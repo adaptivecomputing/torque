@@ -85,7 +85,8 @@
 #include <netdb.h>
 #include <string.h>
 #include <ctype.h>
-
+#include <stdio.h>
+#include <errno.h>
 /*
  * get_fullhostname - get the fully qualified name of a host
  *
@@ -144,6 +145,10 @@ int get_fullhostname(
 
   if (phe == NULL)
     {
+    if (h_errno == HOST_NOT_FOUND){
+	fprintf(stderr, "Unable to lookup host '%s' by address (check /etc/hosts)\n", shortname); 
+    }
+	    
     return(-1);
     }
 
