@@ -1,0 +1,30 @@
+This dialog box is for specifying the list of sites that that you are interested
+on, and the list of PBS server hosts that are running on each site.
+
+A site is a place that runs various networked, multi-platform UNIX environments,
+including heterogeneous clusters of workstations, supercomputers, and massively
+parallel systems. A server host manages user jobs that run on one or more
+execution hosts (nodes). 
+
+On this dialog box, you have a view of the list of sites, and the list of
+servers that are running on each site.
+
+Create the list of sites by specifying each site name on the "Site Name"
+entry box, its display view (ICON or FULL), and then click the "add" button. The
+newly-added site will be shown on the "Sites" listbox as highlighted.
+You may delete any of the items on the listbox by highlighting the item via
+pointing and clicking using the left mouse button, and clicking "delete" button.
+
+Whatever is selected on the "Sites" listbox, the list of servers that run on
+that site will be displayed on the "Servers" listbox. Specify on the
+"Server_Host" entry the server name, the server label (as it would appear on the
+server box) on the DisplayLabel entry box, and click the "add" button next to
+it.  The "Servers" listbox also has an accompanying "delete" button for deleting
+items from the listbox, and "nodes.." button for bringing up another dialog
+box that allows you to specify the list of nodes that are known to the selected
+server host.
+
+Click "done redisplay view" command button after making necessary
+changes that will affect the current view. This will redraw and get new data
+for it. Select "done don't redisplay view" if you've made changes
+that will not affect the current view.

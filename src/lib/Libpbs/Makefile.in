@@ -1,0 +1,136 @@
+#
+#
+#	Makefile for PBS library libpbs.a
+#
+#         OpenPBS (Portable Batch System) v2.3 Software License
+# 
+# Copyright (c) 1999-2000 Veridian Information Solutions, Inc.
+# All rights reserved.
+# 
+# ---------------------------------------------------------------------------
+# For a license to use or redistribute the OpenPBS software under conditions
+# other than those described below, or to purchase support for this software,
+# please contact Veridian Systems, PBS Products Department ("Licensor") at:
+# 
+#    www.OpenPBS.org  +1 650 967-4675                  sales@OpenPBS.org
+#                        877 902-4PBS (US toll-free)
+# ---------------------------------------------------------------------------
+# 
+# This license covers use of the OpenPBS v2.3 software (the "Software") at
+# your site or location, and, for certain users, redistribution of the
+# Software to other sites and locations.  Use and redistribution of
+# OpenPBS v2.3 in source and binary forms, with or without modification,
+# are permitted provided that all of the following conditions are met.
+# After December 31, 2001, only conditions 3-6 must be met:
+# 
+# 1. Commercial and/or non-commercial use of the Software is permitted
+#    provided a current software registration is on file at www.OpenPBS.org.
+#    If use of this software contributes to a publication, product, or
+#    service, proper attribution must be given; see www.OpenPBS.org/credit.html
+# 
+# 2. Redistribution in any form is only permitted for non-commercial,
+#    non-profit purposes.  There can be no charge for the Software or any
+#    software incorporating the Software.  Further, there can be no
+#    expectation of revenue generated as a consequence of redistributing
+#    the Software.
+# 
+# 3. Any Redistribution of source code must retain the above copyright notice
+#    and the acknowledgment contained in paragraph 6, this list of conditions
+#    and the disclaimer contained in paragraph 7.
+# 
+# 4. Any Redistribution in binary form must reproduce the above copyright
+#    notice and the acknowledgment contained in paragraph 6, this list of
+#    conditions and the disclaimer contained in paragraph 7 in the
+#    documentation and/or other materials provided with the distribution.
+# 
+# 5. Redistributions in any form must be accompanied by information on how to
+#    obtain complete source code for the OpenPBS software and any
+#    modifications and/or additions to the OpenPBS software.  The source code
+#    must either be included in the distribution or be available for no more
+#    than the cost of distribution plus a nominal fee, and all modifications
+#    and additions to the Software must be freely redistributable by any party
+#    (including Licensor) without restriction.
+# 
+# 6. All advertising materials mentioning features or use of the Software must
+#    display the following acknowledgment:
+# 
+#     "This product includes software developed by NASA Ames Research Center,
+#     Lawrence Livermore National Laboratory, and Veridian Information
+#     Solutions, Inc.
+#     Visit www.OpenPBS.org for OpenPBS software support,
+#     products, and information."
+# 
+# 7. DISCLAIMER OF WARRANTY
+# 
+# THIS SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND. ANY EXPRESS
+# OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+# OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT
+# ARE EXPRESSLY DISCLAIMED.
+# 
+# IN NO EVENT SHALL VERIDIAN CORPORATION, ITS AFFILIATED COMPANIES, OR THE
+# U.S. GOVERNMENT OR ANY OF ITS AGENCIES BE LIABLE FOR ANY DIRECT OR INDIRECT,
+# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
+# OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+# LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+# NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+# EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# 
+# This license will be governed by the laws of the Commonwealth of Virginia,
+# without reference to its choice of law rules.
+#
+# the first non-comment line must be .POSIX to assure POSIX make behavior
+#
+@MAKE_POSIX_TARGET@
+
+srcdir = @srcdir@
+top_srcdir = @top_srcdir@
+MK_VPATH = @srcdir@/../Libifl:@srcdir@/../Libdis
+INSTALL = @INSTALL@
+
+@mk_head@
+
+INCS = -I@top_builddir@/src/include -I$(top_srcdir)/src/include \
+       -I$(srcdir)/../Libdis -I$(srcdir)/../Libifl
+
+CFLAGS = @CFLAGS@ $(INCS) @DEFS@ -DIFF_PATH=\"$(IFF_PATH)\"
+
+TARGET = libpbs.a
+
+OBJS1 =    PBS_data.o PBS_attr.o get_svrport.o \
+          pbs_geterrmg.o pbs_statfree.o PBSD_manage2.o \
+          PBSD_msg2.o PBSD_rdrpy.o PBSD_sig2.o PBSD_status2.o \
+          PBSD_submit_caps.o dec_Authen.o dec_CpyFil.o dec_JobCred.o dec_JobFile.o \
+          dec_JobId.o dec_JobObit.o dec_Manage.o dec_MsgJob.o dec_MoveJob.o \
+          dec_QueueJob.o dec_Reg.o dec_ReqExt.o dec_ReqHdr.o dec_Resc.o \
+          dec_RunJob.o dec_Shut.o dec_Sig.o dec_Status.o dec_Track.o \
+          dec_attrl.o dec_attropl.o dec_rpyc.o dec_rpys.o dec_svrattrl.o \
+          enc_CpyFil.o enc_JobCred.o enc_JobFile.o enc_JobId.o enc_JobObit.o \
+          enc_Manage.o enc_MsgJob.o enc_MoveJob.o enc_QueueJob.o enc_Reg.o \
+          enc_ReqExt.o enc_ReqHdr.o enc_RunJob.o enc_Shut.o enc_Sig.o \
+          enc_Status.o enc_Track.o enc_attrl.o enc_attropl.o enc_reply.o \
+          enc_svrattrl.o tcp_dis.o tm.o rpp.o nonblock.o
+
+DISOBJS = PBSD_jcred.o PBSD_manager_caps.o PBSD_status.o pbsD_alterjo.o \
+          pbsD_asyrun.o pbsD_connect.o pbsD_deljob.o pbsD_holdjob.o \
+          pbsD_locjob.o pbsD_manager.o pbsD_movejob.o pbsD_msgjob.o \
+          pbsD_orderjo.o pbsD_rerunjo.o pbsD_resc.o pbsD_rlsjob.o pbsD_runjob.o \
+          pbsD_selectj.o pbsD_sigjob.o pbsD_stagein.o pbsD_statjob.o \
+          pbsD_statnode.o pbsD_statque.o pbsD_statsrv.o pbsD_submit.o \
+          pbsD_termin.o 
+
+LDISOBJS = dis.o discui_.o discul_.o disi10d_.o disi10l_.o disiui_.o \
+          disp10d_.o disp10l_.o disrcs.o disrd.o disrf.o \
+          disrfcs.o disrfst.o disrl.o disrl_.o disrsc.o \
+          disrsi.o disrsi_.o disrsl.o disrsl_.o disrss.o \
+          disrst.o disruc.o disrui.o disrul.o disrus.o \
+          diswcs.o diswf.o diswl_.o diswsi.o diswsl.o \
+          diswui.o diswui_.o diswul.o
+
+
+OBJS = $(OBJS1) $(DISOBJS) $(LDISOBJS)
+
+@mk_lib@
+@mk_cleanup@
+@mk_tail@
+

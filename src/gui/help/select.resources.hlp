@@ -1,0 +1,27 @@
+The Select Resources Attributes dialog box is for specifying the resource
+amounts/properties to consult when limiting the list of jobs appearing on
+the Jobs listbox in the main xpbs window.
+
+Click on either the resource/op/value radio button, or on the wildcard button
+"ANY". If the former is selected, specify in the input entry widgets 
+the resource name, the logical operator, and resource amount or property. 
+Move the mouse and button click the "resource" input entry to select a resource
+name, and do the same for the "op" entry to select a logical operator which
+could be: "=", "!=", ">", ">=", "<", "<=". When all entries have been filled
+out, click "add" (or simply hit <return>).  Watch as your input gets loaded
+into the "Resources" listbox. Entries of the latter can be deleted by selecting
+an entry, and then clicking the accompanying "delete" button. If you want to
+modify an entry in the listbox, then select the entry via mouse, which would
+result in its values to be loaded into the input entries, then change the
+values of the input entries, and then click the accompanying "update" button.
+You can use the <Tab> key or <Cntrl-f> to traverse the input entries,
+<Cntrl-b> to go back to a previous input entry field.
+
+===============
+COMMAND BUTTONS
+===============
+This region of command buttons represents the final step when manipulating this
+dialog box. 
+
+Click on "ok" when done setting widget values. This is also the default action 
+when the <Return> key is pressed.

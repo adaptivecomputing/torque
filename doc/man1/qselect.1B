@@ -1,0 +1,545 @@
+.\"         OpenPBS (Portable Batch System) v2.3 Software License
+.\" 
+.\" Copyright (c) 1999-2000 Veridian Information Solutions, Inc.
+.\" All rights reserved.
+.\" 
+.\" ---------------------------------------------------------------------------
+.\" For a license to use or redistribute the OpenPBS software under conditions
+.\" other than those described below, or to purchase support for this software,
+.\" please contact Veridian Systems, PBS Products Department ("Licensor") at:
+.\" 
+.\"    www.OpenPBS.org  +1 650 967-4675                  sales@OpenPBS.org
+.\"                        877 902-4PBS (US toll-free)
+.\" ---------------------------------------------------------------------------
+.\" 
+.\" This license covers use of the OpenPBS v2.3 software (the "Software") at
+.\" your site or location, and, for certain users, redistribution of the
+.\" Software to other sites and locations.  Use and redistribution of
+.\" OpenPBS v2.3 in source and binary forms, with or without modification,
+.\" are permitted provided that all of the following conditions are met.
+.\" After December 31, 2001, only conditions 3-6 must be met:
+.\" 
+.\" 1. Commercial and/or non-commercial use of the Software is permitted
+.\"    provided a current software registration is on file at www.OpenPBS.org.
+.\"    If use of this software contributes to a publication, product, or service
+.\"    proper attribution must be given; see www.OpenPBS.org/credit.html
+.\" 
+.\" 2. Redistribution in any form is only permitted for non-commercial,
+.\"    non-profit purposes.  There can be no charge for the Software or any
+.\"    software incorporating the Software.  Further, there can be no
+.\"    expectation of revenue generated as a consequence of redistributing
+.\"    the Software.
+.\" 
+.\" 3. Any Redistribution of source code must retain the above copyright notice
+.\"    and the acknowledgment contained in paragraph 6, this list of conditions
+.\"    and the disclaimer contained in paragraph 7.
+.\" 
+.\" 4. Any Redistribution in binary form must reproduce the above copyright
+.\"    notice and the acknowledgment contained in paragraph 6, this list of
+.\"    conditions and the disclaimer contained in paragraph 7 in the
+.\"    documentation and/or other materials provided with the distribution.
+.\" 
+.\" 5. Redistributions in any form must be accompanied by information on how to
+.\"    obtain complete source code for the OpenPBS software and any
+.\"    modifications and/or additions to the OpenPBS software.  The source code
+.\"    must either be included in the distribution or be available for no more
+.\"    than the cost of distribution plus a nominal fee, and all modifications
+.\"    and additions to the Software must be freely redistributable by any party
+.\"    (including Licensor) without restriction.
+.\" 
+.\" 6. All advertising materials mentioning features or use of the Software must
+.\"    display the following acknowledgment:
+.\" 
+.\"     "This product includes software developed by NASA Ames Research Center,
+.\"     Lawrence Livermore National Laboratory, and Veridian Information
+.\"     Solutions, Inc.
+.\"     Visit www.OpenPBS.org for OpenPBS software support,
+.\"     products, and information."
+.\" 
+.\" 7. DISCLAIMER OF WARRANTY
+.\" 
+.\" THIS SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND. ANY EXPRESS
+.\" OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+.\" OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT
+.\" ARE EXPRESSLY DISCLAIMED.
+.\" 
+.\" IN NO EVENT SHALL VERIDIAN CORPORATION, ITS AFFILIATED COMPANIES, OR THE
+.\" U.S. GOVERNMENT OR ANY OF ITS AGENCIES BE LIABLE FOR ANY DIRECT OR INDIRECT,
+.\" INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+.\" LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
+.\" OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+.\" LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+.\" NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+.\" EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+.\" 
+.\" This license will be governed by the laws of the Commonwealth of Virginia,
+.\" without reference to its choice of law rules.
+.if \n(Pb .ig Iq
+.TH qselect 1B "" Local PBS
+.so ../ers/ers.macros
+.Iq
+.Sh NAME
+qselect \- select pbs batch jobs
+.Sh SYNOPSIS
+qselect
+[-a [op]date_time] [-A account_string] [-c [op]interval]
+[-h hold_list] [-l resource_list] [-N name] [-p [op]priority]
+[-q destination] [-r rerun] [-s states] [-u user_list]
+.Sh DESCRIPTION
+The
+.B qselect
+command provides a method to list the job identifier of those
+jobs which meet a list of selection criteria.
+.if !\n(Pb .ig Ig
+The selection is accomplished by sending a
+.I "Select Jobs"
+batch request to the default server or the server specified by the
+.Ar \-q option.
+.Ig
+Jobs are selected from those owned by a single server.
+.LP
+When qselect
+successfully completes, it will have written to standard output a
+list of zero or more jobs which meet the criteria specified by the
+options.  Each option acts as a filter restricting the number of jobs
+which might be listed.  With no options, the qselect
+command will list all jobs at the server which the user is authorized
+to list (query status of).
+The -u option may be used to limit the selection to jobs owned by this user
+or other specified users.
+.if !\n(Pb .ig Ig
+Operators and system administrators have the privilege to select all jobs.
+Other uses access depends on the setting of the server attribute 
+.At query_other_jobs .
+.Ig
+.Sh OPTIONS
+When an option is specified with a optional
+.Ar op
+component to the option argument, then
+.Ar op
+specifies a relation between the value of
+a certain job attribute and the value component of the option argument.
+If an
+.Ar op
+is allowable on an option, then the description of the option letter
+will indicate the
+.Ar op
+is allowable.
+The only acceptable strings for the
+.Ar op
+component, and the relation the string indicates, are shown in the following
+list:
+.RS 5
+.IP .eq. 6
+the value represented by the
+attribute of the job is equal to the value represented by the
+option argument.
+.IP .ne. 6
+the value represented by the
+attribute of the job is not equal to the value represented by the
+option argument.
+.IP .ge. 6
+the value represented by the
+attribute of the job is greater than or equal to the value represented by the
+option argument.
+.IP .gt. 6
+the value represented by the
+attribute of the job is greater than the value represented by the
+option argument.
+.IP .le. 6
+the value represented by the
+attribute of the job is less than or equal to the value represented by the
+option argument.
+.IP .lt. 6
+the value represented by the
+attribute of the job is less than the value represented by the
+option argument.
+.RE
+.IP "-a [op]\^date_time " 10
+Restricts selection to a specific time, or a range of times.
+.IP
+The qselect
+command selects only jobs for which the value of the
+.At Execution_Time
+attribute is related to the
+.Ar date_time
+argument by the optional
+.Ar op
+operator.  The
+.Ar date_time
+argument is in the form of the date_time operand of the \f3touch\fP(1)
+command:
+.Ty "[[CC]YY]MMDDhhmm[.SS]"
+.br
+\f1where the MM is the two digits for the month, DD is the day of the
+month, hh is the hour, mm is the minute, and the optional SS is the
+seconds.  CC is the century and YY the year.
+.IP 
+If
+.Ar op
+is not specified, jobs will be selected for which the
+.At Execution_Time
+and
+.Ar date_time
+values are equal.
+If
+.Ar op
+is specified, jobs will be selected according to the following definitions:
+.RS
+.IP .eq.
+.At Execution_Time
+attribute is equal to the
+.Ar date_time
+argument.
+.IP .ne.
+.At Execution_Time
+attribute is not equal to the
+.Ar date_time
+argument.
+.IP .ge.
+.At execution_Time
+attribute is greater than (after) or equal to the
+.Ar date_time
+argument.
+.IP .gt.
+.At Execution_Time
+attribute is greater than (after) the
+.Ar date_time
+argument.
+.IP .le.
+.At Execution_Time
+attribute is less than (before) or equal to the
+.Ar date_time
+argument.
+.IP .lt.
+.At Execution_Time
+attribute is less than (before) the
+.Ar date_time
+argument.
+.RE
+.IP "-A account_string" 10
+Restricts selection to jobs whose 
+.At Account_Name
+attribute matches the specified
+.Ar account_string .
+.IP "-c [\^op\^]\^interval" 10
+Restricts selection to jobs whose 
+.At Checkpoint
+interval attribute matches the specified relationship.
+.IP
+The values of the 
+.At Checkpoint
+attribute are defined to have the following ordered relationship:
+.br
+\ \ \ \ n\ >\  s\ >\ c=minutes\ >\ c\ >\ u
+.br
+If the optional
+.Ar op
+is not specified, jobs will be selected whose
+.At Checkpoint
+attribute is equal to the 
+.Ar interval
+argument.  If 
+.Ar op
+is specified, jobs will be selected according to:
+.RS
+.IP .eq.
+.At Checkpoint
+attribute of the job is equal to the
+.Ar interval
+argument.
+.IP .ne.
+.At Checkpoint
+attribute of the job is not equal to the
+.Ar interval
+argument.
+.IP .ge.
+.At Checkpoint
+attribute of the job is greater than or equal to the
+.Ar interval
+argument.
+.IP .gt.
+.At Checkpoint
+attribute of the job is greater than the
+.Ar interval
+argument.
+.IP .le.
+.At Checkpoint
+attribute of the job is less than or equal to the
+.Ar interval
+argument.
+.IP .lt.
+.At Checkpoint
+attribute of the job is less than the
+.Ar interval
+argument.
+.RE
+.IP
+For an interval value of "u", only ".eq." and ".ne." are valid.
+.IP "-h hold_list" 10
+Restricts the selection of jobs to those with a specific set of hold types.
+Only those jobs will be selected whose
+.At Hold_Types
+attribute exactly match the value of the
+.Ar hold_list
+argument.
+.RS
+.LP
+The
+.Ar hold_list
+argument is a string consisting of one or more occurrences the single letter
+.Ty n ,
+or one or more of the letters
+.Ty u ,
+.Ty o ,
+or 
+.Ty s 
+in any combination.  If letters are duplicated, they are treated as if they
+occurred once.
+The letters represent the hold types:
+.nf
+  \f5n\fP \- none
+  \f5u\fP \- user
+  \f5o\fP \- other
+  \f5s\fP \- system
+.fi
+.RE
+.IP "-l resource_list" 10
+Restricts selection of jobs to those with specified resource amounts.
+.RS
+.LP
+Only those jobs will be selected whose
+.At Resource_List 
+attribute matches the specified relation with each resource and value
+listed in the
+.Ar resource_list
+argument.
+The 
+.Ar resource_list
+is in the following format:
+.br
+\f5resource_name\f6op\f5value[,resource_name\f6op\f5val,...]\f1
+.br
+The relation operator
+.Ar op
+must be present.
+.LP
+When comparing the values of resources, the following definitions for the
+operator apply:
+.IP .eq.
+the resource value in the 
+.At Resource_List
+attribute of the job equals the value specified in
+.Ar resource_list .
+.IP .ne.
+the resource value in the
+.At Resource_List
+attribute of the job is not equal to the value specified in
+.Ar resource_list .
+.IP .ge.
+the resource value in the
+.At Resource_List
+attribute of the job is greater than or equal to the value specified in
+.Ar resource_list .
+.IP .gt.
+the resource value in the
+.At Resource_List
+attribute of the job is greater than the value specified in
+.Ar resource_list .
+.IP .le.
+the resource value in the
+.At Resource_List
+attribute of the job is less than or equal to the value specified in
+.Ar resource_list .
+.IP .lt.
+the resource value in the
+.At Resource_List
+attribute of the job is less than the value specified in
+.Ar resource_list .
+.RE
+.IP "-N name" 10
+Restricts selection of jobs to those with a specific name.
+.IP "-p [op]priority" 10
+Restricts selection of jobs to those with a priority that matches the
+specified relationship.  If
+.Ar op
+is not specified, jobs are selected for which the job
+.At Priority
+attribute is equal to the
+.Ar priority
+.RS
+.LP
+If the
+.Ar op
+is specified, the relationship is defined as:
+.IP .eq.
+.At Priority
+attribute is equal to the value of the
+.Ar priority
+argument.
+.IP .ne.
+.At Priority
+attribute is not equal to the value of the
+.Ar priority
+argument.
+.IP .ge.
+.At Priority
+attribute is greater than or equal to the value of the
+.Ar priority
+argument.
+.IP .gt.
+.At Priority
+attribute is greater than the value of the
+.Ar priority
+argument.
+.IP .le.
+.At Priority
+attribute is less than or equal to the value of the
+.Ar priority
+argument.
+.IP .lt.
+.At Priority
+attribute is less than the value of the
+.Ar priority
+argument.
+.RE
+.IP "-q destination" 10
+Restricts selection to those jobs residing at the specified destination.
+.RS
+.LP
+The
+.Ar destination
+may be of one of the following three forms:
+.br
+.Ty "\ \ \ \ queue"
+.br
+.Ty "\ \ \ \ @server"
+.br
+.Ty "\ \ \ \ queue@server"
+.LP
+If the 
+.Ar -q
+option is not specified, jobs will be selected from the default server.
+.if !\n(Pb .ig Ig
+See the ERS section \*(Si for a definition of the default server.
+.Ig
+.LP
+If the
+.Ar destination
+describes only a queue, only jobs in that queue on the default batch server
+will be selected.
+.LP
+If the
+.Ar destination
+describes only a server, then jobs in all queues on that server will be
+selected.
+.LP
+If the
+.Ar destination
+describes both a queue and a server, then only jobs in the named queue on
+the named server will be selected.
+.RE
+.IP \-r\ rerun
+Restricts selection of jobs to those with the specified
+.At Rerunable
+attribute.  The option argument must be a single character.  The following
+two characters are supported by PBS:
+.Ty y
+and
+.Ty n .
+.IP "-s states" 10
+Restricts job selection to those in the specified states.
+.RS
+.LP
+The
+.Ar states
+argument is a character string which consists of any combination of the
+characters:
+.Ty E ,
+.Ty H ,
+.Ty Q ,
+.Ty R ,
+.Ty T ,
+and
+.Ty W .
+.if !\n(Pb .ig Ig
+.SM
+This set of state letters does not conform to the POSIX 1003.2d standard.
+It requires the sames letters, but in lower case.
+.NL
+A repeated character will be accepted, but no additional meaning is
+assigned to it.
+.Ig
+.LP
+The characters in the
+.Ar states
+argument have the following interpretation:
+.IP \f5E\fP 5
+the Exiting state.
+.IP \f5H\fP 5
+the Held state.
+.IP \f5Q\fP 5
+the Queued state.
+.IP \f5R\fP 5
+the Running state.
+.IP \f5T\fP 5
+the Transiting state.
+.IP \f5W\fP 5
+the Waiting state.
+.LP
+Jobs will be selected which are in any of the specified states.
+.RE
+.IP "-u user_list" 10
+Restricts selection to jobs owned by the specified user names.
+.RS 
+.LP
+This provides a means of limiting the selection to jobs owned by one or
+more users.
+.if !\n(Pb .ig Ig
+The ability to select jobs owned by others is controllable by the server
+attribute
+.At query_other_jobs .
+Mapping between user names on different hosts and validation of privilege
+to access the specified user name is discussed under the server.
+This option may also be used by batch operators and
+batch administrators to select jobs belonging to other users.
+.Ig
+.LP
+The syntax of the
+.Ar user_list
+is:
+.br
+.Ty "\ \ \ \ user_name[@host][,user_name[@host],...]"
+.br
+Host names may be wild carded on the left end, e.g. "*.nasa.gov".
+User_name without a "@host" is equivalent to "user_name@*", that is at any host.
+Jobs will be selected which are owned by the listed users at the
+corresponding hosts.
+.RE
+.Sh STANDARD OUTPUT
+The list of job identifiers of selected jobs is written to standard output.
+Each job identifier is separated by white space.
+Each job identifier is of the form:
+.br
+.Ty "\ \ \ \ sequence_number.server_name@server"
+.br
+Where
+.Ty "sequence_number.server"
+is the identifier assigned at submission time, see
+.BR qsub .
+.Ty @server
+identifies the server which currently owns the job.
+.Sh STANDARD ERROR
+The qselect command will write a diagnostic message to standard error for
+each error occurrence.
+.Sh EXIT STATUS
+Upon successful processing of all options presented to the
+qselect command, the exit status will be a value of zero.
+.LP
+If the qselect command fails to process any option, the
+command exits with a value greater than zero.
+.Sh SEE ALSO
+qsub(1B), qstat(1B), pbs_selectjob(3B), pbs_selstat(3B), pbs_statjob(3B)
+\" turn off any extra indent left by the Sh macro
+.RE
+

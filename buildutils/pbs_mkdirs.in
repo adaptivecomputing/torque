@@ -1,0 +1,377 @@
+#!/bin/sh
+
+#
+# 
+#         OpenPBS (Portable Batch System) v2.3 Software License
+# 
+# Copyright (c) 1999-2000 Veridian Information Solutions, Inc.
+# All rights reserved.
+# 
+# ---------------------------------------------------------------------------
+# For a license to use or redistribute the OpenPBS software under conditions
+# other than those described below, or to purchase support for this software,
+# please contact Veridian Systems, PBS Products Department ("Licensor") at:
+# 
+#    www.OpenPBS.org  +1 650 967-4675                  sales@OpenPBS.org
+#                        877 902-4PBS (US toll-free)
+# ---------------------------------------------------------------------------
+# 
+# This license covers use of the OpenPBS v2.3 software (the "Software") at
+# your site or location, and, for certain users, redistribution of the
+# Software to other sites and locations.  Use and redistribution of
+# OpenPBS v2.3 in source and binary forms, with or without modification,
+# are permitted provided that all of the following conditions are met.
+# After December 31, 2001, only conditions 3-6 must be met:
+# 
+# 1. Commercial and/or non-commercial use of the Software is permitted
+#    provided a current software registration is on file at www.OpenPBS.org.
+#    If use of this software contributes to a publication, product, or
+#    service, proper attribution must be given; see www.OpenPBS.org/credit.html
+# 
+# 2. Redistribution in any form is only permitted for non-commercial,
+#    non-profit purposes.  There can be no charge for the Software or any
+#    software incorporating the Software.  Further, there can be no
+#    expectation of revenue generated as a consequence of redistributing
+#    the Software.
+# 
+# 3. Any Redistribution of source code must retain the above copyright notice
+#    and the acknowledgment contained in paragraph 6, this list of conditions
+#    and the disclaimer contained in paragraph 7.
+# 
+# 4. Any Redistribution in binary form must reproduce the above copyright
+#    notice and the acknowledgment contained in paragraph 6, this list of
+#    conditions and the disclaimer contained in paragraph 7 in the
+#    documentation and/or other materials provided with the distribution.
+# 
+# 5. Redistributions in any form must be accompanied by information on how to
+#    obtain complete source code for the OpenPBS software and any
+#    modifications and/or additions to the OpenPBS software.  The source code
+#    must either be included in the distribution or be available for no more
+#    than the cost of distribution plus a nominal fee, and all modifications
+#    and additions to the Software must be freely redistributable by any party
+#    (including Licensor) without restriction.
+# 
+# 6. All advertising materials mentioning features or use of the Software must
+#    display the following acknowledgment:
+# 
+#     "This product includes software developed by NASA Ames Research Center,
+#     Lawrence Livermore National Laboratory, and Veridian Information
+#     Solutions, Inc.
+#     Visit www.OpenPBS.org for OpenPBS software support,
+#     products, and information."
+# 
+# 7. DISCLAIMER OF WARRANTY
+# 
+# THIS SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND. ANY EXPRESS
+# OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+# OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT
+# ARE EXPRESSLY DISCLAIMED.
+# 
+# IN NO EVENT SHALL VERIDIAN CORPORATION, ITS AFFILIATED COMPANIES, OR THE
+# U.S. GOVERNMENT OR ANY OF ITS AGENCIES BE LIABLE FOR ANY DIRECT OR INDIRECT,
+# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
+# OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+# LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+# NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+# EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# 
+# This license will be governed by the laws of the Commonwealth of Virginia,
+# without reference to its choice of law rules.
+# pbs_mkdirs:
+#
+# This will make the various directories that are needed for PBS
+# housekeeping.
+#
+# Usage:
+#  pbs_mkdirs [-v] [-c] what
+#    -v     be verbose
+#    -c     allow usage of chk_tree (do not use this within a make install)
+#    what   select from the following list
+#              client   -- dirs needed by client programs
+#              server   -- dirs needed by pbs_server
+#              mom      -- dirs needed by pbs_mom
+#              aux      -- the aux directory
+#              default  -- the default file
+#              check    -- run chk_tree (turns on -c automatically)
+#              all      -- do all of the above
+#
+#
+# $Id$
+#
+
+#
+# check tree should not be called until it is installed since
+# only relative paths are used by autoconf.
+#
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+CHK_TREE=@bindir@/chk_tree
+
+PBS_SERVER_HOME=@PBS_SERVER_HOME@
+PBS_DEFAULT_FILE=@PBS_DEFAULT_FILE@
+PBS_DEFAULT_SERVER=@PBS_DEFAULT_SERVER@
+
+PBS_ENVIRON=@PBS_ENVIRON@
+
+#
+# manual page directories are created by doc/ers/Makefile
+#
+PBS_UBIN=@bindir@
+PBS_SBIN=@sbindir@
+PBS_LIB=@libdir@
+PBS_UINC=@includedir@
+
+verbose=""
+
+
+#
+# this will create a directory and any chain of parent directories
+# that might be needed
+# All of this is somewhat lame because install-sh is used
+# along with install_dir in various places. 
+#
+install_dir()
+{
+	# use the id_ for namespace disambiguation
+	id_dname="$1"
+	id_mode=`test -n "$2" && echo "$2" || echo 755`
+	id_owner=`test -n "$3" && echo "$3" || echo root`
+
+	# dlist will contain a list of directory names to make
+	id_dlist=""
+
+	while [ ! \( -z "$id_dname" -o "$id_dname" = / -o \
+		"$id_dname" = "." \) ]; do
+
+		test -f $id_dname && return 1
+		test -d $id_dname && break
+
+		id_dlist="`basename $id_dname` $id_dlist"
+		id_dname=`dirname "$id_dname"`
+	done
+
+	id_dir="$id_dname"
+	for id_d in $id_dlist ""; do
+		id_dir="$id_dir/$id_d"
+		test -z "$id_d" && return 0
+		mkdir $id_dir && chmod $id_mode $id_dir && \
+		    chown $id_owner $id_dir || return 1
+	done
+	return 0
+}
+
+#
+# This will take the name of the variable (not value) and
+# make a directory. This is just to stick with the original
+# way things were done in the top-level make file in PBS
+#
+install_dir_by_varname()
+{
+	idv_dvarname="$1"
+	idv_dname=`eval 'echo $'$idv_dvarname`
+
+	idv_mode=`test -n "$2" && echo "$2" || echo 755`
+	idv_owner=`test -n "$3" && echo "$3" || echo root`
+
+	if [ X$idv_dname = X ] ; then
+		echo $idv_dvarname is not defined 1>&2
+		return 1
+	elif [ -f $idv_dname ] ; then
+		echo $idv_dvarname exists and is not a directory 1>&2
+		return 1
+	elif [ -d $idv_dname ] ; then
+		chmod $idv_mode $idv_dname > /dev/null 2>&1
+		chown $idv_owner $idv_dname > /dev/null 2>&1
+		return 0
+	elif [ ! -d $idv_dname ] ; then
+		test -n "$verbose" && echo Creating $idv_dname
+		install_dir `dirname $idv_dname` 755 $idv_owner && \
+		    mkdir $idv_dname && chmod $idv_mode $idv_dname && \
+		    chown $idv_owner $idv_dname || return 1
+	fi
+
+	return 0
+}
+
+check_env()
+{
+	test -n "$verbose" && echo Making environment file
+	if [ ! -f $PBS_ENVIRON ] ; then
+		install_dir `dirname $PBS_ENVIRON`
+		echo "PATH=/bin:/usr/bin" > $PBS_ENVIRON
+		if [ X$TZ != X ] ; then
+			echo "TZ=$TZ" >> $PBS_ENVIRON
+		fi
+		if [ X$LANG != X ] ; then
+			echo "LANG=$LANG" >> $PBS_ENVIRON
+		fi
+		if [ X$LC_ALL != X ] ; then
+			echo "LC_ALL=$LC_ALL" >> $PBS_ENVIRON
+		fi
+		if [ X$LC_COLLATE != X ] ; then
+			echo "LC_COLLATE=$LC_COLLATE" >> $PBS_ENVIRON
+		fi
+		if [ X$LC_CTYPE != X ] ; then
+			echo "LC_CTYPE=$LC_CTYPE" >> $PBS_ENVIRON
+		fi
+		if [ X$LC_MONETARY != X ] ; then
+			echo "LC_MONETARY=$LC_MONETARY" >> $PBS_ENVIRON
+		fi
+		if [ X$LC_NUMERIC != X ] ; then
+			echo "LC_NUMERIC=$LC_NUMERIC" >> $PBS_ENVIRON
+		fi
+		if [ X$LC_TIME != X ] ; then
+			echo "LC_TIME=$LC_TIME" >> $PBS_ENVIRON
+		fi
+		chmod 644 $PBS_ENVIRON
+	fi
+}
+
+chk_tree_wrap()
+{
+	test -n "$chktree" && $CHK_TREE $*
+}
+
+mk_cli_dirs()
+{
+	test -n "$verbose" && echo Creating Directories required for clients
+	install_dir_by_varname PBS_UBIN 755 $owner
+	install_dir_by_varname PBS_SBIN 755 $owner
+	install_dir_by_varname PBS_LIB  755 $owner
+	install_dir_by_varname PBS_UINC 755 $owner
+
+	chk_tree_wrap -d -n $PBS_UBIN $PBS_SBIN $PBS_LIB $PBS_UINC 
+}
+
+
+mk_server_dirs()
+{
+	test -n "$verbose" && echo Creating Directories required for the Server
+	install_dir_by_varname PBS_SERVER_HOME 755 $owner
+
+	install_dir $PBS_SERVER_HOME/spool 1777 $owner
+	install_dir $PBS_SERVER_HOME/server_priv 750 $owner
+	install_dir $PBS_SERVER_HOME/server_priv/jobs 750 $owner
+	install_dir $PBS_SERVER_HOME/server_priv/queues 750 $owner
+	install_dir $PBS_SERVER_HOME/server_priv/acl_svr 750 $owner
+	install_dir $PBS_SERVER_HOME/server_priv/acl_hosts 750 $owner
+	install_dir $PBS_SERVER_HOME/server_priv/acl_users 750 $owner
+	install_dir $PBS_SERVER_HOME/server_priv/acl_groups 750 $owner
+	install_dir $PBS_SERVER_HOME/server_priv/accounting 755 $owner
+	install_dir $PBS_SERVER_HOME/server_logs 755 $owner
+	install_dir $PBS_SERVER_HOME/sched_priv 750 $owner
+	install_dir $PBS_SERVER_HOME/sched_logs 755 $owner
+
+	test -f $PBS_ENVIRON || check_env
+
+	chk_tree_wrap -d -n $PBS_SERVER_HOME/server_priv/jobs \
+		$PBS_SERVER_HOME/server_priv/queues \
+		$PBS_SERVER_HOME/server_priv/acl_svr \
+		$PBS_SERVER_HOME/server_priv/acl_hosts \
+		$PBS_SERVER_HOME/server_priv/acl_users \
+		$PBS_SERVER_HOME/server_priv/acl_groups \
+		$PBS_SERVER_HOME/server_priv/accounting \
+		$PBS_SERVER_HOME/server_logs
+	chk_tree_wrap -d -n -s $PBS_SERVER_HOME/spool
+	chk_tree_wrap -n $PBS_ENVIRON
+}
+
+
+mk_mom_dirs()
+{
+	test -n "$verbose" && echo Creating Directories required for MOM
+
+	install_dir_by_varname PBS_SERVER_HOME 755 $owner
+
+	test -d $PBS_SERVER_HOME/spool || \
+	    install_dir $PBS_SERVER_HOME/spool 1777 $owner
+
+	install_dir $PBS_SERVER_HOME/checkpoint 700 $owner
+	install_dir $PBS_SERVER_HOME/undelivered  1777 $owner
+	install_dir $PBS_SERVER_HOME/mom_priv 751 $owner
+	install_dir $PBS_SERVER_HOME/mom_priv/jobs 751 $owner
+	install_dir $PBS_SERVER_HOME/mom_logs 755 $owner
+
+	test -f $PBS_ENVIRON || check_env
+
+	chk_tree_wrap -d -n $PBS_SERVER_HOME/checkpoint \
+		$PBS_SERVER_HOME/mom_priv/jobs \
+		$PBS_SERVER_HOME/mom_logs
+	chk_tree_wrap -d -n -s $PBS_SERVER_HOME/spool \
+		$PBS_SERVER_HOME/undelivered
+	chk_tree_wrap -n $PBS_ENVIRON
+}
+
+
+mk_default_file()
+{
+	test -n "$verbose" && echo Making default server file
+
+	install_dir `dirname $PBS_DEFAULT_FILE`
+
+	# I think I know better than pbs.  --pw
+        #  if default already exists, leave alone 
+	if [ ! -e $PBS_DEFAULT_FILE ]; then
+	    rm -f $PBS_DEFAULT_FILE > /dev/null 2>&1
+	    echo $PBS_DEFAULT_SERVER > $PBS_DEFAULT_FILE && \
+		chmod 644 $PBS_DEFAULT_FILE
+	fi
+
+	chk_tree_wrap -n $PBS_DEFAULT_FILE
+}
+
+mk_aux_dir()
+{
+	install_dir $PBS_SERVER_HOME/aux 755
+	chk_tree_wrap -d -n $PBS_SERVER_HOME/aux
+}
+
+do_check_tree()
+{
+	chk_tree_wrap -d $PBS_SERVER_HOME/server_priv/jobs \
+		$PBS_SERVER_HOME/server_priv/queues \
+		$PBS_SERVER_HOME/server_priv/acl_svr \
+		$PBS_SERVER_HOME/server_priv/acl_hosts \
+		$PBS_SERVER_HOME/server_priv/acl_users \
+		$PBS_SERVER_HOME/server_priv/acl_groups \
+		$PBS_SERVER_HOME/server_priv/accounting \
+		$PBS_SERVER_HOME/server_logs
+	chk_tree_wrap -d $PBS_SERVER_HOME/checkpoint \
+		$PBS_SERVER_HOME/mom_priv/jobs \
+		$PBS_SERVER_HOME/mom_logs
+	chk_tree_wrap -d -s $PBS_SERVER_HOME/spool \
+		$PBS_SERVER_HOME/undelivered
+	chk_tree_wrap -d $PBS_SERVER_HOME/aux
+	chk_tree_wrap $PBS_DEFAULT_FILE
+}
+
+
+# mk_dirs() will generate the set of directories needed 
+# for server and mom execution.
+
+mk_dirs()
+{
+	chktree=yes
+	mk_cli_dirs
+	mk_server_dirs
+	mk_mom_dirs
+	mk_default_file
+	mk_aux_dir
+}
+
+while true; do
+	case "$1" in
+	    -v)       verbose=yes ; shift; continue ;;
+	    -c)       chktree=yes ; shift; continue ;;
+	    -d)	      shift; PBS_SERVER_HOME=$1; shift; continue;;
+	    cli*)     mk_cli_dirs ; break ;;
+	    serv*)    mk_server_dirs ; break ;;
+	    mom*)     mk_mom_dirs ; break ;;
+	    aux*)     mk_aux_dir ; break ;;
+	    default*) mk_default_file ; break ;;
+	    check*)   chktree=yes; do_check_tree ; break ;;
+	    all*)     mk_dirs ; break ;;
+	esac
+done
+

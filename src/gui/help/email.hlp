@@ -1,0 +1,21 @@
+The Email Addresses dialog box is for specifying the list of addresses to
+send email to regarding job status. 
+
+Specify the list of addresses by typing the email address in the email input
+entry, and then clicking the "add" button.   Watch as your input gets loaded
+into the "Email Addresses" listbox. Entries of the latter can be deleted by
+selecting an entry, and then clicking the accompanying "delete" button. If you
+want to modify an entry in the listbox, then select the entry, which would
+result in its values to be loaded into the "email" input entry, then
+change the value of the input entry, and finally click the accompanying
+"update" button.  
+
+================
+Command Buttons
+================
+Click on "ok" button after you are satisfied with the list of addresses.
+This is also the default action (as indicated by the sunken look of the button)
+when the <Return> key is pressed.
+
+Click on "reset to default" if you want to reset the box of entries to its
+default values.

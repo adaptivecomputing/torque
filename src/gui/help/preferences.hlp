@@ -1,0 +1,26 @@
+The User Preferences dialog box is for setting various parameters. On future
+releases of the GUI, more items can be set from  this dialog box.
+
+On the server hosts entry box, specify a list of favorite hosts separated by
+white space.
+
+On the "wait timeout secs" spinbox, specify the number of seconds to wait
+before timing out waiting for a connection to the server.
+
+On the xterm entry box, specify the pathname (and arguments) to the xterm
+command that will spawn a PBS interactive session.
+
+The RSH Command is needed in 2 areas of xpbs: 1) "Track Job.." feature (button
+shown on the main xpbs window), and the 2) "file staging.." feature (button
+displayed on the submit window). When the "Track Job.." feature is enabled,
+xpbs will check (and notify user) for existence of output files for
+recently-run jobs. If the output files were returned by PBS into some remote
+host, then xpbs will need to execute an RSH (remote shell) command to check the
+existence of those output files. Similarly, when a user specifies the
+"file staging.." option, xpbs will need to check for existence of the specified
+input file or output file directory path, which could reside remotely,
+requiring xpbs to execute the RSH command.
+
+Click "ok" command button after making some necessary changes. This is also the
+default action (as indicated by the sunken look of the button) when the 
+<Return> key is pressed. 

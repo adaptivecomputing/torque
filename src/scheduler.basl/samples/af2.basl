@@ -1,0 +1,906 @@
+//
+//         OpenPBS (Portable Batch System) v2.3 Software License
+// 
+// Copyright (c) 1999-2000 Veridian Information Solutions, Inc.
+// All rights reserved.
+// 
+// ---------------------------------------------------------------------------
+// For a license to use or redistribute the OpenPBS software under conditions
+// other than those described below, or to purchase support for this software,
+// please contact Veridian Systems, PBS Products Department ("Licensor") at:
+// 
+//    www.OpenPBS.org  +1 650 967-4675                  sales@OpenPBS.org
+//                        877 902-4PBS (US toll-free)
+// ---------------------------------------------------------------------------
+// 
+// This license covers use of the OpenPBS v2.3 software (the "Software") at
+// your site or location, and, for certain users, redistribution of the
+// Software to other sites and locations.  Use and redistribution of
+// OpenPBS v2.3 in source and binary forms, with or without modification,
+// are permitted provided that all of the following conditions are met.
+// After December 31, 2001, only conditions 3-6 must be met:
+// 
+// 1. Commercial and/or non-commercial use of the Software is permitted
+//    provided a current software registration is on file at www.OpenPBS.org.
+//    If use of this software contributes to a publication, product, or
+//    service, proper attribution must be given; see www.OpenPBS.org/credit.html
+// 
+// 2. Redistribution in any form is only permitted for non-commercial,
+//    non-profit purposes.  There can be no charge for the Software or any
+//    software incorporating the Software.  Further, there can be no
+//    expectation of revenue generated as a consequence of redistributing
+//    the Software.
+// 
+// 3. Any Redistribution of source code must retain the above copyright notice
+//    and the acknowledgment contained in paragraph 6, this list of conditions
+//    and the disclaimer contained in paragraph 7.
+// 
+// 4. Any Redistribution in binary form must reproduce the above copyright
+//    notice and the acknowledgment contained in paragraph 6, this list of
+//    conditions and the disclaimer contained in paragraph 7 in the
+//    documentation and/or other materials provided with the distribution.
+// 
+// 5. Redistributions in any form must be accompanied by information on how to
+//    obtain complete source code for the OpenPBS software and any
+//    modifications and/or additions to the OpenPBS software.  The source code
+//    must either be included in the distribution or be available for no more
+//    than the cost of distribution plus a nominal fee, and all modifications
+//    and additions to the Software must be freely redistributable by any party
+//    (including Licensor) without restriction.
+// 
+// 6. All advertising materials mentioning features or use of the Software must
+//    display the following acknowledgment:
+// 
+//     "This product includes software developed by NASA Ames Research Center,
+//     Lawrence Livermore National Laboratory, and Veridian Information
+//     Solutions, Inc.
+//     Visit www.OpenPBS.org for OpenPBS software support,
+//     products, and information."
+// 
+// 7. DISCLAIMER OF WARRANTY
+// 
+// THIS SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND. ANY EXPRESS
+// OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+// OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT
+// ARE EXPRESSLY DISCLAIMED.
+// 
+// IN NO EVENT SHALL VERIDIAN CORPORATION, ITS AFFILIATED COMPANIES, OR THE
+// U.S. GOVERNMENT OR ANY OF ITS AGENCIES BE LIABLE FOR ANY DIRECT OR INDIRECT,
+// INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
+// OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+// EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// 
+// This license will be governed by the laws of the Commonwealth of Virginia,
+// without reference to its choice of law rules.
+// 
+//
+//
+// af2.basl: This scheduler is almost similar to af.basl except
+// 	     "ServerJobsGet()" is used instead of "QueJobsGet()" to get
+//	     information about jobs.
+//
+// Environment: 2 Servers / 2 CNodes
+//
+
+// **************************************************************************
+//
+// User-defined Functions
+//
+// **************************************************************************
+
+Int JobWallTimeReqGet( Job job ) {
+	Int wallt;
+
+	wallt = JobIntResReqGet(job, "walltime");
+	return(wallt);
+}
+
+Int JobWallTimeUsedGet( Job job ) {
+	Int wallt;
+
+	wallt = JobIntResUseGet(job, "walltime");
+	return(wallt);
+}
+
+Int JobCpuTimeReqGet( Job job ) {
+	Int cput;
+
+	cput = JobIntResReqGet(job, "cput");
+	return(cput);
+}
+
+Int JobCpuTimeUsedGet( Job job ) {
+	Int cput;
+
+	cput = JobIntResUseGet(job, "cput");
+	return(cput);
+}
+
+Size JobVirtualMemAvailGet(Job job)
+{
+	Size sz;
+	sz = JobSizeResReqGet(job, "mem");
+	return(sz);
+}
+
+Void printInt(String name, String fname, String resname, Int i)
+{
+	String str;
+
+	str = fname   + "[" + name + "]" + "." +
+              resname + "=";
+	print(str);
+	print(i);
+}
+Void printStr(String name, String fname, String resname, String string)
+{
+	String str;
+
+	str = fname   + "[" + name + "]" + "." +
+              resname + "=";
+	print(str);
+	print(string);
+}
+Void printSize(String name, String fname, String resname, Size sz)
+{
+	String str;
+
+	str = fname   + "[" + name + "]" + "." +
+              resname + "=";
+	print(str);
+	print(sz);
+
+}
+Void printDateTime(String name, String fname, String resname, DateTime dt)
+{
+	String str;
+
+	str = fname   + "[" + name + "]" + "." +
+              resname + "=";
+	print(str);
+	print(dt);
+
+}
+Void printFloat(String name, String fname, String resname, Float f)
+{
+	String str;
+
+	str = fname   + "[" + name + "]" + "." +
+              resname + "=";
+	print(str);
+	print(f);
+}
+
+Que findQueByName( Set Que sq, String qname )
+{
+	Que q;
+
+	foreach(q in sq) {
+		if( QueNameGet(q) EQ qname ) {
+			return(q);
+		}
+	}
+	return(NOQUE);
+}
+
+// **************************************************************************
+//
+// Global variable declarations
+//
+// **************************************************************************
+
+String server_name1;
+String server_name2;
+String mom_name1;
+String mom_name2;
+
+// **************************************************************************
+//
+// Assignment statements to global variables
+//
+// **************************************************************************
+
+server_name1 = "db";
+server_name2 = "ruby";
+mom_name1 = "db";
+mom_name2 = "ruby";
+
+// **************************************************************************
+//
+// main scheduling code
+//
+// **************************************************************************
+
+sched_main()
+{
+	Int	i;
+	Int	k;
+	CNode   cn;
+	CNode   cnhead;
+	Server  s;
+	Server  shead;
+	Job	j;
+	Set CNode  allcns;
+	Set Server alls;
+	Set Job	   alljs;
+
+	String	headstr;
+	String	str;
+	Int	ires;
+	Size	sres;
+	String	stres;
+	String  sname;
+	String  qname;
+	String  jname;	
+	String  cname;
+	String  name;
+	String  hstr;
+	Float	f;
+	DateTime dt;
+	Int	 dtsecs;
+	Job	 job;
+	Int	 res;
+	DateTime d;
+	Size	 sz;
+
+	dt = datetimeGet();
+	printDateTime(NULLSTR, "datetimeGet", NULLSTR, dt);
+	dtsecs = datetimeToSecs(dt);
+	printInt(NULLSTR, "datetimeToSecs", NULLSTR, dtsecs);
+	
+	alls = AllServersGet();
+	shead = AllServersLocalHostGet();
+
+	k = 1;
+	foreach(s in alls) {
+		if( k EQ 1 ) {
+			if( ServerInetAddrGet(s) EQ ServerInetAddrGet(shead) ) {
+				printStr(NULLSTR, "AllServersLocalHostGet", NULLSTR,
+                                                               "passed");
+			} else {
+				printStr(NULLSTR, "AllServersLocalHostGet", NULLSTR,
+                                                               "failed");
+			}
+		}
+		str = ServerInetAddrGet(s) ;
+		sname = str;
+		printStr(sname, "ServerInetAddrGet", NULLSTR, str);
+	
+		str = ServerDefQueGet(s) ;
+		printStr(sname, "ServerDefQueGet", NULLSTR, str);
+	
+		i = ServerStateGet(s) ;
+		switch(i) {
+	  	case SERVER_ACTIVE:
+			{
+				printStr(sname, "ServerStateGet",
+                                                     NULLSTR, "Active");
+			}
+	  	case SERVER_IDLE:
+			{
+				printStr(sname, "ServerStateGet",
+                                                     NULLSTR, "Idle");
+			}
+	  	case SERVER_SCHED:
+			{
+				printStr(sname, "ServerStateGet",
+                                                 NULLSTR, "Scheduling");
+			}
+	  	case SERVER_TERM:
+			{
+				printStr(sname, "ServerStateGet",
+                                                NULLSTR, "Terminating");
+			}
+	  	case SERVER_TERMDELAY:
+			{
+				printStr(sname, "ServerStateGet",
+                                       NULLSTR, "Delayed Termination");
+			}
+	 	default:
+			{
+				printStr(sname, "ServerStateGet",
+                                       NULLSTR, "Unknown Server state");
+			}
+		}
+	
+		i = ServerMaxRunJobsGet(s) ;
+		printInt(sname, "ServerMaxRunJobsGet", NULLSTR, i);
+							
+		i = ServerMaxRunJobsPerUserGet(s);
+		printInt(sname, "ServerMaxRunJobsPerUserGet",NULLSTR,i);
+	
+		i = ServerMaxRunJobsPerGroupGet(s);
+		printInt(sname, "ServerMaxRunJobsPerGroupGet",NULLSTR,i);
+
+		// the Avails
+		ires = ServerIntResAvailGet(s, "cput");
+		printInt(sname, "ServerIntResAvailGet", "cput", ires);
+
+		ires = ServerIntResAvailGet(s, "pcput");
+		printInt(sname, "ServerIntResAvailGet", "pcput", ires);
+
+		ires = ServerIntResAvailGet(s, "walltime");
+		printInt(sname, "ServerIntResAvailGet", "walltime", ires);
+
+		ires = ServerIntResAvailGet(s, "mppt");
+		printInt(sname, "ServerIntResAvailGet", "mppt", ires);
+
+		ires = ServerIntResAvailGet(s, "pmppt");
+		printInt(sname, "ServerIntResAvailGet", "pmppt", ires);
+
+		ires = ServerIntResAvailGet(s, "nice");
+		printInt(sname, "ServerIntResAvailGet", "nice", ires);
+
+		ires = ServerIntResAvailGet(s, "procs");
+		printInt(sname, "ServerIntResAvailGet", "procs", ires);
+
+		ires = ServerIntResAvailGet(s, "mppe");
+		printInt(sname, "ServerIntResAvailGet", "mppe", ires);
+
+		ires = ServerIntResAvailGet(s, "ncpus");
+		printInt(sname, "ServerIntResAvailGet", "ncpus", ires);
+
+		ires = ServerIntResAvailGet(s, "pncpus");
+		printInt(sname, "ServerIntResAvailGet", "pncpus", ires);
+
+		ires = ServerIntResAvailGet(s, "nodect");
+		printInt(sname, "ServerIntResAvailGet", "nodect", ires);
+
+		ires = ServerIntResAvailGet(s, "srfs_assist");
+		printInt(sname, "ServerIntResAvailGet", "srfs_assist",
+								ires);
+
+		ires = ServerIntResAvailGet(s, "mta");
+		printInt(sname, "ServerIntResAvailGet", "mta", ires);
+
+		ires = ServerIntResAvailGet(s, "mtb");
+		printInt(sname, "ServerIntResAvailGet", "mtb", ires);
+
+		ires = ServerIntResAvailGet(s, "mtc");
+		printInt(sname, "ServerIntResAvailGet", "mtc", ires);
+
+		ires = ServerIntResAvailGet(s, "mtd");
+		printInt(sname, "ServerIntResAvailGet", "mtd", ires);
+
+		ires = ServerIntResAvailGet(s, "mte");
+		printInt(sname, "ServerIntResAvailGet", "mte", ires);
+
+		ires = ServerIntResAvailGet(s, "mtf");
+		printInt(sname, "ServerIntResAvailGet", "mtf", ires);
+
+		ires = ServerIntResAvailGet(s, "mtg");
+		printInt(sname, "ServerIntResAvailGet", "mtg", ires);
+
+		ires = ServerIntResAvailGet(s, "mth");
+		printInt(sname, "ServerIntResAvailGet", "mth", ires);
+
+
+
+		sres = ServerSizeResAvailGet(s, "file");
+		printSize(sname, "ServerSizeResAvailGet", "file", sres);
+
+		sres = ServerSizeResAvailGet(s, "mem");
+		printSize(sname, "ServerSizeResAvailGet", "mem", sres);
+
+		sres = ServerSizeResAvailGet(s, "pmem");
+		printSize(sname, "ServerSizeResAvailGet", "pmem", sres);
+
+		sres = ServerSizeResAvailGet(s, "workingset");
+		printSize(sname, "ServerSizeResAvailGet", "workingset",
+                                                                 sres);
+
+		sres = ServerSizeResAvailGet(s, "pf");
+		printSize(sname, "ServerSizeResAvailGet", "pf", sres);
+
+		sres = ServerSizeResAvailGet(s, "ppf");
+		printSize(sname, "ServerSizeResAvailGet", "ppf", sres);
+
+		sres = ServerSizeResAvailGet(s, "srfs_tmp");
+		printSize(sname, "ServerSizeResAvailGet", "srfs_tmp",
+                                                                sres);
+
+		sres = ServerSizeResAvailGet(s, "srfs_wrk");
+		printSize(sname, "ServerSizeResAvailGet", "srfs_wrk",
+                                                                sres);
+
+		sres = ServerSizeResAvailGet(s, "srfs_big");
+		printSize(sname, "ServerSizeResAvailGet", "srfs_big",
+                                                                sres);
+
+		sres = ServerSizeResAvailGet(s, "srfs_fast");
+		printSize(sname, "ServerSizeResAvailGet", "srfs_fast",
+                                                                sres);
+
+		sres = ServerSizeResAvailGet(s, "sds");
+		printSize(sname, "ServerSizeResAvailGet", "sds",
+                                                                sres);
+
+		sres = ServerSizeResAvailGet(s, "psds");
+		printSize(sname, "ServerSizeResAvailGet", "psds",
+                                                                sres);
+
+		stres = ServerStringResAvailGet(s, "nodes");
+		printStr(sname, "ServerStringResAvailGet", "nodes",
+                                                                stres);
+
+		stres = ServerStringResAvailGet(s, "arch");
+		printStr(sname, "ServerStringResAvailGet", "arch",
+                                                                stres);
+
+		stres = ServerStringResAvailGet(s, "neednodes");
+		printStr(sname, "ServerStringResAvailGet", "neednodes",
+                                                                stres);
+
+		// the ASSIGNS	
+		ires = ServerIntResAssignGet(s, "cput");
+		printInt(sname, "ServerIntResAssignGet", "cput", ires);
+
+		ires = ServerIntResAssignGet(s, "pcput");
+		printInt(sname, "ServerIntResAssignGet", "pcput", ires);
+
+		ires = ServerIntResAssignGet(s, "walltime");
+		printInt(sname, "ServerIntResAssignGet", "walltime",
+								ires);
+
+		ires = ServerIntResAssignGet(s, "mppt");
+		printInt(sname, "ServerIntResAssignGet", "mppt", ires);
+
+		ires = ServerIntResAssignGet(s, "pmppt");
+		printInt(sname, "ServerIntResAssignGet", "pmppt", ires);
+
+		ires = ServerIntResAssignGet(s, "nice");
+		printInt(sname, "ServerIntResAssignGet", "nice", ires);
+
+		ires = ServerIntResAssignGet(s, "procs");
+		printInt(sname, "ServerIntResAssignGet", "procs", ires);
+
+		ires = ServerIntResAssignGet(s, "mppe");
+		printInt(sname, "ServerIntResAssignGet", "mppe", ires);
+
+		ires = ServerIntResAssignGet(s, "ncpus");
+		printInt(sname, "ServerIntResAssignGet", "ncpus",
+								ires);
+
+		ires = ServerIntResAssignGet(s, "pncpus");
+		printInt(sname, "ServerIntResAssignGet", "pncpus",
+								ires);
+
+		ires = ServerIntResAssignGet(s, "nodect");
+		printInt(sname, "ServerIntResAssignGet", "nodect",
+								ires);
+
+		ires = ServerIntResAssignGet(s, "srfs_assist");
+		printInt(sname, "ServerIntResAssignGet", "srfs_assist",
+								ires);
+
+		ires = ServerIntResAssignGet(s, "mta");
+		printInt(sname, "ServerIntResAssignGet", "mta", ires);
+
+		ires = ServerIntResAssignGet(s, "mtb");
+		printInt(sname, "ServerIntResAssignGet", "mtb", ires);
+
+		ires = ServerIntResAssignGet(s, "mtc");
+		printInt(sname, "ServerIntResAssignGet", "mtc", ires);
+
+		ires = ServerIntResAssignGet(s, "mtd");
+		printInt(sname, "ServerIntResAssignGet", "mtd", ires);
+
+		ires = ServerIntResAssignGet(s, "mte");
+		printInt(sname, "ServerIntResAssignGet", "mte", ires);
+
+		ires = ServerIntResAssignGet(s, "mtf");
+		printInt(sname, "ServerIntResAssignGet", "mtf", ires);
+
+		ires = ServerIntResAssignGet(s, "mtg");
+		printInt(sname, "ServerIntResAssignGet", "mtg", ires);
+
+		ires = ServerIntResAssignGet(s, "mth");
+		printInt(sname, "ServerIntResAssignGet", "mth", ires);
+
+
+		sres = ServerSizeResAssignGet(s, "file");
+		printSize(sname,"ServerSizeResAssignGet", "file", sres);
+
+		sres = ServerSizeResAssignGet(s, "mem");
+		printSize(sname, "ServerSizeResAssignGet", "mem", sres);
+
+		sres = ServerSizeResAssignGet(s, "pmem");
+		printSize(sname,"ServerSizeResAssignGet", "pmem", sres);
+
+		sres = ServerSizeResAssignGet(s, "workingset");
+		printSize(sname, "ServerSizeResAssignGet", "workingset",
+                                                                 sres);
+
+		sres = ServerSizeResAssignGet(s, "pf");
+		printSize(sname, "ServerSizeResAssignGet", "pf", sres);
+
+		sres = ServerSizeResAssignGet(s, "ppf");
+		printSize(sname, "ServerSizeResAssignGet", "ppf", sres);
+
+		sres = ServerSizeResAssignGet(s, "srfs_tmp");
+		printSize(sname, "ServerSizeResAssignGet", "srfs_tmp",
+                                                                sres);
+
+		sres = ServerSizeResAssignGet(s, "srfs_wrk");
+		printSize(sname, "ServerSizeResAssignGet", "srfs_wrk",
+                                                                sres);
+
+		sres = ServerSizeResAssignGet(s, "srfs_big");
+		printSize(sname, "ServerSizeResAssignGet", "srfs_big",
+                                                                sres);
+
+		sres = ServerSizeResAssignGet(s, "srfs_fast");
+		printSize(sname, "ServerSizeResAssignGet", "srfs_fast",
+                                                                sres);
+
+		sres = ServerSizeResAssignGet(s, "sds");
+		printSize(sname, "ServerSizeResAssignGet", "sds",
+                                                                sres);
+
+		sres = ServerSizeResAssignGet(s, "psds");
+		printSize(sname, "ServerSizeResAssignGet", "psds",
+                                                                sres);
+
+		stres = ServerStringResAssignGet(s, "nodes");
+		printStr(sname, "ServerStringResAssignGet", "nodes",
+                                                                stres);
+
+		stres = ServerStringResAssignGet(s, "arch");
+		printStr(sname, "ServerStringResAssignGet", "arch",
+                                                                stres);
+
+		stres = ServerStringResAssignGet(s, "neednodes");
+		printStr(sname, "ServerStringResAssignGet", "neednodes",
+                                                                stres);
+
+
+			alljs = ServerJobsGet(s);
+			foreach( j in alljs ) {
+
+				jname = JobIdGet( j ) ;
+				printStr(jname, "JobIdGet", NULLSTR, jname);
+			
+				str = JobNameGet( j ) ;
+				printStr(jname, "JobNameGet", NULLSTR, str);
+			
+				str = JobOwnerNameGet( j ) ;
+				printStr(jname, "JobOwnerNameGet", NULLSTR, str);
+			
+				str = JobEffectiveUserNameGet( j ) ;
+				printStr(jname, "JobEffectiveUserNameGet", NULLSTR, str);
+			
+				str = JobEffectiveGroupNameGet( j ) ;
+				printStr(jname, "JobEffectiveGroupNameGet", NULLSTR, str);
+			
+				i = JobStateGet ( j ) ;
+				switch(i)
+				{
+					case TRANSIT:
+						{
+							printStr(jname, "JobStateGet", NULLSTR, "Transit");
+						}
+					case QUEUED:
+						{
+							printStr(jname, "JobStateGet", NULLSTR, "Queued");
+						}
+					case HELD:
+						{
+							printStr(jname, "JobStateGet", NULLSTR, "Held");
+						}
+					case WAITING:
+						{
+							printStr(jname, "JobStateGet", NULLSTR, "Waiting");
+						}
+					case RUNNING:
+						{
+							printStr(jname, "JobStateGet", NULLSTR, "Running");
+						}
+					case EXITING:
+						{
+							printStr(jname, "JobStateGet", NULLSTR, "Exiting");
+						}
+					default:
+						{
+							printStr(jname, "JobStateGet", NULLSTR, "Unknown");
+						}
+				}
+			
+				i = JobPriorityGet( j ) ;
+				printInt(jname, "JobPriorityGet", NULLSTR, i);
+			
+				i = JobRerunFlagGet( j ) ;
+				switch(i)
+				{
+					case FALSE:
+						{
+							printStr(jname, "JobRerunFlagGet", NULLSTR, "False");
+						}
+					case TRUE:
+						{
+							printStr(jname, "JobRerunFlagGet", NULLSTR, "True");
+						}
+					default:
+						{
+							printStr(jname, "JobRerunFlagGet", NULLSTR, "Unknown");
+						}
+				}
+			
+				i = JobInteractiveFlagGet( j ) ;
+				switch(i)
+				{
+					case FALSE:
+						{
+							printStr(jname, "JobInteractiveFlagGet", NULLSTR, "False");
+						}
+					case TRUE:
+						{
+							printStr(jname, "JobInteractiveFlagGet", NULLSTR, "True");
+						}
+					default:
+						{
+							print("Interactive flag is unknown");	
+						}
+				}
+		
+				d = JobDateTimeCreatedGet( j ) ;
+				printDateTime(jname, "JobDateTimeCreatedGet", NULLSTR, d);
+			
+				str = JobEmailAddrGet( j ) ;
+				printStr(jname, "JobEmailAddrGet", NULLSTR, str);
+			
+				str = JobStageinFilesGet( j ) ;
+				printStr(jname, "JobStageinFilesGet", NULLSTR, str);
+			
+				str = JobStageoutFilesGet( j ) ;
+				printStr(jname, "JobStageoutFilesGet", NULLSTR, str);
+
+				// Resource Request 
+				ires = JobIntResReqGet(j, "cput");
+				printInt(jname, "JobIntResReqGet", "cput", ires);
+		
+				ires = JobIntResReqGet(j, "pcput");
+				printInt(jname, "JobIntResReqGet", "pcput", ires);
+		
+				ires = JobIntResReqGet(j, "walltime");
+				printInt(jname, "JobIntResReqGet", "walltime", ires);
+		
+				ires = JobIntResReqGet(j, "mppt");
+				printInt(jname, "JobIntResReqGet", "mppt", ires);
+		
+				ires = JobIntResReqGet(j, "pmppt");
+				printInt(jname, "JobIntResReqGet", "pmppt", ires);
+		
+				ires = JobIntResReqGet(j, "nice");
+				printInt(jname, "JobIntResReqGet", "nice", ires);
+		
+				ires = JobIntResReqGet(j, "procs");
+				printInt(jname, "JobIntResReqGet", "procs", ires);
+		
+				ires = JobIntResReqGet(j, "mppe");
+				printInt(jname, "JobIntResReqGet", "mppe", ires);
+		
+				ires = JobIntResReqGet(j, "ncpus");
+				printInt(jname, "JobIntResReqGet", "ncpus", ires);
+		
+				ires = JobIntResReqGet(j, "pncpus");
+				printInt(jname, "JobIntResReqGet", "pncpus", ires);
+		
+				ires = JobIntResReqGet(j, "nodect");
+				printInt(jname, "JobIntResReqGet", "nodect", ires);
+		
+				ires = JobIntResReqGet(j, "srfs_assist");
+				printInt(jname, "JobIntResReqGet", "srfs_assist",
+										ires);
+		
+				ires = JobIntResReqGet(j, "mta");
+				printInt(jname, "JobIntResReqGet", "mta", ires);
+		
+				ires = JobIntResReqGet(j, "mtb");
+				printInt(jname, "JobIntResReqGet", "mtb", ires);
+		
+				ires = JobIntResReqGet(j, "mtc");
+				printInt(jname, "JobIntResReqGet", "mtc", ires);
+		
+				ires = JobIntResReqGet(j, "mtd");
+				printInt(jname, "JobIntResReqGet", "mtd", ires);
+		
+				ires = JobIntResReqGet(j, "mte");
+				printInt(jname, "JobIntResReqGet", "mte", ires);
+		
+				ires = JobIntResReqGet(j, "mtf");
+				printInt(jname, "JobIntResReqGet", "mtf", ires);
+		
+				ires = JobIntResReqGet(j, "mtg");
+				printInt(jname, "JobIntResReqGet", "mtg", ires);
+		
+				ires = JobIntResReqGet(j, "mth");
+				printInt(jname, "JobIntResReqGet", "mth", ires);
+		
+		
+		
+				sres = JobSizeResReqGet(j, "file");
+				printSize(jname, "JobSizeResReqGet", "file", sres);
+		
+				sres = JobSizeResReqGet(j, "mem");
+				printSize(jname, "JobSizeResReqGet", "mem", sres);
+		
+				sres = JobSizeResReqGet(j, "pmem");
+				printSize(jname, "JobSizeResReqGet", "pmem", sres);
+		
+				sres = JobSizeResReqGet(j, "workingset");
+				printSize(jname, "JobSizeResReqGet", "workingset",
+		                                                                 sres);
+		
+				sres = JobSizeResReqGet(j, "pf");
+				printSize(jname, "JobSizeResReqGet", "pf", sres);
+		
+				sres = JobSizeResReqGet(j, "ppf");
+				printSize(jname, "JobSizeResReqGet", "ppf", sres);
+		
+				sres = JobSizeResReqGet(j, "srfs_tmp");
+				printSize(jname, "JobSizeResReqGet", "srfs_tmp",
+		                                                                sres);
+		
+				sres = JobSizeResReqGet(j, "srfs_wrk");
+				printSize(jname, "JobSizeResReqGet", "srfs_wrk",
+		                                                                sres);
+		
+				sres = JobSizeResReqGet(j, "srfs_big");
+				printSize(jname, "JobSizeResReqGet", "srfs_big",
+		                                                                sres);
+		
+				sres = JobSizeResReqGet(j, "srfs_fast");
+				printSize(jname, "JobSizeResReqGet", "srfs_fast",
+		                                                                sres);
+		
+				sres = JobSizeResReqGet(j, "sds");
+				printSize(jname, "JobSizeResReqGet", "sds",
+		                                                                sres);
+		
+				sres = JobSizeResReqGet(j, "psds");
+				printSize(jname, "JobSizeResReqGet", "psds",
+		                                                                sres);
+		
+				stres = JobStringResReqGet(j, "nodes");
+				printStr(jname, "JobStringResReqGet", "nodes",
+		                                                                stres);
+		
+				stres = JobStringResReqGet(j, "arch");
+				printStr(jname, "JobStringResReqGet", "arch",
+		                                                                stres);
+		
+				stres = JobStringResReqGet(j, "neednodes");
+				printStr(jname, "JobStringResReqGet", "neednodes",
+		                                                                stres);
+		
+				// Resource Used
+
+				ires = JobIntResUseGet(j, "cput");
+				printInt(jname, "JobIntResUseGet", "cput", ires);
+		
+				ires = JobIntResUseGet(j, "pcput");
+				printInt(jname, "JobIntResUseGet", "pcput", ires);
+		
+				ires = JobIntResUseGet(j, "walltime");
+				printInt(jname, "JobIntResUseGet", "walltime",
+										ires);
+		
+				ires = JobIntResUseGet(j, "mppt");
+				printInt(jname, "JobIntResUseGet", "mppt", ires);
+		
+				ires = JobIntResUseGet(j, "pmppt");
+				printInt(jname, "JobIntResUseGet", "pmppt", ires);
+		
+				ires = JobIntResUseGet(j, "nice");
+				printInt(jname, "JobIntResUseGet", "nice", ires);
+		
+				ires = JobIntResUseGet(j, "procs");
+				printInt(jname, "JobIntResUseGet", "procs", ires);
+		
+				ires = JobIntResUseGet(j, "mppe");
+				printInt(jname, "JobIntResUseGet", "mppe", ires);
+		
+				ires = JobIntResUseGet(j, "ncpus");
+				printInt(jname, "JobIntResUseGet", "ncpus",
+										ires);
+		
+				ires = JobIntResUseGet(j, "pncpus");
+				printInt(jname, "JobIntResUseGet", "pncpus",
+										ires);
+		
+				ires = JobIntResUseGet(j, "nodect");
+				printInt(jname, "JobIntResUseGet", "nodect",
+										ires);
+		
+				ires = JobIntResUseGet(j, "srfs_assist");
+				printInt(jname, "JobIntResUseGet", "srfs_assist",
+										ires);
+		
+				ires = JobIntResUseGet(j, "mta");
+				printInt(jname, "JobIntResUseGet", "mta", ires);
+		
+				ires = JobIntResUseGet(j, "mtb");
+				printInt(jname, "JobIntResUseGet", "mtb", ires);
+		
+				ires = JobIntResUseGet(j, "mtc");
+				printInt(jname, "JobIntResUseGet", "mtc", ires);
+		
+				ires = JobIntResUseGet(j, "mtd");
+				printInt(jname, "JobIntResUseGet", "mtd", ires);
+		
+				ires = JobIntResUseGet(j, "mte");
+				printInt(jname, "JobIntResUseGet", "mte", ires);
+		
+				ires = JobIntResUseGet(j, "mtf");
+				printInt(jname, "JobIntResUseGet", "mtf", ires);
+		
+				ires = JobIntResUseGet(j, "mtg");
+				printInt(jname, "JobIntResUseGet", "mtg", ires);
+		
+				ires = JobIntResUseGet(j, "mth");
+				printInt(jname, "JobIntResUseGet", "mth", ires);
+		
+		
+				sres = JobSizeResUseGet(j, "file");
+				printSize(jname,"JobSizeResUseGet", "file", sres);
+		
+				sres = JobSizeResUseGet(j, "mem");
+				printSize(jname, "JobSizeResUseGet", "mem", sres);
+		
+				sres = JobSizeResUseGet(j, "pmem");
+				printSize(jname,"JobSizeResUseGet", "pmem", sres);
+		
+				sres = JobSizeResUseGet(j, "workingset");
+				printSize(jname, "JobSizeResUseGet", "workingset",
+		                                                                 sres);
+		
+				sres = JobSizeResUseGet(j, "pf");
+				printSize(jname, "JobSizeResUseGet", "pf", sres);
+		
+				sres = JobSizeResUseGet(j, "ppf");
+				printSize(jname, "JobSizeResUseGet", "ppf", sres);
+		
+				sres = JobSizeResUseGet(j, "srfs_tmp");
+				printSize(jname, "JobSizeResUseGet", "srfs_tmp",
+		                                                                sres);
+		
+				sres = JobSizeResUseGet(j, "srfs_wrk");
+				printSize(jname, "JobSizeResUseGet", "srfs_wrk",
+		                                                                sres);
+		
+				sres = JobSizeResUseGet(j, "srfs_big");
+				printSize(jname, "JobSizeResUseGet", "srfs_big",
+		                                                                sres);
+		
+				sres = JobSizeResUseGet(j, "srfs_fast");
+				printSize(jname, "JobSizeResUseGet", "srfs_fast",
+		                                                                sres);
+		
+				sres = JobSizeResUseGet(j, "sds");
+				printSize(jname, "JobSizeResUseGet", "sds",
+		                                                                sres);
+		
+				sres = JobSizeResUseGet(j, "psds");
+				printSize(jname, "JobSizeResUseGet", "psds",
+		                                                                sres);
+		
+				stres = JobStringResUseGet(j, "nodes");
+				printStr(jname, "JobStringResUseGet", "nodes",
+		                                                                stres);
+		
+				stres = JobStringResUseGet(j, "arch");
+				printStr(jname, "JobStringResUseGet", "arch",
+						stres);
+		
+				stres = JobStringResUseGet(j, "neednodes");
+				printStr(jname, "JobStringResUseGet",
+                                          		"neednodes", stres);
+
+			} // jobs
+		k++;	
+	} // servers
+
+}

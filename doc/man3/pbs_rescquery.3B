@@ -1,0 +1,235 @@
+.\"         OpenPBS (Portable Batch System) v2.3 Software License
+.\" 
+.\" Copyright (c) 1999-2000 Veridian Information Solutions, Inc.
+.\" All rights reserved.
+.\" 
+.\" ---------------------------------------------------------------------------
+.\" For a license to use or redistribute the OpenPBS software under conditions
+.\" other than those described below, or to purchase support for this software,
+.\" please contact Veridian Systems, PBS Products Department ("Licensor") at:
+.\" 
+.\"    www.OpenPBS.org  +1 650 967-4675                  sales@OpenPBS.org
+.\"                        877 902-4PBS (US toll-free)
+.\" ---------------------------------------------------------------------------
+.\" 
+.\" This license covers use of the OpenPBS v2.3 software (the "Software") at
+.\" your site or location, and, for certain users, redistribution of the
+.\" Software to other sites and locations.  Use and redistribution of
+.\" OpenPBS v2.3 in source and binary forms, with or without modification,
+.\" are permitted provided that all of the following conditions are met.
+.\" After December 31, 2001, only conditions 3-6 must be met:
+.\" 
+.\" 1. Commercial and/or non-commercial use of the Software is permitted
+.\"    provided a current software registration is on file at www.OpenPBS.org.
+.\"    If use of this software contributes to a publication, product, or service
+.\"    proper attribution must be given; see www.OpenPBS.org/credit.html
+.\" 
+.\" 2. Redistribution in any form is only permitted for non-commercial,
+.\"    non-profit purposes.  There can be no charge for the Software or any
+.\"    software incorporating the Software.  Further, there can be no
+.\"    expectation of revenue generated as a consequence of redistributing
+.\"    the Software.
+.\" 
+.\" 3. Any Redistribution of source code must retain the above copyright notice
+.\"    and the acknowledgment contained in paragraph 6, this list of conditions
+.\"    and the disclaimer contained in paragraph 7.
+.\" 
+.\" 4. Any Redistribution in binary form must reproduce the above copyright
+.\"    notice and the acknowledgment contained in paragraph 6, this list of
+.\"    conditions and the disclaimer contained in paragraph 7 in the
+.\"    documentation and/or other materials provided with the distribution.
+.\" 
+.\" 5. Redistributions in any form must be accompanied by information on how to
+.\"    obtain complete source code for the OpenPBS software and any
+.\"    modifications and/or additions to the OpenPBS software.  The source code
+.\"    must either be included in the distribution or be available for no more
+.\"    than the cost of distribution plus a nominal fee, and all modifications
+.\"    and additions to the Software must be freely redistributable by any party
+.\"    (including Licensor) without restriction.
+.\" 
+.\" 6. All advertising materials mentioning features or use of the Software must
+.\"    display the following acknowledgment:
+.\" 
+.\"     "This product includes software developed by NASA Ames Research Center,
+.\"     Lawrence Livermore National Laboratory, and Veridian Information
+.\"     Solutions, Inc.
+.\"     Visit www.OpenPBS.org for OpenPBS software support,
+.\"     products, and information."
+.\" 
+.\" 7. DISCLAIMER OF WARRANTY
+.\" 
+.\" THIS SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND. ANY EXPRESS
+.\" OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+.\" OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT
+.\" ARE EXPRESSLY DISCLAIMED.
+.\" 
+.\" IN NO EVENT SHALL VERIDIAN CORPORATION, ITS AFFILIATED COMPANIES, OR THE
+.\" U.S. GOVERNMENT OR ANY OF ITS AGENCIES BE LIABLE FOR ANY DIRECT OR INDIRECT,
+.\" INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+.\" LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
+.\" OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+.\" LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+.\" NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+.\" EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+.\" 
+.\" This license will be governed by the laws of the Commonwealth of Virginia,
+.\" without reference to its choice of law rules.
+.if \n(Pb .ig Ig
+.TH pbs_rescquery 3B "" Local PBS
+.so ../ers/ers.macros
+.Ig
+.Sh NAME
+pbs_rescquery, avail, totpool, usepool - query resource availability
+.Sh SYNOPSIS
+#include <pbs_error.h>
+.br
+#include <pbs_ifl.h>
+.sp
+.ft 3
+.nf
+int pbs_rescquery\^(\^int\ connect, char\ **resourcelist, int *arraysize,
+int *available, int *allocated, int *reserved, int *down \^)
+.sp
+char *avail\^(\^int connect, char *resc\^)
+.sp
+int totpool\^(\^int connect, int update\^)
+.sp
+int usepool\^(\^int connect, int update\^)
+.fi
+.ft 1
+.Sh DESCRIPTION
+.if \n(Pb .ig Ig
+.HP 2
+.Ig
+.if !\n(Pb .ig Ig
+.sp
+.Ig
+.B pbs_rescquery
+.br
+Issue a request to the batch server to query the availability of resources.
+.Ar connect
+is the connection returned by \f3pbs_connect\fP().
+.Ar resourcelist 
+is an array of one or more strings specifying the resources to be queried.
+.Ar arraysize
+is the is the number of strings in resourcelist.
+.Ar available ,
+.Ar allocated ,
+.Ar reserved ,
+and
+.Ar down
+are integer arrays of size arraysize.  The amount of resource specified in
+the corresponding resourcelist string which is available, already allocated,
+reserved, and down/off-line is returned in the integer arrays.
+.IP
+At the present time the only resources which may be specified is "nodes". 
+It may be specified as 
+.br
+.Ty \ \ \ \ nodes
+.br
+.Ty \ \ \ \ nodes= 
+.br
+.Ty \ \ \ \ nodes=\f2specification\f1
+.br
+where specification is what a user specifies in the -l option arguement list
+for nodes, see qsub(1B) and the various pbs_resource_* man pages.
+.IP
+Where the node resourcelist is a simple type, such as "nodes", "nodes=",
+or "nodes=\f2type\fP", the numbers returned reflect the actual number of nodes
+(of the specified type) which are \f2available\fP, \f2allocated\fP,
+\f2reserved\fP, or \f2down\fP.
+.IP
+For a more complex node resourcelist, such as
+"nodes=2" or "nodes=type1:type2", only the value returned in 
+.I available
+has meaning.
+If the number in
+.I available
+is positive, it is the number of nodes requried to satisified the specification
+and that some set of nodes are available which will satisify it, see 
+.I avail ().
+If the number in
+.I available
+is zero, some number of nodes requried to satisified the specification are
+currently unavailable,  the request might be satisifed at a later time.
+If the number in
+.I available
+is negative, no combination of known nodes can satisified the specification.
+.if \n(Pb .ig Ig
+.HP 2
+.Ig
+.if !\n(Pb .ig Ig
+.sp
+.Ig
+.B avail
+.br
+The
+.I avail ()
+call is provided as conversion aid for scheduler written for early versions
+of PBS.   The avail() routine uses pbs_rescquery() and returns a character
+string answer.  
+.Ar connect
+is the connection returned by \f3pbs_connect\fP().
+.Ar resc
+is a single 
+.I node=specification
+specification as discussed above.  If the nodes to satisify the specification
+are currently available, the return value is the character string
+.B yes .
+If the nodes are currently unavailable, the return is the character string
+.B no .
+If the specification could never be satified, the return is the string
+.B never .
+An error in the specification returns the character string
+.B ? .
+.if \n(Pb .ig Ig
+.HP 2
+.Ig
+.if !\n(Pb .ig Ig
+.sp
+.Ig
+.B totpool
+.br
+The 
+.I totpool ()
+function returns the total number of nodes know to the PBS server.  This is
+the sum of the number of nodes available, allocated, reserved, and down.
+The parameter
+.Ar connection
+is the connection returned by pbs_connect().
+The parameter
+.Ar update
+if non-zero, causes totpool() to issue a pbs_rescquery() call to obtain
+fresh information.   If zero, numbers from the prior pbs_rescquery() are used.
+.if \n(Pb .ig Ig
+.HP 2
+.Ig
+.if !\n(Pb .ig Ig
+.sp
+.Ig
+.B usepool
+.br
+.I usepool ()
+returns the number of nodes currently in use, the sum of allocated, reserved, 
+and down.
+The parameter
+.Ar connection
+is the connection returned by pbs_connect().
+The parameter
+.Ar update
+if non-zero, causes totpool() to issue a pbs_rescquery() call to obtain
+fresh information.   If zero, numbers from the prior pbs_rescquery() are used.
+.Sh "SEE ALSO"
+qsub(1B), pbs_connect(3B), pbs_disconnect(3B), pbs_rescreserve(3B) and
+pbs_resources(7B)
+.Sh DIAGNOSTICS
+When the batch request generated by the \f3pbs_rescquery\f1()
+function has been completed successfully
+by a batch server, the routine will return 0 (zero).
+Otherwise, a non zero error is returned.  The error number is also set
+in pbs_errno.
+.LP
+The functions usepool() and totpool() return -1 on error.
+\" turn off any extra indent left by the Sh macro
+.RE
+

@@ -1,0 +1,497 @@
+.\"         OpenPBS (Portable Batch System) v2.3 Software License
+.\" 
+.\" Copyright (c) 1999-2000 Veridian Information Solutions, Inc.
+.\" All rights reserved.
+.\" 
+.\" ---------------------------------------------------------------------------
+.\" For a license to use or redistribute the OpenPBS software under conditions
+.\" other than those described below, or to purchase support for this software,
+.\" please contact Veridian Systems, PBS Products Department ("Licensor") at:
+.\" 
+.\"    www.OpenPBS.org  +1 650 967-4675                  sales@OpenPBS.org
+.\"                        877 902-4PBS (US toll-free)
+.\" ---------------------------------------------------------------------------
+.\" 
+.\" This license covers use of the OpenPBS v2.3 software (the "Software") at
+.\" your site or location, and, for certain users, redistribution of the
+.\" Software to other sites and locations.  Use and redistribution of
+.\" OpenPBS v2.3 in source and binary forms, with or without modification,
+.\" are permitted provided that all of the following conditions are met.
+.\" After December 31, 2001, only conditions 3-6 must be met:
+.\" 
+.\" 1. Commercial and/or non-commercial use of the Software is permitted
+.\"    provided a current software registration is on file at www.OpenPBS.org.
+.\"    If use of this software contributes to a publication, product, or service
+.\"    proper attribution must be given; see www.OpenPBS.org/credit.html
+.\" 
+.\" 2. Redistribution in any form is only permitted for non-commercial,
+.\"    non-profit purposes.  There can be no charge for the Software or any
+.\"    software incorporating the Software.  Further, there can be no
+.\"    expectation of revenue generated as a consequence of redistributing
+.\"    the Software.
+.\" 
+.\" 3. Any Redistribution of source code must retain the above copyright notice
+.\"    and the acknowledgment contained in paragraph 6, this list of conditions
+.\"    and the disclaimer contained in paragraph 7.
+.\" 
+.\" 4. Any Redistribution in binary form must reproduce the above copyright
+.\"    notice and the acknowledgment contained in paragraph 6, this list of
+.\"    conditions and the disclaimer contained in paragraph 7 in the
+.\"    documentation and/or other materials provided with the distribution.
+.\" 
+.\" 5. Redistributions in any form must be accompanied by information on how to
+.\"    obtain complete source code for the OpenPBS software and any
+.\"    modifications and/or additions to the OpenPBS software.  The source code
+.\"    must either be included in the distribution or be available for no more
+.\"    than the cost of distribution plus a nominal fee, and all modifications
+.\"    and additions to the Software must be freely redistributable by any party
+.\"    (including Licensor) without restriction.
+.\" 
+.\" 6. All advertising materials mentioning features or use of the Software must
+.\"    display the following acknowledgment:
+.\" 
+.\"     "This product includes software developed by NASA Ames Research Center,
+.\"     Lawrence Livermore National Laboratory, and Veridian Information
+.\"     Solutions, Inc.
+.\"     Visit www.OpenPBS.org for OpenPBS software support,
+.\"     products, and information."
+.\" 
+.\" 7. DISCLAIMER OF WARRANTY
+.\" 
+.\" THIS SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND. ANY EXPRESS
+.\" OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+.\" OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT
+.\" ARE EXPRESSLY DISCLAIMED.
+.\" 
+.\" IN NO EVENT SHALL VERIDIAN CORPORATION, ITS AFFILIATED COMPANIES, OR THE
+.\" U.S. GOVERNMENT OR ANY OF ITS AGENCIES BE LIABLE FOR ANY DIRECT OR INDIRECT,
+.\" INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+.\" LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
+.\" OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+.\" LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+.\" NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+.\" EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+.\" 
+.\" This license will be governed by the laws of the Commonwealth of Virginia,
+.\" without reference to its choice of law rules.
+.\" @(#)string.3 1.0 97/05/21 TMP;
+.TH TM 3  "21 May 1997"
+.SH NAME
+tm_init, tm_nodeinfo, tm_poll, tm_notify, tm_spawn, tm_kill, tm_obit, tm_taskinfo, tm_atnode, tm_rescinfo, tm_publish, tm_subscribe, tm_finalize \- task management API
+.SH SYNOPSIS
+.nf
+.B
+#include <tm.h>
+.ft
+.fi
+.LP
+.nf
+.B
+int tm_init(info, roots)
+.in 6
+void \(**info;
+struct tm_roots \(**roots;
+.in
+.ft
+.fi
+.LP
+.nf
+.B
+int tm_nodeinfo(list, nnodes)
+.in 6
+tm_node_id \***list;
+int \(**nnodes;
+.in
+.ft
+.fi
+.LP
+.nf
+.B
+int tm_poll(poll_event, result_event, wait, tm_errno)
+.in 6
+tm_event_t poll_event;
+tm_event_t \(**result_event;
+int wait;
+int \(**tm_errno;
+.in
+.ft
+.fi
+.LP
+.nf
+.B
+int tm_notify(tm_signal)
+.in 6
+int tm_signal;
+.in
+.ft
+.fi
+.LP
+.nf
+.B
+int tm_spawn(argc, argv, envp, where, tid, event)
+.in 6
+int argc;
+char \(**\(**argv;
+char \(**\(**envp;
+tm_node_id where;
+tm_task_id \(**tid;
+tm_event_t \(**event;
+.in
+.ft
+.fi
+.LP
+.nf
+.B
+int tm_kill(tid, sig, event)
+.in 6
+tm_task_id tid;
+int sig;
+tm_event_t \**event;
+.in
+.ft
+.fi
+.LP
+.nf
+.B
+int tm_obit(tid, obitval, event)
+.in 6
+tm_task_id tid;
+int \(**obitval;
+tm_event_t \**event;
+.in
+.ft
+.fi
+.LP
+.nf
+.B
+int tm_taskinfo(node, tid_list, list_size, ntasks, event)
+.in 6
+tm_node_id node;
+tm_task_id \(**tid_list;
+int list_size;
+int \(**ntasks;
+tm_event_t \**event;
+.in
+.ft
+.fi
+.LP
+.nf
+.B
+int tm_atnode(tid, node)
+.in 6
+tm_task_id tid;
+tm_node_id \(**node;
+.in
+.ft
+.fi
+.LP
+.nf
+.B
+int tm_rescinfo(node, resource, len, event)
+.in 6
+tm_node_id node;
+char \(**resource;
+int len;
+tm_event_t \**event;
+.in
+.ft
+.fi
+.LP
+.nf
+.B
+int tm_publish(name, info, len, event)
+.in 6
+char \(**name;
+void \(**info;
+int len;
+tm_event_t \**event;
+.in
+.ft
+.fi
+.LP
+.nf
+.B
+int tm_subscribe(tid, name, info, len, info_len, event)
+.in 6
+tm_task_id tid;
+char \(**name;
+void \(**info;
+int len;
+int \(**info_len;
+tm_event_t \**event;
+.in
+.ft
+.fi
+.LP
+.nf
+.B
+int tm_finalize()
+.ft
+.fi
+.SH DESCRIPTION
+.LP
+These functions provide a partial implementation of the task
+management interface part of the PSCHED API.  In PBS, MOM
+provides the task manager functions.  This library opens a
+tcp socket to the MOM running on the local host and sends
+and receives messages.
+.LP
+The PSCHED Task Management API description used to create this
+library was commited to paper on Novermber 15, 1996 and was
+given the version number 0.1.  Changes may have taken place since
+that time which are not reflected in this library.
+.LP
+The API description uses several data types that it purposefully
+does not define.  This was done so an implementaion would not be
+confined in the way it was written.  For this specific work,
+the definitions follow:
+.sp
+.Ty
+.nf
+typedef	int			tm_node_id;	/* job-relative node id */
+#define	TM_ERROR_NODE	((tm_node_id)-1)
+
+typedef	int			tm_event_t;	/* event handle, > 0 for real events */
+#define	TM_NULL_EVENT	((tm_event_t)0)
+#define	TM_ERROR_EVENT	((tm_event_t)-1)
+
+typedef	unsigned long	tm_task_id;
+#define	TM_NULL_TASK	(tm_task_id)0
+.fi
+.LP
+There are a number of error values defined as well:
+.Ty
+.na
+TM_SUCCESS, TM_ESYSTEM, TM_ENOEVENT, TM_ENOTCONNECTED, TM_EUNKNOWNCMD,
+TM_ENOTIMPLEMENTED, TM_EBADENVIRONMENT, TM_ENOTFOUND.
+.ad
+.LP
+.B tm_init(\|)
+initializes the library by opening a socket to the MOM on the local
+host and sending a TM_INIT message, then waiting for the reply.
+The
+.IR info
+paramenter has no use and is included to conform with the PSCHED
+document.  The
+.IR roots
+pointer will contain valid data after the function returns and
+has the following structure:
+.sp
+.Ty
+.nf
+struct	tm_roots {
+	tm_task_id	tm_me;
+	tm_task_id	tm_parent;
+	int		tm_nnodes;
+	int		tm_ntasks;
+	int		tm_taskpoolid;
+	tm_task_id	*tm_tasklist;
+};
+.fi
+.sp
+.IP tm_me 20
+The task id of this calling task.
+.IP tm_parent 20
+The task id of the task which spawned this task or TM_NULL_TASK if
+the calling task is the initial task started by PBS.
+.IP tm_nnodes 20
+The number of nodes allocated to the job.
+.IP tm_ntasks 20
+This will always be 0 for PBS.
+.IP tm_taskpoolid 20
+PBS does not support task pools so this will always be -1.
+.IP tm_tasklist 20
+This will be NULL for PBS.
+.LP
+The
+.IR tm_ntasks ,
+.IR tm_taskpoolid
+and
+.IR tm_tasklist
+fields are not filled with data specified by the PSCHED document.  PBS does
+not support task pools and, at this time, does not return information
+about current running tasks from
+.B tm_init.
+There is a separate call to get information for current running tasks called
+.B tm_taskinfo
+which is described below.  The return value from
+.B tm_init
+be TM_SUCCESS if the library initialization was successful, or an error
+return otherwise.
+.LP
+.B tm_nodeinfo(\|)
+places a pointer to a malloc'ed
+array of tm_node_id's in the pointer pointed at by
+.IR list .
+The order of the tm_node_id's in
+.IR list
+is the same as that specified to MOM in the "exec_host" attribute.  The
+int pointed to by
+.IR nnodes
+contains the number of nodes allocated to the job.
+This is information that is returned during initialization and does
+not require communication with MOM.  If
+.B tm_init
+has not been called, TM_ESYSTEM is returned, otherwise TM_SUCCESS is
+returned.
+.LP
+.B tm_poll(\|)
+is the function which will retrieve information about the task management
+system to locations specified when other routines request an action
+take place.  The bookkeeping for this is done by generating an
+.IR event
+for each action.  When the task manager (MOM) sends a message that an
+action is complete, the event is reported by
+.B tm_poll
+and information is placed where the caller requested it.
+The argument
+.IR poll_event
+is meant to be used to request a specific event.  This implementation
+does not use it and it must be set to TM_NULL_EVENT or an error
+is returned.  Upon return, the argument
+.IR result_event
+will contain a valid event number or TM_ERROR_EVENT on error.  If
+.IR wait
+is zero and there are no events to report,
+.IR result_event
+is set to TM_NULL_EVENT.  If
+.IR wait
+is non-zero an there are no events to report, the function will block
+waiting for an event.  If no local error takes place, TM_SUCCESS is
+returned.  If an error is reported by MOM for an event, then the argument
+.IR tm_errno
+will be set to an error code.
+.LP
+.B tm_notify(\|)
+is described in the PSCHED documentation, but is not implemented for
+PBS yet.  It will return TM_ENOTIMPLEMENTED.
+.LP
+.B tm_spawn(\|)
+sends a message to MOM to start a new task.  The node id of the
+host to run the task is given by
+.IR where .
+The parameters
+.IR argc ,
+.IR argv
+and
+.IR envp
+specify the program to run and its arguments and environment very
+much like
+.B exec(\|).
+The full path of the program executable must be given by
+.IR argv[0]
+and the number of elements in the argv array is given by
+.IR argc .
+The array
+.IR envp
+is NULL terminated.  The argument
+.IR event
+points to a tm_event_t variable which is filled in with an event
+number.  When this event is returned by
+.B tm_poll ,
+the tm_task_id pointed to by
+.IR tid
+will contain the task id of the newly created task.
+.LP
+.B tm_kill(\|)
+sends a signal specified by
+.IR sig
+to the task
+.IR tid
+and puts an event number in the tm_event_t pointed to by
+.IR event .
+.LP
+.B tm_obit(\|)
+creates an event which will be reported when the task
+.IR tid
+exits.  The int pointed to by
+.IR obitval
+will contain the exit value of the task when the event is reported.
+.LP
+.B tm_taskinfo(\|)
+returns the list of tasks running on the node specified by
+.IR node .
+The PSCHED documentation mentions a special ability to retrieve
+all tasks running in the job.  This is not supported by PBS.
+The argument
+.IR tid_list
+points to an array of tm_task_id's which contains
+.IR list_size
+elements.  Upon return,
+.IR event
+will contain an event number.  When this event is polled, the int
+pointed to by
+.IR ntasks
+will contain the number of tasks running on the node and the array
+will be filled in with tm_task_id's.  If
+.IR ntasks
+is greater than
+.IR list_size ,
+only
+.IR list_size
+tasks will be returned.
+.LP
+.B tm_atnode(\|)
+will place the node id where the task
+.IR tid
+exists in the tm_node_id pointed to by
+.IR node .
+.LP
+.B tm_rescinfo(\|)
+makes a request for a string specifying the resources available on
+a node given by the argument
+.IR node .  
+The string is returned in the buffer pointed to by
+.IR resource
+and is terminated by a NUL character unless the number of characters
+of information is greater than specified by
+.IR len .
+The resource string PBS returns is formated as follows:
+.sp
+A space separated set of strings from the
+.B uname
+system call followed by a colon (:).  The order of the strings is 
+.B sysname,
+.B nodename,
+.B release,
+.B version,
+.B machine.
+.sp
+A comma spearated set of strings giving the components of the
+"Resource_List" attribute of the job.  Each component has the
+resource name, an equal sign, and the limit value.
+.sp
+For example, a return for a task running on an SGI workstation
+might look like:
+.sp
+IRIX golum 6.2 03131015 IP22:cput=20:00,mem=400kb
+.LP
+.B tm_publish(\|)
+causes
+.IR len
+bytes of information pointed at by
+.IR info
+to be sent to the local MOM to be saved under the name given by
+.IR name .
+.LP
+.B tm_subscribe(\|)
+returns a copy of the information named by
+.IR name
+for the task given by
+.IR tid .
+The argument
+.IR info
+points to a buffer of size
+.IR len
+where the information will be returned.  The argument
+.IR info_len
+will be set with the size of the published data.  If this is larger
+than the supplied buffer, the data will have been truncated.
+.LP
+.B tm_finalize(\|)
+may be called to free any memory in use by the library and close
+the connection to MOM.
+.SH SEE ALSO
+.BR pbs_mom,
+.BR "PSCHED: An API for Parallel Job/Resource Managment,"
+.BR http://parallel.nas.nasa.gov/Psched/psched-api-report.ps

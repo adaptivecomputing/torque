@@ -1,0 +1,132 @@
+!         OpenPBS (Portable Batch System) v2.3 Software License
+! 
+! Copyright (c) 1999-2000 Veridian Information Solutions, Inc.
+! All rights reserved.
+! 
+! ---------------------------------------------------------------------------
+! For a license to use or redistribute the OpenPBS software under conditions
+! other than those described below, or to purchase support for this software,
+! please contact Veridian Systems, PBS Products Department ("Licensor") at:
+! 
+!    www.OpenPBS.org  +1 650 967-4675                  sales@OpenPBS.org
+!                        877 902-4PBS (US toll-free)
+! ---------------------------------------------------------------------------
+! 
+! This license covers use of the OpenPBS v2.3 software (the "Software") at
+! your site or location, and, for certain users, redistribution of the
+! Software to other sites and locations.  Use and redistribution of
+! OpenPBS v2.3 in source and binary forms, with or without modification,
+! are permitted provided that all of the following conditions are met.
+! After December 31, 2001, only conditions 3-6 must be met:
+! 
+! 1. Commercial and/or non-commercial use of the Software is permitted
+!    provided a current software registration is on file at www.OpenPBS.org.
+!    If use of this software contributes to a publication, product, or
+!    service, proper attribution must be given; see www.OpenPBS.org/credit.html
+! 
+! 2. Redistribution in any form is only permitted for non-commercial,
+!    non-profit purposes.  There can be no charge for the Software or any
+!    software incorporating the Software.  Further, there can be no
+!    expectation of revenue generated as a consequence of redistributing
+!    the Software.
+! 
+! 3. Any Redistribution of source code must retain the above copyright notice
+!    and the acknowledgment contained in paragraph 6, this list of conditions
+!    and the disclaimer contained in paragraph 7.
+! 
+! 4. Any Redistribution in binary form must reproduce the above copyright
+!    notice and the acknowledgment contained in paragraph 6, this list of
+!    conditions and the disclaimer contained in paragraph 7 in the
+!    documentation and/or other materials provided with the distribution.
+! 
+! 5. Redistributions in any form must be accompanied by information on how to
+!    obtain complete source code for the OpenPBS software and any
+!    modifications and/or additions to the OpenPBS software.  The source code
+!    must either be included in the distribution or be available for no more
+!    than the cost of distribution plus a nominal fee, and all modifications
+!    and additions to the Software must be freely redistributable by any party
+!    (including Licensor) without restriction.
+! 
+! 6. All advertising materials mentioning features or use of the Software must
+!    display the following acknowledgment:
+! 
+!     "This product includes software developed by NASA Ames Research Center,
+!     Lawrence Livermore National Laboratory, and Veridian Information
+!     Solutions, Inc.
+!     Visit www.OpenPBS.org for OpenPBS software support,
+!     products, and information."
+! 
+! 7. DISCLAIMER OF WARRANTY
+! 
+! THIS SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND. ANY EXPRESS
+! OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+! OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT
+! ARE EXPRESSLY DISCLAIMED.
+! 
+! IN NO EVENT SHALL VERIDIAN CORPORATION, ITS AFFILIATED COMPANIES, OR THE
+! U.S. GOVERNMENT OR ANY OF ITS AGENCIES BE LIABLE FOR ANY DIRECT OR INDIRECT,
+! INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+! LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
+! OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+! LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+! NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+! EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+! 
+! This license will be governed by the laws of the Commonwealth of Virginia,
+! without reference to its choice of law rules.
+
+! APPLICATION DEFAULT FILES
+
+!!! FONTS
+!!  Three fonts that can be configured:
+!   labelFont        - font applied to text that appears in labels.
+!   fixlabelFont     - font appplied to text that label fixed-width widgets.
+!		       NOTE: This MUST be a fixed-width font.
+!   textFont         - font applied to a text widget. Keep this as fixed-width
+!		       font. 
+*labelFont:		-adobe-courier-bold-r-normal--12-120-75-75-m-70-iso8859-1
+*fixlabelFont:  	7x13bold
+*textFont:		7x13
+
+!!! COLORS
+!!  Six color resources that can be modified:
+!
+!   backgroundColor - the color applied to background of frames, buttons, 
+!                     entries, scrollbar handles.
+!   foregroundColor - the color applied to text in any context (under \
+!		      selection, insertion, etc...).
+!   activeColor     - the color applied to the background of a selection, 
+!		      a selected command button, or a selected scroll bar
+!		      handle.
+!   disabledColor   - color applied to a disabled widget.
+!   signalColor     - color applied to buttons that signals something to the
+!                     user about a change of state.
+!   shadingColor    - a color shading applied to some of the frames to
+!	              emphasize focus as well as decoration.
+!   selectorColor   - the color applied to the selector box of a radiobutton or
+!		      checkbutton.
+*backgroundColor:	#c8b9a6
+*foregroundColor:	#150567
+*activeColor:		#9db2ff
+*disabledColor:		#8f8e8d
+*signalColor:		#c11b17
+*shadingColor:		#c7af92
+*selectorColor:		#980517
+
+!! OTHER OPTIONS
+!  serverHosts      - the list of server hosts to be queried by xpbs.
+!  timeoutSecs	    - number of seconds before timing out waiting for a
+!		    - connection to a  server.
+!  xtermCmd         - the xterm command to run when the PBS interactive feature
+!		      is selected.
+!  selectHosts      - the full host name that will be selected/highlighted with
+!                     its queues automatically listed.
+!  selectQueues     - the queue name that will be selected/highlighted with
+!                     its jobs automatically listed. This is usually the default
+!		      the default queue.
+!				Format: queue_name@fullHostname
+*serverHosts:		nohost.OpenPBS.org
+*timeoutSecs:   	30
+*xtermCmd:		xterm -sb
+*selectHosts:              nohost.OpenPBS.org
+*selectQueues:		slow@nohost.OpenPBS.org

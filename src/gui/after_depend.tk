@@ -1,0 +1,297 @@
+#         OpenPBS (Portable Batch System) v2.3 Software License
+# 
+# Copyright (c) 1999-2000 Veridian Information Solutions, Inc.
+# All rights reserved.
+# 
+# ---------------------------------------------------------------------------
+# For a license to use or redistribute the OpenPBS software under conditions
+# other than those described below, or to purchase support for this software,
+# please contact Veridian Systems, PBS Products Department ("Licensor") at:
+# 
+#    www.OpenPBS.org  +1 650 967-4675                  sales@OpenPBS.org
+#                        877 902-4PBS (US toll-free)
+# ---------------------------------------------------------------------------
+# 
+# This license covers use of the OpenPBS v2.3 software (the "Software") at
+# your site or location, and, for certain users, redistribution of the
+# Software to other sites and locations.  Use and redistribution of
+# OpenPBS v2.3 in source and binary forms, with or without modification,
+# are permitted provided that all of the following conditions are met.
+# After December 31, 2001, only conditions 3-6 must be met:
+# 
+# 1. Commercial and/or non-commercial use of the Software is permitted
+#    provided a current software registration is on file at www.OpenPBS.org.
+#    If use of this software contributes to a publication, product, or
+#    service, proper attribution must be given; see www.OpenPBS.org/credit.html
+# 
+# 2. Redistribution in any form is only permitted for non-commercial,
+#    non-profit purposes.  There can be no charge for the Software or any
+#    software incorporating the Software.  Further, there can be no
+#    expectation of revenue generated as a consequence of redistributing
+#    the Software.
+# 
+# 3. Any Redistribution of source code must retain the above copyright notice
+#    and the acknowledgment contained in paragraph 6, this list of conditions
+#    and the disclaimer contained in paragraph 7.
+# 
+# 4. Any Redistribution in binary form must reproduce the above copyright
+#    notice and the acknowledgment contained in paragraph 6, this list of
+#    conditions and the disclaimer contained in paragraph 7 in the
+#    documentation and/or other materials provided with the distribution.
+# 
+# 5. Redistributions in any form must be accompanied by information on how to
+#    obtain complete source code for the OpenPBS software and any
+#    modifications and/or additions to the OpenPBS software.  The source code
+#    must either be included in the distribution or be available for no more
+#    than the cost of distribution plus a nominal fee, and all modifications
+#    and additions to the Software must be freely redistributable by any party
+#    (including Licensor) without restriction.
+# 
+# 6. All advertising materials mentioning features or use of the Software must
+#    display the following acknowledgment:
+# 
+#     "This product includes software developed by NASA Ames Research Center,
+#     Lawrence Livermore National Laboratory, and Veridian Information
+#     Solutions, Inc.
+#     Visit www.OpenPBS.org for OpenPBS software support,
+#     products, and information."
+# 
+# 7. DISCLAIMER OF WARRANTY
+# 
+# THIS SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND. ANY EXPRESS
+# OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+# OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT
+# ARE EXPRESSLY DISCLAIMED.
+# 
+# IN NO EVENT SHALL VERIDIAN CORPORATION, ITS AFFILIATED COMPANIES, OR THE
+# U.S. GOVERNMENT OR ANY OF ITS AGENCIES BE LIABLE FOR ANY DIRECT OR INDIRECT,
+# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
+# OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+# LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+# NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+# EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# 
+# This license will be governed by the laws of the Commonwealth of Virginia,
+# without reference to its choice of law rules.
+################################################################################
+# after_depend: defines the layout and functions of the concurrency set, after
+#	after_dependency, and before after_dependency dialog box. This returns input focus
+#	back to 'callerDialogBox' when the after_depend dialog box is closed. 
+proc after_depend {callerDialogBox {qalter 0} } {
+  global LABELFONT activeWindow def after_dependDialogBox
+
+  if {!$qalter} {
+    global qsubv ARR def_qsub
+    set ARR "qsubv"
+    set def def_qsub
+  } else {
+    global qalterv ARR def_qalter
+    set ARR "qalterv"
+    set def def_qalter
+  }
+  global ${ARR}_after_parent_id ${ARR}_afterok_parent_id \
+	 ${ARR}_afternotok_parent_id ${ARR}_afterany_parent_id \
+	 ${ARR}_before_parent_id ${ARR}_beforeok_parent_id \
+	 ${ARR}_beforenotok_parent_id ${ARR}_beforeany_parent_id \
+	 jobinfo JOBS_LISTBOX_KEY afterJob
+
+  busy_cursor
+## Bring up the standard Dialog box ##
+  set after_dependDialogBox ".after_depend"
+  set dbox [popupDialogBox $after_dependDialogBox "After Dependency" 1 "" $callerDialogBox]
+  set activeWindow($after_dependDialogBox) 1
+  set dbox_top    [lindex $dbox 0]
+  set dbox_bottom [lindex $dbox 1]
+
+## BOTTOM PART ##
+  set cmdButtons \
+  [buildCmdButtons $dbox_bottom {{{ok ok} {cancel "reset to default"} {help help}}} x 9m 16 3]
+
+  set cmdFrame  [lindex $cmdButtons 0]
+  set cmdOk     [lindex $cmdButtons 1]
+  set cmdCancel [lindex $cmdButtons 2]
+  set cmdHelp   [lindex $cmdButtons 3]
+
+  $cmdOk configure -command {
+
+    destroy $after_dependDialogBox
+  }
+
+  if {$qalter} {
+    $cmdCancel configure -width 18 -command {
+	set_default_qalter_after
+    }
+  } else {
+    $cmdCancel configure -width 18 -command {
+	set_default_qsub_after
+    }
+  }
+
+  $cmdHelp configure -command {xpbs_help after_depend $after_dependDialogBox}
+## TOP PART ##
+  frame $dbox_top.header -height 10m -width 10m
+  frame $dbox_top.footer -height 10m -width 10m
+
+  frame $dbox_top.on
+  frame $dbox_top.on.count
+  frame $dbox_top.lchild
+  frame $dbox_top.rchild
+  frame $dbox_top.afterbox
+  frame $dbox_top.afterbuttons
+  frame $dbox_top.afterbuttons.after
+  frame $dbox_top.afterbuttons.afterok
+  frame $dbox_top.afterbuttons.afternotok
+  frame $dbox_top.afterbuttons.afterany
+ 
+  label $dbox_top.on.label -text "THIS JOB is dependent on" \
+	-font $LABELFONT -padx 1 -pady 1
+
+  set spinBox [buildSpinbox $dbox_top.on.count 2 \
+                            1-99 ${ARR} oncount "other job(s)." right]
+  set spinCountFrame [lindex $spinBox 0]
+  set ${ARR}(spinCountEntry) [lindex $spinBox 1]
+
+  register_default_action [set ${ARR}(spinCountEntry)] $cmdOk
+
+## ARRANGEMENT ON SCREEN
+
+### AFTER ####
+
+  message $dbox_top.afterboxlabel -anchor c -font $LABELFONT -aspect 1000 \
+	-text "THIS JOB should be scheduled for
+execution AFTER the following job(s):"
+  set listBoxInfo [buildFullListbox $dbox_top.afterbox 28x10 "(select one or more) " yscroll 1 0]
+  set jobidframe   [lindex $listBoxInfo 0]
+  set ${ARR}(selButton) [lindex $listBoxInfo 2]
+  set ${ARR}(afterjobidBox) [lindex $listBoxInfo 3]
+
+  if [info exists jobinfo] {
+    foreach el [array names jobinfo] {
+      set vallist [list $jobinfo($el)]
+
+      set i 0
+      foreach val [lindex $vallist $i] {
+        set entry [strget_keyvals $val $JOBS_LISTBOX_KEY "@"]
+        [set ${ARR}(afterjobidBox)] insert end $entry
+        incr i
+      }
+    }
+  }
+  bind_depend after [set ${ARR}(afterjobidBox)]
+  [set ${ARR}(selButton)] configure -textvariable ${ARR}(afterSelMode) \
+    -command {
+	if { [string compare [set ${ARR}(afterSelMode)]  "Select All"] == 0 } {
+		if { $tk_version < 4.0 } {
+			[set ${ARR}(afterjobidBox)] select from 0
+			[set ${ARR}(afterjobidBox)] select to end
+		} else {
+			[set ${ARR}(afterjobidBox)] select anchor 0
+			[set ${ARR}(afterjobidBox)] select set anchor end
+		}
+		set ${ARR}(afterSelMode) "Deselect All"
+		set afterJob [get_keyvals [set ${ARR}(afterjobidBox)] \
+							{0} "" ":" "select"]
+
+	} else {
+                if {$tk_version < 4.0} {
+			[set ${ARR}(afterjobidBox)] select clear
+		} else {
+			[set ${ARR}(afterjobidBox)] select clear 0 end
+		}
+			set ${ARR}(afterSelMode) "Select All"
+			set afterJob ""
+	}
+  }
+
+
+  set entrybox [buildFullEntrybox $dbox_top.afterbuttons.after 11 "after:" 45 \
+			"" right 0 left]
+  set ${ARR}(afterJobidLabel) [lindex $entrybox 1]
+  set ${ARR}(afterJobid) [lindex $entrybox 2]
+  set ${ARR}(afterJobidScroll) [lindex $entrybox 3]
+  [set ${ARR}(afterJobid)] configure -textvariable ${ARR}(afterJobs)
+  register_default_action [set ${ARR}(afterJobid)] $cmdOk
+
+  set entrybox [buildFullEntrybox $dbox_top.afterbuttons.afterok 11 "afterok:" \
+			45 "" right 0 left]
+  set ${ARR}(afterokJobidLabel) [lindex $entrybox 1]
+  set ${ARR}(afterokJobid) [lindex $entrybox 2]
+  set ${ARR}(afterokJobidScroll) [lindex $entrybox 3]
+  [set ${ARR}(afterokJobid)] configure -textvariable ${ARR}(afterokJobs)
+  register_default_action [set ${ARR}(afterokJobid)] $cmdOk
+
+  set entrybox [buildFullEntrybox $dbox_top.afterbuttons.afternotok 11 \
+			"afternotok:" 45 "" right 0 left]
+  set ${ARR}(afternotokJobidLabel) [lindex $entrybox 1]
+  set ${ARR}(afternotokJobid) [lindex $entrybox 2]
+  set ${ARR}(afternotokJobidScroll) [lindex $entrybox 3]
+  [set ${ARR}(afternotokJobid)] configure -textvariable ${ARR}(afternotokJobs)
+  register_default_action [set ${ARR}(afternotokJobid)] $cmdOk
+
+  set entrybox [buildFullEntrybox $dbox_top.afterbuttons.afterany 11 \
+			"afterany:" 45 "" right 0 left]
+  set ${ARR}(afteranyJobidLabel) [lindex $entrybox 1]
+  set ${ARR}(afteranyJobid) [lindex $entrybox 2]
+  set ${ARR}(afteranyJobidScroll) [lindex $entrybox 3]
+  [set ${ARR}(afteranyJobid)] configure -textvariable ${ARR}(afteranyJobs)
+  register_default_action [set ${ARR}(afteranyJobid)] $cmdOk
+
+  set chkboxList \
+      [list [concat after \"started execution.\" $dbox_top.afterbuttons.after] \
+            [concat afterOk \"terminated without errors." \
+					$dbox_top.afterbuttons.afterok] \
+            [concat afterNotok \"terminated with errors.\" \
+                $dbox_top.afterbuttons.afternotok] \
+            [concat afterAny \"terminated with or without errors.\" \
+                $dbox_top.afterbuttons.afterany] \
+      ]	
+
+  set cmdbox [buildCmdButtons $dbox_top.afterbuttons [list $chkboxList] \
+                 y 2m 35 0 0 0  10m "(click the appropriate button)" 0]
+  set ${ARR}(cmdboxAfter) [lindex $cmdbox 1]
+  set ${ARR}(cmdboxAfterok) [lindex $cmdbox 2]
+  set ${ARR}(cmdboxAfternotok) [lindex $cmdbox 3]
+  set ${ARR}(cmdboxAfterany) [lindex $cmdbox 4]
+
+  [set ${ARR}(cmdboxAfter)] configure -command {
+          enable_fullentry [set ${ARR}(afterJobidLabel)] \
+                           [set ${ARR}(afterJobid)] \
+                           [set ${ARR}(afterJobidScroll)]
+	  set ${ARR}(afterJobs) $afterJob
+  }
+  [set ${ARR}(cmdboxAfterok)] configure -command {
+          enable_fullentry [set ${ARR}(afterokJobidLabel)] \
+                           [set ${ARR}(afterokJobid)] \
+                           [set ${ARR}(afterokJobidScroll)]
+	  set ${ARR}(afterokJobs) $afterJob
+  }
+  [set ${ARR}(cmdboxAfternotok)] configure -command {
+          enable_fullentry [set ${ARR}(afternotokJobidLabel)] \
+                           [set ${ARR}(afternotokJobid)] \
+                           [set ${ARR}(afternotokJobidScroll)]
+	  set ${ARR}(afternotokJobs) $afterJob
+  }
+  [set ${ARR}(cmdboxAfterany)] configure -command {
+          enable_fullentry [set ${ARR}(afteranyJobidLabel)] \
+                           [set ${ARR}(afteranyJobid)] \
+                           [set ${ARR}(afteranyJobidScroll)]
+	  set ${ARR}(afteranyJobs) $afterJob
+  }
+
+
+### PACK the FRAMES
+  pack $dbox_top.afterboxlabel $dbox_top.afterbox -side top \
+		-in $dbox_top.lchild -anchor nw
+  label $dbox_top.dummy -height 3
+  pack $dbox_top.dummy $dbox_top.afterbuttons -side top -in $dbox_top.rchild
+  pack $dbox_top.lchild $dbox_top.rchild -side left -anchor nw -padx 2m 
+  pack $dbox_top.on.label $dbox_top.on.count -side left -anchor nw
+  pack $dbox_top.on -side bottom -before $dbox_top.lchild -anchor nw -padx 2m
+
+  remove_busy_cursor
+  catch {tkwait window $after_dependDialogBox}
+  set activeWindow($after_dependDialogBox) 0
+  focus $callerDialogBox
+  catch {grab $callerDialogBox}
+}

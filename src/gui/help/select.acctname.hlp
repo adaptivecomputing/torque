@@ -1,0 +1,16 @@
+The Select Account Name dialog box is for specifying the name of the account 
+that will be checked when limiting the jobs appearing on the Jobs 
+listbox in the main xpbs window.
+
+Either click on the radio button next to the account name entry box and type in 
+the name string, or click on the wildcard button "ANY" to consider any
+account name string.
+
+===============
+COMMAND BUTTONS
+===============
+This region of command buttons represents the final step when manipulating this
+dialog box. 
+
+Click on "ok" when done setting widget values. This is also the default action 
+when the <Return> key is pressed.

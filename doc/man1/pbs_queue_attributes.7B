@@ -1,0 +1,376 @@
+.\"         OpenPBS (Portable Batch System) v2.3 Software License
+.\" 
+.\" Copyright (c) 1999-2000 Veridian Information Solutions, Inc.
+.\" All rights reserved.
+.\" 
+.\" ---------------------------------------------------------------------------
+.\" For a license to use or redistribute the OpenPBS software under conditions
+.\" other than those described below, or to purchase support for this software,
+.\" please contact Veridian Systems, PBS Products Department ("Licensor") at:
+.\" 
+.\"    www.OpenPBS.org  +1 650 967-4675                  sales@OpenPBS.org
+.\"                        877 902-4PBS (US toll-free)
+.\" ---------------------------------------------------------------------------
+.\" 
+.\" This license covers use of the OpenPBS v2.3 software (the "Software") at
+.\" your site or location, and, for certain users, redistribution of the
+.\" Software to other sites and locations.  Use and redistribution of
+.\" OpenPBS v2.3 in source and binary forms, with or without modification,
+.\" are permitted provided that all of the following conditions are met.
+.\" After December 31, 2001, only conditions 3-6 must be met:
+.\" 
+.\" 1. Commercial and/or non-commercial use of the Software is permitted
+.\"    provided a current software registration is on file at www.OpenPBS.org.
+.\"    If use of this software contributes to a publication, product, or service
+.\"    proper attribution must be given; see www.OpenPBS.org/credit.html
+.\" 
+.\" 2. Redistribution in any form is only permitted for non-commercial,
+.\"    non-profit purposes.  There can be no charge for the Software or any
+.\"    software incorporating the Software.  Further, there can be no
+.\"    expectation of revenue generated as a consequence of redistributing
+.\"    the Software.
+.\" 
+.\" 3. Any Redistribution of source code must retain the above copyright notice
+.\"    and the acknowledgment contained in paragraph 6, this list of conditions
+.\"    and the disclaimer contained in paragraph 7.
+.\" 
+.\" 4. Any Redistribution in binary form must reproduce the above copyright
+.\"    notice and the acknowledgment contained in paragraph 6, this list of
+.\"    conditions and the disclaimer contained in paragraph 7 in the
+.\"    documentation and/or other materials provided with the distribution.
+.\" 
+.\" 5. Redistributions in any form must be accompanied by information on how to
+.\"    obtain complete source code for the OpenPBS software and any
+.\"    modifications and/or additions to the OpenPBS software.  The source code
+.\"    must either be included in the distribution or be available for no more
+.\"    than the cost of distribution plus a nominal fee, and all modifications
+.\"    and additions to the Software must be freely redistributable by any party
+.\"    (including Licensor) without restriction.
+.\" 
+.\" 6. All advertising materials mentioning features or use of the Software must
+.\"    display the following acknowledgment:
+.\" 
+.\"     "This product includes software developed by NASA Ames Research Center,
+.\"     Lawrence Livermore National Laboratory, and Veridian Information
+.\"     Solutions, Inc.
+.\"     Visit www.OpenPBS.org for OpenPBS software support,
+.\"     products, and information."
+.\" 
+.\" 7. DISCLAIMER OF WARRANTY
+.\" 
+.\" THIS SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND. ANY EXPRESS
+.\" OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+.\" OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT
+.\" ARE EXPRESSLY DISCLAIMED.
+.\" 
+.\" IN NO EVENT SHALL VERIDIAN CORPORATION, ITS AFFILIATED COMPANIES, OR THE
+.\" U.S. GOVERNMENT OR ANY OF ITS AGENCIES BE LIABLE FOR ANY DIRECT OR INDIRECT,
+.\" INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+.\" LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
+.\" OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+.\" LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+.\" NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+.\" EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+.\" 
+.\" This license will be governed by the laws of the Commonwealth of Virginia,
+.\" without reference to its choice of law rules.
+.if \n(Pb .ig Iq
+.\" for man page
+.TH pbs_queue_attributes 7B "" Local PBS
+.so ../ers/ers.macros
+.SH NAME
+pbs_queue_attributes - pbs queue attributes
+.SH DESCRIPTION
+.Iq
+.if !\n(Pb .ig Ig
+.\" for ers
+.NH 3
+.Tc Queue Public Attributes
+.Ig
+.LP
+Queue public attributes are alterable on request by a client.  The client must
+be acting for a user with administrator (manager) or operator privilege.
+Certain attributes require the user to have full administrator privilege
+before they can be modified.
+The following attributes apply to both queue types:
+.RS .25i
+.Al acl_group_enable
+Attribute which when true directs the server to use the queue group
+access control list
+.I acl_groups .
+Format: boolean, "TRUE", "True", "true", "Y", "y", "1", "FALSE", "False",
+"false", "N", "n", "0"; default value: false = disabled.
+.if !\n(Pb .ig Ig
+[internal type: boolean]
+.Ig
+.Al acl_groups
+List which allows or denies enqueuing of jobs owned by members of the listed
+groups.  The groups in the list are groups on the server host, not submitting
+hosts.
+See section 10.1, Authorization, in the PBS External Reference Specification.
+Format: "[+|-]group_name[,...]"; default value: all groups allowed.
+.if !\n(Pb .ig Ig
+[internal type: access control list]
+.Ig
+.Al acl_host_enable
+Attribute which when true directs the server to use the 
+.I acl_hosts
+access list.
+Format: boolean (see acl_group_enable); default value: disabled.
+.if !\n(Pb .ig Ig
+[internal type: boolean]
+.Ig
+.Al acl_hosts
+List of hosts which may enqueue jobs in the queue.
+See section 10.1, Authorization, in the PBS External Reference Specification.
+Format: "[+|-]hostname[...]"; default value: all hosts allowed.
+.if !\n(Pb .ig Ig
+[internal type: access control list]
+.Ig
+.Al acl_logic_or
+Modifies the way acls are applied if both
+.I
+acl_user_enable
+and
+.I acl_group_enable
+are set to true.  If
+.I acl_logic_or
+is true, then user and group acls are
+logically OR'ed together (a job can pass either the user or group acl lists to
+be allowed access to the queue).  If
+I acl_logic_or
+is false, then user and group
+acls are logically AND'ed together (a job would have to pass both user and
+group acl lists).
+Format: boolean (see acl_group_enable and acl_user_enable); default value:
+disabled.
+.if !\n(Pb .ig Ig
+[internal type: boolean]
+.Ig
+.Al acl_user_enable
+Attribute which when true directs the server to use the the
+.I acl_users
+access list for this queue.
+Format: boolean (see acl_group_enable); default value: disabled.
+.if !\n(Pb .ig Ig
+[internal type: boolean]
+.Ig
+.Al acl_users
+List of users allowed or denied the ability to enqueue jobs in this queue.
+See section 10.1, Authorization, in the PBS External Reference Specification.
+Format: "[+|-]user[@host][,...]";
+default value: all users allowed.
+.if !\n(Pb .ig Ig
+[internal type:  access control list]
+.Ig
+.Al enabled
+Queue will or will not accept new jobs.  When false the queue is \*Qdisabled\*U
+and will not accept jobs.  Format: boolean (see acl_group_enable);
+default value: disabled.
+.if !\n(Pb .ig Ig
+[internal type: boolean]
+.Ig
+.Al from_route_only
+When true, this queue will not accept jobs except when being routed by
+the server from a local routing queue.  This is used to force user to
+submit jobs into a routing queue used to distribute jobs to other queues
+based on job resource limits.  Format: boolean; default value: disabled.
+.if !\n(Pb .ig Ig
+[internal type: boolean]
+.Ig
+.Al max_queuable
+The maximum number of jobs allowed to reside in the queue at any given time.
+Format: integer; default value: infinite.
+.if !\n(Pb .ig Ig
+[internal type: integer]
+.Ig
+.Al max_running
+The maximum number of jobs allowed to be selected from this queue for routing
+or execution
+at any given time.  For a routing queue, this is enforced, if set, by the
+server.  For an execution queue, this attribute is advisory to the Scheduler,
+it is not enforced by the server.  Format: integer.
+.if !\n(Pb .ig Ig
+[internal type: integer]
+.Ig
+.Al Priority
+The priority of this queue against other queues of the same type on this
+server.  May affect job selection for execution/routing.  Advisory to the
+Scheduler, not used by the server.  Format: integer.
+.if !\n(Pb .ig Ig
+[internal type: integer]
+.Ig
+.Al queue_type
+The type of the queue: execution or route.
+Format: "execution", "e", "route", "r".
+This attribute must be explicitly set.
+.if !\n(Pb .ig Ig
+[internal type: string]
+.Ig
+.Al resources_max
+The maximum amount of each resource which can be requested by a single job
+in this queue.  The queue value supersedes any server wide maximum limit.
+Format: "resources_max.resource_name=value", see qmgr(1B);
+default value: infinite usage.
+.if !\n(Pb .ig Ig
+[internal type: resource]
+.Ig
+.Al resources_min
+The minimum amount of each resource which can be requested by a single job
+in this queue.
+Format: see resources_max, default value: zero usage.
+.if !\n(Pb .ig Ig
+[internal type: resource]
+.Ig
+.Al resources_default
+The list of default resource values which are set as limits for a job 
+residing in this queue and for which the job did not specify a limit.
+Format: "resources_default.resource_name=value", see qmgr(1B);
+default value: none;  if not set, the default limit for a job is determined by
+the first of the following attributes which is set: server's resources_default,
+queue's resources_max, server's resources_max.  If none of these are set, the
+job will unlimited resource usage.
+.if !\n(Pb .ig Ig
+[internal type: resource]
+.Ig
+.Al started\ 
+Jobs may be scheduled for execution from this queue.
+When false, the queue is considered \*Qstopped.\*U
+Advisory to the Scheduler, not enforced by the server.
+[default value: false, but depends on scheduler interpretation]
+Format: boolean (see acl_group_enable).
+.if !\n(Pb .ig Ig
+[internal type: boolean]
+.Ig
+.RE
+.LP
+The following attributes apply only to execution queues:
+.RS .25i
+.Al "checkpoint_min \(sc"
+Specifies the minimum interval of cpu time, in minutes, which is allowed
+between checkpoints of a job.  If a user specifies a time less than this
+value, this value is used instead.  Format: integer;
+default value: no minimum.
+.if !\n(Pb .ig Ig
+[internal type: integer]
+.Ig
+.Al resources_available
+The list of resource and amounts available to jobs running in this queue.
+The sum of the resource of each type used by all jobs running from this queue
+cannot exceed the total amount listed here.
+Advisory to the Scheduler, not enforced by the server.
+Format: "resources_available.resource_name=value", see qmgr(1B).
+.if !\n(Pb .ig Ig
+[internal type: resource]
+.Ig
+.Al kill_delay
+The amount of the time delay between the sending of SIGTERM and SIGKILL
+when a qdel command is issued against a running job.  Format: integer
+seconds; default value: 2 seconds.
+.if !\n(Pb .ig Ig
+[internal type: integer]
+.Ig
+.Al max_user_run
+The maximum number of jobs owned by a single user that are allowed to be 
+running from this queue at one time.  This attribute is advisory to the
+Scheduler, it is not enforced by the server.  Format: integer; default
+value: none.
+.if !\n(Pb .ig Ig
+[internal type: integer]
+.Ig
+.Al max_group_run
+The maximum number of jobs owned by any users in a single group that are
+allowed to be running from this queue at one time.
+This attribute is advisory to the Scheduler, it is not enforced by the server.
+Format: integer; default value: none.
+.if !\n(Pb .ig Ig
+[internal type: integer]
+.Ig
+.RE
+.LP
+The following attributes apply only to routing queues:
+.RS .25i
+.Al route_destinations
+The list of destinations to which jobs may be routed.
+[default value: none, should be set to at least one valid destination]
+.if !\n(Pb .ig Ig
+[internal type: array of strings]
+.Ig
+.Al alt_router
+If true, an site supplied, alternative job router function is used to determine
+the destination for routing jobs from this queue.  Otherwise, the default,
+round-robin router is used.
+Format: boolean (see acl_group_enable); default value: false.
+.if !\n(Pb .ig Ig
+[internal type: boolean]
+.Ig
+.Al route_held_jobs
+If true, jobs with a hold type set may be routed from this queue.  If false,
+held jobs are not to be routed.
+Format: boolean (see acl_group_enable); default value: false.
+.if !\n(Pb .ig Ig
+[internal type: boolean]
+.Ig
+.Al route_waiting_jobs
+If true, jobs with a future 
+.At execution_time
+attribute may be routed from this queue.  If false,
+they are not to be routed.
+Format: boolean (see acl_group_enable); default value: false.
+.if !\n(Pb .ig Ig
+[internal type: boolean]
+.Ig
+.Al route_retry_time
+Time delay between route retries.  Typically used when the network between
+servers is down.  Format: integer seconds; default value:
+.Sc PBS_NET_RETRY_TIME
+(30 seconds).
+.if !\n(Pb .ig Ig
+[internal type: integer]
+.Ig
+.Al route_lifetime
+The maximum time a job is allowed to exist in a routing queue.  If the job
+cannot be routed in this amount of time, the job is aborted.
+If unset or set to a value of zero (0), the lifetime is infinite.
+Format: integer seconds; default infinite.
+.if !\n(Pb .ig Ig
+[internal type: integer]
+.Ig
+.RE
+.if !\n(Pb .ig Ig
+.\" ers only
+.NH 3
+.Tc Queue Read-Only Attributes
+.Ig
+.LP
+The following data items are read-only attributes of the queue.
+They are visible to but cannot be changed by clients.
+.LP
+Items which apply to all types of queues are:
+.RS .25i
+.Al total_jobs
+The number of jobs currently residing in the queue.
+.if !\n(Pb .ig Ig
+[internal type: integer]
+.Ig
+.Al state_count
+The total number of jobs currently residing in the queue in each state.
+.if !\n(Pb .ig Ig
+[internal type: special, array of integers]
+.Ig
+.RE
+.LP
+These read-only attributes only apply to execution queues:
+.RS .25i
+.Al resources_assigned
+The total amount of certain types of resources allocated to jobs running
+from this queue.
+.if !\n(Pb .ig Ig
+[internal type: resource]
+.Ig 
+.RE
+.if \n(Pb .ig Ig
+.\" man page only
+.SH SEE ALSO
+the PBS ERS, qmgr(1)
+.Ig

@@ -1,0 +1,35 @@
+#
+# in case a POSIX make is not behaving completely correctly we 
+# delete all of the suffix rules and replace them with POSIX
+# suffix rules as taken from the POSIX standard
+#
+.SUFFIXES:
+.SUFFIXES: .o .c .y .l .a 
+
+.c:
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $<
+
+.c.o:
+	$(CC) $(CFLAGS) -c $<
+
+.y.o:
+	$(YACC) $(YFLAGS) $<
+	$(CC) $(CFLAGS) -c y.tab.c
+	rm -f y.tab.c
+	mv y.tab.o $@
+
+.l.o:
+	$(LEX) $(LFLAGS) $<
+	$(CC) $(CFLAGS) -c lex.yy.c
+	rm -f lex.yy.c
+	mv lex.yy.o $@
+
+.y.c:
+	$(YACC) $(YFLAGS) $<
+	mv y.tab.c $@
+
+.l.c:
+	$(LEX) $(LFLAGS) $<
+	mv lex.yy.c $@
+
+

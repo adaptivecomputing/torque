@@ -1,0 +1,77 @@
+File staging allows you to specify which (if any) files to copy onto the
+execution host before the job starts, and which (if any) to copy off when
+the job completes.  
+
+PBS staging works like this: "move file X from HERE to THERE". Both HERE
+and THERE can be relative or absolute.
+
+The File Staging dialog box is composed of 3 regions:
+
+(1) File Selection Box region
+(2) Stagein/Stageout region
+(3) Command Buttons
+
+==================
+File Selection Box 
+==================
+This is originally "iconized" in the form of a button labeled "Click me to
+bring up File Selection Box..". Upon clicking this button, the file selection
+box will be displayed to allow the selection of a single file from the
+the directory tree path of the local host. This single file can be used as 
+input to HERE host/input_file in Stagein, and HERE host/output_file in
+Stageout of files. The listing directory is specified in
+SELECTION DIRECTORY entrybox, and the name of the local host is given in HOST.
+The accompanying listbox shows the list of files/directories in the "SELECTION
+DIRECTORY".
+
+Single clicking a file will display the filename on the "FILE Selected" entry
+box.
+Double clicking on a directory will refresh the display of the listbox to show
+the files in the selected directory.
+
+You can also manually entry the name of the directory on the
+"SELECTION DIRECTORY" entrybox, hit <RETURN>, and then the files in that
+directory will be listed. You can also manually enter the filename of your
+choice on the "FILE Selected" entrybox.
+
+To remove the "File Selection Box" from view, click on "Click me to remove
+File Selection Box".
+
+=======================
+Stagein/Stageout region
+=======================
+The Stagein/Stageout region contains 2 box widgets for specifying
+the stagein and stageout attribute values of the job. These attributes
+represent what files are staged (copied) in before job start, or staged out
+after job completes execution.
+
+Type in the values for stagein hostname, input file, and local file, and the
+stageout hostname, output file, local file in the provided input entry widgets.
+That is, on each entry, specify the "input file" ("host" specifies its
+location) that will be copied to the execution host as "local file" before job
+execution starts. Similarly, specify the "local file" on the execution host
+that will be copied back to "host" as "output file" when job execution
+finishes. Or, click on the accompanying button "Add file selected from File
+Selection Box" to load the selected file into the input entries. After you've
+entered the values, then click the accompanying "add" buttons.  Watch as your
+input gets loaded into the "Stagein_Files:" and "Stageout_Files:" listboxes.
+Entries of the latter can be deleted by selecting an entry, and then clicking
+the accompanying "delete" button. If you want to modify an entry in a listbox,
+then select the entry via mouse, which would result in its values to be loaded
+into the input entries, then change the values of the input entries, and then
+click the accompanying "update" button. 
+
+You can move through the input entry fields using <Tab>, <Cntrl-f>, or
+<Cntrl-b> (to go backwards). A horizontal scrollbar is associated with each
+field to scan horizontally a long input string.  Within an entry field, you can
+use the left and right arrow keys, backspace or delete key, and mouse to
+highlight/select a text for immediate overwriting of newly typed character.
+
+================
+Command Buttons
+================
+Click on "ok" button after you are satisfied with the stagein/stageout 
+attribute values set for the job.
+
+Click on "reset to default" if you want to reset the stagein/stageout attribute
+values to the default settings.

@@ -1,0 +1,49 @@
+Samples of PBS Scheduler Scripts Written in TCL.
+
+The sample Tcl based scheduler, loadavg,  included in this directory is
+provided solely as an example of how a scheduler can be implemented
+in the Tcl framework.  
+ 
+This is a simple script that checks the system load average and starts the
+first job if the average is under two.
+
+==========
+
+Other sites have developed Tcl based schedulers.   
+
+Purdue University "NCSS" Fair Share Scheduler
+
+Wendy Lin of Purdue University has written a "Fair Share" Scheduler for
+Purdue's SP-2.  It is available via anonymous FTP from Purdue.   Please
+see the file "./Purdue_NCSS.ReadMe".
+
+----------
+
+PBS at the University of Missouri-Columbia supports an eight processor SGI
+Power Challenge L.  If you wish to control jobs on a SMP, you may
+find his scheduler of interest.  The scheduling policy is described by
+
+        http://www.cclabs.missouri.edu/things/shiva/pbs/#policy
+
+The scheduler was developed by Hossein Tahani at University of Missouri-Columbia
+
+----------
+
+PBS at the University of New Hampshire supports a cluster of Sun Workstations
+running Solaris.  If you wish to distribute jobs across a cluster, you may 
+find this scheduler of interest.  Contact:
+	Thomas E. Milliman
+	Space Science Center
+	University of New Hampshire
+
+---------
+
+PBS at the University of Texas at Dallas supports a Sun Ultra Enterprise 6000
+running Solaris.  A brief reference can be found at
+	http://www.utdallas.edu/utdgeneral/ir/unix/6000/
+You may find this scheduler of interest.   Contact:
+	Amos Gouaux
+	University of Texas at Dallas
+
+
+

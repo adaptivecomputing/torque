@@ -1,0 +1,55 @@
+# START docplan.mk
+
+#
+# This is the basic format of all of the doc/*plan/Makefile files
+#
+
+NROFF = @NROFF@
+FONTS = $(srcdir)/../doc_fonts
+SOELIM = ../soelim
+LOCAL_DICT = $(srcdir)/../requirement_spec/local_spell
+
+all: $(SOELIM) build
+
+build: $(SOELIM) $(TARGET)
+
+print: $(SOELIM) $(TARGET)
+	$(PRTCMD) $(PRTFLG) $(TARGET)
+
+install:
+
+distclean:: clean
+	-($(RM) Makefile; exit 0) > /dev/null 2>&1
+
+clean::
+	-($(RM) *.ps; exit 0) > /dev/null 2>&1
+
+#
+# we need a special soelim that understands a -d flag so that we can
+# built outside of the src tree
+#
+$(SOELIM): $(srcdir)/../soelim.c
+	cd ..; $(MAKE) soelim
+
+spell:
+	spell +$(LOCAL_DICT) $(TEXT)
+
+mailing: $(TARGET) encode.text
+	compress -c $(TARGET) | uuencode $(TARGET).Z > xxx
+	cat encode.text xxx > $(TARGET).uu
+	rm xxx
+
+#
+# we need this because stock make does not understand seperate
+# src and build dirs. TEXT_TOP is the top level file that includes
+# other .ms files
+#
+$(TARGET): $(TEXT) $(DRAWINGS)
+	$(SOELIM) -d $(srcdir) $(FONTS) $(TEXT_TOP) | $(TBL) | \
+	    $(ROFF) -ms | cat - $(DRAWINGS) | $(POSTPS) > $@
+
+# get rid of all suffix rules if possible
+.SUFFIXES:
+
+# END docplan.mk
+

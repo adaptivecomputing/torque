@@ -1,0 +1,27 @@
+The Concurrency Set dialog box contains widgets for instructing xpbs that
+the job being submitted is to be part of a set of concurrently executing jobs.
+ 
+The dialog box is composed of a set of radioboxes that respond to mouse button
+clicks for setting the number of additional jobs to be executed concurrently
+with the current job (synccount), or for adding the current job to an existing
+set of jobs that are dependent on each other for execution (syncwith). 
+
+The "synccount" (first button) is for declaring this job being submitted to be
+the leader of the group; "syncwith" (second button) is simply for adding
+this job to an existing group with an already designated job leader. To 
+specify the job leader in the second button, either select the job from the
+listbox, which lists all jobs currently known to xpbs from a recent poll,
+or to type the job id directly on the accompanying entrybox.
+
+On the listbox, you can also double click a job id to obtain more information
+about the job.
+
+================
+Command Buttons
+================
+Click on "ok" button after you are satisfied with the concurrency dependency
+attribute value of the job.  This is also the default action (as indicated by
+the sunken look of the button) when the <Return> key is pressed.
+
+Click on "reset to default" if you want to reset the concurrency dependency
+attribute values to the default settings.

@@ -1,0 +1,296 @@
+#         OpenPBS (Portable Batch System) v2.3 Software License
+# 
+# Copyright (c) 1999-2000 Veridian Information Solutions, Inc.
+# All rights reserved.
+# 
+# ---------------------------------------------------------------------------
+# For a license to use or redistribute the OpenPBS software under conditions
+# other than those described below, or to purchase support for this software,
+# please contact Veridian Systems, PBS Products Department ("Licensor") at:
+# 
+#    www.OpenPBS.org  +1 650 967-4675                  sales@OpenPBS.org
+#                        877 902-4PBS (US toll-free)
+# ---------------------------------------------------------------------------
+# 
+# This license covers use of the OpenPBS v2.3 software (the "Software") at
+# your site or location, and, for certain users, redistribution of the
+# Software to other sites and locations.  Use and redistribution of
+# OpenPBS v2.3 in source and binary forms, with or without modification,
+# are permitted provided that all of the following conditions are met.
+# After December 31, 2001, only conditions 3-6 must be met:
+# 
+# 1. Commercial and/or non-commercial use of the Software is permitted
+#    provided a current software registration is on file at www.OpenPBS.org.
+#    If use of this software contributes to a publication, product, or
+#    service, proper attribution must be given; see www.OpenPBS.org/credit.html
+# 
+# 2. Redistribution in any form is only permitted for non-commercial,
+#    non-profit purposes.  There can be no charge for the Software or any
+#    software incorporating the Software.  Further, there can be no
+#    expectation of revenue generated as a consequence of redistributing
+#    the Software.
+# 
+# 3. Any Redistribution of source code must retain the above copyright notice
+#    and the acknowledgment contained in paragraph 6, this list of conditions
+#    and the disclaimer contained in paragraph 7.
+# 
+# 4. Any Redistribution in binary form must reproduce the above copyright
+#    notice and the acknowledgment contained in paragraph 6, this list of
+#    conditions and the disclaimer contained in paragraph 7 in the
+#    documentation and/or other materials provided with the distribution.
+# 
+# 5. Redistributions in any form must be accompanied by information on how to
+#    obtain complete source code for the OpenPBS software and any
+#    modifications and/or additions to the OpenPBS software.  The source code
+#    must either be included in the distribution or be available for no more
+#    than the cost of distribution plus a nominal fee, and all modifications
+#    and additions to the Software must be freely redistributable by any party
+#    (including Licensor) without restriction.
+# 
+# 6. All advertising materials mentioning features or use of the Software must
+#    display the following acknowledgment:
+# 
+#     "This product includes software developed by NASA Ames Research Center,
+#     Lawrence Livermore National Laboratory, and Veridian Information
+#     Solutions, Inc.
+#     Visit www.OpenPBS.org for OpenPBS software support,
+#     products, and information."
+# 
+# 7. DISCLAIMER OF WARRANTY
+# 
+# THIS SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND. ANY EXPRESS
+# OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+# OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT
+# ARE EXPRESSLY DISCLAIMED.
+# 
+# IN NO EVENT SHALL VERIDIAN CORPORATION, ITS AFFILIATED COMPANIES, OR THE
+# U.S. GOVERNMENT OR ANY OF ITS AGENCIES BE LIABLE FOR ANY DIRECT OR INDIRECT,
+# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
+# OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+# LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+# NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+# EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# 
+# This license will be governed by the laws of the Commonwealth of Virginia,
+# without reference to its choice of law rules.
+################################################################################
+# This file contains procedures related to spinbox widgets.
+################################################################################
+# buildSpinbox: builds a spinbox widget to be filled with 'list_discrete_values'. If
+# 	'list_discrete_values' is of the form "<numX>-<numY>", then it will assume
+# 	that the values are integers starting from numX up to numY. 'assocVarName' and
+#	'assocVarElem' are the associated variable name and element (if variable is 
+#	an array) for the spinbox entry widget.
+# OPTIONS:
+#	'label_text' -  the text string to label the spinbox.
+#	'label_placement' - where to place 'label_text': right, left, top, bottom.
+#	'default_val' - default value for the spin box entry.
+#	'dateFormat' - a boolean for declaring entry to be of date type: meaning 
+#		numbers from 0 to 9 are to be given a 0 prefix. 
+proc buildSpinbox {frame_name cols list_discrete_values assocVarName \
+     assocVarElem \
+     {label_text ""} {label_placement "right"} {default_val ""} \
+     {dateFormat 0} } {
+
+  global LABELFONT
+
+  if {$dateFormat && [string length $default_val] < 2 && \
+      			$default_val >= 0 && $default_val <= 9 } {
+    set lboxinfo [buildFullEntrybox $frame_name 0 \
+                		"" $cols "0$default_val" "" 0]
+  } else {
+    set lboxinfo [buildFullEntrybox $frame_name 0 \
+                "" $cols $default_val "" 0]
+  }
+
+  set sbox [lindex $lboxinfo 2]
+  bind_entry_overselect $sbox
+  pack forget $sbox 
+
+  scrollbar $frame_name.spinscroll -orient vertical -relief flat \
+       -borderwidth 2  -command [list spincmd $sbox $dateFormat]
+
+  label $frame_name.splabel -font $LABELFONT -text $label_text -padx 1 -pady 1
+
+  switch -exact -- $label_placement {
+    right {
+      pack $sbox $frame_name.spinscroll $frame_name.splabel -side left \
+           -anchor nw
+    }
+    left {
+      pack $frame_name.splabel $sbox $frame_name.spinscroll -side left \
+           -anchor nw
+    }
+    top {
+      pack $frame_name.splabel -side top -anchor nw
+      pack $sbox $frame_name.spinscroll -side left -after $frame_name.splabel \
+           -anchor nw
+    }
+    bottom {
+      pack $sbox $frame_name.spinscroll -side left -anchor nw
+      pack $frame_name.splabel -side bottom -anchor nw -before $sbox
+    }
+    default {
+      pack $sbox -side left -anchor c -pady 2
+      pack $frame_name.spinscroll -side right -anchor nw -pady 2
+    }
+  }
+
+# Initialize some special global variables
+  if [regexp "(.+)\\((.+)\\)" $assocVarElem match elem1 elem2] {
+    set assocVarElem "${elem1}_${elem2}"
+  }
+  global vlist.$sbox 			;# vlist.? holds the list of
+  					;# valid values for the
+					;# spin box.
+
+  set vlist.$sbox $list_discrete_values
+
+  if { [string compare $assocVarElem ""] != 0 } {
+    set value.$sbox $assocVarName\($assocVarElem\)
+  } else {
+    set  value.$sbox $assocVarName
+  }
+
+  $sbox configure -font $LABELFONT -textvariable [set value.$sbox] \
+	-relief groove
+  register_spinbox $sbox
+  return [concat $frame_name $sbox $frame_name.spinscroll $frame_name.splabel]
+}
+
+# spincmd: the associated command when the spinbox widget's scrollbar is manipulated.
+proc spincmd { sbox dateFormat view_idx } {
+
+## It appears that since we have a one entry listbox, then pushing the up
+## arrow returns an index of -1, and pushing down return an index of 1. 
+  if {$view_idx == -1} {
+    incr_spinbox $sbox $dateFormat
+  } else {
+    decr_spinbox $sbox $dateFormat
+  }
+}
+
+# disable_spinbox: disables all the components of a spinbox.
+proc disable_spinbox {spinEntry spinScroll {spinLabel ""}} {
+  global disabledColor
+
+  disable_fullentry "" $spinEntry ""
+
+  if {[string compare $spinScroll ""] != 0} {
+    disable_scrollbar $spinScroll $disabledColor
+  }
+
+  if {[string compare $spinLabel ""] != 0} {
+    disable_label $spinLabel $disabledColor
+  }
+}
+
+# enable_spinbox: enables all the components of a spinbox.
+proc enable_spinbox {spinEntry spinScroll {spinLabel ""}} {
+
+  enable_fullentry "" $spinEntry ""
+
+  if {[string compare $spinScroll ""] != 0} {
+    enable_scrollbar $spinScroll 
+  }
+
+  if {[string compare $spinLabel ""] != 0} {
+    enable_label $spinLabel
+  }
+}
+
+# incr_spinbox: procedure that brings into view the "next" element in the
+# spin box.
+# OPTION:
+#     The option 'dateFormat' means to construct the numeric entry as a date
+# format, meaning, add leading 0 for numbers between 0 to 9.
+#
+proc incr_spinbox {spbox {dateFormat 0} } {
+  global vlist.$spbox
+
+  set valueList [set vlist.$spbox]
+  set newval -1
+  set cval [$spbox get]
+  if [regexp "(\[-0-9]+)-(\[-0-9]+)" $valueList match min max] {
+    if {[string compare $cval ""] == 0} {
+      set cval [expr [digit $min] - 1]
+    } 
+    if { [digit $cval] < [digit $max] } {
+      set newval [expr [digit $cval] + 1]
+      $spbox delete 0 end
+      if {$dateFormat && $newval >= 0 && $newval <= 9 } {
+         $spbox insert 0 "0$newval"
+      } else {
+         $spbox insert 0 $newval
+      }
+    }
+  } else {
+    if { [string compare $cval ""] == 0 } {
+      set idx -1
+    } else {
+      set idx [lsearch $valueList $cval]
+    }
+    if { [expr $idx + 1] < [llength $valueList]} {
+      set newval [lindex $valueList [incr idx]] 
+      $spbox delete 0 end
+      $spbox insert 0 $newval
+    }
+  }
+  return $newval
+}
+# decr_spinbox: similar to incr_spinbox except in reverse.
+#
+proc decr_spinbox {spbox {dateFormat 0} } {
+  global vlist.$spbox
+
+  set valueList [set vlist.$spbox]
+  set newval -1
+  set cval [$spbox get]
+  if [regexp "(\[-0-9]+)-(\[-0-9]+)" $valueList match min max] {
+    if {[string compare $cval ""] == 0} {
+      set cval [expr [digit $max] + 1]
+    } 
+    if { [digit $cval] > [digit $min] } {
+      set newval [expr [digit $cval] - 1]
+      $spbox delete 0 end
+      if {$dateFormat && $newval >= 0 && $newval <= 9 } {
+         $spbox insert 0 "0$newval"
+      } else {
+         $spbox insert 0 $newval
+      }
+    }
+
+  } else {
+    
+    if {[string compare $cval ""] == 0} {
+      set idx [llength $valueList]
+    } else {
+      set idx [lsearch $valueList $cval]
+    }
+
+    if { [expr $idx - 1] >= 0 } {
+      set newval [lindex $valueList [incr idx -1]] 
+      $spbox delete 0 end
+      $spbox insert 0 $newval
+    }
+  }
+  return $newval
+}
+proc check_spinbox_value {spin_entry} {
+  global vlist.$spin_entry
+
+  set valueList [set vlist.$spin_entry]
+  set sbox_var [$spin_entry get]
+
+  if [regexp "(\[-0-9]+)-(\[-0-9]+)" $valueList match min max] {
+
+        if { ![regexp "^(\[-0-9]+)$" $sbox_var match] || \
+               ([digit $sbox_var] < $min || [digit $sbox_var] > $max) } {
+               $spin_entry delete 0 end
+        }
+
+  } elseif { [lsearch -exact $valueList $sbox_var] == -1 } {
+       $spin_entry delete 0 end
+  }
+}

@@ -1,0 +1,606 @@
+
+#         OpenPBS (Portable Batch System) v2.3 Software License
+# 
+# Copyright (c) 1999-2000 Veridian Information Solutions, Inc.
+# All rights reserved.
+# 
+# ---------------------------------------------------------------------------
+# For a license to use or redistribute the OpenPBS software under conditions
+# other than those described below, or to purchase support for this software,
+# please contact Veridian Systems, PBS Products Department ("Licensor") at:
+# 
+#    www.OpenPBS.org  +1 650 967-4675                  sales@OpenPBS.org
+#                        877 902-4PBS (US toll-free)
+# ---------------------------------------------------------------------------
+# 
+# This license covers use of the OpenPBS v2.3 software (the "Software") at
+# your site or location, and, for certain users, redistribution of the
+# Software to other sites and locations.  Use and redistribution of
+# OpenPBS v2.3 in source and binary forms, with or without modification,
+# are permitted provided that all of the following conditions are met.
+# After December 31, 2001, only conditions 3-6 must be met:
+# 
+# 1. Commercial and/or non-commercial use of the Software is permitted
+#    provided a current software registration is on file at www.OpenPBS.org.
+#    If use of this software contributes to a publication, product, or
+#    service, proper attribution must be given; see www.OpenPBS.org/credit.html
+# 
+# 2. Redistribution in any form is only permitted for non-commercial,
+#    non-profit purposes.  There can be no charge for the Software or any
+#    software incorporating the Software.  Further, there can be no
+#    expectation of revenue generated as a consequence of redistributing
+#    the Software.
+# 
+# 3. Any Redistribution of source code must retain the above copyright notice
+#    and the acknowledgment contained in paragraph 6, this list of conditions
+#    and the disclaimer contained in paragraph 7.
+# 
+# 4. Any Redistribution in binary form must reproduce the above copyright
+#    notice and the acknowledgment contained in paragraph 6, this list of
+#    conditions and the disclaimer contained in paragraph 7 in the
+#    documentation and/or other materials provided with the distribution.
+# 
+# 5. Redistributions in any form must be accompanied by information on how to
+#    obtain complete source code for the OpenPBS software and any
+#    modifications and/or additions to the OpenPBS software.  The source code
+#    must either be included in the distribution or be available for no more
+#    than the cost of distribution plus a nominal fee, and all modifications
+#    and additions to the Software must be freely redistributable by any party
+#    (including Licensor) without restriction.
+# 
+# 6. All advertising materials mentioning features or use of the Software must
+#    display the following acknowledgment:
+# 
+#     "This product includes software developed by NASA Ames Research Center,
+#     Lawrence Livermore National Laboratory, and Veridian Information
+#     Solutions, Inc.
+#     Visit www.OpenPBS.org for OpenPBS software support,
+#     products, and information."
+# 
+# 7. DISCLAIMER OF WARRANTY
+# 
+# THIS SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND. ANY EXPRESS
+# OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+# OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT
+# ARE EXPRESSLY DISCLAIMED.
+# 
+# IN NO EVENT SHALL VERIDIAN CORPORATION, ITS AFFILIATED COMPANIES, OR THE
+# U.S. GOVERNMENT OR ANY OF ITS AGENCIES BE LIABLE FOR ANY DIRECT OR INDIRECT,
+# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
+# OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+# LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+# NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+# EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# 
+# This license will be governed by the laws of the Commonwealth of Virginia,
+# without reference to its choice of law rules.
+################################################################################
+# This file contains procedures related to button widgets (checkboxes, radio
+# buttons, command buttons.
+################################################################################
+# buildCheckboxes: creates a row or column of checkbuttons on 'frame_name' 
+#	following the arrangement specified in 'checkbutton_list'.
+#
+# INPUT FORMATS:
+#	'checkbutton_list' - 
+#		{ {group1_button1_name group1_button1_label group1_button1_assoc}
+#		  {group1_button2_name group1_button2_label group1_button1_assoc}
+#		   . . . }
+#		{ {group2_button1_name group2_button1_label group2_button1_assoc}
+#		  {group2_button2_name group2_button2_label group2_button1_assoc}
+#		   . . . }
+#		}
+#		
+#	'orient' - how the group of checkbuttons are to be arranged: column, grid.  
+#	'spacing' - amount of spacing between groups of checkbuttons (in Get_Pixels
+#		    format).
+# OPTIONS:
+#	'checkbox_labelstr' - if the entire groups of checkbuttons are to be given one
+#		 label string.
+#	'place_buttonAssoc_right' - if the button*_assoc is to be placed on the
+#		right side of a check button. 
+#	'place_labelstr_top' - if 'checkbox_labelstr' is to be placed on top of all
+#		checkbuttons instead of to the left.
+#	'button_assoc_groove_relief' - if the button*_assoc is to be enclosed in a
+#		a groove relief.
+#	'selective_right_placement' - refers to the nth button whose
+#				      association will be displayed on its
+#				      right if 'place_buttonAssoc_right' is
+#			              set.	
+#					
+###############################################################################
+proc buildCheckboxes {frame_name checkbutton_list orient spacing \
+   {checkbox_labelstr ""} {place_buttonAssoc_right 1} {place_labelstr_top 0} \
+   {button_assoc_groove_relief 0} } {
+  global LABELFONT BADPARAM errmsg
+
+  set procname "buildCheckboxes"
+
+
+## Let's be defensive about the input
+  if { ![regexp "\\." $frame_name] || \
+        ([string compare $orient "column"] != 0 &&  \
+         [string compare $orient "grid"] != 0) } {
+        puts "Error $BADPARAM in \{$procname $frame_name\}: $errmsg(BADPARAM)"
+        exit $BADPARAM
+  }
+  
+  if { [string compare $frame_name "."] == 0 } {
+       set frame_name ""	
+  }
+
+  if {[string compare $checkbox_labelstr ""] != 0} {
+
+    message $frame_name.clabel -font $LABELFONT -aspect 1000 \
+		-text $checkbox_labelstr
+
+    if {$place_labelstr_top} {
+      pack $frame_name.clabel -side top -anchor nw
+    } else {
+      pack $frame_name.clabel -side left -anchor nw
+    }
+  }
+  set i 1
+  set allButtonsList ""
+  foreach group [lrange $checkbutton_list 0 end] {
+
+    frame $frame_name.$i
+    label $frame_name.${i}_dummy -width 1 -font $LABELFONT -padx 1 -pady 1
+    eval pack "$frame_name.${i}_dummy" -side left
+    eval pack "$frame_name.$i" -side top -anchor nw
+
+    set buttonList ""
+    foreach button_entry [lrange $group 0 end] {
+      set buttonName  [lindex $button_entry 0]
+      set buttonLabel [lindex $button_entry 1]
+      set buttonAssoc [lindex $button_entry 2]
+
+      if {[string compare $buttonAssoc ""] != 0} {
+ 
+        if {$button_assoc_groove_relief} {  
+	  frame $frame_name.$i.f$buttonName -relief groove -borderwidth 2
+        } else {
+	  frame $frame_name.$i.f$buttonName
+        }
+        checkbutton $frame_name.$i.f$buttonName.$buttonName -relief flat \
+		    -anchor c -font $LABELFONT -text $buttonLabel \
+		    -padx 1 -pady 1
+	if {$place_buttonAssoc_right} {
+	  pack $frame_name.$i.f$buttonName.$buttonName -side left -anchor nw
+
+	} else {
+	  pack $frame_name.$i.f$buttonName.$buttonName -side top -anchor nw
+	}
+        pack forget $buttonAssoc
+	if { $place_buttonAssoc_right } {
+          pack $buttonAssoc -in $frame_name.$i.f$buttonName -side right \
+		-anchor nw
+        } else {
+          pack $buttonAssoc -in $frame_name.$i.f$buttonName -side bottom -anchor nw 
+        }
+        raise $buttonAssoc $frame_name.$i.f$buttonName
+        append buttonList " " $frame_name.$i.f$buttonName
+        append allButtonsList " " $frame_name.$i.f$buttonName.$buttonName
+      } else {
+        checkbutton $frame_name.$i.$buttonName -relief flat -anchor c \
+                  -font $LABELFONT -text $buttonLabel -padx 1 -pady 1
+        append buttonList " " $frame_name.$i.$buttonName
+        append allButtonsList " " $frame_name.$i.$buttonName
+      }
+    }
+    if { [string compare $orient "column"] == 0 } {  
+	eval pack "$buttonList" -side top -anchor nw -pady $spacing
+    } else {
+	eval pack "$buttonList" -side left -anchor nw -padx $spacing
+    }
+    incr i
+  }
+  return [concat $frame_name $allButtonsList]
+}
+###############################################################################
+# buildCmdButtons: creates a row or column of command buttons on 'frame_name' 
+#	following the arrangement specified in 'cmdbutton_list'.
+#
+# INPUT FORMATS:
+#	'cmdbutton_list' - 
+#		{ {group1_button1_name group1_button1_label group1_button1_assoc}
+#		  {group1_button2_name group1_button2_label group1_button1_assoc}
+#		   . . . }
+#		{ {group2_button1_name group2_button1_label group2_button1_assoc}
+#		  {group2_button2_name group2_button2_label group2_button1_assoc}
+#		   . . . }
+#		}
+#		
+#	'orient' - how the group of cmd buttons are to be arranged: x (lie in
+#		a horizontal line), y (line in a vertical line), xy (row of columned
+#		buttons).
+#	'spacing' - amount of spacing between groups of checkbuttons (in Get_Pixels
+#		    format).
+#       'button_width'      - the width of a command button (in Get_Pixels format)
+#        'button_height'     - the height of a command button(in Get_Pixels format)
+# OPTIONS:
+#        'first_group_spacing' - an optional boolean value that says to put
+#                             a button spacing before the 1st group of buttons
+#	'spread_out_buttons' - if 1 (true), then the buttons will be spread out
+#                            in the frame
+#	'group_spacing'	   - spacing between groups of cmd buttons.
+#	'cmdbutton_labelstr' - if the entire groups of cmdbuttons are to be given one
+#		 label string.
+###############################################################################
+proc buildCmdButtons {frame_name cmdbutton_list orient spacing button_width\
+                      button_height {first_group_spacing 0} \
+                      {spread_out_buttons 1} {group_spacing "10m"} \
+		      {cmdButton_labelstr ""} {place_buttonAssoc_right 1} \
+		      {place_labelstr_top 0} {button_assoc_groove_relief 0} } {
+  global LABELFONT BADPARAM errmsg
+
+  set procname "buildCmdboxes"
+
+
+## Let's be defensive about the input
+  if { ![regexp "\\." $frame_name] || \
+        ([string compare $orient "x"] != 0 &&   \
+         [string compare $orient "y"] != 0 &&   \
+         [string compare $orient "xy"] != 0) || \
+	 ![regexp "\[0-9]+" $button_width]  ||  \
+	 ![regexp "\[0-9]+" $button_height] } {
+        puts "Error $BADPARAM in \{$procname $frame_name\}: $errmsg(BADPARAM)"
+        exit $BADPARAM
+  }
+  
+  if { [string compare $frame_name "."] == 0 } {
+       set frame_name ""	
+  }
+  if { [string compare $cmdButton_labelstr ""] != 0 } {
+    message $frame_name.clabel -font $LABELFONT -text $cmdButton_labelstr \
+            -aspect 1000
+    pack $frame_name.clabel -side top -anchor nw
+  }
+
+  if {$spread_out_buttons} {
+    pack forget $frame_name
+    pack $frame_name -fill both -expand 1 -ipadx 5m -ipady 5m
+  }
+
+  set i 1
+  set allButtonsList ""
+  foreach group [lrange $cmdbutton_list 0 end] {
+    frame $frame_name.$i -relief flat
+
+    set buttonList ""
+    foreach button_entry $group {
+      set buttonName  [lindex $button_entry 0]
+      set buttonLabel [lindex $button_entry 1]
+      set buttonAssoc [lindex $button_entry 2]
+
+      if {[string compare $buttonAssoc ""] != 0} {
+ 
+        if {$button_assoc_groove_relief} {  
+	  frame $frame_name.$i.f$buttonName -relief groove -borderwidth 2
+        } else {
+	  frame $frame_name.$i.f$buttonName
+        }
+        button $frame_name.$i.f$buttonName.$buttonName -anchor nw \
+		    -font $LABELFONT -text $buttonLabel -width $button_width \
+		    -height $button_height -padx 1 -pady 1
+
+	if {$place_buttonAssoc_right} {
+	  pack $frame_name.$i.f$buttonName.$buttonName -side left -anchor nw \
+		-side left -anchor nw -fill x
+
+	} else {
+	  pack $frame_name.$i.f$buttonName.$buttonName -side top -anchor nw \
+		-side top -anchor nw -fill y
+	}
+
+        pack forget $buttonAssoc
+	if { $place_buttonAssoc_right } {
+          pack $buttonAssoc -in $frame_name.$i.f$buttonName -side right \
+		-anchor nw -fill x
+        } else {
+          pack $buttonAssoc -in $frame_name.$i.f$buttonName -side bottom \
+		-anchor nw -fill y
+        }
+        raise $buttonAssoc $frame_name.$i.f$buttonName
+        append buttonList " " $frame_name.$i.f$buttonName
+        append allButtonsList " " $frame_name.$i.f$buttonName.$buttonName
+      } else {	
+	button $frame_name.$i.$buttonName -anchor c \
+                  -font $LABELFONT -text $buttonLabel -width $button_width \
+		  -height $button_height -padx 1 -pady 1
+
+	append buttonList " " $frame_name.$i.$buttonName
+	append allButtonsList " " $frame_name.$i.$buttonName
+      }	
+    }
+
+    if { [string compare $orient "y"] == 0 } {  
+	eval pack "$buttonList" -side top -anchor nw -pady $spacing
+    } else {
+	eval pack "$buttonList" -side left -anchor c -padx $spacing -expand 1
+    }
+    if {$i == 1 && $first_group_spacing} {   ;# put an extra spacing before 1st
+      label $frame_name.empty$i -width $button_width -height $button_height \
+	    -padx 1 -pady 1
+
+      if { [string compare $orient "x"] == 0 } {
+
+	if {$spread_out_buttons} {
+          eval pack "$frame_name.empty$i $frame_name.$i" -anchor c \
+	            -expand 1 -fill both
+        } else {
+          eval pack "$frame_name.empty$i $frame_name.$i" -anchor c 
+        }
+
+      } else {
+	if {$spread_out_buttons} {
+          eval pack "$frame_name.empty$i $frame_name.$i" -side top -anchor c \
+		-fill both -expand 1
+	} else {
+          eval pack "$frame_name.empty$i $frame_name.$i" -side top -anchor c
+	}
+      }
+    } elseif { [expr $i % 2] == 0 } {	   ;# space even number buttons
+      if { [string compare $orient "x"] == 0 } {
+	if {$spread_out_buttons} {
+          eval pack "$frame_name.$i" -padx $group_spacing  -side left -anchor c \
+	             -fill both -expand 1
+        } else {
+          eval pack "$frame_name.$i" -padx $group_spacing -side left -anchor c
+        }
+      } else {
+	if {$spread_out_buttons} {
+          eval pack "$frame_name.$i" -pady $group_spacing -side top -anchor c \
+	            -fill both -expand 1
+	} else {
+          eval pack "$frame_name.$i" -pady $group_spacing -side top -anchor c
+        }
+      }
+    } else {
+      if { [string compare $orient "x"] == 0 } {
+	if {$spread_out_buttons} {
+          eval pack "$frame_name.$i" -side left -anchor c -fill both -expand 1
+	} else {
+          eval pack "$frame_name.$i" -side left -anchor c
+	}
+      } else {
+	if {$spread_out_buttons} {
+          eval pack "$frame_name.$i" -side top -anchor c -fill both -expand 1
+        } else {
+          eval pack "$frame_name.$i" -side top -anchor c
+        }
+      }
+    }
+
+    incr i
+  }
+  if {[string compare $cmdButton_labelstr ""] != 0} {
+    return [concat $frame_name $allButtonsList $frame_name.clabel]
+  } else {
+    return [concat $frame_name $allButtonsList]
+  }
+}
+###############################################################################
+# buildRadioboxes: creates a row or column of radiobuttons on 'frame_name' 
+#	following the arrangement specified in 'checkbutton_list'.
+#
+# INPUT FORMATS:
+#	'radiobutton_list' - 
+#		{ {group1_button1_name group1_button1_label group1_button1_assoc}
+#		  {group1_button2_name group1_button2_label group1_button1_assoc}
+#		   . . . }
+#		{ {group2_button1_name group2_button1_label group2_button1_assoc}
+#		  {group2_button2_name group2_button2_label group2_button1_assoc}
+#		   . . . }
+#		}
+#		
+#	'orient' - how the group of radiobuttons are to be arranged: column, grid.  
+#	'spacing' - amount of spacing between groups of radiobuttons (in Get_Pixels
+#		    format).
+# OPTIONS:
+#	'radiobox_labelstr' - if the entire groups of radiobuttons are to be given one
+#		 label string.
+#	'place_buttonAssoc_right' - if the button*_assoc is to be placed on the
+#		right side of a check button. 
+#	'place_labelstr_top' - if 'checkbox_labelstr' is to be placed on top of all
+#		checkbuttons instead of to the left.
+#	'button_assoc_groove_relief' - if the button*_assoc is to be enclosed in a
+###############################################################################
+proc buildRadioboxes {frame_name radiobutton_list orient spacing \
+     {radiobox_labelstr ""} {place_buttonAssoc_right 1} \
+     {place_labelstr_top 0} {button_assoc_groove_relief 0} \
+     {selective_right_placement ".*"}} {
+  global LABELFONT BADPARAM errmsg
+
+  set procname "buildRadioboxes"
+
+## Let's be defensive about the input
+  if { ![regexp "\\." $frame_name] || \
+        ([string compare $orient "column"] != 0 &&  \
+         [string compare $orient "grid"] != 0) } {
+        puts "Error $BADPARAM in \{$procname $frame_name\}: $errmsg(BADPARAM)"
+        exit $BADPARAM
+  }
+  
+  if { [string compare $frame_name "."] == 0 } {
+       set frame_name ""	
+  }
+
+  if {[string compare $radiobox_labelstr ""] != 0} {
+    message $frame_name.rlabel -font $LABELFONT -text $radiobox_labelstr \
+	    -aspect 1000
+
+    if {$place_labelstr_top} {
+      pack $frame_name.rlabel -side top -anchor nw -pady $spacing
+    } else {
+      pack $frame_name.rlabel -side left -anchor nw -pady $spacing
+    }
+  }
+
+  set i 1
+  set allButtonsList ""
+  foreach group [lrange $radiobutton_list 0 end] {
+
+    frame $frame_name.$i
+    label $frame_name.${i}_dummy -width 1 -font $LABELFONT -padx 1 -pady 1 
+    eval pack "$frame_name.${i}_dummy" -side left -anchor nw
+    eval pack "$frame_name.$i" -side top -anchor nw
+
+    set buttonList ""
+    set j 1
+    foreach button_entry [lrange $group 0 end] {
+      set buttonName  [lindex $button_entry 0]
+      set buttonLabel [lindex $button_entry 1]
+      set buttonAssoc [lindex $button_entry 2]
+
+      if {[string compare $buttonAssoc ""] != 0} {
+
+        if {$button_assoc_groove_relief} {  
+	  frame $frame_name.$i.f$buttonName -borderwidth 2 -relief groove
+        } else {
+	  frame $frame_name.$i.f$buttonName
+        }
+        radiobutton $frame_name.$i.f$buttonName.$buttonName -relief flat -anchor c \
+                  -font $LABELFONT -text $buttonLabel -padx 1 -pady 1
+	if { $place_buttonAssoc_right && \
+	     [regexp $selective_right_placement $j] } {
+	  pack $frame_name.$i.f$buttonName.$buttonName -side left \
+	       	-anchor nw
+          pack $buttonAssoc -in $frame_name.$i.f$buttonName -side right \
+		-anchor nw
+	} else {
+	  pack $frame_name.$i.f$buttonName.$buttonName -side top -anchor nw
+          pack $buttonAssoc -in $frame_name.$i.f$buttonName -side bottom \
+		-anchor nw
+	}
+        raise $buttonAssoc $frame_name.$i.f$buttonName
+        append buttonList " " $frame_name.$i.f$buttonName
+        append allButtonsList " " $frame_name.$i.f$buttonName.$buttonName
+      } else {
+        radiobutton $frame_name.$i.$buttonName -relief flat -anchor c \
+                  -font $LABELFONT -text $buttonLabel -padx 1 -pady 1
+        append buttonList " " $frame_name.$i.$buttonName
+        append allButtonsList " " $frame_name.$i.$buttonName
+      }	
+      incr j
+    }
+
+    if { [string compare $orient "column"] == 0 } {
+	eval pack "$buttonList" -side top -anchor nw -pady $spacing
+    } else {
+	eval pack "$buttonList" -side left -anchor nw -padx $spacing
+    }
+    incr i
+    
+  }
+  if {[string compare $radiobox_labelstr ""] != 0} {
+    return [concat $frame_name $allButtonsList $frame_name.rlabel]
+  } else {
+    return [concat $frame_name $allButtonsList]
+  }
+}
+# disable_rcbutton: disables radio/check button.
+proc disable_rcbutton button_name {
+  global selColor disabledColor tk_version
+
+  set state [lindex [$button_name configure -state] 4]
+  if {[string compare $state "disabled"] == 0} {
+    return		;# ignore if already disabled
+  }
+
+  if {$tk_version < 4.0} {
+    set selColor($button_name) [lindex [$button_name configure -selector] 4]
+    $button_name configure -state disabled -selector $disabledColor
+  } else {
+    set selColor($button_name) [lindex [$button_name configure -selectcolor] 4]
+    $button_name configure -state disabled -selectcolor $disabledColor
+  }
+
+}
+
+# enable_rcbutton: enables radio/check button.
+proc enable_rcbutton button_name {
+  global selColor tk_version
+
+  set state [lindex [$button_name configure -state] 4]
+  if {![info exists selColor($button_name)] || \
+       [string compare $state "normal"] == 0} {
+    return
+  }
+
+  if {$tk_version < 4.0} {
+    $button_name configure -state normal -selector $selColor($button_name)
+  } else {
+    $button_name configure -state normal -selectcolor $selColor($button_name)
+  }
+}
+
+# disable_button: disables a command button.
+proc disable_button button_name {
+  global disabledColor
+
+  set state [lindex [$button_name configure -state] 4]
+
+  if {[string compare $state "disabled"] == 0} {
+    return		;# ignore if already disabled
+  }
+
+  $button_name configure -state disabled
+}
+
+# enable_button: enables a command button.
+proc enable_button button_name {
+
+  $button_name configure -state normal
+}
+# disable_rcbuttons: disables a list of radio/checkbuttons.
+proc disable_rcbuttons {args} {
+  foreach button $args {
+    disable_rcbutton $button
+  }
+}
+
+# enable_rcbuttons: enables a list of radio/checkbuttons.
+proc enable_rcbuttons {args} {
+  foreach button $args {
+    enable_rcbutton $button
+  }
+}
+
+# invoke_rbutton: for invoking an appropriately set  radio button.
+proc invoke_rbutton {buttons} {
+
+  global qsubv qalterv qsigv
+
+  foreach button $buttons {
+    $button configure -state normal
+    set var [lindex [$button configure -variable] 4]
+    set val [lindex [$button configure -value] 4]
+ 
+    global $var
+
+    if { [string compare [set $var] $val] == 0 } {
+      $button invoke
+    }
+  }
+}
+
+# invoke_cbutton: for invoking an appropriately set check button.
+proc invoke_cbutton {buttons} {
+  global selColor tk_version
+
+  foreach button $buttons {
+
+    set state [lindex [$button configure -state]  4]
+
+    enable_rcbutton $button
+    $button toggle
+    $button invoke
+
+    if {[string compare $state "disabled"] == 0} {
+	disable_rcbutton $button
+    } 
+
+  }
+}

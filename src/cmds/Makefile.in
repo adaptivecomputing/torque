@@ -1,0 +1,213 @@
+#
+#
+#
+# Makefile for PBS commands
+#
+
+#         OpenPBS (Portable Batch System) v2.3 Software License
+# 
+# Copyright (c) 1999-2000 Veridian Information Solutions, Inc.
+# All rights reserved.
+# 
+# ---------------------------------------------------------------------------
+# For a license to use or redistribute the OpenPBS software under conditions
+# other than those described below, or to purchase support for this software,
+# please contact Veridian Systems, PBS Products Department ("Licensor") at:
+# 
+#    www.OpenPBS.org  +1 650 967-4675                  sales@OpenPBS.org
+#                        877 902-4PBS (US toll-free)
+# ---------------------------------------------------------------------------
+# 
+# This license covers use of the OpenPBS v2.3 software (the "Software") at
+# your site or location, and, for certain users, redistribution of the
+# Software to other sites and locations.  Use and redistribution of
+# OpenPBS v2.3 in source and binary forms, with or without modification,
+# are permitted provided that all of the following conditions are met.
+# After December 31, 2001, only conditions 3-6 must be met:
+# 
+# 1. Commercial and/or non-commercial use of the Software is permitted
+#    provided a current software registration is on file at www.OpenPBS.org.
+#    If use of this software contributes to a publication, product, or
+#    service, proper attribution must be given; see www.OpenPBS.org/credit.html
+# 
+# 2. Redistribution in any form is only permitted for non-commercial,
+#    non-profit purposes.  There can be no charge for the Software or any
+#    software incorporating the Software.  Further, there can be no
+#    expectation of revenue generated as a consequence of redistributing
+#    the Software.
+# 
+# 3. Any Redistribution of source code must retain the above copyright notice
+#    and the acknowledgment contained in paragraph 6, this list of conditions
+#    and the disclaimer contained in paragraph 7.
+# 
+# 4. Any Redistribution in binary form must reproduce the above copyright
+#    notice and the acknowledgment contained in paragraph 6, this list of
+#    conditions and the disclaimer contained in paragraph 7 in the
+#    documentation and/or other materials provided with the distribution.
+# 
+# 5. Redistributions in any form must be accompanied by information on how to
+#    obtain complete source code for the OpenPBS software and any
+#    modifications and/or additions to the OpenPBS software.  The source code
+#    must either be included in the distribution or be available for no more
+#    than the cost of distribution plus a nominal fee, and all modifications
+#    and additions to the Software must be freely redistributable by any party
+#    (including Licensor) without restriction.
+# 
+# 6. All advertising materials mentioning features or use of the Software must
+#    display the following acknowledgment:
+# 
+#     "This product includes software developed by NASA Ames Research Center,
+#     Lawrence Livermore National Laboratory, and Veridian Information
+#     Solutions, Inc.
+#     Visit www.OpenPBS.org for OpenPBS software support,
+#     products, and information."
+# 
+# 7. DISCLAIMER OF WARRANTY
+# 
+# THIS SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND. ANY EXPRESS
+# OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+# OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT
+# ARE EXPRESSLY DISCLAIMED.
+# 
+# IN NO EVENT SHALL VERIDIAN CORPORATION, ITS AFFILIATED COMPANIES, OR THE
+# U.S. GOVERNMENT OR ANY OF ITS AGENCIES BE LIABLE FOR ANY DIRECT OR INDIRECT,
+# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
+# OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+# LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+# NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+# EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# 
+# This license will be governed by the laws of the Commonwealth of Virginia,
+# without reference to its choice of law rules.
+#
+# the first non-comment line must be .POSIX to assure POSIX make behavior
+#
+@MAKE_POSIX_TARGET@
+
+
+srcdir = @srcdir@
+top_srcdir = @top_srcdir@
+MK_VPATH = @srcdir@
+INSTALL = @INSTALL@
+
+@mk_head@
+@mk_dirs@
+@mk_tcl@
+
+PBS_MKDIRS = $(SHELL) @top_builddir@/@PBS_MKDIRS@
+
+INCS = -I@top_builddir@/src/include -I$(PBS_SRCINC) $(TCL_INCS)
+CFLAGS = @CFLAGS@ $(INCS) @DEFS@
+
+PBS_LIBS = ../lib/Libcmds/libcmds.a \
+           ../lib/Libnet/libnet.a   \
+           ../lib/Libpbs/libpbs.a   
+
+READLINE_LIBS=@READLINE_LIBS@
+CMDLIBS = $(PBS_LIBS) $(LIBS) $(READLINE_LIBS)
+
+USER = qalter qdel qhold qmove qorder qmsg qrerun qrls qselect qsig qstat \
+	qsub pbsdsh @PBSPOE@
+OPER = qdisable qenable qrun qstart qstop qterm pbsnodes
+ADMN = qmgr
+
+EXES = $(USER) $(OPER) $(ADMN) $(SUPP)
+SCRIPTS = nqs2pbs
+SCRIPT_STAMPS = nqs2pbs-stamp
+SUPP = pbs_demux momctl
+
+OBJS = pbs_demux.o pbsdsh.o qalter.o qdel.o qdisable.o qenable.o qhold.o \
+       qmgr.o qmove.o qmsg.o qorder.o qrerun.o qrls.o qrun.o qselect.o \
+       qsig.o qstart.o qstat.o qstop.o qsub.o qterm.o pbsnodes.o MXML.o \
+       momctl.o @PBSPOEO@
+
+TARGET = $(EXES)
+
+
+all: autodepend
+	@MAKE_POSIX_PLUS@@$(MAKE) build
+
+build: $(TARGET) $(SCRIPT_STAMPS)
+
+
+install:
+	$(PBS_MKDIRS) clients
+	$(PBS_MKDIRS) aux
+	$(PBS_MKDIRS) default
+	$(INSTALL) -d -m 755 $(bindir) && \
+	for f in $(USER) $(OPER) $(ADMN) $(SCRIPTS) ; do \
+	    $(INSTALL) -m 755 $$f $(bindir)/$$f ; \
+	done
+	for f in $(SUPP) ; do \
+	    $(INSTALL) -m 755 $$f $(sbindir)/$$f ; \
+	done
+
+#
+# (almost) all commands depend on the regular libraries
+#
+$(TARGET): $(PBS_LIBS)
+
+
+#
+# unfortunately, some brain damaged makes are unable to handle 
+# automatic generation of the various commands. Thus, we list them
+# here.
+#
+DFLT_ACTION = $(CC) $(CFLAGS) $@.o -o $@ $(LDFLAGS) $(CMDLIBS)
+
+pbs_demux: pbs_demux.o;   $(DFLT_ACTION)
+pbsdsh: pbsdsh.o;         $(DFLT_ACTION)
+qalter: qalter.o;         $(DFLT_ACTION)
+qdel: qdel.o;             $(DFLT_ACTION)
+qdisable: qdisable.o;     $(DFLT_ACTION)
+qenable: qenable.o;       $(DFLT_ACTION)
+qhold: qhold.o;           $(DFLT_ACTION)
+qmgr: qmgr.o;             $(DFLT_ACTION)
+qmove: qmove.o;           $(DFLT_ACTION)
+qmsg: qmsg.o;             $(DFLT_ACTION)
+qorder: qorder.o;         $(DFLT_ACTION)
+qrerun: qrerun.o;         $(DFLT_ACTION)
+qrls: qrls.o;             $(DFLT_ACTION)
+qrun: qrun.o;             $(DFLT_ACTION)
+qselect: qselect.o;       $(DFLT_ACTION)
+qsig: qsig.o;             $(DFLT_ACTION)
+qstart: qstart.o;         $(DFLT_ACTION)
+qstop: qstop.o;           $(DFLT_ACTION)
+qsub: qsub.o;             $(DFLT_ACTION)
+qterm: qterm.o;           $(DFLT_ACTION)
+pbspoe:	pbspoe.o;	  $(DFLT_ACTION)
+pbspd:	pbspd.o;	  $(DFLT_ACTION)
+momctl: momctl.o;         $(DFLT_ACTION)
+
+pbspoe.o:	$(srcdir)/pbspoe.c
+	$(CC) $(LDFLAGS) $(CFLAGS) -DPBSPD=\"$(bindir)/pbspd\" -c $(srcdir)/pbspoe.c
+
+
+EXTRA_QSTAT_LIBS = $(TCL_LIBS)
+QSTAT_LIBS = $(PBS_LIBS) @EXTRA_QSTAT_LIBS@ $(LIBS)
+qstat: qstat.o MXML.o
+	$(CC) $(CFLAGS) qstat.o MXML.o -o $@ $(LDFLAGS) $(QSTAT_LIBS)
+pbsnodes: pbsnodes.o MXML.o
+	$(CC) $(CFLAGS) pbsnodes.o MXML.o -o $@ $(LDFLAGS) $(CMDLIBS)
+
+
+#
+# scripts are handled differently, the complexity arises from
+# not knowing whether srcdir and builddir are the same
+# always try to copy, and then touch a stamp. We assume that
+# the only reason a copy will fail is because they are identical.
+# if it fails due to permissions, the touch will probably 
+# fail for the same reason.
+# the test for srcdir being dot can certainly be fooled.
+#
+nqs2pbs-stamp: $(srcdir)/nqs2pbs
+	-(test "$(srcdir)" != "." && cp $(srcdir)/nqs2pbs .; exit 0)
+	touch $@
+
+clean::
+	-rm -f $(SCRIPT_STAMPS)
+
+@mk_cleanup@
+@mk_tail@
+

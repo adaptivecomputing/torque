@@ -1,0 +1,62 @@
+------------------------------------------------------------------------------
+------------------------------------------------------------------------------
+
+How to Install using autoconf'ed TORQUE.
+
+
+- untar the tar file and cd to the top level directory
+
+- run "./configure" with the options set appropriately for your
+  installation. (See 'CONFIGURE' note below)
+
+- run "make" (See 'BUILD' note below)
+
+- run "make install"
+
+
+-------------------------------------------------------------------
+
+CONFIGURE: It is advisable to create a simple shell script
+  that calls configure with the appropriate options so that you
+  can save typing on reconfigures. If you have already run configure
+  you can remake all of the Makefiles by running "./config.status".
+  Also, looking at the first few lines of config.status will
+  tell you the options that were set when configure was run.
+  To figure out which options one can set run "./configure --help"
+  
+
+BUILD: You need to use a POSIX (or nearly POSIX) make. GNU make
+  works quite well in this regard; BSD make does not. If you are
+  having any sort of build problems, your make should be a prime suspect.
+  Tremendous effort has been expended to provide proper dependency
+  generation and makefiles without relying on any non-POSIX features. 
+  The build should work fine with a simple call to make, however,
+  complicating things by using various make flags is not guaranteed
+  to work. Don't be surprised if the first thing that make does is
+  call configure again. See the note in Makefile.in if this happens.
+
+
+MAC: If building for a Mac OS/X cluster, some users have reported issues 
+  with using the tool 'stuffit' (corrupt the creation of the library 
+  libpbs.a).  To work around this, download the file to the desktop, 
+  open up the terminal and unpack it manually with gzip and tar.  
+
+  If using 'bash' as the job execution shell, '.bashrc' may not be 
+  executed.  Use '#!/bin/bash -l' at the start of the pbs command file
+  to force this script to be run.
+
+
+TRU64/DIGITALUNIX: If building for a TRU64/Digital Unix cluster, some
+  users have reported problems building pbs_mom.  To correct this add
+  the path to librt.a (ie, '/usr/lib/librt.a') to the pbs_mom linker 
+  line in ~/src/resmom/Makefile
+
+
+CONFIGURATION: Once built, see online docs for MOM, scheduler, and 
+  server configuration
+
+  MOM:       http://clusterresources.com/torquedocs/1.1momconfig.shtml
+  scheduler: http://clusterresources.com/moabdocs/pbsintegration.shtml 
+    (FIFO, Maui, or Moab)
+  server:    http://supercluster.org/torquedocs/1.3serverconfig.shtml
+

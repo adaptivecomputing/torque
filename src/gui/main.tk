@@ -1,0 +1,754 @@
+#         OpenPBS (Portable Batch System) v2.3 Software License
+# 
+# Copyright (c) 1999-2000 Veridian Information Solutions, Inc.
+# All rights reserved.
+# 
+# ---------------------------------------------------------------------------
+# For a license to use or redistribute the OpenPBS software under conditions
+# other than those described below, or to purchase support for this software,
+# please contact Veridian Systems, PBS Products Department ("Licensor") at:
+# 
+#    www.OpenPBS.org  +1 650 967-4675                  sales@OpenPBS.org
+#                        877 902-4PBS (US toll-free)
+# ---------------------------------------------------------------------------
+# 
+# This license covers use of the OpenPBS v2.3 software (the "Software") at
+# your site or location, and, for certain users, redistribution of the
+# Software to other sites and locations.  Use and redistribution of
+# OpenPBS v2.3 in source and binary forms, with or without modification,
+# are permitted provided that all of the following conditions are met.
+# After December 31, 2001, only conditions 3-6 must be met:
+# 
+# 1. Commercial and/or non-commercial use of the Software is permitted
+#    provided a current software registration is on file at www.OpenPBS.org.
+#    If use of this software contributes to a publication, product, or
+#    service, proper attribution must be given; see www.OpenPBS.org/credit.html
+# 
+# 2. Redistribution in any form is only permitted for non-commercial,
+#    non-profit purposes.  There can be no charge for the Software or any
+#    software incorporating the Software.  Further, there can be no
+#    expectation of revenue generated as a consequence of redistributing
+#    the Software.
+# 
+# 3. Any Redistribution of source code must retain the above copyright notice
+#    and the acknowledgment contained in paragraph 6, this list of conditions
+#    and the disclaimer contained in paragraph 7.
+# 
+# 4. Any Redistribution in binary form must reproduce the above copyright
+#    notice and the acknowledgment contained in paragraph 6, this list of
+#    conditions and the disclaimer contained in paragraph 7 in the
+#    documentation and/or other materials provided with the distribution.
+# 
+# 5. Redistributions in any form must be accompanied by information on how to
+#    obtain complete source code for the OpenPBS software and any
+#    modifications and/or additions to the OpenPBS software.  The source code
+#    must either be included in the distribution or be available for no more
+#    than the cost of distribution plus a nominal fee, and all modifications
+#    and additions to the Software must be freely redistributable by any party
+#    (including Licensor) without restriction.
+# 
+# 6. All advertising materials mentioning features or use of the Software must
+#    display the following acknowledgment:
+# 
+#     "This product includes software developed by NASA Ames Research Center,
+#     Lawrence Livermore National Laboratory, and Veridian Information
+#     Solutions, Inc.
+#     Visit www.OpenPBS.org for OpenPBS software support,
+#     products, and information."
+# 
+# 7. DISCLAIMER OF WARRANTY
+# 
+# THIS SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND. ANY EXPRESS
+# OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+# OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT
+# ARE EXPRESSLY DISCLAIMED.
+# 
+# IN NO EVENT SHALL VERIDIAN CORPORATION, ITS AFFILIATED COMPANIES, OR THE
+# U.S. GOVERNMENT OR ANY OF ITS AGENCIES BE LIABLE FOR ANY DIRECT OR INDIRECT,
+# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
+# OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+# LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+# NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+# EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# 
+# This license will be governed by the laws of the Commonwealth of Virginia,
+# without reference to its choice of law rules.
+##############################################################################
+#                                                                            #
+# Main.tk: Contains a series of procedures for building the main application #
+#          window.                                                           # 
+#                                                                            # 
+##############################################################################
+
+proc build_main_window {} {
+  global mainWindow iconview
+  
+  frame $mainWindow.hosts     -borderwidth 1 -relief raised
+  frame $mainWindow.queues    -borderwidth 1 -relief raised
+  frame $mainWindow.jobs      -borderwidth 1 -relief raised
+  frame $mainWindow.statusbar -borderwidth 1 -relief raised
+  frame $mainWindow.menubar -borderwidth 2 -relief raised
+
+# Pack menubar and status bar as fixed size frames
+  pack $mainWindow.menubar   -side top -fill x -expand 0 \
+				;# keeps the size fixed
+  
+  fillMenubarFrame   $mainWindow.menubar
+
+# pack the rest of the frames: hosts, queues, and jobs.
+  pack $mainWindow.hosts $mainWindow.queues $mainWindow.jobs \
+       $mainWindow.statusbar -after $mainWindow.menubar \
+       -pady 1 -side top -fill x
+  fillHostsFrame     $mainWindow.hosts
+  fillQueuesFrame    $mainWindow.queues
+  fillJobsFrame      $mainWindow.jobs
+  fillStatusbarFrame $mainWindow.statusbar
+
+# Create the compressed frame views
+  frame $mainWindow.hosts_iconized  -borderwidth 2 -relief raised \
+	-class CmdFrame
+  frame $mainWindow.queues_iconized -borderwidth 2 -relief raised \
+	-class CmdFrame
+  frame $mainWindow.jobs_iconized -borderwidth 2 -relief raised \
+	-class CmdFrame
+  frame $mainWindow.info_iconized -borderwidth 2 -relief raised \
+	-class CmdFrame
+ 
+  fillIconizedFrame "HOSTS"  maximizeHostsView  $mainWindow.hosts_iconized
+  fillIconizedFrame "QUEUES"  maximizeQueuesView $mainWindow.queues_iconized
+  fillIconizedFrame "JOBS"  maximizeJobsView $mainWindow.jobs_iconized
+  fillIconizedFrame "INFO"  maximizeInfoView $mainWindow.info_iconized
+
+  if {[string compare $iconview(hosts) "true"] == 0} {
+    iconizeHostsView
+  }
+  if {[string compare $iconview(queues) "true"] == 0} {
+    iconizeQueuesView
+  }
+  if {[string compare $iconview(jobs) "true"] == 0} {
+    iconizeJobsView
+  }
+  if {[string compare $iconview(info) "true"] == 0} {
+    iconizeInfoView
+  }
+}
+
+### fillconizedFrame: creates a label named "text" and a button with the 
+##  iconization bitmap and an associated "cmd", and display them on 
+##  "widget_name".
+proc fillIconizedFrame {text cmd widget_name} {
+  global LABELFONT bitmap_dir
+
+  label $widget_name.label          -anchor nw    -font $LABELFONT \
+                                    -text $text -padx 1 -pady 1
+  button $widget_name.maximize      -anchor c    \
+                                    -bitmap @$bitmap_dir/maximize.bmp \
+				    -command [list $cmd] -padx 1 -pady 1
+  pack  $widget_name.label          -side left -anchor nw
+  pack  $widget_name.maximize       -side right -anchor se
+}
+proc iconizeHostsView {} {
+    global mainWindow iconview
+
+    pack $mainWindow.hosts_iconized -after $mainWindow.menubar -fill x -pady 1
+    pack forget $mainWindow.hosts
+    set iconview(hosts) true
+}
+proc iconizeQueuesView {} {
+    global mainWindow iconview
+
+    if { [string compare [packinfo $mainWindow.jobs] ""] != 0 } {
+      pack $mainWindow.queues_iconized -before $mainWindow.jobs -fill x -pady 1
+    } else {
+      pack $mainWindow.queues_iconized -before $mainWindow.jobs_iconized -fill x -pady 1
+    }
+    pack forget $mainWindow.queues
+    set iconview(queues) true
+}
+proc iconizeJobsView {} {
+    global mainWindow iconview
+
+    if { [string compare [packinfo $mainWindow.statusbar] ""] != 0 } {
+      pack $mainWindow.jobs_iconized -before $mainWindow.statusbar -fill x -pady 1
+    } else {
+      pack $mainWindow.jobs_iconized -before $mainWindow.info_iconized -fill x -pady 1
+    }
+    pack forget $mainWindow.jobs
+    set iconview(jobs) true
+}
+proc iconizeInfoView {} {
+    global mainWindow iconview
+
+    if { [string compare [packinfo $mainWindow.jobs] ""] != 0 } {
+      pack $mainWindow.info_iconized -after $mainWindow.jobs -fill x -pady 1
+    } else {
+      pack $mainWindow.info_iconized -after $mainWindow.jobs_iconized -fill x -pady 1
+    }
+    pack forget $mainWindow.statusbar
+    set iconview(info) true
+}
+proc maximizeHostsView {} {
+    global mainWindow iconview
+
+    pack $mainWindow.hosts -after $mainWindow.menubar -fill x
+    pack forget $mainWindow.hosts_iconized
+    set iconview(hosts) false
+}
+proc maximizeQueuesView {} {
+    global mainWindow iconview
+
+    if { [string compare [packinfo $mainWindow.jobs] ""] != 0 } {
+      pack $mainWindow.queues -before $mainWindow.jobs -fill x
+    } else {
+      pack $mainWindow.queues -before $mainWindow.jobs_iconized -fill x
+    }
+    pack forget $mainWindow.queues_iconized
+    set iconview(queues) false
+}
+proc maximizeJobsView {} {
+    global mainWindow iconview
+
+    if { [string compare [packinfo $mainWindow.statusbar] ""] != 0 } {
+      pack $mainWindow.jobs -before $mainWindow.statusbar -fill x
+    } else {
+      pack $mainWindow.jobs -before $mainWindow.info_iconized -fill x
+    }
+    pack forget $mainWindow.jobs_iconized
+    set iconview(jobs) false
+}
+proc maximizeInfoView {} {
+    global mainWindow iconview
+
+    if { [string compare [packinfo $mainWindow.jobs] ""] != 0 } {
+      pack $mainWindow.statusbar -after $mainWindow.jobs -fill x
+    } else {
+      pack $mainWindow.statusbar -after $mainWindow.jobs_iconized -fill x
+    }
+    pack forget $mainWindow.info_iconized
+    set iconview(info) false
+}
+##############################################################################
+#	Hosts Frame widget procedures					     #
+##############################################################################
+proc fillHostsFrame widget_name {
+
+  frame $widget_name.header    -borderwidth 2 -relief raised -class CmdFrame
+  frame $widget_name.list      -borderwidth 1 
+
+  pack $widget_name.header -fill x -side top
+  pack $widget_name.list   -after $widget_name.header
+
+  fillHostsHeaderFrame $widget_name.header
+  fillHostsListFrame   $widget_name.list
+}
+proc fillHostsHeaderFrame widget_name {
+  global LABELFONT bitmap_dir
+
+  label $widget_name.label          -anchor nw    -font $LABELFONT \
+                                    -text "HOSTS  " -padx 1 -pady 1
+  button $widget_name.iconize       -anchor c    \
+                                    -bitmap @$bitmap_dir/iconize.bmp \
+				    -command iconizeHostsView \
+				    -padx 1 -pady 1
+  pack  $widget_name.label    -side left -anchor nw -pady 1
+  pack  $widget_name.iconize  -side right -expand 1 -anchor e
+}
+proc fillHostsListFrame widget_name {
+  global  HOSTS_COLUMN_LABEL HOSTS_LISTBOX_KEY \
+  	  HOSTS_LISTBOX_WIDTH HOSTS_LISTBOX_HEIGHT \
+  	  hostsListbox hostsSelMode hostsSelected \
+	  tk_version perm_level activeColor
+
+  frame $widget_name.box            -borderwidth 1
+
+
+  set dim "${HOSTS_LISTBOX_WIDTH}x${HOSTS_LISTBOX_HEIGHT}"
+  set listBoxInfo [buildFullListbox $widget_name.box $dim $HOSTS_COLUMN_LABEL yscroll]
+  set hostsListbox          [lindex $listBoxInfo 3]
+  set hostsListboxSelButton [lindex $listBoxInfo 2]
+  set hostsListboxLabel	    [lindex $listBoxInfo 1]
+
+  $hostsListboxLabel configure -textvariable HOSTS_COLUMN_LABEL
+
+  $hostsListboxSelButton configure \
+	       -textvariable hostsSelMode \
+	       -command {
+                 if { [string compare "$hostsSelMode" "Select All"] == 0 } {
+		        if { $tk_version < 4.0 } {
+                          $hostsListbox select from 0
+                          $hostsListbox select to end
+			} else {
+                          $hostsListbox select anchor 0
+                          $hostsListbox select set anchor end
+			} 
+                        set hostsSelMode "Deselect All"
+        		set hostsSelected \
+                            [get_keyvals $hostsListbox $HOSTS_LISTBOX_KEY "@" " " "select"]
+
+                  } else {
+			if {$tk_version < 4.0} {
+                          $hostsListbox select clear
+			} else {
+                          $hostsListbox select clear 0 end
+			}
+                        set hostsSelMode "Select All"
+			set hostsSelected ""
+                  }
+		  set queuesSelected ""
+		  loadQueues
+                }
+
+
+  frame $widget_name.b
+  pack  $widget_name.b
+
+  set buttonList [list  {detail "detail"} {submit "Submit.."}]
+  if { [string compare $perm_level "admin"] == 0 } {
+    lappend buttonList {term terminate..} 
+  }
+
+  set cmdButtons [buildCmdButtons $widget_name.b \
+		  [list $buttonList] y 0 10 1 1 0 0]
+
+  set cmdButtonFrame  [lindex $cmdButtons 0]
+  set cmdButtonDetail [lindex $cmdButtons 1]
+  set cmdButtonSub    [lindex $cmdButtons 2]
+
+  pack forget $cmdButtonFrame
+
+  $cmdButtonDetail configure -command getHostsDetail
+  $cmdButtonSub     configure -command {runQsub} -bg $activeColor
+
+  if { [string compare $perm_level "admin"] == 0 } {
+    set cmdButtonTerm   [lindex $cmdButtons 3]
+    $cmdButtonTerm configure -command runQterm
+  }
+
+  pack $widget_name.box  $cmdButtonFrame \
+                               -side left  -anchor nw
+}
+##############################################################################
+
+##############################################################################
+#	Queues Frame widget procedures					     #
+##############################################################################
+proc fillQueuesFrame widget_name {
+
+  frame $widget_name.header   -borderwidth 2 -relief raised -class CmdFrame
+  frame $widget_name.list     -borderwidth 1
+
+  pack $widget_name.header -fill x -side top
+  pack $widget_name.list   -after $widget_name.header
+
+  fillQueuesHeaderFrame $widget_name.header
+  fillQueuesListFrame   $widget_name.list
+}
+
+proc fillQueuesHeaderFrame widget_name {
+  global LABELFONT bitmap_dir hostsSelected
+
+  label $widget_name.label          -anchor nw    -font $LABELFONT \
+				    -text QUEUES -padx 1 -pady 1
+  button $widget_name.iconize       -anchor c    \
+                                    -bitmap @$bitmap_dir/iconize.bmp \
+				    -command iconizeQueuesView \
+				    -padx 1 -pady 1
+
+  frame $widget_name.listby
+
+  set entrybox [buildFullEntrybox $widget_name.listby 20 "Listed By Host(s):" 70 "" right 0]
+  set entryFrame [lindex $entrybox 0]
+  set entryLabel [lindex $entrybox 1]
+  set entryField [lindex $entrybox 2]
+  set entryScroll [lindex $entrybox 3]
+  $entryField configure -textvariable hostsSelected -relief flat
+
+  bind_entry_readonly $entryField
+
+  pack  $widget_name.label $entryFrame -side left -anchor nw -pady 1
+  pack  $widget_name.iconize  -side right -expand 1 -anchor e
+}
+proc fillQueuesListFrame widget_name {
+  global  QUEUES_COLUMN_LABEL QUEUES_LISTBOX_WIDTH \
+	  QUEUES_LISTBOX_HEIGHT \
+  	  queuesListbox queuesSelMode queuesSelected \
+	  tk_version perm_level
+
+  frame $widget_name.box            -borderwidth 1
+
+
+  set dim "${QUEUES_LISTBOX_WIDTH}x${QUEUES_LISTBOX_HEIGHT}"
+  set listBoxInfo [buildFullListbox $widget_name.box $dim $QUEUES_COLUMN_LABEL yscroll]
+  set queuesListbox          [lindex $listBoxInfo 3]
+  set queuesListboxSelButton [lindex $listBoxInfo 2]
+  set queuesListboxLabel     [lindex $listBoxInfo 1]
+
+  $queuesListboxLabel configure -textvariable QUEUES_COLUMN_LABEL
+
+  $queuesListboxSelButton configure \
+	       -textvariable queuesSelMode \
+	       -command {
+                 if { [string compare "$queuesSelMode" "Select All"] == 0 } {
+			if {$tk_version < 4.0} {
+                          $queuesListbox select from 0
+                          $queuesListbox select to end
+		 	} else {
+                          $queuesListbox select anchor 0
+                          $queuesListbox select set anchor end
+			}
+                        set queuesSelMode "Deselect All"
+        		set queuesSelected \
+                            [get_keyvals $queuesListbox $QUEUES_LISTBOX_KEY @ " " "select"]
+
+                  } else {
+			if {$tk_version < 4.0} {
+                          $queuesListbox select clear
+			} else {
+                          $queuesListbox select clear 0 end
+			}
+                        set queuesSelMode "Select All"
+			set queuesSelected ""
+                  }
+		  loadJobs
+                }
+
+
+  frame $widget_name.b  
+  pack  $widget_name.b  
+  set buttonList [list  {detail "detail"} ]
+
+  if { [string compare $perm_level "admin"] == 0 } {
+    lappend buttonList {qstop  stop} {qstart start} {qdisable disable} \
+		       {qenable enable} 
+  }
+
+  set cmdButtons [buildCmdButtons $widget_name.b \
+		  [list $buttonList] y 0 9 1 1 0 0]
+
+  set cmdButtonFrame    [lindex $cmdButtons 0]
+  set cmdButtonDetail   [lindex $cmdButtons 1]
+
+  pack forget $cmdButtonFrame
+
+  pack $widget_name.box  $cmdButtonFrame -side left -anchor nw
+  $cmdButtonDetail configure -command getQueuesDetail
+
+  if { [string compare $perm_level "admin"] == 0 } {
+    set cmdButtonQstop    [lindex $cmdButtons 2]
+    set cmdButtonQstart   [lindex $cmdButtons 3]
+    set cmdButtonQdisable [lindex $cmdButtons 4]
+    set cmdButtonQenable  [lindex $cmdButtons 5]
+
+    $cmdButtonQstop configure -command runQstop
+    $cmdButtonQstart configure -command runQstart
+    $cmdButtonQenable configure -command runQenable
+    $cmdButtonQdisable configure -command runQdisable
+  }
+}
+##############################################################################
+
+##############################################################################
+#	Jobs Frame widget procedures					     #
+##############################################################################
+proc fillJobsFrame widget_name {
+
+  frame $widget_name.header   -borderwidth 2 -relief raised -class CmdFrame
+  frame $widget_name.header.t -borderwidth 2
+  frame $widget_name.header.b   -borderwidth 2
+  frame $widget_name.misc -borderwidth 2 -relief ridge -class CmdFrame
+
+  frame $widget_name.list     -borderwidth 2
+
+  pack $widget_name.header.t $widget_name.header.b -side top -fill x
+  pack $widget_name.header -side top -fill x
+  pack  $widget_name.misc -side top -padx 3m  -anchor nw -pady 2m
+  pack $widget_name.list   -side top
+
+  fillJobsHeaderFrame $widget_name.header.t
+  fillJobsMiscFrame   $widget_name.header.b
+  fillJobsListFrame   $widget_name.list
+}
+
+proc fillJobsHeaderFrame widget_name {
+  global LABELFONT queuesSelected bitmap_dir
+
+  button $widget_name.iconize       -anchor c    \
+                                    -bitmap @$bitmap_dir/iconize.bmp \
+				    -command iconizeJobsView \
+				    -padx 1 -pady 1
+  label $widget_name.label          -anchor nw    -font $LABELFONT \
+				    -text "JOBS   " -padx 1 -pady 1
+  frame $widget_name.e0
+  set entrybox [buildFullEntrybox $widget_name.e0 21 "Listed By Queue(s):" 67 "" right 0] 
+  set entryFrame [lindex $entrybox 0]
+  set entryLabel [lindex $entrybox 1]
+  set entryField [lindex $entrybox 2]
+  set entryScroll [lindex $entrybox 3]
+
+  $entryFrame configure
+  $entryLabel configure
+  $entryField configure -textvariable queuesSelected -relief flat
+  bind_entry_readonly $entryField
+
+  pack forget $entryFrame
+  pack  $widget_name.label $entryFrame -anchor nw -side left -pady 1
+  pack  $widget_name.iconize  -side right -expand 1 -anchor e
+}
+proc fillJobsMiscFrame widget_name {
+  global LABELFONT USER SERVER_HOSTS selv activeColor tk_version
+
+  frame $widget_name.invoke -class CmdFrame
+  frame $widget_name.criteria
+  label $widget_name.spaces -font $LABELFONT -width 18
+
+  set m $widget_name.criteria.m
+  menubutton $m -relief raised -bd 2 -font $LABELFONT -anchor w \
+	    -menu $m.menu -text "Other Criteria"
+
+  if {$tk_version >= 4.0} {
+	$m configure -indicatoron 1
+  }
+
+  menu $m.menu
+  bind_button1 $m.menu
+  set selv(menubox) $m.menu
+
+  $m.menu add command -label $selv(owners_list) -font $LABELFONT \
+	-command {
+		owners
+		$selv(menubox) entryconfigure 0 -label $selv(owners_list)
+	}
+  $m.menu add command -label $selv(states) -font $LABELFONT \
+	-command {
+		state
+		$selv(menubox) entryconfigure 1 -label $selv(states)
+	}
+  $m.menu add command -label $selv(jname) -font $LABELFONT \
+	-command {
+		jobname
+		$selv(menubox) entryconfigure 2 -label $selv(jname)
+	}
+  $m.menu add command -label $selv(hold_list) -font $LABELFONT \
+	-command {
+		hold
+		$selv(menubox) entryconfigure 3 -label $selv(hold_list)
+	}
+  $m.menu add command -label $selv(acctname) -font $LABELFONT \
+	-command {
+		acctname
+		$selv(menubox) entryconfigure 4 -label $selv(acctname)
+	}
+  $m.menu add command -label $selv(checkpoint) -font $LABELFONT \
+	-command {
+		checkpoint
+		$selv(menubox) entryconfigure 5 -label $selv(checkpoint)
+	}
+  $m.menu add command -label $selv(exec_time)  -font $LABELFONT \
+	-command {
+		qtime
+		$selv(menubox) entryconfigure 6 -label $selv(exec_time)
+	}
+  $m.menu add command -label $selv(reslist) -font $LABELFONT \
+	-command {
+		res
+		$selv(menubox) entryconfigure 7 -label $selv(reslist)
+	}
+  $m.menu add command -label $selv(priority) -font $LABELFONT \
+	-command {
+		priority
+		$selv(menubox) entryconfigure 8 -label $selv(priority)
+	}
+  $m.menu add command -label $selv(rerun) -font $LABELFONT \
+	-command {
+		rerun
+		$selv(menubox) entryconfigure 9 -label $selv(rerun)
+	}
+
+  if {$tk_version >= 4.0} {
+  	$m.menu configure -tearoff 0
+  }
+  pack $m
+
+  frame $widget_name.invoke.sel
+  set filter_button [lindex \
+                [buildCmdButtons $widget_name.invoke.sel \
+			{{{filter "Select Jobs"}}} x 0 18 2 0 0] 1]
+
+  pack $widget_name.invoke.sel -padx 10m
+  pack $widget_name.spaces $widget_name.criteria $widget_name.invoke \
+		-side left -fill both
+
+  $filter_button configure -command {getdata $SERVER_HOSTS 1}
+}
+
+proc fillJobsListFrame widget_name {
+  global  JOBS_COLUMN_LABEL JOBS_LISTBOX_WIDTH JOBS_LISTBOX_HEIGHT \
+  	  jobsListbox jobsSelMode jobsSelected \
+	  tk_version perm_level
+
+  frame $widget_name.header         -borderwidth 1
+  frame $widget_name.box            -borderwidth 1
+
+
+  set dim ${JOBS_LISTBOX_WIDTH}x${JOBS_LISTBOX_HEIGHT}
+  set listBoxInfo [buildFullListbox $widget_name.box $dim $JOBS_COLUMN_LABEL yscroll] 
+  set jobsListbox          [lindex $listBoxInfo 3]
+  set jobsListboxSelButton [lindex $listBoxInfo 2]
+  set jobsListboxLabel	   [lindex $listBoxInfo 1]
+
+  $jobsListboxLabel configure -textvariable JOBS_COLUMN_LABEL
+ 
+ $jobsListboxSelButton configure \
+	       -textvariable jobsSelMode \
+	       -command {
+                 if { [string compare "$jobsSelMode" "Select All"] == 0 } {
+			if {$tk_version < 4.0} {
+                          $jobsListbox select from 0
+                          $jobsListbox select to end
+			} else {
+                          $jobsListbox select anchor 0
+                          $jobsListbox select set anchor end
+			}
+                        set jobsSelMode "Deselect All"
+        		set jobsSelected \
+                            [get_keyvals $jobsListbox $JOBS_LISTBOX_KEY @ " " "select"]
+                  } else {
+			if {$tk_version < 4.0} {
+                          $jobsListbox select clear
+			} else {
+                          $jobsListbox select clear 0 end
+			}
+                        set jobsSelMode "Select All"
+			set jobsSelected ""
+                  }
+                }
+
+  frame $widget_name.b
+  pack  $widget_name.b
+  set buttonList [list  {detail "detail"}   \
+			{modify modify..}   \
+			{delete delete..}   \
+			{hold hold..}       \
+			{release release..} \
+			{signal signal..}   \
+			{msg msg..}         \
+			{move move..}       \
+		        {order order}]
+
+  if { [string compare $perm_level "admin"] == 0 } {
+    lappend buttonList {run run} {rerun rerun} 
+  }
+
+  set cmdButtons [buildCmdButtons $widget_name.b \
+		  [list $buttonList] y 0 9 1 1 0 0]
+					
+  set cmdButtonFrame   [lindex $cmdButtons 0]
+  set cmdButtonDetail  [lindex $cmdButtons 1]
+  set cmdButtonModify  [lindex $cmdButtons 2]
+  set cmdButtonDelete  [lindex $cmdButtons 3]
+  set cmdButtonHold    [lindex $cmdButtons 4]
+  set cmdButtonRelease [lindex $cmdButtons 5]
+  set cmdButtonSignal  [lindex $cmdButtons 6]
+  set cmdButtonMsg     [lindex $cmdButtons 7]
+  set cmdButtonMove    [lindex $cmdButtons 8]
+  set cmdButtonOrder   [lindex $cmdButtons 9]
+
+  $cmdButtonDetail configure -command getJobsDetail
+  $cmdButtonModify configure -command runQalter
+  $cmdButtonDelete  configure -command runDelete
+  $cmdButtonHold    configure -command runHold
+  $cmdButtonRelease configure -command runRelease
+  $cmdButtonSignal  configure -command runQsig
+  $cmdButtonMsg     configure -command runQmsg
+  $cmdButtonMove    configure -command runQmove
+  $cmdButtonOrder   configure -command runQorder
+
+  if { [string compare $perm_level "admin"] == 0 } {
+    set cmdButtonRun     [lindex $cmdButtons 10]
+    set cmdButtonRerun   [lindex $cmdButtons 11]
+    $cmdButtonRun     configure -command runRun
+    $cmdButtonRerun   configure -command runRerun
+
+  }
+
+  pack forget $cmdButtonFrame
+
+  pack $widget_name.box  $cmdButtonFrame -side left -anchor nw
+}
+###############################################################################
+###	STATUS BAR Frame procedures					      #
+###############################################################################
+proc fillStatusbarFrame widget_name {
+  global infoBox INFOBOX_LISTBOX_WIDTH INFOBOX_LISTBOX_HEIGHT
+
+  frame $widget_name.header    -borderwidth 2 -height 10m -relief raised \
+	-class CmdFrame
+  frame  $widget_name.list     -borderwidth 3
+
+  pack $widget_name.header -side top -fill x
+  pack $widget_name.list   -fill both -side bottom
+
+  fillStatusbarHeaderFrame $widget_name.header
+  set infoBox [lindex [buildFullListbox $widget_name.list \
+             ${INFOBOX_LISTBOX_WIDTH}x${INFOBOX_LISTBOX_HEIGHT} "" xscroll] 3]
+
+}
+###############################################################################
+proc fillStatusbarHeaderFrame widget_name {
+  global LABELFONT bitmap_dir
+
+  label $widget_name.label -anchor nw -font $LABELFONT -text "INFO" \
+	-padx 1 -pady 1
+  button $widget_name.iconize       -anchor c    \
+                                    -bitmap @$bitmap_dir/iconize.bmp \
+				    -command iconizeInfoView \
+				    -padx 1 -pady 1
+  pack $widget_name.label -anchor nw  -side left -pady 1
+  pack  $widget_name.iconize  -side right -expand 1 -anchor e
+}
+###############################################################################
+###	MENU BAR Frame procedures					      #
+###############################################################################
+proc fillMenubarFrame widget_name {
+
+  global LABELFONT SERVER_HOSTS DATA_UPDATE_SEQ trackjob_button \
+	 backgroundColor cmdButtonUpdAuto
+
+  set cmdButtons [buildCmdButtons $widget_name \
+                  { { {update_man "Manual Update"} \
+		      {update_auto "Auto Update.."} } \
+                    {  {track "Track Job.."} } \
+		    {  {prefer "Preferences.."} } \
+		    { {help "Help"} \
+		      {about "About.."} } \
+		    {  {close "Close"}  } } x 1 10 1 0 0 20]
+  
+  set cmdButtonFrame   [lindex $cmdButtons 0]
+  set cmdButtonUpdMan  [lindex $cmdButtons 1]
+  set cmdButtonUpdAuto [lindex $cmdButtons 2]
+  set trackjob_button  [lindex $cmdButtons 3]
+  set cmdButtonPref    [lindex $cmdButtons 4]
+  set cmdButtonHelp    [lindex $cmdButtons 5]
+  set cmdButtonAbout   [lindex $cmdButtons 6]
+  set cmdButtonClose   [lindex $cmdButtons 7]
+
+  $cmdButtonUpdMan  configure -width 14 \
+    -command {
+	incr DATA_UPDATE_SEQ
+	getdata $SERVER_HOSTS
+	$cmdButtonUpdAuto configure -background $backgroundColor
+  }
+
+  $cmdButtonUpdAuto configure -width 14  -command {auto_upd}
+  $trackjob_button  configure -command trackjob -width 11
+  $cmdButtonPref    configure -width 13 -command {pref}
+  $cmdButtonClose   configure -command {
+    if [prefDoIt] {
+      prefsave
+    }
+    exit
+  } 
+  $cmdButtonHelp    configure -command { xpbs_help main ""}
+  $cmdButtonAbout   configure -command { about }
+}

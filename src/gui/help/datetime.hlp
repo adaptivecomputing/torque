@@ -1,0 +1,18 @@
+The date/time dialog box is for setting a date/time parameter. It contains 
+6 spin boxes representing hour, minute, secs, month, day, and year. 
+
+To manipulate the spin boxes, simply use the up and down arrows of the 
+scrollbar to increment through valid values, or simply type in a valid value on
+the spinbox entry box.
+
+===============
+COMMAND BUTTONS
+===============
+
+Click on the "Ok" button when you're done setting values for the various
+widgets.  This is also the default action (as indicated by the sunken look of 
+the button) when the <Return> key is pressed.
+
+If any of the spinboxes are left blank, it will not allow you to quit out of
+the dialog box until you've put in a valid value.
+

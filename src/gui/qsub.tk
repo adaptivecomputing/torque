@@ -1,0 +1,1131 @@
+#         OpenPBS (Portable Batch System) v2.3 Software License
+# 
+# Copyright (c) 1999-2000 Veridian Information Solutions, Inc.
+# All rights reserved.
+# 
+# ---------------------------------------------------------------------------
+# For a license to use or redistribute the OpenPBS software under conditions
+# other than those described below, or to purchase support for this software,
+# please contact Veridian Systems, PBS Products Department ("Licensor") at:
+# 
+#    www.OpenPBS.org  +1 650 967-4675                  sales@OpenPBS.org
+#                        877 902-4PBS (US toll-free)
+# ---------------------------------------------------------------------------
+# 
+# This license covers use of the OpenPBS v2.3 software (the "Software") at
+# your site or location, and, for certain users, redistribution of the
+# Software to other sites and locations.  Use and redistribution of
+# OpenPBS v2.3 in source and binary forms, with or without modification,
+# are permitted provided that all of the following conditions are met.
+# After December 31, 2001, only conditions 3-6 must be met:
+# 
+# 1. Commercial and/or non-commercial use of the Software is permitted
+#    provided a current software registration is on file at www.OpenPBS.org.
+#    If use of this software contributes to a publication, product, or
+#    service, proper attribution must be given; see www.OpenPBS.org/credit.html
+# 
+# 2. Redistribution in any form is only permitted for non-commercial,
+#    non-profit purposes.  There can be no charge for the Software or any
+#    software incorporating the Software.  Further, there can be no
+#    expectation of revenue generated as a consequence of redistributing
+#    the Software.
+# 
+# 3. Any Redistribution of source code must retain the above copyright notice
+#    and the acknowledgment contained in paragraph 6, this list of conditions
+#    and the disclaimer contained in paragraph 7.
+# 
+# 4. Any Redistribution in binary form must reproduce the above copyright
+#    notice and the acknowledgment contained in paragraph 6, this list of
+#    conditions and the disclaimer contained in paragraph 7 in the
+#    documentation and/or other materials provided with the distribution.
+# 
+# 5. Redistributions in any form must be accompanied by information on how to
+#    obtain complete source code for the OpenPBS software and any
+#    modifications and/or additions to the OpenPBS software.  The source code
+#    must either be included in the distribution or be available for no more
+#    than the cost of distribution plus a nominal fee, and all modifications
+#    and additions to the Software must be freely redistributable by any party
+#    (including Licensor) without restriction.
+# 
+# 6. All advertising materials mentioning features or use of the Software must
+#    display the following acknowledgment:
+# 
+#     "This product includes software developed by NASA Ames Research Center,
+#     Lawrence Livermore National Laboratory, and Veridian Information
+#     Solutions, Inc.
+#     Visit www.OpenPBS.org for OpenPBS software support,
+#     products, and information."
+# 
+# 7. DISCLAIMER OF WARRANTY
+# 
+# THIS SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND. ANY EXPRESS
+# OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+# OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT
+# ARE EXPRESSLY DISCLAIMED.
+# 
+# IN NO EVENT SHALL VERIDIAN CORPORATION, ITS AFFILIATED COMPANIES, OR THE
+# U.S. GOVERNMENT OR ANY OF ITS AGENCIES BE LIABLE FOR ANY DIRECT OR INDIRECT,
+# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
+# OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+# LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+# NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+# EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# 
+# This license will be governed by the laws of the Commonwealth of Virginia,
+# without reference to its choice of law rules.
+################################################################################
+# qsub: defines the layout and functions of the submit job dialog box.
+proc qsub {} {
+  global qsubDialogBox LABELFONT queuesListbox QUEUES_LISTBOX_KEY cmdpath \
+	 activeWindow qsubv numRes numEnVars PBS_SCRIPTLOAD_CMD \
+	 hostsSelected tk_version qsubv_res qsubv_val qsubv_evar qsubv_eval \
+	 def_qsub qsubv_notify_addr qsubv_stagein_host qsubv_stagein_input \
+	 qsubv_stagein_local qsubv_stageout_local qsubv_stageout_host \
+	 qsubv_stageout_output qsubv_shellp qsubv_shellh qsubv_groupg \
+	 qsubv_grouph qsubv_useru qsubv_userh submitHost qinfo fileselect \
+	 activeColor jobResourceList
+
+  busy_cursor
+## Bring up the standard Dialog box ##
+  set qsubDialogBox .qsub
+  set dbox [popupDialogBox $qsubDialogBox "Submit Job Dialog"]
+
+  set activeWindow($qsubDialogBox) 1
+
+  bind_button1 $qsubDialogBox  
+  set dbox_top    [lindex $dbox 0]
+  set dbox_bottom [lindex $dbox 1]
+
+## BOTTOM PART ############################################################
+  set cmdButtons \
+  [buildCmdButtons $dbox_bottom \
+    { {{submit "confirm submit"} {pbssh "interactive"} {cancel cancel}} \
+      {{reset "reset options to default"}} {{help help}}} x 0 10 3]
+
+  set cmdFrame  [lindex $cmdButtons 0]
+  set cmdSubmit [lindex $cmdButtons 1]
+  set cmdPbssh  [lindex $cmdButtons 2]
+  set cmdCancel [lindex $cmdButtons 3]
+  set cmdReset  [lindex $cmdButtons 4]
+  set cmdHelp   [lindex $cmdButtons 5]
+
+  $cmdReset configure -width 25 -command {
+    set_default_qsub_main
+    invoke_qsub_widgets qsubv
+    boxLoad $qsubv(resBox) 0
+    boxLoad $qsubv(varBox)
+  }
+
+  $cmdPbssh configure -width 19 -command {
+     if { [pre_build_qsub_opt] == 0 } { 
+       set exitcode [cmdExec "$XTERM -e $cmdpath(QSUB) [build_opt 1] -I &" 1 1]
+       if {$exitcode != 0} {
+	 popupInfoBox $qsubDialogBox "Failed to open interactive session. See INFO box in main window for details."
+       } else {
+         InfoBox_sendmsg "done." 0 1 5
+       }
+     }
+  }
+  $cmdSubmit configure -width 15 -command {
+
+     if [pre_build_qsub_opt] {
+       return
+     }
+     set exitcode 1
+     if {[string compare $qsubv(scriptName) ""] != 0} {
+
+       set actualScriptName [glob -nocomplain $qsubv(scriptName)]
+       if {[string compare $actualScriptName ""] == 0} {
+         popupInfoBox $qsubDialogBox "Script file non-existent!"
+	 return
+       }	
+       set exitcode [win_cmdExec $qsubDialogBox \
+			"$cmdpath(QSUB) [build_opt 1] $actualScriptName"]
+     } else {
+       set body [$qsubv(bufferBox) get 1.0 end]
+       if {[string compare $body ""] == 0 || [string compare $body "\n"] == 0} {
+         popupInfoBox $qsubDialogBox "No script body specified."	
+	 return
+       }	
+       set exitcode [win_cmdExec $qsubDialogBox \
+			"$cmdpath(QSUB) [build_opt 1] << {$body}"]
+     }
+
+     if {$exitcode == 0} {
+       after 500 [list getdata $SERVER_HOSTS 1]
+       destroy $qsubDialogBox
+     }
+  }
+  $cmdCancel configure -command {destroy $qsubDialogBox}
+  $cmdHelp configure -command {xpbs_help submit $qsubDialogBox}
+
+## TOP PART ##
+  frame $dbox_top.script -borderwidth 3 -relief groove
+  frame $dbox_top.script1
+  frame $dbox_top.simpleOpt -borderwidth 3 -relief groove
+  frame $dbox_top.options -borderwidth 3 -relief groove
+  frame $dbox_top.otherOptions -borderwidth 3 -relief groove -class CmdFrame
+
+
+  frame $dbox_top.optionsMain
+  frame $dbox_top.optionsMain.left
+  frame $dbox_top.optionsMain.right
+  frame $dbox_top.line1
+  frame $dbox_top.dest
+  frame $dbox_top.line3
+  frame $dbox_top.line5
+  frame $dbox_top.line4 -relief groove -borderwidth 3
+
+
+  frame $dbox_top.resources -borderwidth 3 -relief groove
+  frame $dbox_top.lower
+  frame $dbox_top.output -relief groove -borderwidth 3 
+  frame $dbox_top.env -relief groove -borderwidth 3 
+
+  frame $dbox_top.fbuffer -borderwidth 2 -relief ridge
+  frame $dbox_top.l -class CmdFrame -relief raised -borderwidth 2
+  frame $dbox_top.othOpts -borderwidth 2 -relief raised -class CmdFrame
+  frame $dbox_top.l2 -class CmdFrame -relief raised -borderwidth 2
+  frame $dbox_top.entries 
+  frame $dbox_top.fileEntry
+  frame $dbox_top.fileButton
+  frame $dbox_top.l2.pbsPrefix
+
+  frame $dbox_top.line1.1
+  frame $dbox_top.line1.2
+  frame $dbox_top.r1
+
+  frame $dbox_top.line5.1
+  frame $dbox_top.line5.2
+
+  frame $dbox_top.line4.t
+  frame $dbox_top.line4.b
+  frame $dbox_top.line4.b.when
+
+  frame $dbox_top.resources.e
+  frame $dbox_top.resources.hdr
+  frame $dbox_top.resources.hdr.h
+
+  frame $dbox_top.action
+  frame $dbox_top.merge
+  frame $dbox_top.retain
+  frame $dbox_top.stderr
+  frame $dbox_top.stderr.file
+  frame $dbox_top.stderr.host
+  frame $dbox_top.stdout
+  frame $dbox_top.stdout.file
+  frame $dbox_top.stdout.host
+
+  set  box [buildFullTextbox $dbox_top.fbuffer 40x14 yscroll ""]
+  set qsubv(bufferBox) [lindex $box 1]
+
+  $qsubv(bufferBox) configure -relief sunken
+
+  label $dbox_top.l.optionsLabel -text "OPTIONS" -font $LABELFONT \
+	-anchor nw -height 2
+  pack $dbox_top.l.optionsLabel -anchor nw
+  label $dbox_top.otherOptionsLabel -text "OTHER OPTIONS" \
+	-font $LABELFONT
+
+  set miscButtons \
+  [buildCmdButtons $dbox_top.othOpts {\
+	{{concur "concurrency set.."} \
+	 {after "after depend.."} \
+	 {before "before depend.."} \
+	 {staging "file staging.."}   \
+	 {misc "misc.."}} } \
+	y 0 17 0 0 0 0 "OTHER OPTIONS"]
+  set miscFrame   [lindex $miscButtons 0]
+  set miscConcur  [lindex $miscButtons 1]
+  set miscAfter   [lindex $miscButtons 2]
+  set miscBefore  [lindex $miscButtons 3]
+  set miscStaging [lindex $miscButtons 4]
+  set miscMisc    [lindex $miscButtons 5]
+  set miscLabel   [lindex $miscButtons 6]
+  $miscConcur configure -command {concur $qsubDialogBox}
+  $miscAfter configure -command {after_depend $qsubDialogBox}
+  $miscBefore configure -command {before_depend $qsubDialogBox}
+  $miscStaging configure -command {staging $qsubDialogBox} -bg $activeColor
+  $miscMisc configure -command {misc $qsubDialogBox}
+  $miscLabel configure -anchor nw
+
+
+  label $dbox_top.l2.label -text "SCRIPT" -font $LABELFONT
+  pack $dbox_top.l2.label -fill x -anchor nw
+### SCRIPT ################################################################
+  set filebox [buildFullEntrybox $dbox_top.fileEntry 0 "" 22 "" \
+		bottom 0]
+  set fileFrame [lindex $filebox 0]
+  set fileLabel [lindex $filebox 1]
+  set fileEntry [lindex $filebox 2]
+
+  $fileLabel configure -anchor nw
+  $fileEntry configure -textvariable qsubv(scriptName)
+  bind_entry_overselect $fileEntry
+
+  button $dbox_top.fileFsboxButton -height 2 -width 7 -font $LABELFONT \
+    -text "FILE.." -padx 0 \
+    -command {
+       fileselect $qsubDialogBox \
+	{set qsubv(scriptName) $fileselect(filepath)} "SCRIPT FILE SELECTION"
+    }
+
+  set fileButtons \
+  [buildCmdButtons $dbox_top.fileButton \
+    {{{load "load"} {save "save"}}} x 2 6 2 0 0]
+
+  set filecmdFrame      [lindex $fileButtons 0]
+  set filecmdLoad       [lindex $fileButtons 1]
+  set filecmdSave 	[lindex $fileButtons 2]
+
+  set filebox [buildFullEntrybox $dbox_top.l2.pbsPrefix 10 "Prefix" 10 "" \
+		bottom 0]
+  set pbsPrefixFrame [lindex $filebox 0]
+  set pbsPrefixLabel [lindex $filebox 1]
+  set pbsPrefixEntry [lindex $filebox 2]
+
+  $pbsPrefixEntry configure -textvariable qsubv(pbs_prefix)
+
+  $filecmdSave configure -command {
+    if { [string compare $qsubv(scriptName) ""] == 0 } {
+       popupInfoBox $qsubDialogBox "Please specify a script name on the FILE entrybox."
+       return	
+    }
+
+    set qsubv(overwriteFile) 1
+    if [file exists [glob -nocomplain $qsubv(scriptName)]] {
+        confirmDelete
+    }
+    if {!$qsubv(overwriteFile)} {
+	return
+    } 
+    busy_cursor
+    if [pre_build_qsub_opt] {
+	return
+    } 
+    if [catch {open $qsubv(scriptName) w} fd] {
+       popupInfoBox $qsubDialogBox "Error opening $qsubv(scriptName): Message: $fd"
+       remove_busy_cursor
+       return
+    } else {
+       puts -nonewline $fd [build_opt 0 $qsubv(pbs_prefix)]
+       puts -nonewline $fd [$qsubv(bufferBox) get 1.0 end]
+       close $fd
+    }
+    remove_busy_cursor
+    popupInfoBox $qsubDialogBox "PBS job options and execution lines saved to \"$qsubv(scriptName)\" file"
+  }
+  $filecmdLoad configure -command {
+
+    busy_cursor
+    if { [string compare $qsubv(scriptName) ""] == 0 } {
+      popupInfoBox $qsubDialogBox "Please specify a script name on the FILE entrybox"
+      remove_busy_cursor
+      return	
+    }
+
+    if { ![file exists [glob -nocomplain $qsubv(scriptName)]] || \
+        [file isfile [glob -nocomplain $qsubv(scriptName)]] == 0 } {
+      popupInfoBox $qsubDialogBox "Script file load failed: does not exist or is a directory"
+      remove_busy_cursor
+      return
+    }
+    
+    set fd [cmdExec_bg \
+     "$PBS_SCRIPTLOAD_CMD -C \"$qsubv(pbs_prefix)\" [glob -nocomplain $qsubv(scriptName)]" 1]
+
+    if {$fd == -1} {
+      popupInfoBox $qsubDialogBox "Failed to execute load. See INFO box in main window for details"
+      remove_busy_cursor
+      return
+    }
+
+    set pbs_prefix_save $qsubv(pbs_prefix)
+    set_default_qsub_main
+    set_default_qsub_concur
+    set_default_qsub_after
+    set_default_qsub_before
+    set_default_qsub_staging
+    set_default_qsub_misc
+    set_default_qsub_email
+    init_qsub_depend_argstr
+
+    if [load_qsub_input $fd] {
+      remove_busy_cursor
+      return
+    }
+
+    boxLoad $qsubv(resBox) 0
+    boxLoad $qsubv(varBox)
+    set qsubv(pbs_prefix) $pbs_prefix_save
+
+    invoke_qsub_widgets qsubv
+
+##### Load the contents
+    if {[info exists qsubv(bufferFile)] && \
+       [string compare $qsubv(bufferFile) ""] != 0} {
+      if [catch {open $qsubv(bufferFile) r} tempfd] {
+       	 popupInfoBox $qsubDialogBox "Error opening temp file $qsubv(bufferFile): Message: $fd"
+      } else {
+         $qsubv(bufferBox) delete 1.0 end
+         $qsubv(bufferBox) insert end [read $tempfd]
+      }
+      close $tempfd
+##### And remove the temporary file WITH EXTRA checks
+
+      if { [string length $qsubv(bufferFile)] > 0 && \
+	   [string compare $qsubv(bufferFile) "*"] != 0 && \
+	   [string compare $qsubv(bufferFile) "?"] != 0 } { 
+
+           set fd [cmdExec_bg "/bin/rm -f $qsubv(bufferFile)"]
+      } else {
+         InfoBox_sendmsg "buffer filename matched a wildcard. Not removing" 0 1 51
+      }
+
+      if [catch {close $fd} errmesg] {
+         InfoBox_sendmsg "done: $errmesg" 0 1 5
+      } else {
+         InfoBox_sendmsg "done." 0 1 5
+      }
+    }
+    remove_busy_cursor
+  }
+### OPTIONS ###############################################################
+ 
+
+### MAIN OPTIONS #################
+
+#### MAIN OPTIONS LINE1 ##########
+
+  set jobbox [buildFullEntrybox $dbox_top.line1.1 11 "Job Name" 15 "" none 0]
+  set JobNameFrame [lindex $jobbox 0]
+  set JobNameEntry [lindex $jobbox 2]
+
+  $JobNameEntry configure -textvariable qsubv(jobName)
+  bind_entry_overselect $JobNameEntry
+  register_entry_fixsize $JobNameEntry 15
+
+  set spinBox [buildSpinbox $dbox_top.line1.2 5 -1024-1023 qsubv priority \
+		"Priority" left ""]
+
+  set priorityFrame  [lindex $spinBox 0]
+  set priorityEntry  [lindex $spinBox 1]
+
+
+#### MAIN OPTIONS LINE 2 #########
+  set listBoxInfo [buildFullListbox $dbox_top.dest 30x2 "Destination" \
+					yscroll 0 1]
+  set destListframe   [lindex $listBoxInfo 0]
+  set qsubv(destLbox) [lindex $listBoxInfo 3]
+  bind_listbox_single_select $qsubv(destLbox)
+
+  set queues [get_keyvals $queuesListbox $QUEUES_LISTBOX_KEY @ " " "all"]
+  foreach q $queues {
+    if [regexp "@$submitHost" $q] {
+      $qsubv(destLbox) insert end $q
+    }
+  }
+
+## Let's specify a default value
+   $qsubv(destLbox) insert 0 "@$submitHost"
+   if {$tk_version < 4.0} {
+     $qsubv(destLbox) select from 0
+   } else {
+     $qsubv(destLbox) select anchor 0
+     $qsubv(destLbox) select set anchor 0
+   }
+#### MAIN OPTIONS LINE 3 ##########
+
+##
+  set radiobox [buildRadioboxes $dbox_top.r1 \
+                { {{now "NOW"} {later "LATER at.."}} }\
+                grid 0 "When to Queue"]
+  set radioboxFrame  [lindex $radiobox 0]
+  set radioboxNow    [lindex $radiobox 1]
+  set radioboxLater  [lindex $radiobox 2]
+
+  $radioboxNow configure -variable qsubv(qtime) -value "now" \
+         -command {
+           set_dateTime qsubv(qtimeMon) qsubv(qtimeDay) qsubv(qtimeYear) \
+                        qsubv(qtimeHH) qsubv(qtimeMM) qsubv(qtimeSS) 1
+           set qsubv(exec_time) $def_qsub(exec_time)}
+
+  $radioboxLater configure -variable qsubv(qtime) -value "later" \
+	-command {dateTime $qsubDialogBox 0}
+
+
+## MAIN OPTIONS LINE 5 #######
+
+
+### LINE5, 1
+  set acctbox [buildFullEntrybox $dbox_top.line5.1 12 "Account Name" 15 "" none 0]
+  set AcctNameFrame [lindex $acctbox 0]
+  set AcctNameEntry [lindex $acctbox 2]
+
+  $AcctNameEntry configure -textvariable qsubv(acctName)
+  bind_entry_overselect $AcctNameEntry
+
+### LINE5, 2
+ set chkbox [buildCheckboxes $dbox_top.line5.2 {{{hold "Hold Job"}}} column 0 "" 0]
+  set chkboxFrame  [lindex $chkbox 0]
+  set chkboxHold   [lindex $chkbox 1]
+
+  $chkboxHold configure -variable qsubv(holdjob)
+
+## MAIN OPTIONS LINE 4 ######
+
+
+  label $dbox_top.line4.t.label1 -text "Notify" -font $LABELFONT
+  label $dbox_top.line4.b.label2 -text "when" -font $LABELFONT
+  set qsubv(cmdEmail) [button $dbox_top.line4.t.email -font $LABELFONT \
+                    -text "email addrs.."]
+
+  $qsubv(cmdEmail) configure -command {email_list $qsubDialogBox 0}
+  set chkbox [buildCheckboxes $dbox_top.line4.b.when \
+         {{{a "job aborts"} {b "job begins execution"} {e "job terminates"}}} column 0 ""]
+  set chkboxFrame  [lindex $chkbox 0]
+  set qsubv(chkboxNotifyAbort)   [lindex $chkbox 1]
+  set qsubv(chkboxNotifyBegin)  [lindex $chkbox 2]
+  set qsubv(chkboxNotifyEnd)    [lindex $chkbox 3]
+
+  $qsubv(chkboxNotifyAbort) configure -variable qsubv(notify_opt(abort)) \
+      -onvalue "a" -offvalue "" -command {
+	if {[string compare $qsubv(notify_opt\(abort\)) "a"] != 0 && \
+	    [string compare $qsubv(notify_opt\(begin\)) "b"] != 0 && \
+	    [string compare $qsubv(notify_opt\(end\)) "e"] != 0 } {
+	    disable_button $qsubv(cmdEmail)
+        } else {
+	    enable_button $qsubv(cmdEmail)
+	}
+  }
+  $qsubv(chkboxNotifyBegin) configure -variable qsubv(notify_opt(begin)) \
+      -onvalue "b" -offvalue "" -command {
+	if {[string compare $qsubv(notify_opt\(abort\)) "a"] != 0 && \
+	    [string compare $qsubv(notify_opt\(begin\)) "b"] != 0 && \
+	    [string compare $qsubv(notify_opt\(end\)) "e"] != 0 } {
+	    disable_button $qsubv(cmdEmail)
+        } else {
+	    enable_button $qsubv(cmdEmail)
+	}
+  } 
+  $qsubv(chkboxNotifyEnd)   configure -variable qsubv(notify_opt(end)) \
+      -onvalue "e" -offvalue "" -command {
+	if {[string compare $qsubv(notify_opt\(abort\)) "a"] != 0 && \
+	    [string compare $qsubv(notify_opt\(begin\)) "b"] != 0 && \
+	    [string compare $qsubv(notify_opt\(end\)) "e"] != 0 } {
+	    disable_button $qsubv(cmdEmail)
+        } else {
+	    enable_button $qsubv(cmdEmail)
+	}
+  }
+
+
+### RESOURCE OPTIONS ########   
+
+
+#  label $dbox_top.resources.hdr.l -text "Resource List" -font $LABELFONT
+  
+
+#  set cmdButtons [buildCmdButtons $dbox_top.resources.hdr.h \
+#			{{{help help}}} x 0 6 1]
+
+#  set cmdFrame   [lindex $cmdButtons 0]
+#  set cmdResHelp [lindex $cmdButtons 1]
+#  pack forget $cmdFrame
+
+#  $cmdResHelp configure -command {resources_help $qsubDialogBox}
+
+   foreach res $jobResourceList {
+	lappend resnames [list "" [lindex $res 0]]
+   }
+  box $dbox_top.resources -title "Resource List" \
+    -entrylabels [list [list "resource" MENU_ENTRY $jobResourceList] value] \
+     -lboxlabels [list " " "Resources"] -lboxwidths [list 8 20] \
+     -lboxheights [list 2 2] -orient xy -array 0 qsubv_res -array 1 qsubv_val \
+     -menuEntry [list [list $resnames] {resources_help $qsubDialogBox} help-] -key 0 \
+     -grabBox $qsubDialogBox
+
+  set qsubv(resBox) $dbox_top.resources
+
+## OUTPUT OPTIONS #####
+
+
+  set radiobox [buildRadioboxes $dbox_top.merge \
+                { {{stdoutMerge "Merge to Stdout"} \
+                   {stderrMerge "Merge to Stderr"} \
+                   {noMerge "Don't Merge"}} } column 0 "Output" 1 1]
+  set qsubv(radioboxStdoutMerge)   [lindex $radiobox 1]
+  set qsubv(radioboxStderrMerge)   [lindex $radiobox 2]
+  set qsubv(radioboxNoMerge)	   [lindex $radiobox 3]
+
+
+  set chkbox [buildCheckboxes $dbox_top.retain \
+                 { {{stdoutRet "Stdout in exec_host:<jobname>.o<seq>"} \
+                    {stderrRet "Stderr in exec_host:<jobname>.e<seq>"}} } \
+                 column 0 "Retain" 1 1]
+  set qsubv(chkboxStdoutRet) [lindex $chkbox 1]
+  set qsubv(chkboxStderrRet) [lindex $chkbox 2]
+  
+  button $dbox_top.stdout.fsboxButton -height 1 -width 18 -font $LABELFONT \
+    -text "Stdout File Name.." -padx 0 \
+    -command {
+       fileselect $qsubDialogBox \
+	{
+	  set qsubv(stdoutFile) $fileselect(filepath)
+	  if { [string compare $fileselect(filepath) ""] != 0 } {
+	    set qsubv(stdoutHost) $fileselect(host)
+	  }
+	} "STDOUT FILE SELECTION" 0
+    }
+
+  set filebox [buildFullEntrybox $dbox_top.stdout.file \
+                      0 "" 15 "" right 0]
+  set qsubv(StdoutFileLabel) [lindex $filebox 1]
+  set qsubv(StdoutFile) [lindex $filebox 2]
+  set qsubv(StdoutFileScroll) [lindex $filebox 3]
+  $qsubv(StdoutFile) configure -textvariable qsubv(stdoutFile)
+
+  set filebox [buildFullEntrybox $dbox_top.stdout.host \
+                      12 "on hostname:" 15 "" right 0]
+  set qsubv(StdoutHostLabel) [lindex $filebox 1]
+  set qsubv(StdoutHost) [lindex $filebox 2]
+  set qsubv(StdoutHostScroll) [lindex $filebox 3]
+  $qsubv(StdoutHost) configure -textvariable qsubv(stdoutHost)
+
+  button $dbox_top.stderr.fsboxButton -height 1 -width 18 -font $LABELFONT \
+    -text "Stderr File Name.." -padx 0 \
+    -command {
+       fileselect $qsubDialogBox \
+	{
+	  set qsubv(stderrFile) $fileselect(filepath)
+	  if { [string compare $fileselect(filepath) ""] != 0 } {
+		set qsubv(stderrHost) $fileselect(host)
+	  }
+	} "STDERR FILE SELECTION" 0
+    }
+  set filebox [buildFullEntrybox $dbox_top.stderr.file \
+                      0 "" 15 "" right 0]
+  set qsubv(StderrFileLabel) [lindex $filebox 1]
+  set qsubv(StderrFile) [lindex $filebox 2]
+  set qsubv(StderrFileScroll) [lindex $filebox 3]
+  $qsubv(StderrFile) configure -textvariable qsubv(stderrFile)
+
+  set filebox [buildFullEntrybox $dbox_top.stderr.host \
+                      12 "on hostname:" 15 "" right 0]
+  set qsubv(StderrHostLabel) [lindex $filebox 1]
+  set qsubv(StderrHost) [lindex $filebox 2]
+  set qsubv(StderrHostScroll) [lindex $filebox 3]
+  $qsubv(StderrHost) configure -textvariable qsubv(stderrHost)
+
+## Set the key tabbing option
+  bind_entry_tab $qsubv(StdoutFile) $qsubv(StdoutHost) $qsubv(StdoutFile)
+  bind_entry_tab $qsubv(StdoutHost) $qsubv(StderrFile) $qsubv(StdoutFile)
+  bind_entry_tab $qsubv(StderrFile) $qsubv(StderrHost) $qsubv(StdoutHost)
+  bind_entry_tab $qsubv(StderrHost) $qsubv(StderrHost) $qsubv(StderrFile)
+
+   bind_entry_overselect $qsubv(StdoutFile)
+   bind_entry_overselect $qsubv(StdoutHost)
+   bind_entry_overselect $qsubv(StderrFile)
+   bind_entry_overselect $qsubv(StderrHost)
+
+## Now for the big trick on output retention. #################################
+
+## Clicking Retain Stdout, then only the "Stderr File/Path Name" will be
+##   enabled for input. Retain will construct its own path for Stdout on the
+##   execution host.
+  $qsubv(chkboxStdoutRet) configure -variable qsubv(stdoutRet) -onvalue "o" \
+	-offvalue "" -command {
+	if {[string compare $qsubv(stdoutRet) "o"] == 0} {
+	  disable_fullentry $qsubv(StdoutFileLabel) $qsubv(StdoutFile) \
+			    $qsubv(StdoutFileScroll) 
+	  disable_fullentry $qsubv(StdoutHostLabel) $qsubv(StdoutHost) \
+			    $qsubv(StdoutHostScroll) 
+	  if {[string compare $qsubv(stderrRet) "e"] != 0} {
+	    focus $qsubv(StderrFile)
+	  }
+	} else {
+	  enable_fullentry $qsubv(StdoutFileLabel) $qsubv(StdoutFile) \
+			   $qsubv(StdoutFileScroll) 
+	  enable_fullentry $qsubv(StdoutHostLabel) $qsubv(StdoutHost) \
+			   $qsubv(StdoutHostScroll) 
+	  focus $qsubv(StdoutFile)
+	}}
+
+## Clicking Retain Stderr, then only the "Stdout File/Path Name" will be
+## enabled for input. Retain will construct its own path for Stderr on the
+## execution host.
+
+  $qsubv(chkboxStderrRet) configure -variable qsubv(stderrRet) -onvalue "e" \
+	-offvalue "" -command {
+	if {[string compare $qsubv(stderrRet) "e"] == 0} {
+  	  disable_fullentry $qsubv(StderrFileLabel) $qsubv(StderrFile) \
+			    $qsubv(StderrFileScroll)
+  	  disable_fullentry $qsubv(StderrHostLabel) $qsubv(StderrHost) \
+			    $qsubv(StderrHostScroll)
+	  if {[string compare $qsubv(stdoutRet) "o"] != 0} {
+	    focus $qsubv(StdoutFile)
+	  }
+	} else {
+  	  enable_fullentry $qsubv(StderrFileLabel) $qsubv(StderrFile) \
+			   $qsubv(StderrFileScroll)
+  	  enable_fullentry $qsubv(StderrHostLabel) $qsubv(StderrHost) \
+			   $qsubv(StderrHostScroll)
+	  focus $qsubv(StderrFile)
+	}}
+
+
+## If standard error and standout are merged as standout output, then anything
+## referring to stderr are meaningless.
+
+  $qsubv(radioboxStdoutMerge) configure -variable qsubv(merge) -value oe \
+	-command {
+      
+	disable_rcbutton $qsubv(chkboxStderrRet)
+        disable_fullentry $qsubv(StderrFileLabel) $qsubv(StderrFile) \
+			  $qsubv(StderrFileScroll)
+        disable_fullentry $qsubv(StderrHostLabel) $qsubv(StderrHost) \
+			  $qsubv(StderrHostScroll)
+
+	enable_rcbutton $qsubv(chkboxStdoutRet)
+	if {[string compare $qsubv(stdoutRet) "o"] != 0} {
+          enable_fullentry $qsubv(StdoutFileLabel) $qsubv(StdoutFile) \
+			   $qsubv(StdoutFileScroll)
+          enable_fullentry $qsubv(StdoutHostLabel) $qsubv(StdoutHost) \
+			   $qsubv(StdoutHostScroll)
+	  focus $qsubv(StdoutFile)
+	}
+  }
+## If standard error and standout are merged as standout error, then anything
+## referring to stdout are meaningless.
+  $qsubv(radioboxStderrMerge) configure -variable qsubv(merge) -value eo \
+	-command {
+
+	disable_rcbutton $qsubv(chkboxStdoutRet)
+        disable_fullentry $qsubv(StdoutFileLabel) $qsubv(StdoutFile) \
+			  $qsubv(StdoutFileScroll)
+        disable_fullentry $qsubv(StdoutHostLabel) $qsubv(StdoutHost) \
+			  $qsubv(StdoutHostScroll)
+
+	enable_rcbutton $qsubv(chkboxStderrRet)
+	if {[string compare $qsubv(stderrRet) "e"] != 0} {
+          enable_fullentry $qsubv(StderrFileLabel) $qsubv(StderrFile) \
+			   $qsubv(StderrFileScroll)
+          enable_fullentry $qsubv(StderrHostLabel) $qsubv(StderrHost) \
+			   $qsubv(StderrHostScroll)
+	  focus $qsubv(StderrFile)
+        }
+  }
+
+  $qsubv(radioboxNoMerge) configure -variable qsubv(merge) -value n \
+	-command {
+
+	enable_rcbutton $qsubv(chkboxStdoutRet)
+	enable_rcbutton $qsubv(chkboxStderrRet)
+
+	if {[string compare $qsubv(stdoutRet) "o"] != 0} {
+          enable_fullentry $qsubv(StdoutFileLabel) $qsubv(StdoutFile) \
+			   $qsubv(StdoutFileScroll)
+          enable_fullentry $qsubv(StdoutHostLabel) $qsubv(StdoutHost) \
+			   $qsubv(StdoutHostScroll)
+	  focus $qsubv(StdoutFile)
+  	}
+	if {[string compare $qsubv(stderrRet) "e"] != 0} {
+          enable_fullentry $qsubv(StderrFileLabel) $qsubv(StderrFile) \
+			   $qsubv(StderrFileScroll)
+          enable_fullentry $qsubv(StderrHostLabel) $qsubv(StderrHost) \
+			   $qsubv(StderrHostScroll)
+	  focus $qsubv(StderrFile)
+  	}
+  }
+## ENVIRONMENT VARIABLE ##  
+#  label $dbox_top.env.l -text "Environment Variables to Export" -font $LABELFONT
+#  pack $dbox_top.env.l -anchor nw
+
+set var_frame $dbox_top.env
+set qsubv(varBox) $var_frame 
+
+  box $var_frame -title "Environment Variables to Export" \
+    -entrylabels [list variable value] \
+     -lboxlabels [list "Variables" " "] -lboxwidths [list 14 20] \
+     -lboxheights [list 2 2] -orient xy \
+     -array 0 qsubv_evar -array 1 qsubv_eval \
+     -key 0 -grabBox $qsubDialogBox -env 1 \
+     -checkbutton [list Current qsubv(export_current_var)]
+
+  set qsubv(resBox) $dbox_top.resources
+
+### PACK the FRAMES
+
+  pack $dbox_top.resources $dbox_top.env -side left -fill both -expand 1 \
+	-in $dbox_top.entries -padx 1m
+  raise $dbox_top.resources $dbox_top.entries
+  raise $dbox_top.env $dbox_top.entries
+
+  pack $dbox_top.othOpts $dbox_top.output -side left -fill both -expand 1 \
+	-in $dbox_top.lower -padx 1m
+  raise $dbox_top.output $dbox_top.lower
+  raise $dbox_top.othOpts $dbox_top.lower
+
+  pack $dbox_top.options -side top -anchor nw -fill x
+  pack $dbox_top.optionsMain $dbox_top.lower $dbox_top.entries \
+       -in $dbox_top.options -side top -anchor nw -pady 5 -fill both -expand 1
+
+  pack $dbox_top.optionsMain.left $dbox_top.optionsMain.right -side left \
+       -anchor nw -padx 1m
+
+  pack $dbox_top.l $dbox_top.simpleOpt $dbox_top.line4 -side top -anchor nw \
+	-pady 5 -in $dbox_top.optionsMain.right -fill x
+  raise $dbox_top.simpleOpt $dbox_top.optionsMain.right
+
+  pack $dbox_top.line1 $dbox_top.line5 $dbox_top.dest \
+	$dbox_top.line3 -side top -anchor nw -pady 2 \
+	-in $dbox_top.simpleOpt -fill x
+
+  pack forget $fileFrame $filecmdFrame $pbsPrefixFrame
+  pack $fileFrame -in $dbox_top.script1 -anchor nw -side left -fill x -expand 1
+  pack $pbsPrefixFrame -anchor nw
+  pack $dbox_top.l2.label -side left -anchor nw
+  pack $pbsPrefixFrame  -side right -anchor se
+  pack  $dbox_top.l2 $dbox_top.script1 $dbox_top.fbuffer \
+	-side top -in $dbox_top.optionsMain.left -anchor nw -fill x -pady 3
+  pack $dbox_top.fileFsboxButton $dbox_top.fileEntry $dbox_top.fileButton \
+	-in $dbox_top.script1 -anchor nw -side left
+
+  pack $dbox_top.line1.1 $dbox_top.line1.2 -anchor nw -side left -pady 1m
+
+  pack $dbox_top.r1 -in $dbox_top.line3
+  pack $dbox_top.r1 -in $dbox_top.line3
+  pack $dbox_top.line5.1 $dbox_top.line5.2 -side left
+  pack $dbox_top.line4.t.label1 $qsubv(cmdEmail) -side left -anchor nw
+  pack $dbox_top.line4.b.label2 $dbox_top.line4.b.when -side left -anchor nw
+  pack $dbox_top.line4.t \
+       $dbox_top.line4.b -side left -anchor nw -pady 6
+
+  pack  $dbox_top.action -side top -anchor nw -pady 3m \
+        -in $dbox_top.output -fill x -expand 1
+  pack  $dbox_top.stdout $dbox_top.stderr \
+        -in $dbox_top.output -side top -anchor nw -fill x -expand 1
+  pack  $dbox_top.merge $dbox_top.retain \
+        -in $dbox_top.action -side left -anchor nw -fill x -expand 1
+  pack  $dbox_top.stdout.fsboxButton $dbox_top.stdout.file \
+		$dbox_top.stdout.host -side left -anchor nw
+  pack  $dbox_top.stderr.fsboxButton $dbox_top.stderr.file \
+		$dbox_top.stderr.host -side left -anchor nw
+
+## END of PACK
+  set_default_qsub_main
+  set_default_qsub_concur
+  set_default_qsub_after
+  set_default_qsub_before
+  set_default_qsub_staging
+  set_default_qsub_misc
+  set_default_qsub_email
+  set_default_qsub_datetime
+  init_qsub_depend_argstr
+
+  invoke_qsub_widgets qsubv
+
+  tkwait visibility $qsubDialogBox
+  remove_busy_cursor
+  catch {tkwait window $qsubDialogBox}
+  boxesUnset
+
+  set activeWindow($qsubDialogBox) 0
+
+  set varnames "qsubv qsubv_res qsubv_val qsubv_evar qsubv_eval \
+	 qsubv_notify_addr qsubv_stagein_host qsubv_stagein_input \
+	 qsubv_stagein_local qsubv_stageout_local qsubv_stageout_host \
+	 qsubv_stageout_output qsubv_shellp qsubv_shellh qsubv_groupg \
+	 qsubv_grouph qsubv_useru qsubv_userh"
+  foreach v $varnames {
+	catch {unset $v}
+  }
+}
+
+# pre_build_opt: builds the options for QSUB based on widget values.
+# RETURNS: 0 if successful; 1 otherwise
+proc pre_build_qsub_opt {} {
+
+  global def_qsub qsubv qsubDialogBox qsubv_res qsubv_val \
+	 qsubv_evar qsubv_eval
+
+  init_qsub_main_argstr
+
+  if { [string compare $qsubv(jobName) ""] != 0  && \
+       ([string length $qsubv(jobName)] > 15 || \
+        ![regexp "\[a-zA-Z]+" [string index $qsubv(jobName) 0]]) } {
+    popupInfoBox $qsubDialogBox "Found Job Name to be of more than 15 chars,\
+		or the first letter is non-alphabetic. Please fix."
+    return 1
+  }
+
+  set d_idx [$qsubv(destLbox) curselection]
+  if {[string compare $d_idx ""] != 0} {
+       set qsubv(destination) [$qsubv(destLbox) get $d_idx]
+  }
+
+  if { [string compare $qsubv(notify_opt\(abort\)) \
+	  $def_qsub(notify_opt\(abort\))] != 0 || \
+          [string compare $qsubv(notify_opt\(begin\)) \
+	  $def_qsub(notify_opt\(begin\))] != 0 || \
+          [string compare $qsubv(notify_opt\(end\)) \
+	  $def_qsub(notify_opt\(end\))] != 0 } {
+
+        set qsubv(mail_option) \
+	  "$qsubv(notify_opt\(abort\))$qsubv(notify_opt\(begin\))$qsubv(notify_opt\(end\))"
+  	if {[string compare $qsubv(mail_option) ""] == 0} {
+    	  set qsubv(mail_option) "n"
+	}
+  }
+
+  if [info exists qsubv(chkboxStdoutRet)] {
+    set state [lindex [$qsubv(chkboxStdoutRet) configure -state] 4]
+    if {[string compare $state "normal"] == 0 && \
+        [string compare $qsubv(stdoutRet) $def_qsub(stdoutRet)] != 0} {
+          append retain $qsubv(stdoutRet)
+    }
+  }
+
+  if [info exists qsubv(chkboxStderrRet)] {
+    set state [lindex [$qsubv(chkboxStderrRet) configure -state] 4]
+    if {[string compare $state "normal"] == 0 && \
+        [string compare $qsubv(stderrRet) $def_qsub(stderrRet)] != 0} {
+          append retain $qsubv(stderrRet)
+    }
+  }
+  if {[info exists retain] && \
+	[string compare $retain  ""] != 0} { 
+        set qsubv(keep_args) $retain
+        unset retain
+  }
+
+  if [info exists qsubv(StdoutFile)] {
+    set state [lindex [$qsubv(StdoutFile) configure -state] 4]
+
+    if {[string compare $state "normal"] == 0} { 
+
+        if { [trimvar ":" qsubv(stdoutFile)] || \
+	     [trimvar ":" qsubv(stdoutHost)] } {
+          popupInfoBox $qsubDialogBox "Detected an illegal character  \":\" within\
+            Stdout filename/hostname. Please remove."
+          return 1
+        }
+
+        if {[string compare $qsubv(stdoutHost) ""] != 0 && \
+            [string compare $qsubv(stdoutFile) ""] == 0} {
+           popupInfoBox $qsubDialogBox "Stdout File/Host specification is incomplete"
+           return 1
+        }
+
+        if {[string compare $qsubv(stdoutHost) $def_qsub(stdoutHost)] != 0 || \
+	    [string compare $qsubv(stdoutFile) $def_qsub(stdoutFile)] != 0} {
+	
+            if {[string compare $qsubv(stdoutHost) ""] != 0} {
+              set qsubv(stdoutPath) "$qsubv(stdoutHost):$qsubv(stdoutFile)"
+            } elseif {[string compare $qsubv(stdoutFile) ""] != 0} {
+              set qsubv(stdoutPath) "$qsubv(stdoutFile)"
+            }
+        }
+    }
+  }
+  if [info exists qsubv(StderrFile)] {
+    set state [lindex [$qsubv(StderrFile) configure -state] 4]
+
+    if {[string compare $state "normal"] == 0} {
+
+        if { [trimvar ":" qsubv(stderrFile)] || \
+	     [trimvar ":" qsubv(stderrHost)] } {
+           popupInfoBox $qsubDialogBox "Detected an illegal character  \":\" in\
+              Stderr filename/hostname. Please remove."
+           return 1
+        }
+
+        if {[string compare $qsubv(stderrHost) ""] != 0 && \
+            [string compare $qsubv(stderrFile) ""] == 0} {
+          popupInfoBox $qsubDialogBox "Stderr File/Host specification is incomplete"
+          return 1
+        }
+
+        if {[string compare $qsubv(stderrHost) $def_qsub(stderrHost)] != 0 || \
+	    [string compare $qsubv(stderrFile) $def_qsub(stderrFile)] != 0} {
+
+            if {[string compare $qsubv(stderrHost) ""] != 0} {
+              set qsubv(stderrPath) "$qsubv(stderrHost):$qsubv(stderrFile)"
+            } elseif {[string compare $qsubv(stderrFile) ""] != 0} {
+              set qsubv(stderrPath) "$qsubv(stderrFile)"
+            }
+  	}
+    }
+  }
+
+  set size 0
+  if [info exists qsubv_res] {
+    set size [array size qsubv_res]
+  }
+  for {set i 0} {$i < $size} {incr i} {
+     if { [trimvar "=," qsubv_res($i)] || \
+	  [trimvar "=," qsubv_val($i)] } { 
+          popupInfoBox $qsubDialogBox "Detected an illegal character \"=\" or\
+		\",\" in resource name or value entry $i. Please remove."
+        return 1
+     }
+     if {[string compare $qsubv_res($i) ""] == 0 && \
+         [string compare $qsubv_val($i) ""] != 0} { 
+          popupInfoBox $qsubDialogBox "Resource List entry $i is incomplete"
+          return 1
+     }
+     if {[string compare $qsubv_res($i) ""] != 0 || \
+         [string compare $qsubv_val($i) ""] != 0} {
+  
+          if {[string compare $qsubv_val($i) ""] == 0} {
+            set resources($i) "$qsubv_res($i)"
+          } else {
+            set resources($i) "$qsubv_res($i)=$qsubv_val($i)"
+          }
+     }
+  }
+  set qsubv(res_args) [construct_array_args resources ","]
+  catch {unset resources}
+
+  set qsub(env_args) ""
+  set size 0
+  if [info exists qsubv_evar] {
+      set size [array size qsubv_evar]
+  }
+  for {set i 0} {$i < $size} {incr i} {
+
+     if { [trimvar "=," qsubv_evar($i)] || \
+	  [trimvar "=," qsubv_eval($i)] } { 
+          popupInfoBox $qsubDialogBox "Detected an illegal character  \"=\" \
+	or \",\" in environment variable name or value entry $i. Please remove."
+        return 1
+     }
+     if {[string compare $qsubv_evar($i) ""] == 0 && \
+         [string compare $qsubv_eval($i) ""] != 0} { 
+            popupInfoBox $qsubDialogBox "Variable List entry $i is incomplete"
+            return 1
+     }
+
+     if {[string compare $qsubv_evar($i) ""] != 0 || \
+         [string compare $qsubv_eval($i) ""] != 0} {
+
+         if {[string compare $qsubv_eval($i) ""] == 0} {
+              set envariables($i) "$qsubv_evar($i)"
+         } else {
+              set envariables($i) "$qsubv_evar($i)=$qsubv_eval($i)"
+         }
+     }
+  }
+  set qsubv(env_args) [construct_array_args envariables ","]
+  catch {unset envariables}
+
+  pre_build_depend_opt qsubv def_qsub
+  pre_build_staging_opt qsubv
+  pre_build_misc_opt qsubv def_qsub
+
+  if { [string compare $qsubv(qtime) "now"] != 0 } {
+    pre_build_datetime_opt qsubv
+  } else {
+    init_qsub_datetime_argstr
+  }
+  if {[string compare $qsubv(mail_option) "n"] == 0} {
+    init_qsub_email_argstr
+  } else {
+    pre_build_email_opt qsubv
+  }
+  return 0
+}
+# invoke_qsub_widgets: invoke the various widgets found in the Qsub Main
+#                        dialog box.
+proc invoke_qsub_widgets assoc_array {
+  upvar $assoc_array arr
+
+  invoke_cbutton $arr(chkboxStdoutRet)
+  invoke_cbutton $arr(chkboxStderrRet)
+  invoke_rbutton [list $arr(radioboxStdoutMerge) \
+		       $arr(radioboxStderrMerge) \
+		       $arr(radioboxNoMerge)]
+  invoke_cbutton $arr(chkboxNotifyAbort)
+  invoke_cbutton $arr(chkboxNotifyBegin)
+  invoke_cbutton $arr(chkboxNotifyEnd)
+}
+# confirmDelete: pops up a dialog box asking confirmation from user about saving
+#           current submit options into a file.
+proc confirmDelete {} {
+
+     global LABELFONT qsubDialogBox qsubv confDialogBox
+
+     set confDialogBox ".confirm" 
+     set dbox [popupDialogBox $confDialogBox "Save to File"]
+     set dbox_top    [lindex $dbox 0]
+     set dbox_bottom [lindex $dbox 1]
+
+     message $dbox_top.msg    -borderwidth 2  -justify left -font $LABELFONT \
+      -aspect 2000 -text \
+      "Overwrite \"$qsubv(scriptName)\" file?"
+
+     pack $dbox_top.msg -padx 3m -pady 3m
+
+     set buttons [buildCmdButtons $dbox_bottom {{{yes yes} {no no}}} x 0 10 3]
+     set yes_button [lindex $buttons 1]
+     set no_button [lindex $buttons 2]
+
+     $yes_button configure -command {
+	set qsubv(overwriteFile) 1
+        destroy $confDialogBox
+	
+     }
+     $no_button configure -command {
+	set qsubv(overwriteFile) 0
+        destroy $confDialogBox
+     }
+
+     register_default_action $confDialogBox $no_button
+     tkwait window $confDialogBox
+     focus $qsubDialogBox
+}
+# procedure that takes 'output' string and display it on screen via an output
+# box that includes a single Ok button.
+proc serverSelect {} {
+
+     global LABELFONT serverDialogBox hostsSelected submitHost qsubv tk_version
+
+     set serverDialogBox ".server"
+     set dbox [popupDialogBox $serverDialogBox "Server Selection"]
+     set dbox_top    [lindex $dbox 0]
+     set dbox_bottom [lindex $dbox 1]
+
+     message $dbox_top.msg    -borderwidth 2  -justify left -aspect 1000 \
+                              -font $LABELFONT \
+                              -text "More than one host selected.\n
+Please select the one host to submit job to:"
+
+     frame $dbox_top.dest
+     set listBoxInfo [buildFullListbox $dbox_top.dest 30x6 ""  yscroll 0 1]
+     set destListframe   [lindex $listBoxInfo 0]
+     set qsubv(serverLbox) [lindex $listBoxInfo 3]
+     bind_listbox_single_select $qsubv(serverLbox)
+
+     foreach q $hostsSelected {
+       $qsubv(serverLbox) insert end $q
+    }
+
+    if {$tk_version < 4.0} {
+       $qsubv(serverLbox) select from 0
+    } else {
+       $qsubv(serverLbox) select anchor 0
+       $qsubv(serverLbox) select set anchor 0
+    }
+
+     set ok_button [lindex \
+                    [buildCmdButtons $dbox_bottom {{{ok ok}}} x 20m 10 3] 1]
+
+     $ok_button configure -command {
+       set submitHost [$qsubv(serverLbox) get [$qsubv(serverLbox) curselection]]
+       destroy $serverDialogBox
+     }
+     pack $dbox_top.msg $dbox_top.dest -side top -padx 3m -pady 3m
+     register_default_action $serverDialogBox $ok_button
+     catch {tkwait window $serverDialogBox}
+}

@@ -1,0 +1,37 @@
+Samples of PBS Schedulers Written in C.
+
+The subdirectories in this directory contain source code for schedulers that
+can be used if you choose "SCHD_TYPE = cc" (the default) when running configure
+(before building PBS). You can indicate which of these schedulers you'd like to
+build by naming it on the
+
+		 --set-sched-code=xxxx 
+
+option to configure (where "xxxx" is one of the following directory names).
+
+The default scheduler, fifo, is intended to be used "out of the box" with
+minimal configuration changes. The other schedulers are included as either
+examples of scheduling approaches, or as optimized scheduler for specific
+systems (that may require a bit more effort to configure to the local site,
+but which should result in higher scheduling efficiency).
+
+
+ Scheduler	Description
+------------	------------------------------------------------------------
+       fifo:	The default PBS scheduler implementing a variety of common
+		scheduling algorithems, including: round-robin, by-queue,
+		strict-fifo, fair-share, and load-balancing. Each of these
+		can be further configured to use a variety of job sorting
+		methods to indicate what class of job should be run first:
+	 	no-sort, shortest, longest, smallest-memory, largest-memory,
+		high-priority, low-priority, large-walltime, ascending-walltime,
+		and combinations of these.
+
+
+
+
+ sgi_origin:	A highly specially scheduler for the SGI Origin2000, providing
+		integrated support for Array Services (for MPI programs), and
+		NODEMASK (to pin applications via software to dynamically 
+		created regions of nodes within the system). Scheduling
+		algorithm includes a dynamic backfill implementation.

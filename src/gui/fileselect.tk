@@ -1,0 +1,349 @@
+#         OpenPBS (Portable Batch System) v2.3 Software License
+# 
+# Copyright (c) 1999-2000 Veridian Information Solutions, Inc.
+# All rights reserved.
+# 
+# ---------------------------------------------------------------------------
+# For a license to use or redistribute the OpenPBS software under conditions
+# other than those described below, or to purchase support for this software,
+# please contact Veridian Systems, PBS Products Department ("Licensor") at:
+# 
+#    www.OpenPBS.org  +1 650 967-4675                  sales@OpenPBS.org
+#                        877 902-4PBS (US toll-free)
+# ---------------------------------------------------------------------------
+# 
+# This license covers use of the OpenPBS v2.3 software (the "Software") at
+# your site or location, and, for certain users, redistribution of the
+# Software to other sites and locations.  Use and redistribution of
+# OpenPBS v2.3 in source and binary forms, with or without modification,
+# are permitted provided that all of the following conditions are met.
+# After December 31, 2001, only conditions 3-6 must be met:
+# 
+# 1. Commercial and/or non-commercial use of the Software is permitted
+#    provided a current software registration is on file at www.OpenPBS.org.
+#    If use of this software contributes to a publication, product, or
+#    service, proper attribution must be given; see www.OpenPBS.org/credit.html
+# 
+# 2. Redistribution in any form is only permitted for non-commercial,
+#    non-profit purposes.  There can be no charge for the Software or any
+#    software incorporating the Software.  Further, there can be no
+#    expectation of revenue generated as a consequence of redistributing
+#    the Software.
+# 
+# 3. Any Redistribution of source code must retain the above copyright notice
+#    and the acknowledgment contained in paragraph 6, this list of conditions
+#    and the disclaimer contained in paragraph 7.
+# 
+# 4. Any Redistribution in binary form must reproduce the above copyright
+#    notice and the acknowledgment contained in paragraph 6, this list of
+#    conditions and the disclaimer contained in paragraph 7 in the
+#    documentation and/or other materials provided with the distribution.
+# 
+# 5. Redistributions in any form must be accompanied by information on how to
+#    obtain complete source code for the OpenPBS software and any
+#    modifications and/or additions to the OpenPBS software.  The source code
+#    must either be included in the distribution or be available for no more
+#    than the cost of distribution plus a nominal fee, and all modifications
+#    and additions to the Software must be freely redistributable by any party
+#    (including Licensor) without restriction.
+# 
+# 6. All advertising materials mentioning features or use of the Software must
+#    display the following acknowledgment:
+# 
+#     "This product includes software developed by NASA Ames Research Center,
+#     Lawrence Livermore National Laboratory, and Veridian Information
+#     Solutions, Inc.
+#     Visit www.OpenPBS.org for OpenPBS software support,
+#     products, and information."
+# 
+# 7. DISCLAIMER OF WARRANTY
+# 
+# THIS SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND. ANY EXPRESS
+# OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+# OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT
+# ARE EXPRESSLY DISCLAIMED.
+# 
+# IN NO EVENT SHALL VERIDIAN CORPORATION, ITS AFFILIATED COMPANIES, OR THE
+# U.S. GOVERNMENT OR ANY OF ITS AGENCIES BE LIABLE FOR ANY DIRECT OR INDIRECT,
+# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
+# OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+# LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+# NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+# EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# 
+# This license will be governed by the laws of the Commonwealth of Virginia,
+# without reference to its choice of law rules.
+################################################################################
+# fileselect: defines the layout and functions of the fileselectrency set dialog box.
+# 	This returns input focus back to 'callerDialogBox' when the depend
+#	dialog box is closed. 
+proc fileselect {callerDialogBox selectProc {title "FILE SELECTION BOX"} \
+						{cdCWD 1} {dim 80x10}} {
+ 
+  global activeWindow def fsDialogBox fileselect
+
+  busy_cursor
+## Bring up the standard Dialog box ##
+  set fsDialogBox ".fileselect"
+  set dbox [popupDialogBox $fsDialogBox "File Selection Dialog" 1 "" \
+				$callerDialogBox]
+  set activeWindow($fsDialogBox) 1
+  set dbox_top    [lindex $dbox 0]
+  set dbox_bottom [lindex $dbox 1]
+## BOTTOM PART ##
+
+
+## TOP PART ##
+## ARRANGEMENT ON SCREEN
+
+  frame $dbox_top.fsBox -borderwidth 2 -relief raised
+  createFileselectWidget $dbox_top.fsBox $title $cdCWD $dim
+  pack $dbox_top.fsBox -padx 1m -pady 1m
+
+  focus $fsDialogBox
+
+## BOTTOM PART ##
+  set cmdButtons \
+  [buildCmdButtons $dbox_bottom {{{ok "Select File"} {help help}}} x 9m 16 3]
+
+  set cmdFrame  [lindex $cmdButtons 0]
+  set cmdOk     [lindex $cmdButtons 1]
+  set cmdHelp   [lindex $cmdButtons 2]
+
+  $cmdOk configure \
+	-command "uplevel #0 [list $selectProc]; destroy $fsDialogBox"
+
+  $cmdHelp configure \
+	-command {xpbs_help fileselect $fsDialogBox}
+
+  register_default_action $fsDialogBox $cmdOk
+  tkwait visibility $fsDialogBox
+  remove_busy_cursor
+  catch {tkwait window $fsDialogBox}
+  set activeWindow($fsDialogBox) 0
+
+  return $fileselect(filepath)
+}
+
+# createFileselectWidget: creates the File selection widget consisting of:
+#		fileselect(dirEntry)	: entry holding the current working
+#			directory entry value in 'fileselect(dir)'
+#		fileselect(list)	: listbox holding the names of 
+#			files/directories under 'fileselect(dir)'. The
+#			selected entry on this listbox is known via 
+#			'fileselect(path)'.
+#		fileselect(fileEntry)	: entry holding a selected file (not
+#					  directory) in 'fileselect(filepath)'.
+# OPTION: 'cdCWD' is if you want the option to setting the 
+#         "current working directory" be displayed.
+proc createFileselectWidget {frame_name {title "FILE SELECTION BOX"} {cdCWD 1} {dim 80x10}} {
+  global fileselect LABELFONT TEXTFONT activeColor
+
+  frame $frame_name.header -height 2m -width 2m
+  frame $frame_name.footer -height 2m -width 2m
+  frame $frame_name.fileselectList
+  frame $frame_name.fileselectEntry
+  frame $frame_name.cwd
+  frame $frame_name.cwd.hl
+  frame $frame_name.cwd.hr
+
+  set fileselect(host) [cmdExec hostname]
+
+  label $frame_name.title -text $title -font $LABELFONT
+
+
+  set entrybox [buildFullEntrybox $frame_name.cwd.hl 20 \
+			"SELECTION DIRECTORY:" 35 "" right 0 left]
+  set entryFrame [lindex $entrybox 0]
+  set elabel [lindex $entrybox 1]
+  set entry [lindex $entrybox 2]
+  set fileselect(dirEntry) $entry
+  
+  $entry configure -textvariable fileselect(dir)
+
+  label $frame_name.cwd.hr.lab2 -font $LABELFONT -text "HOST:"
+  label $frame_name.cwd.hr.host -font $TEXTFONT -text $fileselect(host)
+
+  set listBoxInfo [buildFullListbox $frame_name.fileselectList $dim \
+  	"" yscroll 0 0]
+  set lbox [lindex $listBoxInfo 3]
+  bind_listbox_single_select $lbox 
+  set fileselect(list) $lbox
+
+  label $frame_name.msg -font $LABELFONT \
+   -text "(single click to select file; double click to go to a directory)"
+
+  set entrybox [buildFullEntrybox $frame_name.fileselectEntry 14 \
+			"FILE Selected:" 58 "" right 0 left]
+  set entryFrame [lindex $entrybox 0]
+  set entry [lindex $entrybox 2]
+  $entry configure -textvariable fileselect(filepath)
+  set fileselect(fileEntry) $entry
+
+
+  if {$cdCWD} {
+  	frame $frame_name.cwdM
+  	button $frame_name.cd -font $LABELFONT \
+		-text "cd <SELECTION DIRECTORY>" \
+		-bg $activeColor \
+		-command {
+			cd $fileselect(dir)
+			set fileselect(cwd) $fileselect(dir)
+		}
+        $elabel configure -bg $activeColor
+  	label $frame_name.cwdM.lab -font $LABELFONT \
+			-text "CURRENT WORKING DIRECTORY:" 
+  	label $frame_name.cwdM.dir -font $TEXTFONT \
+			-textvariable fileselect(cwd)
+  	pack $frame_name.cwdM.lab $frame_name.cwdM.dir \
+		-side left -anchor nw
+  }
+
+### PACK the FRAMES
+  pack $frame_name.cwd.hr.lab2 $frame_name.cwd.hr.host -side left -anchor nw
+
+  pack $frame_name.cwd.hl $frame_name.cwd.hr -padx 2m -side left -anchor nw
+  pack $frame_name.header $frame_name.title -side top -anchor c
+  pack $frame_name.cwd $frame_name.fileselectList $frame_name.msg -side top \
+	-anchor nw -padx 4m
+
+  if {$cdCWD} {
+	frame $frame_name.filler -height 2m
+        pack $frame_name.filler -side top
+  	pack $frame_name.cwdM -side top -anchor nw -padx 4m
+	pack $frame_name.cd -side top -anchor c
+  }
+  pack $frame_name.fileselectEntry -side top -padx 2m \
+		-pady 4m -anchor nw
+
+
+  set fileselect(path) {}
+  set fileselect(filepath) {}
+  set fileselect(cwd) [pwd]
+  fileselectBindings $fileselect(dirEntry) $fileselect(list)
+  fileselectList $fileselect(cwd) $fileselect(path)
+}
+
+proc fileselectList {dir {files {}} } {
+  global fileselect tk_version
+
+  set maxFiles 1000
+
+  if { [string compare $dir ""] == 0 } {
+	set dir [pwd]
+  }
+
+# Update the directory display
+  set e1 $fileselect(dirEntry)
+  set e2 $fileselect(fileEntry)
+  $e1 delete 0 end
+  $e2 delete 0 end
+# Scroll to view the tail end
+  if {$tk_version >= 4.0} {
+	$e1 xview moveto 1
+	$e2 xview moveto 1
+  }
+
+  set fileselect(dir) $dir
+
+  $fileselect(list) delete 0 end
+
+# Check for bogus names
+  if ![file isdirectory $dir] {
+  	$fileselect(list) insert 0 "Bad directory"
+	return
+  }
+
+  $fileselect(list) insert 0 "Listing first $maxFiles files..."
+  update idletasks
+
+
+  $fileselect(list) delete 0
+
+  if {[string length $files] == 0} {
+# List the directory and add an entry for the parent directory if there's
+# a parent
+	if {[string compare $fileselect(dir) "/"] != 0} {
+		catch {glob -nocomplain $fileselect(dir)/*} files
+        	$fileselect(list) insert end ../
+	} else {
+		catch {glob -nocomplain /*} files
+	}
+  }
+
+# Sort the directories to the front
+  set dirs {}
+  set others {} 
+  set i 0
+  foreach f [lsort $files] {
+	if [file isdirectory $f] {
+		lappend dirs [file tail $f]/
+	} else {
+		lappend others [file tail $f]
+	}
+	incr i
+
+        if { $i == $maxFiles } {
+                break
+        }
+  }
+  foreach f [concat $dirs $others] {
+	$fileselect(list) insert end $f
+  }
+}
+
+proc fileselectCancel {} {
+  global fileselect
+
+  set fileselect(path) {}	
+}
+
+proc fileselectClick { lb y } {
+# Take the item that the user clicked on
+  global fileselect
+
+  set fileselect(path) [$lb get [$lb nearest $y]]
+}
+
+proc fileselectOK {} {
+  global fileselect
+
+  if { [string compare $fileselect(dir) ""] == 0 } {
+	set fileselect(dir) [pwd]
+  }
+
+# Trim ../ (the parent) out of the pathname that is currently selected
+  if {[regsub {^\.\./?} $fileselect(path) {} newpath] != 0} {
+	set fileselect(path) $newpath
+	set fileselect(dir) [file dirname $fileselect(dir)]
+	fileselectOK
+	return
+  }
+
+# Assume path is relative to current directory. 
+# Concatenate the directory entry and the selected pathname.
+
+  if { [string compare $fileselect(dir) "/"] != 0 } {
+  	set path [string trimright $fileselect(dir)/$fileselect(path) /] 
+  } else {
+  	set path [string trimright /$fileselect(path) /]
+  }
+
+  if { [string compare $path ""] == 0 } {
+	set path "/"
+  }
+
+# If dir/selected_path is a directory, list its contents
+  if [file isdirectory $path] {
+	set fileselect(path) {}
+	fileselectList $path
+    	return
+  }
+
+# If dir/selected_path is a file, let it be the newly selected path.
+  if [file exists $path] {
+	set fileselect(path) $path
+	return
+  }
+}

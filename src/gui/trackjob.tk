@@ -1,0 +1,463 @@
+#         OpenPBS (Portable Batch System) v2.3 Software License
+# 
+# Copyright (c) 1999-2000 Veridian Information Solutions, Inc.
+# All rights reserved.
+# 
+# ---------------------------------------------------------------------------
+# For a license to use or redistribute the OpenPBS software under conditions
+# other than those described below, or to purchase support for this software,
+# please contact Veridian Systems, PBS Products Department ("Licensor") at:
+# 
+#    www.OpenPBS.org  +1 650 967-4675                  sales@OpenPBS.org
+#                        877 902-4PBS (US toll-free)
+# ---------------------------------------------------------------------------
+# 
+# This license covers use of the OpenPBS v2.3 software (the "Software") at
+# your site or location, and, for certain users, redistribution of the
+# Software to other sites and locations.  Use and redistribution of
+# OpenPBS v2.3 in source and binary forms, with or without modification,
+# are permitted provided that all of the following conditions are met.
+# After December 31, 2001, only conditions 3-6 must be met:
+# 
+# 1. Commercial and/or non-commercial use of the Software is permitted
+#    provided a current software registration is on file at www.OpenPBS.org.
+#    If use of this software contributes to a publication, product, or
+#    service, proper attribution must be given; see www.OpenPBS.org/credit.html
+# 
+# 2. Redistribution in any form is only permitted for non-commercial,
+#    non-profit purposes.  There can be no charge for the Software or any
+#    software incorporating the Software.  Further, there can be no
+#    expectation of revenue generated as a consequence of redistributing
+#    the Software.
+# 
+# 3. Any Redistribution of source code must retain the above copyright notice
+#    and the acknowledgment contained in paragraph 6, this list of conditions
+#    and the disclaimer contained in paragraph 7.
+# 
+# 4. Any Redistribution in binary form must reproduce the above copyright
+#    notice and the acknowledgment contained in paragraph 6, this list of
+#    conditions and the disclaimer contained in paragraph 7 in the
+#    documentation and/or other materials provided with the distribution.
+# 
+# 5. Redistributions in any form must be accompanied by information on how to
+#    obtain complete source code for the OpenPBS software and any
+#    modifications and/or additions to the OpenPBS software.  The source code
+#    must either be included in the distribution or be available for no more
+#    than the cost of distribution plus a nominal fee, and all modifications
+#    and additions to the Software must be freely redistributable by any party
+#    (including Licensor) without restriction.
+# 
+# 6. All advertising materials mentioning features or use of the Software must
+#    display the following acknowledgment:
+# 
+#     "This product includes software developed by NASA Ames Research Center,
+#     Lawrence Livermore National Laboratory, and Veridian Information
+#     Solutions, Inc.
+#     Visit www.OpenPBS.org for OpenPBS software support,
+#     products, and information."
+# 
+# 7. DISCLAIMER OF WARRANTY
+# 
+# THIS SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND. ANY EXPRESS
+# OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+# OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT
+# ARE EXPRESSLY DISCLAIMED.
+# 
+# IN NO EVENT SHALL VERIDIAN CORPORATION, ITS AFFILIATED COMPANIES, OR THE
+# U.S. GOVERNMENT OR ANY OF ITS AGENCIES BE LIABLE FOR ANY DIRECT OR INDIRECT,
+# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
+# OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+# LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+# NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+# EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# 
+# This license will be governed by the laws of the Commonwealth of Virginia,
+# without reference to its choice of law rules.
+################################################################################
+# trackjob: defines the layout and functions of the trackjob dialog box.
+proc trackjob {} {
+  global trackjob_user trackjob_mins trackjob_location \
+	 trackjob_lbox trackjob_output trackjob_button trackjob_normal_color \
+  	 LABELFONT trackjobDialogBox activeWindow default \
+  	 TRACKJOB_UPDATE_SEQ activeColor
+
+  busy_cursor
+  set trackjobDialogBox ".trackjob"
+  if [winfo exists $trackjobDialogBox] {
+    wm iconify $trackjobDialogBox
+    wm deiconify $trackjobDialogBox
+    return
+  }
+## Bring up the standard Dialog box ##
+  set dbox [popupDialogBox $trackjobDialogBox "Track Job" 0]
+  set activeWindow($trackjobDialogBox) 1
+  set dbox_top    [lindex $dbox 0]
+  set dbox_bottom [lindex $dbox 1]
+
+## BOTTOM PART ##
+  set cmdButtons \
+  [buildCmdButtons $dbox_bottom {{{rstart "start/reset tracking"} {stop "stop tracking"} \
+	{cont "close window"} {help help}}} x 2m 18 3]
+
+  set cmdFrame  [lindex $cmdButtons 0]
+  set cmdRstart [lindex $cmdButtons 1]
+  set cmdStop   [lindex $cmdButtons 2]
+  set cmdCont   [lindex $cmdButtons 3]
+  set cmdHelp   [lindex $cmdButtons 4]
+
+  $cmdRstart configure -width 21 -command {
+    busy_cursor
+    trackjob_rstart
+    $trackjob_button configure -background $activeColor
+    remove_busy_cursor
+  }
+  $cmdStop configure -command {
+    incr TRACKJOB_UPDATE_SEQ
+    $trackjob_button configure -background $backgroundColor
+    popupInfoBox $trackjobDialogBox "Job Tracking stopped." 
+  }
+  $cmdCont configure -command {
+    if { [string compare $trackjob_location "remote"] == 0 && \
+         [string compare $RSH ""] == 0 } {
+      popupInfoBox $trackjobDialogBox "The RSH command is not set in Preferences. Please do so as it is used in order to access the files." 
+      return
+    }
+    destroy $trackjobDialogBox
+  }
+  $cmdHelp configure -command {
+	xpbs_help trackjob ""
+  }
+## TOP PART ##
+  frame $dbox_top.header -height 10m -width 10m
+  frame $dbox_top.footer -height 10m -width 10m
+
+  frame $dbox_top.u
+  frame $dbox_top.u.p -relief groove -borderwidth 3
+  frame $dbox_top.u.m
+  
+  frame $dbox_top.u.user
+  frame $dbox_top.u.mins
+  frame $dbox_top.u.out -relief groove -borderwidth 3
+
+  frame $dbox_top.u.dest
+
+  message $dbox_top.u.msg -font $LABELFONT -aspect 2000 \
+          -text "Periodically check completion of"
+
+ box $dbox_top.u.user -title "" \
+        -entrylabels [list "{jobs for user:}"] \
+        -lboxlabels "{Tracked Users:}" -lboxwidths 20 -lboxheights 3 \
+        -orient y -array 0 trackjob_user -grabBox $trackjobDialogBox
+
+  boxLoad $dbox_top.u.user
+  label $dbox_top.u.l -font $LABELFONT -text "mins"
+  set spinBox [buildSpinbox $dbox_top.u.mins 4 1-9999 trackjob_mins "" \
+		"every" left $default(trackjob_mins)]
+
+  set minsFrame  [lindex $spinBox 0]
+  set minsEntry  [lindex $spinBox 1]
+  register_default_action $minsEntry $cmdCont
+
+  set radioList [list   {l "local"} \
+			[concat  r \"remote\"]]
+
+  set rbox [buildRadioboxes $dbox_top.u.out [list $radioList] \
+                            column 12 "Location of Job Output Files" 1 1]
+  set rboxFrame    [lindex $rbox 0]
+  set rboxLocal    [lindex $rbox 1]
+  set rboxRemote   [lindex $rbox 2]
+
+  if {![info exists trackjob_location]} {
+    set trackjob_location $default(trackjob_location)
+  } 
+  $rboxLocal configure -variable trackjob_location -value local
+
+  $rboxRemote configure   -variable trackjob_location -value remote
+
+  switch -exact -- $trackjob_location {
+      local  {$rboxLocal invoke}
+      remote {$rboxRemote invoke}
+  }
+
+  set listBoxInfo [buildFullListbox $dbox_top.u.dest 55x5 "Jobs Found Completed"\
+                                        yscroll 0 1]
+  set destListframe [lindex $listBoxInfo 0]
+  set trackjob_lbox  [lindex $listBoxInfo 3]
+  bind_listbox_single_select $trackjob_lbox
+  register_trackjob_box $trackjob_lbox 
+
+  if [info exists trackjob_output] {
+    foreach el [array names trackjob_output] {
+      $trackjob_lbox insert end "$el"
+    } 
+  }
+
+  pack $dbox_top.u.mins $dbox_top.u.l -anchor nw -side left \
+	-in $dbox_top.u.m -pady 2m
+  pack $dbox_top.u.msg $dbox_top.u.user $dbox_top.u.m -anchor nw -side top \
+	-in $dbox_top.u.p
+  pack $dbox_top.u.p $dbox_top.u.out -side left -anchor c -padx 5
+  pack $dbox_top.u.dest -before $dbox_top.u.p -side bottom -pady 5m
+  pack $dbox_top.header $dbox_top.u $dbox_top.footer -padx 5m
+
+  tkwait visibility $trackjobDialogBox
+  remove_busy_cursor
+
+  register_default_action $trackjobDialogBox $cmdCont
+  catch {tkwait window $trackjobDialogBox}
+  boxesUnset
+
+  set activeWindow($trackjobDialogBox) 0
+}
+
+# trackjob_auto_update: calls 'trackjob_check' in a polling loop.
+proc trackjob_auto_update {update_seq} {
+  global trackjob_mins TRACKJOB_UPDATE_SEQ
+
+  if { $update_seq != $TRACKJOB_UPDATE_SEQ} {
+    return
+  }
+  after [expr $trackjob_mins * 60000] [list trackjob_auto_update $update_seq]
+  trackjob_check
+}
+
+# trackjob_rstart: checks the currently queued or active jobs in the queue for
+# 	the list of users given in 'trackjob_user', and keeps track in the 
+#	array 'trackjob_array' the list of output and error files.
+proc trackjob_rstart {} {
+  global trackjob_array trackjob_user trackjob_button trackjob_mins \
+         PBS_QSTATDUMP_CMD SERVER_HOSTS LINES_TO_IGNORE TRACKJOB_UPDATE_SEQ \
+         trackjob_lbox trackjob_output backgroundColor timeout_secs \
+         trackjobDialogBox
+
+  catch {unset trackjob_array}
+  set userlist [construct_array_args trackjob_user ","]
+  if {[string compare $userlist ""] == 0} {
+    popupInfoBox $trackjobDialogBox "Please specify the user(s) to track."
+    return
+  }
+
+  if { [string compare $trackjob_mins ""] == 0 } {
+    popupInfoBox $trackjobDialogBox "Please specify the minutes interval first."
+    return 
+  }
+  set f [cmdExec_bg "$PBS_QSTATDUMP_CMD -t $timeout_secs -T -u $userlist $SERVER_HOSTS"]
+  if {$f == -1} {
+    popupInfoBox $trackjobDialogBox "Unable to start tracking. See INFO box in main window for details"
+    return
+  }
+  while {[gets $f line] >= 0 && \
+         ([string compare $LINES_TO_IGNORE ""] == 0 || \
+          ![regexp $LINES_TO_IGNORE $line]) } {
+    set trackjob_array([lindex $line 0]) "[lrange $line 1 end]"
+  }
+  if [catch {close $f} errmesg] {
+    InfoBox_sendmsg "received message: $errmesg" 0 1 16
+  }
+
+  catch {unset trackjob_output}
+  $trackjob_lbox delete 0 end
+  $trackjob_button configure -background $backgroundColor
+
+  incr TRACKJOB_UPDATE_SEQ 
+  after [expr $trackjob_mins * 60000] trackjob_auto_update $TRACKJOB_UPDATE_SEQ
+  popupInfoBox $trackjobDialogBox "Job tracking will start in $trackjob_mins mins."
+  InfoBox_sendmsg "done." 0 1 5
+}
+
+# trackjob_check: checks for the existence of the output files or error files
+# 	as recorded in 'trackjob_array'. If it finds one, then inserts into the
+#       trackjob_lbox (if it exists) the corresponding job id, and changes the
+#	color of 'trackjob_button' to 'signalColor'. If no completed jobs are 
+#	found, then it sets the button color back to 'backgroundColor'.
+proc trackjob_check {} {
+  global trackjob_location RSH trackjob_lbox trackjob_array \
+         signalColor foregroundColor trackjob_output \
+	 trackjob_button trackjobDialogBox backgroundColor activeColor
+
+  if {![info exists trackjob_array]} {
+    return
+  }
+
+  if [winfo exists $trackjobDialogBox] {
+    $trackjob_lbox delete 0 end
+  }
+
+  catch {unset trackjob_output}
+
+  InfoBox_sendmsg "Looking for returned output files..." 0
+  foreach el [array names trackjob_array] {
+    set username   [lindex $trackjob_array($el) 0]
+    regexp "(\[^:]+):(\[^ $]+)" [lindex $trackjob_array($el) 1] match \
+		outputh outputf
+    regexp "(\[^:]+):(\[^ $]+)" [lindex $trackjob_array($el) 2] match \
+		errorh errorf
+
+    switch -exact -- $trackjob_location {
+      local {
+	if { [file isfile $outputf] || [file isfile $errorf] } {
+	     if [winfo exists $trackjobDialogBox] {
+	       $trackjob_lbox insert end "$el"
+             }
+	     set trackjob_output($el) $username
+	}
+      }
+      remote {
+        if {\
+            [cmdExec \
+              "$RSH $outputh \"test -f $outputf && echo 1\"" \
+            ] == 1 || \
+            [cmdExec \
+              "$RSH $errorh \"test -f $errorf && echo 1\"" \
+            ] == 1} {
+	     if [winfo exists $trackjobDialogBox] {
+	       $trackjob_lbox insert end "$el"
+             }
+	     set trackjob_output($el) $username
+	 }
+      }
+    }
+    InfoBox_sendmsg "." 0 1
+  }
+  $trackjob_button configure -background $backgroundColor
+  if {[info exists trackjob_output] && [array size trackjob_output] > 0} {
+    $trackjob_button configure -background $signalColor
+  } else {
+    $trackjob_button configure -background $activeColor
+  }
+  InfoBox_sendmsg "done." 0 1 5
+}
+
+# trackjob_show: displays the contents of the output file and error file of
+#	'jobid'.
+proc trackjob_show {jobid} {
+
+     global TEXTFONT showDialogBox LABELFONT trackjob_array trackjob_location \
+	    RSH
+
+     busy_cursor 
+     set showDialogBox ".show"
+     set dbox [popupDialogBox $showDialogBox "Job Output Dialog"]
+     set activeWindow($showDialogBox) 1
+     set dbox_top    [lindex $dbox 0]
+     set dbox_bottom [lindex $dbox 1]
+
+     regexp "(\[^:]+):(\[^ $]+)" [lindex $trackjob_array($jobid) 1] match \
+		outputh outputf
+     regexp "(\[^:]+):(\[^ $]+)" [lindex $trackjob_array($jobid) 2] match \
+		errorh errorf
+
+     frame $dbox_top.l1 -class CmdFrame -relief raised -borderwidth 3
+     frame $dbox_top.l2 -class CmdFrame -relief raised -borderwidth 3
+     frame $dbox_top.t1
+     frame $dbox_top.t2
+
+     message $dbox_top.l1.olabel -font $LABELFONT -text "OUTPUT FILE: $outputh:$outputf" -aspect 1000
+     message $dbox_top.l2.elabel -font $LABELFONT -text "ERROR FILE: $errorh:$errorf" -aspect 1000
+
+     
+     text $dbox_top.t1.otextbox -borderwidth 5  -setgrid 1 \
+                             -font $TEXTFONT -exportselection true \
+                             -width 80  -height 15 -relief ridge -borderwidth 2
+
+     text $dbox_top.t2.etextbox -borderwidth 5  -setgrid 1 \
+                             -font $TEXTFONT -exportselection true \
+                             -width 80  -height 15 -relief ridge -borderwidth 2
+
+     bind_text_readonly $dbox_top.t1.otextbox
+     bind_text_readonly $dbox_top.t2.etextbox
+
+     scrollbar $dbox_top.t1.ovscroll \
+                                     -command "$dbox_top.t1.otextbox yview" \
+                                     -borderwidth 2 \
+                                     -orient vertical \
+                                     -relief groove
+
+     $dbox_top.t1.otextbox configure -yscrollcommand "$dbox_top.t1.ovscroll set"
+
+     scrollbar $dbox_top.t2.evscroll \
+                                     -command "$dbox_top.t2.etextbox yview" \
+                                     -borderwidth 2 \
+                                     -orient vertical \
+                                     -relief groove
+
+     $dbox_top.t2.etextbox configure -yscrollcommand "$dbox_top.t2.evscroll set"
+## COMMAND
+     set ok_button [lindex \
+                    [buildCmdButtons $dbox_bottom {{{ok ok}}} x 20m 10 3] 1]
+
+     $ok_button configure -command [list destroy $showDialogBox]
+## LOAD TEXTBOXES with OUTPUT
+     switch -exact -- $trackjob_location {
+       local {
+  	set retcode [catch {open $outputf} fd]
+        if {$retcode != 0} {
+          InfoBox_sendmsg "Error opening file $outputf. Returned: $retcode" 1 1
+        } else {
+	  set output [read $fd]
+	  if {[string compare $output ""] != 0} {
+	    $dbox_top.t1.otextbox insert end $output
+	  }
+	  close $fd
+        }
+        set retcode [catch {open $errorf} fd]
+        if {$retcode != 0} {
+          InfoBox_sendmsg "Error opening file $errorf. Returned: $retcode" 1 1
+        } else {
+	  set output [read $fd]
+	  if {[string compare $output ""] != 0} {
+	    $dbox_top.t2.etextbox insert end $output
+	  }
+	  close $fd
+        }
+      }
+      remote {
+  	set fd [cmdExec_bg "$RSH $outputh cat $outputf"]
+	if {$fd == -1} {
+	  return
+        }
+	
+	set output [read $fd]
+	if {[string compare $output ""] != 0} {
+	    $dbox_top.t1.otextbox insert end $output
+	}
+	if [catch {close $fd} errmesg] {
+    	  InfoBox_sendmsg "received message: $errmesg" 0 1 16
+        }
+
+  	set fd [cmdExec_bg "$RSH $errorh cat $errorf"]
+	if {$fd == -1} {
+	  return
+        }
+	set output [read $fd]
+	if {[string compare $output ""] != 0} {
+	    $dbox_top.t2.etextbox insert end $output
+	}
+	if [catch {close $fd} errmesg] {
+    	  InfoBox_sendmsg "received message: $errmesg" 0 1 16
+        }
+      }
+   }
+
+   register_default_action $showDialogBox $ok_button
+
+#  Make all widgets visible
+   pack $dbox_top.l1.olabel -anchor nw -side left
+   pack $dbox_top.l2.elabel -anchor nw -side left
+
+   pack $dbox_top.t1.otextbox -expand 1 -fill both -side bottom -side left
+   pack $dbox_top.t1.ovscroll  -fill y -expand 1 -side right
+
+   pack $dbox_top.t2.etextbox -expand 1 -fill both -side bottom -side left
+   pack $dbox_top.t2.evscroll  -fill y -expand 1 -side right
+
+   pack $dbox_top.l1 $dbox_top.t1 $dbox_top.l2 $dbox_top.t2 -side top \
+	-anchor nw -fill x -expand 1
+  
+   tkwait visibility $showDialogBox
+   remove_busy_cursor
+
+   catch {tkwait window $showDialogBox}
+   set activeWindow($showDialogBox) 0
+}

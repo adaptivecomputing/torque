@@ -1,0 +1,218 @@
+#         OpenPBS (Portable Batch System) v2.3 Software License
+# 
+# Copyright (c) 1999-2000 Veridian Information Solutions, Inc.
+# All rights reserved.
+# 
+# ---------------------------------------------------------------------------
+# For a license to use or redistribute the OpenPBS software under conditions
+# other than those described below, or to purchase support for this software,
+# please contact Veridian Systems, PBS Products Department ("Licensor") at:
+# 
+#    www.OpenPBS.org  +1 650 967-4675                  sales@OpenPBS.org
+#                        877 902-4PBS (US toll-free)
+# ---------------------------------------------------------------------------
+# 
+# This license covers use of the OpenPBS v2.3 software (the "Software") at
+# your site or location, and, for certain users, redistribution of the
+# Software to other sites and locations.  Use and redistribution of
+# OpenPBS v2.3 in source and binary forms, with or without modification,
+# are permitted provided that all of the following conditions are met.
+# After December 31, 2001, only conditions 3-6 must be met:
+# 
+# 1. Commercial and/or non-commercial use of the Software is permitted
+#    provided a current software registration is on file at www.OpenPBS.org.
+#    If use of this software contributes to a publication, product, or
+#    service, proper attribution must be given; see www.OpenPBS.org/credit.html
+# 
+# 2. Redistribution in any form is only permitted for non-commercial,
+#    non-profit purposes.  There can be no charge for the Software or any
+#    software incorporating the Software.  Further, there can be no
+#    expectation of revenue generated as a consequence of redistributing
+#    the Software.
+# 
+# 3. Any Redistribution of source code must retain the above copyright notice
+#    and the acknowledgment contained in paragraph 6, this list of conditions
+#    and the disclaimer contained in paragraph 7.
+# 
+# 4. Any Redistribution in binary form must reproduce the above copyright
+#    notice and the acknowledgment contained in paragraph 6, this list of
+#    conditions and the disclaimer contained in paragraph 7 in the
+#    documentation and/or other materials provided with the distribution.
+# 
+# 5. Redistributions in any form must be accompanied by information on how to
+#    obtain complete source code for the OpenPBS software and any
+#    modifications and/or additions to the OpenPBS software.  The source code
+#    must either be included in the distribution or be available for no more
+#    than the cost of distribution plus a nominal fee, and all modifications
+#    and additions to the Software must be freely redistributable by any party
+#    (including Licensor) without restriction.
+# 
+# 6. All advertising materials mentioning features or use of the Software must
+#    display the following acknowledgment:
+# 
+#     "This product includes software developed by NASA Ames Research Center,
+#     Lawrence Livermore National Laboratory, and Veridian Information
+#     Solutions, Inc.
+#     Visit www.OpenPBS.org for OpenPBS software support,
+#     products, and information."
+# 
+# 7. DISCLAIMER OF WARRANTY
+# 
+# THIS SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND. ANY EXPRESS
+# OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+# OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT
+# ARE EXPRESSLY DISCLAIMED.
+# 
+# IN NO EVENT SHALL VERIDIAN CORPORATION, ITS AFFILIATED COMPANIES, OR THE
+# U.S. GOVERNMENT OR ANY OF ITS AGENCIES BE LIABLE FOR ANY DIRECT OR INDIRECT,
+# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
+# OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+# LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+# NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+# EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# 
+# This license will be governed by the laws of the Commonwealth of Virginia,
+# without reference to its choice of law rules.
+################################################################################
+# qsig: defines the layout and functions of the signal job dialog box.
+proc qsig {} {
+  global jobsSelected LABELFONT jobidField SERVER_HOSTS cmdpath qsigDialogBox \
+	 otherEntryField qsigv
+  global radioboxOther
+  global activeWindow
+
+  busy_cursor
+## Bring up the standard Dialog box ##
+  set qsigDialogBox ".sig"
+  set dbox [popupDialogBox $qsigDialogBox "Signal Running Job Dialog"]
+  set activeWindow($qsigDialogBox) 1
+  set dbox_top    [lindex $dbox 0]
+  set dbox_bottom [lindex $dbox 1]
+
+## BOTTOM PART ##
+  set cmdButtons \
+  [buildCmdButtons $dbox_bottom {{{sig signal} {cancel cancel} {help help}}} x 10m 10 3]
+
+  set cmdFrame  [lindex $cmdButtons 0]
+  set cmdSignal [lindex $cmdButtons 1]
+  set cmdCancel [lindex $cmdButtons 2]
+  set cmdHelp   [lindex $cmdButtons 3]
+ 
+  $cmdSignal configure -command {
+
+    if { [string compare $qsigv(signal) " "] == 0 } {
+
+      if {[string compare $qsigv(other_signal) ""] == 0} {
+	 popupInfoBox $qsigDialogBox "Please enter the signal name or number."
+	 return
+      }
+      set exitcode [win_cmdExec $qsigDialogBox "$cmdpath(QSIG) -s $qsigv(other_signal) $jobsSelected"]
+    } elseif { [string compare $qsigv(signal) "TERM"] != 0 } {
+      set exitcode [win_cmdExec $qsigDialogBox "$cmdpath(QSIG) -s $qsigv(signal) $jobsSelected"]
+    } else {
+      set exitcode [win_cmdExec $qsigDialogBox "$cmdpath(QSIG) $jobsSelected"]
+    }
+
+    if {$exitcode == 0} {
+      after 500 [list getdata $SERVER_HOSTS 1]
+      destroy $qsigDialogBox
+    }
+  }
+  $cmdCancel configure -command [list destroy $qsigDialogBox]
+
+  $cmdHelp configure -command {xpbs_help signal $qsigDialogBox}
+
+## TOP PART ##
+  frame $dbox_top.header -height 10m -width 10m
+  frame $dbox_top.footer -height 10m -width 10m
+  frame $dbox_top.e
+  frame $dbox_top.e.e1
+  frame $dbox_top.f -borderwidth 3 -relief groove
+  frame $dbox_top.r
+  frame $dbox_top.empty1 -width 14m
+  frame $dbox_top.empty2 -width 11m
+  frame $dbox_top.r.e
+
+  label $dbox_top.e.l -text "to RUNNING job(s):" -font $LABELFONT
+  set jobidbox [buildFullListbox $dbox_top.e.e1 45x3 "" xyscroll 0]
+
+  set jobidFrame [lindex $jobidbox 0]
+  set jobidField [lindex $jobidbox 3]
+  $jobidField configure -relief sunken
+  bind_text_readonly $jobidField
+
+  foreach el $jobsSelected {
+    $jobidField insert end $el
+  }
+
+  set otherEntrybox [buildFullEntrybox $dbox_top.r.e 0 "" 10 "" bottom 0]
+  set otherEntryFrame [lindex $otherEntrybox 0]
+  set qsigv(otherEntryField) [lindex $otherEntrybox 2]
+  set qsigv(otherScroll) [lindex $otherEntrybox 3]
+
+  $qsigv(otherEntryField) configure -textvariable qsigv(other_signal)
+  register_default_action $qsigv(otherEntryField) $cmdCancel
+
+  set radiolist [list {hup  "HUP (hangup)"} {int  "INT (interrupt)"} \
+      {kill "KILL"} {term "TERM (terminate)"} \
+      [concat other \"other (specify signal name or number)\" $otherEntryFrame]]
+
+  set radiobox [buildRadioboxes $dbox_top.r  [list $radiolist] column 0 \
+			"Send signal:"]
+  set radioboxFrame  [lindex $radiobox 0]
+  set radioboxHup    [lindex $radiobox 1]
+  set radioboxInt    [lindex $radiobox 2]
+  set radioboxKill   [lindex $radiobox 3]
+  set radioboxTerm   [lindex $radiobox 4]
+  set radioboxOther  [lindex $radiobox 5]
+
+  $radioboxHup   configure -variable qsigv(signal) -value HUP  \
+                 -command {
+			disable_fullentry "" $qsigv(otherEntryField) \
+				$qsigv(otherScroll)
+		 }
+  $radioboxInt   configure -variable qsigv(signal) -value INT  \
+                 -command {
+			disable_fullentry "" $qsigv(otherEntryField) \
+				$qsigv(otherScroll)
+		 }
+  $radioboxKill  configure -variable qsigv(signal) -value KILL \
+                 -command {
+			disable_fullentry "" $qsigv(otherEntryField) \
+				$qsigv(otherScroll)
+		 }
+  $radioboxTerm  configure -variable qsigv(signal) -value TERM \
+                 -command {
+			disable_fullentry "" $qsigv(otherEntryField) \
+				$qsigv(otherScroll)
+		 }
+  $radioboxOther configure -variable qsigv(signal) -value " " \
+                 -command {
+			enable_fullentry "" $qsigv(otherEntryField) \
+				$qsigv(otherScroll)
+		 }
+
+  set qsigv(signal) TERM
+  invoke_rbutton [list $radioboxHup $radioboxInt $radioboxKill $radioboxTerm \
+			$radioboxOther]
+   
+## ARRANGEMENT ON SCREEN
+
+  pack $dbox_top.e.l $dbox_top.e.e1 -side left -anchor nw
+
+  pack $radioboxFrame -in $dbox_top.f -padx 2m -pady 2m
+  raise $radioboxFrame $dbox_top.f
+  pack $dbox_top.header $dbox_top.f $dbox_top.e $dbox_top.footer -side top \
+	-padx 10m -pady 2m
+
+  pack  $radioboxFrame.e
+
+
+  register_default_action $qsigDialogBox $cmdCancel
+  tkwait visibility $qsigDialogBox
+  remove_busy_cursor
+  catch {tkwait window $qsigDialogBox}
+  set activeWindow($qsigDialogBox) 0
+  catch {unset qsigv}
+}

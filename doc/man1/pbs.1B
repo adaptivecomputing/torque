@@ -1,0 +1,179 @@
+.\"         OpenPBS (Portable Batch System) v2.3 Software License
+.\" 
+.\" Copyright (c) 1999-2000 Veridian Information Solutions, Inc.
+.\" All rights reserved.
+.\" 
+.\" ---------------------------------------------------------------------------
+.\" For a license to use or redistribute the OpenPBS software under conditions
+.\" other than those described below, or to purchase support for this software,
+.\" please contact Veridian Systems, PBS Products Department ("Licensor") at:
+.\" 
+.\"    www.OpenPBS.org  +1 650 967-4675                  sales@OpenPBS.org
+.\"                        877 902-4PBS (US toll-free)
+.\" ---------------------------------------------------------------------------
+.\" 
+.\" This license covers use of the OpenPBS v2.3 software (the "Software") at
+.\" your site or location, and, for certain users, redistribution of the
+.\" Software to other sites and locations.  Use and redistribution of
+.\" OpenPBS v2.3 in source and binary forms, with or without modification,
+.\" are permitted provided that all of the following conditions are met.
+.\" After December 31, 2001, only conditions 3-6 must be met:
+.\" 
+.\" 1. Commercial and/or non-commercial use of the Software is permitted
+.\"    provided a current software registration is on file at www.OpenPBS.org.
+.\"    If use of this software contributes to a publication, product, or service
+.\"    proper attribution must be given; see www.OpenPBS.org/credit.html
+.\" 
+.\" 2. Redistribution in any form is only permitted for non-commercial,
+.\"    non-profit purposes.  There can be no charge for the Software or any
+.\"    software incorporating the Software.  Further, there can be no
+.\"    expectation of revenue generated as a consequence of redistributing
+.\"    the Software.
+.\" 
+.\" 3. Any Redistribution of source code must retain the above copyright notice
+.\"    and the acknowledgment contained in paragraph 6, this list of conditions
+.\"    and the disclaimer contained in paragraph 7.
+.\" 
+.\" 4. Any Redistribution in binary form must reproduce the above copyright
+.\"    notice and the acknowledgment contained in paragraph 6, this list of
+.\"    conditions and the disclaimer contained in paragraph 7 in the
+.\"    documentation and/or other materials provided with the distribution.
+.\" 
+.\" 5. Redistributions in any form must be accompanied by information on how to
+.\"    obtain complete source code for the OpenPBS software and any
+.\"    modifications and/or additions to the OpenPBS software.  The source code
+.\"    must either be included in the distribution or be available for no more
+.\"    than the cost of distribution plus a nominal fee, and all modifications
+.\"    and additions to the Software must be freely redistributable by any party
+.\"    (including Licensor) without restriction.
+.\" 
+.\" 6. All advertising materials mentioning features or use of the Software must
+.\"    display the following acknowledgment:
+.\" 
+.\"     "This product includes software developed by NASA Ames Research Center,
+.\"     Lawrence Livermore National Laboratory, and Veridian Information
+.\"     Solutions, Inc.
+.\"     Visit www.OpenPBS.org for OpenPBS software support,
+.\"     products, and information."
+.\" 
+.\" 7. DISCLAIMER OF WARRANTY
+.\" 
+.\" THIS SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND. ANY EXPRESS
+.\" OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+.\" OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT
+.\" ARE EXPRESSLY DISCLAIMED.
+.\" 
+.\" IN NO EVENT SHALL VERIDIAN CORPORATION, ITS AFFILIATED COMPANIES, OR THE
+.\" U.S. GOVERNMENT OR ANY OF ITS AGENCIES BE LIABLE FOR ANY DIRECT OR INDIRECT,
+.\" INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+.\" LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
+.\" OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+.\" LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+.\" NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+.\" EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+.\" 
+.\" This license will be governed by the laws of the Commonwealth of Virginia,
+.\" without reference to its choice of law rules.
+.if \n(Pb .ig Iq
+.TH pbs 1B "" Local PBS
+.so ../ers/ers.macros
+.Iq
+.Sh NAME
+pbs - general information on pbs
+.Sh DESCRIPTION
+PBS stands for
+.I "Portable Batch System."
+It is a networked subsystem for submitting, monitoring, and controlling a
+work load of batch jobs on one or more systems.
+More information about PBS is available in the PBS Users Guide.
+.LP
+.I Batch
+means that the job will be scheduled for execution at a time chosen by
+the subsystem according to a defined policy and the availability of 
+resources.  For a normal batch job, the standard output and standard error
+of the job will be returned to files available to the user when the job is
+complete.   This differs from an interactive session where commands are
+executed when entered via the terminal and output is returned directly to
+the terminal.   PBS also supports an
+.I "interactive batch"
+mode where the input and output is connected to the user's terminal, but
+the scheduling of the job is still under control of the batch system.
+.LP
+A
+.I job
+is typically a shell script and a set of attributes which provide resource
+and control information about the job.
+A job does not have to be submitted on the system where it will run,
+tt can be submitted on any system with the PBS commands and access to the
+execution system, see 
+.I qsub(1B).
+Output will be returned to the system from which the job was submitted
+unless directed otherwise.
+.LP
+Attributes offer control over when a job is eligible to be run, what happens
+to the output when it is completed and how the user is notified when it
+completes.  The attributes of the job may be specified
+on the command line or in the job script when the job is submitted.
+For information about job attributes, see qsub(1B) and
+.I pbs_job_attributes(7B).
+.LP
+One important attribute is the
+.I "resource list."
+The list specifies the amount and type of resources needed by the job in 
+order to execute.   The list also implies a hard upper limit on usage
+of those resources.  When the limit is reached, the job is terminated.
+The types of resources available to a job vary with
+the system architecture.  For a list of resources supported on the default
+system, see
+.I pbs_resources(7B).
+There are man pages for other systems types as well, see
+.I pbs_resources_aix4(7B),
+.I pbs_resources_fujitsu(7B),
+.I pbs_resources_irix5(7B),
+.I pbs_resources_solaris5(7B),
+.I pbs_resources_sp2(7B),
+.I pbs_resources_sunos4(7B),
+or
+.I pbs_resources_unicos8(7B).
+.LP
+Once a job has been submitted, it may be monitored by use of the
+.I qstat(1B) 
+command.  Two forms of output are available with the qstat command.
+The default form is the short display.   Information about a job
+is limited to a single line.   Complete information about the job or
+jobs is available through qstat with the -f option.
+Information will be given about all jobs in the system, all jobs in specified
+queues, or only specified jobs.
+.LP
+When displaying status of jobs, you will see in which queue the job resides.
+In PBS a queue is just a collection point for jobs, it does not imply any
+execution ordering.  That ordering is determined by a scheduling policy
+implemented by the system administration.
+.LP
+Other commands of interest which have man pages of their own are:
+.IP qalter 8
+Alter a job's attributes.
+.IP qdel
+Delete a job.
+.IP qhold
+Place a hold on a job to keep it from being scheduled for running.
+.IP qmove
+Move a job to a different queue or server.
+.IP qmsg
+Append a message to the output of an executing job.
+.IP qrerun
+Terminate an executing job and return it to a queue.
+.IP qrls
+Remove a hold from a job.
+.IP qselect
+Obtain a list of jobs that met certain criteria.
+.IP qsig
+Send a signal to an executing job.
+.LP
+.Sh SEE ALSO
+qalter(1B), qdel(1B), qhold(1B), qmove(1B), qmsg(1B), qrerun(1B), qrls(1B),
+qselect(1B), qsig(1B), qsub(1B) and the PBS User Guide.
+Starting with qsub(1B), you can find all other available PBS man pages by
+following references in the "See Also" section.
+\" turn off any extra indent left by the Sh macro
+.RE

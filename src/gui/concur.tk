@@ -1,0 +1,320 @@
+#         OpenPBS (Portable Batch System) v2.3 Software License
+# 
+# Copyright (c) 1999-2000 Veridian Information Solutions, Inc.
+# All rights reserved.
+# 
+# ---------------------------------------------------------------------------
+# For a license to use or redistribute the OpenPBS software under conditions
+# other than those described below, or to purchase support for this software,
+# please contact Veridian Systems, PBS Products Department ("Licensor") at:
+# 
+#    www.OpenPBS.org  +1 650 967-4675                  sales@OpenPBS.org
+#                        877 902-4PBS (US toll-free)
+# ---------------------------------------------------------------------------
+# 
+# This license covers use of the OpenPBS v2.3 software (the "Software") at
+# your site or location, and, for certain users, redistribution of the
+# Software to other sites and locations.  Use and redistribution of
+# OpenPBS v2.3 in source and binary forms, with or without modification,
+# are permitted provided that all of the following conditions are met.
+# After December 31, 2001, only conditions 3-6 must be met:
+# 
+# 1. Commercial and/or non-commercial use of the Software is permitted
+#    provided a current software registration is on file at www.OpenPBS.org.
+#    If use of this software contributes to a publication, product, or
+#    service, proper attribution must be given; see www.OpenPBS.org/credit.html
+# 
+# 2. Redistribution in any form is only permitted for non-commercial,
+#    non-profit purposes.  There can be no charge for the Software or any
+#    software incorporating the Software.  Further, there can be no
+#    expectation of revenue generated as a consequence of redistributing
+#    the Software.
+# 
+# 3. Any Redistribution of source code must retain the above copyright notice
+#    and the acknowledgment contained in paragraph 6, this list of conditions
+#    and the disclaimer contained in paragraph 7.
+# 
+# 4. Any Redistribution in binary form must reproduce the above copyright
+#    notice and the acknowledgment contained in paragraph 6, this list of
+#    conditions and the disclaimer contained in paragraph 7 in the
+#    documentation and/or other materials provided with the distribution.
+# 
+# 5. Redistributions in any form must be accompanied by information on how to
+#    obtain complete source code for the OpenPBS software and any
+#    modifications and/or additions to the OpenPBS software.  The source code
+#    must either be included in the distribution or be available for no more
+#    than the cost of distribution plus a nominal fee, and all modifications
+#    and additions to the Software must be freely redistributable by any party
+#    (including Licensor) without restriction.
+# 
+# 6. All advertising materials mentioning features or use of the Software must
+#    display the following acknowledgment:
+# 
+#     "This product includes software developed by NASA Ames Research Center,
+#     Lawrence Livermore National Laboratory, and Veridian Information
+#     Solutions, Inc.
+#     Visit www.OpenPBS.org for OpenPBS software support,
+#     products, and information."
+# 
+# 7. DISCLAIMER OF WARRANTY
+# 
+# THIS SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND. ANY EXPRESS
+# OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+# OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT
+# ARE EXPRESSLY DISCLAIMED.
+# 
+# IN NO EVENT SHALL VERIDIAN CORPORATION, ITS AFFILIATED COMPANIES, OR THE
+# U.S. GOVERNMENT OR ANY OF ITS AGENCIES BE LIABLE FOR ANY DIRECT OR INDIRECT,
+# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
+# OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+# LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+# NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+# EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# 
+# This license will be governed by the laws of the Commonwealth of Virginia,
+# without reference to its choice of law rules.
+################################################################################
+# concur: defines the layout and functions of the concurrency set dialog box.
+# 	This returns input focus back to 'callerDialogBox' when the depend
+#	dialog box is closed. 
+proc concur {callerDialogBox {qalter 0} } {
+  global LABELFONT activeWindow def dependDialogBox
+  global jobinfo JOBS_LISTBOX_KEY concurJob tk_version
+
+  if {!$qalter} {
+    global qsubv ARR def_qsub
+    set ARR "qsubv"
+    set def def_qsub
+  } else {
+    global qalterv ARR def_qalter
+    set ARR "qalterv"
+    set def def_qalter
+  }
+
+  busy_cursor
+## Bring up the standard Dialog box ##
+  set dependDialogBox ".concur"
+  set dbox [popupDialogBox $dependDialogBox "Concurrency Set" 1 "" \
+							     $callerDialogBox]
+  set activeWindow($dependDialogBox) 1
+  set dbox_top    [lindex $dbox 0]
+  set dbox_bottom [lindex $dbox 1]
+
+## BOTTOM PART ##
+  set cmdButtons \
+  [buildCmdButtons $dbox_bottom {{{ok ok} {cancel "reset to default"} {help help}}} x 9m 16 3]
+
+  set cmdFrame  [lindex $cmdButtons 0]
+  set cmdOk     [lindex $cmdButtons 1]
+  set cmdCancel [lindex $cmdButtons 2]
+  set cmdHelp   [lindex $cmdButtons 3]
+
+  $cmdOk configure -command {
+    if [pre_build_concur_depend_opt $ARR] {
+      return
+    }
+    destroy $dependDialogBox
+  }
+
+  if {$qalter} {
+    $cmdCancel configure -width 18 -command {
+	set_default_qalter_concur
+	invoke_concur_widgets $ARR
+    }
+  } else {
+    $cmdCancel configure -width 18 -command {
+	set_default_qsub_concur
+	invoke_concur_widgets $ARR
+    }
+  }
+
+  $cmdHelp configure -command {xpbs_help concur $dependDialogBox}
+## TOP PART ##
+  frame $dbox_top.concur -borderwidth 3
+  frame $dbox_top.concur.count
+  frame $dbox_top.concur.syncwith
+  frame $dbox_top.concur.syncwith.jobs
+  frame $dbox_top.concur.syncwith.entry
+
+## ARRANGEMENT ON SCREEN
+
+## CONCURRENCY SET
+  set spinBox [buildSpinbox $dbox_top.concur.count 2 \
+                            1-99 ${ARR} synccountCnt "other job(s)." right]
+  set spinCountFrame [lindex $spinBox 0]
+  set ${ARR}(spinCountEntry)  [lindex $spinBox 1]
+  set ${ARR}(spinCountScroll) [lindex $spinBox 2]
+  set ${ARR}(spinCountLabel)  [lindex $spinBox 3]
+
+  register_default_action [set ${ARR}(spinCountEntry)] $cmdOk
+
+
+  set listBoxInfo [buildFullListbox $dbox_top.concur.syncwith.jobs 28x10 \
+		"(select one)" yscroll 0 0]
+  set jobidframe   [lindex $listBoxInfo 0]
+  set ${ARR}(headerLabel) [lindex $listBoxInfo 1]
+  set ${ARR}(selButton) ""
+  set ${ARR}(syncBox) [lindex $listBoxInfo 3]
+  set ${ARR}(scrollBar) [lindex $listBoxInfo 4]
+
+  if { ![info exists concurJob] } {
+	set concurJob ""
+  }
+  if [info exists jobinfo] {
+    foreach el [array names jobinfo] {
+      set vallist [list $jobinfo($el)]
+
+      set i 0
+      set concurJob [set ${ARR}(syncwithJob)]
+      foreach val [lindex $vallist $i] {
+        set entry [strget_keyvals $val $JOBS_LISTBOX_KEY "@"]
+        [set ${ARR}(syncBox)] insert end $entry
+        incr i
+
+      }
+    }
+  }
+  bind_listbox_single_select [set ${ARR}(syncBox)]
+  bind_depend concur [set ${ARR}(syncBox)]
+  label $dbox_top.concur.syncwith.label -font $LABELFONT \
+	-text "=" -width 5 -height 15
+  set ${ARR}(entryLabel) $dbox_top.concur.syncwith.e.label
+  set entrybox [buildFullEntrybox $dbox_top.concur.syncwith.entry 10 \
+			"(or type job id here)" 40 \
+                        "" right 0 top]
+  set entryFrame [lindex $entrybox 0]
+  set ${ARR}(syncWithEntryLabel) [lindex $entrybox 1]
+  set ${ARR}(syncWithEntry) [lindex $entrybox 2]
+  set ${ARR}(syncWithEntryScroll) [lindex $entrybox 3]
+  [set ${ARR}(syncWithEntry)] configure -textvariable concurJob
+
+  register_default_action [set ${ARR}(syncWithEntry)] $cmdOk
+
+  pack $jobidframe -side left -padx 10m -anchor nw
+  pack $dbox_top.concur.syncwith.label -side left -anchor nw
+  pack $entryFrame -side right -anchor nw -pady 20m
+
+  set radioList [list \
+                 [concat synccount \
+                  \"THIS JOB is first job to be executed concurrently with\" \
+                  $spinCountFrame] \
+                 [ concat syncwith  \
+ 		   \"THIS JOB is a member of a set of jobs to be executed\
+                   concurrently with job:\" $dbox_top.concur.syncwith] \
+		{syncnone "THIS JOB is not a member of a concurrency set."} ]
+  set radiobox [buildRadioboxes $dbox_top.concur [list $radioList] \
+                column 0 "" 1 0 0 1]
+  set radioboxFrame  [lindex $radiobox 0]
+  set ${ARR}(radioboxSynccount) [lindex $radiobox 1]
+  set ${ARR}(radioboxSyncwith) [lindex $radiobox 2]
+  set ${ARR}(radioboxSyncNone) [lindex $radiobox 3]
+
+  [set ${ARR}(radioboxSynccount)] configure -variable ${ARR}(concur) \
+	-value "synccount" \
+	-command {
+	   set sp_ent [set ${ARR}(spinCountEntry)]
+           set sp_scr [set ${ARR}(spinCountScroll)]
+           set sp_lab [set ${ARR}(spinCountLabel)]
+
+	   set lb_box [set ${ARR}(syncBox)]
+	   set lb_lab [set ${ARR}(headerLabel)]
+	   set lb_sel [set ${ARR}(selButton)]
+           set lb_scr [set ${ARR}(scrollBar)]
+
+	   set sy_ent [set ${ARR}(syncWithEntry)]
+	   set sy_scr [set ${ARR}(syncWithEntryScroll)]
+	   set sy_lab [set ${ARR}(syncWithEntryLabel)]
+
+	   enable_spinbox $sp_ent $sp_scr $sp_lab
+	   disable_listbox $lb_box $lb_lab $lb_sel $lb_scr
+	   disable_fullentry  $sy_lab $sy_ent $sy_scr
+	   
+	   focus $sp_ent
+	}
+  [set ${ARR}(radioboxSyncwith)]  configure -variable ${ARR}(concur) \
+	-value "syncwith" \
+	-command {
+	   set sp_ent [set ${ARR}(spinCountEntry)]
+           set sp_scr [set ${ARR}(spinCountScroll)]
+           set sp_lab [set ${ARR}(spinCountLabel)]
+
+	   set lb_box [set ${ARR}(syncBox)]
+	   set lb_lab [set ${ARR}(headerLabel)]
+	   set lb_sel [set ${ARR}(selButton)]
+           set lb_scr [set ${ARR}(scrollBar)]
+
+	   set sy_ent [set ${ARR}(syncWithEntry)]
+	   set sy_scr [set ${ARR}(syncWithEntryScroll)]
+	   set sy_lab [set ${ARR}(syncWithEntryLabel)]
+
+	   enable_listbox $lb_box $lb_lab $lb_sel $lb_scr "bind_depend concur"
+	   enable_fullentry  $sy_lab $sy_ent $sy_scr
+	   disable_spinbox $sp_ent $sp_scr $sp_lab
+       }
+
+  [set ${ARR}(radioboxSyncNone)]  configure -variable ${ARR}(concur) \
+	-value "syncnone" \
+	-command {
+	   set sp_ent [set ${ARR}(spinCountEntry)]
+           set sp_scr [set ${ARR}(spinCountScroll)]
+           set sp_lab [set ${ARR}(spinCountLabel)]
+
+	   set lb_box [set ${ARR}(syncBox)]
+	   set lb_lab [set ${ARR}(headerLabel)]
+	   set lb_sel [set ${ARR}(selButton)]
+           set lb_scr [set ${ARR}(scrollBar)]
+
+	   set sy_ent [set ${ARR}(syncWithEntry)]
+	   set sy_scr [set ${ARR}(syncWithEntryScroll)]
+	   set sy_lab [set ${ARR}(syncWithEntryLabel)]
+
+	   disable_spinbox $sp_ent $sp_scr $sp_lab
+	   disable_listbox $lb_box $lb_lab $lb_sel $lb_scr
+	   disable_fullentry  $sy_lab $sy_ent $sy_scr
+       }
+
+  focus $dependDialogBox
+
+### PACK the FRAMES
+  pack $dbox_top.concur -anchor nw -side top -fill x -padx 2m
+
+ invoke_concur_widgets $ARR
+  remove_busy_cursor
+  catch {tkwait window $dependDialogBox}
+  set activeWindow($dependDialogBox) 0
+  focus $callerDialogBox
+  catch {grab $callerDialogBox}
+}
+# invoke_depend_widgets: invoke the various widgets found in the Dependency
+#			 dialog box.
+proc invoke_concur_widgets assoc_array {
+  upvar $assoc_array arr
+
+  invoke_rbutton [list $arr(radioboxSyncNone) $arr(radioboxSynccount) \
+		       $arr(radioboxSyncwith)]
+}
+# pre_build_depend_opt: builds the dependency options suitable for processing
+#	by qsub and qalter. RETURNS: 1 if an error is detected; 0 otherwise.
+proc pre_build_concur_depend_opt {array} {
+    upvar $array ARR
+
+    global dependDialogBox concurJob
+
+    switch -exact -- $ARR(concur) {
+      synccount {
+        if {[string compare $ARR(synccountCnt) ""] == 0} {
+  		popupInfoBox $dependDialogBox "Please specify the # of jobs that will synchronize execution with current job."
+		return 1
+	}
+      }
+      syncwith {
+          if {[string compare $concurJob ""] == 0} {
+		popupInfoBox $dependDialogBox "Please click to select the job to synchronize execution with."
+		return 1
+	  }
+	  set ARR(syncwithJob) $concurJob
+      }
+    }
+    return 0
+}

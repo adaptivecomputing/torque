@@ -1,0 +1,269 @@
+#         OpenPBS (Portable Batch System) v2.3 Software License
+# 
+# Copyright (c) 1999-2000 Veridian Information Solutions, Inc.
+# All rights reserved.
+# 
+# ---------------------------------------------------------------------------
+# For a license to use or redistribute the OpenPBS software under conditions
+# other than those described below, or to purchase support for this software,
+# please contact Veridian Systems, PBS Products Department ("Licensor") at:
+# 
+#    www.OpenPBS.org  +1 650 967-4675                  sales@OpenPBS.org
+#                        877 902-4PBS (US toll-free)
+# ---------------------------------------------------------------------------
+# 
+# This license covers use of the OpenPBS v2.3 software (the "Software") at
+# your site or location, and, for certain users, redistribution of the
+# Software to other sites and locations.  Use and redistribution of
+# OpenPBS v2.3 in source and binary forms, with or without modification,
+# are permitted provided that all of the following conditions are met.
+# After December 31, 2001, only conditions 3-6 must be met:
+# 
+# 1. Commercial and/or non-commercial use of the Software is permitted
+#    provided a current software registration is on file at www.OpenPBS.org.
+#    If use of this software contributes to a publication, product, or
+#    service, proper attribution must be given; see www.OpenPBS.org/credit.html
+# 
+# 2. Redistribution in any form is only permitted for non-commercial,
+#    non-profit purposes.  There can be no charge for the Software or any
+#    software incorporating the Software.  Further, there can be no
+#    expectation of revenue generated as a consequence of redistributing
+#    the Software.
+# 
+# 3. Any Redistribution of source code must retain the above copyright notice
+#    and the acknowledgment contained in paragraph 6, this list of conditions
+#    and the disclaimer contained in paragraph 7.
+# 
+# 4. Any Redistribution in binary form must reproduce the above copyright
+#    notice and the acknowledgment contained in paragraph 6, this list of
+#    conditions and the disclaimer contained in paragraph 7 in the
+#    documentation and/or other materials provided with the distribution.
+# 
+# 5. Redistributions in any form must be accompanied by information on how to
+#    obtain complete source code for the OpenPBS software and any
+#    modifications and/or additions to the OpenPBS software.  The source code
+#    must either be included in the distribution or be available for no more
+#    than the cost of distribution plus a nominal fee, and all modifications
+#    and additions to the Software must be freely redistributable by any party
+#    (including Licensor) without restriction.
+# 
+# 6. All advertising materials mentioning features or use of the Software must
+#    display the following acknowledgment:
+# 
+#     "This product includes software developed by NASA Ames Research Center,
+#     Lawrence Livermore National Laboratory, and Veridian Information
+#     Solutions, Inc.
+#     Visit www.OpenPBS.org for OpenPBS software support,
+#     products, and information."
+# 
+# 7. DISCLAIMER OF WARRANTY
+# 
+# THIS SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND. ANY EXPRESS
+# OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+# OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT
+# ARE EXPRESSLY DISCLAIMED.
+# 
+# IN NO EVENT SHALL VERIDIAN CORPORATION, ITS AFFILIATED COMPANIES, OR THE
+# U.S. GOVERNMENT OR ANY OF ITS AGENCIES BE LIABLE FOR ANY DIRECT OR INDIRECT,
+# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
+# OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+# LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+# NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+# EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# 
+# This license will be governed by the laws of the Commonwealth of Virginia,
+# without reference to its choice of law rules.
+##############################################################################
+#                                                                            #
+# Main.tk: Contains a series of procedures for building the main application #
+#          window.                                                           # 
+#                                                                            # 
+##############################################################################
+
+proc build_main_window {mainWindow} {
+  global sysinfo
+  
+  frame $mainWindow.menubar -class Plain
+  frame $mainWindow.main -class Plain
+  set sysinfo(main_frame) $mainWindow.main
+  frame $mainWindow.statusbar -class Plain
+
+# pack the rest of the frames: hosts, queues, and jobs.
+  pack $mainWindow.menubar $mainWindow.main $mainWindow.statusbar -pady 1 \
+					    -side top -expand 1 -fill both
+
+  set sysinfo(statusbar_frame) $mainWindow.statusbar
+  fillMenubarFrame $mainWindow.menubar
+  fillStatusbarFrame $mainWindow.statusbar
+  fillMainFrame $mainWindow.main
+
+}
+
+proc fillMainFrame widget_name {
+  global sysinfo sysnodes
+
+  displayView $widget_name $sysinfo(systemName) 1
+}
+
+proc fillStatusbarFrame widget_name {
+  global sysinfo canvas
+
+  frame $widget_name.header    -borderwidth 2 -height 10m -relief raised
+  frame  $widget_name.list     -borderwidth 3
+
+
+  label $widget_name.header.label -anchor nw \
+	-text "INFO:" -padx 1 -pady 1
+  pack $widget_name.header.label -fill both -expand true
+  set sysinfo(infoBox) [lindex [buildFullListbox $widget_name.list \
+           $sysinfo(infoListBoxWidth)x$sysinfo(infoListBoxHeight) "" xyscroll] 3]
+  pack $widget_name.header $widget_name.list -side left -fill both -expand 1 -padx 0 -pady 0
+}
+
+proc displayView {frame sitename {init 0}} {
+	global sysinfo sysview
+
+	if {[string compare $sitename ""] == 0} {
+		return
+	}
+
+#	if { !$init && [info exists sysinfo(systemName)] && \
+#		 [string compare $sysinfo(systemName) $sitename] == 0} {
+#		return
+#	}
+
+	systemDelete $sysinfo(systemFrame)
+
+	set sysinfo(systemFrame) $frame.c_$sitename
+	set sysinfo(systemName) $sitename
+
+	if { [string compare $sysview($sitename) ICON] == 0 } {
+		iconView 1
+	} elseif { [string compare $sysview($sitename) FULL] == 0 } {
+		fullView 1
+	} else {
+		InfoBox_sendmsg "displayView: view type: $sysview($sitename) unknown!" 1
+	}
+
+}
+
+###############################################################################
+###	MENU BAR Frame procedures					      #
+
+###############################################################################
+###	MENU BAR Frame procedures					      #
+###############################################################################
+proc fillMenubarFrame {widget_name} {
+
+  global sysinfo canvas bitmap_dir tk_version dialog
+
+  frame $widget_name.menu -class Plain
+  frame $widget_name.buttons -class Plain
+  
+  menubutton $widget_name.menu.sys -menu $widget_name.menu.sys.m \
+		-anchor w -text "Site.." -borderwidth 2 -relief raised
+
+  set sysinfo(sysMenuButton) $widget_name.menu.sys.m
+  menu $sysinfo(sysMenuButton) -borderwidth 2 -relief raised
+
+  foreach sitename [siteNamesGet] {
+	$sysinfo(sysMenuButton) add radio -label $sitename \
+		-variable sysinfo(systemName) \
+		-value $sitename \
+		-command "displayView $sysinfo(main_frame) $sitename"
+  }
+
+
+  if {$tk_version >= 4.0} {
+        $sysinfo(sysMenuButton) configure -tearoff 0
+  }
+
+#  pack $widget_name.menu.sys -side left -anchor nw -expand 1 -fill both
+  pack $widget_name.menu.sys -side left -anchor nw -expand 1 -fill both
+  pack $widget_name.menu $widget_name.buttons -side left
+  set cmdButtons [buildCmdButtons $widget_name.buttons \
+                  { {  {prefer "Pref.."} } \
+		    { {update_auto "AutoUpdate.."} } \
+		    { {help "Help"} \
+		      {about "About.."} } \
+		    {  {close "Close"}  }
+		    { {iconify ""} \
+		      {maximize ""} } } x 1 10 1 0 0 20]
+  
+  set cmdButtonFrame   [lindex $cmdButtons 0]
+  set cmdButtonPref    [lindex $cmdButtons 1]
+  set cmdButtonUpdAuto [lindex $cmdButtons 2]
+  set cmdButtonHelp    [lindex $cmdButtons 3]
+  set cmdButtonAbout   [lindex $cmdButtons 4]
+  set cmdButtonClose   [lindex $cmdButtons 5]
+  set cmdButtonIconify [lindex $cmdButtons 6]
+  set cmdButtonMaximize [lindex $cmdButtons 7]
+
+
+  $cmdButtonPref configure -width 10  -command {pref $dialog(mainWindow) $dialog(mainWindow)}
+  $cmdButtonUpdAuto configure -width 14  -command {auto_upd}
+  set sysinfo(cmdButtonUpdAuto) $cmdButtonUpdAuto
+
+  $cmdButtonIconify configure -bitmap @$bitmap_dir/iconize.bmp -padx 1 -pady 1 \
+	-anchor c -width 14 -height $canvas(bigLabelFontHeight) \
+	-command {iconView}
+
+  $cmdButtonMaximize configure -bitmap @$bitmap_dir/maximize.bmp -padx 1 \
+	-pady 1 -anchor c -width 14 -height $canvas(bigLabelFontHeight) \
+	-command {fullView} 
+
+  $cmdButtonHelp    configure -command { xpbs_help main ""}
+  $cmdButtonAbout   configure -command { about }
+  $cmdButtonClose configure -command {
+	prefSaveSitesInfo
+	if [prefDoIt] {
+		prefsave
+	}
+	exit
+  }
+}
+
+proc iconView {{force 0}} {
+        global canvas sysinfo sysview
+
+        if {[string compare $sysinfo(systemFrame) ""] == 0 || \
+            [string compare $sysinfo(systemName) ""] == 0} {
+                return
+        }
+        if {!$force && \
+                [string compare $sysview($sysinfo(systemName)) ICON] == 0} {
+                return
+        }
+        set sysview($sysinfo(systemName)) ICON
+
+        if [winfo exists $sysinfo(systemFrame)] {
+        	systemNodesReCreate $sysinfo(systemFrame)
+        } else {
+        	systemNodesCreate $sysinfo(systemFrame) $sysinfo(systemName)
+                after 1000 systemPopulateNodesWithInfo $sysinfo(systemFrame) 1
+        }
+}
+
+proc fullView {{force 0}} {
+        global canvas sysinfo sysview
+
+        if {[string compare $sysinfo(systemFrame) ""] == 0 || \
+            [string compare $sysinfo(systemName) ""] == 0} {
+                return
+        }
+
+        if {!$force && \
+                [string compare $sysview($sysinfo(systemName)) FULL] == 0} {
+                return
+        }
+
+        set sysview($sysinfo(systemName)) FULL
+
+        if [winfo exists $sysinfo(systemFrame)] {
+        	systemNodesReCreate $sysinfo(systemFrame)
+        } else {
+        	systemNodesCreate $sysinfo(systemFrame) $sysinfo(systemName)
+                after 1000 systemPopulateNodesWithInfo $sysinfo(systemFrame) 1
+        }
+}

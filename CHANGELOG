@@ -1,0 +1,295 @@
+1.2.0p0
+
+  fixed MOM state update behavior (USC/Poland)
+  fixed set_globid() crash
+  added support for > 2GB file size job requirements
+  updated config.guess to 2003 release
+  general patch to initialize all function variables (USC)
+  added patch for serial job TJE leakage (USC)
+  add "hw.memsize" based physmem MOM query for darwin (Maine)
+  add configure option (--disable-filesync) to speed up job submission
+  set PBS mail precedence to bulk to avoid vactaion responses (VPAC)
+  added multiple changes to address gcc warnings (USC)
+  enabled auto-sizing of 'qstat -Q' columns
+  purge DOS EOL characters from submit scripts
+
+1.1.0p6
+ 
+  added failure logging for various MOM job launch failures (USC)
+  allow qsub '-d' relative path qsub specification
+  enabled $restricted parameter w/in FIFO to allow used of non-privileged ports (SAIC)
+  checked job launch status code for retry decisions
+  added nodect resource_available checking to FIFO
+  disabled client port binding by default for darwin systems (use --enable-darwinbind to re-enable)
+    - workaround for darwin bind and pclose OS bugs 
+  fixed interactive job terminal control for MAC (NCIFCRF)
+  added support for MAC MOM-level cpu usage tracking (Maine)
+  fixed __P warning (USC)
+  added support for server level resources_avail override of job nodect limits (VPAC)
+  modify MOM copy files and delete file requests to handle NFS root issues (USC/CRI)
+  enhance port retry code to support mac socket behavior
+  clean up file/socket descriptors before execing prolog/epilog
+  enable dynamic cpu set management (ORNL)
+  enable array services support for memory management (ORNL)
+  add server command logging to diagnostics
+  fix linux setrlimit persistance on failures
+
+1.1.0p5
+
+  added loglevel as MOM config parameter
+  distributed job start sequence into multiple routines
+  force node state/subnode state offline stat synchronization (NCSA)
+  fixed N-1 cpu allocation issue (no sanity checking in set_nodes)
+  enhance job start failure logging
+  added continued port checking if connect fails (rentec)
+  added case insensitive host authentication checks
+  added support for submitfilter command line args
+  added support for relocatable submitfilter via torque.cfg
+  fixed offline status cleared when server restarted (USC)
+  updated PBSTop to 4.05 (USC)
+  fixed PServiceType array to correctly report service messages
+  fixed pbs_server crash from job dependencies
+  prevent mom from truncating lock file when mom is already running
+  tcp timeout added as config option
+
+1.1.0p4
+
+  added 15004 error logging
+  added use of openpty() call for locating pseudo terminals (SNL)
+  add diagnostic reporting of config and executable version info
+  add support for config push
+  add support for MOM config version parameters
+  log node offline/online and up/down state changes in pbs_server logs
+  add mom fork logging and home directory check
+  add timeout checking in rpp socket handling
+  added buffer overflow prevention routines
+  added lockfile logging
+  supported protected env variables with qstat
+
+1.1.0p3
+
+  added support for node specification w/pbsnodes -a
+  added hstfile support to momctl
+  added chroot (-D) support (SRCE)
+  added mom chdir pjob check (SRCE)
+  fixed MOM HELLO initialization procedure
+  added momctl diagnostic/admin command (shutdown, reconfig, query, diagnose) 
+  added mom job abort bailout to prevent infinite loops
+  added network reinitialization when socket failure detected
+  added mom-to-scheduler reporting when existing job detected
+  added mom state machine failure logging
+
+1.1.0p2
+
+  add support for disk size reporting via pbs_mom
+  fixed netload initialization
+  fixed orphans on mom fork failure
+  updated to pbstop v 3.9 (USC)
+  fixed buffer overflow issue in net_server.c
+  added pestat package to contrib (ANU)
+  added parameter checking to cpy_stage()  (NCSA)
+  added -x (xml output) support for 'qstat -f' and 'pbsnodes -a'
+  added SSS xml library (SSS)
+  updated user-project mapping enforcement (ANL)
+  fix bogus 'cannot find submitfilter' message for interactive jobs
+  fix incorrect job allocation issue for interactive jobs (NCSA)
+  prevent failure with invalid 'servername' specification (NCSA)
+  provide more meaningful 'post processing error' messages (NCSA)
+  check for corrupt jobs in server database and remove them immediately
+  enable SIGUSR1/SIGUSR2 pbs_mom dynamic loglevel adjustment
+  profiling enhancements
+  use local directory variable in scan_non_child_tasks() to prevent race condition (VPAC)
+  added AIX 5 odm support for realmem reporting (VPAC)
+
+1.1.0p1
+
+  added pbstop to contrib (USC)
+  added OSC mpiexec patch (OSC)
+  confirmed OSC mom-restart patch (OSC)
+  fix pbsd_init purge job tracking
+  allow tracking of completed jobs (w/TORQUEKEEPCOMPLETED env)
+  added support for MAC OS 10
+  added qsub wrapper support
+  added '-d' qsub command line flag for specifying working directory
+  fixed numerous spelling issues in pbs docs
+  enable logical or'ing of user and group ACL's
+  allow large memory sizes for physmem under solaris (USC)
+  fixed qsub SEGV on bad '-o' specification
+  add null checking on ap->value
+  fixed physmem() routine for tru64 systems to load compute node physical memory
+  added netload tracking
+
+1.1.0p0 
+
+  fixed linux swap space checking
+  fixed AIX5 resmom ODM memory leak
+  handle split var/etc directories for default server check (CHPC)
+  add pbs_check utility
+  added TERAGRID nospool log bounds checking 
+  add code to force host domains to lower case
+  verified integration of OSC prologue-environment.patch (export Resource_List.nodes in an environment variable for prologue)
+  verified integration of OSC no-munge-server-name.patch (do not install over existing server_name)
+  verified integration of OSC docfix.patch (fix minor manpage type)
+
+1.0.1p6
+
+  add messaging to report remote data staging failures to pbs_server
+  added tcp_timeout server parameter
+  add routine to mark hung nodes as down
+  add torque.setup initialization script
+  track okclient status
+  fixed INDIANA ji_grpcache MOM crash
+  fixed pbs_mom PBSLOGLEVEL/PBSDEBUG support
+  fixed pbs_mom usage
+  added rentec patch to mom 'sessions' output
+  fixed pbs_server --help option
+  added OSC patch to allow jobs to survive mom shutdown
+  added patch to support server level node comments
+  added support for reporting of node static resources via sss interface
+  added support for tracking available physical memory for IRIX/Linux systems
+  added support for per node probes to dynamically report local state of arbitrary value
+  fixed qsub -c (checkpoint) usage
+
+1.0.1p5
+
+  add SUSE 9.0 support
+  add Linux 2.4 meminfo support
+  add support for inline comments in mom_priv/conf
+  allow support for upto 100 million unique jobs
+  add pbs_resources_all documentation
+  fix kill_task references
+  add contrib/pam_authuser
+
+1.0.1p4
+
+  fixed multi-line readline buffer overflow 
+  extended TORQUE documentation
+  fixed node health check management
+
+1.0.1p3
+
+  added support for pbs_server health check and routing to scheduler
+  added support for specification of more than one clienthost parameter
+  added PW unused-tcp-interrupt patch
+  added PW mom-file-descriptor-leak patch
+  added PW prologue-bounce patch 
+  added PW mlockall patch (release mlock for mom children)
+  added support for job names up to 256 chars in length 
+  added PW errno-fix patch
+
+1.0.1p2
+
+  added support for macintosh (darwin)
+  fixed qsub 'usage' message to correctly represent '-j', 
+    '-k', '-m', and '-q' support
+  add support for 'PBSAPITIMEOUT' env variable
+  fixed mom dec/hp/linux physmem probes to support 64 bit
+  fixed mom dec/hp/linux availmem probes to support 64 bit
+  fixed mom dec/hp/linux totmem probes to support 64 bit
+  fixed mom dec/hp/linux disk_fs probes to support 64 bit
+  removed pbs server request to bogus probe
+  added support for node 'message' attribute to report internal 
+    failures to server/scheduler
+  corrected potential buffer overflow situations
+  improved logging replacing 'unknown' error with real error message
+  enlarged internal tcp message buffer to support 2000 proc systems
+  fixed enc_attr return code checking
+
+Patches incorporated prior to patch 2:
+
+  HPUX superdome support
+
+    add proper tracking of HP resources - Oct 2003 (NOR)
+
+  is_status memory leak patches - Oct 2003 (CRI)
+
+    corrects various memory leaks
+
+  Bash test - Sep 2003 (FHCRC)
+
+    allows support for linked shells at configure time
+
+  AIXv5 support -Sep 2003 (CRI)
+
+    allows support for AIX 5.x systems
+
+  OSC Meminfo -- Dec 2001 (P. Wycoff)
+
+    corrects how pbs_mom figures out how much physical memory each node has under Linux
+
+  Sandia CPlant Fault Tolerance I (w/OSC enhancements)  -- Dec 2001 (L. Fisk/P. Wycoff)
+
+    handles server-MOM hangs
+
+  OSC Timeout I -- Dec 2001 (P. Wycoff)
+
+    enables longer inter daemon timeouts
+
+  OSC Prologue Env I -- Jan 2002 (P. Wycoff)
+
+    add support for env variable PBS_RESOURCE_NODES in job prolog
+
+  OSC Doc/Install I -- Dec 2001 (P. Wycoff)
+
+    fix to the pbsnodes man page
+    Configuration information for Linux on the IA64 architecture
+    fix the build process to make it clean out the documentation directories during a "make distclean"
+    fix the installation process to keep it from overwriting ${PBS_HOME}/server_name if it already exists
+    correct code creating compile time warnings
+    allow PBS to compile on Linux systems which do not have the Linux kernel source installed
+
+  Maui RM Extension -- Dec 2002 (CRI)
+
+    enable Maui resource manager extensions including QOS, reservations, etc
+
+  NCSA Scaling I -- Mar 2001 (G. Arnold)
+
+    increase number of nodes supported by PBS to 512
+
+  NCSA No Spool -- Apr 2001 (G. Arnold)
+
+    support $HOME/.pbs_spool for large jobs
+
+  NCSA MOM Pin
+
+    pin PBS MOM into memory to keep it from getting swapped
+    (NOTE:  Linux conditionals must be added - NYI)
+
+  Buffalo -- Sep 2002 (???)
+
+    ???
+
+  ANL RPP Tuning -- Sep 2000 (J Navarro)
+
+    tuning RPP for large systems
+
+  WGR Server Node Allocation -- Jul 2000 (B Webb)
+
+    addresses issue where PBS server incorrectly claims insufficient nodes
+
+  WGR MOM Soft Kill -- May 2002 (B Webb)
+
+    processes are killed with SIGTERM followed by SIGKILL
+
+  PNNL SSS Patch -- Jun 2002 (???)
+
+    improves server-mom communication and server-scheduler
+
+  CRI Job Init Patch -- Jul 2003 (CRI)
+
+    correctly initializes new jobs eliminating unpredictable behavior and crashes
+
+  VPAC Crash Trap -- Jul 2003 (VPAC)
+
+    supports PBSCOREDUMP env variable
+
+  CRI Node Init Patch -- Aug 2003 (CRI)
+
+    correctly initializes new nodes eliminating unpredictable behavior and crashes
+
+  SDSC Log Buffer Patch -- Aug 2003 (SDSC)
+
+    addresses log message overruns
+
+
+

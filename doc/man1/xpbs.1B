@@ -1,0 +1,791 @@
+.\"         OpenPBS (Portable Batch System) v2.3 Software License
+.\" 
+.\" Copyright (c) 1999-2000 Veridian Information Solutions, Inc.
+.\" All rights reserved.
+.\" 
+.\" ---------------------------------------------------------------------------
+.\" For a license to use or redistribute the OpenPBS software under conditions
+.\" other than those described below, or to purchase support for this software,
+.\" please contact Veridian Systems, PBS Products Department ("Licensor") at:
+.\" 
+.\"    www.OpenPBS.org  +1 650 967-4675                  sales@OpenPBS.org
+.\"                        877 902-4PBS (US toll-free)
+.\" ---------------------------------------------------------------------------
+.\" 
+.\" This license covers use of the OpenPBS v2.3 software (the "Software") at
+.\" your site or location, and, for certain users, redistribution of the
+.\" Software to other sites and locations.  Use and redistribution of
+.\" OpenPBS v2.3 in source and binary forms, with or without modification,
+.\" are permitted provided that all of the following conditions are met.
+.\" After December 31, 2001, only conditions 3-6 must be met:
+.\" 
+.\" 1. Commercial and/or non-commercial use of the Software is permitted
+.\"    provided a current software registration is on file at www.OpenPBS.org.
+.\"    If use of this software contributes to a publication, product, or service
+.\"    proper attribution must be given; see www.OpenPBS.org/credit.html
+.\" 
+.\" 2. Redistribution in any form is only permitted for non-commercial,
+.\"    non-profit purposes.  There can be no charge for the Software or any
+.\"    software incorporating the Software.  Further, there can be no
+.\"    expectation of revenue generated as a consequence of redistributing
+.\"    the Software.
+.\" 
+.\" 3. Any Redistribution of source code must retain the above copyright notice
+.\"    and the acknowledgment contained in paragraph 6, this list of conditions
+.\"    and the disclaimer contained in paragraph 7.
+.\" 
+.\" 4. Any Redistribution in binary form must reproduce the above copyright
+.\"    notice and the acknowledgment contained in paragraph 6, this list of
+.\"    conditions and the disclaimer contained in paragraph 7 in the
+.\"    documentation and/or other materials provided with the distribution.
+.\" 
+.\" 5. Redistributions in any form must be accompanied by information on how to
+.\"    obtain complete source code for the OpenPBS software and any
+.\"    modifications and/or additions to the OpenPBS software.  The source code
+.\"    must either be included in the distribution or be available for no more
+.\"    than the cost of distribution plus a nominal fee, and all modifications
+.\"    and additions to the Software must be freely redistributable by any party
+.\"    (including Licensor) without restriction.
+.\" 
+.\" 6. All advertising materials mentioning features or use of the Software must
+.\"    display the following acknowledgment:
+.\" 
+.\"     "This product includes software developed by NASA Ames Research Center,
+.\"     Lawrence Livermore National Laboratory, and Veridian Information
+.\"     Solutions, Inc.
+.\"     Visit www.OpenPBS.org for OpenPBS software support,
+.\"     products, and information."
+.\" 
+.\" 7. DISCLAIMER OF WARRANTY
+.\" 
+.\" THIS SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND. ANY EXPRESS
+.\" OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+.\" OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT
+.\" ARE EXPRESSLY DISCLAIMED.
+.\" 
+.\" IN NO EVENT SHALL VERIDIAN CORPORATION, ITS AFFILIATED COMPANIES, OR THE
+.\" U.S. GOVERNMENT OR ANY OF ITS AGENCIES BE LIABLE FOR ANY DIRECT OR INDIRECT,
+.\" INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+.\" LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
+.\" OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+.\" LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+.\" NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+.\" EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+.\" 
+.\" This license will be governed by the laws of the Commonwealth of Virginia,
+.\" without reference to its choice of law rules.
+.if \n(Pb .ig Iq
+.TH xpbs 1B "" Local PBS
+.so ../ers/ers.macros
+.Iq
+.Sh NAME
+xpbs \- GUI front end to PBS commands
+.Sh SYNOPSIS
+xpbs [-admin]
+.Sh DESCRIPTION
+The \f3xpbs\fP command provides a user-friendly point-and-click interface to
+PBS commands. Please see the sections below for a tour and tutorials. Also, 
+within every dialog box, a \f3Help\fP button can be found for assistance.
+.Sh OPTIONS
+.IP "-admin" 8
+A mode where additional buttons are made available for terminating PBS servers,
+starting/stopping/disabling/enabling queues, and running/rerunning jobs.
+.in 0
+.LP
+.Sh GETTING STARTED
+Running \f3xpbs\fP will initialize the X resource database from various sources
+in the following order:
+.IP "1."
+The \f3RESOURCE_MANAGER\fP property on the root window (updated via xrdb) with
+settings usually defined in the .Xdefaults file
+.IP "2."
+Preference settings defined by the system administrator in the global xpbsrc
+file
+.IP "3."
+User's ~/.xpbsrc file - this file defines various X resources like fonts,
+colors, list
+of PBS hosts to query, criteria for listing queues and jobs, and various view
+states. See PREFERENCES section below for a list of resources that can be set.
+.Sh RUNNING XPBS
+.LP
+To run \f3xpbs\fP as a regular, non-privileged user, type:
+.RS
+.sp
+.Ty "\ \ \ setenv DISPLAY <display_host>:0"
+.br
+.Ty "\ \ \ xpbs"
+.sp
+.RE
+To run \f3xpbs\fP with the additional purpose of terminating PBS servers,
+stopping and starting queues, or running/rerunning jobs, then run:
+.RS
+.sp
+.Ty "\ \ \ xpbs -admin"
+.sp
+.RE
+NOTE: Be sure to appropriately set ~/.rhosts file if you're planning to submit
+jobs to some remote server, and expecting output files to be returned to the
+local host (where xpbs was run).
+Usually, adding the PBS hostname running the server to your .rhosts file
+locally, and adding the name of the local machine to the .rhosts file at
+remote host, should be sufficient. 
+.sp
+Also, be sure that the PBS client commands are in the default PATH because
+\f3xpbs\fP will call these commands.  
+.Sh THE XPBS DISPLAY
+This section describes the main parts of the \f3xpbs\fP display. The main 
+window is composed of 5 distinct areas (subwindows) arranged 
+vertically (one on top of another) in the following order:
+.RS
+\ \ \ 1) Menu
+.br
+\ \ \ 2) Hosts
+.br
+\ \ \ 3) Queues
+.br
+\ \ \ 4) Jobs
+.br
+\ \ \ 5) Info
+.br
+.RE
+.LP
+\f3Menu\fP. The Menu area is composed of a row of command buttons that 
+signal some action with a click of the left mouse button. The buttons 
+are:
+.RS
+.IP "Manual Update" 23
+to update the information on hosts, queues, and jobs.
+.IP "Auto Update" 23
+same as
+.Ar "Manual Update"
+except updating is done automatically every
+<some specified> number of minutes.
+.IP "Track Job" 23
+for periodically checking for returned output files of jobs.
+.IP "Preferences" 23
+for setting certain parameters such as the list of server 
+host(s) to query.
+.IP "Help" 23
+contains some help information.
+.IP "About" 23
+tells of the author and who to send comments, bugs, suggestions to.
+.IP "Close" 23
+for exiting \f3xpbs\fP plus saving the current setup information
+(if anything had changed) in the user's $HOME/.xpbsrc file. Information saved include
+the selected host(s), queue(s), job(s), the different jobs
+listing criteria, the view states (i.e.
+minimized/maximized) of the Hosts, Queues, Jobs, and INFO  regions, and
+anything in the Preferences section.
+.RE
+.LP
+\f3Hosts\fP. The Hosts area is composed of a leading horizontal HOSTS bar,
+a listbox, and a set of command buttons. The HOSTS bar contains a
+minimize/maximize button, identified by a dot or a rectangular image,
+for displaying or iconizing the Hosts region. The listbox
+displays information about favorite server host(s), and each entry is
+meant to be selected via a single left mouse button click, shift key +
+mouse button 1 click for contiguous selection, or cntrl key + mouse
+button 1 click for non-contiguous selection. The command buttons
+represent actions on selected host(s), and commonly found buttons are:
+.RS
+.IP detail 11
+for obtaining detailed information about selected server
+host(s).  This functionality can also be achieved by double
+clicking on an entry in the Hosts listbox.
+.IP "Submit" 11 
+for submitting a job to any of the queues managed by the 
+selected host(s).
+.IP terminate 11
+for terminating PBS servers on selected host(s). 
+(-admin only)
+.RE
+.LP
+The server hosts can be chosen by specifying in the ~/.xpbsrc file
+(or .Xdefaults) the resource:
+.RS
+.sp
+*serverHosts:	hostname1 hostname2 ...
+.sp
+.RE
+Another way of specifying the host is to click on the Preferences
+button in the Menu region, and manipulate the server Hosts entry
+widget from the preferences dialog box.
+.sp
+.LP
+\f3Queues\fP. The Queues area is composed of a leading horizontal QUEUES
+bar, a listbox, and a set of command buttons. The QUEUES bar lists the
+hosts that are consulted when listing queues; the bar also contains a
+minimize/maximize button for displaying or iconizing the Queues
+region. The listbox displays information about queues managed by the
+server host(s) selected from the Hosts listbox; each listbox entry is
+meant to be selected (highlighted) via a single left mouse button
+click, shift key + mouse button 1 click for contiguous selection, or
+cntrl key + mouse button 1 click for non-contiguous selection. The
+command buttons represent actions for operating on selected queue(s),
+and commonly found buttons are:
+.RS
+.IP detail 9
+for obtaining detailed information about selected
+queue(s).  This functionality can also be achieved
+by double clicking on a Queues listbox entry.
+.IP stop 9
+for stopping the selected queue(s). (-admin only)
+.IP start 9
+for starting the selected queue(s). (-admin only)
+.IP disable 9
+for disabling the selected queue(s). (-admin only)
+.IP enable 9
+for enabling the selected queue(s). (-admin only)
+.RE
+.sp
+.LP
+\f3Jobs\fP. The Jobs area is composed of a leading horizontal JOBS bar,
+a listbox, and a set of command buttons. The JOBS bar lists the
+queues that are consulted when listing jobs; the bar also contains a
+minimize/maximize button for displaying or iconizing
+the Jobs region. The listbox displays information about jobs that
+are found in the queue(s) selected from the Queues listbox; each
+listbox entry is meant to be selected (highlighted) via a single
+left mouse button click, shift key + mouse button 1 click for
+contiguous selection, or cntrl key + mouse button 1 click for
+non-contiguous selection. The region just above the Jobs listbox
+shows a collection of command buttons whose labels describe
+criteria used for filtering the Jobs listbox
+contents. The list of jobs can be selected according to the
+owner of jobs (Owners), job state (Job_States), name of the
+job (Job_Name), type of hold placed on the job (Hold_Types),
+the account name associated with the job (Account_Name),
+checkpoint attribute (Checkpoint), time the job is eligible
+for queueing/execution (Queue_Time), resources requested by
+the job (Resources), priority attached to the job (Priority),
+and whether or not the job is rerunnable (Rerunnable). The
+selection criteria can be modified by clicking on any of the
+appropriate command buttons to bring up a selection box. The
+criteria command buttons are accompanied by a
+.Ar "Select Jobs"
+button, which when clicked, will update the contents of the Jobs
+listbox based on the new selection criteria. Please see \f3qselect(1B)\fP
+for more details on how the jobs are filtered.
+.sp
+Finally, to the right of the listbox, the Jobs region is accompanied
+by the following command buttons, for operating on selected job(s):
+.RS
+.IP detail 9
+for obtaining detailed information about selected
+job(s).  This functionality can also be achieved by
+double clicking on a Jobs listbox entry.
+.IP modify 9
+for modifying attributes of the selected job(s).
+.IP delete 9
+for deleting the selected job(s).
+.IP hold 9
+for placing some type of hold on selected job(s).
+.IP release 9
+for releasing held job(s).
+.IP signal 9
+for sending signals to selected job(s) that are running.
+.IP msg 9
+for writing a message string into the output streams of
+the selected job(s).
+.IP move 9
+for moving selected job(s) into some specified
+destination queue.
+.IP order 9
+for exchanging order of two selected jobs in a queue.
+.IP run 9
+for running selected job(s). (-admin only)
+.IP rerun 9
+for requeueing selected job(s) that are running.
+(-admin only)
+.RE
+.sp
+.LP
+\f3Info\fP. The Info Area shows the progress of the commands' executed
+by \f3xpbs\fP. Look into this box for errors. The INFO bar also contains a
+minimize/maximize button for displaying or iconizing the Info
+region.
+.RE
+.Sh WIDGETS USED IN XPBS
+Some of the widgets used in \f3xpbs\fP and how they are manipulated are
+described in the following:
+.sp
+.IP "1." 3
+\f3listbox\fP - can be multi-selectable (a number of entries can be
+selected/highlighted using a mouse click) or single-selectable (one entry
+can be highlighted at a time). For a multi-selectable listbox,
+the following operations are allowed:
+.RS
+.IP "a." 3
+single click with mouse button 1 to select/highlight an
+entry.
+.IP "b." 3
+shift key + mouse button 1 to contiguously select more
+than one entry.
+.IP "c." 3
+cntrl key + mouse button 1 to non-contiguously select
+more than one entry.
+NOTE: For systems running Tk < 4.0, the newly selected
+item is reshuffled to appear next to already selected
+items.
+.IP "d." 3
+click the
+.Ar "Select All/Deselect All"
+button to select all
+entries or deselect all entries at once.
+.IP "e." 3
+double clicking an entry usually activates some action
+that uses the selected entry as a parameter.
+.sp
+.RE
+.IP "2." 3
+\f3scrollbar\fP - usually appears either vertically or
+horizontally and contains 5 distinct areas that are mouse
+clicked to achieve different effects:
+.RS
+.IP "top arrow" 14
+Causes the view in the associated widget to shift up
+by one unit (i.e. the object appears to move down
+one unit in its window). If the button is held down
+the action will auto-repeat.
+.IP "top gap" 14
+Causes the view in the associated window to shift up
+by one less than the number of units in the window
+(i.e. the portion of the object that used to appear
+at the very top of the window will  now  appear at
+the  very bottom).  If the button is held down the
+action will auto-repeat.
+.IP "slider" 14
+Pressing button 1 in this area has  no immediate
+effect except to  cause the slider to appear  sunken
+rather than raised.  However, if the mouse is moved
+with the button down  then  the slider will  be
+dragged, adjusting the view as the mouse is moved.
+.IP "bottom gap" 14
+Causes the view in the associated window to shift
+down  by one less  than the number of units in the
+window (i.e.  the portion of  the  object  that  used
+to appear at the very bottom of the window will  now
+appear  at the very top).  If the button is held down
+the action  will auto-repeat.
+.IP "bottom arrow" 14
+Causes the view in the associated window to shift
+down by one unit (i.e. the object appears to move up
+one unit in its window). If the button is held down
+the action will auto-repeat.
+.RE
+.sp
+.IP "3." 3
+\f3entry\fP - brought into focus with a click of the left
+mouse button.  To manipulate this widget, simply type in
+the text value. Use of arrow keys, mouse selection of
+text for deletion or overwrite, copying and pasting with
+sole use of mouse buttons are permitted.
+This widget is usually accompanied by a scrollbar for
+horizontally scanning a long text entry string.
+.sp
+.IP "4." 3
+\f3matrix of entry boxes\fP - usually shown as several
+rows of entry widgets where a number of entries (called
+fields) can be found per row. The matrix is accompanied by
+up/down arrow buttons for paging through the rows of data,
+and each group of fields gets one scrollbar for horizontally
+scanning long entry strings.  Moving from field to field can
+be done using the <Tab>, <Cntrl-f>, or <Cntrl-b> (move
+backwards) keys.
+.sp
+.IP "5." 3
+\f3spinbox\fP - a combination of an entry widget and a
+horizontal scrollbar.  The entry widget will only accept
+values that fall within a defined list of valid values, and
+incrementing through the valid values is done by clicking on
+the up/down arrows.
+.IP "6." 3
+\f3button\fP - a rectangular region appearing either raised or
+pressed that invokes an action when clicked with the left
+mouse button.  When the button appears pressed, then hitting
+the <RETURN> key will automatically select the button.
+.IP "7." 3
+\f3text\fP - an editor like widget. This widget is brought
+into focus with a click of the left mouse button. To manipulate
+this widget, simply type in the text. Use of arrow keys,
+backspace/delete key, mouse selection of text for deletion or
+overwrite, copying and pasting with sole use of mouse buttons
+are permitted. This widget is usually accompanied by a scrollbar
+for vertically scanning a long entry.
+.Sh SUBMITTING JOBS
+Submitting a PBS job requires only to manipulate the widgets found in the
+Submit window.
+The submit dialog box is composed of 4 distinct regions:
+.sp
+\ \ \ 1) Job Script
+.br
+\ \ \ 2) OPTIONS
+.br
+\ \ \ 3) OTHER OPTIONS
+.br
+\ \ \ 4) Command Buttons
+.sp
+The Job Script file region is at the upper left, the OPTIONS
+region containing various widgets for setting job attributes
+is scattered all over the dialog box, the OTHER OPTIONS is
+located just below the Job Script file region, and Command
+Buttons region is at the bottom.
+.sp
+The job script region is composed of a header box, the text
+box, FILE entry box, and a couple of buttons labeled
+.Ar load
+and
+.Ar save.
+If you have a script file containing PBS options
+and executable lines, then type the name of the file on the
+FILE entry box, and then click on the
+.Ar load
+button. The
+various widgets in the Submit window will get loaded with
+values found in the script file. The script file text box
+will only be loaded with executable lines (non-PBS) found
+in the script. The job script header box has a
+.Ar Prefix
+entry box that can be modified to specify the PBS
+directive to look for when parsing a script file for PBS
+options.
+If you don't have a script file, you can start typing the
+executable lines of the job in the file text box.
+.sp
+To submit a job, perform the following steps:
+.RS
+.IP "1." 3
+Select a host from the HOSTS listbox in the main \f3xpbs\fP
+display.
+.IP "2." 3
+Click on the
+.Ar Submit
+button located in the Menu bar.
+.IP "3." 3
+Specify the script file containing the job execution lines and
+job property values, or simply type in the execution lines in
+the FILE textbox.
+.IP "4." 3
+Start manipulating the various widgets in the Submit window.
+Particularly, pay close attention to the Destination
+listbox. This box lists all the queues found in the host
+that you selected. A special entry called
+.Ty """@host"""
+refers
+to the default queue at host. Select appropriately the
+destination queue of the job.  More options can be found
+by clicking the OTHER OPTIONS buttons.
+.IP "5." 3
+At the bottom of the Submit window, click
+.Ar "confirm submit".
+You can also click on
+.Ar "interactive"
+to run the job
+interactively.  Running a job interactively will open an
+xterm window to your display host containing the session.
+.sp
+NOTE: The script FILE entry box is accompanied by a
+.Ar save
+button that you click to save the current widget values to
+the specified file in a form that can later be read by \f3xpbs\fP
+or by the \f3qsub\fP command.
+.RE
+.Sh MODIFYING ATTRIBUTES OF JOBS
+Modifying a PBS job requires only to manipulate the widgets found
+in the Modify window. To modify a job or jobs, do the following
+steps:
+.RS
+.IP "1." 3
+Select one or more jobs from the JOBS listbox in the main
+\f3xpbs\fP display.
+.IP "2." 3
+Click on the
+.Ar modify
+button located to the right of the listbox.
+.IP "3." 3
+The Modify window is structured similarly to the Submit
+window.  Simply manipulate the widgets to specify
+replacement or additional values of job attributes.
+.IP "4." 3
+Click on the
+.Ar "confirm modify"
+button located at the bottom of the dialog box.
+.RE
+.Sh DELETING JOBS
+Deleting a PBS job requires only to manipulate the widgets found
+in the Delete window. To delete a job or jobs, do the following
+steps:
+.RS
+.IP "1." 3
+Select one or more jobs from the JOBS listbox in the main
+\f3xpbs\fP display.
+.IP "2." 3
+Click on the
+.Ar delete
+button located to the right of the
+listbox.
+.IP "3." 3
+Manipulate the spinbox widget to set the kill delay signal
+interval.
+.IP "4." 3
+Click on the
+.Ar delete
+button located at the bottom of the
+dialog box.
+.RE
+.Sh TRACKING RETURNED OUTPUT FILES
+If you want to be informed of returned output files of
+current jobs, and be able to quickly see the
+contents of those files, then enable the
+.Ty """track job"""
+feature as follows:
+.RS
+.IP "1."
+Submit all the jobs that you want monitored.
+.IP "2."
+Click on the
+.Ar "Track Job"
+button located in the Menu bar to
+bring up the Track Job dialog box.
+.IP "3."
+Specify the list of user names, whose jobs are to be
+monitored for returned output files, in the matrix located
+at the upper left of the dialog box.
+.IP "4."
+Manipulate the minutes spinbox, located just below the user
+names matrix, to specify the interval value when output
+files will be periodically checked.
+.IP "5."
+Specify the location of job output files (whether locally or
+remotely) by clicking on one of the radio buttons located at
+the upper right of the dialog box. Returned locally means the
+output files will be returned back to the host where \f3xpbs\fP 
+was run. If the output files are returned to some remote host, then
+\f3xpbs\fP will execute an
+.br
+.Ty "\ \ \ RSH <remote_host> test -f <output_files>"
+.br
+to test the existence of the files. RSH is whatever you set the remote shell
+command to in the corresponding entry box.
+.sp
+NOTE: Be sure the files are accessible from the host where
+\f3xpbs\fP was run (i.e. .rhosts appropriately set).
+.IP "6."
+Click
+.Ar "start/reset tracking"
+button located at the bottom of the dialog box to:
+.RS
+.IP - 2
+cancel any previous tracking
+.IP - 2
+build a new list of jobs to be monitored for returned
+output files based on currently queued jobs.
+.IP - 2
+start periodic tracking.
+.RE
+.IP "7."
+Click on
+.Ar "close window"
+button.
+.RE
+.sp
+When an output file for a job being monitored is found, then the
+.Ar "Track Job"
+button (the one that originally invoked the Track Job
+dialog box) will turn into a different color, and the
+.Ar "Jobs Found Completed"
+listbox, located in the Track Job dialog box,
+is then loaded with the corresponding job id(s). Then double click
+on a job id to see the contents of the output file and the error file.
+Click
+.Ar "stop tracking"
+if you want to cancel tracking.
+.Sh LEAVING XPBS
+Click on the Close button located in the Menu bar to leave \f3xpbs\fP.
+If anything had changed, it will bring up a dialog box asking for a confirmation
+in regards to saving state information like the view states (minimize/maximize) of
+the HOSTS, QUEUES, JOBS, and INFO subwindows, and various criteria for
+listing queues and jobs. The information is saved in ~/.xpbsrc file.
+.Sh PREFERENCES
+The resources that can be set in the X resources file, ~/.xpbsrc, are:
+.IP *serverHosts
+list of server hosts (space separated) to query by \f3xpbs\fP.
+.IP *timeoutSecs
+specify the number of seconds before timing out waiting for a connection to
+a PBS host.
+.IP *xtermCmd
+the xterm command to run driving an interactive PBS session.
+.IP *labelFont
+font applied to text appearing in labels.
+.IP *fixlabelFont
+font applied to text that label fixed-width widgets such as
+listbox labels. This must be a fixed-width font.
+.IP *textFont
+font applied to a text widget. Keep this as fixed-width
+font.
+.IP *backgroundColor
+the color applied to background of frames, buttons,
+entries, scrollbar handles.
+.IP *foregroundColor
+the color applied to text in any context (under selection, insertion,
+etc...).
+.IP *activeColor
+the color applied to the background of a selection,
+a selected command button, or a selected scroll bar
+handle.
+.IP *disabledColor
+color applied to a disabled widget.
+.IP *signalColor
+color applied to buttons that signal something to the
+user about a change of state. For example, the color of the
+.Ar "Track Job"
+button when returned output files are detected.
+.IP *shadingColor
+a color shading applied to some of the frames to
+emphasize focus as well as decoration.
+.IP *selectorColor
+the color applied to the selector box of a radiobutton or
+checkbutton.
+.IP *selectHosts
+list of hosts (space separated) to automatically select/highlight
+in the HOSTS listbox.
+.IP *selectQueues
+list of queues (space separated) to automatically select/highlight
+in the QUEUES listbox.
+.IP *selectJobs
+list of jobs (space separated) to automatically select/highlight
+in the JOBS listbox.
+.IP *selectOwners
+list of owners checked when limiting the
+jobs appearing on the Jobs listbox in the main \f3xpbs\fP window. 
+Specify value as "Owners: <list_of_owners>".
+See -u option in \f3qselect(1B)\fP for format of <list_of_owners>.
+.IP *selectStates
+list of job states to look for (do not space separate) when
+limiting the jobs appearing on the Jobs listbox in the main
+\f3xpbs\fP window.
+Specify value as "Job_States: <states_string>".
+See -s option in \f3qselect(1B)\fP for format of <states_string>.
+.IP *selectRes
+list of resource amounts (space separated) to consult when
+limiting the jobs appearing on the Jobs listbox in the main
+\f3xpbs\fP window.
+Specify value as "Resources: <res_string>".
+See -l option in \f3qselect(1B)\fP for format of <res_string>.
+.IP *selectExecTime
+the Execution Time attribute to consult when limiting the
+list of jobs appearing on the Jobs listbox in the main 
+\f3xpbs\fP window.
+Specify value as "Queue_Time: <exec_time>".
+See -a option in \f3qselect(1B)\fP for format of <exec_time>.
+.IP *selectAcctName
+the name of the account that will be checked when limiting the
+jobs appearing on the Jobs listbox in the main \f3xpbs\fP 
+window.
+Specify value as "Account_Name: <account_name>".
+See -A option in \f3qselect(1B)\fP for format of <account_name>.
+.IP *selectCheckpoint
+the checkpoint attribute relationship (including the logical 
+operator) to consult when limiting the list of jobs
+appearing on the Jobs listbox in the main \f3xpbs\fP window. 
+Specify value as "Checkpoint: <checkpoint_arg>".
+See -c option in \f3qselect(1B)\fP for format of <checkpoint_arg>.
+.IP *selectHold
+the hold types string to look for in a job when limiting the
+jobs appearing on the Jobs listbox in the main \f3xpbs\fP 
+window.
+Specify value as "Hold_Types: <hold_string>".
+See -h option in \f3qselect(1B)\fP for format of <hold_string>.
+.IP *selectPriority
+the priority relationship (including the logical operator) to
+consult when limiting the list of jobs appearing on the Jobs
+listbox in the main \f3xpbs\fP window.
+Specify value as "Priority: <priority_value>".
+See -p option in \f3qselect(1B)\fP for format of <priority_value>.
+.IP *selectRerun
+the rerunnable attribute to consult when limiting the list of
+jobs appearing on the Jobs listbox in the main \f3xpbs\fP 
+window.
+Specify value as "Rerunnable: <rerun_val>".
+See -r option in \f3qselect(1B)\fP for format of <rerun_val>.
+.IP *selectJobName
+name of the job that will be checked when limiting the jobs
+appearing on the Jobs listbox in the main \f3xpbs\fP window.
+Specify value as "Job_Name: <jobname>".
+See -N option in \f3qselect(1B)\fP for format of <jobname>.
+.IP *iconizeHostsView
+a boolean value (true or false) indicating whether or not to
+iconize the HOSTS region.
+.IP *iconizeQueuesView
+a boolean value (true or false) indicating whether or not to
+iconize the QUEUES region.
+.IP *iconizeJobsView
+a boolean value (true or false) indicating whether or not to
+iconize the JOBS region.
+.IP *iconizeInfoView
+a boolean value (true or false) indicating whether or not to
+iconize the INFO region.
+.IP *jobResourceList
+a curly-braced list of resource names as according to
+architecture known to xpbs. The format is as follows:
+.br
+{ <arch-type1> resname1 resname2 ... resnameN }
+.br
+{ <arch-type2> resname1 resname2 ... resnameN }
+.br
+ . . .
+.br
+{ <arch-typeN> resname1 resname2 ... resnameN }
+.LP
+.Sh XPBS AND PBS COMMANDS
+\f3xpbs\fP calls PBS commands as follows:
+.IP "\f3Command Button\fP" 22
+\f3PBS Command\fP
+.IP "detail (Hosts)" 22
+qstat -B -f <selected server_host(s)>
+.IP "terminate" 22
+qterm <selected server_host(s)>
+.IP "detail (Queues)" 22
+qstat -Q -f <selected queue(s)>
+.IP "stop" 22
+qstop <selected queue(s)>
+.IP "start" 22
+qstart <selected queue(s)>
+.IP "enable" 22
+qenable <selected queue(s)>
+.IP "disable" 22
+qdisable <selected queue(s)>	
+.IP "detail (Jobs)" 22
+qstat -f <selected job(s)>
+.IP "modify" 22
+qalter <selected job(s)>
+.IP "delete" 22
+qdel <selected job(s)>
+.IP "hold" 22
+qhold <selected job(s)>
+.IP "release" 22
+qrls <selected job(s)>
+.IP "run" 22
+qrun <selected job(s)>
+.IP "rerun" 22
+qrerun  <selected job(s)>
+.IP "signal" 22
+qsig <selected job(s)>
+.IP "msg" 22
+qmsg <selected job(s)>
+.IP "move" 22
+qmove <selected job(s)>
+.IP "order" 22
+qorder <selected job(s)>
+.LP
+.Sh EXIT STATUS
+Upon successful processing, the \f3xpbs\fP exit status will be a value of zero.
+.LP
+If the xpbs command fails, the
+command exits with a value greater than zero.
+.Sh SEE ALSO
+qalter(1B), qdel(1B), qhold(1B), qmove(1B), qmsg(1B), qrerun(1B),
+qrls(1B), qselect(1B), qsig(1B), qstat(1B), qorder(1B), qsub(1B),
+qdisable(8B), qenable(8B), qrun(8B), qstart(8B), qstop(8B), qterm(8B).
+\" turn off any extra indent left by the Sh macro
+.RE

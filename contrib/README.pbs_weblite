@@ -1,0 +1,62 @@
+#  README.pbs_weblite
+#  contributed by Yuan-Chung Cheng
+#  updated Mar 19, 2004
+
+pbs_weblite version 0.95
+
+Summary:
+PBSWeb-Lite is a simple web-based interface to PBS/Torque.
+
+Supported systems:
+PBSWeb-Lite  should work on all systems.
+
+Overview:
+PBSWeb-Lite is a simple web-based interface to PBS/Torque. This PHP 
+program is based on Paul Lu's PBSWeb 
+<http://www.cs.ualberta.ca/%7Epinchak/PBSWeb/> code, with substantial 
+re-writing. Since most of the PHP files have been re-written by me, I 
+think it is inappropriate to keep calling it "PBSWeb". However, I really 
+don't know how to call it. So I'll call this modified version of PBSWeb 
+as "PBSWeb-Lite", at this moment. Actually I would welcome any 
+suggestion for a new name for this set of PHP scripts (TorqueWeb? :).
+
+
+PBSWeb-Lite 0.95 is available here:
+
+http://seventeen.mit.edu/blog/platin/pbsweb/pbsweb-lite-0.95.tar.gz
+
+I have put together a website for this package:
+
+http://seventeen.mit.edu/blog/platin/pbsweb/ 
+<http://seventeen.mit.edu/blog/platin/pbsweb/pbsweb-lite-0.95.tar.gz>
+
+
+Thanks for works done by Paul Lu et al. Without PBSWeb, there will be no 
+PBSWeb-Lite.
+
+This is the first release of PBSWeb-Lite. PBSWeb-Lite is a substantial 
+re-writing of Paul Lu's PBSWeb 
+<http://www.cs.ualberta.ca/%7Epinchak/PBSWeb/> codes. Here is a list of 
+differences between PBSWeb and PBSWeb-Lite 0.9 (BUTF Release):
+
+    * All PostgreSQL related codes in PBSWeb were removed. PBSWeb-Lite
+      does not depend on a SQL server, and all required parameters are
+      stored in a config file (config.php).
+
+    * Accounts for PBSWeb-Lite are now directly integrated with the Un*x
+      system accounts. PBSWeb-Lite use a simple C program (spasswd.c) to
+      validate username and password (assume shadow password!).
+
+    * PBSWeb-Lite support templates for generating PBS scripts. Also,
+      now it is possible to create a new job based on a previously saved
+      jobscript.
+
+    * PBSWeb-Lite has a simple web-based file manager that can help user
+      to view/download/delete PBS input and output files.
+    *
+
+    * And many other minor changes that I have forgotten.
+
+Read the README file in the package for the instruction for the 
+installation of PBSWeb-Lite.
+

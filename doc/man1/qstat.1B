@@ -1,0 +1,590 @@
+.\"         OpenPBS (Portable Batch System) v2.3 Software License
+.\" 
+.\" Copyright (c) 1999-2000 Veridian Information Solutions, Inc.
+.\" All rights reserved.
+.\" 
+.\" ---------------------------------------------------------------------------
+.\" For a license to use or redistribute the OpenPBS software under conditions
+.\" other than those described below, or to purchase support for this software,
+.\" please contact Veridian Systems, PBS Products Department ("Licensor") at:
+.\" 
+.\"    www.OpenPBS.org  +1 650 967-4675                  sales@OpenPBS.org
+.\"                        877 902-4PBS (US toll-free)
+.\" ---------------------------------------------------------------------------
+.\" 
+.\" This license covers use of the OpenPBS v2.3 software (the "Software") at
+.\" your site or location, and, for certain users, redistribution of the
+.\" Software to other sites and locations.  Use and redistribution of
+.\" OpenPBS v2.3 in source and binary forms, with or without modification,
+.\" are permitted provided that all of the following conditions are met.
+.\" After December 31, 2001, only conditions 3-6 must be met:
+.\" 
+.\" 1. Commercial and/or non-commercial use of the Software is permitted
+.\"    provided a current software registration is on file at www.OpenPBS.org.
+.\"    If use of this software contributes to a publication, product, or service
+.\"    proper attribution must be given; see www.OpenPBS.org/credit.html
+.\" 
+.\" 2. Redistribution in any form is only permitted for non-commercial,
+.\"    non-profit purposes.  There can be no charge for the Software or any
+.\"    software incorporating the Software.  Further, there can be no
+.\"    expectation of revenue generated as a consequence of redistributing
+.\"    the Software.
+.\" 
+.\" 3. Any Redistribution of source code must retain the above copyright notice
+.\"    and the acknowledgment contained in paragraph 6, this list of conditions
+.\"    and the disclaimer contained in paragraph 7.
+.\" 
+.\" 4. Any Redistribution in binary form must reproduce the above copyright
+.\"    notice and the acknowledgment contained in paragraph 6, this list of
+.\"    conditions and the disclaimer contained in paragraph 7 in the
+.\"    documentation and/or other materials provided with the distribution.
+.\" 
+.\" 5. Redistributions in any form must be accompanied by information on how to
+.\"    obtain complete source code for the OpenPBS software and any
+.\"    modifications and/or additions to the OpenPBS software.  The source code
+.\"    must either be included in the distribution or be available for no more
+.\"    than the cost of distribution plus a nominal fee, and all modifications
+.\"    and additions to the Software must be freely redistributable by any party
+.\"    (including Licensor) without restriction.
+.\" 
+.\" 6. All advertising materials mentioning features or use of the Software must
+.\"    display the following acknowledgment:
+.\" 
+.\"     "This product includes software developed by NASA Ames Research Center,
+.\"     Lawrence Livermore National Laboratory, and Veridian Information
+.\"     Solutions, Inc.
+.\"     Visit www.OpenPBS.org for OpenPBS software support,
+.\"     products, and information."
+.\" 
+.\" 7. DISCLAIMER OF WARRANTY
+.\" 
+.\" THIS SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND. ANY EXPRESS
+.\" OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+.\" OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT
+.\" ARE EXPRESSLY DISCLAIMED.
+.\" 
+.\" IN NO EVENT SHALL VERIDIAN CORPORATION, ITS AFFILIATED COMPANIES, OR THE
+.\" U.S. GOVERNMENT OR ANY OF ITS AGENCIES BE LIABLE FOR ANY DIRECT OR INDIRECT,
+.\" INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+.\" LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
+.\" OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+.\" LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+.\" NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+.\" EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+.\" 
+.\" This license will be governed by the laws of the Commonwealth of Virginia,
+.\" without reference to its choice of law rules.
+.if \n(Pb .ig Iq
+.TH qstat 1B "" Local PBS
+.so ../ers/ers.macros
+.Iq
+.Sh NAME
+qstat \- show status of pbs batch jobs
+.Sh SYNOPSIS
+qstat [-f][-W site_specific] [\^job_identifier... | destination...\^]
+.sp
+qstat [-a|-i|-r] [-n] [-s] [-G|-M] [-R] [-u user_list] [\^job_identifier... |\ 
+destination...\^]
+.sp
+qstat -Q [-f][-W site_specific] [\^destination...\^]
+.sp
+qstat -q [-G|-M] [\^destination...\^]
+.sp
+qstat -B [-f][-W site_specific] [\^server_name...\^]
+.Sh DESCRIPTION
+The
+.B qstat
+command is used to request the status of jobs, queues, or a batch server.
+The requested status is written to standard out.
+.if !\n(Pb .ig Ig
+The status is obtained by sending a
+.I "Job Status" ,
+a
+.I "Queue Status" ,
+or a
+.I "Server Status"
+batch request to the appropriate server.
+.Ig
+.LP
+When requesting job status, synopsis format 1 or 2, 
+.B qstat
+will output information about each 
+.Ar job_identifier
+or all jobs at each
+.Ar destination .
+.if !\n(Pb .ig Ig
+.SM
+The capability to request status of all jobs at a destination is an extension
+to POSIX 1003.2d.
+.NL
+.Ig
+Jobs for which the user does not have status privilege are not displayed.
+.LP
+When requesting queue or server status, synopsis format 3 through 5, qstat
+will output information about each
+.Ar destination .
+.if !\n(Pb .ig Ig
+The syntax using the [-a|-i|-r] line or the -q line are extensions to POSIX.
+.Ig
+.Sh OPTIONS
+.IP "-f" 10
+Specifies that a full status display be written to standard out.
+.IP "-a" 10
+"All" jobs are displayed in the alternative format, see the Standard Output
+section.
+If the operand is a destination id, all jobs at that destination are displayed.
+If the operand is a job id, information about that job is displayed.
+.IP "-i" 10
+Job status is displayed in the alternative format.
+For a destination id operand, status for jobs at that destination which are not
+running are displayed.  
+This includes jobs which are queued, held or waiting.
+If an operand is a job id, status for that job is displayed regardless of its
+state.
+.IP "-r" 10
+If an operand is a job id, status for that job is displayed.
+For a destination id operand, status for jobs at that destination which are
+running are displayed,  this includes jobs which are suspended.
+If an operand is a job id, status for that job is displayed.
+.IP "-n" 10
+In addition to the basic information, nodes allocated to a job are listed.
+.IP "-s" 10
+In addition to the basic information, any comment provided by the batch
+administrator or scheduler is shown.
+.IP "-G" 10
+Show size information in giga-bytes.
+.IP "-M" 10
+Show size information, disk or memory in mega-words.   A word is considered
+to be 8 bytes.
+.IP "-R" 10
+In addition to other information, disk reservation information is shown.
+Not applicable to all systems.
+.IP "-u" 10
+Job status is displayed in the alternative format.  If an operand is a job id,
+status for that job is displayed.  For a destination id operand, status for
+jobs at that destination which are owned by the user(s) listed in
+.Ar user_list
+are displayed.
+The syntax of the
+.Ar user_list
+is:
+.br
+.Ty "\ \ \ \ user_name[@host][,user_name[@host],...]"
+.br
+Host names may be wild carded on the left end, e.g. "*.nasa.gov".
+User_name without a "@host" is equivalent to "user_name@*", that is at any host.
+.IP "-Q" 10
+Specifies that the request is for queue status and that the operands are
+destination identifiers.
+.IP "-q" 10
+Specifies that the request is for queue status which should be shown in
+the alternative format.
+.IP "-B" 10
+Specifies that the request is for batch server status and that the operands
+are the names of servers.
+.LP
+.Sh  OPERANDS
+If neither the
+.Ar -Q
+nor the
+.Ar -B
+option is given, the operands on the qstat
+command must be either job identifiers or destinations identifiers.
+.LP
+If the operand is a job identifier, it must be in the following form:
+.RS 5
+.Ty sequence_number[.server_name][@server]
+.RE
+where
+.Ty sequence_number.server_name
+is the job identifier assigned at submittal time, see 
+.BR qsub .
+If the
+.Ty .server_name
+is omitted, the name of the default server will be used.
+If
+.Ty @server
+is supplied, the request will be for the job identifier currently at that
+Server.
+.if !\n(Pb .ig Ig
+See ERS sections \*(Ji and \*(Di for more details on job identifiers and
+batch destinations.
+.Ig
+.LP
+If the operand is a destination identifier, it is one of the following
+three forms:
+.RS 5
+.Ty queue
+.br
+.Ty @server
+.br
+.Ty queue@server
+.RE
+If 
+.Ty queue
+is specified, the request is for status of all jobs in that queue at the
+default server.  If the
+.Ty @server
+form is given, the request is for status of all jobs at that server.
+If a full destination identifier,
+.Ty queue@server ,
+is given, the request is for status of all jobs in the named queue at the
+named server.
+.LP
+If the
+.Ar -Q
+option is given, the operands are destination identifiers as specified
+above.  If 
+.Ty queue
+is specified, the status of that queue at the default server will be given.
+If
+.Ty queue@server
+is specified, the status of the named queue at the named server will be given.
+If
+.Ty @server
+is specified, the status of all queues at
+the named server will be given.
+If no destination is specified, the status of all queues at the default
+server will be given.
+.LP
+If the
+.Ar -B
+option is given, the operand is the name of a server.
+.Sh STANDARD OUTPUT
+Displaying Job Status
+.LP
+If job status is being displayed in the default format and the
+.Ar -f
+option is not specified, the following items are displayed on a single
+line, in the specified order, separated by white space:
+.RS 
+.IP - 3
+the job identifier assigned by PBS.
+.IP -
+the job name given by the submitter.
+.IP -
+the job owner
+.IP -
+the CPU time used
+.IP -
+the job state:
+.RS 0.5i
+C -     Job is completed after having run/
+.br
+E -	Job is exiting after having run.
+.br
+H -	Job is held.
+.br
+Q -	job is queued, eligible to run or routed.
+.br
+R -	job is running.
+.br
+T -	job is being moved to new location.
+.br
+W -	job is waiting for its execution time
+.br
+	(-a option) to be reached.
+.br
+S -	(Unicos only) job is suspend.
+.br
+.if !\n(Pb .ig Ig
+.SM
+This set of state letters does not conform to the POSIX 1003.2d standard.
+It requires the sames letters, but in lower case.
+.NL
+.Ig
+.RE
+.IP -
+the queue in which the job resides
+.RE
+.LP
+If job status is being displayed and the
+.Ar -f
+option is specified, the output will depend on whether
+.B qstat
+was compiled to use a
+.B Tcl
+interpreter.  See the configuration section
+for details.  If
+.B Tcl
+is not being used,
+full display for each job consists of the header line:
+.br
+.Ty "\ \ \ \ Job Id:\ "
+job identifier
+.br
+Followed by one line per job attribute of the form:
+.br
+.Ty "\ \ \ \ attribute_name\ =\ value"
+.if !\n(Pb .ig Ig
+.LP
+The attribute name is indented 4 spaces.  There is a single space on each side
+of the equal sign.  Long values wrap either at column 78 or following a comma
+beyond which the next comma separated segment will not fit before column 79.
+Continuation lines are indented by a tab (8 spaces).
+There is blank line following the last attribute.
+.Ig
+.LP
+If any of the options -a, -i, -r, -u, -n, -s, -G or -M are provided,
+the alternative display format for jobs is used.
+The following items are displayed on a single
+line, in the specified order, separated by white space:
+.RS
+.IP - 3
+the job identifier assigned by PBS.
+.IP -
+the job owner.
+.IP -
+The queue in which the job currently resides.
+.IP -
+The job name given by the submitter.
+.IP -
+The session id (if the job is running).
+.IP -
+The number of nodes requested by the job.
+.IP -
+The number of cpus or tasks requested by the job.
+.IP -
+The amount of memory requested by the job.
+.IP -
+Either the cpu time, if specified, or wall time requested by the job, (hh:mm).
+.IP -
+The job's current state.
+.IP -
+The amount of cpu time or wall time used by the job (hh:mm).
+.RE
+If the -R option is provided, the line contains:
+.RS
+.IP - 3
+the job identifier assigned by PBS.
+.IP -
+the job owner.
+.IP -
+The queue in which the job currently resides.
+.IP -
+The number of nodes requested by the job.
+.IP -
+The number of cpus or tasks requested by the job.
+.IP -
+The amount of memory requested by the job.
+.IP -
+Either the cpu time or wall time requested by the job.
+.IP -
+The job's current state.
+.IP -
+The amount of cpu time or wall time used by the job.
+.IP -
+The amount of SRFS space requested on the big file system.
+.IP -
+The amount of SRFS space requested on the fast file system.
+.IP -
+The amount of space requested on the parallel I/O file system.
+.RE
+The last three fields may not contain useful information at all sites
+or on all systems.
+.sp 2
+Displaying Queue Status
+.LP
+If queue status is being displayed and the
+.Ar -f
+option was not specified, the following items are displayed on a single
+line, in the specified order, separated by white space:
+.RS 5
+.IP -
+the queue name
+.IP -
+the maximum number of jobs that may be run in the queue concurrently
+.IP -
+the total number of jobs in the queue
+.IP -
+the enable or disabled status of the queue
+.IP -
+the started or stopped status of the queue
+.IP -
+for each job state, the name of the state and the number of jobs in the queue
+in that state.
+.IP -
+the type of queue, execution or routing.
+.RE
+.LP
+If queue status is being displayed and the
+.Ar -f
+option is specified, the output will depend on whether
+.B qstat
+was compiled to use a
+.B Tcl
+interpreter.  See the configuration section
+for details.  If
+.B Tcl
+is not being used,
+the full display for each queue consists of the header line:
+.br
+.Ty "\ \ \ \ Queue:\ "
+queue_name
+.br
+Followed by one line per queue attribute of the form:
+.br
+.Ty "\ \ \ \ attribute_name\ =\ value"
+.if !\n(Pb .ig Ig
+.LP
+The queue attributes are listed in the same format as job attributes.
+.Ig
+.LP
+If the -q option is specified, queue information is displayed in the
+alternative format:  The following information is displayed on a single
+line:
+.RS
+.IP - 3
+the queue name
+.IP -
+the maximum amount of memory a job in the queue may request
+.IP -
+the maximum amount of cpu time a job in the queue may request
+.IP -
+the maximum amount of wall time a job in the queue may request
+.IP -
+the maximum amount of nodes a job in the queue may request
+.IP -
+the number of jobs in the queue in the running state
+.IP -
+the number of jobs in the queue in the queued state
+.IP -
+the maximum number (limit) of jobs that may be run in the queue concurrently
+.IP -
+the state of the queue given by a pair of letters:
+.br
+- either the letter E if the queue is Enabled or D if Disabled, and
+.br
+- either the letter R if the queue is Running (started) or S if Stopped.
+.RE
+.sp 2 
+Displaying Server Status
+.LP
+If batch server status is being displayed and the
+.Ar -f
+option is not specified, the following items are displayed on a single
+line, in the specified order, separated by white space:
+.RS 5
+.IP -
+the server name
+.IP -
+the maximum number of jobs that the server may run concurrently
+.IP -
+the total number of jobs currently managed by the server
+.IP -
+the status of the server
+.IP -
+for each job state, the name of the state and the number of jobs in the
+server in that state
+.RE
+.LP
+If server status is being displayed and the
+.Ar -f
+option is specified, the output will depend on whether
+.B qstat
+was compiled to use a
+.B Tcl
+interpreter.  See the configuration section
+for details.  If
+.B Tcl
+is not being used,
+the full display for the server consist of the header line:
+.br
+.Ty "\ \ \ \ Server:\ "
+server name
+.br
+Followed by one line per server attribute of the form:
+.br
+.Ty "\ \ \ \ attribute_name = value"
+.if !\n(Pb .ig Ig
+.LP
+The server attributes are listed in the same format as job attributes.
+.Ig
+.LP
+.Sh STANDARD ERROR
+The qstat command will write a diagnostic message to standard error for
+each error occurrence.
+.Sh CONFIGURATION
+If
+.B qstat
+is compiled with an option to include a
+.B Tcl
+interpreter, using the
+.Ar -f
+flag to get a full display causes a check to be made for a script file
+to use to output the requested information.  The first location checked
+is $HOME/.qstatrc.  If this does not exist, the next location
+checked is administrator configured.  If one of these is found, a
+.B Tcl
+interpreter is started and the script file is passed to it along
+with three global variables.  The command line arguments
+are split into two variable named
+.B flags
+and
+.B operands .
+The status information is passed in a variable named
+.B objects .
+All of these variables are
+.B Tcl
+lists.
+The
+.B flags
+list contains the name of the command (usually "qstat") as its first
+element.  Any other elements are command line option flags with any
+options they use, presented in the order given on the command line.
+They are broken up individually so that if two flags are given
+together on the command line, they are separated in the list.
+For example, if the user typed
+.LP
+.Ty "qstat -QfWbigdisplay"
+.LP
+the
+.B flags
+list would contain
+.LP
+.Ty "qstat -Q -f -W bigdisplay"
+.LP
+The
+.B operands
+list contains all other command line arguments following the flags.
+There will always be at least one element in
+.B operands
+because if no operands are typed by the user, the default destination
+or server name is used.  The
+.B objects
+list contains all the information retrieved from the server(s)
+so the Tcl interpreter can run once to format the entire output.
+This list has the same number of elements as the
+.B operands
+list.  Each element is another list with two elements.  The first
+element is a string giving the type of objects to be found in the
+second.  The string can take the values
+"server", "queue", "job" or "error".  The second element will be a
+list in which each element is a single batch status object of the type given
+by the string discussed above.  In the case of "error", the list
+will be empty.  Each object is again a list.
+The first element is the name of the object.  The second is a list
+of attributes.  The third element will be the object text.
+All three of these object elements correspond with fields in the structure
+.Ty batch_status
+which is described in detail for each type of object by the man pages for
+.B pbs_statjob(3), pbs_statque(3), and pbs_statserver(3).
+Each attribute in the second element
+list whose elements correspond with the
+.Ty attrl
+structure.  Each will be a list with two elements.  The first will be
+the attribute name and the second will be the attribute value.
+.Sh EXIT STATUS
+Upon successful processing of all the operands presented to the
+qstat command, the exit status will be a value of zero.
+.LP
+If the qstat command fails to process any operand, the
+command exits with a value greater than zero.
+.Sh SEE ALSO
+qalter(1B), qsub(1B), pbs_alterjob(3B), pbs_statjob(3B), pbs_statque(3B),
+pbs_statserver(3B), pbs_submit(3B),
+pbs_job_attributes(7B), pbs_queue_attributes(7B), pbs_server_attributes(7B),
+pbs_resources_*(7B) where * is system type, and the PBS ERS.
+
+\" turn off any extra indent left by the Sh macro
+.RE

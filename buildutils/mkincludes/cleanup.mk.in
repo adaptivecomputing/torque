@@ -1,0 +1,13 @@
+# START cleanup.mk
+
+#
+# most Makefiles can include these as the cleanup routines
+#
+
+clean::
+	-($(RM) $(OBJS) $(TARGET) $(TARGETS); exit 0) > /dev/null 2>&1
+
+distclean:: clean
+	-($(RM) $(DEP_STAMP) Makefile; exit 0) > /dev/null 2>&1
+
+# END cleanup.mk

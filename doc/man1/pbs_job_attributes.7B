@@ -1,0 +1,528 @@
+.\"         OpenPBS (Portable Batch System) v2.3 Software License
+.\" 
+.\" Copyright (c) 1999-2000 Veridian Information Solutions, Inc.
+.\" All rights reserved.
+.\" 
+.\" ---------------------------------------------------------------------------
+.\" For a license to use or redistribute the OpenPBS software under conditions
+.\" other than those described below, or to purchase support for this software,
+.\" please contact Veridian Systems, PBS Products Department ("Licensor") at:
+.\" 
+.\"    www.OpenPBS.org  +1 650 967-4675                  sales@OpenPBS.org
+.\"                        877 902-4PBS (US toll-free)
+.\" ---------------------------------------------------------------------------
+.\" 
+.\" This license covers use of the OpenPBS v2.3 software (the "Software") at
+.\" your site or location, and, for certain users, redistribution of the
+.\" Software to other sites and locations.  Use and redistribution of
+.\" OpenPBS v2.3 in source and binary forms, with or without modification,
+.\" are permitted provided that all of the following conditions are met.
+.\" After December 31, 2001, only conditions 3-6 must be met:
+.\" 
+.\" 1. Commercial and/or non-commercial use of the Software is permitted
+.\"    provided a current software registration is on file at www.OpenPBS.org.
+.\"    If use of this software contributes to a publication, product, or service
+.\"    proper attribution must be given; see www.OpenPBS.org/credit.html
+.\" 
+.\" 2. Redistribution in any form is only permitted for non-commercial,
+.\"    non-profit purposes.  There can be no charge for the Software or any
+.\"    software incorporating the Software.  Further, there can be no
+.\"    expectation of revenue generated as a consequence of redistributing
+.\"    the Software.
+.\" 
+.\" 3. Any Redistribution of source code must retain the above copyright notice
+.\"    and the acknowledgment contained in paragraph 6, this list of conditions
+.\"    and the disclaimer contained in paragraph 7.
+.\" 
+.\" 4. Any Redistribution in binary form must reproduce the above copyright
+.\"    notice and the acknowledgment contained in paragraph 6, this list of
+.\"    conditions and the disclaimer contained in paragraph 7 in the
+.\"    documentation and/or other materials provided with the distribution.
+.\" 
+.\" 5. Redistributions in any form must be accompanied by information on how to
+.\"    obtain complete source code for the OpenPBS software and any
+.\"    modifications and/or additions to the OpenPBS software.  The source code
+.\"    must either be included in the distribution or be available for no more
+.\"    than the cost of distribution plus a nominal fee, and all modifications
+.\"    and additions to the Software must be freely redistributable by any party
+.\"    (including Licensor) without restriction.
+.\" 
+.\" 6. All advertising materials mentioning features or use of the Software must
+.\"    display the following acknowledgment:
+.\" 
+.\"     "This product includes software developed by NASA Ames Research Center,
+.\"     Lawrence Livermore National Laboratory, and Veridian Information
+.\"     Solutions, Inc.
+.\"     Visit www.OpenPBS.org for OpenPBS software support,
+.\"     products, and information."
+.\" 
+.\" 7. DISCLAIMER OF WARRANTY
+.\" 
+.\" THIS SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND. ANY EXPRESS
+.\" OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+.\" OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT
+.\" ARE EXPRESSLY DISCLAIMED.
+.\" 
+.\" IN NO EVENT SHALL VERIDIAN CORPORATION, ITS AFFILIATED COMPANIES, OR THE
+.\" U.S. GOVERNMENT OR ANY OF ITS AGENCIES BE LIABLE FOR ANY DIRECT OR INDIRECT,
+.\" INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+.\" LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
+.\" OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+.\" LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+.\" NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+.\" EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+.\" 
+.\" This license will be governed by the laws of the Commonwealth of Virginia,
+.\" without reference to its choice of law rules.
+.if \n(Pb .ig Iq
+.\" for man page
+.TH pbs_job_attributes 7B "" Local PBS
+.so ../ers/ers.macros
+.SH NAME
+pbs_job_attributes - pbs job attributes
+.SH DESCRIPTION
+.Iq
+.if !\n(Pb .ig Ig
+.\" for ers
+.NH 3
+.Tc Public Job Attributes
+.Ig
+.LP
+A batch job has the following public attributes shown in the following list.
+The attributes marked with the section
+symbol \(sc are required by POSIX 1003.2d:
+If an attribute is unset, the indicated default value is assumed.
+.Al "Account_Name \(sc"
+Used for accounting on some hosts.
+.if !\n(Pb .ig Ig
+.\" ers only
+A server may not use the string,
+but allowances for it must be made.
+.Ig
+Format: string; default value: none, not used.
+.if !\n(Pb .ig Ig
+[internal type: string]
+.Ig
+.Al "Checkpoint \(sc"
+If supported by the server implementation and the host operating system,
+the checkpoint
+attribute determines when checkpointing will be performed by PBS on behalf
+of the job.  The legal values for checkpoint are described under the 
+.B qalter
+and 
+.B qsub
+commands.  Format: the strings "n", "s", "c", "c=mmmm"; default value: "u",
+which is unspecified.
+.if !\n(Pb .ig Ig
+[internal type: string]
+.Ig
+.Al depend
+The type of inter-job dependencies specified by the job owner.
+Format: "type:jobid[,jobid...]"; default value: no dependencies.
+.if !\n(Pb .ig Ig
+[internal type: special, dependency]
+.Ig
+.Al "Error_Path \(sc"
+The final path name for the file containing the job's standard error stream.
+See the
+.B qsub
+and
+.B qalter
+command description for more detail.
+Format: "[hostname:]pathname"; default value: (job_name).e(job_number).
+.if !\n(Pb .ig Ig
+[internal type: list]
+.Ig
+.Al "Execution_Time \(sc"
+The time after which the job may execute.  The time is maintained in seconds
+since Epoch.  If this time has not yet been reached, the job will not be
+scheduled for execution and the job is said to be in
+.B wait
+state.  Format: "[[CCwYY]MMDDhhmm[.ss]"; default value: time 0, no delay.
+.if !\n(Pb .ig Ig
+[internal type: integer]
+.Ig
+.Al "group_list \(sc"
+A list of 
+.Ty group_names@hosts
+which determines the group under which
+the job is run on a given host. [internal type: array of strings]
+When a job is to be placed into execution,  the server will select a group
+name according to the following ordered set of rules:
+.RS
+.IP 1. 3
+Select the group name from the list for which the associated host name
+matches the name of the execution host.
+.IP 2. 3
+Select the group name which has no associated host name, the
+\*Qwild card name.\*U
+.IP 3. 3
+Use the login group for the user name under which the job will be run.
+.RE
+.IP
+Format: "group_name[@host][,group_name[@host]...]".
+.if !\n(Pb .ig Ig
+[internal type: array of strings]
+.Ig
+.Al "Hold_Types \(sc"
+The set of holds currently applied to the job.  If the set is not null, 
+the job will not be scheduled for execution and is said to be in the
+.B hold
+state.  Note,  the
+.B hold
+state takes precedence over the
+.B wait
+state.  Format: string made up of the letters 'u', 's', 'o'; default value:
+no hold.
+.if !\n(Pb .ig Ig
+[internal type: string]
+.Ig
+.Al "Job_Name \(sc"
+The name assigned to the job by the 
+.B qsub
+or 
+.B qalter
+command.  Format: string up to 15 characters, first character must be
+alphabetic; default value: the base name of the job script or STDIN.
+.if !\n(Pb .ig Ig
+[internal type: string]
+.Ig
+.Al "Join_Path \(sc"
+If the
+.At Join_Paths
+attribute is
+.Sc TRUE ,
+then the job's standard error stream will be merged, inter-mixed, with the
+job's standard output stream and placed in the file determined by the
+.At Output_Path
+attribute.  The
+.At Error_Path
+attribute is maintained, but ignored.  Format: boolean, values accepted are
+"True", "TRUE", "true", "Y", "y", "1", "False", "FALSE", "false", "N", "n", "0";
+default value: false.
+.if !\n(Pb .ig Ig
+[internal type: string]
+.Ig
+.Al "Keep_Files \(sc"
+If
+.At Keep_Files
+contains the values "o"
+.if !\n(Pb .ig Ig
+.Sc KEEP_OUTPUT
+.Ig
+and/or "e"
+.if !\n(Pb .ig Ig
+.Sc KEEP_ERROR
+.Ig
+the corresponding streams of the batch job will be
+retained on the execution host upon job termination.  
+.At Keep_Files
+overrides the 
+.At Output_Path
+and
+.At Error_Path
+attributes.  Format: "o", "e", "oe" or "eo"; default value: no keep, return
+files to submission host.
+.if !\n(Pb .ig Ig
+[internal type: string]
+.Ig
+.Al "Mail_Points \(sc"
+Identifies at which state changes the server will send mail about the job.
+Format: string made up of the letters 'a' for abort, 'b' for beginning, and
+'e' for ending; 
+default value: 'a', send on job abort.
+.if !\n(Pb .ig Ig
+[internal type: string]
+.Ig
+.Al "Mail_Users \(sc"
+The set of users to whom mail may be sent when the job makes certain
+state changes.  Format: "user@host[,user@host]";  default value: job owner only.
+.if !\n(Pb .ig Ig
+[internal type: array of strings]
+.Ig
+.Al "Output_Path \(sc"
+The final path name for the file containing the job's standard output stream.
+See the
+.B qsub
+and
+.B qalter
+command description for more detail.
+Format: see error_path, default value: (job_name).o(job_number).
+.if !\n(Pb .ig Ig
+[internal type: string]
+.Ig
+.Al "Priority \(sc"
+The job scheduling priority assigned by the user.
+Format: "[+|-]nnnnn"; default value: undefined.
+.if !\n(Pb .ig Ig
+[internal type: integer]
+.Ig
+.Al "Rerunable \(sc"
+The rerunable flag given by the user.  Format: "y" or "n", see Join_Path;
+default value: y, job is rerunable.
+.if !\n(Pb .ig Ig
+[internal type: boolean]
+.Ig
+.Al "Resource_List \(sc"
+The list of resources required by the job.  The resource list is a set of
+.Ty name=value
+strings.  The meaning of 
+.Ty name
+and
+.Ty value
+is server dependent.  The value also establishes the limit of usage of
+that resource.  If not set, the value for a resource may be determined by
+a queue or server default established by the administrator.
+Default value: no usage or no limit depending on specific resource.
+.if !\n(Pb .ig Ig
+[internal type: resource]
+.Ig
+.Al "Shell_Path_List \(sc"
+A set of absolute paths of the program to process the job's script file.
+The list is in the format: "path[@host][,path[@host]...]".
+If this is null, then the user's login shell on the host of execution
+will be used.
+Default value: null, login shell.
+.if !\n(Pb .ig Ig
+[internal type: array of strings]
+.Ig
+.Al stagein
+The list of files to be staged in prior to job execution.
+Format: local_path@remote_host:remote_path
+.if !\n(Pb .ig Ig
+[internal type: array of strings]
+.Ig
+.Al stageout
+The list of files to be staged out after job execution.
+Format: local_path@remote_host:remote_path
+.if !\n(Pb .ig Ig
+[internal type: array of strings]
+.Ig
+.Al "User_List \(sc"
+The list of 
+.Ty user@hosts
+which determines the user name under which
+the job is run on a given host.  [internal type: array of strings]
+When a job is to be placed into execution,  the server will select a user
+name from the list according to the following ordered set of rules:
+.RS
+.IP 1. 3
+Select the user name from the list for which the associated host name
+matches the name of the execution host.
+.IP 2. 3
+Select the user name which has no associated host name, the
+\*Qwild card name.\*U
+.IP 3. 3
+Use the
+.At Job_Owner
+as the user name.
+.RE
+.IP
+Default value: job owner name.
+.if !\n(Pb .ig Ig
+[internal type: array of strings]
+.Ig
+.Al "Variable_List \(sc"
+This is the list of environment variables passed with the
+.I "Queue Job"
+batch request.  Format: "name=value[,name=value...]".
+.if !\n(Pb .ig Ig
+[internal type: array of strings]
+.Ig
+.if !\n(Pb .ig Ig
+.NH 3
+.Tc Privileged Job Attributes
+.Ig
+.LP
+The following attributes require system, manager, or operator privilege to set.
+They are visible to clients depending on privilege as noted.
+.Al comment
+An attribute for displaying comments about the job from the system.
+Visible to any client.
+Format: any string; default value: none.
+.if !\n(Pb .ig Ig
+[internal type: string]
+.Ig
+.Al sched_hint
+This attribute is present when the job is a member of a synchronous
+dependency set.  It is set when the hold is released on the job.  The value is
+.Sc SYNC_SCHED_HINT_FIRST
+(1) when the first job of the set is released for scheduling.  This is a hint
+that may be used by the scheduler to decrease the priority of the job.
+This keeps a user from attempting to \*Qgame\*U the scheduler.  The attribute
+is set to
+.Sc SYNC_SCHED_HINT_OTHER
+(2) for all other jobs in the set as they become schedulable.  This should be
+taken as a hint by the scheduler to increase their priority to insure they
+will run at the same time as the earlier scheduled jobs in the set.
+[This attribute is viewable only by the batch administrator.]
+[type: integer]
+.if !\n(Pb .ig Ig
+.NH 3
+.Tc Read-Only Job Attributes
+.Ig
+.LP
+The following attributes are read-only, they are established by the
+server and are visible to the client but cannot be set by a client.
+Certain ones are only visible to privileged clients (those run by the
+batch administrator).
+.Al alt_id
+For a few systems, such as Irix 6.x running Array Services, the session id
+is insufficient to track which processes belong to the job.  Where a different
+identifier is required, it is recorded in this attribute.   If set, it will
+also be recorded in the end-of-job accounting record.
+.IP
+For Irix 6.x running Array Services, the alt_id attribute is set to the Array
+Session Handle (ASH) assigned to the job.
+.if !\n(Pb .ig Ig
+[internal type: string]
+.Ig
+.Al ctime\ 
+The time that the job was created.
+.if !\n(Pb .ig Ig
+[internal type: integer, (seconds since epoch)]
+.Ig
+.Al etime
+The time that the job became eligible to run, i.e. in a queued state while
+residing in an execution queue.  
+.if !\n(Pb .ig Ig
+[internal type: integer, (seconds since epoch)]
+.Ig
+.Al exec_host
+If the job is running, this is set to the name of the host on which the
+job is executing.
+.if !\n(Pb .ig Ig
+[internal type: string]
+.Ig
+.Al egroup
+If the job is queued in an execution queue, this attribute is set to the
+group name under which the job is to be run.  [This attribute is available
+only to the batch administrator.]
+.if !\n(Pb .ig Ig
+[internal type: string]
+.Ig
+.Al euser
+If the job is queued in an execution queue, this attribute is set to the
+user name under which the job is to be run.  [This attribute is available
+only to the batch administrator.]
+.if !\n(Pb .ig Ig
+[internal type: string]
+.Ig
+.Al hashname
+The name used as a basename for various files, such as the job file, script
+file, and the standard output and error of the job.
+[This attribute is available only to the batch administrator.]
+.if !\n(Pb .ig Ig
+[type: string]
+.Ig
+.Al "interactive"
+True if the job is an interactive PBS job.
+Format: boolean, see Join_Paths; default value: false.
+.if !\n(Pb .ig Ig
+[internal type: long]
+Internally, the value is the port number obtained by qsub when the job was
+submitted.
+.Ig
+.Al "Job_Owner \(sc"
+The login name on the submitting host of the user who submitted the batch job.
+.if !\n(Pb .ig Ig
+[internal type: string]
+.Ig
+.Al "job_state
+The state of the job.
+.RS
+.IP E
+for exiting, the job has completed execution, with or without errors,
+and the batch system is doing post-execution clean-up.
+.IP H
+for Held, one or more holds have been applied to the job.
+.IP Q
+for Queued, the job resides in a execution or routing queue pending
+execution or routing.  It is not in
+.B held
+or
+.B waiting
+state.
+.IP R
+for Running, the job resides in a execution queue and has been placed into
+execution.
+.IP S
+for Suspend (Job running on Unicos only), the job was executing and has
+been suspended.   The job retains its assigned resources but does not
+use cpu cycle or walltime.
+.IP T
+for Transiting, the job is in process of being routed or moved to a new
+destination.
+.IP W
+for Waiting, the job is not held but the
+.At Execution_Time
+attribute contains a time which has not yet been reached.
+.RE
+.if !\n(Pb .ig Ig
+[internal type: character]
+.Ig
+.Al mtime\ 
+The time that the job was last modified, changed state, or changed locations.
+.if !\n(Pb .ig Ig
+Internally, maintained as number of seconds since epoch.
+[internal type: integer]
+.Ig
+.Al qtime\ 
+The time that the job entered the current queue.
+.if !\n(Pb .ig Ig
+Internally, maintained as number of seconds since epoch.
+[internal type: integer]
+.Ig
+.Al queue\ 
+The name of the queue in which the job currently resides.
+.if !\n(Pb .ig Ig
+[internal type: string]
+.Ig
+.Al queue_rank
+An ordered, non-sequential number indicating the job's position with in the
+queue.  This is provided as an aid to the scheduler.
+[This attribute is available to the batch manager only.]
+.if !\n(Pb .ig Ig
+[internal type: integer]
+.Ig
+.Al queue_type
+An identification of the the type of queue in which the job is currently
+residing.  This is provided as an aid to the scheduler.
+[This attribute is available to the batch manager only.]
+Format: The letter \*QE\*U or the letter \*Qr\*U.
+.if !\n(Pb .ig Ig
+[internal type: character]
+.Ig
+.Al "resources_used \(sc"
+The amount of resources used by the job.  This is provided as part of job
+status information if the job is running.
+.if !\n(Pb .ig Ig
+[internal type: resource]
+.Ig
+.Al server\ 
+The name of the server which is currently managing the job.
+.if !\n(Pb .ig Ig
+[internal type: string]
+.Ig
+.Al session_id
+If the job is running, this is set to the session id of the first executing
+task.
+.if !\n(Pb .ig Ig
+[internal type: integer]
+.Ig
+.Al "substate"
+A numerical indicator of the substate of the job.  The substate is used
+by the PBS job server internally.   The attribute is visible to privileged
+clients, such as the scheduler.   
+Format: integer.
+.if !\n(Pb .ig Ig
+[internal type: long integer]
+.br
+The values are defined in the header file job.h.   See the ERS section
+on file staging for why it is available to the scheduler.
+.Ig
+.if \n(Pb .ig Ig
+.\" man page only
+.SH SEE ALSO
+PBS ERS, qsub(1B), qalter(1B)
+.Ig

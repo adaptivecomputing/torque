@@ -1,0 +1,43 @@
+# START tcl.mk
+
+# The location of Tcl (e.g. /usr/local, /usr/pkg, etc.)
+TCL_DIR	= @TCL_DIR@
+
+# if Tclx gets used then this is its location
+TCLX_DIR = @TCLX_DIR@
+
+#
+# these are the versions of Tcl and Tk. They are extracted from the tcl.h
+# and tk.h files. 
+#
+TCL_VER = @TCL_VER@
+TK_VER = @TK_VER@
+
+LIBTK=-ltk@TK_LIB_VER@
+LIBTCL=-ltcl@TCL_LIB_VER@
+
+X11INC=@X11INC@
+X11LIB=@X11LIB@
+
+# The libraries needed to link programs with a Tcl interpreter usually
+# are only the math library. 
+TCL_LIBS = @TCL_LIBS@ -lm
+
+TCL_INCS = @TCL_INCS@
+
+# Whether qstat should include Tcl code
+TCL_QSTAT = @TCL_QSTAT@
+
+# Whether TCLX is used
+TCLX = @TCLX@
+
+#
+# the paths to tclsh and wish are used by the xpbs GUI
+#
+TCLSH_PATH = @TCLSH_PATH@
+WISH_PATH  = @WISH_PATH@
+
+# Directory holding the xpbs Tcl/Tk scripts and binaries
+XPBS_LIB = $(PBS_LIB)/xpbs
+
+# END tcl.mk

@@ -1,0 +1,35 @@
+The File Selection dialog box allows the selection of a single file from the
+the directory tree path of the local host. This single file can be used as 
+input to script filename, stdout file/path, stderr file/path, file staging 
+pathname when submitting or altering jobs. The listing directory is specified in
+SELECTION DIRECTORY entrybox, and the name of the local host is given in HOST.
+The accompanying listbox shows the list of files/directories in the "SELECTION 
+DIRECTORY".
+
+=============
+FILES LISTBOX
+=============
+Single clicking a file will display the filename on the "FILE Selected" entry
+box.
+Double clicking on a directory will refresh the display of the listbox to show
+the files in the selected directory. 
+
+You can also manually enter the name of the directory on the 
+"SELECTION DIRECTORY" entrybox, hit <RETURN>, and then the files in that 
+directory will be listed. You can also manually enter the filename of your
+choice on the "FILE Selected" entrybox.
+
+If the label "CURRENT WORKING DIRECTORY" is displayed, a button named 
+"cd <SELECTION DIRECTORY>" will usually accompany it for making the 
+"SELECTION DIRECTORY" (listed just above the selection listbox) the current
+working directory. The current working directory is the default directory that
+will be known to PBS commands when they are issued by xpbs. For example, when
+submitting jobs, the current working directory determines where the default
+job *.o and *.e files will be placed. 
+
+===============
+COMMAND BUTTONS
+===============
+
+Click "Select File" if you want to accept filename specified on the 
+"FILE Selected" entry box. This filename can even be the empty string.

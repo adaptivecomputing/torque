@@ -1,0 +1,15 @@
+The Automatic Update dialog box is for specifying the interval number of minutes
+for periodically taking updates of nodes data. 
+
+Either type in the minutes value on the spinbox entry, or click on the 
+scrollbar arrows of the spinbox to display valid values (> 0).
+
+Click on the "start updating" command button to signal automatic updating 
+of data.
+
+Click on the "stop updating" command button to signal an end to automatic 
+updates of data.
+
+Click on the "close window" command button to close the dialog box. This is
+also the default action (as indicated by a sunken look of the button) when the
+<Return> key is pressed.

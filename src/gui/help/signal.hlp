@@ -1,0 +1,18 @@
+The Signal Running Job dialog box is for sending some specified signal to
+selected running job(s).
+
+To specify the signal name or number, click on one of the "Send signal"
+radio buttons. If the "other" signal is chosen, then type in the signal name
+or number on the provided entry box. 
+
+===============
+COMMAND BUTTONS
+===============
+This region of command buttons represents the final step when manipulating this
+dialog box. 
+
+Click on "signal" to proceed sending signal to the selected job(s).
+
+Click on "cancel" to cancel the sending of signal to the selected job(s) and
+to quit out of this dialog box. This is also the default action when the 
+<Return> key is pressed.

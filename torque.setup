@@ -1,0 +1,34 @@
+#!/bin/sh
+# torque.setup
+
+# USAGE:  torque.setup <USERNAME>
+
+if [ "$1" = "" ] ; then
+  echo "USAGE:  torque.setup <USERNAME>"
+  exit 1
+  fi
+
+# create default queue
+# enable operator privileges
+
+USER=$1@`hostname -f`
+
+echo "initializing TORQUE (admin: $USER)"
+
+pbs_server -t create
+
+qmgr -c "set server scheduling=true"
+
+echo set server operators += $USER | qmgr
+echo set server managers += $USER | qmgr
+
+qmgr -c 'create queue batch'
+qmgr -c 'set queue batch queue_type = execution'
+qmgr -c 'set queue batch started = true'
+qmgr -c 'set queue batch enabled = true'
+qmgr -c 'set queue batch resources_default.walltime = 1:00:00'
+qmgr -c 'set queue batch resources_default.nodes = 1'
+
+qmgr -c 'set server default_queue = batch'
+
+

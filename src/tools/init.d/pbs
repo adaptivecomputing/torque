@@ -1,0 +1,192 @@
+#!/bin/sh 
+#
+#    PBS init script
+#
+#	$1 can be:
+#	    start   - start PBS
+#	    stop    - terminate PBS
+#	    restart - terminate and start PBS
+#	    status  - report PBS deamon pids
+#
+#
+# chkconfig: 2345 90 10
+# description: The Portable Batch System (PBS) is a flexible batch software 
+# processing system developed at NASA Ames Research Center. It operates on 
+# networked, ulti-platform UNIX environments, including heterogeneous clusters 
+# of workstations, supercomputers, and massively parallel systems. 
+#
+
+if [ -f /etc/pbs.conf ] ; then
+. /etc/pbs.conf
+else
+  echo "***"
+  echo "*** Can not find /etc/pbs.conf"
+  echo "***"
+  exit 1
+fi
+
+update_pids() {
+  if [ -f ${pbs_home}/server_priv/server.lock ] ; then
+    pbs_server_pid=`cat ${pbs_home}/server_priv/server.lock`
+  else
+    pbs_server_pid=-1
+  fi
+  if [ -f ${pbs_home}/mom_priv/mom.lock ] ; then
+    pbs_mom_pid=`cat ${pbs_home}/mom_priv/mom.lock`
+  else
+    pbs_mom_pid=-1
+  fi
+  if [ -f ${pbs_home}/sched_priv/sched.lock ] ; then
+    pbs_sched_pid=`cat ${pbs_home}/sched_priv/sched.lock`
+  else
+    pbs_sched_pid=-1
+  fi
+}
+
+# check_started - check if a particular pid is the program which is expected.
+#                 pbs stores the pid of the currently running incarnation of 
+#                 itself.  This function is used to see if that pid is correct 
+#		  program.
+# 	$1 - the pid
+# 	$2 - the program name (pbs_server pbs_mom pbs_sched)
+#
+# return value: 0 - program is already running
+#		1 - program is not running
+#
+: check_started
+check_started() {
+
+  ps_out=`ps -p $1 -o args | tail +2`
+
+  if [ -z "${ps_out}" ]  ; then
+    return 1;
+  fi
+
+# strip out everything except executable name
+  prog_name=`echo ${ps_out} | awk '{print $1}' | awk -F/ '{print $NF}'`
+
+  if [ ${prog_name} = $2 ] ; then
+    return 0;
+  fi
+
+  return 1;
+}
+
+# check_prog - this function checks to see if a prog is still running.  It will
+#              get the pid out of the prog.lock file and run check_started 
+#	       on that pid.
+#
+#	$1 is either "server" "mom" or "sched"
+#
+# return value: 0 - program is still running
+#		1 - program is not running
+#
+: check_prog
+check_prog() {
+  pid_file=${pbs_home}/${1}_priv/${1}.lock
+
+  if [ -f ${pid_file} ] ; then
+    pid=`cat ${pid_file}`
+    if [ -n "${pid}" ] ; then
+      if check_started "${pid}" "pbs_${1}" ; then
+	return 0
+      else
+	return 1
+      fi
+    else
+      return 1
+    fi
+  fi
+  # Since the pid file does not exist, PBS has never been run
+  return 1
+}
+
+
+: main code
+# lets see how we were called
+case "$1" in
+  start)
+    echo "Starting PBS"
+
+    if [ "${start_server}" -gt 0 ] ; then
+      if check_prog "server" ; then
+	echo "PBS Server already running."
+      else
+	${pbs_exec}/sbin/pbs_server
+	echo "PBS server"
+      fi
+    fi
+  
+    if [ "${start_mom}" -gt 0 ] ; then
+      if check_prog "mom" ; then
+	echo "PBS mom already running."
+      else
+	${pbs_exec}/sbin/pbs_mom
+	echo "PBS mom"
+      fi
+    fi
+    if [ "${start_sched}" -gt 0 ] ; then
+      if check_prog "sched" ; then
+	echo "PBS schedular already running."
+      else
+	${pbs_exec}/sbin/pbs_sched
+	echo "PBS sched"
+      fi
+    fi
+  ;;
+  stop)
+    update_pids 
+    echo "Stopping PBS"
+    if [ "${start_server}" -gt 0 ] ; then
+      if check_prog "server" ; then
+	${pbs_exec}/bin/qterm
+	echo "PBS server - was pid: ${pbs_server_pid}"
+      fi
+    fi
+    if [ "${start_mom}" -gt 0 ] ; then
+      if check_prog "mom" ; then
+	kill ${pbs_mom_pid}
+	echo "PBS mom - was pid: ${pbs_mom_pid}"
+      fi
+    fi
+    if [ "${start_sched}" -gt 0 ] ; then
+      if check_prog "sched" ; then
+	kill ${pbs_sched_pid} 
+	echo "PBS sched - was pid: ${pbs_sched_pid}"
+      fi
+    fi
+  ;;
+  restart)
+    echo "Restarting PBS"
+    $0 stop
+    $0 start
+  ;;
+  status)
+    update_pids
+    if [ "${start_server}" -gt 0 ] ; then
+      if check_prog "server" ; then
+	echo "pbs_server is pid ${pbs_server_pid}"
+      else
+	echo "pbs server is not running."
+      fi
+    fi
+    if [ "${start_mom}" -gt 0 ] ; then
+      if check_prog "mom" ; then
+	echo "pbs_mom is pid ${pbs_mom_pid}"
+      else
+	echo "pbs_mom is not running"
+      fi
+    fi
+    if [ "${start_sched}" -gt 0 ] ; then
+      if check_prog "sched" ; then
+	echo "pbs_sched is pid ${pbs_sched_pid}"
+      else
+	echo "pbs_sched is not running"
+      fi
+    fi
+  ;;
+  *)
+    echo "Usage: pbs {start|stop|restart|status}"
+    exit 1
+esac
+

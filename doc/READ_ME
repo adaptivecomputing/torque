@@ -1,0 +1,11 @@
+The various troff files in the directories below here reference
+the file ./ers.macros
+
+Before they can be processed by troff or (the man pages) can be
+installed in a man directory, this file must be merged into the source.
+
+This is be done by the makefile that processes the document.
+
+Because the program "soelim" is not always available and because it
+needs to know in which directory to look for the so-ed file, a source
+version is included in the doc directory.

@@ -1,0 +1,1068 @@
+#         OpenPBS (Portable Batch System) v2.3 Software License
+# 
+# Copyright (c) 1999-2000 Veridian Information Solutions, Inc.
+# All rights reserved.
+# 
+# ---------------------------------------------------------------------------
+# For a license to use or redistribute the OpenPBS software under conditions
+# other than those described below, or to purchase support for this software,
+# please contact Veridian Systems, PBS Products Department ("Licensor") at:
+# 
+#    www.OpenPBS.org  +1 650 967-4675                  sales@OpenPBS.org
+#                        877 902-4PBS (US toll-free)
+# ---------------------------------------------------------------------------
+# 
+# This license covers use of the OpenPBS v2.3 software (the "Software") at
+# your site or location, and, for certain users, redistribution of the
+# Software to other sites and locations.  Use and redistribution of
+# OpenPBS v2.3 in source and binary forms, with or without modification,
+# are permitted provided that all of the following conditions are met.
+# After December 31, 2001, only conditions 3-6 must be met:
+# 
+# 1. Commercial and/or non-commercial use of the Software is permitted
+#    provided a current software registration is on file at www.OpenPBS.org.
+#    If use of this software contributes to a publication, product, or
+#    service, proper attribution must be given; see www.OpenPBS.org/credit.html
+# 
+# 2. Redistribution in any form is only permitted for non-commercial,
+#    non-profit purposes.  There can be no charge for the Software or any
+#    software incorporating the Software.  Further, there can be no
+#    expectation of revenue generated as a consequence of redistributing
+#    the Software.
+# 
+# 3. Any Redistribution of source code must retain the above copyright notice
+#    and the acknowledgment contained in paragraph 6, this list of conditions
+#    and the disclaimer contained in paragraph 7.
+# 
+# 4. Any Redistribution in binary form must reproduce the above copyright
+#    notice and the acknowledgment contained in paragraph 6, this list of
+#    conditions and the disclaimer contained in paragraph 7 in the
+#    documentation and/or other materials provided with the distribution.
+# 
+# 5. Redistributions in any form must be accompanied by information on how to
+#    obtain complete source code for the OpenPBS software and any
+#    modifications and/or additions to the OpenPBS software.  The source code
+#    must either be included in the distribution or be available for no more
+#    than the cost of distribution plus a nominal fee, and all modifications
+#    and additions to the Software must be freely redistributable by any party
+#    (including Licensor) without restriction.
+# 
+# 6. All advertising materials mentioning features or use of the Software must
+#    display the following acknowledgment:
+# 
+#     "This product includes software developed by NASA Ames Research Center,
+#     Lawrence Livermore National Laboratory, and Veridian Information
+#     Solutions, Inc.
+#     Visit www.OpenPBS.org for OpenPBS software support,
+#     products, and information."
+# 
+# 7. DISCLAIMER OF WARRANTY
+# 
+# THIS SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND. ANY EXPRESS
+# OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+# OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT
+# ARE EXPRESSLY DISCLAIMED.
+# 
+# IN NO EVENT SHALL VERIDIAN CORPORATION, ITS AFFILIATED COMPANIES, OR THE
+# U.S. GOVERNMENT OR ANY OF ITS AGENCIES BE LIABLE FOR ANY DIRECT OR INDIRECT,
+# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
+# OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+# LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+# NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+# EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# 
+# This license will be governed by the laws of the Commonwealth of Virginia,
+# without reference to its choice of law rules.
+
+# NOTE: we restrict to one element keys only for efficiency!
+proc box {frame_name {args}} {
+
+  set boxName [string trim $frame_name "."]
+
+  global $boxName sysinfo LABELFONT disabledColor
+  set configure 0
+
+  set argc [llength $args]
+  for {set i 0} {$i < $argc} {incr i} {
+    switch -exact -- [lindex $args $i] {
+      configure  {
+                set configure 1
+      }
+      -title {
+                set [set boxName](title) [lindex $args [incr i]]
+      }
+      title {
+		if { ![info exists [set boxName](title)]} {
+			return ""
+		}
+                return [set [set boxName](title)]
+      }
+      -class {
+                set [set boxName](class) [lindex $args [incr i]]
+      }
+      class {
+		if { ![info exists [set boxName](class)]} {
+			return Plain
+		}
+                return [set [set boxName](class)]
+      }
+      titlelabel {
+		if { ![info exists [set boxName](titlelabel)]} {
+			return ""
+		}
+                return [set [set boxName](titlelabel)]
+      }		
+      -key {
+                set [set boxName](key) [lindex $args [incr i]]
+      }
+      key {
+		if { ![info exists [set boxName](key)]} {
+			return 0
+		}
+                return [set [set boxName](key)]
+      }
+      -entrylabels {
+                set [set boxName](entrylabels) [lindex $args [incr i]]
+      }
+      entrylabels {
+		if { ![info exists [set boxName](entrylabels)]} {
+			return ""
+		}
+                return [set [set boxName](entrylabels)]
+      }
+      -lboxlabels {
+                set [set boxName](lboxlabels) [lindex $args [incr i]]
+      }
+      lboxlabels {
+		if { ![info exists [set boxName](lboxlabels)]} {
+			return ""
+		}
+                return [set [set boxName](lboxlabels)]
+      }
+      -lboxwidths {
+                set [set boxName](lboxwidths) [lindex $args [incr i]]
+      }
+      lboxwidths {
+		if { ![info exists [set boxName](lboxwidths)]} {
+			return 0
+		}
+                return [set [set boxName](lboxwidths)]
+      }
+      -lboxheights {
+                set [set boxName](lboxheights) [lindex $args [incr i]]
+      }
+      lboxheights {
+		if { ![info exists [set boxName](lboxheights)]} {
+			return 0
+		}
+                return [set [set boxName](lboxheights)]
+      }
+      -orient {
+                set [set boxName](orient) [lindex $args [incr i]]
+      }
+      orient {
+		if { ![info exists [set boxName](orient)]} {
+			return "x"
+		}
+                return [set [set boxName](orient)]
+      }
+      -grabBox {
+                set [set boxName](grabBox) [lindex $args [incr i]]
+      }
+      grabBox {
+		if { ![info exists [set boxName](grabBox)]} {
+			return ""
+		}
+                return [set [set boxName](grabBox)]
+      }
+      -selindex {
+                set [set boxName](selindex) [lindex $args [incr i]]
+      }
+      selindex {
+		if { ![info exists [set boxName](selindex)]} {
+			return -1
+		}
+                return [set [set boxName](selindex)]
+      }
+      vscroll {
+		if { ![info exists [set boxName](vscroll)]} {
+			return ""
+		}
+                return [set [set boxName](vscroll)]
+      }
+      ncols {
+		if { ![info exists [set boxName](ncols)]} {
+			return 1
+		}
+                return [set [set boxName](ncols)]
+      }
+      -nrows {
+		set lbox [box $frame_name lbox 0]
+		if { [string compare $lbox ""] != 0 } {
+			set [set boxName](nrows) [$lbox size]
+		}
+
+		incr [set boxName](nrows) [lindex $args [incr i]]
+                return [set [set boxName](nrows)]
+      }
+      nrows {
+		set lbox [box $frame_name lbox 0]
+		if { [string compare $lbox ""] == 0 } {
+			return 0
+		}
+		set [set boxName](nrows) [$lbox size]
+
+                return [set [set boxName](nrows)]
+      }
+      lbox {
+		set index [lindex $args [incr i]]
+		if {![info exists [set boxName](lbox,$index)]} {
+			return ""
+		}
+                return [set [set boxName](lbox,$index)]
+      }
+      entry {
+		set index [lindex $args [incr i]]
+		if {![info exists [set boxName](entry,$index)]} {
+			return ""
+		}
+                return [set [set boxName](entry,$index)]
+      }
+      firstNonMenuEntry {
+		if { ![info exists [set boxName](firstentry)]} {
+			return ""
+		}
+                return [set [set boxName](firstentry)]
+      }
+      -array {
+		set index [lindex $args [incr i]]
+		set eval [lindex $args [incr i]]
+                set [set boxName](array,$index) $eval
+      }
+      array {
+		set index [lindex $args [incr i]]
+		if {![info exists [set boxName](array,$index)]} {
+			return ""
+		}
+                return [set [set boxName](array,$index)]
+      }
+      arrayReIndex {
+		set index [lindex $args [incr i]]
+		set startindex [lindex $args [incr i]]
+		if {![info exists [set boxName](array,$index)]} {
+			return
+		}
+		set a [set [set boxName](array,$index)]
+		global $a
+		set size [array size $a]
+		for {set i $startindex} {$i < [expr $size-1]} {incr i} {
+			set [set a]($i) [set [set a]([expr $i+1])]
+		}
+
+		if {$size > 0} {
+			catch {unset [set a]([expr $size-1])}
+		}
+		return
+		
+      }
+      shrinkArray {
+		set nrows [box $frame_name nrows]
+		for {set s1 0} {$s1 < $nrows} {incr s1} {
+		    set isEmpty 1
+		    set ncols [box $frame_name ncols]
+		    for {set s2 0} {$s2 < $ncols} {incr s2} {
+			set a [set [set boxName](array,$s2)]
+			global $a
+			if {[info exists [set a]($s1)] && \
+			    [string compare [set [set a]($s1)] ""] != 0} {
+				set isEmpty 0
+			}
+		    }
+		    if {$isEmpty} {
+		        for {set s2 0} {$s2 < $ncols} {incr s2} {
+				box $frame_name arrayReIndex $s2 $s1
+		    	}
+			set nrows [expr $nrows - 1]
+			set s1 [expr $s1 - 1]
+		    }
+		}
+		return
+      }			
+      -entryval {
+		set index [lindex $args [incr i]]
+		set eval [lindex $args [incr i]]
+                set [set boxName](entryval,$index) $eval
+                return [set [set boxName](entryval,$index)]
+      }
+      entryval {
+		set index [lindex $args [incr i]]
+		if {![info exists [set boxName](entryval,$index)]} {
+			return ""
+		}
+                return [set [set boxName](entryval,$index)]
+      }
+      -entryvalDeleted {
+		set index [lindex $args [incr i]]
+		set eval [lindex $args [incr i]]
+                set [set boxName](entryvalDeleted,$index) $eval
+                return [set [set boxName](entryvalDeleted,$index)]
+      }
+      entryvalDeleted {
+		set index [lindex $args [incr i]]
+		if {![info exists [set boxName](entryvalDeleted,$index)]} {
+			return ""
+		}
+                return [set [set boxName](entryvalDeleted,$index)]
+      }
+      -noUpdateButton {
+                set [set boxName](noUpdateButton) [lindex $args [incr i]]
+      }
+      noUpdateButton {
+		if { ![info exists [set boxName](noUpdateButton)]} {
+			return 0
+		}
+                return [set [set boxName](noUpdateButton)]
+      }
+      -env {
+                set [set boxName](env) [lindex $args [incr i]]
+      }
+      env {
+		if { ![info exists [set boxName](env)]} {
+			return 0
+		}
+                return [set [set boxName](env)]
+      }
+      -addCmd {
+                set [set boxName](addCmd) [lindex $args [incr i]]
+      }
+      addCmd {
+		if { ![info exists [set boxName](addCmd)]} {
+			return ""
+		}
+                return [set [set boxName](addCmd)]
+      }
+      -remCmd {
+                set [set boxName](remCmd) [lindex $args [incr i]]
+      }
+      remCmd {
+		if { ![info exists [set boxName](remCmd)]} {
+			return ""
+		}
+                return [set [set boxName](remCmd)]
+      }
+      -checkbutton {
+                set [set boxName](checkbutton) [lindex $args [incr i]]
+      }
+      checkbutton {
+		if { ![info exists [set boxName](checkbutton)]} {
+			return ""
+		}
+                return [set [set boxName](checkbutton)]
+      }
+      -cmdbutton {
+                set [set boxName](cmdbutton) [lindex $args [incr i]]
+      }
+      cmdbutton {
+		if { ![info exists [set boxName](cmdbutton)]} {
+			return ""
+		}
+                return [set [set boxName](cmdbutton)]
+      }
+      -menuEntry {
+                set [set boxName](menuEntry) [lindex $args [incr i]]
+      }
+      menuEntry {
+		if { ![info exists [set boxName](menuEntry)]} {
+			return ""
+		}
+                return [set [set boxName](menuEntry)]
+      }
+      -cleanstrExceptChar {
+		set index [lindex $args [incr i]]
+		set eval [lindex $args [incr i]]
+                set [set boxName](cleanstrExceptChar,$index) $eval
+      }
+      cleanstrExceptChar {
+		set index [lindex $args [incr i]]
+		if {![info exists [set boxName](cleanstrExceptChar,$index)]} {
+			return ""
+		}
+                return [set [set boxName](cleanstrExceptChar,$index)]
+      }
+      updateButton {
+		if { ![info exists [set boxName](updateButton)]} {
+			return ""
+		}
+                return [set [set boxName](updateButton)]
+      }
+      labelWidgets {
+		if { ![info exists [set boxName](labelWidgets)]} {
+			return ""
+		}
+                return [set [set boxName](labelWidgets)]
+      }
+      rcButtonWidgets {
+		if { ![info exists [set boxName](rcButtonWidgets)]} {
+			return ""
+		}
+                return [set [set boxName](rcButtonWidgets)]
+      }
+      buttonWidgets {
+		if { ![info exists [set boxName](buttonWidgets)]} {
+			return ""
+		}
+                return [set [set boxName](buttonWidgets)]
+      }
+      entryWidgets {
+		if { ![info exists [set boxName](entryWidgets)]} {
+			return ""
+		}
+                return [set [set boxName](entryWidgets)]
+      }
+      menuEntryWidgets {
+		if { ![info exists [set boxName](menuEntryWidgets)]} {
+			return ""
+		}
+                return [set [set boxName](menuEntryWidgets)]
+      }
+      listboxWidgets {
+		if { ![info exists [set boxName](listboxWidgets)]} {
+			return ""
+		}
+                return [set [set boxName](listboxWidgets)]
+      }
+      scrollWidgets {
+		if { ![info exists [set boxName](scrollWidgets)]} {
+			return ""
+		}
+                return [set [set boxName](scrollWidgets)]
+      }
+      disable {
+		set labels [box $frame_name labelWidgets]
+		foreach l $labels {
+			if {[string compare $l ""] == 0} {
+				break
+			}
+			disable_label $l $disabledColor
+		}
+
+		set rcButtons [box $frame_name rcButtonWidgets]
+		foreach b $rcButtons {
+			if {[string compare $b ""] == 0} {
+				break
+			}
+			disable_rcbutton $b
+		}
+
+		set buttons [box $frame_name buttonWidgets]
+		foreach b $buttons {
+			if {[string compare $b ""] == 0} {
+				break
+			}
+			disable_button $b
+		}
+
+		set entries [box $frame_name entryWidgets]
+		foreach e $entries {
+
+			if {[string compare $e ""] == 0} {
+				break
+			}
+			eval disable_fullentry $e
+		}
+
+		set entries [box $frame_name menuEntryWidgets]
+		foreach e $entries {
+
+			if {[string compare $e ""] == 0} {
+				break
+			}
+			menuEntry $e disable
+		}
+
+		set lboxes [box $frame_name listboxWidgets]
+		foreach l $lboxes {
+
+			if {[string compare $l ""] == 0} {
+				break
+			}
+			lappend l 0
+			eval disable_listbox $l
+		}
+		set scrolls [box $frame_name scrollWidgets]
+		foreach s $scrolls {
+
+			if {[string compare $s ""] == 0} {
+				continue
+			}
+			eval disable_scrollbar $s $disabledColor
+		}
+		return
+
+      }
+      enable {
+		set labels [box $frame_name labelWidgets]
+		foreach l $labels {
+			if {[string compare $l ""] == 0} {
+				break
+			}
+			enable_label $l
+		}
+
+		set rcButtons [box $frame_name rcButtonWidgets]
+		foreach b $rcButtons {
+			if {[string compare $b ""] == 0} {
+				break
+			}
+			enable_rcbutton $b
+		}
+
+		set buttons [box $frame_name buttonWidgets]
+		foreach b $buttons {
+			if {[string compare $b ""] == 0} {
+				break
+			}
+			enable_button $b
+		}
+
+		set entries [box $frame_name entryWidgets]
+		foreach e $entries {
+
+			if {[string compare $e ""] == 0} {
+				break
+			}
+			eval enable_fullentry $e
+		}
+
+		set entries [box $frame_name menuEntryWidgets]
+		foreach e $entries {
+
+			if {[string compare $e ""] == 0} {
+				break
+			}
+			menuEntry $e enable
+		}
+
+		set lboxes [box $frame_name listboxWidgets]
+		foreach l $lboxes {
+
+			if {[string compare $l ""] == 0} {
+				break
+			}
+			lappend l ""
+			eval enable_listbox $l
+
+		}
+		set scrolls [box $frame_name scrollWidgets]
+		foreach s $scrolls {
+
+			if {[string compare $s ""] == 0} {
+				continue
+			}
+			eval enable_scrollbar $s
+		}
+		return
+      }
+      create     {
+                catch {unset $boxName}
+      }
+      unset {
+                catch {unset $boxName}
+		return
+      }
+      getBoxArray {
+                return "[set boxName]"
+      }
+    }
+  }
+
+  # create one frame to hold everything
+  set f $frame_name
+  if { ![info exists sysinfo(boxes)] || \
+	[lsearch -exact $sysinfo(boxes) $f] == -1 } {
+  		lappend sysinfo(boxes) $f
+  }
+
+  frame $f.t -class CmdFrame -relief raised -borderwidth 2
+  frame $f.b -relief flat
+  frame $f.b.e -relief flat
+  frame $f.b.l -relief ridge -bd 4
+  frame $f.b.b -relief flat
+ 
+  set titlelabel [box $f title]
+  if {[string compare $titlelabel ""] != 0} {
+  	label  $f.t.label -text $titlelabel -justify left -font $LABELFONT \
+		-width [string length $titlelabel] -padx 0 -pady 0
+
+	lappend [set boxName](labelWidgets) $f.t.label
+
+	set cbuttonp [box $f checkbutton]
+	if {[string compare $cbuttonp ""] != 0} {
+		set cbuttonl [lindex $cbuttonp 0]
+		set cbuttona [lindex $cbuttonp 1]
+		global $cbuttona 
+        	checkbutton $f.t.cbutton -relief flat \
+                    -anchor nw -text $cbuttonl -padx 0 \
+                    -pady 4m -variable $cbuttona -font $LABELFONT
+		lappend [set boxName](rcButtonWidgets) $f.t.cbutton
+		pack forget $f.t.cbutton
+  		pack $f.t.cbutton -anchor nw -side right -padx 0 -pady 0
+	}
+	set menu [box $f menuEntry]
+	if {[string compare $menu ""] != 0} {
+		set resnames [lindex $menu 0]
+		set cmd [lindex $menu 1]
+		set labelprefix [lindex $menu 2]
+		frame $f.t.menu
+		set [set boxName](helpvariable) \
+				"help-[lindex [lindex [join $resnames] 0] 1]"
+   		menuEntry $f.t.menu create -menuvalues $resnames \
+			-title "" -command $cmd -noDFLT 1 \
+			-prefix $labelprefix \
+			-textvariable [set boxName](helpvariable)
+			
+		lappend [set boxName](menuEntryWidgets) $f.t.menu
+		pack forget $f.t.menu
+  		pack $f.t.menu -anchor nw -side right
+	}
+	set cbuttonp [box $f cmdbutton]
+	if {[string compare $cbuttonp ""] != 0} {
+		set cbuttonl [lindex $cbuttonp 0]
+		set cbuttonc [lindex $cbuttonp 1]
+        	button $f.t.cmd -relief raised \
+                    -anchor nw -text $cbuttonl -padx 0 \
+                    -command $cbuttonc -font $LABELFONT
+		lappend [set boxName](buttonWidgets) $f.t.cmd
+		pack forget $f.t.cmd
+  		pack $f.t.cmd -anchor nw -side right -padx 0 -pady 0
+	}
+	
+  	set [set boxName](titlelabel) $f.t.label
+  	pack $f.t.label -anchor nw -side left -expand 1 -fill both -padx 0 -pady 0
+  }
+
+## build the entry widget 
+
+## build the add button
+  button $f.b.e.add -text add -height 2 -font $LABELFONT \
+	-command "boxAdd $f \"[box $f addCmd]\""
+
+  lappend [set boxName](buttonWidgets) $f.b.e.add
+
+  if {[string compare [box $f orient] x] == 0 || \
+      [string compare [box $f orient] xy] == 0} {
+  	pack $f.b.e.add -side right -anchor c -pady 1m -padx 2m
+  } else {
+  	pack $f.b.e.add -side bottom -anchor c -pady 1m
+  }
+  set k 0
+  set packlist ""
+  set entrylabels [box $f entrylabels]
+  set lboxwidths [box $f lboxwidths]
+  set lboxheights [box $f lboxheights]
+  foreach labelinfo $entrylabels {
+	set elabel [lindex $labelinfo 0]
+	set type [lindex $labelinfo 1]
+ 	set args [lrange $labelinfo 2 end]
+	frame $f.b.e.$k
+
+	switch -exact -- $type {
+      	  MENU_ENTRY     {
+		menuEntry $f.b.e.$k create -menuvalues $args -title $elabel \
+					-textvariable [set boxName](entryval,$k)
+		lappend [set boxName](menuEntryWidgets) $f.b.e.$k
+  		set [set boxName](entry,$k) ""
+      	  }
+	  default {
+		set lboxwidth [lindex $lboxwidths $k]
+  		set einfo [buildFullEntrybox $f.b.e.$k [string length $elabel] \
+				$elabel $lboxwidth "" bottom 0 top]
+
+  		set eframew [lindex $einfo 0]
+  		set elabelw [lindex $einfo 1]
+  		set eentryw [lindex $einfo 2]
+		set escroll [lindex $einfo 3]
+
+		lappend [set boxName](entryWidgets) \
+				"$elabelw $eentryw $escroll"
+
+		global sel$eentryw
+		set sel$eentryw 0
+		set [set boxName](firstentry) $eentryw
+
+  		$eentryw configure -textvariable [set boxName](entryval,$k)
+  		$elabelw configure -anchor nw
+  		set [set boxName](entry,$k) $eentryw
+  		bind_entry_overselect $eentryw
+		register_default_action $eentryw $f.b.e.add
+	  }
+	}
+	set packlist "$packlist $f.b.e.$k"
+	incr k
+  }
+  set [set boxName](ncols) $k
+  set [set boxName](nrows) 0
+  if {[string compare packlist ""] != 0} {
+  	eval pack [string trim $packlist] -side left -anchor nw
+  }
+  boxSetTabbing $f
+
+
+# build the listbox
+  set packlist ""
+  set k 0
+
+  set lboxlabels [box $f lboxlabels] 
+  set llen [llength $lboxlabels]
+  foreach llabel $lboxlabels {
+	frame $f.b.l.$k
+	set lboxwidth [lindex $lboxwidths $k]
+	set lboxheight [lindex $lboxheights $k]
+	if {[expr $k + 1] != $llen} {
+  		set listBoxInfo [buildFullListbox $f.b.l.$k \
+		       ${lboxwidth}x${lboxheight} $llabel xscroll 0 0]
+	} else {
+  		set listBoxInfo [buildFullListbox $f.b.l.$k \
+		       ${lboxwidth}x${lboxheight} $llabel xyscroll 0 0]
+  		set [set boxName](vscroll) [lindex $listBoxInfo 4]
+	}
+        set hostsOtherScroll      [lrange $listBoxInfo 5 end]
+	set hostsListboxScroll    [lindex $listBoxInfo 4] 
+  	set hostsListbox          [lindex $listBoxInfo 3]
+  	set hostsListboxSelButton [lindex $listBoxInfo 2]
+  	set hostsListboxLabel     [lindex $listBoxInfo 1]
+
+	lappend [set boxName](listboxWidgets) \
+       "$hostsListbox $hostsListboxLabel {} $hostsListboxScroll"
+	lappend [set boxName](scrollWidgets) $hostsOtherScroll
+
+  	bind_listbox_single_select $hostsListbox
+  	bind_listbox_select $hostsListbox $f
+  	set [set boxName](lbox,$k) $hostsListbox
+  	set packlist "$packlist $f.b.l.$k"
+	incr k
+  }
+  if {[string compare packlist ""] != 0} {
+  	eval pack [string trim $packlist] -side left -anchor nw
+  } 
+
+  boxSetScroll $f
+
+## build the buttons
+
+  set noUpdateButton [box $f noUpdateButton]
+  if {$noUpdateButton} {
+  	set buttonList [list  {delete "delete"}]
+  } else {
+  	set buttonList [list  {delete "delete"} {info "update"}]
+  }
+
+  set cmdButtons [buildCmdButtons $f.b.b [list $buttonList] y 0 11 1 1 0 0]
+
+  set cmdButtonFrame  [lindex $cmdButtons 0]
+  set cmdButtonDelete [lindex $cmdButtons 1]
+
+  lappend [set boxName](buttonWidgets) $cmdButtonDelete
+  
+  if {!$noUpdateButton} {
+  	set cmdButtonUpd   [lindex $cmdButtons 2]
+  	set [set boxName](updateButton) $cmdButtonUpd
+        $cmdButtonUpd configure -command "boxUpdate $f"
+  	lappend [set boxName](buttonWidgets) $cmdButtonUpd
+  }
+
+  $cmdButtonDelete configure -command "boxDelete $f \"[box $f remCmd]\""
+  
+  if {[string compare [box $f orient] x] == 0} {
+  	pack $f.b.e -side left -anchor nw
+  	pack  $f.b.l $f.b.b -side left -anchor nw
+  } else {
+  	pack $f.b.e -side top -anchor nw -pady 0 -padx 0
+        pack $f.b.l $f.b.b -side left -after $f.b.e -pady 3m -anchor nw -padx 0
+  }
+  pack $f.t -anchor nw -side top -fill both -expand 1
+  pack $f.b -anchor nw -side top -fill none -expand 0
+
+}
+
+proc boxesUnset {} {
+	global sysinfo
+
+	if [info exists sysinfo(boxes)] {
+		foreach b $sysinfo(boxes) {
+			box $b unset
+		}
+	}
+	set sysinfo(boxes) ""
+}
+
+# returns 1 if an item has been added; 0 otherwise.
+proc boxAdd {frame_name {addfunc ""} {insertIdx end}} {
+	global tk_version
+
+
+	set entrylabels [box $frame_name entrylabels]
+	set keylist [box $frame_name key]
+	set ncols [box $frame_name ncols]
+	set keyval ""
+	set keys ""
+	for {set i 0} {$i < $ncols} {incr i} {
+		 box $frame_name -entryval $i \
+		  [cleanstr [box $frame_name entryval $i] \
+		            [box $frame_name cleanstrExceptChar $i]]
+		set kindex [lsearch -regexp $keylist "(^| )$i"]
+		if {$kindex != -1} {
+			set entryval [box $frame_name entryval $i]
+
+			if {[string compare $entryval ""] == 0} {
+				set entrylab [lindex $entrylabels $i]
+				set entryw [box $frame_name entry $i]
+				popupInfoBox [box $frame_name grabBox] \
+				  "Can't have an empty \"$entrylab\" entry!!!" \
+				  			500 $entryw
+				return 0
+			
+			}
+			set klist [split [lindex $keylist $kindex] ":"]
+			set k [lindex $klist 0]
+			lappend keys $k
+			set kmatchval [lindex $klist 1]
+
+			lappend keyval $entryval
+			if {[string compare $kmatchval ""] != 0 && \
+			    		[regexp "^($kmatchval)$" $entryval]} {
+				set kunique($k) 1
+			} else {
+				set kunique($k) 0
+			}
+		}
+	}
+	set nrows [box $frame_name nrows]
+	for {set i 0} {$i < $nrows} {incr i} {
+		set boxval ""
+		for {set j 0} {$j < $ncols} {incr j} {
+
+			if {[lsearch -exact $keys $j] != -1} {
+			
+				set entryv [box $frame_name entryval $j]
+				set entryw [box $frame_name entryval $j]
+				set lbox [box $frame_name lbox $j]
+				if {$kunique($j)} {
+				    if {![lboxvalue_isUnique $lbox $entryv]} {
+					popupInfoBox [box $frame_name grabBox] \
+					"\"$entryv\" already specified in one of the fields!" 500 $entryw
+					return 0
+				    }
+				}
+				lappend boxval [$lbox get $i]
+			}
+		}
+		if {[string compare $keyval ""] != 0 && \
+		    		[lcomp $keyval $boxval] == 0} {
+			popupInfoBox [box $frame_name grabBox] \
+			"Unable to add entry: key \"[concat $keyval]\" was duplicated!" 500 [box $frame_name firstNonMenuEntry]
+			return 0
+		}
+	}
+
+	for {set i 0} {$i < [box $frame_name ncols]} {incr i} {
+		set lbox [box $frame_name lbox $i]
+		set entry [box $frame_name entry $i]
+
+		global sel$entry
+		set entryval [box $frame_name entryval $i]
+		$lbox insert $insertIdx $entryval
+
+		set lboxidx $insertIdx
+		if {[string compare $insertIdx end] == 0} {
+			set lboxidx [expr [$lbox size] - 1]
+		}
+
+		set a [box $frame_name array $i]
+		if { [string compare $a ""] != 0 } {
+			global $a
+			set [set a]($lboxidx) $entryval
+		}
+		set sel$entry 1
+	}
+	box $frame_name -nrows +1
+	boxSelect $frame_name $insertIdx
+
+	if {[string compare $addfunc ""] != 0} {
+		eval $addfunc
+	}
+
+	return 1
+}
+
+proc boxDelete {frame_name {remfunc ""}} {
+	for {set i 0} {$i < [box $frame_name ncols]} {incr i} {
+		set lbox [box $frame_name lbox $i]
+		set selindex [$lbox curselection]
+		if {[string compare $selindex ""] != 0} {
+			box $frame_name -entryvalDeleted $i [$lbox get $selindex]
+			$lbox delete $selindex
+			box $frame_name arrayReIndex $i $selindex
+			boxSelect $frame_name $selindex
+		}
+	}
+	box $frame_name -nrows -1
+	if {[string compare $remfunc ""] != 0} {
+		eval $remfunc
+	}
+}
+
+proc boxUpdate {frame_name} {
+
+	set ncols [box $frame_name ncols]
+	for {set i 0} {$i < $ncols} {incr i} {
+		set lbox [box $frame_name lbox $i]
+		set selindex [$lbox curselection]
+		if {[string compare $selindex ""] != 0} {
+			box $frame_name -entryvalDeleted $i [$lbox get $selindex]
+			$lbox delete $selindex
+		}
+	}
+
+	set add 0
+	if {[string compare $selindex ""] != 0} {
+		set add [boxAdd $frame_name [box $frame_name addCmd] $selindex]
+		if {!$add} {
+			for {set i 0} {$i < $ncols} {incr i} {
+				set lbox [box $frame_name lbox $i]
+				set val [box $frame_name entryvalDeleted $i]
+				$lbox insert $selindex $val
+				box $frame_name -entryvalDeleted $i ""
+			}
+		}
+		boxSelect $frame_name $selindex
+	}
+}
+
+proc boxGetCurselect {frame_name index} {
+	set selindex [box $frame_name selindex]
+	if {$selindex == -1} {
+		return
+	}
+
+	set lbox [box $frame_name lbox $index]
+	catch {$lbox get $selindex} value
+	return $value
+}
+
+proc boxSelect {frame_name index} {
+	global tk_version
+
+	set nrows [box $frame_name nrows]
+	if { $index == -1 } {
+
+		set lbox [box $frame_name lbox 0] 
+		global cmd$lbox
+		if [info exists cmd$lbox] {
+                	eval [set cmd$lbox]
+        	}
+		return
+	}
+
+	set boxName [box $frame_name getBoxArray]
+	global $boxName
+
+        set [set boxName](selindex) $index
+	set selindex $index
+
+	for {set i 0} {$i < [box $frame_name ncols]} {incr i} {
+		set lbox [box $frame_name lbox $i]
+		set entry [box $frame_name entry $i]
+	        if { $tk_version < 4.0 } {
+          		$lbox select from $selindex
+        	} else {
+			catch {$lbox selection clear [$lbox curselection]}
+			$lbox select set $selindex $selindex
+		}
+		$lbox see $selindex
+
+		set boxval [$lbox get $selindex]
+		if {[string compare $boxval ""] != 0} {
+			box $frame_name -entryval $i $boxval
+		}
+
+		if {$i == 0 && [string compare $entry ""] != 0} {
+			focus $entry
+			$entry select from 0
+			$entry select to end
+
+			if {$tk_version >= 4.0} {
+      				$entry xview moveto 1
+			}
+		}
+		global cmd$lbox
+        
+		if [info exists cmd$lbox] {
+                	eval [set cmd$lbox]
+        	}
+	}
+
+
+}
+proc boxSetScroll {frame_name} {
+	global tk_version
+
+	set vscroll [box $frame_name vscroll]
+	if {[string compare $vscroll ""] == 0} {
+		return
+	}
+	set lboxes ""
+	for {set i 0} {$i < [box $frame_name ncols]} {incr i} {
+		set lbox [box $frame_name lbox $i]
+		$lbox configure -yscrollcommand "$vscroll set"
+
+		lappend lboxes $lbox
+	}
+	$vscroll configure -command "boxAdjScrollView [list $lboxes]"
+}
+
+proc boxSetTabbing {f} {
+
+	for {set i 0} {$i < [box $f ncols]} {incr i} {
+		set entry [box $f entry $i]
+		if {[string compare $entry ""] == 0} {
+			continue
+		}
+		set nentry [box $f entry [expr $i+1]]
+		if {[string compare $nentry ""] == 0} {
+			set nentry $entry
+		} 
+		set pentry [box $f entry [expr $i-1]]
+		if {[string compare $pentry ""] == 0} {
+			set pentry $entry
+		}
+		bind_entry_tab $entry $nentry $pentry [box $f env]
+	}
+}
+
+
+proc boxAdjScrollView {args} {
+        set lboxes [lindex $args 0]
+        set params [lrange $args 1 end]
+        foreach b $lboxes {
+                eval $b yview $params
+        }
+}
+
+# ReLoad the box with values from its array variables
+proc boxLoad {f {entryInit 1}} {
+	box $f shrinkArray
+	for {set i 0} {$i < [box $f ncols]} {incr i} {
+		set a [box $f array $i]
+		set lbox [box $f lbox $i]
+		$lbox delete 0 end
+		global $a
+		for {set j 0} {$j < [array size $a]} {incr j} {
+			$lbox insert end [set [set a]($j)] 	
+		}
+		if {$entryInit} {
+			box $f -entryval $i ""
+		}
+	}
+}

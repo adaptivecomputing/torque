@@ -1,0 +1,25 @@
+This file contains a few notes on building and installing TORQUE and 
+Release notes for each release.
+
+
+REQUIREMENTS
+------------
+
+An ANSI C compiler is required.   The native C compiler is recommended if it
+is ANSI, otherwise use gcc.
+
+A fully POSIX make is required.  If you are unable to "make" PBS with your
+make, we suggest use of gmake from GNU.
+
+Tcl/Tk version 8 or higher is required if you plan to build the GUI portion
+of TORQUE or use a Tcl based scheduler.
+
+
+BUILD AND INSTALLATION DIRECTIONS
+---------------------------------
+
+The directions to build and install are found the PBS Administrators Guide.
+A postscript and PDF copy are found in this directory.  Please read and
+following the directions CAREFULLY.
+
+

@@ -1,0 +1,92 @@
+The Miscellaneous dialog box is for specifying various other job attributes
+like checkpointing, rerunnability, and what shell, disk group, and user name
+to use during execution of a job.
+
+The Miscellaneous dialog box is composed of 5 regions:
+
+(1) "Various" job attributes region
+(2) Shell Path List region
+(3) User List region
+(4) Group List region
+(5) Command buttons region
+
+===============================
+"Various" job attributes region
+===============================
+This region contains 2 toggle buttons that respond to mouse clicks for 
+specifying the checkpoint attribute and rerunnable attribute of the job.
+
+Each toggle button enables radio buttons that represent mutually exclusive
+choices. Within "Checkpoint Job", a spinbox for specifying the checkpoint
+interval (in minutes) is made available which can be manipulated by clicking
+on the arrows of the scrollbar to increment through the valid values, or
+manually entering a valid value on the spinbox entry box. 
+
+===============
+Shell Path List 
+===============
+This contains a box containing input entry widgets for specifying the shell
+path (first field), and the hostname (2nd field) where the shell path will be
+used to interpret a job script. Click the "add" button after entering the
+values.   Watch as your input gets loaded into the "Shell Paths:" listbox.
+Entries of the latter can be deleted by selecting an entry, and then clicking
+the accompanying "delete" button. If you want to modify an entry in the listbox,
+then select the entry via mouse, which would result in its values to be loaded
+into the input entries, then change the values of the input entries, and then
+click the accompanying "update" button.
+
+The widget will only allow (as string matching allows) one unique shell path
+per host. An entry without the hostname part will be the default.
+
+==========
+User List 
+==========
+This contains a box containing input entry widgets for specifying the username
+(first field), and the matching execution host (2nd field). Click the "add"
+button after entering the values. Watch as your input gets loaded into the
+"Usernames:" listbox.  Entries of the latter can be deleted by selecting an
+entry, and then clicking the accompanying "delete" button. If you want to
+modify an entry in the listbox, then select the entry via mouse, which would
+result in its values to be loaded into the input entries, then change the
+values of the input entries, and then click the accompanying "update" button.
+
+The widget will only allow (as string matching allows) one unique username per
+host. An entry without the hostname part will be the default.
+
+==========
+Group List 
+==========
+This contains a box containing input entry widgets for specifying the group name
+(first field), and the matching execution host (2nd field). Click the "add"
+button after entering the values. Watch as your input gets loaded into the
+"Groups:" listbox.  Entries of the latter can be deleted by selecting an
+entry, and then clicking the accompanying "delete" button. If you want to
+modify an entry in the listbox, then select the entry via mouse, which would
+result in its values to be loaded into the input entries, then change the
+values of the input entries, and then click the accompanying "update" button.
+
+The widget will only allow (as string matching allows) one group name per host.
+An entry without the hostname part will be the default.
+
+
+================
+Command Buttons
+================
+Click on "ok" button after you are satisfied with the attribute 
+values of the job. This is also the default action (as indicated by the sunken 
+look of the button) when the <Return> key is pressed.
+
+Click on "reset to default" if you want to reset the misc attribute
+values to the default settings.
+
+======================================
+Manipulating the Matrix of Entry boxes
+======================================
+You can traverse each row of the box of entry widgets by using <Tab>, 
+<Cntrl-f>, or <Cntrl-b> (to move backwards). 
+
+The up and down arrows to the right of the box are for moving through the 
+entries in fixed pages. 
+
+The scrollbar at the top of each vertical group of fields is for horizontally 
+scanning a long entry string.

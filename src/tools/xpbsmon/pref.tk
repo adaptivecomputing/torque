@@ -1,0 +1,739 @@
+#         OpenPBS (Portable Batch System) v2.3 Software License
+# 
+# Copyright (c) 1999-2000 Veridian Information Solutions, Inc.
+# All rights reserved.
+# 
+# ---------------------------------------------------------------------------
+# For a license to use or redistribute the OpenPBS software under conditions
+# other than those described below, or to purchase support for this software,
+# please contact Veridian Systems, PBS Products Department ("Licensor") at:
+# 
+#    www.OpenPBS.org  +1 650 967-4675                  sales@OpenPBS.org
+#                        877 902-4PBS (US toll-free)
+# ---------------------------------------------------------------------------
+# 
+# This license covers use of the OpenPBS v2.3 software (the "Software") at
+# your site or location, and, for certain users, redistribution of the
+# Software to other sites and locations.  Use and redistribution of
+# OpenPBS v2.3 in source and binary forms, with or without modification,
+# are permitted provided that all of the following conditions are met.
+# After December 31, 2001, only conditions 3-6 must be met:
+# 
+# 1. Commercial and/or non-commercial use of the Software is permitted
+#    provided a current software registration is on file at www.OpenPBS.org.
+#    If use of this software contributes to a publication, product, or
+#    service, proper attribution must be given; see www.OpenPBS.org/credit.html
+# 
+# 2. Redistribution in any form is only permitted for non-commercial,
+#    non-profit purposes.  There can be no charge for the Software or any
+#    software incorporating the Software.  Further, there can be no
+#    expectation of revenue generated as a consequence of redistributing
+#    the Software.
+# 
+# 3. Any Redistribution of source code must retain the above copyright notice
+#    and the acknowledgment contained in paragraph 6, this list of conditions
+#    and the disclaimer contained in paragraph 7.
+# 
+# 4. Any Redistribution in binary form must reproduce the above copyright
+#    notice and the acknowledgment contained in paragraph 6, this list of
+#    conditions and the disclaimer contained in paragraph 7 in the
+#    documentation and/or other materials provided with the distribution.
+# 
+# 5. Redistributions in any form must be accompanied by information on how to
+#    obtain complete source code for the OpenPBS software and any
+#    modifications and/or additions to the OpenPBS software.  The source code
+#    must either be included in the distribution or be available for no more
+#    than the cost of distribution plus a nominal fee, and all modifications
+#    and additions to the Software must be freely redistributable by any party
+#    (including Licensor) without restriction.
+# 
+# 6. All advertising materials mentioning features or use of the Software must
+#    display the following acknowledgment:
+# 
+#     "This product includes software developed by NASA Ames Research Center,
+#     Lawrence Livermore National Laboratory, and Veridian Information
+#     Solutions, Inc.
+#     Visit www.OpenPBS.org for OpenPBS software support,
+#     products, and information."
+# 
+# 7. DISCLAIMER OF WARRANTY
+# 
+# THIS SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND. ANY EXPRESS
+# OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+# OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT
+# ARE EXPRESSLY DISCLAIMED.
+# 
+# IN NO EVENT SHALL VERIDIAN CORPORATION, ITS AFFILIATED COMPANIES, OR THE
+# U.S. GOVERNMENT OR ANY OF ITS AGENCIES BE LIABLE FOR ANY DIRECT OR INDIRECT,
+# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
+# OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+# LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+# NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+# EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# 
+# This license will be governed by the laws of the Commonwealth of Virginia,
+# without reference to its choice of law rules.
+################################################################################
+# pref: defines the layout and functions of the user preferences
+#       dialog box.
+proc pref {callerDialogBox focusBox} {
+  global prefDialogBox activeWindow dialog sysinfo
+
+  set sysinfo(PREFLCK) 1
+
+  busy_cursor
+## Bring up the standard Dialog box ##
+  set dialog(prefDialogBox) ".pref"
+  set dbox [popupDialogBox $dialog(prefDialogBox) "User Preferences Dialog"]
+  set activeWindow($dialog(prefDialogBox)) 1
+  set dbox_top    [lindex $dbox 0]
+  set dbox_bottom [lindex $dbox 1]
+
+
+## TOP PART ##
+  box $dbox_top.box1 -title "Sites Preference" \
+	-entrylabels \
+        [list [list "Site Name" "" ""] [list "View" MENU_ENTRY "ICON" "FULL"]] \
+        -lboxlabels [list "Sites" "View"] -lboxwidths [list 19 4] \
+	-lboxheights [list 10 10] \
+	-remCmd "siteDelete \[boxGetCurselect $dbox_top.box1 0\]" \
+ 	-addCmd "siteAdd \[cleanstr \[box $dbox_top.box1 entryval 0\]\] $dbox_top.box1" \
+	-grabBox $dialog(prefDialogBox) -noUpdateButton 1
+
+  box $dbox_top.box2 -title ""  \
+	-entrylabels [list "Server_Host" "DisplayLabel"] \
+        -lboxlabels [list "Servers" "DisplayLabel"] -lboxwidths [list 15 10] \
+	-lboxheights [list 10 10] -orient x -key 0 \
+	-addCmd "serversPut $dbox_top.box2 \[boxGetCurselect $dbox_top.box1 0\]" \
+	-remCmd "serverDelete \[boxGetCurselect $dbox_top.box1 0\],\[boxGetCurselect $dbox_top.box2 0\]" \
+	-grabBox $dialog(prefDialogBox)
+
+  set lbox1 [box $dbox_top.box1 lbox 0]
+  set_listbox_cmd [box $dbox_top.box1 lbox 0] \
+	"serversGet $dbox_top.box2 \[boxGetCurselect $dbox_top.box1 0\]"
+  set updButton [box $dbox_top.box2 updateButton]
+
+  $updButton configure -text "nodes.." -command \
+   "prefServer \[boxGetCurselect $dbox_top.box1 0\] \[boxGetCurselect $dbox_top.box2 0\] $dialog(prefDialogBox) \[box $dbox_top.box2 entry 0\]"
+
+## BOTTOM PART ##
+  set cmdButtons \
+  [buildCmdButtons $dbox_bottom {{{ok1 "done\nredisplay view"} {ok2 "done\ndon't redisplay view"} {help help}}} x 2m 21 3]
+
+  set cmdFrame  [lindex $cmdButtons 0]
+  set cmdOk1     [lindex $cmdButtons 1]
+  set cmdOk2     [lindex $cmdButtons 2]
+  set cmdHelp   [lindex $cmdButtons 3]
+
+  $cmdOk1 configure -command "sitesPut $dbox_top.box1; prefComplete1 $dialog(prefDialogBox)"
+  $cmdOk2 configure -command "sitesPut $dbox_top.box1; prefComplete2 $dialog(prefDialogBox)"
+
+  $cmdHelp configure -command {xpbs_help pref $dialog(prefDialogBox)}
+
+
+  pack $dbox_top.box1 $dbox_top.box2 -side top -anchor nw -fill both -expand 1
+  tkwait visibility $dialog(prefDialogBox)
+  sitesGet $dbox_top.box1
+  remove_busy_cursor
+  catch {tkwait window $dialog(prefDialogBox)}
+  boxesUnset
+  set activeWindow($dialog(prefDialogBox)) 0
+  catch {grab $callerDialogBox}
+  catch {focus $focusBox}
+
+  set sysinfo(PREFLCK) 0
+}
+
+proc prefComplete1 {callerDialogBox} {
+  global sysinfo
+
+  destroy $callerDialogBox
+  catch {$sysinfo(sysMenuButton) invoke $sysinfo(systemName)}
+}
+
+proc prefComplete2 {callerDialogBox} {
+  global sysinfo
+
+  destroy $callerDialogBox
+}
+
+proc siteNamesGet {} {
+	global sysview
+
+	set sites ""
+	foreach s [array names sysview] {
+		if {[lsearch -exact $sites $s] == -1} {
+			lappend sites $s
+		}
+	}
+	return $sites
+}
+
+proc siteNamesPrint {} {
+
+	puts "Site Names:=================="
+  	foreach s [siteNamesGet] {
+		puts $s
+	}
+}
+
+proc siteAdd {siteName boxframe} {
+	global sysview
+
+	set sysview($siteName) [box $boxframe entryval 1]
+}
+
+proc siteDelete {{siteName ""}} {
+	global sysinfo sysview
+
+        if { [string compare $siteName ""] == 0 } {
+                return
+        }
+
+	catch {unset sysview($siteName)}
+	catch {$sysinfo(sysMenuButton) delete $siteName}
+
+        if {[string compare $sysinfo(systemName) $siteName] == 0} {
+                systemDelete $sysinfo(systemFrame)
+                set sysinfo(systemName) ""
+                set sysinfo(systemFrame) ""
+        }
+
+}
+
+proc serverDelete {serverid} {
+
+	global sysnodes
+
+	catch {unset sysnodes($serverid)}
+}
+
+# queryTableGet: get the query string for nodename of given 'type'.
+proc queryTableGet {sitename nodename type} {
+        global queryTable
+        if { ![info exists queryTable($sitename,$nodename)] } {
+                return ""
+        }
+        foreach q $queryTable($sitename,$nodename) {
+                set query  [lindex $q 0]
+                set t [lindex $q 2]
+                if {[string compare $t $type] == 0} {
+                        return $query
+                }
+        }
+        return ""
+}
+
+proc queryTableDelete {nodeid} {
+	global queryTable
+
+	catch {unset queryTable($nodeid)}
+}
+
+proc queryTableSave {sitename boxframe} {
+	global queryTable
+
+	set host [box $boxframe title]
+	set nrows [box $boxframe nrows]
+
+	set qexprBox [box $boxframe lbox 0]
+	set labelBox [box $boxframe lbox 1]
+	set typeBox [box $boxframe lbox 2]
+
+	catch {unset queryTable($sitename,$host)}
+	for {set i 0} {$i < $nrows} {incr i} {
+		set line ""
+		lappend line [queryExprCreate "[$qexprBox get $i]"]
+		lappend line [$labelBox get $i]
+		lappend line [$typeBox get $i]
+
+		lappend queryTable($sitename,$host) $line
+	}
+}
+
+proc queryTableLoad {sitename boxframe} {
+	global queryTable
+
+	set host [box $boxframe title]
+
+	if {![info exists queryTable($sitename,$host)]} {
+		return
+	}
+
+	set qexprBox [box $boxframe lbox 0]
+	set labelBox [box $boxframe lbox 1]
+	set typeBox [box $boxframe lbox 2]
+
+	$qexprBox delete 0 end
+	$labelBox delete 0 end
+	$typeBox delete 0 end
+
+	foreach line $queryTable($sitename,$host) {
+		set qexpr [lindex $line 0]
+		set label [lindex $line 1]
+		set type  [lindex $line 2]
+
+		$qexprBox insert end $qexpr
+		$labelBox insert end $label
+		$typeBox insert end $type
+		box $boxframe -nrows +1
+    	}
+  	boxSelect $boxframe 0
+}
+
+proc queryTablePrint {sitename} {
+	global queryTable
+
+	foreach h [array names queryTable] {
+		set h_list [split $h ","]
+		set sname [lindex $h_list 0]
+		if {[string compare $sname $sitename] == 0} {
+			puts "queryTable($h):================================="
+			puts "=============== $queryTable($h)"
+		}
+	}
+}
+
+proc sitesGet {boxframe} {
+  global sysview
+
+  set box [box $boxframe entry 0]
+  $box delete 0 end
+  foreach s [siteNamesGet] {
+	box $boxframe -entryval 0 $s
+	box $boxframe -entryval 1 $sysview($s)
+	boxAdd $boxframe
+  }
+}
+
+
+proc sitesPut {boxframe} {
+  global sysinfo canvas sysview
+
+  set nrows [box $boxframe nrows]
+  set siteBox [box $boxframe lbox 0]
+  for {set i 0} {$i < $nrows} {incr i} {
+    set sitename [$siteBox get $i]
+    if [catch {$sysinfo(sysMenuButton) index $sitename}] {
+    	$sysinfo(sysMenuButton) add radio -label $sitename \
+	-variable sysinfo(systemName) \
+	-value $sitename \
+ 	-command "displayView $sysinfo(main_frame) $sitename"
+
+    }
+  }
+}
+
+proc serverNamesGet {siteName} {
+        global sysnodes
+
+        set servers ""
+        foreach s [array names sysnodes] {
+                set s_list [split $s ","]
+                set sname [lindex $s_list 0]
+                set hname [lindex $s_list 1]
+                if {[string compare $sname $siteName] == 0} {
+                        lappend servers $hname
+                }
+        }
+        return $servers
+}
+
+proc statNodes {server_name sysframe} {
+
+	set nlist ""
+
+        catch {pbsconnect $server_name} fd
+        InfoBox_sendmsg "statNodes: pbsconnect($server_name): $fd" end
+        if { $fd >= 0 } {
+                catch {pbsstatnode} ninfo
+                InfoBox_sendmsg "statNodes: pbsstatnode($server_name): " end
+
+		foreach n $ninfo {
+			set nname [lindex $n 0]
+                        set attribl [lindex $n 1]
+
+			foreach na $attribl {
+				set attn [lindex $na 0]
+				set attv [lindex $na 1]
+
+				switch -exact -- $attn {
+				  state	{
+					nodeUpdateStat $sysframe $nname $attv
+				  }
+				  properties {
+					set props ""
+					lappend props $attv
+					set line [list "$props" "Properties: " \
+									  TEXT]
+					systemNodeInfo2Append $sysframe $nname \
+									  $line
+				  }
+				  np {
+					set props ""
+					lappend props $attv
+					set line [list $props "Virtual PROCessors: " \
+									  TEXT]
+					systemNodeInfo2Append $sysframe $nname \
+									  $line
+				  }
+				}
+			}
+			lappend nlist "$nname NOMOM_SNODE"
+			systemNodeTypePut $sysframe $nname NOMOM_SNODE
+		}
+
+                catch {pbsdisconnect}
+        	InfoBox_sendmsg "pbsdisconnect($server_name)" end
+        }
+	return $nlist
+}
+
+proc statNodesStateMap {state} {
+
+	set stat [lindex [split $state ,] 0] 
+
+	switch -exact -- $stat {
+		FREE		-
+		free		{ return FREE }
+		OFFLINE		-	
+		offline		{ return OFFLINE }
+		DOWN		-
+		down		{ return DOWN }
+		RESERVED	-
+		reserve		{ return RESERVED }
+		INUSE-EXCLUSIVE	-
+		job-exclusive	{ return INUSE-EXCLUSIVE }
+		INUSE-SHARED	-
+		job-sharing	{ return INUSE-SHARED }
+		NOINFO		{ return NOINFO }
+		default		{ return "" }
+	}
+}
+
+proc nodesListMerge {nlist1 nlist2 frame} {
+
+	set newlist ""
+	set k 0
+	foreach n1 $nlist1 {
+		set nname [lindex $n1 0]
+		set nodes($nname) [lrange $n1 1 end]
+		set order($k) $nname
+		incr k
+	}
+	foreach n2 $nlist2 {
+		set nname [lindex $n2 0]
+		set ntype [lindex $n2 1]
+		if [info exists nodes($nname)] {
+			set oldattr "$nodes($nname)"
+			for {set i 1} {$i < [llength $n2]} {incr i} {
+				set attr [lindex $n2 $i]
+				if {$i == 1 && \
+					[string compare $attr MOM] == 0} {
+					set attr MOM_SNODE
+					set ntype MOM_SNODE
+				}
+				if { $attr != {} } {
+				   set j [expr $i-1]
+				   if { $j < [llength $oldattr] } {
+				     set oldattr [lreplace $oldattr $j $j $attr]
+				   } else  {
+				     lappend oldattr $attr
+				   }	
+				}
+			}
+			set nodes($nname) $oldattr
+		} else {
+			set nodes($nname) [lrange $n2 1 end]
+			set order($k) $nname
+			incr k
+		}
+		systemNodeTypePut $frame $nname $ntype
+	}
+
+	if [info exists order] {
+		for {set k 0} {$k < [array size order]} {incr k} {
+			set n $order($k)
+			lappend newlist "$n $nodes($n)"
+		}
+	}
+
+	return $newlist
+}
+
+proc serverNamesSorted {systemName servers nodesp frame} {
+	global sysnodes
+
+	upvar $nodesp nodeslist
+	set newservers ""
+
+	foreach s $servers {
+		set nlist1 [statNodes $s $frame]
+		set nlist2  [lrange $sysnodes($systemName,$s) 1 end]
+		set nodeslist($s) [nodesListMerge $nlist1 $nlist2 $frame]
+
+		set slen($s) [llength $nodeslist($s)]
+
+		set i 0
+		foreach os $newservers {
+			if {$slen($s) < $slen($os)} {
+				break
+			}
+			incr i
+		}
+		set newservers [linsert $newservers $i $s]
+
+	}
+	return $newservers
+}
+
+proc siteHasServers {siteName} {
+
+	set sites [siteNamesGet]
+	if {[lsearch -exact $sites $siteName] == -1} {
+		return 0
+	}
+	return 1
+}
+
+proc serversPut {boxframe {siteName ""}} {
+        global sysnodes
+
+	if {[string compare $siteName ""] == 0} {
+		return
+	}
+
+        set nrows [box $boxframe nrows]
+        set svrBox [box $boxframe lbox 0]
+	set labBox [box $boxframe lbox 1]
+        for {set i 0} {$i < $nrows} {incr i} {
+		set svrname  [$svrBox get $i]
+		set svrlabel [$labBox get $i]
+		if [info exists sysnodes($siteName,$svrname)] {
+			set sysnodes($siteName,$svrname) \
+			  [lreplace $sysnodes($siteName,$svrname) 0 0 $svrlabel]
+		} else {
+			set sysnodes($siteName,$svrname) $svrlabel
+		}
+        }
+}
+
+proc serversGet {boxframe siteName} {
+	global sysnodes
+
+        set srvBox [box $boxframe lbox 0]
+        $srvBox delete 0 end
+        set srvlBox [box $boxframe lbox 1]
+        $srvlBox delete 0 end
+	
+        box $boxframe -nrows "-[box $boxframe nrows]"
+
+        set entBox [box $boxframe entry 0]
+        $entBox delete 0 end
+        set labBox [box $boxframe entry 1]
+        $labBox delete 0 end
+        [box $boxframe titlelabel] configure -text "Servers@$siteName"
+
+        foreach s [array names sysnodes] {
+                set s_list [split $s ","]
+                set sname [lindex $s_list 0]
+                set hname [lindex $s_list 1]
+                if {[string compare $sname $siteName] == 0} {
+			set hlabel [lindex $sysnodes($sname,$hname) 0]
+               		$srvBox insert end $hname
+			$srvlBox insert end $hlabel
+               		box $boxframe -nrows +1
+                }
+        }
+
+        boxSelect $boxframe 0
+}
+
+proc sysnodesGet {sitename boxframe} {
+	global sysnodes
+
+	set host [box $boxframe title]
+
+	if {![info exists sysnodes($sitename,$host)]} {
+		return
+	}
+
+	set nodeBox [box $boxframe lbox 0]
+	set typeBox [box $boxframe lbox 1]
+
+	$nodeBox delete 0 end
+
+	set nnodes 0
+	foreach line [lrange $sysnodes($sitename,$host) 1 end] {
+		set node [lindex $line 0]
+		set type  [lindex $line 1]
+
+		$nodeBox insert end $node
+		$typeBox insert end $type
+		box $boxframe -nrows +1
+		incr nnodes
+    	}
+	if {$nnodes > 0} {
+		boxSelect $boxframe 0
+	}
+}
+
+proc sysnodesPut {sitename serverName box} {
+	global sysnodes
+
+	if [info exists sysnodes($sitename,$serverName)] {
+		set sysnodes($sitename,$serverName) \
+				[lindex $sysnodes($sitename,$serverName) 0]
+	} else {
+		set sysnodes($sitename,$serverName) ""
+	}
+
+	set nrows [box $box nrows]
+	set ncols [box $box ncols]
+	for {set i 0} {$i < $nrows} {incr i} {
+		set val ""
+		for {set j 0} {$j < $ncols} {incr j} {
+			set lbox [box $box lbox $j]
+			lappend val [$lbox get $i]
+		}
+		lappend sysnodes($sitename,$serverName) $val
+	}
+}
+
+proc sysnodesPrint {sitename} {
+	global sysnodes
+
+	foreach s [array names sysnodes] {
+		set s_list [split $s ","]
+		set sname [lindex $s_list 0]
+		if {[string compare $sname $sitename] == 0} {
+			puts "sysnodes($s): $sysnodes($s)"
+		}
+	}
+}
+
+
+proc prefServerComplete {boxframe callerDialogBox} {
+
+	set title [box $boxframe title]	
+	set nrows [box $boxframe nrows]
+	if {$nrows == 0} {
+	   popupInfoBox $callerDialogBox \
+    	    "Server $title does not have any nodes. Please complete info!" 700 $callerDialogBox
+	   return
+	}
+
+	destroy $callerDialogBox
+}
+
+proc prefServer {siteName serverName callerDialogBox focusBox} {
+  global activeWindow dialog sysnodes
+
+  if {[string compare $serverName ""] == 0} {
+	popupInfoBox $callerDialogBox "Server name not selected!!" 500 \
+							$callerDialogBox
+	return
+  }
+  busy_cursor
+## Bring up the standard Dialog box ##
+  set dialog(prefServerDialogBox) ".prefServer"
+  set dbox [popupDialogBox $dialog(prefServerDialogBox) "Server Preference Dialog"]
+  set activeWindow($dialog(prefServerDialogBox)) 1
+  set dbox_top    [lindex $dbox 0]
+  set dbox_bottom [lindex $dbox 1]
+
+
+## TOP PART ##
+ box $dbox_top.box -entrylabels \
+        [list "Node_Name" [list "type" MENU_ENTRY "MOM" "NOMOM"]] \
+	-title "$serverName" \
+	-remCmd "queryTableDelete $siteName,\[boxGetCurselect $dbox_top.box 0\]" \
+        -lboxlabels [list "Nodes" "Type"] -orient x \
+        -lboxwidths [list 17 5] -lboxheights [list 10 10] \
+        -grabBox $dialog(prefServerDialogBox) \
+	-key [list 0 1]
+  box $dbox_top.box -entryval 1 MOM
+
+  set updButton [box $dbox_top.box updateButton]
+  
+  $updButton configure -text "query.." -command \
+   "prefQuery $siteName \[boxGetCurselect $dbox_top.box 0\] \[boxGetCurselect $dbox_top.box 1\] $dialog(prefServerDialogBox) \[box $dbox_top.box entry 0\]"
+
+## BOTTOM PART ##
+  set cmdButtons \
+  [buildCmdButtons $dbox_bottom {{{ok ok} {help help}}} x 2m 18 3]
+
+  set cmdFrame  [lindex $cmdButtons 0]
+  set cmdOk     [lindex $cmdButtons 1]
+  set cmdHelp   [lindex $cmdButtons 2]
+
+  $cmdOk configure \
+    -command "sysnodesPut $siteName $serverName $dbox_top.box; destroy $dialog(prefServerDialogBox)"
+
+  $cmdHelp configure -command {xpbs_help prefServer $dialog(prefServerDialogBox)}
+
+  pack $dbox_top.box -side bottom -fill both -expand 1
+  tkwait visibility $dialog(prefServerDialogBox)
+  sysnodesGet $siteName $dbox_top.box
+  remove_busy_cursor
+  catch {tkwait window $dialog(prefServerDialogBox)}
+  set activeWindow($dialog(prefServerDialogBox)) 0
+  catch {grab $callerDialogBox}
+  catch {focus $focusBox}
+}
+
+proc prefQuery {siteName nodeName nodeType callerDialogBox focusBox} {
+  global prefQueryDialogBox activeWindow dialog queryTable
+  if {[string compare $nodeName ""] == 0} {
+	popupInfoBox $callerDialogBox "Node name not selected!!" 500 \
+							$callerDialogBox
+	return
+  }
+
+  if {[string compare $nodeType NOMOM] == 0} {
+	popupInfoBox $callerDialogBox "Can't specify queries to send to a node not running MOM!!" 500 $callerDialogBox
+	return
+  }
+
+  busy_cursor
+## Bring up the standard Dialog box ##
+  set dialog(prefQueryDialogBox) ".prefQuery"
+  set dbox [popupDialogBox $dialog(prefQueryDialogBox) "Query Table Dialog"]
+  set activeWindow($dialog(prefQueryDialogBox)) 1
+  set dbox_top    [lindex $dbox 0]
+  set dbox_bottom [lindex $dbox 1]
+
+
+## TOP PART ##
+
+  box $dbox_top.box -title "$nodeName" \
+    -entrylabels [list "Query_Expr" "Display_Info" \
+     [list "Display_Type" MENU_ENTRY TEXT SCALE]] \
+     -lboxlabels [list "Queries" " " " "] -lboxwidths [list 20 20 20] \
+	-lboxheights [list 10 10 10] -orient y \
+	-key {0} -noUpdateButton 1 \
+	-grabBox $dialog(prefQueryDialogBox)
+
+  queryTableLoad $siteName $dbox_top.box
+
+## BOTTOM PART ##
+  set cmdButtons \
+  [buildCmdButtons $dbox_bottom {{{ok ok} {help help}}} x 2m 18 3]
+
+  set cmdFrame  [lindex $cmdButtons 0]
+  set cmdOk     [lindex $cmdButtons 1]
+  set cmdHelp   [lindex $cmdButtons 2]
+
+  $cmdOk configure -command \
+            "queryTableSave $siteName $dbox_top.box; destroy $dialog(prefQueryDialogBox)"
+  $cmdHelp configure -command {xpbs_help prefQuery $dialog(prefQueryDialogBox)}
+
+  pack $dbox_top.box -anchor nw -side left -padx 0 -pady 0
+  tkwait visibility $dialog(prefQueryDialogBox)
+  remove_busy_cursor
+  catch {tkwait window $dialog(prefQueryDialogBox)}
+  set activeWindow($dialog(prefQueryDialogBox)) 0
+  catch {grab $callerDialogBox}
+  catch {focus $focusBox}
+}

@@ -1,0 +1,26 @@
+The Select Checkpoint attribute dialog box is for specifying the checkpoint
+attribute relationship to consult, when limiting the list of jobs appearing on 
+the Jobs listbox in the main xpbs window.
+
+Enter a valid logical operator in the Checkpoint Attribute spinbox, and click
+"on one of the radio buttons "n", "s", "c=", "c", "u", or "ANY" to put together
+a relationship for restricting the list of jobs. For "c=", a corresponding
+minutes spinbox is given for specifying the checkpoint interval.
+
+The values of the Checkpoint attribute are defined to have the following 
+ordered relationship:
+       n >  s > c=minutes > c > u
+
+The valid checkpoint operators for checkpoint values "n", "s", "c=", and "c" 
+are "=", "!=", ">", ">=", "<", "<=". But for checkpoint value "u", the
+valid operators are "=" and "!=", and for checkpoint value "ANY", the valid
+operator is "=" only.
+
+===============
+COMMAND BUTTONS
+===============
+This region of command buttons represents the final step when manipulating this
+dialog box. 
+
+Click on "ok" when done setting widget values. This is also the default action 
+when the <Return> key is pressed.

@@ -1,0 +1,81 @@
+# START head.mk
+
+DEPEND = @DEPEND@
+RANLIB = @RANLIB@
+CC = @CC@
+AR = @AR@
+DEFS = @DEFS@
+CFLAGS_TMP = @CFLAGS@
+LIBS = @LIBS@
+
+LEX = @LEX@
+YACC = @YACC@ -d
+LEXLIB = @LEXLIB@
+
+HOST = @host@
+HOST_OS = @host_os@
+
+prefix =       @prefix@
+exec_prefix =  @exec_prefix@
+bindir =       @bindir@
+sbindir =      @sbindir@
+datadir =      @datadir@
+includedir =   @includedir@
+libdir =       @libdir@
+mandir =       @mandir@
+
+pbs_os_version =  @pbs_os_version@
+pbs_os_type =     @pbs_os_type@
+
+
+# Please Do Not Change the Following
+SHELL	= /bin/sh
+
+
+# For documentation processing
+
+PRTCMD	= lpr 
+PRTFLG	= -P${PRINTER}
+ROFF	= @ROFF@
+TBL	= @TBL@
+PIC	= @PIC@
+POSTPS	= cat
+LN_S    = ln -s
+RM	= rm -f
+
+
+
+# The PBS Machine Target type
+PBS_MACH = @PBS_MACH@
+
+# The scheduler type chosen.
+SCHD_TYPE = @SCHD_TYPE@
+
+# The path and name of the special rcp used by MOM (pbs_rcp)
+RCP_PATH        = $(sbindir)/pbs_rcp
+
+# The path and name of the credential providing program used by the API.
+IFF_PATH	= $(sbindir)/pbs_iff
+
+# The path and name of the demuxing program.
+DEMUX_PATH	= $(sbindir)/pbs_demux
+
+# Absolute path of file holding default server name (for clients)
+PBS_DEFAULT_FILE = @PBS_DEFAULT_FILE@
+
+# Name of the default server, typically this is the same as the host name.
+# The name is written into PBS_DEFAULT_FILE for the clients.
+PBS_DEFAULT_SERVER = @PBS_DEFAULT_SERVER@
+
+# Home working directory for the PBS Server (where it keeps it queues/jobs)
+# when it is running
+PBS_SERVER_HOME	= @PBS_SERVER_HOME@
+
+
+# A section of machine dependent defines.
+
+
+
+@posix_rules@
+
+# END head.mk

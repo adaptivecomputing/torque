@@ -1,0 +1,61 @@
+#  README.pestat
+#  contributed by David Singleton 
+#  updated Sep 23, 2004
+
+pestat version 1.0
+
+Summary:
+provides status information about PBS compute nodes
+
+Supported systems:
+all systmes where PBS builds
+
+Build/Install:
+
+Edit the Makefile:  Change PBSHOME to point to your PBS
+source directory, since pestat.c needs several header files
+from the PBS source distribution.
+
+Look at the supported architectures and uncomment the relevant lines. 
+Check that the include and lib paths point to the correct
+directory.
+
+Type "make" to generate the executable "pestat".  Run pestat
+to verify the correct operation.  Copy pestat to a directory
+in your PATH, such as /usr/local/bin.
+
+Linux notes:
+------------
+
+The OpenPBS 2.3 RPM-package installs include and lib files
+in the directory /usr/pbs.  You will also need to unpack
+the source distribution, since pestat.c needs several header files
+from the PBS distribution. 
+
+Usage:
+
+Example output (from Linux):
+
+# pestat
+  node state  load    pmem ncpu   mem   resi usrs jobs   jobids
+   p01  free  0.15     511   1      0      0  6/3    0
+   p02  free  0.00     511   1      0      0  0/0    0
+   p03  free  0.00     511   1      0      0  0/0    0
+   p04  free  0.00     511   1      0      0  0/0    0
+   p05  free  0.00     511   1      0      0  0/0    0
+   p06  free  0.00     511   1      0      0  0/0    0
+   p07  excl  0.73     511   1      0      0  1/1    1   219
+   p08  excl  0.94     511   1      0      0  1/1    1   217
+   p09  excl  0.99     511   1      0      0  1/1    1   217
+
+Availability:
+
+  Originally written by David.Singleton@anu.edu.au
+    (ANU Supercomputer Facility, Australian National University).
+
+  download latest from ftp://ftp.fysik.dtu.dk/pub/PBS/
+
+  send questions to Ole Holm Nielsen, Ole.H.Nielsen@fysik.dtu.dk
+(Technical University of Denmark).
+
+

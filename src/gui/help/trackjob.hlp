@@ -1,0 +1,69 @@
+The Track Job dialog box is for enabling the periodic checking of returned
+output files of running jobs.
+
+===================
+MONITORED USER JOBS
+===================
+The list of users whose jobs are to be monitored for returned output files 
+can be specified by typing the username in the input entry, and then clicking
+the "add" button.   Watch as your input gets loaded into the "Tracked Users:"
+listbox. Entries of the latter can be deleted by selecting an entry, and then
+clicking the accompanying "delete" button. If you want to modify an entry in
+the listbox, then select the entry, which would result in its values to be
+loaded into the input entry, then change the value of the input entry, and
+finally click the accompanying "update" button.
+
+========
+INTERVAL
+========
+Setting the interval number of minutes is done by manipulating a spin box 
+located at the bottom of the user name entries. Either type in a valid 
+minutes value (> 0) on the spinbox entry, or click on the scrollbar arrows to
+increment through the valid values.
+
+============================
+LOCATION OF JOB OUTPUT FILES
+============================
+A pair of radio buttons located at the upper right of the dialog box will
+inform xpbs if the job output files being monitored are local (host where xpbs
+was run), or would require some remote shell command to access the output
+files. If the output files are returned to some remote host, then xpbs will
+execute an
+	RSH <remote_host> test -f <output_files>
+to test existence of returned output files. RSH is whatever the remote shell
+entry box is set to.
+
+NOTE: Be sure the files are accessible from the host where xpbs was run (i.e.
+.rhosts appropriately set). The use of remote shells can potentially slow down
+the execution of xpbs so using this feature for remote files is discouraged.
+
+=====================
+RETURNED OUTPUT FILES
+=====================
+When an output file for a user job being monitored is found, then the
+"Track Job" button (the one that originally invoked this dialog box) will
+turn into a different color, and the "Jobs Found Completed" listbox is then
+loaded with the corresponding job id(s). 
+
+Click on a job id to see the contents of the output file and the error 
+file. 
+
+===============
+COMMAND BUTTONS
+===============
+Clicking on these buttons represent the last step when manipulating this 
+dialog box.
+
+Click "start/reset tracking" to:
+  1. cancel any previous tracking
+  2. build a new list of jobs to be monitored for returned output files by
+     checking the currently queued jobs.
+  3. start periodic tracking
+NOTE: Be sure to submit the jobs that you want monitored first before 
+      enabling this feature.
+
+Click "stop tracking" to cancel any previous tracking without enabling a
+new tracking cycle.
+
+Click "close window" to exit out of the dialog box. This is also the default
+action when the <Return> key is pressed.

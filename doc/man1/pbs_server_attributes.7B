@@ -1,0 +1,403 @@
+.\"         OpenPBS (Portable Batch System) v2.3 Software License
+.\" 
+.\" Copyright (c) 1999-2000 Veridian Information Solutions, Inc.
+.\" All rights reserved.
+.\" 
+.\" ---------------------------------------------------------------------------
+.\" For a license to use or redistribute the OpenPBS software under conditions
+.\" other than those described below, or to purchase support for this software,
+.\" please contact Veridian Systems, PBS Products Department ("Licensor") at:
+.\" 
+.\"    www.OpenPBS.org  +1 650 967-4675                  sales@OpenPBS.org
+.\"                        877 902-4PBS (US toll-free)
+.\" ---------------------------------------------------------------------------
+.\" 
+.\" This license covers use of the OpenPBS v2.3 software (the "Software") at
+.\" your site or location, and, for certain users, redistribution of the
+.\" Software to other sites and locations.  Use and redistribution of
+.\" OpenPBS v2.3 in source and binary forms, with or without modification,
+.\" are permitted provided that all of the following conditions are met.
+.\" After December 31, 2001, only conditions 3-6 must be met:
+.\" 
+.\" 1. Commercial and/or non-commercial use of the Software is permitted
+.\"    provided a current software registration is on file at www.OpenPBS.org.
+.\"    If use of this software contributes to a publication, product, or service
+.\"    proper attribution must be given; see www.OpenPBS.org/credit.html
+.\" 
+.\" 2. Redistribution in any form is only permitted for non-commercial,
+.\"    non-profit purposes.  There can be no charge for the Software or any
+.\"    software incorporating the Software.  Further, there can be no
+.\"    expectation of revenue generated as a consequence of redistributing
+.\"    the Software.
+.\" 
+.\" 3. Any Redistribution of source code must retain the above copyright notice
+.\"    and the acknowledgment contained in paragraph 6, this list of conditions
+.\"    and the disclaimer contained in paragraph 7.
+.\" 
+.\" 4. Any Redistribution in binary form must reproduce the above copyright
+.\"    notice and the acknowledgment contained in paragraph 6, this list of
+.\"    conditions and the disclaimer contained in paragraph 7 in the
+.\"    documentation and/or other materials provided with the distribution.
+.\" 
+.\" 5. Redistributions in any form must be accompanied by information on how to
+.\"    obtain complete source code for the OpenPBS software and any
+.\"    modifications and/or additions to the OpenPBS software.  The source code
+.\"    must either be included in the distribution or be available for no more
+.\"    than the cost of distribution plus a nominal fee, and all modifications
+.\"    and additions to the Software must be freely redistributable by any party
+.\"    (including Licensor) without restriction.
+.\" 
+.\" 6. All advertising materials mentioning features or use of the Software must
+.\"    display the following acknowledgment:
+.\" 
+.\"     "This product includes software developed by NASA Ames Research Center,
+.\"     Lawrence Livermore National Laboratory, and Veridian Information
+.\"     Solutions, Inc.
+.\"     Visit www.OpenPBS.org for OpenPBS software support,
+.\"     products, and information."
+.\" 
+.\" 7. DISCLAIMER OF WARRANTY
+.\" 
+.\" THIS SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND. ANY EXPRESS
+.\" OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+.\" OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT
+.\" ARE EXPRESSLY DISCLAIMED.
+.\" 
+.\" IN NO EVENT SHALL VERIDIAN CORPORATION, ITS AFFILIATED COMPANIES, OR THE
+.\" U.S. GOVERNMENT OR ANY OF ITS AGENCIES BE LIABLE FOR ANY DIRECT OR INDIRECT,
+.\" INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+.\" LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
+.\" OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+.\" LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+.\" NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+.\" EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+.\" 
+.\" This license will be governed by the laws of the Commonwealth of Virginia,
+.\" without reference to its choice of law rules.
+.if \n(Pb .ig Iq
+.\" for man page
+.TH pbs_server_attributes 7B "" Local PBS
+.so ../ers/ers.macros
+.SH NAME
+pbs_server_attributes - pbs server attributes
+.SH DESCRIPTION
+.Iq
+.if !\n(Pb .ig Ig
+.\" for ers
+.NH 3
+.Tc Server Public Attributes
+.Ig
+.LP
+Server attributes can be read by any client; privilege is not required.
+Most server attributes are alterable by a privileged client, run by
+a user with administrator or operator privilege.
+Certain attributes require the user to have full administrator privilege.
+The following is a list of the server attributes.
+.RS .25i
+.Al acl_host_enable
+Attribute which when true directs the server to use the 
+.I acl_hosts
+access control lists.
+Requires full manager privilege to set or alter.
+Format: boolean, "TRUE", "True", "true", "Y", "y", "1", "FALSE", "False",
+"false", "N", "n", "0";
+default value: false = disabled.
+.if !\n(Pb .ig Ig
+[internal type: boolean]
+.Ig
+.Al acl_hosts
+List of hosts which may request services from this server.
+This list contains the network name of the hosts.
+Local requests, i.e. from the server's host itself, are aways accepted even
+if the host is not included in the list.
+See section 10.1, Authorization, in the PBS External Reference Specification.
+Requires full manager privilege to set or alter.
+Format: "[+|-]hostname.domain[,...]";
+default value: all hosts.
+.if !\n(Pb .ig Ig
+[internal type: access control list]
+.Ig
+.Al acl_user_enable
+Attribute which when true directs the server to use the server level
+.I acl_users
+access list.
+Requires full manager privilege to set or alter.
+Format: boolean (see acl_group_enable); default value: disabled.
+.if !\n(Pb .ig Ig
+[internal type: boolean]
+.Ig
+.Al acl_users
+List of users allowed or denied the ability to make any requests of this 
+server.
+See section 10.1, Authorization, in the PBS External Reference Specification.
+Requires full manager privilege to set or alter.
+Format: "[+|-]user[@host][,...]";
+default value: all users allowed.
+.if !\n(Pb .ig Ig
+[internal type:  access control list]
+.Ig
+.Al acl_roots
+List of super users who may submit to and execute jobs at this server.
+If the job execution id would be zero (0), then the job owner, root@host,
+must be listed in this access control list or the job is rejected.
+Format: "[+|-]user[@host][,...]";
+default value: no root jobs allowed.
+.if !\n(Pb .ig Ig
+[internal type:  access control list]
+.Ig
+.Al comment
+A text string which may be set by the scheduler or other privileged client
+to provide information to the batch system users. 
+Format: any string; default value: none.
+.if !\n(Pb .ig Ig
+[internal type: string]
+.Ig
+.Al default_node
+A node specification to use if there is no other supplied specification.
+This attribute is only used by servers where a
+.I nodes
+file exist in the server_priv directory providing a list of nodes to the
+server.  If the nodes file does not exist, this attribute is not set by
+default and is ignored if set.  The default value allows for jobs to
+share a single node.
+Format: a node specification string;
+default value: 1#shared.
+.if !\n(Pb .ig Ig
+[internal type: string]
+.Ig
+.Al default_queue
+The queue which is the target queue when a request does not specify a queue
+name.  Format: a queue name; 
+default value: none, must be set to an existing queue.
+.if !\n(Pb .ig Ig
+[internal type: string]
+.Ig
+.Al log_events
+A bit string which specifies the type of events which are logged, see
+the section on Event Logging in chapter 3 of the ERS.  Format: integer;
+default value: 511, all events.
+.if !\n(Pb .ig Ig
+[internal type: integer]
+.Ig
+.Al mail_uid
+The uid from which server generated mail is sent to users.
+Format: integer uid;
+default value: 0 for root.
+.if !\n(Pb .ig Ig
+[internal type: integer]
+.Ig
+.Al managers
+List of users granted batch administrator privileges.
+Format:
+.Ty "user@host.sub.domain[,user@host.sub.domain...]" .
+The host, sub-domain, or domain name may be \*Qwild carded\*U by the use of
+an \*Q*\*U character,  see the description of user access control lists in
+chapter 10.1.1 of the ERS.
+Requires full manager privilege to set or alter.
+Default value: root on the local host.
+.if !\n(Pb .ig Ig
+[internal type: access control list]
+.Ig
+.Al max_running
+The maximum number of jobs allowed to be selected for execution at
+any given time.
+Advisory to the Scheduler, not enforced by the server.
+Format: integer.
+.if !\n(Pb .ig Ig
+[internal type: integer]
+.Ig
+.Al max_user_run
+The maximum number of jobs owned by a single user that are allowed to be
+running from this queue at one time.  This attribute is advisory to the
+Scheduler, it is not enforced by the server.  Format: integer; default
+value: none.
+.if !\n(Pb .ig Ig
+[internal type: integer]
+.Ig
+.Al max_group_run
+The maximum number of jobs owned by any users in a single group that are
+allowed to be running from this queue at one time.
+This attribute is advisory to the Scheduler, it is not enforced by the server.
+Format: integer; default value: none.
+.if !\n(Pb .ig Ig
+[internal type: integer]
+.Ig
+.Al node_pack
+Controls how multiple processor nodes are allocated to jobs.
+If this attribute is set to true, jobs will be assigned to the multiple
+processor nodes with the fewest free processors.
+This packs jobs into the fewest possible nodes leaving multiple processor nodes
+free for jobs which need many processors on a node.
+If set to false,  jobs will be scattered across nodes reducing
+conflicts over memory between jobs.   
+If unset, the jobs are packed on nodes in the order that the nodes are 
+declared to the server (in the nodes file).
+Default value: unset \- assigned to nodes as nodes in order that were declared.
+.if !\n(Pb .ig Ig
+[internal type: boolean]
+.Ig
+.Al operators
+List of users granted batch operator privileges.
+Format of the list is identical with
+.At managers
+above.
+Requires full manager privilege to set or alter.
+Default value: root on the local host.
+.if !\n(Pb .ig Ig
+[internal type: access control list]
+.Ig
+.Al query_other_jobs
+The setting of this attribute controls if general users, other than the
+job owner, are allowed to query the status of or select the job.
+Format: boolean (see acl_host_enable);
+Requires full manager privilege to set or alter.
+default value: false - users may not query or select jobs owned by other users.
+.if !\n(Pb .ig Ig
+[internal type: boolean]
+.Ig
+.Al "resources_available"
+The list of resource and amounts available to jobs run by this server.
+The sum of the resource of each type used by all jobs running by this server
+cannot exceed the total amount listed here.
+Advisory to the Scheduler, not enforced by the server.
+Format: "resources_available.resource_name=value[,...]".
+.if !\n(Pb .ig Ig
+[internal type: resource]
+.Ig
+.Al resources_cost
+The cost factors of various types of resources.  These values are used in
+determining the order of releasing members of synchronous job sets, see
+the section on \*QSynchronize Job Starts.\*U  For the most part, these value
+are purely arbitrary and have meaning only in the relative values between
+systems.  The \*Qcost\*U of the resources requested by a job is the sum of the
+products of the various 
+.I resources_cost s
+and the amount of each resource requested by the job.  
+It is not necessary to assign a cost for each possible resource, only those
+which the site wishes to be considered in synchronous job scheduling.
+Format: "resources_cost.resource_name=value[,...]";
+default value: none, cost of resource is not computed.
+.if !\n(Pb .ig Ig
+[internal type: list]
+.Ig
+.Al resources_default
+The list of default resource values that are set as limits for a job 
+executing on this server when the job does not specify a limit,
+and there is no queue default.
+Format: "resources_default.resource_name=value[,...]";
+default value: no limit.
+.if !\n(Pb .ig Ig
+[internal type: resource]
+.Ig
+.Al resources_max
+The maximum amount of each resource which can be requested by a single job
+executing on this server if there is not a resources_max valued defined for
+the queue in which the job resides.
+Format: "resources_max.resource_name=value[,...]";
+default value: infinite usage.
+.if !\n(Pb .ig Ig
+[internal type: resource]
+.Ig
+.Al scheduler_iteration
+The time, in seconds, between iterations of attempts by the batch server
+to schedule jobs.  On each iteration, the server examines the available
+resources and runnable jobs to see if a job can be initiated.  This
+examination also occurs whenever a running batch job terminates or a
+new job is placed in the queued state in an execution queue.
+Format: integer seconds; default value: 10 minutes, set by 
+.Sc PBS_SCHEDULE_CYCLE
+in server_limits.h.
+.if !\n(Pb .ig Ig
+[internal type: integer, displays as name defined below]
+.Ig
+.Al scheduling
+Controls if the server will request job scheduling by the PBS job scheduler.
+If true, the scheduler will be called as required; if false, the scheduler
+will not be called and no job will be placed into execution unless the
+server is directed to do so by an operator or administrator.  Setting or 
+resetting this attribute to true results in an immediate call to the scheduler.
+For more information, see the section
+.B "Scheduler \- Server Interaction"
+in the PBS Administrator Guide.
+Format: boolean (see
+acl_host_enable);
+default value: value of -a option when server is invoked, if -a is not
+specified, the value is recovered from the prior server run.  If it has never
+been set, the value is "false".
+.if !\n(Pb .ig Ig
+[internal type: boolean]
+.Ig
+.Al system_cost
+An arbitrary value factored into the resource cost of any job managed by
+this server for the purpose of selecting which member of synchronous set
+is released first, see resources_cost and section 3.2.2, \*QSynchronize Job
+Starts.\*U
+[default value: none, cost of resource is not computed]
+.if !\n(Pb .ig Ig
+[internal type: list]
+.Ig
+.RE
+.LP
+.if !\n(Pb .ig Ig
+.\" ers only
+.NH 3
+.Tc Read Only Server Attributes
+.Ig
+.LP
+The following attributes are read-only, they are maintained by the server
+and cannot be changed by a client.
+.RS .25i
+.Al resources_assigned
+The total amount of certain types of resources allocated to running jobs.
+.if !\n(Pb .ig Ig
+[internal type: resource]
+.Ig
+.Al server_name
+The name of the server which is the same as the host name.
+.if !\n(Pb .ig Ig
+If the server is listening to a non-standard port, the port number is
+appended, with a colon, to the host name.  For example: 
+.Ty host.domain:9999 .
+[internal type: string]
+.Ig
+.Al server_state
+The current state of the server: 
+.RS
+.IP Active 
+The server is running and will invoke the job scheduler as required to schedule
+jobs for execution.
+.IP Idle 
+The server is running but will not invoke the job scheduler.
+.IP Scheduling 
+The server is running and there is an outstanding request to the job scheduler.
+.IP Terminating 
+The server is terminating.  No additional jobs will be scheduled.
+.IP "Terminating, Delayed"
+The server is terminating in delayed mode.  The server will not run any new
+jobs and will shutdown when the last currently executing job completes. 
+.RE
+.IP
+.if !\n(Pb .ig Ig
+[internal type: integer]
+.Ig
+.Al state_count
+The total number of jobs managed by the server currently in each state.
+.if !\n(Pb .ig Ig
+[internal type: special, array of integers]
+.Ig
+.Al total_jobs
+The total number of jobs currently managed by the server.
+.if !\n(Pb .ig Ig
+[internal type: integer]
+.Ig
+.Al PBS_version
+The release version number of the server.
+.if !\n(Pb .ig Ig
+[internal type: string]
+.Ig
+.RE
+.if \n(Pb .ig Ig
+.\" man page only
+.SH SEE ALSO
+the PBS ERS, qmgr(1B)
+.Ig

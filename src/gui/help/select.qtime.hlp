@@ -1,0 +1,23 @@
+The Select Queue Time attribute dialog box is for specifying the Execution 
+Time attribute relationship to consult (when to queue), when limiting the list
+of jobs appearing on the Jobs listbox in the main xpbs window.
+
+Enter a valid logical operator in the Queue Time spinbox, and click
+"on either the date/time button, or on the wildcard button "ANY" to setup a
+logical relationship to consult when restricting the list of jobs.
+
+For the date/time button, the valid Queue Time operators are "=", "!=", ">", 
+">=", "<", "<=". But for checkpoint value "ANY", the valid
+operator is "=" only.
+
+Specification of date/time parameter is done by manipulating the hour, minutes,
+seconds, month, day, year spin boxes.
+
+===============
+COMMAND BUTTONS
+===============
+This region of command buttons represents the final step when manipulating this
+dialog box. 
+
+Click on "ok" when done setting widget values. This is also the default action 
+when the <Return> key is pressed.

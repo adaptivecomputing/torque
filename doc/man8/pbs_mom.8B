@@ -1,0 +1,338 @@
+.\"         OpenPBS (Portable Batch System) v2.3 Software License
+.\" 
+.\" Copyright (c) 1999-2000 Veridian Information Solutions, Inc.
+.\" All rights reserved.
+.\" 
+.\" ---------------------------------------------------------------------------
+.\" For a license to use or redistribute the OpenPBS software under conditions
+.\" other than those described below, or to purchase support for this software,
+.\" please contact Veridian Systems, PBS Products Department ("Licensor") at:
+.\" 
+.\"    www.OpenPBS.org  +1 650 967-4675                  sales@OpenPBS.org
+.\"                        877 902-4PBS (US toll-free)
+.\" ---------------------------------------------------------------------------
+.\" 
+.\" This license covers use of the OpenPBS v2.3 software (the "Software") at
+.\" your site or location, and, for certain users, redistribution of the
+.\" Software to other sites and locations.  Use and redistribution of
+.\" OpenPBS v2.3 in source and binary forms, with or without modification,
+.\" are permitted provided that all of the following conditions are met.
+.\" After December 31, 2001, only conditions 3-6 must be met:
+.\" 
+.\" 1. Commercial and/or non-commercial use of the Software is permitted
+.\"    provided a current software registration is on file at www.OpenPBS.org.
+.\"    If use of this software contributes to a publication, product, or service
+.\"    proper attribution must be given; see www.OpenPBS.org/credit.html
+.\" 
+.\" 2. Redistribution in any form is only permitted for non-commercial,
+.\"    non-profit purposes.  There can be no charge for the Software or any
+.\"    software incorporating the Software.  Further, there can be no
+.\"    expectation of revenue generated as a consequence of redistributing
+.\"    the Software.
+.\" 
+.\" 3. Any Redistribution of source code must retain the above copyright notice
+.\"    and the acknowledgment contained in paragraph 6, this list of conditions
+.\"    and the disclaimer contained in paragraph 7.
+.\" 
+.\" 4. Any Redistribution in binary form must reproduce the above copyright
+.\"    notice and the acknowledgment contained in paragraph 6, this list of
+.\"    conditions and the disclaimer contained in paragraph 7 in the
+.\"    documentation and/or other materials provided with the distribution.
+.\" 
+.\" 5. Redistributions in any form must be accompanied by information on how to
+.\"    obtain complete source code for the OpenPBS software and any
+.\"    modifications and/or additions to the OpenPBS software.  The source code
+.\"    must either be included in the distribution or be available for no more
+.\"    than the cost of distribution plus a nominal fee, and all modifications
+.\"    and additions to the Software must be freely redistributable by any party
+.\"    (including Licensor) without restriction.
+.\" 
+.\" 6. All advertising materials mentioning features or use of the Software must
+.\"    display the following acknowledgment:
+.\" 
+.\"     "This product includes software developed by NASA Ames Research Center,
+.\"     Lawrence Livermore National Laboratory, and Veridian Information
+.\"     Solutions, Inc.
+.\"     Visit www.OpenPBS.org for OpenPBS software support,
+.\"     products, and information."
+.\" 
+.\" 7. DISCLAIMER OF WARRANTY
+.\" 
+.\" THIS SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND. ANY EXPRESS
+.\" OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+.\" OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT
+.\" ARE EXPRESSLY DISCLAIMED.
+.\" 
+.\" IN NO EVENT SHALL VERIDIAN CORPORATION, ITS AFFILIATED COMPANIES, OR THE
+.\" U.S. GOVERNMENT OR ANY OF ITS AGENCIES BE LIABLE FOR ANY DIRECT OR INDIRECT,
+.\" INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+.\" LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
+.\" OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+.\" LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+.\" NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+.\" EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+.\" 
+.\" This license will be governed by the laws of the Commonwealth of Virginia,
+.\" without reference to its choice of law rules.
+.if \n(Pb .ig Iq
+.TH pbs_mom 8B "" Local PBS
+.so ../ers/ers.macros
+.Iq
+.Sh NAME
+pbs_mom \- start a pbs batch execution mini-server
+.Sh SYNOPSIS
+pbs_mom [\^-C\ chkdirectory\^] [\^-c\ config\^] [\^-d\ directory] [\^-L\ logfile] [\^-M\ MOMport\^] [\^-R\ RPPport\^] [\^-p\^|\^-r] [\^-x]
+.Sh DESCRIPTION
+The
+.B pbs_mom
+command starts the operation of a batch \f3M\f1achine \f3O\f1riented
+\f3M\f1ini\-server, MOM, on the local host.
+Typically, this command will be in a local boot file such as
+.I /etc/rc.local .
+To insure that the pbs_mom
+command is not runnable by the general user community, the server
+will only execute if its real and effective uid is zero.
+.LP
+One function of pbs_mom is to place jobs into execution as directed
+by the server, establish resource usage limits, monitor the job's usage,
+and notify the server when the job completes.  If they exist, pbs_mom will
+execute a prologue script before executing a job and an epilogue script
+after executing the job.
+The next function of pbs_mom is to respond to resource monitor requests.
+This was done by a separate process in previous versions of PBS but
+has now been combined into one process.
+The resource monitor function is provided mainly for the PBS scheduler.
+It provides information about the status of running jobs, memory available etc.
+The next function of pbs_mom is to respond to task manager requests.
+This involves communicating with running tasks over a tcp socket
+as well as communicating with other MOMs within a job (aka a "sisterhood").
+.LP
+Pbs_mom will record a diagnostic message in a log file for any
+error occurrence.  The log files are maintained in the 
+.I mom_logs
+directory below the home directory of the server.
+If the log file cannot be opened, the diagnostic message is written
+to the system console.
+.Sh OPTIONS
+.IP "-C chkdirectory" 16
+Specifieds the path of the directory used to hold checkpoint files.
+[Currently this is only valid on Cray systems.]
+The default directory is PBS_HOME/spool/checkpoint, see the -d option.
+The directory specified with the -C option must be owned by root and 
+accessible (rwx) only by root to protect the security of the checkpoint files.
+.IP "-c config" 16
+Specify a alternative configuration file, see description below.
+If this is a relative file name it will be relative to PBS_HOME/mom_priv,
+see the -d option.  If the specified file cannot be opened, pbs_mom will abort.
+If the -c option is not supplied, pbs_mom will attempt to open the default
+ configuration file "config" in PBS_HOME/mom_priv.  If this file is not
+present, pbs_mom will log the fact and continue.
+.IP "-d directory" 16
+Specifies the path of the directory which is the home of the servers
+working files, PBS_HOME.
+This option is typically used along with -M when debugging MOM.
+The default directory is given by $PBS_SERVER_HOME
+which is typically
+.Ty /usr/spool/PBS .
+.IP "-L logfile" 16
+Specify an absolute path name for use as the log file.
+If not specified, MOM will
+open a file named for the current date in the PBS_HOME/mom_logs
+directory, see the
+.At -d
+option.
+.IP "-M port" 16
+Specifies the port number on which the mini-server (MOM) will
+listen for batch requests.  
+.IP "-R port" 16
+Specifies the port number on which the mini-server (MOM) will
+listen for resource monitor requests, task manager requests and inter-MOM
+messages.  Both a UDP and a TCP port of this number will be used.
+.IP "-p" 16
+Specifies the impact on jobs which were in execution when the mini-server
+shut down.  On any restart of MOM, the new mini-server will not be the
+parent of any running jobs, MOM has lost control of her offspring (not a new
+situation for a mother).
+With the -p option, Mom will allow the jobs to continue to run and
+monitor them indirectly via polling.
+The -p option is mutually exclusive with the -r option.
+.IP "-r" 16
+Specifies the impact on jobs which were in execution when the mini-server
+shut down.  With the -r option,
+MOM will kill any processes belonging to jobs, mark the jobs as terminated,
+and notify the batch server which owns the job.
+The -r option is mutual exclusive with the -p option.
+.IP
+Normally the mini-server is started from the system boot file
+without the 
+.At -p
+or the 
+.At -r
+option.  The mini-server will make no attempt to signal the
+former session of any job which may have been running when the mini-server
+terminated.  It is assumed that on reboot, all processes have been killed.
+.IP
+If the -r option is used following a reboot,
+process IDs (pids) may be reused and
+MOM may kill a process that is not a batch session.
+.IP "-a alarm" 16
+Used to specify the alarm timeout in seconds for computing a resource.
+Every time a resource request is processed, an alarm is set for the
+given amount of time.  If the request has not completed before the
+given time, an alarm signal is generated.
+The default is 5 seconds.
+.IP "-x" 16
+Disables the check for privileged port resource monitor connections.  This is
+used mainly for testing since the privileged port is the only
+mechanism used to prevent any ordinary user from connecting.
+.LP
+.Sh CONFIGURATION FILE
+The configuration file may be specified on the command line at
+program start with the -c flag.  The use of this file is
+to provide several types of run time information to pbs_mom:
+static resource names and values, external resources provided 
+by a program to be run on request via a shell escape, and values
+to pass to internal set up functions at initialization
+(and re-initialization).
+.LP
+Each item type is on a single line with the component parts separated by
+white space.  If the line starts with a hash mark (pound sign, #), 
+the line is considered to be a comment and is skipped.
+.IP "Static Resources"
+For static resource names and values, the configuration file contains a
+list of resource names/values pairs, one pair per line and separated by
+white space.   An Example of static resource names and values could be 
+the number of tape drives of different types and could be specified by
+.IP
+.Ty "tape3480      4"
+.br
+.Ty "tape3420      2"
+.br
+.Ty "tapedat       1"
+.br
+.Ty "tape8mm       1"
+.IP "Shell Commands"
+If the first character of the value is an exclamation mark (!),
+the entire rest of the line is saved to be executed through the services of
+the \f3system\fP(3) standard library routine.
+.IP
+The shell escape provides a means for the resource monitor to yield
+arbitrary information to the scheduler.  Parameter substitution is
+done such that the value of any qualifier sent with the query, as
+explained below, replaces a token with a percent sign (%) followed
+by the name of the qualifier.  For example, here is a configuration file
+line which gives a resource name of "escape":
+.IP
+.Ty "escape     !echo %xxx %yyy"
+.IP
+If a query for "escape" is sent with no qualifiers, the command
+executed would be "echo %xxx %yyy".  If one qualifier is sent,
+"escape[xxx=hi there]", the command executed would be "echo hi there %yyy".
+If two qualifiers are sent, "escape[xxx=hi][yyy=there]", the command
+executed would be "echo hi there".  If a qualifier is sent with
+no matching token in the command line, "escape[zzz=snafu]", an error
+is reported.
+.IP "Initialization Value"
+An initialization value directive has a name which starts with a
+dollar sign ($) and must be known to MOM via an internal table.
+The entries in this table now are: 
+.RS
+.IP clienthost
+which causes a host name to be added to the list of hosts which will be allowed
+to connect to MOM as long as they are using a privilaged port.
+For example, here are two
+configuration file lines which will allow the hosts "fred" and "wilma"
+to connect:
+.IP
+.Ty "$clienthost      fred"
+.br
+.Ty "$clienthost      wilma"
+.IP
+Two host name are always allowed to connection to pbs_mom, "localhost"
+and the name returned to pbs_mom by the system call gethostname().  These
+names need not be specified in the configuration file.  The hosts listed
+as "clienthosts" comprise a "sisterhood" of machines.  Any one of the
+sisterhood will accept connections from a server from within the
+sisterhood.  They will also accept Resource Monitor (RM) requests
+and Internal MOM (IM) messages from within the sisterhood.  For
+a sisterhood to be able to communicate IM messages to each other,
+they must all share the same RM port.
+.IP restricted
+which causes a host name to be added to the list of hosts which will be allowed
+to connect to MOM without needing to use a privilaged port.  These names
+allow for wildcard matching.  For example, here is a configuration file
+line which will allow queries from any host from the domain "ibm.com".
+.IP
+.Ty "$restricted      *.ibm.com"
+.IP
+The restriction which applies to these connections is that only
+internal queries may be made.  No resources from a config file
+will be found.  This is to prevent any shell commands from being
+run by a non-root process.
+.IP logevent
+which sets the mask that determines which event types are logged by pbs_mom.
+For example:
+.IP
+.Ty "$logevent 0x1fff"
+.br
+.Ty "$logevent 255"
+.IP
+The first example would set the log event mask to 0x1ff (511) which enables
+logging of all events including debug events.  The second example would set
+the mask to 0x0ff (255) which enables all events except debug events.
+.IP cputmult
+which sets a factor used to adjust cpu time used by a job.  This is provided
+to allow adjustment of time charged and limits enforced where the job might
+run on systems with different cpu performance. 
+If Mom's system is faster than the reference system, set cputmult to a decimal
+value greater than 1.0.   If Mom's system is slower, set cputmult to a value
+between 1.0 and 0.0.
+For example:
+.IP
+.Ty "$cputmult 1.5
+.br
+.Ty "$cputmult 0.75
+.IP wallmult
+which sets a factor used to adjust wall time usage by to job to a common
+reference system.  The factor is used for walltime calculations and limits
+the same as cputmult is used for cpu time.
+.RE
+.LP
+The configuration file must be "secure".  It must be owned by a user id and
+group id less than 10 and not be world writtable.
+.LP
+.Sh FILES
+.IP $PBS_SERVER_HOME/mom_priv 10
+the default directory for configuration files, typical
+(/usr/spool/pbs)/mom_priv.
+.IP $PBS_SERVER_HOME/mom_logs 10
+directory for log files recorded by the server.
+.IP $PBS_SERVER_HOME/mom_priv/prologue 10
+the administrative script to be run before job execution.
+.IP $PBS_SERVER_HOME/mom_priv/eiplogue 10
+the administrative script to be run after job execution.
+.Sh Signal Handling
+Pbs_mom handles the following signals:
+.IP SIGHUP
+causes pbs_mom to re-read its configuration file, close and reopen the log
+file, and reinitialize resource structures.
+.IP SIGALRM
+results in a log file entry. The signal is used to limit the time taken by
+certain children processes, such as the prologue and epilogue.
+.IP "SIGINT and SIGTERM"
+Result in pbs_mom exiting without terminating any running jobs.
+This is the action for the following signals as well: SIGXCPU, SIGXFSZ,
+SIGCPULIM, and SIGSHUTDN.
+.IP SIGUSR1
+causes mom to kill all running jobs on the node, then exit.
+.IP "SIGPIPE, SIGUSR1, SIGINFO"
+are ignored.
+.LP
+All other signals have their default behavior installed.
+.Sh EXIT STATUS
+If the mini-server command fails to begin operation, the
+server exits with a value greater than zero.
+.Sh SEE ALSO
+pbs_server(8B), pbs_scheduler_basl(8B), pbs_scheduler_tcl(8B),
+the PBS External Reference Specification, and the PBS Administrator's Guide.
+.\" turn off any extra indent left by the Sh macro

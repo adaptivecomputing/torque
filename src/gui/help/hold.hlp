@@ -1,0 +1,16 @@
+The Hold Job dialog box is for placing a user, other, or system hold type
+to one or more of the selected jobs.
+
+To specify the hold type, click on one of the toggle buttons.
+
+===============
+COMMAND BUTTONS
+===============
+This region of command buttons represents the final step when manipulating this
+dialog box. 
+
+Click on "hold" to proceed with the holding of job(s).
+
+Click on "cancel" to cancel placing a hold type on the job(s) and to quit out 
+of this dialog box. This is also the default action when the <Return> key is
+pressed.

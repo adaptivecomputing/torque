@@ -1,0 +1,416 @@
+//
+//         OpenPBS (Portable Batch System) v2.3 Software License
+// 
+// Copyright (c) 1999-2000 Veridian Information Solutions, Inc.
+// All rights reserved.
+// 
+// ---------------------------------------------------------------------------
+// For a license to use or redistribute the OpenPBS software under conditions
+// other than those described below, or to purchase support for this software,
+// please contact Veridian Systems, PBS Products Department ("Licensor") at:
+// 
+//    www.OpenPBS.org  +1 650 967-4675                  sales@OpenPBS.org
+//                        877 902-4PBS (US toll-free)
+// ---------------------------------------------------------------------------
+// 
+// This license covers use of the OpenPBS v2.3 software (the "Software") at
+// your site or location, and, for certain users, redistribution of the
+// Software to other sites and locations.  Use and redistribution of
+// OpenPBS v2.3 in source and binary forms, with or without modification,
+// are permitted provided that all of the following conditions are met.
+// After December 31, 2001, only conditions 3-6 must be met:
+// 
+// 1. Commercial and/or non-commercial use of the Software is permitted
+//    provided a current software registration is on file at www.OpenPBS.org.
+//    If use of this software contributes to a publication, product, or
+//    service, proper attribution must be given; see www.OpenPBS.org/credit.html
+// 
+// 2. Redistribution in any form is only permitted for non-commercial,
+//    non-profit purposes.  There can be no charge for the Software or any
+//    software incorporating the Software.  Further, there can be no
+//    expectation of revenue generated as a consequence of redistributing
+//    the Software.
+// 
+// 3. Any Redistribution of source code must retain the above copyright notice
+//    and the acknowledgment contained in paragraph 6, this list of conditions
+//    and the disclaimer contained in paragraph 7.
+// 
+// 4. Any Redistribution in binary form must reproduce the above copyright
+//    notice and the acknowledgment contained in paragraph 6, this list of
+//    conditions and the disclaimer contained in paragraph 7 in the
+//    documentation and/or other materials provided with the distribution.
+// 
+// 5. Redistributions in any form must be accompanied by information on how to
+//    obtain complete source code for the OpenPBS software and any
+//    modifications and/or additions to the OpenPBS software.  The source code
+//    must either be included in the distribution or be available for no more
+//    than the cost of distribution plus a nominal fee, and all modifications
+//    and additions to the Software must be freely redistributable by any party
+//    (including Licensor) without restriction.
+// 
+// 6. All advertising materials mentioning features or use of the Software must
+//    display the following acknowledgment:
+// 
+//     "This product includes software developed by NASA Ames Research Center,
+//     Lawrence Livermore National Laboratory, and Veridian Information
+//     Solutions, Inc.
+//     Visit www.OpenPBS.org for OpenPBS software support,
+//     products, and information."
+// 
+// 7. DISCLAIMER OF WARRANTY
+// 
+// THIS SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND. ANY EXPRESS
+// OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+// OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT
+// ARE EXPRESSLY DISCLAIMED.
+// 
+// IN NO EVENT SHALL VERIDIAN CORPORATION, ITS AFFILIATED COMPANIES, OR THE
+// U.S. GOVERNMENT OR ANY OF ITS AGENCIES BE LIABLE FOR ANY DIRECT OR INDIRECT,
+// INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
+// OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+// EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// 
+// This license will be governed by the laws of the Commonwealth of Virginia,
+// without reference to its choice of law rules.
+// 
+//
+//
+// This BASL program mimics the best fit algorithm of NQS. It gets all the 
+// server and queue limits and runs any job that does not exceed any limit.
+//
+
+// **************************************************************************
+// 
+// Global variables
+//
+// **************************************************************************
+
+Int	trun;
+Size	tmem;
+Int	tmpp;
+Size	tsds;	
+
+Int	tgrp;
+Int	tusr;
+Int	qrun;
+Int	qgrp;
+Int	qusr;
+Size	qmem;
+Int	qmpp;
+Size	qsds;
+
+// **************************************************************************
+//
+// User-defined Functions
+//
+// **************************************************************************
+
+//
+//       Collect the total number of running jobs, total memory in use,
+// total PEs in use, and total SDS in use.
+//
+Void get_totals(Server s)
+{
+
+	Set Que	   masterqs;
+	Que	   q;
+	Set Job    jobs;
+	Job	   j;
+
+	Size	   jmem;
+	Int	   jmpp;
+	Size	   jsds;
+
+	trun = 0;
+	tmem = 0b;
+	tmpp = 0;
+	tsds = 0b;
+
+	masterqs = ServerQueuesGet(s);
+	foreach(q in masterqs) {
+		jobs =  QueJobsGet(q);
+		foreach( j in jobs ) {
+			if( JobStateGet(j) EQ RUNNING ) {
+				trun++;
+				jmem = JobSizeResReqGet(j, "mem");
+				jmpp = JobIntResReqGet(j, "mppe");
+				jsds = JobSizeResReqGet(j, "sds");
+
+				if( jmem GT 0b ) {
+					tmem = tmem + jmem;
+				}
+				if( jmpp GT 0 ) {
+					tmpp = tmpp + jmpp;
+				}
+				if( jsds GT 0b ) {
+					tsds = tsds + jsds;
+				}
+			}
+		}
+	}
+}
+
+
+//
+// Collects the resources used by user (uname), group (gname), and queue (q)
+//  associated with the job.
+//
+Void get_totals_grp_usr_que(Server s, String gname, String uname, Que que)
+{
+
+	Set Que    masterqs;
+	Que	   q;
+	Set Job    jobs;
+	Job	   j;
+	Size	   jmem;
+	Int	   jmpp;
+	Size	   jsds;
+	String	   egroup;
+	String	   euser;
+
+	tgrp = 0;
+	tusr = 0;
+	qrun = 0;
+	qgrp = 0;
+	qusr = 0;
+	qmem = 0b;
+	qmpp = 0;
+	qsds = 0b;
+		
+	masterqs = ServerQueuesGet(s);
+	foreach(q in masterqs) {
+
+		jobs =  QueJobsGet(q);
+		foreach( j in jobs ) {
+			egroup = JobEffectiveGroupNameGet(j);
+			if( egroup EQ gname ) {
+				tgrp++;
+			}
+
+			euser = JobEffectiveUserNameGet(j);
+			if( euser EQ uname ) {
+				tusr++;
+			}
+
+			if( q EQ que ) {
+				qrun++;
+
+				jmem = JobSizeResReqGet(j, "mem");
+				if( jmem GT 0b ) {
+					qmem = qmem + jmem;
+				}
+	
+				jmpp = JobIntResReqGet(j, "mppe");
+				if( jmpp GT 0 ) {
+					qmpp = qmpp + jmpp;
+				}
+
+				jsds = JobSizeResReqGet(j, "sds");
+				if( jsds GT 0b ) {
+					qsds = qsds + jsds;
+				}
+
+				if( egroup EQ gname ) {
+					qgrp++;
+				} 
+
+				if( euser EQ uname ) {
+					qusr++;
+				}
+
+			}
+		}
+	}
+}
+
+//       The rest of the limits are job dependent. This is done by two nested
+// job loops. The outer loop is the scheduling loop for each job, and the inner
+// loop collects the resources used by user and group associated with the job.
+//
+
+// **************************************************************************
+//
+// Main scheduling Loop
+//
+// **************************************************************************
+sched_main()
+{
+	Server	master;
+	Set Que masterqs;
+	Que	q;
+	Que	q2;
+	Set Job	jobs;
+	Set Job	jobs2;
+	Job	j;
+	Job	j2;
+
+	Size	jmem;
+	Int	jmpp;
+	Size	jsds;
+
+	Int	g_run_lim;
+	Int	g_mpp_lim;
+	Size	g_mem_lim;
+	Size	g_sds_lim;
+
+	String	this_group;
+	String	this_user;
+	Que	this_queue;
+	String	egroup;
+	String	euser;
+
+
+	Int	g_grp_lim;
+	Int	g_usr_lim; 
+
+	Size	q_mem_lim;
+	Int	q_mpp_lim;
+	Size	q_sds_lim;
+
+	Int	q_run_lim;
+	Int	q_grp_lim;
+	Int	q_usr_lim;
+
+	master = AllServersHeadGet();
+
+//
+//       The server state must be "Scheduling" to schedule jobs.
+//
+
+	if( ServerStateGet(master) NEQ SERVER_SCHED ) {
+		return();
+	}  
+
+	g_run_lim = ServerMaxRunJobsGet(master);
+	g_grp_lim = ServerMaxRunJobsPerGroupGet(master);
+	g_usr_lim = ServerMaxRunJobsPerUserGet(master);
+	g_mpp_lim = ServerIntResAvailGet(master, "mppe");
+	g_mem_lim = ServerSizeResAvailGet(master, "mem");
+	g_sds_lim = ServerSizeResAvailGet(master, "sds");
+
+	get_totals(master);
+
+
+	foreach(q in masterqs) {
+//		Is the queue turned on? 
+		if( QueStateGet(q) NEQ SCHED_ENABLED ) {
+			continue;
+		}
+		q_run_lim = QueMaxRunJobsGet(q);
+		q_grp_lim = QueMaxRunJobsPerGroupGet(q);
+		q_usr_lim = QueMaxRunJobsPerUserGet(q);
+		q_mem_lim = QueSizeResAvailGet(q, "mem");
+		q_mpp_lim = QueIntResAvailGet(q, "mppe");
+		q_sds_lim = QueSizeResAvailGet(q, "sds");
+
+		jobs =  QueJobsGet(q);
+		foreach( j in jobs ) {
+
+//			Check the global run limit
+			if( g_run_lim GT 0 AND trun GE g_run_lim ) {
+				return(); // terminate scheduling cycle
+			}
+
+//			Check the global memory limit
+			if( g_mem_lim GT 0b AND tmem GE g_mem_lim ) {
+				return();
+			}
+
+//			Is this job in the "Queued" state?
+			if( JobStateGet(j) NEQ QUEUED ) {
+				continue;
+			}
+
+//			will this job it exceed the global memory limit ?
+			jmem = JobSizeResReqGet(j, "mem");
+			if( g_mem_lim GT 0b AND jmem GT 0b AND
+			                 (tmem + jmem) GT g_mem_lim ) {
+				continue;
+			}
+
+//       	If this job uses the MPP, will it exceed the global MPP limit?
+			jmpp = JobIntResReqGet(j, "mppe");	
+			if( g_mpp_lim GT 0 AND jmpp GT 0 AND
+					       (tmpp + jmpp) GT g_mpp_lim ) {
+				continue;
+			}
+
+//			If this job uses SDS, will it exceed the global SDS
+//			limit?
+			jsds = JobSizeResReqGet(j, "sds");
+			if( g_sds_lim GT 0b AND jsds GT 0b AND
+					   	(tsds + jsds) GT g_sds_lim ) {
+				continue;
+			}
+
+			this_group = JobEffectiveGroupNameGet(j); 
+			this_user  = JobEffectiveUserNameGet(j);
+			this_queue = q;
+
+			get_totals_grp_usr_que(master, this_group, this_user,q);
+		
+//			Check global group limit
+			if( g_grp_lim GT 0 AND tgrp GE g_grp_lim ) {
+				continue;
+			}
+
+//			Check global user limit
+			if( g_usr_lim GT 0 AND tusr GE g_usr_lim ) {
+				continue;
+			}
+
+//			Check the queue run limit
+			if( q_run_lim GT 0 AND qrun GE q_run_lim ) {
+				continue;
+			}
+			
+//			Check the queue group limit
+			if( q_grp_lim GT 0 AND qgrp GE q_grp_lim ) {
+				continue;
+			}
+		
+//			Check the queue user limit
+			if( q_usr_lim GT 0 AND qusr GE q_usr_lim ) {
+				continue;
+			}
+			
+			jmem = JobSizeResReqGet(j, "mem");
+//			Check the queue memory limit
+			if( q_mem_lim GT 0b AND jmem GT 0b AND
+						(qmem + jmem) GT q_mem_lim ) {
+				continue;
+			}
+//			Check the queue MPP limit.
+			if( q_mpp_lim GT 0 AND jmpp GT 0 AND
+						(qmpp + jmpp) GT q_mpp_lim ) {
+				continue;
+			}
+
+//			Check the queue MPP limit.
+			if( q_sds_lim GT 0b AND jsds GT 0b AND
+						(qsds + jsds) GT q_sds_lim ) {
+				continue;
+			}
+
+//			Run job synchronously
+			if( JobAction(j, SYNCRUN, NULLSTR) EQ SUCCESS ) {
+				trun++;	
+				if( jmem GT 0b ) {
+					tmem = tmem + jmem;
+				}	
+				if( jmpp GT 0 ) {
+					tmpp = tmpp + jmpp;
+				}
+				if( jsds GT 0b ) {
+					tsds = tsds + jsds;
+				}
+					
+			}
+		}
+	}
+
+
+}

@@ -1,0 +1,593 @@
+        OpenPBS (Portable Batch System) v2.3 Software License
+
+Copyright (c) 1999-2000 Veridian Information Solutions, Inc.
+All rights reserved.
+
+---------------------------------------------------------------------------
+For a license to use or redistribute the OpenPBS software under conditions
+other than those described below, or to purchase support for this software,
+please contact Veridian Systems, PBS Products Department ("Licensor") at:
+
+   www.OpenPBS.org  +1 650 967-4675                  sales@OpenPBS.org
+                       877 902-4PBS (US toll-free)
+---------------------------------------------------------------------------
+
+This license covers use of the OpenPBS v2.3 software (the "Software") at
+your site or location, and, for certain users, redistribution of the
+Software to other sites and locations.  Use and redistribution of
+OpenPBS v2.3 in source and binary forms, with or without modification,
+are permitted provided that all of the following conditions are met.
+After December 31, 2001, only conditions 3-6 must be met:
+
+1. Commercial and/or non-commercial use of the Software is permitted
+   provided a current software registration is on file at www.OpenPBS.org.
+   If use of this software contributes to a publication, product, or
+   service, proper attribution must be given; see www.OpenPBS.org/credit.html
+
+2. Redistribution in any form is only permitted for non-commercial,
+   non-profit purposes.  There can be no charge for the Software or any
+   software incorporating the Software.  Further, there can be no
+   expectation of revenue generated as a consequence of redistributing
+   the Software.
+
+3. Any Redistribution of source code must retain the above copyright notice
+   and the acknowledgment contained in paragraph 6, this list of conditions
+   and the disclaimer contained in paragraph 7.
+
+4. Any Redistribution in binary form must reproduce the above copyright
+   notice and the acknowledgment contained in paragraph 6, this list of
+   conditions and the disclaimer contained in paragraph 7 in the
+   documentation and/or other materials provided with the distribution.
+
+5. Redistributions in any form must be accompanied by information on how to
+   obtain complete source code for the OpenPBS software and any
+   modifications and/or additions to the OpenPBS software.  The source code
+   must either be included in the distribution or be available for no more
+   than the cost of distribution plus a nominal fee, and all modifications
+   and additions to the Software must be freely redistributable by any party
+   (including Licensor) without restriction.
+
+6. All advertising materials mentioning features or use of the Software must
+   display the following acknowledgment:
+
+    "This product includes software developed by NASA Ames Research Center,
+    Lawrence Livermore National Laboratory, and Veridian Information
+    Solutions, Inc.
+    Visit www.OpenPBS.org for OpenPBS software support,
+    products, and information."
+
+7. DISCLAIMER OF WARRANTY
+
+THIS SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND. ANY EXPRESS
+OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT
+ARE EXPRESSLY DISCLAIMED.
+
+IN NO EVENT SHALL VERIDIAN CORPORATION, ITS AFFILIATED COMPANIES, OR THE
+U.S. GOVERNMENT OR ANY OF ITS AGENCIES BE LIABLE FOR ANY DIRECT OR INDIRECT,
+INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
+OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+This license will be governed by the laws of the Commonwealth of Virginia,
+without reference to its choice of law rules.
+
+-----------------------------------------------------------------------------
+
+                       Administrator's Guide
+                   DEC Custom PBS Scheduler V.2.3
+			      July 2000
+
+
+
+This document covers the following information:
+
+	o Introduction
+	o Summary of new features in Ver. 2.0
+	o Overview of custom scheduler 
+	o Installing the custom scheduler
+	o Rebuilding PBS to use custom scheduler
+	o Required modifications to existing PBS configuration
+	o Configuring the custom scheduler
+	o Using the new features provided
+	o General Comments
+
+
+Introduction
+------------
+
+This package contains the sources for a PBS scheduler (pbs_sched), which
+was designed to be run on a cluster of DEC Alpha workstations with
+different CPU and memory configurations. The function of the scheduler
+is to choose a job or jobs that fit the resources. When a suitable job
+is found, the scheduler will ask PBS to run that job on one of the
+execution hosts. This scheduler assumes a 1:1 correlation between the
+executions queues and execution hosts. The name of the queue is taken
+as the name of the host that jobs in that queue should be run in.
+
+
+Summary of new features in Ver.2.0
+--------------------------------------
+
+Version of 2.0 of the custom Dec/Compaq PBS scheduler includes the
+following new features. These are discussed in more detail below, and
+in the scheduler's configuration file.
+
+	o Fair-Access Controls - Administrator can set per-queue, per-user
+	  limits on the maximum number of running jobs and a maximum amount
+	  of "remaining" runtime (in minutes) for all jobs owned by a given
+	  user.
+
+	o Additional Queue/Job Attributes - The following new attributes
+	  have been added to PBS, and are supported by this scheduler:
+
+		featureA (string)
+		featureB (string)
+		featureC (string)
+		featureD (integer)
+		featureE (integer)
+		featureF (integer)
+		featureG (boolean)
+		featureH (boolean)
+		featureI (boolean)
+
+	o Priority Based Scheduling - Jobs are assigned a priority value
+	  based on the priority of the jobs originating queue (the queue
+	  to which the job is submitted). Jobs are then sorted by their
+	  priority values, ties are broken by the requested cputime.
+		
+
+Overview of custom scheduler internals
+--------------------------------------
+
+This section provides a high level overview of the workings of the
+custom PBS scheduler. The configuration file itself (discussed below)
+contains additional information.
+
+* Overview Of Operation
+
+Please be sure to read the section titled 'Configuring The Scheduler'
+below before attempting to start the scheduler.
+
+The basic mode of operation for the scheduler is this: 
+
+ - Jobs are submitted to the PBS server by users.  The server enqueues
+	them in the default queue (c.f. qmgr(1)). 
+
+ - The scheduler wakes up and performs the following actions:
+
+   + Get a list of jobs from the server.  Typically, the scheduler and
+	server are run on the front-end, and only a resmom is needed on
+	the execution hosts.  See the section on Scheduler Deployment.
+
+   + Get available resource information from each execution host.  The
+	resmom running on each host is queried for a set of resources
+	for the host.  Scheduling decisions are made based upon these
+	resources, queue limits, time of day (optional), etc, etc.
+
+   + Get information about the queues from the server.  The queues over
+	which the scheduler has control are listed in the scheduler's
+	configuration files.  The queues may be listed as batch or submit,
+	queues.  A job list is then created from the jobs on the submit
+	queue(s).
+
+   + If a job fits on a queue and does not violate any policy requirements
+	(like primetime walltime limits), ask PBS to move the job to that
+	queue, and start it running. If this succeeds, account for the
+	expected resource drain and continue. 
+
+   + If the job is not runnable at this time, the job comment will be
+	modified to reflect the reason the job was not runnable (see the
+	section on Lazy Comments).  Note that this reason may change from
+	iteration to iteration, and that there may be several reasons that
+	the job is not runnable now.
+
+   + Clean up all allocated resources, and go back to sleep until the next
+	round of scheduling is requested.
+
+The scheduler attempts to pack the jobs into the queues as closely as
+possible into the queues.  Queues are packed in a "first come, first
+served" order.  
+
+The PBS server will wake up the scheduler when jobs arrive or terminate,
+so jobs should be scheduled immediately if the resources are (or become) 
+available for them.  There is also a periodic run every few minutes.
+
+
+* The Configuration File
+
+The scheduler's configuration file is a flat ASCII file.  Comments are
+allowed anywhere, and begin with a '#' character.  Any non-comment lines
+are considered to be statements, and must conform to the syntax :
+
+	<option> <argument>
+
+The descriptions of the options below describe the type of argument that
+is expected for each of the options.  Arguments must be one of :
+
+	<boolean>	A boolean value.  The strings "true", "yes", "on" and 
+			"1" are all true, anything else evaluates to false.
+	<hostname>	A hostname registered in the DNS system.
+	<integer>	An integral (typically non-negative) decimal value.
+	<pathname>	A valid pathname (i.e. "/usr/local/pbs/pbs_acctdir").
+	<queue_spec>	The name of a PBS queue.  Either 'queue@exechost' or
+			just 'queue'.  If the hostname is not specified, it
+			defaults to the name of the local host machine.
+	<real>		A real valued number (i.e. the number 0.80).
+	<string>	An uninterpreted string passed to other programs.
+	<time_spec>	A string of the form HH:MM:SS (i.e. 00:30:00 for
+			thirty minutes, 4:00:00 for four hours).
+	<variance>	Negative and positive deviation from a value.  The
+			syntax is '-mm%,+nn%' (i.e. '-10%,+15%' for minus
+			10 percent and plus 15% from some value).
+
+Syntactical errors in the configuration file are caught by the parser, and
+the offending line number and/or configuration option/argument is noted in
+the scheduler logs.  The scheduler will not start while there are syntax
+errors in its configuration files.
+
+Before starting up, the scheduler attempts to find common errors in the
+configuration files.  If it discovers a problem, it will note it in the
+logs (possibly suggesting a fix) and exit.
+
+The following is a complete list of the recognized options :
+
+    BATCH_QUEUES			<queue_spec>[,<queue_spec>...]
+    ENFORCE_PRIME_TIME			<boolean>
+    HIGH_SYSTIME			<integer>
+    PRIME_TIME_END			<time_spec>
+    PRIME_TIME_START			<time_spec>
+    PRIME_TIME_WALLT_LIMIT		<time_spec>
+    SCHED_HOST				<hostname>
+    SCHED_RESTART_ACTION		<string>
+    SUBMIT_QUEUE			<queue_spec>
+    TARGET_LOAD_PCT			<integer>
+    TARGET_LOAD_VARIANCE		<variance>
+    SORTED_JOB_DUMPFILE			<string>
+    FAIR_ACCESS 			<access_spec>
+
+
+Key options are described in greater detail below, the rest are discussed
+in the configuration file.
+
+* Queue and Associated Execution Host Definations
+
+The queues on the following lists are ordered from highest scheduling 
+priority to lowest.  These are comma separated lists, if more space is 
+required, the list can be split into multiple lines.  Each line must be
+prefaced by the appropriate configuration option directive.
+
+All queues are associated with a particular execution host.  They may be
+specified either as 'queuename' or 'queuename@exechost'.  If only the name
+is given, the canonical name of the local host will be automatically
+appended to the queue name.
+
+The "normal" scheduling algorithm picks jobs off the SUBMIT_QUEUE and
+attempts to run them on the BATCH_QUEUES.  Jobs are enqueued onto the
+SUBMIT_QUEUE via the 'qsub' command (set the default queue name in PBS
+with the 'set server default_queue' qmgr command), and remain there
+until they are rejected, run, or deleted.  The host attached to the
+SUBMIT_QUEUE is ignored - it is assumed to be on the server.
+
+Note that this implies that the SUBMIT_QUEUE's resources_max values must
+be the union of all the BATCH_QUEUES' resources.
+
+SUBMIT_QUEUE			funnel
+
+BATCH_QUEUES is a list of execution queues onto which the scheduler should
+move and run the jobs it chooses from the SUBMIT_QUEUES.  The algorithm used
+in the scheduler relies on these queues being arranged from "smallest" to
+"largest", as jobs are tested against the list of queues in the order listed,
+and run on the queue which first provides enough resources for the job.
+ 
+BATCH_QUEUES			piglet@piglet,evelyn@evelyn
+
+The following options are used to optimize system load average and scheduler 
+effectiveness. It is a good idea to monitor system load as the user community 
+grows, shrinks, or changes its focus from porting and debugging to 
+production. These defaults were selected for a 64 processor system with 16gb 
+of memory. 
+
+Target Load Average refers to a target percentage of the maximum system 
+load average (1 point for each processor on the machine).  It may vary
+as much as the +/- percentages listed in TARGET_LOAD_VARIANCE.  Jobs may
+or may not be scheduled if the load is too high or too low, even if the
+resources indicate that doing so would otherwise cause a problem.
+The values below attempt to maintain a system load within 75% to 100% of
+the theoretical maximum (load average of 48.0 to 64.0 for a 64-cpu machine).
+TARGET_LOAD_PCT			90%		
+TARGET_LOAD_VARIANCE		-15%,+10%
+
+The next section of options are used to enforce site-specific policies. It
+is a good idea to reevaluate these policies as the user community grows,
+shrinks, or changes its focus from porting and debugging to production.
+
+Check for Prime Time Enforcement.  Sites with a mixed user base can use 
+this option to enforce separate scheduling policies at different times
+during the day. If ENFORCE_PRIME_TIME is set to "False", the non-prime-time
+scheduling policy (as described in BATCH_QUEUES) will be used for the entire
+24 hour period.
+
+ENFORCE_PRIME_TIME		False
+
+Prime-time is defined as a time period each working day (Mon-Fri)
+from PRIME_TIME_START through PRIME_TIME_END.  Times are in 24
+hour format (i.e. 9:00AM is 9:00:00, 5:00PM is 17:00:00) with hours, 
+minutes, and seconds.  Sites can use the prime-time scheduling policy for 
+the entire 24 hour period by setting PRIME_TIME_START and PRIME_TIME_END 
+back-to-back.  The portion of a job that fits within primetime must be
+no longer than PRIME_TIME_WALLT_LIMIT (represented in HH:MM:SS).
+
+#PRIME_TIME_START		9:00:00
+#PRIME_TIME_END			17:00:00
+#PRIME_TIME_WALLT_LIMIT		1:00:00
+
+
+The next option allows the site to choose an action to take upon scheduler
+startup.  The default is to do no special processing (NONE). In some
+instances, a job can end up queued in one of the batch queues, since it
+was running before but was stopped by PBS. If the argument is RESUBMIT,
+these jobs will be moved back to the queue the job was originally submitted
+to, and scheduled as if they had just arrived. If the argument is RERUN,
+the scheduler will have PBS run any jobs found enqueued on the execution
+queues. This may cause the machine to get somewhat confused, as no limits
+checking is done (the assumption being that they were checked when they
+were enqueued).
+
+SCHED_RESTART_ACTION		RESUBMIT
+
+If the following directive points to a valid file, the scheduler will
+dump a listing of all the jobs, in the order it would like to run them,
+to this file. This is disabled (commented) by default.
+
+#SORTED_JOB_DUMPFILE            /PBS/JAMES/sched_priv/sorted_jobs
+
+The Fair Access Directives allow the specification, on a per-queue basis,
+of a per-user limit on the maximum number of simultaniously running jobs
+and a 'time-credit' of the maximum number of minutes left to run a given
+user can have outstanding at any given time. The username of "default"
+is interpreted as the default values for that queue. The format of the
+<access_spec> is:
+
+FAIR_ACCESS QUEUE:queuename:username:max_jobs:max_time_credit_minutes
+
+#FAIR_ACCESS QUEUE:firstQ:myuserA:10:400
+#FAIR_ACCESS QUEUE:firstQ:default:15:1000
+#FAIR_ACCESS QUEUE:thirdQ:myuserA:11:200
+
+
+* Lazy Commenting
+
+Because changing the job comment for each of a large group of jobs can be
+very expensive, there is a notion of lazy comments. The function that sets
+the comment on a job takes a flag that indicates whether or not the comment
+is optional.  Most of the "can't run because ..." comments are considered
+to be optional.
+
+When presented with an optional comment, the job will only be altered if
+the job was enqueued after the last run of the scheduler, if it does not
+already have a comment, or the job's 'mtime' (modification time) attribute
+indicates that the job has not been touched in MIN_COMMENT_AGE seconds.
+
+This should provide each job with a comment at least once per scheduler
+lifetime.  It also provides an upper bound (MIN_COMMENT_AGE seconds + the
+scheduling iteration) on the time between comment updates.
+This compromise seemed reasonable because the comments themselves are some-
+what arbitrary, so keeping them up-to-date is not a high priority.
+
+
+Installing The Custom Scheduler
+-------------------------------
+
+The custom scheduler is packaged an optional scheduler for the OpenPBS v.2.3
+source code tree.
+
+
+Rebuilding PBS to use custom scheduler
+--------------------------------------
+
+This custom scheduler requires modifications to the PBS batch job
+structure (which is compiled into all PBS daemons): the addition of
+the "speed" and "tmpdir" job attributes, which allow the user to specify
+the speed (in Mhz) of the execution host and the amount of space needed
+on /tmp, respectivly. Ver.2.x of the scheduler supports nine attributes
+that are "reserved for future use" (see the New Features section). 
+
+Due to these modifications it is necessary to rebuild all of PBS. 
+It is suggested that a clean build be performed, as follows (note
+that $PBSSRC refers to the top of the PBS source tree-- where the
+file configure is; and that $PBSOBJ refers to the top of the object
+tree where PBS is built):
+
+    cd $PBSSRC/src/include
+    cp $PBSSRC/src/scheduler.cc/samples/dec_cluster/site_resc_attr_def.ht .
+    cd $PBSOBJ
+    make clean
+    $PBSSRC/configure [your options] --set-sched-code=dec_cluster
+    make
+    make install
+
+
+Required modifications to existing PBS configuration
+----------------------------------------------------
+
+There are several changes that will need to be made to the PBS configuration.
+
+This version of the custom scheduler can take advantage of the server nodes
+file, which contains one line per node. (For a detailed explaination of
+the format of the "nodes" file, see the PBS Admin Guide.)
+
+1. Edit $PBSHOME/server_priv/nodes, and add one line for each execution
+   host, as the following example shows:
+
+   piglet
+   evelyn
+   mrjnode1
+   mrjnode2
+   mrjnode3
+   mrjnode4
+
+2. Add the following entry to each MOM's config ($PBSHOME/mom_priv/config)
+   file to enable the querying of /tmp space:
+
+tmpdir !/bin/df -k /tmp |/bin/grep /tmp |/bin/awk '{printf("%f\n",$5 * 1024)}'
+
+3. Create an execution queue, that will become a holding queue from which
+   the scheduler will pull jobs. This queue will need certain minimum
+   attributes set, as indicated below:
+
+   first start the server:
+   #pbs_server
+
+   then change the queue attributes:
+   #qmgr
+   set queue funnel queue_type = Execution
+   set queue funnel resources_default.mem = 512mb
+   set queue funnel resources_default.ncpus = 1
+   set queue funnel resources_default.walltime = 00:05:00
+   set queue funnel enabled = True
+   set queue funnel started = True
+
+4. Set the default and maximum attributes for each execution queue. 
+   It is suggested you dump the qmgr output to a file, and then edit
+   the file (ie  'qmgr -c "p s" > /tmp/somefile'). The example below
+   shows the recommmeded attributes (and changes via qmgr):
+
+   #qmgr
+   set queue evelyn queue_type = Execution
+   set queue evelyn from_route_only = True
+   set queue evelyn resources_max.mem = 2gb
+   set queue evelyn resources_max.ncpus = 8
+   set queue evelyn resources_max.speed = 200
+   set queue evelyn resources_max.walltime = 08:00:00
+   set queue evelyn resources_default.mem = 512mb
+   set queue evelyn resources_default.ncpus = 1
+   set queue evelyn resources_default.walltime = 00:05:00
+   set queue evelyn enabled = True
+   set queue evelyn started = True
+   ...
+
+
+Configuring the custom scheduler
+--------------------------------
+
+The scheduler configuration file (as discussed above) will need to
+be modified for you site. Edit $PBSHOME/sched_priv/sched_config 
+changing in particular the BATCH_QUEUES line. This should contain
+the list of all the queues you have defined, and the associated
+execution host, eg:
+
+Host "piglet.mrj.com" has an assocated queue named "piglet"
+and "evelyn.mrj.com" is fed by queue "evelyn":
+
+BATCH_QUEUES	piglet@piglet.mrj.com,evelyn@evelyn.mrj.com
+
+However, the full hostname is not required, so for brevity, one 
+could enter:
+
+BATCH_QUEUES	piglet@piglet,evelyn@evelyn
+
+The FAIR_ACCESS directive will also need to be updated, as decribed
+in the configuration file.
+
+Review the other configuration parameter, and change any as needed.
+They are currently set to recommended defaults.
+
+
+Using the new features
+----------------------
+
+This scheduler supports several modifications to PBS to allow users to
+specify "non-standard" requirements.  These are used as follows:
+
+To request a host of at least 100 Mhz:
+	qsub -l speed=100 scriptname
+
+
+To request a host with at least 350 MB free space on /tmp:
+	qsub -l tmpdir=350mb scriptname
+
+
+To request a host with both:
+	qsub -l speed=100,tmpdir=350mb script
+or
+	qsub -l speed=100 -l tmpdir=350mb script
+
+
+To request a host with (for example) a "blue" featureA (a generic string
+attribute):
+
+	qsub -l featureA="blue" script
+
+The scheduler will ensure that the job is not placed on a host *slower*
+than requested. For tmpdir, the scheduler will query the mom daemon to
+check the *available* free space on /tmp. If sufficient space is there,
+the job will be run. For the various "featureX" attributes, the scheduler
+will match user requests for these attribute against queues, attempting
+to find one that matches. If a matching queue is not currently available,
+the sceduler will not run the job.
+
+The following attributes will be useful to your users:
+
+	speed    : MHz speed of execution host
+	tmpdir   : amount of /tmp space needed
+	ncpus    : number of CPUs needed
+	mem      : amount of memory needed
+	walltime : amount of wallclock time needed
+	featureA : (string)
+	featureB : (string)
+	featureC : (string)
+	featureD : (integer)
+	featureE : (integer)
+	featureF : (integer)
+	featureG : (boolean)
+	featureH : (boolean)
+	featureI : (boolean)
+
+
+General Notes
+-------------
+
+This section has some general comments about this scheduler, and things
+to be aware of.
+
+In order for the matching of "speed" to work correctly, the queues need
+a corresponding maximum resource limit set. E.g.:
+
+    Qmgr: set queue QUEUENAME resources_max.speed = xxx
+
+
+Since this version of the scheduler support the PBS nodes file, you
+can use the "pbsnodes" commands to view node status, take nodes offline,
+etc. 
+
+	pbsnodes -l      # lists all down/offline/unavailable nodes
+
+	pbsnodes -a 	 # lists all info for all nodes
+
+	pbsnodes -o node # mark the named node OFFLINE, running jobs will
+			 # will continue to run on that node, but no new
+			 # jobs will be started on it.
+
+	pbsnodes -c node # clear or remove the OFFLINE status on node, 
+			 # making it available for running jobs again.
+
+
+The "featureX" attribute also need maximum limits set on the queues in
+order for the scheduler to match on them. E.g.:
+
+    Qmgr: set queue QUEUENAME resources_max.featureA = green
+    Qmgr: set queue QUEUENAME resources_max.featureD = 1000
+    Qmgr: set queue QUEUENAME resources_max.featureG = false
+
+
+The names of the "featureX" attributes can be changed, if desired. To
+do so, edit $PBSSRC/src/include/site_resc_attr_def.ht replacing the
+featureX name with the new desired name. Then edit the scheduler so
+that it knows about the new names:
+   $PBSSRC/src/scheduler.cc/samples/dec_cluster/toolkit.h
+
+

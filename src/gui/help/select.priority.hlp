@@ -1,0 +1,20 @@
+The Select Priority dialog box is for specifying the priority relationship
+to consult, when limiting the list of jobs appearing on the Jobs listbox in the 
+main xpbs window.
+
+Click on either the value radio button, or on the wildcard button
+"ANY". If the former is selected, specify the the logical operator, and the
+priority value by manipulating a couple of spinboxes. The valid logical 
+operators are:
+
+	 "=", "!=", ">", ">=", "<", "<=".
+Valid priority values are between -1024 and 1023.
+
+===============
+COMMAND BUTTONS
+===============
+This region of command buttons represents the final step when manipulating this
+dialog box. 
+
+Click on "ok" when done setting widget values. This is also the default action 
+when the <Return> key is pressed.

@@ -1,0 +1,34 @@
+#  README.pbstop
+#  contributed by Garrick Staples - University of Southern California
+#  updated Nov 14, 2004
+
+pbstop is a curses-based TORQUE/OpenPBS monitoring utility.  The curses module can be 
+found at cpan.org.
+
+Usage is described below:
+
+Usage:  pbstop [-c columns] [-s seconds] [options] [@host ...]
+   Version: 4.05
+   Copyright 2002-2004 University of Southern California
+   garrick@usc.edu http://www-rcf.usc.edu/~garrick/pbstop
+   grep FIXME `which pbstop` if you want to help out
+
+   -s  seconds between refreshes
+   -c  number of columns to display in the grid
+   -m  max number of cpus in a node before it gets its own grid
+   -u  show only a user's jobs
+   -C  toggle colorization
+   -S  toggle state summary display
+   -G  toggle grid display
+   -Q  toggle queue display
+   -t  toggle showing queued jobs in queue display
+   -[0-9]...  cpu numbers for grid display
+   -J  toggle jobs in grid display
+   -V  print version and exit
+
+A demo screen shot is available at http://www-rcf.usc.edu/~garrick/pbstop.png
+
+see http://www-rcf.usc.edu/~garrick/perl-PBS for the latest release
+
+Please send comments to garrick@usc.edu.
+

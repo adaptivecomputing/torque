@@ -1,0 +1,289 @@
+//
+//         OpenPBS (Portable Batch System) v2.3 Software License
+// 
+// Copyright (c) 1999-2000 Veridian Information Solutions, Inc.
+// All rights reserved.
+// 
+// ---------------------------------------------------------------------------
+// For a license to use or redistribute the OpenPBS software under conditions
+// other than those described below, or to purchase support for this software,
+// please contact Veridian Systems, PBS Products Department ("Licensor") at:
+// 
+//    www.OpenPBS.org  +1 650 967-4675                  sales@OpenPBS.org
+//                        877 902-4PBS (US toll-free)
+// ---------------------------------------------------------------------------
+// 
+// This license covers use of the OpenPBS v2.3 software (the "Software") at
+// your site or location, and, for certain users, redistribution of the
+// Software to other sites and locations.  Use and redistribution of
+// OpenPBS v2.3 in source and binary forms, with or without modification,
+// are permitted provided that all of the following conditions are met.
+// After December 31, 2001, only conditions 3-6 must be met:
+// 
+// 1. Commercial and/or non-commercial use of the Software is permitted
+//    provided a current software registration is on file at www.OpenPBS.org.
+//    If use of this software contributes to a publication, product, or
+//    service, proper attribution must be given; see www.OpenPBS.org/credit.html
+// 
+// 2. Redistribution in any form is only permitted for non-commercial,
+//    non-profit purposes.  There can be no charge for the Software or any
+//    software incorporating the Software.  Further, there can be no
+//    expectation of revenue generated as a consequence of redistributing
+//    the Software.
+// 
+// 3. Any Redistribution of source code must retain the above copyright notice
+//    and the acknowledgment contained in paragraph 6, this list of conditions
+//    and the disclaimer contained in paragraph 7.
+// 
+// 4. Any Redistribution in binary form must reproduce the above copyright
+//    notice and the acknowledgment contained in paragraph 6, this list of
+//    conditions and the disclaimer contained in paragraph 7 in the
+//    documentation and/or other materials provided with the distribution.
+// 
+// 5. Redistributions in any form must be accompanied by information on how to
+//    obtain complete source code for the OpenPBS software and any
+//    modifications and/or additions to the OpenPBS software.  The source code
+//    must either be included in the distribution or be available for no more
+//    than the cost of distribution plus a nominal fee, and all modifications
+//    and additions to the Software must be freely redistributable by any party
+//    (including Licensor) without restriction.
+// 
+// 6. All advertising materials mentioning features or use of the Software must
+//    display the following acknowledgment:
+// 
+//     "This product includes software developed by NASA Ames Research Center,
+//     Lawrence Livermore National Laboratory, and Veridian Information
+//     Solutions, Inc.
+//     Visit www.OpenPBS.org for OpenPBS software support,
+//     products, and information."
+// 
+// 7. DISCLAIMER OF WARRANTY
+// 
+// THIS SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND. ANY EXPRESS
+// OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+// OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT
+// ARE EXPRESSLY DISCLAIMED.
+// 
+// IN NO EVENT SHALL VERIDIAN CORPORATION, ITS AFFILIATED COMPANIES, OR THE
+// U.S. GOVERNMENT OR ANY OF ITS AGENCIES BE LIABLE FOR ANY DIRECT OR INDIRECT,
+// INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
+// OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+// EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// 
+// This license will be governed by the laws of the Commonwealth of Virginia,
+// without reference to its choice of law rules.
+// 
+//
+//
+// nodes.basl: A simple scheduler that runs jobs in at least 3 queues: one
+//	       queue called "long" has jobs that run at least 2 hours with
+//	       nice priority of -19, another queue "midlong" has jobs that run
+//	       between 20 minutes and 2 nours with nice priority of -15, and
+//             all other queues are short jobs that run less than 20 minute
+//	       jobs with a nice priority of -10. Jobs in the "long" and
+//             "midlong" queues are to be run exclusively (1 job per node),
+//             and on the other queues the jobs are to be run at most 2 jobs
+//             per job sharing node.
+//	       The queues have been setup so that the priorities are given
+//	       such that "long" and "midlong" queues are consulted first.
+//	       A sample setup has the following components:
+//		 a) nodes list (all must be of cluster type)
+//			Under <pbs_home>/server_priv/nodes file contains,
+//			host1
+//		        host2
+//			host3
+//
+//		    NOTE: All must be set with np=1
+//		 b) queues list (set via qmgr)
+//
+//		    	Queue: long
+//   		    	queue_type = Execution
+//    		    	Priority = 1
+//    		    	resources_min.walltime = 02:00:01
+//    			resources_default.nice = -19
+//    			resources_default.nodect = 1
+//    			resources_default.nodes = 1
+//			resources_default.neednodes = 1
+//    			resources_default.walltime = 02:00:00
+//    			enabled = True
+//    			started = True
+//
+//			Queue: midlong
+//    			queue_type = Execution
+//    			Priority = 2
+//    			resources_max.walltime = 02:00:00
+//    			resources_min.walltime = 00:20:00
+//    			resources_default.nice = -15
+//    			resources_default.nodect = 1
+//    			resources_default.nodes = 1
+//			resources_default.neednodes = 1
+//    			resources_default.walltime = 00:20:00
+//    			enabled = True
+//    			started = True
+//
+//			Queue: short
+//    			queue_type = Execution
+//    			Priority = 3
+//    			resources_max.walltime = 00:19:59
+//    			resources_default.nice = -10
+//    			resources_default.nodect = 1
+//    			resources_default.nodes = 1#shared
+//			resources_default.neednodes = 1#shared
+//			resources_default.walltime = 00:05:00
+//    			enabled = True
+//    			started = True
+//
+//		c) server list (set via qmgr)
+//			Server <hostname>
+//			server_state = Active
+//			scheduling = True
+//			scheduler_iteration = 600
+//			default_queue = short
+//
+
+// **************************************************************************
+//
+// User-defined Functions
+//
+// **************************************************************************
+
+// run_exclusive: runs job exclusively in a node.
+// Returns: SUCCESS or FAIL
+// Note:    JobAction() call will let the server to internally allocate an
+//	    exclusive node.
+//
+Int run_exclusive(Job j)
+{
+	Int	ret;
+
+	String	output;
+
+	ret=JobAction(j, SYNCRUN, NULLSTR); 
+	if( ret EQ SUCCESS ) {
+		output = "exclusive-ran job " + JobIdGet(j);
+		print(output);
+	}
+	return(ret);
+} 
+
+// num_running_sharedjobs: returns the number of jobs, among the supplied
+//       "jobs" pool, that are running in node "nname".
+// Note: The "neednodes" resource of a job is a special attribute that gets
+//	 modified by the scheduler to contain the actual name of the node
+//       where a job is running.
+//	 For example, if job is one of the jobs running and sharing time on
+//	 host aspasia, then neednodes="aspasia#shared".
+//
+Int num_running_sharedjobs(String nname, Set Job jobs)
+{
+	Job	 j;
+	String	 needstr;
+	Int	 nrun;
+
+	nrun = 0;
+	needstr = nname + "#shared";
+	foreach( j in jobs ) {
+		if( JobStateGet(j) EQ RUNNING AND
+		    	JobStringResReqGet(j, "neednodes") EQ needstr ) {
+			nrun++;
+		}
+	}
+	return(nrun);
+}
+
+
+// run_exclusive: runs a job j taken from a set of "jobs", on one of the
+// 	    job-sharing "nodes" in a way that at most "limit" number of
+//          jobs are running on the node.
+// Returns: SUCCESS or FAIL
+Int run_shared(Job j, Set Job jobs, Set CNode nodes, Int limit)
+{
+	CNode	n;
+	String	nname;
+	Int	ret;
+	Int	nrun;
+
+	String output;
+	String nodespec;
+
+	ret = FAIL;
+	foreach(n in nodes ) {
+		nname = CNodeNameGet(n);
+
+		if( (CNodeStateGet(n) EQ CNODE_FREE OR
+		     CNodeStateGet(n) EQ CNODE_INUSE_SHARED) AND
+		     num_running_sharedjobs(nname, jobs) LT limit ) {
+			nodespec = "neednodes=" + nname + "#shared";
+			// since we found the node to run the job, modify
+			// the job's neednodes attribute so that issuing
+			// JobAction() will assign the job to the node 
+			// specified in "neednodes".
+			JobAction(j, MODIFYRES, nodespec);
+			ret=JobAction(j, SYNCRUN, NULLSTR);
+
+			if( ret EQ SUCCESS ) {
+				output = "shared-ran job " + JobIdGet(j) +
+					 " on node " + nname;
+				print(output);
+				break;
+			}
+		}
+	}
+
+	return(ret);
+}
+
+// **************************************************************************
+//
+// Global variable declarations
+//
+// **************************************************************************
+
+Int nrun;
+
+// **************************************************************************
+//
+// main scheduling code
+//
+// **************************************************************************
+sched_main()
+{
+	Set Server serv_hosts;
+	Server	s;
+
+	Set Que queues;
+	Que	q;
+
+	Set Job	jobs;
+	Job	j;
+
+	Set CNode nodes;
+	
+	// get all servers known to the system
+	serv_hosts = AllServersGet();
+
+        foreach (s in serv_hosts) {
+ 
+           queues = ServerQueuesGet(s);
+	   nodes = ServerNodesGet(s);
+	   
+           Sort(queues, QuePriorityGet, ASC);
+	   foreach( q in queues ) {
+		jobs = QueJobsGet(q);
+		foreach(j in jobs ) {
+		    if( JobStateGet(j) EQ QUEUED ) {
+			if( QueNameGet(q) EQ "long" OR
+			    QueNameGet(q) EQ "midlong" ) {
+				run_exclusive(j);
+			} else {
+				run_shared(j, jobs, nodes, 2);
+			}
+		    }
+		} // foreach jobs
+	   } // foreach queues
+	} //foreach servers
+
+}

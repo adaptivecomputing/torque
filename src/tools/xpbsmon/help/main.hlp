@@ -1,0 +1,425 @@
+xpbsmon is the node monitoring GUI for PBS. It is used for displaying
+graphically information about nodes, execution hosts in a PBS environment. In
+a PBS environment, you have a list of sites managed  by PBS, and each site runs
+server, and each server runs jobs on one or more execution hosts (nodes).
+
+On each node, the list of jobs that are running on it will
+be displayed as well as any system parameters that are specified by the
+administrator to monitor. Some attributes like state, properties, and the list
+of running jobs on each node are obtained through the PBS server, while system
+parameters are obtained in terms of queries that are communicated to the MOM
+daemon running on a node. Therefore, for the latter to work, the GUI must be
+run as root and the host where xpbsmon is running has been given explicit
+permission by the MOM daemon to post queries to it (done via the $clienthost
+keyword on its config file).
+
+The topmost window of xpbsmon can be viewed as consisting of 3 parts: menu,
+main, info regions.
+
+
+============
+Menu Region
+============
+
+The menu region displays a row of command buttons
+
+	(Site, Pref, AutoUpdate, Help, About, Close)
+
+that signal some action with the left click of the mouse over a button. 
+
+Site 		- displays the list of sites that have been added using the 
+		  "Pref.." button. Dragging the mouse and releasing it over the
+		  site name will display the nodes view for that site on the
+		  main region.
+
+Pref 		- brings up a dialog box that will allow you to add sites,
+		  servers to each site, as well as a window to other dialog
+		  boxes for specifying list of nodes known to a server, as well
+		  as any system parameters to monitor for each node.
+
+AutoUpdate	- brings up a dialog box for enabling/disabling auto updates of
+		  data. If updating is currently enabled, then this button will
+		  appear in a different color.
+
+Help		- contains this help page.
+
+About		- tells about who the author is and where to send comments,
+		  bugs, and suggestions.
+
+Close		- for exiting xpbsmon plus saving current setup information
+		  in the user's $HOME/.xpbsmonrc file. Information saved
+		  include any of the data specified in the preferences dialog
+		  box.
+
+View Types	- these are represented by the minimize, maximize buttons 
+		  located at the rightmost edge of the menu region. The
+		  minimize button will display the current site in ICON
+		  mode were each node is represented as small boxes that
+		  are colored depending on status but various information 
+		  about node is not shown. The maximize button will show the
+		  current site in FULL mode where each node is shown in
+		  bigger colored boxes and various information about node is
+		  in view.
+
+===========
+Main Region
+===========
+This area (site box) shows nodes information for the site selected through the
+"Site.." button. Thus, only one site at a time can be displayed from this
+area. The site box displays the name of the site at the top,  the
+server/nodes info at the middle, and the color information at the
+bottom.  Each server specified is represented graphically by a box (called a
+server box)  containing the server display label, the list of nodes 
+(in even smaller boxes called node boxes) known to the server, and various
+collective status information like # of nodes used, available,
+reserved, offline, down, or of unknown status. The node box can be
+clicked with the left mouse button to display more information about the node
+(or get a bigger view). Information include what jobs are running on it,
+and values to certain system parameters specified by the administrator to
+monitor.
+
+===========
+Info Region
+===========
+
+This area will show the progress of some actions of xpbsmon like updating
+data for the current view. Look into the info box for errors.
+
+================
+User Preferences
+================
+A global xpbsmon resources file (set by the administrator) is read first and 
+then the user's preference file, $HOME/.xpbsmonrc is loaded. Keep in mind that
+within an Xresources file (Tk only), later entries take precedence. For
+example, suppose in your .xpbsmonrc file, the following entries appear in order:
+
+xpbsmonrc*backgroundColor: blue
+*backgroundColor:       green
+
+The later entry "green" will take precedence even though the first one is more
+precise and longer matching.
+
+Some of the things that can be set in the personal preferences file are fonts,
+colors, and site information. In fact, a complete listing is described in the
+following:
+
+Node Box Colors
+---------------
+
+You can easily change the colors assigned to node boxes by modifying the
+following resources: 
+
+*nodeColorNOINFO:       black
+- color when information for the node it represents could not be obtained. 
+
+*nodeColorFREE:   green
+- color of canvas when node it represents is up.
+
+*nodeColorINUSEshared: #98f5ff
+- color when node it represents has more than  1  job running  on it, or when
+  node has been marked by the server that manages it as "job-sharing".
+
+*nodeColorINUSEexclusive:        #87ceff #a0522d #1e90ff #a9a9a9 #8470ff #a020f0
+- list of colors to assign to a node box when host it represents  is running
+  only 1 job, or when node has been marked by the server that manages it as
+  "time- sharing".  xpbsmon  will  use this list to assign 1 distinct color per
+  job unless all the  colors  have been  exhausted,  in  which case, colors
+  will start getting assigned more than once  in  a  round-robin fashion.
+
+
+*nodeColorDOWN: red
+- color when node it represents is down.
+
+*nodeColorRSVD: yellow
+- color when node it represents is reserved.
+
+*nodeColorOFFL: orange
+- color when node it represents is offline.
+
+
+Node Box Properties
+-------------------
+
+Resource names beginning with "*small" or "*node" apply to the properties of the
+node boxes. A node box is made of an outer frame where the node label sits on
+top, the canvas (smaller box) is on the middle, and possibly some horizontal/
+vertical scrollbars.
+
+*smallForeground:       #150567
+- applies to the color of text inside the canvas.
+
+*smallBackground:       #ffefdb
+- applies to the color of the frame.
+
+*smallBorderWidth:      2
+- distance (in pixels) from other node boxes.
+
+*smallRelief:   raised
+- how node box will visually appear (style).
+
+*smallScrollBorderWidth:        2
+- significant only in FULL mode, this is the distance of the horizontal/vertical
+  scrollbars from the canvas and lower edge of the frame.
+
+*smallScrollBackground: #ffefdb
+- background color of the scrollbars
+
+*smallScrollRelief:     sunken
+- how scrollbars would visually appear (style).
+
+*smallCanvasBackground: #ffefdb
+- color of the canvas (later overridden depending on status of the node it
+  represents) 
+
+*smallCanvasBorderWidth:        1
+- distance of the canvas from the frame and possibly the scrollbars.
+
+*smallCanvasRelief:     flat
+- how the canvas is visually represented (style).
+
+*smallLabelBorderWidth: 0
+- the distance of the node label from the canvas and the topmost edge of the
+  frame. 
+
+*smallLabelBackground:  #ffefdb
+- the background of the area of the node label that is not filled.
+
+*smallLabelRelief:      flat
+- how the label would appear visually (style).
+
+*smallLabelForeground:  #150567
+- the color of node label text.
+
+*smallLabelFont:        -misc-fixed-bold-r-normal--13-100-100-100-c-70-iso8859-1
+- the font to use for the node label text.
+
+*smallLabelFontWidth:   7
+- font width (in pixels) of *smallLabelFont
+
+*smallLabelFontHeight:  13
+- font height (in pixels) of *smallLabelFont
+
+*smallTextFont: -misc-fixed-medium-r-normal--9-90-75-75-c-60-iso8859-1
+- font to use for the text that appear inside a canvas. 
+
+*smallTextFontWidth:    6
+- font width (in pixels) of *smallTextFont.
+
+*smallTextFontHeight:   9
+- font height (in pixels) of *smallTextFont.
+
+*nodeColorTrough:       white
+- color of trough part (the  /100 portion) of a canvas scale item.
+
+*nodeColorSlider:       red
+- color of slider part (value portion) of a canvas scale item.
+
+*nodeColorExtendedTrough:       blue
+- color of extended trough (over 100 portion when value exceeds max) of a
+  canvas scale item.
+
+*nodeScaleFactor:       1
+- tells how much bigger you want the scale item on the canvas to appear.
+  (1 means to keep size as is)
+ 
+*nodeBoxFullMaxWidth:  300
+*nodeBoxFullMaxHeight: 100
+- maximum width and height (in pixels) of a node box in FULL mode.
+
+*nodeBoxIconMaxWidth:  56
+*nodeBoxIconMaxHeight: 56
+- maximum width and height (in pixels) of a node box in ICON mode.
+
+*nodeBoxMirrorMaxWidth:        700
+*nodeBoxMirrorMaxHeight:       400
+- maximum width and height (in pixels) of a node box displayed on a separate
+  window (after it has been clicked with the mouse to obtain a bigger view)
+
+*nodeBoxMirrorScaleFactor:     3
+- tells how much bigger you want the scale item on the canvas to appear
+  while the node box is displayed on a separate window 
+  (1 means to keep size as is)
+
+Server Box Properties
+---------------------
+Resource names beginning with "*medium" apply to the properties
+of the server boxes. A server box is made of an outer frame where the server
+display label sits on top, a canvas filled with node boxes is on the middle, 
+possibly some horizontal/vertical scrollbars, and a status label at the bottom.
+
+*mediumLabelForeground: #150567
+- color of text applied to the server display label and status label.
+ 
+*mediumLabelBackground: #cdc0b0
+- background color of the unfilled portions of the server display label and
+  status label.
+
+*mediumLabelBorderWidth:        4
+- distance of the server display label and status label from other parts of
+  the server box.
+
+*mediumLabelRelief:     ridge
+- how the server display label and status label appear visually (style). 
+
+*mediumLabelFont:       -misc-fixed-bold-r-normal--13-120-75-75-c-80-iso8859-1
+- font used for the text of the server display label and status label.
+
+*mediumLabelFontWidth:  8
+- font width (in pixels) of *mediumLabelFont.
+
+*mediumLabelFontHeight: 13
+- font height (in pixels) of *mediumLabelFont.
+
+*mediumCanvasBorderWidth:       1
+- the distance of the server box's canvas from the label widgets.
+
+*mediumCanvasBackground:        #cdc0b0
+- the background color of the canvas.
+
+*mediumCanvasRelief:    flat
+- how the canvas appear visually (style).
+
+*mediumScrollBorderWidth:       2
+- distance of the scrollbars from the other parts of the server box.
+
+*mediumScrollBackground:        #eedfcc
+- the background color of the scrollbars 
+
+*mediumScrollRelief:    sunken
+- how the scrollbars appear visually.
+
+*mediumBackground:      #cdc0b0
+- the color of the server box frame.
+
+*mediumBorderWidth:     10
+- the distance of the server box from other boxes.
+
+*mediumRelief:  ridge
+- how the server box appears visually (style).
+
+*serverBoxMaxWidth:       700
+*serverBoxMaxHeight:      600
+- maximum width and height (in pixels) of a server box.
+
+*serverBoxMaxNumNodeBoxesPerRow: 17
+- maximum # of node boxes to appear in a row within a canvas.
+
+Miscellaneous Properties
+------------------------
+Resource names beginning with "*big" apply to the properties of a site box,
+as well as to widgets found outside of the server box and node box. This
+includes the dialog boxes that appear when the menu buttons of the main window
+are manipulated. The site box is the one that appears on the main region
+of xpbsmon.
+
+*bigBackground: #c8b9a6
+- background color of the outer layer of the main window.
+
+*bigForeground: #150567
+- color applied to regular text that appear outside of the node box and
+  server box.
+
+*bigBorderWidth:        2
+- distance of the site box from the menu area and the color information area.
+
+*bigRelief:     raised
+- how the site box is visually represented (style)
+
+*bigActiveColor:        #9db2ff
+- the color applied to the background of a selection, a selected command
+  button, or a selected scroll bar handle.
+
+*bigShadingColor:       #c7af92
+- a  color  shading applied to some of the frames to emphasize focus as well
+  as decoration.
+
+*bigSelectorColor:      #980517
+- the  color applied to the selector box of a radiobutton or checkbutton.
+
+*bigDisabledColor:      #8f8e8d
+- color applied to a disabled widget.
+
+*bigLabelBackground:    #c8b9a6
+- color applied to the unfilled portions of label widgets.
+
+*bigLabelBorderWidth:   1
+- distance from other widgets of a label widget.
+ 
+*bigLabelRelief:        raised
+- how label widgets appear visually (style)
+ 
+*bigLabelFont:  -misc-fixed-bold-r-normal--15-140-75-75-c-90-iso8859-1
+- font to use for labels.
+ 
+*bigLabelFontWidth:     9
+- font width (in pixels) of *bigLabelFont.
+
+*bigLabelFontHeight:    15
+- font height (in pixels) of *bigLabelFont.
+
+*bigLabelForeground:    #150567
+- color applied to text that function as labels.
+
+*bigCanvasBackground:   #c8b9a6
+- the color of the main region.
+
+*bigCanvasRelief:       flat
+- how the main region looks like visually (style)
+
+*bigCanvasBorderWidth:  1
+- distance of the main region from the menu and info regions.
+
+*bigScrollBorderWidth:  2
+- if the main region has a scrollbar, this is its distance from other widgets
+  appearing on the the region.
+  
+*bigScrollBackground:   #c8b9a6
+- background color of the scrollbar appearing outside a server box and node
+  box.
+
+*bigScrollRelief:       sunken
+- how the scrollbar that appears outside a server box and node box looks like
+  visually (style)
+
+*bigTextFont:   -misc-fixed-bold-r-normal--15-140-75-75-c-90-iso8859-1
+- the font to use for the text that appears outside any server box or node box.
+
+*bigTextFontWidth:      9
+- the font width (in pixels) of *bigTextFont
+
+*bigTextFontHeight:     15
+- the font height (in pixels) of *bigTextFont
+
+*siteBoxMaxWidth:        700
+- maximum width (in pixels) of the site box.
+
+*siteBoxMaxHeight:       500
+- maximum height (in pixels) of the site box.
+
+*siteBoxMaxNumServerBoxesPerRow:  10
+- maximum number of server boxes to appear in a row inside the site box.
+
+*autoUpdate:    true
+- if set to true, then information about nodes is periodically gathered. 
+
+*autoUpdateMins:        1
+- the # of minutes between polling for data regarding nodes when *autoUpdate is
+  set.
+
+*siteInView:    Mars
+- the name of the site that should be in view
+
+*rcSiteInfoDelimeterChar:       ;
+- the separator character for each input within a curly-bracketed line of 
+  input of *siteInfo.  
+
+*sitesInfo:	{<site1name>;<site1-display-type>;<server-name>;<server-display-label>;<nodename>;<nodetype>;<node-query-expr>} ...{<site2name>;<site2-display-type>;<server-name>;<server-display-label>;<nodename>;<nodetype>;<node-query-expr>}
+		
+- information about a site where <site1-display-type> can be either {FULL,ICON},
+  nodetype can be {MOM, NOMOM}, and <node-query-expr> has the format:
+  { {<expr>} {expr-label} <output-format>} where <output-format> could be
+  {TEXT, SCALE}. It's probably a lot
+  easier to use the "Pref.." dialog boxes in order to update values for this.
+
+Ex.
+*sitesInfo:     {MARS;ICON;newton;Newton;newton3;NOMOM;} {Jupiter;FULL;db;DB;db.OpenPBS.org;MOM;{{ ( availmem / totmem ) * 100} {Memory Usage:} SCALE} {{ ( loadave / ncpus ) * 100} {Cpu Usage:} SCALE} {ncpus {Number of Cpus:} TEXT} {physmem {Physical Memory:} TEXT} {idletime {Idle Time (s):} TEXT} {loadave {Load Avg:} TEXT}} {Mars;ICON;newton;Newton;newton4;NOMOM;} {Mars;ICON;newton;Newton;newton1;NOMOM;} {Mars;ICON;newton;Newton;newton2;NOMOM;} {Mars;ICON;b0101;DB;aspasia.OpenPBS.org;MOM;{{ ( availmem / totmem ) * 100} {Memory Usage:} SCALE} {{ ( loadave / ncpus ) * 100} {Cpu Usage:} SCALE} {ncpus {Number of Cpus:} TEXT} {physmem {Physical Memory:} TEXT} {idletime {Idle Time (s):} TEXT} {loadave {Load Avg:} TEXT}} {Mars;ICON;newton;Newton;newton7;NOMOM;}

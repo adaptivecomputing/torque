@@ -1,0 +1,198 @@
+#         OpenPBS (Portable Batch System) v2.3 Software License
+# 
+# Copyright (c) 1999-2000 Veridian Information Solutions, Inc.
+# All rights reserved.
+# 
+# ---------------------------------------------------------------------------
+# For a license to use or redistribute the OpenPBS software under conditions
+# other than those described below, or to purchase support for this software,
+# please contact Veridian Systems, PBS Products Department ("Licensor") at:
+# 
+#    www.OpenPBS.org  +1 650 967-4675                  sales@OpenPBS.org
+#                        877 902-4PBS (US toll-free)
+# ---------------------------------------------------------------------------
+# 
+# This license covers use of the OpenPBS v2.3 software (the "Software") at
+# your site or location, and, for certain users, redistribution of the
+# Software to other sites and locations.  Use and redistribution of
+# OpenPBS v2.3 in source and binary forms, with or without modification,
+# are permitted provided that all of the following conditions are met.
+# After December 31, 2001, only conditions 3-6 must be met:
+# 
+# 1. Commercial and/or non-commercial use of the Software is permitted
+#    provided a current software registration is on file at www.OpenPBS.org.
+#    If use of this software contributes to a publication, product, or
+#    service, proper attribution must be given; see www.OpenPBS.org/credit.html
+# 
+# 2. Redistribution in any form is only permitted for non-commercial,
+#    non-profit purposes.  There can be no charge for the Software or any
+#    software incorporating the Software.  Further, there can be no
+#    expectation of revenue generated as a consequence of redistributing
+#    the Software.
+# 
+# 3. Any Redistribution of source code must retain the above copyright notice
+#    and the acknowledgment contained in paragraph 6, this list of conditions
+#    and the disclaimer contained in paragraph 7.
+# 
+# 4. Any Redistribution in binary form must reproduce the above copyright
+#    notice and the acknowledgment contained in paragraph 6, this list of
+#    conditions and the disclaimer contained in paragraph 7 in the
+#    documentation and/or other materials provided with the distribution.
+# 
+# 5. Redistributions in any form must be accompanied by information on how to
+#    obtain complete source code for the OpenPBS software and any
+#    modifications and/or additions to the OpenPBS software.  The source code
+#    must either be included in the distribution or be available for no more
+#    than the cost of distribution plus a nominal fee, and all modifications
+#    and additions to the Software must be freely redistributable by any party
+#    (including Licensor) without restriction.
+# 
+# 6. All advertising materials mentioning features or use of the Software must
+#    display the following acknowledgment:
+# 
+#     "This product includes software developed by NASA Ames Research Center,
+#     Lawrence Livermore National Laboratory, and Veridian Information
+#     Solutions, Inc.
+#     Visit www.OpenPBS.org for OpenPBS software support,
+#     products, and information."
+# 
+# 7. DISCLAIMER OF WARRANTY
+# 
+# THIS SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND. ANY EXPRESS
+# OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+# OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT
+# ARE EXPRESSLY DISCLAIMED.
+# 
+# IN NO EVENT SHALL VERIDIAN CORPORATION, ITS AFFILIATED COMPANIES, OR THE
+# U.S. GOVERNMENT OR ANY OF ITS AGENCIES BE LIABLE FOR ANY DIRECT OR INDIRECT,
+# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
+# OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+# LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+# NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+# EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# 
+# This license will be governed by the laws of the Commonwealth of Virginia,
+# without reference to its choice of law rules.
+################################################################################
+# dateTime: creates a dialog box containing date/time widgets. This returns
+#	input focus back to 'callerDialogBox' when closed.
+# OPTION:
+#	qalter - if dialog box is to be opened in the context of qalter.
+#
+proc dateTime {callerDialogBox {qalter 0}} {
+  global LABELFONT dtimeDialogBox activeWindow def
+
+  if {!$qalter} {
+    global qsubv ARR def_qsub
+    set ARR "qsubv"
+    set def def_qsub
+  } else {
+    global qalterv ARR def_qalter
+    set ARR "qalterv"
+    set def def_qalter
+  }
+  if {[string compare [set ${ARR}(qtimeMon)] [set ${def}(qtimeMon)]] == 0 && \
+      [string compare [set ${ARR}(qtimeDay)] [set ${def}(qtimeDay)]] == 0 && \
+      [string compare [set ${ARR}(qtimeYear)] [set ${def}(qtimeYear)]] == 0 && \
+      [string compare [set ${ARR}(qtimeHH)] [set ${def}(qtimeHH)]] == 0 && \
+      [string compare [set ${ARR}(qtimeMM)] [set ${def}(qtimeMM)]] == 0 && \
+      [string compare [set ${ARR}(qtimeSS)] [set ${def}(qtimeSS)]] == 0 } {
+
+    set_dateTime ${ARR}(qtimeMon) ${ARR}(qtimeDay) ${ARR}(qtimeYear) \
+	         ${ARR}(qtimeHH)  ${ARR}(qtimeMM)  ${ARR}(qtimeSS)
+  }
+
+  busy_cursor
+## Bring up the standard Dialog box ##
+  set dtimeDialogBox ".dateTime"
+  set dbox [popupDialogBox $dtimeDialogBox "Date/Time Dialog" 1 "" $callerDialogBox]
+  set activeWindow($dtimeDialogBox) 1
+  set dbox_top    [lindex $dbox 0]
+  set dbox_bottom [lindex $dbox 1]
+
+## BOTTOM PART ##
+  set cmdButtons \
+  [buildCmdButtons $dbox_bottom {{{ok ok} {help help}}} x 1m 10 3]
+
+  set cmdFrame  [lindex $cmdButtons 0]
+  set cmdOk     [lindex $cmdButtons 1]
+  set cmdHelp   [lindex $cmdButtons 2]
+
+  $cmdOk configure -command {
+
+    set parts "[set ${ARR}(mon_widget)]  [set ${ARR}(day_widget)] \
+	       [set ${ARR}(year_widget)] [set ${ARR}(hour_widget)]  \
+	       [set ${ARR}(min_widget)]  [set ${ARR}(sec_widget)]"
+
+    foreach p $parts {
+
+      check_spinbox_value $p
+      if { [string compare [$p get] ""] == 0 } {
+         popupInfoBox $dtimeDialogBox "Bad date/time value found. Please fix."
+         return
+      }
+    } 
+    pre_build_datetime_opt $ARR
+    destroy $dtimeDialogBox
+  }
+  $cmdHelp configure -command {xpbs_help datetime $dtimeDialogBox}
+
+## TOP PART ##
+  frame $dbox_top.header -height 10m -width 10m
+  frame $dbox_top.footer -height 10m -width 10m
+
+  frame $dbox_top.dtimeFrame
+
+  set dateTimeFrame [create_DateTime_box $dbox_top.dtimeFrame "" \
+        "" "" "" "" "" $ARR]
+  set frame_name [lindex $dateTimeFrame 0]
+  set ${ARR}(mon_widget)  [lindex $dateTimeFrame 1]
+  set ${ARR}(day_widget)  [lindex $dateTimeFrame 2]
+  set ${ARR}(year_widget) [lindex $dateTimeFrame 3]
+  set ${ARR}(hour_widget) [lindex $dateTimeFrame 4]
+  set ${ARR}(min_widget)  [lindex $dateTimeFrame 5]
+  set ${ARR}(sec_widget)  [lindex $dateTimeFrame 6]
+
+  register_default_action [lindex $dateTimeFrame 1] $cmdOk
+  register_default_action [lindex $dateTimeFrame 2] $cmdOk
+  register_default_action [lindex $dateTimeFrame 3] $cmdOk
+  register_default_action [lindex $dateTimeFrame 4] $cmdOk
+  register_default_action [lindex $dateTimeFrame 5] $cmdOk
+  register_default_action [lindex $dateTimeFrame 6] $cmdOk
+
+## ARRANGEMENT ON SCREEN
+  pack $dbox_top.header $dbox_top.dtimeFrame $dbox_top.footer -anchor nw \
+       -side top -padx 10m -anchor c
+
+
+  register_default_action $dtimeDialogBox $cmdOk
+
+  tkwait visibility $dtimeDialogBox
+  remove_busy_cursor
+  catch {tkwait window $dtimeDialogBox}
+  set activeWindow($dtimeDialogBox) 0
+  focus $callerDialogBox
+  catch {grab $callerDialogBox}
+}
+
+# pre_build_datetime_opt: builds an argument date/time string suitable for 
+# 	processing by PBS commands, given an 'array' containing the elements:
+#	qtimeMon, qtimeDay, qtimeYear, qtimeHH, qtimeMM, qtimeSS.
+proc pre_build_datetime_opt {array} {
+
+    upvar $array ARR
+
+    if [regexp "qsub" $array] {
+      init_qsub_datetime_argstr
+    } else {     
+      init_qalter_datetime_argstr
+    }
+
+    set ARR(exec_time) "[cvtdatetime_arg $ARR(qtimeMon) \
+				$ARR(qtimeDay) \
+				$ARR(qtimeYear) \
+				$ARR(qtimeHH) \
+				$ARR(qtimeMM) \
+				$ARR(qtimeSS)]"
+}

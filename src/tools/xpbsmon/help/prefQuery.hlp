@@ -1,0 +1,122 @@
+This dialog box is for specifying the list of resource queries to be
+sent to the node's MOM daemon. This query can be anything from a simple
+expression involving only MOM query keywords (ex. loadave), or to
+complex expressions made up of numerical constants, arithmetic/logical/bitwise
+operators, and MOM keywords (ex. "(loadave/ncpus)*100)"). The valid operators
+are: -,~,*,/,%,+,^,(,),<,>,|,&,=,!, <<, <=, >>, >=, ==, !=, &&, ||. Some
+possible query keywords are given in the following, listing also the
+architecture of the host (that is running MOM) where the keyword is valid:
+
+Query Keyword                   MOM-host Architecture
+--------------                  -----------------------------------------------
+sessions                        unicos8, sunos4, solaris5, sp2, linux, fujitsu
+				irix6array, irix6,irix5, hpux10, digitalunix
+
+pids                            unicos8, sunos4, solaris5, sp2, linux,
+				irix6array, irix6, irix5, digitalunix
+
+nsessions                       unicos8, sunos4, solaris5, sp2, linux,
+				irix6array, irix6, irix5, hpux10, fujitsu,
+				digitalunix
+
+nusers                          unicos8, sunos4, solaris5, sp2, linux,
+				irix6array, irix6, irix5, hpux10, fujitsu,
+				digitalunix
+
+totmem                          unicos8, sunos4, linux, irix6array, irix6,
+				irix5, fujitsu
+
+availmem                        unicos8, sunos4, linux, irix6array, irix6,
+				irix5, fujitsu
+
+ncpus                           unicos8, solaris5, linux, irix6array, irix6,
+				irix5, hpux10, fujitsu
+
+physmem                         unicos8, sunos4, solaris5, linux, irix6array,
+				irix6, irix5, hpux10, fujitsu, digitalunix
+
+idletime                        unicos8, sunos4, solaris5, linux, irix6array,
+				irix6, irix5, hpux10, fujitsu, digitalunix
+
+loadave                         unicos8, sunos4, solaris5, sp2, linux,
+				irix6array, irix6, irix5, hpux10, fujitsu,
+				digitalunix
+
+swaprate                        unicos8
+
+swapinrate                      unicos8
+
+swapoutrate                     unicos8
+
+swapused                        unicos8
+
+swapavail                       unicos8
+
+swaptotal                       unicos8
+
+cpusysw                         unicos8
+
+cpuunix                         unicos8
+
+cpuuser                         unicos8
+
+cpuidle                         unicos8
+
+cpuguest                        unicos8
+
+cpuspeed                        hpux10
+
+cputype                         hpux10,digitalunix
+
+platform                        hpux10,digitalunix
+
+cpuclock                        digitalunix
+
+A description of each keyword is given below:
+
+sessions        - list of sessions in the system
+pids            - list of pids in a session
+nsessions       - number of sessions in the system
+nusers          - number of users in the system
+totmem          - total memory size
+availmem        - available memory size
+ncpus           - number of cpus
+physmem         - physical memory size
+idletime        - seconds of idle time
+loadave         - current load average
+swaprate        - swap activity in chars / sec
+swapinrate      - swapin activity in chars / sec
+swapoutrate     - swapout activity in chars / sec
+swapused        - chars swapped out
+swapavail       - chars available in swap area
+swaptotal       - total chars in swap area
+cpusysw         - percent cpu system wait
+cpuunix         - percent cpu unicos
+cpuuser         - percent cpu user
+cpuidle         - percent cpu idle
+cpuguest        - percent cpu guest
+
+The result of the query (Query_Expr) will be displayed on the node's canvas
+with an accompanying text label (Display_Info) and the output format
+(Display_Type) can be in one of 2 ways: TEXT, SCALE. TEXT means that the
+result will be displayed as is, while SCALE will show an actual scale
+item/widget calibrated over 100. For the latter, be sure the result value of
+your query is numeric  and that a value of 100 is considered "optimal".
+
+So specify the query expression in the Query_Expr entry box, the accompanying
+text label on the Display_Info entry box, and drag the mouse over the
+Display_Type CHOICE entry box and click the left button to display the
+choices: {TEXT, SCALE} for the output format of the result. Then click "add"
+(or simply hit <return>) and watch as your input gets added to the Queries
+listbox. For example, if you specified:
+
+Query_Expr		Display_Info		Display_Type
+---------		------------		-------------
+loadave			Load Ave:		TEXT
+
+then if the result of the query is "0.22", the  node's canvas will display:
+
+Load Ave:	0.22
+
+After putting in all the necessary parameters, then simply click the "ok" button
+found at the bottom of the dialog box.

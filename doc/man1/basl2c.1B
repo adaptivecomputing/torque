@@ -1,0 +1,2814 @@
+.\"         OpenPBS (Portable Batch System) v2.3 Software License
+.\" 
+.\" Copyright (c) 1999-2000 Veridian Information Solutions, Inc.
+.\" All rights reserved.
+.\" 
+.\" ---------------------------------------------------------------------------
+.\" For a license to use or redistribute the OpenPBS software under conditions
+.\" other than those described below, or to purchase support for this software,
+.\" please contact Veridian Systems, PBS Products Department ("Licensor") at:
+.\" 
+.\"    www.OpenPBS.org  +1 650 967-4675                  sales@OpenPBS.org
+.\"                        877 902-4PBS (US toll-free)
+.\" ---------------------------------------------------------------------------
+.\" 
+.\" This license covers use of the OpenPBS v2.3 software (the "Software") at
+.\" your site or location, and, for certain users, redistribution of the
+.\" Software to other sites and locations.  Use and redistribution of
+.\" OpenPBS v2.3 in source and binary forms, with or without modification,
+.\" are permitted provided that all of the following conditions are met.
+.\" After December 31, 2001, only conditions 3-6 must be met:
+.\" 
+.\" 1. Commercial and/or non-commercial use of the Software is permitted
+.\"    provided a current software registration is on file at www.OpenPBS.org.
+.\"    If use of this software contributes to a publication, product, or service
+.\"    proper attribution must be given; see www.OpenPBS.org/credit.html
+.\" 
+.\" 2. Redistribution in any form is only permitted for non-commercial,
+.\"    non-profit purposes.  There can be no charge for the Software or any
+.\"    software incorporating the Software.  Further, there can be no
+.\"    expectation of revenue generated as a consequence of redistributing
+.\"    the Software.
+.\" 
+.\" 3. Any Redistribution of source code must retain the above copyright notice
+.\"    and the acknowledgment contained in paragraph 6, this list of conditions
+.\"    and the disclaimer contained in paragraph 7.
+.\" 
+.\" 4. Any Redistribution in binary form must reproduce the above copyright
+.\"    notice and the acknowledgment contained in paragraph 6, this list of
+.\"    conditions and the disclaimer contained in paragraph 7 in the
+.\"    documentation and/or other materials provided with the distribution.
+.\" 
+.\" 5. Redistributions in any form must be accompanied by information on how to
+.\"    obtain complete source code for the OpenPBS software and any
+.\"    modifications and/or additions to the OpenPBS software.  The source code
+.\"    must either be included in the distribution or be available for no more
+.\"    than the cost of distribution plus a nominal fee, and all modifications
+.\"    and additions to the Software must be freely redistributable by any party
+.\"    (including Licensor) without restriction.
+.\" 
+.\" 6. All advertising materials mentioning features or use of the Software must
+.\"    display the following acknowledgment:
+.\" 
+.\"     "This product includes software developed by NASA Ames Research Center,
+.\"     Lawrence Livermore National Laboratory, and Veridian Information
+.\"     Solutions, Inc.
+.\"     Visit www.OpenPBS.org for OpenPBS software support,
+.\"     products, and information."
+.\" 
+.\" 7. DISCLAIMER OF WARRANTY
+.\" 
+.\" THIS SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND. ANY EXPRESS
+.\" OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+.\" OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT
+.\" ARE EXPRESSLY DISCLAIMED.
+.\" 
+.\" IN NO EVENT SHALL VERIDIAN CORPORATION, ITS AFFILIATED COMPANIES, OR THE
+.\" U.S. GOVERNMENT OR ANY OF ITS AGENCIES BE LIABLE FOR ANY DIRECT OR INDIRECT,
+.\" INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+.\" LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
+.\" OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+.\" LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+.\" NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+.\" EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+.\" 
+.\" This license will be governed by the laws of the Commonwealth of Virginia,
+.\" without reference to its choice of law rules.
+.de BP
+.ie '\\n(.z'' .bp \\$1
+.el \!.BP \\$1
+..
+.if \n(Pb .ig Iq
+.TH basl2c 1B "" Local PBS
+.so ../ers/ers.macros
+.Iq
+.Sh NAME
+basl2c \- converts a BASL (BAtch Scheduling Language) code into a C scheduler
+code.
+.Sh SYNOPSIS
+basl2c [\^-d\^] [\^-l lexerDebugFile\^] [\^-p parserDebugFile\^]
+[\^-y symtabDebugFile\^] [\^-s semanticDebugFile\^] [\^-g codegenDebugFile\^]
+[\^-c cFile\^] baslFile
+.Sh DESCRIPTION
+.B basl2c
+is the BASL to C compiler that produces an intermediate code that can be
+fed into a regular C compiler, and linked with the PBS libraries to produce the
+scheduler executable.  Basl2c takes as input a
+.Ar "baslFile",
+which is a program
+written in the BAtch Scheduling Language, containing the main scheduling
+code.  Basl2c then converts the BASL constructs in the file into C
+statements, and it also attaches additional code to produce the PBS scheduler
+source code.  By default, the resulting C code is written into the file
+.Ar "pbs_sched.c".
+.sp
+The full pathname to the resulting C file is what needs to be specified in the
+.B SCHD_CODE
+variable in local.mk before compiling the BASL scheduler to produce the
+.Ar "pbs_sched"
+executable.
+.Sh OPTIONS
+.IP "-d" 5
+Prints additional debugging messages to the lexer (see -l option),
+parser (see -p option),
+symbol table (see -y option),
+semantic analyzer (see -s option), and
+code generator (see -g option).
+.IP "-l lexerDebugFile" 5
+.Ar lexerDebugFile
+is the name of a file to write into the debugging messages
+generated while scanning for tokens.
+.IP "-p parserDebugFile" 5 
+.Ar parserDebugFile
+is the name of a file to write into the debugging messages
+generated while putting together tokens in a usable way.
+.IP "-y symtabDebugFile" 5 
+.Ar symtabDebugFile
+is the name of a file to write into the debugging messages
+related to the symbol table.
+.IP "-s semanticDebugFile" 5
+.Ar semanticDebugFile
+is the name of a file to write into the debugging messages
+generated while checking to make sure variables and operators are used in a
+consistent way.
+.IP "-g codegenDebugFile" 5
+.Ar codegenDebugFile
+is the name of a file to write into the debugging messages
+generated while converting BASL statements to C statements.
+.IP "-c cFile" 5
+.Ar cFile
+is the name of a file where the generated C code is written into.
+.Sh MAIN STRUCTURE
+The basic structure of a scheduler code written in BASL is as follows:
+.BP
+.ft 3
+.nf
+        zero or more FUNCTIONS definitions
+        zero or more global VARIABLE DECLARATIONS
+        zero or more assignment statements (to initialize global variables)
+        sched_main()
+        {
+                one or more VARIABLE DECLARATIONS
+
+                zero or more STATEMENTS
+        }
+.fi
+.sp
+.LP
+For example,
+.Ty
+.nf
+        % cat sched.basl
+        Int sum(Int a, Int b)
+        {
+                Int s;
+                s = a + b;
+                return(s);
+        }
+	Int glob;
+        sched_main()
+        {
+                Int c;
+
+                a = 3;
+                b = 4;
+                c = sum(a, b);
+                print(c);
+		glob = 5;
+		print(glob);
+        }
+.fi
+.LP
+.Ty sched_main()
+is the function that gets called at every scheduling iteration.
+.Sh FUNCTIONS
+To define a function that can be called in subsequent functions, the syntax is:
+.sp
+.ft 3
+.nf
+    ReturnType function-name ( DATATYPE1 IDENTIFIER1, 
+                               DATATYPE2 IDENTIFIER2, ... )
+        {
+                one or more VARIABLE DECLARATIONS
+
+                zero or more STATEMENTS
+        }
+.fi
+.sp
+.ft 1
+For example,
+.Ty
+.nf
+    Void printStuff(Dayofweek dow, DateTime t, String str,
+                                         Size sz, CNode cn)
+    {
+        print(dow);
+        print(t);
+        print(str);
+        print(sz);
+        print(cn);
+    }
+.fi
+.sp
+.ft 1
+Valid function
+.B ReturnType
+are: Void, Int, Float, Dayofweek, DateTime,
+String, Size, Server, Que, Job, CNode, Set Server, Set Que, Set Job,
+Set CNode.
+.sp
+Valid data types
+(
+.B "DATATYPE1, DATATYPE2, ..."
+) for the parameter identifiers are: Int, Float,
+Dayofweek, DateTime, String, Size, Server, Que, Job, CNode,
+Set Server, Set Que, Set Job, Set CNode, Range Int, Range Float,
+Range Dayofweek, Range DateTime, Range Size, Fun Int, Fun Float, Fun Void,
+Fun Dayofweek, Fun DateTime, Fun String, Fun Size, Fun Server, Fun Que,
+Fun Job, Fun CNode, Fun Set Server, Fun Set Que, Fun Set Job, Fun Set CNode.
+These data types will be discussed in the next topic.
+.sp
+Functions are invoked by their name and their arguments as in:
+.sp
+.Ty
+.nf
+        printStuff( MON, (5|1|1997@14:32:00), "sched begins",
+                                                 30gb, node );
+.fi
+.sp
+.ft 1
+.Ar basl2c
+will actually add a "basl_" prefix to the function name given by the
+scheduler writer to minimize chance of name collision, which can
+result when the resulting C code is linked with the PBS, BASL
+libraries.  For example, if you look at the
+generated C code for
+.Ar "printStuff",
+you would see,
+.sp
+.nf
+        basl_printStuff( MON, (5|1|1997@14:32:00),
+                                 "sched begins", 30gb, node );
+.fi
+.sp
+As in C, all function calls must have been previously defined. The BASL
+compiler will check to make sure that arguments in the function call match up
+exactly (in terms of types) with the parameters in the function definition.
+.sp
+Two kinds of functions exist in BASL: user-defined functions and predefined
+functions. User-defined functions are those that the scheduler writer provided
+a definition for, while predefined functions are those that can immediately be
+called without a need for defining it. For a list of predefined functions, 
+see section on
+.B "PREDEFINED FUNCTIONS" .
+.Sh VARIABLE DECLARATIONS
+Like in C, all variables in a BASL code must be explicitly declared before use.
+Those variables declared outside of any function are referred to
+as global variables, while variables that are declared within a function body
+are called local variables.  Global variables are usable anywhere within the
+BASL code, while local variables are readable only within the function from
+which they were declared.
+.sp
+The syntax of a variable declaration is:
+.sp
+.B
+.nf
+        DATATYPE IDENTIFIER ;
+.fi
+.sp
+.ft 1
+where
+.B DATATYPE
+can be: Int, Float, Dayofweek, DateTime, String, Size, Server, Que,
+Job, CNode, Set Server, Set Que, Set Job, Set CNode, Range Int, Range Float,
+Range Dayofweek, Range DateTime, Range Size.
+.sp
+.Sh "DATA TYPE"
+.IP \f3Void\f1 8
+used for functions that don't return a value.
+.IP \f3Int\f1 8
+signed, whole numbers given in base 10.
+.br
+.RS
+.IP "Sample constants:"
+5, +1, -3, SUCCESS (=1), FAIL (=0), TRUE (=1), FALSE (=0)
+.RE
+.IP \f3Float\f1 8
+real numbers which are represented as doubles in the translated C code.
+.br
+Sample constants: 4.3, +1.2, -2.6
+.IP \f3Dayofweek\f1 8
+constant values: SUN, MON, TUE, WED, THU, FRI, SAT, internally represented as
+integer valued constants with SUN=0, MON=1, and so on.
+.IP \f3DateTime\f1 8
+specify in one of 3 formats:
+.sp
+.RS
+.IP [1]
+(m|d|y) where 1 <= m <= 12, 1 <= d <= 31, 0 <= y, ex. (4|4|1997);
+.IP [2]
+(hh:mm:ss) where 0 <= hh <= 23, 0 <= mm <= 59, 0 <= ss <= 61, ex. (12:01:00);
+.IP [3]
+(m|d|y@hh:mm:ss), ex. (4|4|1997@12:01:00)
+.br
+During dates/times comparison, "now" time is substituted if the time portion is
+not given (format [1]); the "now" date is substituted if the date portion is
+not given (format [2]).  Also, the full year portion must be given (i.e.  1997
+instead of 97) in dates to avoid ambiguity.
+.RE
+.IP \f3String\f1 8
+A string is enclosed in quotes (") and it can contain anything except another
+quote, a newline, and left and right parentheses.
+.br
+Sample constants: "a sample string", NULLSTR 
+.IP \f3Size\f1 8
+format: <integer><suffix> where suffix is a multiplier of the form: 
+<multiplier><unit>:
+.sp
+.Ty
+.nf
+   multiplier              unit (bytes or words)
+   ===================     =====================
+   k,m,g,t,p,K,M,G,T,P     b,B,w,W
+.fi
+.ft 1
+.sp
+where k=K=1024, m=M=1,048,576, g=G=1,073,741,824, t=T=1,099,511,627,776,
+p=P=1,125,899,906,842,624, b=B=1, and word size w=W is locally defined  (i.e.
+4 bytes in a 32-bit machine).
+.sp
+When operating on 2 size operands that are of different suffixes, the suffix of
+the "lower" of the two will be the resultant suffix. For example,
+.nf
+     10mb + 10gb =  10250mb
+.fi
+.br
+Sample constants: -1b, 2w, 1kb, 2mw, +3gb, 4tw, 6Pb
+.IP "\f3Range Int\f1" 8
+.RS
+.IP "format: (low Int value, high Int value)" 8
+where low Int value <= high Int value.
+Sample constant: (1,3)
+.RE
+.br
+.IP "\f3Range Float\f1" 8
+.RS
+.IP "format: (low Float value, high Float value)" 8
+where low value <= high value.
+Sample constant: (2.3, 4.6)
+.RE
+.br
+.IP "\f3Range Dayofweek\f1" 8
+.RS
+.IP "format: (earlier day, later day)" 8
+where earlier day <=  later day.
+Sample constant: (WED, FRI)
+.RE
+.br
+.IP "\f3Range DateTime\f1" 8
+.RS
+.IP "format: (earlier date/time, later date/time)" 8
+where earlier date/time <= later date/time.
+.br
+NOTE: if range contains only time portions, and earlier time "appears" to be >
+later time as in "((18:0:0), (6:0:0))", then during date/time comparisons,
+the "later" time will be adjusted by one day so that it will look like:
+"( (<now date>@18:0:0), (<tomorrow date>@6:0:0) )"
+.RE
+.br
+.RS
+.IP "Sample constants:"
+((4|4|1997), (4|10|1997)), ((12:01:00), (12:30:00)), ((4|4|1997@12:01:00),
+(4|10|1997@12:30:00))
+.RE
+.IP "\f3Range Size\f1" 8
+.RS
+.IP "format: (low size, high size)" 8
+where low size <= high size.
+Sample constants: (23gb, 50gb)
+.RE
+.br
+.IP \f3Server\f1 8
+Maps directly to the PBS server object. A
+.B Server
+manages one or more
+.B Que
+objects.
+.br
+Sample constant: NOSERVER
+.IP \f3CNode\f1 8
+for computational node consisting of a single OS image, a shared memory, and
+a set of cpus. CNode runs 1 PBS MOM.
+.br
+Sample constant: NOCNODE
+.IP \f3Que\f1 8
+Maps directly to the PBS queue object. A
+.B Que
+object spools one or more
+.B Job
+objects.
+.br
+Sample constant: NOQUE
+.IP \f3Job\f1 8
+Maps directly to the PBS job object. A
+.B Job
+object carries some attributes and resource requirements.
+.br
+Sample constant: NOJOB
+.IP "\f3Set Server\f1" 8
+list of Server objects.
+.br
+Sample constant: EMPTYSETSERVER
+.IP "\f3Set CNode\f1" 8
+list of CNode objects.
+.br
+Sample constant: EMPTYSETCNODE
+.IP "\f3Set Que\f1" 8
+list of Que objects.
+.br
+Sample constant: EMPTYSETQUE
+.IP "\f3Set Job\f1" 8
+list of Job objects.
+.br
+Sample constant: EMPTYSETJOB
+.sp
+.Sh "BASL-DEFINED CONSTANTS"
+These are constants that cannot be used for naming an identifier (see next
+topic). These are always in uppercase.  
+.sp
+.Ty
+.nf
+   DATA TYPE               BASL-DEFINED CONSTANT               
+   ===================     =============================================
+   Dayofweek               SUN, MON, TUE, WED, THU, FRI, SAT
+
+   Int                     SUCCESS, FAIL, FALSE, TRUE, SYNCRUN, ASYNCRUN,
+                           DELETE, RERUN, HOLD, RELEASE, SIGNAL,
+                           MODIFYATTR, MODIFYRES, SERVER_ACTIVE,
+                           SERVER_IDLE, SERVER_SCHED, SERVER_TERM,
+                           SERVER_TERMDELAY, QTYPE_E, QTYPE_R,
+                           SCHED_DISABLED, SCHED_ENABLED, TRANSIT,
+                           QUEUED, HELD, WAITING, RUNNING, EXITING,
+                           CNODE_OFFLINE, CNODE_DOWN, CNODE_FREE,
+                           CNODE_RESERVE, CNODE_INUSE_EXCLUSIVE,
+                           CNODE_INUSE_SHARED, CNODE_TIMESHARED,
+                           CNODE_CLUSTER, CNODE_UNKNOWN, OP_EQ, OP_NEQ,
+                           OP_LE, OP_LT, OP_GE, OP_GT, OP_MAX, OP_MIN,
+                           ASC, DESC
+
+   Server                  NOSERVER
+   Set Server              EMPTYSETSERVER                  		
+
+   CNode                   NOCNODE
+   Set CNode               EMPTYSETCNODE
+
+   Que                     NOQUE
+   Set Que                 EMPTYSETQUE
+
+   Job                     NOJOB
+   Set Job                 EMPTYSETJOB
+
+   String                  NULLSTR
+.fi
+.ft 1
+.sp
+.Sh IDENTIFIER
+Identifiers (used for variable names and function names) are in alphanumeric
+format, with the special underscore (_)  character allowed. Currently, BASL can
+only handle identifiers with length of up to 80 chars. Also, you cannot use the
+BASL-defined constant names for naming an identifier.
+.Sh STATEMENTS
+In BASL(2), you can have a single statement terminated by a semi-colon, or a
+group of statements (called compound statement or block) delimited
+by '{' and '}'. The different kinds of statements that can appear in a BASL
+code are:
+.RS
+.IP "1. expression statement"
+Expression statements are anything of the form:
+.sp
+.ft 3
+.nf
+        expr ;
+.fi
+.sp
+.ft 1
+where
+.B expr
+can be:
+.RS
+.IP a)
+Arithmetic expressions
+.sp
+.ft 3
+.nf
+        lexpr + rexpr   (add)
+        lexpr - rexpr   (subtract)
+        lexpr * rexpr   (multiply)
+        lexpr / rexpr   (divide)
+        lexpr % rexpr   (modulus or remainder)
+.fi
+.sp
+.ft 1
+NOTE: Adding, subtracting, multiplying, dividing, and remaindering will
+only be allowed for proper types and if the left and right expressions are of
+consistent types. The table below illustrates what types are consistent among
+the various operators:
+.sp
+For +:
+.sp
+.Ty
+.nf
+        lexpr          rexpr
+        ============   ============
+        Int or Float   Int or Float
+        Size           Size
+        String         String
+.fi
+.ft 1
+.sp
+For -, *, /:
+.sp
+.Ty
+.nf
+        lexpr          rexpr
+        ============   ============
+        Int or Float   Int or Float
+        Size           Size
+.fi
+.ft 1
+.sp
+For %:
+.sp
+.Ty
+.nf
+        lexpr          rexpr
+        ============   ============
+        Int or Float   Int or Float
+.fi
+.ft 1
+.sp
+Here are some sample arithmetic expressions statements:
+.Ty
+.nf
+        Int     i1;
+        Int     i2;
+        Float   f1;
+        Float   f2;
+        Size    sz1;
+        Size    sz2;
+        String  str1;
+        String  str2;
+
+        i1 + i2;
+        f1 - i2;
+        sz1 * sz2 * 2b;
+        sz1 / 1024b;
+
+        str1 = "basl";
+        str2 = " cool";
+
+        // the following is a string concatenation
+        // operation resulting in the string:
+        //      "basl cool"
+        str1 + str2;
+
+        i1 % 10;
+.fi
+.IP  b)
+Unary expressions
+.sp
+.ft 3
+.nf
+        +expr     // positive - multiplies by 1 an
+                      //        expression that is
+                      //        of Int, Float, or
+                      //        Size type
+
+        -expr     // negative - multiplies by -1 an
+                      //        expression that is
+                      //        of Int, Float, or
+                      //        Size type
+
+        !expr     // not - converts a non-zero expr
+                      //       value into 0, and a
+                      //       zero expr value into 1
+                      //       where expr type must be
+                      //       of type Int or Float
+.fi
+.sp
+.ft 1
+Some sample unary expressions:
+.Ty
+.nf
+        Int i;
+
+        +3;
+        -(i + 4);
+        !i;
+.fi
+.IP c)
+Logical expressions
+.sp
+.ft 3
+.nf
+        lexpr EQ  rexpr
+        lexpr NEQ rexpr
+        lexpr LT  rexpr
+        lexpr LE  rexpr
+        lexpr GT  rexpr
+        lexpr GE  rexpr
+        lexpr AND rexpr
+        lexpr OR  rexpr
+.fi
+.sp
+.ft 1
+.B lexpr
+and
+.B rexpr
+must have types that are mutually consistent as shown in the following
+table:
+.sp
+.Ty
+.nf
+        lterminal-expr   rterminal-expr
+        ==============   ==============
+        Int or Float     Int or Float
+        Dayofweek        Dayofweek
+        DateTime         DateTime
+        String           String
+        Size             Size
+        Server           Server
+        Que              Que
+        Job              Job
+        CNode            CNode
+        Set Server       Set Server
+        Set Que          Set Que
+        Set Job          Set Job
+        Set CNode        Set CNode
+.fi
+.ft 1
+.sp
+For
+.B AND,
+.B OR
+operators, the
+.B lexpr,
+.B rexpr
+consistent types are Int or Float.
+.sp
+Some sample logical expressions:
+.Ty
+.nf
+
+        i1 EQ  i2;
+        i1 NEQ f2;
+        dow1 LE dow2;
+        d1 LT d2;
+        str1 GT str2;
+        sz1 GE sz2;
+.fi
+.IP  d)
+Post-operator expressions
+.br
+These are expressions that are merely shortcut to assignment statements.
+.sp
+.ft 3
+.nf
+        IDENTIFIER++;    // identifier=identifier+1
+        IDENTIFIER--;     // identifier=identifier-1
+.fi
+.sp
+.ft 1
+.B IDENTIFIER
+must be of Int or Float type.
+.sp
+Example:
+.Ty
+.nf
+         Int i;
+         Float f;
+
+         i++;
+         f--;
+.fi
+.IP e)
+Function call
+.sp
+.ft 3
+.nf
+        function-name ( arg1 ,arg2 ... , argN )
+.fi
+.sp
+.ft 1
+where
+.B "arg1, ..., argN"
+can be any constant or variable. You can't have another function call as an
+argument.
+.br
+Example:
+.Ty
+.nf
+        Void pr(Int a) {
+                print(a);
+        }
+
+        pr(5);
+.fi
+.sp
+.ft 1
+There are certain predefined functions that a scheduler writer can automatically
+call in his/her BASL code without a need to define it. These functions are
+referred to as assist functions (or helper functions) and they are discussed
+under
+.B "PREDEFINED FUNCTIONS"
+topic.
+.IP f)
+Constants
+.br
+Some valid constant expressions are given in the following:
+.nf
+        5;
+        +1.2;
+        SUN;
+        MON;
+        TUE;
+        WED;
+        THU;
+        FRI;
+        SAT;
+        (4|4|1997);
+        (12:01:00);
+        (4|4|1997@12:01:00);
+        "wonderful";
+        -1b;
+        SYNCRUN;
+        ASYNCRUN;
+        DELETE;
+        RERUN;
+        HOLD;
+        RELEASE;
+        SIGNAL;
+        MODIFYATTR;
+        MODIFYRES;
+        (1, 3);
+        (2.3, 4.6);
+        (WED, FRI);
+        ((4|4|1997), (4|10|1997));
+        ((12:01:00), (12:30:00));
+        ((4|4|1997@12:01:00), (4|10|1997@12:30:00));
+        (23gb, 50gb);
+        NOSERVER;
+        NOCNODE;
+        NOQUE;
+        NOJOB;
+        EMPTYSETSERVER;
+        EMPTYSETCNODE;
+        EMPTYSETQUE;
+        EMPTYSETJOB;
+        NULLSTR;
+        SUCCESS;
+        FAIL;
+        SERVER_ACTIVE;
+        SERVER_IDLE;
+        SERVER_SCHED;
+        SERVER_TERM;
+        SERVER_TERMDELAY;
+        QTYPE_E;
+        QTYPE_R;
+        SCHED_DISABLED;
+        SCHED_ENABLED;
+        FALSE;
+        TRUE;
+        TRANSIT;
+        QUEUED;
+        HELD;
+        WAITING;
+        RUNNING;
+        EXITING;
+        CNODE_OFFLINE;
+        CNODE_DOWN;
+        CNODE_FREE;
+        CNODE_RESERVE;
+        CNODE_INUSE_EXCLUSIVE;
+        CNODE_INUSE_SHARED;
+        CNODE_TIMESHARED;
+        CNODE_CLUSTER;
+        CNODE_UNKNOWN;
+        OP_EQ;
+        OP_NEQ;
+        OP_LE;
+        OP_LT;
+        OP_GE;
+        OP_GT;
+        OP_MAX;
+        OP_MIN;
+.fi
+.IP g)
+Identifier
+.sp
+Example:
+.nf
+        Int i;
+
+        i;
+.fi
+.RE
+.IP "2. Assignment statement"
+.sp
+.B
+.nf
+        IDENTIFIER = expr ;
+.fi
+.sp
+.ft 1
+.B IDENTIFIER
+and
+.B expr
+must have types that are mutually consistent as illustrated in the following
+table:
+.sp
+.Ty
+.nf
+        identifier        expr
+        ===============   ===============
+        Int               Int, Float
+        Float             Int, Float
+        Dayofweek         Dayofweek
+        DateTime          DateTime
+        String            String
+        Size              Size
+        Que               Que
+        Job               Job
+        CNode             CNode
+        Server            Server
+        Dayofweek         Dayofweek
+        DateTime          DateTime
+        Set Server        Set Server
+        Set Que           Set Que
+        Set Job           Set Job
+        Set CNode         Set CNode
+        Range Int         Range Int
+        Range Float       Range Float
+        Range Dayofweek   Range Dayofweek
+        Range DateTime    Range DateTime
+        Range Size        Range Size
+.fi
+.IP "3. if...else statement"
+The format of an if statement is similar to that in C with the delimiting
+"{" and "}" always present:
+.sp
+.ft 3
+.nf
+        if( expr ) {
+                zero or more (true) STATEMENTS
+        }
+
+        if( expr ) {
+                zero or more (true) STATEMENTS
+        } else {
+                zero or more (false) STATEMENTS
+        }
+.fi
+.sp
+.ft 1
+The
+.B expr 's
+type must be either Int or Float, and after evaluation if its
+value is non-zero, then the true statements are executed. On the second form,
+if the
+.B expr
+evaluates to zero, then the false statements are executed.
+.sp
+Some sample
+.B if
+statements are given below:
+.sp
+.Ty
+.nf
+        if (2 * x )
+        {
+                y = y + 3;
+                print(y);
+        }
+
+        if (2 * x ) {
+                y = y + 3;
+        } else {
+                if( 3 * x ) {
+                        y = 4;
+                } else {
+                        y = 5;
+                }
+        }
+.fi
+.IP "4. for loop statement"
+The format of a for statement is as follows:
+.sp
+.ft 3
+.nf
+        for( start; test; action ) {
+                zero or more STATEMENTS
+        }
+.fi
+.sp
+.ft 1
+Just like in C,
+.B for
+first executes
+.B "start",
+then evaluates the
+.B test
+condition to see if it returns a non-zero value. If it does, the 
+.B for
+statements are executed. After the
+.B for
+statements are executed, then
+.B action
+is evaluated, and then it checks the
+.B test
+condition again in the same manner as before.
+.B start
+and
+.B action
+can be a simple assignment expression or a post-operator expression.
+.B test
+is a logical/relational expression.
+Some sample for statements are given in the following:
+.sp
+.Ty
+.nf
+        for (i = 0; i LT 3 ; i = i + 1)
+        {
+                print(i);
+        }
+
+
+        for (i = 0; i LT 2 * x; i++)
+        {
+                if (x GT 3)
+               {
+                        y = 99;
+                } else
+                {
+                        x = 73;
+                }
+        }
+.fi
+.IP "5. foreach loop statement"
+This statement is primarily used for successively retrieving each element of
+a Set data type: Set Server, Set CNode, Set Job, Set Que.
+The syntax is:
+.sp
+.ft 3
+.nf
+
+        foreach ( IDENTIFIER1 in IDENTIFIER2 ) {
+                zero or more STATEMENTS
+        }
+.fi
+.sp
+.ft 1
+where the following pairing of types for the identifiers are allowed:
+.sp
+.Ty
+.nf
+        IDENTIFIER1   IDENTIFIER2
+        ===========   ===========
+        Server        Set Server
+        Que           Set Que
+        Job           Set Job
+        CNode         Set CNode
+.fi
+.ft 1
+.sp
+Example:
+.Ty
+.nf
+        Server  s;
+        Que     q;
+        Job     j;
+        CNode   c;
+
+        Set Server ss;
+        Set Que    sq;
+        Set Job    sj;
+        Set CNode  sc;
+
+
+        foreach(s in ss){
+                print(s);
+        }
+        foreach(q in sq){
+                print(q);
+        }
+        foreach(j in sj){
+                print(j);
+        }
+        foreach(c in sc){
+                print(c);
+        }
+.fi
+.IP "6. while loop statement"
+The syntax of a while loop is:
+.sp
+.ft 3
+.nf
+        while ( expr ) {
+                zero or more STATEMENTS
+        }
+.fi
+.sp
+.ft 1
+where
+.B expr
+must be of Int or Float type. If
+.B expr
+is non-zero, then the zero or more
+.Ty STATEMENTS
+are executed and
+.B expr
+is re-evaluated.
+.sp
+Example:
+.Ty
+.nf
+        Int i;
+        i = 3;
+        while(i) {
+                if( i EQ 0 ) {
+                        print("break on i = 1");
+                        break;
+                }
+                i--;
+        }
+.fi
+.IP "7. switch statement"
+The switch statement is a mult-way decision that tests whether an
+identifier's value matches one of a number of values, and branches
+to a group of statements accordingly.
+.br
+The syntax for a switch statement is:
+.sp
+.ft 3
+.nf
+        switch( IDENTIFIER )  {
+                case constant-expr :
+                        {
+                                zero or more STATEMENTS
+                        }
+                case constant-expr :
+                        {
+                                zero or more STATEMENTS
+                        }
+                  ...
+                case in constant-rangeOrSet-expr :
+                        {
+                                zero or more STATEMENTS
+                        }
+                case in IDENTIFIER-rangeOrSettype :
+                        {
+                                zero or more STATEMENTS
+                        }
+                default :
+                        {
+                                zero or more STATEMENTS
+                        }
+        }
+.fi
+.sp
+.ft 1
+where
+.B constant-expr
+is an
+.B expr
+of type Int, Float, Dayofweek, DateTime, Size, String, Server, Que, Job,
+or CNode.
+.B constant-rangeOrSet-expr
+and
+.B IDENTIFIER-rangeOrSettype
+can be of type Set Server, Set CNode, Set Que, Set Job, Range Int, Range Float,
+Range Dayofweek, Range DateTime, or Range Size.
+.sp
+.B IDENTIFIER
+cannot be of type Void.
+.B "IDENTIFIER"'s
+type must be consistent with
+.B "constant-expr"'s,
+.B "constant-rangeOrSet-expr"'s,
+and
+.B "IDENTIFIER-rangeOrSettype"'s
+type as illustrated in the following table:
+.BP
+.Ty
+.nf
+   IDENTIFIER  constant-range-expr, IDENTIFIER-rangetype
+   =========== =========================================
+   Server      Set Server
+   Que         Set Que
+   Job         Set Job
+   CNode       Set CNode
+   Int         Range Int
+   Float       Range Float
+   Dayofweek   Range Dayofweek
+   DateTime    Range DateTime
+   Size        Range Size
+.fi
+.ft 1
+.sp
+If a case expression matches the
+.B "IDENTIFIER"'s
+value, then the corresponding block of statements are executed.
+Unlike in C, execution does NOT fall through to the next case statement. The
+reason for this is that
+.Ar basl2c
+will translate this
+.B switch
+statement into if-elseif-else construct. The case
+labeled default is executed if none of the other cases are satisfied.  The
+.B default
+is optional; if it isn't there, and if none of the cases match, no
+action takes place.
+.sp
+Example:
+.Ty
+.nf
+        Dayofweek dow;
+
+        switch(dow)
+        {
+                case MON:
+                {
+                        print("case MON");
+                }
+                case TUE:
+                {
+                        print("case TUE");
+                }
+                case WED:
+                {
+                        print("case WED");
+                }
+                case THU:
+                {
+                        print("case THU");
+                }
+                case FRI:
+                {
+                        print("case FRI");
+                }
+                case SAT:
+                {
+                        print("case SAT");
+                }
+                case SUN:
+                {
+                        print("case SUN");
+                }
+                default:
+                {
+                        print("case defaulted");
+                }
+        }
+
+        Int a;
+        Range Int ri;
+        ri = (10, 12);
+        switch(a)
+        {
+                case in (1,5):
+                {
+                        print("case 1,5");
+                }
+                case in (6,9):
+                {
+                        print("case 6,9");
+                }
+                case in ri:
+                {
+                        print("case ri");
+                }
+        }
+.fi
+.IP "8. print statement"
+Print statement is capable of printing to stdout the value of any
+.B identifier
+or
+.B constant
+of type Int, Float, Dayofweek, DateTime, String, Size, Que, Job,
+CNode, Server, Range Int, Range Float, Range Dayofweek, Range DateTime,
+Range Size.
+.br
+The syntax is as follows:
+.sp
+.ft 3
+.br
+.nf
+        print ( IDENTIFIER );
+        print ( constant );
+.fi
+.sp
+.ft 1
+Example:
+.Ty
+.nf
+        DateTime dt;
+        CNode cn;
+
+        dt = (4|4|1997@12:13:36);
+        cn = AllNodesLocalHostGet();
+
+        print(dt);
+        print(cn);
+.fi
+.sp
+.ft 1
+For Set types, use
+.B foreach
+to go through each element and print as in:
+.sp
+.Ty
+.nf
+        Server s;
+        Set Server ss;
+
+        ss = AllServersGet();
+
+        foreach(s in ss) {
+                print(s);
+        }
+.fi
+.sp
+.ft 1
+.IP "9. continue statement"
+.sp
+.B
+.nf
+        continue ;
+.fi
+.sp
+.ft 1
+The
+.B continue
+statement must have been invoked within a
+.B for,
+.B foreach,
+and
+.B while
+loop. It causes the next iteration of the enclosing loop to begin.
+
+
+.IP "10. break statement"
+.sp
+.B
+.nf
+        break ;
+.fi
+.sp
+.ft 1
+The
+.B break
+statement must have been invoked within a
+.B for,
+.B foreach,
+and
+.B while
+loop. It provides an early exit from the enclosing loop.
+
+.IP "11. return statement"
+.sp
+.ft 3
+.nf
+        return(IDENTIFIER) ;
+        return(constant) ;
+        return() ;
+.fi
+.sp
+.ft 1
+The return statement provides the value (if any) to be returned by a function.
+The type returned by
+.B IDENTIFIER 
+and
+.B constant
+must match the calling function's return type.
+.B constant
+types allowed are anything except Set and Range types.
+The last format,
+.B "return()"
+is usually called within a function that doesn't return any value ( like
+.B sched_main()
+).
+.IP "12. exit statement"
+.sp
+.B
+.nf
+        exit(constant);
+.fi
+.sp
+.ft 1
+where
+.B constant
+is of type Int. Calling this will terminate the scheduler.
+.IP "13. Comment statement"
+These are statements prefixed by "//" and they are ignored by the BASL compiler.
+.sp
+.Ty
+.nf
+       // this line is ignored 	
+       Int i;  // string following the slashes is ignored
+.fi
+.sp
+.ft 1
+.RE
+.Sh OPERATOR PRECEDENCE AND ASSOCIATIVITY
+The following table shows the various operator precedence levels and
+associativity defined in the BASL language.  The operators are listed in the
+order of decreasing precedence. The higher the precedence of an operator, the
+earlier it gets executed. The order in which the operators on the same level
+are executed depends on the associativity:
+left means the operators are seen from left to right, while right means they
+are seen from right to left. 
+.sp
+.Ty
+.nf
+    Operator                                     Associativity
+    =======================================      =============
+    ! ++ -- + (unary plus) - (unary minus)       right
+    * / %                                        left
+    + -                                          left
+    LT LE GT GE                                  left
+    EQ NEQ                                       left
+    AND                                          left
+    OR                                           left
+    =                                            right
+.fi
+.ft 1
+.Sh PREDEFINED FUNCTIONS
+In BASL(2), a
+.B Server
+data type maps directly to a batch server object.  Similarly,
+.B CNode
+is to mom/resmom,
+.B Job
+is to batch job, and
+.B Que
+is to batch queue. However, not all attributes to the PBS objects can be
+accessed from BASL.  Only a subset of attributes, those that seemed to make
+sense in the context of a scheduler, are made available, and values to these
+attributes can be accessed by calling the following predefined functions, 
+known also as assist/helper functions.
+.RS
+.IP "(1) Server-related functions"
+.RS
+.IP "\f3Set Server AllServersGet(void)\f1"
+Returns the list of servers specified in the configuration file for which
+the scheduler writer wants the system to periodically check for status,
+queues and jobs info.  See
+.B pbs__sched__basl(8B)
+for a discussion on the format of the configuration file.
+.br
+CAUTION: This function must be called from inside
+.B sched_main()
+so that at every scheduling iteration, the most up to date
+.B "Set Server"
+structure is returned.
+.IP "\f3Server AllServersLocalHostGet(void)\f1" 3
+Returns the Server object that represents the local host.
+unset value: NOSERVER.  This is a simple function to call for non-cluster
+environments where only one server host exists.
+.br
+CAUTION: This function must be called from inside
+.B sched_main()
+(or from within function called by sched_main) so that at every scheduling
+iteration, the most up to date
+.B "Server"
+structure is returned.
+.IP "\f3String ServerInetAddrGet(Server s)\f1"
+Returns name for Server s. unset value: NULLSTR
+.IP "\f3String ServerDefQueGet(Server s)\f1"
+Returns the default_queue attribute of Server s. unset value: NULLSTR
+.IP "\f3Int ServerStateGet(Server s)\f1"
+Returns server_state attribute of Server s.
+.br
+.RS
+.IP "Return value:"
+SERVER_ACTIVE, SERVER_IDLE, SERVER_SCHED, SERVER_TERM,
+SERVER_TERMDELAY, -1 (unset value)
+.RE
+.IP "\f3Int ServerMaxRunJobsGet(Server s)\f1"
+Returns max_running attribute of Server s. unset value:  0
+.IP "\f3Int ServerMaxRunJobsPerUserGet(Server s)\f1"
+Returns max_user_run attribute of Server s. unset value:  0
+.IP "\f3Int ServerMaxRunJobsPerGroupGet(Server s)\f1"
+Returns max_group_run attribute of Server s. unset value:  0
+.IP "\f3Set Que ServerQueuesGet(Server s)\f1"
+Returns list of queues managed by Server s.
+.IP "\f3Set Job ServerJobsGet(Server s)\f1"
+Returns list of jobs managed by Server s. For obtaining a subset of this
+list, see \f3QueJobsGet()\f1.
+.IP "\f3Int ServerIntResAvailGet(Server s, String name)\f1"
+Returns the value to resource specified in
+.B name
+that is available to jobs run by this server (Server
+.At resources_available.name
+attribute). Call this function for resources
+with values that are of Int type. Sample resource names
+are: cput, pcput, walltime, mppt, pmppt, nice, procs, mppe, ncpus,
+pncpus, nodect, srfs_assist, mta,..., mth. For a description of these
+resource names, see pbs_resources_irix5(7B), pbs_resources_sp2(7B),
+pbs_resources_sunos4(7B), pbs_resources_unicos8(7B), pbs_server_attributes(7B),
+pbs_resources_irix6(7B), pbs_resources_linux(7B).
+.sp
+Example:
+.Ty
+.nf
+   Int cpuAvail;
+   // return the # of cpus currently available in
+   // the server
+   cpuAvail = ServerIntResAvailGet(server, "ncpus");
+.fi
+.IP "\f3Size ServerSizeResAvailGet(Server s, String name)\f1"
+Returns the value to resource specified in
+.B name
+that is available to jobs run by this server (Server
+.At resources_available.name
+attribute). Call this function for resources
+with values that are of Size type. Sample resource names
+are: file, mem, pmem, workingset, pf, ppf, srfs_tmp, srfs_wrk, srfs_big,
+srfs_fast, sds, psds. For a description of these
+resource names, see pbs_resources_irix5(7B), pbs_resources_sp2(7B),
+pbs_resources_sunos4(7B), pbs_resources_unicos8(7B), pbs_server_attributes(7B),
+pbs_resources_irix6(7B), pbs_resources_linux(7B).
+.sp
+Example:
+.Ty
+.nf
+   Size memAvail;  
+   // return the amount of available memory in
+   // the server
+   memAvail = ServerSizeResAvailGet(server, "mem");
+.fi
+.IP "\f3String ServerStringResAvailGet(Server s, String name)\f1"
+Returns the value to resource specified in
+.B name
+that is available to jobs run by this server (Server
+.At resources_available.name
+attribute). Call this function for resources
+with values that are of String type. Sample resource names
+are: nodes, arch, neednodes. For a description of these resource names, see
+pbs_resources_irix5(7B), pbs_resources_sp2(7B),
+pbs_resources_sunos4(7B), pbs_resources_unicos8(7B), pbs_server_attributes(7B),
+pbs_resources_irix6(7B), pbs_resources_linux(7B).
+.sp
+Example:
+.Ty
+.nf
+   String type;  
+   // return the architecture (or os type) of
+   // the server
+   type = ServerStringResAvailGet(server, "arch");
+.fi
+.IP "\f3Int ServerIntResAssignGet(Server s, String name)\f1"
+Returns the value to resource specified in
+.B name
+that is allocated to running jobs (Server
+.At resources_assigned.name
+attribute). Call this function for resources
+with values that are of Int type. Sample resource names
+are: cput, pcput, walltime, mppt, pmppt, nice, procs, mppe, ncpus,
+pncpus, nodect, srfs_assist, mta,..., mth. For a description of these
+resource names, see pbs_resources_irix5(7B), pbs_resources_sp2(7B),
+pbs_resources_sunos4(7B), pbs_resources_unicos8(7B), pbs_server_attributes(7B),
+pbs_resources_irix6(7B), pbs_resources_linux(7B).
+.sp
+Example:
+.Ty
+.nf
+   Int cpuAssn;
+   // return the # of cpus currently assigned in
+   // the server
+   cpuAssn = ServerIntResAssignGet(server, "ncpus");
+.fi
+.IP "\f3Size ServerSizeResAssignGet(Server s, String name)\f1"
+Returns the value to resource specified in
+.B name
+that is allocated to running jobs (Server
+.At resources_assigned.name
+attribute). Call this function for resources
+with values that are of Size type. Sample resource names
+are: file, mem, pmem, workingset, pf, ppf, srfs_tmp, srfs_wrk, srfs_big,
+srfs_fast, sds, psds. For a description of these
+resource names, see pbs_resources_irix5(7B), pbs_resources_sp2(7B),
+pbs_resources_sunos4(7B), pbs_resources_unicos8(7B), pbs_server_attributes(7B),
+pbs_resources_irix6(7B), pbs_resources_linux(7B).
+.sp
+Example:
+.Ty
+.nf
+   Size sdsAssn;
+   // return the amount of sds space currently assigned
+   // in the server
+   sdsAssn = ServerSizeResAssignGet(server, "sds");
+.fi
+.IP "\f3String ServerStringResAssignGet(Server s, String name)\f1"
+Returns the value to resource specified in
+.B name
+that is allocated to running jobs (Server
+.At resources_assigned.name
+attribute). Call this function for resources
+with values that are of String type. Sample resource names
+are: nodes, arch, neednodes. For a description of these resource names, see
+pbs_resources_irix5(7B), pbs_resources_sp2(7B),
+pbs_resources_sunos4(7B), pbs_resources_unicos8(7B), pbs_server_attributes(7B),
+pbs_resources_irix6(7B), pbs_resources_linux(7B).
+.IP "\f3Set CNode ServerNodesGet(Server s)\f1"
+Returns the set of nodes managed by server s. unset value: EMPTYSETCNODE.
+.br
+NOTE: You can usually call the following functions for the nodes returned
+by this call: CNodeStateGet(), CNodePropertiesGet(), and CNodeTypeGet().
+.IP "\f3Int ServerNodesQuery(Server s, String spec)\f1"
+Issues a request to the specified server to query the availability of resources
+specified in
+.B spec.
+At the present time, the only resource specification allowed is one that
+involves "nodes" and it can be of the format "nodes", "nodes=", or
+"nodes=<type>". The query results can be accessed by calling the following
+functions: ServerNodesNumAvailGet(), ServerNodesNumAllocGet(),
+ServerNodesNumRsvdGet(), ServerNodesNumDownGet().
+.br
+NOTE: This is a wrapper to the pbs_rescquery(3B) server function.
+.br
+.RS
+.IP "Return value:"
+SUCCESS, FAIL
+.RE
+.IP "\f3Int ServerNodesNumAvailGet(Server s)\f1"
+Returns the number of nodes available for those managed by the
+specified server, or as reflected by the most recent query specified
+by ServerNodesQuery(). If the return value is zero, then this means that
+some number of nodes currently needed to satisfy the specification of
+ServerNodesQuery() are currently unavailable. The request maybe
+satisfied at some later time.  If the result is negative, no combination
+of known nodes can satisfy the specification.
+.IP "\f3Int ServerNodesNumAllocGet(Server s)\f1"
+Returns the number of nodes allocated for those managed by the
+specified server, or as reflected by the most recent query specified
+by ServerNodesQuery().
+.IP "\f3Int ServerNodesNumRsvdGet(Server s)\f1"
+Returns the number of nodes reserved for those managed by the
+specified server, or as reflected by the most recent query specified
+by ServerNodesQuery().
+.IP "\f3Int ServerNodesNumDownGet(Server s)\f1"
+Returns the number of nodes down for those managed by the
+specified server, or as reflected by the most recent query specified
+by ServerNodesQuery().
+.IP "\f3Int ServerNodesReserve(Server s,String spec,Int resId)\f1"
+Issues a request to the specified server to reserve the resources
+specified in
+.B spec.
+A value of 0 for
+.B resId
+means that this is for doing a new reservation. Otherwise, the number will
+represent an existing (partial) reservation. Resources  currently  reserved for
+this
+.B resId
+will be released and the full reservation will be attempted again.
+At the present time the  only  resources  which  may  be
+specified  are  "nodes".   It  should  be  specified  as
+.B nodes=specification
+where specification is what  a  user
+specifies in the -l option argument list for nodes, see qsub (1B).
+.br
+NOTE: This is a wrapper to the pbs_rescreserve(3B) server function.
+.br
+.RS
+.IP "Return value:"
+a reference number to a successful or partially-successful reservation, or FAIL
+.RE
+.IP "\f3Int ServerNodesRelease(Server s, Int resId)\f1"
+This releases or frees resources reserved with the reference number specified
+in
+.B resId.
+.br
+NOTE: This is a wrapper to the pbs_rescrelease(3B) server function.
+.br
+.RS
+.IP "Return value:"
+SUCCESS, or FAIL
+.RE
+.RE
+.IP "(2) Que-related functions:"
+.RS
+.IP "\f3String QueNameGet( Que que )\f1"
+Returns name of Que que. unset value: NULLSTR
+.IP "\f3Int QueTypeGet( Que que )\f1"
+Returns queue_type attribute of Que que.
+.br
+Return value: QTYPE_E (Execution), QTYPE_R (Routing), -1 (unset value)
+.IP "\f3Int QueNumJobsGet( Que que )\f1"
+Returns number of jobs residing in Que que. unset value:  0
+.IP "\f3Int QueMaxRunJobsGet( Que que )\f1"
+Returns max_running attribute of Que que. unset value:  0
+.IP "\f3Int QueMaxRunJobsPerUserGet( Que que )\f1"
+Returns max_user_run attribute of Que que. unset value:  0
+.IP "\f3Int QueMaxRunJobsPerGroupGet( Que que )\f1"
+Returns max_group_run attribute of Que que. unset value:  0
+.IP "\f3Int QuePriorityGet( Que que )\f1"
+Returns Priority attribute of Que que. unset value: 0
+.IP "\f3Int QueStateGet( Que que )\f1"
+Returns started attribute of Que que - the job execution selection state of the
+que: SCHED_DISABLED, SCHED_ENABLED. unset value: SCHED_DISABLED
+.IP "\f3Set Job QueJobsGet( Que que )\f1"
+Returns the list of jobs currently residing in que.
+.IP "\f3Int QueIntResAvailGet(Que q, String name)\f1"
+Returns the value to resource specified in
+.B name
+that is available to jobs running from this q (Que
+.At resources_available.name
+attribute). Call this function for resources
+with values that are of Int type. Sample resource names
+are: cput, pcput, walltime, mppt, pmppt, nice, procs, mppe, ncpus,
+pncpus, nodect, srfs_assist, mta,..., mth. For a description of these
+resource names, see pbs_resources_irix5(7B), pbs_resources_sp2(7B),
+pbs_resources_sunos4(7B), pbs_resources_unicos8(7B), pbs_server_attributes(7B),
+pbs_resources_irix6(7B), pbs_resources_linux(7B).
+.IP "\f3Size QueSizeResAvailGet(Que q, String name)\f1"
+Returns the value to resource specified in
+.B name
+that is available to jobs running from this q (Que
+.At resources_available.name
+attribute). Call this function for resources
+with values that are of Size type. Sample resource names
+are: file, mem, pmem, workingset, pf, ppf, srfs_tmp, srfs_wrk, srfs_big,
+srfs_fast, sds, psds. For a description of these
+resource names, see pbs_resources_irix5(7B), pbs_resources_sp2(7B),
+pbs_resources_sunos4(7B), pbs_resources_unicos8(7B), pbs_server_attributes(7B),
+pbs_resources_irix6(7B), pbs_resources_linux(7B).
+.IP "\f3String QueStringResAvailGet(Que q, String name)\f1"
+Returns the value to resource specified in
+.B name
+that is available to jobs running from this q (Que
+.At resources_available.name
+attribute). Call this function for resources
+with values that are of String type. Sample resource names
+are: nodes, arch, neednodes. For a description of these resource names, see
+pbs_resources_irix5(7B), pbs_resources_sp2(7B),
+pbs_resources_sunos4(7B), pbs_resources_unicos8(7B), pbs_server_attributes(7B),
+pbs_resources_irix6(7B), pbs_resources_linux(7B).
+.IP "\f3Int QueIntResAssignGet(Que q, String name)\f1"
+Returns the value to resource specified in
+.B name
+that is allocated to jobs running from this queue (Que
+.At resources_assigned.name
+attribute). Call this function for resources
+with values that are of Int type. Sample resource names
+are: cput, pcput, walltime, mppt, pmppt, nice, procs, mppe, ncpus,
+pncpus, nodect, srfs_assist, mta,..., mth. For a description of these
+resource names, see pbs_resources_irix5(7B), pbs_resources_sp2(7B),
+pbs_resources_sunos4(7B), pbs_resources_unicos8(7B), pbs_server_attributes(7B),
+pbs_resources_irix6(7B), pbs_resources_linux(7B).
+.IP "\f3Size QueSizeResAssignGet(Que q, String name)\f1"
+Returns the value to resource specified in
+.B name
+that is allocated to jobs running from this q (Que
+.At resources_assigned.name
+attribute). Call this function for resources
+with values that are of Size type. Sample resource names
+are: file, mem, pmem, workingset, pf, ppf, srfs_tmp, srfs_wrk, srfs_big,
+srfs_fast, sds, psds. For a description of these
+resource names, see pbs_resources_irix5(7B), pbs_resources_sp2(7B),
+pbs_resources_sunos4(7B), pbs_resources_unicos8(7B), pbs_server_attributes(7B),
+pbs_resources_irix6(7B), pbs_resources_linux(7B).
+.IP "\f3String QueStringResAssignGet(Que q, String name)\f1"
+Returns the value to resource specified in
+.B name
+that is allocated to jobs running from this q (Que
+.At resources_assigned.name
+attribute). Call this function for resources
+with values that are of String type. Sample resource names
+are: nodes, arch, neednodes. For a description of these resource names, see
+pbs_resources_irix5(7B), pbs_resources_sp2(7B),
+pbs_resources_sunos4(7B), pbs_resources_unicos8(7B), pbs_server_attributes(7B),
+pbs_resources_irix6(7B), pbs_resources_linux(7B).
+.RE
+.IP "(3) Job-related functions"
+.RS
+.IP "\f3String JobIdGet( Job job )\f1"
+Returns job identifier of Job job. unset value: NULLSTR
+.IP "\f3String JobNameGet( Job job )\f1"
+Returns Job_Name attribute of Job job. unset value: NULLSTR
+.IP "\f3String JobOwnerNameGet( Job job )\f1"
+Returns Job_Owner attribute of Job job. unset value: NULLSTR
+.IP "\f3String JobEffectiveUserNameGet( Job job)\f1"
+Returns euser attribute of Job job.
+.IP "\f3String JobEffectiveGroupNameGet(Job job)\f1"
+Returns egroup attribute of Job job. unset value: NULLSTR
+.IP "\f3Int JobStateGet ( Job job )\f1"
+Returns job_state attribute of Job job.
+.br
+.RS
+.IP "Return value:"
+TRANSIT, QUEUED, HELD, WAITING, RUNNING, EXITING, -1 (unset
+value)
+.RE
+.IP "\f3Int JobPriorityGet( Job job )\f1"
+Returns Priority attribute of Job job. unset value: 0
+.IP "\f3Int JobRerunFlagGet( Job job )\f1"
+Returns Rerunable attribute of Job job.
+.br
+Return value: FALSE, TRUE, -1 (unset value)
+.IP "\f3Int JobInteractiveFlagGet( Job job )\f1"
+Returns interactive attribute of Job job.
+.br
+Return value: FALSE, TRUE. unset value: FALSE
+.IP "\f3DateTime JobDateTimeCreatedGet(Job job)\f1"
+Returns the ctime attribute of Job job.  unset value: (0|0|0@-1:-1:-1)
+.IP "\f3String JobEmailAddrGet( Job job )\f1"
+Returns the Mail_Users attribute of Job job. unset value: NULLSTR
+.IP "\f3String JobStageinFilesGet( Job job )\f1"
+Returns the stagein attribute of Job job.  unset value: NULLSTR
+.IP "\f3String JobStageoutFilesGet( Job job )\f1"
+Returns stageout attribute of Job job.  unset value: NULLSTR
+.IP "\f3Int JobIntResReqGet(Job job, String name)\f1"
+Returns the value to resource specified in
+.B name
+as required by the job (Job
+.At Resource_List.name
+attribute). Call this function for resources
+with values that are of Int type. Sample resource names
+are: cput, pcput, walltime, mppt, pmppt, nice, procs, mppe, ncpus,
+pncpus, nodect, srfs_assist, mta,..., mth. For a description of these
+resource names, see pbs_resources_irix5(7B), pbs_resources_sp2(7B),
+pbs_resources_sunos4(7B), pbs_resources_unicos8(7B), pbs_server_attributes(7B),
+pbs_resources_irix6(7B), pbs_resources_linux(7B).
+.sp
+Example:
+.Ty
+.nf
+   Int cputReq;
+   // returns the cput requirement of the job
+   cputReq = JobIntResReqGet(job, "cput");
+.fi
+.IP "\f3Size JobSizeResReqGet(Job job, String name)\f1"
+Returns the value to resource specified in
+.B name
+as required by the job (Job
+.At Resource_List.name
+attribute). Call this function for resources
+with values that are of Size type. Sample resource names
+are: file, mem, pmem, workingset, pf, ppf, srfs_tmp, srfs_wrk, srfs_big,
+srfs_fast, sds, psds. For a description of these
+resource names, see pbs_resources_irix5(7B), pbs_resources_sp2(7B),
+pbs_resources_sunos4(7B), pbs_resources_unicos8(7B), pbs_server_attributes(7B),
+pbs_resources_irix6(7B), pbs_resources_linux(7B).
+.sp
+Example:
+.Ty
+.nf
+   Size memReq;
+   // returns the memory requirement of the job
+   memReq = JobSizeResReqGet(job, "mem");
+.fi
+.IP "\f3String JobStringResReqGet(Job job, String name)\f1"
+Returns the value to resource specified in
+.B name
+as required by the job (Job
+.At Resource_List.name
+attribute). Call this function for resources
+with values that are of String type. Sample resource names
+are: nodes, arch, neednodes. For a description of these resource names, see
+pbs_resources_irix5(7B), pbs_resources_sp2(7B),
+pbs_resources_sunos4(7B), pbs_resources_unicos8(7B), pbs_server_attributes(7B),
+pbs_resources_irix6(7B), pbs_resources_linux(7B).
+.sp
+Example:
+.Ty
+.nf
+   String nodes;
+   // returns the nodes requirement property of
+   // the job
+   nodes = JobStringResReqGet(job, "nodes");
+.fi
+.IP "\f3Int JobIntResUseGet(Job job, String name)\f1"
+Returns the value to resource specified in
+.B name
+used by the job (Job
+.At resources_used.name
+attribute). Call this function for resources
+with values that are of Int type. Sample resource names
+are: cput, pcput, walltime, mppt, pmppt, nice, procs, mppe, ncpus,
+pncpus, nodect, srfs_assist, mta,..., mth. For a description of these
+resource names, see pbs_resources_irix5(7B), pbs_resources_sp2(7B),
+pbs_resources_sunos4(7B), pbs_resources_unicos8(7B), pbs_server_attributes(7B),
+pbs_resources_irix6(7B), pbs_resources_linux(7B).
+.sp
+Example:
+.Ty
+.nf
+   Int walltUse;
+   // returns the amount of walltime used by
+   // the job
+   walltUse = JobIntResUseGet(job, "walltime");
+.fi
+.IP "\f3Size JobSizeResUseGet(Job job, String name)\f1"
+Returns the value to resource specified in
+.B name
+used by the job (Job
+.At resources_used.name
+attribute). Call this function for resources
+with values that are of Size type. Sample resource names
+are: file, mem, pmem, workingset, pf, ppf, srfs_tmp, srfs_wrk, srfs_big,
+srfs_fast, sds, psds. For a description of these
+resource names, see pbs_resources_irix5(7B), pbs_resources_sp2(7B),
+pbs_resources_sunos4(7B), pbs_resources_unicos8(7B), pbs_server_attributes(7B),
+pbs_resources_irix6(7B), pbs_resources_linux(7B).
+.sp
+Example:
+.Ty
+.nf
+   Size srfsUse;
+   // returns the amount of srfs_fast used by
+   // the job
+   srfsUse = JobSizeResUseGet(job, "srfs_fast");
+.fi
+.IP "\f3String JobStringResUseGet(Job job, String name)\f1"
+Returns the value to resource specified in
+.B name
+used by the job (Job
+.At resources_used.name
+attribute). Call this function for resources
+with values that are of String type. Sample resource names
+are: nodes, arch, neednodes. For a description of these resource names, see
+pbs_resources_irix5(7B), pbs_resources_sp2(7B),
+pbs_resources_sunos4(7B), pbs_resources_unicos8(7B), pbs_server_attributes(7B),
+pbs_resources_irix6(7B), pbs_resources_linux(7B).
+.RE
+.IP "(4) CNode-related functions"
+.RS
+.IP "\f3Set CNode AllNodesGet(void)\f1"
+Returns list of nodes that are managed by the server running on the local host.
+This could also include those nodes that were specified in the scheduler
+configuration file for which the scheduler writer wants the system to
+periodically check for information like state, property, and so on. See
+.B pbs_sched_basl(8B)
+for a discussion of configuration file format.
+.br
+CAUTION: This function must be called from inside
+.B sched_main()
+so that at every scheduling iteration, the most up to date
+.B "Set CNode"
+structure is returned. Do not call this from an assignment statement intended
+to initialize a global variable, as the statement will only be called once.  
+.IP "\f3CNode AllNodesLocalHostGet(void)\f1"
+Returns the CNode object that represents the local host. This
+is a simple function to call for non-clustered systems where only 1 CNode
+exists. unset value: NOCNODE
+.br
+CAUTION: This function must be called from inside
+.B sched_main()
+(or from within functions called by sched_main) so that at every scheduling
+iteration, the most up to date
+.B "CNode"
+structure is returned. Do not call this from an assignment statement intended
+to initialize a global variable, as the statement will only be called once.  
+.IP "\f3String CNodeNameGet(CNode node)\f1"
+Returns the unique (official) name of the node (i.e. ResMom hostname in a 1
+mom/node model). This returns the same string that was specified in the
+configuration file. unset value: NULLSTR
+.IP "\f3String CNodeOsGet(CNode node)\f1"
+Returns the os architecture of the node (i.e. "irix5", "sp2"). unset value:
+NULLSTR
+.IP "\f3Int CNodeStateGet( CNode node )\f1"
+Returns the node's state.
+.br
+.RS
+.IP "Return value:"
+CNODE_OFFLINE, CNODE_DOWN, CNODE_FREE, CNODE_RESERVE, CNODE_INUSE_EXCLUSIVE,
+CNODE_INUSE_SHARED, CNODE_UNKNOWN
+.RE
+.IP "\f3Int CNodeTypeGet( CNode node )\f1"
+Returns the node's type.
+.br
+.RS
+.IP "Return value:"
+CNODE_TIMESHARED, CNODE_CLUSTER, CNODE_UNKNOWN
+.RE
+.IP "\f3String CNodePropertiesGet(CNode node)\f1"
+Returns the comma-separated list of other names the node is known by (
+properties, other network name).  For example, "babbage.OpenPBS.org" maybe the
+node name, but it could also be known via "babbage1, babbage2".
+unset value: NULLSTR
+.IP "\f3String CNodeVendorGet(CNode node)\f1"
+Returns the name of the vendor for the hardware of the machine (i.e. "sgi",
+"ibm"). unset value: NULLSTR
+.IP "\f3Int CNodeNumCpusGet(CNode node)\f1"
+Returns the number of processors attached to the node.  unset value: -1
+.IP "\f3Size  CNodeMemTotalGet( CNode node, String type )\f1"
+Returns total memory of
+.B type
+for the node.
+.B type
+is an arbitrary string that the scheduler writer defines in the
+scheduler configuration file. unset value: -1b
+.br
+Example:
+.Ty
+.nf
+   // get total physical memory
+   CNodeMemTotalGet(node, "real")
+   // get total virtual memory
+   CNodeMemTotalGet(node, "virtual")
+.fi
+.IP "\f3Size  CNodeMemAvailGet( CNode node, String type )\f1"
+Returns available memory of
+.B type
+for the node.
+.B type
+is an arbitrary string that the scheduler writer defines in the
+scheduler configuration file.
+unset value: -1b
+.br
+So sample calls will be:
+.Ty
+.nf
+  // get available physical memory
+  CNodeMemAvailGet(node, "real")
+  // get available virtual memory
+  CNodeMemAvailGet(node, "virtual")
+.fi
+.IP "\f3Int CNodeIdletimeGet( CNode node )\f1"
+Returns number of seconds in which no keystroke or mouse movement has taken
+place on any terminal connected to the node.  unset value: -1
+.IP "\f3Float CNodeLoadAveGet( CNode  node )\f1"
+Returns node's load average for all cpus. unset value: -1.0
+.IP "\f3Int CNodeCpuPercentIdleGet( CNode  node )\f1"
+Returns the percent of idle time that all the processors of the node have
+experienced.
+.IP "\f3Int CNodeCpuPercentSysGet( CNode  node )\f1"
+Returns the percent of time that all the processors of the node have
+spent running kernel code.
+.IP "\f3Int CNodeCpuPercentUserGet( CNode  node )\f1"
+Returns the percent of time that all the processors of the node have
+spent running user code.
+.IP "\f3Int CNodeCpuPercentGuestGet( CNode  node )\f1"
+Returns the percent of time that all the processors of the node have
+spent running a guest operating system.
+.IP "\f3Int CNodeNetworkBwGet( CNode node, String type )\f1"
+Returns the bandwidth of the node's network of
+.B type
+in bytes/second.
+.B type
+is defined by the scheduler writer in the scheduler configuration file.
+unset value: -1
+.br
+Some sample calls are:
+.Ty
+.nf
+  CNodeNetworkBwGet( node, "hippi" );
+  CNodeNetworkBwGet( node, "fddi" );
+.fi
+.IP "\f3Size CNodeDiskSpaceTotalGet(CNode node, String name)\f1"
+Returns the node's total space on disk identified by
+.B name
+where
+.B name
+is the device name arbitrarily defined by the scheduler writer in the
+scheduler configuration file.  unset value: -1b
+.br
+Example:
+.Ty
+.nf
+  CNodeDiskSpaceTotalGet( node, "/scratch2" );
+.fi
+.IP "\f3Size CNodeDiskSpaceAvailGet(CNode node, String name)\f1"
+Returns the node's available space on disk identified by
+.B name
+where
+.B name
+is arbitrarily defined by the scheduler writer in the scheduler
+configuration file. unset value: -1b
+.br
+Example:
+.Ty
+.nf
+  CNodeDiskSpaceAvailGet( node, "/scratch1" );
+.fi
+.IP "\f3Size CNodeDiskSpaceReservedGet(CNode node, String name)\f1"
+Returns the node's reserved space on disk (user quota?) identified by
+.B name
+where
+.B name
+is arbitrarily defined by the scheduler writer in the scheduler
+configuration file.
+unset value: -1b
+.br
+Example:
+.Ty
+.nf
+  CNodeDiskSpaceReservedGet( node, "/scratch1" );
+.fi
+.IP "\f3Int CNodeDiskInBwGet( CNode node, String name )\f1"
+Returns the write bandwidth (bytes/sec) of the node's disk identified by
+.B "name".
+unset value: -1
+.br
+Example:
+.Ty
+.nf
+  CNodeDiskInBwGet( node, "/fast" );
+.fi
+.IP "\f3Int CNodeDiskOutBwGet( CNode node, String name )\f1"
+Returns read bandwidth (bytes/sec) of the node's disk identified by
+.B "name".
+unset value: -1
+.br
+Example:
+.Ty
+.nf
+  CNodeDiskOutBwGet( node, "/big" );
+.fi
+.IP "\f3Size CNodeSwapSpaceTotalGet( CNode node, String name )\f1"
+Returns the node's total space on swap identified by
+.B name
+where
+.B name
+is arbitrarily defined by the scheduler writer in the scheduler
+configuration file.
+unset value: -1b
+.br
+Example:
+.Ty
+.nf
+  CNodeSwapSpaceTotalGet( node, "primary" );
+.fi
+.IP "\f3Size CNodeSwapSpaceAvailGet( CNode node, String name )\f1"
+Returns node's available space on swap identified by
+.B name
+where
+.B name
+is the device name arbitrarily defined by the scheduler writer in the
+scheduler configuration file.  unset value: -1b
+.br
+Example:
+.Ty
+.nf
+  CNodeSwapSpaceAvailGet( node, "secondary" );
+.fi
+.IP "\f3Int CNodeSwapInBwGet( CNode node, String name )\f1"
+Returns swapin rate of the  node's swap device identified by
+.B name.
+.br
+Example:
+.Ty
+.nf
+  CNodeSwapInBwGet(node, "secondary");
+.fi
+.IP "\f3Int CNodeSwapOutBwGet( CNode node, String name )\f1"
+Returns the swapout rate of the  node's swap device identified by
+.B name.
+unset value: -1
+.br
+Example:
+.Ty
+.nf
+  CNodeSwapOutBwGet(node, "primary");
+.fi
+.IP "\f3Size CNodeTapeSpaceTotalGet( CNode node, String name )\f1"
+Returns the node's total space on tape identified by
+.B name
+where
+.B name
+is arbitrarily defined by the scheduler writer in the scheduler
+configuration file.
+unset value: -1b
+.br
+Example:
+.Ty
+.nf
+  CNodeTapeSpaceTotalGet(node, "4mm");
+.fi
+.IP "\f3Size CNodeTapeSpaceAvailGet( CNode node, String name )\f1"
+Returns the node's available space on tape identified by
+.B name
+where
+.B name
+is arbitrarily defined by the scheduler writer in the scheduler
+configuration file.
+unset value: -1b
+.br
+Example:
+.nf
+  CNodeTapeSpaceAvailGet(node, "8mm");
+.fi
+.IP "\f3Int CNodeTapeInBwGet( CNode node, String name )\f1"
+Returns the write bandwidth (bytes/sec) of the node's tape identified by
+.B "name".
+unset value: -1
+.br
+Example:
+.Ty
+.nf
+  CNodeTapeInBwGet( node, "4mm" );
+.fi
+.IP "\f3Int CNodeTapeOutBwGet( CNode node, String name )\f1"
+Returns the read bandwidth (bytes/sec) of the node's tape identified by
+.B "name".
+unset value: -1
+.br
+Example:
+.Ty
+.nf
+CNodeTapeOutBwGet( node, "8mm" );
+.fi
+.IP "\f3Size CNodeSrfsSpaceTotalGet( CNode node, String name )\f1"
+Returns the node's total space on srfs device identified by
+.B name
+where
+.B name
+is arbitrarily defined by the scheduler writer in the scheduler configuration
+file.
+unset value: -1b
+.br
+Example:
+.Ty
+.nf
+  CNodeSrfsSpaceTotalGet(node, "/fast");
+.fi
+.IP "\f3Size CNodeSrfsSpaceAvailGet( CNode node, String name )\f1"
+Returns the node's available space on srfs device identified by
+.B name
+where
+.B name
+is arbitrarily defined by the scheduler writer in some configuration
+file.
+unset value: -1b
+.br
+Example:
+.Ty
+.nf
+  CNodeSrfsSpaceAvailGet( node, "/big" );
+.fi
+.IP "\f3Size CNodeSrfsSpaceReservedGet(CNode node, String name)\f1"
+Returns the node's total amount of reserved space on srfs device identified
+by
+.B name
+where
+.B name
+is arbitrarily defined by the scheduler writer in
+the scheduler configuration file.
+unset value: -1b
+.br
+Example:
+.Ty
+.nf
+  CNodeSrfsSpaceReservedGet( node, "/fast" );
+.fi
+.IP "\f3Int CNodeSrfsInBwGet( CNode node, String name )\f1"
+Returns the write bandwidth (bytes/sec) of the node's srfs device identified by
+.B "name".
+unset value: -1
+.br
+Example:
+.nf
+  CNodeSrfsInBwGet( node, "/fast" );
+.fi
+.IP "\f3Int CNodeSrfsOutBwGet( CNode node, String name )\f1"
+Returns the read bandwidth (bytes/sec) of the node's srfs device identified by
+.B "name".
+unset value: -1
+.br
+Example:
+.nf
+CNodeSrfsOutBwGet( node, "/big" );
+.fi
+.RE
+.IP "(5) Miscellaneous Functions"
+.RS
+.IP "\f3DateTime datetimeGet()\f1"
+gets the current date/time.
+.IP "\f3Int datetimeToSecs(DateTime dt)\f1"
+returns the # of seconds since epoch (beginning of UNIX time - 00:00:00,
+January 1, 1970) for the given date/time
+.B dt.
+.IP "\f3Int JobAction( Job job, Int action, String param )\f1"
+Performs
+.B action
+on
+.B job
+with a
+.B param
+specified depending on the action.
+.B action
+can be: SYNCRUN, ASYNCRUN, DELETE, RERUN, HOLD, RELEASE,
+SIGNAL, MODIFYATTR, MODIFYRES where: 
+.br
+.Ty
+.nf
+  Action              Description
+  ===============     ==========================
+  SYNCRUN             runs the job synchronously,
+                      meaning the call to
+                      JobAction() will only
+                      return when the job has
+                      started running or when
+                      an error has been
+                      encountered.
+                      Param value:
+                       name of host(s) to run
+                       job under.	
+
+  ASYNCRUN            runs the job asynchronously,
+                      meaning the call to
+                      JobAction() will return
+                      immediately as soon as
+                      the run request is
+                      validated by the PBS server,
+                      and not necessarily when
+                      the job has started
+                      execution.
+                      Param value:
+                        name of host(s) to run
+                        job under.
+
+  DELETE              deletes the job.
+                      Param value:
+                        "deldelay=<# of secs>"           
+                        - delay # of seconds
+                          between the sending
+                          of SIGTERM and SIGKILL
+                          to the job before
+                          getting deleted.
+
+  RERUN                reruns the running job,
+                       which involves terminating
+                       the session leader of the
+                       job and returning the job
+                       to the queued state.
+
+  HOLD                 places one or more holds
+                       on the job.
+                       Param value:
+                        "u", "o", "s", "uo", "os",
+                        "uos"
+                        - type of holds to place
+                          on job: u(ser), o(ther),
+                          s(ystem). 
+
+  RELEASE              removes or releases
+                       holds placed on jobs.
+                       Param value:
+                        "u", "o", "s", "uo", "os",
+                        "uos"
+                        - type of holds to remove
+                          from job: u(ser), o(ther),
+                          s(ystem).
+                       
+  SIGNAL               sends a signal to the
+                       executing job.
+                       Param value:
+                         "HUP", "SIGHUP",...
+
+  MODIFYATTR           modifies the specified
+                       attribute of the job to
+                       the given value, when
+                       the attrib_name is
+                       != "Resource_List" or
+                       "resources_used".
+                       Param value:
+                         "attrib_name=value"
+
+  MODIFYRES            modifies the job's
+                       Resource_List
+                       attribute given the
+                       res_name and the
+                       res_value:
+                       Resource_List.res_name=
+                                     res_value
+                       Param value:
+                        "res_name=res_val"
+.fi
+.br
+.B param
+value depends on the action. Specify NULLSTR if no value for
+this parameter is desired.
+.br
+Return value: SUCCESS or FAIL.
+.br
+NOTE: Any unrecognized
+.B action
+is ignored.
+.br
+Example:
+.Ty
+.nf
+  // run Job j synchronously
+  JobAction(j, SYNCRUN, NULLSTR);
+
+  // run Job j asynchronously on host "db"
+  JobAction(j, ASYNCRUN, "db");
+
+  // delete Job j
+  JobAction(j, DELETE, NULLSTR);
+
+  // delete Job j with a delay of 5 secs
+  // between the sending of SIGTERM and
+  // SIGKILL
+  JobAction(j, DELETE, "deldelay=5");
+
+  // rerun Job j 
+  JobAction(j, RERUN, NULLSTR);
+
+  // place a u(ser) hold on Job j
+  JobAction(j, HOLD, "u");
+
+  // place an o(ther) hold on Job j
+  JobAction(j, HOLD, "o");
+
+  // place a s(ystem) hold on Job j
+  JobAction(j, HOLD, "s");
+
+  // place a default hold (u) on Job j
+  JobAction(j, HOLD, NULLSTR);
+
+  // release u(ser) hold from Job j
+  JobAction(j, RELEASE, "u");
+
+  // release o(ther) hold from Job j
+  JobAction(j, RELEASE, "o");
+
+  // release s(ystem) hold from Job j
+  JobAction(j, RELEASE, "s");
+
+  // release default hold (u) from Job j
+  JobAction(j, RELEASE, NULLSTR);
+
+  // send SIGHUP signal to Job j
+  JobAction(j, SIGNAL, "SIGHUP");
+
+  // update the comment attribute of Job
+  // j to "a message".
+  // The param format is: attribute_name=new_value
+  // Consult PBS documentation for a list of job
+  // attribute names that can be specified.
+  JobAction(j, MODIFYATTR, "comment=a message");
+  // update the Resource_List.cput attribute of Job
+  // j to 3600 seconds.
+  // The param format is: resource_name=new_value
+  // See pbs_resources* man page for a list of
+  // resource_names that can be specified.
+  JobAction(j, MODIFYRES, "cput=3600");
+.fi
+.IP "\f3QueJobFind(Que que,Fun Int func,Int cpr,Int value);\f1"
+.IP "\f3QueJobFind(Que que,Fun String func,Int cpr,String value);\f1"
+.IP "\f3QueJobFind(Que que,Fun DateTime func,Int cpr,DateTime value);\f1"
+.IP "\f3QueJobFind(Que que,Fun Size func,Int cpr,Size value);\f1"
+.sp
+where
+.B cpr
+is one of: OP_EQ, OP_NEQ, OP_LE, OP_LT, OP_GE, OP_GT.
+.B func
+is a function whose ONLY argument is of Job type.
+.B Job
+is the return type.
+.sp
+Description: Applies
+.B func
+to every job in
+.B que ,
+and return the first job that satisfies the logical comparison:
+.B "func(job) cpr value"
+.sp
+Example:
+.sp
+.Ty
+.nf
+Size JobVirtualMemAvailGet(Job job)
+{
+    Size sz;
+
+    sz = JobSizeResReqGet(job, "mem");
+    return(sz);
+}
+Int JobWallTimeReqGet(Job job)
+{
+    Int wallt;
+
+    wallt = JobIntResReqGet(job, "walltime");
+    return(wallt);
+}
+
+Int JobCpuTimeUsedGet(Job job)
+{
+    Int cput;
+
+    cput = JobIntResUseGet(job, "cput");	
+    return(cput);
+}
+
+Que findQueByName(Set Que queues, String qname)
+{
+        Que q;
+
+        foreach(q in queues) {
+                if( QueNameGet(q) EQ qname ) {
+                       return(q);
+                }
+        } 
+        return(NOQUE);
+}
+sched_main()
+{
+   Server s;
+   Que    que;
+   Set Que sq;
+
+   // get local server
+   s = AllServersLocalHostGet();
+
+   // get the queues of the Server s
+   sq = ServerQueuesGet(s);
+
+   // get the queue named "fast" from the
+   // local server
+   que = findQueByName( sq, "fast" );
+
+   // Find the 1st job whose walltime requirement
+   // is == 300s:
+   QueJobFind(que, JobWallTimeReqGet, OP_EQ, 300);
+
+   // Find the 1st job whose email address to
+   // notify about job activity != "bayucan":
+   QueJobFind(que, JobEmailAddrGet, OP_NEQ,
+                                      "bayucan");
+
+   // Find the 1st job that was created after
+   // or on 3/3/1997:
+   QueJobFind(que, JobDateTimeCreatedGet, OP_GE,
+                                        (3|3|1997));
+
+   // Find the 1st job that was created after
+   // 3:3:44:
+   QueJobFind(que, JobDateTimeCreatedGet, OP_GT,
+                                         (3:3:44));
+
+   // Find the 1st job that was created after
+   // 3:3:44 on 3/3/1997:
+   QueJobFind(que, JobDateTimeCreatedGet, OP_GT,
+                                (3|3|1997@3:3:44));
+
+   // Find the 1st job whose cpu time used < 1600s:
+   QueJobFind(que, JobCpuTimeUsedGet, OP_LT, 1600);
+
+   // Find the 1st job whose virtual memory
+   // requirement <= 300mb:
+   QueJobFind(que, JobVirtualMemAvailGet, OP_LE,
+                                            300mb);
+}
+.fi
+.IP "\f3Job QueJobFind( Que que, Fun Int func,      Int cpr)\f1"
+.IP "\f3Job QueJobFind( Que que, Fun String func,   Int cpr)\f1"
+.IP "\f3Job QueJobFind( Que que, Fun DateTime func, Int cpr)\f1"
+.IP "\f3Job QueJobFind( Que que, Fun Size func,     Int cpr)\f1"
+.sp
+where
+.B cpr
+can be one of the following: OP_MAX, OP_MIN,
+.B func
+is a function whose only argument is of Job type.
+.sp
+Description: Returns the Job with the max or min value found for
+.B func(job)
+as it is applied to every job in
+.B "que".
+.sp
+Example:
+.Ty
+.nf
+  Int JobCpuTimeReqGet(Job job)
+  {
+    Int cput;
+
+    cput = JobIntResReqGet(job, "cput");	
+    return(cput);
+  }
+  sched_main()
+  {
+    Que que;
+    Job job;
+
+    // Find the Job with the highest cpu time
+    // requirement:
+    job = QueJobFind(que, JobCpuTimeReqGet, OP_MAX);
+
+    // Find the Job with the minimum cpu time
+    // requirement:
+    job = QueJobFind(que, JobCpuTimeReqGet, OP_MIN);
+  }
+.fi
+.IP "\f3Que QueFilter(Que que,Fun Int func,Int cpr,Int value)\f1"
+.IP "\f3Que QueFilter(Que que,Fun String func,Int cpr,String value)\f1"
+.IP "\f3Que QueFilter(Que que,Fun DateTime func,Int cpr,Date value)\f1"
+.IP "\f3Que QueFilter(Que que,Fun Size func,Int cpr,Size value)\f1"
+.sp
+where
+.B cpr
+can be one of the following: OP_EQ, OP_NEQ, OP_LE, OP_LT, OP_GE, OP_GT,
+.B func
+is a function whose only argument is of Job type.
+.sp
+Description: Applies
+.B func
+to every job in
+.B que ,
+and returns a new que containing all jobs that satisfies the comparison
+condition:
+.B "func(job) cpr value"
+.sp
+Example:
+.br
+.Ty
+.nf
+  Int JobWallTimeReqGet(Job job)
+  {
+    Int wallt;
+
+    wallt = JobIntResReqGet(job, "walltime");
+    return(wallt);
+  }
+  sched_main()
+  {
+    Que que;
+    Que newq;
+
+    // Returns a new que containing all jobs in "que"
+    // with a walltime requirement == 300s:
+    newq = QueFilter(que, JobWallTimeReqGet, OP_EQ, 300);
+
+    // Returns a new que containing all jobs in "que"
+    // with an email address != "bayucan":
+    newq = QueFilter(que, JobEmailAddrGet, OP_NEQ, "bayucan");
+
+    // Returns a new que containing all jobs in "que"
+    // created after or on 3/3/1997:
+    newq = QueFilter(que, JobDateTimeCreatedGet, OP_GE,
+                                         (3|3|1997));
+
+    // Returns a new que containing all jobs in "que"
+    // created after 3:3:44:
+    newq = QueFilter(que, JobDateTimeCreatedGet, OP_GT,
+                                          (3:3:44));
+
+    // Returns a new que containing all jobs in "que"
+    // created after 3:3:44 on 3/3/1997:
+    newq = QueFilter(que, JobDateTimeCreatedGet, OP_GT,
+                                  (3|3|1997@3:3:44));
+
+    // NOTE: The original "que" is not modified
+    // whatsoever.
+  }
+.fi
+.IP "\f3Int Sort(Set Job s, Fun Int      key, Int order)\f1"
+.IP "\f3Int Sort(Set Job s, Fun String   key, Int order)\f1"
+.IP "\f3Int Sort(Set Job s, Fun Float    key, Int order)\f1"
+.IP "\f3Int Sort(Set Job s, Fun DateTime key, Int order)\f1"
+.IP "\f3Int Sort(Set Job s, Fun Size     key, Int order)\f1"
+.sp
+where
+.B s
+the set of jobs to sort.
+.B key
+is the sorting key which is a function whose only argument is of Job type,
+.B order
+is the sorting order: ASC, DESC.
+.sp
+Description: sorts the elements of
+.B s ,
+in either ASCending or DESCending order of values that were returned by
+the
+.B key
+function, as applied to every member of the set of jobs. The
+.B s
+object is modified with this call. This returns SUCCESS or FAIL depending
+on outcome of the sort.
+.sp
+Examples:
+.br
+.Ty
+.nf
+  Size JobMemReqGet(Job job)
+  {
+        Size mem;
+
+        mem = JobSizeResReqGet(job, "mem");
+        return(mem);
+  }
+
+  sched_main()
+  {
+        Server  master;
+
+        Set Job jobs;
+
+        Int     order;
+
+        // get local server
+        master = AllServersLocalHostGet();
+
+        jobs = ServerJobsGet(master);
+        Sort(jobs, JobPriorityGet, ASC);
+        Sort(jobs, JobIdGet, DESC);
+        order = ASC;
+        Sort(jobs, JobDateTimeCreatedGet, order);
+        order = DESC;
+        Sort(jobs, JobMemReqGet, order);
+  }
+.fi
+.IP "\f3Int Sort(Set Que s, Fun Int      key, Int order)\f1"
+.IP "\f3Int Sort(Set Que s, Fun String   key, Int order)\f1"
+.IP "\f3Int Sort(Set Que s, Fun Float    key, Int order)\f1"
+.IP "\f3Int Sort(Set Que s, Fun DateTime key, Int order)\f1"
+.IP "\f3Int Sort(Set Que s, Fun Size     key, Int order)\f1"
+.sp
+where
+.B s
+the set of queues to sort.
+.B key
+is the sorting key which is a function whose only argument is of Que type,
+.B order
+is the sorting order: ASC, DESC.
+.sp
+Description: sorts the elements of
+.B s ,
+in either ASCending or DESCending order of values that were returned by
+the
+.B key
+function, as applied to every member of the set of queues. The
+.B s
+object is modified with this call. This returns SUCCESS or FAIL depending
+on outcome of the sort.
+.sp
+Examples:
+.br
+.Ty
+.nf
+  Size QueMemAvailGet(Que que)
+  {
+        Size mem;
+
+        mem = QueSizeResAvailGet(que, "mem");
+        return(mem);
+  }
+
+  sched_main()
+  {
+        Server  master;
+
+        Set Que ques;
+        Int     order;
+
+        // get local server
+        master = AllServersLocalHostGet();
+
+        ques = ServerQueuesGet(master);
+        Sort(ques, QuePriorityGet, ASC);
+        Sort(ques, QueNameGet, ASC);
+        order = DESC;
+        Sort(ques, QueMemAvailGet, order);
+  }
+.fi
+.IP "\f3Int Sort(Set Server s, Fun Int      key, Int order)\f1"
+.IP "\f3Int Sort(Set Server s, Fun String   key, Int order)\f1"
+.IP "\f3Int Sort(Set Server s, Fun Float    key, Int order)\f1"
+.IP "\f3Int Sort(Set Server s, Fun DateTime key, Int order)\f1"
+.IP "\f3Int Sort(Set Server s, Fun Size     key, Int order)\f1"
+.sp
+where
+.B s
+the set of servers to sort.
+.B key
+is the sorting key which is a function whose only argument is of Server type,
+.B order
+is the sorting order: ASC, DESC.
+.sp
+Description: sorts the elements of
+.B s ,
+in either ASCending or DESCending order of values that were returned by
+the
+.B key
+function, as applied to every member of the set of servers.  The
+.B s
+object is modified with this call. This returns SUCCESS or FAIL depending
+on outcome of the sort.
+.sp
+Examples:
+.br
+.Ty
+.nf
+  Size ServerMemAvailGet(Server serv)
+  {
+        Size mem;
+
+        mem = ServerSizeResAvailGet(serv, "mem");
+        return(mem);
+  }
+
+  sched_main()
+  {
+        Set Server sserver;
+
+        Int     order;
+
+        Int     ret;
+
+        sserver = AllServersGet();
+
+        ret = Sort(sserver, ServerMaxRunJobsGet, ASC);
+        Sort(sserver, ServerInetAddrGet, ASC);
+
+        order = DESC;
+        Sort(sserver, ServerMemAvailGet, order);
+  }
+.fi
+.IP "\f3Int Sort(Set CNode s, Fun Int      key, Int order)\f1"
+.IP "\f3Int Sort(Set CNode s, Fun String   key, Int order)\f1"
+.IP "\f3Int Sort(Set CNode s, Fun Float    key, Int order)\f1"
+.IP "\f3Int Sort(Set CNode s, Fun DateTime key, Int order)\f1"
+.IP "\f3Int Sort(Set CNode s, Fun Size     key, Int order)\f1"
+.sp
+where
+.B s
+the set of nodes to sort.
+.B key
+is the sorting key which is a function whose only argument is of CNode type,
+.B order
+is the sorting order: ASC, DESC.
+.sp
+Description: sorts the elements of
+.B s ,
+in either ASCending or DESCending order of values that were returned by
+the
+.B key
+function, as applied to every member of the set of nodes.  The
+.B s
+object is modified with this call. This returns SUCCESS or FAIL depending
+on outcome of the sort.
+.sp
+Examples:
+.br
+.Ty
+.nf
+  Size CNodeMyMemAvailGet(CNode cn)
+  {
+        Size mem;
+
+        mem = CNodeMemAvailGet(cn, "virtual");
+        return(mem);
+  }
+
+  sched_main()
+  {
+        Set CNode scnode;
+
+        Int     order;
+
+        scnode = AllNodesGet();
+
+        Sort(scnode, CNodeIdletimeGet, ASC);
+        Sort(scnode, CNodeNameGet, ASC);
+        order = DESC;
+        Sort(scnode, CNodeMyMemAvailGet, order);
+  }
+.fi
+.RE
+.RE
+.Sh CNode..Get() FUNCTIONS
+The return values of the CNode..Get() functions discussed in the previous
+section are obtained by sending resource queries to the CNode's MOM
+at every scheduling iteration.  For example,
+.Ty CNodeLoadAveGet(node)
+will return the value obtained from some <host resource> query (this
+could be the string "loadave") as sent to the node's MOM.
+The "<host resource> -> CNode..Get()" mappings are established
+internally, but they can be modified or more mappings can be added via the
+scheduler configuration file. The config file is discussed in
+.B pbs_sched_basl(8B).
+.br
+Mappings already established are given in the following:
+.sp
+For all architectures: 
+.sp
+.Ty
+.nf
+   CNode..Get() actual call    host resource
+   ========================    =============
+   CNodeOsGet(node)            arch
+   CNodeLoadAveGet(node)       loadave
+   CNodeIdletimeGet(node)      idletime
+.fi
+.ft 1
+.sp
+.Sh SEE ALSO
+pbs_sched_basl(8B) pbs_job_attributes(7B), pbs_queue_attributes(7B),
+pbs_resources_irix5(7B), pbs_resources_sp2(7B), pbs_resources_sunos4(7B),
+pbs_resources_unicos8(7B), pbs_server_attributes(7B), and pbs_server(8B),
+pbs_resources_irix6(7B), pbs_resources_linux(7B).
+.RE

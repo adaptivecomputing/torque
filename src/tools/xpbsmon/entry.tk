@@ -1,0 +1,358 @@
+#         OpenPBS (Portable Batch System) v2.3 Software License
+# 
+# Copyright (c) 1999-2000 Veridian Information Solutions, Inc.
+# All rights reserved.
+# 
+# ---------------------------------------------------------------------------
+# For a license to use or redistribute the OpenPBS software under conditions
+# other than those described below, or to purchase support for this software,
+# please contact Veridian Systems, PBS Products Department ("Licensor") at:
+# 
+#    www.OpenPBS.org  +1 650 967-4675                  sales@OpenPBS.org
+#                        877 902-4PBS (US toll-free)
+# ---------------------------------------------------------------------------
+# 
+# This license covers use of the OpenPBS v2.3 software (the "Software") at
+# your site or location, and, for certain users, redistribution of the
+# Software to other sites and locations.  Use and redistribution of
+# OpenPBS v2.3 in source and binary forms, with or without modification,
+# are permitted provided that all of the following conditions are met.
+# After December 31, 2001, only conditions 3-6 must be met:
+# 
+# 1. Commercial and/or non-commercial use of the Software is permitted
+#    provided a current software registration is on file at www.OpenPBS.org.
+#    If use of this software contributes to a publication, product, or
+#    service, proper attribution must be given; see www.OpenPBS.org/credit.html
+# 
+# 2. Redistribution in any form is only permitted for non-commercial,
+#    non-profit purposes.  There can be no charge for the Software or any
+#    software incorporating the Software.  Further, there can be no
+#    expectation of revenue generated as a consequence of redistributing
+#    the Software.
+# 
+# 3. Any Redistribution of source code must retain the above copyright notice
+#    and the acknowledgment contained in paragraph 6, this list of conditions
+#    and the disclaimer contained in paragraph 7.
+# 
+# 4. Any Redistribution in binary form must reproduce the above copyright
+#    notice and the acknowledgment contained in paragraph 6, this list of
+#    conditions and the disclaimer contained in paragraph 7 in the
+#    documentation and/or other materials provided with the distribution.
+# 
+# 5. Redistributions in any form must be accompanied by information on how to
+#    obtain complete source code for the OpenPBS software and any
+#    modifications and/or additions to the OpenPBS software.  The source code
+#    must either be included in the distribution or be available for no more
+#    than the cost of distribution plus a nominal fee, and all modifications
+#    and additions to the Software must be freely redistributable by any party
+#    (including Licensor) without restriction.
+# 
+# 6. All advertising materials mentioning features or use of the Software must
+#    display the following acknowledgment:
+# 
+#     "This product includes software developed by NASA Ames Research Center,
+#     Lawrence Livermore National Laboratory, and Veridian Information
+#     Solutions, Inc.
+#     Visit www.OpenPBS.org for OpenPBS software support,
+#     products, and information."
+# 
+# 7. DISCLAIMER OF WARRANTY
+# 
+# THIS SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND. ANY EXPRESS
+# OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+# OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT
+# ARE EXPRESSLY DISCLAIMED.
+# 
+# IN NO EVENT SHALL VERIDIAN CORPORATION, ITS AFFILIATED COMPANIES, OR THE
+# U.S. GOVERNMENT OR ANY OF ITS AGENCIES BE LIABLE FOR ANY DIRECT OR INDIRECT,
+# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
+# OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+# LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+# NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+# EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# 
+# This license will be governed by the laws of the Commonwealth of Virginia,
+# without reference to its choice of law rules.
+################################################################################
+# This file contains procedures related to entry widgets used in xpbs.
+################################################################################
+# buildFullEntrybox: builds one of the following entry boxes and display it on
+# the 'frame_name' specified.
+#            -----------   
+# (1) label  |         | <|=|> 		       mode: right horizontal scrollbar
+#            -----------			     no all button
+#
+#		   -----------
+# (2) label  [all] |         | <|=|>           mode: right horizontal scrollbar
+#                  -----------			     all button
+#
+#
+#           -----------
+# (3) label |         |				mode: bottom horiz. scrollbar
+#           ----------- 			      no all button	
+#           <|=======|>
+#
+#
+#                 -----------
+# (4) label [all] |         |			mode: bottom horiz. scrollbar   
+#                 -----------			      all button	
+#                 <|=======|> 
+# OPTION:
+#   The 'label_placement' allows for the label to be set "left", "right", 
+#   "top", and "bottom".
+# RETURNS: a list containing the frame holding the full entry box,
+#          all_button (if any) label, entry, scrollbar widget names.
+proc buildFullEntrybox {frame_name label_width label entry_width \
+	    default_entryval scrollbar_placement all_button \
+	    {label_placement "left"} {all_button_placement "left"} \
+	    {ipadx 1m} {anchor nw}} {
+
+  global canvas tk_version
+
+  frame $frame_name.l -relief flat
+  frame $frame_name.e -relief flat
+
+  if {$all_button} {
+     button $frame_name.e.all -width 4 -text "all" -padx 1 -pady 1 -justify left
+  }
+
+
+  label $frame_name.l.label -width $label_width -text $label -padx 1 -pady 1 \
+		-justify left
+
+  entry $frame_name.e.entry -relief sunken \
+                            -borderwidth  2 \
+                            -width $entry_width
+
+  if { $tk_version < 4.0 } {
+     $frame_name.e.entry configure -scrollcommand "$frame_name.e.hscroll set"
+  } else {
+     $frame_name.e.entry configure -xscrollcommand "$frame_name.e.hscroll set"
+  }
+
+  $frame_name.e.entry insert 0 $default_entryval
+
+  bind_entry_overselect $frame_name.e.entry
+
+  if { [string compare $scrollbar_placement ""] != 0 } {
+     scrollbar $frame_name.e.hscroll -orient horizontal \
+                                   -borderwidth 2 \
+                                   -relief groove
+
+     if { $tk_version < 4.0 } {
+       $frame_name.e.hscroll configure -command "$frame_name.e.entry view"
+     } else {
+       $frame_name.e.hscroll configure -command "$frame_name.e.entry xview"
+     }
+  }
+
+
+  if {$all_button && [string compare $all_button_placement "left"] == 0 && \
+                        [string compare $scrollbar_placement "right"] == 0} {
+    pack $frame_name.e.all $frame_name.e.entry \
+         $frame_name.e.hscroll -side left -anchor nw -ipadx $ipadx -fill x
+  } elseif {$all_button && \
+          [string compare $all_button_placement "right"] == 0 && \
+                [string compare $scrollbar_placement "right"] == 0} {
+    pack $frame_name.e.entry $frame_name.e.hscroll $frame_name.e.all \
+                                -side left -anchor nw -ipadx $ipadx -fill x
+  } elseif {$all_button && \
+          [string compare $all_button_placement "bottom"] == 0 && \
+                [string compare $scrollbar_placement "right"] == 0} {
+    pack $frame_name.e.all -side bottom -anchor nw
+    pack $frame_name.e.entry $frame_name.e.hscroll -side left -anchor nw
+  } elseif {$all_button && \
+            [string compare $all_button_placement "left"] == 0 && \
+            [string compare $scrollbar_placement "bottom"] == 0} {
+    pack $frame_name.e.all $frame_name.e.entry -side left -anchor nw -fill x
+    pack $frame_name.e.hscroll -side bottom -fill x -expand 1
+  } elseif {$all_button && \
+            [string compare $all_button_placement "right"] == 0 && \
+            [string compare $scrollbar_placement "bottom"] == 0} {
+    pack $frame_name.e.hscroll -side bottom -fill x -expand 1
+    pack $frame_name.e.entry $frame_name.e.all -side left -anchor nw -fill x
+  } elseif {!$all_button && \
+            [string compare $scrollbar_placement "right"] == 0} {
+    pack $frame_name.e.entry $frame_name.e.hscroll \
+         -side left -anchor nw -ipadx $ipadx -fill x
+  } elseif {!$all_button && \
+            [string compare $scrollbar_placement "bottom"] == 0} {
+    pack $frame_name.e.entry -side left -anchor nw -fill x -expand 1
+    pack $frame_name.e.hscroll -before $frame_name.e.entry -side bottom \
+		-fill x -expand 1 -anchor nw 
+  } elseif {!$all_button && \
+            [string compare $scrollbar_placement "left"] == 0} {
+    pack $frame_name.e.hscroll $frame_name.e.entry -side left -anchor nw \
+		-ipadx $ipadx -fill x
+  } elseif {$all_button && \
+            [string compare $all_button_placement "left"] == 0 && \
+                        [string compare $scrollbar_placement "left"] == 0} {
+    pack $frame_name.e.all $frame_name.e.hscroll $frame_name.e.entry \
+		-side left -anchor nw -ipadx $ipadx -fill x
+  } elseif {$all_button && \
+            [string compare $all_button_placement "right"] == 0 && \
+                        [string compare $scrollbar_placement "left"] == 0} {
+    pack $frame_name.e.hscroll $frame_name.e.entry $frame_name.e.all \
+		-side left -anchor nw -ipadx $ipadx -fill x
+  } else {
+    pack $frame_name.e.entry -side left -anchor nw -fill x
+    if {$tk_version < 4.0} {
+      $frame_name.e.entry configure -scrollcommand ""
+    } else {
+      $frame_name.e.entry configure -xscrollcommand ""
+    }
+  }
+
+  if {$label_width > 0} {
+      if {[string compare $label_placement "left"] == 0} {
+  	  pack $frame_name.l.label -anchor $anchor -side left
+          pack $frame_name.l $frame_name.e -side left -anchor $anchor
+      } elseif {[string compare $label_placement "right"] == 0} {
+  	  pack $frame_name.l.label -anchor $anchor -side left
+          pack $frame_name.e $frame_name.l -side left -anchor $anchor
+      } elseif {[string compare $label_placement "top"] == 0} {
+  	pack $frame_name.l.label -anchor $anchor -side left
+          pack $frame_name.l $frame_name.e -side top -anchor $anchor
+      } elseif {[string compare $label_placement "bottom"] == 0} {
+  	  pack $frame_name.l.fill $frame_name.l.label -anchor $anchor -side left
+          pack $frame_name.e $frame_name.l -side top -anchor $anchor
+      }
+  } else {
+      pack $frame_name.e
+  }
+
+  if {$all_button} {
+    return [list $frame_name $frame_name.l.label $frame_name.e.all \
+                 $frame_name.e.entry $frame_name.e.hscroll $frame_name.e]
+  } else {
+    return [list $frame_name $frame_name.l.label $frame_name.e.entry \
+                 $frame_name.e.hscroll $frame_name.e]
+    
+  }
+}
+# disable_fullentry: disables all components of an entry box.
+proc disable_fullentry {entryLabel entry entryScroll {allButton ""}} {
+  global sysinfo canvas
+
+  if {[string compare $entryLabel ""] != 0} {
+    disable_label $entryLabel $canvas(disabledColor)
+  }
+  if {[string compare $entryScroll ""] != 0} {
+    disable_scrollbar $entryScroll $canvas(disabledColor)
+  }
+  if {[string compare $allButton ""] != 0} {
+      disable_button $allButton
+  }
+  set state [lindex [$entry configure -state] 4]
+  if {[string compare $state "disabled"] != 0} {
+    set sysinfo(selColor$entry) [lindex [$entry configure -foreground] 4]
+    $entry configure -state disabled -foreground $canvas(disabledColor)
+  }
+}
+
+# enable_fullentry: enables all components of an entry box.
+proc enable_fullentry {entryLabel entry entryScroll {allButton ""}} {
+  global syinfo
+
+  if {[string compare $entryLabel ""] != 0} {
+    enable_label $entryLabel
+  } 
+  if {[string compare $entryScroll ""] != 0} {
+    enable_scrollbar $entryScroll
+  }
+  if {[string compare $allButton ""] != 0} {
+      enable_button $allButton
+  }
+  if [info exists sysinfo(selColor$entry)] {
+    $entry configure -state normal -foreground $sysinfo(selColor$entry)
+  } else {
+    $entry configure -state normal
+  }
+  focus $entry
+}
+
+proc menuEntry {frame_name {args}} {
+
+  set menuName [string trim $frame_name "."]
+
+  global $menuName canvas tk_version
+  set configure 0
+
+  set argc [llength $args]
+  for {set i 0} {$i < $argc} {incr i} {
+    switch -exact -- [lindex $args $i] {
+      configure  {
+                set configure 1
+      }
+      menubutton {
+                if { ![info exists [set menuName](menubutton)]} {
+                        return ""
+                }
+                return [set [set menuName](menubutton)]
+      }
+      -menuvalues {
+                set [set menuName](menuvalues) [lindex $args [incr i]]
+      }
+      menuvalues {
+                if { ![info exists [set menuName](menuvalues)]} {
+                        return ""
+                }
+                return [set [set menuName](menuvalues)]
+      }
+      -title {
+                set [set menuName](title) [lindex $args [incr i]]
+      }
+      title {
+                if { ![info exists [set menuName](title)]} {
+                        return ""
+                }
+                return [set [set menuName](title)]
+      }
+      -textvariable {	
+                set [set menuName](textvariable) [lindex $args [incr i]]
+      }	
+      create     {
+                catch {unset $menuName}
+      }
+      getMenuArray {
+                return "[set menuName]"
+      }
+    }
+  }
+
+  global [set [set menuName](textvariable)]
+  set [set [set menuName](textvariable)] " "
+  set f $frame_name
+
+  set label [menuEntry $f title]
+  label $frame_name.l -width [string length $label] -text $label -padx 1 \
+		-pady 1 -justify left
+
+  menubutton $f.m -relief raised -bd 2 -anchor w -menu $f.m.menu \
+	-textvariable [set [set menuName](textvariable)]
+
+  set [set menuName](menubutton) $f.m 
+
+
+  menu $f.m.menu -borderwidth 2 -relief raised
+  if {$tk_version >= 4.0} {
+        $f.m configure -indicatoron 1
+	$f.m.menu configure -tearoff 0
+  }
+  bind_button1 $f.m.menu
+  set maxwidth 0
+  set k 0
+  foreach v [menuEntry $f menuvalues] {
+   set width [string length $v]
+    if {$width > $maxwidth} {
+	set maxwidth $width
+    }
+    $f.m.menu add command -label $v \
+        -command "set [set [set menuName](textvariable)] $v"
+    incr k
+  }
+  $f.m.menu invoke 0
+  $f.m configure -width $maxwidth
+  pack $f.l $f.m -side top -anchor nw
+}

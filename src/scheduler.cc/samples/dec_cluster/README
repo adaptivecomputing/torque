@@ -1,0 +1,249 @@
+#         OpenPBS (Portable Batch System) v2.3 Software License
+# 
+# Copyright (c) 1999-2000 Veridian Information Solutions, Inc.
+# All rights reserved.
+# 
+# ---------------------------------------------------------------------------
+# For a license to use or redistribute the OpenPBS software under conditions
+# other than those described below, or to purchase support for this software,
+# please contact Veridian Systems, PBS Products Department ("Licensor") at:
+# 
+#    www.OpenPBS.org  +1 650 967-4675                  sales@OpenPBS.org
+#                        877 902-4PBS (US toll-free)
+# ---------------------------------------------------------------------------
+# 
+# This license covers use of the OpenPBS v2.3 software (the "Software") at
+# your site or location, and, for certain users, redistribution of the
+# Software to other sites and locations.  Use and redistribution of
+# OpenPBS v2.3 in source and binary forms, with or without modification,
+# are permitted provided that all of the following conditions are met.
+# After December 31, 2001, only conditions 3-6 must be met:
+# 
+# 1. Commercial and/or non-commercial use of the Software is permitted
+#    provided a current software registration is on file at www.OpenPBS.org.
+#    If use of this software contributes to a publication, product, or
+#    service, proper attribution must be given; see www.OpenPBS.org/credit.html
+# 
+# 2. Redistribution in any form is only permitted for non-commercial,
+#    non-profit purposes.  There can be no charge for the Software or any
+#    software incorporating the Software.  Further, there can be no
+#    expectation of revenue generated as a consequence of redistributing
+#    the Software.
+# 
+# 3. Any Redistribution of source code must retain the above copyright notice
+#    and the acknowledgment contained in paragraph 6, this list of conditions
+#    and the disclaimer contained in paragraph 7.
+# 
+# 4. Any Redistribution in binary form must reproduce the above copyright
+#    notice and the acknowledgment contained in paragraph 6, this list of
+#    conditions and the disclaimer contained in paragraph 7 in the
+#    documentation and/or other materials provided with the distribution.
+# 
+# 5. Redistributions in any form must be accompanied by information on how to
+#    obtain complete source code for the OpenPBS software and any
+#    modifications and/or additions to the OpenPBS software.  The source code
+#    must either be included in the distribution or be available for no more
+#    than the cost of distribution plus a nominal fee, and all modifications
+#    and additions to the Software must be freely redistributable by any party
+#    (including Licensor) without restriction.
+# 
+# 6. All advertising materials mentioning features or use of the Software must
+#    display the following acknowledgment:
+# 
+#     "This product includes software developed by NASA Ames Research Center,
+#     Lawrence Livermore National Laboratory, and Veridian Information
+#     Solutions, Inc.
+#     Visit www.OpenPBS.org for OpenPBS software support,
+#     products, and information."
+# 
+# 7. DISCLAIMER OF WARRANTY
+# 
+# THIS SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND. ANY EXPRESS
+# OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+# OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT
+# ARE EXPRESSLY DISCLAIMED.
+# 
+# IN NO EVENT SHALL VERIDIAN CORPORATION, ITS AFFILIATED COMPANIES, OR THE
+# U.S. GOVERNMENT OR ANY OF ITS AGENCIES BE LIABLE FOR ANY DIRECT OR INDIRECT,
+# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
+# OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+# LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+# NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+# EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# 
+# This license will be governed by the laws of the Commonwealth of Virginia,
+# without reference to its choice of law rules.
+#
+# $Id$
+
+This file contains a high level overview of the workings of the PBS 
+scheduler included in this directory. The configuration file itself
+(discussed below) contains additional information.
+
+Suggested reading order:
+
+	This file (README)
+	sched_config 
+	source code
+
+
+* Overview Of Operation
+
+This package contains the sources for a PBS scheduler (pbs_sched), which
+was designed to be run on a cluster of DEC Alpha workstations with
+different CPU and memory configurations. The function of the scheduler
+is to choose a job or jobs that fit the resources. When a suitable job
+is found, the scheduler will ask PBS to run that job on one of the
+execution hosts. This scheduler assumes a 1:1 correlation between the
+executions queues and execution hosts. The name of the queue is taken
+as the name of the host that jobs in that queue should be run in.
+
+Please be sure to read the section titled 'Configuring The Scheduler'
+below before attempting to start the scheduler.
+
+The basic mode of operation for the scheduler is this: 
+
+ - Jobs are submitted to the PBS server by users.  The server enqueues
+	them in the "default" queue (c.f. qmgr(1)). 
+
+ - The scheduler wakes up and performs the following actions:
+
+   + Get a list of jobs from the server.  Typically, the scheduler and
+	server are run on the front-end, and only a resmom is needed on
+	the execution hosts.  See the section on Scheduler Deployment.
+
+   + Get available resource information from each execution host.  The
+	resmom running on each host is queried for a set of resources
+	for the host.  Scheduling decisions are made based upon these
+	resources, queue limits, time of day (optional), etc, etc.
+
+   + Get information about the queues from the server.  The queues over
+	which the scheduler has control are listed in the scheduler's
+	configuration files.  The queues may be listed as batch or submit,
+	queues.  A job list is then created from the jobs on the submit
+	queue(s).
+
+   + If a job fits on a queue and does not violate any policy requirements
+	(like primetime walltime limits), ask PBS to move the job to that
+	queue, and start it running.  If this succeeds, account for the
+	expected resource drain and continue. 
+
+   + If the job is not runnable at this time, the job comment will be
+	modified to reflect the reason the job was not runnable (see the
+	section on Lazy Comments).  Note that this reason may change from
+	iteration to iteration, and that there may be several reasons that
+	the job is not runnable now.
+
+   + If any jobs are enqueued on the "external" queues, run as many as
+	possible on the external queue.  This allows queues to be created
+	and held idle unless jobs are enqueued upon them, in which case
+	they are immediately started.
+
+   + Clean up all allocated resources, and go back to sleep until the next
+	round of scheduling is requested.
+
+The scheduler attempts to pack the jobs into the queues as closely as
+possible into the queues.  Queues are packed in a "first come, first
+served" order.  
+
+The PBS server will wake up the scheduler when jobs arrive or terminate,
+so jobs should be scheduled immediately if the resources are (or become) 
+available for them.  There is also a periodic run every few minutes.
+
+
+* The Configuration File
+
+The scheduler's configuration file is a flat ASCII file.  Comments are
+allowed anywhere, and begin with a '#' character.  Any non-comment lines
+are considered to be statements, and must conform to the syntax :
+
+	<option> <argument>
+
+The descriptions of the options below describe the type of argument that
+is expected for each of the options.  Arguments must be one of :
+
+	<boolean>	A boolean value.  The strings "true", "yes", "on" and 
+			"1" are all true, anything else evaluates to false.
+	<hostname>	A hostname registered in the DNS system.
+	<integer>	An integral (typically non-negative) decimal value.
+	<pathname>	A valid pathname (i.e. "/usr/local/pbs/pbs_acctdir").
+	<queue_spec>	The name of a PBS queue.  Either 'queue@exechost' or
+			just 'queue'.  If the hostname is not specified, it
+			defaults to the name of the local host machine.
+	<real>		A real valued number (i.e. the number 0.80).
+	<string>	An uninterpreted string passed to other programs.
+	<time_spec>	A string of the form HH:MM:SS (i.e. 00:30:00 for
+			thirty minutes, 4:00:00 for four hours).
+	<variance>	Negative and positive deviation from a value.  The
+			syntax is '-mm%,+nn%' (i.e. '-10%,+15%' for minus
+			10 percent and plus 15% from some value).
+
+Syntactical errors in the configuration file are caught by the parser, and
+the offending line number and/or configuration option/argument is noted in
+the scheduler logs.  The scheduler will not start while there are syntax
+errors in its configuration files.
+
+Before starting up, the scheduler attempts to find common errors in the
+configuration files.  If it discovers a problem, it will note it in the
+logs (possibly suggesting a fix) and exit.
+
+The following is a complete list of the recognized options :
+
+    BATCH_QUEUES				<queue_spec>[,<queue_spec>...]
+    ENFORCE_PRIME_TIME				<boolean>
+    PRIME_TIME_END				<time_spec>
+    PRIME_TIME_START				<time_spec>
+    PRIME_TIME_WALLT_LIMIT			<time_spec>
+    SCHED_HOST					<hostname>
+    SCHED_RESTART_ACTION			<string>
+    SUBMIT_QUEUE				<queue_spec>
+    SYSTEM_NAME					<hostname>
+    TARGET_LOAD_PCT				<integer>
+    TARGET_LOAD_VARIANCE			<variance>
+
+Key options are described in greater detail below, the rest are discussed
+in the configuration file..
+
+* Submit Queue
+
+    Related configuration options:   
+        SUBMIT_QUEUE				<queue_spec>
+
+The "normal" mode of operation for this scheduler is to look for jobs that
+are enqueued on the SUBMIT_QUEUE.  Assuming the system resources and policy 
+permit it, jobs are moved from the SUBMIT_QUEUE to one of the BATCH_QUEUES
+(see below), and started.
+
+Note that the limits on the submit queue (i.e. resources_max.*) must be the
+union of the limits on the BATCH_QUEUES.  This is required by PBS, since it
+will reject requests to submit to the SUBMIT_QUEUE if the job does not fit
+the SUBMIT_QUEUE limits.  See the "Configuring The Scheduler" section for
+more information.
+
+* Execution Queues
+    
+    Related configuration options:   
+        BATCH_QUEUES				<queue_spec>[,<queue_spec,...]
+
+
+* Lazy Commenting
+
+Because changing the job comment for each of a large group of jobs can be
+very expensive, there is a notion of lazy comments. The function that sets
+the comment on a job takes a flag that indicates whether or not the comment
+is optional.  Most of the "can't run because ..." comments are considered
+to be optional.
+
+When presented with an optional comment, the job will only be altered if
+the job was enqueued after the last run of the scheduler, if it does not
+already have a comment, or the job's 'mtime' (modification time) attribute
+indicates that the job has not been touched in MIN_COMMENT_AGE seconds.
+
+This should provide each job with a comment at least once per scheduler
+lifetime.  It also provides an upper bound (MIN_COMMENT_AGE seconds + the
+scheduling iteration) on the time between comment updates.
+
+This compromise seemed reasonable because the comments themselves are some-
+what arbitrary, so keeping them up-to-date is not a high priority.
+

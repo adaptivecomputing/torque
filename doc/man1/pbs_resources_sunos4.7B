@@ -1,0 +1,172 @@
+.\"         OpenPBS (Portable Batch System) v2.3 Software License
+.\" 
+.\" Copyright (c) 1999-2000 Veridian Information Solutions, Inc.
+.\" All rights reserved.
+.\" 
+.\" ---------------------------------------------------------------------------
+.\" For a license to use or redistribute the OpenPBS software under conditions
+.\" other than those described below, or to purchase support for this software,
+.\" please contact Veridian Systems, PBS Products Department ("Licensor") at:
+.\" 
+.\"    www.OpenPBS.org  +1 650 967-4675                  sales@OpenPBS.org
+.\"                        877 902-4PBS (US toll-free)
+.\" ---------------------------------------------------------------------------
+.\" 
+.\" This license covers use of the OpenPBS v2.3 software (the "Software") at
+.\" your site or location, and, for certain users, redistribution of the
+.\" Software to other sites and locations.  Use and redistribution of
+.\" OpenPBS v2.3 in source and binary forms, with or without modification,
+.\" are permitted provided that all of the following conditions are met.
+.\" After December 31, 2001, only conditions 3-6 must be met:
+.\" 
+.\" 1. Commercial and/or non-commercial use of the Software is permitted
+.\"    provided a current software registration is on file at www.OpenPBS.org.
+.\"    If use of this software contributes to a publication, product, or service
+.\"    proper attribution must be given; see www.OpenPBS.org/credit.html
+.\" 
+.\" 2. Redistribution in any form is only permitted for non-commercial,
+.\"    non-profit purposes.  There can be no charge for the Software or any
+.\"    software incorporating the Software.  Further, there can be no
+.\"    expectation of revenue generated as a consequence of redistributing
+.\"    the Software.
+.\" 
+.\" 3. Any Redistribution of source code must retain the above copyright notice
+.\"    and the acknowledgment contained in paragraph 6, this list of conditions
+.\"    and the disclaimer contained in paragraph 7.
+.\" 
+.\" 4. Any Redistribution in binary form must reproduce the above copyright
+.\"    notice and the acknowledgment contained in paragraph 6, this list of
+.\"    conditions and the disclaimer contained in paragraph 7 in the
+.\"    documentation and/or other materials provided with the distribution.
+.\" 
+.\" 5. Redistributions in any form must be accompanied by information on how to
+.\"    obtain complete source code for the OpenPBS software and any
+.\"    modifications and/or additions to the OpenPBS software.  The source code
+.\"    must either be included in the distribution or be available for no more
+.\"    than the cost of distribution plus a nominal fee, and all modifications
+.\"    and additions to the Software must be freely redistributable by any party
+.\"    (including Licensor) without restriction.
+.\" 
+.\" 6. All advertising materials mentioning features or use of the Software must
+.\"    display the following acknowledgment:
+.\" 
+.\"     "This product includes software developed by NASA Ames Research Center,
+.\"     Lawrence Livermore National Laboratory, and Veridian Information
+.\"     Solutions, Inc.
+.\"     Visit www.OpenPBS.org for OpenPBS software support,
+.\"     products, and information."
+.\" 
+.\" 7. DISCLAIMER OF WARRANTY
+.\" 
+.\" THIS SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND. ANY EXPRESS
+.\" OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+.\" OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT
+.\" ARE EXPRESSLY DISCLAIMED.
+.\" 
+.\" IN NO EVENT SHALL VERIDIAN CORPORATION, ITS AFFILIATED COMPANIES, OR THE
+.\" U.S. GOVERNMENT OR ANY OF ITS AGENCIES BE LIABLE FOR ANY DIRECT OR INDIRECT,
+.\" INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+.\" LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
+.\" OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+.\" LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+.\" NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+.\" EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+.\" 
+.\" This license will be governed by the laws of the Commonwealth of Virginia,
+.\" without reference to its choice of law rules.
+.if \n(Pb .ig Iq
+.\" for man page
+.TH pbs_Resources_sunos4 7B "" Local PBS
+.so ../ers/ers.macros
+.SH NAME
+pbs_resources_sunos4 - pbs resources on SunOS 4
+.SH DESCRIPTION
+This page summarizes the resources supported by PBS for Sun workstations
+running SunOS 4.x.
+These resources are specified by including them in the
+.I -l
+option argument on the qsub or qalter command or in the PBS job script.
+.SH RESOURCES
+.Iq
+.if !\n(Pb .ig Ig
+.\" for ers only
+.NH 4
+Sun SunOS Version 4 Resources
+.Ig
+.LP
+.IP cput 10
+Maximum amount of CPU time used by all processes in the job.
+Units: time.
+.IP file
+The largest size of any single file that may be created by the job.
+Units: size.
+.IP nice
+The nice value under which the job is to be run.
+Units: unitary.
+.IP pcput
+Maximum amount of CPU time used by any single process in the job.
+Units: time.
+.IP pmem
+Maximum amount of physical memory (workingset) used by any single process 
+of the job.
+Units: size.
+.IP pvmem
+Maximum amount of virtual memory used by any single process in the job.
+Units: size.
+.IP vmem
+Maximum amount of virtual memory used by all concurrent processes in the job.
+Units: size.
+.IP walltime
+Maximum amount of real time during which the job can be in the running state.
+Units: time.
+.so pbs_resources_all.so
+.LP
+qsub -l cput=1:00:00,walltime=2:00:00,file=50gb,mem=15mb script
+.br
+qalter -lcput=30:00,pmem=8mb 123.jobid
+.LP
+or in a qsub script as a directive:
+.LP
+#PBS -l cput=1:00:00,walltime=2:00:00,file=50gb,mem=15
+.LP
+.if !\n(Pb .ig Ig
+.\" for ers only
+.RE
+.LP
+.Ig
+.if \n(Pb .ig Ig
+.\" man page only
+.SH RESOURCE UNITS
+The resource values take the following units:
+.IP time 8
+specifies a maximum time period the resource can be used.  Time is expressed
+in seconds as an integer, or in the form:
+.br
+.Ty [[hours:]minutes:]seconds[.milliseconds]
+.IP size 8
+specifies the maximum amount in terms of bytes or words.  It is expressed
+in the form
+.Ty integer[suffix]
+The suffix is a multiplier defined in the following table,
+'b' means bytes (the default) and 'w' means words.
+The size of a word is the word size on the execution host.
+.RS
+.IP "\ b\ or\ \ w" 12
+bytes or words.
+.IP "kb\ or\ kw"
+Kilo (1024) bytes or words.
+.IP "mb\ or\ mw" 12
+Mega (1,048,576) bytes or words.
+.IP "gb\ or\ gw" 12
+Giga (1,073,741,824) bytes or words.
+.RE
+.IP unitary
+The maximum amount of a resource which is expressed as a simple integer.
+.SH SEE ALSO
+the PBS ERS, qsub(1B), qalter(1B), pbs_submit(3B), pbs_alterjob(3B),
+pbs_statjob(3b)
+pbs_resources_aix4(7B),
+pbs_resources_irix5(7B)
+pbs_resources_sp2(7B),
+pbs_resources_unicos8(7B)
+.Ig

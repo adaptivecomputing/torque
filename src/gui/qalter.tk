@@ -1,0 +1,988 @@
+#         OpenPBS (Portable Batch System) v2.3 Software License
+# 
+# Copyright (c) 1999-2000 Veridian Information Solutions, Inc.
+# All rights reserved.
+# 
+# ---------------------------------------------------------------------------
+# For a license to use or redistribute the OpenPBS software under conditions
+# other than those described below, or to purchase support for this software,
+# please contact Veridian Systems, PBS Products Department ("Licensor") at:
+# 
+#    www.OpenPBS.org  +1 650 967-4675                  sales@OpenPBS.org
+#                        877 902-4PBS (US toll-free)
+# ---------------------------------------------------------------------------
+# 
+# This license covers use of the OpenPBS v2.3 software (the "Software") at
+# your site or location, and, for certain users, redistribution of the
+# Software to other sites and locations.  Use and redistribution of
+# OpenPBS v2.3 in source and binary forms, with or without modification,
+# are permitted provided that all of the following conditions are met.
+# After December 31, 2001, only conditions 3-6 must be met:
+# 
+# 1. Commercial and/or non-commercial use of the Software is permitted
+#    provided a current software registration is on file at www.OpenPBS.org.
+#    If use of this software contributes to a publication, product, or
+#    service, proper attribution must be given; see www.OpenPBS.org/credit.html
+# 
+# 2. Redistribution in any form is only permitted for non-commercial,
+#    non-profit purposes.  There can be no charge for the Software or any
+#    software incorporating the Software.  Further, there can be no
+#    expectation of revenue generated as a consequence of redistributing
+#    the Software.
+# 
+# 3. Any Redistribution of source code must retain the above copyright notice
+#    and the acknowledgment contained in paragraph 6, this list of conditions
+#    and the disclaimer contained in paragraph 7.
+# 
+# 4. Any Redistribution in binary form must reproduce the above copyright
+#    notice and the acknowledgment contained in paragraph 6, this list of
+#    conditions and the disclaimer contained in paragraph 7 in the
+#    documentation and/or other materials provided with the distribution.
+# 
+# 5. Redistributions in any form must be accompanied by information on how to
+#    obtain complete source code for the OpenPBS software and any
+#    modifications and/or additions to the OpenPBS software.  The source code
+#    must either be included in the distribution or be available for no more
+#    than the cost of distribution plus a nominal fee, and all modifications
+#    and additions to the Software must be freely redistributable by any party
+#    (including Licensor) without restriction.
+# 
+# 6. All advertising materials mentioning features or use of the Software must
+#    display the following acknowledgment:
+# 
+#     "This product includes software developed by NASA Ames Research Center,
+#     Lawrence Livermore National Laboratory, and Veridian Information
+#     Solutions, Inc.
+#     Visit www.OpenPBS.org for OpenPBS software support,
+#     products, and information."
+# 
+# 7. DISCLAIMER OF WARRANTY
+# 
+# THIS SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND. ANY EXPRESS
+# OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+# OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT
+# ARE EXPRESSLY DISCLAIMED.
+# 
+# IN NO EVENT SHALL VERIDIAN CORPORATION, ITS AFFILIATED COMPANIES, OR THE
+# U.S. GOVERNMENT OR ANY OF ITS AGENCIES BE LIABLE FOR ANY DIRECT OR INDIRECT,
+# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
+# OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+# LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+# NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+# EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# 
+# This license will be governed by the laws of the Commonwealth of Virginia,
+# without reference to its choice of law rules.
+# hold: defines the layout and functions of the modify job dialog box.
+################################################################################
+proc qalter {} {
+  global qalterv LABELFONT def_qalter cmdpath activeWindow \
+	 jobsSelected qalterDialogBox qalterv_res qalterv_val \
+	 qalterv_stagein_host qalterv_stagein_input \
+         qalterv_stagein_local qalterv_stageout_local qalterv_stageout_host \
+         qalterv_stageout_output qalterv_shellp qalterv_shellh qalterv_groupg \
+	 qalterv_grouph qalterv_useru qalterv_userh qalterv_notify_addr \
+	 jobResourceList
+
+
+## Bring up the standard Dialog box ##
+  busy_cursor
+  set qalterDialogBox .qalter
+  set dbox [popupDialogBox $qalterDialogBox "Modify Job Dialog" 1 \
+	    Qalter]
+
+  set activeWindow($qalterDialogBox) 1
+  bind_button1 $qalterDialogBox  
+  set dbox_top    [lindex $dbox 0]
+  set dbox_bottom [lindex $dbox 1]
+
+## BOTTOM PART ############################################################
+  set cmdButtons \
+  [buildCmdButtons $dbox_bottom \
+    { {{modify "confirm modify"} {cancel cancel}} \
+      {{reset "reset options to default"}} {{help help}}} x 0 10 3]
+
+  set cmdFrame  [lindex $cmdButtons 0]
+  set cmdModify [lindex $cmdButtons 1]
+  set cmdCancel [lindex $cmdButtons 2]
+  set cmdReset  [lindex $cmdButtons 3]
+  set cmdHelp   [lindex $cmdButtons 4]
+
+
+
+  $cmdReset configure -width 25 -command {
+    set_default_qalter_main
+    invoke_qalter_widgets qalterv
+    boxLoad $qalterv(resBox) 0
+  }
+
+  $cmdModify configure -width 15 -command {
+
+     if { [string compare $qalterv(jobName) ""] != 0  && \
+          ([string length $qalterv(jobName)] > 15 || \
+          ![regexp "\[a-zA-Z]+" [string index $qalterv(jobName) 0]]) } {
+       popupInfoBox $qalterDialogBox "Found Job Name to be of more than 15\
+                chars, or the first letter is non-alphabetic. Please fix."
+       return 1
+     }
+
+     init_qalter_main_argstr
+
+     if {$qalterv(notify)} {
+
+       set qalterv(mail_option) \
+	    "$qalterv(notify_opt\(abort\))$qalterv(notify_opt\(begin\))$qalterv(notify_opt\(end\))"
+       if {[string compare $qalterv(mail_option) ""] == 0} {
+            set qalterv(mail_option) "n"
+           init_qalter_email_argstr
+       } else {
+         pre_build_email_opt qalterv
+       }
+     } else {
+       init_qalter_email_argstr
+     }
+
+     set hold_list ""
+     if { [string compare $qalterv(qhold\(user\)) \
+		          $def_qalter(qhold\(user\))] != 0 } {
+	append hold_list $qalterv(qhold\(user\))
+     }
+     if { [string compare $qalterv(qhold\(other\)) \
+		          $def_qalter(qhold\(other\))] != 0 } {
+	append hold_list $qalterv(qhold\(other\))
+     }	
+     if { [string compare $qalterv(qhold\(system\)) \
+		          $def_qalter(qhold\(system\))] != 0} {
+	append hold_list $qalterv(qhold\(system\))
+     }	
+		
+     switch -exact -- $qalterv(hold_action) {
+	place {
+	  if {[string compare $hold_list ""] != 0} {
+	    set qalterv(hold_args) $hold_list
+	  }
+	}
+	clear {
+	  set qalterv(hold_args) "n"
+	}
+     }
+
+    set retain "" 
+    if [info exists qalterv(chkboxStdoutRet)] {
+        set state [lindex [$qalterv(chkboxStdoutRet) configure -state] 4]
+
+        if {[string compare $state "normal"] == 0 && \
+            [string compare $qalterv(stdoutRet) \
+		            $def_qalter(stdoutRet)] != 0} {
+              append retain $qalterv(stdoutRet)
+        }
+    }
+
+    if [info exists qalterv(chkboxStderrRet)] {
+        set state [lindex [$qalterv(chkboxStderrRet) configure -state] 4]
+
+        if {[string compare $state "normal"] == 0 && \
+            [string compare $qalterv(stderrRet) \
+		            $def_qalter(stderrRet)] != 0} {
+              append retain $qalterv(stderrRet)
+        }
+    }
+
+    switch -exact -- $qalterv(retain) {
+       retain {
+	if { [string compare $retain ""] != 0 } {
+	  set qalterv(keep_args) $retain
+	}
+       }  
+       noRetain {
+  	 set qalterv(keep_args) n	 
+       }	
+    }
+
+    if [info exists qalterv(StdoutFile)] {
+      set state [lindex [$qalterv(StdoutFile) configure -state] 4]
+
+      if {[string compare $state "normal"] == 0} { 
+     
+        if { [trimvar ":" qalterv(stdoutFile)] || \
+	     [trimvar ":" qalterv(stdoutHost)] } {
+          popupInfoBox $qalterDialogBox "Detected an illegal character  \":\" \
+	    in Stdout filename/hostname. Please remove."
+           return 1
+	}
+
+        if {[string compare $qalterv(stdoutHost) ""] != 0 && \
+            [string compare $qalterv(stdoutFile) ""] == 0} {
+          popupInfoBox $qalterDialogBox "Stdout File/Host specification is incomplete"
+          return
+        }
+
+        if {[string compare $qalterv(stdoutHost) \
+		            $def_qalter(stdoutHost)] != 0 || \
+	    [string compare $qalterv(stdoutFile) \
+		            $def_qalter(stdoutFile)] != 0} {
+	
+            if {[string compare $qalterv(stdoutHost) ""] != 0} {
+              set qalterv(stdoutPath) "$qalterv(stdoutHost):$qalterv(stdoutFile)"
+            } elseif {[string compare $qalterv(stdoutFile) ""] != 0} {
+              set qalterv(stdoutPath) "$qalterv(stdoutFile)"
+            }
+        }
+      }
+    }
+
+    if [info exists qalterv(StderrFile)] {
+      set state [lindex [$qalterv(StderrFile) configure -state] 4]
+
+      if {[string compare $state "normal"] == 0} {
+
+        if { [trimvar ":" qalterv(stderrFile)] || \
+	     [trimvar ":" qalterv(stderrHost)] } {
+           popupInfoBox $qalterDialogBox "Detected an illegal character \":\"\
+		 in  or Stderr filename/hostname. Please remove."
+           return 1
+        }
+
+        if {[string compare $qalterv(stderrHost) ""] != 0 && \
+            [string compare $qalterv(stderrFile) ""] == 0} {
+          popupInfoBox $qalterDialogBox "Stderr File/Host specification is incomplete"
+          return
+        }
+
+        if {[string compare $qalterv(stderrHost) \
+		            $def_qalter(stderrHost)] != 0 || \
+	    [string compare $qalterv(stderrFile) \
+		            $def_qalter(stderrFile)] != 0} {
+
+            if {[string compare $qalterv(stderrHost) ""] != 0} {
+              set qalterv(stderrPath) "$qalterv(stderrHost):$qalterv(stderrFile)"
+            } elseif {[string compare $qalterv(stderrFile) ""] != 0} {
+              set qalterv(stderrPath) "$qalterv(stderrFile)"
+            }
+  	}
+      }
+    }
+
+   set size 0
+   if [info exists qalterv_res] {
+     set size [array size qalterv_res]
+   }
+
+    for {set i 0} {$i < $size} {incr i} {
+       if { [trimvar "=," qalterv_res($i)] || [trimvar "=," qalterv_val($i)] } {
+          popupInfoBox $qalterDialogBox "Detected an illegal character  \"=\"\
+                 in resource name or value entry $i. Please remove."
+          return 1
+       }
+
+       if {[string compare $qalterv_res($i)  ""] == 0 && \
+           [string compare $qalterv_val($i) ""] != 0} { 
+           popupInfoBox $qalterDialogBox "Resource List entry $i is incomplete"
+           return
+       }
+
+       if {[string compare $qalterv_res($i) ""] != 0 || \
+           [string compare $qalterv_val($i) ""] != 0} {
+          if {[string compare $qalterv_val($i) ""] == 0} {
+            set resources($i) "$qalterv_res($i)"
+          } else {
+            set resources($i) "$qalterv_res($i)=$qalterv_val($i)"
+          }
+       }
+    }
+
+    set qalterv(res_args) [construct_array_args resources ","]
+    catch {unset resources}
+
+    pre_build_depend_opt qalterv def_qalter
+    pre_build_staging_opt qalterv
+    pre_build_misc_opt qalterv def_qalter
+
+    if { [string compare $qalterv(qtime) "now"] != 0 } {
+      pre_build_datetime_opt qalterv
+    } else {
+      init_qalter_datetime_argstr
+    }
+
+    set qopts [build_opt 1 "" 1] 
+    if { [string compare $qopts ""] == 0 } {
+      popupInfoBox $qalterDialogBox "Nothing to alter."	
+    } else {
+      set exitcode [win_cmdExec $qalterDialogBox \
+			"$cmdpath(QALTER) [build_opt 1 "" 1] $jobsSelected"]
+      if {$exitcode == 0} {
+         popupInfoBox $qalterDialogBox "Job(s) have been altered."
+         after 500 [list getdata $SERVER_HOSTS 1]
+         destroy $qalterDialogBox
+      }
+    }
+  }
+
+  $cmdCancel configure -command {
+	destroy $qalterDialogBox
+  }
+
+  $cmdHelp configure -command {xpbs_help modify $qalterDialogBox}
+
+## Bring up Frames
+  frame $dbox_top.jobs
+  frame $dbox_top.optionsLabel -class CmdFrame -relief raised -borderwidth 2
+  frame $dbox_top.options -borderwidth 4 -relief ridge
+
+  frame $dbox_top.optionsMain
+  frame $dbox_top.optionsMain.left -relief groove -borderwidth 3
+  frame $dbox_top.optionsMain.right -relief groove -borderwidth 3
+  frame $dbox_top.line1
+  frame $dbox_top.line3
+  frame $dbox_top.line4
+  frame $dbox_top.line4.n
+  frame $dbox_top.line4.n.t
+  frame $dbox_top.line4.n.b
+  frame $dbox_top.line4.n.b.when
+  frame $dbox_top.line5
+
+
+  frame $dbox_top.resources -borderwidth 3 -relief groove
+  frame $dbox_top.lower
+  frame $dbox_top.output -relief groove -borderwidth 3 
+
+
+  frame $dbox_top.othOpts -class CmdFrame -borderwidth 3 -relief groove
+  frame $dbox_top.r3 -relief groove -borderwidth 3
+  frame $dbox_top.r3.holdt
+
+  frame $dbox_top.entries 
+
+  frame $dbox_top.jobs.e
+  frame $dbox_top.line1.1
+  frame $dbox_top.line1.2
+  frame $dbox_top.r1
+
+  frame $dbox_top.action
+  frame $dbox_top.merge
+  frame $dbox_top.retain
+  frame $dbox_top.stderr
+  frame $dbox_top.stderr.file
+  frame $dbox_top.stderr.host
+  frame $dbox_top.stdout
+  frame $dbox_top.stdout.file
+  frame $dbox_top.stdout.host
+
+
+
+  set miscButtons \
+  [buildCmdButtons $dbox_top.othOpts {\
+	{{concur "concurrency set.."}} \
+	{{after "after depend.."}} \
+	{{before "before depend.."}} \
+	{{staging "file staging.."}} \
+	{{misc "misc.."}} } \
+	y 0 17 0 0 0 0 "OTHER ATTRIBUTES"]
+  set miscConcur [lindex $miscButtons 1]
+  set miscAfter  [lindex $miscButtons 2]
+  set miscBefore [lindex $miscButtons 3]
+  set miscStaging [lindex $miscButtons 4]
+  set miscMisc    [lindex $miscButtons 5]
+  set miscLabel   [lindex $miscButtons 6]
+  $miscConcur configure -command {concur $qalterDialogBox 1}
+  $miscAfter configure -command {after_depend $qalterDialogBox 1}
+  $miscBefore configure -command {before_depend $qalterDialogBox 1}
+  $miscStaging configure -command {staging $qalterDialogBox 1}
+  $miscMisc configure -command {misc $qalterDialogBox 1}
+  $miscLabel configure -anchor nw
+
+
+
+  set chkbox [buildCheckboxes $dbox_top.r3.holdt \
+                   {{{user user} {other other} {system system}}} column 0]
+  set chkboxFrame           [lindex $chkbox 0]
+  set qalterv(chkboxUser)   [lindex $chkbox 1]
+  set qalterv(chkboxOther)  [lindex $chkbox 2]
+  set qalterv(chkboxSystem) [lindex $chkbox 3]
+
+  $qalterv(chkboxUser)   configure -variable qalterv(qhold(user)) -onvalue u \
+                         -offvalue ""
+  $qalterv(chkboxOther)  configure -variable qalterv(qhold(other)) -onvalue o \
+                         -offvalue ""
+  $qalterv(chkboxSystem) configure -variable qalterv(qhold(system)) -onvalue s \
+                         -offvalue ""
+
+  set radioList [list   [concat place "Place" $chkboxFrame] \
+		 	{clear "Clear all"}]
+
+  set radiobox [buildRadioboxes $dbox_top.r3 \
+                                [list $radioList] column 0 "Hold Types" 0 1]
+  set qalterv(radioboxPlace)    [lindex $radiobox 1]
+  set qalterv(radioboxClear)    [lindex $radiobox 2]
+
+  $qalterv(radioboxPlace) configure -variable qalterv(hold_action) \
+		-value "place" -command { \
+ 		enable_rcbuttons $qalterv(chkboxUser) $qalterv(chkboxOther) \
+				 $qalterv(chkboxSystem)
+	}
+  $qalterv(radioboxClear) configure -variable qalterv(hold_action) \
+		-value "clear" -command { \
+		disable_rcbuttons $qalterv(chkboxUser) $qalterv(chkboxOther) \
+				  $qalterv(chkboxSystem)
+	}
+
+### JOBID ################################################################
+
+
+  label $dbox_top.jobs.l -font $LABELFONT -text "Modify job(s):"
+  set jobidbox [buildFullListbox $dbox_top.jobs.e 55x3 "" yscroll 0]
+  set jobidField [lindex $jobidbox 3]
+  $jobidField configure -relief sunken
+  bind_text_readonly $jobidField
+
+  foreach el $jobsSelected {
+    $jobidField insert end $el
+  }
+
+  label $dbox_top.optionsLabel.l -font $LABELFONT -text "ATTRIBUTES"
+  pack $dbox_top.optionsLabel.l -anchor nw
+### OPTIONS ###############################################################
+ 
+
+### MAIN OPTIONS #################
+
+#### MAIN OPTIONS LINE1 ##########
+
+  set jobbox [buildFullEntrybox $dbox_top.line1.1 8 "Job Name" 15 "" none 0]
+  set JobNameEntry [lindex $jobbox 2]
+
+  $JobNameEntry configure -textvariable qalterv(jobName)
+  bind_entry_overselect $JobNameEntry
+  register_entry_fixsize $JobNameEntry 15
+  register_default_action $JobNameEntry $cmdCancel
+
+  set spinBox [buildSpinbox $dbox_top.line1.2 5 -1024-1023 qalterv priority \
+		"Priority" left ""]
+
+  set priorityEntry  [lindex $spinBox 1]
+  register_default_action $priorityEntry $cmdCancel
+
+#### MAIN OPTIONS LINE 3 ##########
+
+##
+  set radiobox [buildRadioboxes $dbox_top.r1 \
+                { {{now "NOW"} {later "LATER at.."}} }\
+                grid 0 "When to Queue"]
+  set radioboxNow    [lindex $radiobox 1]
+  set radioboxLater  [lindex $radiobox 2]
+
+  $radioboxNow configure -variable qalterv(qtime) -value "now" \
+	-command {
+        set_dateTime qalterv(qtimeMon) qalterv(qtimeDay) qalterv(qtimeYear) \
+                     qalterv(qtimeHH) qalterv(qtimeMM) qalterv(qtimeSS) 1
+	set qalterv(exec_time) [lindex $def_qalter(exec_time) 1]}
+  $radioboxLater configure -variable qalterv(qtime) -value "later" \
+	-command [list dateTime $qalterDialogBox 1]
+
+
+## MAIN OPTIONS LINE 5 #######
+  set acctbox [buildFullEntrybox $dbox_top.line5 11 "Account Name" 15 "" none 0]
+  set AcctNameEntry [lindex $acctbox 2]
+
+  $AcctNameEntry configure -textvariable qalterv(acctName)
+  bind_entry_overselect $AcctNameEntry
+  register_default_action $AcctNameEntry $cmdCancel
+
+## MAIN OPTIONS LINE 4 ######
+
+  label $dbox_top.line4.n.t.label1 -text "Notify" -font $LABELFONT
+  label $dbox_top.line4.n.b.label2 -text "when" -font $LABELFONT
+  set qalterv(cmdEmail) [button $dbox_top.line4.n.t.email -font $LABELFONT \
+                    -text "email addrs.."]
+
+  $qalterv(cmdEmail) configure -command {email_list $qalterDialogBox 1}
+  set chkbox [buildCheckboxes $dbox_top.line4.n.b.when \
+                      {{{a "job aborts"} {b "job begins execution"} {e "job terminates"}}} column 0 ""]
+  set chkboxFrame  [lindex $chkbox 0]
+  set qalterv(chkboxNotifyAbort)   [lindex $chkbox 1]
+  set qalterv(chkboxNotifyBegin)  [lindex $chkbox 2]
+  set qalterv(chkboxNotifyEnd)    [lindex $chkbox 3]
+
+  $qalterv(chkboxNotifyAbort) configure -variable qalterv(notify_opt(abort)) \
+      -onvalue "a" -offvalue "" -command {
+        if {[string compare $qalterv(notify_opt\(abort\)) "a"] != 0 && \
+            [string compare $qalterv(notify_opt\(begin\)) "b"] != 0 && \
+            [string compare $qalterv(notify_opt\(end\)) "e"] != 0 } {
+            disable_button $qalterv(cmdEmail)
+        } else {
+            enable_button $qalterv(cmdEmail)
+        }
+  }
+  $qalterv(chkboxNotifyBegin) configure -variable qalterv(notify_opt(begin)) \
+      -onvalue "b" -offvalue "" -command {
+        if {[string compare $qalterv(notify_opt\(abort\)) "a"] != 0 && \
+            [string compare $qalterv(notify_opt\(begin\)) "b"] != 0 && \
+            [string compare $qalterv(notify_opt\(end\)) "e"] != 0 } {
+            disable_button $qalterv(cmdEmail)
+        } else {
+            enable_button $qalterv(cmdEmail)
+        }
+  }
+  $qalterv(chkboxNotifyEnd)   configure -variable qalterv(notify_opt(end)) \
+      -onvalue "e" -offvalue "" -command {
+        if {[string compare $qalterv(notify_opt\(abort\)) "a"] != 0 && \
+            [string compare $qalterv(notify_opt\(begin\)) "b"] != 0 && \
+            [string compare $qalterv(notify_opt\(end\)) "e"] != 0 } {
+            disable_button $qalterv(cmdEmail)
+        } else {
+            enable_button $qalterv(cmdEmail)
+        }
+  }
+
+  pack $dbox_top.line4.n.t.label1  -side left -anchor s
+  pack $qalterv(cmdEmail) -side right -anchor s
+  pack $dbox_top.line4.n.b.label2 $dbox_top.line4.n.b.when -side left -anchor nw
+
+  set qalterv(notifyLabel1) $dbox_top.line4.n.t.label1
+  set qalterv(notifyLabel2) $dbox_top.line4.n.b.label2
+
+  set chkboxList [list   [concat notify \"\" $dbox_top.line4.n] ]
+  pack $dbox_top.line4.n
+  set chkbox [buildCheckboxes $dbox_top.line4 \
+                   [list $chkboxList] column 0]
+  set qalterv(chkboxNotify) [lindex $chkbox 1]
+
+  $qalterv(chkboxNotify) configure -variable qalterv(notify) -command {
+    global disabledColor
+    if {$qalterv(notify)} {
+      enable_label  $qalterv(notifyLabel1)
+      enable_label  $qalterv(notifyLabel2)
+      enable_rcbuttons $qalterv(chkboxNotifyAbort) $qalterv(chkboxNotifyBegin) \
+			$qalterv(chkboxNotifyEnd) 
+      if {[string compare $qalterv(notify_opt\(abort\)) "a"] == 0 || \
+          [string compare $qalterv(notify_opt\(begin\)) "b"] == 0 || \
+          [string compare $qalterv(notify_opt\(end\)) "e"] == 0 } {
+        enable_button $qalterv(cmdEmail)
+      }
+    } else {
+      disable_label  $qalterv(notifyLabel1) $disabledColor
+      disable_label  $qalterv(notifyLabel2) $disabledColor
+      disable_rcbuttons $qalterv(chkboxNotifyAbort) $qalterv(chkboxNotifyBegin) \
+			$qalterv(chkboxNotifyEnd) 
+      disable_button $qalterv(cmdEmail)
+    }
+  }
+### RESOURCE OPTIONS ########   
+
+  foreach res $jobResourceList {
+	lappend resnames [list "" [lindex $res 0]]
+  }
+
+  box $dbox_top.resources -title "Resource List" \
+    -entrylabels [list [list "resource" MENU_ENTRY $jobResourceList] value] \
+     -lboxlabels [list " " "Resources"] -lboxwidths [list 15 20] \
+     -lboxheights [list 2 2] -orient xy \
+     -array 0 qalterv_res -array 1 qalterv_val \
+     -menuEntry [list [list $resnames] {resources_help $qalterDialogBox} help-] -key 0 \
+     -grabBox $qalterDialogBox
+
+  set qalterv(resBox) $dbox_top.resources
+
+## OUTPUT OPTIONS #####
+
+
+  set radiobox [buildRadioboxes $dbox_top.merge \
+                { {{stdoutMerge "Merge to Stdout"} \
+                   {stderrMerge "Merge to Stderr"} \
+                   {noMerge "Don't Merge"} \
+		   {noChange "No Change"}} } column 0 "Output" 1 1]
+  set qalterv(radioboxStdoutMerge)   [lindex $radiobox 1]
+  set qalterv(radioboxStderrMerge)   [lindex $radiobox 2]
+  set qalterv(radioboxNoMerge) 	     [lindex $radiobox 3]
+  set qalterv(radioboxNoChange)      [lindex $radiobox 4]
+
+
+  frame $dbox_top.retain.ret
+  set chkbox [buildCheckboxes $dbox_top.retain.ret \
+                 { {{stdoutRet "Stdout in exec_host:<jobname>.o<seq>"} \
+                    {stderrRet "Stderr in exec_host:<jobname>.e<seq>"}} } \
+                 column 0 "" 1 1]
+  set chkboxFrame [lindex $chkbox 0]
+  set qalterv(chkboxStdoutRet) [lindex $chkbox 1]
+  set qalterv(chkboxStderrRet) [lindex $chkbox 2]
+ 
+  set radioList [list   [concat ret "Retain" $chkboxFrame] \
+		 	{clear "Retain neither stdout/stderr in exec_host"}]
+
+  set radiobox [buildRadioboxes $dbox_top.retain \
+                                [list $radioList] column 0 "" 0 1]
+  set qalterv(rboxRetain)   [lindex $radiobox 1]
+  set qalterv(rboxNoRetain) [lindex $radiobox 2]
+
+  $qalterv(rboxRetain) configure -variable qalterv(retain) -value "retain" \
+	-command {
+    if {[string compare $qalterv(merge) "eo"] != 0} {
+      enable_rcbuttons $qalterv(chkboxStdoutRet)
+    }
+    if {[string compare $qalterv(merge) "oe"] != 0} {
+      enable_rcbuttons $qalterv(chkboxStderrRet)	
+    }
+    invoke_rbutton [list $qalterv(radioboxStdoutMerge) \
+		         $qalterv(radioboxStderrMerge) \
+	                 $qalterv(radioboxNoMerge) \
+			 $qalterv(radioboxNoChange)]
+  }
+  $qalterv(rboxNoRetain) configure -variable qalterv(retain) \
+	-value "noRetain" -command {
+      disable_rcbuttons $qalterv(chkboxStdoutRet) $qalterv(chkboxStderrRet)	
+      invoke_rbutton [list $qalterv(radioboxStdoutMerge) \
+		          $qalterv(radioboxStderrMerge) \
+	                  $qalterv(radioboxNoMerge) \
+			  $qalterv(radioboxNoChange)]
+  }
+
+  button $dbox_top.stdout.fsboxButton -height 1 -width 18 -font $LABELFONT \
+    -text "Stdout File Name.." -padx 0 \
+    -command {
+       fileselect $qalterDialogBox \
+        {
+          set qalterv(stdoutFile) $fileselect(filepath)
+          if { [string compare $fileselect(filepath) ""] != 0 } {
+            set qalterv(stdoutHost) $fileselect(host)
+          }
+        } "STDOUT FILE SELECTION" 0
+    }
+
+  set filebox [buildFullEntrybox $dbox_top.stdout.file \
+                      0 "" 15 "" right 0]
+  set qalterv(StdoutFileLabel) [lindex $filebox 1]
+  set qalterv(StdoutFile) [lindex $filebox 2]
+  set qalterv(StdoutFileScroll) [lindex $filebox 3]
+  $qalterv(StdoutFile) configure -textvariable qalterv(stdoutFile)
+  register_default_action $qalterv(StdoutFile) $cmdCancel
+
+  set filebox [buildFullEntrybox $dbox_top.stdout.host \
+                      12 "on hostname:" 15 "" right 0]
+  set qalterv(StdoutHostLabel) [lindex $filebox 1]
+  set qalterv(StdoutHost) [lindex $filebox 2]
+  set qalterv(StdoutHostScroll) [lindex $filebox 3]
+  $qalterv(StdoutHost) configure -textvariable qalterv(stdoutHost)
+  register_default_action $qalterv(StdoutHost) $cmdCancel
+
+  button $dbox_top.stderr.fsboxButton -height 1 -width 18 -font $LABELFONT \
+    -text "Stderr File Name.." -padx 0 \
+    -command {
+       fileselect $qalterDialogBox \
+        {
+          set qalterv(stderrFile) $fileselect(filepath)
+          if { [string compare $fileselect(filepath) ""] != 0 } {
+                set qalterv(stderrHost) $fileselect(host)
+          }
+        } "STDERR FILE SELECTION" 0
+    }
+
+  set filebox [buildFullEntrybox $dbox_top.stderr.file \
+                      0 "" 15 "" right 0]
+  set qalterv(StderrFileLabel) [lindex $filebox 1]
+  set qalterv(StderrFile) [lindex $filebox 2]
+  set qalterv(StderrFileScroll) [lindex $filebox 3]
+  $qalterv(StderrFile) configure -textvariable qalterv(stderrFile)
+  register_default_action $qalterv(StderrFile) $cmdCancel
+
+  set filebox [buildFullEntrybox $dbox_top.stderr.host \
+                      12 "on hostname:" 15 "" right 0]
+  set qalterv(StderrHostLabel) [lindex $filebox 1]
+  set qalterv(StderrHost) [lindex $filebox 2]
+  set qalterv(StderrHostScroll) [lindex $filebox 3]
+  $qalterv(StderrHost) configure -textvariable qalterv(stderrHost)
+  register_default_action $qalterv(StderrHost) $cmdCancel
+
+## Set the key tabbing option
+  bind_entry_tab $qalterv(StdoutFile) $qalterv(StdoutHost) \
+                 $qalterv(StdoutFile)
+  bind_entry_tab $qalterv(StdoutHost) $qalterv(StderrFile) \
+                 $qalterv(StdoutFile)
+  bind_entry_tab $qalterv(StderrFile) $qalterv(StderrHost) \
+                 $qalterv(StdoutHost)
+  bind_entry_tab $qalterv(StderrHost) $qalterv(StderrHost) \
+                 $qalterv(StderrFile)
+
+   bind_entry_overselect $qalterv(StdoutFile)
+   bind_entry_overselect $qalterv(StdoutHost)
+   bind_entry_overselect $qalterv(StderrFile)
+   bind_entry_overselect $qalterv(StderrHost)
+
+## Now for the big trick on output retention. #################################
+
+## Clicking Retain Stdout, then only the "Stderr File/Path Name" will be
+##   enabled for input. Retain will construct its own path for Stdout on the
+##   execution host.
+  $qalterv(chkboxStdoutRet) configure -variable qalterv(stdoutRet) \
+     -onvalue "o" \
+     -offvalue "" -command {
+	if {[string compare $qalterv(stdoutRet) "o"] == 0} {
+	  disable_fullentry $qalterv(StdoutFileLabel) $qalterv(StdoutFile) \
+                            $qalterv(StdoutFileScroll) 
+	  disable_fullentry $qalterv(StdoutHostLabel) $qalterv(StdoutHost) \
+                            $qalterv(StdoutHostScroll) 
+	  if {[string compare $qalterv(stderrRet) "e"] != 0} {
+	    focus $qalterv(StderrFile)
+	  }
+	} else {
+	  enable_fullentry $qalterv(StdoutFileLabel) $qalterv(StdoutFile) \
+           $qalterv(StdoutFileScroll) 
+	  enable_fullentry $qalterv(StdoutHostLabel) $qalterv(StdoutHost) \
+                           $qalterv(StdoutHostScroll) 
+	  focus $qalterv(StdoutFile)
+	}}
+
+## Clicking Retain Stderr, then only the "Stdout File/Path Name" will be
+## enabled for input. Retain will construct its own path for Stderr on the
+## execution host.
+
+  $qalterv(chkboxStderrRet) configure -variable qalterv(stderrRet) -onvalue "e" \
+        -offvalue "" \
+    -command {
+	if {[string compare $qalterv(stderrRet) "e"] == 0} {
+  	  disable_fullentry $qalterv(StderrFileLabel) $qalterv(StderrFile) \
+                            $qalterv(StderrFileScroll)
+  	  disable_fullentry $qalterv(StderrHostLabel) $qalterv(StderrHost) \
+                            $qalterv(StderrHostScroll)
+	  if {[string compare $qalterv(stdoutRet) "o"] != 0} {
+	    focus $qalterv(StdoutFile)
+	  }
+	} else {
+  	  enable_fullentry $qalterv(StderrFileLabel) $qalterv(StderrFile) \
+                           $qalterv(StderrFileScroll)
+  	  enable_fullentry $qalterv(StderrHostLabel) $qalterv(StderrHost) \
+                           $qalterv(StderrHostScroll)
+	  focus $qalterv(StderrFile)
+	}}
+
+## If standard error and standout are merged as standout output, then anything
+## referring to stderr are meaningless.
+
+  $qalterv(radioboxStdoutMerge) configure -variable qalterv(merge) -value oe \
+	-command {
+
+        if { [string compare $qalterv(retain) "retain"] == 0 } {
+	  disable_rcbutton $qalterv(chkboxStderrRet)
+	  enable_rcbutton $qalterv(chkboxStdoutRet)
+	}
+        disable_fullentry $qalterv(StderrFileLabel) $qalterv(StderrFile) \
+                          $qalterv(StderrFileScroll)
+        disable_fullentry $qalterv(StderrHostLabel) $qalterv(StderrHost) \
+                          $qalterv(StderrHostScroll)
+
+	if { [string compare $qalterv(retain) "retain"] != 0 || \
+	     [string compare $qalterv(stdoutRet) "o"] != 0} {
+          enable_fullentry $qalterv(StdoutFileLabel) $qalterv(StdoutFile) \
+                           $qalterv(StdoutFileScroll)
+          enable_fullentry $qalterv(StdoutHostLabel) $qalterv(StdoutHost) \
+                           $qalterv(StdoutHostScroll)
+	  focus $qalterv(StdoutFile)
+	} else {
+          disable_fullentry $qalterv(StdoutFileLabel) $qalterv(StdoutFile) \
+                           $qalterv(StdoutFileScroll)
+          disable_fullentry $qalterv(StdoutHostLabel) $qalterv(StdoutHost) \
+                           $qalterv(StdoutHostScroll)
+        }
+  }
+## If standard error and standout are merged as standout error, then anything
+## referring to stdout are meaningless.
+  $qalterv(radioboxStderrMerge) configure -variable qalterv(merge) \
+	-value eo -command {
+
+        if { [string compare $qalterv(retain) "retain"] == 0 } {
+	  disable_rcbutton $qalterv(chkboxStdoutRet)
+	  enable_rcbutton $qalterv(chkboxStderrRet)
+        }
+        disable_fullentry $qalterv(StdoutFileLabel) $qalterv(StdoutFile) \
+                          $qalterv(StdoutFileScroll)
+        disable_fullentry $qalterv(StdoutHostLabel) $qalterv(StdoutHost) \
+                          $qalterv(StdoutHostScroll)
+
+	if { [string compare $qalterv(retain) "retain"] != 0 || \
+	     [string compare $qalterv(stderrRet) "e"] != 0} {
+          enable_fullentry $qalterv(StderrFileLabel) $qalterv(StderrFile) \
+                           $qalterv(StderrFileScroll)
+          enable_fullentry $qalterv(StderrHostLabel) $qalterv(StderrHost) \
+                           $qalterv(StderrHostScroll)
+	  focus $qalterv(StderrFile)
+        } else {
+          disable_fullentry $qalterv(StderrFileLabel) $qalterv(StderrFile) \
+                           $qalterv(StderrFileScroll)
+          disable_fullentry $qalterv(StderrHostLabel) $qalterv(StderrHost) \
+                           $qalterv(StderrHostScroll)
+        }
+  }
+
+  $qalterv(radioboxNoMerge) configure -variable qalterv(merge) -value n \
+	-command {
+
+        if { [string compare $qalterv(retain) "retain"] == 0 } {
+	  enable_rcbutton $qalterv(chkboxStdoutRet)
+	  enable_rcbutton $qalterv(chkboxStderrRet)
+	}
+
+        if { [string compare $qalterv(retain) "retain"] != 0 || \
+	     [string compare $qalterv(stdoutRet) "o"] != 0} {
+          enable_fullentry $qalterv(StdoutFileLabel) $qalterv(StdoutFile) \
+                           $qalterv(StdoutFileScroll)
+          enable_fullentry $qalterv(StdoutHostLabel) $qalterv(StdoutHost) \
+                           $qalterv(StdoutHostScroll)
+	  focus $qalterv(StdoutFile)
+  	} else {
+          disable_fullentry $qalterv(StdoutFileLabel) $qalterv(StdoutFile) \
+                           $qalterv(StdoutFileScroll)
+          disable_fullentry $qalterv(StdoutHostLabel) $qalterv(StdoutHost) \
+                           $qalterv(StdoutHostScroll)
+        }
+        if { [string compare $qalterv(retain) "retain"] != 0 || \
+	     [string compare $qalterv(stderrRet) "e"] != 0} {
+          enable_fullentry $qalterv(StderrFileLabel) $qalterv(StderrFile) \
+                           $qalterv(StderrFileScroll)
+          enable_fullentry $qalterv(StderrHostLabel) $qalterv(StderrHost) \
+                           $qalterv(StderrHostScroll)
+	  focus $qalterv(StderrFile)
+  	} else {
+          disable_fullentry $qalterv(StderrFileLabel) $qalterv(StderrFile) \
+                           $qalterv(StderrFileScroll)
+          disable_fullentry $qalterv(StderrHostLabel) $qalterv(StderrHost) \
+                           $qalterv(StderrHostScroll)
+        }
+  }
+  $qalterv(radioboxNoChange) configure -variable qalterv(merge) -value nc \
+	-command {
+
+        if { [string compare $qalterv(retain) "retain"] == 0 } {
+	  enable_rcbutton $qalterv(chkboxStdoutRet)
+	  enable_rcbutton $qalterv(chkboxStderrRet)
+	}
+
+        if { [string compare $qalterv(retain) "retain"] != 0 || \
+	     [string compare $qalterv(stdoutRet) "o"] != 0} {
+          enable_fullentry $qalterv(StdoutFileLabel) $qalterv(StdoutFile) \
+                           $qalterv(StdoutFileScroll)
+          enable_fullentry $qalterv(StdoutHostLabel) $qalterv(StdoutHost) \
+                           $qalterv(StdoutHostScroll)
+	  focus $qalterv(StdoutFile)
+  	} else {
+          disable_fullentry $qalterv(StdoutFileLabel) $qalterv(StdoutFile) \
+                           $qalterv(StdoutFileScroll)
+          disable_fullentry $qalterv(StdoutHostLabel) $qalterv(StdoutHost) \
+                           $qalterv(StdoutHostScroll)
+        }
+        if { [string compare $qalterv(retain) "retain"] != 0 || \
+	     [string compare $qalterv(stderrRet) "e"] != 0} {
+          enable_fullentry $qalterv(StderrFileLabel) $qalterv(StderrFile) \
+                           $qalterv(StderrFileScroll)
+          enable_fullentry $qalterv(StderrHostLabel) $qalterv(StderrHost) \
+                           $qalterv(StderrHostScroll)
+	  focus $qalterv(StderrFile)
+  	} else {
+          disable_fullentry $qalterv(StderrFileLabel) $qalterv(StderrFile) \
+                           $qalterv(StderrFileScroll)
+          disable_fullentry $qalterv(StderrHostLabel) $qalterv(StderrHost) \
+                           $qalterv(StderrHostScroll)
+        }
+  }
+  register_default_action Qalter $cmdCancel
+### Pack the frames
+  pack  $dbox_top.jobs -side top -anchor c  -pady 5 
+  pack  $dbox_top.optionsLabel -anchor nw -after $dbox_top.jobs -fill x
+
+  pack $dbox_top.options \
+        -anchor nw -fill x -after $dbox_top.optionsLabel
+
+  pack $dbox_top.optionsMain \
+       $dbox_top.entries \
+       $dbox_top.lower \
+       -in $dbox_top.options -side top -anchor nw -pady 5 -fill both -expand 1
+
+  pack  $dbox_top.jobs.l $dbox_top.jobs.e -side left -anchor c
+
+
+  pack $dbox_top.line1 \
+       -in $dbox_top.optionsMain.left -side top -anchor nw -pady 3m -padx 3m 
+  pack $dbox_top.line5 \
+       -in $dbox_top.optionsMain.left -anchor nw -padx 3m \
+       -after $dbox_top.line1
+  pack $dbox_top.line3 -after $dbox_top.line5 \
+       -in $dbox_top.optionsMain.left -anchor nw -pady 3m -padx 3m 
+  pack $dbox_top.line1.1 $dbox_top.line1.2 \
+       -anchor nw -side left
+  pack $dbox_top.r1 -in $dbox_top.line3
+
+  pack  $dbox_top.line4 \
+       -in $dbox_top.optionsMain.right -anchor nw -padx 1m -pady 1m
+  pack $dbox_top.line4.n.t \
+       $dbox_top.line4.n.b -side top -anchor nw -pady 6
+
+  pack $dbox_top.optionsMain.left -side left -anchor c -padx 3m -pady 2m
+  pack $dbox_top.optionsMain.right -side right -anchor c -pady 2m
+
+  pack $dbox_top.resources \
+       -in $dbox_top.entries -side left -padx 2m
+  pack $dbox_top.r3 \
+       -in $dbox_top.entries -side left
+  pack $dbox_top.othOpts \
+       -in $dbox_top.entries -side left -padx 2m
+  raise $dbox_top.resources $dbox_top.entries
+  raise $dbox_top.r3 $dbox_top.entries
+  raise $dbox_top.othOpts $dbox_top.entries
+
+  pack $dbox_top.output \
+       -in $dbox_top.lower -padx 2m -side left -fill both -expand 1
+  raise $dbox_top.output $dbox_top.lower
+  pack  $dbox_top.action -side top -anchor nw -pady 3m -padx 2m \
+        -in $dbox_top.output -fill x -expand 1
+  pack  $dbox_top.merge $dbox_top.retain \
+        -in $dbox_top.action -side left -anchor nw -fill both -expand 1 \
+        -padx 2m
+  pack  $dbox_top.stdout \
+        -in $dbox_top.output -side top -anchor nw -fill x -expand 1 \
+	-pady 2m -padx 2m
+  pack  $dbox_top.stderr -after $dbox_top.stdout\
+        -in $dbox_top.output -anchor nw -fill x -expand 1 -padx 2m
+  pack  $dbox_top.stdout.fsboxButton $dbox_top.stdout.file \
+		$dbox_top.stdout.host -side left -anchor nw 
+  pack  $dbox_top.stderr.fsboxButton $dbox_top.stderr.file \
+		$dbox_top.stderr.host -side left -anchor nw
+
+# End of Pack
+### SET OPTIONS TO DEFAULT
+  set_default_qalter_main
+  set_default_qalter_concur
+  set_default_qalter_after
+  set_default_qalter_before
+  set_default_qalter_staging
+  set_default_qalter_misc
+  set_default_qalter_email
+  set_default_qalter_datetime
+
+  invoke_qalter_widgets qalterv
+
+  tkwait visibility $qalterDialogBox
+  remove_busy_cursor
+  catch {tkwait window $qalterDialogBox}
+  boxesUnset
+  set activeWindow($qalterDialogBox) 0
+  set varnames "qalterv qalterv qalterv_res qalterv_val \
+	 qalterv_stagein_host qalterv_stagein_input \
+         qalterv_stagein_local qalterv_stageout_local qalterv_stageout_host \
+         qalterv_stageout_output qalterv_shellp qalterv_shellh qalterv_groupg \
+	 qalterv_grouph qalterv_useru qalterv_userh qalterv_notify_addr"
+  foreach v $varnames {
+        catch {unset $v}
+  }
+}
+# invoke_qalter_widgets: invoke the various widgets found in the Qalter Main
+#                        dialog box.
+proc invoke_qalter_widgets assoc_array {
+  upvar $assoc_array arr
+
+    invoke_rbutton [list $arr(radioboxPlace) $arr(radioboxClear)]
+    invoke_cbutton $arr(chkboxNotify) 
+    invoke_rbutton [list $arr(radioboxStdoutMerge) \
+		         $arr(radioboxStderrMerge) \
+	                 $arr(radioboxNoMerge) \
+			 $arr(radioboxNoChange)]
+    invoke_rbutton [list $arr(rboxRetain) $arr(rboxNoRetain)]
+}

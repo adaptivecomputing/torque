@@ -1,0 +1,16 @@
+The Select Job Name dialog box is for specifying the name of the job that
+will be checked when limiting the jobs appearing on the Jobs 
+listbox of the main xpbs window.
+
+Either click on the radio button next to the job name entry box and type in 
+the name string, or click on the wildcard button "ANY" to consider any type of
+job name string.
+
+===============
+COMMAND BUTTONS
+===============
+This region of command buttons represents the final step when manipulating this
+dialog box. 
+
+Click on "ok" when done setting widget values. This is also the default action 
+when the <Return> key is pressed.

@@ -1,0 +1,45 @@
+# START dirs.mk
+
+# The top directory into which the release tape was un-tar-ed
+PBS_DIR		= $(top_srcdir)/..
+PBS_SRC		= $(top_srcdir)
+PBS_SRCINC	= $(PBS_SRC)/src/include
+
+
+# Section 5 - The target directories...
+
+# The install directory for user, operator, and administrator commands
+PBS_UBIN	= $(bindir)
+
+# The install directory for daemons and other system programs
+# Warning - This must be set before compiling PBS, see the admin guide.
+PBS_SBIN	= $(sbindir)
+
+# The install directory for user accessable libraries (libpbs.a)
+PBS_LIB		= $(libdir)
+
+# The install directory for user accessable include (header) files
+PBS_UINC	= $(includedir)
+
+# The install directory for raw man pages ...
+PBS_MAN		= $(mandir)
+#	user commands (man1 or u_man/man1)
+PBS_MAN1	= $(PBS_MAN)/man1
+
+#	library calls (man3 or p_man/man3)
+PBS_MAN3	= $(PBS_MAN)/man3
+
+#	Misc reference pages (man7 or u_man/man7)
+PBS_MAN7	= $(PBS_MAN)/man7
+
+#	admin commands (man8 or a_man/man8)
+PBS_MAN8	= $(PBS_MAN)/man8
+
+#	Suffix letter for man page installation, e.g qsub(1B)
+MAN_SUFFIX	= @MAN_SUFFIX@
+
+#	Default Target type for resource's man page
+#	You may wish to change this when installing just the commands
+DEFAULT_MAN_RESOURCE_TYPE = $(PBS_MACH)
+
+# END dirs.mk

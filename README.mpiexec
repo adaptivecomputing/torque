@@ -1,0 +1,23 @@
+Documentation of changes applied as part of the mpiexec patch.
+http://www.osc.edu/~pw/mpiexec/
+Last changed 04 Dec 2001.
+
+
+General bug fix:
+
+    src/lib/Libifl/tm.c
+
+       Do not call DIS_tcp_setup(-1) if connection to the local mom failed
+       after 5 tries.
+
+Functionality additions:
+
+    src/resmom/start_exec.c
+
+       Added extension to get stdin/out/err files from the environment rather
+       than always using /dev/null during tm_spawn.
+
+    src/cmds/pbs_demux.c
+
+       Never expect a PBS_JOBCOOKIE to be delivered from a process.
+

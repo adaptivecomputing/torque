@@ -1,0 +1,300 @@
+.\"         OpenPBS (Portable Batch System) v2.3 Software License
+.\" 
+.\" Copyright (c) 1999-2000 Veridian Information Solutions, Inc.
+.\" All rights reserved.
+.\" 
+.\" ---------------------------------------------------------------------------
+.\" For a license to use or redistribute the OpenPBS software under conditions
+.\" other than those described below, or to purchase support for this software,
+.\" please contact Veridian Systems, PBS Products Department ("Licensor") at:
+.\" 
+.\"    www.OpenPBS.org  +1 650 967-4675                  sales@OpenPBS.org
+.\"                        877 902-4PBS (US toll-free)
+.\" ---------------------------------------------------------------------------
+.\" 
+.\" This license covers use of the OpenPBS v2.3 software (the "Software") at
+.\" your site or location, and, for certain users, redistribution of the
+.\" Software to other sites and locations.  Use and redistribution of
+.\" OpenPBS v2.3 in source and binary forms, with or without modification,
+.\" are permitted provided that all of the following conditions are met.
+.\" After December 31, 2001, only conditions 3-6 must be met:
+.\" 
+.\" 1. Commercial and/or non-commercial use of the Software is permitted
+.\"    provided a current software registration is on file at www.OpenPBS.org.
+.\"    If use of this software contributes to a publication, product, or service
+.\"    proper attribution must be given; see www.OpenPBS.org/credit.html
+.\" 
+.\" 2. Redistribution in any form is only permitted for non-commercial,
+.\"    non-profit purposes.  There can be no charge for the Software or any
+.\"    software incorporating the Software.  Further, there can be no
+.\"    expectation of revenue generated as a consequence of redistributing
+.\"    the Software.
+.\" 
+.\" 3. Any Redistribution of source code must retain the above copyright notice
+.\"    and the acknowledgment contained in paragraph 6, this list of conditions
+.\"    and the disclaimer contained in paragraph 7.
+.\" 
+.\" 4. Any Redistribution in binary form must reproduce the above copyright
+.\"    notice and the acknowledgment contained in paragraph 6, this list of
+.\"    conditions and the disclaimer contained in paragraph 7 in the
+.\"    documentation and/or other materials provided with the distribution.
+.\" 
+.\" 5. Redistributions in any form must be accompanied by information on how to
+.\"    obtain complete source code for the OpenPBS software and any
+.\"    modifications and/or additions to the OpenPBS software.  The source code
+.\"    must either be included in the distribution or be available for no more
+.\"    than the cost of distribution plus a nominal fee, and all modifications
+.\"    and additions to the Software must be freely redistributable by any party
+.\"    (including Licensor) without restriction.
+.\" 
+.\" 6. All advertising materials mentioning features or use of the Software must
+.\"    display the following acknowledgment:
+.\" 
+.\"     "This product includes software developed by NASA Ames Research Center,
+.\"     Lawrence Livermore National Laboratory, and Veridian Information
+.\"     Solutions, Inc.
+.\"     Visit www.OpenPBS.org for OpenPBS software support,
+.\"     products, and information."
+.\" 
+.\" 7. DISCLAIMER OF WARRANTY
+.\" 
+.\" THIS SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND. ANY EXPRESS
+.\" OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+.\" OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT
+.\" ARE EXPRESSLY DISCLAIMED.
+.\" 
+.\" IN NO EVENT SHALL VERIDIAN CORPORATION, ITS AFFILIATED COMPANIES, OR THE
+.\" U.S. GOVERNMENT OR ANY OF ITS AGENCIES BE LIABLE FOR ANY DIRECT OR INDIRECT,
+.\" INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+.\" LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
+.\" OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+.\" LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+.\" NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+.\" EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+.\" 
+.\" This license will be governed by the laws of the Commonwealth of Virginia,
+.\" without reference to its choice of law rules.
+.if \n(Pb .ig Ig
+.TH pbs_selstat 3B "" Local PBS
+.so ../ers/ers.macros
+.Ig
+.Sh NAME
+pbs_selstat - obtain status of selected pbs batch jobs
+.Sh SYNOPSIS
+#include <pbs_error.h>
+.br
+#include <pbs_ifl.h>
+.sp
+.ft 3
+.nf
+struct batch_status *pbs_selstat(\^int\ connect, struct\ attropl\ *sel_list,
+char\ *extend\^)
+.sp
+void pbs_statfree(\^struct batch_status *psj\^)
+.fi
+.ft 1
+.Sh DESCRIPTION
+Issue a batch request to examine the status of jobs which meet certain criteria.
+\f3pbs_selstat\f1() returns a list of batch_status structures for those jobs
+which met the selection criteria.
+.LP
+This function is a combination of \f3pbs_selectjobs\f1() and
+\f3pbs_statjob\f1().
+It is an extension to the POSIX Batch standard.
+.LP
+Initially all batch jobs are selected for which the user is authorized to
+query status.
+This set may be reduced or filtered by specifying certain attributes
+of the jobs.
+.LP
+A
+.I "Select Status"
+batch request is generated and sent to the server over the connection
+specified by
+.Ar connect 
+which is the return value of \f3pbs_connect\f1().
+.LP
+The parameter,
+.Ar sel_list ,
+is a pointer to an
+.I attropl 
+structure which is defined in pbs_ifl.h as:
+.sp
+.Ty
+.nf
+    struct attropl {
+        struct attropl *next;
+        char           *name;
+        char           *resource;
+        char           *value;
+        enum batch_op   op;
+    };
+.fi
+.sp
+.ft 1
+The
+.Ar sel_list
+.ft 1
+list is terminated by the first entry where
+.Ty next
+is a null pointer.
+.LP
+The
+.Ty name
+member points to a string which is the name of the attribute.
+Not all of the job attributes may be used as a selection criteria.
+The
+.Ty resource
+member points to a string which is the name of a resource.  This
+member is only used when
+.Ty name
+is set to ATTR_l,
+otherwise it should be a pointer to a null string.
+The
+.Ty value
+member points to a string which is the value of the attribute or resource.
+The attribute names are defined in pbs_ifl.h:
+.br
+.RS
+.IP #define\ ATTR_a\ "Execution_Time"
+Select based upon the job's execution time.
+.IP #define\ ATTR_A\ "Account_Name"
+Select (E) based upon the account string.
+.IP #define\ ATTR_c\ "Checkpoint"
+Select based upon the checkpoint interval.
+.IP #define\ ATTR_e\ "Error_Path"
+Select (E) based upon the name of the standard error file.
+.IP #define\ ATTR_g\ "Group_List"
+Select (E) based upon the list of group names under which the job may execute.
+.IP #define\ ATTR_h\ "Hold_Types"
+Select (E) based upon the hold types.
+.IP #define\ ATTR_j\ "Join_Paths"
+Select (E) based upon the value of the join list.
+.IP #define\ ATTR_k\ "Keep_Files"
+Select (E) based upon the value of the keep files list.
+.IP #define\ ATTR_l\ "Resource_List"
+Select based upon the value of the resource named in
+.Ty resource .
+.IP #define\ ATTR_m\ "Mail_Points"
+Select (E) based upon the setting of the mail points attribute.
+.IP #define\ ATTR_M\ "Mail_Users"
+Select (E) based upon the list of user names to which mail will be sent.
+.IP #define\ ATTR_N\ "Job_Name"
+Select (E) based upon the job name.  
+.IP #define\ ATTR_o\ "Output_Path"
+Select (E) based upon the name of the standard output file.
+.IP #define\ ATTR_p\ "Priority"
+Select based upon the priority of the job.
+.IP #define\ ATTR_q\ "destination"
+Select based upon the specified destination.
+Jobs selected are restricted to those residing in the named queue.
+If destination is the null string, the default queue at the server
+is assumed.
+.IP #define\ ATTR_r\ "Rerunable"
+Select (E) based upon the rerunable flag.
+.IP #define\ ATTR_session\ "session_id"
+Select based upon the session id assigned to running jobs.
+.IP #define\ ATTR_S\ "Shell_Path_List"
+Select (E) based upon the execution shell list.
+.IP #define\ ATTR_u\ "User_List"
+Select (E) based upon the owner of the jobs.
+.IP #define\ ATTR_v\ "Variable_List"
+Select (E) based upon the list of environment variables.
+.IP #define\ ATTR_ctime\ "ctime"
+Select based upon the creation time of the job.
+.IP #define\ ATTR_depend\ "depend"
+Select based upon the list of job dependencies.
+.IP #define\ ATTR_mtime\ "mtime"
+Select based upon the last modification time of the job.
+.IP #define\ ATTR_qtime\ "qtime"
+Select based upon the time of the job was placed into the current queue.
+.IP #define\ ATTR_qtype\ "queue_type"
+Select (E) base on the type of queue in which the job resides.
+.IP #define\ ATTR_stagein\ "stagein"
+Select based upon the list of files to be staged-in.
+.IP #define\ ATTR_stageout\ "stageout"
+Select based upon the list of files to be staged-out.
+.IP #define\ ATTR_state\ "job_state"
+Select based upon the state of the jobs.  State is not a job attribute,
+but is included here to allow selection.
+.RE
+.LP
+The 
+.Ty op
+member defines the operator in the logical expression:
+.br
+.Ty \ \ \ \ value\ operator\ current_value
+.br 
+The logical expression must evaluate as true for the job to be selected.
+The permissible values of
+.Ty op
+are defined in pbs_ifl.h as:
+.Ty "enum batch_op { ..., EQ, NE, GE, GT, LE, LT, ... };" .
+The attributes marked with (E) in the description above may only be selected
+with the equal, EQ, or not equal, NE, operators.
+.if !\n(Pb .ig Ig
+The full range of batch_op values is SET, UNSET, INCR, DECR,
+EQ, NE, GE, GT, LE, and LT,
+Only the relational operators are allowed
+in a selstat call, and others will be rejected by the server.
+.Ig
+.LP
+If
+.Ar sel_list
+itself is a null pointer, then no selection is done on
+the basis of attributes.
+.LP
+The return value is a pointer to a list of
+.I batch_status
+structures or the null pointer if no jobs can be queried for status.
+The batch_status structure is defined in pbs_ifl.h as
+.sp
+.Ty
+.nf
+    struct batch_status {
+        struct batch_status *next;
+        char                *name;
+        struct attrl        *attribs;
+        char                *text;
+    }
+.fi
+.ft 1
+.LP
+The entry,
+.Ty attribs ,
+is a pointer to a list of attrl structures defined in
+pbs_ifl.h as:
+.sp
+.Ty
+.nf
+    struct attrl {
+        struct attrl *next;
+        char         *name;
+        char         *resource;
+        char         *value;
+    };
+.fi
+.ft 1
+.LP
+It is up the user to free the list of batch_status structures when no longer
+needed, by calling \f3pbs_statfree\f1().
+.LP
+The parameter,
+.Ar extend ,
+is reserved for implementation defined extensions.
+.if !\n(Pb .ig Ig
+It is not
+currently used by this function.
+.Ig
+.Sh "SEE ALSO"
+qselect(1B), pbs_alterjob(3B), pbs_connect(3B), pbs_statjob(3B), and 
+pbs_selectjob(3B).
+.Sh DIAGNOSTICS
+When the batch request generated by pbs_selstat()
+function has been completed successfully by a batch server, the routine will
+return a pointer to the list of batch_status structures.
+If no jobs met the criteria or an error occurred, the return will be the
+null pointer.  If an error occurred, the global integer pbs_errno will
+be set to a non-zero value.
+\" turn off any extra indent left by the Sh macro
+.RE

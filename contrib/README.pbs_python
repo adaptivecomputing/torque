@@ -1,0 +1,71 @@
+#  README.pbs_python
+#  contributed by Bas van der Vlies
+#  updated Feb 10, 2004
+
+The latest stable pbs_python interface is available from:
+        ftp://ftp.sara.nl/pub/outgoing/pbs_python.tar.gz
+
+Pbs_python interface is a wrapper class for the OPENPBS/TORQUE C LIB API.
+Now you can write utilities/extensions in Python instead of C.
+
+The Python wrapper class is tested on:
+  - Intel cluster debian GNU/LINUX woody OPENPBS 2.3.16,
+    TORQUE 1.0.1p4
+
+  - Compaq Alpha cluster debian GNU/LINUX woody OPENPBS 2.3.16
+
+  - SGI Origin 3000: Irix 6.5, OPENPBS 2.3.16
+
+  - TRU64 system, NOTE: must rename libnet.a to libpbs_net.a and edit
+    setup.py to reflect the change. There is also a system wide libnet.so.
+
+  - It should run on different OSes.
+
+In the past our Alpha cluster was redhat (6.2)  and we had to add '-lots'
+to the LIBS line
+
+--- Compile and install the package:
+
+  As for python version 1.6 and higher the procedure is:
+    python setup.py install
+
+  Python versions lower then 1.6 do not have the distutils
+  package default in their installation. You can test it:
+    python
+    import distutils
+
+  If this succeed then use the above procedure else use the procedure below:
+    cd src
+    Adjust the Makefile to where you installed Python and OPENPBS libraries.
+    make
+
+    The python PBS module consists of the following files:
+      _pbs.so
+      pbs.py
+      pbs.pyc ( will be generated from pbs.py. The first time you load
+              the module).
+
+    You can install these file in your own directory and use the PYTHONPATH
+    environment variable or install it in a system wide directory, eg:
+      /usr/lib/python1.5/site-packages
+
+--- Testing the package:
+
+The test programs are include as a reference how to use the PBS
+python module. You have to edit some test programs to reflect
+your PBS installation.
+
+pbsmon.py       - ascii xpbsmon
+pbsnodes-a.py   - pbsnodes -a
+pbs_version.py  - print server version
+set_property.py - set some node properties
+resmom_info.py  - queries the pbs_mom daemon on the nodes
+logpbs.py       - Shows the usage of the PBS logging routines
+
+
+Comments,suggestions or bugfixes mail them to: Bas van der Vlies <basv@sara.nl>
+For more info about SARA see:
+        http://www.sara.nl/index_eng.html
+
+
+

@@ -1,0 +1,1192 @@
+.\"         OpenPBS (Portable Batch System) v2.3 Software License
+.\" 
+.\" Copyright (c) 1999-2000 Veridian Information Solutions, Inc.
+.\" All rights reserved.
+.\" 
+.\" ---------------------------------------------------------------------------
+.\" For a license to use or redistribute the OpenPBS software under conditions
+.\" other than those described below, or to purchase support for this software,
+.\" please contact Veridian Systems, PBS Products Department ("Licensor") at:
+.\" 
+.\"    www.OpenPBS.org  +1 650 967-4675                  sales@OpenPBS.org
+.\"                        877 902-4PBS (US toll-free)
+.\" ---------------------------------------------------------------------------
+.\" 
+.\" This license covers use of the OpenPBS v2.3 software (the "Software") at
+.\" your site or location, and, for certain users, redistribution of the
+.\" Software to other sites and locations.  Use and redistribution of
+.\" OpenPBS v2.3 in source and binary forms, with or without modification,
+.\" are permitted provided that all of the following conditions are met.
+.\" After December 31, 2001, only conditions 3-6 must be met:
+.\" 
+.\" 1. Commercial and/or non-commercial use of the Software is permitted
+.\"    provided a current software registration is on file at www.OpenPBS.org.
+.\"    If use of this software contributes to a publication, product, or service
+.\"    proper attribution must be given; see www.OpenPBS.org/credit.html
+.\" 
+.\" 2. Redistribution in any form is only permitted for non-commercial,
+.\"    non-profit purposes.  There can be no charge for the Software or any
+.\"    software incorporating the Software.  Further, there can be no
+.\"    expectation of revenue generated as a consequence of redistributing
+.\"    the Software.
+.\" 
+.\" 3. Any Redistribution of source code must retain the above copyright notice
+.\"    and the acknowledgment contained in paragraph 6, this list of conditions
+.\"    and the disclaimer contained in paragraph 7.
+.\" 
+.\" 4. Any Redistribution in binary form must reproduce the above copyright
+.\"    notice and the acknowledgment contained in paragraph 6, this list of
+.\"    conditions and the disclaimer contained in paragraph 7 in the
+.\"    documentation and/or other materials provided with the distribution.
+.\" 
+.\" 5. Redistributions in any form must be accompanied by information on how to
+.\"    obtain complete source code for the OpenPBS software and any
+.\"    modifications and/or additions to the OpenPBS software.  The source code
+.\"    must either be included in the distribution or be available for no more
+.\"    than the cost of distribution plus a nominal fee, and all modifications
+.\"    and additions to the Software must be freely redistributable by any party
+.\"    (including Licensor) without restriction.
+.\" 
+.\" 6. All advertising materials mentioning features or use of the Software must
+.\"    display the following acknowledgment:
+.\" 
+.\"     "This product includes software developed by NASA Ames Research Center,
+.\"     Lawrence Livermore National Laboratory, and Veridian Information
+.\"     Solutions, Inc.
+.\"     Visit www.OpenPBS.org for OpenPBS software support,
+.\"     products, and information."
+.\" 
+.\" 7. DISCLAIMER OF WARRANTY
+.\" 
+.\" THIS SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND. ANY EXPRESS
+.\" OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+.\" OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT
+.\" ARE EXPRESSLY DISCLAIMED.
+.\" 
+.\" IN NO EVENT SHALL VERIDIAN CORPORATION, ITS AFFILIATED COMPANIES, OR THE
+.\" U.S. GOVERNMENT OR ANY OF ITS AGENCIES BE LIABLE FOR ANY DIRECT OR INDIRECT,
+.\" INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+.\" LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
+.\" OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+.\" LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+.\" NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+.\" EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+.\" 
+.\" This license will be governed by the laws of the Commonwealth of Virginia,
+.\" without reference to its choice of law rules.
+.if \n(Pb .ig Iq
+.TH qsub 1B "" Local PBS
+.so ../ers/ers.macros
+.Iq
+.Sh NAME
+qsub \- submit pbs job
+.Sh SYNOPSIS
+qsub [-a date_time] [-A account_string] [-c interval] [-C directive_prefix]
+[-d path] [-D path] [-e path] [-h] [-I] [-j join] [-k keep] [-l resource_list]
+[-m mail_options] [-M user_list] [-N name] [-o path] 
+[-p priority] [-q destination] [-r c] [-S path_list]
+[-u user_list] [-v variable_list] [-V] [-W additional_attributes] [-z]
+[script]
+.Sh DESCRIPTION
+To create a job is to submit an executable script to a batch server.
+The batch server will be the default server unless the
+.Ar \-q
+option is specified.  See discussion of PBS_DEFAULT under Environment Variables
+below.
+Typically, the script is a shell script which will be executed
+by a command shell such as sh or csh.
+.LP
+Options on the
+.B qsub
+command allow the specification of attributes which affect the behavior
+of the job.
+.if !\n(Pb .ig Ig
+The job is created by sending a 
+.I "Queue Job"
+batch request to the batch server.
+.Ig
+.LP
+The qsub
+command will pass certain environment variables in the
+.At Variable_List
+attribute of the job.
+These variables will be available to the job.
+The value for the following variables will be taken from the environment
+of the qsub
+command: \f3HOME\fP, \f3LANG\fP, \f3LOGNAME\fP, \f3PATH\fP, \f3MAIL\fP,
+\f3SHELL\fP,
+and \f3TZ\fP.  These values will be assigned to a new name which is the
+current name prefixed with the string "PBS_O_".
+For example, the job will have access to an environment variable named
+.B PBS_O_HOME
+which have the value of the variable
+.B HOME
+in the qsub command environment.
+.LP
+In addition to the above, the following environment variables will be available
+to the batch job.
+.if !\n(Pb .ig Ig
+(The values of the following environment variables are established by qsub.)
+.Ig
+.IP \f3PBS_O_HOST\fP
+the name of the host upon which the qsub command is running.
+.IP \f3PBS_O_QUEUE\fP
+the name of the original queue to which the job was submitted.
+.if !\n(Pb .ig Ig
+(It is established by the server which creates the job, not qsub.)
+.Ig
+.IP \f3PBS_O_WORKDIR\fP
+the absolute path of the current working directory of the qsub command.
+.if !\n(Pb .ig Ig
+.LP
+The following are established by the server executing the job,
+not the qsub command.
+.Ig
+.IP \f3PBS_ENVIRONMENT\fP
+set to 
+.Ty PBS_BATCH
+to indicate the job is a batch job, or to
+.Ty PBS_INTERACTIVE
+to indicate the job is a PBS interactive job, see -I option.
+.IP \f3PBS_JOBID\fP
+the job identifier assigned to the job by the batch system.
+.IP \f3PBS_JOBNAME\fP
+the job name supplied by the user.
+.IP \f3PBS_NODEFILE\fP
+the name of the file contain the list of nodes assigned to the job
+(for parallel and cluster systems).
+.IP \f3PBS_QUEUE\fP
+the name of the queue from which the job is executed.
+.Sh OPTIONS
+.IP "-a date_time" 8
+Declares the time after which the job is eligible for execution.
+.RS
+.LP
+The
+.Ar date_time
+argument is in the form: 
+.Ty "[[[[CC]YY]MM]DD]hhmm[.SS]"
+.LP
+\f1Where CC is the first two digits of the year (the century),
+YY is the second two digits of the year, MM is the two digits for the month,
+DD is the day of the month, hh is the hour, mm is the minute,
+and the optional SS is the seconds.
+.LP
+If the month,
+.Ty MM ,
+is not specified, it will default to the current month if the specified day
+.Ty DD ,
+is in the future.  Otherwise, the month will be set to next month.
+Likewise, if the day,
+.Ty DD ,
+is not specified, it will default to today if the time
+.Ty hhmm
+is in the future.  Otherwise, the day will be set to tomorrow.
+For example, if you submit a job at 11:15am with a time of 
+.Ty "-a 1110" ,
+the job will be eligible to run at 11:10am tomorrow.
+.if !\n(Pb .ig Ig
+See the date_time operand for the touch(1) command defined by POSIX.2.
+.LP
+The 
+.At Execution_Time
+job attribute will be set to the number of seconds since Epoch which
+is equivalent to the Universal time expressed by the local time in the
+.Ar date_time
+argument.
+If the 
+.Ar \-a
+option is not specified, the
+.At Execution_Time
+attribute is unset which represents a time zero or no delay.
+.Ig
+.RE
+.IP "-A account_string" 8
+Defines the account string associated with the job.
+The
+.Ar account_string
+is an undefined string of characters and is interpreted by the server
+which executes the job.  See section 2.7.1 of the PBS ERS.
+.if !\n(Pb .ig Ig
+The
+.At Account_Name
+attribute is set to the account string.
+If account_string is unset, it is not passed with the job to the job executor.
+.Ig
+.IP "-c interval"
+Defines the interval at which the job will be checkpointed.  If the job
+executes upon a host which does not support checkpoint, this option will
+be ignored.
+.IP
+The
+.Ar interval
+argument is specified as:
+.RS
+.IP n 3
+No checkpointing is to be performed.
+.if !\n(Pb .ig Ig
+The job's
+.At Checkpoint
+attribute is set to the string
+.Ty """n""" .
+.Ig
+.IP s 3
+Checkpointing is to be performed only when the server executing the job is
+shutdown.
+.if !\n(Pb .ig Ig
+The job's
+.At Checkpoint
+attribute is set to the string
+.Ty """s""" .
+.Ig
+.IP c 3
+Checkpointing is to be performed at the default minimum time for the
+server executing the job.
+.if !\n(Pb .ig Ig
+The job's
+.At Checkpoint
+attribute is set to the string
+.Ty """c""" .
+.Ig
+.IP c=minutes 3
+Checkpointing is to be performed at an interval of
+.Ar minutes ,
+which is the integer number of minutes of CPU time used by the job.
+This value must be greater than zero.
+.if !\n(Pb .ig Ig
+The
+.At Checkpoint
+attribute is set to the string specified by
+.Ar """c=minutes""" .
+.IP
+If
+.Ar -c
+is not specified, the
+.At Checkpoint
+attribute is set to the value
+.Ty """u""" 
+meaning unspecified.  Unless otherwise stated, "u" is treated the same as "s".
+.Ig
+.RE
+.IP "\-C directive_prefix" 8
+Defines the prefix that declares a directive to the qsub command within the
+script file.  See the paragraph on script directives in the
+Extended Description section.
+.IP
+If the
+.Ar -C
+option is presented with a
+.Ar directive_prefix
+argument that is the null string, qsub
+will not scan the script file for directives.
+.if !\n(Pb .ig Ig
+The directive prefix is not a job attribute.  It is used solely within the
+qsub command.
+.Ig
+.IP "\-d path" 8
+Defines the working directory path to be used for the job.  If the
+.Ar -d
+option is not specified, the default working directory is the home directory.
+This option sets the environment variable PBS_O_INITDIR.
+.Ig
+.IP "\-D path" 8
+Defines the root directory to be used for the job.
+This option sets the environment variable PBS_O_ROOTDIR.
+.Ig
+.IP "\-e path" 8
+Defines the path to be used for the standard error stream of the batch job.
+The
+.Ar path
+argument is of the form:
+.br
+.Ty "\ \ \ \ [hostname:]path_name"
+.br
+where 
+.Ty hostname
+is the name of a host to which the file will be returned and
+.Ty path_name
+is the path
+name on that host in the syntax recognized by POSIX.
+The argument will be interpreted as follows:
+.RS
+.IP \f5path_name\f1
+Where path_name is not an absolute path name, then the qsub command will
+expand the path name relative to the current working directory of the command.
+The command will supply the name of the host upon which it is executing for the
+.Ar hostname
+component.
+.IP \f5hostname:path_name\f1
+Where path_name is not an absolute path name, then the qsub command will not
+expand the path name relative to the current working directory of the command.
+On delivery of the standard error, the path name will be expanded relative
+to the user's home directory on the \f5hostname\fP system.
+.IP \f5path_name\f1
+Where path_name specifies an absolute path name, then the qsub will supply
+the name of the host on which it is executing for the
+.Ar hostname .
+.IP \f5hostname:path_name\f1
+Where path_name specifies an absolute path name, the path will be used as
+specified.
+.RE
+.IP
+If the
+.Ar -e
+option is not specified, the default file name for the standard error stream
+will be used.  The default name has the following form:
+.br
+\ \ \ \ \f5job_name.\f6e\f5sequence_number\f1
+.br
+where \f5job_name\fP is the name of the job, see
+.Ar -N 
+option, and \f5sequence_number\f1 is the job number assigned when the
+job is submitted.
+.if !\n(Pb .ig Ig
+This option sets the job attribute
+.At Error_Path .
+.Ig
+.IP "-h" 8
+Specifies that a user hold be applied to the job at submission time.
+.if !\n(Pb .ig Ig
+The
+.At Hold_Types
+attribute will be set to USER, "u".
+If -h is not specified, then
+.At Hold_Types 
+is set to NONE, "n".
+.Ig
+.IP "\-I" 8
+Declares that the job is to be run "interactively".  The job will be queued
+and scheduled as any PBS batch job, but when executed, the standard input,
+output, and error streams of the job are connected through qsub to the
+terminal session in which qsub is running.
+See the "Extended Description" paragraph for addition information of 
+interactive jobs.
+.if !\n(Pb .ig Ig
+.SM
+The \-I option is a violation of the POSIX 1003.2d standard.  Option key
+letters not defined by the standard, such as I, are reserved for future
+revisions of the standard.  PBS can be built with the symbol
+PBS_NO_POSIX_VIOLATION defined, in which case the \-I option is removed.
+The interactive attribute may still be specified via the \-W option.
+.NL
+.Ig
+.IP "\-j join" 8
+Declares if the standard error stream of the job will be merged with the
+standard output stream of the job.
+.IP
+An option argument value of
+.Ty oe
+directs that the two streams will be merged, intermixed, as standard output.
+.if !\n(Pb .ig Ig
+The
+.At Join_Path
+job attribute is set to "oe".
+.Ig
+An option argument value of
+.Ty eo
+directs that the two streams will be merged, intermixed, as standard error.
+.if !\n(Pb .ig Ig
+The
+.At Join_Path
+job attribute is set to "eo".
+.Ig
+.IP
+If the
+.Ar join
+argument is
+.Ty n
+or the option is not specified,
+the two streams will be two separate files.
+.if !\n(Pb .ig Ig
+The
+.At Join_Path
+job attribute is set to "n".
+.Ig
+.IP "\-k keep" 8
+Defines which (if either) of standard output or standard error
+will be retained on the execution host.
+If set for a stream, this option overrides the path name for that stream.
+If not set, neither stream is retained on the execution host.
+.IP
+The argument is either the single letter "e" or "o",
+or the letters "e" and "o" combined in either order.
+Or the argument is the letter "n".
+.if !\n(Pb .ig Ig
+Repetition of characters is permitted, but "n" may not appear in the same
+option argument with the other two characters.
+The attribute
+.At Keep_Files
+is set to the argument.
+.Ig
+.RS
+.IP e 3
+The standard error stream is to retained on the execution host.
+The  stream will be placed in the home directory of the user under whose
+user id the job executed.  The file name will be the default file name
+given by:
+\f5job_name.\f6e\f5sequence\f1
+where \f5job_name\fP is the name specified for the job, and \f5sequence\fP is
+the sequence number component of the job identifier.
+.if !\n(Pb .ig Ig
+The attribute is set to KEEP_ERROR.
+.Ig
+.IP o 3
+The standard output stream is to retained on the execution host.
+The  stream will be placed in the home directory of the user under whose
+user id the job executed.  The file name will be the default file name
+given by: \f5job_name.\f6o\f5sequence\f1
+where \f5job_name\fP is the name specified for the job, and \f5sequence\fP is
+the sequence number component of the job identifier.
+.if !\n(Pb .ig Ig
+The attribute is set to KEEP_OUTPUT.
+.Ig
+.IP eo 3
+Both the standard output and standard error streams will be retained.
+.if !\n(Pb .ig Ig
+The attribute is set to "KEEP_OUTPUT\ |\ KEEP_ERROR".
+.Ig
+.IP oe 3
+Both the standard output and standard error streams will be retained.
+.if !\n(Pb .ig Ig
+The attribute is set to "KEEP_OUTPUT\ |\ KEEP_ERROR".
+.Ig
+.IP n 3
+Neither stream is retained.
+.RE
+.IP "-l resource_list" 8
+Defines the resources that are required by the job and establishes a limit
+to the amount of resource that can be consumed.
+If not set for a generally available resource, such as CPU time, the limit
+is infinite.
+The
+.Ar resource_list
+argument is of the form:
+.br
+.Ty "\ \ \ \ resource_name[=[value]][,resource_name[=[value]],...]
+.if !\n(Pb .ig Ig
+.IP
+For each resource listed in the
+.Ar resource_list ,
+one entry will be added to the
+.At Resource_List
+attribute of the job.  The entry contains the resource name and its
+requested value. No white space is allowed in the value.
+Other than syntax, qsub performs no resource or value
+checking.  The checking is performed by the execution server.
+.Ig
+.IP "\-m mail_options " 8
+Defines the set of conditions under which the execution server will
+send a mail message about the job.  The
+.Ar mail_options
+argument is a string which consists of either the single character "\f5n\f1",
+or one or more of the characters "\f5a\fP", "\f5b\fP", and "\f5e\fP".
+.if !\n(Pb .ig Ig
+Repeated letters are accepted, but \f5n\f1 cannot be mixed with the other
+characters.
+.Ig
+.IP
+If the character "\f5n\fP" is specified, no mail will be sent.
+.if !\n(Pb .ig Ig
+The
+.At Mail_Points
+attribute is set to NONE, "n".
+.Ig
+.IP
+For the letters "\f5a\fP", "\f5b\fP", and "\f5e\fP":
+.RS
+.IP a 3
+mail is sent when the job is aborted by the batch system.
+.if !\n(Pb .ig Ig
+The
+.At Mail_Points
+attribute is set to ABORT, "a".
+.Ig
+.IP b 3
+mail is sent when the job begins execution.
+.if !\n(Pb .ig Ig
+The
+.At Mail_Points
+attribute is set to BEGINNING, "b".
+.Ig
+.IP e 3
+mail is sent when the job terminates.
+.if !\n(Pb .ig Ig
+The
+.At Mail_Points
+attribute is set to EXIT, "e".
+.Ig
+.RE
+.IP
+If the
+.Ar \-m
+option is not specified, mail will be sent if the job is aborted.
+.if !\n(Pb .ig Ig
+The
+.At Mail_Points
+attribute is set to ABORT, "a".
+.Ig
+.IP "\-M user_list" 8
+Declares the list of users to whom mail is sent by the execution server
+when it sends mail about the job.
+.IP
+The
+.Ar user_list
+argument is of the form:
+.br
+.Ty "\ \ \ \ user[@host][,user[@host],...]"
+.br
+If unset, the list defaults to the submitting user at the qsub host, i.e. the
+job owner.
+.if !\n(Pb .ig Ig
+.IP
+The
+.At Mail_Users
+attribute is set to the argument.
+.Ig
+.IP "\-N name " 8
+Declares a name for the job.
+The name specified may be up to and including 15 characters in length.
+It must consist of printable, non white space characters with the first
+character alphabetic.
+.if !\n(Pb .ig Ig
+[The POSIX 1003.2d Standard calls for only alphanumeric characters, but then
+calls for the use of the script file base name as the job name if a name is
+not specified.  The file name may contain other than alphanumeric characters.
+Therefore I \*Qinterpret\*U the standard as allowing printable characters.]
+Names taken from the script name may have a non-alphabetic character first.
+If the script basename is greater than 15 characters, it will be truncated
+to 15.
+.Ig
+.IP
+If the 
+.Ar \-N
+option is not specified, the job name will be the base name of the job
+script file specified on the command line.  If no script file name was
+specified and the script was read from the standard input, then the job
+name will be set to
+.Ty STDIN .
+.if !\n(Pb .ig Ig
+.IP
+The
+.At Job_Name
+attribute is set to the name.
+.Ig
+.IP "\-o path" 8
+Defines the path to be used for the standard output stream of the batch job.
+The
+.Ar path
+argument is of the form:
+.br
+.Ty "\ \ \ \ [hostname:]path_name"
+.br
+where 
+.Ty hostname
+is the name of a host to which the file will be returned and
+.Ty path_name
+is the path
+name on that host in the syntax recognized by POSIX.
+The argument will be interpreted as follows:
+.RS
+.IP \f5path_name\f1
+Where path_name is not an absolute path name, then the qsub command will
+expand the path name relative to the current working directory of the command.
+The command will supply the name of the host upon which it is executing for the
+.Ar hostname
+component.
+.IP \f5hostname:path_name\f1
+Where path_name is not an absolute path name, then the qsub command will not
+expand the path name relative to the current working directory of the command.
+On delivery of the standard output, the path name will be expanded relative
+to the user's home directory on the \f5hostname\fP system.
+.IP \f5path_name\f1
+Where path_name specifies an absolute path name, then the qsub will supply
+the name of the host on which it is executing for the
+.Ar hostname .
+.IP \f5hostname:path_name\f1
+Where path_name specifies an absolute path name, the path will be used as
+specified.
+.RE
+.IP
+If the
+.Ar -o
+option is not specified, the default file name for the standard output stream
+will be used.  The default name has the following form:
+.br
+\ \ \ \ \f5job_name.\f6o\f5sequence_number\f1
+.br
+where \f5job_name\fP is the name of the job, see
+.Ar -N 
+option, and \f5sequence_number\f1 is the job number assigned when the
+job is submitted.
+.if !\n(Pb .ig Ig
+This option sets the job attribute
+.At Output_Path .
+.Ig
+.IP "\-p priority" 8
+Defines the priority of the job.  The
+.Ar priority
+argument must be a integer between -1024 and +1023 inclusive.
+The default is no priority which is equivalent to a priority of zero.
+.if !\n(Pb .ig Ig
+The
+.At Priority
+job attribute is set to this signed integer value.
+.Ig
+.IP "-q destination" 8
+Defines the destination of the job.  The 
+.Ar destination
+names a queue, a server, or a queue at a server.
+.IP
+The qsub command will submit the script to the server defined by the
+.Ar destination
+argument.
+.if !\n(Pb .ig Ig
+The server named by the destination is the one to which qsub sends the
+.I "Queue Job"
+batch request.
+.Ig
+If the destination is a 
+.I "routing queue,"
+the job may be routed by the server to a new destination.
+.IP
+If the
+.Ar \-q
+option is not specified, the qsub
+command will submit the script to the default server.
+See PBS_DEFAULT under the Environment Variables section on this man page
+and the PBS ERS section 2.7.4, "Default Server".
+.IP
+If the
+.Ar \-q 
+option is specified, it is in one of the following three forms:
+.br
+.Ty "\ \ \ \ queue"
+.br
+.Ty "\ \ \ \ @server"
+.br
+.Ty "\ \ \ \ queue@server"
+.IP
+If the 
+.Ar destination
+argument names a queue and does not name a server, the job will be submitted
+to the named queue at the default server.
+.IP
+If the
+.Ar destination
+argument names a server and does not name a queue, the job will be submitted
+to the default queue at the named server.
+.IP
+If the
+.Ar destination
+argument names both a queue and a server, the job will be submitted to
+the named queue at the named server.
+.IP "\-r y|n" 8
+Declares whether the job is rerunable.
+See the
+.B qrerun
+command.
+The option argument
+is a single character, either
+.Ty y
+or 
+.Ty n .
+.if !\n(Pb .ig Ig
+Also see
+.I rerunable
+in the glossary.
+.Ig
+.IP
+If the argument is "\f5y\fP", the job is rerunable.
+.if !\n(Pb .ig Ig
+The
+.At Rerunable
+attribute is set to the character  'y'.
+.Ig
+If the argument is "\f5n\fP", the job is not rerunable.
+The default value is 'y', rerunable.
+.IP "\-S path_list" 8
+Declares the shell that interprets the job script.
+.IP
+The option argument
+.Ar path_list
+is in the form:
+.br
+.Ty "\ \ \ \ path[@host][,path[@host],...]"
+.br
+Only one path may be specified for any host named.  Only one path may be
+specified without the corresponding host name.  The path selected will be
+the one with the host name that matched the name of the execution host.
+If no matching host is found, then the path specified without
+a host will be selected, if present.
+.IP
+If the
+.Ar \-S
+option is not specified, the option argument is the null string, or
+no entry from the 
+.Ar path_list
+is selected, the execution will use the user's login shell
+on the execution host.
+.if !\n(Pb .ig Ig
+The
+.At Shell_Path_List
+attribute is set to the
+.Ar path_list
+argument if present, otherwise it is set to the null string.
+.Ig
+.IP "\-u user_list" 8
+Defines the user name under which the job is to run on the execution system.
+.IP
+The
+.Ar user_list
+argument is of the form:
+.br
+.Ty "\ \ \ \ user[@host][,user[@host],...]"
+.br
+\f1Only one user name may be given per specified host.
+Only one of the
+.Ty user
+\f1specifications may be supplied without the corresponding
+.Ty host
+\f1specification.  That user name will used for execution on any host not
+named in the argument list.
+.if !\n(Pb .ig Ig
+The
+.At User_List
+attribute is set to the value of
+.Ar user_list .
+.Ig
+If unset, the user list defaults to the user who is running qsub.
+.IP "-v variable_list"
+Expands the list of environment variables that are exported to the job.
+.IP
+In addition to the variables described in the "Description" section above,
+.Ar variable_list
+names environment variables from the qsub
+command environment which are made available to the job when it executes.
+The
+.Ar variable_list
+is a comma separated list of strings of the form
+.Ty variable
+or
+.Ty variable=value .
+These variables and their values are passed to the job.
+.if !\n(Pb .ig Ig
+The
+.At Variable_List
+attribute is appended with the variables in
+.Ar user_list 
+and their values.
+.Ig
+.IP "-V" 8
+Declares that all environment variables in the qsub
+command's environment are to be exported to the batch job.
+.if !\n(Pb .ig Ig
+The
+.At Variable_List
+attribute is appended with the variables in the qsub
+command's environment and their values.
+.Ig
+.IP "-W additional_attributes" 8
+The -W option allows for the specification of additional job attributes.
+.if !\n(Pb .ig Ig
+.SM
+POSIX.2 reserves all undefined option letters for future versions of the
+standard.  The single letter 'W' is allowed for extensions.  PBS makes use
+of the -W to specify attributes which are extensions to POSIX 1003.2d.
+.NL
+.Ig
+The general syntax of the -W is in the form:
+.br
+.ft 5
+\ \ \ \ \-W\ attr_name=attr_value[,attr_name=attr_value...]
+.ft 1
+.br
+Note if white space occurs anywhere within the option argument string or the
+equal sign, "=", occurs within an 
+.Ar attribute_value
+string, then the string must be enclosed with either single or double quote
+marks.
+.IP
+PBS currently supports the following attributes within the -W option.
+.IP
+.Ty "depend=dependency_list"
+.br
+Defines the dependency between this and other jobs.  The 
+.Ar dependency_list
+is in the form:
+.br
+.Ty "type[:argument[:argument...][,type:argument...]" .
+.br
+The
+.I argument
+is either a numeric count or a PBS job id according to
+.I type .
+If argument is a count, it must
+be greater than 0.  If it is a job id and not fully specified
+in the form
+.Ty seq_number.server.name ,
+it will be expanded according to the default server rules which apply to
+job IDs on most commands.
+If
+.I argument
+is null (the preceding colon need not be specified), the
+dependency of the corresponding type is cleared (unset).
+.RS 12
+.IP "\f5synccount:\f2count\f1" 4
+This job is the first in a set of jobs to be executed at the same time.
+.I Count
+is the number of additional jobs in the set.
+.IP "\f5syncwith:\f2jobid\f1" 4
+This job is an additional member of a set of jobs to be executed at the
+same time.
+In the above and following dependency types,
+.I jobid
+is the job identifier of the first job in the set.
+.IP "\f5after:\f2jobid[:jobid...]\f1" 4
+This job may be scheduled for execution at any point after jobs
+.I jobid
+have started execution.
+.IP "\f5afterok:\f2jobid[:jobid...]\f1" 4
+This job may be scheduled for execution only after jobs
+.I jobid
+have terminated with no errors.
+See the csh warning under "Extended Description".
+.IP "\f5afternotok:\f2jobid[:jobid...]\f1" 4
+This job may be scheduled for execution only after jobs
+.I jobid
+have terminated with errors.
+See the csh warning under "Extended Description".
+.IP "\f5afterany:\f2jobid[:jobid...]\f1" 4
+This job may be scheduled for execution after jobs
+.I jobid
+have terminated, with or without errors.
+.IP "\f5on:\f2count\f1" 4
+This job may be scheduled for execution after \f2count\f1 dependencies on
+other jobs have been satisfied.  This form is used in conjunction
+with one of the \f5before\f1 forms, see below.
+.IP \f5before:\f2jobid[:jobid...]\f1 4
+When this job has begun execution, then jobs \f2jobid...\f1 may begin.
+.IP \f5beforeok:\f2jobid[:jobid...]\f1 4
+If this job terminates execution without errors, then jobs
+\f2jobid...\f1 may begin.
+See the csh warning under "Extended Description".
+.IP \f5beforenotok:\f2jobid[:jobid...]\f1 4
+If this job terminates execution with errors, then jobs
+\f2jobid...\f1 may begin.
+See the csh warning under "Extended Description".
+.IP \f5beforeany:\f2jobid[:jobid...]\f1 4
+When this job terminates execution, jobs \f2jobid...\f1 may begin.
+.IP
+If any of the \f5before\f1 forms are used, the jobs referenced by \f2jobid\f1
+must have been submitted with a dependency type of \f5on\f1.
+.if !\n(Pb .ig Ig
+.IP
+The
+.At depend
+attribute is set to the value of the
+.Ar dependency
+option argument.
+.Ig
+.IP
+If any of the \f5before\f1 forms are used, the jobs referenced by \f2jobid\f1
+must have the same owner as the job being submitted.  Otherwise, the dependency
+is ignored.
+.LP
+Error processing of the existence, state, or condition of the job on which the
+newly submitted job is a deferred service, i.e. the check is performed after
+the job is queued.  If an error is detected, the new job will be deleted by
+the server.  Mail will be sent to the job submitter stating the error.
+.LP
+Dependency examples:
+.br
+.Ty "qsub -W depend=afterok:123.big.iron.com /tmp/script"
+.br
+.Ty "qsub -W depend=before:234.hunk1.com:235.hunk1.com /tmp/script"
+.RE
+.IP
+.Ty group_list=g_list
+.br
+Defines the group name under which the job is to run on the execution system.
+The
+.Ar g_list
+argument is of the form:
+.br
+.Ty "group[@host][,group[@host],...]"
+.br
+\f1Only one group name may be given per specified host.
+Only one of the
+.Ty group
+\f1specifications may be supplied without the corresponding
+.Ty host
+\f1specification.  That group name will used for execution on any host not
+named in the argument list.
+.if !\n(Pb .ig Ig
+The
+.At group_list
+attribute is set to the value of
+.Ar g_list .
+.Ig
+If not set, the 
+.At group_list
+defaults to the primary group of the user under which the job will be run.
+.IP
+.Ty "interactive=true"
+.br
+If the interactive attribute is specified, the job is an interactive job.
+The \-I option is a alternative method of specifying this attribute.
+.IP
+.Ty "stagein=file_list"
+.br
+.Ty "stageout=file_list"
+.br
+Specifies 
+.if !\n(Pb .ig Ig
+the
+.At stagein
+or 
+.At stageout
+attribute, listing
+.Ig
+which files are staged (copied) in before job start or staged out
+after the job completes execution.
+On completion of the job, all staged-in and staged-out files
+are removed from the execution system.  The
+.Ar file_list
+is in the form
+.br
+.Ty "local_file@hostname:remote_file[,...]"
+.br
+regardless of the direction of the copy.
+The name
+.Ty local_file 
+is the name of the file on the system where the job executed.
+It may be an absolute path
+or relative to the home directory of the user.
+The name
+.Ty remote_file
+is the destination name on the host specified by
+.Ty hostname . 
+The name may be absolute or relative to the user's home directory on the
+destination host.
+The use of wildcards in the file name is not recommended.
+.if !\n(Pb .ig Ig
+Since rcp (or scp) is run via rsh, it will pick up matching names from the
+remote system.  However, pbs_mom will does not expand the wildcards and will
+fail to delete the staged files on job termination.
+.Ig
+The file names map to a remote copy program (rcp) call
+on the execution system in the follow manner:
+.br
+For stagein:   rcp hostname:remote_file local_file
+.br
+For stageout:  rcp local_file hostname:remote_file
+.IP "-z" 8
+Directs that the qsub
+command is not to write the job identifier assigned to the job to 
+the command's standard output.
+.in 0
+.LP
+.Sh  OPERANDS
+The qsub command accepts a
+.Ar script
+operand that is the path to the script of the job.
+If the path is relative, it will be expanded relative to the working
+directory of the qsub command.
+.LP
+If the
+.Ar script
+operand is not provided or the operand is the single character "\-", the
+qsub command reads the script from standard input.
+.if \n(Pb .ig Ig
+When the script is being read from Standard Input, qsub will copy the
+file to a temporary file.  This temporary file is passed to the library
+interface routine pbs_submit.  The temporary file is removed by qsub
+after pbs_submit returns or upon the receipt of a signal which would cause
+qsub to terminate.
+.Ig
+.Sh STANDARD INPUT
+The qsub command reads the script for the job from standard input if the 
+.Ar script
+operand is missing or is the single character "\-".
+.Sh INPUT FILES
+The
+.Ar script
+file is read by the qsub command.
+Qsub acts upon any directives found in the script.
+.LP
+When the job is created, a copy of the script file is made and that copy
+cannot be modified.
+.Sh STANDARD OUTPUT
+Unless the
+.Ar \-z
+option is set, the job identifier assigned to the job will be written to
+standard output if the job is successfully created.
+.Sh STANDARD ERROR
+The
+qsub
+command will write a diagnostic message to standard error for
+each error occurrence.
+.Sh ENVIRONMENT VARIABLES
+The values of some or all of the variables in the qsub
+command's environment are exported with the job, see the -v and -V options.
+.LP
+The environment variable
+.B PBS_DEFAULT
+defines the name of the default server.   Typically, it corresponds to the
+system name of the host on which the server is running.
+If PBS_DEFAULT is not set, the default is defined by an administrator
+established file.
+.LP
+The environment variable
+.B PBS_DPREFIX
+determines the prefix string which identifies directives in the script.
+.Sh EXTENDED DESCRIPTION
+.LP
+Script Processing:
+.LP
+A job script may consist of PBS directives, comments and executable statements.
+A PBS directive provides a way of specifying job attributes in addition to
+the command line options.
+For example:
+.RS
+.Cs
+:
+#PBS -N Job_name
+#PBS -l walltime=10:30,mem=320kb
+#PBS -m be
+#
+step1 arg1 arg2
+step2 arg3 arg4
+.Ce
+.RE
+.LP
+The qsub
+command scans the lines of the script file for directives.
+An initial line in the script that begins with the characters "#!" or the
+character ":" will be ignored and scanning will start with the next line.
+Scanning will continue until the first executable line, that is a line that
+is not blank, not a directive line, nor a line whose first non white space
+character is "#".
+If directives occur on subsequent lines, they will be ignored.
+.LP
+A line in the script file will be processed as a directive to qsub
+if and only if the string of characters starting with the first non white
+space character on the line and of the same length as the directive prefix
+matches the directive prefix.
+.LP
+The remainder of the directive line consists of the options to qsub
+in the same syntax as they appear on the command line.
+The option character is to be preceded with the "\-" character.
+.LP
+If an option is present in both a directive and on the command line, that
+option and its argument, if any, will be ignored in the directive.  The
+command line takes precedence.
+.LP
+If an option is present in a directive and not on the command line, that
+option and its argument, if any, will be processed as if it had occurred
+on the command line.
+.LP
+The directive prefix string will be determined in order of preference
+from:
+.RS 4
+.sp
+The value of the
+.Ar \-C
+option argument if the option is specified on the command line.
+.sp
+The value of the environment variable
+.B PBS_DPREFIX 
+if it is defined.
+.sp
+The four character string
+.Ty #PBS .
+.sp
+.RE
+If the
+.Ar \-C
+option is found in a directive in the script file, it will be ignored.
+.LP
+User Authorization:
+.LP
+When the user submits a job from a system other than the one on which the
+PBS Server is running, the name under which the job is to be executed is
+selected according to the rules listed under the -u option.
+The user submitting the job must be authorized to run the job under the
+execution user name. 
+This authorization is provided if 
+.RS
+.IP (1) 5
+The host on which qsub is run is trusted by the execution host (see
+/etc/hosts.equiv),
+.IP (2)
+The execution user has an .rhosts file naming the submitting user on the
+submitting host.
+.RE
+.LP
+C-Shell .logout File:
+.LP
+The following warning applies for users of the c-shell, csh.
+If the job is executed under the csh and a 
+.I .logout
+file exists in the home directory in which the job executes,
+the exit status of the job is that of the .logout script, not the job script.
+This may impact any inter-job dependencies.
+To preserve the job exit status, either remove the .logout file or place the
+following line as the first line in the .logout file
+.br
+.Ty "\ \ \ set EXITVAL = $status"
+.br
+and the following line as the last executable line in .logout
+.br
+.Ty "\ \ \ exit $EXITVAL"
+.LP
+Interactive Jobs:
+.LP
+If the 
+.Ar \-I 
+option is specified on the command line or in a script directive, or if
+the "interactive" job attribute declared true via the \-W option,
+.Ty "-W interactive=true" ,
+either on the command line or in a script directive, the job is an interactive
+job.  The script will be processed for directives, but will not be included
+with the job.  When the job begins execution, all input to the job is from
+the terminal session in which qsub is running.
+.LP
+When an interactive job is submitted, the qsub command will not
+terminate when the job is submitted.  Qsub will remain running until the
+job terminates, is aborted, or the user interrupts qsub with an SIGINT
+(the control-C key).  If qsub is interrupted prior to job start,
+it will query if the user wishes to exit.
+If the user response "yes", qsub exits and the job is aborted.
+.LP
+One the interactive job has started execution, input to and output from the
+job pass through qsub.  Keyboard generated interrupts are passed to the job.
+Lines entered that begin with the tilde ('~') character and contain special
+sequences are escaped by qsub.  The recognized escape sequences are:
+.RS
+.IP "~."
+Qsub terminates execution.  The batch job is also terminated.
+.IP "~susp"
+Suspend the qsub program if running under the C shell.  "susp" is the suspend
+character, usually CNTL-Z.
+.IP "~asusp"
+Suspend the input half of qsub (terminal to job), but allow output to continue
+to be displayed.  Only works under the C shell.  "asusp" is the auxiliary
+suspend character, usually CNTL-Y.
+.RE
+.LP
+.Sh EXIT STATUS
+Upon successful processing, the qsub exit status will be a value of zero.
+.LP
+If the qsub command fails, the
+command exits with a value greater than zero.
+.Sh SEE ALSO
+qalter(1B), qdel(1B), qhold(1B), qmove(1B), qmsg(1B), qrerun(1B),
+qrls(1B), qselect(1B), qsig(1B), qstat(1B), pbs_connect(3B),
+pbs_job_attributes(7B),
+pbs_queue_attributes(7B),
+pbs_resources_irix5(7B), pbs_resources_sp2(7B), pbs_resources_sunos4(7B),
+pbs_resources_unicos8(7B), pbs_server_attributes(7B), and
+pbs_server(8B)
+\" turn off any extra indent left by the Sh macro
+.RE

@@ -1,0 +1,20 @@
+#  README.pbs_ganglia
+#  contributed by Bas van der Vlies
+#  updated Mar 23, 2004
+
+This is the SARA port of the ROCKS pbs monitor. In this distribution
+there are two directories:
+         client)
+           This gathers OPENPBS/TORQUE information and publish this as
+           metric to the ganglia gmon daemon.
+
+         web)
+           This is web interface to the queue data. Now users can monitor
+           their jobs, eg: cpu usage, network traffic ...
+
+For installation read the INSTALL file.
+
+Have suggestions or bugs mail them to:
+         Bas van der Vlies <basv@sara.nl>
+         http://www.sara.nl/index_eng.html for more info about SARA
+

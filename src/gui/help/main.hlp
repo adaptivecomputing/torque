@@ -1,0 +1,325 @@
+The main xpbs window is composed of 5 distinct areas (subwindows) arranged 
+vertically (one on top of another) in the following order:
+
+1) Menu region
+2) Hosts region
+3) Queues region
+4) Jobs region
+5) Info region
+
+===========
+Menu region
+===========
+The Menu area is composed of a row of command buttons that signal some
+action with a click of the left mouse button. The buttons are:
+
+Manual Update	     - to update the information on hosts, queues, and jobs.
+		       NOTE: choosing this option will automatically cancel
+		       any auto updates in progress.
+
+Auto Update	     - same as "Update Data Manually" except updating is
+		       done automatically every <some specified> number of 
+		       minutes. If currently enabled by user, the button will
+		       appear in a different color. 
+
+Track Job	     - for periodically checking for returned output files of 
+		       jobs. If currently enabled by user, the button will
+		       appear in a different color.	 
+
+Preferences	     - for setting certain parameters such as the list of 
+		       server host(s) to query.
+
+Help		     - contains this help page.		       			       
+About		     - tells of the author and who to send comments, bugs, and
+		       suggestions to. 
+
+Close		     - for exiting xpbs plus saving the current setup 
+		       information in the user's $HOME/.xpbsrc file. 
+		       Information saved include the selected host(s), 
+		       queue(s), job(s), the different jobs listing 
+		       criteria, the view states (i.e. minimized/maximized)
+		       of the Hosts Queues, Jobs, and INFO regions, and
+		       anything in the Preferences section.
+============
+Hosts region
+============
+The Hosts area is composed of a leading horizontal HOSTS bar, a listbox, and 
+a set of command buttons. The HOSTS bar contains a minimize/maximize button, 
+identified by a dot or a rectangular image, for displaying or iconizing
+the Hosts region. The listbox displays information about "favorite" server 
+host(s), and each entry is meant to be selected via a single left mouse button
+click, shift key + mouse button 1 click for contiguous selection, or cntrl key
++ mouse button 1 click for non-contiguous selection. The command buttons 
+represent actions on selected host(s), and commonly found buttons are:
+
+detail      - for obtaining detailed information about selected server host(s).
+              This functionality can also be achieved by double clicking on an
+	      entry in the Hosts listbox.
+
+Submit	     - for submitting a job to any of the queues managed by the
+	       selected server host(s).
+
+terminate   - for terminating PBS servers on selected host(s). (-admin only) 
+
+The server hosts can be chosen by specifying in the $HOME/.xpbsrc file 
+(or .Xdefaults) the resource:
+
+	*serverHosts:	hostname1 hostname2 ...
+Another way of specifying the host is to click on the Preferences button in 
+the Menu region, and manipulate the server Hosts entry widget from the 
+preferences dialog box.
+
+=============
+Queues region
+=============
+The Queues area is composed of a leading horizontal QUEUES bar, a listbox, and
+a set of command buttons. The QUEUES bar lists the hosts that are consulted
+when listing queues; the bar also contains a minimize/maximize button for
+displaying or "iconizing" the Queues region. The listbox displays information
+about queues managed by the server host(s) selected from the Hosts 
+listbox; each listbox entry is meant to be selected (highlighted) via a single
+left mouse button click, shift key + mouse button 1 click for contiguous
+selection, or cntrl key + mouse button 1 click for non-contiguous selection. 
+The command buttons represent actions for operating on selected 
+queue(s), and commonly found buttons are:
+
+detail	    - for obtaining detailed information about selected queue(s). This
+	      functionality can also be achieved by double clicking on a Queues
+	      listbox entry. 	
+stop	    - for stopping the selected queue(s). (-admin only)
+start	    - for starting the selected queue(s). (-admin only)
+disable	    - for disabling the selected queue(s). (-admin only)
+enable	    - for enabling the selected queue(s). (-admin only)
+
+===========
+Jobs region
+===========
+The Jobs area is composed of a leading horizontal JOBS bar, a listbox, and a
+set of command buttons. The JOBS bar lists the queues and other criteria that
+are consulted when listing jobs; the bar also contains a minimize/maximize
+button for displaying or "iconizing" the Jobs region. The listbox displays
+information about jobs that are found in the queue(s) that are selected from
+the Queues listbox; each listbox entry is meant to be selected (highlighted)
+via a single left mouse button click, shift key + mouse button 1 click for
+contiguous selection, or cntrl key + mouse button 1 click for non-contiguous
+selection.
+The "Other Criteria" drop-down menu describes selection criteria used for
+further filtering the contents of the Jobs listbox. The list of jobs can be
+selected according to the owner of jobs (Owners), job state (Job_States), name
+of the job (Job_Name), type of hold placed on the job (Hold_Types), the account
+name associated with the job (Account_Name), checkpoint attribute (Checkpoint),
+time the job is eligible for queueing/execution (Queue_Time), resources
+requested by the job (Resources), priority attached to the job (Priority), and
+whether or not the job is rerunnable (Rerunnable). The selection criteria can
+be modified by selecting the appropriate menu entry that would bring up a
+selection box. The menu is accompanied by a "Select Jobs" button, which when
+clicked, will update the contents of the Jobs listbox based on the new selection
+criteria.
+
+Finally, to the right of the listbox, the Jobs region is accompanied by the
+following command buttons, for operating on selected job(s):
+
+detail	- for obtaining detailed information about selected job(s). This 
+	  functionality can also be achieved by double clicking on a Jobs 
+	  listbox entry.
+modify	- for modifying attributes of the selected job(s).
+delete	- for deleting the selected job(s).
+hold	- for placing some type of hold on selected job(s).
+release	- for releasing held job(s).
+signal	- for sending signals to selected job(s) that are running.
+msg	- for writing a message string into the output streams of the
+	  selected job(s).
+move	- for moving selected job(s) into some specified destination queue.
+order	- for exchanging order of two selected jobs in a queue.
+run	- for running selected job(s). (-admin only)
+rerun	- for requeueing selected job(s) that are running. (-admin only)
+
+
+===========
+Info region
+===========
+xpbs is a GUI front end to the PBS commands; it actually calls PBS commands
+after the user has set widget values.  The Info Area shows the progress of the
+commands' executed by xpbs. Look into this box for errors. The INFO bar
+contains a minimize/maximize button for displaying or "iconizing" the Info
+region.
+
+================
+User Preferences
+================
+A global xpbs resources file (set by the administrator) is read first and then
+the user's preference file, $HOME/.xpbsrc is loaded. Keep in mind that within 
+an Xresources file (Tk only), later entries take precedence. For example, 
+suppose in your .xpbsrc file, the following entries appear in order:
+
+xpbsrc*backgroundColor: blue
+*backgroundColor:       green
+
+The later entry "green" will take precedence even though the first one is more
+precise and longer matching.
+
+The things that can be set in the personal preferences file are fonts, colors,
+and favorite server host(s) to query.
+
+Ex.
+
+!!! FONTS
+!!  Three fonts that can be configured:
+!   labelFont        - font applied to text that appear in labels.
+!   fixlabelFont     - font applied to text that label fixed-width widgets.
+!		       NOTE: This MUST be a fixed-width font.
+!   textFont         - font applied to a text widget. Keep this as fixed-width
+!		       font. 
+*labelFont:		-adobe-courier-bold-r-normal--12-120-75-75-m-70-iso8859-1
+*fixlabelFont:  	7x13bold
+*textFont:		7x13
+
+!!! COLORS
+!!  Six color resources that can be modified:
+!
+!   backgroundColor - the color applied to background of frames, buttons, 
+!                     entries, scrollbar handles.
+!   foregroundColor - the color applied to text in any context (under \
+!		      selection, insertion, etc...).
+!   activeColor     - the color applied to the background of a selection, 
+!		      a selected command button, or a select scroll bar
+!		      handle.
+!   disabledColor   - color applied to a disabled widget.
+!   signalColor     - color applied to buttons that signal something to the
+!                     user about a change of state.
+!   shadingColor    - a color shading applied to some of the frames to
+!	              emphasize focus as well as decoration.
+!   selectorColor   - the color applied to the selector box of a radiobutton or
+!		      checkbutton.
+*backgroundColor:	#c8b9a6
+*foregroundColor:	#150567
+*activeColor:		#9db2ff
+*disabledColor:		#8f8e8d
+*signalColor:		#c11b17
+*shadingColor:		#c7af92
+*selectorColor:		#980517
+
+!! OTHER OPTIONS
+!  serverHosts      - the list of server hosts to be queried by xpbs.
+!  timeoutSecs      - number of seconds before timing out waiting for a
+!                   - connection to a  server.
+!  xtermCmd         - the xterm command to run when the PBS interactive feature
+!                     is selected.
+*serverHosts:           davinci
+*timeoutSecs:           30
+*xtermCmd:              xterm
+
+=====================
+Xpbs and PBS commands
+=====================
+Xpbs is a GUI front end to PBS commands. It calls the commands as follows:
+
+Command Button			PBS Command
+--------------			-----------
+detail	(Hosts)			qstat -B -f <selected server_host(s)>
+terminate 			qterm <selected server_host(s)>
+detail (Queues)			qstat -Q -f <selected queue(s)>
+stop 				qstop <selected queue(s)>
+start				qstart <selected queue(s)>
+enable				qenable <selected queue(s)>
+disable				qdisable <selected queue(s)>	
+detail (Jobs)			qstat -f <selected job(s)>
+modify				qalter <selected job(s)>
+delete				qdel <selected job(s)>
+hold				qhold <selected job(s)>
+release				qrls <selected job(s)>
+run				qrun <selected job(s)>
+rerun				qrerun  <selected job(s)>
+signal				qsig <selected job(s)>
+msg				qmsg <selected job(s)>
+move				qmove <selected job(s)>
+order				qorder <selected job(s)>
+
+================================
+Some Common Widgets Used in Xpbs
+================================
+Widgets are graphical controls that user manipulate to invoke some action.
+Some widgets used in xpbs are:
+
+1. listbox - can be multi-selectable (a number of entries can be selected/
+   highlighted using a mouse click) or single-selectable (one entry
+   can be highlighted at a time). For a multi-selectable listbox,
+   the following operations are allowed:
+
+  a. single click with mouse button 1 to select/highlight an entry.
+  b. shift key + mouse button 1 to contiguously select more than one entry.
+  c. cntrl key + mouse button 1 to non-contiguously select more than one 
+     entry.
+     NOTE: For systems running Tk < 4.0, the newly selected item is reshuffled
+     to appear next to already selected items.
+  d. click the "Select All/Deselect All" button to select all entries or
+     deselect all entries at once.
+  e. double clicking an entry usually activates some action that uses the
+     selected entry as a parameter.
+
+2. scrollbar - usually appears either vertically or horizontally and contains
+   5 distinct areas that are mouse clicked to achieve different effects:
+
+   	  top arrow           Causes the view in the associated window
+                              to shift up by one unit (i.e. the object
+                              appears to move down  one  unit  in  its
+                              window).  If the button is held down the
+                              action will auto-repeat.
+
+          top gap             Causes the view in the associated window
+                              to  shift up by one less than the number
+                              of units in the window (i.e. the portion
+                              of the object that used to appear at the
+                              very top of the window will  now  appear
+                              at  the  very bottom).  If the button is
+                              held down the action will auto-repeat.
+
+          slider              Pressing button 1 in this  area  has  no
+                              immediate  effect  except  to  cause the
+                              slider  to  appear  sunken  rather  than
+                              raised.   However, if the mouse is moved
+                              with the button  down  then  the  slider
+                              will  be  dragged, adjusting the view as
+                              the mouse is moved.
+
+          bottom gap          Causes the view in the associated window
+                              to  shift  down  by  one  less  than the
+                              number of units in the window (i.e.  the
+                              portion  of  the  object  that  used  to
+                              appear at the very bottom of the  window
+                              will  now  appear  at the very top).  If
+                              the button is held down the action  will
+                              auto-repeat.
+
+          bottom arrow        Causes the view in the associated window
+                              to  shift  down  by  one  unit (i.e. the
+                              object appears to move up  one  unit  in
+                              its window).  If the button is held down
+                              the action will auto-repeat.
+
+3. entry - brought into focus with a click of the left mouse button.
+   To manipulate this widget, simply type in the text value. Use of
+   arrow keys, mouse selection of text for deletion or overwrite,
+   copying and pasting with sole use of mouse buttons are permitted.
+   This widget is usually accompanied by a scrollbar for horizontally
+   scanning a long text entry string.
+
+4. spin box - a combination of an entry widget and a horizontal scrollbar.
+   The entry widget will only accept values that fall within a defined list of 
+   valid values, and incrementing through the valid values is done by clicking 
+   on the up/down arrows.
+
+5. button - a rectangular region appearing either raised or pressed that 
+   invokes an action when clicked with the left mouse button.  When the button
+   appears pressed, then hitting the <RETURN> key will automatically select 
+   the button.
+
+6. text - an editor like widget. This widget is brought into focus with
+   a click of the left mouse button. To manipulate this widget, simply
+   type in the text. Use of arrow keys, backspace/delete  key, mouse
+   selection of text for deletion or overwrite, copying and pasting with
+   sole use of mouse buttons are permitted. To copy and paste text, drag the
+   left mouse button to select text, click on the left button again to 
+   reposition the insertion cursor, and then click on the middle mouse button
+   to paste. This widget is usually accompanied by a scrollbar for vertically
+   scanning a long entry.

@@ -1,0 +1,1924 @@
+#         OpenPBS (Portable Batch System) v2.3 Software License
+# 
+# Copyright (c) 1999-2000 Veridian Information Solutions, Inc.
+# All rights reserved.
+# 
+# ---------------------------------------------------------------------------
+# For a license to use or redistribute the OpenPBS software under conditions
+# other than those described below, or to purchase support for this software,
+# please contact Veridian Systems, PBS Products Department ("Licensor") at:
+# 
+#    www.OpenPBS.org  +1 650 967-4675                  sales@OpenPBS.org
+#                        877 902-4PBS (US toll-free)
+# ---------------------------------------------------------------------------
+# 
+# This license covers use of the OpenPBS v2.3 software (the "Software") at
+# your site or location, and, for certain users, redistribution of the
+# Software to other sites and locations.  Use and redistribution of
+# OpenPBS v2.3 in source and binary forms, with or without modification,
+# are permitted provided that all of the following conditions are met.
+# After December 31, 2001, only conditions 3-6 must be met:
+# 
+# 1. Commercial and/or non-commercial use of the Software is permitted
+#    provided a current software registration is on file at www.OpenPBS.org.
+#    If use of this software contributes to a publication, product, or
+#    service, proper attribution must be given; see www.OpenPBS.org/credit.html
+# 
+# 2. Redistribution in any form is only permitted for non-commercial,
+#    non-profit purposes.  There can be no charge for the Software or any
+#    software incorporating the Software.  Further, there can be no
+#    expectation of revenue generated as a consequence of redistributing
+#    the Software.
+# 
+# 3. Any Redistribution of source code must retain the above copyright notice
+#    and the acknowledgment contained in paragraph 6, this list of conditions
+#    and the disclaimer contained in paragraph 7.
+# 
+# 4. Any Redistribution in binary form must reproduce the above copyright
+#    notice and the acknowledgment contained in paragraph 6, this list of
+#    conditions and the disclaimer contained in paragraph 7 in the
+#    documentation and/or other materials provided with the distribution.
+# 
+# 5. Redistributions in any form must be accompanied by information on how to
+#    obtain complete source code for the OpenPBS software and any
+#    modifications and/or additions to the OpenPBS software.  The source code
+#    must either be included in the distribution or be available for no more
+#    than the cost of distribution plus a nominal fee, and all modifications
+#    and additions to the Software must be freely redistributable by any party
+#    (including Licensor) without restriction.
+# 
+# 6. All advertising materials mentioning features or use of the Software must
+#    display the following acknowledgment:
+# 
+#     "This product includes software developed by NASA Ames Research Center,
+#     Lawrence Livermore National Laboratory, and Veridian Information
+#     Solutions, Inc.
+#     Visit www.OpenPBS.org for OpenPBS software support,
+#     products, and information."
+# 
+# 7. DISCLAIMER OF WARRANTY
+# 
+# THIS SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND. ANY EXPRESS
+# OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+# OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT
+# ARE EXPRESSLY DISCLAIMED.
+# 
+# IN NO EVENT SHALL VERIDIAN CORPORATION, ITS AFFILIATED COMPANIES, OR THE
+# U.S. GOVERNMENT OR ANY OF ITS AGENCIES BE LIABLE FOR ANY DIRECT OR INDIRECT,
+# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
+# OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+# LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+# NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+# EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# 
+# This license will be governed by the laws of the Commonwealth of Virginia,
+# without reference to its choice of law rules.
+
+proc nodeCreate { nodeframe nodename nodelabel clusterframe {nodeType NOMOM_SNODE} {viewType "FULL"} } {
+
+        global canvas sysinfo
+
+	if {[string compare $nodeframe ""] == 0 || \
+	    		[string compare $nodename ""] == 0} {
+		return
+	}
+
+        set sysframe ""
+        if {[string compare $clusterframe ""] != 0} {
+                set sysframe [clusterSystemFrameGet $clusterframe]
+                systemNodeFramePut $sysframe $nodename $nodeframe $viewType
+        }
+        nodeNamePut $nodeframe $nodename
+        nodeViewTypePut $nodeframe $viewType
+        nodeTypePut $nodeframe $nodeType
+        nodeClusterFramePut $nodeframe $clusterframe
+
+        switch -exact -- $viewType {
+          MIRROR {
+                set label_font $canvas(bigLabelFont)
+                set label_font_width $canvas(bigLabelFontWidth)
+                set label_font_height $canvas(bigLabelFontHeight)
+                set text_width $canvas(bigTextFontWidth)
+                set text_height $canvas(bigTextFontHeight)
+                set maxWidth $canvas(mirrorMaxWidth)
+                set maxHeight $canvas(mirrorMaxHeight)
+          }
+          FULL   {
+                set label_font $canvas(smallLabelFont)
+                set label_font_width $canvas(smallLabelFontWidth)
+                set label_font_height $canvas(smallLabelFontHeight)
+                set text_width $canvas(smallTextFontWidth)
+                set text_height $canvas(smallTextFontHeight)
+                set maxWidth $canvas(nodeMaxWidth)
+                set maxHeight $canvas(nodeMaxHeight)
+          }
+          ICON   {
+                set label_font $canvas(smallLabelFont)
+                set label_font_width $canvas(smallLabelFontWidth)
+                set label_font_height $canvas(smallLabelFontHeight)
+                set text_width $canvas(smallTextFontWidth)
+                set text_height $canvas(smallTextFontHeight)
+                set maxWidth $canvas(iconMaxWidth)
+                set maxHeight $canvas(iconMaxHeight)
+          }
+          default {
+		return
+          }
+        }
+        set basicWidth $maxWidth
+        set basicHeight $maxHeight
+
+        frame $nodeframe -class Small
+
+        frame $nodeframe.cf -borderwidth 0
+        frame $nodeframe.cf.c -class SmallCanvas
+        frame $nodeframe.cf.y -borderwidth 0
+        frame $nodeframe.cf.x -borderwidth 0
+
+        frame $nodeframe.lf -class SmallLabel -borderwidth 0 -relief flat
+
+        set nodelabel2 $nodelabel
+        if { [string compare $viewType "ICON"] == 0 } {
+                set nodelabel2 [lindex [split $nodelabel .] 0]
+                label $nodeframe.lf.label -text $nodelabel2 -justify left \
+                                                -font $label_font -anchor nw
+        } else {
+                label $nodeframe.lf.label -text $nodelabel2 -justify center \
+                                                -font $label_font -anchor c
+        }
+
+
+        set labelWidth [expr 2*$canvas(smallBd) + 2*$canvas(smallLabelBd) + \
+                    $label_font_width*[string length $nodelabel2]]
+        set labelHeight [expr $canvas(smallBd) + 2*$canvas(smallLabelBd) + \
+                             + $label_font_height]
+
+        canvas $nodeframe.cf.c.canvas -width $basicWidth -height $basicHeight \
+                -xscrollcommand [list $nodeframe.cf.x.xscroll set] \
+                -yscrollcommand [list $nodeframe.cf.y.yscroll set] \
+                -confine 1
+        nodeCanvasPut $nodeframe $nodeframe.cf.c.canvas
+
+        set sysinfo(nodeframe,$nodeframe.cf.c.canvas) $nodeframe
+        bind_canvas $nodeframe.cf.c.canvas
+
+        set nodestat [systemNodeStatusGet $sysframe $nodename]
+        if { [string compare $nodeType MOM] == 0 || \
+	     			[string compare $nodeType MOM_SNODE] == 0} {
+                if {[string compare $viewType MIRROR] != 0 } {
+                  nodeUpdateStat $sysframe $nodename $nodestat NOINFO
+                } else {
+                  nodeNoInfo $nodeframe
+                }
+        } else {
+                if {[string compare $viewType MIRROR] != 0} {
+                  nodeUpdateStat $sysframe $nodename $nodestat FREE
+                } else {
+                  nodeUp $nodeframe
+                }
+        }
+
+        set canvasFrameWidth [expr $canvas(smallBd) + \
+                                   2*$canvas(smallCanvasBd)]
+        set canvasFrameHeight [expr 2*$canvas(smallCanvasBd)]
+        scrollbar $nodeframe.cf.x.xscroll -orient horizontal \
+                -relief $canvas(smallScrollRelief) \
+                -borderwidth $canvas(smallScrollBd) \
+                -background $canvas(smallScrollBg) \
+                -width $text_height \
+                -command [list $nodeframe.cf.c.canvas xview]
+
+        set scrollHeight [expr $canvas(smallBd) + \
+              2*[lindex [$nodeframe.cf.x.xscroll configure -borderwidth] end] \
+                + [lindex [$nodeframe.cf.x.xscroll configure -width] end]]
+        $nodeframe.cf.x configure -height $scrollHeight
+
+        scrollbar $nodeframe.cf.y.yscroll -orient vertical \
+                        -relief $canvas(smallScrollRelief) \
+                        -borderwidth $canvas(smallScrollBd) \
+                        -background $canvas(smallScrollBg) \
+                        -width $text_height \
+                        -command [list $nodeframe.cf.c.canvas yview]
+
+        set scrollWidth [expr $canvas(smallBd) + \
+               2*[lindex [$nodeframe.cf.y.yscroll configure -borderwidth] end] \
+               + [lindex [$nodeframe.cf.y.yscroll configure -width] end]]
+        $nodeframe.cf.y configure -width $scrollWidth
+        nodeLabelPut    $nodeframe $nodeframe.lf.label
+        nodeLabelFramePut $nodeframe $nodeframe.lf
+        nodeCanvasFramePut $nodeframe $nodeframe.cf.c
+        nodeMainFramePut $nodeframe $nodeframe.cf
+        nodeXscrollPut  $nodeframe $nodeframe.cf.x.xscroll
+        nodeXscrollFramePut $nodeframe $nodeframe.cf.x
+        nodeYscrollPut  $nodeframe $nodeframe.cf.y.yscroll
+        nodeYscrollFramePut $nodeframe $nodeframe.cf.y
+        nodeXposPut     $nodeframe 0
+        nodeYposPut     $nodeframe 0
+        nodeScrollRegionWidthPut $nodeframe 0
+        nodeScrollRegionHeightPut $nodeframe 0
+        nodeOffsetWidthPut $nodeframe 0
+        nodeNextPut $nodeframe ""
+        nodeRefreshPut $nodeframe 0
+
+        pack $nodeframe.lf.label -fill both -expand true -padx 0 -pady 0 -ipadx 0 -ipady 0 -anchor nw
+        pack $nodeframe.cf.c.canvas -fill both -padx 0 -pady 0 -ipadx 0 -ipady 0
+        pack $nodeframe.cf.y -side right -fill  y -padx 0 -pady 0 -ipadx 0 -ipady 0
+        pack $nodeframe.cf.x -side bottom -fill x -padx 0 -pady 0 -ipadx 0 -ipady 0
+        pack $nodeframe.cf.c -expand true -fill both -padx 0 -pady 0 -ipadx 0 -ipady 0
+        pack $nodeframe.lf $nodeframe.cf -side top -fill both -expand true -padx 0 -pady 0 -ipadx 0 -ipady 0
+
+        pack $nodeframe -expand true -fill both -padx 0 -pady 0 -ipadx 0 -ipady 0
+
+        set width [expr $canvasFrameWidth + $basicWidth + $scrollWidth]
+
+        if {$labelWidth > $width} {
+                set width $labelWidth
+        }
+        nodeCanvasWidthPut $nodeframe $basicWidth
+        nodeDisplayWidthPut $nodeframe $width
+        if {$width > $maxWidth} {
+                set canvWidth [expr $maxWidth - \
+                                    $canvasFrameWidth - $scrollWidth]
+                if {$canvWidth > 0} {
+                        nodeCanvasWidthPut $nodeframe $canvWidth
+                        nodeDisplayWidthPut $nodeframe $maxWidth
+                        $nodeframe.cf.c.canvas configure -width $canvWidth
+                        set width $maxWidth
+                }
+        }
+
+        set  height [expr $labelHeight + $canvasFrameHeight + $basicHeight + \
+                                                                  $scrollHeight]
+
+        nodeCanvasHeightPut $nodeframe $basicHeight
+        nodeDisplayHeightPut $nodeframe $height
+        if {$height > $maxHeight} {
+                set canvHeight [expr $maxHeight - \
+                             $labelHeight - $canvasFrameHeight - $scrollHeight]
+                if {$canvHeight > 0} {
+                        nodeCanvasHeightPut $nodeframe $canvHeight
+                        nodeDisplayHeightPut $nodeframe $maxHeight
+                        $nodeframe.cf.c.canvas configure -height $canvHeight
+                        set height $maxHeight
+                }
+        }
+
+        if {[string compare $viewType ICON] == 0} {
+                nodeCoverCanvas $nodeframe
+        } else {
+                nodeUnCoverCanvas $nodeframe
+        }
+
+        return [list $width $height]
+}
+
+proc nodeAddWidth {nodeframe incr} {
+        global canvas
+
+        if {[string compare $nodeframe ""] == 0 || \
+	    				![regexp {[0-9]+} $incr]} {
+                return
+        }
+        set vtype [nodeViewTypeGet $nodeframe]
+
+        switch -exact -- $vtype {
+          MIRROR {
+                set maxWidth $canvas(mirrorMaxWidth)
+          }
+          FULL   {
+                set maxWidth $canvas(nodeMaxWidth)
+          }
+          ICON   {
+                set maxWidth $canvas(iconMaxWidth)
+          }
+	  default {
+		return
+	  }
+        }
+        set newDispWidth [expr [nodeDisplayWidthGet $nodeframe] + $incr]
+
+        if {$newDispWidth < $maxWidth } {
+                nodeCanvasWidthPut $nodeframe \
+                        [expr [nodeCanvasWidthGet $nodeframe] + $incr]
+                nodeDisplayWidthPut $nodeframe $newDispWidth
+                clusterAddWidth [nodeClusterFrameGet $nodeframe] $incr
+        }
+}
+
+proc nodeRepack {nodeframe} {
+        global canvas
+
+	if {[string compare $nodeframe ""] == 0} {
+		return
+	}
+
+        set vtype [nodeViewTypeGet $nodeframe]
+        switch -exact -- $vtype {
+          MIRROR {
+                set maxWidth $canvas(mirrorMaxWidth)
+          }
+          FULL   {
+                set maxWidth $canvas(nodeMaxWidth)
+          }
+          ICON   {
+                set maxWidth $canvas(iconMaxWidth)
+          }
+	  default {
+		return
+	  }
+        }
+        set label [nodeLabelGet $nodeframe]
+        set labelFrame [nodeLabelFrameGet $nodeframe]
+        set c [nodeCanvasGet $nodeframe]
+        set canvasFrame [nodeCanvasFrameGet $nodeframe]
+        set mainFrame [nodeMainFrameGet $nodeframe]
+        set xscroll [nodeXscrollGet $nodeframe]
+        set xscrollf [nodeXscrollFrameGet $nodeframe]
+        set yscroll [nodeYscrollGet $nodeframe]
+        set yscrollf [nodeYscrollFrameGet $nodeframe]
+        set clusterf [nodeClusterFrameGet $nodeframe]
+        set clusterc [clusterCanvasGet $clusterf]
+
+        if {[string compare $clusterc ""] != 0} {
+                catch {pack forget $labelFrame $mainFrame $canvasFrame $xscrollf}
+                $clusterc delete $nodeframe
+        }
+
+        set canvWidth [nodeCanvasWidthGet $nodeframe]
+
+        set scrollRegionWidth [nodeScrollRegionWidthGet $nodeframe]
+        set scrollRegionHeight [nodeScrollRegionHeightGet $nodeframe]
+        set canvWidth [nodeCanvasWidthGet $nodeframe]
+        set canvHeight [nodeCanvasHeightGet $nodeframe]
+
+        if {$scrollRegionWidth > $canvWidth} {
+                catch {pack $xscroll -side bottom -fill x -padx 0 -pady 0 -ipadx 0 -ipady 0}
+        } else {
+                catch {pack forget $xscroll}
+        }
+
+        if {$scrollRegionHeight > $canvHeight} {
+                catch {pack $yscroll -side right -fill y -padx 0 -pady 0 -ipadx 0 -ipady 0 -anchor nw}
+        } else {
+                catch {pack forget $yscroll}
+        }
+        if {[string compare $clusterc ""] == 0} {
+                return
+        }
+
+        pack $label -fill both -padx 0 -pady 0 -ipadx 0 -ipady 0
+        pack $c -fill both -padx 0 -pady 0 -ipadx 0 -ipady 0
+        pack $yscrollf -side right -fill y -padx 0 -pady 0 -ipadx 0 -ipady 0
+        pack $xscrollf -side bottom -fill x -padx 0 -pady 0 -ipadx 0 -ipady 0
+        pack $canvasFrame -fill both -expand true -padx 0 -pady 0 -ipadx 0 -ipady 0
+        pack $labelFrame $mainFrame -side top -fill both -expand true -padx 0 -pady 0 -ipadx 0 -ipady 0
+
+        $c configure -width $canvWidth -height $canvHeight \
+                -scrollregion [list 0 0 $scrollRegionWidth $scrollRegionHeight]
+
+        $clusterc create window \
+                        [nodeXposGet $nodeframe] \
+                        [nodeYposGet $nodeframe] \
+                        -window $nodeframe -anchor nw \
+                        -tags $nodeframe \
+                        -width  [nodeDisplayWidthGet $nodeframe] \
+                        -height [nodeDisplayHeightGet $nodeframe]
+
+}
+
+proc nodeReCreate { nodeframe } {
+
+        global canvas sysview
+
+	if {[string compare $nodeframe ""] == 0} {
+		return
+	}
+
+        set nodename [nodeNameGet $nodeframe]
+
+        set cframe [nodeClusterFrameGet $nodeframe]
+        set viewType [nodeViewTypeGet $nodeframe]
+        if {[string compare $cframe ""] != 0} {
+                set sysframe [clusterSystemFrameGet $cframe]
+                set sitename [systemNameGet $sysframe]
+                nodeViewTypePut $nodeframe $sysview($sitename)
+                systemNodeFramePut $sysframe $nodename $nodeframe $viewType
+        }
+
+        switch -exact -- $viewType {
+          MIRROR {
+                set label_font $canvas(bigLabelFont)
+                set label_font_width $canvas(bigLabelFontWidth)
+                set label_font_height $canvas(bigLabelFontHeight)
+                set maxWidth $canvas(mirrorMaxWidth)
+                set maxHeight $canvas(mirrorMaxHeight)
+                set text_width $canvas(bigTextFontWidth)
+                set text_height $canvas(bigTextFontHeight)
+          }
+          FULL   {
+                set label_font $canvas(smallLabelFont)
+                set label_font_width $canvas(smallLabelFontWidth)
+                set label_font_height $canvas(smallLabelFontHeight)
+                set maxWidth $canvas(nodeMaxWidth)
+                set maxHeight $canvas(nodeMaxHeight)
+                set text_width $canvas(smallTextFontWidth)
+                set text_height $canvas(smallTextFontHeight)
+          }
+          ICON   {
+                set label_font $canvas(smallLabelFont)
+                set label_font_width $canvas(smallLabelFontWidth)
+                set label_font_height $canvas(smallLabelFontHeight)
+                set maxWidth $canvas(iconMaxWidth)
+                set maxHeight $canvas(iconMaxHeight)
+                set text_width $canvas(smallTextFontWidth)
+                set text_height $canvas(smallTextFontHeight)
+          }
+         default {
+                set label_font $canvas(smallLabelFont)
+                set label_font_width $canvas(smallLabelFontWidth)
+                set label_font_height $canvas(smallLabelFontHeight)
+                set text_width $canvas(smallTextFontWidth)
+                set text_height $canvas(smallTextFontHeight)
+                set maxWidth 0
+                set maxHeight 0
+          }
+        }
+        set basicWidth $maxWidth
+        set basicHeight $maxHeight
+
+        set nodelabel [nodeLabelGet $nodeframe]
+        if { [string compare $viewType "ICON"] == 0 } {
+                set nodelabel [lindex [split $nodelabel .] 0]
+                $nodeframe.lf.label configure -text $nodelabel -justify left \
+                             -font $label_font -anchor nw
+        } else {
+                set nodelabel [lindex [split $nodelabel .] 0]
+                $nodeframe.lf.label configure -text $nodelabel -justify center \
+                             -font $label_font -anchor c
+        }
+        set clusterframe [nodeClusterFrameGet $nodeframe]
+        bind_canvas $nodeframe.cf.c.canvas
+
+        set labelWidth \
+                    [expr 2*$canvas(smallBd) + 2*$canvas(smallLabelBd) + \
+                          $label_font_width*[string length $nodelabel]]
+        set labelHeight [expr $canvas(smallBd) + 2*$canvas(smallLabelBd) + \
+                                + $label_font_height]
+
+        $nodeframe.cf.c.canvas configure -width $basicWidth \
+                -height $basicHeight \
+                -xscrollcommand [list $nodeframe.cf.x.xscroll set] \
+                -yscrollcommand [list $nodeframe.cf.y.yscroll set] \
+                -confine 1
+
+
+        set nodestat [systemNodeStatusGet $sysframe $nodename]
+        set nodetype [nodeTypeGet $nodeframe]
+        if { [string compare $nodetype MOM] == 0 || \
+				[string compare $nodetype MOM_SNODE] == 0 } {
+                if {[string compare $viewType MIRROR] != 0 } {
+                  nodeUpdateStat $sysframe $nodename $nodestat NOINFO
+                } else {
+                  nodeNoInfo $nodeframe
+                }
+        } else {
+                if {[string compare $viewType MIRROR] != 0} {
+                  nodeUpdateStat $sysframe $nodename $nodestat FREE
+                } else {
+                  nodeUp $nodeframe
+                }
+        }
+
+        set canvasFrameWidth [expr $canvas(smallBd) + \
+                                   2*$canvas(smallCanvasBd)]
+        set canvasFrameHeight [expr 2*$canvas(smallCanvasBd)]
+        $nodeframe.cf.x.xscroll configure \
+                -width $text_height \
+                -command [list $nodeframe.cf.c.canvas xview]
+        set xscroll $nodeframe.cf.x.xscroll
+
+        set scrollHeight [expr $canvas(smallBd) + \
+              2*[lindex [$nodeframe.cf.x.xscroll configure -borderwidth] end] \
+                + [lindex [$nodeframe.cf.x.xscroll configure -width] end]]
+        $nodeframe.cf.x configure -height $scrollHeight
+
+        $nodeframe.cf.y.yscroll configure \
+                        -width $text_height \
+                        -command [list $nodeframe.cf.c.canvas yview]
+        set yscroll $nodeframe.cf.y.yscroll
+
+        set scrollWidth [expr $canvas(smallBd) + \
+               2*[lindex [$nodeframe.cf.y.yscroll configure -borderwidth] end] \
+               + [lindex [$nodeframe.cf.y.yscroll configure -width] end]]
+        $nodeframe.cf.y configure -width $scrollWidth
+
+        set width [expr $canvasFrameWidth + $basicWidth + $scrollWidth]
+        if {$labelWidth > $width} {
+                set width $labelWidth
+        }
+        nodeCanvasWidthPut $nodeframe $basicWidth
+        nodeDisplayWidthPut $nodeframe $width
+
+        if {$width > $maxWidth} {
+                set canvWidth [expr $maxWidth - \
+                                    $canvasFrameWidth - $scrollWidth]
+                if {$canvWidth > 0} {
+                        nodeCanvasWidthPut $nodeframe $canvWidth
+                        nodeDisplayWidthPut $nodeframe $maxWidth
+                        $nodeframe.cf.c.canvas configure -width $canvWidth
+                        set width $maxWidth
+                }
+        }
+
+        set  height [expr $labelHeight + $canvasFrameHeight + $basicHeight + \
+                                                                  $scrollHeight]
+        nodeCanvasHeightPut $nodeframe $basicHeight
+        nodeDisplayHeightPut $nodeframe $height
+        if {$height > $maxHeight} {
+                set canvHeight [expr $maxHeight - \
+                             $labelHeight - $canvasFrameHeight - $scrollHeight]
+                if {$canvHeight > 0} {
+                        nodeCanvasHeightPut $nodeframe $canvHeight
+                        nodeDisplayHeightPut $nodeframe $maxHeight
+                        $nodeframe.cf.c.canvas configure -height $canvHeight
+                        set height $maxHeight
+                }
+        }
+        set scrollRegionWidth [nodeScrollRegionWidthGet $nodeframe]
+        set scrollRegionHeight [nodeScrollRegionHeightGet $nodeframe]
+
+        set canvWidth [nodeCanvasWidthGet $nodeframe]
+        catch {pack forget $xscroll}
+        if {[string compare $viewType ICON] != 0 && \
+                                        $scrollRegionWidth > $canvWidth} {
+                catch {pack $xscroll -side bottom -fill x -padx 0 -pady 0 \
+                                                        -ipadx 0 -ipady 0}
+        }
+
+        set canvHeight [nodeCanvasHeightGet $nodeframe]
+        catch {pack forget $yscroll}
+        if {[string compare $viewType ICON] != 0 && \
+                                        $scrollRegionHeight > $canvHeight} {
+                catch {pack $yscroll -side right -fill y -padx 0 -pady 0 -ipadx 0 -ipady 0 -anchor nw}
+        }
+
+        if {[string compare $viewType ICON] == 0} {
+                nodeCoverCanvas $nodeframe
+        } else {
+                nodeUnCoverCanvas $nodeframe
+        }
+
+        return [list $width $height]
+}
+
+proc nodeCoverCanvas {nodeframe} {
+
+	if {[string compare $nodeframe ""] == 0} {
+		return
+	}
+
+        set canv [nodeCanvasGet $nodeframe]
+        set width [nodeScrollRegionWidthGet $nodeframe]
+        set height [nodeScrollRegionHeightGet $nodeframe]
+
+	if {[string compare $canv ""] == 0  || \
+	    [string compare $width ""] == 0 || \
+	    [string compare $height ""] == 0} {
+		return
+	}
+
+        catch {$canv delete $nodeframe.cover}
+
+        $canv create rect -1 -1 $width $height \
+                     -fill  [lindex [$canv configure -bg] end] \
+                     -tag $nodeframe.cover
+}
+
+proc nodeUnCoverCanvas {nodeframe} {
+
+	if {[string compare $nodeframe ""] == 0} {
+		return
+	}
+
+        set canv [nodeCanvasGet $nodeframe]
+	if {[string compare $canv ""] == 0} {
+		return
+	} 
+
+        catch {$canv delete $nodeframe.cover}
+}
+
+proc nodeReCoverCanvas {nodeframe} {
+
+	if {[string compare $nodeframe ""] == 0} {
+		return
+	}
+
+        set canv [nodeCanvasGet $nodeframe]
+	if {[string compare $canv ""] == 0} {
+		return
+	} 
+
+        catch {$canv delete $nodeframe.cover}
+
+        $canv itemconfigure $nodeframe.cover \
+                        -fill  [lindex [$canv configure -bg] end] \
+                        -tag $nodeframe.cover
+}
+
+proc nodeRefreshGet nodeframe {
+
+        set array [string trimleft $nodeframe .]
+        global $array
+
+        if {![info exists ${array}(refresh)]} {
+                return 0
+        }
+        return [set ${array}(refresh)]
+}
+
+proc nodeRefreshPut {nodeframe flag} {
+        set array [string trimleft $nodeframe .]
+        global $array
+
+        set ${array}(refresh) $flag
+}
+
+proc nodeNameGet nodeframe {
+
+        set array [string trimleft $nodeframe .]
+        global $array
+
+        if {![info exists ${array}(name)]} {
+                return ""
+        }
+        return [set ${array}(name)]
+}
+proc nodeNamePut {nodeframe name} {
+        set array [string trimleft $nodeframe .]
+        global $array
+
+        set ${array}(name) $name
+}
+
+proc nodeLabelFramePut {nodeframe frame} {
+        set array [string trimleft $nodeframe .]
+        global $array
+
+        set ${array}(labelFrame) $frame
+}
+
+proc nodeLabelFrameGet {nodeframe} {
+        set array [string trimleft $nodeframe .]
+        global $array
+
+        if {![info exists ${array}(labelFrame)]} {
+                return ""
+        }
+        return [set ${array}(labelFrame)]
+}
+
+proc nodeLabelGet nodeframe {
+
+        set array [string trimleft $nodeframe .]
+        global $array
+
+        if {![info exists ${array}(label)]} {
+                return ""
+        }
+        return [set ${array}(label)]
+}
+
+proc nodeLabelPut {nodeframe label} {
+        set array [string trimleft $nodeframe .]
+        global $array
+
+        set ${array}(label) $label
+}
+
+
+proc nodeTypeGet nodeframe {
+
+        set array [string trimleft $nodeframe .]
+        global $array
+
+        if {![info exists ${array}(type)]} {
+                return ""
+        }
+        return [set ${array}(type)]
+}
+
+proc nodeTypePut {nodeframe type} {
+        set array [string trimleft $nodeframe .]
+        global $array
+
+        set ${array}(type) $type
+}
+
+proc nodeViewTypeGet nodeframe {
+
+        set array [string trimleft $nodeframe .]
+        global $array
+
+        if {![info exists ${array}(viewType)]} {
+                return ""
+        }
+        return [set ${array}(viewType)]
+}
+
+proc nodeViewTypePut {nodeframe type} {
+        set array [string trimleft $nodeframe .]
+        global $array
+
+        set ${array}(viewType) $type
+}
+
+proc nodeCanvasFrameGet {nodeframe} {
+        set array [string trimleft $nodeframe .]
+        global $array
+
+        if {![info exists ${array}(canvasFrame)]} {
+                return ""
+        }
+        return [set ${array}(canvasFrame)]
+}
+
+
+proc nodeCanvasFramePut {nodeframe frame} {
+        set array [string trimleft $nodeframe .]
+        global $array
+
+        set ${array}(canvasFrame) $frame
+}
+
+proc nodeCanvasGet nodeframe {
+        set array [string trimleft $nodeframe .]
+        global $array
+
+        if {![info exists ${array}(canvas)]} {
+                return ""
+        }
+        return [set ${array}(canvas)]
+}
+
+proc nodeCanvasPut {nodeframe canvas} {
+        set array [string trimleft $nodeframe .]
+        global $array
+
+        set ${array}(canvas) $canvas
+}
+
+proc nodeXscrollFrameGet {nodeframe} {
+        set array [string trimleft $nodeframe .]
+        global $array
+
+        if {![info exists ${array}(XscrollFrame)]} {
+                return ""
+        }
+        return [set ${array}(XscrollFrame)]
+}
+
+proc nodeXscrollFramePut {nodeframe frame} {
+        set array [string trimleft $nodeframe .]
+        global $array
+
+        set ${array}(XscrollFrame) $frame
+}
+
+proc nodeYscrollFrameGet {nodeframe} {
+        set array [string trimleft $nodeframe .]
+        global $array
+
+        if {![info exists ${array}(YscrollFrame)]} {
+                return ""
+        }
+        return [set ${array}(YscrollFrame)]
+}
+
+proc nodeYscrollFramePut {nodeframe frame} {
+        set array [string trimleft $nodeframe .]
+        global $array
+
+        set ${array}(YscrollFrame) $frame
+}
+
+proc nodeXscrollGet nodeframe {
+        set array [string trimleft $nodeframe .]
+        global $array
+
+        if {![info exists ${array}(xscroll)]} {
+                return ""
+        }
+        return [set ${array}(xscroll)]
+}
+
+proc nodeXscrollPut {nodeframe xscroll} {
+        set array [string trimleft $nodeframe .]
+        global $array
+
+        set ${array}(xscroll) $xscroll
+}
+
+proc nodeYscrollGet nodeframe {
+        set array [string trimleft $nodeframe .]
+        global $array
+
+        if {![info exists ${array}(yscroll)]} {
+                return ""
+        }
+        return [set ${array}(yscroll)]
+}
+
+proc nodeYscrollPut {nodeframe yscroll} {
+        set array [string trimleft $nodeframe .]
+        global $array
+
+        set ${array}(yscroll) $yscroll
+}
+proc nodeScrollRegionWidthGet {nodeframe} {
+        set array [string trimleft $nodeframe .]
+        global $array
+
+        if {![info exists ${array}(scrollRegionWidth)]} {
+                return ""
+        }
+        return [set ${array}(scrollRegionWidth)]
+}
+
+proc nodeScrollRegionWidthPut {nodeframe width} {
+        set array [string trimleft $nodeframe .]
+        global $array
+
+        set ${array}(scrollRegionWidth) $width
+}
+
+proc nodeScrollRegionHeightGet {nodeframe} {
+        set array [string trimleft $nodeframe .]
+        global $array
+
+        if {![info exists ${array}(scrollRegionHeight)]} {
+                return ""
+        }
+        return [set ${array}(scrollRegionHeight)]
+}
+
+proc nodeScrollRegionHeightPut {nodeframe height} {
+        set array [string trimleft $nodeframe .]
+        global $array
+
+        set ${array}(scrollRegionHeight) $height
+}
+
+proc nodeDisplayWidthGet {nodeframe} {
+        set array [string trimleft $nodeframe .]
+        global $array
+
+        if {![info exists ${array}(displayWidth)]} {
+                return ""
+        }
+        return [set ${array}(displayWidth)]
+}
+
+proc nodeDisplayWidthPut {nodeframe width} {
+        set array [string trimleft $nodeframe .]
+        global $array
+
+        set ${array}(displayWidth) $width
+}
+
+proc nodeDisplayHeightGet {nodeframe} {
+        set array [string trimleft $nodeframe .]
+        global $array
+
+        if {![info exists ${array}(displayHeight)]} {
+                return ""
+        }
+        return [set ${array}(displayHeight)]
+}
+
+proc nodeDisplayHeightPut {nodeframe height} {
+        set array [string trimleft $nodeframe .]
+        global $array
+
+        set ${array}(displayHeight) $height
+}
+
+proc nodeCanvasWidthGet {nodeframe} {
+        set array [string trimleft $nodeframe .]
+        global $array
+
+        if {![info exists ${array}(canvasWidth)]} {
+                return ""
+        }
+        return [set ${array}(canvasWidth)]
+}
+
+
+proc nodeCanvasWidthPut {nodeframe width} {
+        set array [string trimleft $nodeframe .]
+        global $array
+
+        set ${array}(canvasWidth) $width
+}
+
+proc nodeCanvasHeightGet {nodeframe} {
+        set array [string trimleft $nodeframe .]
+        global $array
+
+        if {![info exists ${array}(canvasHeight)]} {
+                return ""
+        }
+        return [set ${array}(canvasHeight)]
+}
+
+proc nodeCanvasHeightPut {nodeframe height} {
+        set array [string trimleft $nodeframe .]
+        global $array
+
+        set ${array}(canvasHeight) $height
+}
+
+proc nodeClusterFrameGet {nodeframe} {
+        set array [string trimleft $nodeframe .]
+        global $array
+
+        if {![info exists ${array}(clusterFrame)]} {
+                return ""
+        }
+        return [set ${array}(clusterFrame)]
+}
+
+proc nodeClusterFramePut {nodeframe frame} {
+        set array [string trimleft $nodeframe .]
+        global $array
+
+        set ${array}(clusterFrame) $frame
+}
+
+proc nodeXposGet {nodeframe} {
+        set array [string trimleft $nodeframe .]
+        global $array
+
+        if {![info exists ${array}(Xpos)]} {
+                return ""
+        }
+        return [set ${array}(Xpos)]
+}
+
+proc nodeXposPut {nodeframe pt} {
+        set array [string trimleft $nodeframe .]
+        global $array
+
+        set ${array}(Xpos) $pt
+}
+
+proc nodeYposGet {nodeframe} {
+        set array [string trimleft $nodeframe .]
+        global $array
+
+        if {![info exists ${array}(Ypos)]} {
+                return ""
+        }
+        return [set ${array}(Ypos)]
+}
+
+
+proc nodeYposPut {nodeframe pt} {
+        set array [string trimleft $nodeframe .]
+        global $array
+
+        set ${array}(Ypos) $pt
+}
+
+proc nodeOffsetWidthGet {nodeframe} {
+        set array [string trimleft $nodeframe .]
+        global $array
+
+        if {![info exists ${array}(offsetWidth)]} {
+                return ""
+        }
+        return [set ${array}(offsetWidth)]
+}
+
+proc nodeOffsetWidthPut {nodeframe width} {
+        set array [string trimleft $nodeframe .]
+        global $array
+
+        set ${array}(offsetWidth) $width
+}
+
+proc nodeNextGet {nodeframe} {
+        set array [string trimleft $nodeframe .]
+        global $array
+
+        if {![info exists ${array}(next)]} {
+                return ""
+        }
+        return [set ${array}(next)]
+}
+
+proc nodeNextPut {nodeframe frame} {
+        set array [string trimleft $nodeframe .]
+        global $array
+
+        set ${array}(next) $frame
+}
+
+proc nodeMainFrameGet {nodeframe} {
+        set array [string trimleft $nodeframe .]
+        global $array
+
+        if {![info exists ${array}(mainFrame)]} {
+                return ""
+        }
+        return [set ${array}(mainFrame)]
+}
+
+proc nodeMainFramePut {nodeframe frame} {
+        set array [string trimleft $nodeframe .]
+        global $array
+
+        set ${array}(mainFrame) $frame
+}
+
+proc nodeGroupXCGet {nodeframe group} {
+        set array [string trimleft $nodeframe .]
+        global $array
+
+        if {![info exists ${array}(groupXC,$group)]} {
+                return ""
+        }
+        return [set ${array}(groupXC,$group)]
+}
+
+proc nodeGroupXCPut {nodeframe group xc} {
+        set array [string trimleft $nodeframe .]
+        global $array
+
+        set ${array}(groupXC,$group) $xc
+}
+
+proc nodePrint {nodeframe} {
+
+	if {[string compare $nodeframe ""] == 0} {
+		return
+	}
+        puts "Node: $nodeframe=======================================>"
+	puts "Refresh Flag: [nodeRefreshGet $nodeframe]"
+	puts "Name: [nodeNameGet $nodeframe]"
+        puts "LabelFrame: [nodeLabelFrameGet $nodeframe]"
+        puts "Label: [nodeLabelGet $nodeframe]"
+        puts "Type: [nodeTypeGet $nodeframe]"
+        puts "ViewType: [nodeViewTypeGet $nodeframe]"
+        puts "CanvasFrame: [nodeCanvasFrameGet $nodeframe]"
+        puts "Canvas: [nodeCanvasGet $nodeframe]"
+        puts "XscrollFrame: [nodeXscrollFrameGet $nodeframe]"
+        puts "Xscroll: [nodeXscrollGet $nodeframe]"
+        puts "YscrollFrame: [nodeYscrollFrameGet $nodeframe]"
+        puts "Yscroll: [nodeYscrollGet $nodeframe]"
+        puts "ScrollRegion's Width: [nodeScrollRegionWidthGet $nodeframe]"
+        puts "ScrollRegion's Height: [nodeScrollRegionHeightGet $nodeframe]"
+        puts "Display Width: [nodeDisplayWidthGet $nodeframe]"
+        puts "Display Height: [nodeDisplayHeightGet $nodeframe]"
+        puts "Canvas Width: [nodeCanvasWidthGet $nodeframe]"
+        puts "Canvas Height: [nodeCanvasHeightGet $nodeframe]"
+	puts "Cluster Frame: [nodeClusterFrameGet $nodeframe]"
+        puts "Xpos: [nodeXposGet $nodeframe]"
+        puts "Ypos: [nodeYposGet $nodeframe]"
+        puts "OffsetWidth: [nodeOffsetWidthGet $nodeframe]"
+        puts "NodeNext: [nodeNextGet $nodeframe]"
+	puts "Main Frame: [nodeMainFrameGet $nodeframe]"
+}
+
+proc nodeDelete nodeframe {
+        set array [string trimleft $nodeframe .]
+        global $array
+
+        catch {pack forget $nodeframe}
+
+        set nname [nodeNameGet $nodeframe]
+        set vtype [nodeViewTypeGet $nodeframe]
+        set cframe [nodeClusterFrameGet $nodeframe]
+        if {[string compare $cframe ""] != 0} {
+                set sysframe [clusterSystemFrameGet $cframe]
+                systemNodeFrameUnset $sysframe $nname $vtype
+        }
+        unset $array
+}
+
+proc nodeLineGet {nodeframe lineno group} {
+        set array [string trimleft $nodeframe .]
+        global $array
+
+        if {![info exists ${array}(line,$lineno,$group)]} {
+                return ""
+        }
+        return [set ${array}(line,$lineno,$group)]
+}
+
+proc nodeLinePut {nodeframe lineno group tagOrId} {
+        set array [string trimleft $nodeframe .]
+        global $array
+
+        set ${array}(line,$lineno,$group) $tagOrId
+}
+
+proc nodeAddText { nodeframe lineno groupno text} {
+        global canvas
+
+	if {[string compare $nodeframe ""] == 0} {
+		return
+	}
+        set vtype [nodeViewTypeGet $nodeframe]
+
+        switch -exact -- $vtype {
+          MIRROR {
+                set text_font $canvas(bigTextFont)
+                set text_width $canvas(bigTextFontWidth)
+                set text_height $canvas(bigTextFontHeight)
+          }
+          default {
+                set text_font $canvas(smallTextFont)
+                set text_width $canvas(smallTextFontWidth)
+                set text_height $canvas(smallTextFontHeight)
+          }
+        }
+
+        set ncanv [nodeCanvasGet $nodeframe]
+        if {$groupno == 0} {
+                set xpos $text_width
+                set ypos $text_height
+                if {$lineno > 0} {
+                        set previd [nodeLineGet $nodeframe \
+                                                        [expr $lineno - 1] 0]
+                        set pos [$ncanv bbox $previd]
+                        set xpos [lindex $pos 0]
+                        set ypos [lindex $pos 3]
+                }
+        } else {
+                set previd [nodeLineGet $nodeframe $lineno [expr $groupno - 1]]
+                set pos [$ncanv bbox $previd]
+
+                set xpos [lindex $pos 2]
+                set ypos [lindex $pos 1]
+        }
+        set textid [$ncanv create text $xpos $ypos -anchor nw \
+                        -text $text -tags "text $nodeframe" \
+                        -font $text_font \
+                        -fill $canvas(bigFg) -justify left]
+
+        nodeLinePut $nodeframe $lineno $groupno $textid
+}
+
+proc nodeAddLineText { nodeframe lineno listOfText } {
+
+	if {[string compare $nodeframe ""] == 0} {
+		return
+	}
+
+        set ncanv [nodeCanvasGet $nodeframe]
+        set g 0
+        foreach text $listOfText {
+                nodeAddText $nodeframe $lineno $g $text
+                incr g
+        }
+}
+
+proc nodeMatchItemTag {nodeframe itemid tag} {
+        if {[string compare $nodeframe ""] == 0 || \
+			[string compare $itemid ""] == 0} {
+                return 0
+        }
+        set canv [nodeCanvasGet $nodeframe]
+
+        set tags [lindex [$canv itemconfigure $itemid -tags] end]
+        if {[lsearch -exact $tags $tag] != -1} {
+                return 1
+        }
+        return 0
+}
+
+proc nodeModText { nodeframe lineno groupno text } {
+
+	if {[string compare $nodeframe ""] == 0} {
+		return
+	}
+
+        set ncanv [nodeCanvasGet $nodeframe]
+
+        set textid [nodeLineGet $nodeframe $lineno $groupno]
+
+        if [nodeMatchItemTag $nodeframe $textid text] {
+                set oldtext [lindex [$ncanv itemconfigure $textid -text] end]
+
+                if {[string compare $text $oldtext] != 0} {
+                        $ncanv itemconfigure $textid -text $text
+                        return 1
+                }
+
+        } else {
+                catch {$ncanv delete $textid}
+                nodeAddText $nodeframe $lineno $groupno $text
+                return 1
+        }
+        return 0
+}
+
+proc nodeRemLineEntry { nodeframe lineno groupno } {
+        global canvas
+
+	if {[string compare $nodeframe ""] == 0} {
+		return
+	}
+
+        set ncanv [nodeCanvasGet $nodeframe]
+        set array [string trimleft $nodeframe .]
+        global $array
+
+        set j $groupno
+        set item [nodeLineGet $nodeframe $lineno $j]
+        while {[string compare $item ""] != 0} {
+                $ncanv delete $item
+                catch {unset ${array}(line,$lineno,$j)}
+                incr j
+                set item [nodeLineGet $nodeframe $lineno $j]
+        }
+}
+
+proc nodeModLineText { nodeframe lineno listOfText } {
+
+	if {[string compare $nodeframe ""] == 0} {
+		return
+	}
+
+        set ncanv [nodeCanvasGet $nodeframe]
+
+        set g 0
+        foreach text $listOfText {
+                nodeModText $nodeframe $lineno $g $text
+
+                incr g
+        }
+        nodeRemLineEntry $nodeframe $lineno $g
+}
+
+proc nodeRemLines { nodeframe lineno } {
+        global canvas
+
+	if {[string compare $nodeframe ""] == 0} {
+		return
+	}
+
+        set ncanv [nodeCanvasGet $nodeframe]
+        set array [string trimleft $nodeframe .]
+        global $array
+
+
+        set i $lineno
+
+        set item [nodeLineGet $nodeframe $i 0]
+        while {[string compare $item ""] != 0} {
+                nodeRemLineEntry $nodeframe $i 0
+                incr i
+                set item [nodeLineGet $nodeframe $i 0]
+        }
+}
+
+proc nodeScaleCreate {nodeframe lineno groupno value} {
+        global canvas
+
+	if {[string compare $nodeframe ""] == 0} {
+		return
+	}
+
+        set ncanv [nodeCanvasGet $nodeframe]
+
+        set vtype [nodeViewTypeGet $nodeframe]
+        switch -exact -- $vtype {
+          MIRROR {
+                set scale_factor $canvas(mirrorScaleFactor)
+                set text_font $canvas(bigTextFont)
+                set text_width $canvas(bigTextFontWidth)
+                set text_height $canvas(bigTextFontHeight)
+          }
+          default {
+                set scale_factor $canvas(nodeScaleFactor)
+                set text_font $canvas(smallTextFont)
+                set text_width $canvas(smallTextFontWidth)
+                set text_height $canvas(smallTextFontHeight)
+          }
+        }
+
+        if {$groupno == 0} {
+                set xpos $text_width
+                set ypos $text_height
+                if {$lineno > 0} {
+                        set previd [nodeLineGet $nodeframe \
+                                                        [expr $lineno - 1] 0]
+                        set pos [$ncanv bbox $previd]
+                        set xpos [lindex $pos 0]
+                        set ypos [lindex $pos 3]
+                }
+        } else {
+                set previd [nodeLineGet $nodeframe $lineno [expr $groupno - 1]]
+                set pos [$ncanv bbox $previd]
+
+                set xpos [lindex $pos 2]
+                set ypos [lindex $pos 1]
+        }
+
+        set valabel "$value%"
+        set vlen [string length $valabel]
+        for {set i [string length $valabel]} {$i < 10} {incr i} {
+                set valabel "$valabel "
+        }
+
+        if [catch {expr $value * $scale_factor} val] {
+                InfoBox_sendmsg "nodeScaleCreate: Received val: $val" 2
+                return ""
+        }
+
+        set textid [$ncanv create text $xpos $ypos -anchor nw \
+                        -text "$valabel" -tags [list scale \
+                                    $lineno$groupno$nodeframe \
+                                    text.$lineno$groupno$nodeframe] \
+                        -fill $canvas(smallFg) -justify left \
+                        -font $text_font -justify right]
+
+
+        if [catch {expr 101 * $scale_factor} width] {
+                InfoBox_sendmsg "nodeScaleCreate: Received width: $width" 2
+                return ""
+        }
+
+        set pos [$ncanv bbox $textid]
+        set x1pos [lindex $pos 2]
+        set y1pos [lindex $pos 1]
+
+        set y2pos [expr ($y1pos + $text_height) - 3]
+        set x2pos [expr $x1pos + $width]
+
+
+        set trid [$ncanv create rect $x1pos $y1pos $x2pos $y2pos \
+                        -tags [list scale \
+                                    $lineno$groupno$nodeframe \
+                                    scale.$lineno$groupno$nodeframe] \
+                        -fill $canvas(nodeColorTrough)]
+
+        if {$val > $width} {
+                set diff [expr ($val - $width) + 1]
+                set slid [$ncanv create rect $x1pos $y1pos $x2pos $y2pos \
+                            -tags [list scale \
+                                        $lineno$groupno$nodeframe \
+                                        scale.$lineno$groupno$nodeframe] \
+                            -fill $canvas(nodeColorSlider)]
+
+                set textd [$ncanv create rect $x2pos $y1pos \
+                                              [expr $x2pos + $diff] $y2pos \
+                            -tags [list scale \
+                                        $lineno$groupno$nodeframe \
+                                        scale.$lineno$groupno$nodeframe] \
+                            -fill $canvas(nodeColorExtendedTrough)]
+        } else {
+
+                set slid [$ncanv create rect $x1pos $y1pos \
+                            [expr $x1pos + $val] $y2pos \
+                            -tags [list scale \
+                                        $lineno$groupno$nodeframe \
+                                        scale.$lineno$groupno$nodeframe] \
+                            -fill $canvas(nodeColorSlider)]
+        }
+        nodeLinePut $nodeframe $lineno $groupno $lineno$groupno$nodeframe
+}
+
+proc nodeScaleReCreate {nodeframe lineno groupno newvalue} {
+        global canvas
+
+	if {[string compare $nodeframe ""] == 0} {
+		return
+	}
+
+        set ncanv [nodeCanvasGet $nodeframe]
+
+        set vtype [nodeViewTypeGet $nodeframe]
+        switch -exact -- $vtype {
+          MIRROR {
+                set scale_factor $canvas(mirrorScaleFactor)
+                set text_font $canvas(bigTextFont)
+                set text_width $canvas(bigTextFontWidth)
+                set text_height $canvas(bigTextFontHeight)
+          }
+          default {
+                set scale_factor $canvas(nodeScaleFactor)
+                set text_font $canvas(smallTextFont)
+                set text_width $canvas(smallTextFontWidth)
+                set text_height $canvas(smallTextFontHeight)
+          }
+        }
+
+        set valabel "$newvalue%"
+        set vlen [string length $valabel]
+        for {set i [string length $valabel]} {$i < 10} {incr i} {
+                set valabel "$valabel "
+        }
+        set oldlabel \
+        [lindex [$ncanv itemconfigure text.$lineno$groupno$nodeframe -text] end]
+        if {[string compare $valabel $oldlabel] != 0} {
+
+                if [catch {expr $newvalue * $scale_factor} val] {
+                        InfoBox_sendmsg "nodeScaleReCreate: Received val: $val" 2
+                        return ""
+                }
+                catch {$ncanv delete scale.$lineno$groupno$nodeframe}
+                if [catch {expr 101 * $scale_factor} width] {
+                        InfoBox_sendmsg "nodeScaleReCreate: Received width: $width" 2
+                        return ""
+                }
+
+                $ncanv itemconfigure text.$lineno$groupno$nodeframe \
+                        -text $valabel
+
+
+                set pos [$ncanv bbox text.$lineno$groupno$nodeframe]
+                set x1pos [lindex $pos 2]
+                set y1pos [lindex $pos 1]
+
+                set y2pos [expr ($y1pos + $text_height) - 3]
+                set x2pos [expr $x1pos + $width]
+
+
+                set trid [$ncanv create rect $x1pos $y1pos $x2pos $y2pos \
+                        -tags [list scale \
+                                    $lineno$groupno$nodeframe \
+                                    scale.$lineno$groupno$nodeframe] \
+                        -fill $canvas(nodeColorTrough)]
+
+                if {$val > $width} {
+                        set diff [expr ($val - $width) + 1]
+                        set slid [$ncanv create rect $x1pos $y1pos \
+                                                        $x2pos $y2pos \
+                            -tags [list scale \
+                                        $lineno$groupno$nodeframe \
+                                        scale.$lineno$groupno$nodeframe] \
+                                    -fill $canvas(nodeColorSlider)]
+
+                        set textd [$ncanv create rect $x2pos $y1pos \
+                                              [expr $x2pos + $diff] $y2pos \
+                            -tags [list scale \
+                                        $lineno$groupno$nodeframe \
+                                        scale.$lineno$groupno$nodeframe] \
+                            -fill $canvas(nodeColorExtendedTrough)]
+               } else {
+
+                        set slid [$ncanv create rect $x1pos $y1pos \
+                            [expr $x1pos + $val] $y2pos \
+                            -tags [list scale \
+                                        $lineno$groupno$nodeframe \
+                                        scale.$lineno$groupno$nodeframe] \
+                            -fill $canvas(nodeColorSlider)]
+                }
+        }
+}
+
+
+proc nodeAddLineScale { nodeframe lineno param } {
+
+	if {[string compare $nodeframe ""] == 0} {
+		return
+	}
+
+        set ncanv [nodeCanvasGet $nodeframe]
+        set label [lindex $param 0]
+        set valabel [lindex $param 1]
+
+        nodeAddText $nodeframe $lineno 0 $label
+        if {[string compare $valabel ""] != 0} {
+                nodeScaleCreate $nodeframe $lineno 1 $valabel
+        }
+}
+
+proc nodeModLineScale { nodeframe lineno newContent } {
+
+	if {[string compare $nodeframe ""] == 0} {
+		return
+	}
+
+        set ncanv [nodeCanvasGet $nodeframe]
+        set label [lindex $newContent 0]
+        set valabel [lindex $newContent 1]
+
+        nodeModText $nodeframe $lineno 0 $label
+
+        if {[string compare $valabel ""] != 0} {
+		if { [string compare [nodeLineGet $nodeframe $lineno 1] \
+				     		${lineno}1${nodeframe}] == 0 } {
+                	nodeScaleReCreate $nodeframe $lineno 1 $valabel
+        		nodeRemLineEntry $nodeframe $lineno 2
+		} else {
+        		nodeRemLineEntry $nodeframe $lineno 1
+                	nodeScaleCreate $nodeframe $lineno 1 $valabel
+		}
+        } else {
+        	nodeRemLineEntry $nodeframe $lineno 1
+	}
+}
+
+proc nodeFindXCs {nodeframe startl endl} {
+
+	if {[string compare $nodeframe ""] == 0} {
+		return
+	}
+
+        set canv [nodeCanvasGet $nodeframe]
+        set i $startl
+        set j 0
+        set item [nodeLineGet $nodeframe $i $j]
+        while {[string compare $item ""] != 0} {
+                while {[string compare $item ""] != 0} {
+                        set coords [$canv bbox $item]
+                        set x1 [lindex $coords 0]
+                        set x2 [lindex $coords 2]
+                        set w [expr $x2 - $x1]
+                        set aScale [nodeMatchItemTag $nodeframe $item scale]
+
+                        if {![info exists max($j)]} {
+				set max($j) 0
+			} else {
+				if {!$aScale && $x1 > $max($j)} {
+					set max($j) $x1
+				}
+                        }
+
+                        if { ![info exists maxw($j)] || $w > $maxw($j) } {
+                                set maxw($j) $w
+                        }
+
+                        incr j
+                        set item [nodeLineGet $nodeframe $i $j]
+                }
+
+                incr i
+		if { [string compare $endl "end"] != 0 && $i > $endl} {
+			break
+		}
+                set j 0
+                set item [nodeLineGet $nodeframe $i $j]
+        }
+        set glen [array size max]
+        for {set g 0} {$g < $glen} {incr g} {
+                set newval [expr $max($g) + $maxw($g)]
+                set k [expr $g + 1]
+                if {[info exists max($k)] && $newval > $max($k)} {
+                        set max($k) $newval
+                }
+                nodeGroupXCPut $nodeframe $g $max($g)
+        }
+}
+
+proc nodeAdjustDisplay {nodeframe splitl} {
+        global canvas
+
+	if {[string compare $nodeframe ""] == 0} {
+		return
+	}
+
+        set viewtype [nodeViewTypeGet $nodeframe]
+
+        switch -exact -- $viewtype {
+          MIRROR {
+                set text_width $canvas(bigTextFontWidth)
+                set text_height $canvas(bigTextFontHeight)
+          }
+          default {
+                set text_width $canvas(smallTextFontWidth)
+                set text_height $canvas(smallTextFontHeight)
+          }
+        }
+
+	if {$splitl < 0} {
+        	nodeFindXCs $nodeframe 0 end
+	} else {
+        	nodeFindXCs $nodeframe 0 [expr $splitl - 1]
+	}
+        set canv [nodeCanvasGet $nodeframe]
+        set maxw 0
+        set maxs 0
+        set totheight $text_height
+        set i 0
+        set j 0
+	set xgsave 0
+        set item [nodeLineGet $nodeframe $i $j]
+        while {[string compare $item ""] != 0} {
+               set maxh 0
+                set hasScale 0
+                while {[string compare $item ""] != 0} {
+                        set xg [nodeGroupXCGet $nodeframe $j]
+			if {$j == 0} {
+				set xgsave $xg
+			}
+                        set x1 [lindex [$canv bbox $item] 0]
+                        set xoffset [expr $xg - $x1]
+
+                        $canv move $item $xoffset 0
+
+                        set coords [$canv bbox $item]
+                        set x1 [lindex $coords 0]
+                        set x2 [lindex $coords 2]
+                        set y1 [lindex $coords 1]
+                        set y2 [lindex $coords 3]
+                        set h [expr ($y2 - $y1) + 1]
+                        if {$h > $maxh} {
+                                set maxh $h
+                        }
+
+                        incr j
+                        set item [nodeLineGet $nodeframe $i $j]
+                }
+                if {$x2 > $maxw} {
+                        set maxw $x2
+                }
+
+                if {$hasScale && $x2 > $maxs} {
+                        set maxs $x2
+                }
+                incr totheight $maxh
+
+                incr i
+		if {$i == $splitl} {
+        		nodeFindXCs $nodeframe $splitl end
+			nodeGroupXCPut $nodeframe 0 $xgsave
+		}
+                set j 0
+                set item [nodeLineGet $nodeframe $i $j]
+        }
+
+        incr maxw
+        if {$maxw != [nodeScrollRegionWidthGet $nodeframe]} {
+                nodeScrollRegionWidthPut $nodeframe $maxw
+                set xscroll [nodeXscrollGet $nodeframe]
+                if {[string compare $viewtype ICON] != 0} {
+                    if {$maxw > [nodeCanvasWidthGet $nodeframe]} {
+                        catch {pack $xscroll -side bottom -fill x -padx 0 \
+                                                      -pady 0 -ipadx 0 -ipady 0}
+		    }
+                } else {
+                        catch {pack forget $xscroll}
+                }
+        }
+
+	set  scrollheight [nodeScrollRegionHeightGet $nodeframe]
+        if {$totheight != [nodeScrollRegionHeightGet $nodeframe]} {
+                nodeScrollRegionHeightPut $nodeframe $totheight
+
+                set yscroll [nodeYscrollGet $nodeframe]
+                if {[string compare $viewtype ICON] != 0} {
+                    if {$totheight > [nodeCanvasHeightGet $nodeframe]} {
+                        catch {pack $yscroll -side right -fill y -padx 0 \
+                                           -pady 0 -ipadx 0 -ipady 0 -anchor nw}
+		    }
+                } else {
+                        catch {pack forget $yscroll}
+                }
+        }
+        set scrollRegionWidth [nodeScrollRegionWidthGet $nodeframe]
+        set scrollRegionHeight [nodeScrollRegionHeightGet $nodeframe]
+        $canv configure \
+                -scrollregion [list 0 0 $scrollRegionWidth $scrollRegionHeight]
+}
+
+proc nodeDown nodeframe {
+        global canvas
+
+	if {[string compare $nodeframe ""] == 0} {
+		return
+	}
+
+        [nodeCanvasGet $nodeframe] configure -background $canvas(nodeColorDOWN)
+}
+
+proc nodeUp nodeframe {
+        global canvas
+
+	if {[string compare $nodeframe ""] == 0} {
+		return
+	}
+
+        [nodeCanvasGet $nodeframe] configure -background $canvas(nodeColorFREE)
+
+}
+
+proc nodeOffline nodeframe {
+        global canvas
+
+	if {[string compare $nodeframe ""] == 0} {
+		return
+	}
+
+        [nodeCanvasGet $nodeframe] configure -background $canvas(nodeColorOFFL)
+}
+
+proc nodeReserved nodeframe {
+        global canvas
+
+	if {[string compare $nodeframe ""] == 0} {
+		return
+	}
+        [nodeCanvasGet $nodeframe] configure -background $canvas(nodeColorRSVD)
+}
+
+proc nodeNoInfo nodeframe {
+        global canvas
+
+	if {[string compare $nodeframe ""] == 0} {
+		return
+	}
+
+        [nodeCanvasGet $nodeframe] configure -background $canvas(nodeColorNOINFO)
+}
+
+proc nodeInUse nodeframe {
+        global canvas
+
+	if {[string compare $nodeframe ""] == 0} {
+		return
+	}
+
+        set nodename [nodeNameGet $nodeframe]
+        set sysframe [clusterSystemFrameGet [nodeClusterFrameGet $nodeframe]]
+
+        set color ""
+	set nodestat [systemNodeStatusGet $sysframe $nodename]
+	set nodeinfo [systemNodeInfoGet $sysframe $nodename]
+	set  k [expr [llength $nodeinfo] - 1]
+	while {$k >= 0} {
+		set info [lindex $nodeinfo $k]
+                set type [lindex $info end]
+                if {[string compare $type NODEJOB] == 0} {
+                        set userinfo [lindex $info 0]
+                        set jobs ""
+                        foreach u $userinfo {
+                                set uname [lindex $u 0]
+                                set jids [lindex $u 1]
+                                foreach j [split $jids ","] {
+                                        set jstr [lindex [split $j "."] 0]
+                                        lappend jobs "$jstr.$uname"
+                                }
+                        }
+			set jobslen [llength $jobs]
+                        if { [string compare $nodestat INUSE-EXCLUSIVE] == 0 \
+							     && $jobslen <= 1} {
+                                set color [assignNodeColorInUse $jobs]
+                        } else {
+                                set color [assignNodeColorInUse TIMESHARED \
+                                                $canvas(nodeColorINUSEshared)]
+                        }
+			break
+                }
+		incr k -1
+        }
+	if {[string compare $color ""] != 0} {
+        	[nodeCanvasGet $nodeframe] configure -background $color
+	}
+
+}
+
+proc nodeUpdateStat {sysframe nodeid status2 {defstat NOINFO}} {
+
+        if {[string compare $sysframe ""] == 0} {
+                return
+        }
+	set status [statNodesStateMap $status2]
+
+        set nodeframe [systemNodeFrameGet $sysframe $nodeid FULL]
+
+        set nodestat [systemNodeStatusGet $sysframe $nodeid]
+        set oldstatus $nodestat
+
+        if {[string compare $status ""] == 0} {
+                set status [statNodesStateMap $defstat]
+        }
+
+        systemNodeStatusPut $sysframe $nodeid $status
+
+        set clusterf [nodeClusterFrameGet $nodeframe]
+
+        if {[string compare $clusterf ""] != 0} {
+	  clusterStatsUpdate $clusterf $status +
+	  clusterStatsUpdate $clusterf $oldstatus -
+        }
+}
+
+proc nodeColorIt {nodeframe nodeid} {
+
+        if {[string compare $nodeframe ""] == 0} {
+                return
+        }
+
+        set cframe [nodeClusterFrameGet $nodeframe]
+        set sysframe [clusterSystemFrameGet $cframe]
+
+        set status [systemNodeStatusGet $sysframe $nodeid]
+
+	switch -exact -- $status {
+          OFFLINE {
+                nodeOffline $nodeframe
+          }
+	  DOWN {
+                nodeDown $nodeframe
+          }
+	  FREE {
+                nodeUp $nodeframe
+          }
+	  INUSE-SHARED		-
+	  INUSE-EXCLUSIVE	{
+                nodeInUse $nodeframe
+          }
+          RESERVED {
+                nodeReserved $nodeframe
+          }
+	  default {
+                nodeNoInfo $nodeframe
+          }
+  	}
+
+        set viewtype [nodeViewTypeGet $nodeframe]
+        if {[string compare $viewtype ICON] == 0} {
+                nodeReCoverCanvas $nodeframe
+        }
+}
+
+proc nodeDisplayInfo {nodeframe queryInfo {create 0}} {
+
+        if {[string compare $nodeframe ""] == 0} {
+                return
+        }
+
+        set nodename [nodeNameGet $nodeframe]
+
+        nodeColorIt $nodeframe $nodename
+
+        set llen [llength $queryInfo]
+	set jobline -1 
+        for {set i 0} {$i < $llen} {incr i} {
+                set queryinfo [lindex $queryInfo $i]
+                set expr [lindex $queryinfo 0]
+                set hdr  [lindex $queryinfo 1]
+                set typ  [lindex $queryinfo 2]
+                set res  [evaluateExpr $expr]
+
+                if {[string compare $typ TEXT] == 0} {
+                        if {$create} {
+                                nodeAddLineText $nodeframe $i [list $hdr $res]
+                        } else {
+                                nodeModLineText $nodeframe $i [list $hdr $res]
+                        }
+                } elseif {[string compare $typ SCALE] == 0} {
+                        if {$create} {
+                                nodeAddLineScale $nodeframe $i [list $hdr $res]
+                        } else {
+                                nodeModLineScale $nodeframe $i [list $hdr $res]
+                        }
+                } elseif {[string compare $typ NODEJOB] == 0} {
+			set jobline $i
+
+                        if {[string compare \
+                                     [nodeLineGet $nodeframe $i 0] ""] == 0} {
+                                nodeAddLineText $nodeframe $i $hdr
+                        } else {
+                                nodeModLineText $nodeframe $i $hdr
+                        }
+                        set k [expr $i+1]
+                        foreach e $expr {
+                                set user [lindex $e 0]
+                                set ljobs [lrange $e 1 end]
+                                set arglist [list " " " " $user " " $ljobs]
+                                if {[string compare \
+                                     [nodeLineGet $nodeframe $k 0] ""] == 0} {
+                                        nodeAddLineText $nodeframe $k $arglist
+                                } else {
+                                        nodeModLineText $nodeframe $k $arglist
+                                }
+                                incr k
+                        }
+                }
+        }
+
+
+        if {![info exists k]} {
+                set k $i
+        }
+# Remove extra lines that are not found in queryInfo
+        nodeRemLines $nodeframe $k
+
+        nodeAdjustDisplay $nodeframe $jobline
+
+        set viewtype [nodeViewTypeGet $nodeframe]
+        if {[string compare $viewtype ICON] == 0} {
+                nodeCoverCanvas $nodeframe
+        } else {
+                nodeUnCoverCanvas $nodeframe
+        }
+        update idletasks
+
+}

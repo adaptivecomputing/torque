@@ -1,0 +1,159 @@
+#         OpenPBS (Portable Batch System) v2.3 Software License
+# 
+# Copyright (c) 1999-2000 Veridian Information Solutions, Inc.
+# All rights reserved.
+# 
+# ---------------------------------------------------------------------------
+# For a license to use or redistribute the OpenPBS software under conditions
+# other than those described below, or to purchase support for this software,
+# please contact Veridian Systems, PBS Products Department ("Licensor") at:
+# 
+#    www.OpenPBS.org  +1 650 967-4675                  sales@OpenPBS.org
+#                        877 902-4PBS (US toll-free)
+# ---------------------------------------------------------------------------
+# 
+# This license covers use of the OpenPBS v2.3 software (the "Software") at
+# your site or location, and, for certain users, redistribution of the
+# Software to other sites and locations.  Use and redistribution of
+# OpenPBS v2.3 in source and binary forms, with or without modification,
+# are permitted provided that all of the following conditions are met.
+# After December 31, 2001, only conditions 3-6 must be met:
+# 
+# 1. Commercial and/or non-commercial use of the Software is permitted
+#    provided a current software registration is on file at www.OpenPBS.org.
+#    If use of this software contributes to a publication, product, or
+#    service, proper attribution must be given; see www.OpenPBS.org/credit.html
+# 
+# 2. Redistribution in any form is only permitted for non-commercial,
+#    non-profit purposes.  There can be no charge for the Software or any
+#    software incorporating the Software.  Further, there can be no
+#    expectation of revenue generated as a consequence of redistributing
+#    the Software.
+# 
+# 3. Any Redistribution of source code must retain the above copyright notice
+#    and the acknowledgment contained in paragraph 6, this list of conditions
+#    and the disclaimer contained in paragraph 7.
+# 
+# 4. Any Redistribution in binary form must reproduce the above copyright
+#    notice and the acknowledgment contained in paragraph 6, this list of
+#    conditions and the disclaimer contained in paragraph 7 in the
+#    documentation and/or other materials provided with the distribution.
+# 
+# 5. Redistributions in any form must be accompanied by information on how to
+#    obtain complete source code for the OpenPBS software and any
+#    modifications and/or additions to the OpenPBS software.  The source code
+#    must either be included in the distribution or be available for no more
+#    than the cost of distribution plus a nominal fee, and all modifications
+#    and additions to the Software must be freely redistributable by any party
+#    (including Licensor) without restriction.
+# 
+# 6. All advertising materials mentioning features or use of the Software must
+#    display the following acknowledgment:
+# 
+#     "This product includes software developed by NASA Ames Research Center,
+#     Lawrence Livermore National Laboratory, and Veridian Information
+#     Solutions, Inc.
+#     Visit www.OpenPBS.org for OpenPBS software support,
+#     products, and information."
+# 
+# 7. DISCLAIMER OF WARRANTY
+# 
+# THIS SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND. ANY EXPRESS
+# OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+# OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT
+# ARE EXPRESSLY DISCLAIMED.
+# 
+# IN NO EVENT SHALL VERIDIAN CORPORATION, ITS AFFILIATED COMPANIES, OR THE
+# U.S. GOVERNMENT OR ANY OF ITS AGENCIES BE LIABLE FOR ANY DIRECT OR INDIRECT,
+# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
+# OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+# LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+# NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+# EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# 
+# This license will be governed by the laws of the Commonwealth of Virginia,
+# without reference to its choice of law rules.
+#
+# BASL scheduler: $Id$
+#
+@MAKE_POSIX_TARGET@
+
+srcdir = @srcdir@
+top_srcdir = @top_srcdir@
+MK_VPATH = @srcdir@
+INSTALL = @INSTALL@
+
+@mk_head@
+@mk_dirs@
+
+BUILD_INCS = -I. -I$(srcdir) -I@top_builddir@/src/include
+INCS = $(BUILD_INCS) -I$(PBS_SRCINC)
+CFLAGS = @CFLAGS@ $(INCS) @DEFS@
+
+# The scheduler code source directory.
+SCHD_SRC = @SCHD_SRC@
+
+OBJS_COMMON = af.o
+
+OBJS_COMP =  Basl2c.o CodeGen.o List.o Node.o Semantic.o SymTab.o \
+             Lexer.o Parser.o
+
+OBJS_SCHED = af_cnode.o af_cnodemap.o af_config.o af_job.o \
+             af_que.o af_resmom.o af_server.o af_system.o pbs_sched.o
+
+OBJS = $(OBJS_COMMON) $(OBJS_COMP) $(OBJS_SCHED)
+
+#
+# do not try to find the source for these objs, they are created
+# by the Makefile
+#
+MKDEP_IGNORE = pbs_sched.o
+
+TARGETS = basl2c pbs_sched
+
+PBSLIBS = ../lib/Liblog/liblog.a ../lib/Libnet/libnet.a ../lib/Libpbs/libpbs.a
+
+LIBRARIES = $(LDFLAGS) $(PBSLIBS) $(TCL_LIBS) $(LIBS) $(LEXLIB) -lm
+
+
+
+all: autodepend
+	@MAKE_POSIX_PLUS@@$(MAKE) build
+
+build: $(TARGETS)
+
+install: build
+	$(INSTALL) -d -m 755 $(bindir) &&    \
+	$(INSTALL) -m 755 basl2c $(bindir) ; \
+	$(INSTALL) -d -m 755 $(sbindir) &&   \
+	$(INSTALL) -m 700 pbs_sched $(sbindir)
+
+basl2c: $(OBJS_COMMON) $(OBJS_COMP)
+	$(CC) $(CFLAGS) -o $@ $(OBJS_COMMON) $(OBJS_COMP) $(LIBRARIES)
+
+pbs_sched: $(OBJS_COMMON) $(OBJS_SCHED)
+	$(CC) $(CFLAGS) -o $@ $(OBJS_COMMON) $(OBJS_SCHED) $(LIBRARIES)
+
+pbs_sched.o: $(SCHD_SRC) $(srcdir)/af_system.h $(srcdir)/af_server.h basl2c
+	@if expr $(SCHD_SRC) : '.*\.basl$$' > /dev/null 2>&1; then \
+	    echo Compiling BASL: $(SCHD_SRC) ;\
+            echo         into C: pbs_sched.c ; \
+	    echo ./basl2c $(SCHD_SRC) ; \
+	    ./basl2c $(SCHD_SRC) ; \
+	    $(CC) $(CFLAGS) -c pbs_sched.c ; \
+	else \
+	    $(CC) $(CFLAGS) -c $(SCHD_SRC) ; \
+	fi
+
+
+Lexer.o: y.tab.h
+y.tab.h: Parser.o
+
+# some of these files can be left behind if make is interrupted
+clean::
+	-(rm y.tab.* lex.yy.* pbs_sched.c; exit 0)
+
+@mk_cleanup@
+@mk_tail@
+

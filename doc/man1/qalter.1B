@@ -1,0 +1,792 @@
+.\"         OpenPBS (Portable Batch System) v2.3 Software License
+.\" 
+.\" Copyright (c) 1999-2000 Veridian Information Solutions, Inc.
+.\" All rights reserved.
+.\" 
+.\" ---------------------------------------------------------------------------
+.\" For a license to use or redistribute the OpenPBS software under conditions
+.\" other than those described below, or to purchase support for this software,
+.\" please contact Veridian Systems, PBS Products Department ("Licensor") at:
+.\" 
+.\"    www.OpenPBS.org  +1 650 967-4675                  sales@OpenPBS.org
+.\"                        877 902-4PBS (US toll-free)
+.\" ---------------------------------------------------------------------------
+.\" 
+.\" This license covers use of the OpenPBS v2.3 software (the "Software") at
+.\" your site or location, and, for certain users, redistribution of the
+.\" Software to other sites and locations.  Use and redistribution of
+.\" OpenPBS v2.3 in source and binary forms, with or without modification,
+.\" are permitted provided that all of the following conditions are met.
+.\" After December 31, 2001, only conditions 3-6 must be met:
+.\" 
+.\" 1. Commercial and/or non-commercial use of the Software is permitted
+.\"    provided a current software registration is on file at www.OpenPBS.org.
+.\"    If use of this software contributes to a publication, product, or service
+.\"    proper attribution must be given; see www.OpenPBS.org/credit.html
+.\" 
+.\" 2. Redistribution in any form is only permitted for non-commercial,
+.\"    non-profit purposes.  There can be no charge for the Software or any
+.\"    software incorporating the Software.  Further, there can be no
+.\"    expectation of revenue generated as a consequence of redistributing
+.\"    the Software.
+.\" 
+.\" 3. Any Redistribution of source code must retain the above copyright notice
+.\"    and the acknowledgment contained in paragraph 6, this list of conditions
+.\"    and the disclaimer contained in paragraph 7.
+.\" 
+.\" 4. Any Redistribution in binary form must reproduce the above copyright
+.\"    notice and the acknowledgment contained in paragraph 6, this list of
+.\"    conditions and the disclaimer contained in paragraph 7 in the
+.\"    documentation and/or other materials provided with the distribution.
+.\" 
+.\" 5. Redistributions in any form must be accompanied by information on how to
+.\"    obtain complete source code for the OpenPBS software and any
+.\"    modifications and/or additions to the OpenPBS software.  The source code
+.\"    must either be included in the distribution or be available for no more
+.\"    than the cost of distribution plus a nominal fee, and all modifications
+.\"    and additions to the Software must be freely redistributable by any party
+.\"    (including Licensor) without restriction.
+.\" 
+.\" 6. All advertising materials mentioning features or use of the Software must
+.\"    display the following acknowledgment:
+.\" 
+.\"     "This product includes software developed by NASA Ames Research Center,
+.\"     Lawrence Livermore National Laboratory, and Veridian Information
+.\"     Solutions, Inc.
+.\"     Visit www.OpenPBS.org for OpenPBS software support,
+.\"     products, and information."
+.\" 
+.\" 7. DISCLAIMER OF WARRANTY
+.\" 
+.\" THIS SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND. ANY EXPRESS
+.\" OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+.\" OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT
+.\" ARE EXPRESSLY DISCLAIMED.
+.\" 
+.\" IN NO EVENT SHALL VERIDIAN CORPORATION, ITS AFFILIATED COMPANIES, OR THE
+.\" U.S. GOVERNMENT OR ANY OF ITS AGENCIES BE LIABLE FOR ANY DIRECT OR INDIRECT,
+.\" INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+.\" LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
+.\" OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+.\" LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+.\" NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+.\" EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+.\" 
+.\" This license will be governed by the laws of the Commonwealth of Virginia,
+.\" without reference to its choice of law rules.
+.if \n(Pb .ig Iq
+.TH qalter 1B "" Local PBS
+.so ../ers/ers.macros
+.Iq
+.Sh NAME
+qalter \- alter pbs batch job
+.Sh SYNOPSIS
+qalter
+[\-a date_time] [\-A account_string] [\-c interval] [\-e path]
+[\-h hold_list] [\-j join] [\-k keep] [\-l resource_list] 
+[\-m mail_options] [\-M user_list] [\-N name] [\-o path] [\-p priority]
+[\-r c] [-S path] [\-u user_list] [\-W additional_attributes]
+job_identifier...
+.Sh DESCRIPTION
+The
+.B qalter
+command modifies the attributes of the job or jobs specified
+by
+.Ar "job_identifier"
+on the command line.
+Only those attributes listed as options on the command will be modified.  
+If any of the specified attributes cannot be modified for a job for any reason, 
+none of that job's attributes will be modified.
+.LP
+The qalter
+command accomplishes the modifications by sending a
+.I "Modify Job"
+batch request to the batch server which owns each job.
+.Sh OPTIONS
+.IP "\-a date_time" 8
+Replaces the 
+.if !\n(Pb .ig Ig
+attribute
+.At Execution_Time
+.Ig
+time at which the job becomes eligible for execution.
+The
+.Ar date_time
+argument syntax is: 
+.Ty "[[[[CC]YY]MM]DD]hhmm[.SS]" .
+.IP
+If the month,
+.Ty MM ,
+is not specified, it will default to the current month if the specified day
+.Ty DD ,
+is in the future.  Otherwise, the month will be set to next month.
+Likewise, if the day,
+.Ty DD ,
+is not specified, it will default to today if the time
+.Ty hhmm
+is in the future.  Otherwise, the day will be set to tomorrow.
+.if !\n(Pb .ig Ig
+This 
+.Ar date_time
+will be converted to the integer number of seconds since Epoch that is
+equivalent to the local time on the system where the command is being executed.
+.Ig
+.IP
+This attribute can be altered once the job has begun execution, but it will
+not take affect until the job is rerun.
+.IP "\-A account_string " 8
+Replaces the
+.if !\n(Pb .ig Ig
+the
+.At Account_Name
+attribute,
+.Ig
+the account string associated with the job.
+.if !\n(Pb .ig Ig
+The syntax of the
+.Ar account_string
+is defined in section 2.7.1. It is interpreted by the server which executes 
+the job.
+.Ig
+.IP
+This attribute cannot be altered once the job has begun execution.
+.IP "\-c interval" 8
+Replaces the
+.if !\n(Pb .ig Ig
+.At Checkpoint
+attribute,
+.Ig
+the interval at which the job will be checkpointed.
+If the job executes upon a host which does not support checkpoint,
+this option will be ignored.
+.IP
+The
+.Ar interval
+argument is specified as:
+.RS
+.IP n 4
+No checkpointing is to be performed.
+.if !\n(Pb .ig Ig
+The job's 
+.At Checkpoint
+attribute is set to the string
+.Ty """n""" .
+.Ig
+.IP s 4
+Checkpointing is to be performed only when the server executing the job is
+shutdown.
+.if !\n(Pb .ig Ig
+The job's
+.At Checkpoint
+attribute is set to the string
+.Ty """s""" .
+.Ig
+.IP c 4
+Checkpointing is to be performed at the default minimum cpu time for the
+queue from which the job is executing.
+.if !\n(Pb .ig Ig
+The job's
+.At Checkpoint
+attribute is set to the string
+.Ty """c""" .
+.Ig
+.IP c=minutes 3
+Checkpointing is to be performed at an interval of
+.Ar minutes ,
+which is the integer number of minutes of CPU time used by the job.
+This value must be greater than zero.
+If the number is less than the default checkpoint time, the default time
+will be used.
+.if !\n(Pb .ig Ig
+The
+.At Checkpoint
+attributes is set to the string specified by
+.Ar """c=minutes""" .
+.Ig
+.RE
+.IP
+This attribute can be altered once the job has begun execution, but the
+new value does not take affect until the job is rerun.
+.IP "\-e path" 8
+Replaces the 
+.if !\n(Pb .ig Ig
+.At Error_Path
+attribute,
+.Ig
+the path to be used for the standard error stream of the batch job.
+The
+.Ar path
+argument is of the form:
+.br
+.Ty "\ \ \ \ [hostname:]path_name"
+.br
+where 
+.Ty hostname
+is the name of a host to which the file will be returned and
+.Ty path_name
+is the path
+name on that host in the syntax recognized by POSIX 1003.1.
+The argument will be interpreted as follows:
+.RS
+.IP \f5path_name\f1
+Where path_name is not an absolute path name, then the qalter command will
+expand the path name relative to the current working directory of the command.
+The command will supply the name of the host upon which it is executing for the
+.Ar hostname
+component.
+.IP \f5hostname:path_name\f1
+Where path_name is not an absolute path name, then the qalter command will
+not expand the path name.  The execution server will expand it relative to
+the home directory of the user on the system specified by hostname.
+.IP \f5path_name\f1
+Where path_name specifies an absolute path name, then qalter will supply
+the name of the host on which it is executing for the
+.Ar hostname .
+.IP \f5hostname:path_name\f1
+Where path_name specifies an absolute path name, the path will be used as
+specified.
+.RE
+.IP
+This attribute can be altered once the job has begun execution, but it will
+not take affect until the job is rerun.
+.IP "\-h hold_list" 8
+Updates the 
+.if !\n(Pb .ig Ig
+.At Hold_Types
+attribute,
+.Ig
+the types of holds on the job.  The
+.Ar hold_list
+argument is a string of one or more of the following characters:
+.RS
+.IP u 5
+Add the USER type hold.
+.IP s 5
+Add the SYSTEM type hold if the user has the appropriate level of privilege.
+[Typically reserved to the batch administrator.]
+.IP o 5
+Add the OTHER (or OPERATOR )
+type hold if the user has the appropriate level of privilege.
+[Typically reserved to the batch administrator and batch operator.]
+.IP n 5
+Set to none; that is clear the hold types which could be applied with
+the users level of privilege.
+.RE
+.IP
+Repetition of characters is permitted, but "n" may not appear in the same
+option argument with the other three characters.
+This attribute can be altered once the job has begun execution, but the
+hold will not take affect until the job is rerun.
+.IP "\-j join" 8
+Declares which standard streams of the job will be merged together.  The
+.Ar join
+argument value may be the characters "oe" and "eo", or the
+single character "n".
+.IP
+A argument value of
+.Ty oe
+directs that the standard output and standard error streams of the job will
+be merged, intermixed, and returned as the standard output.
+A argument value of
+.Ty eo
+directs that the standard output and standard error streams of the job will
+be merged, intermixed, and returned as the standard error.
+.if !\n(Pb .ig Ig
+The
+.At Join_Path
+job attribute is set to the value.
+.Ig
+.IP
+A value of
+.Ty n
+directs that the two streams will be two separate files.
+.if !\n(Pb .ig Ig
+The
+.At Join_Path
+attribute is set to "n".
+.Ig
+This attribute can be altered once the job has begun execution, but it will
+not take affect until the job is rerun.
+.IP "\-k keep" 8
+Defines which if either of standard output or standard error of the job
+will be retained on the execution host.
+If set for a stream, this option overrides the path name for that stream.
+.IP
+The argument is either the single letter "\f5e\fP", "\f5o\fP", or "\f5n\fP",
+or one or more of the letters "\f5e\fP" and "\f5o\fP"
+combined in either order.
+.RS
+.IP n 5
+No streams are to be retained.
+.if !\n(Pb .ig Ig
+The 
+.At Keep_Files
+attribute is set to KEEP_NONE, "n".
+.Ig
+.IP e 5
+The standard error stream is to retained on the execution host.
+The  stream will be placed in the home directory of the user under whose
+user id the job executed.  The file name will be the default file name
+given by:
+\f5job_name.\f6e\f5sequence\f1
+where \f5job_name\fP is the name specified for the job, and \f5sequence\fP is
+the sequence number component of the job identifier.
+.if !\n(Pb .ig Ig
+The attribute is set to include KEEP_ERROR, "e".
+.Ig
+.IP o 5
+The standard output stream is to be retained on the execution host.
+The  stream will be placed in the home directory of the user under whose
+user id the job executed.  The file name will be the default file name
+given by: \f5job_name.\f6o\f5sequence\f1
+where \f5job_name\fP is the name specified for the job, and \f5sequence\fP is
+the sequence number component of the job identifier.
+.if !\n(Pb .ig Ig
+The 
+.At Output_Path
+attribute is set to include KEEP_OUTPUT, "o".
+.Ig
+.IP eo 5 
+Both the standard output and standard error streams will be retained.
+.if !\n(Pb .ig Ig
+The attribute is set to KEEP_OUTPUT\ |\ KEEP_ERROR.
+.Ig
+.IP oe 5 
+Both the standard output and standard error streams will be retained.
+.if !\n(Pb .ig Ig
+The attribute is set to KEEP_OUTPUT\ |\ KEEP_ERROR.
+.Ig
+.RE
+.IP
+.if !\n(Pb .ig Ig
+Repetition of characters is permitted, but "n" may not appear in the same
+option argument with the other two characters.
+.Ig
+This attribute cannot be altered once the job has begun execution.
+.IP "\-l resource_list " 8
+Modifies the 
+.if !\n(Pb .ig Ig
+.At Resource_List
+attribute, the
+.Ig
+list of resources that are required by the job.
+The 
+.Ar Resource_List
+argument is in the following syntax:
+.br
+.Ty resource_name[=[value]][,resource_name[=[value]],...]
+.if !\n(Pb .ig Ig
+.IP
+For each resource listed,
+if a resource with the specified name already exist in the jobs resource
+attribute, the value for that resource will be updated.
+If the named resource does not exist in the job resource attribute,
+the resource name and value will be added.
+No white space is allowed in the value.
+.IP
+Because the list of supported resources vary from host to host, the command
+will perform no validation of the name or value.  
+.Ig
+.IP
+If a requested modification to a resource would exceed the resource limits
+for jobs in the current queue, the server will reject the request.
+.IP
+If the job is running, only certain, resources can be altered.
+Which resources can be altered in the run state is system dependent.
+A user may only lower the limit for those resources.
+.if !\n(Pb .ig Ig
+A PBS Manager or Operator may increase them.
+.Ig
+.IP "\-m mail_options " 8
+Replaces the set of conditions under which the execution server will
+send a mail message about the job.  The
+.Ar mail_options
+argument is a string which consists of 
+.if !\n(Pb .ig Ig
+one or more repetitions of 
+.Ig
+the single character "\f5n\fP",
+or one or more 
+.if !\n(Pb .ig Ig
+repetitions
+.Ig
+of the characters "\f5a\fP", "\f5b\fP", and
+"\f5e\fP".
+.IP
+If the character "\f5n\fP" is specified, no mail will be sent.
+.if !\n(Pb .ig Ig
+The
+.At Mail_Points
+attribute is set to NONE, "n".
+.Ig
+.IP
+For the letters "\f5a\fP", "\f5b\fP", and "\f5e\fP":
+.RS
+.IP a 5
+mail is sent when the job is aborted by the batch system.
+.if !\n(Pb .ig Ig
+The
+.At Mail_Points
+attribute is set to ABORT, "a".
+.Ig
+.IP b 5
+mail is sent when the job begins execution.
+.if !\n(Pb .ig Ig
+The
+.At Mail_Points
+attribute is set to BEGINNING, "b".
+.Ig
+.IP e 5
+mail is sent when the job terminates.
+.if !\n(Pb .ig Ig
+The
+.At Mail_Points
+attribute is set to EXIT, "e".
+.Ig
+.RE
+.IP "\-M user_list" 8
+Replaces the list of users to whom mail is sent by the execution server
+when it sends mail about the job.
+.IP
+The
+.Ar user_list
+argument is of the form:
+.br
+.Ty "\ \ \ \ user[@host][,user[@host],...]"
+.if !\n(Pb .ig Ig
+.br
+The
+.At Mail_Users
+attribute is set to the argument.
+.Ig
+.IP "\-N name" 8
+Renames the job.
+The name specified may be up to and including 15 characters in length.
+It must consist of printable, non white space characters with the first
+character alphabetic.
+.if !\n(Pb .ig Ig
+[See the discussion of the -N option under qsub(1).]
+The
+.At Job_Name
+attribute is reset to the name value.
+.Ig
+.IP "\-o path" 8
+Replaces the path to be used for the standard output stream of the batch job.
+The
+.Ar path
+argument is of the form:
+.br
+.Ty "\ \ \ \ [hostname:]path_name"
+.br
+where 
+.Ty hostname
+is the name of a host to which the file will be returned and
+.Ty path_name
+is the path
+name on that host in the syntax recognized by POSIX.
+The argument will be interpreted as follows:
+.RS
+.IP \f5path_name\f1
+Where path_name is not an absolute path name, then the qalter command will
+expand the path name relative to the current working directory of the command.
+The command will supply the name of the host upon which it is executing for the
+.Ar hostname
+component.
+.IP \f5hostname:path_name\f1
+Where path_name is not an absolute path name, then the qalter command will
+not expand the path name.  The execution server will expand it relative to
+the home directory of the user on the system specified by hostname.
+.IP \f5path_name\f1
+Where path_name specifies an absolute path name, then the qalter will supply
+the name of the host on which it is executing for the
+.Ar hostname .
+.IP \f5hostname:path_name\f1
+Where path_name specifies an absolute path name, the path will be used as
+specified.
+.RE
+.IP
+This attribute can be altered once the job has begun execution, but it will
+not take affect until the job is rerun.
+.IP "\-p priority" 8
+Replaces the priority of the job.  The
+.Ar priority
+argument must be a integer between -1024 and +1023 inclusive.
+.if !\n(Pb .ig Ig
+The
+.At Priority
+attribute is set to this signed integer value.
+.Ig
+.IP
+This attribute can be altered once the job has begun execution, but it will
+not take affect until the job is rerun.
+.IP "\-r c" 8
+Declares whether the job is rerunable.
+See the
+.B qrerun 
+command.
+The option argument
+.Ar c
+is a single character.  PBS recognizes the following characters:
+.Ty y
+and 
+.Ty n .
+.if !\n(Pb .ig Ig
+Also see 
+.I rerunability
+in the glossary.
+.Ig
+.IP
+If the argument is "\f5y\fP", the job is marked rerunable.
+.if !\n(Pb .ig Ig
+The
+.At Rerunable
+attribute is set to 'y'.
+.Ig
+If the argument is "\f5n\fP", the job is marked as not rerunable.
+.if !\n(Pb .ig Ig
+The
+.At Rerunable
+attribute is set to 'n'.
+.Ig
+.IP "\-S path" 8
+Declares the shell that interprets the job script.
+.IP
+The option argument
+.Ar path_list
+is in the form:
+.br
+.Ty "\ \ \ \ path[@host][,path[@host],...]"
+.br
+Only one path may be specified for any host named.  Only one path may be
+specified without the corresponding host name.  The path selected will be
+the one with the host name that matched the name of the execution host.
+If no matching host is found, then if present the path specified without
+a host will be selected.
+.IP
+If the
+.Ar \-S
+option is not specified, the option argument is the null string, or
+no entry from the 
+.Ar path_list
+is selected, the execution will use the login shell of the user
+on the execution host.
+.if !\n(Pb .ig Ig
+The
+.At Shell_Path_List
+attribute is set to the
+.Ar path_list
+argument if present, otherwise it is set to the null string.
+.Ig
+.IP
+This attribute can be altered once the job has begun execution, but it will
+not take affect until the job is rerun.
+.IP "\-u user_list" 8
+Replaces the user name under which the job is to run on the execution system.
+.IP
+The
+.Ar user_list
+argument is of the form:
+.br
+.Ty "\ \ \ \ user[@host][,user[@host],...]"
+.br
+Only one user name may be given for per specified host.
+Only one of the
+.Ty user
+specifications may be supplied without the corresponding
+.Ty host
+specification.  That user name will be used for execution on any host not
+named in the argument list.
+.if !\n(Pb .ig Ig
+The
+.At User_List
+attribute is set to the value of
+.Ar User_List .
+.Ig
+.IP
+This attribute cannot be altered once the job has begun execution.
+.IP "-W additional_attributes" 8
+The -W option allows for the modification of additional job attributes.
+The general syntax of the -W is in the form:
+.br
+.ft 5
+\ \ \ \ -W attr_name=value[,attr_name=value...]
+.ft 1
+.br
+Note if white space occurs anywhere within the option argument string or the
+equal sign, "=", occurs within an
+.Ar attribute_value
+string, then the string must be enclosed with either single or double quote
+marks.
+.IP
+PBS currently supports the following attributes within the -W option.
+.IP
+.Ty "depend=dependency_list"
+.br
+Redefines the 
+.if !\n(Pb .ig Ig
+.At depend
+attribute listing the
+.Ig
+dependencies between this and other jobs.  The 
+.Ar dependency_list
+is in the form:
+.Ty "type[:argument[:argument...][,type:argument...]" .
+.br
+The 
+.I argument
+is either a numeric count or a PBS job id according to 
+.I type .
+If argument is a count, it must
+be greater than 0.  If it is a job id and is not fully specified
+in the form:
+.Ty "seq_number.server.name" ,
+it will be expanded according to the default server rules.
+If 
+.I argument
+is null (the preceding colon need not be specified), the
+dependency of the corresponding type is cleared (unset).
+.RS 12
+.IP "\f5synccount:\f2count\f1" 4
+This job is the first in a set of jobs to be executed at the same time.
+.I Count
+is the number of additional jobs in the set.
+.IP "\f5syncwith:\f2jobid\f1"
+This job is an additional member of a set of jobs to be executed at the
+same time.  
+.I Jobid
+is the job identifier of the first job in the set.
+.IP "\f5after:\f2jobid[:jobid...]\f1"
+This job may be scheduled for execution at any point after jobs
+.I jobid
+have started execution.
+.IP "\f5afterok:\f2jobid[:jobid...]\f1"
+This job may be scheduled for execution only after jobs
+.I jobid
+have terminated with no errors.
+.IP "\f5afternotok:\f2jobid[:jobid...]\f1"
+This job may be scheduled for execution only after jobs
+.I jobid
+have terminated with errors.
+.IP "\f5afterany:\f2jobid[:jobid...]\f1"
+This job may be scheduled for execution after jobs
+.I jobid
+have terminated, with or without errors.
+.IP "\f5on:\f2count\f1"
+This job may be scheduled for execution after \f2count\f1 dependencies on
+other jobs have been satisfied.  This form is used in conjunction
+with one of the \f5before\f1 forms, see below.
+.IP \f5before:\f2jobid[:jobid...]\f1
+When this job has begun execution, then jobs \f2jobid...\f1 may begin.
+.IP \f5beforeok:\f2jobid[:jobid...]\f1
+If this job terminates execution without errors, then jobs
+\f2jobid...\f1 may begin.
+.IP \f5beforenotok:\f2jobid[:jobid...]\f1
+If this job terminates execution with errors, then jobs
+\f2jobid...\f1 may begin.
+.IP \f5beforeany:\f2jobid[:jobid...]\f1
+When this job terminates execution, jobs \f2jobid...\f1 may begin.
+.IP
+If any of the \f5before\f1 forms are used, the job referenced by \f2jobid\f1
+must have been submitted with a dependency type of \f5on\f1.
+.IP
+The job specified in any of the \f5before\f1 forms must have the same
+owner as the job being altered..  Otherwise, the dependency will not take
+effect.
+.LP
+Error processing of the existence, state, or condition of the job on which the
+newly submitted job is a deferred service, i.e. the check is performed after
+the job is queued.  If an error is detected, the new job will be deleted by
+the server.  Mail will be sent to the job submitter stating the error.
+.if !\n(Pb .ig Ig
+.SM
+These options are extensions to the POSIX 1003.2d standard.
+.NL
+.Ig
+.RE
+.IP
+.Ty group_list=g_list
+.br
+Alters the 
+.if !\n(Pb .ig Ig
+.At group_list
+attribute, which lists the
+.Ig
+group name under which the job is to run on the execution system.
+.IP
+The
+.Ar g_list
+argument is of the form:
+.Ty "\ \ group[@host][,group[@host],...]"
+.br
+\f1Only one group name may be given per specified host.
+Only one of the
+.Ty group
+\f1specifications may be supplied without the corresponding
+.Ty host
+\f1specification.  That group name will used for execution on any host not
+named in the argument list.
+.if !\n(Pb .ig Ig
+.SM
+This option is an extension to the POSIX 1003.2d standard.
+.NL
+.Ig
+.IP
+.Ty "stagein=file_list"
+.br
+.Ty "stageout=file_list"
+.br
+Alters
+.if !\n(Pb .ig Ig
+the 
+.At stageout
+attribute or the
+.At stagein
+attribute, which list
+.Ig
+which files are staged (copied) in before job start or staged out
+after the job completes execution.
+The
+.Ar file_list
+is in the form:
+.Ty "local_file@hostname:remote_file[,...]"
+.br
+The name
+.Ty local_file
+is the name on the system where the job executes.  It may be an absolute path
+or a path relative to the home directory of the user.
+The name
+.Ty remote_file
+is the destination name on the host specified by
+.Ty hostname .
+The name may be absolute or relative to the user's home directory on the
+destination host.
+.if !\n(Pb .ig Ig
+.SM
+These options are extensions to the POSIX 1003.2d standard.
+.NL
+.Ig
+.LP
+.Sh OPERANDS
+The qalter command accepts one or more
+.Ar job_identifier
+operands of the form:
+.br
+.Ty "\ \ \ \ sequence_number[.server_name][@server]"
+.br
+.if !\n(Pb .ig Ig
+See the description under "Job Identifier" in section \*(Ji in this ERS.
+.Ig
+.Sh STANDARD ERROR
+Any error condition, either in processing the options or the operands,
+or any error received in reply to the batch requests will
+result in a error message being written to standard error.
+.Sh EXIT STATUS
+Upon successful processing of all the operands presented to the
+the qalter command, the exit status will be a value of zero.
+.LP
+If the qalter command fails to process any operand, the
+command exits with a value greater than zero.
+.Sh SEE ALSO
+qsub(1B), qstat(1B), pbs_alterjob(3B), pbs_statjob(3B), pbs_selectjob(3B),
+pbs_resources_*(7B), where * is system type, and the PBS ERS.
+.RE

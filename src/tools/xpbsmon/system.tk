@@ -1,0 +1,1755 @@
+#         OpenPBS (Portable Batch System) v2.3 Software License
+# 
+# Copyright (c) 1999-2000 Veridian Information Solutions, Inc.
+# All rights reserved.
+# 
+# ---------------------------------------------------------------------------
+# For a license to use or redistribute the OpenPBS software under conditions
+# other than those described below, or to purchase support for this software,
+# please contact Veridian Systems, PBS Products Department ("Licensor") at:
+# 
+#    www.OpenPBS.org  +1 650 967-4675                  sales@OpenPBS.org
+#                        877 902-4PBS (US toll-free)
+# ---------------------------------------------------------------------------
+# 
+# This license covers use of the OpenPBS v2.3 software (the "Software") at
+# your site or location, and, for certain users, redistribution of the
+# Software to other sites and locations.  Use and redistribution of
+# OpenPBS v2.3 in source and binary forms, with or without modification,
+# are permitted provided that all of the following conditions are met.
+# After December 31, 2001, only conditions 3-6 must be met:
+# 
+# 1. Commercial and/or non-commercial use of the Software is permitted
+#    provided a current software registration is on file at www.OpenPBS.org.
+#    If use of this software contributes to a publication, product, or
+#    service, proper attribution must be given; see www.OpenPBS.org/credit.html
+# 
+# 2. Redistribution in any form is only permitted for non-commercial,
+#    non-profit purposes.  There can be no charge for the Software or any
+#    software incorporating the Software.  Further, there can be no
+#    expectation of revenue generated as a consequence of redistributing
+#    the Software.
+# 
+# 3. Any Redistribution of source code must retain the above copyright notice
+#    and the acknowledgment contained in paragraph 6, this list of conditions
+#    and the disclaimer contained in paragraph 7.
+# 
+# 4. Any Redistribution in binary form must reproduce the above copyright
+#    notice and the acknowledgment contained in paragraph 6, this list of
+#    conditions and the disclaimer contained in paragraph 7 in the
+#    documentation and/or other materials provided with the distribution.
+# 
+# 5. Redistributions in any form must be accompanied by information on how to
+#    obtain complete source code for the OpenPBS software and any
+#    modifications and/or additions to the OpenPBS software.  The source code
+#    must either be included in the distribution or be available for no more
+#    than the cost of distribution plus a nominal fee, and all modifications
+#    and additions to the Software must be freely redistributable by any party
+#    (including Licensor) without restriction.
+# 
+# 6. All advertising materials mentioning features or use of the Software must
+#    display the following acknowledgment:
+# 
+#     "This product includes software developed by NASA Ames Research Center,
+#     Lawrence Livermore National Laboratory, and Veridian Information
+#     Solutions, Inc.
+#     Visit www.OpenPBS.org for OpenPBS software support,
+#     products, and information."
+# 
+# 7. DISCLAIMER OF WARRANTY
+# 
+# THIS SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND. ANY EXPRESS
+# OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+# OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT
+# ARE EXPRESSLY DISCLAIMED.
+# 
+# IN NO EVENT SHALL VERIDIAN CORPORATION, ITS AFFILIATED COMPANIES, OR THE
+# U.S. GOVERNMENT OR ANY OF ITS AGENCIES BE LIABLE FOR ANY DIRECT OR INDIRECT,
+# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
+# OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+# LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+# NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+# EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# 
+# This license will be governed by the laws of the Commonwealth of Virginia,
+# without reference to its choice of law rules.
+
+proc systemAddWidth {systemf incr} {
+        global canvas
+
+        if {[string compare $systemf ""] == 0 || ![regexp {[0-9]+} $incr]} {
+                return
+        }
+
+        set newCanvWidth [expr [systemCanvasWidthGet $systemf] + $incr]
+        set newDispWidth [expr [systemDisplayWidthGet $systemf] + $incr]
+        if {$newDispWidth < $canvas(systemMaxWidth)} {
+                systemCanvasWidthPut $systemf $newCanvWidth
+                systemDisplayWidthPut $systemf $newDispWidth
+        }
+        systemScrollRegionWidthPut $systemf \
+                [expr [systemScrollRegionWidthGet $systemf] + $incr]
+}
+
+proc systemRefreshPut {systemframe flag} {
+        set array [string trimleft $systemframe .]
+	global $array
+
+	set ${array}(refresh) $flag
+}
+
+proc systemRefreshGet {systemframe} {
+        set array [string trimleft $systemframe .]
+	global $array
+
+	if {![info exists ${array}(refresh)]} {
+		return 0
+	}
+	return [set ${array}(refresh)]
+}
+
+proc systemNamePut {systemframe name} {
+        set array [string trimleft $systemframe .]
+	global $array
+
+	set ${array}(name) $name
+}
+
+proc systemNameGet {systemframe} {
+        set array [string trimleft $systemframe .]
+	global $array
+
+	if {![info exists ${array}(name)]} {
+		return ""
+	}
+	return [set ${array}(name)]
+}
+
+proc systemNodeFramePut {systemframe nodename frame frametype}  {
+        set array [string trimleft $systemframe .]
+        global $array
+	if {[string compare $frametype ICON] == 0} {
+		set frametype FULL
+	}
+
+        set ${array}(nodeframe,$nodename,$frametype) $frame
+}
+
+proc systemNodeFrameGet {systemframe nodename frametype} {
+        set array [string trimleft $systemframe .]
+        global $array
+
+        if {![info exists ${array}(nodeframe,$nodename,$frametype)]} {
+                return ""
+        }
+        return [set ${array}(nodeframe,$nodename,$frametype)]
+}
+
+proc systemNodeFrameUnset {systemframe nodename frametype} {
+        set array [string trimleft $systemframe .]
+        global $array
+
+        if {[info exists ${array}(nodeframe,$nodename,$frametype)]} {
+                unset ${array}(nodeframe,$nodename,$frametype)
+        }
+}
+
+proc systemNodeStatusPut {systemframe nodename stat} {
+
+	if { [string compare $systemframe ""] != 0 } {
+        	set array [string trimleft $systemframe .]
+        	global $array
+
+        	set ${array}(nodestat,$nodename) $stat
+	}
+}
+
+proc systemNodeStatusGet {systemframe nodename} {
+	if { [string compare $systemframe ""] == 0 } {
+		return ""
+	}
+
+        set array [string trimleft $systemframe .]
+        global $array
+
+        if {![info exists ${array}(nodestat,$nodename)]} {
+                return ""
+        }
+        return [set ${array}(nodestat,$nodename)]
+}
+
+proc systemNodeStatusUnset {systemframe nodename} {
+	if { [string compare $systemframe ""] != 0 } {
+
+        	set array [string trimleft $systemframe .]
+        	global $array
+
+        	if {[info exists ${array}(nodestat,$nodename)]} {
+                	unset ${array}(nodestat,$nodename)
+        	}
+	}
+}
+
+proc systemNodeNamesGet {systemframe} {
+	if { [string compare $systemframe ""] == 0 } {
+		return ""
+	}
+
+        set array [string trimleft $systemframe .]
+        global $array
+
+        set nodeslist ""
+        foreach n [array names $array] {
+                set nl [split $n ,]
+                set f1 [lindex $nl 0]
+                set f2 [lrange $nl 1 end]
+                if {[string compare $f1 "nodestat"] == 0} {
+                        lappend  nodeslist [join $f2 ,]
+                }
+        }
+        return $nodeslist
+}
+
+proc systemNodeInfoPut {systemframe nodename info} {
+
+	if { [string compare $systemframe ""] != 0 } {
+        	set array [string trimleft $systemframe .]
+        	global $array
+
+        	set ${array}(nodeinfo,$nodename) $info
+	}
+}
+
+proc systemNodeInfoAppend {systemframe nodename info} {
+
+	if { [string compare $systemframe ""] != 0 } {
+        	set array [string trimleft $systemframe .]
+        	global $array
+
+        	lappend ${array}(nodeinfo,$nodename) $info
+	}
+}
+
+proc systemNodeInfoGet {systemframe nodename} {
+	if { [string compare $systemframe ""] == 0 } {
+		return ""
+	}
+
+        set array [string trimleft $systemframe .]
+        global $array
+
+        if {![info exists ${array}(nodeinfo,$nodename)]} {
+                return ""
+        }
+        return [set ${array}(nodeinfo,$nodename)]
+}
+
+proc systemNodeInfoUnset {systemframe nodename} {
+	if { [string compare $systemframe ""] != 0 } {
+
+        	set array [string trimleft $systemframe .]
+        	global $array
+
+        	if {[info exists ${array}(nodeinfo,$nodename)]} {
+                	unset ${array}(nodeinfo,$nodename)
+        	}
+	}
+}
+
+proc systemNodeInfo2Put {systemframe nodename info} {
+
+	if { [string compare $systemframe ""] != 0 } {
+        	set array [string trimleft $systemframe .]
+        	global $array
+
+        	set ${array}(nodeinfo2,$nodename) $info
+	}
+}
+
+proc systemNodeInfo2Append {systemframe nodename info} {
+
+	if { [string compare $systemframe ""] != 0 } {
+        	set array [string trimleft $systemframe .]
+        	global $array
+
+        	lappend ${array}(nodeinfo2,$nodename) $info
+	}
+}
+
+proc systemNodeInfo2Get {systemframe nodename} {
+	if { [string compare $systemframe ""] == 0 } {
+		return ""
+	}
+
+        set array [string trimleft $systemframe .]
+        global $array
+
+        if {![info exists ${array}(nodeinfo2,$nodename)]} {
+                return ""
+        }
+        return [set ${array}(nodeinfo2,$nodename)]
+}
+
+proc systemNodeInfo2Unset {systemframe nodename} {
+	if { [string compare $systemframe ""] != 0 } {
+
+        	set array [string trimleft $systemframe .]
+        	global $array
+
+        	if {[info exists ${array}(nodeinfo2,$nodename)]} {
+                	unset ${array}(nodeinfo2,$nodename)
+        	}
+	}
+}
+
+proc systemNodeTypePut {systemframe hostname type} {
+        set array [string trimleft $systemframe .]
+        global $array
+
+        set ${array}(nodetype,$hostname) $type
+}
+
+proc systemNodeTypeGet {systemframe hostname} {
+        set array [string trimleft $systemframe .]
+        global $array
+
+        if {![info exists ${array}(nodetype,$hostname)]} {
+                return ""
+        }
+        return [set ${array}(nodetype,$hostname)]
+}
+
+proc systemClusterFramePut {systemframe name frame}  {
+        set array [string trimleft $systemframe .]
+        global $array
+
+        set ${array}(clusterframe,$name) $frame
+}
+
+proc systemClusterFrameGet {systemframe name} {
+        set array [string trimleft $systemframe .]
+        global $array
+
+        if {![info exists ${array}(clusterframe,$name)]} {
+                return ""
+        }
+        return [set ${array}(clusterframe,$name)]
+}
+
+proc systemClusterFrameUnset {systemframe name} {
+        set array [string trimleft $systemframe .]
+        global $array
+
+        if {[info exists ${array}(clusterframe,$name)]} {
+                unset ${array}(clusterframe,$name)
+        }
+}
+
+proc systemClusterNamesGet {systemframe} {
+	if { [string compare $systemframe ""] == 0 } {
+		return ""
+	}
+
+        set array [string trimleft $systemframe .]
+        global $array
+
+        set clustlist ""
+        foreach n [array names $array] {
+                set nl [split $n ,]
+                set f1 [lindex $nl 0]
+                set f2 [lrange $nl 1 end]
+                if {[string compare $f1 "clusterframe"] == 0} {
+                        lappend  clustlist [join $f2 ,]
+                }
+        }
+        return $clustlist
+}
+
+proc systemCanvasPut {systemframe frame} {
+        set array [string trimleft $systemframe .]
+	global $array
+
+	set ${array}(canvas) $frame
+}
+
+proc systemCanvasGet {systemframe} {
+        set array [string trimleft $systemframe .]
+	global $array
+
+	if {![info exists ${array}(canvas)]} {
+		return ""
+	}
+	return [set ${array}(canvas)]
+}
+
+proc systemDisplayWidthPut {systemframe width} {
+        set array [string trimleft $systemframe .]
+	global $array
+
+	set ${array}(displayWidth) $width
+}
+
+proc systemDisplayWidthGet {systemframe} {
+        set array [string trimleft $systemframe .]
+	global $array
+
+	if {![info exists ${array}(displayWidth)]} {
+		return ""
+	}
+	return [set ${array}(displayWidth)]
+}
+
+proc systemDisplayHeightPut {systemframe height} {
+        set array [string trimleft $systemframe .]
+	global $array
+
+	set ${array}(displayHeight) $height
+}
+
+proc systemDisplayHeightGet {systemframe} {
+        set array [string trimleft $systemframe .]
+	global $array
+
+	if {![info exists ${array}(displayHeight)]} {
+		return ""
+	}
+	return [set ${array}(displayHeight)]
+}
+
+proc systemScrollRegionWidthPut {systemframe width} {
+        set array [string trimleft $systemframe .]
+	global $array
+
+	set ${array}(scrollRegionWidth) $width
+}
+
+proc systemScrollRegionWidthGet {systemframe} {
+        set array [string trimleft $systemframe .]
+	global $array
+
+	if {![info exists ${array}(scrollRegionWidth)]} {
+		return ""
+	}
+	return [set ${array}(scrollRegionWidth)]
+}
+
+proc systemScrollRegionHeightPut {systemframe height} {
+        set array [string trimleft $systemframe .]
+	global $array
+
+	set ${array}(scrollRegionHeight) $height
+}
+
+proc systemScrollRegionHeightGet {systemframe} {
+        set array [string trimleft $systemframe .]
+	global $array
+
+	if {![info exists ${array}(scrollRegionHeight)]} {
+		return ""
+	}
+	return [set ${array}(scrollRegionHeight)]
+}
+proc systemXscrollPut {systemframe xscroll} {
+        set array [string trimleft $systemframe .]
+        global $array
+
+        set ${array}(Xscroll) $xscroll
+}
+
+proc systemXscrollGet {systemframe} {
+        set array [string trimleft $systemframe .]
+        global $array
+
+	if {![info exists ${array}(Xscroll)]} {
+		return ""
+	}
+        return [set ${array}(Xscroll)]
+}
+
+proc systemYscrollPut {systemframe yscroll} {
+        set array [string trimleft $systemframe .]
+        global $array
+
+        set ${array}(Yscroll) $yscroll
+}
+
+proc systemYscrollGet {systemframe} {
+        set array [string trimleft $systemframe .]
+        global $array
+
+	if {![info exists ${array}(Yscroll)]} {
+		return ""
+	}
+        return [set ${array}(Yscroll)]
+}
+
+proc systemCanvasFrameWidthPut {systemframe width} {
+        set array [string trimleft $systemframe .]
+        global $array
+
+        set ${array}(canvasFrameWidth) $width
+}
+
+proc systemCanvasFrameWidthGet {systemframe} {
+        set array [string trimleft $systemframe .]
+        global $array
+
+	if {![info exists ${array}(canvasFrameWidth)]} {
+		return ""
+	}
+        return [set ${array}(canvasFrameWidth)]
+}
+
+proc systemCanvasFrameHeightPut {systemframe height} {
+        set array [string trimleft $systemframe .]
+        global $array
+
+        set ${array}(canvasFrameHeight) $height
+}
+
+proc systemCanvasFrameHeightGet {systemframe} {
+        set array [string trimleft $systemframe .]
+        global $array
+
+	if {![info exists ${array}(canvasFrameHeight)]} {
+		return ""
+	}
+        return [set ${array}(canvasFrameHeight)]
+}
+
+proc systemScrollWidthPut {systemframe width} {
+        set array [string trimleft $systemframe .]
+        global $array
+
+        set ${array}(scrollWidth) $width
+}
+
+proc systemScrollWidthGet {systemframe} {
+        set array [string trimleft $systemframe .]
+        global $array
+
+	if {![info exists ${array}(scrollWidth)]} {
+		return ""
+	}
+        return [set ${array}(scrollWidth)]
+}
+
+proc systemScrollHeightPut {systemframe height} {
+        set array [string trimleft $systemframe .]
+        global $array
+
+        set ${array}(scrollHeight) $height
+}
+
+proc systemScrollHeightGet {systemframe} {
+        set array [string trimleft $systemframe .]
+        global $array
+
+	if {![info exists ${array}(scrollHeight)]} {
+		return ""
+	}
+        return [set ${array}(scrollHeight)]
+}
+
+proc systemLabelHeightPut {systemframe height} {
+        set array [string trimleft $systemframe .]
+        global $array
+
+        set ${array}(labelHeight) $height
+}
+
+proc systemLabelHeightGet {systemframe} {
+        set array [string trimleft $systemframe .]
+        global $array
+
+	if {![info exists ${array}(labelHeight)]} {
+		return ""
+	}
+        return [set ${array}(labelHeight)]
+}
+
+proc systemLabelWidthPut {systemframe width} {
+        set array [string trimleft $systemframe .]
+        global $array
+
+        set ${array}(labelWidth) $width
+}
+
+proc systemLabelWidthGet {systemframe} {
+        set array [string trimleft $systemframe .]
+        global $array
+
+	if {![info exists ${array}(labelWidth)]} {
+		return ""
+	}
+        return [set ${array}(labelWidth)]
+}
+
+proc systemFooterHeightPut {systemframe height} {
+        set array [string trimleft $systemframe .]
+        global $array
+
+        set ${array}(footerHeight) $height
+}
+
+proc systemFooterHeightGet {systemframe} {
+        set array [string trimleft $systemframe .]
+        global $array
+
+	if {![info exists ${array}(footerHeight)]} {
+		return ""
+	}
+        return [set ${array}(footerHeight)]
+}
+proc systemFooterWidthPut {systemframe width} {
+        set array [string trimleft $systemframe .]
+        global $array
+
+        set ${array}(footerWidth) $width
+}
+
+proc systemFooterWidthGet {systemframe} {
+        set array [string trimleft $systemframe .]
+        global $array
+
+	if {![info exists ${array}(footerWidth)]} {
+		return ""
+	}
+	return [set ${array}(footerWidth)]
+}
+
+proc systemCanvasHeightPut {systemframe height} {
+        set array [string trimleft $systemframe .]
+        global $array
+
+        set ${array}(canvasHeight) $height
+}
+
+proc systemCanvasHeightGet {systemframe} {
+        set array [string trimleft $systemframe .]
+        global $array
+
+	if {![info exists ${array}(canvasHeight)]} {
+		return ""
+	}
+	return [set ${array}(canvasHeight)]
+}
+
+proc systemCanvasWidthPut {systemframe width} {
+        set array [string trimleft $systemframe .]
+        global $array
+
+        set ${array}(canvasWidth) $width
+}
+
+proc systemCanvasWidthGet {systemframe} {
+        set array [string trimleft $systemframe .]
+        global $array
+
+	if {![info exists ${array}(canvasWidth)]} {
+		return ""
+	}
+	return [set ${array}(canvasWidth)]
+}
+
+proc systemServerNamesPut {systemframe serverl} {
+        set array [string trimleft $systemframe .]
+        global $array
+
+        set ${array}(servers) $serverl
+}
+
+proc systemServerNamesGet {systemframe} {
+        set array [string trimleft $systemframe .]
+        global $array
+
+	if {![info exists ${array}(servers)]} {
+		return ""
+	}
+	return [set ${array}(servers)]
+}
+
+proc systemPrint systemframe {
+
+	puts "Refresh Flag: [systemRefreshGet $systemframe]"
+	puts "Name: [systemNameGet $systemframe]"
+	puts "Canvas: [systemCanvasGet $systemframe]"
+	puts "Display Width: [systemDisplayWidthGet $systemframe]"
+ 	puts "Display Height: [systemDisplayHeightGet $systemframe]"
+ 	puts "Scroll Region Width: [systemScrollRegionWidthGet $systemframe]"
+	puts "Scroll Region Height: [systemScrollRegionHeightGet $systemframe]"
+	puts "Canvas Frame Width: [systemCanvasFrameWidthGet $systemframe]"
+	puts "Canvas Frame Height: [systemCanvasFrameHeightGet $systemframe]"
+	puts "Canvas Width: [systemCanvasWidthGet $systemframe]"
+	puts "Canvas Height: [systemCanvasHeightGet $systemframe]"
+	puts "Scroll Width: [systemScrollWidthGet $systemframe]"
+	puts "Scroll Height: [systemScrollHeightGet $systemframe]"
+	puts "Label Width: [systemLabelWidthGet $systemframe]"
+	puts "Label Height: [systemLabelHeightGet $systemframe]"
+	puts "Footer Width: [systemFooterWidthGet $systemframe]"  
+	puts "Footer Height: [systemFooterHeightGet $systemframe]"
+	puts "X scroll:	[systemXscrollGet $systemframe]"
+	puts "Y scroll: [systemYscrollGet $systemframe]"
+
+	foreach n [systemNodeNamesGet $systemframe] {
+		puts "systemNodeFrameGet( $systemframe $n FULL ): \
+			[systemNodeFrameGet $systemframe $n FULL ]"
+		puts "systemNodeStatusGet( $systemframe $n ): \
+			[systemNodeStatusGet $systemframe $n]"
+		puts "systemNodeInfoGet( $systemframe $n ): \
+			[systemNodeInfoGet $systemframe $n]"
+		puts "systemNodeTypeGet( $systemframe $n ): \
+			[systemNodeTypeGet $systemframe $n]"
+	}
+
+	foreach c [systemClusterNamesGet $systemframe] {
+		puts "systemClusterFrameGet( $systemframe $c ): \
+			[systemClusterFrameGet $systemframe $c]"
+		
+	}
+
+	puts "Server Names: [systemServerNamesGet $systemframe]"
+}
+
+
+
+proc systemNodesCreate {frame systemName} {
+	global canvas sysnodes sysview
+
+	systemNamePut $frame $systemName
+
+	frame $frame -class Big
+
+	frame $frame.l -class BigLabel
+
+	frame $frame.m -borderwidth 0
+
+	frame $frame.m.c -class BigCanvas
+
+	frame $frame.m.y -borderwidth 0
+
+	frame $frame.m.x -borderwidth 0
+	frame $frame.s -class BigLabel
+
+	label $frame.l.label 	-text $systemName -justify center
+	set labelWidth [expr \
+                     2*$canvas(bigBd) + 2*$canvas(bigLabelBd) + \
+        	     $canvas(bigLabelFontWidth)*[string length $systemName]]
+	systemLabelWidthPut $frame $labelWidth
+
+        set labelHeight [expr $canvas(bigBd) + 2*$canvas(bigLabelBd) \
+                                + $canvas(bigLabelFontHeight)]
+	systemLabelHeightPut $frame $labelHeight
+
+	canvas $frame.m.c.canvas -confine 1 -width $canvas(systemMaxWidth) \
+		-height $canvas(systemMaxHeight)
+
+	systemCanvasPut $frame $frame.m.c.canvas
+        set canvasFrameWidth [expr $canvas(bigBd) + \
+                                   2*$canvas(bigCanvasBd)]
+	systemCanvasFrameWidthPut $frame $canvasFrameWidth
+
+        set canvasFrameHeight [expr 2*$canvas(bigCanvasBd)]
+	systemCanvasFrameHeightPut $frame $canvasFrameHeight
+	systemRefreshPut $frame 0
+ 
+
+	set x1 0
+	set y1 0
+	set totwidth 0
+	set totheight 0
+	set pw 0
+	set ph 0
+	set maxWidth 0
+	set prevCluster ""
+	set rowClusters ""
+
+	set i 0
+	set j 0
+
+	set serverl [serverNamesSorted $systemName \
+			[serverNamesGet $systemName] nodeslist $frame]
+
+	set servers ""
+	foreach a $serverl {
+		set clusterLabel [lindex $sysnodes($systemName,$a) 0]
+		set nlist [lrange $sysnodes($systemName,$a) 1 end]
+
+		if {[string compare $nodeslist($a) ""] == 0} {
+			continue
+		}
+		lappend servers $a
+
+		clusterSystemFramePut $frame.m.c.$i $frame
+		systemClusterFramePut $frame $a $frame.m.c.$i
+		set  pos [clusterCreate $frame.m.c.$i $a $clusterLabel \
+				$nodeslist($a) "" $sysview($systemName)]
+		set numNodes [llength $nodeslist($a)]
+
+		set w [expr [lindex $pos 0] + 2*$canvas(medBd)]
+		set h [lindex $pos 1]
+
+		if { $i == 0 } {
+			set rowClusters $frame.m.c.$i
+			incr totwidth $w
+		} elseif { [expr $j % $canvas(systemNumBoxesPerRow)] == 0 || \
+			   [expr $totwidth + $w] > $canvas(systemMaxWidth) } {
+			set rowOffset [expr \
+				      ($canvas(systemMaxWidth) - $totwidth) / 2]
+			if {$rowOffset > 0} {
+				foreach fr $rowClusters {
+					clusterOffsetWidthPut $fr $rowOffset
+				}
+			}
+			set rowClusters $frame.m.c.$i
+			set x1 0
+			incr y1 $ph
+
+			incr totheight $ph
+
+			if {$totwidth > $maxWidth} {
+				set maxWidth $totwidth
+			}
+			set totwidth $w
+			set j 0
+			set ph 0
+		} else {
+			lappend rowClusters $frame.m.c.$i
+			incr x1 $pw
+			incr totwidth $w
+
+                        if {[string compare $prevCluster ""] != 0} {
+                                clusterNextPut $prevCluster $frame.m.c.$i
+                        }
+		}
+
+		pack forget $frame.m.c.$i
+		$frame.m.c.canvas create window $x1 $y1 -window $frame.m.c.$i \
+		 -anchor nw -width  $w -height $h -tags $frame.m.c.$i
+	
+		clusterXposPut $frame.m.c.$i $x1
+		clusterYposPut $frame.m.c.$i $y1
+		# save current width
+		set pw $w
+		if {$h > $ph} {
+			set ph $h
+		}
+		set prevCluster $frame.m.c.$i
+		incr i
+		incr j
+	}
+	systemServerNamesPut $frame $servers
+
+	if {[string compare $rowClusters ""] != 0} {
+		set rowOffset [expr ($canvas(systemMaxWidth) - $totwidth) / 2]
+		if {$rowOffset > 0} {
+			foreach fr $rowClusters {
+				clusterOffsetWidthPut $fr $rowOffset
+			}
+		}
+	}
+	if {$maxWidth >  $totwidth } {
+		set totwidth $maxWidth
+	}
+	incr totheight $ph
+	systemScrollRegionWidthPut $frame $totwidth
+	systemScrollRegionHeightPut $frame $totheight
+        set scrollRegionWidth $totwidth
+        set scrollRegionHeight $totheight
+	
+	scrollbar $frame.m.x.xscroll -orient horizontal \
+		-width $canvas(bigLabelFontHeight) \
+		-background $canvas(bigScrollBg) \
+		-borderwidth $canvas(bigScrollBd) \
+		-relief $canvas(bigScrollRelief) \
+		-command [list $frame.m.c.canvas xview]
+	systemXscrollPut $frame $frame.m.x.xscroll
+
+        set scrollHeight [expr \
+                2*[lindex [$frame.m.x.xscroll configure -borderwidth] end] \
+                + [lindex [$frame.m.x.xscroll configure -width] end]]
+	$frame.m.x configure -height $scrollHeight
+
+	scrollbar $frame.m.y.yscroll -orient vertical \
+				-width $canvas(bigLabelFontHeight) \
+				-background $canvas(bigScrollBg) \
+				-borderwidth $canvas(bigScrollBd) \
+				-relief $canvas(bigScrollRelief) \
+				-command [list $frame.m.c.canvas yview]
+	systemYscrollPut $frame $frame.m.y.yscroll
+        set scrollWidth [expr \
+                $canvas(bigBd) + \
+                2*[lindex [$frame.m.y.yscroll configure -borderwidth] end]  \
+                + [lindex [$frame.m.y.yscroll configure -width] end]]
+	$frame.m.y configure -width $scrollWidth
+
+	colorBarCreate $frame.s
+
+        set footerWidth [expr 2*$canvas(bigBd) + 2*$canvas(bigLabelBd)]
+	systemFooterWidthPut $frame $footerWidth
+
+        set footerHeight [expr 2*$canvas(bigLabelBd) + \
+                               $canvas(bigBd) + \
+                               2*$canvas(smallLabelFontHeight)]
+	systemFooterHeightPut $frame $footerHeight
+
+
+        set retwidth [expr $canvasFrameWidth + $totwidth + $scrollWidth]
+        if {$labelWidth > $retwidth && $labelWidth > $footerWidth} {
+                set retwidth $labelWidth
+        } elseif {$footerWidth > $retwidth && $footerWidth > $labelWidth} {
+                set retwidth $footerWidth
+        }
+        systemDisplayWidthPut $frame $retwidth
+	set canvWidth $totwidth
+        systemCanvasWidthPut $frame $canvWidth
+	systemScrollWidthPut $frame $scrollWidth
+
+        if { $retwidth  >  $canvas(systemMaxWidth) } {
+                set canvWidth  [expr $canvas(systemMaxWidth) - \
+                                     $canvasFrameWidth - $scrollWidth]
+
+                if {$canvWidth > 0} {
+        		systemCanvasWidthPut $frame $canvWidth
+                        systemDisplayWidthPut $frame $canvas(systemMaxWidth)
+                        set retwidth $canvas(systemMaxWidth)
+                }               
+        }
+
+        set retheight [expr $labelHeight + $canvasFrameHeight + $totheight + \
+                                                $scrollHeight + $footerHeight]
+
+        systemDisplayHeightPut $frame $retheight
+	set canvHeight $totheight
+	systemCanvasHeightPut $frame $canvHeight
+	systemScrollHeightPut $frame $scrollHeight
+
+        if { $retheight >  $canvas(systemMaxHeight) } {
+                set canvHeight [expr    $canvas(systemMaxHeight) - \
+                                        $labelHeight - $canvasFrameHeight - \
+                                        $scrollHeight - $footerHeight]
+                if {$canvHeight > 0} {
+			systemCanvasHeightPut $frame $canvHeight
+                        systemDisplayHeightPut $frame $canvas(systemMaxHeight)
+                        set retheight $canvas(systemMaxHeight)
+
+                }
+        }
+
+	set canvWidth [systemCanvasWidthGet $frame]
+	set canvHeight [systemCanvasHeightGet $frame]
+        $frame.m.c.canvas  configure \
+		-width  $canvWidth  \
+		-height $canvHeight \
+		-xscrollcommand [list $frame.m.x.xscroll set] \
+		-yscrollcommand [list $frame.m.y.yscroll set] \
+                -scrollregion [list 0 0 $scrollRegionWidth $scrollRegionHeight]
+
+	if {$canvWidth > 0 && $scrollRegionWidth > $canvWidth} {
+		pack $frame.m.x.xscroll -side bottom -fill x -padx 0 -pady 0 \
+							      -ipadx 0 -ipady 0
+        }
+	if {$canvHeight > 0 && $scrollRegionHeight > $canvHeight} {
+		pack $frame.m.y.yscroll -side right -fill y -padx 0 -pady 0 \
+						   -ipadx 0 -ipady 0 -anchor nw
+        }
+	pack $frame.l.label -fill both -expand true -padx 0 -pady 0 -ipadx 0 \
+					-ipady 0
+	pack $frame.m.c.canvas -expand true -fill both -padx 0 -pady 0 \
+					-ipadx 0 -ipady 0
+	pack $frame.m.x -side bottom -fill x -padx 0 -pady 0 -ipadx 0 -ipady 0
+	pack $frame.m.y -side right -fill y -padx 0 -pady 0 -ipadx 0 -ipady 0
+	pack $frame.m.c -expand true -fill both -padx 0 -pady 0 -ipadx 0 \
+								      -ipady 0 
+
+	pack $frame.l $frame.m $frame.s -side top -anchor nw -fill both \
+				-expand true -padx 0 -pady 0 -ipadx 0 -ipady 0
+	pack $frame -anchor c -expand true -fill both -padx 0 -pady 0 -ipadx 0 -ipady 0
+
+	systemAdjustNodesDistances $frame
+
+}
+proc systemNodesReCreate {frame } {
+
+	global canvas sysnodes
+
+	set systemName [systemNameGet $frame]
+	$frame.l.label 	configure -text $systemName
+	set labelWidth [expr \
+                     2*$canvas(bigBd) + 2*$canvas(bigLabelBd) + \
+        	     $canvas(bigLabelFontWidth)*[string length $systemName]]
+	systemLabelWidthPut $frame $labelWidth
+
+        set labelHeight [expr $canvas(bigBd) + 2*$canvas(bigLabelBd) \
+                                + $canvas(bigLabelFontHeight)]
+	systemLabelHeightPut $frame $labelHeight
+
+        set canvasFrameWidth [expr $canvas(bigBd) + 2*$canvas(bigCanvasBd)]
+	systemCanvasFrameWidthPut $frame $canvasFrameWidth
+
+        set canvasFrameHeight [expr 2*$canvas(bigCanvasBd)]
+	systemCanvasFrameHeightPut $frame $canvasFrameHeight
+ 
+
+	set x1 0
+	set y1 0
+	set totwidth 0
+	set totheight 0
+	set pw 0
+	set ph 0
+	set maxWidth 0
+	set prevCluster ""
+	set rowClusters ""
+
+	set i 0
+	set j 0
+
+	foreach a [systemServerNamesGet $frame] {
+		set clusterLabel [lindex $sysnodes($systemName,$a) 0]
+
+		clusterNamePut $frame.m.c.$i $a
+		clusterLabelTextPut $frame.m.c.$i $clusterLabel
+
+		$frame.m.c.canvas delete $frame.m.c.$i
+
+		systemClusterFramePut $frame $a $frame.m.c.$i
+		set  pos [clusterReCreate $frame.m.c.$i]
+
+		set w [expr [lindex $pos 0] + 2*$canvas(medBd)]
+		set h [lindex $pos 1]
+
+
+		if { $i == 0 } {
+			set rowClusters $frame.m.c.$i
+			incr totwidth $w
+		} elseif { [expr $j % $canvas(systemNumBoxesPerRow)] == 0 || \
+			   [expr $totwidth + $w] > $canvas(systemMaxWidth) } {
+			set rowOffset [expr \
+				      ($canvas(systemMaxWidth) - $totwidth) / 2]
+			if {$rowOffset > 0} {
+				foreach fr $rowClusters {
+					clusterOffsetWidthPut $fr $rowOffset
+				}
+			}
+			set rowClusters $frame.m.c.$i
+			set x1 0
+			incr y1 $ph
+
+			incr totheight $ph
+
+			if {$totwidth > $maxWidth} {
+				set maxWidth $totwidth
+			}
+			set totwidth $w
+			set j 0
+			set ph 0
+		} else {
+			lappend rowClusters $frame.m.c.$i
+
+			incr x1 $pw
+			incr totwidth $w
+
+                        if {[string compare $prevCluster ""] != 0} {
+                                clusterNextPut $prevCluster $frame.m.c.$i
+                        }
+		}
+
+		pack forget $frame.m.c.$i
+		$frame.m.c.canvas create window $x1 $y1 -window $frame.m.c.$i \
+		 -anchor nw -width  $w -height $h -tags $frame.m.c.$i
+	
+		clusterXposPut $frame.m.c.$i $x1
+		clusterYposPut $frame.m.c.$i $y1
+		# save current width
+		set pw $w
+		if {$h > $ph} {
+			set ph $h
+		}
+		set prevCluster $frame.m.c.$i
+		incr i
+		incr j
+	}
+	if {[string compare $rowClusters ""] != 0} {
+		set rowOffset [expr ($canvas(systemMaxWidth) - $totwidth) / 2]
+		if {$rowOffset > 0} {
+			foreach fr $rowClusters {
+				clusterOffsetWidthPut $fr $rowOffset
+			}
+		}
+	}
+
+	if {$maxWidth > $totwidth} {
+		set totwidth $maxWidth
+	}
+	incr totheight $ph
+	systemScrollRegionWidthPut $frame $totwidth
+	systemScrollRegionHeightPut $frame $totheight
+        set scrollRegionWidth $totwidth
+        set scrollRegionHeight $totheight
+	
+	$frame.m.x.xscroll configure -orient horizontal \
+				-width $canvas(bigLabelFontHeight) \
+				-command [list $frame.m.c.canvas xview]
+
+        set scrollHeight [expr \
+                2*[lindex [$frame.m.x.xscroll configure -borderwidth] end] \
+                + [lindex [$frame.m.x.xscroll configure -width] end]]
+
+
+	$frame.m.y.yscroll configure -orient vertical \
+				-width $canvas(bigLabelFontHeight) \
+				-command [list $frame.m.c.canvas yview]
+        set scrollWidth [expr \
+                $canvas(bigBd) + \
+                2*[lindex [$frame.m.y.yscroll configure -borderwidth] end]  \
+                + [lindex [$frame.m.y.yscroll configure -width] end]]
+
+        set footerWidth [expr 2*$canvas(bigBd) + 2*$canvas(bigLabelBd)]
+        set footerHeight [expr 2*$canvas(bigLabelBd) + \
+                               $canvas(bigBd) + \
+                               2*$canvas(smallLabelFontHeight)]
+	systemFooterHeightPut $frame $footerHeight
+
+
+        set retwidth [expr $canvasFrameWidth + $totwidth + $scrollWidth]
+	
+        if {$labelWidth > $retwidth && $labelWidth > $footerWidth} {
+                set retwidth $labelWidth
+        } elseif {$footerWidth > $retwidth && $footerWidth > $labelWidth} {
+                set retwidth $footerWidth
+        }
+        systemDisplayWidthPut $frame $retwidth
+	set canvWidth $totwidth
+        systemCanvasWidthPut $frame $canvWidth
+	systemScrollWidthPut $frame $scrollWidth
+
+        if { $retwidth  >  $canvas(systemMaxWidth) } {
+                set canvWidth  [expr $canvas(systemMaxWidth) - \
+                                     $canvasFrameWidth - $scrollWidth]
+                if {$canvWidth > 0} {
+        		systemCanvasWidthPut $frame $canvWidth
+                        systemDisplayWidthPut $frame $canvas(systemMaxWidth)
+                        set retwidth $canvas(systemMaxWidth)
+                }               
+        }
+
+        set retheight [expr $labelHeight + $canvasFrameHeight + $totheight + \
+                                                $scrollHeight + $footerHeight]
+
+        systemDisplayHeightPut $frame $retheight
+	set canvHeight $totheight
+	systemCanvasHeightPut $frame $canvHeight
+	systemScrollHeightPut $frame $scrollHeight
+
+        if { $retheight >  $canvas(systemMaxHeight) } {
+                set canvHeight [expr    $canvas(systemMaxHeight) - \
+                                        $labelHeight - $canvasFrameHeight - \
+                                        $scrollHeight - $footerHeight]
+                if {$canvHeight > 0} {
+			systemCanvasHeightPut $frame $canvHeight
+                        systemDisplayHeightPut $frame $canvas(systemMaxHeight)
+                        set retheight $canvas(systemMaxHeight)
+
+                }
+        }
+
+	set canvWidth [systemCanvasWidthGet $frame]
+	set canvHeight [systemCanvasHeightGet $frame]
+        $frame.m.c.canvas configure -width $canvWidth -height $canvHeight \
+		-xscrollcommand [list $frame.m.x.xscroll set] \
+		-yscrollcommand [list $frame.m.y.yscroll set] \
+                -scrollregion [list 0 0 $scrollRegionWidth $scrollRegionHeight]
+
+	catch {pack forget $frame.m.x.xscroll}
+	if {$canvWidth > 0 && $scrollRegionWidth > $canvWidth} {
+		pack $frame.m.x.xscroll -side bottom -fill x -padx 0 -pady 0 \
+							      -ipadx 0 -ipady 0
+        }
+	catch {pack forget $frame.m.y.yscroll}
+	if {$canvHeight > 0 && $scrollRegionHeight > $canvHeight} {
+		pack $frame.m.y.yscroll -side right -fill y -padx 0 -pady 0 \
+						   -ipadx 0 -ipady 0 -anchor nw
+        }
+	pack $frame -anchor c -expand true -fill both -padx 0 -pady 0 -ipadx 0 -ipady 0
+	systemAdjustNodesDistances $frame
+}
+
+proc systemRepack {systemframe} {
+	global canvas
+
+	if {[string compare $systemframe ""] == 0} {
+		return
+	}
+
+	set canv [systemCanvasGet $systemframe]
+
+	set xscroll [systemXscrollGet $systemframe]
+
+	set yscroll [systemYscrollGet $systemframe]
+
+        set labelWidth [systemLabelWidthGet $systemframe]
+	set footerWidth [systemFooterWidthGet $systemframe]
+	set canvasFrameWidth [systemCanvasFrameWidthGet $systemframe]
+	set scrollWidth [systemScrollWidthGet $systemframe]
+
+	set labelHeight [systemLabelHeightGet $systemframe]
+	set canvasFrameHeight [systemCanvasFrameHeightGet $systemframe]
+	set scrollHeight [systemScrollHeightGet $systemframe]
+	set footerHeight [systemFooterHeightGet $systemframe]
+
+	set scrollRegionWidth [systemScrollRegionWidthGet $systemframe] 
+	set scrollRegionHeight [systemScrollRegionHeightGet $systemframe]
+
+	set canvWidth [systemCanvasWidthGet $systemframe]
+	set canvHeight [systemCanvasHeightGet $systemframe]
+
+	set dispWidth  [systemDisplayWidthGet  $systemframe]
+	set dispHeight [systemDisplayHeightGet $systemframe]
+
+
+        set retwidth [expr $canvasFrameWidth + $canvWidth + $scrollWidth]
+	set footerWidth [expr $retwidth + 1]
+        if {$labelWidth > $retwidth && $labelWidth > $footerWidth} {
+                set retwidth $labelWidth
+        } elseif {$footerWidth > $retwidth && $footerWidth > $labelWidth} {
+                set retwidth $footerWidth
+        }
+
+        systemDisplayWidthPut $systemframe $retwidth
+        if { $retwidth  >  $canvas(systemMaxWidth) } {
+                set canvWidth  [expr $canvas(systemMaxWidth) - \
+                                     $canvasFrameWidth - $scrollWidth]
+                if {$canvWidth > 0} {
+			systemCanvasWidthPut $systemframe $canvWidth
+                        systemDisplayWidthPut $systemframe \
+						        $canvas(systemMaxWidth)
+                        set retwidth $canvas(systemMaxWidth)
+                }               
+        }
+
+        set retheight [expr $labelHeight + $canvasFrameHeight + $canvHeight + \
+                                                $scrollHeight + $footerHeight]
+
+        systemDisplayHeightPut $systemframe $retheight
+        if { $retheight >  $canvas(systemMaxHeight) } {
+                set canvHeight [expr    $canvas(systemMaxHeight) - \
+                                        $labelHeight - $canvasFrameHeight - \
+                                        $scrollHeight - $footerHeight]
+                if {$canvHeight > 0} {
+			systemCanvasHeightPut $systemframe $canvHeight
+                        systemDisplayHeightPut $systemframe \
+							$canvas(systemMaxHeight)
+                        set retheight $canvas(systemMaxHeight)
+
+                }
+        }
+
+        set canvWidth [systemCanvasWidthGet $systemframe]
+        set canvHeight [systemCanvasHeightGet $systemframe]
+
+	$canv configure -width $canvWidth -height $canvHeight \
+		-scrollregion [list 0 0 $scrollRegionWidth $scrollRegionHeight]
+
+	if {$canvWidth > 0 && $scrollRegionWidth > $canvWidth} {
+		catch {pack $xscroll -side bottom -fill x -padx 0 -pady 0 \
+				-ipadx 0 -ipady 0}
+        } else {
+		catch {pack forget $xscroll}
+	}
+
+	if {$canvHeight > 0 && $scrollRegionHeight > $canvHeight} {
+		pack $yscroll -side right -fill y -padx 0 -pady 0 -ipadx 0 \
+							     -ipady 0 -anchor nw
+        } else {
+		catch {pack forget $yscroll}
+	}
+}
+
+proc systemDelete {sysframe} {
+
+	if {![winfo exists $sysframe]} {
+		return
+	}
+
+	set sysname [systemNameGet $sysframe]
+
+	foreach n [systemNodeNamesGet $sysframe] {
+		set nframe [systemNodeFrameGet $sysframe $n FULL]
+		nodeDelete $nframe
+	}
+
+	foreach c [systemClusterNamesGet $sysframe] {
+		set cframe [systemClusterFrameGet $sysframe $c]
+		clusterDelete $cframe
+	}
+
+        set array [string trimleft $sysframe .]
+	global $array
+
+	unset $array
+
+	destroy $sysframe
+}
+
+proc systemRefreshDisplay {sysframe} {
+	global canvas
+
+	systemRefreshPut $sysframe 0
+	foreach nn [systemNodeNamesGet $sysframe] {
+		set nf [systemNodeFrameGet $sysframe $nn FULL]
+		if [nodeRefreshGet $nf] {
+			update idletasks
+			clusterRefreshPut [nodeClusterFrameGet $nf] 1
+			systemRefreshPut $sysframe 1
+			nodeRefreshPut $nf 0
+		}
+	}
+
+	foreach cn [systemClusterNamesGet $sysframe] {
+		set cf [systemClusterFrameGet $sysframe $cn]
+		if [clusterRefreshGet $cf] {
+			update idletasks
+			systemRefreshPut $sysframe 1
+			clusterRefreshPut $cf 0
+		}
+	}
+
+	if [systemRefreshGet $sysframe] {
+		systemNodesReCreate $sysframe
+		update idletasks
+	}
+}
+
+proc systemDisplayClusterStatus {sysframe cname} {
+	global canvas
+
+	set cf [systemClusterFrameGet $sysframe $cname]
+
+	set usepool [clusterUsePoolGet $cf]
+	set availpool [clusterAvailPoolGet $cf]
+	set totpool [clusterTotPoolGet $cf]
+
+	set statusLine ""
+	if {$totpool > 1} {
+		set statusLine \
+	     "Nodes:: $statusLine Total:$totpool Used:$usepool Avail:$availpool"
+	}
+
+	set offpool [clusterOfflinePoolGet $cf]
+	if {$offpool != 0} {
+		set statusLine "$statusLine Offl:$offpool"
+	}
+
+	set dwnpool [clusterDownPoolGet $cf]
+	if {$dwnpool != 0} {
+		set statusLine "$statusLine Down:$dwnpool"
+	}
+
+	set rsvpool [clusterReservedPoolGet $cf]
+	if {$rsvpool != 0} {
+		set statusLine "$statusLine Rsvd:$rsvpool"
+	}
+	set unkpool [clusterUnkPoolGet $cf]
+	if {$unkpool != 0} {
+		set statusLine "$statusLine Unk:$unkpool"
+	}
+
+	set cpu_assn [clusterCpusAssnGet $cf]
+	if {$cpu_assn != 0} {
+		set statusLine "$statusLine CpusAssn:$cpu_assn"
+
+		set cpu_max [clusterCpusMaxGet $cf]
+		if {$cpu_max != 0} {
+			set statusLine "$statusLine/$cpu_max"
+		}
+	}
+	set vprocs_assn [clusterVprocsAssnGet $cf]
+	if {$vprocs_assn != 0} {
+		set statusLine "$statusLine VPROCsUsed:$vprocs_assn"
+	}
+
+	set sbar [clusterStatusBarGet $cf]
+
+        $sbar configure -text $statusLine
+	set statusLineWidth \
+	   	[expr [string length $statusLine] * $canvas(medLabelFontWidth)]
+
+	if {$statusLineWidth > [clusterDisplayWidthGet $cf]} {
+		clusterRefreshPut $cf 1
+	}
+	clusterFooterHeaderPut $cf $statusLine
+}
+
+
+# BUG: if a node was in the OFFLINE, and then on the next iteration
+#	becomes FREE (no job on it), its color never gets updated to OFFLINE . 
+proc systemPopulateNodesWithInfo {sysframe {create 0}} {
+	global sysnodes canvas sysinfo
+
+	if {[string compare $sysframe ""] == 0} {
+		return
+	}
+
+	if {$sysinfo(LCK) || $sysinfo(PREFLCK)} {
+	    InfoBox_sendmsg "systemPopulateNodesWithInfo: intentionally not updating since either another one is running, or pref dialog active." 1
+	    return	
+	}
+
+	set sysinfo(LCK) 1
+
+	set systemName [systemNameGet $sysframe]
+	busy_cursor
+	InfoBox_flush 1
+	InfoBox_sendmsg "populatesNodesWithInfo: updating" 0
+
+	update idletasks
+        unsetNodeColorInUseMapping
+	foreach n [systemNodeNamesGet $sysframe] {
+		systemNodeInfoUnset $sysframe $n
+		systemNodeInfo2Unset $sysframe $n
+	}
+
+	set serverl [serverNamesSorted $systemName \
+			[serverNamesGet $systemName] nodeslist $sysframe]
+
+	foreach server_name $serverl {
+		if {[string compare $nodeslist($server_name) ""] != 0} {
+			systemGetJobsInfo $sysframe $server_name
+		}
+	}
+
+	set donehosts ""
+	foreach n [systemNodeNamesGet $sysframe] {
+
+		InfoBox_sendmsg "." 0 1
+
+		set fullnodeFrame [systemNodeFrameGet $sysframe $n FULL]
+		set mirrornodeFrame [systemNodeFrameGet $sysframe $n MIRROR]
+
+		set nodejob [systemNodeInfoGet $sysframe $n]
+		set nodestat [systemNodeStatusGet $sysframe $n]
+		set nodetype [systemNodeTypeGet $sysframe $n]
+		set nodeinfo2 [systemNodeInfo2Get $sysframe $n]
+
+		switch -exact -- $nodetype {
+                  NOMOM {
+                        if {[string compare $nodejob ""] == 0 && \
+                            ([string compare $nodestat INUSE-EXCLUSIVE] == 0 \
+			     || [string compare $nodestat INUSE-SHARED] == 0)} {
+                                nodeUpdateStat $sysframe $n FREE
+                        }
+			systemNodeInfoPut $sysframe $n \
+					[concat $nodeinfo2 $nodejob]
+                  }
+		  NOMOM_SNODE {
+			systemNodeInfoPut $sysframe $n \
+					[concat $nodeinfo2 $nodejob]
+		  }
+		  MOM	{
+			if {[string compare $nodejob ""] == 0 && \
+		    	    ([string compare $nodestat INUSE-EXCLUSIVE] == 0 \
+			     || [string compare $nodestat INUSE-SHARED] == 0)} {
+				nodeUpdateStat $sysframe $n NOINFO
+			}
+
+			catch {openrm $n} fd
+			InfoBox_sendmsg "systemPopulateNodesWithInfo: openrm($n): $fd" end
+			if {$fd < 0} {
+				nodeUpdateStat $sysframe $n DOWN
+			} else {
+				set status [TSgetStatus $fd $sysframe $n 1]
+				switch -exact -- $status {
+				  FREE {
+				      set qlist [sendTSQueries $fd \
+								$systemName $n]
+				      set qexpr [recvResponses $fd \
+							$systemName $n $qlist]
+
+				      set qexpr [concat $qexpr $nodejob]
+				      systemNodeInfoPut $sysframe $n $qexpr
+				      systemUpdateInUse $sysframe $n $nodejob
+				  }
+				  NOINFO {
+				      systemUpdateInUse $sysframe $n $nodejob
+				  }
+			        }
+
+				catch {closerm $fd}
+				InfoBox_sendmsg "systemPopulateNodesWithInfo: closerm($n)" end
+			}
+		  }
+		  MOM_SNODE {
+			set qexpr ""	
+			catch {openrm $n} fd
+			InfoBox_sendmsg "systemPopulateNodesWithInfo: openrm($n): $fd" end
+			if {$fd >= 0} {
+				set status [TSgetStatus $fd $sysframe $n 0]
+				if {[string compare $status FREE] == 0} {
+					set qlist [sendTSQueries $fd \
+								$systemName $n]
+					set qexpr [recvResponses $fd \
+							$systemName $n $qlist]
+
+			        }
+
+				catch {closerm $fd}
+				InfoBox_sendmsg "systemPopulateNodesWithInfo: closerm($n)" end
+			}
+			set qexpr [concat $nodeinfo2 $qexpr $nodejob]
+			systemNodeInfoPut $sysframe $n $qexpr
+		  }
+		}
+		set nodeinfo [systemNodeInfoGet $sysframe $n]
+
+		if { [string compare $nodeinfo ""] != 0 } {
+			nodeDisplayInfo $fullnodeFrame $nodeinfo $create
+			nodeDisplayInfo $mirrornodeFrame $nodeinfo $create
+		} else {
+			nodeRemLines $fullnodeFrame 0
+			nodeRemLines $mirrornodeFrame 0
+		      	nodeColorIt $fullnodeFrame $n
+		      	nodeColorIt $mirrornodeFrame $n
+		}
+	}
+
+	foreach f [systemClusterNamesGet $sysframe] {
+		systemDisplayClusterStatus $sysframe $f
+	}
+
+	systemRefreshDisplay $sysframe
+	colorBarUpdate
+	InfoBox_sendmsg "done." 0 1 5
+	remove_busy_cursor
+
+	set sysinfo(LCK) 0
+
+}
+
+proc systemUpdateInUse {sysframe n jobslist} {
+
+	set len [lindex [lindex [lindex $jobslist 0] 1] 3]
+
+	if {[string compare $len ""] == 0} {
+		set len 0
+	}
+	if {$len == 1} {
+		nodeUpdateStat $sysframe $n INUSE-EXCLUSIVE
+	} elseif {$len > 1} {
+		nodeUpdateStat $sysframe $n INUSE-SHARED
+	}
+
+}
+
+proc systemGetJobsInfo {sysframe server_name} {
+
+	if {[string compare $sysframe ""] == 0 || \
+	    [string compare $server_name ""] == 0} {
+		return
+	}
+
+	foreach nname [systemNodeNamesGet $sysframe] {
+		set name [split $nname ,]
+		set superhost [lindex $name 0]
+		set fullhost  [lindex $name 1]
+		
+		if {[string compare $fullhost ""] == 0} {
+			set node $superhost
+		} else {
+			set node $fullhost
+		}
+		set chophost  [lindex [split $node .] 0]
+		set nodeMatch($node) $nname
+		set nodeMatch($chophost) $nname
+	}
+
+
+	catch {unset jobs}
+	catch {unset vp_used}
+	set cpus_assn 0
+	catch {pbsconnect $server_name} fd
+	InfoBox_sendmsg "systemGetJobsInfo: pbsconnect($server_name): $fd" end
+	set cframe [systemClusterFrameGet $sysframe $server_name]
+	if { $fd >= 0 } {
+		catch {pbsstatserv} sinfo
+		set attribl [lindex $sinfo 1]
+
+		foreach a $attribl {
+			set res [lindex $a 0]
+			set val [lindex $a 1]
+			if {[string compare $res "resources_max.ncpus"] == 0} {
+			      if {[string compare $cframe ""] != 0} {
+			      	clusterCpusMaxPut $cframe $val
+			      }
+			} elseif {[string compare $res \
+				   "resources_assigned.nodect"] == 0} {
+				clusterVprocsAssnPut $cframe $val
+			}
+		}
+
+		catch {pbsstatjob} jinfo
+		InfoBox_sendmsg "systemGetJobsInfo: pbsstatjob($server_name): " end
+
+		foreach j $jinfo {
+			set jobid [lindex $j 0]
+			set attribl [lindex $j 1]
+
+			set user ""
+			set state ""
+			set hostlist {}
+			set nodeslist {}
+			set ncpus 0
+			foreach a $attribl {
+				set res [lindex $a 0]
+				set val [lindex $a 1]
+
+				if { [string compare $res "Job_Owner"] == 0 } {
+					set user [lindex [split $val @] 0]
+				} elseif {[string compare $res \
+							   "job_state"] == 0} {
+					set state $val
+				} elseif {[string compare $res \
+							   "exec_host"] == 0} {
+					set hostlist [split $val +]
+				} elseif {[string compare $res \
+					  "resources_used.nodes"] == 0} {
+					set nodeslist [split $val +]
+				} elseif {[string compare $res \
+					  "Resource_List.ncpus"] == 0} {
+					set ncpus $val
+				} elseif {[string compare $state ""] != 0 && \
+					      [string compare $state R] != 0} {
+					break
+				}
+
+			}
+			if {[string compare $state R] == 0} {
+				incr cpus_assn $ncpus
+				if {[string compare $nodeslist ""] != 0} {
+					set hlist $nodeslist
+				} else {
+					set hlist $hostlist
+				}
+				catch {unset ujobinfo}
+				foreach h1 $hlist {
+					set h1_list [split $h1 /]
+					set h [lindex $h1_list 0] 
+					set p [lindex $h1_list 1]
+
+					if {[string compare $p ""] != 0} {
+					    if {![info exists ujobinfo($h)]} {
+						set ujobinfo($h) " on vprocs $p"
+						set vp_used($h,$p) 1
+					    } else {
+						append ujobinfo($h) ":$p"
+					    }
+					} else {
+					    set ujobinfo($h) ""
+					}
+				}
+
+				foreach h [array names ujobinfo] {
+
+					if [info exists nodeMatch($h)] {
+					  if {$ncpus != 0} {
+				     	    lappend jobs($nodeMatch($h)@$user) \
+					     "$jobid$ujobinfo($h) (cpus=$ncpus)"
+					   } else {
+				     	    lappend jobs($nodeMatch($h)@$user) \
+							"$jobid$ujobinfo($h)"
+					  }
+					}
+				}
+			}
+		}
+
+		catch {pbsdisconnect}
+		InfoBox_sendmsg "pbsdisconnect($server_name)" end
+	}
+
+	foreach j [array names jobs] {
+		set jinfo [split $j @]
+		set nodename [lindex $jinfo 0]
+		set user [lindex $jinfo 1]
+		set numj [llength $jobs($j)]
+		lappend nodejobs($nodename) "$user [join $jobs($j) ,]"
+		if {![info exists njobs($nodename)]} {
+			set njobs($nodename) $numj
+		} else {
+			incr njobs($nodename) $numj
+		}
+			
+		if {![info exists nusers($nodename)]} {
+			set nusers($nodename) 1
+		} else {
+			incr nusers($nodename)
+		}
+	}
+
+	
+	foreach n [array names nodejobs] {
+		set header "Jobs: "
+		if {$nusers($n) <= 1} {
+			lappend header " $nusers($n) " "USER: "
+		} else {
+			lappend header " $nusers($n) " "USERs: "
+		}
+
+		if {$njobs($n) <= 1} {
+			lappend header " $njobs($n) " "JID: "
+		} else {
+			lappend header " $njobs($n) " "JIDs: "
+		}
+
+		systemNodeInfoAppend $sysframe $n \
+					[list $nodejobs($n) $header NODEJOB]
+
+		set nodetype [systemNodeTypeGet $sysframe $n]
+
+		systemUpdateInUse $sysframe $n [systemNodeInfoGet $sysframe $n]
+	}
+
+	if [info exists cframe] {
+		clusterCpusAssnPut $cframe $cpus_assn
+	}
+
+	if {[info exists vp_used]} {
+		set accum 0
+		foreach pro [array names vp_used] {
+			incr accum $vp_used($pro)
+		}
+		clusterVprocsAssnPut $cframe $accum
+	}
+}
+
+proc systemAdjustNodesDistances {sysframe} {
+        global canvas
+
+        foreach n [systemNodeNamesGet $sysframe] {
+                set nframe [systemNodeFrameGet $sysframe $n FULL]
+
+                set ccanv [clusterCanvasGet [nodeClusterFrameGet $nframe]]
+
+                set offset [nodeOffsetWidthGet $nframe]
+                if { [string compare $offset ""] != 0 && $offset != 0 } {
+                        $ccanv move $nframe $offset 0
+                        nodeXposPut $nframe [expr [nodeXposGet $nframe] + \
+                                                                        $offset]
+                        nodeOffsetWidthPut $nframe 0
+                }
+
+        }
+
+        foreach c [systemClusterNamesGet $sysframe] {
+                set cframe [systemClusterFrameGet $sysframe $c]
+
+                set systemc [systemCanvasGet [clusterSystemFrameGet $cframe]]
+                set offset [clusterOffsetWidthGet $cframe]
+                if { [string compare $offset ""] != 0 && $offset != 0 } {
+                        $systemc move $cframe $offset 0
+                        clusterXposPut $cframe [expr [clusterXposGet $cframe] \
+                                                     + $offset]
+                        clusterOffsetWidthPut $cframe 0
+                }
+        }
+}

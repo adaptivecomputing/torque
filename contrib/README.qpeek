@@ -1,0 +1,15 @@
+#  README.qpeek
+#  contributed by Troy Baer - Ohio Supercomputing Center
+#  updated Mar 31, 2004
+
+qpeek allows a user to view the output files of a job which is still running.  
+Options allow display of the start, end or full file, allowing 'tailing', 
+and allow viewing of error files.
+
+qpeek requires perl.
+
+see http://www.osc.edu/~troy/pbs/qpeek for latest release
+
+For suggestions and bug fixes contact troy@osc.edu
+
+

@@ -1,0 +1,272 @@
+#         Portable Batch System (PBS) Software License
+# 
+#         OpenPBS (Portable Batch System) v2.3 Software License
+# 
+# Copyright (c) 1999-2000 Veridian Systems, Inc. All rights reserved.
+# 
+# ---------------------------------------------------------------------------
+# For a license to use or redistribute the OpenPBS software under conditions
+# other than those described below, or to purchase support for this software,
+# please contact Veridian Systems, PBS Products Department ("Licensor") at:
+# 
+#    www.pbspro.com   +1 650 967-4675                  sales@pbspro.com
+#                        877 905-4PBS (US toll-free)
+# ---------------------------------------------------------------------------
+# 
+# This license covers use of the OpenPBS v2.3 software (the "Software") at
+# your site or location, and, for certain users, redistribution of the
+# Software to other sites and locations.  Use and redistribution of
+# OpenPBS v2.3 in source and binary forms, with or without modification,
+# are permitted provided that all of the following conditions are met.
+# After December 31, 2001, only conditions 3-6 must be met:
+# 
+# 1. Commercial and/or non-commercial use of the Software is permitted
+#    provided a current software registration is on file at www.pbspro.com.
+#    If use of this software contributes to a publication, product, or
+#    service, proper attribution must be given; see www.pbspro.com/credit.html
+# 
+# 2. Redistribution in any form is only permitted for non-commercial,
+#    non-profit purposes.  There can be no charge for the Software or any
+#    software incorporating the Software.  Further, there can be no
+#    expectation of revenue generated as a consequence of redistributing
+#    the Software.
+# 
+# 3. Any Redistribution of source code must retain the above copyright notice
+#    and the acknowledgment contained in paragraph 6, this list of conditions
+#    and the disclaimer contained in paragraph 7.
+# 
+# 4. Any Redistribution in binary form must reproduce the above copyright
+#    notice and the acknowledgment contained in paragraph 6, this list of
+#    conditions and the disclaimer contained in paragraph 7 in the
+#    documentation and/or other materials provided with the distribution.
+# 
+# 5. Redistributions in any form must be accompanied by information on how to
+#    obtain complete source code for the OpenPBS software and any
+#    modifications and/or additions to the OpenPBS software.  The source code
+#    must either be included in the distribution or be available for no more
+#    than the cost of distribution plus a nominal fee, and all modifications
+#    and additions to the Software must be freely redistributable by any party
+#    (including Licensor) without restriction.
+# 
+# 6. All advertising materials mentioning features or use of the Software must
+#    display the following acknowledgment:
+# 
+#     "This product includes software developed by NASA Ames Research Center,
+#     Lawrence Livermore National Laboratory, and Veridian Systems, Inc.
+#     Visit www.pbspro.com for OpenPBS software support,
+#     products, and information."
+# 
+# 7. DISCLAIMER OF WARRANTY
+# 
+# THIS SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND. ANY EXPRESS
+# OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+# OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT
+# ARE EXPRESSLY DISCLAIMED.
+# 
+# IN NO EVENT SHALL VERIDIAN CORPORATION, ITS AFFILIATED COMPANIES, OR THE
+# U.S. GOVERNMENT OR ANY OF ITS AGENCIES BE LIABLE FOR ANY DIRECT OR INDIRECT,
+# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
+# OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+# LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+# NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+# EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# 
+# This license will be governed by the laws of the Commonwealth of Virginia,
+# without reference to its choice of law rules.
+#
+#
+#       Makefile for Custom PBS scheduler
+#
+#
+# This program is confidential and proprietary to Veridian MRJ Technology
+# Solutions, Inc. and may not be reproduced, published or disclosed to
+# others without written authorization from Veridian MRJ.
+#
+# Copyright (c) 2000 Veridian MRJ Technolgoy Solutions. All Rights Reserved.
+# Copyright (c) 1999,2000 MRJ Technology Solutions, Inc. All Rights Reserved.
+#
+# For more information, support services, or software licensing, contact:
+#
+#	Veridian Systems PBS Products Dept.
+#	2672 Bayshore Parkway, Suite 810
+#	Mountain View, CA 94043-1010
+#
+#	Phone: +1 650-967-4675
+#	  FAX: +1 650-967-3080
+#	Email: sales@pbspro.com
+#
+#
+# $Id$
+#
+#     Copyright (c) 1999-2000 Veridian Information Solutions, Inc.
+#     All rights reserved.
+#
+#
+
+###############################################################################
+# Constant configuration file for the psched scheduler.  This file needs to 
+# be copied to the $(PBS_SERVER_HOME)/sched_priv directory before starting 
+# the scheduler. This should be done automatically during the installation
+# process.
+# 
+# Required arguments are marked by three question marks, ???. A default has
+# been provided for those options which provide scheduler optimizations. 
+# If you do not wish to take advantage of an option, comment out the line.
+#
+# Boolean options take "On", "True", "Yes", "1" for true (case insensitive), 
+# and anything else as false.
+#
+###############################################################################
+
+###############################################################################
+# This scheduler uses two execution queue types.  Any changes to the queue 
+# names in qmgr's list should be added here and vice versa.  
+###############################################################################
+#
+# The queues on the following lists are ordered from highest scheduling 
+# priority to lowest.  These are comma separated lists, if more space is 
+# required, the list can be split into multiple lines.  Each line must be
+# prefaced by the appropriate configuration option directive.
+#
+# All queues are associated with a particular execution host.  They may be
+# specified either as 'queuename' or 'queuename@exechost'.  If only the name
+# is given, the canonical name of the local host will be automatically
+# appended to the queue name.
+
+# The "normal" scheduling algorithm picks jobs off the SUBMIT_QUEUE and
+# attempts to run them on the BATCH_QUEUES. Jobs are enqueued onto the
+# SUBMIT_QUEUE via the 'qsub' command (set the default queue name in PBS
+# with the 'set server default_queue' qmgr command), and remain there
+# until they are rejected, run, or deleted.  The host attached to the
+# SUBMIT_QUEUE is ignored - it is assumed to be on the server.
+#
+# Note that this implies that the SUBMIT_QUEUE's resources_max values must
+# be the union of all the BATCH_QUEUES' resources.
+#
+SUBMIT_QUEUE	submit
+
+# BATCH_QUEUES is a list of execution queues onto which the scheduler should
+# move and run the jobs it chooses from the SUBMIT_QUEUES. Hosts can be listed
+# in any order, and multple BATCH_QUEUES lines are permitted if necessary. 
+# (Using multiple lines is in fact recommended, as there is a 512 character
+# limit for each BATCH_QUEUE directive. The full cannonical name of the
+# execution hosts is NOT required.
+# 
+BATCH_QUEUES	hosta@hosta.pbs.com,hostb@hostb.pbs.com,hostc@hostc.pbs.com
+
+# EXPRESS_QUEUE is the name of the "highest priority" queue, jobs from which
+# will run before all else, checkpointing other jobs as necessary
+#
+EXPRESS_QUEUE	express
+
+###############################################################################
+# These options are used to optimize system load average and scheduler 
+# effectiveness. It is a good idea to monitor system load as the user community 
+# grows, shrinks, or changes its focus from porting and debugging to 
+# production. These defaults were selected for a 64 processor system with 16gb 
+# of memory. 
+###############################################################################
+#
+# Target Load Average refers to a target percentage of the maximum system 
+# load average (1 point for each processor on the machine).  It may vary
+# as much as the +/- percentages listed in TARGET_LOAD_VARIANCE.  Jobs may
+# or may not be scheduled if the load is too high or too low, even if the
+# resources indicate that doing so would otherwise cause a problem.
+# The values below attempt to maintain a system load within 75% to 100% of
+# the theoretical maximum (load average of 48.0 to 64.0 for a 64-cpu machine).
+TARGET_LOAD_PCT			90%		
+TARGET_LOAD_VARIANCE		-15%,+10%
+
+###############################################################################
+# These options are used to enforce site-specific policies. It is a good idea 
+# to reevaluate these policies as the user community grows, shrinks, or changes
+# its focus from porting and debugging to production.
+###############################################################################
+#
+# Check for Prime Time Enforcement.  Sites with a mixed user base can use 
+# this option to enforce separate scheduling policies at different times
+# during the day. If ENFORCE_PRIME_TIME is set to "False", the non-prime-time
+# scheduling policy (as described in BATCH_QUEUES) will be used for the entire
+# 24 hour period.
+#
+ENFORCE_PRIME_TIME		False
+
+# Prime-time is defined as a time period each working day (Mon-Fri)
+# from PRIME_TIME_START through PRIME_TIME_END.  Times are in 24
+# hour format (i.e. 9:00AM is 9:00:00, 5:00PM is 17:00:00) with hours, 
+# minutes, and seconds.  Sites can use the prime-time scheduling policy for 
+# the entire 24 hour period by setting PRIME_TIME_START and PRIME_TIME_END 
+# back-to-back.  The portion of a job that fits within primetime must be
+# no longer than PRIME_TIME_WALLT_LIMIT (represented in HH:MM:SS).
+#
+#PRIME_TIME_START		9:00:00
+#PRIME_TIME_END			17:00:00
+#PRIME_TIME_WALLT_LIMIT		1:00:00
+
+# Choose an action to take upon scheduler startup.  The default is to do no
+# special processing (NONE).  In some instances, a job can end up queued in
+# one of the batch queues, since it was running before but was stopped by PBS.
+# If the argument is RESUBMIT, these jobs will be moved back to the queue
+# the job was originally submitted to, and scheduled as if they had just
+# arrived. If the argument is RERUN, the scheduler will have PBS run any
+# jobs found enqueued on the execution queues. This may cause the machine
+# to get somewhat confused, as no limits checking is done (the assumption
+# being that they were checked when they were enqueued).
+#
+SCHED_RESTART_ACTION		RESUBMIT
+
+# Define how long a job should be allowed to wait in the queue before
+# being given "extra" priority to run. The priority given is exceeded
+# only by the priority of the Express queue jobs. Note that this extra
+# priority is ignored for jobs that from over-fairshare queue, as well
+# as if the job owner has exceeded his/her max running job limit.
+# Value is express in hours:minutes:seconds  (default is 5 days)
+#
+MAX_WAIT_TIME			120:00:00
+
+# Define the threshold at which to choose to Suspend a job rather than
+# Checkpoint it. Specified value is the percentage of remaining time for
+# the job
+#
+SUSPEND_THRESHOLD		10
+
+# Define the action to take if both Suspend and Checkpoint fail for a
+# given job. Given that the primary purpose of checkpoint is to free up
+# resources for a very-high-priority job, setting this to "1" (True)
+# tells the schduler to force a qhold/qrerun/qrls of the job. This will
+# FORCE the job back into a queued state. If the user has done no job-level
+# checkpointing, then the job will be restarted from the beginning.
+#
+FORCE_REQUEUE			True
+
+# Specify whether or not to have the scheduler update the job's comment
+# field with a reason as to why the job is not running.
+# Default is true
+#
+UPDATE_COMMENTS			True
+
+# If specified, this directive will tell the scheduler to dump an ordered
+# listing of the jobs to the named file. Useful for users and debugging,
+# but an expensive operation with LOTS of jobs queued, since the file is
+# rewritten for each run of the scheduler.
+#
+SORTED_JOB_DUMPFILE		/PBS/sched_priv/sorted_jobs
+
+# Name of file into which to save 'fair-share' info. File is rewritten
+# hourly to ensure current data is saved across scheduler runs. Data in
+# file is recalcuated daily in order to maintain historical share usage
+# 
+SHARE_INFO_FILE			/PBS/sched_priv/share_usage
+
+# Fair Access Directive specify "shares" (or percentages) of the system
+# on a per-queue basis, as well as a (soft limit) for the maximum number
+# of running jobs per-user (percent of total cpus). (See the Custom
+# Scheduler Admin Guide for details.) Format is:
+#
+#		FAIR_SHARE QUEUE:name_of_queue:shares:max_run_limit
+#
+FAIR_SHARE QUEUE:low:10:10
+FAIR_SHARE QUEUE:med:15:10
+FAIR_SHARE QUEUE:hi:40:10
+FAIR_SHARE QUEUE:special:35:10

@@ -1,0 +1,374 @@
+#         OpenPBS (Portable Batch System) v2.3 Software License
+# 
+# Copyright (c) 1999-2000 Veridian Information Solutions, Inc.
+# All rights reserved.
+# 
+# ---------------------------------------------------------------------------
+# For a license to use or redistribute the OpenPBS software under conditions
+# other than those described below, or to purchase support for this software,
+# please contact Veridian Systems, PBS Products Department ("Licensor") at:
+# 
+#    www.OpenPBS.org  +1 650 967-4675                  sales@OpenPBS.org
+#                        877 902-4PBS (US toll-free)
+# ---------------------------------------------------------------------------
+# 
+# This license covers use of the OpenPBS v2.3 software (the "Software") at
+# your site or location, and, for certain users, redistribution of the
+# Software to other sites and locations.  Use and redistribution of
+# OpenPBS v2.3 in source and binary forms, with or without modification,
+# are permitted provided that all of the following conditions are met.
+# After December 31, 2001, only conditions 3-6 must be met:
+# 
+# 1. Commercial and/or non-commercial use of the Software is permitted
+#    provided a current software registration is on file at www.OpenPBS.org.
+#    If use of this software contributes to a publication, product, or
+#    service, proper attribution must be given; see www.OpenPBS.org/credit.html
+# 
+# 2. Redistribution in any form is only permitted for non-commercial,
+#    non-profit purposes.  There can be no charge for the Software or any
+#    software incorporating the Software.  Further, there can be no
+#    expectation of revenue generated as a consequence of redistributing
+#    the Software.
+# 
+# 3. Any Redistribution of source code must retain the above copyright notice
+#    and the acknowledgment contained in paragraph 6, this list of conditions
+#    and the disclaimer contained in paragraph 7.
+# 
+# 4. Any Redistribution in binary form must reproduce the above copyright
+#    notice and the acknowledgment contained in paragraph 6, this list of
+#    conditions and the disclaimer contained in paragraph 7 in the
+#    documentation and/or other materials provided with the distribution.
+# 
+# 5. Redistributions in any form must be accompanied by information on how to
+#    obtain complete source code for the OpenPBS software and any
+#    modifications and/or additions to the OpenPBS software.  The source code
+#    must either be included in the distribution or be available for no more
+#    than the cost of distribution plus a nominal fee, and all modifications
+#    and additions to the Software must be freely redistributable by any party
+#    (including Licensor) without restriction.
+# 
+# 6. All advertising materials mentioning features or use of the Software must
+#    display the following acknowledgment:
+# 
+#     "This product includes software developed by NASA Ames Research Center,
+#     Lawrence Livermore National Laboratory, and Veridian Information
+#     Solutions, Inc.
+#     Visit www.OpenPBS.org for OpenPBS software support,
+#     products, and information."
+# 
+# 7. DISCLAIMER OF WARRANTY
+# 
+# THIS SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND. ANY EXPRESS
+# OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+# OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT
+# ARE EXPRESSLY DISCLAIMED.
+# 
+# IN NO EVENT SHALL VERIDIAN CORPORATION, ITS AFFILIATED COMPANIES, OR THE
+# U.S. GOVERNMENT OR ANY OF ITS AGENCIES BE LIABLE FOR ANY DIRECT OR INDIRECT,
+# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
+# OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+# LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+# NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+# EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# 
+# This license will be governed by the laws of the Commonwealth of Virginia,
+# without reference to its choice of law rules.
+################################################################################
+# This file contains all procedures related to listboxes.
+# In PBS's GUI:
+#	a listbox can have 
+#		one or more entries, 
+#	and each entry is made up of a
+#		number of field values separated by one or more white spaces. 
+#       A field is referred to as 
+#		the index # representing the corresponding field value.
+# The terms "entry", "field", "fieldval" will be used to represent listbox
+# elements.
+#
+################################################################################
+# buildFullListbox: a procedure that automates the creation of a complete
+# listbox using the "listbox" widet command.
+# INPUT: frame_name          - the name of the frame widget where to place the
+#				complete listbox.
+#        ColxRow             - # of columns (characters) and # of rows
+#				lines on the the listbox. Must have the
+#				format, <number>x<number>  
+#	  header_str          - the header string of the listbox.
+# 	  scrollbarType       - specifies the orientation of the listbox's
+#			        scrollbar. Can only have the values:
+#				xscroll, yscroll, xyscroll, noscroll.
+# IF header_str is the empty "" string, then the listbox will have no header
+# meaning, even the select all/deselect all button will not be placed.
+# 	
+# OPTIONS:
+#	all_button		- if you want the "Select All/Deselect All" to
+#				  be included. 
+#	header_at_left		- if you want the header string to be at the
+#				  left side of the listbox.
+proc buildFullListbox {frame_name ColxRow header_str scrollbarType \
+		{all_button 1} {header_at_left 0} } {
+
+  global BADPARAM errmsg FIXLABELFONT TEXTFONT LABELFONT tk_version
+  set procname "buildFull_FullListbox"
+
+  set scrollbars ""
+
+## Let's be defensive about the input
+  if { ![regexp "\\." $frame_name] || \
+        ![regexp "(\[0-9]+)x(\[0-9]+)" $ColxRow match Col Row] || \
+        ([string compare $scrollbarType  "xscroll"] != 0 &&  \
+         [string compare $scrollbarType  "yscroll"] != 0 &&  \
+         [string compare $scrollbarType  "xyscroll"] != 0 && \
+	 [string compare $scrollbarType  "noscroll"] != 0) } {
+        puts "Error $BADPARAM in $procname: $errmsg(BADPARAM) frame_name: $frame_name ColRow: $ColxRow scrollbarType: $scrollbarType"
+	exit $BADPARAM
+  }
+  if { [string compare $frame_name "." ] == 0 } {
+	set frame_name ""
+  }
+
+  if { [string compare $header_str ""] != 0 } {
+    frame $frame_name.header -borderwidth 1
+
+    pack  $frame_name.header -side top -expand 1
+
+    label $frame_name.header.label   -font $FIXLABELFONT -text $header_str \
+                                     -anchor nw -width [expr $Col - 4] \
+				     -padx 1 -pady 1
+    if {$all_button} {
+      set selMode "Select All"
+      button $frame_name.header.select -font $FIXLABELFONT -padx 2m  \
+		-anchor c -width 12 -text "Select All" -pady 1
+
+      pack $frame_name.header.label -side left -anchor nw -expand 1
+      pack $frame_name.header.select -side left -anchor se 
+    } else {
+        pack $frame_name.header.label -side left -anchor nw -expand 1
+
+    }
+    if {$header_at_left && [string compare $header_str ""] != 0} {
+      $frame_name.header.label configure -font $LABELFONT \
+                               -width [string length $header_str]
+      pack forget $frame_name.header $frame_name.header.label
+      pack $frame_name.header $frame_name.header.label -expand 0 -side left \
+	   -anchor nw
+    }
+  }
+
+
+
+  listbox $frame_name.box 	-borderwidth 1 \
+			        -setgrid 1 \
+                                -font $TEXTFONT  \
+				-exportselection false \
+                                -relief sunken
+
+  if { $tk_version < 4.0 } {
+    $frame_name.box configure -geometry $ColxRow
+  } else {
+    $frame_name.box configure -width $Col -height $Row -selectmode extended
+  }
+
+  pack $frame_name.box      -anchor se -side left -expand 1 -fill x
+
+
+
+  if { [string compare $scrollbarType "yscroll"] == 0 || \
+       [string compare $scrollbarType "xyscroll"] == 0 } {	
+       scrollbar $frame_name.vscroll -command "$frame_name.box yview" \
+                                     -borderwidth 2 \
+                                     -orient vertical \
+                                     -relief groove
+       $frame_name.box configure -yscrollcommand "$frame_name.vscroll set"  	
+       pack $frame_name.vscroll  -anchor w -fill y -expand 1 -side right \
+				 -before $frame_name.box
+
+       append scrollbars " $frame_name.vscroll"
+  }
+
+  if { [string compare $scrollbarType "xscroll"] == 0 || \
+       [string compare $scrollbarType "xyscroll"] == 0 } {	
+       scrollbar $frame_name.hscroll -command "$frame_name.box xview" \
+                                     -borderwidth 2 \
+                                     -orient horizontal \
+                                     -relief groove
+
+       $frame_name.box configure -xscrollcommand "$frame_name.hscroll set"
+       pack $frame_name.hscroll  -fill x -expand 1 -side bottom \
+				 -before $frame_name.box -anchor nw
+       append scrollbars " $frame_name.hscroll"
+  }
+
+  return [concat $frame_name $frame_name.header.label \
+		 $frame_name.header.select $frame_name.box $scrollbars]
+}
+
+# get_keyvals: Procedure that returns a formatted string containing field
+# values (indexes specified in 'key_list') of a listbox, 'lbox'. The format of
+# string puts 'inner_sep' within key values of an entry, and 'outer_sep' 
+# between entries of the listbox. The entries of the listbox that will be
+# checked can be either "all" or "select".
+#
+# Ex. suppose you have a listbox, lbox1, whose key is a pair: 
+#     {column_0 column_6}.  The idea is to return the string:
+#
+#	"entry0_key0val@entry0_key6val|entry1_key0val@entry1_key6val}|.."
+#     Do this by calling the procedure as follows:
+#	   get_keyvals lbox1 {0 6} "@" "|" "all"
+#
+# CAUTION: This procedure returns a list of elements ACCORDING to its 
+# increasing entry position in the list box.
+# So returning "elem1 elem2 elem3" means 'elem1' appears in the listbox before
+# 'elem2', and 'elem2' appears before 'elem3', and so on. 
+proc get_keyvals {lbox key_list inner_sep outer_sep {type "all"}} {
+
+# Get the indices to the entries
+  if { [string compare $type "select"] == 0 } {
+    set indices [$lbox curselection]
+  } else {
+    set num_els [$lbox size]
+
+    set indices ""
+    for {set i 0} {$i < $num_els} {incr i} {
+      append indices " $i"
+    }
+  }
+ 
+  if {[string compare $indices ""] == 0} {
+     return ""	;# No need to proceed if there are no entries
+		;# in lbox1 selected.
+  }
+  set elems ""
+  foreach entry [lsort -integer -increasing $indices] {
+      set key_elems ""
+      set lbox_entry [$lbox get $entry]
+      foreach field [lrange $key_list 0 end] {
+        append key_elems "[lindex $lbox_entry $field]$inner_sep"
+      }
+
+      if { [string compare $key_elems $outer_sep] == 0 } {
+	InfoBox_sendmsg "Found \"$lbox_entry\" entry to have incomplete information"
+        append elems "$key_elems$outer_sep"
+      } else { 
+        append elems "[string trim $key_elems $inner_sep]$outer_sep"
+      }
+  }
+  return "[string trim $elems $outer_sep]"
+}
+
+# strget_keyvals: similar to get_keyvals except instead of a listbox, the 
+# source is a string.
+proc strget_keyvals {str key_list sep} {
+
+  if {[string compare $str ""] == 0} {
+     return ""	;# No need to proceed if there are no entries
+		;# in lbox1 selected.
+  }
+
+  set key_elems ""
+  foreach field [lrange $key_list 0 end] {
+    if {[string compare $key_elems ""] != 0} {
+      append key_elems "$sep[lindex $str $field]"
+    } else {
+      set key_elems [lindex $str $field]
+    }
+  }
+
+  return $key_elems
+}
+
+proc disable_listbox { box headerLabel selButton scrollbar {readonly 1}} {
+  global disabledColor selColor
+
+  if { [string compare $headerLabel ""] != 0 } {
+    disable_label $headerLabel $disabledColor
+  }
+  if { [string compare $selButton ""] != 0 } {
+    disable_button $selButton
+  }
+  if { [string compare $scrollbar ""] != 0 } {
+    disable_scrollbar $scrollbar $disabledColor
+  }
+
+  if {$readonly} {
+  	bind_listbox_readonly $box 
+  }
+
+  set fgColor 	 [lindex [$box configure -foreground] 4]
+  set selBgColor [lindex [$box configure -selectbackground] 4]
+  set selFgColor [lindex [$box configure -selectforeground] 4]
+
+  if { [string compare $disabledColor $fgColor] == 0 && \
+       [string compare $disabledColor $selFgColor] == 0 && \
+       [string compare $disabledColor $selBgColor] == 0} {
+	return
+  }
+
+  set selColor(fg$box) $fgColor
+  set selColor(selFg$box) $selFgColor
+  set selColor(selBg$box) $selBgColor
+
+  $box configure -foreground $disabledColor -selectforeground $disabledColor \
+		 -selectbackground $disabledColor
+}
+
+proc enable_listbox { box headerLabel selButton scrollbar enaBox_proc } {
+  global selColor
+
+  if { 	![info exists selColor(fg$box)] && \
+	![info exists selColor(selFg$box)] && \
+	![info exists selColor(selBg$box)]} {
+		return
+  }
+
+
+  if { [string compare $headerLabel ""] != 0 } {
+    enable_label $headerLabel
+  }
+
+  if { [string compare $selButton ""] != 0 } {
+    enable_button $selButton
+  }
+  if { [string compare $scrollbar ""] != 0 } {
+    enable_scrollbar $scrollbar
+  }
+
+  if {[string compare $enaBox_proc ""] != 0} {
+  	eval $enaBox_proc $box
+  }
+
+  $box configure -foreground $selColor(fg$box) \
+		 -selectforeground $selColor(selFg$box) \
+		 -selectbackground $selColor(selBg$box)
+}
+
+proc lboxvalue_isUnique {listbox value} {
+
+        for {set k 0} {$k < [$listbox size]} {incr k} {
+
+                set lboxval [$listbox get $k]
+                if {[string compare $lboxval $value] == 0} {
+                        return 0
+                }
+        }
+        return 1
+}
+
+# lcomp: compares 2 listboxes: returns 0 if the same; 1 otherwise
+proc lcomp {lbox1 lbox2} {
+        set llen1 [llength $lbox1]
+        set llen2 [llength $lbox2]
+        if {$llen1 != $llen2} {
+                return 1
+        }
+        for {set i 0} {$i < $llen1} {incr i} {
+                set elem1 [lindex $lbox1 $i]
+                set elem2 [lindex $lbox2 $i]
+
+                if {[string compare $elem1 $elem2] != 0} {
+                        return 1
+                }
+        }
+        return 0
+}

@@ -1,0 +1,1941 @@
+//
+//         OpenPBS (Portable Batch System) v2.3 Software License
+// 
+// Copyright (c) 1999-2000 Veridian Information Solutions, Inc.
+// All rights reserved.
+// 
+// ---------------------------------------------------------------------------
+// For a license to use or redistribute the OpenPBS software under conditions
+// other than those described below, or to purchase support for this software,
+// please contact Veridian Systems, PBS Products Department ("Licensor") at:
+// 
+//    www.OpenPBS.org  +1 650 967-4675                  sales@OpenPBS.org
+//                        877 902-4PBS (US toll-free)
+// ---------------------------------------------------------------------------
+// 
+// This license covers use of the OpenPBS v2.3 software (the "Software") at
+// your site or location, and, for certain users, redistribution of the
+// Software to other sites and locations.  Use and redistribution of
+// OpenPBS v2.3 in source and binary forms, with or without modification,
+// are permitted provided that all of the following conditions are met.
+// After December 31, 2001, only conditions 3-6 must be met:
+// 
+// 1. Commercial and/or non-commercial use of the Software is permitted
+//    provided a current software registration is on file at www.OpenPBS.org.
+//    If use of this software contributes to a publication, product, or
+//    service, proper attribution must be given; see www.OpenPBS.org/credit.html
+// 
+// 2. Redistribution in any form is only permitted for non-commercial,
+//    non-profit purposes.  There can be no charge for the Software or any
+//    software incorporating the Software.  Further, there can be no
+//    expectation of revenue generated as a consequence of redistributing
+//    the Software.
+// 
+// 3. Any Redistribution of source code must retain the above copyright notice
+//    and the acknowledgment contained in paragraph 6, this list of conditions
+//    and the disclaimer contained in paragraph 7.
+// 
+// 4. Any Redistribution in binary form must reproduce the above copyright
+//    notice and the acknowledgment contained in paragraph 6, this list of
+//    conditions and the disclaimer contained in paragraph 7 in the
+//    documentation and/or other materials provided with the distribution.
+// 
+// 5. Redistributions in any form must be accompanied by information on how to
+//    obtain complete source code for the OpenPBS software and any
+//    modifications and/or additions to the OpenPBS software.  The source code
+//    must either be included in the distribution or be available for no more
+//    than the cost of distribution plus a nominal fee, and all modifications
+//    and additions to the Software must be freely redistributable by any party
+//    (including Licensor) without restriction.
+// 
+// 6. All advertising materials mentioning features or use of the Software must
+//    display the following acknowledgment:
+// 
+//     "This product includes software developed by NASA Ames Research Center,
+//     Lawrence Livermore National Laboratory, and Veridian Information
+//     Solutions, Inc.
+//     Visit www.OpenPBS.org for OpenPBS software support,
+//     products, and information."
+// 
+// 7. DISCLAIMER OF WARRANTY
+// 
+// THIS SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND. ANY EXPRESS
+// OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+// OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT
+// ARE EXPRESSLY DISCLAIMED.
+// 
+// IN NO EVENT SHALL VERIDIAN CORPORATION, ITS AFFILIATED COMPANIES, OR THE
+// U.S. GOVERNMENT OR ANY OF ITS AGENCIES BE LIABLE FOR ANY DIRECT OR INDIRECT,
+// INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
+// OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+// EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// 
+// This license will be governed by the laws of the Commonwealth of Virginia,
+// without reference to its choice of law rules.
+// 
+//
+//
+// af.basl: This scheduler does nothing useful to jobs except perform a 
+// 	    regression test on BASL features. It will actually run one job on
+// 	    every iteration. This code provides useful examples on how to call
+//          the BASL assist/predefined functions.
+//
+// Environment: 2 Servers / 2 CNodes
+//
+
+// **************************************************************************
+//
+// User-defined Functions
+//
+// **************************************************************************
+
+Int JobWallTimeReqGet( Job job ) {
+	Int wallt;
+
+	wallt = JobIntResReqGet(job, "walltime");
+	return(wallt);
+}
+
+Int JobWallTimeUsedGet( Job job ) {
+	Int wallt;
+
+	wallt = JobIntResUseGet(job, "walltime");
+	return(wallt);
+}
+
+Int JobCpuTimeReqGet( Job job ) {
+	Int cput;
+
+	cput = JobIntResReqGet(job, "cput");
+	return(cput);
+}
+
+Int JobCpuTimeUsedGet( Job job ) {
+	Int cput;
+
+	cput = JobIntResUseGet(job, "cput");
+	return(cput);
+}
+
+Size JobVirtualMemAvailGet(Job job)
+{
+	Size sz;
+	sz = JobSizeResReqGet(job, "mem");
+	return(sz);
+}
+
+Void printInt(String name, String fname, String resname, Int i)
+{
+	String str;
+
+	str = fname   + "[" + name + "]" + "." +
+              resname + "=";
+	print(str);
+	print(i);
+}
+Void printStr(String name, String fname, String resname, String string)
+{
+	String str;
+
+	str = fname   + "[" + name + "]" + "." +
+              resname + "=";
+	print(str);
+	print(string);
+}
+Void printSize(String name, String fname, String resname, Size sz)
+{
+	String str;
+
+	str = fname   + "[" + name + "]" + "." +
+              resname + "=";
+	print(str);
+	print(sz);
+
+}
+Void printDateTime(String name, String fname, String resname, DateTime dt)
+{
+	String str;
+
+	str = fname   + "[" + name + "]" + "." +
+              resname + "=";
+	print(str);
+	print(dt);
+
+}
+Void printFloat(String name, String fname, String resname, Float f)
+{
+	String str;
+
+	str = fname   + "[" + name + "]" + "." +
+              resname + "=";
+	print(str);
+	print(f);
+}
+
+Que findQueByName( Set Que sq, String qname )
+{
+	Que q;
+
+	foreach(q in sq) {
+		if( QueNameGet(q) EQ qname ) {
+			return(q);
+		}
+	}
+	return(NOQUE);
+}
+
+// **************************************************************************
+//
+// Global variable declarations
+//
+// **************************************************************************
+
+String server_name1;
+String server_name2;
+String mom_name1;
+String mom_name2;
+
+// **************************************************************************
+//
+// Assignment statements to global variables
+//
+// **************************************************************************
+
+server_name1 = "db";
+server_name2 = "ruby";
+mom_name1 = "db";
+mom_name2 = "ruby";
+
+// **************************************************************************
+//
+// main scheduling code
+//
+// **************************************************************************
+sched_main()
+{
+	Int	i;
+	Int	k;
+	CNode   cn;
+	CNode   cnhead;
+	Server  s;
+	Server  shead;
+	Job	j;
+	Set CNode  allcns;
+	Set Server alls;
+	Set Job	   alljs;
+
+	String	headstr;
+	String	str;
+	Que	q;
+	Set Que	allqs; 
+	Int	ires;
+	Size	sres;
+	String	stres;
+	String  sname;
+	String  qname;
+	String  jname;	
+	String  cname;
+	String  name;
+	String  hstr;
+	Float	f;
+	DateTime dt;
+	Int	 dtsecs;
+	Que	 que;
+	Que	 newq;
+	Job	 job;
+	Int	 res;
+	DateTime d;
+	Size	 sz;
+	Set Que  sq;
+
+	dt = datetimeGet();
+	printDateTime(NULLSTR, "datetimeGet", NULLSTR, dt);
+	dtsecs = datetimeToSecs(dt);
+	printInt(NULLSTR, "datetimeToSecs", NULLSTR, dtsecs);
+	
+	alls = AllServersGet();
+	shead = AllServersHeadGet();
+
+	k = 1;
+	foreach(s in alls) {
+		if( k EQ 1 ) {
+			if( ServerInetAddrGet(s) EQ ServerInetAddrGet(shead) ) {
+				printStr(NULLSTR, "AllServersHeadGet", NULLSTR,
+                                                               "passed");
+			} else {
+				printStr(NULLSTR, "AllServersHeadGet", NULLSTR,
+                                                               "failed");
+			}
+		}
+		str = ServerInetAddrGet(s) ;
+		sname = str;
+		printStr(sname, "ServerInetAddrGet", NULLSTR, str);
+	
+		str = ServerDefQueGet(s) ;
+		printStr(sname, "ServerDefQueGet", NULLSTR, str);
+	
+		i = ServerStateGet(s) ;
+		switch(i) {
+	  	case SERVER_ACTIVE:
+			{
+				printStr(sname, "ServerStateGet",
+                                                     NULLSTR, "Active");
+			}
+	  	case SERVER_IDLE:
+			{
+				printStr(sname, "ServerStateGet",
+                                                     NULLSTR, "Idle");
+			}
+	  	case SERVER_SCHED:
+			{
+				printStr(sname, "ServerStateGet",
+                                                 NULLSTR, "Scheduling");
+			}
+	  	case SERVER_TERM:
+			{
+				printStr(sname, "ServerStateGet",
+                                                NULLSTR, "Terminating");
+			}
+	  	case SERVER_TERMDELAY:
+			{
+				printStr(sname, "ServerStateGet",
+                                       NULLSTR, "Delayed Termination");
+			}
+	 	default:
+			{
+				printStr(sname, "ServerStateGet",
+                                       NULLSTR, "Unknown Server state");
+			}
+		}
+	
+		i = ServerMaxRunJobsGet(s) ;
+		printInt(sname, "ServerMaxRunJobsGet", NULLSTR, i);
+							
+		i = ServerMaxRunJobsPerUserGet(s);
+		printInt(sname, "ServerMaxRunJobsPerUserGet",NULLSTR,i);
+	
+		i = ServerMaxRunJobsPerGroupGet(s);
+		printInt(sname, "ServerMaxRunJobsPerGroupGet",NULLSTR,i);
+
+		// the Avails
+		ires = ServerIntResAvailGet(s, "cput");
+		printInt(sname, "ServerIntResAvailGet", "cput", ires);
+
+		ires = ServerIntResAvailGet(s, "pcput");
+		printInt(sname, "ServerIntResAvailGet", "pcput", ires);
+
+		ires = ServerIntResAvailGet(s, "walltime");
+		printInt(sname, "ServerIntResAvailGet", "walltime", ires);
+
+		ires = ServerIntResAvailGet(s, "mppt");
+		printInt(sname, "ServerIntResAvailGet", "mppt", ires);
+
+		ires = ServerIntResAvailGet(s, "pmppt");
+		printInt(sname, "ServerIntResAvailGet", "pmppt", ires);
+
+		ires = ServerIntResAvailGet(s, "nice");
+		printInt(sname, "ServerIntResAvailGet", "nice", ires);
+
+		ires = ServerIntResAvailGet(s, "procs");
+		printInt(sname, "ServerIntResAvailGet", "procs", ires);
+
+		ires = ServerIntResAvailGet(s, "mppe");
+		printInt(sname, "ServerIntResAvailGet", "mppe", ires);
+
+		ires = ServerIntResAvailGet(s, "ncpus");
+		printInt(sname, "ServerIntResAvailGet", "ncpus", ires);
+
+		ires = ServerIntResAvailGet(s, "pncpus");
+		printInt(sname, "ServerIntResAvailGet", "pncpus", ires);
+
+		ires = ServerIntResAvailGet(s, "nodect");
+		printInt(sname, "ServerIntResAvailGet", "nodect", ires);
+
+		ires = ServerIntResAvailGet(s, "srfs_assist");
+		printInt(sname, "ServerIntResAvailGet", "srfs_assist",
+								ires);
+
+		ires = ServerIntResAvailGet(s, "mta");
+		printInt(sname, "ServerIntResAvailGet", "mta", ires);
+
+		ires = ServerIntResAvailGet(s, "mtb");
+		printInt(sname, "ServerIntResAvailGet", "mtb", ires);
+
+		ires = ServerIntResAvailGet(s, "mtc");
+		printInt(sname, "ServerIntResAvailGet", "mtc", ires);
+
+		ires = ServerIntResAvailGet(s, "mtd");
+		printInt(sname, "ServerIntResAvailGet", "mtd", ires);
+
+		ires = ServerIntResAvailGet(s, "mte");
+		printInt(sname, "ServerIntResAvailGet", "mte", ires);
+
+		ires = ServerIntResAvailGet(s, "mtf");
+		printInt(sname, "ServerIntResAvailGet", "mtf", ires);
+
+		ires = ServerIntResAvailGet(s, "mtg");
+		printInt(sname, "ServerIntResAvailGet", "mtg", ires);
+
+		ires = ServerIntResAvailGet(s, "mth");
+		printInt(sname, "ServerIntResAvailGet", "mth", ires);
+
+
+
+		sres = ServerSizeResAvailGet(s, "file");
+		printSize(sname, "ServerSizeResAvailGet", "file", sres);
+
+		sres = ServerSizeResAvailGet(s, "mem");
+		printSize(sname, "ServerSizeResAvailGet", "mem", sres);
+
+		sres = ServerSizeResAvailGet(s, "pmem");
+		printSize(sname, "ServerSizeResAvailGet", "pmem", sres);
+
+		sres = ServerSizeResAvailGet(s, "workingset");
+		printSize(sname, "ServerSizeResAvailGet", "workingset",
+                                                                 sres);
+
+		sres = ServerSizeResAvailGet(s, "pf");
+		printSize(sname, "ServerSizeResAvailGet", "pf", sres);
+
+		sres = ServerSizeResAvailGet(s, "ppf");
+		printSize(sname, "ServerSizeResAvailGet", "ppf", sres);
+
+		sres = ServerSizeResAvailGet(s, "srfs_tmp");
+		printSize(sname, "ServerSizeResAvailGet", "srfs_tmp",
+                                                                sres);
+
+		sres = ServerSizeResAvailGet(s, "srfs_wrk");
+		printSize(sname, "ServerSizeResAvailGet", "srfs_wrk",
+                                                                sres);
+
+		sres = ServerSizeResAvailGet(s, "srfs_big");
+		printSize(sname, "ServerSizeResAvailGet", "srfs_big",
+                                                                sres);
+
+		sres = ServerSizeResAvailGet(s, "srfs_fast");
+		printSize(sname, "ServerSizeResAvailGet", "srfs_fast",
+                                                                sres);
+
+		sres = ServerSizeResAvailGet(s, "sds");
+		printSize(sname, "ServerSizeResAvailGet", "sds",
+                                                                sres);
+
+		sres = ServerSizeResAvailGet(s, "psds");
+		printSize(sname, "ServerSizeResAvailGet", "psds",
+                                                                sres);
+
+		stres = ServerStringResAvailGet(s, "nodes");
+		printStr(sname, "ServerStringResAvailGet", "nodes",
+                                                                stres);
+
+		stres = ServerStringResAvailGet(s, "arch");
+		printStr(sname, "ServerStringResAvailGet", "arch",
+                                                                stres);
+
+		stres = ServerStringResAvailGet(s, "neednodes");
+		printStr(sname, "ServerStringResAvailGet", "neednodes",
+                                                                stres);
+
+		// the ASSIGNS	
+		ires = ServerIntResAssignGet(s, "cput");
+		printInt(sname, "ServerIntResAssignGet", "cput", ires);
+
+		ires = ServerIntResAssignGet(s, "pcput");
+		printInt(sname, "ServerIntResAssignGet", "pcput", ires);
+
+		ires = ServerIntResAssignGet(s, "walltime");
+		printInt(sname, "ServerIntResAssignGet", "walltime",
+								ires);
+
+		ires = ServerIntResAssignGet(s, "mppt");
+		printInt(sname, "ServerIntResAssignGet", "mppt", ires);
+
+		ires = ServerIntResAssignGet(s, "pmppt");
+		printInt(sname, "ServerIntResAssignGet", "pmppt", ires);
+
+		ires = ServerIntResAssignGet(s, "nice");
+		printInt(sname, "ServerIntResAssignGet", "nice", ires);
+
+		ires = ServerIntResAssignGet(s, "procs");
+		printInt(sname, "ServerIntResAssignGet", "procs", ires);
+
+		ires = ServerIntResAssignGet(s, "mppe");
+		printInt(sname, "ServerIntResAssignGet", "mppe", ires);
+
+		ires = ServerIntResAssignGet(s, "ncpus");
+		printInt(sname, "ServerIntResAssignGet", "ncpus",
+								ires);
+
+		ires = ServerIntResAssignGet(s, "pncpus");
+		printInt(sname, "ServerIntResAssignGet", "pncpus",
+								ires);
+
+		ires = ServerIntResAssignGet(s, "nodect");
+		printInt(sname, "ServerIntResAssignGet", "nodect",
+								ires);
+
+		ires = ServerIntResAssignGet(s, "srfs_assist");
+		printInt(sname, "ServerIntResAssignGet", "srfs_assist",
+								ires);
+
+		ires = ServerIntResAssignGet(s, "mta");
+		printInt(sname, "ServerIntResAssignGet", "mta", ires);
+
+		ires = ServerIntResAssignGet(s, "mtb");
+		printInt(sname, "ServerIntResAssignGet", "mtb", ires);
+
+		ires = ServerIntResAssignGet(s, "mtc");
+		printInt(sname, "ServerIntResAssignGet", "mtc", ires);
+
+		ires = ServerIntResAssignGet(s, "mtd");
+		printInt(sname, "ServerIntResAssignGet", "mtd", ires);
+
+		ires = ServerIntResAssignGet(s, "mte");
+		printInt(sname, "ServerIntResAssignGet", "mte", ires);
+
+		ires = ServerIntResAssignGet(s, "mtf");
+		printInt(sname, "ServerIntResAssignGet", "mtf", ires);
+
+		ires = ServerIntResAssignGet(s, "mtg");
+		printInt(sname, "ServerIntResAssignGet", "mtg", ires);
+
+		ires = ServerIntResAssignGet(s, "mth");
+		printInt(sname, "ServerIntResAssignGet", "mth", ires);
+
+
+		sres = ServerSizeResAssignGet(s, "file");
+		printSize(sname,"ServerSizeResAssignGet", "file", sres);
+
+		sres = ServerSizeResAssignGet(s, "mem");
+		printSize(sname, "ServerSizeResAssignGet", "mem", sres);
+
+		sres = ServerSizeResAssignGet(s, "pmem");
+		printSize(sname,"ServerSizeResAssignGet", "pmem", sres);
+
+		sres = ServerSizeResAssignGet(s, "workingset");
+		printSize(sname, "ServerSizeResAssignGet", "workingset",
+                                                                 sres);
+
+		sres = ServerSizeResAssignGet(s, "pf");
+		printSize(sname, "ServerSizeResAssignGet", "pf", sres);
+
+		sres = ServerSizeResAssignGet(s, "ppf");
+		printSize(sname, "ServerSizeResAssignGet", "ppf", sres);
+
+		sres = ServerSizeResAssignGet(s, "srfs_tmp");
+		printSize(sname, "ServerSizeResAssignGet", "srfs_tmp",
+                                                                sres);
+
+		sres = ServerSizeResAssignGet(s, "srfs_wrk");
+		printSize(sname, "ServerSizeResAssignGet", "srfs_wrk",
+                                                                sres);
+
+		sres = ServerSizeResAssignGet(s, "srfs_big");
+		printSize(sname, "ServerSizeResAssignGet", "srfs_big",
+                                                                sres);
+
+		sres = ServerSizeResAssignGet(s, "srfs_fast");
+		printSize(sname, "ServerSizeResAssignGet", "srfs_fast",
+                                                                sres);
+
+		sres = ServerSizeResAssignGet(s, "sds");
+		printSize(sname, "ServerSizeResAssignGet", "sds",
+                                                                sres);
+
+		sres = ServerSizeResAssignGet(s, "psds");
+		printSize(sname, "ServerSizeResAssignGet", "psds",
+                                                                sres);
+
+		stres = ServerStringResAssignGet(s, "nodes");
+		printStr(sname, "ServerStringResAssignGet", "nodes",
+                                                                stres);
+
+		stres = ServerStringResAssignGet(s, "arch");
+		printStr(sname, "ServerStringResAssignGet", "arch",
+                                                                stres);
+
+		stres = ServerStringResAssignGet(s, "neednodes");
+		printStr(sname, "ServerStringResAssignGet", "neednodes",
+                                                                stres);
+
+
+		allqs = ServerQueuesGet(s);
+
+		foreach(q in allqs) {
+			str = QueNameGet( q ) ;
+			qname = sname + "-" + str;
+			printStr(qname, "QueNameGet", NULLSTR, str);
+	
+			i = QueTypeGet( q ) ;
+			if( i EQ QTYPE_E ) {
+				printStr(qname, "QueTypeGet", NULLSTR, "Execution");
+			} else {
+				if( i EQ QTYPE_R ) {
+					printStr(qname, "QueTypeGet", NULLSTR, "Routing");
+				}	
+			}
+
+	
+			i = QueNumJobsGet( q ) ;
+			printInt(qname, "QueNumJobsGet", NULLSTR, i);
+	
+			i = QueMaxRunJobsGet( q ) ;
+			printInt(qname, "QueMaxRunJobsGet", NULLSTR, i);
+							
+			i = QueMaxRunJobsPerUserGet( q ) ;
+			printInt(qname, "QueMaxRunJobsPerUserGet", NULLSTR, i);
+	
+			i = QueMaxRunJobsPerGroupGet( q ) ;
+			printInt(qname, "QueMaxRunJobsPerGroupGet", NULLSTR, i);
+	
+	
+			i = QuePriorityGet( q ) ;
+			printInt(qname, "QuePriorityGet", NULLSTR, i);
+	
+			i = QueStateGet( q ) ;
+			if( i EQ SCHED_DISABLED ) {
+				printStr(qname, "QueStateGet", NULLSTR, "Disabled for scheduling");
+			} else {
+				if( i EQ SCHED_ENABLED ) {
+					printStr(qname, "QueStateGet", NULLSTR, "Enabled for scheduling");
+				}
+			}
+			// the Avails
+			ires = QueIntResAvailGet(q, "cput");
+			printInt(qname, "QueIntResAvailGet", "cput", ires);
+	
+			ires = QueIntResAvailGet(q, "pcput");
+			printInt(qname, "QueIntResAvailGet", "pcput", ires);
+	
+			ires = QueIntResAvailGet(q, "walltime");
+			printInt(qname, "QueIntResAvailGet", "walltime", ires);
+	
+			ires = QueIntResAvailGet(q, "mppt");
+			printInt(qname, "QueIntResAvailGet", "mppt", ires);
+	
+			ires = QueIntResAvailGet(q, "pmppt");
+			printInt(qname, "QueIntResAvailGet", "pmppt", ires);
+	
+			ires = QueIntResAvailGet(q, "nice");
+			printInt(qname, "QueIntResAvailGet", "nice", ires);
+	
+			ires = QueIntResAvailGet(q, "procs");
+			printInt(qname, "QueIntResAvailGet", "procs", ires);
+	
+			ires = QueIntResAvailGet(q, "mppe");
+			printInt(qname, "QueIntResAvailGet", "mppe", ires);
+	
+			ires = QueIntResAvailGet(q, "ncpus");
+			printInt(qname, "QueIntResAvailGet", "ncpus", ires);
+	
+			ires = QueIntResAvailGet(q, "pncpus");
+			printInt(qname, "QueIntResAvailGet", "pncpus", ires);
+	
+			ires = QueIntResAvailGet(q, "nodect");
+			printInt(qname, "QueIntResAvailGet", "nodect", ires);
+	
+			ires = QueIntResAvailGet(q, "srfs_assist");
+			printInt(qname, "QueIntResAvailGet", "srfs_assist",
+									ires);
+	
+			ires = QueIntResAvailGet(q, "mta");
+			printInt(qname, "QueIntResAvailGet", "mta", ires);
+	
+			ires = QueIntResAvailGet(q, "mtb");
+			printInt(qname, "QueIntResAvailGet", "mtb", ires);
+	
+			ires = QueIntResAvailGet(q, "mtc");
+			printInt(qname, "QueIntResAvailGet", "mtc", ires);
+	
+			ires = QueIntResAvailGet(q, "mtd");
+			printInt(qname, "QueIntResAvailGet", "mtd", ires);
+	
+			ires = QueIntResAvailGet(q, "mte");
+			printInt(qname, "QueIntResAvailGet", "mte", ires);
+	
+			ires = QueIntResAvailGet(q, "mtf");
+			printInt(qname, "QueIntResAvailGet", "mtf", ires);
+	
+			ires = QueIntResAvailGet(q, "mtg");
+			printInt(qname, "QueIntResAvailGet", "mtg", ires);
+	
+			ires = QueIntResAvailGet(q, "mth");
+			printInt(qname, "QueIntResAvailGet", "mth", ires);
+	
+	
+	
+			sres = QueSizeResAvailGet(q, "file");
+			printSize(qname, "QueSizeResAvailGet", "file", sres);
+	
+			sres = QueSizeResAvailGet(q, "mem");
+			printSize(qname, "QueSizeResAvailGet", "mem", sres);
+	
+			sres = QueSizeResAvailGet(q, "pmem");
+			printSize(qname, "QueSizeResAvailGet", "pmem", sres);
+	
+			sres = QueSizeResAvailGet(q, "workingset");
+			printSize(qname, "QueSizeResAvailGet", "workingset",
+	                                                                 sres);
+	
+			sres = QueSizeResAvailGet(q, "pf");
+			printSize(qname, "QueSizeResAvailGet", "pf", sres);
+	
+			sres = QueSizeResAvailGet(q, "ppf");
+			printSize(qname, "QueSizeResAvailGet", "ppf", sres);
+	
+			sres = QueSizeResAvailGet(q, "srfs_tmp");
+			printSize(qname, "QueSizeResAvailGet", "srfs_tmp",
+	                                                                sres);
+	
+			sres = QueSizeResAvailGet(q, "srfs_wrk");
+			printSize(qname, "QueSizeResAvailGet", "srfs_wrk",
+	                                                                sres);
+	
+			sres = QueSizeResAvailGet(q, "srfs_big");
+			printSize(qname, "QueSizeResAvailGet", "srfs_big",
+	                                                                sres);
+	
+			sres = QueSizeResAvailGet(q, "srfs_fast");
+			printSize(qname, "QueSizeResAvailGet", "srfs_fast",
+	                                                                sres);
+	
+			sres = QueSizeResAvailGet(q, "sds");
+			printSize(qname, "QueSizeResAvailGet", "sds",
+	                                                                sres);
+	
+			sres = QueSizeResAvailGet(q, "psds");
+			printSize(qname, "QueSizeResAvailGet", "psds",
+	                                                                sres);
+	
+			stres = QueStringResAvailGet(q, "nodes");
+			printStr(qname, "QueStringResAvailGet", "nodes",
+	                                                                stres);
+	
+			stres = QueStringResAvailGet(q, "arch");
+			printStr(qname, "QueStringResAvailGet", "arch",
+	                                                                stres);
+	
+			stres = QueStringResAvailGet(q, "neednodes");
+			printStr(qname, "QueStringResAvailGet", "neednodes",
+	                                                                stres);
+	
+			// the ASSIGNS	
+			ires = QueIntResAssignGet(q, "cput");
+			printInt(qname, "QueIntResAssignGet", "cput", ires);
+	
+			ires = QueIntResAssignGet(q, "pcput");
+			printInt(qname, "QueIntResAssignGet", "pcput", ires);
+	
+			ires = QueIntResAssignGet(q, "walltime");
+			printInt(qname, "QueIntResAssignGet", "walltime",
+									ires);
+	
+			ires = QueIntResAssignGet(q, "mppt");
+			printInt(qname, "QueIntResAssignGet", "mppt", ires);
+	
+			ires = QueIntResAssignGet(q, "pmppt");
+			printInt(qname, "QueIntResAssignGet", "pmppt", ires);
+	
+			ires = QueIntResAssignGet(q, "nice");
+			printInt(qname, "QueIntResAssignGet", "nice", ires);
+	
+			ires = QueIntResAssignGet(q, "procs");
+			printInt(qname, "QueIntResAssignGet", "procs", ires);
+	
+			ires = QueIntResAssignGet(q, "mppe");
+			printInt(qname, "QueIntResAssignGet", "mppe", ires);
+	
+			ires = QueIntResAssignGet(q, "ncpus");
+			printInt(qname, "QueIntResAssignGet", "ncpus",
+									ires);
+	
+			ires = QueIntResAssignGet(q, "pncpus");
+			printInt(qname, "QueIntResAssignGet", "pncpus",
+									ires);
+	
+			ires = QueIntResAssignGet(q, "nodect");
+			printInt(qname, "QueIntResAssignGet", "nodect",
+									ires);
+	
+			ires = QueIntResAssignGet(q, "srfs_assist");
+			printInt(qname, "QueIntResAssignGet", "srfs_assist",
+									ires);
+	
+			ires = QueIntResAssignGet(q, "mta");
+			printInt(qname, "QueIntResAssignGet", "mta", ires);
+	
+			ires = QueIntResAssignGet(q, "mtb");
+			printInt(qname, "QueIntResAssignGet", "mtb", ires);
+	
+			ires = QueIntResAssignGet(q, "mtc");
+			printInt(qname, "QueIntResAssignGet", "mtc", ires);
+	
+			ires = QueIntResAssignGet(q, "mtd");
+			printInt(qname, "QueIntResAssignGet", "mtd", ires);
+	
+			ires = QueIntResAssignGet(q, "mte");
+			printInt(qname, "QueIntResAssignGet", "mte", ires);
+	
+			ires = QueIntResAssignGet(q, "mtf");
+			printInt(qname, "QueIntResAssignGet", "mtf", ires);
+	
+			ires = QueIntResAssignGet(q, "mtg");
+			printInt(qname, "QueIntResAssignGet", "mtg", ires);
+	
+			ires = QueIntResAssignGet(q, "mth");
+			printInt(qname, "QueIntResAssignGet", "mth", ires);
+	
+	
+			sres = QueSizeResAssignGet(q, "file");
+			printSize(qname,"QueSizeResAssignGet", "file", sres);
+	
+			sres = QueSizeResAssignGet(q, "mem");
+			printSize(qname, "QueSizeResAssignGet", "mem", sres);
+	
+			sres = QueSizeResAssignGet(q, "pmem");
+			printSize(qname,"QueSizeResAssignGet", "pmem", sres);
+	
+			sres = QueSizeResAssignGet(q, "workingset");
+			printSize(qname, "QueSizeResAssignGet", "workingset",
+	                                                                 sres);
+	
+			sres = QueSizeResAssignGet(q, "pf");
+			printSize(qname, "QueSizeResAssignGet", "pf", sres);
+	
+			sres = QueSizeResAssignGet(q, "ppf");
+			printSize(qname, "QueSizeResAssignGet", "ppf", sres);
+	
+			sres = QueSizeResAssignGet(q, "srfs_tmp");
+			printSize(qname, "QueSizeResAssignGet", "srfs_tmp",
+	                                                                sres);
+	
+			sres = QueSizeResAssignGet(q, "srfs_wrk");
+			printSize(qname, "QueSizeResAssignGet", "srfs_wrk",
+	                                                                sres);
+	
+			sres = QueSizeResAssignGet(q, "srfs_big");
+			printSize(qname, "QueSizeResAssignGet", "srfs_big",
+	                                                                sres);
+	
+			sres = QueSizeResAssignGet(q, "srfs_fast");
+			printSize(qname, "QueSizeResAssignGet", "srfs_fast",
+	                                                                sres);
+	
+			sres = QueSizeResAssignGet(q, "sds");
+			printSize(qname, "QueSizeResAssignGet", "sds",
+	                                                                sres);
+	
+			sres = QueSizeResAssignGet(q, "psds");
+			printSize(qname, "QueSizeResAssignGet", "psds",
+	                                                                sres);
+	
+			stres = QueStringResAssignGet(q, "nodes");
+			printStr(qname, "QueStringResAssignGet", "nodes",
+	                                                                stres);
+	
+			stres = QueStringResAssignGet(q, "arch");
+			printStr(qname, "QueStringResAssignGet", "arch",
+	                                                                stres);
+	
+			stres = QueStringResAssignGet(q, "neednodes");
+			printStr(qname, "QueStringResAssignGet", "neednodes",
+									stres);
+			alljs = QueJobsGet(q);
+			foreach( j in alljs ) {
+
+				jname = JobIdGet( j ) ;
+				printStr(jname, "JobIdGet", NULLSTR, jname);
+			
+				str = JobNameGet( j ) ;
+				printStr(jname, "JobNameGet", NULLSTR, str);
+			
+				str = JobOwnerNameGet( j ) ;
+				printStr(jname, "JobOwnerNameGet", NULLSTR, str);
+			
+				str = JobEffectiveUserNameGet( j ) ;
+				printStr(jname, "JobEffectiveUserNameGet", NULLSTR, str);
+			
+				str = JobEffectiveGroupNameGet( j ) ;
+				printStr(jname, "JobEffectiveGroupNameGet", NULLSTR, str);
+			
+				i = JobStateGet ( j ) ;
+				switch(i)
+				{
+					case TRANSIT:
+						{
+							printStr(jname, "JobStateGet", NULLSTR, "Transit");
+						}
+					case QUEUED:
+						{
+							printStr(jname, "JobStateGet", NULLSTR, "Queued");
+						}
+					case HELD:
+						{
+							printStr(jname, "JobStateGet", NULLSTR, "Held");
+						}
+					case WAITING:
+						{
+							printStr(jname, "JobStateGet", NULLSTR, "Waiting");
+						}
+					case RUNNING:
+						{
+							printStr(jname, "JobStateGet", NULLSTR, "Running");
+						}
+					case EXITING:
+						{
+							printStr(jname, "JobStateGet", NULLSTR, "Exiting");
+						}
+					default:
+						{
+							printStr(jname, "JobStateGet", NULLSTR, "Unknown");
+						}
+				}
+			
+				i = JobPriorityGet( j ) ;
+				printInt(jname, "JobPriorityGet", NULLSTR, i);
+			
+				i = JobRerunFlagGet( j ) ;
+				switch(i)
+				{
+					case FALSE:
+						{
+							printStr(jname, "JobRerunFlagGet", NULLSTR, "False");
+						}
+					case TRUE:
+						{
+							printStr(jname, "JobRerunFlagGet", NULLSTR, "True");
+						}
+					default:
+						{
+							printStr(jname, "JobRerunFlagGet", NULLSTR, "Unknown");
+						}
+				}
+			
+				i = JobInteractiveFlagGet( j ) ;
+				switch(i)
+				{
+					case FALSE:
+						{
+							printStr(jname, "JobInteractiveFlagGet", NULLSTR, "False");
+						}
+					case TRUE:
+						{
+							printStr(jname, "JobInteractiveFlagGet", NULLSTR, "True");
+						}
+					default:
+						{
+							print("Interactive flag is unknown");	
+						}
+				}
+		
+				d = JobDateTimeCreatedGet( j ) ;
+				printDateTime(jname, "JobDateTimeCreatedGet", NULLSTR, d);
+			
+				str = JobEmailAddrGet( j ) ;
+				printStr(jname, "JobEmailAddrGet", NULLSTR, str);
+			
+				str = JobStageinFilesGet( j ) ;
+				printStr(jname, "JobStageinFilesGet", NULLSTR, str);
+			
+				str = JobStageoutFilesGet( j ) ;
+				printStr(jname, "JobStageoutFilesGet", NULLSTR, str);
+
+				// Resource Request 
+				ires = JobIntResReqGet(j, "cput");
+				printInt(jname, "JobIntResReqGet", "cput", ires);
+		
+				ires = JobIntResReqGet(j, "pcput");
+				printInt(jname, "JobIntResReqGet", "pcput", ires);
+		
+				ires = JobIntResReqGet(j, "walltime");
+				printInt(jname, "JobIntResReqGet", "walltime", ires);
+		
+				ires = JobIntResReqGet(j, "mppt");
+				printInt(jname, "JobIntResReqGet", "mppt", ires);
+		
+				ires = JobIntResReqGet(j, "pmppt");
+				printInt(jname, "JobIntResReqGet", "pmppt", ires);
+		
+				ires = JobIntResReqGet(j, "nice");
+				printInt(jname, "JobIntResReqGet", "nice", ires);
+		
+				ires = JobIntResReqGet(j, "procs");
+				printInt(jname, "JobIntResReqGet", "procs", ires);
+		
+				ires = JobIntResReqGet(j, "mppe");
+				printInt(jname, "JobIntResReqGet", "mppe", ires);
+		
+				ires = JobIntResReqGet(j, "ncpus");
+				printInt(jname, "JobIntResReqGet", "ncpus", ires);
+		
+				ires = JobIntResReqGet(j, "pncpus");
+				printInt(jname, "JobIntResReqGet", "pncpus", ires);
+		
+				ires = JobIntResReqGet(j, "nodect");
+				printInt(jname, "JobIntResReqGet", "nodect", ires);
+		
+				ires = JobIntResReqGet(j, "srfs_assist");
+				printInt(jname, "JobIntResReqGet", "srfs_assist",
+										ires);
+		
+				ires = JobIntResReqGet(j, "mta");
+				printInt(jname, "JobIntResReqGet", "mta", ires);
+		
+				ires = JobIntResReqGet(j, "mtb");
+				printInt(jname, "JobIntResReqGet", "mtb", ires);
+		
+				ires = JobIntResReqGet(j, "mtc");
+				printInt(jname, "JobIntResReqGet", "mtc", ires);
+		
+				ires = JobIntResReqGet(j, "mtd");
+				printInt(jname, "JobIntResReqGet", "mtd", ires);
+		
+				ires = JobIntResReqGet(j, "mte");
+				printInt(jname, "JobIntResReqGet", "mte", ires);
+		
+				ires = JobIntResReqGet(j, "mtf");
+				printInt(jname, "JobIntResReqGet", "mtf", ires);
+		
+				ires = JobIntResReqGet(j, "mtg");
+				printInt(jname, "JobIntResReqGet", "mtg", ires);
+		
+				ires = JobIntResReqGet(j, "mth");
+				printInt(jname, "JobIntResReqGet", "mth", ires);
+		
+		
+		
+				sres = JobSizeResReqGet(j, "file");
+				printSize(jname, "JobSizeResReqGet", "file", sres);
+		
+				sres = JobSizeResReqGet(j, "mem");
+				printSize(jname, "JobSizeResReqGet", "mem", sres);
+		
+				sres = JobSizeResReqGet(j, "pmem");
+				printSize(jname, "JobSizeResReqGet", "pmem", sres);
+		
+				sres = JobSizeResReqGet(j, "workingset");
+				printSize(jname, "JobSizeResReqGet", "workingset",
+		                                                                 sres);
+		
+				sres = JobSizeResReqGet(j, "pf");
+				printSize(jname, "JobSizeResReqGet", "pf", sres);
+		
+				sres = JobSizeResReqGet(j, "ppf");
+				printSize(jname, "JobSizeResReqGet", "ppf", sres);
+		
+				sres = JobSizeResReqGet(j, "srfs_tmp");
+				printSize(jname, "JobSizeResReqGet", "srfs_tmp",
+		                                                                sres);
+		
+				sres = JobSizeResReqGet(j, "srfs_wrk");
+				printSize(jname, "JobSizeResReqGet", "srfs_wrk",
+		                                                                sres);
+		
+				sres = JobSizeResReqGet(j, "srfs_big");
+				printSize(jname, "JobSizeResReqGet", "srfs_big",
+		                                                                sres);
+		
+				sres = JobSizeResReqGet(j, "srfs_fast");
+				printSize(jname, "JobSizeResReqGet", "srfs_fast",
+		                                                                sres);
+		
+				sres = JobSizeResReqGet(j, "sds");
+				printSize(jname, "JobSizeResReqGet", "sds",
+		                                                                sres);
+		
+				sres = JobSizeResReqGet(j, "psds");
+				printSize(jname, "JobSizeResReqGet", "psds",
+		                                                                sres);
+		
+				stres = JobStringResReqGet(j, "nodes");
+				printStr(jname, "JobStringResReqGet", "nodes",
+		                                                                stres);
+		
+				stres = JobStringResReqGet(j, "arch");
+				printStr(jname, "JobStringResReqGet", "arch",
+		                                                                stres);
+		
+				stres = JobStringResReqGet(j, "neednodes");
+				printStr(jname, "JobStringResReqGet", "neednodes",
+		                                                                stres);
+		
+				// Resource Used
+
+				ires = JobIntResUseGet(j, "cput");
+				printInt(jname, "JobIntResUseGet", "cput", ires);
+		
+				ires = JobIntResUseGet(j, "pcput");
+				printInt(jname, "JobIntResUseGet", "pcput", ires);
+		
+				ires = JobIntResUseGet(j, "walltime");
+				printInt(jname, "JobIntResUseGet", "walltime",
+										ires);
+		
+				ires = JobIntResUseGet(j, "mppt");
+				printInt(jname, "JobIntResUseGet", "mppt", ires);
+		
+				ires = JobIntResUseGet(j, "pmppt");
+				printInt(jname, "JobIntResUseGet", "pmppt", ires);
+		
+				ires = JobIntResUseGet(j, "nice");
+				printInt(jname, "JobIntResUseGet", "nice", ires);
+		
+				ires = JobIntResUseGet(j, "procs");
+				printInt(jname, "JobIntResUseGet", "procs", ires);
+		
+				ires = JobIntResUseGet(j, "mppe");
+				printInt(jname, "JobIntResUseGet", "mppe", ires);
+		
+				ires = JobIntResUseGet(j, "ncpus");
+				printInt(jname, "JobIntResUseGet", "ncpus",
+										ires);
+		
+				ires = JobIntResUseGet(j, "pncpus");
+				printInt(jname, "JobIntResUseGet", "pncpus",
+										ires);
+		
+				ires = JobIntResUseGet(j, "nodect");
+				printInt(jname, "JobIntResUseGet", "nodect",
+										ires);
+		
+				ires = JobIntResUseGet(j, "srfs_assist");
+				printInt(jname, "JobIntResUseGet", "srfs_assist",
+										ires);
+		
+				ires = JobIntResUseGet(j, "mta");
+				printInt(jname, "JobIntResUseGet", "mta", ires);
+		
+				ires = JobIntResUseGet(j, "mtb");
+				printInt(jname, "JobIntResUseGet", "mtb", ires);
+		
+				ires = JobIntResUseGet(j, "mtc");
+				printInt(jname, "JobIntResUseGet", "mtc", ires);
+		
+				ires = JobIntResUseGet(j, "mtd");
+				printInt(jname, "JobIntResUseGet", "mtd", ires);
+		
+				ires = JobIntResUseGet(j, "mte");
+				printInt(jname, "JobIntResUseGet", "mte", ires);
+		
+				ires = JobIntResUseGet(j, "mtf");
+				printInt(jname, "JobIntResUseGet", "mtf", ires);
+		
+				ires = JobIntResUseGet(j, "mtg");
+				printInt(jname, "JobIntResUseGet", "mtg", ires);
+		
+				ires = JobIntResUseGet(j, "mth");
+				printInt(jname, "JobIntResUseGet", "mth", ires);
+		
+		
+				sres = JobSizeResUseGet(j, "file");
+				printSize(jname,"JobSizeResUseGet", "file", sres);
+		
+				sres = JobSizeResUseGet(j, "mem");
+				printSize(jname, "JobSizeResUseGet", "mem", sres);
+		
+				sres = JobSizeResUseGet(j, "pmem");
+				printSize(jname,"JobSizeResUseGet", "pmem", sres);
+		
+				sres = JobSizeResUseGet(j, "workingset");
+				printSize(jname, "JobSizeResUseGet", "workingset",
+		                                                                 sres);
+		
+				sres = JobSizeResUseGet(j, "pf");
+				printSize(jname, "JobSizeResUseGet", "pf", sres);
+		
+				sres = JobSizeResUseGet(j, "ppf");
+				printSize(jname, "JobSizeResUseGet", "ppf", sres);
+		
+				sres = JobSizeResUseGet(j, "srfs_tmp");
+				printSize(jname, "JobSizeResUseGet", "srfs_tmp",
+		                                                                sres);
+		
+				sres = JobSizeResUseGet(j, "srfs_wrk");
+				printSize(jname, "JobSizeResUseGet", "srfs_wrk",
+		                                                                sres);
+		
+				sres = JobSizeResUseGet(j, "srfs_big");
+				printSize(jname, "JobSizeResUseGet", "srfs_big",
+		                                                                sres);
+		
+				sres = JobSizeResUseGet(j, "srfs_fast");
+				printSize(jname, "JobSizeResUseGet", "srfs_fast",
+		                                                                sres);
+		
+				sres = JobSizeResUseGet(j, "sds");
+				printSize(jname, "JobSizeResUseGet", "sds",
+		                                                                sres);
+		
+				sres = JobSizeResUseGet(j, "psds");
+				printSize(jname, "JobSizeResUseGet", "psds",
+		                                                                sres);
+		
+				stres = JobStringResUseGet(j, "nodes");
+				printStr(jname, "JobStringResUseGet", "nodes",
+		                                                                stres);
+		
+				stres = JobStringResUseGet(j, "arch");
+				printStr(jname, "JobStringResUseGet", "arch",
+						stres);
+		
+				stres = JobStringResUseGet(j, "neednodes");
+				printStr(jname, "JobStringResUseGet",
+                                          		"neednodes", stres);
+
+			} // jobs
+		} // queues
+		k++;	
+	} // servers
+
+	allcns = AllNodesGet();
+	cnhead = AllNodesHeadGet();
+	i=1;
+	foreach( cn in allcns ) {
+
+		if( i EQ 1 ) {
+			if( CNodeNameGet(cn) EQ CNodeNameGet(cnhead) ) {
+				printStr(NULLSTR, "AllNodesHeadGet", NULLSTR,
+                                                               "passed");
+			} else {
+				printStr(NULLSTR, "AllNodesHeadGet", NULLSTR,
+                                                               "failed");
+			}
+		}
+
+		str = CNodeNameGet(cn) ;
+		cname = str;
+		printStr(cname, "CNodeNameGet", NULLSTR, str);
+	
+		str = CNodeAliasGet(cn) ;
+		printStr(cname, "CNodeAliasGet", NULLSTR, str);
+	
+		str = CNodeVendorGet(cn) ;
+		printStr(cname, "CNodeVendorGet", NULLSTR, str);
+	
+		str = CNodeOsGet(cn) ;
+		printStr(cname, "CNodeOsGet", NULLSTR, str);
+	
+		i = CNodeNumCpusGet(cn) ;
+		printInt(cname, "CNodeNumCpusGet", NULLSTR, i);
+
+		sz =  CNodeMemTotalGet( cn, "real" ) ;
+		printSize(cname, "CNodeMemTotalGet", "real", sz);
+	
+		sz =  CNodeMemTotalGet( cn, "virtual" ) ;
+		printSize(cname, "CNodeMemTotalGet", "virtual", sz);
+		
+		sz =  CNodeMemAvailGet( cn, "real" ) ;
+		printSize(cname, "CNodeMemAvailGet", "real", sz);
+	
+		sz =  CNodeMemAvailGet( cn, "virtual" ) ;
+		printSize(cname, "CNodeMemAvailGet", "virtual", sz);
+
+		i = CNodeStateGet( cn ) ;
+		switch(i)
+		{
+		  case CNODE_DOWN:
+			{
+				printStr(cname, "CNodeStateGet", NULLSTR, "Down");
+			}
+		  case CNODE_OFFLINE:
+			{
+				printStr(cname, "CNodeStateGet", NULLSTR, "Offline");
+			}
+		  case CNODE_UP:
+			{
+				printStr(cname, "CNodeStateGet", NULLSTR, "Up");
+			}
+		  case CNODE_DYNAMIC_STALE:
+			{
+				printStr(cname, "CNodeStateGet", NULLSTR, "DynamicStale");
+			}
+		  case CNODE_STATIC_STALE:
+			{
+				printStr(cname, "CNodeStateGet", NULLSTR, "StaticStale");
+			}
+		  case CNODE_ALL_STALE:
+			{
+				printStr(cname, "CNodeStateGet", NULLSTR, "AllStale");
+			}
+		  default:	
+			{
+				printStr(cname, "CNodeStateGet", NULLSTR, "Unknown");
+			}
+		}	
+	
+		i = CNodeIdletimeGet( cn ) ;	
+		printInt(cname, "CNodeIdleTimeGet", NULLSTR, i);
+	
+		f = CNodeLoadAveGet(  cn ) ;
+		printFloat(cname, "CNodeLoadAveGet", NULLSTR, f);
+
+		i = CNodeCpuPercentIdleGet( cn ) ;
+		printInt(cname, "CNodeCpuPercentIdleGet", NULLSTR, i);
+
+		i = CNodeCpuPercentSysGet( cn ) ;
+		printInt(cname, "CNodeCpuPercentSysGet", NULLSTR, i);
+
+		i = CNodeCpuPercentUserGet( cn ) ;
+		printInt(cname, "CNodeCpuPercentUserGet", NULLSTR, i);
+
+		i = CNodeCpuPercentGuestGet( cn ) ;
+		printInt(cname, "CNodeCpuPercentGuestGet", NULLSTR, i);
+	
+		i = CNodeNetworkBwGet( cn, "hippi" ) ;
+		printInt(cname, "CNodeNetworkBwGet", "hippi", i);
+
+		sz = CNodeDiskSpaceTotalGet( cn, "/u" ) ;
+		printSize(cname, "CNodeDiskSpaceTotalGet", "/u", sz);
+	
+		sz = CNodeDiskSpaceAvailGet( cn, "/u" ) ;
+		printSize(cname, "CNodeDiskSpaceAvailGet", "/u", sz);
+	
+		sz = CNodeDiskSpaceReservedGet( cn, "/u" ) ;
+		printSize(cname, "CNodeDiskSpaceReservedGet", "/u", sz);
+	
+		i = CNodeDiskInBwGet( cn, "/u" ) ;
+		printInt(cname, "CNodeDiskInBwGet", "/u", i);
+	
+		i = CNodeDiskOutBwGet( cn, "/u" ) ;
+		printInt(cname, "CNodeDiskOutBwGet", "/u", i);
+
+		sz = CNodeDiskSpaceTotalGet( cn, "/u/wk" ) ;
+		printSize(cname, "CNodeDiskSpaceTotalGet", "/u/wk", sz);
+	
+		sz = CNodeDiskSpaceAvailGet( cn, "/u/wk" ) ;
+		printSize(cname, "CNodeDiskSpaceAvailGet", "/u/wk", sz);
+	
+		sz = CNodeDiskSpaceReservedGet( cn, "/u/wk" ) ;
+		printSize(cname, "CNodeDiskSpaceReservedGet", "/u/wk", sz);
+	
+		i = CNodeDiskInBwGet( cn, "/u/wk" ) ;
+		printInt(cname, "CNodeDiskInBwGet", "/u/wk", i);
+	
+		i = CNodeDiskOutBwGet( cn, "/u/wk" ) ;
+		printInt(cname, "CNodeDiskOutBwGet", "/u/wk", i);
+
+
+		sz = CNodeDiskSpaceTotalGet( cn, "/tmp" ) ;
+		printSize(cname, "CNodeDiskSpaceTotalGet", "/tmp", sz);
+	
+		sz = CNodeDiskSpaceAvailGet( cn, "/tmp" ) ;
+		printSize(cname, "CNodeDiskSpaceAvailGet", "/tmp", sz);
+	
+		sz = CNodeDiskSpaceReservedGet( cn, "/tmp" ) ;
+		printSize(cname, "CNodeDiskSpaceReservedGet", "/tmp", sz);
+	
+		i = CNodeDiskInBwGet( cn, "/tmp" ) ;
+		printInt(cname, "CNodeDiskInBwGet", "/tmp", i);
+	
+		i = CNodeDiskOutBwGet( cn, "/tmp" ) ;
+		printInt(cname, "CNodeDiskOutBwGet", "/tmp", i);
+
+
+		name = "primary";	
+		sz = CNodeSwapSpaceTotalGet( cn, name ) ;
+		printSize(cname, "CNodeSwapSpaceTotalGet", name, sz); 
+	
+		sz = CNodeSwapSpaceAvailGet( cn, name ) ;
+		printSize(cname, "CNodeSwapSpaceAvailGet", name, sz); 
+	
+		i = CNodeSwapInBwGet( cn, name ) ;
+		printInt(cname, "CNodeSwapInBwGet", name, i); 
+	
+		i = CNodeSwapOutBwGet( cn, name ) ;
+		printInt(cname, "CNodeSwapOutBwGet", name, i); 
+	
+		sz = CNodeTapeSpaceTotalGet( cn, "4mm" ) ;
+		printSize(cname, "CNodeTapeSpaceTotalGet", "4mm", sz); 
+	
+		sz = CNodeTapeSpaceAvailGet( cn, "4mm" ) ;
+		printSize(cname, "CNodeTapeSpaceAvailGet", "4mm", sz); 
+	
+		i = CNodeTapeInBwGet( cn, "4mm" ) ;
+		printInt(cname, "CNodeTapeInBwGet", "4mm", i); 
+	
+		i = CNodeTapeOutBwGet( cn, "4mm" ) ;
+		printInt(cname, "CNodeTapeOutBwGet", "4mm", i); 
+
+		sz = CNodeTapeSpaceTotalGet( cn, "8mm" ) ;
+		printSize(cname, "CNodeTapeSpaceTotalGet", "8mm", sz); 
+	
+		sz = CNodeTapeSpaceAvailGet( cn, "8mm" ) ;
+		printSize(cname, "CNodeTapeSpaceAvailGet", "8mm", sz); 
+	
+		i = CNodeTapeInBwGet( cn, "8mm" ) ;
+		printInt(cname, "CNodeTapeInBwGet", "8mm", i); 
+	
+		i = CNodeTapeOutBwGet( cn, "8mm" ) ;
+		printInt(cname, "CNodeTapeOutBwGet", "8mm", i); 
+
+	
+		sz = CNodeSrfsSpaceTotalGet( cn, "fast" ) ;
+		printSize(cname, "CNodeSrfsSpaceTotalGet", "fast", sz); 
+	
+		sz = CNodeSrfsSpaceAvailGet( cn, "fast" ) ;
+		printSize(cname, "CNodeSrfsSpaceAvailGet", "fast", sz); 
+	
+		sz = CNodeSrfsSpaceReservedGet( cn, "fast" ) ;
+		printSize(cname, "CNodeSrfsSpaceReservedGet", "fast", sz); 
+	
+		i = CNodeSrfsInBwGet( cn, "fast" ) ;
+		printInt(cname, "CNodeSrfsInBwGet", "fast", i); 
+	
+		i = CNodeSrfsOutBwGet( cn, "fast" ) ;
+		printInt(cname, "CNodeSrfsOutBwGet", "fast", i); 
+
+		sz = CNodeSrfsSpaceTotalGet( cn, "big" ) ;
+		printSize(cname, "CNodeSrfsSpaceTotalGet", "big", sz); 
+	
+		sz = CNodeSrfsSpaceAvailGet( cn, "big" ) ;
+		printSize(cname, "CNodeSrfsSpaceAvailGet", "big", sz); 
+	
+		sz = CNodeSrfsSpaceReservedGet( cn, "big" ) ;
+		printSize(cname, "CNodeSrfsSpaceReservedGet", "big", sz); 
+	
+		i = CNodeSrfsInBwGet( cn, "big" ) ;
+		printInt(cname, "CNodeSrfsInBwGet", "big", i); 
+	
+		i = CNodeSrfsOutBwGet( cn, "big" ) ;
+		printInt(cname, "CNodeSrfsOutBwGet", "big", i); 
+
+		i++;
+	}
+
+        print("*****************Doing various miscellaneous functions*******");
+        print("Jobs in fast are searched and queues filter while Jobs in slow are operated on");
+ 
+	s = AllServersHeadGet();
+	sq = 	ServerQueuesGet(s) ;
+
+	que = findQueByName(sq, "fast");	
+
+	i = 300;
+	job = QueJobFind(que, JobWallTimeReqGet, OP_EQ, i);
+	if( job NEQ NOJOB ) {
+		str = "1st job in fast whose wallTimeReq == 300s: " + JobIdGet(job);
+	} else {
+		str = "1st job in fast whose wallTimeReq == 300s: " + "NOJOB";
+	}
+	print(str);
+
+	str = "bayucan";
+	job = QueJobFind(que, JobEmailAddrGet, OP_NEQ, str);
+	if( job NEQ NOJOB ) {
+		str = "1st job in fast whose JobEmailAddrGet != bayucan: " + JobIdGet(job);
+	} else {
+		str = "1st job in fast whose JobEmailAddrGet != bayucan: " + "NOJOB"; 
+	}
+	print(str);
+
+
+	d = (4|9|1997);
+	job = QueJobFind(que, JobDateTimeCreatedGet, OP_GE, d);
+	if( job NEQ NOJOB ) {
+		str = "1st job in fast whose JobDateTimeCreatedGet >= 4|9|1997: " + JobIdGet(job);
+	} else {
+		str = "1st job in fast whose JobDateTimeCreatedGet >= 4|9|1997: " + "NOJOB";
+	}
+	print(str);
+
+
+	d = (12:00:00);
+	job = QueJobFind(que, JobDateTimeCreatedGet, OP_GT, d);
+	if( job NEQ NOJOB ) {
+		str = "1st job in fast whose JobDateTimeCreatedGet > 12h0m0s: " + JobIdGet(job);
+	} else {
+		str = "1st job in fast whose JobDateTimeCreatedGet > 12h0m0s: " + "NOJOB";
+	}
+	print(str);
+
+	d = (4|9|1997@12:00:00);
+	job = QueJobFind(que, JobDateTimeCreatedGet, OP_LT, d);
+	if( job NEQ NOJOB ) {
+		str = "1st job in fast whose JobDateTimeCreatedGet < 4|9|1997@12h0m0s: " + JobIdGet(job);
+	} else {
+		str = "1st job in fast whose JobDateTimeCreatedGet < 4|9|1997@12h0m0s: " + "NOJOB";
+	}
+	print(str);
+
+	i = 1;
+	job = QueJobFind(que, JobCpuTimeUsedGet, OP_GT, i);
+	if( job NEQ NOJOB ) {
+		str = "1st job in fast whose JobCpuTimeUsedGet > 10: " + JobIdGet(job);
+	} else {
+		str = "1st job in fast whose JobCpuTimeUsedGet > 10: " + "NOJOB";
+	}
+	print(str);
+
+	job = QueJobFind(que, JobVirtualMemAvailGet, OP_LE, 30mb);
+	if( job NEQ NOJOB ) {
+		str = "1st job in fast whose JobVirtualMemAvailGet <= 30mb: " + JobIdGet(job);
+	} else {
+		str = "1st job in fast whose JobVirtualMemAvailGet <= 30mb: " + "NOJOB";
+	}
+	print(str);
+
+	job = QueJobFind(que, JobCpuTimeReqGet, OP_MAX);
+	if( job NEQ NOJOB ) {
+		str = "1st job in fast whose JobCpuTimeReqGet is MAX: " + JobIdGet(job);
+	} else {
+		str = "1st job in fast whose JobCpuTimeReqGet is MAX: " + "NOJOB";
+	}
+	print(str);
+
+	job = QueJobFind(que, JobCpuTimeReqGet, OP_MIN);
+	if( job NEQ NOJOB ) {
+		str = "1st job in fast whose JobCpuTimeReqGet is MIN: " + JobIdGet(job);
+	} else {
+		str = "1st job in fast whose JobCpuTimeReqGet is MIN: " + "NOJOB";
+	}
+	print(str);
+
+	i = 300;
+	newq = QueFilter(que, JobWallTimeReqGet, OP_EQ, i);
+	if( newq NEQ NOQUE ) {
+		str = "jobs in fast whose wallTimeReq == 300s: ";
+		alljs = QueJobsGet(newq);
+		foreach( j in alljs ) {
+			str = str + JobIdGet(j) + " ";
+		}
+	} else {
+		str = "jobs in fast whose wallTimeReq == 300s: " + "NOQUE";
+	}
+	print(str);
+
+	str = "bayucan";
+	newq = QueFilter(que, JobEmailAddrGet, OP_NEQ, str);
+	if( newq NEQ NOQUE ) {
+		str = "jobs in fast whose JobEmailAddrGet != bayucan: ";
+		alljs = QueJobsGet(newq);
+		foreach( j in alljs ) {
+			str = str + JobIdGet(j) + " ";
+		}
+	} else {
+		str = "jobs in fast whose JobEmailAddrGet != bayucan: " + "NOQUE"; 
+	}
+	print(str);
+
+
+	d = (4|9|1997);
+	newq = QueFilter(que, JobDateTimeCreatedGet, OP_GE, d);
+	if( newq NEQ NOQUE ) {
+		str = "jobs in fast whose JobDateTimeCreatedGet >= 4|9|1997: ";
+		alljs = QueJobsGet(newq);
+		foreach( j in alljs ) {
+			str = str + JobIdGet(j) + " ";
+		}
+	} else {
+		str = "jobs in fast whose JobDateTimeCreatedGet >= 4|9|1997: " + "NOQUE";
+	}
+	print(str);
+
+
+	d = (12:00:00);
+	newq = QueFilter(que, JobDateTimeCreatedGet, OP_GT, d);
+	if( newq NEQ NOQUE ) {
+		str = "jobs in fast whose JobDateTimeCreatedGet > 12h0m0s: ";
+		alljs = QueJobsGet(newq);
+		foreach( j in alljs ) {
+			str = str + JobIdGet(j) + " ";
+		}
+	} else {
+		str = "jobs in fast whose JobDateTimeCreatedGet > 12h0m0s: " + "NOQUE";
+	}
+	print(str);
+
+	d = (4|9|1997@12:0:0);
+	newq = QueFilter(que, JobDateTimeCreatedGet, OP_LT, d);
+	if( newq NEQ NOQUE ) {
+		str = "jobs in fast whose JobDateTimeCreatedGet < 4|9|1997@12h0m0s: ";
+		alljs = QueJobsGet(newq);
+		foreach( j in alljs ) {
+			str = str + JobIdGet(j) + " ";
+		}
+	} else {
+		str = "jobs in fast whose JobDateTimeCreatedGet < 4|9|1997@14h58m44s: " + "NOQUE";
+	}
+	print(str);
+
+	i = 10;
+	newq = QueFilter(que, JobCpuTimeUsedGet, OP_GT, i);
+	if( newq NEQ NOQUE ) {
+		str = "jobs in fast whose JobCpuTimeUsedGet > 10: ";
+		alljs = QueJobsGet(newq);
+		foreach( j in alljs ) {
+			str = str + JobIdGet(j) + " ";
+		}
+	} else {
+		str = "jobs in fast whose JobCpuTimeUsedGet > 10: " + "NOQUE";
+	}
+	print(str);
+
+	newq = QueFilter(que, JobVirtualMemAvailGet, OP_LE, 30mb);
+	if( newq NEQ NOQUE ) {
+		str = "jobs in fast whose JobVirtualMemAvailGet <= 30mb: ";
+		alljs = QueJobsGet(newq);
+		foreach( j in alljs ) {
+			str = str + JobIdGet(j) + " ";
+		}
+	} else {
+		str = "jobs in fast whose JobVirtualMemAvailGet <= 30mb: " + "NOQUE";
+	}
+	print(str);
+
+
+	s   = AllServersHeadGet();
+	sq  = 	ServerQueuesGet(s) ;
+	que = findQueByName(sq, "fast");
+
+	alljs = QueJobsGet(que);
+
+	i = 1;
+	foreach( j in alljs ) {
+	   str = "JobAction[" + JobIdGet(j); 
+	   switch(i) {
+	     case 1:
+	      {
+		res = JobAction(j, SYNCRUN, NULLSTR);
+		hstr = str;
+                str = hstr + "," + "SYNCRUN" + "," + "NULLSTR" + "]: "; 
+		if( res EQ SUCCESS ) {
+		        str = str + "SUCCESS"; 
+		} else {
+			if( res EQ FAIL ) { 
+		        	str = str + "FAIL"; 
+			}
+		}
+		print(str);
+
+		res = JobAction(j, SIGNAL, "SIGHUP");
+                str = hstr + "," + "SIGNAL" + "," + "SIGHUP" + "]: "; 
+		if( res EQ SUCCESS ) { 
+		        str = str + "SUCCESS"; 
+		} else {
+			if( res EQ FAIL ) { 
+		        	str = str + "FAIL"; 
+			}
+		}
+		print(str);
+		res = JobAction(j, RERUN, NULLSTR);
+                str = hstr + "," + "RERUN" + "," + "NULLSTR" + "]: "; 
+		if( res EQ SUCCESS ) { 
+		        str = str + "SUCCESS"; 
+		} else {
+			if( res EQ FAIL ) { 
+		        	str = str + "FAIL"; 
+			}
+		}
+		print(str);
+
+		res = JobAction(j, ASYNCRUN, mom_name1);
+                str = hstr + "," + "ASYNCRUN" + "," + mom_name1 + "]: "; 
+		if( res EQ SUCCESS ) { 
+		        str = str + "SUCCESS"; 
+		} else {
+			if( res EQ FAIL ) { 
+		        	str = str + "FAIL"; 
+			}
+		}
+		print(str);
+		JobAction(j, SIGNAL, "SIGKILL");
+		JobAction(j, DELETE, NULLSTR);
+
+	      }
+
+	     case 2:
+	      {
+		res = JobAction(j, DELETE, NULLSTR);
+                str = str + "," + "DELETE" + "," + "NULLSTR" + "]: "; 
+		if( res EQ SUCCESS ) { 
+		        str = str + "SUCCESS"; 
+		} else {
+			if( res EQ FAIL ) { 
+		        	str = str + "FAIL";
+			}
+		}
+		print(str);
+	      } 
+
+	     case 3:
+	      {
+
+		res = JobAction(j, DELETE, "deldelay=5");
+                str = str + "," + "DELETE" + "," + "deldelay=5" + "]: "; 
+		if( res EQ SUCCESS ) { 
+		        str = str + "SUCCESS"; 
+		} else {
+			if( res EQ FAIL ) { 
+		        	str = str + "FAIL"; 
+			}
+		}
+		print(str);
+	      }	
+
+
+	
+	     case 4:
+	      {
+		res = JobAction(j, HOLD, "u");
+                str = str + "," + "HOLD" + "," + "u" + "]: "; 
+		if( res EQ SUCCESS ) { 
+		        str = str + "SUCCESS"; 
+		} else {
+			if( res EQ FAIL ) { 
+		        	str = str + "FAIL"; 
+			}
+		}
+		print(str);
+	      }
+	     case 5:
+	      { 
+		res = JobAction(j, HOLD, "u");
+                str = str + "," + "HOLD" + "," + "u" + "]: "; 
+		if( res EQ SUCCESS ) { 
+		        str = str + "SUCCESS"; 
+		} else {
+			if( res EQ FAIL ) { 
+		        	str = str + "FAIL"; 
+			}
+		}
+		res = JobAction(j, RELEASE, "u");
+                str = str + "," + "RELEASE" + "," + "u" + "]: "; 
+		if( res EQ SUCCESS ) { 
+		        str = str + "SUCCESS"; 
+		} else {
+			if( res EQ FAIL ) { 
+		        	str = str + "FAIL"; 
+			}
+		}
+		print(str);
+	      } 	
+
+
+	     case 6:
+	      {
+		res = JobAction(j, HOLD, "o");
+                str = str + "," + "HOLD" + "," + "o" + "]: "; 
+		if( res EQ SUCCESS ) { 
+		        str = str + "SUCCESS"; 
+		} else {
+			if( res EQ FAIL ) { 
+		        	str = str + "FAIL"; 
+			}
+		}
+		print(str);
+	      }
+
+	     case 7:
+	      {
+		res = JobAction(j, HOLD, "o");
+                str = str + "," + "HOLD" + "," + "o" + "]: "; 
+		if( res EQ SUCCESS ) { 
+		        str = str + "SUCCESS"; 
+		} else {
+			if( res EQ FAIL ) { 
+		        	str = str + "FAIL"; 
+			}
+		}
+		res = JobAction(j, RELEASE, "o");
+                str = str + "," + "RELEASE" + "," + "o" + "]: "; 
+		if( res EQ SUCCESS ) { 
+		        str = str + "SUCCESS"; 
+		} else {
+			if( res EQ FAIL ) { 
+		        	str = str + "FAIL"; 
+			}
+		}
+		print(str);
+	      } 	
+
+	     case 8:
+	      {
+		res = JobAction(j, HOLD, "s");
+                str = str + "," + "HOLD" + "," + "s" + "]: "; 
+		if( res EQ SUCCESS ) { 
+		        str = str + "SUCCESS"; 
+		} else {
+			if( res EQ FAIL ) { 
+		        	str = str + "FAIL"; 
+			}
+		}
+		print(str);
+	      }
+
+	    case 9:
+	      {
+		res = JobAction(j, HOLD, "s");
+                str = str + "," + "HOLD" + "," + "s" + "]: "; 
+		if( res EQ SUCCESS ) { 
+		        str = str + "SUCCESS"; 
+		} else {
+			if( res EQ FAIL ) { 
+		        	str = str + "FAIL"; 
+			}
+		}
+		res = JobAction(j, RELEASE, "s");
+                str = str + "," + "RELEASE" + "," + "s" + "]: "; 
+		if( res EQ SUCCESS ) { 
+		        str = str + "SUCCESS"; 
+		} else {
+			if( res EQ FAIL ) { 
+		        	str = str + "FAIL"; 
+			}
+		}
+		print(str);
+
+	      } 	
+
+	     case 10:
+	      {
+		res = JobAction(j, HOLD, NULLSTR);
+                str = str + "," + "HOLD" + "," + "NULLSTR" + "]: "; 
+		if( res EQ SUCCESS ) { 
+		        str = str + "SUCCESS"; 
+		} else {
+			if( res EQ FAIL ) { 
+		        	str = str + "FAIL"; 
+			}
+		}
+		print(str);
+
+	      }	
+
+	    case 11:
+	      {  
+		res = JobAction(j, HOLD, NULLSTR);
+                str = str + "," + "HOLD" + "," + "NULLSTR" + "]: "; 
+		if( res EQ SUCCESS ) { 
+		        str = str + "SUCCESS"; 
+		} else {
+			if( res EQ FAIL ) { 
+		        	str = str + "SUCCESS"; 
+			}
+		}
+
+		res = JobAction(j, RELEASE, NULLSTR);
+                str = str + "," + "RELEASE" + "," + "NULLSTR" + "]: "; 
+		if( res EQ SUCCESS ) { 
+		        str = str + "SUCCESS"; 
+		} else {
+			if( res EQ FAIL ) { 
+		        	str = str + "FAIL"; 
+			}
+		}
+		print(str);
+	      }
+
+	     case 12:
+	      {
+		res = JobAction(j, HOLD, "p");
+                str = str + "," + "HOLD" + "," + "p" + "]: "; 
+		if( res EQ SUCCESS ) { 
+		        str = str + "SUCCESS"; 
+		} else {
+			if( res EQ FAIL ) { 
+		        	str = str + "FAIL"; 
+			}
+		}
+		res = JobAction(j, RELEASE, "p");
+                str = str + "," + "RELEASE" + "," + "p" + "]: "; 
+		if( res EQ SUCCESS ) { 
+		        str = str + "SUCCESS"; 
+		} else {
+			if( res EQ FAIL ) { 
+		        	str = str + "FAIL"; 
+			}
+		}
+		print(str);
+	      }
+
+	     case 13:
+	      {
+
+		res = JobAction(j, MODIFYATTR, "comment=what a message");
+                str = str + "," + "MODIFYATTR" + "," + "comment=what a message" + "]: "; 
+		if( res EQ SUCCESS ) { 
+		        str = str + "SUCCESS"; 
+		} else {
+			if( res EQ FAIL ) { 
+		        	str = str + "FAIL"; 
+			}
+		}
+		print(str);
+	      }
+	     case 14:
+	      {
+
+		res = JobAction(j, MODIFYATTR, "what a message");
+                str = str + "," + "MODIFYATTR" + "," + "what a message" + "]: "; 
+		if( res EQ SUCCESS ) { 
+		        str = str + "SUCCESS"; 
+		} else {
+			if( res EQ FAIL ) { 
+		        	str = str + "FAIL"; 
+			}
+		}
+		print(str);
+	      }
+	     case 15:
+	      {
+
+		res = JobAction(j, MODIFYRES, "cput=3600");
+                str = str + "," + "MODIFYRES" + "," + "cput=3600" + "]: "; 
+		if( res EQ SUCCESS ) { 
+		        str = str + "SUCCESS"; 
+		} else {
+			if( res EQ FAIL ) { 
+		        	str = str + "FAIL"; 
+			}
+		}
+		print(str);
+	      }
+	     case 16:
+	      {
+
+		res = JobAction(j, MODIFYATTR, "comment=");
+                str = str + "," + "MODIFYATTR" + "," + "comment=" + "]: "; 
+		if( res EQ SUCCESS ) { 
+		        str = str + "SUCCESS"; 
+		} else {
+			if( res EQ FAIL ) { 
+		        	str = str + "FAIL"; 
+			}
+		}
+		print(str);
+	      }
+	     case 17:
+	      {
+
+		res = JobAction(j, MODIFYRES, "=what");
+                str = str + "," + "MODIFYRES" + "," + "=what" + "]: "; 
+		if( res EQ SUCCESS ) { 
+		        str = str + "SUCCESS"; 
+		} else {
+			if( res EQ FAIL ) { 
+		        	str = str + "FAIL"; 
+			}
+		}
+		print(str);
+	      }
+	     case 18:
+	      {
+
+		res = JobAction(j, MODIFYRES, "=");
+                str = str + "," + "MODIFYRES" + "," + "=" + "]: "; 
+		if( res EQ SUCCESS ) { 
+		        str = str + "SUCCESS"; 
+		} else {
+			if( res EQ FAIL ) {
+		        	str = str + "FAIL"; 
+			}
+		}
+		print(str);
+	      }
+	   }
+	   i++;
+	}
+}

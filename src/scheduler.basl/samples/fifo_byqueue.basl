@@ -1,0 +1,922 @@
+//
+//         OpenPBS (Portable Batch System) v2.3 Software License
+// 
+// Copyright (c) 1999-2000 Veridian Information Solutions, Inc.
+// All rights reserved.
+// 
+// ---------------------------------------------------------------------------
+// For a license to use or redistribute the OpenPBS software under conditions
+// other than those described below, or to purchase support for this software,
+// please contact Veridian Systems, PBS Products Department ("Licensor") at:
+// 
+//    www.OpenPBS.org  +1 650 967-4675                  sales@OpenPBS.org
+//                        877 902-4PBS (US toll-free)
+// ---------------------------------------------------------------------------
+// 
+// This license covers use of the OpenPBS v2.3 software (the "Software") at
+// your site or location, and, for certain users, redistribution of the
+// Software to other sites and locations.  Use and redistribution of
+// OpenPBS v2.3 in source and binary forms, with or without modification,
+// are permitted provided that all of the following conditions are met.
+// After December 31, 2001, only conditions 3-6 must be met:
+// 
+// 1. Commercial and/or non-commercial use of the Software is permitted
+//    provided a current software registration is on file at www.OpenPBS.org.
+//    If use of this software contributes to a publication, product, or
+//    service, proper attribution must be given; see www.OpenPBS.org/credit.html
+// 
+// 2. Redistribution in any form is only permitted for non-commercial,
+//    non-profit purposes.  There can be no charge for the Software or any
+//    software incorporating the Software.  Further, there can be no
+//    expectation of revenue generated as a consequence of redistributing
+//    the Software.
+// 
+// 3. Any Redistribution of source code must retain the above copyright notice
+//    and the acknowledgment contained in paragraph 6, this list of conditions
+//    and the disclaimer contained in paragraph 7.
+// 
+// 4. Any Redistribution in binary form must reproduce the above copyright
+//    notice and the acknowledgment contained in paragraph 6, this list of
+//    conditions and the disclaimer contained in paragraph 7 in the
+//    documentation and/or other materials provided with the distribution.
+// 
+// 5. Redistributions in any form must be accompanied by information on how to
+//    obtain complete source code for the OpenPBS software and any
+//    modifications and/or additions to the OpenPBS software.  The source code
+//    must either be included in the distribution or be available for no more
+//    than the cost of distribution plus a nominal fee, and all modifications
+//    and additions to the Software must be freely redistributable by any party
+//    (including Licensor) without restriction.
+// 
+// 6. All advertising materials mentioning features or use of the Software must
+//    display the following acknowledgment:
+// 
+//     "This product includes software developed by NASA Ames Research Center,
+//     Lawrence Livermore National Laboratory, and Veridian Information
+//     Solutions, Inc.
+//     Visit www.OpenPBS.org for OpenPBS software support,
+//     products, and information."
+// 
+// 7. DISCLAIMER OF WARRANTY
+// 
+// THIS SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND. ANY EXPRESS
+// OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+// OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT
+// ARE EXPRESSLY DISCLAIMED.
+// 
+// IN NO EVENT SHALL VERIDIAN CORPORATION, ITS AFFILIATED COMPANIES, OR THE
+// U.S. GOVERNMENT OR ANY OF ITS AGENCIES BE LIABLE FOR ANY DIRECT OR INDIRECT,
+// INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
+// OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+// EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// 
+// This license will be governed by the laws of the Commonwealth of Virginia,
+// without reference to its choice of law rules.
+// 
+//
+// **********************************************************************
+// *									*
+// *	 fifo_byqueue.basl: 						*
+// *	ENVIRONMENT:						        *
+// *	  this scheduler works in a:					*
+// *	  (1) single server, single execution host environment    	*
+// *	      (e.g. pbs_server, pbs_sched, pbs_mom all running on 	*
+// *		    the local host, or pbs_mom running on some    	*
+// *		    remote host), or					*
+// *	  (2) single-server, multiple node hosts with the list    	*
+// *	      maintained by the server (version > 1.1.12)		*
+// *	      (e.g. pbs_server, pbs_sched running on some local   	*
+// *	      host, pbs_moms running on each of the node    		*
+// *	      hosts as maintained by the pbs_server	        	*
+// *	ALGORITHM:							*
+// *	 (0) Different scheduling strategy is employed depending on     *
+// * 	     whether the current time falls in primetime period		*
+// *	     (between PRIME_START and PRIME_END), or in non-primetime   *
+// *	     period.							*
+// *	 (1) if PRIMETIME_SORTQUE or NONPRIMETIME_SORTQUEUE is TRUE,    *
+// *	     sort the list of queues to consult based on priority. The  *
+// *	     queues to consult are the ones that are not called DEDQ    *
+// *	     and are "execution"  queues.				*
+// *	 (2) if PRIMETIME_HELP_STARVING_JOB or				*
+// *		NONPRIMETIME_HELP_STARVING_JOB is true,			*
+// *	     find the most starving job and and make the running of it  *
+// *	     a priority. A job is considered starving if it has been    *
+// *	     queued for at least STARVE_TIME_SECS. 			*
+// *     (3) loop through the list of jobs to run in a per-queue basis. *
+// * 	     (go through all the jobs in one queue, and then go to the  *
+// *	     next queue, etc...). The list of jobs are sorted           *
+// *	     according to the mechanism as specified in                 *
+// *	     PRIMETIME_SORTJOB_METHOD, NONPRIMETIME_SORTJOB_METHOD.     *
+// *	 (4) A job gets run if it will not cause the following		*
+// *	     constraints to be violated:				*
+// *	      i.  max_run, max_user_run, max_group_run of the Server 	*
+// *          ii. max_run, max_user_run, max_group_run of the Que where *
+// *			the job belongs to.				*
+// *          iii. running job not overlaps with a dedicated time	*
+// *		   whose starting and ending hours are specified in     *
+// *		   DEDTIME_START, DEDTIME_END			        *
+// *	      iv.  resource requested is available.			*
+// *		   It can either be a "nodes" model, or 1 timesharing   *
+// *		   host (local) model					*
+// *	    NOTE: if a starving job is found, then only that job gets   *
+// *		  run.						        *
+// *	 (5) If PRIMETIME_STRICT_FIFO or NONPRIMETIME_STRICT_FIFO is    *
+// *		TRUE, then if a job did not run, then the jobs 		*
+// *		following it on the same queue will be blocked from     *
+// *		starting. The next queue will immediately be consulted. * 
+// *									*
+// *	SETUP:								*
+// *		This scheduler does not need any config file.		*
+// *		Be sure to go the "Global Assignments" section and      *
+// *		ensure that the following are correctly set:		*
+// *		PRIME_START, PRIME_END, PRIMETIME_SORTQUE,		*
+// *		NONPRIMETIME_SORTQUEUE, DEDQ,				*
+// *		PRIMETIME_HELP_STARVING_JOB,				*
+// *		NONPRIMETIME_HELP_STARVING_JOB, STARVE_TIME_SECS,	*
+// *		PRIMETIME_SORTJOB_METHOD, NONPRIMETIME_SORTJOB_METHOD,	*
+// *		DEDTIME_START, DEDTIME_END, PRIMETIME_STRICT_FIFO,	*
+// *		NONPRIMETIME_STRICT_FIFO.				*
+// *	ADVISORY:							*
+// *		You may choose to disable some of the print* statements *
+// *		in this scheduler to minimize amount of messages stored *
+// *		in "sched_out" file.					*
+// **********************************************************************
+// Global definitions:
+String			DEDQ;
+DateTime		DEDTIME_START;
+DateTime 		DEDTIME_END;
+Int			STARVE_TIME_SECS;
+
+Int			PRIME_PERIOD;
+
+Range	DateTime	PRIMETIME;
+Int			PRIMETIME_SORTQUE;
+Int			PRIMETIME_HELP_STARVING_JOB;
+String			PRIMETIME_SORTJOB_METHOD;
+Int			PRIMETIME_STRICT_FIFO;
+
+Range	DateTime	NON_PRIMETIME;
+Int			NON_PRIMETIME_SORTQUE;
+Int			NON_PRIMETIME_HELP_STARVING_JOB;
+String			NON_PRIMETIME_SORTJOB_METHOD;
+Int			NON_PRIMETIME_STRICT_FIFO;
+
+Int			MAXRUN;
+Int			MAXRUN_PERUSER;
+Int			MAXRUN_PERGRP;
+
+Int 			QUE_MAXRUN;
+Int			QUE_MAXRUN_PERUSER;
+Int			QUE_MAXRUN_PERGRP; 
+
+
+Void printmsg(Job j, String msg)
+{
+	DateTime dt;
+	String mesg;
+
+	dt = datetimeGet();
+	print(dt);
+	mesg = "[" + JobIdGet(j) + "]:" + msg;
+	print(mesg);
+}
+
+Void printmsg2(String jid, String msg)
+{
+	DateTime dt;
+	String mesg;
+
+	dt = datetimeGet();
+	print(dt);
+	mesg = "[" + jid + "]:" + msg;
+	print(mesg);
+}
+
+Int comment_update(Job j, String msg)
+{
+	String cmt;
+	Int	rc;
+
+	printmsg(j, msg);
+
+	cmt = "comment=" + msg;
+	rc = JobAction(j, MODIFYATTR, cmt);
+
+	return(rc);
+}
+
+Int numRunning(Server s)
+{
+	Int	nrun;
+	Set Job jobs;
+	Job	j;
+
+	jobs  =  ServerJobsGet(s);
+
+	nrun = 0;
+	foreach(j in jobs) {
+		if( JobStateGet(j) EQ RUNNING ) {
+			nrun++;
+		}
+	}
+	return(nrun);
+}
+
+Int numRunningPerUser(Server s, String user)
+{
+	Int	nrun;
+	Set Job jobs;
+	Job	j;
+
+	jobs  =  ServerJobsGet(s);
+
+	nrun = 0;
+	foreach(j in jobs) {
+		if( JobStateGet(j) EQ RUNNING AND
+		    JobEffectiveUserNameGet(j) EQ user ) {
+			nrun++;
+		}
+	}
+	return(nrun);
+}
+
+Int numRunningPerGroup(Server s, String group)
+{
+	Int	nrun;
+	Set Job jobs;
+	Job	j;
+
+	jobs  =  ServerJobsGet(s);
+
+	nrun = 0;
+	foreach(j in jobs) {
+		if( JobStateGet(j) EQ RUNNING AND
+		    JobEffectiveGroupNameGet(j) EQ group ) {
+			nrun++;
+		}
+	}
+	return(nrun);
+}
+
+Int numRunningInQue(Que q)
+{
+	Int	nrun;
+	Set Job jobs;
+	Job	j;
+
+	jobs  =  QueJobsGet(q);
+
+	nrun = 0;
+	foreach(j in jobs) {
+		if( JobStateGet(j) EQ RUNNING ) {
+			nrun++;
+		}
+	}
+	return(nrun);
+}
+
+Int numRunningInQuePerUser(Que q, String user)
+{
+	Int	nrun;
+	Set Job jobs;
+	Job	j;
+
+	jobs  =  QueJobsGet(q);
+
+	nrun = 0;
+	foreach(j in jobs) {
+		if( JobStateGet(j) EQ RUNNING AND
+		    JobEffectiveUserNameGet(j) EQ user ) {
+			nrun++;
+		}
+	}
+	return(nrun);
+}
+
+Int numRunningInQuePerGroup(Que q, String group)
+{
+	Int	nrun;
+	Set Job jobs;
+	Job	j;
+
+	jobs  =  QueJobsGet(q);
+
+	nrun = 0;
+	foreach(j in jobs) {
+		if( JobStateGet(j) EQ RUNNING AND
+		    JobEffectiveGroupNameGet(j) EQ group ) {
+			nrun++;
+		}
+	}
+	return(nrun);
+}
+
+// crossDedTimeBoundary(job): returns TRUE if job upon end of execution will
+//			      overlap with a dedicated time.
+Int crossDedTimeBoundary(Job job)
+{
+	DateTime	current_time;
+	Int		finish_secs;
+	Int		walltime;
+	Int		inDedTime;
+
+	current_time = datetimeGet();
+
+	// walltime < 0 if walltime attrib not set. We assume then it will
+	// cross dedicated time. 
+	walltime = JobIntResReqGet(job, "walltime");
+	if( walltime LT 0 ) {
+		return(TRUE);
+	}
+	finish_secs = walltime + datetimeToSecs(current_time);
+	inDedTime = (current_time GE DEDTIME_START AND
+                     current_time LE DEDTIME_END);
+	
+	if( !inDedTime AND finish_secs GE datetimeToSecs(DEDTIME_START) ) {
+		return(TRUE);
+	}
+
+	if( inDedTime AND finish_secs GE datetimeToSecs(DEDTIME_END) ) {
+		return(TRUE);
+	}
+
+	return(FALSE);
+}
+
+Job findMostStarvedJob(Server s)
+{
+	Job	 j;
+	Set Job	 jobs;
+	Que	 q;
+	Set Que	 queues;
+	Int	 current_time_secs;
+
+	Job	 most_starve_job;
+	Int	 create_time_secs; 
+	Int	 oldest_time_secs;
+
+	DateTime dt;
+	DateTime ct;
+
+	if( (PRIME_PERIOD AND !PRIMETIME_HELP_STARVING_JOB) OR
+	    (!PRIME_PERIOD AND !NON_PRIMETIME_HELP_STARVING_JOB) ) {
+		return(NOJOB);
+	}
+
+	dt = datetimeGet();
+	current_time_secs = datetimeToSecs(dt);
+
+	most_starve_job = NOJOB;
+	oldest_time_secs = -1;
+	queues = ServerQueuesGet(s);
+	foreach(q in queues) {
+//		Don't process the dedicated queues.
+		if( QueNameGet(q) EQ DEDQ ) {
+			continue;
+		}
+		jobs = QueJobsGet(q);
+		foreach(j in jobs) {
+		  ct = JobDateTimeCreatedGet(j);
+		  create_time_secs = datetimeToSecs(ct);
+		  
+	  	  if( JobStateGet(j) EQ QUEUED AND
+	      	      	(create_time_secs + STARVE_TIME_SECS) LT
+						current_time_secs ) {
+			if( oldest_time_secs LT 0 OR
+					create_time_secs LT oldest_time_secs ) {
+				oldest_time_secs = create_time_secs;
+				most_starve_job = j;
+			}
+	          }
+		}
+	}
+	return(most_starve_job);
+}
+
+// resource_available: returns:
+//	 TRUE if job's resource requirement is satisfiable.
+// 	 FALSE if job's resource requirement is currently not satisfiable,
+//	 -1 if job's resource requirement can never be satisfied.
+Int resource_available(Server s, Job j)
+{
+	String nodes;
+	String nodesq;
+	String msg;
+	Int    numAvail; 	
+
+	Size   mem_req;
+	Size   mem_left;
+
+	Int    ncpus_req;
+	Int    ncpus_left;
+
+	DateTime dt;
+
+	nodes = JobStringResReqGet(j, "nodes");
+
+	if( nodes NEQ NULLSTR ) {
+		nodesq = "nodes=" + nodes;
+
+		if( ServerNodesQuery(s, nodesq) NEQ SUCCESS ) {
+			dt = datetimeGet();
+			print(dt);
+			msg = "[" + JobIdGet(j) + "]: ServerNodesQuery[" + ServerInetAddrGet(s) + "," + nodesq + "]: failed!"; 
+			print(msg);
+			return( FALSE );
+		}
+
+		numAvail = ServerNodesNumAvailGet(s);
+		if( numAvail LT 0 ) {
+			dt = datetimeGet();
+			print(dt);
+			msg = "[" + JobIdGet(j) + "]: ServerNodesQuery[" + ServerInetAddrGet(s) + "," + nodesq + "]: unsatisfiable!";
+			print(msg);
+			return(-1);
+		}
+		if( numAvail GT 0 ) {
+			return(TRUE);
+		}
+		return(FALSE);
+	}
+
+	mem_req     = JobSizeResReqGet(j, "mem");
+	mem_left    = ServerSizeResAvailGet(s, "mem") - ServerSizeResAssignGet(s, "mem");	
+
+	if( (mem_req GE 0b AND mem_left GE 0b) AND (mem_req GT mem_left) ) {
+		dt = datetimeGet();
+		print(dt);
+		msg = "[" + JobIdGet(j) + "]: ";
+		print(msg);
+		print("MemRequire: ");
+		print(mem_req);
+		print("> MemLeft: ");
+		print(mem_left);
+		return(FALSE);
+	}
+
+	ncpus_req   = JobIntResReqGet(j, "ncpus");
+	ncpus_left  = ServerIntResAvailGet(s, "ncpus") -
+					ServerIntResAssignGet(s, "ncpus");
+
+	if( (ncpus_req GE 0 AND ncpus_left GE 0) AND (ncpus_req GT ncpus_left) ) {
+		dt = datetimeGet();
+		print(dt);
+		msg = "[" + JobIdGet(j) + "]: ";
+		print(msg);
+		print("# of cpus required: ");
+		print(ncpus_req);
+		print("> # of cpus left: ");
+		print(ncpus_left);
+		return(FALSE);
+	}
+
+	return(TRUE);
+}
+
+// runJob: runs job j depending if resAvail flag is set to TRUE or not.
+// 	   returns SUCCESS or if job ran, or FAIL if not.
+Int runJob(Job j, Int resAvail) {
+	Int retcode;
+	String jid;
+
+	switch(resAvail) {
+	  case TRUE:
+	    {
+		retcode = JobAction(j, SYNCRUN, NULLSTR);
+		if( retcode EQ FAIL ) {
+			printmsg(j, "SYNCRUN of job failed!");
+		} else {
+			printmsg(j, "SYNCRUN job.");
+			return(SUCCESS);
+		}
+	    }
+	  case FALSE:
+	    {
+		retcode = comment_update(j, "not enough resources available");
+		if( retcode EQ FAIL ) {
+		  printmsg(j, "MODIFYATTR of job's comment field failed!");
+		} else {
+		  printmsg(j, "cannot run job: resource temporarily unavailable");
+		}
+	    }
+	  case -1:
+	    {
+		jid = JobIdGet(j);
+		retcode = JobAction(j, DELETE, "Resource request unsatisfiable!");
+		if( retcode EQ SUCCESS ) {
+		  printmsg2(jid, "deleted. Resource request unsatisfiable!");
+		} else {
+		  printmsg2(jid, "deletion failed!");
+		}
+	    }
+	}
+	return(FAIL);
+}
+
+Void setSchedPeriod()
+{
+	DateTime	current_time;
+
+	current_time = datetimeGet();
+
+	switch(current_time) {
+	  case in PRIMETIME:
+		{
+			PRIME_PERIOD = TRUE;
+		}
+	  case in NON_PRIMETIME:
+		{
+			PRIME_PERIOD = FALSE;
+		}
+	}
+}
+
+Void perform_queue_sort(Server s)
+{
+	Set Que	queues;
+
+	queues = ServerQueuesGet(s);
+
+	if( (PRIME_PERIOD AND PRIMETIME_SORTQUE) OR (!PRIME_PERIOD AND NON_PRIMETIME_SORTQUE) ) {
+		Sort(queues, QuePriorityGet, DESC);
+	}
+}
+
+Int JobCputGet( Job job ) {
+	Int cput;
+
+	cput = JobIntResReqGet(job, "cput");
+	return(cput);
+}
+
+Int JobWalltimeGet( Job job ) {
+	Int wallt;
+
+	wallt = JobIntResReqGet(job, "walltime");
+	return(wallt);
+}
+
+Size JobMemGet( Job job ) {
+	Size mem;
+
+	mem = JobSizeResReqGet(job, "mem");
+	return(mem);
+}
+
+Void sortJobs(Set Job jobs, String sortMethod) {
+
+	switch(sortMethod) {
+	  case "shortest_job_first":
+	    {
+		Sort(jobs, JobCputGet, ASC);
+	    }
+	  case "longest_job_first":
+	    {
+		Sort(jobs, JobCputGet, DESC);
+	    }
+	  case "smallest_memory_first":
+	    {
+		Sort(jobs, JobMemGet, ASC);
+	    }
+	  case "largest_memory_first":
+	    {
+		Sort(jobs, JobMemGet, DESC);
+	    }
+	  case "high_priority_first":
+	    {
+		Sort(jobs, JobPriorityGet, DESC);
+	    }
+	  case "low_priority_first":
+	    {
+		Sort(jobs, JobPriorityGet, ASC);
+	    }
+	  case "large_walltime_first":
+	    {
+		Sort(jobs, JobWalltimeGet, DESC);
+	    }
+	  case "short_walltime_first":
+	    {
+		Sort(jobs, JobWalltimeGet, ASC);
+	    }
+	}
+}
+
+Void perform_job_sort(Server s)
+{
+	Que 	q;
+	Set Que ques;
+	Set Job jobs;
+
+	if( PRIME_PERIOD ) {
+	
+		ques = ServerQueuesGet(s);
+		foreach( q in ques ) {
+			jobs = QueJobsGet(q);
+			sortJobs(jobs, PRIMETIME_SORTJOB_METHOD);
+		}
+
+	} else {
+
+		ques = ServerQueuesGet(s);
+		foreach( q in ques ) {
+			jobs = QueJobsGet(q);
+			sortJobs(jobs, NON_PRIMETIME_SORTJOB_METHOD);
+		}
+
+	}
+}
+
+Int satisfy_constraint(Job j, Server s, Que q, Int nrun, Int q_nrun, Job stj)
+{
+
+  String	euser;
+  String	egroup;
+
+  Int		nrun_per_user;
+  Int		nrun_per_group;
+
+  Int		q_nrun_per_user;
+  Int		q_nrun_per_group;
+
+  String	jobid;
+  String	hostname;
+  String	qname;
+  String	buf;
+
+  Int		cond_s;
+  Int		cond_d;
+  Int		cond_qru;
+  Int		cond_qrg;
+  Int		cond_qr;
+  Int		cond_ru;
+  Int		cond_rg;
+  Int		cond_r;
+
+  cond_s = TRUE;
+  cond_d = TRUE;
+  cond_qru = TRUE;
+  cond_qrg = TRUE;
+  cond_qr = TRUE;
+  cond_ru = TRUE;
+  cond_rg = TRUE;
+  cond_r = TRUE;
+
+  jobid = JobIdGet(j);
+  hostname = ServerInetAddrGet(s);
+  qname = QueNameGet(q);
+
+  euser = JobEffectiveUserNameGet(j);
+  egroup = JobEffectiveGroupNameGet(j);
+
+  if(MAXRUN LE 0 OR MAXRUN GT nrun) {
+  
+    nrun_per_group = numRunningPerGroup(s, egroup);
+    if(MAXRUN_PERGRP LE 0 OR MAXRUN_PERGRP GT nrun_per_group) {
+
+      nrun_per_user = numRunningPerUser(s, euser);
+      if(MAXRUN_PERUSER LE 0 OR MAXRUN_PERUSER GT nrun_per_user) {
+
+        if(QUE_MAXRUN LE 0 OR QUE_MAXRUN GT q_nrun) {
+
+          q_nrun_per_group = numRunningInQuePerGroup(q, egroup);
+          if(QUE_MAXRUN_PERGRP LE 0 OR QUE_MAXRUN_PERGRP GT q_nrun_per_group) {
+
+  	    q_nrun_per_user = numRunningInQuePerUser(q, euser);
+            if(QUE_MAXRUN_PERUSER LE 0 OR QUE_MAXRUN_PERUSER GT q_nrun_per_user) {
+
+              if(!crossDedTimeBoundary(j)) {
+
+                if(stj EQ NOJOB OR stj EQ j) {
+			return(TRUE);
+                } else {
+			cond_s = FALSE;
+		}
+              } else {
+		cond_d = FALSE;
+	      }
+            } else {
+	      cond_qru = FALSE;
+	    }
+          } else {
+	    cond_qrg = FALSE;
+	  }
+        } else {
+	  cond_qr = FALSE;
+	}
+      } else {
+	cond_ru = FALSE;
+      }
+    } else {
+      cond_rg = FALSE;
+    }
+  } else {
+    cond_r = FALSE;
+  }
+
+  if( !cond_r ) {
+    buf = "running job will exceed max_running of host:" + hostname;
+    comment_update(j, buf);
+    return(FALSE);
+  }
+
+  if( !cond_rg ) {
+    buf = "running job will exceed max_group_run of host:" + hostname + " under group:" + egroup;
+    comment_update(j, buf);
+    return(FALSE);
+  }
+
+  if( !cond_ru ) {
+    buf = "running job will exceed max_user_run of host:" + hostname + " under user:" + euser;
+    comment_update(j, buf);
+    return(FALSE);
+  }
+
+  if( !cond_qr ) {
+    buf = "running job will exceed max_running of queue@host:" + qname + "@" + hostname;
+    comment_update(j, buf);
+    return(FALSE);
+  }
+
+  if( !cond_qrg ) {
+    buf = "running job will exceed max_group_run of queue@host:" + qname + "@" + hostname + " under group:" + egroup;
+    comment_update(j, buf);
+    return(FALSE);
+  }
+
+  if( !cond_qru ) {
+    buf = "running job will exceed max_user_run of queue@host:" + qname + "@" + hostname + " under user:" + euser;
+    comment_update(j, buf);
+    return(FALSE);
+  }
+  if( !cond_d ) {
+    comment_update(j, "running job will cross dedicated time");
+    return(FALSE);
+  }
+  if( !cond_s ) {
+    comment_update(j, "not the starving job.");
+    return(FALSE);
+  }
+
+  return(FALSE);
+}
+
+// **********************************************************************
+// *									*
+// *	Global assignments.						*
+// *									*
+// **********************************************************************
+DEDQ	      = "dedicated";
+DEDTIME_START = (01|01|2035@00:00:00);
+DEDTIME_END   = (01|01|2035@00:00:00);
+
+// specify how many secs a job has been queued before it is considered
+// starving.
+STARVE_TIME_SECS   = 86400;	// 24 hrs * (60 mins / 1 hr)* (60 secs / 1 min)
+
+// Specify the start time and end time of primetime period
+PRIMETIME =     ((04:00:00), (17:30:00));
+// Specify the start time and end time of non-primetime period
+NON_PRIMETIME = ((17:30:00), (04:00:00));
+
+// ======================================================================
+// =									=
+// =		Scheduling Strategy Specification			=
+// = NOTE: Different scheduling strategies can be undertaken depending	=
+// =	   on time period.						=
+// =									=
+// ======================================================================
+
+// Sorting of queues: TRUE or FALSE (1 or 0) to sort the queues by priority
+PRIMETIME_SORTQUE = TRUE;
+NON_PRIMETIME_SORTQUE = TRUE;
+
+
+// Push of Starving job: TRUE or FALSE (1 or 0) to give priority to starving
+// jobs (jobs which have been queued for more than STARVE_TIME_SECS). All
+// starving jobs will be run first before all other starving jobs.
+PRIMETIME_HELP_STARVING_JOB = TRUE;
+NON_PRIMETIME_HELP_STARVING_JOB = TRUE;
+
+
+// Sorting of jobs in a queue: Specify one of the following job sort strategies:
+//	"no_sort"
+//	"shortest_job_first"
+//	"longest_job_first"
+//	"smallest_memory_first"
+// 	"largest_memory_first"
+//	"high_priority_first"
+//	"low_priority_first"
+//	"large_walltime_first"
+//	"short_walltime_first"
+PRIMETIME_SORTJOB_METHOD = "shortest_job_first";
+NON_PRIMETIME_SORTJOB_METHOD = "shortest_job_first";
+
+
+// Strict fifo: TRUE or FALSE (0 or 1) to run jobs in a strict fifo order. If
+// one job cannot run, then move on to the next queue.
+// NOTE: If this is set to TRUE, it might be wise to specify "no_sort" for
+// 	 PRIMETIME_SORTJOB_METHOD or NON_PRIMETIME_SORTJOB_METHOD so as to
+//	 preserve internal ordering of the jobs. 
+PRIMETIME_STRICT_FIFO = FALSE;
+NON_PRIMETIME_STRICT_FIFO = FALSE;
+
+// **********************************************************************
+// *									*
+// * 	main scheduling code						*
+// *									*
+// **********************************************************************
+sched_main()
+{
+
+	Server	local;
+
+	Set Que	queues;
+	Que	q;
+
+	Set Job	jobs;
+	Job	j;
+
+	Job	stj;
+
+	Int	nrun;
+
+	Int	q_nrun;
+
+	Int	resAvail;
+	Int	ranjob;
+
+	DateTime dt;
+
+	String	jid;
+
+	setSchedPeriod();
+
+	dt = datetimeGet();
+	print(dt);
+	switch(PRIME_PERIOD) {
+	case TRUE:
+		{
+		  print("Primetime Scheduling started::::::::::::::::::::");
+		}
+	case FALSE:
+		{
+		  print("Non-Primetime Scheduling started::::::::::::::::::::");
+		}
+	}
+
+	local = AllServersLocalHostGet();
+
+	perform_queue_sort(local);
+	queues = ServerQueuesGet(local);
+
+	stj = findMostStarvedJob(local);
+
+	perform_job_sort(local);
+
+	nrun = numRunning(local);
+  	MAXRUN = ServerMaxRunJobsGet(local);
+	MAXRUN_PERUSER = ServerMaxRunJobsPerUserGet(local);
+	MAXRUN_PERGRP = ServerMaxRunJobsPerGroupGet(local);
+	// jobs are selected by queue
+	foreach( q in queues ) {
+		if( QueTypeGet(q) NEQ QTYPE_E OR QueStateGet(q) NEQ SCHED_ENABLED ) {
+			continue;
+		} 
+		jobs = QueJobsGet(q);
+
+		q_nrun = numRunningInQue(q);
+		QUE_MAXRUN = QueMaxRunJobsGet(q);
+	        QUE_MAXRUN_PERUSER = QueMaxRunJobsPerUserGet(q);		
+		QUE_MAXRUN_PERGRP = QueMaxRunJobsPerGroupGet(q);	
+		foreach( j in jobs ) {
+	             ranjob = FALSE;
+	             jid = JobIdGet(j);	
+		     if(JobStateGet(j) EQ QUEUED) {
+			if(satisfy_constraint(j, local, q, nrun, q_nrun, stj)) {
+				resAvail = resource_available(local, j);
+				if( runJob(j, resAvail) EQ SUCCESS ) {
+					nrun++;
+					q_nrun++;
+					ranjob = TRUE;
+				}
+			}
+			if( !ranjob ) {
+				if( (PRIME_PERIOD AND PRIMETIME_STRICT_FIFO) OR (!PRIME_PERIOD AND NON_PRIMETIME_STRICT_FIFO) ) {
+					printmsg2(jid, "did not run. Going into next queue since we run strict fifo.");
+					break;
+				}
+			} else {
+				if( stj EQ j ) {
+					printmsg2(jid, "Checking next queue since we already run 1 starving job from current queue.");
+					break;
+				}
+			}
+	             } else {
+			printmsg2(jid, "not running job since it's not QUEUED");
+		     }
+		}
+	}
+}

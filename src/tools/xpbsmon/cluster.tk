@@ -1,0 +1,1424 @@
+#         OpenPBS (Portable Batch System) v2.3 Software License
+# 
+# Copyright (c) 1999-2000 Veridian Information Solutions, Inc.
+# All rights reserved.
+# 
+# ---------------------------------------------------------------------------
+# For a license to use or redistribute the OpenPBS software under conditions
+# other than those described below, or to purchase support for this software,
+# please contact Veridian Systems, PBS Products Department ("Licensor") at:
+# 
+#    www.OpenPBS.org  +1 650 967-4675                  sales@OpenPBS.org
+#                        877 902-4PBS (US toll-free)
+# ---------------------------------------------------------------------------
+# 
+# This license covers use of the OpenPBS v2.3 software (the "Software") at
+# your site or location, and, for certain users, redistribution of the
+# Software to other sites and locations.  Use and redistribution of
+# OpenPBS v2.3 in source and binary forms, with or without modification,
+# are permitted provided that all of the following conditions are met.
+# After December 31, 2001, only conditions 3-6 must be met:
+# 
+# 1. Commercial and/or non-commercial use of the Software is permitted
+#    provided a current software registration is on file at www.OpenPBS.org.
+#    If use of this software contributes to a publication, product, or
+#    service, proper attribution must be given; see www.OpenPBS.org/credit.html
+# 
+# 2. Redistribution in any form is only permitted for non-commercial,
+#    non-profit purposes.  There can be no charge for the Software or any
+#    software incorporating the Software.  Further, there can be no
+#    expectation of revenue generated as a consequence of redistributing
+#    the Software.
+# 
+# 3. Any Redistribution of source code must retain the above copyright notice
+#    and the acknowledgment contained in paragraph 6, this list of conditions
+#    and the disclaimer contained in paragraph 7.
+# 
+# 4. Any Redistribution in binary form must reproduce the above copyright
+#    notice and the acknowledgment contained in paragraph 6, this list of
+#    conditions and the disclaimer contained in paragraph 7 in the
+#    documentation and/or other materials provided with the distribution.
+# 
+# 5. Redistributions in any form must be accompanied by information on how to
+#    obtain complete source code for the OpenPBS software and any
+#    modifications and/or additions to the OpenPBS software.  The source code
+#    must either be included in the distribution or be available for no more
+#    than the cost of distribution plus a nominal fee, and all modifications
+#    and additions to the Software must be freely redistributable by any party
+#    (including Licensor) without restriction.
+# 
+# 6. All advertising materials mentioning features or use of the Software must
+#    display the following acknowledgment:
+# 
+#     "This product includes software developed by NASA Ames Research Center,
+#     Lawrence Livermore National Laboratory, and Veridian Information
+#     Solutions, Inc.
+#     Visit www.OpenPBS.org for OpenPBS software support,
+#     products, and information."
+# 
+# 7. DISCLAIMER OF WARRANTY
+# 
+# THIS SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND. ANY EXPRESS
+# OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+# OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT
+# ARE EXPRESSLY DISCLAIMED.
+# 
+# IN NO EVENT SHALL VERIDIAN CORPORATION, ITS AFFILIATED COMPANIES, OR THE
+# U.S. GOVERNMENT OR ANY OF ITS AGENCIES BE LIABLE FOR ANY DIRECT OR INDIRECT,
+# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
+# OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+# LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+# NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+# EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# 
+# This license will be governed by the laws of the Commonwealth of Virginia,
+# without reference to its choice of law rules.
+
+proc clusterAddWidth {clusterf incr} {
+        global canvas
+
+        if {[string compare $clusterf ""] == 0 || ![regexp {[0-9]+} $incr]} {
+                return
+        }
+        set sysframe [clusterSystemFrameGet $clusterf]
+
+        set newCanvWidth [expr [clusterCanvasWidthGet $clusterf] + $incr]
+        set newDispWidth [expr [clusterDisplayWidthGet $clusterf] + $incr]
+        if {$newDispWidth < $canvas(clusterMaxWidth)} {
+                clusterCanvasWidthPut $clusterf $newCanvWidth
+                clusterDisplayWidthPut $clusterf $newDispWidth
+		set endpt [expr [clusterXposGet $clusterf] + $newCanvWidth]
+		if {$endpt > [systemCanvasWidthGet $sysframe]} {
+                	systemAddWidth $sysframe $incr
+		}
+        }
+        clusterScrollRegionWidthPut $clusterf \
+                          [expr [clusterScrollRegionWidthGet $clusterf] + $incr]
+
+}
+
+proc clusterPropagateOffset {clusterf diff} {
+
+	if {[string compare $clusterf ""] == 0 || ![regexp {[0-9]+} $diff]} {
+		return
+	}
+
+        set nextCluster [clusterNextGet $clusterf]
+
+        while {[string compare $nextCluster ""] != 0} {
+                set clusterOffset [clusterOffsetWidthGet $nextCluster]
+                clusterOffsetWidthPut $nextCluster \
+                                        [expr $clusterOffset + $diff]
+                set nextCluster [clusterNextGet $nextCluster]
+        }
+}
+
+proc clusterDelete clusterframe {
+        set array [string trimleft $clusterframe .]
+        global $array
+	if { [string compare $clusterframe ""] == 0 } {
+		return
+	}
+
+        catch {pack forget $clusterframe}
+
+        set cname [clusterNameGet $clusterframe]
+        set sysframe [clusterSystemFrameGet $clusterframe]
+        systemClusterFrameUnset $sysframe $cname
+
+        unset $array
+
+}
+
+proc clusterNamePut {clusterframe name} {
+        set array [string trimleft $clusterframe .]
+        global $array
+
+        set ${array}(name) $name
+}
+
+proc clusterNameGet {clusterframe} {
+        set array [string trimleft $clusterframe .]
+        global $array
+
+        if {![info exists ${array}(name)]} {
+                return ""
+        }
+        return [set ${array}(name)]
+}
+
+proc clusterCanvasFramePut {clusterframe frame} {
+        set array [string trimleft $clusterframe .]
+        global $array
+
+        set ${array}(canvasFrame) $frame
+}
+
+proc clusterCanvasFrameGet {clusterframe} {
+        set array [string trimleft $clusterframe .]
+        global $array
+
+        if {![info exists ${array}(canvasFrame)]} {
+                return ""
+        }
+        return [set ${array}(canvasFrame)]
+}
+
+proc clusterCanvasPut {clusterframe canvas} {
+        set array [string trimleft $clusterframe .]
+        global $array
+
+        set ${array}(canvas) $canvas
+}
+
+proc clusterCanvasGet {clusterframe} {
+        set array [string trimleft $clusterframe .]
+        global $array
+        if {![info exists ${array}(canvas)]} {
+                return ""
+        }
+        return [set ${array}(canvas)]
+}
+proc clusterRefreshPut {clusterframe flag} {
+        set array [string trimleft $clusterframe .]
+        global $array
+
+        set ${array}(refresh) $flag
+}
+
+proc clusterRefreshGet {clusterframe} {
+        set array [string trimleft $clusterframe .]
+        global $array
+
+        if {![info exists ${array}(refresh)]} {
+                return 0
+        }
+        return [set ${array}(refresh)]
+}
+
+proc clusterLabelFramePut {clusterframe frame} {
+        set array [string trimleft $clusterframe .]
+        global $array
+
+        set ${array}(labelFrame) $frame
+}
+
+proc clusterLabelFrameGet {clusterframe} {
+        set array [string trimleft $clusterframe .]
+        global $array
+
+        if {![info exists ${array}(labelFrame)]} {
+                return ""
+        }
+        return [set ${array}(labelFrame)]
+}
+
+proc clusterLabelPut {clusterframe label} {
+        set array [string trimleft $clusterframe .]
+        global $array
+
+        set ${array}(label) $label
+}
+
+proc clusterLabelGet {clusterframe} {
+        set array [string trimleft $clusterframe .]
+        global $array
+
+        if {![info exists ${array}(label)]} {
+                return ""
+        }
+        return [set ${array}(label)]
+}
+
+proc clusterLabelTextPut {clusterframe text} {
+        set array [string trimleft $clusterframe .]
+        global $array
+
+        set ${array}(labelText) $text
+}
+
+proc clusterLabelTextGet {clusterframe} {
+        set array [string trimleft $clusterframe .]
+        global $array
+
+        if {![info exists ${array}(labelText)]} {
+                return ""
+        }
+        return [set ${array}(labelText)]
+}
+
+proc clusterFooterHeaderPut {clusterframe label} {
+        set array [string trimleft $clusterframe .]
+        global $array
+
+        set ${array}(footerHeader) $label
+}
+
+proc clusterFooterHeaderGet {clusterframe} {
+        set array [string trimleft $clusterframe .]
+        global $array
+
+        if {![info exists ${array}(footerHeader)]} {
+                return ""
+        }
+        return [set ${array}(footerHeader)]
+}
+
+proc clusterStatusBarPut {clusterframe statusBar} {
+        set array [string trimleft $clusterframe .]
+        global $array
+
+        set ${array}(statusBar) $statusBar
+}
+
+proc clusterStatusBarFramePut {clusterframe frame} {
+        set array [string trimleft $clusterframe .]
+        global $array
+
+        set ${array}(statusBarFrame) $frame
+}
+
+proc clusterStatusBarFrameGet {clusterframe} {
+        set array [string trimleft $clusterframe .]
+        global $array
+
+        if {![info exists ${array}(statusBarFrame)]} {
+                return ""
+        }
+        return [set ${array}(statusBarFrame)]
+}
+
+proc clusterStatusBarGet {clusterframe} {
+        set array [string trimleft $clusterframe .]
+        global $array
+
+        if {![info exists ${array}(statusBar)]} {
+                return ""
+        }
+        return [set ${array}(statusBar)]
+}
+
+proc clusterXscrollFramePut {clusterframe frame} {
+        set array [string trimleft $clusterframe .]
+        global $array
+
+        set ${array}(xscrollFrame) $frame
+}
+
+proc clusterXscrollFrameGet {clusterframe} {
+        set array [string trimleft $clusterframe .]
+        global $array
+
+        if {![info exists ${array}(xscrollFrame)]} {
+                return ""
+        }
+        return [set ${array}(xscrollFrame)]
+}
+
+
+proc clusterXscrollPut {clusterframe xscroll} {
+        set array [string trimleft $clusterframe .]
+        global $array
+
+        set ${array}(Xscroll) $xscroll
+}
+
+proc clusterXscrollGet {clusterframe} {
+        set array [string trimleft $clusterframe .]
+        global $array
+
+        if {![info exists ${array}(Xscroll)]} {
+                return ""
+        }
+        return [set ${array}(Xscroll)]
+}
+
+proc clusterYscrollFramePut {clusterframe frame} {
+        set array [string trimleft $clusterframe .]
+        global $array
+
+        set ${array}(yscrollFrame) $frame
+}
+
+proc clusterYscrollFrameGet {clusterframe} {
+        set array [string trimleft $clusterframe .]
+        global $array
+
+        if {![info exists ${array}(yscrollFrame)]} {
+                return ""
+        }
+        return [set ${array}(yscrollFrame)]
+}
+
+
+proc clusterYscrollPut {clusterframe yscroll} {
+        set array [string trimleft $clusterframe .]
+        global $array
+
+        set ${array}(Yscroll) $yscroll
+}
+
+proc clusterYscrollGet {clusterframe} {
+        set array [string trimleft $clusterframe .]
+        global $array
+
+        if {![info exists ${array}(Yscroll)]} {
+                return ""
+        }
+        return [set ${array}(Yscroll)]
+}
+
+proc clusterDisplayWidthPut {clusterframe width} {
+        set array [string trimleft $clusterframe .]
+        global $array
+
+        set ${array}(displayWidth) $width
+}
+
+proc clusterDisplayWidthGet {clusterframe} {
+        set array [string trimleft $clusterframe .]
+        global $array
+
+        if {![info exists ${array}(displayWidth)]} {
+                return ""
+        }
+        return [set ${array}(displayWidth)]
+}
+
+proc clusterDisplayHeightPut {clusterframe height} {
+        set array [string trimleft $clusterframe .]
+        global $array
+
+        set ${array}(displayHeight) $height
+}
+
+proc clusterDisplayHeightGet {clusterframe} {
+        set array [string trimleft $clusterframe .]
+        global $array
+
+        if {![info exists ${array}(displayHeight)]} {
+                return ""
+        }
+        return [set ${array}(displayHeight)]
+}
+
+proc clusterCanvasWidthPut {clusterframe width} {
+        set array [string trimleft $clusterframe .]
+        global $array
+
+        set ${array}(canvasWidth) $width
+}
+
+proc clusterCanvasWidthGet {clusterframe} {
+        set array [string trimleft $clusterframe .]
+        global $array
+
+        if {![info exists ${array}(canvasWidth)]} {
+                return ""
+        }
+        return [set ${array}(canvasWidth)]
+}
+proc clusterCanvasHeightPut {clusterframe height} {
+        set array [string trimleft $clusterframe .]
+        global $array
+
+        set ${array}(canvasHeight) $height
+}
+
+proc clusterCanvasHeightGet {clusterframe} {
+        set array [string trimleft $clusterframe .]
+        global $array
+
+        if {![info exists ${array}(canvasHeight)]} {
+                return ""
+        }
+        return [set ${array}(canvasHeight)]
+}
+
+proc clusterScrollRegionWidthPut {clusterframe width} {
+        set array [string trimleft $clusterframe .]
+        global $array
+
+        set ${array}(scrollRegionWidth) $width
+}
+
+proc clusterScrollRegionWidthGet {clusterframe} {
+        set array [string trimleft $clusterframe .]
+        global $array
+
+        if {![info exists ${array}(scrollRegionWidth)]} {
+                return ""
+        }
+        return [set ${array}(scrollRegionWidth)]
+}
+
+proc clusterScrollRegionHeightPut {clusterframe height} {
+        set array [string trimleft $clusterframe .]
+        global $array
+
+        set ${array}(scrollRegionHeight) $height
+}
+
+proc clusterScrollRegionHeightGet {clusterframe} {
+        set array [string trimleft $clusterframe .]
+        global $array
+
+        if {![info exists ${array}(scrollRegionHeight)]} {
+                return ""
+        }
+        return [set ${array}(scrollRegionHeight)]
+}
+proc clusterXposPut {clusterframe pos} {
+        set array [string trimleft $clusterframe .]
+        global $array
+
+        set ${array}(Xpos) $pos
+}
+
+proc clusterXposGet {clusterframe} {
+        set array [string trimleft $clusterframe .]
+        global $array
+
+        if {![info exists ${array}(Xpos)]} {
+                return ""
+        }
+        return [set ${array}(Xpos)]
+}
+
+proc clusterYposPut {clusterframe pos} {
+        set array [string trimleft $clusterframe .]
+        global $array
+
+        set ${array}(Ypos) $pos
+}
+
+proc clusterYposGet {clusterframe} {
+        set array [string trimleft $clusterframe .]
+        global $array
+
+        if {![info exists ${array}(Ypos)]} {
+                return ""
+        }
+        return [set ${array}(Ypos)]
+}
+
+proc clusterNextPut {clusterframe frame} {
+        set array [string trimleft $clusterframe .]
+        global $array
+
+        set ${array}(next) $frame
+}
+
+proc clusterNextGet {clusterframe} {
+        set array [string trimleft $clusterframe .]
+        global $array
+
+        if {![info exists ${array}(next)]} {
+                return ""
+        }
+        return [set ${array}(next)]
+}
+proc clusterOffsetWidthPut {clusterframe incr} {
+        set array [string trimleft $clusterframe .]
+        global $array
+
+        set ${array}(offsetWidth) $incr
+}
+
+proc clusterOffsetWidthGet {clusterframe} {
+        set array [string trimleft $clusterframe .]
+        global $array
+
+        if {![info exists ${array}(offsetWidth)]} {
+                return ""
+        }
+        return [set ${array}(offsetWidth)]
+}
+
+proc clusterMainFramePut {clusterframe frame} {
+        set array [string trimleft $clusterframe .]
+        global $array
+
+        set ${array}(mainFrame) $frame
+}
+
+proc clusterMainFrameGet {clusterframe} {
+        set array [string trimleft $clusterframe .]
+        global $array
+
+        if {![info exists ${array}(mainFrame)]} {
+                return ""
+        }
+        return [set ${array}(mainFrame)]
+}
+
+proc clusterSystemFramePut {clusterframe frame} {
+        set array [string trimleft $clusterframe .]
+        global $array
+
+        set ${array}(systemFrame) $frame
+}
+
+proc clusterSystemFrameGet {clusterframe} {
+        set array [string trimleft $clusterframe .]
+        global $array
+
+        if {![info exists ${array}(systemFrame)]} {
+                return ""
+        }
+        return [set ${array}(systemFrame)]
+}
+proc clusterNodesListPut {clusterframe nlist} {
+        set array [string trimleft $clusterframe .]
+        global $array
+
+        set ${array}(nodeslist) $nlist
+}
+
+proc clusterNodesListGet {clusterframe} {
+        set array [string trimleft $clusterframe .]
+        global $array
+
+        if {![info exists ${array}(nodeslist)]} {
+                return ""
+        }
+        return [set ${array}(nodeslist)]
+}
+
+proc clusterTotPoolPut {clusterframe totpool} {
+        set array [string trimleft $clusterframe .]
+        global $array
+
+        set ${array}(totpool) $totpool
+}
+
+proc clusterTotPoolGet {clusterframe} {
+        set array [string trimleft $clusterframe .]
+        global $array
+
+        if {![info exists ${array}(totpool)]} {
+                return ""
+        }
+        return [set ${array}(totpool)]
+}
+
+proc clusterUsePoolPut {clusterframe usepool} {
+        set array [string trimleft $clusterframe .]
+        global $array
+
+        set ${array}(usepool) $usepool
+}
+
+proc clusterUsePoolGet {clusterframe} {
+        set array [string trimleft $clusterframe .]
+        global $array
+
+        if {![info exists ${array}(usepool)]} {
+                return ""
+        }
+        return [set ${array}(usepool)]
+}
+
+proc clusterAvailPoolPut {clusterframe availpool} {
+        set array [string trimleft $clusterframe .]
+        global $array
+
+        set ${array}(availpool) $availpool
+}
+
+proc clusterAvailPoolGet {clusterframe} {
+        set array [string trimleft $clusterframe .]
+        global $array
+
+        if {![info exists ${array}(availpool)]} {
+                return ""
+        }
+        return [set ${array}(availpool)]
+}
+proc clusterOfflinePoolPut {clusterframe offlpool} {
+        set array [string trimleft $clusterframe .]
+        global $array
+
+        set ${array}(offlpool) $offlpool
+}
+
+proc clusterOfflinePoolGet {clusterframe} {
+        set array [string trimleft $clusterframe .]
+        global $array
+
+        if {![info exists ${array}(offlpool)]} {
+                return ""
+        }
+        return [set ${array}(offlpool)]
+}
+
+proc clusterDownPoolPut {clusterframe downpool} {
+        set array [string trimleft $clusterframe .]
+        global $array
+
+        set ${array}(downpool) $downpool
+}
+
+proc clusterDownPoolGet {clusterframe} {
+        set array [string trimleft $clusterframe .]
+        global $array
+
+        if {![info exists ${array}(downpool)]} {
+                return ""
+        }
+        return [set ${array}(downpool)]
+}
+
+proc clusterReservedPoolPut {clusterframe rsrvpool} {
+        set array [string trimleft $clusterframe .]
+        global $array
+
+        set ${array}(rsrvpool) $rsrvpool
+}
+
+proc clusterReservedPoolGet {clusterframe} {
+        set array [string trimleft $clusterframe .]
+        global $array
+
+        if {![info exists ${array}(rsrvpool)]} {
+                return ""
+        }
+        return [set ${array}(rsrvpool)]
+}
+
+proc clusterUnkPoolPut {clusterframe unkpool} {
+        set array [string trimleft $clusterframe .]
+        global $array
+
+        set ${array}(unkpool) $unkpool
+}
+
+proc clusterUnkPoolGet {clusterframe} {
+        set array [string trimleft $clusterframe .]
+        global $array
+
+        if {![info exists ${array}(unkpool)]} {
+                return ""
+        }
+        return [set ${array}(unkpool)]
+}
+
+proc clusterCpusAssnPut {clusterframe cpus_assn} {
+        set array [string trimleft $clusterframe .]
+        global $array
+
+        set ${array}(cpus_assn) $cpus_assn
+}
+
+proc clusterCpusAssnGet {clusterframe} {
+        set array [string trimleft $clusterframe .]
+        global $array
+
+        if {![info exists ${array}(cpus_assn)]} {
+                return ""
+        }
+        return [set ${array}(cpus_assn)]
+}
+
+proc clusterVprocsAssnPut {clusterframe vprocs_assn} {
+        set array [string trimleft $clusterframe .]
+        global $array
+
+        set ${array}(vprocs_assn) $vprocs_assn
+}
+
+proc clusterVprocsAssnGet {clusterframe} {
+        set array [string trimleft $clusterframe .]
+        global $array
+
+        if {![info exists ${array}(vprocs_assn)]} {
+                return ""
+        }
+        return [set ${array}(vprocs_assn)]
+}
+
+proc clusterCpusMaxPut {clusterframe cpus_max} {
+        set array [string trimleft $clusterframe .]
+        global $array
+
+        set ${array}(cpus_max) $cpus_max
+}
+
+proc clusterCpusMaxGet {clusterframe} {
+        set array [string trimleft $clusterframe .]
+        global $array
+
+        if {![info exists ${array}(cpus_max)]} {
+                return ""
+        }
+        return [set ${array}(cpus_max)]
+}
+
+proc clusterPrint clusterframe {
+
+	if {[string compare $clusterframe ""] == 0} {
+		return
+	}
+        puts "cluster frame: $clusterframe===================================>"
+        puts "Name: [clusterNameGet $clusterframe]"
+        puts "Canvas: [clusterCanvasGet $clusterframe]"
+        puts "Canvas Frame: [clusterCanvasFrameGet $clusterframe]"
+        puts "Refresh Flag: [clusterRefreshGet $clusterframe]"
+        puts "Label Frame: [clusterLabelFrameGet $clusterframe]"
+        puts "Label: [clusterLabelGet $clusterframe]"
+        puts "Label Text: [clusterLabelTextGet $clusterframe]"
+        puts "FooterHeader: [clusterFooterHeaderGet $clusterframe]"
+        puts "StatusBar: [clusterStatusBarGet $clusterframe]"   
+        puts "StatusBar Frame: [clusterStatusBarFrameGet $clusterframe]"
+        puts "Xscroll: [clusterXscrollGet $clusterframe]"
+        puts "Xscroll Frame: [clusterXscrollFrameGet $clusterframe]"
+        puts "Yscroll: [clusterYscrollGet $clusterframe]"
+        puts "Yscroll Frame: [clusterYscrollFrameGet $clusterframe]"
+        puts "Display Width: [clusterDisplayWidthGet $clusterframe]"
+        puts "Display Height: [clusterDisplayHeightGet $clusterframe]"
+        puts "Canvas Width: [clusterCanvasWidthGet $clusterframe]"
+        puts "Canvas Height: [clusterCanvasHeightGet $clusterframe]"
+        puts "ScrollRegion's Width: [clusterScrollRegionWidthGet $clusterframe]"
+        puts "ScrollRegion's Height: [clusterScrollRegionHeightGet $clusterframe]"
+        puts "Xpos: [clusterXposGet $clusterframe]"
+        puts "Ypos: [clusterYposGet $clusterframe]"
+        puts "Next Frame: [clusterNextGet $clusterframe]"
+        puts "Offset Width: [clusterOffsetWidthGet $clusterframe]"
+        puts "Main Frame: [clusterMainFrameGet $clusterframe]"
+        puts "System Frame: [clusterSystemFrameGet $clusterframe]"
+        puts "Nodes List: [clusterNodesListGet $clusterframe]"
+        puts "Total Pool: [clusterTotPoolGet $clusterframe]"
+        puts "Use Pool: [clusterUsePoolGet $clusterframe]"
+        puts "Avail Pool: [clusterAvailPoolGet $clusterframe]"
+        puts "Offline Pool: [clusterOfflinePoolGet $clusterframe]"
+        puts "Down Pool: [clusterDownPoolGet $clusterframe]"
+        puts "Reserved Pool: [clusterReservedPoolGet $clusterframe]"
+        puts "Unknown Pool: [clusterUnkPoolGet $clusterframe]"
+        puts "Cpus Assn: [clusterCpusAssnGet $clusterframe]"
+        puts "Virtual Processors Assn: [clusterVprocsAssnGet $clusterframe]"
+        puts "Cpus Max: [clusterCpusMaxGet $clusterframe]"
+}
+
+proc clusterCreate {frame clusterName clusterLabel nlist footerHeader viewType} {
+        global canvas
+
+
+        set retwidth 0
+        set retheight 0
+
+        clusterNamePut $frame $clusterName
+
+        frame $frame -class Medium
+
+        frame $frame.l -class MediumLabel -borderwidth 0 -relief flat
+
+        frame $frame.m -class MediumCanvas -borderwidth 0 -relief flat
+        frame $frame.m.c -borderwidth 0
+
+        frame $frame.m.y -borderwidth 0
+
+        frame $frame.m.x -borderwidth 0
+        frame $frame.s  -class MediumLabel -borderwidth 0 -relief flat
+
+        label $frame.l.label -text $clusterLabel \
+                        -justify center
+        set labelWidth [expr \
+                         2*$canvas(medBd) + 2*$canvas(medLabelBd) + \
+                $canvas(medLabelFontWidth)*[string length $clusterLabel]]
+        set labelHeight [expr $canvas(medBd) + 2*$canvas(medLabelBd) \
+                                + $canvas(medLabelFontHeight)]
+
+
+        clusterLabelTextPut $frame $clusterLabel
+
+        label $frame.s.label -font $canvas(medLabelFont) \
+                                -text $footerHeader \
+                                -justify center
+        set footerWidth [expr \
+                                2*$canvas(medBd) + \
+                                2*$canvas(medLabelBd) + \
+                   $canvas(medLabelFontWidth)*[string length $footerHeader]]
+        set footerHeight [expr 2*$canvas(medLabelBd) + \
+                               $canvas(medBd) + \
+                               2*$canvas(medLabelFontHeight)]
+
+        canvas $frame.m.c.canvas -confine 1
+
+        set canvasFrameWidth [expr $canvas(medBd) + \
+                                   2*$canvas(medCanvasBd)]
+
+        set canvasFrameHeight [expr 2*$canvas(medCanvasBd)]
+        set totwidth 0
+        set totheight 0
+        set x1 0
+        set y1 0
+        set pw 0
+        set ph 0
+	if {$footerWidth > $labelWidth} {
+        	set maxWidth $footerWidth
+	} else {
+        	set maxWidth $labelWidth
+	}
+
+        clusterNodesListPut $frame $nlist
+        set llen [llength $nlist]
+	set prevNode ""
+	set rowNodes ""
+
+        clusterTotPoolPut $frame $llen
+        clusterUsePoolPut $frame 0
+        clusterAvailPoolPut $frame 0
+        clusterOfflinePoolPut $frame 0
+        clusterDownPoolPut $frame 0
+        clusterReservedPoolPut $frame 0
+        clusterUnkPoolPut $frame 0
+        clusterCpusAssnPut $frame 0
+        clusterVprocsAssnPut $frame 0
+        clusterCpusMaxPut $frame 0
+
+	set sysframe [clusterSystemFrameGet $frame]
+
+        set j 0
+        for {set i 0} {$i < $llen} {incr i} {
+                set nodeinfo [lindex $nlist $i]
+                set nodename [lindex $nodeinfo 0]
+                set nodelabel $nodename
+                set nodetype [lindex $nodeinfo 1]
+
+		clusterStatsUpdate $frame \
+			[systemNodeStatusGet $sysframe $nodename] +
+
+                set pos [nodeCreate $frame.m.c.$i $nodename $nodelabel \
+                                         	$frame $nodetype $viewType]
+
+                set w [lindex $pos 0]
+                set h [lindex $pos 1]
+
+                if { $i == 0 } {
+			set rowNodes $frame.m.c.$i
+                        incr totwidth $w
+                        incr totheight $h
+                } elseif { [expr $j % $canvas(clusterNumBoxesPerRow)] == 0 || \
+                           [expr $totwidth + $w] > $canvas(clusterMaxWidth) } {
+		
+                        set rowOffset [expr ($maxWidth - $totwidth) / 2]
+                        if {$rowOffset > 0} {
+                                foreach fr $rowNodes {
+                                        nodeOffsetWidthPut $fr $rowOffset
+                                }
+                        }
+                        set rowNodes $frame.m.c.$i
+                        set x1 0
+                        incr y1 $ph
+                        incr totheight $h
+
+                        if {$totwidth > $maxWidth} {
+                                set maxWidth $totwidth
+                        }
+                        set totwidth $w
+                        set j 0
+
+                } else {
+			lappend rowNodes $frame.m.c.$i
+                        # same row
+                        incr x1 $pw
+                        incr totwidth $w
+
+			if {[string compare $prevNode ""] != 0} {
+                                nodeNextPut $prevNode $frame.m.c.$i
+                        }
+
+                }
+                pack forget $frame.m.c.$i
+                set wid [$frame.m.c.canvas create window $x1 $y1 \
+                                 -window $frame.m.c.$i -anchor nw \
+                                 -tags $frame.m.c.$i -width $w -height $h]
+                nodeXposPut $frame.m.c.$i $x1
+                nodeYposPut $frame.m.c.$i $y1
+                set pw $w
+                set ph $h
+		set prevNode $frame.m.c.$i
+                incr j
+       }
+
+        if {[string compare $rowNodes ""] != 0} {
+                set rowOffset [expr ($maxWidth - $totwidth) / 2]
+                if {$rowOffset > 0} {
+                        foreach fr $rowNodes {
+                                nodeOffsetWidthPut $fr $rowOffset
+                        }
+                }
+        }
+
+        if {$maxWidth > $totwidth} {
+                set totwidth $maxWidth
+        }
+
+
+        scrollbar $frame.m.x.xscroll -orient horizontal \
+                        -width $canvas(medLabelFontHeight) \
+                        -background $canvas(medScrollBg) \
+                        -relief $canvas(medScrollRelief) \
+                        -borderwidth $canvas(medScrollBd) \
+                        -command [list $frame.m.c.canvas xview]
+
+        set scrollHeight [expr \
+                2*[lindex [$frame.m.x.xscroll configure -borderwidth] end] \
+                + [lindex [$frame.m.x.xscroll configure -width] end]]
+        $frame.m.x configure -height $scrollHeight
+
+        scrollbar $frame.m.y.yscroll -orient vertical \
+                                -width $canvas(medLabelFontHeight) \
+                                -background $canvas(medScrollBg) \
+                                -relief $canvas(medScrollRelief) \
+                                -borderwidth $canvas(medScrollBd) \
+                                -command [list $frame.m.c.canvas yview]
+
+        set scrollWidth [expr \
+                $canvas(medBd) + \
+                2*[lindex [$frame.m.y.yscroll configure -borderwidth] end]  \
+               + [lindex [$frame.m.y.yscroll configure -width] end]]
+        $frame.m.y configure -width $scrollWidth
+
+        clusterFooterHeaderPut $frame $footerHeader
+        clusterLabelPut $frame $frame.l.label
+        clusterLabelFramePut $frame $frame.l
+
+        clusterCanvasPut $frame $frame.m.c.canvas
+        clusterCanvasFramePut $frame $frame.m.c
+
+        clusterXscrollPut $frame $frame.m.x.xscroll
+        clusterXscrollFramePut $frame $frame.m.x
+
+        clusterYscrollPut $frame $frame.m.y.yscroll
+        clusterYscrollFramePut $frame $frame.m.y
+
+        clusterStatusBarPut $frame $frame.s.label
+        clusterStatusBarFramePut $frame $frame.s
+
+        clusterMainFramePut $frame $frame.m
+        clusterScrollRegionWidthPut $frame $totwidth
+        set scrollRegionWidth $totwidth
+        clusterScrollRegionHeightPut $frame $totheight
+        set scrollRegionHeight $totheight
+
+        clusterXposPut $frame 0
+        clusterYposPut $frame 0
+
+        clusterNextPut $frame ""
+        clusterOffsetWidthPut $frame 0
+        clusterRefreshPut $frame 0
+
+        set retwidth [expr $canvasFrameWidth + $totwidth + $scrollWidth]
+        if {$labelWidth > $retwidth && \
+                $labelWidth > $footerWidth} {
+                set retwidth $labelWidth
+        } elseif {$footerWidth > $retwidth && \
+                $footerWidth > $labelWidth} {
+                set retwidth $footerWidth
+        }
+
+        clusterCanvasWidthPut $frame $totwidth
+        clusterDisplayWidthPut $frame $retwidth
+        set canvWidth $totwidth
+        if { $retwidth  >  $canvas(clusterMaxWidth) } {
+                set canvWidth  [expr $canvas(clusterMaxWidth) - \
+                                     $canvasFrameWidth - $scrollWidth]
+                if {$canvWidth > 0} {
+                        clusterDisplayWidthPut $frame $canvas(clusterMaxWidth)
+                        clusterCanvasWidthPut $frame $canvWidth
+                        set retwidth $canvas(clusterMaxWidth)
+
+                }
+        }
+
+        set retheight [expr $labelHeight + $canvasFrameHeight + $totheight + \
+                                                $scrollHeight + $footerHeight]
+        clusterCanvasHeightPut $frame $totheight
+        clusterDisplayHeightPut $frame $retheight
+        set canvHeight $totheight
+        if { $retheight >  $canvas(clusterMaxHeight) } {
+                set canvHeight [expr    $canvas(clusterMaxHeight) - \
+                                        $labelHeight - $canvasFrameHeight - \
+                                        $scrollHeight - $footerHeight]
+                if {$canvHeight > 0} {
+                        clusterDisplayHeightPut $frame $canvas(clusterMaxHeight)
+                        clusterCanvasHeightPut $frame $canvHeight
+                        set retheight $canvas(clusterMaxHeight)
+
+                }
+        }
+      set canvWidth [clusterCanvasWidthGet $frame]
+      set canvHeight [clusterCanvasHeightGet $frame]
+      $frame.m.c.canvas configure -width $canvWidth -height $canvHeight \
+                -xscrollcommand [list $frame.m.x.xscroll set] \
+                -yscrollcommand [list $frame.m.y.yscroll set] \
+                -scrollregion [list 0 0 $scrollRegionWidth $scrollRegionHeight]
+
+        if {$canvWidth > 0 && $scrollRegionWidth > $canvWidth} {
+                pack $frame.m.x.xscroll -side bottom -fill x -padx 0 -pady 0 \
+                                                              -ipadx 0 -ipady 0
+        }
+        if {$canvHeight > 0 && $scrollRegionHeight > $canvHeight} {
+                pack $frame.m.y.yscroll -side right -fill y -padx 0 -pady 0 \
+                                                   -ipadx 0 -ipady 0 -anchor nw
+        }
+
+        pack $frame.l.label -fill both -expand true -padx 0 -pady 0 \
+                                -ipadx 0  -ipady 0
+        pack $frame.m.c.canvas -fill both -expand true -padx 0 -pady 0 \
+                                -ipadx 0 -ipady 0
+        pack $frame.m.x -side bottom -fill x -padx 0 -pady 0 \
+                                -ipadx 0 -ipady 0
+        pack $frame.m.y -side right -fill y -padx 0 -pady 0 -ipadx 0 -ipady 0
+        pack $frame.m.c -expand true -fill both -padx 0 -pady 0 -ipadx 0 \
+                                                                -ipady 0
+        pack $frame.s.label -fill both -expand true -padx 0 -pady 0 -ipadx 0 \
+                                                                -ipady 0
+
+        pack $frame.l $frame.m $frame.s -side top -fill both -anchor nw \
+                                -expand true -padx 0 -pady 0 -ipadx 0 -ipady 0
+        pack $frame -fill both -expand true -padx 0 -pady 0 -ipadx 0 -ipady 0
+
+        return [list $retwidth $retheight]
+}
+
+proc clusterReCreate { frame } {
+        global canvas sysview
+
+        set retwidth 0
+        set retheight 0
+
+        set sitename [systemNameGet [clusterSystemFrameGet $frame]]
+
+        set clusterLabel [clusterLabelTextGet $frame]
+
+        $frame.l.label configure -text $clusterLabel
+        set labelWidth [expr \
+                         2*$canvas(medBd) + 2*$canvas(medLabelBd) + \
+                $canvas(medLabelFontWidth)*[string length $clusterLabel]]
+        set labelHeight [expr $canvas(medBd) + 2*$canvas(medLabelBd) \
+                                + $canvas(medLabelFontHeight)]
+
+        set footerHeader [clusterFooterHeaderGet $frame]
+        $frame.s.label configure -text $footerHeader
+
+        set footerWidth [expr \
+                                2*$canvas(medBd) + \
+                                2*$canvas(medLabelBd) + \
+                   $canvas(medLabelFontWidth)*[string length $footerHeader]]
+        set footerHeight [expr 2*$canvas(medLabelBd) + \
+                               $canvas(medBd) + \
+                               2*$canvas(medLabelFontHeight)]
+
+        set canvasFrameWidth [expr $canvas(medBd) + \
+                                   2*$canvas(medCanvasBd)]
+
+        set canvasFrameHeight [expr 2*$canvas(medCanvasBd)]
+
+        set totwidth 0
+        set totheight 0
+        set x1 0
+        set y1 0
+        set pw 0
+        set ph 0
+	if {$footerWidth > $labelWidth} {
+        	set maxWidth $footerWidth
+	} else {
+        	set maxWidth $labelWidth
+	}
+
+        set nlist [clusterNodesListGet $frame]
+        set llen [llength $nlist]
+	set prevNode ""
+	set rowNodes ""
+
+        set j 0
+        for {set i 0} {$i < $llen} {incr i} {
+                set nodeinfo [lindex $nlist $i]
+                set nodename [lindex $nodeinfo 0]
+                set nodelabel $nodename
+                set nodetype [lindex $nodeinfo 1]
+
+                catch {frame $frame.m.c.$i -borderwidth 0}
+
+                nodeNamePut $frame.m.c.$i $nodename
+                nodeLabelPut $frame.m.c.$i $nodelabel
+                nodeViewTypePut $frame.m.c.$i $sysview($sitename)
+                nodeTypePut $frame.m.c.$i $nodetype
+
+                $frame.m.c.canvas delete $frame.m.c.$i
+
+                set pos [nodeReCreate $frame.m.c.$i]
+                set w [lindex $pos 0]
+                set h [lindex $pos 1]
+
+                if { $i == 0 } {
+			set rowNodes $frame.m.c.$i
+                        incr totwidth $w
+                        incr totheight $h
+                } elseif { [expr $j % $canvas(clusterNumBoxesPerRow)] == 0 || \
+                           [expr $totwidth + $w] > $canvas(clusterMaxWidth) } {
+                        set rowOffset [expr ($maxWidth - $totwidth) / 2]
+                        if {$rowOffset > 0} {
+                                foreach fr $rowNodes {
+                                        nodeOffsetWidthPut $fr $rowOffset
+                                }
+                        }
+                        set rowNodes $frame.m.c.$i
+                        set x1 0
+                        incr y1 $ph
+                        incr totheight $h
+
+                        if {$totwidth > $maxWidth} {
+                                set maxWidth $totwidth
+                        }
+                        set totwidth $w
+                        set j 0
+
+                } else {
+			lappend rowNodes $frame.m.c.$i
+                        # same row
+                        incr x1 $pw
+                        incr totwidth $w
+
+                        if {[string compare $prevNode ""] != 0} {
+                                nodeNextPut $prevNode $frame.m.c.$i
+                        }
+
+                }
+                pack forget $frame.m.c.$i
+                set wid [$frame.m.c.canvas create window $x1 $y1 \
+                                -window $frame.m.c.$i -anchor nw \
+                                -tags $frame.m.c.$i -width $w -height $h]
+                nodeXposPut $frame.m.c.$i $x1
+                nodeYposPut $frame.m.c.$i $y1
+                set pw $w
+                set ph $h
+		set prevNode $frame.m.c.$i
+                incr j
+        }
+
+        if {[string compare $rowNodes ""] != 0} {
+                set rowOffset [expr ($maxWidth - $totwidth) / 2]
+                if {$rowOffset > 0} {
+                        foreach fr $rowNodes {
+                                nodeOffsetWidthPut $fr $rowOffset
+                        }
+                }
+        }
+
+        if {$maxWidth > $totwidth} {
+                set totwidth $maxWidth
+        }
+
+        $frame.m.x.xscroll configure -orient horizontal \
+                        -width $canvas(medLabelFontHeight) \
+                        -command [list $frame.m.c.canvas xview]
+
+        set scrollHeight [expr \
+                2*[lindex [$frame.m.x.xscroll configure -borderwidth] end] \
+                + [lindex [$frame.m.x.xscroll configure -width] end]]
+        $frame.m.x configure -height $scrollHeight
+
+        $frame.m.y.yscroll configure -orient vertical \
+                                -width $canvas(medLabelFontHeight) \
+                                -command [list $frame.m.c.canvas yview]
+
+        set scrollWidth [expr $canvas(medBd) + \
+                2*[lindex [$frame.m.y.yscroll configure -borderwidth] end]  \
+               + [lindex [$frame.m.y.yscroll configure -width] end]]
+        $frame.m.y configure -width $scrollWidth
+
+
+        clusterScrollRegionWidthPut $frame $totwidth
+        clusterScrollRegionHeightPut $frame $totheight
+
+        set scrollRegionWidth [clusterScrollRegionWidthGet $frame]
+        set scrollRegionHeight [clusterScrollRegionHeightGet $frame]
+        set retwidth [expr $canvasFrameWidth + $totwidth + $scrollWidth]
+        if {$labelWidth > $retwidth && \
+                $labelWidth > $footerWidth} {
+                set retwidth $labelWidth
+        } elseif {$footerWidth > $retwidth && \
+                $footerWidth > $labelWidth} {
+                set retwidth $footerWidth
+        }
+
+        clusterCanvasWidthPut $frame $totwidth
+        clusterDisplayWidthPut $frame $retwidth
+        set canvWidth $totwidth
+        if { $retwidth  >  $canvas(clusterMaxWidth) } {
+                set canvWidth  [expr $canvas(clusterMaxWidth) - \
+                                     $canvasFrameWidth - $scrollWidth]
+                if {$canvWidth > 0} {
+                        clusterDisplayWidthPut $frame $canvas(clusterMaxWidth)
+                        clusterCanvasWidthPut $frame $canvWidth
+                        set retwidth $canvas(clusterMaxWidth)
+
+                }
+        }
+
+        set retheight [expr $labelHeight + $canvasFrameHeight + $totheight + \
+                                                $scrollHeight + $footerHeight]
+        clusterCanvasHeightPut $frame $totheight
+        clusterDisplayHeightPut $frame $retheight
+        set canvHeight $totheight
+        if { $retheight >  $canvas(clusterMaxHeight) } {
+                set canvHeight [expr    $canvas(clusterMaxHeight) - \
+                                        $labelHeight - $canvasFrameHeight - \
+                                        $scrollHeight - $footerHeight]
+                if {$canvHeight > 0} {
+                        clusterDisplayHeightPut $frame $canvas(clusterMaxHeight)
+                        clusterCanvasHeightPut $frame $canvHeight
+                        set retheight $canvas(clusterMaxHeight)
+
+                }
+        }
+
+       set canvWidth [clusterCanvasWidthGet $frame]
+       set canvHeight [clusterCanvasHeightGet $frame]
+
+       $frame.m.c.canvas configure -width $canvWidth -height $canvHeight \
+                -xscrollcommand [list $frame.m.x.xscroll set] \
+                -yscrollcommand [list $frame.m.y.yscroll set] \
+                -scrollregion [list 0 0 $scrollRegionWidth $scrollRegionHeight]
+
+        catch {pack forget $frame.m.x.xscroll}
+
+        if {$canvWidth > 0 && $scrollRegionWidth > $canvWidth} {
+                catch {pack $frame.m.x.xscroll -side bottom -fill x -padx 0 \
+                -pady 0 -ipadx 0 -ipady 0}
+        }
+
+        catch {pack forget $frame.m.y.yscroll}
+        if {$canvHeight > 0 && $scrollRegionHeight > $canvHeight} {
+                catch {pack $frame.m.y.yscroll -side right -fill y -padx 0 \
+                                        -pady 0 -ipadx 0 -ipady 0 -anchor nw}
+        }
+
+        return [list $retwidth $retheight]
+}
+
+proc clusterRepack {clusterframe} {
+        global canvas
+
+	if {[string compare $clusterframe ""] == 0} {
+		return
+	}
+
+        set systemc [systemCanvasGet [clusterSystemFrameGet $clusterframe]]
+        if {[string compare $systemc ""] == 0} {
+                return
+        }
+
+        set label [clusterLabelGet $clusterframe]
+        set labelf [clusterLabelFrameGet $clusterframe]
+
+        set canv [clusterCanvasGet $clusterframe]
+        set canvf [clusterCanvasFrameGet $clusterframe]
+
+        set xscroll [clusterXscrollGet $clusterframe]
+        set xscrollf [clusterXscrollFrameGet $clusterframe]
+
+        set yscroll [clusterYscrollGet $clusterframe]
+        set yscrollf [clusterYscrollFrameGet $clusterframe]
+
+        set sbar [clusterStatusBarGet $clusterframe]
+        set sbarf [clusterStatusBarFrameGet $clusterframe]
+
+        set mframe [clusterMainFrameGet $clusterframe]
+
+        set footerHeader [lindex [$sbar configure -text] end]
+        set footerWidth [expr 2*$canvas(medBd) + \
+                              2*$canvas(medLabelBd) + \
+           $canvas(medLabelFontWidth)*[string length $footerHeader]]
+
+        set dispWidth [clusterDisplayWidthGet $clusterframe]
+        if {$footerWidth > $dispWidth} {
+                set diff [expr ($footerWidth - $dispWidth) * $canvas(nodeScaleFactor)]
+                clusterPropagateOffset $clusterframe $diff
+                clusterAddWidth $clusterframe $diff
+                set dispWidth $footerWidth
+        }
+        set dispHeight [clusterDisplayHeightGet $clusterframe]
+
+        set canvWidth [clusterCanvasWidthGet $clusterframe]
+        set canvHeight [clusterCanvasHeightGet $clusterframe]
+
+        set scrollRegionWidth [clusterScrollRegionWidthGet $clusterframe]
+        set scrollRegionHeight [clusterScrollRegionHeightGet $clusterframe]
+
+        $systemc delete $clusterframe
+
+        catch {pack forget $label $sbar $labelf $mframe $sbarf $xscrollf $yscrollf $canvf}
+        if {$canvWidth > 0 && $scrollRegionWidth > $canvWidth} {
+                catch {pack $xscroll -side bottom -fill x -padx 0 -pady 0 -ipadx 0 -ipady 0}
+        } else {
+                catch {pack forget $xscroll}
+        }
+
+        if {$canvHeight > 0 && $scrollRegionHeight > $canvHeight} {
+                catch {pack $yscroll -side right -fill y -padx 0 -pady 0 -ipadx 0 -ipady 0 -anchor nw}
+        } else {
+                catch {pack forget $yscroll}
+        }
+
+        $canv configure -width $canvWidth -height $canvHeight \
+                -scrollregion [list 0 0 $scrollRegionWidth $scrollRegionHeight]
+
+        pack $label -fill both -expand true -padx 0 -pady 0 -ipadx 0 -ipady 0
+        pack $canv -fill both -expand true -padx 0 -pady 0 -ipadx 0 -ipady 0
+        pack $xscrollf -side bottom -fill x -padx 0 -pady 0 -ipadx 0 -ipady 0
+        pack $yscrollf -side right -fill y -padx 0 -pady 0 -ipadx 0 -ipady 0
+        pack $canvf -expand true -fill both -padx 0 -pady 0 -ipadx 0 -ipady 0
+        pack $sbar -fill both -expand true -padx 0 -pady 0 -ipadx 0 -ipady 0
+
+        pack $labelf $mframe $sbarf -side top -anchor nw -fill both \
+                -expand true -padx 0 -pady 0 -ipadx 0 -ipady 0
+
+        set dispWidth  [clusterDisplayWidthGet  $clusterframe]
+        set dispHeight [clusterDisplayHeightGet $clusterframe]
+
+        $systemc create window [clusterXposGet $clusterframe] \
+                        [clusterYposGet $clusterframe] \
+                        -window $clusterframe -anchor nw \
+                        -tags $clusterframe \
+                        -width  [expr $dispWidth + 2*$canvas(medBd)] \
+                        -height $dispHeight
+
+}
+
+proc clusterStatsUpdate {clusterf status oper} {
+
+	switch -exact -- $status {
+
+            OFFLINE {
+                clusterOfflinePoolPut $clusterf \
+                            [expr [clusterOfflinePoolGet $clusterf] $oper 1]
+            }
+            DOWN {
+                clusterDownPoolPut $clusterf \
+                            [expr [clusterDownPoolGet $clusterf] $oper 1]
+            }
+            FREE {
+                clusterAvailPoolPut $clusterf \
+                            [expr [clusterAvailPoolGet $clusterf] $oper 1]
+            }
+            INUSE-SHARED        -
+            INUSE-EXCLUSIVE     {
+                clusterUsePoolPut $clusterf \
+                            [expr [clusterUsePoolGet $clusterf] $oper 1]
+            }
+            RESERVED {
+                clusterReservedPoolPut $clusterf \
+                            [expr [clusterReservedPoolGet $clusterf] $oper 1]
+            }
+            NOINFO {
+                clusterUnkPoolPut $clusterf \
+                                [expr [clusterUnkPoolGet $clusterf] $oper 1]
+            }
+
+	}
+}

@@ -1,0 +1,447 @@
+/*
+*         OpenPBS (Portable Batch System) v2.3 Software License
+* 
+* Copyright (c) 1999-2000 Veridian Information Solutions, Inc.
+* All rights reserved.
+* 
+* ---------------------------------------------------------------------------
+* For a license to use or redistribute the OpenPBS software under conditions
+* other than those described below, or to purchase support for this software,
+* please contact Veridian Systems, PBS Products Department ("Licensor") at:
+* 
+*    www.OpenPBS.org  +1 650 967-4675                  sales@OpenPBS.org
+*                        877 902-4PBS (US toll-free)
+* ---------------------------------------------------------------------------
+* 
+* This license covers use of the OpenPBS v2.3 software (the "Software") at
+* your site or location, and, for certain users, redistribution of the
+* Software to other sites and locations.  Use and redistribution of
+* OpenPBS v2.3 in source and binary forms, with or without modification,
+* are permitted provided that all of the following conditions are met.
+* After December 31, 2001, only conditions 3-6 must be met:
+* 
+* 1. Commercial and/or non-commercial use of the Software is permitted
+*    provided a current software registration is on file at www.OpenPBS.org.
+*    If use of this software contributes to a publication, product, or
+*    service, proper attribution must be given; see www.OpenPBS.org/credit.html
+* 
+* 2. Redistribution in any form is only permitted for non-commercial,
+*    non-profit purposes.  There can be no charge for the Software or any
+*    software incorporating the Software.  Further, there can be no
+*    expectation of revenue generated as a consequence of redistributing
+*    the Software.
+* 
+* 3. Any Redistribution of source code must retain the above copyright notice
+*    and the acknowledgment contained in paragraph 6, this list of conditions
+*    and the disclaimer contained in paragraph 7.
+* 
+* 4. Any Redistribution in binary form must reproduce the above copyright
+*    notice and the acknowledgment contained in paragraph 6, this list of
+*    conditions and the disclaimer contained in paragraph 7 in the
+*    documentation and/or other materials provided with the distribution.
+* 
+* 5. Redistributions in any form must be accompanied by information on how to
+*    obtain complete source code for the OpenPBS software and any
+*    modifications and/or additions to the OpenPBS software.  The source code
+*    must either be included in the distribution or be available for no more
+*    than the cost of distribution plus a nominal fee, and all modifications
+*    and additions to the Software must be freely redistributable by any party
+*    (including Licensor) without restriction.
+* 
+* 6. All advertising materials mentioning features or use of the Software must
+*    display the following acknowledgment:
+* 
+*     "This product includes software developed by NASA Ames Research Center,
+*     Lawrence Livermore National Laboratory, and Veridian Information 
+*     Solutions, Inc.
+*     Visit www.OpenPBS.org for OpenPBS software support,
+*     products, and information."
+* 
+* 7. DISCLAIMER OF WARRANTY
+* 
+* THIS SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND. ANY EXPRESS
+* OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+* OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT
+* ARE EXPRESSLY DISCLAIMED.
+* 
+* IN NO EVENT SHALL VERIDIAN CORPORATION, ITS AFFILIATED COMPANIES, OR THE
+* U.S. GOVERNMENT OR ANY OF ITS AGENCIES BE LIABLE FOR ANY DIRECT OR INDIRECT,
+* INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+* LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
+* OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+* LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+* NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+* EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+* 
+* This license will be governed by the laws of the Commonwealth of Virginia,
+* without reference to its choice of law rules.
+*/
+* The Configuration File
+
+The scheduler's configuration file is a flat ASCII file.  Comments are
+allowed anywhere, and begin with a '#' character.  Any non-comment lines
+are considered to be statements, and must conform to the syntax :
+
+	<option> <argument>
+
+The descriptions of the options below describe the type of argument that
+is expected for each of the options.  Arguments must be one of :
+
+	<boolean>	A boolean value.  The strings "true", "yes", "on" and 
+			"1" are all true, anything else evaluates to false.
+	<hostname>	A hostname registered in the DNS system.
+	<integer>	An integral (typically non-negative) decimal value.
+	<pathname>	A valid pathname (i.e. "/usr/local/pbs/pbs_acctdir").
+	<queue_spec>	The name of a PBS queue.  Either 'queue@exechost' or
+			just 'queue'.  If the hostname is not specified, it
+			defaults to the name of the local host machine.
+	<real>		A real valued number (i.e. the number 0.80).
+	<string>	An uninterpreted string passed to other programs.
+	<time_spec>	A string of the form HH:MM:SS (i.e. 00:30:00 for
+			thirty minutes, 4:00:00 for four hours).
+	<variance>	Negative and positive deviation from a value.  The
+			syntax is '-mm%,+nn%' (i.e. '-10%,+15%' for minus
+			10 percent and plus 15% from some value).
+
+Syntactical errors in the configuration file are caught by the parser, and
+the offending line number and/or configuration option/argument is noted in
+the scheduler logs.  The scheduler will not start while there are syntax
+errors in its configuration files.
+
+Before starting up, the scheduler attempts to find common errors in the
+configuration files.  If it discovers a problem, it will note it in the
+logs (possibly suggesting a fix) and exit.
+
+The following is a complete list of the recognized options :
+
+    AVOID_FRAGMENTATION				<boolean>
+    BACKGROUND_QUEUE_NAME   			<string>
+    CHALLENGE_QUEUE_NAME    			<string>
+    BATCH_QUEUES				<queue_spec>[,<queue_spec>...]
+    DECAY_FACTOR				<real>
+    DEDICATED_QUEUE				<queue_spec>
+    DEDICATED_TIME_CACHE_SECS			<integer>
+    DEDICATED_TIME_COMMAND			<pathname>
+    ENFORCE_ALLOCATION				<boolean>
+    ENFORCE_DEDICATED_TIME			<boolean>
+    ENFORCE_PRIME_TIME				<boolean>
+    FAKE_MACHINE_MULT				<integer>
+    HIGH_SYSTIME				<integer>
+    INTERACTIVE_LONG_WAIT			<time_spec>
+    MAX_DEDICATED_JOBS				<integer>
+    MAX_JOBS					<integer>
+    MAX_QUEUED_TIME				<time_spec>
+    MAX_USER_RUN_JOBS				<integer>
+    MIN_JOBS					<integer>
+    NONPRIME_DRAIN_SYS				<boolean>
+    OA_DECAY_FACTOR				<real>
+    PRIME_TIME_END				<time_spec>
+    PRIME_TIME_SMALL_NODE_LIMIT			<integer>
+    PRIME_TIME_SMALL_WALLT_LIMIT		<time_spec>
+    PRIME_TIME_START				<time_spec>
+    PRIME_TIME_WALLT_LIMIT			<time_spec>
+    SCHED_ACCT_DIR				<pathname>
+    SCHED_HOST					<hostname>
+    SCHED_RESTART_ACTION			<string>
+    SERVER_HOST					<hostname>
+    SMALL_JOB_MAX				<integer>
+    SMALL_QUEUED_TIME				<time_spec>
+    SORT_BY_PAST_USAGE				<boolean>
+    SORTED_JOB_FILE 				<pathname>
+    SPECIAL_QUEUE				<queue_spec>
+    SUBMIT_QUEUE				<queue_spec>
+    SYSTEM_NAME					<hostname>
+    TARGET_LOAD_PCT				<integer>
+    TARGET_LOAD_VARIANCE			<variance>
+    TEST_ONLY					<boolean>
+    WALLT_LIMIT_LARGE_JOB			<time_spec>
+    WALLT_LIMIT_SMALL_JOB			<time_spec>
+
+These options are described in greater detail below.
+
+* Overview Of Operation
+
+This package contains the sources for a PBS scheduler (pbs_sched), which
+was designed to be run on a cluster of Silicon Graphics, Inc. Origin2000
+machines.  The function of the scheduler is to choose a job or jobs that
+fit the resources and policy limits.  When a suitable job is found, the
+scheduler will ask PBS to run that job on one of the execution hosts.  
+
+Please be sure to read the section titled 'Configuring The Scheduler'
+below before attempting to start the scheduler.
+
+The basic mode of operation for the scheduler is this: 
+
+ - Jobs are submitted to the PBS server by users.  The server enqueues
+	them in the "default" queue (c.f. qmgr(1)). 
+
+ - The scheduler wakes up and performs the following actions:
+
+   + Get a list of jobs from the server.  Typically, the scheduler and
+	server are run on the front-end, and only a resmom is needed on
+	the execution hosts.  See the section on Scheduler Deployment.
+
+   + Get available resource information from each execution host.  The
+	resmom running on each host is queried for a set of resources
+	for the host.  Scheduling decisions are made based upon these
+	resources, queue limits, time of day, etc, etc.
+
+   + Get information about the queues from the server.  The queues over
+	which the scheduler has control are listed in the scheduler's
+	configuration files.  The queues may be listed as batch, submit,
+	special, or dedicated queues.  A job list is then created from
+	the jobs on the submit, special and dedicated queues.
+
+   + The list of jobs is sorted into a "preferred order" based upon the
+	policy implementation (largest first during primetime, etc).
+	This is the main mechanism by which policy such as "largest jobs
+	first" and "maximize small job throughput" is implemented. 
+
+   + For each job on the list of jobs, attempt to find a queue in which
+	each job will fit.  Since the first job in the sorted list is the
+	highest-priority job, the scheduler goes out of its way to ensure
+	that it will be able to run it as soon as possible.
+
+   + Since the submit queue resource limits must be large enough to hold
+	any job that might run on any execution queue, it is possible for
+	PBS to accept a submitted job that cannot fit on any queue.  These
+	jobs are immediately rejected.
+
+   + If a job fits on a queue and does not violate any policy requirements
+	(like primetime walltime limits), ask PBS to move the job to that
+	queue, and start it running.  If this succeeds, account for the
+	expected resource drain and continue. 
+
+   + If the job is not runnable at this time, the job comment will be
+	modified to reflect the reason the job was not runnable (see the
+	section on Lazy Comments).  Note that this reason may change from
+	iteration to iteration, and that there may be several reasons that
+	the job is not runnable now.
+
+   + Clean up all allocated resources, and go back to sleep until the next
+	round of scheduling is requested.
+
+The scheduler attempts to pack the jobs as closely as possible into the
+queues. Queues are packed in a priority order. 
+
+The PBS server will wake up the scheduler when jobs arrive or terminate,
+so jobs should be scheduled immediately if the resources are (or become) 
+available for them.  There is also a periodic run every few minutes.
+
+* Dedicated Time
+
+    Related configuration options: 
+	ENFORCE_DEDICATED_TIME			<boolean>
+	DEDICATED_TIME_COMMAND			<pathname>
+	DEDICATED_QUEUE				<queue_spec>
+	SYSTEM_NAME				<string>
+	DEDICATED_TIME_CACHE_SECS [optional]	<integer>
+
+Downtimes for all of the NAS supercomputers are scheduled by a locally-
+created program called 'schedule'.  The schedule client queries a database
+through the server, returning a list of scheduled downtimes in chronological
+order.  The scheduler parses through this output, looking for information
+about any upcoming dedicated times for the machine or cluster named by
+the configuration variable 'SYSTEM_NAME'.
+
+The scheduler runs the DEDICATED_TIME_COMMAND with a single argument of the
+string given by the SYSTEM_NAME option.  As shipped, the scheduler expects
+the output of this command to be in the following format:
+
+    TURING       07/07/1998 16:00-19:00 07/07/1998  Administrative period 
+						    (weekly turing downtime)
+    HOPPER       07/09/1998 16:00-19:00 07/09/1998  Administrative period 
+						    (weekly hopper downtime)
+    PIGLET       07/14/1998 16:00-19:00 07/14/1998  Install latest compiler.
+    PIGLET       07/28/1998 10:00-16:00 07/28/1998  Preventive maintenance
+    SLICKY       08/20/1998 09:00-09:00 08/21/1998  All day outage for power
+                                                    supply and CPU board swap.
+
+The DEDICATED_TIME_COMMAND may be a binary executable or a shell script.
+
+If DEDICATED_TIME_CACHE_SECS is specified, the DEDICATED_TIME_COMMAND will
+be queried at most once each DEDICATED_TIME_CACHE_SECS seconds.  This feature
+is intended to prevent overloading a centralized server with queries.
+
+* Fragmentation Avoidance Heuristics
+
+    Related configuration options:
+        AVOID_FRAGMENTATION			<boolean>
+
+A natural side-effect of packing jobs into a queue is that the queues tend
+to become "fragmented".  As jobs are packed into the queue, the available
+resources become smaller, decreasing the possibilities of a large job
+being able to run.  Without some mechanism for recovering from queue
+fragmentation, it is possible that the large job will be starved forever. 
+
+Assuming there is a relatively small job running in the queue, the larger
+job will not be able to run.  However, to improve utilization, smaller
+jobs will be packed into the remaining nodes.  These jobs may run longer
+than the original small job.  When the original job exits, there will
+still not be enough nodes available to run the large job, so more small
+jobs will be packed into the remaining space.  This "juggling" effect can
+continue indefinitely in a naive implementation.
+
+This problem was addressed in an early version of the scheduler (before
+the Waiting Job Support (see below) was added) by introducing a heuristic
+algorithm to attempt to recover from fragmentation.  The algorithm works
+by examining the relationship between queue and job resources, as follows: 
+
+If the queue is empty, allow the job to run, and attempt to recover from
+fragmentation later, if necessary.  This avoids unduly preventing any job
+from running.
+
+Otherwise, compute the "fragment size"  of the queue.  This is the number
+of nodes assigned to the queue divided by the maximum number of jobs that
+can be run on the queue.  If the maxrun (see qmgr(1)) is not defined, or
+the fragment size is less than 2 nodes, the heuristic doesn't apply, so
+allow the job to run. 
+
+If the requesting job is at least as large as the fragment size, allow it
+to run - it will not create a fragmented queue itself.
+
+If the job is smaller than the fragment size, it could cause the queue to
+become or continue to be fragmented.  Compute the average size of the jobs
+running in the queue.  If the average job size is smaller than the
+fragment size then the queue is already fragmented.  If the job is
+expected to complete before the queue is empty, allow it to run. 
+Otherwise, do not run it, as it would perpetuate the state of
+fragmentation.
+
+Finally, if the job would allocate the last fragment, and it would extend
+past the expected time at which the queue will empty, don't allow it.
+
+If the job has not been disallowed by the previous tests, allow it to run.
+
+This heuristic appears to do a reasonable job of controlling the effects
+of queue fragmentation without unduly delaying jobs.
+
+* Submit Queue
+
+    Related configuration options:   
+        SUBMIT_QUEUE				<queue_spec>
+
+The "normal" mode of operation for this scheduler is to look for jobs that
+are enqueued on the SUBMIT_QUEUE.  Assuming the system resources and policy 
+permit it, jobs are moved from the SUBMIT_QUEUE to one of the BATCH_QUEUES
+(see below), and started.
+
+Note that the limits on the submit queue (i.e. resources_max.*) must be the
+union of the limits on the BATCH_QUEUES.  This is required by PBS, since it
+will reject requests to submit to the SUBMIT_QUEUE if the job does not fit
+the SUBMIT_QUEUE limits.  See the "Configuring The Scheduler" section for
+more information.
+
+* Execution Queues
+    
+    Related configuration options:   
+        BATCH_QUEUES				<queue_spec>[,<queue_spec,...]
+
+* "Special" Queue Support
+
+    Related configuration options:   
+        SPECIAL_QUEUE				<queue_spec>
+
+The "special" queue provides a way for the batch system administrator to
+selectively allow high-priority access to the system, by providing a user
+ACL (see qmgr(1)) on the queue named by the SPECIAL_QUEUE option.  Any
+jobs queued on the special queue will be placed at the top of the list of
+jobs to be scheduled.  This means that they will be considered for
+execution before any other jobs. 
+
+Additionally, jobs found on the SPECIAL_QUEUE will be internally treated
+as high-priority jobs.  Most of the policy checks do not apply to jobs
+that are marked as high-priority.  This can be confusing to users and
+admins alike, so special jobs are noted as such in the job comment :
+
+   "Started on Fri Aug  7 17:24:26 1998 (special access job)"
+
+Internally, there is only one list of jobs (the submit queue's job list) 
+that is considered for scheduling.  The "special" jobs are marked with a
+HIGH_PRIORITY flag and placed at the head of the list by the function
+fixup_special() in schedule.c.
+
+* Lazy Commenting
+
+Because changing the job comment for each of a large group of jobs can be
+very expensive, there is a notion of lazy jobs.  The function that sets the
+comment on a job takes a flag that indicates whether or not the comment is
+optional.  Most of the "can't run because ..." comments are considered to
+be optional.
+
+When presented with an optional comment, the job will only be altered if
+the job was enqueued after the last run of the scheduler, if it does not
+already have a comment, or the job's 'mtime' (modification time) attribute
+indicates that the job has not been touched in MIN_COMMENT_AGE seconds.
+
+This should provide each job with a comment at least once per scheduler
+lifetime.  It also provides an upper bound (MIN_COMMENT_AGE seconds + the
+scheduling iteration) on the time between comment updates.
+
+This compromise seemed reasonable because the comments themselves are some-
+what arbitrary, so keeping them up-to-date is not a high priority.
+
+* Waiting Job Support (batch/interactive)
+
+    Related configuration options:   
+	MAX_QUEUED_TIME				<time_spec>
+        INTERACTIVE_LONG_WAIT			<time_spec>
+        SMALL_QUEUED_TIME			<time_spec>
+
+Although some effort is made to prevent it happening, it is very possible
+for a job to be starved for a very long period of time.  This is especially
+true when large numbers of "special" jobs have been run, preventing the
+other "normal" jobs from being eligible.  The scheduler provides a simple
+mechanism by which these jobs may be prevented from starving indefinitely.
+
+When a job has not been run for some period of time (see below), that job
+will be marked as "waiting".  Waiting jobs are pushed to the top of the job
+list (but are still preempted by "special" jobs).  When a job is marked as
+waiting, a queue will be drained if necessary to allow the job to run as
+soon as possible.
+
+Jobs become waiting when their eligible time ("etime" attribute) (or, if 
+not defined, their creation time ("ctime" attribute)) exceeds one of two
+values, depending upon the value of the "interactive" job attribute.
+
+    Job Type		Becomes waiting when etime (or ctime) exceeds...
+    ---------------	----------------------------------------------------
+    Non-interactive	MAX_QUEUED_TIME
+    Interactive		(INTERACTIVE_LONG_WAIT + requested walltime)
+
+(Setting either option to "00:00:00" disables the appropriate functionality.)
+
+The theory is that an interactive job should become "waiting" much earlier
+than a batch job, as there is probably a person at the other end of the 
+'qsub' in the interactive case.  However, to provide a sort of "ordering"
+for interactive jobs, the "long time" is dependent upon their walltime.
+
+Waiting jobs are sorted using the following criteria:
+
+    If both jobs are either over or under SMALL_QUEUED_TIME, sort by:
+	- Largest to smallest (reqeuested nodes)
+	- Oldest to youngest (eligible time)
+
+    If one job requests more than SMALL_QUEUED_TIME, and the other doesn't,
+    sort them by:
+	- Longest to shortest (requested walltime)
+	- Youngest to oldest (eligible time)
+
+Other features include:
+
+* Primetime Support
+* Primetime Specification
+* Handling of Job Lists From Server (get/demux)
+* Past-Usage Support
+* Scheduler Restart Action
+* Deletion of Illegally-sized Jobs
+* Big Jobs (concept)
+* User ACL's on Queues
+* Signal Handlers
+* Standards Compliance
+* Allocations
+* System Resources
+* Queue Limits
+* Scheduling CPU/Memory vs. Nodes
+* Multiple Execution Hosts
+* Queue Sanity

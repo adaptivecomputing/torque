@@ -1,0 +1,881 @@
+#         OpenPBS (Portable Batch System) v2.3 Software License
+# 
+# Copyright (c) 1999-2000 Veridian Information Solutions, Inc.
+# All rights reserved.
+# 
+# ---------------------------------------------------------------------------
+# For a license to use or redistribute the OpenPBS software under conditions
+# other than those described below, or to purchase support for this software,
+# please contact Veridian Systems, PBS Products Department ("Licensor") at:
+# 
+#    www.OpenPBS.org  +1 650 967-4675                  sales@OpenPBS.org
+#                        877 902-4PBS (US toll-free)
+# ---------------------------------------------------------------------------
+# 
+# This license covers use of the OpenPBS v2.3 software (the "Software") at
+# your site or location, and, for certain users, redistribution of the
+# Software to other sites and locations.  Use and redistribution of
+# OpenPBS v2.3 in source and binary forms, with or without modification,
+# are permitted provided that all of the following conditions are met.
+# After December 31, 2001, only conditions 3-6 must be met:
+# 
+# 1. Commercial and/or non-commercial use of the Software is permitted
+#    provided a current software registration is on file at www.OpenPBS.org.
+#    If use of this software contributes to a publication, product, or
+#    service, proper attribution must be given; see www.OpenPBS.org/credit.html
+# 
+# 2. Redistribution in any form is only permitted for non-commercial,
+#    non-profit purposes.  There can be no charge for the Software or any
+#    software incorporating the Software.  Further, there can be no
+#    expectation of revenue generated as a consequence of redistributing
+#    the Software.
+# 
+# 3. Any Redistribution of source code must retain the above copyright notice
+#    and the acknowledgment contained in paragraph 6, this list of conditions
+#    and the disclaimer contained in paragraph 7.
+# 
+# 4. Any Redistribution in binary form must reproduce the above copyright
+#    notice and the acknowledgment contained in paragraph 6, this list of
+#    conditions and the disclaimer contained in paragraph 7 in the
+#    documentation and/or other materials provided with the distribution.
+# 
+# 5. Redistributions in any form must be accompanied by information on how to
+#    obtain complete source code for the OpenPBS software and any
+#    modifications and/or additions to the OpenPBS software.  The source code
+#    must either be included in the distribution or be available for no more
+#    than the cost of distribution plus a nominal fee, and all modifications
+#    and additions to the Software must be freely redistributable by any party
+#    (including Licensor) without restriction.
+# 
+# 6. All advertising materials mentioning features or use of the Software must
+#    display the following acknowledgment:
+# 
+#     "This product includes software developed by NASA Ames Research Center,
+#     Lawrence Livermore National Laboratory, and Veridian Information
+#     Solutions, Inc.
+#     Visit www.OpenPBS.org for OpenPBS software support,
+#     products, and information."
+# 
+# 7. DISCLAIMER OF WARRANTY
+# 
+# THIS SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND. ANY EXPRESS
+# OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+# OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT
+# ARE EXPRESSLY DISCLAIMED.
+# 
+# IN NO EVENT SHALL VERIDIAN CORPORATION, ITS AFFILIATED COMPANIES, OR THE
+# U.S. GOVERNMENT OR ANY OF ITS AGENCIES BE LIABLE FOR ANY DIRECT OR INDIRECT,
+# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
+# OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+# LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+# NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+# EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# 
+# This license will be governed by the laws of the Commonwealth of Virginia,
+# without reference to its choice of law rules.
+################################################################################
+# This file contains procedures that are accessed across file modules.
+################################################################################
+# lintmax: returns the maximum value element in a positive list of integers.
+#	   return -1 if errors are encountered. 
+proc lintmax intlist {
+
+  set retval [catch {lsort -integer -decreasing $intlist} sorted_intlist]
+  
+  if { $retval == 0 && [string compare $sorted_intlist ""] != 0 } {
+     return [lindex $sorted_intlist 0]	
+  }
+  puts "Error in \"lintmax \{$intlist\}\": sorting resulted in: $sorted_intlist"
+  return -1
+}
+
+# lintmin: returns the minimum value element in a positive list of integers.
+#	   return -1 if errors are encountered. 
+proc lintmin intlist {
+
+  set retval [catch {lsort -integer -increasing $intlist} sorted_intlist]
+  
+  if { $retval == 0 && [string compare $sorted_intlist ""] != 0 } {
+     return [lindex $sorted_intlist 0]	
+  }
+  puts "Error in \"lintmin \{$intlist\}\": sorting resulted in: $sorted_intlist"
+  return -1
+}
+
+# popupDialogBox: A popupDialogBox creates the standard dialog box used by the GUI on
+#		  the toplevel named 'dialog_top' to be named 'title'. It
+# 		  creates 2 frames: top frame (to be populated by widgets) and
+# 			  bottom frame (to be populated by command buttons).
+# RETURNS: a list with 2 items: top_frame_name and bottom_frame_name.
+# OPTIONS: 'grab_window' says to set a grab on 'dialog_top'.
+#	   'class' is the class name to associate 'dialog_top'.
+#	   'master' specifies that the dialog box is working on behalf of 
+#	            some 'master' window.  
+proc popupDialogBox {dialog_top title {grab_window 1} {class ""} {master ""} {precisePlace 0} } {
+
+  global activeWindow bitmap_dir mainWindow coordX coordY 
+
+  if {[string compare $class ""] == 0} { 
+    toplevel $dialog_top
+  } else {
+    toplevel $dialog_top -class $class
+  }
+    
+  wm title $dialog_top $title
+
+  if {$precisePlace} {
+
+  	if { [info exists coordX] && [info exists coordY] } {
+  		wm geometry $dialog_top "+$coordX+$coordY" 
+  	}
+  }
+
+  if {$grab_window} { 
+    catch {grab $dialog_top} grab_msg
+
+    if { [string compare $grab_msg ""] != 0 } {
+      tkwait visibility $dialog_top
+
+      catch {grab $dialog_top} grab_msg
+      if { [string compare $grab_msg ""] != 0 } {
+        InfoBox_sendmsg "Grabbing $dialog_top got: $grab_msg" 2
+      }
+    }
+  }
+  focus $dialog_top
+  frame $dialog_top.top -borderwidth 4 -relief ridge
+  frame $dialog_top.bottom -borderwidth 2 -relief raised -class CmdFrame
+  pack  $dialog_top.top $dialog_top.bottom -side top -fill both -expand 1
+
+  if { [string compare $master ""] != 0 } {
+    wm transient $dialog_top $master
+  } else {
+    wm transient $dialog_top $mainWindow
+  }
+
+  return [list $dialog_top.top $dialog_top.bottom]
+}
+
+# win_cmdExec: procedure that executes the given 'command_list' via catch/open
+#              and returns any error code, message, and output in a nice popup 
+#	       text box. 'callerDialogBox' is for returning the input focus 
+#	       back to the calling dialog box.		
+# OUTPUT: an output text box with all the necessary information. 
+# RETURNS: the exit code of the executed command.
+# NOTE: The beauty of Tk is that you can almost feed exec with a commandline 
+#       of ANY size and be able to send to it without failure. I have tested
+#       this on a commandline of up to 4111 chars without any unusual benavior.
+proc win_cmdExec {callerDialogBox command_list} {
+  busy_cursor
+
+  InfoBox_sendmsg "'$command_list'..."
+  set retcode [catch {eval exec $command_list} output]
+
+  if {$retcode != 0} {
+     if { [string compare $callerDialogBox ""] != 0 } {
+       popupErrorBox $retcode $command_list $output 500 $callerDialogBox
+     } else {
+       popupErrorBox $retcode $command_list $output 500 ""
+     }
+     InfoBox_sendmsg "failed!" 1 1
+  } else {
+     if { [string compare $output ""] != 0 } {
+       popupOutputBox $output $callerDialogBox
+     }
+     InfoBox_sendmsg "done." 1 1 5
+  }
+
+  remove_busy_cursor
+  if { [string compare $callerDialogBox ""] != 0 } {
+    focus $callerDialogBox
+    grab $callerDialogBox
+  }
+  return $retcode
+}
+
+# win_cmdExec2: similar to win_cmdExec except error is ignored.
+proc win_cmdExec2 {callerDialogBox command_list} {
+  busy_cursor
+
+  InfoBox_sendmsg "'$command_list'..."
+  set retcode [catch {eval exec $command_list} output]
+
+  if { [string compare $output ""] != 0 } {
+       popupOutputBox $output $callerDialogBox
+  }
+  InfoBox_sendmsg "done." 1 1 5
+
+  remove_busy_cursor
+  if { [string compare $callerDialogBox ""] != 0 } {
+    focus $callerDialogBox
+    grab $callerDialogBox
+  }
+  return $retcode
+}
+
+# busy_cursor: displays a busy cursor under the mouse pointer position over a
+#              "registered" active window.
+proc busy_cursor {} {
+  global activeWindow bitmap_dir
+
+  foreach win [array names activeWindow] {
+    if {$activeWindow($win)} {
+      $win configure -cursor "@$bitmap_dir/hourglass.bmp black"
+    }
+  }
+}
+
+# remove_busy_cursor: removes the busy cursor set up by busy_cursor. 
+proc remove_busy_cursor {} {
+  global activeWindow
+
+  foreach win [array names activeWindow] {
+    if {$activeWindow($win)} {
+      $win configure -cursor {}
+    }
+  }
+}
+
+# cmdExec: procedure that executes the given 'command_list' via catch/open.
+# RETURNS:
+#	 any regular output or error message. 
+#	If output is empty, then the return code is returned.
+# OPTIONS:
+#	'popupError' says if an error 
+#	'retcode_only' says if return code is to be returned instead of the output
+#	string.
+# OUTPUT: output string or return code of command depending on chosen option.
+proc cmdExec {command_list {popupError 0} {retcode_only 0} {callerDialogBox ""} } {
+
+  busy_cursor
+
+  InfoBox_sendmsg "'$command_list'..."
+  set retcode [catch {eval exec $command_list} output]
+
+  if {$retcode != 0} {
+     InfoBox_sendmsg "failed! Output: $output" 1 1
+     if {$popupError} {
+	popupErrorBox $retcode $command_list $output 500 $callerDialogBox
+     }
+  } else {
+    InfoBox_sendmsg "done." 1 1 5
+  }
+  remove_busy_cursor
+  if {$retcode_only} {
+    return $retcode
+  }
+  return $output
+}
+
+# InfoBox_sendmsg: The following procedure sends the specified 'message' to InfoBox.
+# OPTIONS:
+#	'line_number' - the position on the InfoBox where the message will be placed.
+#	'append'      - to append messages to an existing entry.		
+#	'xview_increment' - how much to right shift the horizontal display of the
+#			    InfoBox.
+proc InfoBox_sendmsg { message {line_number 1} {append 0} \
+      {xview_increment 1} } {
+     global infoBox tk_version infoBox_counter INFOBOX_LISTBOX_WIDTH
+
+     catch {exec date "+%D %T"} datestr
+     if {!$append} {
+       set msg "\[$datestr\] $message"
+       set infoBox_counter [expr [string length $msg] - $INFOBOX_LISTBOX_WIDTH]
+       catch {$infoBox insert $line_number $msg}
+
+       set lsize [$infoBox size]
+       set line_to_delete [expr $line_number + 1]
+       if { $lsize > 1 && $line_to_delete < $lsize } {
+         catch {$infoBox delete $line_to_delete}
+       }
+     } else {
+       set cval [$infoBox get $line_number]
+       incr infoBox_counter $xview_increment
+       catch {$infoBox insert $line_number "$cval$message"} out
+
+       set lsize [$infoBox size]
+       set line_to_delete [expr $line_number + 1]
+       if { $lsize > 1 && $line_to_delete < $lsize } {
+         catch {$infoBox delete $line_to_delete}
+       }
+     }
+     if {$tk_version >= 4.0} {
+	if {$infoBox_counter > 0} { 
+          $infoBox xview moveto 1
+        } else {
+          $infoBox xview 0
+        }
+     } else {
+        $infoBox xview $infoBox_counter
+     }
+     update idletasks
+}
+
+# cmdExec_bg: Executes 'command_list' in the background.
+# OPTIONS: 
+#	   'popupError' - if an error dialog box is to be displayed when error is
+#			  encountered. 
+# RETURNS: the file descriptor from where input can be read; or -1 if an error
+# 	   has occurred. 
+proc cmdExec_bg {command_list {popupError 0}} {
+
+  InfoBox_sendmsg "'$command_list'..." 0
+
+  if [catch {open "|$command_list" RDONLY} input] {
+    InfoBox_sendmsg "failed: $input" 0 1 6
+    return -1
+  }
+  return $input
+}
+# procedure that takes 'output' string and display it on screen via an output
+# box that includes a single Ok button.
+proc popupOutputBox {output {callerDialogBox ""} } {
+
+     global TEXTFONT outDialogBox
+
+     set outDialogBox ".output"
+     set dbox [popupDialogBox $outDialogBox "Output Dialog" 1 "" $callerDialogBox]
+     set dbox_top    [lindex $dbox 0]
+     set dbox_bottom [lindex $dbox 1]
+
+     text $dbox_top.textbox -borderwidth 2  -setgrid 1 \
+                             -font $TEXTFONT -exportselection true \
+                             -width 80  -height 30 -relief flat
+
+     bind_text_readonly $dbox_top.textbox
+     pack $dbox_top.textbox -expand 1 -fill both -side left -padx 3m -pady 3m
+
+     scrollbar $dbox_top.vscroll \
+                                     -command "$dbox_top.textbox yview" \
+                                     -borderwidth 2 \
+                                     -orient vertical \
+                                     -relief groove
+
+     $dbox_top.textbox configure -yscrollcommand "$dbox_top.vscroll set"
+     pack $dbox_top.vscroll  -fill y -expand 1 -after $dbox_top.textbox
+
+     set ok_button [lindex \
+                    [buildCmdButtons $dbox_bottom {{{ok ok}}} x 20m 10 3] 1]
+
+     $ok_button configure -command [list destroy $outDialogBox]
+
+     $dbox_top.textbox insert 1.0 $output
+     register_default_action $outDialogBox $ok_button
+     catch {tkwait window $outDialogBox}
+}
+
+# popupErrorBox: procedure that displays 'retcode', 'command_list', 'errmsg' 
+#	information on the output screen via an error dialog box.
+# OPTIONS: 
+#	'width_pixels' is the size of the error dialog box.
+#	'callerDialogBox' is for returning the input focus to the calling dialog box.
+proc popupErrorBox {retcode command_list errmsg {width_pixels 500} \
+		    {callerDialogBox ""} } {
+
+     global LABELFONT errDialogBox
+
+     set errDialogBox ".error" 
+     set dbox [popupDialogBox $errDialogBox "Error Dialog" 1 "" $callerDialogBox]
+     set dbox_top    [lindex $dbox 0]
+     set dbox_bottom [lindex $dbox 1]
+
+     message $dbox_top.msg    -borderwidth 2  -justify left \
+                              -font $LABELFONT -width $width_pixels \
+                              -text "FAILED (return code=$retcode)\
+                                     to execute the following\
+                                     command:\n\n\n\t$command_list\n\n\nThe\
+                                     error message was\n\n\n\t$errmsg\n"
+     pack $dbox_top.msg -padx 3m -pady 3m
+
+     set ok_button [lindex \
+		    [buildCmdButtons $dbox_bottom {{{ok ok}}} x 20m 10 3] 1]
+
+     $ok_button configure -command [list destroy $errDialogBox]
+
+     register_default_action $errDialogBox $ok_button
+     catch {tkwait window $errDialogBox}
+     if { [string compare $callerDialogBox ""] != 0 } {
+	focus $callerDialogBox
+	grab $callerDialogBox
+     }
+}
+
+# popupInfoBox: pops up a dialog box informing the user of some 'msg'. 
+#	'callerDialogBox' is for returning the the input focus to the calling dialog
+#	box.
+# OPTIONS:
+#	'width_pixels' is the size of the info box.
+proc popupInfoBox {callerDialogBox msg {width_pixels 500} {focusBox ""}} {
+
+     global LABELFONT infoDialogBox
+
+     set infoDialogBox ".info" 
+
+     if [winfo exists $infoDialogBox] {
+         return
+     }
+
+     set dbox [popupDialogBox $infoDialogBox "Info Dialog" 1 "" $callerDialogBox]
+     set dbox_top    [lindex $dbox 0]
+     set dbox_bottom [lindex $dbox 1]
+
+     message $dbox_top.msg    -borderwidth 2  -justify left \
+                              -font $LABELFONT -width $width_pixels \
+                              -text "\n\n\n\t$msg\n"
+     pack $dbox_top.msg -padx 3m -pady 3m
+
+     set ok_button [lindex \
+		    [buildCmdButtons $dbox_bottom {{{ok ok}}} x 20m 10 3] 1]
+
+     $ok_button configure -command [list destroy $infoDialogBox]
+
+     register_default_action $infoDialogBox $ok_button
+     tkwait window $infoDialogBox
+     if { [string compare $callerDialogBox ""] != 0 } {
+       focus $callerDialogBox
+       grab $callerDialogBox
+     }
+     catch {focus $focusBox}
+}
+
+# popupInfoBoxWOpt: like popupInfoBox with an "ok" or "not ok"  option which
+# will return a 0 (ok) or 1 (not ok).
+# OPTIONS:
+#	'width_pixels' is the size of the info box.
+proc popupInfoBoxWOpt {callerDialogBox msg {width_pixels 500} } {
+
+     global LABELFONT infoDialogBox popupInfoBoxWOpt
+
+     set infoDialogBox ".info" 
+
+     if [winfo exists $infoDialogBox] {
+         return
+     }
+
+     set dbox [popupDialogBox $infoDialogBox "Info Dialog" 1 "" $callerDialogBox]
+     set dbox_top    [lindex $dbox 0]
+     set dbox_bottom [lindex $dbox 1]
+
+     message $dbox_top.msg    -borderwidth 2  -justify left \
+                              -font $LABELFONT -width $width_pixels \
+                              -text "\n\n\n\t$msg\n"
+     pack $dbox_top.msg -padx 3m -pady 3m
+
+     set button [buildCmdButtons $dbox_bottom {{{ok "ok"} {notok "not ok"}}} x 20m 10 3]
+     set ok_button [lindex $button 1]
+     set notok_button [lindex $button 2]
+
+     $ok_button configure -command {
+		set popupInfoBoxWOpt(ret) 0
+		destroy $infoDialogBox
+     }
+     $notok_button configure -command {
+		set popupInfoBoxWOpt(ret) 1
+		destroy $infoDialogBox
+     }	
+
+     register_default_action $infoDialogBox $ok_button
+     tkwait window $infoDialogBox
+     if { [string compare $callerDialogBox ""] != 0 } {
+       focus $callerDialogBox
+       grab $callerDialogBox
+     }
+     return $popupInfoBoxWOpt(ret)
+}
+
+# create_DateTime_box: procedure that creates the date and time spin boxes on 
+#	'frame_name'.
+# INPUT:
+#	frame_name - the frame where the boxes will appear.
+#	def_*      - the list of default values to be loaded in the respective
+#		     spin boxes.
+#       ARR        - holds the qtimeMon, qtimeDay, qtimeYear, qtimeHH, qtimeMM,
+#		     qtimeSS elements.
+proc create_DateTime_box {frame_name def_mon def_day def_yr def_hr \
+                                             def_min def_sec ARR } {
+
+  global LABELFONT months
+ 
+
+  frame $frame_name.1
+  frame $frame_name.2
+  frame $frame_name.3
+  frame $frame_name.4
+  frame $frame_name.5
+  pack $frame_name.1 $frame_name.2 $frame_name.3 $frame_name.4 $frame_name.5 \
+	-side left -anchor nw
+
+  frame $frame_name.1.mon
+  frame $frame_name.3.day
+  frame $frame_name.5.year
+  frame $frame_name.1.hh
+  frame $frame_name.3.mm
+  frame $frame_name.5.ss
+
+  set scrolls ""
+  set labels ""
+  label $frame_name.2.slash1 -font $LABELFONT -text "/" -padx 1 -pady 1
+  label $frame_name.4.slash2 -font $LABELFONT -text "/" -padx 1 -pady 1
+
+  label $frame_name.2.col1 -font $LABELFONT -text ":" -padx 1 -pady 1
+  label $frame_name.4.col2 -font $LABELFONT -text ":" -padx 1 -pady 1
+
+  set labels "$labels $frame_name.2.slash1 $frame_name.4.slash2 \
+              $frame_name.2.col1 $frame_name.4.col2"
+
+  pack $frame_name.1.hh $frame_name.1.mon -side top -anchor nw
+  pack $frame_name.2.slash1 $frame_name.2.col1 -side top -anchor c -pady 16 \
+	-padx 1m
+  pack $frame_name.3.mm $frame_name.3.day -side top -anchor nw
+  pack $frame_name.4.slash2 $frame_name.4.col2 -side top -anchor c -pady 16 \
+	-padx 1m
+  pack $frame_name.5.ss $frame_name.5.year -side top -anchor nw
+
+  set spinBox [buildSpinbox $frame_name.1.mon 4 $months $ARR qtimeMon "mon" top \
+	                    $def_mon]
+  set qtimeMon [lindex $spinBox 1]
+  set scrolls "$scrolls  [lindex $spinBox 2]"
+  set labels  "$labels [lindex $spinBox 3]"
+
+  set spinBox [buildSpinbox $frame_name.3.day 2 1-31 $ARR qtimeDay "day" top \
+                            $def_day 1]
+  set qtimeDay [lindex $spinBox 1]
+  set scrolls "$scrolls  [lindex $spinBox 2]"
+  set labels  "$labels [lindex $spinBox 3]"
+  
+  set spinBox [buildSpinbox $frame_name.5.year 4 1970-2100 $ARR qtimeYear "year" top \
+                            $def_yr]
+  set qtimeYear [lindex $spinBox 1]
+  set scrolls "$scrolls  [lindex $spinBox 2]"
+  set labels  "$labels [lindex $spinBox 3]"
+
+  set spinBox [buildSpinbox $frame_name.1.hh 2 0-23 $ARR qtimeHH "hour" top $def_hr 1]
+  set qtimeHH [lindex $spinBox 1]
+  set scrolls "$scrolls  [lindex $spinBox 2]"
+  set labels  "$labels [lindex $spinBox 3]"
+
+  set spinBox [buildSpinbox $frame_name.3.mm 2 0-59 $ARR qtimeMM "minute" top $def_min 1]
+  set qtimeMM [lindex $spinBox 1]
+  set scrolls "$scrolls  [lindex $spinBox 2]"
+  set labels  "$labels [lindex $spinBox 3]"
+
+
+  set spinBox [buildSpinbox $frame_name.5.ss 2 0-59 $ARR qtimeSS "secs" top $def_sec 1]
+  set qtimeSS [lindex $spinBox 1]
+  set scrolls "$scrolls  [lindex $spinBox 2]"
+  set labels  "$labels [lindex $spinBox 3]"
+
+##
+  return [list $frame_name $qtimeMon $qtimeDay $qtimeYear $qtimeHH \
+		 $qtimeMM $qtimeSS $scrolls $labels]
+}
+
+# disable_label: disables a label widget.
+proc disable_label {label_name color_name} {
+  global selColor
+
+  set cur_fgcolor [lindex [$label_name configure -fg]  4]
+
+  if { [string compare $color_name $cur_fgcolor] == 0} {
+	return
+  }
+  set selColor(fg$label_name) $cur_fgcolor
+  $label_name configure -fg $color_name
+}
+
+# enable_label: enables a label widget.
+proc enable_label {label_name} {
+  global selColor
+
+  if {![info exists selColor(fg$label_name)]} {
+    return
+  }
+  $label_name configure -fg $selColor(fg$label_name)
+}
+
+# disable_scrollbar: disables a scrollbar.
+proc disable_scrollbar {scrollbar color_name} {
+  global selColor tk_version
+
+
+  if {$tk_version < 4.0} {
+    set cur_bgcolor [lindex [$scrollbar configure -bg] 4]
+    set cur_activefgcolor [lindex [$scrollbar configure -activeforeground] 4]
+    set cur_fgcolor [lindex [$scrollbar configure -fg] 4]
+  } else {
+    set cur_bgcolor [lindex [$scrollbar configure -troughcolor] 4]
+    set cur_activefgcolor [lindex [$scrollbar configure -activebackground] 4]
+    set cur_fgcolor [lindex [$scrollbar configure -background] 4]
+  }
+
+
+  if { [string compare $color_name $cur_bgcolor] == 0 && \
+       [string compare $color_name $cur_activefgcolor] == 0 && \
+       [string compare $color_name $cur_fgcolor] == 0} {
+	return
+  }
+  set selColor(bg$scrollbar) $cur_bgcolor
+  set selColor(active_fg$scrollbar) $cur_activefgcolor
+  set selColor(fg$scrollbar) $cur_fgcolor
+
+  if {$tk_version < 4.0} {
+    $scrollbar configure  -bg $color_name -activeforeground $color_name \
+	  -fg $color_name
+  } else {
+    $scrollbar configure  -troughcolor $color_name -activebackground $color_name \
+	  -background $color_name
+  }
+}
+
+# enable_scrollbar: enables a scrollbar.
+proc enable_scrollbar {scrollbar} {
+  global selColor tk_version
+
+  if { ![info exists selColor(bg$scrollbar)] && \
+       ![info exists selColor(active_fg$scrollbar)] && \
+       ![info exists selColor(fg$scrollbar)]} {
+    return
+  }
+  if {$tk_version < 4.0} {
+     $scrollbar configure -bg $selColor(bg$scrollbar) \
+	-activeforeground $selColor(active_fg$scrollbar) \
+	-fg $selColor(fg$scrollbar)
+  } else {
+     $scrollbar configure -troughcolor $selColor(bg$scrollbar) \
+	-activebackground $selColor(active_fg$scrollbar) \
+	-background $selColor(fg$scrollbar)
+  }
+}
+
+# disable_dateTime: disables all components of a dateTime widget.
+proc disable_dateTime {entryList scrollList labelList} {
+  global disabledColor
+
+  set i 0
+  foreach e $entryList {
+     disable_spinbox $e "" ""
+     incr i
+  }
+
+  foreach l $labelList {
+    disable_label $l $disabledColor
+  }
+  foreach s $scrollList {
+    disable_scrollbar $s $disabledColor
+  }
+}
+
+# enable_dateTime: enables all components of a dateTime widget.
+proc enable_dateTime {entryList scrollList labelList} {
+   set i 0
+   foreach e $entryList {
+     enable_spinbox $e "" ""
+     incr i
+   }
+  foreach l $labelList {
+    enable_label $l
+  }
+  foreach s $scrollList {
+    enable_scrollbar $s
+  }
+}
+# clear_array: procedure that initializes an array to empty values.
+proc clear_array {array_name} {
+  upvar $array_name arr
+
+  if [info exists arr] {
+    foreach el [array names arr] {
+      set arr($el) ""
+    }
+  }
+
+}
+
+# construct_array_args: constructs a string containing the elements of 'arr'
+# 	separated by 'sep'. If 'header_str' is supplied, then the resulting string
+# 	is prefixed with 'header_str'.
+proc construct_array_args {arr sep {header_str ""} } {
+  upvar $arr a
+
+  set arr_str ""
+  set firstEntry 1
+  if [info exists a] {
+    foreach i [lsort -integer [array names a]] { 
+      if {[info exists a($i)] && [string compare $a($i) ""] != 0} {
+
+        if {!$firstEntry} {
+          append arr_str "$sep" "$a($i)"
+        } else {
+          append arr_str "$header_str" "$a($i)"
+	  set firstEntry 0
+        }
+      }
+    }
+  }
+  return $arr_str
+
+}
+
+# deconstruct_array_args: reverse of "construct_array_args".
+proc deconstruct_array_args {arr_str arr sep {header_str_to_ignore ""} } {
+  upvar $arr a
+
+  set i 0
+  foreach token [split $arr_str $sep] {
+    if {[string compare $token $header_str_to_ignore] == 0} {
+	continue
+    }
+    set a($i) $token
+    incr i
+  } 
+}
+# load_argstr: loads the array elements in 'arraylist' with values from
+#              each sub-token separated by 'innersep_list' found in each
+#	       token of	'arr_str' separated by 'outersep'.
+proc load_argstr {arr_str outersep arraylist innersep_list \
+	{header_str_to_ignore ""} } {
+
+  set i 0
+#   We have to use clear_array since the arrays can potentially be bound
+#   to an existing widget - using unset will useless. 
+  foreach el $arraylist {
+    global $el
+    catch {clear_array $el}
+    set array($i) $el
+    incr i
+  }
+
+  set matchstr ""
+  set i 0
+  foreach el $innersep_list {
+    append matchstr {([^}
+    if {$i == 0} {
+      append matchstr "$el]+)$el*"
+    } else {
+      append matchstr "$el]*)$el*"
+    }
+    incr i
+  }
+  append matchstr {([^ ]*)}
+
+  set i 0
+  regsub "${header_str_to_ignore}" $arr_str "" str
+  foreach token [split $str $outersep] {
+    set argstr ""
+    lappend argstr $matchstr $token match
+
+    foreach j [array names array] {
+      lappend argstr [set array($j)]($i)
+      set [set array($j)]($i) ""
+    }
+    eval regexp $argstr
+    incr i
+  }
+}
+# set_dateTime: sets month (m), day (d), year (y), hour, min, an sec to some default
+# 	value, to current date/time, or to 'valuestr', depending on options given.
+proc set_dateTime { m d y hour min sec {default 0} {valuestr ""} } {
+    upvar $m    mon
+    upvar $d    day
+    upvar $y    year
+    upvar $hour hh
+    upvar $min  mm
+    upvar $sec  ss
+
+    if {$default} {
+      set datestr "Thu Jan 1 00:00:00 PST 1970"
+    } elseif { [string compare $valuestr ""] != 0 } {
+      set datestr $valuestr
+    } else {
+      set datestr [cmdExec "date"]
+    }
+
+    if [regexp \
+          "\[^ ]+ (\[^ ]+) +(\[^ ]+) +(\[^:]+):(\[^:]+):(\[^: ]+) +\[^ ]+" \
+                  $datestr match mon day hh mm ss] {
+
+       set year [lindex $datestr [expr [llength $datestr] - 1]]
+
+       if {[string length $day] < 2 && $day >= 0 && $day <= 9} {
+         set day "0$day"
+       }
+
+       if {[string length $hh] < 2 && $hh >= 0 && $hh <= 9} {
+         set hh "0$hh"
+       }
+          
+       if {[string length $mm] < 2 && $mm >= 0 && $mm <= 9} {
+         set mm "0$mm"
+       }
+  
+       if {[string length $ss] < 2 && $ss >= 0 && $ss <= 9} {
+         set ss "0$ss"
+       }
+    } else {
+      set mon  "Jan"
+      set day  "01"
+      set year "1970"
+      set hh   "00"
+      set mm   "00"
+      set ss   "00"
+    }
+}
+
+# digit: returns the integer given some number string (like atoi). Tcl seems to
+# 	be having problems converting from 08/09 to 8/9 so this procedure is needed.
+proc digit {number_str} {
+  switch -regexp -- $number_str {
+  "^(00|01|02|03|04|05|06|07|08|09)$"  {return [string index $number_str 1]}
+  default 			       {return $number_str}
+  }
+}
+
+# packinfo: for returning the correct pack info/newinfo information based on tk
+# 	version.
+proc packinfo {slave} {
+  global tk_version
+
+  if {$tk_version < 4.0} {
+    set cmd "pack newinfo $slave"
+  } else {
+    set cmd "pack info $slave"
+  }
+
+  if { [catch $cmd output] == 0 } {
+    return $output
+  } else {
+    return ""
+  }
+}
+
+# trimvar: removes from 'var' any leading or trailing chars from the set 
+#	     given by 'chars'.
+# RETURNS: 1 if 'chars' still appear "within" (non-leading nor non-trailing) 
+#	   'var' string; otherwise, 0 is returned.
+proc trimvar {chars var} {
+
+  upvar $var v
+  set v [string trim $v $chars]
+
+  set matche "\[$chars]+"
+
+  return [regexp $matche $v]
+}
+
+proc cleanstr {str {exceptChar ""}} {
+        global sysinfo
+
+        set newstr ""
+        for {set i 0} {$i < [string length $str]} {incr i} {
+                set c [string index $str $i]
+                if { [string compare $c $exceptChar] == 0 || \
+		     ([string compare $c "="] != 0 &&  \
+                      [string compare $c ","] != 0 &&  \
+                      [string compare $c "\["] != 0 && \
+                      [string compare $c "\]"] != 0) } {
+                        set newstr "$newstr$c"
+                }
+        }
+        return $newstr
+}

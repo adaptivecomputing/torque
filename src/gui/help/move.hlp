@@ -1,0 +1,18 @@
+The Move Job dialog box is for moving one more jobs into a selected queue.
+
+Use the left mouse button to highlight and select a destination queue in the 
+queue listbox.
+The list of queues that appear on the listbox are those that are managed by
+the server host(s) selected in the Hosts listbox in the main xpbs window.
+
+===============
+COMMAND BUTTONS
+===============
+This region of command buttons represents the final step when manipulating this
+dialog box. 
+
+Click on "move" to proceed moving the job(s) to the selected queue.
+
+Click on "cancel" to cancel the moving of job(s) to the selected queue and
+to quit out of this dialog box. This is also the default action when the 
+<Return> key is pressed.

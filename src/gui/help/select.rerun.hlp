@@ -1,0 +1,15 @@
+The Select Rerunnable Attribute dialog box is for specifying the rerunnable 
+attribute value to consult when limiting the list of jobs appearing on the Jobs
+listbox in the main xpbs window.
+
+Click on one of the radio buttons marked "y", "n", and "ANY" to specify the
+attribute value.
+
+===============
+COMMAND BUTTONS
+===============
+This region of command buttons represents the final step when manipulating this
+dialog box. 
+
+Click on "ok" when done setting widget values. This is also the default action 
+when the <Return> key is pressed.

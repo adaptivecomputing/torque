@@ -1,0 +1,515 @@
+.\"         OpenPBS (Portable Batch System) v2.3 Software License
+.\" 
+.\" Copyright (c) 1999-2000 Veridian Information Solutions, Inc.
+.\" All rights reserved.
+.\" 
+.\" ---------------------------------------------------------------------------
+.\" For a license to use or redistribute the OpenPBS software under conditions
+.\" other than those described below, or to purchase support for this software,
+.\" please contact Veridian Systems, PBS Products Department ("Licensor") at:
+.\" 
+.\"    www.OpenPBS.org  +1 650 967-4675                  sales@OpenPBS.org
+.\"                        877 902-4PBS (US toll-free)
+.\" ---------------------------------------------------------------------------
+.\" 
+.\" This license covers use of the OpenPBS v2.3 software (the "Software") at
+.\" your site or location, and, for certain users, redistribution of the
+.\" Software to other sites and locations.  Use and redistribution of
+.\" OpenPBS v2.3 in source and binary forms, with or without modification,
+.\" are permitted provided that all of the following conditions are met.
+.\" After December 31, 2001, only conditions 3-6 must be met:
+.\" 
+.\" 1. Commercial and/or non-commercial use of the Software is permitted
+.\"    provided a current software registration is on file at www.OpenPBS.org.
+.\"    If use of this software contributes to a publication, product, or service
+.\"    proper attribution must be given; see www.OpenPBS.org/credit.html
+.\" 
+.\" 2. Redistribution in any form is only permitted for non-commercial,
+.\"    non-profit purposes.  There can be no charge for the Software or any
+.\"    software incorporating the Software.  Further, there can be no
+.\"    expectation of revenue generated as a consequence of redistributing
+.\"    the Software.
+.\" 
+.\" 3. Any Redistribution of source code must retain the above copyright notice
+.\"    and the acknowledgment contained in paragraph 6, this list of conditions
+.\"    and the disclaimer contained in paragraph 7.
+.\" 
+.\" 4. Any Redistribution in binary form must reproduce the above copyright
+.\"    notice and the acknowledgment contained in paragraph 6, this list of
+.\"    conditions and the disclaimer contained in paragraph 7 in the
+.\"    documentation and/or other materials provided with the distribution.
+.\" 
+.\" 5. Redistributions in any form must be accompanied by information on how to
+.\"    obtain complete source code for the OpenPBS software and any
+.\"    modifications and/or additions to the OpenPBS software.  The source code
+.\"    must either be included in the distribution or be available for no more
+.\"    than the cost of distribution plus a nominal fee, and all modifications
+.\"    and additions to the Software must be freely redistributable by any party
+.\"    (including Licensor) without restriction.
+.\" 
+.\" 6. All advertising materials mentioning features or use of the Software must
+.\"    display the following acknowledgment:
+.\" 
+.\"     "This product includes software developed by NASA Ames Research Center,
+.\"     Lawrence Livermore National Laboratory, and Veridian Information
+.\"     Solutions, Inc.
+.\"     Visit www.OpenPBS.org for OpenPBS software support,
+.\"     products, and information."
+.\" 
+.\" 7. DISCLAIMER OF WARRANTY
+.\" 
+.\" THIS SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND. ANY EXPRESS
+.\" OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+.\" OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT
+.\" ARE EXPRESSLY DISCLAIMED.
+.\" 
+.\" IN NO EVENT SHALL VERIDIAN CORPORATION, ITS AFFILIATED COMPANIES, OR THE
+.\" U.S. GOVERNMENT OR ANY OF ITS AGENCIES BE LIABLE FOR ANY DIRECT OR INDIRECT,
+.\" INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+.\" LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
+.\" OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+.\" LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+.\" NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+.\" EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+.\" 
+.\" This license will be governed by the laws of the Commonwealth of Virginia,
+.\" without reference to its choice of law rules.
+.de BP
+.ie '\\n(.z'' .bp \\$1
+.el \!.BP \\$1
+..
+.if \n(Pb .ig Iq
+.TH pbs_scheduler_basl 8B "" Local PBS
+.so ../ers/ers.macros
+.Iq
+.Sh NAME
+pbs_sched_basl \- pbs BASL scheduler
+.Sh SYNOPSIS
+pbs_sched\ [\^-d home\^] [\^-L logfile\^] [\^-p print_file\^]
+[\^-a alarm\^] [\^-S port\^] [\^-c configfile\^]
+.Sh DESCRIPTION
+The
+.B pbs_sched
+command starts the operation of a batch scheduler on the local host.
+It runs in conjunction with the PBS server.  It queries the
+server about the state of PBS and communicates with
+.B pbs_mom
+to get information about the status of running jobs, memory available etc.
+It then makes decisions as to what jobs to run.
+.LP
+Typically, this command will be in a local boot file such as
+.I /etc/rc.local .
+.LP
+pbs_sched must be executed with root permission.
+.Sh OPTIONS
+.IP "-d home"
+Specifies the name of the PBS home directory, PBS_HOME.
+If not specified, the value
+of $PBS_SERVER_HOME as defined at compile time is used.  Also see the -L
+option.
+.IP "-L logfile" 5
+Specifies an absolute path name of the file to use as the log file.
+If not specified, the scheduler will
+open a file named for the current date in the PBS_HOME/sched_logs directory.
+See the -d option.
+.IP "-p print_file" 5
+This specifies the "print" file.  Any output from the scheduler code which is
+written to standard out or standard error will be written to this file.
+If this option is not given, the file used will be
+$PBS_HOME/sched_priv/sched_out. See the -d option.
+.IP "-a alarm" 5
+This specifies the time in seconds to wait for a schedule run to finish.  If a
+scheduling iteration takes too long to finish, an alarm signal is sent, and
+the scheduler is restarted.  If a core file does not exist in the current
+directory, abort() is called and a core file is generated.  The default for
+alarm is 180 seconds.
+.IP "-S port" 5
+Specifies a port on which to talk to the server. This option is not 
+required. It merely overides the default PBS scheduler port.
+.IP "-c configfile" 5
+Specify a configuration file, see description below.  If this is a relative
+file name it will be relative to PBS_HOME/sched_priv, see the -d option.
+If the -c option is not supplied, pbs_sched will not attempt to open a
+configuration file. In BASL, this config file is almost always needed because
+it is where the list of servers, nodes, and host resource queries are specified by the administrator.
+.LP
+.Sh USAGE
+This version of the scheduler requires knowledge of the BASL language. The
+site must first write a function called
+.I sched_main()
+(and all functions supporting it) using BASL constructs, and then translate the
+functions into C using the BASL compiler
+.I "basl2c",
+which would also attach a
+main program to the resulting code.  This main program performs general
+initialization and housekeeping chores such as setting up local socket to
+communicate with the server running on the same machine, cd-ing to the priv
+directory, opening log files, opening configuration file (if any), setting up
+locks, forking the child to become a daemon, initializing a scheduling cycle
+(i.e.  get node attributes that are static in nature), setting up the signal
+handlers, executing global initialization assignment statements specified by
+the scheduler writer, and finally sitting on a loop waiting for a scheduling
+command from the server. When the server sends the scheduler an appropriate
+scheduling command
+.Sc "SCH_SCHEDULE_NEW, SCH_SCHEDULE_TERM, SCH_SCHEDULE_TIME, SCH_SCHEDULE_RECYC, SCH_SCHEDULE_CMD, SCH_SCHEDULE_FIRST",
+information about server(s), jobs, queues, and execution host(s) are obtained,
+and then
+.I sched_main()
+is called.
+.Sh SCHEDULING LANGUAGE
+The BAtch Scheduling Language (BASL) is a C-like procedural language. It
+provides a number
+of constructs and predefined functions that facilitate dealing with
+scheduling issues. Information about a PBS server, the queues that it owns,
+jobs residing on each queue, and the computational nodes where jobs can be run,
+are accessed via the BASL data types  Server, Que, Job, CNode, Set Server,
+Set Que, Set Job, and Set CNode.
+.LP
+The following
+simple sched_main() will cause the server to run all queued jobs on the
+local server:
+.IP
+.Ty
+.nf
+sched_main()
+{
+        Server  s;
+        Que     q;
+        Job     j;
+        Set Que queues;
+        Set Job jobs;
+
+        s = AllServersLocalHostGet(); // get local server
+        queues = ServerQueuesGet(s);
+
+        foreach( q in queues ) {
+                jobs = QueJobsGet(q);
+                foreach( j in jobs ) {
+                         JobAction(j, SYNCRUN, NULLSTR);
+                }
+        }
+	
+}
+.fi
+.LP
+For a more complete discussion of the Batch Scheduler Language, see
+.B "basl2c(1B)".
+.Sh CONFIGURATION FILE
+A configuration file may be specified with the -c option.
+This file is used to specify the (1) hosts which are allowed to
+connect to pbs_sched, (2) the list of server hosts for which the scheduler
+writer wishes the system to periodically check for status, queues, and jobs
+info, (3) list of execution hosts for which the scheduler writer wants the
+system to periodically check for information like state, property, and so on,
+and (4) various queries to send to each execution host.
+.IP "(1) specifying client hosts:" 6
+The hosts allowed to connect to pbs_sched are specified in the configuration
+file in a manner identical to that used in pbs_mom.  There is one line per
+host using the syntax:
+.sp
+.Ty "$clienthost   hostname"
+.sp
+where
+.Ty clienthost
+and
+.Ty hostname
+are separated by white space.
+Two host names are always allowed to connection to pbs_sched: "localhost"
+and the name returned to pbs_sched by the system call gethostname().  These
+names need not be specified in the configuration file.
+.IP "(2) specifying list of servers:" 6
+The list of servers is specified in a one host per line manner, using the
+syntax:
+.sp
+.Ty "$serverhost hostname port_number"
+.br
+or
+where
+.Ty $server_host,
+.Ty hostname,
+and
+.Ty port_number
+are separated by white space.
+.sp
+If
+.Ty port_number
+is 0, then the default PBS server port will be used.
+.sp
+Regardless of what has been specified in the file, the list of servers
+will always include the local server - one running on the same host where
+the scheduler is running.
+.sp
+Within the BASL code, access to data of the list of servers is done by calling
+.I AllServersGet(),
+or
+.I AllServersLocalHostGet()
+which returns the local server on the list.
+.IP "(3) specifying the list of execution hosts:" 6
+The list of execution hosts (nodes), whose MOMs are to be queried from the
+scheduler, is specified in a one host per line manner,
+using the syntax:
+.sp
+.Ty "$momhost hostname port_number"
+.sp
+where
+.Ty $momhost,
+.Ty hostname,
+and
+.Ty port_number
+are separated by white space.
+.sp
+If
+.Ty port_number
+is 0, then the default PBS MOM port will be used.
+.sp
+The BASL function
+.I AllNodesGet()
+, or
+.I ServerNodesGet(AllServersLocalHostGet())
+is available for getting the list of nodes known to the local system.
+.IP "(4) specifying the list of host resources:" 
+For specifying the list of host resource queries to send to each execution
+host's MOM, the following syntax is used:
+.sp
+.Ty "$node node_name CNode..Get host_resource
+.sp
+.Ty node_name
+should be the same hostname string that was specified in a
+.Ty $momhost
+line. A
+.Ty node_name
+value of "*" (wildcard) means to match any node. 
+.sp
+Please consult section 9 of the PBS ERS (Resource Monitor/Resources) for a
+list of possible values to
+.Ty host_resource
+parameter.
+.sp
+.Ty CNode..Get
+refers to the actual function name that is called from the
+scheduler code to obtain the return values to host resource queries.
+The list of
+.Ty CNode..Get
+function names that can appear in the configuration file are:
+.BP
+.ft 3
+.nf
+    STATIC: 
+    ================================
+    CNodePropertiesGet
+    CNodeVendorGet
+    CNodeNumCpusGet
+    CNodeOsGet
+    CNodeMemTotalGet[type]
+    CNodeNetworkBwGet[type]
+    CNodeSwapSpaceTotalGet[name]
+    CNodeDiskSpaceTotalGet[name]
+    CNodeDiskInBwGet[name]
+    CNodeDiskOutBwGet[name]
+    CNodeTapeSpaceTotalGet[name]
+    CNodeTapeInBwGet[name]
+    CNodeTapeOutBwGet[name]
+    CNodeSrfsSpaceTotalGet[name]
+    CNodeSrfsInBwGet[name]
+    CNodeSrfsOutBwGet[name]
+
+    DYNAMIC:
+    ================================
+    CNodeIdletimeGet
+    CNodeLoadAveGet
+    CNodeMemAvailGet[type]
+    CNodeSwapSpaceAvailGet[name]
+    CNodeSwapInBwGet[name]
+    CNodeSwapOutBwGet[name]
+    CNodeDiskSpaceReservedGet[name]
+    CNodeDiskSpaceAvailGet[name]
+    CNodeTapeSpaceAvailGet[name]
+    CNodeSrfsSpaceReservedGet[name]
+    CNodeSrfsSpaceAvailGet[name]
+    CNodeCpuPercentIdleGet
+    CNodeCpuPercentSysGet
+    CNodeCpuPercentUserGet
+    CNodeCpuPercentGuestGet
+.fi
+.ft 1
+.sp
+STATIC function names return values that are obtained only during the first
+scheduling cycle, or when the scheduler is instructed to reconfig; whereas,
+DYNAMIC function names return attribute values that are taken at every
+subsequent scheduling cycle.  
+.sp
+.B name
+and
+.B type
+are arbitrarily defined. For example, you can choose to have
+.B name
+defined as
+"$FASTDIR" for the CNodeSrfs* calls, and a sample configuration file entry
+would look like:
+.sp
+.nf
+   $node unicos8 CNodeSrfsSpaceAvailGet[$FASTDIR]
+                               quota[type=ares_avail,dir=$FASTDIR]
+.fi
+.sp
+So in a BASL code, if you call CNodeSrfsSpaceAvailGet(node, "$FASTDIR"), then
+it will return the value to the query "quota[type=ares_avail,dir=$FASTDIR]"
+(3rd parameter) as sent to the node's MOM.
+.sp
+By default, the scheduler has already internally defined the following
+mappings, which can be overriden in the configuration file:
+.sp
+.Ty
+.nf
+keyword  node_name   CNode..Get        host_resource
+=======  =========   ================  =============
+$node    *           CNodeOsGet        arch
+$node    *           CNodeLoadAveGet   loadave
+$node    *           CNodeIdletimeGet  idletime
+.fi
+.ft 1
+.sp
+The above means that for all declared nodes (via $momhost), the host queries
+.Ty arch,
+.Ty loadave,
+and
+.Ty idletime
+will be sent to each node's MOM. The value to
+.Ty arch
+is obtained internally by the system during the first scheduling cycle because
+it falls under STATIC category, while values to
+.Ty loadave
+and
+.Ty idletime
+are taken at every scheduling iteration because they fall under the DYNAMIC
+category. Access to
+the return values is done by calling
+.Ar "CNodeOsGet(node)",
+.Ar "CNodeLoadAveGet(node)",
+and
+.Ar "CNodeIdletimeGet(node)",
+respectively.
+The following are some sample $node arguments that you may put in the
+configuration file.
+.BP
+.Ty
+.nf
+node_name           CNode..Get                       host res
+==================  =========================        ==========
+<sunos4_nodename>   CNodeIdletimeGet                 idletime
+<sunos4_nodename>   CNodeLoadAveGet                  loadave
+<sunos4_nodename>   CNodeMemTotalGet[real]           physmem
+<sunos4_nodename>   CNodeMemTotalGet[virtual]        totmem
+<sunos4_nodename>   CNodeMemAvailGet[virtual]        availmem
+
+<irix5_nodename>    CNodeNumCpusGet                  ncpus
+<irix5_nodename>    CNodeMemTotalGet[real]           physmem
+<irix5_nodename>    CNodeMemTotalGet[virtual]        totmem
+<irix5_nodename>    CNodeIdletimeGet                 idletime
+<irix5_nodename>    CNodeLoadAveGet                  loadave
+<irix5_nodename>    CNodeMemAvailGet[virtual]        availmem
+
+<linux_nodename>    CNodeNumCpusGet                  ncpus
+<linux_nodename>    CNodeMemTotalGet[real]           physmem
+<linux_nodename>    CNodeMemTotalGet[virtual]        totmem
+<linux_nodename>    CNodeIdletimeGet                 idletime
+<linux_nodename>    CNodeLoadAveGet                  loadave
+<linux_nodename>    CNodeMemAvailGet[virtual]        availmem
+
+<solaris5_nodename> CNodeIdletimeGet                 idletime
+<solaris5_nodename> CNodeLoadAveGet                  loadave
+<solaris5_nodename> CNodeNumCpusGet                  ncpus
+<solaris5_nodename> CNodeMemTotalGet[real]           physmem
+
+<aix4_nodename>     CNodeIdletimeGet                 idletime
+<aix4_nodename>     CNodeLoadAveGet                  loadave
+<aix4_nodename>     CNodeMemTotalGet[virtual]        totmem
+<aix4_nodename>     CNodeMemAvailGet[virtual]        availmem
+
+<unicos8_nodename>  CNodeIdletimeGet                 idletime
+<unicos8_nodename>  CNodeLoadAveGet                  loadave
+<unicos8_nodename>  CNodeNumCpusGet                  ncpus
+<unicos8_nodename>  CNodeMemTotalGet[real]           physme
+<unicos8_nodename>  CNodeMemAvailGet[virtual]        availmem
+<unicos8_nodename>  CNodeSwapSpaceTotalGet[primary]  swaptotal
+<unicos8_nodename>  CNodeSwapSpaceAvailGet[primary]  swapavail
+<unicos8_nodename>  CNodeSwapInBwGet[primary]        swapinrate
+<unicos8_nodename>  CNodeSwapOutBwGet[primary]       swapoutrate
+<unicos8_nodename>  CNodePercentIdleGet              cpuidle
+<unicos8_nodename>  CNodePercentSysGet               cpuunix
+<unicos8_nodename>  CNodePercentGuestGet             cpuguest
+<unicos8_nodename>  CNodePercentUsrGet               cpuuser
+<unicos8_nodename>  CNodeSrfsSpaceAvailGet[$FASTDIR] quota[type
+                                                   =ares_avail,
+                                                   dir=$FASTDIR]
+
+<unicos8_nodename>  CNodeSrfsSpaceAvailGet[$BIGDIR]  quota[type
+                                                   =ares_avail,
+                                                   dir=$BIGDIR]
+
+<unicos8_nodename>  CNodeSrfsSpaceAvailGet[$WRKDIR]  quota[type
+                                                   =ares_avail,
+                                                   dir=$WRKDIR]
+
+<sp2_nodename>      CNodeLoadAveGet                  loadave
+.fi
+.ft 1
+.sp
+Suppose you have an execution host that is of irix5 os type, then the
+<irix5_node_name> entries will be consulted by the scheduler. The
+initial scheduling cycle would involve  sending the STATIC
+queries
+.Ty "ncpus",
+.Ty "physmem",
+.Ty "totmem"
+to the execution host's MOM, and access to return values of the queries is done
+via
+.Ty "CNodeNumCpusGet(node)",
+.Ty "CNodeMemTotalGet(node, ""real"")",
+.Ty "CNodeMemTotalGet(node, ""virtual"")"
+respectively, where node is the CNode representation of the execution host.
+The subsequent scheduling cycles will only send DYNAMIC queries
+.Ty "idletime",
+.Ty "loadave",
+and
+.Ty "availmem",
+and access to the return values of the queries is done via
+.Ty "CNodeIdleTimeGet(node)",
+.Ty "CNodeLoadAveGet(node)",
+.Ty "CNodeMemAvailGet(node, ""virtual"")".
+respectively.
+.RE
+.LP
+"Later" entries in the config file take precedence.
+.LP
+The configuration file must be "secure".  It must be owned by a user id and
+group id less than 10 and not be world writable.
+.sp
+On receipt of a SIGHUP signal, the scheduler will close and reopen
+its log file and reread its configuration file (if any).
+.LP
+.Sh FILES
+.IP $PBS_SERVER_HOME/sched_priv 10
+the default directory for configuration files, typically
+(/usr/spool/pbs)/sched_priv.
+.LP
+.Sh Signal Handling
+A C based scheduler will handle the following signals:
+.IP SIGHUP
+The server will close and reopen its log file and reread the config file
+if one exists.
+.IP SIGALRM
+If the site supplied scheduling module exceeds the time limit, the Alarm
+will cause the scheduler to attempt to core dump and restart itself.
+.IP "SIGINT and SIGTERM"
+Will result in an orderly shutdown of the scheduler.
+.LP
+All other signals have the default action installed.
+.Sh "EXIT STATUS"
+Upon normal termination, an exit status of zero is returned.
+.Sh "SEE ALSO"
+basl2c(1B), pbs_sched_tcl(8B), pbs_server(8B), and pbs_mom(8B).
+.br
+PBS Internal Design Specification
+.\" turn off any extra indent left by the Sh macro
+.RE

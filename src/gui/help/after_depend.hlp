@@ -1,0 +1,33 @@
+The After Dependency dialog box contains widgets for instructing xpbs that the
+job being submitted can only begin execution after one or more other jobs
+have started execution, terminated with errors, terminated without errors, 
+and terminated with or without errors.
+
+The job ids with an "after" dependency on the job being submitted can be
+specified by selecting one or more job ids from the listbox, which lists all
+jobs currently known to xpbs from a previous poll, or typing directly into
+the "after:", "afterok:", "afternotok:", and "afterany:" entry boxes. If you
+select from the listbox, then be sure to click on one of the command buttons:
+"started execution", "terminated without errors", "terminated with errors",
+and "terminated with or without errors" to specify your intention. Note that
+after clicking a command button, the job ids selected will be displayed on the
+accompanying entry boxes with ":" being the separator for multiple job ids. If
+you specify the job ids manually, be sure to separate them with ":".
+
+This dialog box also contains a spinbox for specifying how many other
+jobs that this job is dependent on for its execution; that is, this job can
+only be scheduled for execution after dependencies on "count" number of jobs
+have been satisfied.
+
+On the listbox, you can also double click a job id to obtain more information
+about the job.
+
+================
+Command Buttons
+================
+Click on "ok" button after you are satisfied with the after dependency
+attribute value of the job.  This is also the default action (as indicated by
+the sunken look of the button) when the <Return> key is pressed.
+
+Click on "reset to default" if you want to reset the after dependency attribute
+values to the default settings.

@@ -1,0 +1,274 @@
+.\"         OpenPBS (Portable Batch System) v2.3 Software License
+.\" 
+.\" Copyright (c) 1999-2000 Veridian Information Solutions, Inc.
+.\" All rights reserved.
+.\" 
+.\" ---------------------------------------------------------------------------
+.\" For a license to use or redistribute the OpenPBS software under conditions
+.\" other than those described below, or to purchase support for this software,
+.\" please contact Veridian Systems, PBS Products Department ("Licensor") at:
+.\" 
+.\"    www.OpenPBS.org  +1 650 967-4675                  sales@OpenPBS.org
+.\"                        877 902-4PBS (US toll-free)
+.\" ---------------------------------------------------------------------------
+.\" 
+.\" This license covers use of the OpenPBS v2.3 software (the "Software") at
+.\" your site or location, and, for certain users, redistribution of the
+.\" Software to other sites and locations.  Use and redistribution of
+.\" OpenPBS v2.3 in source and binary forms, with or without modification,
+.\" are permitted provided that all of the following conditions are met.
+.\" After December 31, 2001, only conditions 3-6 must be met:
+.\" 
+.\" 1. Commercial and/or non-commercial use of the Software is permitted
+.\"    provided a current software registration is on file at www.OpenPBS.org.
+.\"    If use of this software contributes to a publication, product, or service
+.\"    proper attribution must be given; see www.OpenPBS.org/credit.html
+.\" 
+.\" 2. Redistribution in any form is only permitted for non-commercial,
+.\"    non-profit purposes.  There can be no charge for the Software or any
+.\"    software incorporating the Software.  Further, there can be no
+.\"    expectation of revenue generated as a consequence of redistributing
+.\"    the Software.
+.\" 
+.\" 3. Any Redistribution of source code must retain the above copyright notice
+.\"    and the acknowledgment contained in paragraph 6, this list of conditions
+.\"    and the disclaimer contained in paragraph 7.
+.\" 
+.\" 4. Any Redistribution in binary form must reproduce the above copyright
+.\"    notice and the acknowledgment contained in paragraph 6, this list of
+.\"    conditions and the disclaimer contained in paragraph 7 in the
+.\"    documentation and/or other materials provided with the distribution.
+.\" 
+.\" 5. Redistributions in any form must be accompanied by information on how to
+.\"    obtain complete source code for the OpenPBS software and any
+.\"    modifications and/or additions to the OpenPBS software.  The source code
+.\"    must either be included in the distribution or be available for no more
+.\"    than the cost of distribution plus a nominal fee, and all modifications
+.\"    and additions to the Software must be freely redistributable by any party
+.\"    (including Licensor) without restriction.
+.\" 
+.\" 6. All advertising materials mentioning features or use of the Software must
+.\"    display the following acknowledgment:
+.\" 
+.\"     "This product includes software developed by NASA Ames Research Center,
+.\"     Lawrence Livermore National Laboratory, and Veridian Information
+.\"     Solutions, Inc.
+.\"     Visit www.OpenPBS.org for OpenPBS software support,
+.\"     products, and information."
+.\" 
+.\" 7. DISCLAIMER OF WARRANTY
+.\" 
+.\" THIS SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND. ANY EXPRESS
+.\" OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+.\" OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT
+.\" ARE EXPRESSLY DISCLAIMED.
+.\" 
+.\" IN NO EVENT SHALL VERIDIAN CORPORATION, ITS AFFILIATED COMPANIES, OR THE
+.\" U.S. GOVERNMENT OR ANY OF ITS AGENCIES BE LIABLE FOR ANY DIRECT OR INDIRECT,
+.\" INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+.\" LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
+.\" OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+.\" LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+.\" NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+.\" EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+.\" 
+.\" This license will be governed by the laws of the Commonwealth of Virginia,
+.\" without reference to its choice of law rules.
+.if \n(Pb .ig Iq
+.TH qmgr 8B "" Local PBS
+.so ../ers/ers.macros
+.Iq
+.Sh NAME
+qmgr \- pbs batch system manager
+.Sh SYNOPSIS
+qmgr [\^-a\^] [\^-c\ command\^] [\^-e\^] [\^-n\^]
+[\^-z\^] [\^server...]
+.Sh DESCRIPTION
+The
+.B qmgr
+command provides an administrator interface to the batch system.
+.LP
+The command reads directives from standard input.  The syntax of each
+directive is checked and the appropriate request is sent to the
+batch server or servers.
+.LP
+The list or print subcommands of qmgr can be executed by general users.
+Creating or deleting a queue requries PBS Manager privilege.  Setting or
+unsetting server or queue attributes requires PBS Operator or Manager privilege.
+.Sh OPTIONS
+.IP "-a" 12
+Abort
+.B qmgr 
+on any syntax errors or any requests rejected by a server.
+.IP "-c command"
+Execute a single
+.Ar command
+and exit
+.B qmgr .
+.IP "-e"
+Echo all commands to standard output.
+.IP "-n"
+No commands are executed, syntax checking only is performed.
+.IP "-z"
+No errors are written to standard error.
+.LP
+.Sh OPERANDS
+The
+.Ar server 
+operands identify the name of the batch server to which the administrator
+requests are sent.  Each
+.Ar server
+conforms to the following syntax:
+.br
+.Ty \ \ \ \ host_name[:port]
+.br
+where
+.Ty host_name
+is the network name of the host on which the server is running and
+.Ty port
+is the port number to which to connect.  If
+.Ty port 
+is not specified, the default port number is used.
+.LP
+If 
+.Ar server
+is not specified, the administrator requests are sent to the local
+server.
+.Sh STANDARD INPUT
+The
+.B qmgr
+command reads standard input for directives until end of file is reached,
+or the
+.I exit 
+or
+.I quit
+directive is read.
+.Sh STANDARD OUTPUT
+If Standard Output is connected to a terminal, a command prompt will
+be written to standard output when qmgr is ready to read a directive.
+.LP
+If the
+.Ar -e
+option is specified, 
+.B qmgr
+will echo the directives read from standard input to standard output.
+.Sh STANDARD ERROR
+If the
+.Ar -z
+option is not specified, the qmgr command will write a diagnostic message
+to standard error for each error occurrence.
+.Sh EXTENDED DESCRIPTION
+If
+.B qmgr
+is invoked without the
+.Ar -c
+option and standard output is connected to a terminal, qmgr will write a
+prompt to standard output and read a directive from
+standard input.
+.LP
+Commands can be abbreviated to their minimum unambiguous form.
+A command is terminated by a new line character or a semicolon, ";",
+character.  Multiple commands may be entered on a single line.
+A command may extend across lines by escaping the new line character
+with a back-slash "\\".
+.LP
+Comments begin with the # character and continue to end of the line.
+Comments and blank lines are ignored by qmgr.
+.Sh DIRECTIVE SYNTAX
+A qmgr directive is one of the following forms:
+.sp
+.Ty "command\ server\ [names]\ [attr\ OP\ value[,attr\ OP\ value,...]]"
+.br
+.Ty "command\ queue\ [names]\ [attr\ OP\ value[,attr\ OP\ value,...]]"
+.br
+.Ty "command\ node\ [names]\ [attr\ OP\ value[,attr\ OP\ value,...]]"
+.sp
+Where, 
+.IP command 10
+is the command to perform on a object.  Commands are:
+.RS
+.IP active 10
+sets the active objects.  If the active objects are specified, and the name is 
+not given in a qmgr cmd the active object names will be used.
+.IP create 10
+is to create a new object, applies to queues and nodes.
+.IP delete 10
+is to destroy an existing object, applies to queues and nodes.
+.IP set 10
+is to define or alter attribute values of the object.
+.IP unset 10
+is to clear the value of attributes of the object.
+Note, this form does not accept an OP and value, only the
+attribute name.
+.IP list 10
+is to list the current attributes and associated values of the object.
+.IP print 10
+is to print all the queue and server attributes in a format that will be usable
+as input to the qmgr command.
+.RE
+.IP names
+is a list of one or more names of specific objects
+The name list is in the form:
+.br
+.Ty "\ \ [name][@server][,queue_name[@server]...]"
+.br
+with no intervening white space.
+The name of an object is declared when the object is first created.  If the 
+name is @server, then all the objects of specified type at the server will be 
+effected.
+.IP attr
+specifies the name of an attribute
+of the object which is to be set or modified.
+.if !\n(Pb .ig Ig
+The attributes of objects are described in section 2 of the ERS.
+.Ig
+If the attribute is one which consist of a set of resources, then the
+attribute is specified in the form:
+.br
+\ \ \f5attribute_name\f3.\f5resource_name\f1
+.br
+.IP OP
+operation to be performed with the attribute and its value:
+.RS
+.IP =
+set the value of the attribute.  If the attribute has a existing value, the
+current value is replaced with the new value.
+.IP +=
+increase the current value of the attribute by the amount in the new value.
+.IP -=
+decrease the current value of the attribute by the amount in the new value.
+.RE
+.IP value
+the value to assign to an attribute.  If the value includes white space,
+commas or other special characters, such as the # character,
+the value string must be inclosed in quote marks (").
+.LP
+The following are examples of qmgr directives:
+.sp
+.ft 5
+.nf
+create queue fast priority=10,queue_type=e,enabled = true,max_running=0
+set queue fast max_running +=2
+create queue little
+set queue little resources_max.mem=8mw,resources_max.cput=10
+unset queue fast max_running
+set node state = "down,offline"
+active server s1,s2,s3
+list queue @server1
+set queue max_running = 10	- uses active queues
+.fi
+.ft 1
+.LP
+.Sh EXIT STATUS
+Upon successful processing of all the operands presented to the
+qmgr
+command, the exit status will be a value of zero.
+.LP
+If the qmgr command fails to process any operand, the
+command exits with a value greater than zero.
+.Sh SEE ALSO
+pbs_server(8B), pbs_queue_attributes(7B), pbs_server_attributes(7B),
+qstart(8B), qstop(8B), qenable(8B), qdisable(8),
+and the PBS External Reference Specification
+.\" turn off any extra indent left by the Sh macro
+.RE

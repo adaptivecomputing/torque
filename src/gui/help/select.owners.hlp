@@ -1,0 +1,24 @@
+The Select Owners dialog box is for specifying the list of owners that
+will be checked when limiting the jobs appearing on the Jobs listbox in the 
+main xpbs window.
+
+Click on either the wildcard radio button ANY to specify any owners, or
+the user@host radio button. If the latter is selected, then type in the first 
+field the user name, and in second field the hostname from where the job was
+originally submitted. You can also skip the hostname part altogether.
+After typing your input, click the "add" button. Watch as your input gets loaded
+into the "Owners:" listbox. Entries of the latter can be deleted by
+selecting an entry, and then clicking the accompanying "delete" button. If you
+want to modify an entry in the listbox, then select the entry, which would
+result in its values to be loaded into the "user" and "host" input entries, then
+change the value of the input entries, and finally click the accompanying
+"update" button.
+
+===============
+COMMAND BUTTONS
+===============
+This region of command buttons represents the final step when manipulating this
+dialog box. 
+
+Click on "ok" when done setting widget values. This is also the default action 
+when the <Return> key is pressed.

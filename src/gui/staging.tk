@@ -1,0 +1,434 @@
+#         OpenPBS (Portable Batch System) v2.3 Software License
+# 
+# Copyright (c) 1999-2000 Veridian Information Solutions, Inc.
+# All rights reserved.
+# 
+# ---------------------------------------------------------------------------
+# For a license to use or redistribute the OpenPBS software under conditions
+# other than those described below, or to purchase support for this software,
+# please contact Veridian Systems, PBS Products Department ("Licensor") at:
+# 
+#    www.OpenPBS.org  +1 650 967-4675                  sales@OpenPBS.org
+#                        877 902-4PBS (US toll-free)
+# ---------------------------------------------------------------------------
+# 
+# This license covers use of the OpenPBS v2.3 software (the "Software") at
+# your site or location, and, for certain users, redistribution of the
+# Software to other sites and locations.  Use and redistribution of
+# OpenPBS v2.3 in source and binary forms, with or without modification,
+# are permitted provided that all of the following conditions are met.
+# After December 31, 2001, only conditions 3-6 must be met:
+# 
+# 1. Commercial and/or non-commercial use of the Software is permitted
+#    provided a current software registration is on file at www.OpenPBS.org.
+#    If use of this software contributes to a publication, product, or
+#    service, proper attribution must be given; see www.OpenPBS.org/credit.html
+# 
+# 2. Redistribution in any form is only permitted for non-commercial,
+#    non-profit purposes.  There can be no charge for the Software or any
+#    software incorporating the Software.  Further, there can be no
+#    expectation of revenue generated as a consequence of redistributing
+#    the Software.
+# 
+# 3. Any Redistribution of source code must retain the above copyright notice
+#    and the acknowledgment contained in paragraph 6, this list of conditions
+#    and the disclaimer contained in paragraph 7.
+# 
+# 4. Any Redistribution in binary form must reproduce the above copyright
+#    notice and the acknowledgment contained in paragraph 6, this list of
+#    conditions and the disclaimer contained in paragraph 7 in the
+#    documentation and/or other materials provided with the distribution.
+# 
+# 5. Redistributions in any form must be accompanied by information on how to
+#    obtain complete source code for the OpenPBS software and any
+#    modifications and/or additions to the OpenPBS software.  The source code
+#    must either be included in the distribution or be available for no more
+#    than the cost of distribution plus a nominal fee, and all modifications
+#    and additions to the Software must be freely redistributable by any party
+#    (including Licensor) without restriction.
+# 
+# 6. All advertising materials mentioning features or use of the Software must
+#    display the following acknowledgment:
+# 
+#     "This product includes software developed by NASA Ames Research Center,
+#     Lawrence Livermore National Laboratory, and Veridian Information
+#     Solutions, Inc.
+#     Visit www.OpenPBS.org for OpenPBS software support,
+#     products, and information."
+# 
+# 7. DISCLAIMER OF WARRANTY
+# 
+# THIS SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND. ANY EXPRESS
+# OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+# OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT
+# ARE EXPRESSLY DISCLAIMED.
+# 
+# IN NO EVENT SHALL VERIDIAN CORPORATION, ITS AFFILIATED COMPANIES, OR THE
+# U.S. GOVERNMENT OR ANY OF ITS AGENCIES BE LIABLE FOR ANY DIRECT OR INDIRECT,
+# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
+# OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+# LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+# NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+# EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# 
+# This license will be governed by the laws of the Commonwealth of Virginia,
+# without reference to its choice of law rules.
+################################################################################
+# staging: defines the layout and functions of the file staging dialog box.
+#	   Input focus returns to 'callerDialogBox' upon return.
+# CONTEXT: executes originally in the context of qsub, but can changed via
+#          setting qalter to 1.
+proc staging {callerDialogBox {qalter 0}} {
+  global LABELFONT stagingDialogBox activeWindow numStaging fileselect
+
+ if {!$qalter} {
+    global qsubv ARR
+    set ARR "qsubv"
+  } else {
+    global qalterv ARR
+    set ARR "qalterv"
+  }
+
+  global ${ARR}_stagein_host ${ARR}_stagein_input ${ARR}_stagein_local \
+	 ${ARR}_stageout_local ${ARR}_stageout_host ${ARR}_stageout_output
+
+  busy_cursor
+## Bring up the standard Dialog box ##
+  set stagingDialogBox .staging
+  set dbox [popupDialogBox $stagingDialogBox "File Staging Dialog" 1 "" $callerDialogBox]
+  set activeWindow($stagingDialogBox) 1
+  set dbox_top    [lindex $dbox 0]
+  set dbox_bottom [lindex $dbox 1]
+
+## BOTTOM PART ##
+  set cmdButtons \
+  [buildCmdButtons $dbox_bottom {{{ok ok} {cancel "reset to default"} {help help}}} x 10m 16 3]
+
+  set cmdFrame  [lindex $cmdButtons 0]
+  set cmdOk     [lindex $cmdButtons 1]
+  set cmdCancel [lindex $cmdButtons 2]
+  set cmdHelp   [lindex $cmdButtons 3]
+
+  $cmdOk configure -width 18 -command {
+    if [pre_build_staging_opt $ARR] {
+	return
+    }
+      destroy $stagingDialogBox
+  }
+
+  if {$qalter} {
+    $cmdCancel configure -width 18 \
+	-command "set_default_qalter_staging; boxLoad $dbox_top.stagein; boxLoad $dbox_top.stageout"
+  } else {
+    $cmdCancel configure -width 18 \
+	-command "set_default_qsub_staging; boxLoad $dbox_top.stagein; boxLoad $dbox_top.stageout"
+  }
+
+  $cmdHelp configure -command {xpbs_help staging $stagingDialogBox}
+## TOP PART ##
+  frame $dbox_top.header -height 5m -width 5m
+  frame $dbox_top.footer -height 5m -width 5m
+  frame $dbox_top.gap -height 5m -width 5m
+
+  frame $dbox_top.stagein -relief groove -borderwidth 2
+  frame $dbox_top.stageout -relief groove -borderwidth 2
+  frame $dbox_top.fsbox -relief groove -borderwidth 4
+
+  set fileselect(path) {}
+  set fileselect(filepath) {}
+## STAGEIN
+  box $dbox_top.stagein -title "Stagein (from HERE to THERE):" \
+        -entrylabels {{{HERE host}} {{HERE input_file}} {{THERE local_file}}} \
+	-lboxwidths {20 30 30} -lboxheights {2 2 2} \
+        -lboxlabels {{Stagein Files:} " " " "} -orient xy \
+	-grabBox $stagingDialogBox \
+	-cmdbutton [list {Add file selected from File Selection Box..} \
+	  { \
+           box [set ${ARR}(stagein_frame)] -entryval 0 $fileselect(host); \
+           box [set ${ARR}(stagein_frame)] -entryval 1 $fileselect(filepath) \
+          }] \
+	-key {0 1 2} \
+	-array 0 ${ARR}_stagein_host \
+	-array 1 ${ARR}_stagein_input \
+	-array 2 ${ARR}_stagein_local
+
+  boxLoad $dbox_top.stagein 
+  set ${ARR}(stagein_frame) $dbox_top.stagein
+
+  box $dbox_top.stageout -title "Stageout (from THERE to HERE): " \
+        -entrylabels {{{THERE local_file}} {{HERE host}} {{HERE output_file}}} \
+	-lboxwidths {30 20 30} -lboxheights {2 2 2} \
+        -lboxlabels {{Stageout Files:} " " " "} -orient xy \
+	-grabBox $stagingDialogBox \
+	-key {0 1 2} \
+	-cmdbutton [list {Add file selected from File Selection Box..} \
+	  { \
+           box [set ${ARR}(stageout_frame)] -entryval 1 $fileselect(host); \
+           box [set ${ARR}(stageout_frame)] -entryval 2 $fileselect(filepath) \
+          }] \
+	-array 0 ${ARR}_stageout_local \
+	-array 1 ${ARR}_stageout_host  \
+	-array 2 ${ARR}_stageout_output
+  boxLoad $dbox_top.stageout
+  set ${ARR}(stageout_frame) $dbox_top.stageout
+
+  focus $stagingDialogBox
+  register_default_action $stagingDialogBox $cmdOk
+
+  set fileselect(fsbox) $dbox_top.fsbox
+  set fileselect(fsboxButton) $dbox_top.fsboxButton
+  set fileselect(fsboxDisplay) 0
+  button $dbox_top.fsboxButton -font $LABELFONT \
+	-text "Click me to bring up File Selection Box.." \
+	-command {
+	  if { $fileselect(fsboxDisplay) } {
+		pack forget $fileselect(fsbox)
+		$fileselect(fsboxButton) configure \
+			-text "Click me to bring up File Selection Box.."
+  		set fileselect(fsboxDisplay) 0
+          } else {
+		pack $fileselect(fsbox) -after $fileselect(fsboxButton)
+		$fileselect(fsboxButton) configure \
+			-text "Click me to remove File Selection Box.."
+  		set fileselect(fsboxDisplay) 1
+          }
+	}
+## ARRANGEMENT ON SCREEN
+  pack forget $dbox_top.stagein $dbox_top.stageout
+  pack $dbox_top.fsboxButton -anchor c -side top
+  pack $dbox_top.header -anchor nw -side top
+  pack $dbox_top.stagein $dbox_top.gap -anchor c -side top
+  pack $dbox_top.stageout $dbox_top.footer -anchor c -side top
+
+  createFileselectWidget $dbox_top.fsbox "FILE SELECTION BOX" 0 80x6
+
+  tkwait visibility $stagingDialogBox
+  remove_busy_cursor
+  catch {tkwait window $stagingDialogBox}
+
+  set activeWindow($stagingDialogBox) 0
+  focus $callerDialogBox
+  catch {grab $callerDialogBox}
+}
+
+# check_staging_input: checks for the existence of "host:file" input.
+#	RETURNS:
+#		1	if file@host exists	
+#		0	if file@host does not exist	
+#		-1	If directory containing "file@host" does not exist,
+#				implying "file@host" does not exist.
+#		-2	if problem executing command needed to check for
+#				existence of dir/file.
+
+proc check_staging_input {host file} {
+	global RSH
+
+	set basename [file tail $file]
+	if { [string compare [string trimleft $file "./"] $basename] == 0 } { 
+
+		set hdir [cmdExec "$RSH $host pwd"]
+		set file "$hdir/$file"
+	}
+
+	set dirname [file dirname $file]
+	set localhost [cmdExec hostname]
+	if { [string compare $host $localhost] == 0 } {
+		if { ![file isdirectory $dirname] } {
+			return -1
+		}
+		return [file isfile $file]
+
+	} else {
+		set dirOk [cmdExec "$RSH $host \"test -d $dirname && echo 1\""] 
+		if { [string compare $dirOk ""] == 0 } {
+			return -1
+		} elseif { [string compare $dirOk "1"] != 0 } {
+			return -2
+		}
+
+		set filOk [cmdExec "$RSH $host \"test -f $file && echo 1\""] 
+		if { [string compare $filOk "1"] == 0 } {
+			return 1
+		} elseif { [string compare $filOk ""] == 0 } {
+			return 0
+		} else {
+			return -2
+		}
+	}
+}
+
+# pre_build_staging_opt: builds the email options suitable for processing by
+#       either qsub or qalter.
+proc pre_build_staging_opt {array} {
+
+    upvar $array ARR
+
+    global stagingDialogBox \
+	 ${array}_stagein_host ${array}_stagein_input ${array}_stagein_local \
+	 ${array}_stageout_local ${array}_stageout_host ${array}_stageout_output
+
+    if [regexp "qsub" $array] {
+      init_qsub_staging_argstr
+    } else {     
+      init_qalter_staging_argstr
+    }
+
+    set size 0
+    if [info exists ${array}_stagein_host] {
+       set size [array size ${array}_stagein_host]
+    }
+    for {set i 0} {$i < $size} {incr i} {
+  
+      if { [trimvar "@:," ${array}_stagein_host($i)] || \
+	   [trimvar "@:," ${array}_stagein_input($i)] || \
+           [trimvar "@:," ${array}_stagein_local($i)] } {
+          popupInfoBox $stagingDialogBox "Detected an illegal character \
+            \"@\", \":\", \",\" in stagein entry $i. Please remove."
+        return 1
+      }
+
+
+      set stagein_host 	   [set ${array}_stagein_host($i)]
+      set stagein_input    [set ${array}_stagein_input($i)]
+      set stagein_local    [set ${array}_stagein_local($i)]
+ 
+      if {[string compare $stagein_host ""] != 0 && \
+          [string compare $stagein_input ""] != 0 && \
+	  [string compare $stagein_local ""] != 0} {
+   	set stagein_file($i) "$stagein_local@$stagein_host:$stagein_input"
+      } elseif {[string compare $stagein_host ""] != 0  || \
+                [string compare $stagein_input ""] != 0 || \
+	        [string compare $stagein_local ""] != 0} {
+	popupInfoBox $stagingDialogBox "Incomplete specification found in Stagein entry $i"
+        return 1
+      }
+   
+      if [winfo exists $stagingDialogBox] {
+      	if { [string compare $stagein_host ""] != 0 && \
+			[string compare $stagein_input ""] != 0 } {      
+	   set ret [check_staging_input $stagein_host $stagein_input]
+           if { $ret == -1 || $ret == 0 } {
+
+          	if { [popupInfoBoxWOpt $stagingDialogBox \
+			"$stagein_input@$stagein_host\
+			       file (stagein entry $i) does not exist."] == 1} {
+			return 1
+		}
+           }
+        }
+      }
+    }
+
+    set ARR(stagein_filelist) \
+	[construct_array_args stagein_file "," "stagein="]
+
+    set size 0
+    if [info exists ${array}_stageout_host] {
+      set size [array size ${array}_stageout_host]
+    }
+    for {set i 0} {$i < $size} {incr i} {
+
+
+      if { [trimvar "@:," ${array}_stageout_host($i)] || \
+	   [trimvar "@:," ${array}_stageout_output($i)] || \
+           [trimvar "@:," ${array}_stageout_local($i)] } {
+          popupInfoBox $stagingDialogBox "Detected an illegal character \
+            \"@\", \":\", \",\" in stageout entry $i. Please remove."
+        return 1
+      }
+
+      set stageout_host    [set ${array}_stageout_host($i)]
+      set stageout_output  [set ${array}_stageout_output($i)]
+      set stageout_local   [set ${array}_stageout_local($i)]
+
+
+      if {[string compare $stageout_host ""] != 0 && \
+          [string compare $stageout_output ""] != 0 && \
+	  [string compare $stageout_local ""] != 0} {
+   	set stageout_file($i) "$stageout_local@$stageout_host:$stageout_output"
+      } elseif {[string compare $stageout_host ""] != 0 || \
+                [string compare $stageout_output ""] != 0 || \
+	        [string compare $stageout_local ""] != 0} {
+	popupInfoBox $stagingDialogBox "Incomplete specification found in Stageout entry $i"
+        return 1
+      }
+
+      if [winfo exists $stagingDialogBox] {
+      	if { [string compare $stageout_host ""] != 0 && \
+	   		[string compare $stageout_output ""] != 0 } { 
+          if { [check_staging_input $stageout_host $stageout_output] == -1 } {
+
+            if { [popupInfoBoxWOpt $stagingDialogBox "Subdir\
+			[file dirname $stageout_output]@$stageout_host\
+				(stageout entry $i) does not exist."] == 1 } {
+	  	return 1
+	    }
+
+          }
+        }
+      }
+    }
+
+    set ARR(stageout_filelist)  \
+	[construct_array_args stageout_file "," "stageout="]
+
+    catch {unset stagein_file}
+    catch {unset stageout_file}
+    return 0
+}
+proc insertHereStageinEntry {array host input} {
+    upvar $array ARR
+
+    global ${array}_stagein_host ${array}_stagein_input
+
+    if { [string compare $input ""] == 0 } {
+	return
+    }
+
+    set size 0
+    if [info exists ${array}_stagein_host] {
+      set size [array size ${array}_stagein_host]
+    }
+
+    for {set i 0} {$i < $size} {incr i} {
+      if {[string compare [set ${array}_stagein_host($i)] ""]  == 0 && \
+          [string compare [set ${array}_stagein_input($i)] ""] == 0 } {
+	  set ${array}_stagein_host($i) $host
+	  set ${array}_stagein_input($i) $input
+		return
+      }
+    }
+    if { $i == $size } {
+	  set ${array}_stagein_host($i) $host
+	  set ${array}_stagein_input($i) $input
+    }
+}
+proc insertHereStageoutEntry {array host output} {
+    upvar $array ARR
+
+    global ${array}_stageout_host ${array}_stageout_output
+
+    if { [string compare $output ""] == 0 } {
+	return
+    }
+
+    set size 0
+    if [info exists ${array}_stageout_host] {
+      set size [array size ${array}_stageout_host]
+    }
+
+    for {set i 0} {$i < $size} {incr i} {
+      if {[string compare [set ${array}_stageout_host($i)] ""]  == 0 && \
+          [string compare [set ${array}_stageout_output($i)] ""] == 0 } {
+	  set ${array}_stageout_host($i) $host
+	  set ${array}_stageout_output($i) $output
+		return
+      }
+    }
+
+    if { $i == $size } {
+	  set ${array}_stageout_host($i) $host
+	  set ${array}_stageout_output($i) $output
+    }
+}

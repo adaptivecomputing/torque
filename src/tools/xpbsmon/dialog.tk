@@ -1,0 +1,318 @@
+#         OpenPBS (Portable Batch System) v2.3 Software License
+# 
+# Copyright (c) 1999-2000 Veridian Information Solutions, Inc.
+# All rights reserved.
+# 
+# ---------------------------------------------------------------------------
+# For a license to use or redistribute the OpenPBS software under conditions
+# other than those described below, or to purchase support for this software,
+# please contact Veridian Systems, PBS Products Department ("Licensor") at:
+# 
+#    www.OpenPBS.org  +1 650 967-4675                  sales@OpenPBS.org
+#                        877 902-4PBS (US toll-free)
+# ---------------------------------------------------------------------------
+# 
+# This license covers use of the OpenPBS v2.3 software (the "Software") at
+# your site or location, and, for certain users, redistribution of the
+# Software to other sites and locations.  Use and redistribution of
+# OpenPBS v2.3 in source and binary forms, with or without modification,
+# are permitted provided that all of the following conditions are met.
+# After December 31, 2001, only conditions 3-6 must be met:
+# 
+# 1. Commercial and/or non-commercial use of the Software is permitted
+#    provided a current software registration is on file at www.OpenPBS.org.
+#    If use of this software contributes to a publication, product, or
+#    service, proper attribution must be given; see www.OpenPBS.org/credit.html
+# 
+# 2. Redistribution in any form is only permitted for non-commercial,
+#    non-profit purposes.  There can be no charge for the Software or any
+#    software incorporating the Software.  Further, there can be no
+#    expectation of revenue generated as a consequence of redistributing
+#    the Software.
+# 
+# 3. Any Redistribution of source code must retain the above copyright notice
+#    and the acknowledgment contained in paragraph 6, this list of conditions
+#    and the disclaimer contained in paragraph 7.
+# 
+# 4. Any Redistribution in binary form must reproduce the above copyright
+#    notice and the acknowledgment contained in paragraph 6, this list of
+#    conditions and the disclaimer contained in paragraph 7 in the
+#    documentation and/or other materials provided with the distribution.
+# 
+# 5. Redistributions in any form must be accompanied by information on how to
+#    obtain complete source code for the OpenPBS software and any
+#    modifications and/or additions to the OpenPBS software.  The source code
+#    must either be included in the distribution or be available for no more
+#    than the cost of distribution plus a nominal fee, and all modifications
+#    and additions to the Software must be freely redistributable by any party
+#    (including Licensor) without restriction.
+# 
+# 6. All advertising materials mentioning features or use of the Software must
+#    display the following acknowledgment:
+# 
+#     "This product includes software developed by NASA Ames Research Center,
+#     Lawrence Livermore National Laboratory, and Veridian Information
+#     Solutions, Inc.
+#     Visit www.OpenPBS.org for OpenPBS software support,
+#     products, and information."
+# 
+# 7. DISCLAIMER OF WARRANTY
+# 
+# THIS SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND. ANY EXPRESS
+# OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+# OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT
+# ARE EXPRESSLY DISCLAIMED.
+# 
+# IN NO EVENT SHALL VERIDIAN CORPORATION, ITS AFFILIATED COMPANIES, OR THE
+# U.S. GOVERNMENT OR ANY OF ITS AGENCIES BE LIABLE FOR ANY DIRECT OR INDIRECT,
+# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
+# OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+# LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+# NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+# EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# 
+# This license will be governed by the laws of the Commonwealth of Virginia,
+# without reference to its choice of law rules.
+
+# popupDialogBox: A popupDialogBox creates the standard dialog box used by the GUI on
+#                 the toplevel named 'dialog_top' to be named 'title'. It
+#                 creates 2 frames: top frame (to be populated by widgets) and
+#                         bottom frame (to be populated by command buttons).
+# RETURNS: a list with 2 items: top_frame_name and bottom_frame_name.
+# OPTIONS: 'grab_window' says to set a grab on 'dialog_top'.
+#          'class' is the class name to associate 'dialog_top'.
+#          'master' specifies that the dialog box is working on behalf of
+#                   some 'master' window.
+proc popupDialogBox {dialog_top title {grab_window 1} {class Plain} {master ""} {precisePlace 0} } {
+
+  global activeWindow bitmap_dir dialog coordX coordY
+
+  if {[string compare $class ""] == 0} {
+    toplevel $dialog_top
+  } else {
+    toplevel $dialog_top -class $class
+  }
+
+  wm title $dialog_top $title
+
+  if {$precisePlace} {
+
+        if { [info exists coordX] && [info exists coordY] } {
+                wm geometry $dialog_top "+$coordX+$coordY"
+        }
+  }
+
+  if {$grab_window} {
+    catch {grab $dialog_top} grab_msg
+
+    if { [string compare $grab_msg ""] != 0 } {
+      tkwait visibility $dialog_top
+
+      catch {grab $dialog_top} grab_msg
+      if { [string compare $grab_msg ""] != 0 } {
+        InfoBox_sendmsg "Grabbing $dialog_top got: $grab_msg" 2
+      }
+    }
+  }
+  focus $dialog_top
+  frame $dialog_top.top -borderwidth 4 -relief ridge
+  frame $dialog_top.bottom -borderwidth 2 -relief raised -class CmdFrame
+  pack  $dialog_top.top $dialog_top.bottom -side top -fill both -expand 1
+
+  if { [string compare $master ""] != 0 } {
+    wm transient $dialog_top $master
+  } else {
+    wm transient $dialog_top $dialog(mainWindow)
+  }
+
+  return [list $dialog_top.top $dialog_top.bottom]
+}
+
+# popupInfoBox: pops up a dialog box informing the user of some 'msg'.
+#       'callerDialogBox' is for returning the the input focus to the calling dialog
+#       box.
+# OPTIONS:
+#       'width_pixels' is the size of the info box.
+proc popupNodeInfoBox {callerDialogBox nodeframe nodename nodeType clusterSrc \
+			{focusBox ""} } {
+
+     global dialog canvas nodeStatus activeWindow \
+	    nodeMirrorFrame
+
+     set dialog(nodeInfoBox) ".nodeinfo"
+
+     set activeWindow($dialog(nodeInfoBox)) 1
+
+     if [winfo exists $dialog(nodeInfoBox)] {
+         return
+     }
+
+     set dbox [popupDialogBox $dialog(nodeInfoBox) "Node Info Dialog" 1 Plain \
+							$callerDialogBox 1]
+     set dbox_top    [lindex $dbox 0]
+     set dbox_bottom [lindex $dbox 1]
+
+    set delim [string last "," $nodename]
+    if {$delim == -1} {
+	set nodelabel $nodename
+    } else {
+	incr delim
+	set nodelabel [string range $nodename $delim end]
+    }	
+
+    nodeCreate $dbox_top.n $nodename $nodelabel $clusterSrc $nodeType MIRROR
+
+    set sysframe [clusterSystemFrameGet [nodeClusterFrameGet $nodeframe]]
+    set nodeinfo [systemNodeInfoGet $sysframe $nodename]
+    if {[string compare $nodeinfo ""] != 0} {
+    	nodeDisplayInfo $dbox_top.n $nodeinfo 1
+    } else {
+	nodeColorIt $dbox_top.n $nodename
+    }	
+
+     set ok_button [lindex \
+                    [buildCmdButtons $dbox_bottom {{{ok ok}}} x 20m 10 3] 1]
+
+     $ok_button configure -command [list destroy $dialog(nodeInfoBox)]
+
+     register_default_action $dialog(nodeInfoBox) $ok_button
+     tkwait window $dialog(nodeInfoBox)
+     set activeWindow($dialog(nodeInfoBox)) 0
+
+
+     catch {focus $focusBox}
+     catch {grab $callerDialogBox}
+     nodeDelete $dbox_top.n
+}
+
+# popupInfoBox: pops up a dialog box informing the user of some 'msg'.
+#       'callerDialogBox' is for returning the the input focus to the calling
+#	dialog box.
+# OPTIONS:
+#       'width_pixels' is the size of the info box.
+proc popupInfoBox {callerDialogBox msg {width_pixels 500} {focusBox ""}} {
+
+     global canvas dialog activeWindow
+
+     set dialog(infoBox) ".info"
+
+     set activeWindow($dialog(infoBox)) 1
+     if [winfo exists $dialog(infoBox)] {
+         return
+     }
+
+     set dbox [popupDialogBox $dialog(infoBox) "Info Dialog" 1 Plain \
+							$callerDialogBox]
+     set dbox_top    [lindex $dbox 0]
+     set dbox_bottom [lindex $dbox 1]
+
+     message $dbox_top.msg    -justify left \
+			      -width $width_pixels \
+                              -text "\n\n\n\t$msg\n"
+     pack $dbox_top.msg -padx 3m -pady 3m
+
+     set ok_button [lindex \
+                    [buildCmdButtons $dbox_bottom {{{ok ok}}} x 20m 10 3] 1]
+
+     $ok_button configure -command [list destroy $dialog(infoBox)]
+
+     register_default_action $dialog(infoBox) $ok_button
+     tkwait window $dialog(infoBox)
+     set activeWindow($dialog(infoBox)) 0
+     catch {grab $callerDialogBox}
+     catch {focus $focusBox}
+}
+
+proc popupErrorBox {retcode command_list errmsg {width_pixels 500} \
+                    {callerDialogBox ""} } {
+
+     global dialog
+
+     set dialog(errDialogBox) ".error"
+     set dbox [popupDialogBox $dialog(errDialogBox) "Error Dialog" 1 Plain \
+		$callerDialogBox]
+     set dbox_top    [lindex $dbox 0]
+     set dbox_bottom [lindex $dbox 1]
+
+     message $dbox_top.msg    -borderwidth 2  -justify left \
+                              -width $width_pixels \
+                              -text "FAILED (return code=$retcode)\
+                                     to execute the following\
+                                     command:\n\n\n\t$command_list\n\n\nThe\
+                                     error message was\n\n\n\t$errmsg\n"
+     pack $dbox_top.msg -padx 3m -pady 3m
+
+     set ok_button [lindex \
+                    [buildCmdButtons $dbox_bottom {{{ok ok}}} x 20m 10 3] 1]
+
+     $ok_button configure -command [list destroy $dialog(errDialogBox)]
+
+     register_default_action $dialog(errDialogBox) $ok_button
+     catch {tkwait window $dialog(errDialogBox)}
+     if { [string compare $callerDialogBox ""] != 0 } {
+        focus $callerDialogBox
+        grab $callerDialogBox
+     }
+}
+
+proc popupOutputBox {output {callerDialogBox ""} } {
+
+     set dialog(outDialogBox) ".output"
+     set dbox [popupDialogBox $dialog(outDialogBox) "Output Dialog" 1 Plain $callerDialogBox]
+     set dbox_top    [lindex $dbox 0]
+     set dbox_bottom [lindex $dbox 1]
+
+     text $dbox_top.textbox -borderwidth 2  -setgrid 1 \
+                             -exportselection true \
+                             -width 80  -height 30 -relief flat
+
+     bind_text_readonly $dbox_top.textbox
+     pack $dbox_top.textbox -expand 1 -fill both -side left -padx 3m -pady 3m
+
+     scrollbar $dbox_top.vscroll \
+                                     -command "$dbox_top.textbox yview" \
+                                     -borderwidth 2 \
+                                     -orient vertical \
+                                     -relief groove
+
+     $dbox_top.textbox configure -yscrollcommand "$dbox_top.vscroll set"
+     pack $dbox_top.vscroll  -fill y -expand 1 -after $dbox_top.textbox
+
+     set ok_button [lindex \
+                    [buildCmdButtons $dbox_bottom {{{ok ok}}} x 20m 10 3] 1]
+
+     $ok_button configure -command [list destroy $dialog(outDialogBox)]
+
+     $dbox_top.textbox insert 1.0 $output
+     register_default_action $dialog(outDialogBox) $ok_button
+     catch {tkwait window $dialog(outDialogBox)}
+}
+
+proc win_cmdExec {callerDialogBox command_list} {
+  busy_cursor
+
+  InfoBox_sendmsg "'$command_list'..."
+  set retcode [catch {eval exec $command_list} output]
+
+  if {$retcode != 0} {
+     if { [string compare $callerDialogBox ""] != 0 } {
+       popupErrorBox $retcode $command_list $output 500 $callerDialogBox
+     } else {
+       popupErrorBox $retcode $command_list $output 500 ""
+     }
+     InfoBox_sendmsg "failed!" 1 1
+  } else {
+     if { [string compare $output ""] != 0 } {
+       popupOutputBox $output $callerDialogBox
+     }
+     InfoBox_sendmsg "done." 1 1 5
+  }
+
+  remove_busy_cursor
+  if { [string compare $callerDialogBox ""] != 0 } {
+    focus $callerDialogBox
+    grab $callerDialogBox
+  }
+  return $retcode
+}

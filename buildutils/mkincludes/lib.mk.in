@@ -1,0 +1,22 @@
+# START lib.mk
+
+#
+# All of the PBS libs are made using this standard form and target
+#
+
+all: autodepend
+	@MAKE_POSIX_PLUS@@$(MAKE) build
+
+build: $(TARGET)
+
+
+$(TARGET): $(OBJS)
+	$(AR) $(ARFLAGS) $@ $? && \
+	$(RANLIB) $@
+
+install:: $(TARGET)
+	@# a two step process is best to work around broken installs
+	$(INSTALL) -d $(libdir) && \
+	$(INSTALL) -m 644 $(TARGET) $(libdir)/$(TARGET)
+
+# END lib.mk

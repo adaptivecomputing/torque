@@ -1,0 +1,330 @@
+#!/usr/local/bin/wish -f
+###############################################################################
+# xpbs-gui: The GUI front end to the PBS user and operator commands.
+#
+# Written by Albeaus Bayucan
+# History
+#	Initial Date: 1/17/96
+###############################################################################
+#         OpenPBS (Portable Batch System) v2.3 Software License
+# 
+# Copyright (c) 1999-2000 Veridian Information Solutions, Inc.
+# All rights reserved.
+# 
+# ---------------------------------------------------------------------------
+# For a license to use or redistribute the OpenPBS software under conditions
+# other than those described below, or to purchase support for this software,
+# please contact Veridian Systems, PBS Products Department ("Licensor") at:
+# 
+#    www.OpenPBS.org  +1 650 967-4675                  sales@OpenPBS.org
+#                        877 902-4PBS (US toll-free)
+# ---------------------------------------------------------------------------
+# 
+# This license covers use of the OpenPBS v2.3 software (the "Software") at
+# your site or location, and, for certain users, redistribution of the
+# Software to other sites and locations.  Use and redistribution of
+# OpenPBS v2.3 in source and binary forms, with or without modification,
+# are permitted provided that all of the following conditions are met.
+# After December 31, 2001, only conditions 3-6 must be met:
+# 
+# 1. Commercial and/or non-commercial use of the Software is permitted
+#    provided a current software registration is on file at www.OpenPBS.org.
+#    If use of this software contributes to a publication, product, or
+#    service, proper attribution must be given; see www.OpenPBS.org/credit.html
+# 
+# 2. Redistribution in any form is only permitted for non-commercial,
+#    non-profit purposes.  There can be no charge for the Software or any
+#    software incorporating the Software.  Further, there can be no
+#    expectation of revenue generated as a consequence of redistributing
+#    the Software.
+# 
+# 3. Any Redistribution of source code must retain the above copyright notice
+#    and the acknowledgment contained in paragraph 6, this list of conditions
+#    and the disclaimer contained in paragraph 7.
+# 
+# 4. Any Redistribution in binary form must reproduce the above copyright
+#    notice and the acknowledgment contained in paragraph 6, this list of
+#    conditions and the disclaimer contained in paragraph 7 in the
+#    documentation and/or other materials provided with the distribution.
+# 
+# 5. Redistributions in any form must be accompanied by information on how to
+#    obtain complete source code for the OpenPBS software and any
+#    modifications and/or additions to the OpenPBS software.  The source code
+#    must either be included in the distribution or be available for no more
+#    than the cost of distribution plus a nominal fee, and all modifications
+#    and additions to the Software must be freely redistributable by any party
+#    (including Licensor) without restriction.
+# 
+# 6. All advertising materials mentioning features or use of the Software must
+#    display the following acknowledgment:
+# 
+#     "This product includes software developed by NASA Ames Research Center,
+#     Lawrence Livermore National Laboratory, and Veridian Information
+#     Solutions, Inc.
+#     Visit www.OpenPBS.org for OpenPBS software support,
+#     products, and information."
+# 
+# 7. DISCLAIMER OF WARRANTY
+# 
+# THIS SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND. ANY EXPRESS
+# OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+# OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT
+# ARE EXPRESSLY DISCLAIMED.
+# 
+# IN NO EVENT SHALL VERIDIAN CORPORATION, ITS AFFILIATED COMPANIES, OR THE
+# U.S. GOVERNMENT OR ANY OF ITS AGENCIES BE LIABLE FOR ANY DIRECT OR INDIRECT,
+# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
+# OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+# LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+# NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+# EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# 
+# This license will be governed by the laws of the Commonwealth of Virginia,
+# without reference to its choice of law rules.
+################################################################################
+set XPBS_VERSION      1.1.12
+set libdir /u/wk/bayucan/xpbs.test
+set appdefdir .
+set bitmap_dir	      $libdir/bitmaps
+set helpdir	      $libdir/help		
+set bindir            $libdir/bin
+set auto_path         [linsert $auto_path 0 $libdir] 
+set auto_path         [linsert $auto_path 0 .]
+set appDefaultsFile   $appdefdir/xpbsrc
+
+set appname1 "xpbs"
+set appname "${appname1}${XPBS_VERSION}"
+
+if [catch {exec whoami} USER] {
+  puts "Could not set USER. - exec whoami failed."
+}
+
+switch -exact -- $argc {
+  0 {
+    set perm_level "user"
+  }
+  1 {
+    if { [string compare [lindex $argv 0] "-admin"] == 0 } {
+      set perm_level "admin"
+    } else {
+      puts stderr "$appname1 \[-admin\]"
+      exit 1
+    }
+  }
+  default {
+    puts stderr "$appname1 \[-admin\]"
+    exit 1
+  }
+}
+
+global env
+if { ![info exists env(DISPLAY)] } {
+	puts "DISPLAY variable not set."
+	exit 1
+}
+
+catch {Pref_Init "$env(HOME)/.xpbsrc" $appDefaultsFile} output
+if {[string compare $output ""] != 0} {
+        puts "xpbs: initialization failed! output: $output"
+        exit 1
+}
+
+## For items that are configurable, please add an entry on this array
+set preferences { \
+ {LABELFONT labelFont "-adobe-courier-bold-r-normal--12-120-75-75-m-70-iso8859-1"}
+ {FIXLABELFONT fixlabelFont "7x13bold"}
+ {TEXTFONT textFont "7x13"}
+ {SERVER_HOSTS serverHosts	""}
+ {XTERM xtermCmd "xterm"}
+ {RSH rshCmd "rsh"}
+ {backgroundColor backgroundColor "#c8b9a6"}
+ {foregroundColor foregroundColor "#150567"}
+ {activeColor	  activeColor     "#9db2ff"}
+ {disabledColor   disabledColor   "#8f8e8d"}
+ {signalColor	  signalColor     "#c11b17"}
+ {shadingColor    shadingColor    "#c7af92"}
+ {selectorColor   selectorColor "#980517"}
+ {hostsSelected   selectHosts ""}
+ {queuesSelected  selectQueues ""}
+ {jobsSelected  selectJobs ""}
+ {jobResourceList  jobResourceList \
+	 "{unicos8 ncpus cput mem mppe mppt nice pncpus pcput pf pmem pmppt ppf procs psds sds srfs_tmp srfs_wrk srfs_big srfs_fast walltime arch nodes mta mtb mtc mtd mte mtf mtg mth} \
+	 {irix5 cput file mem nice pcput pmem walltime workingset arch nodes} \
+	 {irix6 cput file mem ncpus nice nodemask pcput pmem walltime workingset arch nodes} \
+	 {irix6array cput file mem ncpus nice nodemask pcput pmem walltime workingset arch nodes} \
+	 {solaris5 cput file mem nice pcput pmem walltime arch nodes} \
+	 {linux cput file mem nice pcput pmem walltime workingset arch nodes} \
+	 {aix4 cput file mem nice pcput pmem walltime workingset arch nodes} \
+	 {sp2 nice walltime arch nodes} \
+	 {sunos4 cput file mem nice pcput pmem walltime workingset arch nodes} \
+	 {digitalunix cput file mem nice pcput pmem walltime arch nodes} \
+	 {fujitsu cput file mem nice pcput pmem walltime arch nodes}" }
+ {selv(owners_list) selectOwners  ""}
+ {selv(states)      selectStates  "Job_States: -ANY-"} 
+ {selv(reslist)     selectRes     "Resources: -ANY-"}
+ {selv(exec_time)   selectExecTime "Queue_Time: -ANY-"}
+ {selv(acctname)    selectAcctName "Account_Name: -ANY-"}
+ {selv(checkpoint)  selectCheckpoint "Checkpoint: -ANY-"}
+ {selv(hold_list)   selectHold     "Hold_Types: -ANY-"}
+ {selv(priority)    selectPriority "Priority: -ANY-"}
+ {selv(rerun)       selectRerun    "Rerunnable: -ANY-"}
+ {selv(jname)       selectJobName  "Job_Name: -ANY-"}
+ {iconview(hosts)	   iconizeHostsView {CHOICE false true}}
+ {iconview(queues)	   iconizeQueuesView {CHOICE false true}}
+ {iconview(jobs)	   iconizeJobsView {CHOICE false true}}
+ {iconview(info)	   iconizeInfoView {CHOICE false true}}
+ {timeout_secs	   timeoutSecs 30}
+}
+Pref_Add $preferences
+
+if { [string compare $selv(owners_list) ""] == 0 } {
+  set selv(owners_list) "Owners: $USER"
+}
+
+# Let's save the current resource values
+# Format: init(XresourceName) XresourceVariable
+ set init(labelFont) $LABELFONT
+ set init(fixlabelFont) $FIXLABELFONT
+ set init(textFont) $TEXTFONT
+ set init(serverHosts) $SERVER_HOSTS
+ set init(xtermCmd) $XTERM
+ set init(rshCmd) $RSH
+ set init(backgroundColor) $backgroundColor
+ set init(foregroundColor) $foregroundColor
+ set init(activeColor)  $activeColor
+ set init(disabledColor) $disabledColor
+ set init(signalColor)  $signalColor
+ set init(shadingColor)  $shadingColor
+ set init(selectorColor) $selectorColor
+ set init(selectHosts) $hostsSelected
+ set init(selectQueues) $queuesSelected
+ set init(selectJobs) $jobsSelected
+ set init(jobResourceList) $jobResourceList
+ set init(selectOwners)  $selv(owners_list)
+ set init(selectStates)  $selv(states)
+ set init(selectRes)  $selv(reslist)
+ set init(selectExecTime) $selv(exec_time)
+ set init(selectAcctName) $selv(acctname)
+ set init(selectCheckpoint) $selv(checkpoint)
+ set init(selectHold)  $selv(hold_list)
+ set init(selectPriority) $selv(priority)
+ set init(selectRerun)  $selv(rerun)
+ set init(selectJobName)  $selv(jname)
+ set init(iconizeHostsView) $iconview(hosts)
+ set init(iconizeQueuesView) $iconview(queues)
+ set init(iconizeJobsView) $iconview(jobs)
+ set init(iconizeInfoView) $iconview(info)
+ set init(timeoutSecs) $timeout_secs
+
+# Set the colors
+option add *background $backgroundColor
+option add *troughColor $backgroundColor 
+
+option add *foreground $foregroundColor
+option add *activeForeground $foregroundColor
+option add *insertBackground $foregroundColor
+option add *selectForeground $foregroundColor
+
+option add *selectBackground $activeColor
+option add *activeBackground $activeColor
+
+option add *selector $selectorColor
+option add *selectColor $selectorColor	;# for 4.0
+
+
+option add *disabledForeground $disabledColor
+
+option add *Scrollbar*troughColor $backgroundColor
+option add *Scrollbar*foreground $backgroundColor
+option add *Scrollbar*background $backgroundColor	;# 4.0
+
+option add *Scrollbar*activeForeground $activeColor
+option add *Scrollbar*activeBackground $activeColor	;# 4.0
+
+option add *CmdFrame*background $shadingColor
+#option add *CmdFrame*foreground $backgroundColor
+option add *CmdFrame*Button.foreground $foregroundColor
+option add *CmdFrame*Button.background $backgroundColor
+
+option add *highlightColor $backgroundColor
+option add *highlightThickness 0
+
+set mainWindow ".main"
+set activeWindow($mainWindow) 1
+if {[string compare $mainWindow "."] != 0} {
+  toplevel $mainWindow
+  wm withdraw .
+} else {
+  set mainWindow ""
+}
+
+
+# LISTBOX-related parameters 
+set HOSTS_LISTBOX_WIDTH   96	;# number of chars + 2.
+
+set HOSTS_LISTBOX_HEIGHT  4	;# number of lines
+set HOSTS_COLUMN_HEADER  "Server"
+set HOSTS_COLUMN_LABEL  $HOSTS_COLUMN_HEADER
+set HOSTS_LISTBOX_KEY  11	;# defines the primary key(s)
+				;# of the host listbox.
+				;# in the Hosts Listbox.
+set HOSTS_LISTBOX_FKEY 11	;# defines the foreign key
+
+
+set QUEUES_LISTBOX_WIDTH  98	;# number of chars + 2.
+set QUEUES_LISTBOX_HEIGHT 6	;# number of lines
+set QUEUES_COLUMN_HEADER "Queue"
+set QUEUES_COLUMN_LABEL $QUEUES_COLUMN_HEADER
+				;# what appears as column labels above the
+				;# queues list box
+set QUEUES_LISTBOX_KEY {0 12}
+set QUEUES_LISTBOX_FKEY 12
+
+set JOBS_LISTBOX_WIDTH    96	;# number of chars + 2.
+set JOBS_LISTBOX_HEIGHT	  14	;# number of lines
+set JOBS_COLUMN_HEADER 	  "Job id"
+set JOBS_COLUMN_LABEL 	  $JOBS_COLUMN_HEADER
+set JOBS_LISTBOX_KEY   {9 8}
+				;# what appears as column labels above the
+				;# hosts list box.
+set JOBS_LISTBOX_FKEY {7}
+
+set INFOBOX_LISTBOX_WIDTH 100
+set INFOBOX_LISTBOX_HEIGHT 2
+
+if {[string compare $perm_level "user"] == 0} {
+  set JOBS_LISTBOX_HEIGHT  11	;# number of lines
+}
+
+set months {Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec}
+set default(trackjob_mins) 5
+set default(trackjob_location) local
+set default(trackjob_rsh_command) rsh
+set default(auto_update_mins) 5
+set default(qterm_type) immediate
+
+##############################################################################
+## POLLING-related parameters						    ##
+##############################################################################
+ 
+set DATA_UPDATE_SEQ  0		;# tracks current sequence in data update
+set TRACKJOB_UPDATE_SEQ 0	;# tracks the current sequence in track job
+				;# update.
+set trackjob_user(0) $USER
+
+
+### Errors ####################################################################
+set BADPARAM 7000
+set errmsg(BADPARAM) "A procedure has encountered a bad parameter."
+### ###########################################################################
+set tk_strictMotif 1
+set_pbs_commands
+set_pbs_options
+set_pbs_defaults
+build_main_window
+set_wmgr $mainWindow
+bind_button1 $mainWindow
+register_dependency
+update idletasks
+after 500 [list getdata $SERVER_HOSTS]

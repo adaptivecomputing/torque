@@ -1,0 +1,226 @@
+The submit dialog box is composed of 4 distinct regions:
+
+(1) Job Script region
+(2) OPTIONS regions
+(3) OTHER OPTIONS region
+(4) Command Buttons region 
+
+The Job Script file region is at the upper left, the OPTIONS region containing 
+various widgets for setting job attributes is scattered all over the dialog 
+box, the OTHER OPTIONS is located just below the Job Script file region, and 
+Command Buttons region is at the bottom.
+
+=================
+WORKING FRAMEWORK
+=================
+The framework when working in the Submit dialog box is to first
+specify the job script file and/or contents (see JOB SCRIPT REGION), then 
+manipulate the appropriate widgets to set job attributes, and finally click on
+any of the command buttons at the bottom of the dialog box to invoke an action,
+particularly the submission of a job.
+
+=================
+JOB SCRIPT REGION
+=================
+
+The job script region is composed of a header box, the text box, FILE entry 
+box, and a couple of buttons labeled "load" and "save". 
+
+The job script header box has a "Prefix" entry box that can be modified to 
+specify the PBS directive to look for when parsing a script file for PBS 
+options. The default value for the prefix is whatever the environment 
+PBS_DPREFIX is set to, or if not set, then "#PBS".
+
+The text box is where you can also type in the execution lines of the job. You
+can use the arrow keys (left, right, up, down) for moving the text insertion
+cursor around the box. You can use the standard backspace, delete keys, and
+also can mouse highlight portions of text for deletion, or overwrite.
+
+The FILE entry box is for specifying the name of the script to load whose
+leading lines that match the PBS directive are mapped to job attribute
+(widget) values, and non-matching lines (job execution lines) are automatically
+loaded into the text box. To accomplish this, click on the "load" command
+button after specifying the script FILE. 
+The default directory path of the file is the directory where "xpbs" was 
+executed.
+Wildcards (*, ~) in a filename will be recognize.
+NOTE: The accompanying "FILE.." button will bring up the File Selection dialog
+      that will also allow you to change the current working directory.
+
+Click on "save" for saving the current attribute values, and execution lines 
+found in the text box to a script file named in the FILE entry box. This script
+file can later be read by xpbs or qsub.  Clicking the "save" button isolates 
+all (#PBS) directive lines from non-PBS lines. The newly-saved script file may 
+or may not be identical to the original script file depending on what PBS 
+options are set. For example, suppose you have the following original script 
+named "job.test":
+
+#!/bin/sh
+#PBS -l nodes=1
+#PBS -l walltime=00:45:00
+#PBS -a 07172300
+/u/wk/bayucan/pbs-dejagnu-1.2/dejagnu/pbs-tests/job/shortjob hi there
+
+After clicking "save", you will get:
+
+#PBS -l nodes=1,walltime=00:45:00
+#PBS -q @nohost.OpenPBS.org
+#PBS -a 199607172300.00
+#!/bin/sh
+/u/wk/bayucan/pbs-dejagnu-1.2/dejagnu/pbs-tests/job/shortjob hi there
+
+NOTE: The -l option settings were combined into one #PBS line, the execution
+time argument (-a) was expanded, and the destination queue was made explicit
+(-q option).
+
+==============
+JOB ATTRIBUTES
+==============
+The rest of the widgets that are waiting to be manipulated by user represent
+job attribute values. These are:
+
+Job Attribute		How to Operate
+-------------		--------------
+Job Name		Type in the name of the job on the Job Name entry
+			widget. You can use left, right arrow keys, and 
+			mouse highlight to select and overwrite or delete text. 
+
+Priority		Type in the job priority value (between -1024
+			and 1023) on Priority spinbox, or click on the 
+			scrollbar arrows to increment up or down the valid 
+			spinbox values.
+
+Account Name		Type in the account name (usually used for CPU charging)
+                        on the Account Name entry widget.
+
+Hold Job		Click on the Hold Job toggle button to place a user
+			hold on the job upon submission.
+
+Execution Time		Click on the button "Later at" if you want to specify a
+			date/time when the job should be eligible for queueing
+			and execution.
+
+Destination		Simply highlight to select the queue where the job will
+			be placed. The queues listed in the box are those that
+		        are managed by the selected server host. The special
+			entry "@hostname" is for allowing the job to be queued
+                        to the host's default queue. 
+
+Mail			Click on the command button, "email addrs", to specify
+			who to notify to notify regarding job status. Click
+			any of the 3 toggle buttons, "job aborts", 
+			"job begins execution", "job terminates", to
+		        specify the condition when email should be sent out.
+
+Output			Click  on the various radio buttons to indicate whether
+			the job output should be merged to stdout, to stderr, 
+			or to neither stdout or stderr. 
+
+			Click on the various check buttons to toggle the
+		        conditions of retaining the stdout files and/or stderr
+			files in the execution host. 
+
+			Type in "Stdout File Name/ Hostname" and 
+			"Stderr File Name/Hostname" for the output files for 
+			the job.
+
+			NOTE: The accompanying "Stdout File Name.." and
+			"Stderr File Name.." buttons will bring up the File 
+			Selection dialog for a point-and-click way of specifying
+			the filenames.
+					
+
+Resources		Move the mouse and button click the "resource" input
+			entry to select a resource name, and in the second
+			input field enter the resource value. When both entries
+			have been filled out, click "add" (or simply hit
+			<return>).  Watch as your input gets loaded into the
+			"Resources" listbox. Entries of the latter can be
+			deleted by selecting an entry, and then clicking the
+			accompanying "delete" button. If you want to modify an
+			entry in the listbox, then select the entry via mouse,
+			which would result in its values to be loaded into the
+			input entries, then change the values of the input
+			entries, and then click the accompanying "update"
+			button.  You can use the <Tab> key or <Cntrl-f> to
+			traverse the input entries, <Cntrl-b> to go back to a
+			previous input entry field. 
+
+			You can use the left and right keys to move left
+			or right within an entry field, highlight to select a
+			character and type any key to overwrite the selected
+			text, or type delete, backspace to delete a selected 				or un-selected text.
+
+			The "help" pull down button will give you a description
+			of the different resources that can be requested when
+			submitting jobs, as according to architecture type.
+	
+			NOTE: The list of valid resources for the "resource"
+			input entry can be specified via the *jobResourceList
+			xpbs resource.
+
+Environment 
+Variables		Click on the "Current" toggle button to specify that the
+			current command line environment is to be exported to 
+			the job's execution environment.
+
+			Specify in the first field (variable input entry) the
+			name of the environment variable, and the value on the
+			second field (value input entry).  Watch as your input
+			gets loaded into the "Variables" listbox. Entries of
+			the latter can be deleted by selecting an entry, and
+			then clicking the accompanying "delete" button. If you
+			want to modify an entry in the listbox, then select the
+			entry via mouse, which would result in its values to be
+			loaded into the input entries, then change the values
+			of the input entries, and finally click the
+			accompanying "update" button.  You can use the <Tab>
+			key or <Cntrl-f> to traverse the input entries.
+			<Cntrl-b> to go back to a previous input entry field. 
+
+			Clicking tab after entering the variable name will 
+			automatically fill the value field with the current 
+			value.
+
+			You can use the left and right keys to move left or
+			right within an entry field, highlight to select a
+			character and type any key to overwrite the selected
+			text, or type delete, backspace to delete a selected or
+			un-selected text.
+
+Job Dependency		Click on the "job dependency" command button under the 
+			"OTHER OPTIONS" box to bring up a dialog box for 
+			specifying the synccount, syncwith, on, after, afterok,
+                        afternotok, afterany, before, beforeok, beforenotok, 
+			beforeany depend attributes of the job.
+
+File Staging		Click on the "file staging" command button under the
+			"OTHER OPTIONS" box to bring up a dialog box for
+			specifying the stagein and stageout attributes of the
+			job.
+
+Misc			Click on the "misc" command button under the
+			"OTHER OPTIONS" box to specify the checkpoint 
+			attribute, rerunnable attribute, list of Unix shells,
+			user names, and groups to use when executing the job.
+
+
+===============
+COMMAND BUTTONS
+===============
+At the bottom of the Submit dialog box is a row of command buttons. 
+
+Click on "confirm submit" after specifying the script file and job attributes to
+submit a job to the specified destination queue.
+
+Click on "interactive" to run a job interactively. This will bring up 
+an xterm window containing the session. Before running "PBSsh", you may want to
+specify the Resources attributes of the job first.
+
+Click on "cancel" if you don't want to submit the job at this time. 
+
+Click on "reset options to default" if you want to reset the widget values
+(i.e. job attribute values) to default values (usually null) for the Submit
+dialog box only. This does not reset the values for "job dependency", 
+"file staging", and "misc" widgets. This is useful for restarting the process 
+of setting job attributes.

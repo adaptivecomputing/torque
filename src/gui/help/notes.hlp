@@ -1,0 +1,75 @@
+xpbs-1.1.11
+============
+- rid of the inefficient matrix of entry boxes and replaced them with
+  specialized listboxes accompanied by input entry widgets.
+- the list of valid resources for the "Resource" box is now presented in
+  a pull-down menu. (change request #1089).
+
+xpbs-1.1.10 (released July '97):
+================================
+- "Update Data Auto" and the "Track Job" buttons will appear in a different
+  color when their functions are enabled by user.
+- The unnecessary vertical scroll bar in the INFO box has been removed.
+- Collapsed the set of selection criteria command buttons on the JOBS panel
+  into a single drop-down menu box.
+- Forced newly-opened windows/sub-windows to be placed in a location
+  that intersects the mouse pointer coordinates. (more precise placement of
+  windows).
+- incorporated these release notes into the "About..." dialog box.
+- changed the name of the "NodesInUse" column on the HOSTS display to
+  "PEsInUse" for processing elements in use. Also, the "Nodes" column on the
+  JOBS display has been renamed to "PEs". For serves compiled in a
+  non-NEEDNODES=1 model, PEsInUse value will be the resources_max.ncpus
+  server attribute, and PEs will be the Resource_List.ncpus job attribute 
+  value.  
+
+xpbs-1.1.9 (released Dec '96):
+==============================
+- The HOSTS display on the main window now includes a "NodesInUse" column.
+- The JOBS display on the main window now includes information about # of
+   "Nodes" requested, and "WalltimeUsed".
+- The Job Dependency dialog box was overhauled: it now breaks down into
+  3 sub-dialog boxes: Concurrency Set, After Dependency, and Before Dependency
+  with each box allowing users to select the job ids from a listbox, instead
+  of only allowing the typing of job ids.
+- It now behaves in a way where an active window will always be on top of
+  inactive windows.
+- Several bug fixes
+
+xpbs-1.1.8.1 (released as a patch file Oct '96):
+================================================
+- fixed the following 2 bugs:
+   1. specifying a non-existent script file hangs xpbs.
+   2. an empty script body is not detected under Tk 4.0/4.1.
+
+- fixed Makefile and setup.sh so that script files are copied to the target
+  directory during "./make" instead of at "./make install". This allows
+  building of the GUI where the source is on one machine, and the target
+  is on another machine, and the target cannot read the source as root.
+
+xpbs-1.1.8 (official release Aug '96):
+======================================
+- changed "Update Data Manually" label to simply "Manual Update"
+- changed "Update Data Auto" label to simply "Auto Update"
+- moved the Close button to the end in the menu bar.
+- improved the packing of widgets in the qsub/qalter windows to lessen
+  flicker.
+
+xpbs-1.1.7b (beta release July '96):
+====================================
+- The number of entries in the matrix of entry widgets is now unlimited.
+- Submit button has now been moved from the menu bar to the Hosts area.
+- Clicking Submit button will not require users to have to select a single
+  host from the Hosts listbox. Instead, if it detects more than one host
+  are selected, then a bridge window opens up asking users to filter the
+  selection.
+- Some checking for illegal characters are now done for entry widgets. Will be
+  more exhaustive in future releases.
+- On the Submit window, switched the positions of the FILE entry box and the
+  Job script textbox.
+- Improved the help notes and labeling of the widgets in the File staging
+  window. Made file staging more clearer by following the example in the
+  Parallel/PBS Web page.
+- Made the default size of the server window to be 4 instead of 3 for both
+  "xpbs" and "xpbs -admin".
+- Many bug fixes.

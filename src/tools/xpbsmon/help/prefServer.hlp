@@ -1,0 +1,23 @@
+This dialog box is for specifying the list of nodes that are known to the
+current server (whose name is displayed near the top of box).
+
+On the "Node_Name" entry box, type the name of the node, and drag the mouse
+to the "type" choice entry and hold/click the left mouse button to display/
+select one of 2 options: {MOM, NOMOM}. A MOM type means that the node/execution
+host that you're currently adding is running a PBS MOM daemon; otherwise, it is
+not running it.  After setting the node's name and type, then click the "add"
+button (or simply hit <return>) and watch as your input gets added to the
+"Nodes" listbox. The newly-added item will be shown highlighted. The highlighted
+item can serve as input when the "delete" and "query.." buttons are manipulated.
+The former will remove the item from the listbox while the latter is for
+specifying the list of resource status queries to send to node' MOM.
+
+NOTE: For "Node Name", be sure to enter the name exactly as how it would
+appear in the "exec_host" attribute or "resources_used.nodes" attribute of
+each job as displayed by the server host when you do a "qstat".  xpbsmon
+determines what jobs are running on what nodes by looking up the
+"exec_host" or "resources_used.nodes" value of the job and matching it up
+with the known node names.
+
+Once you've added the nodes to the list, and also specified any queries
+to send to the MOM nodes, then click "ok".

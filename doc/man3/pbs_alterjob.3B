@@ -1,0 +1,226 @@
+.\"         OpenPBS (Portable Batch System) v2.3 Software License
+.\" 
+.\" Copyright (c) 1999-2000 Veridian Information Solutions, Inc.
+.\" All rights reserved.
+.\" 
+.\" ---------------------------------------------------------------------------
+.\" For a license to use or redistribute the OpenPBS software under conditions
+.\" other than those described below, or to purchase support for this software,
+.\" please contact Veridian Systems, PBS Products Department ("Licensor") at:
+.\" 
+.\"    www.OpenPBS.org  +1 650 967-4675                  sales@OpenPBS.org
+.\"                        877 902-4PBS (US toll-free)
+.\" ---------------------------------------------------------------------------
+.\" 
+.\" This license covers use of the OpenPBS v2.3 software (the "Software") at
+.\" your site or location, and, for certain users, redistribution of the
+.\" Software to other sites and locations.  Use and redistribution of
+.\" OpenPBS v2.3 in source and binary forms, with or without modification,
+.\" are permitted provided that all of the following conditions are met.
+.\" After December 31, 2001, only conditions 3-6 must be met:
+.\" 
+.\" 1. Commercial and/or non-commercial use of the Software is permitted
+.\"    provided a current software registration is on file at www.OpenPBS.org.
+.\"    If use of this software contributes to a publication, product, or service
+.\"    proper attribution must be given; see www.OpenPBS.org/credit.html
+.\" 
+.\" 2. Redistribution in any form is only permitted for non-commercial,
+.\"    non-profit purposes.  There can be no charge for the Software or any
+.\"    software incorporating the Software.  Further, there can be no
+.\"    expectation of revenue generated as a consequence of redistributing
+.\"    the Software.
+.\" 
+.\" 3. Any Redistribution of source code must retain the above copyright notice
+.\"    and the acknowledgment contained in paragraph 6, this list of conditions
+.\"    and the disclaimer contained in paragraph 7.
+.\" 
+.\" 4. Any Redistribution in binary form must reproduce the above copyright
+.\"    notice and the acknowledgment contained in paragraph 6, this list of
+.\"    conditions and the disclaimer contained in paragraph 7 in the
+.\"    documentation and/or other materials provided with the distribution.
+.\" 
+.\" 5. Redistributions in any form must be accompanied by information on how to
+.\"    obtain complete source code for the OpenPBS software and any
+.\"    modifications and/or additions to the OpenPBS software.  The source code
+.\"    must either be included in the distribution or be available for no more
+.\"    than the cost of distribution plus a nominal fee, and all modifications
+.\"    and additions to the Software must be freely redistributable by any party
+.\"    (including Licensor) without restriction.
+.\" 
+.\" 6. All advertising materials mentioning features or use of the Software must
+.\"    display the following acknowledgment:
+.\" 
+.\"     "This product includes software developed by NASA Ames Research Center,
+.\"     Lawrence Livermore National Laboratory, and Veridian Information
+.\"     Solutions, Inc.
+.\"     Visit www.OpenPBS.org for OpenPBS software support,
+.\"     products, and information."
+.\" 
+.\" 7. DISCLAIMER OF WARRANTY
+.\" 
+.\" THIS SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND. ANY EXPRESS
+.\" OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+.\" OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT
+.\" ARE EXPRESSLY DISCLAIMED.
+.\" 
+.\" IN NO EVENT SHALL VERIDIAN CORPORATION, ITS AFFILIATED COMPANIES, OR THE
+.\" U.S. GOVERNMENT OR ANY OF ITS AGENCIES BE LIABLE FOR ANY DIRECT OR INDIRECT,
+.\" INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+.\" LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
+.\" OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+.\" LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+.\" NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+.\" EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+.\" 
+.\" This license will be governed by the laws of the Commonwealth of Virginia,
+.\" without reference to its choice of law rules.
+.if \n(Pb .ig Ig
+.TH pbs_alterjob 3B " " Local PBS
+.so ../ers/ers.macros
+.Ig
+.Sh NAME
+pbs_alterjob - alter pbs batch job
+.Sh SYNOPSIS
+#include <pbs_error.h>
+.br
+#include <pbs_ifl.h>
+.sp
+.nf
+.ft 3
+int pbs_alterjob(\^int connect, char\ *job_id, struct\ attrl\ *attrib,
+char\ *extend\^)
+.fi
+.ft 1
+.Sh DESCRIPTION
+Issue a batch request to alter a batch job.
+.LP
+A
+.I "Modify Job"
+batch request is generated and sent to the server over the connection
+specified by
+.Ar connect 
+which is the return value of \f3pbs_connect\f1().
+.LP 
+The argument,
+.Ar job_id ,
+identifies which job is to be altered, it is specified in the form:
+.br
+.Ty
+\ \ \ \ sequence_number.server
+.ft 1
+.LP
+The parameter,
+.Ar attrib ,
+is a pointer to an
+.I attrl
+structure which is defined in pbs_ifl.h as:
+.sp
+.Ty
+.nf
+    struct attrl {
+        char *name;
+        char *resource;
+        char *value
+        struct attrl *next;
+    };
+.fi
+.sp
+.ft 1
+The 
+.Ar attrib
+list is terminated by the first entry where
+.Ty next
+is a null pointer.
+.LP
+The
+.Ty name
+member points to a string which is the name of the attribute.  The
+.Ty value
+member points to a string which is the value of the attribute.
+The attribute names are defined in pbs_ifl.h:
+.br
+.RS
+.IP #define\ ATTR_a\ "Execution_Time"
+Alter the job's execution time.
+.IP #define\ ATTR_A\ "Account_Name"
+Alter the account string.
+.IP #define\ ATTR_c\ "Checkpoint"
+Alter the checkpoint interval.
+.IP #define\ ATTR_e\ "Error_Path"
+Alter the path name for the standard error of the job.
+.IP #define\ ATTR_g\ "Group_List"
+Alter the list of group names under which the job may execute.
+.IP #define\ ATTR_h\ "Hold_Types"
+Alter the hold types.
+.IP #define\ ATTR_j\ "Join_Path"
+Alter if standard error and standard output are joined (merged).
+.IP #define\ ATTR_k\ "Keep_Files"
+Alter which output of the job is kept on the execution host.
+.IP #define\ ATTR_l\ "Resource_List"
+Alter the value of a named resource.
+.IP #define\ ATTR_m\ "Mail_Points"
+Alter the points at which the server will send mail about the job.
+.IP #define\ ATTR_M\ "Mail_Users"
+Alter the list of users who would receive mail about the job.
+.IP #define\ ATTR_N\ "Job_Name"
+Alter the job name.
+.IP #define\ ATTR_o\ "Output_Path"
+Alter the path name for the standard output of the job.
+.IP #define\ ATTR_p\ "Priority"
+Alter the priority of the job.
+.IP #define\ ATTR_r\ "Rerunable"
+Alter the rerunable flag.
+.IP #define\ ATTR_S\ "Shell_Path_List"
+Alter the path to the shell which will interprets the job script.
+.IP #define\ ATTR_u\ "User_List"
+Alter the list of user names under which the job may execute.
+.IP #define\ ATTR_v\ "Variable_List"
+Alter the list of environmental variables which are to be exported to the job.
+.IP #define\ ATTR_depend\ "depend"
+Alter the inter-job dependencies.
+.IP #define\ ATTR_stagein\ "stagein"
+Alter the list of files to be staged-in before job execution.
+.IP #define\ ATTR_stageout\ "stageout"
+Alter the list of files to be staged-out after job execution.
+.RE
+.LP
+If
+.Ar attrib
+itself is a null pointer, then no attributes are altered.
+.LP
+Associated with an attribute of type ATTR_l (the letter ell)
+is a resource name indicated by
+.Ty resource 
+in the
+.I attrl
+structure.
+All other attribute types should have a pointer to a null string ("") for
+.Ty resource .
+.LP
+If the resource of the specified resource name is already present in the job's
+.At Resource_List
+attribute, it will be altered to the specified value.  If the resource
+is not present in the attribute, it is added.
+.LP
+Certain attributes of a job may or may not be alterable depending on
+the state of the job;  see \f3qalter\f1(1B).
+.sp
+.LP
+The parameter,
+.Ar extend ,
+is reserved for implementation defined extensions.
+.if !\n(Pb .ig Ig
+It is not
+currently used by this function.
+.Ig
+.Sh "SEE ALSO"
+qalter(1B), qhold(1B), qrls(1B), qsub(1B), pbs_connect(3B), pbs_holdjob(3B),
+and pbs_rlsjob(3B)
+.Sh DIAGNOSTICS
+When the batch request generated by \f3pbs_alterjob\f1()
+function has been completed successfully by a batch server, the routine will
+return 0 (zero).
+Otherwise, a non zero error is returned.  The error number is also set
+in pbs_errno.
+\" turn off any extra indent left by the Sh macro
+.RE

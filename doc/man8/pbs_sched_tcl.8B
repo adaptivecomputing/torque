@@ -1,0 +1,519 @@
+.\"         OpenPBS (Portable Batch System) v2.3 Software License
+.\" 
+.\" Copyright (c) 1999-2000 Veridian Information Solutions, Inc.
+.\" All rights reserved.
+.\" 
+.\" ---------------------------------------------------------------------------
+.\" For a license to use or redistribute the OpenPBS software under conditions
+.\" other than those described below, or to purchase support for this software,
+.\" please contact Veridian Systems, PBS Products Department ("Licensor") at:
+.\" 
+.\"    www.OpenPBS.org  +1 650 967-4675                  sales@OpenPBS.org
+.\"                        877 902-4PBS (US toll-free)
+.\" ---------------------------------------------------------------------------
+.\" 
+.\" This license covers use of the OpenPBS v2.3 software (the "Software") at
+.\" your site or location, and, for certain users, redistribution of the
+.\" Software to other sites and locations.  Use and redistribution of
+.\" OpenPBS v2.3 in source and binary forms, with or without modification,
+.\" are permitted provided that all of the following conditions are met.
+.\" After December 31, 2001, only conditions 3-6 must be met:
+.\" 
+.\" 1. Commercial and/or non-commercial use of the Software is permitted
+.\"    provided a current software registration is on file at www.OpenPBS.org.
+.\"    If use of this software contributes to a publication, product, or service
+.\"    proper attribution must be given; see www.OpenPBS.org/credit.html
+.\" 
+.\" 2. Redistribution in any form is only permitted for non-commercial,
+.\"    non-profit purposes.  There can be no charge for the Software or any
+.\"    software incorporating the Software.  Further, there can be no
+.\"    expectation of revenue generated as a consequence of redistributing
+.\"    the Software.
+.\" 
+.\" 3. Any Redistribution of source code must retain the above copyright notice
+.\"    and the acknowledgment contained in paragraph 6, this list of conditions
+.\"    and the disclaimer contained in paragraph 7.
+.\" 
+.\" 4. Any Redistribution in binary form must reproduce the above copyright
+.\"    notice and the acknowledgment contained in paragraph 6, this list of
+.\"    conditions and the disclaimer contained in paragraph 7 in the
+.\"    documentation and/or other materials provided with the distribution.
+.\" 
+.\" 5. Redistributions in any form must be accompanied by information on how to
+.\"    obtain complete source code for the OpenPBS software and any
+.\"    modifications and/or additions to the OpenPBS software.  The source code
+.\"    must either be included in the distribution or be available for no more
+.\"    than the cost of distribution plus a nominal fee, and all modifications
+.\"    and additions to the Software must be freely redistributable by any party
+.\"    (including Licensor) without restriction.
+.\" 
+.\" 6. All advertising materials mentioning features or use of the Software must
+.\"    display the following acknowledgment:
+.\" 
+.\"     "This product includes software developed by NASA Ames Research Center,
+.\"     Lawrence Livermore National Laboratory, and Veridian Information
+.\"     Solutions, Inc.
+.\"     Visit www.OpenPBS.org for OpenPBS software support,
+.\"     products, and information."
+.\" 
+.\" 7. DISCLAIMER OF WARRANTY
+.\" 
+.\" THIS SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND. ANY EXPRESS
+.\" OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+.\" OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT
+.\" ARE EXPRESSLY DISCLAIMED.
+.\" 
+.\" IN NO EVENT SHALL VERIDIAN CORPORATION, ITS AFFILIATED COMPANIES, OR THE
+.\" U.S. GOVERNMENT OR ANY OF ITS AGENCIES BE LIABLE FOR ANY DIRECT OR INDIRECT,
+.\" INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+.\" LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
+.\" OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+.\" LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+.\" NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+.\" EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+.\" 
+.\" This license will be governed by the laws of the Commonwealth of Virginia,
+.\" without reference to its choice of law rules.
+.if \n(Pb .ig Iq
+.TH pbs_sched 8B "" Local PBS
+.so ../ers/ers.macros
+.Iq
+.Sh NAME
+pbs_sched_tcl \- pbs Tcl scheduler
+.Sh SYNOPSIS
+pbs_sched [\^-a\ alarm\^] [\^-b\ file\^] [\^-d\ home\^] [\^-i\ file\^]
+[\^-L\ logfile\^] [\^-p\ file\^] [\^-S\ port\^] [\^-t\ file\^]
+[\^-v\^] [\^-c\ file\^]
+.Sh DESCRIPTION
+The
+.B pbs_sched
+program runs in conjunction with the PBS server.  It queries the
+server about the state of PBS and communicates with
+.B pbs_mom
+to get information about the status of running jobs, memory available etc.
+It then makes decisions as to what jobs to run.
+.LP
+pbs_sched must be executed with root permission.
+.Sh OPTIONS
+.IP "-a alarm" 15
+This specifies the time in seconds to wait for a schedule run to finish.
+If a script takes too long to finish, an alarm signal is sent, and
+the scheduler is restarted.  If a core file does not exist in the
+current directory,
+.B abort()
+is called and a core file is generated.  The default for
+.I alarm
+is 180 seconds.
+.IP "-b file" 15
+This specifies the "body" file.  The file given is read into memory
+once at program start or after the program receives a SIGHUP
+and executed each time the scheduler is awakened by the server.
+If this option is not given, the file "sched_tcl" in the directory
+PBS_HOME/sched_priv is read for the body
+code.
+.IP "-d home" 15
+This specifies the PBS home directory, PBS_HOME.
+The current working directory of the scheduler is PBS_HOME/sched_priv.
+If this option is not given, PBS_HOME defaults to $PBS_SERVER_HOME as defined 
+during the PBS build procedure.
+.IP "-i file" 15
+This specifies the "initialize" file.  The file given is executed
+once before the main processing loop is entered.  If this option
+is not given, no initialization code is executed.
+.IP "-L logfile" 15
+Specifies an absolute path name of the file to use as the log file.
+If not specified, the scheduler will
+open a file named for the current date in the PBS_HOME/sched_logs
+directory (see the -d option).
+.IP "-p file" 15
+This specifies the "print" file.  Any output from the Tcl
+code which is written to standard out or standard error will be
+written to this file.
+If this option is not given, the file used will be
+.I PBS_HOME/sched_priv/sched_out.
+See the
+.At -d
+option.
+.IP "-S port" 15
+This specifies the port to use.  If this option is not given,
+the default port for the PBS scheduler is used.
+.IP "-t file" 15
+This specifies the "terminator" file.  If a QUIT command is sent
+from the server, this code is executed before the scheduler exits.
+If this option is not given, no special termination handling is done.
+.IP "-v" 15
+This puts the scheduler into "verbose" mode.
+Any errors will be shown no matter what this may be set to, but
+some "uninteresting" events may be logged by using this flag.
+An example is a message each time the server contacts the scheduler.
+.IP "-c file" 15
+Specify a configuration file, see description below.
+If this is a relative file name it will be relative to PBS_HOME/sched_priv,
+see the -d option.  If the -c option is not supplied, pbs_sched will not
+attempt to open a configuration file.
+.LP
+The options that specify file names may be absolute or relative.
+If they are relative, their root directory will be PBS_HOME/sched_priv.
+.LP
+.Sh USAGE
+This version of the scheduler requires knowledge of the Tcl
+language.  A set of functions to communicate with the PBS
+server and resource monitor have been added to those normally
+available with Tcl.  All these calls will set the Tcl variable
+"pbs_errno" to a value to indicate if an error occured.
+In all cases, the value "0" means no error.  If a call to
+a Resource Monitor function is made, any error value will
+come from the system supplied
+.B errno
+variable.  If the function call communicates with the PBS
+Server, any error value will come from the error number returned
+by the server.
+.IP "openrm host ?port?" 6
+Creates a connection to the PBS Resource Monitor on
+.I host
+using
+.I port
+as the port number or the standard port for the resource monitor
+if it is not given.  A connection handle is returned.
+If the open is successful, this will be a non-negative integer.
+If not, an error occurred.
+.IP "closerm connection" 6
+The parameter
+.I connection
+is a handle to a resource monitor which was previously returned from
+.B openrm.
+This connection is closed.  Nothing is returned.
+.LP
+.IP "downrm connection" 6
+Sends a command to the connected resource monitor to shutdown.
+Nothing is returned.
+.LP
+.IP "configrm connection filename" 6
+Sends a command to the connected resource monitor to read the configuration
+file given by
+.I filename.
+If this is successful, a "0" is returned, otherwise, "-1" is returned.
+.LP
+.IP "addreq connection request" 6
+A resource request is sent to the connected resource monitor.
+If this is successful, a "0" is returned, otherwise, "-1" is returned.
+.LP
+.IP "getreq connection" 6
+One resource request response from the connected resource monitor is
+returned.  If an error occurred or there are no more responses, an
+empty string is returned.
+.LP
+.IP "allreq request" 6
+A resource request is sent to all connected resource monitors.
+The number of streams acted upon is returned.
+.LP
+.IP "flushreq" 6
+All resource requests previously sent to all connected resource monitors
+are flushed out to the network.  Nothing is returned.
+.LP
+.IP "activereq" 6
+The connection number of the next stream with something to read is returned.
+If there is nothing to read from any of the connections, a negative
+number is returned.
+.LP
+.IP "fullresp flag" 6
+Evaluates
+.I flag
+as a boolean value and sets
+the response mode used by
+.B getreq
+to
+.B full
+if
+.I flag
+evaluates to "true".
+The full return from a resource monitor includes the original request
+followed by an equal sign followed by the response.  The default
+situation is only to return the response following the equal sign.
+If a script needs to "see" the entire line, this function may be used.
+.LP
+.IP "pbsstatserv" 6
+The server is sent a status request for information about the server
+itself.
+If the request succeeds, a list with three elements is returned,
+otherwise an empty string is returned.
+The first element is the server's name.  The second is a list of attributes.
+The third is the "text" associated with the server (usually blank).
+.LP
+.IP "pbsstatjob" 6
+The server is sent a status request for information about the all
+jobs resident within the server.
+If the request succeeds, a list is returned, otherwise an empty string
+is returned.
+The list contains an entry for each job.  Each element is a list
+with three elements.  The first is the job's jobid.  The second
+is a list of attributes.  The attribute names which specify
+resources will have a name of the form "Resource_List:name" where
+"name" is the resource name.
+The third is the "text" associated with the job (usually blank).
+.LP
+.IP "pbsstatque" 6
+The server is sent a status request for information about all
+queues resident within the server.
+If the request succeeds, a list is returned, otherwise an empty string
+is returned.
+The list contains an entry for each queue.  Each element is a list
+with three elements.  This first is the queue's name.  The second
+is a list of attributes similar to
+.B pbsstatjob.
+The third is the "text" associated with the queue (usually blank).
+.LP
+.IP "pbsstatnode" 6
+The server is sent a status request for information about all
+nodes defined within the server.
+If the request succeeds, a list is returned, otherwise an empty string
+is returned.
+The list contains an entry for each node.  Each element is a list
+with three elements.  This first is the nodes's name.  The second
+is a list of attributes similar to
+.B pbsstatjob.
+The third is the "text" associated with the node (usually blank).
+.LP
+.IP "pbsselstat" 6
+The server is sent a status request for information about the all runnable
+jobs resident within the server.
+If the request succeeds, a list similar to
+.B pbsstatjob
+is returned, otherwise an empty string is returned.
+.LP
+.IP "pbsrunjob jobid ?location?" 6
+Run the job given by
+.I jobid
+at the location given by
+.I location.
+If
+.I location
+is not given, the default location is used.
+If this is successful, a "0" is returned, otherwise, "-1" is returned.
+.LP
+.IP "pbsasyrunjob jobid ?location?" 6
+Run the job given by
+.I jobid
+at the location given by
+.I location
+without waiting for a positive response that the job
+has actually started.
+If
+.I location
+is not given, the default location is used.
+If this is successful, a "0" is returned, otherwise, "-1" is returned.
+.LP
+.IP "pbsrerunjob jobid" 6
+Re-runs the job given by
+.I jobid.
+If this is successful, a "0" is returned, otherwise, "-1" is returned.
+.LP
+.IP "pbsdeljob jobid" 6
+Delete the job given by
+.I jobid.
+If this is successful, a "0" is returned, otherwise, "-1" is returned.
+.LP
+.IP "pbsholdjob jobid" 6
+Place a hold on the job given by
+.I jobid.
+If this is successful, a "0" is returned, otherwise, "-1" is returned.
+.LP
+.IP "pbsmovejob jobid ?location?" 6
+Move the job given by
+.I jobid
+to the location given by
+.I location.
+If
+.I location
+is not given, the default location is used.
+If this is successful, a "0" is returned, otherwise, "-1" is returned.
+.LP
+.IP "pbsqenable queue" 6
+Set the "enabled" attribute for the queue given by
+.I queue
+to true.
+If this is successful, a "0" is returned, otherwise, "-1" is returned.
+.LP
+.IP "pbsqdisable queue" 6
+Set the "enabled" attribute for the queue given by
+.I queue
+to false.
+If this is successful, a "0" is returned, otherwise, "-1" is returned.
+.LP
+.IP "pbsqstart queue" 6
+Set the "started" attribute for the queue given by
+.I queue
+to true.
+If this is successful, a "0" is returned, otherwise, "-1" is returned.
+.LP
+.IP "pbsqstop queue" 6
+Set the "started" attribute for the queue given by
+.I queue
+to false.
+If this is successful, a "0" is returned, otherwise, "-1" is returned.
+.LP
+.IP "pbsalterjob jobid attribute_list" 6
+Alter the attributes for a job specified by
+.I jobid.
+The parameter
+.I attribute_list
+is the list of attributes to be altered.  There can be more than one.
+Each attribute consists of a list of three elements.  The first
+is the name, the second the resource and the third is the new value.
+If the alter is successful, a "0" is returned, otherwise, "-1" is returned.
+.LP
+.IP "pbsrescquery resource_list" 6
+Obtain information about the resources specified by
+.I resource_list.
+This will be a list of strings.  If the request succeeds, a list
+with the same number of elements as
+.I resource_list
+is returned.  Each element in this list will be a list with four
+numbers.  The numbers specify
+.I available,
+.I allocated,
+.I reserved,
+and
+.I down
+in that order.
+.LP
+.IP "pbsrescreserve resource_id resource_list" 6
+Make (or extend) a reservation for the resources specified by
+.I resource_list
+which will be given as a list of strings.  The parameter
+.I resource_id
+is a number which provides a unique identifier for a reservation
+being tracked by the server.  If
+.I resource_id
+is given as "0", a new reservation is created.  In this case,
+a new identifier is generated and returned by the function.
+If an old identifier is used, that same number will be returned.
+The Tcl variable "pbs_errno" will be set to indicate the success
+or failure of the reservation.
+.LP
+.IP "pbsrescrelease resource_id" 6
+The reservation specified by
+.I resource_id
+is released.
+.LP
+The two following commands are not normally used by the scheduler.
+They are included here because there could be a need for a scheduler
+to contact a server other than the one which it normally communicates
+with.  Also, these commands are used by the Tcl tools.
+.LP
+.IP "pbsconnect ?server?" 6
+Make a connection to the named server or the default server if
+a parameter is not given.
+Only one connection to a server is allowed at any one time.
+.LP
+.IP pbsdisconnect 6
+Disconnect from the currently connected server.
+.LP
+The above Tcl functions use PBS interface library calls for communication
+with the server and the PBS resource monitor library to communicate
+with pbs_mom.
+.LP
+.IP "datetime ?day? ?time?" 6
+The number of arguments used determine the type of
+date to be calculated.  With no arguments, the current POSIX
+date is returned.  This is an integer in seconds.
+.sp
+With one argument there are two possible formats.  The first is a 12
+(or more) character string specifying a complete date in
+the following format:
+.Cs
+YYMMDDhhmmss
+.Ce
+All characters must be digits.  The year (YY) is given by the first
+two (or more) characters and is the number of years since 1900.
+The month (MM) is the number of the month [01-12].
+The day (DD) is the day of the month [01-32].  The hour (hh) is the hour
+of the day [00-23].  The minute (mm) is minutes after the hour [00-59].
+The second (ss) is seconds after the minute [00-59].  The POSIX date
+for the given date/time is returned.
+.sp
+The second option with one argument is a relative time.  The format
+for this is
+.Cs
+HH:MM:SS
+.Ce
+With hours (HH), minutes (MM) and seconds (SS) being separated by
+colons ":".  The number returned in this case will be the number of seconds
+in the interval specified, not an absolute POSIX date.
+.sp
+With two arguments a relative date is calculated.  The first argument
+specifies a day of the week and must be one of the following strings:
+"Sun", "Mon", "Tue", "Wed", "Thr", "Fri", or "Sat".  The second
+argument is a relative time as given above.  The POSIX date
+calculated will be the day of the week given which follows the
+current day, and the time given in the second argument.  For example,
+if the current day was Monday, and the two arguments were
+"Fri" and "04:30:00", the date calculated would be the POSIX date
+for the Friday following the current Monday, at four-thirty in the
+morning.  If the day specified and the current day are the same,
+the current day is used, not the day one week later.
+.LP
+.IP "strftime format time"
+This function calls the POSIX function
+.I strftime().
+It requires two arguments.  The first
+is a format string.  The format conventions are the same as those
+for the POSIX function strftime().  The second argument is POSIX
+calendar time in second as returned by
+.I datetime.
+It returns a string based on the format given.  This gives the ability to
+extract information about a time, or format it for printing.
+.LP
+The Tcl interpreter is started at program initialization and after
+a reset (the receipt of a SIGHUP signal).  It is not deleted between
+scheduling runs so variables which are set in one can be accessed later.
+.LP
+The "initialize" and "terminator" files are run with no supplied
+connection to the server.  This means that none of the above functions
+which talk to the server will work unless
+.B pbsconnect
+is called first.  The "body" file is run with a connection to
+the server already established.
+.Sh CONFIGURATION FILE
+A configuration file may be specified with the -c option.  
+This file may be used to specify the hosts (servers) which are allowed to
+connect to pbs_sched.  The hosts are specified in the configuration file
+in a manor identical to that used in pbs_mom.  There is one line per
+host with the syntax:
+.br
+.Ty "$clienthost   hostname"
+.br
+where clienthost and hostname are separated by white space.
+.LP
+Two host names are always allowed to connection to pbs_sched, "localhost"
+and the name returned to pbs_sched by the system call gethostname().  These
+names need not be specified in the configuration file.
+.LP
+The configuration file must be "secure".  It must be owned by a user id and
+group id less than 10 and not be world writable.
+.LP
+.Sh FILES
+.IP $PBS_SERVER_HOME/sched_priv 10
+the default directory for configuration files, typically
+(/usr/spool/pbs)/sched_priv.
+.LP
+.Sh Signal Handling
+A C based scheduler will handle the following signals:
+.IP SIGHUP
+The server will close and reopen its log file and reread the config file
+if one exists.
+.IP SIGALRM
+If the site supplied scheduling module exceeds the time limit, the Alarm
+will cause the scheduler to attempt to core dump and restart itself.
+.IP "SIGINT and SIGTERM"
+Will result in an orderly shutdown of the scheduler.
+.LP
+All other signals have the default action installed.
+.Sh "EXIT STATUS"
+Upon normal termination, an exit status of zero is returned.
+.Sh "SEE ALSO"
+pbs_scheduler_cc(8B), pbs_scheduler_rule(8B), pbs_server(8B), and pbs_mom(8B).
+.br
+PBS Internal Design Specification
+.\" turn off any extra indent left by the Sh macro
+.RE

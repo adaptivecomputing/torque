@@ -1,0 +1,371 @@
+#         OpenPBS (Portable Batch System) v2.3 Software License
+# 
+# Copyright (c) 1999-2000 Veridian Information Solutions, Inc.
+# All rights reserved.
+# 
+# ---------------------------------------------------------------------------
+# For a license to use or redistribute the OpenPBS software under conditions
+# other than those described below, or to purchase support for this software,
+# please contact Veridian Systems, PBS Products Department ("Licensor") at:
+# 
+#    www.OpenPBS.org  +1 650 967-4675                  sales@OpenPBS.org
+#                        877 902-4PBS (US toll-free)
+# ---------------------------------------------------------------------------
+# 
+# This license covers use of the OpenPBS v2.3 software (the "Software") at
+# your site or location, and, for certain users, redistribution of the
+# Software to other sites and locations.  Use and redistribution of
+# OpenPBS v2.3 in source and binary forms, with or without modification,
+# are permitted provided that all of the following conditions are met.
+# After December 31, 2001, only conditions 3-6 must be met:
+# 
+# 1. Commercial and/or non-commercial use of the Software is permitted
+#    provided a current software registration is on file at www.OpenPBS.org.
+#    If use of this software contributes to a publication, product, or
+#    service, proper attribution must be given; see www.OpenPBS.org/credit.html
+# 
+# 2. Redistribution in any form is only permitted for non-commercial,
+#    non-profit purposes.  There can be no charge for the Software or any
+#    software incorporating the Software.  Further, there can be no
+#    expectation of revenue generated as a consequence of redistributing
+#    the Software.
+# 
+# 3. Any Redistribution of source code must retain the above copyright notice
+#    and the acknowledgment contained in paragraph 6, this list of conditions
+#    and the disclaimer contained in paragraph 7.
+# 
+# 4. Any Redistribution in binary form must reproduce the above copyright
+#    notice and the acknowledgment contained in paragraph 6, this list of
+#    conditions and the disclaimer contained in paragraph 7 in the
+#    documentation and/or other materials provided with the distribution.
+# 
+# 5. Redistributions in any form must be accompanied by information on how to
+#    obtain complete source code for the OpenPBS software and any
+#    modifications and/or additions to the OpenPBS software.  The source code
+#    must either be included in the distribution or be available for no more
+#    than the cost of distribution plus a nominal fee, and all modifications
+#    and additions to the Software must be freely redistributable by any party
+#    (including Licensor) without restriction.
+# 
+# 6. All advertising materials mentioning features or use of the Software must
+#    display the following acknowledgment:
+# 
+#     "This product includes software developed by NASA Ames Research Center,
+#     Lawrence Livermore National Laboratory, and Veridian Information
+#     Solutions, Inc.
+#     Visit www.OpenPBS.org for OpenPBS software support,
+#     products, and information."
+# 
+# 7. DISCLAIMER OF WARRANTY
+# 
+# THIS SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND. ANY EXPRESS
+# OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+# OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT
+# ARE EXPRESSLY DISCLAIMED.
+# 
+# IN NO EVENT SHALL VERIDIAN CORPORATION, ITS AFFILIATED COMPANIES, OR THE
+# U.S. GOVERNMENT OR ANY OF ITS AGENCIES BE LIABLE FOR ANY DIRECT OR INDIRECT,
+# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
+# OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+# LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+# NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+# EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# 
+# This license will be governed by the laws of the Commonwealth of Virginia,
+# without reference to its choice of law rules.
+#
+################################################################################
+# Constant configuration file for the Cray T3E scheduler.  This file needs to 
+# be copied to the $(PBS_SERVER_HOME)/sched_priv directory before starting 
+# the scheduler.
+# 
+# Required arguments are marked by three question marks, ???. A default has
+# been provided for those options which provide scheduler optimizations. 
+# If you do not wish to take advantage of an option, comment out the line.
+#
+# Boolean options take "On", "True", "Yes", "1" for true (case insensitive), 
+# and anything else as false.
+#
+################################################################################
+
+###############################################################################
+# This scheduler uses five execution queue types.  Any changes to the queue 
+# names in qmgr's list should be added here and vice versa.  
+###############################################################################
+#
+# The queues on the following lists are ordered from highest scheduling 
+# priority to lowest.  These are comma separated lists, if more space is 
+# required, the list can be split into multiple lines.  Each line must be
+# prefaced by the appropriate configuration option directive.
+#
+# All queues are associated with a particular execution host.  They may be
+# specified either as 'queuename' or 'queuename@exechost'.  If only the name
+# is given, the canonical name of the local host will be automatically
+# appended to the queue name.
+
+# The "normal" scheduling algorithm picks jobs off the SUBMIT_QUEUE and
+# attempts to run them on the BATCH_QUEUES.  Jobs are enqueued onto the
+# SUBMIT_QUEUE via the 'qsub' command (set the default queue name in PBS
+# with the 'set server default_queue' qmgr command), and remain there
+# until they are rejected, run, or deleted.  The host attached to the
+# SUBMIT_QUEUE is ignored - it is assumed to be on the server.
+#
+# Note that this implies that the SUBMIT_QUEUE's resources_max values must
+# be the union of all the BATCH_QUEUES' resources.
+#
+SUBMIT_QUEUE			???
+
+# BATCH_QUEUES is a list of execution queues onto which the scheduler should
+# move and run the jobs it chooses from the SUBMIT_QUEUES.  The algorithm used
+# in the scheduler relies on these queues being arranged from "smallest" to
+# "largest", as jobs are tested against the list of queues in the order listed,
+# and run on the queue which first provides enough resources for the job.
+# 
+BATCH_QUEUES			???
+
+# The SPECIAL_QUEUE is populated by "special" users via the "qsub -q" command. 
+# Authorized users are listed in qmgr with the acl_users command.  
+# When a job enters the SPECIAL_QUEUE, it will be run as soon as resources
+# become available.  Sites with checkpoint/restart capabilities can enhance 
+# this portion of the code so that any job that enters the SPECIAL_QUEUE will
+# be run "immediately".  The special queue is a "special" submit queue, so
+# there may be only one on the machine.  The hostname is ignored.
+#
+#SPECIAL_QUEUE			???
+#CHALLENGE_QUEUE_NAME		???
+#BACKGROUND_QUEUE_NAME		???
+
+# Some sites may wish to schedule outages and dedicated times for the hosts
+# in the cluster.  If you wish to submit jobs that will be queued during
+# regular times, and run on the machine during dedicated time, list a queue
+# for dedicated jobs on each machine.  Each machine may have at most one 
+# dedicated queue, and it is normally a queue that contains all the machine's
+# system resources.  A comma separated list of queues is expected.
+#
+#DEDICATED_QUEUES		???
+
+###############################################################################
+# These options are used to optimize system load average and scheduler 
+# effectiveness. It is a good idea to monitor system load as the user community 
+# grows, shrinks, or changes its focus from porting and debugging to 
+# production. These defaults were selected for a 64 processor system with 16gb 
+# of memory. 
+###############################################################################
+#
+# Maximum number of jobs to run.  This number can be different than the 
+# combined total of max_running (per queue) limits specified in qmgr.  
+# Sites with time-intensive users can set this higher than the maximum number 
+# of processors.  Sites with memory- or CPU- intensive users should set it 
+# lower.  As the max_running (per queue) limits change in qmgr, this option 
+# should be revisited. 
+# 
+MAX_JOBS                	16
+
+# Minimum number of jobs to keep running.  Please note that as the gap between 
+# the MAX_JOBS and MIN_JOBS numbers shrinks, any dynamic backfilling algorithms 
+# will be less effective.
+#
+MIN_JOBS			1
+
+# Target Load Average refers to a target percentage of the maximum system 
+# load average (1 point for each processor on the machine).  It may vary
+# as much as the +/- percentages listed in TARGET_LOAD_VARIANCE.  Jobs may
+# or may not be scheduled if the load is too high or too low, even if the
+# resources indicate that doing so would otherwise cause a problem.
+# The values below attempt to maintain a system load within 75% to 100% of
+# the theoretical maximum (load average of 48.0 to 64.0 for a 64-cpu machine).
+TARGET_LOAD_PCT			90%		
+TARGET_LOAD_VARIANCE		-15%,+10%
+
+###############################################################################
+# These options are used to enforce site-specific policies. It is a good idea 
+# to reevaluate these policies as the user community grows, shrinks, or changes
+# its focus from porting and debugging to production.
+###############################################################################
+#
+# Check for Prime Time Enforcement.  Sites with a mixed user base can use 
+# this option to enforce separate scheduling policies at different times
+# during the day.  Refer to the INTERACTIVE_QUEUES description for the current
+# prime-time scheduling policy.  If ENFORCE_PRIME_TIME is set to "0", the 
+# non-prime-time scheduling policy (as described in BATCH_QUEUES) will be used 
+# for the entire 24 hour period.
+#
+# If enforcement is needed at some future time, it may be specified on the
+# configuration line instead of "True".  The syntax of the date string is
+# MM/DD/YYYY@HH:MM:SS (due to limitations of the parsing engine).  For 
+# instance, to start enforcing primetime on January 1, 2000 at 8:00AM, use
+# the following configuration line:
+#
+#	ENFORCE_PRIME_TIME	01/01/2000@08:00:00
+#
+ENFORCE_PRIME_TIME		False
+
+# Prime-time is defined as a time period each working day (Mon-Fri)
+# from PRIME_TIME_START through PRIME_TIME_END.  Times are in 24
+# hour format (i.e. 9:00AM is 9:00:00, 5:00PM is 17:00:00) with hours, 
+# minutes, and seconds.  Sites can use the prime-time scheduling policy for 
+# the entire 24 hour period by setting PRIME_TIME_START and PRIME_TIME_END 
+# back-to-back.  The portion of a job that fits within primetime must be
+# no longer than PRIME_TIME_WALLT_LIMIT (represented in HH:MM:SS).
+#
+PRIME_TIME_START		???
+PRIME_TIME_END			???
+PRIME_TIME_WALLT_LIMIT		???
+
+# Some systems may want a split time limit for small and large jobs.  If this
+# is required, the split will be made at PRIME_TIME_SMALL_NODE_LIMIT nodes,
+# with jobs less than that value being allowed PRIME_TIME_SMALL_WALLT_LIMIT
+# time values, and larger jobs getting PRIME_TIME_WALLT_LIMIT.
+# For instance, for 8 nodes or more, give them PRIME_TIME_WALLT_LIMIT, but
+# if smaller, give them 5 minutes:
+#PRIME_TIME_SMALL_NODE_LIMIT	8
+#PRIME_TIME_SMALL_WALLT_LIMIT	0:05:00
+
+# Additionally, some sites may want a non-primetime walltime limit that is
+# different for different sized jobs.  If so, set the SMALL_JOB_MAX option
+# to that size, and choose time limits.  For instance, for more than 8 nodes,
+# give them 4 hours outside of primetime.  Otherwise, give 2 hours.
+#
+# SMALL_JOB_MAX			8
+# WALLT_LIMIT_LARGE_JOB		4:00:00
+# WALLT_LIMIT_SMALL_JOB		2:00:00
+
+# Interactive jobs that have been queued for (INTERACTIVE_LONG_WAIT + the
+# requested walltime) will be considered "long outstanding".  This is based
+# on the theory that there is a human on the other end of the 'qsub -I', but
+# batch jobs have a looser idea of "long outstanding".
+#
+INTERACTIVE_LONG_WAIT		0:30:00
+
+# Jobs that have been waiting on the submit queue for a long period of time
+# should be given higher priority, in order to prevent starvation.  If the
+# scheduler should go out of its way to run a long-waiting job (even to the
+# extreme of draining the system for it), set the MAX_QUEUED_TIME to the
+# amount of time that is "too long".  24 to 48 hours is usually good.
+#
+MAX_QUEUED_TIME			24:00:00
+
+# Check for Dedicated/Preventative Maintenance Time Enforcement.  This option
+# requires the NAS 'pbsdedtime' command which in turn depends on the NAS 
+# 'schedule' program.
+#
+# If enforcement is needed at some future time, it may be specified on the
+# configuration line instead of "True".  The syntax of the date string is
+# MM/DD/YYYY@HH:MM:SS (due to limitations of the parsing engine).  For 
+# instance, to start enforcing dedicated time on January 1, 2000 at 8:00AM, 
+# use the following configuration line:
+#
+#	ENFORCE_DEDICATED_TIME	01/01/2000@08:00:00
+#
+ENFORCE_DEDICATED_TIME		False
+
+# Command used to check for upcoming dedicated/preventative maintenance time. 
+# Supply the absolute path to NAS 'pbsdedtime' or a similar command.  This
+# command will be executed with the short name of an execution host as its
+# only argument.  For instance, "/usr/local/pbs/sbin/pbsdedtime hopper".
+#
+DEDICATED_TIME_COMMAND		???
+
+# To minimize the impact on the schedule server, as well as reduce average
+# run time, the scheduler caches the responses for upcominig outages.
+# The last response from the DEDICATED_TIME_COMMAND will be cached for this 
+# many seconds (300 is recommended).  
+# The outages cache is invalidated upon catching a SIGHUP.
+#
+DEDICATED_TIME_CACHE_SECS	300
+
+# If your machines are running in a cluster configuration, you can specify a
+# "logical system name" for the cluster as a whole.  DEDICATED_TIME_COMMAND
+# must be able to return valid information for this "hostname".  Any dedicated
+# times returned for SYSTEM_NAME will override the dedicated time (or the lack
+# thereof) for any host in the cluster.  Overlaps will be resolved correctly,
+# with the system dedicated times getting priority.
+# This option may be useful if your schedule dedicated time for individual
+# hosts.  Point SYSTEM_NAME to the front-end to prevent scheduling jobs when
+# the front-end is in dedicated time (otherwise, dedicated time is checked for
+# the back-ends only).
+#SYSTEM_NAME			???
+
+# If SORT_BY_PAST_USAGE is non-zero, the list of jobs will be permuted to
+# bring the least active users' jobs to the front of the list.  This may
+# provide some sense of fairness, but be warned that it may cause the choice
+# of jobs to be fairly inexplicable from the outside.  The "past usage" is
+# decayed daily by one of two values, DECAY_FACTOR or OA_DECAY_FACTOR.  The
+# OA_DECAY_FACTOR is used if the ENFORCE_ALLOCATION is on, and the user is
+# over their allocations.  Decays must be <= 1.0, with lower numbers 
+# indicating quicker decay.
+#
+SORT_BY_PAST_USAGE		True
+#DECAY_FACTOR			0.75
+#OA_DECAY_FACTOR		0.95
+
+# Check for Allocation Enforcement.  This option depends on the NAS ACCT++ 
+# program and a Data Loading Client.  
+#
+# If enforcement is needed at some future time, it may be specified on the
+# configuration line instead of "True".  The syntax of the date string is
+# MM/DD/YYYY@HH:MM:SS (due to limitations of the parsing engine).  For 
+# instance, to start enforcing allocations on January 1, 2000 at 8:00AM, 
+# use the following configuration line:
+#
+#	ENFORCE_ALLOCATION	01/01/2000@08:00:00
+#
+ENFORCE_ALLOCATION		False
+
+# Absolute path to the $(PBS_SERVER_HOME)/pbs_acctdir directory which contains
+# the accounting year-to-date (YTD) and allocation files.
+#
+SCHED_ACCT_DIR			???
+
+# Choose an action to take upon scheduler startup.  The default is to do no
+# special processing (NONE).  In some instances, for instance with check-
+# pointing, a job can end up queued in one of the batch queues, since it was 
+# running before but was stopped by PBS.  If the argument is RESUBMIT, these 
+# jobs will be moved back to the first submit queue, and scheduled as if
+# they had just arrived.  If the argument is RERUN, the scheduler will have
+# PBS run any jobs found enqueued on the execution queues.  This may cause
+# the machine to get somewhat confused, as no limits checking is done (the
+# assumption being that they were checked when they were enqueued).
+#
+SCHED_RESTART_ACTION		RESUBMIT
+
+# Use heuristics to attempt to reduce the problem of queue fragmentation.
+# If AVOID_FRAGMENTATION is set, jobs that will cause or prolong queue
+# fragmentation will not be run.  Once the queue becomes fragmented, this
+# will clear the small jobs out of the queue by favoring larger jobs.
+# This is probably not very useful in most situations, but might help if
+# your site has lots of very small jobs and several queues.
+#
+AVOID_FRAGMENTATION		False
+
+# In order to guarantee that large jobs will be able to run at night, set
+# the NONPRIME_DRAIN_SYS option to True.  This will cause a hard barrier to
+# be set at the time between prime-time and non-prime-time, so the system
+# will drain down to idle just before non-prime-time begins.
+#
+NONPRIME_DRAIN_SYS		False
+
+# For debugging and evaluation purposes, it might be useful to have a file
+# listing the "pre-scheduling" sorted list of jobs (including any special
+# attributes) updated at each run.  If SORTED_JOB_DUMPFILE is specified,
+# the sorted list of jobs will be dumped into it.  If special permissions,
+# etc, are needed, create it with those permissions before starting the
+# scheduler.  If the file does not exist, it will be created with the default
+# permissions and owner/group.
+#
+# A good place for this file might be $(PBS_HOME)/sched_priv/sortedjobs
+#
+#SORTED_JOB_DUMPFILE		???
+
+##############################################################################
+# For testing, set TEST_ONLY to True to prevent any calls being made to PBS
+# that would change the jobs in any way.
+#
+#TEST_ONLY			False
+#
+# The scheduler can multiply all system resources, load averages, node counts,
+# etc, by some integer value in order to simulate running on a larger system.
+# This can be used to test the expected behavior for a 128-processor machine,
+# on an 8-processor test host by setting FAKE_MACHINE_MULT to 16 (128 / 8).
+#FAKE_MACHINE_MULT		16

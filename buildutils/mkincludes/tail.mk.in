@@ -1,0 +1,81 @@
+# START tail.mk
+
+#
+# @configure_input@
+#
+
+
+# The philosophy of depend...
+# - dependencies should be generated automatically, without the
+#   user having to do anything the first time.
+# - dependencies should not ever be regenerated unless the user 
+#   explicitly does a "make depend", or after a clean.
+# - regenerating dependencies automatically whenever they theoretically
+#   should be regenerated just annoys people working on code.
+# - dependencies should be regenerated whenever Makefile has been
+#   touched, as this is usually due to it being remade from
+#   a Makefile.in by configure (in which case all of the depend info
+#   has been lost).
+#
+# There are two dependency related targets:
+#    autodepend (gets made every time and depends on a stamp file)
+#    depend     (gets made by explicit user invocation)
+#
+# Thus we expect some sort of:
+#    all: autodepend realtarget
+# as the default target in the makefile.
+#
+
+# the name of the file to time stamp after dependency (re)generation
+DEP_STAMP=.depend_stamp
+
+# all possible dependency related files
+DEP_FILES=$(DEP_STAMP) .depends .dep_cksum
+
+#
+# the name of a file containing makefile-style suffix transformation
+# rules to use. In the PBS tree the head.mk file contains a set of
+# POSIX rules.
+#
+MAKERULES=@MAKERULES@
+
+#
+# the name of a sed script file used to process the list of .h
+# dependencies. This is useful for excluding things in /usr/include
+# and other places that otherwise bloat the makefile
+#
+XSCRIPT=$(top_srcdir)/buildutils/exclude_script
+
+#
+# autodepend: create dependencies only if the .depend-stamp file does
+# not exist. (this target is never invoked directly by a human)
+# The reason for having two targets here is so that we have a 
+# friendlier name in "all: autodepend realtarget" than $(DEP_STAMP)
+#
+autodepend: $(DEP_STAMP)
+
+$(DEP_STAMP): Makefile
+	@echo generating dependencies
+	@$(DEPEND) -v -m $(MAKERULES) @DEPEND_CACHE@ \
+                 -x "$(MKDEP_EXCLUDE)" -i "$(MKDEP_IGNORE)" \
+                 -p "$(CC) -E" -V $(MK_VPATH) -e $(XSCRIPT) -- \
+                 $(CFLAGS) -- $(OBJS) && touch $(DEP_STAMP)
+
+	
+
+#
+# depend: force a remaking of depends by removing the stamp file and
+# invoking make again. The reason that it is done in the subshell is
+# to prevent make from telling us that rm failed even though '-' is given.
+# Although most makes automatically execute lines with "MAKE" appearing
+# in them regardless of whether "-n" is given, POSIX does not specify
+# this, so we use a "+".
+#
+depend:
+	-@(/bin/rm -f $(DEP_FILES); exit 0) > /dev/null 2>&1
+	@MAKE_POSIX_PLUS@@$(MAKE) autodepend
+
+distclean::
+	-@(/bin/rm -f $(DEP_FILES); exit 0) > /dev/null 2>&1
+
+# END tail.mk

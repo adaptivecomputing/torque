@@ -1,0 +1,275 @@
+#         OpenPBS (Portable Batch System) v2.3 Software License
+# 
+# Copyright (c) 1999-2000 Veridian Information Solutions, Inc.
+# All rights reserved.
+# 
+# ---------------------------------------------------------------------------
+# For a license to use or redistribute the OpenPBS software under conditions
+# other than those described below, or to purchase support for this software,
+# please contact Veridian Systems, PBS Products Department ("Licensor") at:
+# 
+#    www.OpenPBS.org  +1 650 967-4675                  sales@OpenPBS.org
+#                        877 902-4PBS (US toll-free)
+# ---------------------------------------------------------------------------
+# 
+# This license covers use of the OpenPBS v2.3 software (the "Software") at
+# your site or location, and, for certain users, redistribution of the
+# Software to other sites and locations.  Use and redistribution of
+# OpenPBS v2.3 in source and binary forms, with or without modification,
+# are permitted provided that all of the following conditions are met.
+# After December 31, 2001, only conditions 3-6 must be met:
+# 
+# 1. Commercial and/or non-commercial use of the Software is permitted
+#    provided a current software registration is on file at www.OpenPBS.org.
+#    If use of this software contributes to a publication, product, or
+#    service, proper attribution must be given; see www.OpenPBS.org/credit.html
+# 
+# 2. Redistribution in any form is only permitted for non-commercial,
+#    non-profit purposes.  There can be no charge for the Software or any
+#    software incorporating the Software.  Further, there can be no
+#    expectation of revenue generated as a consequence of redistributing
+#    the Software.
+# 
+# 3. Any Redistribution of source code must retain the above copyright notice
+#    and the acknowledgment contained in paragraph 6, this list of conditions
+#    and the disclaimer contained in paragraph 7.
+# 
+# 4. Any Redistribution in binary form must reproduce the above copyright
+#    notice and the acknowledgment contained in paragraph 6, this list of
+#    conditions and the disclaimer contained in paragraph 7 in the
+#    documentation and/or other materials provided with the distribution.
+# 
+# 5. Redistributions in any form must be accompanied by information on how to
+#    obtain complete source code for the OpenPBS software and any
+#    modifications and/or additions to the OpenPBS software.  The source code
+#    must either be included in the distribution or be available for no more
+#    than the cost of distribution plus a nominal fee, and all modifications
+#    and additions to the Software must be freely redistributable by any party
+#    (including Licensor) without restriction.
+# 
+# 6. All advertising materials mentioning features or use of the Software must
+#    display the following acknowledgment:
+# 
+#     "This product includes software developed by NASA Ames Research Center,
+#     Lawrence Livermore National Laboratory, and Veridian Information
+#     Solutions, Inc.
+#     Visit www.OpenPBS.org for OpenPBS software support,
+#     products, and information."
+# 
+# 7. DISCLAIMER OF WARRANTY
+# 
+# THIS SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND. ANY EXPRESS
+# OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+# OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT
+# ARE EXPRESSLY DISCLAIMED.
+# 
+# IN NO EVENT SHALL VERIDIAN CORPORATION, ITS AFFILIATED COMPANIES, OR THE
+# U.S. GOVERNMENT OR ANY OF ITS AGENCIES BE LIABLE FOR ANY DIRECT OR INDIRECT,
+# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
+# OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+# LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+# NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+# EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# 
+# This license will be governed by the laws of the Commonwealth of Virginia,
+# without reference to its choice of law rules.
+
+# listcomp: Returns 0 if the 2 lists are the same (order of elements will not
+# matter); otherwise 1.
+proc listcomp {list1 list2} {
+  if {[llength $list1] != [llength $list2]} {
+        return 1
+  }
+
+  foreach e1 $list1 {
+        set j 0
+        foreach e2 $list2 {  
+                if {[string compare $e1 $e2] == 0} {
+                        set list2 [lreplace $list2 $j $j]
+                        break
+                }
+                incr j
+        }
+  }
+  if {[llength $list2] != 0} {
+        return 1
+  }
+  return 0
+}
+
+# busy_cursor: displays a busy cursor under the mouse pointer position over a
+#              "registered" active window.
+proc busy_cursor {} {
+  global activeWindow bitmap_dir
+
+  foreach win [array names activeWindow] {
+    if {$activeWindow($win)} {
+      $win configure -cursor "@$bitmap_dir/hourglass.bmp black"
+    }
+  }
+}
+
+# remove_busy_cursor: removes the busy cursor set up by busy_cursor.
+proc remove_busy_cursor {} {
+  global activeWindow
+
+  foreach win [array names activeWindow] {
+    if {$activeWindow($win)} {
+      $win configure -cursor {}
+    }
+  }
+}
+
+# InfoBox_sendmsg: The following procedure sends the specified 'message' to
+#	Info Box.
+# OPTIONS:
+#       'line_number' - the position on the InfoBox where the message will be
+#			placed.
+#       'append'      - to append messages to an existing entry.
+#       'xview_increment' - how much to right shift the horizontal display of
+#			    the InfoBox.
+proc InfoBox_sendmsg { message {line_number 1} {append 0} \
+      {xview_increment 1} } {
+     global sysinfo tk_version
+
+    if {![info exists sysinfo(infoBox)]} {
+	return
+    }
+	
+    if {[string compare $line_number "end"] == 0} {
+		set line_number [$sysinfo(infoBox) size]
+    }
+
+     catch {exec date "+%D %T"} datestr
+     if {!$append} {
+       set msg "\[$datestr\] $message"
+       set sysinfo(infoBoxCounter) \
+		[expr [string length $msg] - $sysinfo(infoListBoxWidth)]
+       catch {$sysinfo(infoBox) insert $line_number $msg}
+
+       set lsize [$sysinfo(infoBox) size]
+       set line_to_delete [expr $line_number + 1]
+       if { $lsize > 1 && $line_to_delete < $lsize } {
+         catch {$sysinfo(infoBox) delete $line_to_delete}
+       }
+     } else {
+       set cval [$sysinfo(infoBox) get $line_number]
+       incr sysinfo(infoBoxCounter) $xview_increment
+       catch {$sysinfo(infoBox) insert $line_number "$cval$message"} out
+
+       set lsize [$sysinfo(infoBox) size]
+       set line_to_delete [expr $line_number + 1]
+       if { $lsize > 1 && $line_to_delete < $lsize } {
+         catch {$sysinfo(infoBox) delete $line_to_delete}
+       }
+     }
+     if {$tk_version >= 4.0} {
+        if {$sysinfo(infoBoxCounter) > 0} {
+          $sysinfo(infoBox) xview moveto 1
+        } else {
+          $sysinfo(infoBox) xview 0
+        }
+     } else {
+        $sysinfo(infoBox) xview $sysinfo(infoBoxCounter)
+     }
+     update idletasks
+}
+
+proc InfoBox_flush {start_line} {
+	global sysinfo
+
+	$sysinfo(infoBox) delete $start_line end
+}
+
+# digit: returns the integer given some number string (like atoi). Tcl seems to
+#       be having problems converting from 08/09 to 8/9 so this procedure is
+#	needed.
+proc digit {number_str} {
+  switch -regexp -- $number_str {
+  "^(00|01|02|03|04|05|06|07|08|09)$"  {return [string index $number_str 1]}
+  default                              {return $number_str}
+  }
+}
+
+proc stackPush {element} {
+        global sysinfo
+
+        if [info exists sysinfo(stack)] {
+                set newstack [linsert $sysinfo(stack) 0 $element]
+                set sysinfo(stack) $newstack
+        } else {
+                set sysinfo(stack) $element
+        }
+}
+
+proc stackPop {} {
+        global sysinfo
+
+        set sysinfo(stack) [lrange $sysinfo(stack) 1 end]
+}
+
+proc isStackEmpty {} {
+        global sysinfo
+
+        if { ![info exists sysinfo(stack)] || \
+             [llength $sysinfo(stack)] == 0 } {
+                return 1
+        }
+        return 0
+}
+proc stackClear {} {
+        global sysinfo
+
+        set sysinfo(stack) {}
+}
+
+proc stackPrint {} {
+        global sysinfo
+
+        if [info exists sysinfo(stack)] {
+                puts "STACK entries: $sysinfo(stack)"
+        } else {
+                puts "STACK entries: "
+        }
+}
+
+
+proc addLlist {llist key row col} {
+
+        upvar $llist ll
+        set append 1
+        set newll ""
+        foreach elem $ll {
+                set mid [lsearch -exact $elem $key]
+
+                if {$mid != -1} { # found a match
+                        set newelem [concat $elem $row $col]
+                        lappend newll $newelem
+                        set append 0
+                } else {
+                        lappend newll $elem
+                }
+        }
+        if {$append} {
+                lappend newll "$key $row $col"
+        }
+        set ll $newll
+        return $append
+}
+
+proc cleanstr {str} {
+        global sysinfo
+
+        set newstr ""
+        for {set i 0} {$i < [string length $str]} {incr i} {
+                set c [string index $str $i]
+                if { [string compare $c \
+                                $sysinfo(rcSiteInfoDelimeterChar)] != 0 && \
+		     [string compare $c "\["] != 0 && \
+		     [string compare $c "\]"] != 0 } {
+                        set newstr "$newstr$c"
+                }
+        }
+        return $newstr
+}

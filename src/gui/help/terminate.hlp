@@ -1,0 +1,20 @@
+The Terminate Server dialog box is for terminating the PBS server on one or
+more selected hosts.
+
+
+Click on either the "immediate" or "delay" radio button for specifying the
+type of shutdown to perform. See man pages for qterm for the definition of these
+shutdown types.
+
+===============
+COMMAND BUTTONS
+===============
+This region of command buttons represent the final step when manipulating this
+dialog box. 
+
+Click on "terminate" to proceed with the PBS server termination.
+
+Click on "cancel" to cancel the PBS server termination and quit out of this
+dialog box. This is also the default action when the <Return> key is pressed.
+
+

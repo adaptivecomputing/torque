@@ -1,0 +1,444 @@
+#         OpenPBS (Portable Batch System) v2.3 Software License
+# 
+# Copyright (c) 1999-2000 Veridian Information Solutions, Inc.
+# All rights reserved.
+# 
+# ---------------------------------------------------------------------------
+# For a license to use or redistribute the OpenPBS software under conditions
+# other than those described below, or to purchase support for this software,
+# please contact Veridian Systems, PBS Products Department ("Licensor") at:
+# 
+#    www.OpenPBS.org  +1 650 967-4675                  sales@OpenPBS.org
+#                        877 902-4PBS (US toll-free)
+# ---------------------------------------------------------------------------
+# 
+# This license covers use of the OpenPBS v2.3 software (the "Software") at
+# your site or location, and, for certain users, redistribution of the
+# Software to other sites and locations.  Use and redistribution of
+# OpenPBS v2.3 in source and binary forms, with or without modification,
+# are permitted provided that all of the following conditions are met.
+# After December 31, 2001, only conditions 3-6 must be met:
+# 
+# 1. Commercial and/or non-commercial use of the Software is permitted
+#    provided a current software registration is on file at www.OpenPBS.org.
+#    If use of this software contributes to a publication, product, or
+#    service, proper attribution must be given; see www.OpenPBS.org/credit.html
+# 
+# 2. Redistribution in any form is only permitted for non-commercial,
+#    non-profit purposes.  There can be no charge for the Software or any
+#    software incorporating the Software.  Further, there can be no
+#    expectation of revenue generated as a consequence of redistributing
+#    the Software.
+# 
+# 3. Any Redistribution of source code must retain the above copyright notice
+#    and the acknowledgment contained in paragraph 6, this list of conditions
+#    and the disclaimer contained in paragraph 7.
+# 
+# 4. Any Redistribution in binary form must reproduce the above copyright
+#    notice and the acknowledgment contained in paragraph 6, this list of
+#    conditions and the disclaimer contained in paragraph 7 in the
+#    documentation and/or other materials provided with the distribution.
+# 
+# 5. Redistributions in any form must be accompanied by information on how to
+#    obtain complete source code for the OpenPBS software and any
+#    modifications and/or additions to the OpenPBS software.  The source code
+#    must either be included in the distribution or be available for no more
+#    than the cost of distribution plus a nominal fee, and all modifications
+#    and additions to the Software must be freely redistributable by any party
+#    (including Licensor) without restriction.
+# 
+# 6. All advertising materials mentioning features or use of the Software must
+#    display the following acknowledgment:
+# 
+#     "This product includes software developed by NASA Ames Research Center,
+#     Lawrence Livermore National Laboratory, and Veridian Information
+#     Solutions, Inc.
+#     Visit www.OpenPBS.org for OpenPBS software support,
+#     products, and information."
+# 
+# 7. DISCLAIMER OF WARRANTY
+# 
+# THIS SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND. ANY EXPRESS
+# OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+# OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT
+# ARE EXPRESSLY DISCLAIMED.
+# 
+# IN NO EVENT SHALL VERIDIAN CORPORATION, ITS AFFILIATED COMPANIES, OR THE
+# U.S. GOVERNMENT OR ANY OF ITS AGENCIES BE LIABLE FOR ANY DIRECT OR INDIRECT,
+# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
+# OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+# LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+# NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+# EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# 
+# This license will be governed by the laws of the Commonwealth of Virginia,
+# without reference to its choice of law rules.
+
+# register_default_action: specify the default action (a 'button' activation) when
+#     the <Return> key is pressed in a dialog box given by 'toplevel'.
+proc register_default_action {toplevel button} {
+  global tk_version
+
+  $button configure -relief ridge -borderwidth 3
+  bind $toplevel <Return> "catch {$button flash; $button invoke}"
+}
+
+proc bind_button1 win {
+        global coordX coordY
+
+        bind $win <1> {
+                set coordX %X
+                set coordY %Y
+        }
+}
+
+proc bind_canvas {canvasw} {
+	global tk_version coordX coordY sysinfo
+
+	if {$tk_version >= 4.0} {
+		bindtags $canvasw [list $canvasw]
+	}
+
+	bind $canvasw <1> {
+                set coordX %X
+                set coordY %Y
+		popupNodeInfoBox . $sysinfo(nodeframe,%W) \
+		   [nodeNameGet $sysinfo(nodeframe,%W)] \
+		   [nodeTypeGet $sysinfo(nodeframe,%W)] \
+		   [nodeClusterFrameGet $sysinfo(nodeframe,%W)]
+	}
+}
+
+# bind_entry_readonly: binds an entry to be read only.
+proc bind_entry_readonly widget_name {
+   $widget_name configure -state disabled
+}
+
+# bind_entry_tab: procedure that causes the 'entry_name' widget to pass the input 
+# 	focus to  the 'next_entry_name' widget when the <tab> key is hit on the
+#       former, or to 'prev_entry_name'  when <Control-b> is pressed.
+proc bind_entry_tab {entry_name next_entry_name prev_entry_name} {
+  global next$entry_name
+  global prev$entry_name
+  global sel$entry_name
+  global tk_version
+
+  if {$tk_version >= 4.0} {
+    bindtags $entry_name [list all Entry $entry_name]
+  }
+
+  set next$entry_name $next_entry_name
+  set prev$entry_name $prev_entry_name
+
+  bind $entry_name <Tab> {
+   focus ${next%W}
+   if {$tk_version >= 4.0} {
+      	${next%W} xview moveto 1
+   }
+   if [set sel${next%W}] {
+	${next%W} select from 0
+	${next%W} select to end
+   }
+  }
+  bind $entry_name <Control-f> {
+
+   focus ${next%W}
+   if {$tk_version >= 4.0} {
+      ${next%W} xview moveto 1
+   }
+   if [set sel${next%W}] {
+	${next%W} select from 0
+	${next%W} select to end
+   }
+  }
+
+  bind $entry_name <Control-b> {
+   
+   focus ${prev%W}
+   if {$tk_version >= 4.0} {
+      ${prev%W} xview moveto 1
+   }
+   if [set sel${prev%W}] {
+	${prev%W} select from 0
+	${prev%W} select to end
+   }
+  }
+}
+
+# bind_entry_overselect: creates a set of bindings for a user-friendly entry widget.
+# 	This includes features such as overwriting selected text, copying and pasting
+#	text solely using mouse buttons, use of basic editing keys: left and right
+#	arrow keys.
+proc bind_entry_overselect {entry_name} {
+  global tk_version
+
+  if {$tk_version >= 4.0} {
+    return
+  } 
+
+  bind $entry_name <1> {
+    %W icursor @%x
+    %W select clear
+    %W select from @%x
+    if {[lindex [%W config -state] 4] == "normal"} {
+       focus %W
+    }
+  }
+
+  bind $entry_name <Any-KeyPress> {
+## Overwrite the selected region - the selected text is treated as a unit.
+## 
+    catch {%W delete sel.first sel.last}
+
+    if {[string compare %A ""] != 0} {
+        %W insert insert %A
+        tk_entrySeeCaret %W
+    }
+  }
+  bind $entry_name <2> {
+    catch {%W insert insert [selection get]}
+    selection clear %W
+    
+    tk_entrySeeCaret %W
+  }
+  bind $entry_name <B2-Motion> {%W scan dragto %y}
+
+  bind $entry_name <Delete> {
+
+## Delete selection if any.
+    if [catch {%W delete sel.first sel.last}] {
+      tk_entryBackspace %W
+    }
+    tk_entrySeeCaret %W
+  }
+
+  bind $entry_name <BackSpace> {
+
+## Delete selection if any.
+    if [catch {%W delete sel.first sel.last}] {
+      tk_entryBackspace %W 
+    }
+    tk_entrySeeCaret %W
+  }
+  bind $entry_name <Control-h> {
+## Delete selection if any.
+    if [catch {%W delete sel.first sel.last}] {
+      tk_entryBackspace %W 
+    }
+    tk_entrySeeCaret %W
+  }
+  bind $entry_name <Control-d> {
+    %W delete sel.first sel.last
+    tk_entrySeeCaret %W
+ }
+  bind $entry_name <Control-u> {%W delete 0 end}
+  bind $entry_name <Control-v> {
+    %W insert insert [selection get]
+
+    tk_entrySeeCaret %W
+  }
+  bind $entry_name <Control-w> {
+    tk_entryBackword %W
+
+    tk_entrySeeCaret %W
+  }
+
+  bind $entry_name <Key-Right> {
+    set c [ expr [%W index insert] + 1]
+    %W icursor $c
+    %W select from $c
+
+    tk_entrySeeCaret %W
+  }
+  bind $entry_name <Key-Left> {
+    set c [ expr [%W index insert] - 1]
+    %W icursor $c
+    %W select from $c
+
+    tk_entrySeeCaret %W
+  }
+
+}
+
+proc bind_entry_return {entry_name cmdButton} {
+  global tk_version
+
+  global button$entry_name
+  set button$entry_name $cmdButton
+
+  bind $entry_name <Return> {
+	${button%W} invoke
+  }
+}
+
+# bind_entry_shared_scrollbar: a special procedure that binds a "reserved" scrollbar
+#	to 'entry_name.
+proc bind_entry_shared_scrollbar {entry_name shared_scrollbar} {
+  global tk_version scroll$entry_name
+
+  set scroll$entry_name $shared_scrollbar
+
+  bind $entry_name <1> {
+    %W icursor @%x
+    %W select clear
+    %W select from @%x
+    if {[lindex [%W config -state] 4] == "normal"} {
+       focus %W
+       if {$tk_version < 4.0} {
+	  if {[lindex [%W configure -scrollcommand] 4] == ""} {
+             %W configure -scrollcommand "${scroll%W} set"
+          }
+          ${scroll%W} configure -command "%W view"
+       } else {
+	  if {[lindex [%W configure -xscrollcommand] 4] == ""} {
+             %W configure -xscrollcommand "${scroll%W} set"
+          }
+          ${scroll%W} configure -command "%W xview"
+       }
+    }
+  }
+}
+
+# register_spinbox: place an appropriate binding to 'entry_name' so that it 
+# 	behaves like a spinbox entry.
+proc register_spinbox entry {
+  global tk_version vlist.$entry
+
+  if {$tk_version >= 4.0} {
+    bindtags $entry [list all Entry $entry]
+  }
+
+  bind $entry <Any-KeyPress> {
+    if {$tk_version < 4.0} {
+      catch {%W delete sel.first sel.last}
+
+      if {[string compare %A ""] != 0} {
+        %W insert insert %A
+        tk_entrySeeCaret %W
+      }
+    }
+    set valueList ${vlist.%W}
+    set sbox_var [%W get]
+    if [regexp "(\[-0-9]+)-(\[-0-9]+)" $valueList match min max] {
+
+	if { $min >= 0 } {
+            if { ![regexp "^(\[0-9]+)$" $sbox_var match] || \
+	         $sbox_var < $min || $sbox_var > $max } {
+	        %W delete 0 end
+	    }
+	} else {
+	    set firstChar [string index $sbox_var 0]
+	    set restOfChar [string range $sbox_var 1 end]
+
+	    if { ![regexp "^(\[-0-9]+)$" $firstChar match] } {
+	        %W delete 0 end
+	    } elseif {[string compare $restOfChar ""] != 0} {
+
+		  if { ![regexp "^(\[0-9]+)$" $restOfChar  match] || \
+			 $sbox_var < $min || $sbox_var > $max } {
+	        	%W delete 0 end
+		  }
+	    }
+        }
+    } elseif { ([lsearch -exact ". ^ $ \[ ] ( ) * + ? |" $sbox_var] != -1 && \
+                [lsearch -exact $valueList $sbox_var] == -1) || \
+                [lsearch -regexp $valueList "^${sbox_var}"] == -1 } {
+       %W delete 0 end
+    }
+  }
+
+  bind $entry <FocusOut> {
+    check_spinbox_value %W
+  }
+}
+proc register_entry_fixsize {entry size} {
+  global tk_version size.$entry
+
+  set size.$entry $size
+
+  if {$tk_version >= 4.0} {
+    bindtags $entry [list all Entry $entry]
+  }
+
+  bind $entry <Any-KeyPress> {
+    set size ${size.%W}
+    set sbox_var [%W get]
+    if {[string length $sbox_var] < $size} {
+      if {$tk_version < 4.0} {
+        catch {%W delete sel.first sel.last}
+
+        if {[string compare %A ""] != 0} {
+          %W insert insert %A
+          tk_entrySeeCaret %W
+        }
+      }
+    } else {
+      if {$tk_version >= 4.0} {
+	 %W delete 0 end
+         %W insert 0 [string range $sbox_var 0 [expr $size - 1]]
+      }
+    }
+  }
+}
+
+# bind_listbox_single_select: binds a listbox to allow only one item selection at a
+# time.
+proc bind_listbox_single_select widget_name {
+  global tk_version
+
+  if {$tk_version < 4.0} {
+    bind $widget_name <B1-Motion> {;}
+    bind $widget_name <Shift-1> {;}
+    bind $widget_name <Shift-B1-Motion> {;}
+    bind $widget_name <2> {;}
+    bind $widget_name <B2-Motion> {;}
+  } else {
+    $widget_name configure -selectmode single
+  }
+}
+
+proc bind_listbox_select {listbox boxframe} {
+
+   global tk_version box$listbox
+
+   set box$listbox $boxframe
+
+   if { $tk_version >= 4.0 } {
+     bindtags $listbox [list all Listbox $listbox]
+   }
+
+    bind $listbox <1> {
+        if { $tk_version < 4.0 } {
+          %W select from [%W nearest %y]
+	  boxSelect ${box%W} [%W index @%x,%y]
+        }
+	boxSelect ${box%W} [%W index @%x,%y]
+    }
+}
+
+proc set_listbox_cmd {lbox cmdexpr} {
+  global cmd$lbox
+
+  set cmd$lbox $cmdexpr
+}
+
+proc bind_text_readonly widget_name {
+  global tk_version
+
+  if {$tk_version >= 4.0} {
+    bindtags $widget_name [list $widget_name]
+  }
+
+  bind $widget_name <1> {;}
+  bind $widget_name <Double-1> {;}
+  bind $widget_name <Triple-1> {;}
+  bind $widget_name <B1-Motion> {;}
+  bind $widget_name <Shift-B1-Motion> {;}
+  bind $widget_name <Return> {;}
+  bind $widget_name <BackSpace> {;}
+  bind $widget_name <Delete> {;}
+  bind $widget_name <Control-h> {;}
+  bind $widget_name <Control-d> {;}
+  bind $widget_name <Control-v> {;}
+}

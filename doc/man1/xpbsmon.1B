@@ -1,0 +1,652 @@
+.\"         OpenPBS (Portable Batch System) v2.3 Software License
+.\" 
+.\" Copyright (c) 1999-2000 Veridian Information Solutions, Inc.
+.\" All rights reserved.
+.\" 
+.\" ---------------------------------------------------------------------------
+.\" For a license to use or redistribute the OpenPBS software under conditions
+.\" other than those described below, or to purchase support for this software,
+.\" please contact Veridian Systems, PBS Products Department ("Licensor") at:
+.\" 
+.\"    www.OpenPBS.org  +1 650 967-4675                  sales@OpenPBS.org
+.\"                        877 902-4PBS (US toll-free)
+.\" ---------------------------------------------------------------------------
+.\" 
+.\" This license covers use of the OpenPBS v2.3 software (the "Software") at
+.\" your site or location, and, for certain users, redistribution of the
+.\" Software to other sites and locations.  Use and redistribution of
+.\" OpenPBS v2.3 in source and binary forms, with or without modification,
+.\" are permitted provided that all of the following conditions are met.
+.\" After December 31, 2001, only conditions 3-6 must be met:
+.\" 
+.\" 1. Commercial and/or non-commercial use of the Software is permitted
+.\"    provided a current software registration is on file at www.OpenPBS.org.
+.\"    If use of this software contributes to a publication, product, or service
+.\"    proper attribution must be given; see www.OpenPBS.org/credit.html
+.\" 
+.\" 2. Redistribution in any form is only permitted for non-commercial,
+.\"    non-profit purposes.  There can be no charge for the Software or any
+.\"    software incorporating the Software.  Further, there can be no
+.\"    expectation of revenue generated as a consequence of redistributing
+.\"    the Software.
+.\" 
+.\" 3. Any Redistribution of source code must retain the above copyright notice
+.\"    and the acknowledgment contained in paragraph 6, this list of conditions
+.\"    and the disclaimer contained in paragraph 7.
+.\" 
+.\" 4. Any Redistribution in binary form must reproduce the above copyright
+.\"    notice and the acknowledgment contained in paragraph 6, this list of
+.\"    conditions and the disclaimer contained in paragraph 7 in the
+.\"    documentation and/or other materials provided with the distribution.
+.\" 
+.\" 5. Redistributions in any form must be accompanied by information on how to
+.\"    obtain complete source code for the OpenPBS software and any
+.\"    modifications and/or additions to the OpenPBS software.  The source code
+.\"    must either be included in the distribution or be available for no more
+.\"    than the cost of distribution plus a nominal fee, and all modifications
+.\"    and additions to the Software must be freely redistributable by any party
+.\"    (including Licensor) without restriction.
+.\" 
+.\" 6. All advertising materials mentioning features or use of the Software must
+.\"    display the following acknowledgment:
+.\" 
+.\"     "This product includes software developed by NASA Ames Research Center,
+.\"     Lawrence Livermore National Laboratory, and Veridian Information
+.\"     Solutions, Inc.
+.\"     Visit www.OpenPBS.org for OpenPBS software support,
+.\"     products, and information."
+.\" 
+.\" 7. DISCLAIMER OF WARRANTY
+.\" 
+.\" THIS SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND. ANY EXPRESS
+.\" OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+.\" OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT
+.\" ARE EXPRESSLY DISCLAIMED.
+.\" 
+.\" IN NO EVENT SHALL VERIDIAN CORPORATION, ITS AFFILIATED COMPANIES, OR THE
+.\" U.S. GOVERNMENT OR ANY OF ITS AGENCIES BE LIABLE FOR ANY DIRECT OR INDIRECT,
+.\" INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+.\" LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
+.\" OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+.\" LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+.\" NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+.\" EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+.\" 
+.\" This license will be governed by the laws of the Commonwealth of Virginia,
+.\" without reference to its choice of law rules.
+.if \n(Pb .ig Iq
+.TH xpbsmon 1B "" Local PBS
+.so ../ers/ers.macros
+.Iq
+.Sh NAME
+xpbsmon \- GUI for displaying, monitoring the nodes/execution hosts under PBS
+.Sh SYNOPSIS
+xpbsmon
+.Sh DESCRIPTION
+The \f3xpbsmon\fP command provides a way to graphically display the various
+nodes that run jobs. A node or execution host can be running a \f3pbs_mom\fP
+daemon, or not running the daemon. For the latter case, it could just
+be a nodename that appears in a nodes file that is managed by a main
+\f3pbs_server \fP running on another host. This utility also provides the
+ability to monitor values of certain system resources by posting queries
+to the \f3pbs_mom\fP of a node.  With this utility, you can see what
+job is running on what node, who owns the job, how many nodes assigned to
+a job, status of each node (color-coded and the colors are user-modifiable),
+how many nodes are available, free, down, reserved, offline, of unknown
+status,  in use running multiple jobs or executing only 1 job.
+Please see the sections below for a tour and tutorials of xpbsmon. Also, within
+every dialog box, a \f3Help\fP button can be found for assistance.
+.Sh GETTING STARTED
+Running  xpbsmon will initialize the X resource database from various sources
+in the following order:
+.IP "1."
+The \f3RESOURCE_MANAGER\fP property on the root window (updated via xrdb) with
+settings usually defined in the .Xdefaults file
+.IP "2."
+Preference settings defined by the system administrator in the global xpbsmonrc
+file
+.IP "3."
+User's ~/.xpbsmonrc file - this file defines various X resources like fonts,
+colors, list of colors to use to represent the various status of the nodes,
+list of PBS sites to query, list of server hosts on each site, list of
+nodes/execution hosts on each server host, list of system resource queries to
+send to the nodes' pbs_mom, and various view states. See PREFERENCES section
+below for a list of resources that can be set.
+.Sh RUNNING XPBSMON
+.LP
+\f3xpbsmon\fP can be run either as a regular user or superuser.  If you
+run it with less privilege, you may not be able to see all the information for
+a node. If it is executed as a regular user, you should still be able to see
+what jobs are running on what nodes, possibly state and properties as these
+information are obtained by xpbsmon talking directly to the specified server. If
+you want other system resource values, it may require special privilege since
+xpbsmon will have to talk directly to the pbs_mom of a node. In addition, the
+host where xpbsmon was running must also have been given explicit access
+permission by the mom (unless the GUI is running on the same host where mom is
+running). This is done done by updating the $clienthost and/or the $restricted parameter on the mom's configuration file.
+
+To run \f3xpbsmon\fP, type:
+.RS
+.sp
+.Ty "\ \ \ setenv DISPLAY <display_host>:0"
+.br
+.Ty "\ \ \ xpbsmon"
+.sp
+.RE
+If you are running the GUI and only interested in jobs data, then be sure to
+set all the nodes' type to NOMOM in the \f3Pref\fP  dialog box.
+.Sh THE XPBSMON DISPLAY
+This section describes the main parts of the \f3xpbsmon\fP display. The main
+window is composed of 3 distinct areas (subwindows) arranged vertically (one
+on top of another)  in  the following order:
+.RS
+\ \ \ 1) Menu
+.br
+\ \ \ 2) Site Information
+.br
+\ \ \ 3) Info
+.br
+.RE
+.LP
+\f3Menu\fP. The Menu area is composed of a row of command buttons that 
+signal some action with a click of the left mouse button. The buttons 
+are:
+.RS
+.IP "Site.." 15
+ displays a popup menu containing the list of PBS sites that have been added
+using the Sites Preferences window. Simply drag your mouse and release to the
+site name whose servers/nodes information you would like to see.
+.IP "Pref.." 15
+brings up various dialog boxes for specifying the list of sites, servers
+on each site, nodes that are known to a server, and the system resource
+queries to be sent to a node's pbs_mom daemon.
+.IP "Auto Update.." 15
+brings up another window for specifying whether or not to do auto updates of
+nodes information, and also for specifying the interval number
+of minutes between updates.
+.IP "Help" 15
+contains some help information.
+.IP "About" 15
+tells who the author is and who to send comments, bugs, suggestions to.
+.IP "Close" 15
+for exiting \f3xpbsmon\fP plus saving the current setup information
+(if anything had changed) in the user's $HOME/.xpbsmonrc file. Information
+saved include the the specified list of sites, servers on each site, nodes
+known to each server, and system resource queries to send to node's pbs_mom.
+.IP "Minimize Button" 15
+shows the iconized view of Site Information where nodes are represented
+as tiny boxes, where each box is colored according to status. In order to get
+more information about a node, you need to double click on the colored box.
+.IP "Maximize button" 15
+shows the full view of Site Information where nodes are represented in bigger
+boxes, still colored depending on the status, and some information on it is
+displayed.
+.RE
+.LP
+\f3Site Information\fP. 
+Only one site at a time can be displayed. This area (shown as one huge box
+referred to as the site box) can be further sub-divided into 3 areas: the site
+name label at the top, server boxes in the middle, and the color status bar at
+the bottom.  The site name label shows the name of the site as specified in the
+\f3Pref..\fP window.  At the middle of the site box shows a row of big boxes
+housing smaller boxes.
+.sp
+The big box is an abstraction of a server host (called a server box),
+showing its server display label at the top of the box, a grid of smaller boxes
+representing the nodes that the server knows about (where jobs are run), and
+summary status for the nodes under the server. Status information will show
+counters for the number of nodes used, available, reserved, offline, or of
+unknown status and even # of cpus assigned.  For a cleaner display, some
+counters with a value of zero are not displayed.
+The server boxes are placed in a grid, with a new row being started
+when either *siteBoxMaxNumServerBoxesPerRow or *siteBoxMaxWidth limit has been
+reached.
+.sp
+The smaller boxes represent the nodes/execution hosts where jobs are run
+(referred to as node boxes).  Each node box shows the name at the top, and a
+sub-box (a smaller square) that is is colored according to the status of the
+node that it represents, and if the view type is FULL, it will will display
+some node information according to the system resource queries specified on
+the \f3Pref..\fP window.  Clicking on the sub-box will show a much bigger box
+(called the MIRROR view) with bigger fonts containing nodes information. Another
+view is called ICON and this shows a tiny box with a colored area. The
+node boxes are arranged in a grid, where a new row is created if either the
+*serverBoxMaxNumNodeBoxesPerRow or *serverBoxMaxWidth limit has been reached.
+ICON view of the node boxes will be constrained by the *nodeBoxIconMaxHeight
+and *nodeBoxIconMaxWidth pixel values; FULL view of the node boxes will be
+bounded by *nodeBoxFullMaxWidth and *nodeBoxFullMaxHeight; the mirror
+view of the node boxes has its size be *nodeBoxMirrorMaxWidth, and
+*nodeBoxMirrorMaxHeight.
+.sp
+Horizontal and vertical scrollbars for the site box, server box, and
+node box will be displayed as needed. 
+.sp
+Finally, the color bar information shows a color chart displaying what the
+various colors mean in terms of node status. The color-to-status mapping can be
+modified by setting the X resources: *nodeColorNOINFO, *nodeColorFREE,
+*nodeColorINUSEshared, *nodeColorINUSEexclusive, *nodeColorDOWN, *nodeColorRSVD,
+*nodeColorOFFL.
+.sp
+.LP
+\f3Info\fP. The Info Area shows the progress of some of the background
+actions performed by \f3xpbsmon\fP. Look into this box for errors.
+.Sh WIDGETS USED IN XPBSMON
+Some of the widgets used in \f3xpbsmon\fP and how they are manipulated are
+described in the following:
+.sp
+.IP "1." 3
+\f3listbox\fP - the ones found in this GUI are only single-selectable
+(one  entry  can be highlighted/selected at a time via a mouse click).
+.IP "2." 3
+\f3scrollbar\fP - usually appears either vertically or
+horizontally and contains 5 distinct areas that are mouse
+clicked to achieve different effects:
+.RS
+.IP "top arrow" 14
+Causes the view in the associated widget to shift up
+by one unit (i.e. the object appears to move down
+one unit in its window). If the button is held down
+the action will auto-repeat.
+.IP "top gap" 14
+Causes the view in the associated window to shift up
+by one less than the number of units in the window
+(i.e. the portion of the object that used to appear
+at the very top of the window will  now  appear at
+the  very bottom).  If the button is held down the
+action will auto-repeat.
+.IP "slider" 14
+Pressing button 1 in this area has  no immediate
+effect except to  cause the slider to appear  sunken
+rather than raised.  However, if the mouse is moved
+with the button down  then  the slider will  be
+dragged, adjusting the view as the mouse is moved.
+.IP "bottom gap" 14
+Causes the view in the associated window to shift
+down  by one less  than the number of units in the
+window (i.e.  the portion of  the  object  that  used
+to appear at the very bottom of the window will  now
+appear  at the very top).  If the button is held down
+the action  will auto-repeat.
+.IP "bottom arrow" 14
+Causes the view in the associated window to shift
+down by one unit (i.e. the object appears to move up
+one unit in its window). If the button is held down
+the action will auto-repeat.
+.RE
+.sp
+.IP "3." 3
+\f3entry\fP - brought into focus with a click of the left
+mouse button.  To manipulate this widget, simply type in
+the text value. Use of arrow keys, mouse selection of
+text for deletion or overwrite, copying and pasting with
+sole use of mouse buttons are permitted.
+This widget is usually accompanied by a scrollbar for
+horizontally scanning a long text entry string.
+.sp
+.IP "4." 3
+\f3box\fP -  made up of 1 or more listboxes displayed adjacent
+to each other giving the effect of a "matrix". Each row
+from the listboxes makes up an element of the box. In order
+to add items to the box, you need to manipulate the accompanying
+entry widgets, one for each listbox, and then clicking the \f3add\fP
+button. Removing items from the box is done by selecting an
+element, and then clicking \f3delete\fP.
+.sp
+.IP "5." 3
+\f3spinbox\fP - a combination of an entry widget and a
+horizontal scrollbar.  The entry widget will only accept
+values that fall within a defined list of valid values, and
+incrementing through the valid values is done by clicking on
+the up/down arrows.
+.IP "6." 3
+\f3button\fP - a rectangular region appearing either raised or
+pressed that invokes an action when clicked with the left
+mouse button.  When the button appears pressed, then hitting
+the <RETURN> key will automatically select the button.
+.Sh UPDATING PREFERENCES
+.IP "CASE 1: Time Sharing"
+.sp
+Suppose you have a time-sharing environment where the front-end is
+called bower and you have 4 nodes: bower1, bower2, bower3, bower4.
+bower is the host that runs the server; jobs are submitted to host bower where
+it enqueues it for future execution. Also, a pbs_mom daemon is running on
+each of the execution hosts. If the server bower also maintains a nodes list
+containing information like state, properties for the 4 nodes, then this will
+also be reported. Then to setup \f3xpbsmon\fP, do the following:
+.sp
+.RS
+.IP 1.
+Click the \f3Pref..\fP button on the Menu section.
+.IP 2.
+On the Sites Preference dialog, enter any arbitrary site name, for example
+"Local". Then click the \f3add\fP button.
+.IP 3.
+On the Server_Host entry box, enter "bower", and on the DisplayLabel entry
+box, put an arbitrary label (as it would appear on the header of the server
+box) like "Bower", and then click \f3add\fP.
+.IP 4.
+Click the \f3nodes..\fP button that is accompanying the Servers box.
+This would bring up the Server Preference dialog.
+.IP 5.
+Now add the entries "bower1", "bower2", "bower3", "bower4" specifying type MOM
+for each on the Nodes box.
+.IP 6.
+If you need to monitor certain system resource parameters for each of
+the nodes, you need to specify query expressions containing resource
+queries to be sent to the individual PBS moms. For example, if you
+want to obtain memory usage, then select a node from the Nodes list,
+click on the \f3query..\fP button that accompanies the Nodes list, and
+this would bring up the Query Table dialog. Specify the following input:
+.sp
+.RS
+Query_Expr:    (availmem/totmem) * 100
+.br
+Display_Info:  Memory Usage:
+.br
+Display_Type:  SCALE
+.RE
+.IP
+.sp
+The above says to display the result of the "Query_Expr" in a scale
+widget calibrated over 100. The queries "availmem" and "totmem" will
+be sent to the PBS mom, and the expression is evaluated upon receiving
+all results from the mom. If you want to display the result of
+another query, say "loadave", directly, then specify the following:
+.sp
+.RS
+Query_Expr:    loadave
+.br
+Display_Info:  Load Average:
+.br
+Display_Type:  TEXT
+.RE
+.IP
+.sp
+NOTE: For a list of queries that can be sent to a pbs_mom, please
+click on the \f3Help\fP button on the Query table window.
+.RE
+.IP "CASE 2: Jobs Exclusive Environment"
+Supposing you have a "space non-sharing" environment where the server
+maintains a list of nodes that it runs jobs on exclusively (one job at a time
+outstanding per node). Let's call this server b1. Simply update Preferences
+information as follows:
+.RS
+.IP 1.
+Click the \f3Pref..\fP button on the Menu section.
+.IP 2.
+On the Sites Preference dialog, enter a site name, for example
+"B System". Then click the \f3add\fP button.
+.IP 3.
+On the Server_Host entry box, enter "b1", DisplayLabel entry box type "B1" (or
+whatever label that you would like to appear on the header of the server box),
+and then click \f3add\fP.
+.sp
+.RE
+.IP "CASE 3: Hybrid Time Sharing/Space Sharing Environment"
+A cluster of heterogeneous machines, time-sharing or jobs exclusive,  could
+easily be represented in \f3xpbsmon\fP by combining steps in CASE 1 and CASE 2.
+.Sh LEAVING XPBSMON
+Click on the \f3Close\fP button located in the Menu bar to leave \f3xpbsmon\fP.
+If anything had changed, it will bring up a  dialog box  asking  for a
+confirmation in regards to saving preferences information about list of sites,
+their view types, list of servers on each site, the list of nodes known to each
+server, and the list of queries to be sent to the pbs_mom of each node.  The
+information  is saved in ~/.xpbsmonrc file.
+.Sh PREFERENCES
+The resources that can be set in the X resources file, ~/.xpbsmonrc, are
+described in the following:
+.sp
+\f3Node Box Properties\fP
+.sp
+Resource names beginning with "*small" or "*node" apply to the properties of the
+node boxes. A node box is made of an outer frame where the node label sits on
+top, the canvas (smaller box) is on the middle, and possibly some horizontal/
+vertical scrollbars.
+.sp
+.IP nodeColorNOINFO
+color of node box when information for the node it represents could not be
+obtained.
+.IP *nodeColorFREE
+color of canvas when node it represents is up.
+.IP *nodeColorINUSEshared
+color when node it represents has more than 1 job running on it, or when node
+has been marked by the server that manages it as "job-sharing".
+.IP *nodeColorINUSEexclusive
+list of colors to assign to a node box when host it represents is running only
+1 job, or when node has been marked by the server that manages it as
+"time-sharing". xpbsmon will use this list to assign 1 distinct color per job
+unless all the colors have been exhausted, in which case, colors will start
+getting assigned more than once in a round-robin fashion.
+.IP *nodeColorDOWN
+color when node it represents is down.
+.IP *nodeColorRSVD
+color when node it represents is reserved.
+.IP *nodeColorOFFL
+color when node it represents is offline.
+.IP *smallForeground
+applies to the color of text inside the canvas.
+.IP *smallBackground
+applies to the color of the frame.
+.IP *smallBorderWidth
+distance (in pixels) from other node boxes.
+.IP *smallRelief
+how node box will visually appear (style).
+.IP *smallScrollBorderWidth
+significant only in FULL mode, this is the distance of the horizontal/vertical
+scrollbars from the canvas and lower edge of the frame.
+.IP *smallScrollBackground
+background color of the scrollbars
+.IP *smallScrollRelief
+how scrollbars would visually appear (style).
+.IP *smallCanvasBackground
+color of the canvas (later overridden depending on status of the node it
+represents)
+.IP *smallCanvasBorderWidth
+distance of the canvas from the frame and possibly the scrollbars.
+.IP *smallCanvasRelief
+how the canvas is visually represented (style).
+.IP *smallLabelBorderWidth
+the distance of the node label from the canvas and the topmost edge of the
+frame.
+.IP *smallLabelBackground
+the background of the area of the node label that is not filled.
+.IP *smallLabelRelief
+how the label would appear visually (style).
+.IP *smallLabelForeground
+the color of node label text.
+.IP *smallLabelFont
+the font to use for the node label text.
+.IP *smallLabelFontWidth
+font width (in pixels) of *smallLabelFont
+.IP *smallLabelFontHeight
+font height (in pixels) of *smallLabelFont
+.IP *smallTextFont
+font to use for the text that appear inside a canvas.
+.IP *smallTextFontWidth
+font width (in pixels) of *smallTextFont.
+.IP *smallTextFontHeight
+font height (in pixels) of *smallTextFont.
+.IP *nodeColorTrough
+color of trough part (the  /100 portion) of a canvas scale item.
+.IP *nodeColorSlider
+color of slider part (value portion) of a canvas scale item.
+.IP *nodeColorExtendedTrough
+color of extended trough (over 100 portion when value exceeds max) of a
+canvas scale item.
+.IP *nodeScaleFactor
+tells how much bigger you want the scale item on the canvas to appear.
+(1 means to keep size as is)
+.IP *nodeBoxFullMaxWidth
+.IP *nodeBoxFullMaxHeight
+maximum width and height (in pixels) of a node box in FULL mode.
+.IP *nodeBoxIconMaxWidth
+.IP *nodeBoxIconMaxHeight
+maximum width and height (in pixels) of a node box in ICON mode.
+.IP *nodeBoxMirrorMaxWidth
+.IP *nodeBoxMirrorMaxHeight
+maximum width and height (in pixels) of a node box displayed on a separate
+window (after it has been clicked with the mouse to obtain a bigger view)
+.IP *nodeBoxMirrorScaleFactor
+tells how much bigger you want the scale item on the canvas to appear
+while the node box is displayed on a separate window
+(1 means to keep size as is)
+.LP
+\f3Server Box Properties\fP
+.sp
+Resource names beginning with "*medium" apply to the properties
+of the server boxes. A server box is made of an outer frame where the server
+display label sits on top, a canvas filled with node boxes is on the middle,
+possibly some horizontal/vertical scrollbars, and a status label at the bottom.
+.IP *mediumLabelForeground
+color of text applied to the server display label and status label.
+.IP *mediumLabelBackground
+background color of the unfilled portions of the server display label and
+status label.
+.IP *mediumLabelBorderWidth
+distance of the server display label and status label from other parts of
+the server box.
+.IP *mediumLabelRelief
+how the server display label and status label appear visually (style).
+.IP *mediumLabelFont"
+font used for the text of the server display label and status label.
+.IP *mediumLabelFontWidth
+font width (in pixels) of *mediumLabelFont.
+.IP *mediumLabelFontHeight
+font height (in pixels) of *mediumLabelFont.
+.IP *mediumCanvasBorderWidth
+the distance of the server box's canvas from the label widgets.
+.IP *mediumCanvasBackground
+the background color of the canvas.
+.IP *mediumCanvasRelief
+how the canvas appear visually (style).
+.IP *mediumScrollBorderWidth
+distance of the scrollbars from the other parts of the server box.
+.IP *mediumScrollBackground
+the background color of the scrollbars
+.IP *mediumScrollRelief
+how the scrollbars appear visually.
+.IP *mediumBackground
+the color of the server box frame.
+.IP *mediumBorderWidth
+the distance of the server box from other boxes.
+.IP *mediumRelief
+how the server box appears visually (style).
+.IP *serverBoxMaxWidth
+.IP *serverBoxMaxHeight
+maximum width and height (in pixels) of a server box.
+.IP *serverBoxMaxNumNodeBoxesPerRow
+maximum # of node boxes to appear in a row within a canvas.
+.LP
+\f3Miscellaneous Properties\fP
+.sp
+Resource names beginning with "*big" apply to the properties of a site box,
+as well as to widgets found outside of the server box and node box. This
+includes the dialog boxes that appear when the menu buttons of the main window
+are manipulated. The site box is the one that appears on the main region
+of xpbsmon.
+.IP *bigBackground
+background color of the outer layer of the main window.
+.IP *bigForeground
+color applied to regular text that appear outside of the node box and
+server box.
+.IP *bigBorderWidth
+distance of the site box from the menu area and the color information area.
+.IP *bigRelief
+how the site box is visually represented (style)
+.IP *bigActiveColor
+the color applied to the background of a selection, a selected command
+button, or a selected scroll bar handle.
+.IP *bigShadingColor
+a  color  shading applied to some of the frames to emphasize focus as well
+as decoration.
+.IP *bigSelectorColor
+the  color applied to the selector box of a radiobutton or checkbutton.
+.IP *bigDisabledColor
+color applied to a disabled widget.
+.IP *bigLabelBackground
+color applied to the unfilled portions of label widgets.
+.IP *bigLabelBorderWidth
+distance from other widgets of a label widget.
+.IP *bigLabelRelief
+how label widgets appear visually (style)
+.IP *bigLabelFont
+font to use for labels.
+.IP *bigLabelFontWidth
+font width (in pixels) of *bigLabelFont.
+.IP *bigLabelFontHeight
+font height (in pixels) of *bigLabelFont.
+.IP *bigLabelForeground
+color applied to text that function as labels.
+.IP *bigCanvasBackground
+the color of the main region.
+.IP *bigCanvasRelief
+how the main region looks like visually (style)
+.IP *bigCanvasBorderWidth:
+distance of the main region from the menu and info regions.
+.IP *bigScrollBorderWidth
+if the main region has a scrollbar, this is its distance from other widgets
+appearing on the the region.
+.IP *bigScrollBackground
+background color of the scrollbar appearing outside a server box and node
+box.
+.IP *bigScrollRelief
+how the scrollbar that appears outside a server box and node box looks like
+visually (style)
+.IP *bigTextFontWidth
+the font width (in pixels) of *bigTextFont
+.IP *bigTextFontHeight
+the font height (in pixels) of *bigTextFont
+.IP *siteBoxMaxWidth
+maximum width (in pixels) of the site box.
+.IP *siteBoxMaxHeight
+maximum height (in pixels) of the site box.
+.IP *siteBoxMaxNumServerBoxesPerRow
+maximum number of server boxes to appear in a row inside the site box.
+.IP *autoUpdate
+if set to true, then information about nodes is periodically gathered.
+.IP *autoUpdateMins
+the # of minutes between polling for data regarding nodes when *autoUpdate is
+set.
+.IP *siteInView
+the name of the site that should be in view
+.IP *rcSiteInfoDelimeterChar
+the separator character for each input within a curly-bracketed line of
+input of *siteInfo.
+.IP *sitesInfo
+{<site1name><sep><site1-display-type><sep><server-name><sep><server-display-label><sep><nodename><sep><nodetype><sep><node-query-expr>}
+.br
+ . . .
+.br
+{<site2name><sep><site2-display-type><sep><server-name><sep><server-display-label><sep><nodename><sep><nodetype><sep><node-query-expr>}
+.sp
+information about a site where <site1-display-type> can be either {FULL,ICON},
+<nodetype> can be {MOM, NOMOM}, and <node-query-expr> has the format:
+.sp
+{ {<expr>} {expr-label} <output-format>}
+.sp
+where <output-format> could be {TEXT, SCALE}. It's
+probably better to use the \f3Pref\fP dialog boxes in order to specify a value
+for this.
+.sp
+Example:
+.sp
+*rcSiteInfoDelimeterChar ;
+.br
+*sitesInfo:     {Mars;ICON;newton;Newton;newton3;NOMOM;} {Langley;FULL;db;DB;db.OpenPBS.org;MOM;{{ ( availmem / totmem ) * 100} {Memory Usage:} SCALE} {{ ( loadave / ncpus ) * 100} {Cpu Usage:} SCALE} {ncpus {Number of Cpus:} TEXT} {physmem {Physical Memory:} TEXT} {idletime {Idle Time (s):} TEXT} {loadave {Load Avg:} TEXT}} {Mars;ICON;newton;Newton;newton4;NOMOM;} {Mars;ICON;newton;Newton;newton1;NOMOM;} {Mars;ICON;newton;Newton;newton2;NOMOM;} {Mars;ICON;b0101;DB;aspasia.OpenPBS.org;MOM;{{ ( availmem / totmem ) * 100} {Memory Usage:} SCALE} {{ ( loadave / ncpus ) * 100} {Cpu Usage:} SCALE} {ncpus {Number of Cpus:} TEXT} {physmem {Physical Memory:} TEXT} {idletime {Idle Time (s):} TEXT} {loadave {Load Avg:} TEXT}} {Mars;ICON;newton;Newton;newton7;NOMOM;}
+.Sh EXIT STATUS
+Upon successful processing, the \f3xpbsmon\fP exit status will be a value of zero.
+.LP
+If the xpbsmon command fails, the
+command exits with a value greater than zero.
+.LP
+If xpbsmon is querying a host running a server with an incompatible version,
+you may see the following messages:
+.RS
+.sp
+Internal error: pbsstatnode: End of File (15031)
+.sp
+.RE
+The above message can be safely ignored.
+.Sh SEE ALSO
+pbs_sched_tcl(8B) and pbs_mom(8B).
+\" turn off any extra indent left by the Sh macro

@@ -1,0 +1,16 @@
+The Delete Job dialog box is for deleting one or more of the selected jobs.
+
+Specify the number of seconds delay between the sending of SIGTERM and SIGKILL
+to a running job by typing a valid value on the spinbox entry, or manipulating
+the scrollbar arrows to increment through the valid values.  
+
+===============
+COMMAND BUTTONS
+===============
+This region of command buttons represents the final step when manipulating this
+dialog box. 
+
+Click on "delete" to proceed with job deletion.
+
+Click on "cancel" to cancel job deletion and to quit out of this
+dialog box. This is also the default action when the <Return> key is pressed.

@@ -1,0 +1,506 @@
+#         OpenPBS (Portable Batch System) v2.3 Software License
+# 
+# Copyright (c) 1999-2000 Veridian Information Solutions, Inc.
+# All rights reserved.
+# 
+# ---------------------------------------------------------------------------
+# For a license to use or redistribute the OpenPBS software under conditions
+# other than those described below, or to purchase support for this software,
+# please contact Veridian Systems, PBS Products Department ("Licensor") at:
+# 
+#    www.OpenPBS.org  +1 650 967-4675                  sales@OpenPBS.org
+#                        877 902-4PBS (US toll-free)
+# ---------------------------------------------------------------------------
+# 
+# This license covers use of the OpenPBS v2.3 software (the "Software") at
+# your site or location, and, for certain users, redistribution of the
+# Software to other sites and locations.  Use and redistribution of
+# OpenPBS v2.3 in source and binary forms, with or without modification,
+# are permitted provided that all of the following conditions are met.
+# After December 31, 2001, only conditions 3-6 must be met:
+# 
+# 1. Commercial and/or non-commercial use of the Software is permitted
+#    provided a current software registration is on file at www.OpenPBS.org.
+#    If use of this software contributes to a publication, product, or
+#    service, proper attribution must be given; see www.OpenPBS.org/credit.html
+# 
+# 2. Redistribution in any form is only permitted for non-commercial,
+#    non-profit purposes.  There can be no charge for the Software or any
+#    software incorporating the Software.  Further, there can be no
+#    expectation of revenue generated as a consequence of redistributing
+#    the Software.
+# 
+# 3. Any Redistribution of source code must retain the above copyright notice
+#    and the acknowledgment contained in paragraph 6, this list of conditions
+#    and the disclaimer contained in paragraph 7.
+# 
+# 4. Any Redistribution in binary form must reproduce the above copyright
+#    notice and the acknowledgment contained in paragraph 6, this list of
+#    conditions and the disclaimer contained in paragraph 7 in the
+#    documentation and/or other materials provided with the distribution.
+# 
+# 5. Redistributions in any form must be accompanied by information on how to
+#    obtain complete source code for the OpenPBS software and any
+#    modifications and/or additions to the OpenPBS software.  The source code
+#    must either be included in the distribution or be available for no more
+#    than the cost of distribution plus a nominal fee, and all modifications
+#    and additions to the Software must be freely redistributable by any party
+#    (including Licensor) without restriction.
+# 
+# 6. All advertising materials mentioning features or use of the Software must
+#    display the following acknowledgment:
+# 
+#     "This product includes software developed by NASA Ames Research Center,
+#     Lawrence Livermore National Laboratory, and Veridian Information
+#     Solutions, Inc.
+#     Visit www.OpenPBS.org for OpenPBS software support,
+#     products, and information."
+# 
+# 7. DISCLAIMER OF WARRANTY
+# 
+# THIS SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND. ANY EXPRESS
+# OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+# OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT
+# ARE EXPRESSLY DISCLAIMED.
+# 
+# IN NO EVENT SHALL VERIDIAN CORPORATION, ITS AFFILIATED COMPANIES, OR THE
+# U.S. GOVERNMENT OR ANY OF ITS AGENCIES BE LIABLE FOR ANY DIRECT OR INDIRECT,
+# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
+# OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+# LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+# NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+# EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# 
+# This license will be governed by the laws of the Commonwealth of Virginia,
+# without reference to its choice of law rules.
+################################################################################
+# misc: defines the layout and functions of the misc dialog
+#             box. Input focus returns to 'callerDialogBox' upon return.
+# CONTEXT: executes originally in the context of qsub, but can changed via
+#          setting qalter to 1.
+proc misc {callerDialogBox {qalter 0}} {
+  global LABELFONT miscDialogBox activeWindow def do_qalter
+
+  if {!$qalter} {
+    global qsubv ARR def_qsub
+    set ARR "qsubv"
+    set def def_qsub
+  } else {
+    global qalterv ARR def_qalter
+    set ARR "qalterv"
+    set def def_qalter
+  }
+  global ${ARR}_shellp ${ARR}_shellh ${ARR}_groupg ${ARR}_grouph \
+	 ${ARR}_useru ${ARR}_userh
+
+  set do_qalter $qalter
+  busy_cursor
+## Bring up the standard Dialog box ##
+  set miscDialogBox .misc
+  set dbox [popupDialogBox $miscDialogBox "Miscellaneous Dialog" 1 "" $callerDialogBox]
+  set activeWindow($miscDialogBox) 1
+  set dbox_top    [lindex $dbox 0]
+  set dbox_bottom [lindex $dbox 1]
+
+## BOTTOM PART ##
+  set cmdButtons \
+  [buildCmdButtons $dbox_bottom {{{ok ok} {cancel "reset to default"} {help help}}} x 10m 16 3]
+
+  set cmdFrame  [lindex $cmdButtons 0]
+  set cmdOk     [lindex $cmdButtons 1]
+  set cmdCancel [lindex $cmdButtons 2]
+  set cmdHelp [lindex $cmdButtons 3]
+
+  $cmdOk configure -command {
+
+    if [pre_build_misc_opt $ARR $def] {
+      return
+    }
+    destroy $miscDialogBox
+  }
+  $cmdCancel configure -width 18 \
+	-command {
+	        if {$do_qalter} {
+		  set_default_qalter_misc
+		} else {
+		  set_default_qsub_misc
+		}
+		invoke_misc_widgets $ARR
+  
+		boxLoad [set ${ARR}(shellBox)]
+		boxLoad [set ${ARR}(groupBox)]
+		boxLoad [set ${ARR}(userBox)]
+  	}
+  
+
+  $cmdHelp configure -command {xpbs_help misc $miscDialogBox}
+## TOP PART ##
+  frame $dbox_top.header -height 10m -width 10m
+  frame $dbox_top.footer -height 10m -width 10m
+
+  frame $dbox_top.o -relief groove -borderwidth 2
+  frame $dbox_top.s -relief groove -borderwidth 2
+  frame $dbox_top.g -relief groove -borderwidth 2
+  frame $dbox_top.u -relief groove -borderwidth 2
+
+  frame $dbox_top.r2
+  frame $dbox_top.r2.sp1
+
+
+
+  set spinBox [buildSpinbox $dbox_top.r2.sp1 4 1-9999 ${ARR} \
+		 checkpoint_min "CPU minutes" right]
+  set manualCkpntMinFrame [lindex $spinBox 0]
+  set ${ARR}(manualCkpntMin) [lindex $spinBox 1]
+  set ${ARR}(manualCkpntScroll) [lindex $spinBox 2]
+  set ${ARR}(manualCkpntLabel)  [lindex $spinBox 3]
+ 
+  register_default_action [set ${ARR}(manualCkpntMin)] $cmdOk
+
+  set radioList [list  [concat manual "every" $manualCkpntMinFrame] \
+                       {automatic "when host shuts down"} \
+                       {default "at host's default minimum time"} \
+                       {nocheck "do not checkpoint"} ]
+
+ pack $dbox_top.r2.sp1
+ set radiobox [buildRadioboxes $dbox_top.r2 \
+                                [list $radioList] column 0]
+  set radioboxFrame      [lindex $radiobox 0]
+  set ${ARR}(radioboxManual)    [lindex $radiobox 1]
+  set ${ARR}(radioboxAuto)      [lindex $radiobox 2]
+  set ${ARR}(radioboxDefault)   [lindex $radiobox 3]
+  set ${ARR}(radioboxNoChkpnt)  [lindex $radiobox 4]
+
+  [set ${ARR}(radioboxManual)]  configure -variable ${ARR}(checkpoint_option) \
+		 -value "c=" \
+                  -command { \
+                       enable_spinbox [set ${ARR}(manualCkpntMin)] \
+			       [set ${ARR}(manualCkpntScroll)] \
+                               [set ${ARR}(manualCkpntLabel)]
+                       focus [ set ${ARR}(manualCkpntMin)]
+                  }
+  [set ${ARR}(radioboxAuto)] configure -variable ${ARR}(checkpoint_option) \
+		 -value "s" -command { \
+                       disable_spinbox [set ${ARR}(manualCkpntMin)] \
+				       [set ${ARR}(manualCkpntScroll)] \
+                       		       [set ${ARR}(manualCkpntLabel)]
+                  }
+
+  [set ${ARR}(radioboxDefault)] configure -variable ${ARR}(checkpoint_option) \
+		 -value "c" -command {
+                       disable_spinbox [set ${ARR}(manualCkpntMin)] \
+				       [set ${ARR}(manualCkpntScroll)] \
+                       		       [set ${ARR}(manualCkpntLabel)]
+                  }
+  [set ${ARR}(radioboxNoChkpnt)] configure -variable ${ARR}(checkpoint_option) \
+		 -value "n" -command {
+                       disable_spinbox [set ${ARR}(manualCkpntMin)] \
+				       [set ${ARR}(manualCkpntScroll)] \
+                       		       [set ${ARR}(manualCkpntLabel)]
+                  }
+
+
+  frame $dbox_top.o.rerun
+  set rbox [buildRadioboxes $dbox_top.o.rerun \
+                { {{y "rerunnable"} {n "not rerunnable"}} } grid 0 ""]
+  set rerunValFrame [lindex $rbox 0]
+  set ${ARR}(rerunY) [lindex $rbox 1]
+  set ${ARR}(rerunN) [lindex $rbox 2]
+
+  [set ${ARR}(rerunY)] configure -variable ${ARR}(rerunnable) -value y
+  [set ${ARR}(rerunN)] configure -variable ${ARR}(rerunnable) -value n
+
+  pack forget $rerunValFrame
+  set chkboxList [list  [concat chkpnt \"Checkpoint Job\" $radioboxFrame] \
+                        [concat mark \"Mark Job as\" $rerunValFrame]]
+
+  pack $dbox_top.r2 -in $dbox_top.o
+  set chkbox [buildCheckboxes $dbox_top.o \
+                   [list $chkboxList] column 0 "Job Attributes" 0 1]
+  set chkboxFrame  [lindex $chkbox 0]
+  set ${ARR}(chkboxChkpnt) [lindex $chkbox 1]
+  set ${ARR}(chkboxMark)   [lindex $chkbox 2]
+
+  [set ${ARR}(chkboxChkpnt)] configure -variable ${ARR}(checkpoint_job) \
+               -command {
+                 if {[set ${ARR}(checkpoint_job)]} {
+                   enable_rcbuttons [set ${ARR}(radioboxManual)] \
+			[set ${ARR}(radioboxAuto)] \
+                        [set ${ARR}(radioboxDefault)] \
+			[set ${ARR}(radioboxNoChkpnt)]
+                   if {[string compare [set ${ARR}(checkpoint_option)] "c="] == 0} {
+                     [set ${ARR}(radioboxManual)] invoke
+                   }
+                 } else {
+                   disable_rcbuttons [set ${ARR}(radioboxManual)] \
+				     [set ${ARR}(radioboxAuto)] \
+                                     [set ${ARR}(radioboxDefault)] \
+				     [set ${ARR}(radioboxNoChkpnt)]
+                   disable_spinbox [set ${ARR}(manualCkpntMin)] \
+			 	   [set ${ARR}(manualCkpntScroll)] \
+                       	           [set ${ARR}(manualCkpntLabel)]
+                 }
+               }
+
+  [set ${ARR}(chkboxMark)] configure -variable ${ARR}(rerun) -command {
+     if {[set ${ARR}(rerun)]} {
+       enable_rcbuttons [set ${ARR}(rerunY)] [set ${ARR}(rerunN)]
+     } else {
+       disable_rcbuttons [set ${ARR}(rerunY)] [set ${ARR}(rerunN)]
+     }
+  }
+
+## SHELL
+  box $dbox_top.s -title "Shell Path List" \
+        -entrylabels {shell_path host} \
+        -lboxwidths {15 15} -lboxheights {3 3} \
+        -lboxlabels {{Shell Paths:} " " } -orient xy \
+        -grabBox $miscDialogBox \
+	-key {-1} \
+        -array 0 ${ARR}_shellp \
+        -array 1 ${ARR}_shellh
+  boxLoad $dbox_top.s
+  set ${ARR}(shellBox) $dbox_top.s
+
+  box $dbox_top.g -title "Group List" \
+        -entrylabels {group host} \
+        -lboxwidths {15 15} -lboxheights {3 3} \
+        -lboxlabels {Groups: " " } -orient xy \
+        -grabBox $miscDialogBox \
+	-key {-1} \
+        -array 0 ${ARR}_groupg \
+        -array 1 ${ARR}_grouph
+  boxLoad $dbox_top.g
+  set ${ARR}(groupBox) $dbox_top.g
+
+  box $dbox_top.u -title "User List" \
+        -entrylabels {user host} \
+        -lboxwidths {15 15} -lboxheights {3 3} \
+        -lboxlabels {Usernames: " " } -orient xy \
+        -grabBox $miscDialogBox \
+	-key {-1} \
+        -array 0 ${ARR}_useru \
+        -array 1 ${ARR}_userh
+  boxLoad $dbox_top.u
+  set ${ARR}(userBox) $dbox_top.u
+
+## PACK the FRAMES
+  frame $dbox_top.t
+  frame $dbox_top.b
+  pack $dbox_top.o $dbox_top.s -side left -padx 2m -pady 5m -in $dbox_top.t
+  pack $dbox_top.u $dbox_top.g -side left -padx 2m -pady 5m -in $dbox_top.b
+  raise $dbox_top.o $dbox_top.t
+  raise $dbox_top.s $dbox_top.t
+  raise $dbox_top.u $dbox_top.b
+  raise $dbox_top.g $dbox_top.b
+  raise $dbox_top.r2 $dbox_top.o
+  raise $dbox_top.r2 $dbox_top.t
+  raise $dbox_top.r2 $dbox_top.b
+  pack $dbox_top.t $dbox_top.b -side top
+
+  register_default_action $miscDialogBox $cmdOk
+  focus $miscDialogBox
+
+## INVOKE the widgets
+  invoke_misc_widgets $ARR
+
+  tkwait visibility $miscDialogBox
+  remove_busy_cursor
+  catch {tkwait window $miscDialogBox}
+
+  set activeWindow($miscDialogBox) 0
+  focus $callerDialogBox
+  catch {grab $callerDialogBox}
+}
+
+# pre_build_misc_opt: builds the misc options suitable for processing by
+#       either qsub or qalter. RETURNS: 1 if an error is detected; 0 otherwise.
+proc pre_build_misc_opt {array def_array} {
+    upvar $array ARR
+    upvar $def_array DEF
+
+    global miscDialogBox \
+  	   ${array}_shellp ${array}_shellh ${array}_groupg ${array}_grouph \
+	   ${array}_useru ${array}_userh
+
+    if [regexp "qsub" $array] {
+      init_qsub_misc_argstr
+    } else {     
+      init_qalter_misc_argstr
+    }
+
+    if {[string compare $ARR(checkpoint_job) $DEF(checkpoint_job)] != 0 && \
+        $ARR(checkpoint_job)} {
+
+     switch -exact -- $ARR(checkpoint_option) {
+       "c=" {
+
+          if {[string compare $ARR(checkpoint_min) $DEF(checkpoint_min)] != 0} {
+            set ARR(checkpoint_arg) \
+		  "$ARR(checkpoint_option)$ARR(checkpoint_min)"
+          } elseif {[string compare $ARR(checkpoint_min) ""] == 0} {
+            popupInfoBox $miscDialogBox "Please specify the checkpoint interval (in mins)."
+	    return 1
+	  }
+       }
+       default {
+          set ARR(checkpoint_arg) $ARR(checkpoint_option)
+       }
+     }
+    }
+
+    if { $ARR(rerun)} {
+        set ARR(rerun_args) $ARR(rerunnable)
+    }
+
+    set size 0
+    if [info exists ${array}_shellp] {
+      set size [array size ${array}_shellp]
+    }
+    for {set i 0} {$i < $size} {incr i} {
+
+      if { [trimvar "@," ${array}_shellp($i)] || \
+	   [trimvar "@," ${array}_shellh($i)] } {
+          popupInfoBox $miscDialogBox "Detected an illegal character \"@\" or\
+	    \",\" in shell path name or host entry [expr $i+1]. Please remove."
+        return 1
+      }
+
+      set shellp [set ${array}_shellp($i)]
+      set shellh [set ${array}_shellh($i)]
+
+      if {[string compare $shellp ""] == 0 && \
+          [string compare $shellh ""] != 0} {
+  	popupInfoBox $miscDialogBox "Shell path list entry [expr $i+1] is incomplete"
+	return 1
+      }
+
+      if {[string compare $shellh ""] != 0 || \
+          [string compare $shellp ""] != 0} {
+
+        if [info exists shellHostCnt($shellh)] {
+            incr shellHostCnt($shellh)
+            if {$shellHostCnt($shellh) > 1} {
+	      popupInfoBox $miscDialogBox "Shell path entry [expr $i+1]. . . Must provide only one unique shell path per host"
+	      return 1
+            }
+        } else { 
+            set shellHostCnt($shellh) 1
+        }
+
+	if {[string compare $shellh ""] == 0} {
+          set shellpath($i) "$shellp"
+	} else {
+          set shellpath($i) "$shellp@$shellh"
+        }
+      }
+    }
+    set ARR(shell_args) [construct_array_args shellpath ","]
+
+    set size 0
+    if [info exists ${array}_useru] {
+      set size [array size ${array}_useru]
+    }
+    for {set i 0} {$i < $size} {incr i} {
+
+      if { [trimvar "@," ${array}_useru($i)] || \
+	   [trimvar "@," ${array}_userh($i)] } {
+          popupInfoBox $miscDialogBox "Detected an illegal character \"@\" or\
+	    \",\" in user name or host entry [expr $i+1]. Please remove."
+        return 1
+      }
+
+      set useru  [set ${array}_useru($i)]
+      set userh  [set ${array}_userh($i)]
+
+      if {[string compare $useru ""] == 0 && \
+          [string compare $userh ""] != 0} {
+	popupInfoBox $miscDialogBox "User list entry [expr $i+1] is incomplete"
+        return 1
+      }	 
+
+      if {[string compare $useru ""] != 0 || \
+          [string compare $userh ""] != 0} {
+
+        if [info exists userHostCnt($userh)] {
+          incr userHostCnt($userh)
+	  if {$userHostCnt($userh) > 1} {
+	    popupInfoBox $miscDialogBox "User list entry [expr $i+1]. . .Must provide only one unique username per host."
+	    return 1
+          }
+        } else { 
+          set userHostCnt($userh) 1 
+        }
+	if {[string compare $userh ""] == 0} {
+          set userlist($i) "$useru"
+	} else {
+          set userlist($i) "$useru@$userh" 
+	}
+      }
+    }
+    set ARR(user_args) [construct_array_args userlist ","]
+
+    set size 0
+    if [info exists ${array}_groupg] {
+      set size [array size ${array}_groupg]
+    }
+    for {set i 0} {$i < $size} {incr i} {
+
+      if { [trimvar "@," ${array}_groupg($i)] || \
+	   [trimvar "@," ${array}_grouph($i)] } {
+          popupInfoBox $miscDialogBox "Detected an illegal character \"@\" or\
+	    \",\" in group name or host entry [expr $i+1]. Please remove."
+        return 1
+      }
+
+      set groupg [set ${array}_groupg($i)]
+      set grouph [set ${array}_grouph($i)]
+
+      if {[string compare $groupg ""] == 0 && \
+          [string compare $grouph ""] != 0} {
+	popupInfoBox $miscDialogBox "Group list entry [expr $i+1] is incomplete"
+	return 1
+      }
+
+      if {[string compare $grouph ""] != 0 || \
+          [string compare $groupg ""] != 0} {	 
+        if [info exists groupHostCnt($grouph)] {
+          incr groupHostCnt($grouph)
+          if {$groupHostCnt($grouph) > 1} {
+	    popupInfoBox $miscDialogBox "Group list entry [expr $i+1]. . .Must provide only one unique group per host."
+	    return 1
+	  }
+        } else {
+          set groupHostCnt($grouph) 1
+        }
+	if {[string compare $grouph ""] == 0} {
+          set grouplist($i) "$groupg"
+	} else {
+          set grouplist($i) "$groupg@$grouph"
+	}
+      }
+    }
+  
+    set ARR(group_args) [construct_array_args grouplist "," "group_list="]
+
+    catch {unset shellHostCnt}
+    catch {unset userHostCnt}
+    catch {unset groupHostCnt}
+    catch {unset shellpath}
+    catch {unset grouplist}
+    catch {unset userlist}
+
+    return 0
+}
+# invoke_misc_widgets: invoke the various widgets found in the Miscellaneous
+#                        dialog box.
+proc invoke_misc_widgets assoc_array {
+  upvar $assoc_array arr
+
+  invoke_rbutton [list $arr(radioboxManual)  $arr(radioboxAuto) \
+  		       $arr(radioboxDefault) $arr(radioboxNoChkpnt)]
+  invoke_cbutton $arr(chkboxChkpnt)
+  
+  invoke_cbutton $arr(chkboxMark)
+}

@@ -1,0 +1,15 @@
+The Select Hold Type dialog box is for specifying the SET of hold types to
+look for in a job, when limiting the jobs appearing on the Jobs listbox in the
+main xpbs window.
+
+Simply click on any of 3 toggle buttons to specify u (user), o (other), and
+s (system) for the hold types string.
+
+===============
+COMMAND BUTTONS
+===============
+This region of command buttons represents the final step when manipulating this
+dialog box. 
+
+Click on "ok" when done setting widget values. This is also the default action 
+when the <Return> key is pressed.

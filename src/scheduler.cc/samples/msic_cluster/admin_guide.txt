@@ -1,0 +1,587 @@
+
+                       Administrator's Guide
+                   MSIC-Cluster PBS Scheduler V.1.5
+		            July 2000
+
+	       Copyright (c) 2000 Veridian Systems, Inc.
+
+
+
+This document covers the following information:
+
+	o Introduction
+	o Summary of features in Ver. 1.1
+	o Overview of MSIC-Cluster scheduler 
+	o Installing the MSIC-Cluster scheduler
+	o Rebuilding PBS to use MSIC-Cluster scheduler
+	o Required modifications to existing PBS configuration
+	o Configuring the MSIC-Cluster scheduler
+	o General Comments
+
+
+Introduction
+------------
+
+This package contains the sources for a PBS scheduler (pbs_sched), which
+was designed to be run on a cluster of systems with different CPU and
+memory configurations. The function of the scheduler is to choose a job
+or jobs that fit the resources. When a suitable job is found, the
+scheduler will direct PBS to run that job on a specific execution host.
+This scheduler assumes a 1:1 correlation between the executions queues
+and execution hosts. The name of the queue is taken as the name of the
+host that jobs in that queue should be run in. (The required queue
+structure is discussed in detail below.)
+
+
+Summary of features in Ver.1.1
+------------------------------
+
+Version of 1.1 of the MSIC-Cluster PBS scheduler includes the following
+features. These are discussed in more detail below, and in the scheduler's
+configuration file.
+
+    o User-Specified Architecture - When users submit a job they can
+      specify what system architecture the job should run on. This is
+      done via the "-l arch=xxx" option to qsub or within a PBS job
+      script. The "arch" values correspond to the values determined
+      during the PBS configure/build process for the target architectures.
+      There is not currently any command to list the "arch" values for a
+      given cluster. However, the scheduler includes the "arch" string in
+      its status summary of each node. It is recommended that you grep
+      "arch" out of the scheduler logs, and then add the corresponding
+      "arch" string to each node in the server's nodes file as a "node
+      attribute". Doing so will enable the "arch" strings to be displayed
+      via the "pbsnodes" command. (See the General Notes section below for
+      more info on "pbsnodes".)
+
+    o Fair-Access Controls - Administrator can designate "shares" or
+      percentages of the total cluster resources on a per-queue basis.
+      The selection of which jobs to run will be based on a fair
+      distribution of jobs, utilizing the past and current "share" usage
+      information. Jobs that were submitted to queues that are below
+      their share/percent usage will have higher priority than jobs from
+      queues that are "over-usage". If the only jobs that are queued are
+      over-usage jobs, they will be permitted to run. However, over-usage
+      jobs will be prime candidates for suspension or checkpointing should
+      that become necessary (see below).
+
+      In addition, the administrator can specify per-queue limits on the
+      maximum number of running jobs for a given user. This limit is 
+      defined as a percentage of the total cluster CPU resources, and is
+      implemented as a "soft limit". As such, the limit will be applied in
+      order to provide fair usage within the cluster, yet will be relaxed
+      if necessary to fully utilize the available resources.
+
+    o Scheduler-Initiated Checkpoint/Restart of Jobs - When the scheduler
+      determines that a given job is "high priority" or that it has "waited
+      too long to run", such jobs are given the highest priority within the
+      system. (Actually, a Long-Waiting job is just slightly lower priority
+      than a Priority job.) If sufficient resources are not available to run
+      such a job immediately, the scheduler will take action to acquire
+      the needed resources. This includes suspending, checkpointing, or
+      forceably requeueing enough running jobs to make room for the special
+      job.
+    
+      The administrator can define (in the scheduler config file) a
+      suspension threshold representing the percentage of time remaining
+      for a running job above which the scheduler should attempt to suspend
+      the job (as opposed to checkpointing the job).
+    
+      If the scheduler finds that it cannot suspend a job (either because of
+      the above described threshold or because the suspend attempt failed for
+      some reason) then the scheduler will attempt to checkpoint the job.
+    
+      If the checkpoint of the job fails, then the scheduler can (optionally,
+      as specified in the scheduler config file) force the running job to be
+      terminated and requeued. 
+      
+    o Express Queue - The scheduler supports the concept of an "express" or
+      high-priority queue. The name of the queue is specified in the
+      configuration file. Any jobs that are submitted to this queue are
+      immediately given highest priority within the system. The scheduler
+      will utilize the above described suspension/checkpoint features, if
+      necessary, to ensure this priority.
+    
+      Note that High-Priority and Long Waiting jobs are not considered for
+      checkpointing. Therefore, it is possible that a high-priority job
+      may be forced to wait if the system is full of other high-priority
+      jobs.
+
+
+Overview of MSIC-Cluster scheduler internals
+--------------------------------------------
+
+This section provides a high level overview of the workings of the
+MSIC-Cluster PBS scheduler. 
+
+* Overview Of Operation
+
+Please be sure to read the section titled 'Configuring The Scheduler'
+below before attempting to start the scheduler.
+
+The basic mode of operation for the MSIC-Cluster scheduler is as follows:
+
+  o Jobs are submitted to the PBS server by users.
+
+  o The scheduler wakes up and performs the following actions:
+
+    + Get the list of jobs from the server. If the scheduler find a job
+      without a memory specification, it will set the job's memory limit
+      to its originating queue's default.mem value.
+
+    + Get available resource information from each execution host. The
+      PBS MOM daemon running on each host is queried for a set of resources
+      for the host. Scheduling decisions will be based upon these resources,
+      queue limits, time of day (optional), etc, etc.
+
+    + Get information about the queues from the server.  The queues over
+      which the scheduler has control are listed in the scheduler's
+      configuration files.  The queues may be listed as batch or submit
+      queues.
+
+    + A job list is then created from the jobs on the submit queue.
+
+    + Sort the jobs based on the past-share-usage of the queues from which
+      the jobs came.
+
+    + Loop through all the jobs, attempting to pack the execution hosts
+      in order to maximize utilization:
+
+      o If a job fits on a given host/queue and does not violate any policy
+	requirements direct PBS to move the job to that queue, and start it
+	running. If this succeeds, account for the expected resource
+	consumption and continue. 
+
+      o If the job is not runnable at this time, determine if it is a High
+	Priority or Long Waiting job. If not, modify the job comment to
+	reflect the reason the job was not runnable (see the section on
+	Lazy Comments). Note that this reason may change from iteration to
+	iteration, and that there may be several reasons that the job is
+	not runnable now, bowever only one reason is reported.
+
+      o If the job is High Priority or Long Waiting, then proceed to free
+	up enough resources to run the job.
+
+      o If the job is normal, and there are over-fair-share jobs running,
+	then proceed to free up enough resources to run the job.
+
+    + Clean up all allocated resources, and go back to sleep until the next
+      round of scheduling is requested.
+
+The PBS server will wake up the scheduler when jobs arrive or terminate,
+so jobs should be scheduled immediately if the resources are (or become) 
+available for them.  There is also a periodic run every few minutes.
+
+
+* The Configuration File
+
+The scheduler's configuration file is a flat ASCII file.  Comments are
+allowed anywhere, and begin with a '#' character.  Any non-comment lines
+are considered to be statements, and must conform to the syntax :
+
+	<option> <argument>
+
+The descriptions of the options below describe the type of argument that
+is expected for each of the options.  Arguments must be one of :
+
+	<boolean>	A boolean value.  The strings "true", "yes", "on" and 
+			"1" are all true, anything else evaluates to false.
+	<hostname>	A hostname registered in the DNS system.
+	<integer>	An integral (typically non-negative) decimal value.
+	<pathname>	A valid pathname (i.e. "/usr/local/pbs/pbs_acctdir").
+	<queue_spec>	The name of a PBS queue.  Either 'queue@exechost' or
+			just 'queue'.  If the hostname is not specified, it
+			defaults to the name of the local host machine.
+	<real>		A real valued number (e.g. the number 0.80).
+	<string>	An uninterpreted string passed to other programs.
+	<time_spec>	A string of the form HH:MM:SS (i.e. 00:30:00 for
+			thirty minutes, 4:00:00 for four hours).
+	<variance>	Negative and positive deviation from a value.  The
+			syntax is '-mm%,+nn%' (i.e. '-10%,+15%' for minus
+			10 percent and plus 15% from some value).
+
+Syntactical errors in the configuration file are caught by the parser, and
+the offending line number and/or configuration option/argument is noted in
+the scheduler logs.  The scheduler will not start while there are syntax
+errors in its configuration file.
+
+Before starting up, the scheduler attempts to find common errors in the
+configuration files.  If it discovers a problem, it will note it in the
+logs (possibly suggesting a fix) and exit.
+
+The following is a complete list of the recognized options :
+
+    SUBMIT_QUEUE			<queue_spec>
+    BATCH_QUEUES			<queue_spec>[,<queue_spec>...]
+    EXPRESS_QUEUE			<string>
+    ENFORCE_PRIME_TIME			<boolean>
+    PRIME_TIME_END			<time_spec>
+    PRIME_TIME_START			<time_spec>
+    PRIME_TIME_WALLT_LIMIT		<time_spec>
+    SCHED_RESTART_ACTION		<string>
+    TARGET_LOAD_PCT			<integer>
+    TARGET_LOAD_VARIANCE		<variance>
+    SORTED_JOB_DUMPFILE			<string>
+    FORCE_REQUEUE			<boolean>
+    MAX_WAIT_TIME			<time_spec>
+    SHARE_INFO_FILE			<string>
+    SORTED_JOB_DUMPFILE			<string>
+    SUSPEND_THRESHOLD			<integer>
+    FAIR_SHARE 				<access_spec>
+
+
+Key options are described in greater detail below, the rest are discussed
+in the configuration file ($PBS_HOME/sched_priv/sched_config).
+
+* Queue and Associated Execution Host Definations
+
+The queues are named on the following comma separated lists. If more space
+is required, the list can be split into multiple lines, but each line must
+be prefaced by the appropriate configuration option directive.
+
+All queues are associated with a particular execution host. They may be
+specified either as 'queuename' or 'queuename@exechost'. If only the queue
+name is given, the canonical name of the local host will be automatically
+appended to the queue name.
+
+The scheduling algorithm picks jobs off the SUBMIT_QUEUE and attempts to
+run them on the BATCH_QUEUES. Jobs are enqueued onto the SUBMIT_QUEUE via
+the 'qsub' command (set the default queue name in PBS with the 'set server
+default_queue' qmgr command), and remain there until they are rejected,
+run, or deleted.  The host attached to the SUBMIT_QUEUE is ignored - it
+is assumed to be on the PBS server.
+
+Note that this implies that the SUBMIT_QUEUE's resources_max values must
+be the union of all the BATCH_QUEUES' resources.
+
+SUBMIT_QUEUE			pending
+
+BATCH_QUEUES is a list of execution queues onto which the scheduler should
+move and run the jobs it chooses from the SUBMIT_QUEUES. 
+ 
+BATCH_QUEUES			hosta@hosta,hostb@hostb
+
+EXPRESS_QUEUE is the name of the "highest priority" queue, jobs from which
+will run before all else, checkpointing other jobs as necessary
+
+EXPRESS_QUEUE   special
+
+The following options are used to optimize system load average and scheduler 
+effectiveness. It is a good idea to monitor system load as the user community 
+grows, shrinks, or changes its focus from porting and debugging to production
+runs. These defaults were selected for a 64 processor system with 16gb of
+memory. 
+
+Target Load Average (TARGET_LOAD_PCT) refers to a target percentage of the
+maximum system load average (1 point for each processor on the machine). It
+may vary as much as the +/- percentages listed in TARGET_LOAD_VARIANCE. Jobs
+may or may not be scheduled if the load is too high or too low, even if the
+resources indicate that doing so would otherwise cause a problem. The values
+below attempt to maintain a system load within 75% to 100% of the theoretical
+maximum (load average of 48.0 to 64.0 for a 64-cpu machine).
+TARGET_LOAD_PCT			90%		
+TARGET_LOAD_VARIANCE		-15%,+10%
+
+The next section of options are used to enforce site-specific policies. It
+is a good idea to reevaluate these policies as the user community grows,
+shrinks, or changes its focus from porting and debugging to production.
+
+Check for Prime Time Enforcement.  Sites with a mixed user base can use 
+this option to enforce separate scheduling policies at different times
+during the day. If ENFORCE_PRIME_TIME is set to "False", the non-prime-time
+scheduling policy (as described in BATCH_QUEUES) will be used for the entire
+24 hour period.
+
+ENFORCE_PRIME_TIME		False
+
+Prime-time is defined as a time period each working day (Mon-Fri)
+from PRIME_TIME_START through PRIME_TIME_END.  Times are in 24
+hour format (i.e. 9:00AM is 9:00:00, 5:00PM is 17:00:00) with hours, 
+minutes, and seconds.  Sites can use the prime-time scheduling policy for 
+the entire 24 hour period by setting PRIME_TIME_START and PRIME_TIME_END 
+back-to-back.  The portion of a job that fits within primetime must be
+no longer than PRIME_TIME_WALLT_LIMIT (represented in HH:MM:SS).
+
+#PRIME_TIME_START		9:00:00
+#PRIME_TIME_END			17:00:00
+#PRIME_TIME_WALLT_LIMIT		1:00:00
+
+The next option allows the site to choose an action to take upon scheduler
+startup.  The default is to do no special processing (NONE). In some
+instances, a job can end up queued in one of the batch queues, since it
+was running before but was stopped by PBS. If the argument is RESUBMIT,
+these jobs will be moved back to the queue the job was originally submitted
+to, and scheduled as if they had just arrived. If the argument is RERUN,
+the scheduler will have PBS run any jobs found enqueued on the execution
+queues. This may cause the machine to get somewhat confused, as no limits
+checking is done (the assumption being that they were checked when they
+were enqueued).
+
+SCHED_RESTART_ACTION		RESUBMIT
+
+Define how long a job should be forced to wait in the queue before being
+given "extra" priority to run. The priority given is exceeded only by the
+priority of the Express queue jobs. Note that this extra priority is
+ignored for jobs from an over-fairshare queue, or if the job owner has
+exceeded his/her max running job limit. Value is express in HH:MM:SS
+(default is 5 days)
+
+MAX_WAIT_TIME                   120:00:00
+
+Define the threshold at which to choose to Suspend a job rather than
+Checkpoint it. Specified value is the percentage of remaining time for
+the job
+
+SUSPEND_THRESHOLD               10
+
+
+Define the action to take if both Suspend and Checkpoint fail for a
+given job. Given that the primary purpose of checkpoint is to free up
+resources for a very-high-priority job, setting this to "1" (True)
+tells the scheduler to force a qhold/qrerun/qrls of the job. This will
+FORCE the job back into a queued state. If the user has done no job-level
+checkpointing, then the job will be restarted from the beginning.
+
+FORCE_REQUEUE                   True
+
+
+If specified, this directive will tell the scheduler to dump an ordered
+listing of the jobs to the named file. Useful for users and debugging,
+but an expensive operation with LOTS of jobs queued, since the file is
+rewritten for each run of the scheduler.
+
+SORTED_JOB_DUMPFILE             /PBS/sched_priv/sorted_jobs
+
+
+Name of file into which to save 'fair-share' info. File is rewritten hourly
+to ensure current data is saved across scheduler runs. Data in file is
+recalculated once per day in order to maintain historical share usage over
+time.
+ 
+SHARE_INFO_FILE                 /PBS/sched_priv/share_usage
+
+The Fair Access Directives allow the specification, on a per-queue basis,
+of a per-user limit on the maximum number of simultaneously running jobs
+that a given user can have outstanding at any given time. <access_spec> is:
+FAIR_SHARE QUEUE:queuename:shares:max_running_jobs
+
+FAIR_SHARE QUEUE:firstQ:30:8
+FAIR_SHARE QUEUE:thirdQ:40:10
+FAIR_SHARE QUEUE:fifthQ:30:10
+
+
+* Lazy Commenting
+
+Because changing the job comment for each of a large group of jobs can be
+very time intensive, there is a notion of lazy comments. The function that
+sets the comment on a job takes a flag that indicates whether or not the
+comment is optional. Most of the "can't run because ..." comments are
+considered to be optional.
+
+When presented with an optional comment, the job will only be altered if
+the job was enqueued after the last run of the scheduler, if it does not
+already have a comment, or the job's 'mtime' (modification time) attribute
+indicates that the job has not been touched in MIN_COMMENT_AGE seconds.
+
+This should provide each job with a comment at least once per scheduler
+lifetime.  It also provides an upper bound (MIN_COMMENT_AGE seconds + the
+scheduling iteration) on the time between comment updates.
+This compromise seemed reasonable because the comments themselves are some-
+what arbitrary, so keeping them up-to-date is not a high priority.
+
+This having been said, there may still be time when setting *any* comment
+may be too expensive an operation. Say, if you have 10,000 jobs queued,
+then it may take "too long" to keep the comments updated. If so, you can
+turn off commenting of jobs completly by setting the UPDATE_COMMENTS
+option in the scheduler configuratin file to False.
+
+Installing The MSIC-Cluster Scheduler
+------------------------------------
+
+The MSIC-Cluster scheduler is packaged as an alternate scheduler for
+OpenPBS v.2.3. Basic steps are as follows (note that $PBSSRC is the
+directory into which you extracted the PBS source tree; this is the
+directory that contains the configure and configure.in file, amoung
+others); the $PBSOBJ is the top of your object tree:
+
+Rebuilding PBS to use MSIC-Cluster scheduler
+--------------------------------------
+
+While it is not necessary to rebuilt all of PBS, it is necessary
+to rerun "configure" and then build the scheduler:
+
+	cd $PBSOBJ
+	$PBSSRC/configure [your options] --set-sched-code=msic_cluster
+	make
+	make install
+
+
+Required modifications to existing PBS configuration
+----------------------------------------------------
+
+There are several changes that will need to be made to the PBS configuration.
+This version of the MSIC-Cluster scheduler can take advantage of the server
+nodes file, which contains one line per node. (For a detailed explanation of
+the format of the "nodes" file, see the PBS Admin Guide).
+
+1. Edit $PBSHOME/server_priv/nodes, and add one line for each execution
+   host, as the following example shows:
+
+   pbsnode1:ts  np=8
+   pbsnode2:ts  np=8
+   pbsnode3:ts  np=8
+   pbsnode4:ts  np=8
+
+Where the first column is the hostname of the node, with ":ts" appended
+to indicate that the node is a time-share node, and the second column is
+a number of processor specification. (This NP value is used as the maximum
+number of cpus on a given node. This allows the server to reject a job
+immediately that requests more cpus than can be provided by the current
+configuration.)
+
+2. Create an execution queue that will become a holding queue from which
+   the scheduler will pull jobs. This queue will need certain minimum
+   attributes set, as indicated below:
+
+   first start the server, if not already running:
+   #pbs_server
+
+   then create and set the queue attributes (example SUBMIT queue
+   called "pending"):
+
+   #qmgr
+   create queue pending
+   set queue pending queue_type = Execution
+   set queue pending resources_default.ncpus = 1
+   set queue pending resources_default.walltime = 00:05:00
+   set queue pending enabled = True
+   set queue pending started = True
+
+3. Create an execution queue that corresponds to each execution host.
+   Set the default and maximum attributes for each execution queue. 
+   It is suggested you dump the qmgr output to a file, and then edit
+   the file (ie  'qmgr -c "p s" > /tmp/somefile' ; edit the file; and
+   then load the changed info back into the server: 'qmgr < /tmp/somefile').
+   The example below shows the recommended attributes (and changes via qmgr):
+   Note that the "from_route_only" directive prevents users from submitting
+   directly to the backend execution queues. This is necessary since
+   priorities are calculated based on the originating queues (i.e. the
+   route queues defined below).
+
+   #qmgr
+   create queue pbsnode1
+   set queue pbsnode1 queue_type = Execution
+   set queue pbsnode1 from_route_only = True
+   set queue pbsnode1 resources_max.ncpus = 8
+   set queue pbsnode1 resources_max.walltime = 08:00:00
+   set queue pbsnode1 resources_default.ncpus = 1
+   set queue pbsnode1 resources_default.walltime = 00:05:00
+   set queue pbsnode1 enabled = True
+   set queue pbsnode1 started = True
+   ...
+
+4. Create as many "originating" Route queues as needed by your local
+   configuration. These should be route queues with one destination:
+   the above defined SUBMIT queue. Jobs will carry their originating
+   queue name with them, and the scheduler will use this to enforce
+   the queue-specific share limits. For example:
+
+   # Create and define queue groupA
+   #
+   create queue groupA
+   set queue groupA queue_type = Route
+   set queue groupA route_destinations = pending
+   set queue groupA resources_default.mem = 10mb
+   set queue groupA enabled = True
+   set queue groupA started = True
+   #
+   # Create and define queue groupB
+   #
+   create queue groupB
+   set queue groupB queue_type = Route
+   set queue groupB route_destinations = pending
+   set queue groupB resources_default.mem = 20mb
+   set queue groupB enabled = True
+   set queue groupB started = True
+   #
+   # Create and define queue groupC
+   #
+   create queue groupC
+   set queue groupC queue_type = Route
+   set queue groupC route_destinations = pending
+   set queue groupC resources_default.mem = 30mb
+   set queue groupC enabled = True
+   set queue groupC started = True
+   #
+   # Create and define queue express
+   #
+   create queue express
+   set queue express queue_type = Route
+   set queue express route_destinations = pending
+   set queue groupC resources_default.mem = 40mb
+   set queue express enabled = True
+   set queue express started = True
+   
+   # and then set the default queue on the server. This should generally
+   # point to the medium priority route queue.
+   #
+   set server default_queue = groupB
+
+
+ 5. Set the cluster-wide maximum number of cpus (e.g. the count of all the
+    CPUs on all nodes within the cluster. This info will be used in addition
+    to the dynamically queried per-node CPU counts. You will need to update
+    this value if you remove or add nodes to your cluster. Do not worry about
+    updating it for a temporarily unavailable node.
+
+    #qmgr
+    set server resources_max.ncpus = 48  (or whatever the correct value is)
+    quit
+
+
+Configuring the MSIC-Cluster scheduler
+--------------------------------------
+
+The scheduler configuration file (as discussed above) will need to be
+modified. Edit $PBSHOME/sched_priv/sched_config changing in particular
+the BATCH_QUEUES line. This should contain the list of all the queues
+you have defined, and the associated execution host, eg:
+
+Host "hostA.pbs.com" has an associated queue named "hostA"
+and "pbsnode1.pbs.com" is fed by queue "pbsnode1":
+
+BATCH_QUEUES	hostA@hostA.pbs.com,pbsnode1@pbsnode1.pbs.com
+
+However, the full hostname is not required, so for brevity, one could enter:
+
+BATCH_QUEUES	hostA@hostA,pbsnode1@pbsnode1
+
+The FAIR_SHARE directive will also need to be updated, as described above.
+
+Review the other configuration parameter, and change any as needed.
+They are currently set to recommended defaults.
+
+
+General Notes
+-------------
+
+This section has some general comments about this scheduler, and things
+to be aware of.
+
+Since this scheduler supports the PBS nodes file, you can use the "pbsnodes"
+commands to view node status, take nodes offline, etc. Here is a short
+summary of handy
+
+	pbsnodes -l      # lists all down/offline/unavailable nodes
+
+	pbsnodes -a 	 # lists all info for all nodes
+
+	pbsnodes -o node # mark the named node OFFLINE, running jobs will
+			 # will continue to run on that node, but no new
+			 # jobs will be started on it. Be sure to list all
+			 # OFFLINE nodes as any not listed will be assumed
+			 # to be up.
+
+	pbsnodes -c node # clear or remove the OFFLINE status on node, 
+			 # making it available for running jobs again.
+

@@ -1,0 +1,326 @@
+#
+# $Id$
+#
+#         OpenPBS (Portable Batch System) v2.3 Software License
+# 
+# Copyright (c) 1999-2000 Veridian Information Solutions, Inc.
+# All rights reserved.
+# 
+# ---------------------------------------------------------------------------
+# For a license to use or redistribute the OpenPBS software under conditions
+# other than those described below, or to purchase support for this software,
+# please contact Veridian Systems, PBS Products Department ("Licensor") at:
+# 
+#    www.OpenPBS.org  +1 650 967-4675                  sales@OpenPBS.org
+#                        877 902-4PBS (US toll-free)
+# ---------------------------------------------------------------------------
+# 
+# This license covers use of the OpenPBS v2.3 software (the "Software") at
+# your site or location, and, for certain users, redistribution of the
+# Software to other sites and locations.  Use and redistribution of
+# OpenPBS v2.3 in source and binary forms, with or without modification,
+# are permitted provided that all of the following conditions are met.
+# After December 31, 2001, only conditions 3-6 must be met:
+# 
+# 1. Commercial and/or non-commercial use of the Software is permitted
+#    provided a current software registration is on file at www.OpenPBS.org.
+#    If use of this software contributes to a publication, product, or
+#    service, proper attribution must be given; see www.OpenPBS.org/credit.html
+# 
+# 2. Redistribution in any form is only permitted for non-commercial,
+#    non-profit purposes.  There can be no charge for the Software or any
+#    software incorporating the Software.  Further, there can be no
+#    expectation of revenue generated as a consequence of redistributing
+#    the Software.
+# 
+# 3. Any Redistribution of source code must retain the above copyright notice
+#    and the acknowledgment contained in paragraph 6, this list of conditions
+#    and the disclaimer contained in paragraph 7.
+# 
+# 4. Any Redistribution in binary form must reproduce the above copyright
+#    notice and the acknowledgment contained in paragraph 6, this list of
+#    conditions and the disclaimer contained in paragraph 7 in the
+#    documentation and/or other materials provided with the distribution.
+# 
+# 5. Redistributions in any form must be accompanied by information on how to
+#    obtain complete source code for the OpenPBS software and any
+#    modifications and/or additions to the OpenPBS software.  The source code
+#    must either be included in the distribution or be available for no more
+#    than the cost of distribution plus a nominal fee, and all modifications
+#    and additions to the Software must be freely redistributable by any party
+#    (including Licensor) without restriction.
+# 
+# 6. All advertising materials mentioning features or use of the Software must
+#    display the following acknowledgment:
+# 
+#     "This product includes software developed by NASA Ames Research Center,
+#     Lawrence Livermore National Laboratory, and Veridian Information
+#     Solutions, Inc.
+#     Visit www.OpenPBS.org for OpenPBS software support,
+#     products, and information."
+# 
+# 7. DISCLAIMER OF WARRANTY
+# 
+# THIS SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND. ANY EXPRESS
+# OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+# OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT
+# ARE EXPRESSLY DISCLAIMED.
+# 
+# IN NO EVENT SHALL VERIDIAN CORPORATION, ITS AFFILIATED COMPANIES, OR THE
+# U.S. GOVERNMENT OR ANY OF ITS AGENCIES BE LIABLE FOR ANY DIRECT OR INDIRECT,
+# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
+# OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+# LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+# NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+# EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# 
+# This license will be governed by the laws of the Commonwealth of Virginia,
+# without reference to its choice of law rules.
+#
+# the first non-comment line must be .POSIX to assure POSIX make behavior
+#
+@MAKE_POSIX_TARGET@
+
+srcdir = @srcdir@
+top_srcdir = @top_srcdir@
+INSTALL = @INSTALL@
+
+@mk_head@
+@mk_dirs@
+
+
+# Makefile for External Reference Spec (ERS)
+#
+# Targets:
+#	build:	Makes separate postscript docuements for each chapther.
+#
+#	all:	Makes a single postscript file for entire document.
+#
+
+DOCSRC  = $(srcdir)/..
+DOCTRG  = .
+
+SOELIM  = ../soelim
+FONTS = $(srcdir)/../doc_fonts
+
+ERS =	$(DOCSRC)/ers/title_ers.ms \
+	$(DOCSRC)/ers/intro_ers.ms \
+	$(DOCSRC)/ers/general_ers.ms \
+	$(DOCSRC)/ers/server_ers.ms \
+	$(DOCSRC)/ers/ifl_ers.ms \
+	$(DOCSRC)/ers/usercmds_ers.ms \
+	$(DOCSRC)/ers/opcmds_ers.ms \
+	$(DOCSRC)/ers/scheduler_ers.ms \
+	$(DOCSRC)/ers/resmom_ers.ms \
+	$(DOCSRC)/ers/network_ers.ms \
+	$(DOCSRC)/ers/tools_ers.ms \
+	$(DOCSRC)/ers/taskmgr_ers.ms
+
+APPENDIX = 
+
+AUXERS =	$(DOCSRC)/ers/ers_setup.ms \
+		$(DOCSRC)/ers/ers.macros 
+
+AUXRESC =	$(DOCSRC)/ers/pbs_resources_all.so \
+		$(DOCSRC)/man1/pbs_resources_aix4.7B \
+		$(DOCSRC)/man1/pbs_resources_digitalunix.7B \
+		$(DOCSRC)/man1/pbs_resources_freebsd.7B \
+		$(DOCSRC)/man1/pbs_resources_fujitsu.7B \
+		$(DOCSRC)/man1/pbs_resources_irix5.7B \
+		$(DOCSRC)/man1/pbs_resources_irix6array.7B \
+		$(DOCSRC)/man1/pbs_resources_irix6.7B \
+		$(DOCSRC)/man1/pbs_resources_linux.7B \
+		$(DOCSRC)/man1/pbs_resources_netbsd.7B \
+		$(DOCSRC)/man1/pbs_resources_solaris5.7B \
+		$(DOCSRC)/man1/pbs_resources_solaris7.7B \
+		$(DOCSRC)/man1/pbs_resources_sp2.7B \
+		$(DOCSRC)/man1/pbs_resources_sunos4.7B \
+		$(DOCSRC)/man1/pbs_resources_unicos8.7B \
+		$(DOCSRC)/man1/pbs_resources_unicosmk2.7B
+
+MAN1 = $(DOCSRC)/man1/qalter.1B \
+	$(DOCSRC)/man1/qdel.1B \
+	$(DOCSRC)/man1/qhold.1B \
+	$(DOCSRC)/man1/qmove.1B \
+	$(DOCSRC)/man1/qmsg.1B \
+	$(DOCSRC)/man1/qorder.1B \
+	$(DOCSRC)/man1/qrerun.1B \
+	$(DOCSRC)/man1/qrls.1B \
+	$(DOCSRC)/man1/qselect.1B \
+	$(DOCSRC)/man1/qsig.1B \
+	$(DOCSRC)/man1/qstat.1B \
+	$(DOCSRC)/man1/qsub.1B \
+	$(DOCSRC)/man1/pbs.1B \
+	$(DOCSRC)/man1/pbsdsh.1B \
+	$(DOCSRC)/man1/nqs2pbs.1B \
+	$(DOCSRC)/man1/basl2c.1B \
+	$(DOCSRC)/man1/xpbs.1B \
+	$(DOCSRC)/man1/xpbsmon.1B
+
+MAN3 =	$(DOCSRC)/man3/pbs_alterjob.3B \
+	$(DOCSRC)/man3/pbs_connect.3B \
+	$(DOCSRC)/man3/pbs_deljob.3B \
+	$(DOCSRC)/man3/pbs_default.3B \
+	$(DOCSRC)/man3/pbs_disconnect.3B \
+	$(DOCSRC)/man3/pbs_geterrmsg.3B \
+	$(DOCSRC)/man3/pbs_holdjob.3B \
+	$(DOCSRC)/man3/pbs_manager.3B \
+	$(DOCSRC)/man3/pbs_movejob.3B \
+	$(DOCSRC)/man3/pbs_msgjob.3B \
+	$(DOCSRC)/man3/pbs_orderjob.3B \
+	$(DOCSRC)/man3/pbs_rescreserve.3B \
+	$(DOCSRC)/man3/pbs_rescquery.3B \
+	$(DOCSRC)/man3/pbs_rerunjob.3B \
+	$(DOCSRC)/man3/pbs_rlsjob.3B \
+	$(DOCSRC)/man3/pbs_runjob.3B \
+	$(DOCSRC)/man3/pbs_selectjob.3B \
+	$(DOCSRC)/man3/pbs_sigjob.3B \
+	$(DOCSRC)/man3/pbs_stagein.3B \
+	$(DOCSRC)/man3/pbs_statjob.3B \
+	$(DOCSRC)/man3/pbs_statque.3B \
+	$(DOCSRC)/man3/pbs_statserver.3B \
+	$(DOCSRC)/man3/pbs_submit.3B \
+	$(DOCSRC)/man3/pbs_terminate.3B \
+	$(DOCSRC)/man3/rpp.3 \
+	$(DOCSRC)/man3/tm.3
+
+MAN7 =	$(DOCSRC)/man1/pbs_job_attributes.7B \
+	$(DOCSRC)/man1/pbs_queue_attributes.7B \
+	$(DOCSRC)/man1/pbs_server_attributes.7B \
+	${AUXRESC}
+
+MAN8 =	$(DOCSRC)/man8/qdisable.8B \
+	$(DOCSRC)/man8/qenable.8B \
+	$(DOCSRC)/man8/pbs_mom.8B \
+	$(DOCSRC)/man8/pbs_server.8B \
+	$(DOCSRC)/man8/qmgr.8B \
+	$(DOCSRC)/man8/qrun.8B \
+	$(DOCSRC)/man8/qstart.8B \
+	$(DOCSRC)/man8/qstop.8B \
+	$(DOCSRC)/man8/qterm.8B \
+	$(DOCSRC)/man8/pbsnodes.8B \
+	$(DOCSRC)/man8/pbs_sched_cc.8B \
+	$(DOCSRC)/man8/pbs_sched_basl.8B \
+	$(DOCSRC)/man8/pbs_sched_tcl.8B
+
+
+PARTS =	$(DOCTRG)/ers_ch0.ps \
+	$(DOCTRG)/ers_ch1.ps \
+	$(DOCTRG)/ers_ch2.ps \
+	$(DOCTRG)/ers_ch3.ps \
+	$(DOCTRG)/ers_ch4.ps \
+	$(DOCTRG)/ers_ch5.ps \
+	$(DOCTRG)/ers_ch6_7.ps \
+	$(DOCTRG)/ers_ch8.ps \
+	$(DOCTRG)/ers_ch9.ps \
+	$(DOCTRG)/ers_ch10_11.ps \
+	$(DOCTRG)/ers_ch12.ps \
+	$(DOCTRG)/ers_ch13.ps \
+	$(DOCTRG)/ers_chA.ps
+
+TARGET = $(DOCTRG)/ers_all.ps
+
+build:	${SOELIM} $(DOCTRG)/ers_toc.input ${PARTS}
+
+no_toc:	${PARTS}
+
+all:	$(TARGET)
+
+$(TARGET):	${SOELIM} ${ERS} ${MAN1} ${MAN3} ${MAN7} ${MAN8} \
+	${AUXERS} ${APPENDIX} $(DOCTRG)/ers_toc.input
+	${SOELIM} -d $(DOCSRC)/ers $(FONTS) ${ERS} ${APPENDIX} | ${PIC} | ${TBL} | ${ROFF} -ms | ${POSTPS} > $(DOCTRG)/ers_all.ps
+
+print:	build
+	for F in ${PARTS} ; do ${PRTCMD} ${PRTFLG} $$F ; done
+
+distclean:: clean
+	-$(RM) Makefile
+
+clean::
+	-$(RM) $(TARGET) $(PARTS) *.input
+
+
+$(SOELIM): $(srcdir)/../soelim.c
+	cd ..; $(MAKE) soelim
+
+#
+# Generate each (chapter) Part
+#
+
+$(DOCTRG)/ers_ch0.ps:	$(DOCSRC)/ers/title_ers.ms ${AUXERS} \
+				$(DOCTRG)/ers_toc.input \
+			$(DOCSRC)/ers/release.ms \
+			$(DOCSRC)/ers/rel_history.ms
+	${SOELIM} -d $(DOCSRC)/ers $(FONTS) $(DOCSRC)/ers/title_ers.ms | ${ROFF} -ms | ${POSTPS} > $(DOCTRG)/ers_ch0.ps
+
+$(DOCTRG)/ers_ch1.ps:	$(DOCSRC)/ers/intro_ers.ms \
+			$(DOCSRC)/ers/stagein.pic  \
+			$(DOCSRC)/ers/glossary.ms ${AUXERS}
+	${SOELIM} -d $(DOCSRC)/ers $(FONTS) $(DOCSRC)/ers/intro_ers.ms | ${PIC} | ${ROFF} -ms | ${POSTPS} > $(DOCTRG)/ers_ch1.ps
+
+$(DOCTRG)/ers_ch2.ps:	$(DOCSRC)/ers/general_ers.ms ${AUXERS} \
+			$(DOCSRC)/man1/pbs_job_attributes.7B \
+			$(DOCSRC)/man1/pbs_queue_attributes.7B \
+			$(DOCSRC)/man1/pbs_server_attributes.7B \
+			$(DOCSRC)/ers/dir_struct.pic \
+			$(DOCSRC)/ers/svr_dir.pic \
+			$(DOCSRC)/ers/sched1.pic \
+			$(DOCSRC)/ers/sched2.pic
+	${SOELIM} -d $(DOCSRC)/ers $(FONTS) $(DOCSRC)/ers/general_ers.ms | ${PIC} | ${ROFF} -ms | ${POSTPS} > $(DOCTRG)/ers_ch2.ps
+
+$(DOCTRG)/ers_ch3.ps:	$(DOCSRC)/ers/server_ers.ms ${AUXERS} \
+			$(DOCSRC)/man1/pbs_resources_aix4.7B \
+			$(DOCSRC)/man1/pbs_resources_irix5.7B \
+			$(DOCSRC)/man1/pbs_resources_irix6.7B \
+			$(DOCSRC)/man1/pbs_resources_sp2.7B \
+			$(DOCSRC)/man1/pbs_resources_sunos4.7B \
+			$(DOCSRC)/man1/pbs_resources_unicos8.7B
+	 ${SOELIM} -d $(DOCSRC)/ers $(FONTS) $(DOCSRC)/ers/server_ers.ms | ${TBL} | ${ROFF} -ms | ${POSTPS} > $(DOCTRG)/ers_ch3.ps
+
+$(DOCTRG)/ers_ch4.ps:	$(DOCSRC)/ers/ifl_ers.ms ${AUXERS} ${MAN3} \
+			$(DOCSRC)/ers/iff.pic
+	${SOELIM} -d $(DOCSRC)/ers $(FONTS) $(DOCSRC)/ers/ifl_ers.ms | $(PIC) | ${ROFF} -ms | ${POSTPS} > $(DOCTRG)/ers_ch4.ps
+
+$(DOCTRG)/ers_ch5.ps:	$(DOCSRC)/ers/usercmds_ers.ms ${MAN1} ${AUXERS} \
+			$(DOCSRC)/ers/basl_datatype.pic
+	${SOELIM} -d $(DOCSRC)/ers $(FONTS) $(DOCSRC)/ers/usercmds_ers.ms | ${PIC} | ${ROFF} -ms | ${POSTPS} > $(DOCTRG)/ers_ch5.ps
+
+
+$(DOCTRG)/ers_ch6_7.ps:	$(DOCSRC)/ers/opcmds_ers.ms ${MAN8} ${AUXERS}
+	${SOELIM} -d $(DOCSRC)/ers $(FONTS) $(DOCSRC)/ers/opcmds_ers.ms | ${ROFF} -ms | ${POSTPS} > $(DOCTRG)/ers_ch6_7.ps
+
+$(DOCTRG)/ers_ch8.ps:	$(DOCSRC)/ers/scheduler_ers.ms ${AUXERS}
+	${SOELIM} -d $(DOCSRC)/ers/ $(FONTS) $(DOCSRC)/ers/scheduler_ers.ms | ${TBL} | ${ROFF} -ms | ${POSTPS} > $(DOCTRG)/ers_ch8.ps
+
+$(DOCTRG)/ers_ch9.ps:	$(DOCSRC)/ers/resmom_ers.ms ${AUXERS}
+	${SOELIM} -d $(DOCSRC)/ers/ $(FONTS) $(DOCSRC)/ers/resmom_ers.ms | $(TBL) | ${ROFF} -ms | ${POSTPS} > $(DOCTRG)/ers_ch9.ps
+
+$(DOCTRG)/ers_ch10_11.ps:	$(DOCSRC)/ers/network_ers.ms \
+			$(DOCSRC)/ers/twophase.pic \
+			${AUXERS}
+	${SOELIM} -d $(DOCSRC)/ers/ $(FONTS) $(DOCSRC)/ers/network_ers.ms | $(PIC) | $(TBL) | ${ROFF} -ms | ${POSTPS} > $(DOCTRG)/ers_ch10_11.ps
+
+$(DOCTRG)/ers_ch12.ps:	$(DOCSRC)/ers/tools_ers.ms ${AUXERS}
+	${SOELIM} -d $(DOCSRC)/ers/ $(FONTS) $(DOCSRC)/ers/tools_ers.ms | ${ROFF} -ms | ${POSTPS} > $(DOCTRG)/ers_ch12.ps
+
+$(DOCTRG)/ers_ch13.ps:	$(DOCSRC)/ers/taskmgr_ers.ms ${AUXERS}
+	${SOELIM} -d $(DOCSRC)/ers/ $(FONTS) $(DOCSRC)/ers/taskmgr_ers.ms | ${ROFF} -ms | ${POSTPS} > $(DOCTRG)/ers_ch13.ps
+
+$(DOCTRG)/ers_chA.ps:	${APPENDIX}
+	${SOELIM} -d $(DOCSRC)/ers $(FONTS) ${APPENDIX} | ${ROFF} -ms | ${POSTPS} >> $(DOCTRG)/ers_chA.ps
+
+
+$(DOCTRG)/ers_toc.input:	${ERS}
+	@echo Remaking ERS Table of Contents, please wait ...
+	@rm -f $(DOCTRG)/ers_toc.input
+	@touch $(DOCTRG)/ers_toc.input
+	@for f in ${ERS} ; do \
+	${SOELIM} -d $(DOCSRC)/ers $(FONTS) $$f | ${PIC} | ${ROFF} -ms -rI2 > /dev/null 2>>$(DOCTRG)/ers_toc.input ; done
+	@echo TOC remake complete
+
+
+# The following should go away in the product version
+
+spell:
+	${SOELIM} ${ERS} | spell +$(DOCSRC)/ers/local_spell

@@ -1,0 +1,247 @@
+#
+# $Id$
+#
+
+#         OpenPBS (Portable Batch System) v2.3 Software License
+# 
+# Copyright (c) 1999-2000 Veridian Information Solutions, Inc.
+# All rights reserved.
+# 
+# ---------------------------------------------------------------------------
+# For a license to use or redistribute the OpenPBS software under conditions
+# other than those described below, or to purchase support for this software,
+# please contact Veridian Systems, PBS Products Department ("Licensor") at:
+# 
+#    www.OpenPBS.org  +1 650 967-4675                  sales@OpenPBS.org
+#                        877 902-4PBS (US toll-free)
+# ---------------------------------------------------------------------------
+# 
+# This license covers use of the OpenPBS v2.3 software (the "Software") at
+# your site or location, and, for certain users, redistribution of the
+# Software to other sites and locations.  Use and redistribution of
+# OpenPBS v2.3 in source and binary forms, with or without modification,
+# are permitted provided that all of the following conditions are met.
+# After December 31, 2001, only conditions 3-6 must be met:
+# 
+# 1. Commercial and/or non-commercial use of the Software is permitted
+#    provided a current software registration is on file at www.OpenPBS.org.
+#    If use of this software contributes to a publication, product, or
+#    service, proper attribution must be given; see www.OpenPBS.org/credit.html
+# 
+# 2. Redistribution in any form is only permitted for non-commercial,
+#    non-profit purposes.  There can be no charge for the Software or any
+#    software incorporating the Software.  Further, there can be no
+#    expectation of revenue generated as a consequence of redistributing
+#    the Software.
+# 
+# 3. Any Redistribution of source code must retain the above copyright notice
+#    and the acknowledgment contained in paragraph 6, this list of conditions
+#    and the disclaimer contained in paragraph 7.
+# 
+# 4. Any Redistribution in binary form must reproduce the above copyright
+#    notice and the acknowledgment contained in paragraph 6, this list of
+#    conditions and the disclaimer contained in paragraph 7 in the
+#    documentation and/or other materials provided with the distribution.
+# 
+# 5. Redistributions in any form must be accompanied by information on how to
+#    obtain complete source code for the OpenPBS software and any
+#    modifications and/or additions to the OpenPBS software.  The source code
+#    must either be included in the distribution or be available for no more
+#    than the cost of distribution plus a nominal fee, and all modifications
+#    and additions to the Software must be freely redistributable by any party
+#    (including Licensor) without restriction.
+# 
+# 6. All advertising materials mentioning features or use of the Software must
+#    display the following acknowledgment:
+# 
+#     "This product includes software developed by NASA Ames Research Center,
+#     Lawrence Livermore National Laboratory, and Veridian Information
+#     Solutions, Inc.
+#     Visit www.OpenPBS.org for OpenPBS software support,
+#     products, and information."
+# 
+# 7. DISCLAIMER OF WARRANTY
+# 
+# THIS SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND. ANY EXPRESS
+# OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+# OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT
+# ARE EXPRESSLY DISCLAIMED.
+# 
+# IN NO EVENT SHALL VERIDIAN CORPORATION, ITS AFFILIATED COMPANIES, OR THE
+# U.S. GOVERNMENT OR ANY OF ITS AGENCIES BE LIABLE FOR ANY DIRECT OR INDIRECT,
+# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
+# OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+# LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+# NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+# EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# 
+# This license will be governed by the laws of the Commonwealth of Virginia,
+# without reference to its choice of law rules.
+#
+# the first non-comment line must be .POSIX to assure POSIX make behavior
+#
+@MAKE_POSIX_TARGET@
+
+
+srcdir = @srcdir@
+top_srcdir = @top_srcdir@
+
+@mk_head@
+@mk_dirs@
+
+DOCSRC = $(srcdir)
+INSTALL = @INSTALL@
+SOELIM = ./soelim
+CFLAGS = @CFLAGS@ @DEFS@
+
+AUXRESC =	$(DOCSRC)/ers/pbs_resources_all.so \
+		$(DOCSRC)/man1/pbs_resources_aix4.7B \
+		$(DOCSRC)/man1/pbs_resources_digitalunix.7B \
+		$(DOCSRC)/man1/pbs_resources_freebsd.7B \
+		$(DOCSRC)/man1/pbs_resources_fujitsu.7B \
+		$(DOCSRC)/man1/pbs_resources_irix5.7B \
+		$(DOCSRC)/man1/pbs_resources_irix6array.7B \
+		$(DOCSRC)/man1/pbs_resources_irix6.7B \
+		$(DOCSRC)/man1/pbs_resources_linux.7B \
+		$(DOCSRC)/man1/pbs_resources_netbsd.7B \
+		$(DOCSRC)/man1/pbs_resources_solaris5.7B \
+		$(DOCSRC)/man1/pbs_resources_solaris7.7B \
+		$(DOCSRC)/man1/pbs_resources_sp2.7B \
+		$(DOCSRC)/man1/pbs_resources_sunos4.7B \
+		$(DOCSRC)/man1/pbs_resources_unicos8.7B \
+		$(DOCSRC)/man1/pbs_resources_unicosmk2.7B
+
+MAN1 = $(DOCSRC)/man1/qalter.1B \
+	$(DOCSRC)/man1/qdel.1B \
+	$(DOCSRC)/man1/qhold.1B \
+	$(DOCSRC)/man1/qmove.1B \
+	$(DOCSRC)/man1/qmsg.1B \
+	$(DOCSRC)/man1/qorder.1B \
+	$(DOCSRC)/man1/qrerun.1B \
+	$(DOCSRC)/man1/qrls.1B \
+	$(DOCSRC)/man1/qselect.1B \
+	$(DOCSRC)/man1/qsig.1B \
+	$(DOCSRC)/man1/qstat.1B \
+	$(DOCSRC)/man1/qsub.1B \
+	$(DOCSRC)/man1/pbs.1B \
+	$(DOCSRC)/man1/pbsdsh.1B \
+	$(DOCSRC)/man1/nqs2pbs.1B \
+	$(DOCSRC)/man1/basl2c.1B \
+	$(DOCSRC)/man1/xpbs.1B \
+	$(DOCSRC)/man1/xpbsmon.1B
+
+MAN3 =	$(DOCSRC)/man3/pbs_alterjob.3B \
+	$(DOCSRC)/man3/pbs_connect.3B \
+	$(DOCSRC)/man3/pbs_deljob.3B \
+	$(DOCSRC)/man3/pbs_default.3B \
+	$(DOCSRC)/man3/pbs_disconnect.3B \
+	$(DOCSRC)/man3/pbs_geterrmsg.3B \
+	$(DOCSRC)/man3/pbs_holdjob.3B \
+	$(DOCSRC)/man3/pbs_manager.3B \
+	$(DOCSRC)/man3/pbs_movejob.3B \
+	$(DOCSRC)/man3/pbs_msgjob.3B \
+	$(DOCSRC)/man3/pbs_orderjob.3B \
+	$(DOCSRC)/man3/pbs_rescreserve.3B \
+	$(DOCSRC)/man3/pbs_rescquery.3B \
+	$(DOCSRC)/man3/pbs_rerunjob.3B \
+	$(DOCSRC)/man3/pbs_rlsjob.3B \
+	$(DOCSRC)/man3/pbs_runjob.3B \
+	$(DOCSRC)/man3/pbs_selectjob.3B \
+	$(DOCSRC)/man3/pbs_sigjob.3B \
+	$(DOCSRC)/man3/pbs_stagein.3B \
+	$(DOCSRC)/man3/pbs_statjob.3B \
+	$(DOCSRC)/man3/pbs_statque.3B \
+	$(DOCSRC)/man3/pbs_statserver.3B \
+	$(DOCSRC)/man3/pbs_submit.3B \
+	$(DOCSRC)/man3/pbs_terminate.3B \
+	$(DOCSRC)/man3/rpp.3 \
+	$(DOCSRC)/man3/tm.3
+
+MAN7 =	$(DOCSRC)/man1/pbs_job_attributes.7B \
+	$(DOCSRC)/man1/pbs_queue_attributes.7B \
+	$(DOCSRC)/man1/pbs_server_attributes.7B \
+	${AUXRESC}
+
+MAN8 =	$(DOCSRC)/man8/qdisable.8B \
+	$(DOCSRC)/man8/qenable.8B \
+	$(DOCSRC)/man8/pbs_mom.8B \
+	$(DOCSRC)/man8/pbs_server.8B \
+	$(DOCSRC)/man8/qmgr.8B \
+	$(DOCSRC)/man8/qrun.8B \
+	$(DOCSRC)/man8/qstart.8B \
+	$(DOCSRC)/man8/qstop.8B \
+	$(DOCSRC)/man8/qterm.8B \
+	$(DOCSRC)/man8/pbsnodes.8B \
+	$(DOCSRC)/man8/pbs_sched_cc.8B \
+	$(DOCSRC)/man8/pbs_sched_basl.8B \
+	$(DOCSRC)/man8/pbs_sched_tcl.8B
+
+all:: build
+
+build install:: soelim
+
+build clean distclean::
+
+
+install:: soelim install1 install3 install7 install8
+
+#
+# Install Various Man pages
+#
+
+install1:	${MAN1}
+	@echo Installing section 1 man pages
+	@$(INSTALL) -d -m 755 $(PBS_MAN) && \
+	$(INSTALL) -d -m 755 $(PBS_MAN1) && \
+	for t in $?; do \
+		tt=`basename $$t B`; \
+		${SOELIM} -d $(DOCSRC)/ers $$t | sed -e 's/^\.Sh/.SH/' >${PBS_MAN1}/$${tt}$(MAN_SUFFIX); \
+		chmod 644 ${PBS_MAN1}/$${tt}$(MAN_SUFFIX); \
+	done
+
+install3: $(MAN3)
+	@echo Installing section 3 man pages
+	@$(INSTALL) -d -m 755 $(PBS_MAN) && \
+	$(INSTALL) -d -m 755 $(PBS_MAN3) && \
+	for t in $?; do \
+		tt=`basename $$t B`; \
+		${SOELIM} -d $(DOCSRC)/ers $$t | sed -e 's/^\.Sh/.SH/' >${PBS_MAN3}/$${tt}$(MAN_SUFFIX); \
+		chmod 644 ${PBS_MAN3}/$${tt}$(MAN_SUFFIX); \
+	done
+
+install7: $(MAN7)
+	@echo Installing section 7 man pages
+	@$(INSTALL) -d -m 755 $(PBS_MAN) && \
+	$(INSTALL) -d -m 755 $(PBS_MAN7) && \
+	for t in $?;  do \
+		tt=`basename $$t B`; \
+		${SOELIM} -d $(DOCSRC)/ers $$t | sed -e 's/^\.Sh/.SH/' >${PBS_MAN7}/$${tt}$(MAN_SUFFIX); \
+		chmod 644 ${PBS_MAN7}/$${tt}$(MAN_SUFFIX); \
+	done
+	@rm -f ${PBS_MAN7}/pbs_resources.7$(MAN_SUFFIX)
+	@ln ${PBS_MAN7}/pbs_resources_$(DEFAULT_MAN_RESOURCE_TYPE).7$(MAN_SUFFIX) ${PBS_MAN7}/pbs_resources.7$(MAN_SUFFIX)
+
+install8: $(MAN8)
+	@echo Installing section 8 man pages
+	@$(INSTALL) -d -m 755 $(PBS_MAN) && \
+	$(INSTALL) -d -m 755 $(PBS_MAN8) && \
+	for t in $?; do \
+		tt=`basename $$t B`; \
+		${SOELIM} -d $(DOCSRC)/ers $$t | sed -e 's/^\.Sh/.SH/' >${PBS_MAN8}/$${tt}$(MAN_SUFFIX); \
+		chmod 644 ${PBS_MAN8}/$${tt}$(MAN_SUFFIX); \
+	done
+
+depend::
+
+clean::
+	-$(RM) soelim
+
+soelim:	$(srcdir)/soelim.c
+	$(CC) $(CFLAGS) -o $@ $?
+	@chmod 755 $@
+
+distclean::
+	(cd ers && echo Making $@ in ers && $(MAKE) $@)
+	-$(RM) Makefile soelim
+

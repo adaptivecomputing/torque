@@ -1,0 +1,18 @@
+The Send Message to Running Job dialog box is for sending some message string
+to selected running job(s).
+
+Enter the message in the "Send message" entry box, and click on the toggle 
+buttons to specify whether the message is to be delivered to stdout or 
+stderr of the job(s).
+
+===============
+COMMAND BUTTONS
+===============
+This region of command buttons represents the final step when manipulating this
+dialog box. 
+
+Click on "Send Message" to proceed sending the message to the selected job(s).
+
+Click on "cancel" to cancel the sending of message to the selected job(s) and
+to quit out of this dialog box. This is also the default action when the 
+<Return> key is pressed.

@@ -1,0 +1,1050 @@
+#         OpenPBS (Portable Batch System) v2.3 Software License
+# 
+# Copyright (c) 1999-2000 Veridian Information Solutions, Inc.
+# All rights reserved.
+# 
+# ---------------------------------------------------------------------------
+# For a license to use or redistribute the OpenPBS software under conditions
+# other than those described below, or to purchase support for this software,
+# please contact Veridian Systems, PBS Products Department ("Licensor") at:
+# 
+#    www.OpenPBS.org  +1 650 967-4675                  sales@OpenPBS.org
+#                        877 902-4PBS (US toll-free)
+# ---------------------------------------------------------------------------
+# 
+# This license covers use of the OpenPBS v2.3 software (the "Software") at
+# your site or location, and, for certain users, redistribution of the
+# Software to other sites and locations.  Use and redistribution of
+# OpenPBS v2.3 in source and binary forms, with or without modification,
+# are permitted provided that all of the following conditions are met.
+# After December 31, 2001, only conditions 3-6 must be met:
+# 
+# 1. Commercial and/or non-commercial use of the Software is permitted
+#    provided a current software registration is on file at www.OpenPBS.org.
+#    If use of this software contributes to a publication, product, or
+#    service, proper attribution must be given; see www.OpenPBS.org/credit.html
+# 
+# 2. Redistribution in any form is only permitted for non-commercial,
+#    non-profit purposes.  There can be no charge for the Software or any
+#    software incorporating the Software.  Further, there can be no
+#    expectation of revenue generated as a consequence of redistributing
+#    the Software.
+# 
+# 3. Any Redistribution of source code must retain the above copyright notice
+#    and the acknowledgment contained in paragraph 6, this list of conditions
+#    and the disclaimer contained in paragraph 7.
+# 
+# 4. Any Redistribution in binary form must reproduce the above copyright
+#    notice and the acknowledgment contained in paragraph 6, this list of
+#    conditions and the disclaimer contained in paragraph 7 in the
+#    documentation and/or other materials provided with the distribution.
+# 
+# 5. Redistributions in any form must be accompanied by information on how to
+#    obtain complete source code for the OpenPBS software and any
+#    modifications and/or additions to the OpenPBS software.  The source code
+#    must either be included in the distribution or be available for no more
+#    than the cost of distribution plus a nominal fee, and all modifications
+#    and additions to the Software must be freely redistributable by any party
+#    (including Licensor) without restriction.
+# 
+# 6. All advertising materials mentioning features or use of the Software must
+#    display the following acknowledgment:
+# 
+#     "This product includes software developed by NASA Ames Research Center,
+#     Lawrence Livermore National Laboratory, and Veridian Information
+#     Solutions, Inc.
+#     Visit www.OpenPBS.org for OpenPBS software support,
+#     products, and information."
+# 
+# 7. DISCLAIMER OF WARRANTY
+# 
+# THIS SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND. ANY EXPRESS
+# OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+# OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT
+# ARE EXPRESSLY DISCLAIMED.
+# 
+# IN NO EVENT SHALL VERIDIAN CORPORATION, ITS AFFILIATED COMPANIES, OR THE
+# U.S. GOVERNMENT OR ANY OF ITS AGENCIES BE LIABLE FOR ANY DIRECT OR INDIRECT,
+# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
+# OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+# LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+# NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+# EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# 
+# This license will be governed by the laws of the Commonwealth of Virginia,
+# without reference to its choice of law rules.
+# 
+######################################################################################
+# The procedures below defines customized bindings for some of the widgets.
+######################################################################################
+# listbox_non_contiguous_selection:  procedure used in pre-4.0 Tk for simulating
+# non-contiguous selection in listboxes. Non-contiguous items that are selected will
+# appear "contiguously".
+######################################################################################
+proc listbox_non_contiguous_selection { W cur_selection new_selection } {
+
+        if {[string compare $cur_selection ""] == 0} {
+           $W select from $new_selection
+	   $W yview $new_selection
+           return
+        }
+
+        if {[string compare $new_selection "end"] == 0} {
+	  set new_selection [expr [$W size] - 1]
+        }
+        set max_cur_selection [ lintmax $cur_selection ]
+        set min_cur_selection [ lintmin $cur_selection ]
+        set topview $min_cur_selection
+
+        if { $new_selection > $max_cur_selection } {
+
+           set new_element [$W get $new_selection]
+           $W delete $new_selection
+
+           set new_position [expr $max_cur_selection+1]
+           $W insert $new_position $new_element
+           $W select adjust $new_position
+
+        } elseif { $new_selection < $min_cur_selection } {
+
+           set new_element [$W get $new_selection]
+           $W delete $new_selection
+
+           set new_position [expr $min_cur_selection-1]
+           $W insert $new_position $new_element
+           $W select adjust $new_position
+	   set topview $new_position
+        }
+        $W yview $topview         
+}
+
+# bind_listbox_single_select: binds a listbox to allow only one item selection at a
+# time.
+proc bind_listbox_single_select widget_name {
+  global tk_version
+
+  if {$tk_version < 4.0} {
+    bind $widget_name <B1-Motion> {;}
+    bind $widget_name <Shift-1> {;}
+    bind $widget_name <Shift-B1-Motion> {;}
+    bind $widget_name <2> {;}
+    bind $widget_name <B2-Motion> {;}
+  } else {
+    $widget_name configure -selectmode single
+  }
+}
+
+# bind_listbox_readonly: binds a listbox to be in browse mode
+proc bind_listbox_readonly widget_name {
+    global tk_version	
+  
+    if {$tk_version >= 4.0} {
+      bindtags $widget_name [list $widget_name]
+    }
+
+    bind $widget_name <1> {;}
+    bind $widget_name <Double-1> {;}
+    bind $widget_name <B1-Motion> {;}
+    bind $widget_name <Shift-1> {;}
+    bind $widget_name <Shift-B1-Motion> {;}
+    bind $widget_name <2> {;}
+    bind $widget_name <B2-Motion> {;}
+}
+# bind_text_readonly: binds a text widget to be read-only. 
+proc bind_text_readonly widget_name {
+  global tk_version
+
+  if {$tk_version >= 4.0} {
+    bindtags $widget_name [list $widget_name]
+  }
+
+  bind $widget_name <1> {;}
+  bind $widget_name <Double-1> {;}
+  bind $widget_name <Triple-1> {;}
+  bind $widget_name <B1-Motion> {;}
+  bind $widget_name <Shift-B1-Motion> {;}
+  bind $widget_name <Return> {;}
+  bind $widget_name <BackSpace> {;}
+  bind $widget_name <Delete> {;}
+  bind $widget_name <Control-h> {;}
+  bind $widget_name <Control-d> {;}
+  bind $widget_name <Control-v> {;}
+}
+
+# bind_entry_readonly: binds an entry to be read only.
+proc bind_entry_readonly widget_name {
+   $widget_name configure -state disabled
+}
+
+# register_dependency: registers a set of bindings for the main listboxes: hostsListbox,
+#   jobsListbox, and queuesListbox.
+proc register_dependency {} {
+   global queuesListbox jobsListbox hostsListbox \
+   	  HOSTS_LISTBOX_KEY QUEUES_LISTBOX_KEY JOBS_LISTBOX_KEY \
+   	  hostsSelMode queuesSelMode jobsSelMode \
+   	  hostsSelected queuesSelected jobsSelected tk_version
+
+   if { $tk_version >= 4.0 } {
+     bindtags $queuesListbox [list all Listbox $queuesListbox]
+     bindtags $jobsListbox [list all Listbox $jobsListbox]
+     bindtags $hostsListbox [list all Listbox $hostsListbox]
+   }
+    bind $queuesListbox <1> {
+      
+	if { $tk_version < 4.0 } {
+	  %W select from [%W nearest %y]
+	}
+
+        set queuesSelected \
+	       [get_keyvals $queuesListbox $QUEUES_LISTBOX_KEY @ " " "select"]
+	loadJobs
+        if { [$queuesListbox size] == [llength [$queuesListbox curselection]]} {
+		set queuesSelMode "Deselect All"
+	} else {
+		set queuesSelMode "Select All"
+	}
+    }
+    bind $queuesListbox <B1-Motion> {
+
+        if { $tk_version < 4.0 } {
+	  %W select to [%W nearest %y]
+        }
+
+        set queuesSelected \
+	       [get_keyvals $queuesListbox $QUEUES_LISTBOX_KEY @ " " "select"]
+	loadJobs
+        if { [$queuesListbox size] == [llength [$queuesListbox curselection]]} {
+		set queuesSelMode "Deselect All"
+	} else {
+		set queuesSelMode "Select All"
+	}
+
+    }
+
+    bind $queuesListbox <Shift-1> {
+        if { $tk_version < 4.0 } {
+	  %W select adjust [%W nearest %y]
+	}
+        set queuesSelected \
+	       [get_keyvals $queuesListbox $QUEUES_LISTBOX_KEY @ " " "select"]
+	loadJobs
+        if { [$queuesListbox size] == [llength [$queuesListbox curselection]]} {
+		set queuesSelMode "Deselect All"
+	} else {
+		set queuesSelMode "Select All"
+	}
+    }
+    bind $queuesListbox <Shift-B1-Motion> {
+        if { $tk_version < 4.0 } {
+	  %W select to [%W nearest %y]
+        }
+
+        set queuesSelected \
+	       [get_keyvals $queuesListbox $QUEUES_LISTBOX_KEY @ " " "select"]
+	loadJobs
+        if { [$queuesListbox size] == [llength [$queuesListbox curselection]]} {
+		set queuesSelMode "Deselect All"
+	} else {
+		set queuesSelMode "Select All"
+	}
+    }
+    bind $queuesListbox <Control-1> {
+        if {$tk_version < 4.0} {
+          set cur_selection [%W curselection]
+          set new_selection [%W nearest %y]
+	  listbox_non_contiguous_selection %W $cur_selection $new_selection
+        }
+
+        set queuesSelected \
+	       [get_keyvals $queuesListbox $QUEUES_LISTBOX_KEY @ " " "select"]
+	loadJobs
+        if { [$queuesListbox size] == [llength [$queuesListbox curselection]]} {
+		set queuesSelMode "Deselect All"
+	} else {
+		set queuesSelMode "Select All"
+	}
+    }
+    bind $queuesListbox <Double-1> {
+       getQueuesDetail 
+    }
+
+
+    bind $hostsListbox <1> {
+	if { $tk_version < 4.0 } {
+	  %W select from [%W nearest %y]
+	}
+
+        set hostsSelected \
+            [get_keyvals $hostsListbox $HOSTS_LISTBOX_KEY "@" " " "select"]
+	loadQueues
+        if { [$hostsListbox size] == [llength [$hostsListbox curselection]]} {
+		set hostsSelMode "Deselect All"
+	} else {
+		set hostsSelMode "Select All"
+	}
+    }
+    bind $hostsListbox <B1-Motion> {
+        if { $tk_version < 4.0 } {
+	  %W select to [%W nearest %y]
+        }
+
+        set hostsSelected \
+            [get_keyvals $hostsListbox $HOSTS_LISTBOX_KEY "@" " " "select"]
+	loadQueues
+        if { [$hostsListbox size] == [llength [$hostsListbox curselection]]} {
+		set hostsSelMode "Deselect All"
+	} else {
+		set hostsSelMode "Select All"
+	}
+    }
+    bind $hostsListbox <Shift-1> {
+	if {$tk_version < 4.0} {
+	  %W select adjust [%W nearest %y]
+        }
+        set hostsSelected \
+            [get_keyvals $hostsListbox $HOSTS_LISTBOX_KEY "@" " " "select"]
+	loadQueues
+
+        if { [$hostsListbox size] == [llength [$hostsListbox curselection]]} {
+		set hostsSelMode "Deselect All"
+	} else {
+		set hostsSelMode "Select All"
+	}
+    }
+    bind $hostsListbox <Shift-B1-Motion> {
+        if { $tk_version < 4.0 } {
+	  %W select to [%W nearest %y]
+        }
+        set hostsSelected \
+            [get_keyvals $hostsListbox $HOSTS_LISTBOX_KEY "@" " " "select"]
+	loadQueues
+
+        if { [$hostsListbox size] == [llength [$hostsListbox curselection]]} {
+		set hostsSelMode "Deselect All"
+	} else {
+		set hostsSelMode "Select All"
+	}
+    }
+    bind $hostsListbox <Control-1> {
+	if {$tk_version < 4.0} {
+          set cur_selection [%W curselection]
+          set new_selection [%W nearest %y]
+	  listbox_non_contiguous_selection %W $cur_selection $new_selection
+          %W yview [lindex [%W curselection] 0]
+        }
+        set hostsSelected \
+            [get_keyvals $hostsListbox $HOSTS_LISTBOX_KEY "@" " " "select"]
+	loadQueues
+        if { [$hostsListbox size] == [llength [$hostsListbox curselection]] } {
+		set hostsSelMode "Deselect All"
+	} else {
+		set hostsSelMode "Select All"
+	}
+    }
+    bind $hostsListbox <Double-1> {
+	 getHostsDetail
+    }
+
+    bind $jobsListbox <1> {
+	if { $tk_version < 4.0 } {
+	  %W select from [%W nearest %y]
+	}
+        set jobsSelected [get_keyvals $jobsListbox $JOBS_LISTBOX_KEY "@" " " "select"]
+        if {[$jobsListbox size] == [llength [$jobsListbox curselection]]} {
+		set jobsSelMode "Deselect All"
+	} else {
+		set jobsSelMode "Select All"
+	}
+    }
+    bind $jobsListbox <Double-1> {
+	getJobsDetail
+    }
+    bind $jobsListbox <B1-Motion> {
+        if { $tk_version < 4.0 } {
+	  %W select to [%W nearest %y]
+        }
+        set jobsSelected [get_keyvals $jobsListbox $JOBS_LISTBOX_KEY "@" " " "select"]
+        if {[$jobsListbox size] == [llength [$jobsListbox curselection]]} {
+		set jobsSelMode "Deselect All"
+	} else {
+		set jobsSelMode "Select All"
+	}
+    }
+    bind $jobsListbox <Shift-1> {
+	if {$tk_version < 4.0} {
+	  %W select adjust [%W nearest %y]
+        }
+        set jobsSelected [get_keyvals $jobsListbox $JOBS_LISTBOX_KEY "@" " " "select"]
+
+        if { [$jobsListbox size] == [llength [$jobsListbox curselection]]} {
+		set jobsSelMode "Deselect All"
+	} else {
+		set jobsSelMode "Select All"
+	}
+    }
+    bind $jobsListbox <Shift-B1-Motion> {
+        if { $tk_version < 4.0 } {
+	  %W select to [%W nearest %y]
+        }
+        set jobsSelected [get_keyvals $jobsListbox $JOBS_LISTBOX_KEY "@" " " "select"]
+
+        if { [$jobsListbox size] == [llength [$jobsListbox curselection]] } {
+		set jobsSelMode "Deselect All"
+	} else {
+		set jobsSelMode "Select All"
+	}
+    }
+    bind $jobsListbox <Control-1> {
+	if {$tk_version < 4.0} {
+          set cur_selection [%W curselection]
+          set new_selection [%W nearest %y]
+          listbox_non_contiguous_selection %W $cur_selection $new_selection
+
+          %W yview [lindex [%W curselection] 0]
+	}
+        set jobsSelected [get_keyvals $jobsListbox $JOBS_LISTBOX_KEY "@" " " "select"]
+        if { [$jobsListbox size] == [llength [$jobsListbox curselection]]} {
+		set jobsSelMode "Deselect All"
+	} else {
+		set jobsSelMode "Select All"
+	}
+    }
+}
+
+# register_trackjob_box: binds 'listbox' to perform the function of a trackjob box.
+proc register_trackjob_box {listbox} {
+    global tk_version
+
+    if {$tk_version >= 4.0} {
+      bindtags $listbox [list all Listbox $listbox]
+    }
+
+    bind $listbox <1> {
+	if { $tk_version < 4.0 } {
+	  %W select from [%W nearest %y]
+	}
+	set curIdx [%W curselection]
+        if {[string compare $curIdx ""] != 0} {
+	  set jobid [%W get $curIdx]
+	  if {[string compare $jobid ""] != 0} {
+	    trackjob_show $jobid
+          }
+	}
+    }
+}
+
+# register_default_action: specify the default action (a 'button' activation) when 
+#     the <Return> key is pressed in a dialog box given by 'toplevel'.
+proc register_default_action {toplevel button} {
+  $button configure -relief ridge -borderwidth 3
+  bind $toplevel <Return> "catch {$button flash; $button invoke}"
+}
+
+# bind_entry_tab: procedure that causes the 'entry_name' widget to pass the input 
+# 	focus to  the 'next_entry_name' widget when the <tab> key is hit on the
+#       former, or to 'prev_entry_name'  when <Control-b> is pressed.
+proc bind_entry_tab {entry_name next_entry_name prev_entry_name {env 0}} {
+  global next$entry_name
+  global prev$entry_name
+  global tk_version
+
+  if {$tk_version >= 4.0} {
+    bindtags $entry_name [list all Entry $entry_name]
+  }
+
+  set next$entry_name $next_entry_name
+  set prev$entry_name $prev_entry_name
+
+  if {$env} {
+  	bind $entry_name <Tab> {
+   		focus ${next%W}
+	    	${next%W} delete 0 end
+      		if { [info exists env([%W get])] } {
+	    		${next%W} insert 0 $env([%W get])
+		}
+   		if {$tk_version >= 4.0} {
+      			${next%W} xview moveto 1
+   		}
+  	}
+
+  	bind $entry_name <Control-f> {
+
+   		focus ${next%W}
+	    	${next%W} delete 0 end
+      		if { [info exists env([%W get])] } {
+	    		${next%W} insert 0 $env([%W get])
+		}
+   		if {$tk_version >= 4.0} {
+      			${next%W} xview moveto 1
+   		}
+  	}
+  } else {
+  	bind $entry_name <Tab> {
+   		focus ${next%W}
+   		if {$tk_version >= 4.0} {
+      			${next%W} xview moveto 1
+   		}
+  	}
+
+  	bind $entry_name <Control-f> {
+
+   		focus ${next%W}
+   		if {$tk_version >= 4.0} {
+      			${next%W} xview moveto 1
+   		}
+  	}
+  }
+
+  bind $entry_name <Control-b> {
+   
+   focus ${prev%W}
+   if {$tk_version >= 4.0} {
+      ${prev%W} xview moveto 1
+   }
+  }
+}
+# bind_entry_overselect: creates a set of bindings for a user-friendly entry widget.
+# 	This includes features such as overwriting selected text, copying and pasting
+#	text solely using mouse buttons, use of basic editing keys: left and right
+#	arrow keys.
+proc bind_entry_overselect {entry_name} {
+  global tk_version
+
+  if {$tk_version >= 4.0} {
+    return
+  } 
+
+  bind $entry_name <1> {
+    %W icursor @%x
+    %W select clear
+    %W select from @%x
+    if {[lindex [%W config -state] 4] == "normal"} {
+       focus %W
+    }
+  }
+
+  bind $entry_name <Any-KeyPress> {
+## Overwrite the selected region - the selected text is treated as a unit.
+## 
+    catch {%W delete sel.first sel.last}
+
+    if {[string compare %A ""] != 0} {
+        %W insert insert %A
+        tk_entrySeeCaret %W
+    }
+  }
+  bind $entry_name <2> {
+    catch {%W insert insert [selection get]}
+    selection clear %W
+    
+    tk_entrySeeCaret %W
+  }
+  bind $entry_name <B2-Motion> {%W scan dragto %y}
+
+  bind $entry_name <Delete> {
+
+## Delete selection if any.
+    if [catch {%W delete sel.first sel.last}] {
+      tk_entryBackspace %W
+    }
+    tk_entrySeeCaret %W
+  }
+
+  bind $entry_name <BackSpace> {
+
+## Delete selection if any.
+    if [catch {%W delete sel.first sel.last}] {
+      tk_entryBackspace %W 
+    }
+    tk_entrySeeCaret %W
+  }
+  bind $entry_name <Control-h> {
+## Delete selection if any.
+    if [catch {%W delete sel.first sel.last}] {
+      tk_entryBackspace %W 
+    }
+    tk_entrySeeCaret %W
+  }
+  bind $entry_name <Control-d> {
+    %W delete sel.first sel.last
+    tk_entrySeeCaret %W
+ }
+  bind $entry_name <Control-u> {%W delete 0 end}
+  bind $entry_name <Control-v> {
+    %W insert insert [selection get]
+
+    tk_entrySeeCaret %W
+  }
+  bind $entry_name <Control-w> {
+    tk_entryBackword %W
+
+    tk_entrySeeCaret %W
+  }
+
+  bind $entry_name <Key-Right> {
+    set c [ expr [%W index insert] + 1]
+    %W icursor $c
+    %W select from $c
+
+    tk_entrySeeCaret %W
+  }
+  bind $entry_name <Key-Left> {
+    set c [ expr [%W index insert] - 1]
+    %W icursor $c
+    %W select from $c
+
+    tk_entrySeeCaret %W
+  }
+
+}
+
+# bind_entry_shared_scrollbar: a special procedure that binds a "reserved" scrollbar
+#	to 'entry_name.
+proc bind_entry_shared_scrollbar {entry_name shared_scrollbar} {
+  global tk_version scroll$entry_name
+
+  set scroll$entry_name $shared_scrollbar
+
+  bind $entry_name <1> {
+    %W icursor @%x
+    %W select clear
+    %W select from @%x
+    if {[lindex [%W config -state] 4] == "normal"} {
+       focus %W
+       if {$tk_version < 4.0} {
+	  if {[lindex [%W configure -scrollcommand] 4] == ""} {
+             %W configure -scrollcommand "${scroll%W} set"
+          }
+          ${scroll%W} configure -command "%W view"
+       } else {
+	  if {[lindex [%W configure -xscrollcommand] 4] == ""} {
+             %W configure -xscrollcommand "${scroll%W} set"
+          }
+          ${scroll%W} configure -command "%W xview"
+       }
+    }
+  }
+}
+
+# bind_text_overselect: creates a set of bindings for a user-friendly text widget.
+# 	This includes features such as overwriting selected text, copying and pasting
+#	text solely using mouse buttons, use of basic editing keys: left, right, up,
+#	and down arrow keys.
+proc bind_text_overselect {text_widget} {
+  global tk_version
+
+  if {$tk_version >= 4.0} {
+    bindtags $text_widget [list $text_widget all Text]
+
+    bind $text_widget <1> {
+      tkTextButton1 %W %x %y
+      break
+    }
+
+bind $text_widget <B1-Motion> {
+      set tkPriv(x) %x
+      set tkPriv(y) %y
+      tkTextSelectTo %W %x %y
+      break
+    }
+
+    bind $text_widget <Double-1> {
+      set tkPriv(selectMode) word
+      tkTextSelectTo %W %x %y
+      catch {%W mark set insert sel.first}
+      break
+    }
+
+    bind $text_widget <Triple-1> {
+      set tkPriv(selectMode) line
+      tkTextSelectTo %W %x %y
+      catch {%W mark set insert sel.first}
+      break
+    }
+
+    bind $text_widget <Shift-1> {
+      tkTextResetAnchor %W @%x,%y
+      set tkPriv(selectMode) char
+      tkTextSelectTo %W %x %y
+      break
+    }
+
+    bind $text_widget <Double-Shift-1>      {
+      set tkPriv(selectMode) word
+      tkTextSelectTo %W %x %y
+      break    
+    }
+
+    bind $text_widget <Triple-Shift-1>      {
+      set tkPriv(selectMode) line
+      tkTextSelectTo %W %x %y
+      break
+    }
+
+    bind $text_widget <B1-Leave> {
+      set tkPriv(x) %x
+      set tkPriv(y) %y
+      tkTextAutoScan %W
+      break
+    }
+
+    bind $text_widget <B1-Enter> {
+      tkCancelRepeat
+      break
+    }
+
+    bind $text_widget <ButtonRelease-1> {
+      tkCancelRepeat
+      break
+    }
+
+    bind $text_widget <2> {
+      %W scan mark %x %y
+      set tkPriv(x) %x
+      set tkPriv(y) %y
+      set tkPriv(mouseMoved) 0
+      break
+    }
+    bind $text_widget <B2-Motion> {
+      if {(%x != $tkPriv(x)) || (%y != $tkPriv(y))} {
+         set tkPriv(mouseMoved) 1
+      }
+      if $tkPriv(mouseMoved) {
+         %W scan dragto %x %y
+      }
+      break
+    }
+    bind $text_widget <ButtonRelease-2> {
+      if !$tkPriv(mouseMoved) {
+         catch {
+            %W insert @%x,%y [selection get -displayof %W]
+         }
+         %W tag remove sel 0.0 end
+      }
+      break
+    }
+    
+    return
+  }
+
+  bind $text_widget <1> {
+    set tk_priv(selectMode) char
+    %W mark set insert @%x,%y
+    %W mark set anchor insert
+    if {[lindex [%W config -state] 4] == "normal"} {focus %W}
+  }
+
+  bind $text_widget <Double-1> {
+    set tk_priv(selectMode) word
+    %W mark set insert "@%x,%y wordstart"
+    tk_textSelectTo %W insert
+  }
+
+  bind $text_widget <Triple-1> {
+    set tk_priv(selectMode) line
+    %W mark set insert "@%x,%y linestart"
+    tk_textSelectTo %W insert
+  }
+
+  bind $text_widget <B1-Motion> {tk_textSelectTo %W @%x,%y}
+
+  bind $text_widget <2> {
+    catch {%W insert insert [selection get]}
+    selection clear %W
+  }
+  bind $text_widget <B2-Motion> {%W scan dragto %y}
+
+  bind $text_widget <Return> {%W insert insert \n; %W yview -pickplace insert}
+  bind $text_widget <BackSpace> {
+      if [catch {%W delete sel.first sel.last}] {
+	tk_textBackspace %W
+	%W yview -pickplace insert
+      }
+  }
+  bind $text_widget <Delete> {
+      if [catch {%W delete sel.first sel.last}] {
+	tk_textBackspace %W
+	%W yview -pickplace insert
+      }
+  }
+  bind $text_widget <Control-d> { catch {%W delete sel.first sel.last}}
+  bind $text_widget <Control-v> {
+    %W insert insert [selection get]
+    %W yview -pickplace insert
+  }
+  bind $text_widget <Control-h> {
+
+      if [catch {%W delete sel.first sel.last}] {
+ 	tk_textBackspace %W
+	%W yview -pickplace insert
+      }
+  }
+  bind $text_widget <Key-Right> {
+    set idx [regexp "(\[0-9]+)\\.(\[0-9]+)" [%W index insert] match l c]
+    incr c
+    %W mark set insert $l.$c
+    %W mark set anchor insert
+    if {[lindex [%W config -state] 4] == "normal"} {focus %W}
+  }
+  bind $text_widget <Key-Left> {
+    set idx [regexp "(\[0-9]+)\\.(\[0-9]+)" [%W index insert] match l c]
+    incr c -1
+    %W mark set insert $l.$c
+    %W mark set anchor insert
+    if {[lindex [%W config -state] 4] == "normal"} {focus %W}
+  }
+  bind $text_widget <Key-Up> {
+    set idx [regexp "(\[0-9]+)\\.(\[0-9]+)" [%W index insert] match l c]
+    incr l -1
+    %W mark set insert $l.$c
+    %W mark set anchor insert
+    if {[lindex [%W config -state] 4] == "normal"} {focus %W}
+  }
+  bind $text_widget <Key-Down> {
+    set idx [regexp "(\[0-9]+)\\.(\[0-9]+)" [%W index insert] match l c]
+    incr l
+    %W mark set insert $l.$c
+    %W mark set anchor insert
+    if {[lindex [%W config -state] 4] == "normal"} {focus %W}
+  }
+
+  bind $text_widget <Any-KeyPress> {
+    catch {%W delete sel.first sel.last}
+    if {"%A" != ""} {
+        %W insert insert %A
+        %W yview -pickplace insert
+    }
+  }
+
+}
+
+# register_spinbox: place an appropriate binding to 'entry_name' so that it 
+# 	behaves like a spinbox entry.
+proc register_spinbox entry {
+  global tk_version vlist.$entry
+
+  if {$tk_version >= 4.0} {
+    bindtags $entry [list all Entry $entry]
+  }
+ 
+  bind $entry <Any-KeyPress> {
+    if {$tk_version < 4.0} {
+      catch {%W delete sel.first sel.last}
+
+      if {[string compare %A ""] != 0} {
+        %W insert insert %A
+        tk_entrySeeCaret %W
+      }
+    }
+    set valueList ${vlist.%W}
+    set sbox_var [%W get]
+    if [regexp "(\[-0-9]+)-(\[-0-9]+)" $valueList match min max] {
+
+	if { $min >= 0 } {
+            if { ![regexp "^(\[0-9]+)$" $sbox_var match] || \
+	         $sbox_var < $min || $sbox_var > $max } {
+	        %W delete 0 end
+	    }
+	} else {
+	    set firstChar [string index $sbox_var 0]
+	    set restOfChar [string range $sbox_var 1 end]
+
+	    if { ![regexp "^(\[-0-9]+)$" $firstChar match] } {
+	        %W delete 0 end
+	    } elseif {[string compare $restOfChar ""] != 0} {
+
+		  if { ![regexp "^(\[0-9]+)$" $restOfChar  match] || \
+			 $sbox_var < $min || $sbox_var > $max } {
+	        	%W delete 0 end
+		  }
+	    }
+        }
+    } elseif { ([lsearch -exact ". ^ $ \[ ] ( ) * + ? |" $sbox_var] != -1 && \
+                [lsearch -exact $valueList $sbox_var] == -1) || \
+                [lsearch -regexp $valueList "^${sbox_var}"] == -1 } {
+       %W delete 0 end
+    }
+  }
+
+  bind $entry <FocusOut> {
+    check_spinbox_value %W
+  }
+}
+proc register_entry_fixsize {entry size} {
+  global tk_version size.$entry
+
+  set size.$entry $size
+
+  if {$tk_version >= 4.0} {
+    bindtags $entry [list all Entry $entry]
+  }
+
+  bind $entry <Any-KeyPress> {
+    set size ${size.%W}
+    set sbox_var [%W get]
+    if {[string length $sbox_var] < $size} {
+      if {$tk_version < 4.0} {
+        catch {%W delete sel.first sel.last}
+
+        if {[string compare %A ""] != 0} {
+          %W insert insert %A
+          tk_entrySeeCaret %W
+        }
+      }
+    } else {
+      if {$tk_version >= 4.0} {
+	 %W delete 0 end
+         %W insert 0 [string range $sbox_var 0 [expr $size - 1]]
+      }
+    }
+  }
+}
+proc bind_depend {mode listbox} {
+
+   global tk_version PBS_JOBS_DETAIL_CMD
+   global queuesListbox jobsListbox hostsListbox \
+   	  HOSTS_LISTBOX_KEY QUEUES_LISTBOX_KEY JOBS_LISTBOX_KEY \
+   	  hostsSelMode queuesSelMode jobsSelMode \
+   	  hostsSelected queuesSelected jobsSelected tk_version mode$listbox
+
+   switch -exact -- $mode {
+     concur {
+	global concurJob
+
+	set mode$listbox concur
+     }
+     after {
+        global afterJob
+
+	set mode$listbox after
+     }
+     before {
+	global beforeJob
+
+	set mode$listbox before
+     }
+   }
+
+   if { $tk_version >= 4.0 } {
+     bindtags $listbox [list all Listbox $listbox]
+   }
+
+    bind $listbox <1> {
+	if { $tk_version < 4.0 } {
+	  %W select from [%W nearest %y]
+	}
+        set ${mode%W}Job [get_keyvals %W {0} "" ":" "select"]
+    }
+
+    bind $listbox <Double-1> {
+	win_cmdExec "" "$PBS_JOBS_DETAIL_CMD [set ${mode%W}Job]"
+    }
+
+    bind $listbox <B1-Motion> {
+        if { $tk_version < 4.0 } {
+	  %W select to [%W nearest %y]
+        }
+        set ${mode%W}Job [get_keyvals %W {0} "" ":" "select"]
+    }
+    bind $listbox <Shift-1> {
+	if {$tk_version < 4.0} {
+	  %W select adjust [%W nearest %y]
+        }
+        set ${mode%W}Job [get_keyvals %W {0} "" ":" "select"]
+
+    }
+    bind $listbox <Shift-B1-Motion> {
+        if { $tk_version < 4.0 } {
+	  %W select to [%W nearest %y]
+        }
+        set ${mode%W}Job [get_keyvals %W {0} "" ":" "select"]
+
+    }
+    bind $listbox <Control-1> {
+	if {$tk_version < 4.0} {
+          set cur_selection [%W curselection]
+          set new_selection [%W nearest %y]
+          listbox_non_contiguous_selection %W $cur_selection $new_selection
+
+          %W yview [lindex [%W curselection] 0]
+	}
+        set ${mode%W}Job [get_keyvals %W {0} "" ":" "select"]
+    }
+}
+# t - toplevel
+# e - name entry
+# lb - listbox
+proc fileselectBindings { e lb } {
+  global fileselect tk_version
+
+   if { $tk_version >= 4.0 } {
+     bindtags $lb [list all Listbox $lb]
+     bindtags $e [list all Entry $e]
+   }
+
+# Entry bindings
+  bind $e <Return> {
+        fileselectList $fileselect(dir)
+  }
+
+# A single click puts the name in the entry
+# A double click or <Return> select the name
+  bind $lb <Button-1> {
+	if { $tk_version < 4.0 } {
+	  %W select from [%W nearest %y]
+	}
+
+        fileselectClick %W %y
+
+        if { [string compare $fileselect(dir) "/"] != 0 && \
+             [file isfile $fileselect(dir)/$fileselect(path)] } {
+                set fileselect(filepath) $fileselect(dir)/$fileselect(path)
+        } elseif { [string compare $fileselect(dir) "/"] == 0 && \
+                   [file isfile /$fileselect(path)] } {
+                set fileselect(filepath) /$fileselect(path)
+        } else {
+                set fileselect(filepath) {}
+        }
+  }
+  bind $lb <Double-Button-1> {
+        busy_cursor
+        fileselectClick %W %y
+        fileselectOK
+        if [file isfile $fileselect(path)] {
+                set fileselect(filepath) $fileselect(path)
+        } else {
+                set fileselect(filepath) {}
+        }
+        remove_busy_cursor
+  }
+
+}
+
+proc bind_button1 win {
+	global coordX coordY
+
+	bind $win <1> {
+		set coordX %X
+		set coordY %Y
+	}
+}
+
+proc bind_listbox_select {listbox boxframe} {
+
+   global tk_version box$listbox
+
+   set box$listbox $boxframe
+
+   if { $tk_version >= 4.0 } {
+     bindtags $listbox [list all Listbox $listbox]
+   }
+
+    bind $listbox <1> {
+        if { $tk_version < 4.0 } {
+          %W select from [%W nearest %y]
+          boxSelect ${box%W} [%W index @%x,%y]
+        }
+        boxSelect ${box%W} [%W index @%x,%y]
+    }
+}

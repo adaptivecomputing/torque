@@ -1,0 +1,9 @@
+
+This code is eventually compiled into the libpbs.a library.
+All actual compilation occurs in ../Libpbs
+Originally the libpbs.a file would end up in the directory above
+this, since it archived object files from both the Libdis and Libifl
+directories. Currently, all objects and compilation occur in Libpbs
+and the libpbs.a is left there.
+
+

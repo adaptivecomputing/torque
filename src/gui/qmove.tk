@@ -1,0 +1,174 @@
+#         OpenPBS (Portable Batch System) v2.3 Software License
+# 
+# Copyright (c) 1999-2000 Veridian Information Solutions, Inc.
+# All rights reserved.
+# 
+# ---------------------------------------------------------------------------
+# For a license to use or redistribute the OpenPBS software under conditions
+# other than those described below, or to purchase support for this software,
+# please contact Veridian Systems, PBS Products Department ("Licensor") at:
+# 
+#    www.OpenPBS.org  +1 650 967-4675                  sales@OpenPBS.org
+#                        877 902-4PBS (US toll-free)
+# ---------------------------------------------------------------------------
+# 
+# This license covers use of the OpenPBS v2.3 software (the "Software") at
+# your site or location, and, for certain users, redistribution of the
+# Software to other sites and locations.  Use and redistribution of
+# OpenPBS v2.3 in source and binary forms, with or without modification,
+# are permitted provided that all of the following conditions are met.
+# After December 31, 2001, only conditions 3-6 must be met:
+# 
+# 1. Commercial and/or non-commercial use of the Software is permitted
+#    provided a current software registration is on file at www.OpenPBS.org.
+#    If use of this software contributes to a publication, product, or
+#    service, proper attribution must be given; see www.OpenPBS.org/credit.html
+# 
+# 2. Redistribution in any form is only permitted for non-commercial,
+#    non-profit purposes.  There can be no charge for the Software or any
+#    software incorporating the Software.  Further, there can be no
+#    expectation of revenue generated as a consequence of redistributing
+#    the Software.
+# 
+# 3. Any Redistribution of source code must retain the above copyright notice
+#    and the acknowledgment contained in paragraph 6, this list of conditions
+#    and the disclaimer contained in paragraph 7.
+# 
+# 4. Any Redistribution in binary form must reproduce the above copyright
+#    notice and the acknowledgment contained in paragraph 6, this list of
+#    conditions and the disclaimer contained in paragraph 7 in the
+#    documentation and/or other materials provided with the distribution.
+# 
+# 5. Redistributions in any form must be accompanied by information on how to
+#    obtain complete source code for the OpenPBS software and any
+#    modifications and/or additions to the OpenPBS software.  The source code
+#    must either be included in the distribution or be available for no more
+#    than the cost of distribution plus a nominal fee, and all modifications
+#    and additions to the Software must be freely redistributable by any party
+#    (including Licensor) without restriction.
+# 
+# 6. All advertising materials mentioning features or use of the Software must
+#    display the following acknowledgment:
+# 
+#     "This product includes software developed by NASA Ames Research Center,
+#     Lawrence Livermore National Laboratory, and Veridian Information
+#     Solutions, Inc.
+#     Visit www.OpenPBS.org for OpenPBS software support,
+#     products, and information."
+# 
+# 7. DISCLAIMER OF WARRANTY
+# 
+# THIS SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND. ANY EXPRESS
+# OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+# OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT
+# ARE EXPRESSLY DISCLAIMED.
+# 
+# IN NO EVENT SHALL VERIDIAN CORPORATION, ITS AFFILIATED COMPANIES, OR THE
+# U.S. GOVERNMENT OR ANY OF ITS AGENCIES BE LIABLE FOR ANY DIRECT OR INDIRECT,
+# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
+# OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+# LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+# NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+# EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# 
+# This license will be governed by the laws of the Commonwealth of Virginia,
+# without reference to its choice of law rules.
+################################################################################
+# qmove: defines the layout and functions of the move job dialog box.
+proc qmove {} {
+  global jobsSelected LABELFONT qlbox activeWindow tk_version
+  global SERVER_HOSTS cmdpath qmoveDialogBox queuesListbox QUEUES_LISTBOX_KEY
+
+  busy_cursor
+## Bring up the standard Dialog box ##
+  set qmoveDialogBox ".move"
+  set dbox [popupDialogBox $qmoveDialogBox "Move Job Dialog"]
+  set activeWindow($qmoveDialogBox) 1
+  set dbox_top    [lindex $dbox 0]
+  set dbox_bottom [lindex $dbox 1]
+
+## BOTTOM PART ##
+  set cmdButtons \
+  [buildCmdButtons $dbox_bottom {{{move move} {cancel cancel} {help help}}} x 10m 10 3]
+
+  set cmdFrame  [lindex $cmdButtons 0]
+  set cmdMove [lindex $cmdButtons 1]
+  set cmdCancel [lindex $cmdButtons 2]
+  set cmdHelp [lindex $cmdButtons 3]
+ 
+  $cmdMove configure -command {
+
+    set exitcode \
+	[win_cmdExec $qmoveDialogBox \
+	 "$cmdpath(QMOVE) [$qlbox get [$qlbox curselection]] $jobsSelected"]
+
+    if {$exitcode == 0} {
+      after 500 [list getdata $SERVER_HOSTS 1]
+      destroy $qmoveDialogBox
+    }
+  }
+  $cmdCancel configure -command [list destroy $qmoveDialogBox]
+
+  $cmdHelp configure -command {xpbs_help move $qmoveDialogBox}
+
+## TOP PART ##
+  frame $dbox_top.header -height 10m -width 10m
+  frame $dbox_top.footer -height 10m -width 10m
+
+  frame $dbox_top.e
+  frame $dbox_top.dest
+  frame $dbox_top.empty -width 10m
+
+  set jobidbox [buildFullListbox $dbox_top.e 55x3 "" xyscroll 0]
+  set jobidFrame [lindex $jobidbox 0]
+  set jobidField [lindex $jobidbox 3]
+  bind_text_readonly $jobidField
+
+  foreach el $jobsSelected {
+    $jobidField insert end $el
+  }
+
+
+  set listBoxInfo [buildFullListbox $dbox_top.dest 30x3 \
+                  "" yscroll 0]
+  set queuesListframe [lindex $listBoxInfo 0]  
+  set qlbox [lindex $listBoxInfo 3]
+  bind_listbox_single_select $qlbox
+
+  set qlist [get_keyvals $queuesListbox $QUEUES_LISTBOX_KEY @ " "]
+
+  foreach qitems $qlist {
+    $qlbox insert end $qitems
+  }
+  if {[$qlbox size] > 0} {
+    if {$tk_version < 4.0} {	
+      $qlbox select from 0
+    } else {
+      $qlbox select anchor 0
+      $qlbox select set anchor 0
+    }		
+  }
+
+  label $dbox_top.lboxLabel -text "to queue (select one):" -font $LABELFONT
+  label $dbox_top.lboxLabel2 -text "Move job(s):" -font $LABELFONT
+
+## ARRANGEMENT ON SCREEN
+  pack forget $jobidFrame
+
+  pack  $dbox_top.e 
+  pack  $dbox_top.dest
+  pack $dbox_top.header -side top
+  pack $dbox_top.lboxLabel2 $jobidFrame -after $dbox_top.header -side top \
+	-anchor nw -padx 10m
+  pack $dbox_top.empty $dbox_top.lboxLabel $queuesListframe \
+       -after $jobidFrame -side left -anchor nw -pady 2m
+  pack $dbox_top.footer -after $dbox_top.lboxLabel -side bottom
+
+
+  register_default_action $qmoveDialogBox $cmdCancel
+  tkwait visibility $qmoveDialogBox
+  remove_busy_cursor
+  catch {tkwait window $qmoveDialogBox}
+  set activeWindow($qmoveDialogBox) 0
+}

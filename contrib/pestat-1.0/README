@@ -1,0 +1,103 @@
+
+pestat - a tool to monitor resources on all PBS nodes
+-----------------------------------------------------
+
+The pestat code contacts every node served by the given
+PBS server and retrieves resource information such as
+CPU load and memory usage (any resource information can be 
+programmed into the code, if you need it). 
+A single summary line is printed for each node.
+
+The latest version of this code is available from
+ftp://ftp.fysik.dtu.dk/pub/PBS/
+
+The code has been tested on the following architectures:
+ o Linux (the default)
+ o Compaq Tru64 UNIX 4.0F 
+
+Example output (from Linux):
+
+# pestat
+  node state  load    pmem ncpu   mem   resi usrs jobs   jobids
+   p01  free  0.15     511   1      0      0  6/3    0
+   p02  free  0.00     511   1      0      0  0/0    0
+   p03  free  0.00     511   1      0      0  0/0    0
+   p04  free  0.00     511   1      0      0  0/0    0
+   p05  free  0.00     511   1      0      0  0/0    0
+   p06  free  0.00     511   1      0      0  0/0    0
+   p07  excl  0.73     511   1      0      0  1/1    1   219
+   p08  excl  0.94     511   1      0      0  1/1    1   217
+   p09  excl  0.99     511   1      0      0  1/1    1   217
+   p10  excl  0.99     511   1      0      0  1/1    1   217   
+
+Example output (from Tru64 UNIX):
+
+# pestat
+  node state  load    pmem ncpu frmem ubcmem usrs jobs   jobids
+  asrv  free  1.24*    640   1    274     62  5/4    0
+  acmp  free  0.00    1536   1   1139     75  9/9    0
+   a01  excl  0.00*    512   1    311     24  1/1    1   14371
+   a02  excl  0.01*    512   1    314     24  1/1    1   14371
+   a03  excl  1.00     512   1    323     24  1/1    1   14263
+   a04  excl  0.97     512   1     97     24  1/1    1   14298
+   a05  excl  1.00     512   1    309     24  1/1    1   14371
+   a06  excl  0.60     512   1    361     17  1/1    1   14582
+   a07  excl  0.56     512   1    355     18  1/1    1   14582
+   a08  excl  1.00     512   1    143     24  1/1    1   14598
+   a09  free  0.00     512   1    438     14  0/0    0             
+
+Some nodes have an asterisk (*) next to the "load" column.
+This indicates a node whose load is "unexpected", i.e., a
+free node with a high load or a busy node with low load.
+The "acceptable" load-range for a busy node has arbitrarily
+been taken as 0.5-1.5, but this can of course be changed in
+the code (look for the loadave variable).
+
+Installation
+------------
+
+Edit the Makefile:  Change PBSHOME to point to your PBS
+source directory, since pestat.c needs several header files
+from the PBS source distribution.
+
+Look at the supported architectures and uncomment the relevant lines. 
+Check that the include and lib paths point to the correct
+directory.
+
+Type "make" to generate the executable "pestat".  Run pestat
+to verify the correct operation.  Copy pestat to a directory
+in your PATH, such as /usr/local/bin.
+
+Linux notes:
+------------
+
+The OpenPBS 2.3 RPM-package installs include and lib files
+in the directory /usr/pbs.  You will also need to unpack
+the source distribution, since pestat.c needs several header files
+from the PBS distribution. 
+
+Compaq Tru64 UNIX notes:
+------------------------
+
+The Makefile assumes that you have copied the relevant PBS files
+to /usr/local/include and /usr/local/lib, so edit this if 
+necessary.  One snag is that you can't link with "-lnet"
+because that would incorrectly pick up /usr/shlib/libnet.so.
+
+The pestat.c code has some "#ifdef TRU64" sections that assume
+that the resources named "freemem" and "ubcmem" are available.
+The latter refers to the Tru64 UBC (Unified Buffer Cache)
+memory reservation.  These resources requires that you have
+compiled PBS with the MOM-patches written by Mohan <mkannapa@ford.com>.
+These patches should become available on http://www.mcs.anl.gov/openpbs/.
+
+Author:
+-------
+
+Originally written by David.Singleton@anu.edu.au
+(ANU Supercomputer Facility, Australian National University).
+
+Questions: Ole Holm Nielsen, Ole.H.Nielsen@fysik.dtu.dk
+(Technical University of Denmark).
+
+Please send bug reports, support for other architectures, etc. to Ole.
