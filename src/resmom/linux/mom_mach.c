@@ -2667,7 +2667,7 @@ static char *totmem(
     }
 
   sprintf(ret_string,"%lukb", 
-    (ulong)(mm->mem_total + mm->swap_total) >> 10); /* KB */
+    (ulong)((mm->mem_total >> 10) + (mm->swap_total >> 10))); /* KB */
 
   return(ret_string);
   }  /* END totmem() */
@@ -2684,7 +2684,7 @@ static char *availmem(
   char *id = "availmem";
   proc_mem_t *mm;
 
-  if (attrib) 
+  if (attrib != NULL) 
     {
     log_err(-1,id,extra_parm);
 
@@ -2712,7 +2712,7 @@ static char *availmem(
     }
 
   sprintf(ret_string,"%lukb",
-    (mm->mem_free + mm->swap_free) >> 10); /* KB */
+    (ulong)((mm->mem_free >> 10) + (mm->swap_free >> 10))); /* KB */
 
   return(ret_string);
   }  /* END availmem() */

@@ -123,6 +123,9 @@ enum srv_atr {
 	SRV_ATR_Comment,
 	SRV_ATR_DefNode,
 	SRV_ATR_NodePack,
+        SRV_ATR_JobStatRate,
+	SRV_ATR_PollJobs,
+        SRV_ATR_LogLevel,
 #include "site_svr_attr_enum.h"
 	SRV_ATR_version,
 	/* This must be last */
@@ -183,3 +186,21 @@ extern struct server server;
 
 extern int  svr_recov A_((char *));
 extern int  svr_save A_((struct server *, int mode));
+
+
+/*
+** Macros for fast min/max.
+*/
+#ifndef MIN
+#define MIN(a,b) (((a)<(b))?(a):(b))
+#endif /* END MIN */
+
+#ifndef MAX
+#define MAX(a,b) (((a)>(b))?(a):(b))                                              
+#endif /* END MAX */
+
+#ifndef JobStatRate
+#define JobStatRate MAX(PBS_JOBSTAT_MIN,server.sv_attr[(int)SRV_ATR_JobStatRate].at_val.at_long)
+#endif
+
+/* END server.h */

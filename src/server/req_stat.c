@@ -139,12 +139,14 @@ static void stat_update A_((struct work_task *));
  * req_stat_job - service the Status Job Request 
  *
  *	This request processes the request for status of a single job or
- *	the set of jobs at a destination.  This takes three steps because
- *	of running jobs being known to MOM:
- *	1. validate and setup the request (done here).
- *	2. for each canidate job which is running and for which there is no
- *	   current status, ask MOM for an update.
- *	3. form the reply for each candidate job and return it to the client.
+ *	the set of jobs at a destination.  
+ *	If SRV_ATR_PollJobs is not set or false (default), this takes three
+ *	steps because of running jobs being known to MOM:
+ *	  1. validate and setup the request (done here).
+ *	  2. for each candidate job which is running and for which there is no
+ *	     current status, ask MOM for an update.
+ *	  3. form the reply for each candidate job and return it to the client.
+ *      If SRV_ATR_PollJobs is true, then we skip step 2.
  */
 
 void req_stat_job(
@@ -154,8 +156,8 @@ void req_stat_job(
   {
   struct stat_cntl *cntl;	/* see svrfunc.h		*/
   char		   *name;
-  job		   *pjob = (job *)0;
-  pbs_queue	   *pque = (pbs_queue *)0;
+  job		   *pjob = NULL;
+  pbs_queue	   *pque = NULL;
   int		    rc = 0;
   int		    type = 0;
 
@@ -206,9 +208,9 @@ void req_stat_job(
 
   CLEAR_HEAD(preq->rq_reply.brp_un.brp_status);
 
-  cntl = (struct stat_cntl *)malloc(sizeof (struct stat_cntl));
+  cntl = (struct stat_cntl *)malloc(sizeof(struct stat_cntl));
 
-  if (!cntl) 
+  if (cntl == NULL) 
     {
     req_reject(PBSE_SYSTEM,0,preq,NULL,NULL);
 
@@ -221,6 +223,9 @@ void req_stat_job(
   cntl->sc_origrq = preq;
   cntl->sc_post   = req_stat_job_step2;
   cntl->sc_jobid[0] = '\0';	/* cause "start from beginning" */
+
+  if (server.sv_attr[(int)SRV_ATR_PollJobs].at_val.at_long)
+    cntl->sc_post = 0; /* we're not going to make clients wait */
 
   req_stat_job_step2(cntl); /* go to step 2, see if running is current */
 
@@ -257,78 +262,83 @@ static void req_stat_job_step2(
   type = cntl->sc_type;
   preply = &preq->rq_reply;
 
-  if (cntl->sc_jobid[0] == '\0')
-    pjob = NULL;
-  else
-    pjob = find_job(cntl->sc_jobid);
+  /* See pbs_server_attributes(1B) for details on "poll_jobs" behaviour */
 
-  while (1) 
+  if (!server.sv_attr[(int)SRV_ATR_PollJobs].at_val.at_long)
     {
-    if (pjob == NULL) 
-      { 	
-      /* start from the first job */
+    if (cntl->sc_jobid[0] == '\0')
+      pjob = NULL;
+    else
+      pjob = find_job(cntl->sc_jobid);
 
-      if (type == 1)
-        pjob = find_job(preq->rq_ind.rq_status.rq_id);
-      else if (type == 2) 
-        pjob = (job *)GET_NEXT(cntl->sc_pque->qu_jobs);	
-      else
-        pjob = (job *)GET_NEXT(svr_alljobs);
-      } 
-    else 
-      {			
-      /* get next job */
-
-      if (type == 1)
-        break;
-
-      if (type == 2)
-        pjob = (job *)GET_NEXT(pjob->ji_jobque);
-      else
-        pjob = (job *)GET_NEXT(pjob->ji_alljobs);
-      }
-
-    if (pjob == NULL)
-      break;
-
-    /* PBS_RESTAT_JOB defaults to 30 seconds */
-
-    if ((pjob->ji_qs.ji_substate == JOB_SUBSTATE_RUNNING) &&
-       ((time_now - pjob->ji_momstat) > (PBS_RESTAT_JOB << 4))) 
+    while (1) 
       {
-      /* go to MOM for status */
+      if (pjob == NULL) 
+        { 	
+        /* start from the first job */
 
-      strcpy(cntl->sc_jobid,pjob->ji_qs.ji_jobid);
+        if (type == 1)
+          pjob = find_job(preq->rq_ind.rq_status.rq_id);
+        else if (type == 2) 
+          pjob = (job *)GET_NEXT(cntl->sc_pque->qu_jobs);	
+        else
+          pjob = (job *)GET_NEXT(svr_alljobs);
+        } 
+      else 
+        {			
+        /* get next job */
 
-      if ((rc = stat_to_mom(pjob,cntl)) == PBSE_SYSTEM) 
-        {
+        if (type == 1)
+          break;
+
+        if (type == 2)
+          pjob = (job *)GET_NEXT(pjob->ji_jobque);
+        else
+          pjob = (job *)GET_NEXT(pjob->ji_alljobs);
+        }
+
+      if (pjob == NULL)
         break;
-        } 
 
-      if (rc != 0) 
+      /* PBS_RESTAT_JOB defaults to 30 seconds */
+
+      if ((pjob->ji_qs.ji_substate == JOB_SUBSTATE_RUNNING) &&
+         ((time_now - pjob->ji_momstat) > JobStatRate)) 
         {
-        rc = 0;
+        /* go to MOM for status */
 
-        continue;
-        } 
+        strcpy(cntl->sc_jobid,pjob->ji_qs.ji_jobid);
 
-      return;	/* will pick up after mom replies */
+        if ((rc = stat_to_mom(pjob,cntl)) == PBSE_SYSTEM) 
+          {
+          break;
+          } 
+
+        if (rc != 0) 
+          {
+          rc = 0;
+
+          continue;
+          } 
+
+        return;	/* will pick up after mom replies */
+        }
+      }    /* END while(1) */
+
+    if (cntl->sc_conn >= 0)
+      svr_disconnect(cntl->sc_conn); 	/* close connection to MOM */
+
+    if (rc) 
+      {
+      free(cntl);
+
+      reply_free(preply);
+
+      req_reject(rc,0,preq,NULL,NULL);
+
+      return;
       }
-    }    /* END while(1) */
-
-  if (cntl->sc_conn >= 0)
-    svr_disconnect(cntl->sc_conn); 	/* close connection to MOM */
-
-  if (rc) 
-    {
-    free(cntl);
-
-    reply_free(preply);
-
-    req_reject(rc,0,preq,NULL,NULL);
-
-    return;
-    }
+    }    /* END if (!server.sv_attr[(int)SRV_ATR_PollJobs].at_val.at_long) */
 
   /*
    * now ready for part 3, building the status reply,
@@ -556,7 +566,7 @@ void stat_mom_job(
 
   cntl = (struct stat_cntl *)malloc(sizeof(struct stat_cntl));
 
-  if (!cntl)
+  if (cntl == NULL)
     {
     return;
     }
@@ -578,6 +588,28 @@ void stat_mom_job(
   return;
   }  /* END stat_mom_job() */
 
+
+
+
+void poll_job_task( 
+
+  struct work_task *ptask) 
+
+  {
+
+  job *pjob;
+  long when;
+
+  pjob = (job *)ptask->wt_parm1;
+
+  if (server.sv_attr[(int)SRV_ATR_PollJobs].at_val.at_long && 
+      pjob->ji_qs.ji_state == JOB_STATE_RUNNING)
+    {
+    stat_mom_job(pjob);
+    }
+
+  return;
+  }  /* END poll_job_task() */
 
 
 

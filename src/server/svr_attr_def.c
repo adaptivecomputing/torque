@@ -524,6 +524,45 @@ attribute_def svr_attr_def[] = {
 	PARENT_TYPE_SERVER
     },
 
+/* SRV_ATR_JobStatRate */
+    {	ATTR_jobstatrate,	/* "job_stat_rate" */
+	decode_l,
+	encode_l,
+	set_l,
+	comp_l,
+	free_null,
+	NULL_FUNC,
+	MGR_ONLY_SET,
+	ATR_TYPE_LONG,
+	PARENT_TYPE_SERVER
+    },
+
+/* SRV_ATR_PollJobs */
+    {	ATTR_polljobs,		/* "poll_jobs" */
+	decode_b,
+	encode_b,
+	set_b,
+	comp_b,
+	free_null,
+	NULL_FUNC,
+	MGR_ONLY_SET,
+	ATR_TYPE_LONG,
+	PARENT_TYPE_SERVER
+    },
+
+/* SRV_ATR_LogLevel */
+    {   ATTR_loglevel,          /* "loglevel" */
+        decode_b,
+        encode_b,
+        set_b,
+        comp_b,
+        free_null,
+        NULL_FUNC,
+        MGR_ONLY_SET,
+        ATR_TYPE_LONG,
+        PARENT_TYPE_SERVER
+    },
+
 /* site supplied server attribute definitions if any, see site_svr_attr_*.h  */
 #include "site_svr_attr_def.h"
 

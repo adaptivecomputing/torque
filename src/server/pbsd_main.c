@@ -129,6 +129,7 @@ extern int  pbsd_init A_((int));
 extern void shutdown_ack ();
 extern void update_nodes_file A_((void));
 extern void tcp_settimeout(long);
+extern void poll_job_task(struct work_task *);
 
 /* external data items */
 extern	int	svr_chngNodesfile;
@@ -395,6 +396,9 @@ int main(
   pid_t	 sid;
   long  *state;
   time_t waittime;
+  time_t last_jobstat_time;
+  int when;
+
   void	 ping_nodes A_((struct work_task *ptask));
   void   check_nodes A_((struct work_task *ptask));
 
@@ -432,6 +436,8 @@ int main(
   umask(022);
 
   time_now = time((time_t *)0);
+
+  last_jobstat_time = time_now;
 
   /* find out who we are (hostname) */
 
@@ -813,7 +819,7 @@ int main(
 
   /* record the fact that we are up and running */
 
-  sprintf(log_buffer,msg_startup2,sid);
+  sprintf(log_buffer,msg_startup2,sid,LOGLEVEL);
 
   log_event(
     PBSEVENT_SYSTEM | PBSEVENT_FORCE, 
@@ -845,7 +851,10 @@ int main(
     {
     /* first process any task whose time delay has expired */
 
-    waittime = next_task();
+    if (server.sv_attr[(int)SRV_ATR_PollJobs].at_val.at_long)
+      waittime = MIN(next_task(),JobStatRate - (time_now - last_jobstat_time));
+    else
+      waittime = next_task();
 
     if (*state == SV_STATE_RUN) 
       {	
@@ -905,7 +914,31 @@ int main(
 
     if (wait_request(waittime) != 0) 
       {
-      log_err(-1, msg_daemonname, "wait_requst failed");
+      log_err(-1,msg_daemonname,"wait_request failed");
+      }
+
+    /* update dynamic loglevel specification */
+
+    LOGLEVEL = server.sv_attr[(int)SRV_ATR_LogLevel].at_val.at_long;
+
+    /* any running jobs need a status update? */ 
+
+    if (server.sv_attr[(int)SRV_ATR_PollJobs].at_val.at_long && 
+       (last_jobstat_time + JobStatRate <= time_now))
+      {
+      for (pjob = (job *)GET_NEXT(svr_alljobs);pjob;pjob = (job *)GET_NEXT(pjob->ji_alljobs)) 
+        {
+        if (pjob->ji_qs.ji_substate == JOB_SUBSTATE_RUNNING)
+          {
+          /* spread these out over the next JobStatRate seconds */
+
+          when = pjob->ji_wattr[(int)JOB_ATR_qrank].at_val.at_long % JobStatRate;
+    
+          set_task(WORK_Timed,when+time_now,poll_job_task,pjob);
+          }
+        }
+
+      last_jobstat_time = time_now;
       }
 
     if (*state == SV_STATE_SHUTSIG) 

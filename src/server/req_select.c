@@ -111,6 +111,7 @@ extern int   status_job A_((job *, struct batch_request *, svrattrl *, list_head
 
 /* Global Data Items  */
 
+extern struct server server;
 extern int	 resc_access_perm;
 extern list_head svr_alljobs;
 extern time_t	 time_now;
@@ -217,51 +218,72 @@ static attribute_def state_sel = {
  *		1. Determine if any job that qualifies is running and has
  *		   stale data from MOM.   If so get new from MOM.
  *		2. Build the status reply for any job that qualifies.
+ *	
+ *	And just like regular status requests, if poll_job is enabled,
+ *	we skip over sending update requests to MOM.
  */
 
-void req_selectjobs(preq)
-	struct batch_request *preq;
-{
-	int		    bad = 0;
-	struct stat_cntl   *cntl;
-	svrattrl	   *plist;
-	pbs_queue	   *pque;
-	int		    rc;
-	struct select_list *selistp;
+void req_selectjobs(
 
-	plist = (svrattrl *)GET_NEXT(preq->rq_ind.rq_select);
+  struct batch_request *preq)
 
-	rc = build_selist(plist, preq->rq_perm, &selistp, &pque, &bad);
+  {
+  int		    bad = 0;
+  struct stat_cntl *cntl;
+  svrattrl	   *plist;
+  pbs_queue	   *pque;
+  int		    rc;
+  struct select_list *selistp;
 
-	if (rc != 0) {
-		reply_badattr(rc, bad, plist, preq);
-		free_sellist(selistp);
-		return;
-	}
+  plist = (svrattrl *)GET_NEXT(preq->rq_ind.rq_select);
 
-	if ((cntl=(struct stat_cntl *)malloc(sizeof (struct stat_cntl))) == 0) {
-		free_sellist(selistp);
-		req_reject(PBSE_SYSTEM, 0, preq,NULL,NULL);
-		return;
-	}
-	if (pque)
-		cntl->sc_type = 2;     /* 2: all jobs in a queue, see sc_pque */
-	else
-		cntl->sc_type = 3;     /* 3: all jobs in the server */
-	cntl->sc_conn = -1;	       /* no connection (yet) to mom */
-	cntl->sc_pque = pque;	       /* queue or null */
-	cntl->sc_origrq = preq;	       /* the original request */
-	cntl->sc_jobid[0] = '\0';      /* null job id, start from the top */
-	cntl->sc_select = selistp;     /* the select list */
+  rc = build_selist(plist,preq->rq_perm,&selistp,&pque,&bad);
 
-	if (preq->rq_type == PBS_BATCH_SelectJobs) {
-		sel_step3(cntl);
-	} else {
-		cntl->sc_post   = sel_step2;
-		sel_step2(cntl);
-	}
-	return;
-}
+  if (rc != 0) 
+    {
+    reply_badattr(rc,bad,plist,preq);
+
+    free_sellist(selistp);
+
+    return;
+    }
+
+  if ((cntl = (struct stat_cntl *)malloc(sizeof(struct stat_cntl))) == NULL) 
+    {
+    free_sellist(selistp);
+
+    req_reject(PBSE_SYSTEM,0,preq,NULL,NULL);
+
+    return;
+    }
+
+  if (pque != NULL)
+    cntl->sc_type = 2;     /* 2: all jobs in a queue, see sc_pque */
+  else
+    cntl->sc_type = 3;     /* 3: all jobs in the server */
+
+  cntl->sc_conn = -1;	      /* no connection (yet) to mom */
+  cntl->sc_pque = pque;	      /* queue or null */
+  cntl->sc_origrq = preq;     /* the original request */
+  cntl->sc_jobid[0] = '\0';   /* null job id, start from the top */
+  cntl->sc_select = selistp;  /* the select list */
+
+  if (preq->rq_type == PBS_BATCH_SelectJobs) 
+    {
+    sel_step3(cntl);
+    } 
+  else if (server.sv_attr[(int)SRV_ATR_PollJobs].at_val.at_long) 
+    {
+    sel_step3(cntl);
+    }
+  else 
+    {
+    cntl->sc_post   = sel_step2;
+    sel_step2(cntl);
+    }
+
+  return;
+  }  /* END req_selectjobs() */
 
 
 
@@ -317,7 +339,7 @@ static void sel_step2(
       if (select_job(pjob,cntl->sc_select)) 
         {
         if ((pjob->ji_qs.ji_substate == JOB_SUBSTATE_RUNNING) &&
-           ((time_now - pjob->ji_momstat) > PBS_RESTAT_JOB)) 
+           ((time_now - pjob->ji_momstat) > JobStatRate)) 
           {
           /* need to ask MOM for new status */
 

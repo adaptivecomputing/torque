@@ -1,7 +1,11 @@
 pre 1.2.0p2
 
+  modified reporting of linux availmem and totmem to allow larger file sizes
+  fixed pbs_demux for OSF/TRU64 systems to stop orphaned demux processes
+  added dynamic pbs_server loglevel specification
+  added intelligent mom job stat sync'ing for improved scalability (USC/CRI) 
   added mom state sync patch for dup join (USC)
-  add spool dir space check (MAINE)
+  added spool dir space check (MAINE)
 
 1.2.0p1
 

@@ -138,6 +138,7 @@
 #include	"dis_init.h"
 #include	"resmon.h"
 #include        "pbs_version.h"
+#include        "pbs_nodes.h"
 
 #include        "mcom.h"
 
@@ -621,6 +622,25 @@ static char *reqgres(
 
 
 
+static char *reqstate(
+
+  struct rm_attribute *attrib)  /* I (ignored) */
+
+  {
+  char *id = "reqstate";
+
+  static char state[1024];
+
+  if (internal_state & INUSE_BUSY)
+    strcpy(state,"busy");
+  else
+    strcpy(state,"free");
+
+  return(state);
+  }  /* END reqstate() */
+
+
+
 
 static char *requname(
 
@@ -632,7 +652,6 @@ static char *requname(
 
   if (attrib != NULL) 
     {
-
     log_err(-1,id,extra_parm);
 
     rm_errno = RM_ERR_BADPARAM;
@@ -719,6 +738,7 @@ struct	config	common_config[] = {
   { "validuser", {validuser} },
   { "message",   {reqmsg} },
   { "gres",      {reqgres} },
+  { "state",     {reqstate} },
   { NULL,        {nullproc} },
  };
 
@@ -2458,6 +2478,7 @@ int is_update_stat(
     "gres",
     "netload",
     "size",
+    "state",
     NULL };
 
   char   cp[1024];

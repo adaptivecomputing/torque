@@ -192,7 +192,7 @@ void readit(
 	
 int main(
 
-  int argc, 
+  int   argc, 
   char *argv[])
 
   {
@@ -230,20 +230,20 @@ int main(
 
   maxfd = sysconf(_SC_OPEN_MAX);
 
-  routem = (struct routem *)malloc(maxfd*sizeof(struct routem));
+  routem = (struct routem *)malloc(maxfd * sizeof(struct routem));
 
   for (i = 0;i < maxfd;++i) 
     {
-    (routem+i)->r_where = invalid;
-    (routem+i)->r_nl    = 1;
+    (routem + i)->r_where = invalid;
+    (routem + i)->r_nl    = 1;
     }
 
-  (routem+main_sock_out)->r_where = new_out;
-  (routem+main_sock_err)->r_where = new_err;
+  (routem + main_sock_out)->r_where = new_out;
+  (routem + main_sock_err)->r_where = new_err;
 	
   FD_ZERO(&readset);
-  FD_SET(main_sock_out, &readset);
-  FD_SET(main_sock_err, &readset);
+  FD_SET(main_sock_out,&readset);
+  FD_SET(main_sock_err,&readset);
 
   if (listen(main_sock_out,5) < 0) 
     {
@@ -269,43 +269,82 @@ int main(
 
     if (n == -1) 
       {
-		if (errno == EINTR) {
-			n = 0;
-		} else {
-			fprintf(stderr,"%s: select failed\n", argv[0]);
-			exit(1);
-		}
-	    } else if (n == 0) {
-		if (getppid() == 1) {
-#ifdef DEBUG
-			fprintf(stderr, "%s: Parent has gone, and so do I\n",
-				argv[0]);
-#endif	/* DEBUG */
-			break;
-		}
-	    }
+      if (errno == EINTR) 
+        {
+        n = 0;
+        } 
+      else 
+        {
+        fprintf(stderr,"%s: select failed\n", 
+          argv[0]);
 
-	    for (i=0; n && i<maxfd; ++i) {
-		if (FD_ISSET(i, &selset)) {     /* this socket has data */
-		    n--;
-		    switch ((routem+i)->r_where) {
-			case new_out:
-			case new_err:
-				newsock = accept(i, 0, 0);
-				(routem+newsock)->r_where =  (routem+i)->r_where== new_out ? old_out : old_err;
-				FD_SET(newsock, &readset);
-				break;
-			case old_out:
-			case old_err:
-				readit(i, routem+i);
-				break;
-			default:
-				fprintf(stderr, "%s: internal error\n",argv[0]);
-				exit(2);
+        exit(1);
+        }
+      } 
+    else if (n == 0) 
+      {
+      /* NOTE:  on TRU64, init process does not have pid==1 */
+
+#ifdef __TDIGITAL
+      if (getppid() != parent) 
+#else /* __TDIGITAL */
+      if (getppid() == 1)
+#endif /* __TDIGITAL */
+        {
+#ifdef DEBUG
+        fprintf(stderr,"%s: Parent has gone, and so do I\n",
+          argv[0]);
+#endif	/* DEBUG */
+
+        break;
+        }
+      }    /* END else if (n == 0) */
+
+    for (i = 0;(n != 0) && (i < maxfd);++i) 
+      {
+      if (FD_ISSET(i,&selset)) 
+        {     /* this socket has data */
+        n--;
+
+        switch ((routem + i)->r_where) 
+          {
+          case new_out:
+          case new_err:
+
+            newsock = accept(i,0,0);
+
+            (routem + newsock)->r_where = (routem + i)->r_where == new_out ? 
+              old_out : 
+              old_err;
+
+            FD_SET(newsock,&readset);
+
+            break;
+
+          case old_out:
+          case old_err:
+
+            readit(i,routem + i);
+
+            break;
+
+          default:
+
+            fprintf(stderr,"%s: internal error\n",
+              argv[0]);
+
+            exit(2);
+
+            /*NOTREACHED*/
+
+            break;
           }
         }
       }
-    }
+    }    /* END while(1) */
 
   return(0);
   }  /* END main() */
+
+/* END pbs_demux.c */
+

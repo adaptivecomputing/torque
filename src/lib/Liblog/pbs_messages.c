@@ -160,7 +160,7 @@ char *msg_script_write	= "Unable to write script file";
 char *msg_shutdown_op	= "Shutdown request from %s@%s ";
 char *msg_shutdown_start = "Starting to shutdown the server, type is ";
 char *msg_startup1	= "Server %s started, initialization type = %d";
-char *msg_startup2	= "Server Ready, pid = %d";
+char *msg_startup2	= "Server Ready, pid = %d, loglevel=%d";
 char *msg_startup3	= "%s %s: %s mode and %s exists, \ndo you wish to continue y/(n)?";
 char *msg_svdbopen	= "Unable to open server data base";
 char *msg_svdbnosv	= "Unable to save server data base";

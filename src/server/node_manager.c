@@ -436,6 +436,16 @@ int is_stat_get(
         return(DIS_NOCOMMIT);
         }
 
+      /* Is there a better way to do this? */
+
+      if (!strncmp(ret_info,"state",5))
+        {
+        if (!strncmp(ret_info,"state=free",10))
+          np->nd_state &= ~(INUSE_BUSY);
+        else
+          np->nd_state |= INUSE_BUSY;
+        }
+
       free(ret_info);
       }
     }    /* END while (rc != DIS_EOD) */
@@ -1104,17 +1114,17 @@ found:
         node->nd_state |= i;
         }
 
-       if (ret != DIS_SUCCESS)
-         {
-         if (LOGLEVEL >= 1)
-           {
-           sprintf(log_buffer,"IS_UPDATE error %d on node %s\n",
-             ret,
-             node->nd_name);
+      if (ret != DIS_SUCCESS)
+        {
+        if (LOGLEVEL >= 1)
+          {
+          sprintf(log_buffer,"IS_UPDATE error %d on node %s\n",
+            ret,
+            node->nd_name);
  
-           log_err(ret,id,log_buffer);
-           }
-         }
+          log_err(ret,id,log_buffer);
+          }
+        }
 
       break;
 

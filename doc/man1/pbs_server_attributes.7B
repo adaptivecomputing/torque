@@ -172,10 +172,28 @@ default value: none, must be set to an existing queue.
 .if !\n(Pb .ig Ig
 [internal type: string]
 .Ig
+.Al job_stat_rate
+Moderates how often job stat requests will be issued from pbs_server
+to the MOM daemons.  If poll_jobs is unset or false, then all jobs that
+haven't been updated in job_stat_rate seconds will trigger a stat request.  
+If poll_jobs is true, then all jobs will be updated every job_stat_rate.
+ (see poll_jobs)  On active clusters, 60 or 120 might be reasonable.
+Default value: 30 seconds  (PBS_RESTAT_JOB in server_limits.h)
+Minimum value: 4 seconds  (PBS_JOBSTAT_MIN in server_limits.h)
+.if !\n(Pb .ig Ig
+[internal type: integer]
+.Ig
 .Al log_events
 A bit string which specifies the type of events which are logged, see
 the section on Event Logging in chapter 3 of the ERS.  Format: integer;
 default value: 511, all events.
+.if !\n(Pb .ig Ig
+[internal type: integer]
+.Ig
+.Al log_level
+Controls the verbosity of server logs.  This value ranges from 0 to 7 with
+7 representing maximum verbosity.  Format: integer; default value: 0, 
+minimum verbosity.
 .if !\n(Pb .ig Ig
 [internal type: integer]
 .Ig
@@ -245,6 +263,18 @@ Requires full manager privilege to set or alter.
 Default value: root on the local host.
 .if !\n(Pb .ig Ig
 [internal type: access control list]
+.Ig
+.Al poll_jobs
+Controls how pbs_server will send job status requests to MOMs.  When unset or
+false, statjob requests from clients (ie: qstat(1B) or the scheduler) may
+trigger job status requests to MOMs and and must wait until the MOMs have
+replied; this is suitable for small to medium sized clusters.  When set to
+true, pbs_server will send periodic job status requests; this is suitable for
+busy clusters with lots of jobs, lots of clients, qstat(1B) is too slow, or
+your scheduler times out.  (see job_stat_rate) 
+Default value: unset - client requests trigger, and wait for, job status updates.
+.if !\n(Pb .ig Ig
+[internal type: boolean]
 .Ig
 .Al query_other_jobs
 The setting of this attribute controls if general users, other than the

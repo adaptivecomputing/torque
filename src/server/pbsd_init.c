@@ -474,6 +474,10 @@ int pbsd_init(
     2 * PBS_NORMAL_PING_RATE;
   server.sv_attr[(int)SRV_ATR_check_rate].at_flags = ATR_VFLAG_SET;
 
+  server.sv_attr[(int)SRV_ATR_JobStatRate].at_val.at_long =
+    PBS_RESTAT_JOB;
+  server.sv_attr[(int)SRV_ATR_JobStatRate].at_flags = ATR_VFLAG_SET;
+
   /* 4. force logging of all types */
 
   server.sv_attr[(int)SRV_ATR_log_events].at_val.at_long = PBSEVENT_MASK;
