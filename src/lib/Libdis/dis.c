@@ -91,17 +91,20 @@ int (*disr_skip) A_((int stream, size_t nskips))			= NULL;
 int (*disw_commit) A_((int stream, int commit))				= NULL;
 int (*disr_commit) A_((int stream, int commit))				= NULL;
 
-const char *dis_emsg[] = {"No error",
-	                  "Input value too large to convert to this type",
-		          "Tried to write floating point infinity",
-			  "Negative sign on an unsigned datum",
-			  "Input count or value has leading zero",
-			  "Non-digit found where a digit was expected",
-			  "Input string has an embedded ASCII NUL",
-		          "Premature end of message",
-	                  "Unable to malloc enough space for string",
-		          "Supporting protocol failure",
-                          "Protocol failure in commit",
-			  "End of File"};
+/* sync w/#define DIS_* (include/dis.h) */
+
+const char *dis_emsg[] = {
+  "No error",
+  "Input value too large to convert to this type",
+  "Tried to write floating point infinity",
+  "Negative sign on an unsigned datum",
+  "Input count or value has leading zero",
+  "Non-digit found where a digit was expected",
+  "Input string has an embedded ASCII NUL",
+  "Premature end of message",
+  "Unable to malloc enough space for string",
+  "Supporting protocol failure",
+  "Protocol failure in commit",
+  "End of File"};
 
 char dis_buffer[DIS_BUFSIZ];

@@ -1,5 +1,6 @@
 pre 1.2.0p2
 
+  fixed tracejob tool to only match correct jobs
   modified reporting of linux availmem and totmem to allow larger file sizes
   fixed pbs_demux for OSF/TRU64 systems to stop orphaned demux processes
   added dynamic pbs_server loglevel specification

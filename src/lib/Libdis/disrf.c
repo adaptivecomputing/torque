@@ -108,105 +108,208 @@ static unsigned ndigs;
 static unsigned nskips;
 static double dval;
 
-static int disrd_(stream, count)
-    int			stream;
-    unsigned		count;
-    {
-	int		c;
-	int		negate;
-	unsigned	unum;
-	char		*cp;
+static int disrd_(
 
-	if (dis_umaxd == 0)
-	        disiui_();
-	switch (c = (*dis_getc)(stream)) {
-	    case '-':
-	    case '+':
-		negate = c == '-';
-		nskips = count > FLT_DIG ? count - FLT_DIG : 0;
-		count -= nskips;
-		ndigs = count;
-		dval = 0.0;
-		do {
-			if ((c = (*dis_getc)(stream)) < '0' || c > '9') {
-				if (c < 0)
-				        return (DIS_EOD);
-				return (DIS_NONDIGIT);
-			}
-			dval = dval * 10.0 + (double)(c - '0');
-		} while (--count);
-		if ((count = nskips) > 0) {
-			count--;
-			switch ((*dis_getc)(stream)) {
-			    case '5':
-				if(count == 0)
-				        break;
-			    case '6':
-			    case '7':
-			    case '8':
-			    case '9':
-			        dval += 1.0;
-			    case '0':
-			    case '1':
-			    case '2':
-			    case '3':
-			    case '4':
-				if (count > 0 &&
-				   (*disr_skip)(stream, (size_t)count) < 0)
-				        return (DIS_EOD);
-				break;
-			    default:
-				return (DIS_NONDIGIT);
-			}
-		}
-		dval = negate ? -dval : dval;
-		return (DIS_SUCCESS);
-	    case '0':
-		return (DIS_LEADZRO);
-	    case '1':
-	    case '2':
-	    case '3':
-	    case '4':
-	    case '5':
-	    case '6':
-	    case '7':
-	    case '8':
-	    case '9':
-		unum = c - '0';
-		if (count > 1) {
-			if ((*dis_gets)(stream, dis_buffer + 1, count - 1) !=
-								count - 1)
-			        return (DIS_EOD);
-			cp = dis_buffer;
-			if (count >= dis_umaxd) {
-				if (count > dis_umaxd)
-				        break;
-				*cp = c;
-				if (memcmp(dis_buffer, dis_umax, dis_umaxd) > 0)
-				        break;
-			}
-			while (--count) {
-				if ((c = *++cp) < '0' || c > '9')
-				        return (DIS_NONDIGIT);
-				unum = unum * 10 + (unsigned)(c - '0');
-			}
-		}
-		return (disrd_(stream, unum));
-	    case -1:
-		return (DIS_EOD);
-	    case -2:
-		return (DIS_EOF);
-	    default:
-		return (DIS_NONDIGIT);
-	}
-	dval = HUGE_VAL;
-	return (DIS_OVERFLOW);
-}
+  int          stream,
+  unsigned int count)
 
-float disrf(stream, retval)
-    int			stream;
-    int			*retval;
+  {
+  int		c;
+  int		negate;
+  unsigned int  unum;
+  char		*cp;
+
+  if (dis_umaxd == 0)
+    disiui_();
+
+  c = (*dis_getc)(stream);
+
+  switch (c) 
     {
+    case '-':
+    case '+':
+
+      negate = (c == '-');
+
+      nskips = (count > FLT_DIG) ? 
+        count - FLT_DIG : 
+        0;
+
+      count -= nskips;
+
+      ndigs = count;
+
+      dval = 0.0;
+
+      do 
+        {
+        c = (*dis_getc)(stream);
+
+        if ((c < '0') || (c > '9')) 
+          {
+          if (c < 0)
+            {
+            return (DIS_EOD);
+            }
+
+          return(DIS_NONDIGIT);
+          }
+
+        dval = dval * 10.0 + (double)(c - '0');
+        } while (--count);
+
+      count = nskips;
+
+      if (count > 0) 
+        {
+        count--;
+
+        switch ((*dis_getc)(stream)) 
+          {
+          case '5':
+
+            if (count == 0)
+              break;
+
+            /* fall through */
+
+          case '6':
+          case '7':
+          case '8':
+          case '9':
+
+            dval += 1.0;
+
+            /* fall through */
+
+          case '0':
+          case '1':
+          case '2':
+          case '3':
+          case '4':
+
+            if ((count > 0) &&
+               ((*disr_skip)(stream,(size_t)count) < 0))
+              {
+              return(DIS_EOD);
+              }
+
+            break;
+
+          default:
+
+            return(DIS_NONDIGIT);
+
+            /*NOTREACHED*/
+
+            break;
+          }
+        }
+
+      dval = negate ? -dval : dval;
+
+      return(DIS_SUCCESS);
+
+      /*NOTREACHED*/
+
+      break;
+
+    case '0':
+
+      return(DIS_LEADZRO);
+
+      break;
+
+    case '1':
+    case '2':
+    case '3':
+    case '4':
+    case '5':
+    case '6':
+    case '7':
+    case '8':
+    case '9':
+
+      unum = c - '0';
+
+      if (count > 1) 
+        {
+        if ((*dis_gets)(stream,dis_buffer + 1,count - 1) != count - 1)
+          {
+          return(DIS_EOD);
+          }
+
+        cp = dis_buffer;
+
+        if (count >= dis_umaxd) 
+          {
+          if (count > dis_umaxd)
+            break;
+
+          *cp = c;
+
+          if (memcmp(dis_buffer,dis_umax,dis_umaxd) > 0)
+            break;
+          }
+
+        while (--count) 
+          {
+          c = *++cp;
+
+          if ((c < '0') || (c > '9'))
+            {
+            return(DIS_NONDIGIT);
+            }
+
+          unum = unum * 10 + (unsigned)(c - '0');
+          }
+        }
+
+      return(disrd_(stream,unum));
+
+      /*NOTREACHED*/
+
+      break;
+
+    case -1:
+
+      return(DIS_EOD);
+
+      /*NOTREACHED*/
+
+      break;
+
+    case -2:
+
+      return(DIS_EOF);
+
+      /*NOTREACHED*/
+
+      break;
+
+    default:
+
+      return(DIS_NONDIGIT);
+
+      /*NOTREACHED*/
+
+      break;
+    }  /* END switch(c) */
+
+  dval = HUGE_VAL;
+
+  return(DIS_OVERFLOW);
+  }  /* END disrd_() */
+
+
+
+
+float disrf(
+
+  int  stream,
+  int *retval)
+
+  {
 	int		expon;
 	unsigned	uexpon;
 	int		locret;

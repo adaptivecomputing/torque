@@ -94,6 +94,8 @@
  * Integer function return values from Data-is-Strings reading calls
  */
 
+/* sync w/dis_emsg[] (lib/Libdis/dis.c) */
+
 #define DIS_SUCCESS	0	/* No error */
 #define DIS_OVERFLOW	1	/* Value too large to convert */
 #define DIS_HUGEVAL	2	/* Tried to write floating point infinity */
