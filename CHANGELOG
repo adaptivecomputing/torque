@@ -1,5 +1,6 @@
 pre 1.2.0p2
 
+  added mom state sync patch for dup join (USC)
   add spool dir space check (MAINE)
 
 1.2.0p1
