@@ -131,6 +131,8 @@ extern time_t time_now;
 
 extern int   LOGLEVEL;
 
+extern const char *PJobState[];
+
 /* External Functions called */
 
 extern void set_resc_assigned A_((job *, enum batch_op));
@@ -1466,9 +1468,12 @@ void req_jobobit(
       {
       /* not running and not exiting - bad news (possible data staging issue) */
 
-      sprintf(log_buffer,msg_obitnojob,
+      /* NOTE:  was logged w/msg_obitnojob */
+
+      sprintf(log_buffer,"obit received for job %s from host %s with bad state (state: %s)",
+        preq->rq_ind.rq_jobobit.rq_jid,
         preq->rq_host, 
-        PBSE_BADSTATE);
+        PJobState[pjob->ji_qs.ji_state]);
 
       log_event(
         PBSEVENT_ERROR|PBSEVENT_JOB,

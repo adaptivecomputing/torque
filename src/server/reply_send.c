@@ -120,6 +120,7 @@ extern list_head task_list_immed;
 #endif	/* PBS_MOM */
 
 extern struct pbs_err_to_txt pbs_err_to_txt[];
+extern const char *PBatchReqType[];
 
 #define ERR_MSG_SIZE 127
 
@@ -308,13 +309,15 @@ void reply_ack(preq)
  *	batch_reply structure, the reply structure itself IS NOT FREED.
  */
 
-void reply_free(prep)
-	struct batch_reply *prep;
-{
-	struct brp_status  *pstat;
-	struct brp_status  *pstatx;
-	struct brp_select  *psel;
-	struct brp_select  *pselx;
+void reply_free(
+
+  struct batch_reply *prep)
+
+  {
+  struct brp_status  *pstat;
+  struct brp_status  *pstatx;
+  struct brp_select  *psel;
+  struct brp_select  *pselx;
 
 	if (prep->brp_choice == BATCH_REPLY_CHOICE_Text) {
 		if (prep->brp_un.brp_txt.brp_str) {
@@ -345,8 +348,11 @@ void reply_free(prep)
 		(void)free(prep->brp_un.brp_rescq.brq_resvd);
 		(void)free(prep->brp_un.brp_rescq.brq_down);
 	}
-	prep->brp_choice = BATCH_REPLY_CHOICE_NULL;
-}
+
+  prep->brp_choice = BATCH_REPLY_CHOICE_NULL;
+
+  return;
+  }  /* END reply_free() */
 
 
 
@@ -385,11 +391,11 @@ void req_reject(
       Msg);
     }
     
-  sprintf(log_buffer,"Reject reply code=%d(%s), aux=%d, type=%d, from %s@%s",
+  sprintf(log_buffer,"Reject reply code=%d(%s), aux=%d, type=%s, from %s@%s",
     code, 
     msgbuf,
     aux, 
-    preq->rq_type, 
+    PBatchReqType[preq->rq_type], 
     preq->rq_user, 
     preq->rq_host);
 

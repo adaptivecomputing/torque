@@ -291,8 +291,10 @@ static void req_stat_job_step2(
     if (pjob == NULL)
       break;
 
+    /* PBS_RESTAT_JOB defaults to 30 seconds */
+
     if ((pjob->ji_qs.ji_substate == JOB_SUBSTATE_RUNNING) &&
-       ((time_now - pjob->ji_momstat) > PBS_RESTAT_JOB)) 
+       ((time_now - pjob->ji_momstat) > (PBS_RESTAT_JOB << 4))) 
       {
       /* go to MOM for status */
 

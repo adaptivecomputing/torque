@@ -1580,6 +1580,11 @@ void tcl_run(
 #define tcl_run(f_opt)
 #endif	/* TCL_QSTAT */
 
+
+
+/* connects to server side routine pbs_statjob() in lib/Libifl/pbs_statjob.c */
+/*  routes to req_stat_job() in server/req_stat.c (PBS_BATCH_StatusJob) */
+
 int main(
 
   int    argc,
@@ -1603,13 +1608,13 @@ int main(
   char server_out[MAXSERVERNAME];
   char server_old[MAXSERVERNAME] = "";
   char rmt_server[MAXSERVERNAME];
-  char destination[PBS_MAXDEST+1];
+  char destination[PBS_MAXDEST + 1];
   char *def_server;
     
   char *queue_name_out;
   char *server_name_out;
 
-  char operand[PBS_MAXCLTJOBID+1];
+  char operand[PBS_MAXCLTJOBID + 1];
   int alt_opt;
   int f_opt, B_opt, Q_opt;
   int p_header = TRUE;
