@@ -96,8 +96,11 @@
 #include <netinet/in.h>
 #include <sys/time.h>
 
-#ifdef __TLINUX
+#if defined(__TLINUX)
 #include <sys/vfs.h>
+#elif defined(__TDARWIN)
+#include <sys/param.h> 
+#include <sys/mount.h>
 #endif /* __TLINUX */
 
 #include "pbs_ifl.h"

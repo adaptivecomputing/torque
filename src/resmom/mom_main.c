@@ -3053,6 +3053,8 @@ int rm_request(
               sprintf(tmpLine,"WARNING:  no messages sent to server\n");
               }
 
+            MUStrNCat(&BPtr,&BSpace,tmpLine);
+
             if (verbositylevel >= 1)
               {
               sprintf(tmpLine,"Server Update Interval: %d seconds\n",
@@ -3060,8 +3062,6 @@ int rm_request(
   
               MUStrNCat(&BPtr,&BSpace,tmpLine);
               }
-
-            MUStrNCat(&BPtr,&BSpace,tmpLine);
 
             if (PBSNodeMsgBuf[0] != '\0')
               {

@@ -763,9 +763,9 @@ int send_sisters(
 
 #define	SEND_ERR(err) \
 if (reply) { \
-	(void)im_compose(stream, jobid, cookie, IM_ERROR, event, fromtask); \
-	(void)diswsi(stream, err); \
-}
+  im_compose(stream,jobid,cookie,IM_ERROR,event,fromtask); \
+  diswsi(stream,err); \
+  }
 
 
 
@@ -1735,24 +1735,46 @@ void im_request(
         {
         /* job already exists locally */
 
-        if (LOGLEVEL >= 0)
+        if (pjob->ji_qs.ji_substate == JOB_SUBSTATE_PRERUN)
           {
-          sprintf(log_buffer,"ERROR:    received request '%s' from %s (job already exists locally)\n",
-            PMOMCommand[MIN(command,IM_MAX)],
-            netaddr(addr));
+          if (LOGLEVEL >= 1)
+            {
+            /* if peer mom times out, MS will send new join request for same job */
+
+            sprintf(log_buffer,"WARNING:    duplicate JOIN request from %s (purging previous pjob)\n",
+              PMOMCommand[MIN(command,IM_MAX)],
+              netaddr(addr));
+
+            LOG_EVENT(
+              PBSEVENT_JOB,
+              PBS_EVENTCLASS_JOB,
+              jobid,
+              log_buffer);
+            }
+
+          job_purge(pjob);
+          }
+        else 
+          {
+          if (LOGLEVEL >= 0)
+            {
+            sprintf(log_buffer,"ERROR:    received request '%s' from %s (job already exists locally)\n",
+              PMOMCommand[MIN(command,IM_MAX)],
+              netaddr(addr));
+
+            LOG_EVENT(
+              PBSEVENT_JOB,
+              PBS_EVENTCLASS_JOB,
+              jobid,
+              log_buffer);
+            }
 
           /* should local job be purged, ie 'job_purge(pjob);' ? */
 
-          LOG_EVENT(
-            PBSEVENT_JOB,
-            PBS_EVENTCLASS_JOB,
-            jobid,
-            log_buffer);
+          SEND_ERR(PBSE_JOBEXIST)
+ 
+          goto done;
           }
-
-        SEND_ERR(PBSE_JOBEXIST)
-  
-        goto done;
         }  /* END if (pjob != NULL) */
   
       if ((pjob = job_alloc()) == NULL) 
@@ -3704,7 +3726,7 @@ void im_request(
       /*NOTREACHED*/
   
       break;
-    }  /* END switch(Command) */
+    }  /* END switch (Command) */
 
 done:
 
@@ -3716,7 +3738,7 @@ done:
 
     if ((ret != DIS_SUCCESS) || (rpp_flush(stream) == -1)) 
       {
-      log_err(errno, id, "rpp_flush");
+      log_err(errno,id,"rpp_flush");
 
       rpp_close(stream);
 

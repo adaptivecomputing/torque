@@ -207,50 +207,69 @@ char			nokernel[] = "kernel not available";
 char			noproc[] = "process %d does not exist";
 static  int		nncpus = 0;
 
-void
-dep_initialize()
-{
-	char	*id = "dep_initialize";
-	int	 mib[2];
-	size_t	 len;
+void dep_initialize()
 
-	if (kd == NULL) {
-		kd = kvm_open(NULL, NULL, NULL, O_RDONLY, "resmom");
-		if (kd == NULL) {
-			log_err(errno, id, "kvm_open");
-			return;
-		}
-	}
+  {
+  char  *id = "dep_initialize";
+  int    mib[2];
+  size_t len;
 
-	if (kvm_nlist(kd, nl) == -1) {
-		log_err(errno, id, "kvm_nlist");
-		return;
-	}
+  if (kd == NULL) 
+    {
+    kd = kvm_open(NULL,NULL,NULL,O_RDONLY,"resmom");
 
-	mib[0] = CTL_HW;	/* get number of processors */
-	mib[1] = HW_NCPU;
-	len    = sizeof(nncpus);
-	(void)sysctl(mib, 2, &nncpus, &len, NULL,  0);
+    if (kd == NULL) 
+      {
+      log_err(errno,id,"kvm_open");
 
-	return;
-}
+      return;
+      }
+    }
 
-void
-dep_cleanup()
-{
-	char	*id = "dep_cleanup";
+  if (kvm_nlist(kd,nl) == -1) 
+    {
+    log_err(errno,id,"kvm_nlist");
 
-	log_record(PBSEVENT_SYSTEM, 0, id, "dependent cleanup");
-	if (kd)
-		kvm_close(kd);
-	kd = NULL;
-}
+    return;
+    }
 
-void
-end_proc()
-{
-	return;
-}
+  mib[0] = CTL_HW;	/* get number of processors */
+  mib[1] = HW_NCPU;
+
+  len = sizeof(nncpus);
+
+  sysctl(mib,2,&nncpus,&len,NULL,0);
+
+  return;
+  }
+
+
+
+
+void dep_cleanup()
+
+  {
+  char *id = "dep_cleanup";
+
+  log_record(PBSEVENT_SYSTEM,0,id,"dependent cleanup");
+
+  if (kd != NULL)
+    kvm_close(kd);
+
+  kd = NULL;
+
+  return;
+  }
+
+
+
+
+
+void end_proc()
+
+  {
+  return;
+  }
 
 extern	struct	pbs_err_to_txt	pbs_err_to_txt[];
 extern	time_t			time_now;
@@ -363,6 +382,7 @@ injob(pjob, sesid)
  */
 
 static unsigned long cput_sum(
+
   job *pjob)
 
   {
@@ -433,9 +453,9 @@ static unsigned long cput_sum(
        
       total_time = mystats.user_time;
       system_time = mystats.system_time;
-      time_value_add(&total_time, &tutime)
-      time_value_add(&system_time, &tstime)
-      time_value_add(&total_time, &system_time)
+      time_value_add(&total_time,&tutime)
+      time_value_add(&system_time,&tstime)
+      time_value_add(&total_time,&system_time)
       cputime += total_time.seconds;
       }
     else
@@ -446,28 +466,28 @@ static unsigned long cput_sum(
         id,
         (u_long)pp->kp_proc.p_ru))
        
-       if (kvm_read(kd,(u_long)pp->kp_proc.p_ru,&ru,sizeof(ru)) != sizeof(ru))
-         {
-         log_err(errno, id, "kvm_read(session)");
+      if (kvm_read(kd,(u_long)pp->kp_proc.p_ru,&ru,sizeof(ru)) != sizeof(ru))
+        {
+        log_err(errno,id,"kvm_read(session)");
        
-         continue;
-         }
-       
-        cputime += tv(ru.ru_utime) + tv(ru.ru_stime);
+        continue;
         }
-
-      DBPRT(("%s: ses %d pid %d cputime %d\n", 
-        id,
-        sess_tbl[i], 
-        pp->kp_proc.p_pid, 
-        cputime))
+       
+      cputime += tv(ru.ru_utime) + tv(ru.ru_stime);
       }
- 
-    if (nps == 0)
-      pjob->ji_flags |= MOM_NO_PROC;
 
-    return((unsigned long)((double)cputime * cputfactor));
-    } /* END cput_sum() */
+    DBPRT(("%s: ses %d pid %d cputime %d\n", 
+      id,
+      sess_tbl[i], 
+      pp->kp_proc.p_pid, 
+      cputime))
+    }  /* END for (i) */
+ 
+  if (nps == 0)
+    pjob->ji_flags |= MOM_NO_PROC;
+
+  return((unsigned long)((double)cputime * cputfactor));
+  } /* END cput_sum() */
   
 
 
@@ -486,26 +506,29 @@ static unsigned long mem_sum(
   job *pjob)
 
   {
-	char		*id="mem_sum";
-	int		i;
-	unsigned long	memsize;
+  char         *id="mem_sum";
+  int           i;
+  unsigned long memsize;
 
-	memsize = 0;
-	for (i=0; i<nproc; i++) {
-		struct kinfo_proc	*pp = &proc_tbl[i];
+  memsize = 0;
 
-		if (!injob(pjob, sess_tbl[i]))
-			continue;
+  for (i = 0;i < nproc;i++) 
+    {
+    struct kinfo_proc *pp = &proc_tbl[i];
 
-		memsize += ctob(pp->kp_eproc.e_vm.vm_tsize +
-			pp->kp_eproc.e_vm.vm_dsize +
-			pp->kp_eproc.e_vm.vm_ssize);
-		DBPRT(("%s: ses %d pid=%d totmem=%lu\n", id,
-		       sess_tbl[i], pp->kp_proc.p_pid, memsize))
-	}
+    if (!injob(pjob, sess_tbl[i]))
+      continue;
 
-	return (memsize);
-}
+    memsize += ctob(pp->kp_eproc.e_vm.vm_tsize +
+      pp->kp_eproc.e_vm.vm_dsize +
+      pp->kp_eproc.e_vm.vm_ssize);
+
+    DBPRT(("%s: ses %d pid=%d totmem=%lu\n", id,
+      sess_tbl[i], pp->kp_proc.p_pid, memsize))
+    }
+
+  return(memsize);
+  }
 
 
 
@@ -756,38 +779,55 @@ int mom_do_poll(pjob)
 		    strcmp(pname, "pvmem") == 0 ||
 		    strcmp(pname, "vmem") == 0)
 			return (TRUE);
-		pres = (resource *)GET_NEXT(pres->rs_link);
-	}
 
-	return (FALSE);
-}
+    pres = (resource *)GET_NEXT(pres->rs_link);
+    }
+
+  return(FALSE);
+  }
+
+
+
 
 /*
  * Setup for polling.
  *
  *	Open kernel device and get namelist info.
  */
+
 int mom_open_poll()
-{
-	char		*id = "mom_open_poll";
 
-	DBPRT(("%s: entered\n", id))
-	if (kd == NULL) {
-		kd = kvm_open(NULL, NULL, NULL, O_RDONLY, "mom");
-		if (kd == NULL) {
-			log_err(errno, id, "kvm_open");
-			return (PBSE_SYSTEM);
-		}
-	}
-	/*
-	if (kvm_nlist(kd, nl) == -1) {
-		log_err(errno, id, "kvm_nlist");
-		return (PBSE_SYSTEM);
-	}
-	*/
+  {
+  char *id = "mom_open_poll";
 
-	return (PBSE_NONE);
-}
+  DBPRT(("%s: entered\n", 
+    id))
+
+  if (kd == NULL) 
+    {
+    kd = kvm_open(NULL,NULL,NULL,O_RDONLY,"mom");
+
+    if (kd == NULL) 
+      {
+      log_err(errno,id,"kvm_open");
+
+      return(PBSE_SYSTEM);
+      }
+    }
+
+  /*
+  if (kvm_nlist(kd,nl) == -1) 
+    {
+    log_err(errno,id,"kvm_nlist");
+
+    return(PBSE_SYSTEM);
+    }
+  */
+
+  return(PBSE_NONE);
+  }
+
+
 
 
 int
@@ -894,8 +934,13 @@ static kinfo_proc *GetBSDProcessList(
 
     assert( (err == 0) == (result != NULL) );
 //    fprintf(logfile, "end buffer %d\n", result);
-    return result;
-}
+
+  return(result);
+  }
+
+
+
+
 
 /*
  * Declare start of polling loop.
@@ -904,65 +949,98 @@ static kinfo_proc *GetBSDProcessList(
  *	use the same data.  Returns a PBS error code.
  */
 
-int
-mom_get_sample()
-{
-	char			*id = "mom_get_sample";
-	int			i;
-	struct	session		ss;
-	struct	kinfo_proc	*kp;
-	struct	kinfo_proc	*leader;
-	pid_t			sid;
+int mom_get_sample()
 
-	DBPRT(("%s: entered\n", id))
-	if (sess_tbl)
-		free(sess_tbl);
+  {
+  char		*id = "mom_get_sample";
+  int		i;
+  struct	session		ss;
+  struct	kinfo_proc	*kp;
+  struct	kinfo_proc	*leader;
+  pid_t		sid;
 
-	if (kd == NULL)
-		return (PBSE_INTERNAL);
+  DBPRT(("%s: entered\n", 
+    id))
 
-	/* proc_tbl = kvm_getprocs(kd, KERN_PROC_ALL, 0, &nproc); */
-	proc_tbl = GetBSDProcessList(proc_tbl, &nproc);
-	if (proc_tbl == NULL) {
-		sprintf(log_buffer,
-		    "kvm_getprocs: %s", kvm_geterr(kd));
-		log_err(errno, id, log_buffer);
-		return (PBSE_SYSTEM);
-	}
-	sess_tbl = (pid_t *)calloc(nproc, sizeof(pid_t));
-	if (sess_tbl == NULL) {
-		sprintf(log_buffer,
-		    "can't allocate memory for session table");
-		log_err(errno, id, log_buffer);
-		return (PBSE_SYSTEM);
-	}
+  if (sess_tbl != NULL)
+    free(sess_tbl);
 
-	qsort(proc_tbl, nproc, sizeof(struct kinfo_proc), qs_cmp);
+  if (kd == NULL)
+    {
+    return(PBSE_INTERNAL);
+    }
 
-	for (i=0, kp=proc_tbl; i<nproc; i++, kp++) {
-		if (kp->kp_eproc.e_sess != NULL)  {
-			if (kvm_read(kd, (u_long)kp->kp_eproc.e_sess, &ss, sizeof(ss))
-					!= sizeof(ss)) {
-				sprintf(log_buffer,
-					"kvm_read: %s", kvm_geterr(kd));
-				log_err(errno, id, log_buffer);
-				return (PBSE_SYSTEM);
-			}
-			if (ss.s_leader == kp->kp_eproc.e_paddr ||
-					ss.s_leader == NULL) {
-				sid = kp->kp_proc.p_pid;
-			}
-			else {
-				leader = bsearch(&ss, proc_tbl, nproc,
-					sizeof(struct kinfo_proc), bs_cmp);
-				sid = leader ? leader->kp_proc.p_pid : 0;
-			}
-			sess_tbl[i] = sid;
-		}
-	}
+  /* proc_tbl = kvm_getprocs(kd, KERN_PROC_ALL, 0, &nproc); */
 
-	return (PBSE_NONE);
-}
+  proc_tbl = GetBSDProcessList(proc_tbl,&nproc);
+
+  if (proc_tbl == NULL) 
+    {
+    sprintf(log_buffer,"kvm_getprocs: %s", 
+      kvm_geterr(kd));
+
+    log_err(errno,id,log_buffer);
+
+    return(PBSE_SYSTEM);
+    }
+
+  sess_tbl = (pid_t *)calloc(nproc,sizeof(pid_t));
+
+  if (sess_tbl == NULL) 
+    {
+    sprintf(log_buffer,"can't allocate memory for session table");
+
+    log_err(errno,id,log_buffer);
+
+    return(PBSE_SYSTEM);
+    }
+
+  qsort(proc_tbl,nproc,sizeof(struct kinfo_proc),qs_cmp);
+
+  for (i = 0,kp = proc_tbl;i < nproc;i++,kp++) 
+    {
+    if (kp->kp_eproc.e_sess != NULL)  
+      {
+      if (kvm_read(
+            kd, 
+            (u_long)kp->kp_eproc.e_sess, 
+            &ss, 
+            sizeof(ss)) != sizeof(ss)) 
+        {
+        sprintf(log_buffer,"kvm_read: %s", 
+          kvm_geterr(kd));
+
+        log_err(errno,id,log_buffer);
+
+        return(PBSE_SYSTEM);
+        }
+
+      if ((ss.s_leader == kp->kp_eproc.e_paddr) ||
+          (ss.s_leader == NULL)) 
+        {
+        sid = kp->kp_proc.p_pid;
+        }
+      else 
+        {
+        leader = bsearch(
+          &ss, 
+          proc_tbl, 
+          nproc,
+          sizeof(struct kinfo_proc), 
+          bs_cmp);
+
+        sid = leader ? leader->kp_proc.p_pid : 0;
+        }
+
+      sess_tbl[i] = sid;
+      }
+    }
+
+  return(PBSE_NONE);
+  }
+
+
+
 
 /*
  * Measure job resource usage and compare with its limits.
@@ -1170,24 +1248,38 @@ int kill_task(ptask, sig)
 	return ct;
 }
 
+
+
+
+
 /*
  * Clean up everything related to polling.
  *
  *	In the case of the sun, close the kernal if it is open.
  */
-int mom_close_poll()
-{
-	DBPRT(("mom_close_poll entered\n"))
-	if (kd) {
-		if (kvm_close(kd) != 0) {
-			log_err(errno, "mom_close_poll", "kvm_close");
-			return (PBSE_SYSTEM);
-		}
-		kd = NULL;
-	}
 
-	return (PBSE_NONE);
-}
+int mom_close_poll()
+
+  {
+  DBPRT(("mom_close_poll entered\n"))
+
+  if (kd != NULL) 
+    {
+    if (kvm_close(kd) != 0) 
+      {
+      log_err(errno, "mom_close_poll", "kvm_close");
+
+      return(PBSE_SYSTEM);
+      }
+
+    kd = NULL;
+    }
+
+  return(PBSE_NONE);
+  }
+
+
+
 
 /*
  * mom_does_chkpnt - return 1 if mom supports checkpoint
@@ -1248,6 +1340,9 @@ getprocs()
 	return 1;
 }
 
+
+
+
 char	*
 cput_job(jobid)
 pid_t	jobid;
@@ -1303,59 +1398,96 @@ pid_t	jobid;
 	}
 
 	sprintf(ret_string, "%.2f", (double)cputime * cputfactor);
-	return ret_string;
-}
+  
+  return(ret_string);
+  }
 
-char	*
-cput_proc(pid)
-pid_t	pid;
-{
-	char			*id = "cput_proc";
-	struct	pstats		ps;
-	uint			i, cputime;
 
-	for (i=0; i<nproc; i++) {
-		struct kinfo_proc	*pp = &proc_tbl[i];
 
-		if (pid != pp->kp_proc.p_pid)
-			continue;
 
-		cputime = tvk(pp->kp_proc.p_rtime);
+char *cput_proc(
 
-		if (pp->kp_proc.p_ru == NULL) {
-			struct	pstats	ps;
+  pid_t pid)
 
-			if (pp->kp_proc.p_stat == NULL)
-				break;
+  {
+  char		*id = "cput_proc";
+  struct	pstats		ps;
+  uint		i, cputime;
 
-			if (kvm_read(kd, (u_long)pp->kp_proc.p_stat, &ps,
-					sizeof(ps)) != sizeof(ps)) {
-				log_err(errno, id, "kvm_read(pstats)");
-				break;
-			}
-			cputime += tv(ps.p_ru.ru_utime) +
-				tv(ps.p_ru.ru_stime) +
-				tv(ps.p_cru.ru_utime) +
-				tv(ps.p_cru.ru_stime);
-		}
-		else {
-			struct	rusage	ru;
+  if (kd == NULL)
+    {
+    log_err(errno,id,"null kd");
 
-			if (kvm_read(kd, (u_long)pp->kp_proc.p_ru, &ru,
-					sizeof(ru)) != sizeof(ru)) {
-				log_err(errno, id, "kvm_read(session)");
-				break;
-			}
-			cputime += tv(ru.ru_utime) + tv(ru.ru_stime);
-		}
-		DBPRT(("%s: pid %d cputime %d\n", id, pid, cputime))
+    rm_errno = RM_ERR_EXIST;
 
-		sprintf(ret_string, "%.2f", (double)cputime * cputfactor);
-		return ret_string;
-	}
-	rm_errno = RM_ERR_EXIST;
-	return NULL;
-}
+    return(NULL);
+    }
+
+  for (i = 0;i < nproc;i++) 
+    {
+    struct kinfo_proc	*pp = &proc_tbl[i];
+
+    if (pid != pp->kp_proc.p_pid)
+      continue;
+
+    cputime = tvk(pp->kp_proc.p_rtime);
+
+    if (pp->kp_proc.p_ru == NULL) 
+      {
+      struct pstats ps;
+
+      if (pp->kp_proc.p_stat == NULL)
+        break;
+
+      if (kvm_read(
+           kd,
+           (u_long)pp->kp_proc.p_stat,
+           &ps,
+           sizeof(ps)) != sizeof(ps)) 
+        {
+        log_err(errno,id,"kvm_read(pstats)");
+
+        break;
+        }
+
+      cputime += tv(ps.p_ru.ru_utime) +
+                 tv(ps.p_ru.ru_stime) +
+                 tv(ps.p_cru.ru_utime) +
+                 tv(ps.p_cru.ru_stime);
+      }
+    else 
+      {
+      struct rusage ru;
+
+      if (kvm_read(
+            kd,
+            (u_long)pp->kp_proc.p_ru, 
+            &ru,
+            sizeof(ru)) != sizeof(ru)) 
+        {
+        log_err(errno,id,"kvm_read(session)");
+
+        break;
+        }
+
+      cputime += tv(ru.ru_utime) + tv(ru.ru_stime);
+      }
+
+    DBPRT(("%s: pid %d cputime %d\n", id, pid, cputime))
+
+    sprintf(ret_string,"%.2f", 
+      (double)cputime * cputfactor);
+
+    return(ret_string);
+    }
+
+  rm_errno = RM_ERR_EXIST;
+
+  return(NULL);
+  }
+
+
+
 
 char	*
 cput(attrib)
