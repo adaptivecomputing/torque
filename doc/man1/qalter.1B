@@ -782,7 +782,7 @@ or any error received in reply to the batch requests will
 result in a error message being written to standard error.
 .Sh EXIT STATUS
 Upon successful processing of all the operands presented to the
-the qalter command, the exit status will be a value of zero.
+qalter command, the exit status will be a value of zero.
 .LP
 If the qalter command fails to process any operand, the
 command exits with a value greater than zero.

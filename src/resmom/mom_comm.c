@@ -209,6 +209,18 @@ int task_save(
 
   openflags = O_WRONLY|O_CREAT|O_Sync;
 
+  if (LOGLEVEL >= 6)
+    {
+    sprintf(log_buffer,"saving task in %s",
+      namebuf);
+
+    log_record(
+      PBSEVENT_JOB,
+      PBS_EVENTCLASS_JOB,
+      id,
+      log_buffer);
+    }
+
   fds = open(namebuf,openflags,0600);
 
   if (fds < 0) 
@@ -510,6 +522,8 @@ int task_recov(
 
     if ((pt = pbs_task_create(pjob,TM_NULL_TASK)) == NULL)  
       {
+      log_err(errno,id,"cannot create task");
+
       unlink(namebuf);
 
       close(fds);
@@ -1227,10 +1241,12 @@ void im_eof(
 
     if (num < pjob->ji_numnodes)	/* found it */
       break;
-    }
+    }  /* END for (pjob) */
 
   if (pjob == NULL)
+    {
     return;
+    }
 
   node_bailout(pjob,np);
 
@@ -1246,6 +1262,11 @@ void im_eof(
       np->hn_host);
 
     log_err(-1,id,log_buffer);
+
+    /* don't just give up, maybe mother superior is just being restarted, 
+       do not set exiting_tasks -gs */
+
+    /* exiting_tasks = 1; */
 
     pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITING;
 
@@ -2374,6 +2395,15 @@ void im_request(
       ptask->ti_qs.ti_parentnode = nodeid;
       ptask->ti_qs.ti_parenttask = fromtask;
 
+      if (LOGLEVEL >= 6)
+        {
+        LOG_EVENT(
+          PBSEVENT_JOB,
+          PBS_EVENTCLASS_JOB,
+          jobid,
+          "saving task (IM_SPAWN_TASK)");
+        }
+
       if (task_save(ptask) == -1) 
         {
         if (LOGLEVEL >= 0)
@@ -3275,247 +3305,344 @@ void im_request(
 			(void)DIS_tcp_wflush(ptask->ti_fd);
 			break;
 
-      case IM_POLL_JOB:
+        case IM_POLL_JOB:
 
-        /*
-        ** I must be Mother Superior for the job and
-        ** this is a reply with job resources to
-        ** tally up.
-        **
-        ** auxiliary info (
-        **	recommendation	int;
-        **	cput		u_long;
-        **	mem		u_long;
-        ** )
-        */
+          /*
+          ** I must be Mother Superior for the job and
+          ** this is a reply with job resources to
+          ** tally up.
+          **
+          ** auxiliary info (
+          **	recommendation	int;
+          **	cput		u_long;
+          **	mem		u_long;
+          ** )
+          */
 
-        if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HERE) == 0) 
-          {
-          log_err(-1,id,"got POLL_JOB and I'm not MS");
+          if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HERE) == 0) 
+            {
+            log_err(-1,id,"got POLL_JOB and I'm not MS");
+ 
+            goto err;
+            }
 
-          goto err;
-          }
+          exitval = disrsi(stream,&ret);
 
-        exitval = disrsi(stream,&ret);
+          if (ret != DIS_SUCCESS)
+            goto err;
+  
+          pjob->ji_resources[nodeidx-1].nr_cput = disrul(stream,&ret);
+  
+          if (ret != DIS_SUCCESS)
+            goto err;
+  
+          pjob->ji_resources[nodeidx-1].nr_mem = disrul(stream,&ret);
+  
+          if (ret != DIS_SUCCESS)
+            goto err;
+  
+          DBPRT(("%s: POLL_JOB %s OKAY kill %d cpu %lu mem %lu\n",
+            id, 
+            jobid, 
+            exitval,
+            pjob->ji_resources[nodeidx-1].nr_cput,
+            pjob->ji_resources[nodeidx-1].nr_mem))
+  
+          if (exitval != 0)
+            {
+            sprintf(log_buffer,"%s non-zero exit status reported from node %s (%d)",
+              pjob->ji_qs.ji_jobid,
+              np->hn_host,
+              np->hn_node);
+  
+            log_err(-1,id,log_buffer);
+  
+            pjob->ji_nodekill = np->hn_node;
+            }
+  
+          break;
+  
+        case IM_GET_TID:
+  
+          /*
+          ** Sender must be Mother Superior with a TID.
+          ** I will either do the spawn or forward the SPAWN
+          ** to the final destination.
+          **
+          ** auxiliary info (
+          **	task id		tm_task_id;
+          ** )
+          */
+  
+          if (check_ms(stream,pjob))
+            goto fini;
+  
+          taskid = disrsi(stream,&ret);
+  
+          if (ret != DIS_SUCCESS)
+            goto err;
+  
+          /*
+          ** Check to see if I need to forward the taskid
+          ** to another MOM.
+          */
+  
+          if (pjob->ji_nodeid != efwd.fe_node) 
+            {
+            np = find_node(pjob,-1,efwd.fe_node);
+  
+            if (np == NULL)
+              goto done;
+  
+            ep = event_alloc(
+              IM_SPAWN_TASK, 
+              np,
+              efwd.fe_event, 
+              efwd.fe_taskid);
+  
+            ret = im_compose(
+              np->hn_stream, 
+              jobid, 
+              cookie,
+              IM_SPAWN_TASK, 
+              efwd.fe_event,
+              efwd.fe_taskid);
 
-        if (ret != DIS_SUCCESS)
-          goto err;
+            if (ret != DIS_SUCCESS)
+              goto done;
 
-        pjob->ji_resources[nodeidx-1].nr_cput = disrul(stream,&ret);
+            ret = diswsi(np->hn_stream,pjob->ji_nodeid);
+  
+            if (ret != DIS_SUCCESS)
+              goto done;
+  
+            ret = diswsi(np->hn_stream,taskid);
+  
+            if (ret != DIS_SUCCESS)
+              goto done;
+  
+            ret = diswst(np->hn_stream,pjob->ji_globid);
+  
+            if (ret != DIS_SUCCESS)
+              goto done;
+  
+            for (i = 0;argv[i];i++) 
+              {
+              ret = diswst(np->hn_stream,argv[i]);
+  
+              if (ret != DIS_SUCCESS)
+                goto done;
+              }
+  
+            ret = diswst(np->hn_stream,"");
+   
+            if (ret != DIS_SUCCESS)
+              goto done;
+  
+            for (i = 0;envp[i];i++) 
+              {
+              ret = diswst(np->hn_stream,envp[i]);
+  
+              if (ret != DIS_SUCCESS)
+                goto done;
+              }
+  
+            ret = (rpp_flush(np->hn_stream) == -1) ?
+              DIS_NOCOMMIT : DIS_SUCCESS;
+  
+            arrayfree(argv);
+            arrayfree(envp);
+  
+            break;
+            }  /* END if (pjob->ji_nodeid != efwd.fe_node) */
+  
+          /* It's me, do the spawn */
+  
+          ret = 0;
 
-        if (ret != DIS_SUCCESS)
-          goto err;
+          if ((ptask = pbs_task_create(pjob,taskid)) != NULL) 
+            {
+            strcpy(ptask->ti_qs.ti_parentjobid,jobid);
+  
+            ptask->ti_qs.ti_parentnode = efwd.fe_node;
+            ptask->ti_qs.ti_parenttask = efwd.fe_taskid;
 
-        pjob->ji_resources[nodeidx-1].nr_mem = disrul(stream,&ret);
+            if (LOGLEVEL >= 6)
+              {
+              log_record(
+                PBSEVENT_ERROR,
+                PBS_EVENTCLASS_JOB,
+                pjob->ji_qs.ji_jobid,
+                "saving task (IM_GET_TID)");
+              }
 
-        if (ret != DIS_SUCCESS)
-          goto err;
-
-        DBPRT(("%s: POLL_JOB %s OKAY kill %d cpu %lu mem %lu\n",
-          id, 
-          jobid, 
-          exitval,
-          pjob->ji_resources[nodeidx-1].nr_cput,
-          pjob->ji_resources[nodeidx-1].nr_mem))
-
-        if (exitval != 0)
-          {
-          sprintf(log_buffer,"%s non-zero exit status reported from node %s (%d)",
-            pjob->ji_qs.ji_jobid,
-            np->hn_host,
-            np->hn_node);
-
+            if (task_save(ptask) != -1)
+              ret = start_process(ptask,argv,envp);
+            }
+  
+          arrayfree(argv);
+          arrayfree(envp);
+  
+          taskid = ptask->ti_qs.ti_task;
+  
+          ptask = task_check(pjob,efwd.fe_taskid);
+  
+          if (ptask == NULL)
+            break;
+  
+          tm_reply(
+            ptask->ti_fd,
+            (ret == -1) ? TM_ERROR : TM_OKAY,
+            efwd.fe_event);
+  
+          diswsi(
+            ptask->ti_fd, 
+            (int)(ret == -1 ?  TM_ESYSTEM : taskid));
+  
+          DIS_tcp_wflush(ptask->ti_fd);
+  
+          break;
+  
+        default:
+  
+          sprintf(log_buffer,"unknown request type %d saved",
+            event_com);
+  
           log_err(-1,id,log_buffer);
 
-          pjob->ji_nodekill = np->hn_node;
-          }
+          break;
+        }  /* END switch (event_com) */
 
-        break;
+      break;
 
-      case IM_GET_TID:
+    case IM_ERROR:  /* this is a REPLY */
 
-			/*
-			** Sender must be Mother Superior with a TID.
-			** I will either do the spawn or forward the SPAWN
-			** to the final destination.
-			**
-			** auxiliary info (
-			**	task id		tm_task_id;
-			** )
-			*/
-			if (check_ms(stream, pjob))
-				goto fini;
-			taskid = disrsi(stream, &ret);
-			if (ret != DIS_SUCCESS)
-				goto err;
-			/*
-			** Check to see if I need to forward the taskid
-			** to another MOM.
-			*/
-			if (pjob->ji_nodeid != efwd.fe_node) {
-				np = find_node(pjob, -1, efwd.fe_node);
-				if (np == NULL)
-					goto done;
+      /*
+      ** Sender is responding to a request with an error code.
+      **
+      ** auxiliary info (
+      **  error value	int;
+      ** )
+      */
 
-				ep = event_alloc(IM_SPAWN_TASK, np,
-					efwd.fe_event, efwd.fe_taskid);
-				ret = im_compose(np->hn_stream, jobid, cookie,
-					IM_SPAWN_TASK, efwd.fe_event,
-					efwd.fe_taskid);
-				if (ret != DIS_SUCCESS)
-					goto done;
-				ret = diswsi(np->hn_stream, pjob->ji_nodeid);
-				if (ret != DIS_SUCCESS)
-					goto done;
-				ret = diswsi(np->hn_stream, taskid);
-				if (ret != DIS_SUCCESS)
-					goto done;
-				ret = diswst(np->hn_stream, pjob->ji_globid);
-				if (ret != DIS_SUCCESS)
-					goto done;
-				for (i=0; argv[i]; i++) {
-					ret = diswst(np->hn_stream, argv[i]);
-					if (ret != DIS_SUCCESS)
-						goto done;
-				}
-				ret = diswst(np->hn_stream, "");
-				if (ret != DIS_SUCCESS)
-					goto done;
-				for (i=0; envp[i]; i++) {
-					ret= diswst(np->hn_stream, envp[i]);
-					if (ret != DIS_SUCCESS)
-						goto done;
-				}
-				ret = (rpp_flush(np->hn_stream) == -1) ?
-					DIS_NOCOMMIT : DIS_SUCCESS;
-				arrayfree(argv);
-				arrayfree(envp);
-				break;
-			}
+      errcode = disrsi(stream,&ret);
 
-			/*
-			** It's me, do the spawn.
-			*/
-			ret = 0;
-			if ((ptask = pbs_task_create(pjob, taskid)) != NULL) {
-				strcpy(ptask->ti_qs.ti_parentjobid, jobid);
-				ptask->ti_qs.ti_parentnode = efwd.fe_node;
-				ptask->ti_qs.ti_parenttask = efwd.fe_taskid;
-				if (task_save(ptask) != -1)
-					ret = start_process(ptask, argv, envp);
-			}
-			arrayfree(argv);
-			arrayfree(envp);
+      if (ret != DIS_SUCCESS)
+        goto err;
 
-			taskid = ptask->ti_qs.ti_task;
-			ptask = task_check(pjob, efwd.fe_taskid);
-			if (ptask == NULL)
-				break;
-			(void)tm_reply(ptask->ti_fd,
-				(ret == -1) ? TM_ERROR : TM_OKAY,
-				efwd.fe_event);
-			(void)diswsi(ptask->ti_fd, (int)(ret == -1 ?
-					TM_ESYSTEM : taskid));
-			(void)DIS_tcp_wflush(ptask->ti_fd);
+      switch (event_com) 
+        {
+        case IM_JOIN_JOB:
 
-			break;
+          /*
+          ** A MOM has rejected a request to join a job.
+          ** We need to send a ABORT_JOB to all the sisterhood
+          ** and fail the job start to server.
+          ** I'm mother superior.
+          */
 
-		default:
-			sprintf(log_buffer, "unknown request type %d saved",
-				event_com);
-			log_err(-1, id, log_buffer);
-			break;
-		}
-		break;
+          if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HERE) == 0) 
+            {
+            log_err(-1,id,"JOIN_JOB ERROR and I'm not MS");
 
-	case	IM_ERROR:		/* this is a REPLY */
-		/*
-		** Sender is responding to a request with an error code.
-		**
-		** auxiliary info (
-		**	error value	int;
-		** )
-		*/
-		errcode = disrsi(stream, &ret);
-		if (ret != DIS_SUCCESS)
-			goto err;
+            goto err;
+            }
 
-		switch (event_com) {
+          DBPRT(("%s: JOIN_JOB %s returned ERROR %d\n",
+            id, 
+            jobid, 
+            errcode))
 
-		case	IM_JOIN_JOB:
-			/*
-			** A MOM has rejected a request to join a job.
-			** We need to send a ABORT_JOB to all the sisterhood
-			** and fail the job start to server.
-			** I'm mother superior.
-			*/
-			if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HERE) == 0) {
-				log_err(-1, id,
-					"JOIN_JOB ERROR and I'm not MS");
-				goto err;
-			}
-			DBPRT(("%s: JOIN_JOB %s returned ERROR %d\n",
-				id, jobid, errcode))
-			job_start_error(pjob,errcode,netaddr(addr));
-			break;
+          job_start_error(pjob,errcode,netaddr(addr));
 
-		case	IM_ABORT_JOB:
-		case	IM_KILL_JOB:
-			/*
-			** Job cleanup failed on a sister.
-			** Wait for everybody to respond then finishup.
-			** I'm mother superior.
-			*/
-			if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HERE) == 0) {
-				log_err(-1, id,
-					"KILL_JOB %s ERROR and I'm not MS");
-				goto err;
-			}
-			DBPRT(("%s: KILL/ABORT JOB %s returned ERROR %d\n",
-				id, jobid, errcode))
-			np->hn_sister = errcode ? errcode : SISTER_KILLDONE;
-			for (i=1; i<pjob->ji_numnodes; i++) {
-				if (pjob->ji_hosts[i].hn_sister == SISTER_OKAY)
-					break;
-			}
-			if (i == pjob->ji_numnodes) {	/* all dead */
-				pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITING;
-				exiting_tasks = 1;
-			}
-			break;
+          break;
 
-		case	IM_SPAWN_TASK:
-		case	IM_GET_TASKS:
-		case	IM_SIGNAL_TASK:
-		case	IM_OBIT_TASK:
-		case	IM_GET_INFO:
-			/*
-			** A user attemt failed, inform process.
-			*/
-			DBPRT(("%s: REQUEST %d %s returned ERROR %d\n",
-				id, event_com, jobid, errcode))
-			ptask = task_check(pjob, event_task);
-			if (ptask == NULL)
-				break;
-			(void)tm_reply(ptask->ti_fd, TM_ERROR, event);
-			(void)diswsi(ptask->ti_fd, errcode);
-			(void)DIS_tcp_wflush(ptask->ti_fd);
-			break;
+        case IM_ABORT_JOB:
+        case IM_KILL_JOB:
 
-		case	IM_POLL_JOB:
-			/*
-			** I must be Mother Superior for the job and
-			** this is an error reply to a poll request.
-			*/
-			if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HERE) == 0) {
-				log_err(-1, id,
-					"POLL_JOB %s ERROR and I'm not MS");
-				goto err;
-			}
-			DBPRT(("%s: POLL_JOB %s returned ERROR %d\n",
-				id, jobid, errcode))
-			np->hn_sister = errcode ? errcode : SISTER_BADPOLL;
-			break;
+          /*
+          ** Job cleanup failed on a sister.
+          ** Wait for everybody to respond then finishup.
+          ** I'm mother superior.
+          */
+
+          if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HERE) == 0) 
+            {
+            /* log_err(-1,id,"KILL_JOB %s ERROR and I'm not MS"); */
+
+            log_err(-1,id,"KILL_JOB ERROR and I'm not MS");
+
+            goto err;
+            }
+
+          DBPRT(("%s: KILL/ABORT JOB %s returned ERROR %d\n",
+            id, jobid, errcode))
+
+          np->hn_sister = errcode ? errcode : SISTER_KILLDONE;
+
+          for (i = 1;i < pjob->ji_numnodes;i++) 
+            {
+            if (pjob->ji_hosts[i].hn_sister == SISTER_OKAY)
+              break;
+            }
+
+          if (i == pjob->ji_numnodes) 
+            {
+            /* all dead */
+
+            pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITING;
+
+            exiting_tasks = 1;
+            }
+
+          break;
+
+        case IM_SPAWN_TASK:
+        case IM_GET_TASKS:
+        case IM_SIGNAL_TASK:
+        case IM_OBIT_TASK:
+        case IM_GET_INFO:
+
+          /* A user attempt failed, inform process. */
+
+          DBPRT(("%s: REQUEST %d %s returned ERROR %d\n",
+            id,event_com,jobid,errcode))
+
+          ptask = task_check(pjob, event_task);
+
+          if (ptask == NULL)
+            break;
+
+          tm_reply(ptask->ti_fd,TM_ERROR,event);
+
+          diswsi(ptask->ti_fd,errcode);
+
+          DIS_tcp_wflush(ptask->ti_fd);
+
+          break;
+
+        case IM_POLL_JOB:
+
+          /*
+          ** I must be Mother Superior for the job and
+          ** this is an error reply to a poll request.
+          */
+
+          if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HERE) == 0) 
+            {
+            /* log_err(-1,id,"POLL_JOB %s ERROR and I'm not MS"); */
+
+            log_err(-1,id,"POLL_JOB ERROR and I'm not MS");
+
+            goto err;
+            }
+
+          DBPRT(("%s: POLL_JOB %s returned ERROR %d\n",
+            id, jobid, errcode))
+
+          np->hn_sister = errcode ? errcode : SISTER_BADPOLL;
+
+          break;
 
         case IM_GET_TID:
 
@@ -4044,150 +4171,228 @@ int tm_request(
       if (prev_error)
         goto done;
 
-		if (pjob->ji_nodeid != nodeid) {	/* not me */
-			ep = event_alloc(IM_GET_TASKS, phost, event, fromtask);
-			if (phost->hn_stream == -1) {
-				phost->hn_stream = rpp_open(phost->hn_host,
-							pbs_rm_port);
-			}
-			ret = im_compose(phost->hn_stream, jobid, cookie,
-					IM_GET_TASKS, event, fromtask);
-			if (ret != DIS_SUCCESS)
-				goto done;
-			ret = diswui(phost->hn_stream, pjob->ji_nodeid); /* XXX */
-			if (ret != DIS_SUCCESS)
-				goto done;
-			ret = (rpp_flush(phost->hn_stream) == -1) ?
-				DIS_NOCOMMIT : DIS_SUCCESS;
-			if (ret != DIS_SUCCESS)
-				goto done;
-			reply = FALSE;
-			goto done;
-		}
-		ret = tm_reply(fd, TM_OKAY, event);
-		if (ret != DIS_SUCCESS)
-			goto done;
-		for (ptask=(task *)GET_NEXT(pjob->ji_tasks);
-				ptask;
-				ptask=(task *)GET_NEXT(ptask->ti_jobtask)) {
-			ret = diswui(fd, ptask->ti_qs.ti_task);
-			if (ret != DIS_SUCCESS)
-				goto done;
-		}
-		ret = diswui(fd, TM_NULL_TASK);
-		break;
+      if (pjob->ji_nodeid != nodeid) 
+        {
+        /* not me */
 
-	case TM_SPAWN:
+        ep = event_alloc(IM_GET_TASKS,phost,event,fromtask);
 
-          /*
-	   ** Spawn a task on the requested node.
-	   **
-           **	read (
-	   **		argc		int;
-	   **		arg 0		string;
-           **		...
-           **		arg argc-1	string;
-           **		env 0		string;
-           **		...
-           **		env m		string;
-           **	)
-           */
-		DBPRT(("%s: SPAWN %s on node %d\n",
-			id, jobid, nodeid))
-		numele = disrui(fd, &ret);
-		if (ret != DIS_SUCCESS)
-			goto done;
+        if (phost->hn_stream == -1) 
+          {
+          phost->hn_stream = rpp_open(phost->hn_host,pbs_rm_port);
+          }
 
-		argv = (char **)calloc(numele + 1,sizeof(char **));
-		assert(argv);
+        ret = im_compose(
+          phost->hn_stream, 
+          jobid, 
+          cookie,
+          IM_GET_TASKS, 
+          event, 
+          fromtask);
 
-		for (i=0; i<numele; i++) {
-			argv[i] = disrst(fd, &ret);
-			if (ret != DIS_SUCCESS) {
-				arrayfree(argv);
-				goto done;
-			}
-		}
-		argv[i] = NULL;
+        if (ret != DIS_SUCCESS)
+          goto done;
 
-		numele = 3;
+        ret = diswui(phost->hn_stream,pjob->ji_nodeid); /* XXX */
 
-		envp = (char **)calloc(numele, sizeof(char **));
-		assert(envp);
+        if (ret != DIS_SUCCESS)
+          goto done;
 
-		for (i=0;; i++) {
-			char	*env;
+        ret = (rpp_flush(phost->hn_stream) == -1) ?
+          DIS_NOCOMMIT : DIS_SUCCESS;
 
-			env = disrst(fd, &ret);
-			if (ret != DIS_SUCCESS && ret != DIS_EOD) {
-				arrayfree(argv);
-				arrayfree(envp);
-				goto done;
-			}
-			if (env == NULL)
-				break;
-			if (*env == '\0') {
-				free(env);
-				break;
-			}
-			/*
-			**	Need to remember extra slot for NULL
-			**	at the end.  Thanks to Pete Wyckoff
-			**	for finding this.
-			*/
-			if (i == numele-1) {
-				numele *= 2;
-				envp = (char **)realloc(envp,
-					numele*sizeof(char **));
-				assert(envp);
-			}
-			envp[i] = env;
-		}
-		envp[i] = NULL;
-		ret = DIS_SUCCESS;
+        if (ret != DIS_SUCCESS)
+          goto done;
 
-		if (prev_error) {
-			arrayfree(argv);
-			arrayfree(envp);
-			goto done;
-		}
+        reply = FALSE;
 
-		/*
-		** If I'm Mother Suerior and the spawn happens on
-		** me, just do it.
-		*/
+        goto done;
+        }  /* END if (pjob->ji_nodeid != nodeid) */
 
-		if (pjob->ji_nodeid == 0 && pjob->ji_nodeid == nodeid) {  /* XXX */
-			i = TM_ERROR;
-			ptask = pbs_task_create(pjob, TM_NULL_TASK);
-			if (ptask != NULL) {
-				strcpy(ptask->ti_qs.ti_parentjobid, jobid);
-				ptask->ti_qs.ti_parentnode = pjob->ji_nodeid;
-				ptask->ti_qs.ti_parenttask = fromtask;
-				if (task_save(ptask) != -1) {
-					ret = start_process(ptask, argv, envp);
-					if (ret != -1)
-						i = TM_OKAY;
-				}
-			}
-			arrayfree(argv);
-			arrayfree(envp);
-			ret = tm_reply(fd, i, event);
-			if (ret != DIS_SUCCESS)
-				goto done;
-			ret = diswsi(fd, ((i == TM_ERROR) ?
-					TM_ESYSTEM :
-					ptask->ti_qs.ti_task));
-			goto done;
-		}
-		/*
-		** If I'm a regular mom and the destination is not
-		** MS, just send a GET_TID to MS.
-		*/
-		else if (pjob->ji_nodeid != 0 &&
-				nodeid != pjob->ji_vnods[0].vn_node) { /* XXX */
-			pnode = &pjob->ji_vnods[0];
-			phost = pnode->vn_host;
+      ret = tm_reply(fd,TM_OKAY,event);
+
+      if (ret != DIS_SUCCESS)
+        goto done;
+
+      for (ptask = (task *)GET_NEXT(pjob->ji_tasks);
+           ptask;
+           ptask = (task *)GET_NEXT(ptask->ti_jobtask)) 
+        {
+        ret = diswui(fd, ptask->ti_qs.ti_task);
+
+        if (ret != DIS_SUCCESS)
+          goto done;
+        }
+
+      ret = diswui(fd, TM_NULL_TASK);
+
+      break;
+
+    case TM_SPAWN:
+
+      /*
+      ** Spawn a task on the requested node.
+      **
+      ** read (
+      **	argc		int;
+      **	arg 0		string;
+      **	...
+      **	arg argc-1	string;
+      **	env 0		string;
+      **	...
+      **	env m		string;
+      **	)
+      */
+
+      DBPRT(("%s: SPAWN %s on node %d\n",
+        id, jobid, nodeid))
+
+      numele = disrui(fd,&ret);
+
+      if (ret != DIS_SUCCESS)
+        goto done;
+
+      argv = (char **)calloc(numele + 1,sizeof(char **));
+
+      assert(argv);
+
+      for (i = 0;i < numele;i++) 
+        {
+        argv[i] = disrst(fd,&ret);
+
+        if (ret != DIS_SUCCESS) 
+          {
+          arrayfree(argv);
+
+          goto done;
+          }
+        }
+
+      argv[i] = NULL;
+
+      numele = 3;
+
+      envp = (char **)calloc(numele, sizeof(char **));
+
+      assert(envp);
+
+      for (i = 0;;i++) 
+        {
+        char *env;
+
+        env = disrst(fd,&ret);
+
+        if ((ret != DIS_SUCCESS) && (ret != DIS_EOD)) 
+          {
+          arrayfree(argv);
+          arrayfree(envp);
+
+          goto done;
+          }
+
+        if (env == NULL)
+          break;
+
+        if (*env == '\0') 
+          {
+          free(env);
+
+          break;
+          }
+
+        /*
+        **	Need to remember extra slot for NULL
+        **	at the end.  Thanks to Pete Wyckoff
+        **	for finding this.
+        */
+
+        if (i == numele - 1) 
+          {
+          numele *= 2;
+
+          envp = (char **)realloc(envp,numele * sizeof(char **));
+
+          assert(envp);
+          }
+
+        envp[i] = env;
+        }
+
+      envp[i] = NULL;
+
+      ret = DIS_SUCCESS;
+
+      if (prev_error) 
+        {
+        arrayfree(argv);
+        arrayfree(envp);
+
+        goto done;
+        }
+
+      /*
+      ** If I'm Mother Suerior and the spawn happens on
+      ** me, just do it.
+      */
+
+      if ((pjob->ji_nodeid == 0) && (pjob->ji_nodeid == nodeid)) 
+        {  
+        /* XXX */
+
+        i = TM_ERROR;
+
+        ptask = pbs_task_create(pjob,TM_NULL_TASK);
+
+        if (ptask != NULL) 
+          {
+          strcpy(ptask->ti_qs.ti_parentjobid,jobid);
+
+          ptask->ti_qs.ti_parentnode = pjob->ji_nodeid;
+          ptask->ti_qs.ti_parenttask = fromtask;
+
+          if (LOGLEVEL >= 6)
+            {
+            log_record(
+              PBSEVENT_ERROR,
+              PBS_EVENTCLASS_JOB,
+              pjob->ji_qs.ji_jobid,
+              "saving task (TM_SPAWN)");
+            }
+
+          if (task_save(ptask) != -1) 
+            {
+            ret = start_process(ptask,argv,envp);
+
+            if (ret != -1)
+              i = TM_OKAY;
+            }
+          }
+
+        arrayfree(argv);
+        arrayfree(envp);
+
+        ret = tm_reply(fd,i,event);
+
+        if (ret != DIS_SUCCESS)
+          goto done;
+
+        ret = diswsi(
+          fd,
+          ((i == TM_ERROR) ?  TM_ESYSTEM : ptask->ti_qs.ti_task));
+
+        goto done;
+        }  /* END if ((pjob->ji_nodeid == 0) && (pjob->ji_nodeid == nodeid)) */
+
+      /*
+      ** If I'm a regular mom and the destination is not
+      ** MS, just send a GET_TID to MS.
+      */
+      else if ((pjob->ji_nodeid != 0) && (nodeid != pjob->ji_vnods[0].vn_node))
+        { 
+        /* XXX */
+
+        pnode = &pjob->ji_vnods[0];
+        phost = pnode->vn_host;
 
 			ep = event_alloc(IM_GET_TID, pnode->vn_host,
 					TM_NULL_EVENT, TM_NULL_TASK);

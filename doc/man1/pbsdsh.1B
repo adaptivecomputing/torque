@@ -81,9 +81,9 @@
 .Sh NAME
 pbsdsh \- distribute task to nodes under pbs
 .Sh SYNOPSIS
-pbsdsh [-c copies] [-s] [-v] program [args]
+pbsdsh [-c copies] [-s] [-v] [--] program [args]
 .br
-pbsdsh [-n node] [-s] [-v] program [args]
+pbsdsh [-n node] [-s] [-v] [--] program [args]
 .Sh DESCRIPTION
 Executes (spawns) a normal Unix program on one or more nodes under control of
 the Portable Batch System, PBS.  Pbsdsh uses the Task Manager
@@ -106,6 +106,8 @@ If this option is given, the program is run in turn on each
 node, one after the other.
 .IP -v
 Verbose output about error conditions and task exit status is produced.
+.IP --
+Disables further argument processing.  Useful if your program's arguments use dashes.
 .Sh OPERANDS
 The first operand,
 .Ar program ,
@@ -118,7 +120,11 @@ are passed as arguments to the program.
 The pbsdsh command will write a diagnostic message to standard error for
 each error occurrence.
 .Sh EXIT STATUS
-Upon successful processing of all the operands presented to the
+Upon successful processing of all the operands presented to the command, the
+exit status will be a value of zero.
+.LP
+If the pbsdsh command fails to process any operand, or fails to contact the
+MOM daemon on the localhost the command exits with a value greater than zero.
 .Sh SEE ALSO
 qsub(1B), tm_spawn(3B)
 \" turn off any extra indent left by the Sh macro

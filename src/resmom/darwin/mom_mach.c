@@ -1760,18 +1760,27 @@ struct	rm_attribute	*attrib;
 	return ret_string;
 }
 
-static char	*
-ncpus(attrib)
-struct rm_attribute	*attrib;
-{
-	if (attrib) {
-		log_err(-1, "ncpus", extra_parm);
-		rm_errno = RM_ERR_BADPARAM;
-		return NULL;
-	}
-	sprintf(ret_string, "%d", nncpus);
-	return ret_string;
-}
+
+
+static char *ncpus(
+
+  struct rm_attribute *attrib)
+
+  {
+  if (attrib != NULL) 
+    {
+    log_err(-1,"ncpus",extra_parm);
+
+    rm_errno = RM_ERR_BADPARAM;
+
+    return(NULL);
+    }
+
+  sprintf(ret_string,"%d", 
+    nncpus);
+
+  return(ret_string);
+  }
 
 
 
@@ -1795,9 +1804,11 @@ static char *physmem(
 #ifdef TUSEMEMSIZE
 
   {
+  /* NOTE:  patch by UMaine */
+
   uint64_t physmem = 0;
 
-  /* NOTE:  patch by UMaine */
+  size_t len = sizeof(physmem);
 
   if (sysctlbyname("hw.memsize",&physmem,&len,NULL,0) < 0)
     {

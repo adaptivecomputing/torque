@@ -1,6 +1,4 @@
 #
-# $Id$
-#
 #
 #       Makefile for the PBS "mom" routine
 #
@@ -125,6 +123,7 @@ OBJS =	mom_main.o \
 	mom_mach.o \
 	mom_start.o \
 	pe_input.o \
+	tmsock_recov.o \
 	$(MOM_ADDTL_OBJS)
 
 

@@ -355,13 +355,15 @@ void scan_for_terminated()
     ptask->ti_qs.ti_exitstat = exiteval;
     ptask->ti_qs.ti_status   = TI_STATE_EXITED;
 
-    task_save(ptask);
-
     sprintf(log_buffer,"%s: job %s task %d terminated, sid %d",
       __func__, 
       pjob->ji_qs.ji_jobid,
       ptask->ti_qs.ti_task, 
       ptask->ti_qs.ti_sid);
+
+    task_save(ptask);
+
+    DBPRT(("%s\n",log_buffer));  /* REMOVEME */
 
     LOG_EVENT(
       PBSEVENT_DEBUG,

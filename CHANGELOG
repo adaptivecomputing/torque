@@ -1,3 +1,9 @@
+1.2.0p1
+
+  added support for solaris 5
+  added support for program args in pbsdsh (USC)
+  added improved task recovery (USC)
+
 1.2.0p0
 
   fixed MOM state update behavior (USC/Poland)

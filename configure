@@ -1624,6 +1624,12 @@ cat >> confdefs.h <<EOF
 EOF
 fi
 
+if test "$PBS_MACH" = solaris5; then
+cat >> confdefs.h <<EOF
+#define __TSOLARIS5
+EOF
+fi
+
 if test "$PBS_MACH" = digitalunix; then
 cat >> confdefs.h <<EOF
 #define __TDIGITAL

@@ -370,20 +370,20 @@ int get_script(
 
   while ((in = fgets(s,MAX_LINE_LEN,file)) != NULL) 
     {
+    int len;
+
+    /* replace DOS EOL ('^M') characters */
+
+    len = strlen(in);
+
+    if ((len >= 2) && (in[len - 2] == '\r') && (in[len - 1] == '\n'))
+      {
+      in[len - 2] = '\n';
+      in[len - 1] = '\0';
+      }
+
     if (!exec && ((sopt = ispbsdir(s,prefix)) != NULL)) 
       {
-      int len;
-
-      /* replace DOS EOL ('^M') characters */
-
-      len = strlen(in);
-
-      if ((len >= 2) && (in[len - 2] == '\r') && (in[len - 1] == '\n'))
-        {
-        in[len - 2] = '\n';
-        in[len - 1] = '\0';
-        }
-
       while ((*(cont = in + strlen(in) - 2) == '\\') && (*(cont + 1) == '\n') ) 
         { 
         /* next line is continuation of this line */

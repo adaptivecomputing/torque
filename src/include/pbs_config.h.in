@@ -114,8 +114,8 @@
 /* PBS specific: defined if this is a linux system */
 #undef __TLINUX
 
-/* PBS specific: defined if this is a SUN OS system */
-#undef IS_SUNOS4
+/* PBS specific: defined if this is a SUN OS 5/Solaris 10 system */
+#undef __TSOLARIS5
 
 /* PBS specific: defined if this is an SP2 */
 #undef IBM_SP2

@@ -145,7 +145,7 @@ The qmove command will write a diagnostic messages to standard error for each
 error occurrence.
 .Sh EXIT STATUS
 Upon successful processing of all the operands presented to the
-the qmove command, the exit status will be a value of zero.
+qmove command, the exit status will be a value of zero.
 .LP
 If the qmove command fails to process any operand, the
 command exits with a value greater than zero.

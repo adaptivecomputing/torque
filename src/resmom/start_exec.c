@@ -371,7 +371,7 @@ int mom_restart_job(
 
     strcpy(filnam,pdir->d_name);
 
-    if (mach_restart(ptask, namebuf) == -1) 
+    if (mach_restart(ptask,namebuf) == -1) 
       {
       sprintf(log_buffer, "%s: task %d failed from file %s",
         pjob->ji_qs.ji_jobid, 
@@ -382,6 +382,15 @@ int mom_restart_job(
       }
 
     ptask->ti_qs.ti_status = TI_STATE_RUNNING;
+
+    if (LOGLEVEL >= 6)
+      {
+      log_record(
+        PBSEVENT_ERROR,
+        PBS_EVENTCLASS_JOB,
+        pjob->ji_qs.ji_jobid,
+        "task set to running (mom_restart_job)");
+      }
  
     task_save(ptask);
 
@@ -2359,6 +2368,15 @@ int TMomFinalizeJob3(
 
   strcpy(ptask->ti_qs.ti_parentjobid,pjob->ji_qs.ji_jobid);
 
+  if (LOGLEVEL >= 6)
+    {
+    log_record(
+      PBSEVENT_ERROR,
+      PBS_EVENTCLASS_JOB,
+      pjob->ji_qs.ji_jobid,
+      "saving task (TMomFinalizeJob3)");
+    }
+
   if (task_save(ptask) == -1)
     {
     /* FAILURE */
@@ -2406,7 +2424,9 @@ int TMomFinalizeJob3(
   pjob->ji_qs.ji_state    = JOB_STATE_RUNNING;
   pjob->ji_qs.ji_substate = JOB_SUBSTATE_RUNNING;
 
-  job_save(pjob,SAVEJOB_QUICK);
+  /* changed from SAVEJOB_QUICK to SAVEJOB_FULL (USC - 2/5/2005) */
+
+  job_save(pjob,SAVEJOB_FULL);
 
   sprintf(log_buffer,"job %s started, pid = %ld",
     pjob->ji_qs.ji_jobid,
@@ -2651,6 +2671,15 @@ int start_process(
 
     ptask->ti_qs.ti_sid = sjr.sj_session;
     ptask->ti_qs.ti_status = TI_STATE_RUNNING;
+
+    if (LOGLEVEL >= 6)
+      {
+      log_record(
+        PBSEVENT_ERROR,
+        PBS_EVENTCLASS_JOB,
+        pjob->ji_qs.ji_jobid,
+        "task set to running/saving task (start_process)");
+      }
 
     task_save(ptask);
 

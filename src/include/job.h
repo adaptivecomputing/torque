@@ -368,7 +368,8 @@ typedef struct {
 
 struct job {
 
-	/* Note: these members, up to ji_qs, are not saved to disk */
+	/* Note: these members, up to ji_qs, are not saved to disk
+           (except for ji_stdout, ji_stderr) */
 
 	list_link       ji_alljobs;	/* links to all jobs in server */
 	list_link       ji_jobque;	/* SVR: links to jobs in same queue */

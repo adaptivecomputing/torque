@@ -1019,7 +1019,7 @@ void rmnl(
 
 
 
-static u_long addclient(
+u_long addclient(
 
   char *name)  /* I */
 
@@ -4996,6 +4996,15 @@ int main(
             ptask->ti_qs.ti_status = TI_STATE_EXITED;
 
             pjob->ji_qs.ji_un.ji_momt.ji_exitstat = 0;
+
+            if (LOGLEVEL >= 6)
+              {
+              log_record(
+                PBSEVENT_ERROR,
+                PBS_EVENTCLASS_JOB,
+                pjob->ji_qs.ji_jobid,
+                "saving task (main loop)");
+              }
 
             task_save(ptask);
 

@@ -145,7 +145,13 @@ install_dir()
 		"$id_dname" = "." \) ]; do
 
 		test -f $id_dname && return 1
-		test -d $id_dname && break
+
+# solaris fails on 'test -d'
+#               test -d $id_dname && break
+
+		if [ -d $id_dname ]; then
+                  break;
+                fi
 
 		id_dlist="`basename $id_dname` $id_dlist"
 		id_dname=`dirname "$id_dname"`
@@ -312,7 +318,9 @@ mk_default_file()
 
 	# I think I know better than pbs.  --pw
         #  if default already exists, leave alone 
-	if [ ! -e $PBS_DEFAULT_FILE ]; then
+
+	# solaris fails on '-e', use '-f'
+	if [ ! -f $PBS_DEFAULT_FILE ]; then
 	    rm -f $PBS_DEFAULT_FILE > /dev/null 2>&1
 	    echo $PBS_DEFAULT_SERVER > $PBS_DEFAULT_FILE && \
 		chmod 644 $PBS_DEFAULT_FILE

@@ -191,7 +191,7 @@ The qhold command will write a diagnostic message to standard error for each
 error occurrence.
 .Sh EXIT STATUS
 Upon successful processing of all the operands presented to the
-the qhold command, the exit status will be a value of zero.
+qhold command, the exit status will be a value of zero.
 .LP
 If the qhold command fails to process any operand, the
 command exits with a value greater than zero.

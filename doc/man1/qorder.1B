@@ -123,7 +123,7 @@ The qorder command will write diagnostic messages to standard error for each
 error occurrence.
 .Sh EXIT STATUS
 Upon successful processing of all the operands presented to the
-the qorder command, the exit status will be a value of zero.
+qorder command, the exit status will be a value of zero.
 .LP
 If the qorder command fails to process any operand, the
 command exits with a value greater than zero.

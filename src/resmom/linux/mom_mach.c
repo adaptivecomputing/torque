@@ -3060,6 +3060,12 @@ void scan_non_child_tasks(void)
         task->ti_qs.ti_exitstat = 0;  /* actually unknown */
         task->ti_qs.ti_status = TI_STATE_EXITED;
 
+        /* NOTE:  dup of logging above (REMOVEME) */
+
+        DBPRT(("%s: %s\n", 
+          (char *)__func__,
+          buf));
+
         task_save(task);
 
         exiting_tasks = 1;

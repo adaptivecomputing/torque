@@ -113,6 +113,11 @@
 #define JOBBUFSIZE 2048
 #define MAX_SAVE_TRIES 3
 
+#ifdef PBS_MOM
+int save_tmsock(job *);
+int recov_tmsock(int,job *);
+#endif
+
 /* global data items */
 
 extern char  *path_jobs;
@@ -270,6 +275,12 @@ int job_save(
         {
         redo++;
         } 
+#ifdef PBS_MOM
+      else if (save_tmsock(pjob) != 0) 
+        {
+        redo++;
+        } 
+#endif  /* PBS_MOM */
       else if (save_attr(job_attr_def,pjob->ji_wattr,(int)JOB_ATR_LAST) != 0) 
         {
         redo++;
@@ -431,6 +442,14 @@ job *job_recov(
 
     return(NULL);
     }
+#ifdef PBS_MOM
+  /* read in tm sockets and ips */
+
+  if (recov_tmsock(fds,pj) != 0) 
+    {
+    log_err(errno,"job_recov","err from recov_tmsock");
+    }
+#endif /* PBS_MOM */
 
   close(fds);
 

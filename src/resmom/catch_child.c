@@ -434,7 +434,7 @@ void scan_for_exiting()
 
           tp = task_find(pjob,pobit->oe_info.fe_taskid);
 
-          assert(tp != NULL);
+          assert(tp != NULL);  /* FIXME:  ??? */
 
           if (tp->ti_fd != -1) 
             {  
@@ -472,7 +472,9 @@ void scan_for_exiting()
 
       ptask->ti_fd = -1;
       ptask->ti_qs.ti_status = TI_STATE_DEAD;
-  
+ 
+      DBPRT(("%s: task is dead\n",(char *)__func__));
+ 
       task_save(ptask);
       }  /* END for (ptask) */
 
@@ -1001,22 +1003,25 @@ void init_abort_jobs(
   char          *id = "init_abort_jobs";
 
   DIR		*dir;
-  int		i, sisters, rc;
+  int            i;
+  int            j;
+  int            sisters, rc;
   struct dirent	*pdirent;
   job		*pj;
   char		*job_suffix = JOB_FILE_SUFFIX;
-  int		job_suf_len = strlen(job_suffix);
+  int            job_suf_len = strlen(job_suffix);
   char		*psuffix;
 #if	MOM_CHECKPOINT == 1
-  char		path[MAXPATHLEN+1];
-  char		oldp[MAXPATHLEN+1];
-  struct	stat	statbuf;
-  extern char	*path_checkpoint;
+  char           path[MAXPATHLEN + 1];
+  char           oldp[MAXPATHLEN + 1];
+  struct stat    statbuf;
+  extern char   *path_checkpoint;
 #endif
 
   if (LOGLEVEL >= 6)
     {
-    sprintf(log_buffer,"init_abort_jobs: recover=%d\n",
+    sprintf(log_buffer,"%s: recover=%d\n",
+      id,
       recover);
 
     log_record(
@@ -1056,9 +1061,35 @@ void init_abort_jobs(
 
     if (pj == NULL)
       {
-      DBPRT(("init_abort_jobs: NULL job pointer\n"))
-        continue;
+      sprintf(log_buffer,"%s: NULL job pointer\n",
+        id);
+
+      log_record(
+        PBSEVENT_ERROR,
+        PBS_EVENTCLASS_SERVER,
+        msg_daemonname,
+        log_buffer);
+
+      continue;
       }
+
+    for (j = 0;j < pj->ji_numnodes;j++)
+      {
+      if (LOGLEVEL >= 6)
+        {
+        sprintf(log_buffer,"%s: adding client %s\n",
+          id,
+          pj->ji_hosts[j].hn_host);
+
+        log_record(
+          PBSEVENT_ERROR,
+          PBS_EVENTCLASS_SERVER,
+          msg_daemonname,
+          log_buffer);
+        }
+
+      addclient(pj->ji_hosts[j].hn_host);
+      }  /* END for (j) */
 
     if (LOGLEVEL >= 4)
       {
