@@ -233,7 +233,7 @@ void set_globid(
     return;
     }
 
-  if (srj != NULL)
+  if (sjr != NULL)
     {
     sprintf(cvtbuf,"%llx", 
       sjr->sj_ash);

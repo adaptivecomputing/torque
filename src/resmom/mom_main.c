@@ -257,7 +257,7 @@ struct	config_list {
 
 int                     LOGLEVEL = 0;  /* valid values (0 - 10) */
 int                     DEBUGMODE = 0;
-long                    TJobInitialStartTimeout = 5; /* seconds to wait for job to launch before backgrounding */
+long                    TJobStartBlockTime = 5; /* seconds to wait for job to launch before backgrounding */
 long                    TJobStartTimeout = 300; /* seconds to wait for job to launch before purging */
 
 
@@ -1364,6 +1364,32 @@ static unsigned long setloglevel(
 
 
 
+static unsigned long jobstartblocktime(
+
+  char *value)  /* I */
+
+  {
+  int i;
+
+  log_record(
+    PBSEVENT_SYSTEM,
+    PBS_EVENTCLASS_SERVER,
+    "startblocktime",
+    value);
+
+  i = (int)strtol(value,NULL,10);
+
+  if ((i < 0) || ((i == 0) && (value[0] != '0')))
+    {
+    return(0);  /* error */
+    }
+
+  TJobStartBlockTime = (unsigned int)i;
+
+  return(1);
+  }  /* END jobstartblocktime() */
+
+
 
 /*
 **	Add static resource or shell escape line from config file.
@@ -1632,6 +1658,7 @@ int read_config(
       { "max_load",     setmaxload },
       { "prologalarm",  prologalarm },
       { "restricted",   restricted },
+      { "jobstartblocktime", jobstartblocktime },
       { "usecp",        usecp },
       { "wallmult",     wallmult },
       { "pbsserver",    setserver },
@@ -1791,9 +1818,9 @@ int read_config(
 
       for (i = 0;special[i].name;i++) 
         {
-        if (strcmp(name,special[i].name) == 0)
+        if (strcasecmp(name,special[i].name) == 0)
           break;
-        }
+        }  /* END for (i) */
 
       if (special[i].name == NULL) 
         {
@@ -1828,13 +1855,13 @@ int read_config(
     add_static(str,file,linenum);
 
     nconfig++;
-    }
+    }  /* END while (fgets()) */
 		
   /*
   **	Create a new array.
   */
 
-  if (config_array) 
+  if (config_array != NULL) 
     {
     for (ap = config_array;ap->c_name != NULL;ap++) 
       {
@@ -4881,6 +4908,8 @@ int main(
 
     end_proc();
 
+    check_state();
+
     time_now = time((time_t *)0);
 
     /*
@@ -4905,13 +4934,11 @@ int main(
 
           internal_state |= UPDATE_MOM_STATE;
           }
-
-        is_update_stat(index);
         }
       }
 
 #if IBM_SP2==2
-    (void)query_adp();
+    query_adp();
 #endif	/*IBM_SP2 */
 
     /* check if loadave means we should be "busy" */
@@ -4924,8 +4951,6 @@ int main(
 
       check_busy(myla);
       }
-
-    check_state();
 
     /* if needed, update server with my state change */
     /* can be changed in check_busy() or query_adp() */
@@ -5443,7 +5468,7 @@ int TMOMScanForStarting(void)
 
           memset(TJE,0,sizeof(pjobexec_t));
                                                                                 
-          exec_bail(pjob,JOB_EXEC_RETRY);
+          exec_bail(pjob,SC);
           }
         else
           {

@@ -200,7 +200,7 @@ struct pbsnode *PGetNodeFromAddr(
 
 void bad_node_warning(
 		
-  pbs_net_t addr)
+  pbs_net_t addr)  /* I */
 
   {
   int i;
@@ -224,7 +224,7 @@ void bad_node_warning(
       ** ping_nodes to check and reset the node's state.
       */
 
-      sprintf(log_buffer, "!!! unable to contact node %s !!!",
+      sprintf(log_buffer, "ALERT: unable to contact node %s",
         pbsndlist[i]->nd_name);
 
       log_event(
@@ -647,6 +647,8 @@ static void initialize_pbsnode(
   int             ntype) /* time-shared or cluster */
 
   {
+  char *id = "initialize_pbsnode";
+
   int i;
 
   memset(pnode,0,sizeof(struct pbsnode));
@@ -673,6 +675,22 @@ static void initialize_pbsnode(
 
   for (i = 0;pul[i];i++) 
     {
+    if (LOGLEVEL >= 6)
+      {
+      sprintf(log_buffer,"node '%s' allows trust for ipaddr %ld.%ld.%ld.%ld\n",
+        pnode->nd_name,
+        (pul[i] & 0xff000000) >> 24,
+        (pul[i] & 0x00ff0000) >> 16,
+        (pul[i] & 0x0000ff00) >> 8,
+        (pul[i] & 0x000000ff));
+                                                                                               
+      log_record(
+        PBSEVENT_SCHED,
+        PBS_EVENTCLASS_REQUEST,
+        id,
+        log_buffer);
+      }
+
     tinsert(pul[i],pnode,&ipaddrs);
     }  /* END for (i) */
 
@@ -963,7 +981,8 @@ int update_nodes_file()
 
     /* ... write its name, and if time-shared, append :ts */
 
-    fprintf(nin, "%s", np->nd_name);	/* write name */
+    fprintf(nin,"%s", 
+      np->nd_name);	/* write name */
 
     if (np->nd_ntype == NTYPE_TIMESHARED)
       fprintf(nin, ":ts"); 
@@ -972,7 +991,9 @@ int update_nodes_file()
     /* don't write to maintain compatability with old style file */
 
     if (np->nd_nsn > 1)
-      fprintf(nin," %s=%d",ATTR_NODE_np,np->nd_nsn);
+      fprintf(nin," %s=%d",
+        ATTR_NODE_np,
+        np->nd_nsn);
 
     /* write out properties */
 
@@ -1377,11 +1398,14 @@ int setup_nodes(void)
 
   if ((nin = fopen(path_nodes,"r")) == NULL) 
     {
+    sprintf(log_buffer,"cannot open node description file '%s' in setup_nodes()\n",
+      path_nodes);
+
     log_event(
       PBSEVENT_ADMIN, 
       PBS_EVENTCLASS_SERVER, 
       server_name,
-      "No Node description file found in setup_nodes");
+      log_buffer);
 
     return(0);
     }
@@ -1427,8 +1451,8 @@ int setup_nodes(void)
 
     nodename = token;
 
-    /* now process remaining tokes (if any), they may be either */
-    /* attributes (keyword=value) or old style properties       */
+    /* now process remaining tokens (if any), they may be either */
+    /* attributes (keyword=value) or old style properties        */
 
     while (1) 
       {
@@ -1481,7 +1505,7 @@ int setup_nodes(void)
         }
       }    /* END while(1) */
 
-    /* if any properties, create properity attr and add to list */
+    /* if any properties, create property attr and add to list */
 
     if (propstr[0] != '\0') 
       {
@@ -1529,7 +1553,8 @@ int setup_nodes(void)
 
       goto errtoken2;
       } 
-    else if (err != 0) 
+
+    if (err != 0) 
       {
       sprintf(log_buffer,"could not create node \"%s\", error = %d", 
         nodename, 
@@ -1544,8 +1569,20 @@ int setup_nodes(void)
       goto errtoken2;
       }
 
+    if (LOGLEVEL >= 3)
+      {
+      sprintf(log_buffer,"node '%s' successfully loaded from nodes file",
+        nodename);
+                                                                                               
+      log_record(
+        PBSEVENT_SCHED,
+        PBS_EVENTCLASS_REQUEST,
+        id,
+        log_buffer);
+      }
+
     free_attrlist(&atrlist);
-    }
+    }  /* END for (linenum) */
 
   fclose(nin);
 

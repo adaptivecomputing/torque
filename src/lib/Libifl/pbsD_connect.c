@@ -504,7 +504,7 @@ int pbs_disconnect(
 
   {
   int  sock;
-  char x;
+  static char x[THE_BUF_SIZE / 4];
 
   /* send close-connection message */
 
@@ -519,7 +519,7 @@ int pbs_disconnect(
       {	
       /* wait for server to close connection */
 
-      if (read(sock,&x,1) < 1) 
+      if (read(sock,&x,sizeof(x)) < 1) 
         break;
       }
     }
@@ -533,7 +533,7 @@ int pbs_disconnect(
   connection[connect].ch_inuse = 0;
 
   return(0);
-  }
+  }  /* END pbs_disconnect() */
 
 
 

@@ -242,111 +242,213 @@ int setwinsize(pty)
 	return (0);
 }
 
+
+
+
+
 /*
  * reader process - reads from the remote socket, and writes
  *	to the master pty
  */
-int mom_reader(s, ptc)
-	int s;
-	int ptc;
-{
-	extern ssize_t read_blocking_socket(int fd, void *buf, ssize_t count);
-	char buf[1024];
-	int c;
 
-	/* read from the socket, and write to ptc */
-	while (mom_reader_go) {
-		c = read_blocking_socket(s, buf, sizeof(buf));
-		if (c > 0) {
-			int wc;
-			char *p = buf;
+int mom_reader(
+
+  int s,
+  int ptc)
+
+  {
+  extern ssize_t read_blocking_socket(int fd, void *buf, ssize_t count);
+  char buf[1024];
+  int c;
+
+  /* read from the socket, and write to ptc */
+
+  while (mom_reader_go) 
+    {
+    c = read_blocking_socket(s,buf,sizeof(buf));
+
+    if (c > 0) 
+      {
+      int   wc;
+      char *p = buf;
 	
-			while (c) {
-				if ((wc = write(ptc, p, c)) < 0) {
-					if (errno == EINTR) {
-						continue;
-					}
-					return (-1);
-				}
-				c -= wc;
-				p += wc;
-			}
-		} else if (c == 0) {
-			return (0);
-		} else if (c < 0) {
-			if (errno == EINTR)
-				continue;
-			else {
-				return (-1);
-			}
-		}
-	}
-	return 0;
-}
+      while (c > 0) 
+        {
+        if ((wc = write(ptc,p,c)) < 0) 
+          {
+          if (errno == EINTR) 
+            {
+            /* write interrupted - retry */
+
+            continue;
+            }
+
+          /* FAILURE - write failed */
+
+          return(-1);
+          }
+
+        c -= wc;
+        p += wc;
+        }  /* END while (c > 0) */
+
+      continue;
+      } 
+
+    if (c == 0) 
+      {
+      /* SUCCESS - all data written */
+
+      return (0);
+      } 
+
+    if (c < 0) 
+      {
+      if (errno == EINTR)
+        {
+        /* read interrupted - retry */
+
+        continue;
+        }
+
+      /* FAILURE - read failed */
+
+      return(-1);
+      }
+    }    /* END while (1) */
+
+  /* NOTREACHED*/
+
+  return(0);
+  }  /* END mom_reader() */
+
+
+
+
 
 
 /*
  * Writer process: reads from master pty, and writes
  * data out to the rem socket
  */
-int
-mom_writer(s, ptc)
-	int s;
-	int ptc;
-{
-	char buf[1024];
-	int c;
 
-	/* read from ptc, and write to the socket */
-	while (1) {
-		c = read(ptc, buf, sizeof(buf));
-		if (c > 0) {
-			int wc;
-			char *p = buf;
+int mom_writer(
+
+  int s,
+  int ptc)
+
+  {
+  char buf[1024];
+  int c;
+
+  /* read from ptc, and write to the socket */
+
+  while (1) 
+    {
+    c = read(ptc,buf,sizeof(buf));
+
+    if (c > 0) 
+      {
+      int wc;
+      char *p = buf;
 	
-			while (c) {
-				if ((wc = write(s, p, c)) < 0) {
-					if (errno == EINTR) {
-						continue;
-					}
-					return (-1);
-				}
-				c -= wc;
-				p += wc;
-			}
-		} else if (c == 0) {
-			return (0);
-		} else if (c < 0) {
-			if (errno == EINTR)
-				continue;
-			else {
-				return (-1);
-			}
-		}
-	}
-}
+      while (c > 0) 
+        {
+        if ((wc = write(s,p,c)) < 0) 
+          {
+          if (errno == EINTR) 
+            {
+            continue;
+            }
+
+          /* FAILURE - write failed */
+
+          return(-1);
+          }
+
+        c -= wc;
+        p += wc;
+        }  /* END while(c) */
+
+      continue;
+      }  /* END if (c > 0) */
+
+    if (c == 0) 
+      {
+      /* SUCCESS - all data read */
+
+      return(0);
+      } 
+
+    if (c < 0) 
+      {
+      if (errno == EINTR)
+        {
+        /* read interupted, retry */
+
+        continue;
+        }
+
+      /* FAILURE - read failed */
+
+      return(-1);
+      }
+    }    /* END while(1) */
+
+  /*NOTREACHED*/
+
+  return(-1);
+  }  /* END mom_writer */
+
+
+
+
 
 /*
  * conn_qsub - connect to the qsub that submitted this interactive job
+ * return >= 0 on SUCCESS, < 0 on FAILURE 
  */
 
-int conn_qsub(hostname, port)
-	char *hostname;
-	long  port;
-{
-	pbs_net_t hostaddr;
-	int s;
+int conn_qsub(
 
-	if ((hostaddr = get_hostaddr(hostname)) == (pbs_net_t)0)
-		return (-1);
-	s = client_to_svr(hostaddr, (unsigned int)port, 0);
+  char *hostname,
+  long  port)
 
-	/* this one should be blocking */
-	if (s >= 0) {
-	    int flags = fcntl(s, F_GETFL);
-	    flags &= ~O_NONBLOCK;
-	    fcntl(s, F_SETFL, flags);
-	}
+  {
+  pbs_net_t hostaddr;
+  int s;
 
-	return s;
-}
+  int flags;
+
+  if ((hostaddr = get_hostaddr(hostname)) == (pbs_net_t)0)
+    {
+    return(-1);
+    }
+
+  s = client_to_svr(hostaddr,(unsigned int)port,0);
+
+  /* NOTE:  client_to_svr() can return 0 for SUCCESS */
+
+  /* assume SUCCESS requires s > 0 (USC) was 'if (s >= 0)' */
+  /* above comment not enabled */
+
+  if (s < 0)
+    {
+    /* FAILURE */
+
+    return(-1);
+    }
+
+  /* this socket should be blocking */
+
+  flags = fcntl(s,F_GETFL);
+
+  flags &= ~O_NONBLOCK;
+
+  fcntl(s,F_SETFL,flags);
+
+  return(s);
+  }  /* END conn_qsub() */
+
+
+/* END mom_inter.c */

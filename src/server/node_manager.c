@@ -427,7 +427,7 @@ int is_stat_get(
 
       if (decode_arst(&temp,NULL,NULL,ret_info))
         {
-        DBPRT(("is_get_stat: cannot add attributes\n"));
+        DBPRT(("is_stat_get: cannot add attributes\n"));
 
         free_arst(&temp);
 
@@ -447,7 +447,7 @@ int is_stat_get(
 
   if (decode_arst(&temp,NULL,NULL,date_attrib))
     {
-    DBPRT(("is_get_stat:  cannot add date_attrib\n"));
+    DBPRT(("is_stat_get:  cannot add date_attrib\n"));
 
     free_arst(&temp);
 
@@ -462,7 +462,7 @@ int is_stat_get(
 
   if (node_status_list(&temp,np,ATR_ACTION_ALTER))
     {
-    DBPRT(("is_get_stat: cannot set node status list\n"));
+    DBPRT(("is_stat_get: cannot set node status list\n"));
 
     return(DIS_NOCOMMIT);
     }
@@ -951,8 +951,19 @@ void is_request(
     goto found;
     }  /* END if ((node = tfind(ipaddr,&ipaddrs)) != NULL) */
 
-  sprintf(log_buffer,"bad attempt to connect from %s",
+  /* node not listed in trusted ipaddrs list */
+
+  sprintf(log_buffer,"bad attempt to connect from %s (address not trusted)",
     netaddr(addr));
+
+  if (LOGLEVEL >= 2)
+    {
+    log_record(
+      PBSEVENT_SCHED,
+      PBS_EVENTCLASS_REQUEST,
+      id,
+      log_buffer);
+    }
 
   log_err(-1,id,log_buffer);
 
@@ -1064,7 +1075,7 @@ found:
 
       /* CLUSTER_ADDRS successful */
 
-      node->nd_state &= ~(INUSE_DOWN|INUSE_UNKNOWN|INUSE_NEEDS_HELLO_PING);
+      node->nd_state &= ~(INUSE_UNKNOWN|INUSE_NEEDS_HELLO_PING);
 
       for (sp = node->nd_psn;sp != NULL;sp = sp->next)
         {
@@ -1083,13 +1094,27 @@ found:
       if (ret == DIS_SUCCESS) 
         {
         DBPRT(("%s: IS_UPDATE %s 0x%x\n",
-          id,node->nd_name,i))
+          id,
+          node->nd_name,
+          i))
 
-        i &= (INUSE_DOWN|INUSE_BUSY);
+        i &= (INUSE_BUSY);
 
-        node->nd_state &= ~(INUSE_DOWN|INUSE_BUSY);
+        node->nd_state &= ~(INUSE_BUSY);
         node->nd_state |= i;
         }
+
+       if (ret != DIS_SUCCESS)
+         {
+         if (LOGLEVEL >= 1)
+           {
+           sprintf(log_buffer,"IS_UPDATE error %d on node %s\n",
+             ret,
+             node->nd_name);
+ 
+           log_err(ret,id,log_buffer);
+           }
+         }
 
       break;
 
@@ -1120,9 +1145,25 @@ found:
           }
         }
 
-      node->nd_state &= ~(INUSE_DOWN|INUSE_UNKNOWN|INUSE_NEEDS_HELLO_PING); 
-
       /*node->nd_state &= ~(INUSE_DOWN|INUSE_UNKNOWN);*/
+
+      node->nd_state &= ~(INUSE_UNKNOWN|INUSE_NEEDS_HELLO_PING); 
+
+      ret = is_stat_get(node);
+
+      if (ret != DIS_SUCCESS) 
+        {
+        if (LOGLEVEL >= 1)
+          {
+          sprintf(log_buffer,"IS_STATUS error %d on node %s\n",
+            ret,
+            node->nd_name);
+
+          log_err(ret,id,log_buffer);
+          }
+ 
+        goto err;
+        }
 
       for (sp = node->nd_psn;sp != NULL;sp = sp->next)
         {
@@ -1142,21 +1183,6 @@ found:
           }
 
         sp->inuse &= ~INUSE_DOWN;
-        }
-
-      ret = is_stat_get(node);
-
-      if (ret != DIS_SUCCESS) 
-        {
-        if (LOGLEVEL >= 1)
-          {
-          sprintf(log_buffer,"IS_STATUS error %d on node %s\n",
-            ret,node->nd_name);
-
-          log_err(ret,id,log_buffer);
-          }
-
-        goto err;
         }
 
       node->nd_lastupdate = time_now;

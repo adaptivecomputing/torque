@@ -685,43 +685,48 @@ static void get_ct(str, jque, jrun)
  * altdsp_statque - alternative display for queue information, -q option
  */
 
-static void altdsp_statque(serv, pstat, opt)
-	char *serv;
-	struct batch_status *pstat;
-	int  opt;
-{
-	char  rmem[SIZEL];
-	char *cput;
-	char *wallt;
-	char *jmax;
-	char *nodect;
-	char *blank = "--   ";
-	int   jrun;
-	int   jque;
-	char  qenabled = NULL;
-	char  qstarted = NULL;
-	int   tot_jrun = 0;
-	int   tot_jque = 0;
-	struct attrl *pat;
+static void altdsp_statque(
 
-	printf("\nserver: %s\n\n", serv);
-	printf("Queue            Memory CPU Time Walltime Node Run Que Lm  State\n");
-	printf("---------------- ------ -------- -------- ---- --- --- --  -----\n");
+  char *serv,
+  struct batch_status *pstat,
+  int  opt)
 
-	while (pstat) {
-		/* *rmem = '\0'; */
-		(void)strncpy(rmem, "--  ", SIZEL-1);
-		cput  = blank;
-		wallt = blank;
-		nodect= "-- ";
-		jrun  = 0;
-		jque  = 0;
-		jmax  = blank;
+  {
+  char  rmem[SIZEL];
+  char *cput;
+  char *wallt;
+  char *jmax;
+  char *nodect;
+  char *blank = "--   ";
+  int   jrun;
+  int   jque;
+  char  qenabled = '\0';
+  char  qstarted = '\0';
+  int   tot_jrun = 0;
+  int   tot_jque = 0;
+  struct attrl *pat;
 
-		
-		pat = pstat->attribs;
+  printf("\nserver: %s\n\n", serv);
+  printf("Queue            Memory CPU Time Walltime Node Run Que Lm  State\n");
+  printf("---------------- ------ -------- -------- ---- --- --- --  -----\n");
 
-		while (pat) {
+  while (pstat != NULL) 
+    {
+    /* *rmem = '\0'; */
+
+    strncpy(rmem, "--  ", SIZEL-1);
+
+    cput  = blank;
+    wallt = blank;
+    nodect= "-- ";
+    jrun  = 0;
+    jque  = 0;
+    jmax  = blank;
+
+    pat = pstat->attribs;
+
+    while (pat != NULL) 
+      {
 			if (strcmp(pat->name, ATTR_maxrun) == 0) {
 				jmax = pat->value;
 			} else if (strcmp(pat->name, ATTR_enable) == 0) {
@@ -760,9 +765,14 @@ static void altdsp_statque(serv, pstat, opt)
 
 		pstat = pstat->next;
 	}
-	printf("                                               --- ---\n");
-	printf("                                               %3d %3d\n", tot_jrun, tot_jque);
-}
+
+  printf("                                               --- ---\n");
+  printf("                                               %3d %3d\n", 
+    tot_jrun, 
+    tot_jque);
+
+  return;
+  }
 
 
 

@@ -1659,7 +1659,7 @@ int kill_task(
           */
 
         sprintf(log_buffer,"%s: not killing pid 0 with sig %d",
-          (char *)__func__,
+          id,
           sig);
 
         log_record(
@@ -1690,7 +1690,7 @@ int kill_task(
           }
 
         sprintf(log_buffer,"%s: killing pid %d task %d with sig %d",
-          (char *)__func__, 
+          id, 
           ps->pid, 
           ptask->ti_qs.ti_task, 
           sig);
@@ -2994,6 +2994,8 @@ char *size(
 void scan_non_child_tasks(void)
 
   {
+  char *id = "scan_non_child_tasks";
+
   job *job;
   extern list_head svr_alljobs;
 
@@ -3054,17 +3056,11 @@ void scan_non_child_tasks(void)
         log_event(
           PBSEVENT_JOB,
           PBS_EVENTCLASS_JOB,
-          (char *)__func__,
+          id,
           buf);
 
         task->ti_qs.ti_exitstat = 0;  /* actually unknown */
         task->ti_qs.ti_status = TI_STATE_EXITED;
-
-        /* NOTE:  dup of logging above (REMOVEME) */
-
-        DBPRT(("%s: %s\n", 
-          (char *)__func__,
-          buf));
 
         task_save(task);
 

@@ -89,6 +89,11 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
+
+#ifndef __TOLDTTY
+#include <pty.h>
+#endif /* __TOLDTTY */
+
 #include "list_link.h"
 #include "log.h"
 #include "server_limits.h"
@@ -97,7 +102,6 @@
 #include "job.h"
 #include "mom_mach.h"
 #include "mom_func.h"
-
 
 /* Global Variables */
 
@@ -356,7 +360,7 @@ void scan_for_terminated()
     ptask->ti_qs.ti_status   = TI_STATE_EXITED;
 
     sprintf(log_buffer,"%s: job %s task %d terminated, sid %d",
-      __func__, 
+      id, 
       pjob->ji_qs.ji_jobid,
       ptask->ti_qs.ti_task, 
       ptask->ti_qs.ti_sid);
@@ -389,7 +393,7 @@ void scan_for_terminated()
 
 #define PTY_SIZE 64
 
-#ifdef __PNEWTTY
+#ifndef __TOLDTTY
 
 int open_master(
 
@@ -405,7 +409,7 @@ int open_master(
   if (status < 0)
     {
     log_err(errno,"open_master", 
-      "failed in open_pty()");
+      "failed in openpty()");
 
     return(-1);
     }
@@ -419,7 +423,7 @@ int open_master(
   return(master);
   }  /* END open_master() */
 
-#else /* __PNEWTTY */
+#else /* __TOLDTTY */
 
 int open_master(
 
@@ -463,7 +467,7 @@ int open_master(
   return(-1);	/* tried all entries, give up */
   }  /* END open_master() */
 
-#endif /* __PNEWTTY */
+#endif /* __TOLDTTY */
 
 
 

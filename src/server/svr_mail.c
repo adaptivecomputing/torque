@@ -167,7 +167,7 @@ void svr_mailowner(
 
   /* Who is mail from, if SRV_ATR_mailfrom not set use default */
 
-  if ((mailfrom = server.sv_attr[(int)SRV_ATR_mailfrom].at_val.at_str) == 0)
+  if ((mailfrom = server.sv_attr[(int)SRV_ATR_mailfrom].at_val.at_str) == NULL)
     mailfrom = PBS_DEFAULT_MAIL;
 
   /* Who does the mail go to?  If mail-list, them; else owner */
@@ -180,7 +180,7 @@ void svr_mailowner(
 
     pas = pjob->ji_wattr[(int)JOB_ATR_mailuser].at_val.at_arst;
 
-    if (pas != (struct array_strings *)0)	
+    if (pas != NULL)	
       {
       for (i = 0;i < pas->as_usedptr;i++) 
         {
@@ -197,6 +197,11 @@ void svr_mailowner(
     /* no mail user list, just send to owner */
 
     strcpy(mailto,pjob->ji_wattr[(int)JOB_ATR_job_owner].at_val.at_str);
+
+    #ifdef TMAILDOMAIN
+      strcat(mailto,"@");
+      strcat(mailto,TMAILDOMAIN);
+    #endif /* TMAILDOMAIN */ 
     }
 
   /* setup sendmail command line with -f from_whom */
@@ -272,7 +277,7 @@ void svr_mailowner(
     fprintf(outmail, "%s\n", 
       stdmessage);
 
-  if (text != (char *)0)
+  if (text != NULL)
     fprintf(outmail, "%s\n",
       text);
 

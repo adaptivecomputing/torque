@@ -158,7 +158,7 @@ char task_fmt[] = "/%010.10ld";
 char noglobid[] = "none";
 
 extern int LOGLEVEL;
-extern long TJobInitialStartTimeout;
+extern long TJobStartBlockTime;
 
 /* external functions */
 
@@ -1266,11 +1266,13 @@ void im_eof(
     /* don't just give up, maybe mother superior is just being restarted, 
        do not set exiting_tasks -gs */
 
-    /* exiting_tasks = 1; */
+    /* disabled - USC 2/11/2005 */
 
-    pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITING;
-
-    exiting_tasks = 1;
+    /* 
+     * exiting_tasks = 1;
+     *
+     * pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITING;
+     */
     }
   }    /* END im_eof() */
 
@@ -3001,7 +3003,7 @@ void im_request(
               {
               memset(TJE,0,sizeof(pjobexec_t));
 
-              exec_bail(pjob,JOB_EXEC_RETRY);
+              exec_bail(pjob,SC);
               }
 
             break;
@@ -3009,10 +3011,10 @@ void im_request(
 
           /* block, wait for child to complete indicating success/failure of job launch */
 
-          if (TMomCheckJobChild(TJE,TJobInitialStartTimeout,&Count,&RC) == FAILURE)
+          if (TMomCheckJobChild(TJE,TJobStartBlockTime,&Count,&RC) == FAILURE)
             {
             sprintf(log_buffer,"job not ready after %ld second timeout, MOM will check later",
-              TJobInitialStartTimeout);
+              TJobStartBlockTime);
 
             log_record(
               PBSEVENT_ERROR,
@@ -4394,74 +4396,117 @@ int tm_request(
         pnode = &pjob->ji_vnods[0];
         phost = pnode->vn_host;
 
-			ep = event_alloc(IM_GET_TID, pnode->vn_host,
-					TM_NULL_EVENT, TM_NULL_TASK);
-			ep->ee_argv = argv;
-			ep->ee_envp = envp;
-			ep->ee_forward.fe_node = nodeid;
-			ep->ee_forward.fe_event = event;
-			ep->ee_forward.fe_taskid = fromtask;
-			ret = im_compose(phost->hn_stream, jobid, cookie,
-					IM_GET_TID, ep->ee_event,
-					TM_NULL_TASK);
-			if (ret != DIS_SUCCESS)
-				goto done;
-			ret = (rpp_flush(phost->hn_stream) == -1) ?
-				DIS_NOCOMMIT : DIS_SUCCESS;
-			if (ret != DIS_SUCCESS)
-				goto done;
-			reply = FALSE;
-			goto done;
-		}
+        ep = event_alloc(
+          IM_GET_TID, 
+          pnode->vn_host,
+          TM_NULL_EVENT, 
+          TM_NULL_TASK);
 
-		/*
-		** If I am MS, generate the TID now, otherwise
-		** we are sending to MS who will do it when she gets
-		** the SPAWN.
-		*/
-		taskid = (pjob->ji_nodeid == 0) ?
-			pjob->ji_taskid++ : TM_NULL_TASK;
+        ep->ee_argv = argv;
+        ep->ee_envp = envp;
+        ep->ee_forward.fe_node = nodeid;
+        ep->ee_forward.fe_event = event;
+        ep->ee_forward.fe_taskid = fromtask;
 
-		ep = event_alloc(IM_SPAWN_TASK, phost, event, fromtask);
-		if (phost->hn_stream == -1) {
-			phost->hn_stream = rpp_open(phost->hn_host,
-						pbs_rm_port);
-		}
-		ret = im_compose(phost->hn_stream, jobid, cookie,
-				IM_SPAWN_TASK, event, fromtask);
-		if (ret != DIS_SUCCESS)
-			goto done;
-		ret = diswui(phost->hn_stream, pjob->ji_nodeid);
-		if (ret != DIS_SUCCESS)
-			goto done;
-		ret = diswui(phost->hn_stream, taskid);
-		if (ret != DIS_SUCCESS)
-			goto done;
-		ret = diswst(phost->hn_stream, pjob->ji_globid);
-		if (ret != DIS_SUCCESS)
-			goto done;
-		for (i=0; argv[i]; i++) {
-			ret = diswst(phost->hn_stream, argv[i]);
-			if (ret != DIS_SUCCESS)
-				goto done;
-		}
-		ret = diswst(phost->hn_stream, "");
-		if (ret != DIS_SUCCESS)
-			goto done;
-		for (i=0; envp[i]; i++) {
-			ret = diswst(phost->hn_stream, envp[i]);
-			if (ret != DIS_SUCCESS)
-				goto done;
-		}
-		ret = (rpp_flush(phost->hn_stream) == -1) ?
-			DIS_NOCOMMIT : DIS_SUCCESS;
-		if (ret != DIS_SUCCESS)
-			goto done;
-		reply = FALSE;
-		arrayfree(argv);
-		arrayfree(envp);
+        ret = im_compose(
+          phost->hn_stream, 
+          jobid, 
+          cookie,
+          IM_GET_TID, 
+          ep->ee_event,
+          TM_NULL_TASK);
 
-		break;
+        if (ret != DIS_SUCCESS)
+          goto done;
+
+        ret = (rpp_flush(phost->hn_stream) == -1) ?
+          DIS_NOCOMMIT : DIS_SUCCESS;
+
+        if (ret != DIS_SUCCESS)
+          goto done;
+
+        reply = FALSE;
+
+        goto done;
+        }  /* END else if ((pjob->ji_nodeid != 0) && ...) */
+
+      /*
+      ** If I am MS, generate the TID now, otherwise
+      ** we are sending to MS who will do it when she gets
+      ** the SPAWN.
+      */
+
+      taskid = (pjob->ji_nodeid == 0) ?
+        pjob->ji_taskid++ : TM_NULL_TASK;
+
+      ep = event_alloc(IM_SPAWN_TASK,phost,event,fromtask);
+
+      job_save(pjob,SAVEJOB_FULL);
+
+      if (phost->hn_stream == -1) 
+        {
+        phost->hn_stream = rpp_open(phost->hn_host,pbs_rm_port);
+        }
+
+      ret = im_compose(
+        phost->hn_stream, 
+        jobid, 
+        cookie,
+        IM_SPAWN_TASK, 
+        event, 
+        fromtask);
+
+      if (ret != DIS_SUCCESS)
+        goto done;
+
+      ret = diswui(phost->hn_stream,pjob->ji_nodeid);
+
+      if (ret != DIS_SUCCESS)
+        goto done;
+
+      ret = diswui(phost->hn_stream,taskid);
+
+      if (ret != DIS_SUCCESS)
+        goto done;
+
+      ret = diswst(phost->hn_stream,pjob->ji_globid);
+
+      if (ret != DIS_SUCCESS)
+        goto done;
+
+      for (i = 0;argv[i];i++) 
+        {
+        ret = diswst(phost->hn_stream,argv[i]);
+
+        if (ret != DIS_SUCCESS)
+          goto done;
+        }
+
+      ret = diswst(phost->hn_stream,"");
+
+      if (ret != DIS_SUCCESS)
+        goto done;
+
+      for (i = 0;envp[i];i++) 
+        {
+        ret = diswst(phost->hn_stream,envp[i]);
+
+        if (ret != DIS_SUCCESS)
+          goto done;
+        }
+
+      ret = (rpp_flush(phost->hn_stream) == -1) ?
+        DIS_NOCOMMIT : DIS_SUCCESS;
+
+      if (ret != DIS_SUCCESS)
+        goto done;
+
+      reply = FALSE;
+
+      arrayfree(argv);
+      arrayfree(envp);
+
+      break;
 
     case TM_SIGNAL:
 

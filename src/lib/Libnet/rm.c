@@ -347,29 +347,33 @@ delrm(stream)
 **	Internal routine to find the out structure for a stream number.
 **	Return non NULL if all is well, NULL on error.
 */
-static
-struct	out *
-findout(stream)
-     int	stream;
-{
-	struct	out	*op;
 
-	for (op=outs[stream % HASHOUT]; op; op=op->next) {
-		if (op->stream == stream)
-			break;
-	}
-	if (op == NULL)
-		pbs_errno = ENOTTY;
-	return op;
-}
+static struct out *findout(
+
+  int stream)
+
+  {
+  struct out *op;
+
+  for (op = outs[stream % HASHOUT];op;op=op->next) 
+    {
+    if (op->stream == stream)
+      break;
+    }
+
+  if (op == NULL)
+    pbs_errno = ENOTTY;
+
+  return(op);
+  }
 
 
 
 
 static int startcom(
 
-  int stream,
-  int com)
+  int stream,  /* I */
+  int com)     /* I */
 
   {
   int ret;
@@ -388,8 +392,9 @@ static int startcom(
 
   if (ret != DIS_SUCCESS) 
     {
-    DBPRT(("startcom: diswsi error %s\n", 
-      dis_emsg[ret]))
+    /* NOTE:  cannot resolve log_err */
+
+    /* log_err(ret,"startcom - diswsi error",(char *)dis_emsg[ret]); */
 
     pbs_errno = errno;
     }
@@ -467,8 +472,9 @@ static int simpleget(
 
   if (ret != DIS_SUCCESS) 
     {
-    DBPRT(("simpleget: %s\n", 
-      dis_emsg[ret]))
+    /* NOTE:  cannot resolve log_err */
+
+    /* log_err(ret,"simpleget",(char *)dis_emsg[ret]); */
 
     pbs_errno = errno ? errno : EIO;
 

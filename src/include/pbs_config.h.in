@@ -189,6 +189,9 @@
 /* PBS specific: Define if PBS should use RPP/UDP for resource queries */
 #undef RPP
 
+/* PBS specific: Define default mail domain if other than localhost */
+#undef TMAILDOMAIN
+
 /* PBS specific: Define if PBS should use disable O_FSYNC for file open() calls */
 #undef TDISABLEFILESYNC
 

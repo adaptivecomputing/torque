@@ -147,6 +147,64 @@ void bailout(
 
 
 
+/*
+ * obit_submit - submit an OBIT request
+ * FIXME: do we need to retry this multiple times?
+ */
+
+int obit_submit(
+
+  int c)     /* the task index number */
+
+  {
+  int rc;
+
+  if (verbose)
+    {
+    fprintf(stderr,"%s: sending obit for task %u\n",
+      id, 
+      *(tid + c));
+    } 
+    
+  rc = tm_obit(*(tid + c),ev + c,events_obit + c);
+
+  if (rc == TM_SUCCESS)
+    {
+    if (*(events_obit+c) == TM_NULL_EVENT)
+      {
+      if (verbose)
+        {
+        fprintf(stderr,"task already dead\n");
+        }
+      }
+    else if (*(events_obit+c) == TM_ERROR_EVENT)
+      {
+      if (verbose)
+        {
+        fprintf(stderr, "Error on Obit return\n");
+        }
+      }
+    }
+  else
+    {
+    fprintf(stderr, "%s: failed to register for task termination notice, task %d\n", 
+      id, 
+      c);
+    }
+
+  return(rc);
+  }  /* END obit_submit() */
+
+
+
+
+/*
+ * mom_reconnect - continually attempt to reconnect to mom
+ * If we do reconnect, resubmit OBIT requests 
+ *
+ * FIXME: there's an assumption that all tasks have already been
+ * spawned and initial OBIT requests have been made.
+ */
 
 void mom_reconnect() 
 
@@ -179,23 +237,12 @@ void mom_reconnect()
         {
         if (*(events_obit + c) != TM_NULL_EVENT) 
           {
-          rc = tm_obit(*(tid + c),ev + c,events_obit + c);
+          rc = obit_submit(c);
 
           if (rc != TM_SUCCESS) 
             {
-            fprintf(stderr, "%s: failed to register for task termination notice, task %d\n", 
-              id, 
-              c);
-
             break;  /* reconnect again */
             }
-					   
-          if (verbose)
-            fprintf(stderr,"%s: resent obit for task %u, return: %s (%d)\n",
-              id, 
-              *(tid + c), 
-              get_ecname(rc), 
-              rc);
           } 
         else if (verbose) 
           {
@@ -309,39 +356,43 @@ void wait_for_task(
           continue;
           }
 
-        rc = tm_obit(*(tid + c),ev + c,events_obit + c);
+        rc = obit_submit(c);
 
         if (rc == TM_SUCCESS) 
           {
-          if (*(events_obit + c) == TM_NULL_EVENT) 
-            {
-            if (verbose) 
-              {
-              fprintf(stderr,"task already dead\n");
-              }
-            }  
-          else if (*(events_obit + c) == TM_ERROR_EVENT) 
-            {
-            if (verbose) 
-              {
-              fprintf(stderr, "Error on Obit return\n");
-              }
-            } 
-          else 
+          if ((*(events_obit + c) != TM_NULL_EVENT) && 
+              (*(events_obit + c) != TM_ERROR_EVENT))
             {
             nobits++;
             }
           } 
-        else if (verbose) 
-          {
-          fprintf(stderr, "%s: failed to register for task termination notice, task %d\n", 
-            id, 
-            c);
-          }
         } 
       else if (eventpolled == *(events_obit + c)) 
         {
-        /* obit event, task exited */
+        /* obit event, let's check it out */
+
+        if (tm_errno == TM_ESYSTEM)
+          {
+          if (verbose)
+            {
+            fprintf(stderr, "error TM_ESYSTEM on obit (resubmitting)\n");
+            }
+         
+          sleep(2);  /* Give the world a second to take a breath */
+ 
+          obit_submit(c);
+
+          continue; /* Go poll again */
+          }
+
+        if (tm_errno != 0)
+          {
+          fprintf(stderr, "error %d on obit for task %d\n",
+            tm_errno,
+            c);
+          }
+
+        /* task exited */
 
         if (verbose) 
           {
@@ -353,7 +404,9 @@ void wait_for_task(
 
         *(tid + c) = TM_NULL_TASK;
 
-        if (verbose || *(ev + c) != 0) 
+        *(events_obit + c) = TM_NULL_EVENT;
+
+        if ((verbose != 0) || (*(ev + c) != 0)) 
           {
           printf("%s: task %d exit status %d\n",
             id, 
@@ -494,78 +547,113 @@ int main(
     return(1);
     }
 
-	sigemptyset(&allsigs);
-	sigaddset(&allsigs, SIGHUP);
-	sigaddset(&allsigs, SIGINT);
-	sigaddset(&allsigs, SIGTERM);
+  sigemptyset(&allsigs);
+  sigaddset(&allsigs, SIGHUP);
+  sigaddset(&allsigs, SIGINT);
+  sigaddset(&allsigs, SIGTERM);
 
-	act.sa_mask = allsigs;
-	act.sa_flags = 0;
-	/*
-	** We want to abort system calls and call a function.
-	*/
+  act.sa_mask = allsigs;
+  act.sa_flags = 0;
+
+  /* We want to abort system calls and call a function. */
+
 #ifdef	SA_INTERRUPT
-	act.sa_flags |= SA_INTERRUPT;
+  act.sa_flags |= SA_INTERRUPT;
 #endif
-	act.sa_handler = bailout;
-	sigaction(SIGHUP, &act, NULL);
-	sigaction(SIGINT, &act, NULL);
-	sigaction(SIGTERM, &act, NULL);
+  act.sa_handler = bailout;
+  sigaction(SIGHUP, &act, NULL);
+  sigaction(SIGINT, &act, NULL);
+  sigaction(SIGTERM, &act, NULL);
 
 #ifdef DEBUG
-	if (rootrot.tm_parent == TM_NULL_TASK) {
-		printf("%s: I am the mother of all tasks\n", id);
-	} else {
-		printf("%s: I am but a child in the scheme of things\n", id);
-	}
+  if (rootrot.tm_parent == TM_NULL_TASK) 
+    {
+    printf("%s: I am the mother of all tasks\n", 
+      id);
+    } 
+  else 
+    {
+    printf("%s: I am but a child in the scheme of things\n", 
+      id);
+    }
 #endif /* DEBUG */
 
-	if ((rc = tm_nodeinfo(&nodelist, &numnodes)) != TM_SUCCESS) {
-		fprintf(stderr, "%s: tm_nodeinfo failed, rc = %s (%d)\n", id,
-						get_ecname(rc), rc);
-		return 1;
-	}
+  if ((rc = tm_nodeinfo(&nodelist,&numnodes)) != TM_SUCCESS) 
+    {
+    fprintf(stderr,"%s: tm_nodeinfo failed, rc = %s (%d)\n", 
+      id,
 
-	/* malloc space for various arrays based on number of nodes/tasks */
+    get_ecname(rc),rc);
 
-	tid = (tm_task_id *)calloc(numnodes, sizeof (tm_task_id));
-	if (tid == NULL) {
-		fprintf(stderr, "%s: malloc of task ids failed\n", id);
-		return 1;
-	}
-	events_spawn = (tm_event_t *)calloc(numnodes, sizeof (tm_event_t));
-	events_obit  = (tm_event_t *)calloc(numnodes, sizeof (tm_event_t));
-	ev = (int *)calloc(numnodes, sizeof (int));
-	for (c = 0; c < numnodes; c++ ) {
-		*(tid + c)          = TM_NULL_TASK;
-		*(events_spawn + c) = TM_NULL_EVENT;
-		*(events_obit  + c) = TM_NULL_EVENT;
-		*(ev + c)	    = 0;
-	}
+    return(1);
+    }
 
+  /* We already checked the lower bounds in the argument processing,
+     now we check the upper bounds */
 
-	/* Now spawn the program to where it goes */
+  if ((onenode >= numnodes) || (ncopies > numnodes)) 
+    {
+    fprintf(stderr,"%s: only %d nodes available\n", 
+      id, 
+      numnodes);
 
-	if (onenode >= 0) {
+    return(1);
+    } 
 
-		/* Spawning one copy onto logical node "onenode" */
+  /* malloc space for various arrays based on number of nodes/tasks */
 
-		start = onenode;
-		stop  = onenode + 1;
+  tid = (tm_task_id *)calloc(numnodes,sizeof(tm_task_id));
 
-	} else if (ncopies >= 0) {
-		/* Spawn a copy of the program to the first "ncopies" nodes */
+  events_spawn = (tm_event_t *)calloc(numnodes,sizeof(tm_event_t));
+  events_obit  = (tm_event_t *)calloc(numnodes,sizeof(tm_event_t));
 
-		start = 0;
-		stop  = ncopies;
-	} else {
-		/* Spawn a copy on all nodes */
+  ev = (int *)calloc(numnodes,sizeof(int));
 
-		start = 0;
-		stop  = numnodes;
-	}
+  if ((tid == NULL) || 
+      (events_spawn == NULL) ||
+      (events_obit == NULL) ||
+      (ev == NULL)) 
+    {
+    fprintf(stderr,"%s: memory alloc of task ids failed\n", 
+      id);
 
-	sigprocmask(SIG_BLOCK, &allsigs, NULL);
+    return(1);
+    }
+ 	
+  for (c = 0;c < numnodes;c++) 
+    {
+    *(tid + c)          = TM_NULL_TASK;
+    *(events_spawn + c) = TM_NULL_EVENT;
+    *(events_obit  + c) = TM_NULL_EVENT;
+    *(ev + c)           = 0;
+    }  /* END for (c) */
+
+  /* Now spawn the program to where it goes */
+
+  if (onenode >= 0) 
+    {
+    /* Spawning one copy onto logical node "onenode" */
+
+    start = onenode;
+    stop  = onenode + 1;
+    } 
+  else if (ncopies >= 0) 
+    {
+    /* Spawn a copy of the program to the first "ncopies" nodes */
+
+    start = 0;
+    stop  = ncopies;
+    } 
+  else 
+    {
+    /* Spawn a copy on all nodes */
+
+    start = 0;
+    stop  = numnodes;
+    }
+
+  sigprocmask(SIG_BLOCK,&allsigs,NULL);
+
 	for (c = start; c < stop; ++c) {
 		if ((rc = tm_spawn(argc-optind,
 			     argv+optind,

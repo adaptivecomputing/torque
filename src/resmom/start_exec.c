@@ -146,7 +146,7 @@ extern	unsigned int	pbs_rm_port;
 extern	u_long		localaddr;
 
 extern int LOGLEVEL;
-extern long TJobInitialStartTimeout;
+extern long TJobStartBlockTime;
 
 extern char *__get_variable(job *,char *);
 
@@ -711,7 +711,14 @@ int TMomFinalizeJob1(
   {
   static char 	       *id = "TMomFinalizeJob1";
 
-  int	   		i;
+#ifdef socklen_t
+  socklen_t             slen;
+#else
+  unsigned int	        slen;
+#endif /* socklen_t */
+
+  int                    i;
+
   attribute		*pattr;
   attribute		*pattri;
   resource		*presc;
@@ -757,11 +764,12 @@ int TMomFinalizeJob1(
     ** Main MOM will not need them after the job is going.
     */
 
-    i = sizeof(saddr);
+    slen = sizeof(saddr);
 
     if (getsockname(
           pjob->ji_stdout,
-          (struct sockaddr *)&saddr,&i) == -1) 
+          (struct sockaddr *)&saddr,
+          &slen) == -1) 
       {
       sprintf(log_buffer,"getsockname on stdout");
  
@@ -772,11 +780,12 @@ int TMomFinalizeJob1(
 
     TJE->port_out = (int)ntohs(saddr.sin_port);
 	
-    i = sizeof(saddr);
+    slen = sizeof(saddr);
 
     if (getsockname(
          pjob->ji_stderr,
-         (struct sockaddr *)&saddr,&i) == -1) 
+         (struct sockaddr *)&saddr,
+         &slen) == -1) 
       {
       sprintf(log_buffer,"getsockname on stderr");
  
@@ -834,7 +843,7 @@ int TMomFinalizeJob1(
       pjob->ji_qs.ji_jobid,
       log_buffer);
 
-    *SC = JOB_EXEC_RETRY;
+	    *SC = JOB_EXEC_RETRY;
 
     return(FAILURE);
     }
@@ -2692,7 +2701,7 @@ int start_process(
       }
 
     sprintf(log_buffer,"%s: task started, tid %d, sid %ld, cmd %s",
-      (char *)__func__, 
+      id, 
       ptask->ti_qs.ti_task, 
       (long)ptask->ti_qs.ti_sid, 
       argv[0]);
@@ -3357,14 +3366,20 @@ void start_exec(
   static char	*id = "start_exec";
 
   eventent	*ep;
-  int		i, nodenum, len;
+  int		i, nodenum;
   int		ports[2], socks[2];
-  struct	sockaddr_in	saddr;
+  struct	sockaddr_in saddr;
   hnodent	*np;
   attribute	*pattr;
   list_head	phead;
   svrattrl	*psatl;
   int		stream;
+
+#ifdef socklen_t
+  socklen_t slen;
+#else
+  unsigned int slen;
+#endif /* socklen_t */
 
   void im_compose A_((int stream,
     char	*jobid,
@@ -3488,9 +3503,9 @@ void start_exec(
         break;
         }
 	
-      len = sizeof(saddr);
+      slen = sizeof(saddr);
 
-      if (getsockname(socks[i],(struct sockaddr *)&saddr,&len) == -1)
+      if (getsockname(socks[i],(struct sockaddr *)&saddr,&slen) == -1)
         break;
 
       ports[i] = (int)ntohs(saddr.sin_port);
@@ -3615,16 +3630,16 @@ void start_exec(
         {
         memset(TJE,0,sizeof(pjobexec_t));
 
-        exec_bail(pjob,JOB_EXEC_RETRY);
+        exec_bail(pjob,SC);
         }
 
       return;
       }
 
-    if (TMomCheckJobChild(TJE,TJobInitialStartTimeout,&Count,&RC) == FAILURE)
+    if (TMomCheckJobChild(TJE,TJobStartBlockTime,&Count,&RC) == FAILURE)
       {
       sprintf(log_buffer,"job not ready after %ld second timeout, MOM will recheck",
-        TJobInitialStartTimeout);
+        TJobStartBlockTime);
 
       log_record(
         PBSEVENT_ERROR,

@@ -1,8 +1,6 @@
-------------------------------------------------------------------------------
-------------------------------------------------------------------------------
-
 How to Install using autoconf'ed TORQUE.
 
+ONLINE: http://clusterresources.com/torquedocs/quickstart.shtml
 
 - untar the tar file and cd to the top level directory
 
@@ -12,7 +10,6 @@ How to Install using autoconf'ed TORQUE.
 - run "make" (See 'BUILD' note below)
 
 - run "make install"
-
 
 -------------------------------------------------------------------
 
@@ -24,6 +21,7 @@ CONFIGURE: It is advisable to create a simple shell script
   tell you the options that were set when configure was run.
   To figure out which options one can set run "./configure --help"
   
+-------------------------------------------------------------------
 
 BUILD: You need to use a POSIX (or nearly POSIX) make. GNU make
   works quite well in this regard; BSD make does not. If you are
@@ -35,6 +33,9 @@ BUILD: You need to use a POSIX (or nearly POSIX) make. GNU make
   to work. Don't be surprised if the first thing that make does is
   call configure again. See the note in Makefile.in if this happens.
 
+-------------------------------------------------------------------
+
+OS NOTES
 
 MAC: If building for a Mac OS/X cluster, some users have reported issues 
   with using the tool 'stuffit' (corrupt the creation of the library 
@@ -51,6 +52,7 @@ TRU64/DIGITALUNIX: If building for a TRU64/Digital Unix cluster, some
   the path to librt.a (ie, '/usr/lib/librt.a') to the pbs_mom linker 
   line in ~/src/resmom/Makefile
 
+-------------------------------------------------------------------
 
 CONFIGURATION: Once built, see online docs for MOM, scheduler, and 
   server configuration

@@ -1,6 +1,4 @@
 #
-# $Id$
-#
 #
 #       Makefile for the PBS GUI
 #
@@ -113,8 +111,8 @@ build: $(TARGETS) ccode
 xpbs: $(srcdir)/xpbs.src
 	@echo Processing xpbs
 	@sed -e 's,#\!.*wish.*$$,#\!${WISH_PATH} -f,;' \
-            -e 's,set  *libdir.*$$,set libdir $(srcdir),' \
-	    -e 's,set  *appdefdir.*$$,set appdefdir .,' \
+            -e 's,set  *libdir.*$$,set libdir ${XPBS_LIB},' \
+	    -e 's,set  *appdefdir.*$$,set appdefdir ${XPBS_LIB},' \
             $? > $@
 	@chmod +x $@
 
@@ -156,9 +154,7 @@ install: build
 	# install xpbs changing the location of libdir and appdefdir
 	#
 	@echo Install xpbs
-	@sed -e 's,set  *libdir.*$$,set libdir ${XPBS_LIB},' \
-	    -e 's,set  *appdefdir.*$$,set appdefdir ${XPBS_LIB},' \
-	    xpbs > $(bindir)/xpbs
+	$(INSTALL) -m 755 xpbs $(bindir)/xpbs
 	@chmod 755 $(bindir)/xpbs 2> /dev/null
 	#
 	$(INSTALL) -m 755 buildindex $(XPBS_LIB)

@@ -1,7 +1,5 @@
 dnl -*- mode: m4; -*-
 dnl
-dnl $Id$
-dnl
 dnl This is an autoconf script.
 dnl To rebuild the `configure' script from this, execute the command
 dnl     autoconf
@@ -745,13 +743,15 @@ AC_ARG_SET(server_name_file,
                           the --set-server-home option to configure. If this
                           option is not specified, the default name for
                           this file will be set to \"server_name\".],
-[PBS_DEFAULT_FILE="${setval}"], [PBS_DEFAULT_FILE="server_name"])dnl
+[pbs_default_file="${setval}"], [pbs_default_file="server_name"])dnl
 
-case "${PBS_DEFAULT_FILE}" in
-  /*)     PBS_DEFAULT_FILE="${PBS_DEFAULT_FILE}" ;;
-  *)      PBS_DEFAULT_FILE="${pbs_server_home}/${PBS_DEFAULT_FILE}" ;;
+case "${pbs_default_file}" in
+  /*)     PBS_DEFAULT_FILE="${pbs_default_file}"
+          _PBS_DEFAULT_FILE="${pbs_default_file}" ;;
+  *)      PBS_DEFAULT_FILE="\${PBS_SERVER_HOME}/${pbs_default_file}"
+          _PBS_DEFAULT_FILE="${PBS_SERVER_HOME}/${pbs_default_file}" ;;
 esac
-AC_DEFINE_UNQUOTED(PBS_DEFAULT_FILE, "${PBS_DEFAULT_FILE}")
+AC_DEFINE_UNQUOTED(PBS_DEFAULT_FILE, "${_PBS_DEFAULT_FILE}")
 
 
 
@@ -777,11 +777,21 @@ AC_ARG_SET(environ,
 
 case "${pbs_environ}" in
   yes) AC_MSG_ERROR(--with-environ=PATH must be given a path) ;;
-  no)  PBS_ENVIRON="${pbs_server_home}/pbs_environment" ;;
+  no)  PBS_ENVIRON="\$(PBS_SERVER_HOME)/pbs_environment" ;;
   /*)  PBS_ENVIRON="${pbs_environ}" ;;
-  *)   PBS_ENVIRON="${pbs_server_home}/${pbs_environ}" ;;
+  *)   PBS_ENVIRON="\${PBS_SERVER_HOME}/${pbs_environ}" ;;
 esac
-AC_DEFINE_UNQUOTED(PBS_ENVIRON, "${PBS_ENVIRON}")
+
+case "${pbs_environ}" in
+  yes) { echo "configure: error: --with-environ=PATH must be given a path" 1>&2; exit 1; } ;;
+  no)  PBS_ENVIRON="\${PBS_SERVER_HOME}/pbs_environment"
+       _PBS_ENVIRON="${PBS_SERVER_HOME}/pbs_environment" ;;
+  /*)  PBS_ENVIRON="${pbs_environ}"
+       _PBS_ENVIRON="${pbs_environ}" ;;
+  *)   PBS_ENVIRON="\${PBS_SERVER_HOME}/${pbs_environ}"
+       _PBS_ENVIRON="${PBS_SERVER_HOME}/${pbs_environ}" ;;
+ esac
+AC_DEFINE_UNQUOTED(PBS_ENVIRON, "${_PBS_ENVIRON}")
 
 
 

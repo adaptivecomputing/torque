@@ -1,5 +1,16 @@
+pre 1.2.0p2
+
+  add spool dir space check (MAINE)
+
 1.2.0p1
 
+  add default DEFAULTMAILDOMAIN configure option
+  improve configure options to use pbs environment (USC)
+  use openpty() based tty management by default
+  enable default resource manager extensions
+  make mom config parameters case insensitive
+  added jobstartblocktime mom parameter
+  added bulk read in pbs_disconnect() (USC)
   added support for solaris 5
   added support for program args in pbsdsh (USC)
   added improved task recovery (USC)

@@ -1369,17 +1369,20 @@ PBS_SERVER_HOME="${pbs_server_home}"
 # Check whether --set-server_name_file was given.
 if test "${set_server_name_file+zzq}" = zzq; then
   setval="$set_server_name_file"
-  PBS_DEFAULT_FILE="${setval}"
+  pbs_default_file="${setval}"
 else
-  PBS_DEFAULT_FILE="server_name"
+  pbs_default_file="server_name"
 fi
 
-case "${PBS_DEFAULT_FILE}" in
-  /*)     PBS_DEFAULT_FILE="${PBS_DEFAULT_FILE}" ;;
-  *)      PBS_DEFAULT_FILE="${pbs_server_home}/${PBS_DEFAULT_FILE}" ;;
+case "${pbs_default_file}" in
+  /*)     PBS_DEFAULT_FILE="${pbs_default_file}"
+          _PBS_DEFAULT_FILE="${pbs_default_file}" ;;
+  *)      PBS_DEFAULT_FILE="\${PBS_SERVER_HOME}/${pbs_default_file}"
+          _PBS_DEFAULT_FILE="${PBS_SERVER_HOME}/${pbs_default_file}" ;;
 esac
+
 cat >> confdefs.h <<EOF
-#define PBS_DEFAULT_FILE "${PBS_DEFAULT_FILE}"
+#define PBS_DEFAULT_FILE "${_PBS_DEFAULT_FILE}"
 EOF
 
 
@@ -1404,12 +1407,15 @@ fi
 
 case "${pbs_environ}" in
   yes) { echo "configure: error: --with-environ=PATH must be given a path" 1>&2; exit 1; } ;;
-  no)  PBS_ENVIRON="${pbs_server_home}/pbs_environment" ;;
-  /*)  PBS_ENVIRON="${pbs_environ}" ;;
-  *)   PBS_ENVIRON="${pbs_server_home}/${pbs_environ}" ;;
+  no)  PBS_ENVIRON="\${PBS_SERVER_HOME}/pbs_environment"
+       _PBS_ENVIRON="${PBS_SERVER_HOME}/pbs_environment" ;;
+  /*)  PBS_ENVIRON="${pbs_environ}"
+       _PBS_ENVIRON="${pbs_environ}" ;;
+  *)   PBS_ENVIRON="\${PBS_SERVER_HOME}/${pbs_environ}"
+       _PBS_ENVIRON="${PBS_SERVER_HOME}/${pbs_environ}" ;;
 esac
 cat >> confdefs.h <<EOF
-#define PBS_ENVIRON "${PBS_ENVIRON}"
+#define PBS_ENVIRON "${_PBS_ENVIRON}"
 EOF
 
 
@@ -1642,13 +1648,6 @@ cat >> confdefs.h <<EOF
 EOF
 fi
 
-# NOTE:  END not included in configure.in
-
-cat >> confdefs.h <<EOF
-#define MACH_RESC_DEFS "resc_def_${PBS_MACH}.c"
-EOF
-
-
 # Check whether --disable-filesync was given.
 if test "${disable-filesync+set}" = set; then
   disableval="$disable_filesync"
@@ -1669,6 +1668,20 @@ else
 EOF
 
 fi
+
+
+# Check whether --maildomain was given.
+if test "${maildomain+set}" = set; then
+  cat >> confdefs.h <<\EOF
+#define TMAILDOMAIN ${maildomain}
+EOF
+fi
+
+# NOTE:  END not included in configure.in
+
+cat >> confdefs.h <<EOF
+#define MACH_RESC_DEFS "resc_def_${PBS_MACH}.c"
+EOF
 
 
 
@@ -1823,6 +1836,10 @@ fi
 
 if test "$PBS_MACH" = aix4; then
     MOMLIBS="$MOMLIBS -lodm -lcfg"
+fi
+
+if test "$PBS_MACH" = linux; then
+    MOMLIBS="$MOMLIBS -lutil"
 fi
 
 if test "$PBS_MACH" = irix6array; then

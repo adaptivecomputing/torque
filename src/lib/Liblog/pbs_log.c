@@ -406,7 +406,9 @@ void log_close(
 
     if (msg) 
       {
-      log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER,
+      log_record(
+        PBSEVENT_SYSTEM, 
+        PBS_EVENTCLASS_SERVER,
         "Log", 
         "Log closed");
       }

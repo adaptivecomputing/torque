@@ -2187,157 +2187,302 @@ int process_opts(
             pc++;
             }
 
-		i = atoi(optarg);
-		if ( i < -1024 || i > 1023 ) {
-		    fprintf(stderr, "qsub: illegal -p value\n");
-		    errflg++;
-		    break;
-		}
-                set_attr(&attrib,ATTR_p,optarg);
-            }
-            break;
-        case 'q':
-            if_cmd_line(q_opt) {
-                q_opt = passet;
-                strcpy(destination, optarg);
-            }
-            break;
-        case 'r':
+          i = atoi(optarg);
 
-            if_cmd_line(r_opt) {
-                r_opt = passet;
-		if ( strlen(optarg) != 1 ) {
-		    fprintf(stderr, "qsub: illegal -r value\n");
-		    errflg++;
-		    break;
-		}
-		if ( *optarg != 'y' && *optarg != 'n' ) {
-		    fprintf(stderr, "qsub: illegal -r value\n");
-		    errflg++;
-		    break;
-		}
-                set_attr(&attrib, ATTR_r, optarg);
-            }
-            break;
+          if ((i < -1024) || (i > 1023)) 
+            {
+            fprintf(stderr, "qsub: illegal -p value\n");
 
-        case 'S':
-
-            if_cmd_line(S_opt) {
-                S_opt = passet;
-		if ( parse_at_list(optarg, TRUE, TRUE) ) {
-	            fprintf(stderr, "qsub: illegal -S value\n");
-	            errflg++;
-		    break;
-		}
-                set_attr(&attrib, ATTR_S, optarg);
-            }
-            break;
-        case 'u':
-            if_cmd_line(u_opt) {
-                u_opt = passet;
-		if ( parse_at_list(optarg, TRUE, FALSE) ) {
-	            fprintf(stderr, "qsub: illegal -u value\n");
-	            errflg++;
-		    break;
-		}
-                set_attr(&attrib, ATTR_u, optarg);
-            }
-            break;
-        case 'v':
-            if_cmd_line(v_opt) {
-                v_opt = passet;
-		if ( v_value != (char *)0 ) free(v_value);
-		v_value = (char *) malloc(strlen(optarg)+1);
-		if ( v_value == (char *)0 ) {
-		    fprintf(stderr, "qsub: out of memory\n");
-		    errflg++;
-		    break;
-		}
-                strcpy(v_value, optarg);
-            }
-            break;
-        case 'V':
-            if_cmd_line(V_opt) {
-                V_opt = passet;
-            }
-            break;
-        case 'W':
-	    while ( isspace((int)*optarg) ) optarg++;
-	    if ( strlen(optarg) == 0 ) {
-		fprintf(stderr, "qsub: illegal -W value\n");
-		errflg++;
-		break;
-	    }
-	    i = parse_equal_string(optarg, &keyword, &valuewd);
-	    while (i == 1) {
-		if (strcmp(keyword, ATTR_depend) == 0) {
-            	    if_cmd_line(Depend_opt) {
-                	Depend_opt = passet;
-			pdepend = malloc(PBS_DEPEND_LEN);
-			if (parse_depend_list(valuewd,pdepend,PBS_DEPEND_LEN)) {
-			    fprintf(stderr, "qsub: illegal -W value\n");
-			    errflg++;
-			    break;
-			}
-                	set_attr(&attrib, ATTR_depend, pdepend);
-		    }
-		} else if (strcmp(keyword, ATTR_stagein) == 0) {
-            	    if_cmd_line(Stagein_opt) {
-                	Stagein_opt = passet;
-			if ( parse_stage_list(valuewd) ) {
-			    fprintf(stderr, "qsub: illegal -W value\n");
-			    errflg++;
-			    break;
-			}
-                	set_attr(&attrib, ATTR_stagein, valuewd);
-		    }
-		} else if (strcmp(keyword, ATTR_stageout) == 0) {
-            	    if_cmd_line(Stageout_opt) {
-                	Stageout_opt = passet;
-                        if ( parse_stage_list(valuewd) ) {
-                            fprintf(stderr, "qsub: illegal -W value\n");
-                            errflg++;
-			    break;
-                        }
-                	set_attr(&attrib, ATTR_stageout, valuewd);
-		    }
-		} else if (strcmp(keyword, ATTR_g) == 0) {
-		    if_cmd_line(Grouplist_opt) {
-			Grouplist_opt = passet;
-                	if ( parse_at_list(valuewd, TRUE, FALSE) ) {
-                	    fprintf(stderr, "qsub: illegal -W value\n");
-                	    errflg++;
-			    break;
-                	}
-			set_attr(&attrib, ATTR_g, valuewd);
-		    }
-		} else if (strcmp(keyword, ATTR_inter) == 0) {
-		    if_cmd_line(Interact_opt) {
-			Interact_opt = passet;
-			if ( strcmp(valuewd, "true") != 0 ) {
-			    fprintf(stderr, "qsub: illegal -W value\n");
-			    errflg++;
-			    break;
-			}
-			set_attr(&attrib, ATTR_inter, interactive_port());
-		    }
-		} else {
-			set_attr(&attrib, keyword, valuewd);
-		}
-		i = parse_equal_string((char *)0, &keyword, &valuewd);
-            }
-	    if (i == -1) {
-		fprintf(stderr, "qsub: illegal -W value\n");
-		errflg++;
-	    }
-            break;
-        case 'z':
-            if_cmd_line(z_opt) z_opt = passet;
-            break;
-        case '?':
-        default :
             errflg++;
-        }
+
+            break;
+            }
+
+          set_attr(&attrib,ATTR_p,optarg);
+          }
+
+        break;
+
+      case 'q':
+
+        if_cmd_line(q_opt) 
+          {
+          q_opt = passet;
+
+          strcpy(destination,optarg);
+          }
+
+        break;
+
+      case 'r':
+
+        if_cmd_line(r_opt) 
+          {
+          r_opt = passet;
+
+          if (strlen(optarg) != 1) 
+            {
+            fprintf(stderr,"qsub: illegal -r value\n");
+
+            errflg++;
+
+            break;
+            }
+
+          if ((*optarg != 'y') && (*optarg != 'n')) 
+            {
+            fprintf(stderr,"qsub: illegal -r value\n");
+
+            errflg++;
+
+            break;
+            }
+
+          set_attr(&attrib,ATTR_r,optarg);
+          }
+
+        break;
+
+      case 'S':
+
+        if_cmd_line(S_opt) 
+          {
+          S_opt = passet;
+
+          if (parse_at_list(optarg,TRUE,TRUE)) 
+            {
+            fprintf(stderr,"qsub: illegal -S value\n");
+
+            errflg++;
+
+            break;
+            }
+
+          set_attr(&attrib,ATTR_S,optarg);
+          }
+
+        break;
+
+      case 'u':
+
+        if_cmd_line(u_opt) 
+          {
+          u_opt = passet;
+
+          if (parse_at_list(optarg,TRUE,FALSE)) 
+            {
+            fprintf(stderr,"qsub: illegal -u value\n");
+
+            errflg++;
+
+            break;
+            }
+
+          set_attr(&attrib,ATTR_u,optarg);
+          }
+
+        break;
+
+      case 'v':
+
+        if_cmd_line(v_opt) 
+          {
+          v_opt = passet;
+
+          if (v_value != NULL) 
+            free(v_value);
+
+          v_value = (char *)malloc(strlen(optarg) + 1);
+
+          if (v_value == NULL) 
+            {
+            fprintf(stderr, "qsub: out of memory\n");
+ 
+            errflg++;
+
+            break;
+            }
+
+          strcpy(v_value,optarg);
+          }
+
+        break;
+
+      case 'V':
+
+        if_cmd_line(V_opt) 
+          {
+          V_opt = passet;
+          }
+
+        break;
+
+      case 'W':
+
+        while (isspace((int)*optarg)) 
+          optarg++;
+
+        if (strlen(optarg) == 0) 
+          {
+          /* value is empty */
+
+          fprintf(stderr,"qsub: illegal -W value\n");
+
+          errflg++;
+
+          break;
+          }
+
+        i = parse_equal_string(optarg,&keyword,&valuewd);
+
+        if (i != 1)
+          {
+          char tmpLine[65536];
+
+          /* assume resource manager extension */
+
+          snprintf(tmpLine,sizeof(tmpLine),"x=%s",
+            optarg);
+
+          i = parse_equal_string(tmpLine,&keyword,&valuewd);
+          }
+
+        while (i == 1) 
+          {
+          if (!strcmp(keyword,ATTR_depend)) 
+            {
+            if_cmd_line(Depend_opt) 
+              {
+              Depend_opt = passet;
+
+              pdepend = malloc(PBS_DEPEND_LEN);
+
+              if (parse_depend_list(valuewd,pdepend,PBS_DEPEND_LEN)) 
+                {
+                /* cannot parse 'depend' value */
+ 
+                fprintf(stderr, "qsub: illegal -W value\n");
+                  errflg++;
+
+                break;
+                }
+
+              set_attr(&attrib,ATTR_depend,pdepend);
+              }
+            } 
+          else if (!strcmp(keyword,ATTR_stagein)) 
+            {
+            if_cmd_line(Stagein_opt) 
+              {
+              Stagein_opt = passet;
+
+              if (parse_stage_list(valuewd)) 
+                {
+                /* cannot parse 'stagein' value */
+
+                fprintf(stderr, "qsub: illegal -W value\n");
+
+                errflg++;
+
+                break;
+                }
+
+              set_attr(&attrib,ATTR_stagein,valuewd);
+              }
+            } 
+          else if (!strcmp(keyword,ATTR_stageout)) 
+            {
+            if_cmd_line(Stageout_opt) 
+              {
+              Stageout_opt = passet;
+
+              if (parse_stage_list(valuewd)) 
+                {
+                /* cannot parse 'stageout' value */
+ 
+                fprintf(stderr,"qsub: illegal -W value\n");
+
+                errflg++;
+
+                break;
+                }
+ 
+              set_attr(&attrib,ATTR_stageout,valuewd);
+              }
+            } 
+          else if (!strcmp(keyword,ATTR_g)) 
+            {
+            if_cmd_line(Grouplist_opt) 
+              {
+              Grouplist_opt = passet;
+
+              if (parse_at_list(valuewd,TRUE,FALSE)) 
+                {
+                /* cannot parse 'grouplist' value */
+ 
+                fprintf(stderr,"qsub: illegal -W value\n");
+
+                errflg++;
+
+                break;
+                }
+  
+              set_attr(&attrib,ATTR_g,valuewd);
+              }
+            } 
+          else if (!strcmp(keyword,ATTR_inter)) 
+            {
+            /* specify interactive job */
+
+            if_cmd_line(Interact_opt) 
+              {
+              Interact_opt = passet;
+
+              if (strcmp(valuewd,"true") != 0) 
+                {
+                fprintf(stderr,"qsub: illegal -W value\n");
+
+                errflg++;
+ 
+                break;
+                }
+
+              set_attr(&attrib,ATTR_inter,interactive_port());
+              }
+            } 
+          else 
+            {
+            /* generic job attribute specified */
+
+            set_attr(&attrib,keyword,valuewd);
+            }
+
+          i = parse_equal_string(NULL,&keyword,&valuewd);
+          }  /* END while (i == 1) */
+
+        if (i == -1) 
+          {
+          fprintf(stderr,"qsub: illegal -W value\n");
+ 
+          errflg++;
+          }
+
+        break;
+
+      case 'z':
+ 
+        if_cmd_line(z_opt) 
+          z_opt = passet;
+
+        break;
+
+      case '?':
+      default :
+
+        errflg++;
+ 
+        break;   
+      }
     }  /* END while ((c = getopt(argc,argv,GETOPT_ARGS)) != EOF) */
 
 /* ORNL WRAPPER */
@@ -2392,7 +2537,7 @@ int process_opts(
     fP = fopen(tmp_name,"r+");
     unlink(tmp_name);
 
-    /* evaluate the resources. */
+    /* evaluate the resources */
 
     while (fgets(cline,sizeof(cline),fP) != NULL) 
       {

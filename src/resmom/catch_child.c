@@ -434,7 +434,7 @@ void scan_for_exiting()
 
           tp = task_find(pjob,pobit->oe_info.fe_taskid);
 
-          assert(tp != NULL);  /* FIXME:  ??? */
+          assert(tp != NULL); 
 
           if (tp->ti_fd != -1) 
             {  
@@ -473,7 +473,7 @@ void scan_for_exiting()
       ptask->ti_fd = -1;
       ptask->ti_qs.ti_status = TI_STATE_DEAD;
  
-      DBPRT(("%s: task is dead\n",(char *)__func__));
+      DBPRT(("%s: task is dead\n",id));
  
       task_save(ptask);
       }  /* END for (ptask) */

@@ -274,6 +274,10 @@ int job_save(
       if (save_struct((char *)&pjob->ji_qs,(size_t)quicksize) != 0) 
         {
         redo++;
+        }
+      else if (save_attr(job_attr_def,pjob->ji_wattr,(int)JOB_ATR_LAST) != 0) 
+        {
+        redo++;
         } 
 #ifdef PBS_MOM
       else if (save_tmsock(pjob) != 0) 
@@ -281,10 +285,6 @@ int job_save(
         redo++;
         } 
 #endif  /* PBS_MOM */
-      else if (save_attr(job_attr_def,pjob->ji_wattr,(int)JOB_ATR_LAST) != 0) 
-        {
-        redo++;
-        } 
       else if (save_flush() != 0) 
         {
         redo++;
@@ -458,6 +458,7 @@ job *job_recov(
   return(pj);
   }  /* END job_recov() */
 
+/* END job_recov.c */
 
 
 

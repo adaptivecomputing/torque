@@ -358,7 +358,7 @@ void set_globid(
   {
   char cvtbuf[20];
 
-  if (srj != NULL)
+  if (sjr != NULL)
     {
     sprintf(cvtbuf,"%ld", 
       (long)sjr->sj_pid);

@@ -96,6 +96,10 @@
 #include <netinet/in.h>
 #include <sys/time.h>
 
+#ifdef __TLINUX
+#include <sys/vfs.h>
+#endif /* __TLINUX */
+
 #include "pbs_ifl.h"
 #include "pbs_error.h"
 #include "log.h"
@@ -113,6 +117,7 @@ extern	unsigned int	default_server_port;
 extern	char		mom_host[];
 extern	char		*path_jobs;
 extern	char		*path_home;
+extern  char            *path_spool;
 extern	int		pbs_errno;
 extern	unsigned int	pbs_mom_port;
 extern	unsigned int	pbs_rm_port;
@@ -672,6 +677,9 @@ int MUReadPipe(
   FILE *fp;
   int   rc;
 
+  int   rcount;
+  int   ccount;
+
   if ((Command == NULL) || (Buffer == NULL))
     {
     return(1);
@@ -682,16 +690,40 @@ int MUReadPipe(
     return(1);
     }
 
-  if ((rc = fread(Buffer,1,BufSize,fp)) == -1)
+  ccount = 0;
+  rcount = 0;
+
+  do 
     {
+    rc = fread(Buffer + ccount,1,BufSize - ccount,fp);
+
+    ccount += rc;
+
+    if (ferror(fp))
+      {
+      break;
+      }
+
+    if ((ccount >= BufSize) || (rcount++ > 10))
+      {
+      /* full buffer loaded or too many attempts */
+
+      break;
+      }
+    } while (!feof(fp));
+
+  if (ferror(fp))
+    {
+    /* FAILURE */
+
     pclose(fp);
 
     return(1);
     }
 
-  /* terminate buffer */
+  /* SUCCESS - terminate buffer */
 
-  Buffer[MIN(BufSize - 1,rc)] = '\0';
+  Buffer[MIN(BufSize - 1,ccount)] = '\0';
 
   pclose(fp);
 
@@ -722,6 +754,28 @@ void check_state()
      - inadequate file handles available (for period X) 
      - external health check fails
   */
+
+  /* verify adequate space in spool directory */
+
+#define TMINSPOOLBLOCKS 100  /* blocks available in spool directory required for proper operation */
+
+
+#ifdef __TLINUX
+  {
+  struct statfs F;
+
+  if (statfs(path_spool,&F) == -1)
+    {
+    /* cannot check filesystem */
+    }
+  else if (F.f_bfree < TMINSPOOLBLOCKS)
+    {
+    /* inadequate disk space in spool directory */
+
+    strcpy(PBSNodeMsgBuf,"no disk space");
+    }
+  }    /* END BLOCK */
+#endif /* __TLINUX */
 
   if (PBSNodeCheckPath[0] != '\0')
     {

@@ -369,7 +369,7 @@ void dep_initialize(void)
 
   /* NOTE:  was 'odm_initialize() == 0' */
 
-  if ((odm_path = odm_set_path("/etc/objrepos")) != -1)
+  if ((odm_path = odm_set_path("/etc/objrepos")) != (char *)-1)
     {
     /* NOTE:  obj is alloc'd */
 
