@@ -763,7 +763,7 @@ void check_state()
 #define TMINSPOOLBLOCKS 100  /* blocks available in spool directory required for proper operation */
 
 
-#ifdef __TLINUX
+#if defined(__TLINUX) || defined(__TDARWIN)
   {
   struct statfs F;
 
@@ -778,7 +778,7 @@ void check_state()
     strcpy(PBSNodeMsgBuf,"no disk space");
     }
   }    /* END BLOCK */
-#endif /* __TLINUX */
+#endif /* __TLINUX || __TDARWIN */
 
   if (PBSNodeCheckPath[0] != '\0')
     {
