@@ -128,6 +128,8 @@
 
 static char *DefaultFilterPath = "/usr/local/sbin/torque_submitfilter";
 
+#define SUBMIT_FILTER_ADMIN_REJECT_CODE -1 
+
 #define MAX_QSUB_PREFIX_LEN 32
 
 static char PBS_DPREFIX_DEFAULT[] = "#PBS";
@@ -142,7 +144,7 @@ char PBS_RootDir[256];
 char *set_dir_prefix(
 
   char *prefix,
-  int diropt)
+  int   diropt)
 
   {
   char *s;
@@ -251,7 +253,9 @@ int get_script(
   char tmp_name3[L_tmpnam + 1];
 
   struct stat sfilter;
-  FILE *filesaved;
+  FILE       *filesaved;
+
+  int         rc;
 
   /*  If the submitfilter exists, run it.                               */
 
@@ -307,10 +311,33 @@ int get_script(
     strcat(cfilter," >");
     strcat(cfilter,tmp_name3);
 
-    if (system(cfilter) == -1) 
+    rc = system(cfilter);
+
+    if (rc == -1)
       {
-      fprintf( stderr, "qsub: error writing filter o/p, %s\n",
+      fprintf( stderr, "qsub: failed to execute submit filter, %s\n",
         tmp_name3);
+
+      unlink(tmp_name2);
+      unlink(tmp_name3);
+
+      return(3);
+      }
+
+    if (WEXITSTATUS(rc) == (unsigned char)SUBMIT_FILTER_ADMIN_REJECT_CODE)
+      {
+      fprintf(stderr,"qsub: Your job has been administratively rejected by the queueing system.\n");
+      fprintf(stderr,"qsub: There may be a more detailed explanation prior to this notice.\n");
+
+      unlink(tmp_name2);
+      unlink(tmp_name3);
+
+      return(3);
+      }
+
+    if (WEXITSTATUS(rc))
+      {
+      fprintf(stderr,"qsub: submit filter returned an error code, aborting job submission.\n");
 
       unlink(tmp_name2);
       unlink(tmp_name3);

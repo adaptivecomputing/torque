@@ -1136,37 +1136,66 @@ rpp_alist(hp, sp)
 	return;
 }
 
-static
-int
-rpp_send_ack(sp, seq)
-    struct	stream	*sp;
-    int		seq;
-{
-	DOID("send_ack")
-	char	buf[RPP_PKT_HEAD];
-	u_long	xcrc;
 
-	if (sp->stream_id < 0) {		/* can't send yet */
-		DBPRT((DBTO, "%s: STREAM NOT OPEN seq %d\n", id, seq))
-		return 0;
-	}
 
-	I2TOH(RPP_ACK, buf)
-	I8TOH(sp->stream_id, &buf[2])
-	I8TOH(seq, &buf[10])
-	xcrc = crc((u_char *)buf, (u_long)RPP_PKT_CRC);
-	I8TOH(xcrc, &buf[RPP_PKT_CRC])
 
-	DBPRT((DBTO, "%s: seq %d to %s crc %lX\n",
-			id, seq, netaddr(&sp->addr), xcrc))
-	if (sendto(sp->fd, buf, RPP_PKT_HEAD, 0, (struct sockaddr *)&sp->addr,
-			sizeof(struct sockaddr_in)) == -1) {
-		DBPRT((DBTO, "%s: ACK error %d\n", id, errno))
-		if (errno != EWOULDBLOCK && errno != ENOBUFS)
-			return -1;
-	}
-	return 0;
-}
+
+static int rpp_send_ack(
+
+  struct stream	*sp,
+  int            seq)
+
+  {
+  DOID("send_ack")
+
+  char   buf[RPP_PKT_HEAD];
+  u_long xcrc;
+
+  if (sp->stream_id < 0) 
+    {
+    /* can't send yet */
+
+    DBPRT((DBTO,"%s: STREAM NOT OPEN seq %d\n", 
+      id, 
+      seq))
+
+    return(0);
+    }
+
+  I2TOH(RPP_ACK, buf)
+  I8TOH(sp->stream_id, &buf[2])
+  I8TOH(seq, &buf[10])
+
+  xcrc = crc((u_char *)buf, (u_long)RPP_PKT_CRC);
+
+  I8TOH(xcrc, &buf[RPP_PKT_CRC])
+
+  DBPRT((DBTO, "%s: seq %d to %s crc %lX\n",
+    id, seq, netaddr(&sp->addr), xcrc))
+
+  if (sendto(
+        sp->fd, 
+        buf, 
+        RPP_PKT_HEAD, 
+        0, 
+        (struct sockaddr *)&sp->addr,
+        sizeof(struct sockaddr_in)) == -1) 
+    {
+    DBPRT((DBTO,"%s: ACK error %d\n", 
+      id, 
+      errno))
+
+    if ((errno != EWOULDBLOCK) && (errno != ENOBUFS))
+      {
+      return(-1);
+      }
+    }
+
+  return(0);
+  }  /* END rpp_send_ack() */
+
+
+
 
 /*
 **	Take a packet off the send queue and free it.

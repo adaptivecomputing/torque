@@ -1,5 +1,10 @@
-pre 1.2.0p2
+1.2.0p3
 
+  add submit filter return code processing to qsub
+
+1.2.0p2
+
+  enhance network failure messages
   fixed tracejob tool to only match correct jobs (WESTGRID)
   modified reporting of linux availmem and totmem to allow larger file sizes
   fixed pbs_demux for OSF/TRU64 systems to stop orphaned demux processes

@@ -5,6 +5,7 @@
  */
 #include <unistd.h>
 #include <errno.h>
+#include <fcntl.h>
 
 /*
  * Assumes full-block read/write.  No accounting for partial blocks,
@@ -56,9 +57,43 @@ ssize_t read_nonblocking_socket(
   ssize_t count)
 
   {
+  int     flags;
   ssize_t i;
 
   /* verify socket is non-blocking */
+
+  /* NOTE:  under some circumstances, a blocking fd will be passed */
+
+  if ((flags = fcntl(fd,F_GETFL)) == -1)
+    {
+    return(-1);
+    }
+
+#if defined(FNDELAY) && !defined(__hpux)
+   if (flags & FNDELAY)
+#else
+   if (flags & O_NONBLOCK)
+#endif
+     {
+     /* flag already set */
+
+     /* NO-OP */
+     }
+   else
+     {
+     /* set no delay */
+
+#if defined(FNDELAY) && !defined(__hpux)
+    flags |= FNDELAY;
+#else
+    flags |= O_NONBLOCK;
+#endif
+    
+    if (fcntl(fd,F_SETFL,flags) == -1)
+      {
+      return(-1);
+      }
+    }    /* END else (flags & BLOCK) */
  
   for (;;) 
     {
@@ -78,7 +113,7 @@ ssize_t read_nonblocking_socket(
   /*NOTREACHED*/
 
   return(0);
-  }
+  }  /* END read_nonblocking_socket() */
 
 
 
@@ -87,9 +122,14 @@ ssize_t read_nonblocking_socket(
 /*
  * Call the real read, for things that want to block.
  */
-ssize_t
-read_blocking_socket(int fd, void *buf, ssize_t count)
-{
-    return read(fd, buf, count);
-}
+
+ssize_t read_blocking_socket(
+
+  int      fd, 
+  void    *buf, 
+  ssize_t  count)
+
+  {
+  return(read(fd,buf,count));
+  }
 

@@ -2501,7 +2501,9 @@ int is_update_stat(
     {
     /* currently do not support multiple servers per MOM */
 
-    return(0);
+    /* NOTE:  attempt to support multiple servers per MOM */
+
+    /* return(0); */
     }
 
   close_io = (void(*) A_((int)))rpp_close;

@@ -88,6 +88,8 @@
  *
  */
 
+/* sync w/SRV_ATR_* in server.h, server/svr_attr_def.c, and ATTR_* in pbs_ifl.h  */
+
 ATTR_aclhten,
 ATTR_aclhost,
 ATTR_acluren,
@@ -119,3 +121,4 @@ ATTR_ndchkrate,
 ATTR_tcptimeout,
 ATTR_jobstatrate,
 ATTR_polljobs,
+ATTR_loglevel,
