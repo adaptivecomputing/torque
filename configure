@@ -243,7 +243,7 @@ ac_help="$ac_help
 			  as standard input"
 ac_help="$ac_help
 
-  --enable-rpp            use RPP/UDP for resource queries to mom.
+  --enable-rpp            use RPP/UDP for resource queries from PBS server to mom.
                           This is enabled by default. If disabled TCP is used."
 ac_help="$ac_help
 
