@@ -3460,7 +3460,9 @@ void start_exec(
     for (i = 1;i < nodenum;i++) 
       {
       np = &pjob->ji_hosts[i];
-	
+
+      /* rpp_open() will succeed even if mom is down */
+
       np->hn_stream = rpp_open(np->hn_host,pbs_rm_port);
 
       if (np->hn_stream < 0) 
@@ -3535,7 +3537,7 @@ void start_exec(
     **	Send out a JOIN_JOB message to all the MOM's in the sisterhood.
     */
 
-    /* NOTE:  do not check success of join request? */
+    /* NOTE:  does not check success of join request */
 
     for (i = 1;i < nodenum;i++) 
       {
@@ -3543,6 +3545,8 @@ void start_exec(
       stream = np->hn_stream;
 	
       ep = event_alloc(IM_JOIN_JOB,np,TM_NULL_EVENT,TM_NULL_TASK);
+
+      /* im_compose() will succeed even if mom is down */
 
       im_compose(
         stream, 
@@ -3562,6 +3566,8 @@ void start_exec(
       psatl = (svrattrl *)GET_NEXT(phead);
 
       encode_DIS_svrattrl(stream,psatl);
+
+      /* rpp_flush() will succeed even if mom is down */
 
       if (rpp_flush(stream) != 0)
         {
