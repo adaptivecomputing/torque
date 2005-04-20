@@ -167,7 +167,7 @@ extern int h_errno;
 /*
 **	Integer codes for all the valid RPP state values
 */
-#define RPP_DEAD	-1
+#define RPP_DEAD	-1  /* only set during clear_stream() */
 #define	RPP_FREE 	 0
 #define	RPP_OPEN_PEND	 1
 #define	RPP_OPEN_WAIT	 2
@@ -176,7 +176,7 @@ extern int h_errno;
 #define	RPP_LAST_ACK	 5
 #define	RPP_CLOSE_WAIT1	 6
 #define	RPP_CLOSE_WAIT2	 7
-#define	RPP_STALE	99
+#define	RPP_STALE	99 /* set when a packet has been sent more than RPP_RETRY times */
 
 /*
 **	Time in seconds; packet on the master send queue is not sent more
