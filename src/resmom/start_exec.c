@@ -3461,7 +3461,7 @@ void start_exec(
       {
       np = &pjob->ji_hosts[i];
 
-      /* rpp_open() will succeed even if mom is down */
+      /* rpp_open() will succeed even if MOM is down */
 
       np->hn_stream = rpp_open(np->hn_host,pbs_rm_port);
 
@@ -3567,7 +3567,7 @@ void start_exec(
 
       encode_DIS_svrattrl(stream,psatl);
 
-      /* rpp_flush() will succeed even if mom is down */
+      /* rpp_flush() will succeed even if MOM is down */
 
       if (rpp_flush(stream) != 0)
         {
