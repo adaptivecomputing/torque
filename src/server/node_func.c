@@ -208,6 +208,20 @@ void bad_node_warning(
 
   for (i = 0;i < svr_totnodes;i++) 
     {
+    if (pbsndlist[i] == NULL)
+      {
+      sprintf(log_buffer,"ALERT:  node table is corrupt at index %d",
+        i);
+
+      log_event(
+        PBSEVENT_ADMIN,
+        PBS_EVENTCLASS_SERVER,
+        "WARNING",
+        log_buffer);
+
+      continue;
+      }
+
     if (pbsndlist[i]->nd_addrs[0] == addr) 
       {
       now = time(0);
@@ -224,7 +238,7 @@ void bad_node_warning(
       ** ping_nodes to check and reset the node's state.
       */
 
-      sprintf(log_buffer, "ALERT: unable to contact node %s",
+      sprintf(log_buffer,"ALERT: unable to contact node %s",
         pbsndlist[i]->nd_name);
 
       log_event(
@@ -238,7 +252,8 @@ void bad_node_warning(
        */
 
       pbsndlist[i]->nd_warnbad = now;
-        break;
+
+      break;
       }  /* END if (pbsndlist[i]->nd_addrs[0] == addr) */
     }    /* END for (i = 0) */
 
@@ -249,28 +264,33 @@ void bad_node_warning(
 
 
 /*
- * returns 1 if node is OK, 0 if node is down.
+ * return 0 if addr is a mom node and node is in bad state,
+ * return 1 otherwise (it is not a MOM node, or it's state is OK)
  */
 
 int addr_ok(
 
-  pbs_net_t addr)
+  pbs_net_t addr)  /* I */
 
   {
-  int i, status = 0;
+  int i;
+  int status = 1;  /* assume destination host is healthy */
 
-  if (pbsndlist)
+  if (pbsndlist != NULL)
     {
-    for (i=0; i<svr_totnodes; i++)
+    for (i = 0;i < svr_totnodes;i++)
       {
-      if (!(pbsndlist[i]->nd_state & 
-          (INUSE_DOWN|INUSE_DELETED|INUSE_UNKNOWN)) &&
-           pbsndlist[i]->nd_addrs[0] == addr) 
-        {
-        status = 1;
+      /* NOTE:  should walk thru all nd_addrs for multi-homed hosts */
 
-        break;
+      if (pbsndlist[i]->nd_addrs[0] != addr)
+        continue;
+
+      if (pbsndlist[i]->nd_state & (INUSE_DOWN|INUSE_DELETED|INUSE_UNKNOWN))
+        {
+        status = 0;
         }
+
+      break;
       }
     }
 
@@ -308,9 +328,9 @@ struct pbsnode *find_nodebyname(
   if ((pslash = strchr(nodename,(int)'/')) != NULL)
     *pslash = '\0';
 
-  pnode = (struct pbsnode *)0;
+  pnode = NULL;
 
-  for (i=0; i<svr_totnodes; i++ ) 
+  for (i = 0;i < svr_totnodes;i++) 
     {
     if (pbsndlist[i]->nd_state & INUSE_DELETED)
       continue;
@@ -323,7 +343,7 @@ struct pbsnode *find_nodebyname(
       }
     }
 
-  if (pslash)
+  if (pslash != NULL)
     *pslash = '/';	/* restore the slash */
 
   return(pnode);

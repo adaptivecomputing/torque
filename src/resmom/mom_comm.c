@@ -993,9 +993,9 @@ void node_bailout(
   {
   static char id[] = "node_bailout";
 
-  task		*ptask;
-  eventent	*ep;
-  int		i;
+  task          *ptask;
+  eventent      *ep;
+  int            i;
 
   ep = (eventent *)GET_NEXT(np->hn_events);
 
@@ -1179,7 +1179,7 @@ void term_job(
     }
 
   return;
-  }  /* END term_job */
+  }  /* END term_job() */
 
 
 
@@ -1290,8 +1290,8 @@ void im_eof(
 
 int check_ms(
 
-  int stream,
-  job *pjob)
+  int  stream,  /* I */
+  job *pjob)    /* I */
 
   {
   static char id[] = "check_ms";
@@ -1681,7 +1681,7 @@ void im_request(
     case IM_JOIN_JOB:
 
       /*
-       ** Sender is mom superior sending a job structure to me.
+       ** Sender is mother superior sending a job structure to me.
        ** I am going to become a member of a job.
        **
        ** auxiliary info (
@@ -2863,12 +2863,17 @@ void im_request(
 
       /* ** Send the information tallied for the job.  */
 
-      ret = diswul(stream, resc_used(pjob, "cput", gettime));
+      ret = diswul(stream,resc_used(pjob,"cput",gettime));
   
       if (ret != DIS_SUCCESS)
         break;
 
-      ret = diswul(stream, resc_used(pjob, "mem", getsize));
+      ret = diswul(stream,resc_used(pjob,"mem",getsize));
+
+      if (ret != DIS_SUCCESS)
+        break;
+
+      ret = diswul(stream,resc_used(pjob,"vmem",getsize));
 
       break;
 
@@ -2967,112 +2972,162 @@ void im_request(
           ** )
           */
 
-        if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HERE) == 0) 
-          {
-          log_err(-1,id,"got JOIN_JOB OKAY and I'm not MS");
-
-          goto err;
-          }
-
-        for (i = 0;i < pjob->ji_numnodes;i++) 
-          {
-          np = &pjob->ji_hosts[i];
-
-          if ((ep = (eventent *)GET_NEXT(np->hn_events)) != NULL)
-            break;
-          }  /* END for (i) */
-
-        if (ep == NULL)	
-          {
-          pjobexec_t *TJE;
-          int         SC;
-          int         RC;
-
-          int         Count;
-
-          /* no events reminaing, all moms have reported in, launch job locally */
-
-          if (LOGLEVEL >= 2)
+          if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HERE) == 0) 
             {
-            LOG_EVENT(
-              PBSEVENT_JOB,
-              PBS_EVENTCLASS_JOB,
-              pjob->ji_qs.ji_jobid,
-              "all sisters have reported in, launching job locally");
+            log_err(-1,id,"got JOIN_JOB OKAY and I'm not MS");
+
+            goto err;
             }
 
-          TMOMJobGetStartInfo(NULL,&TJE);
-
-          if (TMomFinalizeJob1(pjob,TJE,&SC) == FAILURE)
+          for (i = 0;i < pjob->ji_numnodes;i++) 
             {
-            /* FAILURE (or at least do not continue) */
+            np = &pjob->ji_hosts[i];
 
-            if (SC != 0)
+            if ((ep = (eventent *)GET_NEXT(np->hn_events)) != NULL)
+              break;
+            }  /* END for (i) */
+
+          if (ep == NULL)	
+            {
+            pjobexec_t *TJE;
+            int         SC;
+            int         RC;
+
+            int         Count;
+
+            /* no events remaining, all moms have reported in, launch job locally */
+
+            if (LOGLEVEL >= 2)
               {
+              LOG_EVENT(
+                PBSEVENT_JOB,
+                PBS_EVENTCLASS_JOB,
+                pjob->ji_qs.ji_jobid,
+                "all sisters have reported in, launching job locally");
+              }
+
+            TMOMJobGetStartInfo(NULL,&TJE);
+
+            if (TMomFinalizeJob1(pjob,TJE,&SC) == FAILURE)
+              {
+              /* FAILURE (or at least do not continue) */
+
+              if (SC != 0)
+                {
+                memset(TJE,0,sizeof(pjobexec_t));
+
+                exec_bail(pjob,SC);
+                }
+
+              break;
+              }
+
+            /* TMomFinalizeJob2() blocks until job is fully launched */
+
+            if (TMomFinalizeJob2(TJE,&SC) == FAILURE)
+              {
+              if (SC != 0)
+                {
+                memset(TJE,0,sizeof(pjobexec_t));
+
+                exec_bail(pjob,SC);
+                }
+
+              break;
+              }
+
+            /* block, wait for child to complete indicating success/failure of job launch */
+
+            if (TMomCheckJobChild(TJE,TJobStartBlockTime,&Count,&RC) == FAILURE)
+              {
+              sprintf(log_buffer,"job not ready after %ld second timeout, MOM will check later",
+                TJobStartBlockTime);
+
+              log_record(
+                PBSEVENT_ERROR,
+                PBS_EVENTCLASS_JOB,
+                pjob->ji_qs.ji_jobid,
+                log_buffer);
+
+              break;
+              }
+
+            /* NOTE:  TMomFinalizeJob3() populates SC */
+
+            if (TMomFinalizeJob3(TJE,Count,RC,&SC) == FAILURE)
+              {
+              sprintf(log_buffer,"ALERT:  job failed phase 3 start, server will retry");
+
+              log_record(
+                PBSEVENT_ERROR,
+                PBS_EVENTCLASS_JOB,
+                pjob->ji_qs.ji_jobid,
+                log_buffer);
+
               memset(TJE,0,sizeof(pjobexec_t));
 
               exec_bail(pjob,SC);
+
+              break;
               }
 
-            break;
-            }
-
-          /* TMomFinalizeJob2() blocks until job is fully launched */
-
-          if (TMomFinalizeJob2(TJE,&SC) == FAILURE)
-            {
-            if (SC != 0)
-              {
-              memset(TJE,0,sizeof(pjobexec_t));
-
-              exec_bail(pjob,SC);
-              }
-
-            break;
-            }
-
-          /* block, wait for child to complete indicating success/failure of job launch */
-
-          if (TMomCheckJobChild(TJE,TJobStartBlockTime,&Count,&RC) == FAILURE)
-            {
-            sprintf(log_buffer,"job not ready after %ld second timeout, MOM will check later",
-              TJobStartBlockTime);
-
-            log_record(
-              PBSEVENT_ERROR,
-              PBS_EVENTCLASS_JOB,
-              pjob->ji_qs.ji_jobid,
-              log_buffer);
-
-            break;
-            }
-
-          /* NOTE:  TMomFinalizeJob3() populates SC */
-
-          if (TMomFinalizeJob3(TJE,Count,RC,&SC) == FAILURE)
-            {
-            sprintf(log_buffer,"ALERT:  job failed phase 3 start, server will retry");
-
-            log_record(
-              PBSEVENT_ERROR,
-              PBS_EVENTCLASS_JOB,
-              pjob->ji_qs.ji_jobid,
-              log_buffer);
+            /* SUCCESS:  MOM returns */
 
             memset(TJE,0,sizeof(pjobexec_t));
 
-            exec_bail(pjob,SC);
+            if (LOGLEVEL >= 3)
+              {
+              sprintf(log_buffer,"job successfully started");
 
-            break;
+              log_record(
+                PBSEVENT_ERROR,
+                PBS_EVENTCLASS_JOB,
+                pjob->ji_qs.ji_jobid,
+                log_buffer);
+              }
+            }    /* END if (ep == NULL) */
+          else
+            {
+            if (LOGLEVEL >= 4)
+              {
+              sprintf(log_buffer,"joinjob response received from node %s, (still waiting for %s)",
+                netaddr(addr),
+                np->hn_host);
+
+              LOG_EVENT(
+                PBSEVENT_JOB,
+                PBS_EVENTCLASS_JOB,
+                pjob->ji_qs.ji_jobid,
+                log_buffer);
+              }
             }
 
-          /* SUCCESS:  MOM returns */
+          break;
+      
+        case IM_KILL_JOB:
 
-          memset(TJE,0,sizeof(pjobexec_t));
+          /*
+          ** Sender is sending a response that a job
+          ** which needs to die has been given the ax.
+          ** I'm mother superior.
+          **
+          ** auxiliary info (
+          **	cput	ulong;
+          **	mem	ulong;
+          **      vmem    ulong;
+          ** )
+          */
 
-          if (LOGLEVEL >= 3)
+          if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HERE) == 0) 
             {
-            sprintf(log_buffer,"job successfully started");
+            log_err(-1,id,"got KILL_JOB OKAY and I'm not MS");
+
+            goto err;
+            }
+
+          if (LOGLEVEL >= 2)
+            {
+            sprintf(log_buffer,"KILL_JOB acknowledgement received");
 
             log_record(
               PBSEVENT_ERROR,
@@ -3080,186 +3135,165 @@ void im_request(
               pjob->ji_qs.ji_jobid,
               log_buffer);
             }
-          }    /* END if (ep == NULL) */
-        else
-          {
-          if (LOGLEVEL >= 4)
-            {
-            sprintf(log_buffer,"joinjob response received from node %s, (still waiting for %s",
-              netaddr(addr),
-              np->hn_host);
-
-            LOG_EVENT(
-              PBSEVENT_JOB,
-              PBS_EVENTCLASS_JOB,
-              pjob->ji_qs.ji_jobid,
-              log_buffer);
-            }
-          }
-
-        break;
-      
-      case IM_KILL_JOB:
-
-        /*
-        ** Sender is sending a response that a job
-        ** which needs to die has been given the ax.
-        ** I'm mother superior.
-        **
-        ** auxiliary info (
-        **	cput	int;
-        **	mem	int;
-        ** )
-        */
-
-        if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HERE) == 0) 
-          {
-          log_err(-1,id,"got KILL_JOB OKAY and I'm not MS");
-
-          goto err;
-          }
-
-        if (LOGLEVEL >= 2)
-          {
-          sprintf(log_buffer,"KILL_JOB acknowledgement received");
-
-          log_record(
-            PBSEVENT_ERROR,
-            PBS_EVENTCLASS_JOB,
-            pjob->ji_qs.ji_jobid,
-            log_buffer);
-          }
  
-        if (pjob->ji_resources != NULL)
-          {
-          pjob->ji_resources[nodeidx - 1].nr_cput = disrul(stream,&ret);
+          if (pjob->ji_resources != NULL)
+            {
+            pjob->ji_resources[nodeidx - 1].nr_cput = disrul(stream,&ret);
 
-          if (ret != DIS_SUCCESS)
-            goto err;
+            if (ret != DIS_SUCCESS)
+              goto err;
 
-          pjob->ji_resources[nodeidx - 1].nr_mem = disrul(stream,&ret);
+            pjob->ji_resources[nodeidx - 1].nr_mem = disrul(stream,&ret);
+  
+            if (ret != DIS_SUCCESS)
+              goto err;
+     
+            pjob->ji_resources[nodeidx - 1].nr_vmem = disrul(stream,&ret);
 
-          if (ret != DIS_SUCCESS)
-            goto err;
+            if (ret != DIS_SUCCESS)
+              goto err;
+ 
+            DBPRT(("%s: %s FINAL from %d  cpu %lu sec  mem %lu kb  vmem %ld kb\n",
+              id,
+              jobid, 
+              nodeidx,
+              pjob->ji_resources[nodeidx - 1].nr_cput,
+              pjob->ji_resources[nodeidx - 1].nr_mem,
+              pjob->ji_resources[nodeidx - 1].nr_vmem))
+            }  /* END if (pjob_ji_resources != NULL) */
       
-          DBPRT(("%s: %s FINAL from %d cpu %lu sec mem %lu kb\n",
-            id,
-            jobid, 
-            nodeidx,
-            pjob->ji_resources[nodeidx-1].nr_cput,
-            pjob->ji_resources[nodeidx-1].nr_mem))
-          }  /* END if (pjob_ji_resources != NULL) */
-      
-        /* don't close stream in case other jobs use it */
+          /* don't close stream in case other jobs use it */
 
-        np->hn_sister = SISTER_KILLDONE;
+          np->hn_sister = SISTER_KILLDONE;
     
-        for (i = 1;i < pjob->ji_numnodes;i++) 
-          {
-          if (pjob->ji_hosts[i].hn_sister == SISTER_OKAY)
-            break;
-          }
+          for (i = 1;i < pjob->ji_numnodes;i++) 
+            {
+            if (pjob->ji_hosts[i].hn_sister == SISTER_OKAY)
+              break;
+            }
 
-        if (i == pjob->ji_numnodes) 
-          {
-          /* all dead */
+          if (i == pjob->ji_numnodes) 
+            {
+            /* all dead */
 
-          DBPRT(("%s: ALL DONE, set EXITING job %s\n",
-            id, 
-            jobid))
+            DBPRT(("%s: ALL DONE, set EXITING job %s\n",
+              id, 
+              jobid))
 
-          pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITING;
+            pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITING;
       
-          exiting_tasks = 1;
-          }
+            exiting_tasks = 1;
+            }
 
-        break;
-
-      case IM_SPAWN_TASK:
-
-        /*
-        ** Sender is MOM responding to a "spawn_task"
-        ** request.
-        **
-        ** auxiliary info (
-        **	task id		tm_task_id;
-        ** )
-        */
-
-        taskid = disrsi(stream,&ret);
-
-        if (ret != DIS_SUCCESS)
-          goto err;
-
-        DBPRT(("%s: SPAWN_TASK %s OKAY task %d\n",
-          id, 
-          jobid, 
-          taskid))
-
-        ptask = task_check(pjob,event_task);
-
-        if (ptask == NULL)
           break;
 
-        tm_reply(ptask->ti_fd,TM_OKAY,event);
-        diswsi(ptask->ti_fd,taskid);
-        DIS_tcp_wflush(ptask->ti_fd);
+        case IM_SPAWN_TASK:
 
-        break;
+          /*
+          ** Sender is MOM responding to a "spawn_task"
+          ** request.
+          **
+          ** auxiliary info (
+          **	task id		tm_task_id;
+          ** )
+          */
 
-      case IM_GET_TASKS:
+          taskid = disrsi(stream,&ret);
 
-			/*
-			** Sender is MOM giving a list of tasks which she
-			** has started for this job.
-			**
-			** auxiliary info (
-			**	task id		tm_task_id;
-			**	...
-			**	task id		tm_task_id;
-			** )
-			*/
-			DBPRT(("%s: GET_TASKS %s OKAY\n", id, jobid))
-			ptask = task_check(pjob, event_task);
-			if (ptask == NULL)
-				break;
-			(void)tm_reply(ptask->ti_fd, TM_OKAY, event);
-			for (;;) {
-				DIS_rpp_reset();
-				taskid = disrsi(stream, &ret);
-				if (ret != DIS_SUCCESS) {
-					if (ret == DIS_EOD)
-						break;
-					else
-						goto err;
-				}
-				DIS_tcp_funcs();
-				(void)diswsi(ptask->ti_fd, taskid);
-			}
-			DIS_tcp_funcs();
-			(void)diswsi(ptask->ti_fd, TM_NULL_TASK);
-			(void)DIS_tcp_wflush(ptask->ti_fd);
-			break;
+          if (ret != DIS_SUCCESS)
+            goto err;
 
-      case IM_SIGNAL_TASK:
+          DBPRT(("%s: SPAWN_TASK %s OKAY task %d\n",
+            id, 
+            jobid, 
+            taskid))
 
-			/*
-			** Sender is MOM with a good signal to report.
-			**
-			** auxiliary info (
-			**	none;
-			** )
-			*/
-			DBPRT(("%s: SIGNAL_TASK %s OKAY %d\n",
-				id, jobid, event_task))
-			ptask = task_check(pjob, event_task);
-			if (ptask == NULL)
-				break;
-			(void)tm_reply(ptask->ti_fd, TM_OKAY, event);
-			(void)DIS_tcp_wflush(ptask->ti_fd);
-			break;
+          ptask = task_check(pjob,event_task);
 
-      case IM_OBIT_TASK:
+          if (ptask == NULL)
+            break;
+
+          tm_reply(ptask->ti_fd,TM_OKAY,event);
+          diswsi(ptask->ti_fd,taskid);
+          DIS_tcp_wflush(ptask->ti_fd);
+
+          break;
+
+        case IM_GET_TASKS:
+
+          /*
+          ** Sender is MOM giving a list of tasks which she
+          ** has started for this job.
+          **
+          ** auxiliary info (
+          **	task id		tm_task_id;
+          **	...
+          **	task id		tm_task_id;
+          ** )
+          */
+
+          DBPRT(("%s: GET_TASKS %s OKAY\n", 
+            id, jobid))
+
+          ptask = task_check(pjob,event_task);
+
+          if (ptask == NULL)
+            break;
+
+          tm_reply(ptask->ti_fd,TM_OKAY,event);
+
+          for (;;) 
+            {
+            DIS_rpp_reset();
+
+            taskid = disrsi(stream,&ret);
+
+            if (ret != DIS_SUCCESS) 
+              {
+              if (ret == DIS_EOD)
+                break;
+
+              goto err;
+              }
+
+            DIS_tcp_funcs();
+ 
+            diswsi(ptask->ti_fd,taskid);
+            }
+
+          DIS_tcp_funcs();
+
+          diswsi(ptask->ti_fd,TM_NULL_TASK);
+
+          DIS_tcp_wflush(ptask->ti_fd);
+
+          break;
+
+        case IM_SIGNAL_TASK:
+
+          /*
+          ** Sender is MOM with a good signal to report.
+          **
+          ** auxiliary info (
+          **	none;
+          ** )
+          */
+
+          DBPRT(("%s: SIGNAL_TASK %s OKAY %d\n",
+            id, jobid, event_task))
+
+          ptask = task_check(pjob, event_task);
+
+          if (ptask == NULL)
+            break;
+
+          tm_reply(ptask->ti_fd, TM_OKAY, event);
+
+          DIS_tcp_wflush(ptask->ti_fd);
+
+          break;
+
+        case IM_OBIT_TASK:
 
 			/*
 			** Sender is MOM with a death report.
@@ -3276,12 +3310,14 @@ void im_request(
 			ptask = task_check(pjob, event_task);
 			if (ptask == NULL)
 				break;
-			(void)tm_reply(ptask->ti_fd, TM_OKAY, event);
-			(void)diswsi(ptask->ti_fd, exitval);
-			(void)DIS_tcp_wflush(ptask->ti_fd);
-			break;
 
-      case IM_GET_INFO:
+          tm_reply(ptask->ti_fd, TM_OKAY, event);
+          diswsi(ptask->ti_fd, exitval);
+          DIS_tcp_wflush(ptask->ti_fd);
+
+          break;
+
+        case IM_GET_INFO:
 
 			/*
 			** Sender is MOM with a named info to report.
@@ -3300,34 +3336,47 @@ void im_request(
 				free(info);
 				break;
 			}
-			(void)tm_reply(ptask->ti_fd, TM_OKAY, event);
-			(void)diswcs(ptask->ti_fd, info, len);
-			(void)DIS_tcp_wflush(ptask->ti_fd);
-			break;
 
-      case IM_GET_RESC:
+          tm_reply(ptask->ti_fd, TM_OKAY, event);
+          diswcs(ptask->ti_fd, info, len);
+          DIS_tcp_wflush(ptask->ti_fd);
 
-			/*
-			** Sender is MOM with a resource info to report.
-			**
-			** auxiliary info (
-			**	info		counted string;
-			** )
-			*/
-			info = disrst(stream, &ret);
-			if (ret != DIS_SUCCESS)
-				goto err;
-			DBPRT(("%s: GET_RESC %s OKAY %d\n",
-				id, jobid, event_task))
-			ptask = task_check(pjob, event_task);
-			if (ptask == NULL) {
-				free(info);
-				break;
-			}
-			(void)tm_reply(ptask->ti_fd, TM_OKAY, event);
-			(void)diswst(ptask->ti_fd, info);
-			(void)DIS_tcp_wflush(ptask->ti_fd);
-			break;
+          break;
+
+        case IM_GET_RESC:
+
+          /*
+          ** Sender is MOM with a resource info to report.
+          **
+          ** auxiliary info (
+          **	info		counted string;
+          ** )
+          */
+
+          info = disrst(stream, &ret);
+
+          if (ret != DIS_SUCCESS)
+            goto err;
+
+          DBPRT(("%s: GET_RESC %s OKAY %d\n",
+            id, jobid, event_task))
+
+          ptask = task_check(pjob,event_task);
+
+          if (ptask == NULL) 
+            {
+            free(info);
+
+            break;
+            }
+
+          tm_reply(ptask->ti_fd,TM_OKAY,event);
+
+          diswst(ptask->ti_fd,info);
+
+          DIS_tcp_wflush(ptask->ti_fd);
+
+          break;
 
         case IM_POLL_JOB:
 
@@ -3340,6 +3389,7 @@ void im_request(
           **	recommendation	int;
           **	cput		u_long;
           **	mem		u_long;
+          **    vmem            u_long;
           ** )
           */
 
@@ -3355,22 +3405,28 @@ void im_request(
           if (ret != DIS_SUCCESS)
             goto err;
   
-          pjob->ji_resources[nodeidx-1].nr_cput = disrul(stream,&ret);
+          pjob->ji_resources[nodeidx - 1].nr_cput = disrul(stream,&ret);
   
           if (ret != DIS_SUCCESS)
             goto err;
   
-          pjob->ji_resources[nodeidx-1].nr_mem = disrul(stream,&ret);
+          pjob->ji_resources[nodeidx - 1].nr_mem = disrul(stream,&ret);
   
           if (ret != DIS_SUCCESS)
             goto err;
-  
-          DBPRT(("%s: POLL_JOB %s OKAY kill %d cpu %lu mem %lu\n",
+ 
+          pjob->ji_resources[nodeidx - 1].nr_vmem = disrul(stream,&ret);
+
+          if (ret != DIS_SUCCESS)
+            goto err;
+ 
+          DBPRT(("%s: POLL_JOB %s OKAY kill %d  cpu=%lu  mem=%lu  vmem=%lu\n",
             id, 
             jobid, 
             exitval,
-            pjob->ji_resources[nodeidx-1].nr_cput,
-            pjob->ji_resources[nodeidx-1].nr_mem))
+            pjob->ji_resources[nodeidx - 1].nr_cput,
+            pjob->ji_resources[nodeidx - 1].nr_mem,
+            pjob->ji_resources[nodeidx - 1].nr_vmem))
   
           if (exitval != 0)
             {

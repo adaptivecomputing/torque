@@ -1,6 +1,14 @@
 1.2.0p3
 
-  add submit filter return code processing to qsub
+  TODO:  job session ID not reported to pbs_server for parallel jobs (CHPC)
+  TODO:  queue hostlist attribute (CRI)
+  TODO:  ~/.pbs_spool fix - add NO_SPOOL_OUTPUT as config option (CHPC)
+  TODO:  node reconnect protocol (BOEING)
+  TODO:  64 bit query corruption (NCSA)
+  TODO:  altix CPUSet support (ORNL)
+  fixed pid scanning for RHEL3 (VPAC)
+  added mproved vmem/mem limit enforcement and reporting (UMU)
+  added submit filter return code processing to qsub
 
 1.2.0p2
 

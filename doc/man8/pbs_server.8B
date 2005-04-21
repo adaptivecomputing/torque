@@ -83,7 +83,7 @@ pbs_server \- start a pbs batch server
 .Sh SYNOPSIS
 pbs_server\ [-a active] [-d\ config_path\^]\ [-p\ port\^] [\^-A\ acctfile\^]
 [\^-L\ logfile\^] [-M\ mom_port\^] [-R\ momRPP_port] [-S\ scheduler_port\^]
-[-t\ type\^]
+[-h\ hostname\^] [-t\ type\^]
 .Sh DESCRIPTION
 The
 .B pbs_server
@@ -153,6 +153,11 @@ Specifies the port number to which the server should connect when
 contacting the Scheduler.  The option argument,
 .Ar scheduler_conn ,
 is of the same syntax as under the -M option.
++.IP "-h hostname"
+Causes the server to start under a different hostname as obtained from
+gethostname(2). Useful for servers with multiple network interfaces to support
+connections from clients over an interface that has a hostname assigned
+that differs from the one that is returned by gethostname(2).
 .IP "-t type"
 Specifies the impact on jobs which were in execution, running, when the server
 shut down.  If the running job is not rerunnable or restartable from a

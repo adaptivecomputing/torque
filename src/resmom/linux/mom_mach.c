@@ -360,6 +360,7 @@ proc_mem_t *get_proc_mem()
   static proc_mem_t  mm;
   FILE              *fp;
   char               str[32];
+  unsigned long      bfsz, casz;
 
   if ((fp = fopen("/proc/meminfo","r")) == NULL) 
     {
@@ -377,49 +378,79 @@ proc_mem_t *get_proc_mem()
 
     fscanf(fp,"%*[^\n]%*c");      /* remove text header */;
 
+    /* umu vmem patch */
+
+    fscanf(fp,"%*s %lu %lu %lu %*lu %lu %lu",
+       &mm.mem_total,
+       &mm.mem_used,
+       &mm.mem_free,
+       &bfsz,
+       &casz);
+
+    mm.mem_free += casz + bfsz;
+
+/*
     fscanf(fp,"%*s %lu %lu %lu %*[^\n]%*c",
       &mm.mem_total,
       &mm.mem_used,
       &mm.mem_free);
+*/
 
     fscanf(fp,"%*s %lu %lu %lu %*[^\n]%*c",
       &mm.swap_total,
       &mm.swap_used,
       &mm.swap_free);
     } 
-  else do 
-    { 
-    /* new format (kernel > 2.4) the first 'str' has been read */
+  else 
+    {
+    do 
+      { 
+      /* new format (kernel > 2.4) the first 'str' has been read */
 
-    if (!strncmp(str,"MemTotal:",sizeof(str))) 
-      {
-      fscanf(fp,"%lu",
-        &mm.mem_total);
+      if (!strncmp(str,"MemTotal:",sizeof(str))) 
+        {
+        fscanf(fp,"%lu",
+          &mm.mem_total);
 
-      mm.mem_total *= 1024; /* the unit is kB */
-      } 
-    else if (!strncmp(str,"MemFree:",sizeof(str))) 
-      {
-      fscanf(fp,"%lu",
-        &mm.mem_free);
+        mm.mem_total *= 1024; /* the unit is kB */
+        } 
+      else if (!strncmp(str,"MemFree:",sizeof(str))) 
+        {
+        fscanf(fp,"%lu",
+          &mm.mem_free);
 
-      mm.mem_free *= 1024;
-      } 
-    else if (!strncmp(str,"SwapTotal:",sizeof(str))) 
-      {
-      fscanf(fp,"%lu",
-        &mm.swap_total);
+        mm.mem_free *= 1024;
+        } 
+      else if (!strncmp(str,"Buffers:",sizeof(str))) 
+        {
+        fscanf(fp,"%lu",
+          &bfsz);
+ 
+        mm.mem_free += bfsz * 1024;
+        } 
+      else if (!strncmp(str,"Cached:",sizeof(str))) 
+        {
+        fscanf(fp,"%lu",
+          &casz);
+ 
+        mm.mem_free += casz * 1024;
+        } 
+      else if (!strncmp(str,"SwapTotal:",sizeof(str))) 
+        {
+        fscanf(fp,"%lu",
+          &mm.swap_total);
 
-      mm.swap_total *= 1024;
-      } 
-    else if (!strncmp(str,"SwapFree:",sizeof(str))) 
-      {
-      fscanf(fp,"%lu",
-        &mm.swap_free);
+        mm.swap_total *= 1024;
+        } 
+      else if (!strncmp(str,"SwapFree:",sizeof(str))) 
+        {
+        fscanf(fp,"%lu",
+          &mm.swap_free);
 
-      mm.swap_free *= 1024;
-      }
-    }  while (fscanf(fp,"%30s",str) == 1);
+        mm.swap_free *= 1024;
+        }
+      }  while (fscanf(fp,"%30s",str) == 1);
+    }    /* END else */
 
   fclose(fp);
 
@@ -1008,6 +1039,7 @@ int mom_set_limits(
   unsigned long	value;	/* place in which to build resource value */
   resource	*pres;
   struct rlimit	reslim;
+  unsigned long vmem_limit = 0;
   unsigned long	mem_limit = 0;
 
   if (LOGLEVEL >= 2)
@@ -1118,8 +1150,8 @@ int mom_set_limits(
         return(error(pname,retval));
         }
 
-      if ((mem_limit == 0) || (value < mem_limit))
-        mem_limit = value;
+      if ((vmem_limit == 0) || (value < vmem_limit))
+        vmem_limit = value;
       } 
     else if (strcmp(pname,"pvmem") == 0) 
       {	
@@ -1139,8 +1171,8 @@ int mom_set_limits(
           return(error(pname,PBSE_BADATVAL));
           }
 
-        if ((mem_limit == 0) || (value < mem_limit))
-          mem_limit = value;
+        if ((vmem_limit == 0) || (value < vmem_limit))
+          vmem_limit = value;
         }
       } 
     else if (strcmp(pname,"mem") == 0) 
@@ -1162,9 +1194,21 @@ int mom_set_limits(
 
         reslim.rlim_cur = reslim.rlim_max = value;
 
+        if (setrlimit(RLIMIT_DATA,&reslim) < 0)
+          {
+          return(error("RLIMIT_DATA",PBSE_SYSTEM));
+          }
+
         if (setrlimit(RLIMIT_RSS,&reslim) < 0)
           {
           return(error("RLIMIT_RSS",PBSE_SYSTEM));
+          }
+
+        mem_limit = value;
+
+        if (getrlimit(RLIMIT_STACK,&reslim) >= 0)
+          {
+          mem_limit = value + reslim.rlim_cur;
           }
         }
       } 
@@ -1207,8 +1251,25 @@ int mom_set_limits(
     {
     /* if either of vmem or pvmem was given, set sys limit to lesser */
 
-    if (mem_limit != 0) 
+    if (vmem_limit != 0) 
       {
+      /* Don't make (p)vmem < pmem */
+
+      if (mem_limit > vmem_limit) 
+        {
+        vmem_limit = mem_limit;
+        }
+
+      reslim.rlim_cur = reslim.rlim_max = vmem_limit;
+
+      if (setrlimit(RLIMIT_AS,&reslim) < 0)
+        {
+        return(error("RLIMIT_AS",PBSE_SYSTEM));
+        }
+
+      /* UMU vmem patch sets RLIMIT_AS rather than RLIMIT_DATA and RLIMIT_STACK */
+
+      /*
       reslim.rlim_cur = reslim.rlim_max = mem_limit;
 
       if (setrlimit(RLIMIT_DATA,&reslim) < 0)
@@ -1220,6 +1281,7 @@ int mom_set_limits(
         {
         return(error("RLIMIT_STACK",PBSE_SYSTEM));
         }
+      */
       }
     }
 
@@ -2304,7 +2366,7 @@ char *sessions(
         sprintf(log_buffer,"%s: get_proc_stat", 
           dent->d_name);
 
-        log_err(errno, id, log_buffer);
+        log_err(errno,id,log_buffer);
         }
 
       continue;
@@ -2455,40 +2517,59 @@ char *pids(
     return(NULL);
     }
 
-	if ((jobid = (pid_t)atoi(attrib->a_value)) == 0) {
-		sprintf(log_buffer, "bad param: %s", attrib->a_value);
-		log_err(-1, id, log_buffer);
-		rm_errno = RM_ERR_BADPARAM;
-		return NULL;
-	}
-	if (momgetattr(NULL)) {
-		log_err(-1, id, extra_parm);
-		rm_errno = RM_ERR_BADPARAM;
-		return NULL;
-	}
+  if ((jobid = (pid_t)atoi(attrib->a_value)) == 0) 
+    {
+    sprintf(log_buffer,"bad param: %s", 
+      attrib->a_value);
 
-	if (strcmp(attrib->a_qualifier, "session") != 0) {
-		rm_errno = RM_ERR_BADPARAM;
-		return NULL;
-	}
+    log_err(-1,id,log_buffer);
 
-	/*
-	** Search for members of session
-	*/
-	rewinddir(pdir);
-	fmt = ret_string;
-	while ((dent = readdir(pdir)) != NULL) {
-		if (!isdigit(dent->d_name[0]))
-			continue;
+    rm_errno = RM_ERR_BADPARAM;
 
-		if ((ps = get_proc_stat(atoi(dent->d_name))) == NULL) {
-			if (errno != ENOENT) {
-				sprintf(log_buffer,
-					"%s: get_proc_stat", dent->d_name);
-				log_err(errno, id, log_buffer);
-			}
-			continue;
-		}
+    return(NULL);
+    }
+
+  if (momgetattr(NULL)) 
+    {
+    log_err(-1,id,extra_parm);
+
+    rm_errno = RM_ERR_BADPARAM;
+
+    return(NULL);
+    }
+
+  if (strcmp(attrib->a_qualifier,"session") != 0) 
+    {
+    rm_errno = RM_ERR_BADPARAM;
+
+    return(NULL);
+    }
+
+  /*
+  ** Search for members of session
+  */
+
+  rewinddir(pdir);
+
+  fmt = ret_string;
+
+  while ((dent = readdir(pdir)) != NULL) 
+    {
+    if (!isdigit(dent->d_name[0]))
+      continue;
+
+    if ((ps = get_proc_stat(atoi(dent->d_name))) == NULL) 
+      {
+      if (errno != ENOENT) 
+        {
+        sprintf(log_buffer,"%s: get_proc_stat", 
+          dent->d_name);
+
+        log_err(errno,id,log_buffer);
+        }
+
+      continue;
+      }
 
     if (LOGLEVEL >= 6)
       {
@@ -2546,9 +2627,9 @@ char *nusers(
     return(NULL);
     }
 
-  if ((uids = (uid_t *)calloc(maxuid, sizeof(uid_t))) == NULL) 
+  if ((uids = (uid_t *)calloc(maxuid,sizeof(uid_t))) == NULL) 
     {
-    log_err(errno, id, "no memory");
+    log_err(errno,id,"no memory");
     rm_errno = RM_ERR_SYSTEM;
 
     return(NULL);
@@ -3020,27 +3101,39 @@ void scan_non_child_tasks(void)
       /* look for processes with this session id */
 
       found = 0;
-      rewinddir(pdir);
 
-      while ((dent = readdir(pdir)) != NULL) 
+      /* NOTE:  on linux systems, the session master should have pid == sessionid */
+
+      if (kill(task->ti_qs.ti_sid,0) != -1)
         {
-        proc_stat_t *ps;
+        found = 1;
+        }
+      else
+        {
+        /* session master cannot be found, look for other pid in session */
 
-        if (!isdigit(dent->d_name[0]))
-          continue;
-
-        ps = get_proc_stat(atoi(dent->d_name));
-
-        if (!ps)
-          continue;
-
-        if (ps->session == task->ti_qs.ti_sid) 
+        rewinddir(pdir);
+  
+        while ((dent = readdir(pdir)) != NULL) 
           {
-          ++found;
+          proc_stat_t *ps;
 
-          break;
-          }
-        }    /* END while ((dent) != NULL) */
+          if (!isdigit(dent->d_name[0]))
+            continue;
+
+          ps = get_proc_stat(atoi(dent->d_name));
+
+          if (ps == NULL)
+            continue;
+
+          if (ps->session == task->ti_qs.ti_sid) 
+            {
+            found = 1;
+
+            break;
+            }
+          }    /* END while ((dent) != NULL) */
+        }
 
       if (!found) 
         {

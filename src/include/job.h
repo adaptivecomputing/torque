@@ -277,23 +277,26 @@ typedef	struct	hnodent {
 	int		hn_stream;	/* stream to MOM on node */
 	int		hn_sister;	/* save error for KILL_JOB event */
 	list_head	hn_events;	/* pointer to list of events */
-} hnodent;
+  } hnodent;
+
 
 typedef struct vnodent {
-	tm_node_id	vn_node;	/* user's vnode identifier */
-	hnodent	       *vn_host;	/* parent (host) nodeent entry */
-	int		vn_index;	/* index (window) */
-} vnodent;
+  tm_node_id  vn_node;	/* user's vnode identifier */
+  hnodent    *vn_host;	/* parent (host) nodeent entry */
+  int         vn_index;	/* index (window) */
+  } vnodent;
 
 
 /*
-**	Mothere Superior gets to hold an array of information from each
+**	Mother Superior gets to hold an array of information from each
 **	of the other nodes for resource usage.
 */
+
 typedef struct	noderes {
-	long		nr_cput;	/* cpu time */
-	long		nr_mem;		/* memory */
-} noderes;
+  long nr_cput;	/* cpu time */
+  long nr_mem;	/* memory */
+  long nr_vmem; /* virtual memory */
+  } noderes;
 
 
 

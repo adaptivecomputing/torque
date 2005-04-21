@@ -1428,46 +1428,61 @@ void encode_used(
     return;
     }
 
-	for (rs = (resource *)GET_NEXT(at->at_val.at_list);
-			rs != (resource *)0;
-			rs = (resource *)GET_NEXT(rs->rs_link)) {
+  for (rs = (resource *)GET_NEXT(at->at_val.at_list);rs != NULL;rs = (resource *)GET_NEXT(rs->rs_link)) 
+    {
+    resource_def *rd = rs->rs_defin;
+    attribute     val;
+    int           rc;
 
-		resource_def	*rd = rs->rs_defin;
-		attribute	val;
-		int		rc;
+    if ((rd->rs_flags & resc_access_perm) == 0)
+      continue;
 
-		if ((rd->rs_flags & resc_access_perm) == 0)
-			continue;
+    val = rs->rs_value;	/* copy resource attribute */
 
-		val = rs->rs_value;	/* copy resource attribute */
+    /* count up sisterhood too */
 
-		/* count up sisterhood too */
-		lnum = 0;
-		if (pjob->ji_resources != NULL) {
-			if (strcmp(rd->rs_name, "cput") == 0) {
-				for (i=0; i<pjob->ji_numnodes-1; i++) {
-					noderes	*nr = &pjob->ji_resources[i];
-					lnum += nr->nr_cput;
-				}
-			}
-			else if (strcmp(rd->rs_name, "mem") == 0) {
-				for (i=0; i<pjob->ji_numnodes-1; i++) {
-					noderes	*nr = &pjob->ji_resources[i];
-					lnum += nr->nr_mem;
-				}
-			}
-		}
-		val.at_val.at_long += lnum;
+    if (pjob->ji_resources != NULL) 
+      {
+      lnum = 0;
 
-		rc = rd->rs_encode(&val, phead,
-				ad->at_name, rd->rs_name,
-				ATR_ENCODE_CLIENT);
-		if (rc < 0)
-			break;
-	}
+      if (!strcmp(rd->rs_name,"cput")) 
+        {
+        for (i = 0;i < pjob->ji_numnodes - 1;i++) 
+          {
+          lnum += pjob->ji_resources[i].nr_cput;
+          }
+        }
+      else if (!strcmp(rd->rs_name,"mem")) 
+        {
+        for (i = 0;i < pjob->ji_numnodes - 1;i++) 
+          {
+          lnum += pjob->ji_resources[i].nr_mem;
+          }
+        }
+      else if (!strcmp(rd->rs_name,"vmem"))
+        {
+        for (i = 0;i < pjob->ji_numnodes - 1;i++)
+          {
+          lnum += pjob->ji_resources[i].nr_vmem;
+          }
+        }
+
+      val.at_val.at_long += lnum;
+      }
+
+    rc = rd->rs_encode(
+      &val, 
+      phead,
+      ad->at_name, 
+      rd->rs_name,
+      ATR_ENCODE_CLIENT);
+
+    if (rc < 0)
+      break;
+    }  /* END for (rs) */
 
   return;
-  }
+  }  /* END encode_used() */
 
 
 

@@ -393,6 +393,7 @@ int main(
   job	*pjob;
   pbs_queue *pque;
   char	*servicename;
+  pbs_net_t def_pbs_server_addr;
   pid_t	 sid;
   long  *state;
   time_t waittime;
@@ -471,7 +472,7 @@ int main(
 
   /* parse the parameters from the command line */
 
-  while ((c = getopt(argc,argv,"A:a:d:p:t:L:M:R:S:-:")) != -1) 
+  while ((c = getopt(argc,argv,"A:a:d:h:p:t:L:M:R:S:-:")) != -1) 
     {
     switch (c) 
       {
@@ -514,6 +515,62 @@ int main(
 
         break;
 
+      case 'h':
+
+        /* overwrite locally detected hostname with specified hostname */
+        /*  (used for multi-homed hosts) */
+
+        strncpy(server_host,optarg,PBS_MAXHOSTNAME);
+
+        if (get_fullhostname(server_host,server_host,PBS_MAXHOSTNAME) == -1)
+          {
+          log_err(-1,"pbsd_main","Unable to get host name");
+
+          return(1);
+          }
+
+        strcpy(server_name,server_host);
+
+        def_pbs_server_addr = pbs_server_addr;
+
+        pbs_server_addr = get_hostaddr(server_host);
+
+        if (pbs_mom_addr == def_pbs_server_addr)
+          pbs_mom_addr = pbs_server_addr;
+
+        if (pbs_scheduler_addr == def_pbs_server_addr)
+          pbs_scheduler_addr = pbs_server_addr;
+
+        if (strlen(servicename) > 0)
+          {
+          if (strlen(server_name) + strlen(servicename) + 1 > (size_t)PBS_MAXSERVERNAME)
+            {
+            fprintf(stderr,"%s: -h host too long\n", 
+              argv[0]);
+
+            return(1);
+            }
+
+          strcat(server_name,":");
+          strcat(server_name,servicename);
+
+          if ((pbs_server_port_dis = atoi(servicename)) == 0)
+            {
+            fprintf(stderr,"%s: host: %s, port: %s, max: %i\n", 
+              argv[0],
+              server_name,
+              servicename,
+              PBS_MAXSERVERNAME);
+
+            fprintf(stderr, "%s: -h host invalid\n", 
+              argv[0]);
+
+            return(1);
+            }
+          }
+
+        break;
+
       case 'p':
 
         servicename = optarg;
@@ -526,8 +583,8 @@ int main(
           return(1);
           }
 
-        strcat(server_name, ":");
-        strcat(server_name, servicename);
+        strcat(server_name,":");
+        strcat(server_name,servicename);
 
         if ((pbs_server_port_dis = atoi(servicename)) == 0) 
           {
