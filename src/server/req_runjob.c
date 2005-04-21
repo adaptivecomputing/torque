@@ -87,6 +87,8 @@
 #include <signal.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <netdb.h>
+#include <errno.h>
 #include "libpbs.h"
 #include "server_limits.h"
 #include "list_link.h"
@@ -141,7 +143,9 @@ extern time_t time_now;
 extern int   svr_totnodes;	/* non-zero if using nodes */
 extern int   svr_tsnodes;	/* non-zero if time-shared nodes */
 
-extern const char *PJobSubState[];
+extern const char   *PJobSubState[];
+extern unsigned int  pbs_rm_port;
+extern char         *msg_err_malloc;
 
 
 
@@ -158,8 +162,9 @@ void req_runjob(
   struct batch_request *preq)  /* I (modified) */
 
   {
-  job *pjob;
-  int  rc;
+  job  *pjob;
+  int   rc;
+  void *bp;
 
   if ((pjob = chk_job_torun(preq)) == NULL)
     {
@@ -201,7 +206,16 @@ void req_runjob(
     {
     free_nodes(pjob);
 
-    req_reject(rc,0,preq,NULL,NULL);
+    /* If the job has a non-empty rejectdest list, pass the first host into req_reject() */
+
+    if ((bp = GET_NEXT(pjob->ji_rejectdest)) != NULL)
+      {
+      req_reject(rc,0,preq,((struct badplace *)bp)->bp_dest,"could not contact host");
+      }
+    else
+      {
+      req_reject(rc,0,preq,NULL,NULL);
+      }
     }
 
   return;
@@ -420,8 +434,14 @@ int svr_startjob(
   struct batch_request *preq)	/* NULL or Run Job batch request */
 
   {
-  int f;
-  int rc;
+  int     f;
+  int     rc;
+  int     sock, nodenum;
+  struct  hostent *hp;
+  char   *nodestr, *cp;
+  struct  sockaddr_in saddr;
+
+  char   *id = "svr_startjob";
 
   /* if not already setup, transfer the control/script file basename */
   /* into an attribute accessable to MOM				   */
@@ -463,6 +483,106 @@ int svr_startjob(
     {
     return(rc);
     }
+
+/* #define BOEING */
+#ifdef BOEING
+  /* Verify that all the nodes are alive via a TCP connect. */
+
+  /* Get the first host. */
+
+  nodestr = strtok(pjob->ji_wattr[(int)JOB_ATR_exec_host].at_val.at_str,"+");
+
+  while (nodestr != NULL)
+    {
+    /* Truncate from trailing slash on (if one exists). */
+
+    if ((cp = strchr(nodestr,'/')) != NULL)
+      {
+      cp[0] = '\0';
+      }
+
+    /* Lookup IP address of host. */
+
+    if ((hp = gethostbyname(nodestr)) == NULL)
+      {
+      sprintf(log_buffer,"could not contact %s (gethostbyname failed)",nodestr);
+      log_err(errno,id,log_buffer);
+
+      /* Add this host to the reject destination list for the job */
+
+      badplace *bp = (badplace *)malloc(sizeof (badplace));
+      if (bp == (badplace *)0)
+        {
+        log_err(errno,id,msg_err_malloc);
+        return;
+        }
+      CLEAR_LINK(bp->bp_link);
+      strcpy(bp->bp_dest,nodestr);
+      append_link(&pjob->ji_rejectdest,&bp->bp_link, bp);
+
+      return(PBSE_RESCUNAV);
+      }
+
+    /* Open a socket. */
+
+    if ((sock = socket(AF_INET,SOCK_STREAM,0)) == -1)
+      {
+      sprintf(log_buffer,"could not contact %s (socket failed)",nodestr);
+      log_err(errno,id,log_buffer);
+
+      /* Add this host to the reject destination list for the job */
+
+      badplace *bp = (badplace *)malloc(sizeof (badplace));
+      if (bp == (badplace *)0)
+        {
+        log_err(errno,id,msg_err_malloc);
+        return;
+        }
+      CLEAR_LINK(bp->bp_link);
+      strcpy(bp->bp_dest,nodestr);
+      append_link(&pjob->ji_rejectdest,&bp->bp_link, bp);
+
+      return(PBSE_RESCUNAV);
+      }
+
+    /* Set the host information. */
+
+    memset(&saddr,'\0',sizeof(saddr));
+    saddr.sin_family = AF_INET;
+    memcpy(&saddr.sin_addr,hp->h_addr,hp->h_length);
+    saddr.sin_port = htons(pbs_rm_port);
+
+    /* Connect to the host. */
+
+    if (connect(sock,(struct sockaddr *)&saddr,sizeof(saddr)) < 0)
+      {
+      sprintf(log_buffer,"could not contact %s (connect failed)",nodestr);
+      log_err(errno,id,log_buffer);
+
+      /* Add this host to the reject list for the job */
+
+      badplace *bp = (badplace *)malloc(sizeof (badplace));
+      if (bp == (badplace *)0)
+        {
+        log_err(errno,id,msg_err_malloc);
+        return;
+        }
+      CLEAR_LINK(bp->bp_link);
+      strcpy(bp->bp_dest,nodestr);
+      append_link(&pjob->ji_rejectdest,&bp->bp_link, bp);
+
+      return(PBSE_RESCUNAV);
+      }
+
+    /* Clean up and get next host. */
+
+    close(sock);
+    nodestr = strtok(NULL,"+");
+    }
+
+  /* END MOM verification check via TCP. */
+
+#endif  /* END BOEING */
 
   /* Next, are there files to be staged-in? */
 

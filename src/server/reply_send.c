@@ -374,21 +374,27 @@ void req_reject(
 
   {
   char msgbuf[ERR_MSG_SIZE + 256 + 1];
+  char msgbuf2[ERR_MSG_SIZE + 256 + 1];
 
   set_err_msg(code,msgbuf);
+  memcpy(msgbuf2,msgbuf,strlen(msgbuf));
 
   if (HostName != NULL)
     {
     snprintf(msgbuf,sizeof(msgbuf),"%s REJHOST=%s",
-      msgbuf,
+      msgbuf2,
       HostName);
+    memcpy(msgbuf2,msgbuf,strlen(msgbuf));
     }
 
   if (Msg != NULL)
     {
     snprintf(msgbuf,sizeof(msgbuf),"%s MSG=%s",
-      msgbuf,
+      msgbuf2,
       Msg);
+
+    /* NOTE: Don't need this last memcpy() unless another message is concatenated. */
+    /* memcpy(msgbuf2,msgbuf,strlen(msgbuf)); */
     }
     
   sprintf(log_buffer,"Reject reply code=%d(%s), aux=%d, type=%s, from %s@%s",
