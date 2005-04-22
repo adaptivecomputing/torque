@@ -131,6 +131,13 @@ int encode_DIS_attropl(
     {
     /* length of three strings */
 
+    if (ps->name == NULL)
+      {
+      /* Continue if attribute has no name (CRI 2005-04-22). */
+
+      continue;
+      }
+
     name_len = strlen(ps->name) + 1;
 
     if (ps->value != NULL)
