@@ -6,6 +6,7 @@
 #include <unistd.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <sys/time.h>
 
 /*
  * Assumes full-block read/write.  No accounting for partial blocks,
@@ -59,6 +60,7 @@ ssize_t read_nonblocking_socket(
   {
   int     flags;
   ssize_t i;
+  time_t  start, now;
 
   /* verify socket is non-blocking */
 
@@ -95,6 +97,10 @@ ssize_t read_nonblocking_socket(
       }
     }    /* END else (flags & BLOCK) */
  
+  /* Set a timer to prevent an infinite loop here. */
+
+  start = -1;
+
   for (;;) 
     {
     i = read(fd,buf,count);
@@ -105,6 +111,16 @@ ssize_t read_nonblocking_socket(
       }
 
     if (errno != EAGAIN) 
+      {
+      return(i);
+      }
+
+    time(&now);
+    if (start == -1)
+      {
+      start = now;
+      }
+    else if ((now - start) > 30)
       {
       return(i);
       }
