@@ -2154,14 +2154,27 @@ void req_cpyfile(
 
   if (rc < 0) 
     {
+    char tmpLine[1024];
+    
     /* FAILURE */
 
     req_reject(-rc,0,preq,mom_host,EMsg);
 
-    if (rc != -PBSE_SYSTEM)
+    if ((rc != -PBSE_SYSTEM) && (rc != -PBSE_BADUSER))
       {
+      sprintf(tmpLine, "fork_to_user failed with rc=%d '%s' - exiting",
+        rc,
+        EMsg);
+
+      log_err(errno,"req_cpyfile",tmpLine);
       exit(rc);
       }
+
+    sprintf(tmpLine, "fork_to_user failed with rc=%d '%s' - returning failure",
+      rc,
+      EMsg);
+
+    log_err(errno,"req_cpyfile",tmpLine);
 
     return;
     }
