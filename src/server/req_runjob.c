@@ -441,7 +441,8 @@ int svr_startjob(
   char   *nodestr, *cp;
   struct  sockaddr_in saddr;
 
-  char   *id = "svr_startjob";
+  badplace *bp;
+  char     *id = "svr_startjob";
 
   /* if not already setup, transfer the control/script file basename */
   /* into an attribute accessable to MOM				   */
@@ -510,7 +511,7 @@ int svr_startjob(
 
       /* Add this host to the reject destination list for the job */
 
-      badplace *bp = (badplace *)malloc(sizeof (badplace));
+      bp = (badplace *)malloc(sizeof (badplace));
       if (bp == (badplace *)0)
         {
         log_err(errno,id,msg_err_malloc);
