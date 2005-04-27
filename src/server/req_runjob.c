@@ -533,7 +533,7 @@ int svr_startjob(
 
       /* Add this host to the reject destination list for the job */
 
-      badplace *bp = (badplace *)malloc(sizeof (badplace));
+      bp = (badplace *)malloc(sizeof (badplace));
       if (bp == (badplace *)0)
         {
         log_err(errno,id,msg_err_malloc);
@@ -562,7 +562,7 @@ int svr_startjob(
 
       /* Add this host to the reject list for the job */
 
-      badplace *bp = (badplace *)malloc(sizeof (badplace));
+      bp = (badplace *)malloc(sizeof (badplace));
       if (bp == (badplace *)0)
         {
         log_err(errno,id,msg_err_malloc);
