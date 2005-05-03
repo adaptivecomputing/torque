@@ -110,24 +110,35 @@
 #include "dis_.h"
 #undef disrui
 
-unsigned disrui(stream, retval)
-    int			stream;
-    int			*retval;
+unsigned disrui(
+
+  int  stream,  /* I */
+  int *retval)  /* O */
+
+  {
+  int       locret;
+  int       negate;
+  unsigned  value;
+
+  assert(disr_commit != NULL);
+
+  locret = disrsi_(stream,&negate,&value,1);
+
+  if (locret != DIS_SUCCESS) 
     {
-	int		locret;
-	int		negate;
-	unsigned	value;
+    value = 0;
+    } 
+  else if (negate) 
+    {
+    value = 0;
 
-	assert(disr_commit != NULL);
+    locret = DIS_BADSIGN;
+    }
 
-	locret = disrsi_(stream, &negate, &value, 1);
-	if (locret != DIS_SUCCESS) {
-		value = 0;
-	} else if (negate) {
-		value = 0;
-		locret = DIS_BADSIGN;
-	}
-	*retval = ((*disr_commit)(stream, locret == DIS_SUCCESS) < 0) ?
-	    DIS_NOCOMMIT : locret;
-	return (value);
-}
+  *retval = ((*disr_commit)(stream,locret == DIS_SUCCESS) < 0) ?
+    DIS_NOCOMMIT : locret;
+
+  return(value);
+  }
+
+

@@ -182,109 +182,160 @@ int decode_DIS_replyCmd(
 
     case BATCH_REPLY_CHOICE_Select:
 
-		/* have to get count of number of strings first */
+      /* have to get count of number of strings first */
 
-		reply->brp_un.brp_select = (struct brp_select *)0;
-		pselx = &reply->brp_un.brp_select;
-		ct = disrui(sock, &rc);
-		if (rc) return rc;
+      reply->brp_un.brp_select = NULL;
 
-		while (ct--) {
-			psel = (struct brp_select *)malloc(sizeof (struct brp_select));
-			if (psel == 0) return DIS_NOMALLOC;
-			psel->brp_next = (struct brp_select *)0;
-			psel->brp_jobid[0] = '\0';
-			rc = disrfst(sock, PBS_MAXSVRJOBID+1, psel->brp_jobid);
-			if (rc) {
-				(void)free(psel);
-				return rc;
-			}
-			*pselx = psel;
-			pselx  = &psel->brp_next;
-		}
-		break;
+      pselx = &reply->brp_un.brp_select;
 
-	    case BATCH_REPLY_CHOICE_Status:
+      ct = disrui(sock,&rc);
 
-		/* have to get count of number of status objects first */
+      if (rc) 
+        {
+        return(rc);
+        }
 
-		reply->brp_un.brp_statc = (struct brp_cmdstat *)0;
-		pstcx = &reply->brp_un.brp_statc;
-		ct = disrui(sock, &rc);
-		if (rc) return rc;
+      while (ct--) 
+        {
+        psel = (struct brp_select *)malloc(sizeof (struct brp_select));
 
-		while (ct--) {
-			pstcmd = (struct brp_cmdstat *)malloc(sizeof (struct brp_cmdstat));
-			if (pstcmd == 0) return DIS_NOMALLOC;
+        if (psel == NULL) 
+          {
+          return(DIS_NOMALLOC);
+          }
 
-			pstcmd->brp_stlink = (struct brp_cmdstat *)0;
-			pstcmd->brp_objname[0] = '\0';
-			pstcmd->brp_attrl = (struct attrl *)0;
+        psel->brp_next = NULL;
 
-			pstcmd->brp_objtype = disrui(sock, &rc);
-			if (rc == 0) {
-				rc = disrfst(sock, PBS_MAXSVRJOBID+1,
-					     pstcmd->brp_objname);
-			}
-			if (rc) {
-				(void)free(pstcmd);
-				return rc;
-			}
-			rc = decode_DIS_attrl(sock, &pstcmd->brp_attrl);
-			if (rc) {
-				(void)free(pstcmd);
-				return rc;
-			}
-			*pstcx = pstcmd;
-			pstcx  = &pstcmd->brp_stlink;
-		}
-		break;
+        psel->brp_jobid[0] = '\0';
+
+        rc = disrfst(sock,PBS_MAXSVRJOBID + 1,psel->brp_jobid);
+
+        if (rc) 
+          {
+          free(psel);
+
+          return(rc);
+          }
+
+        *pselx = psel;
+
+        pselx  = &psel->brp_next;
+        }
+
+      break;
+
+    case BATCH_REPLY_CHOICE_Status:
+
+      /* have to get count of number of status objects first */
+
+      reply->brp_un.brp_statc = NULL;
+
+      pstcx = &reply->brp_un.brp_statc;
+
+      ct = disrui(sock,&rc);
+
+      if (rc) 
+        {
+        return(rc);
+        }
+
+      while (ct--) 
+        {
+        pstcmd = (struct brp_cmdstat *)malloc(sizeof (struct brp_cmdstat));
+
+        if (pstcmd == NULL) 
+          {
+          return(DIS_NOMALLOC);
+          }
+
+        pstcmd->brp_stlink = NULL;
+
+        pstcmd->brp_objname[0] = '\0';
+
+        pstcmd->brp_attrl = NULL;
+
+        pstcmd->brp_objtype = disrui(sock,&rc);
+
+        if (rc == 0) 
+          {
+          rc = disrfst(sock,PBS_MAXSVRJOBID + 1,pstcmd->brp_objname);
+          }
+
+        if (rc) 
+          {
+          free(pstcmd);
+
+          return(rc);
+          }
+
+        rc = decode_DIS_attrl(sock, &pstcmd->brp_attrl);
+
+        if (rc) 
+          {
+          free(pstcmd);
+
+          return(rc);
+          }
+
+        *pstcx = pstcmd;
+
+        pstcx  = &pstcmd->brp_stlink;
+        }
+
+      break;
 		
-	    case BATCH_REPLY_CHOICE_Text:
+    case BATCH_REPLY_CHOICE_Text:
 		
-		/* text reply */
+      /* text reply */
 
-		reply->brp_un.brp_txt.brp_str = disrcs(sock,
-				(size_t*)&reply->brp_un.brp_txt.brp_txtlen,
-				&rc);
-		break;
+      reply->brp_un.brp_txt.brp_str = disrcs(
+        sock,
+        (size_t*)&reply->brp_un.brp_txt.brp_txtlen,
+        &rc);
 
-	    case BATCH_REPLY_CHOICE_Locate:
+      break;
 
-		/* Locate Job Reply */
+    case BATCH_REPLY_CHOICE_Locate:
 
-		rc = disrfst(sock, PBS_MAXDEST+1, reply->brp_un.brp_locate);
-		break;
+      /* Locate Job Reply */
 
-	    case BATCH_REPLY_CHOICE_RescQuery:
+      rc = disrfst(sock,PBS_MAXDEST + 1,reply->brp_un.brp_locate);
 
-		/* Resource Query Reply */
+      break;
 
-		reply->brp_un.brp_rescq.brq_avail = NULL;
-		reply->brp_un.brp_rescq.brq_alloc = NULL;
-		reply->brp_un.brp_rescq.brq_resvd = NULL;
-		reply->brp_un.brp_rescq.brq_down  = NULL;
-		ct = disrui(sock, &rc);
-		if (rc) break;
-		reply->brp_un.brp_rescq.brq_number = ct;
-		reply->brp_un.brp_rescq.brq_avail  = 
-					  (int *)malloc(ct * sizeof (int));
-		reply->brp_un.brp_rescq.brq_alloc  = 
-					  (int *)malloc(ct * sizeof (int));
-		reply->brp_un.brp_rescq.brq_resvd  = 
-					  (int *)malloc(ct * sizeof (int));
-		reply->brp_un.brp_rescq.brq_down   = 
-					  (int *)malloc(ct * sizeof (int));
+    case BATCH_REPLY_CHOICE_RescQuery:
 
-		for (i=0; (i < ct) && (rc == 0); ++i) 
-		    *(reply->brp_un.brp_rescq.brq_avail+i) = disrui(sock, &rc);
-		for (i=0; (i < ct) && (rc == 0); ++i) 
-		    *(reply->brp_un.brp_rescq.brq_alloc+i) = disrui(sock, &rc);
-		for (i=0; (i < ct) && (rc == 0); ++i) 
-		    *(reply->brp_un.brp_rescq.brq_resvd+i) = disrui(sock, &rc);
-		for (i=0; (i < ct) && (rc == 0); ++i) 
-		    *(reply->brp_un.brp_rescq.brq_down+i)  = disrui(sock, &rc);
-		break;
+      /* Resource Query Reply */
+
+      reply->brp_un.brp_rescq.brq_avail = NULL;
+      reply->brp_un.brp_rescq.brq_alloc = NULL;
+      reply->brp_un.brp_rescq.brq_resvd = NULL;
+      reply->brp_un.brp_rescq.brq_down  = NULL;
+
+      ct = disrui(sock,&rc);
+
+      if (rc) 
+        break;
+
+      reply->brp_un.brp_rescq.brq_number = ct;
+      reply->brp_un.brp_rescq.brq_avail  = (int *)malloc(ct * sizeof (int));
+      reply->brp_un.brp_rescq.brq_alloc  = (int *)malloc(ct * sizeof (int));
+      reply->brp_un.brp_rescq.brq_resvd  = (int *)malloc(ct * sizeof (int));
+      reply->brp_un.brp_rescq.brq_down   = (int *)malloc(ct * sizeof (int));
+
+      for (i = 0;(i < ct) && (rc == 0);++i) 
+        *(reply->brp_un.brp_rescq.brq_avail + i) = disrui(sock,&rc);
+
+      for (i = 0;(i < ct) && (rc == 0);++i) 
+        *(reply->brp_un.brp_rescq.brq_alloc + i) = disrui(sock,&rc);
+
+      for (i = 0;(i < ct) && (rc == 0);++i) 
+        *(reply->brp_un.brp_rescq.brq_resvd+i) = disrui(sock, &rc);
+
+      for (i = 0;(i < ct) && (rc == 0);++i) 
+        *(reply->brp_un.brp_rescq.brq_down+i)  = disrui(sock, &rc);
+
+      break;
 
     default:
 
@@ -298,4 +349,5 @@ int decode_DIS_replyCmd(
   return(rc);
   }  /* END decode_DIS_replyCmd() */
 
+/* END dec_rpyc.c */
 

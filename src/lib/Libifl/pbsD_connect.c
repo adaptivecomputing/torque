@@ -515,13 +515,23 @@ int pbs_disconnect(
   if ((encode_DIS_ReqHdr(sock,PBS_BATCH_Disconnect,pbs_current_user) == 0) && 
       (DIS_tcp_wflush(sock) == 0)) 
     {
+    int atime;
+
+    /* set alarm to break out of potentially infinite read */
+
+    atime = ualarm(10);
+
     while (1) 
       {	
       /* wait for server to close connection */
 
+      /* NOTE:  if read of 'sock' is blocking, request below may hang forever */
+
       if (read(sock,&x,sizeof(x)) < 1) 
         break;
       }
+
+    ualarm(atime);
     }
 	
   close(sock);

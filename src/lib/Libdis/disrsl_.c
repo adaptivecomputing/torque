@@ -129,6 +129,8 @@ int disrsl_(
 
   c = (*dis_getc)(stream);
 
+  /* FORMAT:  +2+1+0+0+64+2079+22+251175826.teva.westgrid.ubc2+362+21+8Job_Name+02+11run32_.2557+02+ ... */
+
   switch (c) 
     {
     case '-':
@@ -190,32 +192,78 @@ int disrsl_(
     case '8':
     case '9':
 
-		ndigs = c - '0';
-		if (count > 1) {
-			if ((*dis_gets)(stream, dis_buffer + 1, count - 1) !=
-								count - 1)
-			        return (DIS_EOD);
-			cp = dis_buffer;
-			if (count >= ulmaxdigs) {
-				if (count > ulmaxdigs)
-				        break;
-				*cp = c;
-				if (memcmp(dis_buffer, ulmax, ulmaxdigs) > 0)
-				        break;
-			}
-			while (--count) {
-				if ((c = *++cp) < '0' || c > '9')
-				        return (DIS_NONDIGIT);
-				ndigs = 10 * ndigs + c - '0';
-			}
-		}
-		return (disrsl_(stream, negate, value, ndigs));
-	    case -1:
-		return (DIS_EOD);
-	    case -2:
-		return (DIS_EOF);
-	    default:
-		return (DIS_NONDIGIT);
+      ndigs = c - '0';
+
+      if (count > 1) 
+        {
+        if ((*dis_gets)(stream,dis_buffer + 1,count - 1) != count - 1)
+          {
+          /* FAILURE */
+
+          return(DIS_EOD);
+          }
+
+        cp = dis_buffer;
+
+        if (count >= ulmaxdigs) 
+          {
+          if (count > ulmaxdigs)
+            break;
+
+          *cp = c;
+
+          if (memcmp(dis_buffer,ulmax,ulmaxdigs) > 0)
+            break;
+          }
+
+        while (--count) 
+          {
+          if (((c = *++cp) < '0') || (c > '9'))
+            {
+            /* FAILURE */
+ 
+            return(DIS_NONDIGIT);
+            }
+
+          ndigs = 10 * ndigs + c - '0';
+          }
+        }
+
+      return(disrsl_(stream,negate,value,ndigs));
+
+      /*NOTREACHED*/
+
+      break;
+
+    case -1:
+
+      /* FAILURE */
+
+      return(DIS_EOD);
+
+      /*NOTREACHED*/
+
+      break;
+
+    case -2:
+
+      /* FAILURE */
+
+      return(DIS_EOF);
+
+      /*NOTREACHED*/
+
+      break;
+
+    default:
+
+      /* FAILURE */
+
+      return(DIS_NONDIGIT);
+
+      /*NOTREACHED*/
+
+      break;
     }  /* END switch (c) */
 
   *negate = FALSE;
@@ -226,3 +274,7 @@ overflow:
 
   return(DIS_OVERFLOW);
   }  /* END disrsl_() */
+
+/* END disrsl_.c */
+
+

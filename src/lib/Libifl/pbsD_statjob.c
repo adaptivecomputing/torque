@@ -93,6 +93,20 @@ struct batch_status * pbs_statjob(
   char         *extend)  /* ??? */
 
   {
+  /* NOTE:
+
+    tcp_read(fd=10)
+#0  tcp_getc (fd=10) at ../Libifl/tcp_dis.c:399
+#1  0x081e40ab in disrsl_ (stream=10, negate=0xbffe9ed0, value=0xbffe9ecc, count=1) at ../Libdis/disrsl_.c:130
+#2  0x081e65ef in disrul (stream=10, retval=0xbffe9f04) at ../Libdis/disrul.c:124
+#3  0x081e4bbe in decode_DIS_replyCmd (sock=10, reply=0xc6d78e8) at ../Libifl/dec_rpyc.c:119
+#4  0x081e47ec in PBSD_rdrpy (c=1) at ../Libifl/PBSD_rdrpy.c:131
+#5  0x081e5c91 in PBSD_status_get (c=1) at ../Libifl/PBSD_status.c:144
+#6  0x081e5c66 in PBSD_status (c=1, function=19, id=0x8242b48 "", attrib=0x0, extend=0x0)
+    at ../Libifl/PBSD_status.c:125
+#7  0x081e3df8 in pbs_statjob (c=1, id=0x0, attrib=0x0, extend=0x0) at ../Libifl/pbsD_statjob.c:96
+  */
+
   return(PBSD_status(c,PBS_BATCH_StatusJob,id,attrib,extend));
   }  /* END pbs_statjob() */
 
