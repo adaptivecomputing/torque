@@ -438,7 +438,8 @@ int svr_startjob(
   int     rc;
   int     sock, nodenum;
   struct  hostent *hp;
-  char   *nodestr, *cp;
+  char   *nodestr, *cp, *hostlist;
+  int     size;
   struct  sockaddr_in saddr;
 
   badplace *bp;
@@ -485,13 +486,28 @@ int svr_startjob(
     return(rc);
     }
 
-/* #define BOEING */
+#define BOEING
 #ifdef BOEING
   /* Verify that all the nodes are alive via a TCP connect. */
 
-  /* Get the first host. */
+  /* NOTE: Copy the nodes into a temp string because strtok() is destructive. */
 
-  nodestr = strtok(pjob->ji_wattr[(int)JOB_ATR_exec_host].at_val.at_str,"+");
+  size = strlen(pjob->ji_wattr[(int)JOB_ATR_exec_host].at_val.at_str);
+  hostlist = malloc(size + 1);
+
+  if (hostlist == NULL)
+    {
+    sprintf(log_buffer,"could not allocate temporary buffer (malloc failed) -- skipping TCP connect check");
+    log_err(errno,id,log_buffer);
+    }
+  else
+    {
+    /* Get the first host. */
+
+    strncpy(hostlist,pjob->ji_wattr[(int)JOB_ATR_exec_host].at_val.at_str,size);
+    hostlist[size] = '\0';
+    nodestr = strtok(hostlist,"+");
+    }
 
   while (nodestr != NULL)
     {
@@ -580,6 +596,9 @@ int svr_startjob(
     close(sock);
     nodestr = strtok(NULL,"+");
     }
+
+  if (hostlist != NULL)
+    free(hostlist);
 
   /* END MOM verification check via TCP. */
 
