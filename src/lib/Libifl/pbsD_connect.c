@@ -519,7 +519,7 @@ int pbs_disconnect(
 
     /* set alarm to break out of potentially infinite read */
 
-    atime = ualarm(10);
+    atime = alarm(10);
 
     while (1) 
       {	
@@ -531,7 +531,7 @@ int pbs_disconnect(
         break;
       }
 
-    ualarm(atime);
+    alarm(atime);
     }
 	
   close(sock);
