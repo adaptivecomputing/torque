@@ -377,8 +377,8 @@ int PBSShowUsage(
 
 int main(
 
-  int   argc,
-  char *argv[])
+  int   argc,    /* I */
+  char *argv[])  /* I */
 
   {
   int	 c;
@@ -392,7 +392,7 @@ int main(
   char	*pc;
   job	*pjob;
   pbs_queue *pque;
-  char	*servicename;
+  char	*servicename = NULL;
   pbs_net_t def_pbs_server_addr;
   pid_t	 sid;
   long  *state;
@@ -541,7 +541,7 @@ int main(
         if (pbs_scheduler_addr == def_pbs_server_addr)
           pbs_scheduler_addr = pbs_server_addr;
 
-        if (strlen(servicename) > 0)
+        if ((servicename != NULL) && (strlen(servicename) > 0))
           {
           if (strlen(server_name) + strlen(servicename) + 1 > (size_t)PBS_MAXSERVERNAME)
             {
@@ -567,7 +567,7 @@ int main(
 
             return(1);
             }
-          }
+          }    /* END if (strlen(servicename) > 0) */
 
         break;
 
