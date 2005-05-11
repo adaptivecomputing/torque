@@ -90,11 +90,14 @@ ssize_t read_nonblocking_socket(
 #else
     flags |= O_NONBLOCK;
 #endif
-    
+   
+/*  NOTE: apparently some incoming sockets are blocking and must be blocking (investigate further?) 
+
     if (fcntl(fd,F_SETFL,flags) == -1)
       {
       return(-1);
       }
+*/
     }    /* END else (flags & BLOCK) */
  
   /* Set a timer to prevent an infinite loop here. */
