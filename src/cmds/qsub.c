@@ -1148,20 +1148,29 @@ settermraw(ptio)
 	perror("qsub: set terminal mode");
 }
 
+
+
+
+
 /*
  * stopme - suspend process on ~^Z or ~^Y
  *	on suspend, reset terminal to normal "cooked" mode;
  *	when resumed, again set terminal to raw.
  */
 
-void
-stopme(p)
-    pid_t p;	/* pid of 0 (process group) or just myself (writer) */
-{
-    (void)tcsetattr(0, TCSANOW, &oldtio); /* reset terminal */
-    kill(p, SIGTSTP);
-    (void)settermraw(&oldtio);            /* back to raw when we resume */
-}
+void stopme(
+
+  pid_t p)  /* pid of 0 (process group) or just myself (writer) */
+
+  {
+  tcsetattr(0,TCSANOW,&oldtio); /* reset terminal */
+
+  kill(p,SIGTSTP);
+
+  settermraw(&oldtio);          /* back to raw when we resume */
+
+  return;
+  }
 
 
 
@@ -1171,44 +1180,72 @@ stopme(p)
  *      and writes that out to the stdout
  */
 
-int
-reader(s)
-    int s;	/* socket */
-{
-    char buf[4096];
-    int  c;
-    char *p;
-    int  wc;
+int reader(
 
-    /* read from the socket, and write to stdout */
-    while (1) {
-	c = read(s, buf, sizeof(buf));
-	if (c > 0) {
-	    p = buf;
-	    while (c) {
-		if ((wc = write(1, p, c)) < 0) {
-		    if (errno == EINTR) {
-			continue;
-		    } else {
-			perror("qsub: write error");
-			return (-1);
-		    }
-		}
-		c -= wc;
-		p += wc;
-	    }
-	} else if (c == 0) {
-	    return (0);		/* EOF - all done */
-	} else {
-	    if (errno == EINTR)
-		continue;
-	    else {
-		perror("qsub: read error");
-		return (-1);
-	    }
-	}
-    }
-}
+  int s)	/* socket */
+
+  {
+  char buf[4096];
+  int  c;
+  char *p;
+  int  wc;
+
+  /* read from the socket, and write to stdout */
+
+  /* NOTE:  s should be blocking */
+
+  while (1) 
+    {
+    c = read(s,buf,sizeof(buf));
+
+    if (c > 0) 
+      {
+      p = buf;
+
+      while (c) 
+        {
+        if ((wc = write(1,p,c)) < 0) 
+          {
+          if (errno == EINTR) 
+            {
+            continue;
+            } 
+          else 
+            {
+            perror("qsub: write error");
+
+            return(-1);
+            }
+          }
+
+         c -= wc;
+         p += wc;
+         }
+       } 
+     else if (c == 0) 
+       {
+       return(0);		/* EOF - all done */
+       } 
+     else 
+       {
+       if (errno == EINTR)
+         continue;
+
+       if (errno == EAGAIN)
+         {
+         sleep(1);
+
+         continue;
+         }
+
+       perror("qsub: read error");
+  
+       return(-1);
+       }
+    }    /* END while (1) */
+ 
+  return(0);
+  }  /* END reader() */
 	
 	
 
@@ -1219,45 +1256,66 @@ reader(s)
  * data out to the rem socket
  */
 
-void
-writer(s)
-    int s;	/* socket */
-{
-    char c;
-    int i;
-    int newline = 1;
-    char tilda = '~';
-    int wi;
+void writer(
 
-    /* read from stdin, and write to the socket */
+  int s)  /* socket */
 
-    while (1) {
-	i = read(0, &c, 1);
-	if (i > 0) {		/* read data */
-	    if (newline) {
-		if (c == tilda) {	/* maybe escape character */
+  {
+  char c;
+  int i;
+  int newline = 1;
+  char tilda = '~';
+  int wi;
 
-		    /* read next character to check */
+  /* read from stdin, and write to the socket */
 
-		    while ((i = read(0, &c, 1)) != 1) {
-			if ((i == -1) && (errno == EINTR))
-			    continue;
-			else
-			    break;
-		    }
-		    if (i != 1)
-			break;
-		    if (c == '.')	/* termination character */
-			break;
- 		    else if (c == oldtio.c_cc[VSUSP]) {
-			stopme(0);	/* ^Z suspend all */
-			continue;
+  while (1) 
+    {
+    i = read(0,&c,1);
+
+    if (i > 0) 
+      {  
+      /* read data */
+
+      if (newline) 
+        {
+        if (c == tilda) 
+          {
+          /* maybe escape character */
+
+          /* read next character to check */
+
+          while ((i = read(0,&c,1)) != 1) 
+            {
+            if ((i == -1) && (errno == EINTR))
+              continue;
+
+            break;
+            }
+
+          if (i != 1)
+            break;
+
+          if (c == '.')	/* termination character */
+            break;
+         
+          if (c == oldtio.c_cc[VSUSP]) 
+            {
+            stopme(0);	/* ^Z suspend all */
+
+            continue;
 #ifdef VDSUSP
-		    } else if (c == oldtio.c_cc[VDSUSP]) {
-			stopme(getpid());
-			continue;
+            } 
+          else if (c == oldtio.c_cc[VDSUSP]) 
+            {
+            stopme(getpid());
+
+            continue;
 #endif	/* VDSUSP */
-		    } else {	/* not escape, write out tilda */
+            } 
+          else 
+            {
+            /* not escape, write out tilda */
 			while ((wi = write(s, &tilda, 1)) != 1) {
 			    if ((wi == -1) && (errno == EINTR))
 				continue;
@@ -1294,10 +1352,11 @@ writer(s)
 		perror("qsub: read error");
 		return;
 	    }
-	}
-    }
-    return;
-}
+      }
+    }  /* END while(1) */
+
+  return;
+  }  /* END writer() */
 	
 
 

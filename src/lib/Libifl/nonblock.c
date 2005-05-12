@@ -90,14 +90,21 @@ ssize_t read_nonblocking_socket(
 #else
     flags |= O_NONBLOCK;
 #endif
-   
-/*  NOTE: apparently some incoming sockets are blocking and must be blocking (investigate further?) 
+  
+    /* NOTE:  the pbs scheduling API passes in a blocking socket which 
+              should be a non-blocking socket in pbs_disconnect.  Also, 
+              qsub passes in a blocking socket which must remain 
+              non-blocking */
 
+    /* the below non-blocking socket flag check should be rolled into
+       pbs_disconnect and removed from here (NYI) */
+
+    /*
     if (fcntl(fd,F_SETFL,flags) == -1)
       {
       return(-1);
       }
-*/
+    */
     }    /* END else (flags & BLOCK) */
  
   /* Set a timer to prevent an infinite loop here. */
