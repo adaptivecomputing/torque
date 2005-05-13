@@ -493,7 +493,8 @@ struct sig_tbl sig_tbl[] = {
 	{ "TERM", SIGTERM },
 	{ "URG", SIGURG },
 	{ "STOP", SIGSTOP },
-	{ "suspend", SIGSTOP },
+	/* { "suspend", SIGSTOP }, - NOTE: changed for MPI jobs - NORWAY */
+        { "suspend", SIGTSTP },
 	{ "TSTP", SIGTSTP },
 	{ "CONT", SIGCONT },
 	{ "resume", SIGCONT },

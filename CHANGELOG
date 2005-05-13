@@ -4,11 +4,14 @@
   TODO:  queue hostlist attribute (CRI)
   TODO:  ~/.pbs_spool fix - add NO_SPOOL_OUTPUT as config option (CHPC)
   TODO:  64 bit query corruption (NCSA)
-
-1.2.0p3
-
   TODO:  altix CPUSet support (ORNL/NCSA)
   TODO:  enable quick node connect at startup
+  extend job prolog to include jobname, resouce, queue, and account info (MAINE)
+  add support for Darwin 10.4 (MAINE)
+  fix suspend/resume for MPI jobs (NORWAY)
+  
+1.2.0p3
+
   enable multiple server to mom communication
   fixed node reject message overwrite issue
   enable pre-start node health check (BOEING)

@@ -1165,6 +1165,22 @@ static void cray_susp_resum(pjob, which, preq)
 
 
 
+int MUSleep(
+
+  long SleepDuration) /* I (in us) */
+
+  {
+  struct timeval timeout;
+
+  timeout.tv_sec  = SleepDuration / 1000000;
+  timeout.tv_usec = SleepDuration % 1000000;
+
+  select(0,(fd_set *)NULL,(fd_set *)NULL,(fd_set *)NULL,&timeout);
+
+  return(0);
+  }  /* END MUSleep() */
+
+
 
 static void resume_suspend( 
 
@@ -1178,22 +1194,65 @@ static void resume_suspend(
   int   stat = 0;
   int   savederr = 0;
 
+  /* First we need to send SIGTSTP to let reasonable mpi daemons stop
+     their subprocesses, then we send SIGSTOP to stop all other types
+     of processes.  This is split into two loops instead of doing them
+     right after each other because one needs a delay between the
+     SIGTSTP and SIGSTOP to give the mpi daemon time to stop all its
+     tasks.  Inserting a delay for each task would produce a very long
+     delay for jobs with large number of tasks.
+
+     So, to summarize, we send all tasks SIGTSTP, then we wait for 1
+     second, then we send all tasks SIGSTOP.  Hopefully this should
+     cover all cases.  The delay should rather be configurable but I
+     don't have a clue how, nor time, to do that.
+ 
+     Fortunately only one SIGCONT is needed to resume.
+   */
+
   for (tp = (task *)GET_NEXT(pjob->ji_tasks);tp != NULL;tp = (task *)GET_NEXT(tp->ti_jobtask)) 
     {
     if (susp != 0)
-      stat = kill_task(tp,SIGSTOP);
+      {
+      /* NOTE:  for suspend, changed signals to SIGTSTP for MPI jobs - NORWAY */
+
+      /* stat = kill_task(tp,SIGSTOP); */
+
+      stat = kill_task(tp,SIGTSTP);
+      }
     else
+      {
       stat = kill_task(tp,SIGCONT);
+      }
 
     if (stat < 0) 
       {
-      /* Hmm, couldn't send signal, don't signal more tasks */
+      /* couldn't send signal, don't signal more tasks */
 
       savederr = errno;
 
       break;
       }
     }    /* END for (tp) */
+
+  if ((susp != 0) && (stat >= 0))
+    {
+    MUSleep(50000);
+ 
+    for (tp = (task *)GET_NEXT(pjob->ji_tasks);tp != NULL;tp = (task *)GET_NEXT(tp->ti_jobtask)) 
+      {
+      stat = kill_task(tp,SIGSTOP);
+
+      if (stat < 0) 
+        {
+        /* couldn't send signal, don't signal more tasks */
+
+        savederr = errno;
+
+        break;
+        }
+      }    /* END for (tp) */
+    }      /* END if  ((susp != 0) && (stat >= 0)) */
 
   /* We're done sending signals, let's adjust some statuses */
 
@@ -1204,12 +1263,31 @@ static void resume_suspend(
     for (tp = (task *)GET_NEXT(pjob->ji_tasks);tp != NULL;tp = (task *)GET_NEXT(tp->ti_jobtask)) 
       {
       if (susp)
+        {
 	stat = kill_task(tp,SIGCONT);
+        }
       else
-	stat = kill_task(tp,SIGSTOP);
+        {
+        /* NOTE:  for suspend, changed signals to SIGTSTP for MPI jobs - NORWAY */
+
+	/* stat = kill_task(tp,SIGSTOP); */
+
+        stat = kill_task(tp,SIGTSTP);
+        }
       }  /* END for (tp) */
 
-    /* Tell them we couldn't */
+    /* the same two signal excercise as above */
+    if (susp != 0)
+      {
+      MUSleep(50000);
+
+      for (tp = (task *)GET_NEXT(pjob->ji_tasks);tp != NULL;tp = (task *)GET_NEXT(tp->ti_jobtask)) 
+        {
+        stat = kill_task(tp,SIGSTOP);
+        }  /* END for (tp) */
+      }
+
+    /* report failure */
 
     req_reject(PBSE_SYSTEM,savederr,preq,NULL,NULL);      
     }  /* END if (stat < 0) */ 

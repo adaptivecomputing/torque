@@ -520,7 +520,13 @@ int run_pelog(
       } 
     else 
       {
-      arg[4] = NULL;
+      /* prolog */
+
+      arg[4] = pjob->ji_wattr[(int)JOB_ATR_jobname].at_val.at_str;
+      arg[5] = resc_to_string(&pjob->ji_wattr[(int)JOB_ATR_resource],resc_list,2048);
+      arg[6] = pjob->ji_wattr[(int)JOB_ATR_in_queue].at_val.at_str;
+      arg[7] = pjob->ji_wattr[(int)JOB_ATR_account].at_val.at_str;
+      arg[8] = NULL;		
       }
 
     {

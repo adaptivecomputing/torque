@@ -268,7 +268,7 @@ int set_jobexid(
   char		*puser;
   struct passwd	*pwent;
   char		*pgrpn;
-  char		 gname[PBS_MAXGRPN+1];
+  char		 gname[PBS_MAXGRPN + 1];
 #ifdef _CRAY
   struct udb    *pudb;
 #endif

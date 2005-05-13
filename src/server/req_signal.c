@@ -227,9 +227,17 @@ static void post_signal_req(
       set_statechar(pjob);
 
       job_save(pjob,SAVEJOB_QUICK);
+
+      /* release resources allocated to suspended job - NORWAY */
+
+      free_nodes(pjob);
       } 
     else if (strcmp(preq->rq_ind.rq_signal.rq_signame,SIG_RESUME) == 0) 
       {
+      /* re-allocate assigned node to resumed job - NORWAY */
+
+      set_old_nodes(pjob);
+
       pjob->ji_qs.ji_svrflags &= ~JOB_SVFLG_Suspend;
 
       set_statechar(pjob);

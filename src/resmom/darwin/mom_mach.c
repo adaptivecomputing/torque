@@ -503,15 +503,19 @@ static unsigned long cput_sum(
 
 static unsigned long mem_sum(
 
-  job *pjob)
+  job *pjob)  /* I */
 
   {
-  char         *id="mem_sum";
+  char         *id = "mem_sum";
   int           i;
   unsigned long memsize;
 
   memsize = 0;
 
+#ifdef __TDARWIN10_4
+
+
+#else /* __TDARWIN10_4 */
   for (i = 0;i < nproc;i++) 
     {
     struct kinfo_proc *pp = &proc_tbl[i];
@@ -526,20 +530,83 @@ static unsigned long mem_sum(
     DBPRT(("%s: ses %d pid=%d totmem=%lu\n", id,
       sess_tbl[i], pp->kp_proc.p_pid, memsize))
     }
+#endif /* __TDARWIN10_4 */
 
   return(memsize);
+  }  /* END mem_sum */
+
+
+
+
+#ifdef __TDARWIN10_4
+
+int get_task_memory(
+
+  task_t task)  /* I */
+
+  {
+  kern_return_t                  error;
+    
+  mach_msg_type_number_t         t_info_count = TASK_BASIC_INFO_COUNT;
+	
+  mach_msg_type_number_t         vm_info_count = VM_REGION_BASIC_INFO_COUNT_64;
+    
+  struct task_basic_info         t_info;
+  struct vm_region_basic_info_64 vm_info;
+  
+  vm_address_t                   address = global_shared_text_segment;
+  vm_size_t                      size;
+  mach_port_t                    object_name;
+  
+  if ((error = task_info(
+        task, 
+        TASK_BASIC_INFO, 
+        (task_info_t)&t_info, 
+        &t_info_count)) != KERN_SUCCESS)
+    {
+    return(error);
+    }
+  
+  /* check for firmware split libraries */
+  /* this is copied from the ps source code */
+
+  if ((error = vm_region_64(
+        task, 
+        &address, 
+        &size, 
+        VM_REGION_BASIC_INFO, 
+        (vm_region_info_t)&vm_info, 
+        &vm_info_count, 
+        &object_name)) != KERN_SUCCESS)
+    {
+    return(error);
+    }
+
+  if ((vm_info.reserved != 0) && 
+      (size == shared_text_region_size) && 
+      (t_info.virtual_size > (shared_text_region_size + shared_data_region_size)))
+    {
+    t_info.virtual_size -= (shared_text_region_size + shared_data_region_size);
+    }
+
+  printf("virtual_size:%d\nresident_size:%d\n", 
+    t_info.virtual_size, 
+    t_info.resident_size);
+	
+  return(KERN_SUCCESS);
   }
 
-
-
-
+#endif /* __TDARWIN10_4 */
 
 /*
  * Internal session mem (workingset) size function.
  */
-static unsigned long resi_sum(pjob)
-    job		*pjob;
-{
+
+static unsigned long resi_sum(
+
+  job *pjob)
+
+  {
 	char		*id="resi_sum";
 	int		i;
 	unsigned long	memsize;
