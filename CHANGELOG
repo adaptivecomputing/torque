@@ -9,6 +9,7 @@
   extend job prolog to include jobname, resouce, queue, and account info (MAINE)
   add support for Darwin 10.4 (MAINE)
   fix suspend/resume for MPI jobs (NORWAY)
+  added support for epilog.precancel to enable local job cancellation handling
   
 1.2.0p3
 

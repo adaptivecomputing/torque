@@ -1395,7 +1395,7 @@ void req_signaljob(
       }
 
 #ifdef _CRAY
-    cray_susp_resum(pjob, 0, preq);
+    cray_susp_resum(pjob,0,preq);
 #else
     resume_suspend(pjob,0,preq);
 #endif	/* _CRAY */
@@ -1409,14 +1409,14 @@ void req_signaljob(
     }
   else 
     {
-    if (!strncmp("SIG", sname, 3))
+    if (!strncmp("SIG",sname,3))
       sname += 3;
 
     psigt = sig_tbl;
 
     while (psigt->sig_name) 
       {
-      if (!strcmp(sname, psigt->sig_name)) 
+      if (!strcmp(sname,psigt->sig_name)) 
         break;
 
       psigt++;
@@ -1427,12 +1427,12 @@ void req_signaljob(
 
   if (sig < 0) 
     {
-    req_reject(PBSE_UNKSIG, 0, preq,NULL,NULL);
+    req_reject(PBSE_UNKSIG,0,preq,NULL,NULL);
 
     return;
     }
 			
-  if ((kill_job(pjob, sig) == 0) && (sig == 0)) 
+  if ((kill_job(pjob,sig) == 0) && (sig == 0)) 
     {
     /* SIGNUL and no procs found, force job to exiting */
     /* force issue of (another) job obit */

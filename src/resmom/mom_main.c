@@ -173,6 +173,7 @@ char	       *path_epilog;
 char           *path_epilogp;
 char           *path_epiloguser;
 char           *path_epiloguserp;
+char           *path_epilogpdel;
 char	       *path_jobs;
 char	       *path_prolog;
 char           *path_prologp;
@@ -3813,8 +3814,8 @@ void tcp_request(
 
 int kill_job(
 
-  job *pjob,
-  int  sig)
+  job *pjob,  /* I */
+  int  sig)   /* I */
 
   {
   task	*ptask;
@@ -3827,6 +3828,24 @@ int kill_job(
       PBS_EVENTCLASS_JOB,
       pjob->ji_qs.ji_jobid, 
       "kill_job");
+    }
+
+  /* NOTE:  should cahnge be made to only execute precancel epilog if job is active? (NYI) */
+
+  /* NOTE:  epilog blocks until complete, which may cause issues if shutdown grace time is
+            enabled.  Change model to allow epilog.precancel to run in background and have
+            kill_task() executed once it is complete (NYI) */
+
+  /* NOTE:  this will allow kill_job to return immediately and will require sigchild 
+            harvesting and the kill_task loop to be called once this signal is received */
+
+  /* NOTE:  if path_epilogpdel is not set, kill_task should be called immediately (NYI) */
+
+  if (run_pelog(PE_EPILOGUSER,path_epilogpdel,pjob,PE_IO_TYPE_NULL) != 0)
+    {
+    log_err(-1,id,"precancel epilog failed");
+
+    sprintf(PBSNodeMsgBuf,"ERROR:  precancel epilog failed");
     }
 
   ptask = (task *)GET_NEXT(pjob->ji_tasks);
@@ -4453,14 +4472,14 @@ int main(
 #ifndef DEBUG
 #ifdef _CRAY
 
-  limit(C_JOB,      0, L_CPROC, 0);
-  limit(C_JOB,      0, L_CPU,   0);
-  limit(C_JOBPROCS, 0, L_CPU,   0);
-  limit(C_PROC,     0, L_FD,  255);
-  limit(C_JOB,      0, L_FSBLK, 0);
-  limit(C_JOBPROCS, 0, L_FSBLK, 0);
-  limit(C_JOB,      0, L_MEM  , 0);
-  limit(C_JOBPROCS, 0, L_MEM  , 0);
+  limit(C_JOB,      0,L_CPROC, 0);
+  limit(C_JOB,      0,L_CPU,   0);
+  limit(C_JOBPROCS, 0,L_CPU,   0);
+  limit(C_PROC,     0,L_FD,  255);
+  limit(C_JOB,      0,L_FSBLK, 0);
+  limit(C_JOBPROCS, 0,L_FSBLK, 0);
+  limit(C_JOB,      0,L_MEM  , 0);
+  limit(C_JOBPROCS, 0,L_MEM  , 0);
 
 #else	/* not  _CRAY */
 
@@ -4496,6 +4515,7 @@ int main(
   path_prologp     = mk_dirs("mom_priv/prologue.parallel");
   path_epiloguserp = mk_dirs("mom_priv/epilogue.user.parallel");
   path_prologuserp = mk_dirs("mom_priv/prologue.user.parallel");
+  path_epilogpdel  = mk_dirs("mom_priv/epilogue.precancel");
 
   path_log         = mk_dirs("mom_logs");
   path_spool       = mk_dirs("spool/");
