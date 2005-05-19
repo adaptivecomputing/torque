@@ -6,18 +6,20 @@
   TODO:  64 bit query corruption (NCSA)
   TODO:  altix CPUSet support (ORNL/NCSA)
   TODO:  enable quick node connect at startup
-  extend job prolog to include jobname, resouce, queue, and account info (MAINE)
-  add support for Darwin 10.4 (MAINE)
-  fix suspend/resume for MPI jobs (NORWAY)
+  extended job prolog to include jobname, resouce, queue, and account info (MAINE)
+  added support for Darwin 10.4 (MAINE)
+  fixed suspend/resume for MPI jobs (NORWAY)
   added support for epilog.precancel to enable local job cancellation handling
-  
+  fixed build for case insensitve filesystems
+  fixed relative path based Makefiles for xpbsmom
+ 
 1.2.0p3
 
   enable multiple server to mom communication
   fixed node reject message overwrite issue
   enable pre-start node health check (BOEING)
   fixed pid scanning for RHEL3 (VPAC)
-  added mproved vmem/mem limit enforcement and reporting (UMU)
+  added improved vmem/mem limit enforcement and reporting (UMU)
   added submit filter return code processing to qsub
 
 1.2.0p2
