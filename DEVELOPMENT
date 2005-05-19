@@ -1,0 +1,11 @@
+current active development projects (to be released soon)
+
+TODO:  route job start failure messages from sister to mother superior
+TODO:  job session ID not reported to pbs_server for parallel jobs (CHPC)
+TODO:  add queue hostlist attribute (CRI)
+TODO:  ~/.pbs_spool fix - add NO_SPOOL_OUTPUT as config option (CHPC)
+TODO:  fix 64 bit query corruption (NCSA)
+TODO:  enable altix CPUSet support (ORNL/NCSA)
+TODO:  enable quick node connect at startup
+TODO:  enable background epilog.precancel script management
+

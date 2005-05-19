@@ -1,11 +1,5 @@
 1.2.0p4
 
-  TODO:  job session ID not reported to pbs_server for parallel jobs (CHPC)
-  TODO:  queue hostlist attribute (CRI)
-  TODO:  ~/.pbs_spool fix - add NO_SPOOL_OUTPUT as config option (CHPC)
-  TODO:  64 bit query corruption (NCSA)
-  TODO:  altix CPUSet support (ORNL/NCSA)
-  TODO:  enable quick node connect at startup
   extended job prolog to include jobname, resouce, queue, and account info (MAINE)
   added support for Darwin 10.4 (MAINE)
   fixed suspend/resume for MPI jobs (NORWAY)
