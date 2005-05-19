@@ -110,7 +110,7 @@ build: $(TARGETS)
 #
 xpbsmon: $(srcdir)/xpbsmon.src
 	@echo Processing xpbsmon
-	@sed -e 's,#\!.*pbs_wish.*$$,#\!{PBSROOT}/pbs_wish -f,' \
+	@sed -e 's,#\!.*pbs_wish.*$$,#\!$(PBS_UBIN)/pbs_wish -f,' \
 	    -e 's,set  *libdir.*$$,set libdir ${XPBSMON_LIB},' \
 	    -e 's,set  *appdefdir.*$$,set appdefdir ${XPBSMON_LIB},' \
 	    $? > $@
