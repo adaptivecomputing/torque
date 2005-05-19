@@ -3829,7 +3829,7 @@ int kill_job(
       PBSEVENT_JOB, 
       PBS_EVENTCLASS_JOB,
       pjob->ji_qs.ji_jobid, 
-      id);
+      (char *)id);
     }
 
   /* NOTE:  should cahnge be made to only execute precancel epilog if job is active? (NYI) */
@@ -3845,7 +3845,7 @@ int kill_job(
 
   if (run_pelog(PE_EPILOGUSER,path_epilogpdel,pjob,PE_IO_TYPE_NULL) != 0)
     {
-    log_err(-1,id,"precancel epilog failed");
+    log_err(-1,(char *)id,"precancel epilog failed");
 
     sprintf(PBSNodeMsgBuf,"ERROR:  precancel epilog failed");
     }
