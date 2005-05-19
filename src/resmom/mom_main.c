@@ -3821,13 +3821,15 @@ int kill_job(
   task	*ptask;
   int	ct = 0;
 
+  const char *id = "kill_job";
+
   if (LOGLEVEL >= 2)
     {
     log_record(
       PBSEVENT_JOB, 
       PBS_EVENTCLASS_JOB,
       pjob->ji_qs.ji_jobid, 
-      "kill_job");
+      id);
     }
 
   /* NOTE:  should cahnge be made to only execute precancel epilog if job is active? (NYI) */
