@@ -907,10 +907,11 @@ void job_start_error(
     abortjobid[0] = '\0';
     }
 
-  sprintf(log_buffer,"job_start_error from node %s", 
-    nodename);
+  sprintf(log_buffer,"job_start_error from node %s in %s", 
+    nodename,
+    id);
 
-  log_err(code,log_buffer,pjob->ji_qs.ji_jobid);
+  log_err(code,pjob->ji_qs.ji_jobid,log_buffer);
 
   if (!strcmp(abortjobid,pjob->ji_qs.ji_jobid))
     {
@@ -918,10 +919,11 @@ void job_start_error(
       {
       /* abort is not working, do not send sisters again */
 
-      sprintf(log_buffer,"abort attempted 16 times.  ignoring abort request from node %s",
+      sprintf(log_buffer,"abort attempted 16 times in %s.  ignoring abort request from node %s",
+        id,
         nodename);
 
-      log_err(code,log_buffer,pjob->ji_qs.ji_jobid);
+      log_err(code,pjob->ji_qs.ji_jobid,log_buffer);
 
       exec_bail(pjob,JOB_EXEC_RETRY);
 
@@ -3642,7 +3644,7 @@ void im_request(
 
           /*
           ** Job cleanup failed on a sister.
-          ** Wait for everybody to respond then finishup.
+          ** Wait for everybody to respond then finish.
           ** I'm mother superior.
           */
 
@@ -3655,8 +3657,16 @@ void im_request(
             goto err;
             }
 
-          DBPRT(("%s: KILL/ABORT JOB %s returned ERROR %d\n",
-            id, jobid, errcode))
+          if (LOGLEVEL >= 1)
+            {
+            char tmpLine[1024];
+
+            sprintf(tmpLine,"KILL/ABORT request for job %s returned error %d\n",
+              jobid,
+              errcode);
+
+            log_err(errcode,id,tmpLine);
+            }
 
           np->hn_sister = errcode ? errcode : SISTER_KILLDONE;
 

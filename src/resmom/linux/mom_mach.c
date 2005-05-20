@@ -1788,16 +1788,20 @@ int mom_close_poll()
 
   if (LOGLEVEL >= 6)
     {
-    DBPRT(("%s: entered\n", 
-      id))
+    log_record(
+      PBSEVENT_SYSTEM,
+      0,
+      id,
+      "entered");
     }
 
   if (pdir) 
     {
     if (closedir(pdir) != 0) 
       {
-      log_err(errno, id, "closedir");
-      return (PBSE_SYSTEM);
+      log_err(errno,id,"closedir");
+
+      return(PBSE_SYSTEM);
       }
 
     pdir = NULL;
