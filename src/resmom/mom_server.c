@@ -110,6 +110,8 @@
 #include "rpp.h"
 #include "dis.h"
 #include "dis_init.h"
+#include "list_link.h"
+#include "attribute.h"
 #include "pbs_nodes.h"
 #include "resmon.h"
 

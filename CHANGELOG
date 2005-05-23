@@ -6,6 +6,7 @@
   added support for epilog.precancel to enable local job cancellation handling
   fixed build for case insensitve filesystems
   fixed relative path based Makefiles for xpbsmom
+  added support for gcc 4.0
  
 1.2.0p3
 

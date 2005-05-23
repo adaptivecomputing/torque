@@ -1317,7 +1317,9 @@ static int rpp_recv_pkt(
   {
   DOID("recv_pkt")
 
-  int		len, flen;
+  unsigned int  flen;
+
+  int		len;
   struct	sockaddr_in	addr;
   struct	hostent		*hp;
   int		i, streamid;

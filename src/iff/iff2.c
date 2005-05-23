@@ -132,7 +132,7 @@ int main(
   int	 	servport = -1;
   int 		 sock;
   struct sockaddr_in sockname;
-  int		 socknamelen;
+  unsigned int   socknamelen;
   int		 testmode = 0;
   int		 rc;
   struct batch_reply   *reply;

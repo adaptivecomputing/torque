@@ -561,8 +561,9 @@ badconn(msg)
 	sprintf(log_buffer, "%s on port %u %s",
 			buf, ntohs(saddr.sin_port), msg);
 	log_err(-1, id, log_buffer);
-	return;
-}
+
+  return;
+  }
 
 
 
@@ -572,8 +573,9 @@ int server_command()
 
   {
   char	*id = "server_command";
-  int		new_socket;
-  int		slen;
+
+  int           new_socket;
+  unsigned int	slen;
   int		i, cmd;
   pbs_net_t	addr;
 
@@ -641,6 +643,10 @@ int server_command()
 
   return(cmd);
   }
+
+
+
+
 
 /*
  * lock_out - lock out other daemons from this directory.

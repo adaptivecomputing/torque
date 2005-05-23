@@ -1072,7 +1072,7 @@ final:
 char *interactive_port()
 
   {
-  int namelen;
+  unsigned int namelen;
   static char portstring[8];
   struct sockaddr_in myaddr;
   unsigned short port;
@@ -1087,33 +1087,47 @@ char *interactive_port()
 
   if (inter_sock < 0) 
     {
-	perror("qsub: unable to obtain socket");
-	exit(1);
-    }
-    myaddr.sin_family = AF_INET;
-    myaddr.sin_addr.s_addr = INADDR_ANY;
-    myaddr.sin_port = 0;
-    if (bind(inter_sock, (struct sockaddr *)&myaddr, sizeof(myaddr)) < 0) {
-	perror("qsub: unable to bind to socket");
-	exit(1);
+    perror("qsub: unable to obtain socket");
+
+    exit(1);
     }
 
-    /* get port number assigned */
+  myaddr.sin_family = AF_INET;
+  myaddr.sin_addr.s_addr = INADDR_ANY;
+  myaddr.sin_port = 0;
 
-    namelen = sizeof(myaddr);
-    if (getsockname(inter_sock, (struct sockaddr *)&myaddr, &namelen) < 0) {
-	perror("qsub: unable to get port number");
-	exit(1);
+  if (bind(inter_sock,(struct sockaddr *)&myaddr,sizeof(myaddr)) < 0) 
+    {
+    perror("qsub: unable to bind to socket");
+
+    exit(1);
     }
-    port = ntohs(myaddr.sin_port);
-    (void)sprintf(portstring, "%u", (unsigned int)port);
-    if (listen(inter_sock, 1) < 0) {
-	perror("qsub: listen on interactive socket");
-	exit(1);
+
+  /* get port number assigned */
+
+  namelen = sizeof(myaddr);
+
+  if (getsockname(inter_sock,(struct sockaddr *)&myaddr,&namelen) < 0) 
+    {
+    perror("qsub: unable to get port number");
+
+    exit(1);
+    }
+
+  port = ntohs(myaddr.sin_port);
+
+  sprintf(portstring,"%u", 
+    (unsigned int)port);
+
+  if (listen(inter_sock,1) < 0) 
+    {
+    perror("qsub: listen on interactive socket");
+
+    exit(1);
     }
     
-    return (portstring);
-}
+  return(portstring);
+  }
 
 
 
@@ -1122,31 +1136,35 @@ char *interactive_port()
  * settermraw - set terminal into "raw" mode
  */
 
-void
-settermraw(ptio)
-    struct termios *ptio;
-{
-    struct termios tio;
+void settermraw(
 
-    tio = *ptio;
+  struct termios *ptio)
 
-    tio.c_lflag &= ~(ICANON|ISIG|ECHO|ECHOE|ECHOK);
-    tio.c_iflag &= ~(IGNBRK|INLCR|ICRNL|IXON|IXOFF);
-    tio.c_oflag = 0;
-    tio.c_oflag |= (OPOST); /* TAB3 */
-    tio.c_cc[VMIN] = 1;
-    tio.c_cc[VTIME] = 0;
+  {
+  struct termios tio;
+
+  tio = *ptio;
+
+  tio.c_lflag &= ~(ICANON|ISIG|ECHO|ECHOE|ECHOK);
+  tio.c_iflag &= ~(IGNBRK|INLCR|ICRNL|IXON|IXOFF);
+  tio.c_oflag = 0;
+  tio.c_oflag |= (OPOST); /* TAB3 */
+  tio.c_cc[VMIN] = 1;
+  tio.c_cc[VTIME] = 0;
 
 #if defined(TABDLY) && defined(TAB3)
-    if ((tio.c_oflag & TABDLY) == TAB3)
-	tio.c_oflag &= ~TABDLY;
+  if ((tio.c_oflag & TABDLY) == TAB3)
+    tio.c_oflag &= ~TABDLY;
 #endif
-    tio.c_cc[VKILL]  = -1;
-    tio.c_cc[VERASE] = -1;
 
-    if (tcsetattr(0, TCSANOW, &tio) < 0)
-	perror("qsub: set terminal mode");
-}
+  tio.c_cc[VKILL]  = -1;
+  tio.c_cc[VERASE] = -1;
+
+  if (tcsetattr(0,TCSANOW,&tio) < 0)
+    perror("qsub: set terminal mode");
+
+  return;
+  }  /* END settermraw() */
 
 
 
@@ -1528,8 +1546,8 @@ void interactive()
 
   {
   int  amt;
-  char cur_server[PBS_MAXSERVERNAME+PBS_MAXPORTNUM+2];
-  int fromlen;
+  char cur_server[PBS_MAXSERVERNAME + PBS_MAXPORTNUM + 2];
+  unsigned int fromlen;
 
   char momjobid[PBS_MAXSVRJOBID+1];
   int  news;
@@ -1559,122 +1577,166 @@ void interactive()
 
   act.sa_handler = toolong;
 
-    if ( (sigaction(SIGALRM, &act, (struct sigaction *)0) < 0) ) {
-	perror("cannot catch alarm");
-	exit(2);
+  if ((sigaction(SIGALRM,&act,NULL) < 0)) 
+    {
+    perror("cannot catch alarm");
+
+    exit(2);
     }
 
-    /* save the old terminal setting */
+  /* save the old terminal setting */
 
-    if (tcgetattr(0, &oldtio) < 0) {
-	perror("qsub: unable to get terminal settings");
-	exit (1);
+  if (tcgetattr(0,&oldtio) < 0)  
+    {
+    perror("qsub: unable to get terminal settings");
+
+    exit(1);
     }
 
-    /* Get the current window size, to be sent to MOM later */
+  /* Get the current window size, to be sent to MOM later */
 
-    if (getwinsize(&wsz)) {
-	wsz.ws_row = 20;	/* unable to get actual values	*/
-	wsz.ws_col = 80;	/* set defaults			*/
-	wsz.ws_xpixel = 0;
-	wsz.ws_ypixel = 0;
+  if (getwinsize(&wsz)) 
+    {
+    wsz.ws_row = 20;	/* unable to get actual values	*/
+    wsz.ws_col = 80;	/* set defaults			*/
+    wsz.ws_xpixel = 0;
+    wsz.ws_ypixel = 0;
     }
 
-    printf("qsub: waiting for job %s to start\n", new_jobname);
+  printf("qsub: waiting for job %s to start\n", 
+    new_jobname);
 
-    /* Accept connection on socket set up earlier */
+  /* Accept connection on socket set up earlier */
 
-    nsel = 0;
-    while (nsel == 0) {
-	FD_ZERO(&selset);
-	FD_SET(inter_sock, &selset);
-        timeout.tv_usec = 0;
-        timeout.tv_sec  = 30;
-	nsel = select(FD_SETSIZE, &selset, (fd_set *)0, (fd_set *)0, &timeout);
-	if (nsel > 0) {
-		break;
-	} else if (nsel == -1) {
-	    if (errno == EINTR)
-		nsel = 0;
-	    else {
-		perror("qsub: select failed");
-		exit(1);
-	    }
-	}
-	/* connect to server, status job to see if still there */
+  nsel = 0;
 
-        if ( ! locate_job(new_jobname, server_out, cur_server) ) {
-		fprintf(stderr,"qsub: job %s apparently deleted\n",new_jobname);
-		exit(1);
-	}
+  while (nsel == 0) 
+    {
+    FD_ZERO(&selset);
+    FD_SET(inter_sock, &selset);
 
+    timeout.tv_usec = 0;
+    timeout.tv_sec  = 30;
+
+    nsel = select(FD_SETSIZE,&selset,NULL,NULL,&timeout);
+
+    if (nsel > 0) 
+      {
+      break;
+      } 
+    else if (nsel == -1) 
+      {
+      if (errno == EINTR)
+        {
+        nsel = 0;
+        }
+      else 
+        {
+        perror("qsub: select failed");
+
+        exit(1);
+        }
+      }
+
+    /* connect to server, status job to see if still there */
+
+    if (!locate_job(new_jobname,server_out,cur_server)) 
+      {
+      fprintf(stderr,"qsub: job %s apparently deleted\n",
+        new_jobname);
+
+      exit(1);
+      }
     }
 
-    /* apparently someone is attempting to connect to us */
+  /* apparently someone is attempting to connect to us */
 
-    fromlen = sizeof(from);
-    if ((news = accept(inter_sock, (struct sockaddr *)&from, &fromlen)) < 0) {
-	perror("qsub: accept error");
-	exit (1);
+  fromlen = sizeof(from);
+
+  if ((news = accept(inter_sock,(struct sockaddr *)&from,&fromlen)) < 0) 
+    {
+    perror("qsub: accept error");
+
+    exit(1);
     }
 
-    /* When MOM connects, she will send the job id for us to verify */
+  /* When MOM connects, she will send the job id for us to verify */
 
+  amt = PBS_MAXSVRJOBID + 1;
 
-    amt = PBS_MAXSVRJOBID+1;
-    pc = momjobid;
-    while (amt > 0) {
-	fromlen = read(news, pc, amt);
-	if (fromlen <= 0)
-	    break;
-	pc += fromlen;
-	if (*(pc-1) == '\0')
-	    break;
-	amt -= fromlen;
+  pc = momjobid;
+
+  while (amt > 0) 
+    {
+    fromlen = read(news,pc,amt);
+
+    if (fromlen <= 0)
+      break;
+
+    pc += fromlen;
+
+    if (*(pc - 1) == '\0')
+      break;
+
+    amt -= fromlen;
     }
-    if (strncmp(momjobid, new_jobname, PBS_MAXSVRJOBID) != 0) {
-	fprintf(stderr, "qsub: invalid job name from execution server\n");
-	shutdown(news, 2);
-	exit (1);
+
+  if (strncmp(momjobid,new_jobname,PBS_MAXSVRJOBID) != 0) 
+    {
+    fprintf(stderr, "qsub: invalid job name from execution server\n");
+
+    shutdown(news,2);
+
+    exit(1);
     }
     
-    /*
-     * got the right job, send:
-     *		terminal type as "TERM=xxxx"
-     *		window size as   "WINSIZE=r,c,x,y"
-     */
-    send_term(news);
-    send_winsize(news);
+  /*
+   * got the right job, send:
+   *		terminal type as "TERM=xxxx"
+   *		window size as   "WINSIZE=r,c,x,y"
+   */
 
-    printf("qsub: job %s ready\n\n", new_jobname);
+  send_term(news);
+  send_winsize(news);
+
+  printf("qsub: job %s ready\n\n", 
+    new_jobname);
 
     /* set SIGINT, SIGTERM processing to default */
 
-    act.sa_handler = SIG_DFL;
-    if ( (sigaction(SIGINT, &act, (struct sigaction *)0) < 0)  ||
-         (sigaction(SIGTERM, &act, (struct sigaction *)0) < 0) ||
-         (sigaction(SIGALRM, &act, (struct sigaction *)0) < 0) ||
-         (sigaction(SIGTSTP, &act, (struct sigaction *)0) < 0) ) {
-		perror("unable to reset signals");
-		exit(1);
+  act.sa_handler = SIG_DFL;
+
+  if ((sigaction(SIGINT, &act, (struct sigaction *)0) < 0)  ||
+      (sigaction(SIGTERM, &act, (struct sigaction *)0) < 0) ||
+      (sigaction(SIGALRM, &act, (struct sigaction *)0) < 0) ||
+      (sigaction(SIGTSTP, &act, (struct sigaction *)0) < 0) ) 
+    {
+    perror("unable to reset signals");
+
+    exit(1);
     }
 
-    child = fork();
-    if (child == 0) {
-	/*
-	 * child process - start the reader function
-	 *		   set terminal into raw mode
-	 */
+  child = fork();
 
-	settermraw(&oldtio);
+  if (child == 0) 
+    {
+    /*
+     * child process - start the reader function
+     *		   set terminal into raw mode
+     */
 
-	(void)reader(news);
+    settermraw(&oldtio);
 
-	/* reset terminal */
-	tcsetattr(0, TCSANOW, &oldtio);
-	printf("\nqsub: job %s completed\n", new_jobname);
-	exit (0);
+    reader(news);
 
+    /* reset terminal */
+
+    tcsetattr(0,TCSANOW,&oldtio);
+
+    printf("\nqsub: job %s completed\n", 
+      new_jobname);
+
+    exit(0);
     } 
   else if (child > 0) 
     {
