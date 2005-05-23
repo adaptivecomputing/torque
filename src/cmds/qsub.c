@@ -415,7 +415,7 @@ int get_script(
         { 
         /* next line is continuation of this line */
 
-        *cont = '\0';	/* clear newline from our copy */
+        *cont = '\0';  /* clear newline from our copy */
 
         if (fputs(in,TMP_FILE) < 0) 
           {
@@ -658,8 +658,8 @@ char *v_value = NULL;
 
 char *copy_env_value(
 
-  char *dest,	/* destination  */
-  char *pv,	/* value string */
+  char *dest,      /* destination  */
+  char *pv,        /* value string */
   int   quote_flg) /* non-zero then assume single word (quoting on) */
 
   {
@@ -677,7 +677,7 @@ char *copy_env_value(
       case '\'':
 
         if (q_ch) 
-          {	
+          {
           /* local quoting is in progress */
 
           if (q_ch == (int)*pv) 
@@ -703,28 +703,37 @@ char *copy_env_value(
           }
 
         break;
-				
+        
       case '\\':
 
-			*dest++ = '\\';		/* escape back-slash */
-			*dest++ = *pv;
-			break;
+        *dest++ = '\\';		/* escape back-slash */
+        *dest++ = *pv;
 
-		    case ',':
-			if (q_ch || quote_flg) {
-				*dest++ = '\\';
-				*dest++ = *pv;
-			} else {
-				go = 0;		/* end of value string */
-			}
-			break;
+        break;
 
-		    default:
-			*dest++ = *pv;
-			break;
-		}
-		pv++;
-	}
+      case ',':
+
+        if (q_ch || quote_flg) 
+          {
+          *dest++ = '\\';
+          *dest++ = *pv;
+          } 
+        else 
+          {
+          go = 0;		/* end of value string */
+          }
+
+        break;
+
+      default:
+
+        *dest++ = *pv;
+
+        break;
+      }
+
+    pv++;
+    }  /* END while (go && *pv) */
 
   *dest = '\0';
 
@@ -969,7 +978,7 @@ int set_job_env(
     if (getcwd(c,MAXPATHLEN + 1) == NULL) 
       *s = '\0';
     }
-	
+
   /* Send these variables with the job. */
   /* POSIX requirement: If a variable is given without a value, supply the
      value from the environment. */
@@ -980,45 +989,105 @@ int set_job_env(
     {
     c = v_value;
 
-state1:         /* Initial state comes here */
-        switch (*c) {
-        case ',':
-        case '=':
-            return FALSE;
-        case '\0':
-            goto final;
-        }
-        s = c;
-state2:         /* Variable name */
-        switch (*c) {
-        case ',':
-        case '\0':
-            goto state3;
-        case '=':
-            goto state4;
-        default:
-            c++;
-            goto state2;
-        }
+state1:         /* goto label : Initial state comes here */
+
+    switch (*c) 
+      {
+      case ',':
+      case '=':
+
+        return FALSE;
+
+        /*NOTREACHED*/
+
+        break;
+
+      case '\0':
+
+        goto final;
+
+        /*NOTRREACHED*/
+
+        break;
+      }
+
+    s = c;
+
+    /* pass through to next case */
+
+state2:         /* goto label : Variable name */
+
+    switch (*c) 
+      {
+      case ',':
+      case '\0':
+
+        goto state3;
+
+        /*NOTREACHED*/
+
+        break;
+
+      case '=':
+
+        goto state4;
+
+        /*NOTREACHED*/
+
+        break;
+
+      default:
+
+        c++;
+
+        goto state2;
+
+        /*NOTREACHED*/
+
+        break;
+      }  /* END switch (*c) */
+
 state3:         /* No value - get it from qsub environment */
-        l = *c;
-        *c = '\0';
-        env = getenv(s);
-        if ( env == NULL ) return FALSE;
-        strcat(job_env, ",");
-        strcat(job_env, s);
-        strcat(job_env, "=");
-	if (copy_env_value(job_env, env, 1) == (char *)0) return FALSE;
-        if ( l == ',' ) c++;
-        goto state1;
-state4:         /* Value specified */
-        *c++ = '\0';;
-	(void)strcat(job_env, ",");
-	(void)strcat(job_env, s);
-	(void)strcat(job_env, "=");
-	if ((c = copy_env_value(job_env, c, 0)) == (char *)0) return FALSE;
-	goto state1;
-    }
+
+    l = *c;
+    *c = '\0';
+
+    env = getenv(s);
+
+    if (env == NULL) 
+      {
+      return(FALSE);
+      }
+
+    strcat(job_env, ",");
+    strcat(job_env, s);
+    strcat(job_env, "=");
+
+    if (copy_env_value(job_env,env,1) == NULL) 
+      {
+      return(FALSE);
+      }
+
+    if (l == ',') 
+      c++;
+
+    goto state1;
+
+state4:         /* goto label - Value specified */
+
+    *c++ = '\0';;
+
+    strcat(job_env,",");
+    strcat(job_env,s);
+    strcat(job_env,"=");
+
+    if ((c = copy_env_value(job_env,c,0)) == NULL) 
+      {
+      return(FALSE);
+      }
+
+    goto state1;
+    }  /* END if (v_opt) */
 
 final:
 
@@ -1052,7 +1121,7 @@ final:
   free(job_env);
 
   return(TRUE);
-  }
+  }  /* END set_job_env() */
 
 
 
@@ -1264,11 +1333,11 @@ int reader(
  
   return(0);
   }  /* END reader() */
-	
-	
+        
+        
 
 
-	    
+        
 /*
  * Writer process: reads from stdin, and writes
  * data out to the rem socket
@@ -1282,7 +1351,7 @@ void writer(
   char c;
   int i;
   int newline = 1;
-  char tilda = '~';
+  char tilde = '~';
   int wi;
 
   /* read from stdin, and write to the socket */
@@ -1297,7 +1366,7 @@ void writer(
 
       if (newline) 
         {
-        if (c == tilda) 
+        if (c == tilde) 
           {
           /* maybe escape character */
 
@@ -1333,65 +1402,89 @@ void writer(
             } 
           else 
             {
-            /* not escape, write out tilda */
-			while ((wi = write(s, &tilda, 1)) != 1) {
-			    if ((wi == -1) && (errno == EINTR))
-				continue;
-			    else
-				break;
-			}
-			if (wi != 1)
-			    break;
-		    }
-		}
-		newline = 0;   /* no longer at start of line */
-	    } else {
-		/* reset to newline if \n \r kill or interrupt */
-		newline = (c == '\n') ||
-			  (c == oldtio.c_cc[VKILL]) ||
-			  (c == oldtio.c_cc[VINTR]) ||
-			  (c == '\r') ;
-	    }
-	    while ((wi = write(s, &c, 1)) != 1) {   /* write out character */
-		if ((wi == -1) && (errno == EINTR))
-		    continue;
-		else
-		    break;
-	    }
-	    if (wi != 1)
-		break;
+            /* not escape, write out tilde */
 
-	} else if (i == 0) {	/* EOF */
-	    break;
-	} else if (i < 0) {	/* error */
-	    if (errno == EINTR)
-		continue;
-	    else {
-		perror("qsub: read error");
-		return;
-	    }
+            while ((wi = write(s,&tilde,1)) != 1) 
+              {
+              if ((wi == -1) && (errno == EINTR))
+                continue;
+
+              break;
+              }
+
+            if (wi != 1)
+              break;
+            }
+          }
+
+        newline = 0;   /* no longer at start of line */
+        } 
+      else 
+        {
+        /* reset to newline if \n \r kill or interrupt */
+
+        newline = (c == '\n') ||
+                  (c == oldtio.c_cc[VKILL]) ||
+                  (c == oldtio.c_cc[VINTR]) ||
+                  (c == '\r');
+        }
+
+      while ((wi = write(s,&c,1)) != 1) 
+        {   
+        /* write out character */
+
+        if ((wi == -1) && (errno == EINTR))
+          continue;
+
+        break;
+        }
+
+      if (wi != 1)
+        break;
+      } 
+    else if (i == 0) 
+      {
+      /* EOF */
+
+      break;
+      } 
+    else if (i < 0) 
+      {	
+      /* error */
+
+      if (errno != EINTR)
+        {
+        perror("qsub: read error");
+
+        return;
+        }
       }
-    }  /* END while(1) */
+    }  /* END while (1) */
 
   return;
   }  /* END writer() */
-	
 
 
-	
+
+
 /*
  * getwinsize - get the current window size
  */
-int
-getwinsize(pwsz)
-    struct winsize *pwsz;
-{
-    if (ioctl(0, TIOCGWINSZ, &wsz) < 0) {
-	perror("qsub: unable to get window size");
-	return (-1);
+
+int getwinsize(
+
+  struct winsize *pwsz)
+
+  {
+  if (ioctl(0,TIOCGWINSZ,&wsz) < 0) 
+    {
+    perror("qsub: unable to get window size");
+
+    return(-1);
     }
-    return (0);
-}
+
+  return(0);
+  }
 
 
 
@@ -1401,139 +1494,219 @@ getwinsize(pwsz)
  * send_winsize = send the current tty's window size
  */
 
-void
-send_winsize(sock)
-    int sock;
-{
-    char  buf[PBS_TERM_BUF_SZ];
+void send_winsize(
 
-    (void)sprintf(buf, "WINSIZE %hu,%hu,%hu,%hu", wsz.ws_row, wsz.ws_col,
-			wsz.ws_xpixel, wsz.ws_ypixel);
-    (void)write(sock, buf, PBS_TERM_BUF_SZ);
-    return;
-}
+  int sock)
+
+  {
+  char  buf[PBS_TERM_BUF_SZ];
+
+  sprintf(buf,"WINSIZE %hu,%hu,%hu,%hu", 
+    wsz.ws_row, 
+    wsz.ws_col,
+    wsz.ws_xpixel, 
+    wsz.ws_ypixel);
+
+  write(sock,buf,PBS_TERM_BUF_SZ);
+
+  return;
+  } 
+
+
+
 
 /*
  * send_term - send the current TERM type and certain control characters
  */
 
-void
-send_term(sock)
-    int sock;
-{
-    char  buf[PBS_TERM_BUF_SZ];
-    char *term;
-    char  cc_array[PBS_TERM_CCA];
+void send_term(
 
-    (void)strcpy(buf, "TERM=");
-    term = getenv("TERM");
-    if (term == (char *)0)
-	(void)strcat(buf, "unknown");
-    else
-	(void)strncat(buf, term, PBS_TERM_BUF_SZ-5);
-    (void)write(sock, buf, PBS_TERM_BUF_SZ);
+  int sock)
 
-    cc_array[0] = oldtio.c_cc[VINTR];
-    cc_array[1] = oldtio.c_cc[VQUIT];
-    cc_array[2] = oldtio.c_cc[VERASE];
-    cc_array[3] = oldtio.c_cc[VKILL];
-    cc_array[4] = oldtio.c_cc[VEOF];
-    cc_array[5] = oldtio.c_cc[VSUSP];
-    write(sock, cc_array, PBS_TERM_CCA);
-}
+  {
+  char  buf[PBS_TERM_BUF_SZ];
+  char *term;
+  char  cc_array[PBS_TERM_CCA];
+
+  strcpy(buf,"TERM=");
+
+  term = getenv("TERM");
+
+  if (term == NULL)
+    strcat(buf,"unknown");
+  else
+    strncat(buf,term,PBS_TERM_BUF_SZ - 5);
+
+  write(sock, buf, PBS_TERM_BUF_SZ);
+
+  cc_array[0] = oldtio.c_cc[VINTR];
+  cc_array[1] = oldtio.c_cc[VQUIT];
+  cc_array[2] = oldtio.c_cc[VERASE];
+  cc_array[3] = oldtio.c_cc[VKILL];
+  cc_array[4] = oldtio.c_cc[VEOF];
+  cc_array[5] = oldtio.c_cc[VSUSP];
+
+  write(sock, cc_array, PBS_TERM_CCA);
+
+  return;
+  }
+
+
 
 
 /*
  * catchchild = signal handler for Death of Child
  */    
  
-void
-catchchild(sig)
-    int sig;
-{
-    int status;
-    int pid;
+void catchchild(
 
-    while (1) {
-    	pid = waitpid(-1, &status, WNOHANG|WUNTRACED);
-    	if (pid == 0)
-	    return;
-    	if ( (pid > 0) && (WIFSTOPPED(status) == 0) )
-	    break;
-	if ((pid == -1) && (errno != EINTR)) {
-	    perror("qsub: bad status in catchchild: ");
-	    return;
-        }
+  int sig)
+
+  {
+  int status;
+  int pid;
+
+  while (1) 
+    {
+    pid = waitpid(-1,&status,WNOHANG|WUNTRACED);
+
+    if (pid == 0)
+      {
+      return;
+      }
+
+    if ((pid > 0) && (WIFSTOPPED(status) == 0))
+      break;
+
+    if ((pid == -1) && (errno != EINTR)) 
+      {
+      perror("qsub: bad status in catchchild: ");
+
+      return;
+      }
     }
    
-    /* reset terminal to cooked mode */
+  /* reset terminal to cooked mode */
 
-    (void)tcsetattr(0, TCSANOW, &oldtio);
-    exit(0);
-}
+  tcsetattr(0,TCSANOW,&oldtio);
 
-void no_suspend(sig)
-	int sig;
-{
-	printf("Sorry, you cannot suspend qsub until the job is started\n");
-	fflush(stdout);
-}
+  exit(0);
 
-void
-bailout()
-{
-	int	c;
+  /*NOTREACHED*/
 
-	(void)shutdown(inter_sock, 2);
-	(void)close(inter_sock);
-	printf("Job %s is being deleted\n", new_jobname);	
-	c = cnt2server(server_out);
-	if ( c <= 0 ) {
-		fprintf(stderr,
-			"qsub: cannot connect to server %s (errno=%d)\n",
-	        	pbs_server, pbs_errno);
-		exit(1);
-	}
-	(void)pbs_deljob(c, new_jobname, (char *)0);
-	pbs_disconnect(c);
-	exit(0);
-}
+  return;
+  }
 
-void
-toolong(sig)
-    int	sig;
-{
-	printf("Timeout -- deleting job\n");
-	bailout();
-}
 
-void
-catchint(sig)
-    int sig;
-{
-    int c;
 
-    printf("Do you wish to terminate the job and exit (y|[n])? ");
-    fflush(stdout);
-    while (1) {
-	alarm(60);	/* give a minute to think about it */
-	c = getchar();
 
-	if ((c == 'n') || (c == 'N') || (c == '\n'))
-	    break;
-	else if ((c == 'y') || (c == 'Y')) {
-	    bailout();
-	} else {
-	    printf("yes or no please\n");
-	    while ((c != '\n') && (c != EOF))
-		c = getchar();
-	}
+void no_suspend(
+
+  int sig)
+
+  {
+  printf("Sorry, you cannot suspend qsub until the job is started\n");
+
+  fflush(stdout);
+  }
+
+
+
+
+/* does not return */
+
+void bailout()
+
+  {
+  int c;
+
+  shutdown(inter_sock,2);
+
+  close(inter_sock);
+
+  printf("Job %s is being deleted\n", 
+    new_jobname);	
+
+  c = cnt2server(server_out);
+
+  if (c <= 0) 
+    {
+    fprintf(stderr,"qsub: cannot connect to server %s (errno=%d)\n",
+      pbs_server, 
+      pbs_errno);
+
+    exit(1);
     }
-    alarm(0);		/* reset alarm */
+
+  pbs_deljob(c,new_jobname,NULL);
+
+  pbs_disconnect(c);
+
+  exit(0);
+  }
+
+
+
+
+void toolong(
+
+  int sig)
+
+  {
+  printf("Timeout -- deleting job\n");
+
+  bailout();
+  
+  /*NOTREACHED*/
+
+  exit(0);
+  }
+
+
+
+
+void catchint(
+
+  int sig)
+
+  {
+  int c;
+
+  printf("Do you wish to terminate the job and exit (y|[n])? ");
+
+  fflush(stdout);
+
+  while (1) 
+    {
+    alarm(60);	/* give a minute to think about it */
+
+    c = getchar();
+
+    if ((c == 'n') || (c == 'N') || (c == '\n'))
+      break;
+
+    if ((c == 'y') || (c == 'Y')) 
+      {
+      bailout();
+
+      /*NOTREACHED*/
+
+      exit(0);
+      } 
+
+    printf("yes or no please\n");
+
     while ((c != '\n') && (c != EOF))
-	c = getchar();
-    return;
-}
+      c = getchar();
+    }  /* END while (1) */
+
+  alarm(0);  /* reset alarm */
+
+  while ((c != '\n') && (c != EOF))
+    c = getchar();
+
+  return;
+  }  /* END catchint() */
 
 
 
@@ -1871,7 +2044,7 @@ int process_opts(
             fprintf(stderr, "qsub: illegal -a value\n");
             errflg++;
 
-	    break;
+            break;
             }
 
           sprintf(a_value,"%ld", 
@@ -2773,7 +2946,7 @@ void set_opt_defaults()
 int load_config(
 
   char *config_buf, 
-  int BufSize)
+  int   BufSize)
 
   {                                                                       
   FILE *config_stream;
@@ -2930,7 +3103,7 @@ int main(
       else if (errflg < 0) 
         {
         exit(1);
-	}
+        }
       }
     } 
   else 
