@@ -125,6 +125,8 @@ int site_check_user_map(
   char *p1;
   char *p2;
   int   rc;
+ 
+  char  dptr;
 	
   /* get just the owner name, without the "@host" */
 	
@@ -158,12 +160,22 @@ int site_check_user_map(
     return(0);
     }
 
+  /* make short host name */
+
+  if ((dptr = strchr(orighost,'.')) != NULL)
+    {
+    *dptr = '\0';
+    }
+
   if ((TAllowComputeHostSubmit == TRUE) && (find_nodebyname(orighost) != NULL))
     {
     /* job submitted from compute host, access allowed */
 
     return(0);
     }
+
+  if (dptr != NULL)
+    *dptr = '.';
 
   rc = ruserok(orighost,0,owner,luser);
 
