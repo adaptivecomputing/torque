@@ -96,6 +96,8 @@ extern char *pbs_o_host;
 extern char  server_host[];
 extern char *msg_orighost;	/* error message: no PBS_O_HOST */
 
+extern int   TAllowComputeHostSubmit;
+
 /*
  * site_check_u - site_check_user_map()
  *
@@ -103,44 +105,76 @@ extern char *msg_orighost;	/* error message: no PBS_O_HOST */
  *	on this host under the login name specified (in user-list attribute)
  *
  *	As provided, this routine uses ruserok(3N).  If this is a problem,
- *	It's replacement is "left as an exersize for the reader."
+ *	It's replacement is "left as an exercise for the reader."
+ *
+ *      Return -1 for access denied, otherwise 0 for ok.
  */
 
-int site_check_user_map(pjob, luser)
-	job	*pjob;	
-	char	*luser;
-{
-	char    *orighost;
-	char	 owner[PBS_MAXUSER+1];
-	char	*p1;
-	char	*p2;
-	int	 rc;
-	
-	/* get just the owner name, without the "@host" */
-	
-	p1 = pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str;
-	p2 = owner;
-	while ((*p1 != '@') && (*p1 != '\0'))
-		*p2++ = *p1++;
-	*p2 = '\0';
+int site_check_user_map(
 
-	orighost = get_variable(pjob, pbs_o_host);
-	if (orighost == (char *)0) {
-		log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, 
-			  pjob->ji_qs.ji_jobid, msg_orighost);
-		return (-1);
-	}
-	if ( !strcmp(orighost, server_host) && !strcmp(owner, luser))
-		return (0);
+  job  *pjob,	
+  char *luser)
 
-	rc =   ruserok(orighost, 0, owner, luser);
+  {
+  char *orighost;
+  char  owner[PBS_MAXUSER + 1];
+  char *p1;
+  char *p2;
+  int   rc;
+	
+  /* get just the owner name, without the "@host" */
+	
+  p1 = pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str;
+  p2 = owner;
+
+  while ((*p1 != '@') && (*p1 != '\0'))
+    *p2++ = *p1++;
+
+  *p2 = '\0';
+
+  orighost = get_variable(pjob,pbs_o_host);
+
+  if (orighost == NULL) 
+    {
+    /* access denied */
+
+    log_event(
+      PBSEVENT_JOB, 
+      PBS_EVENTCLASS_JOB, 
+      pjob->ji_qs.ji_jobid, 
+      msg_orighost);
+
+    return(-1);
+    }
+
+  if (!strcmp(orighost,server_host) && !strcmp(owner,luser))
+    {
+    /* submitting from server host, access allowed */
+
+    return(0);
+    }
+
+  if ((TAllowComputeHostSubmit == TRUE) && (find_nodebyname(orighost) != NULL))
+    {
+    /* job submitted from compute host, access allowed */
+
+    return(0);
+    }
+
+  rc = ruserok(orighost,0,owner,luser);
+
 #ifdef sun
-	/* broken Sun ruserok() sets process so it appears to be owned	*/
-	/* by the luser, change it back for cosmetic reasons		*/
-	setuid(0);
+  /* broken Sun ruserok() sets process so it appears to be owned	*/
+  /* by the luser, change it back for cosmetic reasons		*/
+
+  setuid(0);
 #endif	/* sun */
-	return (rc);
-}
+
+  return(rc);
+  }  /* END site_check_user_map() */
+
+
+
 
 /*
  * site_check_u - site_acl_check()

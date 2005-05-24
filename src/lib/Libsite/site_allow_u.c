@@ -87,9 +87,9 @@
  * site_allow_u - site allow user access
  *
  *	This routine determines if a user is privileged to access the batch
- *	ssytem on this host.
+ *	system on this host.
  *
- *	It's implementation is "left as an exersize for the reader."
+ *	It's implementation is "left as an exercise for the reader."
  *
  *	Arguments:	user - the user's name making the request
  *			host - host from which the user is making the request
