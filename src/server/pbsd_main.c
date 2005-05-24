@@ -537,6 +537,7 @@ int main(
   if (TLoadConfig(Buffer,sizeof(Buffer)) == 0)
     {
     char *ptr;
+    char *tptr;
 
     /* success - process config file */
 
@@ -553,26 +554,26 @@ int main(
         continue;
         }
 
-      if ((ptr = strstr(ptr,"SERVERHOST")) != NULL)
+      if ((tptr = strstr(ptr,"SERVERHOST")) != NULL)
         {
-        ptr += strlen("SERVERHOST");
+        tptr += strlen("SERVERHOST");
 
-        while (isspace(*ptr) && (*ptr != '\0'))
-          ptr++;
+        while (isspace(*tptr) && (*tptr != '\0'))
+          tptr++;
 
         /* NYI */
         }
-      else if ((ptr = strstr(ptr,"ALLOWCOMPUTEHOSTSUBMIT")) != NULL)
+      else if ((tptr = strstr(ptr,"ALLOWCOMPUTEHOSTSUBMIT")) != NULL)
         {
-        ptr += strlen("ALLOWCOMPUTEHOSTSUBMIT");
+        tptr += strlen("ALLOWCOMPUTEHOSTSUBMIT");
 
-        while (isspace(*ptr) && (*ptr != '\0'))
-          ptr++;
+        while (isspace(*tptr) && (*tptr != '\0'))
+          tptr++;
 
-        if (!strncasecmp(ptr,"true",strlen("true")) || 
-            !strncasecmp(ptr,"on",strlen("on")) ||
-            !strncasecmp(ptr,"yes",strlen("yes")) ||
-            (*ptr = '1'))
+        if (!strncasecmp(tptr,"true",strlen("true")) || 
+            !strncasecmp(tptr,"on",strlen("on")) ||
+            !strncasecmp(tptr,"yes",strlen("yes")) ||
+            (*tptr = '1'))
           {
           TAllowComputeHostSubmit = TRUE;
           }

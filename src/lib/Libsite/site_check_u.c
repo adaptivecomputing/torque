@@ -126,7 +126,7 @@ int site_check_user_map(
   char *p2;
   int   rc;
  
-  char  dptr;
+  char  *dptr;
 	
   /* get just the owner name, without the "@host" */
 	
