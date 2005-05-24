@@ -422,7 +422,7 @@ int TLoadConfig(
     return(1);
     }
 
-  fclose(stream);
+  fclose(config_stream);
 
   /* SUCCESS */
 

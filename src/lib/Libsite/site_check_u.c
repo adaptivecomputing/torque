@@ -90,6 +90,10 @@
 #include "job.h"
 #include "log.h"
 
+#ifndef TRUE
+#define TRUE 1
+#endif
+
 /* Global Data Items */
 
 extern char *pbs_o_host;
