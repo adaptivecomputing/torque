@@ -2943,17 +2943,19 @@ void set_opt_defaults()
 
 
 
+#define TCONST_CFGFILE "torque.cfg"
+
 int load_config(
 
-  char *config_buf, 
-  int   BufSize)
+  char *config_buf, /* O */
+  int   BufSize)    /* I */
 
   {                                                                       
   FILE *config_stream;
 
   char home_dir[MAXPATHLEN];
 
-  int  length = strlen(PBS_SERVER_HOME) + strlen("/torque.cfg");
+  int  length = strlen(PBS_SERVER_HOME) + strlen(TCONST_CFGFILE) + 1;
 
   if (length >= MAXPATHLEN)
     {
@@ -2963,8 +2965,10 @@ int load_config(
   home_dir[0] = '\0';
 
   strcat(home_dir,PBS_SERVER_HOME);
-                                                                           
-  strcat(home_dir,"/torque.cfg");
+
+  strcat(home_dir,"/");
+ 
+  strcat(home_dir,TCONST_CFGFILE);
 
   if ((config_stream = fopen(home_dir,"r")) == NULL)
     {

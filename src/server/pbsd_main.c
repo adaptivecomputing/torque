@@ -189,6 +189,7 @@ time_t		time_now = 0;
 
 int             LOGLEVEL = 0;
 int             DEBUGMODE = 0;
+int             TAllowComputeHostSubmit = FALSE;
 
 char           *ProgName;
 
@@ -371,6 +372,65 @@ int PBSShowUsage(
 
 
 
+#define TCONST_CFGFILE "torque.cfg"
+
+int TLoadConfig(
+
+  char *Buffer,    /* O */
+  int   BufSize)   /* I */
+
+  {
+  FILE *config_stream;
+
+  char home_dir[MAXPATHLEN];
+
+  int  length = strlen(PBS_SERVER_HOME) + strlen(TCONST_CFGFILE) + 1;
+
+  if (Buffer == NULL)
+    {
+    /* FAILURE */
+
+    return(1);
+    }
+
+  if (length >= MAXPATHLEN)
+    {
+    /* FAILURE */
+
+    return(1);
+    }
+
+  home_dir[0] = '\0';
+
+  strcat(home_dir,PBS_SERVER_HOME);
+
+  strcat(home_dir,"/");
+
+  strcat(home_dir,TCONST_CFGFILE);
+
+  if ((config_stream = fopen(home_dir,"r")) == NULL)
+    {
+    /* FAILURE */
+
+    return(1);
+    }
+
+  if (fgets(Buffer,BufSize,config_stream) == NULL)
+    {
+    /* FAILURE */
+
+    return(1);
+    }
+
+  fclose(stream);
+
+  /* SUCCESS */
+
+  return(0);
+  }  /* END TLoadConfig() */
+
+
+
 /*
  * main - the initialization and main loop of pbs_daemon
  */
@@ -400,6 +460,8 @@ int main(
   time_t last_jobstat_time;
   int when;
 
+  char   Buffer[65536];
+
   void	 ping_nodes A_((struct work_task *ptask));
   void   check_nodes A_((struct work_task *ptask));
 
@@ -422,7 +484,7 @@ int main(
 
   ProgName = argv[0];
 
-  /* if we are not run with real and effective uid of 0, forget it */
+  /* if we are not running with real and effective uid of 0, forget it */
 
   if ((getuid() != 0) || (geteuid() != 0)) 
     {
@@ -452,16 +514,16 @@ int main(
 
   /* initialize service port numbers for self, Scheduler, and MOM */
 
-  pbs_server_port_dis = get_svrport(PBS_BATCH_SERVICE_NAME, "tcp", 
+  pbs_server_port_dis = get_svrport(PBS_BATCH_SERVICE_NAME,"tcp", 
     PBS_BATCH_SERVICE_PORT_DIS);
 
-  pbs_scheduler_port = get_svrport(PBS_SCHEDULER_SERVICE_NAME, "tcp",
+  pbs_scheduler_port = get_svrport(PBS_SCHEDULER_SERVICE_NAME,"tcp",
     PBS_SCHEDULER_SERVICE_PORT);
 
-  pbs_mom_port = get_svrport(PBS_MOM_SERVICE_NAME, "tcp",
+  pbs_mom_port = get_svrport(PBS_MOM_SERVICE_NAME,"tcp",
     PBS_MOM_SERVICE_PORT);
 
-  pbs_rm_port = get_svrport(PBS_MANAGER_SERVICE_NAME, "tcp",
+  pbs_rm_port = get_svrport(PBS_MANAGER_SERVICE_NAME,"tcp",
     PBS_MANAGER_SERVICE_PORT);
 
   strcpy(server_name,server_host);	/* by default server = host */
@@ -469,6 +531,56 @@ int main(
   pbs_server_addr    = get_hostaddr(server_host);
   pbs_mom_addr 	     = pbs_server_addr;   /* assume on same host */
   pbs_scheduler_addr = pbs_server_addr;   /* assume on same host */
+
+  /* load/process config file first then override values with command line parameters */
+
+  if (TLoadConfig(Buffer,sizeof(Buffer)) == 0)
+    {
+    char *ptr;
+
+    /* success - process config file */
+
+    ptr = strtok(Buffer,"\n");
+
+    while (ptr != NULL)
+      {
+      if (ptr[0] == '#')
+        {
+        /* ignore comments */
+
+        ptr = strtok(NULL,"\n");
+
+        continue;
+        }
+
+      if ((ptr = strstr(ptr,"SERVERHOST")) != NULL)
+        {
+        ptr += strlen("SERVERHOST");
+
+        while (isspace(*ptr) && (*ptr != '\0'))
+          ptr++;
+
+        /* NYI */
+        }
+      else if ((ptr = strstr(ptr,"ALLOWCOMPUTEHOSTSUBMIT")) != NULL)
+        {
+        ptr += strlen("ALLOWCOMPUTEHOSTSUBMIT");
+
+        while (isspace(*ptr) && (*ptr != '\0'))
+          ptr++;
+
+        if (!strncasecmp(ptr,"true",strlen("true")) || 
+            !strncasecmp(ptr,"on",strlen("on")) ||
+            !strncasecmp(ptr,"yes",strlen("yes")) ||
+            (*ptr = '1'))
+          {
+          TAllowComputeHostSubmit = TRUE;
+          }
+        }
+
+      ptr = strtok(NULL,"\n");
+      }  /* END while (ptr != NULL) */
+    }    /* END if (TLoadConfig(Buffer,sizeof(Buffer)) == 0) */
 
   /* parse the parameters from the command line */
 
