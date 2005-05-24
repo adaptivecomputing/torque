@@ -8,6 +8,7 @@
   fixed relative path based Makefiles for xpbsmom
   added support for gcc 4.0
   added PBSDEBUG support to client commands to allow more verbose diagnostics of client failures
+  added ALLOWCOMPUTEHOSTSUBMIT option to torque.cfg
  
 1.2.0p3
 
