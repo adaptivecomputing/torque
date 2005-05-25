@@ -2975,7 +2975,7 @@ int load_config(
     return(1);
     }
 
-  if (fgets(config_buf,BufSize,config_stream) == NULL)
+  if (fread(config_buf,BufSize,1,config_stream) == NULL)
     {
     return(1);
     }
@@ -2999,6 +2999,8 @@ char *get_param(
   char *new_val = NULL;
 
   /* FORMAT:  <PARAM> <WS> <VALUE> \n */
+
+  /* NOTE:  does not support comments */
 
   if ((param_val = strstr(config_buf,param)) == NULL)
     {

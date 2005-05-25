@@ -415,7 +415,7 @@ int TLoadConfig(
     return(1);
     }
 
-  if (fgets(Buffer,BufSize,config_stream) == NULL)
+  if (fread(Buffer,BufSize,1,config_stream) == NULL)
     {
     /* FAILURE */
 
