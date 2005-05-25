@@ -3129,6 +3129,8 @@ int rm_request(
               {
               sprintf(tmpLine,"WARNING:  could not open connection to server, %s\n",
                 MOMSendStatFailure);
+
+              MUStrNCat(&BPtr,&BSpace,tmpLine);
               }
 
             sprintf(tmpLine,"LOGLEVEL:               %d (use SIGUSR1/SIGUSR2 to adjust)\n",
