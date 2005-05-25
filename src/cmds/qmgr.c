@@ -135,7 +135,9 @@
 #ifdef HAVE_READLINE
 /* some versions have a buggy readline header */
 #undef HAVE_CONFIG_H
+#ifndef __TDARWIN_8  /* OSX 10.4 does not support readline */
 #include <readline/tilde.h>
+#endif /* __TDARWIN_8 */
 #define HAVE_CONFIG_H
 
 #include <readline/readline.h>
@@ -426,149 +428,197 @@ int attributes(
         return(start - attrs);
         }
             
-      /* Allocate storage for attribute structure */
+        /* Allocate storage for attribute structure */
 
-      Mstruct(paol, struct attropl);
-      paol -> name = NULL;
-      paol -> resource = NULL;
-      paol -> value = NULL;
-      paol -> next = *attrlist;
+        Mstruct(paol,struct attropl);
+        paol->name = NULL;
+        paol->resource = NULL;
+        paol->value = NULL;
+        paol->next = *attrlist;
 
-      *attrlist = paol;
+        *attrlist = paol;
             
-      /* Copy attribute into structure */
-
-      ltxt = c - start;
-      Mstring(paol -> name, ltxt+1);
-      strncpy(paol -> name, start, ltxt);
-      paol -> name[ltxt] = '\0';
-  
-      /* Resource, if any */
-
-      if (*c == '.') 
-        {
-        start = ++c;
-
-        while (!White(*c) && !Oper(c) && !EOL(*c)) 
-          c++;
+        /* Copy attribute into structure */
 
         ltxt = c - start;
+        Mstring(paol->name,ltxt + 1);
+        strncpy(paol->name,start,ltxt);
+        paol->name[ltxt] = '\0';
+  
+        /* Resource, if any */
 
-        if (ltxt == 0) 		/* No resource */
+        if (*c == '.') 
           {
-          return(start - attrs);
+          start = ++c;
+
+          while (!White(*c) && !Oper(c) && !EOL(*c)) 
+            c++;
+
+          ltxt = c - start;
+
+          if (ltxt == 0) 		/* No resource */
+            {
+            return(start - attrs);
+            }
+
+          Mstring(paol->resource,ltxt + 1);
+
+          strncpy(paol->resource,start,ltxt);
+
+          paol->resource[ltxt] = '\0';
           }
+        } 
+      else
+        {
+        return(c - attrs);
+        }
+ 
+      /* Get the operator */
 
-        Mstring(paol->resource,ltxt + 1);
+      while (White(*c)) 
+        c++;
 
-        strncpy(paol->resource,start,ltxt);
+    if (!EOL(*c)) 
+      {
+      switch (*c) 
+        {
+        case '=':
 
-        paol->resource[ltxt] = '\0';
+          paol->op = SET;
+          c++;
+
+          break;
+
+        case '+':
+
+          paol->op = INCR;
+          c += 2;
+
+          break;
+
+        case '-':
+
+          paol->op = DECR;
+          c += 2;
+
+          break;
+
+        case ',':
+
+          /* Attribute with no value */
+
+          Mstring(paol->value,1);
+          paol->value[0] = '\0';
+
+          goto next;
+
+          /*NOTREACHED */
+
+          break;
+
+        default:
+
+          return(c - attrs);
+
+          /*NOTREACHED*/
+
+          break;
+        }
+      
+      /* The unset command must not have a operator or value */
+
+      if (doper == MGR_CMD_UNSET) 
+        {
+        return(c - attrs);
         }
       } 
-    else
+    else if ((doper != MGR_CMD_CREATE) && (doper != MGR_CMD_SET)) 
+      {
+      Mstring(paol->value,1);
+
+      paol->value[0] = '\0';
+
+      return(0);
+      } 
+    else 
       {
       return(c - attrs);
       }
- 
-    /* Get the operator */
+     
+    /* Get the value */
 
     while (White(*c)) 
       c++;
 
     if (!EOL(*c)) 
       {
-      switch (*c) 
-        {
-	case '=':
-	  paol -> op = SET;
-	  c++;
-	break;
-	case '+':
-	  paol -> op = INCR;
-	  c += 2;
-	break;
-	case '-':
-	  paol -> op = DECR;
-	  c += 2;
-	break;
-	case ',':
-	  /* Attribute with no value */
-	  Mstring(paol -> value, 1);
-	  paol -> value[0] = '\0';
-	  goto next;
-	default:
-	  return (c - attrs);
-      }
-      
-      /* The unset command must not have a operator or value */
-      if ( doper == MGR_CMD_UNSET ) 
-	return (c - attrs);
-    } 
-    else if (doper != MGR_CMD_CREATE && doper != MGR_CMD_SET) 
-    {
-      Mstring(paol -> value, 1);
-      paol -> value[0] = '\0';
-      return 0;
-    } 
-    else 
-      return (c - attrs);
-        
-    /* Get the value */
-    while ( White(*c) ) 
-      c++;
-
-    if ( !EOL(*c) ) 
-    {
       start = c;
-      if ( (*c == '"') || (*c == '\'') ) 
-      {
-	q = *c;
-	start = ++c;
-	while ( (*c != q) && !EOL(*c) ) 
-	  c++;
 
-	if ( EOL(*c) ) 
-	  return (start - attrs);
+      if ((*c == '"') || (*c == '\'')) 
+        {
+        q = *c;
 
-	ltxt = c - start;
+        start = ++c;
 
-        Mstring(paol -> value, ltxt+1);
+        while ((*c != q) && !EOL(*c)) 
+          c++;
+ 
+        if (EOL(*c)) 
+          { 
+          return(start - attrs);
+         }
+ 
+        ltxt = c - start;
 
-	if ( ltxt > 0 ) 
-	  strncpy(paol -> value, start, ltxt);
+        Mstring(paol->value,ltxt + 1);
 
-        paol -> value[ltxt] = '\0';
+        if (ltxt > 0) 
+          strncpy(paol->value,start,ltxt);
 
-	c++;
-      } 
+        paol->value[ltxt] = '\0';
+
+        c++;
+        } 
       else 
-      {
-	while ( !White(*c) && (*c != ',') && !EOL(*c) ) 
-	  c++;
+        {
+        while (!White(*c) && (*c != ',') && !EOL(*c)) 
+          c++;
 
-	ltxt = c - start;
-	Mstring(paol -> value, ltxt+1);
-	strncpy(paol -> value, start, ltxt);
-	paol -> value[ltxt] = '\0';
-      }
-    } 
+        ltxt = c - start;
+
+        Mstring(paol->value,ltxt + 1);
+
+        strncpy(paol->value,start,ltxt);
+
+        paol->value[ltxt] = '\0';
+        }  
+      } 
     else 
-      return (c - attrs);
-      
+      {
+      return(c - attrs);
+      }
+ 
     /* See if there is another attribute-value pair */
 
 next:
+
     while ( White(*c) ) 
       c++;
-    if ( EOL(*c) ) 
-      return 0;
+
+    if (EOL(*c)) 
+      {
+      return(0);
+      }
 
     if (*c == ',')
+      {
       c++;
+      }
     else
-      return (c - attrs);
-    }
+      {
+      return(c - attrs);
+      }
+    }    /* END while (TRUE) */
 
   /* NOTE:  original code did not explicitly return, what should be returned at this point? */
 
