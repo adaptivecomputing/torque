@@ -4,11 +4,13 @@
   added support for Darwin 10.4 (MAINE)
   fixed suspend/resume for MPI jobs (NORWAY)
   added support for epilog.precancel to enable local job cancellation handling
-  fixed build for case insensitve filesystems
+  fixed build for case insensitive filesystems
   fixed relative path based Makefiles for xpbsmom
   added support for gcc 4.0
   added PBSDEBUG support to client commands to allow more verbose diagnostics of client failures
   added ALLOWCOMPUTEHOSTSUBMIT option to torque.cfg
+  fixed dyanmic pbs_server loglevel support
+  added mom-server rpp socket diagnostics
  
 1.2.0p3
 

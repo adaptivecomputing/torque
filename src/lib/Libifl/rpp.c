@@ -900,26 +900,33 @@ rpp_form_pkt(index, type, seq, buf, len)
 	return;
 }
 
+
+
+
 /*
 **	Check to make sure an incoming packet goes with one of the
 **	streams we have.
 */
-static
-struct	stream	*
-rpp_check_pkt(index, addrp)
-    int		index;
-    struct	sockaddr_in	*addrp;
-{
-	DOID("check_pkt")
-	struct	stream	*sp;
-	struct	in_addr	*addrs;
-	int		i;
 
-	if (index < 0 || index >= stream_num) {
-		DBPRT((DBTO, "%s: BAD INDEX %d outside limit %d\n",
-			id, index, stream_num))
-		return NULL;
-	}
+static struct stream *rpp_check_pkt(
+
+  int                 index,
+  struct sockaddr_in *addrp)
+
+  {
+  DOID("check_pkt")
+
+  struct stream  *sp;
+  struct in_addr *addrs;
+  int             i;
+
+  if ((index < 0) || (index >= stream_num)) 
+    {
+    DBPRT((DBTO,"%s: BAD INDEX %d outside limit %d\n",
+      id, index, stream_num))
+
+    return(NULL);
+    }
 
 	sp = &stream_array[index];
 	if (sp->state <= RPP_FREE) {
@@ -941,12 +948,19 @@ rpp_check_pkt(index, addrp)
 		}
 	}
 
-  bad:
-	DBPRT((DBTO, "%s: ADDRESS MISMATCH\n", id))
-	DBPRT((DBTO, "\tstream %d addr %s\n", index, netaddr(&sp->addr)))
-	DBPRT((DBTO, "\tpkt addr %s\n", netaddr(addrp)))
-	return NULL;
-}
+bad:
+
+  DBPRT((DBTO,"%s: ADDRESS MISMATCH\n", 
+    id))
+
+  DBPRT((DBTO,"\tstream %d addr %s\n", 
+    index, netaddr(&sp->addr)))
+
+  DBPRT((DBTO,"\tpkt addr %s\n", 
+    netaddr(addrp)))
+
+  return(NULL);
+  }
 
 
 
@@ -1028,51 +1042,84 @@ static void rpp_send_out()
 static int rpp_create_sp()
 
   {
-	int	i;
-	struct	stream	*sp = NULL;
+  int i;
+  struct stream *sp = NULL;
 
-	if (stream_array == NULL) {
-		stream_array = (struct stream *)malloc(sizeof(struct stream));
-		if (stream_array == NULL)
-			return -1;
-		memset(stream_array, '\0', sizeof(struct stream));
-		stream_num = 1;
-	}
-	for (i=0; i<stream_num; i++) {
-		sp = &stream_array[i];
+  if (stream_array == NULL) 
+    {
+    stream_array = (struct stream *)malloc(sizeof(struct stream));
 
-		if (sp->state == RPP_FREE)
-			break;
-	}
-	if (i == stream_num) {
-		for (i=0; i<stream_num; i++) {
-			sp = &stream_array[i];
+    if (stream_array == NULL)
+      {
+      return(-1);
+      }
 
-			if (sp->state == RPP_DEAD)
-				break;
-		}
-	}
-	if (i == stream_num) {		/* none available */
-		sp = (struct stream *)realloc((void *)stream_array,
-					(stream_num*2)*sizeof(struct stream));
-		if (sp == NULL) {
-			sp = (struct stream *)realloc((void *)stream_array,
-					(stream_num+1)*sizeof(struct stream));
-			if (sp == NULL)
-				return -1;
-			stream_num++;
-		}
-		else
-			stream_num *= 2;
-		stream_array = sp;
-		sp = &stream_array[i];
-		memset((void *)sp, '\0', (stream_num-i)*sizeof(struct stream));
-	}
-	else
-		memset((void *)sp, '\0', sizeof(struct stream));
-	DBPRT((DBTO, "rpp_create_sp: new index %d\n", i))
-	return i;
-}
+    memset(stream_array,'\0',sizeof(struct stream));
+
+    stream_num = 1;
+    }
+
+  for (i = 0;i < stream_num;i++) 
+    {
+    sp = &stream_array[i];
+
+    if (sp->state == RPP_FREE)
+      break;
+    }
+
+  if (i == stream_num) 
+    {
+    for (i = 0;i < stream_num;i++) 
+      {
+      sp = &stream_array[i];
+
+      if (sp->state == RPP_DEAD)
+        break;
+      }
+    }
+
+  if (i == stream_num) 
+    {
+    /* no free streams available */
+
+    sp = (struct stream *)realloc(
+       (void *)stream_array,
+       (stream_num * 2) * sizeof(struct stream));
+
+    if (sp == NULL) 
+      {
+      sp = (struct stream *)realloc(
+         (void *)stream_array,
+         (stream_num + 1) * sizeof(struct stream));
+
+      if (sp == NULL)
+        {
+        return(-1);
+        }
+
+      stream_num++;
+      }
+    else
+      {
+      stream_num *= 2;
+      }
+
+    stream_array = sp;
+
+    sp = &stream_array[i];
+
+    memset((void *)sp,'\0',(stream_num - i) * sizeof(struct stream));
+    }
+  else
+    {
+    memset((void *)sp,'\0',sizeof(struct stream));
+    }
+
+  DBPRT((DBTO,"rpp_create_sp: new index %d\n", 
+    i))
+
+  return(i);
+  }
 
 
 
@@ -1082,59 +1129,85 @@ static int rpp_create_sp()
 **	Look up the "canonical" name for the host by
 **	calling gethostbyaddr with an IP address.
 */
-static
-struct	hostent		*
-rpp_get_cname(addr)
-    struct	sockaddr_in	*addr;
-{
-	DOID("get_cname")
-	struct	hostent		*hp;
-	char			*hname;
 
-	if ((hp = gethostbyaddr((void *)&addr->sin_addr,
-				sizeof(struct in_addr),
-				addr->sin_family)) == NULL) {
-		DBPRT((DBTO, "%s: addr not found, h_errno=%d errno=%d\n",
-				id, h_errno, errno))
-		return NULL;
-	}
-	if ((hname = (char *)strdup(hp->h_name)) == NULL)
-		return NULL;
+static struct hostent *rpp_get_cname(
 
-	if ((hp = gethostbyname(hname)) == NULL) {
-		DBPRT((DBTO, "%s: canonical name %s not found, h_errno=%d errno=%d\n",
-				id, hname, h_errno, errno))
-	}
-	free(hname);
-	return hp;
-}
+  struct sockaddr_in *addr)
+
+  {
+  DOID("get_cname")
+
+  struct hostent *hp;
+  char           *hname;
+
+  if ((hp = gethostbyaddr(
+        (void *)&addr->sin_addr,
+        sizeof(struct in_addr),
+        addr->sin_family)) == NULL) 
+    {
+    DBPRT((DBTO,"%s: addr not found, h_errno=%d errno=%d\n",
+      id, h_errno, errno))
+
+    return(NULL);
+    }
+
+  if ((hname = (char *)strdup(hp->h_name)) == NULL)
+    {
+    return(NULL);
+    }
+
+  if ((hp = gethostbyname(hname)) == NULL) 
+    {
+    DBPRT((DBTO,"%s: canonical name %s not found, h_errno=%d errno=%d\n",
+      id, hname, h_errno, errno))
+    }
+
+  free(hname);
+
+  /* SUCCESS */
+
+  return(hp);
+  }
+
+
+
 
 /*
 **	Allocate a list of alternate address for a host and save
 **	them in the stream structure.
 */
-static
-void
-rpp_alist(hp, sp)
-    struct	hostent		*hp;
-    struct	stream		*sp;
-{
-	int	i, j;
 
-	for (i=1; hp->h_addr_list[i]; i++);
-	if (i == 1)
-		return;
+static void rpp_alist(
 
-	sp->addr_array = (struct in_addr *)calloc(i, sizeof(struct in_addr));
-	for (j=i=0; hp->h_addr_list[i]; i++) {
-		if (memcmp(&sp->addr.sin_addr,
-				hp->h_addr_list[i], hp->h_length) == 0)
-			continue;
-		memcpy(&sp->addr_array[j++], hp->h_addr_list[i], hp->h_length);
-	}
-	sp->addr_array[j].s_addr = 0;
-	return;
-}
+  struct hostent *hp,
+  struct stream	 *sp)
+
+  {
+  int i, j;
+
+  for (i = 1;hp->h_addr_list[i];i++);
+
+  if (i == 1)
+    {
+    return;
+    }
+
+  sp->addr_array = (struct in_addr *)calloc(i, sizeof(struct in_addr));
+
+  j = 0;
+
+  for (i = 0;hp->h_addr_list[i];i++) 
+    {
+    if (memcmp(&sp->addr.sin_addr,hp->h_addr_list[i],hp->h_length) == 0)
+      continue;
+
+    memcpy(&sp->addr_array[j++],hp->h_addr_list[i],hp->h_length);
+    }
+
+  sp->addr_array[j].s_addr = 0;
+
+  return;
+  }
 
 
 
@@ -1200,69 +1273,92 @@ static int rpp_send_ack(
 /*
 **	Take a packet off the send queue and free it.
 */
-static
-void
-dqueue(pp)
-    struct	send_packet	*pp;
-{
-	if (pp->down == NULL)
-		bottom = pp->up;
-	else
-		pp->down->up = pp->up;
-	if (pp->up == NULL)
-		top = pp->down;
-	else
-		pp->up->down = pp->down;
 
-	if (--pkts_sent < 0)
-		pkts_sent = 0;
-	free(pp->data);
-	free(pp);
-	return;
-}
+static void dqueue(
+
+  struct send_packet *pp)
+
+  {
+  if (pp->down == NULL)
+    bottom = pp->up;
+  else
+    pp->down->up = pp->up;
+
+  if (pp->up == NULL)
+    top = pp->down;
+  else
+    pp->up->down = pp->down;
+
+  if (--pkts_sent < 0)
+    pkts_sent = 0;
+
+  free(pp->data);
+  free(pp);
+
+  return;
+  }
+
+
+
+
 
 /*
 **	Get rid of anything on the pend and send queue for a stream.
 */
-static
-void
-clear_send(sp)
-    struct	stream		*sp;
-{
-	struct	pending		*ppp, *pprev;
-	struct	send_packet	*spp, *sprev;
 
-	for (ppp=sp->pend_head; ppp; ppp=pprev) {
-		pprev=ppp->next;
-		free(ppp->data);
-		free(ppp);
-	}
-	sp->pend_head = NULL;
-	sp->pend_tail = NULL;
-	sp->pend_commit = 0;
-	sp->pend_attempt = 0;
+static void clear_send(
 
-	for (spp=sp->send_head; spp; spp=sprev) {
-		sprev=spp->next;
+  struct stream	*sp)
 
-		if (sp->stream_id == -1) { 	    	/* not open yet */
-			struct	send_packet	*look;	/* might not be */
+  {
+  struct pending     *ppp, *pprev;
+  struct send_packet *spp, *sprev;
+
+  for (ppp = sp->pend_head;ppp;ppp = pprev) 
+    {
+    pprev=ppp->next;
+
+    free(ppp->data);
+
+    free(ppp);
+    }
+
+  sp->pend_head = NULL;
+  sp->pend_tail = NULL;
+  sp->pend_commit = 0;
+  sp->pend_attempt = 0;
+
+  for (spp = sp->send_head;spp;spp = sprev) 
+    {
+    sprev = spp->next;
+
+    if (sp->stream_id == -1) 
+      { 	    	/* not open yet */
+      struct send_packet *look;	/* might not be */
 							/* on send queue */
-			for (look = top; look; look = look->down) {
-				if (look == spp)
-					break;
-			}
-			if (look == NULL) {
-				free(spp->data);
-				free(spp);
-				continue;
-			}
-		}
-		dqueue(spp);
-	}
-	sp->send_head = NULL;
-	sp->send_tail = NULL;
-}
+      for (look = top;look;look = look->down) 
+        {
+        if (look == spp)
+          break;
+        }
+
+      if (look == NULL) 
+        {
+        free(spp->data);
+        free(spp);
+
+        continue;
+        }
+      }
+
+    dqueue(spp);
+    }
+
+  sp->send_head = NULL;
+  sp->send_tail = NULL;
+
+  return;
+  }
 
 
 
@@ -1272,31 +1368,43 @@ clear_send(sp)
 **	a stream, free all the memory and zero the stream_array
 **	entry.
 */
-static
-void
-clear_stream(sp)
-    struct	stream		*sp;
-{
-	struct	recv_packet	*rpp, *rprev;
 
-	DBPRT((DBTO, "CLEAR stream %ld\n",
-			((long)sp - (long)stream_array)/sizeof(struct stream)))
-	for (rpp=sp->recv_head; rpp; rpp=rprev) {
-		rprev=rpp->next;
-		if (rpp->data)
-			free(rpp->data);
-		free(rpp);
-	}
-	sp->recv_head = NULL;
-	sp->recv_tail = NULL;
+static void clear_stream(
 
-	clear_send(sp);
-	if (sp->addr_array) {
-		free(sp->addr_array);
-		sp->addr_array = NULL;
-	}
-	sp->state = RPP_DEAD;
-}
+  struct stream	*sp)
+
+  {
+  struct	recv_packet	*rpp, *rprev;
+
+  DBPRT((DBTO, "CLEAR stream %ld\n",
+    ((long)sp - (long)stream_array)/sizeof(struct stream)))
+
+  for (rpp = sp->recv_head;rpp;rpp=rprev)
+    {
+    rprev = rpp->next;
+
+    if (rpp->data)
+      free(rpp->data);
+
+    free(rpp);
+    }
+
+  sp->recv_head = NULL;
+  sp->recv_tail = NULL;
+
+  clear_send(sp);
+
+  if (sp->addr_array) 
+    {
+    free(sp->addr_array);
+
+    sp->addr_array = NULL;
+    }
+
+  sp->state = RPP_DEAD;
+
+  return;
+  }
 
 
 
@@ -1399,39 +1507,51 @@ static int rpp_recv_pkt(
       DBPRT((DBTO, "%s: ACK stream %d sequence %d crc %08lX\n",
         id, streamid, sequence, pktcrc))
 
-		free(data);
-		if ((sp = rpp_check_pkt(streamid, &addr)) == NULL)
-			return -2;
+      free(data);
 
-		if (sp->state == RPP_OPEN_PEND) {
-			if (sequence != sp->open_key) {
-				DBPRT((DBTO,
-					"%s: WILD ACK in RPP_OPEN_PEND %d\n",
-					id, streamid))
-				return -2;
-			}
-			spp = sp->send_head;
-			assert(spp->type == RPP_HELLO2);
-			assert(spp->next == NULL);
+      if ((sp = rpp_check_pkt(streamid, &addr)) == NULL)
+        {
+        return(-2);
+        }
 
-			sp->state = RPP_CONNECT;
-			sp->send_head = NULL;
-			sp->send_tail = NULL;
-			dqueue(spp);
-			return streamid;
-		}
-		else if (sp->stream_id == -1) {
-			DBPRT((DBTO, "%s: ACK for closed stream %d\n",
-				id, streamid))
-			return -2;
-		}
+      if (sp->state == RPP_OPEN_PEND) 
+        {
+        if (sequence != sp->open_key) 
+          {
+          DBPRT((DBTO,"%s: WILD ACK in RPP_OPEN_PEND %d\n",
+            id, streamid))
 
-		for (spp=sp->send_head, sprev=NULL; spp;
-				sprev=spp, spp=spp->next) {
-			if (spp->sequence == sequence)
-				break;
-		}
-		if (spp) {
+          return(-2);
+          }
+
+        spp = sp->send_head;
+        assert(spp->type == RPP_HELLO2);
+        assert(spp->next == NULL);
+
+        sp->state = RPP_CONNECT;
+        sp->send_head = NULL;
+        sp->send_tail = NULL;
+
+        dqueue(spp);
+
+        return(streamid);
+        }
+      else if (sp->stream_id == -1) 
+        {
+        DBPRT((DBTO,"%s: ACK for closed stream %d\n",
+          id, streamid))
+
+        return(-2);
+        }
+
+      for (spp = sp->send_head,sprev = NULL;spp;sprev = spp,spp = spp->next) 
+        {
+        if (spp->sequence == sequence)
+          break;
+        }
+
+      if (spp != NULL) 
+        {
 			DBPRT((DBTO, "%s: stream %d seq %d took %ld\n",
 				id, streamid, sequence,
 				(long)(time(NULL) - spp->time_sent)))
@@ -1723,7 +1843,8 @@ static int rpp_recv_pkt(
 		free(data);
 		break;
 	}
-	return -2;
+
+  return -2;
 
 err_out:
 
