@@ -219,6 +219,7 @@ char            MOMLastRecvFromServerCmd[MMAX_LINE];
 int             MOMRecvHelloCount         = 0;
 int             MOMRecvClusterAddrsCount  = 0;
 int             MOMSendHelloCount         = 0;
+char            MOMSendStatFailure[MMAX_LINE];
 
 char            MOMConfigVersion[64];
 
@@ -2529,7 +2530,8 @@ int is_update_stat(
 
     if ((server_stream = rpp_open(
            pbs_servername[ServerIndex],
-           default_server_port)) < 0)
+           default_server_port),
+           MOMSendStatFailure) < 0)
       {
       if (LOGLEVEL >= 6)
         {
@@ -3121,6 +3123,12 @@ int rm_request(
                 MOMSendHelloCount);
 
               MUStrNCat(&BPtr,&BSpace,tmpLine);
+              }
+
+            if (MOMSendStatFailure[0] != '\0')
+              {
+              sprintf(tmpLine,"WARNING:  could not open connection to server, %s\n",
+                MOMSendStatFailure);
               }
 
             sprintf(tmpLine,"LOGLEVEL:               %d (use SIGUSR1/SIGUSR2 to adjust)\n",

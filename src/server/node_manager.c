@@ -660,7 +660,7 @@ void ping_nodes(
 
     if (np->nd_stream < 0) 
       {
-      np->nd_stream = rpp_open(np->nd_name, pbs_rm_port);
+      np->nd_stream = rpp_open(np->nd_name,pbs_rm_port);
       np->nd_state |= INUSE_DOWN;
 
       for (sp = np->nd_psn; sp; sp = sp->next)
@@ -833,6 +833,15 @@ void check_nodes(
 
 
 
+/* sync w/#define IS_XXX */
+
+const char *PBSServerCmds2[] = {
+  "NULL",
+  "HELLO",
+  "CLUSTER_ADDRS",
+  "UPDATE",
+  "STATUS",
+  NULL };
 
 /*
 **	Input is coming from another server (MOM) over a DIS rpp stream.
@@ -993,7 +1002,8 @@ found:
 
   if (LOGLEVEL >= 3)
     {
-    sprintf(log_buffer,"message '%d' received from %s (%s)",
+    sprintf(log_buffer,"message %s (%d) received from mom on host %s (%s)",
+      PBSServerCmds2[command],
       command,
       node->nd_name,
       netaddr(addr));

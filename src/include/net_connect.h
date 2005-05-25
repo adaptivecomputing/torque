@@ -113,7 +113,7 @@ typedef unsigned long pbs_net_t;        /* for holding host addresses */
 **	Types of Inter Server messages.
 */
 
-/* sync w/PBSServerCmds[] */
+/* sync w/PBSServerCmds[] in resmom/mom_main.c and PBSServerCmds2[] in server/node_manager.c */
 
 #define	IS_NULL			0
 #define	IS_HELLO		1

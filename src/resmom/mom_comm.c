@@ -726,7 +726,7 @@ int send_sisters(
       continue;
 
     if (np->hn_stream == -1)
-      np->hn_stream = rpp_open(np->hn_host,pbs_rm_port);
+      np->hn_stream = rpp_open(np->hn_host,pbs_rm_port,NULL);
 
     ep = event_alloc(com,np,TM_NULL_EVENT,TM_NULL_TASK);
 
@@ -818,7 +818,7 @@ hnodent	*find_node(
     /* if node is not me and no stream open, open one */
 
     if (pjob->ji_nodeid != hp->hn_node && node_addr == NULL)
-      hp->hn_stream = rpp_open(hp->hn_host,pbs_rm_port);
+      hp->hn_stream = rpp_open(hp->hn_host,pbs_rm_port,NULL);
 
     return(hp);
     }
@@ -4269,7 +4269,7 @@ int tm_request(
 
         if (phost->hn_stream == -1) 
           {
-          phost->hn_stream = rpp_open(phost->hn_host,pbs_rm_port);
+          phost->hn_stream = rpp_open(phost->hn_host,pbs_rm_port,NULL);
           }
 
         ret = im_compose(
@@ -4533,7 +4533,7 @@ int tm_request(
 
       if (phost->hn_stream == -1) 
         {
-        phost->hn_stream = rpp_open(phost->hn_host,pbs_rm_port);
+        phost->hn_stream = rpp_open(phost->hn_host,pbs_rm_port,NULL);
         }
 
       ret = im_compose(
@@ -4631,7 +4631,7 @@ int tm_request(
 
         if (phost->hn_stream == -1) 
           {
-          phost->hn_stream = rpp_open(phost->hn_host,pbs_rm_port);
+          phost->hn_stream = rpp_open(phost->hn_host,pbs_rm_port,NULL);
           }
 
         ret = im_compose(phost->hn_stream,jobid,cookie,IM_SIGNAL_TASK,event,fromtask);
@@ -4724,7 +4724,7 @@ int tm_request(
 
         if (phost->hn_stream == -1) 
           {
-          phost->hn_stream = rpp_open(phost->hn_host,pbs_rm_port);
+          phost->hn_stream = rpp_open(phost->hn_host,pbs_rm_port,NULL);
           }
 
         ret = im_compose(phost->hn_stream, jobid, cookie,
@@ -4801,119 +4801,187 @@ int tm_request(
 
     case TM_GETINFO:
 
-		/*
-		** Get named info for a specified task.
-		**
-		**	read (
-		**		task			int
-		**		name			string
-		**	)
-		*/
-		taskid = disrui(fd, &ret);
-		if (ret != DIS_SUCCESS)
-			goto err;
-		name = disrst(fd, &ret);
-		if (ret != DIS_SUCCESS)
-			goto err;
-		DBPRT(("%s: GETINFO %s from node %d task %d name %s\n",
-			id, jobid, nodeid, taskid, name))
-		if (prev_error)
-			goto done;
+      /*
+      ** Get named info for a specified task.
+      **
+      **	read (
+      **		task			int
+      **		name			string
+      **	)
+      */
 
-		if (pjob->ji_nodeid != nodeid) {	/* not me */
-			ep = event_alloc(IM_GET_INFO, phost,
-					event, fromtask);
-			if (phost->hn_stream == -1) {
-				phost->hn_stream = rpp_open(phost->hn_host,
-							pbs_rm_port);
-			}
-			ret = im_compose(phost->hn_stream, jobid, cookie,
-					IM_GET_INFO, event, fromtask);
-			if (ret == DIS_SUCCESS) {
-				ret = diswui(phost->hn_stream, pjob->ji_nodeid);
-				if (ret == DIS_SUCCESS) {
-					ret = diswsi(phost->hn_stream, taskid);
-					if (ret == DIS_SUCCESS) {
-						ret = diswst(phost->hn_stream,
-								name);
-					}
-				}
-			}
-			free(name);
-			if (ret != DIS_SUCCESS)
-				goto done;
-			ret = (rpp_flush(phost->hn_stream) == -1) ?
-				DIS_NOCOMMIT : DIS_SUCCESS;
-			if (ret != DIS_SUCCESS)
-				goto done;
-			reply = FALSE;
-			goto done;
-		}
+      taskid = disrui(fd,&ret);
 
-		/*
-		** Task should be here... look for it.
-		*/
-		if ((ptask = task_find(pjob, taskid)) != NULL) {
-			if ((ip = task_findinfo(ptask, name)) != NULL) {
-				ret = tm_reply(fd, TM_OKAY, event);
-				if (ret != DIS_SUCCESS)
-					goto done;
-				ret = diswcs(fd, ip->ie_info, ip->ie_len);
-				break;
-			}
-		}
-		ret = tm_reply(fd, TM_ERROR, event);
-		if (ret != DIS_SUCCESS)
-			goto done;
-		ret = diswsi(fd, TM_ENOTFOUND);
-		break;
+      if (ret != DIS_SUCCESS)
+        goto err;
 
-	case TM_RESOURCES:
-		/*
-		** Get resource string for a node.
-		*/
-		DBPRT(("%s: RESOURCES %s for node %d task %d\n",
-			id, jobid, nodeid, taskid))
-		if (prev_error)
-			goto done;
+      name = disrst(fd,&ret);
 
-		if (pjob->ji_nodeid != nodeid) {	/* not me XXX */
-			ep = event_alloc(IM_GET_RESC, phost,
-					event, fromtask);
-			if (phost->hn_stream == -1) {
-				phost->hn_stream = rpp_open(phost->hn_host,
-							pbs_rm_port);
-			}
-			ret = im_compose(phost->hn_stream, jobid, cookie,
-					IM_GET_RESC, event, fromtask);
-			if (ret != DIS_SUCCESS)
-				goto done;
-			ret = diswui(phost->hn_stream, pjob->ji_nodeid);
-			if (ret != DIS_SUCCESS)
-				goto done;
-			ret = (rpp_flush(phost->hn_stream) == -1) ?
-				DIS_NOCOMMIT : DIS_SUCCESS;
-			if (ret != DIS_SUCCESS)
-				goto done;
-			reply = FALSE;
-			goto done;
-		}
+      if (ret != DIS_SUCCESS)
+        goto err;
 
-		info = resc_string(pjob);
-		ret = tm_reply(fd, TM_OKAY, event);
-		if (ret != DIS_SUCCESS)
-			goto done;
-		ret = diswst(fd, info);
-		free(info);
-		break;
+      DBPRT(("%s: GETINFO %s from node %d task %d name %s\n",
+        id, jobid, nodeid, taskid, name))
 
-	default:
-		sprintf(log_buffer, "unknown command %d", command);
-		(void)tm_reply(fd, TM_ERROR, event);
-		(void)diswsi(fd, TM_EUNKNOWNCMD);
-		(void)DIS_tcp_wflush(fd);
-		goto err;
-	}
+      if (prev_error)
+        goto done;
+
+      if (pjob->ji_nodeid != nodeid) 
+        {	/* not me */
+        ep = event_alloc(
+               IM_GET_INFO, 
+               phost,
+               event, 
+               fromtask);
+
+        if (phost->hn_stream == -1) 
+          {
+          phost->hn_stream = rpp_open(phost->hn_host,pbs_rm_port,NULL);
+          }
+
+        ret = im_compose(
+          phost->hn_stream, 
+          jobid, 
+          cookie,
+          IM_GET_INFO, 
+          event, 
+          fromtask);
+
+        if (ret == DIS_SUCCESS) 
+          {
+          ret = diswui(phost->hn_stream,pjob->ji_nodeid);
+
+          if (ret == DIS_SUCCESS) 
+            {
+            ret = diswsi(phost->hn_stream,taskid);
+
+            if (ret == DIS_SUCCESS) 
+              {
+              ret = diswst(phost->hn_stream,name);
+              }
+            }
+          }
+
+        free(name);
+
+        if (ret != DIS_SUCCESS)
+          goto done;
+
+        ret = (rpp_flush(phost->hn_stream) == -1) ?  DIS_NOCOMMIT : DIS_SUCCESS;
+
+        if (ret != DIS_SUCCESS)
+          goto done;
+
+        reply = FALSE;
+
+        goto done;
+        }  /* END if (pjob->ji_nodeid != nodeid) */
+
+      /*
+      ** Task should be here... look for it.
+      */
+
+      if ((ptask = task_find(pjob,taskid)) != NULL) 
+        {
+        if ((ip = task_findinfo(ptask,name)) != NULL)
+          {
+          ret = tm_reply(fd,TM_OKAY event);
+
+          if (ret != DIS_SUCCESS)
+            goto done;
+
+          ret = diswcs(fd,ip->ie_info,ip->ie_len);
+
+          break;
+          }
+        }
+
+      ret = tm_reply(fd,TM_ERROR,event);
+
+      if (ret != DIS_SUCCESS)
+        goto done;
+
+      ret = diswsi(fd,TM_ENOTFOUND);
+
+      break;
+
+    case TM_RESOURCES:
+
+      /* get resource string for a node */
+
+      DBPRT(("%s: RESOURCES %s for node %d task %d\n",
+        id, jobid, nodeid, taskid))
+
+      if (prev_error)
+        goto done;
+
+      if (pjob->ji_nodeid != nodeid) 
+        {
+        /* not me XXX */
+
+        ep = event_alloc(IM_GET_RESC,phost,event,fromtask);
+
+        if (phost->hn_stream == -1) 
+          {
+          phost->hn_stream = rpp_open(phost->hn_host,pbs_rm_port,NULL);
+          }
+
+        ret = im_compose(
+          phost->hn_stream, 
+          jobid, 
+          cookie,
+          IM_GET_RESC, 
+          event, 
+          fromtask);
+
+        if (ret != DIS_SUCCESS)
+          goto done;
+
+        ret = diswui(phost->hn_stream,pjob->ji_nodeid);
+
+        if (ret != DIS_SUCCESS)
+          goto done;
+
+        ret = (rpp_flush(phost->hn_stream) == -1) ?  DIS_NOCOMMIT : DIS_SUCCESS;
+
+        if (ret != DIS_SUCCESS)
+          goto done;
+
+        reply = FALSE;
+
+        goto done;
+        }  /* END if (pjob->ji_nodeid != nodeid) */
+
+      info = resc_string(pjob);
+
+      ret = tm_reply(fd,TM_OKAY,event);
+
+      if (ret != DIS_SUCCESS)
+        goto done;
+
+      ret = diswst(fd,info);
+
+      free(info);
+
+      break;
+
+    default:
+
+      sprintf(log_buffer,"unknown command %d", 
+        command);
+
+      tm_reply(fd,TM_ERROR,event);
+
+      diswsi(fd,TM_EUNKNOWNCMD);
+
+      DIS_tcp_wflush(fd);
+
+      goto err;
+
+      /*NOTREACHED*/
+
+      break;
+    }  /* END switch (command) */
 
 done:
 

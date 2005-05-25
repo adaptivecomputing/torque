@@ -395,7 +395,7 @@ int main(
 
         break;
 
-      case 'r':
+   case 'r':
 
         flag = RESET;
 
@@ -524,7 +524,7 @@ int main(
   if (DisplayXML == TRUE)
     flag = ALLI;
 
-  switch(flag) 
+  switch (flag) 
     {
     case DIAG:
 
@@ -534,12 +534,12 @@ int main(
 
     case DOWN:
 
-	/*
-	 * loop through the list of nodes returned above:
-	 *   if node is up and is in argv list, mark it down;
-	 *   if node is down and not in argv list, mark it up;
-	 * for all changed nodes, send in request to server
-	 */
+      /*
+       * loop through the list of nodes returned above:
+       *   if node is up and is in argv list, mark it down;
+       *   if node is down and not in argv list, mark it up;
+       * for all changed nodes, send in request to server
+       */
 
       for (pbstat = bstatus;pbstat != NULL;pbstat = pbstat->next) 
         {
@@ -692,7 +692,7 @@ int main(
         }
 
       break;
-    }  /* END switch(flag) */
+    }  /* END switch (flag) */
 
   pbs_disconnect(con);
   

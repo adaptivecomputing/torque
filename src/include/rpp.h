@@ -77,7 +77,7 @@
 * without reference to its choice of law rules.
 */
 
-int			rpp_open	(char *, unsigned int);
+int			rpp_open	(char *,unsigned int,char *);
 int			rpp_bind	(unsigned int);
 int			rpp_poll	(void);
 int			rpp_io		(void);

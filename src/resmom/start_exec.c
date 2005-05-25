@@ -3463,7 +3463,7 @@ void start_exec(
 
       /* rpp_open() will succeed even if MOM is down */
 
-      np->hn_stream = rpp_open(np->hn_host,pbs_rm_port);
+      np->hn_stream = rpp_open(np->hn_host,pbs_rm_port,NULL);
 
       if (np->hn_stream < 0) 
         {

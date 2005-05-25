@@ -2114,8 +2114,9 @@ int rpp_bind(
 
 int rpp_open(
 
-  char *name,
-  uint  port)
+  char *name,  /* I */
+  uint  port,  /* I */
+  char *EMsg)  /* O (optional,minsize=1024) */
 
   {
   DOID("rpp_open")
@@ -2124,10 +2125,19 @@ int rpp_open(
   struct hostent *hp;
   struct stream  *sp;
 
-  DBPRT((DBTO, "%s: entered %s:%d\n", id, name, port))
+  DBPRT((DBTO, "%s: entered %s:%d\n", 
+    id, 
+    name, 
+    port))
+
+  if (EMsg != NULL)
+    EMsg[0] = '\0';
 
   if (rpp_bind(0) == -1)	/* bind if we need to */
     {
+    if (EMsg != NULL)
+      sprintf(EMsg,"cannot bind rpp socket");
+
     return(-1);
     }
 
@@ -2142,6 +2152,13 @@ int rpp_open(
       name))
 
     errno = ENOENT;
+
+    if (EMsg != NULL)
+      {
+      sprintf(EMsg,"hostname resolution for '%s' failed, errno=%d",
+        name,
+        h_errno);
+      }
 
     return(-1);
     }
@@ -2159,7 +2176,7 @@ int rpp_open(
     if (sp->state <= RPP_FREE)
       continue;
 
-    if (memcmp(&sp->addr.sin_addr, hp->h_addr, hp->h_length))
+    if (memcmp(&sp->addr.sin_addr,hp->h_addr,hp->h_length))
       continue;
 
     if (sp->addr.sin_port != htons((unsigned short)port))
@@ -2171,16 +2188,23 @@ int rpp_open(
     if (sp->state > RPP_CLOSE_PEND) 
       {
       DBPRT((DBTO,"%s: OLD STREAM state %d reopened %d\n",
-        id, sp->state, sp->open_key))
+        id, 
+        sp->state, 
+        sp->open_key))
 
       clear_stream(sp);	/* old stream */
       }
     else 
       {
       DBPRT((DBTO,"%s: reopen of %s, sp->retry %d, global %d\n",
-        id, netaddr(&sp->addr), sp->retry, rpp_retry))
+        id, 
+        netaddr(&sp->addr), 
+        sp->retry, 
+        rpp_retry))
 
       sp->retry = rpp_retry;
+
+      /* SUCCESS */
 
       return(i);
       }
@@ -2190,6 +2214,11 @@ int rpp_open(
 
   if (stream == -1)
     {
+    if (EMsg != NULL)
+      {
+      sprintf(EMsg,"cannot create new stream");
+      }
+
     return(-1);
     }
 
@@ -2200,7 +2229,7 @@ int rpp_open(
 
   /*
   ** We save the address returned for the name given so we
-  ** can send out on the perfered interface.
+  ** can send out on the preferred interface.
   */
 
   memcpy(&sp->addr.sin_addr, hp->h_addr, hp->h_length);
@@ -2215,6 +2244,12 @@ int rpp_open(
       {
       errno = ENOENT;
 
+      if (EMsg != NULL)
+        {
+        sprintf(EMsg,"cannot lookup cname for host '%s'",
+          name);
+        }
+    
       return(-1);
       }
     }
@@ -2231,8 +2266,15 @@ int rpp_open(
 
   if (rpp_recv_all() == -1)
     {
+    if (EMsg != NULL)
+      {
+      sprintf(EMsg,"rpp_recv_all failed");
+      }
+
     return(-1);
     }
+
+  /* SUCCESS */
 
   rpp_send_out();
 
