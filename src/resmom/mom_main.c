@@ -2530,8 +2530,8 @@ int is_update_stat(
 
     if ((server_stream = rpp_open(
            pbs_servername[ServerIndex],
-           default_server_port),
-           MOMSendStatFailure) < 0)
+           default_server_port,
+           MOMSendStatFailure)) < 0)
       {
       if (LOGLEVEL >= 6)
         {

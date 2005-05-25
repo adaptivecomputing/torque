@@ -660,7 +660,7 @@ void ping_nodes(
 
     if (np->nd_stream < 0) 
       {
-      np->nd_stream = rpp_open(np->nd_name,pbs_rm_port);
+      np->nd_stream = rpp_open(np->nd_name,pbs_rm_port,NULL);
       np->nd_state |= INUSE_DOWN;
 
       for (sp = np->nd_psn; sp; sp = sp->next)

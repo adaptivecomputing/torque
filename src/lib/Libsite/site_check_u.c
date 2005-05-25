@@ -127,6 +127,8 @@ int site_check_user_map(
   int   rc;
  
   char  *dptr;
+
+  extern struct pbsnode *find_nodebyname(char *);
 	
   /* get just the owner name, without the "@host" */
 	

@@ -4885,7 +4885,7 @@ int tm_request(
         {
         if ((ip = task_findinfo(ptask,name)) != NULL)
           {
-          ret = tm_reply(fd,TM_OKAY event);
+          ret = tm_reply(fd,TM_OKAY,event);
 
           if (ret != DIS_SUCCESS)
             goto done;
