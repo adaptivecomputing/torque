@@ -304,33 +304,56 @@ void set_resc_assigned(
 /*
  * ck_chkpnt - check validity of job checkpoint attribute value
  */
-int ck_chkpnt(pattr, pobject, mode)
-	attribute *pattr;
-	void	  *pobject;	/* not used */
-	int	   mode;	/* not used */
-{
-	char *val;
 
-	val = pattr->at_val.at_str;
-	if (val == (char *)0)
-		return (0);
+int ck_chkpnt(
 
-	if ((*val == 'n') || (*val == 's') || (*val == 'u')) {
-		if (*(val+1) != '\0')
-			return (PBSE_BADATVAL);
-	}
-	else if (*val++ == 'c') {
-		if (*val != '\0') {
-			if (*val++ != '=')
-				return (PBSE_BADATVAL);
-			if (atoi(val) <= 0)
-				return (PBSE_BADATVAL);
-		}
-	} else
-		return (PBSE_BADATVAL);
+  attribute *pattr,
+  void      *pobject,	/* not used */
+  int        mode)	/* not used */
 
-	return (0);
-}
+  {
+  char *val;
+
+  val = pattr->at_val.at_str;
+
+  if (val == NULL)
+    {
+    /* SUCCESS */
+
+    return(0);
+    }
+
+  if ((*val == 'n') || (*val == 's') || (*val == 'u')) 
+    {
+    if (*(val + 1) != '\0')
+      {
+      return(PBSE_BADATVAL);
+      }
+    }
+  else if (*val++ == 'c') 
+    {
+    if (*val != '\0') 
+      {
+      if (*val++ != '=')
+        {
+        return(PBSE_BADATVAL);
+        }
+
+      if (atoi(val) <= 0)
+        {
+        return(PBSE_BADATVAL);
+        }
+      }
+    } 
+  else
+    {
+    return(PBSE_BADATVAL);
+    }
+
+  /* SUCCESS */
+
+  return(0);
+  }
 
 
 
