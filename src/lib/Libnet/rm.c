@@ -233,7 +233,7 @@ int openrm(
       }
     }
 
-  stream = rpp_open(host,port);
+  stream = rpp_open(host,port,NULL);
 
 #else /* RPP */
 
