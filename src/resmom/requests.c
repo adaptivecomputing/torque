@@ -370,6 +370,8 @@ static pid_t fork_to_user(
       errno,
       strerror(errno));
 
+    log_err(-1,id,tmpLine);
+
     if (EMsg != NULL)
       strncpy(EMsg,tmpLine,1024);
 
@@ -470,7 +472,7 @@ static void add_bad_list(
   while (nl--)				/* prefix new-lines */
     strcat(*pbl,"\n");
 
-  strcat(*pbl, newtext);
+  strcat(*pbl,newtext);
 
   return;
   }  /* END add_bad_list() */
@@ -481,62 +483,80 @@ static void add_bad_list(
 
 #define RT_BLK_SZ 4096 
 
-static int return_file(pjob, which, sock)
-	job	      *pjob;
-	enum job_file  which;
-	int	       sock;
-{
-	int		      amt;
-	char		      buf[RT_BLK_SZ];
-	int		      fds;
-	char		     *filename;
-	struct batch_request *prq;
-	int		      rc = 0;
-	int		      seq = 0;
+static int return_file(
 
-	filename = std_file_name(pjob, which, &amt); /* amt is place holder */
-	fds = open(filename, O_RDONLY, 0);
-	if (fds < 0)
-		return (0);
+  job	        *pjob,
+  enum job_file  which,
+  int	         sock)
 
-	prq = alloc_br(PBS_BATCH_MvJobFile);
-	if (prq == (struct batch_request *)0)
-		return PBSE_SYSTEM;
+  {
+  int		      amt;
+  char		      buf[RT_BLK_SZ];
+  int		      fds;
+  char		     *filename;
+  struct batch_request *prq;
+  int		      rc = 0;
+  int		      seq = 0;
 
-	(void)strcpy(prq->rq_host, mom_host);
-	(void)strcpy(prq->rq_ind.rq_jobfile.rq_jobid, pjob->ji_qs.ji_jobid);
+  filename = std_file_name(pjob,which,&amt); /* amt is place holder */
 
-	while ( (amt = read(fds, buf, RT_BLK_SZ)) > 0 ) {
-		/* prq->rq_ind.rq_jobfile.rq_sequence = seq++; */
-		/* prq->rq_ind.rq_jobfile.rq_type = (int)which; */
-		/* prq->rq_ind.rq_jobfile.rq_size = amt; */
-		/* prq->rq_ind.rq_jobfile.rq_data = buf; */
+  fds = open(filename,O_RDONLY,0);
 
+  if (fds < 0)
+    {
+    return(0);
+    }
 
-		DIS_tcp_setup(sock);
-		if ( (rc = encode_DIS_ReqHdr(sock, PBS_BATCH_MvJobFile,
-					     pbs_current_user)) ||
-		     (rc = encode_DIS_JobFile(sock, seq++, buf, amt,
-					      pjob->ji_qs.ji_jobid, which)) ||
-		     (rc = encode_DIS_ReqExtend(sock, (char *)0)) ) {
-			break;
-		}
+  prq = alloc_br(PBS_BATCH_MvJobFile);
+
+  if (prq == NULL)
+    {
+    /* no memory */
+
+    return(PBSE_SYSTEM);
+    }
+
+  strcpy(prq->rq_host,mom_host);
+  strcpy(prq->rq_ind.rq_jobfile.rq_jobid,pjob->ji_qs.ji_jobid);
+
+  while ((amt = read(fds,buf,RT_BLK_SZ)) > 0) 
+    {
+    /* prq->rq_ind.rq_jobfile.rq_sequence = seq++; */
+    /* prq->rq_ind.rq_jobfile.rq_type = (int)which; */
+    /* prq->rq_ind.rq_jobfile.rq_size = amt; */
+    /* prq->rq_ind.rq_jobfile.rq_data = buf; */
+
+    DIS_tcp_setup(sock);
+
+    if ((rc = encode_DIS_ReqHdr(sock,PBS_BATCH_MvJobFile,pbs_current_user)) ||
+        (rc = encode_DIS_JobFile(sock,seq++,buf,amt,pjob->ji_qs.ji_jobid,which)) ||
+        (rc = encode_DIS_ReqExtend(sock,NULL))) 
+      {
+      break;
+      }
 		
-		DIS_tcp_wflush(sock);
+    DIS_tcp_wflush(sock);
 
-		if ( (DIS_reply_read(sock, &prq->rq_reply) != 0) ||
-		     (prq->rq_reply.brp_code != 0) ) {
-			(void)close(fds);
-			rc = -1;
-			break;
-		}
-		
-	}
-	free_br(prq);
-	(void)close(fds);
-	if (rc == 0) (void)unlink(filename);
-	return (rc);
-}
+    if ((DIS_reply_read(sock,&prq->rq_reply) != 0) ||
+        (prq->rq_reply.brp_code != 0)) 
+      {
+      close(fds);
+
+      rc = -1;
+
+      break;
+      }
+    }
+
+  free_br(prq);
+
+  close(fds);
+
+  if (rc == 0) 
+    unlink(filename);
+
+  return(rc);
+  }
 
 
 
@@ -1098,69 +1118,97 @@ void req_shutdown(
 
 
 #ifdef _CRAY
+
 /*
  * cray_susp_resum - special cray suspend/resume function
  */
-static void cray_susp_resum(pjob, which, preq)
-	job	*pjob;
-	int	 which;
-	struct batch_request *preq;
-{
-	int 	i;
-	int	ct;
-	task	*ptask;
-	pid_t   pid;
-	long	sess;
-	int	sock;
 
-	sock = preq->rq_conn;
-	pid = fork_me(sock);
-	if (pid > 0) {
+static void cray_susp_resum(
 
-		/* record pid in job for when child terminates */
+  job                  *pjob,
+  int                   which,
+  struct batch_request *preq)
 
-		pjob->ji_momsubt = pid;
-		if (which == 1) {
-			pjob->ji_mompost = post_suspend;
+  {
+  int 	 i;
+  int	 ct;
+  task	*ptask;
+  pid_t  pid;
+  long	 sess;
+  int	 sock;
 
-			/* save stop time for adjusting walltime */
-			pjob->ji_momstat = time_now;
-		} else {
-			pjob->ji_mompost = post_resume;
-		}
-		free_br(preq);
-		return;
+  sock = preq->rq_conn;
 
-	} else if (pid == -1) {
-		/* fork failed - still the main mom */
-		req_reject(PBSE_SYSTEM, errno, preq,NULL,NULL);
-		return;
-	}
+  pid = fork_me(sock);
 
-	/* child of MOM, cannot update job struct */
+  if (pid > 0) 
+    {
+    /* record pid in job for when child terminates */
 
-	for (ptask = (task *)GET_NEXT(pjob->ji_tasks);
-			ptask != NULL;
-			ptask = (task *)GET_NEXT(ptask->ti_jobtask)) {
-		sess = ptask->ti_qs.ti_sid;
+    pjob->ji_momsubt = pid;
 
-		for (ct=0; ct<3; ct++)  {
-			i = (which == 1) ?
-				suspend(C_JOB, sess) :
-				resume(C_JOB, sess);
-			if (i == 0)
-				break;
-			if ((errno != EAGAIN) && (errno != EINTR))
-				break;
-		}
-		if (i == -1) {	/* error */
-			req_reject(PBSE_SYSTEM, errno, preq,NULL,NULL);
-			exit(1);
-		}
-	}
-	reply_ack(preq);
-	exit(0);
-}
+    if (which == 1) 
+      {
+      pjob->ji_mompost = post_suspend;
+
+      /* save stop time for adjusting walltime */
+
+      pjob->ji_momstat = time_now;
+      } 
+    else 
+      {
+      pjob->ji_mompost = post_resume;
+      }
+
+    free_br(preq);
+
+    return;
+    } 
+  else if (pid == -1) 
+    {
+    /* fork failed - still the main mom */
+
+    log_err(-1,id,"cannot fork child for cray suspend");
+
+    req_reject(PBSE_SYSTEM,errno,preq,NULL,NULL);
+
+    return;
+    }
+
+  /* child of MOM, cannot update job struct */
+
+  for (ptask = (task *)GET_NEXT(pjob->ji_tasks);
+       ptask != NULL;
+       ptask = (task *)GET_NEXT(ptask->ti_jobtask)) 
+    {
+    sess = ptask->ti_qs.ti_sid;
+
+    for (ct = 0;ct < 3;ct++)  
+      {
+      i = (which == 1) ?  suspend(C_JOB,sess) : resume(C_JOB,sess);
+
+      if (i == 0)
+        break;
+
+      if ((errno != EAGAIN) && (errno != EINTR))
+        break;
+      }
+
+    if (i == -1) 
+      {
+      /* error */
+
+      req_reject(PBSE_SYSTEM,errno,preq,NULL,NULL);
+
+      exit(1);
+      }
+    }
+
+  reply_ack(preq);
+
+  exit(0);
+  }
+
 #endif	/* _CRAY */
 
 
@@ -1276,7 +1324,8 @@ static void resume_suspend(
         }
       }  /* END for (tp) */
 
-    /* the same two signal excercise as above */
+    /* the same two signal exercise as above */
+
     if (susp != 0)
       {
       MUSleep(50000);
@@ -1287,7 +1336,7 @@ static void resume_suspend(
         }  /* END for (tp) */
       }
 
-    /* report failure */
+    /* suspend/resume failued - report failure */
 
     req_reject(PBSE_SYSTEM,savederr,preq,NULL,NULL);      
     }  /* END if (stat < 0) */ 
@@ -2245,6 +2294,7 @@ void req_cpyfile(
         EMsg);
 
       log_err(errno,"req_cpyfile",tmpLine);
+
       exit(rc);
       }
 
@@ -2274,10 +2324,9 @@ void req_cpyfile(
 
   dir = preq->rq_ind.rq_cpyfile.rq_dir;
 
-  for (
-     pair = (struct rqfpair *)GET_NEXT(preq->rq_ind.rq_cpyfile.rq_pair);
-     pair != NULL;
-     pair = (struct rqfpair *)GET_NEXT(pair->fp_link)) 
+  for (pair = (struct rqfpair *)GET_NEXT(preq->rq_ind.rq_cpyfile.rq_pair);
+       pair != NULL;
+       pair = (struct rqfpair *)GET_NEXT(pair->fp_link)) 
     {
     from_spool = 0;
     prmt       = pair->fp_rmt;
@@ -2903,28 +2952,45 @@ int start_checkpoint(
     {
     /* parent, record pid in job for when child terminates */
 
-		pjob->ji_momsubt = pid;
-		pjob->ji_mompost = post_chkpt;
-		if (preq)
-			free_br(preq);
-		/*
-		** If we are going to have tasks dieing, set a flag.
-		*/
-		if (abort)
-			pjob->ji_flags |= MOM_CHKPT_ACTIVE;
+    pjob->ji_momsubt = pid;
+    pjob->ji_mompost = post_chkpt;
 
-	} else if (pid < 0) {
-		return (PBSE_SYSTEM);		/* error on fork */
-	} else {
-		/* child - does the checkpoint */
-		int	  hok = 1;
+    if (preq)
+      free_br(preq);
 
-		clear_attr(&tmph, &job_attr_def[(int)JOB_ATR_hold]);
-		if (preq) {
-			pal = (svrattrl *)
-				GET_NEXT(preq->rq_ind.rq_hold.rq_orig.rq_attr);
-			if (pal) {
-				hok = job_attr_def[(int)JOB_ATR_hold].at_decode(
+    /* If we are going to have tasks dieing, set a flag. */
+
+    if (abort)
+      pjob->ji_flags |= MOM_CHKPT_ACTIVE;
+    } 
+  else if (pid < 0) 
+    {
+    char tmpLine[1024];
+
+    /* error on fork */
+
+    sprintf(tmpLine,"cannot fork child process for checkpoint, errno=%d",
+      errno);
+
+    log_err(-1,id,tmpLine);
+
+    return(PBSE_SYSTEM);	
+    } 
+  else 
+    {
+    /* child - does the checkpoint */
+
+    int hok = 1;
+
+    clear_attr(&tmph, &job_attr_def[(int)JOB_ATR_hold]);
+
+    if (preq) 
+      {
+      pal = (svrattrl *)GET_NEXT(preq->rq_ind.rq_hold.rq_orig.rq_attr);
+
+      if (pal) 
+        {
+        hok = job_attr_def[(int)JOB_ATR_hold].at_decode(
 							&tmph,
 							pal->al_name,
 							(char *)0,

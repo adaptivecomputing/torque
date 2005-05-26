@@ -1781,6 +1781,10 @@ void im_request(
   
       if ((pjob = job_alloc()) == NULL) 
         {
+        /* out of memory */
+
+        log_err(-1,id,"insufficient memory to create job");
+
         SEND_ERR(PBSE_SYSTEM)
   
         goto done;
@@ -1964,6 +1968,8 @@ void im_request(
         {
         job_purge(pjob);
 
+        log_err(-1,id,"cannot load sp switch table");
+
         SEND_ERR(PBSE_SYSTEM)
   
         goto done;
@@ -1980,6 +1986,10 @@ void im_request(
       if (mkdir(namebuf,0700) == -1) 
         {
         job_purge(pjob);
+
+        /* cannot create temporary job directory */
+
+        log_err(-1,id,"cannot create temporary directory");
 
         SEND_ERR(PBSE_SYSTEM)
   
