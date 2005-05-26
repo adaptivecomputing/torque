@@ -2975,7 +2975,7 @@ int load_config(
     return(1);
     }
 
-  if (fread(config_buf,BufSize,1,config_stream) <= 0)
+  if ((fread(config_buf,BufSize,1,config_stream) <= 0) && (ferror(config_stream) != 0))
     {
     return(1);
     }
