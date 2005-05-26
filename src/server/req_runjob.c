@@ -107,6 +107,10 @@
 #include "net_connect.h"
 #include "pbs_proto.h"
 
+ifdef __TDARWIN
+#include <netinet/in.h>
+#endif  /* END __TDARWIN */
+
 /* External Functions Called: */
 
 extern int   send_job A_((job *,pbs_net_t,int,int,void (*x)(),struct batch_request *));

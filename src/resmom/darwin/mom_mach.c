@@ -186,7 +186,9 @@ extern char	*nullproc	A_((struct rm_attribute *attrib));
 
 #ifdef __TDARWIN_8
 int		get_tinfo_by_pid  A_((struct task_basic_info *t_info, unsigned int pid));
-#endif
+#else /* __TDARWIN_8 */
+int		bs_cmp		A_((struct session *key, struct kinfo_proc *member));
+#endif /* __TDARWIN_8 */
 
 struct	config	dependent_config[] = {
 	{ "resi",	{resi} },
@@ -586,7 +588,7 @@ static unsigned long resi_sum(
 
 #ifdef __TDARWIN_8
   struct task_basic_info t_info;	
-  unsigned int pid;	
+  unsigned int pid;
 #endif /* __TDARWIN_8 */
 
   for (i = 0;i < nproc;i++) 
@@ -603,13 +605,15 @@ static unsigned long resi_sum(
       continue;
 
     memsize += ctob(t_info.resident_size);	
-#else /* __TDARWIN_8 */
-    memsize += ctob(pp->kp_eproc.e_vm.vm_rssize);
-#endif /* __TDARWIN_8 */
 
     DBPRT(("%s: pid=%d ses=%d mem=%d totmem=%d\n", 
+     id,pp->kp_proc.p_pid,sess_tbl[i],t_info.resident_size,memsize))
+#else /* __TDARWIN_8 */
+    memsize += ctob(pp->kp_eproc.e_vm.vm_rssize);
+
+    DBPRT(("%s: pid=%d ses=%d mem=%d totmem=%d\n",
       id,pp->kp_proc.p_pid,sess_tbl[i],pp->kp_eproc.e_vm.vm_rssize,memsize))
-    }  /* END for (i) */
+#endif /* __TDARWIN_8 */
 
   return(memsize);
   }
@@ -914,19 +918,25 @@ int mom_open_poll()
 
 
 
-int
-qs_cmp(a, b)
-    struct	kinfo_proc	*a;
-    struct	kinfo_proc	*b;
-{
-	return((int)a->kp_eproc.e_paddr - (int)b->kp_eproc.e_paddr);
-}
+int qs_cmp(
+
+  struct kinfo_proc *a,
+  struct kinfo_proc *b)
+
+  {
+  return((int)a->kp_eproc.e_paddr - (int)b->kp_eproc.e_paddr);
+  }
 
 
 
-/* removed 5/22/05 MAINE OSX 10.5 patch */
+/* removed 5/22/05 MAINE OSX 10.5 patch 
+ * Only needs to be removed if __TDARWIN_8
+ * is defined
+ */
 
-/*
+
+#ifndef __TDARWIN_8
+
 int bs_cmp(
 
   struct session    *key,
@@ -935,7 +945,8 @@ int bs_cmp(
   {
   return((int)key->s_leader - (int)member->kp_eproc.e_paddr);
   }
-*/
+
+#endif /* __TDARWIN_8 */
 
 typedef struct kinfo_proc kinfo_proc;
 
@@ -969,35 +980,48 @@ static kinfo_proc *GetBSDProcessList(
     result = NULL;
     }
 
-    done = false;
-    do {
-        assert(result == NULL);
+  done = false;
 
-        /* Call sysctl with a NULL buffer. */
+  do 
+    {
+    assert(result == NULL);
 
-        length = 0;
-        err = sysctl( (int *) name, (sizeof(name) / sizeof(*name)) - 1,
-                      NULL, &length,
-                      NULL, 0);
-        if (err == -1) {
-            err = errno;
+    /* Call sysctl with a NULL buffer. */
+
+    length = 0;
+
+    err = sysctl(
+      (int *)name,
+      (sizeof(name)/sizeof(*name)) - 1,
+      NULL, 
+      &length,
+      NULL, 
+      0);
+
+    if (err == -1) 
+      {
+      err = errno;
+      }
+
+    /* Allocate an appropriately sized buffer based on the results of previous call */
+
+    if (err == 0) 
+      {
+      result = malloc(length);
+
+      /* fprintf(logfile, "aloc buffer %d\n", result); */
+
+      if (result == NULL) 
+        {
+        err = ENOMEM;
         }
+      }
 
-        // Allocate an appropriately sized buffer based on the results
-        // from the previous call.
+    /* Call sysctl again with the new buffer.  If we get an ENOMEM
+     * error, toss away our buffer and start again. */
 
-        if (err == 0) {
-            result = malloc(length);
-//            fprintf(logfile, "aloc buffer %d\n", result);
-            if (result == NULL) {
-                err = ENOMEM;
-            }
-        }
-
-        // Call sysctl again with the new buffer.  If we get an ENOMEM
-        // error, toss away our buffer and start again.
-
-        if (err == 0) {
+    if (err == 0) 
+      {
             err = sysctl( (int *) name, (sizeof(name) / sizeof(*name)) - 1,
                           result, &length,
                           NULL, 0);
@@ -2022,14 +2046,18 @@ static char *resi(
   struct rm_attribute *attrib)
 
   {
-	char			*id = "resi";
-	int			value;
+  char			*id = "resi";
+  int			value;
 
-	if (attrib == NULL) {
-		log_err(-1, id, no_parm);
-		rm_errno = RM_ERR_NOPARAM;
-		return NULL;
-	}
+  if (attrib == NULL) 
+    {
+    log_err(-1, id, no_parm);
+
+    rm_errno = RM_ERR_NOPARAM;
+   
+    return(NULL);
+    }
+
 	if ((value = atoi(attrib->a_value)) == 0) {
 		sprintf(log_buffer, "bad param: %s", attrib->a_value);
 		log_err(-1, id, log_buffer);
@@ -2042,15 +2070,27 @@ static char *resi(
 		return NULL;
 	}
 
-	if (strcmp(attrib->a_qualifier, "session") == 0)
-		return (resi_job((pid_t)value));
-	else if (strcmp(attrib->a_qualifier, "proc") == 0)
-		return (resi_proc((pid_t)value));
-	else {
-		rm_errno = RM_ERR_BADPARAM;
-		return NULL;
-	}
-}
+  if (!strcmp(attrib->a_qualifier,"session"))
+    {
+    return(resi_job((pid_t)value));
+    }
+  else if (!strcmp(attrib->a_qualifier,"proc"))
+    {
+    return(resi_proc((pid_t)value));
+    }
+
+  /* FAILURE */
+
+  rm_errno = RM_ERR_BADPARAM;
+
+  return(NULL);
+  }
+
+  }
+
+
+
+
 
 char	*
 sessions(attrib)
