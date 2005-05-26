@@ -107,7 +107,7 @@
 #include "net_connect.h"
 #include "pbs_proto.h"
 
-ifdef __TDARWIN
+#ifdef __TDARWIN
 #include <netinet/in.h>
 #endif  /* END __TDARWIN */
 
