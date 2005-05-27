@@ -808,25 +808,31 @@ void effective_node_delete(
  *			      time later through the ping_nodes mechanism
 */
 
-void	setup_notification ()
-{
-	int	i;
-	for (i=0; i<svr_totnodes; i++) {
-	     if (pbsndlist[i]->nd_state & INUSE_DELETED)
-		 continue;
-	     else
-		 pbsndlist[i]->nd_state |= INUSE_NEEDS_HELLO_PING;
-	}
-}
+void setup_notification()
+
+  {
+  int i;
+
+  for (i = 0;i < svr_totnodes;i++) 
+    {
+    if (pbsndlist[i]->nd_state & INUSE_DELETED)
+      continue;
+
+    pbsndlist[i]->nd_state |= INUSE_NEEDS_HELLO_PING;
+    }
+
+  return;
+  }
+
 
 
 
 static int process_host_name_part(
 
   char	  *objname,	/* node to be's name */ 
-  u_long **pul,		/*0 terminated host adrs array*/
-  char	 **pname,	/*node name w/o any :ts       */
-  int	  *ntype)	/*node type; time-shared, not */
+  u_long **pul,		/* 0 terminated host addrs array */
+  char	 **pname,	/* node name w/o any :ts         */
+  int	  *ntype)	/* node type; time-shared, not   */
 
   {
   struct hostent *hp;
@@ -850,15 +856,17 @@ static int process_host_name_part(
 
   *ntype = NTYPE_CLUSTER;
 
-  if (len >= 3 && !strcmp(&phostname[len-3],":ts")) 
+  if ((len >= 3) && !strcmp(&phostname[len - 3],":ts")) 
     {
-    phostname[len-3] = '\0';
+    phostname[len - 3] = '\0';
     *ntype = NTYPE_TIMESHARED;
     }
 
   if ((hp = gethostbyname(phostname)) == NULL) 
     {
-    sprintf(log_buffer,"host %s not found",objname);
+    sprintf(log_buffer,"host %s not found",
+      objname);
+
     free(phostname);
 
     return(PBSE_UNKNODE);

@@ -1,6 +1,6 @@
 1.2.0p4
 
-  extended job prolog to include jobname, resouce, queue, and account info (MAINE)
+  extended job prolog to include jobname, resource, queue, and account info (MAINE)
   added support for Darwin 10.4 (MAINE)
   fixed suspend/resume for MPI jobs (NORWAY)
   added support for epilog.precancel to enable local job cancellation handling
@@ -11,6 +11,7 @@
   added ALLOWCOMPUTEHOSTSUBMIT option to torque.cfg
   fixed dyanmic pbs_server loglevel support
   added mom-server rpp socket diagnostics
+  added support for multi-homed hosts w/SERVERHOST parameter in torque.cfg
  
 1.2.0p3
 
