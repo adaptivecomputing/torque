@@ -625,6 +625,7 @@ char dir_prefix[MAX_QSUB_PREFIX_LEN+1];
 char path_out[MAXPATHLEN+1];
 char destination[PBS_MAXDEST];
 static char server_out[PBS_MAXSERVERNAME+PBS_MAXPORTNUM+2];
+char server_host[PBS_MAXHOSTNAME + 1];
 
 /* state booleans for protecting already-set options */
 int a_opt = FALSE;
@@ -754,9 +755,8 @@ int set_job_env(
   char **evp;
   char *job_env;
   char *s, *c, *env, l;
-  char host[PBS_MAXHOSTNAME + 1];
-  int len;
-  int rc;
+  int   len;
+  int   rc;
   char *getcwd();
 
   /* Calculate how big to make the variable string. */
@@ -881,18 +881,18 @@ int set_job_env(
 
   c = getenv("TZ");
 
-  if ( c != NULL ) 
+  if (c != NULL) 
     {
     strcat(job_env,",PBS_O_TZ=");
     strcat(job_env,c);
     }
 
-  if ((rc = gethostname(host,PBS_MAXHOSTNAME + 1)) == 0) 
+  if ((server_host[0] != '\0') || ((rc = gethostname(server_host,PBS_MAXHOSTNAME + 1)) == 0))
     {
-    if ((rc = get_fullhostname(host,host,PBS_MAXHOSTNAME)) == 0) 
+    if ((rc = get_fullhostname(server_host,server_host,PBS_MAXHOSTNAME)) == 0) 
       {
       strcat(job_env,",PBS_O_HOST=");
-      strcat(job_env,host);
+      strcat(job_env,server_host);
       }
     }
 
@@ -3069,6 +3069,7 @@ int main(
   /* check TORQUE config settings */
 
   strcpy(PBS_Filter,DefaultFilterPath);
+  server_host[0] = '\0';
 
   if (load_config(config_buf,sizeof(config_buf)) == 0)
     {
@@ -3080,6 +3081,13 @@ int main(
     if ((param_val = get_param("SUBMITFILTER",config_buf)) != NULL)
       {
       strncpy(PBS_Filter,param_val,sizeof(PBS_Filter));
+      PBS_Filter[sizeof(PBS_Filter) - 1] = '\0';
+      }
+
+    if ((param_val = get_param("SERVERHOST",config_buf)) != NULL)
+      {
+      strncpy(server_host,param_val,sizeof(PBS_Filter));
+      server_host[sizeof(server_host) - 1] = '\0';
       }
     }
 

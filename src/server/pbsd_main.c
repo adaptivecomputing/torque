@@ -458,7 +458,7 @@ int main(
   long  *state;
   time_t waittime;
   time_t last_jobstat_time;
-  int when;
+  int    when;
 
   char   Buffer[65536];
 
@@ -504,33 +504,7 @@ int main(
 
   /* find out who we are (hostname) */
 
-  if ((gethostname(server_host, PBS_MAXHOSTNAME) == -1) ||
-      (get_fullhostname(server_host,server_host,PBS_MAXHOSTNAME) == -1)) 
-    {
-    log_err(-1,"pbsd_main","Unable to get my host name");
-
-    return(-1);
-    }
-
-  /* initialize service port numbers for self, Scheduler, and MOM */
-
-  pbs_server_port_dis = get_svrport(PBS_BATCH_SERVICE_NAME,"tcp", 
-    PBS_BATCH_SERVICE_PORT_DIS);
-
-  pbs_scheduler_port = get_svrport(PBS_SCHEDULER_SERVICE_NAME,"tcp",
-    PBS_SCHEDULER_SERVICE_PORT);
-
-  pbs_mom_port = get_svrport(PBS_MOM_SERVICE_NAME,"tcp",
-    PBS_MOM_SERVICE_PORT);
-
-  pbs_rm_port = get_svrport(PBS_MANAGER_SERVICE_NAME,"tcp",
-    PBS_MANAGER_SERVICE_PORT);
-
-  strcpy(server_name,server_host);	/* by default server = host */
-
-  pbs_server_addr    = get_hostaddr(server_host);
-  pbs_mom_addr 	     = pbs_server_addr;   /* assume on same host */
-  pbs_scheduler_addr = pbs_server_addr;   /* assume on same host */
+  server_host[0] = '\0';
 
   /* load/process config file first then override values with command line parameters */
 
@@ -561,7 +535,8 @@ int main(
         while (isspace(*tptr) && (*tptr != '\0'))
           tptr++;
 
-        /* NYI */
+        sscanf(tptr,"%64s",
+          server_host);
         }
       else if ((tptr = strstr(ptr,"ALLOWCOMPUTEHOSTSUBMIT")) != NULL)
         {
@@ -570,7 +545,7 @@ int main(
         while (isspace(*tptr) && (*tptr != '\0'))
           tptr++;
 
-        if (!strncasecmp(tptr,"true",strlen("true")) || 
+        if (!strncasecmp(tptr,"true",strlen("true")) ||
             !strncasecmp(tptr,"on",strlen("on")) ||
             !strncasecmp(tptr,"yes",strlen("yes")) ||
             (*tptr = '1'))
@@ -582,6 +557,34 @@ int main(
       ptr = strtok(NULL,"\n");
       }  /* END while (ptr != NULL) */
     }    /* END if (TLoadConfig(Buffer,sizeof(Buffer)) == 0) */
+
+  if (((server_host[0] == '\0') && (gethostname(server_host,PBS_MAXHOSTNAME) == -1)) ||
+       (get_fullhostname(server_host,server_host,PBS_MAXHOSTNAME) == -1)) 
+    {
+    log_err(-1,"pbsd_main","Unable to get my host name");
+
+    return(-1);
+    }
+
+  /* initialize service port numbers for self, Scheduler, and MOM */
+
+  pbs_server_port_dis = get_svrport(PBS_BATCH_SERVICE_NAME,"tcp", 
+    PBS_BATCH_SERVICE_PORT_DIS);
+
+  pbs_scheduler_port = get_svrport(PBS_SCHEDULER_SERVICE_NAME,"tcp",
+    PBS_SCHEDULER_SERVICE_PORT);
+
+  pbs_mom_port = get_svrport(PBS_MOM_SERVICE_NAME,"tcp",
+    PBS_MOM_SERVICE_PORT);
+
+  pbs_rm_port = get_svrport(PBS_MANAGER_SERVICE_NAME,"tcp",
+    PBS_MANAGER_SERVICE_PORT);
+
+  strcpy(server_name,server_host);	/* by default server = host */
+
+  pbs_server_addr    = get_hostaddr(server_host);
+  pbs_mom_addr 	     = pbs_server_addr;   /* assume on same host */
+  pbs_scheduler_addr = pbs_server_addr;   /* assume on same host */
 
   /* parse the parameters from the command line */
 
