@@ -766,7 +766,11 @@ int send_job(
             NULL)) == NULL)
         {
         if (pbs_errno == PBSE_EXPIRED)
+          {
+          /* queue job timeout based on pbs_tcp_timeout */
+
           Timeout = TRUE;
+          }
 
         if ((pbs_errno == PBSE_JOBEXIST) && (move_type == MOVE_TYPE_Exec)) 
           {
@@ -857,11 +861,20 @@ int send_job(
 
       /* if failure occurs, pbs_mom should purge job and pbs_server should set job state to idle w/error msg */
 
-      /* NYI */
+      if (errno == EINPROGRESS)
+        {
+        /* request is still being processed */
 
-      /* FAILURE */
+        Timeout = TRUE;
+        }
+      else
+        {
+        /* NYI */
 
-      exit(1);
+        /* FAILURE */
+
+        exit(1);
+        }
       }
 
     svr_disconnect(con);
@@ -876,6 +889,9 @@ int send_job(
 
   if (Timeout == TRUE)
     {
+    /* 10 indicates that job migrate timed out, server will mark node down and abort the job */
+    /* see post_sendmom() */
+
     exit(10);
     }
 
@@ -928,47 +944,68 @@ static void net_move_die(
  * Returns: 2 on success (child started, see send_job()), -1 on error
  */
 
-int net_move(jobp, req)
- job	*jobp;
- struct batch_request	*req;
-{
-	void		*data;
-	char		*destination = jobp->ji_qs.ji_destin;
-	pbs_net_t	 hostaddr;
-	char		*hostname;
-	int		 move_type;
-	unsigned int	 port = pbs_server_port_dis;
-	void	       (*post_func) A_((struct work_task *));
-	char		*toserver;
-	char		*id = "net_move";
+int net_move(
 
-	/* Determine to whom are we sending the job */
+  job                  *jobp,
+  struct batch_request *req)
 
-	if ((toserver = strchr(destination, '@')) == NULL) {
-		sprintf(log_buffer,
-			"no server specified in %s\n", destination);
-		log_err(-1, id, log_buffer);
-		return (-1);
-	}
+  {
+  void		*data;
+  char		*destination = jobp->ji_qs.ji_destin;
+  pbs_net_t	 hostaddr;
+  char		*hostname;
+  int		 move_type;
+  unsigned int	 port = pbs_server_port_dis;
+  void	       (*post_func) A_((struct work_task *));
+  char		*toserver;
+  char		*id = "net_move";
 
-	toserver++;		/* point to server name */
-	hostname = parse_servername(toserver, &port);
-	hostaddr = get_hostaddr(hostname);
-	if (req) {
-		/* note, in this case, req is the orginal Move Request */
-		move_type = MOVE_TYPE_Move;
-		post_func = post_movejob;
-		data      = req;
-	} else {
-		/* note, in this case req is NULL */
-		move_type = MOVE_TYPE_Route;
-		post_func = post_routejob;
-		data      = 0;
-	}
+  /* Determine to whom are we sending the job */
 
-	(void)svr_setjobstate(jobp, JOB_STATE_TRANSIT, JOB_SUBSTATE_TRNOUT);
-	return ( send_job(jobp, hostaddr, port, move_type, post_func, data) );
-}
+  if ((toserver = strchr(destination,'@')) == NULL) 
+    {
+    sprintf(log_buffer,"no server specified in %s\n", 
+      destination);
+
+    log_err(-1,id,log_buffer);
+
+    return(-1);
+    }
+
+  toserver++;		/* point to server name */
+
+  hostname = parse_servername(toserver,&port);
+  hostaddr = get_hostaddr(hostname);
+
+  if (req) 
+    {
+    /* note, in this case, req is the orginal Move Request */
+
+    move_type = MOVE_TYPE_Move;
+    post_func = post_movejob;
+
+    data      = req;
+    } 
+  else 
+    {
+    /* note, in this case req is NULL */
+
+    move_type = MOVE_TYPE_Route;
+    post_func = post_routejob;
+
+    data      = 0;
+    }
+
+  svr_setjobstate(jobp, JOB_STATE_TRANSIT, JOB_SUBSTATE_TRNOUT);
+
+  return(send_job(
+    jobp, 
+    hostaddr, 
+    port, 
+    move_type, 
+    post_func, 
+    data));
+  }
 
 
 
@@ -1001,7 +1038,9 @@ static int should_retry_route(
     case PBSE_QUNOENB:
     case PBSE_NOCONNECTS:
 
-      return (1);
+      /* retry destination */
+
+      return(1);
 
       /*NOTREACHED*/
 

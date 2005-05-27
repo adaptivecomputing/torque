@@ -752,7 +752,7 @@ static void post_sendmom(
       log_buffer);
     }
 
-  switch(r) 
+  switch (r) 
     {
     case 0:  /* send to MOM went ok */
 

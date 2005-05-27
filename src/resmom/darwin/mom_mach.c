@@ -614,9 +614,10 @@ static unsigned long resi_sum(
     DBPRT(("%s: pid=%d ses=%d mem=%d totmem=%d\n",
       id,pp->kp_proc.p_pid,sess_tbl[i],pp->kp_eproc.e_vm.vm_rssize,memsize))
 #endif /* __TDARWIN_8 */
+    }  /* END for (i) */
 
   return(memsize);
-  }
+  }  /* END resi_sum() */
 
 
 
@@ -2046,29 +2047,38 @@ static char *resi(
   struct rm_attribute *attrib)
 
   {
-  char			*id = "resi";
-  int			value;
+  char *id = "resi";
+  int   value;
 
   if (attrib == NULL) 
     {
-    log_err(-1, id, no_parm);
+    log_err(-1,id,no_parm);
 
     rm_errno = RM_ERR_NOPARAM;
    
     return(NULL);
     }
 
-	if ((value = atoi(attrib->a_value)) == 0) {
-		sprintf(log_buffer, "bad param: %s", attrib->a_value);
-		log_err(-1, id, log_buffer);
-		rm_errno = RM_ERR_BADPARAM;
-		return NULL;
-	}
-	if (momgetattr(NULL)) {
-		log_err(-1, id, extra_parm);
-		rm_errno = RM_ERR_BADPARAM;
-		return NULL;
-	}
+  if ((value = atoi(attrib->a_value)) == 0) 
+    {
+    sprintf(log_buffer,"bad param: %s", 
+      attrib->a_value);
+
+    log_err(-1,id,log_buffer);
+
+    rm_errno = RM_ERR_BADPARAM;
+
+    return(NULL);
+    }
+
+  if (momgetattr(NULL)) 
+    {
+    log_err(-1,id,extra_parm);
+
+    rm_errno = RM_ERR_BADPARAM;
+
+    return(NULL);
+    }
 
   if (!strcmp(attrib->a_qualifier,"session"))
     {
@@ -2084,23 +2094,22 @@ static char *resi(
   rm_errno = RM_ERR_BADPARAM;
 
   return(NULL);
-  }
-
-  }
+  }  /* END resi() */
 
 
 
 
 
-char	*
-sessions(attrib)
-struct	rm_attribute	*attrib;
-{
-	char			*id = "sessions";
-	int			i, j;
-	char			*fmt;
-	int			njids = 0;
-	pid_t			*jids, jobid;
+char *sessions(
+
+  struct rm_attribute *attrib)
+
+  {
+  char			*id = "sessions";
+  int			i, j;
+  char			*fmt;
+  int			njids = 0;
+  pid_t			*jids, jobid;
 
 	if (attrib) {
 		log_err(-1, id, extra_parm);
@@ -2143,14 +2152,21 @@ struct	rm_attribute	*attrib;
 		sprintf(fmt, " %d", (int)jids[j]);
 		fmt += strlen(fmt);
 	}
-	free(jids);
-	return ret_string;
-}
 
-char	*
-nsessions(attrib)
-struct	rm_attribute	*attrib;
-{
+  free(jids);
+
+  return(ret_string);
+  }
+
+
+
+
+
+char *nsessions(
+
+  struct rm_attribute *attrib)
+
+  {
 	char	*result, *ch;
 	int	num = 0;
 

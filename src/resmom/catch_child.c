@@ -808,7 +808,7 @@ void scan_for_exiting()
 
 
 
-
+/* is sock associated with a peer MOM or with pbs_server? */
 
 /*
  * obit_reply - read and process the reply from the server acknowledging
@@ -915,7 +915,7 @@ static void obit_reply(
           {
           char tmpLine[1024];
 
-          switch(preq->rq_reply.brp_code)
+          switch (preq->rq_reply.brp_code)
             {
             case PBSE_BADSTATE:
 
