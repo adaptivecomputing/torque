@@ -1,7 +1,7 @@
 1.2.0p4
 
   extended job prolog to include jobname, resource, queue, and account info (MAINE)
-  added support for Darwin 10.4 (MAINE)
+  added support for Darwin 8/OS X 10.4 (MAINE)
   fixed suspend/resume for MPI jobs (NORWAY)
   added support for epilog.precancel to enable local job cancellation handling
   fixed build for case insensitive filesystems
