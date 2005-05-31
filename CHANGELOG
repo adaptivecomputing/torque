@@ -12,6 +12,7 @@
   fixed dyanmic pbs_server loglevel support
   added mom-server rpp socket diagnostics
   added support for multi-homed hosts w/SERVERHOST parameter in torque.cfg
+  added support for static linking w/PBSBINDIR
  
 1.2.0p3
 

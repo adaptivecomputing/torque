@@ -230,7 +230,7 @@ static char *PBS_get_server(
 
 static int PBSD_authenticate(
 
-  int psock)
+  int psock)  /* I */
 
   {
   char   cmd[PBS_MAXSERVERNAME + 80];
@@ -238,14 +238,29 @@ static int PBSD_authenticate(
   int    i;
   int    j;
   FILE	*piff;
+  char  *ptr;
 
   /* use pbs_iff to authenticate me */
 
-  sprintf(cmd,"%s %s %u %d", 
-    IFF_PATH, 
-    server_name, 
-    server_port,
-    psock);
+  ptr = getenv("PBSBINDIR");
+
+  if (ptr == NULL)
+    {
+    sprintf(cmd,"%s %s %u %d", 
+      IFF_PATH, 
+      server_name, 
+      server_port,
+      psock);
+    }
+  else
+    {
+    sprintf(cmd,"%s/%s %s %u %d",
+      ptr,
+      "pbs_iff",
+      server_name,
+      server_port,
+      psock);
+    }
 
   piff = popen(cmd,"r");
 
