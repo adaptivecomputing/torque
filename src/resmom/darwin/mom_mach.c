@@ -171,10 +171,12 @@ extern	int			rm_errno;
 extern	unsigned	int	reqnum;
 extern	double	cputfactor;
 extern	double	wallfactor;
+extern  int     LOGLEVEL;
 
 /*
 ** local functions
 */
+
 static char	*resi		A_((struct rm_attribute *attrib));
 static char	*physmem	A_((struct rm_attribute *attrib));
 static char	*walltime	A_((struct rm_attribute *attrib));
