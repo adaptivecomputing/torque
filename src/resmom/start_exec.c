@@ -1901,9 +1901,16 @@ int TMomFinalizeChild(
         pjob, 
         PE_IO_TYPE_ASIS)) != 0) 
       {
-      fprintf(stderr,"cannot run prolog: %s (rc: %d)\n", 
-        log_buffer,
-        j);
+      if (LOGLEVEL >= 2)
+        {
+        char tmpLine[1024];
+
+        snprintf(tmpLine,"cannot run prolog: %s (rc: %d)\n",
+          log_buffer,
+          j);
+
+        log_err(-1,id,tmpLine);
+        }
 
       if (j == 1)
         {

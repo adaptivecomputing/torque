@@ -1453,20 +1453,27 @@ int mom_set_use(pjob)
 	return (PBSE_NONE);
 }
 
+
+
+
 /*
  *	Kill a job task.
  *	Call with the job and a signal number.
  */
-int kill_task(ptask, sig)
-    task	*ptask;
-    int		sig;
-{
-	char	*id = "kill_task";
-	int	ct = 0;
-	int	i, err;
-	int	sesid;
 
-	DBPRT(("%s entered\n", id))
+int kill_task(
+
+  task *ptask,
+  int   sig)
+
+  {
+  char	*id = "kill_task";
+  int	ct = 0;
+  int	i, err;
+  int	sesid;
+
+  DBPRT(("%s entered\n",
+    id))
 
 	sesid = ptask->ti_qs.ti_sid;
 	if (sesid <= 1)
@@ -1502,13 +1509,18 @@ int kill_task(ptask, sig)
 int mom_close_poll()
 
   {
-  DBPRT(("mom_close_poll entered\n"))
+  char *id = "mom_close_poll";
+
+  if (LOGLEVEL >= 4)
+    {
+    log_record(PBSEVENT_SYSTEM,0,id,"entered");
+    }
 
   if (kd != NULL) 
     {
     if (kvm_close(kd) != 0) 
       {
-      log_err(errno, "mom_close_poll", "kvm_close");
+      log_err(errno,id,"kvm_close");
 
       return(PBSE_SYSTEM);
       }
