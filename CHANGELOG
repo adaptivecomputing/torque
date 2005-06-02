@@ -13,6 +13,7 @@
   added mom-server rpp socket diagnostics
   added support for multi-homed hosts w/SERVERHOST parameter in torque.cfg
   added support for static linking w/PBSBINDIR
+  added availmem/totmem support to Darwin systems
  
 1.2.0p3
 

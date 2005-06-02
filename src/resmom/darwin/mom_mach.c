@@ -193,14 +193,15 @@ int		bs_cmp		A_((struct session *key, struct kinfo_proc *member));
 #endif /* __TDARWIN_8 */
 
 struct	config	dependent_config[] = {
-	{ "resi",	{resi} },
-	{ "physmem",	{physmem} },
-	{ "ncpus",	{ncpus} },
-	{ "loadave",	{loadave} },
-	{ "walltime",	{walltime} },
-	{ "quota",	{quota} },
-	{ NULL,		{nullproc} },
-};
+  { "resi",	{resi} },
+  { "physmem",	{physmem} },
+  { "ncpus",	{ncpus} },
+  { "loadave",	{loadave} },
+  { "walltime",	{walltime} },
+  { "quota",	{quota} },
+  { "totmem",	{totmem} },
+  { "availmem", {availmem} },
+  { NULL,	{nullproc} } };
 
 struct nlist nl[] = {
 	{ "_anoninfo" },	/* 0 */
@@ -2297,8 +2298,171 @@ struct	rm_attribute	*attrib;
 
 	sprintf(ret_string, "%d", nuids);
 	free(uids);
-	return ret_string;
-}
+
+  return(ret_string);
+  }
+
+
+
+
+static char *totmem( 
+
+  struct rm_attribute *attrib)
+
+  {
+  char             *id = "totmem";
+  uint64_t          mem = 0;
+  int               mib[2];
+  size_t            len;
+  struct xsw_usage  swap;
+  extern int        errno;
+
+  if (attrib)
+    {
+    log_err(-1,id,extra_parm);
+
+    rm_errno = RM_ERR_BADPARAM;
+
+    return(NULL);
+    }
+
+  /* Get Physical Memory Size
+   * We have to be careful as hw.memsize is not
+   * defined on pre 10.3
+   */
+
+  len = sizeof( uint64_t );
+
+#ifdef HW_MEMSIZE
+  if (sysctlbyname("hw.memsize",&mem,&len,NULL,0) != 0)
+    {
+    sprintf(log_buffer,"sysctl failed with errno %d", 
+      errno);
+
+    log_err(-1,id,log_buffer);
+
+    return(NULL);
+    }
+#else /* HW_MEMSIZE */
+  if (sysctlbyname("hw.physmem",&mem,&len,NULL,0) != 0)
+    {
+    sprintf(log_buffer,"sysctl failed with errno %d", 
+      errno);
+
+    log_err(-1,id,log_buffer);
+
+    return(NULL);
+    }
+#endif /* HW_MEMSIZE */
+
+  /* Get Swap Size */
+
+  mib[0] = CTL_VM;
+  mib[1] = VM_SWAPUSAGE;
+
+  len = sizeof(struct xsw_usage);
+
+  if (sysctl(mib,2,&swap,&len,NULL,0) != 0)
+    {
+    sprintf(log_buffer,"sysctl failed with errno %d", 
+      errno);
+
+    log_err(-1,id,"log_buffer");
+
+    return(NULL);
+    }
+
+  mem += swap.xsu_total;
+
+  if (LOGLEVEL >= 6)
+    {
+    sprintf(log_buffer,"%s: total mem=%lu\n", 
+      id, 
+      (unsigned long) mem);
+
+    log_record(PBSEVENT_SYSTEM,0,id,log_buffer);
+    }
+
+  sprintf(ret_string,"%lukb", 
+    (unsigned long)(mem / 1024.0 )); /* KB */
+
+  return(ret_string);
+  }  /* END totmem() */
+
+
+
+static char *availmem(
+ 
+  struct rm_attribute *attrib)
+
+  {
+  char *id = "availmem";
+  struct vm_statistics stat;
+  int              count = HOST_VM_INFO_COUNT;
+  uint64_t         mem = 0;
+  int              mib[2];
+  size_t           len;
+  struct xsw_usage swap;
+
+  extern int errno;
+
+  if (attrib != NULL)
+    {
+    log_err(-1,id,extra_parm);
+
+    rm_errno = RM_ERR_BADPARAM;
+
+    return(NULL);
+    }
+
+  /* Get Swap Info */
+
+  mib[0] = CTL_VM;
+  mib[1] = VM_SWAPUSAGE;
+
+  len = sizeof(struct xsw_usage);
+
+  if (sysctl(mib,2,&swap,&len,NULL,0) != 0)
+    {
+    sprintf(log_buffer,"sysctl failed with errno %d",
+      errno);
+
+    log_err(-1,id,"log_buffer");
+
+    return(NULL);
+    }
+	
+  mem += swap.xsu_avail;
+	
+  if (host_statistics(mach_host_self(),HOST_VM_INFO,(host_info_t)&stat,&count) != KERN_SUCCESS)
+    {
+    log_err(-1,id,"host_statistics failed");
+
+    rm_errno = RM_ERR_SYSTEM;
+
+    return(NULL);
+    }
+
+  /* assume 4k blocks */
+
+  mem += (uint64_t)stat.free_count * 4096;
+
+  if (LOGLEVEL >= 6)
+    {
+    sprintf(log_buffer,"%s: free mem=%lu\n", 
+      id, 
+      (unsigned long)mem);
+ 
+    log_record(PBSEVENT_SYSTEM,0,id,log_buffer);
+    }
+
+  sprintf(ret_string,"%lukb", 
+    (unsigned long)(mem / 1024)); /* KB */
+
+  return(ret_string);
+  }  /* END availmem() */
+
+
 
 
 
