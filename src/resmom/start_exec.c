@@ -1905,7 +1905,7 @@ int TMomFinalizeChild(
         {
         char tmpLine[1024];
 
-        snprintf(tmpLine,"cannot run prolog: %s (rc: %d)\n",
+        snprintf(tmpLine,sizeof(tmpLine),"cannot run prolog: %s (rc: %d)\n",
           log_buffer,
           j);
 

@@ -177,14 +177,16 @@ extern  int     LOGLEVEL;
 ** local functions
 */
 
-static char	*resi		A_((struct rm_attribute *attrib));
-static char	*physmem	A_((struct rm_attribute *attrib));
-static char	*walltime	A_((struct rm_attribute *attrib));
-static char	*quota		A_((struct rm_attribute *attrib));
-static char	*ncpus		A_((struct rm_attribute *attrib));
+static char *resi	A_((struct rm_attribute *attrib));
+static char *physmem	A_((struct rm_attribute *attrib));
+static char *walltime	A_((struct rm_attribute *attrib));
+static char *quota	A_((struct rm_attribute *attrib));
+static char *ncpus	A_((struct rm_attribute *attrib));
+static char *totmem	A_((struct rm_attribute *attrib));
+static char *availmem	A_((struct rm_attribute *attrib));
 
-extern char	*loadave	A_((struct rm_attribute *attrib));
-extern char	*nullproc	A_((struct rm_attribute *attrib));
+extern char *loadave	A_((struct rm_attribute *attrib));
+extern char *nullproc	A_((struct rm_attribute *attrib));
 
 #ifdef __TDARWIN_8
 int		get_tinfo_by_pid  A_((struct task_basic_info *t_info, unsigned int pid));
@@ -2256,14 +2258,18 @@ struct	rm_attribute	*attrib;
 	return ret_string;
 }
 
-char	*
-nusers(attrib)
-struct	rm_attribute	*attrib;
-{
-	char			*id = "nusers";
-	int			i, j;
-	int			nuids = 0;
-	uid_t			*uids, uid;
+
+
+
+char *nusers(
+
+  struct rm_attribute *attrib)
+
+  {
+  char			*id = "nusers";
+  int			i, j;
+  int			nuids = 0;
+  uid_t			*uids, uid;
 
 	if (attrib) {
 		log_err(-1, id, extra_parm);
@@ -2314,7 +2320,11 @@ static char *totmem(
   uint64_t          mem = 0;
   int               mib[2];
   size_t            len;
+
+#ifdef __TDARWIN_8
   struct xsw_usage  swap;
+#endif /* __TDARWIN_8 */
+
   extern int        errno;
 
   if (attrib)
@@ -2357,6 +2367,7 @@ static char *totmem(
 
   /* Get Swap Size */
 
+#ifdef __TDARWIN_8
   mib[0] = CTL_VM;
   mib[1] = VM_SWAPUSAGE;
 
@@ -2373,6 +2384,9 @@ static char *totmem(
     }
 
   mem += swap.xsu_total;
+#else /* __TDARWIN_8 */
+  /* need to load swap info (not implemented) */
+#endif /* __TDARWIN_8 */
 
   if (LOGLEVEL >= 6)
     {
@@ -2402,8 +2416,9 @@ static char *availmem(
   uint64_t         mem = 0;
   int              mib[2];
   size_t           len;
+#ifdef __TDARWIN_8
   struct xsw_usage swap;
-
+#endif /* __TDARWIN_8 */
   extern int errno;
 
   if (attrib != NULL)
@@ -2417,6 +2432,7 @@ static char *availmem(
 
   /* Get Swap Info */
 
+#ifdef __TDARWIN_8
   mib[0] = CTL_VM;
   mib[1] = VM_SWAPUSAGE;
 
@@ -2433,7 +2449,10 @@ static char *availmem(
     }
 	
   mem += swap.xsu_avail;
-	
+#else /* __TDARWIN_8 */
+  /* need to load swap info (not implemented) */
+#endif /* __TDARWIN_8 */
+
   if (host_statistics(mach_host_self(),HOST_VM_INFO,(host_info_t)&stat,&count) != KERN_SUCCESS)
     {
     log_err(-1,id,"host_statistics failed");
