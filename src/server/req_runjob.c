@@ -817,7 +817,7 @@ static void post_sendmom(
         PBSEVENT_JOB,
         PBS_EVENTCLASS_JOB,
         jobp->ji_qs.ji_jobid,
-        "unable to run job, MOM rejected");
+        "unable to run job, MOM rejected/timeout");
 
       free_nodes(jobp);
 
@@ -842,11 +842,14 @@ static void post_sendmom(
 
       /* send failed, requeue the job */
 
+      sprintf(log_buffer,"unable to run job, MOM rejected/rc=%d",
+        r);
+
       log_event(
         PBSEVENT_JOB, 
         PBS_EVENTCLASS_JOB,
         jobp->ji_qs.ji_jobid,
-        "unable to run job, MOM rejected");
+        log_buffer);
 
       free_nodes(jobp);
 
@@ -873,7 +876,7 @@ static void post_sendmom(
         }
 			
       break;
-    }  /* END switch(r) */
+    }  /* END switch (r) */
 
   return;
   }  /* END post_sendmom() */
