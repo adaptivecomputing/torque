@@ -113,6 +113,7 @@
 #include	<nlist.h>
 #include	<fstab.h>
 #include	<kvm.h>
+#include        <sys/socket.h>
 #include	<sys/types.h>
 #include	<sys/time.h>
 #include	<sys/param.h>
@@ -127,6 +128,8 @@
 #include	<sys/sysctl.h>
 #include	<sys/vmmeter.h>
 #include	<ufs/ufs/quota.h>
+#include	<net/if.h>
+#include	<ifaddrs.h>
 #include	<mach/vm_map.h>
 
 /*  additional header files required for darwin 8.0.0 */
@@ -184,7 +187,7 @@ static char *quota	A_((struct rm_attribute *attrib));
 static char *ncpus	A_((struct rm_attribute *attrib));
 static char *totmem	A_((struct rm_attribute *attrib));
 static char *availmem	A_((struct rm_attribute *attrib));
-
+static char *netload	A_((struct rm_attribute *attrib));
 extern char *loadave	A_((struct rm_attribute *attrib));
 extern char *nullproc	A_((struct rm_attribute *attrib));
 
@@ -203,6 +206,7 @@ struct	config	dependent_config[] = {
   { "quota",	{quota} },
   { "totmem",	{totmem} },
   { "availmem", {availmem} },
+  { "netload",	{netload} },
   { NULL,	{nullproc} } };
 
 struct nlist nl[] = {
@@ -2302,11 +2306,13 @@ char *nusers(
 			uids[nuids++] = uid;	/* so add it to list */
 	}
 
-	sprintf(ret_string, "%d", nuids);
-	free(uids);
+  sprintf(ret_string,"%d", 
+    nuids);
+
+  free(uids);
 
   return(ret_string);
-  }
+  }  /* END nusers() */
 
 
 
@@ -2321,13 +2327,13 @@ static char *totmem(
   int               mib[2];
   size_t            len;
 
-#ifdef __TDARWIN_8
+#ifdef VM_SWAPUSAGE
   struct xsw_usage  swap;
-#endif /* __TDARWIN_8 */
+#endif /* VM_SWAPUSAGE */
 
   extern int        errno;
 
-  if (attrib)
+  if (attrib != NULL)
     {
     log_err(-1,id,extra_parm);
 
@@ -2367,7 +2373,7 @@ static char *totmem(
 
   /* Get Swap Size */
 
-#ifdef __TDARWIN_8
+#ifdef VM_SWAPUSAGE
   mib[0] = CTL_VM;
   mib[1] = VM_SWAPUSAGE;
 
@@ -2384,9 +2390,11 @@ static char *totmem(
     }
 
   mem += swap.xsu_total;
-#else /* __TDARWIN_8 */
-  /* need to load swap info (not implemented) */
-#endif /* __TDARWIN_8 */
+#else /* VM_SWAPUSAGE */
+  /* need to load swap info from alternate source */
+
+  /* (not implemented) */
+#endif /* VM_SWAPUSAGE */
 
   if (LOGLEVEL >= 6)
     {
@@ -2416,9 +2424,9 @@ static char *availmem(
   uint64_t         mem = 0;
   int              mib[2];
   size_t           len;
-#ifdef __TDARWIN_8
+#ifdef VM_SWAPUSAGE
   struct xsw_usage swap;
-#endif /* __TDARWIN_8 */
+#endif /* VM_SWAPUSAGE */
   extern int errno;
 
   if (attrib != NULL)
@@ -2432,7 +2440,7 @@ static char *availmem(
 
   /* Get Swap Info */
 
-#ifdef __TDARWIN_8
+#ifdef VM_SWAPUSAGE
   mib[0] = CTL_VM;
   mib[1] = VM_SWAPUSAGE;
 
@@ -2449,9 +2457,11 @@ static char *availmem(
     }
 	
   mem += swap.xsu_avail;
-#else /* __TDARWIN_8 */
-  /* need to load swap info (not implemented) */
-#endif /* __TDARWIN_8 */
+#else /* VM_SWAPUSAGE */
+  /* need to load swap info */
+
+  /* (not implemented) */
+#endif /* VM_SWAPUSAGE */
 
   if (host_statistics(mach_host_self(),HOST_VM_INFO,(host_info_t)&stat,&count) != KERN_SUCCESS)
     {
@@ -2462,7 +2472,7 @@ static char *availmem(
     return(NULL);
     }
 
-  /* assume 4k blocks */
+  /* assume 4k blocks - NOTE: this should be looked up */
 
   mem += (uint64_t)stat.free_count * 4096;
 
@@ -2481,6 +2491,64 @@ static char *availmem(
   return(ret_string);
   }  /* END availmem() */
 
+
+
+
+/*
+ *  netload.  right now this just sums the number of bytes sent/recieved on an interface
+ *  this appears to be what netload in linux/res_mom.c does, but I think it would make
+ *  more sense to report bytes per second instead.
+ */
+
+static char *netload(
+
+  struct rm_attribute *attrib)
+
+  {
+  char *id = "netload";
+
+  struct ifaddrs *ifap, *ifa;
+  struct if_data *ifd;
+  unsigned long bytes = 0;
+
+  if (attrib != NULL)
+    {
+    log_err(-1,id,extra_parm);
+
+    rm_errno = RM_ERR_BADPARAM;
+
+    return(NULL);
+    }
+
+
+  if (getifaddrs(&ifap) < 0)
+    {
+    sprintf(log_buffer,"getifaddrs error");
+    log_record(PBSEVENT_SYSTEM,0,id,log_buffer);
+
+    return(NULL);
+    }
+ 
+  for (ifa = ifap; ifa != NULL; ifa = ifa->ifa_next)
+    {
+    if ((ifa->ifa_flags & IFF_UP) && !(ifa->ifa_flags & IFF_LOOPBACK))
+      {
+      if (ifa->ifa_addr->sa_family != AF_LINK)
+        continue;
+
+      ifd = (struct if_data *)ifa->ifa_data;
+      bytes += ifd->ifi_ibytes;
+      bytes += ifd->ifi_obytes;
+      }
+    }    /* END for (ifa) */
+
+  freeifaddrs(ifap);
+
+  sprintf(ret_string,"%lu", 
+    bytes);
+
+  return(ret_string);
+  }  /* END netload() */
 
 
 
