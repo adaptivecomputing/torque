@@ -723,11 +723,14 @@ static unsigned long cput_sum(
 
     if (LOGLEVEL >= 6)
       {
-      DBPRT(("%s: ses %d pid %d cputime %lu\n",
+      sprintf(log_buffer,"%s: session=%d pid=%d cputime=%lu (cputfactor=%lf)\n",
         id, 
         ps->session, 
         ps->pid, 
-        cputime));
+        cputime,
+        cputfactor);
+
+      log_record(PBSEVENT_SYSTEM,0,id,log_buffer);
       }
     }
 
