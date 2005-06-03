@@ -2930,6 +2930,7 @@ int start_checkpoint(
   struct batch_request *preq)	/* may be null */
 
   {
+  static char	id[] = "start_checkpoint";
   svrattrl *pal;
   pid_t     pid;
   int       rc;

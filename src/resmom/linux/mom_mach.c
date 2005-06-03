@@ -173,6 +173,7 @@ extern	struct	pbs_err_to_txt	pbs_err_to_txt[];
 extern	time_t			time_now;
 
 extern  int     LOGLEVEL;
+extern  char    CHECKPOINT_SCRIPT[1024];
 extern  char    PBSNodeMsgBuf[1024];
 
 /*
@@ -1821,6 +1822,11 @@ int mom_close_poll()
 int mom_does_chkpnt()
 
   {
+  if (CHECKPOINT_SCRIPT[0] != '\0')
+    {
+    return(1);
+    }
+
   return(0);
   }
 
@@ -1837,6 +1843,45 @@ int mach_checkpoint(
   int	 abort)
 
   {
+  /* if a checkpoint script is defined launch it */
+
+  if (CHECKPOINT_SCRIPT[0] != '\0')
+    {
+    int   pid,rc;
+    char *arg[5];
+    char  sid[20];
+
+    /* launch the script and return success */
+    pid = fork();
+    if (pid > 0)
+      {
+      /* parent: pid = child's pid */
+
+      /* NO-OP, but may need to waitpid() the child (NYI) */
+      }
+    else if (pid == 0)
+      {
+      /* child: execv the script */
+
+      sprintf(sid,"%ld",
+        ptask->ti_job->ji_wattr[(int)JOB_ATR_session_id].at_val.at_long);
+
+      arg[0] = CHECKPOINT_SCRIPT;
+      arg[1] = sid;
+      arg[2] = ptask->ti_job->ji_qs.ji_jobid;
+      arg[3] = ptask->ti_job->ji_wattr[(int)JOB_ATR_euser].at_val.at_str;
+      arg[4] = NULL;
+
+      execv(arg[0],arg);
+
+      /* NOTE: The right way to do this is to put the job into some sort
+       *       of waiting state before returning, and the monitor the
+       *       the child to see what it's exit status is.  We are delaying
+       *       the full implementation for now.  NYI
+       */
+      }
+    }
+
   return(-1);
   }
 
@@ -1854,6 +1899,8 @@ long mach_restart(ptask, file)
     task	*ptask;
     char	*file;
 {
+  /* NOTE: Currently, we expect the application to handle this itself */
+
 	return (-1);
 }
 

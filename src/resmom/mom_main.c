@@ -260,6 +260,7 @@ struct	config_list {
 
 int                     LOGLEVEL = 0;  /* valid values (0 - 10) */
 int                     DEBUGMODE = 0;
+char                    CHECKPOINT_SCRIPT[1024];
 long                    TJobStartBlockTime = 5; /* seconds to wait for job to launch before backgrounding */
 long                    TJobStartTimeout = 300; /* seconds to wait for job to launch before purging */
 
@@ -1654,6 +1655,35 @@ static unsigned long setmaxload(
 
 
 
+static unsigned long setcheckpointscript(
+
+  char *value)  /* I */
+
+  {
+  struct stat sbuf;
+
+  log_record(
+    PBSEVENT_SYSTEM,
+    PBS_EVENTCLASS_SERVER,
+    "checkpoint_script",
+    value);
+
+  if ((stat(value,&sbuf) == -1) || !(sbuf.st_mode & S_IXUSR))
+    {
+    /* file does not exist or is not executable */
+
+    return(0);  /* error */
+    }
+
+  strncpy(CHECKPOINT_SCRIPT,value,sizeof(CHECKPOINT_SCRIPT));
+
+  return(1);
+  }  /* END setcheckpointscript() */
+
+
+
+
+
 /*
 **	Open and read the config file.  Save information in a linked
 **	list.  After reading the file, create an array, copy the list
@@ -1687,6 +1717,7 @@ int read_config(
       { "node_check_script", setnodecheckscript },
       { "node_check_interval", setnodecheckinterval },
       { "timeout",      settimeout },
+      { "checkpoint_script", setcheckpointscript },
       { NULL,           NULL } };
 
   FILE	                *conf;
