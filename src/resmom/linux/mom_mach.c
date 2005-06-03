@@ -1850,11 +1850,12 @@ int mach_checkpoint(
 
   if (CHECKPOINT_SCRIPT[0] != '\0')
     {
-    int   pid,rc;
-    char *arg[5];
-    char  sid[20];
+    int   pid;
+    char  sid[20],s_abort[20];
+    char *arg[6];
 
     /* launch the script and return success */
+
     pid = fork();
     if (pid > 0)
       {
@@ -1870,12 +1871,15 @@ int mach_checkpoint(
 
       sprintf(sid,"%ld",
         ptask->ti_job->ji_wattr[(int)JOB_ATR_session_id].at_val.at_long);
+      sprintf(s_abort,"%ld",
+        abort);
 
       arg[0] = CHECKPOINT_SCRIPT;
       arg[1] = sid;
       arg[2] = ptask->ti_job->ji_qs.ji_jobid;
       arg[3] = ptask->ti_job->ji_wattr[(int)JOB_ATR_euser].at_val.at_str;
-      arg[4] = NULL;
+      arg[4] = s_abort;
+      arg[5] = NULL;
 
       execv(arg[0],arg);
 
