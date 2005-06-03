@@ -1861,6 +1861,8 @@ int mach_checkpoint(
       /* parent: pid = child's pid */
 
       /* NO-OP, but may need to waitpid() the child (NYI) */
+
+      return(0);
       }
     else if (pid == 0)
       {
