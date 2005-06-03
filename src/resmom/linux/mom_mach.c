@@ -738,7 +738,7 @@ static unsigned long cput_sum(
     pjob->ji_flags |= MOM_NO_PROC;
 
   return((unsigned long)((double)cputime * cputfactor));
-  }  /* END cput_ses() */
+  }  /* END cput_sum() */
 
 
 
