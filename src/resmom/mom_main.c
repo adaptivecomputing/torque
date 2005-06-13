@@ -4042,32 +4042,41 @@ static void mom_lock(
 
 unsigned long getsize(
 
-  resource *pres)
+  resource *pres)  /* I */
 
   {
-	unsigned long	value;
-	unsigned long	shift;
+  unsigned long	value;
+  unsigned long	shift;
 
-	if (pres->rs_value.at_type != ATR_TYPE_SIZE)
-		return (0);
-	value = pres->rs_value.at_val.at_size.atsv_num;
-	shift = pres->rs_value.at_val.at_size.atsv_shift;
+  if (pres->rs_value.at_type != ATR_TYPE_SIZE)
+    {
+    return(0);
+    }
 
-	if (pres->rs_value.at_val.at_size.atsv_units ==
-	    ATR_SV_WORDSZ) {
-		if (value > ULONG_MAX / sizeof(int))
-			return (0);
-		value *= sizeof(int);
-	}
-	if (shift > 10) {
-		shift -= 10;
-		return (value << shift);
-	}
-	else {
-		shift = 10 - shift;
-		return (value >> shift);
-	}
-}
+  value = pres->rs_value.at_val.at_size.atsv_num;
+  shift = pres->rs_value.at_val.at_size.atsv_shift;
+
+  if (pres->rs_value.at_val.at_size.atsv_units == ATR_SV_WORDSZ) 
+    {
+    if (value > ULONG_MAX / sizeof(int))
+      {
+      return(0);
+      }
+
+    value *= sizeof(int);
+    }
+
+  if (shift > 10) 
+    {
+    shift -= 10;
+
+    return(value << shift);
+    }
+
+  shift = 10 - shift;
+
+  return(value >> shift);
+  }
 
 
 

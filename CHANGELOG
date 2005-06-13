@@ -1,3 +1,7 @@
+1.2.0p5
+
+  added local checkpoint script support for linux
+
 1.2.0p4
 
   extended job prolog to include jobname, resource, queue, and account info (MAINE)

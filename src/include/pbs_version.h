@@ -1,5 +1,3 @@
-/*
- * The version of this file and the PBS version have no simple correlation.
- */
+/* pbs version file */
 
-#define PBS_VERSION "torque_1.2.0p4"
+#define PBS_VERSION "torque_1.2.0p5"

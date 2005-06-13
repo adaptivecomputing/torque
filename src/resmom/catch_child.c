@@ -561,6 +561,7 @@ void scan_for_exiting()
 
       diswul(stream,resc_used(pjob,"cput",gettime));
       diswul(stream,resc_used(pjob,"mem",getsize));
+      diswul(stream,resc_used(pjob,"vmem",getsize));
 
       rpp_flush(stream);
 
