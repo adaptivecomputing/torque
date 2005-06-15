@@ -1,6 +1,8 @@
 1.2.0p5
 
   added local checkpoint script support for linux
+  fixed 'premature end of message warning'
+  clarify job deleted mail message
 
 1.2.0p4
 

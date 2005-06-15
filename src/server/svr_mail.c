@@ -107,15 +107,17 @@ extern struct server server;
 extern char *msg_job_abort;
 extern char *msg_job_start;
 extern char *msg_job_end;
+extern char *msg_job_del;
 extern char *msg_job_stageinfail;
 
+extern int LOGLEVEL;
 
 void svr_mailowner(
 
-  job	*pjob,
-  int 	 mailpoint,	/* note, single character  */
-  int	 force,		/* if set, force mail delivery */
-  char	*text)		/* additional message text */
+  job	*pjob,       /* I */
+  int 	 mailpoint,  /* note, single character  */
+  int	 force,	     /* if set, force mail delivery */
+  char	*text)	     /* additional message text */
 
   {
   char	*cmdbuf;
@@ -125,6 +127,21 @@ void svr_mailowner(
   FILE	*outmail;
   struct array_strings *pas;
   char	*stdmessage = NULL;
+
+  if (LOGLEVEL >= 3)
+    {
+    snprintf(log_buffer,LOG_BUF_SIZE,"sending '%c' mail for job %s to %s (%.64s)\n",
+      (char)mailpoint,
+      pjob->ji_qs.ji_jobid,
+      pjob->ji_wattr[(int)JOB_ATR_job_owner].at_val.at_str,
+      (text != NULL) ? text : "---");
+
+    log_event(
+      PBSEVENT_ERROR|PBSEVENT_ADMIN|PBSEVENT_JOB,
+      PBS_EVENTCLASS_JOB,
+      pjob->ji_qs.ji_jobid,
+      log_buffer);
+    }
 
   /* if force is true, force the mail out regardless of mailpoint */
 
@@ -259,13 +276,27 @@ void svr_mailowner(
 
       break;
 
+    case MAIL_DEL:
+
+      stdmessage = msg_job_del;
+
+      break;
+
+    case MAIL_OTHER:
+
+      /* NOTE:  route other message to stageinfail ??? */
+
+      stdmessage = msg_job_stageinfail;
+
+      break;
+
     case MAIL_STAGEIN:
     default:
 
       stdmessage = msg_job_stageinfail;
 
       break;
-    }
+    }  /* END switch (mailpoint) */
 
   fprintf(outmail,"PBS Job Id: %s\n", 
     pjob->ji_qs.ji_jobid);

@@ -285,7 +285,7 @@ void req_deletejob(
     }
 
   /*
-   * Log delete and if if requesting client is not job owner, send mail.
+   * Log delete and if requesting client is not job owner, send mail.
    */
 
   sprintf(log_buffer,"requestor=%s@%s",
@@ -309,7 +309,7 @@ void req_deletejob(
     {
     if (strncmp(preq->rq_extend,deldelaystr,strlen(deldelaystr))) 
       {
-      /* have text message in request extention, add it */
+      /* have text message in request extension, add it */
 
       strcat(log_buffer,"\n");
       strcat(log_buffer,preq->rq_extend);
@@ -318,7 +318,7 @@ void req_deletejob(
 
   if (svr_chk_owner(preq,pjob) != 0) 
     {
-    svr_mailowner(pjob,MAIL_OTHER,MAIL_FORCE,log_buffer);
+    svr_mailowner(pjob,MAIL_DEL,MAIL_FORCE,log_buffer);
     }
 	
   if (pjob->ji_qs.ji_state == JOB_STATE_RUNNING) 

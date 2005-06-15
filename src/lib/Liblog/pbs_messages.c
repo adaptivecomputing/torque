@@ -118,6 +118,7 @@ char *msg_init_unkstate = "Unable to recover job in strange substate: %d";
 char *msg_isodedecode	= "Decode of request failed";
 char *msg_issuebad	= "attempt to issue invalid request of type %d";
 char *msg_job_abort	= "Aborted by PBS Server ";
+char *msg_job_del       = "job deleted";
 char *msg_jobholdset	= "Holds %s set at request of %s@%s";
 char *msg_jobholdrel	= "Holds %s released at request of %s@%s";
 char *msg_job_end	= "Execution terminated";

@@ -606,6 +606,7 @@ task		*task_find	A_((	job		*pjob,
 #define MAIL_NONE  (int)'n'
 #define MAIL_ABORT (int)'a'
 #define MAIL_BEGIN (int)'b'
+#define MAIL_DEL   (int)'d'
 #define MAIL_END   (int)'e'
 #define MAIL_OTHER (int)'o'
 #define MAIL_STAGEIN (int)'s'
