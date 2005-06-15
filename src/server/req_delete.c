@@ -304,6 +304,8 @@ void req_deletejob(
     PBS_EVENTCLASS_JOB,
     pjob->ji_qs.ji_jobid,
     log_buffer);
+
+  /* NOTE:  should incorporate job delete message */
 	
   if (preq->rq_extend != NULL) 
     {
