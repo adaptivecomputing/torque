@@ -94,6 +94,7 @@
 #include "attribute.h"
 #include "server_limits.h"
 #include "job.h"
+#include "log.h"
 #include "server.h"
 
 
