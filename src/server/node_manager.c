@@ -763,9 +763,9 @@ void check_nodes(
   struct work_task *ptask)  /* I (modified) */
 
   {
-  static     char    id[] = "check_nodes";
-  struct     pbsnode       *np;
-  int                       i,chk_len;
+  static char     id[] = "check_nodes";
+  struct pbsnode *np;
+  int             i,chk_len;
 
   /* load min refresh interval */
 

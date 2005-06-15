@@ -930,9 +930,9 @@ int main(
 
     lock_out(lockfds, F_WRLCK);
 
-    (void)fclose(stdin);
-    (void)fclose(stdout);
-    (void)fclose(stderr);
+    fclose(stdin);
+    fclose(stdout);
+    fclose(stderr);
 
     dummyfile = fopen("/dev/null","r");
     assert((dummyfile != 0) && (fileno(dummyfile) == 0));
@@ -954,10 +954,10 @@ int main(
     setvbuf(stderr,NULL,_IOLBF,0);
     }
 
-  (void)sprintf(log_buffer, "%ld\n", (long)sid);
-  (void)write(lockfds, log_buffer, strlen(log_buffer));
+  sprintf(log_buffer, "%ld\n", (long)sid);
+  write(lockfds, log_buffer, strlen(log_buffer));
 #if (PLOCK_DAEMONS & 1)
-  (void)plock(PROCLOCK);
+  plock(PROCLOCK);
 #endif
 
   if ((rppfd = rpp_bind(pbs_server_port_dis)) == -1) 

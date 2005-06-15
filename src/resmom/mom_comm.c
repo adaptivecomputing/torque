@@ -1542,8 +1542,8 @@ char *resc_string(
 
 void im_request(
 
-  int stream,
-  int version)
+  int stream,   /* I */
+  int version)  /* I */
 
   {
   char			*id = "im_request";
@@ -2210,9 +2210,10 @@ void im_request(
 
       if (LOGLEVEL >= 3)
         {
-        sprintf(log_buffer,"%s: KILL_JOB %s node ???\n",
+        sprintf(log_buffer,"%s: KILL_JOB %s node %s\n",
           id,
-          jobid);
+          jobid,
+          netaddr(addr));
 
         log_record(
           PBSEVENT_JOB,
