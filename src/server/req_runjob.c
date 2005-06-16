@@ -491,7 +491,6 @@ int svr_startjob(
     return(rc);
     }
 
-#define BOEING
 #ifdef BOEING
   /* Verify that all the nodes are alive via a TCP connect. */
 
@@ -547,9 +546,13 @@ int svr_startjob(
 
     /* Open a socket. */
 
+    /* NOTE:  should change to PF_* */
+
     if ((sock = socket(AF_INET,SOCK_STREAM,0)) == -1)
       {
-      sprintf(log_buffer,"could not contact %s (socket failed)",nodestr);
+      sprintf(log_buffer,"could not contact %s (socket failed)",
+        nodestr);
+
       log_err(errno,id,log_buffer);
 
       /* Add this host to the reject destination list for the job */

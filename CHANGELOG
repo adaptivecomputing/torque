@@ -2,7 +2,8 @@
 
   added local checkpoint script support for linux
   fixed 'premature end of message warning'
-  clarify job deleted mail message
+  clarify job deleted mail message (SDSC)
+  fix AIX 5.3 support in configure (WestGrid)
 
 1.2.0p4
 

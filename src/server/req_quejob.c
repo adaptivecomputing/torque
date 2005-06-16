@@ -1131,7 +1131,7 @@ void req_jobscript(
  * req_mvjobfile - receive a job file
  *	This request is used to move a file associated with a job, typically
  *	the standard output or error, between a server and a server or from
- *	a mom back to a server.  For a server, the destination is alway 
+ *	a mom back to a server.  For a server, the destination is always 
  *	within the spool directory.
  */
 

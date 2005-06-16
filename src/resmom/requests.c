@@ -556,7 +556,7 @@ static int return_file(
     unlink(filename);
 
   return(rc);
-  }
+  }  /* END return_file() */
 
 
 

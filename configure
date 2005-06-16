@@ -1833,8 +1833,11 @@ if test "${enable_array+set}" = set; then
 
 fi
 
-
 if test "$PBS_MACH" = aix4; then
+    MOMLIBS="$MOMLIBS -lodm -lcfg"
+fi
+
+if test "$PBS_MACH" = aix5; then
     MOMLIBS="$MOMLIBS -lodm -lcfg"
 fi
 

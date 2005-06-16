@@ -1060,6 +1060,10 @@ if test "$PBS_MACH" = aix4; then
     MOMLIBS="$MOMLIBS -lodm -lcfg"
 fi
 
+if test "$PBS_MACH" = aix5; then
+    MOMLIBS="$MOMLIBS -lodm -lcfg"
+fi
+
 if test "$PBS_MACH" = irix6array; then
     MOMLIBS="-larray"
 fi
