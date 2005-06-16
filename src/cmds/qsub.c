@@ -1075,7 +1075,7 @@ state3:         /* No value - get it from qsub environment */
 
 state4:         /* goto label - Value specified */
 
-    *c++ = '\0';;
+    *c++ = '\0';
 
     strcat(job_env,",");
     strcat(job_env,s);

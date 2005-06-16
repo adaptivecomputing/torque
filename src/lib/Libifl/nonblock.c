@@ -90,7 +90,7 @@ ssize_t read_nonblocking_socket(
 #else
     flags |= O_NONBLOCK;
 #endif
-  
+   
     /* NOTE:  the pbs scheduling API passes in a blocking socket which 
               should be a non-blocking socket in pbs_disconnect.  Also, 
               qsub passes in a blocking socket which must remain 
