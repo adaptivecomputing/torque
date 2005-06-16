@@ -132,12 +132,16 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
+#if defined(__TAIX_5)
+#undef HAVE_READLINE
+#endif /* !__TAIX_5 */
+
 #ifdef HAVE_READLINE
 /* some versions have a buggy readline header */
 #undef HAVE_CONFIG_H
 #ifndef __TDARWIN_8  /* OSX 10.4 does not support readline */
 #include <readline/tilde.h>
-#endif /* __TDARWIN_8 */
+#endif /* !__TDARWIN_8 && !__TAIX_5 */
 #define HAVE_CONFIG_H
 
 #include <readline/readline.h>

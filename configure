@@ -1642,6 +1642,12 @@ cat >> confdefs.h <<EOF
 EOF
 fi
 
+if test "$PBS_MACH" = aix5; then
+cat >> confdefs.h <<EOF
+#define __TAIX_5
+EOF
+fi
+
 if test "$PBS_MACH" = linux; then
 cat >> confdefs.h <<EOF
 #define __TLINUX

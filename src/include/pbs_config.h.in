@@ -111,6 +111,9 @@
 /* PBS specific: defined if this is a digital unix system */
 #undef __TDIGITAL
 
+/* PBS specific: defined if this is an AIX 5 system */
+#undef __TAIX_5
+
 /* PBS specific: defined if this is a linux system */
 #undef __TLINUX
 
