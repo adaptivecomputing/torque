@@ -471,7 +471,7 @@ int pbsd_init(
   server.sv_attr[(int)SRV_ATR_tcp_timeout].at_flags = ATR_VFLAG_SET;
 
   server.sv_attr[(int)SRV_ATR_check_rate].at_val.at_long =
-    2 * PBS_NORMAL_PING_RATE;
+    PBS_NORMAL_PING_RATE / 2;
   server.sv_attr[(int)SRV_ATR_check_rate].at_flags = ATR_VFLAG_SET;
 
   server.sv_attr[(int)SRV_ATR_JobStatRate].at_val.at_long =
