@@ -107,7 +107,7 @@
 #include	"dis.h"
 #include	"dis_init.h"
 #include	"resmon.h"
-#include        "query_configs.h"
+#include  "query_configs.h"
 
 extern void DIS_rpp_reset A_((void));
 
@@ -232,6 +232,20 @@ struct pbsnode *tfind(
 
   return(NULL);
   }  /* END tfind() */
+
+
+
+
+
+
+struct pbsnode *tfind_addr(
+
+  const u_long  key)
+
+  {
+  return tfind(key, &ipaddrs);
+  }
+
 
 
 

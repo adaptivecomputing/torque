@@ -107,20 +107,21 @@
 
 /* Global Data Items: */
 
-extern struct server server;
-extern list_head svr_alljobs;
-extern list_head svr_queues;
-extern char          server_name[];
-extern attribute_def svr_attr_def[];
-extern attribute_def que_attr_def[];
-extern attribute_def job_attr_def[];
-extern int	     pbs_mom_port;
-extern time_t	     time_now;
-extern char	    *msg_init_norerun;
+extern struct server   server;
+extern list_head       svr_alljobs;
+extern list_head       svr_queues;
+extern char            server_name[];
+extern attribute_def   svr_attr_def[];
+extern attribute_def   que_attr_def[];
+extern attribute_def   job_attr_def[];
+extern int	           pbs_mom_port;
+extern time_t	         time_now;
+extern char	          *msg_init_norerun;
+extern struct pbsnode *tfind_addr();
 
 /* Extern Functions */
 
-int   status_job A_((job *,struct batch_request *,svrattrl *,list_head *,int *));
+int status_job A_((job *,struct batch_request *,svrattrl *,list_head *,int *));
 int status_attrib A_((svrattrl *,attribute_def *,attribute *,int,int,list_head *,int *,int));
 
 /* Private Data Definitions */
@@ -435,8 +436,10 @@ int stat_to_mom(
 
   {
   struct batch_request *newrq;
-  int		      rc;
-  struct work_task    *pwt = 0;
+  int		                rc;
+  struct work_task     *pwt = 0;
+  struct pbsnode *node;
+
 
   if ((newrq = alloc_br(PBS_BATCH_StatusJob)) == (struct batch_request *)0)
     {
@@ -453,6 +456,14 @@ int stat_to_mom(
     newrq->rq_ind.rq_status.rq_id[0] = '\0';  /* get stat of all */
 
   CLEAR_HEAD(newrq->rq_ind.rq_status.rq_attr);
+
+  /* if MOM is offline or down just return stale information */
+
+  if (((node = tfind_addr(pjob->ji_qs.ji_un.ji_exect.ji_momaddr)) != NULL) &&
+       (node->nd_state & (INUSE_DELETED|INUSE_OFFLINE|INUSE_DOWN)))
+    {
+    return(PBSE_SYSTEM);
+    }
 
   /* get connection to MOM */
 
