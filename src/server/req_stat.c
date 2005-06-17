@@ -427,6 +427,10 @@ static void req_stat_job_step2(
 /*
  * stat_to_mom - send a Job Status to MOM to obtain latest status.
  *	Used by req_stat_job()/stat_step_2() 
+ *
+ * Returns PBSE_SYSTEM if out of memory, PBSE_NORELYMOM if the MOM
+ * is down, offline, or deleted.  Otherwise returns result of MOM
+ * contact request.
  */
 
 int stat_to_mom(
