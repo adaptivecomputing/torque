@@ -1635,6 +1635,12 @@ void bailout()
       pbs_server, 
       pbs_errno);
 
+    if (getenv("PBSDEBUG") != NULL)
+      {
+      fprintf(stderr,"qsub: pbs_server daemon may not be running on host %s or hostname in file '$TORQUEHOME/server_name' may be incorrect)\n",
+        pbs_server);
+      }
+
     exit(1);
     }
 
@@ -3215,6 +3221,12 @@ int main(
     fprintf(stderr, "qsub: cannot connect to server %s (errno=%d)\n",
       pbs_server, 
       pbs_errno);
+
+    if (getenv("PBSDEBUG") != NULL)
+      {
+      fprintf(stderr,"qsub: pbs_server daemon may not be running on host %s or hostname in file '$TORQUEHOME/server_name' may be incorrect)\n",
+        pbs_server);
+      }
 
     unlink(script_tmp);
 
