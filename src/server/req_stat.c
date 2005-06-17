@@ -462,7 +462,7 @@ int stat_to_mom(
   if (((node = tfind_addr(pjob->ji_qs.ji_un.ji_exect.ji_momaddr)) != NULL) &&
        (node->nd_state & (INUSE_DELETED|INUSE_OFFLINE|INUSE_DOWN)))
     {
-    return(PBSE_SYSTEM);
+    return(PBSE_NORELYMOM);
     }
 
   /* get connection to MOM */
