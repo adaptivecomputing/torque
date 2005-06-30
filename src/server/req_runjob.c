@@ -865,8 +865,8 @@ static void post_sendmom(
         if (preq != NULL)
           {
           char tmpLine[1024];
- 
-          if (preq->rc == PBSE_EINPROGRESS)
+
+          if (preq->rq_reply.brp_code == PBSE_JOBEXIST)
             {
             /* job already running, start request failed but return success since
              * desired behavior (job is running) is accomplished */
@@ -906,6 +906,7 @@ static void post_sendmom(
         }
 			
       break;
+      }
     }  /* END switch (r) */
 
   return;
