@@ -1183,7 +1183,7 @@ int main(
 
 static int get_port(
 
-  char	       *arg,		/* "host", "port", ":port", or "host:port" */
+  char	       *arg,	/* "host", "port", ":port", or "host:port" */
   unsigned int *port,	/* RETURN: new port iff one given 	   */
   pbs_net_t    *addr)	/* RETURN: daemon's address iff host given */
 
@@ -1201,7 +1201,7 @@ static int get_port(
     } 
   else 
     {
-    name = parse_servername(arg, port);
+    name = parse_servername(arg,port);
 
     if (name != NULL) 
       {
@@ -1238,10 +1238,10 @@ static int get_port(
 static time_t next_task()
 
   {
-  time_t	   delay;
+  time_t	     delay;
   struct work_task  *nxt;
   struct work_task  *ptask;
-  time_t	   tilwhen = server.sv_attr[(int)SRV_ATR_schedule_iteration].at_val.at_long;
+  time_t	     tilwhen = server.sv_attr[(int)SRV_ATR_schedule_iteration].at_val.at_long;
 
   time_now = time((time_t *)0);
 
@@ -1249,7 +1249,7 @@ static time_t next_task()
     {
     ptask = (struct work_task *)GET_NEXT(task_list_event);
 
-    while (ptask) 
+    while (ptask != NULL) 
       {
       nxt = (struct work_task *)GET_NEXT(ptask->wt_linkall);
 

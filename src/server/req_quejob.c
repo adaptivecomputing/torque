@@ -1005,6 +1005,8 @@ void req_jobscript(
   int	 filemode = 0600;
 #endif
 
+  errno = 0;
+
   pj = locate_new_job(preq->rq_conn,NULL);
 
   if (pj == NULL) 
@@ -1018,8 +1020,10 @@ void req_jobscript(
 
   if (pj->ji_qs.ji_substate != JOB_SUBSTATE_TRANSIN) 
     {
-    sprintf(log_buffer,"job in unexpected state '%s'",
-      PJobSubState[pj->ji_qs.ji_substate]);
+    sprintf(log_buffer,"job in unexpected state '%s' (errno=%d - %s)",
+      PJobSubState[pj->ji_qs.ji_substate],
+      errno,
+      strerror(errno));
 
     log_err(errno,id,log_buffer);
 
@@ -1314,7 +1318,7 @@ void req_mvjobfile(
  * req_rdytocommit - Ready To Commit Batch Request
  *
  *	Set substate to JOB_SUBSTATE_TRANSICM and
- *	record job to permanent storage, i.e. writen to the job save file
+ *	record job to permanent storage, i.e. written to the job save file
  */
 
 void req_rdytocommit(
@@ -1324,12 +1328,19 @@ void req_rdytocommit(
   {
   job *pj;
   int  sock = preq->rq_conn;
+  
+  int  OrigState;
+  int  OrigSState;
+  char OrigSChar;
+  long OrigFlags;
 
   pj = locate_new_job(sock,preq->rq_ind.rq_rdytocommit);
 
   if (pj == NULL) 
     {
     req_reject(PBSE_UNKJOBID,0,preq,NULL,NULL);
+
+    /* FAILURE */
 
     return;
     }
@@ -1340,6 +1351,8 @@ void req_rdytocommit(
 
     req_reject(PBSE_IVALREQ,0,preq,NULL,NULL);
 
+    /* FAILURE */
+
     return;
     }
 
@@ -1347,13 +1360,20 @@ void req_rdytocommit(
 
   if (svr_authorize_jobreq(preq,pj) == -1) 
     {
-    req_reject(PBSE_PERM,0,preq,NULL,NULL);
+    req_reject(PBSE_PERM,0,preq,NULL,"cannot authorize jobreq");
+
+    /* FAILURE */
 
     return;
     }
 
 #endif /* PBS_MOM */
 
+  OrigState  = pj->ji_qs.ji_state;
+  OrigSState = pj->ji_qs.ji_substate;
+  OrigSChar  = pj->ji_wattr[(int)JOB_ATR_state].at_val.at_char;
+  OrigFlags  = pj->ji_wattr[(int)JOB_ATR_state].at_flags;
+ 
   pj->ji_qs.ji_state    = JOB_STATE_TRANSIT;
   pj->ji_qs.ji_substate = JOB_SUBSTATE_TRANSICM;
   pj->ji_wattr[(int)JOB_ATR_state].at_val.at_char = 'T';
@@ -1361,7 +1381,22 @@ void req_rdytocommit(
 
   if (job_save(pj,SAVEJOB_NEW) == -1) 
     {
-    req_reject(PBSE_SYSTEM,0,preq,NULL,NULL);
+    char tmpLine[1024];
+
+    sprintf(tmpLine,"cannot save job - errno=%d - %s",
+      errno,
+      strerror(errno));
+
+    /* commit failed, backoff state changes */
+
+    pj->ji_qs.ji_state    = OrigState;
+    pj->ji_qs.ji_substate = OrigSState;
+    pj->ji_wattr[(int)JOB_ATR_state].at_val.at_char = OrigSChar;
+    pj->ji_wattr[(int)JOB_ATR_state].at_flags = OrigFlags;
+
+    req_reject(PBSE_SYSTEM,0,preq,NULL,tmpLine);
+
+    /* FAILURE */
 
     return;
     }

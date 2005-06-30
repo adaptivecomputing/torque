@@ -149,6 +149,8 @@ const static unsigned int quicksize = sizeof(struct jobfix);
  *
  *	For a new file write, first time, the data is written directly to
  *	the file.
+ *
+ *      RETURN:  0 - success, -1 - failure 
  */
 
 int job_save(
@@ -178,7 +180,7 @@ int job_save(
 
   if (updatetype == SAVEJOB_QUICK) 
     {
-    openflags = O_WRONLY | O_Sync;
+    openflags = O_WRONLY|O_Sync;
 
     /* NOTE:  open, do not create */
 
@@ -249,7 +251,7 @@ int job_save(
 		
     strcat(namebuf2,JOB_FILE_COPY);
 
-    openflags = O_CREAT | O_WRONLY | O_Sync;
+    openflags = O_CREAT|O_WRONLY|O_Sync;
 
     /* NOTE:  create file if required */
 

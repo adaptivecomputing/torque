@@ -844,6 +844,9 @@ static void post_sendmom(
 
     default:	
 
+      {
+      int JobOK = 0;
+
       /* send failed, requeue the job */
 
       sprintf(log_buffer,"unable to run job, MOM rejected/rc=%d",
@@ -862,16 +865,39 @@ static void post_sendmom(
         if (preq != NULL)
           {
           char tmpLine[1024];
-  
-          sprintf(tmpLine,"send failed, %s",
-            PJobSubState[jobp->ji_qs.ji_substate]);
+ 
+          if (preq->rc == PBSE_EINPROGRESS)
+            {
+            /* job already running, start request failed but return success since
+             * desired behavior (job is running) is accomplished */
+
+            JobOK = 1;
+            }
+          else
+            { 
+            sprintf(tmpLine,"send failed, %s",
+              PJobSubState[jobp->ji_qs.ji_substate]);
           
-          req_reject(PBSE_MOMREJECT,0,preq,NULL,tmpLine);
+            req_reject(PBSE_MOMREJECT,0,preq,NULL,tmpLine);
+            }
           }
 
-        svr_evaljobstate(jobp,&newstate,&newsub,1);
+        if (JobOK == 1)
+          {
+          /* do not re-establish accounting - completed first time job was started */
 
-        svr_setjobstate(jobp,newstate,newsub);
+          /* update mom-based job status */
+
+          jobp->ji_momstat = 0;
+
+          stat_mom_job(jobp);
+          }
+        else
+          {
+          svr_evaljobstate(jobp,&newstate,&newsub,1);
+
+          svr_setjobstate(jobp,newstate,newsub);
+          }
         } 
       else 
         {

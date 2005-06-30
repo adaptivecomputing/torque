@@ -145,9 +145,11 @@ int get_fullhostname(
 
   if (phe == NULL)
     {
-    if (h_errno == HOST_NOT_FOUND){
-	fprintf(stderr, "Unable to lookup host '%s' by address (check /etc/hosts)\n", shortname); 
-    }
+    if (h_errno == HOST_NOT_FOUND)
+      {
+      fprintf(stderr,"Unable to lookup host '%s' by address (check /etc/hosts or DNS reverse name lookup)\n", 
+        shortname); 
+      }
 	    
     return(-1);
     }

@@ -111,6 +111,10 @@
 #include "pbs_error.h"
 #include "pbs_proto.h"
 
+#if defined(PENABLE_DYNAMIC_CPUSETS)
+#include <cpuset.h>
+#endif /* PENABLE_DYNAMIC_CPUSETS */
+
 /* External Functions */
 
 /* External Globals */
@@ -335,7 +339,9 @@ void scan_for_exiting()
   int im_compose A_((int,char *,char *,int,tm_event_t,tm_task_id));
 
 #ifdef  PENABLE_DYNAMIC_CPUSETS
-  char          cQueue[16];
+  char           cQueueName[8];
+  char           cPermFile[1024];
+  struct passwd *pwdp;
 #endif  /* PENABLE_DYNAMIC_CPUSETS */
 
   /*

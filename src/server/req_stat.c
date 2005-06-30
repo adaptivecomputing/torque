@@ -617,8 +617,15 @@ void poll_job_task(
 
   pjob = (job *)ptask->wt_parm1;
 
+  if (pjob == NULL)
+    {
+    /* FAILURE */
+
+    return;
+    }
+
   if (server.sv_attr[(int)SRV_ATR_PollJobs].at_val.at_long && 
-      pjob->ji_qs.ji_state == JOB_STATE_RUNNING)
+     (pjob->ji_qs.ji_state == JOB_STATE_RUNNING))
     {
     stat_mom_job(pjob);
     }

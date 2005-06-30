@@ -1975,7 +1975,9 @@ struct rm_attribute *momgetattr(
 
   if (str == NULL)	/* if NULL is passed, use prev value */
     str = hold;
-	
+
+  /* FORMAT: ??? */
+
   do 
     {
     str = skipwhite(str);
@@ -1986,7 +1988,7 @@ struct rm_attribute *momgetattr(
       }
 		
     str = skipwhite(str);		/* copy qualifier */
-    str = tokcpy(str, qual);
+    str = tokcpy(str,qual);
     str = skipwhite(str);
 		
     if (*str++ != '=')

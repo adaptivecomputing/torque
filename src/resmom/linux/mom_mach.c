@@ -2031,7 +2031,7 @@ char *cput(
 
   if (attrib == NULL) 
     {
-    log_err(-1, id, no_parm);
+    log_err(-1,id,no_parm);
 
     rm_errno = RM_ERR_NOPARAM;
 
@@ -2043,7 +2043,7 @@ char *cput(
     sprintf(log_buffer,"bad param: %s", 
       attrib->a_value);
 
-    log_err(-1, id, log_buffer);
+    log_err(-1,id,log_buffer);
 
     rm_errno = RM_ERR_BADPARAM;
 
@@ -2052,7 +2052,7 @@ char *cput(
 
   if (momgetattr(NULL)) 
     {
-    log_err(-1, id, extra_parm);
+    log_err(-1,id,extra_parm);
 
     rm_errno = RM_ERR_BADPARAM;
 
@@ -2252,7 +2252,7 @@ static char *resi_job(
         sprintf(log_buffer,"%s: get_proc_stat", 
           dent->d_name);
 
-        log_err(errno, id, log_buffer);
+        log_err(errno,id,log_buffer);
         }
 
       continue;
@@ -2324,8 +2324,8 @@ static char *resi(
   struct rm_attribute *attrib)
 
   {
-  char			*id = "resi";
-  int			value;
+  char *id = "resi";
+  int   value;
 
   if (attrib == NULL) 
     {
