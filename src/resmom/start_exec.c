@@ -2016,6 +2016,13 @@ int TMomFinalizeChild(
 
   if ((i = mom_set_limits(pjob,SET_LIMIT_SET)) != PBSE_NONE) 
     {
+    if (log_buffer[0] != '\0')
+      {
+      /* report error to user via stderr file */
+
+      fprintf(stderr,"%s\n",log_buffer);
+      }
+
     sprintf(log_buffer,"Unable to set limits, err=%d", 
       i);
 
@@ -2907,6 +2914,13 @@ int start_process(
 
   if ((i = mom_set_limits(pjob,SET_LIMIT_SET)) != PBSE_NONE) 
     {
+    if (log_buffer[0] != '\0')
+      {
+      /* report error to user via stderr file */
+
+      fprintf(stderr,"%s\n",log_buffer);
+      }
+
     sprintf(log_buffer,"Unable to set limits, err=%d",
       i);
 

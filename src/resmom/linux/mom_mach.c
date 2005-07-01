@@ -1046,6 +1046,8 @@ int mom_set_limits(
   unsigned long vmem_limit = 0;
   unsigned long	mem_limit = 0;
 
+  /* NOTE:  log_buffer is exported */
+
   if (LOGLEVEL >= 2)
     {
     sprintf(log_buffer,"%s(%s,%s) entered",
@@ -1054,6 +1056,8 @@ int mom_set_limits(
       (set_mode == SET_LIMIT_SET) ? "set" : "alter");
 
     log_record(PBSEVENT_SYSTEM,0,id,log_buffer);
+
+    log_buffer[0] = '\0';
     }
 
   assert(pjob != NULL);
@@ -1086,6 +1090,8 @@ int mom_set_limits(
 
       if (retval != PBSE_NONE)
         {
+        log_buffer[0] = '\0;
+
         return(error(pname,retval));
         }
       } 
@@ -1097,6 +1103,8 @@ int mom_set_limits(
 
       if (retval != PBSE_NONE)
         {
+        log_buffer[0] = '\0;
+
         return(error(pname,retval));
         }
 
@@ -1110,10 +1118,14 @@ int mom_set_limits(
           pjob->ji_qs.ji_jobid);
 
         log_record(PBSEVENT_SYSTEM,0,id,log_buffer);
+
+        log_buffer[0] = '\0';
         }
 
       if (setrlimit(RLIMIT_CPU,&reslim) < 0)
         {
+        log_buffer[0] = '\0;
+
         return(error("RLIMIT_CPU",PBSE_SYSTEM));
         }
       } 
@@ -1132,6 +1144,17 @@ int mom_set_limits(
 
         if (value > ULONG_MAX)
           {
+          if (LOGLEVEL >= 0)
+            {
+            sprintf(log_buffer,"cannot set file limit to %ld for job %s (value too large)";
+              reslim.rlim_cur,
+              pjob->ji_qs.ji_jobid);
+
+            log_err(0,id,log_buffer);
+
+            log_buffer[0] = '\0';
+            }
+
           return(error(pname,PBSE_BADATVAL));
           }
 
@@ -1139,6 +1162,14 @@ int mom_set_limits(
 
         if (setrlimit(RLIMIT_FSIZE,&reslim) < 0)
           {
+          sprintf(log_buffer,"cannot set file limit to %ld for job %s (setrlimit failed - check default user limits)";
+            reslim.rlim_max,
+            pjob->ji_qs.ji_jobid);
+
+          log_err(errno,id,log_buffer);
+
+          log_buffer[0] = '\0';
+
           return(error(pname,PBSE_SYSTEM));
           }
         }
@@ -1151,6 +1182,8 @@ int mom_set_limits(
 
       if (retval != PBSE_NONE)
         {
+        log_buffer[0] = '\0;
+
         return(error(pname,retval));
         }
 
@@ -1167,11 +1200,15 @@ int mom_set_limits(
 
         if (retval != PBSE_NONE)
           {
+          log_buffer[0] = '\0;
+
           return(error(pname,retval));
           }
 
         if (value > ULONG_MAX)
           {
+          log_buffer[0] = '\0;
+ 
           return(error(pname,PBSE_BADATVAL));
           }
 

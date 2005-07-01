@@ -544,6 +544,8 @@ int mom_set_limits(pjob, set_mode)
 	resource	*pres;
        	struct rlimit	reslim;
 
+        log_buffer[0] = '\0';
+
 	DBPRT(("%s: entered\n", id))
 	assert(pjob != NULL);
 	assert(pjob->ji_wattr[(int)JOB_ATR_resource].at_type == ATR_TYPE_RESC);

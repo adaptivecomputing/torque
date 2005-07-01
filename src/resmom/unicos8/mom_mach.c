@@ -1053,6 +1053,8 @@ int mom_set_limits(pjob, set_mode)
 	struct		srfs_req_s	srfs_brk;
 	struct		fsres_s		srfsinfo;
 
+        log_buffer[0] = '\0';
+
 #define	SRFS_SET(fs, val) \
 	if (val > 0) { \
 		DBPRT(("%s: going to set %s to %d\n", id, fs, val)) \

@@ -1072,7 +1072,9 @@ void req_modifyjob(
   /* note, the newattr[] attributes are on the stack, they goaway auto */
 
   if (rc == 0)
+    {
     rc = mom_set_limits(pjob,SET_LIMIT_ALTER);
+    }
 
   if (rc != 0) 
     {

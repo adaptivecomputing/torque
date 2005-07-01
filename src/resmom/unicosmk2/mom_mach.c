@@ -547,6 +547,8 @@ int mom_set_limits(pjob, set_mode)
 	task		*ptask;
 	unsigned long	value;	/* place in which to build resource value */
 
+        log_buffer[0] = '\0';
+
 	DBPRT(("%s: entered\n", id))
 	assert(pjob != NULL);
 	assert(pjob->ji_wattr[(int)JOB_ATR_resource].at_type == ATR_TYPE_RESC);
