@@ -1090,7 +1090,7 @@ int mom_set_limits(
 
       if (retval != PBSE_NONE)
         {
-        log_buffer[0] = '\0;
+        log_buffer[0] = '\0';
 
         return(error(pname,retval));
         }
@@ -1103,7 +1103,7 @@ int mom_set_limits(
 
       if (retval != PBSE_NONE)
         {
-        log_buffer[0] = '\0;
+        log_buffer[0] = '\0';
 
         return(error(pname,retval));
         }
@@ -1124,7 +1124,7 @@ int mom_set_limits(
 
       if (setrlimit(RLIMIT_CPU,&reslim) < 0)
         {
-        log_buffer[0] = '\0;
+        log_buffer[0] = '\0';
 
         return(error("RLIMIT_CPU",PBSE_SYSTEM));
         }
@@ -1146,7 +1146,7 @@ int mom_set_limits(
           {
           if (LOGLEVEL >= 0)
             {
-            sprintf(log_buffer,"cannot set file limit to %ld for job %s (value too large)";
+            sprintf(log_buffer,"cannot set file limit to %ld for job %s (value too large)",
               reslim.rlim_cur,
               pjob->ji_qs.ji_jobid);
 
@@ -1162,7 +1162,7 @@ int mom_set_limits(
 
         if (setrlimit(RLIMIT_FSIZE,&reslim) < 0)
           {
-          sprintf(log_buffer,"cannot set file limit to %ld for job %s (setrlimit failed - check default user limits)";
+          sprintf(log_buffer,"cannot set file limit to %ld for job %s (setrlimit failed - check default user limits)",
             reslim.rlim_max,
             pjob->ji_qs.ji_jobid);
 
@@ -1182,7 +1182,7 @@ int mom_set_limits(
 
       if (retval != PBSE_NONE)
         {
-        log_buffer[0] = '\0;
+        log_buffer[0] = '\0';
 
         return(error(pname,retval));
         }
@@ -1200,14 +1200,14 @@ int mom_set_limits(
 
         if (retval != PBSE_NONE)
           {
-          log_buffer[0] = '\0;
+          log_buffer[0] = '\0';
 
           return(error(pname,retval));
           }
 
         if (value > ULONG_MAX)
           {
-          log_buffer[0] = '\0;
+          log_buffer[0] = '\0';
  
           return(error(pname,PBSE_BADATVAL));
           }

@@ -683,7 +683,7 @@ int mom_set_limits(pjob, set_mode)
 	__uint64_t	nodemask;
 #endif	/* NODEMASK */
 
-        log_buffer[0] = '\0;
+        log_buffer[0] = '\0';
 
 	DBPRT(("%s: entered\n", id))
 	assert(pjob != NULL);
