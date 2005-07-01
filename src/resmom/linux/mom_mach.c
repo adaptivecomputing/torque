@@ -813,7 +813,7 @@ static unsigned long mem_sum(
   job *pjob)
 
   {
-  char			*id="mem_sum";
+  char			*id = "mem_sum";
   struct dirent		*dent;
   unsigned long		segadd;
   proc_stat_t		*ps;
@@ -1742,9 +1742,9 @@ int kill_task(
           int i;
 
           req.tv_sec = 0;
-          req.tv_nsec = 250000000;
+          req.tv_nsec = 250000000;  /* .25 seconds */
 
-          /* give the process some time to quit gracefully first */
+          /* give the process some time to quit gracefully first (up to 5 seconds) */
 
           for (i = 0;i < 20;i++) 
             {
@@ -1766,6 +1766,10 @@ int kill_task(
           PBS_EVENTCLASS_JOB,
           ptask->ti_job->ji_qs.ji_jobid,
           log_buffer);
+
+        /* kill process hard */
+
+        /* should this be replaced w/killpg() to kill all children? */
 
         kill(ps->pid,sig);
 

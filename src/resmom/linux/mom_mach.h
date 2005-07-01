@@ -132,8 +132,8 @@ typedef struct proc_stat {
 	unsigned	cstime;		/* sum of children's stime */
 	int		pid;		/* process id */
 	char		*name;		/* name of exec'd command */
-	unsigned	vsize;		/* virtual memory size for proc */
-	unsigned	rss;		/* resident set size */
+	unsigned long   vsize;		/* virtual memory size for proc */
+	unsigned long   rss;		/* resident set size */
 	unsigned	start_time;	/* start time of this process */
 	unsigned	flags;		/* the flags of the process */
 	unsigned	uid;		/* uid of the process owner */

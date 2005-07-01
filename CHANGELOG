@@ -4,6 +4,7 @@
   fixed 'premature end of message warning'
   clarify job deleted mail message (SDSC)
   fix AIX 5.3 support in configure (WestGrid)
+  added support for >= 4GB memory usage (GMX)
 
 1.2.0p4
 
