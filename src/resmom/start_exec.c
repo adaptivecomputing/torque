@@ -2231,9 +2231,48 @@ int TMomFinalizeChild(
     shell = demux;  /* for fprintf below */
     }  /* END else if (cpid == 0) */
 
-  fprintf(stderr,"pbs_mom, exec of %s failed with error %d\n",
+  fprintf(stderr,"pbs_mom, exec of shell \"%s\" failed with error %d\n",
     shell, 
     errno);
+
+  if (strlen(shell) == 0)
+    {
+    extern char mom_host[];
+
+    fprintf(stderr,"pbs_mom, user \"%s\" may not have a shell defined on node \"%s\"\n",
+      pwdp->pw_name,
+      mom_host);
+    }
+  else if (strstr(shell, "/bin/false") != NULL)
+    {
+    extern char mom_host[];
+
+    fprintf(stderr,"pbs_mom, user \"%s\" has shell \"/bin/false\" on node \"%s\"\n",
+      pwdp->pw_name,
+      mom_host);
+    }
+  else
+    {
+    struct stat buf;
+
+    if (stat(shell, &buf) != 0)
+      {
+      fprintf(stderr,"pbs_mom, stat of shell \"%s\" failed with error %d\n",
+        shell, 
+        errno);
+      }
+    else if (S_ISREG(buf.st_mode) == 0)
+      {
+      fprintf(stderr,"pbs_mom, shell \"%s\" is not a file\n",
+        shell);
+      }
+    else if ((buf.st_mode & S_IXUSR) != 0)
+      {
+      fprintf(stderr,"pbs_mom, shell \"%s\" is not executable by user \"%s\"\n",
+        shell,
+        pwdp->pw_name);
+      }
+    }
 
   exit(254);	/* should never, ever get here */
 
