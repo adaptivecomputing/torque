@@ -270,10 +270,10 @@ void proc_get_btime()
   fclose(fp);
 
   return;
-  }
+  }  /* END proc_get_btime() */
 
 static char stat_str[] = "%d (%[^)]) %c %*d %*d %d %*d %*d %u %*u \
-%*u %*u %*u %d %d %d %d %*d %*d %*u %*u %u %u %u %*u %*u \
+%*u %*u %*u %d %d %d %d %*d %*d %*u %*u %u %lu %lu %*u %*u \
 %*u %*u %*u %*u %*u %*u %*u %*u %*u %*u %*u";
 
 /*
