@@ -761,7 +761,7 @@ int set_job_env(
 
   int   eindex;
 
-  const char *EList = {
+  const char *EList[] = {
     "HOME",
     "LANG",
     "LOGNAME",
