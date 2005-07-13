@@ -129,7 +129,7 @@ Format: boolean (see acl_group_enable); default value: disabled.
 .Al acl_users
 List of users allowed or denied the ability to make any requests of this 
 server.
-See section 10.1, Authorization, in the PBS External Reference Specification.
+See section 10.1, Authorization, in the PBS External Reference Specification.  If acl_user_enable is set to true, only users listed in acl_users may submit to or execute jobs in the queue.
 Requires full manager privilege to set or alter.
 Format: "[+|-]user[@host][,...]";
 default value: all users allowed.

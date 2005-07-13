@@ -759,9 +759,21 @@ int set_job_env(
   int   rc;
   char *getcwd();
 
+  int   eindex;
+
+  const char *EList = {
+    "HOME",
+    "LANG",
+    "LOGNAME",
+    "MAIL",
+    "PATH",
+    "SHELL",
+    "TZ",
+    NULL };
+
   /* Calculate how big to make the variable string. */
 
-  len = 0;
+  len = PBS_MAXHOSTNAME + MAXPATHLEN;
 
   if (v_opt) 
     {
@@ -780,46 +792,23 @@ int set_job_env(
       }
     }
 
-  env = getenv("HOME");
+  for (eindex = 0;EList[eindex] != NULL;eindex++)
+    {
+    env = getenv(EList[eindex]);
 
-  if (env != NULL) 
-    len += strlen(env);
+    if (env == NULL)
+      continue;
 
-  env = getenv("LANG");
+    /* prepend 'PBS_O_' to each var and add '2' for ',' and '=' */
 
-  if (env != NULL) 
-    len += strlen(env);
-
-  env = getenv("LOGNAME");
-
-  if (env != NULL) 
-    len += strlen(env);
-
-  env = getenv("PATH");
-
-  if (env != NULL) 
-    len += strlen(env);
-
-  env = getenv("MAIL");
-
-  if (env != NULL) 
-    len += strlen(env);
-
-  env = getenv("SHELL");
-
-  if (env != NULL) 
-    len += strlen(env);
-
-  env = getenv("TZ");
-
-  if (env != NULL) 
-    len += strlen(env);
+    len += strlen(env) + strlen(EList[eindex]) + strlen("PBS_O_") + 2;
+    }  /* END for (eindex) */
 
   len += PBS_MAXHOSTNAME;
 
   len += MAXPATHLEN;
 
-  len += len;     /* Double it for all the commas, etc. */
+  len <<= 2;     /* enlarge buffer for all the commas, etc. */
 
   if ((job_env = (char *)malloc(len)) == NULL)
     {
@@ -887,7 +876,8 @@ int set_job_env(
     strcat(job_env,c);
     }
 
-  if ((server_host[0] != '\0') || ((rc = gethostname(server_host,PBS_MAXHOSTNAME + 1)) == 0))
+  if ((server_host[0] != '\0') || 
+     ((rc = gethostname(server_host,PBS_MAXHOSTNAME + 1)) == 0))
     {
     if ((rc = get_fullhostname(server_host,server_host,PBS_MAXHOSTNAME)) == 0) 
       {
@@ -1059,9 +1049,23 @@ state3:         /* No value - get it from qsub environment */
       return(FALSE);
       }
 
-    strcat(job_env, ",");
-    strcat(job_env, s);
-    strcat(job_env, "=");
+    if (strlen(job_env) + 2 + strlen(s) + strlen(env) >= len)
+      {
+      /* increase size of job env buffer */
+
+      len <<= 1;
+
+      job_env = (char *)realloc(job_env,len);
+
+      if (job_env == NULL)
+        {
+        return(FALSE);
+        }
+      }
+
+    strcat(job_env,",");
+    strcat(job_env,s);
+    strcat(job_env,"=");
 
     if (copy_env_value(job_env,env,1) == NULL) 
       {
@@ -1076,6 +1080,20 @@ state3:         /* No value - get it from qsub environment */
 state4:         /* goto label - Value specified */
 
     *c++ = '\0';
+
+    if (strlen(job_env) + 2 + strlen(s) + strlen(c) >= len)
+      {
+      /* increase size of job env buffer */
+
+      len <<= 1;
+
+      job_env = (char *)realloc(job_env,len);
+
+      if (job_env == NULL)
+        {
+        return(FALSE);
+        }
+      }
 
     strcat(job_env,",");
     strcat(job_env,s);
@@ -1106,6 +1124,20 @@ final:
 
       *s = '\0';
 
+      if (strlen(job_env) + 2 + strlen(*evp) + strlen(s + 1) >= len)
+        {
+        /* increase size of job env buffer */
+
+        len <<= 1;
+
+        job_env = (char *)realloc(job_env,len);
+
+        if (job_env == NULL)
+          {
+          return(FALSE);
+          }
+        }
+
       strcat(job_env,",");
       strcat(job_env,*evp);
       strcat(job_env,"=");
@@ -1114,7 +1146,7 @@ final:
 
       evp++;
       }
-    }
+    }    /* END if (V_opt) */
 
   set_attr(&attrib,ATTR_v,job_env);
 
@@ -3238,6 +3270,7 @@ int main(
   if (!set_job_env(envp)) 
     {
     fprintf(stderr, "qsub: cannot send environment with the job\n");
+
     exit(3);
     }
 
