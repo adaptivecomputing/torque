@@ -1,5 +1,6 @@
 1.2.0p5
 
+  added further Altix CPUSet support (NCSA)
   added local checkpoint script support for linux
   fixed 'premature end of message warning'
   clarify job deleted mail message (SDSC)
@@ -8,6 +9,7 @@
   added support for >= 4GB memory usage (GMX)
   log job execution limits failures
   added more detailed error messages for missing user shell on mom
+  fixed qsub env overflow issue
 
 1.2.0p4
 

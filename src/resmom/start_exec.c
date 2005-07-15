@@ -103,7 +103,12 @@
 #include <netinet/in.h>
 #if IBM_SP2==2	/* IBM SP with PSSP 3.1 */
 #include <st_client.h>
-#endif				/* IBM SP */
+#endif	/* IBM SP */
+
+#if defined(PENABLE_DYNAMIC_CPUSETS)
+# define CBUFFERSIZE 4095
+# include <cpuset.h>
+#endif /* PENABLE_DYNAMIC_CPUSETS */
 
 #include "libpbs.h"
 #include "portability.h"
@@ -1314,7 +1319,30 @@ int TMomFinalizeChild(
 
   struct startjob_rtn   sjr;
 
-  int Count;
+  int                   Count;
+
+#if defined(PENABLE_DYNAMIC_CPUSETS)
+
+  char                  cQueueName[8];  /* Unique CpuSet Name */
+  char                  cPermFile[1024]; /* Unique File Name */
+  FILE                  *fp;            /* file pointer into /proc/cpuinfo */
+  char                  cBuffer[CBUFFERSIZE + 1];  /* char buffer used for counting procs */
+  int                   nCPUS = 0;              /* Number of cpus the machine has */
+  int                   nCpuId = 0;             /* CpuId */
+
+  struct CpuSetMap {
+    short CpuId;
+    char  cQueueName[8]; /* Data struct for mapping CpuId to
+                            CpuSets assignments for the machine */
+  } *cpusetMap;
+
+  cpuset_NameList_t     *cpusetList;    /* List of all cpusets defined on machine */
+  cpuset_CPUList_t      *cpuList;       /* List of Cpus assigned to one CpuSet */
+  cpuset_QueueDef_t     *cpuQdef;       /* CpuSet Definition */
+  resource              *presc;         /* Requested Resource List */
+  resource_def          *prd;
+
+#endif  /* PENABLE_DYNAMIC_CPUSETS */
 
   job                  *pjob;
   task                 *ptask;
@@ -1500,35 +1528,241 @@ int TMomFinalizeChild(
 
   /* create dynamic cpuset(s) */
 
-  /* clear queue name */
+  /* Get the number of Active CPUs in the system. */
 
-  cQueue[0] = '\0';
+  if ((fp = fopen( "/proc/cpuinfo","r")) == NULL) 
+    {
+    sprintf(log_buffer,"cannot open /proc/cpuinfo");
 
-  execute_dynamo( 
-    0, 
-    pjob->ji_qs.ji_jobid,
-    pjob->ji_qs.ji_un.ji_momt.ji_exuid,
-    pjob->ji_qs.ji_un.ji_momt.ji_exgid,
-    path_home, 
-    cQueue);  /* O */
+    log_err(errno,id,log_buffer);
+    }
+
+  /* Look for each instance of "processor" in cpuinfo */
+
+  while (fgets(cBuffer,CBUFFERSIZE,fp)) 
+    {
+    if (!strncmp(cBuffer,"processor  :",strlen("processor  :")))
+      nCPUS++;
+    }
+
+  /* Reset the file pointer, so we can parse the cpuinfo
+     file again below */
+
+  rewind(fp);
+
+  /* Allocate memory for the CPU-CpuSet map. */
+
+  cpusetMap = (struct CpuSetMap *)malloc(nCPUS * sizeof(struct CpuSetMap));
+
+  if (cpusetMap == NULL) 
+    {
+    sprintf(log_buffer,"cannot allocate memory for CpuSetMap struct");
+
+    log_err(errno,id,log_buffer);
+    }
+  else 
+    {
+    memset(cpusetMap,0,(nCPUS * sizeof(struct CpuSetMap)));
+
+    /* Create map of CPU-CpuSet assignments */
+
+    while (fgets(cBuffer,CBUFFERSIZE,fp)) 
+      {
+      if (!strncmp(cBuffer,"processor  :",strlen("processor  :")))
+        {
+        sscanf(&cBuffer[12],"%d", 
+          &nCpuId);
+
+        cpusetMap[nCpuId].CpuId = nCpuId;
+        }
+      }    /* END while() */
+
+    if (!(cpusetList = cpusetGetNameList())) 
+      {
+      sprintf(log_buffer,"cannot get CpuSet NameList");
+
+      log_err(errno,id,log_buffer);
+      }
+    else 
+      {
+      /* Get the list of CPUs in each CpuSet. */
+
+      for (i = 0;i < cpusetList->count;i++) 
+        {
+        if (!(cpuList = cpusetGetCPUList(cpusetList->list[i]))) 
+          {
+          sprintf(log_buffer,"cannot get cpuList");
+
+          log_err(errno,id,log_buffer);
+          }
+
+        /* Copy the queue name into each used CPU in the CPU-job map. */
+
+        for (j = 0;j < cpuList->count;j++)
+          {
+          /* CpuSet Name = cpusetList->list[i] */
+
+          strncpy(cpusetMap[cpuList->list[j]].cQueueName,cpusetList->list[i],8);
+          }
+        }    /* END for (i) */
+      }      /* END else */
+    }        /* END else */
+
+  fclose(fp);
+
+  /* Determine the number of cpus to insert into the cpuset from the request */
+
+  /* TODO: nodes */
+
+  /*
+  pattr = &pjob->ji_wattr[(int)JOB_ATR_resource];
+  prd = find_resc_def(svr_resc_def,"nodes",svr_resc_size);
+  presc = find_resc_entry(pattr,prd);
+
+  if (presc != NULL)
+    {
+    printf ("nodes = %s\n", 
+      presc->rs_value.at_val.at_str);
+    }
+  */
+
+  /* TODO: neednodes */
+
+  /*
+  pattr = &pjob->ji_wattr[(int)JOB_ATR_resource];
+  prd = find_resc_def(svr_resc_def,"neednodes",svr_resc_size);
+  presc = find_resc_entry(pattr,prd);
+
+  if (presc != NULL)
+    {
+    printf ("neednodes = %s\n", 
+      presc->rs_value.at_val.at_str);
+    }
+  */
+
+  /* ncpus */
+
+  pattr = &pjob->ji_wattr[(int)JOB_ATR_resource];
+  prd = find_resc_def(svr_resc_def,"ncpus",svr_resc_size);
+  presc = find_resc_entry(pattr,prd);
+
+  if (presc != NULL) 
+    {
+    /* Allocating cpuset definition using the ncpus attribute */
+
+    cpuQdef = cpusetAllocQueueDef(presc->rs_value.at_val.at_long);
+
+    /* strncat(cQueueName,pwdp->pw_name,3); */
+
+    /* Queue Name can only be 3 - 8 chars long */
+
+    strncpy(cQueueName,pwdp->pw_name,3);
+    strncat(cQueueName,pjob->ji_qs.ji_jobid,5);
+
+    /* Set Memory Affinity */
+
+    cpuQdef->flags = CPUSET_CPU_EXCLUSIVE | CPUSET_MEMORY_LOCAL;
+
+    /* Setting the number of cpus in the cpuset to what was requested by ncpus */
+
+    cpuQdef->cpu->count = presc->rs_value.at_val.at_long;
+
+    strcpy(cPermFile,PBS_SERVER_HOME);
+    strcat(cPermFile,"/mom_priv/jobs/");
+    strcat(cPermFile,cQueueName);
+    strcat(cPermFile,".CS");
+    cpuQdef->permfile = cPermFile;
+
+    /* write cpuset definition file */
+
+    if ((fp = fopen(cpuQdef->permfile,"w")) == NULL) 
+      {
+      sprintf(log_buffer,"cannot create cpuset defintion file");
+
+      log_err(errno,id,log_buffer);
+      }
+
+    /* Comment Header, see cpuset(4) */
+
+    fprintf(fp,"#CPUSET CONFIGURATION FILE\n");
+
+    /* First Come, First Server when assigning Cpus to a new CpuSet */
+
+    j = 0;
+
+    for (i = 0;i < nCPUS;i++) 
+      {
+      if (j >= presc->rs_value.at_val.at_long)
+        break;
+
+      printf ("%d %s\n",
+        i,
+        cpusetMap[i].cQueueName);
+
+      if (!strlen(cpusetMap[i].cQueueName)) 
+        {
+        cpuQdef->cpu->list[j++] = cpusetMap[i].CpuId;
+
+        fprintf(fp,"CPU %d",
+          cpusetMap[i].CpuId);
+        }
+      }    /* END for (i) */
+
+    fclose(fp);
+
+    /* Set the permissions to the definition file */
+
+    if (chmod(cpuQdef->permfile,0700) != 0)
+      {
+      sprintf(log_buffer,"cannot chmod perm file");
+
+      log_err(errno,id,log_buffer);
+      }
+
+    /* Chown the definition file to the user */
+
+    if (chown(
+          cpuQdef->permfile,
+          pjob->ji_qs.ji_un.ji_momt.ji_exuid, 
+          pjob->ji_qs.ji_un.ji_momt.ji_exgid) != 0) 
+      {
+      sprintf(log_buffer,"cannot chown perm file");
+
+      log_err(errno,id,log_buffer);
+      }
+
+    /* Create the cpuset */
+
+    if (!cpusetCreate(cQueueName,cpuQdef)) 
+      {
+      sprintf(log_buffer,"cannot create cpuset definition");
+
+      log_err(errno,id,log_buffer);
+      }
+
+    /* Attach this process & all children processes to the cpuset */
+
+    if (!cpusetAttach(cQueueName)) 
+      {
+      sprintf(log_buffer,"cannot attach cpuset definition");
+
+      log_err(errno,id,log_buffer);
+      }
+    }
+
+  /* Clean up dynamic structures */
+
+  cpusetFreeNameList(cpusetList);
+  cpusetFreeCPUList(cpuList);
+  cpusetFreeQueueDef(cpuQdef);
+  memset(cQueueName,0,sizeof(cQueueName));
+  free(cpusetMap);
 
 #else  /* PENABLE_DYNAMIC_CPUSETS */
 
-  /* static cpuset - set queue to the batch queue */
+  /* NO-OP */
 
-  strcpy(cQueue,"batch");
 #endif  /* PENABLE_DYNAMIC_CPUSETS */
-
-  /* lock the job into the defined cpuset queue */
-
-  if (!cpusetAttach(cQueue)) 
-    {
-    /* attach failed */
-
-    system("cpuset -C");
-
-    perror(cQueue);
-    }
 
 #endif  /* (PENABLE_CPUSETS || PENABLE_DYNAMIC_CPUSETS) */
 
@@ -4447,7 +4681,7 @@ int TMomCheckJobChild(
 
 
 
-#ifdef PENABLE_DYNAMIC_CPUSETS
+#ifdef PENABLE_DYNAMIC_CPUSETS2
 
 /**********************************************************************/
 /*                                                                    */
@@ -4595,7 +4829,7 @@ int execute_dynamo(
   return(0);
   }  /* END execute_dynamo() */
 
-#endif  /* PENABLE_DYNAMIC_CPUSETS */
+#endif  /* PENABLE_DYNAMIC_CPUSETS2 */
 
 
 

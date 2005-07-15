@@ -737,21 +737,22 @@ void scan_for_exiting()
 
 #ifdef PENABLE_DYNAMIC_CPUSETS
 
-    /* clear queue name */
+    pwdp = getpwuid(pjob->ji_qs.ji_un.ji_momt.ji_exuid);
+    strncpy(cQueueName,pwdp->pw_name,3);
+    strncat(cQueueName,pjob->ji_qs.ji_jobid,5);
 
-    memset(cQueue,'\0',sizeof(cQueue));
+    strcpy(cPermFile,PBS_SERVER_HOME);
+    strcat(cPermFile,"/mom_priv/jobs/");
+    strcat(cPermFile,cQueueName);
+    strcat(cPermFile,".CS");
 
-    /* remove dynamic cpuset(s) */
+    cpusetDestroy(cQueueName);
+    unlink(cPermFile);
 
-    execute_dynamo( 
-      1, 
-      pjob->ji_qs.ji_jobid,
-      pjob->ji_qs.ji_un.ji_momt.ji_exuid,
-      pjob->ji_qs.ji_un.ji_momt.ji_exgid,
-      path_home, 
-      cQueue);
+    memset(cQueueName,0,sizeof(cQueueName));
+    memset(cPermFile,0,sizeof(cPermFile));
 
-   /* NOTE:  must clear cpusets even if child not captured, ie, mom is down when job completes */
+    /* NOTE:  must clear cpusets even if child not captured, ie, mom is down when job completes */
 
 #endif /* PENABLE_DYNAMIC_CPUSETS */
 
