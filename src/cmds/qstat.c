@@ -314,31 +314,52 @@ void prt_attr(
     printf(".%s", 
       r);
     }
-	printf(" = ");
-	c = strtok(v, comma);
-	while (c) {
-		if ((l = strlen(c)) + start < 78) {
-			printf("%s", c);
-			start += l;
-		} else {
-			if ( ! first) {
-				printf("\n\t");
-				start = 9;
-			}
-			while (*c) {
-				putchar(*c++);
-				if (++start > 78) {
-					start = 8;
-					printf("\n\t");
-				}
-			}
-		}
-		if (c = strtok((char *)0, comma)) {
-			first = 0;
-			putchar(',');
-		}
-	}
-}
+
+  printf(" = ");
+
+  c = strtok(v,comma);
+
+  while (c != NULL) 
+    {
+    if ((l = strlen(c)) + start < 78) 
+      {
+      printf("%s", 
+        c);
+
+      start += l;
+      } 
+    else 
+      {
+      if (!first) 
+        {
+        printf("\n\t");
+
+        start = 9;
+        }
+
+      while (*c) 
+        {
+        putchar(*c++);
+
+        if (++start > 78) 
+          {
+          start = 8;
+
+          printf("\n\t");
+          }
+        }
+      }
+
+    if ((c = strtok(NULL,comma)) != NULL)
+      {
+      first = 0;
+
+      putchar(',');
+      }
+    }
+
+  return;
+  }
 
 
 
@@ -504,79 +525,108 @@ static void altdsp_statjob(
   int                  alt_opt)
 
   {
-	char *comment;
-	char *pc;
-	struct attrl *pat;
-	char *exechost;
-	char *usern = NULL;
-	char *queuen = NULL;
-	char *jobn = NULL;
-	char *sess;
-	char *tasks;
-	char *nodect;
-	char *rqtimecpu;
-	char *rqtimewal;
-	char *jstate;
-	char *eltimecpu;
-	char *eltimewal;
-	int   usecput;
-	static char  pfs[SIZEL];
-	static char  rqmem[SIZEL];
-	static char  srfsbig[SIZEL];
-	static char  srfsfast[SIZEL];
-	static char *blank = " -- ";
+  char *comment;
+  char *pc;
+  struct attrl *pat;
+  char *exechost;
+  char *usern = NULL;
+  char *queuen = NULL;
+  char *jobn = NULL;
+  char *sess;
+  char *tasks;
+  char *nodect;
+  char *rqtimecpu;
+  char *rqtimewal;
+  char *jstate;
+  char *eltimecpu;
+  char *eltimewal;
+  int   usecput;
+  static char  pfs[SIZEL];
+  static char  rqmem[SIZEL];
+  static char  srfsbig[SIZEL];
+  static char  srfsfast[SIZEL];
+  static char *blank = " -- ";
 
-	if (prtheader) {
-		printf("\n%s: ", prtheader->name);
-		if (pc = findattrl(prtheader->attribs, ATTR_comment, NULL))
-			printf("%s", pc);
-		if (alt_opt & ALT_DISPLAY_R) {
-		 	printf("\n                                          Req'd  Req'd   Elap \n");
-			printf("Job ID          Username Queue    NDS TSK Memory Time  S Time   BIG  FAST   PFS\n");
-			printf("--------------- -------- -------- --- --- ------ ----- - ----- ----- ----- -----\n"); 
-		} else {
-			printf("\n                                                            Req'd  Req'd   Elap\n");
-			printf("Job ID          Username Queue    Jobname    SessID NDS TSK Memory Time  S Time\n");
-			printf("--------------- -------- -------- ---------- ------ --- --- ------ ----- - -----\n");
-		}
-	}
-	while (pstat) {
-		exechost = blank;
-		sess   = blank;
-		nodect  = blank;
-		tasks  = blank;
-		rqtimecpu = blank;
-		rqtimewal = blank;
-		eltimecpu = blank;
-		eltimewal = blank;
-		jstate    = blank;
-		comment   = blank;
-/*		*pfs      = *blank;  */
-		(void)strcpy(pfs, blank);
-/*		*rqmem    = *blank;  */
-		(void)strcpy(rqmem, blank);
-/*		*srfsbig  = *blank;  */
-		(void)strcpy(srfsbig, blank);
-/*		*srfsfast = *blank;  */
-		(void)strcpy(srfsfast, blank);
-		usecput = 0;
+  if (prtheader) 
+    {
+    printf("\n%s: ", 
+      prtheader->name);
 
-		pat = pstat->attribs;
+    if ((pc = findattrl(prtheader->attribs,ATTR_comment,NULL)) != NULL)
+      {
+      printf("%s", 
+        pc);
+      }
 
-		while (pat) {
-		    if (strcmp(pat->name, ATTR_N) == 0) {
-			jobn = pat->value;
-		    } else if (strcmp(pat->name, ATTR_owner) == 0) {
-			usern = pat->value;	
-			if (pc = strchr(usern, (int)'@'))
-				*pc = '\0';
-		    } else if (strcmp(pat->name, ATTR_state) == 0) {
-			jstate = pat->value;
-		    } else if (strcmp(pat->name, ATTR_queue) == 0) {
-			queuen = pat->value;
-		    } else if (strcmp(pat->name, ATTR_session) == 0) {
-			sess = pat->value;
-		    } else if (strcmp(pat->name, ATTR_l) == 0) {
+    if (alt_opt & ALT_DISPLAY_R) 
+      {
+      printf("\n                                          Req'd  Req'd   Elap \n");
+
+      printf("Job ID          Username Queue    NDS TSK Memory Time  S Time   BIG  FAST   PFS\n");
+
+      printf("--------------- -------- -------- --- --- ------ ----- - ----- ----- ----- -----\n"); 
+      } 
+    else 
+      {
+      printf("\n                                                            Req'd  Req'd   Elap\n");
+
+      printf("Job ID          Username Queue    Jobname    SessID NDS TSK Memory Time  S Time\n");
+
+      printf("--------------- -------- -------- ---------- ------ --- --- ------ ----- - -----\n");
+      }
+    }
+
+  while (pstat != NULL) 
+    {
+    exechost  = blank;
+    sess      = blank;
+    nodect    = blank;
+    tasks     = blank;
+    rqtimecpu = blank;
+    rqtimewal = blank;
+    eltimecpu = blank;
+    eltimewal = blank;
+    jstate    = blank;
+    comment   = blank;
+    /*	*pfs      = *blank;  */
+    strcpy(pfs,blank);
+    /*	*rqmem    = *blank;  */
+    strcpy(rqmem,blank);
+    /*	*srfsbig  = *blank;  */
+    strcpy(srfsbig,blank);
+    /*	*srfsfast = *blank;  */
+    strcpy(srfsfast, blank);
+    usecput = 0;
+
+    pat = pstat->attribs;
+
+    while (pat != NULL) 
+      {
+      if (!strcmp(pat->name,ATTR_N)) 
+        {
+        jobn = pat->value;
+        } 
+      else if (!strcmp(pat->name,ATTR_owner)) 
+        {
+        usern = pat->value;	
+
+        if ((pc = strchr(usern,(int)'@')) != NULL)
+          *pc = '\0';
+        } 
+      else if (!strcmp(pat->name,ATTR_state)) 
+        {
+        jstate = pat->value;
+        } 
+      else if (!strcmp(pat->name,ATTR_queue)) 
+        {
+        queuen = pat->value;
+        } 
+      else if (!strcmp(pat->name,ATTR_session)) 
+        {
+        sess = pat->value;
+        } 
+      else if (!strcmp(pat->name,ATTR_l)) 
+        {
 			if (strcmp(pat->resource, "nodect") == 0) {
 				nodect = pat->value;
 			} else if (strcmp(pat->resource, "ncpus") == 0) {

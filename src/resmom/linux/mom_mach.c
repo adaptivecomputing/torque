@@ -381,7 +381,7 @@ proc_mem_t *get_proc_mem()
 
     /* umu vmem patch */
 
-    fscanf(fp,"%*s %lu %lu %lu %*lu %lu %lu",
+    fscanf(fp,"%*s %lu %lu %lu %*u %lu %lu",
        &mm.mem_total,
        &mm.mem_used,
        &mm.mem_free,
@@ -1884,7 +1884,7 @@ int mach_checkpoint(
 
   task	*ptask,
   char	*file,
-  int	 abort)
+  int	 abort)  /* I */
 
   {
   /* if a checkpoint script is defined launch it */
@@ -1912,7 +1912,8 @@ int mach_checkpoint(
 
       sprintf(sid,"%ld",
         ptask->ti_job->ji_wattr[(int)JOB_ATR_session_id].at_val.at_long);
-      sprintf(s_abort,"%ld",
+
+      sprintf(s_abort,"%d",
         abort);
 
       arg[0] = CHECKPOINT_SCRIPT;
@@ -3004,7 +3005,7 @@ static char *physmem(
     {
     BPtr += strlen("MemTotal:");
 
-    if (sscanf(BPtr,"%Lu",
+    if (sscanf(BPtr,"%llu",
          &mem) != 1)
       {
       rm_errno = RM_ERR_SYSTEM;
@@ -3018,7 +3019,7 @@ static char *physmem(
     {
     /* attempt to load first numeric value */
 
-    if (sscanf(BPtr,"%*s %Lu",
+    if (sscanf(BPtr,"%*s %llu",
         &mem) != 1)
       {
       rm_errno = RM_ERR_SYSTEM;
@@ -3031,7 +3032,7 @@ static char *physmem(
     mem >>= 10;
     }
 
-  sprintf(ret_string,"%Lukb", 
+  sprintf(ret_string,"%llukb", 
     mem);
  
   return(ret_string);

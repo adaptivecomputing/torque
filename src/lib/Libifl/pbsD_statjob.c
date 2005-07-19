@@ -90,7 +90,7 @@ struct batch_status * pbs_statjob(
   int           c,       /* I - socket descriptor */
   char         *id,      /* I - job id (optional) */
   struct attrl *attrib,  /* ??? */
-  char         *extend)  /* ??? */
+  char         *extend)  /* I - ??? */
 
   {
   /* NOTE:

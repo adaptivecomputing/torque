@@ -104,39 +104,58 @@
  *			string		resource list
  */
 
-int decode_DIS_Rescl(sock, preq)
-	int	 sock;
-	struct batch_request *preq;
-{
-	int    ct;
-	int    i;
-	char **ppc;
-	int    rc;
+int decode_DIS_Rescl(
 
-	/* first, the resource handle (even if not used in request) */
+  int	 sock,
+  struct batch_request *preq)
 
-	preq->rq_ind.rq_rescq.rq_rhandle = disrsi(sock, &rc);
-	if (rc) return rc;
+  {
+  int    ct;
+  int    i;
+  char **ppc;
+  int    rc;
 
-	/* next need to know how many query strings */
+  /* first, the resource handle (even if not used in request) */
 
-	ct = disrui(sock, &rc);
-	if (rc) return rc;
-	preq->rq_ind.rq_rescq.rq_num = ct;
-	if (ct) {
-		if ((ppc = (char **)malloc(ct * sizeof (char *))) == 0)
-			return PBSE_RMSYSTEM;
+  preq->rq_ind.rq_rescq.rq_rhandle = disrsi(sock,&rc);
 
-		for (i=0; i<ct; i++)
-			*(ppc + i) = (char *)0;
+  if (rc) 
+    {
+    return(rc);
+    }
 
-        	preq->rq_ind.rq_rescq.rq_list = ppc;
-		for (i=0; i<ct; i++) {
-			*(ppc+i) = disrst(sock, &rc);
-			if (rc)
-				break;
-		}
-	}
+  /* next need to know how many query strings */
+
+  ct = disrui(sock,&rc);
+
+  if (rc) 
+    {
+    return(rc);
+    }
+
+  preq->rq_ind.rq_rescq.rq_num = ct;
+
+  if (ct) 
+    {
+    if ((ppc = (char **)malloc(ct * sizeof(char *))) == NULL)
+      {
+      return(PBSE_RMSYSTEM);
+      }
+
+    for (i = 0;i < ct;i++)
+      *(ppc + i) = NULL;
+
+    preq->rq_ind.rq_rescq.rq_list = ppc;
+
+    for (i = 0;i < ct;i++) 
+      {
+      *(ppc + i) = disrst(sock,&rc);
+
+      if (rc)
+        break;
+      }
+    }
 		
-	return rc;
-}
+  return(rc);
+  }  /* END decode_DIS_Rescl() */
+

@@ -361,7 +361,12 @@ static void accept_conn(
   {
   int newsock;
   struct sockaddr_in from;
+
+#if defined _SOCKLEN_T
+  socklen_t fromsize;
+#else /* _SOCKLEN_T */
   int fromsize;
+#endif /* _SCOKLEN_T */
 	
   /* update lasttime of main socket */
 

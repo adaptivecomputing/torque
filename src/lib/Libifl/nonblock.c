@@ -6,7 +6,7 @@
 #include <unistd.h>
 #include <errno.h>
 #include <fcntl.h>
-#include <sys/time.h>
+#include <time.h>
 
 /*
  * Assumes full-block read/write.  No accounting for partial blocks,

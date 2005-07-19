@@ -105,8 +105,15 @@ static int await_connect(
 
   {
   fd_set fs;
-  int n, val, len, rc;
+  int n, val, rc;
   struct timeval tv;
+
+#if defined(_SOCKLEN_T)
+
+  socklen_t len;
+#else /* _SOCKLEN_T */
+  int len;
+#endif /* _SCOKLEN_T */
 
   tv.tv_sec = (time_t)timeout;
   tv.tv_usec = 0;

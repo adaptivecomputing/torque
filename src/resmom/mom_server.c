@@ -438,7 +438,7 @@ void is_request(
   int		ret = DIS_SUCCESS;
   u_long	ipaddr;
   short		port;
-  struct	sockaddr_in *addr;
+  struct	sockaddr_in *addr = NULL;
   void		init_addrs();
 
   if (cmdp != NULL)
@@ -470,12 +470,12 @@ void is_request(
     }
 
   /* check that machine is okay to be a server */
-  /*  If the stream is the server_stream we already opened, then it's fine  */
+  /* If the stream is the server_stream we already opened, then it's fine  */
+
+  addr = rpp_getaddr(stream);
 
   if (stream != server_stream)
     {
-    addr = rpp_getaddr(stream);
-
     port = ntohs((unsigned short)addr->sin_port);
 
     ipaddr = ntohl(addr->sin_addr.s_addr);
@@ -625,7 +625,7 @@ err:
 
   sprintf(log_buffer,"%s from %s", 
     dis_emsg[ret], 
-    netaddr(addr));
+    (addr != NULL) ? netaddr(addr) : "???");
 
   log_err(-1,id,log_buffer);
 

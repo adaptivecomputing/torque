@@ -1743,7 +1743,7 @@ void im_request(
             {
             /* if peer mom times out, MS will send new join request for same job */
 
-            sprintf(log_buffer,"WARNING:    duplicate JOIN request from %s (purging previous pjob)\n",
+            sprintf(log_buffer,"WARNING:    duplicate JOIN request %s from %s (purging previous pjob)\n",
               PMOMCommand[MIN(command,IM_MAX)],
               netaddr(addr));
 

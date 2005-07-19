@@ -136,48 +136,65 @@ static int read_net(sock, buf, amt)
 	return (total); 
 }
 
+
+
+
+
 /*
  * rcvttype - receive the terminal type of the real terminal
  *
  *	Sent over network as "TERM=type_string"
  */
 
-char *rcvttype(sock)
-	int sock;
-{
-	static char buf[PBS_TERM_BUF_SZ];
+char *rcvttype(
 
-	/* read terminal type as sent by qsub */
+  int sock)
 
-	if ( (read_net(sock, buf, PBS_TERM_BUF_SZ) != PBS_TERM_BUF_SZ) ||
-	     (strncmp(buf, "TERM=", 5) != 0) )
-		return ((char *)0);
+  {
+  static char buf[PBS_TERM_BUF_SZ];
 
-	/* get the basic control characters from qsub's termial */
+  /* read terminal type as sent by qsub */
 
-	if (read_net(sock, cc_array, PBS_TERM_CCA) != PBS_TERM_CCA) {
-		return ((char *)0);
-	}
+  if ((read_net(sock,buf,PBS_TERM_BUF_SZ) != PBS_TERM_BUF_SZ) ||
+      (strncmp(buf,"TERM=",5) != 0))
+    {
+    return(NULL);
+    }
+
+  /* get the basic control characters from qsub's termial */
+
+  if (read_net(sock,cc_array,PBS_TERM_CCA) != PBS_TERM_CCA) 
+    {
+    return(NULL);
+    }
 	
-	return (buf);
-}
+  return(buf);
+  }
+
+
+
 
 /* 
  * set_termcc - set the basic modes for the slave terminal, and set the
  *	control characters to those sent by qsub.
  */
 
-void set_termcc(fd)
-{
-	struct termios slvtio;
+void set_termcc(
+
+  int fd)
+
+  {
+  struct termios slvtio;
 
 #ifdef	PUSH_STREAM
-	(void)ioctl(fd, I_PUSH, "ptem");
-	(void)ioctl(fd, I_PUSH, "ldterm");
+  ioctl(fd,I_PUSH,"ptem");
+  ioctl(fd,I_PUSH,"ldterm");
 #endif	/* PUSH_STREAM */
 
-	if (tcgetattr(fd, &slvtio) < 0)
-		return;		/* cannot do it, leave as is */
+  if (tcgetattr(fd,&slvtio) < 0)
+    {
+    return;	/* cannot do it, leave as is */
+    }
 
 #ifdef IMAXBEL
 	slvtio.c_iflag = (BRKINT|IGNPAR|ICRNL|IXON|IXOFF|IMAXBEL);

@@ -220,16 +220,25 @@ void free_null(attr)
 	attr->at_flags &= ~ATR_VFLAG_SET;
 }
 
+
+
 /*
  * comp_null - A do nothing, except return 0, attribute comparison
  *	       function.
  */
 
-int comp_null(attr, with)
-	struct attribute *attr, *with;
-{
-   return 0;
-}
+int comp_null(
+
+  struct attribute *attr, 
+  struct attriubte *with)
+
+  {
+  /* SUCCESS */
+
+  return(0);
+  }
+
+
 
 
 /*
@@ -242,38 +251,53 @@ int comp_null(attr, with)
  * Return: ptr to entry or NULL if error
  */
 
-svrattrl *attrlist_alloc(szname, szresc, szval)
-	int szname;
-	int szresc;
-	int szval;
-{
-	register size_t tsize;
-	svrattrl *pal;
+svrattrl *attrlist_alloc(
 
-	tsize = sizeof(svrattrl) + szname + szresc + szval;
-	pal = (svrattrl *)malloc(tsize);
-	if (pal == (svrattrl *)0) 
-		return ((svrattrl *)0);
-#ifdef DEBUG
-	memset(pal, 0, sizeof(svrattrl));
-#endif
+  int szname,  /* I */
+  int szresc,  /* I */
+  int szval)   /* I */
 
-	CLEAR_LINK(pal->al_link);	/* clear link */
-	pal->al_atopl.next = 0;
-	pal->al_tsize = tsize;		/* set various string sizes */
-	pal->al_nameln = szname;
-	pal->al_rescln = szresc;
-	pal->al_valln  = szval;
-	pal->al_flags  = 0;
-	pal->al_op     = SET;
-	pal->al_name = (char *)pal + sizeof (svrattrl);
-	if (szresc)
-		pal->al_resc = pal->al_name + szname;
-	else
-		pal->al_resc = (char *)0;
-	pal->al_value = pal->al_name + szname + szresc;
-	return (pal);
-}
+  {
+  register size_t  tsize;
+  svrattrl        *pal;
+
+  /* alloc memory block <SVRATTRL><NAME><RESC><VAL> */
+
+  tsize = sizeof(svrattrl) + szname + szresc + szval;
+
+  pal = (svrattrl *)calloc(1,tsize);
+
+  if (pal == NULL)
+    { 
+    return(NULL);
+    }
+
+  CLEAR_LINK(pal->al_link);	/* clear link */
+
+  pal->al_atopl.next = 0;
+  pal->al_tsize = tsize;		/* set various string sizes */
+  pal->al_nameln = szname;
+  pal->al_rescln = szresc;
+  pal->al_valln  = szval;
+  pal->al_flags  = 0;
+  pal->al_op     = SET;
+  
+  /* point ptrs to name, resc, and val strings to memory after svrattrl struct */
+
+  pal->al_name = (char *)pal + sizeof(svrattrl);
+
+  if (szresc > 0)
+    pal->al_resc = pal->al_name + szname;
+  else
+    pal->al_resc = NULL;
+
+  pal->al_value = pal->al_name + szname + szresc;
+
+  return(pal);
+  }  /* END attrlist_alloc() */
+
+
+
 
 /* 
  * attrlist_create - create an svrattrl structure entry
@@ -285,29 +309,36 @@ svrattrl *attrlist_alloc(szname, szresc, szval)
  * Return: ptr to entry or NULL if error
  */
 
-svrattrl *attrlist_create(aname, rname, vsize)
-	char  *aname;	/* attribute name */
-	char  *rname;	/* resource name if needed or null */
-	int    vsize;	/* size of resource value         */
-{
-	svrattrl *pal;
-	size_t	     asz;
-	size_t	     rsz;
+svrattrl *attrlist_create(
 
-	asz = strlen(aname) + 1;     /* attribute name,allow for null term */
+  char  *aname,	/* I - attribute name */
+  char  *rname,	/* I - resource name if needed or null */
+  int    vsize)	/* I - size of resource value         */
 
-	if (rname == (char *)0)      /* resource name only if type resource */
-		rsz = 0;
-	else
-		rsz = strlen(rname) + 1;
+  {
+  svrattrl *pal;
+  size_t    asz;
+  size_t    rsz;
 
-	pal = attrlist_alloc(asz, rsz, vsize);
-	strcpy(pal->al_name, aname);	/* copy name right after struct */
-	if (rsz)
-		strcpy(pal->al_resc, rname);
+  asz = strlen(aname) + 1;     /* attribute name,allow for null term */
 
-	return (pal);
-}
+  if (rname == NULL)      /* resource name only if type resource */
+    rsz = 0;
+  else
+    rsz = strlen(rname) + 1;
+
+  pal = attrlist_alloc(asz,rsz,vsize);
+
+  strcpy(pal->al_name,aname);	/* copy name right after struct */
+
+  if (rsz > 0)
+    strcpy(pal->al_resc,rname);
+
+  return(pal);
+  }
+
+
+
 
 /*
  * free_attrlist - free the space allocated to a list of svrattrl

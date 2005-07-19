@@ -1221,7 +1221,7 @@ int create_pbs_node(
 
     pnode = (struct pbsnode *)calloc(1,sizeof(struct pbsnode));
 
-    if (pnode == (struct pbsnode *)0) 
+    if (pnode == NULL) 
       {
       free(pul);
       free(pname);

@@ -109,18 +109,20 @@ struct batch_status *PBSD_status(
 
   rc = PBSD_status_put(c,function,id,attrib,extend);
 
-  if (extend != NULL)
-    strcpy(extend,"timeout");
-
   if (rc != 0) 
     {
     if (pbs_errno == 0)
       pbs_errno = PBSE_PROTOCOL;
 
+    if (extend != NULL)
+      strcpy(extend,"timeout");
+
     return((struct batch_status *)NULL);
     }
 
   /* get the status reply */
+
+  pbs_errno = 0;
 
   return(PBSD_status_get(c));
   }  /* END PBSD_status() */
