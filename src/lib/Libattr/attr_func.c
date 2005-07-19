@@ -229,8 +229,8 @@ void free_null(attr)
 
 int comp_null(
 
-  struct attribute *attr, 
-  struct attriubte *with)
+  struct attribute *attr,   /* I */
+  struct attribute *with)   /* I */
 
   {
   /* SUCCESS */
