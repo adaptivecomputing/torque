@@ -1235,9 +1235,9 @@ int create_pbs_node(
 
     tmpndlist = (struct pbsnode **)realloc(
       pbsndmast,
-      sizeof(struct pbsnode*) * (svr_totnodes + 1));
+      sizeof(struct pbsnode *) * (svr_totnodes + 1));
 
-    if (tmpndlist == (struct pbsnode **)0) 
+    if (tmpndlist == NULL) 
       {
       free(pnode);
       free(pul);
