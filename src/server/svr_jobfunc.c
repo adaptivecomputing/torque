@@ -864,7 +864,7 @@ static void chk_svr_resc_limit(
       {
       tmpI = (int)strtol(ptr,NULL,10);
 
-      if ((SvrNodeCt > 0) && (tmpI < SvrNodeCt))
+      if ((SvrNodeCt > 0) && (tmpI <= SvrNodeCt))
         IgnTest = 1;
       }
 
