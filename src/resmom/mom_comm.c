@@ -3709,7 +3709,7 @@ void im_request(
           DBPRT(("%s: REQUEST %d %s returned ERROR %d\n",
             id,event_com,jobid,errcode))
 
-          ptask = task_check(pjob, event_task);
+          ptask = task_check(pjob,event_task);
 
           if (ptask == NULL)
             break;
@@ -3882,7 +3882,14 @@ void tm_eof(
       {
       if (ptask->ti_fd == fd) 
         {
-        log_err(-1,id,"matching task located, marking interface closed");
+        if (LOGLEVEL >= 6)
+          {
+          log_record(
+            PBSEVENT_JOB,
+            PBS_EVENTCLASS_JOB,
+            pjob->ji_qs.ji_jobid,
+            "matching task located, marking interface closed");
+          }
 
         ptask->ti_fd = -1;
 

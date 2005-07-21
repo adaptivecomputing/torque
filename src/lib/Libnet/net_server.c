@@ -291,7 +291,7 @@ int wait_request(
         } 
       else 
         {
-        log_err(0,"wait_request","select bad socket");
+        log_err(-1,"wait_request","select bad socket");
 
         FD_CLR(i,&readset);
 

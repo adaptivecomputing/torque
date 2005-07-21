@@ -252,7 +252,7 @@ void req_stagein(
 
   if ((pjob->ji_wattr[(int)JOB_ATR_stagein].at_flags & ATR_VFLAG_SET) == 0) 
     {
-    log_err(0,"req_stagein","stage-in information not set");
+    log_err(-1,"req_stagein","stage-in information not set");
 
     req_reject(PBSE_IVALREQ,0,preq,NULL,NULL);
 
@@ -974,7 +974,7 @@ static job *chk_job_torun(
     {
     /* the job must be in an execution queue */
 
-    log_err(0,"chk_job_torun","attempt to start job in non-execution queue");
+    log_err(-1,"chk_job_torun","attempt to start job in non-execution queue");
 
     req_reject(PBSE_IVALREQ,0,preq,NULL,"job not in execution queue");
 

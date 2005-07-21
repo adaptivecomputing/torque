@@ -277,14 +277,21 @@ static char stat_str[] = "%d (%[^)]) %c %*d %*d %d %*d %*d %u %*u \
 %*u %*u %*u %*u %*u %*u %*u %*u %*u %*u %*u";
 
 /*
-**	Convert jiffies to seconds.
+ * Convert jiffies to seconds.
+ *
+ * CLOCKS_PER_SEC is the C99 ANSI standard name, CLK_TCK is obsolete
 */
-#define	JTOS(x)	 x = (x + CLK_TCK/2) / CLK_TCK;
+
+#ifndef CLOCKS_PER_SEC
+#define CLOCKS_PER_SEC CLK_TCK
+#endif /* CLOCKS_PER_SEC */
+
+#define JTOS(x)  x = (x + CLOCKS_PER_SEC/2) / CLOCKS_PER_SEC;
 
 /*
  * Linux /proc status routine.
  *
- *	Returns a pointer to a malloc'd proc_stat_t structure given
+ *	Returns a pointer to a static proc_stat_t structure given
  *	a process number, or NULL if there is an error.  Takes the
  *	place of the ioctl call PIOCSTATUS in the irix imp of mom_mach.c
  *

@@ -641,7 +641,7 @@ static int build_selentry(
 
     free(entry);
 
-    log_err(0,"build_selentry","cannot select attribute");
+    log_err(-1,"build_selentry","cannot select attribute");
 
     return(PBSE_IVALREQ);
     }
