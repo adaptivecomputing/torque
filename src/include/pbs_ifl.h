@@ -242,6 +242,8 @@
 
 
 #define DELDELAY  "deldelay="	/* see qdel.c */
+#define DELPURGE  "delpurge="   /* see qdel.c */
+
 #define USER_HOLD "u"
 #define OTHER_HOLD "o"
 #define SYSTEM_HOLD "s"

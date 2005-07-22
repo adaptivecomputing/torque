@@ -111,6 +111,10 @@
 extern char *msg_deletejob;
 extern char *msg_delrunjobsig;
 extern char *msg_manager;
+extern char *msg_unkjobid;
+extern char *msg_permlog;
+extern char *msg_badstate;
+
 extern struct server server;
 extern time_t time_now;
 
@@ -119,10 +123,12 @@ extern time_t time_now;
 static void post_delete_route A_((struct work_task *));
 static void post_delete_mom1 A_((struct work_task *));
 static void post_delete_mom2 A_((struct work_task *));
+static int forced_jobpurge A_((struct batch_request *));
 
 /* Private Data Items */
 
 static char *deldelaystr = DELDELAY;
+static char *delpurgestr = DELPURGE;
 
 /* 
  * remove_stagein() - request that mom delete staged-in files for a job
@@ -187,11 +193,17 @@ void req_deletejob(
   struct batch_request *preq)
 
   {
-  job		 *pjob;
+  job              *pjob;
   struct work_task *pwtold;
   struct work_task *pwtnew;
-  int		  rc;
-  char		 *sigt = "SIGTERM";
+
+  int               rc;
+  char             *sigt = "SIGTERM";
+
+  if (forced_jobpurge(preq) != 0)
+    {
+    return;
+    }
 
   pjob = chk_job_request(preq->rq_ind.rq_delete.rq_objname,preq);
 
@@ -544,6 +556,72 @@ static void post_delete_mom2(
   return;
   }
 
+
+
+
+
+/*
+ * forced_jobpurge - possibly forcibly purge a job
+ */
+
+static int forced_jobpurge(
+
+  struct batch_request *preq)
+
+  {
+  job *pjob;
+
+  if ((pjob = find_job(preq->rq_ind.rq_delete.rq_objname)) == NULL)
+    {
+    log_event(
+      PBSEVENT_DEBUG,
+      PBS_EVENTCLASS_JOB,
+      preq->rq_ind.rq_delete.rq_objname,
+      msg_unkjobid);
+
+    req_reject(PBSE_UNKJOBID,0,preq,NULL,NULL);
+
+    return(-1);
+    }
+
+  /* check about possibly purging the job */
+
+  if (preq->rq_extend != NULL) 
+    {
+    if (strncmp(preq->rq_extend,delpurgestr,strlen(delpurgestr)) == 0) 
+      {
+      if ((preq->rq_perm & (ATR_DFLAG_OPRD|ATR_DFLAG_OPWR|
+                            ATR_DFLAG_MGRD|ATR_DFLAG_MGWR)) != 0)
+        {
+        sprintf(log_buffer, "purging job without checking MOM");
+
+        log_event(
+          PBSEVENT_JOB, 
+          PBS_EVENTCLASS_JOB,
+          pjob->ji_qs.ji_jobid,
+          log_buffer);
+
+        reply_ack(preq);
+
+        free_nodes(pjob);
+
+        set_resc_assigned(pjob,DECR);
+
+        job_purge(pjob);
+
+        return(1);
+        } 
+      else
+        {
+        req_reject(PBSE_PERM,0,preq,NULL,NULL);
+
+        return(-1);
+        } 
+      } 
+    } 
+
+  return(0);
+  }  /* END forced_jobpurge() */
 
 /* END req_delete.c */
 

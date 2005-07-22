@@ -83,6 +83,7 @@ qdel - delete pbs batch job
 .Sh SYNOPSIS
 qdel
 [\-W delay]
+[\p]
 job_identifier ...
 .Sh DESCRIPTION
 The 
@@ -120,6 +121,8 @@ specifies a unsigned integer number of seconds.
 This option is an extension to POSIX 1003.2d.
 .NL
 .Ig
+.IP "\-p" 15
+Forcibly purge the job from the server.  This should only be used if a running job will not exit because its allocated nodes are unreachable.  The admin should make every attempt at resolving the problem on the nodes.  If a job's mother superior recovers after purging the job, any epilogue scripts may still run.  This option is only available to a batch operator or the batch administrator.
 .LP
 .Sh OPERANDS
 The qdel command accepts one or more

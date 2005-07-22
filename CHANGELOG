@@ -1,5 +1,6 @@
 1.2.0p5
 
+  added '-p' flag to qdel to enable forced job purge (USC)
   fixed server resources_available n-1 issue
   added further Altix CPUSet support (NCSA)
   added local checkpoint script support for linux
