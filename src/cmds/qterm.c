@@ -195,13 +195,6 @@ int main(
       exit(1);
       }
     } 
-  else 
-    {
-    fprintf(stderr, 
-      usage);
-
-    exit(1);
-    }
 
   if (optind < argc)
     {
