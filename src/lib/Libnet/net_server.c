@@ -218,7 +218,7 @@ int init_network(
 	
   /* start listening for connections */
 
-  if (listen(sock,128) < 0) 
+  if (listen(sock,512) < 0) 
     {
     log_err(errno,"init_network","listen failed");
 

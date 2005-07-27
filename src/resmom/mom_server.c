@@ -138,7 +138,7 @@ extern  int             MOMRecvClusterAddrsCount;
 
 int			server_stream = -1;	/* XXX */
 
-void	state_to_server A_((int));
+void state_to_server A_((int));
 
 /*
  * Tree search generalized from Knuth (6.2.2) Algorithm T just like

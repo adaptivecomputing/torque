@@ -1004,7 +1004,7 @@ int main(
 
   /* Just check the nodes with check_nodes above and don't ping anymore. */
 
-  /* set_task(WORK_Immed, 0, ping_nodes, NULL); */
+  set_task(WORK_Immed,0,ping_nodes,NULL); 
 
   /*
    * Now at last, we are ready to do some batch work.  The
