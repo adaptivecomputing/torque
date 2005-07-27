@@ -3629,7 +3629,12 @@ void rpp_request(
       }
 
     if (stream == -2)
+      {
+      
+      /* unknown stream identifier */
+
       break;
+      }
 
     do_rpp(stream);
     }  /* END for() */

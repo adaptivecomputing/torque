@@ -3500,6 +3500,8 @@ int rpp_poll(void)
 
   rpp_send_out();
 
+  /* unknown stream identifier */
+
   return(-2);
   }
 
