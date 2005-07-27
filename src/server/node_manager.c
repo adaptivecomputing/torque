@@ -643,7 +643,7 @@ void stream_eof(
 
 void ping_nodes(
 
-  struct work_task *ptask)
+  struct work_task *ptask)  /* I (optional) */
 
   {
   static  char	        *id = "ping_nodes";
@@ -677,7 +677,7 @@ void ping_nodes(
       np->nd_stream = rpp_open(np->nd_name,pbs_rm_port,NULL);
       np->nd_state |= INUSE_DOWN;
 
-      for (sp = np->nd_psn; sp; sp = sp->next)
+      for (sp = np->nd_psn;sp;sp = sp->next)
 	sp->inuse |= INUSE_DOWN;
 
       if (np->nd_stream == -1) 
@@ -720,12 +720,24 @@ void ping_nodes(
 
     np->nd_state |= INUSE_DOWN;
 
+    for (sp = np->nd_psn;sp;sp = sp->next)
+      sp->inuse |= INUSE_DOWN;
+
     ret = is_compose(np->nd_stream,com);
 
     if (ret == DIS_SUCCESS) 
       {
       if (rpp_flush(np->nd_stream) == 0)
+        {
+        /* success, mark node up */
+
+        np->nd_state &= ~INUSE_DOWN;
+
+        for (sp = np->nd_psn;sp;sp = sp->next)
+          sp->inuse &= ~INUSE_DOWN;
+
         continue;
+        }
 
       ret = DIS_NOCOMMIT;
       }
@@ -741,12 +753,8 @@ void ping_nodes(
     log_err(-1,id,log_buffer);
 
     rpp_close(np->nd_stream);
-    tdelete((u_long)np->nd_stream, &streams);
+    tdelete((u_long)np->nd_stream,&streams);
     np->nd_stream = -1;
-    np->nd_state |= INUSE_DOWN;
-
-    for (sp = np->nd_psn; sp; sp = sp->next)
-      sp->inuse |= INUSE_DOWN;
     }  /* END for (i) */
 
   if (ptask->wt_parm1 == NULL) 
@@ -756,7 +764,9 @@ void ping_nodes(
     else
       i = 120;
 
-    set_task(WORK_Timed,time_now + i,ping_nodes,NULL);
+    /* only ping nodes once */
+
+    /* set_task(WORK_Timed,time_now + i,ping_nodes,NULL); */
     }
 
   return;
