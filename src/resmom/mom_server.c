@@ -441,6 +441,8 @@ void is_request(
   struct	sockaddr_in *addr = NULL;
   void		init_addrs();
 
+  time_t        time_now;
+
   if (cmdp != NULL)
     *cmdp = 0;
 
@@ -551,6 +553,12 @@ void is_request(
 
       MOMRecvHelloCount++;
 
+      /* FORCE immediate update server */
+
+      time_now = time((time_t *)0);
+
+      LastServerUpdateTime = time_now - ServerStatUpdateInterval;
+
       if (internal_state != 0)
         state_to_server(1);
 
@@ -598,6 +606,12 @@ void is_request(
         }  /* END for (;;) */
 
       MOMRecvClusterAddrsCount++;
+
+      /* FORCE immediate update server */
+
+      time_now = time((time_t *)0);
+
+      LastServerUpdateTime = time_now - ServerStatUpdateInterval;
 
       if (ret != DIS_EOD)
         goto err;

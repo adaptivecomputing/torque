@@ -2484,7 +2484,7 @@ int bad_restrict(
 
 /*
  **   is_update_stat
- **     This should update the PBS server with the status information
+ **   This should update the PBS server with the status information
  **   that the resource manager should need.  This should allow for
  **   less trouble on the part of the resource manager.  It can get
  **   this information from the server rather than going to each mom.
@@ -3937,11 +3937,14 @@ int kill_job(
 
 static void finish_loop(
 
-  time_t waittime)  /* I */
+  time_t waittime)  /* I (in seconds) */
 
   {
   static char id[] = "finish_loop";
 
+  time_t tmpTime;
+  time_t time_now;
+  
   /* check for any extra rpp messages */
 
   rpp_request(42);
@@ -3964,9 +3967,15 @@ static void finish_loop(
   if (sigprocmask(SIG_UNBLOCK,&allsigs,NULL) == -1)
     log_err(errno,id,"sigprocmask(UNBLOCK)");
 
+  time_now = time((time_t *)0);
+
+  tmpTime = MIN(waittime,LastServerUpdateTime + ServerStatUpdateInterval - time_now);
+
+  tmpTime = MAX(1,tmpTime);
+
   /* wait for a request to process */
 
-  if (wait_request(waittime) != 0)
+  if (wait_request(tmpTime) != 0)
     {
     if (errno == EBADF)
       {
@@ -3980,7 +3989,7 @@ static void finish_loop(
 
   /* block signals while we do things */
 
-  if (sigprocmask(SIG_BLOCK, &allsigs, NULL) == -1)
+  if (sigprocmask(SIG_BLOCK,&allsigs,NULL) == -1)
     log_err(errno,id,"sigprocmask(BLOCK)");
 
   return;
