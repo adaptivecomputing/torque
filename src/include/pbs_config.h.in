@@ -165,6 +165,9 @@
 /* PBS specific: set whether job scripts use a pipe */
 #undef SHELL_INVOKE
 
+/* PBS specific: set whether shell is invoked with job script on command line */
+#undef SHELL_USE_ARGV
+
 /* PBS Specific: Define if one should use NODEMASK on SGI O2k or Cray T3e */
 #undef NODEMASK
 

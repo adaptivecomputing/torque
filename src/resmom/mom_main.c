@@ -4764,17 +4764,17 @@ int main(
 
   act.sa_handler = SIG_IGN;
   sigaction(SIGPIPE,&act,NULL);
-  sigaction(SIGUSR2,&act,NULL);
-#ifdef	SIGINFO
-  sigaction( SIGINFO, &act, NULL);
-#endif
+
+#ifdef SIGINFO
+  sigaction(SIGINFO,&act,NULL);
+#endif /* SIGINFO */
 
   sigaddset(&allsigs,SIGHUP);	/* remember to block these */
   sigaddset(&allsigs,SIGINT);	/* during critical sections */
   sigaddset(&allsigs,SIGTERM);	/* so we don't get confused */
   sigaddset(&allsigs,SIGCHLD);
 #ifdef _CRAY
-  sigaddset(&allsigs, WJSIGNAL);
+  sigaddset(&allsigs,WJSIGNAL);
 #endif
   act.sa_mask = allsigs;
 
@@ -5374,27 +5374,16 @@ static char *mk_dirs(
 
 void stop_me(
 
-  int sig)
+  int sig)  /* I */
 
   {
   const char *dowhat;
 
-  if (sig == SIGUSR1) 
-    {
-    /* kill all jobs, then exit */
+  /* just exit, leaving jobs running */
 
-    mom_run_state = MOM_RUN_STATE_KILLALL;
+  mom_run_state = MOM_RUN_STATE_EXIT;
 
-    dowhat = "killing all jobs then exiting";
-    } 
-  else 
-    {
-    /* just exit, leaving jobs running */
-
-    mom_run_state = MOM_RUN_STATE_EXIT;
-
-    dowhat = "leaving jobs running, just exiting";
-    }
+  dowhat = "leaving jobs running, just exiting";
 
   sprintf(log_buffer,"caught signal %d: %s", 
     sig, 

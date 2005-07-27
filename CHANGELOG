@@ -1,3 +1,7 @@
+1.2.0p6
+
+  added 'shell-use-arg' patch (OSC)
+
 1.2.0p5
 
   make '-t quick' default behavior for qterm

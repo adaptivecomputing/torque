@@ -232,6 +232,15 @@ If two qualifiers are sent, "escape[xxx=hi][yyy=there]", the command
 executed would be "echo hi there".  If a qualifier is sent with
 no matching token in the command line, "escape[zzz=snafu]", an error
 is reported.
+.IP size[fs=<FS>]
+Specifies that the available and configured disk space in the <FS> filesystem
+is to be reported to the pbs_server and scheduler.  NOTE: To request disk space
+on a per job basis, specify the file resource as in 'qsub -l
+nodes=1,file=1000kb'  For example, the available and configured disk space in
+the /localscratch filesystem will be reported:
+.IP
+.Ty "size[fs=/localscratch]"
+.br
 .IP "Initialization Value"
 An initialization value directive has a name which starts with a
 dollar sign ($) and must be known to MOM via an internal table.
@@ -292,15 +301,61 @@ For example:
 .Ty "$cputmult 1.5
 .br
 .Ty "$cputmult 0.75
+.IP usecp
+specifies which directories should be staged with cp instead of rcp/scp.  If a
+shared filesystem is available on all hosts in a cluster, this directive is used to
+make these filesystems known to pbs_mom.  For example, if /home is NFS mounted on
+all nodes in a cluster:
+.IP
+.Ty "$usecp *:/home  /home"
+.br
 .IP wallmult
 which sets a factor used to adjust wall time usage by to job to a common
 reference system.  The factor is used for walltime calculations and limits
 the same as cputmult is used for cpu time.
+.IP configversion
+specifies the version of the config file data, a string.
+.IP ideal_load
+ideal processor load.  Represents a low water mark for the load average.  Nodes
+that currently busy will consider itself free after falling below ideal_load.
+.IP loglevel
+specifies the verbosity of logging with higher numbers specifying more verbose
+logging.  Values may range between 0 and 7.
+.IP max_load
+maximum processor load.  Nodes over this load average are considered busy (see
+ideal_load above).
+.IP node_check_script
+specifies the fully qualified pathname of the health check script to run (see
+HEALTH CHECK for more information).
+.IP node_check_interval
+specifies the number of MOM intervals between subsequent executions of the
+specified health check.  This value default to 1 indicating the check is run every
+mom interval. (see HEALTH CHECK for more information)
+.IP prologalarm
+Specifies maximum duration (in seconds) which the mom will wait for the job prolog
+or job job epilog to complete.  This parameter default to 300 seconds (5 minutes)
+.IP timeout
+Specifies the number of seconds before mom-to-mom messages will timeout if RPP is
+disabled.  Default is 60 seconds.
 .RE
 .LP
 The configuration file must be "secure".  It must be owned by a user id and
 group id less than 10 and not be world writtable.
 .LP
+.Sh HEALTH CHECK
+The health check script is executed directly by the pbs_mom daemon under the
+root user id. It must be accessible from the compute node and may be a script
+or compile executable program.  It may make any needed system calls and execute
+any combination of system utilities but should not execute resource manager
+client commands.  Also, as of TORQUE 1.0.1, the pbs_mom daemon blocks until the
+health check is completed and does not possess a built-in timeout.
+Consequently, it is advisable to keep the launch script execution time short
+and verify that the script will not block even under failure conditions.
+.LP
+If the script detects a failure, it should return the keyword 'ERROR' to stdout
+followed by an error message.  The message (up to 256 characters) immediately
+following the ERROR string will be assigned to the node attribute 'message' of
+the associated node. 
 .Sh FILES
 .IP $PBS_SERVER_HOME/mom_priv 10
 the default directory for configuration files, typical
@@ -311,8 +366,8 @@ directory for log files recorded by the server.
 the administrative script to be run before job execution.
 .IP $PBS_SERVER_HOME/mom_priv/eiplogue 10
 the administrative script to be run after job execution.
-.Sh Signal Handling
-Pbs_mom handles the following signals:
+.Sh SIGNAL HANDLING
+pbs_mom handles the following signals:
 .IP SIGHUP
 causes pbs_mom to re-read its configuration file, close and reopen the log
 file, and reinitialize resource structures.
@@ -320,12 +375,16 @@ file, and reinitialize resource structures.
 results in a log file entry. The signal is used to limit the time taken by
 certain children processes, such as the prologue and epilogue.
 .IP "SIGINT and SIGTERM"
-Result in pbs_mom exiting without terminating any running jobs.
+results in pbs_mom exiting without terminating any running jobs.
 This is the action for the following signals as well: SIGXCPU, SIGXFSZ,
 SIGCPULIM, and SIGSHUTDN.
-.IP SIGUSR1
-causes mom to kill all running jobs on the node, then exit.
-.IP "SIGPIPE, SIGUSR1, SIGINFO"
+.IP SIGUSR1, SIGUSR2
+causes mom to increase and decrease logging levels, respectively.
+.IP "SIGPIPE, SIGINFO"
+ are ignored.
+.IP "SIGBUS, SIGFPE, SIGILL, SIGTRAP, and SIGSYS"
+cause a core dump if the PBSCOREDUMP environmental variable is defined.
+ .LP
 are ignored.
 .LP
 All other signals have their default behavior installed.

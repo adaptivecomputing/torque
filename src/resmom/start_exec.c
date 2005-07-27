@@ -1059,6 +1059,7 @@ int TMomFinalizeJob1(
       TJE->ptc_name);
     }  /* END if (TJE->is_interactive == TRUE) */
 
+#if SHELL_USE_ARGV == 0
 #if SHELL_INVOKE == 1
 
   if (TJE->is_interactive == FALSE)
@@ -1084,6 +1085,7 @@ int TMomFinalizeJob1(
     }    /* END if (TJE->is_interactive == FALSE) */
 
 #endif /* SHELL_INVOKE */
+#endif /* !SHELL_USE_ARGV */
 
   /* create pipes between MOM and the job starter   */
   /* fork the job starter which will become the job */
@@ -1237,6 +1239,7 @@ int TMomFinalizeJob2(
     pjob->ji_qs.ji_un.ji_momt.ji_exuid,
     pjob->ji_qs.ji_un.ji_momt.ji_exgid);
 
+#if SHELL_USE_ARGV == 0
 #if SHELL_INVOKE == 1
 
   if (TJE->is_interactive == FALSE) 
@@ -1269,6 +1272,7 @@ int TMomFinalizeJob2(
     }
 
 #endif	/* SHELL_INVOKE */
+#endif  /* !SHELL_USE_ARGV */
 
   /* SUCCESS:  parent returns */
 
@@ -1302,7 +1306,7 @@ int TMomFinalizeChild(
   static char          *id = "TMomFinalizeChild";
 
   struct sigaction      act;
-  char                 *arg[2];
+  char                 *arg[3];
   char                  buf[MAXPATHLEN + 2];
   pid_t                 cpid;
   int                   i, j, vnodenum;
@@ -2079,14 +2083,20 @@ int TMomFinalizeChild(
 
     bld_env_variables(&vtable,"PBS_ENVIRONMENT","PBS_BATCH");
     bld_env_variables(&vtable,"ENVIRONMENT","BATCH");
-	
-#if SHELL_INVOKE == 1
+
+#if SHELL_USE_ARGV == 1
+    /* connect stdin to /dev/null and feed the name of
+     * the script on the command line */
+
+    if (TJE->is_interactive == FALSE)
+      script_in = open("/dev/null",O_RDONLY,0);
+#elif SHELL_INVOKE == 1
     /* if passing script file name as input to shell */
 
     close(TJE->pipe_script[1]);
   
     script_in = TJE->pipe_script[0];
-#else	/* SHELL_INVOKE == 0 */
+#else	/* SHELL_USE_ARGV || SHELL_INVOKE */
     /* if passing script itself as input to shell */
 
     strcpy(buf,path_jobs);
@@ -2098,8 +2108,8 @@ int TMomFinalizeChild(
       if (errno == ENOENT)
         script_in = open("/dev/null",O_RDONLY,0);
       }
-#endif	/* SHELL_INVOKE */
-	
+#endif  /* SHELL_USE_ARGV */
+
     if (script_in < 0) 
       {
       log_record(
@@ -2430,6 +2440,22 @@ int TMomFinalizeChild(
 
     arg[1] = NULL;
 
+#if SHELL_USE_ARGV == 1
+    if (TJE->is_interactive == FALSE) 
+      {
+      arg[1] = malloc(
+        strlen(path_jobs) +
+        strlen(pjob->ji_qs.ji_fileprefix) +
+        strlen(JOB_SCRIPT_SUFFIX) + 1);
+
+      strcpy(arg[1],path_jobs);
+      strcat(arg[1],pjob->ji_qs.ji_fileprefix);
+      strcat(arg[1],JOB_SCRIPT_SUFFIX);
+
+      arg[2] = NULL;
+      } 
+#endif /* SHELL_USE_ARGV */
+
     execve(shell,arg,vtable.v_envp);
     }
   else if (cpid == 0)
@@ -2484,7 +2510,7 @@ int TMomFinalizeChild(
       pwdp->pw_name,
       mom_host);
     }
-  else if (strstr(shell, "/bin/false") != NULL)
+  else if (strstr(shell,"/bin/false") != NULL)
     {
     extern char mom_host[];
 

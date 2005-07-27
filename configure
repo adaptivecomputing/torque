@@ -242,7 +242,10 @@ ac_help="$ac_help
                           disabled, the behavior is to give the script file
 			  as standard input"
 ac_help="$ac_help
-
+  --enable-shell-use-argv enable this to put the job script name on the
+                          command line that invokes the shell.  Not on by
+                          default.  Ignores --enable-shell-pipe setting."
+ac_help="$ac_help
   --enable-rpp            use RPP/UDP for resource queries from PBS server to mom.
                           This is enabled by default. If disabled TCP is used."
 ac_help="$ac_help
@@ -1583,7 +1586,7 @@ fi
 
 
 
-# Check whether --enable-shell_pipe or --disable-shell_pipe was given.
+# Check whether --enable-shell-pipe or --disable-shell-pipe was given.
 if test "${enable_shell_pipe+set}" = set; then
   enableval="$enable_shell_pipe"
   case "${enableval}" in
@@ -1595,6 +1598,18 @@ else
   SHELL_INVOKE=1
 fi
 
+
+# Check whether --enable-shell-use-argv or --disable-shell-use-argv was given.
+if test "${enable_shell_use_argv+set}" = set; then
+  enableval="$enable_shell_use_argv"
+  case "${enableval}" in
+  yes) SHELL_USE_ARGV=1 ;;
+  no)  SHELL_USE_ARGV=0 ;;
+  *)   SHELL_USE_ARGV=0 ;;
+esac
+else
+  SHELL_USE_ARGV=0
+fi
 
 
 #
@@ -1981,6 +1996,9 @@ cat >> confdefs.h <<EOF
 #define SHELL_INVOKE ${SHELL_INVOKE}
 EOF
 
+cat >> confdefs.h <<EOF
+#define SHELL_USE_ARGV ${SHELL_USE_ARGV}
+EOF
 
 # Extract the first word of "flex", so it can be a program name with args.
 set dummy flex; ac_word=$2
