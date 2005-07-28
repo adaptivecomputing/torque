@@ -1,6 +1,8 @@
 1.2.0p6
 
   added 'shell-use-arg' patch (OSC)
+  improve API timeout disconnect feature
+  added improved rapid start up 
 
 1.2.0p5
 

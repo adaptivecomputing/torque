@@ -544,7 +544,7 @@ int pbs_disconnect(
 
     atime = alarm(10);
 
-    /* should this be replaced with a non-blocking 'select' loop? */
+    /* NOTE:  alarm will break out of blocking read even with sigaction ignored */
 
     while (1) 
       {	
