@@ -3630,14 +3630,23 @@ void rpp_request(
 
     if (stream == -2)
       {
-      
+      time_t time_now;
+
       /* unknown stream identifier */
+
+      /* for now, assume request is coming from uninitialized pbs_server connection */
+
+      /* FORCE immediate update server */
+
+      time_now = time((time_t *)0);
+
+      LastServerUpdateTime = time_now - ServerStatUpdateInterval;
 
       break;
       }
 
     do_rpp(stream);
-    }  /* END for() */
+    }  /* END for () */
 
   return;
   }  /* END rpp_request() */
