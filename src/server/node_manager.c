@@ -674,6 +674,8 @@ void ping_nodes(
 
     if (np->nd_stream < 0) 
       {
+      /* open new stream */
+
       np->nd_stream = rpp_open(np->nd_name,pbs_rm_port,NULL);
       np->nd_state |= INUSE_DOWN;
 
@@ -689,25 +691,8 @@ void ping_nodes(
 
 	continue;
 	}
-      else
-        {
-        sprintf(log_buffer,"successful ping to node %s\n",
-          np->nd_name);
-
-        log_record(
-          PBSEVENT_SCHED,
-          PBS_EVENTCLASS_REQUEST,
-          id,
-          log_buffer);
-        }
-
-      com = IS_HELLO;
 
       tinsert((u_long)np->nd_stream,np,&streams);
-      }
-    else
-      {
-      com = IS_NULL;
       }
 
     DBPRT(("%s: ping %s\n",
@@ -717,11 +702,6 @@ void ping_nodes(
     /* nodes are down until proven otherwise */
 
     com = IS_HELLO;
-
-    np->nd_state |= INUSE_DOWN;
-
-    for (sp = np->nd_psn;sp;sp = sp->next)
-      sp->inuse |= INUSE_DOWN;
 
     ret = is_compose(np->nd_stream,com);
 
@@ -736,11 +716,27 @@ void ping_nodes(
         for (sp = np->nd_psn;sp;sp = sp->next)
           sp->inuse &= ~INUSE_DOWN;
 
+        sprintf(log_buffer,"successful ping to node %s\n",
+          np->nd_name);
+
+        log_record(
+          PBSEVENT_SCHED,
+          PBS_EVENTCLASS_REQUEST,
+          id,
+          log_buffer);
+
         continue;
         }
 
       ret = DIS_NOCOMMIT;
       }
+
+    /* ping unsuccessful, mark node down, clear stream */
+
+    np->nd_state |= INUSE_DOWN;
+
+    for (sp = np->nd_psn;sp;sp = sp->next)
+      sp->inuse |= INUSE_DOWN;
 
     addr = rpp_getaddr(np->nd_stream);
 
@@ -753,10 +749,15 @@ void ping_nodes(
     log_err(-1,id,log_buffer);
 
     rpp_close(np->nd_stream);
+
     tdelete((u_long)np->nd_stream,&streams);
+
     np->nd_stream = -1;
     }  /* END for (i) */
 
+  /* only ping nodes once (disable new task) */
+
+#ifdef TNOT
   if (ptask->wt_parm1 == NULL) 
     {
     if (server_init_type == RECOV_HOT)
@@ -764,10 +765,9 @@ void ping_nodes(
     else
       i = 120;
 
-    /* only ping nodes once */
-
-    /* set_task(WORK_Timed,time_now + i,ping_nodes,NULL); */
+    set_task(WORK_Timed,time_now + i,ping_nodes,NULL); 
     }
+#endif /* TNOT */
 
   return;
   }  /* END ping_nodes() */
