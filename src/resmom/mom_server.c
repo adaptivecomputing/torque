@@ -135,6 +135,8 @@ extern  int             PBSNodeCheckInterval;
 extern  char            PBSNodeMsgBuf[1024];
 extern  int             MOMRecvHelloCount;
 extern  int             MOMRecvClusterAddrsCount;
+extern  time_t          LastServerUpdateTime;
+extern  int             ServerStatUpdateInterval;
 
 int			server_stream = -1;	/* XXX */
 
