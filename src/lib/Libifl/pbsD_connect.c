@@ -500,7 +500,12 @@ int pbs_connect(
 
   if ((ptr = getenv("PBSAPITIMEOUT")) != NULL)
     {
-    pbs_tcp_timeout = (int)strtol(ptr,NULL,0);	/* set for 3 hour time out */
+    pbs_tcp_timeout = strtol(ptr,NULL,0);	
+
+    if (pbs_tcp_timeout <= 0)
+      {
+      pbs_tcp_timeout = 10800;      /* set for 3 hour time out */
+      }
     }
   else
     {
@@ -542,7 +547,7 @@ int pbs_disconnect(
     act.sa_flags = 0;
     sigaction(SIGALRM,&act,&oldact);
 
-    atime = alarm(10);
+    atime = alarm(pbs_tcp_timeout);
 
     /* NOTE:  alarm will break out of blocking read even with sigaction ignored */
 
