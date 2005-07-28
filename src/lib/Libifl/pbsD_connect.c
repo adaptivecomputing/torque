@@ -90,6 +90,7 @@
 #include <stdio.h>
 #include <pwd.h>
 #include <string.h>
+#include <signal.h>
 #include <netdb.h>
 #include <unistd.h>
 #include <sys/types.h>
@@ -531,10 +532,19 @@ int pbs_disconnect(
       (DIS_tcp_wflush(sock) == 0)) 
     {
     int atime;
+    struct sigaction act;
+    struct sigaction oldact;
 
     /* set alarm to break out of potentially infinite read */
 
+    act.sa_handler = SIG_IGN;
+    sigemptyset(&act.sa_mask);
+    act.sa_flags = 0;
+    sigaction(SIGALRM,&act,&oldact);
+
     atime = alarm(10);
+
+    /* should this be replaced with a non-blocking 'select' loop? */
 
     while (1) 
       {	
@@ -547,6 +557,8 @@ int pbs_disconnect(
       }
 
     alarm(atime);
+
+    sigaction(SIGALRM,&oldact,NULL);
     }
 	
   close(sock);
