@@ -95,8 +95,8 @@
 void set_attr(
 
   struct attrl **attrib,
-  char *attrib_name,
-  char *attrib_value)
+  char          *attrib_name,
+  char          *attrib_value)
 
   {
   struct attrl *attr, *ap;
@@ -105,7 +105,8 @@ void set_attr(
 
   if (attr == NULL) 
     {
-    fprintf(stderr, "Out of memory\n");
+    fprintf(stderr,"Out of memory\n");
+
     exit(2);
     }
 
@@ -119,7 +120,7 @@ void set_attr(
 
     if (attr->name == NULL) 
       {
-      fprintf(stderr, "Out of memory\n");
+      fprintf(stderr,"out of memory\n");
       exit(2);
       }
 
@@ -136,9 +137,9 @@ void set_attr(
     {
     attr->value = (char *)malloc(strlen(attrib_value) + 1);
 
-    if (attr->name == NULL) 
+    if (attr->value == NULL) 
       {
-      fprintf(stderr, "Out of memory\n");
+      fprintf(stderr,"out of memory\n");
 
       exit(2);
       }
