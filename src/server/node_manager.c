@@ -650,8 +650,10 @@ void ping_nodes(
   struct  pbsnode	*np;
   struct  pbssubn	*sp;
   struct  sockaddr_in	*addr;
-  int     i, ret, com;
-  extern  int		pbs_rm_port;
+  int                    i, ret, com;
+  extern  int            pbs_rm_port;
+
+  static  int            startcount = 0;
 
   DBPRT(("%s: entered\n",
     id))
@@ -665,8 +667,15 @@ void ping_nodes(
     id,
     log_buffer);
 
-  for (i = 0;i < svr_totnodes;i++) 
+  for (i = startcount;i < svr_totnodes;i++) 
     {
+    if (i - startcount > 256)
+      {
+      /* only ping 256 nodes at a time, ping next batch later */
+
+      break;
+      }
+
     np = pbsndmast[i];
 
     if (np->nd_state & (INUSE_DELETED|INUSE_OFFLINE))
@@ -755,19 +764,16 @@ void ping_nodes(
     np->nd_stream = -1;
     }  /* END for (i) */
 
+  startcount = i;
+
   /* only ping nodes once (disable new task) */
 
-#ifdef TNOT
-  if (ptask->wt_parm1 == NULL) 
+  if (startcount < svr_totnodes)
     {
-    if (server_init_type == RECOV_HOT)
-      i = 15;		/* rapid ping rate while hot restart */
-    else
-      i = 120;
+    /* continue outstanding pings in 5 seconds */
 
-    set_task(WORK_Timed,time_now + i,ping_nodes,NULL); 
+    set_task(WORK_Timed,time_now + 5,ping_nodes,NULL); 
     }
-#endif /* TNOT */
 
   return;
   }  /* END ping_nodes() */

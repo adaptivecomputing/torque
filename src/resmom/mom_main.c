@@ -2534,11 +2534,9 @@ int is_update_stat(
 
   if (ServerIndex != 0)
     {
-    /* currently do not support multiple servers per MOM */
-
     /* NOTE:  attempt to support multiple servers per MOM */
 
-    /* return(0); */
+    /* NO-OP */
     }
 
   close_io = (void(*) A_((int)))rpp_close;
@@ -3602,7 +3600,7 @@ void do_rpp(
       rpp_close(stream);
 
       break;
-    }  /* END switch(proto) */
+    }  /* END switch (proto) */
 
   return;
   }  /* END do_rpp() */
@@ -3641,6 +3639,9 @@ void rpp_request(
       time_now = time((time_t *)0);
 
       LastServerUpdateTime = time_now - ServerStatUpdateInterval;
+
+      rpp_close(server_stream);
+      server_stream = -1;
 
       break;
       }
