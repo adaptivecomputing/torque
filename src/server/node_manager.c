@@ -1327,7 +1327,7 @@ err:
     {
     DBPRT(("%s: error processing node %s\n",
       id,
-      np->nd_name))
+      node->nd_name))
     }
 
   sprintf(log_buffer,"%s from %s(%s)",
