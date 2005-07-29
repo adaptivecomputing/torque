@@ -904,18 +904,18 @@ int main(
          * Chris Samuel - VPAC
          * csamuel@vpac.org - 29th July 2003
          * 
-         * Now conditional on the PSBCOREDUMP environment variable
+         * Now conditional on the PBSCOREDUMP environment variable
          */
 
-        if (getenv("PSBCOREDUMP"))
+        if (getenv("PBSCOREDUMP"))
           {
           act.sa_handler = catch_abort;   /* make sure we core dump */
 
-          sigaction(SIGSEGV, &act, NULL);
+          sigaction(SIGSEGV,&act, NULL);
           sigaction(SIGBUS, &act, NULL);
           sigaction(SIGFPE, &act, NULL);
           sigaction(SIGILL, &act, NULL);
-          sigaction(SIGTRAP, &act, NULL);
+          sigaction(SIGTRAP,&act, NULL);
           sigaction(SIGSYS, &act, NULL);
           }
 

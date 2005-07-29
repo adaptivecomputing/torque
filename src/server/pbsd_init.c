@@ -350,11 +350,11 @@ int pbsd_init(
    * Chris Samuel - VPAC
    * csamuel@vpac.org - 29th July 2003
    *
-   * Now conditional on PSBCOREDUMP environment variable.
+   * Now conditional on PBSCOREDUMP environment variable.
    * 13th August 2003.
    */
 
-  if (getenv("PSBCOREDUMP"))
+  if (getenv("PBSCOREDUMP"))
     {
     act.sa_handler = catch_abort;   /* make sure we core dump */
 
