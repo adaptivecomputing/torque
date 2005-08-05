@@ -1092,7 +1092,13 @@ int main(
 
     /* update dynamic loglevel specification */
 
-    LOGLEVEL = server.sv_attr[(int)SRV_ATR_LogLevel].at_val.at_long;
+    /* FIXME: This overrides PBSLOGLEVEL and PBSDEBUG */
+
+    /* if (!getenv("PBSLOGLEVEL") && !getenv("PBSDEBUG"))
+     * (and SRV_ATR_LogLevel's at_action can set LOGLEVEL */
+
+    if (!getenv("PBSLOGLEVEL"))
+      LOGLEVEL = server.sv_attr[(int)SRV_ATR_LogLevel].at_val.at_long;
 
     /* any running jobs need a status update? */ 
 

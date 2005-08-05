@@ -511,7 +511,7 @@ attribute_def svr_attr_def[] = {
 	ATR_TYPE_STR,
 	PARENT_TYPE_SERVER
     },
-/* SRV_ATR_NodeOrder */
+/* SRV_ATR_NodePack */
     {	ATTR_nodepack,		/* "node_pack" */
 	decode_b,
 	encode_b,

@@ -194,7 +194,7 @@ list_head	svr_newjobs;	/* jobs being sent to MOM */
 list_head	svr_alljobs;	/* all jobs under MOM's control */
 int		termin_child = 0;
 time_t		time_now = 0;
-time_t		last_scan = 0;
+time_t		polltime = 0;
 extern list_head svr_requests;
 extern struct var_table vtable;	/* see start_exec.c */
 #if MOM_CHECKPOINT == 1
@@ -634,7 +634,9 @@ static char *reqstate(
 
   static char state[1024];
 
-  if (internal_state & INUSE_BUSY)
+  if (internal_state & INUSE_DOWN)
+    strcpy(state,"down");
+  else if (internal_state & INUSE_BUSY)
     strcpy(state,"busy");
   else
     strcpy(state,"free");
@@ -2482,6 +2484,67 @@ int bad_restrict(
 
 
 
+/* init_server_stream() - open a connection to pbs_server */
+
+int init_server_stream(void)
+
+  {
+  static char id[] = "init_server_stream";
+  int ServerIndex = 0;
+
+  if (LOGLEVEL >= 5)
+    {
+    sprintf(log_buffer,"%s: trying to open %s port %d",
+      id,
+      pbs_servername[ServerIndex],
+      default_server_port);
+
+    log_record(PBSEVENT_SYSTEM,0,id,log_buffer);
+    }
+
+  if ((server_stream = rpp_open(
+         pbs_servername[ServerIndex],
+         default_server_port,
+         MOMSendStatFailure)) < 0)
+    {
+    if (LOGLEVEL >= 6)
+      {
+      sprintf(log_buffer,"%s: cannot open rpp connection, rc=%d",
+        id,
+        server_stream);
+
+      log_record(PBSEVENT_SYSTEM,0,id,log_buffer);
+      }
+
+    server_stream = -1;
+
+    return(DIS_EOF);
+    }
+
+  if (addclient(pbs_servername[ServerIndex]) == 0)                                       
+    {
+    rpp_close(server_stream);
+    server_stream = -1;
+
+    return(DIS_EOF);
+    } 
+
+  if (LOGLEVEL >= 3)
+    {
+    sprintf(log_buffer,"%s: added connection to %s",
+      id,
+      pbs_servername[ServerIndex]);
+
+    log_record(PBSEVENT_SYSTEM,0,id,log_buffer);                                         
+    }
+
+  return(DIS_SUCCESS);
+  }  /* END init_server_stream() */
+
+
+
+
+
 /*
  **   is_update_stat
  **   This should update the PBS server with the status information
@@ -2541,58 +2604,6 @@ int is_update_stat(
 
   close_io = (void(*) A_((int)))rpp_close;
   flush_io = rpp_flush;
-
-  if (server_stream < 0)
-    {
-    /* This happens when pbs_server has restarted, we want
-       to make sure we send the current state */
-
-    internal_state |= UPDATE_MOM_STATE;
-
-    if (LOGLEVEL >= 5)
-      {
-      sprintf(log_buffer,"%s: trying to open %s port %d\n",
-        id,
-        pbs_servername[ServerIndex],
-        default_server_port);
-
-      log_record(PBSEVENT_SYSTEM,0,id,log_buffer);
-      }
-
-    if ((server_stream = rpp_open(
-           pbs_servername[ServerIndex],
-           default_server_port,
-           MOMSendStatFailure)) < 0)
-      {
-      if (LOGLEVEL >= 6)
-        {
-        sprintf(log_buffer,"%s: cannot open rpp connection, rc=%d",
-          id,
-          server_stream);
-
-        log_record(PBSEVENT_SYSTEM,0,id,log_buffer);
-        }
-
-      return(DIS_EOF);
-      }
-
-    if (addclient(pbs_servername[ServerIndex]) == 0)
-      {
-      rpp_close(server_stream);
-      server_stream = -1;
-
-      return(DIS_EOF);
-      } 
-
-    if (LOGLEVEL >= 3)
-      {
-      sprintf(log_buffer,"%s: added connection to %s",
-        id,
-        pbs_servername[ServerIndex]);
-
-      log_record(PBSEVENT_SYSTEM,0,id,log_buffer);
-      }
-    }
 
   if (LOGLEVEL >= 6)
     {
@@ -2772,25 +2783,9 @@ int is_update_stat(
     log_record(PBSEVENT_SYSTEM,0,id,"status update successfully sent to server");
     }
 
-  if (MOMRecvClusterAddrsCount <= 0)
-    {
-    /* send hello if no cluster addrs message received */
+  /* It would be redundant to send state since it is already in status */
 
-    is_compose(server_stream,IS_HELLO);
-
-    rpp_flush(server_stream);
-
-    MOMSendHelloCount++;
-
-    log_record(PBSEVENT_SYSTEM,0,id,"hello sent to server");
-    }
-
-  /*
-  if (internal_state != 0)
-    {
-    state_to_server(1);
-    }
-  */
+  internal_state &= ~UPDATE_MOM_STATE;
 
   return(ret);
 
@@ -3021,7 +3016,7 @@ int rm_request(
             {
             /*  force immediate cycle */
 
-            LastServerUpdateTime = time((time_t *)0);
+            LastServerUpdateTime = 0;
 
             strcpy(output,"cycle forced");
 
@@ -3628,20 +3623,7 @@ void rpp_request(
 
     if (stream == -2)
       {
-      time_t time_now;
-
       /* unknown stream identifier */
-
-      /* for now, assume request is coming from uninitialized pbs_server connection */
-
-      /* FORCE immediate update server */
-
-      time_now = time((time_t *)0);
-
-      LastServerUpdateTime = time_now - ServerStatUpdateInterval;
-
-      rpp_close(server_stream);
-      server_stream = -1;
 
       break;
       }
@@ -3984,7 +3966,9 @@ static void finish_loop(
 
   time_now = time((time_t *)0);
 
-  tmpTime = MIN(waittime,LastServerUpdateTime + ServerStatUpdateInterval - time_now);
+  tmpTime = MIN(waittime,time_now - (LastServerUpdateTime + ServerStatUpdateInterval));
+
+  tmpTime = MIN(tmpTime,time_now - (polltime + CHECK_POLL_TIME));
 
   tmpTime = MAX(1,tmpTime);
 
@@ -4316,7 +4300,6 @@ int main(
   double	myla;
   struct sigaction act;
   job		*pjob;
-  static time_t	polltime = 0;
   extern time_t	wait_time;
   extern char	*optarg;
   extern int	optind;
@@ -5029,34 +5012,7 @@ int main(
 
     end_proc();
 
-    check_state();
-
     time_now = time((time_t *)0);
-
-    /*
-     *  Update the server on the status of this mom.
-     */
-
-    if (time_now > (LastServerUpdateTime + ServerStatUpdateInterval))
-      {
-      int index;
-
-      LastServerUpdateTime = time_now;
-
-      for (index = 0;index < PBS_MAXSERVER;index++)
-        {
-        if (pbs_servername[index][0] == '\0')
-          break;
-
-        if (is_update_stat(index) != 0)
-          {
-          /* something bad happened with the server, let's be sure
-             it gets our _correct_ state */
-
-          internal_state |= UPDATE_MOM_STATE;
-          }
-        }
-      }
 
 #if IBM_SP2==2
     query_adp();
@@ -5073,8 +5029,51 @@ int main(
       check_busy(myla);
       }
 
+    /* are we connected to the server? */
+
+    if (server_stream == -1)
+      {
+      MOMRecvClusterAddrsCount=0;
+
+      /* we're either just starting up, or the server has gone away.
+       * Either way, let's be sure to say hello */
+
+      if (init_server_stream() != DIS_SUCCESS)
+        {
+        continue;                                                                        
+        }
+
+      is_compose(server_stream,IS_HELLO);
+
+      rpp_flush(server_stream);
+
+      MOMSendHelloCount++;
+
+      log_record(PBSEVENT_SYSTEM,0,id,"hello sent to server");
+      }
+
+    /* Don't do any other processing until we've re-established
+     * contact with server */
+
+    if (MOMRecvClusterAddrsCount < 1)
+      continue;
+
+    /*
+     *  Update the server on the status of this mom.
+     */
+
+    if (time_now > (LastServerUpdateTime + ServerStatUpdateInterval))
+      {
+      check_state((LastServerUpdateTime == 0));
+
+      if (is_update_stat(42) == DIS_SUCCESS)
+         {
+         LastServerUpdateTime = time_now;
+         }
+      }
+
     /* if needed, update server with my state change */
-    /* can be changed in check_busy() or query_adp() */
+    /* can be changed in check_busy(), query_adp(), and is_update_stat() */
 
     if (internal_state & UPDATE_MOM_STATE)
       state_to_server(0);
@@ -5084,7 +5083,6 @@ int main(
       continue;
       }
 
-    last_scan = polltime;
     polltime = time_now;
 
     /* are there any jobs? */

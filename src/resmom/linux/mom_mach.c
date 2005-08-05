@@ -730,7 +730,7 @@ static unsigned long cput_sum(
 
     if (LOGLEVEL >= 6)
       {
-      sprintf(log_buffer,"%s: session=%d pid=%d cputime=%lu (cputfactor=%lf)\n",
+      sprintf(log_buffer,"%s: session=%d pid=%d cputime=%lu (cputfactor=%lf)",
         id, 
         ps->session, 
         ps->pid, 
@@ -2849,7 +2849,7 @@ static char *totmem(
  
   if (LOGLEVEL >= 6)
     {
-    sprintf(log_buffer,"%s: total mem=%lu\n", 
+    sprintf(log_buffer,"%s: total mem=%lu", 
       id, 
       mm->mem_total + mm->swap_total);
 
@@ -2894,7 +2894,7 @@ static char *availmem(
 
   if (LOGLEVEL >= 6)
     {
-    sprintf(log_buffer,"%s: free mem=%lu\n", 
+    sprintf(log_buffer,"%s: free mem=%lu", 
       id, 
       mm->mem_free + mm->swap_free);
 

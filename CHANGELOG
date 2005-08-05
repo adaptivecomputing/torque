@@ -1,8 +1,30 @@
 1.2.0p6
 
   added 'shell-use-arg' patch (OSC)
-  improve API timeout disconnect feature
+  improved API timeout disconnect feature
   added improved rapid start up
+
+  reworked mom-server state management (USC)
+  - fixed 'momctl -C' which actually _prevented_ an update
+  - fixed incorrect math on 'tmpTime'
+  - added 'polltime' to the math on 'tmpTime'
+  - consolidated node state changes to new 'update_node_state()'
+  - tightened up the "node state machine"
+  - changed mom's state to follow the documented state guidelines
+  - correctly handle "down" from mom
+  - moved server stream handling out of 'is_update_stat()' to new
+    'init_server_stream()'
+  - refactored the top of the main loop to tighten up state changes
+  - fixed interval counting on the health check script
+  - forced health check script if update state is forced
+  - don't spam the server with updates on startup
+  - required new addr list after connections are dropped
+  - removed duplicate state updates because of broken multi-server support
+  - send "down" if internal_state is down (aix's query_adp() can do this)
+  - removed ferror() check on fread() because fread() randomly fails on initial
+    mom startup.  
+  - send "down" if health check returns "ERROR"
+  - send "down" if disk space check fails.
  
 1.2.0p5
 
@@ -31,7 +53,7 @@
   added support for gcc 4.0
   added PBSDEBUG support to client commands to allow more verbose diagnostics of client failures
   added ALLOWCOMPUTEHOSTSUBMIT option to torque.cfg
-  fixed dyanmic pbs_server loglevel support
+  fixed dynamic pbs_server loglevel support
   added mom-server rpp socket diagnostics
   added support for multi-homed hosts w/SERVERHOST parameter in torque.cfg
   added support for static linking w/PBSBINDIR

@@ -450,7 +450,7 @@ void is_request(
 
   if (LOGLEVEL >= 4)
     {
-    sprintf(log_buffer,"stream %d version %d\n",
+    sprintf(log_buffer,"stream %d version %d",
       stream,
       version);
 
@@ -557,12 +557,7 @@ void is_request(
 
       /* FORCE immediate update server */
 
-      time_now = time((time_t *)0);
-
-      LastServerUpdateTime = time_now - ServerStatUpdateInterval;
-
-      if (internal_state != 0)
-        state_to_server(1);
+      LastServerUpdateTime = 0;
 
       break;
 
@@ -607,16 +602,14 @@ void is_request(
           }
         }  /* END for (;;) */
 
+      if (ret != DIS_EOD)
+        goto err;
+
       MOMRecvClusterAddrsCount++;
 
       /* FORCE immediate update server */
 
-      time_now = time((time_t *)0);
-
-      LastServerUpdateTime = time_now - ServerStatUpdateInterval;
-
-      if (ret != DIS_EOD)
-        goto err;
+      LastServerUpdateTime = 0;
 
       break;
 
@@ -718,12 +711,12 @@ int MUReadPipe(
     {
     rc = fread(Buffer + ccount,1,BufSize - ccount,fp);
 
-    ccount += rc;
+    /* NOTE:  ferror may create false failures */
 
-    if (ferror(fp))
-      {
-      break;
-      }
+    if (rc > 0)
+      { 
+      ccount += rc;
+      }  
 
     if ((ccount >= BufSize) || (rcount++ > 10))
       {
@@ -760,16 +753,25 @@ int MUReadPipe(
  *   if down criteria is not set and node is down, mark it up
  */
 
-void check_state()
+void check_state(
+
+  int Force)  /* I */
 
   {
   static int ICount = 0;
 
   static char tmpPBSNodeMsgBuf[1024];
 
+  if (Force)
+    {
+    ICount = 0;
+    }
+
   /* clear node messages */
 
   PBSNodeMsgBuf[0] = '\0';
+
+  internal_state &= ~INUSE_DOWN;
 
   /* conditions:  external state should be down if
      - inadequate file handles available (for period X) 
@@ -793,7 +795,11 @@ void check_state()
     {
     /* inadequate disk space in spool directory */
 
-    strcpy(PBSNodeMsgBuf,"no disk space");
+    strcpy(PBSNodeMsgBuf,"ERROR: torque spool filesystem full");
+
+    /* NOTE:  adjusting internal state may not be proper behavior, see note below */
+
+    internal_state |= INUSE_DOWN;
     }
   }    /* END BLOCK */
 #endif /* __TLINUX || __TDARWIN */
@@ -826,6 +832,11 @@ void check_state()
         sizeof(PBSNodeMsgBuf));
 
       PBSNodeMsgBuf[sizeof(PBSNodeMsgBuf) - 1] = '\0';
+
+      /* NOTE:  not certain this is the correct behavior, scheduler should probably make this decision as 
+                proper action may be context sensitive */
+
+      internal_state |= INUSE_DOWN;
       }
     }      /* END if (PBSNodeCheckPath[0] != '\0') */
 
@@ -880,7 +891,7 @@ void state_to_server(
 
     if (LOGLEVEL >= 4)
       {
-      sprintf(log_buffer,"sent updated state 0x%x to server\n",
+      sprintf(log_buffer,"sent updated state 0x%x to server",
         internal_state);
 
       log_record(

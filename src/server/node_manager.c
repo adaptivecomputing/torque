@@ -381,6 +381,116 @@ void tfree(
 
 
 
+/* update_node_state - central location for updating node state */
+
+void update_node_state(
+
+  struct pbsnode *np,         /* I (modified) */
+  int             newstate)   /* I */
+
+  {
+  char      *id = "update_node_state";
+
+  struct pbssubn *sp;
+
+  /*
+   * LOGLEVEL >= 4 logs all state changes
+   *          >= 2 logs down->(busy|free) changes
+   *          (busy|free)->down changes are always logged
+   */          
+
+  log_buffer[0] = '\0';
+
+  if (newstate & INUSE_DOWN)
+    {
+    if (!(np->nd_state & INUSE_DOWN))
+      {
+      sprintf(log_buffer,"node %s marked down",
+        (np->nd_name != NULL) ? np->nd_name : "NULL");
+
+      np->nd_state |= INUSE_DOWN; 
+      np->nd_state &= ~INUSE_UNKNOWN; 
+
+      /* mark all subnodes down */
+
+      for (sp = np->nd_psn;sp != NULL;sp = sp->next)
+        {
+        sp->inuse |= INUSE_DOWN;
+        }
+      }
+          
+    /* ignoring the obvious possiblity of a "down,busy" node */
+    }
+  else if (newstate & INUSE_BUSY)
+    {                                                                                      
+    if ((!(np->nd_state & INUSE_BUSY) && (LOGLEVEL >= 4)) ||                               
+        ( (np->nd_state & INUSE_DOWN) && (LOGLEVEL >= 2)))
+      {
+      sprintf(log_buffer,"node %s marked busy",
+        (np->nd_name != NULL) ? np->nd_name : "NULL");
+      }
+
+    np->nd_state |= INUSE_BUSY; 
+    np->nd_state &= ~INUSE_UNKNOWN; 
+
+    if (np->nd_state & INUSE_DOWN)
+      {
+      np->nd_state &= ~INUSE_DOWN; 
+
+      /* clear down on all subnodes */
+
+      for (sp = np->nd_psn;sp != NULL;sp = sp->next)
+        {
+        sp->inuse &= ~INUSE_DOWN;
+        }
+      }
+
+    }
+  else if (newstate == INUSE_FREE)
+    {
+    if (((np->nd_state & INUSE_DOWN) && (LOGLEVEL >= 2)) ||
+        ((np->nd_state & INUSE_BUSY) && (LOGLEVEL >= 4)))
+      {
+      sprintf(log_buffer,"node %s marked free",
+        (np->nd_name != NULL) ? np->nd_name : "NULL");
+      }
+
+    np->nd_state &= ~INUSE_BUSY; 
+    np->nd_state &= ~INUSE_UNKNOWN; 
+
+    if (np->nd_state & INUSE_DOWN)
+      {
+      np->nd_state &= ~INUSE_DOWN; 
+
+      /* clear down on all subnodes */
+
+      for (sp = np->nd_psn;sp != NULL;sp = sp->next)
+        {
+        sp->inuse &= ~INUSE_DOWN;
+        }
+      }
+    }
+
+  if (newstate & INUSE_UNKNOWN)
+    {
+    np->nd_state |= INUSE_UNKNOWN;
+    }                                                                                    
+
+  if (log_buffer[0] != '\0')
+    {
+    log_record(
+      PBSEVENT_SCHED,
+      PBS_EVENTCLASS_REQUEST,
+      id,
+      log_buffer);
+    }
+
+  return;
+  }  /* END update_node_state() */
+
+
+
+
 int is_stat_get(
 		
   struct pbsnode *np)  /* I (modified) */
@@ -450,14 +560,32 @@ int is_stat_get(
         return(DIS_NOCOMMIT);
         }
 
-      /* Is there a better way to do this? */
-
       if (!strncmp(ret_info,"state",5))
         {
-        if (!strncmp(ret_info,"state=free",10))
-          np->nd_state &= ~(INUSE_BUSY);
-        else
-          np->nd_state |= INUSE_BUSY;
+        /* MOM currently never sends multiple states - bad assumption for the future? */
+
+        if (!strncmp(ret_info,"state=down",10))
+          {
+          update_node_state(np,INUSE_DOWN);
+          }
+        else if (!strncmp(ret_info,"state=busy",10))
+          {
+          update_node_state(np,INUSE_BUSY);
+          }
+        else if (!strncmp(ret_info,"state=free",10))
+          {
+          update_node_state(np,INUSE_FREE);
+          }
+        else 
+          {
+          sprintf(log_buffer,"unknown %s from node %s",
+            ret_info,
+            (np->nd_name != NULL) ? np->nd_name : "NULL");
+
+          log_err(-1,id,log_buffer);
+
+          update_node_state(np, INUSE_UNKNOWN);
+          }                        
         }
 
       free(ret_info);
@@ -491,24 +619,7 @@ int is_stat_get(
     return(DIS_NOCOMMIT);
     }
 
-  /* adjust node state */
-
-  if (np->nd_state & INUSE_DOWN)
-    {
-    if (LOGLEVEL >= 0)
-      {
-      sprintf(log_buffer,"node %s marked available",
-        (np != NULL) ? np->nd_name : "NULL");
-
-      log_record(
-        PBSEVENT_SCHED,
-        PBS_EVENTCLASS_REQUEST,
-        id,
-        log_buffer);
-      }
-    }
-
-  np->nd_state &= ~(INUSE_DOWN|INUSE_UNKNOWN|INUSE_NEEDS_HELLO_PING); 
+  /* NOTE:  node state adjusted in update_node_state() */
 
   return(DIS_SUCCESS);
   }  /* END is_stat_get() */
@@ -608,7 +719,7 @@ void stream_eof(
 
   /* mark down node and all subnodes */
 
-  np->nd_state |= INUSE_DOWN;
+  update_node_state(np,INUSE_DOWN);
 
   /* remove stream from list of valid connections */
 
@@ -617,13 +728,6 @@ void stream_eof(
     np->nd_stream = -1;
 
     tdelete((u_long)stream,&streams);
-    }
-
-  /* mark all submodes as down */
-
-  for (sp = np->nd_psn;sp != NULL;sp = sp->next)
-    {
-    sp->inuse |= INUSE_DOWN;
     }
 
   return;
@@ -659,7 +763,11 @@ void ping_nodes(
     id))
 
   sprintf(log_buffer,"ping attempting to contact %d nodes\n",
-    svr_totnodes);
+    (svr_totnodes - startcount > 256) ? 
+      256 : 
+      (svr_totnodes - startcount < 0) ? 
+        svr_totnodes : 
+        svr_totnodes - startcount); /* phew! */
 
   log_record(
     PBSEVENT_SCHED, 
@@ -686,10 +794,8 @@ void ping_nodes(
       /* open new stream */
 
       np->nd_stream = rpp_open(np->nd_name,pbs_rm_port,NULL);
-      np->nd_state |= INUSE_DOWN;
 
-      for (sp = np->nd_psn;sp;sp = sp->next)
-	sp->inuse |= INUSE_DOWN;
+      update_node_state(np,INUSE_DOWN);
 
       if (np->nd_stream == -1) 
         {
@@ -718,13 +824,6 @@ void ping_nodes(
       {
       if (rpp_flush(np->nd_stream) == 0)
         {
-        /* success, mark node up */
-
-        np->nd_state &= ~INUSE_DOWN;
-
-        for (sp = np->nd_psn;sp;sp = sp->next)
-          sp->inuse &= ~INUSE_DOWN;
-
         sprintf(log_buffer,"successful ping to node %s\n",
           np->nd_name);
 
@@ -742,10 +841,7 @@ void ping_nodes(
 
     /* ping unsuccessful, mark node down, clear stream */
 
-    np->nd_state |= INUSE_DOWN;
-
-    for (sp = np->nd_psn;sp;sp = sp->next)
-      sp->inuse |= INUSE_DOWN;
+    update_node_state(np,INUSE_DOWN);
 
     addr = rpp_getaddr(np->nd_stream);
 
@@ -838,7 +934,7 @@ void check_nodes(
           log_buffer);
         }
 
-      np->nd_state |= INUSE_DOWN;
+      update_node_state(np,(INUSE_DOWN|INUSE_UNKNOWN));
       }
     }    /* END for (i = 0) */
 
@@ -889,8 +985,6 @@ void is_request(
   int		command = 0;
   int		ret = DIS_SUCCESS;
   int		i, j;
-
-  int           firstCon = 0;  /* first contact from node */
 
   unsigned long	ipaddr;
   struct	sockaddr_in *addr;
@@ -995,8 +1089,6 @@ void is_request(
   
     tinsert((u_long)stream,node,&streams);
 
-    firstCon = 1;
-
     goto found;
     }  /* END if ((node = tfind(ipaddr,&ipaddrs)) != NULL) */
 
@@ -1024,11 +1116,11 @@ found:
 
   command = disrsi(stream,&ret);
 
-  if (cmdp != NULL)
-    *cmdp = command;
-
   if (ret != DIS_SUCCESS)
     goto err;
+
+  if (cmdp != NULL)
+    *cmdp = command;
 
   if (LOGLEVEL >= 3)
     {
@@ -1076,7 +1168,7 @@ found:
         if (np->nd_state & INUSE_DELETED)
           continue;
 
-        if (LOGLEVEL >= 7)
+        if (LOGLEVEL == 7)  /* higher loglevel gets more info below */
           {
           sprintf(log_buffer,"adding node[%d] %s to hello response\n",
             i,
@@ -1125,12 +1217,7 @@ found:
 
       /* CLUSTER_ADDRS successful */
 
-      node->nd_state &= ~(INUSE_UNKNOWN|INUSE_NEEDS_HELLO_PING);
-
-      for (sp = node->nd_psn;sp != NULL;sp = sp->next)
-        {
-        sp->inuse &= ~INUSE_DOWN;
-        }
+      node->nd_state &= ~(INUSE_NEEDS_HELLO_PING);
 
       break;
 
@@ -1140,19 +1227,6 @@ found:
         id))
 
       i = disrui(stream,&ret);
-
-      if (ret == DIS_SUCCESS) 
-        {
-        DBPRT(("%s: IS_UPDATE %s 0x%x\n",
-          id,
-          node->nd_name,
-          i))
-
-        i &= (INUSE_BUSY);
-
-        node->nd_state &= ~(INUSE_BUSY);
-        node->nd_state |= i;
-        }
 
       if (ret != DIS_SUCCESS)
         {
@@ -1164,7 +1238,16 @@ found:
  
           log_err(ret,id,log_buffer);
           }
+
+        goto err;
         }
+
+      DBPRT(("%s: IS_UPDATE %s 0x%x\n",
+        id,
+        node->nd_name,
+        i))
+
+      update_node_state(node,i);
 
       break;
 
@@ -1172,8 +1255,9 @@ found:
 
       /* pbs_server brought up 
          pbs_mom brought up  
-         pbs_mom sends IS_STATUS message to pbs_server
-         pbs_server sends IS_CLUSTER_ADDRS message to pbs_mom 
+         they send IS_HELLO to each other
+         pbs_mom sends IS_STATUS message to pbs_server (replying to IS_HELLO)
+         pbs_server sends IS_CLUSTER_ADDRS message to pbs_mom  (replying to IS_HELLO)
          pbs_mom uses IS_CLUSTER_ADDRS message to authorize contacts from sisters */
 
       if (LOGLEVEL >= 2)
@@ -1183,21 +1267,6 @@ found:
 
         log_event(PBSEVENT_ADMIN,PBS_EVENTCLASS_SERVER,id,log_buffer);
         }
-
-      if (node->nd_state & INUSE_DOWN)
-        {
-        if (LOGLEVEL >= 4)
-          {
-          sprintf(log_buffer,"setting node state to 'up' on node %s\n",
-            node->nd_name);
-                                                                              
-          log_event(PBSEVENT_ADMIN,PBS_EVENTCLASS_SERVER,id,log_buffer);
-          }
-        }
-
-      /*node->nd_state &= ~(INUSE_DOWN|INUSE_UNKNOWN);*/
-
-      node->nd_state &= ~(INUSE_UNKNOWN|INUSE_NEEDS_HELLO_PING); 
 
       ret = is_stat_get(node);
 
@@ -1215,11 +1284,24 @@ found:
         goto err;
         }
 
+      node->nd_lastupdate = time_now;
+
+      if (LOGLEVEL >= 9)
+        {
+        sprintf(log_buffer,"node '%s' is at state '0x%x'\n",
+          node->nd_name,
+          node->nd_state);
+
+        log_event(PBSEVENT_ADMIN,PBS_EVENTCLASS_SERVER,id,log_buffer);
+        }
+
       for (sp = node->nd_psn;sp != NULL;sp = sp->next)
         {
         if (!(node->nd_state & INUSE_OFFLINE) &&
              (sp->inuse & INUSE_OFFLINE))
           {
+          /* this doesn't seem to ever happen */
+
           if (LOGLEVEL >= 2)
             {
             sprintf(log_buffer,"sync'ing subnode state '%s' with node state on node %s\n",
@@ -1234,71 +1316,6 @@ found:
 
         sp->inuse &= ~INUSE_DOWN;
         }
-
-      node->nd_lastupdate = time_now;
-
-      if (firstCon != 0)
-        {
-        /* first time node has been contacted, send cluster-addrs */
-
-        ret = is_compose(stream,IS_CLUSTER_ADDRS);
-
-        if (ret != DIS_SUCCESS)
-          goto err;
-
-        for (i = 0;i < svr_totnodes;i++) 
-          {
-          np = pbsndmast[i];
-
-          if (np->nd_state & INUSE_DELETED)
-            continue;
-
-          if (LOGLEVEL >= 5)
-            {
-            sprintf(log_buffer,"node[%d] %s added to IS_CLUSTER_ADDRS response",
-              i,
-              np->nd_name);
-
-            log_event(PBSEVENT_ADMIN,PBS_EVENTCLASS_SERVER,id,log_buffer);
-            }
-
-          /* determine all nodes this node should have access to */
-          /* NOTE:  this includes all nodes in cluster */
-
-          for (j = 0;np->nd_addrs[j];j++) 
-            {
-            u_long ipaddr = np->nd_addrs[j];
-
-            if (LOGLEVEL >= 7)
-              { 
-              sprintf(log_buffer,"node[%d] interface[%d] address %ld.%ld.%ld.%ld added to IS_CLUSTER_ADDRS response",
-                i,
-                j,
-                (ipaddr & 0xff000000) >> 24,
-                (ipaddr & 0x00ff0000) >> 16,
-                (ipaddr & 0x0000ff00) >> 8,
-                (ipaddr & 0x000000ff));
-
-              log_event(PBSEVENT_ADMIN,PBS_EVENTCLASS_SERVER,id,log_buffer);
-              }
-
-            ret = diswul(stream,ipaddr);
-
-            if (ret != DIS_SUCCESS)
-              goto err;
-            }
-          }    /* END for (i) */
-
-        rpp_flush(stream);
-
-        if (LOGLEVEL >= 2)
-          {
-          sprintf(log_buffer,"IS_CLUSTER_ADDRS sent to %s",
-            node->nd_name);
-
-          log_event(PBSEVENT_ADMIN,PBS_EVENTCLASS_SERVER,id,log_buffer);
-          }
-        }  /* END if (firstCon != 0) */
 
       break;
 
@@ -1339,10 +1356,7 @@ err:
 
   rpp_close(stream);
 
-  node->nd_state |= INUSE_DOWN;
-
-  for (sp = node->nd_psn; sp; sp = sp->next)
-    sp->inuse |= INUSE_DOWN;
+  update_node_state(node,INUSE_DOWN);
 
   return;
   }  /* END is_request() */
