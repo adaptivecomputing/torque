@@ -476,10 +476,8 @@ int pbsd_init(
 
   server.sv_attr[(int)SRV_ATR_JobStatRate].at_val.at_long =
     PBS_RESTAT_JOB;
-  server.sv_attr[(int)SRV_ATR_JobStatRate].at_flags = ATR_VFLAG_SET;
 
   server.sv_attr[(int)SRV_ATR_PollJobs].at_val.at_long = PBS_POLLJOBS;
-  server.sv_attr[(int)SRV_ATR_PollJobs].at_flags = ATR_VFLAG_SET;
 
   /* 4. force logging of all types */
 
