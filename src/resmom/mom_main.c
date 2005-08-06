@@ -4542,7 +4542,7 @@ int main(
   limit(C_JOB,      0,L_MEM  , 0);
   limit(C_JOBPROCS, 0,L_MEM  , 0);
 
-#else	/* not  _CRAY */
+#else /* _CRAY */
 
   {
   struct rlimit rlimit;
@@ -4559,7 +4559,7 @@ int main(
   setrlimit(RLIMIT_VMEM, &rlimit);
 #endif	/* RLIMIT_VMEM */
   }  /* END BLOCK */
-#endif	/* not _CRAY */
+#endif	/* else _CRAY */
 #endif	/* DEBUG */
 
   /* set up and validate home paths */

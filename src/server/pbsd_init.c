@@ -478,6 +478,9 @@ int pbsd_init(
     PBS_RESTAT_JOB;
   server.sv_attr[(int)SRV_ATR_JobStatRate].at_flags = ATR_VFLAG_SET;
 
+  server.sv_attr[(int)SRV_ATR_PollJobs].at_val.at_long = PBS_POLLJOBS;
+  server.sv_attr[(int)SRV_ATR_PollJobs].at_flags = ATR_VFLAG_SET;
+
   /* 4. force logging of all types */
 
   server.sv_attr[(int)SRV_ATR_log_events].at_val.at_long = PBSEVENT_MASK;
@@ -490,7 +493,7 @@ int pbsd_init(
   if (type != RECOV_CREATE) 
     {
     /* Open the server database (save file) and read it in */
-	
+
     if ((rc != 0) || ((rc = svr_recov(path_svrdb)) == -1)) 
       {
       log_err(rc,"pbsd_init",msg_init_baddb);

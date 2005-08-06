@@ -1,5 +1,6 @@
 1.2.0p6
 
+  make poll_jobs the default behavior with a restat time of 45 seconds
   added 'shell-use-arg' patch (OSC)
   improved API timeout disconnect feature
   added improved rapid start up
