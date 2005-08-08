@@ -132,6 +132,14 @@
 #define FAILURE 0
 #endif /* FAILURE */
 
+#ifndef TRUE
+#define TRUE 1
+#endif /* TRUE */
+
+#ifndef FALSE
+#define FALSE 0
+#endif /* FALSE */
+
 /* global Data Items */
 
 extern char	*msg_startup3;
