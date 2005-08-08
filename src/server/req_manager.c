@@ -625,6 +625,14 @@ int __PNodeStateToString(
     strcat(Buf,ND_reserve);
     }
 
+  if (SBM & (INUSE_UNKNOWN))
+    {
+    if (Buf[0] != '\0')
+      strcat(Buf,",");
+
+    strcat(Buf,ND_state_unknown);
+    }
+
   if (Buf[0] == '\0')
     {
     strcat(Buf,ND_free);

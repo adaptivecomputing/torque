@@ -81,21 +81,24 @@
 .Sh NAME
 pbsnodes \- pbs node manipulation
 .Sh SYNOPSIS
-pbsnodes [\^-{c|o|r}\^] [-s server] [nodename ...]
+pbsnodes [\^-{c|d|o|p|r}\^] [-q] [-s server] [nodename ...]
 .br
-pbsnodes -{a|l} [-s server]
+pbsnodes -l [-s server] [-q]
+.br
+pbsnodes [\^-{a|x}\^] [-s server] [-q] [node]
+
 .Sh DESCRIPTION
 The 
 .B pbsnodes
-command is used to mark nodes down, free or off line.
+command is used to mark nodes down, free or offline.
 It can also be used to list nodes and their state.
 Node information is obtained by sending a request to the PBS job server.
 .LP
 If
 .B pbsnodes
 is run without options (other than
-.B \-s ),
-the nodes specified as operands are marked DOWN and unavailable to run jobs.
+.B \-s
+), the nodes specified as operands are marked DOWN and unavailable to run jobs.
 It is importaint that all the nodes known to be down are given as arguments
 on the command line.  This is because nodes which
 are not listed are assumed to be UP and will be indicated
@@ -109,13 +112,14 @@ or
 options, the user must have PBS Manager or Operator privilege.
 .Sh OPTIONS
 .IP "-a" 15
-All nodes and their attributes are listed.   
-The attributes include "state" and "properities".
+All attributes of a node or all nodes are listed.
 .IP "-c" 15
-Clear OFFLINE or DOWN from listed nodes.  The listed nodes are "free" to 
-be allocated to jobs.
+Clear OFFLINE from listed nodes. 
+.IP "-d" 15
+Print MOM diagnosis on the listed nodes.  Not yet implemented.  
+Use momctl instead.
 .IP "-l" 15
-List all nodes marked in any way.
+List all nodes marked as DOWN, OFFLINE, or UNKNOWN.
 .IP "-o" 15
 Mark listed nodes as OFFLINE even if currently in use.
 This is different from being marked DOWN.
@@ -124,9 +128,17 @@ An automated script that checks nodes being up or down and calls
 with a list of nodes down will not change the status of nodes marked
 OFFLINE.  This gives the administrator a tool to hold a node out
 of service without changing the automatic script.
+.IP "-p" 15
+Purge the node record from pbs_server.  Not yet implemented.
+.IP "-q" 15
+Supress all error messages.
 .IP "-r" 15
+Reset the listed nodes by clearing OFFLINE and adding DOWN state.
+pbs_server will ping the node and set the state appropriately.
 clear OFFLINE from listed nodes.
 .IP "-s" 15
-specify the PBS server to which to connect.
+Specify the PBS server's hostname or IP address.
+.IP "-x" 15
+Same as -a, but the output has an XML-like format.
 .Sh SEE ALSO
 pbs_server(8B) and the PBS External Reference Specification

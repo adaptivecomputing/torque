@@ -916,7 +916,7 @@ void check_nodes(
     {
     np = pbsndmast[i];
 
-    if (np->nd_state & (INUSE_DELETED|INUSE_OFFLINE|INUSE_DOWN))
+    if (np->nd_state & (INUSE_DELETED|INUSE_DOWN))
       continue;
 
     if (np->nd_lastupdate < (time_now - chk_len))
