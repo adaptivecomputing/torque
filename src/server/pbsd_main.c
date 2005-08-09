@@ -1003,11 +1003,7 @@ int main(
   /* do not check nodes immediately as they will initially be marked 
      down unless they have already reported in */
 
-  /* FIXME:  are we trying to call this routine in 60 seconds? */
-
-  /* set_task(WORK_Immed,0,check_nodes + 60,NULL) */
-
-  set_task(WORK_Immed,0,check_nodes,NULL);
+  set_task(WORK_Immed,time_now + 60,check_nodes,NULL);
 
   /* Just check the nodes with check_nodes above and don't ping anymore. */
 
