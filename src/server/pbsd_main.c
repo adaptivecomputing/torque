@@ -1003,7 +1003,7 @@ int main(
   /* do not check nodes immediately as they will initially be marked 
      down unless they have already reported in */
 
-  set_task(WORK_Immed,0,check_nodes + 60,NULL);
+  set_task(WORK_Immed,0,check_nodes,NULL);
 
   /* Just check the nodes with check_nodes above and don't ping anymore. */
 
