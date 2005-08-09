@@ -286,7 +286,22 @@ static char stat_str[] = "%d (%[^)]) %c %*d %*d %d %*d %*d %u %*u \
 #define CLOCKS_PER_SEC CLK_TCK
 #endif /* CLOCKS_PER_SEC */
 
+#ifdef _SC_CLK_TCK
+# define Hertz (sysconf(_SC_CLK_TCK))
+#else
+#include <asm/param.h>
+# ifdef HZ
+#  define Hertz Hz
+# else
+#  define Hertz 100
+# endif
+#endif
+
+#define JTOS(x)  x = x / (Hertz > 1 ? Hertz : 100);
+
+/*
 #define JTOS(x)  x = (x + CLOCKS_PER_SEC/2) / CLOCKS_PER_SEC;
+*/
 
 /*
  * Linux /proc status routine.
