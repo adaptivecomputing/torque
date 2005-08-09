@@ -899,8 +899,7 @@ void check_nodes(
 
   if (LOGLEVEL >= 5)
     {
-    sprintf(log_buffer,"%s: verifying nodes are active (min refresh = %d seconds)",
-      id,
+    sprintf(log_buffer,"verifying nodes are active (min_refresh = %d seconds)",
       chk_len);
 
     log_event(
