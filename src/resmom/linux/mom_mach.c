@@ -341,10 +341,8 @@ proc_stat_t *get_proc_stat(
 
     return(NULL);
     }  
-  else  
-    {
-    ps.uid = sb.st_uid;
-    }
+
+  ps.uid = sb.st_uid;
 
   ps.start_time = linux_time + (jiffies / 100);
   ps.name = path;

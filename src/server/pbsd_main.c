@@ -1000,7 +1000,10 @@ int main(
     msg_daemonname, 
     log_buffer);
 
-  set_task(WORK_Immed,0,check_nodes,NULL);
+  /* do not check nodes immediately as they will initially be marked 
+     down unless they have already reported in */
+
+  set_task(WORK_Immed,0,check_nodes + 60,NULL);
 
   /* Just check the nodes with check_nodes above and don't ping anymore. */
 

@@ -934,7 +934,7 @@ void check_nodes(
           log_buffer);
         }
 
-      update_node_state(np,(INUSE_DOWN|INUSE_UNKNOWN));
+      update_node_state(np,(INUSE_DOWN));
       }
     }    /* END for (i = 0) */
 
@@ -1371,8 +1371,14 @@ void write_node_state()
   static char *fmt = "%s %d\n";
   int	i;
 
+  int   savemask;
+
   if (LOGLEVEL >= 5)
     DBPRT(("write_node_state: entered\n"))
+
+  /* don't store volatile states like down and unknown */
+
+  savemask = INUSE_OFFLINE|INUSE_DELETED|INUSE_RESERVE|INUSE_JOB|INUSE_JOBSHARE;
 
   if (nstatef != NULL) 
     {
@@ -1410,7 +1416,7 @@ void write_node_state()
       {
       fprintf(nstatef,fmt,
         np->nd_name, 
-        np->nd_state);
+        np->nd_state & savemask);
       }
     }    /* END for (i) */
 

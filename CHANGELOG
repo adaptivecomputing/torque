@@ -6,6 +6,8 @@
   added improved rapid start up
 
   reworked mom-server state management (USC)
+  - removed 'unknown' state
+  - improved pbsnodes 'offline' management
   - fixed 'momctl -C' which actually _prevented_ an update
   - fixed incorrect math on 'tmpTime'
   - added 'polltime' to the math on 'tmpTime'

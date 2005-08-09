@@ -681,10 +681,10 @@ static void initialize_pbsnode(
   pnode->nd_nsnfree = 0;
   pnode->nd_needed  = 0;
   pnode->nd_order   = 0;
-  pnode->nd_prop    = (struct array_strings *)0;
-  pnode->nd_status  = (struct array_strings *)0;
+  pnode->nd_prop    = NULL;
+  pnode->nd_status  = NULL;
   pnode->nd_psn     = NULL;
-  pnode->nd_state   = INUSE_UNKNOWN | INUSE_NEEDS_HELLO_PING | INUSE_DOWN;
+  pnode->nd_state   = INUSE_NEEDS_HELLO_PING | INUSE_DOWN;
   pnode->nd_first   = init_prop(pnode->nd_name);
   pnode->nd_last    = pnode->nd_first;
   pnode->nd_f_st    = init_prop(pnode->nd_name);
