@@ -135,7 +135,6 @@ Supress all error messages.
 .IP "-r" 15
 Reset the listed nodes by clearing OFFLINE and adding DOWN state.
 pbs_server will ping the node and set the state appropriately.
-clear OFFLINE from listed nodes.
 .IP "-s" 15
 Specify the PBS server's hostname or IP address.
 .IP "-x" 15

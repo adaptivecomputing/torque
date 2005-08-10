@@ -461,10 +461,10 @@ int stat_to_mom(
 
   CLEAR_HEAD(newrq->rq_ind.rq_status.rq_attr);
 
-  /* if MOM is offline or down just return stale information */
+  /* if MOM is down just return stale information */
 
   if (((node = tfind_addr(pjob->ji_qs.ji_un.ji_exect.ji_momaddr)) != NULL) &&
-       (node->nd_state & (INUSE_DELETED|INUSE_OFFLINE|INUSE_DOWN)))
+       (node->nd_state & (INUSE_DELETED|INUSE_DOWN)))
     {
     return(PBSE_NORELYMOM);
     }

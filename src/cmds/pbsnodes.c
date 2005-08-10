@@ -603,7 +603,7 @@ int main(
 
     case RESET:
 
-      /* clear OFFLINE and DOWN from specified nodes */
+      /* clear OFFLINE, add DOWN to specified nodes */
 
       for (pa = argv + optind;*pa;pa++) 
         {
