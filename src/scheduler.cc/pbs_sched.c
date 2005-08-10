@@ -761,7 +761,7 @@ int main(
 			}
 			break;
 		case '?':
-                        errflag = 1;
+                        errflg = 1;
 			break;
 		}
 	}
