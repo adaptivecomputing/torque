@@ -349,6 +349,11 @@ int job_abt(
         issue_track(pjob);
         }
 
+      if (pjob->ji_wattr[(int)JOB_ATR_depend].at_flags & ATR_VFLAG_SET)
+        {
+        depend_on_term(pjob);
+        }
+
       job_purge(pjob);
 
       *pjobp = NULL;
@@ -374,6 +379,11 @@ int job_abt(
       /* notify creator that job is exited */
 
       issue_track(pjob);
+      }
+
+    if (pjob->ji_wattr[(int)JOB_ATR_depend].at_flags & ATR_VFLAG_SET)
+      {
+      depend_on_term(pjob);
       }
 
     job_purge(pjob);

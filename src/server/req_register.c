@@ -869,10 +869,17 @@ int depend_on_term(
       {
       case JOB_DEPEND_TYPE_BEFOREOK:
 
-        if (exitstat == 0)
-          op = JOB_DEPEND_OP_RELEASE;
-        else
+        if (pjob->ji_qs.ji_substate == JOB_SUBSTATE_ABORT)
+          {
           op = JOB_DEPEND_OP_DELETE;
+          }
+        else
+          {
+          if (exitstat == 0)
+            op = JOB_DEPEND_OP_RELEASE;
+          else
+            op = JOB_DEPEND_OP_DELETE;
+          }
 
         break;
 

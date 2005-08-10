@@ -124,7 +124,14 @@ static void post_delete_route A_((struct work_task *));
 static void post_delete_mom1 A_((struct work_task *));
 static void post_delete_mom2 A_((struct work_task *));
 static int forced_jobpurge A_((struct batch_request *));
+static void job_delete_nanny A_((struct work_task *));
+static void post_job_delete_nanny A_((struct work_task *));
 
+/* Public Functions in this file */
+
+struct work_task *apply_job_delete_nanny A_((struct job *, int));
+int has_job_delete_nanny A_((struct job *pjob));
+ 
 /* Private Data Items */
 
 static char *deldelaystr = DELDELAY;
@@ -330,13 +337,21 @@ void req_deletejob(
       }
     }
 
-  if (svr_chk_owner(preq,pjob) != 0) 
+  if ((svr_chk_owner(preq,pjob) != 0) && 
+      !has_job_delete_nanny(pjob)) 
     {
     svr_mailowner(pjob,MAIL_DEL,MAIL_FORCE,log_buffer);
     }
 	
   if (pjob->ji_qs.ji_state == JOB_STATE_RUNNING) 
     {
+    /*
+     * setup a nanny task to make sure the job is actually deleted (see the
+     * comments at job_delete_nanny()).
+     */
+
+    apply_job_delete_nanny(pjob,time_now + 60);
+
     /*
      * Send signal request to MOM.  The server will automagically
      * pick up and "finish" off the client request when MOM replies.
@@ -520,8 +535,15 @@ static void post_delete_mom1(
     {
     /* insure that work task will be removed if job goes away */
 
-    append_link(&pjob->ji_svrtask, &pwtnew->wt_linkobj, pwtnew);
+    append_link(&pjob->ji_svrtask,&pwtnew->wt_linkobj,pwtnew);
     }
+
+  /*
+   * Since the first signal has succeeded, let's reschedule the
+   * nanny to be 1 minute after the second phase.
+   */
+
+  apply_job_delete_nanny(pjob,time_now + delay + 60);
 
   return;
   }  /* END post_delete_mom1() */
@@ -593,7 +615,7 @@ static int forced_jobpurge(
       if ((preq->rq_perm & (ATR_DFLAG_OPRD|ATR_DFLAG_OPWR|
                             ATR_DFLAG_MGRD|ATR_DFLAG_MGWR)) != 0)
         {
-        sprintf(log_buffer, "purging job without checking MOM");
+        sprintf(log_buffer,"purging job without checking MOM");
 
         log_event(
           PBSEVENT_JOB, 
@@ -622,6 +644,240 @@ static int forced_jobpurge(
 
   return(0);
   }  /* END forced_jobpurge() */
+
+
+
+
+/* has_job_delete_nanny - return true if job has a job delete nanny
+ *
+ * This means someone has already tried to cancel this job, and
+ * the nanny is taking care of things now.
+ */
+
+int has_job_delete_nanny(
+
+  struct job *pjob)
+
+  {
+  struct work_task *pwtiter;
+
+  pwtiter = (struct work_task *)GET_NEXT(pjob->ji_svrtask);
+    
+  while (pwtiter != NULL)
+    {
+    if (pwtiter->wt_func == job_delete_nanny)
+      {
+      return(1);
+      }
+
+    pwtiter = (struct work_task *)GET_NEXT(pwtiter->wt_linkobj);
+    }
+
+  return(0);
+  }  /* END has_job_delete_nanny() */
+
+
+
+
+
+/* remove_job_delete_nanny - remove all nannies on a job */
+
+void remove_job_delete_nanny(
+
+  struct job *pjob)
+
+  {
+  struct work_task *pwtiter, *pwtdel;
+
+  pwtiter = (struct work_task *)GET_NEXT(pjob->ji_svrtask);
+    
+  while (pwtiter != NULL)
+    {
+    if (pwtiter->wt_func == job_delete_nanny)
+      {
+      pwtdel = pwtiter;
+      pwtiter = (struct work_task *)GET_NEXT(pwtiter->wt_linkobj);
+      delete_task(pwtdel);
+      }
+    else
+      {
+      pwtiter = (struct work_task *)GET_NEXT(pwtiter->wt_linkobj);
+      }
+    }
+
+  return;
+  }  /* END has_job_delete_nanny() */
+
+
+
+
+
+
+/* apply_job_delete_nanny - setup the job delete nanny on a job
+ *
+ * Only 1 nanny will be allowed at a time.  Before adding the new
+ * nanny, we'll remove any existing nannies.
+ */
+
+struct work_task *apply_job_delete_nanny(
+
+  struct job *pjob, 
+  int         delay)
+
+  {
+  struct work_task *pwtiter, *pwtnew, *pwtdel;
+  enum work_type tasktype;
+
+  if (delay == 0) 
+    {
+    tasktype = WORK_Immed;
+    }
+  else if (delay > 0)
+    {
+    tasktype = WORK_Timed;
+    }
+  else
+    {
+    log_err(-1,"apply_job_delete_nanny", "negative delay requested for nanny");
+
+    return(NULL);
+    }
+
+  /* first, surgically remove any existing nanny tasks */
+
+  remove_job_delete_nanny(pjob);
+
+  /* second, add a nanny task at the requested time */
+
+  pwtnew = set_task(tasktype,delay,job_delete_nanny,(void *)pjob);
+
+  if (pwtnew) 
+    {
+    /* insure that work task will be removed if job goes away */
+
+    append_link(&pjob->ji_svrtask,&pwtnew->wt_linkobj,pwtnew);
+    }
+
+  return(pwtnew);
+  } /* END apply_job_delete_nanny() */
+
+
+
+
+
+/*  
+ * job_delete_nanny - make sure jobs are actually deleted after a delete
+ * request.  Like any good nanny, we'll be persistent with killing the job.
+ *
+ * jobdelete requests will set a task in the future to call job_delete_nanny().
+ * Under normal conditions, we never actually get called and job deletes act
+ * the same as before.  If we do get called, it means MS is having problems.
+ * Our purpose is to continually send KILL signals to MS.  This is made
+ * persisent by always setting ourselves as a future task.
+ *
+ * req_jobdelete sets us as a task 1 minute in the future and sends a SIGTERM
+ * to MS.  If that succeeds, post_delete_mom1 reschedules the task to be 1
+ * minute after the KILL delay.  Either way, if the job doesn't exit we'll
+ * start sending our own KILLs, forever, until MS wakes up.  The purpose of
+ * the rescheduling is to stay out of the way of the KILL delay and not
+ * interfere with normal job deletes.
+ *
+ * If MS ever returns UNKJOBID, we'll just purge the job ourselves.  We are
+ * also called from pbsd_init_job() after recovering EXITING jobs.
+ */
+
+void job_delete_nanny(
+      
+  struct work_task *pwt)
+    
+  {   
+  job *pjob;
+  struct work_task *pwtnanny;
+  char *sigk = "SIGKILL";
+  struct batch_request *newreq;
+
+  pjob = (job *)pwt->wt_parm1;
+
+
+  sprintf(log_buffer,"exiting job '%s' still exists, sending a SIGKILL",
+    pjob->ji_qs.ji_jobid);
+
+  log_err(-1,"job nanny",log_buffer);
+
+  /* build up a Signal Job batch request */
+
+  if ((newreq = alloc_br(PBS_BATCH_SignalJob)) != NULL)
+    {
+    strcpy(newreq->rq_ind.rq_signal.rq_jid,pjob->ji_qs.ji_jobid);
+    strncpy(newreq->rq_ind.rq_signal.rq_signame,sigk,PBS_SIGNAMESZ);
+    }
+
+  issue_signal(pjob,sigk,post_job_delete_nanny,newreq);
+
+
+  apply_job_delete_nanny(pjob, time_now + 60);
+
+  return;
+  } /* END job_delete_nanny() */
+
+
+/*
+ * post_job_delete_nanny - second part of async job deletes.
+ *
+ * This is only called if one of job_delete_nanny()'s KILLs actually
+ * succeeds.  The sole purpose is to purge jobs that are unknown
+ * to MS.
+ */
+
+static void post_job_delete_nanny(
+
+  struct work_task *pwt)
+
+  {
+  struct batch_request *preq_sig;                /* signal request to MOM */
+  struct batch_request *preq_clt;                /* original client request */
+  int rc;
+  job  *pjob;
+
+  preq_sig = pwt->wt_parm1;
+  rc       = preq_sig->rq_reply.brp_code;
+
+  release_req(pwt);
+
+  pjob = find_job(preq_sig->rq_ind.rq_signal.rq_jid);
+
+  if (pjob == NULL)
+    {
+    sprintf(log_buffer,"job delete nanny returned, but the job is gone");
+ 
+    LOG_EVENT(
+      PBSEVENT_ERROR, 
+      PBS_EVENTCLASS_JOB,
+      preq_sig->rq_ind.rq_signal.rq_jid, 
+      log_buffer);
+
+    return;
+    }
+   
+  if (rc == PBSE_UNKJOBID)
+    {
+    sprintf(log_buffer, "job '%s' does not exist on mom, purging job locally",
+      pjob->ji_qs.ji_jobid);
+       
+    log_err(-1,"post_job_delete_nanny",log_buffer);
+ 
+    free_nodes(pjob);
+ 
+    set_resc_assigned(pjob,DECR);
+ 
+    job_purge(pjob);
+    }
+
+  return;
+  } /* END post_job_delete_nanny() */
+
+ /* END req_delete.c */
+ 
 
 /* END req_delete.c */
 

@@ -195,9 +195,10 @@ extern struct server server;
 
 extern void   on_job_exit A_((struct work_task *));
 extern void   on_job_rerun A_((struct work_task *));
-extern void   set_resc_assigned A_((job *, enum batch_op));
+extern void   set_resc_assigned A_((job *,enum batch_op));
 extern void   set_old_nodes A_((job *));
 extern void   acct_close A_((void));
+extern struct work_task *apply_job_delete_nanny A_((struct job *,int));
 
 
 /* Private functions in this file */
@@ -1081,6 +1082,11 @@ static int pbsd_init_job(
     case JOB_SUBSTATE_STAGEDEL:
     case JOB_SUBSTATE_EXITED:
     case JOB_SUBSTATE_ABORT:
+
+      /* This is delayed because it is highly likely MS is "state-unknown"
+       * at this time, and there's no real hurry anyways. */
+
+      apply_job_delete_nanny(pjob,time_now + 60);
 
       set_task(WORK_Immed,0,on_job_exit,(void *)pjob);
 

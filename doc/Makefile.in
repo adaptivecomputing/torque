@@ -231,6 +231,8 @@ install8: $(MAN8)
 		${SOELIM} -d $(DOCSRC)/ers $$t | sed -e 's/^\.Sh/.SH/' >${PBS_MAN8}/$${tt}$(MAN_SUFFIX); \
 		chmod 644 ${PBS_MAN8}/$${tt}$(MAN_SUFFIX); \
 	done
+	@rm -f ${PBS_MAN8}/pbs_sched.8$(MAN_SUFFIX)
+	@case ${SCHD_TYPE} in cc|tcl|basl) ln
 
 depend::
 

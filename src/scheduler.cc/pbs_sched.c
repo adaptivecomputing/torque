@@ -119,6 +119,7 @@
 #include	"sched_cmds.h"
 #include	"server_limits.h"
 #include	"net_connect.h"
+#include        "pbs_version.h"
 
 struct		connect_handle connection[PBS_NET_MAX_CONNECTIONS];
 int		pbs_errno;
@@ -700,13 +701,6 @@ int main(
 	int		schedinit A_((int argc, char **argv));
 	int		schedule A_((int com, int connector));
 
-#ifndef DEBUG
-	if ((geteuid() != 0) || (getuid() != 0)) {
-		fprintf(stderr, "%s: Must be run by root\n", argv[0]);
-		return (1);
-	}
-#endif	/* DEBUG */
-
 	glob_argv = argv;
 	alarm_time = 180;
 
@@ -716,8 +710,21 @@ int main(
 			   PBS_MANAGER_SERVICE_PORT);
 
 	opterr = 0;
-	while ((c = getopt(argc, argv, "L:S:R:d:p:c:a:")) != EOF) {
+
+        while ((c = getopt(argc, argv, "L:S:R:d:p:c:a:-:")) != EOF) {
 		switch (c) {
+                case '-':
+                        if ((optarg == NULL) || (optarg[0] == '\0')) {
+                                errflg = 1;
+                        }
+
+                        if (!strcmp(optarg,"version")) {
+                                fprintf(stderr,"version: %s\n", PBS_VERSION);
+                                exit(0);
+                        } else {
+                                errflg = 1;
+                        }
+                        break;
 		case 'L':
 			logfile = optarg;
 			break;
@@ -754,6 +761,7 @@ int main(
 			}
 			break;
 		case '?':
+                        errflag = 1;
 			break;
 		}
 	}
@@ -761,6 +769,13 @@ int main(
 		fprintf(stderr, "usage: %s %s\n", argv[0], usage);
 		exit(1);
 	}
+
+#ifndef DEBUG
+        if ((geteuid() != 0) || (getuid() != 0)) {
+                fprintf(stderr, "%s: Must be run by root\n", argv[0]);
+                return (1);
+        }
+#endif        /* DEBUG */
 
 	/* Save the original working directory for "restart" */
 	if ((oldpath = getcwd((char *)NULL, MAXPATHLEN)) == NULL) {

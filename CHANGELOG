@@ -1,5 +1,7 @@
 1.2.0p6
 
+  add job cancel nanny patch (USC)
+  recursively remove job dependencies if children can never be satisfied (USC)
   make poll_jobs the default behavior with a restat time of 45 seconds
   added 'shell-use-arg' patch (OSC)
   improved API timeout disconnect feature
