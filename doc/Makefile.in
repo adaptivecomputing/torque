@@ -232,7 +232,7 @@ install8: $(MAN8)
 		chmod 644 ${PBS_MAN8}/$${tt}$(MAN_SUFFIX); \
 	done
 	@rm -f ${PBS_MAN8}/pbs_sched.8$(MAN_SUFFIX)
-	@case ${SCHD_TYPE} in cc|tcl|basl) ln
+	@case ${SCHD_TYPE} in cc|tcl|basl) ln ${PBS_MAN8}/pbs_sched_${SCHD_TYPE}.8$(MAN_SUFFIX) ${PBS_MAN8}/pbs_sched.8$(MAN_SUFFIX);; esac
 
 depend::
 
