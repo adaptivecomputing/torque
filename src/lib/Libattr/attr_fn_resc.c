@@ -142,55 +142,83 @@ extern int	    svr_resc_size;
  *		*patr members set
  */
 
-int decode_resc(patr, name, rescn, val)
-	struct attribute *patr;		/* Modified on Return */
-	char *name;			/* attribute name */
-	char *rescn;			/* resource name - is used here */
-	char *val;			/* resource value */
-{
-	resource	*prsc;
-	resource_def	*prdef;
-	int		 rc = 0;
-	int		 rv;
+int decode_resc(
 
-	if (patr == (attribute *)0)
-		return (PBSE_INTERNAL);
-	if (rescn == (char *)0)
-		return (PBSE_UNKRESC);
-	if ( !(patr->at_flags & ATR_VFLAG_SET))
-		CLEAR_HEAD(patr->at_val.at_list);
+  struct attribute *patr,  /* Modified on Return */
+  char             *name,  /* attribute name */
+  char             *rescn, /* I: resource name - is used here */
+  char             *val)   /* resource value */
+
+  {
+  resource	*prsc;
+  resource_def	*prdef;
+  int		 rc = 0;
+  int		 rv;
+
+  if (patr == NULL)
+    {
+    return(PBSE_INTERNAL);
+    }
+
+  if (rescn == NULL)
+    {
+    return(PBSE_UNKRESC);
+    }
+
+  if (!(patr->at_flags & ATR_VFLAG_SET))
+    CLEAR_HEAD(patr->at_val.at_list);
 	
+  prdef = find_resc_def(svr_resc_def,rescn,svr_resc_size);
 
-	prdef = find_resc_def(svr_resc_def, rescn, svr_resc_size);
-	if (prdef == (resource_def *)0) {
-		/*
-		 * didn't find resource with matching name, use unknown;
-		 * but return PBSE_UNKRESC incase caller dosn`t wish to
-		 * accept unknown resources
- 		 */
-		rc = PBSE_UNKRESC;
-		prdef = svr_resc_def + (svr_resc_size-1);
-	}
+  if (prdef == NULL) 
+    {
+    /*
+     * didn't find resource with matching name, use unknown;
+     * but return PBSE_UNKRESC in case caller doesn`t wish to
+     * accept unknown resources
+     */
 
-	prsc = find_resc_entry(patr, prdef);
-	if (prsc == (resource *)0) 	/* no current resource entry, add it */
-		if ((prsc = add_resource_entry(patr,prdef)) == (resource *)0) {
-			return (PBSE_SYSTEM);
-		}
+    rc = PBSE_UNKRESC;
 
-	/* note special use of ATR_DFLAG_ACCESS, see server/attr_recov() */
+    prdef = svr_resc_def + (svr_resc_size - 1);
+    }
 
-	if (((prsc->rs_defin->rs_flags&resc_access_perm&ATR_DFLAG_WRACC) ==0) &&
-	    (resc_access_perm != ATR_DFLAG_ACCESS))
-		return (PBSE_ATTRRO);
+  prsc = find_resc_entry(patr,prdef);
 
-	patr->at_flags |= ATR_VFLAG_SET | ATR_VFLAG_MODIFY;
-	rv = prdef->rs_decode(&prsc->rs_value, name, rescn, val);
-	if (rv)
-		return (rv);
-	else
-		return (rc);
-}
+  if (prsc == NULL) /* no current resource entry, add it */
+
+  if ((prsc = add_resource_entry(patr,prdef)) == NULL) 
+    {
+    return(PBSE_SYSTEM);
+    }
+
+  /* note special use of ATR_DFLAG_ACCESS, see server/attr_recov() */
+
+  if (((prsc->rs_defin->rs_flags&resc_access_perm&ATR_DFLAG_WRACC) == 0) &&
+       (resc_access_perm != ATR_DFLAG_ACCESS))
+    {
+    return(PBSE_ATTRRO);
+    }
+
+  patr->at_flags |= ATR_VFLAG_SET | ATR_VFLAG_MODIFY;
+
+  rv = prdef->rs_decode(&prsc->rs_value,name,rescn,val);
+
+  if (rv == 0)
+    {
+    /* FAILURE */
+
+    return(rc);
+    }
+
+  /* SUCCESS */
+
+  return(rv);
+  }
+
+
+
+
 
 /*
  * encode_resc - encode attr of type ATR_TYPE_RESR into attr_extern form
@@ -463,18 +491,29 @@ void free_resc(
  *	Returns: pointer to the structure or NULL
  */
 
-resource_def *find_resc_def (rscdf, name, limit)
-	resource_def *rscdf;	/* address of array of resource_def structs */
-	char         *name;	/* name of resource */
-	int	      limit;	/* number of members in resource_def array */
-{
-	while (limit--) {
-		if (strcmp(rscdf->rs_name, name) == 0)
-			return (rscdf);
-		rscdf++;
-	}
-	return ((resource_def *)0);
-}
+resource_def *find_resc_def(
+
+  resource_def *rscdf,	/* address of array of resource_def structs */
+  char         *name,	/* name of resource */
+  int           limit)	/* number of members in resource_def array */
+
+  {
+  while (limit--) 
+    {
+    if (!strcmp(rscdf->rs_name,name))
+      {
+      /* SUCCESS */
+
+      return(rscdf);
+      }
+
+    rscdf++;
+    }
+
+  return(NULL);
+  }  /* END find_resc_def() */
+
+
 
 /*
  * find_resc_entry - find a resource (value) entry in a list headed in an

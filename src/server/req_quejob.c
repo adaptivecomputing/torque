@@ -578,6 +578,10 @@ void req_quejob(
       {
       if (rc == PBSE_UNKRESC) 
         {
+        /* check for RM extension */
+
+        /* NYI */
+
         /* unknown resources not allowed in Exec queue */
 
         if (pque->qu_qs.qu_type == QTYPE_Execution) 
