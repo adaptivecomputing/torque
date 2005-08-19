@@ -242,7 +242,7 @@ int main(
             set_attr(&attrib, ATTR_k, optarg);
             break;
         case 'l':
-            if ( set_resources(&attrib, optarg, TRUE) ) {
+            if (set_resources(&attrib,optarg,TRUE)) {
 		fprintf(stderr, "qalter: illegal -l value\n");
 		errflg++;
 	    }

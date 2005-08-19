@@ -129,6 +129,8 @@ int set_resources(
 
     if (r == eq) 
       {
+      /* FAILURE */
+
       return(1);
       }
 
@@ -143,62 +145,111 @@ int set_resources(
 
     /* If separated by an equal sign, get the value */
 
-	if ( *eq == '=' ) {
-	    v = eq + 1;
-	    while ( isspace((int)*v) ) v++;
-	    e = v;
-	    while ( *e != ',' && *e != '\0' ) {
-		if ( isspace((int)*e) ) return(1);
-	        e++;
-	    }
-	} else
-	    v = NULL;
-	
-        /* Allocate memory for the attrl structure */
-        attr = (struct attrl *) malloc(sizeof(struct attrl));
-        if ( attr == NULL ) {
-            fprintf(stderr, "Out of memory\n");
-            exit(2);
+    if (*eq == '=') 
+      {
+      v = eq + 1;
+
+      while (isspace((int)*v)) 
+        v++;
+
+      e = v;
+
+      while ((*e != ',') && (*e != '\0')) 
+        {
+        if (isspace((int)*e)) 
+          {
+          /* FAILURE */
+ 
+          return(1);
+          }
+
+        e++;
         }
+      } 
+    else
+      {
+      v = NULL;
+      }
 	
-        /* Allocate memory for the attribute name and copy */
-        str = (char *) malloc( strlen(ATTR_l)+1 );
-        if ( str == NULL ) {
-            fprintf(stderr, "Out of memory\n");
-            exit(2);
+    /* Allocate memory for the attrl structure */
+
+    attr = (struct attrl *)malloc(sizeof(struct attrl));
+
+    if (attr == NULL) 
+      {
+      fprintf(stderr,"Out of memory\n");
+ 
+      /* FAILURE */
+
+      exit(2);
+      }
+	
+    /* Allocate memory for the attribute name and copy */
+
+    str = (char *)malloc(strlen(ATTR_l) + 1);
+
+    if (str == NULL) 
+      {
+      fprintf(stderr,"Out of memory\n");
+
+      exit(2);
+      }
+
+    strcpy(str,ATTR_l);
+
+    attr->name = str;
+	
+    /* Allocate memory for the resource name and copy */
+
+    str = (char *)malloc(len + 1);
+
+    if (str == NULL) 
+      {
+      fprintf(stderr,"Out of memory\n");
+
+      exit(2);
+      }
+
+    strncpy(str, r, len);
+
+    str[len] = '\0';
+
+    attr->resource = str;
+	
+    /* Allocate memory for the value and copy */
+
+    if (v != NULL) 
+      {
+      str = (char *)malloc(e - v + 1);
+
+      if (str == NULL) 
+        {
+        fprintf(stderr,"Out of memory\n");
+
+        exit(2);
         }
-        strcpy(str, ATTR_l);
-        attr->name = str;
-	
-        /* Allocate memory for the resource name and copy */
-        str = (char *) malloc( len + 1 );
-        if ( str == NULL ) {
-            fprintf(stderr, "Out of memory\n");
-            exit(2);
+
+      strncpy(str,v,e - v);
+
+      str[e - v] = '\0';
+
+      attr->value = str;
+      } 
+    else 
+      {
+      str = (char *)malloc(1);
+
+      if (str == NULL) 
+        {
+        fprintf(stderr,"Out of memory\n");
+
+        exit(2);
         }
-        strncpy(str, r, len);
-        str[len] = '\0';
-        attr->resource = str;
-	
-        /* Allocate memory for the value and copy */
-	if ( v != NULL ) {
-            str = (char *) malloc(e-v+1);
-            if ( str == NULL ) {
-                fprintf(stderr, "Out of memory\n");
-                exit(2);
-            }
-            strncpy(str, v, e-v);
-            str[e-v] = '\0';
-            attr->value = str;
-	} else {
-	    str = (char *) malloc(1);
-	    if ( str == NULL ) {
-                fprintf(stderr, "Out of memory\n");
-                exit(2);
-            }
-	    str[0] = '\0';
-	    attr->value = str;
-	}
+
+      str[0] = '\0';
+
+      attr->value = str;
+      }
 
     /* Put it on the attribute list */
 
@@ -249,5 +300,9 @@ int set_resources(
       }
     }      /* END while (*r != '\0') */
 
-  return (0);
-  }
+  /* SUCCESS */
+
+  return(0);
+  }  /* END set_resources() */
+
+
