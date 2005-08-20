@@ -3160,10 +3160,10 @@ int rm_request(
               MUStrNCat(&BPtr,&BSpace,tmpLine);
               }
 
-            if (MOMUnameMissing[0] != '\0')
+            if (MOMUNameMissing[0] != '\0')
               {
               sprintf(tmpLine,"WARNING:  passwd file is corrupt (job requests user '%s' - not found in local passwd file)\n",
-                MOMUnameMissing);
+                MOMUNameMissing);
 
               MUStrNCat(&BPtr,&BSpace,tmpLine);
               }

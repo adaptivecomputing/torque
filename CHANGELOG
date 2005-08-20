@@ -1,5 +1,7 @@
 1.2.0p6
 
+  add direct support for external scheduler extensions
+  add passwd file corruption check
   add job cancel nanny patch (USC)
   recursively remove job dependencies if children can never be satisfied (USC)
   make poll_jobs the default behavior with a restat time of 45 seconds
