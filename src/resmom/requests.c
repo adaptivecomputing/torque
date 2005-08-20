@@ -242,7 +242,7 @@ static pid_t fork_to_user(
     if ((pwdp = getpwnam(preq->rq_ind.rq_cpyfile.rq_user)) == NULL)
       {
       if (MOMUNameMissing[0] == '\0')
-        MUStrCpy(MOMUNameMissing,preq->rq_ind.rq_cpyfile.rq_user,64);
+        strncpy(MOMUNameMissing,preq->rq_ind.rq_cpyfile.rq_user,64);
 
       sprintf(tmpLine,"cannot find user '%s' in password file",
         preq->rq_ind.rq_cpyfile.rq_user);
