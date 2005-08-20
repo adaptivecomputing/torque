@@ -127,6 +127,8 @@ extern time_t		time_now;
 extern int		resc_access_perm;	/* see encode_resc() */
 						/* in attr_fn_resc.c */
 
+extern char             MOMUnameMissing[];
+
 /* Local Data Items */
 
 static uid_t  useruid;
@@ -239,6 +241,9 @@ static pid_t fork_to_user(
     {
     if ((pwdp = getpwnam(preq->rq_ind.rq_cpyfile.rq_user)) == NULL)
       {
+      if (MOMUnameMissing[0] == '\0')
+        MUStrCpy(MOMUnameMissing,preq->rq_ind.rq_cpyfile.rq_user,64);
+
       sprintf(tmpLine,"cannot find user '%s' in password file",
         preq->rq_ind.rq_cpyfile.rq_user);
 

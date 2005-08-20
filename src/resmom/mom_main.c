@@ -222,6 +222,7 @@ int             MOMSendHelloCount         = 0;
 char            MOMSendStatFailure[MMAX_LINE];
 
 char            MOMConfigVersion[64];
+char            MOMUNameMissing[64];            
 
 #define TMAX_JE  64
 
@@ -3155,6 +3156,14 @@ int rm_request(
               {
               sprintf(tmpLine,"WARNING:  could not open connection to server, %s\n",
                 MOMSendStatFailure);
+
+              MUStrNCat(&BPtr,&BSpace,tmpLine);
+              }
+
+            if (MOMUnameMissing[0] != '\0')
+              {
+              sprintf(tmpLine,"WARNING:  passwd file is corrupt (job requests user '%s' - not found in local passwd file)\n",
+                MOMUnameMissing);
 
               MUStrNCat(&BPtr,&BSpace,tmpLine);
               }

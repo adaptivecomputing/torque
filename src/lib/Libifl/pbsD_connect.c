@@ -100,20 +100,25 @@
 #include "dis.h"
 #include "net_connect.h"
 
-static uid_t pbs_current_uid;
+/* NOTE:  globals, must not impose per connection constraints */
 
-extern char pbs_current_user[PBS_MAXUSER];
-extern struct connect_handle connection[NCONNECTS];
-extern time_t pbs_tcp_timeout;
+static uid_t pbs_current_uid;               /* only one uid per requestor */
+
+extern char pbs_current_user[PBS_MAXUSER];  /* only one uname per requestor */
+
+extern struct connect_handle connection[NCONNECTS];  /* verify no connect conflicts (TODO) */
+extern time_t pbs_tcp_timeout;              /* source? */
 
 static unsigned int dflt_port = 0;
-static char dflt_server[PBS_MAXSERVERNAME+1];
+static char dflt_server[PBS_MAXSERVERNAME + 1];
 static int got_dflt = FALSE;
-static char server_name[PBS_MAXSERVERNAME+1];
-static unsigned int server_port;
+static char server_name[PBS_MAXSERVERNAME + 1];  /* definite conflicts */
+static unsigned int server_port;                 /* definite conflicts */
 static char *pbs_destn_file = PBS_DEFAULT_FILE;
 
-char *pbs_server = 0;
+char *pbs_server = NULL;
+
+
 
 
 char *pbs_default()
@@ -171,16 +176,20 @@ char *pbs_default()
 
 static char *PBS_get_server(
 
-  char         *server,
-  unsigned int *port)
+  char         *server,  /* I (modified) */
+  unsigned int *port)    /* O */
 
   {
   int   i;
   char *pc;
 	
   for (i = 0;i < PBS_MAXSERVERNAME + 1;i++) 
+    {
+    /* clear global server_name */
+
     server_name[i] = '\0';
-	
+    }
+
   if (dflt_port == 0) 
     {
     dflt_port = get_svrport(
@@ -270,9 +279,11 @@ static int PBSD_authenticate(
     /* FAILURE */
 
     if (getenv("PBSDEBUG"))
+      {
       fprintf(stderr,"ALERT:  cannot open pipe, errno=%d (%s)\n",
         errno,
         strerror(errno));
+      }
 
     return(-1);
     }
@@ -311,9 +322,11 @@ static int PBSD_authenticate(
     /* FAILURE */
 
     if (getenv("PBSDEBUG"))
+      {
       fprintf(stderr,"ALERT:  cannot close pipe, errno=%d (%s)\n",
         errno,
         strerror(errno));
+      }
 
     /* report failure but do not fail (CRI) */
 
@@ -329,10 +342,13 @@ static int PBSD_authenticate(
 
 
 /* returns socket descriptor or -1 on failure */
+/* NOTE:  cannot use globals or static infomration as API
+   may be used to connect a singe server to multiple TORQUE
+   interfaces */
 
 int pbs_connect(
 
-  char *server)  /* I */
+  char *server)  /* I (FORMAT:  NULL | HOSTNAME | HOSTNAME:PORT )*/
 
   {
   struct sockaddr_in server_addr;
@@ -369,6 +385,8 @@ int pbs_connect(
 
     if (getenv("PBSDEBUG"))
       fprintf(stderr,"ALERT:  cannot locate free channel\n");
+
+    /* FAILURE */
 
     return(-1);
     }
