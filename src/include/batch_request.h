@@ -221,10 +221,10 @@ struct rq_track {
 /* RegisterDependentJob */
 
 struct rq_register {
-	char	rq_owner[PBS_MAXUSER+1];
-	char	rq_svr[PBS_MAXSERVERNAME+1];
-	char	rq_parent[PBS_MAXSVRJOBID+1];
-	char	rq_child[PBS_MAXCLTJOBID+1];	/* need separate entry for */
+	char	rq_owner[PBS_MAXUSER + 1];
+	char	rq_svr[PBS_MAXSERVERNAME + 1];
+	char	rq_parent[PBS_MAXSVRJOBID + 1];
+	char	rq_child[PBS_MAXCLTJOBID + 1];	/* need separate entry for */
 	int	rq_dependtype;			/* from server_name:port   */
 	int	rq_op;
 	long	rq_cost;
@@ -246,12 +246,12 @@ struct rq_authen {
 #define STAGE_DIR_OUT 1
 
 struct rq_cpyfile {
-	char	  rq_jobid[PBS_MAXSVRJOBID+1];	  /* Not used for stage-in */
-	char	  rq_owner[PBS_MAXUSER+1];	  /* used in Copy only	   */
-	char 	  rq_user[PBS_MAXUSER+1];	  /* used in Copy & Delete */
-	char 	  rq_group[PBS_MAXGRPN+1];	  /* used in Copy only     */
+	char	  rq_jobid[PBS_MAXSVRJOBID + 1];  /* Not used for stage-in */
+	char	  rq_owner[PBS_MAXUSER + 1];	  /* used in Copy only	   */
+	char 	  rq_user[PBS_MAXUSER + 1];	  /* used in Copy & Delete */
+	char 	  rq_group[PBS_MAXGRPN + 1];	  /* used in Copy only     */
 	int	  rq_dir;			  /* used in Copy only     */
-	list_head rq_pair;	/* list of rqfpair,  used in Copy & Delete */
+	list_head rq_pair;                        /* list of rqfpair,  used in Copy & Delete */
 };
 
 struct rqfpair {

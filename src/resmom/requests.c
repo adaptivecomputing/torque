@@ -688,7 +688,7 @@ static int told_to_cp(
 
 static int local_or_remote(
 
-  char **path)
+  char **path)  /* I */
 
   {
   int   len;
@@ -2276,13 +2276,22 @@ void req_cpyfile(
   struct stat	 myspooldir;
   int		 rcstat;
   char		 undelname[MAXPATHLEN + 1];
-  struct stat      sb; /* see if local file is a regular file */
+  struct stat    sb; /* see if local file is a regular file */
 #ifdef  _CRAY
   char		 tmpdirname[MAXPATHLEN + 1];
 #endif 	/* _CRAY */
 
   char           EMsg[1024];
   char           HDir[1024];
+
+  if (LOGLEVEL >= 3)
+    {
+    LOG_EVENT(
+      PBSEVENT_JOB,
+      PBS_EVENTCLASS_JOB,
+      preq->rq_ind.rq_cpyfile.rq_jobid,
+      log_buffer);
+    }
 
   rc = (int)fork_to_user(preq,TRUE,HDir,EMsg);
 
@@ -2296,7 +2305,7 @@ void req_cpyfile(
 
     if ((rc != -PBSE_SYSTEM) && (rc != -PBSE_BADUSER))
       {
-      sprintf(tmpLine, "fork_to_user failed with rc=%d '%s' - exiting",
+      sprintf(tmpLine,"fork_to_user failed with rc=%d '%s' - exiting",
         rc,
         EMsg);
 
@@ -2305,7 +2314,7 @@ void req_cpyfile(
       exit(rc);
       }
 
-    sprintf(tmpLine, "fork_to_user failed with rc=%d '%s' - returning failure",
+    sprintf(tmpLine,"fork_to_user failed with rc=%d '%s' - returning failure",
       rc,
       EMsg);
 
@@ -2335,9 +2344,16 @@ void req_cpyfile(
        pair != NULL;
        pair = (struct rqfpair *)GET_NEXT(pair->fp_link)) 
     {
+    if ((pair->fp_rmt != NULL) && (!strcmp(pair->fp_rmt,"/dev/null")))
+      {
+      /* ignore copies to/from /dev/null */
+
+      continue;
+      }
+
     from_spool = 0;
     prmt       = pair->fp_rmt;
-			
+	
     if (local_or_remote(&prmt) == 0) 
       {
       /* destination host is this host, use cp */
@@ -2488,7 +2504,7 @@ void req_cpyfile(
         /* using rcp, need to prepend the owner name */
 
         strcat(arg2,preq->rq_ind.rq_cpyfile.rq_owner);
-        strcat(arg2, "@");
+        strcat(arg2,"@");
         }
 
       strcat(arg2,prmt);
@@ -2526,9 +2542,9 @@ void req_cpyfile(
 
       /* copy message from rcp as well */
 
-      if ((fp = fopen(rcperr, "r")) != NULL) 
+      if ((fp = fopen(rcperr,"r")) != NULL) 
         {
-        add_bad_list(&bad_list, ">>> error from copy", 1);
+        add_bad_list(&bad_list,">>> error from copy",1);
 
         while (fgets(log_buffer,LOG_BUF_SIZE,fp) != NULL) 
           {
@@ -2770,29 +2786,39 @@ int mom_checkpoint_job(
    * when restarted.
    */
 
-	if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_Suspend) && abort) {
-		for (ptask = (task *)GET_NEXT(pjob->ji_tasks);
-				ptask != NULL;
-				ptask = (task *)GET_NEXT(ptask->ti_jobtask)) {
-			sesid = ptask->ti_qs.ti_sid;
-			if (ptask->ti_qs.ti_status != TI_STATE_RUNNING)
-				continue;
+  if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_Suspend) && abort) 
+    {
+    for (ptask = (task *)GET_NEXT(pjob->ji_tasks); 
+         ptask != NULL; 
+         ptask = (task *)GET_NEXT(ptask->ti_jobtask)) 
+      {
+      sesid = ptask->ti_qs.ti_sid;
 
-			/*
-			** What to do if some resume's work and others don't?
-			*/
-			if ((ckerr = resume(C_JOB, sesid)) == 0) {
-				post_resume(pjob, ckerr);
-	    		} else {
-				sprintf(log_buffer,
-					"chkpnt failed: errno=%d sid=%d",
-					errno, sesid);
-				LOG_EVENT(PBSEVENT_JOB, PBS_EVENTCLASS_JOB,
-					pjob->ji_qs.ji_jobid, log_buffer);
-				return (errno);
-			}
-		}
-	}
+      if (ptask->ti_qs.ti_status != TI_STATE_RUNNING)
+        continue;
+
+      /* What to do if some resume work and others don't? */
+
+      if ((ckerr = resume(C_JOB,sesid)) == 0) 
+        {
+        post_resume(pjob, ckerr);
+        } 
+      else 
+        {
+        sprintf(log_buffer,"chkpnt failed: errno=%d sid=%d",
+          errno, 
+          sesid);
+
+        LOG_EVENT(
+          PBSEVENT_JOB, 
+          PBS_EVENTCLASS_JOB,
+          pjob->ji_qs.ji_jobid, 
+          log_buffer);
+
+        return(errno);
+        }
+      }
+    }
 #endif	/* _CRAY */
 
 	for (ptask = (task *)GET_NEXT(pjob->ji_tasks);

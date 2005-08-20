@@ -1348,7 +1348,7 @@ void mom_deljob(
     log_record(
       PBSEVENT_DEBUG,
       PBS_EVENTCLASS_JOB,
-      id,
+      pjob->ji_qs.ji_jobid,
       log_buffer);
     }
 
