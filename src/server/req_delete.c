@@ -722,11 +722,15 @@ void remove_job_delete_nanny(
 struct work_task *apply_job_delete_nanny(
 
   struct job *pjob, 
-  int         delay)
+  int         delay)  /* I */
 
   {
   struct work_task *pwtiter, *pwtnew, *pwtdel;
   enum work_type tasktype;
+
+#ifndef __TNANNY
+  return(NULL);
+#endif /* __TNANNY */
 
   if (delay == 0) 
     {
@@ -821,6 +825,8 @@ void job_delete_nanny(
   } /* END job_delete_nanny() */
 
 
+
+
 /*
  * post_job_delete_nanny - second part of async job deletes.
  *
@@ -836,15 +842,20 @@ static void post_job_delete_nanny(
   {
   struct batch_request *preq_sig;                /* signal request to MOM */
   struct batch_request *preq_clt;                /* original client request */
-  int rc;
+
+  int   rc;
   job  *pjob;
 
   preq_sig = pwt->wt_parm1;
   rc       = preq_sig->rq_reply.brp_code;
 
-  release_req(pwt);
+  /* extract job id from task */
 
   pjob = find_job(preq_sig->rq_ind.rq_signal.rq_jid);
+
+  /* free task */
+
+  release_req(pwt);
 
   if (pjob == NULL)
     {
