@@ -1,5 +1,7 @@
 1.2.0p6
 
+  add fix for out of memory failure (USC)
+  add file recovery failure messages (USC)
   add direct support for external scheduler extensions
   add passwd file corruption check
   add job cancel nanny patch (USC)
