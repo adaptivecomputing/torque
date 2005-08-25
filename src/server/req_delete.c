@@ -855,8 +855,6 @@ static void post_job_delete_nanny(
 
   /* free task */
 
-  release_req(pwt);
-
   if (pjob == NULL)
     {
     sprintf(log_buffer,"job delete nanny returned, but the job is gone");
@@ -866,11 +864,8 @@ static void post_job_delete_nanny(
       PBS_EVENTCLASS_JOB,
       preq_sig->rq_ind.rq_signal.rq_jid, 
       log_buffer);
-
-    return;
     }
-   
-  if (rc == PBSE_UNKJOBID)
+  else if (rc == PBSE_UNKJOBID)
     {
     sprintf(log_buffer, "job '%s' does not exist on mom, purging job locally",
       pjob->ji_qs.ji_jobid);
@@ -884,11 +879,11 @@ static void post_job_delete_nanny(
     job_purge(pjob);
     }
 
+  release_req(pwt);
+
   return;
   } /* END post_job_delete_nanny() */
 
- /* END req_delete.c */
- 
 
 /* END req_delete.c */
 
