@@ -421,16 +421,25 @@ int recov_attr(
     if (tempal.al_tsize == ENDATTRIBUTES)
       break;            /* hit dummy attribute that is eof */
 
+    if (tempal.al_tsize <= sizeof(tempal))
+      {
+      log_err(-1,id,"attr size too small");
+
+      return(-1);
+      }
+
     /* read in the attribute chunck (name and encoded value) */
 
     pal = (svrattrl *)calloc(1,tempal.al_tsize);
 
-    palsize = tempal.al_tsize;
-
     if (pal == NULL)
       {
+      log_err(errno,id,"calloc failed");
+
       return(-1);
       }
+
+    palsize = tempal.al_tsize;
 
     *pal = tempal;
 

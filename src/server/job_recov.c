@@ -382,7 +382,10 @@ job *job_recov(
 
   if (fds < 0) 
     {
-    log_err(errno,"job_recov","open of job file");
+    sprintf(log_buffer,"unable to open %s",
+      namebuf);
+
+    log_err(errno,"job_recov",log_buffer);
 
     free((char *)pj);
 
@@ -395,13 +398,16 @@ job *job_recov(
 
   if (read(fds,(char *)&pj->ji_qs,quicksize) != quicksize) 
     {
-    log_err(errno,"job_recov","read");
+    sprintf(log_buffer,"Unable to read %s",
+      namebuf);
+
+    log_err(errno,"job_recov",log_buffer);
 
     free((char *)pj);
 
     close(fds);
 
-    return (NULL);
+    return(NULL);
     }
 
   /* Does file name match the internal name? */
@@ -436,7 +442,10 @@ job *job_recov(
         (int)JOB_ATR_LAST,
         (int)JOB_ATR_UNKN) != 0) 
     {
-    log_err(errno,"job_recov","err from recov_attr");
+    sprintf(log_buffer,"unable to recover %s (file is likely corrupted)",
+      namebuf);
+
+    log_err(-1,"job_recov",log_buffer);
 
     job_free(pj);
 
@@ -444,12 +453,16 @@ job *job_recov(
 
     return(NULL);
     }
+
 #ifdef PBS_MOM
   /* read in tm sockets and ips */
 
   if (recov_tmsock(fds,pj) != 0) 
     {
-    log_err(errno,"job_recov","err from recov_tmsock");
+    sprintf(log_buffer,"warning: tmsockets not recovered from %s (written by an older pbs_mom?)",
+      namebuf);
+
+    log_err(-1,"job_recov",log_buffer);
     }
 #endif /* PBS_MOM */
 
