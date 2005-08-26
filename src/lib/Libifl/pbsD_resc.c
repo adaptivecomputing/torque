@@ -167,58 +167,70 @@ static int PBS_resc(c, reqtype, rescl, ct, rh)
 	return (0);
 }
 
+
+
+
 /*
  * pbs_rescquery() - query the availability of resources
  */
 
-int pbs_rescquery(c, resclist, num_resc, 
-		available, allocated, reserved, down)
-	int    c;
-	char **resclist;	/* In - list of queries */
-	int    num_resc;	/* In - number in list  */
-	int   *available; 	/* Out - number available per query */
-	int   *allocated; 	/* Out - number allocated per query */
-	int   *reserved;	/* Out - number reserved  per query */
-	int   *down;		/* Out - number down/off  per query */
-{
-	int i;
-	struct batch_reply *reply;
-	int rc = 0;
+int pbs_rescquery(
+
+  int    c,
+  char **resclist,	/* In - list of queries */
+  int    num_resc,	/* In - number in list  */
+  int   *available, 	/* Out - number available per query */
+  int   *allocated, 	/* Out - number allocated per query */
+  int   *reserved,	/* Out - number reserved  per query */
+  int   *down)		/* Out - number down/off  per query */
+
+  {
+  int                 i;
+  struct batch_reply *reply;
+  int                 rc = 0;
+
+  if (resclist == NULL) 
+    {
+    connection[c].ch_errno = PBSE_RMNOPARAM;
+
+    pbs_errno = PBSE_RMNOPARAM;
+
+    return(pbs_errno);
+    }
+
+  /* send request */
+
+  if ((rc = PBS_resc(c,PBS_BATCH_Rescq,resclist,num_resc,(resource_t)0)) != 0)
+    {
+    return(rc);
+    }
+
+  /* read in reply */
+
+  reply = PBSD_rdrpy(c);
+
+  if (rc == PBSE_NONE)
+    {
+    /* copy in available and allocated numbers */
+
+    for (i = 0;i < num_resc;++i)
+      {
+      *(available + i) = *(reply->brp_un.brp_rescq.brq_avail + i);
+      *(allocated + i) = *(reply->brp_un.brp_rescq.brq_alloc + i);
+      *(reserved  + i) = *(reply->brp_un.brp_rescq.brq_resvd + i);
+      *(down      + i) = *(reply->brp_un.brp_rescq.brq_down  + i);
+      }
+    }
+
+  PBSD_FreeReply(reply);
+
+  return(rc);
+  }  /* END pbs_rescquery() */
 
 
-	if (resclist == 0) {
-		connection[c].ch_errno = PBSE_RMNOPARAM;
-		return (pbs_errno = PBSE_RMNOPARAM);
-	}
 
-	/* send request */
 
-	if ((rc = PBS_resc(c, PBS_BATCH_Rescq, resclist, num_resc, (resource_t)0)) != 0)
-		return (rc);
-
-	/* read in reply */
-
-	reply = PBSD_rdrpy(c);
-	if ((rc = connection[c].ch_errno) == PBSE_NONE) {
-
-		/* copy in available and allocated numbers */
-
-		for (i=0; i < num_resc; ++i) {
-		    *(available + i) = *(reply->brp_un.brp_rescq.brq_avail +i);
-		    *(allocated + i) = *(reply->brp_un.brp_rescq.brq_alloc +i);
-		    *(reserved  + i) = *(reply->brp_un.brp_rescq.brq_resvd +i);
-		    *(down      + i) = *(reply->brp_un.brp_rescq.brq_down  +i);
-		}
-	}
-	
-	PBSD_FreeReply(reply);
-	return (rc);
-}
-
-/*
- * pbs_reserve() - reserver resources
- *
- */
+/* pbs_reserve() - reserve resources */
 
 int pbs_rescreserve(c, rl, num_resc, prh)
 	int	  c;		/* connection */
