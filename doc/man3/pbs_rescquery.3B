@@ -87,7 +87,7 @@ pbs_rescquery, avail, totpool, usepool - query resource availability
 .sp
 .ft 3
 .nf
-int pbs_rescquery\^(\^int\ connect, char\ **resourcelist, int *arraysize,
+int pbs_rescquery\^(\^int\ connect, char\ **resourcelist, int arraysize,
 int *available, int *allocated, int *reserved, int *down \^)
 .sp
 char *avail\^(\^int connect, char *resc\^)
