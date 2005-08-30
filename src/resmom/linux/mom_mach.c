@@ -3764,13 +3764,13 @@ static char *quota(
 
     case currdata:
 
-#ifdef Q_6_5_QUOTAON
-      sprintf(ret_string,"%ukb",
-        (unsigned int)qi.dqb_curspace >> 10);
-#else
+#if _LINUX_QUOTA_VERSION >= 2
       sprintf(ret_string,"%ukb",
         qi.dqb_curblocks >> 10);
-#endif /* Q_6_5_QUOTAON */
+#else /* _LINUX_QUOTA_VERSION >= 2 */
+      sprintf(ret_string,"%ukb",
+        (unsigned int)qi.dqb_curspace >> 10);
+#endif /* _LINUX_QUOTA_VERSION >= 2 */
 
       break;
 
