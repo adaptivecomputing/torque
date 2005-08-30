@@ -350,6 +350,13 @@ void req_deletejob(
      * comments at job_delete_nanny()).
      */
 
+    if (has_job_delete_nanny(pjob))
+      {
+      req_reject(PBSE_IVALREQ,0,preq,NULL,"job cancel in progress");
+
+      return;
+      }
+
     apply_job_delete_nanny(pjob,time_now + 60);
 
     /*
