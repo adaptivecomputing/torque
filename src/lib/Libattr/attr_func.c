@@ -206,19 +206,45 @@ int find_attr(
  * free_null - A free routine for attributes which do not
  *	have malloc-ed space ( boolean, char, long ).
  */
+
 /*ARGSUSED*/
-void free_null(attr)
-	struct attribute *attr;
-{
-	/*
-	 * a bit of a kludge here, clear out the value (for unset) 
-	 * the at_size is the larger of the union that does not have
-	 * additional allocated space, so we use it here
-	 */
-	attr->at_val.at_size.atsv_num   = 0;
-	attr->at_val.at_size.atsv_shift = 0;
-	attr->at_flags &= ~ATR_VFLAG_SET;
-}
+
+void free_null(
+
+  struct attribute *attr)
+
+  {
+  /*
+   * a bit of a kludge here, clear out the value (for unset) 
+   * the at_size is the larger of the union that does not have
+   * additional allocated space, so we use it here
+   */
+
+  attr->at_val.at_size.atsv_num   = 0;
+  attr->at_val.at_size.atsv_shift = 0;
+  attr->at_flags &= ~ATR_VFLAG_SET;
+
+  return;
+  }  /* END free_null() */
+
+
+
+
+/*
+ * free_noop - A free routine for attrs that are too important
+ *             to be unset.
+ */
+
+void free_noop(
+
+  struct attribute *attr)
+
+  {
+  /* no nothing */
+
+  return;
+  }  /* END free_noop() */
+
 
 
 

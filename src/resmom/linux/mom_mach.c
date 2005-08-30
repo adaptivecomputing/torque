@@ -279,29 +279,10 @@ static char stat_str[] = "%d (%[^)]) %c %*d %*d %d %*d %*d %u %*u \
 /*
  * Convert jiffies to seconds.
  *
- * CLOCKS_PER_SEC is the C99 ANSI standard name, CLK_TCK is obsolete
+ * Hertz is sysconf(_SC_CLK_TCK) in get_proc_stat()
 */
 
-#ifndef CLOCKS_PER_SEC
-#define CLOCKS_PER_SEC CLK_TCK
-#endif /* CLOCKS_PER_SEC */
-
-#ifdef _SC_CLK_TCK
-# define Hertz (sysconf(_SC_CLK_TCK))
-#else
-#include <asm/param.h>
-# ifdef HZ
-#  define Hertz Hz
-# else
-#  define Hertz 100
-# endif
-#endif
-
-#define JTOS(x)  x = x / (Hertz > 1 ? Hertz : 100);
-
-/*
-#define JTOS(x)  x = (x + CLOCKS_PER_SEC/2) / CLOCKS_PER_SEC;
-*/
+#define JTOS(x)  x = x / Hertz;
 
 /*
  * Linux /proc status routine.
@@ -322,6 +303,26 @@ proc_stat_t *get_proc_stat(
   FILE                 *fd;
   unsigned		jiffies;
   struct stat		sb;
+
+  static int Hertz  = 0;
+  int Hertz_errored = 0;
+
+  if (Hertz <= 0)
+    {
+    Hertz = sysconf(_SC_CLK_TCK);  /* returns 0 on error */
+
+    if (Hertz <= 0)
+      {
+      if (!Hertz_errored)
+        log_err(errno,"get_proc_stat","sysconf(_SC_CLK_TCK) failed, unable to monitor processes");
+
+      Hertz_errored = 1;
+
+      return(NULL);
+      }
+    }
+
+  Hertz_errored = 0;
 
   sprintf(path,"/proc/%d/stat",
     pid);

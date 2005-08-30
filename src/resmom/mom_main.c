@@ -147,7 +147,7 @@
 #endif /* __PPINMEM */
 
 #define CHECK_POLL_TIME     120
-#define DEFAULT_SERVER_STAT_UPDATES 20
+#define DEFAULT_SERVER_STAT_UPDATES 45
 
 #define PBS_MAXSERVER       4
 #define PMAX_PORT           32000

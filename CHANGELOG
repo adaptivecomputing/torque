@@ -1,5 +1,6 @@
 1.2.0p6
 
+  disable unsetting of key/integer server parameters (USC)
   allow FC4 support - quota struct fix (USC)
   add fix for out of memory failure (USC)
   add file recovery failure messages (USC)

@@ -286,7 +286,7 @@ attribute_def svr_attr_def[] = {
 	encode_arst,
 	set_uacl,
 	comp_arst,
-	free_arst,
+	free_noop,   /* do not allow managers to be unset - changed from free_arst */ 
 	manager_oper_chk,
 	MGR_ONLY_SET,
 	ATR_TYPE_ACL,
@@ -325,7 +325,7 @@ attribute_def svr_attr_def[] = {
 	encode_l,
 	set_l,
 	comp_l,
-	free_null,
+	free_noop,  /* disable unset */
 	NULL_FUNC,
 	NO_USER_SET,
 	ATR_TYPE_LONG,
@@ -442,7 +442,7 @@ attribute_def svr_attr_def[] = {
 	encode_l,
 	set_l,
 	comp_l,
-	free_null,
+	free_noop,  /* disable unset */
 	NULL_FUNC,
 	NO_USER_SET,
 	ATR_TYPE_LONG,
@@ -467,7 +467,7 @@ attribute_def svr_attr_def[] = {
        encode_l,
        set_l,
        comp_l,
-       free_null,
+       free_noop,  /* disable unset */
        NULL_FUNC,
        NO_USER_SET,
        ATR_TYPE_LONG,
@@ -480,7 +480,7 @@ attribute_def svr_attr_def[] = {
        encode_l,
        set_l,
        comp_l,
-       free_null,
+       free_noop,  /* disable unset */
        NULL_FUNC,
        NO_USER_SET,
        ATR_TYPE_LONG,
@@ -530,7 +530,7 @@ attribute_def svr_attr_def[] = {
 	encode_l,
 	set_l,
 	comp_l,
-	free_null,
+	free_noop,  /* disable unset */
 	NULL_FUNC,
 	MGR_ONLY_SET,
 	ATR_TYPE_LONG,
@@ -543,7 +543,7 @@ attribute_def svr_attr_def[] = {
 	encode_b,
 	set_b,
 	comp_b,
-	free_null,
+	free_noop,  /* disable unset */
 	NULL_FUNC,
 	MGR_ONLY_SET,
 	ATR_TYPE_LONG,
@@ -556,7 +556,7 @@ attribute_def svr_attr_def[] = {
         encode_l,
         set_l,
         comp_l,
-        free_null,
+        free_noop,  /* disable unset */
         NULL_FUNC,
         MGR_ONLY_SET,
         ATR_TYPE_LONG,
