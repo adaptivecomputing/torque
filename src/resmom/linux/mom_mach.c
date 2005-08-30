@@ -3766,10 +3766,10 @@ static char *quota(
 
 #if _LINUX_QUOTA_VERSION < 2
       sprintf(ret_string,"%ukb",
-        (unsigned int)qi.dqb_curspace >> 10);
+        qi.dqb_curblocks >> 10);
 #else /* _LINUX_QUOTA_VERSION < 2 */
       sprintf(ret_string,"%ukb",
-        qi.dqb_curblocks >> 10);
+        (unsigned int)qi.dqb_curspace >> 10);
 #endif /* _LINUX_QUOTA_VERSION < 2 */
 
       break;
