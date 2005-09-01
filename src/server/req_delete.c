@@ -809,7 +809,6 @@ void job_delete_nanny(
 
   pjob = (job *)pwt->wt_parm1;
 
-
   sprintf(log_buffer,"exiting job '%s' still exists, sending a SIGKILL",
     pjob->ji_qs.ji_jobid);
 
