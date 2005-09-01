@@ -13,6 +13,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
+#include <syslog.h>
 #include "libpbs.h"
 #include "dis.h"
 #include "server_limits.h"
@@ -126,6 +127,7 @@ int main(
   pbs_net_t	 hostaddr;
   int		 i;
   uid_t		 myrealuid;
+  uid_t          myeuid;
   unsigned int	 parentport;
   int		 parentsock = -1;
   struct passwd   *pwent;
@@ -199,6 +201,19 @@ int main(
 
     return(1);
     }
+
+  myeuid = geteuid();
+
+  if (!testmode && (myeuid != 0))
+    {
+    fprintf(stderr,"pbs_iff: file not setuid root, likely misconfigured\n");
+
+#if SYSLOG
+     syslog(LOG_ERR|LOG_DAEMON,"not setuid 0, likely misconfigured");
+#endif
+
+    return(1);
+    }  /* END if (!testmode && (myeuid != 0)) */
 
   /* first, make sure we have a valid server (host), and ports */
 

@@ -1,5 +1,6 @@
 1.2.0p6
 
+  fixed qrun based default scheduling to ignore down nodes (USC)
   disable unsetting of key/integer server parameters (USC)
   allow FC4 support - quota struct fix (USC)
   add fix for out of memory failure (USC)

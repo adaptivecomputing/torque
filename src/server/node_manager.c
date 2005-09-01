@@ -1642,6 +1642,9 @@ static int search(
       if (pnode->nd_flag != okay)
         continue;
 
+      if (pnode->nd_state & pass)
+        continue;
+
       if (!hasprop(pnode,glorf))
         continue;
 
@@ -1669,7 +1672,7 @@ static int search(
       pnode->nd_needed = vpreq;
       pnode->nd_order  = order;
 
-      /* success */
+      /* SUCCESS */
 
       return(1);
       }
@@ -1677,7 +1680,7 @@ static int search(
 
   if (glorf == NULL)		/* no property */
     {
-    /* failure */
+    /* FAILURE */
 
     return(0);			/* can't retry */
     }
@@ -1725,11 +1728,15 @@ static int search(
 
         pnode->nd_needed = vpreq;
         pnode->nd_order  = order;
-			
+		
+        /* SUCCESS */
+	
         return(1);
         }
       }
     }    /* END for (i) */
+
+  /* FAILURE */
 
   return(0);	/* not found */
   }  /* END search() */
