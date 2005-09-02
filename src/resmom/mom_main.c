@@ -2704,7 +2704,7 @@ int is_update_stat(
 
         /* only report arch if specified in mom config */
 
-        attr = momgetattr(ap->c_u.c_value);
+        attr = ap->c_u.c_value;
 
         if (attr == NULL)
           continue;
@@ -5107,7 +5107,7 @@ int main(
       {
       check_state((LastServerUpdateTime == 0));
 
-      if (is_update_stat(42) == DIS_SUCCESS)
+      if (is_update_stat(0) == DIS_SUCCESS)
          {
          LastServerUpdateTime = time_now;
          }
