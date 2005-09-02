@@ -112,17 +112,16 @@ typedef struct resource {
 } resource;
 	
 typedef struct resource_def {
-	char   *rs_name;
-	int   (*rs_decode) A_((attribute *prsc,char *name,char *rn,char *val));
-	int   (*rs_encode) A_((attribute *prsv, list_head *phead, char *atname,
-			       char *rsname, int mode));
-	int   (*rs_set) A_((attribute *old, attribute *new, enum batch_op op));
-	int   (*rs_comp) A_((attribute *prsc, attribute *with));
-	void  (*rs_free) A_((attribute *prsc));
-	int   (*rs_action) A_((resource *presc, attribute *pat, int actmode));
-	int	rs_flags:ATRFLAG;	/* flags: R/O, ..., see attribute.h */
-	int	rs_type:ATRTYPE;	/* type of resource,see attribute.h */
-} resource_def;
+  char   *rs_name;
+  int   (*rs_decode)A_((attribute *,char *,char *,char *));
+  int   (*rs_encode)A_((attribute *,list_head *,char *,char *,int));
+  int   (*rs_set)A_((attribute *,attribute *,enum batch_op));
+  int   (*rs_comp)A_((attribute *,attribute *));
+  void  (*rs_free)A_((attribute *));
+  int   (*rs_action)A_((resource *,attribute *,int));
+  unsigned int rs_flags:ATRFLAG;	/* flags: R/O, ..., see attribute.h */
+  unsigned int rs_type:ATRTYPE;	/* type of resource,see attribute.h */
+  } resource_def;
 
 /* the resource definition array, only the fixed resources */
 extern resource_def svr_resc_def_const[];  

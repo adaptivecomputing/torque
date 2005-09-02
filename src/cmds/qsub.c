@@ -621,10 +621,10 @@ struct winsize wsz;
 
 struct attrl *attrib = NULL;
 char *new_jobname;                  /* return from submit request */
-char dir_prefix[MAX_QSUB_PREFIX_LEN+1];
-char path_out[MAXPATHLEN+1];
+char dir_prefix[MAX_QSUB_PREFIX_LEN + 1];
+char path_out[MAXPATHLEN + 1];
 char destination[PBS_MAXDEST];
-static char server_out[PBS_MAXSERVERNAME+PBS_MAXPORTNUM+2];
+static char server_out[PBS_MAXSERVERNAME + PBS_MAXPORTNUM + 2];
 char server_host[PBS_MAXHOSTNAME + 1];
 
 /* state booleans for protecting already-set options */
@@ -3124,7 +3124,7 @@ int main(
 
     if ((param_val = get_param("SERVERHOST",config_buf)) != NULL)
       {
-      strncpy(server_host,param_val,sizeof(PBS_Filter));
+      strncpy(server_host,param_val,sizeof(server_host));
       server_host[sizeof(server_host) - 1] = '\0';
       }
     }
