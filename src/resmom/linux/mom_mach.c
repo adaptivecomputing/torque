@@ -1429,8 +1429,9 @@ int mom_open_poll()
   char *id = "mom_open_poll";
 
   if (LOGLEVEL >= 6)
-    DBPRT(("%s: entered\n", 
-      id))
+    {
+    log_record(PBSEVENT_SYSTEM,0,id,"started");
+    }
 
   pagesize = getpagesize();
 

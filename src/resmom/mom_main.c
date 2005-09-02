@@ -2690,7 +2690,19 @@ int is_update_stat(
         if (ap == NULL)
           continue;
 
-        /* only specify size if specified in mom config */
+        /* only report size if specified in mom config */
+
+        attr = momgetattr(ap->c_u.c_value);
+
+        if (attr == NULL)
+          continue;
+        }
+      else if (!strcmp(name,"arch"))
+        {
+        if (ap == NULL)
+          continue;
+
+        /* only report arch if specified in mom config */
 
         attr = momgetattr(ap->c_u.c_value);
 
@@ -2707,7 +2719,10 @@ int is_update_stat(
 
       alarm(alarm_time);
 
-      if ((ap != NULL) && !restrictrm && strcmp(name,"size")) 
+      if ((ap != NULL) && 
+          !restrictrm && 
+          strcmp(name,"size") &&
+          strcmp(name,"arch")) 
         {    
         /* static */
 
