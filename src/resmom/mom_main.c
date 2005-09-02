@@ -2704,9 +2704,7 @@ int is_update_stat(
 
         /* only report arch if specified in mom config */
 
-        attr = ap->c_u.c_value;
-
-        if (attr == NULL)
+        if (ap->c_u.c_value == NULL)
           continue;
         }
       else
@@ -2719,10 +2717,17 @@ int is_update_stat(
 
       alarm(alarm_time);
 
-      if ((ap != NULL) && 
-          !restrictrm && 
-          strcmp(name,"size") &&
-          strcmp(name,"arch")) 
+      if ((!strcmp(name,"arch")) && (ap != NULL))
+        {
+        /* report arch */
+
+        snprintf(buff,sizeof(buff),"%s=%s",
+          name,
+          ap->c_u.c_value);
+        }
+      else if ((ap != NULL) && 
+               !restrictrm && 
+                strcmp(name,"size"))
         {    
         /* static */
 
@@ -3299,7 +3304,9 @@ int rm_request(
             alarm(alarm_time);
 
             if (ap && !restrictrm) 
-              {	/* static */
+              {	
+              /* static */
+
               sprintf(output,"%s=%s",
                 cp,
                 conf_res(ap->c_u.c_value,attr));
