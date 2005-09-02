@@ -503,6 +503,8 @@ static char *arch(
   {
   char *id = "arch";
 
+  struct config *cp;
+
   if (attrib != NULL) 
     {
     log_err(-1,id,extra_parm);
@@ -511,6 +513,19 @@ static char *arch(
 
     return(NULL);
     }
+
+  /* locate arch string */
+
+  for (cp = config_array;cp->c_name != NULL;cp++)
+    {
+    if (cp->c_u.c_value == NULL)
+      continue;
+
+    if (strcmp(cp->c_name,"arch"))
+      continue; 
+
+    return(cp->c_u.c_value);
+    }  /* END for (cp) */
 
   return(PBS_MACH);
   }  /* END arch() */
@@ -606,6 +621,7 @@ static char *reqgres(
         !strcmp(cp->c_name,"node_check_script") ||
         !strcmp(cp->c_name,"ideal_load") ||
         !strcmp(cp->c_name,"max_load") ||
+        !strcmp(cp->c_name,"arch") ||
         !strncmp(cp->c_name,"size",strlen("size")))
       {
       continue;
@@ -623,6 +639,7 @@ static char *reqgres(
 
   return(GResBuf);
   }  /* END reqgres() */
+
 
 
 
