@@ -735,9 +735,14 @@ struct work_task *apply_job_delete_nanny(
   struct work_task *pwtiter, *pwtnew, *pwtdel;
   enum work_type tasktype;
 
-#ifndef __TNANNY
-  return(NULL);
-#endif /* __TNANNY */
+  /* short-circuit if nanny isn't enabled */
+
+  if (!server.sv_attr[(int)SRV_ATR_JobNanny].at_val.at_long)
+    {
+    remove_job_delete_nanny(pjob); /* in case it was recently disabled */
+
+    return(NULL);
+    }
 
   if (delay == 0) 
     {
@@ -793,8 +798,7 @@ struct work_task *apply_job_delete_nanny(
  * the rescheduling is to stay out of the way of the KILL delay and not
  * interfere with normal job deletes.
  *
- * If MS ever returns UNKJOBID, we'll just purge the job ourselves.  We are
- * also called from pbsd_init_job() after recovering EXITING jobs.
+ * We are also called from pbsd_init_job() after recovering EXITING jobs.
  */
 
 void job_delete_nanny(
@@ -806,6 +810,15 @@ void job_delete_nanny(
   struct work_task *pwtnanny;
   char *sigk = "SIGKILL";
   struct batch_request *newreq;
+
+  /* short-circuit if nanny isn't enabled */
+
+  if (!server.sv_attr[(int)SRV_ATR_JobNanny].at_val.at_long)
+    {
+    release_req(pwt);
+
+    return;
+    }
 
   pjob = (job *)pwt->wt_parm1;
 
@@ -855,11 +868,16 @@ static void post_job_delete_nanny(
   preq_sig = pwt->wt_parm1;
   rc       = preq_sig->rq_reply.brp_code;
 
+  /* short-circuit if nanny isn't enabled */
+
+  if (!server.sv_attr[(int)SRV_ATR_JobNanny].at_val.at_long)
+    {
+    return;
+    }
+
   /* extract job id from task */
 
   pjob = find_job(preq_sig->rq_ind.rq_signal.rq_jid);
-
-  /* free task */
 
   if (pjob == NULL)
     {
@@ -873,17 +891,23 @@ static void post_job_delete_nanny(
     }
   else if (rc == PBSE_UNKJOBID)
     {
-    sprintf(log_buffer, "job '%s' does not exist on mom, purging job locally",
+    sprintf(log_buffer, "job '%s' does not exist on mom",
       pjob->ji_qs.ji_jobid);
        
     log_err(-1,"post_job_delete_nanny",log_buffer);
- 
+
+    /* we probably need better checks before enabling this  -disable for now */
+
+    /* 
     free_nodes(pjob);
  
     set_resc_assigned(pjob,DECR);
  
     job_purge(pjob);
+    */
     }
+
+  /* free task */
 
   release_req(pwt);
 

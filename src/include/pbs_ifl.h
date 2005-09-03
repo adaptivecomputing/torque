@@ -219,6 +219,8 @@
 #define ATTR_tcptimeout  "tcp_timeout"
 #define ATTR_jobstatrate "job_stat_rate"
 #define ATTR_polljobs    "poll_jobs"
+#define ATTR_downonerror "down_on_error"
+#define ATTR_jobnanny    "job_nanny"
 
 
 /* additional node "attributes" names */

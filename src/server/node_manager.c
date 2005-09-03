@@ -504,6 +504,7 @@ int is_stat_get(
   char      *ret_info;
   attribute  temp;
   char       date_attrib[100];
+  int        msg_error = 0;
 
   if (LOGLEVEL >= 3)
     {
@@ -584,13 +585,26 @@ int is_stat_get(
 
           log_err(-1,id,log_buffer);
 
-          update_node_state(np, INUSE_UNKNOWN);
+          update_node_state(np,INUSE_UNKNOWN);
           }                        
+        }
+
+      if (!strncmp(ret_info,"me",2))  /* shorter str compare than "message" */
+        {
+        if (!strncmp(ret_info,"message=ERROR",13))
+          {
+          msg_error = 1;
+          }
         }
 
       free(ret_info);
       }
     }    /* END while (rc != DIS_EOD) */
+
+  if (msg_error && server.sv_attr[(int)SRV_ATR_DownOnError].at_val.at_long)
+    {
+    update_node_state(np,INUSE_DOWN);
+    }
 
   /* it's nice to know when the last update happened */
 

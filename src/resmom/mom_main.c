@@ -224,6 +224,8 @@ char            MOMSendStatFailure[MMAX_LINE];
 char            MOMConfigVersion[64];
 char            MOMUNameMissing[64];            
 
+int             MOMConfigDownOnError      = 0;
+
 #define TMAX_JE  64
 
 pjobexec_t      TMOMStartInfo[TMAX_JE];
@@ -533,6 +535,43 @@ static char *arch(
 
 
 
+static char *opsys(
+ 
+  struct rm_attribute *attrib)  /* I */
+
+  {
+  char *id = "opsys";
+
+  struct config *cp;
+
+  if (attrib != NULL) 
+    {
+    log_err(-1,id,extra_parm);
+
+    rm_errno = RM_ERR_BADPARAM;
+
+    return(NULL);
+    }
+
+  /* locate opsys string */
+
+  for (cp = config_array;cp->c_name != NULL;cp++)
+    {
+    if (cp->c_u.c_value == NULL)
+      continue;
+
+    if (strcmp(cp->c_name,"opsys"))
+      continue; 
+
+    return(cp->c_u.c_value);
+    }  /* END for (cp) */
+
+  return(PBS_MACH);
+  }  /* END opsys() */
+
+
+
+
 
 char *getuname()
 
@@ -622,6 +661,7 @@ static char *reqgres(
         !strcmp(cp->c_name,"ideal_load") ||
         !strcmp(cp->c_name,"max_load") ||
         !strcmp(cp->c_name,"arch") ||
+        !strcmp(cp->c_name,"opsys") ||
         !strncmp(cp->c_name,"size",strlen("size")))
       {
       continue;
@@ -652,7 +692,7 @@ static char *reqstate(
 
   static char state[1024];
 
-  if (internal_state & INUSE_DOWN)
+  if ((internal_state & INUSE_DOWN) && (MOMConfigDownOnError != 0))
     strcpy(state,"down");
   else if (internal_state & INUSE_BUSY)
     strcpy(state,"busy");
@@ -757,13 +797,13 @@ char *loadave(
 
 struct	config	common_config[] = {
   { "arch",      {arch} },
+  { "opsys",     {opsys} },
   { "uname",     {requname} },
   { "validuser", {validuser} },
   { "message",   {reqmsg} },
   { "gres",      {reqgres} },
   { "state",     {reqstate} },
-  { NULL,        {nullproc} },
- };
+  { NULL,        {nullproc} } };
 
 
 
@@ -1101,9 +1141,12 @@ static u_long setserver(
   
   {
   int index;
+  int rc;
 
   if ((value == NULL) || (value[0] == '\0'))
     {
+    /* FAILURE */
+
     return(1);
     }
 
@@ -1112,6 +1155,8 @@ static u_long setserver(
     if (!strcmp(pbs_servername[index],value))
       {
       /* servername already added */
+
+      /* IGNORE DUPLICATE REQUEST */
 
       return(0);
       }
@@ -1124,12 +1169,16 @@ static u_long setserver(
     {
     /* buffer is full */
 
+    /* FAILURE */
+
     return(1);
     }
 
   strncpy(pbs_servername[index],value,PBS_MAXHOSTNAME);
 
-  return(addclient(pbs_servername[index]));
+  rc = addclient(pbs_servername[index]);
+
+  return(rc);
   }  /* END setserver() */
 
 
@@ -1214,6 +1263,48 @@ static u_long configversion(
   return(1);
   }  /* END configversion() */
 
+
+
+
+
+static u_long setdownonerror(
+
+  char *Value)  /* I */
+
+  {
+  static char   id[] = "setdownonerror";
+  int           enable = 0;
+
+  log_record(PBSEVENT_SYSTEM,PBS_EVENTCLASS_SERVER,id,Value);
+
+  if (Value == NULL)
+    {
+    /* FAILURE */
+
+    return(0);
+    }
+
+  /* accept various forms of "true", "yes", and "1" */
+  switch (Value[0])
+    {
+    case 't':
+    case 'T':
+    case 'y':
+    case 'Y':
+    case '1':
+
+      enable = 1;
+    
+      break;
+    }
+
+  if (enable)
+    {
+    MOMConfigDownOnError=1;
+    }
+
+  return(1);
+  }  /* END setdownonerror() */
 
 
 
@@ -1724,6 +1815,7 @@ int read_config(
       { "clienthost",   setserver },
       { "configversion",configversion },
       { "cputmult",     cputmult },
+      { "headnode",     setserver },
       { "ideal_load",   setidealload },
       { "logevent",     setlogevent },
       { "loglevel",     setloglevel },
@@ -1738,6 +1830,7 @@ int read_config(
       { "node_check_interval", setnodecheckinterval },
       { "timeout",      settimeout },
       { "checkpoint_script", setcheckpointscript },
+      { "down_on_error", setdownonerror },
       { NULL,           NULL } };
 
   FILE	                *conf;
@@ -2580,6 +2673,7 @@ int is_update_stat(
 
   static char *stats[] = {
     "arch", 
+    "opsys",
     "uname", 
     "sessions", 
     "nsessions", 
@@ -2720,6 +2814,14 @@ int is_update_stat(
       if ((!strcmp(name,"arch")) && (ap != NULL))
         {
         /* report arch */
+
+        snprintf(buff,sizeof(buff),"%s=%s",
+          name,
+          ap->c_u.c_value);
+        }
+      else if ((!strcmp(name,"opsys")) && (ap != NULL))
+        {
+        /* report opsys */
 
         snprintf(buff,sizeof(buff),"%s=%s",
           name,

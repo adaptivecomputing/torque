@@ -315,6 +315,10 @@ reference system.  The factor is used for walltime calculations and limits
 the same as cputmult is used for cpu time.
 .IP configversion
 specifies the version of the config file data, a string.
+.IP down_on_error
+causes MOM to report itself as state "down" to pbs_server in the event of a
+failed health check.  This feature is EXPERIMENTAL and likely to be removed in
+the future.  See HEALTH CHECK below.
 .IP ideal_load
 ideal processor load.  Represents a low water mark for the load average.  Nodes
 that currently busy will consider itself free after falling below ideal_load.
@@ -345,7 +349,7 @@ group id less than 10 and not be world writtable.
 .Sh HEALTH CHECK
 The health check script is executed directly by the pbs_mom daemon under the
 root user id. It must be accessible from the compute node and may be a script
-or compile executable program.  It may make any needed system calls and execute
+or compiled executable program.  It may make any needed system calls and execute
 any combination of system utilities but should not execute resource manager
 client commands.  Also, as of TORQUE 1.0.1, the pbs_mom daemon blocks until the
 health check is completed and does not possess a built-in timeout.
@@ -356,6 +360,17 @@ If the script detects a failure, it should return the keyword 'ERROR' to stdout
 followed by an error message.  The message (up to 256 characters) immediately
 following the ERROR string will be assigned to the node attribute 'message' of
 the associated node. 
+.LP
+TORQUE currently ignores ERROR messages by default, but advanced schedulers
+like moab can be configured to react appropriately.
+.LP
+If the experimental $down_on_error MOM setting is enabled, MOM will set itself
+to state down and report to pbs_server; and pbs_server will report the node as
+"down".  Additionally, the experimental "down_on_error" server attribute can be
+enabled which has the same effect but moves the decision to pbs_server.  It is
+redundant to have MOM's $down_on_error and pbs_server's down_on_error features
+enabled.  See "down_on_error" in pbs_server_attributes(7B).
+.LP
 .Sh FILES
 .IP $PBS_SERVER_HOME/mom_priv 10
 the default directory for configuration files, typical
@@ -364,7 +379,7 @@ the default directory for configuration files, typical
 directory for log files recorded by the server.
 .IP $PBS_SERVER_HOME/mom_priv/prologue 10
 the administrative script to be run before job execution.
-.IP $PBS_SERVER_HOME/mom_priv/eiplogue 10
+.IP $PBS_SERVER_HOME/mom_priv/epilogue 10
 the administrative script to be run after job execution.
 .Sh SIGNAL HANDLING
 pbs_mom handles the following signals:
