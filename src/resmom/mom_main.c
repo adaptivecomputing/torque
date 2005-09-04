@@ -146,7 +146,7 @@
 #include <sys/mman.h>
 #endif /* __PPINMEM */
 
-#define CHECK_POLL_TIME     120
+#define CHECK_POLL_TIME     45
 #define DEFAULT_SERVER_STAT_UPDATES 45
 
 #define PBS_MAXSERVER       4

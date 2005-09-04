@@ -166,13 +166,17 @@ its log file and reread its configuration file (if any).
 A configuration file may be specified with the -c option.  
 This file may be used to specify the hosts (servers) which are allowed to
 connect to pbs_sched.  The hosts are specified in the configuration file
-in a manor identical to that used in pbs_mom.  There is one line per
-host with the syntax:
-.br
+in a manor identical to that used in pbs_mom.
+.IP clienthost
+One or more servers, one per line, may be specified:
+.IP
 .Ty "$clienthost   hostname"
-.br
-where clienthost and hostname are separated by white space.
-.LP
++.IP restricted
+Allows connections from non-priviledged ports on the named hosts.  Typically
+only used with Mac OSX:
+.IP
+.Ty "$restricted   hostname"
+.IP
 Two host names are always allowed to connection to pbs_sched, "localhost"
 and the name returned to pbs_sched by the system call gethostname().  These
 names need not be specified in the configuration file.
@@ -200,7 +204,7 @@ All other signals have the default action installed.
 .Sh "EXIT STATUS"
 Upon normal termination, an exit status of zero is returned.
 .Sh "SEE ALSO"
-pbs_sched_rule(8B), pbs_sched_tcl(8B), pbs_server(8B), and pbs_mom(8B).
+pbs_sched_tcl(8B), pbs_server(8B), and pbs_mom(8B).
 .br
 PBS Internal Design Specification
 .\" turn off any extra indent left by the Sh macro

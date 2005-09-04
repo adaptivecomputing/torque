@@ -197,7 +197,7 @@ to the MOM daemons.  If poll_jobs is unset or false, then all jobs that
 haven't been updated in job_stat_rate seconds will trigger a stat request.  
 If poll_jobs is true, then all jobs will be updated every job_stat_rate.
  (see poll_jobs)  On active clusters, 60 or 120 might be reasonable.
-Default value: 30 seconds  (PBS_RESTAT_JOB in server_limits.h)
+Default value: 45 seconds  (PBS_RESTAT_JOB in server_limits.h)
 Minimum value: 4 seconds  (PBS_JOBSTAT_MIN in server_limits.h)
 .if !\n(Pb .ig Ig
 [internal type: integer]
@@ -300,7 +300,7 @@ replied; this is suitable for small to medium sized clusters.  When set to
 true, pbs_server will send periodic job status requests; this is suitable for
 busy clusters with lots of jobs, lots of clients, qstat(1B) is too slow, or
 your scheduler times out.  (see job_stat_rate) 
-Default value: unset - client requests trigger, and wait for, job status updates.
+Default value: TRUE
 .if !\n(Pb .ig Ig
 [internal type: boolean]
 .Ig
