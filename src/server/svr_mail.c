@@ -131,7 +131,9 @@ void svr_mailowner(
 
   if (LOGLEVEL >= 3)
     {
-    snprintf(log_buffer,LOG_BUF_SIZE,"sending '%c' mail for job %s to %s (%.64s)\n",
+    char tmpBuf[LOG_BUF_SIZE];
+
+    snprintf(tmpBuf,LOG_BUF_SIZE,"sending '%c' mail for job %s to %s (%.64s)\n",
       (char)mailpoint,
       pjob->ji_qs.ji_jobid,
       pjob->ji_wattr[(int)JOB_ATR_job_owner].at_val.at_str,
@@ -141,7 +143,7 @@ void svr_mailowner(
       PBSEVENT_ERROR|PBSEVENT_ADMIN|PBSEVENT_JOB,
       PBS_EVENTCLASS_JOB,
       pjob->ji_qs.ji_jobid,
-      log_buffer);
+      tmpBuf);
     }
 
   /* if force is true, force the mail out regardless of mailpoint */
