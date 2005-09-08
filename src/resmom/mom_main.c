@@ -155,6 +155,7 @@
 /* Global Data Items */
 
 int             ServerStatUpdateInterval = DEFAULT_SERVER_STAT_UPDATES;
+int             CheckPollTime            = CHECK_POLL_TIME;
 
 double		cputfactor = 1.00;
 unsigned int	default_server_port;
@@ -1485,7 +1486,7 @@ static unsigned long setloglevel(
 
   i = (int)atoi(value);
 
-  if (i <= 0)
+  if (i < 0)
     {
     return(0);  /* error */
     }
@@ -1523,7 +1524,55 @@ static unsigned long jobstartblocktime(
   return(1);
   }  /* END jobstartblocktime() */
 
+static unsigned long setstatusupdatetime(
 
+  char *value)  /* I */
+
+  {
+  int i;
+
+  log_record(
+    PBSEVENT_SYSTEM,
+    PBS_EVENTCLASS_SERVER,
+    "setstateuspdatetime",
+    value);
+
+  i = (int)strtol(value,NULL,10);
+
+  if (i < 1)
+    {
+    return(0);  /* error */
+    }
+
+  ServerStatUpdateInterval = (unsigned int)i;
+
+  return(1);
+  }  /* END setstatusupdatetime() */
+
+static unsigned long setcheckpolltime(
+
+  char *value)  /* I */
+
+  {
+  int i;
+
+  log_record(
+    PBSEVENT_SYSTEM,
+    PBS_EVENTCLASS_SERVER,
+    "setcheckpolltime",
+    value);
+
+  i = (int)strtol(value,NULL,10);
+
+  if (i < 1)
+    {
+    return(0);  /* error */
+    }
+
+  CheckPollTime = (unsigned int)i;
+
+  return(1);
+  }  /* END setcheckpolltime() */
 
 /*
 **	Add static resource or shell escape line from config file.
@@ -1831,6 +1880,8 @@ int read_config(
       { "timeout",      settimeout },
       { "checkpoint_script", setcheckpointscript },
       { "down_on_error", setdownonerror },
+      { "status_update_time", setstatusupdatetime },
+      { "check_poll_time", setcheckpolltime },
       { NULL,           NULL } };
 
   FILE	                *conf;
@@ -3162,6 +3213,66 @@ int rm_request(
 
             log_record(PBSEVENT_SYSTEM,0,id,"reporting cycle forced");
             }
+          else if (!strncasecmp(name,"status_update_time",strlen("status_update_time")))
+            {
+            /* set or report status_update_time */
+
+            if ( (*curr == '=') && ((*curr)+1 != '\0' ))
+              {
+              setstatusupdatetime(curr+1);
+              }
+
+            sprintf(output,"status_update_time=%d",
+              ServerStatUpdateInterval);
+            }
+          else if (!strncasecmp(name,"check_poll_time",strlen("check_poll_time")))
+            {
+            /* set or report check_poll_time */
+
+            if ( (*curr == '=') && ((*curr)+1 != '\0' ))
+              {
+              setcheckpolltime(curr+1);
+              }
+
+            sprintf(output,"check_poll_time=%d",
+              CheckPollTime);
+            }
+          else if (!strncasecmp(name,"jobstartblocktime",strlen("jobstartblocktime")))
+            {
+            /* set or report jobstartblocktime */
+
+            if ( (*curr == '=') && ((*curr)+1 != '\0' ))
+              {
+              jobstartblocktime(curr+1);
+              }
+
+            sprintf(output,"jobstartblocktime=%d",
+              TJobStartBlockTime);
+            }
+          else if (!strncasecmp(name,"loglevel",strlen("loglevel")))
+            {
+            /* set or report loglevel */
+
+            if ( (*curr == '=') && ((*curr)+1 != '\0' ))
+              {
+              setloglevel(curr+1);
+              }
+
+            sprintf(output,"loglevel=%d",
+              LOGLEVEL);
+            }
+          else if (!strncasecmp(name,"down_on_error",strlen("down_on_error")))
+            {
+            /* set or report loglevel */
+
+            if ( (*curr == '=') && ((*curr)+1 != '\0' ))
+              {
+              setdownonerror(curr+1);
+              }
+
+            sprintf(output,"down_on_error=%d",
+              LOGLEVEL);
+            }
           else if (!strncasecmp(name,"diag",strlen("diag")))
             {
             char tmpLine[1024];
@@ -4118,7 +4229,7 @@ static void finish_loop(
 
   tmpTime = MIN(waittime,time_now - (LastServerUpdateTime + ServerStatUpdateInterval));
 
-  tmpTime = MIN(tmpTime,time_now - (polltime + CHECK_POLL_TIME));
+  tmpTime = MIN(tmpTime,time_now - (polltime + CheckPollTime));
 
   tmpTime = MAX(1,tmpTime);
 
@@ -5228,7 +5339,7 @@ int main(
     if (internal_state & UPDATE_MOM_STATE)
       state_to_server(0);
 
-    if (time_now < (polltime + CHECK_POLL_TIME))
+    if (time_now < (polltime + CheckPollTime))
       {
       continue;
       }
