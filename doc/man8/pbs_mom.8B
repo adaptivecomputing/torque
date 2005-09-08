@@ -315,6 +315,12 @@ reference system.  The factor is used for walltime calculations and limits
 the same as cputmult is used for cpu time.
 .IP configversion
 specifies the version of the config file data, a string.
+.IP check_poll_time
+specifies the MOM interval in seconds.  MOM checks each job for updated
+resource usages, exited processes, over-limit conditions, etc. once per
+interval.  This value should be equal or lower to pbs_server's job_stat_rate.
+High values result in stale information reported to pbs_server.  Low values
+result increased system usage by MOM.  Default is 45 seconds.
 .IP down_on_error
 causes MOM to report itself as state "down" to pbs_server in the event of a
 failed health check.  This feature is EXPERIMENTAL and likely to be removed in
@@ -341,11 +347,35 @@ or job job epilog to complete.  This parameter default to 300 seconds (5 minutes
 .IP timeout
 Specifies the number of seconds before mom-to-mom messages will timeout if RPP is
 disabled.  Default is 60 seconds.
+.IP status_update_time
+specifies (in seconds) how often MOM updates its status information to
+pbs_server.  This value should correlate with the server's scheduling interval.
+High values increase the load of pbs_server and the network.  Low values cause
+pbs_server to report stale information.  Default is 45 seconds.
 .RE
 .LP
 The configuration file must be "secure".  It must be owned by a user id and
 group id less than 10 and not be world writtable.
 .LP
+.Sh RESOURCES
+Resource Monitor queries can be made with momctl's -q option to retrieve and
+set pbs_mom options.  Any configured static resource may be retrieved with a
+request of the same name.  These are resource requests not otherwise documented
+in the PBS ERS.
+.IP cycle
+forces an immediate MOM cycle.
+.IP status_update_time
+retrieve or set the $status_update_time parameter
+.IP check_poll_time
+retrieve or set the $check_poll_time parameter
+.IP jobstartblocktime
+retrieve or set the $jobstartblocktime parameter
+.IP loglevel
+retrieve or set the $loglevel parameter
+.IP down_on_error
+retrieve or set the EXPERIMENTAL $down_on_error parameter
+.IP "diag0 - diag4"
+retrieves various diagnostic information
 .Sh HEALTH CHECK
 The health check script is executed directly by the pbs_mom daemon under the
 root user id. It must be accessible from the compute node and may be a script
