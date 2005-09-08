@@ -709,7 +709,7 @@ task		*task_find	A_((	job		*pjob,
 
 extern void  add_dest A_((job *));
 extern void  depend_clrrdy A_((job *));
-extern int   depend_on_que A_((attribute *, job *, int mode));
+extern int   depend_on_que A_((attribute *, void *, int));
 extern int   depend_on_exec A_((job *));
 extern int   depend_on_term A_((job *));
 extern job  *find_job A_((char *));

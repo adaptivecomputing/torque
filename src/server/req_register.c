@@ -625,7 +625,7 @@ static void alter_unreg(
 int depend_on_que(
 
   attribute *pattr,
-  job       *pjob,
+  void       *pjob,
   int        mode)
 
   {
@@ -636,8 +636,8 @@ int depend_on_que(
   int	       type;
 
   if (((mode != ATR_ACTION_ALTER) && (mode != ATR_ACTION_NOOP)) ||
-       (pjob->ji_qhdr == 0) ||
-       (pjob->ji_qhdr->qu_qs.qu_type != QTYPE_Execution))
+       (((job *)pjob)->ji_qhdr == 0) ||
+       (((job *)pjob)->ji_qhdr->qu_qs.qu_type != QTYPE_Execution))
     {
     return(0);
     }
@@ -646,12 +646,12 @@ int depend_on_que(
     {
     /* if there are dependencies being removed, unregister them */
 
-    alter_unreg(pjob, &pjob->ji_wattr[(int)JOB_ATR_depend], pattr);
+    alter_unreg((job *)pjob, &((job *)pjob)->ji_wattr[(int)JOB_ATR_depend], pattr);
     }
 
   /* First set a System hold if required */
 
-  set_depend_hold(pjob,pattr);
+  set_depend_hold((job *)pjob,pattr);
 
   /* Check if there are dependencies that require registering */
 
@@ -665,12 +665,12 @@ int depend_on_que(
       {
       /* register myself - this calculates and records the cost */
 
-      cost = calc_job_cost(pjob);
+      cost = calc_job_cost((job *)pjob);
 
-      register_sync(pdep,pjob->ji_qs.ji_jobid,server_name,cost);
+      register_sync(pdep,((job *)pjob)->ji_qs.ji_jobid,server_name,cost);
 
       if (pdep->dp_numreg > pdep->dp_numexp)
-        release_cheapest(pjob, pdep);
+        release_cheapest((job *)pjob, pdep);
       } 
     else if (type != JOB_DEPEND_TYPE_ON) 
       {
@@ -678,7 +678,7 @@ int depend_on_que(
 
       while (pparent) 
         {
-        if ((rc = send_depend_req(pjob,pparent,type,JOB_DEPEND_OP_REGISTER,SYNC_SCHED_HINT_NULL,post_doq)))
+        if ((rc = send_depend_req((job *)pjob,pparent,type,JOB_DEPEND_OP_REGISTER,SYNC_SCHED_HINT_NULL,post_doq)))
 
         return(rc);
 
