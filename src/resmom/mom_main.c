@@ -1519,7 +1519,7 @@ static unsigned long jobstartblocktime(
     return(0);  /* error */
     }
 
-  TJobStartBlockTime = (unsigned int)i;
+  TJobStartBlockTime = i;
 
   return(1);
   }  /* END jobstartblocktime() */
@@ -3246,7 +3246,7 @@ int rm_request(
               jobstartblocktime(curr+1);
               }
 
-            sprintf(output,"jobstartblocktime=%d",
+            sprintf(output,"jobstartblocktime=%ld",
               TJobStartBlockTime);
             }
           else if (!strncasecmp(name,"loglevel",strlen("loglevel")))
@@ -5390,11 +5390,14 @@ int main(
             {
 #endif	/* not cray */
 
-            LOG_EVENT(
-              PBSEVENT_JOB, 
-              PBS_EVENTCLASS_JOB, 
-              id, 
-              "no active process found");
+            if (LOGLEVEL >= 3)
+              {
+              LOG_EVENT(
+                PBSEVENT_JOB, 
+                PBS_EVENTCLASS_JOB, 
+                pjob->ji_qs.ji_jobid, 
+                "no active process found");
+              }
 
             ptask->ti_qs.ti_exitstat = 0;
 
