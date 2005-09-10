@@ -1484,6 +1484,13 @@ void writer(
       {	
       /* error */
 
+      if (errno == EAGAIN)
+        {
+        sleep(1);
+
+        continue;
+        }
+
       if (errno != EINTR)
         {
         perror("qsub: read error");

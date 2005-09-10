@@ -172,7 +172,8 @@ ac_help="$ac_help
                           set the name of the computer that clients will
                           access when no machine name is specified as part
                           of the queue name. It defaults to the hostname
-                          of the machine on which PBS is being compiled."
+                          of the machine on which PBS is being compiled.
+                          DO NOT SET THIS TO 'localhost'"
 ac_help="$ac_help
 
   --set-environ=PATH      set the path containing the environment variables

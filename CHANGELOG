@@ -1,3 +1,7 @@
+1.2.0p7
+
+  fixed doc build by adding AIX 5 resources docs
+
 1.2.0p6
 
   added $headnode mom config (CRI) 
