@@ -350,7 +350,7 @@ static pid_t fork_to_user(
 
   if (LOGLEVEL >= 1)
     { 
-    sprintf(tmpLine,"forking to user, uid: %ld  gid: %ld  homedir: '%s'\n",
+    sprintf(tmpLine,"forking to user, uid: %ld  gid: %ld  homedir: '%s'",
       (long)useruid,
       (long)usergid,
       hdir);
@@ -2061,7 +2061,7 @@ static int sys_copy(
 
     if (LOGLEVEL >= 3)
       {
-      sprintf(log_buffer,"executing copy command: %s %s %s %s\n",
+      sprintf(log_buffer,"executing copy command: %s %s %s %s",
         ag0,
         ag1,
         ag2,

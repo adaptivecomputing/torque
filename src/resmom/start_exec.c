@@ -144,7 +144,7 @@ extern  char            *path_prologuser;
 extern  char            *path_prologp;
 extern  char            *path_prologuserp;
 extern	char		*path_spool;
-extern	char		*path_home;
+extern	char		*path_aux;
 extern	gid_t		 pbsgroup;
 extern	time_t		time_now;
 extern	unsigned int	pbs_rm_port;
@@ -192,7 +192,7 @@ static	void catchinter A_((int));
 int TMomFinalizeJob1(job *,pjobexec_t *,int *);
 int TMomFinalizeJob2(pjobexec_t *,int *);
 int TMomFinalizeJob3(pjobexec_t *,int,int,int *);
-int TMomFinalizeJobChild(pjobexec_t *);
+int TMomFinalizeChild(pjobexec_t *);
 
 int TMomCheckJobChild(pjobexec_t *,int,int *,int *);
 static int search_env_and_open(const char *,u_long);
@@ -1481,8 +1481,8 @@ int TMomFinalizeChild(
     {
     FILE *nhow;
 
-    sprintf(buf,"%s/aux/%s",
-      path_home, 
+    sprintf(buf,"%s/%s",
+      path_aux, 
       pjob->ji_qs.ji_jobid);
 
     bld_env_variables(&vtable,variables_else[11],buf);
@@ -1802,9 +1802,6 @@ int TMomFinalizeChild(
 
     sigaction(SIGALRM,&act,(struct sigaction *)0);
 
-    if (LOGLEVEL >= 3)
-      log_record(PBSEVENT_SYSTEM,0,id,"setting 30 second alarm in finish_exec");
-
     alarm(30);
 
     /* Set environment to reflect interactive */
@@ -1904,11 +1901,7 @@ int TMomFinalizeChild(
         strcpy(log_buffer,"unable to set session");
         }
 
-      log_record(
-        PBSEVENT_ERROR, 
-        PBS_EVENTCLASS_JOB,
-        pjob->ji_qs.ji_jobid, 
-        log_buffer);
+      log_err(-1,id,log_buffer);
 
       starter_return(TJE->upfds,TJE->downfds,JOB_EXEC_FAIL1,&sjr); 
       }
@@ -1971,10 +1964,8 @@ int TMomFinalizeChild(
            pjob,
            PE_IO_TYPE_ASIS) != 0) 
         {
-        fprintf(stderr,"cannot run prolog: %s\n",
-          log_buffer);
 
-        log_err(-1,id,"prolog failed");
+        log_err(-1,id,"interactive prolog failed");
 
         starter_return(TJE->upfds,TJE->downfds,JOB_EXEC_FAIL2,&sjr);
         }
@@ -1987,10 +1978,8 @@ int TMomFinalizeChild(
            pjob,
            PE_IO_TYPE_ASIS) != 0)
         {
-        fprintf(stderr,"cannot run user prolog: %s\n",
-          log_buffer);
 
-        log_err(-1,id,"user prolog failed");
+        log_err(-1,id,"interactive user prolog failed");
 
         starter_return(TJE->upfds,TJE->downfds,JOB_EXEC_FAIL2,&sjr);
 
@@ -2112,11 +2101,7 @@ int TMomFinalizeChild(
 
     if (script_in < 0) 
       {
-      log_record(
-        PBSEVENT_ERROR, 
-        PBS_EVENTCLASS_JOB,
-        pjob->ji_qs.ji_jobid,
-        "Unable to open script");
+      log_err(errno,id,"Unable to open script");
 
       starter_return(TJE->upfds,TJE->downfds,JOB_EXEC_FAIL1,&sjr);
       }
@@ -2145,30 +2130,17 @@ int TMomFinalizeChild(
         pjob, 
         PE_IO_TYPE_ASIS)) != 0) 
       {
-      if (LOGLEVEL >= 2)
-        {
-        char tmpLine[1024];
-
-        snprintf(tmpLine,sizeof(tmpLine),"cannot run prolog: %s (rc: %d)\n",
-          log_buffer,
-          j);
-
-        log_err(-1,id,tmpLine);
-        }
+      log_err(-1,id,"batch job prolog failed");
 
       if (j == 1)
         {
         /* permanent failure - abort job */
-
-        log_err(-1,id,"prolog failed: aborting job");
 
         starter_return(TJE->upfds,TJE->downfds,JOB_EXEC_FAIL2,&sjr);
         }
       else
         {
         /* retry - requeue job */
-
-        log_err(-1,id,"prolog failed: retrying job");
 
         starter_return(TJE->upfds,TJE->downfds,JOB_EXEC_RETRY,&sjr);
         }
@@ -2184,10 +2156,7 @@ int TMomFinalizeChild(
         pjob,
         PE_IO_TYPE_ASIS)) != 0)
       {
-      fprintf(stderr,"cannot run user prolog '%s': %s (rc: %d)\n",
-        path_prologuser,
-        log_buffer,
-        j);
+      log_err(-1,id,"batch job user prolog failed");
 
       if (j == 1)
         {
@@ -2215,7 +2184,7 @@ int TMomFinalizeChild(
       {
       /* FAILURE */
 
-      if (j == -1) 
+      if (j != -2) 
         {
         /* set_job didn't leave message in log_buffer */
 
@@ -2224,15 +2193,7 @@ int TMomFinalizeChild(
 
       /* set_job leaves message in log_buffer */
 
-      fprintf(stderr,"%s\n",log_buffer);
-
-#ifndef NDEBUG
-      log_record(
-        PBSEVENT_ERROR, 
-        PBS_EVENTCLASS_JOB,
-        pjob->ji_qs.ji_jobid, 
-        log_buffer);
-#endif	/* NDEBUG */
+      log_err(-1,id,log_buffer);
 
       starter_return(TJE->upfds,TJE->downfds,JOB_EXEC_FAIL2,&sjr);
 
@@ -2270,11 +2231,7 @@ int TMomFinalizeChild(
     sprintf(log_buffer,"Unable to set limits, err=%d", 
       i);
 
-    log_record(
-      PBSEVENT_ERROR, 
-      PBS_EVENTCLASS_JOB,
-      pjob->ji_qs.ji_jobid, 
-      log_buffer);
+    log_err(-1,id,log_buffer);
   
     if (i == PBSE_RESCUNAV)	
       {	
@@ -2307,20 +2264,10 @@ int TMomFinalizeChild(
     {
     if (chroot(idir) == -1)
       {
-      char tmpLine[1024];
+      sprintf(log_buffer,"chroot to '%.256s' failed",
+        idir);
 
-      sprintf(tmpLine,"chroot to '%.256s' failed, errno=%d - %s",
-        idir,
-        errno,
-        strerror(errno));
-
-      log_record(
-        PBSEVENT_JOB|PBSEVENT_SECURITY,PBS_EVENTCLASS_JOB,
-        pjob->ji_qs.ji_jobid,
-        tmpLine);
-
-      fprintf(stderr,"%s\n",
-        tmpLine);
+      log_err(errno,id,log_buffer);
 
       starter_return(TJE->upfds,TJE->downfds,JOB_EXEC_FAIL2,&sjr);
 
@@ -2356,20 +2303,10 @@ int TMomFinalizeChild(
 
     if (chdir(idir) == -1)
       {
-      char tmpLine[1024];
+      sprintf(log_buffer,"chdir to '%.256s' failed",
+        idir);
 
-      sprintf(tmpLine,"chdir to '%.256s' failed, errno=%d - %s",
-        idir,
-        errno,
-        strerror(errno));
-
-      log_record(
-        PBSEVENT_JOB|PBSEVENT_SECURITY,PBS_EVENTCLASS_JOB,
-        pjob->ji_qs.ji_jobid,
-        tmpLine);
-
-      fprintf(stderr,"%s\n",
-        tmpLine);
+      log_err(errno,id,log_buffer);
 
       starter_return(TJE->upfds,TJE->downfds,JOB_EXEC_FAIL2,&sjr);
 
@@ -2384,20 +2321,10 @@ int TMomFinalizeChild(
 
     if (chdir(pwdp->pw_dir) == -1)
       {
-      char tmpLine[1024];
+      sprintf(log_buffer,"chdir to '%.256s' failed",
+        pwdp->pw_dir);
 
-      sprintf(tmpLine,"chdir to '%.256s' failed, errno=%d - %s",
-        pwdp->pw_dir,
-        errno,
-        strerror(errno));
-
-      log_record(
-        PBSEVENT_JOB|PBSEVENT_SECURITY,PBS_EVENTCLASS_JOB,
-        pjob->ji_qs.ji_jobid,
-        tmpLine);
-
-      fprintf(stderr,"%s\n",
-        tmpLine);
+      log_err(errno,id,log_buffer);
 
       starter_return(TJE->upfds,TJE->downfds,JOB_EXEC_FAIL2,&sjr);
 
@@ -2498,25 +2425,26 @@ int TMomFinalizeChild(
     shell = demux;  /* for fprintf below */
     }  /* END else if (cpid == 0) */
 
-  fprintf(stderr,"pbs_mom, exec of shell \"%s\" failed with error %d\n",
-    shell, 
-    errno);
+  sprintf(log_buffer,"exec of shell \"%s\" failed",
+    shell);
+
+  log_err(errno,id,log_buffer);
 
   if (strlen(shell) == 0)
     {
     extern char mom_host[];
 
-    fprintf(stderr,"pbs_mom, user \"%s\" may not have a shell defined on node \"%s\"\n",
+    DBPRT(("user \"%s\" may not have a shell defined on node \"%s\"\n",
       pwdp->pw_name,
-      mom_host);
+      mom_host));
     }
   else if (strstr(shell,"/bin/false") != NULL)
     {
     extern char mom_host[];
 
-    fprintf(stderr,"pbs_mom, user \"%s\" has shell \"/bin/false\" on node \"%s\"\n",
+    DBPRT(("user \"%s\" has shell \"/bin/false\" on node \"%s\"\n",
       pwdp->pw_name,
-      mom_host);
+      mom_host));
     }
   else
     {
@@ -2524,20 +2452,20 @@ int TMomFinalizeChild(
 
     if (stat(shell, &buf) != 0)
       {
-      fprintf(stderr,"pbs_mom, stat of shell \"%s\" failed with error %d\n",
+      DBPRT(("stat of shell \"%s\" failed with error %d\n",
         shell, 
-        errno);
+        errno));
       }
     else if (S_ISREG(buf.st_mode) == 0)
       {
-      fprintf(stderr,"pbs_mom, shell \"%s\" is not a file\n",
-        shell);
+      DBPRT(("shell \"%s\" is not a file\n",
+        shell));
       }
     else if ((buf.st_mode & S_IXUSR) != 0)
       {
-      fprintf(stderr,"pbs_mom, shell \"%s\" is not executable by user \"%s\"\n",
+      DBPRT(("shell \"%s\" is not executable by user \"%s\"\n",
         shell,
-        pwdp->pw_name);
+        pwdp->pw_name));
       }
     }
 
@@ -2613,7 +2541,7 @@ int TMomFinalizeJob3(
 
   if (LOGLEVEL >= 3)
     {
-    sprintf(log_buffer,"read start return code=%d session=%ld\n",
+    sprintf(log_buffer,"read start return code=%d session=%ld",
       sjr.sj_code,
       (long)sjr.sj_session);
 
@@ -3126,6 +3054,14 @@ int start_process(
 
   if (set_mach_vars(pjob,&vtable) != 0) 
     {
+    strcpy(log_buffer,"machine dependent environment variable setup failed");
+
+    log_record(
+      PBSEVENT_ERROR, 
+      PBS_EVENTCLASS_JOB,
+      pjob->ji_qs.ji_jobid, 
+      log_buffer);
+
     starter_return(kid_write,kid_read,JOB_EXEC_FAIL2,&sjr);
 
     /*NOTREACHED*/
@@ -3151,8 +3087,7 @@ int start_process(
 
   if (j < 0) 
     {
-#ifndef NDEBUG
-    if (j == -1) 
+    if (j != -2) 
       {
       /* set_job didn't leave message in log_buffer */
 
@@ -3164,8 +3099,6 @@ int start_process(
       PBS_EVENTCLASS_JOB,
       pjob->ji_qs.ji_jobid, 
       log_buffer);
-
-#endif  /* NDEBUG */
 
     starter_return(kid_write,kid_read,JOB_EXEC_FAIL2,&sjr);
     }
@@ -3230,7 +3163,7 @@ int start_process(
 
   if ((idir = __get_variable(pjob,"PBS_O_INITDIR")) != NULL)
     {
-    /* in TMomFinalizeChild() executed as user */
+    /* in start_process() executed as user */
 
     if (chdir(idir) == -1)
       {
@@ -3243,14 +3176,14 @@ int start_process(
         pjob->ji_qs.ji_jobid,
         log_buffer);
 
-      fprintf(stderr,log_buffer);
+      DBPRT((log_buffer));
 
       starter_return(kid_write,kid_read,JOB_EXEC_FAIL2,&sjr);
       }
     }
   else 
     {
-    /* in TMomFinalizeChild() executed as user */
+    /* in start_process() executed as user */
 
     if (chdir(pjob->ji_grpcache->gc_homedir) == -1)
       {
@@ -3260,7 +3193,7 @@ int start_process(
         pjob->ji_qs.ji_jobid,
         "could not chdir to home directory");
 
-      fprintf(stderr,"could not chdir to home directory\n");
+      DBPRT(("could not chdir to home directory\n"));
 
       starter_return(kid_write,kid_read,JOB_EXEC_FAIL2,&sjr);
       }
@@ -3432,9 +3365,9 @@ int start_process(
 
   /* only reached if execvp() fails */
 
-  fprintf(stderr,"%s: %s\n", 
+  DBPRT(("%s: %s\n", 
     argv[0],
-    strerror(errno));
+    strerror(errno)));
 
   exit(254);
 
@@ -3647,7 +3580,7 @@ void job_nodes(
 
   if (LOGLEVEL >= 2)
     {
-    sprintf(log_buffer,"job: %s numnodes=%d numvnod=%d\n",
+    sprintf(log_buffer,"job: %s numnodes=%d numvnod=%d",
       pjob->ji_qs.ji_jobid,
       nhosts,
       nodenum);
@@ -3964,14 +3897,17 @@ void start_exec(
 
     if (TMomCheckJobChild(TJE,TJobStartBlockTime,&Count,&RC) == FAILURE)
       {
-      sprintf(log_buffer,"job not ready after %ld second timeout, MOM will recheck",
-        TJobStartBlockTime);
+      if (LOGLEVEL >= 3)
+        {
+        sprintf(log_buffer,"job not ready after %ld second timeout, MOM will recheck",
+          TJobStartBlockTime);
 
-      log_record(
-        PBSEVENT_ERROR,
-        PBS_EVENTCLASS_JOB,
-        pjob->ji_qs.ji_jobid,
-        log_buffer);
+        log_record(
+          PBSEVENT_ERROR,
+          PBS_EVENTCLASS_JOB,
+          pjob->ji_qs.ji_jobid,
+          log_buffer);
+        }
 
       return;
       }
@@ -3980,13 +3916,7 @@ void start_exec(
 
     if (TMomFinalizeJob3(TJE,Count,RC,&SC) == FAILURE)
       {
-      sprintf(log_buffer,"ALERT:  job failed phase 3 start, server will retry");
-
-      log_record(
-        PBSEVENT_ERROR,
-        PBS_EVENTCLASS_JOB,
-        pjob->ji_qs.ji_jobid,
-        log_buffer);
+      /* no need to log an error, TMomFinalizeJob3 already does it */
 
       memset(TJE,0,sizeof(pjobexec_t));
 

@@ -191,12 +191,12 @@ static int pelog_err(
   char *text)  /* I */
 
   {
-  sprintf(log_buffer,"prolog/epilog failed, file: %s, exit: %d, %s\n", 
+  sprintf(log_buffer,"prolog/epilog failed, file: %s, exit: %d, %s", 
     file, 
     n, 
     text);
 
-  sprintf(PBSNodeMsgBuf,"ERROR: prolog/epilog failed, file: %s, exit: %d, %s\n",
+  sprintf(PBSNodeMsgBuf,"ERROR: prolog/epilog failed, file: %s, exit: %d, %s",
     file,
     n,
     text);
@@ -432,16 +432,9 @@ int run_pelog(
 
       if (chdir(pjob->ji_grpcache->gc_homedir) != 0)
         {
-        /* warn only, no failure */
+        /* warn only, no failure (we're a child process and can't log_record() */
 
-        if (LOGLEVEL >= 2)
-          {
-          log_record(
-            PBSEVENT_DEBUG,
-            PBS_EVENTCLASS_JOB,
-            pjob->ji_qs.ji_jobid,
-            "cannot chdir to user home as root - running pro/epi script in current directory");
-          }
+        DBPRT(("cannot chdir to user home as user - running pro/epi script in current directory"));
         }
       }
 

@@ -182,6 +182,7 @@ char           *path_prologuser;
 char           *path_prologuserp;
 char	       *path_spool;
 char	       *path_undeliv;
+char	       *path_aux;
 char           *path_home = PBS_SERVER_HOME;
 char           *mom_home;
 char		pbs_current_user[PBS_MAXUSER] = "pbs_mom";  /* for libpbs.a */
@@ -2188,7 +2189,7 @@ struct rm_attribute *momgetattr(
 
     if (LOGLEVEL >= 7)
       {
-      sprintf(log_buffer,"found %s = %s\n",
+      sprintf(log_buffer,"found %s = %s",
         qual,
         valu);
 
@@ -2204,7 +2205,7 @@ struct rm_attribute *momgetattr(
 
   if (LOGLEVEL >= 5)
     {
-    sprintf(log_buffer,"passing back %s = %s\n",
+    sprintf(log_buffer,"passing back %s = %s",
       qual,
       valu);
 
@@ -3490,9 +3491,6 @@ int rm_request(
               {
               for (;pjob != NULL;pjob = (job *)GET_NEXT(pjob->ji_alljobs))
                 {
-                if (pjob->ji_qs.ji_substate != JOB_SUBSTATE_RUNNING)
-                  continue;
-
                 sprintf(tmpLine,"Job[%s]  State=%s\n",
                   pjob->ji_qs.ji_jobid,
                   PJobSubState[pjob->ji_qs.ji_substate]);
@@ -4061,7 +4059,7 @@ void tcp_request(
 
   if (LOGLEVEL >= 6)
     {
-    sprintf(log_buffer,"%s: fd %d addr %s\n",
+    sprintf(log_buffer,"%s: fd %d addr %s",
       id,
       fd,
       address);
@@ -4842,6 +4840,7 @@ int main(
   path_log         = mk_dirs("mom_logs");
   path_spool       = mk_dirs("spool/");
   path_undeliv     = mk_dirs("undelivered/");
+  path_aux         = mk_dirs("aux/");
 
 #if MOM_CHECKPOINT == 1
 
@@ -4876,6 +4875,7 @@ int main(
 #if !defined(DEBUG) && !defined(NO_SECURITY_CHECK)
 
   c |= chk_file_sec(path_jobs,   1, 0, S_IWGRP|S_IWOTH, 1);
+  c |= chk_file_sec(path_aux,    1, 0, S_IWGRP|S_IWOTH, 1);
   c |= chk_file_sec(path_spool,  1, 1, S_IWOTH, 0);
   c |= chk_file_sec(PBS_ENVIRON, 0, 0, S_IWGRP|S_IWOTH, 0);
 
@@ -4903,6 +4903,8 @@ int main(
     {
     strcpy(log_buffer,"pbs_mom: Unable to open lock file\n");
     
+    fprintf(stderr,log_buffer);
+
     return(1);
     }
  
@@ -4921,9 +4923,9 @@ int main(
     if (c == EADDRINUSE)
       strcat(log_buffer,", already in use");
 
-    strcat(log_buffer,"\n");
-
     log_err(-1,msg_daemonname,log_buffer);
+
+    strcat(log_buffer,"\n");
 
     fprintf(stderr,log_buffer);
 
@@ -4941,9 +4943,9 @@ int main(
     if (c == EADDRINUSE)
       strcat(log_buffer,", already in use");
 
-    strcat(log_buffer,"\n");
-
     log_err(-1,msg_daemonname,log_buffer);
+
+    strcat(log_buffer,"\n");
 
     fprintf(stderr,log_buffer);
 
@@ -5486,7 +5488,7 @@ int main(
 
         if (send_sisters(pjob,IM_POLL_JOB) != pjob->ji_numnodes - 1)
           {
-          sprintf(log_buffer,"cannot contact sisters - node %d failed\n",
+          sprintf(log_buffer,"cannot contact sisters - node %d failed",
             pjob->ji_nodeid);
 
           log_record(PBSEVENT_JOB | PBSEVENT_FORCE,
@@ -5831,12 +5833,7 @@ int TMOMScanForStarting(void)
                                                                                 
         if (TMomFinalizeJob3(TJE,Count,RC,&SC) == FAILURE)
           {
-          sprintf(log_buffer,"ALERT:  job failed phase 3 start, server will retry");                                                                                
-          log_record(
-            PBSEVENT_ERROR,
-            PBS_EVENTCLASS_JOB,
-            pjob->ji_qs.ji_jobid,
-            log_buffer);
+          /* no need to log this, TMomFinalizeJob3() already did */
 
           memset(TJE,0,sizeof(pjobexec_t));
                                                                                 

@@ -129,7 +129,7 @@ extern char		*msg_daemonname;
 extern int		termin_child;
 extern struct connection svr_conn[];
 extern int		resc_access_perm;
-extern char		*path_home;
+extern char		*path_aux;
 
 extern int              LOGLEVEL;
 
@@ -762,8 +762,8 @@ void scan_for_exiting()
       {
       char file[MAXPATHLEN + 1];
 
-      sprintf(file,"%s/aux/%s",
-        path_home, 
+      sprintf(file,"%s/%s",
+        path_aux, 
         pjob->ji_qs.ji_jobid);
 
       unlink(file);
@@ -1028,7 +1028,7 @@ void init_abort_jobs(
 
   if (LOGLEVEL >= 6)
     {
-    sprintf(log_buffer,"%s: recover=%d\n",
+    sprintf(log_buffer,"%s: recover=%d",
       id,
       recover);
 
@@ -1069,7 +1069,7 @@ void init_abort_jobs(
 
     if (pj == NULL)
       {
-      sprintf(log_buffer,"%s: NULL job pointer\n",
+      sprintf(log_buffer,"%s: NULL job pointer",
         id);
 
       log_record(
@@ -1085,7 +1085,7 @@ void init_abort_jobs(
       {
       if (LOGLEVEL >= 6)
         {
-        sprintf(log_buffer,"%s: adding client %s\n",
+        sprintf(log_buffer,"%s: adding client %s",
           id,
           pj->ji_hosts[j].hn_host);
 

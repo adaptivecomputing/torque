@@ -440,11 +440,14 @@ task *task_check(
 
   if (ptask->ti_fd < 0) 
     {
-    sprintf(log_buffer,"cannot tm_reply to %s task %ld",
-      pjob->ji_qs.ji_jobid, 
+    sprintf(log_buffer,"cannot tm_reply to task %ld",
       (long)taskid);
 
-    log_err(-1,id,log_buffer);
+    log_record(
+      PBSEVENT_ERROR,
+      PBS_EVENTCLASS_JOB,
+      pjob->ji_qs.ji_jobid,
+      log_buffer);
 
     return(NULL);
     }
@@ -857,22 +860,14 @@ hnodent	*find_node(
         &node_addr->sin_addr,
         sizeof(node_addr->sin_addr)) != 0) 
     {
-    sprintf(log_buffer,"stream id %d does not match %d to node %d",
+    sprintf(log_buffer,"stream id %d does not match %d to node %d (stream=%s node=%s)",
       stream, 
       hp->hn_stream, 
-      nodeid);
+      nodeid,
+      netaddr(stream_addr),
+      netaddr(node_addr));
 
     log_err(-1,id,log_buffer);
-
-    sprintf(log_buffer,"%s: stream addr %s\n", 
-      id,
-      netaddr(stream_addr));
-      log_err(-1,id,log_buffer);
-
-    sprintf(log_buffer,"%s: node addr %s\n", 
-      id,
-      netaddr(node_addr));
-      log_err(-1, id, log_buffer);
 
     return(NULL);
     }
@@ -1210,7 +1205,11 @@ void im_eof(
     dis_emsg[ret], 
     netaddr(addr));
 
-  log_err(-1,id,log_buffer);
+  log_record(
+    PBSEVENT_SYSTEM,
+    PBS_EVENTCLASS_NODE,
+    id,
+    log_buffer);
 
   rpp_close(stream);
 
@@ -1585,17 +1584,9 @@ void im_request(
   u_long gettime	A_((resource *pres));
   u_long getsize	A_((resource *pres));
 
-  if (LOGLEVEL >= 3)
-    {
-    sprintf(log_buffer,"%s: stream %d version %d\n",
-      id,
-      stream,
-      version);
-    }
-
   if (version != IM_PROTOCOL_VER) 
     {
-    sprintf(log_buffer,"protocol version %d unknown\n",
+    sprintf(log_buffer,"protocol version %d unknown",
       version);
 
     log_err(-1,id,log_buffer);
@@ -1616,8 +1607,8 @@ void im_request(
       netaddr(addr));
 
     log_record(
-      PBSEVENT_JOB,
-      PBS_EVENTCLASS_JOB,
+      PBSEVENT_SYSTEM,
+      PBS_EVENTCLASS_NODE,
       id,
       log_buffer);
     }
@@ -1647,7 +1638,7 @@ void im_request(
 
   if (LOGLEVEL >= 3)
     {
-    sprintf(log_buffer,"received request '%s' from %s\n",
+    sprintf(log_buffer,"received request '%s' from %s",
       PMOMCommand[MIN(command,IM_MAX)],
       netaddr(addr));
 
@@ -1715,7 +1706,7 @@ void im_request(
 
       if (LOGLEVEL >= 3)
         {
-        sprintf(log_buffer,"%s: JOIN_JOB %s node %d\n",
+        sprintf(log_buffer,"%s: JOIN_JOB %s node %d",
           id,
           jobid,
           nodeid);
@@ -1739,11 +1730,11 @@ void im_request(
 
         if (pjob->ji_qs.ji_substate == JOB_SUBSTATE_PRERUN)
           {
-          if (LOGLEVEL >= 1)
+          if (LOGLEVEL >= 3)
             {
             /* if peer mom times out, MS will send new join request for same job */
 
-            sprintf(log_buffer,"WARNING:    duplicate JOIN request %s from %s (purging previous pjob)\n",
+            sprintf(log_buffer,"WARNING:    duplicate JOIN request %s from %s (purging previous pjob)",
               PMOMCommand[MIN(command,IM_MAX)],
               netaddr(addr));
 
@@ -1760,7 +1751,7 @@ void im_request(
           {
           if (LOGLEVEL >= 0)
             {
-            sprintf(log_buffer,"ERROR:    received request '%s' from %s (job already exists locally)\n",
+            sprintf(log_buffer,"ERROR:    received request '%s' from %s (job already exists locally)",
               PMOMCommand[MIN(command,IM_MAX)],
               netaddr(addr));
 
@@ -1903,10 +1894,10 @@ void im_request(
           pjob,
           PE_IO_TYPE_ASIS)) != 0)
         {
-        fprintf(stderr,"cannot run local prolog '%s': %s (rc: %d)\n",
+        DBPRT(("cannot run local prolog '%s': %s (rc: %d)\n",
           path_prologp,
           log_buffer,
-          j);
+          j));
 
         LOG_EVENT(
           PBSEVENT_JOB,
@@ -1929,10 +1920,10 @@ void im_request(
           pjob,
           PE_IO_TYPE_ASIS)) != 0)
         {
-        fprintf(stderr,"cannot run local user prolog '%s': %s (rc: %d)\n",
+        DBPRT(("cannot run local user prolog '%s': %s (rc: %d)\n",
           path_prologuserp,
           log_buffer,
-          j);
+          j));
 
         LOG_EVENT(
           PBSEVENT_JOB,
@@ -2056,7 +2047,7 @@ void im_request(
     {
     if (LOGLEVEL >= 0)
       {
-      sprintf(log_buffer,"ERROR:    received request '%s' from %s for job '%s' (job does not exist locally)\n",
+      sprintf(log_buffer,"ERROR:    received request '%s' from %s for job '%s' (job does not exist locally)",
         PMOMCommand[MIN(command,IM_MAX)],
         netaddr(addr),
         jobid);
@@ -2079,7 +2070,7 @@ void im_request(
     {
     if (LOGLEVEL >= 0)
       {
-      sprintf(log_buffer,"ERROR:    received request '%s' from %s for job '%s' (job has no cookie)\n",
+      sprintf(log_buffer,"ERROR:    received request '%s' from %s for job '%s' (job has no cookie)",
         PMOMCommand[MIN(command,IM_MAX)],
         netaddr(addr),
         jobid);
@@ -2102,7 +2093,7 @@ void im_request(
     {
     if (LOGLEVEL >= 0)
       {
-      sprintf(log_buffer,"ERROR:    received request '%s' from %s for job '%s' (job has corrupt cookie - '%s' != '%s')\n",
+      sprintf(log_buffer,"ERROR:    received request '%s' from %s for job '%s' (job has corrupt cookie - '%s' != '%s')",
         PMOMCommand[MIN(command,IM_MAX)],
         netaddr(addr),
         jobid,
@@ -2210,7 +2201,7 @@ void im_request(
 
       if (LOGLEVEL >= 3)
         {
-        sprintf(log_buffer,"%s: KILL_JOB %s node %s\n",
+        sprintf(log_buffer,"%s: KILL_JOB %s node %s",
           id,
           jobid,
           netaddr(addr));
@@ -2277,7 +2268,7 @@ void im_request(
 
       if (LOGLEVEL >= 3)
         {
-        sprintf(log_buffer,"INFO:     received request '%s' from %s for job '%s' (spawning task on node '%d' with taskid=%d, globid='%s'\n",
+        sprintf(log_buffer,"INFO:     received request '%s' from %s for job '%s' (spawning task on node '%d' with taskid=%d, globid='%s'",
           PMOMCommand[MIN(command,IM_MAX)],
           netaddr(addr),
           jobid,
@@ -2407,7 +2398,7 @@ void im_request(
         {
         if (LOGLEVEL >= 0)
           {
-          sprintf(log_buffer,"ERROR:    received request '%s' from %s for job '%s' (cannot create task)\n",
+          sprintf(log_buffer,"ERROR:    received request '%s' from %s for job '%s' (cannot create task)",
             PMOMCommand[MIN(command,IM_MAX)],
             netaddr(addr),
             jobid);
@@ -2445,13 +2436,13 @@ void im_request(
         {
         if (LOGLEVEL >= 0)
           {
-          sprintf(log_buffer,"ERROR:    received request '%s' from %s for job '%s' (cannot save task)\n",
+          sprintf(log_buffer,"ERROR:    received request '%s' from %s for job '%s' (cannot save task)",
             PMOMCommand[MIN(command,IM_MAX)],
             netaddr(addr),
             jobid);
 
           LOG_EVENT(
-            PBSEVENT_JOB,
+            PBSEVENT_ERROR,
             PBS_EVENTCLASS_JOB,
             jobid,
             log_buffer);
@@ -2469,7 +2460,7 @@ void im_request(
         {
         if (LOGLEVEL >= 0)
           {
-          sprintf(log_buffer,"ERROR:    received request '%s' from %s for job '%s' (cannot start task)\n",
+          sprintf(log_buffer,"ERROR:    received request '%s' from %s for job '%s' (cannot start task)",
             PMOMCommand[MIN(command,IM_MAX)],
             netaddr(addr),
             jobid);
@@ -2503,7 +2494,7 @@ void im_request(
 
         if (LOGLEVEL >= 0)
           {
-          sprintf(log_buffer,"ALERT:    received request '%s' from %s for job '%s' (task successfully started but reply failed)\n",
+          sprintf(log_buffer,"ALERT:    received request '%s' from %s for job '%s' (task successfully started but reply failed)",
             PMOMCommand[MIN(command,IM_MAX)],
             netaddr(addr),
             jobid);
@@ -2630,7 +2621,7 @@ void im_request(
         break;
         }
 
-      sprintf(log_buffer,"%s: SIGNAL_TASK %s from node %d task %d signal %d\n",
+      sprintf(log_buffer,"%s: SIGNAL_TASK %s from node %d task %d signal %d",
         id,jobid,nodeid,taskid,sig);
 
       LOG_EVENT(
@@ -2905,7 +2896,7 @@ void im_request(
         {
         if (LOGLEVEL >= 0)
           {
-          sprintf(log_buffer,"ERROR:    received request '%s' from %s for job '%s' (requestor is not parent)\n",
+          sprintf(log_buffer,"ERROR:    received request '%s' from %s for job '%s' (requestor is not parent)",
             PMOMCommand[MIN(command,IM_MAX)],
             netaddr(addr),
             jobid);
@@ -2920,12 +2911,19 @@ void im_request(
         goto fini;
         }
 
-      sprintf(log_buffer,"%s: received KILL/ABORT request for job %s from node %s",
-        id,
-        jobid,
-        netaddr(addr));
+      if (LOGLEVEL >= 2)
+        {
+        sprintf(log_buffer,"%s: received KILL/ABORT request for job %s from node %s",
+          id,
+          jobid,
+          netaddr(addr));
 
-      log_err(-1,id,log_buffer);
+        LOG_EVENT(
+          PBSEVENT_JOB,
+          PBS_EVENTCLASS_JOB,
+          jobid,
+          log_buffer);
+        }
 
       reply = 0;
 
@@ -3053,14 +3051,17 @@ void im_request(
 
             if (TMomCheckJobChild(TJE,TJobStartBlockTime,&Count,&RC) == FAILURE)
               {
-              sprintf(log_buffer,"job not ready after %ld second timeout, MOM will check later",
-                TJobStartBlockTime);
+              if (LOGLEVEL >= 3)
+                {
+                sprintf(log_buffer,"job not ready after %ld second timeout, MOM will check later",
+                  TJobStartBlockTime);
 
-              log_record(
-                PBSEVENT_ERROR,
-                PBS_EVENTCLASS_JOB,
-                pjob->ji_qs.ji_jobid,
-                log_buffer);
+                log_record(
+                  PBSEVENT_SYSTEM,
+                  PBS_EVENTCLASS_JOB,
+                  pjob->ji_qs.ji_jobid,
+                  log_buffer);
+                }
 
               break;
               }
@@ -3069,7 +3070,7 @@ void im_request(
 
             if (TMomFinalizeJob3(TJE,Count,RC,&SC) == FAILURE)
               {
-              sprintf(log_buffer,"ALERT:  job failed phase 3 start, server will retry");
+              sprintf(log_buffer,"ALERT:  job failed phase 3 start");
 
               log_record(
                 PBSEVENT_ERROR,
@@ -3143,7 +3144,7 @@ void im_request(
             sprintf(log_buffer,"KILL_JOB acknowledgement received");
 
             log_record(
-              PBSEVENT_ERROR,
+              PBSEVENT_JOB,
               PBS_EVENTCLASS_JOB,
               pjob->ji_qs.ji_jobid,
               log_buffer);
@@ -3443,12 +3444,17 @@ void im_request(
   
           if (exitval != 0)
             {
-            sprintf(log_buffer,"%s non-zero exit status reported from node %s (%d)",
-              pjob->ji_qs.ji_jobid,
-              np->hn_host,
-              np->hn_node);
-  
-            log_err(-1,id,log_buffer);
+            if (LOGLEVEL >= 2)
+              {
+              sprintf(log_buffer,"non-zero exit status reported from node %s, aborting job",
+                np->hn_host);
+
+              log_record(
+                PBSEVENT_ERROR,
+                PBS_EVENTCLASS_JOB,
+                pjob->ji_qs.ji_jobid,
+                log_buffer);
+              }
   
             pjob->ji_nodekill = np->hn_node;
             }
@@ -3563,7 +3569,7 @@ void im_request(
             if (LOGLEVEL >= 6)
               {
               log_record(
-                PBSEVENT_ERROR,
+                PBSEVENT_JOB,
                 PBS_EVENTCLASS_JOB,
                 pjob->ji_qs.ji_jobid,
                 "saving task (IM_GET_TID)");
@@ -3898,7 +3904,14 @@ void tm_eof(
       }
     }
 
-  log_err(-1,id,"no matching task found");
+  if (LOGLEVEL >= 1)
+    {
+    log_record(
+      PBSEVENT_JOB,
+      PBS_EVENTCLASS_JOB,
+      pjob->ji_qs.ji_jobid,
+      "no matching task found");
+    }
 
   return;
   }  /* END tm_eof() */
@@ -4698,14 +4711,17 @@ int tm_request(
         break;
         }
 
-      sprintf(log_buffer,"%s: TM_SIGNAL %s from node %d task %d signal %d\n",
-        id,jobid,nodeid,taskid,signum);
-
-      LOG_EVENT(
-        PBSEVENT_JOB,
-        PBS_EVENTCLASS_JOB,
-        jobid,
-        log_buffer);
+      if (LOGLEVEL >= 3)
+        {
+        sprintf(log_buffer,"%s: TM_SIGNAL %s from node %d task %d signal %d",
+          id,jobid,nodeid,taskid,signum);
+  
+        LOG_EVENT(
+          PBSEVENT_JOB,
+          PBS_EVENTCLASS_JOB,
+          jobid,
+          log_buffer);
+        }
 
       kill_task(ptask,signum);
 

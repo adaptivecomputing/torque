@@ -587,7 +587,7 @@ void is_request(
           {
           char tmpLine[1024];
 
-          sprintf(tmpLine,"%s:\t%ld.%ld.%ld.%ld added to okclients\n", 
+          sprintf(tmpLine,"%s:\t%ld.%ld.%ld.%ld added to okclients", 
             id,
             (ipaddr & 0xff000000) >> 24,
             (ipaddr & 0x00ff0000) >> 16,

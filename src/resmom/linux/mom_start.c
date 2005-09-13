@@ -303,7 +303,7 @@ void scan_for_terminated()
       {
       if (LOGLEVEL >= 1)
         {
-        sprintf(log_buffer,"pid %d not tracked, exitcode=%d\n",
+        sprintf(log_buffer,"pid %d not tracked, exitcode=%d",
           pid,
           statloc);
 
@@ -341,7 +341,7 @@ void scan_for_terminated()
 
     if (LOGLEVEL >= 2)
       {
-      sprintf(log_buffer,"for job %s, task %d, pid=%d, exitcode=%d\n",
+      sprintf(log_buffer,"for job %s, task %d, pid=%d, exitcode=%d",
         pjob->ji_qs.ji_jobid,
         ptask->ti_qs.ti_task,
         pid,

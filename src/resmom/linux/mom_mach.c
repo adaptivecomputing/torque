@@ -2504,7 +2504,7 @@ char *sessions(
 
     if (LOGLEVEL >= 6)
       {
-      sprintf(log_buffer,"%s[%d]: pid %d sid %d\n",
+      sprintf(log_buffer,"%s[%d]: pid %d sid %d",
         id, 
         njids, 
         ps->pid, 
@@ -2784,7 +2784,7 @@ char *nusers(
 
     if (LOGLEVEL >= 6)
       {
-      sprintf(log_buffer,"%s[%d]: pid %d uid %d\n",
+      sprintf(log_buffer,"%s[%d]: pid %d uid %d",
 	id, 
         nuids, 
         ps->pid, 
@@ -3074,7 +3074,7 @@ char *size_fs(
 
   if (param[0] != '/') 
     {
-    sprintf(log_buffer,"%s: not full path filesystem name: %s\n",
+    sprintf(log_buffer,"%s: not full path filesystem name: %s",
       id, 
       param);
 
@@ -3114,7 +3114,7 @@ char *size_file(
 
   if (param[0] != '/') 
     {
-    sprintf(log_buffer, "%s: not full path filesystem name: %s\n",
+    sprintf(log_buffer, "%s: not full path filesystem name: %s",
       id,param);
 
     log_err(-1,id,log_buffer);
