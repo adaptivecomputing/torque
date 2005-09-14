@@ -251,10 +251,10 @@ int get_script(
 
   /* START WRAPPER */
 
-  char cfilter[MAXPATHLEN + L_tmpnam + L_tmpnam + 1024];
+  char cfilter[MAXPATHLEN + 1024];
 
-  char tmp_name2[L_tmpnam + 1];
-  char tmp_name3[L_tmpnam + 1];
+  char tmp_name2[]="/tmp/qsub.XXXXXX";
+  char tmp_name3[]="/tmp/qsub.XXXXXX";
 
   struct stat sfilter;
   FILE       *filesaved;
@@ -267,13 +267,19 @@ int get_script(
     {
     /* Create a copy of the script to run through the submit filter. */
 
-    tmpnam(tmp_name2);
-
-    if ((TMP_FILE = fopen(tmp_name2,"w+")) == NULL) 
+    if ((tmpfd = mkstemp(tmp_name2)) < 0) 
       {
       fprintf(stderr,
         "qsub: could not create filter i/p %s\n",
         tmp_name2);
+
+      return(4);
+      }
+
+    if ((TMP_FILE = fdopen(tmpfd,"w+")) == NULL) 
+      {
+      fprintf(stderr, "qsub: could not create filter i/p %s\n", 
+        tmp_name);
 
       return(4);
       }
@@ -296,7 +302,16 @@ int get_script(
 
     /* run the copy through the submit filter. */
 
-    tmpnam(tmp_name3);
+    if ((tmpfd = mkstemp(tmp_name3)) < 0) 
+      {
+      fprintf(stderr,
+        "qsub: could not create filter o/p %s\n",
+        tmp_name3);
+
+      return(4);
+      }
+
+    close(tmpfd);
 
     strcpy(cfilter,PBS_Filter);
 
@@ -1495,6 +1510,13 @@ void writer(
         continue;
         }
 
+      if (errno == EAGAIN)
+        {
+        sleep(1);
+
+        continue;
+        }
+
       if (errno != EINTR)
         {
         perror("qsub: read error");
@@ -2013,7 +2035,7 @@ int process_opts(
   char *pdepend;
 
   FILE *fP;
-  char tmp_name[L_tmpnam + 2];
+  char tmp_name[]="/tmp/qsub.XXXXXX";;
   char cline[4096];
   char *cP;
 
@@ -2021,13 +2043,15 @@ int process_opts(
 
   struct stat sfilter;
 
+  int tmpfd;
+
 #if !defined(PBS_NO_POSIX_VIOLATION)
 #define GETOPT_ARGS "a:A:c:C:d:D:e:hIj:k:l:m:M:N:o:p:q:r:S:u:v:VW:z-:"
 #else
 #define GETOPT_ARGS "a:A:c:C:e:hj:k:l:m:M:N:o:p:q:r:S:u:v:VW:z"
 #endif	/* PBS_NO_POSIX_VIOLATION */
 
-#define MAX_RES_LIST_LEN 64
+#define MAX_RES_LIST_LEN 64  /* doesn't seem to be used? */
 
 /* The following macro, together the value of passet (pass + 1) is used	*/
 /* to enforce the following rules: 1. option on the command line take	*/
@@ -2036,8 +2060,6 @@ int process_opts(
 /* precedence over the earlier occurance.				*/
 
 #define if_cmd_line(x) if ((pass == 0) || (x != 1))
-
-  tmpnam(tmp_name);
 
   passet = pass + 1;
 
@@ -2394,7 +2416,26 @@ int process_opts(
           {
           /* Queue interactive resources to temp file. */
 
-          fP = fopen(tmp_name,"a+");
+          if ((tmpfd = mkstemp(tmp_name)) < 0)
+            {
+            fprintf(stderr,
+              "qsub: could not create tmp job file %s\n",
+              tmp_name);
+      
+            errflg++;
+
+            break;
+            }
+      
+          if ((fP = fdopen(tmpfd,"w+")) == NULL)
+            {
+            fprintf(stderr, "qsub: could not create tmp job file %s\n",
+              tmp_name);
+      
+            errflg++;
+
+            break;
+            }
 
           fputs("#PBS -l ",fP);
           fputs(optarg,fP);
