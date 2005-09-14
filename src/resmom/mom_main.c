@@ -139,6 +139,7 @@
 #include	"resmon.h"
 #include        "pbs_version.h"
 #include        "pbs_nodes.h"
+#include        "dis.h"
 
 #include        "mcom.h"
 
@@ -395,6 +396,16 @@ extern void  catch_child A_((int));
 extern void  init_abort_jobs A_((int));
 extern void  scan_for_exiting();
 extern void  scan_for_terminated();
+extern int TMomCheckJobChild(pjobexec_t *,int,int *,int *);
+extern int TMomFinalizeJob3(pjobexec_t *,int,int,int *);
+extern void exec_bail(job *,int);
+extern int is_compose(int,int);
+extern void check_state(int);
+extern void tinsert(const u_long,void **);
+extern int tfind(const u_long,void **);
+extern int tlist(void **,char *,int);
+extern void DIS_tcp_funcs();
+
 
 /* Local public functions */
 
@@ -2852,6 +2863,8 @@ int is_update_stat(
 
         if (ap->c_u.c_value == NULL)
           continue;
+
+        attr = NULL;
         }
       else
         {

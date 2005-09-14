@@ -107,6 +107,7 @@
 /* Extenal functions called */
 
 extern int   status_job A_((job *, struct batch_request *, svrattrl *, list_head *, int *));
+extern int   svr_authorize_jobreq A_((struct batch_request *,job *));
 
 
 /* Global Data Items  */

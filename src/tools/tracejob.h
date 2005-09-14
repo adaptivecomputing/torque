@@ -155,6 +155,7 @@ char *log_path( char *path, int index, struct tm *tm_ptr );
 void alloc_more_space();
 void filter_excess( int threshold );
 int sort_by_message( const void *v1, const void *v2 );
+int get_cols(void);
 
 
 /* used by getopt(3) */

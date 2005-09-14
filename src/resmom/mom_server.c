@@ -142,6 +142,8 @@ int			server_stream = -1;	/* XXX */
 
 void state_to_server A_((int));
 
+extern void DIS_rpp_reset A_((void));
+
 /*
  * Tree search generalized from Knuth (6.2.2) Algorithm T just like
  * the AT&T man page says.

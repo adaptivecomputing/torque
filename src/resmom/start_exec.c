@@ -123,6 +123,9 @@
 #include "mom_func.h"
 #include "pbs_error.h"
 #include "svrfunc.h"
+#include "net_connect.h"
+#include "dis.h"
+#include "batch_request.h"
 #include "md5.h"
 #include "mcom.h"
 
@@ -196,6 +199,10 @@ int TMomFinalizeChild(pjobexec_t *);
 
 int TMomCheckJobChild(pjobexec_t *,int,int *,int *);
 static int search_env_and_open(const char *,u_long);
+extern int TMOMJobGetStartInfo(job *,pjobexec_t **);
+extern int mom_reader(int,int);
+extern int mom_writer(int,int);
+
 
 /* END prototypes */
 

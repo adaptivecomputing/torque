@@ -97,7 +97,7 @@ CFLAGS = @CFLAGS@ $(INCS) @DEFS@ -DIFF_PATH=\"$(IFF_PATH)\"
 
 TARGET = libpbs.a
 
-OBJS1 =    PBS_data.o PBS_attr.o get_svrport.o \
+OBJS1 =   PBS_data.o PBS_attr.o get_svrport.o \
           pbs_geterrmg.o pbs_statfree.o PBSD_manage2.o \
           PBSD_msg2.o PBSD_rdrpy.o PBSD_sig2.o PBSD_status2.o \
           PBSD_submit_caps.o dec_Authen.o dec_CpyFil.o dec_JobCred.o dec_JobFile.o \
@@ -111,7 +111,7 @@ OBJS1 =    PBS_data.o PBS_attr.o get_svrport.o \
           enc_Status.o enc_Track.o enc_attrl.o enc_attropl.o enc_reply.o \
           enc_svrattrl.o tcp_dis.o tm.o rpp.o nonblock.o
 
-DISOBJS = PBSD_jcred.o PBSD_manager_caps.o PBSD_status.o pbsD_alterjo.o \
+DISOBJS = PBSD_manager_caps.o PBSD_status.o pbsD_alterjo.o \
           pbsD_asyrun.o pbsD_connect.o pbsD_deljob.o pbsD_holdjob.o \
           pbsD_locjob.o pbsD_manager.o pbsD_movejob.o pbsD_msgjob.o \
           pbsD_orderjo.o pbsD_rerunjo.o pbsD_resc.o pbsD_rlsjob.o pbsD_runjob.o \

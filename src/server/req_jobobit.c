@@ -123,8 +123,6 @@ extern char *msg_momnoexec2;
 extern char *msg_obitnojob;
 extern char *msg_obitnocpy;
 extern char *msg_obitnodel;
-extern struct connection svr_conn[];
-extern struct connect_handle connection[];
 extern char  server_host[];
 extern int   svr_do_schedule;
 extern time_t time_now;

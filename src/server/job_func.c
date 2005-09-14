@@ -126,6 +126,7 @@
 #include "pbs_error.h"
 #include "svrfunc.h"
 #include "acct.h"
+#include "net_connect.h"
 
 
 /* External functions */

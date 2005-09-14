@@ -137,6 +137,11 @@ int has_job_delete_nanny A_((struct job *pjob));
 static char *deldelaystr = DELDELAY;
 static char *delpurgestr = DELPURGE;
 
+/* Extern Functions */
+
+extern void set_resc_assigned(job *, enum batch_op op);
+
+
 /* 
  * remove_stagein() - request that mom delete staged-in files for a job
  *	used when the job is to be purged after files have been staged in

@@ -115,6 +115,7 @@
 #include "pbs_nodes.h"
 #include "pbs_error.h"
 #include "log.h"
+#include "rpp.h"
 #include "pbs_proto.h"
 
 #if !defined(H_ERRNO_DECLARED)
@@ -299,7 +300,7 @@ int addr_ok(
 
 
 
-
+/* FIXME: this should all be in a seperate header file */
 typedef struct tree_t {
        u_long          key;
        struct pbsnode  *nodep;
@@ -308,6 +309,8 @@ typedef struct tree_t {
 
 extern void tinsert(const u_long key, struct pbsnode *nodep, tree **rootp);
 extern void *tdelete(const u_long key, tree **rootp);
+extern void tfree(tree **rootp);
+
 
 
 

@@ -161,6 +161,10 @@ extern int message_job(job *,enum job_file,char *);
 extern void term_job(job *);
 extern struct passwd *check_pwd(job *);
 extern int send_sisters(job *,int);
+extern int task_save(task *) ;
+extern void DIS_rpp_reset A_((void));
+extern void checkret A_((char **,int));
+
 
 /* Defines for pe_io_type, see run_pelog() */
 

@@ -94,6 +94,8 @@
 #include	"cmds.h"
 #include	"rm.h"
 
+extern void site_cmds(Tcl_Interp *);
+
 static char ident[] = "@(#) $RCSfile$ $Revision$";
 
 char	badparm[] = "%s: bad parameter";

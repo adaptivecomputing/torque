@@ -98,6 +98,7 @@
 #include "dis.h"
 #include "batch_request.h"
 
+extern int decode_DIS_attrl(int, struct attrl **);
 
 
 int decode_DIS_replyCmd(

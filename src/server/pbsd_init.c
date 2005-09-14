@@ -117,6 +117,7 @@
 #include "rpp.h"
 #include "net_connect.h"
 #include "pbs_proto.h"
+#include "batch_request.h"
 
 
 #ifndef SIGKILL
@@ -199,6 +200,7 @@ extern void   set_resc_assigned A_((job *,enum batch_op));
 extern void   set_old_nodes A_((job *));
 extern void   acct_close A_((void));
 extern struct work_task *apply_job_delete_nanny A_((struct job *,int));
+extern int     net_move A_((job *,struct batch_request *));
 
 
 /* Private functions in this file */

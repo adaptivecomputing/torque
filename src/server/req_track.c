@@ -101,6 +101,7 @@
 #include "work_task.h"
 #include "tracking.h"
 #include "svrfunc.h"
+#include "log.h"
 
 /* External functions */
 

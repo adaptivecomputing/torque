@@ -82,6 +82,16 @@ static char ident[] = "@(#) $RCSfile$ $Revision$";
 
 #include <sys/types.h>
 #include <netinet/in.h>
+
+
+/* FIXME: needs to move to a header file */
+#ifndef NEED_BLOCKING_CONNECTIONS
+extern ssize_t read_nonblocking_socket(int, void *, ssize_t);
+#endif
+
+
+
+
 /*
  * get_4byte() - read and return a 4 byte integer from the network
  *

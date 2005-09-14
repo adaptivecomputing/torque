@@ -195,7 +195,6 @@ void scan_for_terminated()
 	job		*pjob;
 	task		*ptask;
 	int		statloc;
-	void		task_save	A_((task *ptask));
 
 	/* update the latest intelligence about the running jobs;         */
 	/* must be done before we reap the zombies, else we lose the info */

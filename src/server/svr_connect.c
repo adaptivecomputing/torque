@@ -108,6 +108,7 @@
 #include "server_limits.h"
 #include "net_connect.h"
 #include "svrfunc.h"
+#include "dis.h"
 
 
 /* global data */
@@ -120,6 +121,12 @@ extern int		 pbs_errno;
 extern unsigned int	 pbs_server_port_dis;
 extern struct connection svr_conn[];
 extern pbs_net_t	 pbs_server_addr;
+
+extern int addr_ok(pbs_net_t);
+extern void bad_node_warning(pbs_net_t);
+extern ssize_t read_blocking_socket(int,void *,ssize_t);
+
+
 
 int svr_connect(
 

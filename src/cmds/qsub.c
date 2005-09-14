@@ -124,6 +124,7 @@
 
 
 #include "cmds.h"
+#include "net_connect.h"
 #include "pbs_version.h"
 
 static char *DefaultFilterPath = "/usr/local/sbin/torque_submitfilter";
@@ -138,6 +139,9 @@ char PBS_Filter[256];
 char PBS_InitDir[256];
 char PBS_RootDir[256];
 
+
+int do_dir(char *);
+int process_opts(int,char **,int);
 
 
 

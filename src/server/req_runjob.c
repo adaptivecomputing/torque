@@ -118,6 +118,9 @@ extern int   send_job A_((job *,pbs_net_t,int,int,void (*x)(),struct batch_reque
 extern void  set_resc_assigned A_((job *, enum batch_op));
 extern struct batch_request *cpy_stage A_((struct batch_request *,job *,enum job_atr,int));
 void      stream_eof A_((int,u_long,int));
+extern int job_set_wait(attribute *,void *,int);
+extern void       stat_mom_job A_((job *));
+  
 
 /* Public Functions in this file */
 

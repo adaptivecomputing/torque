@@ -119,6 +119,8 @@
 #include	"sched_cmds.h"
 #include	"server_limits.h"
 #include	"net_connect.h"
+#include	"rpp.h"
+#include	"rm.h"
 #include        "pbs_version.h"
 
 struct		connect_handle connection[PBS_NET_MAX_CONNECTIONS];
@@ -147,7 +149,7 @@ int 		pbs_rm_port;
 
 int	schedreq();
 
-
+extern int get_4byte(int,int *);
 
 
 /*

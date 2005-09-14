@@ -123,6 +123,8 @@ extern struct pbsnode *tfind_addr();
 
 int status_job A_((job *,struct batch_request *,svrattrl *,list_head *,int *));
 int status_attrib A_((svrattrl *,attribute_def *,attribute *,int,int,list_head *,int *,int));
+extern int   svr_connect A_((pbs_net_t, unsigned int, void (*)(int), enum conn_type));
+extern int status_nodeattrib(svrattrl *,attribute_def *,struct pbsnode *,int,int,list_head *,int*);
 
 /* Private Data Definitions */
 

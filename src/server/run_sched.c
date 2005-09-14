@@ -110,6 +110,13 @@ int scheduler_jobct = 0;
 static int  put_4byte A_((int sock, unsigned int val));
 static void scheduler_close A_((int));
 
+
+extern void bad_node_warning(pbs_net_t);
+extern ssize_t write_nonblocking_socket(int,const void *,ssize_t);
+
+
+                
+
 /* sync w/sched_cmds.h */
 
 const char *PSchedCmdType[] = {

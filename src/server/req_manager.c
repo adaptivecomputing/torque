@@ -143,6 +143,12 @@ extern char *msg_man_set;
 extern char *msg_man_uns;
 
 
+extern int que_purge(pbs_queue *);
+extern void save_characteristic(struct pbsnode *);
+extern int chk_characteristic(struct pbsnode *,int *);
+
+
+
 /* private data */
 
 static char *all_quename = "_All_";

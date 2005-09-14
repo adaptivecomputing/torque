@@ -143,9 +143,40 @@ static void close_quejob A_((int sfds));
 
 /* END private prototypes */
 
+/* request processing prototypes */
+void req_quejob(struct batch_request *preq);
+void req_jobcredential(struct batch_request *preq);
+void req_jobscript(struct batch_request *preq);
+void req_rdytocommit(struct batch_request *preq);
+void req_commit(struct batch_request *preq);
+void req_deletejob(struct batch_request *preq);
+void req_holdjob(struct batch_request *preq);
+void req_messagejob(struct batch_request *preq);
+void req_modifyjob(struct batch_request *preq);
+#ifndef PBS_MOM
+void req_orderjob(struct batch_request *preq);
+void req_rescreserve(struct batch_request *preq);
+void req_rescfree(struct batch_request *preq);
+#endif
+#ifdef PBS_MOM
+void req_rerunjob(struct batch_request *preq);
+#endif
+void req_shutdown(struct batch_request *preq);
+void req_signaljob(struct batch_request *preq);
+void req_mvjobfile(struct batch_request *preq);
+#ifndef PBS_MOM
+void req_stat_node(struct batch_request *preq);
+void req_track(struct batch_request *preq);
+void req_jobobit(struct batch_request *preq);
+void req_stagein(struct batch_request *preq);
+#endif
 
+/* END request processing prototypes */
 
-
+#ifdef PBS_MOM
+extern int tfind(const u_long,void **);
+#endif
+                       
 
 /*
  * process_request - process an request from the network:

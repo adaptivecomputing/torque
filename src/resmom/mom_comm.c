@@ -115,6 +115,7 @@
 #include	"dis.h"
 #include	"dis_init.h"
 #include        "mom_func.h"
+#include        "batch_request.h"
 #include        "mcom.h"
 
 
@@ -166,6 +167,13 @@ extern void exec_bail(job *,int);
 extern int TMomFinalizeJob1(job *,pjobexec_t *,int *);
 extern int TMomFinalizeJob2(pjobexec_t *,int *);
 extern int TMomFinalizeJob3(pjobexec_t *,int,int,int *);
+extern int TMOMJobGetStartInfo(job *,pjobexec_t **) ;
+extern int TMomCheckJobChild(pjobexec_t *,int,int *,int *);
+extern void job_nodes(job *);
+extern int tfind(const u_long,void **);
+extern int tlist(void **,char *,int);
+extern void DIS_tcp_funcs();
+
 
 /* END external functions */
 

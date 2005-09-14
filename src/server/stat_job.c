@@ -104,6 +104,9 @@
 #include "svrfunc.h"
 
 
+extern int     svr_authorize_jobreq A_((struct batch_request *,job *));
+int status_attrib A_((svrattrl *,attribute_def *,attribute *,int,int,list_head *,int *,int));
+
 /* Global Data Items: */
 
 extern attribute_def job_attr_def[];

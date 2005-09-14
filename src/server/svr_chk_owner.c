@@ -103,6 +103,9 @@ extern char *msg_permlog;
 extern char *msg_unkjobid;
 extern time_t time_now;
 
+extern int site_allow_u(char *,char *);
+
+
 /*
  * svr_chk_owner - compare a user name from a request and the name of
  *	the user who owns the job.

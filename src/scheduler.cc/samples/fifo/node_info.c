@@ -91,6 +91,10 @@
 
 static char *ident = "$Id$";
 
+/* Internal functions */
+int set_node_type( node_info *ninfo, char *ntype );
+
+
 /*
  *      query_nodes - query all the nodes associated with a server
  *

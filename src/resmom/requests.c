@@ -106,6 +106,8 @@
 #include "mom_mach.h"
 #include "mom_func.h"
 #include "log.h"
+#include "rpp.h"
+#include "net_connect.h"
 #ifdef _CRAY
 #include <sys/category.h>
 #endif

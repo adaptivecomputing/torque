@@ -87,6 +87,9 @@
 #include	"tk.h"
 #include <string.h>
 
+extern void fullresp(int);
+extern void add_cmds(Tcl_Interp *);
+
 static char ident[] = "@(#) $RCSfile$ $Revision$";
 
 char	log_buffer[1024];

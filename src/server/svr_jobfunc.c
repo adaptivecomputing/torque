@@ -116,8 +116,8 @@
 #include "attribute.h"
 #include "resource.h"
 #include "server.h"
-#include "job.h"
 #include "queue.h"
+#include "job.h"
 #include "work_task.h"
 #include "pbs_error.h"
 #include "log.h"
@@ -149,7 +149,10 @@ extern int    LOGLEVEL;
 
 extern time_t time_now;
 
-/* Global Data Items */
+/* Externl Functions */
+
+extern int node_avail_complex(char *,int *,int *,int *,int *);
+
 
 /* Private Functions */
 

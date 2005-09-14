@@ -124,3 +124,7 @@ void prt_error A_((char *, char *, int));
 void set_attr A_((struct attrl **, char *, char *));
 int set_resources A_((struct attrl **, char *, int));
 int cnt2server A_((char *server));
+void prt_job_err A_((char *,int,char *));
+int parse_at_list A_((char *,int, int));
+int parse_depend_list A_((char *,char *,int));
+int parse_stage_list A_((char *));

@@ -106,6 +106,8 @@
 #include	"rm.h"
 #if	RPP
 #include	"rpp.h"
+#else
+extern void DIS_tcp_funcs();
 #endif
 
 

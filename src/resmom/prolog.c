@@ -99,6 +99,7 @@
 #include "mom_func.h"
 #include "resource.h"
 #include "pbs_proto.h"
+#include "net_connect.h"
 
 
 #define PBS_PROLOG_TIME 300

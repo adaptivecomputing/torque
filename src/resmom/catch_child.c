@@ -110,6 +110,7 @@
 #include "mom_func.h"
 #include "pbs_error.h"
 #include "pbs_proto.h"
+#include "rpp.h"
 
 #if defined(PENABLE_DYNAMIC_CPUSETS)
 #include <cpuset.h>
@@ -141,6 +142,13 @@ extern char            *PJobSubState[];
 
 u_long resc_used(job *,char *,u_long (*f) A_((resource *)));
 static void obit_reply A_((int));
+extern int tm_reply A_((int,int,tm_event_t));
+extern u_long addclient A_((char *));
+extern void encode_used A_((job *,list_head *));
+extern void job_nodes A_((job *));
+extern int task_recov A_((job *));
+
+
 
 /* END external prototypes */
 

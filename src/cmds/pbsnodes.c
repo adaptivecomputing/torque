@@ -112,6 +112,7 @@
 #include	"pbs_ifl.h"
 #include        "pbs_version.h"
 #include        "mcom.h"
+#include        "cmds.h"
   
 #define	DOWN	0
 #define	LIST	1

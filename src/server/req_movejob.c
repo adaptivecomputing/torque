@@ -98,6 +98,7 @@
 #include "job.h"
 #include "log.h"
 #include "pbs_error.h"
+#include "queue.h"
 
 /* Global Data Items: */
 
@@ -107,6 +108,9 @@ extern char	*msg_manager;
 extern char	*msg_movejob;
 extern int	 pbs_errno;
 extern char	*pbs_o_host;
+
+extern int svr_movejob A_((job *jobp, char *destination, struct batch_request  *req));
+extern int svr_chkque A_((job *,pbs_queue *,char *,int));
 
 /*
  * req_movejob = move a job to a new destination (local or remote)

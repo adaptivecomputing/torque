@@ -92,6 +92,15 @@
 #include "globals.h"
 #include "dedtime.h"
 
+/* Internal functions */
+int check_server_max_run( server_info *sinfo );
+int check_queue_max_run( queue_info *qinfo );
+int check_ded_time_queue( queue_info *qinfo );
+int check_node_availability( job_info *jinfo, node_info **ninfo_arr );
+int check_starvation( job_info *jinfo );
+int check_ded_time_boundry( job_info *jinfo );
+
+
 static char *ident = "$Id$";
 
 /*

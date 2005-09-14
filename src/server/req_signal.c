@@ -107,6 +107,7 @@ static void post_signal_req A_((struct work_task *));
 
 extern char *msg_momreject;
 
+extern void   set_old_nodes A_((job *));
 
 /*
  * req_signaljob - service the Signal Job Request

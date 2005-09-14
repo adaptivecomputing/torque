@@ -102,6 +102,7 @@
 #include "attribute.h"
 #include "queue.h"
 #include "svrfunc.h"
+#include "log.h"
 
 
 /* data global to this file */
