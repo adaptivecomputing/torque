@@ -100,7 +100,8 @@ extern char *pbs_o_host;
 extern char  server_host[];
 extern char *msg_orighost;	/* error message: no PBS_O_HOST */
 
-extern int   TAllowComputeHostSubmit;
+extern int    TAllowComputeHostSubmit;
+extern char **TAllowSubmitHostList;
 
 /*
  * site_check_u - site_check_user_map()
@@ -174,6 +175,24 @@ int site_check_user_map(
     /* job submitted from compute host, access allowed */
 
     return(0);
+    }
+
+  if (TAllowSubmitHostList != NULL)
+    {
+    int hindex;
+
+    for (hindex = 0;hindex < 2048;hindex++)
+      {
+      if (TAllowSubmitHostList[hindex] == NULL)
+        break;
+
+      if (!strcasecmp(TAllowSubmitHostList[hindex],orighost))
+        {
+        /* job submitted from host found in trusted submit host list, access allowed */
+
+        return(0);
+        }
+      }  /* END for (hindex) */
     }
 
   if (dptr != NULL)

@@ -196,6 +196,7 @@ time_t		time_now = 0;
 int             LOGLEVEL = 0;
 int             DEBUGMODE = 0;
 int             TAllowComputeHostSubmit = FALSE;
+char          **TAllowedSubmitHostList = NULL;
 
 char           *ProgName;
 
@@ -546,6 +547,8 @@ int main(
         }
       else if ((tptr = strstr(ptr,"ALLOWCOMPUTEHOSTSUBMIT")) != NULL)
         {
+        /* FORMAT:  ALLOWCOMPUTEHOSTSUBMIT  true */
+
         tptr += strlen("ALLOWCOMPUTEHOSTSUBMIT");
 
         while (isspace(*tptr) && (*tptr != '\0'))
@@ -559,6 +562,32 @@ int main(
           TAllowComputeHostSubmit = TRUE;
           }
         }
+      else if ((tptr = strstr(ptr,"SUBMITHOSTS")) != NULL)
+        {
+        int hcount;
+
+        /* FORMAT:  SUBMITHOSTS  <HOST>[,<HOST>]... */
+
+        TAllowedSubmitHostList = (char **)calloc(1,sizeof(char *) * (2048 + 1));
+
+        tptr += strlen("SUBMITHOSTS");
+
+        hcount = 0;
+
+        tptr = strtok(tptr,",: \t\n");
+
+        while (tptr != NULL)
+          {
+          TAllowedSubmitHostList[hcount] = strdup(tptr);
+
+          hcount++;
+
+          if (hcount >= 2048)
+            break;
+          }  /* END while (tptr != NULL) */
+        }
+
+      TAllowedSubmitHostList[hcount] = NULL;
 
       ptr = strtok(NULL,"\n");
       }  /* END while (ptr != NULL) */
