@@ -574,7 +574,7 @@ int main(
 
         hcount = 0;
 
-        tptr = strtok(tptr,",: \t\n");
+        tptr = strtok(tptr,"+,: \t\n");
 
         while (tptr != NULL)
           {
@@ -584,6 +584,8 @@ int main(
 
           if (hcount >= 2048)
             break;
+
+          tptr = strtok(NULL,"+,: \t\n");
           }  /* END while (tptr != NULL) */
         }
 
