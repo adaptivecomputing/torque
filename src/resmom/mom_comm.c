@@ -1915,7 +1915,7 @@ void im_request(
 
         job_purge(pjob);
 
-        SEND_ERR(PBSE_BADUSER)
+        SEND_ERR(PBSE_SYSTEM)
 
         goto done;
         }
@@ -1941,7 +1941,7 @@ void im_request(
 
         job_purge(pjob);
 
-        SEND_ERR(PBSE_BADUSER)
+        SEND_ERR(PBSE_SYSTEM)
 
         goto done;
         }

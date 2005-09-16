@@ -675,10 +675,7 @@ static int open_std_out_err(
 
   if ((file_out < 0) || (file_err < 0)) 
     {
-    log_record(
-      PBSEVENT_ERROR, 
-      PBS_EVENTCLASS_JOB,
-      pjob->ji_qs.ji_jobid,
+    log_err(errno,"open_std_out_err",
       "Unable to open standard output/error");
 
     return(-1);
@@ -2211,6 +2208,9 @@ int TMomFinalizeChild(
   /***********************************************************************/
   /*	Set resource limits				 		 */
   /*	Both normal batch and interactive job come through here 	 */
+  /*                                                                     */
+  /*    output fds to the user are setup at this point, so write() all   */
+  /*    errors (with a \n) directly to the user on fd 2 and fscync(2) it */
   /***********************************************************************/
 
   pjob->ji_wattr[(int)JOB_ATR_session_id].at_val.at_long = sjr.sj_session;
@@ -2219,12 +2219,18 @@ int TMomFinalizeChild(
     {
     /* FAILURE */
 
-    log_err(-1,id,"site specific job setup failed");
+    sprintf(log_buffer,"PBS: site specific job setup failed\n");
+
+    write(2,log_buffer,strlen(log_buffer));
+
+    fsync(2);
 
     starter_return(TJE->upfds,TJE->downfds,JOB_EXEC_FAIL2,&sjr); /* exits */
 
     /*NOTREACHED*/
     }
+
+  log_buffer[0] = '\0';
 
   if ((i = mom_set_limits(pjob,SET_LIMIT_SET)) != PBSE_NONE) 
     {
@@ -2232,14 +2238,11 @@ int TMomFinalizeChild(
       {
       /* report error to user via stderr file */
 
-      fprintf(stderr,"%s\n",log_buffer);
+      write(2,log_buffer,strlen(log_buffer));
+
+      fsync(2);
       }
 
-    sprintf(log_buffer,"Unable to set limits, err=%d", 
-      i);
-
-    log_err(-1,id,log_buffer);
-  
     if (i == PBSE_RESCUNAV)	
       {	
       /* resource temp unavailable */
@@ -2271,10 +2274,13 @@ int TMomFinalizeChild(
     {
     if (chroot(idir) == -1)
       {
-      sprintf(log_buffer,"chroot to '%.256s' failed",
-        idir);
+      sprintf(log_buffer,"PBS: chroot to '%.256s' failed: %s\n",
+        idir,
+        strerror(errno));
 
-      log_err(errno,id,log_buffer);
+      write(2,log_buffer,strlen(log_buffer));
+
+      fsync(2);
 
       starter_return(TJE->upfds,TJE->downfds,JOB_EXEC_FAIL2,&sjr);
 
@@ -2310,10 +2316,13 @@ int TMomFinalizeChild(
 
     if (chdir(idir) == -1)
       {
-      sprintf(log_buffer,"chdir to '%.256s' failed",
-        idir);
+      sprintf(log_buffer,"PBS: chdir to '%.256s' failed: %s\n",
+        idir,
+        strerror(errno));
 
-      log_err(errno,id,log_buffer);
+      write(2,log_buffer,strlen(log_buffer));
+
+      fsync(2);
 
       starter_return(TJE->upfds,TJE->downfds,JOB_EXEC_FAIL2,&sjr);
 
@@ -2328,10 +2337,13 @@ int TMomFinalizeChild(
 
     if (chdir(pwdp->pw_dir) == -1)
       {
-      sprintf(log_buffer,"chdir to '%.256s' failed",
-        pwdp->pw_dir);
+      sprintf(log_buffer,"PBS: chdir to '%.256s' failed: %s\n",
+        pwdp->pw_dir,
+        strerror(errno));
 
-      log_err(errno,id,log_buffer);
+      write(2,log_buffer,strlen(log_buffer));
+
+      fsync(2);
 
       starter_return(TJE->upfds,TJE->downfds,JOB_EXEC_FAIL2,&sjr);
 
@@ -2345,7 +2357,7 @@ int TMomFinalizeChild(
 
   starter_return(TJE->upfds,TJE->downfds,JOB_EXEC_OK,&sjr);
 
-  log_close(0);
+  log_close(0);  /* FIXME:  this is useless, right? */
 
   if ((pjob->ji_numnodes == 1) ||
      ((cpid = fork()) > 0)) 
@@ -2432,10 +2444,12 @@ int TMomFinalizeChild(
     shell = demux;  /* for fprintf below */
     }  /* END else if (cpid == 0) */
 
-  sprintf(log_buffer,"exec of shell \"%s\" failed",
+  sprintf(log_buffer,"PBS: exec of shell '%.256s' failed\n",
     shell);
 
-  log_err(errno,id,log_buffer);
+  write(2,log_buffer,strlen(log_buffer));
+
+  fsync(2);
 
   if (strlen(shell) == 0)
     {
@@ -2887,31 +2901,31 @@ int start_process(
 
         case JOB_EXEC_FAIL1:  /* -1 */
 
-          strcpy(tmpLine,"job exec failure, before files staged, no retry");
+          strcpy(tmpLine,"stdio setup failed");
 
           break;
 
         case JOB_EXEC_FAIL2:  /* -2 */
 
-          strcpy(tmpLine,"job exec failure, after files staged, no retry");
+          strcpy(tmpLine,"env setup or user dir problem");
 
           break;
 
         case JOB_EXEC_RETRY: /* -3 */
 
-          strcpy(tmpLine,"job exec failure, retry will be attempted");
+          strcpy(tmpLine,"unable to set limits, retry will be attempted");
 
           break;
 
         default:
 
-          sprintf(tmpLine,"job exec failure, code=%d",
+          sprintf(tmpLine,"code=%d",
             sjr.sj_code);
 
           break;
         }  /* END switch(sjr.sj_code) */
  
-      sprintf(log_buffer,"task not started, %s %s",
+      sprintf(log_buffer,"task not started, '%s', %s (see syslog)",
         argv[0],
         tmpLine);
 
@@ -2978,6 +2992,156 @@ int start_process(
   close(parent_write);
 
   /*
+  ** Set up stdin.
+  */
+
+  /* look through env for a port# on MS we should use for stdin */
+
+  if ((fd0 = search_env_and_open("MPIEXEC_STDIN_PORT",ipaddr)) == -2)
+    starter_return(kid_write,kid_read,JOB_EXEC_FAIL1,&sjr);
+
+  /* use /dev/null if no env var found */
+
+  if ((fd0 < 0) && (fd0 = open("/dev/null",O_RDONLY)) == -1) 
+    {
+    log_err(errno,id,"could not open dev/null");
+
+    close(0);
+    }
+  else 
+    {
+    dup2(fd0,0);
+
+    if (fd0 > 0)
+      close(fd0);
+    }
+
+  /* look through env for a port# on MS we should use for stdout/err */
+
+  if ((fd1 = search_env_and_open("MPIEXEC_STDOUT_PORT",ipaddr)) == -2)
+    starter_return(kid_write,kid_read,JOB_EXEC_FAIL1,&sjr);
+
+  if ((fd2 = search_env_and_open("MPIEXEC_STDERR_PORT",ipaddr)) == -2)
+    starter_return(kid_write,kid_read,JOB_EXEC_FAIL1,&sjr);
+
+  if (pjob->ji_numnodes > 1) 
+    {
+    /*
+    ** Open sockets to demux proc for stdout and stderr.
+    */
+
+    if ((fd1 < 0) && ((fd1 = open_demux(ipaddr,pjob->ji_stdout)) == -1))
+      {
+      starter_return(kid_write,kid_read,JOB_EXEC_FAIL1,&sjr);
+  
+      /*NOTREACHED*/
+
+      exit(1);
+      }
+
+    dup2(fd1,1);
+
+    if (fd1 > 1)
+      close(fd1);
+
+    if ((fd2 < 0) && ((fd2 = open_demux(ipaddr,pjob->ji_stderr)) == -1))
+      {
+      starter_return(kid_write,kid_read,JOB_EXEC_FAIL1,&sjr);
+
+      /*NOTREACHED*/
+
+      exit(1);
+      }
+
+    dup2(fd2,2);
+
+    if (fd2 > 2)
+      close(fd2);
+
+    /* never send cookie - PW mpiexec patch */
+
+    /*	
+    write(1,pjob->ji_wattr[(int)JOB_ATR_Cookie].at_val.at_str,
+      strlen(pjob->ji_wattr[(int)JOB_ATR_Cookie].at_val.at_str));
+
+    write(2,pjob->ji_wattr[(int)JOB_ATR_Cookie].at_val.at_str,
+      strlen(pjob->ji_wattr[(int)JOB_ATR_Cookie].at_val.at_str));
+    */
+    } 
+  else if ((pjob->ji_wattr[(int)JOB_ATR_interactive].at_flags&ATR_VFLAG_SET) &&
+           (pjob->ji_wattr[(int)JOB_ATR_interactive].at_val.at_long > 0)) 
+    {
+    /* interactive job, single node, write to pty */
+
+    pts = -1;
+
+    if ((fd1 < 0) || (fd2 < 0)) 
+      {
+      if ((pts = open_pty(pjob)) < 0) 
+        {
+        log_err(errno,id,"cannot open slave pty");
+
+        starter_return(kid_write,kid_read,JOB_EXEC_FAIL1,&sjr);
+        }
+
+      if (fd1 < 0)
+        fd1 = pts;
+
+      if (fd2 < 0)
+        fd2 = pts;
+      }
+
+    dup2(fd1,1);
+    dup2(fd2,2);
+
+    if (fd1 != pts)
+      close(fd1);
+
+    if (fd2 != pts)
+       close(fd2);
+    }
+  else 
+    {
+    /* normal batch job, single node, write straight to files */
+
+    pts = -1;
+
+    if ((fd1 < 0) || (fd2 < 0))
+      {
+      if (open_std_out_err(pjob) == -1)
+        {
+        log_err(errno,id,"cannot open job stderr/stdout files");
+
+        starter_return(kid_write,kid_read,JOB_EXEC_FAIL1,&sjr);
+        }
+      }
+
+    if (fd1 >= 0)
+      {
+      close(1);
+      dup2(fd1,1);
+
+      if (fd1 > 1)
+        close(fd1);
+      }
+
+    if (fd2 >= 0)
+      {
+      close(2);
+      dup2(fd2,2);
+
+      if (fd2 > 2)
+        close(fd2);
+      }
+    }    /* END else */
+
+  /*******************************************************
+   * At this point, output fds are setup for the job,
+   * any further error messages should be written
+   * directly to fd 2, with a \n, and ended with fsync(2)
+   *******************************************************/
+
+  /*
    * set up the Environmental Variables to be given to the job 
    */
 
@@ -2991,13 +3155,37 @@ int start_process(
 
   vtable.v_block = malloc(vtable.v_bsize);
 
+  if (vtable.v_block == NULL)
+    {
+    sprintf(log_buffer,"PBS: failed to init env, malloc: %s\n",
+      strerror(errno));
+
+    write(2,log_buffer,strlen(log_buffer));
+
+    fsync(2);
+
+    starter_return(kid_write,kid_read,JOB_EXEC_RETRY,&sjr);
+    }
+
   vtable.v_ensize = vstrs->as_usedptr + num_var_else + num_var_env +
     j + EXTRA_ENV_PTRS;
 
   vtable.v_used = 0;
 
-  vtable.v_envp = (char **)malloc(vtable.v_ensize * sizeof(char *));
+  vtable.v_envp = malloc(vtable.v_ensize * sizeof(char *));
 	
+  if (vtable.v_envp == NULL)
+    {
+    sprintf(log_buffer,"PBS: failed to init env, malloc: %s\n",
+      strerror(errno));
+
+    write(2,log_buffer,strlen(log_buffer));
+
+    fsync(2);
+
+    starter_return(kid_write,kid_read,JOB_EXEC_RETRY,&sjr);
+    }
+
   /* First variables from the local environment */
 
   for (j = 0;j < num_var_env;++j) 
@@ -3061,15 +3249,13 @@ int start_process(
 
   if (set_mach_vars(pjob,&vtable) != 0) 
     {
-    strcpy(log_buffer,"machine dependent environment variable setup failed");
+    strcpy(log_buffer,"PBS: machine dependent environment variable setup failed\n");
 
-    log_record(
-      PBSEVENT_ERROR, 
-      PBS_EVENTCLASS_JOB,
-      pjob->ji_qs.ji_jobid, 
-      log_buffer);
+    write(2,log_buffer,strlen(log_buffer));
 
-    starter_return(kid_write,kid_read,JOB_EXEC_FAIL2,&sjr);
+    fsync(2);
+
+    starter_return(kid_write,kid_read,JOB_EXEC_FAIL1,&sjr);
 
     /*NOTREACHED*/
 
@@ -3098,34 +3284,36 @@ int start_process(
       {
       /* set_job didn't leave message in log_buffer */
 
-      strcpy(log_buffer,"Unable to set task session");
+      strcpy(log_buffer,"PBS: Unable to set task session\n");
       }
 
-    log_record(
-      PBSEVENT_ERROR, 
-      PBS_EVENTCLASS_JOB,
-      pjob->ji_qs.ji_jobid, 
-      log_buffer);
+    write(2,log_buffer,strlen(log_buffer));
+
+    fsync(2);
 
     starter_return(kid_write,kid_read,JOB_EXEC_FAIL2,&sjr);
     }
 
   ptask->ti_qs.ti_sid = sjr.sj_session;
 
+  log_buffer[0] = '\0';
+
   if ((i = mom_set_limits(pjob,SET_LIMIT_SET)) != PBSE_NONE) 
     {
     if (log_buffer[0] != '\0')
       {
       /* report error to user via stderr file */
+      write(2,log_buffer,strlen(log_buffer));
 
-      fprintf(stderr,"%s\n",log_buffer);
+      fsync(2);
       }
 
-    sprintf(log_buffer,"Unable to set limits, err=%d",
+    sprintf(log_buffer,"PBS: Unable to set limits, err=%d\n",
       i);
 
-    log_record(PBSEVENT_ERROR,PBS_EVENTCLASS_JOB,
-      pjob->ji_qs.ji_jobid,log_buffer);
+    write(2,log_buffer,strlen(log_buffer));
+
+    fsync(2);
 
     if (i == PBSE_RESCUNAV)		/* resource temp unavailable */
       j = JOB_EXEC_RETRY;
@@ -3139,16 +3327,13 @@ int start_process(
     {
     if (chroot(idir) == -1)
       {
-      sprintf(log_buffer,"could not chroot to %s",
-        idir);
+      sprintf(log_buffer,"PBS: chroot to %.256s failed: %s\n",
+        idir,
+        strerror(errno));
 
-      log_record(
-        PBSEVENT_JOB|PBSEVENT_SECURITY,
-        PBS_EVENTCLASS_JOB,
-        pjob->ji_qs.ji_jobid,
-        log_buffer);
+      write(2,log_buffer,strlen(log_buffer));
 
-      fprintf(stderr,log_buffer);
+      fsync(2);
 
       starter_return(kid_write, kid_read, JOB_EXEC_FAIL2, &sjr);
       }
@@ -3174,16 +3359,13 @@ int start_process(
 
     if (chdir(idir) == -1)
       {
-      sprintf(log_buffer,"could not chdir to %s",
-        idir);
+      sprintf(log_buffer,"PBS: chdir to %.256s failed: %s\n",
+        idir,
+        strerror(errno));
 
-      log_record(
-        PBSEVENT_JOB|PBSEVENT_SECURITY,
-        PBS_EVENTCLASS_JOB,
-        pjob->ji_qs.ji_jobid,
-        log_buffer);
+      write(2,log_buffer,strlen(log_buffer));
 
-      DBPRT((log_buffer));
+      fsync(2);
 
       starter_return(kid_write,kid_read,JOB_EXEC_FAIL2,&sjr);
       }
@@ -3194,163 +3376,18 @@ int start_process(
 
     if (chdir(pjob->ji_grpcache->gc_homedir) == -1)
       {
-      log_record(
-        PBSEVENT_JOB|PBSEVENT_SECURITY, 
-        PBS_EVENTCLASS_JOB,
-        pjob->ji_qs.ji_jobid,
-        "could not chdir to home directory");
+      sprintf(log_buffer,"PBS: chdir to %.256s failed: %s\n",
+        pjob->ji_grpcache->gc_homedir,
+        strerror(errno));
 
-      DBPRT(("could not chdir to home directory\n"));
+      write(2,log_buffer,strlen(log_buffer));
+
+      fsync(2);
 
       starter_return(kid_write,kid_read,JOB_EXEC_FAIL2,&sjr);
       }
     }
 
-  /*
-  ** Set up stdin.
-  */
-
-  /* look through env for a port# on MS we should use for stdin */
-
-  if ((fd0 = search_env_and_open("MPIEXEC_STDIN_PORT",ipaddr)) == -2)
-    starter_return(kid_write,kid_read,JOB_EXEC_FAIL2,&sjr);
-
-  /* use /dev/null if no env var found */
-
-  if ((fd0 < 0) && (fd0 = open("/dev/null",O_RDONLY)) == -1) 
-    {
-    log_err(errno,"newtask","could not open dev/null");
-
-    close(0);
-    }
-  else 
-    {
-    dup2(fd0,0);
-
-    if (fd0 > 0)
-      close(fd0);
-    }
-
-  /* look through env for a port# on MS we should use for stdout/err */
-
-  if ((fd1 = search_env_and_open("MPIEXEC_STDOUT_PORT",ipaddr)) == -2)
-    starter_return(kid_write,kid_read,JOB_EXEC_FAIL2,&sjr);
-
-  if ((fd2 = search_env_and_open("MPIEXEC_STDERR_PORT",ipaddr)) == -2)
-    starter_return(kid_write,kid_read,JOB_EXEC_FAIL2,&sjr);
-
-  if (pjob->ji_numnodes > 1) 
-    {
-    /*
-    ** Open sockets to demux proc for stdout and stderr.
-    */
-
-    if ((fd1 < 0) && ((fd1 = open_demux(ipaddr,pjob->ji_stdout)) == -1))
-      {
-      starter_return(kid_write,kid_read,JOB_EXEC_FAIL2,&sjr);
-  
-      /*NOTREACHED*/
-
-      exit(1);
-      }
-
-    dup2(fd1,1);
-
-    if (fd1 > 1)
-      close(fd1);
-
-    if ((fd2 < 0) && ((fd2 = open_demux(ipaddr,pjob->ji_stderr)) == -1))
-      {
-      starter_return(kid_write,kid_read,JOB_EXEC_FAIL2,&sjr);
-
-      /*NOTREACHED*/
-
-      exit(1);
-      }
-
-    dup2(fd2,2);
-
-    if (fd2 > 2)
-      close(fd2);
-
-    /* never send cookie - PW mpiexec patch */
-
-    /*	
-    write(1,pjob->ji_wattr[(int)JOB_ATR_Cookie].at_val.at_str,
-      strlen(pjob->ji_wattr[(int)JOB_ATR_Cookie].at_val.at_str));
-
-    write(2,pjob->ji_wattr[(int)JOB_ATR_Cookie].at_val.at_str,
-      strlen(pjob->ji_wattr[(int)JOB_ATR_Cookie].at_val.at_str));
-    */
-    } 
-  else if ((pjob->ji_wattr[(int)JOB_ATR_interactive].at_flags&ATR_VFLAG_SET) &&
-           (pjob->ji_wattr[(int)JOB_ATR_interactive].at_val.at_long > 0)) 
-    {
-    /* interactive job, single node, write to pty */
-
-    pts = -1;
-
-    if ((fd1 < 0) || (fd2 < 0)) 
-      {
-      if ((pts = open_pty(pjob)) < 0) 
-        {
-        log_err(errno,id,"cannot open slave");
-
-        starter_return(kid_write,kid_read,JOB_EXEC_FAIL1,&sjr);
-        }
-
-      if (fd1 < 0)
-        fd1 = pts;
-
-      if (fd2 < 0)
-        fd2 = pts;
-      }
-
-    dup2(fd1,1);
-    dup2(fd2,2);
-
-    if (fd1 != pts)
-      close(fd1);
-
-    if (fd2 != pts)
-       close(fd2);
-    }
-  else 
-    {
-    /* normal batch job, single node, write straight to files */
-
-    pts = -1;
-
-    if ((fd1 < 0) || (fd2 < 0))
-      {
-      if (open_std_out_err(pjob) == -1)
-        {
-        log_err(errno,id,"cannot open stderr/stdout");
-
-        starter_return(kid_write,kid_read,JOB_EXEC_FAIL1,&sjr);
-        }
-      }
-
-    if (fd1 >= 0)
-      {
-      close(1);
-      dup2(fd1,1);
-
-      if (fd1 > 1)
-        close(fd1);
-      }
-
-    if (fd2 >= 0)
-      {
-      close(2);
-      dup2(fd2,2);
-
-      if (fd2 > 2)
-        close(fd2);
-      }
-    }    /* END else */
-
-  log_close(0);
 
   starter_return(
     kid_write, 
@@ -3372,9 +3409,13 @@ int start_process(
 
   /* only reached if execvp() fails */
 
-  DBPRT(("%s: %s\n", 
+  sprintf(log_buffer,"PBS: %.256s: %s\n", 
     argv[0],
-    strerror(errno)));
+    strerror(errno));
+
+  write(2,log_buffer,strlen(log_buffer));
+
+  fsync(2);
 
   exit(254);
 

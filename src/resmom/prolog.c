@@ -197,16 +197,10 @@ static int pelog_err(
     n, 
     text);
 
-  sprintf(PBSNodeMsgBuf,"ERROR: prolog/epilog failed, file: %s, exit: %d, %s",
-    file,
-    n,
-    text);
-
-  LOG_EVENT(
-    PBSEVENT_ERROR, 
-    PBS_EVENTCLASS_JOB,
-    pjob->ji_qs.ji_jobid, 
+  sprintf(PBSNodeMsgBuf,"ERROR: %s",
     log_buffer);
+
+  log_err(-1,"run_pelog",log_buffer);
 
   return(n);
   }  /* END pelog_err() */
@@ -431,12 +425,6 @@ int run_pelog(
 
       setuid(pjob->ji_qs.ji_un.ji_momt.ji_exuid);
 
-      if (chdir(pjob->ji_grpcache->gc_homedir) != 0)
-        {
-        /* warn only, no failure (we're a child process and can't log_record() */
-
-        DBPRT(("cannot chdir to user home as user - running pro/epi script in current directory"));
-        }
       }
 
     if (fd_input != 0) 
@@ -489,18 +477,35 @@ int run_pelog(
         }
       }
 
+    if ((which == PE_PROLOGUSER) || (which == PE_EPILOGUSER))
+      {
+      if (chdir(pjob->ji_grpcache->gc_homedir) != 0)
+        {
+        /* warn only, no failure */
+
+        sprintf(log_buffer,
+          "PBS: chdir to %s failed: %s (running user %s in current directory)",
+          pjob->ji_grpcache->gc_homedir,
+          strerror(errno),
+          which == PE_PROLOGUSER ? "prologue" : "epilogue");
+
+        write(2,log_buffer,strlen(log_buffer));
+
+        fsync(2);
+        }
+    }
     /* for both prolog and epilog */
 
     arg[0] = pelog;
     arg[1] = pjob->ji_qs.ji_jobid;
     arg[2] = pjob->ji_wattr[(int)JOB_ATR_euser].at_val.at_str;
     arg[3] = pjob->ji_wattr[(int)JOB_ATR_egroup].at_val.at_str;
+    arg[4] = pjob->ji_wattr[(int)JOB_ATR_jobname].at_val.at_str;
 
-    /* for epilog only */
 
     if (which == PE_EPILOG) 
       {
-      arg[4] = pjob->ji_wattr[(int)JOB_ATR_jobname].at_val.at_str;
+      /* for epilog only */
 
       sprintf(sid,"%ld",
         pjob->ji_wattr[(int)JOB_ATR_session_id].at_val.at_long);
@@ -516,7 +521,6 @@ int run_pelog(
       {
       /* prolog */
 
-      arg[4] = pjob->ji_wattr[(int)JOB_ATR_jobname].at_val.at_str;
       arg[5] = resc_to_string(&pjob->ji_wattr[(int)JOB_ATR_resource],resc_list,2048);
       arg[6] = pjob->ji_wattr[(int)JOB_ATR_in_queue].at_val.at_str;
       arg[7] = pjob->ji_wattr[(int)JOB_ATR_account].at_val.at_str;
@@ -561,7 +565,13 @@ int run_pelog(
 
     execv(pelog,arg);
 
-    log_err(errno,"run_pelog","execv of prologue failed");
+    sprintf(log_buffer,"execv of %s failed: %s\n",
+      pelog,
+      strerror(errno));
+
+    write(2,log_buffer,strlen(log_buffer));
+
+    fsync(2);
 
     exit(255);
     }  /* END else () */
