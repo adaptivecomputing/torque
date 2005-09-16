@@ -263,7 +263,7 @@ int wait_request(
 
   selset = readset;  /* readset is global */
 
-  n = select(FD_SETSIZE,&selset,(fd_set *)0,&errorfds,&timeout);
+  n = select(FD_SETSIZE,&selset,(fd_set *)0,(fd_set *)0,&timeout);
 
   if (n == -1) 
     {
@@ -286,7 +286,7 @@ int wait_request(
 
       for (i = 0;i < FD_SETSIZE;i++)
         {
-        if (FD_ISSET(i,readset) == 0)
+        if (FD_ISSET(i,&readset) == 0)
           continue;
 
         if (fstat(i,&fbuf) == 0)
@@ -294,7 +294,7 @@ int wait_request(
 
         /* clean up SdList and bad sd... */
 
-        FD_CLR(i,readset);
+        FD_CLR(i,&readset);
 
         sprintf(tmpLine,"fd %d was improperly closed - readset was not updated",
           i);
@@ -335,14 +335,10 @@ int wait_request(
           char tmpLine[1024];
 
           sprintf(tmpLine,"closed connection to fd %d - num_connections=%d (select bad socket)",
-            sd,
+            i,
             num_connections);
 
-          log_record(
-            PBSEVENT_SYSTEM,
-            PBS_EVENTCLASS_SERVER,
-            "wait_request",
-            tmpLine);
+          log_err(-1,"wait_request",tmpLine);
           }  /* END if (LOGLEVEL >= 3) */
         }
       }
@@ -478,11 +474,7 @@ void add_conn(
       sock,
       num_connections);
 
-    log_record(
-      PBSEVENT_SYSTEM,
-      PBS_EVENTCLASS_SERVER,
-      "add_conn",
-      tmpLine);
+    log_err(-1,"add_con",tmpLine);
     }  /* END if (LOGLEVEL >= 3) */
 
   FD_SET(sock,&readset);
@@ -555,11 +547,7 @@ void close_conn(
       sd,
       num_connections);
 
-    log_record(
-      PBSEVENT_SYSTEM,
-      PBS_EVENTCLASS_SERVER,
-      "add_conn",
-      tmpLine);
+    log_err(-1,"close_conn",tmpLine);
     }  /* END if (LOGLEVEL >= 3) */
 
   return;
