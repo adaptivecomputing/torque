@@ -293,14 +293,14 @@ void req_deletejob(
 
     if (cycle_check_when != 0) 
       {
-      if (!strcmp(pjob->ji_qs.ji_jobid,cycle_check_id) && 
+      if (!strcmp(pjob->ji_qs.ji_jobid,cycle_check_jid) && 
          (time_now - cycle_check_when > 10)) 
         {
         /* state not updated after 10 seconds */
 
         /* did the mom ever get it? delete it anyways... */
 
-        cycle_check_id[0] = '\0';
+        cycle_check_jid[0] = '\0';
         cycle_check_when  = 0;
 
         goto jump;
@@ -310,7 +310,7 @@ void req_deletejob(
         {
         /* give up after 20 seconds */
 
-        cycle_check_id[0] = '\0';
+        cycle_check_jid[0] = '\0';
         cycle_check_when  = 0;
         }
       }    /* END if (cycle_check_when != 0) */ 
@@ -320,7 +320,7 @@ void req_deletejob(
       /* new PRERUN job located */
 
       cycle_check_when = time_now;
-      strcpy(cycle_check_id,pjob->ji_qs.ji_jobid);
+      strcpy(cycle_check_jid,pjob->ji_qs.ji_jobid);
       }
 
     sprintf(log_buffer,"job cannot be deleted, state=PRERUN, requeuing delete request");
