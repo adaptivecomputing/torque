@@ -1286,7 +1286,7 @@ static u_long setdownonerror(
 
   {
   static char   id[] = "setdownonerror";
-  int           enable = 0;
+  int           enable = -1;
 
   log_record(PBSEVENT_SYSTEM,PBS_EVENTCLASS_SERVER,id,Value);
 
@@ -1309,11 +1309,22 @@ static u_long setdownonerror(
       enable = 1;
     
       break;
+
+    case 'f':
+    case 'F':
+    case 'n':
+    case 'N':
+    case '0':
+
+      enable = 0;
+    
+      break;
+
     }
 
-  if (enable)
+  if (enable != -1)
     {
-    MOMConfigDownOnError=1;
+    MOMConfigDownOnError=enable;
     }
 
   return(1);
@@ -3285,7 +3296,7 @@ int rm_request(
               }
 
             sprintf(output,"down_on_error=%d",
-              LOGLEVEL);
+              MOMConfigDownOnError);
             }
           else if (!strncasecmp(name,"diag",strlen("diag")))
             {
@@ -3320,7 +3331,7 @@ int rm_request(
 
             MUStrNCat(&BPtr,&BSpace,tmpLine);
 
-            if (LOGLEVEL >= 2)
+            if (verbositylevel >= 2)
               {
               sprintf(tmpLine,"PID:                    %ld\n",
                 (long)getpid());
