@@ -1,10 +1,11 @@
 1.2.0p7
 
   fixed doc build by adding AIX 5 resources docs
+  added prerun timeout change (RENTEC)
+  added code to handle select() EBADF - 9
 
 1.2.0p6
 
-  added $headnode mom config (CRI) 
   enabled opsys mom confing (USC) 
   enabled arch mom config (CRI)
   fixed qrun based default scheduling to ignore down nodes (USC)

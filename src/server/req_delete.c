@@ -288,7 +288,42 @@ void req_deletejob(
     /* being sent to MOM, wait till she gets it going */
     /* retry in one second				  */
 
-    sprintf(log_buffer,"job cannot be deleted, state = PRERUN, requeuing delete request");
+    static time_t  cycle_check_when = 0;
+    static char    cycle_check_jid[PBS_MAXSVRJOBID + 1];
+
+    if (cycle_check_when != 0) 
+      {
+      if (!strcmp(pjob->ji_qs.ji_jobid,cycle_check_id) && 
+         (time_now - cycle_check_when > 10)) 
+        {
+        /* state not updated after 10 seconds */
+
+        /* did the mom ever get it? delete it anyways... */
+
+        cycle_check_id[0] = '\0';
+        cycle_check_when  = 0;
+
+        goto jump;
+        } 
+
+      if (time_now - cycle_check_when > 20) 
+        {
+        /* give up after 20 seconds */
+
+        cycle_check_id[0] = '\0';
+        cycle_check_when  = 0;
+        }
+      }    /* END if (cycle_check_when != 0) */ 
+
+    if (cycle_check_when == 0) 
+      {
+      /* new PRERUN job located */
+
+      cycle_check_when = time_now;
+      strcpy(cycle_check_id,pjob->ji_qs.ji_jobid);
+      }
+
+    sprintf(log_buffer,"job cannot be deleted, state=PRERUN, requeuing delete request");
       
     log_event(
       PBSEVENT_JOB, 
@@ -307,6 +342,8 @@ void req_deletejob(
 
     return;
     }
+
+jump:
 
   /*
    * Log delete and if requesting client is not job owner, send mail.

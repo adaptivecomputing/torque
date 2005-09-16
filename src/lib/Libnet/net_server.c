@@ -87,6 +87,8 @@
 #include <unistd.h>
 
 #include <sys/types.h>
+#include <sys/stat.h>  /* added - CRI 9/05 */
+#include <unistd.h>    /* added - CRI 9/05 */
 #include <sys/time.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -127,6 +129,8 @@ static fd_set	readset;
 static void	(*read_func[2]) A_((int));
 static enum conn_type settype[2];		/* temp kludge */
 static char logbuf[256];
+
+extern int LOGLEVEL;
 
 /* Private function within this file */
 
@@ -181,7 +185,7 @@ int init_network(
 
   read_func[initialized++] = readfunc;
 
-  sock = socket(AF_INET, SOCK_STREAM, 0);
+  sock = socket(AF_INET,SOCK_STREAM,0);
 
   if (sock < 0) 
     {
@@ -207,7 +211,7 @@ int init_network(
     {
     close(sock);
 
-    log_err(errno,"init_network" ,"bind failed");
+    log_err(errno,"init_network","bind failed");
 
     return(-1);
     }
@@ -257,23 +261,50 @@ int wait_request(
   timeout.tv_usec = 0;
   timeout.tv_sec  = waittime;
 
-  selset = readset;
+  selset = readset;  /* readset is global */
 
-  n = select(FD_SETSIZE,&selset,(fd_set *)0,(fd_set *)0,&timeout);
+  n = select(FD_SETSIZE,&selset,(fd_set *)0,&errorfds,&timeout);
 
   if (n == -1) 
     {
     if (errno == EINTR)
       {
-      n = 0;	/* interrupted, cycle arround */
+      n = 0;	/* interrupted, cycle around */
       }
     else 
       {
+      int i;
+      struct stat fbuf;
+     
+      char tmpLine[1024];
+
       log_err(errno,"wait_request","select failed");
 
+      /* check all file descriptors to verify they are valid */
+
+      /* NOTE:  selset may be modified by failed select() */
+
+      for (i = 0;i < FD_SETSIZE;i++)
+        {
+        if (FD_ISSET(i,readset) == 0)
+          continue;
+
+        if (fstat(i,&fbuf) == 0)
+          continue;
+
+        /* clean up SdList and bad sd... */
+
+        FD_CLR(i,readset);
+
+        sprintf(tmpLine,"fd %d was improperly closed - readset was not updated",
+          i);
+
+        log_err(errno,"wait_request",tmpLine);
+        }    /* END for (i) */
+  
       return(-1);
-      }
-    }
+      }  /* END else (errno == EINTR) */
+    }    /* END if (n == -1) */
 
   for (i = 0;i < max_connection && n;i++) 
     {
@@ -296,6 +327,23 @@ int wait_request(
         FD_CLR(i,&readset);
 
         close(i);
+
+        num_connections--;  /* added by CRI - should this be here? */
+
+        if (LOGLEVEL >= 3)
+          {
+          char tmpLine[1024];
+
+          sprintf(tmpLine,"closed connection to fd %d - num_connections=%d (select bad socket)",
+            sd,
+            num_connections);
+
+          log_record(
+            PBSEVENT_SYSTEM,
+            PBS_EVENTCLASS_SERVER,
+            "wait_request",
+            tmpLine);
+          }  /* END if (LOGLEVEL >= 3) */
         }
       }
     }    /* END for (i) */
@@ -311,7 +359,7 @@ int wait_request(
 
     cp = &svr_conn[i];
 
-    if (cp->cn_active != FromClientASN && cp->cn_active != FromClientDIS)
+    if ((cp->cn_active != FromClientASN) && (cp->cn_active != FromClientDIS))
       continue;
 
     if ((now - cp->cn_lasttime) <= PBS_NET_MAXCONNECTIDLE)
@@ -378,7 +426,7 @@ static void accept_conn(
 
   if (newsock == -1) 
     {
-    log_err(errno, "accept_conn", "accept failed");
+    log_err(errno,"accept_conn","accept failed");
 
     return;
     }
@@ -421,6 +469,21 @@ void add_conn(
 
   {
   num_connections++;
+
+  if (LOGLEVEL >= 3)
+    {
+    char tmpLine[1024];
+
+    sprintf(tmpLine,"added connection to fd %d - num_connections=%d",
+      sock,
+      num_connections);
+
+    log_record(
+      PBSEVENT_SYSTEM,
+      PBS_EVENTCLASS_SERVER,
+      "add_conn",
+      tmpLine);
+    }  /* END if (LOGLEVEL >= 3) */
 
   FD_SET(sock,&readset);
 
@@ -484,6 +547,21 @@ void close_conn(
 
   num_connections--;
 
+  if (LOGLEVEL >= 3)
+    {
+    char tmpLine[1024];
+
+    sprintf(tmpLine,"closed connection to fd %d - num_connections=%d",
+      sd,
+      num_connections);
+
+    log_record(
+      PBSEVENT_SYSTEM,
+      PBS_EVENTCLASS_SERVER,
+      "add_conn",
+      tmpLine);
+    }  /* END if (LOGLEVEL >= 3) */
+
   return;
   }  /* END close_conn() */
 
@@ -515,10 +593,10 @@ void net_close(
 
       close_conn(i);
       }
-    }
+    }    /* END for (i) */
 
   return;
-  }
+  }  /* END net_close() */
 
 
 
