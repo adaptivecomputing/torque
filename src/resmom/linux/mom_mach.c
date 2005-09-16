@@ -3603,7 +3603,7 @@ static char *quota(
     sprintf(log_buffer, "unknown qualifier %s",
       attrib->a_qualifier);
 
-    log_err(-1, id, log_buffer);
+    log_err(-1,id,log_buffer);
 
     rm_errno = RM_ERR_BADPARAM;
 
@@ -3766,6 +3766,7 @@ static char *quota(
 
     case currdata:
 
+#if defined(TENABLEQUOTA)
 #if _LINUX_QUOTA_VERSION < 2
       sprintf(ret_string,"%ukb",
         qi.dqb_curblocks >> 10);
@@ -3773,6 +3774,7 @@ static char *quota(
       sprintf(ret_string,"%ukb",
         (unsigned int)qi.dqb_curspace >> 10);
 #endif /* _LINUX_QUOTA_VERSION < 2 */
+#endif /* TENABLEQUOTA */
 
       break;
 

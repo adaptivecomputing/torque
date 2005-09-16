@@ -3,6 +3,7 @@
   fixed doc build by adding AIX 5 resources docs
   added prerun timeout change (RENTEC)
   added code to handle select() EBADF - 9
+  disabled MOM quota feature by default, enabled with -DTENABLEQUOTA
 
 1.2.0p6
 
