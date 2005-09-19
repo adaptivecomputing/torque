@@ -575,6 +575,7 @@ gen_depends()
     
                 eval $CPP $arg_cc $d/$s $errout | \
                   sed -n -e "s;^\# [0-9][0-9 ]*\"\(.*\)\";$f: \1;p" | \
+                  grep -v "//\$" | \
                   grep -v "$s\$" | grep -v command | grep -v built-in | \
                   sed -e 's;\([^ :]*: [^ ]*\).*;\1;' \
                   >> $TMP

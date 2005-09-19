@@ -5,6 +5,7 @@
   added code to handle select() EBADF - 9
   disabled MOM quota feature by default, enabled with -DTENABLEQUOTA
   cleanup MOM child error messages (USC)
+  fix makedepend-sh for gcc-3.4 and higher (DTU)
 
 1.2.0p6
 
