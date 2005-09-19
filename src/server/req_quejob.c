@@ -1360,7 +1360,7 @@ void req_rdytocommit(
     log_record(
       PBSEVENT_JOB,
       PBS_EVENTCLASS_JOB,
-      (pj != NULL) ? pj->ji_qs.ji_jobid : "NULL"
+      (pj != NULL) ? pj->ji_qs.ji_jobid : "NULL",
       "ready to commit job");
     }
 
@@ -1486,7 +1486,7 @@ void req_commit(
     log_record(
       PBSEVENT_JOB,
       PBS_EVENTCLASS_JOB,
-      (pj != NULL) ? pj->ji_qs.ji_jobid : "NULL"
+      (pj != NULL) ? pj->ji_qs.ji_jobid : "NULL",
       "committing job");
     }
 
@@ -1532,7 +1532,7 @@ void req_commit(
     log_record(
       PBSEVENT_JOB,
       PBS_EVENTCLASS_JOB,
-      (pj != NULL) ? pj->ji_qs.ji_jobid : "NULL"
+      (pj != NULL) ? pj->ji_qs.ji_jobid : "NULL",
       "starting job execution");
     }
 
@@ -1543,7 +1543,7 @@ void req_commit(
     log_record(
       PBSEVENT_JOB,
       PBS_EVENTCLASS_JOB,
-      (pj != NULL) ? pj->ji_qs.ji_jobid : "NULL"
+      (pj != NULL) ? pj->ji_qs.ji_jobid : "NULL",
       "job execution started");
     }
 	
@@ -1570,7 +1570,7 @@ void req_commit(
       log_record(
         PBSEVENT_JOB,
         PBS_EVENTCLASS_JOB,
-        (pj != NULL) ? pj->ji_qs.ji_jobid : "NULL"
+        (pj != NULL) ? pj->ji_qs.ji_jobid : "NULL",
         tmpLine);
       }
 
@@ -1601,7 +1601,7 @@ void req_commit(
       log_record(
         PBSEVENT_JOB,
         PBS_EVENTCLASS_JOB,
-        (pj != NULL) ? pj->ji_qs.ji_jobid : "NULL"
+        (pj != NULL) ? pj->ji_qs.ji_jobid : "NULL",
         "no permission to start job");
       }
 
@@ -1632,7 +1632,7 @@ void req_commit(
       log_record(
         PBSEVENT_JOB,
         PBS_EVENTCLASS_JOB,
-        (pj != NULL) ? pj->ji_qs.ji_jobid : "NULL"
+        (pj != NULL) ? pj->ji_qs.ji_jobid : "NULL",
         "cannot queue job");
       }
 
@@ -1650,7 +1650,7 @@ void req_commit(
       log_record(
         PBSEVENT_JOB,
         PBS_EVENTCLASS_JOB,
-        (pj != NULL) ? pj->ji_qs.ji_jobid : "NULL"
+        (pj != NULL) ? pj->ji_qs.ji_jobid : "NULL",
         "cannot save job");
       }
 
@@ -1680,7 +1680,7 @@ void req_commit(
         log_record(
           PBSEVENT_JOB,
           PBS_EVENTCLASS_JOB,
-          (pj != NULL) ? pj->ji_qs.ji_jobid : "NULL"
+          (pj != NULL) ? pj->ji_qs.ji_jobid : "NULL",
           "job route job");
         }
 
