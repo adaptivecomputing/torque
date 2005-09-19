@@ -123,10 +123,10 @@
 
 /* External Functions Called: */
 
-extern int    reply_jid A_((char *jobid));
-extern void   start_exec A_((job *));
-extern int     svr_authorize_jobreq A_((struct batch_request *,job *));
-extern int svr_chkque A_((job *,pbs_queue *,char *,int));
+extern int  reply_jid A_((char *jobid));
+extern void start_exec A_((job *));
+extern int  svr_authorize_jobreq A_((struct batch_request *,job *));
+extern int  svr_chkque A_((job *,pbs_queue *,char *,int));
 extern int  job_route A_((job *));
 
 /* Global Data Items: */
@@ -152,6 +152,7 @@ extern char *msg_init_abt;
 
 extern char *msg_jobnew;
 extern time_t time_now;
+extern int    LOGLEVEL;
 
 extern  char *msg_daemonname;
 
