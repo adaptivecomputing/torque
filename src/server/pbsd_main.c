@@ -568,7 +568,7 @@ int main(
 
         /* FORMAT:  SUBMITHOSTS  <HOST>[,<HOST>]... */
 
-        TAllowedSubmitHostList = (char **)calloc(1,sizeof(char *) * (2048 + 1));
+        TAllowSubmitHostList = (char **)calloc(1,sizeof(char *) * (2048 + 1));
 
         tptr += strlen("SUBMITHOSTS");
 
@@ -578,7 +578,7 @@ int main(
 
         while (tptr != NULL)
           {
-          TAllowedSubmitHostList[hcount] = strdup(tptr);
+          TAllowSubmitHostList[hcount] = strdup(tptr);
 
           hcount++;
 
@@ -588,7 +588,7 @@ int main(
           tptr = strtok(NULL,"+,: \t\n");
           }  /* END while (tptr != NULL) */
 
-        TAllowedSubmitHostList[hcount] = NULL;
+        TAllowSubmitHostList[hcount] = NULL;
         }
 
       ptr = strtok(NULL,"\n");
