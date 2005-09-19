@@ -587,9 +587,9 @@ int main(
 
           tptr = strtok(NULL,"+,: \t\n");
           }  /* END while (tptr != NULL) */
-        }
 
-      TAllowedSubmitHostList[hcount] = NULL;
+        TAllowedSubmitHostList[hcount] = NULL;
+        }
 
       ptr = strtok(NULL,"\n");
       }  /* END while (ptr != NULL) */

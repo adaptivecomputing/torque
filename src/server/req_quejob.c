@@ -82,7 +82,7 @@
  * Functions relating to the Queue Job Batch Request sequence, including
  * Queue Job, Job Script, Ready to Commit, and Commit.
  *
- * Included funtions are:
+ * Included functions are:
  *	req_quejob()
  *	req_jobcredential()
  *	req_jobscript()
@@ -1025,12 +1025,22 @@ void req_jobscript(
     return;
     }
 
+  /* what is the difference between JOB_SUBSTATE_TRANSIN and TRANSICM? */
+
   if (pj->ji_qs.ji_substate != JOB_SUBSTATE_TRANSIN) 
     {
-    sprintf(log_buffer,"job in unexpected state '%s' (errno=%d - %s)",
-      PJobSubState[pj->ji_qs.ji_substate],
-      errno,
-      strerror(errno));
+    if (errno == 0)
+      {
+      sprintf(log_buffer,"job in unexpected state '%s'",
+        PJobSubState[pj->ji_qs.ji_substate]);
+      }
+    else
+      {
+      sprintf(log_buffer,"job in unexpected state '%s' (errno=%d - %s)",
+        PJobSubState[pj->ji_qs.ji_substate],
+        errno,
+        strerror(errno));
+      }
 
     log_err(errno,id,log_buffer);
 
@@ -1326,6 +1336,7 @@ void req_mvjobfile(
  *
  *	Set substate to JOB_SUBSTATE_TRANSICM and
  *	record job to permanent storage, i.e. written to the job save file
+ *      (called by both pbs_server and pbs_mom) 
  */
 
 void req_rdytocommit(
@@ -1342,6 +1353,15 @@ void req_rdytocommit(
   long OrigFlags;
 
   pj = locate_new_job(sock,preq->rq_ind.rq_rdytocommit);
+
+  if (LOGLEVEL >= 6)
+    {
+    log_record(
+      PBSEVENT_JOB,
+      PBS_EVENTCLASS_JOB,
+      (pj != NULL) ? pj->ji_qs.ji_jobid : "NULL"
+      "ready to commit job");
+    }
 
   if (pj == NULL) 
     {
@@ -1374,7 +1394,7 @@ void req_rdytocommit(
     return;
     }
 
-#endif /* PBS_MOM */
+#endif /* !PBS_MOM */
 
   OrigState  = pj->ji_qs.ji_state;
   OrigSState = pj->ji_qs.ji_substate;
@@ -1393,6 +1413,8 @@ void req_rdytocommit(
     sprintf(tmpLine,"cannot save job - errno=%d - %s",
       errno,
       strerror(errno));
+
+    log_err(errno,"req_rdytocommit",tmpLine);
 
     /* commit failed, backoff state changes */
 
@@ -1414,9 +1436,19 @@ void req_rdytocommit(
     {
     /* reply failed, purge the job and close the connection */
 
+    sprintf(tmpLine,"cannot report jobid - errno=%d - %s",
+      errno,
+      strerror(errno));
+
+    log_err(errno,"req_rdytocommit",tmpLine);
+
     close_conn(sock);
 
     job_purge(pj);
+
+    /* FAILURE */
+
+    return;
     }
 
   return;
@@ -1447,6 +1479,15 @@ void req_commit(
 #endif /* SERVER only */
 
   pj = locate_new_job(preq->rq_conn,preq->rq_ind.rq_commit);
+
+  if (LOGLEVEL >= 6)
+    {
+    log_record(
+      PBSEVENT_JOB,
+      PBS_EVENTCLASS_JOB,
+      (pj != NULL) ? pj->ji_qs.ji_jobid : "NULL"
+      "committing job");
+    }
 
   if (pj == NULL) 
     {
@@ -1485,7 +1526,25 @@ void req_commit(
 
   /* For MOM - start up the job (blocks) */
 
+  if (LOGLEVEL >= 6)
+    {
+    log_record(
+      PBSEVENT_JOB,
+      PBS_EVENTCLASS_JOB,
+      (pj != NULL) ? pj->ji_qs.ji_jobid : "NULL"
+      "starting job execution");
+    }
+
   start_exec(pj);
+
+  if (LOGLEVEL >= 6)
+    {
+    log_record(
+      PBSEVENT_JOB,
+      PBS_EVENTCLASS_JOB,
+      (pj != NULL) ? pj->ji_qs.ji_jobid : "NULL"
+      "job execution started");
+    }
 	
   /* if start request fails, reply with failure string */
 
@@ -1505,6 +1564,15 @@ void req_commit(
       sprintf(tmpLine,"start failed on unknown node");
       }
 
+    if (LOGLEVEL >= 6)
+      {
+      log_record(
+        PBSEVENT_JOB,
+        PBS_EVENTCLASS_JOB,
+        (pj != NULL) ? pj->ji_qs.ji_jobid : "NULL"
+        tmpLine);
+      }
+
     reply_text(preq,0,tmpLine);
     }
   else
@@ -1522,9 +1590,19 @@ void req_commit(
   pj->ji_wattr[(int)JOB_ATR_altid].at_flags |= ATR_VFLAG_MODIFY;
 
 #else	/* PBS_SERVER */
-  if (svr_authorize_jobreq(preq, pj) == -1) 
+
+  if (svr_authorize_jobreq(preq,pj) == -1) 
     {
     req_reject(PBSE_PERM,0,preq,NULL,NULL);
+
+    if (LOGLEVEL >= 6)
+      {
+      log_record(
+        PBSEVENT_JOB,
+        PBS_EVENTCLASS_JOB,
+        (pj != NULL) ? pj->ji_qs.ji_jobid : "NULL"
+        "no permission to start job");
+      }
 
     return;
     }
@@ -1548,14 +1626,32 @@ void req_commit(
 
     req_reject(rc,0,preq,NULL,NULL);
 
+    if (LOGLEVEL >= 6)
+      {
+      log_record(
+        PBSEVENT_JOB,
+        PBS_EVENTCLASS_JOB,
+        (pj != NULL) ? pj->ji_qs.ji_jobid : "NULL"
+        "cannot queue job");
+      }
+
     return;
     }
 
-  if (job_save(pj,SAVEJOB_FULL)) 
+  if (job_save(pj,SAVEJOB_FULL) != 0) 
     {
     job_purge(pj);
 
     req_reject(PBSE_SYSTEM,0,preq,NULL,NULL);
+
+    if (LOGLEVEL >= 6)
+      {
+      log_record(
+        PBSEVENT_JOB,
+        PBS_EVENTCLASS_JOB,
+        (pj != NULL) ? pj->ji_qs.ji_jobid : "NULL"
+        "cannot save job");
+      }
 
     return;
     }
@@ -1577,6 +1673,17 @@ void req_commit(
       job_purge(pj);
 
       req_reject(rc,0,preq,NULL,NULL);
+
+      if (LOGLEVEL >= 6)
+        {
+        log_record(
+          PBSEVENT_JOB,
+          PBS_EVENTCLASS_JOB,
+          (pj != NULL) ? pj->ji_qs.ji_jobid : "NULL"
+          "job route job");
+        }
+
+      /* FAILURE */
 
       return;
       }
