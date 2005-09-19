@@ -1437,11 +1437,11 @@ void req_rdytocommit(
     {
     /* reply failed, purge the job and close the connection */
 
-    sprintf(tmpLine,"cannot report jobid - errno=%d - %s",
+    sprintf(log_buffer,"cannot report jobid - errno=%d - %s",
       errno,
       strerror(errno));
 
-    log_err(errno,"req_rdytocommit",tmpLine);
+    log_err(errno,"req_rdytocommit",log_buffer);
 
     close_conn(sock);
 

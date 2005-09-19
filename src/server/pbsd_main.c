@@ -196,7 +196,7 @@ time_t		time_now = 0;
 int             LOGLEVEL = 0;
 int             DEBUGMODE = 0;
 int             TAllowComputeHostSubmit = FALSE;
-char          **TAllowedSubmitHostList = NULL;
+char          **TAllowSubmitHostList = NULL;
 
 char           *ProgName;
 
