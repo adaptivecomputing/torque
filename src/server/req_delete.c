@@ -625,7 +625,7 @@ static void post_delete_mom2(
     }
 
   return;
-  }
+  }  /* END post_delete_mom2() */
 
 
 

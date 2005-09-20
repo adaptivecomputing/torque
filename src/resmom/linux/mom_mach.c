@@ -1805,14 +1805,18 @@ int kill_task(
 
           /* give the process some time to quit gracefully first (up to 5 seconds) */
 
+          kill(ps->pid,SIGTERM);
+
           for (i = 0;i < 20;i++) 
             {
-            if (kill(ps->pid,SIGTERM) == -1) 
+            /* check if process is gone */
+
+            if (kill(ps->pid,0) == -1) 
               break;
 
             nanosleep(&req,NULL);
             }  /* END for (i = 0) */
-          }
+          }    /* END if (sig == SIGKILL) */
 
         sprintf(log_buffer,"%s: killing pid %d task %d with sig %d",
           id, 
@@ -1826,11 +1830,14 @@ int kill_task(
           ptask->ti_job->ji_qs.ji_jobid,
           log_buffer);
 
-        /* kill process hard */
+        if (i < 20)
+          {
+          /* kill process hard */
 
-        /* should this be replaced w/killpg() to kill all children? */
+          /* should this be replaced w/killpg() to kill all children? */
 
-        kill(ps->pid,sig);
+          kill(ps->pid,sig);
+          }
 
         ++ct;
         }  /* END else ((ps->state == 'Z') || (ps->pid == 0)) */
