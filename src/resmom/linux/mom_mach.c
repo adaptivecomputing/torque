@@ -1795,10 +1795,11 @@ int kill_task(
         }
       else
         {
+        int i = 0;
+
         if (sig == SIGKILL) 
           {
           struct timespec req;
-          int i;
 
           req.tv_sec = 0;
           req.tv_nsec = 250000000;  /* .25 seconds */
@@ -1817,6 +1818,10 @@ int kill_task(
             nanosleep(&req,NULL);
             }  /* END for (i = 0) */
           }    /* END if (sig == SIGKILL) */
+        else
+          {
+          i = 20;
+          }
 
         sprintf(log_buffer,"%s: killing pid %d task %d with sig %d",
           id, 
@@ -1830,7 +1835,7 @@ int kill_task(
           ptask->ti_job->ji_qs.ji_jobid,
           log_buffer);
 
-        if (i < 20)
+        if (i >= 20)
           {
           /* kill process hard */
 
