@@ -695,8 +695,9 @@ int send_sisters(
 
   if (LOGLEVEL >= 4)
     {
-    sprintf(log_buffer,"sending command %s (%d)",
+    sprintf(log_buffer,"sending command %s for job %s (%d)",
       PMOMCommand[com],
+      pjob->ji_qs.jobid,
       com);
 
     LOG_EVENT(

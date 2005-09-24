@@ -439,6 +439,8 @@ void req_quejob(
 
   if (pj != NULL) 
     {
+    /* newly queued job already exists */
+
     if (pj->ji_qs.ji_substate == JOB_SUBSTATE_RUNNING) 
       {
       /* FAILURE - job exists and is running */
@@ -478,7 +480,7 @@ void req_quejob(
     /* unlink job from svr_alljobs since it will be placed on newjobs */
 
     delete_link(&pj->ji_alljobs);
-    } 
+    }  /* END if (pj != NULL) */ 
   else 
     {
     /* if not already here, allocate job struct */
@@ -513,7 +515,7 @@ void req_quejob(
 
       return;
       }
-    }
+    }    /* END else (pj != NULL) */
 
 #endif  /* PBS_MOM */
 
@@ -659,7 +661,7 @@ void req_quejob(
 #endif     /* PBS_MOM */
 
     psatl = (svrattrl *)GET_NEXT(psatl->al_link);
-    }
+    }      /* END while (psatl != NULL) */
 
 #ifndef PBS_MOM
 
@@ -909,7 +911,7 @@ void req_quejob(
   pj->ji_wattr[(int)JOB_ATR_substate].at_val.at_long = JOB_SUBSTATE_TRANSIN;
   pj->ji_wattr[(int)JOB_ATR_substate].at_flags |= ATR_VFLAG_SET;
 
-#endif  /* PBS_MOM */
+#endif  /* !PBS_MOM */
 
   /* set remaining job structure elements */
 
@@ -998,7 +1000,7 @@ void req_jobcredential(
 
 void req_jobscript(
 
-  struct batch_request *preq)	/* ptr to the decoded request   */
+  struct batch_request *preq)	/* ptr to the decoded request*/
 
   {
   char *id = "req_jobscript";
@@ -1032,12 +1034,14 @@ void req_jobscript(
     {
     if (errno == 0)
       {
-      sprintf(log_buffer,"job in unexpected state '%s'",
+      sprintf(log_buffer,"job %s in unexpected state '%s'",
+        pj->ji_qs.ji_jobid,
         PJobSubState[pj->ji_qs.ji_substate]);
       }
     else
       {
-      sprintf(log_buffer,"job in unexpected state '%s' (errno=%d - %s)",
+      sprintf(log_buffer,"job %s in unexpected state '%s' (errno=%d - %s)",
+        pj->ji_qs.ji_jobid,
         PJobSubState[pj->ji_qs.ji_substate],
         errno,
         strerror(errno));
@@ -1738,8 +1742,8 @@ void req_commit(
 
 static job *locate_new_job(
 
-  int   sock,
-  char *jobid)  /* I */
+  int   sock,   /* I */
+  char *jobid)  /* I (optional) */
 
   {
   job *pj;
@@ -1761,9 +1765,24 @@ static job *locate_new_job(
           break;
           }
         } 
-      else
+      else if (pj->ji_qs.ji_un.ji_newt.ji_fromsock == -1)
         {
         /* empty job slot located */
+
+        break;
+        }
+#ifdef __TNW
+      else if (pj->ji_qs.ji_substate != JOB_SUBSTATE_TRANSIN) || 
+             ((time_now - pj->ji_wattr[(int)JOB_ATR_mtime].at_val.at_long > 9000))
+        {
+        /* ignore 'stale' recovered job */
+
+        continue;
+        }
+#endif /* __TNW */
+      else
+        {
+        /* matching job slot located */
 
         break;
         }
