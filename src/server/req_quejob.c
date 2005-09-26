@@ -376,6 +376,8 @@ void req_quejob(
             {
             /* FAILURE */
 
+            log_err(errno,id,"job file is corrupt");
+
             req_reject(PBSE_INTERNAL,0,preq,NULL,"job file is corrupt");
 
             return;
@@ -1015,6 +1017,10 @@ void req_jobscript(
   int	 filemode = 0600;
 #endif
 
+#ifdef __TNW
+  int    DoRetry = 1;
+#endif /* __TNW */
+
   errno = 0;
 
   pj = locate_new_job(preq->rq_conn,NULL);
@@ -1068,6 +1074,10 @@ void req_jobscript(
 
   if (svr_authorize_jobreq(preq,pj) == -1) 
     {
+    /* FAILURE */
+
+    log_err(errno,id,"cannot authorize request");
+
     req_reject(PBSE_PERM,0,preq,NULL,NULL);
 
     return;
@@ -1079,7 +1089,7 @@ void req_jobscript(
 
   if (pj->ji_qs.ji_svrflags & JOB_SVFLG_CHKPT) 
     {
-    /* do nothing, ignore script */
+    /* SUCCESS - do nothing, ignore script */
 
     reply_ack(preq);
 
@@ -1092,6 +1102,8 @@ void req_jobscript(
   strcat(namebuf,pj->ji_qs.ji_fileprefix);
   strcat(namebuf,JOB_SCRIPT_SUFFIX);
 
+retry:
+
   if (pj->ji_qs.ji_un.ji_newt.ji_scriptsz == 0) 
     {
     /* NOTE:  fail is job script already exists */
@@ -1103,7 +1115,7 @@ void req_jobscript(
     fds = open(namebuf,O_WRONLY|O_APPEND|O_Sync,filemode);
     }
 
-  if (fds < 0) 
+  if (fds < 0)
     {
     char tmpLine[1024];
 
@@ -1112,12 +1124,27 @@ void req_jobscript(
       errno,
       strerror(errno));
 
+#ifdef __TNW
+
     if (errno == EEXIST)
       {
-      /* is the script stale?  should it be removed? */
+      if (DoRetry == 1)
+        {
+        /* stale script detected - remove it and retry */
 
-      /* NO-OP */
+        remove(namebuf);
+  
+        log_err(errno,id,"duplicate script file located and removed");
+
+        DoRetry = 0;
+
+        goto retry;
+        }
       }
+
+#endif /* __TNW */
+
+    /* FAILURE */
 
     /* NOTE: log_err may modify errno */
 
@@ -1137,9 +1164,15 @@ void req_jobscript(
         preq->rq_ind.rq_jobfile.rq_data, 
         (unsigned)preq->rq_ind.rq_jobfile.rq_size) != preq->rq_ind.rq_jobfile.rq_size) 
     {
+    /* FAILURE */
+
     log_err(errno,id,msg_script_write);
 
-    req_reject(PBSE_SYSTEM,0,preq,NULL,NULL);
+#ifdef PBS_MOM
+    req_reject(PBSE_INTERNAL,0,preq,mom_host,"cannot write job command file");
+#else
+    req_reject(PBSE_INTERNAL,0,preq,NULL,"cannot write job command file");
+#endif /* PBS_MOM */
 
     close(fds);
 
@@ -1150,8 +1183,12 @@ void req_jobscript(
 
   pj->ji_qs.ji_un.ji_newt.ji_scriptsz += preq->rq_ind.rq_jobfile.rq_size;
 
+  /* job has a script file */
+
   pj->ji_qs.ji_svrflags = 
-    (pj->ji_qs.ji_svrflags & ~JOB_SVFLG_CHKPT)|JOB_SVFLG_SCRIPT; /* has a script file */
+    (pj->ji_qs.ji_svrflags & ~JOB_SVFLG_CHKPT)|JOB_SVFLG_SCRIPT; 
+
+  /* SUCCESS */
 
   reply_ack(preq);
 

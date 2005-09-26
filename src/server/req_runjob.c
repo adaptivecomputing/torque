@@ -855,7 +855,7 @@ static void post_sendmom(
 
       break;
 
-    case 1:   /* ??? */
+    case 1:   /* commit failed */
     default:	
 
       {
