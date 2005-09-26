@@ -120,7 +120,8 @@ extern struct batch_request *cpy_stage A_((struct batch_request *,job *,enum job
 void      stream_eof A_((int,u_long,int));
 extern int job_set_wait(attribute *,void *,int);
 extern void       stat_mom_job A_((job *));
-  
+
+extern int LOGLEVEL;  
 
 /* Public Functions in this file */
 

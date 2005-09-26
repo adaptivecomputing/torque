@@ -120,7 +120,7 @@
 
 /* External functions called */
 
-extern void	stat_mom_job A_((job *));
+extern void stat_mom_job A_((job *));
 extern void remove_stagein(job *);
 extern int  job_route A_((job *));
 
@@ -155,8 +155,8 @@ extern char    *pbs_o_host;
 extern pbs_net_t pbs_server_addr;
 extern unsigned int pbs_server_port_dis;
 extern time_t	pbs_tcp_timeout;
-extern int	 resc_access_perm;
-
+extern int	resc_access_perm;
+extern int      LOGLEVEL;
 
 int net_move A_((job *,struct batch_request *));
 
