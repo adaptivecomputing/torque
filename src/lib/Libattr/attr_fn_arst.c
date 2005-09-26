@@ -237,9 +237,9 @@ static int decode_arst_direct(
 int decode_arst(
 
   struct attribute *patr,    /* O (modified) */
-  char             *name,    /* I: attribute name (notused) */
-  char             *rescn,   /* I: resource name (notused) */
-  char             *val)     /* I: attribute value */
+  char             *name,    /* I attribute name (notused) */
+  char             *rescn,   /* I resource name (notused) */
+  char             *val)     /* I attribute value */
 
   {
   int	  rc;
@@ -249,7 +249,7 @@ int decode_arst(
     {
     free_arst(patr);
 
-    patr->at_flags &= ATR_VFLAG_MODIFY;	/* _SET cleared in free_arst */
+    patr->at_flags &= ~ATR_VFLAG_MODIFY;	/* _SET cleared in free_arst */
 
     return(0);
     }

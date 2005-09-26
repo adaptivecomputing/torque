@@ -430,7 +430,9 @@ int recov_attr(
 
     /* read in the attribute chunck (name and encoded value) */
 
-    pal = (svrattrl *)calloc(1,tempal.al_tsize);
+    palsize = tempal.al_tsize;
+
+    pal = (svrattrl *)calloc(1,palsize);
 
     if (pal == NULL)
       {
@@ -438,8 +440,6 @@ int recov_attr(
 
       return(-1);
       }
-
-    palsize = tempal.al_tsize;
 
     *pal = tempal;
 
@@ -498,9 +498,11 @@ int recov_attr(
         {
         log_err(-1,id,"unknown attribute discarded");
 
+        free(pal);
+
         continue;
         }
-      }
+      }    /* END if (index < 0) */
 
     (padef + index)->at_decode(
       pattr + index,
@@ -509,13 +511,12 @@ int recov_attr(
       pal->al_value);
 
     if ((padef + index)->at_action != (int (*)())0)
-      (padef + index)->at_action(pattr+index,parent,ATR_ACTION_RECOV);
+      (padef + index)->at_action(pattr + index,parent,ATR_ACTION_RECOV);
 
     (pattr + index)->at_flags = pal->al_flags & ~ATR_VFLAG_MODIFY;
-    }  /* END if (index < 0) */
 
-  if (palsize)
     free(pal);
+    }  /* END while (1) */
 
   return(0);
   }  /* END recov_attr() */
