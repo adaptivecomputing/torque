@@ -1772,12 +1772,12 @@ static job *locate_new_job(
         break;
         }
 #ifdef __TNW
-      else if (pj->ji_qs.ji_substate != JOB_SUBSTATE_TRANSIN) || 
-             ((time_now - pj->ji_wattr[(int)JOB_ATR_mtime].at_val.at_long > 9000))
+      else if ((pj->ji_qs.ji_substate != JOB_SUBSTATE_TRANSIN) || 
+               (time_now - pj->ji_wattr[(int)JOB_ATR_mtime].at_val.at_long > 9000))
         {
         /* ignore 'stale' recovered job */
 
-        continue;
+        /* NO-OP */
         }
 #endif /* __TNW */
       else
@@ -1786,7 +1786,7 @@ static job *locate_new_job(
 
         break;
         }
-      }
+      }    /* END if ((pj->ji_qs.ji_un.ji_newt.ji_fromsock == -1) || ...) */
 
     pj = (job *)GET_NEXT(pj->ji_alljobs);
     }  /* END while(pj != NULL) */
