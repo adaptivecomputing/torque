@@ -644,7 +644,7 @@ int svr_startjob(
 /* PATH
     svr_startjob()
       svr_strtjob2()
-        send_job()
+        send_job()         - svr_movejob.c
           svr_connect()
           PBSD_queuejob() 
 */
@@ -736,6 +736,15 @@ static void post_sendmom(
   int	 stat;
   job	*jobp = (job *)pwt->wt_parm1;
   struct batch_request *preq = (struct batch_request *)pwt->wt_parm2;
+
+  if (LOGLEVEL >= 6)
+    {
+    log_record(
+      PBSEVENT_JOB,
+      PBS_EVENTCLASS_JOB,
+      jobp->ji_qs.ji_jobid,
+      "entering post_sendmom");
+    }
 
   stat = pwt->wt_aux;
 
@@ -845,6 +854,7 @@ static void post_sendmom(
 
       break;
 
+    case 1:   /* ??? */
     default:	
 
       {

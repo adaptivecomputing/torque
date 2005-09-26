@@ -2923,7 +2923,7 @@ int start_process(
             sjr.sj_code);
 
           break;
-        }  /* END switch(sjr.sj_code) */
+        }  /* END switch (sjr.sj_code) */
  
       sprintf(log_buffer,"task not started, '%s', %s (see syslog)",
         argv[0],

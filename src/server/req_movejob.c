@@ -116,15 +116,20 @@ extern int svr_chkque A_((job *,pbs_queue *,char *,int));
  * req_movejob = move a job to a new destination (local or remote)
  */
 
-void req_movejob(req)
-	struct batch_request	*req;
-{
-	char	*id = "req_movejob";
-	job	*jobp;
+void req_movejob(
 
-	jobp = chk_job_request(req->rq_ind.rq_move.rq_jid, req);
-	if (jobp == NULL) 
-		return;
+  struct batch_request *req)
+
+  {
+  char	*id = "req_movejob";
+  job	*jobp;
+
+  jobp = chk_job_request(req->rq_ind.rq_move.rq_jid,req);
+
+  if (jobp == NULL) 
+    {
+    return;
+    }
 
 	if (jobp->ji_qs.ji_state != JOB_STATE_QUEUED &&
 	    jobp->ji_qs.ji_state != JOB_STATE_HELD &&
@@ -163,8 +168,9 @@ void req_movejob(req)
 				/* post_movejob() when the child completes */
 		break;
 	}
-	return;
-}
+
+  return;
+  }
 
 
 

@@ -576,6 +576,15 @@ int send_job(
     return(-1);
     }
 
+  if (LOGLEVEL >= 6)
+    {
+    log_event(
+      PBSEVENT_JOB,
+      PBS_EVENTCLASS_JOB,
+      jobp->ji_qs.ji_jobid,
+      "forking in send_job");
+    }
+
   pid = fork();
 
   if (pid == -1) 
@@ -601,26 +610,26 @@ int send_job(
 
     ptask = set_task(WORK_Deferred_Child,pid,post_func,jobp);
 
-    if (!ptask) 
+    if (ptask == NULL) 
       {
       log_err(errno,id,msg_err_malloc);
 
       return(-1);
       } 
-    else 
-      {
-      ptask->wt_parm2 = data;
 
-      append_link(
-        &((job *)jobp)->ji_svrtask, 
-        &ptask->wt_linkobj, 
-        ptask);
-      }
+    ptask->wt_parm2 = data;
+
+    append_link(
+      &((job *)jobp)->ji_svrtask, 
+      &ptask->wt_linkobj, 
+      ptask);
 
     /* now can unblock SIGCHLD */
 
     if (sigprocmask(SIG_UNBLOCK,&child_set,NULL) == -1)
       log_err(errno,id,spfail);
+
+    /* SUCCESS */
 
     return(2);
     }  /* END if (pid != 0) */
@@ -721,8 +730,15 @@ int send_job(
       if (con >= 0)
         svr_disconnect(con);
 
+       /* check pbs_errno from previous attempt */
+
       if (should_retry_route(pbs_errno) == -1) 
         {
+        sprintf(log_buffer,"child failed in previous commit request for job %s",
+          jobp->ji_qs.ji_jobid);
+
+        log_err(pbs_errno,id,log_buffer);
+
         exit(1);	/* fatal error, don't retry */
         }
 
@@ -856,7 +872,7 @@ int send_job(
      * safely purge the job
      */
 
-    if (move_type != MOVE_TYPE_Exec)	/* Not if sending to MOM */
+    if (move_type != MOVE_TYPE_Exec)	/* not if sending to MOM */
       job_purge(jobp);
 
     if ((rc = PBSD_commit(con,job_id)) != 0)
@@ -867,23 +883,34 @@ int send_job(
 
       log_err(errno,id,log_buffer);
 
-      /* if failure occurs, pbs_mom should purge job and pbs_server should set job state to idle w/error msg */
+      /* if failure occurs, pbs_mom should purge job and pbs_server should set *
+         job state to idle w/error msg */
 
       if (errno == EINPROGRESS)
         {
         /* request is still being processed */
 
         Timeout = TRUE;
+
+        /* do we need a continue here? */
+
+        sprintf(log_buffer,"child commit request timed-out for job %s",
+          jobp->ji_qs.ji_jobid);
+
+        log_err(errno,id,log_buffer);
         }
       else
         {
-        /* NYI */
+        sprintf(log_buffer,"child failed in commit request for job %s",
+          jobp->ji_qs.ji_jobid);
+
+        log_err(errno,id,log_buffer);
 
         /* FAILURE */
 
         exit(1);
         }
-      }
+      }    /* END if ((rc = PBSD_commit(con,job_id)) != 0) */
 
     svr_disconnect(con);
 
@@ -897,14 +924,24 @@ int send_job(
 
   if (Timeout == TRUE)
     {
-    /* 10 indicates that job migrate timed out, server will mark node down and abort the job */
-    /* see post_sendmom() */
+    /* 10 indicates that job migrate timed out, server will mark node down *
+          and abort the job - see post_sendmom() */
+
+    sprintf(log_buffer,"child timed-out attempting to start job %s",
+      jobp->ji_qs.ji_jobid);
+
+    log_err(pbs_errno,id,log_buffer);
 
     exit(10);
     }
 
   if (should_retry_route(pbs_errno) == -1)
     {
+    sprintf(log_buffer,"child failed and will not retry job %s",
+      jobp->ji_qs.ji_jobid);
+
+    log_err(pbs_errno,id,log_buffer);
+
     exit(1);
     }
 

@@ -206,7 +206,7 @@ int svr_connect(
 
 void svr_disconnect(
 
-  int handle)
+  int handle)  /* I */
 
   {
   int sock;
@@ -236,10 +236,10 @@ void svr_disconnect(
 
     close_conn(connection[handle].ch_socket);
 
-    if (connection[handle].ch_errtxt != (char *)0) 
+    if (connection[handle].ch_errtxt != NULL) 
       {
       free(connection[handle].ch_errtxt);
-      connection[handle].ch_errtxt = (char *)0;
+      connection[handle].ch_errtxt = NULL;
       }
 
     connection[handle].ch_errno = 0;

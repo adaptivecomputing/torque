@@ -1094,6 +1094,8 @@ void req_jobscript(
 
   if (pj->ji_qs.ji_un.ji_newt.ji_scriptsz == 0) 
     {
+    /* NOTE:  fail is job script already exists */
+
     fds = open(namebuf,O_WRONLY|O_CREAT|O_EXCL|O_Sync,filemode);
     } 
   else 
@@ -1105,12 +1107,21 @@ void req_jobscript(
     {
     char tmpLine[1024];
 
-    log_err(errno,id,msg_script_open);
-
     snprintf(tmpLine,sizeof(tmpLine),"cannot open '%s' errno=%d - %s",
       namebuf,
       errno,
       strerror(errno));
+
+    if (errno == EEXIST)
+      {
+      /* is the script stale?  should it be removed? */
+
+      /* NO-OP */
+      }
+
+    /* NOTE: log_err may modify errno */
+
+    log_err(errno,id,msg_script_open);
 
 #ifdef PBS_MOM
     req_reject(PBSE_INTERNAL,0,preq,mom_host,tmpLine);
@@ -1370,6 +1381,8 @@ void req_rdytocommit(
 
   if (pj == NULL) 
     {
+    log_err(errno,"req_rdytocommit","unknown job id");
+
     req_reject(PBSE_UNKJOBID,0,preq,NULL,NULL);
 
     /* FAILURE */
@@ -1454,6 +1467,15 @@ void req_rdytocommit(
     /* FAILURE */
 
     return;
+    }
+
+  if (LOGLEVEL >= 6)
+    {
+    log_record(
+      PBSEVENT_JOB,
+      PBS_EVENTCLASS_JOB,
+      (pj != NULL) ? pj->ji_qs.ji_jobid : "NULL",
+      "ready to commit job completed");
     }
 
   return;
