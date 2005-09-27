@@ -186,7 +186,7 @@ int PBSD_commit(
   PBSD_FreeReply(reply);
 
   return(connection[connect].ch_errno);
-  }
+  }  /* END PBSD_commit() */
 
 
 

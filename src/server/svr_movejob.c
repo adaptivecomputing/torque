@@ -877,34 +877,44 @@ int send_job(
 
     if ((rc = PBSD_commit(con,job_id)) != 0)
       {
+      int errno2;
+
+      /* NOTE:  errno is modified by log_err */
+
+      errno2 = errno;
+
       sprintf(log_buffer,"send_job commit failed, rc=%d (%s)",
         rc,
         (connection[con].ch_errtxt != NULL) ? connection[con].ch_errtxt : "N/A");
 
-      log_err(errno,id,log_buffer);
+      log_err(errno2,id,log_buffer);
 
       /* if failure occurs, pbs_mom should purge job and pbs_server should set *
          job state to idle w/error msg */
 
-      if (errno == EINPROGRESS)
+      if (errno2 == EINPROGRESS)
         {
         /* request is still being processed */
+
+        /* increase tcp_timeout in qmgr? */
 
         Timeout = TRUE;
 
         /* do we need a continue here? */
 
-        sprintf(log_buffer,"child commit request timed-out for job %s",
+        sprintf(log_buffer,"child commit request timed-out for job %s, increase tcp_timeout?",
           jobp->ji_qs.ji_jobid);
 
-        log_err(errno,id,log_buffer);
+        log_err(errno2,id,log_buffer);
+
+        /* do we need a break here? */
         }
       else
         {
         sprintf(log_buffer,"child failed in commit request for job %s",
           jobp->ji_qs.ji_jobid);
 
-        log_err(errno,id,log_buffer);
+        log_err(errno2,id,log_buffer);
 
         /* FAILURE */
 
