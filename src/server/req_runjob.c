@@ -156,6 +156,8 @@ extern const char   *PJobSubState[];
 extern unsigned int  pbs_rm_port;
 extern char         *msg_err_malloc;
 
+long  DispatchTime[20];
+job  *DispatchJob[20];
 
 
 
@@ -757,6 +759,8 @@ static void post_sendmom(
     {
     r = 2;
 
+    /* cannot get child exit status */
+
     sprintf(log_buffer,msg_badexit,
       stat);
 
@@ -769,13 +773,45 @@ static void post_sendmom(
       log_buffer);
     }
 
+  /* maintain local struct to associate job id with dispatch time */
+
+  if (LOGLEVEL >= 1)
+    {
+    int jindex;
+
+    long DispatchTime = time_now - 10000;
+
+    for (jindex = 0;jindex < 20;jindex++)
+      {
+      if (DispatchJob[jindex] == jobp)
+        {
+        DispatchTime = DispatchTime[jindex];
+
+        DispatchJob[jindex] = NULL;
+
+        break;
+        }
+      }
+
+    sprintf(log_buffer,"child reported %s for job after %d seconds, rc=%d",
+      (r == 0) ? "success" : "failure",
+      time_now - J[jindex].DispatchTime,
+      r);
+
+    log_event(
+      PBSEVENT_SYSTEM,
+      PBS_EVENTCLASS_JOB,
+      jobp->ji_qs.ji_jobid,
+      log_buffer);
+    }
+
   switch (r) 
     {
     case 0:  /* send to MOM went ok */
 
       jobp->ji_qs.ji_svrflags &= ~JOB_SVFLG_HOTSTART;
 
-      if (preq)
+      if (preq != NULL)
         reply_ack(preq);
 			
       /* record start time for accounting */

@@ -629,6 +629,25 @@ int send_job(
     if (sigprocmask(SIG_UNBLOCK,&child_set,NULL) == -1)
       log_err(errno,id,spfail);
 
+    if (LOGLEVEL >= 1)
+      {
+      /* record job dispatch time */
+
+      int jindex;
+
+      for (jindex = 0;jindex < 20;jindex++)
+        {
+        if (DispatchJob[jindex] == NULL)
+          {
+          DispatchTime[jindex] = time_now;
+
+          DispatchJob[jindex] = jobp;
+
+          break;
+          }
+        }
+      }
+
     /* SUCCESS */
 
     return(2);
@@ -868,7 +887,7 @@ int send_job(
       }
 		
     /*
-     * We are sure that the other side has everything, so we can
+     * we are sure that the other side has everything, so we can
      * safely purge the job
      */
 
@@ -924,9 +943,11 @@ int send_job(
 
     svr_disconnect(con);
 
+    /* child process is done */
+
     /* SUCCESS */
 
-    exit(0);	/* This child process is all done */
+    exit(0);
     }  /* END for (i) */
 
   if (con >= 0)
