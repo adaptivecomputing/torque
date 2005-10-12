@@ -143,7 +143,7 @@ int svr_connect(
 
   if ((hostaddr == pbs_server_addr) && (port == pbs_server_port_dis))
     {
-    return(PBS_LOCAL_CONNECTION);	/* special value for local */
+    return(PBS_LOCAL_CONNECTION); /* special value for local */
     }
 
   /* obtain the connection to the other server */

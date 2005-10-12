@@ -158,7 +158,7 @@ extern char         *msg_err_malloc;
 
 long  DispatchTime[20];
 job  *DispatchJob[20];
-
+char *DispatchNode[20];
 
 
 
@@ -793,9 +793,10 @@ static void post_sendmom(
         }
       }
 
-    sprintf(log_buffer,"child reported %s for job after %d seconds, rc=%d",
+    sprintf(log_buffer,"child reported %s for job after %d seconds (dest=%s), rc=%d",
       (r == 0) ? "success" : "failure",
       time_now - J[jindex].DispatchTime,
+      (DispatchNode[jindex] != NULL) ? DispatchNode[jindex] : "???",
       r);
 
     log_event(

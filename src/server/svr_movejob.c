@@ -631,6 +631,14 @@ int send_job(
 
     if (LOGLEVEL >= 1)
       {
+      extern long  *DispatchTime;
+      extern job  **DispatchJob;
+      extern char **DispatchNode;
+
+      extern struct pbsnode *PGetNodeFromAddr(pbs_net_t);
+
+      node *NP;
+
       /* record job dispatch time */
 
       int jindex;
@@ -643,6 +651,11 @@ int send_job(
 
           DispatchJob[jindex] = jobp;
 
+          if ((NP = PGetNodeFromAddr(hostaddr)) != NULL)
+            DispatchNode[jindex] = NP->nd_name;
+          else 
+            DispatchNode[jindex] = NULL;
+ 
           break;
           }
         }
