@@ -102,6 +102,7 @@
 #include "log.h"
 #include "queue.h"
 #include "job.h"
+#include "pbs_nodes.h"
 #include "credential.h"
 #include "batch_request.h"
 #include "net_connect.h"
@@ -123,6 +124,7 @@
 extern void stat_mom_job A_((job *));
 extern void remove_stagein(job *);
 extern int  job_route A_((job *));
+extern struct pbsnode *PGetNodeFromAddr(pbs_net_t);
 
 
 
@@ -631,13 +633,13 @@ int send_job(
 
     if (LOGLEVEL >= 1)
       {
-      extern long  *DispatchTime;
-      extern job  **DispatchJob;
-      extern char **DispatchNode;
+      extern long   DispatchTime[];
+      extern job   *DispatchJob[];
+      extern char  *DispatchNode[];
 
-      extern struct pbsnode *PGetNodeFromAddr(pbs_net_t);
+      extern time_t time_now;
 
-      node *NP;
+      struct pbsnode *NP;
 
       /* record job dispatch time */
 

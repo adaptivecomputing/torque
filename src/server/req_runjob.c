@@ -779,13 +779,13 @@ static void post_sendmom(
     {
     int jindex;
 
-    long DispatchTime = time_now - 10000;
+    long DTime = time_now - 10000;
 
     for (jindex = 0;jindex < 20;jindex++)
       {
       if (DispatchJob[jindex] == jobp)
         {
-        DispatchTime = DispatchTime[jindex];
+        DTime = DispatchTime[jindex];
 
         DispatchJob[jindex] = NULL;
 
@@ -795,7 +795,7 @@ static void post_sendmom(
 
     sprintf(log_buffer,"child reported %s for job after %d seconds (dest=%s), rc=%d",
       (r == 0) ? "success" : "failure",
-      time_now - J[jindex].DispatchTime,
+      time_now - DTime,
       (DispatchNode[jindex] != NULL) ? DispatchNode[jindex] : "???",
       r);
 
