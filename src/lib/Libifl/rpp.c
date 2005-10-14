@@ -3626,8 +3626,8 @@ int RPPConfigure(
 int RPPReset(void)
 
   {
-  RPPTimeOut = DEFAULT_RPPTIMEOUT;
-  RPPRetry   = DEFAULT_RPPRETRY;
+  RPPTimeOut = DEFAULT_RPP_TIMEOUT;
+  RPPRetry   = DEFAULT_RPP_RETRY;
   
   return(0);
   }
