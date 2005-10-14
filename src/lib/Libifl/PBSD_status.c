@@ -159,8 +159,13 @@ struct batch_status *PBSD_status_get(
     }
   else if (connection[c].ch_errno != 0)
     {
+    char tmpLine[1024];
+
     if (pbs_errno == 0)
       pbs_errno = PBSE_PROTOCOL;
+
+    sprintf(tmpLine,"PBS API connection failed with pbserrno=%d\n",
+      connection[c].ch_errno);
     }
   else 
     {
