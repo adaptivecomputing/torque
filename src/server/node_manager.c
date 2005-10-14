@@ -773,6 +773,9 @@ void ping_nodes(
 
   static  int            startcount = 0;
 
+  extern RPPConfigure(int,int);
+  extern RPPReset(void);
+
   DBPRT(("%s: entered\n",
     id))
 
@@ -788,6 +791,10 @@ void ping_nodes(
     PBS_EVENTCLASS_REQUEST, 
     id,
     log_buffer);
+
+  /* change RPP to report node state quickly */
+
+  RPPConfigure(3,10);
 
   for (i = startcount;i < svr_totnodes;i++) 
     {
@@ -874,15 +881,17 @@ void ping_nodes(
     np->nd_stream = -1;
     }  /* END for (i) */
 
+  RPPReset();
+
   startcount = i;
 
   /* only ping nodes once (disable new task) */
 
   if (startcount < svr_totnodes)
     {
-    /* continue outstanding pings in 5 seconds */
+    /* continue outstanding pings in 3 seconds */
 
-    set_task(WORK_Timed,time_now + 5,ping_nodes,NULL); 
+    set_task(WORK_Timed,time_now + 3,ping_nodes,NULL); 
     }
 
   return;

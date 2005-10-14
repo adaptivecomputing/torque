@@ -182,16 +182,18 @@ extern int h_errno;
 **	Time in seconds; packet on the master send queue is not sent more
 **	often than every RPP_TIMEOUT seconds.
 */
-#define	RPP_TIMEOUT	4
+#define	DEFAULT_RPP_TIMEOUT  4
 /*
 **	Default number of sendto attempts on a *packet.
 */
-#define	RPP_RETRY	48
+#define	DEFAULT_RPP_RETRY    48
 /*
 **	Max allowed number of outstanding pkts
 */
 #define	RPP_HIGHWATER	60
 
+int RPPTimeOut = DEFAULT_RPP_TIMEOUT;
+int RPPRetry   = DEFAULT_RPP_RETRY;
 
 /* external prototypes */
 
@@ -451,11 +453,6 @@ int		*rpp_fd_array = NULL;
 */
 int		rpp_fd_num = 0;
 
-
-/*
-**	Number of retrys to set into each new stream.
-*/
-int		rpp_retry = RPP_RETRY;
 
 /*
 **	Tables used by the macros I2TOH, HTOI2, I8TOH, HTOI8
@@ -750,14 +747,16 @@ static u_long crctab[] = {
 	0xa2f33668, 0xbcb4666d, 0xb8757bda, 0xb5365d03, 0xb1f740b4
 };
 
+
+
+
 /*
  * Compute a POSIX 1003.2 checksum.  This routine has been broken out so that
  * other programs can use it.  It takes a char pointer and length.
  * It ruturns the crc value for the data in buf.
  */
 
-u_long
-crc(buf, clen)
+u_long crc(buf, clen)
 	u_char	*buf;
 	u_long	clen;
 {
@@ -990,7 +989,7 @@ static void rpp_send_out()
     {
     time_t sitting = curr - pp->time_sent;
 
-    if (sitting < RPP_TIMEOUT)
+    if (sitting < RPPTimeOut)
       continue;
 
     if (pp->time_sent == 0 && pkts_sent >= RPP_HIGHWATER)
@@ -1747,7 +1746,7 @@ static int rpp_recv_pkt(
 		sp = &stream_array[i];
 		sp->state = RPP_OPEN_PEND;
 		sp->fd = fd;
-		sp->retry = rpp_retry;
+		sp->retry = RPPRetry;
 		memcpy(&sp->addr, &addr, sizeof(addr));
 		if ((hp = rpp_get_cname(&addr)) != NULL)
 			rpp_alist(hp, sp);
@@ -2086,7 +2085,9 @@ int rpp_flush(
   if ((sp->pend_head != NULL) || (sp->send_head == NULL)) 
     {
     if (rpp_dopending(index, TRUE))
+      {
       return(-1);
+      }
     }
 
   if (rpp_recv_all() == -1)
@@ -2326,9 +2327,9 @@ int rpp_open(
         id, 
         netaddr(&sp->addr), 
         sp->retry, 
-        rpp_retry))
+        RPPRetry))
 
-      sp->retry = rpp_retry;
+      sp->retry = RPPRetry;
 
       /* SUCCESS */
 
@@ -2362,7 +2363,7 @@ int rpp_open(
   sp->addr.sin_port = htons((unsigned short)port);
   sp->addr.sin_family = hp->h_addrtype;
   sp->fd = rpp_fd;
-  sp->retry = rpp_retry;
+  sp->retry = RPPRetry;
 
   if (hp->h_addr_list[1] == NULL) 
     {
@@ -2587,7 +2588,7 @@ void rpp_shutdown()
       {        
       /* got nothing -- wait a bit */
 
-      tv.tv_sec  = RPP_TIMEOUT;
+      tv.tv_sec  = RPPTimeOut;
       tv.tv_usec = 0;
 
       for (i = 0;i < rpp_fd_num;i++)
@@ -2934,7 +2935,7 @@ static int rpp_okay(
     {
     int i;
 
-    tv.tv_sec  = RPP_TIMEOUT;
+    tv.tv_sec  = RPPTimeOut;
     tv.tv_usec = 0;
 
     for (i = 0;i < rpp_fd_num;i++)
@@ -3601,6 +3602,35 @@ int rpp_putc(
   return(0);
   }
 
+
+
+
+int RPPConfigure(
+
+  int SRPPTimeOut,  /* I */
+  int SRPPRetry)    /* I */
+
+  {
+  if (SRPPTimeOut > 0)
+    RPPTimeOut = SRPPTimeOut;
+
+  if (SRPPRetry > 0)
+    RPPRetry = SRPPRetry;
+
+  return(0);
+  }
+
+
+
+
+int RPPReset(void)
+
+  {
+  RPPTimeOut = DEFAULT_RPPTIMEOUT;
+  RPPRetry   = DEFAULT_RPPRETRY;
+  
+  return(0);
+  }
 
 /* END rpp.c */
 
