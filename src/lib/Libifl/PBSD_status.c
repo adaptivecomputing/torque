@@ -156,9 +156,16 @@ struct batch_status *PBSD_status_get(
 	   (reply->brp_choice != BATCH_REPLY_CHOICE_Status)) 
     {
     pbs_errno = PBSE_PROTOCOL;
-    } 
-  else if (connection[c].ch_errno == 0) 
+    }
+  else if (connection[c].ch_errno != 0)
     {
+    if (pbs_errno == 0)
+      pbs_errno = PBSE_PROTOCOL;
+    }
+  else 
+    {
+    /* query is successful */
+
     /* have zero or more attrl structs to decode here */
 
     stp = reply->brp_un.brp_statc;
@@ -215,12 +222,7 @@ struct batch_status *PBSD_status_get(
 
       rbsp = (struct batch_status *)NULL;
       }
-    }    /* END else if (connection[c].ch_errno == 0) */
-  else
-    {
-    if (pbs_errno == 0)
-      pbs_errno = PBSE_PROTOCOL;
-    }
+    }    /* END else */
 
   PBSD_FreeReply(reply);
 
@@ -229,9 +231,8 @@ struct batch_status *PBSD_status_get(
 
 
 
-/*	
-	Allocate a batch status reply structure
-*/
+
+/* Allocate a batch status reply structure */
 
 static struct batch_status *alloc_bs()
 
