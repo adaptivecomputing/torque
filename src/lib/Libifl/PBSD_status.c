@@ -143,15 +143,17 @@ struct batch_status *PBSD_status_get(
 
   /* read reply from stream into presentation element */
 
+  pbs_errno = 0;
+
   reply = PBSD_rdrpy(c);
 
   if (reply == NULL) 
     {
     pbs_errno = PBSE_PROTOCOL;
     } 
-  else if (reply->brp_choice != BATCH_REPLY_CHOICE_NULL  &&
-	   reply->brp_choice != BATCH_REPLY_CHOICE_Text &&
-	   reply->brp_choice != BATCH_REPLY_CHOICE_Status) 
+  else if ((reply->brp_choice != BATCH_REPLY_CHOICE_NULL) &&
+	   (reply->brp_choice != BATCH_REPLY_CHOICE_Text) &&
+	   (reply->brp_choice != BATCH_REPLY_CHOICE_Status)) 
     {
     pbs_errno = PBSE_PROTOCOL;
     } 
@@ -165,7 +167,7 @@ struct batch_status *PBSD_status_get(
 
     pbs_errno = 0;
 
-    while (stp != (struct brp_cmdstat *)NULL) 
+    while (stp != NULL) 
       {
       if (i++ == 0) 
         {
@@ -197,8 +199,8 @@ struct batch_status *PBSD_status_get(
       bsp->name = strdup(stp->brp_objname);
       bsp->attribs = stp->brp_attrl;
 
-      if (stp->brp_attrl)
-        stp->brp_attrl = 0;
+      if (stp->brp_attrl != NULL)
+        stp->brp_attrl = NULL;
 
       bsp->next = (struct batch_status *)NULL;
 
@@ -214,12 +216,16 @@ struct batch_status *PBSD_status_get(
       rbsp = (struct batch_status *)NULL;
       }
     }    /* END else if (connection[c].ch_errno == 0) */
+  else
+    {
+    if (pbs_errno == 0)
+      pbs_errno = PBSE_PROTOCOL;
+    }
 
   PBSD_FreeReply(reply);
 
   return(rbsp);
   }  /* END PBSD_status_get() */
-
 
 
 

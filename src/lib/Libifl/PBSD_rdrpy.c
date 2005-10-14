@@ -115,15 +115,13 @@ struct batch_reply *PBSD_rdrpy(
     connection[c].ch_errtxt = NULL;
     }
 
-  if ((reply = (struct batch_reply *)malloc(sizeof(struct batch_reply))) == NULL) 
+  if ((reply = (struct batch_reply *)calloc(1,sizeof(struct batch_reply))) == NULL) 
     {
     connection[c].ch_errno = PBSE_SYSTEM;
     pbs_errno = PBSE_SYSTEM;
 
     return(NULL);
     }
-
-  memset(reply,0,sizeof(struct batch_reply));
 
   sock = connection[c].ch_socket;
   DIS_tcp_setup(sock);

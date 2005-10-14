@@ -331,39 +331,39 @@ struct	pending {
 */
 
 struct stream {
-	int			state;		/* state of this end of the */
-						/* connection; RPP_OPEN, etc */
+  int state;		/* state of this end of the */
+			/* connection; RPP_OPEN, etc */
 
-	struct	sockaddr_in	addr;		/* address of the other end; */
-						/* port/family/IPadrs */
+  struct sockaddr_in addr;	/* address of the other end; */
+				/* port/family/IPadrs */
 
-	struct	in_addr		*addr_array;	/* array of alternate network */
-						/* addresses for other end */
-						/* of the connection */
+  struct in_addr *addr_array;	/* array of alternate network */
+				/* addresses for other end */
+				/* of the connection */
 
-	int			fd;		/* must be in rpp_fd_array */
+  int fd;		/* must be in rpp_fd_array */
 
-	int			stream_id;	/* id of other end of the */
-						/* connection; array position */
-						/* of stream struct on the */
-						/* other end */
+  int stream_id;	/* id of other end of the */
+			/* connection; array position */
+			/* of stream struct on the */
+			/* other end */
 
-	int			retry;		/* sendto retry limit */
+  int retry;		/* sendto retry limit */
 
-	int			open_key;	/* unique bit pattern created */
-						/* by the end issuing the */
-						/* rpp_open.  It's the same */
-						/* same for each end of the */
-						/* connecton; used in setting */
-						/* up the stream connection */
+  int open_key;	        /* unique bit pattern created */
+			/* by the end issuing the */
+			/* rpp_open.  It's the same */
+			/* same for each end of the */
+			/* connecton; used in setting */
+			/* up the stream connection */
 
-	int			msg_cnt;	/* size in bytes of current */
-						/* DATA/EOD/GOODBYE message */
+  int msg_cnt;          /* size in bytes of current */
+			/* DATA/EOD/GOODBYE message */
 
-	int			send_sequence;	/* initialized to value of 1 */
-						/* and incremented by 1 for */
-						/* each packet that's added */
-						/* to the master send list */
+  int send_sequence;	/* initialized to value of 1 */
+			/* and incremented by 1 for */
+			/* each packet that's added */
+			/* to the master send list */
 
 	struct	pending		*pend_head;	/* head and tail pointers for */
 	struct	pending		*pend_tail;	/* stream's pend list; see */
@@ -399,7 +399,7 @@ struct stream {
 	int			recv_attempt;	/* number bytes, from start */
 						/* of current message, that */
 						/* have been read */
-};
+  };
 
 /*
 **	Static Variables
@@ -824,24 +824,29 @@ netaddr(ap)
 	return out;
 }
 
+
+
+
 /*
 **	Create a packet of the given type, fill in the sequence and
 **	index number.  If buf is NULL, malloc an area for just
 **	a header.  If buf is not NULL, it should contain space
 **	for len+RPP_PKT_HEADER bytes.
 */
-static
-void
-rpp_form_pkt(index, type, seq, buf, len)
-    int		index;
-    int		type;
-    int		seq;
-    u_char	*buf;
-    int		len;
-{
-	DOID("form_pkt")
-	struct	send_packet	*pktp;
-	struct	stream		*sp;
+
+static void rpp_form_pkt(
+
+  int		index,
+  int		type,
+  int		seq,
+  u_char	*buf,
+  int		len)
+
+  {
+  DOID("form_pkt")
+
+  struct send_packet	*pktp;
+  struct stream		*sp;
 
 	DBPRT((DBTO, "%s: index %d type %d seq %d len %d\n",
 		id, index, type, seq, len))
@@ -1119,7 +1124,7 @@ static int rpp_create_sp()
     i))
 
   return(i);
-  }
+  }  /* END rpp_create_sp() */
 
 
 

@@ -89,10 +89,10 @@
 
 int disrsi_(
 
-  int		stream,
-  int		*negate,
-  unsigned     	*value,
-  unsigned	count)
+  int       stream,
+  int      *negate,
+  unsigned *value,
+  unsigned  count)
 
   {
   int		c;
@@ -117,7 +117,7 @@ int disrsi_(
 
       *negate = c == '-';
 
-      if ((*dis_gets)(stream, dis_buffer, count) != count)
+      if ((*dis_gets)(stream,dis_buffer,count) != count)
         {
         return(DIS_EOD);
         }
@@ -127,7 +127,7 @@ int disrsi_(
         if (count > dis_umaxd)
           goto overflow;
 
-        if (memcmp(dis_buffer, dis_umax, dis_umaxd) > 0)
+        if (memcmp(dis_buffer,dis_umax,dis_umaxd) > 0)
           goto overflow;
         }
 
@@ -137,7 +137,7 @@ int disrsi_(
 
       do 
         {
-        if ((c = *cp++) < '0' || c > '9')
+        if (((c = *cp++) < '0') || (c > '9'))
           {
           return(DIS_NONDIGIT);
           }
@@ -149,9 +149,13 @@ int disrsi_(
 
       return (DIS_SUCCESS);
 
+      break;
+
     case '0':
 
       return (DIS_LEADZRO);
+
+      break;
 
     case '1':
     case '2':
@@ -165,35 +169,74 @@ int disrsi_(
 
       ndigs = c - '0';
 
-		if (count > 1) {
-			if ((*dis_gets)(stream, dis_buffer + 1, count - 1) !=
-								count - 1)
-			        return (DIS_EOD);
-			cp = dis_buffer;
-			if (count >= dis_umaxd) {
-				if (count > dis_umaxd)
-				        break;
-				*cp = c;
-				if (memcmp(dis_buffer, dis_umax, dis_umaxd) > 0)
-				        break;
-			}
-			while (--count) {
-				if ((c = *++cp) < '0' || c > '9')
-				        return (DIS_NONDIGIT);
-				ndigs = 10 * ndigs + c - '0';
-			}
-		}
-		return (disrsi_(stream, negate, value, ndigs));
-	    case -1:
-		return (DIS_EOD);
-	    case -2:
-		return (DIS_EOF);
-	    default:
-		return (DIS_NONDIGIT);
-	}
-	*negate = FALSE;
-    overflow:
-	*value = UINT_MAX;
-	return (DIS_OVERFLOW);
-  }
+      if (count > 1) 
+        {
+        if ((*dis_gets)(stream,dis_buffer + 1,count - 1) != count - 1)
+          {
+          return(DIS_EOD);
+          }
+
+        cp = dis_buffer;
+
+        if (count >= dis_umaxd) 
+          {
+          if (count > dis_umaxd)
+            break;
+
+          *cp = c;
+
+          if (memcmp(dis_buffer,dis_umax,dis_umaxd) > 0)
+            break;
+          }
+
+        while (--count) 
+          {
+          if (((c = *++cp) < '0') || (c > '9'))
+            {
+            return(DIS_NONDIGIT);
+            }
+
+          ndigs = 10 * ndigs + c - '0';
+          }
+        }    /* END if (count > 1) */
+
+      return(disrsi_(stream,negate,value,ndigs));
+
+      /*NOTREACHED*/
+
+      break;
+
+    case -1:
+
+      return(DIS_EOD);
+
+      /*NOTREACHED*/
+
+      break;
+
+    case -2:
+
+      return(DIS_EOF);
+
+      /*NOTREACHED*/
+
+      break;
+
+    default:
+
+      return(DIS_NONDIGIT);
+
+      /*NOTREACHED*/
+
+      break;
+    }
+
+  *negate = FALSE;
+
+overflow:
+
+  *value = UINT_MAX;
+
+  return(DIS_OVERFLOW);
+  }  /* END disrsi_() */
 
