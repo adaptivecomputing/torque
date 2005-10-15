@@ -794,7 +794,7 @@ void ping_nodes(
 
   /* change RPP to report node state quickly */
 
-  RPPConfigure(3,10);
+  RPPConfigure(2,1);
 
   for (i = startcount;i < svr_totnodes;i++) 
     {
