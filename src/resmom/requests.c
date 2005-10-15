@@ -2047,19 +2047,17 @@ static int sys_copy(
       ag0 = "/bin/cp";
       ag1 = "-r";
 
-#ifdef SCP_PATH
       } 
-    else if (((loop % 2) == 1) && (strcmp(SCP_PATH,"") != 0))
-      {	/* remote, try scp */
+    else
+      {
+#ifdef SCP_PATH
       ag0 = SCP_PATH;
       ag1 = "-Br";
-#endif	/* SCP_PATH */
-      } 
-    else 
-      {
+#else /* SCP_PATH */
       ag0 = RCP_PATH;
       ag1 = "-r";
-      }
+#endif	/* SCP_PATH */
+      } 
 
     if (LOGLEVEL >= 3)
       {
