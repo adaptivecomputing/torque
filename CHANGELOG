@@ -1,5 +1,8 @@
 1.2.0p7
 
+  improved start-up to support quick startup with down nodes
+  fixed corrupt job/node/queue API reporting 
+  fixed tracejob for large jobs (Sandia)
   changed qdel to only send one SIGTERM at mom level
   fixed doc build by adding AIX 5 resources docs
   added prerun timeout change (RENTEC)

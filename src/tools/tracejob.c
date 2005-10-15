@@ -297,17 +297,18 @@ int main(
       printf("\nJob: %s\n\n", log_lines[0].name);
     for( i = 0; i < ll_cur_amm; i++ )
     {
-      if( log_lines[i].log_file == 'A' )
+      if (log_lines[i].log_file == 'A')
 	event_type = 0;
       else
         event_type = strtol(log_lines[i].event, &endp, 16);
-      if( !( log_filter & event_type ) && !(log_lines[i].no_print) )
-      {
+
+      if (!( log_filter & event_type) && !(log_lines[i].no_print))
+        {
 	printf("%-20s %-5c", log_lines[i].date, log_lines[i].log_file);
 	line_wrap(log_lines[i].msg, 26, wrap);
+        }
       }
     }
-  }
 
   return(0);
   }
@@ -337,7 +338,7 @@ void parse_log(
 
   {
   struct log_entry tmp;	/* temporary log entry */
-  char buf[4096];	/* buffer to read in from file */
+  char buf[32768];	/* buffer to read in from file */
   char *p;		/* pointer to use for strtok */
   int field_count;	/* which field in log entry */
   int j = 0;
