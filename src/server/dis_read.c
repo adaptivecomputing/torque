@@ -383,7 +383,7 @@ int dis_request_read(
     } 
   else if (rc != PBSE_UNKREQ) 
     {
-    sprintf(log_buffer, "req body bad, dis error %d (%s), type=%s",
+    sprintf(log_buffer,"req body bad, dis error %d (%s), type=%s",
       rc, 
       dis_emsg[rc],
       PBatchReqType[request->rq_type]);

@@ -113,6 +113,8 @@ int disrfst(
 
   {
   int		locret;
+  int           rc;
+
   int		negate;
   unsigned	count;
 
@@ -138,7 +140,16 @@ int disrfst(
       value[count] = '\0';
     }
 
-  locret = (*disr_commit)(stream, locret == DIS_SUCCESS) ?
+/*
+  if (locret == DIS_SUCCESS)
+    rc = (*disr_commit)(stream,TRUE);
+  else
+    rc = (*disr_commit)(stream,FALSE);
+
+  locret = (rc != 0) ? rc : DIS_NOCOMMIT;
+*/
+
+  locret = (*disr_commit)(stream,locret == DIS_SUCCESS) ?
     DIS_NOCOMMIT : 
     locret;
 
