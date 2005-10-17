@@ -100,19 +100,26 @@
 #include "batch_request.h"
 #include "dis.h"
 
-int decode_DIS_ReqExtend(sock, preq)
-	int   sock;
-	struct batch_request *preq;
-{
-	int i;
-	int rc;
+int decode_DIS_ReqExtend(
 
-	i = disrui(sock, &rc);	/* indicates if an extension exists */
+  int                   sock,
+  struct batch_request *preq)
 
-	if (rc == 0) {
-		if (i != 0) {
-			preq->rq_extend = disrst(sock, &rc);
-		}
-	}
-	return (rc);
-}
+  {
+  int i;
+  int rc;
+
+  i = disrui(sock,&rc);	/* indicates if an extension exists */
+
+  if (rc == 0) 
+    {
+    if (i != 0) 
+      {
+      preq->rq_extend = disrst(sock,&rc);
+      }
+    }
+
+  return(rc);
+  }
+
+

@@ -144,10 +144,10 @@ int dis_request_read(
       return(EOF);
       }
 
-    sprintf(log_buffer,"Req Header bad, dis error %d", 
+    sprintf(log_buffer,"req header bad, dis error %d", 
       rc);
 
-    LOG_EVENT(PBSEVENT_DEBUG, PBS_EVENTCLASS_REQUEST,"?",
+    LOG_EVENT(PBSEVENT_DEBUG,PBS_EVENTCLASS_REQUEST,"?",
       log_buffer);
 
     return(PBSE_DISPROTO);
@@ -155,10 +155,27 @@ int dis_request_read(
 
   if (proto_ver != PBS_BATCH_PROT_VER) 
     {
+    sprintf(log_buffer,"conflicting version numbers, %d detected, %d expected",
+      proto_ver,
+      PBS_BATCH_PROT_VER);
+
+    LOG_EVENT(PBSEVENT_DEBUG,PBS_EVENTCLASS_REQUEST,"?",
+      log_buffer);
+
     return(PBSE_DISPROTO);
     }
 
   /* Decode the Request Body based on the type */
+
+  if (LOGLEVEL >= 5)
+    {
+    sprintf(log_buffer,"reading command %d in %s",
+      request->rq_type,
+      id);
+
+    LOG_EVENT(PBSEVENT_DEBUG,PBS_EVENTCLASS_REQUEST,"?",
+      log_buffer);
+    }
 
   switch (request->rq_type) 
     {
@@ -347,7 +364,7 @@ int dis_request_read(
 
     if ((rc = decode_DIS_ReqExtend(sfds,request))) 
       {  
-      sprintf(log_buffer,"Req Extension bad, dis error %d", 
+      sprintf(log_buffer,"req extension bad, dis error %d", 
         rc);
 
       LOG_EVENT(
@@ -361,11 +378,11 @@ int dis_request_read(
     } 
   else if (rc != PBSE_UNKREQ) 
     {
-    sprintf(log_buffer, "Req Body bad, dis error %d, type %d",
+    sprintf(log_buffer, "req body bad, dis error %d, type %d",
       rc, 
       request->rq_type);
 
-    LOG_EVENT(PBSEVENT_DEBUG, PBS_EVENTCLASS_REQUEST, "?", log_buffer);
+    LOG_EVENT(PBSEVENT_DEBUG,PBS_EVENTCLASS_REQUEST,"?",log_buffer);
 
     rc = PBSE_DISPROTO;
     }
@@ -388,7 +405,7 @@ int dis_request_read(
 
 int DIS_reply_read(
 
-  int    sock,
+  int                 sock,
   struct batch_reply *preply)
 
   {
