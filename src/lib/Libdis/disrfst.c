@@ -105,38 +105,49 @@
 #include "dis.h"
 #include "dis_.h"
 
-int disrfst(stream, achars, value)
-    int			stream;
-    size_t		achars;
-    char		*value;
+int disrfst(
+
+  int     stream,
+  size_t  achars,
+  char   *value)
+
+  {
+  int		locret;
+  int		negate;
+  unsigned	count;
+
+  assert(value != NULL);
+  assert(dis_gets != NULL);
+  assert(disr_commit != NULL);
+
+  locret = disrsi_(stream,&negate,&count,1);
+
+  if (locret == DIS_SUCCESS) 
     {
-        int		locret;
-        int		negate;
-        unsigned	count;
-
-	assert(value != NULL);
-	assert(dis_gets != NULL);
-	assert(disr_commit != NULL);
-
-	locret = disrsi_(stream, &negate, &count, 1);
-	if (locret == DIS_SUCCESS) {
-		if (negate)
-		        locret = DIS_BADSIGN;
-		else if (count > achars)
-		        locret = DIS_OVERFLOW;
-		else if ((*dis_gets)(stream, value, (size_t)count) !=
-						(size_t)count)
-		        locret = DIS_PROTO;
+    if (negate)
+      locret = DIS_BADSIGN;
+    else if (count > achars)
+      locret = DIS_OVERFLOW;
+    else if ((*dis_gets)(stream,value,(size_t)count) != (size_t)count)
+      locret = DIS_PROTO;
 #ifndef NDEBUG
-		else if (memchr(value, 0, (size_t)count))
-		        locret = DIS_NULLSTR;
+    else if (memchr(value,0,(size_t)count))
+      locret = DIS_NULLSTR;
 #endif
-		else
-		        value[count] = '\0';
-	}
-	locret = (*disr_commit)(stream, locret == DIS_SUCCESS) ?
-	    DIS_NOCOMMIT : locret;
-	if (locret != DIS_SUCCESS)
-	        *value = '\0';
-	return (locret);
-}
+    else
+      value[count] = '\0';
+    }
+
+  locret = (*disr_commit)(stream, locret == DIS_SUCCESS) ?
+    DIS_NOCOMMIT : 
+    locret;
+
+  if (locret != DIS_SUCCESS)
+    *value = '\0';
+
+  return(locret);
+  }  /* END disrfst() */
+
+
+
+

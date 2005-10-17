@@ -169,11 +169,14 @@ int dis_request_read(
 
   if (LOGLEVEL >= 5)
     {
-    sprintf(log_buffer,"reading command %d in %s",
-      request->rq_type,
-      id);
+    sprintf(log_buffer,"decoding command %s from %s",
+      PBatchReqType[request->rq_type],
+      request->rq_user);
 
-    LOG_EVENT(PBSEVENT_DEBUG,PBS_EVENTCLASS_REQUEST,"?",
+    LOG_EVENT(
+      PBSEVENT_DEBUG,
+      PBS_EVENTCLASS_REQUEST,
+      id,
       log_buffer);
     }
 
@@ -252,7 +255,7 @@ int dis_request_read(
 
     case PBS_BATCH_LocateJob:
 
-      rc = decode_DIS_JobId(sfds, request->rq_ind.rq_locate);
+      rc = decode_DIS_JobId(sfds,request->rq_ind.rq_locate);
 
       break;
 
@@ -266,7 +269,7 @@ int dis_request_read(
     case PBS_BATCH_MoveJob:
     case PBS_BATCH_OrderJob:
 
-      rc = decode_DIS_MoveJob(sfds, request);
+      rc = decode_DIS_MoveJob(sfds,request);
 
       break;
 
@@ -364,8 +367,10 @@ int dis_request_read(
 
     if ((rc = decode_DIS_ReqExtend(sfds,request))) 
       {  
-      sprintf(log_buffer,"req extension bad, dis error %d", 
-        rc);
+      sprintf(log_buffer,"req extension bad, dis error %d (%s), type=%s", 
+        rc,
+        dis_emsg[rc],
+        PBatchReqType[request->rq_type]);
 
       LOG_EVENT(
         PBSEVENT_DEBUG, 
@@ -378,9 +383,10 @@ int dis_request_read(
     } 
   else if (rc != PBSE_UNKREQ) 
     {
-    sprintf(log_buffer, "req body bad, dis error %d, type %d",
+    sprintf(log_buffer, "req body bad, dis error %d (%s), type=%s",
       rc, 
-      request->rq_type);
+      dis_emsg[rc],
+      PBatchReqType[request->rq_type]);
 
     LOG_EVENT(PBSEVENT_DEBUG,PBS_EVENTCLASS_REQUEST,"?",log_buffer);
 

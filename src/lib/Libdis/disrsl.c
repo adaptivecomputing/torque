@@ -109,21 +109,26 @@
 #include "dis_.h"
 #undef disrsl
 
-long disrsl(stream, retval)
-    int			stream;
-    int	        	*retval;
+long disrsl(
+
+  int  stream,
+  int *retval)
+
+  {
+  int		locret;
+  int		negate;
+  long		value;
+  unsigned long	uvalue;
+
+  assert(retval != NULL);
+  assert(disr_commit != NULL);
+
+  value = 0;
+
+  switch (locret = disrsl_(stream,&negate,&uvalue,1)) 
     {
-	int		locret;
-	int		negate;
-	long		value;
-	unsigned long	uvalue;
+    case DIS_SUCCESS:
 
-	assert(retval != NULL);
-	assert(disr_commit != NULL);
-
-	value = 0;
-	switch (locret = disrsl_(stream, &negate, &uvalue, 1)) {
-	    case DIS_SUCCESS:
 		if (negate ? uvalue <= (unsigned long)-(LONG_MIN + 1) + 1 :
 		   uvalue <= LONG_MAX) {
 			value = negate ? -uvalue : uvalue;
@@ -133,7 +138,9 @@ long disrsl(stream, retval)
 	    case DIS_OVERFLOW:
 		value = negate ? LONG_MIN : LONG_MAX;
 	}
-	*retval = ((*disr_commit)(stream, locret == DIS_SUCCESS) < 0) ?
-	       DIS_NOCOMMIT : locret;
-	return (value);
-}
+
+  *retval = ((*disr_commit)(stream, locret == DIS_SUCCESS) < 0) ?
+    DIS_NOCOMMIT : locret;
+
+  return (value);
+  }

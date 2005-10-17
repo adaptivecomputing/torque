@@ -96,18 +96,33 @@
 #include "batch_request.h"
 #include "dis.h"
 
-int decode_DIS_QueueJob(sock, preq)
-	int   sock;
-	struct batch_request *preq;
-{
-	int rc;
+int decode_DIS_QueueJob(
 
-	CLEAR_HEAD(preq->rq_ind.rq_queuejob.rq_attr);
-	rc = disrfst(sock, PBS_MAXSVRJOBID+1, preq->rq_ind.rq_queuejob.rq_jid);
-	if (rc) return rc;
+  int                   sock,
+  struct batch_request *preq)
 
-	rc = disrfst(sock,PBS_MAXSVRJOBID+1,preq->rq_ind.rq_queuejob.rq_destin);
-	if (rc) return rc;
+  {
+  int rc;
 
-	return (decode_DIS_svrattrl(sock, &preq->rq_ind.rq_queuejob.rq_attr));
-}
+  CLEAR_HEAD(preq->rq_ind.rq_queuejob.rq_attr);
+
+  rc = disrfst(sock,PBS_MAXSVRJOBID + 1,preq->rq_ind.rq_queuejob.rq_jid);
+
+  if (rc != 0) 
+    {
+    return(rc);
+    }
+
+  rc = disrfst(sock,PBS_MAXSVRJOBID + 1,preq->rq_ind.rq_queuejob.rq_destin);
+
+  if (rc != 0)  
+    {
+    return(rc);
+    }
+
+  rc = decode_DIS_svrattrl(sock,&preq->rq_ind.rq_queuejob.rq_attr);
+
+  return(rc);
+  }  /* END decode_DIS_QueueJob() */
+
+

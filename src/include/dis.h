@@ -117,7 +117,7 @@
 #define volatile
 #endif
 
-unsigned long disrul A_((int stream, int *retval));
+unsigned long disrul A_((int stream,int *retval));
 
 /*#if UINT_MAX == ULONG_MAX*/
 #if SIZEOF_UNSIGNED == SIZEOF_LONG
@@ -130,29 +130,29 @@ unsigned disrui A_((int stream, int *retval));
 #if SIZEOF_UNSIGNED_SHORT == SIZEOF_UNSIGNED_INT
 #define disrus(strea, retval) (unsigned short)disrui(stream, (retval))
 #else
-unsigned short disrus A_((int stream, int *retval));
+unsigned short disrus A_((int stream,int *retval));
 #endif
 
 /*#if UCHAR_MAX == USHRT_MAX*/
 #if SIZEOF_UNSIGNED_CHAR == SIZEOF_UNSIGNED_SHORT
 #define disruc(stream, retval) (unsigned char)disrus(stream, (retval))
 #else
-unsigned char disruc A_((int stream, int *retval));
+unsigned char disruc A_((int stream,int *retval));
 #endif
 
-long disrsl A_((int stream, int *retval));
+long disrsl A_((int stream,int *retval));
 /*#if INT_MIN == LONG_MIN && INT_MAX == LONG_MAX*/
 #if SIZEOF_INT == SIZEOF_LONG
 #define disrsi(stream, retval) (int)disrsl(stream, (retval))
 #else
-int disrsi A_((int stream, int *retval));
+int disrsi A_((int stream,int *retval));
 #endif
 
 /*#if SHRT_MIN == INT_MIN && SHRT_MAX == INT_MAX*/
 #if SIZEOF_SHORT == SIZEOF_INT
 #define disrss(stream, retval) (short)disrsi(stream, (retval))
 #else
-short disrss A_((int stream, int *retval));
+short disrss A_((int stream,int *retval));
 #endif
 
 /*#if CHAR_MIN == SHRT_MIN && CHAR_MAX == SHRT_MAX*/
