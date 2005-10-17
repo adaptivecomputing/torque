@@ -107,7 +107,7 @@
 extern char	*msg_nosupport;
 extern char     *PBatchReqType[];
 
-
+extern int       LOGLEVEL;
 
 
 /*
