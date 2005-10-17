@@ -237,7 +237,7 @@ int diswl_ A_((int stream, dis_long_double_t value, unsigned int ndigs));
 #if SIZEOF_FLOAT == SIZEOF_DOUBLE
 #define diswf(stream, value) diswl_(stream, (dis_long_double_t)(value), FLT_DIG)
 #else
-int diswf A_((int stream, double value));
+int diswf A_((int stream,double value));
 #endif
 
 extern const char *dis_emsg[];
@@ -251,6 +251,8 @@ extern void DIS_tcp_settimeout A_((long timeout));
 extern int  DIS_tcp_istimeout A_((int fd));
 
 extern int  PConnTimeout(int);
+
+/* NOTE:  increase THE_BUF_SIZE to 131072 for systems > 5k nodes */
 
 #define THE_BUF_SIZE 65536 /* max size of tcp send buffer (must be big enough to contain all job attributes) */
 

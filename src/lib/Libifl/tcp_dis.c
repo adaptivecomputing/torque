@@ -517,22 +517,29 @@ static int tcp_puts(
  * tcp_rcommit - tcp/dis support routine to commit/uncommit read data 
  */
 
-static int tcp_rcommit(fd, commit_flag)
-	int fd;
-	int commit_flag;
-{
-	struct	tcpdisbuf	*tp;
+static int tcp_rcommit(
 
-	tp = &tcparray[fd]->readbuf;
-	if (commit_flag) {
-		/* commit by moving trailing up */
-		tp->tdis_trailp = tp->tdis_leadp;
-	} else {
-		/* uncommit by moving leading back */
-		tp->tdis_leadp = tp->tdis_trailp;
-	}
-	return 0;
-}
+  int fd,
+  int commit_flag)
+
+  {
+  struct tcpdisbuf *tp;
+
+  tp = &tcparray[fd]->readbuf;
+
+  if (commit_flag) 
+    {
+    /* commit by moving trailing up */
+    tp->tdis_trailp = tp->tdis_leadp;
+    } 
+  else 
+    {
+    /* uncommit by moving leading back */
+    tp->tdis_leadp = tp->tdis_trailp;
+    }
+
+  return(0);
+  }
 
 
 
@@ -634,7 +641,7 @@ void DIS_tcp_setup(
         tcparray,
         tcparraymax * sizeof(struct tcp_chan *));
 
-      memset(&tcparray[hold],'\0',(tcparraymax-hold) * sizeof(struct tcp_chan *));
+      memset(&tcparray[hold],'\0',(tcparraymax - hold) * sizeof(struct tcp_chan *));
       }
     }
 
