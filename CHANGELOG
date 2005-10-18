@@ -1,5 +1,7 @@
-1.2.0p7
+2.0.0p0
 
+  torque patches for RCP and resmom (UCHSC)
+  enhanced DIS logging
   improved start-up to support quick startup with down nodes
   fixed corrupt job/node/queue API reporting 
   fixed tracejob for large jobs (Sandia)

@@ -493,9 +493,25 @@ int open_demux(
     switch (errno) 
       {
       case EINTR:
-      case EADDRINUSE:
       case ETIMEDOUT:
+      case ECONNRESET:
+
+        sleep(2);
+
+        continue;
+
+        /*NOTREACHED*/
+
+        break;
+
+      case EADDRINUSE:
       case ECONNREFUSED:
+
+        sprintf(log_buffer,"%s: cannot connect to %s", 
+          id, 
+          netaddr(&remote));
+
+        log_err(errno,id,log_buffer);
 
         sleep(2);
 
@@ -510,7 +526,7 @@ int open_demux(
         /* NO-OP */
 
         break;
-      }  /* END switch(errno) */
+      }  /* END switch (errno) */
 
     break;
     }  /* END for (i) */

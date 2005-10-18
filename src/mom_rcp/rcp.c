@@ -389,60 +389,101 @@ tolocal(argc, argv)
 	}
 }
 
-void
-source(argc, argv)
-	int argc;
-	char *argv[];
-{
-	struct stat stb;
-	static BUF buffer;
-	BUF *bp;
-	off_t i;
-	int amt, fd, haderr, indx, result;
-	char *last, *name, buf[BUFSIZ];
 
-	for (indx = 0; indx < argc; ++indx) {
-                name = argv[indx];
-		if ((fd = open(name, O_RDONLY, 0)) < 0)
-			goto syserr;
-		if (fstat(fd, &stb)) {
-syserr:			run_err("%s: %s", name, strerror(errno));
-			goto next;
-		}
-		switch (stb.st_mode & S_IFMT) {
-		case S_IFREG:
-			break;
-		case S_IFDIR:
-			if (iamrecursive) {
-				rsource(name, &stb);
-				goto next;
-			}
-			/* FALLTHROUGH */
-		default:
-			run_err("%s: not a regular file", name);
-			goto next;
-		}
-		if ((last = strrchr(name, '/')) == NULL)
-			last = name;
-		else
-			++last;
-		if (pflag) {
-			/*
-			 * Make it compatible with possible future
-			 * versions expecting microseconds.
-			 */
-                        (void)sprintf(buf, "T%ld 0 %ld 0\n",
-                            (long)stb.st_mtime, (long)stb.st_atime);
-			(void)write(rem, buf, strlen(buf));
-			if (response() < 0)
-				goto next;
-		}
+
+
+void source(
+
+  int   argc,
+  char *argv[])
+
+  {
+  struct stat stb;
+  static BUF buffer;
+  BUF *bp;
+  off_t i;
+  int amt, fd, haderr, indx, result;
+  char *last, *name, buf[BUFSIZ];
+
+  for (indx = 0;indx < argc;++indx) 
+    {
+    name = argv[indx];
+
+    if ((fd = open(name,O_RDONLY,0)) < 0)
+      goto syserr;
+
+    if (fstat(fd,&stb) != 0) 
+      {
+syserr:			
+      run_err("%s: %s",name,strerror(errno));
+
+      goto next;
+      }
+
+    switch (stb.st_mode & S_IFMT) 
+      {
+      case S_IFREG:
+
+        break;
+
+      case S_IFDIR:
+ 
+        if (iamrecursive) 
+          {
+          rsource(name,&stb);
+
+          goto next;
+          }
+
+        /* FALLTHROUGH */
+
+      default:
+
+        run_err("%s: not a regular file",name);
+
+        goto next;
+      }
+
+    if ((last = strrchr(name, '/')) == NULL)
+      last = name;
+    else
+      ++last;
+
+    if (pflag) 
+      {
+      /* Make it compatible with possible future versions expecting microseconds */
+
+      sprintf(buf,"T%ld 0 %ld 0\n",
+        stb.st_mtime, 
+        (long)stb.st_atime);
+
+      write(rem,buf,strlen(buf));
+
+      if (response() < 0)
+        goto next;
+      }
+
 #define	MODMASK	(S_ISUID|S_ISGID|S_IRWXU|S_IRWXG|S_IRWXO)
-		(void)sprintf(buf, "C%04lo %ld %s\n",
-		    (unsigned long)stb.st_mode & MODMASK, stb.st_size, last);
-		(void)write(rem, buf, strlen(buf));
-		if (response() < 0)
-			goto next;
+
+    /* NOTE:  nothing defined which indicates this is Darwin/powerpc64 etc */
+
+#ifdef __TDARWIN
+    sprintf(buf,"C%04lo %qd %s\n",
+      stb.st_mode & MODMASK, 
+      stb.st_size, 
+      last);
+#else
+    sprintf(buf,"C%04lo %ld %s\n",
+      stb.st_mode & MODMASK, 
+      stb.st_size, 
+      last);
+#endif /* __TDARWIN */
+
+    write(rem,buf,strlen(buf));
+
+    if (response() < 0)
+      goto next;
+
 		if ((bp = allocbuf(&buffer, fd, BUFSIZ)) == NULL) {
 next:			(void)close(fd);
 			continue;

@@ -132,6 +132,11 @@
 #include	<ifaddrs.h>
 #include	<mach/vm_map.h>
 
+/* where to put these defines?? */
+/* #define VM_SWAPUSAGE 0 - no this is only for Tiger!! */
+/* #define HW_MEMSIZE 1 - and this is defined in sysctl.h - so will be defined!! */
+#define TUSEMEMSIZE 1
+
 /*  additional header files required for darwin 8.0.0 */
 #ifdef __TDARWIN_8
 #include 	<mach/mach_host.h>
@@ -1483,29 +1488,75 @@ int kill_task(
   int	i, err;
   int	sesid;
 
-  DBPRT(("%s entered\n",
-    id))
+  sesid = ptask->ti_qs.ti_sid;
 
-	sesid = ptask->ti_qs.ti_sid;
-	if (sesid <= 1)
-		return 0;
+  if (sesid <= 1)
+    {
+    return(0);
+    }
 
-	if ((err = mom_get_sample()) != PBSE_NONE)
-		return 0;
+  DBPRT(("%s sending %d\n", 
+    id, 
+    sig))
 
-	for (i=0; i<nproc; i++) {
-		struct	kinfo_proc	*pp = &proc_tbl[i];
+  if ((err = mom_get_sample()) != PBSE_NONE)
+    {
+    return(0);
+    }
 
-		if (sesid != sess_tbl[i])
-			continue;
+  for (i = 0;i < nproc;i++) 
+    {
+    struct kinfo_proc *pp = &proc_tbl[i];
 
-		DBPRT(("%s: send signal %d to pid %d\n", id,
-				sig, pp->kp_proc.p_pid))
-		(void)kill(pp->kp_proc.p_pid, sig);
-		++ct;
-	}
-	return ct;
-}
+    if (sesid != sess_tbl[i])
+      continue;
+
+    if (sig == SIGKILL)
+      {
+      struct timespec req;
+      int i;
+
+      req.tv_sec = 0;
+      req.tv_nsec = 250000000;
+
+      /* give the process some time to quit gracefully first */
+
+      if (kill(pp->kp_proc.p_pid,SIGTERM) == -1)
+        break;
+ 
+      for (i = 0;i < 20;i++)
+        {
+        if (kill(pp->kp_proc.p_pid,0) == -1)
+          break;
+ 
+        nanosleep(&req,NULL);
+        }  /* END for (i = 0) */
+      }
+ 
+    sprintf(log_buffer,"%s: killing pid %d task %d with sig %d",
+      (char *)__func__,
+      pp->kp_proc.p_pid,
+      ptask->ti_qs.ti_task,
+      sig);
+ 
+    log_record(
+      PBSEVENT_JOB,
+      PBS_EVENTCLASS_JOB,
+      ptask->ti_job->ji_qs.ji_jobid,
+      log_buffer);
+
+    DBPRT(("%s: send signal %d to pid %d\n", 
+      id,
+      sig, 
+      pp->kp_proc.p_pid))
+
+    kill(pp->kp_proc.p_pid,sig);
+
+    ++ct;
+    }
+
+  return(ct);
+  }  /* END kill_task() */
 
 
 
@@ -2178,8 +2229,13 @@ char *sessions(
 
   free(jids);
 
+  if (njids == 0) 
+    {
+    return(NULL);            /* by analogy with linux version */
+    }
+
   return(ret_string);
-  }
+  }  /* END sessions() */
 
 
 
@@ -2190,11 +2246,16 @@ char *nsessions(
   struct rm_attribute *attrib)
 
   {
-	char	*result, *ch;
-	int	num = 0;
+  char *result, *ch;
+  int   num = 0;
 
-	if ((result = sessions(attrib)) == NULL)
-		return result;
+  if ((result = sessions(attrib)) == NULL)
+    { 
+    sprintf(ret_string,"%d", 
+      num); 
+
+    return(ret_string); 
+    }
 
 	for (ch=result; *ch; ch++) {
 		if (*ch == ' ')		/* count blanks */
@@ -2203,6 +2264,9 @@ char *nsessions(
 	sprintf(ret_string, "%d", num);
 	return ret_string;
 }
+
+
+
 
 char	*
 pids(attrib)

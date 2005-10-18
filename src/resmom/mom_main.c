@@ -5190,7 +5190,13 @@ int main(
 
     if (c != 0)
       {
-      log_err(-1,msg_daemonname,"Unable to get my full hostname");
+      char logbuf[1024];
+
+      snprintf(logbuf,1024,"Unable to get my full hostname for %s error %d",
+        mom_host,
+        c);
+
+      log_err(-1,msg_daemonname,logbuf);
 
       return(-1);
       }
