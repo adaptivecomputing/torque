@@ -94,9 +94,9 @@ dis_long_double_t disp10l_(
   int expon)
 
   {
-  int		negate;
-  int		pow2;
-  dis_long_double_t	accum;
+  int                negate;
+  int                pow2;
+  dis_long_double_t  accum;
 
   if (expon == 0)
     {
@@ -140,7 +140,9 @@ dis_long_double_t disp10l_(
         }
 
       if (negate == TRUE)
+        {
         return(1.0L / accum);
+        }
 
       return(accum);
       }
@@ -149,7 +151,9 @@ dis_long_double_t disp10l_(
     } while (pow2++ < dis_lmx10);
 
   if (negate == TRUE)
+    {
     return(0.0L);
+    }
 
   return(HUGE_VAL);
   }  /* END disp10l_ */
