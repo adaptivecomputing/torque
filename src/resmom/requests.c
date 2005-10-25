@@ -2121,11 +2121,7 @@ static int sys_copy(
         sprintf(log_buffer,"can't open %s, error = %d",
           rcperr,errno);
 
-        LOG_EVENT(
-          PBSEVENT_DEBUG, 
-          PBS_EVENTCLASS_FILE,
-          myid, 
-          log_buffer);
+        log_err(errno,myid,log_buffer);
 
         exit(12);
         };
@@ -2148,11 +2144,7 @@ static int sys_copy(
         ag3, 
         errno);
 
-      LOG_EVENT(
-        PBSEVENT_DEBUG, 
-        PBS_EVENTCLASS_FILE,
-        myid,
-        log_buffer);
+      log_err(errno,myid,log_buffer);
 
       exit(13);	/* 13, an unlucky number */
       }
