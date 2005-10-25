@@ -2983,7 +2983,7 @@ void im_request(
         case IM_JOIN_JOB:
 
           /*
-          ** Sender is one of the systerhood saying she
+          ** Sender is one of the sisterhood saying she
           ** got the job structure sent and she accepts it.
           ** I'm mother superior.
           **
