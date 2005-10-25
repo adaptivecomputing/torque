@@ -773,8 +773,8 @@ void ping_nodes(
 
   static  int            startcount = 0;
 
-  extern RPPConfigure(int,int);
-  extern RPPReset(void);
+  extern int RPPConfigure(int,int);
+  extern int RPPReset(void);
 
   DBPRT(("%s: entered\n",
     id))
@@ -794,7 +794,7 @@ void ping_nodes(
 
   /* change RPP to report node state quickly */
 
-  RPPConfigure(2,1);
+  RPPConfigure(2,2); /* (timeout,retry) retry must be at least 2 */
 
   for (i = startcount;i < svr_totnodes;i++) 
     {

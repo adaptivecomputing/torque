@@ -3614,7 +3614,7 @@ int RPPConfigure(
   if (SRPPTimeOut > 0)
     RPPTimeOut = SRPPTimeOut;
 
-  if (SRPPRetry > 0)
+  if (SRPPRetry > 1) /* always need an "extra" retry to invalidate existing conns */
     RPPRetry = SRPPRetry;
 
   return(0);
