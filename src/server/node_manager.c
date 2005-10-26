@@ -706,7 +706,7 @@ void stream_eof(
 
   np = NULL;
 
-  if (stream != 0)
+  if (stream >= 0)
     {
     /* find who the stream belongs to and mark down */
 
@@ -737,7 +737,7 @@ void stream_eof(
 
   /* remove stream from list of valid connections */
 
-  if (stream > 0)
+  if (stream >= 0)
     {
     np->nd_stream = -1;
 
