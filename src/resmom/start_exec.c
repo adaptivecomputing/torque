@@ -1347,7 +1347,7 @@ int TMomFinalizeChild(
 
 #if defined(PENABLE_DYNAMIC_CPUSETS)
 
-  char                  cQueueName[8];  /* Unique CpuSet Name */
+  char                  cQueueName[16];  /* Unique CpuSet Name */
   char                  cPermFile[1024]; /* Unique File Name */
   FILE                  *fp;            /* file pointer into /proc/cpuinfo */
   char                  cBuffer[CBUFFERSIZE + 1];  /* char buffer used for counting procs */
@@ -1356,8 +1356,8 @@ int TMomFinalizeChild(
 
   struct CpuSetMap {
     short CpuId;
-    char  cQueueName[8]; /* Data struct for mapping CpuId to
-                            CpuSets assignments for the machine */
+    char  cQueueName[16]; /* Data struct for mapping CpuId to
+                             CpuSets assignments for the machine */
   } *cpusetMap;
 
   cpuset_NameList_t     *cpusetList;    /* List of all cpusets defined on machine */
@@ -1627,6 +1627,7 @@ int TMomFinalizeChild(
           /* CpuSet Name = cpusetList->list[i] */
 
           strncpy(cpusetMap[cpuList->list[j]].cQueueName,cpusetList->list[i],8);
+          cpusetMap[cpuList->list[j]].cQueueName[8] = '\0';
           }
         }    /* END for (i) */
       }      /* END else */
@@ -1681,7 +1682,10 @@ int TMomFinalizeChild(
     /* Queue Name can only be 3 - 8 chars long */
 
     strncpy(cQueueName,pwdp->pw_name,3);
+    cQueueName[3] = '\0';
+
     strncat(cQueueName,pjob->ji_qs.ji_jobid,5);
+    cQueueName[8] = '\0';
 
     /* Set Memory Affinity */
 
@@ -1714,7 +1718,11 @@ int TMomFinalizeChild(
 
     j = 0;
 
+#ifdef CPUSETS_FIRST_CPU
+    for (i = CPUSETS_FIRST_CPU;i < nCPUS;i++) 
+#else
     for (i = 0;i < nCPUS;i++) 
+#endif
       {
       if (j >= presc->rs_value.at_val.at_long)
         break;
