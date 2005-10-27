@@ -184,7 +184,7 @@ funcs_dis()		/* The equivalent of DIS_tcp_funcs() */
 
 #endif
 
-
+char TRMEMSG[1024];  /* global rm error message */
 
 
 /*
@@ -208,10 +208,8 @@ int openrm(
     {
     if (gotport == 0) 
       {
-
       gotport = get_svrport(PBS_MANAGER_SERVICE_NAME,"tcp",
 	   	PBS_MANAGER_SERVICE_PORT);
-
       }  /* END if (gotport == 0) */
 
     port = gotport;
@@ -235,7 +233,12 @@ int openrm(
       }
     }
 
-  stream = rpp_open(host,port,NULL);
+  if ((stream = rpp_open(host,port,TRMEMsg)) == -1)
+    {
+    pbs_errno = errno;
+
+    return(-1);
+    }
 
 #else /* RPP */
 
@@ -275,9 +278,9 @@ int openrm(
     addr.sin_family = hp->h_addrtype;
     addr.sin_port = htons((unsigned short)port);
 
-    memcpy(&addr.sin_addr, hp->h_addr, hp->h_length);
+    memcpy(&addr.sin_addr,hp->h_addr,hp->h_length);
 
-    if (connect(stream, (struct sockaddr *)&addr,sizeof(addr)) == -1) 
+    if (connect(stream,(struct sockaddr *)&addr,sizeof(addr)) == -1) 
       {
       pbs_errno = errno;
 

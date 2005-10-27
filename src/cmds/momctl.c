@@ -318,9 +318,18 @@ int main(
     {
     if ((sd = openrm(HPtr,MOMPort)) < 0)
       {
-      fprintf(stderr,"cannot connect to MOM on node '%s', rc=%d\n",
+      extern char TRMEMsg[];
+
+      fprintf(stderr,"cannot connect to MOM on node '%s', errno=%d (%s)\n",
         HPtr,
-        sd);
+        pbs_errno,
+        strerror(pbs_errno));
+
+      if (TRMEMsg[0] != '\0')
+        {
+        fprintf(stderr," %s\n",
+          TRMEMsg);
+        }
 
       HPtr = strtok_r(NULL,", \t\n",&HTok);
 
@@ -335,7 +344,7 @@ int main(
         HPtr);
       }
 
-    switch(CmdIndex)
+    switch (CmdIndex)
       {
       case momClear:
 
