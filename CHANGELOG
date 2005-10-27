@@ -1,6 +1,12 @@
+2.0.0p1
+
+  enhanced momctl to diagnose and report on connectivity issues
+  added hostname resolution diagnostics and logging
+  fixed 'first node down' rpp failure (USC)
+  improved qsub response time
+ 
 2.0.0p0
 
-  added hostname resolution diagnostics and logging
   torque patches for RCP and resmom (UCHSC)
   enhanced DIS logging
   improved start-up to support quick startup with down nodes
