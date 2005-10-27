@@ -184,7 +184,7 @@ funcs_dis()		/* The equivalent of DIS_tcp_funcs() */
 
 #endif
 
-char TRMEMSG[1024];  /* global rm error message */
+char TRMEMsg[1024];  /* global rm error message */
 
 
 /*

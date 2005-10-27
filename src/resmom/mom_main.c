@@ -2694,7 +2694,7 @@ int init_server_stream(void)
          default_server_port,
          MOMSendStatFailure)) < 0)
     {
-    if ((Passcount == 0) || (LOGLEVEL >= 6))
+    if ((PassCount == 0) || (LOGLEVEL >= 6))
       {
       if (errno == ENOENT)
         {
@@ -2714,7 +2714,7 @@ int init_server_stream(void)
       log_record(PBSEVENT_SYSTEM,0,id,log_buffer);
       }
 
-    Passcount++;
+    PassCount++;
 
     server_stream = -1;
 

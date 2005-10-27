@@ -1,5 +1,6 @@
 2.0.0p0
 
+  added hostname resolution diagnostics and logging
   torque patches for RCP and resmom (UCHSC)
   enhanced DIS logging
   improved start-up to support quick startup with down nodes
