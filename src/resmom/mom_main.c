@@ -2677,6 +2677,8 @@ int init_server_stream(void)
   static char id[] = "init_server_stream";
   int ServerIndex = 0;
 
+  static PassCount = 0;
+
   if (LOGLEVEL >= 5)
     {
     sprintf(log_buffer,"%s: trying to open %s port %d",
@@ -2692,14 +2694,27 @@ int init_server_stream(void)
          default_server_port,
          MOMSendStatFailure)) < 0)
     {
-    if (LOGLEVEL >= 6)
+    if ((Passcount == 0) || (LOGLEVEL >= 6))
       {
-      sprintf(log_buffer,"%s: cannot open rpp connection, rc=%d",
-        id,
-        server_stream);
+      if (errno == ENOENT)
+        {
+        sprintf(log_buffer,"%s: cannot open rpp connection, errno=%d, %s (check /etc/hosts file?)",
+          id,
+          errno,
+          MOMSendStatFailure);
+        }
+      else
+        {
+        sprintf(log_buffer,"%s: cannot open rpp connection, errno=%d, %s",
+          id,
+          errno,
+          MOMSendStatFailure);
+        }
 
       log_record(PBSEVENT_SYSTEM,0,id,log_buffer);
       }
+
+    Passcount++;
 
     server_stream = -1;
 
@@ -3429,8 +3444,11 @@ int rm_request(
 
             if (MOMSendStatFailure[0] != '\0')
               {
-              sprintf(tmpLine,"WARNING:  could not open connection to server, %s\n",
-                MOMSendStatFailure);
+              sprintf(tmpLine,"WARNING:  could not open connection to server, %s%s\n",
+                MOMSendStatFailure,
+                (strstr(MOMSendStatFailure,"cname") != NULL) ? 
+                  " (check name resolution - /etc/hosts?)" : 
+                  "");
 
               MUStrNCat(&BPtr,&BSpace,tmpLine);
               }

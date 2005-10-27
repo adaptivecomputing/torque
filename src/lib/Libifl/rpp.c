@@ -2406,7 +2406,7 @@ int rpp_open(
   rpp_send_out();
 
   return(stream);
-  }
+  }  /* END rpp_open() */
 
 
 
