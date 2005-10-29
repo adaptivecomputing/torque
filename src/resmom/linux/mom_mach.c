@@ -1367,7 +1367,6 @@ int mom_do_poll(
   job *pjob) /* I */
 
   {
-  char		*id = "mom_do_poll";
   char		*pname;
   resource	*pres;
  
@@ -1468,7 +1467,6 @@ int mom_over_limit(
   job *pjob)
 
   {
-  char		*id = "mom_over_limit";
   char		*pname;
   int		retval;
   unsigned long	value, num;
@@ -1593,7 +1591,6 @@ int mom_set_use(
   job *pjob)
 
   {
-  char			*id = "mom_set_use";
   resource		*pres;
   attribute		*at;
   resource_def		*rd;

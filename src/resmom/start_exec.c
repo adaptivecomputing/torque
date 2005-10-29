@@ -183,8 +183,6 @@ static	char *variables_else[] = {	/* variables to add, value computed */
   "PBS_MOMPORT",
   "PBS_NODEFILE" };
 
-static	char *variables_env[NUM_LCL_ENV_VAR];
-
 static	int num_var_else = sizeof(variables_else) / sizeof(char *);
 
 /* prototypes */
@@ -1201,7 +1199,6 @@ int TMomFinalizeJob2(
   char                  buf[MAXPATHLEN + 2];
   pid_t                 cpid;
   int                   i, j;
-  struct stat           sb;
 
   job                  *pjob;
   task                 *ptask;
@@ -1325,12 +1322,10 @@ int TMomFinalizeChild(
   {
   static char          *id = "TMomFinalizeChild";
 
-  struct sigaction      act;
   char                 *arg[3];
   char                  buf[MAXPATHLEN + 2];
   pid_t                 cpid;
   int                   i, j, vnodenum;
-  attribute             *pattr;
   attribute             *pattri;
   char                  *phost;
   int                   pts;
@@ -1342,8 +1337,6 @@ int TMomFinalizeChild(
   struct array_strings  *vstrs;
 
   struct startjob_rtn   sjr;
-
-  int                   Count;
 
 #if defined(PENABLE_DYNAMIC_CPUSETS)
 

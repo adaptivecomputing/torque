@@ -3886,7 +3886,6 @@ void tm_eof(
   int fd)
 
   {
-  static char id[] = "tm_eof";
 
   job	*pjob;
   task	*ptask;

@@ -1339,7 +1339,6 @@ void mom_deljob(
   job *pjob)  /* I (modified) */
 
   {
-  char *id = "mom_deljob";
 
 #ifdef _CRAY
   /* remove any temporary directories */

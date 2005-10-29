@@ -214,7 +214,7 @@ extern char     ReportMomState[];
 extern unsigned int pe_alarm_time;
 extern time_t   pbs_tcp_timeout;
 
-time_t          LastServerUpdateTime;  /* NOTE: all servers updated together */
+time_t          LastServerUpdateTime = 0;  /* NOTE: all servers updated together */
 
 time_t          MOMStartTime              = 0;
 time_t          MOMLastSendToServerTime[PBS_MAXSERVER];
@@ -419,7 +419,7 @@ int         TMOMScanForStarting(void);
 /* Local private functions */
 
 static char *mk_dirs A_((char *));
-int is_update_stat(int);
+void is_update_stat(int);
 
 
 int MUSNPrintF(
@@ -703,8 +703,6 @@ static char *reqstate(
   struct rm_attribute *attrib)  /* I (ignored) */
 
   {
-  char *id = "reqstate";
-
   static char state[1024];
 
   if ((internal_state & INUSE_DOWN) && (MOMConfigDownOnError != 0))
@@ -1148,9 +1146,33 @@ u_long addclient(
 
 
 
+static u_long setpbsclient(
+
+  char *value)  /* I */
+  
+  {
+  u_long rc;
+
+  if ((value == NULL) || (value[0] == '\0'))
+    {
+    /* FAILURE */
+
+    return(1);
+    }
+
+  rc = addclient(value);
+
+  if (rc != 0)
+    {
+    return(1);
+    }
+
+  return(0);
+  }  /* END setpbsclient() */
 
 
-static u_long setserver(
+
+static u_long setpbsserver(
 
   char *value)  /* I */
   
@@ -1176,6 +1198,8 @@ static u_long setserver(
       return(0);
       }
 
+    /* FIXME: need to also check for duplicate IPs */
+
     if (pbs_servername[index][0] == '\0')
       break;
     }  /* END for (index) */
@@ -1194,7 +1218,7 @@ static u_long setserver(
   rc = addclient(pbs_servername[index]);
 
   return(rc);
-  }  /* END setserver() */
+  }  /* END setpbsserver() */
 
 
 
@@ -1886,10 +1910,9 @@ int read_config(
     char            *name;
     u_long          (*handler)();
     } special[] = {
-      { "clienthost",   setserver },
+      { "pbsclient",    setpbsclient },
       { "configversion",configversion },
       { "cputmult",     cputmult },
-      { "headnode",     setserver },
       { "ideal_load",   setidealload },
       { "logevent",     setlogevent },
       { "loglevel",     setloglevel },
@@ -1899,7 +1922,7 @@ int read_config(
       { "jobstartblocktime", jobstartblocktime },
       { "usecp",        usecp },
       { "wallmult",     wallmult },
-      { "pbsserver",    setserver },
+      { "pbsserver",    setpbsserver },
       { "node_check_script", setnodecheckscript },
       { "node_check_interval", setnodecheckinterval },
       { "timeout",      settimeout },
@@ -2680,7 +2703,7 @@ int init_server_stream(
   {
   static char id[] = "init_server_stream";
 
-  static PassCount = 0;
+  static int PassCount = 0;
 
   if (LOGLEVEL >= 5)
     {
@@ -2706,20 +2729,20 @@ int init_server_stream(
         sprintf(log_buffer,"%s: cannot open rpp connection, errno=%d, %s (check /etc/hosts file?)",
           id,
           errno,
-          MOMSendStatFailure);
+          MOMSendStatFailure[ServerIndex]);
         }
       else
         {
         sprintf(log_buffer,"%s: cannot open rpp connection, errno=%d, %s",
           id,
           errno,
-          MOMSendStatFailure);
+          MOMSendStatFailure[ServerIndex]);
         }
 
       log_record(PBSEVENT_SYSTEM,0,id,log_buffer);
       }
 
-    PassCount++;
+    PassCount = 1;
 
     SStream[ServerIndex] = -1;
 
@@ -2760,9 +2783,9 @@ int init_server_stream(
  **   this information from the server rather than going to each mom.
  */
 
-int is_update_stat(
+void is_update_stat(
 
-  int ServerIndex) /* I */
+  int ServerIndex) /* I: unused */
 
   {
   static char id[] = "is_update_stat";
@@ -2801,53 +2824,81 @@ int is_update_stat(
 
   char  *ptr;
 
-  time(&MOMLastSendToServerTime[ServerIndex]);
-
-#ifndef __TMULTISERVER
-  if (ServerIndex != 0)
-    {
-    /* NOTE:  attempt to support multiple servers per MOM */
-
-    /* NO-OP */
-    }
-#endif /* __TMULTISERVER */
 
   close_io = (void(*) A_((int)))rpp_close;
   flush_io = rpp_flush;
+
+  DIS_rpp_reset();
 
   if (LOGLEVEL >= 6)
     {
     log_record(PBSEVENT_SYSTEM,0,id,"composing status update for server");
     }
 
-  DIS_rpp_reset();
-
-  ret = diswsi(SStream[ServerIndex],IS_PROTOCOL);
-
-  if (ret != DIS_SUCCESS)
+  for (ServerIndex = 0;ServerIndex < PBS_MAXSERVER;ServerIndex++)
     {
-    log_err(ret,id,"cannot specify protocol");
+    if (SStream[ServerIndex] == -1)
+      continue;
+  
+    if (MOMRecvClusterAddrsCount[ServerIndex] == 0)
+      continue;
 
-    goto isdone;
-    }
+    time(&MOMLastSendToServerTime[ServerIndex]);
+  
+  
+    ret = diswsi(SStream[ServerIndex],IS_PROTOCOL);
+  
+    if (ret != DIS_SUCCESS)
+      {
+      sprintf(log_buffer,
+        "cannot specify protocol to %s",
+        pbs_servername[ServerIndex]);
+  
+      log_err(ret,id,log_buffer);
+  
+      rpp_close(SStream[ServerIndex]);
 
-  ret = diswsi(SStream[ServerIndex],IS_PROTOCOL_VER);
+      SStream[ServerIndex] = -1;
 
-  if (ret != DIS_SUCCESS)
-    {
-    log_err(ret,id,"cannot specify protocol version");
+      continue;
+      }
+  
+    ret = diswsi(SStream[ServerIndex],IS_PROTOCOL_VER);
+  
+    if (ret != DIS_SUCCESS)
+      {
+      sprintf(log_buffer,
+        "cannot specify protocol version to %s",
+        pbs_servername[ServerIndex]);
+  
+      log_err(ret,id,log_buffer);
+  
+      rpp_close(SStream[ServerIndex]);
 
-    goto isdone;
-    }
+      SStream[ServerIndex] = -1;
 
-  ret = diswsi(SStream[ServerIndex],IS_STATUS);
+      continue;
+      }
+  
+    ret = diswsi(SStream[ServerIndex],IS_STATUS);
+  
+    if (ret != DIS_SUCCESS)
+      {
+      sprintf(log_buffer,
+        "cannot specify command type to %s",
+        pbs_servername[ServerIndex]);
+  
+      log_err(ret,id,log_buffer);
+  
+      rpp_close(SStream[ServerIndex]);
 
-  if (ret != DIS_SUCCESS)
-    {
-    log_err(ret,id,"cannot specify command type");
+      SStream[ServerIndex] = -1;
 
-    goto isdone;
-    }
+      continue;
+      }
+  
+    } /* END for each server */
+
 
   for (i = 0;stats[i] != NULL;i++) 
     {
@@ -2990,18 +3041,32 @@ int is_update_stat(
       log_record(PBSEVENT_SYSTEM,0,id,log_buffer);
       }
 
-    ret = diswst(SStream[ServerIndex], 
-      buff);
-
-    if (ret != DIS_SUCCESS) 
+    for (ServerIndex = 0;ServerIndex < PBS_MAXSERVER;ServerIndex++)
       {
-      sprintf(log_buffer,"write string failed %s",
-        dis_emsg[ret]);
+      if (SStream[ServerIndex] == -1)
+        continue;
+  
+      if (MOMRecvClusterAddrsCount[ServerIndex] == 0)
+        continue;
 
-      log_err(ret,id,log_buffer);
+      ret = diswst(SStream[ServerIndex], 
+        buff);
 
-      goto isdone;
-      }
+      if (ret != DIS_SUCCESS) 
+        {
+        sprintf(log_buffer,"write string failed %s to %s",
+          dis_emsg[ret],
+          pbs_servername[ServerIndex]);
+  
+        log_err(ret,id,log_buffer);
+  
+        rpp_close(SStream[ServerIndex]);
+  
+        SStream[ServerIndex] = -1;
+
+        continue;
+        }
+      } /* END for each server */
     }    /* END for (i) */
 
   if (LOGLEVEL >= 8)
@@ -3009,35 +3074,40 @@ int is_update_stat(
 
   alarm(0);
 
-  if (flush_io(SStream[ServerIndex]) == -1) 
+  for (ServerIndex = 0;ServerIndex < PBS_MAXSERVER;ServerIndex++)
     {
-    log_err(errno,id,"flush");
 
-    ret = -1;
+    if (SStream[ServerIndex] == -1)
+      continue;
+  
+    if (MOMRecvClusterAddrsCount[ServerIndex] == 0)
+      continue;
 
-    goto isdone;
+    if (flush_io(SStream[ServerIndex]) == -1) 
+      {
+      log_err(errno,id,"flush");
+  
+      rpp_close(SStream[ServerIndex]);
+
+      SStream[ServerIndex] = -1;
+
+      continue;
+      }
+
+    if (LOGLEVEL >= 3)
+      {
+      sprintf(log_buffer,"status update successfully sent to %s",
+        pbs_servername[ServerIndex]);
+  
+      log_record(PBSEVENT_SYSTEM,0,id,log_buffer);
+      }
+
+    /* It would be redundant to send state since it is already in status */
+  
+    ReportMomState[ServerIndex] = 0;
+  
     }
 
-  if (LOGLEVEL >= 3)
-    {
-    log_record(PBSEVENT_SYSTEM,0,id,"status update successfully sent to server");
-    }
-
-  /* It would be redundant to send state since it is already in status */
-
-  ReportMomState[ServerIndex] = 0;
-
-  return(ret);
-
-isdone:
-
-  alarm(0);
-
-  DBPRT(("%s: send error %s\n",
-    id, 
-    dis_emsg[ret]))
-
-  return(ret);
   }  /* END is_update_stat() */
 
 
@@ -3436,7 +3506,7 @@ int rm_request(
 
             if (pbs_servername[0][0] == '\0')
               {
-              sprintf(tmpLine,"WARNING:  server not specified (set $clienthost)\n");
+              sprintf(tmpLine,"WARNING:  server not specified (set $pbsserver)\n");
 
               MUStrNCat(&BPtr,&BSpace,tmpLine);
               }
@@ -5376,7 +5446,7 @@ int main(
 
     end_proc();
 
-    time_now = time((time_t *)0);
+    time_now = time(NULL);
 
 #if IBM_SP2==2
     query_adp();
@@ -5422,7 +5492,8 @@ int main(
 
         MOMSendHelloCount[sindex]++;
 
-        log_record(PBSEVENT_SYSTEM,0,id,"hello sent to server");
+        sprintf(log_buffer,"hello sent to server %s", pbs_servername[sindex]);
+        log_record(PBSEVENT_SYSTEM,0,id,log_buffer);
         }  /* END if (SStream[sindex] == -1) */
 
       TotalClusterAddrsCount += MOMRecvClusterAddrsCount[sindex];
@@ -5434,7 +5505,7 @@ int main(
     if (TotalClusterAddrsCount < 1)
       {
       /* Don't do any other processing until we've re-established
-       * contact with server */
+       * contact with at least one server */
 
       continue;
       }
@@ -5447,16 +5518,10 @@ int main(
       {
       check_state((LastServerUpdateTime == 0));
 
-      for (sindex = 0;sindex < PBS_MAXSERVER;sindex++)
-        {
-        if (SStream[sindex] == -1)
-          continue;
+      is_update_stat(0);
 
-        if (is_update_stat(sindex) == DIS_SUCCESS)
-          {
-          LastServerUpdateTime = time_now;
-          }
-        }
+      LastServerUpdateTime = time_now;
+
       }
 
     /* if needed, update server with my state change */

@@ -136,10 +136,12 @@ extern int LOGLEVEL;
 /* private functions local to this file */
 
 static void close_client A_((int sfds));
-static void free_rescrq A_((struct rq_rescq *));
 static void freebr_manage A_((struct rq_manage *)); 
 static void freebr_cpyfile A_((struct rq_cpyfile *));
 static void close_quejob A_((int sfds));
+#ifndef PBS_MOM
+static void free_rescrq A_((struct rq_rescq *));
+#endif /* PBS_MOM */
 
 /* END private prototypes */
 
@@ -1066,6 +1068,7 @@ static void freebr_cpyfile(
 
 
 
+#ifndef PBS_MOM
 static void free_rescrq(
 
   struct rq_rescq *pq)
@@ -1086,6 +1089,7 @@ static void free_rescrq(
 
   return;
   }  /* END free_rescrq() */
+#endif /* PBS_MOM */
 
 /* END process_requests.c */
 

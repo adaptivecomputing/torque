@@ -165,11 +165,15 @@ extern  char *msg_daemonname;
 
 static job *locate_new_job A_((int sock, char *jobid));
 
+#ifdef PNOT
 static int user_account_verify A_((char *arguser, char* argaccount));
 static char *user_account_default A_((char *arguser));
 static int user_account_read_user A_((char *arguser));
+#endif /* PNOT */
 
+#ifndef PBS_MOM
 static char *pbs_o_que = "PBS_O_QUEUE=";
+#endif
 
 
 
@@ -187,7 +191,6 @@ void req_quejob(
 
   char		 basename[PBS_JOBBASE + 1];
   int		 created_here = 0;
-  int		 i;
   int		 index;
   char		*jid;
   char		 namebuf[MAXPATHLEN + 1];
@@ -198,6 +201,7 @@ void req_quejob(
   int		 sock = preq->rq_conn;
 
 #ifndef PBS_MOM
+  int		 i;
   char		 buf[256];
   int		 fds;
   char		 jidbuf[PBS_MAXSVRJOBID + 1];
@@ -1105,7 +1109,9 @@ void req_jobscript(
   strcat(namebuf,pj->ji_qs.ji_fileprefix);
   strcat(namebuf,JOB_SCRIPT_SUFFIX);
 
+#ifdef __TNW
 retry:
+#endif
 
   if (pj->ji_qs.ji_un.ji_newt.ji_scriptsz == 0) 
     {
@@ -1880,6 +1886,7 @@ struct {
 
 
 
+#ifdef PNOT
 int user_account_verify(
 
   char *arguser, 
@@ -1969,7 +1976,6 @@ user_account_default_done:
 
   return(rc);
   }
-
 
 
 
@@ -2097,6 +2103,7 @@ have_account:
   return(1);
   }  /* END user_account_read_user() */
 
+#endif /* PNOT */
 
 
 /* END req_quejob.c() */

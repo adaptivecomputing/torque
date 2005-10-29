@@ -127,7 +127,6 @@ extern	int		pbs_errno;
 extern	unsigned int	pbs_mom_port;
 extern	unsigned int	pbs_rm_port;
 extern	unsigned int	pbs_tm_port;
-extern	time_t		time_now;
 extern	int		internal_state;
 extern  int             LOGLEVEL;
 extern  char            PBSNodeCheckPath[1024];
@@ -137,6 +136,7 @@ extern  int             MOMRecvHelloCount[];
 extern  int             MOMRecvClusterAddrsCount[];
 extern  time_t          LastServerUpdateTime;
 extern  int             ServerStatUpdateInterval;
+extern  char            pbs_servername[PBS_MAXSERVER][PBS_MAXHOSTNAME + 1];
 
 int			SStream[PBS_MAXSERVER];  /* streams to pbs_server daemons */
                                                  /* initialized in MOMInitialize() */
@@ -448,8 +448,6 @@ void is_request(
   short		port;
   struct	sockaddr_in *addr = NULL;
   void		init_addrs();
-
-  time_t        time_now;
 
   int           ServerIndex;
   int           sindex;
@@ -943,8 +941,9 @@ void state_to_server(
 
     if (LOGLEVEL >= 4)
       {
-      sprintf(log_buffer,"sent updated state 0x%x to server",
-        internal_state);
+      sprintf(log_buffer,"sent updated state 0x%x to server %s",
+        internal_state,
+        pbs_servername[ServerIndex]);
 
       log_record(
         PBSEVENT_ERROR,
@@ -957,11 +956,14 @@ void state_to_server(
     {
     if (LOGLEVEL >= 2)
       {
+      sprintf(log_buffer,"state update to server %s failed",
+        pbs_servername[ServerIndex]);
+
       log_record(
         PBSEVENT_ERROR,
         PBS_EVENTCLASS_JOB,
         id,
-        "server state update failed");
+        log_buffer);
       }
     }
 

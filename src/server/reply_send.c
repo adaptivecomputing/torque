@@ -228,10 +228,10 @@ int reply_send(
 
   {
   int		    rc = 0;
-  static char	   *id = "reply_send";
   int		    sfds = request->rq_conn;		/* socket */
 
 #ifndef PBS_MOM
+  static char	   *id = "reply_send";
   struct work_task *ptask;
 #endif /* PBS_MOM */
 
