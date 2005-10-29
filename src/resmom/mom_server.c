@@ -133,8 +133,8 @@ extern  int             LOGLEVEL;
 extern  char            PBSNodeCheckPath[1024];
 extern  int             PBSNodeCheckInterval;
 extern  char            PBSNodeMsgBuf[1024];
-extern  int             MOMRecvHelloCount;
-extern  int             MOMRecvClusterAddrsCount;
+extern  int             MOMRecvHelloCount[];
+extern  int             MOMRecvClusterAddrsCount[];
 extern  time_t          LastServerUpdateTime;
 extern  int             ServerStatUpdateInterval;
 
@@ -582,9 +582,9 @@ void is_request(
 
         rpp_flush(stream);
 
-        MOMRecvHelloCount++;
+        MOMRecvHelloCount[ServerIndex]++;
 
-        /* FORCE immediate update server */
+        /* FORCE immediate server update */
 
         LastServerUpdateTime = 0;
         }
@@ -635,7 +635,8 @@ void is_request(
       if (ret != DIS_EOD)
         goto err;
 
-      MOMRecvClusterAddrsCount++;
+      if (ServerIndex >= 0)
+        MOMRecvClusterAddrsCount[sindex]++;
 
       /* FORCE immediate update server */
 

@@ -214,17 +214,17 @@ extern char     ReportMomState[];
 extern unsigned int pe_alarm_time;
 extern time_t   pbs_tcp_timeout;
 
-time_t          LastServerUpdateTime = 0;
+time_t          LastServerUpdateTime;  /* NOTE: all servers updated together */
 
 time_t          MOMStartTime              = 0;
-time_t          MOMLastSendToServerTime   = 0;
-time_t          MOMLastRecvFromServerTime = 0;
-char            MOMLastRecvFromServerCmd[MMAX_LINE];
+time_t          MOMLastSendToServerTime[PBS_MAXSERVER];
+time_t          MOMLastRecvFromServerTime[PBS_MAXSERVER];
+char            MOMLastRecvFromServerCmd[PBS_MAXSERVER][MMAX_LINE];
 
-int             MOMRecvHelloCount         = 0;
-int             MOMRecvClusterAddrsCount  = 0;
-int             MOMSendHelloCount         = 0;
-char            MOMSendStatFailure[MMAX_LINE];
+int             MOMRecvHelloCount[PBS_MAXSERVER];
+int             MOMRecvClusterAddrsCount[PBS_MAXSERVER];
+int             MOMSendHelloCount[PBS_MAXSERVER];
+char            MOMSendStatFailure[PBS_MAXSERVER][MMAX_LINE];
 
 char            MOMConfigVersion[64];
 char            MOMUNameMissing[64];            
@@ -2695,7 +2695,7 @@ int init_server_stream(
   if ((SStream[ServerIndex] = rpp_open(
          pbs_servername[ServerIndex],
          default_server_port,
-         MOMSendStatFailure)) < 0)
+         MOMSendStatFailure[ServerIndex])) < 0)
     {
     /* FAILURE */
 
@@ -2801,7 +2801,7 @@ int is_update_stat(
 
   char  *ptr;
 
-  time(&MOMLastSendToServerTime);
+  time(&MOMLastSendToServerTime[ServerIndex]);
 
 #ifndef __TMULTISERVER
   if (ServerIndex != 0)
@@ -3360,9 +3360,76 @@ int rm_request(
               if (pbs_servername[sindex][0] == '\0')
                 break;
 
-              sprintf(tmpLine,"\nServer: %s (%s)\n",
+              sprintf(tmpLine,"Server[%d]: %s (%s)\n",
+                sindex,
                 pbs_servername[sindex],  
                 (SStream[sindex] != -1) ? "connection is active" : "connection is down");
+
+              MUStrNCat(&BPtr,&BSpace,tmpLine);
+
+              if ((MOMRecvHelloCount[sindex] > 0) || 
+                  (MOMRecvClusterAddrsCount[sindex] > 0))
+                {
+                if (verbositylevel >= 1)
+                  {
+                  sprintf(tmpLine,"  Init Msgs Received:     %d hellos/%d cluster-addrs\n",
+                    MOMRecvHelloCount[sindex],
+                    MOMRecvClusterAddrsCount[sindex]);
+
+                  MUStrNCat(&BPtr,&BSpace,tmpLine);
+
+                  sprintf(tmpLine,"  Init Msgs Sent:         %d hellos\n",
+                    MOMSendHelloCount[sindex]);
+
+                  MUStrNCat(&BPtr,&BSpace,tmpLine);
+                  }
+                }
+              else
+                {
+                sprintf(tmpLine,"  WARNING:  no hello/cluster-addrs messages received from server\n");
+
+                MUStrNCat(&BPtr,&BSpace,tmpLine);
+
+                sprintf(tmpLine,"  Init Msgs Sent:         %d hellos\n",
+                  MOMSendHelloCount[sindex]);
+
+                MUStrNCat(&BPtr,&BSpace,tmpLine);
+                }
+
+              if (MOMSendStatFailure[sindex][0] != '\0')
+                {
+                sprintf(tmpLine,"  WARNING:  could not open connection to server, %s%s\n",
+                  MOMSendStatFailure[sindex],
+                  (strstr(MOMSendStatFailure[sindex],"cname") != NULL) ?
+                    " (check name resolution - /etc/hosts?)" :
+                    "");
+
+                MUStrNCat(&BPtr,&BSpace,tmpLine);
+                }
+
+              if (MOMLastRecvFromServerTime[sindex] > 0)
+                {
+                sprintf(tmpLine,"  Last Msg From Server:   %ld seconds (%s)\n",
+                  (long)Now - MOMLastRecvFromServerTime[sindex],
+                  (MOMLastRecvFromServerCmd[sindex][0] != '\0') ?
+                    MOMLastRecvFromServerCmd[sindex] : "N/A");
+                }
+              else
+                {
+                sprintf(tmpLine,"  WARNING:  no messages received from server\n");
+                }
+
+              MUStrNCat(&BPtr,&BSpace,tmpLine);
+
+              if (MOMLastSendToServerTime[sindex] > 0)
+                {
+                sprintf(tmpLine,"  Last Msg To Server:     %ld seconds\n",
+                  (long)Now - MOMLastSendToServerTime[sindex]);
+                }
+              else
+                {
+                sprintf(tmpLine,"  WARNING:  no messages sent to server\n");
+                }
 
               MUStrNCat(&BPtr,&BSpace,tmpLine);
               }  /* END for (sindex) */
@@ -3400,32 +3467,6 @@ int rm_request(
 
             MUStrNCat(&BPtr,&BSpace,tmpLine);
 
-            if (MOMLastRecvFromServerTime > 0)
-              {
-              sprintf(tmpLine,"Last Msg From Server:   %ld seconds (%s)\n",
-                (long)Now - MOMLastRecvFromServerTime,
-                (MOMLastRecvFromServerCmd[0] != '\0') ?
-                 MOMLastRecvFromServerCmd : "N/A");
-              }
-            else
-              {
-              sprintf(tmpLine,"WARNING:  no messages received from server\n");
-              }                   
- 
-            MUStrNCat(&BPtr,&BSpace,tmpLine);
-
-            if (MOMLastSendToServerTime > 0)
-              {
-              sprintf(tmpLine,"Last Msg To Server:     %ld seconds\n",
-                (long)Now - MOMLastSendToServerTime);
-              }
-            else
-              {
-              sprintf(tmpLine,"WARNING:  no messages sent to server\n");
-              }
-
-            MUStrNCat(&BPtr,&BSpace,tmpLine);
-
             if (verbositylevel >= 1)
               {
               sprintf(tmpLine,"Server Update Interval: %d seconds\n",
@@ -3438,45 +3479,6 @@ int rm_request(
               {
               sprintf(tmpLine,"MOM Message:            %s (use 'momctl -q clearmsg' to clear)\n",
                 PBSNodeMsgBuf);
-
-              MUStrNCat(&BPtr,&BSpace,tmpLine);
-              }
-
-            if ((MOMRecvHelloCount > 0) || (MOMRecvClusterAddrsCount > 0))
-              {
-              if (verbositylevel >= 1)
-                {
-                sprintf(tmpLine,"Init Msgs Received:     %d hellos/%d cluster-addrs\n",
-                  MOMRecvHelloCount,
-                  MOMRecvClusterAddrsCount);
-
-                MUStrNCat(&BPtr,&BSpace,tmpLine);
-
-                sprintf(tmpLine,"Init Msgs Sent:         %d hellos\n",
-                  MOMSendHelloCount);
-
-                MUStrNCat(&BPtr,&BSpace,tmpLine);
-                }
-              }
-            else
-              {
-              sprintf(tmpLine,"WARNING:  no hello/cluster-addrs messages received from server\n");
-
-              MUStrNCat(&BPtr,&BSpace,tmpLine);
-
-              sprintf(tmpLine,"Init Msgs Sent:         %d hellos\n",
-                MOMSendHelloCount);
-
-              MUStrNCat(&BPtr,&BSpace,tmpLine);
-              }
-
-            if (MOMSendStatFailure[0] != '\0')
-              {
-              sprintf(tmpLine,"WARNING:  could not open connection to server, %s%s\n",
-                MOMSendStatFailure,
-                (strstr(MOMSendStatFailure,"cname") != NULL) ? 
-                  " (check name resolution - /etc/hosts?)" : 
-                  "");
 
               MUStrNCat(&BPtr,&BSpace,tmpLine);
               }
@@ -3888,6 +3890,7 @@ void do_rpp(
 
       {
       int tmpI;
+      int sindex;
 
       if (LOGLEVEL >= 3)
         {
@@ -3898,11 +3901,17 @@ void do_rpp(
           "got an inter-server request");
         }
 
-      time(&MOMLastRecvFromServerTime);
-
       is_request(stream,version,&tmpI);
 
-      strcpy(MOMLastRecvFromServerCmd,PBSServerCmds[tmpI]);
+      for (sindex = 0;sindex < PBS_MAXSERVER;sindex++)
+        {
+        if (SStream[sindex] == stream)
+          {
+          time(&MOMLastRecvFromServerTime[sindex]);
+
+          strcpy(MOMLastRecvFromServerCmd[sindex],PBSServerCmds[tmpI]);
+          }
+        }
       }  /* END BLOCK */
 
       break;
@@ -4645,6 +4654,7 @@ int main(
   extern int	optind;
 
   int           sindex;  /* server index */
+  int           TotalClusterAddrsCount;
 
 #if MOM_CHECKPOINT == 1
   resource	*prscput;
@@ -5387,6 +5397,8 @@ int main(
 
     /* loop through all entries in ServerName[] array (NYI) */
 
+    TotalClusterAddrsCount = 0;
+
     for (sindex = 0;sindex < PBS_MAXSERVER;sindex++)
       {
       if (pbs_servername[sindex][0] == '\0')
@@ -5394,7 +5406,7 @@ int main(
 
       if (SStream[sindex] == -1)
         {
-        MOMRecvClusterAddrsCount = 0;
+        MOMRecvClusterAddrsCount[sindex] = 0;
 
         /* we're either just starting up, or the server has gone away.
          * Either way, let's be sure to say hello */
@@ -5408,17 +5420,24 @@ int main(
 
         rpp_flush(SStream[sindex]);
 
-        MOMSendHelloCount++;
+        MOMSendHelloCount[sindex]++;
 
         log_record(PBSEVENT_SYSTEM,0,id,"hello sent to server");
         }  /* END if (SStream[sindex] == -1) */
+
+      TotalClusterAddrsCount += MOMRecvClusterAddrsCount[sindex];
       }    /* END for (sindex) */
 
     /* Don't do any other processing until we've re-established
      * contact with server */
 
-    if (MOMRecvClusterAddrsCount < 1)
+    if (TotalClusterAddrsCount < 1)
+      {
+      /* Don't do any other processing until we've re-established
+       * contact with server */
+
       continue;
+      }
 
     /*
      *  Update the server on the status of this mom.
