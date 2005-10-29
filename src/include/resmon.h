@@ -108,7 +108,8 @@ struct	config {
 #define RM_RSP_OK	100
 #define RM_RSP_ERROR	999
 
-#define UPDATE_MOM_STATE 0x8000
+#define PBS_MAXSERVER   4
+
 
 
 /*

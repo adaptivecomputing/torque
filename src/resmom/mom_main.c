@@ -150,7 +150,6 @@
 #define CHECK_POLL_TIME     45
 #define DEFAULT_SERVER_STAT_UPDATES 45
 
-#define PBS_MAXSERVER       4
 #define PMAX_PORT           32000
 
 /* Global Data Items */
@@ -5383,7 +5382,7 @@ int main(
 
     /* loop through all entries in ServerName[] array (NYI) */
 
-    for (sindex = 0;sindex < MMAX_SERVER;sindex++)
+    for (sindex = 0;sindex < PBS_MAXSERVER;sindex++)
       {
       if (pbs_servername[sindex][0] == '\0')
         break;
@@ -5441,7 +5440,7 @@ int main(
 
     for (sindex = 0;sindex < PBS_MAXSERVER;sindex++)
       {
-      if (ReportMOMState[sindex] != 0)
+      if (ReportMomState[sindex] != 0)
         state_to_server(sindex,0);
       }
 

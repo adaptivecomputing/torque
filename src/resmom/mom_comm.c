@@ -116,6 +116,7 @@
 #include	"dis_init.h"
 #include        "mom_func.h"
 #include        "batch_request.h"
+#include        "resmon.h"
 #include        "mcom.h"
 
 

@@ -155,7 +155,7 @@ extern int   conn_qsub A_((char *,unsigned int));
 extern int   run_pelog A_((int, char *,job *,int));
 extern int   is_joined A_((job *));
 extern void  check_busy A_((double));
-extern void  state_to_server A_((int));
+extern void  state_to_server A_((int,int));
 extern void end_proc(void);
 extern int message_job(job *,enum job_file,char *);
 extern void term_job(job *);
