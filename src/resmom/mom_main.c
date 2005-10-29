@@ -3348,16 +3348,21 @@ int rm_request(
             BPtr = output;
             BSpace = sizeof(output);
 
+            sprintf(tmpLine,"\nHost: %s/%s   Version: %s\n",
+              mom_short_name,
+              mom_host,
+              PBS_VERSION);
+
+            MUStrNCat(&BPtr,&BSpace,tmpLine);
+
             for (sindex = 0;sindex < PBS_MAXSERVER;sindex++)
               {
               if (pbs_servername[sindex][0] == '\0')
                 break;
 
-              sprintf(tmpLine,"\nHost: %s/%s   Server: %s   Version: %s\n",
-                mom_short_name,
-                mom_host,
+              sprintf(tmpLine,"\nServer: %s (%s)\n",
                 pbs_servername[sindex],  
-                PBS_VERSION);
+                (SStream[sindex] != -1) ? "connection is active" : "connection is down");
 
               MUStrNCat(&BPtr,&BSpace,tmpLine);
               }  /* END for (sindex) */
