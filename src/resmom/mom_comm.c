@@ -134,7 +134,8 @@ extern	list_head	svr_alljobs;	/* all jobs under MOM's control */
 extern	int		termin_child;
 extern	time_t		time_now;
 extern	void           *okclients;	/* accept connections from */
-extern	int		server_stream;
+extern	int		SStream[];
+extern  int             SIndex;         /* master server index */
 extern  int             port_care;
 extern  char           *path_prologp;
 extern  char           *path_prologuserp;
@@ -1198,8 +1199,8 @@ void term_job(
 
 void im_eof(
 
-  int stream,
-  int ret)
+  int stream,  /* I */
+  int ret)     /* I */
 
   {
   static char           id[] = "im_eof";
@@ -1207,6 +1208,7 @@ void im_eof(
   job                  *pjob;
   hnodent              *np;
   struct sockaddr_in   *addr;
+  int                   sindex;
 
   addr = rpp_getaddr(stream);
 
@@ -1222,12 +1224,17 @@ void im_eof(
 
   rpp_close(stream);
 
-  if (stream == server_stream) 
+  for (sindex = 0;sindex < PBS_MAXSERVER;sindex++)
     {
-    server_stream = -1;
+    if (stream == SStream[sindex]) 
+      {
+      /* stream to close is server stream */
 
-    return;
-    }
+      SStream[sindex] = -1;
+
+      return;
+      }
+    }    /* END for (sindex) */
 
   /*
   ** Search though all the jobs looking for this stream.
@@ -1235,7 +1242,9 @@ void im_eof(
   ** from the "dead" stream and do something with them.
   */
 
-  for (pjob = (job *)GET_NEXT(svr_alljobs);pjob != NULL;pjob = (job *)GET_NEXT(pjob->ji_alljobs)) 
+  for (pjob = (job *)GET_NEXT(svr_alljobs);
+       pjob != NULL;
+       pjob = (job *)GET_NEXT(pjob->ji_alljobs)) 
     {
     for (num = 0,np = pjob->ji_hosts;num<pjob->ji_numnodes;num++,np++) 
       {
@@ -1247,7 +1256,7 @@ void im_eof(
 
         break;
         }
-      }
+      }  /* END for (num) */
 
     if (num < pjob->ji_numnodes)	/* found it */
       break;

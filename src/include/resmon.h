@@ -110,12 +110,14 @@ struct	config {
 
 #define UPDATE_MOM_STATE 0x8000
 
+
 /*
 ** Macros for fast min/max.
 */
 #ifndef MIN
 #define MIN(a,b) (((a)<(b))?(a):(b))
-#endif
+#endif /* !MIN */
+
 #ifndef MAX
 #define MAX(a,b) (((a)>(b))?(a):(b))
 #endif

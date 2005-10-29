@@ -293,6 +293,11 @@ ac_help="$ac_help
                           but may lead to server delays in larger systems. 
                           filesync is enabled by default"
 
+ac_help="$ac_help
+
+  --enable-multiserver    enable multiple server daemons to communicate with
+                          each mom. multiserver is disabled by default"
+
 # Initialize some variables set by options.
 # The variables have the same names as the options, with
 # dashes changed to underlines.
@@ -1691,6 +1696,26 @@ EOF
 
 fi
 
+# Check whether --enable-multiserver was given.
+if test "${enable-multiserver+set}" = set; then
+  disableval="$enable_multiserver"
+  if test "${enable_multiserver}" = "yes" ; then
+    cat >> confdefs.h <<\EOF
+#define TENABLEMULTISERVER 1
+EOF
+
+else
+    cat >> confdefs.h <<\EOF
+#define TENABLEMULTISERVER 0
+EOF
+
+fi
+else
+  cat >> confdefs.h <<\EOF
+#define TENABLEMULTISERVER 0
+EOF
+
+fi
 
 # Check whether --maildomain was given.
 if test "${maildomain+set}" = set; then

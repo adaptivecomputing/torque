@@ -1,5 +1,6 @@
 2.0.0p1
 
+  Altix cpuset enhancements (CSIRO)
   enhanced momctl to diagnose and report on connectivity issues
   added hostname resolution diagnostics and logging
   fixed 'first node down' rpp failure (USC)

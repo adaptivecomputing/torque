@@ -138,9 +138,13 @@ extern  int             MOMRecvClusterAddrsCount;
 extern  time_t          LastServerUpdateTime;
 extern  int             ServerStatUpdateInterval;
 
-int			server_stream = -1;	/* XXX */
+int			SStream[PBS_MAXSERVER];  /* streams to pbs_server daemons */
+                                                 /* initialized in MOMInitialize() */
+int                     SIndex;                  /* master server index */
 
-void state_to_server A_((int));
+char                    ReportMomState[PBS_MAXSERVER];
+
+void state_to_server A_((int,int));
 
 extern void DIS_rpp_reset A_((void));
 
@@ -447,6 +451,9 @@ void is_request(
 
   time_t        time_now;
 
+  int           ServerIndex;
+  int           sindex;
+
   if (cmdp != NULL)
     *cmdp = 0;
 
@@ -476,11 +483,23 @@ void is_request(
     }
 
   /* check that machine is okay to be a server */
-  /* If the stream is the server_stream we already opened, then it's fine  */
+  /* If the stream is the SStream we already opened, then it's fine  */
 
   addr = rpp_getaddr(stream);
 
-  if (stream != server_stream)
+  ServerIndex = -1;
+
+  for (sindex = 0;sindex < PBS_MAXSERVER;sindex++)
+    {
+    if (stream == SStream[sindex])
+      {
+      ServerIndex = sindex;
+
+      break;
+      }
+    }    /* END for (sindex) */
+
+  if (ServerIndex == -1)
     {
     port = ntohs((unsigned short)addr->sin_port);
 
@@ -504,7 +523,7 @@ void is_request(
 
       return;
       }
-    }    /* END if (stream != server_stream) */
+    }    /* END if (ServerIndex == -1) */
 
   command = disrsi(stream,&ret);
 
@@ -538,7 +557,13 @@ void is_request(
 
       if (internal_state & INUSE_DOWN) 
         {
-        state_to_server(1);
+        int sindex;
+
+        for (sindex = 0;sindex < PBS_MAXSERVER;sindex++)
+          {
+          if (SStream[sindex] != -1)
+            state_to_server(sindex,1);
+          }
         }
 
       break;
@@ -549,17 +574,20 @@ void is_request(
         id, 
         internal_state))
 
-      server_stream = stream;		/* save stream to server XXX */
+      if (ServerIndex >= 0)
+        {
+        SStream[ServerIndex] = stream;	/* save stream to server */
 
-      is_compose(stream,IS_HELLO);
+        is_compose(stream,IS_HELLO);
 
-      rpp_flush(stream);
+        rpp_flush(stream);
 
-      MOMRecvHelloCount++;
+        MOMRecvHelloCount++;
 
-      /* FORCE immediate update server */
+        /* FORCE immediate update server */
 
-      LastServerUpdateTime = 0;
+        LastServerUpdateTime = 0;
+        }
 
       break;
 
@@ -658,22 +686,40 @@ err:
 
 void check_busy(
 
-  double mla)
+  double mla) /* I */
 
   {
   extern int   internal_state;
   extern float ideal_load_val;
   extern float max_load_val;
 
+  int sindex;
+
   if ((mla >= max_load_val) && 
      ((internal_state & INUSE_BUSY) == 0))
     {
-    internal_state |= (INUSE_BUSY | UPDATE_MOM_STATE);
+    /* node transitioned from free to busy, report state */
+
+    internal_state |= INUSE_BUSY;
+
+    for (sindex = 0;sindex < PBS_MAXSERVER;sindex++)
+      {
+      if (SStream[sindex] != -1)
+        ReportMomState[sindex] = 1;
+      }
     }
   else if ((mla < ideal_load_val) && 
           ((internal_state & INUSE_BUSY) != 0))
     {
-    internal_state = (internal_state & ~INUSE_BUSY) | UPDATE_MOM_STATE;
+    /* node transitioned from busy to free, report state */
+
+    internal_state = (internal_state & ~INUSE_BUSY);
+
+    for (sindex = 0;sindex < PBS_MAXSERVER;sindex++)
+      {
+      if (SStream[sindex] != -1)
+        ReportMomState[sindex] = 1;
+      }
     }
 
   return;
@@ -854,42 +900,45 @@ void check_state(
 
 
 /*
- * state_to_server() - if UPDATE_MOM_STATE is set, send state message to
+ * state_to_server() - if ReportMomState is set, send state message to
  *	the server.
  */
 
 void state_to_server(
 
-  int force)  /* I (boolean) */
+  int ServerIndex,  /* I */
+  int force)        /* I (boolean) */
 
   {
   char *id = "state_to_server";
 
-  if (!force && !(internal_state & UPDATE_MOM_STATE)) 
+  if ((force == 0) && (ReportMomState[ServerIndex] == 0))
     {
+    /* NO-OP */
+
     return;
     }
 
-  if (server_stream < 0)
+  if (SStream[ServerIndex] < 0)
     {
     return;
     }
  
-  if (is_compose(server_stream,IS_UPDATE) != DIS_SUCCESS) 
+  if (is_compose(SStream[ServerIndex],IS_UPDATE) != DIS_SUCCESS) 
     {
     return;		
     } 
 
-  if (diswui(server_stream,internal_state & ~UPDATE_MOM_STATE) != DIS_SUCCESS) 
+  if (diswui(SStream[ServerIndex],internal_state) != DIS_SUCCESS) 
     {
     return;
     }
 
-  if (rpp_flush(server_stream) == 0)
+  if (rpp_flush(SStream[ServerIndex]) == 0)
     {
-    /* send successful, unset UPDATE_MOM_STATE */
+    /* send successful, unset ReportMomState */
 
-    internal_state &= ~UPDATE_MOM_STATE;
+    ReportMomState[ServerIndex] = 0;
 
     if (LOGLEVEL >= 4)
       {
