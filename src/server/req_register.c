@@ -530,6 +530,9 @@ static void post_doq(
 
   char *msg;
   job  *pjob;
+  attribute       *pattr;
+  struct depend     *pdp;
+  struct depend_job *pdjb;
 
   if (preq->rq_reply.brp_code) 
     {
@@ -549,7 +552,27 @@ static void post_doq(
       }
 
     if (pjob != NULL)
-      job_abt(&pjob,log_buffer);
+      {
+      strcat(log_buffer, "\n");
+      strcat(log_buffer, "Job held for unknown job dep, use 'qrls' to release");
+
+      svr_mailowner(pjob,MAIL_ABORT,MAIL_FORCE,log_buffer);
+
+      pattr = &pjob->ji_wattr[(int)JOB_ATR_depend];
+
+      if (((pdp = find_depend(preq->rq_ind.rq_register.rq_dependtype,pattr)) != 0) &&
+          ((pdjb = find_dependjob(pdp,preq->rq_ind.rq_register.rq_parent)) != 0))
+        {
+        del_depend_job(pdjb);
+
+        pjob->ji_wattr[(int)JOB_ATR_hold].at_val.at_long |= HOLD_u;
+        pjob->ji_wattr[(int)JOB_ATR_hold].at_flags |= ATR_VFLAG_SET;
+        pjob->ji_modified = 1;
+
+        set_depend_hold(pjob,pattr);
+
+        }
+      }
     }
 
   release_req(pwt);

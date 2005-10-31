@@ -1584,8 +1584,11 @@ case "${SCP_PATH}" in
   *)     cat >> confdefs.h <<EOF
 #define SCP_PATH "${SCP_PATH}"
 EOF
+MOM_RCP=""
  ;;
 esac
+else
+MOM_RCP=mom_rcp
 fi
 
 
@@ -4281,6 +4284,7 @@ s%@X11INC@%$X11INC%g
 s%@X11LIB@%$X11LIB%g
 s%@SCHD_CODE_SUBDIR@%$SCHD_CODE_SUBDIR%g
 s%@SCP_PATH@%$SCP_PATH%g
+s%@MOM_RCP@%$MOM_RCP%g
 s%@PBSPOE@%$PBSPOE%g
 s%@PBSPOEO@%$PBSPOEO%g
 s%@EXTRA_QSTAT_LIBS@%$EXTRA_QSTAT_LIBS%g

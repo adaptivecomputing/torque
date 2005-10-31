@@ -563,6 +563,21 @@ int run_pelog(
       }  /* END if (r != NULL) */
     }    /* END BLOCK */
 
+    /* Set PBS_SCHED_HINT */
+    {
+      char *envname = "PBS_SCHED_HINT";
+      char *envval;
+      char *envstr;
+      extern char *__get_variable(job *,char *);
+  
+      if ((envval = __get_variable(pjob,envname)) != NULL)
+        {
+        envstr = malloc((strlen(envname) + strlen(envval) + 2) * sizeof(char));
+
+        sprintf(envstr,"%s=%s",envname,envval);
+        putenv(envstr);
+        }
+    }
     execv(pelog,arg);
 
     sprintf(log_buffer,"execv of %s failed: %s\n",

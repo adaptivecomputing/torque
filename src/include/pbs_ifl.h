@@ -221,6 +221,7 @@
 #define ATTR_polljobs    "poll_jobs"
 #define ATTR_downonerror "down_on_error"
 #define ATTR_jobnanny    "job_nanny"
+#define ATTR_momjobsync  "mom_job_sync"
 
 
 /* additional node "attributes" names */

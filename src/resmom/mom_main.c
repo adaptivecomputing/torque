@@ -637,6 +637,50 @@ static char *reqmsg(
   }  /* END reqmsg() */
 
 
+static char *getjoblist(
+
+  struct rm_attribute *attrib)
+
+  {
+  char  *id = "getjoblist";
+  static char *list=NULL;
+  static int listlen=0;
+  job *pjob;
+  int firstjob=1;
+
+  if (list == NULL)
+    {
+    list=calloc(BUFSIZ+50,sizeof(char));
+
+    listlen=BUFSIZ;
+    }
+
+  *list='\0'; /* reset the list */
+
+  if ((pjob = (job *)GET_NEXT(svr_alljobs)) == NULL)
+    {
+    return(NULL);
+    }
+  else
+    {
+    for (;pjob != NULL;pjob = (job *)GET_NEXT(pjob->ji_alljobs))
+      {
+      if (!firstjob)
+        strcat(list," ");
+      strcat(list,pjob->ji_qs.ji_jobid);
+      if (strlen(list) >= listlen)
+        {
+        listlen+=BUFSIZ;
+        list=realloc(list,listlen);
+        }
+      firstjob=0;
+      }
+    }
+
+  return (list);
+}
+
+
 
 
 static char *reqgres(
@@ -816,6 +860,7 @@ struct	config	common_config[] = {
   { "message",   {reqmsg} },
   { "gres",      {reqgres} },
   { "state",     {reqstate} },
+  { "jobs",      {getjoblist} },
   { NULL,        {nullproc} } };
 
 
@@ -2808,6 +2853,7 @@ void is_update_stat(
     "netload",
     "size",
     "state",
+    "jobs",
     NULL };
 
   char   cp[1024];

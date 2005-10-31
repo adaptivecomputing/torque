@@ -93,13 +93,14 @@
 #include	"portability.h"
 #include	"libpbs.h"
 #include	"server_limits.h"
-#include 	"svrfunc.h"
 #include	"list_link.h"
 #include	"attribute.h"
 #include	"resource.h"
 #include	"server.h"
 #include	"net_connect.h"
+#include	"batch_request.h"
 #include	"work_task.h"
+#include 	"svrfunc.h"
 #include	"job.h"
 #include	"log.h"
 #include	"pbs_nodes.h"
@@ -141,6 +142,8 @@ extern char	*path_home;
 extern char	*path_nodes;
 extern char	*path_nodes_new;
 extern char	*path_nodestate;
+extern unsigned int pbs_mom_port;
+extern char  server_name[];
 
 extern struct server server;
 
@@ -489,6 +492,107 @@ void update_node_state(
   }  /* END update_node_state() */
 
 
+/*
+ * find_job_by_node - return a job structure by looking for a jobid in a
+ * specific node struct 
+ *
+ * probably only useful as a test to see if a job exists on a given node
+ * and it's much faster than find_job()
+ */
+
+job *find_job_by_node(
+
+  struct pbsnode *pnode, /* I */
+  char *jobid)           /* I */
+
+  {
+  struct pbssubn *np;
+  struct jobinfo *jp;
+  struct job     *pjob = NULL;
+
+  char *at;
+
+  if ((at = strchr(jobid,(int)'@')) != NULL)
+    *at = '\0'; /* strip off @server_name */
+
+  /* for each subnode on node ... */
+  for (np = pnode->nd_psn;np != NULL;np = np->next)
+    {
+
+    /* for each jobinfo on subnode on node ... */
+    for (jp = np->jobs;jp != NULL;jp = jp->next)
+      {
+      if ((jp->job != NULL) && 
+          (jp->job->ji_qs.ji_jobid != NULL) && 
+          (strcmp(jobid,jp->job->ji_qs.ji_jobid) == 0))
+        {
+        pjob=jp->job;
+
+        break;
+        }
+      }
+    }
+
+  if (at)                                                                                     
+    *at = '@';  /* restore @server_name */
+
+  return(pjob);
+  }
+        
+        
+
+void sync_node_jobs(
+
+  struct pbsnode *np,            /* I */
+  char           *jobstring_in)  /* I */
+
+  {
+  char      *id = "sync_node_jobs";
+  char      *joblist;
+  char      *jobidstr;
+  struct batch_request *preq;
+  int conn;
+
+  if ((jobstring_in == NULL) || (!isdigit(*jobstring_in)))
+    return;
+
+  joblist=strdup(jobstring_in);
+
+  jobidstr=strtok(joblist," ");
+
+  while((jobidstr!=NULL) && isdigit(*jobidstr))
+    {
+
+    if (find_job_by_node(np,jobidstr) == NULL)
+      {
+      sprintf(log_buffer,"stray job %s found on %s",jobidstr,np->nd_name);
+
+      log_err(-1,id,log_buffer);
+
+      if ((preq = alloc_br(PBS_BATCH_DeleteJob)) == NULL)
+        {
+        log_err(-1,id,"unable to allocate DeleteJob request - big trouble!");
+
+        break;
+        }
+
+      conn = svr_connect(
+        np->nd_addrs[0],
+        pbs_mom_port,
+        process_Dreply,
+        ToServerDIS);
+
+      strcpy(preq->rq_ind.rq_delete.rq_objname,jobidstr);
+
+      issue_Drequest(conn,preq,release_req,0);
+
+      /* release_req will free preq and close connection */
+      }
+    jobidstr=strtok(NULL," ");
+    }
+  free(joblist);
+  }
+
 
 
 int is_stat_get(
@@ -588,13 +692,17 @@ int is_stat_get(
           update_node_state(np,INUSE_UNKNOWN);
           }                        
         }
-
-      if (!strncmp(ret_info,"me",2))  /* shorter str compare than "message" */
+      else if (!strncmp(ret_info,"me",2))  /* shorter str compare than "message" */
         {
         if (!strncmp(ret_info,"message=ERROR",13))
           {
           msg_error = 1;
           }
+        }
+      else if (server.sv_attr[(int)SRV_ATR_MomJobSync].at_val.at_long && 
+               (strncmp(ret_info,"jobs=",5) == 0))
+        {
+        sync_node_jobs(np,ret_info+5);
         }
 
       free(ret_info);

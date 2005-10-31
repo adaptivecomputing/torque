@@ -259,6 +259,14 @@ Format: integer; default value: none.
 .if !\n(Pb .ig Ig
 [internal type: integer]
 .Ig
+.Al mom_job_sync
+Enables the experimental "job sync on MOM" feature.   When MOMs send a status
+update, and it includes a list of jobs, server will issue job deletes for any
+jobs that don't actually exist.  This is an EXPERIMENTAL feature and may be
+removed in the future.  Format: boolean; default value: false.
+.if !\n(Pb .ig Ig
+[internal type: boolean]
+.Ig
 .Al node_check_rate
 In OpenPBS, this was the rate at which pbs_server would poll each node.  In
 TORQUE, nodes periodically send updates without solicitation from pbs_server;

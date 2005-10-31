@@ -4499,6 +4499,7 @@ int init_groups(
 
   /* return -1 on failure */
 
+  char *id[]="init_groups";
   extern sigset_t allsigs; /* set up at the start of mom_main */
   sigset_t savedset;
 
@@ -4508,19 +4509,19 @@ int init_groups(
   gid_t momegid;
   int i;
 
-  /* save current group access becuase we're about to overwrite it */
+  /* save current group access because we're about to overwrite it */
 
   nsaved = getgroups(NGROUPS_MAX,savedgroups);
 
   if (nsaved < 0) 
     {
-    log_err(errno,"init_groups","getgroups");
+    log_err(errno,id,"getgroups");
 
     return(-1);
     }
 
   /* From the Linux man page: It is unspecified whether the effective
-     group ID of the calling pro- cess is included in the returned
+     group ID of the calling process is included in the returned
      list. (Thus, an application should also call getegid(2) and add
      or remove the resulting value.)
   */
@@ -4547,7 +4548,7 @@ int init_groups(
 
     if (pwe == NULL) 
       {
-      log_err(errno,"init_groups","no such user");
+      log_err(errno,id,"no such user");
 
       return(-1);
       }
@@ -4560,7 +4561,7 @@ int init_groups(
 
   if (sigprocmask(SIG_BLOCK,&allsigs,&savedset) == -1) 
     {
-    log_err(errno,"init_groups","sigprocmask(BLOCK)");
+    log_err(errno,id,"sigprocmask(BLOCK)");
 
     return(-1);
     }
@@ -4569,7 +4570,7 @@ int init_groups(
 
   if (initgroups(pwname,pwgrp) < 0) 
     {
-    log_err(errno,"init_groups","initgroups");
+    log_err(errno,id,"initgroups");
 
     n = -1;
     } 
@@ -4581,10 +4582,10 @@ int init_groups(
   /* restore state */
 
   if (setgroups(nsaved,savedgroups) < 0)
-    log_err(errno,"init_groups","setgroups");
+    log_err(errno,id,"setgroups");
 
   if (sigprocmask(SIG_SETMASK,&savedset,NULL) == -1)
-    log_err(errno,"init_groups","sigprocmask(SIG_SETMASK)");
+    log_err(errno,id,"sigprocmask(SIG_SETMASK)");
 
   return(n);
   }  /* END init_groups() */

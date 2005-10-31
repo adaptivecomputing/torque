@@ -1,5 +1,9 @@
 2.0.0p1
 
+  add joblist to MOM's status & add experimental server "mom_job_sync" (USC)
+  export PBS_SCHED_HINT to pelogues if set in the job (USC)
+  don't build or install pbs_rcp if --enable-scp (USC)
+  set user hold on submitted jobs with invalid deps (USC)
   add initial multi-server support for HA
   Altix cpuset enhancements (CSIRO)
   enhanced momctl to diagnose and report on connectivity issues

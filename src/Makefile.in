@@ -103,6 +103,7 @@ top_srcdir = @top_srcdir@
 
 GUI = @GUI@
 SCHD_DIR = @SCHD_CODE_SUBDIR@
+MOM_RCP = @MOM_RCP@
 
 PGM_DIR = server iff cmds resmom mom_rcp tools $(SCHD_DIR) $(GUI)
 ALL_PGM_DIR = server iff cmds resmom mom_rcp tools scheduler.* gui
@@ -110,12 +111,12 @@ ALL_PGM_DIR = server iff cmds resmom mom_rcp tools scheduler.* gui
 CLEAN_SUBDIRS = $(ALL_PGM_DIR) lib include
 
 INST_SERVER_SUBDIRS = server $(SCHD_DIR)
-INST_MOM_SUBDIRS = resmom mom_rcp
+INST_MOM_SUBDIRS = resmom $(MOM_RCP)
 INST_CLIENTS_SUBDIRS = iff cmds lib include tools $(GUI)
 INST_SUBDIRS = @INST_SERVER_SUBDIRS@ @INST_MOM_SUBDIRS@ @INST_CLIENTS_SUBDIRS@
 
 BLD_SERVER_SUBDIRS = server $(SCHD_DIR)
-BLD_MOM_SUBDIRS = resmom mom_rcp
+BLD_MOM_SUBDIRS = resmom $(MOM_RCP)
 BLD_CLIENTS_SUBDIRS = iff cmds tools $(GUI)
 BLD_LIBS = include lib
 BLD_SUBDIRS =  @BLD_LIBS@ @BLD_SERVER_SUBDIRS@ \

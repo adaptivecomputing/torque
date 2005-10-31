@@ -128,6 +128,7 @@ enum srv_atr {
         SRV_ATR_LogLevel,
         SRV_ATR_DownOnError,
         SRV_ATR_JobNanny,
+        SRV_ATR_MomJobSync,
 #include "site_svr_attr_enum.h"
 	SRV_ATR_version,
 	/* This must be last */
