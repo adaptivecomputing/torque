@@ -4476,11 +4476,124 @@ void bld_env_variables(
 	
 
 
+#ifdef __TOLDGROUP
 
+/*
+  * init_groups - build the group list via an LDAP friendly method
+  */
 
-/*                                                                    
+int init_groups(
+
+  char *pwname,   /* I User's name */
+  int   pwgrp,    /* I User's group from pw entry */
+  int   groupsize,/* I size of the array, following argument */
+  int  *groups)   /* O ptr to group array, list build there */
+
+  {
+  /* DJH Jan 2004. The original implementation looped over all groups
+     looking for membership. Thats OK for /etc/groups, but thrashes LDAP
+     if you're using that for groups in nsswitch.conf. Since there is an
+     explicit LDAP backend to do initgroups (3) efficiently in nss_ldap
+     (on Linux), lets use initgroups() to figure out the group
+     membership. A little clunky, but not too ugly.  */
+
+  /* return -1 on failure */
+
+  extern sigset_t allsigs; /* set up at the start of mom_main */
+  sigset_t savedset;
+
+  int n, nsaved;
+  gid_t savedgroups[NGROUPS_MAX + 1]; /* plus one for the egid below */
+
+  gid_t momegid;
+  int i;
+
+  /* save current group access becuase we're about to overwrite it */
+
+  nsaved = getgroups(NGROUPS_MAX,savedgroups);
+
+  if (nsaved < 0) 
+    {
+    log_err(errno,"init_groups","getgroups");
+
+    return(-1);
+    }
+
+  /* From the Linux man page: It is unspecified whether the effective
+     group ID of the calling pro- cess is included in the returned
+     list. (Thus, an application should also call getegid(2) and add
+     or remove the resulting value.)
+  */
+
+  momegid = getegid();
+
+  /* search for duplicates */
+
+  for (i = 0;i < nsaved;i++)
+    {
+    if (savedgroups[i] == momegid)
+      break;
+    }
+
+  if (i >= nsaved) 
+    savedgroups[nsaved++] = momegid;
+
+  if (pwgrp == 0) 
+    {
+    /* Emulate the original init_groups() behaviour which treated
+       gid==0 as a special case */
+
+    struct passwd *pwe = getpwnam(pwname);
+
+    if (pwe == NULL) 
+      {
+      log_err(errno,"init_groups","no such user");
+
+      return(-1);
+      }
+
+    pwgrp = pwe->pw_gid;
+    }
+
+  /* Block signals while we do this or else the signal handler might
+     run with strange group access */
+
+  if (sigprocmask(SIG_BLOCK,&allsigs,&savedset) == -1) 
+    {
+    log_err(errno,"init_groups","sigprocmask(BLOCK)");
+
+    return(-1);
+    }
+
+  n = 0;
+
+  if (initgroups(pwname,pwgrp) < 0) 
+    {
+    log_err(errno,"init_groups","initgroups");
+
+    n = -1;
+    } 
+  else 
+    {
+    n = getgroups(groupsize,(gid_t *)groups);
+    }
+
+  /* restore state */
+
+  if (setgroups(nsaved,savedgroups) < 0)
+    log_err(errno,"init_groups","setgroups");
+
+  if (sigprocmask(SIG_SETMASK,&savedset,NULL) == -1)
+    log_err(errno,"init_groups","sigprocmask(SIG_SETMASK)");
+
+  return(n);
+  }  /* END init_groups() */
+
+#else /* __TOLDGROUP */
+
+/*
  * init_groups - read the /etc/group file and build an array of
- *	group memberships for user pwname.
+ *      group memberships for user pwname.
  */
 
 int init_groups(
@@ -4528,7 +4641,7 @@ int init_groups(
   return(n);
   }  /* END init_groups() */
 
-
+#endif /* __TOLDGORUP */
 
 
 
