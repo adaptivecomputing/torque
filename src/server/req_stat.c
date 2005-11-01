@@ -615,7 +615,6 @@ void poll_job_task(
   {
 
   job *pjob;
-  long when;
 
   pjob = (job *)ptask->wt_parm1;
 

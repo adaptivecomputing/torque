@@ -280,8 +280,6 @@ void wait_for_task(
   int	    rc;
   int	    tm_errno;
 
-  struct tm_roots rootrot;
-
   while (*nspawned || nobits) 
     {
     if (verbose) 

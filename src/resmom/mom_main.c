@@ -214,6 +214,8 @@ extern char     ReportMomState[];
 extern unsigned int pe_alarm_time;
 extern time_t   pbs_tcp_timeout;
 
+char            tmpdir_basename[MAXPATHLEN];  /* for $TMPDIR */
+
 time_t          LastServerUpdateTime = 0;  /* NOTE: all servers updated together */
 
 time_t          MOMStartTime              = 0;
@@ -642,7 +644,6 @@ static char *getjoblist(
   struct rm_attribute *attrib)
 
   {
-  char  *id = "getjoblist";
   static char *list=NULL;
   static int listlen=0;
   job *pjob;
@@ -1267,6 +1268,26 @@ static u_long setpbsserver(
 
 
 
+static        u_long settmpdir(
+
+  char *Value)
+
+  {
+  static  char    id[] = "settmpdir";
+
+  log_record(PBSEVENT_SYSTEM,PBS_EVENTCLASS_SERVER,id,Value);
+
+  if (*Value != '/')
+    {
+    log_err(-1,id,"tmpdir must be a full path");
+
+    return(0);
+    }
+
+  strncpy(tmpdir_basename,Value,sizeof(tmpdir_basename));
+
+  return(1);
+  }
 
 
 
@@ -1975,6 +1996,7 @@ int read_config(
       { "down_on_error", setdownonerror },
       { "status_update_time", setstatusupdatetime },
       { "check_poll_time", setcheckpolltime },
+      { "tmpdir", settmpdir },
       { NULL,           NULL } };
 
   FILE	                *conf;
@@ -5440,6 +5462,8 @@ int main(
 
   if (gethostname(ret_string,ret_size) == 0)
     addclient(ret_string);
+
+  tmpdir_basename[0]='\0';
 
   if (read_config(NULL)) 
     {

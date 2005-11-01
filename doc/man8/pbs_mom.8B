@@ -347,6 +347,22 @@ or job job epilog to complete.  This parameter default to 300 seconds (5 minutes
 .IP timeout
 Specifies the number of seconds before mom-to-mom messages will timeout if RPP is
 disabled.  Default is 60 seconds.
+.IP tmpdir
+Sets the directory basename for a per-job temporary directory.  Before job
+launch, MOM will append the jobid to the tmpdir basename and create the
+directory.  After the job exit, MOM will recursively delete it.  The env
+variable TMPDIR will be set for all pro/epilog scripts, the job script, and TM
+tasks.
+.br
+Directory creation and removal is done as the job owner and group, so the owner
+must have write permission to create the directory.  If the directory already
+exists and is owned by the job owner, it will not be deleted after the job.  If
+the directory already exists and is NOT owned by the job owner, the job start
+will be rejected.
+.br
+Individual jobs can override $tmpdir by setting the TMPDIR env variable with a
+full path.  It is not created and removed if a relative path is specified.  The
+jobid is not appended to a user-supplied TMPDIR.
 .IP status_update_time
 specifies (in seconds) how often MOM updates its status information to
 pbs_server.  This value should correlate with the server's scheduling interval.

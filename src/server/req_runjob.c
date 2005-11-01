@@ -447,6 +447,7 @@ int svr_startjob(
   {
   int     f;
   int     rc;
+#ifdef BOEING
   int     sock, nodenum;
   struct  hostent *hp;
   char   *nodestr, *cp, *hostlist;
@@ -455,6 +456,7 @@ int svr_startjob(
 
   badplace *bp;
   char     *id = "svr_startjob";
+#endif
 
   /* if not already setup, transfer the control/script file basename */
   /* into an attribute accessable to MOM				   */
@@ -793,7 +795,7 @@ static void post_sendmom(
         }
       }
 
-    sprintf(log_buffer,"child reported %s for job after %d seconds (dest=%s), rc=%d",
+    sprintf(log_buffer,"child reported %s for job after %ld seconds (dest=%s), rc=%d",
       (r == 0) ? "success" : "failure",
       time_now - DTime,
       (DispatchNode[jindex] != NULL) ? DispatchNode[jindex] : "???",

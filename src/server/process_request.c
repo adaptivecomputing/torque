@@ -193,7 +193,9 @@ void process_request(
   int sfds)	/* file descriptor (socket) to get request */
 
   {
+#ifdef PBS_MOM
   char *id = "process_request";
+#endif
 
   int                   rc;
   struct batch_request *request;

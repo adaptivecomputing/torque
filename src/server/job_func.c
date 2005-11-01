@@ -147,6 +147,8 @@ static void job_init_wattr A_((job *));
 
 #ifndef PBS_MOM
 extern struct server   server;
+#else
+extern gid_t pbsgroup;
 #endif	/* PBS_MOM */
 extern char *msg_abt_err;
 extern char *path_jobs;
@@ -159,6 +161,8 @@ extern list_head svr_alljobs;
 
 #ifdef PBS_MOM
 void nodes_free A_((job *));
+int TTmpDirName A_((job *,char *));
+
 
 void tasks_free(
 
@@ -568,13 +572,72 @@ void job_purge(
   job *pjob)
 
   {
-  static	char	id[] = "job_purge";
+  static char	id[] = "job_purge";
 
   char		namebuf[MAXPATHLEN + 1];
-  extern	char	*msg_err_purgejob;
+  extern char	*msg_err_purgejob;
+#ifdef PBS_MOM
+  int		rc;
+#endif
 
 
 #ifdef PBS_MOM
+
+  if (pjob->ji_flags & MOM_HAS_TMPDIR)
+    {
+    if (TTmpDirName(pjob,namebuf))
+      {
+      sprintf(log_buffer,"Removing transient job directory %s",namebuf);
+      
+      log_record(PBSEVENT_DEBUG,
+        PBS_EVENTCLASS_JOB,
+        pjob->ji_qs.ji_jobid,
+        log_buffer);
+      
+#if defined(HAVE_SETEUID) && defined(HAVE_SETEGID)
+
+    /* most systems */
+
+    if ((setegid(pjob->ji_qs.ji_un.ji_momt.ji_exgid) == -1) ||
+        (seteuid(pjob->ji_qs.ji_un.ji_momt.ji_exuid) == -1))
+      {
+      return;
+      }
+
+    rc = remtree(namebuf);
+
+    seteuid(0);
+    setegid(pbsgroup);
+
+#elif defined(HAVE_SETRESUID) && defined(HAVE_SETRESGID)
+
+    /* HPUX and the like */
+
+    if ((setresgid(-1,pjob->ji_qs.ji_un.ji_momt.ji_exgid,-1) == -1) ||
+        (setresuid(-1,pjob->ji_qs.ji_un.ji_momt.ji_exuid,-1) == -1))
+      {
+      return;
+      }
+    
+    rc = remtree(namebuf);
+
+    setresuid(-1,0,-1);
+    setresgid(-1,pbsgroup,-1);
+
+#endif  /* HAVE_SETRESUID */
+
+      if (rc != 0)
+        {
+        sprintf(log_buffer,
+          "recursive remove of job transient tmpdir %s failed",
+          namebuf);
+    
+        log_err(errno, "recursive (r)rmdir", log_buffer);
+        }
+        
+        pjob->ji_flags &= ~MOM_HAS_TMPDIR;
+      }
+    }
 
   delete_link(&pjob->ji_jobque);
   delete_link(&pjob->ji_alljobs);

@@ -115,6 +115,7 @@ static int run_exit;
 /* external prototypes */
 
 extern int pe_input A_((char *));
+extern int TTmpDirName A_((job *,char *tmpdir));
 
 /* END extern prototypes */
 
@@ -270,6 +271,7 @@ int run_pelog(
   struct stat	 sbuf;
   char		 sid[20];
   int		 waitst;
+  char		 buf[MAXPATHLEN + 2];
 
   if (stat(pelog,&sbuf) == -1) 
     {
@@ -561,6 +563,24 @@ int run_pelog(
 
       putenv(envstr);
       }  /* END if (r != NULL) */
+
+    if (TTmpDirName(pjob,buf))
+      {
+
+      const char *envname = "TMPDIR=";
+      char *envstr;
+
+      envstr = malloc(
+        (strlen(envname) + strlen(buf) + 1) * sizeof(char)); 
+
+      strcpy(envstr,envname);
+
+      strcat(envstr,buf);
+
+      /* do _not_ free the string when using putenv */
+
+      putenv(envstr);
+      }  /* END if (TTmpDirName(pjob,&buf)) */
     }    /* END BLOCK */
 
     /* Set PBS_SCHED_HINT */

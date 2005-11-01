@@ -113,7 +113,7 @@ int disrfst(
 
   {
   int		locret;
-  int           rc;
+  /*int           rc;*/
 
   int		negate;
   unsigned	count;

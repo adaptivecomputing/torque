@@ -144,7 +144,6 @@ int main(
 
   char *ptr;
 
-  const char *id = "main";
 
   int PBSLOGLEVEL = 0;
 
@@ -304,16 +303,6 @@ int main(
 
   /* send authentication information */
 
-  if (PBSLOGLEVEL >= 5)
-    {
-    /*
-    DBPRT(("%s: sending name '%s'/port %d to server\n",
-      id,
-      pwent->pw_name,
-      parentport));
-    */
-    }
-
   if ((rc = encode_DIS_ReqHdr(sock,PBS_BATCH_AuthenUser,pwent->pw_name)) ||
       (rc = diswui(sock,parentport)) ||
       (rc = encode_DIS_ReqExtend(sock,NULL))) 
@@ -332,27 +321,11 @@ int main(
 
   if (reply == NULL) 
     {
-    /*
-    ptr = pbse_to_txt(pbs_errno);
-
-    fprintf(stderr,"pbs_iff: error returned: %d - %s (no reply)\n", 
-      pbs_errno,
-      (ptr != NULL) ? ptr : "unknown error");
-    */
-
     return(1);
     }
 
   if (reply->brp_code != 0) 
     {
-    /* 
-    ptr = pbse_to_txt(reply->brp_code);
-
-    fprintf(stderr,"pbs_iff: error returned: %d - %s\n",
-      reply->brp_code,
-      (ptr != NULL) ? ptr : "unknown error");
-    */
-
     if (reply->brp_choice == BATCH_REPLY_CHOICE_Text)
       {
       fprintf(stderr,"pbs_iff: %s\n",

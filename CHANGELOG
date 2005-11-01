@@ -1,5 +1,6 @@
 2.0.0p1
 
+  resmom transient TMPDIR (USC)
   add joblist to MOM's status & add experimental server "mom_job_sync" (USC)
   export PBS_SCHED_HINT to pelogues if set in the job (USC)
   don't build or install pbs_rcp if --enable-scp (USC)

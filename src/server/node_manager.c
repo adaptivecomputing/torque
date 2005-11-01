@@ -128,8 +128,6 @@ struct pbsnode **pbsndmast = NULL;
 static int	 svr_numnodes = 0;	/* number nodes currently available */
 static int	 exclusive;		/* node allocation type */
 
-static char      extra_parm[] = "extra parameter(s)";
-static char      no_parm[]    = "required parameter not found";
 static FILE 	*nstatef = NULL;
 
 extern int	 server_init_type;
@@ -808,7 +806,6 @@ void stream_eof(
   {
   static char     id[] = "stream_eof";
   struct pbsnode *np;
-  struct pbssubn *sp;
 
   rpp_close(stream);
 
@@ -874,7 +871,6 @@ void ping_nodes(
   {
   static  char	        *id = "ping_nodes";
   struct  pbsnode	*np;
-  struct  pbssubn	*sp;
   struct  sockaddr_in	*addr;
   int                    i, ret, com;
   extern  int            pbs_rm_port;

@@ -85,8 +85,6 @@
 
 #include "libpbs.h"
 
-static char ident[] = "$I";
-
 struct batch_status *pbs_statnode(
 
   int           c,      /* I */

@@ -774,7 +774,7 @@ struct work_task *apply_job_delete_nanny(
   int         delay)  /* I */
 
   {
-  struct work_task *pwtiter, *pwtnew, *pwtdel;
+  struct work_task *pwtnew;
   enum work_type tasktype;
 
   /* short-circuit if nanny isn't enabled */
@@ -849,7 +849,6 @@ void job_delete_nanny(
     
   {   
   job *pjob;
-  struct work_task *pwtnanny;
   char *sigk = "SIGKILL";
   struct batch_request *newreq;
 
@@ -902,7 +901,6 @@ static void post_job_delete_nanny(
 
   {
   struct batch_request *preq_sig;                /* signal request to MOM */
-  struct batch_request *preq_clt;                /* original client request */
 
   int   rc;
   job  *pjob;

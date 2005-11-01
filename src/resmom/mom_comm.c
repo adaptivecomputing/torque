@@ -175,6 +175,9 @@ extern void job_nodes(job *);
 extern int tfind(const u_long,void **);
 extern int tlist(void **,char *,int);
 extern void DIS_tcp_funcs();
+extern int TTmpDirName (job *,char *);
+extern int TMakeTmpDir (job *,char *);
+
 
 
 /* END external functions */
@@ -1905,6 +1908,35 @@ void im_request(
       pjob->ji_qs.ji_un.ji_newt.ji_fromaddr = addr->sin_addr.s_addr;
       pjob->ji_qs.ji_un.ji_newt.ji_scriptsz = 0;
  
+      if (check_pwd(pjob) == NULL) 
+        {
+        LOG_EVENT(
+          PBSEVENT_JOB, 
+          PBS_EVENTCLASS_JOB,
+          pjob->ji_qs.ji_jobid, 
+          log_buffer);
+  
+        job_purge(pjob);
+  
+        SEND_ERR(PBSE_BADUSER)
+  
+        goto done;
+        }
+  
+      /* should we make a tmpdir? */
+    
+      if (TTmpDirName(pjob,namebuf))
+        {
+        if (!TMakeTmpDir(pjob,namebuf))
+          {
+          job_purge(pjob);
+
+          SEND_ERR(PBSE_BADUSER)
+
+          goto done;
+          }
+        }
+
       /* run local prolog */
 
       if ((j = run_pelog(
@@ -1957,21 +1989,6 @@ void im_request(
         goto done;
         }
  
-      if (check_pwd(pjob) == NULL) 
-        {
-        LOG_EVENT(
-          PBSEVENT_JOB, 
-          PBS_EVENTCLASS_JOB,
-          pjob->ji_qs.ji_jobid, 
-          log_buffer);
-  
-        job_purge(pjob);
-  
-        SEND_ERR(PBSE_BADUSER)
-  
-        goto done;
-        }
-  
 #if IBM_SP2==2  /* IBM SP with PSSP 3.1 */
   
       if (load_sp_switch(pjob) != 0) 

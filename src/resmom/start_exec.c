@@ -162,6 +162,8 @@ extern char *__get_variable(job *,char *);
 int              mom_reader_go;		/* see catchinter() & mom_writer() */
 struct var_table vtable;		/* for building up Job's environ */
 
+extern char             tmpdir_basename[];  /* for TMPDIR */
+
 /* Local Varibles */ 
 
 static int	 script_in;	/* script file, will be stdin	  */
@@ -181,7 +183,8 @@ static	char *variables_else[] = {	/* variables to add, value computed */
   "PBS_NODENUM",
   "PBS_TASKNUM",
   "PBS_MOMPORT",
-  "PBS_NODEFILE" };
+  "PBS_NODEFILE",
+  "TMPDIR" };
 
 static	int num_var_else = sizeof(variables_else) / sizeof(char *);
 
@@ -716,7 +719,221 @@ static int open_std_out_err(
   }  /* END open_std_out_err() */
 
 
+int mkdirtree(
 
+  char *dirpath, /* I */
+  mode_t mode)   /* I */
+
+  {
+
+  char *part;
+  int rc = 0;
+  mode_t oldmask = 0;
+  char *path = NULL;
+
+  if (*dirpath != '/')
+    {
+    rc=-1;
+
+    goto done;
+    }
+
+  /* make a copy to scribble NULLs on */
+  if ((path=strdup(dirpath)) == NULL)
+    {
+    rc=-1;
+
+    goto done;
+    }
+
+  oldmask=umask(0000);
+
+  part=strtok(path,"/");
+  if (part == NULL)
+    {
+    rc=-1;
+
+    goto done;
+    }
+  *(part-1)='/';  /* leading / */
+
+  while((part = strtok(NULL,"/")) != NULL)
+    {
+    if (mkdir(path,mode) == -1)
+      {
+      if (errno != EEXIST)
+        {
+        rc=errno;
+
+        goto done;
+        }
+      }
+
+    *(part-1)='/';
+    }
+
+  /* very last component */
+  if (mkdir(path,mode) == -1)
+    {
+    if (errno != EEXIST)
+      {
+      rc=errno;
+
+      goto done;
+      }
+    }
+
+done:
+
+  if (oldmask != 0)
+    umask(oldmask);
+
+  if (path != NULL)
+    free(path);
+
+  return(rc);
+}
+
+  
+
+/* If the job, our env, or our config allows it, construct tmpdir path */
+int TTmpDirName(
+
+  job  *pjob,   /* I */
+  char *tmpdir) /* O */
+
+  {
+
+  char *envval;
+
+  if ((envval = __get_variable(pjob,"TMPDIR")) != NULL)
+    {
+    if (*envval == '/')
+      {
+      strncpy(tmpdir,envval,MAXPATHLEN);
+      }
+    else
+      {
+      *tmpdir='\0'; /* FIXME: prefix with homedir, workdir, or rootdir */
+      }
+    }
+  else if (tmpdir_basename[0] == '/')
+    {
+    snprintf(tmpdir,
+      MAXPATHLEN,
+      "%s/%s",
+      tmpdir_basename,
+      pjob->ji_qs.ji_jobid);
+    }
+  else
+    {
+    *tmpdir='\0';
+    }
+
+  return(*tmpdir != '\0');  /* return "true" if tmpdir is set */
+  }
+
+
+int TMakeTmpDir(
+
+  job  *pjob,   /* I */
+  char *tmpdir) /* I */
+  {
+
+  char id[]="TMakeTmpDir";
+  int			rc;
+  int			retval;
+  struct stat		sb;
+
+#if defined(HAVE_SETEUID) && defined(HAVE_SETEGID)
+  if ((setegid(pjob->ji_qs.ji_un.ji_momt.ji_exgid) == -1) ||
+      (seteuid(pjob->ji_qs.ji_un.ji_momt.ji_exuid) == -1))
+#elif defined(HAVE_SETRESUID) && defined(HAVE_SETRESGID)
+  if ((setresgid(-1,pjob->ji_qs.ji_un.ji_momt.ji_exgid,-1) == -1) ||
+      (setresuid(-1,pjob->ji_qs.ji_un.ji_momt.ji_exuid,-1) == -1))
+#endif
+    {
+    return(0);
+    }
+
+  retval=mkdirtree(tmpdir,0755);
+
+  if (retval == 0)
+    {
+    /* We made it, it's ours */
+    pjob->ji_flags |= MOM_HAS_TMPDIR;
+    }
+  else
+    {
+    rc=stat(tmpdir,&sb);
+
+    if (rc)
+      rc=errno;
+
+    switch (rc)
+      {
+      case ENOENT:
+
+        sprintf(log_buffer,
+          "Unable to make job transient directory: %s",
+          tmpdir);
+
+        break;
+
+      case 0:
+
+        if(S_ISDIR(sb.st_mode))
+          {
+          if (sb.st_uid == pjob->ji_qs.ji_un.ji_momt.ji_exuid)
+            {
+            retval=0;  /* owned by the job, allowed */
+            }
+          else
+            {
+            sprintf(log_buffer,
+              "Job transient tmpdir %s already exists, owned by %d",
+              tmpdir,
+              sb.st_uid);
+
+            retval=-1;
+            }
+          }
+        else
+          {
+          sprintf(log_buffer,
+            "Job transient tmpdir %s exists, but is not a directory",
+            tmpdir);
+
+          retval=-1;
+          }
+
+      break;
+
+    default:
+
+      sprintf(log_buffer,
+        "Cannot name job tmp directory %s (on stat)",
+        tmpdir);
+
+      return(0);
+
+      break;
+    }
+  }
+
+#if defined(HAVE_SETEUID) && defined(HAVE_SETEGID)
+  seteuid(0);
+  setegid(pbsgroup);
+#elif defined(HAVE_SETRESUID) && defined(HAVE_SETRESGID)
+  setresuid(-1,0,-1);
+  setresgid(-1,pbsgroup,-1);
+#endif  /* HAVE_SETRESUID */
+
+  if (retval != 0)
+    log_err(retval,id,log_buffer);
+
+  return(retval == 0);  /* return boolean */
+  }
 
 
 /*
@@ -1538,6 +1755,21 @@ int TMomFinalizeChild(
 
     fclose(nhow);
     }  /* END if (pjob->ji_flags & MOM_HAS_NODEFILE) */
+
+    /* setup TMPDIR */
+
+    if (TTmpDirName(pjob,buf))
+      {
+      bld_env_variables(&vtable, variables_else[12], buf);
+
+      sprintf(log_buffer,"using transient tmpdir %s",buf);
+
+      log_record(
+        PBSEVENT_DEBUG,
+        PBS_EVENTCLASS_JOB,
+        pjob->ji_qs.ji_jobid,
+        log_buffer);                             
+      }
 
 #if defined(PENABLE_CPUSETS) || defined(PENABLE_DYNAMIC_CPUSETS)
 
@@ -3264,6 +3496,13 @@ int start_process(
 
   bld_env_variables(&vtable,variables_else[10],buf);
 
+  /* TMPDIR */
+
+  if (TTmpDirName(pjob,buf))
+    {
+    bld_env_variables(&vtable, variables_else[12], buf);
+    }
+
   if (set_mach_vars(pjob,&vtable) != 0) 
     {
     strcpy(log_buffer,"PBS: machine dependent environment variable setup failed\n");
@@ -3692,6 +3931,7 @@ void start_exec(
   list_head	phead;
   svrattrl	*psatl;
   int		stream;
+  char		tmpdir[MAXPATHLEN];
 
 #ifdef socklen_t
   socklen_t slen;
@@ -3746,6 +3986,33 @@ void start_exec(
   pjob->ji_nodeid = 0;	/* I'm MS */
 
   nodenum = pjob->ji_numnodes;
+
+  /* We do this early because we need the uid/gid for TMakeTmpDir */
+
+  if (!check_pwd(pjob)) 
+    {
+    sprintf(log_buffer,"job %s check_pwd failed",
+      pjob->ji_qs.ji_jobid);
+
+    log_err(-1,id,log_buffer);
+
+    exec_bail(pjob,JOB_EXEC_FAIL1);
+
+    return;
+    }
+
+  /* should we make a tmpdir? */
+
+  if (TTmpDirName(pjob,tmpdir))
+    {
+    if (!TMakeTmpDir(pjob,tmpdir))
+      {
+      exec_bail(pjob,JOB_EXEC_FAIL1);
+
+      return;
+      }
+    }
+  
 
   /* if nodecount > 1, return once joins are sent, if nodecount == 1, return once job is started */
 
