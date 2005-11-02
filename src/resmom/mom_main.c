@@ -167,7 +167,8 @@ int		lockfds = -1;
 time_t		loopcnt;		/* used for MD5 calc */
 float		max_load_val = -1.0;
 char		mom_host[PBS_MAXHOSTNAME + 1];
-char		pbs_servername[PBS_MAXSERVER][PBS_MAXHOSTNAME + 1];
+char		pbs_servername[PBS_MAXSERVER][PBS_MAXSERVERNAME + 1];
+u_long		MOMServerAddrs[PBS_MAXSERVER];
 char		mom_short_name[PBS_MAXHOSTNAME + 1];
 int		num_var_env;
 char	       *path_epilog;
@@ -183,6 +184,7 @@ char           *path_prologuserp;
 char	       *path_spool;
 char	       *path_undeliv;
 char	       *path_aux;
+char	       *path_server_name;
 char           *path_home = PBS_SERVER_HOME;
 char           *mom_home;
 char		pbs_current_user[PBS_MAXUSER] = "pbs_mom";  /* for libpbs.a */
@@ -1181,7 +1183,7 @@ u_long addclient(
     return(0);
     }
 
-  memcpy((char *)&saddr,host->h_addr,host->h_length);
+  memcpy(&saddr,host->h_addr,host->h_length);
 
   ipaddr = ntohl(saddr.s_addr);
 
@@ -1217,14 +1219,17 @@ static u_long setpbsclient(
   }  /* END setpbsclient() */
 
 
-
+/* FIXME: we need to handle a non-default port number */
 static u_long setpbsserver(
 
   char *value)  /* I */
   
   {
+  static char	  id[] = "setpbsserver";
   int index;
-  int rc;
+  struct hostent *host, *gethostbyname();
+  struct in_addr  saddr;
+  u_long	  ipaddr;
 
   if ((value == NULL) || (value[0] == '\0'))
     {
@@ -1233,18 +1238,45 @@ static u_long setpbsserver(
     return(1);
     }
 
+  if ((host = gethostbyname(value)) == NULL) 
+    {
+    sprintf(log_buffer,"server host %s not found", 
+      value);
+
+    log_err(-1,id,log_buffer);
+
+    return(0);
+    }
+
+  memcpy(&saddr,host->h_addr,host->h_length);
+
+  ipaddr = ntohl(saddr.s_addr);
+
   for (index = 0;index < PBS_MAXSERVER;index++)
     {
     if (!strcmp(pbs_servername[index],value))
       {
-      /* servername already added */
+      /* IGNORE DUPLICATE SERVERNAME REQUEST */
 
-      /* IGNORE DUPLICATE REQUEST */
+      sprintf(log_buffer,"server hostname %s already added", 
+        value);
 
-      return(0);
+      log_record(PBSEVENT_SYSTEM,PBS_EVENTCLASS_SERVER,id,log_buffer);
+
+      return(1);
       }
 
-    /* FIXME: need to also check for duplicate IPs */
+    if (MOMServerAddrs[index] == ipaddr)
+      {
+      /* IGNORE DUPLICATE IPADDR REQUEST */
+
+      sprintf(log_buffer,"server ip %s already added", 
+        netaddr(ipaddr));
+
+      log_record(PBSEVENT_SYSTEM,PBS_EVENTCLASS_SERVER,id,log_buffer);
+
+      return(1);
+      }
 
     if (pbs_servername[index][0] == '\0')
       break;
@@ -1254,16 +1286,22 @@ static u_long setpbsserver(
     {
     /* buffer is full */
 
-    /* FAILURE */
+    sprintf(log_buffer,"server table overflow (max=%d) - server host %s not added", 
+      PBS_MAXSERVER,
+      value);
 
-    return(1);
+    log_err(-1,id,log_buffer);
+
+    return(0); /* FAILURE */
     }
 
   strncpy(pbs_servername[index],value,PBS_MAXHOSTNAME);
 
-  rc = addclient(pbs_servername[index]);
+  MOMServerAddrs[index] = ipaddr;
 
-  return(rc);
+  tinsert(ipaddr,&okclients);
+
+  return(1);
   }  /* END setpbsserver() */
 
 
@@ -2816,16 +2854,6 @@ int init_server_stream(
     return(DIS_EOF);
     }
 
-  if (addclient(pbs_servername[ServerIndex]) == 0)                                       
-    {
-    /* FAILURE */
-
-    rpp_close(SStream[ServerIndex]);
-    SStream[ServerIndex] = -1;
-
-    return(DIS_EOF);
-    } 
-
   if (LOGLEVEL >= 3)
     {
     sprintf(log_buffer,"%s: added connection to %s",
@@ -2924,7 +2952,7 @@ void is_update_stat(
   
       log_err(ret,id,log_buffer);
   
-      rpp_close(SStream[ServerIndex]);
+      close_io(SStream[ServerIndex]);
 
       SStream[ServerIndex] = -1;
 
@@ -2941,7 +2969,7 @@ void is_update_stat(
   
       log_err(ret,id,log_buffer);
   
-      rpp_close(SStream[ServerIndex]);
+      close_io(SStream[ServerIndex]);
 
       SStream[ServerIndex] = -1;
 
@@ -2958,7 +2986,7 @@ void is_update_stat(
   
       log_err(ret,id,log_buffer);
   
-      rpp_close(SStream[ServerIndex]);
+      close_io(SStream[ServerIndex]);
 
       SStream[ServerIndex] = -1;
 
@@ -3128,7 +3156,7 @@ void is_update_stat(
   
         log_err(ret,id,log_buffer);
   
-        rpp_close(SStream[ServerIndex]);
+        close_io(SStream[ServerIndex]);
   
         SStream[ServerIndex] = -1;
 
@@ -3155,7 +3183,7 @@ void is_update_stat(
       {
       log_err(errno,id,"flush");
   
-      rpp_close(SStream[ServerIndex]);
+      close_io(SStream[ServerIndex]);
 
       SStream[ServerIndex] = -1;
 
@@ -4793,6 +4821,7 @@ int main(
 
   int           sindex;  /* server index */
   int           TotalClusterAddrsCount;
+  FILE          *file;
 
 #if MOM_CHECKPOINT == 1
   resource	*prscput;
@@ -5074,6 +5103,7 @@ int main(
   path_spool       = mk_dirs("spool/");
   path_undeliv     = mk_dirs("undelivered/");
   path_aux         = mk_dirs("aux/");
+  path_server_name = mk_dirs("server_name");
 
 #if MOM_CHECKPOINT == 1
 
@@ -5111,6 +5141,7 @@ int main(
   c |= chk_file_sec(path_aux,    1, 0, S_IWGRP|S_IWOTH, 1);
   c |= chk_file_sec(path_spool,  1, 1, S_IWOTH, 0);
   c |= chk_file_sec(PBS_ENVIRON, 0, 0, S_IWGRP|S_IWOTH, 0);
+  c |= chk_file_sec(path_server_name, 0, 0, S_IWGRP|S_IWOTH, 0);
 
   if (c)
     {
@@ -5456,6 +5487,28 @@ int main(
     exit(1);
     }
 
+  if ((file = fopen(path_server_name,"r")) != NULL) 
+    {
+    char tmpLine[PBS_MAXSERVERNAME+1];
+    char *pn;
+
+    if (fgets(tmpLine,sizeof(tmpLine),file) > 0)
+      {
+      if ((pn = strchr(tmpLine,'\n')))
+        *pn = '\0';
+
+      /* FIXME: uncomment this when we correctly handle port numbers
+         setpbsserver() will print an error message in the meantime
+      if ((pn = strchr(tmpLine,':')))
+        *pn = '\0';
+      */
+
+      setpbsserver(tmpLine);
+      }
+
+    fclose(file);
+    }
+
   localaddr = addclient("localhost");
 
   addclient(mom_host);
@@ -5555,10 +5608,30 @@ int main(
           {
           continue;                                                                        
           }
+        }
 
-        is_compose(SStream[sindex],IS_HELLO);
+      if (MOMRecvClusterAddrsCount[sindex] == 0)
+        {
+        if (is_compose(SStream[sindex],IS_HELLO) == -1)
+          {
+          sprintf(log_buffer,"error composing hello to server %s", pbs_servername[sindex]);
+          log_record(PBSEVENT_SYSTEM,0,id,log_buffer);
 
-        rpp_flush(SStream[sindex]);
+          rpp_close(SStream[sindex]);
+
+          SStream[sindex] = -1;
+
+          continue;
+          }
+
+        if (rpp_flush(SStream[sindex]) == -1)
+          {
+          rpp_close(SStream[sindex]);
+
+          SStream[sindex] = -1;
+
+          continue;
+          }
 
         MOMSendHelloCount[sindex]++;
 

@@ -137,6 +137,7 @@ extern  int             MOMRecvClusterAddrsCount[];
 extern  time_t          LastServerUpdateTime;
 extern  int             ServerStatUpdateInterval;
 extern  char            pbs_servername[PBS_MAXSERVER][PBS_MAXHOSTNAME + 1];
+extern  u_long          MOMServerAddrs[PBS_MAXSERVER];
 
 int			SStream[PBS_MAXSERVER];  /* streams to pbs_server daemons */
                                                  /* initialized in MOMInitialize() */
@@ -497,23 +498,44 @@ void is_request(
       }
     }    /* END for (sindex) */
 
+  /* We don't have an existing connection, but is this a valid server? */
+
   if (ServerIndex == -1)
     {
     port = ntohs((unsigned short)addr->sin_port);
 
     ipaddr = ntohl(addr->sin_addr.s_addr);
 
-    if ((port >= IPPORT_RESERVED) || !tfind(ipaddr,&okclients)) 
+    for (sindex = 0;sindex < PBS_MAXSERVER;sindex++)
       {
-      char tmpLine[1024];
+      if (ipaddr == MOMServerAddrs[sindex])
+        {
+        ServerIndex = sindex;
 
-      tmpLine[0] = '\0';
+        if (SStream[sindex] != -1)
+          {
+          sprintf(log_buffer,"duplicate connection from %s - closing original connection",
+            netaddr(addr));
 
-      tlist(okclients,tmpLine,1024);
+          log_record(
+            PBSEVENT_ERROR,
+            PBS_EVENTCLASS_SERVER,
+            id,
+            log_buffer);
 
-      sprintf(log_buffer,"bad connect from %s - unauthorized (okclients: %s)",
-        netaddr(addr),
-        tmpLine);
+          rpp_close(SStream[sindex]);
+          }
+
+        SStream[sindex] = stream;
+  
+        break;
+        }
+      }    /* END for (sindex) */
+
+    if (ServerIndex == -1)
+      {
+      sprintf(log_buffer,"bad connect from %s - unauthorized server",
+        netaddr(addr));
 
       log_err(-1,id,log_buffer);
 
@@ -547,6 +569,7 @@ void is_request(
     {
     case IS_NULL: /* a ping from the server */
 
+      /* nothing seems to ever generate an IS_NULL message */
       if (LOGLEVEL >= 4)
         {
         DBPRT(("%s: IS_NULL\n",
@@ -568,24 +591,44 @@ void is_request(
 
     case IS_HELLO:		/* server wants a return ping */
 
-      DBPRT(("%s: IS_HELLO, state=0x%x\n", 
-        id, 
-        internal_state))
-
-      if (ServerIndex >= 0)
+      if (LOGLEVEL >= 3)
         {
-        SStream[ServerIndex] = stream;	/* save stream to server */
+        sprintf(log_buffer,"IS_HELLO received");
 
-        is_compose(stream,IS_HELLO);
-
-        rpp_flush(stream);
-
-        MOMRecvHelloCount[ServerIndex]++;
-
-        /* FORCE immediate server update */
-
-        LastServerUpdateTime = 0;
+        log_record(
+          PBSEVENT_ERROR,
+          PBS_EVENTCLASS_JOB,
+          id,
+          log_buffer);
         }
+
+      if (is_compose(stream,IS_HELLO) != DIS_SUCCESS)
+        {
+        log_err(-1,id,"Error composing IS_HELLO");
+
+        rpp_close(stream);
+
+        SStream[ServerIndex] = -1;
+
+        break;
+        }
+
+      if (rpp_flush(stream) != 0)
+        {
+        log_err(-1,id,"Error sending IS_HELLO");
+
+        rpp_close(stream);
+
+        SStream[ServerIndex] = -1;
+
+        break;
+        }
+
+      MOMRecvHelloCount[ServerIndex]++;
+
+      /* FORCE immediate server update */
+
+      LastServerUpdateTime = 0;
 
       break;
 
@@ -633,8 +676,7 @@ void is_request(
       if (ret != DIS_EOD)
         goto err;
 
-      if (ServerIndex >= 0)
-        MOMRecvClusterAddrsCount[sindex]++;
+      MOMRecvClusterAddrsCount[ServerIndex]++;
 
       /* FORCE immediate update server */
 
@@ -925,11 +967,15 @@ void state_to_server(
  
   if (is_compose(SStream[ServerIndex],IS_UPDATE) != DIS_SUCCESS) 
     {
+    rpp_close(SStream[ServerIndex]);
+    SStream[ServerIndex]=-1;
     return;		
     } 
 
   if (diswui(SStream[ServerIndex],internal_state) != DIS_SUCCESS) 
     {
+    rpp_close(SStream[ServerIndex]);
+    SStream[ServerIndex]=-1;
     return;
     }
 
@@ -965,6 +1011,8 @@ void state_to_server(
         id,
         log_buffer);
       }
+    rpp_close(SStream[ServerIndex]);
+    SStream[ServerIndex]=-1;
     }
 
   return;
