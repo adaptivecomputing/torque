@@ -1,5 +1,7 @@
 2.0.0p1
 
+  $clienthost and $headnode removed, $pbsclient and $pbsserver added (USC)
+  $PBS_HOME/server_name is now added to MOM's server list (USC)
   resmom transient TMPDIR (USC)
   add joblist to MOM's status & add experimental server "mom_job_sync" (USC)
   export PBS_SCHED_HINT to pelogues if set in the job (USC)
