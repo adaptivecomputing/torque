@@ -3728,14 +3728,21 @@ int rm_request(
               }
             else
               {
+              int numvnodes=0;
               for (;pjob != NULL;pjob = (job *)GET_NEXT(pjob->ji_alljobs))
                 {
+                numvnodes+=pjob->ji_numvnod;
+
                 sprintf(tmpLine,"Job[%s]  State=%s\n",
                   pjob->ji_qs.ji_jobid,
                   PJobSubState[pjob->ji_qs.ji_substate]);
 
                 MUStrNCat(&BPtr,&BSpace,tmpLine);
                 }
+              sprintf(tmpLine,"Assigned CPU Count:     %d\n",
+                numvnodes);
+
+              MUStrNCat(&BPtr,&BSpace,tmpLine);
               }
 
             MUStrNCat(&BPtr,&BSpace,"\ndiagnostics complete\n");
