@@ -5500,7 +5500,7 @@ int main(
     char tmpLine[PBS_MAXSERVERNAME+1];
     char *pn;
 
-    if (fgets(tmpLine,sizeof(tmpLine),file) > 0)
+    if (fgets(tmpLine,sizeof(tmpLine),file) != NULL)
       {
       if ((pn = strchr(tmpLine,'\n')))
         *pn = '\0';
