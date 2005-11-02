@@ -1271,8 +1271,12 @@ static u_long setpbsserver(
       {
       /* IGNORE DUPLICATE IPADDR REQUEST */
 
-      sprintf(log_buffer,"server ip %s already added", 
-        netaddr(ipaddr));
+       sprintf(log_buffer,"server ip %ld.%ld.%ld.%ld already added", 
+         (ipaddr & 0xff000000) >> 24,
+         (ipaddr & 0x00ff0000) >> 16,
+         (ipaddr & 0x0000ff00) >> 8,
+         (ipaddr & 0x000000ff));
+
 
       log_record(PBSEVENT_SYSTEM,PBS_EVENTCLASS_SERVER,id,log_buffer);
 
@@ -5620,6 +5624,11 @@ int main(
 
       if (MOMRecvClusterAddrsCount[sindex] == 0)
         {
+        if ((time_now - MOMLastSendToServerTime[sindex]) < 10)
+          continue;
+
+        MOMLastSendToServerTime[sindex]=time_now;
+
         if (is_compose(SStream[sindex],IS_HELLO) == -1)
           {
           sprintf(log_buffer,"error composing hello to server %s", pbs_servername[sindex]);
