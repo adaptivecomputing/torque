@@ -1069,6 +1069,8 @@ int main(
     else
       waittime = next_task();
 
+    waittime = MAX(0,waittime);
+
     if (*state == SV_STATE_RUN) 
       {	
       /* In normal Run state */

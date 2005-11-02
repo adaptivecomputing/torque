@@ -830,11 +830,10 @@ void stream_eof(
     return;
     }
 
-  sprintf(log_buffer, "connection to %s dropped.  setting node state to down in %s\n",
-    np->nd_name,
-    id);
+  sprintf(log_buffer, "connection to %s dropped.  setting node state to down\n",
+    np->nd_name);
 
-  log_err(errno,id,log_buffer);
+  log_err(-1,id,log_buffer);
 
   /* mark down node and all subnodes */
 
