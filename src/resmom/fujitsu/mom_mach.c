@@ -160,6 +160,7 @@ extern	int			rm_errno;
 extern	unsigned	int	reqnum;
 extern	double	cputfactor;
 extern	double	wallfactor;
+extern  long    system_ncpus;
 
 /*
 ** local functions and data
@@ -1613,6 +1614,7 @@ struct	rm_attribute	*attrib;
 	}
 	free(peidlist);
 	sprintf(ret_string, "%d", npes);
+	system_ncpus=npes;
 	return ret_string;
 }
 

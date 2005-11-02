@@ -196,6 +196,7 @@ extern	int			rm_errno;
 extern	unsigned	int	reqnum;
 extern	double	cputfactor;
 extern	double	wallfactor;
+extern  long    system_ncpus;
 
 /*
 ** local functions and data
@@ -1912,6 +1913,7 @@ struct	rm_attribute	*attrib;
 		return NULL;
 	}
 	sprintf(ret_string, "%ld", sysmp(MP_NAPROCS));
+	system_ncpus=sysmp(MP_NAPROCS);
 	return ret_string;
 }
 

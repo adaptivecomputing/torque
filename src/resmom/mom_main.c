@@ -234,6 +234,7 @@ char            MOMConfigVersion[64];
 char            MOMUNameMissing[64];            
 
 int             MOMConfigDownOnError      = 0;
+long            system_ncpus=0;
 
 #define TMAX_JE  64
 

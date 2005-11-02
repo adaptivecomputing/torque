@@ -154,6 +154,7 @@ extern	int			rm_errno;
 extern	unsigned	int	reqnum;
 extern	double	cputfactor;
 extern	double	wallfactor;
+extern  long    system_ncpus;
 
 /*
 ** local functions and data
@@ -1602,6 +1603,7 @@ struct	rm_attribute	*attrib;
 		return NULL;
 	}
 	sprintf(ret_string, "%ld", sysconf(_SC_NPROCESSORS_ONLN));
+	system_ncpus=sysconf(_SC_NPROCESSORS_ONLN);
 	return ret_string;
 }
 

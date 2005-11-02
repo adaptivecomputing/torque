@@ -166,6 +166,7 @@ extern	int			rm_errno;
 extern	unsigned	int	reqnum;
 extern	double	cputfactor;
 extern 	double	wallfactor;
+extern  long    system_ncpus;
 
 /*
 ** local functions and data
@@ -1540,6 +1541,8 @@ static char *ncpus(
 
   sprintf(ret_string,"%d",
     sysconf(_SC_NPROCESSORS_ONLN));
+
+  system_ncpus=sysconf(_SC_NPROCESSORS_ONLN);
 
   return(ret_string);
   }  /* END ncpus() */

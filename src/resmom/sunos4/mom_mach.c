@@ -158,6 +158,7 @@ extern	int			rm_errno;
 extern	unsigned	int	reqnum;
 extern	double	cputfactor;
 extern	double	wallfactor;
+/* wow, no ncpus - extern  long    system_ncpus; */
 
 /*
 ** local functions

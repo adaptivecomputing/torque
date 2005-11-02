@@ -164,6 +164,7 @@ extern	unsigned	int	reqnum;
 extern	char			*ret_string;
 extern	double	cputfactor;
 extern	double	wallfactor;
+extern  long    system_ncpus;
 
 /*
 ** local functions and data
@@ -1448,6 +1449,7 @@ struct	rm_attribute	*attrib;
 	}
 
 	sprintf(ret_string, "%ld", tinfo.mc_ncpu);
+	system_ncpus=tinfo.mc_ncpu;
 	return ret_string;
 }
 

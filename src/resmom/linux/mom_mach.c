@@ -184,8 +184,7 @@ extern	struct	rm_attribute	*momgetattr A_((char *));
 extern	int                      rm_errno;
 extern	double	cputfactor;
 extern	double	wallfactor;
-
-
+extern	long	system_ncpus;
 
 /*
 ** local functions and data
@@ -2970,6 +2969,8 @@ static char *ncpus(
 
   sprintf(ret_string,"%d",
     procs);
+
+  system_ncpus=procs;
 
   fclose(fp);
 

@@ -170,6 +170,7 @@ extern	struct	rm_attribute	*momgetattr A_((char *));
 extern	int			rm_errno;
 extern	double	cputfactor;
 extern	double	wallfactor;
+extern  long    system_ncpus;
 
 /*
 ** local functions and data
@@ -1713,6 +1714,7 @@ struct	rm_attribute	*attrib;
 		return NULL;
 	}
 	sprintf(ret_string, "%d", sysmp(MP_NAPROCS));
+	system_ncpus=sysmp(MP_NAPROCS);
 	return ret_string;
 }
 

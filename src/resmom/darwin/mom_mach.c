@@ -180,6 +180,7 @@ extern	unsigned	int	reqnum;
 extern	double	cputfactor;
 extern	double	wallfactor;
 extern  int     LOGLEVEL;
+extern  long    system_ncpus;
 
 /*
 ** local functions
@@ -2635,6 +2636,8 @@ static char *ncpus(
 
   sprintf(ret_string,"%d", 
     nncpus);
+
+  system_ncpus=nncpus;
 
   return(ret_string);
   }

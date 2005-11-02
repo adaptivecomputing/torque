@@ -158,6 +158,7 @@ extern	int			rm_errno;
 extern	unsigned	int	reqnum;
 extern	double	cputfactor;
 extern	double	wallfactor;
+extern  long    system_ncpus;
 
 /*
 ** local functions and data
@@ -1456,6 +1457,7 @@ struct	rm_attribute	*attrib;
           log_err(errno, id, log_buffer);
         }
 	sprintf(ret_string, "%d", (int) pst_d.psd_proc_cnt);
+	system_ncpus=(int) pst_d.psd_proc_cnt;
 	return ret_string;
 }
 

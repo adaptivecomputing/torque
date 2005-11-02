@@ -157,6 +157,7 @@ extern	int			rm_errno;
 extern	unsigned	int	reqnum;
 extern	double	cputfactor;
 extern	double	wallfactor;
+extern  long    system_ncpus;
 
 /*
 ** local functions and data
@@ -1557,6 +1558,7 @@ static char *ncpus(
 	}
 	free(pst_p);
 	sprintf(ret_string,"%d",retval);
+	system_ncpus=retval;
 	return ret_string;
 }
 
