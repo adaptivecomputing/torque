@@ -169,7 +169,7 @@ member should aways be a pointer to a null string.
 .LP
 The parameter,
 .Ar extend ,
-is reserved for implementation defined extensions.  TORQUE 2.0.0p2 added the
+is reserved for implementation defined extensions.  TORQUE 2.0.0p1 added the
 #define'd constant string EXECQUEONLY to only retrieve jobs in execution
 queues.
 .LP
