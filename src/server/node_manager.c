@@ -535,10 +535,12 @@ job *find_job_by_node(
     *at = '@';  /* restore @server_name */
 
   return(pjob);
-  }
-        
-        
+  } /* END find_job_by_node() */
 
+
+/*
+ * sync_node_jobs() - determine if a MOM has a stale job and possibly delete it
+ */
 void sync_node_jobs(
 
   struct pbsnode *np,            /* I */
@@ -560,36 +562,38 @@ void sync_node_jobs(
 
   while((jobidstr!=NULL) && isdigit(*jobidstr))
     {
-
-    if (find_job_by_node(np,jobidstr) == NULL)
+    if (strstr(jobidstr,server_name) != NULL)
       {
-      sprintf(log_buffer,"stray job %s found on %s",jobidstr,np->nd_name);
-
-      log_err(-1,id,log_buffer);
-
-      if ((preq = alloc_br(PBS_BATCH_DeleteJob)) == NULL)
+      if (find_job_by_node(np,jobidstr) == NULL)
         {
-        log_err(-1,id,"unable to allocate DeleteJob request - big trouble!");
+        sprintf(log_buffer,"stray job %s found on %s",jobidstr,np->nd_name);
 
-        break;
+        log_err(-1,id,log_buffer);
+
+        if ((preq = alloc_br(PBS_BATCH_DeleteJob)) == NULL)
+          {
+          log_err(-1,id,"unable to allocate DeleteJob request - big trouble!");
+
+          break;
+          }
+
+        conn = svr_connect(
+          np->nd_addrs[0],
+          pbs_mom_port,
+          process_Dreply,
+          ToServerDIS);
+
+        strcpy(preq->rq_ind.rq_delete.rq_objname,jobidstr);
+
+        issue_Drequest(conn,preq,release_req,0);
+
+        /* release_req will free preq and close connection */
         }
-
-      conn = svr_connect(
-        np->nd_addrs[0],
-        pbs_mom_port,
-        process_Dreply,
-        ToServerDIS);
-
-      strcpy(preq->rq_ind.rq_delete.rq_objname,jobidstr);
-
-      issue_Drequest(conn,preq,release_req,0);
-
-      /* release_req will free preq and close connection */
       }
     jobidstr=strtok(NULL," ");
     }
   free(joblist);
-  }
+  } /* END sync_node_jobs() */
 
 
 
