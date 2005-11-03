@@ -1674,6 +1674,7 @@ int main(
   struct batch_status *p_server;
   struct attropl *p_atropl = 0;
   char *errmsg;
+  int exec_only=0;
 
 #ifndef mbool
 #define mbool char
@@ -1688,7 +1689,7 @@ int main(
 #endif /* !FALSE */
 
 #if !defined(PBS_NO_POSIX_VIOLATION)
-#define GETOPT_ARGS "afinqrsu:xGMQRBW:-:"
+#define GETOPT_ARGS "aefinqrsu:xGMQRBW:-:"
 #else
 #define GETOPT_ARGS "fQBW:"
 #endif /* PBS_NO_POSIX_VIOLATION */
@@ -1705,6 +1706,9 @@ int main(
   option[0] = '-';
   option[2] = '\0';
 
+  if (getenv("PBS_QSTAT_EXECONLY") != NULL)
+    exec_only = 1;
+
   while ((c = getopt(argc,argv,GETOPT_ARGS )) != EOF) 
     {
     option[1] = (char)c;
@@ -1719,6 +1723,12 @@ int main(
       case 'a':
 
         alt_opt |= ALT_DISPLAY_a;
+
+        break;
+
+      case 'e':
+
+        exec_only = 1;
 
         break;
 
@@ -1968,7 +1978,7 @@ int main(
     {
     static char usage[]="usage: \n\
 qstat [-f] [-W site_specific] [ job_identifier... | destination... ]\n\
-qstat [-a|-i|-r] [-u user] [-n] [-s] [-G|-M] [-R] [job_id... | destination...]\n\
+qstat [-a|-i|-r|-e] [-u user] [-n] [-s] [-G|-M] [-R] [job_id... | destination...]\n\
 qstat -Q [-f] [-W site_specific] [ destination... ]\n\
 qstat -q [-G|-M] [ destination... ]\n\
 qstat -B [-f] [-W site_specific] [ server_name... ]\n";
@@ -2137,7 +2147,7 @@ job_no_args:
 
         if ((stat_single_job == 1) || (p_atropl == 0)) 
           {
-          p_status = pbs_statjob(connect,job_id_out,NULL,NULL);
+          p_status = pbs_statjob(connect,job_id_out,NULL, exec_only ? EXECQUEONLY : NULL);
           } 
         else 
           {

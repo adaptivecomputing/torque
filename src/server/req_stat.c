@@ -261,6 +261,9 @@ static void req_stat_job_step2(
   int		        rc = 0;
   int                   type;
 
+  pbs_queue            *pque = NULL;
+  int                   exec_only = 0;
+
   preq = cntl->sc_origrq;
   type = cntl->sc_type;
   preply = &preq->rq_reply;
@@ -355,11 +358,23 @@ static void req_stat_job_step2(
   else
     pjob = (job *)GET_NEXT(svr_alljobs);
 
+  if (preq->rq_extend != NULL)
+    if (!strncmp(preq->rq_extend,EXECQUEONLY,strlen(EXECQUEONLY)))
+      exec_only = 1;
+
   free(cntl);
 
   while (pjob != NULL) 
     {
     /* go ahead and build the status reply for this job */
+
+    if (exec_only)
+      {
+      pque=find_queuebyname(pjob->ji_qs.ji_queue);
+
+      if (pque->qu_qs.qu_type != QTYPE_Execution)
+         goto nextjob;
+      }
 
     pal = (svrattrl *)GET_NEXT(preq->rq_ind.rq_status.rq_attr);
 
@@ -373,6 +388,8 @@ static void req_stat_job_step2(
       }
 
     /* get next job */
+
+nextjob:
 
     if (type == 1)
       break;

@@ -83,7 +83,7 @@ qstat \- show status of pbs batch jobs
 .Sh SYNOPSIS
 qstat [-f][-W site_specific] [\^job_identifier... | destination...\^]
 .sp
-qstat [-a|-i|-r] [-n] [-s] [-G|-M] [-R] [-u user_list] [\^job_identifier... |\ 
+qstat [-a|-i|-r|-e] [-n] [-s] [-G|-M] [-R] [-u user_list] [\^job_identifier... |\ 
 destination...\^]
 .sp
 qstat -Q [-f][-W site_specific] [\^destination...\^]
@@ -124,7 +124,7 @@ When requesting queue or server status, synopsis format 3 through 5, qstat
 will output information about each
 .Ar destination .
 .if !\n(Pb .ig Ig
-The syntax using the [-a|-i|-r] line or the -q line are extensions to POSIX.
+The syntax using the [-a|-i|-r|-e] line or the -q line are extensions to POSIX.
 .Ig
 .Sh OPTIONS
 .IP "-f" 10
@@ -134,6 +134,10 @@ Specifies that a full status display be written to standard out.
 section.
 If the operand is a destination id, all jobs at that destination are displayed.
 If the operand is a job id, information about that job is displayed.
+.IP "-e" 10
+If the operand is a job id or not specified, only jobs in executable queues are
+displayed.  Setting the PBS_QSTAT_EXECONLY environment variable will also enable
+this option.
 .IP "-i" 10
 Job status is displayed in the alternative format.
 For a destination id operand, status for jobs at that destination which are not
@@ -145,7 +149,6 @@ state.
 If an operand is a job id, status for that job is displayed.
 For a destination id operand, status for jobs at that destination which are
 running are displayed,  this includes jobs which are suspended.
-If an operand is a job id, status for that job is displayed.
 .IP "-n" 10
 In addition to the basic information, nodes allocated to a job are listed.
 .IP "-s" 10

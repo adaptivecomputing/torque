@@ -169,11 +169,9 @@ member should aways be a pointer to a null string.
 .LP
 The parameter,
 .Ar extend ,
-is reserved for implementation defined extensions.
-.if !\n(Pb .ig Ig
-It is not
-currently used by this function.
-.Ig
+is reserved for implementation defined extensions.  TORQUE 2.0.0p2 added the
+#define'd constant string EXECQUEONLY to only retrieve jobs in execution
+queues.
 .LP
 The return value 
 is a pointer to a list of

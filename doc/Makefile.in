@@ -148,6 +148,7 @@ MAN3 =	$(DOCSRC)/man3/pbs_alterjob.3B \
 	$(DOCSRC)/man3/pbs_rlsjob.3B \
 	$(DOCSRC)/man3/pbs_runjob.3B \
 	$(DOCSRC)/man3/pbs_selectjob.3B \
+	$(DOCSRC)/man3/pbs_selstat.3B \
 	$(DOCSRC)/man3/pbs_sigjob.3B \
 	$(DOCSRC)/man3/pbs_stagein.3B \
 	$(DOCSRC)/man3/pbs_statjob.3B \

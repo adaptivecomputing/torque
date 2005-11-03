@@ -246,6 +246,7 @@
 
 #define DELDELAY  "deldelay="	/* see qdel.c */
 #define DELPURGE  "delpurge="   /* see qdel.c */
+#define EXECQUEONLY  "exec_queue_only"   /* see req_stat.c */
 
 #define USER_HOLD "u"
 #define OTHER_HOLD "o"
