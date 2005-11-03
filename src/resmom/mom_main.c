@@ -4881,13 +4881,21 @@ int main(
 
   errflg = 0;
 
-  while ((c = getopt(argc,argv,"a:c:C:d:M:S:R:L:prxv")) != -1) 
+  while ((c = getopt(argc,argv,"a:c:C:d:L:M:prR:S:vx")) != -1) 
     {
-    switch(c) 
+    switch (c) 
       {
-      case 'd':	/* directory */
+      case 'a':
 
-        path_home = optarg;
+        alarm_time = (int)strtol(optarg,&ptr,10);
+
+        if ((alarm_time <= 0) || (*ptr != '\0'))
+          {
+          fprintf(stderr,"%s: bad alarm time\n",
+            optarg);
+
+          errflg = 1;
+          }
 
         break;
 
@@ -4896,6 +4904,42 @@ int main(
         config_file_specified = 1;
 
         strcpy(config_file,optarg);	/* remember name */
+
+        break;
+
+      case 'C':
+
+#if MOM_CHECKPOINT == 1
+
+        if (*(optarg + strlen(optarg)) == '/')
+          {
+          path_checkpoint = optarg;
+          }
+        else
+          {
+          path_checkpoint = malloc(strlen(optarg) + 2);
+
+          strcpy(path_checkpoint,optarg);
+
+          strcat(path_checkpoint,"/");
+          }
+#else
+
+        fprintf(stderr,"Not compiled with CHECKPOINT\n");
+
+#endif  /* MOM_CHECKPOINT */
+
+        break;
+
+      case 'd': /* directory */
+
+        path_home = optarg;
+
+        break;
+
+      case 'L':
+
+        log_file = optarg;
 
         break;
 
@@ -4910,78 +4954,6 @@ int main(
 
           exit(1);
           }
-
-        break;
-
-      case 'S':
-
-        default_server_port = (unsigned int)atoi(optarg);
-
-        if (default_server_port == 0) 
-          {
-          fprintf(stderr,"Bad Server port value %s\n",
-            optarg);
-
-          exit(1);
-          }
-
-        break;
-
-      case 'R':
-
-        pbs_rm_port = (unsigned int)atoi(optarg);
-
-        if (pbs_rm_port == 0) 
-          {
-          fprintf(stderr,"Bad RM port value %s\n",
-            optarg);
-
-          exit(1);
-          }
-
-        break;
-
-      case 'L':
-
-        log_file = optarg;
-
-        break;
-
-      case 'a':
-
-        alarm_time = (int)strtol(optarg,&ptr,10);
-
-        if ((alarm_time <= 0) || (*ptr != '\0')) 
-          {
-          fprintf(stderr,"%s: bad alarm time\n", 
-            optarg);
-
-          errflg = 1;
-          }
-
-        break;
-
-      case 'C':
-
-#if MOM_CHECKPOINT == 1
-
-        if (*(optarg+strlen(optarg)) == '/') 
-          {
-          path_checkpoint = optarg;
-          }
-        else 
-          {
-          path_checkpoint = malloc(strlen(optarg) + 2);
-
-          strcpy(path_checkpoint,optarg);
-
-          strcat(path_checkpoint,"/");
-          }
-#else
-
-        fprintf(stderr,"Not compiled with CHECKPOINT\n");
-
-#endif	/* MOM_CHECKPOINT */
 
         break;
 
@@ -5003,9 +4975,31 @@ int main(
 
         break;
 
-      case 'x':
+      case 'R':
 
-        port_care = FALSE;
+        pbs_rm_port = (unsigned int)atoi(optarg);
+
+        if (pbs_rm_port == 0)
+          {
+          fprintf(stderr,"Bad RM port value %s\n",
+            optarg);
+
+          exit(1);
+          }
+
+        break;
+
+      case 'S':
+
+        default_server_port = (unsigned int)atoi(optarg);
+
+        if (default_server_port == 0) 
+          {
+          fprintf(stderr,"Bad Server port value %s\n",
+            optarg);
+
+          exit(1);
+          }
 
         break;
 
@@ -5013,6 +5007,12 @@ int main(
 
         fprintf(stderr,"version: %s\n",
           "N/A");
+
+        break;
+
+      case 'x':
+
+        port_care = FALSE;
 
         break;
 

@@ -1217,7 +1217,12 @@ void init_abort_jobs(
           {
           sprintf(log_buffer,"local host is not mother-superior, deleting job %s",
             pj->ji_qs.ji_jobid);
-                                                                                                     log_record(                                                                                  PBSEVENT_DEBUG,                                                                            PBS_EVENTCLASS_JOB,                                                                        id,                                                                                        log_buffer);
+
+          log_record(
+            PBSEVENT_DEBUG,
+            PBS_EVENTCLASS_JOB,
+            id,
+            log_buffer); 
           }
 
         mom_deljob(pj);
@@ -1239,7 +1244,7 @@ void init_abort_jobs(
         }
 
       /* set exit status to:
-       *   JOB_EXEC_INITABT - init abort and no chkpnt
+       *   JOB_EXEC_INITABT - init abort and no chkpt
        *   JOB_EXEC_INITRST - init and chkpt, no mig
        *   JOB_EXEC_INITRMG - init and chkpt, migrate
        * to indicate recovery abort

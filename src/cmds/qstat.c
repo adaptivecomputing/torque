@@ -560,19 +560,19 @@ static void altdsp_statjob(
 
     if (alt_opt & ALT_DISPLAY_R) 
       {
-      printf("\n                                          Req'd  Req'd   Elap \n");
+      printf("\n                                             Req'd  Req'd   Elap \n");
 
-      printf("Job ID          Username Queue    NDS TSK Memory Time  S Time   BIG  FAST   PFS\n");
+      printf("Job ID             Username Queue    NDS TSK Memory Time  S Time   BIG  FAST   PFS\n");
 
-      printf("--------------- -------- -------- --- --- ------ ----- - ----- ----- ----- -----\n"); 
+      printf("------------------ -------- -------- --- --- ------ ----- - ----- ----- ----- -----\n"); 
       } 
     else 
       {
-      printf("\n                                                            Req'd  Req'd   Elap\n");
+      printf("\n                                                               Req'd  Req'd   Elap\n");
 
-      printf("Job ID          Username Queue    Jobname    SessID NDS TSK Memory Time  S Time\n");
+      printf("Job ID             Username Queue    Jobname    SessID NDS TSK Memory Time  S Time\n");
 
-      printf("--------------- -------- -------- ---------- ------ --- --- ------ ----- - -----\n");
+      printf("------------------ -------- -------- ---------- ------ --- --- ------ ----- - -----\n");
       }
     }
 
@@ -667,40 +667,60 @@ static void altdsp_statjob(
 		    }
 
 		    pat = pat->next;
-		}
+      }
 
+    printf("%-20.20s %-8.8s %-8.8s ", 
+      pstat->name, 
+      usern, 
+      queuen);
 
-		printf("%-15.15s %-8.8s %-8.8s ", 
-			pstat->name, usern, queuen);
-		if (alt_opt & ALT_DISPLAY_R) {
-			printf("%3.3s %3.3s %6.6s %5.5s %1.1s %5.5s %5.5s %5.5s %5.5s\n", 
-				nodect, tasks, rqmem, 
-				usecput ? rqtimecpu : rqtimewal,
-				jstate, 
-				usecput ? eltimecpu : eltimewal,
-				srfsbig, srfsfast, pfs);
-		} else {
-			printf("%-10.10s %6.6s %3.3s %3.3s %6.6s %5.5s %1.1s %5.5s\n",
-				jobn, sess, nodect, tasks, 
-				rqmem,
-				usecput ? rqtimecpu : rqtimewal,
-				jstate, 
-				usecput ? eltimecpu : eltimewal);
-		}
+    if (alt_opt & ALT_DISPLAY_R) 
+      {
+      printf("%5.5s %3.3s %6.6s %5.5s %1.1s %5.5s %5.5s %5.5s %5.5s\n", 
+        nodect, 
+        tasks, 
+        rqmem, 
+        usecput ? rqtimecpu : rqtimewal,
+        jstate, 
+        usecput ? eltimecpu : eltimewal,
+        srfsbig, 
+        srfsfast, 
+        pfs);
+      } 
+    else 
+      {
+      printf("%-10.10s %6.6s %5.5s %3.3s %6.6s %5.5s %1.1s %5.5s\n",
+        jobn, 
+        sess, 
+        nodect, 
+        tasks, 
+        rqmem,
+        usecput ? rqtimecpu : rqtimewal,
+        jstate, 
+        usecput ? eltimecpu : eltimewal);
+      }
 
-		if (alt_opt & ALT_DISPLAY_n) {
-			/* print assigned nodes */
-			prt_nodes(exechost);
-		}
-		if (alt_opt & ALT_DISPLAY_s) {
-			/* print (scheduler) comment */
-			if (*comment != '\0')
-				printf("   %s\n", comment);
-		}
+    if (alt_opt & ALT_DISPLAY_n) 
+      {
+      /* print assigned nodes */
 
-		pstat = pstat->next;
-	}
-}
+      prt_nodes(exechost);
+      }
+
+    if (alt_opt & ALT_DISPLAY_s) 
+      {
+      /* print (scheduler) comment */
+  
+      if (*comment != '\0')
+        printf("   %s\n", 
+          comment);
+      }
+
+    pstat = pstat->next;
+    }
+
+  return;
+  }  /* END altdsp_statjob() */
 
 
 
@@ -777,14 +797,19 @@ static void altdsp_statque(
 
     while (pat != NULL) 
       {
-			if (strcmp(pat->name, ATTR_maxrun) == 0) {
-				jmax = pat->value;
-			} else if (strcmp(pat->name, ATTR_enable) == 0) {
-				if (*pat->value == 'T')
-					qenabled = 'E';
-				else
-					qenabled = 'D';
-			} else if (strcmp(pat->name, ATTR_start) == 0) {
+      if (strcmp(pat->name,ATTR_maxrun) == 0) 
+        {
+        jmax = pat->value;
+        } 
+      else if (strcmp(pat->name,ATTR_enable) == 0) 
+        {
+        if (*pat->value == 'T')
+          qenabled = 'E';
+        else
+          qenabled = 'D';
+        } 
+      else if (strcmp(pat->name,ATTR_start) == 0) 
+        {
 				if (*pat->value == 'T')
 					qstarted = 'R';
 				else
@@ -808,7 +833,7 @@ static void altdsp_statque(
 			pat = pat->next;
 		}
 
-		printf("%-16.16s %6.6s %8.8s %8.8s %4.4s ",
+		printf("%-16.16s %6.6s %8.8s %8.8s %5.5s ",
 		       pstat->name, rmem, cput, wallt, nodect);
 		printf("%3d %3d %2.2s   %c %c\n",
 		       jrun, jque, jmax, qenabled, qstarted);
@@ -900,8 +925,8 @@ void display_statjob(
       {
       /* display summary header */
 
-      printf("Job id           Name             User             Time Use S Queue\n");
-      printf("---------------- ---------------- ---------------- -------- - -----\n");
+      printf("Job id              Name             User             Time Use S Queue\n");
+      printf("------------------- ---------------- ---------------- -------- - -----\n");
       }
     }    /* END if (!full) */
 
@@ -996,7 +1021,7 @@ void display_statjob(
                 *c = '\0';
                 l = strlen(p->name);
                 if ( l > (PBS_MAXSEQNUM+8) ) {
-                    c = p->name + PBS_MAXSEQNUM + 8;
+                    c = p->name + PBS_MAXSEQNUM + 14;
                     *c = '\0';
                 }
                 jid = p->name;
