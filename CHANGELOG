@@ -1,6 +1,7 @@
 2.0.0p1
 
-  new qstat -e option to only select jobs in executable queues (USC)
+  fix detection of local output files with localhost or /dev/null (USC)
+  new qstat/qselect -e option to only select jobs in exec queues (USC)
   $clienthost and $headnode removed, $pbsclient and $pbsserver added (USC)
   $PBS_HOME/server_name is now added to MOM's server list (USC)
   resmom transient TMPDIR (USC)
@@ -33,7 +34,7 @@
 
 1.2.0p6
 
-  enabled opsys mom confing (USC) 
+  enabled opsys mom config (USC) 
   enabled arch mom config (CRI)
   fixed qrun based default scheduling to ignore down nodes (USC)
   disable unsetting of key/integer server parameters (USC)
