@@ -82,7 +82,7 @@
 qselect \- select pbs batch jobs
 .Sh SYNOPSIS
 qselect
-[-a [op]date_time] [-A account_string] [-c [op]interval]
+[-a [op]date_time] [-A account_string] [-e] [-c [op]interval]
 [-h hold_list] [-l resource_list] [-N name] [-p [op]priority]
 [-q destination] [-r rerun] [-s states] [-u user_list]
 .Sh DESCRIPTION
@@ -217,6 +217,8 @@ attribute is less than (before) the
 .Ar date_time
 argument.
 .RE
+.IP "-e" 10
+Restricts selection to jobs in execution queues.
 .IP "-A account_string" 10
 Restricts selection to jobs whose 
 .At Account_Name

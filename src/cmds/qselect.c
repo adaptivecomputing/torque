@@ -286,8 +286,12 @@ int main(
     int u_cnt, o_cnt, s_cnt, n_cnt;
     time_t after;
     char a_value[80];
+    int exec_only = 0;
 
-#define GETOPT_ARGS "a:A:c:h:l:N:p:q:r:s:u:"
+    if (getenv("PBS_QSTAT_EXECONLY") != NULL)
+      exec_only = 1;
+
+#define GETOPT_ARGS "a:A:ec:h:l:N:p:q:r:s:u:"
          
     while ((c = getopt(argc, argv, GETOPT_ARGS)) != EOF)
     switch (c) {
@@ -302,6 +306,9 @@ int main(
 
         sprintf(a_value, "%ld", (long)after);
         set_attrop(&select_list, ATTR_a, NULL, a_value, op);
+        break;
+    case 'e':
+        exec_only = 1;
         break;
     case 'c':
         check_op(optarg, pop, optargout); 
@@ -454,7 +461,7 @@ int main(
 
     if (errflg || (optind < argc)) {
         static char usage[]="usage: qselect \
-[-a [op]date_time] [-A account_string] [-c [op]interval] \n\
+[-a [op]date_time] [-A account_string] [-e] [-c [op]interval] \n\
 [-h hold_list] [-l resource_list] [-N name] [-p [op]priority] \n\
 [-q destination] [-r y|n] [-s states] [-u user_name]\n";
         fprintf(stderr, usage);
@@ -478,7 +485,7 @@ int main(
                 pbs_server, pbs_errno);
         exit(pbs_errno);
     }
-    selectjob_list = pbs_selectjob(connect, select_list, NULL);
+    selectjob_list = pbs_selectjob(connect, select_list, exec_only ? EXECQUEONLY : NULL);
     if ( selectjob_list == NULL ) {
         if ( pbs_errno != PBSE_NONE ) {
             errmsg = pbs_geterrmsg(connect);

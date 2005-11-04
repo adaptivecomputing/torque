@@ -281,7 +281,9 @@ needed, by calling \f3pbs_statfree\f1().
 .LP
 The parameter,
 .Ar extend ,
-is reserved for implementation defined extensions.
+is reserved for implementation defined extensions.  TORQUE 2.0.0p1 added the
+#define'd constant string EXECQUEONLY to only retrieve jobs in execution
+queues.
 .if !\n(Pb .ig Ig
 It is not
 currently used by this function.

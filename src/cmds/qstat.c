@@ -2176,7 +2176,7 @@ job_no_args:
           } 
         else 
           {
-          p_status = pbs_selstat(connect,p_atropl,NULL);
+          p_status = pbs_selstat(connect,p_atropl,exec_only ? EXECQUEONLY : NULL);
           }
 
             if ( p_status == NULL ) {

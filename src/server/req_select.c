@@ -297,6 +297,8 @@ static void sel_step2(
   {
   job *pjob;
   int  rc;
+  int		      exec_only = 0;
+  pbs_queue           *pque = NULL;
 
   /* do first pass of finding jobs that match the selection criteria */
 
@@ -304,6 +306,10 @@ static void sel_step2(
     pjob = NULL;
   else
     pjob = find_job(cntl->sc_jobid);
+
+  if (cntl->sc_origrq->rq_extend != NULL)
+    if (!strncmp(cntl->sc_origrq->rq_extend,EXECQUEONLY,strlen(EXECQUEONLY)))
+      exec_only = 1;
 
   while (1) 
     {
@@ -331,6 +337,14 @@ static void sel_step2(
 	
     if (pjob == NULL)
       break;
+
+    if (exec_only)
+      {
+      pque=find_queuebyname(pjob->ji_qs.ji_queue);
+
+      if (pque->qu_qs.qu_type != QTYPE_Execution)
+         continue;
+      }
 
     if (server.sv_attr[(int)SRV_ATR_query_others].at_val.at_long ||
        (svr_authorize_jobreq(cntl->sc_origrq,pjob) == 0)) 
@@ -386,6 +400,8 @@ static void sel_step3(
   struct brp_select    *pselect;
   struct brp_select   **pselx;
   int		      rc = 0;
+  int		      exec_only = 0;
+  pbs_queue           *pque = NULL;
 
   /* setup the appropriate return */
 
@@ -405,6 +421,10 @@ static void sel_step3(
 
   pselx = &preply->brp_un.brp_select;
 
+  if (preq->rq_extend != NULL)
+    if (!strncmp(preq->rq_extend,EXECQUEONLY,strlen(EXECQUEONLY)))
+      exec_only = 1;
+
   /* now start checking for jobs that match the selection criteria */
 
   if (cntl->sc_pque) 
@@ -415,9 +435,17 @@ static void sel_step3(
   while (pjob != NULL) 
     {
     if (server.sv_attr[(int)SRV_ATR_query_others].at_val.at_long ||
-       (svr_authorize_jobreq(preq,pjob) == 0) ) 
+        (svr_authorize_jobreq(preq,pjob) == 0) ) 
       {
       /* either job owner or has special permission to look at job */
+
+      if (exec_only)
+        {
+        pque=find_queuebyname(pjob->ji_qs.ji_queue);
+
+        if (pque->qu_qs.qu_type != QTYPE_Execution)
+           goto nextjob;
+        }
 
       if (select_job(pjob,cntl->sc_select))  
         {
@@ -427,36 +455,39 @@ static void sel_step3(
           {
           /* Select Jobs */
 
-			pselect = (struct brp_select *)
-					malloc(sizeof (struct brp_select));
-			if (pselect == (struct brp_select *)0) {
-				rc = PBSE_SYSTEM;
-				break;
-			}
-			pselect->brp_next = (struct brp_select*)0;
-			(void)strcpy(pselect->brp_jobid, pjob->ji_qs.ji_jobid);
-			*pselx = pselect;
-			pselx = &pselect->brp_next;
-			preq->rq_reply.brp_auxcode++;
+	  pselect = malloc(sizeof (struct brp_select));
 
-		    } else {
-
-			/* Select-Status */
-
-			rc = status_job(pjob, preq, (svrattrl *)0,
-					&preply->brp_un.brp_status, &bad);
-			if (rc && (rc != PBSE_PERM)) {
-				break;
-			}
-
-		    }
-		}
+	  if (pselect == NULL)
+            {
+	    rc = PBSE_SYSTEM;
+	    break;
 	    }
-	    if (cntl->sc_pque)
-		pjob = (job *)GET_NEXT(pjob->ji_jobque);
-	    else
-		pjob = (job *)GET_NEXT(pjob->ji_alljobs);
-	}
+	  pselect->brp_next = NULL;
+
+	  strcpy(pselect->brp_jobid,pjob->ji_qs.ji_jobid);
+	  *pselx = pselect;
+	  pselx = &pselect->brp_next;
+	  preq->rq_reply.brp_auxcode++;
+
+	  }
+        else
+          {
+	  /* Select-Status */
+
+	  rc = status_job(pjob,preq,NULL,&preply->brp_un.brp_status,&bad);
+          if (rc && (rc != PBSE_PERM))
+	    break;
+          }
+        }
+      }
+
+nextjob:
+
+    if (cntl->sc_pque)
+      pjob = (job *)GET_NEXT(pjob->ji_jobque);
+    else
+      pjob = (job *)GET_NEXT(pjob->ji_alljobs);
+  }
 
   free_sellist(cntl->sc_select);
 

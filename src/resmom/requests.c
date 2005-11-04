@@ -709,7 +709,7 @@ static int local_or_remote(
 
   len = strlen(*path);
 
-  if ((strcmp("localhost",*path) == 0) ||
+  if ((strncmp("localhost",*path,9) == 0) ||
      ((strncmp(mom_host,*path,len) == 0) && 
      ((mom_host[len] == '\0') || (mom_host[len] == '.')))) 
     {
@@ -2336,7 +2336,7 @@ void req_cpyfile(
        pair != NULL;
        pair = (struct rqfpair *)GET_NEXT(pair->fp_link)) 
     {
-    if ((pair->fp_rmt != NULL) && (!strcmp(pair->fp_rmt,"/dev/null")))
+    if ((pair->fp_rmt != NULL) && (strstr(pair->fp_rmt,":/dev/null")))
       {
       /* ignore copies to/from /dev/null */
 
