@@ -136,7 +136,7 @@ extern  int             MOMRecvHelloCount[];
 extern  int             MOMRecvClusterAddrsCount[];
 extern  time_t          LastServerUpdateTime;
 extern  int             ServerStatUpdateInterval;
-extern  char            pbs_servername[PBS_MAXSERVER][PBS_MAXHOSTNAME + 1];
+extern  char            pbs_servername[PBS_MAXSERVER][PBS_MAXSERVERNAME + 1];
 extern  u_long          MOMServerAddrs[PBS_MAXSERVER];
 
 int			SStream[PBS_MAXSERVER];  /* streams to pbs_server daemons */

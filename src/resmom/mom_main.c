@@ -1300,7 +1300,7 @@ static u_long setpbsserver(
     return(0); /* FAILURE */
     }
 
-  strncpy(pbs_servername[index],value,PBS_MAXHOSTNAME);
+  strncpy(pbs_servername[index],value,PBS_MAXSERVERNAME);
 
   MOMServerAddrs[index] = ipaddr;
 
