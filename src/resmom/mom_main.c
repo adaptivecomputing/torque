@@ -3395,61 +3395,62 @@ int rm_request(
           }
         else 
           {
-          if (!strcmp(name,"clearjob="))
+          if (!strncasecmp(name,"clearjob",strlen("clearjob")))
             {
-            char *ptr;
+            char *ptr = NULL;
 
-            job *pjob;
+            job *pjob = NULL, *pjobnext = NULL;
 
-            ptr = name + strlen("clearjob=");
-
+            if ( (*curr == '=') && ((*curr)+1 != '\0' ))
+              {
+              ptr = curr+1;
+              }
+            
             /* purge job if local */
 
-            if ((pjob = (job *)GET_NEXT(svr_alljobs)) != NULL)
+            if (ptr == NULL)
+              {
+              strcpy(output,"invalid clearjob request");
+              }
+            else
               {
               char tmpLine[1024];
 
-              for (;pjob != NULL;pjob = (job *)GET_NEXT(pjob->ji_alljobs))
+              if (!strcasecmp(ptr,"all"))
                 {
-                if ((ptr != NULL) && 
-                     strcasecmp(ptr,"all") && 
-                     strcmp(ptr,pjob->ji_qs.ji_jobid))
-                  continue;  
+                if ((pjob = (job *)GET_NEXT(svr_alljobs)) != NULL)
+                  {
+                  while (pjob != NULL)
+                    {
+                    sprintf(tmpLine,"clearing job %s",
+                      pjob->ji_qs.ji_jobid);
 
+                    log_record(PBSEVENT_SYSTEM,0,id,tmpLine);
+
+                    pjobnext = (job *)GET_NEXT(pjob->ji_alljobs);
+
+                    job_purge(pjob);
+                
+                    pjob = pjobnext;
+
+                    strcat(output,tmpLine);
+                    strcat(output,"\n");
+                    }
+                  }
+                strcat(output,"clear completed");
+                }
+              else if ((pjob = find_job(ptr)) != NULL)
+                {
                 sprintf(tmpLine,"clearing job %s",
                   pjob->ji_qs.ji_jobid);
 
                 log_record(PBSEVENT_SYSTEM,0,id,tmpLine);
 
                 job_purge(pjob);
+
+                strcpy(output,tmpLine);
                 }
               }
-
-            /* remove job from spool directory */
-
-            if ((ptr != NULL) && 
-                (ptr[0] != '\0') &&
-                strcasecmp(ptr,"all"))
-              {
-              char tmpLine[1024];
-
-              sprintf(tmpLine,"%s%s",
-                path_jobs,
-                ptr);
-
-              errno = 0;
-
-              remove(tmpLine);
-
-              sprintf(log_buffer,"removed file '%s', errno=%d (%s)",
-                tmpLine,
-                errno,
-                strerror(errno));
-
-              log_record(PBSEVENT_SYSTEM,0,id,log_buffer);
-              }
-
-            strcpy(output,"clear completed");
             }
           else if (!strncasecmp(name,"clearmsg",strlen("clearmsg")))
             {
