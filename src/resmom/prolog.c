@@ -105,6 +105,7 @@
 #define PBS_PROLOG_TIME 300
 
 extern char PBSNodeMsgBuf[];
+extern int  MOMPrologTimeoutCount;
 extern int  LOGLEVEL;
 extern int  lockfds;
 
@@ -367,6 +368,8 @@ int run_pelog(
         {
         if (KillSent == FALSE)
           {
+          MOMPrologTimeoutCount++;
+
           /* timeout occurred */
 
           KillSent = TRUE;

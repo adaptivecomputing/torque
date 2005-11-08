@@ -224,7 +224,7 @@ time_t          MOMStartTime              = 0;
 time_t          MOMLastSendToServerTime[PBS_MAXSERVER];
 time_t          MOMLastRecvFromServerTime[PBS_MAXSERVER];
 char            MOMLastRecvFromServerCmd[PBS_MAXSERVER][MMAX_LINE];
-
+int             MOMPrologTimeoutCount;
 int             MOMRecvHelloCount[PBS_MAXSERVER];
 int             MOMRecvClusterAddrsCount[PBS_MAXSERVER];
 int             MOMSendHelloCount[PBS_MAXSERVER];
@@ -1618,7 +1618,7 @@ static unsigned long prologalarm(
   log_record(
     PBSEVENT_SYSTEM, 
     PBS_EVENTCLASS_SERVER,
-    "prolog_alarm",
+    "prologalarm",
     value);
 
   i = (int)atoi(value);
@@ -1740,6 +1740,9 @@ static unsigned long setcheckpolltime(
   return(1);
   }  /* END setcheckpolltime() */
 
+
+
+
 /*
 **	Add static resource or shell escape line from config file.
 **	This is a support routine for read_config().
@@ -1759,8 +1762,12 @@ static void add_static(
   str = tokcpy(str,name); /* resource name */
   str = skipwhite(str);	  /* resource value */
 
+  /* FORMAT:  <ATTR> [!]<VALUE> */
+
   if (*str == '!')	/* shell escape command */
     {
+    /* remove trailing newline */
+
     rmnl(str);
     }
   else 
@@ -1771,7 +1778,7 @@ static void add_static(
       {	
       /* strip trailing blanks */
 
-      if (!isspace((int)*(str+i)))
+      if (!isspace((int)*(str + i)))
         break;
 
       *(str + i) = '\0';
@@ -2478,13 +2485,15 @@ char *conf_res(
 
       for (i = 0;name[i];i++) 
         {
-        if (strcmp(param, name[i]) == 0)
+        if (strcmp(param,name[i]) == 0)
           break;
         }
 
       if (name[i]) 
-        {	/* found a match */
-        char	*x = value[i];
+        {	
+        /* found a match */
+
+        char *x = value[i];
 
         while (*x)
           {
@@ -3687,6 +3696,15 @@ int rm_request(
               {
               sprintf(tmpLine,"WARNING:  passwd file is corrupt (job requests user '%s' - not found in local passwd file)\n",
                 MOMUNameMissing);
+
+              MUStrNCat(&BPtr,&BSpace,tmpLine);
+              }
+
+            if (MOMPrologTimeoutCount > 0)
+              {
+              sprintf(tmpLine,"WARNING:  %d prolog timeouts (%d seconds) detected since start up - increase $prologalarm or investigate prolog\n",
+                MOMPrologTimeoutCount,
+                pe_alarm_time);
 
               MUStrNCat(&BPtr,&BSpace,tmpLine);
               }
@@ -5555,7 +5573,7 @@ int main(
 
   if (read_config(NULL)) 
     {
-    fprintf(stderr,"%s: config file '%s' failed\n",
+    fprintf(stderr,"%s: cannot load config file '%s'\n",
       argv[0], 
       config_file);
 
