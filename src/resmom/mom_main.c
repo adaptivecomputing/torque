@@ -1231,6 +1231,7 @@ static u_long setpbsserver(
   struct hostent *host, *gethostbyname();
   struct in_addr  saddr;
   u_long	  ipaddr;
+  char           tmpname[PBS_MAXSERVERNAME+0], *portstr;
 
   if ((value == NULL) || (value[0] == '\0'))
     {
@@ -1239,10 +1240,17 @@ static u_long setpbsserver(
     return(1);
     }
 
-  if ((host = gethostbyname(value)) == NULL) 
+  strncpy(tmpname,value,PBS_MAXSERVERNAME);
+
+  if ((portstr = strchr(tmpname,':')) != NULL)
+    {
+    *portstr='\0';
+    }
+
+  if ((host = gethostbyname(tmpname)) == NULL) 
     {
     sprintf(log_buffer,"server host %s not found", 
-      value);
+      tmpname);
 
     log_err(-1,id,log_buffer);
 
@@ -1259,7 +1267,7 @@ static u_long setpbsserver(
       {
       /* IGNORE DUPLICATE SERVERNAME REQUEST */
 
-      sprintf(log_buffer,"server hostname %s already added", 
+      sprintf(log_buffer,"server host %s already added", 
         value);
 
       log_record(PBSEVENT_SYSTEM,PBS_EVENTCLASS_SERVER,id,log_buffer);
@@ -1293,7 +1301,7 @@ static u_long setpbsserver(
 
     sprintf(log_buffer,"server table overflow (max=%d) - server host %s not added", 
       PBS_MAXSERVER,
-      value);
+      tmpname);
 
     log_err(-1,id,log_buffer);
 
@@ -2814,20 +2822,34 @@ int init_server_stream(
   static char id[] = "init_server_stream";
 
   static int PassCount = 0;
+  int port = default_server_port;
+  char *portstr;
+
+  if ((portstr=strchr(pbs_servername[ServerIndex],':')) != NULL)
+    {
+    *(portstr)='\0';
+
+    if (*(portstr+1) != '\0')
+      port=atoi(portstr+1);
+
+    if (port == 0)
+      port = default_server_port;
+
+    }
 
   if (LOGLEVEL >= 5)
     {
-    sprintf(log_buffer,"%s: trying to open %s port %d",
+    sprintf(log_buffer,"%s: trying to open RPP conn to %s port %d",
       id,
       pbs_servername[ServerIndex],
-      default_server_port);
+      port);
 
     log_record(PBSEVENT_SYSTEM,0,id,log_buffer);
     }
 
   if ((SStream[ServerIndex] = rpp_open(
          pbs_servername[ServerIndex],
-         default_server_port,
+         port,
          MOMSendStatFailure[ServerIndex])) < 0)
     {
     /* FAILURE */
@@ -2856,17 +2878,24 @@ int init_server_stream(
 
     SStream[ServerIndex] = -1;
 
+    if (portstr != NULL)
+      *portstr=':';
+
     return(DIS_EOF);
     }
 
   if (LOGLEVEL >= 3)
     {
-    sprintf(log_buffer,"%s: added connection to %s",
+    sprintf(log_buffer,"%s: added connection to %s port %d",
       id,
-      pbs_servername[ServerIndex]);
+      pbs_servername[ServerIndex],
+      port);
 
     log_record(PBSEVENT_SYSTEM,0,id,log_buffer);                                         
     }
+
+  if (portstr != NULL)
+    *portstr=':';
 
   return(DIS_SUCCESS);
   }  /* END init_server_stream() */
@@ -5508,12 +5537,6 @@ int main(
       {
       if ((pn = strchr(tmpLine,'\n')))
         *pn = '\0';
-
-      /* FIXME: uncomment this when we correctly handle port numbers
-         setpbsserver() will print an error message in the meantime
-      if ((pn = strchr(tmpLine,':')))
-        *pn = '\0';
-      */
 
       setpbsserver(tmpLine);
       }
