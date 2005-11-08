@@ -2034,9 +2034,11 @@ int process_opts(
   char *pc;
   char *pdepend;
 
-  FILE *fP;
+  FILE *fP=NULL;;
   char tmp_name[]="/tmp/qsub.XXXXXX";;
+  char tmp_name2[]="/tmp/qsub.XXXXXX";;
   char cline[4096];
+  char tmpResources[4096]="";
   char *cP;
 
   char *ptr;
@@ -2414,33 +2416,12 @@ int process_opts(
 
         if (Interact_opt == 1) 
           {
+          char tmpLine[4096];
           /* Queue interactive resources to temp file. */
 
-          if ((tmpfd = mkstemp(tmp_name)) < 0)
-            {
-            fprintf(stderr,
-              "qsub: could not create tmp job file %s\n",
-              tmp_name);
-      
-            errflg++;
+          strcpy(tmpLine,tmpResources);
 
-            break;
-            }
-      
-          if ((fP = fdopen(tmpfd,"w+")) == NULL)
-            {
-            fprintf(stderr, "qsub: could not create tmp job file %s\n",
-              tmp_name);
-      
-            errflg++;
-
-            break;
-            }
-
-          fputs("#PBS -l ",fP);
-          fputs(optarg,fP);
-          fputs("\n",fP);
-          fclose(fP);
+          sprintf(tmpResources,"%s#PBS -l %s\n",tmpLine,optarg);
           } 
         else 
           {
@@ -2902,16 +2883,55 @@ int process_opts(
     {
     /* Evaluate resources for interactive submission here. */
 
-    fP = fopen(tmp_name,"a+");
+    if ((tmpfd = mkstemp(tmp_name)) < 1)
+      {
+      fprintf(stderr,
+        "qsub: could not create tmp job file %s\n",
+        tmp_name);
+    
+      errflg++;
 
-    fputs("\n",fP);
-    fputs("\n",fP);
+      goto err;
+      }
+
+    if ((fP = fdopen(tmpfd,"w+")) == NULL)
+      {
+      fprintf(stderr, "qsub: could not create tmp job file %s\n",
+        tmp_name);
+      
+      errflg++;
+
+      goto err;
+      }
+
+    if (fprintf(fP,"%s\n\n",tmpResources) < 0)
+      {
+      fprintf(stderr, "qsub: unable to write to tmp job file %s\n",
+        tmp_name);
+
+      errflg++;
+
+      goto err;
+      }
 
     fclose(fP);
 
     if (stat(PBS_Filter,&sfilter) != -1)
       {
       int index;
+
+      if ((tmpfd = mkstemp(tmp_name2)) < 1)
+        {
+        fprintf(stderr,
+          "qsub: could not create tmp job file %s\n",
+          tmp_name2);
+    
+        errflg++;
+
+        goto err;
+        }
+
+      close(tmpfd);
 
       /* run the specified resources through the submitfilter. */
 
@@ -2930,23 +2950,26 @@ int process_opts(
       strcat(cline," <");
       strcat(cline,tmp_name);
       strcat(cline," >");
-      strcat(cline,tmp_name);
-      strcat(cline,"2");
+      strcat(cline,tmp_name2);
 
       if (system(cline) == -1)
         {
         fprintf( stderr, "qsub: error writing filter o/p, %s\n",
-          tmp_name);
+          tmp_name2);
 
         exit(1);
         }
 
-      unlink(tmp_name);
-      strcat(tmp_name,"2");
-      }
+      fP = fopen(tmp_name2,"r+");
 
-    fP = fopen(tmp_name,"r+");
-    unlink(tmp_name);
+      unlink(tmp_name2);
+      unlink(tmp_name);
+      }
+    else
+      {
+      fP = fopen(tmp_name,"r+");
+      unlink(tmp_name);
+      }
 
     /* evaluate the resources */
 
@@ -2975,6 +2998,7 @@ int process_opts(
 
 /* END ORNL WRAPPER */
 
+err:
   if (!errflg && pass) 
     {
     errflg = (optind != argc);
