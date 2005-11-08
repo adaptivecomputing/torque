@@ -225,6 +225,7 @@ time_t          MOMLastSendToServerTime[PBS_MAXSERVER];
 time_t          MOMLastRecvFromServerTime[PBS_MAXSERVER];
 char            MOMLastRecvFromServerCmd[PBS_MAXSERVER][MMAX_LINE];
 int             MOMPrologTimeoutCount;
+int             MOMPrologFailureCount;
 int             MOMRecvHelloCount[PBS_MAXSERVER];
 int             MOMRecvClusterAddrsCount[PBS_MAXSERVER];
 int             MOMSendHelloCount[PBS_MAXSERVER];
@@ -3706,6 +3707,14 @@ int rm_request(
               sprintf(tmpLine,"WARNING:  %d prolog timeouts (%d seconds) detected since start up - increase $prologalarm or investigate prolog\n",
                 MOMPrologTimeoutCount,
                 pe_alarm_time);
+
+              MUStrNCat(&BPtr,&BSpace,tmpLine);
+              }
+
+            if (MOMPrologFailureCount > 0)
+              {
+              sprintf(tmpLine,"WARNING:  %d prolog failures detected since start up - investigate prolog\n",
+                MOMPrologFailureCount);
 
               MUStrNCat(&BPtr,&BSpace,tmpLine);
               }

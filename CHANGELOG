@@ -1,5 +1,6 @@
 2.0.0p1
 
+  add mom diagnostics for prolog failures and timeouts
   fix clearjob MOM request (momctl -c) (USC)
   fix detection of local output files with localhost or /dev/null (USC)
   new qstat/qselect -e option to only select jobs in exec queues (USC)

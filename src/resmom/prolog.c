@@ -106,6 +106,8 @@
 
 extern char PBSNodeMsgBuf[];
 extern int  MOMPrologTimeoutCount;
+extern int  MOMPrologFailureCount;
+
 extern int  LOGLEVEL;
 extern int  lockfds;
 
@@ -346,9 +348,16 @@ int run_pelog(
 
     sigaction(SIGALRM,&act,0);
 
-    /* it would be nice if the harvest routine could block for 5 seconds, and if the prolog is not complete in that time, mark job as prolog pending, append prolog child, and continue */
+    /* it would be nice if the harvest routine could block for 5 seconds, 
+       and if the prolog is not complete in that time, mark job as prolog 
+       pending, append prolog child, and continue */
   
-    /* main loop should attempt to harvest prolog in non-blocking mode.  If unsuccessful after timeout, job should be terminated, and failure reported.  If successful, mom should unset prolog pending, and continue with job start sequence.  Mom should report job as running while prologpending flag is set.  (NOTE:  must track per job prolog start time)
+    /* main loop should attempt to harvest prolog in non-blocking mode.  
+       If unsuccessful after timeout, job should be terminated, and failure 
+       reported.  If successful, mom should unset prolog pending, and 
+       continue with job start sequence.  Mom should report job as running 
+       while prologpending flag is set.  (NOTE:  must track per job prolog 
+       start time)
     */
 
     alarm(pe_alarm_time);
@@ -360,6 +369,8 @@ int run_pelog(
         /* exit loop. non-alarm based failure occurred */
 
         run_exit = -3;
+
+        MOMPrologFailureCount++;
 
         break;
         }
