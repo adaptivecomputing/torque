@@ -101,6 +101,7 @@
 #include "portability.h"
 #include "server_limits.h"
 #include "net_connect.h"
+#include "log.h"
 
 
 /* External Functions Called */
@@ -261,6 +262,9 @@ int wait_request(
   timeout.tv_usec = 0;
   timeout.tv_sec  = waittime;
 
+  char tmpLine[1024];
+  char id[]="wait_request";
+
   selset = readset;  /* readset is global */
 
   n = select(FD_SETSIZE,&selset,(fd_set *)0,(fd_set *)0,&timeout);
@@ -276,9 +280,7 @@ int wait_request(
       int i;
       struct stat fbuf;
      
-      char tmpLine[1024];
-
-      log_err(errno,"wait_request","select failed");
+      log_err(errno,id,"select failed");
 
       /* check all file descriptors to verify they are valid */
 
@@ -299,7 +301,7 @@ int wait_request(
         sprintf(tmpLine,"fd %d was improperly closed - readset was not updated",
           i);
 
-        log_err(errno,"wait_request",tmpLine);
+        log_err(-1,id,tmpLine);
         }    /* END for (i) */
   
       return(-1);
@@ -322,24 +324,17 @@ int wait_request(
         } 
       else 
         {
-        log_err(-1,"wait_request","select bad socket");
-
         FD_CLR(i,&readset);
 
         close(i);
 
         num_connections--;  /* added by CRI - should this be here? */
 
-        if (LOGLEVEL >= 3)
-          {
-          char tmpLine[1024];
+        sprintf(tmpLine,"closed connection to fd %d - num_connections=%d (select bad socket)",
+          i,
+          num_connections);
 
-          sprintf(tmpLine,"closed connection to fd %d - num_connections=%d (select bad socket)",
-            i,
-            num_connections);
-
-          log_err(-1,"wait_request",tmpLine);
-          }  /* END if (LOGLEVEL >= 3) */
+        log_err(-1,id,tmpLine);
         }
       }
     }    /* END for (i) */
@@ -377,7 +372,7 @@ int wait_request(
 
     /* NYI */
 
-    log_err(0,"wait_request",logbuf);
+    log_err(-1,id,logbuf);
 
     close_conn(i);
     }  /* END for (i) */
@@ -474,7 +469,8 @@ void add_conn(
       sock,
       num_connections);
 
-    log_err(-1,"add_con",tmpLine);
+    log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_SERVER,
+                          "add_conn", log_buffer);
     }  /* END if (LOGLEVEL >= 3) */
 
   FD_SET(sock,&readset);
@@ -547,7 +543,8 @@ void close_conn(
       sd,
       num_connections);
 
-    log_err(-1,"close_conn",tmpLine);
+    log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_SERVER,
+                          "close_conn", log_buffer);
     }  /* END if (LOGLEVEL >= 3) */
 
   return;
