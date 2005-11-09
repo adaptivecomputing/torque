@@ -276,7 +276,7 @@ attribute_def job_attr_def[] = {
 	PARENT_TYPE_JOB
     },
 /* JOB_ATR_exectime */
-    {	ATTR_a,			/* "Execution_Time" */
+    {	ATTR_a,			/* "Execution_Time" (aka release_date) */
 	decode_l,
 	encode_l,
 	set_l,

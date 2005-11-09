@@ -236,7 +236,7 @@ enum job_atr {
 	JOB_ATR_substate,
 	JOB_ATR_userlst,
 	JOB_ATR_variables,
-				/* this set are private attributes,       */
+				/* this set contains private attributes,  */
 				/* as such not sent to clients (status)   */
 
 	JOB_ATR_euser,		/* execution user name for MOM		  */

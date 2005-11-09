@@ -119,7 +119,7 @@ void svr_mailowner(
   job	*pjob,       /* I */
   int 	 mailpoint,  /* note, single character  */
   int	 force,	     /* if set, force mail delivery */
-  char	*text)	     /* additional message text */
+  char	*text)	     /* (optional) additional message text */
 
   {
   char	*cmdbuf;
@@ -308,13 +308,17 @@ void svr_mailowner(
   fprintf(outmail,"Job Name:   %s\n",
     pjob->ji_wattr[(int)JOB_ATR_jobname].at_val.at_str);
 
-  if (stdmessage)
-    fprintf(outmail, "%s\n", 
+  if (stdmessage != NULL)
+    {
+    fprintf(outmail,"%s\n", 
       stdmessage);
+    }
 
   if (text != NULL)
-    fprintf(outmail, "%s\n",
+    {
+    fprintf(outmail,"%s\n",
       text);
+    }
 
   fclose(outmail);
 

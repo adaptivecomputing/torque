@@ -104,6 +104,8 @@
  *	value type
  */
 
+/* sync w/job_attr_def.c */
+
 static int decode_nodes A_((struct attribute *, char *, char *, char *));
 static int set_node_ct A_((resource *, attribute *, int actmode));
 

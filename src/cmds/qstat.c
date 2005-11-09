@@ -914,7 +914,7 @@ void display_statjob(
   if (!full)
     {
     sprintf(format,"%%-%ds %%-%ds %%-%ds %%%ds %%%ds %%-%ds\n", 
-      PBS_MAXSEQNUM + 8, 
+      PBS_MAXSEQNUM + 11, 
       NAMEL, 
       OWNERL, 
       TIMEUL, 
@@ -1014,36 +1014,70 @@ void display_statjob(
 
       if (p->name != NULL) 
         {
-                c = p->name;
-                while ( *c != '.' && *c != '\0' ) c++;
-                c++;    /* List the first part of the server name, too. */
-                while ( *c != '.' && *c != '\0' ) c++;
-                *c = '\0';
-                l = strlen(p->name);
-                if ( l > (PBS_MAXSEQNUM+8) ) {
-                    c = p->name + PBS_MAXSEQNUM + 14;
-                    *c = '\0';
-                }
-                jid = p->name;
-            }
-            a = p->attribs;
-            while ( a != NULL ) {
-                if ( a->name != NULL )  {
-                    if ( strcmp(a->name,ATTR_name) == 0 ) {
-                        l = strlen(a->value);
-                        if ( l > NAMEL ) {
-			    l = l - NAMEL + 3;
-                            c = a->value + l;
-			    while ( *c != '/' && *c != '\0' ) c++;
-			    if ( *c == '\0' ) c = a->value + l;
-			    strcpy(long_name, "...");
-                            strcat(long_name, c);
-			    c = long_name;
-			} else
-			    c = a->value;
-                        name = c;
-                    } else if ( strcmp(a->name,ATTR_owner) == 0 ) {
-                        c = a->value;
+        c = p->name;
+
+        while ((*c != '.') && (*c != '\0')) 
+          c++;
+
+        c++;    /* List the first part of the server name, too. */
+
+        while ((*c != '.') && (*c != '\0')) 
+          c++;
+
+        *c = '\0';
+
+        l = strlen(p->name);
+
+        if (l > (PBS_MAXSEQNUM + 8)) 
+          {
+          /* truncate job name */
+
+          c = p->name + PBS_MAXSEQNUM + 14;
+
+          *c = '\0';
+          }
+  
+        jid = p->name;
+        }
+
+      a = p->attribs;
+
+      while (a != NULL) 
+        {
+        if (a->name != NULL) 
+          {
+          if (strcmp(a->name,ATTR_name) == 0) 
+            {
+            l = strlen(a->value);
+
+            if (l > NAMEL) 
+              {
+              l = l - NAMEL + 3;
+
+              c = a->value + l;
+
+              while ((*c != '/') && (*c != '\0')) 
+                c++;
+
+              if (*c == '\0') 
+                c = a->value + l;
+
+              strcpy(long_name,"...");
+              strcat(long_name,c);
+
+              c = long_name;
+              } 
+            else
+              {     
+              c = a->value;
+              }
+
+            name = c;
+            } 
+          else if (!strcmp(a->name,ATTR_owner)) 
+            {
+            c = a->value;
+
                         while ( *c != '@' && *c != '\0' ) c++;
                         *c = '\0';
                         l = strlen(a->value);

@@ -304,6 +304,8 @@ int remtree(
  *	to the job owner.
  */
 
+/* NOTE:  this routine is called under the following conditions:  ??? */
+
 int job_abt(
 
   job  **pjobp, /* I (modified/freed) */
@@ -330,7 +332,7 @@ int job_abt(
     {	
     /* req_delete sends own mail and acct record */
 
-    account_record(PBS_ACCT_ABT,pjob, "");
+    account_record(PBS_ACCT_ABT,pjob,"");
     svr_mailowner(pjob,MAIL_ABORT,MAIL_NORMAL,text);
     }
 
@@ -349,7 +351,7 @@ int job_abt(
         {
         /* notify creator that job is exited */
 
-        pjob->ji_wattr[(int)JOB_ATR_state].at_val.at_char='E';
+        pjob->ji_wattr[(int)JOB_ATR_state].at_val.at_char = 'E';
    
         issue_track(pjob);
         }
