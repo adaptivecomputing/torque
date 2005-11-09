@@ -757,6 +757,14 @@ void req_quejob(
     pj->ji_wattr[(int)JOB_ATR_hopcount].at_val.at_long = 1;
     pj->ji_wattr[(int)JOB_ATR_hopcount].at_flags |= ATR_VFLAG_SET;
 
+    /* Interactive jobs are necessarily not rerunable */
+
+    if (pj->ji_wattr[(int)JOB_ATR_interactive].at_val.at_long)
+      {
+      pj->ji_wattr[(int)JOB_ATR_rerunable].at_val.at_long = 0;
+      pj->ji_wattr[(int)JOB_ATR_rerunable].at_flags |= ATR_VFLAG_SET;
+      }
+
     /* need to set certain environmental variables per POSIX */
 
     clear_attr(&tempattr,&job_attr_def[(int)JOB_ATR_variables]);

@@ -1,5 +1,6 @@
 2.0.0p1
 
+  interactive jobs cannot be rerunable (USC)
   be sure nodefile is removed when job is purged (USC)
   don't run epilogue multiple times when multiple jobs exit at once (USC)
   add mom diagnostics for prolog failures and timeouts
