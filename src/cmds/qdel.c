@@ -114,10 +114,9 @@ int main(
   char server_out[MAXSERVERNAME];
   char rmt_server[MAXSERVERNAME];
 
-#define MAX_TIME_DELAY_LEN 32
-  char extend[MAX_TIME_DELAY_LEN + 1];
+  char extend[1024];
 
-#define GETOPT_ARGS "W:p"
+#define GETOPT_ARGS "m:pW:"
                  
   extend[0] = '\0';
 
@@ -125,10 +124,36 @@ int main(
     {
     switch (c) 
       {
+      case 'm':
+
+        /* add delete message */
+
+        if (extend[0] != '\0')
+          {
+          errflg++;
+
+          break;
+          }
+
+        if (strchr(optarg,'='))
+          {
+          errflag++;
+
+          break;
+          }
+        
+        strncpy(extend,optarg,sizeof(extend));
+
+        break;
+
       case 'p':
 
         if (extend[0] != '\0')
+          {
           errflg++;
+
+          break;
+          }
 
         strcpy(extend,DELPURGE);
         strcat(extend,"1");
@@ -137,8 +162,12 @@ int main(
 
       case 'W':
 
-        if (extend[0]!='\0')
+        if (extend[0] != '\0')
+          {
           errflg++;
+
+          break;
+          }
 
         pc = optarg;
 
@@ -180,11 +209,11 @@ int main(
 
   if ((errflg != 0) || (optind >= argc)) 
     {
-    static char usage[] = "usage: qdel [{ -p | -W delay}] <JOBID>[ <JOBID>]...\n";
+    static char usage[] = "usage: qdel [{ -p | -W delay | -m message}] [<JOBID>[ <JOBID>]...\n";
 
     fprintf(stderr,usage);
 
-    fprintf(stderr, "       -W and -p are mutually exclusive\n");
+    fprintf(stderr, "       -m, -p, and -W are mutually exclusive\n");
 
     exit(2);
     }
