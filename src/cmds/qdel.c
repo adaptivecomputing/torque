@@ -137,7 +137,7 @@ int main(
 
         if (strchr(optarg,'='))
           {
-          errflag++;
+          errflg++;
 
           break;
           }
