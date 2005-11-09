@@ -212,6 +212,8 @@ void req_deletejob(
   int               rc;
   char             *sigt = "SIGTERM";
 
+  char             *Msg = NULL;
+
   if (forced_jobpurge(preq) != 0)
     {
     return;
@@ -353,6 +355,19 @@ jump:
     preq->rq_user,
     preq->rq_host);
 
+  if (preq->rq_extend != NULL)
+    {
+    if (strncmp(preq->rq_extend,deldelaystr,strlen(deldelaystr)) &&
+        strncmp(preq->rq_extend,delpurgestr,strlen(delpurgestr)))
+      {
+      /* have text message in request extension, add it */
+
+      Msg = preq->rq_extend;
+      }
+    }
+
+  /* NOTE:  should annotate accounting record with extend message (NYI) */
+
   account_record(PBS_ACCT_DEL,pjob,log_buffer);
 
   sprintf(log_buffer,msg_manager, 
@@ -368,20 +383,20 @@ jump:
 
   /* NOTE:  should incorporate job delete message */
 	
-  if (preq->rq_extend != NULL) 
+  if (Msg != NULL) 
     {
-    if (strncmp(preq->rq_extend,deldelaystr,strlen(deldelaystr))) 
-      {
-      /* have text message in request extension, add it */
+    /* have text message in request extension, add it */
 
-      strcat(log_buffer,"\n");
-      strcat(log_buffer,preq->rq_extend);
-      }
+    strcat(log_buffer,"\n");
+    strcat(log_buffer,Msg);
     }
 
   if ((svr_chk_owner(preq,pjob) != 0) && 
       !has_job_delete_nanny(pjob)) 
     {
+    /* only send email if owner did not delete job and job deleted
+       has not been previously attempted */
+
     svr_mailowner(pjob,MAIL_DEL,MAIL_FORCE,log_buffer);
     }
 	
@@ -441,7 +456,7 @@ jump:
 
     remove_stagein(pjob);
 
-    job_abt(&pjob,NULL);
+    job_abt(&pjob,Msg);
     } 
   else 
     {
@@ -450,7 +465,7 @@ jump:
      * is not running, so abort it.
      */
 
-    job_abt(&pjob,NULL);
+    job_abt(&pjob,Msg);
     }
 
   reply_ack(preq);

@@ -116,8 +116,8 @@ extern int site_allow_u(char *,char *);
 
 int svr_chk_owner(
 
-  struct batch_request *preq,
-  job                  *pjob)
+  struct batch_request *preq,  /* I */
+  job                  *pjob)  /* I */
 
   {
   char  owner[PBS_MAXUSER + 1];
