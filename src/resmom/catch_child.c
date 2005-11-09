@@ -497,8 +497,7 @@ void scan_for_exiting()
     ** in any state other than EXITING continue on.
     */
 
-    if ((pjob->ji_qs.ji_substate != JOB_SUBSTATE_EXITING) &&
-        (pjob->ji_qs.ji_substate != JOB_SUBSTATE_EXITED))
+    if (pjob->ji_qs.ji_substate != JOB_SUBSTATE_EXITING)
       continue;
 
     /*
@@ -745,10 +744,13 @@ void scan_for_exiting()
 
 #ifdef PENABLE_DYNAMIC_CPUSETS
 
+    /* FIXME: this is the wrong place for this code.
+     * it should be called from job_purge() */
     pwdp = getpwuid(pjob->ji_qs.ji_un.ji_momt.ji_exuid);
     strncpy(cQueueName,pwdp->pw_name,3);
     strncat(cQueueName,pjob->ji_qs.ji_jobid,5);
 
+    /* FIXME: use the path_jobs variable */
     strcpy(cPermFile,PBS_SERVER_HOME);
     strcat(cPermFile,"/mom_priv/jobs/");
     strcat(cPermFile,cQueueName);
@@ -764,21 +766,6 @@ void scan_for_exiting()
 
 #endif /* PENABLE_DYNAMIC_CPUSETS */
 
-    /* get rid of HOSTFILE if any */
-
-    if (pjob->ji_flags & MOM_HAS_NODEFILE) 
-      {
-      char file[MAXPATHLEN + 1];
-
-      sprintf(file,"%s/%s",
-        path_aux, 
-        pjob->ji_qs.ji_jobid);
-
-      unlink(file);
-
-      pjob->ji_flags &= ~MOM_HAS_NODEFILE;
-      }
-		
     /* send the job obiturary notice to the server */
 
     preq = alloc_br(PBS_BATCH_JobObit);

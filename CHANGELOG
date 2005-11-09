@@ -1,5 +1,7 @@
 2.0.0p1
 
+  be sure nodefile is removed when job is purged (USC)
+  don't run epilogue multiple times when multiple jobs exit at once (USC)
   add mom diagnostics for prolog failures and timeouts
   fix clearjob MOM request (momctl -c) (USC)
   fix detection of local output files with localhost or /dev/null (USC)

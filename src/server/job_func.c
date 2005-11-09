@@ -153,6 +153,7 @@ extern gid_t pbsgroup;
 extern char *msg_abt_err;
 extern char *path_jobs;
 extern char *path_spool;
+extern char *path_aux;
 extern char  server_name[];
 extern time_t time_now;
 extern list_head svr_newjobs;
@@ -639,6 +640,21 @@ void job_purge(
         
         pjob->ji_flags &= ~MOM_HAS_TMPDIR;
       }
+    }
+
+  /* delete the nodefile if still hanging around */
+
+  if (pjob->ji_flags & MOM_HAS_NODEFILE)
+    {
+    char file[MAXPATHLEN + 1];
+
+    sprintf(file,"%s/%s",
+      path_aux,
+      pjob->ji_qs.ji_jobid);
+
+    unlink(file);
+
+    pjob->ji_flags &= ~MOM_HAS_NODEFILE;
     }
 
   delete_link(&pjob->ji_jobque);
