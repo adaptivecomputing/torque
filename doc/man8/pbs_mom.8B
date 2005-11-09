@@ -246,26 +246,31 @@ An initialization value directive has a name which starts with a
 dollar sign ($) and must be known to MOM via an internal table.
 The entries in this table now are: 
 .RS
-.IP clienthost
+.IP pbsserver
+which defines additional hostnames running pbs_server that will be allowed to
+submit jobs, issue Resource Monitor (RM) requests, and get status updates.  MOM
+will continually attempt to contact all server hosts for node status and state
+updates.  Like $PBS_SERVER_HOME/server_name, the hostname may be followed by a
+colon and a port number.  This parameter replaces the oft-confused $clienthost
+parameter from TORQUE 2.0.0p0 and earlier.  Note that the hostname in
+$PBS_SERVER_HOME/server_name is the first added as a pbs_server host.
+.IP pbsclient
 which causes a host name to be added to the list of hosts which will be allowed
-to connect to MOM as long as they are using a privilaged port.
+to connect to MOM as long as they are using a privilaged port for the purposes
+of resource monitor requests.
 For example, here are two
 configuration file lines which will allow the hosts "fred" and "wilma"
 to connect:
 .IP
-.Ty "$clienthost      fred"
+.Ty "$pbsclient      fred"
 .br
-.Ty "$clienthost      wilma"
+.Ty "$pbsclient      wilma"
 .IP
-Two host name are always allowed to connection to pbs_mom, "localhost"
-and the name returned to pbs_mom by the system call gethostname().  These
-names need not be specified in the configuration file.  The hosts listed
-as "clienthosts" comprise a "sisterhood" of machines.  Any one of the
-sisterhood will accept connections from a server from within the
-sisterhood.  They will also accept Resource Monitor (RM) requests
-and Internal MOM (IM) messages from within the sisterhood.  For
-a sisterhood to be able to communicate IM messages to each other,
-they must all share the same RM port.
+Two host name are always allowed to connection to pbs_mom, "localhost" and the
+name returned to pbs_mom by the system call gethostname().  These names need
+not be specified in the configuration file.  The hosts listed as "clients" can
+issue Resource Monitor (RM) requests.  Other MOM nodes and servers do not need
+to be listed as clients.
 .IP restricted
 which causes a host name to be added to the list of hosts which will be allowed
 to connect to MOM without needing to use a privilaged port.  These names
@@ -278,6 +283,8 @@ The restriction which applies to these connections is that only
 internal queries may be made.  No resources from a config file
 will be found.  This is to prevent any shell commands from being
 run by a non-root process.
+.br
+This parameter is generally not required except for some versions of OSX.
 .IP logevent
 which sets the mask that determines which event types are logged by pbs_mom.
 For example:
@@ -304,7 +311,7 @@ For example:
 .IP usecp
 specifies which directories should be staged with cp instead of rcp/scp.  If a
 shared filesystem is available on all hosts in a cluster, this directive is used to
-make these filesystems known to pbs_mom.  For example, if /home is NFS mounted on
+make these filesystems known to MOM.  For example, if /home is NFS mounted on
 all nodes in a cluster:
 .IP
 .Ty "$usecp *:/home  /home"
@@ -320,14 +327,14 @@ specifies the MOM interval in seconds.  MOM checks each job for updated
 resource usages, exited processes, over-limit conditions, etc. once per
 interval.  This value should be equal or lower to pbs_server's job_stat_rate.
 High values result in stale information reported to pbs_server.  Low values
-result increased system usage by MOM.  Default is 45 seconds.
+result in increased system usage by MOM.  Default is 45 seconds.
 .IP down_on_error
 causes MOM to report itself as state "down" to pbs_server in the event of a
 failed health check.  This feature is EXPERIMENTAL and likely to be removed in
 the future.  See HEALTH CHECK below.
 .IP ideal_load
 ideal processor load.  Represents a low water mark for the load average.  Nodes
-that currently busy will consider itself free after falling below ideal_load.
+that are currently busy will consider itself free after falling below ideal_load.
 .IP loglevel
 specifies the verbosity of logging with higher numbers specifying more verbose
 logging.  Values may range between 0 and 7.
@@ -345,8 +352,8 @@ mom interval. (see HEALTH CHECK for more information)
 Specifies maximum duration (in seconds) which the mom will wait for the job prolog
 or job job epilog to complete.  This parameter default to 300 seconds (5 minutes)
 .IP timeout
-Specifies the number of seconds before mom-to-mom messages will timeout if RPP is
-disabled.  Default is 60 seconds.
+Specifies the number of seconds before TCP messages will time out.  TCP messages include job obituaries, and TM requests if RPP is disabled.
+Default is 60 seconds.
 .IP tmpdir
 Sets the directory basename for a per-job temporary directory.  Before job
 launch, MOM will append the jobid to the tmpdir basename and create the
@@ -418,8 +425,10 @@ redundant to have MOM's $down_on_error and pbs_server's down_on_error features
 enabled.  See "down_on_error" in pbs_server_attributes(7B).
 .LP
 .Sh FILES
+.IP $PBS_SERVER_HOME/server_name
+contains the hostname running pbs_server.
 .IP $PBS_SERVER_HOME/mom_priv 10
-the default directory for configuration files, typical
+the default directory for configuration files, typically
 (/usr/spool/pbs)/mom_priv.
 .IP $PBS_SERVER_HOME/mom_logs 10
 directory for log files recorded by the server.
