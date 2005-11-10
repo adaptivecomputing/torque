@@ -4,6 +4,7 @@
 
 2.0.0p1
 
+  fix mpiexec stdout regression from 2.0.0p0 (USC)
   add 'qdel -m' support to enable annotating job cancellation (CRI)
   add mom diagnostics for prolog failures and timeouts (CRI)
   interactive jobs cannot be rerunable (USC)
