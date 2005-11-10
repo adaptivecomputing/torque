@@ -249,6 +249,13 @@ struct passwd *check_pwd(
   struct passwd	*pwdp;
   struct group	*grpp;
 
+  if (pjob->ji_grpcache != NULL)
+    {
+    /* pwd previously loaded and cached */
+
+    return(pwdp); 
+    }
+
   pwdp = getpwnam(pjob->ji_wattr[(int)JOB_ATR_euser].at_val.at_str);
 
   if (pwdp == NULL) 
