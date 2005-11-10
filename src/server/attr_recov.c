@@ -351,9 +351,7 @@ int save_attr(
 
   /* indicate last of attributes by writing dummy entry */
 
-#ifdef DEBUG
   memset(&dummy,0,sizeof(dummy));
-#endif
   dummy.al_tsize = ENDATTRIBUTES;
 
   if (save_struct((char *)&dummy,sizeof(dummy)) < 0)

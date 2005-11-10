@@ -249,13 +249,6 @@ struct passwd *check_pwd(
   struct passwd	*pwdp;
   struct group	*grpp;
 
-  if (pjob->ji_grpcache != NULL)
-    {
-    /* pwd previously loaded and cached */
-
-    return(pwdp); 
-    }
-
   pwdp = getpwnam(pjob->ji_wattr[(int)JOB_ATR_euser].at_val.at_str);
 
   if (pwdp == NULL) 
@@ -264,6 +257,13 @@ struct passwd *check_pwd(
       pjob->ji_wattr[(int)JOB_ATR_euser].at_val.at_str);
  
     return(NULL);
+    }
+
+  if (pjob->ji_grpcache != NULL)
+    {
+    /* group cache previously loaded */
+
+    return(pwdp); 
     }
 
   pjob->ji_qs.ji_un.ji_momt.ji_exuid = pwdp->pw_uid;
@@ -2622,8 +2622,11 @@ int TMomFinalizeChild(
 
     /* close sockets that child uses */
 
-    close(pjob->ji_stdout);
-    close(pjob->ji_stderr);
+    if (pjob->ji_stdout >= 0)
+      close(pjob->ji_stdout);
+
+    if (pjob->ji_stderr >= 0)
+      close(pjob->ji_stderr);
 
     /* construct argv array */
 
