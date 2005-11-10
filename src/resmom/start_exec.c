@@ -268,13 +268,6 @@ struct passwd *check_pwd(
     return(pwd);
     }
 
-  if (pjob->ji_grpcache != NULL)
-    {
-    /* group cache previously loaded */
-
-    return(pwdp); 
-    }
-
   pjob->ji_qs.ji_un.ji_momt.ji_exuid = pwdp->pw_uid;
 
   pjob->ji_grpcache = malloc(sizeof(struct grpcache) + strlen(pwdp->pw_dir) + 1);
