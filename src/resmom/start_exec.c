@@ -253,19 +253,19 @@ struct passwd *check_pwd(
 
   pwdp = getpwnam(pjob->ji_wattr[(int)JOB_ATR_euser].at_val.at_str);
 
-  if (pjob->ji_grpcache != NULL)
-    {
-    /* pwd previously loaded and cached */
-
-    return(pwd);
-    }
-
   if (pwdp == NULL) 
     {
     sprintf(log_buffer,"No Password Entry for User %s",
       pjob->ji_wattr[(int)JOB_ATR_euser].at_val.at_str);
  
     return(NULL);
+    }
+
+  if (pjob->ji_grpcache != NULL)
+    {
+    /* pwd previously loaded and cached */
+
+    return(pwd);
     }
 
   if (pjob->ji_grpcache != NULL)
