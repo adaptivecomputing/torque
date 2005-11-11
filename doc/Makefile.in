@@ -97,12 +97,15 @@ CFLAGS = @CFLAGS@ @DEFS@
 
 AUXRESC =	$(DOCSRC)/ers/pbs_resources_all.so \
 		$(DOCSRC)/man1/pbs_resources_aix4.7B \
+		$(DOCSRC)/man1/pbs_resources_aix5.7B \
+		$(DOCSRC)/man1/pbs_resources_darwin.7B \
 		$(DOCSRC)/man1/pbs_resources_digitalunix.7B \
 		$(DOCSRC)/man1/pbs_resources_freebsd.7B \
 		$(DOCSRC)/man1/pbs_resources_fujitsu.7B \
+		$(DOCSRC)/man1/pbs_resources_hpux10.7B \
 		$(DOCSRC)/man1/pbs_resources_irix5.7B \
-		$(DOCSRC)/man1/pbs_resources_irix6array.7B \
 		$(DOCSRC)/man1/pbs_resources_irix6.7B \
+		$(DOCSRC)/man1/pbs_resources_irix6array.7B \
 		$(DOCSRC)/man1/pbs_resources_linux.7B \
 		$(DOCSRC)/man1/pbs_resources_netbsd.7B \
 		$(DOCSRC)/man1/pbs_resources_solaris5.7B \
@@ -221,7 +224,9 @@ install7: $(MAN7)
 		chmod 644 ${PBS_MAN7}/$${tt}$(MAN_SUFFIX); \
 	done
 	@rm -f ${PBS_MAN7}/pbs_resources.7$(MAN_SUFFIX)
-	@ln ${PBS_MAN7}/pbs_resources_$(DEFAULT_MAN_RESOURCE_TYPE).7$(MAN_SUFFIX) ${PBS_MAN7}/pbs_resources.7$(MAN_SUFFIX)
+	@if test -f ${PBS_MAN7}/pbs_resources_$(DEFAULT_MAN_RESOURCE_TYPE).7$(MAN_SUFFIX) ;then \
+		ln ${PBS_MAN7}/pbs_resources_$(DEFAULT_MAN_RESOURCE_TYPE).7$(MAN_SUFFIX) ${PBS_MAN7}/pbs_resources.7$(MAN_SUFFIX); \
+	fi
 
 install8: $(MAN8)
 	@echo Installing section 8 man pages
