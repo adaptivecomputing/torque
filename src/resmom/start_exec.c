@@ -265,7 +265,7 @@ struct passwd *check_pwd(
     {
     /* pwd previously loaded and cached */
 
-    return(pwd);
+    return(pwdp);
     }
 
   pjob->ji_qs.ji_un.ji_momt.ji_exuid = pwdp->pw_uid;
