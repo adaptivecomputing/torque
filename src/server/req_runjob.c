@@ -119,21 +119,21 @@ extern void  set_resc_assigned A_((job *, enum batch_op));
 extern struct batch_request *cpy_stage A_((struct batch_request *,job *,enum job_atr,int));
 void      stream_eof A_((int,u_long,int));
 extern int job_set_wait(attribute *,void *,int);
-extern void       stat_mom_job A_((job *));
+extern void stat_mom_job A_((job *));
 
 extern int LOGLEVEL;  
 
 /* Public Functions in this file */
 
-int  svr_startjob A_((job *, struct batch_request *));
+int  svr_startjob A_((job *,struct batch_request *));
 
-/* Private Function local to this file */
+/* Private Functions local to this file */
 
 static void post_sendmom A_((struct work_task *));
-static int  svr_stagein A_((job *, struct batch_request *, int, int)); 
-static int  svr_strtjob2 A_((job *, struct batch_request *));
-static job *chk_job_torun A_((struct batch_request *preq));
-static int  assign_hosts A_((job *, char *given, int setflag));
+static int  svr_stagein A_((job *,struct batch_request *,int,int)); 
+static int  svr_strtjob2 A_((job *,struct batch_request *));
+static job *chk_job_torun A_((struct batch_request *));
+static int  assign_hosts A_((job *,char *,int));
 
 /* Global Data Items: */
 
@@ -163,7 +163,7 @@ char *DispatchNode[20];
 
 
 /*
- * req_runjob - service the Run Job and Asyc Run Job Requests
+ * req_runjob - service the Run Job and Async Run Job Requests
  *
  *	This request forces a job into execution.  Client must be privileged.
  */
@@ -176,6 +176,8 @@ void req_runjob(
   job  *pjob;
   int   rc;
   void *bp;
+
+  /* chk_job_torun will extract job id and assign hostlist if specified */
 
   if ((pjob = chk_job_torun(preq)) == NULL)
     {
@@ -199,9 +201,7 @@ void req_runjob(
     log_buffer);
 
   /* If async run, reply now; otherwise reply is handled in */
-  /* post_sendmom or post_stagein				  */
-
-  /* NOTE:  nodes not assigned to job until svr_startjob() */
+  /* post_sendmom or post_stagein */
 
   /* perhaps node assignment should be handled immediately in async run? */
 
@@ -213,11 +213,15 @@ void req_runjob(
     preq = NULL;  /* cleared so we don't try to reuse */
     }
 
-  if (((rc = svr_startjob(pjob,preq)) != 0) && (preq != NULL)) 
+  /* NOTE:  nodes assigned to job in svr_startjob() */
+
+  rc = svr_startjob(pjob,preq);
+
+  if ((rc != 0) && (preq != NULL)) 
     {
     free_nodes(pjob);
 
-    /* If the job has a non-empty rejectdest list, pass the first host into req_reject() */
+    /* if the job has a non-empty rejectdest list, pass the first host into req_reject() */
 
     if ((bp = GET_NEXT(pjob->ji_rejectdest)) != NULL)
       {
@@ -239,7 +243,7 @@ void req_runjob(
 /*
  * req_stagein - service the Stage In Files for a Job Request
  *
- *	This request causes MOM to start stagin in files. 
+ *	This request causes MOM to start staging in files. 
  *	Client must be privileged.
  */
 
@@ -321,10 +325,10 @@ static void post_stagein(
 
         pwait->at_flags |= ATR_VFLAG_SET;
 
-        job_set_wait(pwait, pjob, 0);
+        job_set_wait(pwait,pjob,0);
         }
 
-      svr_setjobstate(pjob, JOB_STATE_WAITING, JOB_SUBSTATE_STAGEFAIL);
+      svr_setjobstate(pjob,JOB_STATE_WAITING,JOB_SUBSTATE_STAGEFAIL);
 
       if (preq->rq_reply.brp_choice == BATCH_REPLY_CHOICE_Text)
         {
@@ -375,20 +379,20 @@ static void post_stagein(
 
 static int svr_stagein(
 
-  job *pjob,
-  struct batch_request *preq,
-  int state,
-  int substate)
+  job                  *pjob,     /* I */
+  struct batch_request *preq,     /* I */
+  int                   state,    /* I */
+  int                   substate) /* I */
 
   {
   struct batch_request *momreq = 0;
   int		      rc;
 
-  momreq = cpy_stage(momreq, pjob, JOB_ATR_stagein, STAGE_DIR_IN);
+  momreq = cpy_stage(momreq,pjob,JOB_ATR_stagein,STAGE_DIR_IN);
 
   if (momreq == NULL) 
     {	
-    /* no files to stage-in, go direct to sending job to mom */
+    /* no files to stage, go directly to sending job to mom */
 
     return(svr_strtjob2(pjob,preq));
     }
@@ -397,7 +401,7 @@ static int svr_stagein(
 
   /* save job id for post_stagein */
 
-  momreq->rq_extra = malloc(PBS_MAXSVRJOBID+1);
+  momreq->rq_extra = malloc(PBS_MAXSVRJOBID + 1);
 
   if (momreq->rq_extra == 0) 
     {
@@ -413,7 +417,7 @@ static int svr_stagein(
 
   if (rc == 0) 
     {
-    svr_setjobstate(pjob, state, substate);
+    svr_setjobstate(pjob,state,substate);
 
     /*
      * stage-in started ok - reply to client as copy may
@@ -437,12 +441,13 @@ static int svr_stagein(
 
 /*
  * svr_startjob - place a job into running state by shipping it to MOM
+ *   called by req_runjob() 
  */
 
 int svr_startjob(
 
   job                  *pjob,	/* job to run */
-  struct batch_request *preq)	/* NULL or Run Job batch request */
+  struct batch_request *preq)	/* Run Job batch request (optional) */
 
   {
   int     f;
@@ -459,7 +464,7 @@ int svr_startjob(
 #endif
 
   /* if not already setup, transfer the control/script file basename */
-  /* into an attribute accessable to MOM				   */
+  /* into an attribute accessible by MOM */
 
   if (!(pjob->ji_wattr[(int)JOB_ATR_hashname].at_flags & ATR_VFLAG_SET))
     {
@@ -473,8 +478,10 @@ int svr_startjob(
       }
     }
 
-  /* if exec_host already set and either (hot start or checkpoint)	*/
+  /* if exec_host already set and either (hot start or checkpoint) */
   /* then use the host(s) listed in exec_host			*/
+
+  /* NOTE:  should extract hostlist at this point so we can assign hosts? */
 
   rc = 0;
 
@@ -485,13 +492,16 @@ int svr_startjob(
       (pjob->ji_qs.ji_svrflags & JOB_SVFLG_CHKPT)) && 
      ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HasNodes) == 0)) 
     {
-    rc = assign_hosts(pjob,pjob->ji_wattr[(int)JOB_ATR_exec_host].at_val.at_str,0);
+    rc = assign_hosts(    /* inside req_runjob() */
+           pjob,
+           pjob->ji_wattr[(int)JOB_ATR_exec_host].at_val.at_str,
+           0);
     } 
   else if (f == 0) 
     {
     /* exec_host not already set, get hosts and set it */
 
-    rc = assign_hosts(pjob,NULL,1);
+    rc = assign_hosts(pjob,NULL,1);  /* inside req_runjob() */
     }
 
   if (rc != 0)
@@ -534,20 +544,27 @@ int svr_startjob(
 
     if ((hp = gethostbyname(nodestr)) == NULL)
       {
-      sprintf(log_buffer,"could not contact %s (gethostbyname failed)",nodestr);
+      sprintf(log_buffer,"could not contact %s (gethostbyname failed)",
+        nodestr);
+
       log_err(errno,id,log_buffer);
 
       /* Add this host to the reject destination list for the job */
 
-      bp = (badplace *)malloc(sizeof (badplace));
-      if (bp == (badplace *)0)
+      bp = (badplace *)malloc(sizeof(badplace));
+
+      if (bp == NULL)
         {
         log_err(errno,id,msg_err_malloc);
+
         return;
         }
+
       CLEAR_LINK(bp->bp_link);
+
       strcpy(bp->bp_dest,nodestr);
-      append_link(&pjob->ji_rejectdest,&bp->bp_link, bp);
+
+      append_link(&pjob->ji_rejectdest,&bp->bp_link,bp);
 
       return(PBSE_RESCUNAV);
       }
@@ -565,15 +582,22 @@ int svr_startjob(
 
       /* Add this host to the reject destination list for the job */
 
-      bp = (badplace *)malloc(sizeof (badplace));
-      if (bp == (badplace *)0)
+      bp = (badplace *)malloc(sizeof(badplace));
+
+      if (bp == NULL)
         {
+        /* FAILURE - cannot allocate memory */
+
         log_err(errno,id,msg_err_malloc);
+
         return;
         }
+
       CLEAR_LINK(bp->bp_link);
+
       strcpy(bp->bp_dest,nodestr);
-      append_link(&pjob->ji_rejectdest,&bp->bp_link, bp);
+
+      append_link(&pjob->ji_rejectdest,&bp->bp_link,bp);
 
       return(PBSE_RESCUNAV);
       }
@@ -594,15 +618,22 @@ int svr_startjob(
 
       /* Add this host to the reject list for the job */
 
-      bp = (badplace *)malloc(sizeof (badplace));
-      if (bp == (badplace *)0)
+      bp = (badplace *)malloc(sizeof(badplace));
+
+      if (bp == NULL)
         {
+        /* FAILURE - cannot allocate memory */
+
         log_err(errno,id,msg_err_malloc);
+
         return;
         }
+
       CLEAR_LINK(bp->bp_link);
+
       strcpy(bp->bp_dest,nodestr);
-      append_link(&pjob->ji_rejectdest,&bp->bp_link, bp);
+
+      append_link(&pjob->ji_rejectdest,&bp->bp_link,bp);
 
       return(PBSE_RESCUNAV);
       }
@@ -611,7 +642,7 @@ int svr_startjob(
 
     close(sock);
     nodestr = strtok(NULL,"+");
-    }
+    }  /* END while (nodestr != NULL) */
 
   if (hostlist != NULL)
     free(hostlist);
@@ -647,11 +678,12 @@ int svr_startjob(
 
 
 /* PATH
-    svr_startjob()
-      svr_strtjob2()
-        send_job()         - svr_movejob.c
-          svr_connect()
-          PBSD_queuejob() 
+    req_runjob()
+ >    svr_startjob()
+        svr_strtjob2()
+          send_job()         - svr_movejob.c
+            svr_connect()
+            PBSD_queuejob() 
 */
 
 
@@ -659,8 +691,8 @@ int svr_startjob(
 
 static int svr_strtjob2(
 
-  job                  *pjob,
-  struct batch_request *preq)
+  job                  *pjob,  /* I */
+  struct batch_request *preq)  /* I (modified - report status) */
 
   {
   extern char *PAddrToString(pbs_net_t *);
@@ -988,6 +1020,8 @@ static job *chk_job_torun(
 
   if ((pjob = chk_job_request(prun->rq_jid,preq)) == 0)
     {
+    /* FAILURE */
+
     return(NULL);
     }
 
@@ -997,7 +1031,7 @@ static job *chk_job_torun(
       (pjob->ji_qs.ji_substate == JOB_SUBSTATE_PRERUN)  ||
       (pjob->ji_qs.ji_substate == JOB_SUBSTATE_RUNNING))  
     {
-    /* job already started */
+    /* FAILURE - job already started */
 
     req_reject(PBSE_BADSTATE,0,preq,NULL,NULL);
 
@@ -1008,6 +1042,8 @@ static job *chk_job_torun(
     {
     if (pjob->ji_qs.ji_substate == JOB_SUBSTATE_STAGEIN) 
       {
+      /* FAILURE */
+
       req_reject(PBSE_BADSTATE,0,preq,NULL,NULL);
 
       return(NULL);
@@ -1016,7 +1052,7 @@ static job *chk_job_torun(
 
   if ((preq->rq_perm & (ATR_DFLAG_MGWR|ATR_DFLAG_OPWR)) == 0) 
     {
-    /* run request non-authorized */
+    /* FAILURE - run request not authorized */
 
     req_reject(PBSE_PERM,0,preq,NULL,NULL);
 
@@ -1025,7 +1061,7 @@ static job *chk_job_torun(
 
   if (pjob->ji_qhdr->qu_qs.qu_type != QTYPE_Execution) 
     {
-    /* the job must be in an execution queue */
+    /* FAILURE - job must be in execution queue */
 
     log_err(-1,"chk_job_torun","attempt to start job in non-execution queue");
 
@@ -1049,6 +1085,8 @@ static job *chk_job_torun(
            prun->rq_destin,
            pjob->ji_wattr[(int)JOB_ATR_exec_host].at_val.at_str) != 0) 
         {
+        /* FAILURE */
+
         req_reject(PBSE_EXECTHERE,0,preq,NULL,NULL);
 
         return(NULL);
@@ -1059,7 +1097,7 @@ static job *chk_job_torun(
       {
       /* re-reserve nodes and leave exec_host as is */
 
-      if ((rc = assign_hosts(
+      if ((rc = assign_hosts(  /* inside chk_job_torun() */
             pjob,
             pjob->ji_wattr[(int)JOB_ATR_exec_host].at_val.at_str,
             0)) != 0) 
@@ -1069,23 +1107,25 @@ static job *chk_job_torun(
         return(NULL);
         }
       }
-    } 
+    }    /* END if (pjob->ji_qs.ji_svrflags & (JOB_SVFLG_CHKPT|JOB_SVFLG_StagedIn)) */ 
   else 
     {
-    /* job has not run before or need not run there again	*/
-    /* reserve nodes and set exec_host anew			*/
+    /* job has not run before or need not run there again */
+    /* reserve nodes and set new exec_host */
 
     if (prun->rq_destin[0] == '\0') 
       {
-      rc = assign_hosts(pjob,0,1);
+      rc = assign_hosts(pjob,NULL,1);  /* inside chk_job_torun() */
       } 
     else 
       {
-      rc = assign_hosts(pjob,prun->rq_destin,1);
+      rc = assign_hosts(pjob,prun->rq_destin,1);  /* inside chk_job_torun() */
       }
 
     if (rc != 0) 
       {
+      /* FAILURE - cannot assign correct hosts */
+
       req_reject(rc,0,preq,NULL,NULL);
 
       return(NULL);
@@ -1110,7 +1150,7 @@ static job *chk_job_torun(
 static int assign_hosts(
 
   job  *pjob,           /* I (modified) */
-  char *given,
+  char *given,          /* I (optional) list of requested hosts */
   int   set_exec_host)  /* I (boolean) */
 
   {
@@ -1126,19 +1166,28 @@ static int assign_hosts(
     &pjob->ji_wattr[(int)JOB_ATR_resource],
     find_resc_def(svr_resc_def,"neednodes",svr_resc_size));
 
-  if (given != NULL) 
+  if ((given != NULL) && (given[0] != '\0'))
     {	
     /* assign what was specified in run request */
 
     hosttoalloc = given;
     } 
+#ifdef __TREQSCHED
+  else if ((server.sv_attr[(int)SRV_ATR_ReqSched].at_flags & ATR_VFLAG_SET) &&
+           (server.sv_attr[(int)SRV_ATR_ReqSched].at_val.at_str != NULL))
+    {
+    /* scheduler must specify node allocation for all jobs */
+
+    return(PBSE_UNKNODEATR);
+    }
+#endif /* __TREQSCHED */
   else if (pres != NULL) 
     {	
     /* assign what was in "neednodes" */
 
     hosttoalloc = pres->rs_value.at_val.at_str;
 
-    if (hosttoalloc == NULL) 
+    if ((hosttoalloc == NULL) || (hosttoalloc[0] == '\0'))
       {
       return(PBSE_UNKNODEATR);
       }
@@ -1148,7 +1197,7 @@ static int assign_hosts(
     /* assign "local" */
 
     if ((server.sv_attr[(int)SRV_ATR_DefNode].at_flags & ATR_VFLAG_SET) && 
-        (server.sv_attr[(int)SRV_ATR_DefNode].at_val.at_str != 0)) 
+        (server.sv_attr[(int)SRV_ATR_DefNode].at_val.at_str != NULL)) 
       {
       hosttoalloc = server.sv_attr[(int)SRV_ATR_DefNode].at_val.at_str;
       } 
@@ -1161,7 +1210,7 @@ static int assign_hosts(
   else if ((server.sv_attr[(int)SRV_ATR_DefNode].at_flags & ATR_VFLAG_SET) && 
            (server.sv_attr[(int)SRV_ATR_DefNode].at_val.at_str != 0)) 
     {
-    /* alloc what server's attribute default_node is set to */
+    /* alloc server default_node */
 
     hosttoalloc = server.sv_attr[(int)SRV_ATR_DefNode].at_val.at_str;
     } 

@@ -134,7 +134,7 @@ extern int schedule_jobs(void);
 extern void queue_route A_((pbs_queue *));
 extern void svr_shutdown(int);
 extern void acct_close(void);
-extern int  svr_startjob A_((job *,void *)); /* FIXME: void should be struct batch_request */
+extern int  svr_startjob A_((job *,struct batch_request *)); 
 
 
 /* external data items */
@@ -1113,7 +1113,7 @@ int main(
 
     pque = (pbs_queue *)GET_NEXT(svr_queues);
 
-    while (pque) 
+    while (pque != NULL) 
       {
       if (pque->qu_qs.qu_type == QTYPE_RoutePush)
         queue_route(pque);
@@ -1368,7 +1368,7 @@ static int start_hot_jobs(void)
         pjob->ji_qs.ji_jobid, 
         "attempting to hot start job");
 
-      svr_startjob(pjob,0);
+      svr_startjob(pjob,NULL);
 
       ct++;
       }

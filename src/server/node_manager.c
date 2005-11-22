@@ -241,10 +241,10 @@ struct pbsnode *tfind(
 
 struct pbsnode *tfind_addr(
 
-  const u_long  key)
+  const u_long key)
 
   {
-  return tfind(key, &ipaddrs);
+  return tfind(key,&ipaddrs);
   }
 
 
@@ -270,15 +270,17 @@ void tinsert(
     */
     }
 
-  if (rootp == (struct tree_t **)0)
+  if (rootp == NULL)
     {
     return;
     }
 
-  while (*rootp != (struct tree_t *)0) 
+  while (*rootp != NULL) 
     {	/* Knuth's T1: */
     if (key == (*rootp)->key)	/* T2: */
+      {
       return;			/* we found it! */
+      }
 
     rootp = (key < (*rootp)->key) ?
       &(*rootp)->left :	/* T3: follow left branch */
@@ -324,30 +326,45 @@ void *tdelete(
     return(NULL);
     }
 
-	while (key != (*rootp)->key) {
-		p = *rootp;
-		rootp = (key < (*rootp)->key) ?
-			&(*rootp)->left :		/* left branch */
-			&(*rootp)->right;		/* right branch */
-		if (*rootp == NULL)
-			return ((void *)0);		/* key not found */
-	}
-	r = (*rootp)->right;				/* D1: */
-	if ((q = (*rootp)->left) == NULL)		/* Left */
-		q = r;
-	else if (r != (struct tree_t *)0) {		/* Right is null? */
-		if (r->left == (struct tree_t *)0) {	/* D2: Find successor */
-			r->left = q;
-			q = r;
-		}
-		else {		/* D3: Find (struct tree_t *)0 link */
-			for (q = r->left; q->left != NULL; q = r->left)
-				r = q;
-			r->left = q->right;
-			q->left = (*rootp)->left;
-			q->right = (*rootp)->right;
-		}
-	}
+  while (key != (*rootp)->key) 
+    {
+    p = *rootp;
+
+    rootp = (key < (*rootp)->key) ?
+      &(*rootp)->left :		/* left branch */
+      &(*rootp)->right;		/* right branch */
+
+    if (*rootp == NULL)
+      {
+      return(NULL);		/* key not found */
+      }
+    }
+
+  r = (*rootp)->right;				/* D1: */
+
+  if ((q = (*rootp)->left) == NULL)		/* Left */
+    {
+    q = r;
+    }
+  else if (r != NULL) 
+    {		/* Right is null? */
+    if (r->left == NULL) 
+      {	/* D2: Find successor */
+      r->left = q;
+
+      q = r;
+      }
+    else 
+      {		/* D3: Find (struct tree_t *)0 link */
+      for (q = r->left;q->left != NULL;q = r->left)
+        r = q;
+
+      r->left = q->right;
+
+      q->left = (*rootp)->left;
+      q->right = (*rootp)->right;
+      }
+    }
 
   free((struct tree_t *)*rootp);     /* D4: Free node */
 
@@ -566,7 +583,9 @@ void sync_node_jobs(
       {
       if (find_job_by_node(np,jobidstr) == NULL)
         {
-        sprintf(log_buffer,"stray job %s found on %s",jobidstr,np->nd_name);
+        sprintf(log_buffer,"stray job %s found on %s",
+          jobidstr,
+          np->nd_name);
 
         log_err(-1,id,log_buffer);
 
@@ -590,10 +609,12 @@ void sync_node_jobs(
         /* release_req will free preq and close connection */
         }
       }
+
     jobidstr=strtok(NULL," ");
     }
+
   free(joblist);
-  } /* END sync_node_jobs() */
+  }  /* END sync_node_jobs() */
 
 
 
@@ -1894,18 +1915,24 @@ static int number(
     holder[i++] = *str++;
 
   if (i == 0)
-    return 1;
+    {
+    return(1);
+    }
 
-	holder[i] = '\0';
-	if ((i = atoi(holder)) == 0) {
-		sprintf(log_buffer, "zero illegal");
-		return -1;
-	}
+  holder[i] = '\0';
 
-	*ptr = str;
-	*num = i;
-	return 0;
-}
+  if ((i = atoi(holder)) == 0) 
+    {
+    sprintf(log_buffer,"zero illegal");
+
+    return(-1);
+    }
+
+  *ptr = str;
+  *num = i;
+
+  return(0);
+  }  /* END number() */
 
 
 
@@ -2136,55 +2163,74 @@ done:
 /*
 **	Add the "global" spec to every sub-spec in "spec".
 */
-static
-char    *
-mod_spec(spec, global)
-    char	*spec;
-    char	*global;
-{
-	static	char	line[512];
-	char	*cp;
-	int	len;
 
-	len = strlen(global);
-	cp = line;
-	while (*spec) {
-		if (*spec == '+') {
-			*cp++ = ':';
-			strcpy(cp, global);
-			cp += len;
-		}
-		*cp++ = *spec++;
-	}
-	*cp++ = ':';
-	strcpy(cp, global);
+static char *mod_spec(
 
-	return line;
-}
+  char *spec,
+  char *global)
+
+  {
+  static char	line[512];
+  char	*cp;
+  int	len;
+
+  len = strlen(global);
+
+  cp = line;
+
+  while (*spec) 
+    {
+    if (*spec == '+') 
+      {
+      *cp++ = ':';
+
+      strcpy(cp,global);
+
+      cp += len;
+      }
+
+    *cp++ = *spec++;
+    }
+
+  *cp++ = ':';
+
+  strcpy(cp,global);
+
+  return(line);
+  }
+
+
 
 /* cntjons - count jobs on (shared) nodes */
 
-static int
-cntjons(pn)
-    struct pbsnode *pn;
-{
-    	struct pbssubn *psn;
-	int ct = 0;
-	int n;
-	struct jobinfo *pj;
+static int cntjons(
 
-	psn = pn->nd_psn;
-	for (n=0; n<pn->nd_nsn; ++n) {
+  struct pbsnode *pn)
 
-	    pj = psn->jobs;
-	    while (pj) {
-		++ct;
-		pj = pj->next;
-	    }
-	    psn = psn->next;
-	}
-	return (ct);
-}
+  {
+  struct pbssubn *psn;
+  int ct = 0;
+  int n;
+  struct jobinfo *pj;
+
+  psn = pn->nd_psn;
+
+  for (n = 0;n < pn->nd_nsn;++n) 
+    {
+    pj = psn->jobs;
+
+    while (pj) 
+      {
+      ++ct;
+
+      pj = pj->next;
+      }
+
+    psn = psn->next;
+    }
+
+  return(ct);
+  }
 
 
 
@@ -2766,11 +2812,11 @@ int set_nodes(
 
 int node_avail_complex(
 
-  char	*spec,		/* In  - node spec */
-  int 	*navail,	/* Out - number available */
-  int	*nalloc,	/* Out - number allocated */
-  int	*nresvd,	/* Out - number reserved  */
-  int	*ndown)		/* Out - number down	  */
+  char	*spec,		/* I - node spec */
+  int 	*navail,	/* O - number available */
+  int	*nalloc,	/* O - number allocated */
+  int	*nresvd,	/* O - number reserved  */
+  int	*ndown)		/* O - number down      */
 
   {
   int	holdnum;
@@ -2795,7 +2841,7 @@ int node_avail_complex(
 
 
 /*
- * node_avail - report if nodes requested is available
+ * node_avail - report if nodes requested are available
  *	Does NOT even consider Time Shared Nodes 
  *
  *	Return 0 when no error in request and
@@ -2808,11 +2854,11 @@ int node_avail_complex(
 
 int node_avail(
 
-  char	*spec,		/* In  - node spec */
-  int 	*navail,	/* Out - number available */
-  int	*nalloc,	/* Out - number allocated */
-  int	*nresvd,	/* Out - number reserved  */
-  int	*ndown)		/* Out - number down	  */
+  char	*spec,		/* I  - node spec */
+  int 	*navail,	/* O - number available */
+  int	*nalloc,	/* O - number allocated */
+  int	*nresvd,	/* O - number reserved  */
+  int	*ndown)		/* O - number down      */
 
   {
   char	*id = "node_avail";
@@ -2831,7 +2877,7 @@ int node_avail(
 
   if (spec == NULL) 
     {
-    log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, id, "no spec");
+    log_event(PBSEVENT_ADMIN,PBS_EVENTCLASS_SERVER,id,"no spec");
 
     return(RM_ERR_NOPARAM);
     }
@@ -2849,53 +2895,64 @@ int node_avail(
     xresvd = 0;
     xdown  = 0;
 
-		/* find number of a specific type of node */
+    /* find number of a specific type of node */
 
-		if (*pc)
-			if (proplist(&pc, &prop, &node_req))
-				return (RM_ERR_BADPARAM);
+    if (*pc)
+      {
+      if (proplist(&pc,&prop,&node_req))
+        {
+        return(RM_ERR_BADPARAM);
+        }
+      }
 
-		for (i=0; i<svr_totnodes; i++) {
-			pn = pbsndlist[i];
+    for (i = 0;i < svr_totnodes;i++) 
+      {
+      pn = pbsndlist[i];
 
-		     if ((pn->nd_ntype == NTYPE_CLUSTER) && hasprop(pn, prop)) {
-			if (pn->nd_state &
-				     (INUSE_OFFLINE|INUSE_DOWN))
-				++xdown;
-			else if (hasppn(pn,node_req,SKIP_ANYINUSE))
-				++xavail;
-			else if (hasppn(pn,node_req,SKIP_NONE)) {
-			    /*
-			     * has enought processor, are they busy or reserved
-			     */
-			    j = 0;
-			    for (psn=pn->nd_psn; psn; psn=psn->next) {
-				if (psn->inuse  & INUSE_RESERVE)
-					j++;
-			    }
-			    if (j >= node_req)
-				++xresvd;
-			    else
-				++xalloc;
-			}
-		    }
-		}
-		free_prop(prop);
+      if ((pn->nd_ntype == NTYPE_CLUSTER) && hasprop(pn,prop)) 
+        {
+        if (pn->nd_state & (INUSE_OFFLINE|INUSE_DOWN))
+          ++xdown;
+        else if (hasppn(pn,node_req,SKIP_ANYINUSE))
+          ++xavail;
+        else if (hasppn(pn,node_req,SKIP_NONE)) 
+          {
+          /* node has enough processors, are they busy or reserved? */
 
-		*navail = xavail;
-		*nalloc = xalloc;
-		*nresvd = xresvd;
-		*ndown  = xdown;
-		return 0;
+          j = 0;
 
-	} else if (number(&pc, &holdnum) == -1) {
-		    /* invalid spec */
-		    return (RM_ERR_BADPARAM);
-	}
+          for (psn = pn->nd_psn;psn;psn = psn->next) 
+            {
+            if (psn->inuse & INUSE_RESERVE)
+              j++;
+            }
 
+          if (j >= node_req)
+            ++xresvd;
+          else
+            ++xalloc;
+          }
+        }
+      }    /* END for (i) */
+
+    free_prop(prop);
+
+    *navail = xavail;
+    *nalloc = xalloc;
+    *nresvd = xresvd;
+    *ndown  = xdown;
+
+    return(0);
+    }
+  else if (number(&pc,&holdnum) == -1) 
+    {
+    /* invalid spec */
+
+    return(RM_ERR_BADPARAM);
+    }
 
   /* not a simple spec - determine if supplied complex	*/
-  /* node spec can be satisified from avail nodes		*/
+  /* node spec can be satisified from avail nodes	*/
   /* navail set to >0 if can be satified now		*/
   /*		  0 if not now but possible		*/
   /*		 -l if never possible			*/
@@ -2903,7 +2960,7 @@ int node_avail(
   node_avail_complex(spec,navail,nalloc,nresvd,ndown);
 
   return(0);
-  }
+  }  /* END node_avail() */
 
 
 
@@ -2964,7 +3021,9 @@ int node_reserve(
         {
         if (snp->inuse == INUSE_FREE) 
           {
-          DBPRT(("hold %s/%d\n", pnode->nd_name, snp->index))
+          DBPRT(("hold %s/%d\n", 
+            pnode->nd_name, 
+            snp->index))
 
           snp->inuse |= INUSE_RESERVE;
           snp->allocto = tag;
@@ -3021,12 +3080,15 @@ int is_ts_node(
     {
     np = pbsndmast[i];
 
-		if ( ((np->nd_state & INUSE_DELETED) == 0) &&
-		     (np->nd_ntype == NTYPE_TIMESHARED) ) {
-			if (strcmp(nodestr, np->nd_name) == 0)
-				return 0;
-		}
-	}
+    if (((np->nd_state & INUSE_DELETED) == 0) &&
+         (np->nd_ntype == NTYPE_TIMESHARED)) 
+      {
+      if (!strcmp(nodestr,np->nd_name))
+        {
+        return(0);
+        }
+      }
+    }
 
   return(1);
   }  /* END is_ts_node() */
@@ -3165,7 +3227,7 @@ void free_nodes(
 
 
 /*
- * set_one_old - set a named node as allocated to a a job
+ * set_one_old - set a named node as allocated to a job
  */
 
 static void set_one_old(
@@ -3175,54 +3237,67 @@ static void set_one_old(
   int   shared)	/* how used flag, either INUSE_JOB or INUSE_JOBSHARE */
 
   {
-	int		i;
-	int		index;
-	struct pbsnode *pnode;
-	struct pbssubn *snp;
-	struct jobinfo *jp;
-	char	       *pc;
-
+  int		i;
+  int		index;
+  struct pbsnode *pnode;
+  struct pbssubn *snp;
+  struct jobinfo *jp;
+  char	       *pc;
 	
-	if ((pc = strchr(name, (int)'/')))  {
-		index = atoi(pc+1);
-		*pc = '\0';
-	} else
-		index = 0;
+  if ((pc = strchr(name,(int)'/'))) 
+    {
+    index = atoi(pc + 1);
 
-	for (i=0; i<svr_totnodes; i++) {
-	    pnode = pbsndmast[i];
+    *pc = '\0';
+    } 
+  else
+    {
+    index = 0;
+    }
 
-	    if (strcmp(name, pnode->nd_name) == 0) {
+  for (i = 0;i < svr_totnodes;i++) 
+    {
+    pnode = pbsndmast[i];
 
-		/* Mark node as being IN USE ...  */
+    if (strcmp(name,pnode->nd_name) == 0) 
+      {
+      /* Mark node as being IN USE ...  */
 
-		 if (pnode->nd_ntype == NTYPE_CLUSTER) {
-		    for (snp = pnode->nd_psn; snp; snp = snp->next) {
-			if (snp->index == index) {
+      if (pnode->nd_ntype == NTYPE_CLUSTER) 
+        {
+        for (snp = pnode->nd_psn;snp;snp = snp->next) 
+          {
+          if (snp->index == index) 
+            {
+            snp->inuse = shared;
 
-				snp->inuse = shared;
-				jp  = (struct jobinfo *)malloc(sizeof(struct jobinfo));
-				jp->next = snp->jobs;
-				snp->jobs = jp;
-				jp->job = pjob;
+            jp = (struct jobinfo *)malloc(sizeof(struct jobinfo));
 
-				if (--pnode->nd_nsnfree == 0)
-				    pnode->nd_state = shared;
-				return;
-			}
+            jp->next = snp->jobs;
 
-		    }
-		}
-	    }
-	}
-}
+            snp->jobs = jp;
+
+            jp->job = pjob;
+
+            if (--pnode->nd_nsnfree == 0)
+              pnode->nd_state = shared;
+
+            return;
+            }
+          }
+        }
+      }
+    }
+
+  return;
+  }
 
 
 
 
 	
 /*
- * set_old_nodes - set "old" nodes as in use - called from pbsd_init
+ * set_old_nodes - set "old" nodes as in use - called from pbsd_init()
  *	when recovering a job in the running state.
  */
 
@@ -3236,37 +3311,41 @@ void set_old_nodes(
   resource *presc;
   int   shared = INUSE_JOB;
 
-	if ((pbsndmast != NULL) && 
-	    (pjob->ji_wattr[(int)JOB_ATR_exec_host].at_flags & ATR_VFLAG_SET)) {
+  if ((pbsndmast != NULL) && 
+      (pjob->ji_wattr[(int)JOB_ATR_exec_host].at_flags & ATR_VFLAG_SET)) 
+    {
+    /* are the nodes being used shared? Look in "neednodes" */
 
-		/* are the nodes being used shared? Look in "neednodes" */
+    presc = find_resc_entry(
+      &pjob->ji_wattr[(int)JOB_ATR_resource],
+      find_resc_def(svr_resc_def,"neednodes",svr_resc_size));
 
-		presc = find_resc_entry(&pjob->ji_wattr[(int)JOB_ATR_resource],
-					find_resc_def(svr_resc_def, "neednodes",
-					svr_resc_size) );
-		if ( (presc != NULL) && 
-		     (presc->rs_value.at_flags & ATR_VFLAG_SET) ) {
-			if ((po = strchr(presc->rs_value.at_val.at_str, '#'))) {
-				if (strstr(++po, "shared") != NULL) 
-					shared = INUSE_JOBSHARE;
-			}
-		}
+    if ((presc != NULL) && (presc->rs_value.at_flags & ATR_VFLAG_SET)) 
+      {
+      if ((po = strchr(presc->rs_value.at_val.at_str,'#'))) 
+        {
+        if (strstr(++po,"shared") != NULL) 
+          shared = INUSE_JOBSHARE;
+        }
+      }
 
-		
-		old = strdup(pjob->ji_wattr[(int)JOB_ATR_exec_host].at_val.at_str);
-		while ((po = strrchr(old, (int)'+')) != NULL) {
+    old = strdup(pjob->ji_wattr[(int)JOB_ATR_exec_host].at_val.at_str);
 
-			*po++ = '\0';
-			set_one_old(po, pjob, shared);
-		}
-		set_one_old(old, pjob, shared);
+    while ((po = strrchr(old,(int)'+')) != NULL) 
+      {
+      *po++ = '\0';
 
-		free(old);
-	}
+      set_one_old(po,pjob,shared);
+      }
+
+    set_one_old(old,pjob,shared);
+
+    free(old);
+    }
 
   return;
   }
 
 
-
 /* END node_manager.c */
+

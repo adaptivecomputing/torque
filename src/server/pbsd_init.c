@@ -206,16 +206,16 @@ extern int     net_move A_((job *,struct batch_request *));
 /* Private functions in this file */
 
 static void  init_abt_job A_((job *));
-static char *build_path A_((char *parent, char *name, char *subdir));
+static char *build_path A_((char *,char *,char *));
 static void  catch_child A_((int));
 static void  catch_abort A_((int));
 static void  change_logs A_((int));
-static int   chk_save_file A_((char *filename));
+static int   chk_save_file A_((char *));
 static void  need_y_response A_((int));
-static int   pbsd_init_job A_((job *pjob, int type));
-static void  pbsd_init_reque A_((job *job, int change_state));
+static int   pbsd_init_job A_((job *,int));
+static void  pbsd_init_reque A_((job *,int));
 static void  resume_net_move A_((struct work_task *));
-static void  rm_files A_((char *dirname));
+static void  rm_files A_((char *));
 static void  stop_me A_((int));
 
 /* private data */
@@ -1411,51 +1411,81 @@ static int chk_save_file(
  *	in JOB_SUBSTATE_TRNOUTCM state.
  */
 
-static void resume_net_move(ptask)
-	struct work_task *ptask;
-{
-	net_move((job *)ptask->wt_parm1, 0);
-}
+static void resume_net_move(
+
+  struct work_task *ptask)
+
+  {
+  net_move((job *)ptask->wt_parm1,0);
+
+  return;
+  }
 
 /*
  * need_y_response - on create/clean initialization that would delete
  *	information, obtain the operator approval first.
  */
 
-static void need_y_response(type)
-	int type;
-{
-	static int answ = -2;
-	int c;
+static void need_y_response(
 
-	if (answ > 0)
-		return;		/* already gotten a response */
+  int type)  /* I */
 
-	fflush(stdin);
-	if (type == RECOV_CREATE)
-		printf(msg_startup3, msg_daemonname, server_name, "Create","server database");
-	else
-		printf(msg_startup3, msg_daemonname, server_name, "Cold", "jobs");
-	while (1) {
-		answ = getchar();
-		c    = answ;
-		while ((c != '\n') && (c != EOF))
-			c = getchar();
-		switch (answ) {
-		    case 'y':
-		    case 'Y':
-			return;
+  {
+  static int answ = -2;
+  int c;
+
+  if (answ > 0)
+    {
+    return;		/* already received a response */
+    }
+
+  fflush(stdin);
+
+  if (type == RECOV_CREATE)
+    printf(msg_startup3, msg_daemonname, server_name, "Create","server database");
+  else
+    printf(msg_startup3, msg_daemonname, server_name, "Cold", "jobs");
+  
+  while (1) 
+    {
+    answ = getchar();
+
+    c = answ;
+
+    while ((c != '\n') && (c != EOF))
+      c = getchar();
+
+    switch (answ) 
+      {
+      case 'y':
+      case 'Y':
+
+        return;
 	
-		    case  EOF:
-		    case '\n':
-		    case 'n':
-		    case 'N':
-			printf("PBS server %s initialization aborted\n", server_name);
-			exit(0);
-		}
-		printf("y(es) or n(o) please:\n");
-	}
-}
+        /*NOTREACHED*/
+
+        break;
+
+      case  EOF:
+      case '\n':
+      case 'n':
+      case 'N':
+
+        printf("PBS server %s initialization aborted\n", 
+          server_name);
+
+        exit(0);
+
+        /*NOTREACHED*/
+
+        break;
+      }
+
+    printf("y(es) or n(o) please:\n");
+    }
+
+  return;
+  }
 
 
 
@@ -1466,45 +1496,58 @@ static void need_y_response(type)
  *	directory (path_priv) and any subdirectory except under "jobs".
  */
 
-static void rm_files(dirname)
-	char *dirname;
-{
-	DIR *dir;
-	int  i;
-	struct stat    stb;
-	struct dirent *pdirt;
-	char path[1024];
+static void rm_files(
 
-	/* list of directories in which files are removed */
-	static char *byebye[] = {
-		"acl_groups",
-		"acl_hosts",
-		"acl_svr",
-		"acl_users",
-		"queues",
-		(char *)0		/* keep as last entry */
-	};
+  char *dirname)
 
-	dir = opendir(dirname);
-	if (dir) {
-		while ((pdirt = readdir(dir)) != NULL) {
-			(void)strcpy(path, dirname);
-			(void)strcat(path, "/");
-			(void)strcat(path, pdirt->d_name);
-			if (stat(path, &stb) == 0) {
-				if (S_ISDIR(stb.st_mode)) {
-					for (i=0; byebye[i]; ++i) {
-						if (strcmp(pdirt->d_name, byebye[i]) == 0) {
-							rm_files(path);
-				    		}
-					}
-				} else if (unlink(path) == -1) {
-					(void)strcpy(log_buffer,"cant unlink");
-					(void)strcat(log_buffer, path);
-					log_err(errno, "pbsd_init", log_buffer);
-				}
-			}
-		}
+  {
+  DIR *dir;
+  int  i;
+  struct stat    stb;
+  struct dirent *pdirt;
+  char path[1024];
+
+  /* list of directories in which files are removed */
+
+  static char *byebye[] = {
+    "acl_groups",
+    "acl_hosts",
+    "acl_svr",
+    "acl_users",
+    "queues",
+    NULL };      /* keep as last entry */
+
+  dir = opendir(dirname);
+
+  if (dir != NULL) 
+    {
+    while ((pdirt = readdir(dir)) != NULL) 
+      {
+      strcpy(path,dirname);
+      strcat(path,"/");
+      strcat(path,pdirt->d_name);
+
+      if (stat(path,&stb) == 0) 
+        {
+        if (S_ISDIR(stb.st_mode)) 
+          {
+          for (i = 0;byebye[i];++i) 
+            {
+            if (strcmp(pdirt->d_name,byebye[i]) == 0) 
+              {
+              rm_files(path);
+              }
+            }
+          } 
+        else if (unlink(path) == -1) 
+          {
+          strcpy(log_buffer,"cannot unlink");
+          strcat(log_buffer,path);
+
+          log_err(errno,"pbsd_init",log_buffer);
+          }
+        }
+      }
     }
 
   return;

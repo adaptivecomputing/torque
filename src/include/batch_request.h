@@ -190,10 +190,10 @@ struct rq_rescq {
 /* RunJob */
 
 struct rq_runjob {
-	char	rq_jid[PBS_MAXSVRJOBID+1];
-	char	rq_destin[PBS_MAXDEST+1];
-	unsigned int rq_resch;
-};
+  char	rq_jid[PBS_MAXSVRJOBID + 1];  /* requested job id */
+  char	rq_destin[PBS_MAXDEST + 1];   /* destination hostlist */
+  unsigned int rq_resch;
+  };
 
 /* SignalJob */
 
