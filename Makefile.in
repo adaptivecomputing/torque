@@ -91,8 +91,62 @@ MK_VPATH = @srcdir@
 @mk_head@
 @mk_dirs@
 
+#
+# Used by the 'packages' target below
+#
+# Additional package name, should be redefined to something meaningful to
+# the user.
+PKGNAME     = package
 
-all build depend install clean distclean::
+# Directory with files that override the packaged files.
+# Can be redefined on the make cmdline to a permanent location
+PKGOVERRIDE = $(PWD)/pkgoverride
+
+# temp dir for the packaged files and tarballs
+PKGROOT     = $(PWD)/tpackages
+
+
+default: all
+
+packages:
+	@if `echo $(PKGROOT) | grep ^/ >/dev/null`;then \
+	  echo "Building packages from $(PKGROOT)"; \
+	else \
+	  echo "Error: PKGROOT must be an absolute path"; \
+	  exit 1; \
+	fi
+	rm -rf $(PKGROOT)
+	mkdir $(PKGROOT)
+	@for d in @PART_CLIENTS@ @PART_MOM@ @PART_SERVER@ `test X@PART_CLIENTS@ != X && echo @GUI@` devel;do \
+	   proot=$(PKGROOT)/$$d; \
+	   pname=$(PKGNAME); \
+	   tarball=$(PKGROOT)/torque-$$pname-$$d-$(PBS_MACH)-`uname -m`.tar.gz; \
+	   pkgfile=./torque-$$pname-$$d-$(PBS_MACH)-`uname -m`.sh; \
+	   echo "Building $$pkgfile ..."; \
+	   $(MAKE) \
+	     sbindir=$$proot$(sbindir) \
+	     bindir=$$proot$(bindir) \
+	     libdir=$$proot$(libdir) \
+	     mandir=$$proot$(mandir) \
+	     includedir=$$proot$(includedir) \
+	     PBS_SERVER_HOME=$$proot$(PBS_SERVER_HOME) \
+	     install_$$d >/dev/null || exit 1; \
+	   if test -d $(PKGOVERRIDE)/$$d ;then \
+	     echo "Using override dir $(PKGOVERRIDE)/$$d"; \
+	     ( cd $(PKGOVERRIDE)/$$d && tar cf - . | (cd $$proot; tar xvf - ) ); \
+	   fi; \
+	   ( cd $$proot; tar cf - * ) | gzip > $$tarball && \
+	   cat ./buildutils/self-extract-head-sh > $$pkgfile && \
+	   cat $$tarball >> $$pkgfile && \
+	   chmod 755 $$pkgfile; \
+	done
+	@echo "Done."
+	@echo ""
+	@echo "The package files are self-extracting packages that can be copied"; \
+	 echo "and executed on your production machines.  Use --help for options.";
+
+
+all build depend install install_clients install_mom install_server install_gui install_devel clean distclean::
 	@# do the distclean here so the sequencing can be assured
 	@# allow for empty subdir lists and abort make if any subdir fails
 	@if test "_$@_" = "_all_" -o "_$@_" = "_build_"; then \

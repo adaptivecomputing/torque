@@ -184,6 +184,16 @@ MAN8 =	$(DOCSRC)/man8/qdisable.8B \
 all:: build
 
 build install:: soelim
+ 
+install_clients:: soelim install1 install7
+
+install_server:: soelim install1 install8
+
+install_mom:: soelim install8
+
+install_gui:: soelim install1
+
+install_devel:: install
 
 build clean distclean::
 

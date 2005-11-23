@@ -4081,6 +4081,7 @@ pbs_makefile_list="
     buildutils/mkincludes/tail.mk
     buildutils/mkincludes/tcl.mk
     buildutils/Makefile
+    buildutils/self-extract-head-sh
 
     ./Makefile
     src/Makefile

@@ -123,17 +123,23 @@ BLD_SUBDIRS =  @BLD_LIBS@ @BLD_SERVER_SUBDIRS@ \
                @BLD_MOM_SUBDIRS@ @BLD_CLIENTS_SUBDIRS@
 
 
-all build install depend clean distclean::
+all build install install_clients install_mom install_server install_gui install_devel depend clean distclean::
 	@# do the distclean here so the sequencing can be assured
 	@# allow for empty subdir lists and abort make if any subdir fails
-	@case $@ in \
+	@target=$@; \
+	case $@ in \
 	    all|depend|build) SDIRS="$(BLD_SUBDIRS)";; \
 	    install)   SDIRS="$(INST_SUBDIRS)";; \
+	    install_server) SDIRS="$(INST_SERVER_SUBDIRS)";target=install;; \
+	    install_mom)    SDIRS="$(INST_MOM_SUBDIRS)";target=install;; \
+	    install_clients)SDIRS="iff cmds tools";target=install;; \
+	    install_gui)    SDIRS="$(GUI)";target=install;; \
+	    install_devel)  SDIRS="lib include";target=install;; \
 	    *clean)    SDIRS="$(CLEAN_SUBDIRS)";; \
 	esac && \
 	for d in $$SDIRS "" ; do \
 	    if test -n "$$d"; then \
-	        (cd $$d && echo Making $@ in $$d && $(MAKE) $@) || exit $$?; \
+	        (cd $$d && echo Making $@ in $$d && $(MAKE) $$target) || exit $$?; \
 	    else true; fi; \
 	done && \
 	{ test $@ = distclean && \
