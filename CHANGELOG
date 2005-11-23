@@ -3,6 +3,7 @@
   added torque.spec (rpmbuild -tb should work) (USC)
   new 'packages' make target (see INSTALL) (USC)
   fix check_pwd() memory leak (USC)
+  added '-1' qstat option to display node info (UMICH)
 
 2.0.0p1
 
