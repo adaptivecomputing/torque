@@ -1,5 +1,6 @@
 2.0.0p2
 
+  added torque.spec (rpmbuild -tb should work) (USC)
   new 'packages' make target (see INSTALL) (USC)
   fix check_pwd() memory leak (USC)
 

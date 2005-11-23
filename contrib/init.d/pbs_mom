@@ -1,0 +1,86 @@
+#!/bin/sh
+#
+# pbs_mom	This script will start and stop the PBS Mom
+#
+# chkconfig: 345 85 85
+# description: PBS is a versatile batch system for SMPs and clusters
+#
+ulimit -n 32768
+# Source the library functions
+. /etc/rc.d/init.d/functions
+
+PBS_DAEMON=/usr/sbin/pbs_mom
+PBS_HOME=/usr/spool/PBS
+export PBS_DAEMON PBS_HOME
+
+if [ -f /etc/sysconfig/pbs_mom ];then
+    . /etc/sysconfig/pbs_mom
+fi
+
+args=""
+if [ -z "$previous" ];then
+   # being run manually, don't disturb jobs
+   args="-p"
+fi
+
+pidof_pbs_mom() {
+   pid="-1"
+   if [ -f $PBS_HOME/mom_priv/mom.lock ];then
+   	pid=`cat $PBS_HOME/mom_priv/mom.lock`
+   fi
+   echo $pid
+}
+
+kill_pbs_mom() {
+   pid=`pidof_pbs_mom`
+
+   if [ $pid -le 1 ];then
+      return -1;
+   fi
+   retval=1
+   while kill -0 $pid 2>/dev/null;do
+      kill -TERM $pid
+      retval=$?
+      sleep 1
+   done
+   return $retval
+}
+	
+# let see how we were called
+case "$1" in
+	start)
+		echo -n "Starting TORQUE Mom: "
+		daemon $PBS_DAEMON $args
+		touch /var/lock/subsys/pbs_mom
+   		echo
+		;;
+	purge)
+		[ -f /var/lock/subsys/pbs_mom ] && $0 stop
+		echo -n "Starting TORQUE Mom with purge: "
+		daemon $PBS_DAEMON -r
+		touch /var/lock/subsys/pbs_mom
+   		echo
+		;;
+	stop)
+		echo -n "Shutting down TORQUE Mom: "
+		kill_pbs_mom && success "shutdown" || failure "shutdown"
+		echo
+		rm -f /var/lock/subsys/pbs_mom
+		;;
+	status)
+		status pbs_mom
+		;;
+	restart)
+		$0 stop
+		sleep 1
+		$0 start
+		;;
+	reload)
+	        echo -n "Re-reading TORQUE Mom config file: "
+		kill -SIGHUP `pidof_pbs_mom` && success "HUP" || failure "HUP"
+		echo
+	        ;;
+	*)
+		echo "Usage: pbs_mom {start|stop|restart|reload|status|purge}"
+		exit 1
+esac
