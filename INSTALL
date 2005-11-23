@@ -42,36 +42,55 @@ INSTALL: The standard "install" target will install all of the
   shared to your nodes, you can rsh/ssh to each node and run:
   "make install_mom install_clients".
 
+
   For more convienent installation on compute nodes and login machines,
   TORQUE can build customized, distributable, self-extracting packages
   with the "packages" target.  The packages contain all required files
   to use a specific subcomponent on any host with the same Operating
-  System.  Environments that use multiple builds can add a useful
-  package name by defining PKGNAME, ie: 
-     make PKGNAME=cluster1-suse packages
-
-  Local changes like MOM config files and pro/epilog scripts can be
-  placed in a "package override" directory.  Files in this directory
-  will be added, possibly overwritting default files, to the generated
-  packages.  Override files are scanned from PKGOVERRIDE/$component
-  where PKGOVERRIDE defaults to "./pkgoverride" and $component is one
-  of: clients, mom, server, gui, and devel.  Override files are copied
-  with the full path, ie: 
-     ./pkgoverride/mom/$PBS_SERVER_HOME/mom_priv/config
-
-  If an executable is found at PKGOVERRIDE/$component/post-install, it
-  will be added to the package, executed after installation, and then
-  removed if it exits successfully.
-
-  One might maintain MOM scripts in a permanent location like
-  ~/tpkgoverride/mom and build packages with:
-     make PKGOVERRIDE=~/tpkgoverride packages
+  System.
 
   The generated packages can be copied to all other hosts and installed
   by running the script with --install.  By default, packages will
   preserve config files (See buildutils/self-extract-head-sh.in for the
   current list of config files.  Run the package with --help for other
   options.
+
+
+  Environments that use multiple builds can add a useful package name
+  by defining PKGNAME, ie: 
+     $ make PKGNAME=cluster1 packages
+     ...
+     Building torque-cluster1-clients-linux-i686.sh ...
+     Building torque-cluster1-mom-linux-i686.sh ...
+     ...
+
+
+  Local changes, such as MOM config files and pro/epilog scripts, can
+  be placed in a "package override" directory.  Files in this directory
+  will be added, possibly overwriting default files, to the generated
+  packages.  Override files are scanned from PKGOVERRIDE/$component
+  where PKGOVERRIDE defaults to "./pkgoverride" and $component is one
+  of: clients, mom, server, gui, and devel.  Override files are copied
+  with the full path, ie: 
+     ./pkgoverride/mom/usr/spool/PBS/mom_priv/config
+
+  One might maintain MOM scripts in a permanent location like
+  ~/pkgoverride/mom and build packages with:
+     $ make PKGOVERRIDE=~/pkgoverride packages
+     ...
+     Building torque-package-mom-linux-i686.sh ...
+     Using override dir ~/pkgoverride/mom
+     ...
+     ./usr/spool/PBS/mom_priv/config
+     ./usr/spool/PBS/mom_priv/prologue
+     Building torque-package-server-linux-i686.sh ...
+     Building torque-package-gui-linux-i686.sh ...
+     ...
+
+
+  If an executable is found at PKGOVERRIDE/$component/post-install, it
+  will be added to the package, executed after installation, and then
+  removed if it exits successfully.
 
 -------------------------------------------------------------------
 
