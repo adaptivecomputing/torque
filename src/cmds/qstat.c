@@ -122,6 +122,7 @@ static void states();
 #define ALT_DISPLAY_Mb	0x100	/* show sizes in MB */
 #define ALT_DISPLAY_Mw	0x200	/* -M option - show sizes in MW */
 #define ALT_DISPLAY_G	0x400	/* -G option - show sizes in GB */
+#define ALT_DISPLAY_o   0x800   /* -1 option - add node list on same line */
 #endif /* not PBS_NO_POSIX_VIOLATION */
 
 
@@ -409,46 +410,90 @@ static char *findattrl(
 
 static void prt_nodes(
 
-  char *nodes)
+  char *nodes,   /* I */
+  int   option)  /* I */
 
   {
-	int  i;
-	char linebuf[78];
-	char *stp;
+  int   i;
+  char *stp;
 
-	if ((nodes == (char *)0) || (*nodes == '\0'))
-		return;
+  int   linesize;
 
-	i = 0;
-	stp = nodes;
-	while (*nodes != '\0') {
-		if ((*stp == '.') || (*stp == '+') || (*stp == '\0')) {
-			/* does node fit into line? */
-			if (i + stp - nodes < 77) {
-				while (nodes < stp)
-					linebuf[i++] = *nodes++;
-			} else {
-				/* flush line and start next */
-				linebuf[i] = '\0';
-				printf("   %s\n", linebuf);
-				i = 0;
-				while (nodes < stp)
-					linebuf[i++] = *nodes++;
-			}
+  char  linebuf[65536];
+
+  if ((nodes == NULL) || (*nodes == '\0'))
+    {
+    /* FAILURE - node is invalid */
+
+    return;
+    }
+
+  if (option & ALT_DISPLAY_o) 
+    {
+    linesize = sizeof(linebuf);        
+    }
+  else
+    {
+    linesize = 77;
+    }
+
+  i = 0;
+
+  stp = nodes;
+
+  while (*nodes != '\0') 
+    {
+    if ((*stp == '.') || (*stp == '+') || (*stp == '\0')) 
+      {
+      /* does node fit into line? */
+
+      if (i + stp - nodes < linesize) 
+        {
+        while (nodes < stp)
+          linebuf[i++] = *nodes++;
+        } 
+      else 
+        {
+        /* flush line and start next */
+
+        linebuf[i] = '\0';
+
+        printf("   %s\n", 
+          linebuf);
+
+        i = 0;
+
+        while (nodes < stp)
+          linebuf[i++] = *nodes++;
+        }
 			
-			/* strip off domain name to keep string short */
-			while ((*stp != '+') && (*stp != '\0'))
-				stp++;
-			nodes = stp++;
-		} else {
-			stp++;
-		}
-	}
-	if (i != 0) {
-		linebuf[i] = '\0';
-		printf("   %s\n", linebuf);
-	}
-}
+      /* strip off domain name to keep string short */
+
+      while ((*stp != '+') && (*stp != '\0'))
+        stp++;
+
+      nodes = stp++;
+      } 
+    else 
+      {
+      stp++;
+      }
+    }
+
+  if (i != 0) 
+    {
+    linebuf[i] = '\0';
+
+    printf("   %s\n", 
+      linebuf);
+    }
+
+  return;
+  }  /* END prt_nodes() */
+
+
+
+
 
 /*
  * convert size from suffix string (nnnn[ kmgt][ bw]) to string of
@@ -627,18 +672,26 @@ static void altdsp_statjob(
         } 
       else if (!strcmp(pat->name,ATTR_l)) 
         {
-			if (strcmp(pat->resource, "nodect") == 0) {
-				nodect = pat->value;
-			} else if (strcmp(pat->resource, "ncpus") == 0) {
-				if (strcmp(pat->value, "0") != 0)
-					tasks = pat->value;
-			} else if (strcmp(pat->resource, "mppe") == 0) {
-				if (strcmp(pat->value, "0") != 0)
-					tasks = pat->value;
-			} else if (strcmp(pat->resource, "mem") == 0) {
-				(void)strncpy(rqmem,
-					cnv_size(pat->value, alt_opt), SIZEL);
-			} else if (strcmp(pat->resource, "walltime") == 0) {
+        if (!strcmp(pat->resource,"nodect")) 
+          {
+          nodect = pat->value;
+          } 
+        else if (!strcmp(pat->resource,"ncpus")) 
+          {
+          if (strcmp(pat->value,"0"))
+            tasks = pat->value;
+          } 
+        else if (!strcmp(pat->resource,"mppe")) 
+          {
+          if (strcmp(pat->value,"0"))
+            tasks = pat->value;
+          } 
+        else if (!strcmp(pat->resource,"mem")) 
+          {
+          strncpy(rqmem,cnv_size(pat->value,alt_opt),SIZEL);
+          } 
+        else if (!strcmp(pat->resource,"walltime")) 
+          {
 				rqtimewal = pat->value;
 			} else if (strcmp(pat->resource, "cput") == 0) {
 				rqtimecpu = pat->value;
@@ -676,7 +729,7 @@ static void altdsp_statjob(
 
     if (alt_opt & ALT_DISPLAY_R) 
       {
-      printf("%5.5s %3.3s %6.6s %5.5s %1.1s %5.5s %5.5s %5.5s %5.5s\n", 
+      printf("%5.5s %3.3s %6.6s %5.5s %1.1s %5.5s %5.5s %5.5s %5.5s", 
         nodect, 
         tasks, 
         rqmem, 
@@ -689,7 +742,7 @@ static void altdsp_statjob(
       } 
     else 
       {
-      printf("%-10.10s %6.6s %5.5s %3.3s %6.6s %5.5s %1.1s %5.5s\n",
+      printf("%-10.10s %6.6s %5.5s %3.3s %6.6s %5.5s %1.1s %5.5s",
         jobn, 
         sess, 
         nodect, 
@@ -698,13 +751,16 @@ static void altdsp_statjob(
         usecput ? rqtimecpu : rqtimewal,
         jstate, 
         usecput ? eltimecpu : eltimewal);
+
+      if (!(alt_opt & ALT_DISPLAY_o)) 
+        printf("\n");
       }
 
     if (alt_opt & ALT_DISPLAY_n) 
       {
       /* print assigned nodes */
 
-      prt_nodes(exechost);
+      prt_nodes(exechost,alt_opt);
       }
 
     if (alt_opt & ALT_DISPLAY_s) 
@@ -1748,7 +1804,7 @@ int main(
 #endif /* !FALSE */
 
 #if !defined(PBS_NO_POSIX_VIOLATION)
-#define GETOPT_ARGS "aefinqrsu:xGMQRBW:-:"
+#define GETOPT_ARGS "aefin1qrsu:xGMQRBW:-:"
 #else
 #define GETOPT_ARGS "fQBW:"
 #endif /* PBS_NO_POSIX_VIOLATION */
@@ -1778,6 +1834,12 @@ int main(
     switch (c) 
       {
 #if !defined(PBS_NO_POSIX_VIOLATION)
+
+      case '1':
+
+        alt_opt |= ALT_DISPLAY_o;
+
+        break;
 
       case 'a':
 
@@ -2019,14 +2081,21 @@ int main(
 
   if (c == (ALT_DISPLAY_Mw | ALT_DISPLAY_G)) 
     {
-    fprintf(stderr, conflict);
+    fprintf(stderr,conflict);
 
     errflg++;
     }
 
   if ((alt_opt & ALT_DISPLAY_q) && (f_opt == 1)) 
     {
-    fprintf(stderr, conflict);
+    fprintf(stderr,conflict);
+
+    errflg++;
+    }
+
+  if (( alt_opt & ALT_DISPLAY_o) && ! (alt_opt & ALT_DISPLAY_n))
+    {
+    fprintf(stderr,conflict);
 
     errflg++;
     }
@@ -2037,7 +2106,7 @@ int main(
     {
     static char usage[]="usage: \n\
 qstat [-f] [-W site_specific] [ job_identifier... | destination... ]\n\
-qstat [-a|-i|-r|-e] [-u user] [-n] [-s] [-G|-M] [-R] [job_id... | destination...]\n\
+qstat [-a|-i|-r|-e] [-u user] [-n] [-1] [-s] [-G|-M] [-R] [job_id... | destination...]\n\
 qstat -Q [-f] [-W site_specific] [ destination... ]\n\
 qstat -q [-G|-M] [ destination... ]\n\
 qstat -B [-f] [-W site_specific] [ server_name... ]\n";
@@ -2061,8 +2130,8 @@ qstat -B [-f] [-W site_specific] [ server_name... ]\n";
       case JOBS:
 
         server_out[0] = '@';
-        strcpy(&server_out[1], def_server);
-        tcl_addarg(ops, server_out);
+        strcpy(&server_out[1],def_server);
+        tcl_addarg(ops,server_out);
 
         job_id_out[0] = '\0';
         server_out[0] = '\0';
@@ -2076,7 +2145,7 @@ qstat -B [-f] [-W site_specific] [ server_name... ]\n";
       case QUEUES:
 
         server_out[0] = '@';
-        strcpy(&server_out[1], def_server);
+        strcpy(&server_out[1],def_server);
 
         tcl_addarg(ops, server_out);
 

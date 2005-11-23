@@ -132,7 +132,7 @@ int  svr_startjob A_((job *,struct batch_request *));
 static void post_sendmom A_((struct work_task *));
 static int  svr_stagein A_((job *,struct batch_request *,int,int)); 
 static int  svr_strtjob2 A_((job *,struct batch_request *));
-static job *chk_job_torun A_((struct batch_request *));
+static job *chk_job_torun A_((struct batch_request *,int));
 static int  assign_hosts A_((job *,char *,int));
 
 /* Global Data Items: */
@@ -177,9 +177,16 @@ void req_runjob(
   int   rc;
   void *bp;
 
+  int   setneednodes;
+
   /* chk_job_torun will extract job id and assign hostlist if specified */
 
-  if ((pjob = chk_job_torun(preq)) == NULL)
+  if (getenv("TORQUEAUTONN"))
+    setneedndes = 1;
+  else
+    setneednodes = 0;
+
+  if ((pjob = chk_job_torun(preq,setneednodes)) == NULL)
     {
     /* FAILURE */
 
@@ -255,7 +262,7 @@ void req_stagein(
   job *pjob;
   int  rc;
 
-  if ((pjob = chk_job_torun(preq)) == NULL) 
+  if ((pjob = chk_job_torun(preq,0)) == NULL) 
     {
     return;
     } 
@@ -481,7 +488,7 @@ int svr_startjob(
   /* if exec_host already set and either (hot start or checkpoint) */
   /* then use the host(s) listed in exec_host			*/
 
-  /* NOTE:  should extract hostlist at this point so we can assign hosts? */
+  /* NOTE:  qrun hostlist assigned in req_runjob() */
 
   rc = 0;
 
@@ -1009,12 +1016,13 @@ static void post_sendmom(
 
 static job *chk_job_torun(
 
-  struct batch_request *preq)  /* I */
+  struct batch_request *preq,  /* I */
+  int                   setnn) /* I */
 
   {
-  job		 *pjob;
+  job              *pjob;
   struct rq_runjob *prun;
-  int 		  rc;
+  int               rc;
 
   prun = &preq->rq_ind.rq_run;
 
@@ -1131,7 +1139,32 @@ static job *chk_job_torun(
       return(NULL);
       }
     }
-			
+
+  if (setnn == 1)
+    {
+    resource *prescjb = find_resc_entry(pjob,"neednodes");
+
+    if ((prescjb == NULL) ||
+       ((prescjb->rs_value.at_flags & ATR_VFLAG_SET) == 0))
+      {
+      /* resource does not exist or value is not set */
+
+      if (prescjb == NULL)
+        prescjb = add_resource_entry(pjob,"neednodes");
+
+      if (prescjb != NULL)
+        {
+        if (prescdt->rs_defin->rs_set(
+              &prescjb->rs_value,
+              &prescdt->rs_value,
+              SET) == 0)
+          {
+          prescjb->rs_value.at_flags |= ATR_VFLAG_SET;
+          }
+        }
+      }
+    }
+
   return(pjob);
   }  /* END chk_job_torun() */
 
@@ -1156,42 +1189,50 @@ static int assign_hosts(
   {
   unsigned int	 dummy;
   char		*list = NULL;
-  char		*hosttoalloc;
+  char		*hosttoalloc = NULL;
   pbs_net_t	 momaddr = 0;
   resource	*pres;
   int		 rc = 0;
   extern char 	*mom_host;
 	
-  pres = find_resc_entry(
-    &pjob->ji_wattr[(int)JOB_ATR_resource],
-    find_resc_def(svr_resc_def,"neednodes",svr_resc_size));
-
-  if ((given != NULL) && (given[0] != '\0'))
-    {	
-    /* assign what was specified in run request */
-
-    hosttoalloc = given;
-    } 
 #ifdef __TREQSCHED
-  else if ((server.sv_attr[(int)SRV_ATR_ReqSched].at_flags & ATR_VFLAG_SET) &&
-           (server.sv_attr[(int)SRV_ATR_ReqSched].at_val.at_str != NULL))
+  if ((given == NULL) || (given[0] == '\0'))
     {
     /* scheduler must specify node allocation for all jobs */
 
     return(PBSE_UNKNODEATR);
     }
 #endif /* __TREQSCHED */
-  else if (pres != NULL) 
+
+  if ((given != NULL) && (given[0] != '\0'))
     {	
-    /* assign what was in "neednodes" */
+    /* assign what was specified in run request */
 
-    hosttoalloc = pres->rs_value.at_val.at_str;
+    hosttoalloc = given;
+    }
+  else
+    {
+    pres = find_resc_entry(
+      &pjob->ji_wattr[(int)JOB_ATR_resource],
+      find_resc_def(svr_resc_def,"neednodes",svr_resc_size));
 
-    if ((hosttoalloc == NULL) || (hosttoalloc[0] == '\0'))
-      {
-      return(PBSE_UNKNODEATR);
-      }
-    } 
+    if (pres != NULL) 
+      {	
+      /* assign what was in "neednodes" */
+
+      hosttoalloc = pres->rs_value.at_val.at_str;
+
+      if ((hosttoalloc == NULL) || (hosttoalloc[0] == '\0'))
+        {
+        return(PBSE_UNKNODEATR);
+        }
+      } 
+    }
+
+  if (hostalloc != NULL)
+    {
+    /* NO-OP */
+    }
   else if (svr_totnodes == 0) 
     {	
     /* assign "local" */

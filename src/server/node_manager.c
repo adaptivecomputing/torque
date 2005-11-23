@@ -3303,7 +3303,7 @@ static void set_one_old(
 
 void set_old_nodes(
 
-  job *pjob)
+  job *pjob)  /* I (modified) */
 
   {
   char *old;
@@ -3344,7 +3344,7 @@ void set_old_nodes(
     }
 
   return;
-  }
+  }  /* END set_old_nodes() */
 
 
 /* END node_manager.c */

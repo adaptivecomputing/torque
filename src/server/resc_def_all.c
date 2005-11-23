@@ -715,47 +715,73 @@ int ctnodes(spec)
  *	the value of the resource "nodect" for use by the scheduler.
  */
 
-static int set_node_ct(pnodesp, pattr, actmode)
-	resource  *pnodesp;
-	attribute *pattr;
-	int	   actmode;
-{
-	resource	*pnct;
-	resource_def	*pndef;
+static int set_node_ct(
 
-	if (actmode == ATR_ACTION_RECOV)
-		return (0);
+  resource  *pnodesp,  /* I */
+  attribute *pattr,    /* I */
+  int        actmode)  /* I */
 
-	/* Set "nodect" to count of nodes in "nodes" */
+  {
+  resource	*pnct;
+  resource_def	*pndef;
 
-	pndef = find_resc_def(svr_resc_def, "nodect", svr_resc_size);
-	if (pndef == (resource_def *)0)
-		return (PBSE_SYSTEM);
+  if (actmode == ATR_ACTION_RECOV)
+    {
+    /* SUCCESS */
 
-	if ((pnct = find_resc_entry(pattr, pndef)) == (resource *)0) {
-		if ((pnct = add_resource_entry(pattr, pndef)) == 0)
-			return (PBSE_SYSTEM);
-	}
+    return(0);
+    }
 
-	pnct->rs_value.at_val.at_long =
-				ctnodes(pnodesp->rs_value.at_val.at_str);
-	pnct->rs_value.at_flags |= ATR_VFLAG_SET;
+  /* Set "nodect" to count of nodes in "nodes" */
 
-	/* Set "neednodes" to "nodes", may be altered by Scheduler */
+  pndef = find_resc_def(svr_resc_def,"nodect",svr_resc_size);
 
-	pndef = find_resc_def(svr_resc_def, "neednodes", svr_resc_size);
-	if (pndef == (resource_def *)0)
-		return (PBSE_SYSTEM);
+  if (pndef == NULL)
+    {
+    return(PBSE_SYSTEM);
+    }
 
-	if ((pnct = find_resc_entry(pattr, pndef)) == (resource *)0) {
-		if ((pnct = add_resource_entry(pattr, pndef)) == 0)
-			return (PBSE_SYSTEM);
-	} else {
-		pndef->rs_free(&pnct->rs_value);
-	}
-	pndef->rs_decode(&pnct->rs_value, (char *)0, (char *)0,
-			 pnodesp->rs_value.at_val.at_str);
-	pnct->rs_value.at_flags |= ATR_VFLAG_SET;
+  if ((pnct = find_resc_entry(pattr,pndef)) == NULL) 
+    {
+    if ((pnct = add_resource_entry(pattr,pndef)) == 0)
+      {
+      return(PBSE_SYSTEM);
+      }
+    }
+
+  pnct->rs_value.at_val.at_long =
+    ctnodes(pnodesp->rs_value.at_val.at_str);
+
+  pnct->rs_value.at_flags |= ATR_VFLAG_SET;
+
+  /* Set "neednodes" to "nodes", may be altered by Scheduler */
+
+  pndef = find_resc_def(svr_resc_def,"neednodes",svr_resc_size);
+
+  if (pndef == NULL)
+    {
+    return(PBSE_SYSTEM);
+    }
+
+  if ((pnct = find_resc_entry(pattr,pndef)) == NULL) 
+    {
+    if ((pnct = add_resource_entry(pattr,pndef)) == NULL)
+      {
+      return(PBSE_SYSTEM);
+      }
+    } 
+  else 
+    {
+    pndef->rs_free(&pnct->rs_value);
+    }
+
+  pndef->rs_decode(&pnct->rs_value,NULL,NULL,pnodesp->rs_value.at_val.at_str);
+
+  pnct->rs_value.at_flags |= ATR_VFLAG_SET;
+
+  /* SUCCESS */
 	
-	return (0);
-}
+  return(0);
+  }  /* END set_node_ct() */
+
+
