@@ -46,16 +46,18 @@ INSTALL: The standard "install" target will install all of the
   TORQUE can build customized, distributable, self-extracting packages
   with the "packages" target.  The packages contain all required files
   to use a specific subcomponent on any host with the same Operating
-  System.  Environments that use multiple builds can add a useful package
-  name by defining PKGNAME, ie: "make PKGNAME=cluster1-suse packages".  
+  System.  Environments that use multiple builds can add a useful
+  package name by defining PKGNAME, ie: 
+     make PKGNAME=cluster1-suse packages
 
   Local changes like MOM config files and pro/epilog scripts can be
-  placed in a "package override" directory.  Files in this directory will
-  be added, possibly overwritting default files, to the generated packages.  
-  Override files are scanned from PKGOVERRIDE/$component where PKGOVERRIDE
-  defaults to "./pkgoverride" and $component is one of: clients, mom,
-  server, gui, and devel.  Override files are copied with the full path,
-  ie: "./pkgoverride/mom/$PBS_SERVER_HOME/mom_priv/config".
+  placed in a "package override" directory.  Files in this directory
+  will be added, possibly overwritting default files, to the generated
+  packages.  Override files are scanned from PKGOVERRIDE/$component
+  where PKGOVERRIDE defaults to "./pkgoverride" and $component is one
+  of: clients, mom, server, gui, and devel.  Override files are copied
+  with the full path, ie: 
+     ./pkgoverride/mom/$PBS_SERVER_HOME/mom_priv/config
 
   If an executable is found at PKGOVERRIDE/$component/post-install, it
   will be added to the package, executed after installation, and then
