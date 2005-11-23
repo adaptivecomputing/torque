@@ -1,0 +1,145 @@
+#!/bin/sh
+
+# self-extracting distribution packages
+
+PBS_SERVER_HOME=@PBS_SERVER_HOME@
+PBS_DEFAULT_FILE=@PBS_DEFAULT_FILE@
+PBS_ENVIRON=@PBS_ENVIRON@
+export PBS_SERVER_HOME PBS_DEFAULT_FILE PBS_ENVIRON
+
+conffiles="$PBS_SERVER_HOME/sched_priv/sched_config
+           $PBS_SERVER_HOME/sched_priv/resource_group
+           $PBS_SERVER_HOME/sched_priv/holidays
+           $PBS_SERVER_HOME/sched_priv/dedicated_time
+           $PBS_ENVIRON
+           $PBS_DEFAULT_FILE"
+
+saveext=save.$$
+
+SKIP=`awk '/^__ARCHIVE_FOLLOWS__/ { print NR + 1; exit 0; }' $0`
+
+# set package defaults
+install=0
+listfiles=0
+extract=0
+user=root
+group=root
+chownfiles=1
+saveconfs=1
+destdir=/
+verbose=0
+postscript=1
+vopt=""
+
+usage() {
+cat <<__EOF__
+ $0: [--install] [--listfiles] [--extractfiles]
+     [--destdir dir] [--nochown] [--overwriteconf]
+     [--instuser user] [--instgroup group] [--verbose]
+     [--nopostscript]
+ Usually just use --install
+__EOF__
+}
+
+# parse command line args
+while test $# -gt 0 ;do
+  case $1 in
+    --install|-i) install=1;;
+    --listfiles|-l) listfiles=1;;
+    --extractfiles|-e) extract=1;;
+    --destdir|-d) shift; destdir=$1/;;
+    --nochown) chownfiles=0;;
+    --overwriteconf) saveconfs=0;;
+    --instuser) shift; user=$1;;
+    --instgroup) shift; group=$1;;
+    --nopostscript) postscript=0;;
+    --verbose) verbose=1; vopt="v";;
+    *) usage; exit 1;;
+  esac
+  shift
+done
+    
+# user didn't specify an action
+if test $extract -lt 1 -a $listfiles -lt 1 -a $install -lt 1;then
+   usage
+   exit 1
+fi
+
+
+#
+# start doing real work
+#
+
+# extract the files in the tarball
+if test $extract -gt 0;then
+
+  # be sure to respect $destdir
+  test $destdir = / && destdir=.
+  if test -d $destdir;then
+     echo "Extracting files into $destdir..."
+  else
+     echo "Unable to extract files: $destdir is not a directory" 1>&2
+     exit 1
+  fi
+
+  tail +$SKIP $0 | gzip -dc | (cd $destdir; tar x$vopt)
+  echo "Done."
+fi
+
+# just list the files in the tarball
+if test $listfiles -gt 0;then
+  tail +$SKIP $0 | gzip -dc | tar t$vopt
+fi
+
+# install the tarball
+if test $install -gt 0;then
+  if test -d $destdir;then
+    echo ""
+    echo "Installing TORQUE archive... "
+    echo ""
+  else
+    echo "Unable to install archive: $destdir is not a directory" 1>&2
+    exit 1
+  fi
+
+  # save any existing conf files
+  if test $saveconfs -gt 0;then
+    for a in $conffiles;do
+      test -f $destdir$a && mv -f$vopt $destdir$a $destdir$a.$saveext
+    done
+  fi
+
+  # take the archive portion of this file and pipe it to tar
+  tail +$SKIP $0 | gzip -dc | (cd $destdir; tar x$vopt )
+
+  if test $chownfiles -gt 0;then
+    test $verbose -gt 0 && echo "setting file user and group ownerships"
+    tail +$SKIP $0 | gzip -dc | tar t | \
+      while read line;do
+         chown $user $destdir$line; chgrp $group $destdir$line
+      done
+  fi
+
+  # restore the original conf files
+  if test $saveconfs -gt 0;then
+    for a in $conffiles;do
+      test -f $destdir$a -a -f $destdir$a.$saveext && mv -f$vopt $destdir$a $destdir$a.new;
+      test -f $destdir$a.$saveext && mv -f$vopt $destdir$a.$saveext $destdir$a
+    done
+  fi
+
+  if test -f ${destdir}post-install;then
+    if test $postscript -gt 0;then
+      test $verbose -gt 0 && echo "Running ${destdir}post-install..."
+      ( cd $destdir && ./post-install && rm -f ./post-install )
+    else
+      echo "Skipping ${destdir}post-install"
+    fi
+  fi
+    
+  echo "Done."
+fi
+
+exit 0
+
+__ARCHIVE_FOLLOWS__
