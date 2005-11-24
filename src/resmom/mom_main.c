@@ -3158,7 +3158,9 @@ void is_update_stat(
             {
             char *ptr;
 
-            ptr = conf_res(value,attr);
+            ptr = strchr(value,":") + 1;
+
+            ptr = conf_res(ptr,NULL);
 
             if ((ptr != NULL) && (ptr[0] != '\0'))
               {
@@ -3842,7 +3844,7 @@ int rm_request(
 
             alarm(alarm_time);
 
-            if (ap && !restrictrm) 
+            if ((ap != NULL) && !restrictrm) 
               {	
               /* static */
 
