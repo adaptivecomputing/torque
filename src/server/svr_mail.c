@@ -111,6 +111,7 @@ extern char *msg_job_start;
 extern char *msg_job_end;
 extern char *msg_job_del;
 extern char *msg_job_stageinfail;
+extern char *msg_job_otherfail;
 
 extern int LOGLEVEL;
 
@@ -286,18 +287,16 @@ void svr_mailowner(
 
       break;
 
-    case MAIL_OTHER:
-
-      /* NOTE:  route other message to stageinfail ??? */
+    case MAIL_STAGEIN:
 
       stdmessage = msg_job_stageinfail;
 
       break;
 
-    case MAIL_STAGEIN:
+    case MAIL_OTHER:
     default:
 
-      stdmessage = msg_job_stageinfail;
+      stdmessage = msg_job_otherfail;
 
       break;
     }  /* END switch (mailpoint) */

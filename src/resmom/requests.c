@@ -2034,8 +2034,6 @@ static int sys_copy(
   int loop;
   int rc;
 
-  static int failcount = 0;
-
   sprintf(rcperr,"%srcperr.%ld", 
     path_spool, 
     (long)getpid());
@@ -2059,7 +2057,7 @@ static int sys_copy(
 #endif	/* SCP_PATH */
       } 
 
-    if (LOGLEVEL >= 3)
+    if (LOGLEVEL >= 6)
       {
       sprintf(log_buffer,"executing copy command: %s %s %s %s",
         ag0,
@@ -2067,11 +2065,7 @@ static int sys_copy(
         ag2,
         ag3);
  
-      LOG_EVENT(
-        PBSEVENT_DEBUG,
-        PBS_EVENTCLASS_FILE,
-        myid,
-        log_buffer);
+      log_err(-1,"sys_copy",log_buffer);
       }
 
     if ((rc = fork()) > 0) 
@@ -2151,59 +2145,19 @@ static int sys_copy(
 
     /* copy did not work, try again */
 
-    {
-    char tmpLine[1024];
-
-    switch(rc)
-      {
-      case 1:
-
-        sprintf(tmpLine,"copy request failed");
-       
-        failcount++;
-
-        break;
-
-      case 0:
-
-        sprintf(tmpLine,"copy request succeeded");
-
-        failcount = 0;
-
-        break;
-
-      default:
-
-        sprintf(tmpLine,"unknown copy failure");
-
-        break;
-      }  /* END switch(rc) */
-
-    sprintf(log_buffer,"command: %s %s %s %s status=%d (%s), try=%d",
+    sprintf(log_buffer,"command: %s %s %s %s status=%d, try=%d",
       ag0, 
       ag1, 
       ag2, 
       ag3, 
       rc, 
-      tmpLine,
       loop);
-    }  /* END BLOCK */
 
-    LOG_EVENT(PBSEVENT_DEBUG,PBS_EVENTCLASS_FILE,myid,log_buffer);
+    log_err(-1,myid,log_buffer);
 
     if ((loop % 2) == 0)	/* don't sleep between scp and rcp */
       sleep(loop/2 * 3 + 1);
 
-    if (failcount >= 3)
-      {
-      /* data staging service may be disabled at destination? */
-
-      if (errno == ENFILE)
-        {
-        snprintf(PBSNodeMsgBuf,sizeof(PBSNodeMsgBuf),
-          "ERROR:  NOSTAGE - data staging services disabled");
-        }
-      }
     }  /* END for (loop) */
 
   return(rc);	/* tried a bunch of times, just give up */
@@ -2459,12 +2413,12 @@ void req_cpyfile(
           }
         }
 
-      /* Is this a regular file?  We wouldn't want to scp /dev/null! */
+      /* Is this a regular file or directory?  We wouldn't want to scp /dev/null! */
 
       if (stat(localname,&sb) < 0)
         continue;
 
-      if (!S_ISREG(sb.st_mode))
+      if ((!S_ISREG(sb.st_mode)) && (!S_ISDIR(sb.st_mode)))
         continue;
 
       strcpy(arg2,localname);
@@ -2526,11 +2480,7 @@ void req_cpyfile(
 
       add_bad_list(&bad_list,log_buffer,2);
 
-      log_record(
-        PBSEVENT_ADMIN, 
-        PBS_EVENTCLASS_FILE,
-        pair->fp_local, 
-        log_buffer);
+      log_err(-1,"req_cpyfile",log_buffer);
 
       /* copy message from rcp as well */
 
@@ -2546,12 +2496,6 @@ void req_cpyfile(
             log_buffer[len] = '\0';
 
           add_bad_list(&bad_list,log_buffer, 1);
-
-          log_record(
-            PBSEVENT_ADMIN, 
-            PBS_EVENTCLASS_FILE,
-            pair->fp_local, 
-            log_buffer);
           }
 
         fclose(fp);

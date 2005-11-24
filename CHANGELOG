@@ -1,9 +1,16 @@
-2.0.0p2
+2.0.0p3
 
   added torque.spec (rpmbuild -tb should work) (USC)
   new 'packages' make target (see INSTALL) (USC)
-  fix check_pwd() memory leak (USC)
   added '-1' qstat option to display node info (UMICH)
+  various fixes in file staging and copying (USC)
+    - reenable stageout of directories
+    - fix confusing email messages on failed stageout
+    - child processes can't use MOM's logging, must use syslog
+
+2.0.0p2
+
+  fix check_pwd() memory leak (USC)
 
 2.0.0p1
 
