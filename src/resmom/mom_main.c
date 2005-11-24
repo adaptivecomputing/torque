@@ -2405,8 +2405,8 @@ struct rm_attribute *momgetattr(
 
 char *conf_res(
 
-  char	              *s,
-  struct rm_attribute *attr)
+  char	              *resline, /* I */
+  struct rm_attribute *attr)    /* I */
 
   {
   char	*id = "conf_res";
@@ -2419,7 +2419,14 @@ char *conf_res(
   char	*child_spot;
   int	child_len;
 
-  if (*s != '!') 
+  char  *ptr;
+
+  if (resline == NULL)
+    {
+    return("");
+    }
+
+  if (resline[0] != '!')
     {	
     /* static value */
 
@@ -2431,7 +2438,7 @@ char *conf_res(
       return(ret_string);
       }
 
-    return(s);
+    return(resline);
     }
 
   /*
@@ -2445,7 +2452,11 @@ char *conf_res(
     /* remember params */
 
     if (attr == NULL)
+      {
+      /* FAILURE */
+
       break;
+      }
 
     name[i] = strdup(attr->a_qualifier);
 
@@ -2472,17 +2483,17 @@ char *conf_res(
 
   name[i] = NULL;
 
-  for (d = ret_string,s++;*s;) 
+  for (d = ret_string,resline++;*resline;) 
     {
     /* scan command */
 
-    if (*s == '%') 
+    if (*resline == '%') 
       {	
       /* possible token */
 
       char *hold;
 
-      hold = tokcpy(s + 1,param);
+      hold = tokcpy(resline + 1,param);
 
       for (i = 0;name[i];i++) 
         {
@@ -2501,18 +2512,18 @@ char *conf_res(
           *d++ = *x++;
           }
 
-        s = hold;
+        resline = hold;
 
         used[i] = 1;
         }
       else
         {
-        *d++ = *s++;
+        *d++ = *resline++;
         }
       }
     else
       {
-      *d++ = *s++;
+      *d++ = *resline++;
       }
     }
 
@@ -3158,11 +3169,11 @@ void is_update_stat(
             {
             char *ptr;
 
-            ptr = strchr(value,":") + 1;
+            ptr = strchr(value,':') + 1;
 
-            ptr = conf_res(ptr,NULL);
+            ptr = conf_res(ptr,attr);
 
-            if ((ptr != NULL) && (ptr[0] != '\0'))
+            if ((ptr == NULL) || (ptr[0] == '\0'))
               {
               /* all static attributes are optional */
 
@@ -3815,7 +3826,7 @@ int rm_request(
 
               for (;pjob != NULL;pjob = (job *)GET_NEXT(pjob->ji_alljobs))
                 {
-                numvnodes+=pjob->ji_numvnod;
+                numvnodes += pjob->ji_numvnod;
 
                 sprintf(tmpLine,"Job[%s]  State=%s\n",
                   pjob->ji_qs.ji_jobid,
