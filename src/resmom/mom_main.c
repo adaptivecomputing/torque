@@ -3154,7 +3154,7 @@ void is_update_stat(
             continue;
             }
         
-          if (!strcmp(cp,"gres") && (value[0] == '!'))
+          if (!strcmp(cp,"gres") && (strstr(value,":!") != NULL))
             {
             char *ptr;
 
