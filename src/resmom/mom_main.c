@@ -1753,7 +1753,7 @@ static void add_static(
 
   char *str,     /* I */
   char *file,    /* I */
-  int   linenum)
+  int   linenum) /* I */
 
   {
   int	 i;
@@ -2460,7 +2460,7 @@ char *conf_res(
     attr = momgetattr(NULL);
     }  /* END for (i) */
 
-  if (attr) 
+  if (attr != NULL) 
     {			/* too many params */
     log_err(-1,id,"too many params");
 
