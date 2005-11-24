@@ -182,7 +182,7 @@ void req_runjob(
   /* chk_job_torun will extract job id and assign hostlist if specified */
 
   if (getenv("TORQUEAUTONN"))
-    setneedndes = 1;
+    setneednodes = 1;
   else
     setneednodes = 0;
 
@@ -1142,6 +1142,7 @@ static job *chk_job_torun(
 
   if (setnn == 1)
     {
+#ifdef __TDEV
     resource *prescjb = find_resc_entry(pjob,"neednodes");
 
     if ((prescjb == NULL) ||
@@ -1163,6 +1164,7 @@ static job *chk_job_torun(
           }
         }
       }
+#endif /* __TDEV */
     }
 
   return(pjob);
@@ -1229,7 +1231,7 @@ static int assign_hosts(
       } 
     }
 
-  if (hostalloc != NULL)
+  if (hosttoalloc != NULL)
     {
     /* NO-OP */
     }
