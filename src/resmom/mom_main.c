@@ -1370,11 +1370,11 @@ static	u_long restricted(
   {
   static char id[] = "restricted";
 
-  log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, id, name);
+  log_record(PBSEVENT_SYSTEM,PBS_EVENTCLASS_SERVER,id,name);
 
   if (mask_max == 0) 
     {
-    maskclient = (char **)calloc(4, sizeof(char *));
+    maskclient = (char **)calloc(4,sizeof(char *));
 
     mask_max = 4;
     }
@@ -3153,10 +3153,30 @@ void is_update_stat(
 
             continue;
             }
+        
+          if (!strcmp(cp,"gres") && (value[0] == '!'))
+            {
+            char *ptr;
 
-          sprintf(buff,"%s=%s",
-            cp,
-            value);
+            ptr = conf_res(value,attr);
+
+            if ((ptr != NULL) && (ptr[0] != '\0'))
+              {
+              /* all static attributes are optional */
+
+              continue;
+              }
+
+            sprintf(buff,"%s=%s",
+              cp,
+              ptr);
+            }
+          else
+            {
+            sprintf(buff,"%s=%s",
+              cp,
+              value);
+            }
           }
         else 
           {  
@@ -3789,7 +3809,8 @@ int rm_request(
               }
             else
               {
-              int numvnodes=0;
+              int numvnodes = 0;
+
               for (;pjob != NULL;pjob = (job *)GET_NEXT(pjob->ji_alljobs))
                 {
                 numvnodes+=pjob->ji_numvnod;
