@@ -605,19 +605,19 @@ static void altdsp_statjob(
 
     if (alt_opt & ALT_DISPLAY_R) 
       {
-      printf("\n                                             Req'd  Req'd   Elap \n");
+      printf("\n                                                 Req'd  Req'd   Elap \n");
 
-      printf("Job ID             Username Queue    NDS TSK Memory Time  S Time   BIG  FAST   PFS\n");
+      printf("Job ID               Username Queue    NDS   TSK Memory Time  S Time   BIG  FAST   PFS\n");
 
-      printf("------------------ -------- -------- --- --- ------ ----- - ----- ----- ----- -----\n"); 
+      printf("-------------------- -------- -------- ----- --- ------ ----- - ----- ----- ----- -----\n"); 
       } 
     else 
       {
-      printf("\n                                                               Req'd  Req'd   Elap\n");
+      printf("\n                                                                   Req'd  Req'd   Elap\n");
 
-      printf("Job ID             Username Queue    Jobname    SessID NDS TSK Memory Time  S Time\n");
+      printf("Job ID               Username Queue    Jobname    SessID NDS   TSK Memory Time  S Time\n");
 
-      printf("------------------ -------- -------- ---------- ------ --- --- ------ ----- - -----\n");
+      printf("-------------------- -------- -------- ---------- ------ ----- --- ------ ----- - -----\n");
       }
     }
 
@@ -751,10 +751,10 @@ static void altdsp_statjob(
         usecput ? rqtimecpu : rqtimewal,
         jstate, 
         usecput ? eltimecpu : eltimewal);
-
-      if (!(alt_opt & ALT_DISPLAY_o)) 
-        printf("\n");
       }
+
+    if (!(alt_opt & ALT_DISPLAY_o)) 
+      printf("\n");
 
     if (alt_opt & ALT_DISPLAY_n) 
       {
