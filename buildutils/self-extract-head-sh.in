@@ -22,8 +22,8 @@ SKIP=`awk '/^__ARCHIVE_FOLLOWS__/ { print NR + 1; exit 0; }' $0`
 install=0
 listfiles=0
 extract=0
-user=root
-group=root
+user=0
+group=0
 chownfiles=1
 saveconfs=1
 destdir=/
@@ -112,6 +112,7 @@ if test $install -gt 0;then
   # take the archive portion of this file and pipe it to tar
   tail +$SKIP $0 | gzip -dc | (cd $destdir; tar x$vopt )
 
+  # finallized files should be owned by root, not the package-builder
   if test $chownfiles -gt 0;then
     test $verbose -gt 0 && echo "setting file user and group ownerships"
     tail +$SKIP $0 | gzip -dc | tar t | \
@@ -128,6 +129,7 @@ if test $install -gt 0;then
     done
   fi
 
+  # run user-specified post-install script
   if test -f ${destdir}post-install;then
     if test $postscript -gt 0;then
       test $verbose -gt 0 && echo "Running ${destdir}post-install..."

@@ -14,6 +14,7 @@ LEXLIB = @LEXLIB@
 
 HOST = @host@
 HOST_OS = @host_os@
+HOST_CPU = @host_cpu@
 
 prefix =       @prefix@
 exec_prefix =  @exec_prefix@

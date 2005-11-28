@@ -120,8 +120,9 @@ packages:
 	@for d in @PART_CLIENTS@ @PART_MOM@ @PART_SERVER@ `test X@PART_CLIENTS@ != X && echo @GUI@` devel;do \
 	   proot=$(PKGROOT)/$$d; \
 	   pname=$(PKGNAME); \
-	   tarball=$(PKGROOT)/torque-$$pname-$$d-$(PBS_MACH)-`uname -m`.tar.gz; \
-	   pkgfile=./torque-$$pname-$$d-$(PBS_MACH)-`uname -m`.sh; \
+	   phost=$(PBS_MACH)-$(HOST_CPU); \
+	   tarball=$(PKGROOT)/torque-$$pname-$$d-$$phost.tar.gz; \
+	   pkgfile=./torque-$$pname-$$d-$$phost.sh; \
 	   echo "Building $$pkgfile ..."; \
 	   $(MAKE) \
 	     sbindir=$$proot$(sbindir) \
@@ -136,6 +137,14 @@ packages:
 	     ( cd $(PKGOVERRIDE)/$$d && tar cf - . | (cd $$proot; tar xvf - ) ); \
 	   fi; \
 	   ( cd $$proot; tar cf - * ) | gzip > $$tarball && \
+	   ( cd $$proot; tar cf - \
+	                   `test -d .$(sbindir) && echo .$(sbindir)/*` \
+	                   `test -d .$(bindir) && echo .$(bindir)/*` \
+	                   `test -d .$(libdir) && echo .$(libdir)/*` \
+	                   `test -d .$(mandir) && echo .$(mandir)/*/*` \
+	                   `test -d .$(includedir) && echo .$(includedir)/*` \
+	                   `test -d .$(PBS_SERVER_HOME) && echo .$(PBS_SERVER_HOME)/*` ) \
+	                   | gzip > $$tarball && \
 	   cat ./buildutils/self-extract-head-sh > $$pkgfile && \
 	   cat $$tarball >> $$pkgfile && \
 	   chmod 755 $$pkgfile; \
