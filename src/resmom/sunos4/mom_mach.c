@@ -847,6 +847,8 @@ int mom_over_limit(pjob)
 				return (TRUE);
 			}
 		} else if (strcmp(pname, "walltime") == 0) {
+			if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HERE) == 0)
+				continue;
 			retval = gettime(pres, &value);
 			if (retval != PBSE_NONE)
 				continue;

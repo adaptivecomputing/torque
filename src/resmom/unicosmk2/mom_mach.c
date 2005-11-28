@@ -1011,6 +1011,8 @@ int mom_over_limit(pjob)
 		assert(pname != NULL);
 		assert(*pname != '\0');
 		if (strcmp(pname, "walltime") == 0) {
+			if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HERE) == 0)
+				continue;
 			retval = gettime(pres, &value);
 			if (retval != PBSE_NONE)
 				continue;

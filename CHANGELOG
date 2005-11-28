@@ -8,6 +8,7 @@
     - fix confusing email messages on failed stageout
     - child processes can't use MOM's logging, must use syslog
   fix overflow in RM netload (USC)
+  don't check walltime on sister nodes, only on MS (ANU)
 
 2.0.0p2
 

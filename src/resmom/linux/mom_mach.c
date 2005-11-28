@@ -1550,6 +1550,11 @@ int mom_over_limit(
       } 
     else if (strcmp(pname,"walltime") == 0) 
       {
+
+      /* no need to check walltime on sisters, MS will get it */
+      if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HERE) == 0)
+        continue;
+
       retval = gettime(pres,&value);
 
       if (retval != PBSE_NONE)
