@@ -3833,7 +3833,7 @@ static char *quota(
 
 #define MAX_INTERFACES 10 /*the maximum number of interfaces*/
 #define HEADER_STR "%*[^\n]\n%*[^\n]\n"
-#define INTERFACE_STR "%[^:]:%d %*d %*d %*d %*d %*d %*d %*d %d %*d %*d %*d %*d %*d %*d %*d\n"
+#define INTERFACE_STR "%[^:]:%lu %*d %*d %*d %*d %*d %*d %*d %lu %*d %*d %*d %*d %*d %*d %*d\n"
 
 static char *netload(
 
@@ -3844,8 +3844,8 @@ static char *netload(
   int   rc; /*read count*/
 
   char interfaceName[MAX_INTERFACES][32];
-  int bytesRX[MAX_INTERFACES + 1];
-  int bytesTX[MAX_INTERFACES + 1];
+  unsigned long int bytesRX[MAX_INTERFACES + 1];
+  unsigned long int bytesTX[MAX_INTERFACES + 1];
 
   int interface = 0;
   /* int ethNum = 0; */
@@ -3915,7 +3915,7 @@ static char *netload(
   fclose(fp);
 
   sprintf(ret_string,"%lu",
-    (unsigned long)(bytesRX[MAX_INTERFACES] + bytesTX[MAX_INTERFACES]));
+    bytesRX[MAX_INTERFACES] + bytesTX[MAX_INTERFACES]);
 
   return(ret_string);
   }  /* END netload() */
