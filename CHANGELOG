@@ -9,6 +9,7 @@
     - child processes can't use MOM's logging, must use syslog
   fix overflow in RM netload (USC)
   don't check walltime on sister nodes, only on MS (ANU)
+  kill_task wasn't being declared proper for all mach types (USC)
 
 2.0.0p2
 

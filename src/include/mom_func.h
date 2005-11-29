@@ -165,6 +165,8 @@ extern int task_save(task *) ;
 extern void DIS_rpp_reset A_((void));
 extern void checkret A_((char **,int));
 
+/* defined in mach-dependant mom_mach.c */
+extern int kill_task A_((struct task *,int sig));
 
 /* Defines for pe_io_type, see run_pelog() */
 

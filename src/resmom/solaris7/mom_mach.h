@@ -102,8 +102,6 @@ typedef struct	pbs_plinks {		/* struct to link processes */
 } pbs_plinks;
 
 
-extern int kill_task A_((struct task *,int sig));
-
 /* struct startjob_rtn = used to pass error/session/other info 	*/
 /* 			child back to parent			*/
 

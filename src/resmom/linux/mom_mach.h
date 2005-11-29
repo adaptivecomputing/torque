@@ -91,11 +91,6 @@
 #define SET_LIMIT_ALTER 0
 #define PBS_CHKPT_MIGRATE 0
 
-/* prototypes */
-
-extern int kill_task A_((struct task *,int sig));
-
-/* END prototypes */
 
 
 
