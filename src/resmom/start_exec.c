@@ -4750,7 +4750,7 @@ void bld_env_variables(
 	
 
 
-#ifdef __TOLDGROUP
+#ifndef __TOLDGROUP
 
 /*
   * init_groups - build the group list via an LDAP friendly method
@@ -4864,7 +4864,7 @@ int init_groups(
   return(n);
   }  /* END init_groups() */
 
-#else /* __TOLDGROUP */
+#else /* !__TOLDGROUP */
 
 /*
  * init_groups - read the /etc/group file and build an array of
@@ -4916,7 +4916,7 @@ int init_groups(
   return(n);
   }  /* END init_groups() */
 
-#endif /* __TOLDGORUP */
+#endif /* !__TOLDGROUP */
 
 
 

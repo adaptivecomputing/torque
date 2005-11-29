@@ -141,6 +141,9 @@
 /* PBS specific: Define to the path of the environment file */
 #undef PBS_ENVIRON
 
+/* PBS specific: comment out to use LDAP friendly unix group lookup
+##define __TOLDGROUP
+
 /* PBS specific: Define if you are on a solaris box */
 #undef PBS_PUSH_STREAM
 
