@@ -94,7 +94,6 @@
 #include <errno.h>
 #include <string.h>
 #include <pwd.h>
-#include <nlist.h>
 #include <unistd.h>
 #include <sys/param.h>
 #include <sys/stat.h>

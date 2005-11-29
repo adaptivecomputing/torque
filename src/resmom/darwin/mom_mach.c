@@ -938,11 +938,11 @@ int mom_open_poll()
 
 int qs_cmp(
 
-  struct kinfo_proc *a,
-  struct kinfo_proc *b)
+  const void *a,
+  const void *b)
 
   {
-  return((int)a->kp_eproc.e_paddr - (int)b->kp_eproc.e_paddr);
+  return((int)((struct kinfo_proc *)a)->kp_eproc.e_paddr - (int)((struct kinfo_proc *)b)->kp_eproc.e_paddr);
   }
 
 
@@ -957,11 +957,11 @@ int qs_cmp(
 
 int bs_cmp(
 
-  struct session    *key,
-  struct kinfo_proc *member)
+  const void *key,
+  const void *member)
 
   {
-  return((int)key->s_leader - (int)member->kp_eproc.e_paddr);
+  return((int)((struct session *)key)->s_leader - (int)((struct kinfo_proc *)member)->kp_eproc.e_paddr);
   }
 
 #endif /* __TDARWIN_8 */

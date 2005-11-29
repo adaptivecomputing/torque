@@ -91,7 +91,6 @@
 #include <string.h>
 #include <pwd.h>
 #include <kvm.h>
-#include <nlist.h>
 #include <sys/types.h>
 #include <sys/unistd.h>
 #include <sys/param.h>

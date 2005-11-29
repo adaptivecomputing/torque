@@ -89,7 +89,6 @@
 #include <errno.h>
 #include <string.h>
 #include <pwd.h>
-#include <nlist.h>
 #include <sys/unistd.h>
 #include <sys/param.h>
 #include <sys/pstat.h>

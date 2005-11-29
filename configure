@@ -3598,6 +3598,8 @@ fi
 
 fi
 
+case $PBS_MACH in
+aix4|aix5|sunos4|solaris5|freebsd|darwin|fujitsu)
 echo $ac_n "checking for nlist in -lc""... $ac_c" 1>&6
 echo "configure:3436: checking for nlist in -lc" >&5
 ac_lib_var=`echo c'_'nlist | sed 'y%./+-%__p_%'`
@@ -3684,7 +3686,11 @@ else
 fi
 
 fi
+;;
+esac
 
+case $PBS_MACH in
+sunos4|solaris5|netbsd|freebsd|darwin)
 echo $ac_n "checking for kvm_open in -lkvm""... $ac_c" 1>&6
 echo "configure:3523: checking for kvm_open in -lkvm" >&5
 ac_lib_var=`echo kvm'_'kvm_open | sed 'y%./+-%__p_%'`
@@ -3731,8 +3737,12 @@ EOF
 else
   echo "$ac_t""no" 1>&6
 fi
+;;
+esac
 
 
+case $PBS_MACH in
+none)
 echo $ac_n "checking for dlopen in -ldl""... $ac_c" 1>&6
 echo "configure:3571: checking for dlopen in -ldl" >&5
 ac_lib_var=`echo dl'_'dlopen | sed 'y%./+-%__p_%'`
@@ -3779,6 +3789,8 @@ EOF
 else
   echo "$ac_t""no" 1>&6
 fi
+;;
+esac
 
 
 
