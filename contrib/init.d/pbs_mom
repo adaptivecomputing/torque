@@ -3,7 +3,7 @@
 # pbs_mom	This script will start and stop the PBS Mom
 #
 # chkconfig: 345 85 85
-# description: PBS is a versatile batch system for SMPs and clusters
+# description: TORQUE/PBS is a versatile batch system for SMPs and clusters
 #
 ulimit -n 32768
 # Source the library functions
@@ -46,7 +46,7 @@ kill_pbs_mom() {
    return $retval
 }
 	
-# let see how we were called
+# how were we called
 case "$1" in
 	start)
 		echo -n "Starting TORQUE Mom: "
@@ -84,3 +84,6 @@ case "$1" in
 		echo "Usage: pbs_mom {start|stop|restart|reload|status|purge}"
 		exit 1
 esac
+
+
+

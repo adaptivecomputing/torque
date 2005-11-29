@@ -1,5 +1,6 @@
 2.0.0p3
 
+  fixed dynamic gres loading in pbs_mom (CRI)
   added torque.spec (rpmbuild -tb should work) (USC)
   new 'packages' make target (see INSTALL) (USC)
   added '-1' qstat option to display node info (UMICH)

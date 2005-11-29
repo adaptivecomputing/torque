@@ -1,13 +1,13 @@
 
 # comment out snap if building a real release
 %define name torque
-%define version 2.0.0p2
-#%%define snap 1132464359
+%define version TVERSION 
+#%define snap TSNAP
 %define release 1cri
 
 
 # Hrm, should we default to the name of the buildhost?  That seems only
-# slightly better than picking a hostname at random.  This exactly the
+# slightly better than picking a hostname at random.  This iis exactly the
 # kind of compile-time default that doesn't work well with distributable
 # packages.  Let's force the issue with the non-sensical "localhost".
 #
