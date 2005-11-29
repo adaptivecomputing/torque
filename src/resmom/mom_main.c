@@ -2419,8 +2419,6 @@ char *conf_res(
   char	*child_spot;
   int	child_len;
 
-  char  *ptr;
-
   if (resline == NULL)
     {
     return("");

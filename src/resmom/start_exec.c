@@ -4773,7 +4773,7 @@ int init_groups(
 
   /* return -1 on failure */
 
-  char *id[]="init_groups";
+  char id[]="init_groups";
   extern sigset_t allsigs; /* set up at the start of mom_main */
   sigset_t savedset;
 
