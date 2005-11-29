@@ -120,6 +120,7 @@
 #include "rpp.h"
 #include "dis.h"
 #include "dis_init.h"
+#include "batch_request.h"
 #include "pbs_version.h"
 #include "pbs_proto.h"
 
