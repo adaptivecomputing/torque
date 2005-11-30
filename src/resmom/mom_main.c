@@ -3777,10 +3777,21 @@ int rm_request(
 
             if (verbositylevel >= 1)
               {
-              sprintf(tmpLine,"Prolog Alarm Time:      %d seconds\n",
-                pe_alarm_time);
+              struct stat s;
 
-              MUStrNCat(&BPtr,&BSpace,tmpLine);
+              if (stat(path_prologp,&s) == -1)
+                {
+                MUStrNCat(&BPtr,&BSpace,"NOTE:  no prolog configured");
+                }
+              else
+                {
+                MUStrNCat(&BPtr,&BSpace,"NOTE:  prolog enabled");
+
+                sprintf(tmpLine,"Prolog Alarm Time:      %d seconds\n",
+                  pe_alarm_time);
+
+                MUStrNCat(&BPtr,&BSpace,tmpLine);
+                }
               }
 
             if (verbositylevel >= 2)
