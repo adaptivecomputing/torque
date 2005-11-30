@@ -13,6 +13,7 @@
   kill_task wasn't being declared properly for all mach types (USC)
   don't unnecessarily link with libelf and libdl (USC)
   fix compile warnings with qsort/bsearch on bsd/darwin (USC)
+  fix --disable-filesync to actually work (USC)
 
 2.0.0p2
 
