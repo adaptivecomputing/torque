@@ -114,7 +114,7 @@ extern list_head svr_alljobs;
 extern int	 termin_child;
 extern char	*path_home;
 
-extern void    state_to_server A_((int));
+extern void    state_to_server A_((int,int));
 
 /* Private variables */
 static int     job_key;
@@ -484,7 +484,8 @@ int load_sp_switch(pjob)
 		log_record(PBSEVENT_SYSTEM|PBSEVENT_ADMIN|PBSEVENT_JOB,
 			   PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid,log_buffer);
 		internal_state |= INUSE_DOWN;
-		state_to_server(1);	/* tell server we are down */
+/* FIXME: need to send state to all servers, not just index 0 */
+		state_to_server(0,1);	/* tell server we are down */
 	} else {
 
 	    /* success */
@@ -536,7 +537,8 @@ void unload_sp_switch(pjob)
 			sprintf(log_buffer,"error %d cleaning switch table window %d for job %s", rc, pvp->vn_index, pjob->ji_qs.ji_jobid);
 			log_err(PBSE_SYSTEM, "unload_sp_switch", log_buffer);
 			internal_state |= INUSE_DOWN;
-			state_to_server(1);	/* tell server we are down */
+/* FIXME: need to send state to all servers, not just index 0 */
+			state_to_server(0,1);	/* tell server we are down */
 		    }
 		}
 	    }
