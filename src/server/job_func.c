@@ -156,6 +156,8 @@ extern char *path_spool;
 extern char *path_aux;
 extern char  server_name[];
 extern time_t time_now;
+extern int   LOGLEVEL;
+
 extern list_head svr_newjobs;
 extern list_head svr_alljobs;
 
