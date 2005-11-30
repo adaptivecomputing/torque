@@ -4780,6 +4780,8 @@ int job_over_limit(
   attr = &pjob->ji_wattr[JOB_ATR_resource];
   used = &pjob->ji_wattr[JOB_ATR_resc_used];
 
+  /* only enforce cpu time and memory usage */
+
   for (limresc = (resource *)GET_NEXT(attr->at_val.at_list);
        limresc != NULL;
        limresc = (resource *)GET_NEXT(limresc->rs_link)) 
@@ -4789,9 +4791,9 @@ int job_over_limit(
 
     rd = limresc->rs_defin;
 
-    if (strcmp(rd->rs_name,"cput") == 0)
+    if (!strcmp(rd->rs_name,"cput"))
       index = 0;
-    else if (strcmp(rd->rs_name,"mem") == 0)
+    else if (!strcmp(rd->rs_name,"mem"))
       index = 1;
     else
       continue;
@@ -4817,7 +4819,7 @@ int job_over_limit(
 
     if (limit <= total)
       break;
-    }
+    }  /* END for (limresc) */
 
   if (limresc == NULL)
     {

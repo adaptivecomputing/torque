@@ -269,7 +269,7 @@ void process_request(
 
     /*
      * request didn't decode, either garbage or unknown
-     * request type, in ether case, return reject-reply
+     * request type, in either case, return reject-reply
      */
 
     req_reject(rc,0,request,NULL,"cannot decode message");

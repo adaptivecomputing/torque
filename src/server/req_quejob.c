@@ -142,6 +142,7 @@ extern int   queue_rank;
 #endif	/* PBS_MOM */
 
 extern const char *PJobSubState[];
+extern const char *TJobFileType[];
 
 extern int	 resc_access_perm;
 extern list_head svr_alljobs;
@@ -1226,7 +1227,7 @@ retry:
  *	within the spool directory.
  */
 
-void req_mvjobfile(
+void req_mvjobfile(  /* NOTE:  routine for server only - mom code follows this routine */
 
   struct batch_request *preq)	/* ptr to the decoded request   */
 
@@ -1242,7 +1243,10 @@ void req_mvjobfile(
 
   if ((preq->rq_fromsvr == 0) || (pj == NULL)) 
     {
-    log_err(errno,"req_mvjobfile","cannot find job");
+    snprintf(log_buffer,1024,"cannot find job %s",
+      preq->rq_ind.rq_jobfile.rq_jobid);
+
+    log_err(errno,"req_mvjobfile",log_buffer);
 
     req_reject(PBSE_IVALREQ,0,preq,NULL,NULL);
 
@@ -1316,15 +1320,25 @@ void req_mvjobfile(
 
   close(fds);
 
+  if (LOGLEVEL >= 6)
+    {
+    sprintf(log_buffer,"successfully moved file '%s' for job '%s'",
+      namebuf,
+      preq->rq_ind.rq_jobfile.rq_jobid);
+
+    log_record(
+      PBSEVENT_JOB,
+      PBS_EVENTCLASS_JOB,
+      (pj != NULL) ? pj->ji_qs.ji_jobid : "NULL",
+      log_buffer);
+    }
+
   reply_ack(preq);
 
   return;
   }  /* END req_mvjobfile() */
 
 #else /* PBS_MOM */
-
-
-
 
 /*
  * req_mvjobfile - move the specifled job standard files 
@@ -1333,9 +1347,9 @@ void req_mvjobfile(
  *	on the compile option, see std_file_name().
  */
 
-void req_mvjobfile(
+void req_mvjobfile(  /* routine for MOM only - server routine listed above */
 
-  struct batch_request *preq)
+  struct batch_request *preq)  /* I */
 
   {
   int	         fds;
@@ -1358,6 +1372,11 @@ void req_mvjobfile(
 
   if (pj == NULL) 
     {
+    snprintf(log_buffer,1024,"cannot find job %s",
+      preq->rq_ind.rq_jobfile.rq_jobid);
+
+    log_err(errno,"req_mvjobfile",log_buffer);
+
     req_reject(PBSE_UNKJOBID,0,preq,NULL,NULL);
 
     return;
@@ -1370,7 +1389,7 @@ void req_mvjobfile(
     return;
     }
     
-  if (((pwd = getpwnam(pj->ji_wattr[(int)JOB_ATR_euser].at_val.at_str)) == 0) || 
+  if (((pwd = getpwnam(pj->ji_wattr[(int)JOB_ATR_euser].at_val.at_str)) == NULL) || 
       ((fds = open_std_file(pj,jft,oflag,pwd->pw_gid)) < 0)) 
     {
     req_reject(PBSE_MOMREJECT,0,preq,NULL,NULL);
@@ -1391,6 +1410,19 @@ void req_mvjobfile(
     }
 
   close(fds);
+
+  if (LOGLEVEL >= 6)
+    {
+    sprintf(log_buffer,"successfully moved %s file for job '%s'",
+      TJobFileType[jft],
+      preq->rq_ind.rq_jobfile.rq_jobid);
+
+    log_record(
+      PBSEVENT_JOB,
+      PBS_EVENTCLASS_JOB,
+      (pj != NULL) ? pj->ji_qs.ji_jobid : "NULL",
+      log_buffer);
+    }
 
   return;
   }  /* END req_mvjobfile() */

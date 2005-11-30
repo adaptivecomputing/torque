@@ -117,14 +117,14 @@
 #define EOF -1
 #endif
 
-/* enums for standard job files */
+/* enums for standard job files (sync w/TJobFileType[]) */
+
 enum job_file {
-	JScript,
-	StdIn,
-	StdOut,
-	StdErr,
-	Chkpt
-};
+  JScript,
+  StdIn,
+  StdOut,
+  StdErr,
+  Chkpt };
 
 #define MH(type) (type *)malloc(sizeof(type))
 #define M(var,type) if( (var = MH(type)) == (type *)NULL ) \
