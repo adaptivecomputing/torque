@@ -172,17 +172,6 @@ const char *PJobState[] = {
   NULL };
 
 
-/* sync w/enum job_file TJobFileType[]) */
-
-const char *TJobFileType[] = {
-  "jobscript",
-  "stdin",
-  "stdout",
-  "stderr",
-  "ckpt",
-  NULL };
-
-
 /* sync w/#define JOB_SUBSTATE_XXX, PJobSubState in mom_main.c */
 
 const char *PJobSubState[] = {

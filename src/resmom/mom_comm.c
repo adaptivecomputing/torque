@@ -1886,6 +1886,18 @@ void im_request(
   
       if (errcode != 0) 
         {
+        if (LOGLEVEL >= 6)
+          {
+          sprintf(log_buffer,"error %d received in joinjob - purging job",
+            errcode);
+
+          LOG_EVENT(
+            PBSEVENT_JOB,
+            PBS_EVENTCLASS_JOB,
+            pjob->ji_qs.ji_jobid,
+            log_buffer);
+          }
+
         job_purge(pjob);
 
         SEND_ERR(errcode)
@@ -1929,6 +1941,12 @@ void im_request(
         {
         if (!TMakeTmpDir(pjob,namebuf))
           {
+          LOG_EVENT(
+            PBSEVENT_JOB,
+            PBS_EVENTCLASS_JOB,
+            pjob->ji_qs.ji_jobid,
+            "cannot create tmp dir");
+
           job_purge(pjob);
 
           SEND_ERR(PBSE_BADUSER)
@@ -2012,11 +2030,11 @@ void im_request(
   
       if (mkdir(namebuf,0700) == -1) 
         {
+        log_err(-1,id,"cannot create temporary directory");
+
         job_purge(pjob);
 
         /* cannot create temporary job directory */
-
-        log_err(-1,id,"cannot create temporary directory");
 
         SEND_ERR(PBSE_SYSTEM)
   

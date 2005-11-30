@@ -524,6 +524,15 @@ void scan_for_exiting()
 
       if (stream == -1) 
         {
+        if (LOGLEVEL >= 6)
+          {
+          LOG_EVENT(
+            PBSEVENT_JOB,
+            PBS_EVENTCLASS_JOB,
+            pjob->ji_qs.ji_jobid,
+            "connection to server lost - killing job");
+          }
+
         kill_job(pjob,SIGKILL);
 
         job_purge(pjob);
@@ -577,6 +586,15 @@ void scan_for_exiting()
       diswul(stream,resc_used(pjob,"vmem",getsize));
 
       rpp_flush(stream);
+
+      if (LOGLEVEL >= 6)
+        {
+        LOG_EVENT(
+          PBSEVENT_JOB,
+          PBS_EVENTCLASS_JOB,
+          pjob->ji_qs.ji_jobid,
+          "all tasks complete - purging job as sister");
+        }
 
       job_purge(pjob);
 

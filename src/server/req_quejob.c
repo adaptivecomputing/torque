@@ -139,10 +139,19 @@ extern char *path_spool;
 extern struct server server;
 extern char  server_name[];
 extern int   queue_rank;
-#endif	/* PBS_MOM */
+#endif	/* !PBS_MOM */
 
 extern const char *PJobSubState[];
-extern const char *TJobFileType[];
+
+/* sync w/enum job_file TJobFileType[]) */
+
+const char *TJobFileType[] = {
+  "jobscript",
+  "stdin",
+  "stdout",
+  "stderr",
+  "ckpt",
+  NULL };
 
 extern int	 resc_access_perm;
 extern list_head svr_alljobs;
