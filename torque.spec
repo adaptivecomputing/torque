@@ -224,8 +224,6 @@ This package holds the server
 Group: System Environment/Daemons
 Summary: execution part of Torque
 Requires: %{name} = %{?epoch:%{epoch}:}%{version}-%{release}
-# the prolog/epilog/health scripts use lots of utils
-Requires: bc, findutils, perl, psmisc, procps, pvfs, gm
 Provides: pbs-mom
 %description mom
 %shared_description
