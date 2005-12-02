@@ -16,6 +16,7 @@
   fix --disable-filesync to actually work (USC)
   added prolog diagnostics to 'momctl -d' output (CRI)
   added logging for job file management (CRI)
+  added mom parameter $ignwalltime (CRI)
 
 2.0.0p2
 

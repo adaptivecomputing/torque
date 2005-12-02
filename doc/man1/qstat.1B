@@ -83,7 +83,7 @@ qstat \- show status of pbs batch jobs
 .Sh SYNOPSIS
 qstat [-f][-W site_specific] [\^job_identifier... | destination...\^]
 .sp
-qstat [-a|-i|-r|-e] [-n] [-s] [-G|-M] [-R] [-u user_list] [\^job_identifier... |\ 
+qstat [-a|-i|-r|-e] [-n [-1]] [-s] [-G|-M] [-R] [-u user_list] [\^job_identifier... |\ 
 destination...\^]
 .sp
 qstat -Q [-f][-W site_specific] [\^destination...\^]
@@ -151,6 +151,8 @@ For a destination id operand, status for jobs at that destination which are
 running are displayed,  this includes jobs which are suspended.
 .IP "-n" 10
 In addition to the basic information, nodes allocated to a job are listed.
+.IP "-1" 10
+In combination with the -n, the -1 option puts all of the nodes on the same line as the job ID.  This is intended to ease the parsing of the qstat output.
 .IP "-s" 10
 In addition to the basic information, any comment provided by the batch
 administrator or scheduler is shown.

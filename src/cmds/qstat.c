@@ -692,34 +692,47 @@ static void altdsp_statjob(
           } 
         else if (!strcmp(pat->resource,"walltime")) 
           {
-				rqtimewal = pat->value;
-			} else if (strcmp(pat->resource, "cput") == 0) {
-				rqtimecpu = pat->value;
-				usecput = 1;
-			} else if (strcmp(pat->resource, "srfs_big") == 0) {
-				(void)strncpy(srfsbig, 
-					cnv_size(pat->value, alt_opt), SIZEL-1);
-			} else if (strcmp(pat->resource, "srfs_fast") == 0) {
-				(void)strncpy(srfsfast, 
-					cnv_size(pat->value, alt_opt), SIZEL-1);
-			} else if (strcmp(pat->resource, "piofs") == 0) {
-				(void)strncpy(pfs, 
-					cnv_size(pat->value, alt_opt), SIZEL-1);
-			}
-			
-		    } else if (strcmp(pat->name, ATTR_exechost) == 0) {
-				exechost = pat->value;
-		    } else if (strcmp(pat->name, ATTR_used) == 0) {
-			if (strcmp(pat->resource, "walltime") == 0) {
-				eltimewal = pat->value;
-			} else if (strcmp(pat->resource, "cput") == 0)  {
-				eltimecpu = pat->value;
-			}
-		    } else if (strcmp(pat->name, ATTR_comment) == 0) {
-			comment = pat->value;
-		    }
+          rqtimewal = pat->value;
+          } 
+        else if (!strcmp(pat->resource,"cput")) 
+          {
+          rqtimecpu = pat->value;
+          usecput = 1;
+          } 
+        else if (!strcmp(pat->resource,"srfs_big")) 
+          {
+          strncpy(srfsbig,cnv_size(pat->value,alt_opt),SIZEL - 1);
+          } 
+        else if (!strcmp(pat->resource,"srfs_fast")) 
+          {
+          strncpy(srfsfast,cnv_size(pat->value,alt_opt),SIZEL - 1);
+          } 
+        else if (!strcmp(pat->resource,"piofs")) 
+          {
+          strncpy(pfs,cnv_size(pat->value,alt_opt),SIZEL - 1);
+          }
+        } 
+      else if (!strcmp(pat->name,ATTR_exechost)) 
+        {
+        exechost = pat->value;
+        } 
+      else if (!strcmp(pat->name,ATTR_used)) 
+        {
+        if (!strcmp(pat->resource,"walltime")) 
+          {
+          eltimewal = pat->value;
+          } 
+        else if (!strcmp(pat->resource,"cput"))  
+          {
+          eltimecpu = pat->value;
+          }
+        } 
+      else if (!strcmp(pat->name,ATTR_comment)) 
+        {
+        comment = pat->value;
+        }
 
-		    pat = pat->next;
+      pat = pat->next;
       }
 
     printf("%-20.20s %-8.8s %-8.8s ", 
