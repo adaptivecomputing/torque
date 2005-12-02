@@ -2000,12 +2000,17 @@ int main(
       case 'W':
 
 #if (TCL_QSTAT == 0)
-	    pc = optarg;
-	    while ( *pc ) {
-		switch (*pc) {
-		    case 'a':
-	    		alt_opt |= ALT_DISPLAY_a;
-			break;
+        pc = optarg;
+
+        while (*pc) 
+          {
+          switch (*pc) 
+            {
+            case 'a':
+
+              alt_opt |= ALT_DISPLAY_a;
+
+              break;
 
 		    case 'i':
 	    		alt_opt |= ALT_DISPLAY_i;
@@ -2106,7 +2111,7 @@ int main(
     errflg++;
     }
 
-  if (( alt_opt & ALT_DISPLAY_o) && ! (alt_opt & ALT_DISPLAY_n))
+  if ((alt_opt & ALT_DISPLAY_o) && !(alt_opt & ALT_DISPLAY_n))
     {
     fprintf(stderr,conflict);
 
@@ -2119,7 +2124,7 @@ int main(
     {
     static char usage[]="usage: \n\
 qstat [-f] [-W site_specific] [ job_identifier... | destination... ]\n\
-qstat [-a|-i|-r|-e] [-u user] [-n] [-1] [-s] [-G|-M] [-R] [job_id... | destination...]\n\
+qstat [-a|-i|-r|-e] [-u user] [-n [-1]] [-s] [-G|-M] [-R] [job_id... | destination...]\n\
 qstat -Q [-f] [-W site_specific] [ destination... ]\n\
 qstat -q [-G|-M] [ destination... ]\n\
 qstat -B [-f] [-W site_specific] [ server_name... ]\n";
