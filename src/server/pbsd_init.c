@@ -257,7 +257,7 @@ int pbsd_init(
   struct sigaction act;
   struct sigaction oact;
 
-  /* The following is code to reduce security risks                */
+  /* The following is code to reduce security risks */
 
   if (setup_env(PBS_ENVIRON) == -1) 
     {

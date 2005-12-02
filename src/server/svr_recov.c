@@ -267,6 +267,11 @@ int svr_save(
 
     if (save_struct((char *)&ps->sv_qs,sizeof(struct server_qs)) != 0) 
       {
+      snprintf(log_buffer,1024,"cannot save data into server db, errno=%d",
+        errno);
+
+      log_err(errno,"svr_recov",log_buffer);
+
       close(sdb);
 
       return(-1);
@@ -286,10 +291,22 @@ int svr_save(
       return(-1);
       }
 
+    /* new db successfully created, remove original db */
+
     close(sdb);
     unlink(path_svrdb);
-    link(path_svrdb_new,path_svrdb);
-    unlink(path_svrdb_new);
+
+    if (link(path_svrdb_new,path_svrdb) == -1)
+      {
+      snprintf(log_buffer,1024,"cannot move new database to default database location, errno=%d",
+        errno);
+
+      log_err(errno,"svr_recov",log_buffer);
+      }
+    else
+      {
+      unlink(path_svrdb_new);
+      }
 
     /* save the server acls to their own files:	*/
     /* 	priv/svracl/(attr name)			*/
