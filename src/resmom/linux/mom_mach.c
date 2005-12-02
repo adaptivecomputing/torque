@@ -185,6 +185,7 @@ extern	int                      rm_errno;
 extern	double	cputfactor;
 extern	double	wallfactor;
 extern	long	system_ncpus;
+extern  int     ignwalltime;
 
 /*
 ** local functions and data
@@ -1569,7 +1570,10 @@ int mom_over_limit(
           num, 
           value);
 
-        return(TRUE);
+        if (ignwalltime == 0)
+          {
+          return(TRUE);
+          }
         }
       }
     }  /* END for (pres) */

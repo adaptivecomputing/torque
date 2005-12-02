@@ -162,7 +162,7 @@ unsigned int	default_server_port;
 int		exiting_tasks = 0;
 float		ideal_load_val = -1.0;
 int		internal_state = 0;
-
+int             ignwalltime = 0;        /* by default, enable mom based walltime enforcement */
 int		lockfds = -1;
 time_t		loopcnt;		/* used for MD5 calc */
 float		max_load_val = -1.0;
@@ -1858,6 +1858,42 @@ static unsigned long setidealload(
 
 
 
+static unsigned long setignwalltime(
+
+  char *value)  /* I */
+
+  {
+  char newstr[50] = "ignwalltime ";
+
+  log_record(
+    PBSEVENT_SYSTEM,
+    PBS_EVENTCLASS_SERVER,
+    "ignwalltime",
+    value);
+
+  if (!strncasecmp(value,"t",1) || (value[0] == "1") || !strcasecmp(value,"on"))
+    {
+    ignwalltime = 1;
+    }
+  else
+    {
+    ignwalltime = 0;
+    }
+
+  strcat(newstr,value);
+
+  add_static(newstr,"config",0);
+
+  nconfig++;
+
+  /* SUCCESS */
+
+  return(1);
+  }  /* END setidealload() */
+
+
+
+
 
 static unsigned long setnodecheckscript(
 
@@ -1876,9 +1912,11 @@ static unsigned long setnodecheckscript(
 
   if ((stat(value,&sbuf) == -1) || !(sbuf.st_mode & S_IXUSR))
     {
+    /* FAILURE */
+
     /* file does not exist or is not executable */
 
-    return(0);  /* error */
+    return(0);  
     }
 
   strncpy(PBSNodeCheckPath,value,sizeof(PBSNodeCheckPath));
@@ -1888,6 +1926,8 @@ static unsigned long setnodecheckscript(
   add_static(newstr,"config",0);
 
   nconfig++;
+
+  /* SUCCESS */
 
   return(1);
   }  /* END setnodecheckscript() */
@@ -2039,6 +2079,7 @@ int read_config(
       { "configversion",configversion },
       { "cputmult",     cputmult },
       { "ideal_load",   setidealload },
+      { "ignwalltime",  setignwalltime },
       { "logevent",     setlogevent },
       { "loglevel",     setloglevel },
       { "max_load",     setmaxload },

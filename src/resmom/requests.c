@@ -1373,7 +1373,7 @@ static void resume_suspend(
         {
 	/* If it's suspended, update the start time */
 
-	pjob->ji_qs.ji_stime =  pjob->ji_qs.ji_stime - pjob->ji_momstat + time_now;
+	pjob->ji_qs.ji_stime = pjob->ji_qs.ji_stime - pjob->ji_momstat + time_now;
         }
 
       /* Clear the Suspend bit */

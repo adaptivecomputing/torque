@@ -1381,10 +1381,11 @@ void req_mvjobfile(  /* routine for MOM only - server routine listed above */
 
   if (pj == NULL) 
     {
-    snprintf(log_buffer,1024,"cannot find job %s",
-      preq->rq_ind.rq_jobfile.rq_jobid);
+    snprintf(log_buffer,1024,"cannot find job %s for move of %s file",
+      preq->rq_ind.rq_jobfile.rq_jobid,
+      TJobFileType[jft]);
 
-    log_err(errno,"req_mvjobfile",log_buffer);
+    log_err(-1,"req_mvjobfile",log_buffer);
 
     req_reject(PBSE_UNKJOBID,0,preq,NULL,NULL);
 

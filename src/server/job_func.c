@@ -473,7 +473,7 @@ job *job_alloc()
 
 void job_free(
 
-  job *pj)
+  job *pj)  /* I (modified) */
 
   {
   int			 i;
@@ -482,6 +482,16 @@ void job_free(
   struct work_task	*pwt;
   badplace		*bp;
 #endif /* PBS_MOM */
+
+  if (LOGLEVEL >= 8)
+    {
+    sprintf(log_buffer,"freeing job");
+
+    log_record(PBSEVENT_DEBUG,
+      PBS_EVENTCLASS_JOB,
+      pj->ji_qs.ji_jobid,
+      log_buffer);
+    }
 
   /* remove any malloc working attribute space */
 
@@ -577,14 +587,13 @@ void job_purge(
   job *pjob)
 
   {
-  static char	id[] = "job_purge";
+  static char   id[] = "job_purge";
 
-  char		namebuf[MAXPATHLEN + 1];
-  extern char	*msg_err_purgejob;
+  char          namebuf[MAXPATHLEN + 1];
+  extern char  *msg_err_purgejob;
 #ifdef PBS_MOM
-  int		rc;
+  int           rc;
 #endif
-
 
 #ifdef PBS_MOM
 
