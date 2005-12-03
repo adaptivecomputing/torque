@@ -1780,6 +1780,12 @@ int TMomFinalizeChild(
         log_buffer);                             
       }
 
+    /* Set PBS_VNODENUM */
+
+    sprintf(buf,"%d",0);
+
+    bld_env_variables(&vtable,"PBS_VNODENUM",buf);
+
 #if defined(PENABLE_CPUSETS) || defined(PENABLE_DYNAMIC_CPUSETS)
 
 #ifdef PENABLE_DYNAMIC_CPUSETS

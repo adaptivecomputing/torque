@@ -4444,7 +4444,7 @@ int tm_request(
 
       argv[i] = NULL;
 
-      numele = 3;
+      numele = 4;
 
       envp = (char **)calloc(numele, sizeof(char **));
 
@@ -4480,7 +4480,7 @@ int tm_request(
         **	for finding this.
         */
 
-        if (i == numele - 1) 
+        if (i == numele - 2) 
           {
           numele *= 2;
 
@@ -4491,6 +4491,14 @@ int tm_request(
 
         envp[i] = env;
         }
+
+      /* tack on PBS_VNODENUM */
+
+      envp[i] = malloc(1024 * sizeof(char));
+
+      sprintf(envp[i], "PBS_VNODENUM=%d",nodeid);
+
+      i++;
 
       envp[i] = NULL;
 

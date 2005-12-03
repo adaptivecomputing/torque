@@ -17,6 +17,7 @@
   added prolog diagnostics to 'momctl -d' output (CRI)
   added logging for job file management (CRI)
   added mom parameter $ignwalltime (CRI)
+  added $PBS_VNODENUM to job/TM env (USC)
 
 2.0.0p2
 
