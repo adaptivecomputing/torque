@@ -118,7 +118,7 @@ extern time_t time();
  * a record of the open I/O connections, it is indexed by the socket number.  
  */
 
-struct	connection svr_conn[PBS_NET_MAX_CONNECTIONS];
+struct connection svr_conn[PBS_NET_MAX_CONNECTIONS];
 
 /*
  * The following data is private to this set of network interface routines.

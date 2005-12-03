@@ -2781,7 +2781,7 @@ int set_nodes(
 
   if (LOGLEVEL >= 3)
     {
-    sprintf(log_buffer,"job %s allocated %d nodes (nodelist=%s)",
+    snprintf(log_buffer,sizeof(log_buffer),"job %s allocated %d nodes (nodelist=%s)",
       pjob->ji_qs.ji_jobid,
       NCount,
       nodelist);
