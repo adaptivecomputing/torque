@@ -1116,7 +1116,8 @@ int mom_over_limit(pjob)
 				sprintf(log_buffer,
 					"walltime %lu exceeded limit %lu",
 					num, value);
-				return (TRUE);
+				if (ignwalltime == 0)
+					return (TRUE);
 			}
 		}
 	}
