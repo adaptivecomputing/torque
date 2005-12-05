@@ -153,6 +153,11 @@ extern char  log_buffer[];
  *
  *	We have an interesting problem here in that the request may well
  *	orginate from ourself.  In that case we doen't really reply.
+ *
+ *	Note: It is possible, though it doesn't make sense, for a job
+ *	to have a self-referencing depend.  We reject these for the register
+ *	and delete operations, but allow it for others in an attempt
+ *	to be graceful.
  */
 
 void req_register(
@@ -228,6 +233,14 @@ void req_register(
   switch (preq->rq_ind.rq_register.rq_op) 
     {
     case JOB_DEPEND_OP_REGISTER:
+
+      if (!strcmp(preq->rq_ind.rq_register.rq_parent,
+                  preq->rq_ind.rq_register.rq_child))
+        {
+        rc = PBSE_IVALREQ; /* can't depend on self */
+
+        break;
+        }
 
       switch (type) 
         {
@@ -438,6 +451,14 @@ void req_register(
       break;
 
     case JOB_DEPEND_OP_DELETE:
+
+      if (!strcmp(preq->rq_ind.rq_register.rq_parent,
+                  preq->rq_ind.rq_register.rq_child))
+        {
+        rc = PBSE_IVALREQ; /* prevent an infinite loop */
+
+        break;
+        }
 
       sprintf(log_buffer, msg_registerdel,
         preq->rq_ind.rq_register.rq_child);
@@ -938,29 +959,40 @@ int depend_on_term(
 
         if (shouldkill) 
           {
-			pparent = (struct depend_job *)GET_NEXT(pdep->dp_jobs);
-			/* skip first, its this job */
-		        pparent=(struct depend_job *)GET_NEXT(pparent->dc_link);
-			while (pparent) {
-			    (void)send_depend_req(pjob, pparent, type, 
-					    JOB_DEPEND_OP_DELETE,
-					    SYNC_SCHED_HINT_NULL,
-					     release_req);
-		            pparent=(struct depend_job *)GET_NEXT(pparent->dc_link);
-			}
-		    }
-		    break;
+	  pparent = (struct depend_job *)GET_NEXT(pdep->dp_jobs);
+
+          /* skip first, its this job */
+
+          pparent=(struct depend_job *)GET_NEXT(pparent->dc_link);
+
+	  while (pparent)
+            {
+	    send_depend_req(pjob, pparent, type, 
+              JOB_DEPEND_OP_DELETE,
+              SYNC_SCHED_HINT_NULL,
+              release_req);
+
+            pparent=(struct depend_job *)GET_NEXT(pparent->dc_link);
 	    }
+	  }
 
-	    if (op != -1) {
-		pparent = (struct depend_job *)GET_NEXT(pdep->dp_jobs);
-		while (pparent) {
+        break;
 
-		    /* "release" the job to execute */
-		    if ((rc = send_depend_req(pjob, pparent, type, op, SYNC_SCHED_HINT_NULL, release_req)))
-			return (rc);
-		    pparent = (struct depend_job *)GET_NEXT(pparent->dc_link);
-		}
+      } /* END switch(type) */
+
+    if (op != -1)
+      {
+      pparent = (struct depend_job *)GET_NEXT(pdep->dp_jobs);
+      while (pparent)
+        {
+
+        /* "release" the job to execute */
+        if ((rc = send_depend_req(pjob, pparent, type, op,
+               SYNC_SCHED_HINT_NULL, release_req)))
+          return (rc);
+
+        pparent = (struct depend_job *)GET_NEXT(pparent->dc_link);
+        }
       }
 
     pdep = (struct depend *)GET_NEXT(pdep->dp_link);
@@ -1084,31 +1116,37 @@ static void set_depend_hold(
        
         break;
 
-		    case JOB_DEPEND_TYPE_ON:
-			if (pdp->dp_numexp)
-				substate = JOB_SUBSTATE_DEPNHOLD;
-			break;
-		}
-		pdp = (struct depend *)GET_NEXT(pdp->dp_link);
-	}
-	if (substate == -1) {
+      case JOB_DEPEND_TYPE_ON:
 
-		/* No (more) dependencies, clear system hold and set state */
+        if (pdp->dp_numexp)
+          substate = JOB_SUBSTATE_DEPNHOLD;
 
-	    if ((pjob->ji_qs.ji_substate == JOB_SUBSTATE_SYNCHOLD) ||
-		(pjob->ji_qs.ji_substate == JOB_SUBSTATE_DEPNHOLD)) {
-		    pjob->ji_wattr[(int)JOB_ATR_hold].at_val.at_long &= ~HOLD_s;
-		    svr_evaljobstate(pjob, &newstate, &newsubst, 0);
-		    (void)svr_setjobstate(pjob, newstate, newsubst);
-	    }
-	} else {
+        break;
 
-		/* there are dependencies, set system hold accordingly */
+      }
+    pdp = (struct depend *)GET_NEXT(pdp->dp_link);
+    }
 
-		pjob->ji_wattr[(int)JOB_ATR_hold].at_val.at_long |= HOLD_s;
-		pjob->ji_wattr[(int)JOB_ATR_hold].at_flags |= ATR_VFLAG_SET;
-		(void)svr_setjobstate(pjob, JOB_STATE_HELD, substate);
-	}
+  if (substate == -1)
+    {
+    /* No (more) dependencies, clear system hold and set state */
+
+    if ((pjob->ji_qs.ji_substate == JOB_SUBSTATE_SYNCHOLD) ||
+        (pjob->ji_qs.ji_substate == JOB_SUBSTATE_DEPNHOLD))
+      {
+      pjob->ji_wattr[(int)JOB_ATR_hold].at_val.at_long &= ~HOLD_s;
+      svr_evaljobstate(pjob, &newstate, &newsubst, 0);
+      svr_setjobstate(pjob, newstate, newsubst);
+      }
+    }
+  else
+    {
+    /* there are dependencies, set system hold accordingly */
+
+    pjob->ji_wattr[(int)JOB_ATR_hold].at_val.at_long |= HOLD_s;
+    pjob->ji_wattr[(int)JOB_ATR_hold].at_flags |= ATR_VFLAG_SET;
+    svr_setjobstate(pjob, JOB_STATE_HELD, substate);
+    }
 
   return;
   }
@@ -1504,19 +1542,23 @@ static int send_depend_req(
 	
   /* if registering sync, include job cost for scheduling */
 
-	if (type == JOB_DEPEND_TYPE_SYNCWITH) {
-		if (op == JOB_DEPEND_OP_REGISTER) 
-			/* for sync-register, cost = job resource cost */
-			preq->rq_ind.rq_register.rq_cost = calc_job_cost(pjob);
-		else 
-			/* for sync-release, cost = scheduling hint */
-			preq->rq_ind.rq_register.rq_cost = schedhint;
-	} else {
-		/* otherwise, cost = null */
-		preq->rq_ind.rq_register.rq_cost = 0;
-	}
-		
+  if (type == JOB_DEPEND_TYPE_SYNCWITH)
+    {
+    if (op == JOB_DEPEND_OP_REGISTER) 
+      /* for sync-register, cost = job resource cost */
 
+      preq->rq_ind.rq_register.rq_cost = calc_job_cost(pjob);
+    else 
+      /* for sync-release, cost = scheduling hint */
+
+      preq->rq_ind.rq_register.rq_cost = schedhint;
+    }
+  else
+    {
+    /* otherwise, cost = null */
+    preq->rq_ind.rq_register.rq_cost = 0;
+    }
+		
   if (issue_to_svr(pparent->dc_svr,preq,postfunc) == -1) 
     {
     sprintf(log_buffer,"Unable to perform dependency with job %s\n", 

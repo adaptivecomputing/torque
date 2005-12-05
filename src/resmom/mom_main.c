@@ -1871,7 +1871,7 @@ static unsigned long setignwalltime(
     "ignwalltime",
     value);
 
-  if (!strncasecmp(value,"t",1) || (value[0] == "1") || !strcasecmp(value,"on"))
+  if (!strncasecmp(value,"t",1) || (value[0] == '1') || !strcasecmp(value,"on"))
     {
     ignwalltime = 1;
     }
