@@ -20,6 +20,7 @@
   added $PBS_VNODENUM to job/TM env (USC)
   fix self-referencing job deps (USC)
   Use --enable-wordexp to enable variables in data staging (USC)
+  $PBS_HOME/server_name is now used by MOM _iff $pbsserver isn't used_ (USC)
 
 2.0.0p2
 

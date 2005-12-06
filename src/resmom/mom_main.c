@@ -5642,22 +5642,6 @@ int main(
     exit(1);
     }
 
-  if ((file = fopen(path_server_name,"r")) != NULL) 
-    {
-    char tmpLine[PBS_MAXSERVERNAME+1];
-    char *pn;
-
-    if (fgets(tmpLine,sizeof(tmpLine),file) != NULL)
-      {
-      if ((pn = strchr(tmpLine,'\n')))
-        *pn = '\0';
-
-      setpbsserver(tmpLine);
-      }
-
-    fclose(file);
-    }
-
   localaddr = addclient("localhost");
 
   addclient(mom_host);
@@ -5674,6 +5658,26 @@ int main(
       config_file);
 
     exit(1);
+    }
+
+  if (pbs_servername[0] == '\0')
+    {
+    /* no $pbsserver paramters in config, use server_name as last-resort */
+    if ((file = fopen(path_server_name,"r")) != NULL)
+      {
+      char tmpLine[PBS_MAXSERVERNAME+1];
+      char *pn;
+
+      if (fgets(tmpLine,sizeof(tmpLine),file) != NULL)
+        {
+        if ((pn = strchr(tmpLine,'\n')))
+          *pn = '\0';
+
+        setpbsserver(tmpLine);
+        }
+
+      fclose(file);
+      }
     }
 
   initialize();		/* init RM code */

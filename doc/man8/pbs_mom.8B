@@ -247,13 +247,13 @@ dollar sign ($) and must be known to MOM via an internal table.
 The entries in this table now are: 
 .RS
 .IP pbsserver
-which defines additional hostnames running pbs_server that will be allowed to
+which defines hostnames running pbs_server that will be allowed to
 submit jobs, issue Resource Monitor (RM) requests, and get status updates.  MOM
 will continually attempt to contact all server hosts for node status and state
 updates.  Like $PBS_SERVER_HOME/server_name, the hostname may be followed by a
 colon and a port number.  This parameter replaces the oft-confused $clienthost
 parameter from TORQUE 2.0.0p0 and earlier.  Note that the hostname in
-$PBS_SERVER_HOME/server_name is the first added as a pbs_server host.
+$PBS_SERVER_HOME/server_name is used if no $pbsserver parameters are found
 .IP pbsclient
 which causes a host name to be added to the list of hosts which will be allowed
 to connect to MOM as long as they are using a privilaged port for the purposes
