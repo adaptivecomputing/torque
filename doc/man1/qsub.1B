@@ -358,7 +358,8 @@ is set to NONE, "n".
 Declares that the job is to be run "interactively".  The job will be queued
 and scheduled as any PBS batch job, but when executed, the standard input,
 output, and error streams of the job are connected through qsub to the
-terminal session in which qsub is running.
+terminal session in which qsub is running.  Interactive jobs are forced
+to not rerunable.
 See the "Extended Description" paragraph for addition information of 
 interactive jobs.
 .if !\n(Pb .ig Ig
@@ -693,7 +694,7 @@ or
 .if !\n(Pb .ig Ig
 Also see
 .I rerunable
-in the glossary.
+in the glossary.  Interactive jobs are forced to not rerunable.
 .Ig
 .IP
 If the argument is "\f5y\fP", the job is rerunable.
@@ -980,6 +981,15 @@ on the execution system in the follow manner:
 For stagein:   rcp hostname:remote_file local_file
 .br
 For stageout:  rcp local_file hostname:remote_file
+.br
+Data staging examples:
+.br
+.Ty "-W stagein=/tmp/input.txt@headnode:/home/user/input.txt"
+.br
+.Ty "-W stagein=/tmp/output.txt@headnode:/home/user/output.txt"
+.br If TORQUE has been compiled with wordexp support, then variables can
+be used in the specified paths.  Currently only $PBS_JOBID, $HOME, and
+$TMPDIR are supported for stagein.
 .IP "-z" 8
 Directs that the qsub
 command is not to write the job identifier assigned to the job to 

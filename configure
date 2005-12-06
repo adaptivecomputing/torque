@@ -293,6 +293,12 @@ ac_help="$ac_help
                           but may lead to server delays in larger systems. 
                           filesync is enabled by default"
 
+ac_help="$ac_help
+
+  --enable-wordexp        enable word expansion on file paths used in job stagein,
+                          stageout, and standard out/err files.  Requires that
+                          your libc implementation provides wordexp() and wordexp.h"
+
 # Initialize some variables set by options.
 # The variables have the same names as the options, with
 # dashes changed to underlines.
@@ -3338,8 +3344,14 @@ EOF
 
 fi
 
+if test "${enable_wordexp+set}" = set; then
+  case $enable_wordexp in
+    yes) wordexp_func=wordexp
+  esac
+fi
 
-for ac_func in setresuid setresgid seteuid setegid
+
+for ac_func in setresuid setresgid seteuid setegid $wordexp_func
 do
 echo $ac_n "checking for $ac_func""... $ac_c" 1>&6
 echo "configure:3204: checking for $ac_func" >&5
@@ -3394,6 +3406,11 @@ else
 fi
 done
 
+if test "${wordexp_func+set}" = set; then
+  if eval "test \"`echo '$''{'ac_cv_func_$wordexp_func'}'`\" != yes"; then
+    { echo "configure: error: $wordexp_func not found" 1>&2; exit 1; }
+  fi
+fi
 
 
 #

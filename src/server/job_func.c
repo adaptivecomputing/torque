@@ -279,7 +279,7 @@ int remtree(
 	    }
 	    (void)closedir(dir);
 	    if (rmdir(dirname) < 0) {
-		if (errno != ENOENT) {
+		if ((errno != ENOENT) && (errno != EINVAL)) {
 			sprintf(log_buffer, "rmdir failed on %s", dirname);
 			log_err(errno, id, log_buffer);
 			rtnv = -1;
@@ -645,7 +645,7 @@ void job_purge(
 
 #endif  /* HAVE_SETRESUID */
 
-      if (rc != 0)
+      if ((rc != 0) && (LOGLEVEL >= 5))
         {
         sprintf(log_buffer,
           "recursive remove of job transient tmpdir %s failed",

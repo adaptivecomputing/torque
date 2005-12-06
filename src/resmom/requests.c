@@ -112,6 +112,28 @@
 #include <sys/category.h>
 #endif
 
+#ifdef HAVE_WORDEXP
+#include <wordexp.h>
+
+extern struct var_table vtable;      /* see start_exec.c */
+extern        char          **environ;
+
+extern int InitUserEnv(
+      
+  job            *pjob,   /* I */
+  task           *ptask,  /* I (optional) */
+  char          **envp,   /* I (optional) */
+  struct passwd  *pwdp,   /* I (optional) */
+  char           *shell);  /* I (optional) */
+    
+extern int mkdirtree(
+              
+  char *dirpath, /* I */
+  mode_t mode);
+
+extern int TTmpDirName( job*,char *);
+#endif /* HAVE_WORDEXP */
+
 /* External Global Data Items */
 
 extern unsigned int	default_server_port;
@@ -211,8 +233,6 @@ static pid_t fork_to_user(
 
   char           *hdir;
 
-  char            tmpLine[1024];
-
   struct stat     sb;
 
   /* initialize */
@@ -246,13 +266,13 @@ static pid_t fork_to_user(
       if (MOMUNameMissing[0] == '\0')
         strncpy(MOMUNameMissing,preq->rq_ind.rq_cpyfile.rq_user,64);
 
-      sprintf(tmpLine,"cannot find user '%s' in password file",
+      sprintf(log_buffer,"cannot find user '%s' in password file",
         preq->rq_ind.rq_cpyfile.rq_user);
 
       if (EMsg != NULL)
-        strncpy(EMsg,tmpLine,1024);
+        strncpy(EMsg,log_buffer,1024);
 
-      log_err(errno,id,tmpLine);
+      log_err(errno,id,log_buffer);
 
       return(-PBSE_BADUSER);
       }
@@ -269,13 +289,13 @@ static pid_t fork_to_user(
       }
     else
       {
-      sprintf(tmpLine,"cannot find group for user '%s' in password file",
+      sprintf(log_buffer,"cannot find group for user '%s' in password file",
         preq->rq_ind.rq_cpyfile.rq_user);
 
       if (EMsg != NULL)
-        strncpy(EMsg,tmpLine,1024);
+        strncpy(EMsg,log_buffer,1024);
 
-      log_err(errno,id,tmpLine);
+      log_err(errno,id,log_buffer);
 
       return(-PBSE_BADUSER);
       }
@@ -320,18 +340,18 @@ static pid_t fork_to_user(
 
   if (stat(hdir,&sb) != 0)
     {
-    sprintf(tmpLine,"invalid home directory '%s' specified, errno=%d (%s)",
+    sprintf(log_buffer,"invalid home directory '%s' specified, errno=%d (%s)",
       hdir,
       errno,
       strerror(errno));
 
     if (LOGLEVEL >= 2)
       { 
-      log_err(errno,id,tmpLine);
+      log_err(errno,id,log_buffer);
       }
 
     if (EMsg != NULL)
-      strncpy(EMsg,tmpLine,1024);
+      strncpy(EMsg,log_buffer,1024);
 
     /* NOTE:  warn only, root may not be able to stat directory */
 
@@ -339,20 +359,20 @@ static pid_t fork_to_user(
     }
   else if (!S_ISDIR(sb.st_mode))
     {
-    sprintf(tmpLine,"invalid home directory '%s' specified, not a directory",
+    sprintf(log_buffer,"invalid home directory '%s' specified, not a directory",
       hdir);
 
-    log_err(PBSE_UNKRESC,id,tmpLine);
+    log_err(PBSE_UNKRESC,id,log_buffer);
       
     if (EMsg != NULL)
-      strncpy(EMsg,tmpLine,1024);
+      strncpy(EMsg,log_buffer,1024);
 
     return(-PBSE_UNKRESC); 
     }
 
   if (LOGLEVEL >= 1)
     { 
-    sprintf(tmpLine,"forking to user, uid: %ld  gid: %ld  homedir: '%s'",
+    sprintf(log_buffer,"forking to user, uid: %ld  gid: %ld  homedir: '%s'",
       (long)useruid,
       (long)usergid,
       hdir);
@@ -361,7 +381,7 @@ static pid_t fork_to_user(
       PBSEVENT_ADMIN,
       PBS_EVENTCLASS_FILE,
       (pjob != NULL) ? pjob->ji_qs.ji_jobid : "N/A",
-      tmpLine);
+      log_buffer);
     }
 
   if (HDir != NULL)
@@ -373,14 +393,14 @@ static pid_t fork_to_user(
     {
     /* fork failed */
 
-    sprintf(tmpLine,"forked failed, errno=%d (%s)",
+    sprintf(log_buffer,"forked failed, errno=%d (%s)",
       errno,
       strerror(errno));
 
-    log_err(-1,id,tmpLine);
+    log_err(-1,id,log_buffer);
 
     if (EMsg != NULL)
-      strncpy(EMsg,tmpLine,1024);
+      strncpy(EMsg,log_buffer,1024);
 
     return(-PBSE_SYSTEM);
     }
@@ -429,6 +449,53 @@ static pid_t fork_to_user(
       return(-PBSE_UNKRESC);
       }
     }
+
+    
+#ifdef HAVE_WORDEXP
+  {
+    /* set some useful env variables */
+
+    char *envstr;
+
+    envstr=malloc((strlen("HOME=") + strlen(hdir) + 1) * sizeof(char));
+
+    if (envstr == NULL)
+      {
+      sprintf(log_buffer,"malloc failed, errno=%d (%s)",
+        errno,
+        strerror(errno));
+
+      log_err(-1,id,log_buffer);
+
+      if (EMsg != NULL)
+        strncpy(EMsg,log_buffer,1024);
+
+      return(-PBSE_SYSTEM);
+      }
+
+    sprintf(envstr,"HOME=%s",hdir);
+    putenv(envstr);
+
+    envstr=malloc((strlen("PBS_JOBID=") + strlen(preq->rq_ind.rq_cpyfile.rq_jobid) + 1) * sizeof(char));
+
+    if (envstr == NULL)
+      {
+      sprintf(log_buffer,"malloc failed, errno=%d (%s)",
+        errno,
+        strerror(errno));
+
+      log_err(-1,id,log_buffer);
+
+      if (EMsg != NULL)
+        strncpy(EMsg,log_buffer,1024);
+
+      return(-PBSE_SYSTEM);
+      }
+
+    sprintf(envstr,"PBS_JOBID=%s",preq->rq_ind.rq_cpyfile.rq_jobid);
+    putenv(envstr);
+  }
+#endif
 
   return(pid);
   }  /* END fork_to_user() */
@@ -1751,9 +1818,11 @@ static int del_files(
 
   struct batch_request *preq,      /* I */
   char                 *HDir,      /* I (home directory) */
+  int                   setuserenv,/* I */
   char                **pbadfile)  /* O */
 
   {
+  char		 id[]="del_files";
   int		 AsUser = FALSE;
   struct rqfpair  *pair;
   int		 rc = 0;
@@ -1764,6 +1833,11 @@ static int del_files(
   struct stat	 sb;
   int		 rcstat;
   struct stat	 myspooldir;
+
+#ifdef HAVE_WORDEXP
+  job *pjob;
+  wordexp_t pathexp;
+#endif
 
   /* NOTE:  may be called as root in TORQUE home dir or as user in user homedir */
 
@@ -1814,6 +1888,16 @@ static int del_files(
         chdir(HDir);
         }
 
+#ifdef HAVE_WORDEXP
+      if (setuserenv && (pjob = find_job(preq->rq_ind.rq_cpyfile.rq_jobid)) != NULL)
+        {
+        InitUserEnv(pjob,NULL,NULL,NULL,NULL);
+
+        *(vtable.v_envp + vtable.v_used) = NULL;
+
+        environ = vtable.v_envp;
+        }
+#endif
       AsUser = TRUE;
       }
 
@@ -1829,6 +1913,23 @@ static int del_files(
         continue;
         }
       }
+
+#ifdef HAVE_WORDEXP
+    switch (wordexp(path,&pathexp, WRDE_NOCMD|WRDE_UNDEF))
+      {
+      case 0:
+        break; /* Successful */
+      case WRDE_NOSPACE:
+        wordfree(&pathexp);
+      default:
+        sprintf(log_buffer,">>> failed to delete files, expansion of %s failed",path);
+        add_bad_list(pbadfile,log_buffer,1);
+        return(-1);
+      }
+
+    strcpy(path,pathexp.we_wordv[0]);
+    wordfree(&pathexp);
+#endif
 
     if (stat(path,&sb) == 0) 
       {
@@ -1882,7 +1983,7 @@ static int del_files(
       LOG_EVENT(
         PBSEVENT_JOB, 
         PBS_EVENTCLASS_REQUEST,
-        "del_files", 
+        id, 
         log_buffer);
       }
 			
@@ -1898,7 +1999,7 @@ static int del_files(
         LOG_EVENT(
           PBSEVENT_JOB, 
           PBS_EVENTCLASS_REQUEST,
-          "del_files", 
+          id, 
           log_buffer);
 
         add_bad_list(pbadfile,log_buffer,2);
@@ -1918,7 +2019,7 @@ static int del_files(
       LOG_EVENT(
         PBSEVENT_DEBUG, 
         PBS_EVENTCLASS_FILE,
-        "del_files", 
+        id, 
         log_buffer);
 
 #endif  /* DEBUG */
@@ -2205,6 +2306,7 @@ void req_cpyfile(
   struct batch_request *preq)  /* I */
 
   {
+  char		 id[]="req_cpyfile";
   char		 arg2[MAXPATHLEN + 1];
   char		 arg3[MAXPATHLEN + 1];
   int		 bad_files = 0;
@@ -2222,13 +2324,20 @@ void req_cpyfile(
   struct stat	 myspooldir;
   int		 rcstat;
   char		 undelname[MAXPATHLEN + 1];
-  struct stat    sb; /* see if local file is a regular file */
 #ifdef  _CRAY
   char		 tmpdirname[MAXPATHLEN + 1];
 #endif 	/* _CRAY */
 
   char           EMsg[1024];
   char           HDir[1024];
+
+#ifdef HAVE_WORDEXP
+  int		 madefaketmpdir=0;
+  int		 usedfaketmpdir=0;
+  wordexp_t	 argexp;
+  char		 faketmpdir[1024];
+  job 		*pjob;
+#endif
 
   if (LOGLEVEL >= 3)
     {
@@ -2255,7 +2364,7 @@ void req_cpyfile(
         rc,
         EMsg);
 
-      log_err(errno,"req_cpyfile",tmpLine);
+      log_err(errno,id,tmpLine);
 
       exit(rc);
       }
@@ -2264,7 +2373,7 @@ void req_cpyfile(
       rc,
       EMsg);
 
-    log_err(errno,"req_cpyfile",tmpLine);
+    log_err(errno,id,tmpLine);
 
     return;
     }
@@ -2281,6 +2390,41 @@ void req_cpyfile(
   /* child */
 
   /* now running as user in the user's home directory */
+
+#ifdef HAVE_WORDEXP
+  faketmpdir[0] = '\0';
+
+  if ((pjob = find_job(preq->rq_ind.rq_cpyfile.rq_jobid)) == NULL)
+    {
+    /* This a stagein which happens before the job struct to sent to MOM
+     * This limits the available variables we can use.  fork_to_user()
+     * has already set PBS_JOBID and HOME for us.  Now just fake a TMPDIR
+     * if we need it. */
+
+    pjob=job_alloc();
+    strcpy(pjob->ji_qs.ji_jobid,preq->rq_ind.rq_cpyfile.rq_jobid);
+
+    if (TTmpDirName(pjob,faketmpdir))
+      {
+      if (!mkdirtree(faketmpdir,0755))
+        {
+        char *envstr;
+        envstr=malloc((strlen("TMPDIR=") + strlen(faketmpdir) + 1) * sizeof(char));
+        sprintf(envstr,"TMPDIR=%s",faketmpdir);
+        putenv(envstr);
+        madefaketmpdir=1;
+        }
+      }
+    }
+  else
+    {
+    InitUserEnv(pjob,NULL,NULL,NULL,NULL);
+
+    *(vtable.v_envp + vtable.v_used) = NULL;
+
+    environ = vtable.v_envp;
+    }
+#endif
 
   /* build up cp/rcp command(s), one per file pair */
 
@@ -2351,31 +2495,24 @@ void req_cpyfile(
 
       /* check for $HOME/.pbs_spool */
       /* if it isn't a directory, just use $HOME us usual */
+
+      /* NOTE: this completely overrides checkpoint and spool stuff above */
 			
       pw = &mypw;
       pw = getpwuid(useruid); 	
 
+      /* we used to go through a big process of stat()ing directories, looking
+         for root squash.  We don't need to do that anymore since now we
+         do this stuff as user... so just check for the directory */
+
       strcpy(localname_alt,pw->pw_dir); 
+      strcat(localname_alt,"/.pbs_spool/");
 
       rcstat = stat(localname_alt,&myspooldir);
 
-      /* also need o+x perms. to write through as root via */
-      /* an nfs mount --assuming root is squashed */
-
-      if ((rcstat == 0) && 
-          (S_ISDIR(myspooldir.st_mode)) &&  
-          ((myspooldir.st_mode & S_IXOTH) == S_IXOTH))
+      if ((rcstat == 0) && S_ISDIR(myspooldir.st_mode))
         {
-        strcat(localname_alt,"/.pbs_spool/");
-
-        rcstat= stat(localname_alt,&myspooldir);
-
-        if ((rcstat == 0) && 
-            (S_ISDIR(myspooldir.st_mode)) && 
-            ((myspooldir.st_mode & S_IXOTH) == S_IXOTH))
-          {
-          strcpy(localname,localname_alt);
-          }
+        strcpy(localname,localname_alt);
         }
 
       strcat(localname,pair->fp_local);
@@ -2402,24 +2539,6 @@ void req_cpyfile(
         }
 
 #endif /* SRFS */
-
-      /* Is the file there?  If not, don`t trying copy */
-
-      if (access(localname,F_OK|R_OK) < 0)
-        {
-        if (errno == ENOENT) 
-          {
-          continue;
-          }
-        }
-
-      /* Is this a regular file or directory?  We wouldn't want to scp /dev/null! */
-
-      if (stat(localname,&sb) < 0)
-        continue;
-
-      if ((!S_ISREG(sb.st_mode)) && (!S_ISDIR(sb.st_mode)))
-        continue;
 
       strcpy(arg2,localname);
 
@@ -2458,6 +2577,82 @@ void req_cpyfile(
       strcpy(arg3,pair->fp_local);
       }
 
+#ifdef HAVE_WORDEXP
+
+    /* Expand and verify arg2 (source path) */
+
+    switch (wordexp(arg2,&argexp, WRDE_NOCMD|WRDE_UNDEF))
+      {
+      case 0:
+        break; /* Successful */
+      case WRDE_NOSPACE:
+        wordfree(&argexp);
+      default:
+        sprintf(log_buffer,"Failed to expand source path in data staging: %s",arg2);
+        add_bad_list(&bad_list,log_buffer,2);
+        bad_files=1;
+        goto ERROR;
+      }
+
+    if (argexp.we_wordc > 1)
+      {
+      sprintf(log_buffer,"Too many words after expanding source destination path: %s",arg2);
+      add_bad_list(&bad_list,log_buffer,2);
+      wordfree(&argexp);
+      bad_files=1;
+      goto ERROR;
+      }
+
+    strcpy(arg2,argexp.we_wordv[0]);
+    wordfree(&argexp);
+
+    /* Expand and verify arg3 (destination path) */
+
+    switch (wordexp(arg3,&argexp, WRDE_NOCMD|WRDE_UNDEF))
+      {
+      case 0:
+        break; /* Successful */
+      case WRDE_NOSPACE:
+        wordfree(&argexp);
+      default:
+        sprintf(log_buffer,"Failed to expand destination path in data staging: %s",arg3);
+        add_bad_list(&bad_list,log_buffer,2);
+        bad_files=1;
+        goto ERROR;
+      }
+
+    if (argexp.we_wordc > 1)
+      {
+      sprintf(log_buffer,"Too many words after expanding destination path: %s",arg3);
+      add_bad_list(&bad_list,log_buffer,2);
+      reply_text(preq,PBSE_NOCOPYFILE,bad_list);
+      bad_files=1;
+      goto ERROR;
+      }
+
+    strcpy(arg3,argexp.we_wordv[0]);
+    wordfree(&argexp);
+
+    if (dir == STAGE_DIR_IN) 
+      strcpy(localname,arg3);
+    else
+      strcpy(localname,arg2);
+
+    /* if we made a fake TMPDIR, and we are using it, don't delete after stagein */
+
+    if (madefaketmpdir && 
+        (faketmpdir[0] != '\0') && 
+        !strncmp(faketmpdir,arg3,strlen(faketmpdir)))
+      {
+      usedfaketmpdir=1;
+      }
+    else
+      {
+      usedfaketmpdir=0;
+      }
+
+#endif
+			
     if ((rmtflag == 0) && (is_file_same(arg2,arg3) == 1)) 
       {
       /* local file, source == destination, don't copy */
@@ -2473,14 +2668,13 @@ void req_cpyfile(
 
       bad_files = 1;
 
-      sprintf(log_buffer,"Unable to copy file %s %s %s",
-        pair->fp_local,
-        (dir == STAGE_DIR_IN) ? "from" : "to",
-        pair->fp_rmt);
+      sprintf(log_buffer,"Unable to copy file %s to %s",
+        arg2,
+        arg3);
 
       add_bad_list(&bad_list,log_buffer,2);
 
-      log_err(-1,"req_cpyfile",log_buffer);
+      log_err(-1,id,log_buffer);
 
       /* copy message from rcp as well */
 
@@ -2503,13 +2697,14 @@ void req_cpyfile(
         add_bad_list(&bad_list,">>> end error output",1);
         }
 		
+ERROR:
       if (dir == STAGE_DIR_IN) 
         {
         /* delete the stage_in files that were just copied in */
 
         /* NOTE:  running as user in user homedir */
 
-        del_files(preq,NULL,&bad_list);
+        del_files(preq,NULL,1,&bad_list);
 
 #ifndef NO_SPOOL_OUTPUT
         } 
@@ -2532,11 +2727,11 @@ void req_cpyfile(
           } 
         else 
           {
-          sprintf(arg3,"Unable to rename %s to %s",
+          sprintf(log_buffer,"Unable to rename %s to %s",
             localname, 
             undelname);
 
-          log_err(errno,"req_cpyfile",arg3);
+          log_err(errno,id,log_buffer);
           }
 #endif	/* NO_SPOOL_OUTPUT */
         }
@@ -2558,13 +2753,13 @@ void req_cpyfile(
 
         if (remtree(localname) < 0) 
           {
-          sprintf(arg3,msg_err_unlink, 
+          sprintf(log_buffer,msg_err_unlink, 
             "stage out",
             localname);
 
-          log_err(errno,"req_cpyfile",arg3);
+          log_err(errno,id,log_buffer);
 
-          add_bad_list(&bad_list,arg3,2);
+          add_bad_list(&bad_list,log_buffer,2);
 
           bad_files = 1;
           }
@@ -2574,6 +2769,13 @@ void req_cpyfile(
     unlink(rcperr);
     }  /* END for() */
 
+#ifdef HAVE_WORDEXP
+  if (madefaketmpdir && !usedfaketmpdir)
+    {
+    remtree(faketmpdir);
+    }
+#endif
+   
   if (bad_files) 
     {
     reply_text(preq,PBSE_NOCOPYFILE,bad_list);
@@ -2637,7 +2839,7 @@ void req_delfile(
 
   /* delete the files */
 
-  if ((rc = del_files(preq,HDir,&bad_list)))
+  if ((rc = del_files(preq,HDir,1,&bad_list)))
     {
     /* FAILURE */
 

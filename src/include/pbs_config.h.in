@@ -261,6 +261,9 @@
 /* Define if you have the socket library (-lsocket).  */
 #undef HAVE_LIBSOCKET
 
+/* Define if you have the wordexp function. */
+#undef HAVE_WORDEXP
+
 #ifndef NEED_BLOCKING_CONNECTIONS
 #define write(a,b,c) write_nonblocking_socket(a,b,c)
 #define read(a,b,c) read_nonblocking_socket(a,b,c)
