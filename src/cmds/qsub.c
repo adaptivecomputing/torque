@@ -2034,7 +2034,7 @@ int process_opts(
   char *pc;
   char *pdepend;
 
-  FILE *fP=NULL;;
+  FILE *fP=NULL;
   char tmp_name[]="/tmp/qsub.XXXXXX";
   char tmp_name2[]="/tmp/qsub.XXXXXX";
   char cline[4096];
