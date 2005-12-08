@@ -23,6 +23,7 @@
   $PBS_HOME/server_name is now used by MOM _iff $pbsserver isn't used_ (USC)
   Fix TRU64 compile issues (NCIFCRF)
   Expand job limits up to ULONG_MAX (NCIFCRF)
+  user-supplied TMPDIR no longer treated specially (USC)
 
 2.0.0p2
 

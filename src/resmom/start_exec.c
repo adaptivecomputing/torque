@@ -805,7 +805,7 @@ done:
 
   
 
-/* If the job, our env, or our config allows it, construct tmpdir path */
+/* If our config allows it, construct tmpdir path */
 int TTmpDirName(
 
   job  *pjob,   /* I */
@@ -813,20 +813,7 @@ int TTmpDirName(
 
   {
 
-  char *envval;
-
-  if ((envval = __get_variable(pjob,"TMPDIR")) != NULL)
-    {
-    if (*envval == '/')
-      {
-      strncpy(tmpdir,envval,MAXPATHLEN);
-      }
-    else
-      {
-      *tmpdir='\0'; /* FIXME: prefix with homedir, workdir, or rootdir */
-      }
-    }
-  else if (tmpdir_basename[0] == '/')
+  if (tmpdir_basename[0] == '/')
     {
     snprintf(tmpdir,
       MAXPATHLEN,
@@ -964,6 +951,7 @@ int InitUserEnv(
   int j=0;
   int ebsize=0;
   char  buf[MAXPATHLEN + 2];
+  int usertmpdir=0;
 
   if (pjob == NULL)
     {
@@ -1027,7 +1015,11 @@ int InitUserEnv(
   if (vstrs != NULL)
     {
     for (j = 0;j < vstrs->as_usedptr;++j)
-      bld_env_variables(&vtable,vstrs->as_string[j],NULL);
+      {
+        bld_env_variables(&vtable,vstrs->as_string[j],NULL);
+        if (strncmp(vstrs->as_string[j],variables_else[12],strlen(variables_else[12])) == 0)
+          usertmpdir=1;
+      }
     }
 
   /* HOME */
@@ -1112,7 +1104,7 @@ int InitUserEnv(
 
   /* setup TMPDIR */
 
-  if (TTmpDirName(pjob,buf))
+  if (!usertmpdir && TTmpDirName(pjob,buf))
     bld_env_variables(&vtable, variables_else[12], buf);
 
   /* passed-in environment for tasks */

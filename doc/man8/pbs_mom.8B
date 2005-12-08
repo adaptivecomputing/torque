@@ -366,10 +366,6 @@ must have write permission to create the directory.  If the directory already
 exists and is owned by the job owner, it will not be deleted after the job.  If
 the directory already exists and is NOT owned by the job owner, the job start
 will be rejected.
-.br
-Individual jobs can override $tmpdir by setting the TMPDIR env variable with a
-full path.  It is not created and removed if a relative path is specified.  The
-jobid is not appended to a user-supplied TMPDIR.
 .IP status_update_time
 specifies (in seconds) how often MOM updates its status information to
 pbs_server.  This value should correlate with the server's scheduling interval.
