@@ -21,6 +21,8 @@
   fix self-referencing job deps (USC)
   Use --enable-wordexp to enable variables in data staging (USC)
   $PBS_HOME/server_name is now used by MOM _iff $pbsserver isn't used_ (USC)
+  Fix TRU64 compile issues (NCIFCRF)
+  Expand job limits up to ULONG_MAX (NCIFCRF)
 
 2.0.0p2
 

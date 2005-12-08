@@ -134,7 +134,13 @@ int main(
   int	 	servport = -1;
   int 		 sock;
   struct sockaddr_in sockname;
-  unsigned int   socknamelen;
+
+#ifdef socklen_t
+  socklen_t socknamelen;
+#else
+  unsigned int socknamelen;
+#endif /* socklen_t */
+
   int		 testmode = 0;
   int		 rc;
   struct batch_reply   *reply;
