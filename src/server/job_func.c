@@ -238,7 +238,7 @@ int remtree(
 	int		rtnv = 0;
 	struct stat	sb;
 
-	if (stat(dirname, &sb) == -1) {
+	if (lstat(dirname, &sb) == -1) {
 		if (errno != ENOENT)
 			log_err(errno, id, "stat");
 		return -1;
@@ -262,7 +262,7 @@ int remtree(
 
 		(void)strcpy(filnam, pdir->d_name);
 
-		if (stat(namebuf, &sb) == -1) {
+		if (lstat(namebuf, &sb) == -1) {
 			log_err(errno, id, "stat");
 			rtnv = -1;
 			continue;
