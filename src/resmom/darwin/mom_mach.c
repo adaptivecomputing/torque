@@ -792,7 +792,7 @@ int mom_set_limits(pjob, set_mode)
 			    retval = getsize(pres, &value);
 			    if (retval != PBSE_NONE)
 			        return (error(pname, retval));
-			    if (value > INT_MAX)
+			    if (value > ULONG_MAX)
 			        return (error(pname, PBSE_BADATVAL));
 			    reslim.rlim_cur = reslim.rlim_max = value;
 			    if (setrlimit(RLIMIT_FSIZE, &reslim) < 0)
@@ -809,7 +809,7 @@ int mom_set_limits(pjob, set_mode)
 			    retval = getsize(pres, &value);
 			    if (retval != PBSE_NONE)
 			        return (error(pname, retval));
-			    if (value > INT_MAX)
+			    if (value > ULONG_MAX)
 			        return (error(pname, PBSE_BADATVAL));
 			if ((mem_limit == 0) || (value < mem_limit))
 				mem_limit = value;

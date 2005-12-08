@@ -1150,7 +1150,7 @@ int mom_set_limits(
         return(error("RLIMIT_CPU",PBSE_SYSTEM));
         }
       } 
-    else if (strcmp(pname,"file") == 0) 
+    else if (!strcmp(pname,"file")) 
       {	
       /* set */
 

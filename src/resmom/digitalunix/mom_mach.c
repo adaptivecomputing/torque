@@ -561,18 +561,34 @@ int mom_set_limits(pjob, set_mode)
 				(unsigned long)((double)value / cputfactor);
 			if (setrlimit(RLIMIT_CPU, &reslim) < 0)
 	        		return (error("RLIMIT_CPU", PBSE_SYSTEM));
-		} else if (strcmp(pname, "file") == 0) {	/* set */
-			if (set_mode == SET_LIMIT_SET)  {
-			    retval = getsize(pres, &value);
-			    if (retval != PBSE_NONE)
-			        return (error(pname, retval));
-			    if (value > INT_MAX)
-			        return (error(pname, PBSE_BADATVAL));
-			    reslim.rlim_cur = reslim.rlim_max = value;
-			    if (setrlimit(RLIMIT_FSIZE, &reslim) < 0)
-			        return (error(pname, PBSE_SYSTEM));
-			}
-		} else if (strcmp(pname, "vmem") == 0) {	/* check */
+      } 
+    else if (!strcmp(pname,"file")) 
+      {
+      /* set */
+     
+      if (set_mode == SET_LIMIT_SET)  
+        {
+        retval = getsize(pres,&value);
+
+        if (retval != PBSE_NONE)
+          {
+          return(error(pname,retval));
+          }
+
+        if (value > ULONG_MAX)
+          {
+          return(error(pname,PBSE_BADATVAL));
+          }
+
+        reslim.rlim_cur = reslim.rlim_max = value;
+
+        if (setrlimit(RLIMIT_FSIZE,&reslim) < 0)
+          {
+          return(error(pname,PBSE_SYSTEM));
+          }
+        }
+      } 
+    else if (strcmp(pname,"vmem") == 0) {	/* check */
 			retval = getsize(pres, &value);
 			if (retval != PBSE_NONE)
 			        return (error(pname, retval));
@@ -583,7 +599,7 @@ int mom_set_limits(pjob, set_mode)
 			    retval = getsize(pres, &value);
 			    if (retval != PBSE_NONE)
 			        return (error(pname, retval));
-			    if (value > INT_MAX)
+			    if (value > ULONG_MAX)
 			        return (error(pname, PBSE_BADATVAL));
 			if ((mem_limit == 0) || (value < mem_limit))
 				mem_limit = value;
@@ -613,8 +629,14 @@ int mom_set_limits(pjob, set_mode)
 			return (error("RLIMIT_VMEM", PBSE_SYSTEM));
 	    }
 	}
-	return (PBSE_NONE);
-}
+
+  return(PBSE_NONE);
+  }
+
+
+
+
+
 /*
  * State whether MOM main loop has to poll this job to determine if some
  * limits are being exceeded.

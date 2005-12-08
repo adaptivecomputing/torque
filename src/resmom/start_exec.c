@@ -4353,7 +4353,9 @@ pid_t fork_me(
     /* release mlock; it seems to be inherited even though the
      * man page claims otherwise */
 
+#ifdef __PPINMEM
     munlockall();
+#endif /* __PPINMEM */
     } 
   else if (pid < 0)
     {
