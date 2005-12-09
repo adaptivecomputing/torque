@@ -1727,8 +1727,9 @@ int TMomFinalizeChild(
   char                  buf[MAXPATHLEN + 2];
   pid_t                 cpid;
   int                   i, j, vnodenum;
-  attribute             *pattri;
-  char                  *phost;
+  attribute            *pattr;
+  attribute            *pattri;
+  char                 *phost;
   int                   pts;
   int                   qsub_sock;
   char                  *shell;
