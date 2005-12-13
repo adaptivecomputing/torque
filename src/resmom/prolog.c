@@ -150,7 +150,7 @@ static char *resc_to_string(
 
   long      val;
 
-  char      tmpVal[MMAX_LINE];
+  char      tmpVal[1024];
 
   int       i;
 
@@ -178,7 +178,7 @@ static char *resc_to_string(
       continue;
       }
 
-    val = strtol(patlist->al_value);
+    val = strtol(patlist->al_value,NULL,10);
 
     if ((pjob != NULL) && (pjob->ji_resources != NULL))
       {
@@ -189,14 +189,14 @@ static char *resc_to_string(
           val += pjob->ji_resources[i].nr_cput;
           }
         }
-      else if (!strcmp(rd->rs_name,"mem"))
+      else if (!strcmp(patlist->al_resc,"mem"))
         {
         for (i = 0;i < pjob->ji_numnodes - 1;i++)
           {
           val += pjob->ji_resources[i].nr_mem;
           }
         }
-      else if (!strcmp(rd->rs_name,"vmem"))
+      else if (!strcmp(patlist->al_resc,"vmem"))
         {
         for (i = 0;i < pjob->ji_numnodes - 1;i++)
           {
