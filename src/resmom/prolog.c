@@ -205,6 +205,14 @@ static char *resc_to_string(
         }
       }
 
+    if (LOGLEVEL >= 7)
+      {
+      fprintf(stderr,"Epilog:  %s=%ld (M: %ld)\n",
+        patlist->al_resc,
+        val,
+        strtol(patlist->al_value,NULL,10));
+      }
+
     sprintf(tmpVal,"%ld",val);
 
     if (isfirst == 1)
