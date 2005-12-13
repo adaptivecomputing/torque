@@ -26,6 +26,7 @@
   user-supplied TMPDIR no longer treated specially (USC)
   remtree() now deals with symlinks correctly (USC)
   enable configurable mail domain (Sandia)
+  modify epilog to report full job resource utilization
 
 2.0.0p2
 

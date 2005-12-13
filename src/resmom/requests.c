@@ -1611,10 +1611,12 @@ static enum job_atr mom_rtn_list[] = {
 };
 
 
+
+
 void encode_used(
 
-  job       *pjob,
-  list_head *phead)
+  job       *pjob,   /* I */
+  list_head *phead)  /* O */
 
   {
   unsigned long		lnum;

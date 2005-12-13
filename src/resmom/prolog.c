@@ -138,44 +138,93 @@ const char *PPEType[] = {
 
 static char *resc_to_string(
 
-  attribute *pattr,	/* the attribute to convert */
-  char      *buf,	/* the buffer into which to convert */
-  int	     buflen)	/* the length of the above buffer */
+  job       *pjob,      /* I (optional - if specified, report total job resources) */
+  attribute *pattr,	/* I the attribute to convert */
+  char      *buf,	/* O the buffer into which to convert */
+  int	     buflen)	/* I the length of the above buffer */
 
   {
   int       need;
   svrattrl *patlist;
   list_head svlist;
 
+  long      val;
+
+  char      tmpVal[MMAX_LINE];
+
+  int       i;
+
+  int       isfirst = 1;
+
   CLEAR_HEAD(svlist);
 
   *buf = '\0';
 
-  if (encode_resc(pattr,&svlist,"x",(char *)0,ATR_ENCODE_CLIENT) <= 0)
+  if (encode_resc(pattr,&svlist,"x",NULL,ATR_ENCODE_CLIENT) <= 0)
     {
     return(buf);
     }
 
   patlist = (svrattrl *)GET_NEXT(svlist);
 
-  while (patlist) 
+  while (patlist != NULL) 
     {
     need = strlen(patlist->al_resc) + strlen(patlist->al_value) + 3;
 
-    if (need < buflen) 
+    if (need >= buflen) 
       {
-      strcat(buf, patlist->al_resc);
-      strcat(buf,"=");
-      strcat(buf, patlist->al_value);
+      patlist = (svrattrl *)GET_NEXT(patlist->al_link);
 
-      buflen -= need;
+      continue;
       }
 
-    patlist = (svrattrl *)GET_NEXT(patlist->al_link);
+    val = strtol(patlist->al_value);
 
-    if (patlist)
-      strcat(buf, ",");
-    }
+    if ((pjob != NULL) && (pjob->ji_resources != NULL))
+      {
+      if (!strcmp(patlist->al_resc,"cput"))
+        {
+        for (i = 0;i < pjob->ji_numnodes - 1;i++)
+          {
+          val += pjob->ji_resources[i].nr_cput;
+          }
+        }
+      else if (!strcmp(rd->rs_name,"mem"))
+        {
+        for (i = 0;i < pjob->ji_numnodes - 1;i++)
+          {
+          val += pjob->ji_resources[i].nr_mem;
+          }
+        }
+      else if (!strcmp(rd->rs_name,"vmem"))
+        {
+        for (i = 0;i < pjob->ji_numnodes - 1;i++)
+          {
+          val += pjob->ji_resources[i].nr_vmem;
+          }
+        }
+      }
+
+    sprintf(tmpVal,"%ld",val);
+
+    if (isfirst == 1)
+      {
+      isfirst = 0;
+      }
+    else
+      {
+      strcat(buf,",");
+      buflen--; 
+      }
+
+    strcat(buf,patlist->al_resc);
+    strcat(buf,"=");
+    strcat(buf,tmpVal);
+
+    buflen -= need;
+
+    patlist = (svrattrl *)GET_NEXT(patlist->al_link);
+    }  /* END while (patlist != NULL) */
 
   return(buf);
   }  /* END resc_to_string() */
@@ -521,14 +570,17 @@ int run_pelog(
 
     if (which == PE_EPILOG) 
       {
+      resource jres;
+
       /* for epilog only */
 
       sprintf(sid,"%ld",
         pjob->ji_wattr[(int)JOB_ATR_session_id].at_val.at_long);
 
       arg[5] = sid;
-      arg[6] = resc_to_string(&pjob->ji_wattr[(int)JOB_ATR_resource],resc_list,sizeof(resc_list));
-      arg[7] = resc_to_string(&pjob->ji_wattr[(int)JOB_ATR_resc_used],resc_used,sizeof(resc_used));  /* FIXME */
+      arg[6] = resc_to_string(NULL,&pjob->ji_wattr[(int)JOB_ATR_resource],resc_list,sizeof(resc_list));
+
+      arg[7] = resc_to_string(pjob,&pjob->ji_wattr[(int)JOB_ATR_resc_used],resc_used,sizeof(resc_used)); 
       arg[8] = pjob->ji_wattr[(int)JOB_ATR_in_queue].at_val.at_str;
       arg[9] = pjob->ji_wattr[(int)JOB_ATR_account].at_val.at_str;
       arg[10] = NULL;
@@ -537,7 +589,7 @@ int run_pelog(
       {
       /* prolog */
 
-      arg[5] = resc_to_string(&pjob->ji_wattr[(int)JOB_ATR_resource],resc_list,sizeof(resc_list));
+      arg[5] = resc_to_string(NULL,&pjob->ji_wattr[(int)JOB_ATR_resource],resc_list,sizeof(resc_list));
       arg[6] = pjob->ji_wattr[(int)JOB_ATR_in_queue].at_val.at_str;
       arg[7] = pjob->ji_wattr[(int)JOB_ATR_account].at_val.at_str;
       arg[8] = NULL;		
