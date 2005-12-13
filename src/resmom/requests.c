@@ -1539,7 +1539,7 @@ void req_signaljob(
 
     psigt = sig_tbl;
 
-    while (psigt->sig_name) 
+    while (psigt->sig_name != NULL) 
       {
       if (!strcmp(sname,psigt->sig_name)) 
         break;

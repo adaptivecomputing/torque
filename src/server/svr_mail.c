@@ -126,7 +126,7 @@ void svr_mailowner(
   char	*cmdbuf;
   int	 i;
   char	*mailfrom;
-  char	 mailto[512];
+  char	 mailto[1024];
   FILE	*outmail;
   struct array_strings *pas;
   char	*stdmessage = NULL;
@@ -218,11 +218,12 @@ void svr_mailowner(
     {
     /* no mail user list, just send to owner */
 
-    strcpy(mailto,pjob->ji_wattr[(int)JOB_ATR_job_owner].at_val.at_str);
-
     #ifdef TMAILDOMAIN
+      strcpy(mailto,pjob->ji_wattr[(int)JOB_ATR_euser].at_val.at_str);
       strcat(mailto,"@");
       strcat(mailto,TMAILDOMAIN);
+    #else /* TMAILDOMAIN */
+      strcpy(mailto,pjob->ji_wattr[(int)JOB_ATR_job_owner].at_val.at_str);
     #endif /* TMAILDOMAIN */ 
     }
 

@@ -99,19 +99,29 @@
 #include "batch_request.h"
 #include "dis.h"
 
-int encode_DIS_JobObit(sock, preq)
-	int   sock;
-	struct batch_request *preq;
-{
-	int   rc;
-	struct svrattrl *psvrl;
+int encode_DIS_JobObit(
 
-	psvrl = (struct svrattrl *)GET_NEXT(preq->rq_ind.rq_jobobit.rq_attr);
+  int                   sock,  /* I */
+  struct batch_request *preq)  /* I */
 
-	if ( (rc = diswst(sock, preq->rq_ind.rq_jobobit.rq_jid) != 0) ||
-	     (rc = diswsi(sock, preq->rq_ind.rq_jobobit.rq_status) != 0) ||
-	     (rc = encode_DIS_svrattrl(sock, psvrl) != 0) )
-		return rc;
+  {
+  int              rc;
+  struct svrattrl *psvrl;
 
-	return 0;
-}
+  psvrl = (struct svrattrl *)GET_NEXT(preq->rq_ind.rq_jobobit.rq_attr);
+
+  if ((rc = diswst(sock,preq->rq_ind.rq_jobobit.rq_jid) != 0) ||
+      (rc = diswsi(sock,preq->rq_ind.rq_jobobit.rq_status) != 0) ||
+      (rc = encode_DIS_svrattrl(sock,psvrl) != 0))
+    {
+    /* FAILURE */
+
+    return(rc);
+    }
+
+  return(0);
+  }  /* END encode_DIS_JobObit() */
+
+
+
+

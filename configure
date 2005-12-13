@@ -299,6 +299,13 @@ ac_help="$ac_help
                           stageout, and standard out/err files.  Requires that
                           your libc implementation provides wordexp() and wordexp.h"
 
+ac_help="$ac_help
+
+  --maildomain=MAILDOMAIN override the default domain for outgoing mail messages,
+                          i.e. \"user@maildomain\".  the default maildomain is the
+                          hostname where the job was submitted from"
+
+
 # Initialize some variables set by options.
 # The variables have the same names as the options, with
 # dashes changed to underlines.
@@ -459,6 +466,11 @@ EOF
     ac_prev=libdir ;;
   -libdir=* | --libdir=* | --libdi=* | --libd=*)
     libdir="$ac_optarg" ;;
+
+  -maildomain | --maildomain)
+    ac_prev=maildomain ;;
+  -maildomain=* | --maildomain=*)
+    maildomain="$ac_optarg" ;;
 
   -mandir | --mandir | --mandi | --mand | --man | --ma | --m)
     ac_prev=mandir ;;
@@ -1703,8 +1715,8 @@ fi
 
 # Check whether --maildomain was given.
 if test "${maildomain+set}" = set; then
-  cat >> confdefs.h <<\EOF
-#define TMAILDOMAIN ${maildomain}
+  cat >> confdefs.h <<EOF
+#define TMAILDOMAIN "$maildomain"
 EOF
 fi
 
@@ -4252,6 +4264,7 @@ s%@libdir@%$libdir%g
 s%@includedir@%$includedir%g
 s%@oldincludedir@%$oldincludedir%g
 s%@infodir@%$infodir%g
+s%@maildomain@%$maildomain%g
 s%@mandir@%$mandir%g
 s%@PBS_MKDIRS@%$PBS_MKDIRS%g
 s%@host@%$host%g

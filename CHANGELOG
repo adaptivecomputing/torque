@@ -25,6 +25,7 @@
   Expand job limits up to ULONG_MAX (NCIFCRF)
   user-supplied TMPDIR no longer treated specially (USC)
   remtree() now deals with symlinks correctly (USC)
+  enable configurable mail domain (Sandia)
 
 2.0.0p2
 

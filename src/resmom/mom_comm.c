@@ -2702,7 +2702,7 @@ void im_request(
       ** )
       */
 
-      nodeid = disrsi(stream, &ret);
+      nodeid = disrsi(stream,&ret);
 
       if (ret != DIS_SUCCESS)
         goto err;
