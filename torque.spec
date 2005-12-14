@@ -1,33 +1,123 @@
 
 # comment out snap if building a real release
 %define name torque
-%define version TVERSION 
+%define version TVERSION
 #%define snap TSNAP
 %define release 1cri
 
+# The following options are supported:
+#   --with server_name=hostname
+#   --with homedir=directory
+#   --with libdir=directory
+#   --with mandir=directory
+#   --with scp[=path]
+#   --without scp
+#   --with[out] syslog
+#   --with[out] rpp
+#   --with[out] filesync
+#   --with[out] gui
+#   --with tcl=/path
+#   --without tcl
+# Note that gui and tcl bits don't work correctly yet
+
 
 # Hrm, should we default to the name of the buildhost?  That seems only
-# slightly better than picking a hostname at random.  This iis exactly the
-# kind of compile-time default that doesn't work well with distributable
-# packages.  Let's force the issue with the non-sensical "localhost".
+# slightly better than picking a hostname at random.  This is exactly the kind
+# of compile-time default that doesn't work well with distributable packages.
+# Let's force the issue with the non-sensical "localhost".
 #
-# Note that "localhost" doesn't actually work.  You must either define
-# the correct hostname here, or be sure that $PBS_SERVER_HOME/server_name
-# contains the correct hostname.
+# Note that "localhost" doesn't actually work.  You must either define the
+# correct hostname here, pass '--with server_name=foo' to rpmbuild, or be sure
+# that $PBS_SERVER_HOME/server_name contains the correct hostname.
 %define server_name localhost
+%{?_with_server_name:%define server_name %(set -- %{_with_server_name}; echo $1 | grep -v with)}
 
 # change as you wish
-%define use_tcl 1
 %define use_syslog 1
 %define use_scp 1
-%define use_rpp 0
+%define use_rpp 1
 %define use_fsync 0
+%define use_tcl 0
+%define build_gui 0
 
 # these are non-defaults, but fit better into most RPM-based systems
 %define torquehomedir %{_localstatedir}/lib/%{name}
 %define torquelibdir  %{_libdir}/%{name}
 %define torquemandir  %{_mandir}
 
+
+
+
+# --with/--without processing
+# first, error if conflicting options are used
+%{?_with_filesync: %{?_without_filesync: %{error: both _with_filesync and _without_filesync}}}
+%{?_with_syslog: %{?_without_syslog: %{error: both _with_syslog and _without_syslog}}}
+%{?_with_rpp: %{?_without_rpp: %{error: both _with_rpp and _without_rpp}}}
+%{?_with_scp: %{?_without_scp: %{error: both _with_scp and _without_scp}}}
+%{?_with_tcl: %{?_without_tcl: %{error: both _with_tcl and _without_tcl}}}
+%{?_with_gui: %{?_without_gui: %{error: both _with_gui and _without_gui}}}
+
+# did we find any --with options?
+%{?_with_filesync: %define use_fsync 1}
+%{?_with_syslog: %define use_syslog 1}
+%{?_with_rpp: %define use_rpp 1}
+%{?_with_scp: %define use_scp 1}
+%{?_with_tcl: %define use_tcl 1}
+%{?_with_gui: %define build_gui 1}
+
+%{?_with_homedir:%define torquehomedir %(set -- %{_with_homedir}; echo $1 | grep -v with)}
+%{?_with_libdir:%define torquelibdir %(set -- %{_with_libdir}; echo $1 | grep -v with)}
+%{?_with_mandir:%define torquemandir %(set -- %{_with_mandir}; echo $1 | grep -v with)}
+
+
+# did we find any --without options?
+%{?_without_filesync: %define use_fsync 0}
+%{?_without_syslog: %define use_syslog 0}
+%{?_without_rpp: %define use_rpp 0}
+%{?_without_scp: %define use_scp 0}
+%{?_without_tcl: %define use_tcl 0}
+%{?_without_gui: %define build_gui 0}
+
+# Set up all options as disabled
+%define fsyncflags  --disable-filesync
+%define syslogflags --disable-syslog
+%define rppflags    --disable-rpp
+%define scpflags    %{nil}
+%define tclflags    --without-tcl --without-tclx
+%define guiflags    --disable-gui
+
+# Enable options that we want
+%if %use_fsync
+%define fsyncflags  --enable-filesync
+%endif
+%if %use_syslog
+%define syslogflags --enable-syslog
+%endif
+%if %use_rpp
+%define rppflags    --enable-rpp
+%endif
+%if %use_scp
+%define scpflags    --with-scp%{?_with_scp:%(set -- %{_with_scp}; echo $1 | grep -v with)}
+%endif
+
+# dealing with tcl and gui is way too complicated
+%if %use_tcl
+%define tclflags    --with-tcl%{?_with_tcl:%(set -- %{_with_tcl}; echo $1 | grep -v with)} %{!?build_gui:--with-tclx%{?_with_tclx:%(set -- %{_with_tclx}; echo $1 | grep -v with)}}
+%endif
+
+%if %build_gui
+%define guiflags   --enable-gui
+%if ! %use_tcl
+%{error: gui requires tcl, enable tcl or add --without gui}
+blow up
+%endif
+%endif
+
+# finish up the configs...
+%define server_nameflags --set-default-server=%(echo %{server_name} | sed -e 's/=//')
+
+
+%define shared_description %(echo -e "TORQUE (Tera-scale Open-source Resource and QUEue manager) is a resource \\nmanager providing control over batch jobs and distributed compute nodes.  \\nTorque is based on OpenPBS version 2.3.12 and incorporates scalability, \\nfault tolerance, and feature extension patches provided by USC, NCSA, OSC, \\nthe U.S. Dept of Energy, Sandia, PNNL, U of Buffalo, TeraGrid, and many \\nother leading edge HPC organizations.\\n\\nThis build was configured with:\\n  %{fsyncflags}\\n  %{syslogflags}\\n  %{tclflags}\\n  %{rppflags}\\n  %{server_nameflags}\\n %{scpflags}\\n")
 
 
 Summary: Tera-scale Open-source Resource and QUEue manager
@@ -43,39 +133,7 @@ Provides: pbs
 BuildRequires: ed
 Conflicts: pbspro, openpbs, openpbs-oscar
 
-%if %use_tcl
-BuildRequires: tclx, tcl-devel, tk-devel
-%else
-Obsoletes: torque-gui
-%endif
-
-
-
-# don't change these
-%define fsyncflags  --disable-filesync
-%define syslogflags --disable-syslog
-%define tclflags    --disable-gui --without-tclx --without-tcl
-%define rppflags    --disable-rpp
-%define scpflags    --without-scp
-
-%if %use_fsync
-%define fsyncflags  --enable-filesync
-%endif
-%if %use_syslog
-%define syslogflags --enable-syslog
-%endif
-%if %use_tcl
-%define tclflags    --enable-gui --with-tclx --with-tcl
-%endif
-%if %use_rpp
-%define rppflags    --enable-rpp
-%endif
-%if %use_scp
-%define scpflags    --with-scp
-%endif
-
-%define shared_description %(echo -e "TORQUE (Tera-scale Open-source Resource and QUEue manager) is a resource \\nmanager providing control over batch jobs and distributed compute nodes.  \\nTorque is based on OpenPBS version 2.3.12 and incorporates scalability, \\nfault tolerance, and feature extension patches provided by USC, NCSA, OSC, \\nthe U.S. Dept of Energy, Sandia, PNNL, U of Buffalo, TeraGrid, and many \\nother leading edge HPC organizations.\\n\\nThis build was configured with:\\n  %{fsyncflags}\\n  %{syslogflags}\\n  %{tclflags}\\n  %{rppflags}\\n  %{scpflags}\\n")
-
+%{!?build_gui:Obsoletes: torque-gui}
 
 %description
 %shared_description
@@ -98,16 +156,17 @@ done
 # autoconf and friends to work with torque, so we can't use the
 # various configure macros
 ./configure --prefix=%{_prefix} --sbindir=%{_sbindir} --bindir=%{_bindir} \
-  --includedir=%{_includedir} --mandir=%{torquemandir} --libdir=%{torquelibdir} \
-  --enable-docs --enable-server --enable-mom --enable-clients \
-  --set-server-home=%{torquehomedir} --set-default-server=%{server_name} \
-  %{fsyncflags} %{syslogflags} %{tclflags} %{rppflags} %{scpflags}
+ --includedir=%{_includedir} --mandir=%{torquemandir} --libdir=%{torquelibdir} \
+ --enable-server --enable-clients --enable-mom --enable-docs %{guiflags} \
+ --set-server-home=%{torquehomedir} %{server_nameflags} \
+ %{fsyncflags} %{syslogflags} %{tclflags} %{rppflags} %{scpflags}
 
 
 
 %{__make} clean
 %{__make} %{_smp_mflags} depend
 %{__make} %{_smp_mflags} all
+ 
 
 
 %install
@@ -150,11 +209,10 @@ fi
 
 %files
 %defattr(-, root, root)
+%doc doc/admin_guide.ps INSTALL README.torque torque.setup Release_Notes CHANGELOG PBS_License.txt
 %config(noreplace) %{torquehomedir}/pbs_environment
 %config(noreplace) %{torquehomedir}/server_name
 %{torquehomedir}/aux
-%{torquehomedir}/checkpoint
-%{torquehomedir}/undelivered
 %{torquehomedir}/spool
 
 
@@ -166,10 +224,10 @@ Provides: pbs-docs
 %description docs
 %shared_description
 This package holds the documentation files
+
 %files docs
 %defattr(-, root, root)
 %{torquemandir}/man*/*
-%doc doc/admin_guide.ps INSTALL README.torque torque.setup Release_Notes CHANGELOG PBS_License.txt
 
 %package scheduler
 Group: System Environment/Daemons
@@ -228,6 +286,7 @@ Provides: pbs-mom
 %description mom
 %shared_description
 This package holds the execute daemon required on every node.
+
 %files mom
 %defattr(-, root, root)
 %{_sbindir}/pbs_mom
@@ -237,6 +296,8 @@ This package holds the execute daemon required on every node.
 %endif
 %{torquehomedir}/mom_priv/*
 %{torquehomedir}/mom_logs
+%{torquehomedir}/checkpoint
+%{torquehomedir}/undelivered
 
 %post mom
 /sbin/chkconfig --add pbs_mom
@@ -254,6 +315,7 @@ Provides: pbs-client
 %description client
 %shared_description
 This package holds the command-line client programs
+
 %files client
 %defattr(-, root, root)
 %{_bindir}/q*
@@ -266,6 +328,9 @@ This package holds the command-line client programs
 %{_bindir}/tracejob
 %attr(4755 root root) %{_sbindir}/pbs_iff
 %{_sbindir}/pbs_demux
+%if %use_tcl
+%{_bindir}/pbs_tclsh
+%endif
 
 %package gui
 Group: Applications/System
@@ -275,15 +340,15 @@ Provides: xpbs xpbsmon
 %description gui
 %shared_description
 This package holds the graphical clients
-%if %use_tcl
+
+%if %{build_gui}
 %files gui
 %defattr(-, root, root)
 %{_bindir}/pbs_wish
-%{_bindir}/pbs_tclsh
 %{_bindir}/xpbs
 %{_bindir}/xpbsmon
-%{torquelibdir}/xpbs/*
-%{torquelibdir}/xpbsmon/*
+%{torquelibdir}/xpbs
+%{torquelibdir}/xpbsmon
 %endif
 
 
