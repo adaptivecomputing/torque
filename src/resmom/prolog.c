@@ -178,7 +178,7 @@ static char *resc_to_string(
       continue;
       }
 
-    val = strtol(patlist->al_value,NULL,10);
+    val = 0;
 
     if ((pjob != NULL) && (pjob->ji_resources != NULL))
       {
@@ -213,8 +213,6 @@ static char *resc_to_string(
         strtol(patlist->al_value,NULL,10));
       }
 
-    sprintf(tmpVal,"%ld",val);
-
     if (isfirst == 1)
       {
       isfirst = 0;
@@ -225,9 +223,27 @@ static char *resc_to_string(
       buflen--; 
       }
 
+    if (pjob == NULL)
+      {
+      }
+    
     strcat(buf,patlist->al_resc);
     strcat(buf,"=");
-    strcat(buf,tmpVal);
+
+    if (pjob == NULL)
+      {
+      strcat(buf,patlist->al_value);
+      }
+    else
+      {
+      /* NOTE:  al_value may contain alpha modifiers */
+
+      val += strtol(patlist->al_value,NULL,10);
+
+      sprintf(tmpVal,"%ld",val);
+
+      strcat(buf,tmpVal);
+      }
 
     buflen -= need;
 
