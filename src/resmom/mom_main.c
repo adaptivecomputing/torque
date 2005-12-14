@@ -3822,7 +3822,7 @@ int rm_request(
 
               if (stat(path_prologp,&s) == -1)
                 {
-                MUStrNCat(&BPtr,&BSpace,"NOTE:  no prolog configured");
+                MUStrNCat(&BPtr,&BSpace,"NOTE:  no prolog configured\n");
                 }
               else
                 {

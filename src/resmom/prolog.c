@@ -236,7 +236,7 @@ static char *resc_to_string(
       }
     else
       {
-      char             tmpBuf[1024];
+      char tmpBuf[1024];
 
       /* NOTE:  al_value may contain alpha modifiers */
 
@@ -253,8 +253,6 @@ static char *resc_to_string(
         strcpy(tmpBuf,"0");
 
         encode_time(&tAttr,NULL,tmpBuf,NULL,0);
-
-        strcat(buf,tmpBuf);
         }
       else
         {
@@ -267,9 +265,9 @@ static char *resc_to_string(
         strcpy(tmpBuf,"0");
 
         from_size(&tSize,tmpBuf); 
-
-        strcat(buf,tmpBuf);
         }
+
+      strcat(buf,tmpBuf);
       }
 
     buflen -= need;
