@@ -1221,7 +1221,10 @@ static u_long setpbsclient(
   }  /* END setpbsclient() */
 
 
+
+
 /* FIXME: we need to handle a non-default port number */
+
 static u_long setpbsserver(
 
   char *value)  /* I */
@@ -1232,7 +1235,8 @@ static u_long setpbsserver(
   struct hostent *host, *gethostbyname();
   struct in_addr  saddr;
   u_long	  ipaddr;
-  char           tmpname[PBS_MAXSERVERNAME+0], *portstr;
+  char            tmpname[PBS_MAXSERVERNAME + 0]; 
+  char           *portstr;
 
   if ((value == NULL) || (value[0] == '\0'))
     {
@@ -1286,7 +1290,6 @@ static u_long setpbsserver(
          (ipaddr & 0x0000ff00) >> 8,
          (ipaddr & 0x000000ff));
 
-
       log_record(PBSEVENT_SYSTEM,PBS_EVENTCLASS_SERVER,id,log_buffer);
 
       return(1);
@@ -1320,7 +1323,8 @@ static u_long setpbsserver(
 
 
 
-static        u_long settmpdir(
+
+static u_long settmpdir(
 
   char *Value)
 
@@ -2088,6 +2092,7 @@ int read_config(
       { "jobstartblocktime", jobstartblocktime },
       { "usecp",        usecp },
       { "wallmult",     wallmult },
+      { "clienthost"    setpbsserver },  /* deprecated */
       { "pbsserver",    setpbsserver },
       { "node_check_script", setnodecheckscript },
       { "node_check_interval", setnodecheckinterval },
@@ -2096,7 +2101,7 @@ int read_config(
       { "down_on_error", setdownonerror },
       { "status_update_time", setstatusupdatetime },
       { "check_poll_time", setcheckpolltime },
-      { "tmpdir", settmpdir },
+      { "tmpdir",       settmpdir },
       { NULL,           NULL } };
 
   FILE	                *conf;
@@ -3719,7 +3724,7 @@ int rm_request(
 
             if (pbs_servername[0][0] == '\0')
               {
-              sprintf(tmpLine,"WARNING:  server not specified (set $pbsserver)\n");
+              sprintf(tmpLine,"WARNING:  server not specified (set $clienthost)\n");
 
               MUStrNCat(&BPtr,&BSpace,tmpLine);
               }
