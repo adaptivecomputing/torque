@@ -134,9 +134,9 @@ BuildRequires: ed
 Conflicts: pbspro, openpbs, openpbs-oscar
 %if %build_gui
 BuildRequires: perl
+%else
+Obsoletes: torque-gui
 %endif
-
-%{!?build_gui:Obsoletes: torque-gui}
 
 %description
 %shared_description
