@@ -2092,7 +2092,7 @@ int read_config(
       { "jobstartblocktime", jobstartblocktime },
       { "usecp",        usecp },
       { "wallmult",     wallmult },
-      { "clienthost"    setpbsserver },  /* deprecated */
+      { "clienthost",   setpbsserver },  /* deprecated - use pbsserver */
       { "pbsserver",    setpbsserver },
       { "node_check_script", setnodecheckscript },
       { "node_check_interval", setnodecheckinterval },
