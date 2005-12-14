@@ -1016,9 +1016,10 @@ int InitUserEnv(
     {
     for (j = 0;j < vstrs->as_usedptr;++j)
       {
-        bld_env_variables(&vtable,vstrs->as_string[j],NULL);
-        if (strncmp(vstrs->as_string[j],variables_else[12],strlen(variables_else[12])) == 0)
-          usertmpdir=1;
+      bld_env_variables(&vtable,vstrs->as_string[j],NULL);
+
+      if (!strncmp(vstrs->as_string[j],variables_else[12],strlen(variables_else[12])))
+        usertmpdir = 1;
       }
     }
 
@@ -1105,7 +1106,7 @@ int InitUserEnv(
   /* setup TMPDIR */
 
   if (!usertmpdir && TTmpDirName(pjob,buf))
-    bld_env_variables(&vtable, variables_else[12], buf);
+    bld_env_variables(&vtable,variables_else[12],buf);
 
   /* passed-in environment for tasks */
 
@@ -1116,7 +1117,7 @@ int InitUserEnv(
     }
 
   return(0);
-}
+  }
 
 
 

@@ -5562,7 +5562,7 @@ int main(
 
     if (setucat(0) < 0) 
       {
-      fprintf(stderr, "cannot put security cat\n");
+      fprintf(stderr,"cannot put security cat\n");
 
       return(2);
       }

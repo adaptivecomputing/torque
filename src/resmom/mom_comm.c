@@ -3924,7 +3924,7 @@ void tm_eof(
   job	*pjob;
   task	*ptask;
 
-  const char *id = "tm_eof";
+  char *id = "tm_eof";
 
   /*
   ** Search though all the jobs looking for this fd.
