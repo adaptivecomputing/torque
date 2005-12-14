@@ -135,13 +135,13 @@ extern attribute_def svr_attr_def[];
 
 void svr_shutdown(
 
-  int type)
+  int type) /* I */
 
   {
-  attribute	  *pattr;
-  job		  *pjob;
-  job		  *pnxt;
-  long		 *state;
+  attribute *pattr;
+  job	    *pjob;
+  job	    *pnxt;
+  long	    *state;
 
   /* Lets start by logging shutdown and saving everything */
 
@@ -149,68 +149,96 @@ void svr_shutdown(
 
   strcpy(log_buffer,msg_shutdown_start);
 
-	if (*state == SV_STATE_SHUTIMM) {
+  if (*state == SV_STATE_SHUTIMM) 
+    {
+    /* if already shuting down, another Immed/sig will force it */
 
-		/* if already shuting down, another Immed/sig will force it */
+    if ((type == SHUT_IMMEDIATE) || (type == SHUT_SIG)) 
+      {
+      *state = SV_STATE_DOWN;
 
-		if ((type == SHUT_IMMEDIATE) || (type == SHUT_SIG)) {
-			*state = SV_STATE_DOWN;
-			(void)strcat(log_buffer, "Forced");
-			log_event(PBSEVENT_SYSTEM|PBSEVENT_ADMIN|PBSEVENT_DEBUG,
-		  		  PBS_EVENTCLASS_SERVER, msg_daemonname,
-				  log_buffer);
-			return;
-		}
-	}
+      strcat(log_buffer,"Forced");
 
-	if (type == SHUT_IMMEDIATE) {
-		*state = SV_STATE_SHUTIMM;
-		(void)strcat(log_buffer, "Immediate");
+      log_event(
+        PBSEVENT_SYSTEM|PBSEVENT_ADMIN|PBSEVENT_DEBUG,
+        PBS_EVENTCLASS_SERVER, 
+        msg_daemonname,
+        log_buffer);
 
-	} else if (type == SHUT_DELAY) {
-		*state = SV_STATE_SHUTDEL;
-		(void)strcat(log_buffer, "Delayed");
+      return;
+      }
+    }
 
-	} else if (type == SHUT_QUICK) {
-		*state = SV_STATE_DOWN; /* set to down to brk pbsd_main loop */
-		(void)strcat(log_buffer, "Quick");
+  if (type == SHUT_IMMEDIATE) 
+    {
+    *state = SV_STATE_SHUTIMM;
+ 
+    strcat(log_buffer,"Immediate");
+    } 
+  else if (type == SHUT_DELAY) 
+    {
+    *state = SV_STATE_SHUTDEL;
 
-	} else {
-		*state = SV_STATE_SHUTIMM;
-		(void)strcat(log_buffer, "By Signal");
-	}
-	log_event(PBSEVENT_SYSTEM|PBSEVENT_ADMIN|PBSEVENT_DEBUG,
-		  PBS_EVENTCLASS_SERVER, msg_daemonname, log_buffer);
+    strcat(log_buffer, "Delayed");
+    } 
+  else if (type == SHUT_QUICK) 
+    {
+    *state = SV_STATE_DOWN; /* set to down to brk pbsd_main loop */
 
-	if (type == SHUT_QUICK || type == SHUT_SIG) /* quick, leave jobs as are */
-		return;
+    strcat(log_buffer, "Quick");
+    } 
+  else 
+    {
+    *state = SV_STATE_SHUTIMM;
 
-	svr_save(&server, SVR_SAVE_QUICK);
+    strcat(log_buffer, "By Signal");
+    }
 
-	pnxt = (job *)GET_NEXT(svr_alljobs);
-	while ((pjob = pnxt) != (job *)0) {
-	    pnxt = (job *)GET_NEXT(pjob->ji_alljobs);
+  log_event(
+    PBSEVENT_SYSTEM|PBSEVENT_ADMIN|PBSEVENT_DEBUG,
+    PBS_EVENTCLASS_SERVER, 
+    msg_daemonname, 
+    log_buffer);
 
-	    if (pjob->ji_qs.ji_state == JOB_STATE_RUNNING) {
+  if ((type == SHUT_QUICK) || (type == SHUT_SIG)) /* quick, leave jobs as are */
+    {
+    return;
+    }
 
-		pjob->ji_qs.ji_svrflags |= JOB_SVFLG_HOTSTART|JOB_SVFLG_HASRUN;
-		pattr = &pjob->ji_wattr[(int)JOB_ATR_chkpnt];
-		if ( (pattr->at_val.at_str) &&
-		      (*pattr->at_val.at_str != 'n') ) {
-			/* do checkpoint of job */
+  svr_save(&server,SVR_SAVE_QUICK);
 
-			if (shutdown_chkpt(pjob) == 0)
-				continue;
-		}
+  pnxt = (job *)GET_NEXT(svr_alljobs);
 
-		/* if not checkpoint (not supported, not allowed, or fails */
-		/* rerun if possible, else kill job			   */
+  while ((pjob = pnxt) != NULL) 
+    {
+    pnxt = (job *)GET_NEXT(pjob->ji_alljobs);
 
-		rerun_or_kill(pjob, msg_on_shutdown);
-	    }
-	}
-	return;
-}
+    if (pjob->ji_qs.ji_state == JOB_STATE_RUNNING) 
+      {
+      pjob->ji_qs.ji_svrflags |= JOB_SVFLG_HOTSTART|JOB_SVFLG_HASRUN;
+
+      pattr = &pjob->ji_wattr[(int)JOB_ATR_chkpnt];
+
+      if ((pattr->at_val.at_str) && (*pattr->at_val.at_str != 'n')) 
+        {
+        /* do checkpoint of job */
+
+        if (shutdown_chkpt(pjob) == 0)
+          continue;
+        }
+
+      /* if no checkpoint (not supported, not allowed, or fails */
+      /* rerun if possible, else kill job */
+
+      rerun_or_kill(pjob,msg_on_shutdown);
+      }
+    }
+
+  return;
+  }
+
+
+
 
 /*
  * shutdown_ack - acknowledge the shutdown (terminate) request
@@ -219,12 +247,20 @@ void svr_shutdown(
  */
 
 void shutdown_ack()
-{
-	if (pshutdown_request) {
-		reply_ack(pshutdown_request);
-		pshutdown_request = 0;
-	}
-}
+
+  {
+  if (pshutdown_request) 
+    {
+    reply_ack(pshutdown_request);
+
+    pshutdown_request = 0;
+    }
+
+  return;
+  }
+
+
+
 
 /*
  * req_shutdown - process request to shutdown the server.
@@ -232,24 +268,39 @@ void shutdown_ack()
  *	Must have operator or administrator privilege.
  */
 
-void req_shutdown(preq)
-	struct batch_request *preq;
-{
-	if ((preq->rq_perm & (ATR_DFLAG_MGWR | ATR_DFLAG_MGRD | ATR_DFLAG_OPRD |
-	     ATR_DFLAG_OPWR)) == 0) {
-		req_reject(PBSE_PERM, 0, preq,NULL,NULL);
-		return;
-	}
+void req_shutdown(
 
-	(void)sprintf(log_buffer, msg_shutdown_op,preq->rq_user,preq->rq_host);
-	log_event(PBSEVENT_SYSTEM|PBSEVENT_ADMIN|PBSEVENT_DEBUG,
-		  PBS_EVENTCLASS_SERVER, msg_daemonname, log_buffer);
+  struct batch_request *preq)
 
-	pshutdown_request = preq;    /* save for reply from main() when done */
+  {
+  if ((preq->rq_perm & 
+      (ATR_DFLAG_MGWR|ATR_DFLAG_MGRD|ATR_DFLAG_OPRD|ATR_DFLAG_OPWR)) == 0) 
+    {
+    req_reject(PBSE_PERM,0,preq,NULL,NULL);
 
-	svr_shutdown(preq->rq_ind.rq_shutdown);
-	return;
-}
+    return;
+    }
+
+  sprintf(log_buffer,msg_shutdown_op,
+    preq->rq_user,
+    preq->rq_host);
+
+  log_event(
+    PBSEVENT_SYSTEM|PBSEVENT_ADMIN|PBSEVENT_DEBUG,
+    PBS_EVENTCLASS_SERVER, 
+    msg_daemonname, 
+    log_buffer);
+
+  pshutdown_request = preq;    /* save for reply from main() when done */
+
+  svr_shutdown(preq->rq_ind.rq_shutdown);
+
+  return;
+  }
+
+
+
+
 
 /*
  * shutdown_chkpt - perform checkpoint of job by issuing a hold request to mom
