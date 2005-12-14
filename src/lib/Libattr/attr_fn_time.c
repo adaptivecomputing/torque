@@ -121,37 +121,48 @@
  */
 
 #define PBS_MAX_TIME (LONG_MAX - 1)
-int decode_time(patr, name, rescn, val)
-	struct attribute *patr;
-	char *name;		/* attribute name */
-	char *rescn;		/* resource name, unused here */
-	char *val;		/* attribute value */
-{
-	int   i;
-	char  msec[4];
-	int   ncolon = 0;
-	char *pc;
-	long  rv = 0;
-	char *workval;
-	char *workvalsv;
 
-	if ((val == (char *)0) || (strlen(val) == 0)) {
-		patr->at_flags = (patr->at_flags & ~ATR_VFLAG_SET) |
-				 ATR_VFLAG_MODIFY;
-		patr->at_val.at_long = 0;
-		return (0);
-	}
+int decode_time(
 
-	workval = strdup(val);
-	workvalsv = workval;
+  struct attribute *patr,  /* I/O (modified) */
+  char             *name,  /* I - attribute name (not used) */
+  char             *rescn, /* I - resource name (not used) */
+  char             *val)   /* I - attribute value */
 
-	for (i = 0; i < 3; ++i)
-		msec[i] = '0';
-	msec[i] = '\0';
+  {
+  int   i;
+  char  msec[4];
+  int   ncolon = 0;
+  char *pc;
+  long  rv = 0;
+  char *workval;
+  char *workvalsv;
 
-	for (pc = workval; *pc; ++pc) {
+  if ((val == NULL) || (strlen(val) == 0)) 
+    {
+    patr->at_flags = (patr->at_flags & ~ATR_VFLAG_SET)|ATR_VFLAG_MODIFY;
 
-		if (*pc == ':') {
+    patr->at_val.at_long = 0;
+
+    /* SUCCESS */
+
+    return(0);
+    }
+
+  /* FORMAT:  HH:MM:SS[.MS] */
+
+  workval = strdup(val);
+  workvalsv = workval;
+
+  for (i = 0;i < 3;++i)
+    msec[i] = '0';
+
+  msec[i] = '\0';
+
+  for (pc = workval;*pc;++pc) 
+    {
+    if (*pc == ':') 
+      {
 			if (++ncolon > 2)
 				goto badval;
 			*pc = '\0';
@@ -166,20 +177,34 @@ int decode_time(patr, name, rescn, val)
 		} else if ( !isdigit((int)*pc) ) { 
 			goto badval;	/* bad value */
 		}
-	}
-	rv = (rv * 60) + atoi(workval);
-	if (rv > PBS_MAX_TIME)
-		goto badval;
-	if (atoi(msec) >= 500)
-		rv++;
-	patr->at_val.at_long = rv;
-	patr->at_flags |= ATR_VFLAG_SET | ATR_VFLAG_MODIFY;
-	(void)free(workvalsv);
-	return (0);
+    }
 
-badval:	(void)free(workvalsv);
-	return (PBSE_BADATVAL);
-}
+  rv = (rv * 60) + atoi(workval);
+
+  if (rv > PBS_MAX_TIME)
+    goto badval;
+
+  if (atoi(msec) >= 500)
+    rv++;
+
+  patr->at_val.at_long = rv;
+  patr->at_flags |= ATR_VFLAG_SET | ATR_VFLAG_MODIFY;
+
+  free(workvalsv);
+
+  /* SUCCESS */
+
+  return(0);
+
+badval:	
+  free(workvalsv);
+
+  return(PBSE_BADATVAL);
+  }
+
+
+
+
 
 /*
  * encode_time - encode attribute of type long into attr_extern
@@ -191,52 +216,82 @@ badval:	(void)free(workvalsv);
  */
 /*ARGSUSED*/
 
+/* NOTE:  if phead not specified, report output via atname (minsize=1024) */
+
 #define CVNBUFSZ 21
 
-int encode_time(attr, phead, atname, rsname, mode)
-	attribute	*attr;	  /* ptr to attribute */
-	list_head	*phead;	  /* head of attrlist list */
-	char		*atname;  /* attribute name */
-	char		*rsname;  /* resource name or null */
-	int		mode;	  /* encode mode, unused here */
-{
-	size_t	  ct;
-	char	  cvnbuf[CVNBUFSZ];
-	int 	  hr;
-	int	  min;
-	long	  n;
-	svrattrl *pal;
-	int	  sec;
-	char	 *pv;
+int encode_time(
 
-	if ( !attr )
-		return (-1);
-	if ( !(attr->at_flags & ATR_VFLAG_SET))
-		return (0);
+  attribute *attr,   /* ptr to attribute (value in attr->at_val.at_long) */
+  list_head *phead,  /* head of attrlist list (optional) */
+  char      *atname, /* attribute name */
+  char      *rsname, /* resource name (optional) */
+  int        mode)   /* encode mode (not used) */
 
-	n   = attr->at_val.at_long;
-	hr  = n / 3600;
-	n   = n % 3600;
-	min = n / 60;
-	n   = n % 60;
-	sec = n;
+  {
+  size_t  ct;
+  char	  cvnbuf[CVNBUFSZ];
+  int 	  hr;
+  int	  min;
+  long	  n;
+  svrattrl *pal;
+  int	  sec;
+  char	 *pv;
 
-	pv = cvnbuf;
-	(void)sprintf(pv, "%02d:%02d:%02d", hr, min, sec);
-	pv += strlen(pv);
+  if (attr == NULL)
+    {
+    /* FAILURE */
 
-	ct = strlen(cvnbuf) + 1;
+    return(-1);
+    }
 
-	pal = attrlist_create(atname, rsname, ct);
-	if (pal == (svrattrl *)0)
-		return (-1);
+  if (!(attr->at_flags & ATR_VFLAG_SET))
+    {
+    return(0);
+    }
 
-	(void)memcpy(pal->al_value, cvnbuf, ct);
-	pal->al_flags = attr->at_flags;
-	append_link(phead, &pal->al_link, pal);
+  n   = attr->at_val.at_long;
+  hr  = n / 3600;
+  n   = n % 3600;
+  min = n / 60;
+  n   = n % 60;
+  sec = n;
+
+  pv = cvnbuf;
+
+  sprintf(pv,"%02d:%02d:%02d", 
+    hr, min, sec);
+
+  pv += strlen(pv);
+
+  ct = strlen(cvnbuf) + 1;
+
+  if (phead != NULL)
+    {
+    pal = attrlist_create(atname,rsname,ct);
+
+    if (pal == NULL)
+      {
+      /* FAILURE */
+
+      return(-1);
+      }
+
+    memcpy(pal->al_value,cvnbuf,ct);
+
+    pal->al_flags = attr->at_flags;
+
+    append_link(phead,&pal->al_link,pal);
+    }
+  else
+    {
+    strcpy(atname,cvnbuf);
+    }
+
+  /* SUCCESS */
 	
-	return (1);
-}
+  return(1);
+  }
 
 /*
  * set_time  - use the function set_l()

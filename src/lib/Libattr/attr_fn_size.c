@@ -121,26 +121,38 @@
  *		*patr elements set
  */
 
-int decode_size(patr, name, rescn, val)
-	struct attribute *patr;
-	char *name;		/* attribute name */
-	char *rescn;		/* resource name, unused here */
-	char *val;		/* attribute value */
-{
-	int to_size A_((char *, struct size_value *));
+int decode_size(
 
-	patr->at_val.at_size.atsv_num   = 0;
-	patr->at_val.at_size.atsv_shift = 0;
-	if ((val != (char *)0) && (strlen(val) != 0)) {
-		if (to_size(val, &patr->at_val.at_size) != 0)
-			return (PBSE_BADATVAL);
-		patr->at_flags |= ATR_VFLAG_SET | ATR_VFLAG_MODIFY;
-	} else {
-		patr->at_flags = (patr->at_flags & ~ATR_VFLAG_SET) |
-				 ATR_VFLAG_MODIFY;
-	}
-	return (0);
-}
+  struct attribute *patr,
+  char             *name,	/* attribute name */
+  char             *rescn,	/* resource name, unused here */
+  char             *val)	/* attribute value */
+
+  {
+  int to_size A_((char *,struct size_value *));
+
+  patr->at_val.at_size.atsv_num   = 0;
+  patr->at_val.at_size.atsv_shift = 0;
+
+  if ((val != NULL) && (val[0] != '\0')) 
+    {
+    if (to_size(val,&patr->at_val.at_size) != 0)
+      {
+      return(PBSE_BADATVAL);
+      }
+
+    patr->at_flags |= ATR_VFLAG_SET | ATR_VFLAG_MODIFY;
+    } 
+  else 
+    {
+    patr->at_flags = (patr->at_flags & ~ATR_VFLAG_SET)|ATR_VFLAG_MODIFY;
+    }
+
+  return(0);
+  }
+
+
+
 
 /*
  * encode_size - encode attribute of type size into attr_extern
@@ -153,36 +165,59 @@ int decode_size(patr, name, rescn, val)
 
 #define CVNBUFSZ 23
 
-int encode_size(attr, phead, atname, rsname, mode)
-	attribute	*attr;	  /* ptr to attribute */
-	list_head	*phead;	  /* head of attrlist list */
-	char		*atname;  /* attribute name */
-	char		*rsname;  /* resource name or null */
-	int		mode;	  /* encode mode, unused here */
-{
-	size_t	     ct;
-	char	     cvnbuf[CVNBUFSZ];
-	svrattrl *pal;
-	void from_size A_((struct size_value *, char *));
+int encode_size(
 
-	if ( !attr )
-		return (-1);
-	if ( !(attr->at_flags & ATR_VFLAG_SET))
-		return (0);
+  attribute *attr,    /* ptr to attribute */
+  list_head *phead,   /* head of attrlist list */
+  char      *atname,  /* attribute name */
+  char      *rsname,  /* resource name (optional) */
+  int        mode)    /* encode mode (not used) */
 
-	from_size(&attr->at_val.at_size, cvnbuf);
-	ct = strlen(cvnbuf) + 1;
+  {
+  size_t    ct;
+  char	    cvnbuf[CVNBUFSZ];
+  svrattrl *pal;
+  void from_size A_((struct size_value *,char *));
 
-	pal = attrlist_create(atname, rsname, ct);
-	if (pal == (svrattrl *)0)
-		return (-1);
+  if (attr == NULL)
+    {
+    /* FAILURE */
 
-	(void)memcpy(pal->al_value, cvnbuf, ct);
-	pal->al_flags = attr->at_flags;
-	append_link(phead, &pal->al_link, pal);
+    return(-1);
+    }
+
+  if (!(attr->at_flags & ATR_VFLAG_SET))
+    {
+    return(0);
+    }
+
+  from_size(&attr->at_val.at_size,cvnbuf);
+
+  ct = strlen(cvnbuf) + 1;
+
+  pal = attrlist_create(atname,rsname,ct);
+
+  if (pal == NULL)
+    {
+    /* FAILURE */
+
+    return(-1);
+    }
+
+  memcpy(pal->al_value,cvnbuf,ct);
+
+  pal->al_flags = attr->at_flags;
+
+  append_link(phead,&pal->al_link,pal);
+
+  /* SUCCESS */
 	
-	return (1);
-}
+  return(1);
+  }
+
+
+
+
 
 /*
  * set_size - set attribute A to attribute B,
@@ -238,6 +273,9 @@ int set_size(attr, new, op)
 	return (0);
 }
 
+
+
+
 /*
  * comp_size - compare two attributes of type size
  *
@@ -273,6 +311,10 @@ int comp_size(attr, with)
 		return (0);
 
 }
+
+
+
+
 
 /*
  * free_size - use free_null to (not) free space
@@ -333,56 +375,73 @@ int normalize_size (a, b, ta, tb)
 }
 
 
+
+
+
 /* 
  * to_size - decode the value string TO a size_value structure
  *
  *	This function decodes a value string into a size_value struct.
  */
 
-int to_size(val, psize)
-	char	 *val;
-	struct size_value *psize;
-{
-	int   havebw = 0;
-	char *pc;
+int to_size(
 
-	psize->atsv_units = ATR_SV_BYTESZ;
-	psize->atsv_num = strtol(val, &pc, 0);
-	if (pc == val)		/* no numeric part */
-		return (PBSE_BADATVAL);
+  char              *val,   /* I */
+  struct size_value *psize) /* O */
 
-	switch (*pc) {
-	    case '\0':	break;
-	    case 'k':
-	    case 'K':	psize->atsv_shift = 10;
-			break;
-	    case 'm':
-	    case 'M':	psize->atsv_shift = 20;
-			break;
-	    case 'g':
-	    case 'G':	psize->atsv_shift = 30;
-			break;
-	    case 't':
-	    case 'T':	psize->atsv_shift = 40;
-			break;
-	    case 'p':
-	    case 'P':	psize->atsv_shift = 50;
-			break;
-	    case 'b':
-	    case 'B':	havebw = 1;
-			break;
-	    case 'w':
-	    case 'W':	havebw = 1;
-			psize->atsv_units = ATR_SV_WORDSZ;
-			break;
-	    default:	return (PBSE_BADATVAL);	 /* invalid string */
-	}
-	if (*pc != '\0') 
-		pc++;
-	if (*pc != '\0') {
-		if (havebw)
-			return (PBSE_BADATVAL);  /* invalid string */
-		switch (*pc) {
+  {
+  int   havebw = 0;
+  char *pc;
+
+  psize->atsv_units = ATR_SV_BYTESZ;
+  psize->atsv_num   = strtol(val,&pc,0);
+
+  if (pc == val)		/* no numeric part */
+    {
+    return(PBSE_BADATVAL);
+    }
+
+  switch (*pc) 
+    {
+    case '\0':	break;
+    case 'k':
+    case 'K':	psize->atsv_shift = 10;
+	break;
+    case 'm':
+    case 'M':	psize->atsv_shift = 20;
+	break;
+    case 'g':
+    case 'G':	psize->atsv_shift = 30;
+	break;
+    case 't':
+    case 'T':	psize->atsv_shift = 40;
+	break;
+    case 'p':
+    case 'P':	psize->atsv_shift = 50;
+	break;
+    case 'b':
+    case 'B':	havebw = 1;
+	break;
+    case 'w':
+    case 'W':	havebw = 1;
+	psize->atsv_units = ATR_SV_WORDSZ;
+	break;
+    default:	return (PBSE_BADATVAL);	 /* invalid string */
+        break;
+    }
+
+  if (*pc != '\0') 
+    pc++;
+
+  if (*pc != '\0') 
+    {
+    if (havebw)
+      {
+      return(PBSE_BADATVAL);  /* invalid string */
+      }
+
+    switch (*pc) 
+      {
 		    case 'b':
 		    case 'B':	break;
 		    case 'w':
@@ -390,34 +449,48 @@ int to_size(val, psize)
 				break;
 		    default:	return (PBSE_BADATVAL);
 		}
-	}
-	return (0);
-}
+    }
+
+  return(0);
+  }
+
+
+
 
 /*
  * from_size - encode a string FROM a size_value structure
  */
 
-void from_size(psize, cvnbuf)
-	struct size_value *psize;
-	char		  *cvnbuf;
-{
+void from_size(
 
-	(void)sprintf(cvnbuf, "%lu", psize->atsv_num);
-	switch (psize->atsv_shift) {
-		case  0:	break;
-		case 10:	strcat(cvnbuf, "k");
-				break;
-		case 20:	strcat(cvnbuf, "m");
-				break;
-		case 30:	strcat(cvnbuf, "g");
-				break;
-		case 40:	strcat(cvnbuf, "t");
-				break;
-		case 50:	strcat(cvnbuf, "p");
-	}
-	if (psize->atsv_units & ATR_SV_WORDSZ)
-		strcat(cvnbuf, "w");
-	else
-		strcat(cvnbuf, "b");
-}
+  struct size_value *psize,  /* I */
+  char              *cvnbuf) /* O (minsize=CVNBUFSZ) */
+
+  {
+  sprintf(cvnbuf,"%lu", 
+    psize->atsv_num);
+
+  switch (psize->atsv_shift) 
+    {
+    case  0:	/*NO-OP*/
+      break;
+    case 10:	strcat(cvnbuf, "k");
+      break;
+    case 20:	strcat(cvnbuf, "m");
+      break;
+    case 30:	strcat(cvnbuf, "g");
+      break;
+    case 40:	strcat(cvnbuf, "t");
+      break;
+    case 50:	strcat(cvnbuf, "p");
+      break;
+    }
+
+  if (psize->atsv_units & ATR_SV_WORDSZ)
+    strcat(cvnbuf,"w");
+  else
+    strcat(cvnbuf,"b");
+
+  return;
+  }
+
