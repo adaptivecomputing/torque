@@ -465,8 +465,11 @@ void add_conn(
       sock,
       num_connections);
 
-    log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_SERVER,
-                          "add_conn", log_buffer);
+    log_event(
+      PBSEVENT_DEBUG, 
+      PBS_EVENTCLASS_SERVER,
+      "add_conn", 
+      tmpLine);
     }  /* END if (LOGLEVEL >= 3) */
 
   FD_SET(sock,&readset);
@@ -539,8 +542,11 @@ void close_conn(
       sd,
       num_connections);
 
-    log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_SERVER,
-                          "close_conn", log_buffer);
+    log_event(
+      PBSEVENT_DEBUG, 
+      PBS_EVENTCLASS_SERVER,
+      "close_conn", 
+      tmpLine);
     }  /* END if (LOGLEVEL >= 3) */
 
   return;

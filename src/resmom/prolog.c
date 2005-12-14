@@ -566,7 +566,8 @@ int run_pelog(
 
         fsync(2);
         }
-    }
+      }
+
     /* for both prolog and epilog */
 
     arg[0] = pelog;
@@ -575,6 +576,7 @@ int run_pelog(
     arg[3] = pjob->ji_wattr[(int)JOB_ATR_egroup].at_val.at_str;
     arg[4] = pjob->ji_wattr[(int)JOB_ATR_jobname].at_val.at_str;
 
+    /* NOTE:  inside child */
 
     if (which == PE_EPILOG) 
       {
@@ -644,7 +646,6 @@ int run_pelog(
 
     if (TTmpDirName(pjob,buf))
       {
-
       const char *envname = "TMPDIR=";
       char *envstr;
 
@@ -663,19 +664,20 @@ int run_pelog(
 
     /* Set PBS_SCHED_HINT */
     {
-      char *envname = "PBS_SCHED_HINT";
-      char *envval;
-      char *envstr;
-      extern char *__get_variable(job *,char *);
+    char *envname = "PBS_SCHED_HINT";
+    char *envval;
+    char *envstr;
+    extern char *__get_variable(job *,char *);
   
-      if ((envval = __get_variable(pjob,envname)) != NULL)
-        {
-        envstr = malloc((strlen(envname) + strlen(envval) + 2) * sizeof(char));
+    if ((envval = __get_variable(pjob,envname)) != NULL)
+      {
+      envstr = malloc((strlen(envname) + strlen(envval) + 2) * sizeof(char));
 
-        sprintf(envstr,"%s=%s",envname,envval);
-        putenv(envstr);
-        }
+      sprintf(envstr,"%s=%s",envname,envval);
+      putenv(envstr);
+      }
     }
+
     execv(pelog,arg);
 
     sprintf(log_buffer,"execv of %s failed: %s\n",

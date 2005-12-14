@@ -229,7 +229,7 @@ int task_save(
 
     log_record(
       PBSEVENT_JOB,
-      PBS_EVENTCLASS_JOB,
+      PBS_EVENTCLASS_SERVER,
       id,
       log_buffer);
     }
@@ -1222,7 +1222,7 @@ void im_eof(
 
   log_record(
     PBSEVENT_SYSTEM,
-    PBS_EVENTCLASS_NODE,
+    PBS_EVENTCLASS_SERVER,
     id,
     log_buffer);
 
@@ -1630,7 +1630,7 @@ void im_request(
 
     log_record(
       PBSEVENT_SYSTEM,
-      PBS_EVENTCLASS_NODE,
+      PBS_EVENTCLASS_SERVER,
       id,
       log_buffer);
     }
@@ -3921,9 +3921,10 @@ void tm_eof(
   int fd)
 
   {
-
   job	*pjob;
   task	*ptask;
+
+  const char *id = "tm_eof";
 
   /*
   ** Search though all the jobs looking for this fd.
@@ -3961,8 +3962,8 @@ void tm_eof(
     {
     log_record(
       PBSEVENT_JOB,
-      PBS_EVENTCLASS_JOB,
-      pjob->ji_qs.ji_jobid,
+      PBS_EVENTCLASS_SERVER,
+      id,
       "no matching task found");
     }
 
