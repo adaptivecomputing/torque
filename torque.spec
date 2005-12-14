@@ -117,7 +117,7 @@ blow up
 %define server_nameflags --set-default-server=%(echo %{server_name} | sed -e 's/=//')
 
 
-%define shared_description %(echo -e "TORQUE (Tera-scale Open-source Resource and QUEue manager) is a resource \\nmanager providing control over batch jobs and distributed compute nodes.  \\nTorque is based on OpenPBS version 2.3.12 and incorporates scalability, \\nfault tolerance, and feature extension patches provided by USC, NCSA, OSC, \\nthe U.S. Dept of Energy, Sandia, PNNL, U of Buffalo, TeraGrid, and many \\nother leading edge HPC organizations.\\n\\nThis build was configured with:\\n  %{fsyncflags}\\n  %{syslogflags}\\n  %{tclflags}\\n  %{rppflags}\\n  %{server_nameflags}\\n %{scpflags}\\n")
+%define shared_description %(echo -e "TORQUE (Tera-scale Open-source Resource and QUEue manager) is a resource \\nmanager providing control over batch jobs and distributed compute nodes.  \\nTorque is based on OpenPBS version 2.3.12 and incorporates scalability, \\nfault tolerance, and feature extension patches provided by USC, NCSA, OSC, \\nthe U.S. Dept of Energy, Sandia, PNNL, U of Buffalo, TeraGrid, and many \\nother leading edge HPC organizations.\\n\\nThis build was configured with:\\n  %{fsyncflags}\\n  %{syslogflags}\\n  %{tclflags}\\n  %{rppflags}\\n  %{server_nameflags}\\n %{guiflags}\\n %{scpflags}\\n")
 
 
 Summary: Tera-scale Open-source Resource and QUEue manager
@@ -132,6 +132,9 @@ BuildRoot: %{_tmppath}/%{name}-%{version}-buildroot
 Provides: pbs
 BuildRequires: ed
 Conflicts: pbspro, openpbs, openpbs-oscar
+%if %build_gui
+BuildRequires: perl
+%endif
 
 %{!?build_gui:Obsoletes: torque-gui}
 
@@ -177,6 +180,12 @@ done
 # Kind of gross, but it's easier to get maui/mpiexec/etc to build with these
 %__ln_s . $RPM_BUILD_ROOT%{torquelibdir}/lib
 %__ln_s %{_includedir} $RPM_BUILD_ROOT%{torquelibdir}/include
+
+%if %build_gui
+pat=$(echo $RPM_BUILD_ROOT | sed 's/\// /g')
+perl -pi -e "s/$pat//" $RPM_BUILD_ROOT%{torquelibdir}/xpbsmon/tclIndex
+perl -pi -e "s/$pat//" $RPM_BUILD_ROOT%{torquelibdir}/xpbs/tclIndex
+%endif
 
 
 %{__mkdir_p} $RPM_BUILD_ROOT%{_initrddir}
