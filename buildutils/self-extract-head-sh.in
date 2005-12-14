@@ -65,6 +65,8 @@ if test $extract -lt 1 -a $listfiles -lt 1 -a $install -lt 1;then
    exit 1
 fi
 
+# make sure any leading directories are created with world-readable perms
+umask 022
 
 #
 # start doing real work
