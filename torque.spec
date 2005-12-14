@@ -15,6 +15,7 @@
 #   --with[out] syslog
 #   --with[out] rpp
 #   --with[out] filesync
+#   --with[out] wordexp
 #   --with[out] gui
 #   --with tcl=/path
 #   --without tcl
@@ -38,6 +39,7 @@
 %define use_rpp 1
 %define use_fsync 0
 %define use_tcl 0
+%define use_wordexp 0
 %define build_gui 0
 
 # these are non-defaults, but fit better into most RPM-based systems
@@ -55,6 +57,7 @@
 %{?_with_rpp: %{?_without_rpp: %{error: both _with_rpp and _without_rpp}}}
 %{?_with_scp: %{?_without_scp: %{error: both _with_scp and _without_scp}}}
 %{?_with_tcl: %{?_without_tcl: %{error: both _with_tcl and _without_tcl}}}
+%{?_with_wordexp: %{?_without_wordexp: %{error: both _with_wordexp and _without_wordexp}}}
 %{?_with_gui: %{?_without_gui: %{error: both _with_gui and _without_gui}}}
 
 # did we find any --with options?
@@ -63,6 +66,7 @@
 %{?_with_rpp: %define use_rpp 1}
 %{?_with_scp: %define use_scp 1}
 %{?_with_tcl: %define use_tcl 1}
+%{?_with_wordexp: %define use_wordexp 1}
 %{?_with_gui: %define build_gui 1}
 
 %{?_with_homedir:%define torquehomedir %(set -- %{_with_homedir}; echo $1 | grep -v with)}
@@ -76,6 +80,7 @@
 %{?_without_rpp: %define use_rpp 0}
 %{?_without_scp: %define use_scp 0}
 %{?_without_tcl: %define use_tcl 0}
+%{?_without_wordexp: %define use_wordexp 0}
 %{?_without_gui: %define build_gui 0}
 
 # Set up all options as disabled
@@ -84,6 +89,7 @@
 %define rppflags    --disable-rpp
 %define scpflags    %{nil}
 %define tclflags    --without-tcl --without-tclx
+%define fsyncflags  --without-wordexp
 %define guiflags    --disable-gui
 
 # Enable options that we want
@@ -98,6 +104,9 @@
 %endif
 %if %use_scp
 %define scpflags    --with-scp%{?_with_scp:%(set -- %{_with_scp}; echo $1 | grep -v with)}
+%endif
+%if %use_wordexp
+%define wordexpflags  --with-wordexp
 %endif
 
 # dealing with tcl and gui is way too complicated
@@ -117,7 +126,7 @@ blow up
 %define server_nameflags --set-default-server=%(echo %{server_name} | sed -e 's/=//')
 
 
-%define shared_description %(echo -e "TORQUE (Tera-scale Open-source Resource and QUEue manager) is a resource \\nmanager providing control over batch jobs and distributed compute nodes.  \\nTorque is based on OpenPBS version 2.3.12 and incorporates scalability, \\nfault tolerance, and feature extension patches provided by USC, NCSA, OSC, \\nthe U.S. Dept of Energy, Sandia, PNNL, U of Buffalo, TeraGrid, and many \\nother leading edge HPC organizations.\\n\\nThis build was configured with:\\n  %{fsyncflags}\\n  %{syslogflags}\\n  %{tclflags}\\n  %{rppflags}\\n  %{server_nameflags}\\n %{guiflags}\\n %{scpflags}\\n")
+%define shared_description %(echo -e "TORQUE (Tera-scale Open-source Resource and QUEue manager) is a resource \\nmanager providing control over batch jobs and distributed compute nodes.  \\nTorque is based on OpenPBS version 2.3.12 and incorporates scalability, \\nfault tolerance, and feature extension patches provided by USC, NCSA, OSC, \\nthe U.S. Dept of Energy, Sandia, PNNL, U of Buffalo, TeraGrid, and many \\nother leading edge HPC organizations.\\n\\nThis build was configured with:\\n  %{fsyncflags}\\n  %{syslogflags}\\n  %{tclflags}\\n  %{rppflags}\\n  %{server_nameflags}\\n %{guiflags}\\n %{wordexpflags}\\n %{scpflags}\\n")
 
 
 Summary: Tera-scale Open-source Resource and QUEue manager
@@ -162,7 +171,7 @@ done
  --includedir=%{_includedir} --mandir=%{torquemandir} --libdir=%{torquelibdir} \
  --enable-server --enable-clients --enable-mom --enable-docs %{guiflags} \
  --set-server-home=%{torquehomedir} %{server_nameflags} \
- %{fsyncflags} %{syslogflags} %{tclflags} %{rppflags} %{scpflags}
+ %{fsyncflags} %{syslogflags} %{tclflags} %{rppflags} %{scpflags} %{wordexpflags}
 
 
 
