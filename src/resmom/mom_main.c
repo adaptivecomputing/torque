@@ -5665,7 +5665,7 @@ int main(
     exit(1);
     }
 
-  if (pbs_servername[0] == '\0')
+  if (pbs_servername[0][0] == '\0')
     {
     /* no $pbsserver paramters in config, use server_name as last-resort */
     if ((file = fopen(path_server_name,"r")) != NULL)
