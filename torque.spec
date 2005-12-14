@@ -89,7 +89,7 @@
 %define rppflags    --disable-rpp
 %define scpflags    %{nil}
 %define tclflags    --without-tcl --without-tclx
-%define fsyncflags  --without-wordexp
+%define wordexpflags  --without-wordexp
 %define guiflags    --disable-gui
 
 # Enable options that we want
