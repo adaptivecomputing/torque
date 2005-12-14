@@ -1665,6 +1665,14 @@ if test "$PBS_MACH" = darwin; then
 cat >> confdefs.h <<EOF
 #define __TDARWIN
 EOF
+
+case `uname -r` in
+  8*) cat >> confdefs.h <<EOF
+#define __TDARWIN_8
+EOF
+;;
+esac
+
 fi
 
 if test "$PBS_MACH" = solaris5; then
