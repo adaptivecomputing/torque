@@ -1148,7 +1148,9 @@ int main(
     if (server.sv_attr[(int)SRV_ATR_PollJobs].at_val.at_long && 
        (last_jobstat_time + JobStatRate <= time_now))
       {
-      for (pjob = (job *)GET_NEXT(svr_alljobs);pjob;pjob = (job *)GET_NEXT(pjob->ji_alljobs)) 
+      for (pjob = (job *)GET_NEXT(svr_alljobs);
+           pjob != NULL;
+           pjob = (job *)GET_NEXT(pjob->ji_alljobs)) 
         {
         if (pjob->ji_qs.ji_substate == JOB_SUBSTATE_RUNNING)
           {
@@ -1156,12 +1158,12 @@ int main(
 
           when = pjob->ji_wattr[(int)JOB_ATR_qrank].at_val.at_long % JobStatRate;
     
-          set_task(WORK_Timed,when+time_now,poll_job_task,pjob);
+          set_task(WORK_Timed,when + time_now,poll_job_task,pjob);
           }
         }
 
       last_jobstat_time = time_now;
-      }
+      }  /* END if (...) */
 
     if (*state == SV_STATE_SHUTSIG) 
       svr_shutdown(SHUT_SIG);	/* caught sig */
@@ -1174,22 +1176,24 @@ int main(
     if ((*state > SV_STATE_RUN) &&
         (server.sv_jobstates[JOB_STATE_RUNNING] == 0) &&
         (server.sv_jobstates[JOB_STATE_EXITING] == 0) &&
-       ((void *)GET_NEXT(task_list_event) == (void *)0))
+        (GET_NEXT(task_list_event) == NULL))
       {
       *state = SV_STATE_DOWN;
       }
-    }
+    }    /* END while (*state != SV_STATE_DOWN) */
 
   svr_save(&server,SVR_SAVE_FULL);	/* final recording of server */
 
-  track_save((struct work_task *)0);	/* save tracking data	     */
+  track_save(NULL);                     /* save tracking data */
 
   /* save any jobs that need saving */
 
-  for (pjob = (job *)GET_NEXT(svr_alljobs);pjob;pjob = (job *)GET_NEXT(pjob->ji_alljobs)) 
+  for (pjob = (job *)GET_NEXT(svr_alljobs);
+       pjob != NULL;
+       pjob = (job *)GET_NEXT(pjob->ji_alljobs)) 
     {
     if (pjob->ji_modified)
-      job_save(pjob, SAVEJOB_FULL);
+      job_save(pjob,SAVEJOB_FULL);
     }
 
   if (svr_chngNodesfile) 

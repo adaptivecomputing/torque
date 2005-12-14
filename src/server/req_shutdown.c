@@ -179,19 +179,19 @@ void svr_shutdown(
     {
     *state = SV_STATE_SHUTDEL;
 
-    strcat(log_buffer, "Delayed");
+    strcat(log_buffer,"Delayed");
     } 
   else if (type == SHUT_QUICK) 
     {
     *state = SV_STATE_DOWN; /* set to down to brk pbsd_main loop */
 
-    strcat(log_buffer, "Quick");
+    strcat(log_buffer,"Quick");
     } 
   else 
     {
     *state = SV_STATE_SHUTIMM;
 
-    strcat(log_buffer, "By Signal");
+    strcat(log_buffer,"By Signal");
     }
 
   log_event(
