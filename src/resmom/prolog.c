@@ -139,7 +139,7 @@ const char *PPEType[] = {
 static char *resc_to_string(
 
   job       *pjob,      /* I (optional - if specified, report total job resources) */
-  attribute *pattr,	/* I the attribute to convert */
+  attribute *pattr,	/* I array of attributes to convert */
   char      *buf,	/* O the buffer into which to convert */
   int	     buflen)	/* I the length of the above buffer */
 
@@ -236,13 +236,40 @@ static char *resc_to_string(
       }
     else
       {
+      char             tmpBuf[1024];
+
       /* NOTE:  al_value may contain alpha modifiers */
 
-      val += strtol(patlist->al_value,NULL,10);
+      if (!strcmp(patlist->al_resc,"cput"))
+        {
+        struct attribute tAttr;
 
-      sprintf(tmpVal,"%ld",val);
+        decode_time(&tAttr,NULL,NULL,patlist->al_value);
 
-      strcat(buf,tmpVal);
+        val += tAttr.at_val.at_long;
+
+        tAttr.at_val.at_long = val;
+
+        strcpy(tmpBuf,"0");
+
+        encode_time(&tAttr,NULL,tmpBuf,NULL,0);
+
+        strcat(buf,tmpBuf);
+        }
+      else
+        {
+        struct size_value tSize;
+
+        to_size(patlist->al_value,&tSize);
+
+        tSize.atsv_num += (val >> tSize.atsv_shift);
+
+        strcpy(tmpBuf,"0");
+
+        from_size(&tSize,tmpBuf); 
+
+        strcat(buf,tmpBuf);
+        }
       }
 
     buflen -= need;
