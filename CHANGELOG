@@ -27,7 +27,8 @@
   remtree() now deals with symlinks correctly (USC)
   enable configurable mail domain (Sandia)
   modify epilog to report full job resource utilization
-  configure now handles darwin8
+  configure now handles darwin8 (USC)
+  configure now handles --with-scp=path and --without-scp correctly (USC)
 
 2.0.0p2
 
