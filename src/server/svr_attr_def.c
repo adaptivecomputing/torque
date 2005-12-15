@@ -614,6 +614,7 @@ attribute_def svr_attr_def[] = {
 	free_str,
 	NULL_FUNC,
 	READ_ONLY,
+	ATR_TYPE_STR,
 	PARENT_TYPE_SERVER
     }
 };

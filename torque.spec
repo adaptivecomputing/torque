@@ -156,7 +156,7 @@ This package holds just a few shared files and directories.
 
 
 %build
-CFLAGS="-fPIC %optflags -Wall -std=gnu99  -pedantic -D_GNU_SOURCE"
+CFLAGS="-fPIC %optflags -Wall -std=gnu99 -pedantic -D_GNU_SOURCE"
 export CFLAGS
 
 # The config.guess in torque *was* ancient, but let's do it anyways
@@ -171,6 +171,7 @@ done
  --includedir=%{_includedir} --mandir=%{torquemandir} --libdir=%{torquelibdir} \
  --enable-server --enable-clients --enable-mom --enable-docs %{guiflags} \
  --set-server-home=%{torquehomedir} %{server_nameflags} \
+ --set-cflags="$CFLAGS" \
  %{fsyncflags} %{syslogflags} %{tclflags} %{rppflags} %{scpflags} %{wordexpflags}
 
 
