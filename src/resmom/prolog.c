@@ -119,6 +119,7 @@ static int run_exit;
 
 extern int pe_input A_((char *));
 extern int TTmpDirName A_((job *,char *tmpdir));
+extern void encode_used A_((job *,list_head *));
 
 /* END extern prototypes */
 
@@ -139,7 +140,7 @@ const char *PPEType[] = {
 static char *resc_to_string(
 
   job       *pjob,      /* I (optional - if specified, report total job resources) */
-  attribute *pattr,	/* I array of attributes to convert */
+  int        aindex,    /* I which attribute to convert */
   char      *buf,	/* O the buffer into which to convert */
   int	     buflen)	/* I the length of the above buffer */
 
@@ -147,12 +148,7 @@ static char *resc_to_string(
   int       need;
   svrattrl *patlist;
   list_head svlist;
-
-  long      val;
-
-  char      tmpVal[1024];
-
-  int       i;
+  attribute *pattr;
 
   int       isfirst = 1;
 
@@ -160,10 +156,27 @@ static char *resc_to_string(
 
   *buf = '\0';
 
-  if (encode_resc(pattr,&svlist,"x",NULL,ATR_ENCODE_CLIENT) <= 0)
+  pattr=&pjob->ji_wattr[aindex];
+
+  /* pack the list of resources into svlist */
+
+  if (aindex==JOB_ATR_resource)
+    {
+    if (encode_resc(pattr,&svlist,"x",NULL,ATR_ENCODE_CLIENT) <= 0)
+      {
+      return(buf);
+      }
+    }
+  else if (aindex==JOB_ATR_resc_used)
+    {
+    encode_used(pjob,&svlist);
+    }
+  else
     {
     return(buf);
     }
+
+  /* unpack svlist into a comma-delimited string */
 
   patlist = (svrattrl *)GET_NEXT(svlist);
 
@@ -178,39 +191,11 @@ static char *resc_to_string(
       continue;
       }
 
-    val = 0;
-
-    if ((pjob != NULL) && (pjob->ji_resources != NULL))
-      {
-      if (!strcmp(patlist->al_resc,"cput"))
-        {
-        for (i = 0;i < pjob->ji_numnodes - 1;i++)
-          {
-          val += pjob->ji_resources[i].nr_cput;
-          }
-        }
-      else if (!strcmp(patlist->al_resc,"mem"))
-        {
-        for (i = 0;i < pjob->ji_numnodes - 1;i++)
-          {
-          val += pjob->ji_resources[i].nr_mem;
-          }
-        }
-      else if (!strcmp(patlist->al_resc,"vmem"))
-        {
-        for (i = 0;i < pjob->ji_numnodes - 1;i++)
-          {
-          val += pjob->ji_resources[i].nr_vmem;
-          }
-        }
-      }
-
     if (LOGLEVEL >= 7)
       {
-      fprintf(stderr,"Epilog:  %s=%ld (M: %ld)\n",
+      fprintf(stderr,"Epilog:  %s=%s\n",
         patlist->al_resc,
-        val,
-        strtol(patlist->al_value,NULL,10));
+        patlist->al_value);
       }
 
     if (isfirst == 1)
@@ -223,57 +208,16 @@ static char *resc_to_string(
       buflen--; 
       }
 
-    if (pjob == NULL)
-      {
-      }
-    
     strcat(buf,patlist->al_resc);
     strcat(buf,"=");
-
-    if (pjob == NULL)
-      {
-      strcat(buf,patlist->al_value);
-      }
-    else
-      {
-      char tmpBuf[1024];
-
-      /* NOTE:  al_value may contain alpha modifiers */
-
-      if (!strcmp(patlist->al_resc,"cput"))
-        {
-        struct attribute tAttr;
-
-        decode_time(&tAttr,NULL,NULL,patlist->al_value);
-
-        val += tAttr.at_val.at_long;
-
-        tAttr.at_val.at_long = val;
-
-        strcpy(tmpBuf,"0");
-
-        encode_time(&tAttr,NULL,tmpBuf,NULL,0);
-        }
-      else
-        {
-        struct size_value tSize;
-
-        to_size(patlist->al_value,&tSize);
-
-        tSize.atsv_num += (val >> tSize.atsv_shift);
-
-        strcpy(tmpBuf,"0");
-
-        from_size(&tSize,tmpBuf); 
-        }
-
-      strcat(buf,tmpBuf);
-      }
+    strcat(buf,patlist->al_value);
 
     buflen -= need;
 
     patlist = (svrattrl *)GET_NEXT(patlist->al_link);
     }  /* END while (patlist != NULL) */
+
+  free_attrlist(&svlist);
 
   return(buf);
   }  /* END resc_to_string() */
@@ -621,21 +565,14 @@ int run_pelog(
 
     if (which == PE_EPILOG) 
       {
-      resource jres;
-
       /* for epilog only */
 
       sprintf(sid,"%ld",
         pjob->ji_wattr[(int)JOB_ATR_session_id].at_val.at_long);
 
       arg[5] = sid;
-      arg[6] = resc_to_string(NULL,&pjob->ji_wattr[(int)JOB_ATR_resource],resc_list,sizeof(resc_list));
-
-#ifdef FULLJOB
-      arg[7] = resc_to_string(pjob,&pjob->ji_wattr[(int)JOB_ATR_resc_used],resc_used,sizeof(resc_used)); 
-#else
-      arg[7] = resc_to_string(NULL,&pjob->ji_wattr[(int)JOB_ATR_resc_used],resc_used,sizeof(resc_used));
-#endif
+      arg[6] = resc_to_string(pjob,(int)JOB_ATR_resource,resc_list,sizeof(resc_list));
+      arg[7] = resc_to_string(pjob,(int)JOB_ATR_resc_used,resc_used,sizeof(resc_used)); 
       arg[8] = pjob->ji_wattr[(int)JOB_ATR_in_queue].at_val.at_str;
       arg[9] = pjob->ji_wattr[(int)JOB_ATR_account].at_val.at_str;
       arg[10] = NULL;
@@ -644,7 +581,7 @@ int run_pelog(
       {
       /* prolog */
 
-      arg[5] = resc_to_string(NULL,&pjob->ji_wattr[(int)JOB_ATR_resource],resc_list,sizeof(resc_list));
+      arg[5] = resc_to_string(pjob,(int)JOB_ATR_resource,resc_list,sizeof(resc_list));
       arg[6] = pjob->ji_wattr[(int)JOB_ATR_in_queue].at_val.at_str;
       arg[7] = pjob->ji_wattr[(int)JOB_ATR_account].at_val.at_str;
       arg[8] = NULL;		

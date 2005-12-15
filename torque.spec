@@ -89,7 +89,7 @@
 %define rppflags    --disable-rpp
 %define scpflags    %{nil}
 %define tclflags    --without-tcl --without-tclx
-%define wordexpflags  --without-wordexp
+%define wordexpflags  --disable-wordexp
 %define guiflags    --disable-gui
 
 # Enable options that we want
@@ -106,7 +106,7 @@
 %define scpflags    --with-scp%{?_with_scp:%(set -- %{_with_scp}; echo $1 | grep -v with)}
 %endif
 %if %use_wordexp
-%define wordexpflags  --with-wordexp
+%define wordexpflags  --enable-wordexp
 %endif
 
 # dealing with tcl and gui is way too complicated
