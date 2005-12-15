@@ -9,7 +9,6 @@
 #   --with server_name=hostname
 #   --with homedir=directory
 #   --with libdir=directory
-#   --with mandir=directory
 #   --with scp[=path]
 #   --without scp
 #   --with[out] syslog
@@ -45,7 +44,6 @@
 # these are non-defaults, but fit better into most RPM-based systems
 %define torquehomedir %{_localstatedir}/lib/%{name}
 %define torquelibdir  %{_libdir}/%{name}
-%define torquemandir  %{_mandir}
 
 
 
@@ -71,7 +69,6 @@
 
 %{?_with_homedir:%define torquehomedir %(set -- %{_with_homedir}; echo $1 | grep -v with)}
 %{?_with_libdir:%define torquelibdir %(set -- %{_with_libdir}; echo $1 | grep -v with)}
-%{?_with_mandir:%define torquemandir %(set -- %{_with_mandir}; echo $1 | grep -v with)}
 
 
 # did we find any --without options?
@@ -126,7 +123,7 @@ blow up
 %define server_nameflags --set-default-server=%(echo %{server_name} | sed -e 's/=//')
 
 
-%define shared_description %(echo -e "TORQUE (Tera-scale Open-source Resource and QUEue manager) is a resource \\nmanager providing control over batch jobs and distributed compute nodes.  \\nTorque is based on OpenPBS version 2.3.12 and incorporates scalability, \\nfault tolerance, and feature extension patches provided by USC, NCSA, OSC, \\nthe U.S. Dept of Energy, Sandia, PNNL, U of Buffalo, TeraGrid, and many \\nother leading edge HPC organizations.\\n\\nThis build was configured with:\\n  %{fsyncflags}\\n  %{syslogflags}\\n  %{tclflags}\\n  %{rppflags}\\n  %{server_nameflags}\\n %{guiflags}\\n %{wordexpflags}\\n %{scpflags}\\n")
+%define shared_description %(echo -e "TORQUE (Tera-scale Open-source Resource and QUEue manager) is a resource \\nmanager providing control over batch jobs and distributed compute nodes.  \\nTorque is based on OpenPBS version 2.3.12 and incorporates scalability, \\nfault tolerance, and feature extension patches provided by USC, NCSA, OSC, \\nthe U.S. Dept of Energy, Sandia, PNNL, U of Buffalo, TeraGrid, and many \\nother leading edge HPC organizations.\\n\\nThis build was configured with:\\n  %{fsyncflags}\\n  %{syslogflags}\\n  %{tclflags}\\n  %{rppflags}\\n  %{server_nameflags}\\n  %{guiflags}\\n  %{wordexpflags}\\n  %{scpflags}\\n")
 
 
 Summary: Tera-scale Open-source Resource and QUEue manager
@@ -168,10 +165,9 @@ done
 # autoconf and friends to work with torque, so we can't use the
 # various configure macros
 ./configure --prefix=%{_prefix} --sbindir=%{_sbindir} --bindir=%{_bindir} \
- --includedir=%{_includedir} --mandir=%{torquemandir} --libdir=%{torquelibdir} \
+ --includedir=%{_includedir} --mandir=%{_mandir} --libdir=%{torquelibdir} \
  --enable-server --enable-clients --enable-mom --enable-docs %{guiflags} \
- --set-server-home=%{torquehomedir} %{server_nameflags} \
- --set-cflags="$CFLAGS" \
+ --set-server-home=%{torquehomedir} %{server_nameflags} --set-cflags="$CFLAGS" \
  %{fsyncflags} %{syslogflags} %{tclflags} %{rppflags} %{scpflags} %{wordexpflags}
 
 
@@ -185,19 +181,31 @@ done
 %install
 [ "$RPM_BUILD_ROOT" != "/" ] && %{__rm} -rf "$RPM_BUILD_ROOT"
 
-%{makeinstall} libdir=$RPM_BUILD_ROOT%{torquelibdir} PBS_SERVER_HOME=$RPM_BUILD_ROOT%{torquehomedir}
+# we don't use makeinstall because we don't support DESTDIR (as happens on Suse)
+%{__make} \
+    sbindir=$RPM_BUILD_ROOT%{_sbindir} \
+    bindir=$RPM_BUILD_ROOT%{_bindir} \
+    includedir=$RPM_BUILD_ROOT%{_includedir} \
+    mandir=$RPM_BUILD_ROOT%{_mandir} \
+    libdir=$RPM_BUILD_ROOT%{torquelibdir} \
+    PBS_SERVER_HOME=$RPM_BUILD_ROOT%{torquehomedir} \
+  install
 
 # Kind of gross, but it's easier to get maui/mpiexec/etc to build with these
 %__ln_s . $RPM_BUILD_ROOT%{torquelibdir}/lib
 %__ln_s %{_includedir} $RPM_BUILD_ROOT%{torquelibdir}/include
 
+# Correct the tclIndex files that are broken when installing into a fakeroot
 %if %build_gui
 pat=$(echo $RPM_BUILD_ROOT | sed 's/\// /g')
-perl -pi -e "s/$pat//" $RPM_BUILD_ROOT%{torquelibdir}/xpbsmon/tclIndex
-perl -pi -e "s/$pat//" $RPM_BUILD_ROOT%{torquelibdir}/xpbs/tclIndex
+for indexfile in $RPM_BUILD_ROOT%{torquelibdir}/*/tclIndex; do
+  %__sed -e "s/$pat//" < $indexfile > tcltmp
+  %__cat < tcltmp > $indexfile
+done
+%__rm -f tcltmp
 %endif
 
-
+# install initscripts
 %{__mkdir_p} $RPM_BUILD_ROOT%{_initrddir}
 for initscript in pbs_mom pbs_sched pbs_server; do
   %__sed -e 's|^PBS_PREFIX=.*|PBS_PREFIX=%{_prefix}|' \
@@ -246,7 +254,7 @@ This package holds the documentation files
 
 %files docs
 %defattr(-, root, root)
-%{torquemandir}/man*/*
+%{_mandir}/man*/*
 
 %package scheduler
 Group: System Environment/Daemons
