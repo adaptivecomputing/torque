@@ -138,6 +138,8 @@ BuildRoot: %{_tmppath}/%{name}-%{version}-buildroot
 Provides: pbs
 BuildRequires: ed
 Conflicts: pbspro, openpbs, openpbs-oscar
+Obsoletes: scatorque
+
 %if %build_gui
 BuildRequires: perl
 %else
