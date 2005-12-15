@@ -3724,7 +3724,7 @@ int rm_request(
 
             if (pbs_servername[0][0] == '\0')
               {
-              sprintf(tmpLine,"WARNING:  server not specified (set $clienthost)\n");
+              sprintf(tmpLine,"WARNING:  server not specified (set $pbsserver)\n");
 
               MUStrNCat(&BPtr,&BSpace,tmpLine);
               }
