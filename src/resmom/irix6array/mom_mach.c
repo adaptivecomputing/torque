@@ -199,6 +199,7 @@ extern	double	cputfactor;
 extern	double	wallfactor;
 extern  long    system_ncpus;
 extern char	*loadave	A_((struct rm_attribute *attrib));
+extern  int     ignwalltime;
 
 /*
 ** local functions and data

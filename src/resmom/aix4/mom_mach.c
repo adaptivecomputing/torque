@@ -169,6 +169,7 @@ extern	char	*ret_string;
 extern 	double	 cputfactor;
 extern	double	 wallfactor;
 extern  long     system_ncpus;
+extern  int      ignwalltime;
 
 /*
 ** local functions

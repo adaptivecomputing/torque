@@ -159,6 +159,7 @@ extern	unsigned	int	reqnum;
 extern	double	cputfactor;
 extern	double	wallfactor;
 /* wow, no ncpus - extern  long    system_ncpus; */
+extern  int     ignwalltime;
 
 /*
 ** local functions

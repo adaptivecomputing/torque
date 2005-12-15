@@ -154,6 +154,7 @@ extern	unsigned	int	reqnum;
 extern	double	cputfactor;
 extern	double	wallfactor;
 extern  long    system_ncpus;
+extern  int     ignwalltime;
 
 /*
 ** local functions and data

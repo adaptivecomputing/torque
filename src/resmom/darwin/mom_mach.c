@@ -181,6 +181,7 @@ extern	double	cputfactor;
 extern	double	wallfactor;
 extern  int     LOGLEVEL;
 extern  long    system_ncpus;
+extern  int     ignwalltime;
 
 /*
 ** local functions
