@@ -246,7 +246,8 @@ int init_network(
 
 int wait_request(
 
-  time_t waittime)  /* I (seconds) */
+  time_t  waittime,   /* I (seconds) */
+  long   *SState)     /* I (optional) */
 
   {
   int i;
@@ -260,7 +261,8 @@ int wait_request(
   void close_conn();
 
   char tmpLine[1024];
-  char id[]="wait_request";
+
+  char id[] = "wait_request";
 
   timeout.tv_usec = 0;
   timeout.tv_sec  = waittime;
@@ -308,7 +310,7 @@ int wait_request(
       }  /* END else (errno == EINTR) */
     }    /* END if (n == -1) */
 
-  for (i = 0;i < max_connection && n;i++) 
+  for (i = 0;(i < max_connection) && (n != 0);i++) 
     {
     if (FD_ISSET(i,&selset)) 
       {	
@@ -321,6 +323,11 @@ int wait_request(
       if (svr_conn[i].cn_active != Idle) 
         {
         svr_conn[i].cn_func(i);
+
+        /* NOTE:  breakout if shutdown request received */
+
+        if ((SState != NULL) && (*SState == 0))
+          break;
         } 
       else 
         {
@@ -339,6 +346,10 @@ int wait_request(
       }
     }    /* END for (i) */
 
+  /* NOTE:  break out if shutdown request received */
+
+  /* NYI */
+
   /* have any connections timed out ?? */
 
   now = time((time_t *)0);
@@ -349,6 +360,9 @@ int wait_request(
     u_long             ipaddr;
 
     cp = &svr_conn[i];
+
+    if ((SState != NULL) && (*SState == 0))
+      break;
 
     if ((cp->cn_active != FromClientASN) && (cp->cn_active != FromClientDIS))
       continue;

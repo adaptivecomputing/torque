@@ -4636,7 +4636,7 @@ static void finish_loop(
 
   /* wait for a request to process */
 
-  if (wait_request(tmpTime) != 0)
+  if (wait_request(tmpTime,NULL) != 0)
     {
     if (errno == EBADF)
       {

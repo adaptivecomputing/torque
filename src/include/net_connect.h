@@ -148,12 +148,12 @@ pbs_net_t get_connectaddr A_((int sock));
 int  get_connecthost A_((int sock, char *namebuf, int size));
 pbs_net_t get_hostaddr A_((char *hostname));
 int  get_fullhostname A_((char *shortname, char *namebuf, int size));
-unsigned int  get_svrport A_((char *servicename, char *proto, unsigned int df));
-int  init_network A_((unsigned int port, void (*readfunc)()));
+unsigned int  get_svrport A_((char *,char *,unsigned int));
+int  init_network A_((unsigned int, void (*readfunc)()));
 void net_close A_((int));
-int  wait_request(time_t waittime);
-void net_add_close_func A_((int, void(*)()));
-void net_set_type A_((enum conn_type, enum conn_type));
+int  wait_request(time_t waittime,long *);
+void net_add_close_func A_((int,void(*)()));
+void net_set_type A_((enum conn_type,enum conn_type));
 
 
 struct connection {

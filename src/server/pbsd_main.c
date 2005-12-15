@@ -1128,7 +1128,7 @@ int main(
 
     /* wait for a request and process it */
 
-    if (wait_request(waittime) != 0) 
+    if (wait_request(waittime,state) != 0) 
       {
       log_err(-1,msg_daemonname,"wait_request failed");
       }
