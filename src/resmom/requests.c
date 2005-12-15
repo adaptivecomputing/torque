@@ -1633,7 +1633,9 @@ void encode_used(
     return;
     }
 
-  for (rs = (resource *)GET_NEXT(at->at_val.at_list);rs != NULL;rs = (resource *)GET_NEXT(rs->rs_link)) 
+  for (rs = (resource *)GET_NEXT(at->at_val.at_list);
+       rs != NULL;
+       rs = (resource *)GET_NEXT(rs->rs_link)) 
     {
     resource_def *rd = rs->rs_defin;
     attribute     val;

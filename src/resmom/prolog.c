@@ -145,9 +145,9 @@ static char *resc_to_string(
   int	     buflen)	/* I the length of the above buffer */
 
   {
-  int       need;
-  svrattrl *patlist;
-  list_head svlist;
+  int        need;
+  svrattrl  *patlist;
+  list_head  svlist;
   attribute *pattr;
 
   int       isfirst = 1;
@@ -160,14 +160,14 @@ static char *resc_to_string(
 
   /* pack the list of resources into svlist */
 
-  if (aindex==JOB_ATR_resource)
+  if (aindex == JOB_ATR_resource)
     {
     if (encode_resc(pattr,&svlist,"x",NULL,ATR_ENCODE_CLIENT) <= 0)
       {
       return(buf);
       }
     }
-  else if (aindex==JOB_ATR_resc_used)
+  else if (aindex == JOB_ATR_resc_used)
     {
     encode_used(pjob,&svlist);
     }
