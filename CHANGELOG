@@ -1,3 +1,6 @@
+2.0.0p4
+  fix up socklen_t issues
+
 2.0.0p3
 
   fixed dynamic gres loading in pbs_mom (CRI)

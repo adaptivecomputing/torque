@@ -108,7 +108,8 @@ static int await_connect(
   int n, val, rc;
   struct timeval tv;
 
-  socklen_t len;
+  /* socklen_t not portable */
+  int len;
 
   tv.tv_sec = timeout;
   tv.tv_usec = 0;
@@ -123,7 +124,7 @@ static int await_connect(
     return(-1);
     }
  
-  len = sizeof(int);
+  len = sizeof(val);
 
   rc = getsockopt(sockd,SOL_SOCKET,SO_ERROR,&val,&len);
 
@@ -172,7 +173,7 @@ int client_to_svr(
   int                sock;
   unsigned short     tryport;
   int                flags;
-  long               one = 1;
+  int               one = 1;
   
   local.sin_family = AF_INET;
   local.sin_addr.s_addr = 0;
@@ -217,7 +218,7 @@ retry:  /* retry goto added (rentec) */
       SOL_SOCKET,
       SO_REUSEADDR,
       (void *)&one, 
-      sizeof(void *));
+      sizeof(one));
 
     local.sin_port = htons(tryport);
 

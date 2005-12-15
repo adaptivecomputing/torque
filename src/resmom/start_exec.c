@@ -1136,11 +1136,8 @@ int TMomFinalizeJob1(
   {
   static char 	       *id = "TMomFinalizeJob1";
 
-#ifdef socklen_t
-  socklen_t             slen;
-#else
-  unsigned int	        slen;
-#endif /* socklen_t */
+  /* socklen_t not portable */
+  int	        slen;
 
   int                    i;
 
@@ -3917,11 +3914,8 @@ void start_exec(
   int		stream;
   char		tmpdir[MAXPATHLEN];
 
-#ifdef socklen_t
-  socklen_t slen;
-#else
-  unsigned int slen;
-#endif /* socklen_t */
+  /* socklen_t not portable */
+  int slen;
 
   void im_compose A_((int stream,
     char	*jobid,

@@ -415,7 +415,8 @@ static void accept_conn(
   int newsock;
   struct sockaddr_in from;
 
-  socklen_t fromsize;
+  /* socklen_t not portable */
+  int fromsize;
 	
   /* update lasttime of main socket */
 

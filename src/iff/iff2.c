@@ -135,11 +135,8 @@ int main(
   int 		 sock;
   struct sockaddr_in sockname;
 
-#ifdef socklen_t
-  socklen_t socknamelen;
-#else
-  unsigned int socknamelen;
-#endif /* socklen_t */
+  /* socklen_t not portable */
+  int socknamelen;
 
   int		 testmode = 0;
   int		 rc;
