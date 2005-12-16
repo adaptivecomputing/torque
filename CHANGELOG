@@ -4,6 +4,7 @@
   fixed epilog to report total job resource utilization
   improved RPM spec (USC)
   modified qterm to drop hung connections to bad nodes
+  enhance HPUX operation
 
 2.0.0p3
 
