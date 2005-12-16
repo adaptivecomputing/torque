@@ -1,5 +1,9 @@
 2.0.0p4
+
   fix up socklen_t issues
+  fixed epilog to report total job resource utilization
+  improved RPM spec (USC)
+  modified qterm to drop hung connections to bad nodes
 
 2.0.0p3
 
@@ -29,7 +33,6 @@
   user-supplied TMPDIR no longer treated specially (USC)
   remtree() now deals with symlinks correctly (USC)
   enable configurable mail domain (Sandia)
-  modify epilog to report full job resource utilization
   configure now handles darwin8 (USC)
   configure now handles --with-scp=path and --without-scp correctly (USC)
 
