@@ -305,6 +305,13 @@ ac_help="$ac_help
                           i.e. \"user@maildomain\".  the default maildomain is the
                           hostname where the job was submitted from"
 
+ac_help="$ac_help
+
+  --disable-spool         if set, TORQUE will create output and error files directly 
+                          in $HOME/.pbs_spool if it exists or in $HOME otherwise.
+                          By default, TORQUE will spool files in $TORQUEHOME/spool 
+                          and copy them to the users home directory when the job
+                          completes
 
 # Initialize some variables set by options.
 # The variables have the same names as the options, with
@@ -1706,6 +1713,7 @@ cat >> confdefs.h <<EOF
 EOF
 fi
 
+
 # Check whether --disable-filesync was given.
 if test "${enable_filesync+set}" = set; then
   enableval="$enable_filesync"
@@ -1725,7 +1733,29 @@ else
 #define TDISABLEFILESYNC 0
 EOF
 
+fi # END filesync
+
+
+# Check whether --disable-spool was given.
+if test "${enable_spool+set}" = set; then
+  enableval="$enable_spool"
+  if test "${enableval}" = "no" ; then
+    cat >> confdefs.h <<\EOF
+#define NO_SPOOL_OUTPUT 1
+EOF
+
+else
+    cat >> confdefs.h <<\EOF
+#define NO_SPOOL_OUTPUT 0
+EOF
+
 fi
+else
+  cat >> confdefs.h <<\EOF
+#define NO_SPOOL_OUTPUT 0
+EOF
+
+fi # END disable-spool
 
 
 # Check whether --maildomain was given.
@@ -1888,7 +1918,6 @@ if test "${enable_array+set}" = set; then
     else
         { echo "configure: error: Cannot use \"--en/disable-array\" unless configuring for IRIX 6.x or above" 1>&2; exit 1; }
     fi
-
 fi
 
 if test "$PBS_MACH" = aix4; then
