@@ -4516,7 +4516,7 @@ char *std_file_name(
     strncpy(path,pjob->ji_grpcache->gc_homedir,sizeof(path));
 		
     /* check for $HOME/.pbs_spool */ 
-    /*if it's not a directory, just use $HOME us usual */
+    /* if it's not a directory, just use $HOME us usual */
 
     strncpy(path_alt,path,sizeof(path_alt));
 

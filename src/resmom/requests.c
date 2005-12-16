@@ -817,21 +817,27 @@ static int local_or_remote(
  *		 0 if not the same (or cannot tell)
  */
 
-static int is_file_same(file1, file2)
-	char *file1;
-	char *file2;
-{
-	struct stat sb1, sb2;
+static int is_file_same(
 
-	if ((stat(file1, &sb1) == 0) && (stat(file2, &sb2) == 0)) {
+  char *file1,
+  char *file2)
 
-		if ( !memcmp(&sb1.st_dev, &sb2.st_dev, sizeof(dev_t)) && 
-		     !memcmp(&sb1.st_ino, &sb2.st_ino, sizeof(ino_t)) )
-			return 1;
+  {
+  struct stat sb1, sb2;
 
-	}
-	return 0;
-}
+  if ((stat(file1,&sb1) == 0) && (stat(file2,&sb2) == 0)) 
+    {
+    if (!memcmp(&sb1.st_dev,&sb2.st_dev,sizeof(dev_t)) && 
+        !memcmp(&sb1.st_ino,&sb2.st_ino,sizeof(ino_t)) )
+      {
+      /* files are same */
+
+      return(1);
+      }
+    }
+
+  return(0);
+  }
 
 
 
@@ -1388,7 +1394,7 @@ static void resume_suspend(
       {
       if (susp)
         {
-	stat = kill_task(tp,SIGCONT);
+        stat = kill_task(tp,SIGCONT);
         }
       else
         {
@@ -1438,9 +1444,9 @@ static void resume_suspend(
       
       if (pjob->ji_qs.ji_svrflags & JOB_SVFLG_Suspend) 
         {
-	/* If it's suspended, update the start time */
+        /* If it's suspended, update the start time */
 
-	pjob->ji_qs.ji_stime = pjob->ji_qs.ji_stime - pjob->ji_momstat + time_now;
+        pjob->ji_qs.ji_stime = pjob->ji_qs.ji_stime - pjob->ji_momstat + time_now;
         }
 
       /* Clear the Suspend bit */
@@ -1556,7 +1562,7 @@ void req_signaljob(
 
     return;
     }
-			
+
   if ((kill_job(pjob,sig) == 0) && (sig == 0)) 
     {
     /* SIGNUL and no procs found, force job to exiting */
@@ -1826,7 +1832,8 @@ static int del_files(
   char                **pbadfile)  /* O */
 
   {
-  char		 id[]="del_files";
+  char		 id[] = "del_files";
+
   int		 AsUser = FALSE;
   struct rqfpair  *pair;
   int		 rc = 0;
@@ -1944,12 +1951,12 @@ static int del_files(
 
         /* check for  ~/.pbs_spool */
         /* if it isn't a dir., use $HOME us usual */
-		
+
         strcpy(path_alt,path);
         strcat(path_alt,"/.pbs_spool/");
 
         rcstat = stat(path_alt,&myspooldir);
-			
+
         if ((rcstat == 0) && 
             (S_ISDIR(myspooldir.st_mode)) && 
             ((myspooldir.st_mode & S_IXOTH) == S_IXOTH))
@@ -1990,7 +1997,7 @@ static int del_files(
         id, 
         log_buffer);
       }
-			
+
     if (remtree(path) == -1)
       {
       if (errno != ENOENT) 
@@ -2267,11 +2274,11 @@ static int sys_copy(
 
   return(rc);	/* tried a bunch of times, just give up */
   }  /* END sys_copy() */
-	
 
 
 
-		
+
+
 /*
  * req_cpyfile - process the Copy Files request from the server to dispose
  *	of output from the job.  This is done by a child of MOM since it
@@ -2447,7 +2454,7 @@ void req_cpyfile(
 
     from_spool = 0;
     prmt       = pair->fp_rmt;
-	
+
     if (local_or_remote(&prmt) == 0) 
       {
       /* destination host is this host, use cp */
@@ -2501,7 +2508,7 @@ void req_cpyfile(
       /* if it isn't a directory, just use $HOME us usual */
 
       /* NOTE: this completely overrides checkpoint and spool stuff above */
-			
+
       pw = &mypw;
       pw = getpwuid(useruid); 	
 
@@ -2585,25 +2592,42 @@ void req_cpyfile(
 
     /* Expand and verify arg2 (source path) */
 
-    switch (wordexp(arg2,&argexp, WRDE_NOCMD|WRDE_UNDEF))
+    switch (wordexp(arg2,&argexp,WRDE_NOCMD|WRDE_UNDEF))
       {
       case 0:
+
+        /* NO-OP */
+
         break; /* Successful */
+
       case WRDE_NOSPACE:
+
         wordfree(&argexp);
+
+        /* fall through */
+
       default:
+
         sprintf(log_buffer,"Failed to expand source path in data staging: %s",arg2);
         add_bad_list(&bad_list,log_buffer,2);
         bad_files=1;
         goto ERROR;
-      }
+        /*NOTREACHED*/
+
+        break;
+      }  /* END switch () */
 
     if (argexp.we_wordc > 1)
       {
-      sprintf(log_buffer,"Too many words after expanding source destination path: %s",arg2);
+      sprintf(log_buffer,"Too many words after expanding source destination path: %s",
+        arg2);
+
       add_bad_list(&bad_list,log_buffer,2);
+
       wordfree(&argexp);
-      bad_files=1;
+
+      bad_files = 1;
+
       goto ERROR;
       }
 
@@ -2615,19 +2639,34 @@ void req_cpyfile(
     switch (wordexp(arg3,&argexp, WRDE_NOCMD|WRDE_UNDEF))
       {
       case 0:
+
         break; /* Successful */
+
       case WRDE_NOSPACE:
+
         wordfree(&argexp);
+
+        /* fall through */
+
       default:
-        sprintf(log_buffer,"Failed to expand destination path in data staging: %s",arg3);
+
+        sprintf(log_buffer,"Failed to expand destination path in data staging: %s",
+          arg3);
+
         add_bad_list(&bad_list,log_buffer,2);
-        bad_files=1;
+
+        bad_files = 1;
+
         goto ERROR;
-      }
+
+        break;
+      }  /* END switch () */
 
     if (argexp.we_wordc > 1)
       {
-      sprintf(log_buffer,"Too many words after expanding destination path: %s",arg3);
+      sprintf(log_buffer,"Too many words after expanding destination path: %s",
+        arg3);
+
       add_bad_list(&bad_list,log_buffer,2);
       reply_text(preq,PBSE_NOCOPYFILE,bad_list);
       bad_files=1;
@@ -2648,15 +2687,15 @@ void req_cpyfile(
         (faketmpdir[0] != '\0') && 
         !strncmp(faketmpdir,arg3,strlen(faketmpdir)))
       {
-      usedfaketmpdir=1;
+      usedfaketmpdir = 1;
       }
     else
       {
-      usedfaketmpdir=0;
+      usedfaketmpdir = 0;
       }
 
 #endif
-			
+
     if ((rmtflag == 0) && (is_file_same(arg2,arg3) == 1)) 
       {
       /* local file, source == destination, don't copy */
@@ -2700,7 +2739,7 @@ void req_cpyfile(
 
         add_bad_list(&bad_list,">>> end error output",1);
         }
-		
+
 ERROR:
       if (dir == STAGE_DIR_IN) 
         {
@@ -2884,12 +2923,13 @@ int mom_checkpoint_job(
   int		ckerr;
   int		i;
   struct stat	statbuf;
-  char		path[MAXPATHLEN+1];
-  char		oldp[MAXPATHLEN+1];
-  char		file[MAXPATHLEN+1], *name;
+  char		path[MAXPATHLEN + 1];
+  char		oldp[MAXPATHLEN + 1];
+  char		file[MAXPATHLEN + 1]; 
+  char         *name;
   int		filelen;
-  task		*ptask;
-  extern	char	task_fmt[];
+  task         *ptask;
+  extern char   task_fmt[];
 
   assert(pjob != NULL);
 
@@ -2963,60 +3003,85 @@ int mom_checkpoint_job(
     }
 #endif	/* _CRAY */
 
-	for (ptask = (task *)GET_NEXT(pjob->ji_tasks);
-			ptask != NULL;
-			ptask = (task *)GET_NEXT(ptask->ti_jobtask)) {
+  for (ptask = (task *)GET_NEXT(pjob->ji_tasks);
+       ptask != NULL;
+       ptask = (task *)GET_NEXT(ptask->ti_jobtask)) 
+    {
+    sesid = ptask->ti_qs.ti_sid;
 
-		sesid = ptask->ti_qs.ti_sid;
-		if (ptask->ti_qs.ti_status != TI_STATE_RUNNING)
-			continue;
-		sprintf(name, task_fmt, ptask->ti_qs.ti_task);
-		if (mach_checkpoint(ptask, file, abort) == -1)
-			goto fail;
-	}
+    if (ptask->ti_qs.ti_status != TI_STATE_RUNNING)
+      continue;
 
-	/* Checkpoint successful */
+    sprintf(name,task_fmt, 
+      ptask->ti_qs.ti_task);
 
-	(void)job_save(pjob, SAVEJOB_FULL);  /* to save resources_used so far */
-	sprintf(log_buffer, "checkpointed to %s", path);
-	log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB,
-		   pjob->ji_qs.ji_jobid, log_buffer);
-	if (hasold) 
-		(void)remtree(oldp);
+    if (mach_checkpoint(ptask,file,abort) == -1)
+      goto fail;
+    }
 
-       	return (PBSE_NONE);
+  /* Checkpoint successful */
 
- fail:
-	/*
-	** A checkpoint has failed.  Log and return error.
-	*/
-	ckerr = errno;
-	sprintf(log_buffer,"chkpnt failed:errno=%d sid=%d", errno, sesid);
-	LOG_EVENT(PBSEVENT_JOB, PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,
-		  log_buffer);
+  job_save(pjob,SAVEJOB_FULL);  /* to save resources_used so far */
 
-	/*
-	** See if any checkpoints worked and abort is set.
-	** If so, we need to restart these tasks so the whole job is
-	** still running.  This has to wait until we reap the
-	** aborted task(s).
-	*/
-	if (abort)
-		return PBSE_CKPSHORT;
+  sprintf(log_buffer,"checkpointed to %s", 
+    path);
 
-	/*
-	** Clean up files.
-	*/
-	(void)remtree(path);
-	if (hasold) {
-		if (rename(oldp, path) == -1)
-			pjob->ji_qs.ji_svrflags &= ~JOB_SVFLG_CHKPT;
-	}
-	if (ckerr == EAGAIN)
-		return (PBSE_CKPBSY);
-	else
-		return(ckerr);
-}
+  log_record(
+    PBSEVENT_JOB, 
+    PBS_EVENTCLASS_JOB,
+    pjob->ji_qs.ji_jobid, 
+    log_buffer);
+
+  if (hasold) 
+    remtree(oldp);
+
+  return(PBSE_NONE);
+
+fail:
+
+  /* A checkpoint has failed.  Log and return error. */
+
+  ckerr = errno;
+
+  sprintf(log_buffer,"chkpnt failed:errno=%d sid=%d", 
+    errno, 
+    sesid);
+
+  LOG_EVENT(
+    PBSEVENT_JOB, 
+    PBS_EVENTCLASS_JOB,
+    pjob->ji_qs.ji_jobid,
+    log_buffer);
+
+  /*
+  ** See if any checkpoints worked and abort is set.
+  ** If so, we need to restart these tasks so the whole job is
+  ** still running.  This has to wait until we reap the
+  ** aborted task(s).
+  */
+
+  if (abort)
+    {
+    return(PBSE_CKPSHORT);
+    }
+
+  /* Clean up files */
+
+  remtree(path);
+
+  if (hasold) 
+    {
+    if (rename(oldp,path) == -1)
+      pjob->ji_qs.ji_svrflags &= ~JOB_SVFLG_CHKPT;
+    }
+
+  if (ckerr == EAGAIN)
+    {
+    return(PBSE_CKPBSY);
+    }
+
+  return(ckerr);
+  }
 
 
 
@@ -3029,63 +3094,87 @@ int mom_checkpoint_job(
  *	This sets the "has checkpoint image" bit in the job.
  */
 
-void post_chkpt(pjob, ev)
-	job *pjob;
-	int  ev;
-{
-	char		path[MAXPATHLEN+1];
-	DIR		*dir;
-	struct	dirent	*pdir;
-	extern	char	*path_checkpoint;
-	tm_task_id	tid;
-	task		*ptask;
-	int		abort = pjob->ji_flags & MOM_CHKPT_ACTIVE;
+void post_chkpt(
 
-	exiting_tasks = 1;	/* make sure we call scan_for_exiting() */
-	pjob->ji_flags &= ~MOM_CHKPT_ACTIVE;
-	if (ev == 0) {
-		pjob->ji_qs.ji_svrflags |= JOB_SVFLG_CHKPT;
-		return;
-	}
+  job *pjob,
+  int  ev)
 
-	/*
-	** If we get here, an error happened.  Only try to recover
-	** if we had abort set.
-	*/
-	if (abort == 0)
-		return;
-	/*
-	** Set a flag for scan_for_exiting() to be able to
-	** deal with a failed checkpoint rather than doing
-	** the usual processing.
-	*/
-	pjob->ji_flags |= MOM_CHKPT_POST;
+  {
+  char           path[MAXPATHLEN + 1];
+  DIR		*dir;
+  struct dirent	*pdir;
+  extern char	*path_checkpoint;
+  tm_task_id	tid;
+  task		*ptask;
+  int		abort = pjob->ji_flags & MOM_CHKPT_ACTIVE;
 
-	/*
-	** Set the TI_FLAGS_CHKPT flag for each task that
-	** was checkpointed and aborted.
-	*/
-	strcpy(path, path_checkpoint);
-	strcat(path, pjob->ji_qs.ji_fileprefix);
-	strcat(path, JOB_CKPT_SUFFIX);
+  exiting_tasks = 1;	/* make sure we call scan_for_exiting() */
 
-	dir = opendir(path);
-	if (dir == NULL)
-		return;
-	while ((pdir = readdir(dir)) != NULL) {
-		if (pdir->d_name[0] == '.')
-			continue;
-		tid = atoi(pdir->d_name);
-		if (tid == 0)
-			continue;
-		ptask = task_find(pjob, tid);
-		if (ptask == NULL)
-			continue;
-		ptask->ti_flags |= TI_FLAGS_CHKPT;
-	}
-	closedir(dir);
-	return;
-}
+  pjob->ji_flags &= ~MOM_CHKPT_ACTIVE;
+
+  if (ev == 0) 
+    {
+    pjob->ji_qs.ji_svrflags |= JOB_SVFLG_CHKPT;
+
+    return;
+    }
+
+  /*
+  ** If we get here, an error happened.  Only try to recover
+  ** if we had abort set.
+  */
+
+  if (abort == 0)
+    {
+    return;
+    }
+
+  /*
+  ** Set a flag for scan_for_exiting() to be able to
+  ** deal with a failed checkpoint rather than doing
+  ** the usual processing.
+  */
+
+  pjob->ji_flags |= MOM_CHKPT_POST;
+
+  /*
+  ** Set the TI_FLAGS_CHKPT flag for each task that
+  ** was checkpointed and aborted.
+  */
+
+  strcpy(path,path_checkpoint);
+  strcat(path,pjob->ji_qs.ji_fileprefix);
+  strcat(path,JOB_CKPT_SUFFIX);
+
+  dir = opendir(path);
+
+  if (dir == NULL)
+    {
+    return;
+    }
+
+  while ((pdir = readdir(dir)) != NULL) 
+    {
+    if (pdir->d_name[0] == '.')
+      continue;
+
+    tid = atoi(pdir->d_name);
+
+    if (tid == 0)
+      continue;
+
+    ptask = task_find(pjob,tid);
+
+    if (ptask == NULL)
+      continue;
+
+    ptask->ti_flags |= TI_FLAGS_CHKPT;
+    }
+
+  closedir(dir);
+
+  return;
+  }
 
 
 
@@ -3105,7 +3194,7 @@ int start_checkpoint(
   struct batch_request *preq)	/* may be null */
 
   {
-  static char	id[] = "start_checkpoint";
+  static char id[] = "start_checkpoint";
   svrattrl *pal;
   pid_t     pid;
   int       rc;
@@ -3158,36 +3247,38 @@ int start_checkpoint(
 
     int hok = 1;
 
-    clear_attr(&tmph, &job_attr_def[(int)JOB_ATR_hold]);
+    clear_attr(&tmph,&job_attr_def[(int)JOB_ATR_hold]);
 
-    if (preq) 
+    if (preq != NULL) 
       {
       pal = (svrattrl *)GET_NEXT(preq->rq_ind.rq_hold.rq_orig.rq_attr);
 
-      if (pal) 
+      if (pal != NULL) 
         {
         hok = job_attr_def[(int)JOB_ATR_hold].at_decode(
-							&tmph,
-							pal->al_name,
-							(char *)0,
-							pal->al_value);
-			}
-		}
-		rc = mom_checkpoint_job(pjob, abort);
-		if (preq != (struct batch_request *)0) {
-			/*
-			** rc may be 0, req_reject is used
-			** to pass auxcode
-			*/
-			req_reject(rc, PBS_CHKPT_MIGRATE, preq,NULL,NULL);
-		}
-		if ( (rc == 0) && (hok == 0) )
-			rc = site_mom_postchk(pjob, (int)tmph.at_val.at_long);
+          &tmph,
+          pal->al_name,
+          NULL,
+          pal->al_value);
+        }
+      }
 
-		exit(rc);	/* zero exit tells main chkpnt ok */
+    rc = mom_checkpoint_job(pjob,abort);
+
+    if (preq != NULL) 
+      {
+      /* rc may be 0, req_reject is used to pass auxcode */
+
+      req_reject(rc,PBS_CHKPT_MIGRATE,preq,NULL,NULL);
+      }
+
+    if ((rc == 0) && (hok == 0))
+      rc = site_mom_postchk(pjob,(int)tmph.at_val.at_long);
+
+    exit(rc);	/* zero exit tells main chkpnt ok */
     }
 
-  return (0);		/* parent return */
+  return(0);		/* parent return */
   }  /* END start_checkpoint() */
 
 #endif	/* MOM_CHECKPOINT */
