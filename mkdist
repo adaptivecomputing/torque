@@ -1,0 +1,63 @@
+#!/bin/bash
+
+# src/include/pbs_version.h is _authoritaive_
+# README.torque and torque.spec are updated in the tarball (source is unchanged)
+# if --rel, pbs_version is incremented in the source
+
+
+if [ -z "$1" ];then
+  echo "Usage: $0 [--rel|--snap]" 1>&2
+  exit 1
+fi
+
+case $1 in
+  --rel) release=1;;
+  --snap) release=0;;
+  *) echo huh?" 1>&2; exit 1";;
+esac
+
+if [ ! -f ./src/include/pbs_version.h ];then
+  echo "Not in source directory" 1>&2
+  exit 1
+fi
+
+if ! cvs diff -R 2>/dev/null ;then
+  echo "You have aren't synced with CVS" 1>&2
+  exit 1
+fi
+
+timestamp=$(date +%s) # or maybe use something like +%F-%T
+reldate=$(date "+%b, %d %Y")
+version=$(set -- $(cat ./src/include/pbs_version.h);echo $3 | xargs echo | sed 's/-snap.*//')
+
+
+# figure out this release name (and the next)
+if [ $release = 1 ];then
+  relname=torque-$version
+  nextversion=$(perl -e '$_=shift; /(\d+\.\d+\.\d+p)(\d+)/; $b=$2; $b++; print "$1$b\n"' $version)
+else
+  relname=torque-$version-snap.$timestamp
+fi
+
+# make our release directory
+mkdir $relname
+find . -path '*/CVS' -prune -o -path ./$relname -prune -o \! -name .\* -a -print | tar cf - -T - | tar xf - -C $relname
+
+# update a few files
+perl -pi -e 's/^\%define version .*/\%define version '$version/ $relname/torque.spec
+if [ $release = 1 ];then
+  relname=torque-$version
+  perl -pi -e 's/^#?\%?\%define snap .*/#\%\%define snap '$timestamp/ $relname/torque.spec
+  perl -pi -e 's/TORQUE .* README \(released .*/TORQUE '$version' README (released '"$reldate"')/' $relname/README.torque
+  echo '#define PBS_VERSION "'$nextversion'"' > ./src/include/pbs_version.h
+else
+  relname=torque-$version-snap.$timestamp
+  perl -pi -e 's/^#?\%?\%define snap .*/\%define snap '$timestamp/ $relname/torque.spec
+  echo '#define PBS_VERSION "'$version-snap.$timestamp'"' > $relname/src/include/pbs_version.h
+fi
+
+# tar up the whole mess and cleanup
+tar zcf /tmp/$relname.tar.gz $relname
+rm -rf $relname
+
+ls -al /tmp/$relname.tar.gz
