@@ -1879,9 +1879,9 @@ static int del_files(
       {
       /* the job's stdout/stderr */
 
-#ifndef NO_SPOOL_OUTPUT
+#if NO_SPOOL_OUTPUT == 0
       strncpy(path,path_spool,sizeof(path));
-#endif	/* NO_SPOOL_OUTPUT */
+#endif	/* !NO_SPOOL_OUTPUT */
       } 
     else if (AsUser == FALSE) 
       {
@@ -2483,7 +2483,7 @@ void req_cpyfile(
 
       if (pair->fp_flag == STDJOBFILE) 
         {
-#ifndef NO_SPOOL_OUTPUT
+#if NO_SPOOL_OUTPUT == 0
 
         /* stdout | stderr from MOM's spool area (ie, /usr/spool/PBS/spool ) */
 
@@ -2774,7 +2774,7 @@ ERROR:
 
         del_files(preq,NULL,1,&bad_list);
 
-#ifndef NO_SPOOL_OUTPUT
+#if NO_SPOOL_OUTPUT == 0
         } 
       else if (from_spool == 1) 
         {	
@@ -2801,7 +2801,7 @@ ERROR:
 
           log_err(errno,id,log_buffer);
           }
-#endif	/* NO_SPOOL_OUTPUT */
+#endif	/* !NO_SPOOL_OUTPUT */
         }
 
       if (dir == STAGE_DIR_IN) 

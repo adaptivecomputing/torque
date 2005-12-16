@@ -4423,7 +4423,7 @@ char *std_file_name(
   char *pd;
   char *suffix;
 
-#ifdef NO_SPOOL_OUTPUT
+#if NO_SPOOL_OUTPUT == 1
   struct stat myspooldir;
   static char  path_alt[MAXPATHLEN + 1];
   int   rcstat;
@@ -4509,7 +4509,7 @@ char *std_file_name(
     {
     /* put into spool directory unless NO_SPOOL_OUTPUT is defined */
 
-#ifdef NO_SPOOL_OUTPUT		
+#if NO_SPOOL_OUTPUT == 1		
 
     /* force all output to user's HOME */
 
