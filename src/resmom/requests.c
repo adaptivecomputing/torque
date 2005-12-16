@@ -2317,7 +2317,8 @@ void req_cpyfile(
   struct batch_request *preq)  /* I */
 
   {
-  char		 id[]="req_cpyfile";
+  char		 id[] = "req_cpyfile";
+
   char		 arg2[MAXPATHLEN + 1];
   char		 arg3[MAXPATHLEN + 1];
   int		 bad_files = 0;
@@ -2423,7 +2424,8 @@ void req_cpyfile(
         envstr=malloc((strlen("TMPDIR=") + strlen(faketmpdir) + 1) * sizeof(char));
         sprintf(envstr,"TMPDIR=%s",faketmpdir);
         putenv(envstr);
-        madefaketmpdir=1;
+
+        madefaketmpdir = 1;
         }
       }
     }
@@ -2435,7 +2437,7 @@ void req_cpyfile(
 
     environ = vtable.v_envp;
     }
-#endif
+#endif  /* END HAVE_WORDEXP */
 
   /* build up cp/rcp command(s), one per file pair */
 
@@ -2477,25 +2479,22 @@ void req_cpyfile(
        * build "from" path name, local to this system
        */
 
-      localname[0] = '\0';
+      localname[0] = '\0';  /* from location */
 
       if (pair->fp_flag == STDJOBFILE) 
         {
 #ifndef NO_SPOOL_OUTPUT
 
-        /* stdout | stderr from MOM's spool area */
+        /* stdout | stderr from MOM's spool area (ie, /usr/spool/PBS/spool ) */
 
         strncpy(localname,path_spool,sizeof(localname));
 
         from_spool = 1;	/* flag as being in spool dir */
 
-        /*
-         * note, if NO_SPOOL_OUTPUT is defined, the
-         * output is in the user's home directory where
-         * we currently are.
-         */
+        /* NOTE: if NO_SPOOL_OUTPUT is defined, the output is in the user's 
+           home directory where we currently are.  */
 
-#endif	/* NO_SPOOL_OUTPUT */
+#endif	/* !NO_SPOOL_OUTPUT */
         }
 #if MOM_CHECKPOINT == 1
       else if (pair->fp_flag == JOBCKPFILE) 
@@ -2516,17 +2515,32 @@ void req_cpyfile(
          for root squash.  We don't need to do that anymore since now we
          do this stuff as user... so just check for the directory */
 
+      /* NOTE:  at this point copy is 'stage-out' */
+
+      /* search first in $HOME/.pbs_spool, then $HOME, then /usr/spool/PBS/spool */
+ 
       strcpy(localname_alt,pw->pw_dir); 
       strcat(localname_alt,"/.pbs_spool/");
+      strcat(localname_alt,pair->fp_local);  /* from location */
 
       rcstat = stat(localname_alt,&myspooldir);
 
-      if ((rcstat == 0) && S_ISDIR(myspooldir.st_mode))
+      /* NOTE:  only use $HOME/.pbs_spool or $HOME if directory exists AND 
+                source file exists in directory */
+
+      if (rcstat == 0)
         {
         strcpy(localname,localname_alt);
         }
+      else
+        {
+        rcstat = stat(pair->fp_local,&myspooldir);
 
-      strcat(localname,pair->fp_local);
+        if (rcstat == 0)
+          strcpy(localname,pair->fp_local);  /* from location */
+        else
+          strcat(localname,pair->fp_local);  /* from location */
+        }
 
 #if SRFS
 
@@ -2608,10 +2622,15 @@ void req_cpyfile(
 
       default:
 
-        sprintf(log_buffer,"Failed to expand source path in data staging: %s",arg2);
+        sprintf(log_buffer,"Failed to expand source path in data staging: %s",
+          arg2);
+
         add_bad_list(&bad_list,log_buffer,2);
-        bad_files=1;
+
+        bad_files = 1;
+
         goto ERROR;
+
         /*NOTREACHED*/
 
         break;
@@ -2632,11 +2651,12 @@ void req_cpyfile(
       }
 
     strcpy(arg2,argexp.we_wordv[0]);
+
     wordfree(&argexp);
 
     /* Expand and verify arg3 (destination path) */
 
-    switch (wordexp(arg3,&argexp, WRDE_NOCMD|WRDE_UNDEF))
+    switch (wordexp(arg3,&argexp,WRDE_NOCMD|WRDE_UNDEF))
       {
       case 0:
 
@@ -2668,12 +2688,16 @@ void req_cpyfile(
         arg3);
 
       add_bad_list(&bad_list,log_buffer,2);
+
       reply_text(preq,PBSE_NOCOPYFILE,bad_list);
-      bad_files=1;
+
+      bad_files = 1;
+
       goto ERROR;
       }
 
     strcpy(arg3,argexp.we_wordv[0]);
+
     wordfree(&argexp);
 
     if (dir == STAGE_DIR_IN) 
@@ -2694,7 +2718,7 @@ void req_cpyfile(
       usedfaketmpdir = 0;
       }
 
-#endif
+#endif /* HAVE_WORDEXP */
 
     if ((rmtflag == 0) && (is_file_same(arg2,arg3) == 1)) 
       {
@@ -2741,6 +2765,7 @@ void req_cpyfile(
         }
 
 ERROR:
+
       if (dir == STAGE_DIR_IN) 
         {
         /* delete the stage_in files that were just copied in */
@@ -2810,7 +2835,7 @@ ERROR:
       }
 
     unlink(rcperr);
-    }  /* END for() */
+    }  /* END for(pair) */
 
 #ifdef HAVE_WORDEXP
   if (madefaketmpdir && !usedfaketmpdir)

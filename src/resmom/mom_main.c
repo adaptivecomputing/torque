@@ -5297,10 +5297,10 @@ int main(
 
 #if !defined(DEBUG) && !defined(NO_SECURITY_CHECK)
 
-  c |= chk_file_sec(path_jobs,   1, 0, S_IWGRP|S_IWOTH, 1);
-  c |= chk_file_sec(path_aux,    1, 0, S_IWGRP|S_IWOTH, 1);
-  c |= chk_file_sec(path_spool,  1, 1, S_IWOTH, 0);
-  c |= chk_file_sec(PBS_ENVIRON, 0, 0, S_IWGRP|S_IWOTH, 0);
+  c |= chk_file_sec(path_jobs,        1, 0, S_IWGRP|S_IWOTH, 1);
+  c |= chk_file_sec(path_aux,         1, 0, S_IWGRP|S_IWOTH, 1);
+  c |= chk_file_sec(path_spool,       1, 1, S_IWOTH,         0);
+  c |= chk_file_sec(PBS_ENVIRON,      0, 0, S_IWGRP|S_IWOTH, 0);
   c |= chk_file_sec(path_server_name, 0, 0, S_IWGRP|S_IWOTH, 0);
 
   if (c)
