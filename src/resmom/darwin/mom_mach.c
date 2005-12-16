@@ -201,7 +201,7 @@ extern char *nullproc	A_((struct rm_attribute *attrib));
 #ifdef __TDARWIN_8
 int		get_tinfo_by_pid  A_((struct task_basic_info *t_info, unsigned int pid));
 #else /* __TDARWIN_8 */
-int		bs_cmp		A_((struct session *key, struct kinfo_proc *member));
+int		bs_cmp		A_((const void *key, const void *member));
 #endif /* __TDARWIN_8 */
 
 struct	config	dependent_config[] = {
