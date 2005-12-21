@@ -158,7 +158,7 @@ static int decode_arst_direct(
 
   pc--;
 
-  if ((*pc == '\n') || ((*pc == ',') && (*(pc-1) != '\\'))) 
+  if (((*pc == '\n') || (*pc == ',')) && (*(pc-1) != '\\')) 
     {
     ns--;		/* strip any trailing null string */
     *pc = '\0';
@@ -361,7 +361,7 @@ int encode_arst(
 
   for (pc = attr->at_val.at_arst->as_buf;pc < attr->at_val.at_arst->as_next;++pc) 
     {
-    if ((*pc == '"') || (*pc == '\'') || (*pc == ',') || (*pc == '\\'))
+    if ((*pc == '"') || (*pc == '\'') || (*pc == ',') || (*pc == '\\') || (*pc == '\n'))
       ++j;
     }
 
@@ -384,7 +384,7 @@ int encode_arst(
 
   while (pfrom < end) 
     {
-    if ((*pfrom == '"') || (*pfrom == '\'') || (*pfrom == ',') || (*pfrom == '\\')) 
+    if ((*pfrom == '"') || (*pfrom == '\'') || (*pfrom == ',') || (*pfrom == '\\') || (*pfrom == '\n')) 
       {
       *pc++ = '\\';
       *pc   = *pfrom;

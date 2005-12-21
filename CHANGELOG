@@ -1,6 +1,7 @@
 2.0.0p5
 
-  ---
+  fixes to qsub's env handling for newlines and commas (UMU)
+  fixes to at_arst encoding and decoding for newlines and commas (USC)
 
 2.0.0p4
 

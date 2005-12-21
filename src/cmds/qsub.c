@@ -731,6 +731,13 @@ char *copy_env_value(
 
         break;
 
+      case '\n':
+
+        *dest++ = '\\';		/* escape newline */
+        *dest++ = *pv;
+
+        break;
+
       case ',':
 
         if (q_ch || quote_flg) 
@@ -805,7 +812,8 @@ int set_job_env(
 
     while (notNULL(*evp)) 
       {
-      len += strlen(*evp);
+	  /* add 1 for ',' */
+      len += strlen(*evp) + 1;
 
       evp++;
       }
@@ -823,11 +831,16 @@ int set_job_env(
     len += strlen(env) + strlen(EList[eindex]) + strlen("PBS_O_") + 2;
     }  /* END for (eindex) */
 
-  len += PBS_MAXHOSTNAME;
+  if (PBS_InitDir[0] != '\0') {
+      len += strlen("PBS_O_INITDIR=") + strlen(PBS_InitDir) + 1;
+  }
+  if (PBS_RootDir[0] != '\0') {
+      len += strlen("PBS_O_ROOTDIR=") + strlen(PBS_RootDir) + 1;
+  }
 
-  len += MAXPATHLEN;
+  len += strlen("PBS_O_WORKDIR=") + 1;
 
-  len <<= 2;     /* enlarge buffer for all the commas, etc. */
+  len++; /* Terminating '0' */
 
   if ((job_env = (char *)malloc(len)) == NULL)
     {
@@ -918,8 +931,6 @@ int set_job_env(
     {
     /* load init dir into env */
 
-    s = job_env + strlen(job_env);
-
     strcat(job_env,",PBS_O_INITDIR=");
 
     strcat(job_env,PBS_InitDir);
@@ -928,8 +939,6 @@ int set_job_env(
   if (PBS_RootDir[0] != '\0')
     {
     /* load init dir into env */
-
-    s = job_env + strlen(job_env);
 
     strcat(job_env,",PBS_O_ROOTDIR=");
 
@@ -1068,11 +1077,11 @@ state3:         /* No value - get it from qsub environment */
       return(FALSE);
       }
 
-    if (strlen(job_env) + 2 + strlen(s) + strlen(env) >= len)
+    if (strlen(job_env) + 2 + strlen(s) + 2*strlen(env) >= len)
       {
       /* increase size of job env buffer */
 
-      len <<= 1;
+      len += 2*strlen(env) + 1;
 
       job_env = (char *)realloc(job_env,len);
 
@@ -1100,11 +1109,11 @@ state4:         /* goto label - Value specified */
 
     *c++ = '\0';
 
-    if (strlen(job_env) + 2 + strlen(s) + strlen(c) >= len)
+    if (strlen(job_env) + 2 + strlen(s) + 2*strlen(c) >= len)
       {
       /* increase size of job env buffer */
 
-      len <<= 1;
+      len += 2*strlen(c) + 1;
 
       job_env = (char *)realloc(job_env,len);
 
@@ -1143,11 +1152,11 @@ final:
 
       *s = '\0';
 
-      if (strlen(job_env) + 2 + strlen(*evp) + strlen(s + 1) >= len)
+      if (strlen(job_env) + 2 + strlen(*evp) + 2*strlen(s + 1) >= len)
         {
         /* increase size of job env buffer */
 
-        len <<= 1;
+        len += 2*strlen(s + 1) + 1;
 
         job_env = (char *)realloc(job_env,len);
 
