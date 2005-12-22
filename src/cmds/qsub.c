@@ -1150,7 +1150,14 @@ final:
       while ((*s != '=') && *s)
         ++s;
 
-      *s = '\0';
+      if (!*s)
+        {
+        evp++;
+
+        continue;
+        }
+
+      *s = '\0';  /* NOTE: *s is clobbering our current, real, environ */
 
       if (strlen(job_env) + 2 + strlen(*evp) + 2*strlen(s + 1) >= len)
         {
@@ -1171,6 +1178,8 @@ final:
       strcat(job_env,"=");
 
       copy_env_value(job_env,s + 1,1);
+
+      *s = '='; /* restore our existing environ */
 
       evp++;
       }
