@@ -1169,6 +1169,8 @@ final:
 
         if (job_env == NULL)
           {
+          *s = '='; /* restore our existing environ */
+
           return(FALSE);
           }
         }
