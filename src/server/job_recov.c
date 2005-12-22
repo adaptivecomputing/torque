@@ -127,7 +127,7 @@ extern time_t time_now;
 
 /* data global only to this file */
 
-const static unsigned int quicksize = sizeof(struct jobfix);
+static const unsigned int quicksize = sizeof(struct jobfix);
 
 /*
  * job_save() - Saves (or updates) a job structure image on disk
