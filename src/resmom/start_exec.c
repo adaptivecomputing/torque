@@ -4522,8 +4522,33 @@ char *std_file_name(
 
     strncat(path_alt,"/.pbs_spool/",sizeof(path_alt));
 
+#if defined(HAVE_SETEUID) && defined(HAVE_SETEGID)
+
+    /* most systems */
+
+    if (seteuid(pjob->ji_qs.ji_un.ji_momt.ji_exuid) == -1)
+      {
+      return(NULL);
+      }
+
     rcstat = stat(path_alt,&myspooldir);
 		
+    seteuid(0);
+
+#elif defined(HAVE_SETRESUID) && defined(HAVE_SETRESGID)
+
+    /* HPUX and the like */
+
+    if (setresuid(-1,pjob->ji_qs.ji_un.ji_momt.ji_exuid,-1) == -1)
+      {
+      return(NULL);
+      }
+
+    rcstat = stat(path_alt,&myspooldir);
+
+    setresuid(-1,0,-1);
+#endif  /* HAVE_SETRESUID and friends */
+
     if ((rcstat == 0) && (S_ISDIR(myspooldir.st_mode)))
       strncpy(path,path_alt,sizeof(path));
     else
@@ -4585,13 +4610,7 @@ int open_std_file(
       return(-1);
       }
 
-    /* make mode ugo+rw for spooled file so root can write */
-    /* from prolog & epilog, dir. permissions are more */
-    /* important with this hack in place */
-
-    my_umask = umask(0000);	
-    fds      = open(path,mode,0666);
-    umask(my_umask);
+    fds = open(path,mode,0666);
 
     seteuid(0);
     setegid(pbsgroup);

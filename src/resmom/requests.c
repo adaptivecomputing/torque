@@ -1949,6 +1949,7 @@ static int del_files(
         /* have a directory, must append last segment */
         /* of source name to it for  the unlink	      */
 
+#if NO_SPOOL_OUTPUT == 1
         /* check for  ~/.pbs_spool */
         /* if it isn't a dir., use $HOME us usual */
 
@@ -1964,6 +1965,7 @@ static int del_files(
           strcpy(path,path_alt); 
           }
         else
+#endif /* NO_SPOOL_OUTPUT */
           {
           strcat(path, "/");
           }
@@ -2162,10 +2164,10 @@ static int sys_copy(
       {
 #ifdef SCP_PATH
       ag0 = SCP_PATH;
-      ag1 = "-Br";
+      ag1 = "-Brp";
 #else /* SCP_PATH */
       ag0 = RCP_PATH;
-      ag1 = "-r";
+      ag1 = "-rp";
 #endif	/* SCP_PATH */
       } 
 
@@ -2342,6 +2344,8 @@ void req_cpyfile(
 
   char           EMsg[1024];
   char           HDir[1024];
+  char           homespool[MAXPATHLEN + 1];
+  int            havehomespool = 0;
 
 #ifdef HAVE_WORDEXP
   int		 madefaketmpdir=0;
@@ -2402,6 +2406,21 @@ void req_cpyfile(
   /* child */
 
   /* now running as user in the user's home directory */
+
+#if NO_SPOOL_OUTPUT == 1
+  strcpy(homespool,HDir); 
+  strcat(homespool,"/.pbs_spool/");
+
+  rcstat = stat(homespool,&myspooldir);
+  if ((rcstat == 0) && S_ISDIR(myspooldir.st_mode))
+    {
+    havehomespool = 1;
+    }
+  else
+    {
+    havehomespool = 0;
+    }
+#endif /* END NO_SPOOL_OUTPUT == 1 */
 
 #ifdef HAVE_WORDEXP
   faketmpdir[0] = '\0';
@@ -2479,68 +2498,49 @@ void req_cpyfile(
        * build "from" path name, local to this system
        */
 
-      localname[0] = '\0';  /* from location */
-
       if (pair->fp_flag == STDJOBFILE) 
         {
 #if NO_SPOOL_OUTPUT == 0
 
         /* stdout | stderr from MOM's spool area (ie, /usr/spool/PBS/spool ) */
 
-        strncpy(localname,path_spool,sizeof(localname));
+        strcpy(localname,path_spool);
+        strcat(localname,pair->fp_local);  /* from location */
 
         from_spool = 1;	/* flag as being in spool dir */
+#else
+        strcpy(localname,pair->fp_local);  /* from location */
 
-        /* NOTE: if NO_SPOOL_OUTPUT is defined, the output is in the user's 
-           home directory where we currently are.  */
+        if (havehomespool)
+          {
+          /* only use ~/.pbs_spool if the file actually exists */
 
-#endif	/* !NO_SPOOL_OUTPUT */
+          strcpy(localname_alt,homespool);
+          strcat(localname_alt,pair->fp_local);
+
+          rcstat = stat(localname_alt,&myspooldir);
+          if ((rcstat == 0) && S_ISREG(myspooldir.st_mode))
+            {
+            strcpy(localname,localname_alt);
+            }
+          }
+       
+#endif	/* NO_SPOOL_OUTPUT */
         }
 #if MOM_CHECKPOINT == 1
       else if (pair->fp_flag == JOBCKPFILE) 
         {
-        strncpy(localname,path_checkpoint,sizeof(localname));
+        strcpy(localname,path_checkpoint);
+        strcat(localname,pair->fp_local);  /* from location */
         }
 #endif	/* MOM_CHECKPOINT */
-
-      /* check for $HOME/.pbs_spool */
-      /* if it isn't a directory, just use $HOME us usual */
-
-      /* NOTE: this completely overrides checkpoint and spool stuff above */
-
-      pw = &mypw;
-      pw = getpwuid(useruid); 	
-
-      /* we used to go through a big process of stat()ing directories, looking
-         for root squash.  We don't need to do that anymore since now we
-         do this stuff as user... so just check for the directory */
-
-      /* NOTE:  at this point copy is 'stage-out' */
-
-      /* search first in $HOME/.pbs_spool, then $HOME, then /usr/spool/PBS/spool */
- 
-      strcpy(localname_alt,pw->pw_dir); 
-      strcat(localname_alt,"/.pbs_spool/");
-      strcat(localname_alt,pair->fp_local);  /* from location */
-
-      rcstat = stat(localname_alt,&myspooldir);
-
-      /* NOTE:  only use $HOME/.pbs_spool or $HOME if directory exists AND 
-                source file exists in directory */
-
-      if (rcstat == 0)
-        {
-        strcpy(localname,localname_alt);
-        }
       else
         {
-        rcstat = stat(pair->fp_local,&myspooldir);
+        /* user-supplied stage-out file */
 
-        if (rcstat == 0)
-          strcpy(localname,pair->fp_local);  /* from location */
-        else
-          strcat(localname,pair->fp_local);  /* from location */
+        strncpy(localname,pair->fp_local,sizeof(localname)-1);  /* from location */
         }
+
 
 #if SRFS
 
@@ -2629,7 +2629,7 @@ void req_cpyfile(
 
         bad_files = 1;
 
-        goto ERROR;
+        goto error;
 
         /*NOTREACHED*/
 
@@ -2647,7 +2647,7 @@ void req_cpyfile(
 
       bad_files = 1;
 
-      goto ERROR;
+      goto error;
       }
 
     strcpy(arg2,argexp.we_wordv[0]);
@@ -2677,7 +2677,7 @@ void req_cpyfile(
 
         bad_files = 1;
 
-        goto ERROR;
+        goto error;
 
         break;
       }  /* END switch () */
@@ -2693,17 +2693,17 @@ void req_cpyfile(
 
       bad_files = 1;
 
-      goto ERROR;
+      goto error;
       }
 
     strcpy(arg3,argexp.we_wordv[0]);
 
     wordfree(&argexp);
 
-    if (dir == STAGE_DIR_IN) 
-      strcpy(localname,arg3);
-    else
+    if (dir == STAGE_DIR_OUT) 
+      {
       strcpy(localname,arg2);
+      }
 
     /* if we made a fake TMPDIR, and we are using it, don't delete after stagein */
 
@@ -2764,7 +2764,9 @@ void req_cpyfile(
         add_bad_list(&bad_list,">>> end error output",1);
         }
 
-ERROR:
+#ifdef HAVE_WORDEXP
+error:
+#endif
 
       if (dir == STAGE_DIR_IN) 
         {

@@ -2,6 +2,9 @@
 
   fixes to qsub's env handling for newlines and commas (UMU)
   fixes to at_arst encoding and decoding for newlines and commas (USC)
+  use -p with rcp/scp (USC)
+  several fixes around .pbs_spool usage (USC)
+  don't create "kept" stdout/err files ugo+rw (avoid insane umask) (USC)
 
 2.0.0p4
 
