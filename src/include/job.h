@@ -441,8 +441,8 @@ struct job {
 		    time_t  ji_rteretry;	      /* route retry time */
 		} ji_routet;
 		struct {
+                    pbs_net_t  ji_fromaddr;     /* host job coming from   */
 		    int	       ji_fromsock;	/* socket job coming over */
-		    pbs_net_t  ji_fromaddr;	/* host job coming from   */
 		    int	       ji_scriptsz;	/* script size */
 		} ji_newt;
 		struct {

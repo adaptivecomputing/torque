@@ -1,5 +1,8 @@
 2.0.0p5
 
+  reorganize ji_newt structure to eliminate 64 bit data packing issues
+  enable '--disable-spool' configure directive
+  enable stdout/stderr stageout to search through $HOME and $HOME/.pbs_spool
   fixes to qsub's env handling for newlines and commas (UMU)
   fixes to at_arst encoding and decoding for newlines and commas (USC)
   use -p with rcp/scp (USC)
