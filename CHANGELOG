@@ -7,6 +7,7 @@
   don't create "kept" stdout/err files ugo+rw (avoid insane umask) (USC)
   qsub -V shouldn't clobber qsub's environ (USC)
   don't prevent connects to "down" nodes that are still talking (USC)
+  allow file globs to work correctly under --enable-wordexp (USC)
 
 2.0.0p4
 

@@ -2144,7 +2144,7 @@ static int sys_copy(
   char *ag0;
   char *ag1;
   int i;
-  static char *myid = "sys_copy";
+  static char *id = "sys_copy";
   int loop;
   int rc;
 
@@ -2152,36 +2152,35 @@ static int sys_copy(
     path_spool, 
     (long)getpid());
 
-  for (loop = 1;loop < 5;++loop) 
+  if (rmtflg == 0) 
+    {	/* local copy */
+    ag0 = "/bin/cp";
+    ag1 = "-r";
+    } 
+  else
     {
-    if (rmtflg == 0) 
-      {	/* local copy */
-      ag0 = "/bin/cp";
-      ag1 = "-r";
-
-      } 
-    else
-      {
 #ifdef SCP_PATH
-      ag0 = SCP_PATH;
-      ag1 = "-Brp";
+    ag0 = SCP_PATH;
+    ag1 = "-Brp";
 #else /* SCP_PATH */
-      ag0 = RCP_PATH;
-      ag1 = "-rp";
+    ag0 = RCP_PATH;
+    ag1 = "-rp";
 #endif	/* SCP_PATH */
-      } 
+    } 
 
-    if (LOGLEVEL >= 6)
-      {
-      sprintf(log_buffer,"executing copy command: %s %s %s %s",
-        ag0,
-        ag1,
-        ag2,
-        ag3);
- 
-      log_err(-1,"sys_copy",log_buffer);
-      }
+  if (LOGLEVEL >= 6)
+    {
+    sprintf(log_buffer,"executing copy command: %s %s %s %s",
+      ag0,
+      ag1,
+      ag2,
+      ag3);
 
+    log_err(-1,id,log_buffer);
+    }
+
+  for (loop = 1;loop < 4;++loop) 
+    {
     if ((rc = fork()) > 0) 
       {
       /* Parent - wait for copy to complete */
@@ -2229,7 +2228,7 @@ static int sys_copy(
         sprintf(log_buffer,"can't open %s, error = %d",
           rcperr,errno);
 
-        log_err(errno,myid,log_buffer);
+        log_err(errno,id,log_buffer);
 
         exit(12);
         };
@@ -2252,29 +2251,31 @@ static int sys_copy(
         ag3, 
         errno);
 
-      log_err(errno,myid,log_buffer);
+      log_err(errno,id,log_buffer);
 
       exit(13);	/* 13, an unlucky number */
       }
 
     /* copy did not work, try again */
 
-    sprintf(log_buffer,"command: %s %s %s %s status=%d, try=%d",
-      ag0, 
-      ag1, 
-      ag2, 
-      ag3, 
-      rc, 
-      loop);
-
-    log_err(-1,myid,log_buffer);
-
-    if ((loop % 2) == 0)	/* don't sleep between scp and rcp */
+    if ((loop % 2) == 0)
       sleep(loop/2 * 3 + 1);
 
     }  /* END for (loop) */
 
-  return(rc);	/* tried a bunch of times, just give up */
+  /* tried a bunch of times, just give up */
+
+  sprintf(log_buffer,"command: %s %s %s %s status=%d, try=%d",
+    ag0, 
+    ag1, 
+    ag2, 
+    ag3, 
+    rc, 
+    loop);
+
+  log_err(-1,id,log_buffer);
+
+  return(rc);
   }  /* END sys_copy() */
 
 
@@ -2350,7 +2351,8 @@ void req_cpyfile(
 #ifdef HAVE_WORDEXP
   int		 madefaketmpdir=0;
   int		 usedfaketmpdir=0;
-  wordexp_t	 argexp;
+  wordexp_t	 arg2exp, arg3exp;
+  int            arg2index;
   char		 faketmpdir[1024];
   job 		*pjob;
 #endif
@@ -2606,7 +2608,7 @@ void req_cpyfile(
 
     /* Expand and verify arg2 (source path) */
 
-    switch (wordexp(arg2,&argexp,WRDE_NOCMD|WRDE_UNDEF))
+    switch (wordexp(arg2,&arg2exp,WRDE_NOCMD|WRDE_UNDEF))
       {
       case 0:
 
@@ -2616,7 +2618,7 @@ void req_cpyfile(
 
       case WRDE_NOSPACE:
 
-        wordfree(&argexp);
+        wordfree(&arg2exp);
 
         /* fall through */
 
@@ -2636,27 +2638,9 @@ void req_cpyfile(
         break;
       }  /* END switch () */
 
-    if (argexp.we_wordc > 1)
-      {
-      sprintf(log_buffer,"Too many words after expanding source destination path: %s",
-        arg2);
-
-      add_bad_list(&bad_list,log_buffer,2);
-
-      wordfree(&argexp);
-
-      bad_files = 1;
-
-      goto error;
-      }
-
-    strcpy(arg2,argexp.we_wordv[0]);
-
-    wordfree(&argexp);
-
     /* Expand and verify arg3 (destination path) */
 
-    switch (wordexp(arg3,&argexp,WRDE_NOCMD|WRDE_UNDEF))
+    switch (wordexp(arg3,&arg3exp,WRDE_NOCMD|WRDE_UNDEF))
       {
       case 0:
 
@@ -2664,7 +2648,7 @@ void req_cpyfile(
 
       case WRDE_NOSPACE:
 
-        wordfree(&argexp);
+        wordfree(&arg3exp);
 
         /* fall through */
 
@@ -2682,7 +2666,9 @@ void req_cpyfile(
         break;
       }  /* END switch () */
 
-    if (argexp.we_wordc > 1)
+    /* Note: more than one word is only allowed for arg3 (destination) */
+
+    if (arg3exp.we_wordc > 1)
       {
       sprintf(log_buffer,"Too many words after expanding destination path: %s",
         arg3);
@@ -2696,9 +2682,26 @@ void req_cpyfile(
       goto error;
       }
 
-    strcpy(arg3,argexp.we_wordv[0]);
+    strcpy(arg3,arg3exp.we_wordv[0]);
 
-    wordfree(&argexp);
+    wordfree(&arg3exp);
+
+    arg2index = -1;
+
+nextword:
+
+    arg2index++;
+
+    if (arg2index >= arg2exp.we_wordc) 
+      {
+      /* no more words */
+
+      wordfree(&arg2exp);
+
+      continue;
+      }
+
+    strcpy(arg2,arg2exp.we_wordv[arg2index]);
 
     if (dir == STAGE_DIR_OUT) 
       {
@@ -2837,6 +2840,9 @@ error:
       }
 
     unlink(rcperr);
+#ifdef HAVE_WORDEXP
+    goto nextword;  /* ugh, it's hard to use a real loop when your feature is #ifdef's out */
+#endif
     }  /* END for(pair) */
 
 #ifdef HAVE_WORDEXP
