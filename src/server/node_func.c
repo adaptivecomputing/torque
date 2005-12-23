@@ -121,7 +121,7 @@
 #if !defined(H_ERRNO_DECLARED)
 extern int h_errno;
 #endif
-
+extern time_t      time_now;
 
 
 /* Global Data */
@@ -286,9 +286,27 @@ int addr_ok(
       if (pbsndlist[i]->nd_addrs[0] != addr)
         continue;
 
-      if (pbsndlist[i]->nd_state & (INUSE_DOWN|INUSE_DELETED|INUSE_UNKNOWN))
+      if (pbsndlist[i]->nd_state & (INUSE_DELETED|INUSE_UNKNOWN))
         {
+        /* definitely not ok */
+
         status = 0;
+        }
+      else if (pbsndlist[i]->nd_state & INUSE_DOWN)
+        {
+        /* the node is ok if it is still talking to us */
+        int chk_len;
+
+        chk_len = server.sv_attr[(int)SRV_ATR_check_rate].at_val.at_long;
+        if (pbsndlist[i]->nd_lastupdate <= (time_now - chk_len))
+          {
+          status = 0;
+          }
+
+        if (pbsndlist[i]->nd_stream < 0)
+          {
+          status = 0;
+          }
         }
 
       break;

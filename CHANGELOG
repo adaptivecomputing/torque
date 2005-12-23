@@ -6,6 +6,7 @@
   several fixes around .pbs_spool usage (USC)
   don't create "kept" stdout/err files ugo+rw (avoid insane umask) (USC)
   qsub -V shouldn't clobber qsub's environ (USC)
+  don't prevent connects to "down" nodes that are still talking (USC)
 
 2.0.0p4
 
