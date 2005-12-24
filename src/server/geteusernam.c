@@ -190,8 +190,8 @@ static char *geteusernam(
 
 static char *getegroup(
 
-  job       *pjob,
-  attribute *pattr)	/* group_list attribute */
+  job       *pjob,  /* I */
+  attribute *pattr) /* I group_list attribute */
 
   {
   char	*hit = 0;

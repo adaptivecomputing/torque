@@ -4865,10 +4865,10 @@ int init_groups(
 
 int init_groups(
 
-  char *pwname,	   /* User's name */
-  int   pwgrp,	   /* User's group from pw entry */
-  int   groupsize, /* size of the array, following argument */
-  int  *groups)	   /* ptr to group array, list build there */
+  char *pwname,	   /* I User's name */
+  int   pwgrp,	   /* I User's group from pw entry */
+  int   groupsize, /* I size of the array, following argument */
+  int  *groups)	   /* O ptr to group array, list build there */
 
   {
   struct group *grp;

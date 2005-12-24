@@ -104,6 +104,7 @@
 
 #include "pbs_ifl.h"
 #include <sys/types.h>
+#include <grp.h>
 #include <assert.h>
 #include <errno.h>
 #include <stdio.h>
@@ -1006,55 +1007,100 @@ int svr_chkque(
 
       int rc;
 
-      if ((pjob->ji_wattr[(int)JOB_ATR_grouplst].at_flags & ATR_VFLAG_SET) &&
-          (parst = pjob->ji_wattr[(int)JOB_ATR_grouplst].at_val.at_arst) &&
-          (getenv("PBSACLUSEGRPLIST") != NULL))
+#ifdef PBSACLUSEGRPLIST
         {
-        char  *pn;
-        char  *ptr;
-        static char groupname[PBS_MAXUSER + 1];
+        /* check group acl against all accessible groups */
 
-        int    i;
-
-        /* search the group-list attribute */
-
-        for (i = 0;i < parst->as_usedptr;i++)
+        if ((pjob->ji_wattr[(int)JOB_ATR_grouplst].at_flags & ATR_VFLAG_SET) &&
+            (parst = pjob->ji_wattr[(int)JOB_ATR_grouplst].at_val.at_arst))
           {
-          pn = parst->as_string[i];
-          ptr = strchr(pn,'@');
+          char  *pn;
+          char  *ptr;
+          static char groupname[PBS_MAXUSER + 1];
 
-          /* NOTE:  match against both local and remote groups (FIXME) */
+          int    i;
 
-          if (ptr != NULL)
+          /* search the group-list attribute */
+
+          for (i = 0;i < parst->as_usedptr;i++)
             {
-            strncpy(groupname,pn,MIN(PBS_MAXUSER,ptr - pn));
-            groupname[MIN(PBS_MAXUSER,ptr - pn)] = '\0';
-            }
-          else
+            pn = parst->as_string[i];
+            ptr = strchr(pn,'@');
+
+            /* NOTE:  match against both local and remote groups (FIXME) */
+
+            if (ptr != NULL)
+              {
+              strncpy(groupname,pn,MIN(PBS_MAXUSER,ptr - pn));
+              groupname[MIN(PBS_MAXUSER,ptr - pn)] = '\0';
+              }
+            else
+              {
+              strncpy(groupname,pn,PBS_MAXUSER);
+              }
+
+            rc = acl_check(
+              &pque->qu_attr[QA_ATR_AclGroup],
+              groupname,
+              ACL_Group);
+
+            if (rc != 0)
+              {
+              /* match found or failure encountered */
+
+              break;
+              }
+            }  /* END for (i) */
+          }
+        else 
+          {
+          struct group *grp;
+          int i;
+
+          char uname[64];
+
+          rc = 0;
+
+          strncpy(uname,pjob->ji_wattr[(int)JOB_ATR_job_owner].at_val.at_str,64);
+
+          strtok(uname,"@");
+
+          setgrent();
+
+          /* walk all groups looking for matching user membership */
+
+          while ((grp = getgrent()))
             {
-            strncpy(groupname,pn,PBS_MAXUSER);
-            }
+            for (i = 0;grp->gr_mem[i] != NULL;i++)
+              {
+              if (strcmp(grp->gr_mem[i],uname))
+                continue;
 
-          rc = acl_check(
-            &pque->qu_attr[QA_ATR_AclGroup],
-            groupname,
-            ACL_Group);
+              rc = acl_check(
+                &pque->qu_attr[QA_ATR_AclGroup],
+                grp->gr_name,
+                ACL_Group);
 
-          if (rc != 0)
-            {
-            /* match found or failure encountered */
+              break;
+              }
 
-            break;
-            }
-          }  /* END for (i) */
-        }
-      else
+            if (rc != 0)
+              {
+              /* match found or failure encountered */
+
+              break;
+              }
+            }  /* END while (grp) */
+          }    /* END else */
+        }      /* END if (getenv("PBSACLUSEGRPLIST") != NULL) */
+#else
         {
         rc = acl_check(
            &pque->qu_attr[QA_ATR_AclGroup],
            pjob->ji_wattr[(int)JOB_ATR_egroup].at_val.at_str,
            ACL_Group);
         }
+#endif /* PBSACLUSEGRPLIST */
 
       if (rc == 0)
         {
