@@ -954,8 +954,8 @@ int svr_chkque(
 
   {
   int i;
-  int failed_group_acl=0;
-  int failed_user_acl=0;
+  int failed_group_acl = 0;
+  int failed_user_acl  = 0;
 
   /*
    * 1. If the queue is an Execution queue ...
@@ -1002,20 +1002,77 @@ int svr_chkque(
 
     if (pque->qu_attr[QA_ATR_AclGroupEnabled].at_val.at_long)
       {
-      if (acl_check(
+      struct array_strings *parst;
+
+      int rc;
+
+      if ((pattr->at_flags & ATR_VFLAG_SET) &&
+          (parst = pattr->at_val.at_arst) &&
+          (getenv("PBSACLUSEGRPLIST") != NULL))
+        {
+        char  *pn;
+        char  *ptr;
+        static char groupname[PBS_MAXUSER + 1];
+
+        int    i;
+
+        /* search the group-list attribute */
+
+        if ((pattr->at_flags & ATR_VFLAG_SET) &&
+            (parst = pattr->at_val.at_arst))
+          {
+          for (i = 0;i < parst->as_usedptr;i++)
+            {
+            pn = parst->as_string[i];
+            ptr = strchr(pn,'@');
+
+            /* NOTE:  match against both local and remote groups (FIXME) */
+
+            if (ptr != NULL)
+              {
+              strncpy(groupname,pn,MIN(PBS_MAXUSER,ptr - pn));
+              groupname[MIN(PBS_MAXUSER,ptr - pn)] = '\0';
+
+              rc = acl_check(
+                &pque->qu_attr[QA_ATR_AclGroup],
+                groupname,
+                ACL_Group);
+              }
+
+            if (rc != 0)
+              {
+              /* match found or failure encountered */
+
+              break;
+              }
+            }  /* END for (i) */
+          }
+        }
+      else
+        {
+        rc = acl_check(
            &pque->qu_attr[QA_ATR_AclGroup],
            pjob->ji_wattr[(int)JOB_ATR_egroup].at_val.at_str,
-           ACL_Group) == 0)
+           ACL_Group);
+        }
+
+      if (rc == 0)
         {
+        /* ACL not satisfied */
+
         if (mtype != MOVE_TYPE_MgrMv) /* ok if mgr */
           {
           if (pque->qu_attr[QA_ATR_AclLogic].at_val.at_long &&
               pque->qu_attr[QA_ATR_AclUserEnabled].at_val.at_long)
             {
+            /* only fail if neither user nor group acls can be met */
+
             failed_group_acl = 1;
             }
           else
             {
+            /* no user acl, fail immediately */
+
             return(PBSE_PERM);
             }
           }
@@ -1078,10 +1135,14 @@ int svr_chkque(
         if (pque->qu_attr[QA_ATR_AclLogic].at_val.at_long &&
             pque->qu_attr[QA_ATR_AclGroupEnabled].at_val.at_long)
           {
-          failed_user_acl=1;
+          /* only fail if neither user nor group acls can be met */
+
+          failed_user_acl = 1;
           }
         else
           {
+          /* no group acl, fail immediately */
+
           return(PBSE_PERM);
           }
         }

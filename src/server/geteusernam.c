@@ -199,7 +199,7 @@ static char *getegroup(
   struct array_strings *parst;
   char	*pn;
   char	*ptr;
-  static char groupname[PBS_MAXUSER+1];
+  static char groupname[PBS_MAXUSER + 1];
 
   /* search the group-list attribute */
 
@@ -208,18 +208,28 @@ static char *getegroup(
     {
     for (i = 0;i < parst->as_usedptr;i++) 
       {
-			pn = parst->as_string[i];
-			ptr = strchr(pn, '@');
-			if (ptr) {	/* has host specification */
-			    if (!strncmp(server_host, ptr+1,strlen(ptr+1))) {
-				hit = pn;	/* option 1. */
-				break;
-			    }
-			} else {	/* wildcard host (null) */
-			    hit = pn;	/* option 2. */
-			}
-		}
-	}
+      pn = parst->as_string[i];
+      ptr = strchr(pn,'@');
+
+      if (ptr != NULL) 
+        {
+        /* has host specification */
+
+        if (!strncmp(server_host,ptr + 1,strlen(ptr + 1))) 
+          {
+          hit = pn;	/* option 1. */
+
+          break;
+          }
+        } 
+      else 
+        {
+        /* wildcard host (null) */
+
+        hit = pn;	/* option 2. */
+        }
+      }
+    }
 
   if (!hit) 	/* nothing sepecified, return null */
     {
