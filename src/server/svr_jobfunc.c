@@ -1138,14 +1138,14 @@ int svr_chkque(
       }
 
     if ((pque->qu_attr[QA_ATR_MaxJobs].at_flags & ATR_VFLAG_SET) &&
-        (pque->qu_numjobs>=pque->qu_attr[QA_ATR_MaxJobs].at_val.at_long))
+        (pque->qu_numjobs >= pque->qu_attr[QA_ATR_MaxJobs].at_val.at_long))
       {
       return(PBSE_MAXQUED);
       }
     
     /* 3. if "from_route_only" is true, only local route allowed */
 
-    if ((pque->qu_attr[QA_ATR_FromRouteOnly].at_flags&ATR_VFLAG_SET) &&
+    if ((pque->qu_attr[QA_ATR_FromRouteOnly].at_flags & ATR_VFLAG_SET) &&
         (pque->qu_attr[QA_ATR_FromRouteOnly].at_val.at_long == 1))
       {
       if (mtype == MOVE_TYPE_Move)  /* ok if not plain user */
