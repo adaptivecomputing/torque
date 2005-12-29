@@ -804,10 +804,10 @@ static int overcpu_proc(
       continue;
       }
 
-    if (!injob(pjob, ps->session))
+    if (!injob(pjob,ps->session))
       continue;
 
-    cputime = (ulong)((double)(ps->cutime + ps->cstime)*cputfactor);
+    cputime = (ulong)((double)(ps->cutime + ps->cstime) * cputfactor);
 
     if (cputime > limit)
       {
@@ -882,7 +882,8 @@ static unsigned long resi_sum(
   job *pjob)
 
   {
-  char		*id="resi_sum";
+  char		*id = "resi_sum";
+
   ulong	         resisize;
   struct dirent	*dent;
   proc_stat_t	*ps;
