@@ -11,13 +11,13 @@
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
-#if defined(__STDC__) && (!defined(sun) || defined(__TSOLARIS5))  /* NOTE:  changeme */
+#if defined(__STDC__) && !defined(__TSUNOS4)
 #include <stdarg.h>
 #else
 #include <varargs.h>
 #endif
 
-#if defined(__STDC__) && (!defined(sun) || defined(__TSOLARIS5))
+#if defined(__STDC__) && !defined(__TSUNOS4)
 void errx(int err, const char *fmt, ...)
 #else
 void errx(err, fmt, va_alist)
@@ -28,7 +28,7 @@ void errx(err, fmt, va_alist)
 {
 	va_list ap;
 
-#if defined(__STDC__) && (!defined(sun) || defined(__TSOLARIS5))
+#if defined(__STDC__) && !defined(__TSUNOS4)
 	va_start(ap, fmt);
 #else
 	va_start(ap);
@@ -37,7 +37,7 @@ void errx(err, fmt, va_alist)
 	exit (err);
 }
 
-#if defined(__STDC__) && (!defined(sun) || defined(__TSOLARIS5))
+#if defined(__STDC__) && !defined(__TSUNOS4)
 void warnx(const char *fmt, ...)
 #else
 void warnx(fmt, va_alist)
@@ -48,7 +48,7 @@ void warnx(fmt, va_alist)
   {
   va_list ap;
 
-#if defined(__STDC__) && (!defined(sun) || defined(__TSOLARIS5))
+#if defined(__STDC__) && !defined(__TSUNOS4)
   va_start(ap, fmt);
 #else
   va_start(ap);

@@ -1689,9 +1689,9 @@ esac
 
 fi
 
-if test "$PBS_MACH" = solaris5; then
+if test "$PBS_MACH" = sunos4; then
 cat >> confdefs.h <<EOF
-#define __TSOLARIS5
+#define __TSUNOS4
 EOF
 fi
 
