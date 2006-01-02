@@ -112,6 +112,7 @@ case "$OS" in
 
   sun*)  case "$REL" in
            4*)  mach=sunos4 ;;
+           5.10)  mach=solaris7 ;;
            5.[0123456]*)  mach=solaris5 ;;
            5.*)  mach=solaris7 ;;
            *)   bad_rel=y ;;
