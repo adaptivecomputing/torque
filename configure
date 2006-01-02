@@ -2239,7 +2239,6 @@ else
     fi
   done
   IFS="$ac_save_ifs"
-  test -z "$ac_cv_prog_AR" && ac_cv_prog_AR=":"
 fi
 fi
 AR="$ac_cv_prog_AR"
@@ -2248,6 +2247,7 @@ if test -n "$AR"; then
 else
   echo "$ac_t""no" 1>&6
 fi
+test -z "$AR" && { echo "configure: error: no acceptable ar found in \$PATH" 1>&2; exit 1; }
 
 for ac_prog in 'bison -y' byacc
 do

@@ -12,6 +12,7 @@
   don't prevent connects to "down" nodes that are still talking (USC)
   allow file globs to work correctly under --enable-wordexp (USC)
   enable secondary group checking when evaluating queue acl_group attribute
+  sol10 build system fixes (USC)
 
 2.0.0p4
 
