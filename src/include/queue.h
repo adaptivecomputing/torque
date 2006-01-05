@@ -128,6 +128,7 @@ enum queueattr {
         QA_ATR_AclGroupEnabled,
         QA_ATR_AclGroup,
         QA_ATR_AclLogic,
+        QA_ATR_AclGroupSloppy,
 
 	/* The following attributes apply only to exection queues */
 

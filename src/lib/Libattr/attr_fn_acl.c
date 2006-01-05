@@ -86,6 +86,8 @@
 #endif
 #include <stdlib.h>
 #include <string.h>
+#include <grp.h>
+#include <sys/types.h>
 #include "pbs_ifl.h"
 #include "list_link.h"
 #include "attribute.h"
@@ -123,6 +125,7 @@
 
 static int hacl_match A_((const char *can, const char *master));
 static int user_match A_((const char *can, const char *master));
+static int gid_match A_((const char *can, const char *master));
 static int host_order A_((char *old, char *new));
 static int user_order A_((char *old, char *new));
 static int set_allacl A_((attribute *, attribute *, enum batch_op,
@@ -209,6 +212,9 @@ int acl_check(pattr, name, type)
 		break;
 	    case ACL_User:
 		match_func = user_match;
+		break;
+	    case ACL_Gid:
+		match_func = gid_match;
 		break;
 	    case ACL_Group:
 	    default:
@@ -583,6 +589,31 @@ static int user_order(
   }  /* END user_order() */
 
 
+/*
+ * group acl match - match 2 groups by gid
+ */
+static int gid_match(const char *group1, const char *group2)
+{
+   struct group *pgrp;
+   gid_t gid1, gid2;
+
+fprintf(stderr,"checking %s strcmp %s\n",group1,group2);
+
+   if (!strcmp(group1,group2))
+     {
+     return(0); /* match */
+     }
+
+   pgrp = getgrnam(group1);
+   gid1 = pgrp->gr_gid;
+   pgrp = getgrnam(group2);
+   gid2 = pgrp->gr_gid;
+fprintf(stderr,"checking %d == %d\n",gid1,gid2);
+
+   return (! (gid1 == gid2));
+}
+
+    
 /*
  * host acl order match - match two strings from the tail end first
  * 

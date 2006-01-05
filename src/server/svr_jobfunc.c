@@ -1010,8 +1010,7 @@ int svr_chkque(
          pjob->ji_wattr[(int)JOB_ATR_egroup].at_val.at_str,
          ACL_Group);
 
-#ifdef PBSACLUSEGRPLIST
-      if (rc == 0)
+      if ((rc == 0) && pque->qu_attr[QA_ATR_AclGroupSloppy].at_val.at_long)
         {
         /* check group acl against all accessible groups */
 
@@ -1020,8 +1019,7 @@ int svr_chkque(
 
         char uname[PBS_MAXUSER + 1];
 
-        strncpy(uname,pjob->ji_wattr[(int)JOB_ATR_job_owner].at_val.at_str,PBS_MAXUSER);
-        strtok(uname,"@");
+        strncpy(uname,pjob->ji_wattr[(int)JOB_ATR_euser].at_val.at_str,PBS_MAXUSER);
 
         setgrent();
 
@@ -1037,7 +1035,7 @@ int svr_chkque(
             rc = acl_check(
               &pque->qu_attr[QA_ATR_AclGroup],
               grp->gr_name,
-              ACL_Group);
+              ACL_Gid);
 
             break;
             }
@@ -1049,8 +1047,7 @@ int svr_chkque(
             break;
             }
           }  /* END while (grp) */
-        }    /* END if (rc == 0) */
-#endif /* PBSACLUSEGRPLIST */
+        }    /* END if (rc == 0) && AclGroupSloppy */
 
       if (rc == 0)
         {

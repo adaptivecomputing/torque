@@ -436,5 +436,6 @@ extern int      node_status_list A_(( attribute*, void*, int));
 #define ACL_Host  1
 #define ACL_User  2
 #define ACL_Group 3
+#define ACL_Gid   4
 
 #endif 	/* ATTRIBUTE_H */

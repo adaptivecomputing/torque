@@ -119,4 +119,5 @@ ATTR_rsvexpdt,
 ATTR_rsvsync,
 ATTR_start,
 ATTR_acllogic,  /* contributed by USC */
+ATTR_aclgrpslpy,
 

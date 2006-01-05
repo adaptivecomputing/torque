@@ -192,6 +192,7 @@
 #define ATTR_count	"state_count"
 #define ATTR_number	"number_jobs"
 #define ATTR_acllogic   "acl_logic_or"
+#define ATTR_aclgrpslpy "acl_group_sloppy"
 
 
 /* additional server attributes names */

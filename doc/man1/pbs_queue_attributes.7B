@@ -103,6 +103,13 @@ Format: boolean, "TRUE", "True", "true", "Y", "y", "1", "FALSE", "False",
 .if !\n(Pb .ig Ig
 [internal type: boolean]
 .Ig
+.Al acl_group_sloppy
+Search a job user's secondary groups if the effective group doesn't match the group acl.
+Format: boolean, "TRUE", "True", "true", "Y", "y", "1", "FALSE", "False",
+"false", "N", "n", "0"; default value: false = disabled.
+.if !\n(Pb .ig Ig
+[internal type: boolean]
+.Ig
 .Al acl_groups
 List which allows or denies enqueuing of jobs owned by members of the listed
 groups.  The groups in the list are groups on the server host, not submitting
