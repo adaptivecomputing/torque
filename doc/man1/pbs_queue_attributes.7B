@@ -105,6 +105,7 @@ Format: boolean, "TRUE", "True", "true", "Y", "y", "1", "FALSE", "False",
 .Ig
 .Al acl_group_sloppy
 Search a job user's secondary groups if the effective group doesn't match the group acl.
+Warning, this can be very slow and expensive.
 Format: boolean, "TRUE", "True", "true", "Y", "y", "1", "FALSE", "False",
 "false", "N", "n", "0"; default value: false = disabled.
 .if !\n(Pb .ig Ig

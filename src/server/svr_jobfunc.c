@@ -1010,7 +1010,9 @@ int svr_chkque(
          pjob->ji_wattr[(int)JOB_ATR_egroup].at_val.at_str,
          ACL_Group);
 
-      if ((rc == 0) && pque->qu_attr[QA_ATR_AclGroupSloppy].at_val.at_long)
+      if ((rc == 0) &&
+          (pque->qu_attr[QA_ATR_AclGroupSloppy].at_val.at_long) &&
+          (!(pjob->ji_wattr[(int)JOB_ATR_grouplst].at_flags & ATR_VFLAG_SET)))
         {
         /* check group acl against all accessible groups */
 
@@ -1047,6 +1049,9 @@ int svr_chkque(
             break;
             }
           }  /* END while (grp) */
+
+          endgrent();
+
         }    /* END if (rc == 0) && AclGroupSloppy */
 
       if (rc == 0)
