@@ -1003,103 +1003,53 @@ int svr_chkque(
 
     if (pque->qu_attr[QA_ATR_AclGroupEnabled].at_val.at_long)
       {
-      struct array_strings *parst;
-
       int rc;
 
+      rc = acl_check(
+         &pque->qu_attr[QA_ATR_AclGroup],
+         pjob->ji_wattr[(int)JOB_ATR_egroup].at_val.at_str,
+         ACL_Group);
+
 #ifdef PBSACLUSEGRPLIST
+      if (rc == 0)
         {
         /* check group acl against all accessible groups */
 
-        if ((pjob->ji_wattr[(int)JOB_ATR_grouplst].at_flags & ATR_VFLAG_SET) &&
-            (parst = pjob->ji_wattr[(int)JOB_ATR_grouplst].at_val.at_arst))
+        struct group *grp;
+        int i;
+
+        char uname[PBS_MAXUSER + 1];
+
+        strncpy(uname,pjob->ji_wattr[(int)JOB_ATR_job_owner].at_val.at_str,PBS_MAXUSER);
+        strtok(uname,"@");
+
+        setgrent();
+
+        /* walk all groups looking for matching user membership */
+
+        while ((grp = getgrent()))
           {
-          char  *pn;
-          char  *ptr;
-          static char groupname[PBS_MAXUSER + 1];
-
-          int    i;
-
-          /* search the group-list attribute */
-
-          for (i = 0;i < parst->as_usedptr;i++)
+          for (i = 0;grp->gr_mem[i] != NULL;i++)
             {
-            pn = parst->as_string[i];
-            ptr = strchr(pn,'@');
-
-            /* NOTE:  match against both local and remote groups (FIXME) */
-
-            if (ptr != NULL)
-              {
-              strncpy(groupname,pn,MIN(PBS_MAXUSER,ptr - pn));
-              groupname[MIN(PBS_MAXUSER,ptr - pn)] = '\0';
-              }
-            else
-              {
-              strncpy(groupname,pn,PBS_MAXUSER);
-              }
+            if (strcmp(grp->gr_mem[i],uname))
+              continue;
 
             rc = acl_check(
               &pque->qu_attr[QA_ATR_AclGroup],
-              groupname,
+              grp->gr_name,
               ACL_Group);
 
-            if (rc != 0)
-              {
-              /* match found or failure encountered */
+            break;
+            }
 
-              break;
-              }
-            }  /* END for (i) */
-          }
-        else 
-          {
-          struct group *grp;
-          int i;
-
-          char uname[64];
-
-          rc = 0;
-
-          strncpy(uname,pjob->ji_wattr[(int)JOB_ATR_job_owner].at_val.at_str,64);
-
-          strtok(uname,"@");
-
-          setgrent();
-
-          /* walk all groups looking for matching user membership */
-
-          while ((grp = getgrent()))
+          if (rc != 0)
             {
-            for (i = 0;grp->gr_mem[i] != NULL;i++)
-              {
-              if (strcmp(grp->gr_mem[i],uname))
-                continue;
+            /* match found */
 
-              rc = acl_check(
-                &pque->qu_attr[QA_ATR_AclGroup],
-                grp->gr_name,
-                ACL_Group);
-
-              break;
-              }
-
-            if (rc != 0)
-              {
-              /* match found or failure encountered */
-
-              break;
-              }
-            }  /* END while (grp) */
-          }    /* END else */
-        }      /* END if (getenv("PBSACLUSEGRPLIST") != NULL) */
-#else
-        {
-        rc = acl_check(
-           &pque->qu_attr[QA_ATR_AclGroup],
-           pjob->ji_wattr[(int)JOB_ATR_egroup].at_val.at_str,
-           ACL_Group);
-        }
+            break;
+            }
+          }  /* END while (grp) */
+        }    /* END if (rc == 0) */
 #endif /* PBSACLUSEGRPLIST */
 
       if (rc == 0)
