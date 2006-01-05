@@ -597,8 +597,6 @@ static int gid_match(const char *group1, const char *group2)
    struct group *pgrp;
    gid_t gid1, gid2;
 
-fprintf(stderr,"checking %s strcmp %s\n",group1,group2);
-
    if (!strcmp(group1,group2))
      {
      return(0); /* match */
@@ -606,9 +604,9 @@ fprintf(stderr,"checking %s strcmp %s\n",group1,group2);
 
    pgrp = getgrnam(group1);
    gid1 = pgrp->gr_gid;
+
    pgrp = getgrnam(group2);
    gid2 = pgrp->gr_gid;
-fprintf(stderr,"checking %d == %d\n",gid1,gid2);
 
    return (! (gid1 == gid2));
 }
