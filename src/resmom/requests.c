@@ -2136,9 +2136,9 @@ void req_rerunjob(
 static int sys_copy(
 
   int   rmtflg,  /* I */
-  char *ag2,
-  char *ag3,
-  int   conn)
+  char *ag2,     /* I */
+  char *ag3,     /* I */
+  int   conn)    /* I */
 
   {
   char *ag0;
@@ -2153,12 +2153,16 @@ static int sys_copy(
     (long)getpid());
 
   if (rmtflg == 0) 
-    {	/* local copy */
+    {	
+    /* local copy */
+
     ag0 = "/bin/cp";
     ag1 = "-r";
     } 
   else
     {
+    /* use '-p' to preserve permissions */
+
 #ifdef SCP_PATH
     ag0 = SCP_PATH;
     ag1 = "-Brp";
@@ -2242,9 +2246,9 @@ static int sys_copy(
 
       execl(ag0,ag0,ag1,ag2,ag3,NULL);
 
-      /* not reached on success */
+      /* reached only if execl() fails */
 
-      sprintf(log_buffer,"command: %s %s %s %s exec failed %d",
+      sprintf(log_buffer,"exec of command '%s %s %s %s' failed, errno=%d",
         ag0, 
         ag1, 
         ag2, 
@@ -2260,12 +2264,11 @@ static int sys_copy(
 
     if ((loop % 2) == 0)
       sleep(loop/2 * 3 + 1);
-
     }  /* END for (loop) */
 
   /* tried a bunch of times, just give up */
 
-  sprintf(log_buffer,"command: %s %s %s %s status=%d, try=%d",
+  sprintf(log_buffer,"command '%s %s %s %s' failed with status=%d, giving up after %d attempts",
     ag0, 
     ag1, 
     ag2, 
