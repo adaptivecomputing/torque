@@ -2162,19 +2162,35 @@ done:
 
 /*
 **	Add the "global" spec to every sub-spec in "spec".
+**      RETURNS:  allocated string buffer (must be freed externally) 
 */
 
 static char *mod_spec(
 
-  char *spec,
-  char *global)
+  char *spec,    /* I */
+  char *global)  /* I */
 
   {
-  static char	line[512];
+  char  *line;
   char	*cp;
-  int	len;
+  int    len;
+  int    nsubspec;
+
+  nsubspec = 1;
+
+  cp = spec;
+
+  while (*cp++ != NULL) 
+    {
+    if (*cp == '+') 
+      {
+       nsubspec++;
+      }
+    }
 
   len = strlen(global);
+
+  line = malloc(nsubspec * (len + 1) + strlen(spec) + 1);
 
   cp = line;
 
@@ -2197,7 +2213,8 @@ static char *mod_spec(
   strcpy(cp,global);
 
   return(line);
-  }
+  }  /* END mod_spec() */
+
 
 
 
@@ -2256,6 +2273,8 @@ static int nodecmp(
   struct pbsnode	*a = *(struct pbsnode **)aa;
   struct pbsnode	*b = *(struct pbsnode **)bb;
   int	aprim, bprim;
+
+  /* exclusive is global */
 
   if (exclusive) 
     {	
@@ -2351,7 +2370,7 @@ static int node_spec(
 
       if (strcmp(cp,shared) != 0) 
         {
-        hold = strdup(mod_spec(spec,cp));
+        hold = mod_spec(spec,cp);
 
         free(spec);
 
@@ -2365,7 +2384,7 @@ static int node_spec(
 
     if (strcmp(globs,shared) != 0) 
       {
-      hold = strdup(mod_spec(spec,globs));
+      hold = mod_spec(spec,globs);
 
       free(spec);
 
