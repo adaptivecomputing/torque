@@ -2226,12 +2226,22 @@ char *sessions(
 			jids[njids++] = jobid;	/* so add it to list */
 	}
 
-	fmt = ret_string;
-	for (j=0; j<njids; j++) {
-		checkret(&fmt, 100);
-		sprintf(fmt, " %d", (int)jids[j]);
-		fmt += strlen(fmt);
-	}
+  fmt = ret_string;
+  for (j=0; j<njids; j++)
+    {
+    checkret(&fmt, 100);
+
+    if (j == 0)
+      {
+      sprintf(fmt, "%d", (int)jids[j]);
+      }
+    else
+      {
+      sprintf(fmt, " %d", (int)jids[j]);
+      }
+
+    fmt += strlen(fmt);
+    }
 
   free(jids);
 

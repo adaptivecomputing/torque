@@ -2178,9 +2178,7 @@ static char *mod_spec(
 
   nsubspec = 1;
 
-  cp = spec;
-
-  while (*cp++ != NULL) 
+  for (cp = spec; *cp != NULL; cp++)
     {
     if (*cp == '+') 
       {
