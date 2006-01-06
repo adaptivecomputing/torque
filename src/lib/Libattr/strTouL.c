@@ -204,7 +204,7 @@ u_Long strTouL(nptr, endptr, base)
 			value = digit;
 			break;
 		    case hex1:
-			if (digit >= base)
+			if ((int)digit >= base)
 			        goto done;
 			if (digit == 0) {
 				state = hex2;
@@ -221,14 +221,14 @@ u_Long strTouL(nptr, endptr, base)
 			}
 		    case hex3:
 		    case known:
-			if (digit >= base)
+			if ((int)digit >= base)
 				goto done;
 			state = working;
 			limit = UlONG_MAX / base;
 			value = digit;
 			break;
 		    case working:
-			if (digit >= base)
+			if ((int)digit >= base)
 			        goto done;
 			if (value < limit) {
 				value = value * base + digit;
@@ -244,7 +244,7 @@ u_Long strTouL(nptr, endptr, base)
 			value += digit;
 			break;
 		    case overflow:
-			if (digit >= base)
+			if ((int)digit >= base)
 			        goto done;
 		}
 	}

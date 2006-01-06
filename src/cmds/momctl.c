@@ -147,7 +147,7 @@ int main(
 
         FILE *fp;
 
-        int   size;
+        long   size;
 
         if ((fp = fopen(optarg,"r")) == NULL)
           {
@@ -173,7 +173,7 @@ int main(
 
         size = ftell(fp);
 
-        HostList[MIN(size,sizeof(HostList) - 1)] = '\0';
+        HostList[MIN(size,(long)sizeof(HostList) - 1)] = '\0';
 
         fclose(fp);
         }  /* END BLOCK */

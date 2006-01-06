@@ -2570,8 +2570,8 @@ int is_valid_object(
   /* we need something to make the pbs_stat* call.
    * Even if we only want the object name
    */
-  static struct attrl attrq = { NULL, ATTR_qtype, "", "" };
-  static struct attrl attrn = { NULL, ATTR_NODE_state, "", "" };
+  static struct attrl attrq = { NULL, ATTR_qtype, "", "", 0 };
+  static struct attrl attrn = { NULL, ATTR_NODE_state, "", "", 0 };
   int valid = 1;
   char *errmsg;
 

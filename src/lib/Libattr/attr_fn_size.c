@@ -357,7 +357,7 @@ int normalize_size (a, b, ta, tb)
 
 	if (adj > 0) {
 		temp = ta->atsv_num;
-		if ((adj > sizeof (int) * 8) ||
+		if ((adj > (int)sizeof (int) * 8) ||
 		    (((temp << adj) >> adj) != ta->atsv_num))
 			return (-1);	/* would overflow */
 		ta->atsv_shift = tb->atsv_shift;
@@ -365,7 +365,7 @@ int normalize_size (a, b, ta, tb)
 	} else if (adj < 0) {
 		adj = -adj;
 		temp = tb->atsv_num;
-		if ((adj > sizeof (int) * 8) ||
+		if ((adj > (int)sizeof (int) * 8) ||
 		    (((temp << adj) >> adj) != tb->atsv_num))
 			return (-1);	/* would overflow */
 		tb->atsv_shift = ta->atsv_shift;

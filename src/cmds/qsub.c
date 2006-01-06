@@ -781,7 +781,7 @@ int set_job_env(
   char **evp;
   char *job_env;
   char *s, *c, *env, l;
-  int   len;
+  unsigned   len;
   int   rc;
   char *getcwd();
 

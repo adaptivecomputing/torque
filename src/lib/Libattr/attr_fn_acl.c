@@ -316,8 +316,8 @@ static int set_allacl(attr, new, op, order_func)
 	int	 i;
 	int	 j;
 	int 	 k;
-	unsigned long nsize;
-	unsigned long need;
+	int	 nsize;
+	int  	 need;
 	long	 offset;
 	char	*pc;
 	char	*where;
@@ -377,7 +377,7 @@ static int set_allacl(attr, new, op, order_func)
 			if (pas->as_buf)
 				free(pas->as_buf);
 			nsize += nsize / 2;		/* alloc extra space */
-			if ( !(pas->as_buf = malloc(nsize)) ) {
+			if ( !(pas->as_buf = malloc((size_t)nsize)) ) {
 				pas->as_bufsize = 0;
 				return (PBSE_SYSTEM);
 			}
@@ -407,9 +407,9 @@ static int set_allacl(attr, new, op, order_func)
 
 		    need = pas->as_bufsize + 2 * nsize;  /* alloc new buf */
 		    if (pas->as_buf)
-			pc = realloc(pas->as_buf, need);
+			pc = realloc(pas->as_buf, (size_t)need);
 		    else
-			pc = malloc(need);
+			pc = malloc((size_t)need);
 		    if (pc == (char *)0)
 			return (PBSE_SYSTEM);
 		    offset = pc - pas->as_buf;
@@ -427,8 +427,8 @@ static int set_allacl(attr, new, op, order_func)
 			/* need more pointers */
 
 			j = 3 * j / 2;		/* allocate extra     */
-			need = sizeof(struct array_strings) + (j-1)*sizeof(char *);
-			tmppas=(struct array_strings *)realloc((char *)pas,need);
+			need = (int)sizeof(struct array_strings) + (j-1)*sizeof(char *);
+			tmppas=(struct array_strings *)realloc((char *)pas,(size_t)need);
 			if (tmppas == (struct array_strings *)0)
 				return (PBSE_SYSTEM);
 			tmppas->as_npointers = j;
@@ -472,10 +472,10 @@ static int set_allacl(attr, new, op, order_func)
 		    for (i=0; i<pas->as_usedptr; i++) {
 			if (!strcmp(pas->as_string[i], newpas->as_string[j])) {
 				/* compact buffer */
-				nsize = strlen(pas->as_string[i]) + 1;
+				nsize = (int)strlen(pas->as_string[i]) + 1;
 				pc = pas->as_string[i] + nsize;
 				need = pas->as_next - pc;
-				(void)memcpy(pas->as_string[i], pc, (int)need);
+				memcpy(pas->as_string[i], pc, (size_t)need);
 				pas->as_next -= nsize;
 				/* compact pointers */
 				for ( ++i; i < pas->as_npointers; i++)

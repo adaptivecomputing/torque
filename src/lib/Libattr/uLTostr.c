@@ -111,7 +111,7 @@ const char *uLTostr(
 
  *--bp = '\0';
 
-  if (base < 2 || base > strlen(Long_dig))
+  if (base < 2 || base > (int)strlen(Long_dig))
     {
     errno = EDOM;
 
