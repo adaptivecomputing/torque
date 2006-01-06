@@ -1011,6 +1011,17 @@ int svr_chkque(
          ACL_Group);
 
       if ((rc == 0) &&
+          (pque->qu_attr[QA_ATR_AclGroupSloppy].at_val.at_long))
+        {
+        /* try again looking at the gids */
+
+        rc = acl_check(
+           &pque->qu_attr[QA_ATR_AclGroup],
+           pjob->ji_wattr[(int)JOB_ATR_egroup].at_val.at_str,
+           ACL_Gid);
+        }
+
+      if ((rc == 0) &&
           (pque->qu_attr[QA_ATR_AclGroupSloppy].at_val.at_long) &&
           (!(pjob->ji_wattr[(int)JOB_ATR_grouplst].at_flags & ATR_VFLAG_SET)))
         {

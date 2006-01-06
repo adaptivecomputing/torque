@@ -223,6 +223,7 @@
 #define ATTR_downonerror "down_on_error"
 #define ATTR_jobnanny    "job_nanny"
 #define ATTR_momjobsync  "mom_job_sync"
+#define ATTR_pbsversion  "pbs_version"
 
 
 /* additional node "attributes" names */

@@ -14,6 +14,7 @@
   enable secondary group checking when evaluating queue acl_group attribute
     - enable the new queue parameter "acl_group_sloppy"
   sol10 build system fixes (USC)
+  fix "pbs_version" server attribute (USC)
 
 2.0.0p4
 

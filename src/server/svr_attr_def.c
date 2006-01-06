@@ -551,7 +551,7 @@ attribute_def svr_attr_def[] = {
     },
 
 /* SRV_ATR_LogLevel */
-    {   ATTR_loglevel,          /* "loglevel" */
+    {   ATTR_loglevel,		/* "loglevel" */
         decode_l,
         encode_l,
         set_l,
@@ -564,7 +564,7 @@ attribute_def svr_attr_def[] = {
     },
 
 /* SRV_ATR_DownOnError */
-    {   ATTR_downonerror,          /* "down_on_error" */
+    {   ATTR_downonerror,	/* "down_on_error" */
         decode_b,
         encode_b,
         set_b,
@@ -577,7 +577,7 @@ attribute_def svr_attr_def[] = {
     },
 
 /* SRV_ATR_JobNanny */
-    {   ATTR_jobnanny,          /* "job_nanny" */
+    {   ATTR_jobnanny,		/* "job_nanny" */
         decode_b,
         encode_b,
         set_b,
@@ -590,7 +590,7 @@ attribute_def svr_attr_def[] = {
     },
 
 /* SRV_ATR_MomJobSync */
-    {	ATTR_momjobsync,		/* "mom_job_sync" */
+    {	ATTR_momjobsync,	/* "mom_job_sync" */
 	decode_b,
 	encode_b,
 	set_b,
@@ -602,11 +602,8 @@ attribute_def svr_attr_def[] = {
 	PARENT_TYPE_SERVER
     },
 
-/* site supplied server attribute definitions if any, see site_svr_attr_*.h  */
-#include "site_svr_attr_def.h"
-
 /* SRV_ATR_version */
-    {	"pbs_version",
+    {	ATTR_pbsversion,	/* "pbs_version" */
 	decode_str,
 	encode_str,
 	set_str,
@@ -618,3 +615,7 @@ attribute_def svr_attr_def[] = {
 	PARENT_TYPE_SERVER
     }
 };
+
+/* site supplied server attribute definitions if any, see site_svr_attr_*.h  */
+#include "site_svr_attr_def.h"
+
