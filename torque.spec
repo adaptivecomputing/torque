@@ -1,24 +1,24 @@
 
 # comment out snap if building a real release
 %define name torque
-%define version 2.0.0p4
-%define snap 1134605105
+%define version 2.0.0p5
+%define snap 1136437962
 %define release 1cri
 
 # The following options are supported:
 #   --with server_name=hostname
 #   --with homedir=directory
 #   --with libdir=directory
-#   --with scp[=path]
-#   --without scp
+#   --with includedir=directory
+#   --with prefix=directory
+#   --with[out] scp
 #   --with[out] syslog
 #   --with[out] rpp
 #   --with[out] filesync
 #   --with[out] wordexp
 #   --with[out] gui
-#   --with tcl=/path
-#   --without tcl
-# Note that gui and tcl bits don't work correctly yet
+#   --with[out] tcl
+# Note that prefix overrides homedir, libdir, and includedir
 
 
 # Hrm, should we default to the name of the buildhost?  That seems only
@@ -30,7 +30,6 @@
 # correct hostname here, pass '--with server_name=foo' to rpmbuild, or be sure
 # that $PBS_SERVER_HOME/server_name contains the correct hostname.
 %define server_name localhost
-%{?_with_server_name:%define server_name %(set -- %{_with_server_name}; echo $1 | grep -v with)}
 
 # change as you wish
 %define use_syslog 1
@@ -43,7 +42,8 @@
 
 # these are non-defaults, but fit better into most RPM-based systems
 %define torquehomedir %{_localstatedir}/lib/%{name}
-%define torquelibdir  %{_libdir}/%{name}
+%define _libdir       %{_prefix}/%{_lib}/%{name}/lib
+%define _includedir   %{_prefix}/%{_lib}/%{name}/include
 
 
 
@@ -67,9 +67,21 @@
 %{?_with_wordexp: %define use_wordexp 1}
 %{?_with_gui: %define build_gui 1}
 
-%{?_with_homedir:%define torquehomedir %(set -- %{_with_homedir}; echo $1 | grep -v with)}
-%{?_with_libdir:%define torquelibdir %(set -- %{_with_libdir}; echo $1 | grep -v with)}
+%{?_with_server_name:%define server_name %(set -- %{_with_server_name}; echo $1 | grep -v with | sed 's/=//')}
+%{?_with_homedir:%define torquehomedir %(set -- %{_with_homedir}; echo $1 | grep -v with | sed 's/=//')}
+%{?_with_libdir:%define _libdir %(set -- %{_with_libdir}; echo $1 | grep -v with | sed 's/=//')}
+%{?_with_includedir:%define _includedir %(set -- %{_with_includedir}; echo $1 | grep -v with | sed 's/=//')}
 
+%if %{?_with_prefix:1}%{!?_with_prefix:0}
+%define _prefix %(set -- %{_with_prefix}; echo $1 | grep -v with | sed 's/=//')
+%define torquehomedir %{_prefix}/spool
+%define _libdir %{_prefix}/lib
+%define _includedir %{_prefix}/include
+%define _mandir %{_prefix}/man
+%define _bindir %{_prefix}/bin
+%define _sbindir %{_prefix}/sbin
+%define _defaultdocdir %{_prefix}/doc
+%endif
 
 # did we find any --without options?
 %{?_without_filesync: %define use_fsync 0}
@@ -100,27 +112,28 @@
 %define rppflags    --enable-rpp
 %endif
 %if %use_scp
-%define scpflags    --with-scp%{?_with_scp:%(set -- %{_with_scp}; echo $1 | grep -v with)}
+%define scpflags    --with-scp
 %endif
 %if %use_wordexp
 %define wordexpflags  --enable-wordexp
 %endif
 
 # dealing with tcl and gui is way too complicated
-%if %use_tcl
-%define tclflags    --with-tcl%{?_with_tcl:%(set -- %{_with_tcl}; echo $1 | grep -v with)} %{!?build_gui:--with-tclx%{?_with_tclx:%(set -- %{_with_tclx}; echo $1 | grep -v with)}}
-%endif
-
 %if %build_gui
 %define guiflags   --enable-gui
-%if ! %use_tcl
-%{error: gui requires tcl, enable tcl or add --without gui}
-blow up
+%define use_tcl 1
+%endif
+
+%if %use_tcl
+%if %build_gui
+%define tclflags    --with-tcl --with-tclx
+%else
+%define tclflags    --with-tcl --without-tclx
 %endif
 %endif
 
 # finish up the configs...
-%define server_nameflags --set-default-server=%(echo %{server_name} | sed -e 's/=//')
+%define server_nameflags --set-default-server=%{server_name}
 
 
 %define shared_description %(echo -e "TORQUE (Tera-scale Open-source Resource and QUEue manager) is a resource \\nmanager providing control over batch jobs and distributed compute nodes.  \\nTorque is based on OpenPBS version 2.3.12 and incorporates scalability, \\nfault tolerance, and feature extension patches provided by USC, NCSA, OSC, \\nthe U.S. Dept of Energy, Sandia, PNNL, U of Buffalo, TeraGrid, and many \\nother leading edge HPC organizations.\\n\\nThis build was configured with:\\n  %{fsyncflags}\\n  %{syslogflags}\\n  %{tclflags}\\n  %{rppflags}\\n  %{server_nameflags}\\n  %{guiflags}\\n  %{wordexpflags}\\n  %{scpflags}\\n")
@@ -140,9 +153,7 @@ BuildRequires: ed
 Conflicts: pbspro, openpbs, openpbs-oscar
 Obsoletes: scatorque
 
-%if %build_gui
-BuildRequires: perl
-%else
+%if ! %build_gui
 Obsoletes: torque-gui
 %endif
 
@@ -152,22 +163,25 @@ This package holds just a few shared files and directories.
 
 %prep
 %setup -n %{name}-%{version}
+echo '#define PBS_VERSION "%{version}-%{release}"' > src/include/pbs_version.h
 
 
 %build
-CFLAGS="-fPIC %optflags -Wall -std=gnu99 -pedantic -D_GNU_SOURCE"
+CFLAGS="-fPIC %optflags -Wall -Wno-unused -std=gnu99 -pedantic -D_GNU_SOURCE"
 export CFLAGS
 
-# The config.guess in torque *was* ancient, but let's do it anyways
 for i in $(find . -name config.guess -o -name config.sub) ; do
-    [ -f /usr/lib/rpm/$(basename $i) ] && \
+   if [ -f /usr/lib/rpm/%{_host_vendor}/$(basename $i) ] ; then
+       %{__rm} -f $i && %{__cp} -fv /usr/lib/rpm/%{_host_vendor}/$(basename $i) $i
+   elif [ -f /usr/lib/rpm/$(basename $i) ] ; then
         %{__rm} -f $i && %{__cp} -fv /usr/lib/rpm/$(basename $i) $i
+   fi
 done
 
-# autoconf and friends to work with torque, so we can't use the
+# autoconf and friends don't work with torque, so we can't use the
 # various configure macros
 ./configure --prefix=%{_prefix} --sbindir=%{_sbindir} --bindir=%{_bindir} \
- --includedir=%{_includedir} --mandir=%{_mandir} --libdir=%{torquelibdir} \
+ --includedir=%{_includedir} --mandir=%{_mandir} --libdir=%{_libdir} \
  --enable-server --enable-clients --enable-mom --enable-docs %{guiflags} \
  --set-server-home=%{torquehomedir} %{server_nameflags} --set-cflags="$CFLAGS" \
  %{fsyncflags} %{syslogflags} %{tclflags} %{rppflags} %{scpflags} %{wordexpflags}
@@ -175,7 +189,7 @@ done
 
 
 %{__make} clean
-%{__make} %{_smp_mflags} depend
+%{__make} depend
 %{__make} %{_smp_mflags} all
  
 
@@ -189,18 +203,14 @@ done
     bindir=$RPM_BUILD_ROOT%{_bindir} \
     includedir=$RPM_BUILD_ROOT%{_includedir} \
     mandir=$RPM_BUILD_ROOT%{_mandir} \
-    libdir=$RPM_BUILD_ROOT%{torquelibdir} \
+    libdir=$RPM_BUILD_ROOT%{_libdir} \
     PBS_SERVER_HOME=$RPM_BUILD_ROOT%{torquehomedir} \
   install
-
-# Kind of gross, but it's easier to get maui/mpiexec/etc to build with these
-%__ln_s . $RPM_BUILD_ROOT%{torquelibdir}/lib
-%__ln_s %{_includedir} $RPM_BUILD_ROOT%{torquelibdir}/include
 
 # Correct the tclIndex files that are broken when installing into a fakeroot
 %if %build_gui
 pat=$(echo $RPM_BUILD_ROOT | sed 's/\// /g')
-for indexfile in $RPM_BUILD_ROOT%{torquelibdir}/*/tclIndex; do
+for indexfile in $RPM_BUILD_ROOT%{_libdir}/*/tclIndex; do
   %__sed -e "s/$pat//" < $indexfile > tcltmp
   %__cat < tcltmp > $indexfile
 done
@@ -210,12 +220,14 @@ done
 # install initscripts
 %{__mkdir_p} $RPM_BUILD_ROOT%{_initrddir}
 for initscript in pbs_mom pbs_sched pbs_server; do
-  %__sed -e 's|^PBS_PREFIX=.*|PBS_PREFIX=%{_prefix}|' \
-      -e 's|^PBS_HOME=.*|PBS_HOME=%{torquehomedir}|' \
-      -e 's|^PBS_DAEMON=.*|PBS_DAEMON=%{_sbindir}/'$initscript'|' \
+  %__sed -e 's|^PBS_HOME=.*|PBS_HOME=%{torquehomedir}|' \
+         -e 's|^PBS_DAEMON=.*|PBS_DAEMON=%{_sbindir}/'$initscript'|' \
         < contrib/init.d/$initscript > $RPM_BUILD_ROOT%{_initrddir}/$initscript
   %__chmod 755 $RPM_BUILD_ROOT%{_initrddir}/$initscript
 done
+
+%clean
+[ "$RPM_BUILD_ROOT" != "/" ] && %{__rm} -rf $RPM_BUILD_ROOT
 
 
 %post
@@ -238,7 +250,7 @@ fi
 
 %files
 %defattr(-, root, root)
-%doc doc/admin_guide.ps INSTALL README.torque torque.setup Release_Notes CHANGELOG PBS_License.txt
+%doc INSTALL README.torque torque.setup Release_Notes CHANGELOG PBS_License.txt
 %config(noreplace) %{torquehomedir}/pbs_environment
 %config(noreplace) %{torquehomedir}/server_name
 %{torquehomedir}/aux
@@ -252,10 +264,11 @@ Requires: %{name} = %{?epoch:%{epoch}:}%{version}-%{release}
 Provides: pbs-docs
 %description docs
 %shared_description
-This package holds the documentation files
+This package holds the documentation files.
 
 %files docs
 %defattr(-, root, root)
+%doc doc/admin_guide.ps
 %{_mandir}/man*/*
 
 %package scheduler
@@ -265,13 +278,14 @@ Requires: %{name} = %{?epoch:%{epoch}:}%{version}-%{release}
 Provides: pbs-scheduler
 %description scheduler
 %shared_description
-This package holds the fifo C scheduler
+This package holds the fifo C scheduler.
 
 %files scheduler
 %defattr(-, root, root)
 %{_sbindir}/pbs_sched
 %{_initrddir}/pbs_sched
-%{torquehomedir}/sched_priv
+%dir %{torquehomedir}/sched_priv
+%config(noreplace) %{torquehomedir}/sched_priv/*
 %{torquehomedir}/sched_logs
 
 %post scheduler
@@ -289,7 +303,7 @@ Requires: %{name} = %{?epoch:%{epoch}:}%{version}-%{release}
 Provides: pbs-server
 %description server
 %shared_description
-This package holds the server
+This package holds the server.
 
 %files server
 %defattr(-, root, root)
@@ -343,7 +357,7 @@ Requires: %{name} = %{?epoch:%{epoch}:}%{version}-%{release}
 Provides: pbs-client
 %description client
 %shared_description
-This package holds the command-line client programs
+This package holds the command-line client programs.
 
 %files client
 %defattr(-, root, root)
@@ -368,7 +382,7 @@ Requires: %{name}-client = %{?epoch:%{epoch}:}%{version}-%{release}
 Provides: xpbs xpbsmon
 %description gui
 %shared_description
-This package holds the graphical clients
+This package holds the graphical clients.
 
 %if %{build_gui}
 %files gui
@@ -376,8 +390,8 @@ This package holds the graphical clients
 %{_bindir}/pbs_wish
 %{_bindir}/xpbs
 %{_bindir}/xpbsmon
-%{torquelibdir}/xpbs
-%{torquelibdir}/xpbsmon
+%{_libdir}/xpbs
+%{_libdir}/xpbsmon
 %endif
 
 
@@ -385,9 +399,11 @@ This package holds the graphical clients
 Group: Applications/System
 Summary: installs and configures a minimal localhost-only batch queue system
 PreReq: pbs-mom pbs-server pbs-client pbs-scheduler
+
 %description localhost
 %shared_description
-This package installs and configures a minimal localhost-only batch queue system
+This package installs and configures a minimal localhost-only batch queue system.
+
 %files localhost
 %defattr(-, root, root)
 %post localhost
@@ -418,18 +434,19 @@ Requires: %{name} = %{?epoch:%{epoch}:}%{version}-%{release}
 
 %description devel
 %shared_description
-The %{name}-devel package includes the header files and static libraries
-necessary for developing programs which will use the %{name} library.
+This package includes the header files and static libraries
+necessary for developing programs which will use %{name}.
 
 %files devel
 %defattr(-, root, root)
-%{torquelibdir}/*.*a
-%{torquelibdir}/lib
-%{torquelibdir}/include
+%{_libdir}/*.*a
 %{_includedir}/*.h
 
-%clean
-[ "$RPM_BUILD_ROOT" != "/" ] && %{__rm} -rf $RPM_BUILD_ROOT
+%pre devel
+# previous versions of this spec file installed these as symlinks
+test -L %{_libdir} && rm -f %{torquelibdir}
+test -L %{_includedir} && rm -f %{_includedir}
+exit 0
 
 
 

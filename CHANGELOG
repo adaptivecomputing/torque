@@ -15,6 +15,7 @@
     - enable the new queue parameter "acl_group_sloppy"
   sol10 build system fixes (USC)
   fix "pbs_version" server attribute (USC)
+  torque.spec updates (USC)
 
 2.0.0p4
 
