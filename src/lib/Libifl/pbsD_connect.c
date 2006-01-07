@@ -251,31 +251,26 @@ static int PBSD_authenticate(
   FILE	*piff;
   char  *ptr;
 
+  char   tmpLine[1024];
+
   struct stat buf;
+  int         rc;
 
   /* use pbs_iff to authenticate me */
 
   ptr = getenv("PBSBINDIR");
 
-  if (ptr == NULL)
+  if ((ptr = getenv("PBSBINDIR")) != NULL)
     {
-    sprintf(cmd,"%s %s %u %d", 
-      IFF_PATH, 
-      server_name, 
-      server_port,
-      psock);
+    snprintf(tmpLine,sizeof(tmpLine),"%s/pbs_iff",
+      ptr);
     }
   else
     {
-    sprintf(cmd,"%s/%s %s %u %d",
-      ptr,
-      "pbs_iff",
-      server_name,
-      server_port,
-      psock);
+    strcpy(tmpLine,IFF_PATH);
     }
 
-  if (stat(cmd,&buf) == -1)
+  if (stat(tmpLine,&buf) == -1)
     {
     /* FAILURE */
 
@@ -289,6 +284,12 @@ static int PBSD_authenticate(
 
     return(-1);
     }
+
+  snprintf(cmd,sizeof(cmd),"%s %s %u %d", 
+    tmpLine, 
+    server_name, 
+    server_port,
+    psock);
 
   piff = popen(cmd,"r");
 
