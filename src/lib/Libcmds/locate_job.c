@@ -102,24 +102,40 @@ int locate_job(
 
   {
   int connect;
-  char jid_server[PBS_MAXCLTJOBID+1];
+  char jid_server[PBS_MAXCLTJOBID + 1];
   char *location;
 
-    if ( (connect = pbs_connect(parent_server)) > 0 ) {
-        strcpy(jid_server, job_id);
-	if ( notNULL(parent_server) ) {
-	    strcat(jid_server, "@");
-            strcat(jid_server, parent_server);
-	}
-        location = pbs_locjob(connect, jid_server, NULL);
-        if ( location == NULL ) {
-            pbs_disconnect(connect);
-            return FALSE;
-        }
-        strcpy(located_server, location);
-        free(location);
-        pbs_disconnect(connect);
-        return TRUE;
-    } else
-        return -1;
-}
+  if ((connect = pbs_connect(parent_server)) >= 0) 
+    {
+    /* SUCCESS */
+
+    strcpy(jid_server,job_id);
+
+    if (notNULL(parent_server)) 
+      {
+      strcat(jid_server,"@");
+      strcat(jid_server,parent_server);
+      }
+
+    location = pbs_locjob(connect,jid_server,NULL);
+
+    if (location == NULL) 
+      {
+      pbs_disconnect(connect);
+
+      return(FALSE);
+      }
+
+    strcpy(located_server,location);
+
+    free(location);
+
+    pbs_disconnect(connect);
+
+    return(TRUE);
+    } 
+
+  /* FAILURE */
+
+  return(-1);
+  }  /* END locate_job() */

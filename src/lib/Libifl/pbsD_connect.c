@@ -250,6 +250,8 @@ static int PBSD_authenticate(
   FILE	*piff;
   char  *ptr;
 
+  struct stat buf;
+
   /* use pbs_iff to authenticate me */
 
   ptr = getenv("PBSBINDIR");
@@ -270,6 +272,21 @@ static int PBSD_authenticate(
       server_name,
       server_port,
       psock);
+    }
+
+  if (stat(cmd,&buf) == -1)
+    {
+    /* FAILURE */
+
+    if (getenv("PBSDEBUG"))
+      {
+      fprintf(stderr,"ALERT:  cannot verify file '%s', errno=%d (%s)\n",
+        cmd,
+        errno,
+        strerror(errno));
+      }
+
+    return(-1);
     }
 
   piff = popen(cmd,"r");
@@ -341,10 +358,13 @@ static int PBSD_authenticate(
 
 
 
-/* returns socket descriptor or -1 on failure */
+/* returns socket descriptor or negative value (-1) on failure */
+
 /* NOTE:  cannot use globals or static infomration as API
-   may be used to connect a singe server to multiple TORQUE
+   may be used to connect a single server to multiple TORQUE
    interfaces */
+
+/* NOTE:  0 is not a valid return value */
 
 int pbs_connect(
 
