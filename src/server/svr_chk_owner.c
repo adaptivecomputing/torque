@@ -375,7 +375,7 @@ job *chk_job_request(
     return(NULL);
     }
 
-  if (pjob->ji_qs.ji_state == JOB_STATE_EXITING) 
+  if (pjob->ji_qs.ji_state >= JOB_STATE_EXITING) 
     {
     sprintf(log_buffer,"%s %d", 
       msg_badstate,

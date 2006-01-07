@@ -707,17 +707,11 @@ int pbsd_init(
             {
             /* ignore/remove completed job */
 
+	    /* for some reason, if a completed job is recovered, and it is
+             * forcibly purged with 'qdel -p', it will get deleted a second
+             * time resulting in a segfault */
+
             job_purge(pjob);
-
-            strcpy(basen,pdirent->d_name);
- 
-            psuffix = basen + baselen;
-
-            strcpy(psuffix,JOB_BAD_SUFFIX);
-
-            link(pdirent->d_name,basen);
-
-            unlink(pdirent->d_name);
 
             continue;
             }
@@ -1102,9 +1096,12 @@ static int pbsd_init_job(
 
     case JOB_SUBSTATE_COMPLETE:
 
-      /* should completed jobs clean up at this point or is this already handled earlier? */
+      /* NOOP - completed jobs are already purged above */
+      /* for some reason, this doesn't actually work */
 
-      /* NO-OP */
+      set_task(WORK_Immed,0,on_job_exit,(void *)pjob);
+
+      pbsd_init_reque(pjob,KEEP_STATE);
 
       break;
 

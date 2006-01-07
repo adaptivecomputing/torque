@@ -170,6 +170,7 @@ const char *PJobState[] = {
   "WAITING",
   "RUNNING",
   "EXITING",
+  "COMPLETE",
   NULL };
 
 
@@ -205,7 +206,7 @@ const char *PJobSubState[] = {
   "SUBSTATE26",
   "SUBSTATE27",
   "SUBSTATE28",
-  "SUBSTATE29"
+  "SUBSTATE29",
   "WAITING",                /* job waiting on execution time */
   "SUBSTATE31",
   "SUBSTATE32",
@@ -235,7 +236,7 @@ const char *PJobSubState[] = {
   "SUBSTATE56",
   "SUBSTATE57",
   "OBIT",                   /* (MOM) job obit notice sent */
-  "COMPLETED",
+  "COMPLETE",
   "RERUN",                  /* job is rerun, recover output stage */
   "RERUN1",                 /* job is rerun, stageout phase */
   "RERUN2",                 /* job is rerun, delete files stage */
@@ -539,9 +540,10 @@ int svr_setjobstate(
 
   if (LOGLEVEL >= 2)
     {
-    sprintf(log_buffer,"svr_setjobstate: setting job %s state from %s to %s-%s (%d-%d)\n",
+    sprintf(log_buffer,"svr_setjobstate: setting job %s state from %s-%s to %s-%s (%d-%d)\n",
       (pjob->ji_qs.ji_jobid != NULL) ? pjob->ji_qs.ji_jobid : "",
       PJobState[pjob->ji_qs.ji_state],
+      PJobSubState[pjob->ji_qs.ji_substate],
       PJobState[newstate],
       PJobSubState[newsubstate],
       newstate,
@@ -1516,19 +1518,37 @@ void set_resc_deflt(
  *	to its current state.
  */
 
-void set_statechar(pjob)
-	job *pjob;
-{
-	static char *statechar = "TQHWRE";
-	static char suspend    = 'S';
+void set_statechar(
 
-	if ( (pjob->ji_qs.ji_state == JOB_STATE_RUNNING) &&
-	     (pjob->ji_qs.ji_svrflags & JOB_SVFLG_Suspend) )
-		pjob->ji_wattr[JOB_ATR_state].at_val.at_char = suspend;
-	else
-		pjob->ji_wattr[JOB_ATR_state].at_val.at_char = 
-					*(statechar + pjob->ji_qs.ji_state);
-}
+  job *pjob) /* *I* (modified) */
+
+  {
+  static char *statechar = "TQHWREC";
+  static char suspend    = 'S';
+
+  if ((pjob->ji_qs.ji_state == JOB_STATE_RUNNING) &&
+      (pjob->ji_qs.ji_svrflags & JOB_SVFLG_Suspend) )
+    {
+    pjob->ji_wattr[JOB_ATR_state].at_val.at_char = suspend;
+    }
+  else if ((pjob->ji_qs.ji_state == JOB_STATE_EXITING) &&
+      (pjob->ji_qs.ji_svrflags & JOB_SUBSTATE_COMPLETE) )
+    {
+    pjob->ji_wattr[JOB_ATR_state].at_val.at_char = 'C';
+    }
+  else
+    {
+    if (pjob->ji_qs.ji_state < (int)strlen(statechar))
+      {
+      pjob->ji_wattr[JOB_ATR_state].at_val.at_char = 
+        *(statechar + pjob->ji_qs.ji_state);
+      }
+    else
+      {
+      pjob->ji_wattr[JOB_ATR_state].at_val.at_char = 'U'; /* Unknown */
+      }
+    }
+  }
 
 
 

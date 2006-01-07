@@ -942,37 +942,47 @@ void on_job_exit(
         /* release_req will free preq and close connection */
         }
 
+      /* NOTE: we never check if MOM actually deleted the job */
+
       rel_resc(pjob); /* free any resc assigned to the job */
 
       if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HERE) == 0)
         issue_track(pjob);
 
-      if (getenv("TORQUEKEEPCOMPLETED") != NULL)
-        {
-        /* set job to completed state */
- 
-        svr_setjobstate(pjob,JOB_STATE_COMPLETE,JOB_SUBSTATE_COMPLETE);
+      svr_setjobstate(pjob,JOB_STATE_COMPLETE,JOB_SUBSTATE_COMPLETE);
 
-        pjob->ji_wattr[(int)JOB_ATR_state].at_val.at_char = 'C';
+      ptask->wt_type = WORK_Immed;
 
-        ptask = set_task(WORK_Timed,time_now + 300,on_job_exit,pjob);
-
-        /* NOTE:  what happens if job server is shutdown with job still *
-         *        in completed state?  should job_purge be called at clean 
-                  shutdown?  what about 'hard' shutdown? */
-        }
-      else
-        {
-        job_purge(pjob);
-        }
-
-      break;
+      /* NO BREAK, FALL INTO NEXT CASE */
     
     case JOB_SUBSTATE_COMPLETE:
 
-      /* job has stuck around long enough */
+      if (getenv("TORQUEKEEPCOMPLETED") == NULL)
+        {
+        job_purge(pjob);
 
-      job_purge(pjob);
+        break;
+        }
+
+      if (ptask->wt_type == WORK_Immed) 
+        {
+        /* first time in */
+
+        ptask = set_task(WORK_Timed,time_now + 300,on_job_exit,pjob);
+
+        if (ptask)
+          {
+          /* insure that work task will be removed if job goes away */
+
+          append_link(&pjob->ji_svrtask,&ptask->wt_linkobj,ptask);
+          }
+        }
+      else
+        {
+        /* job has been around long enough */
+
+        job_purge(pjob);
+        }
 
       break;
     }  /* END switch (pjob->ji_qs.ji_substate) */

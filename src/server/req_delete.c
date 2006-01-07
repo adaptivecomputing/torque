@@ -907,7 +907,7 @@ void job_delete_nanny(
  *
  * This is only called if one of job_delete_nanny()'s KILLs actually
  * succeeds.  The sole purpose is to purge jobs that are unknown
- * to MS.
+ * to MS (and to release the req.)
  */
 
 static void post_job_delete_nanny(
@@ -923,10 +923,13 @@ static void post_job_delete_nanny(
   preq_sig = pwt->wt_parm1;
   rc       = preq_sig->rq_reply.brp_code;
 
-  /* short-circuit if nanny isn't enabled */
 
   if (!server.sv_attr[(int)SRV_ATR_JobNanny].at_val.at_long)
     {
+    /* the admin disabled nanny within the last minute or so */
+
+    release_req(pwt);
+
     return;
     }
 
@@ -936,7 +939,7 @@ static void post_job_delete_nanny(
 
   if (pjob == NULL)
     {
-    sprintf(log_buffer,"job delete nanny returned, but the job is gone");
+    sprintf(log_buffer,"job delete nanny: the job disappeared (this is a BUG!)");
  
     LOG_EVENT(
       PBSEVENT_ERROR, 
@@ -946,20 +949,19 @@ static void post_job_delete_nanny(
     }
   else if (rc == PBSE_UNKJOBID)
     {
-    sprintf(log_buffer, "job '%s' does not exist on mom",
-      pjob->ji_qs.ji_jobid);
-       
-    log_err(-1,"post_job_delete_nanny",log_buffer);
+    sprintf(log_buffer,"job delete nanny returned, but does not exist on mom");
+ 
+    LOG_EVENT(
+      PBSEVENT_ERROR, 
+      PBS_EVENTCLASS_JOB,
+      preq_sig->rq_ind.rq_signal.rq_jid, 
+      log_buffer);
 
-    /* we probably need better checks before enabling this  -disable for now */
-
-    /* 
     free_nodes(pjob);
  
     set_resc_assigned(pjob,DECR);
  
     job_purge(pjob);
-    */
     }
 
   /* free task */
