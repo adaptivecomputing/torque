@@ -906,7 +906,8 @@ static int process_host_name_part(
           sizeof(struct in_addr),
           hp->h_addrtype)) == NULL) 
       {
-      sprintf(log_buffer,"addr not found h_errno=%d errno=%d",
+      sprintf(log_buffer,"cannot perform reverse name lookup for '%s' h_errno=%d errno=%d (check name server)",
+        objname,
         h_errno, 
         errno);
 
@@ -917,7 +918,7 @@ static int process_host_name_part(
 	
     hname = (char *)strdup(hp->h_name); /*canonical name in theory*/
 
-    if (hname == (char *)0) 
+    if (hname == NULL) 
       {
       free(phostname);
 
@@ -927,7 +928,8 @@ static int process_host_name_part(
     if ((hp = gethostbyname(hname)) == NULL) 
       {
       sprintf(log_buffer,"bad cname %s, h_errno=%d errno=%d",
-        hname,h_errno,errno);
+        hname,
+        h_errno,errno);
 
       free(hname);
 
@@ -939,11 +941,11 @@ static int process_host_name_part(
     free(hname);
     }  /* END if (hp->h_addr_list[1] == NULL) */
 
-  for (i=0; hp->h_addr_list[i]; i++);	/*count how many ipadrs*/
+  for (i = 0;hp->h_addr_list[i];i++);	              /* count ipaddrs */
 
-  *pul = (u_long *)malloc(sizeof(u_long) * (i+1));  /*null end it*/
+  *pul = (u_long *)malloc(sizeof(u_long) * (i + 1));  /*null end it*/
 
-  if (*pul == (u_long *)0) 
+  if (*pul == NULL) 
     {
     free(phostname);
     }
@@ -959,11 +961,11 @@ static int process_host_name_part(
     (*pul)[i] = ipaddr;
     }
 
-  (*pul)[i] = 0;			/* null term array ip adrs*/
+  (*pul)[i] = 0;			/* null term array ip addrs */
 
-  *pname = phostname;			/* return node name	  */
+  *pname = phostname;			/* return node name	    */
 
-  return(0);				/* function successful    */
+  return(0);				/* function successful      */
   }  /* END process_host_name_part() */
 
 
