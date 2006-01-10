@@ -440,6 +440,19 @@ attribute_def que_attr_def[] = {
 	ATR_TYPE_LONG,
 	PARENT_TYPE_QUE_EXC
     },
+/* QE_ATR_KeepCompleted */
+    {	ATTR_keepcompleted,		/* "keep_completed" */
+	decode_l,
+	encode_l,
+	set_l,
+	comp_l,
+	free_null,
+	NULL_FUNC,
+	NO_USER_SET,
+	ATR_TYPE_LONG,
+	PARENT_TYPE_QUE_EXC
+    },
+
 
     /* for routing queues */
 

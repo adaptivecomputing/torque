@@ -273,6 +273,12 @@ Format: "resources_available.resource_name=value", see qmgr(1B).
 .if !\n(Pb .ig Ig
 [internal type: resource]
 .Ig
+.Al keep_completed
+Number of seconds to retain completed jobs in the C state.  EXPERIMENTAL
+Format: integer; default value: 0.
+.if !\n(Pb .ig Ig
+[internal type: integer]
+.Ig
 .Al kill_delay
 The amount of the time delay between the sending of SIGTERM and SIGKILL
 when a qdel command is issued against a running job.  Format: integer

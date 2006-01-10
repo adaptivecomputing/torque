@@ -193,6 +193,7 @@
 #define ATTR_number	"number_jobs"
 #define ATTR_acllogic   "acl_logic_or"
 #define ATTR_aclgrpslpy "acl_group_sloppy"
+#define ATTR_keepcompleted "keep_completed"
 
 
 /* additional server attributes names */

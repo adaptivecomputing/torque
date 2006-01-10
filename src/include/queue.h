@@ -141,6 +141,7 @@ enum queueattr {
 	QE_ATR_KillDelay,
 	QE_ATR_MaxUserRun,
 	QE_ATR_MaxGrpRun,
+	QE_ATR_KeepCompleted,
 
 	/* The following attribute apply only to routing queues... */
 

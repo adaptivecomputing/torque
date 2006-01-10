@@ -104,6 +104,7 @@
 #include "net_connect.h"
 #include "svrfunc.h"
 #include "sched_cmds.h"
+#include "queue.h"
 
 
 #define RESC_USED_BUF 2048
@@ -660,6 +661,9 @@ void on_job_exit(
   struct batch_request *preq;
 
   int    IsFaked = 0;
+  int	 KeepSeconds = 0;
+  pbs_queue          *pque;
+
 
   if (ptask->wt_type != WORK_Deferred_Reply) 
     {
@@ -957,7 +961,12 @@ void on_job_exit(
     
     case JOB_SUBSTATE_COMPLETE:
 
-      if (getenv("TORQUEKEEPCOMPLETED") == NULL)
+      if ((pque = pjob->ji_qhdr) && (pque->qu_attr != NULL))
+        {
+        KeepSeconds = (int)pque->qu_attr[(int)QE_ATR_KeepCompleted].at_val.at_long;
+        }
+
+      if (KeepSeconds <= 0)
         {
         job_purge(pjob);
 
@@ -968,7 +977,7 @@ void on_job_exit(
         {
         /* first time in */
 
-        ptask = set_task(WORK_Timed,time_now + 300,on_job_exit,pjob);
+        ptask = set_task(WORK_Timed,time_now + KeepSeconds,on_job_exit,pjob);
 
         if (ptask)
           {
