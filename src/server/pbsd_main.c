@@ -392,7 +392,7 @@ int TLoadConfig(
 
   char home_dir[MAXPATHLEN];
 
-  int  length = strlen(PBS_SERVER_HOME) + strlen(TCONST_CFGFILE) + 1;
+  int  length = strlen(PBS_SERVER_HOME) + strlen(TCONST_CFGFILE) + 2;
 
   if (Buffer == NULL)
     {
