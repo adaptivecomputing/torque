@@ -258,8 +258,6 @@ static int PBSD_authenticate(
 
   /* use pbs_iff to authenticate me */
 
-  ptr = getenv("PBSBINDIR");
-
   if ((ptr = getenv("PBSBINDIR")) != NULL)
     {
     snprintf(tmpLine,sizeof(tmpLine),"%s/pbs_iff",

@@ -20,7 +20,7 @@
   remove the leading space on the node session attribute on darwin (USC)
   prevent SEGV if config file is missing/corrupt
   "keep_completed" execution queue attribute
-  off-by-one error in TLoadConfig (UMU)
+  several misc code fixes (UMU)
 
 2.0.0p4
 
