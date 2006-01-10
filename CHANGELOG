@@ -18,6 +18,7 @@
   fix "pbs_version" server attribute (USC)
   torque.spec updates (USC)
   remove the leading space on the node session attribute on darwin (USC)
+  prevent SEGV if config file is missing/corrupt
 
 2.0.0p4
 
