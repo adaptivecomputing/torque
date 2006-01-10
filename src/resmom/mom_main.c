@@ -537,6 +537,11 @@ static char *arch(
     return(NULL);
     }
 
+  if (config_array == NULL)
+    {
+    return(PBS_MACH);
+    }
+
   /* locate arch string */
 
   for (cp = config_array;cp->c_name != NULL;cp++)
@@ -572,6 +577,11 @@ static char *opsys(
     rm_errno = RM_ERR_BADPARAM;
 
     return(NULL);
+    }
+
+  if (config_array == NULL)
+    {
+    return(PBS_MACH);
     }
 
   /* locate opsys string */
@@ -714,6 +724,11 @@ static char *reqgres(
   /* FORMAT:  <GRES>:<VALUE>[+<GRES>:<VALUE>]... */
 
   GResBuf[0] = '\0';
+
+  if (config_array == NULL)
+    {
+    return(GResBuf);
+    }
 
   for (cp = config_array;cp->c_name != NULL;cp++)
     {
