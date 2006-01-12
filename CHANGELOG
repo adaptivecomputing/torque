@@ -1,6 +1,7 @@
 2.0.0p6
 
   fix segfault in new "acl_group_sloppy" code if a group doesn't exist
+  configure defaults changed to enable syslog, enable docs, and disable filesync
 
 2.0.0p5
 

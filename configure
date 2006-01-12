@@ -95,10 +95,7 @@ ac_default_prefix=/usr/local
 # Any additions from configure.in:
 ac_help="$ac_help
 
-  --enable-docs           Use this if you want manpages installed. Apparently
-                          this was once such a long, time-consuming process
-                          that someone bothered to make this option. Now, it
-                          is a bug that this isn't enabled by default."
+  --disable-docs          Don't install the manpages."
 
 ac_help="$ac_help
 
@@ -152,6 +149,7 @@ ac_help="$ac_help
 ac_help="$ac_help
 
   --set-tmpdir=DIR        set the tmp directory that pbs_mom will use.
+                          This is a Cray-specific feature.
                           This will default to \"/tmp\"."
 ac_help="$ac_help
 
@@ -191,7 +189,8 @@ ac_help="$ac_help
                           4 for pbs_mom. (e.g. set to 7 for all three)"
 ac_help="$ac_help
 
-  --enable-syslog         enable the use of syslog for error reporting"
+  --disable-syslog        disable the use of syslog for error reporting"
+
 ac_help="$ac_help
 
   --set-sched=TYPE        sets the scheduler type. If TYPE is
@@ -290,10 +289,10 @@ ac_help="$ac_help
                           This is disabled by default"
 ac_help="$ac_help
 
-  --disable-filesync      disable file system blocking until data is physically 
+  --enable-filesync       enable file system blocking until data is physically 
                           written to the disk.  Filesync enabled is more reliable
                           but may lead to server delays in larger systems. 
-                          filesync is enabled by default"
+                          filesync is disabled by default"
 
 ac_help="$ac_help
 
@@ -304,14 +303,14 @@ ac_help="$ac_help
 ac_help="$ac_help
 
   --maildomain=MAILDOMAIN override the default domain for outgoing mail messages,
-                          i.e. \"user@maildomain\".  the default maildomain is the
+                          i.e. \"user@maildomain\".  The default maildomain is the
                           hostname where the job was submitted from"
 
 ac_help="$ac_help
 
   --disable-spool         if set, TORQUE will create output and error files directly 
-                          in $HOME/.pbs_spool if it exists or in $HOME otherwise.
-                          By default, TORQUE will spool files in $TORQUEHOME/spool 
+                          in \$HOME/.pbs_spool if it exists or in \$HOME otherwise.
+                          By default, TORQUE will spool files in \$TORQUEHOME/spool 
                           and copy them to the users home directory when the job
                           completes"
 
@@ -817,7 +816,7 @@ fi
 #
 # the default is to build all the executables but not the documents
 #
-PART_DOCS=""
+PART_DOCS="doc"
 PART_SERVER=server
 PART_MOM=mom
 PART_CLIENTS=clients
@@ -1467,13 +1466,14 @@ fi
 
 
 # Check whether --enable-syslog or --disable-syslog was given.
+enableval=yes
 if test "${enable_syslog+set}" = set; then
   enableval="$enable_syslog"
   :
 fi
 
 
-if test "${enable_syslog}" = "yes" ; then
+if test "${enableval}" = "yes" ; then
     cat >> confdefs.h <<\EOF
 #define SYSLOG 1
 EOF
@@ -1732,7 +1732,7 @@ EOF
 fi
 else
   cat >> confdefs.h <<\EOF
-#define TDISABLEFILESYNC 0
+#define TDISABLEFILESYNC 1
 EOF
 
 fi # END filesync
