@@ -603,9 +603,15 @@ static int gid_match(const char *group1, const char *group2)
      }
 
    pgrp = getgrnam(group1);
+   if (pgrp == NULL)
+     return(1);
+
    gid1 = pgrp->gr_gid;
 
    pgrp = getgrnam(group2);
+   if (pgrp == NULL)
+     return(1);
+
    gid2 = pgrp->gr_gid;
 
    return (! (gid1 == gid2));

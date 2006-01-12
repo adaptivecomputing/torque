@@ -1,5 +1,6 @@
 2.0.0p6
 
+  fix segfault in new "acl_group_sloppy" code if a group doesn't exist
 
 2.0.0p5
 

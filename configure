@@ -95,9 +95,11 @@ ac_default_prefix=/usr/local
 # Any additions from configure.in:
 ac_help="$ac_help
 
-  --enable-docs           build PBS with documentation. This is off by
-                          default since it takes a while to build. Man pages
-                          will still be installed, however."
+  --enable-docs           Use this if you want manpages installed. Apparently
+                          this was once such a long, time-consuming process
+                          that someone bothered to make this option. Now, it
+                          is a bug that this isn't enabled by default."
+
 ac_help="$ac_help
 
   --enable-server         build/not build the server. Can be used to disable
