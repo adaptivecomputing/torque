@@ -1533,7 +1533,11 @@ void write_node_state()
   if (nstatef != NULL) 
     {
     fseek(nstatef, 0L, SEEK_SET);	/* rewind and clear */
-    ftruncate(fileno(nstatef),(off_t)0);
+    if (ftruncate(fileno(nstatef),(off_t)0) != 0)
+      {
+      log_err(errno,"write_node_state","could not truncate file");
+      return;
+      }
     } 
   else 
     {
@@ -1544,7 +1548,7 @@ void write_node_state()
       log_err(
         errno,
         "write_node_state",
-        "could open file");
+        "could not open file");
 
       return;
       }

@@ -4642,7 +4642,12 @@ int open_std_file(
       {
       /* change file uid/gid to execution user of job  */
 
-      fchown(fds,pjob->ji_qs.ji_un.ji_momt.ji_exuid,exgid);
+      if (fchown(fds,pjob->ji_qs.ji_un.ji_momt.ji_exuid,exgid) != 0)
+        {
+        close(fds);
+
+        return(-1);
+        }
       }
     }
 

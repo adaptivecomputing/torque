@@ -621,7 +621,7 @@ static int decode_nodes(
 
   while (1) 
     {
-    while (isspace(*pc))
+    while (isspace(*pc) && (*pc != '\0'))
       ++pc;
 
     if (!isalnum(*pc))

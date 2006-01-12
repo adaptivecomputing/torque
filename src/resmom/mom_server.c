@@ -879,8 +879,9 @@ void check_state(
   if (statfs(path_spool,&F) == -1)
     {
     /* cannot check filesystem */
+    log_err(errno,"check_state","statfs() failed");
     }
-  else if (F.f_bfree < TMINSPOOLBLOCKS)
+  else if (F.f_bavail < TMINSPOOLBLOCKS)
     {
     /* inadequate disk space in spool directory */
 

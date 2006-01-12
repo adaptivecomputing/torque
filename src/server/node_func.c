@@ -1076,9 +1076,16 @@ int update_nodes_file()
 
   fclose(nin);
 
-  unlink(path_nodes);
-  link(path_nodes_new, path_nodes);
-  unlink(path_nodes_new);
+  if (rename(path_nodes_new, path_nodes) != 0)
+    {
+    log_event(
+      PBSEVENT_ADMIN, 
+      PBS_EVENTCLASS_SERVER, 
+      "nodes",
+      "replacing old nodes file failed");
+
+    return(-1);
+    }
 
   return(0);
   }  /* END update_nodes_file() */
