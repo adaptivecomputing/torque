@@ -306,7 +306,7 @@ int run_pelog(
   {
   char *id = "run_pelog";
 
-  struct sigaction act;
+  struct sigaction act, oldact;
   char	        *arg[11];
   int		 fds1 = 0;
   int		 fds2 = 0;
@@ -388,7 +388,7 @@ int run_pelog(
 
     act.sa_flags = 0;
 
-    sigaction(SIGALRM,&act,0);
+    sigaction(SIGALRM,&act,&oldact);
 
     /* it would be nice if the harvest routine could block for 5 seconds, 
        and if the prolog is not complete in that time, mark job as prolog 
@@ -446,9 +446,8 @@ int run_pelog(
 
     alarm(0);
 
-    act.sa_handler = SIG_DFL;
-
-    sigaction(SIGALRM,&act,0);
+    /* restore the previous handler */
+    sigaction(SIGALRM,&oldact,0);
 
     if (run_exit == 0) 
       {
