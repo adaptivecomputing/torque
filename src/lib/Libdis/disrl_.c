@@ -138,7 +138,7 @@ int disrl_(stream, ldval, ndigs, nskips, sigd, count)
 			    case '3':
 			    case '4':
 				if (count > 0 &&
-				   (*disr_skip)(stream, (size_t)count) == count)
+				   (*disr_skip)(stream, (size_t)count) == (int)count)
 				        return (DIS_EOD);
 				break;
 			    default:
@@ -161,7 +161,7 @@ int disrl_(stream, ldval, ndigs, nskips, sigd, count)
 		unum = c - '0';
 		if (count > 1) {
 			if ((*dis_gets)(stream, dis_buffer + 1, count - 1) !=
-								count - 1)
+								(int)count - 1)
 			        return (DIS_EOD);
 			cp = dis_buffer;
 			if (count >= dis_umaxd) {

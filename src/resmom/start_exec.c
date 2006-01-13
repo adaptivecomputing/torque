@@ -4672,7 +4672,7 @@ static int find_env_slot(
   int	 i;
   int	 len = 1;	/* one extra for '=' */
 
-  for (i = 0;*(pstr + i) != '=';++i)
+  for (i = 0;(*(pstr + i) != '\0') && (*(pstr + i) != '=');++i)
     ++len;
 
   for (i = 0;i < ptbl->v_used;++i) 

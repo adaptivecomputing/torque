@@ -113,7 +113,7 @@ int decode_DIS_attropl(sock, ppatt)
 	struct attropl **ppatt;
 {
 	int		 hasresc;
-	int		 i;
+	unsigned int	 i;
 	unsigned int	 name_len;
 	unsigned int	 numpat;
 	struct attropl  *pat = NULL;

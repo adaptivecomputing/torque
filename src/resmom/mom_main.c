@@ -3820,10 +3820,11 @@ int rm_request(
               {
               sprintf(tmpLine,"Communication Model:    %s\n",
 #if RPP
-                "RPP");
+                "RPP"
 #else  /* RPP */
-                "TCP");
+                "TCP"
 #endif /* RPP */
+                );
 
               MUStrNCat(&BPtr,&BSpace,tmpLine);
               }
@@ -4698,7 +4699,8 @@ static void mom_lock(
  
     tmpPath[0] = '\0';
  
-    getcwd(tmpPath,sizeof(tmpPath));
+    if (getcwd(tmpPath,sizeof(tmpPath)) == NULL)
+      tmpPath[0] = '\0';
 
     sprintf(log_buffer,"cannot lock '%s/mom.lock' - another mom running",
       (tmpPath[0] != '\0') ? tmpPath : "$MOM_HOME");

@@ -117,7 +117,7 @@ int disrsi_(
 
       *negate = c == '-';
 
-      if ((*dis_gets)(stream,dis_buffer,count) != count)
+      if ((*dis_gets)(stream,dis_buffer,count) != (int)count)
         {
         return(DIS_EOD);
         }
@@ -171,7 +171,7 @@ int disrsi_(
 
       if (count > 1) 
         {
-        if ((*dis_gets)(stream,dis_buffer + 1,count - 1) != count - 1)
+        if ((*dis_gets)(stream,dis_buffer + 1,count - 1) != (int)count - 1)
           {
           return(DIS_EOD);
           }

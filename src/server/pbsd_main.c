@@ -257,14 +257,6 @@ void do_rpp(
 
   if (ret != DIS_SUCCESS) 
     {
-    if (LOGLEVEL >= 3)
-      {
-      sprintf(log_buffer,"cannot get rpp protocol, %s\n",
-        dis_emsg[ret]);
-
-      log_err(errno,id,log_buffer);
-      }
-
     stream_eof(stream,0,ret);
 
     return;
@@ -274,14 +266,6 @@ void do_rpp(
 
   if (ret != DIS_SUCCESS) 
     {
-    if (LOGLEVEL >= 3)
-      {
-      sprintf(log_buffer,"cannot get rpp protocol version, %s\n",
-        dis_emsg[ret]);
-
-      log_err(errno,id,log_buffer);
-      }
-
     stream_eof(stream,0,ret);
 
     return;
@@ -536,21 +520,26 @@ int main(
         continue;
         }
 
-      if ((tptr = strstr(ptr,"SERVERHOST")) != NULL)
+      if (!strncmp(ptr,"SERVERHOST",strlen("SERVERHOST")))
         {
-        tptr += strlen("SERVERHOST");
+        tptr = ptr + strlen("SERVERHOST");
 
         while (isspace(*tptr) && (*tptr != '\0'))
           tptr++;
 
-        sscanf(tptr,"%64s",
-          server_host);
+        if (sscanf(tptr,"%64s",server_host) != 1)
+          {
+          log_err(-1,"pbsd_main","parse error in config at SERVERHOST");
+
+          return(-1);
+          }
+           
         }
-      else if ((tptr = strstr(ptr,"ALLOWCOMPUTEHOSTSUBMIT")) != NULL)
+      else if (!strncmp(ptr,"ALLOWCOMPUTEHOSTSUBMIT",strlen("ALLOWCOMPUTEHOSTSUBMIT")))
         {
         /* FORMAT:  ALLOWCOMPUTEHOSTSUBMIT  true */
 
-        tptr += strlen("ALLOWCOMPUTEHOSTSUBMIT");
+        tptr = ptr + strlen("ALLOWCOMPUTEHOSTSUBMIT");
 
         while (isspace(*tptr) && (*tptr != '\0'))
           tptr++;
@@ -563,15 +552,15 @@ int main(
           TAllowComputeHostSubmit = TRUE;
           }
         }
-      else if ((tptr = strstr(ptr,"SUBMITHOSTS")) != NULL)
+      else if (!strncmp(ptr,"SUBMITHOSTS",strlen("SUBMITHOSTS")))
         {
         int hcount;
 
         /* FORMAT:  SUBMITHOSTS  <HOST>[,<HOST>]... */
 
-        TAllowSubmitHostList = (char **)calloc(1,sizeof(char *) * (2048 + 1));
+        tptr = ptr + strlen("SUBMITHOSTS");
 
-        tptr += strlen("SUBMITHOSTS");
+        TAllowSubmitHostList = (char **)calloc(1,sizeof(char *) * (2048 + 1));
 
         hcount = 0;
 
@@ -993,7 +982,12 @@ int main(
     }
 
   sprintf(log_buffer, "%ld\n", (long)sid);
-  write(lockfds, log_buffer, strlen(log_buffer));
+  if (write(lockfds, log_buffer, strlen(log_buffer)) != (ssize_t)strlen(log_buffer))
+    {
+    log_err(errno,msg_daemonname,"failed to write pid to lockfile");
+
+    return(-1);
+    }
 #if (PLOCK_DAEMONS & 1)
   plock(PROCLOCK);
 #endif
@@ -1008,6 +1002,8 @@ int main(
   rpp_fd = -1;		/* force rpp_bind() to get another socket */
 
   tryport = IPPORT_RESERVED;
+
+  privfd = -1;
 
   while (--tryport > 0) 
     {

@@ -131,7 +131,7 @@ char *disrcs(stream, nchars, retval)
 		        	locret = DIS_NOMALLOC;
 			else {
 				if ((*dis_gets)(stream, value,
-						(size_t)count) != (size_t)count)
+						(size_t)count) != (int)count)
 			        	locret = DIS_PROTO;
 				else
 					value[count] = '\0';

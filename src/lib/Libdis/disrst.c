@@ -138,7 +138,7 @@ char *disrst(
         }
       else 
         {
-        if ((*dis_gets)(stream,value,(size_t)count) != (size_t)count)
+        if ((*dis_gets)(stream,value,(size_t)count) != (int)count)
           locret = DIS_PROTO;
 #ifndef NDEBUG
         else if (memchr(value,0,(size_t)count))

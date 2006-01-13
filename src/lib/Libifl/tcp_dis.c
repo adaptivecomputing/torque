@@ -145,7 +145,7 @@ static void tcp_pack_buff(
   {
   size_t amt;
   size_t start;
-  int i;
+  size_t i;
 
   start = tp->tdis_trailp - tp->tdis_thebuf;
 
@@ -271,7 +271,7 @@ int DIS_tcp_wflush(
 
   ct = tp->tdis_trailp - tp->tdis_thebuf;
 
-  while ((i = write(fd,pb,ct)) != ct) 
+  while ((i = write(fd,pb,ct)) != (ssize_t)ct) 
     {
     if (i == -1)  
       {
@@ -356,7 +356,7 @@ static int tcp_rskip(
 
   tp = &tcparray[fd]->readbuf;
 
-  if (tp->tdis_leadp - tp->tdis_eod < ct)
+  if (tp->tdis_leadp - tp->tdis_eod < (ssize_t)ct)
     {
     /* this isn't the best thing to do, but this isn't used, so */
 
@@ -430,7 +430,7 @@ static int tcp_gets(
 
   tp = &tcparray[fd]->readbuf;
 
-  while (tp->tdis_eod - tp->tdis_leadp < ct) 
+  while (tp->tdis_eod - tp->tdis_leadp < (ssize_t)ct) 
     {
     /* not enough data, try to get more */
 
@@ -492,12 +492,12 @@ static int tcp_puts(
 
   tp = &tcparray[fd]->writebuf;
 
-  if ((tp->tdis_thebuf + THE_BUF_SIZE - tp->tdis_leadp) < ct) 
+  if ((tp->tdis_thebuf + THE_BUF_SIZE - tp->tdis_leadp) < (ssize_t)ct) 
     {
     /* not enough room, try to flush committed data */
 
     if ((DIS_tcp_wflush(fd) < 0) ||
-       ((tp->tdis_thebuf + THE_BUF_SIZE - tp->tdis_leadp) < ct))
+       ((tp->tdis_thebuf + THE_BUF_SIZE - tp->tdis_leadp) < (ssize_t)ct))
       {
       return(-1);		/* error */
       }

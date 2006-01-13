@@ -127,7 +127,7 @@ signed char disrsc(stream, retval)
 	value = 0;
 	switch (locret = disrsi_(stream, &negate, &uvalue, 1)) {
 	    case DIS_SUCCESS:
-		if (negate ? -uvalue >= SCHAR_MIN : uvalue <= SCHAR_MAX) {
+		if (negate ? (int)-uvalue >= SCHAR_MIN : uvalue <= SCHAR_MAX) {
 			value = negate ? -uvalue : uvalue;
 			break;
 		} else

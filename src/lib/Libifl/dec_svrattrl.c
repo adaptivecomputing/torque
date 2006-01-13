@@ -115,7 +115,7 @@ int decode_DIS_svrattrl(sock, phead)
 	int 	   sock;
 	list_head *phead;
 {
-	int		i;
+	unsigned int	i;
 	unsigned int	hasresc;
 	size_t		ls;
 	unsigned int	data_len;

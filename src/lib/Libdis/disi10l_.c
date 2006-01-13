@@ -105,7 +105,7 @@ dis_long_double_t *dis_ln10 = NULL;
  */
 
 void disi10l_() {
-	int		i;
+	unsigned	i;
 	unsigned long	ul;
 	dis_long_double_t	accum;
 	size_t		tabsize;

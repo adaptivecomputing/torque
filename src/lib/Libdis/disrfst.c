@@ -130,7 +130,7 @@ int disrfst(
       locret = DIS_BADSIGN;
     else if (count > achars)
       locret = DIS_OVERFLOW;
-    else if ((*dis_gets)(stream,value,(size_t)count) != (size_t)count)
+    else if ((*dis_gets)(stream,value,(size_t)count) != (int)count)
       locret = DIS_PROTO;
 #ifndef NDEBUG
     else if (memchr(value,0,(size_t)count))

@@ -190,6 +190,9 @@ int site_check_user_map(
         {
         /* job submitted from host found in trusted submit host list, access allowed */
 
+        if (dptr != NULL)
+          *dptr = '.';
+
         return(0);
         }
       }  /* END for (hindex) */

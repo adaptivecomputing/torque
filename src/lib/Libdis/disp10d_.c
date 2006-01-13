@@ -89,7 +89,7 @@ double disp10d_(expon)
     int			expon;
     {
 	int		negate;
-	int		pow2;
+	unsigned	pow2;
 	double		accum;
 
 	if (expon == 0)

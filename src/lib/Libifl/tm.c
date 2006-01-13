@@ -420,7 +420,7 @@ static int localmom()
       return(-1);
       }
 
-    assert(hp->h_length <= sizeof(hostaddr));
+    assert((int)hp->h_length <= (int)sizeof(hostaddr));
  
     memcpy(&hostaddr,hp->h_addr_list[0],hp->h_length);
 

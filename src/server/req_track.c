@@ -235,8 +235,12 @@ void track_save(pwt)
 		log_err(errno, myid, "Unable to open tracking file");
 		return;
 	}
-	(void)write(fd, (char *)server.sv_track, server.sv_tracksize * sizeof(struct tracking));
-	(void)close(fd);
+	if (write(fd, (char *)server.sv_track, server.sv_tracksize * sizeof(struct tracking)) !=
+            (ssize_t)(server.sv_tracksize * sizeof(struct tracking)))
+          {
+          log_err(errno,myid,"failed to write to track file");
+          }
+	close(fd);
 	server.sv_trackmodifed = 0;
 	return;
 }

@@ -139,20 +139,15 @@ char *pbs_default()
 
       if (fd == NULL) 
         {
-        char tmpLine[1024];
-
-        /* attempt again with parent */
-
-        snprintf(tmpLine,sizeof(tmpLine),"../%s",
-          pbs_destn_file);
-
-        if ((fd = fopen(pbs_destn_file,"r")) == NULL)
-          {
-          return(NULL);
-          }
+        return(NULL);
         }
 
-      fgets(dflt_server,PBS_MAXSERVERNAME,fd);
+      if (fgets(dflt_server,PBS_MAXSERVERNAME,fd) == NULL)
+        {
+        fclose(fd);
+
+        return(NULL);
+        }
 
       if ((pn = strchr(dflt_server,(int)'\n')))
         *pn = '\0';
@@ -254,7 +249,6 @@ static int PBSD_authenticate(
   char   tmpLine[1024];
 
   struct stat buf;
-  int         rc;
 
   /* use pbs_iff to authenticate me */
 

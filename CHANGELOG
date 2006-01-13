@@ -1,8 +1,11 @@
 2.0.0p6
 
-  fix segfault in new "acl_group_sloppy" code if a group doesn't exist
-  configure defaults changed to enable syslog, enable docs, and disable filesync
+  fix segfault in new "acl_group_sloppy" code if a group doesn't exist (USC)
+  configure defaults changed to enable syslog, enable docs, and disable filesync (USC)
   pelog now correctly restores previous alarm handler (Sandia)
+  misc fixes with checking syscalls returns and sign-mismatches (USC)
+  don't corrupt hostnames when checking torque.cfg SERVERHOST names (USC)
+  don't corrupt memory when parsing env vars without an '=' (USC)
 
 2.0.0p5
 

@@ -121,7 +121,7 @@ int decode_DIS_JobFile(sock, preq)
 		return rc;
 
 	preq->rq_ind.rq_jobfile.rq_data = disrcs(sock, &amt, &rc);
-	if ((amt != preq->rq_ind.rq_jobfile.rq_size) && (rc == 0))
+	if (((long)amt != preq->rq_ind.rq_jobfile.rq_size) && (rc == 0))
 		rc = DIS_EOD;
 	if (rc) {
 		if (preq->rq_ind.rq_jobfile.rq_data)

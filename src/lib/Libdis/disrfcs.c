@@ -121,7 +121,7 @@ int disrfcs(stream, nchars, achars, value)
 		        locret = DIS_BADSIGN;
 		else if ((*nchars = count) > achars)
 		        locret = DIS_OVERFLOW;
-		else if ((*dis_gets)(stream, value, *nchars) != *nchars)
+		else if ((*dis_gets)(stream, value, *nchars) != (int)*nchars)
 		        locret = DIS_PROTO;
 	}
 	locret = (*disr_commit)(stream, locret == DIS_SUCCESS) ?

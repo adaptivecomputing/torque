@@ -115,7 +115,7 @@ int diswcs(
 
   if ((retval == DIS_SUCCESS) && 
       (nchars > 0) &&
-     ((*dis_puts)(stream,value,nchars) != nchars))
+     ((*dis_puts)(stream,value,nchars) != (int)nchars))
     {
     retval = DIS_PROTO;
     }

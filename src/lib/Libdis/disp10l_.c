@@ -95,7 +95,7 @@ dis_long_double_t disp10l_(
 
   {
   int                negate;
-  int                pow2;
+  unsigned           pow2;
   dis_long_double_t  accum;
 
   if (expon == 0)

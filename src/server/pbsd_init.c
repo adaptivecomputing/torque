@@ -764,9 +764,14 @@ int pbsd_init(
 
           strcpy(psuffix,JOB_BAD_SUFFIX);
       
-          link(pdirent->d_name,basen);
-
-          unlink(pdirent->d_name);
+          if (link(pdirent->d_name,basen) < 0)
+            {
+            log_err(errno,"pbsd_init","failed to link corrupt .JB file to .BD");
+            }
+          else
+            {
+            unlink(pdirent->d_name);
+            }
           }
         }
       }
@@ -862,7 +867,15 @@ int pbsd_init(
   for (i = 0;i < server.sv_tracksize;i++)
     (server.sv_track + i)->tk_mtime = 0;
 
-  read(fd,(char *)server.sv_track,server.sv_tracksize * sizeof(struct tracking));
+  if (read(fd,(char *)server.sv_track,server.sv_tracksize * sizeof(struct tracking)) !=
+      (ssize_t)(server.sv_tracksize * sizeof(struct tracking)))
+    {
+    log_err(errno, "pbs_init", "unable to read tracksize from tracking file");
+
+    close(fd);
+
+    return(-1);
+    }
 
   close(fd);
 

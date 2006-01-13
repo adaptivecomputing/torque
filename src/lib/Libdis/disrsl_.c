@@ -138,7 +138,7 @@ int disrsl_(
 
       *negate = (c == '-');
 
-      if ((*dis_gets)(stream,dis_buffer,count) != count)
+      if ((*dis_gets)(stream,dis_buffer,count) != (int)count)
         {
         return(DIS_EOD);
         }
@@ -196,7 +196,7 @@ int disrsl_(
 
       if (count > 1) 
         {
-        if ((*dis_gets)(stream,dis_buffer + 1,count - 1) != count - 1)
+        if ((*dis_gets)(stream,dis_buffer + 1,count - 1) != (int)count - 1)
           {
           /* FAILURE */
 

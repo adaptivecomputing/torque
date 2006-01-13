@@ -930,6 +930,7 @@ int message_job(
   char		*pstr = NULL;
   int		len;
   int		fds;
+  int 		rc;
 
   if (pjob == NULL)
     {
@@ -984,7 +985,16 @@ int message_job(
     text = pstr;
     }
 
-  write(fds,text,len);
+  if (write(fds,text,len) != len)
+    {
+    log_err(errno,"message_job","unable to write message to job");
+
+    rc = PBSE_INTERNAL;
+    }
+  else
+    {
+    rc = PBSE_NONE;
+    }
 
   close(fds);
 
@@ -993,7 +1003,7 @@ int message_job(
 
   /* SUCCESS */
 
-  return(PBSE_NONE);
+  return(rc);
   }  /* END message_job() */
 
 

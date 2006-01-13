@@ -126,7 +126,7 @@ short disrss(stream, retval)
 	value = 0;
 	switch (locret = disrsi_(stream, &negate, &uvalue, 1)) {
 	    case DIS_SUCCESS:
-		if (negate ? -uvalue >= SHRT_MIN : uvalue <= SHRT_MAX) {
+		if (negate ? (int)-uvalue >= SHRT_MIN : uvalue <= SHRT_MAX) {
 			value = negate ? -uvalue : uvalue;
 			break;
 		} else
