@@ -834,7 +834,7 @@ int pbsd_init(
 
   if (fd < 0) 
     {
-    log_err(errno,"pbsd_init", "unable to open tracking file");
+    log_err(errno,"pbsd_init","unable to open tracking file");
 
     return(-1);
     }
@@ -866,6 +866,8 @@ int pbsd_init(
 
   for (i = 0;i < server.sv_tracksize;i++)
     (server.sv_track + i)->tk_mtime = 0;
+
+  /* NOTE:  tracking file records are optional */
 
   i = read(fd,(char *)server.sv_track,server.sv_tracksize * sizeof(struct tracking));
 
