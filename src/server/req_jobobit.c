@@ -664,6 +664,7 @@ void on_job_exit(
   int	 KeepSeconds = 0;
   pbs_queue          *pque;
 
+  extern void remove_job_delete_nanny(struct job *);
 
   if (ptask->wt_type != WORK_Deferred_Reply) 
     {
@@ -682,6 +683,9 @@ void on_job_exit(
     {
     return;
     }		
+
+  /* MOM has killed everything it can kill, so we can stop the nanny */
+  remove_job_delete_nanny(pjob);
 
   switch (pjob->ji_qs.ji_substate) 
     {

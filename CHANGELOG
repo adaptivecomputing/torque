@@ -3,11 +3,12 @@
   fix segfault in new "acl_group_sloppy" code if a group doesn't exist (USC)
   configure defaults changed to enable syslog, enable docs, and disable filesync (USC)
   pelog now correctly restores previous alarm handler (Sandia)
-  misc fixes with checking syscalls returns and sign-mismatches (USC)
-  don't corrupt hostnames when checking torque.cfg SERVERHOST names (USC)
-  don't corrupt memory when parsing env vars without an '=' (USC)
+  misc fixes with syscalls returns, sign-mismatches, and mem corruption (USC)
   prevent MOM from killing herself on new job race condition (USC)
     - so far, only linux is fixed
+  remove job delete nanny earlier to not interrupt long stageouts (USC)
+  display C state later when using keep_completed (USC)
+  
 
 2.0.0p5
 

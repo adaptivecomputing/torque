@@ -1531,11 +1531,6 @@ void set_statechar(
     {
     pjob->ji_wattr[JOB_ATR_state].at_val.at_char = suspend;
     }
-  else if ((pjob->ji_qs.ji_state == JOB_STATE_EXITING) &&
-      (pjob->ji_qs.ji_svrflags & JOB_SUBSTATE_COMPLETE) )
-    {
-    pjob->ji_wattr[JOB_ATR_state].at_val.at_char = 'C';
-    }
   else
     {
     if (pjob->ji_qs.ji_state < (int)strlen(statechar))
