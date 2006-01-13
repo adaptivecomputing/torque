@@ -1739,8 +1739,10 @@ int kill_task(
   struct dirent	*dent;
   proc_stat_t	*ps;
   int		sesid;
+  pid_t         mompid;
 
   sesid = ptask->ti_qs.ti_sid;
+  mompid = getpid();
 
   if (sesid <= 1)
     {
@@ -1787,7 +1789,7 @@ int kill_task(
          * Killing a zombie is sure death! Its pid is zero,
          * which to kill(2) means 'every process in the process
          * group of the current process'.
-          */
+         */
 
         sprintf(log_buffer,"%s: not killing pid 0 with sig %d",
           id,
@@ -1802,6 +1804,19 @@ int kill_task(
       else
         {
         int i = 0;
+
+        if (ps->pid == mompid)
+          {
+          /*
+	   * there is a race condition with newly started jobs that
+           * can be killed before they've established their own
+           * session id.  This means the child tasks still have MOM's
+           * session id.  We check this to make sure MOM doesn't kill
+           * herself. 
+           */
+
+          continue;
+          }
 
         if (sig == SIGKILL) 
           {

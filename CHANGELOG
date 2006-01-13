@@ -6,6 +6,8 @@
   misc fixes with checking syscalls returns and sign-mismatches (USC)
   don't corrupt hostnames when checking torque.cfg SERVERHOST names (USC)
   don't corrupt memory when parsing env vars without an '=' (USC)
+  prevent MOM from killing herself on new job race condition (USC)
+    - so far, only linux is fixed
 
 2.0.0p5
 
