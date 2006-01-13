@@ -100,7 +100,7 @@ INCS = $(BUILD_INCS) -I$(PBS_SRCINC) $(TCL_INCS)
 CFLAGS = @CFLAGS@ $(INCS) @DEFS@
 
 
-OBJS_COMMON = hostn.o chk_tree.o printjob.o tracejob.o
+OBJS_COMMON = hostn.o chk_tree.o printjob.o tracejob.o printtracking.o
 OBJS_TCLTK = pbs_tclWrap.o site_tclWrap.o
 OBJS_TCL = pbsTclInit.o
 OBJS_TK = pbsTkInit.o
@@ -110,7 +110,7 @@ OBJS_WISH = $(OBJS_TCLTK) $(OBJS_TK)
 
 
 TOOLS_TARGETS = @TOOLS_TARGETS@
-COMMON_TARGETS = chk_tree hostn printjob tracejob
+COMMON_TARGETS = chk_tree hostn printjob tracejob printtracking
 
 OBJS = @TOOLS_OBJS@ $(OBJS_COMMON)
 TARGETS = @TOOLS_TARGETS@ $(COMMON_TARGETS)
@@ -151,6 +151,7 @@ DFLT_ACTION = $(CC) $(CFLAGS) $@.o -o $@ $(NO_TCL_LIBS)
 
 chk_tree: chk_tree.o; $(DFLT_ACTION)
 printjob: printjob.o; $(DFLT_ACTION)
+printtracking: printtracking.o; $(DFLT_ACTION)
 hostn: hostn.o;       $(DFLT_ACTION)
 tracejob: tracejob.o; $(DFLT_ACTION)
 
