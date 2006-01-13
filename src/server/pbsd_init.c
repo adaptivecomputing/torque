@@ -850,7 +850,7 @@ int pbsd_init(
 
   if (fstat(fd,&statbuf) < 0) 
     {
-    log_err(errno, "pbs_init", "unable to stat tracking file");
+    log_err(errno,"pbs_init","unable to stat tracking file");
 
     return(-1);
     } 
@@ -867,14 +867,11 @@ int pbsd_init(
   for (i = 0;i < server.sv_tracksize;i++)
     (server.sv_track + i)->tk_mtime = 0;
 
-  if (read(fd,(char *)server.sv_track,server.sv_tracksize * sizeof(struct tracking)) !=
-      (ssize_t)(server.sv_tracksize * sizeof(struct tracking)))
+  i = read(fd,(char *)server.sv_track,server.sv_tracksize * sizeof(struct tracking));
+
+  if (i < 0)
     {
-    log_err(errno, "pbs_init", "unable to read tracksize from tracking file");
-
-    close(fd);
-
-    return(-1);
+    log_err(errno,"pbs_init","unable to read tracksize from tracking file");
     }
 
   close(fd);
@@ -886,7 +883,7 @@ int pbsd_init(
   set_task(WORK_Timed,(long)(time_now + PBS_SAVE_TRACK_TM),track_save,0);
 
   return(0);
-  }
+  }  /* END pbsd_init() */
 
 
 
