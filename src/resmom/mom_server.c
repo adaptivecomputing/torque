@@ -241,7 +241,7 @@ int tlist(
     BSize--;
     }
 
-  if (BSize > strlen(tmpLine))
+  if (BSize > (int)strlen(tmpLine))
     {
     strcat(Buf,tmpLine);
     }

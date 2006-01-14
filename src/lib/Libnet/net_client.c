@@ -109,7 +109,7 @@ static int await_connect(
   struct timeval tv;
 
   /* socklen_t not portable */
-  int len;
+  unsigned int len;
 
   tv.tv_sec = timeout;
   tv.tv_usec = 0;

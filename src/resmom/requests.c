@@ -2368,7 +2368,7 @@ void req_cpyfile(
   int		 madefaketmpdir=0;
   int		 usedfaketmpdir=0;
   wordexp_t	 arg2exp, arg3exp;
-  int            arg2index;
+  int            arg2index = -1;
   char		 faketmpdir[1024];
   job 		*pjob;
 #endif
@@ -2708,7 +2708,7 @@ nextword:
 
     arg2index++;
 
-    if (arg2index >= arg2exp.we_wordc) 
+    if (arg2index >= (int)arg2exp.we_wordc) 
       {
       /* no more words */
 

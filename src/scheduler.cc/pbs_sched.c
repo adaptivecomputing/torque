@@ -551,7 +551,7 @@ badconn(msg)
 
 		uu.aa = addr;
 		sprintf(buf, "%u", uu.bb[0]);
-		for(i=1; i<sizeof(addr); i++) {
+		for(i=1; i<(int)sizeof(addr); i++) {
 			sprintf(hold, ".%u", uu.bb[i]);
 			strcat(buf, hold);
 		}

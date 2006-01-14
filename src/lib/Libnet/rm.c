@@ -575,7 +575,8 @@ int configrm(
   char *file)    /* I */
 
   {
-  int         ret, len;
+  int         ret;
+  size_t      len;
   struct out *op;
 
   pbs_errno = 0;

@@ -416,7 +416,7 @@ static void accept_conn(
   struct sockaddr_in from;
 
   /* socklen_t not portable */
-  int fromsize;
+  unsigned int fromsize;
 	
   /* update lasttime of main socket */
 

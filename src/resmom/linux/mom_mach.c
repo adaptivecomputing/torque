@@ -3513,7 +3513,7 @@ static char *walltime(
 
     found = 1;
 
-    start = MIN(start,ps->start_time);
+    start = MIN((unsigned)start,ps->start_time);
     }  /* END while ((dent = readdir(pdir)) != NULL) */
 
   if (found) 
@@ -3577,7 +3577,7 @@ u_long gracetime(
   {
   time_t now = time((time_t *)NULL);
 
-  if (secs > now)		/* time is in the future */
+  if (secs > (u_long)now)		/* time is in the future */
     return(secs - now);
 
   return(0);

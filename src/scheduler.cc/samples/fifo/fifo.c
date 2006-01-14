@@ -494,8 +494,10 @@ job_info *update_starvation( job_info **jobs )
 	if( jinfo == NULL || jobs[i] -> sch_priority > jinfo -> sch_priority )
 	  jinfo = jobs[i];
       }
+      /* job not starving yet
       else
-        ; /* job not starving yet */
+        ;
+      */
     }
   }
   return jinfo;

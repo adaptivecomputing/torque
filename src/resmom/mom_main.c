@@ -683,7 +683,7 @@ static char *getjoblist(
       if (!firstjob)
         strcat(list," ");
       strcat(list,pjob->ji_qs.ji_jobid);
-      if (strlen(list) >= listlen)
+      if ((int)strlen(list) >= listlen)
         {
         listlen+=BUFSIZ;
         list=realloc(list,listlen);
@@ -4026,7 +4026,7 @@ int rm_request(
             goto bad;
             }
 
-          if (fwrite(ptr,1,strlen(ptr) + 1,fp) < 0)
+          if (fwrite(ptr,sizeof(char),strlen(ptr) + 1,fp) < (strlen(ptr) + 1))
             {
             fclose(fp);
 
@@ -4814,7 +4814,7 @@ int job_over_limit(
   resource	*limresc;
   resource	*useresc;
   struct resource_def	*rd;
-  long		total;
+  unsigned long	total;
   int		index, i;
   unsigned long	limit;
   char		*units;

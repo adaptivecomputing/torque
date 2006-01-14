@@ -256,7 +256,7 @@ int save_flush()
 
   if (spaceused > 0) 
     {
-    while ((i = write(pkbfds,pbuf,spaceused)) != spaceused) 
+    while ((i = write(pkbfds,pbuf,spaceused)) != (ssize_t)spaceused) 
       {
       if (i == -1) 
         {
@@ -419,7 +419,7 @@ int recov_attr(
     if (tempal.al_tsize == ENDATTRIBUTES)
       break;            /* hit dummy attribute that is eof */
 
-    if (tempal.al_tsize <= sizeof(tempal))
+    if (tempal.al_tsize <= (int)sizeof(tempal))
       {
       log_err(-1,id,"attr size too small");
 

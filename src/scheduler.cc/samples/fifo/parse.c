@@ -164,7 +164,7 @@ int parse_config( char *fname )
 	{
 	  num = strtol(config_value, &endp, 10);
 	}
-	else ; /* value is a string */
+	/* else ;  value is a string */
 
 	if( prime_value != NULL )
 	{

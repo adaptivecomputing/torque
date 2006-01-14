@@ -205,7 +205,7 @@ int job_save(
 
     /* just write the "critical" base structure to the file */
 
-    while ((i = write(fds,(char *)&pjob->ji_qs,quicksize)) != quicksize) 
+    while ((i = write(fds,(char *)&pjob->ji_qs,quicksize)) != (ssize_t)quicksize) 
       {
       if ((i < 0) && (errno == EINTR)) 
         {
@@ -396,7 +396,7 @@ job *job_recov(
 
   /* read in job quick save sub-structure */
 
-  if (read(fds,(char *)&pj->ji_qs,quicksize) != quicksize) 
+  if (read(fds,(char *)&pj->ji_qs,quicksize) != (ssize_t)quicksize) 
     {
     sprintf(log_buffer,"Unable to read %s",
       namebuf);

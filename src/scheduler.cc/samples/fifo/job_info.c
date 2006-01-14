@@ -618,7 +618,7 @@ int update_job_comment( int pbs_sd, job_info *jinfo, char *comment )
   /* the pbs_alterjob() call takes a linked list of attrl structures to alter
    * a job.  All we are interested in doing is changing the comment.
    */
-  struct attrl attr = { NULL, ATTR_comment, NULL, NULL };
+  struct attrl attr = { NULL, ATTR_comment, NULL, NULL, 0 };
 
   if( jinfo == NULL )
     return 1;

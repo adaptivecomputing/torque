@@ -1137,7 +1137,7 @@ int TMomFinalizeJob1(
   static char 	       *id = "TMomFinalizeJob1";
 
   /* socklen_t not portable */
-  int	        slen;
+  unsigned int	        slen;
 
   int                    i;
 
@@ -3915,7 +3915,7 @@ void start_exec(
   char		tmpdir[MAXPATHLEN];
 
   /* socklen_t not portable */
-  int slen;
+  unsigned int slen;
 
   void im_compose A_((int stream,
     char	*jobid,
@@ -4889,7 +4889,7 @@ int init_groups(
 
   while ((grp = getgrent())) 
     {
-    if (grp->gr_gid == pwgrp)
+    if (grp->gr_gid == (gid_t)pwgrp)
       continue;
 		
     for (i = 0;grp->gr_mem[i];i++)
