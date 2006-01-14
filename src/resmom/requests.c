@@ -985,18 +985,21 @@ int message_job(
     text = pstr;
     }
 
+  rc = PBSE_NONE;
+
   if (write(fds,text,len) != len)
     {
     log_err(errno,"message_job","unable to write message to job");
 
     rc = PBSE_INTERNAL;
     }
-  else
-    {
-    rc = PBSE_NONE;
-    }
 
-  close(fds);
+  if (close(fds) != 0)
+    {
+    log_err(errno,"message_job","unable to write message to job");
+
+    rc = PBSE_INTERNAL;
+    }
 
   if (pstr != NULL)
     free(pstr);

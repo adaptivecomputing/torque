@@ -240,7 +240,13 @@ void track_save(pwt)
           {
           log_err(errno,myid,"failed to write to track file");
           }
-	close(fd);
+	if (close(fd) < 0)
+          {
+          log_err(errno,myid,"failed to close track file after saving");
+
+          return;
+          }
+
 	server.sv_trackmodifed = 0;
 	return;
 }

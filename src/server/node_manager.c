@@ -1575,7 +1575,10 @@ void write_node_state()
       }
     }    /* END for (i) */
 
-  fflush(nstatef);
+  if (fflush(nstatef) != 0)
+    {
+    log_err(errno,"write_node_state","failed saving node state to disk");
+    }
 
   return;
   }  /* END write_node_state() */
