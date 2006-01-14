@@ -201,9 +201,14 @@ int prepare_path(
     if (gethostname(host_name,PBS_MAXSERVERNAME) != 0) 
       return(2);
     }
+/*
+  This is obnoxious.  If you are submitting from outside of the cluster, you
+  tend to get the wrong hostname.  Instead, just stop surprising the user
+  and just do what they said.
 
   if (get_fullhostname(host_name, host_name, PBS_MAXSERVERNAME) != 0) 
     return(2);
+*/
 
   /* prepare complete path name */
 

@@ -9,6 +9,7 @@
   remove job delete nanny earlier to not interrupt long stageouts (USC)
   display C state later when using keep_completed (USC)
   add 'printtracking' command in src/tools (USC)
+  stop overriding the user with name resolution on qsub's -o/-e args (USC)
   
 
 2.0.0p5
