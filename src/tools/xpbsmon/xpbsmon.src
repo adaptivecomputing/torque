@@ -89,7 +89,7 @@ if { ![info exists env(DISPLAY)] } {
         puts "DISPLAY variable not set."
         exit 1
 }
-set XPBSMON_VERSION 2.2
+set XPBSMON_VERSION 2.3
 
 set libdir /usr/local/lib/xpbsmon
 set appdefdir /usr/local/lib/xpbsmon

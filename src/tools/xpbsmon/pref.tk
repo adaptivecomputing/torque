@@ -378,6 +378,22 @@ proc statNodes {server_name sysframe} {
 					systemNodeInfo2Append $sysframe $nname \
 									  $line
 				  }
+				  ntype {
+					set props ""
+					lappend props $attv
+					set line [list $props "NType: " \
+									  TEXT]
+					systemNodeInfo2Append $sysframe $nname \
+									  $line
+				  }
+				  status {
+					set props ""
+					lappend props $attv
+					set line [list $props "Status: " \
+									  TEXT]
+					systemNodeInfo2Append $sysframe $nname \
+									  $line
+				  }
 				}
 			}
 			lappend nlist "$nname NOMOM_SNODE"

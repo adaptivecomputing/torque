@@ -10,8 +10,8 @@
   display C state later when using keep_completed (USC)
   add 'printtracking' command in src/tools (USC)
   stop overriding the user with name resolution on qsub's -o/-e args (USC)
+  xpbsmon now works with Tcl 8.4 (BCGSC)
   
-
 2.0.0p5
 
   reorganize ji_newt structure to eliminate 64 bit data packing issues

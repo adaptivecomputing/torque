@@ -148,8 +148,7 @@ proc popupNodeInfoBox {callerDialogBox nodeframe nodename nodeType clusterSrc \
          return
      }
 
-     set dbox [popupDialogBox $dialog(nodeInfoBox) "Node Info Dialog" 1 Plain \
-							$callerDialogBox 1]
+     set dbox [popupDialogBox $dialog(nodeInfoBox) "Node Info Dialog" 1 Plain]
      set dbox_top    [lindex $dbox 0]
      set dbox_bottom [lindex $dbox 1]
 
