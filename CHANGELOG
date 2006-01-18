@@ -11,6 +11,7 @@
   add 'printtracking' command in src/tools (USC)
   stop overriding the user with name resolution on qsub's -o/-e args (USC)
   xpbsmon now works with Tcl 8.4 (BCGSC)
+  don't bother spooling/keeping job output intended for /dev/null (USC)
   
 2.0.0p5
 

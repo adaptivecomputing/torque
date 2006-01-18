@@ -4422,6 +4422,7 @@ char *std_file_name(
   int   len;
   char *pd;
   char *suffix;
+  char *jobpath = NULL;
 
 #if NO_SPOOL_OUTPUT == 1
   struct stat myspooldir;
@@ -4453,6 +4454,11 @@ char *std_file_name(
       key = 'o';
       suffix = JOB_STDOUT_SUFFIX;
 
+      if (pjob->ji_wattr[(int)JOB_ATR_outpath].at_flags & ATR_VFLAG_SET)
+        {
+        jobpath = pjob->ji_wattr[(int)JOB_ATR_outpath].at_val.at_str;
+        }
+
       break;
 
     case StdErr:
@@ -4460,6 +4466,11 @@ char *std_file_name(
       key    = 'e';
       suffix = JOB_STDERR_SUFFIX;
     
+      if (pjob->ji_wattr[(int)JOB_ATR_errpath].at_flags & ATR_VFLAG_SET)
+        {
+        jobpath = pjob->ji_wattr[(int)JOB_ATR_errpath].at_val.at_str;
+        }
+
       break;
 
     case Chkpt:
@@ -4470,6 +4481,27 @@ char *std_file_name(
 
       break;
     }  /* END switch(which) */
+
+  /* don't bother keeping output if the user actually wants to discard it */
+
+  if ((jobpath != NULL) && (*jobpath != '\0'))
+    {
+    char *ptr;
+
+    if ((ptr=strchr(jobpath,':')) != NULL)
+      {
+      jobpath = ptr+1;
+      }
+
+    if (!strcmp(jobpath,"/dev/null"))
+      {
+      strcpy(path,"/dev/null");
+
+      *keeping = 1;
+
+      return(path);
+      }
+    }
 
   /* Is file to be kept?, if so use default name in Home directory */
 
