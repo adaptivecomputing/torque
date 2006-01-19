@@ -4482,27 +4482,6 @@ char *std_file_name(
       break;
     }  /* END switch(which) */
 
-  /* don't bother keeping output if the user actually wants to discard it */
-
-  if ((jobpath != NULL) && (*jobpath != '\0'))
-    {
-    char *ptr;
-
-    if ((ptr=strchr(jobpath,':')) != NULL)
-      {
-      jobpath = ptr+1;
-      }
-
-    if (!strcmp(jobpath,"/dev/null"))
-      {
-      strcpy(path,"/dev/null");
-
-      *keeping = 1;
-
-      return(path);
-      }
-    }
-
   /* Is file to be kept?, if so use default name in Home directory */
 
   if ((pjob->ji_wattr[(int)JOB_ATR_keep].at_flags & ATR_VFLAG_SET) &&
@@ -4539,6 +4518,28 @@ char *std_file_name(
     } 
   else 
     {
+
+    /* don't bother keeping output if the user actually wants to discard it */
+
+    if ((jobpath != NULL) && (*jobpath != '\0'))
+      {
+      char *ptr;
+
+      if ((ptr=strchr(jobpath,':')) != NULL)
+        {
+        jobpath = ptr+1;
+        }
+
+      if (!strcmp(jobpath,"/dev/null"))
+        {
+        strcpy(path,"/dev/null");
+
+        *keeping = 1;
+
+        return(path);
+        }
+      }
+
     /* put into spool directory unless NO_SPOOL_OUTPUT is defined */
 
 #if NO_SPOOL_OUTPUT == 1		
