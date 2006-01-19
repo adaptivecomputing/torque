@@ -1851,12 +1851,14 @@ static int del_files(
   struct rqfpair  *pair;
   int		 rc = 0;
   char		 path[MAXPATHLEN + 1];
-  char		 path_alt[MAXPATHLEN + 1];
   char		*pp;
   char		*prmt;
   struct stat	 sb;
+#if NO_SPOOL_OUTPUT == 1
+  char		 path_alt[MAXPATHLEN + 1];
   int		 rcstat;
   struct stat	 myspooldir;
+#endif
 
 #ifdef HAVE_WORDEXP
   job *pjob;
@@ -2346,23 +2348,24 @@ void req_cpyfile(
   int		 from_spool;
   int		 len;
   char		 localname[MAXPATHLEN + 1];  /* used only for in-bound */
-  char		 localname_alt[MAXPATHLEN + 1];
   struct rqfpair  *pair;
   char		*prmt;
   int		 rc;
   int		 rmtflag;
-  struct passwd	 *pw, mypw;
-  struct stat	 myspooldir;
-  int		 rcstat;
   char		 undelname[MAXPATHLEN + 1];
 #ifdef  _CRAY
   char		 tmpdirname[MAXPATHLEN + 1];
 #endif 	/* _CRAY */
+#if NO_SPOOL_OUTPUT == 1
+  char		 localname_alt[MAXPATHLEN + 1];
+  struct stat	 myspooldir;
+  int		 rcstat;
+  char           homespool[MAXPATHLEN + 1];
+  int            havehomespool = 0;
+#endif
 
   char           EMsg[1024];
   char           HDir[1024];
-  char           homespool[MAXPATHLEN + 1];
-  int            havehomespool = 0;
 
 #ifdef HAVE_WORDEXP
   int		 madefaketmpdir=0;

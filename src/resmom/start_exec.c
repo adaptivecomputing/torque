@@ -1725,7 +1725,6 @@ int TMomFinalizeChild(
   char                  buf[MAXPATHLEN + 2];
   pid_t                 cpid;
   int                   i, j, vnodenum;
-  attribute            *pattr;
   attribute            *pattri;
   char                 *phost;
   int                   pts;
@@ -1739,6 +1738,7 @@ int TMomFinalizeChild(
 
 #if defined(PENABLE_DYNAMIC_CPUSETS)
 
+  attribute            *pattr;
   char                  cQueueName[16];  /* Unique CpuSet Name */
   char                  cPermFile[1024]; /* Unique File Name */
   FILE                  *fp;            /* file pointer into /proc/cpuinfo */
@@ -4621,7 +4621,6 @@ int open_std_file(
   {
   int   fds;
   int   keeping;
-  mode_t   my_umask;
   char *path;
 
   if ((path = std_file_name(pjob,which,&keeping)) == NULL)
