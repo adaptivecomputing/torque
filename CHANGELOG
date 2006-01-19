@@ -12,6 +12,7 @@
   stop overriding the user with name resolution on qsub's -o/-e args (USC)
   xpbsmon now works with Tcl 8.4 (BCGSC)
   don't bother spooling/keeping job output intended for /dev/null (USC)
+  correct missing hpux11 manpage (USC)
   
 2.0.0p5
 

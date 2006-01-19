@@ -103,6 +103,7 @@ AUXRESC =	$(DOCSRC)/ers/pbs_resources_all.so \
 		$(DOCSRC)/man1/pbs_resources_freebsd.7B \
 		$(DOCSRC)/man1/pbs_resources_fujitsu.7B \
 		$(DOCSRC)/man1/pbs_resources_hpux10.7B \
+		$(DOCSRC)/man1/pbs_resources_hpux11.7B \
 		$(DOCSRC)/man1/pbs_resources_irix5.7B \
 		$(DOCSRC)/man1/pbs_resources_irix6.7B \
 		$(DOCSRC)/man1/pbs_resources_irix6array.7B \
