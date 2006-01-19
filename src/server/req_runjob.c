@@ -1011,7 +1011,7 @@ static void post_sendmom(
 /*
  * chk_job_torun - check state and past execution host of a job for which
  *	files are about to be staged in or the job is about to be run.
- * 	Returns pointer to job if all is ok, else returns null.
+ * 	Returns pointer to job if all is ok, else returns NULL.
  */
 
 static job *chk_job_torun(
