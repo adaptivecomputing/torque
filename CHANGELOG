@@ -13,7 +13,9 @@
   xpbsmon now works with Tcl 8.4 (BCGSC)
   don't bother spooling/keeping job output intended for /dev/null (USC)
   correct missing hpux11 manpage (USC)
-  
+  fix compile for freebsd - missing symbols (yahoo)
+  fix momctl exit code (yahoo)
+ 
 2.0.0p5
 
   reorganize ji_newt structure to eliminate 64 bit data packing issues
