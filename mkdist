@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # src/include/pbs_version.h is _authoritative_
-# README.torque and torque.spec are updated in the tarball (source is unchanged)
+# README.torque and torque.spec are updated in the tarball
 # if --rel, pbs_version is incremented in the source
 
 usage="Usage: $0 [--rel|--snap]"
@@ -23,36 +23,41 @@ if [ ! -f ./src/include/pbs_version.h ];then
 fi
 
 
-timestamp=$(date +%Y%m%d)
+timestamp=$(date +%Y%m%d%H%M)
 reldate=$(date "+%b, %d %Y")
 version=$(set -- $(cat ./src/include/pbs_version.h);echo $3 | xargs echo | sed 's/-snap.*//')
 
 
 # figure out this release name (and the next)
 if [ $release = 1 ];then
-  relname=torque-$version
+  fullversion=$version
   nextversion=$(perl -e '$_=shift; /(\d+\.\d+\.\d+p)(\d+)/; $b=$2; $b++; print "$1$b\n"' $version)
 else
-  relname=torque-$version-snap.$timestamp
+  fullversion=$version-snap.$timestamp
 fi
+relname=torque-$fullversion
+
+# update a few files in the source dir
+perl -pi -e 's/^\%define version .*/\%define version '"$version"/ torque.spec
+perl -pi -e 's/^#?\%?\%define snap .*/\%define snap '"$timestamp"/ torque.spec
+echo "#define PBS_VERSION \"$fullversion\"" > src/include/pbs_version.h
 
 # make our release directory
 mkdir $relname
 find . -path '*/CVS' -prune -o -path ./$relname -prune -o \! -name .\* -a -type f -a -print | tar cf - -T - | tar xf - -C $relname
 
 # update a few files
-perl -pi -e 's/^\%define version .*/\%define version '$version/ $relname/torque.spec
+perl -pi -e 's/^\%setup.*/%setup -n %{name}-%{version}%{?snap:-snap.%snap}/' $relname/torque.spec
+
 if [ $release = 1 ];then
   perl -pi -e 's/^#?\%?\%define snap .*/#\%\%define snap '$timestamp/ $relname/torque.spec
-  perl -pi -e 's/TORQUE .* README \(released .*/TORQUE '$version' README (released '"$reldate"')/' $relname/README.torque
+  perl -pi -e 's/TORQUE .* README .*/TORQUE '"$version"' README (released '"$reldate"')/' $relname/README.torque
+  perl -pi -e 's/TORQUE .* README .*/TORQUE '"$nextversion"' README (snapshot)/' README.torque
   echo '#define PBS_VERSION "'$nextversion'"' > ./src/include/pbs_version.h
-else
-  perl -pi -e 's/^#?\%?\%define snap .*/\%define snap '$timestamp/ $relname/torque.spec
-  echo '#define PBS_VERSION "'$version-snap.$timestamp'"' > $relname/src/include/pbs_version.h
 fi
 
 # tar up the whole mess and cleanup
-tar zcf /tmp/$relname.tar.gz $relname
+tar cf - $relname | gzip > /tmp/$relname.tar.gz
 rm -rf $relname
 
-ls -al /tmp/$relname.tar.gz
+echo /tmp/$relname.tar.gz
