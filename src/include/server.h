@@ -129,6 +129,7 @@ enum srv_atr {
         SRV_ATR_DownOnError,
         SRV_ATR_JobNanny,
         SRV_ATR_MomJobSync,
+        SRV_ATR_MailDomain,
 	SRV_ATR_version,
 #include "site_svr_attr_enum.h"
 	/* This must be last */

@@ -394,6 +394,16 @@ job is executing.
 .if !\n(Pb .ig Ig
 [internal type: string]
 .Ig
+.Al exit_status
+The exit status of the job.  This is only set on receipt of a job obituary
+notice from MOM, and probably only useful if the "keep_completed" server
+attribute is set.  Note that negative values are generated internally by PBS to
+indicate system errors and are listed as the JOB_EXEC_* defines in job.h.
+Positive values are returned from the user script and cannot be interpreted by
+PBS.
+.if !\n(Pb .ig Ig
+[internal type: integer]
+.Ig
 .Al egroup
 If the job is queued in an execution queue, this attribute is set to the
 group name under which the job is to be run.  [This attribute is available

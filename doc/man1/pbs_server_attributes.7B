@@ -216,6 +216,13 @@ minimum verbosity.
 .if !\n(Pb .ig Ig
 [internal type: integer]
 .Ig
+.Al mail_domain
+Override the default domain for outgoing mail messages.  If set, emails will be
+addressed to "euser@mail_domain".  If unset, the job's Job_Owner attribute will
+be used.  Format: a domain name; Default value: none.
+.if !\n(Pb .ig Ig
+[internal type: string]
+.Ig
 .Al mail_uid
 The uid from which server generated mail is sent to users.
 Format: integer uid;

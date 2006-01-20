@@ -16,6 +16,7 @@
   fix compile for freebsd - missing symbols (yahoo)
   fix momctl exit code (yahoo)
   new "exit_status" job attribute (USC)
+  new "mail_domain" server attribute (overrides --maildomain) (USC)
  
 2.0.0p5
 

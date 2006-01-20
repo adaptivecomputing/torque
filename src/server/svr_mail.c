@@ -218,6 +218,15 @@ void svr_mailowner(
     {
     /* no mail user list, just send to owner */
 
+    if ((server.sv_attr[(int)SRV_ATR_MailDomain].at_flags & ATR_VFLAG_SET) &&
+        (server.sv_attr[(int)SRV_ATR_MailDomain].at_val.at_str != NULL))
+      {
+      strcpy(mailto,pjob->ji_wattr[(int)JOB_ATR_euser].at_val.at_str);
+      strcat(mailto,"@");
+      strcat(mailto,server.sv_attr[(int)SRV_ATR_MailDomain].at_val.at_str);
+      }
+    else
+      {
     #ifdef TMAILDOMAIN
       strcpy(mailto,pjob->ji_wattr[(int)JOB_ATR_euser].at_val.at_str);
       strcat(mailto,"@");
@@ -225,6 +234,7 @@ void svr_mailowner(
     #else /* TMAILDOMAIN */
       strcpy(mailto,pjob->ji_wattr[(int)JOB_ATR_job_owner].at_val.at_str);
     #endif /* TMAILDOMAIN */ 
+      }
     }
 
   /* setup sendmail command line with -f from_whom */

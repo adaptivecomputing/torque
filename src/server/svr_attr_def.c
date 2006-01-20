@@ -602,6 +602,19 @@ attribute_def svr_attr_def[] = {
 	PARENT_TYPE_SERVER
     },
 
+/* SRV_ATR_MailDomain */
+    {	ATTR_maildomain,	/* "mail_domain" */
+	decode_str,
+	encode_str,
+	set_str,
+	comp_str,
+	free_str,
+	NULL_FUNC,
+	MGR_ONLY_SET,
+	ATR_TYPE_STR,
+	PARENT_TYPE_SERVER
+    },
+
 /* SRV_ATR_version */
     {	ATTR_pbsversion,	/* "pbs_version" */
 	decode_str,
