@@ -15,6 +15,7 @@
   correct missing hpux11 manpage (USC)
   fix compile for freebsd - missing symbols (yahoo)
   fix momctl exit code (yahoo)
+  new "exit_status" job attribute (USC)
  
 2.0.0p5
 

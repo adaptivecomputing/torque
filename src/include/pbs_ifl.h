@@ -158,6 +158,7 @@
 #define ATTR_qrank	"queue_rank"
 #define ATTR_altid	"alt_id"
 #define ATTR_etime	"etime"
+#define ATTR_exitstat	"exit_status"
 
 /* additional queue attributes names */
 
