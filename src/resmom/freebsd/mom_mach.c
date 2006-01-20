@@ -139,8 +139,6 @@
 #include	"resmon.h"
 #include	"../rm_dep.h"
 
-static char ident[] = "@(#) freebsd/$RCSfile$ $Revision$";
-
 #ifndef TRUE
 #define FALSE	0
 #define TRUE	1
@@ -157,6 +155,8 @@ extern	double	cputfactor;
 extern	double	wallfactor;
 extern  long    system_ncpus;
 extern  int     ignwalltime;
+
+extern  int     LOGLEVEL;
 
 /*
 ** local functions
@@ -1752,9 +1752,11 @@ void setmax(
   char *dev)
 
   {
-  struct stat	sb;
+  struct stat sb;
 
-  if (stat(dev, &sb) == -1)
+  char *id = "setmax";  
+
+  if (stat(dev,&sb) == -1)
     {
     return;
     }
@@ -1780,10 +1782,11 @@ void setmax(
 
 
 
-char	*
-idletime(attrib)
-struct	rm_attribute	*attrib;
-{
+char *idletime(
+
+  struct rm_attribute *attrib)
+
+  {
 	char	*id = "idletime";
 	DIR	*dp;
 	struct	dirent	*de;
