@@ -38,7 +38,7 @@ fi
 
 # make our release directory
 mkdir $relname
-find . -path '*/CVS' -prune -o -path ./$relname -prune -o \! -name .\* -a -print | tar cf - -T - | tar xf - -C $relname
+find . -path '*/CVS' -prune -o -path ./$relname -prune -o \! -name .\* -a -type f -a -print | tar cf - -T - | tar xf - -C $relname
 
 # update a few files
 perl -pi -e 's/^\%define version .*/\%define version '$version/ $relname/torque.spec
