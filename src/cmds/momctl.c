@@ -545,7 +545,9 @@ int main(
       FailCount);
     }
 
-  return(SUCCESS);
+  /* SUCCESS */
+
+  exit(0);
   }  /* END main() */
 
 
