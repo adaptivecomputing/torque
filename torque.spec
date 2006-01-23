@@ -368,6 +368,7 @@ This package holds the command-line client programs.
 %{_bindir}/pbsdsh
 %{_bindir}/pbsnodes
 %{_bindir}/printjob
+%{_bindir}/printtracking
 %{_bindir}/tracejob
 %attr(4755 root root) %{_sbindir}/pbs_iff
 %{_sbindir}/pbs_demux
