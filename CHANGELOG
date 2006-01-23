@@ -17,6 +17,7 @@
   fix momctl exit code (yahoo)
   new "exit_status" job attribute (USC)
   new "mail_domain" server attribute (overrides --maildomain) (USC)
+  configure fixes for linux x86_64 and tcl install weirdness (USC)
  
 2.0.0p5
 
