@@ -1373,7 +1373,7 @@ if test "$TCLX" -eq 1; then
 
                     tclx_h=/dev/null
     for i in $TCL_DIR/include/tclExtend.h \
-      `/bin/ls -d $TCL_DIR/include/tk*/tclExtend.h 2> /dev/null`; do
+      `/bin/ls -d $TCL_DIR/include/tcl*/tclExtend.h 2> /dev/null`; do
         test -r $i && { tclx_h="$i"; break; }
     done
 
