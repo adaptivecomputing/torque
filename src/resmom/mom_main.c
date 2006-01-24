@@ -857,13 +857,16 @@ static char *reqgres(
 
     if ((sindex < RM_NPARM) &&
         (common_config[sindex].c_name != NULL) &&
-        !strcmp(common_config[sindex].c_name,cp->c_name)  &&
+        !strcmp(common_config[sindex].c_name,cp->c_name) &&
          strcmp(common_config[sindex].c_name,"gres"))
       {
       /* specified parameter is common parameter */
 
       continue;
       }
+
+    if (!strncmp(cp->c_name,"size",strlen("size")))
+      continue;
 
     if (GResBuf[0] != '\0')
       strncat(GResBuf,"+",1024);
