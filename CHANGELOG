@@ -20,6 +20,7 @@
   configure fixes for linux x86_64 and tcl install weirdness (USC)
   extended mom parameter buffer space
   change pbs_mkdirs to use standard var names so that chroot installs work better (USC)
+  torque.spec now has tcl/gui and wordexp enabled by default 
  
 2.0.0p5
 

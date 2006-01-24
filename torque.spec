@@ -36,9 +36,9 @@
 %define use_scp 1
 %define use_rpp 1
 %define use_fsync 0
-%define use_tcl 0
-%define use_wordexp 0
-%define build_gui 0
+%define use_tcl 1
+%define use_wordexp 1
+%define build_gui 1
 
 # these are non-defaults, but fit better into most RPM-based systems
 %define torquehomedir %{_localstatedir}/lib/%{name}
