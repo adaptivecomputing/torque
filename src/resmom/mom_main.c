@@ -3310,12 +3310,12 @@ void is_update_stat(
             char *ptr;
             char  gres[64];
 
-            ptr = strchr(value,':') + 1;
+            ptr = strchr(value,':');
 
             strncpy(gres,value,ptr - value);
             gres[ptr - value] = '\0';
 
-            ptr = conf_res(ptr,attr);
+            ptr = conf_res(ptr + 1,attr);
 
             if ((ptr == NULL) || (ptr[0] == '\0'))
               {
