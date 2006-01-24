@@ -377,27 +377,35 @@ static char *findattrl(
   char         *resc)
 
   {
-	while (pattrl) {
-		if (strcmp(name, pattrl->name) == 0) {
-			if (resc) {
-				if (strcmp(resc, pattrl->resource) == 0) {
-					return (pattrl->value);
-				}
-			} else {
-				return (pattrl->value);
-			}
-		}
-		pattrl = pattrl->next;
-	}
-	return ((char *)0);
-}
+  while (pattrl != NULL) 
+    {
+    if (!strcmp(name,pattrl->name)) 
+      {
+      if (resc != NULL) 
+        {
+        if (!strcmp(resc,pattrl->resource)) 
+          {
+          return(pattrl->value);
+          }
+        } 
+      else 
+        {
+        return(pattrl->value);
+        }
+      }
+
+    pattrl = pattrl->next;
+    }
+
+  return(NULL);
+  }
 
 
 #define NAMEL   16  /* printf of jobs, queues, and servers */
 #define OWNERL  16  /* printf of jobs */
 #define TIMEUL  8   /* printf of jobs */
 #define STATEL  1   /* printf of jobs */
-#define LOCL    16  /* printf of jobs */
+#define LOCL    15  /* printf of jobs */
 #define SIZEL	6   /* length of "SIZE" fields in printf */
 
 
@@ -1147,44 +1155,75 @@ void display_statjob(
             {
             c = a->value;
 
-                        while ( *c != '@' && *c != '\0' ) c++;
-                        *c = '\0';
-                        l = strlen(a->value);
-                        if ( l > OWNERL ) {
-                            c = a->value + OWNERL;
-                            *c = '\0';
-                        }
-                        owner = a->value;
-                    } else if ( strcmp(a->name,ATTR_used) == 0 ) {
-                        if ( strcmp(a->resource, "cput") == 0 ) {
-                            l = strlen(a->value);
-                            if ( l > TIMEUL ) {
-                                c = a->value + TIMEUL;
-                                *c = '\0';
-                            }
-                            timeu = a->value;
-                        }
-                    } else if ( strcmp(a->name, ATTR_state) == 0 ) {
-                        l = strlen(a->value);
-                        if ( l > STATEL ) {
-                            c = a->value + STATEL;
-                            *c = '\0';
-                        }
-                        state = a->value;
-                    } else if ( strcmp(a->name,ATTR_queue) == 0 ) {
-                        c = a->value;
-                        while ( *c != '@' && *c != '\0' ) c++;
-                        *c = '\0';
-                        l = strlen(a->value);
-                        if ( l > LOCL ) {
-                            c = a->value + LOCL;
-                            *c = '\0';
-                        }
-                        location = a->value;
-                    }
+            while ((*c != '@') && (*c != '\0')) 
+              c++;
+
+            *c = '\0';
+
+            l = strlen(a->value);
+
+            if (l > OWNERL) 
+              {
+              c = a->value + OWNERL;
+
+              *c = '\0';
+              }
+
+            owner = a->value;
+            } 
+          else if (!strcmp(a->name,ATTR_used)) 
+            {
+            if (!strcmp(a->resource,"cput")) 
+              {
+              l = strlen(a->value);
+
+              if (l > TIMEUL) 
+                {
+                c = a->value + TIMEUL;
+
+                *c = '\0';
                 }
-                a = a->next;
+
+              timeu = a->value;
+              }
+            } 
+          else if (!strcmp(a->name,ATTR_state)) 
+            {
+            l = strlen(a->value);
+
+            if (l > STATEL)
+              {
+              c = a->value + STATEL;
+
+              *c = '\0';
+              }
+
+            state = a->value;
+            } 
+          else if (!strcmp(a->name,ATTR_queue)) 
+            {
+            c = a->value;
+
+            while ((*c != '@') && (*c != '\0')) 
+              c++;
+
+            *c = '\0';
+
+            l = strlen(a->value);
+
+            if (l > LOCL) 
+              {
+              c = a->value + LOCL;
+
+              *c = '\0';
+              }
+
+            location = a->value;
             }
+          }
+
+        a = a->next;
+        }
 
       if (timeu == NULL) 
         timeu = "0";
