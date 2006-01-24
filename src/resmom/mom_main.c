@@ -807,8 +807,7 @@ static char *reqgres(
         break;
       }  /* END for (sindex) */
 
-    if ((sindex >= RM_NPARM) ||
-        (special[sindex].name == NULL) || 
+    if ((sindex < RM_NPARM) &&
         (!strcmp(special[sindex].name,cp->c_name)))
       {
       /* specified parameter is not a generic resource */
