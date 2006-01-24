@@ -116,10 +116,10 @@ test -n "$PBS_ENVIRON" || PBS_ENVIRON=@PBS_ENVIRON@
 # manual page directories are created by doc/ers/Makefile
 #
 
-test -n "$PBS_UBIN" || PBS_UBIN=@bindir@
-test -n "$PBS_SBIN" || PBS_SBIN=@sbindir@
-test -n "$PBS_LIB" || PBS_LIB=@libdir@
-test -n "$PBS_UINC" || PBS_UINC=@includedir@
+test -n "$bindir" || bindir=@bindir@
+test -n "$sbindir" || sbindir=@sbindir@
+test -n "$libdir" || libdir=@libdir@
+test -n "$includedir" || includedir=@includedir@
 
 verbose=""
 
@@ -188,8 +188,8 @@ install_dir_by_varname()
 		echo $idv_dvarname exists and is not a directory 1>&2
 		return 1
 	elif [ -d $idv_dname ] ; then
-		chmod $idv_mode $idv_dname > /dev/null 2>&1
-		test -n "$idv_owner" && chown $idv_owner $idv_dname > /dev/null 2>&1
+		chmod $idv_mode $idv_dname
+		test -n "$idv_owner" && chown $idv_owner $idv_dname
 		return 0
 	elif [ ! -d $idv_dname ] ; then
 		test -n "$verbose" && echo Creating $idv_dname
@@ -246,12 +246,12 @@ chk_tree_wrap()
 mk_cli_dirs()
 {
 	test -n "$verbose" && echo Creating Directories required for clients
-	install_dir_by_varname PBS_UBIN 755 $owner
-	install_dir_by_varname PBS_SBIN 755 $owner
-	install_dir_by_varname PBS_LIB  755 $owner
-	install_dir_by_varname PBS_UINC 755 $owner
+	install_dir_by_varname bindir 755 $owner
+	install_dir_by_varname sbindir 755 $owner
+	install_dir_by_varname libdir  755 $owner
+	install_dir_by_varname includedir 755 $owner
 
-	chk_tree_wrap -d -n $PBS_UBIN $PBS_SBIN $PBS_LIB $PBS_UINC 
+	chk_tree_wrap -d -n $bindir $sbindir $libdir $includedir 
 }
 
 
