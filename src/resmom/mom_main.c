@@ -2745,7 +2745,9 @@ char *conf_res(
 done:
 
   for (i = 0;name[i] != NULL;i++) 
-    {		/* free up params */
+    {		
+    /* free up params */
+
     free(name[i]);
     free(value[i]);
     }  /* END for (i) */
@@ -3253,17 +3255,9 @@ void is_update_stat(
 
       alarm(alarm_time);
 
-      if ((!strcmp(name,"arch")) && (ap != NULL))
+      if ((!strcmp(name,"arch") || !strcmp(name,"opsys")) && (ap != NULL))
         {
-        /* report arch */
-
-        snprintf(buff,sizeof(buff),"%s=%s",
-          name,
-          ap->c_u.c_value);
-        }
-      else if ((!strcmp(name,"opsys")) && (ap != NULL))
-        {
-        /* report opsys */
+        /* report value */
 
         snprintf(buff,sizeof(buff),"%s=%s",
           name,
@@ -3307,27 +3301,68 @@ void is_update_stat(
         
           if (!strcmp(cp,"gres") && (strstr(value,":!") != NULL))
             {
+            /* value contains executable call-out, must process */
+
+            /* FORMAT:  <XNAME1>:[!]<XVAL1>[+<XNAME2>:[!]<XVAL2>]... */
+
             char *ptr;
-            char  gres[64];
+            char *tail;
 
-            ptr = strchr(value,':');
+            char  gname[64];
 
-            strncpy(gres,value,ptr - value);
-            gres[ptr - value] = '\0';
+            char  src[1024];
+            char  result[1024];
 
-            ptr = conf_res(ptr + 1,attr);
+            strncpy(src,value,sizeof(src);
+            result[0] = '\0';
 
-            if ((ptr == NULL) || (ptr[0] == '\0'))
+            ptr = strtok(src,"+");
+
+            while (ptr != NULL)
               {
-              /* all static attributes are optional */
+              if ((tail = strchr(ptr,':')) == NULL)
+                {
+                /* cannot parse value */
 
-              continue;
+                ptr = strtok(NULL,"+");
+
+                continue;
+                }  
+
+              strncpy(gname,value,tail - ptr);
+              gname[tail - ptr] = '\0';
+
+              ptr = conf_res(tail + 1,attr);
+
+              if ((ptr == NULL) || (ptr[0] == '\0'))
+                {
+                /* all static attributes are optional */
+
+                ptr = strtok(NULL,"+");
+
+                continue;
+                }
+
+              if (result[0] != '\0')
+                strcat(result,"+");
+
+              if ((ptr != NULL) && (strncmp(ptr,gname,strlen(gname))))
+                {
+                strcat(result,gname);
+                strcat(result,":");
+                }
+
+              strcat(result,ptr);
+
+              ptr = strtok(NULL,"+");
+              }  /* END while (ptr != NULL) */
+
+            if (result[0] != '\0')
+              {
+              sprintf(buff,"%s=%s",
+                cp,
+                result);
               }
-
-            sprintf(buff,"%s=%s:%s",
-              cp,
-              gres,
-              ptr);
             }
           else
             {
@@ -3335,7 +3370,7 @@ void is_update_stat(
               cp,
               value);
             }
-          }
+          }  /* END if (value != NULL) */
         else 
           {  
           /* value not set (attribute required) */
