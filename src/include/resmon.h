@@ -98,7 +98,7 @@ struct	config {
 	} c_u;
 };
 
-#define RM_NPARM	20	/* max number of parameters for child */
+#define RM_NPARM	32	/* max number of parameters for child */
 
 #define	RM_CMD_CLOSE	1
 #define	RM_CMD_REQUEST	2

@@ -955,7 +955,7 @@ int main(
       return(2);
       }
 
-    lock_out(lockfds, F_WRLCK);
+    lock_out(lockfds,F_WRLCK);
 
     fclose(stdin);
     fclose(stdout);
@@ -981,8 +981,10 @@ int main(
     setvbuf(stderr,NULL,_IOLBF,0);
     }
 
-  sprintf(log_buffer, "%ld\n", (long)sid);
-  if (write(lockfds, log_buffer, strlen(log_buffer)) != (ssize_t)strlen(log_buffer))
+  sprintf(log_buffer,"%ld\n", 
+    (long)sid);
+
+  if (write(lockfds,log_buffer,strlen(log_buffer)) != (ssize_t)strlen(log_buffer))
     {
     log_err(errno,msg_daemonname,"failed to write pid to lockfile");
 
