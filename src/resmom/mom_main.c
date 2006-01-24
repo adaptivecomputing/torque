@@ -2551,6 +2551,7 @@ char *conf_res(
 
   {
   char	*id = "conf_res";
+
   char	*name[RM_NPARM];
   char	*value[RM_NPARM];
   int	used[RM_NPARM];  /* (boolean) */
@@ -3307,8 +3308,12 @@ void is_update_stat(
           if (!strcmp(cp,"gres") && (strstr(value,":!") != NULL))
             {
             char *ptr;
+            char  gres[64];
 
             ptr = strchr(value,':') + 1;
+
+            strncpy(gres,value,ptr - value);
+            gres[ptr - value] = '\0';
 
             ptr = conf_res(ptr,attr);
 
@@ -3319,8 +3324,9 @@ void is_update_stat(
               continue;
               }
 
-            sprintf(buff,"%s=%s",
+            sprintf(buff,"%s=%s:%s",
               cp,
+              gres,
               ptr);
             }
           else
