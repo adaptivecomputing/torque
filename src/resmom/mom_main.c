@@ -3329,7 +3329,7 @@ void is_update_stat(
                 continue;
                 }  
 
-              strncpy(gname,value,tail - ptr);
+              strncpy(gname,ptr,tail - ptr);
               gname[tail - ptr] = '\0';
 
               ptr = conf_res(tail + 1,attr);
