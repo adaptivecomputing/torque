@@ -745,7 +745,7 @@ static char *getjoblist(
 
       if ((int)strlen(list) >= listlen)
         {
-        listlen+=BUFSIZ;
+        listlen += BUFSIZ;
         list=realloc(list,listlen);
         }
 
@@ -808,6 +808,7 @@ static char *reqgres(
       }  /* END for (sindex) */
 
     if ((sindex < RM_NPARM) &&
+        (special[sindex].name != NULL) &&
         (!strcmp(special[sindex].name,cp->c_name)))
       {
       /* specified parameter is not a generic resource */
