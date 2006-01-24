@@ -3313,7 +3313,7 @@ void is_update_stat(
             char  src[1024];
             char  result[1024];
 
-            strncpy(src,value,sizeof(src);
+            strncpy(src,value,sizeof(src));
             result[0] = '\0';
 
             ptr = strtok(src,"+");
