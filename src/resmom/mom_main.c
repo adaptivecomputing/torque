@@ -2090,6 +2090,9 @@ int read_config(
   {
   static char id[] = "read_config";
 
+  /* NOTE:  must adjust RM_NPARM in resmom.h to be larger than number of parameters 
+            specified below */
+
   static struct specials {
     char            *name;
     u_long          (*handler)();
