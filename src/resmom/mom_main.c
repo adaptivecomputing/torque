@@ -328,6 +328,29 @@ static struct specials {
     { "tmpdir",       settmpdir },
     { NULL,           NULL } };
 
+
+static char *arch(struct rm_attribute *);
+static char *opsys(struct rm_attribute *);
+static char *requname(struct rm_attribute *);
+static char *validuser(struct rm_attribute *);
+static char *reqmsg(struct rm_attribute *);
+static char *reqgres(struct rm_attribute *);
+static char *reqstate(struct rm_attribute *);
+static char *getjoblist(struct rm_attribute *);
+/* static char *nullproc(struct rm_attribute *); */
+
+
+struct config common_config[] = {
+  { "arch",      {arch} },
+  { "opsys",     {opsys} },
+  { "uname",     {requname} },
+  { "validuser", {validuser} },
+  { "message",   {reqmsg} },
+  { "gres",      {reqgres} },
+  { "state",     {reqstate} },
+  { "jobs",      {getjoblist} },
+  { NULL,        {NULL} } };
+
 int                     LOGLEVEL = 0;  /* valid values (0 - 10) */
 int                     DEBUGMODE = 0;
 char                    CHECKPOINT_SCRIPT[1024];
@@ -558,6 +581,9 @@ int MUStrNCat(
 
   return(SUCCESS);
   }  /* END MUStrNCat() */
+
+
+
 
 
 char *nullproc(
@@ -798,6 +824,8 @@ static char *reqgres(
     if (cp->c_u.c_value == NULL)
       continue;
 
+    /* verify parameter is not special */
+
     for (sindex = 0;sindex < RM_NPARM;sindex++)
       {
       if (special[sindex].name == NULL)
@@ -811,7 +839,28 @@ static char *reqgres(
         (special[sindex].name != NULL) &&
         (!strcmp(special[sindex].name,cp->c_name)))
       {
-      /* specified parameter is not a generic resource */
+      /* specified parameter is special parameter */
+
+      continue;
+      }
+
+    /* verify parameter is not common */
+
+    for (sindex = 0;sindex < RM_NPARM;sindex++)
+      {
+      if (common_config[sindex].c_name == NULL)
+        break;
+
+      if (!strcmp(common_config[sindex].c_name,cp->c_name))
+        break;
+      }  /* END for (sindex) */
+
+    if ((sindex < RM_NPARM) &&
+        (common_config[sindex].c_name != NULL) &&
+        !strcmp(common_config[sindex].c_name,cp->c_name)  &&
+         strcmp(common_config[sindex].c_name,"gres"))
+      {
+      /* specified parameter is common parameter */
 
       continue;
       }
@@ -939,19 +988,6 @@ char *loadave(
   return(ret_string);
   }  /* END loadave() */
 
-
-
-
-struct	config	common_config[] = {
-  { "arch",      {arch} },
-  { "opsys",     {opsys} },
-  { "uname",     {requname} },
-  { "validuser", {validuser} },
-  { "message",   {reqmsg} },
-  { "gres",      {reqgres} },
-  { "state",     {reqstate} },
-  { "jobs",      {getjoblist} },
-  { NULL,        {nullproc} } };
 
 
 
