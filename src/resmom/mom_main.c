@@ -653,6 +653,8 @@ static char *reqmsg(
   }  /* END reqmsg() */
 
 
+
+
 static char *getjoblist(
 
   struct rm_attribute *attrib)
@@ -682,18 +684,21 @@ static char *getjoblist(
       {
       if (!firstjob)
         strcat(list," ");
+
       strcat(list,pjob->ji_qs.ji_jobid);
+
       if ((int)strlen(list) >= listlen)
         {
         listlen+=BUFSIZ;
         list=realloc(list,listlen);
         }
-      firstjob=0;
+
+      firstjob = 0;
       }
     }
 
-  return (list);
-}
+  return(list);
+  }
 
 
 
@@ -709,6 +714,8 @@ static char *reqgres(
 
   static char   GResBuf[1024];
   char          tmpLine[1024];
+
+  int           sindex;
 
   if (attrib != NULL)
     {
@@ -735,14 +742,21 @@ static char *reqgres(
     if (cp->c_u.c_value == NULL)
       continue;
 
-    if (!strcmp(cp->c_name,"node_check_interval") ||
-        !strcmp(cp->c_name,"node_check_script") ||
-        !strcmp(cp->c_name,"ideal_load") ||
-        !strcmp(cp->c_name,"max_load") ||
-        !strcmp(cp->c_name,"arch") ||
-        !strcmp(cp->c_name,"opsys") ||
-        !strncmp(cp->c_name,"size",strlen("size")))
+    for (sindex = 0;sindex < RM_NPARM;sindex++)
       {
+      if (specials[sindex].name == NULL)
+        break;
+
+      if (!strcmp(specials[sindex].name,cp->c_name))
+        break;
+      }  /* END for (sindex) */
+
+    if ((sindex >= RM_NPARM) ||
+        (specials[sindex].name == NULL) || 
+        (!strcmp(specials[sindex].name,cp->c_name)))
+      {
+      /* specified parameter is not a generic resource */
+
       continue;
       }
 
@@ -2076,6 +2090,39 @@ static unsigned long setcheckpointscript(
 
 
 
+/* NOTE:  must adjust RM_NPARM in resmom.h to be larger than number of parameters
+          specified below */
+
+static struct specials {
+  char            *name;
+  u_long          (*handler)();
+  } special[] = {
+    { "pbsclient",    setpbsclient },
+    { "configversion",configversion },
+    { "cputmult",     cputmult },
+    { "ideal_load",   setidealload },
+    { "ignwalltime",  setignwalltime },
+    { "logevent",     setlogevent },
+    { "loglevel",     setloglevel },
+    { "max_load",     setmaxload },
+    { "prologalarm",  prologalarm },
+    { "restricted",   restricted },
+    { "jobstartblocktime", jobstartblocktime },
+    { "usecp",        usecp },
+    { "wallmult",     wallmult },
+    { "clienthost",   setpbsserver },  /* deprecated - use pbsserver */
+    { "pbsserver",    setpbsserver },
+    { "node_check_script", setnodecheckscript },
+    { "node_check_interval", setnodecheckinterval },
+    { "timeout",      settimeout },
+    { "checkpoint_script", setcheckpointscript },
+    { "down_on_error", setdownonerror },
+    { "status_update_time", setstatusupdatetime },
+    { "check_poll_time", setcheckpolltime },
+    { "tmpdir",       settmpdir },
+    { NULL,           NULL } };
+
+
 
 /*
 **	Open and read the config file.  Save information in a linked
@@ -2089,38 +2136,6 @@ int read_config(
 
   {
   static char id[] = "read_config";
-
-  /* NOTE:  must adjust RM_NPARM in resmom.h to be larger than number of parameters 
-            specified below */
-
-  static struct specials {
-    char            *name;
-    u_long          (*handler)();
-    } special[] = {
-      { "pbsclient",    setpbsclient },
-      { "configversion",configversion },
-      { "cputmult",     cputmult },
-      { "ideal_load",   setidealload },
-      { "ignwalltime",  setignwalltime },
-      { "logevent",     setlogevent },
-      { "loglevel",     setloglevel },
-      { "max_load",     setmaxload },
-      { "prologalarm",  prologalarm },
-      { "restricted",   restricted },
-      { "jobstartblocktime", jobstartblocktime },
-      { "usecp",        usecp },
-      { "wallmult",     wallmult },
-      { "clienthost",   setpbsserver },  /* deprecated - use pbsserver */
-      { "pbsserver",    setpbsserver },
-      { "node_check_script", setnodecheckscript },
-      { "node_check_interval", setnodecheckinterval },
-      { "timeout",      settimeout },
-      { "checkpoint_script", setcheckpointscript },
-      { "down_on_error", setdownonerror },
-      { "status_update_time", setstatusupdatetime },
-      { "check_poll_time", setcheckpolltime },
-      { "tmpdir",       settmpdir },
-      { NULL,           NULL } };
 
   FILE	                *conf;
   struct stat            sb;
