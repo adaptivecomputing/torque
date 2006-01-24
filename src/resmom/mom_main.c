@@ -272,6 +272,62 @@ struct	config_list {
   struct config_list *c_link;
   };
 
+/* NOTE:  must adjust RM_NPARM in resmom.h to be larger than number of parameters
+          specified below */
+
+static unsigned long setpbsclient(char *);
+static unsigned long configversion(char *);
+static unsigned long cputmult(char *);
+static unsigned long setidealload(char *);
+static unsigned long setignwalltime(char *);
+static unsigned long setlogevent(char *);
+static unsigned long setloglevel(char *);
+static unsigned long setmaxload(char *);
+static unsigned long prologalarm(char *);
+static unsigned long restricted(char *);
+static unsigned long jobstartblocktime(char *);
+static unsigned long usecp(char *);
+static unsigned long wallmult(char *);
+static unsigned long setpbsserver(char *);
+static unsigned long setnodecheckscript(char *);
+static unsigned long setnodecheckinterval(char *);
+static unsigned long settimeout(char *);
+static unsigned long setcheckpointscript(char *);
+static unsigned long setdownonerror(char *);
+static unsigned long setstatusupdatetime(char *);
+static unsigned long setcheckpolltime(char *);
+static unsigned long settmpdir(char *);
+
+
+static struct specials {
+  char            *name;
+  u_long          (*handler)();
+  } special[] = {
+    { "pbsclient",    setpbsclient },
+    { "configversion",configversion },
+    { "cputmult",     cputmult },
+    { "ideal_load",   setidealload },
+    { "ignwalltime",  setignwalltime },
+    { "logevent",     setlogevent },
+    { "loglevel",     setloglevel },
+    { "max_load",     setmaxload },
+    { "prologalarm",  prologalarm },
+    { "restricted",   restricted },
+    { "jobstartblocktime", jobstartblocktime },
+    { "usecp",        usecp },
+    { "wallmult",     wallmult },
+    { "clienthost",   setpbsserver },  /* deprecated - use pbsserver */
+    { "pbsserver",    setpbsserver },
+    { "node_check_script", setnodecheckscript },
+    { "node_check_interval", setnodecheckinterval },
+    { "timeout",      settimeout },
+    { "checkpoint_script", setcheckpointscript },
+    { "down_on_error", setdownonerror },
+    { "status_update_time", setstatusupdatetime },
+    { "check_poll_time", setcheckpolltime },
+    { "tmpdir",       settmpdir },
+    { NULL,           NULL } };
+
 int                     LOGLEVEL = 0;  /* valid values (0 - 10) */
 int                     DEBUGMODE = 0;
 char                    CHECKPOINT_SCRIPT[1024];
@@ -667,9 +723,9 @@ static char *getjoblist(
 
   if (list == NULL)
     {
-    list=calloc(BUFSIZ+50,sizeof(char));
+    list = calloc(BUFSIZ + 50,sizeof(char));
 
-    listlen=BUFSIZ;
+    listlen = BUFSIZ;
     }
 
   *list='\0'; /* reset the list */
@@ -744,16 +800,16 @@ static char *reqgres(
 
     for (sindex = 0;sindex < RM_NPARM;sindex++)
       {
-      if (specials[sindex].name == NULL)
+      if (special[sindex].name == NULL)
         break;
 
-      if (!strcmp(specials[sindex].name,cp->c_name))
+      if (!strcmp(special[sindex].name,cp->c_name))
         break;
       }  /* END for (sindex) */
 
     if ((sindex >= RM_NPARM) ||
-        (specials[sindex].name == NULL) || 
-        (!strcmp(specials[sindex].name,cp->c_name)))
+        (special[sindex].name == NULL) || 
+        (!strcmp(special[sindex].name,cp->c_name)))
       {
       /* specified parameter is not a generic resource */
 
@@ -2088,39 +2144,6 @@ static unsigned long setcheckpointscript(
   }  /* END setcheckpointscript() */
 
 
-
-
-/* NOTE:  must adjust RM_NPARM in resmom.h to be larger than number of parameters
-          specified below */
-
-static struct specials {
-  char            *name;
-  u_long          (*handler)();
-  } special[] = {
-    { "pbsclient",    setpbsclient },
-    { "configversion",configversion },
-    { "cputmult",     cputmult },
-    { "ideal_load",   setidealload },
-    { "ignwalltime",  setignwalltime },
-    { "logevent",     setlogevent },
-    { "loglevel",     setloglevel },
-    { "max_load",     setmaxload },
-    { "prologalarm",  prologalarm },
-    { "restricted",   restricted },
-    { "jobstartblocktime", jobstartblocktime },
-    { "usecp",        usecp },
-    { "wallmult",     wallmult },
-    { "clienthost",   setpbsserver },  /* deprecated - use pbsserver */
-    { "pbsserver",    setpbsserver },
-    { "node_check_script", setnodecheckscript },
-    { "node_check_interval", setnodecheckinterval },
-    { "timeout",      settimeout },
-    { "checkpoint_script", setcheckpointscript },
-    { "down_on_error", setdownonerror },
-    { "status_update_time", setstatusupdatetime },
-    { "check_poll_time", setcheckpolltime },
-    { "tmpdir",       settmpdir },
-    { NULL,           NULL } };
 
 
 
