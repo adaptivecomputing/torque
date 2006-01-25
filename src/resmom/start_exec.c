@@ -2556,6 +2556,16 @@ int TMomFinalizeChild(
   /*    errors (with a \n) directly to the user on fd 2 and fscync(2) it */
   /***********************************************************************/
 
+  pjob->ji_wattr[(int)JOB_ATR_session_id].at_val.at_long = sjr.sj_session;
+
+  pjob->ji_wattr[(int)JOB_ATR_session_id].at_flags =
+    ATR_VFLAG_SET | ATR_VFLAG_MODIFY | ATR_VFLAG_SEND;
+
+  /* leaving a note for myself to check this later...
+     why is it necessary to set JOB_ATR_session_id above?  We are a child process
+     and setting that attr should be useless.  But if it isn't set, MOM sometimes
+     SIGKILLs herself with interactive jobs -garrick */
+
   if (site_job_setup(pjob) != 0) 
     {
     /* FAILURE */
