@@ -21,8 +21,9 @@
   extended mom parameter buffer space
   change pbs_mkdirs to use standard var names so that chroot installs work better (USC)
   torque.spec now has tcl/gui and wordexp enabled by default 
+  enable multiple dynamic+static generic resources per node (GATech)
   make sure attrs on job launch are sent to server (fixes session_id) (USC)
- 
+
 2.0.0p5
 
   reorganize ji_newt structure to eliminate 64 bit data packing issues
