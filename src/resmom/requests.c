@@ -1620,18 +1620,6 @@ void req_signaljob(
 
 
 
-
-static enum job_atr mom_rtn_list[] = {
-	JOB_ATR_errpath,
-	JOB_ATR_outpath,
-	JOB_ATR_session_id,
-	JOB_ATR_altid,
-	(enum job_atr) -1
-};
-
-
-
-
 void encode_used(
 
   job       *pjob,   /* I */
@@ -1727,7 +1715,6 @@ void req_stat_job(
   char			*name;
   job			*pjob;
   int			index;
-  int			nth = 0;
   struct batch_reply	*preply = &preq->rq_reply;
   struct brp_status	*pstat;
   attribute		*at;
@@ -1794,24 +1781,35 @@ void req_stat_job(
 
     /* add attributes to the status reply */
 
-    for (index = 0;(int)mom_rtn_list[index] >= 0;++index) 
+    for (index = 0;(int)index <= JOB_ATR_LAST;++index) 
       {
-      nth = (int)mom_rtn_list[index];
-      at  = &pjob->ji_wattr[nth];
-      ad  = &job_attr_def[nth];
+      at  = &pjob->ji_wattr[index];
+      ad  = &job_attr_def[index];
 
-      if (at->at_flags & ATR_VFLAG_MODIFY) 
+      if (at->at_flags & ATR_VFLAG_SEND) 
         {
+        /* turn off "need to send" flag */
+ 
+        at->at_flags &= ~ATR_VFLAG_SEND;
+
+        if (LOGLEVEL >= 4)
+          {
+          sprintf(log_buffer,"sending \"send flagged\" attr: %s",
+            ad->at_name);
+
+          LOG_EVENT(
+            PBSEVENT_DEBUG, 
+            PBS_EVENTCLASS_JOB,
+            pjob->ji_qs.ji_jobid, 
+            log_buffer);
+          }
+
         ad->at_encode(
           at, 
           &pstat->brp_attr,
           ad->at_name, 
           NULL,
           ATR_ENCODE_CLIENT);
-
-        /* turn off modify so only sent if changed */
- 
-        at->at_flags &= ~ATR_VFLAG_MODIFY;
         }
       }
 

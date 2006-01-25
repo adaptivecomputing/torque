@@ -1465,6 +1465,9 @@ int TMomFinalizeJob1(
       NULL, 
       TJE->ptc_name);
 
+    pjob->ji_wattr[(int)JOB_ATR_outpath].at_flags =
+      (ATR_VFLAG_SET | ATR_VFLAG_MODIFY | ATR_VFLAG_SEND);
+
     pattr = &pjob->ji_wattr[(int)JOB_ATR_errpath];
 
     job_attr_def[(int)JOB_ATR_errpath].at_free(pattr);
@@ -1474,6 +1477,10 @@ int TMomFinalizeJob1(
       NULL, 
       NULL, 
       TJE->ptc_name);
+
+    pjob->ji_wattr[(int)JOB_ATR_errpath].at_flags =
+      (ATR_VFLAG_SET | ATR_VFLAG_MODIFY | ATR_VFLAG_SEND);
+
     }  /* END if (TJE->is_interactive == TRUE) */
 
 #if SHELL_USE_ARGV == 0
@@ -2549,8 +2556,6 @@ int TMomFinalizeChild(
   /*    errors (with a \n) directly to the user on fd 2 and fscync(2) it */
   /***********************************************************************/
 
-  pjob->ji_wattr[(int)JOB_ATR_session_id].at_val.at_long = sjr.sj_session;
-
   if (site_job_setup(pjob) != 0) 
     {
     /* FAILURE */
@@ -3029,7 +3034,7 @@ int TMomFinalizeJob3(
   pjob->ji_wattr[(int)JOB_ATR_session_id].at_val.at_long = sjr.sj_session;
 
   pjob->ji_wattr[(int)JOB_ATR_session_id].at_flags =
-    ATR_VFLAG_SET | ATR_VFLAG_MODIFY;
+    ATR_VFLAG_SET | ATR_VFLAG_MODIFY | ATR_VFLAG_SEND;
 
   pjob->ji_qs.ji_state    = JOB_STATE_RUNNING;
   pjob->ji_qs.ji_substate = JOB_SUBSTATE_RUNNING;

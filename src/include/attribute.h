@@ -257,6 +257,7 @@ typedef struct attribute_def attribute_def;
 #define ATR_VFLAG_SET    0x01	/* has specifed value (is set)	*/
 #define ATR_VFLAG_MODIFY 0x02	/* value has been modified	*/
 #define ATR_VFLAG_DEFLT  0x04	/* value is default value	*/
+#define ATR_VFLAG_SEND   0x08	/* value to be sent to server	*/
 
 #define ATR_TRUE  "True"
 #define ATR_FALSE "False"

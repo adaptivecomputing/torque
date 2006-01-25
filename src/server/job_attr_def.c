@@ -387,7 +387,7 @@ attribute_def job_attr_def[] = {
 	ATR_TYPE_LONG,
 	PARENT_TYPE_JOB
     },
-/* JOB_ATR_output */
+/* JOB_ATR_outpath */
     {	ATTR_o,			/* "Output_Path" */
 	decode_str,
 	encode_str,

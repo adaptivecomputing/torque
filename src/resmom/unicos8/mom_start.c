@@ -379,6 +379,8 @@ void set_globid(
     NULL, 
     cvtbuf);
 
+  pjob->ji_wattr[(int)JOB_ATR_altid].at_flags |= JOB_VFLAG_SEND;
+
   return;
   }
 

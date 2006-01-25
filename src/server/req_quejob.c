@@ -1705,12 +1705,11 @@ void req_commit(
 
   job_save(pj,SAVEJOB_FULL);
 
-  /* set modify for returning these to server once, see stat_job.c */
-
-  pj->ji_wattr[(int)JOB_ATR_errpath].at_flags |= ATR_VFLAG_MODIFY;
-  pj->ji_wattr[(int)JOB_ATR_outpath].at_flags |= ATR_VFLAG_MODIFY;
-  pj->ji_wattr[(int)JOB_ATR_session_id].at_flags |= ATR_VFLAG_MODIFY;
-  pj->ji_wattr[(int)JOB_ATR_altid].at_flags |= ATR_VFLAG_MODIFY;
+  /* NOTE: we used to flag JOB_ATR_errpath, JOB_ATR_outpath,
+   * JOB_ATR_session_id, and JOB_ATR_altid as modified at this point to make sure
+   * pbs_server got these attr values.  This worked fine before TORQUE modified
+   * job launched into an async process.  At 2.0.0p6, a new attribute "SEND" flag
+   * was added to handle this process. */
 
 #else	/* PBS_SERVER */
 

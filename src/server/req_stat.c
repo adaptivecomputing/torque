@@ -534,6 +534,7 @@ static void stat_update(
   struct batch_reply   *preply;
   struct brp_status    *pstatus;
   svrattrl	       *sattrl;
+  int 			oldsid;
 
   preq = pwt->wt_parm1;
   preply = &preq->rq_reply;
@@ -549,15 +550,17 @@ static void stat_update(
         {
         sattrl = (svrattrl *)GET_NEXT(pstatus->brp_attr);
 
+        oldsid = pjob->ji_wattr[(int)JOB_ATR_session_id].at_val.at_long;
+
         modify_job_attr(
           pjob,
           sattrl,
           ATR_DFLAG_MGWR | ATR_DFLAG_SvWR,
           &bad);
 
-        if (pjob->ji_momstat == 0)  
+        if (oldsid != pjob->ji_wattr[(int)JOB_ATR_session_id].at_val.at_long)
           {
-          /* first save since running job, */
+          /* first save since running job (or the sid has changed), */
           /* must save session id	   */
 
           job_save(pjob,SAVEJOB_FULL);
