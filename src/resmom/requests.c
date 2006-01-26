@@ -1056,6 +1056,50 @@ void req_messagejob(
 
 
 
+const char *TJobAttr[] = {
+  "jobname",        /* this set appears first as they show */
+  "job_owner",      /* in a basic job status display       */
+  "resc_used",
+  "state",
+  "in_queue",
+  "at_server",
+  "account",        /* the bulk of the attributes are in   */
+  "chkpnt",         /* alphabetic order for no good reason */
+  "ctime",
+  "depend",
+  "errpath",
+  "exec_host",
+  "exectime",
+  "grouplst",
+  "hold",
+  "interactive",
+  "join",
+  "keep",
+  "mailpnts",
+  "mailuser",
+  "mtime",
+  "outpath",
+  "priority",
+  "qtime",
+  "rerunable",
+  "resource",
+  "session_id",
+  "shell",
+  "stagein",
+  "stageout",
+  "substate",
+  "userlst",
+  "variables",
+  "euser",          /* execution user name for MOM            */
+  "egroup",         /* execution group name for MOM           */
+  "hashname",       /* job name hashed into 14 characters     */
+  "hopcount",
+  "qrank",
+  "queuetype",
+  NULL };
+
+
+
 
 /*
  * req_modifyjob - service the Modify Job Request
@@ -1065,7 +1109,7 @@ void req_messagejob(
 
 void req_modifyjob(
 
-  struct batch_request *preq)
+  struct batch_request *preq)  /* I */
 
   {
   int		 bad = 0;
@@ -1123,7 +1167,7 @@ void req_modifyjob(
 
   if (rc != 0) 
     {
-    /* leave old values, free the new ones */
+    /* FAILURE - leave old values, free the new ones */
  
     for (i = 0;i < JOB_ATR_LAST;i++)
       {
@@ -1143,10 +1187,38 @@ void req_modifyjob(
     {
     if (newattr[i].at_flags & ATR_VFLAG_MODIFY) 
       {
-      if (job_attr_def[i].at_action)  
+      if (LOGLEVEL >= 5)
+        {
+        char tmpLine[1024];
+
+        strcpy(tmpLine,"???");
+
+        if (newattr[i].at_type == ATR_TYPE_STR)
+          {
+          if (newattr[i].at_val.at_str != NULL)
+            strncpy(tmpLine,newattr[i].at_str,sizeof(tmpLine));
+          }
+        else if (newattr[i].at_type == ATR_TYPE_LONG)
+          {
+          sprintf(tmpLine,"%ld",
+            newattr[i].at_val.at_long);
+          }         
+
+        sprintf(log_buffer,"modifying attribute %s of job (value: '%s'",
+          TJobAttr[i],
+          tmpLine);
+
+        log_record(
+          PBSEVENT_ADMIN,
+          PBS_EVENTCLASS_FILE,
+          (pjob != NULL) ? pjob->ji_qs.ji_jobid : "N/A",
+          log_buffer);
+        }
+
+      if (job_attr_def[i].at_action != NULL)  
         job_attr_def[i].at_action(&newattr[i],pjob,ATR_ACTION_ALTER);
 
-      job_attr_def[i].at_free(pattr+i);
+      job_attr_def[i].at_free(pattr + i);
 
       if ((newattr[i].at_type == ATR_TYPE_LIST) ||
           (newattr[i].at_type == ATR_TYPE_RESC)) 
@@ -1160,9 +1232,9 @@ void req_modifyjob(
 
       (pattr + i)->at_flags = newattr[i].at_flags;
       }
-    }
+    }    /* END for (i) */
 
-  /* note, the newattr[] attributes are on the stack, they goaway auto */
+  /* note, the newattr[] attributes are on the stack, they go away auto */
 
   if (rc == 0)
     {

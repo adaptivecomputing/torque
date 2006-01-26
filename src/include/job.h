@@ -201,6 +201,8 @@ struct grpcache {
  * define the size of the array.
  */
 
+/* sync w/XXX */
+
 enum job_atr {
 	JOB_ATR_jobname,	/* this set appears first as they show */
 	JOB_ATR_job_owner,	/* in a basic job status display       */

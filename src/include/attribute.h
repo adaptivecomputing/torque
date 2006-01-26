@@ -118,7 +118,7 @@
 /* define the size of fields in the structures */
 
 #define ATRFLAG 16
-#define ATRTYPE  6
+#define ATRTYPE  6  /* sync w/ATR_TYPE_*  (see #defines below) */
 #define ATRPART  3
 
 /*
