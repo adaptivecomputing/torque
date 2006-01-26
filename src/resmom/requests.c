@@ -1196,7 +1196,7 @@ void req_modifyjob(
         if (newattr[i].at_type == ATR_TYPE_STR)
           {
           if (newattr[i].at_val.at_str != NULL)
-            strncpy(tmpLine,newattr[i].at_str,sizeof(tmpLine));
+            strncpy(tmpLine,newattr[i].at_val.at_str,sizeof(tmpLine));
           }
         else if (newattr[i].at_type == ATR_TYPE_LONG)
           {
