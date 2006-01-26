@@ -23,6 +23,7 @@
   torque.spec now has tcl/gui and wordexp enabled by default 
   enable multiple dynamic+static generic resources per node (GATech)
   make sure attrs on job launch are sent to server (fixes session_id) (USC)
+  add resmom job modify logging
 
 2.0.0p5
 
