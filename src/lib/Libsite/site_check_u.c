@@ -174,6 +174,9 @@ int site_check_user_map(
     {
     /* job submitted from compute host, access allowed */
 
+    if (dptr != NULL)
+       *dptr = '.';
+
     return(0);
     }
 
