@@ -5648,7 +5648,7 @@ int main(
     }
 
   act.sa_handler = catch_hup;	/* do a restart on SIGHUP */
-  sigaction(SIGHUP, &act, NULL);
+  sigaction(SIGHUP,&act,NULL);
 
   act.sa_handler = toolong;	/* handle an alarm call */
   sigaction(SIGALRM,&act,NULL);
@@ -5657,7 +5657,7 @@ int main(
   sigaction(SIGINT,&act,NULL);
   sigaction(SIGTERM,&act,NULL);
 
-  act.sa_handler  = PBSAdjustLogLevel;
+  act.sa_handler = PBSAdjustLogLevel;
   sigaction(SIGUSR1,&act,NULL);
   sigaction(SIGUSR2,&act,NULL);
 
@@ -5780,7 +5780,7 @@ int main(
 
   if (privfd == -1) 
     {
-    log_err(errno, id, "no privileged ports");
+    log_err(errno,id,"no privileged ports");
 
     exit(1);
     }
@@ -5806,9 +5806,10 @@ int main(
   if (pbs_servername[0][0] == '\0')
     {
     /* no $pbsserver paramters in config, use server_name as last-resort */
+
     if ((file = fopen(path_server_name,"r")) != NULL)
       {
-      char tmpLine[PBS_MAXSERVERNAME+1];
+      char tmpLine[PBS_MAXSERVERNAME + 1];
       char *pn;
 
       if (fgets(tmpLine,sizeof(tmpLine),file) != NULL)
@@ -5915,7 +5916,9 @@ int main(
 
         if (is_compose(SStream[sindex],IS_HELLO) == -1)
           {
-          sprintf(log_buffer,"error composing hello to server %s", pbs_servername[sindex]);
+          sprintf(log_buffer,"error composing hello to server %s", 
+            pbs_servername[sindex]);
+
           log_record(PBSEVENT_SYSTEM,0,id,log_buffer);
 
           rpp_close(SStream[sindex]);
@@ -5936,7 +5939,9 @@ int main(
 
         MOMSendHelloCount[sindex]++;
 
-        sprintf(log_buffer,"hello sent to server %s", pbs_servername[sindex]);
+        sprintf(log_buffer,"hello sent to server %s", 
+          pbs_servername[sindex]);
+
         log_record(PBSEVENT_SYSTEM,0,id,log_buffer);
         }  /* END if (SStream[sindex] == -1) */
 
@@ -5965,7 +5970,6 @@ int main(
       is_update_stat(0);
 
       LastServerUpdateTime = time_now;
-
       }
 
     /* if needed, update server with my state change */
@@ -6144,7 +6148,8 @@ int main(
 
         continue;
         }
-      else if (c & JOB_SVFLG_OVERLMT1) 
+
+      if (c & JOB_SVFLG_OVERLMT1) 
         {
         kill_job(pjob,SIGTERM);
 

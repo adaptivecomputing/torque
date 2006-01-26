@@ -505,9 +505,12 @@ int main(
     char *ptr;
     char *tptr;
 
+    char *ltokptr;  /* line token pointer */
+    char *vtokptr;  /* value token pointer */
+
     /* success - process config file */
 
-    ptr = strtok(Buffer,"\n");
+    ptr = strtok_r(Buffer,"\n",&ltokptr);
 
     while (ptr != NULL)
       {
@@ -515,7 +518,7 @@ int main(
         {
         /* ignore comments */
 
-        ptr = strtok(NULL,"\n");
+        ptr = strtok_r(NULL,"\n",&ltokptr);
 
         continue;
         }
@@ -533,7 +536,6 @@ int main(
 
           return(-1);
           }
-           
         }
       else if (!strncmp(ptr,"ALLOWCOMPUTEHOSTSUBMIT",strlen("ALLOWCOMPUTEHOSTSUBMIT")))
         {
@@ -547,7 +549,7 @@ int main(
         if (!strncasecmp(tptr,"true",strlen("true")) ||
             !strncasecmp(tptr,"on",strlen("on")) ||
             !strncasecmp(tptr,"yes",strlen("yes")) ||
-            (*tptr = '1'))
+            (*tptr == '1'))
           {
           TAllowComputeHostSubmit = TRUE;
           }
@@ -564,7 +566,7 @@ int main(
 
         hcount = 0;
 
-        tptr = strtok(tptr,"+,: \t\n");
+        tptr = strtok_r(tptr,"+,: \t\n",&vtokptr);
 
         while (tptr != NULL)
           {
@@ -575,13 +577,13 @@ int main(
           if (hcount >= 2048)
             break;
 
-          tptr = strtok(NULL,"+,: \t\n");
+          tptr = strtok_r(NULL,"+,: \t\n",&vtokptr);
           }  /* END while (tptr != NULL) */
 
         TAllowSubmitHostList[hcount] = NULL;
-        }
+        }  /* END else if (!strncmp(ptr,"SUBMITHOSTS",strlen("SUBMITHOSTS"))) */
 
-      ptr = strtok(NULL,"\n");
+      ptr = strtok_r(NULL,"\n",&ltokptr);
       }  /* END while (ptr != NULL) */
     }    /* END if (TLoadConfig(Buffer,sizeof(Buffer)) == 0) */
 
