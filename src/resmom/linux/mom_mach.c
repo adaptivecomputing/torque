@@ -1054,8 +1054,8 @@ int error(
 
 int mom_set_limits(
 
-  job *pjob,
-  int  set_mode)	/* SET_LIMIT_SET or SET_LIMIT_ALTER */
+  job *pjob,     /* I */
+  int  set_mode) /* SET_LIMIT_SET or SET_LIMIT_ALTER */
 
   {
   char		*id = "mom_set_limits";
@@ -1096,13 +1096,26 @@ int mom_set_limits(
 
   while (pres != NULL) 
     {
-    assert(pres->rs_defin != NULL);
+    if (pres->rs_defin != NULL)
+      pname = pres->rs_defin->rs_name;
+    else 
+      pname = NULL;
 
-    pname = pres->rs_defin->rs_name;
+    if (LOGLEVEL >= 2)
+      {
+      sprintf(log_buffer,"setting limit for attribute '%s'",
+        (pname != NULL) ? pname : "NULL");
+
+      log_record(PBSEVENT_SYSTEM,0,id,log_buffer);
+
+      log_buffer[0] = '\0';
+      }
+
+    assert(pres->rs_defin != NULL);
 
     assert(pname != NULL);
 
-    assert(*pname != '\0');
+    assert(pname[0] != '\0');
 
     if (strcmp(pname,"cput") == 0) 
       {
@@ -1347,6 +1360,20 @@ int mom_set_limits(
       */
       }
     }
+
+  if (LOGLEVEL >= 5)
+    {
+    sprintf(log_buffer,"%s(%s,%s) completed",
+      id,
+      (pjob != NULL) ? pjob->ji_qs.ji_jobid : "NULL",
+      (set_mode == SET_LIMIT_SET) ? "set" : "alter");
+
+    log_record(PBSEVENT_SYSTEM,0,id,log_buffer);
+
+    log_buffer[0] = '\0';
+    }
+
+  /* SUCCESS */
 
   return(PBSE_NONE);
   }  /* END mom_set_limits() */
