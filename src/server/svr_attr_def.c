@@ -286,7 +286,7 @@ attribute_def svr_attr_def[] = {
 	encode_arst,
 	set_uacl,
 	comp_arst,
-	free_null, 
+	free_arst, 
 	manager_oper_chk,
 	MGR_ONLY_SET,
 	ATR_TYPE_ACL,
