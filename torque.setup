@@ -3,24 +3,12 @@
 
 # USAGE:  torque.setup <USERNAME>
 
-if [ "$1" = "" ] ; then
-  echo "USAGE:  torque.setup <USERNAME>"
-  exit 1
-  fi
-
-# create default queue
-# enable operator privileges
-
-USER=$1@`hostname -f`
-
-echo "initializing TORQUE (admin: $USER)"
-
 pbs_server -t create
 
 qmgr -c "set server scheduling=true"
 
-echo set server operators += $USER | qmgr
-echo set server managers += $USER | qmgr
+echo set server operators += wightman@*.icluster.org | qmgr
+echo set server managers += wightman@*.icluster.org | qmgr
 
 qmgr -c 'create queue batch'
 qmgr -c 'set queue batch queue_type = execution'

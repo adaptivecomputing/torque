@@ -1853,7 +1853,7 @@ void req_stat_job(
 
     /* add attributes to the status reply */
 
-    for (index = 0;(int)index <= JOB_ATR_LAST;++index) 
+    for (index = 0;(int)index < JOB_ATR_LAST;++index) 
       {
       at  = &pjob->ji_wattr[index];
       ad  = &job_attr_def[index];
