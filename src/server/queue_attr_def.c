@@ -305,7 +305,7 @@ attribute_def que_attr_def[] = {
 	PARENT_TYPE_QUE_ALL
     },
 /* QA_ATR_AclLogic */
-    {  ATTR_acllogic,          /* "acl_logic_hack" */
+    {  ATTR_acllogic,          /* "acl_logic_or" */
        decode_b,
        encode_b,
        set_b,

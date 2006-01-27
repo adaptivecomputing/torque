@@ -24,6 +24,7 @@
   enable multiple dynamic+static generic resources per node (GATech)
   make sure attrs on job launch are sent to server (fixes session_id) (USC)
   add resmom job modify logging
+  torque.cfg parsing fixes
 
 2.0.0p5
 

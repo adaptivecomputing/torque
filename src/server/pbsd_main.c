@@ -452,7 +452,7 @@ int main(
   time_t last_jobstat_time;
   int    when;
 
-  char   Buffer[65536];
+  char   *Buffer;
 
   void	 ping_nodes A_((struct work_task *ptask));
   void   check_nodes A_((struct work_task *ptask));
@@ -475,6 +475,8 @@ int main(
   extern  char *msg_startup2;	/* log message   */
 
   ProgName = argv[0];
+
+  Buffer=calloc(65536,sizeof(char));
 
   /* if we are not running with real and effective uid of 0, forget it */
 
@@ -586,6 +588,8 @@ int main(
       ptr = strtok_r(NULL,"\n",&ltokptr);
       }  /* END while (ptr != NULL) */
     }    /* END if (TLoadConfig(Buffer,sizeof(Buffer)) == 0) */
+
+  free(Buffer);
 
   if (((server_host[0] == '\0') && (gethostname(server_host,PBS_MAXHOSTNAME) == -1)) ||
        (get_fullhostname(server_host,server_host,PBS_MAXHOSTNAME) == -1)) 
