@@ -475,7 +475,7 @@ static int set_allacl(attr, new, op, order_func)
 				nsize = (int)strlen(pas->as_string[i]) + 1;
 				pc = pas->as_string[i] + nsize;
 				need = pas->as_next - pc;
-				memcpy(pas->as_string[i], pc, (size_t)need);
+				memmove(pas->as_string[i], pc, (size_t)need);
 				pas->as_next -= nsize;
 				/* compact pointers */
 				for ( ++i; i < pas->as_npointers; i++)
