@@ -131,6 +131,9 @@ void svr_mailowner(
   struct array_strings *pas;
   char	*stdmessage = NULL;
 
+  if (strcmp("never",server.sv_attr[(int)SRV_ATR_MailDomain].at_val.at_str))
+    return;
+
   if (LOGLEVEL >= 3)
     {
     char tmpBuf[LOG_BUF_SIZE];
