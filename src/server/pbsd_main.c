@@ -407,7 +407,8 @@ int TLoadConfig(
     return(1);
     }
 
-  if ((fread(Buffer,BufSize,1,config_stream) <= 0) && (ferror(config_stream) != 0))
+  if ((fread(Buffer,BufSize,1,config_stream) <= 0) && 
+      (ferror(config_stream) != 0))
     {
     /* FAILURE */
 
@@ -452,6 +453,8 @@ int main(
   time_t last_jobstat_time;
   int    when;
 
+  int    BufSize;
+
   char   *Buffer;
 
   void	 ping_nodes A_((struct work_task *ptask));
@@ -467,16 +470,18 @@ int main(
    { "create",	RECOV_CREATE },
    { "",	RECOV_Invalid } };
 
-  extern  int   optind;
-  extern	char *optarg;
-  extern  char *msg_daemonname;
-  extern  char *msg_svrdown;	/* log message   */
-  extern  char *msg_startup1;	/* log message   */
-  extern  char *msg_startup2;	/* log message   */
+  extern int   optind;
+  extern char *optarg;
+  extern char *msg_daemonname;
+  extern char *msg_svrdown;	/* log message   */
+  extern char *msg_startup1;	/* log message   */
+  extern char *msg_startup2;	/* log message   */
 
   ProgName = argv[0];
 
-  Buffer=calloc(65536,sizeof(char));
+  BufSize = 65536;
+
+  Buffer = calloc(1,BufSize);
 
   /* if we are not running with real and effective uid of 0, forget it */
 
@@ -502,7 +507,7 @@ int main(
 
   /* load/process config file first then override values with command line parameters */
 
-  if (TLoadConfig(Buffer,sizeof(Buffer)) == 0)
+  if (TLoadConfig(Buffer,BufSize) == 0)
     {
     char *ptr;
     char *tptr;

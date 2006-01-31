@@ -440,7 +440,7 @@ void update_node_state(
     /* ignoring the obvious possiblity of a "down,busy" node */
     }
   else if (newstate & INUSE_BUSY)
-    {                                                                                      
+    { 
     if ((!(np->nd_state & INUSE_BUSY) && (LOGLEVEL >= 4)) ||                               
         ( (np->nd_state & INUSE_DOWN) && (LOGLEVEL >= 2)))
       {
@@ -528,7 +528,7 @@ void update_node_state(
         sp->inuse &= ~INUSE_DOWN;
         }
       }
-    }
+    }    /* END else if (newstate == INUSE_FREE) */
 
   if (newstate & INUSE_UNKNOWN)
     {
@@ -3207,7 +3207,6 @@ void free_nodes(
   {
   static char	id[] = "free_nodes";
   struct pbssubn *np;
-  /* struct pbssubn *xnp; */
   struct pbsnode *pnode;
   struct jobinfo *jp, *prev;
   int             i;
@@ -3287,16 +3286,6 @@ void free_nodes(
           /* adjust node state (turn off job/job-exclusive) */
 
           np->inuse &= ~(INUSE_JOB|INUSE_JOBSHARE);
-
-          /* the following code does nothing - disabled */
-
-          /*
-          for (xnp = pnode->nd_psn;xnp;xnp = xnp->next)
-            {
-            if (xnp->inuse & (INUSE_JOB|INUSE_JOBSHARE))
-              break;
-            }
-          */
 
           pnode->nd_state &= ~(INUSE_JOB|INUSE_JOBSHARE);
           }
