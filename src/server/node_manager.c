@@ -399,6 +399,7 @@ void tfree(
 
 
 
+
 /* update_node_state - central location for updating node state */
 
 void update_node_state(
@@ -441,8 +442,8 @@ void update_node_state(
     }
   else if (newstate & INUSE_BUSY)
     { 
-    if ((!(np->nd_state & INUSE_BUSY) && (LOGLEVEL >= 4)) ||                               
-        ( (np->nd_state & INUSE_DOWN) && (LOGLEVEL >= 2)))
+    if ((!(np->nd_state & INUSE_BUSY) && (LOGLEVEL >= 4)) ||  
+        ((np->nd_state & INUSE_DOWN) && (LOGLEVEL >= 2)))
       {
       sprintf(log_buffer,"node %s marked busy",
         (np->nd_name != NULL) ? np->nd_name : "NULL");
@@ -506,16 +507,26 @@ void update_node_state(
 
         np->nd_state &= ~(INUSE_JOB|INUSE_JOBSHARE);
         }
-      else if (np->nd_nsnfree < np->nd_nsn - snjcount)
+      else
         {
-        np->nd_nsnfree = np->nd_nsn - snjcount;
+        if (np->nd_nsnfree < np->nd_nsn - snjcount)
+          {
+          np->nd_nsnfree = np->nd_nsn - snjcount;
 
-        sprintf(log_buffer,"job allocation released on node %s",
-          (np->nd_name != NULL) ? np->nd_name : "NULL");
+          sprintf(log_buffer,"job allocation released on node %s",
+            (np->nd_name != NULL) ? np->nd_name : "NULL");
 
-        np->nd_state &= ~INUSE_JOBSHARE;
+          np->nd_state &= ~INUSE_JOBSHARE;
+          }
+
+        if (snjcount < np->nd_nsn)
+          {
+          /* if any sub-nodes are free, job cannot be in job-exclusive */
+
+          np->nd_state &= ~INUSE_JOB;
+          }
         }
-      }
+      }    /* END if ((np->nd_state & INUSE_JOB) || ...) */
 
     if (np->nd_state & INUSE_DOWN)
       {
