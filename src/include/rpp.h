@@ -100,4 +100,3 @@ unsigned long		crc		(unsigned char *, unsigned long);
 
 extern	int	rpp_fd;
 extern	int	rpp_dbprt;
-extern	int	rpp_retry;
