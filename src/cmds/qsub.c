@@ -228,6 +228,53 @@ char *ispbsdir(
 
 
 
+#define MMAX_VERIFY_BYTES 50
+
+int istext(
+
+  FILE   *fd,      /* I */
+  int    *IsText)  /* O (optional) */
+
+  {
+  int i;
+  int c;
+
+  if (IsText != NULL)
+    *IsText = FALSE;
+
+  if (fd == NULL)
+    {
+    return(0);
+    }
+
+  /* read first characters to ensure this is ASCII text */
+
+  for(i = 0; i < MMAX_VERIFY_BYTES; i++)
+    {
+    c = fgetc(fd);
+
+    if (c == EOF)
+      break;
+
+    if (!isprint(c) && !isspace(c))
+      {
+      fseek(fd,0,SEEK_SET);
+
+      return(0);
+      }
+    }  /* END for(i) */
+
+  if (IsText != NULL)
+    *IsText = TRUE;
+
+  fseek(fd,0,SEEK_SET);
+
+  return(1);
+  }  /* END FileIsText() */
+
+
+
+
 
 int get_script(
 
@@ -262,6 +309,16 @@ int get_script(
   int         rc;
 
   /*  If the submitfilter exists, run it.                               */
+
+  /* check that the file is text */
+
+  if (istext(file,NULL) == 0)
+    {
+    fprintf(stderr,
+      "qsub:  file must be an ascii script\n");
+
+    return(4);
+    }
 
   if (stat(PBS_Filter,&sfilter) != -1) 
     {
@@ -3157,6 +3214,7 @@ char *get_param(
 
 
 
+
 /* qsub main */
 
 int main( 
@@ -3435,5 +3493,7 @@ int main(
 
   exit(0);
   }  /* END main() */
+
+
 
 
