@@ -1251,7 +1251,7 @@ int mom_set_limits(
           vmem_limit = value;
         }
       } 
-    else if ((!strcmp(pname,"mem") && (pjob->X)) ||
+    else if ((!strcmp(pname,"mem") && (pjob->ji_numnodes == 1)) ||
               !strcmp(pname,"pmem")) 
       {	
       /* set */

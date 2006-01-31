@@ -1861,11 +1861,11 @@ int TMomFinalizeChild(
     fclose(nhow);
     }  /* END if (pjob->ji_flags & MOM_HAS_NODEFILE) */
 
-    /* Set PBS_VNODENUM */
+  /* Set PBS_VNODENUM */
 
-    sprintf(buf,"%d",0);
+  sprintf(buf,"%d",0);
 
-    bld_env_variables(&vtable,"PBS_VNODENUM",buf);
+  bld_env_variables(&vtable,"PBS_VNODENUM",buf);
 
 #if defined(PENABLE_CPUSETS) || defined(PENABLE_DYNAMIC_CPUSETS)
 

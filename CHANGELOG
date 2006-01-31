@@ -1,6 +1,9 @@
 2.1.0p0
 
   fixed job tracking with SMP job suspend/resume (MSIC)
+  modify pbs_mom to enforce memory limits for serial jobs (GaTech)
+    - linux only
+  enable 'never' qmgr maildomain value to disable user mail
 
 2.0.0p7
 
