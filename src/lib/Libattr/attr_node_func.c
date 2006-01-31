@@ -654,6 +654,8 @@ void	free_prop_list( prop )
 }
 
 
+
+
 /*
  * set_node_state - the information in the "short" attribute, *new, is used to
  *		    update the information in the "short" attribute, *pattr.
@@ -661,21 +663,25 @@ void	free_prop_list( prop )
  *		    (SET,INCR,DECR)
  */
 
-int	set_node_state( pattr, new, op)
-	attribute	*pattr;		/*attribute gets modified    */
-	attribute	*new;		/*carries new, modifying info*/
-					/*that got decoded into 'new"*/
-	enum batch_op	 op;
-{
-	int	rc = 0;
+int set_node_state( 
 
-	assert( pattr && new && (new->at_flags & ATR_VFLAG_SET) );
+  attribute *pattr,		/*attribute gets modified    */
+  attribute *new,		/*carries new, modifying info*/
+				/*that got decoded into 'new"*/
+  enum batch_op op)
 
-	switch( op ) {
+  {
+  int rc = 0;
 
-	    case SET:
-	    pattr->at_val.at_short = new->at_val.at_short;
-	    break;
+  assert((pattr != NULL) && (new != NULL) && (new->at_flags & ATR_VFLAG_SET));
+
+  switch(op) 
+    {
+    case SET:
+
+      pattr->at_val.at_short = new->at_val.at_short;
+
+      break;
 
 	    case INCR:
 	    if(pattr->at_val.at_short && new->at_val.at_short == 0) {

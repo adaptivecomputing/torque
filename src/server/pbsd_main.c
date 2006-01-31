@@ -277,7 +277,7 @@ void do_rpp(
 
       if (LOGLEVEL >= 6)
         {
-        sprintf(log_buffer,"inter-server request received\n");
+        sprintf(log_buffer,"inter-server request received");
 
         log_record(
           PBSEVENT_SCHED,

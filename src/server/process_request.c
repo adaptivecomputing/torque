@@ -679,7 +679,7 @@ void dispatch_request(
 
       break;
 
-#ifndef PBS_MOM		/* Server Only Functions */
+#ifndef PBS_MOM		/* server only functions */
 
     case PBS_BATCH_StatusQue: 
 

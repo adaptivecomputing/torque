@@ -706,7 +706,7 @@ int mgr_set_node_attr(
 
   if (plist == NULL)
     {
-    return(0);		/*nothing to do, return success*/
+    return(0);		/* nothing to do, return success */
     }
 
   /* Get heap space for a temporary node-attribute array and use the

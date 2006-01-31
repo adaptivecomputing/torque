@@ -540,7 +540,7 @@ int chk_characteristic(
 
 int status_nodeattrib(
 
-  svrattrl        *pal,	/*an svrattrl from the request  */
+  svrattrl        *pal,	        /*an svrattrl from the request  */
   attribute_def   *padef,	/*the defined node attributes   */
   struct pbsnode  *pnode,	/*no longer an attribute ptr	*/
   int              limit,	/*number of array elts in padef */
@@ -550,7 +550,7 @@ int status_nodeattrib(
 				/*off the brp_attr member of the status sub*/
 				/*structure in the request's "reply area"  */
 
-  int             *bad)	/*if node-attribute error record it's*/
+  int             *bad)	        /*if node-attribute error, record it's*/
 				/*list position here                 */
   {
   int   i;
@@ -1155,7 +1155,7 @@ struct prop *init_prop(
 /*
  * create_subnode - create a subnode entry and link to parent node
  *
- *	Note, pname arg must be a copy of prop list as it is linked directly in
+ *  NOTE: pname arg must be a copy of prop list as it is linked directly in
  */
 
 static struct pbssubn *create_subnode(
@@ -1168,30 +1168,35 @@ static struct pbssubn *create_subnode(
 	
   psubn = (struct pbssubn *)malloc(sizeof(struct pbssubn));
 
-  if (psubn == (struct pbssubn *)0) 
+  if (psubn == NULL) 
     {
     return(NULL);
     }
 
-	/* initialize the subnode and link into the parent node */
+/* initialize the subnode and link into the parent node */
 
-	psubn->host  = pnode;
-	psubn->next  = (struct pbssubn *)NULL;
-	psubn->jobs  = (struct jobinfo *)NULL;
-	psubn->flag  = okay;
-	psubn->inuse = 0;
-	psubn->index = pnode->nd_nsn++;
-	pnode->nd_nsnfree++;
-	if ((pnode->nd_state & (INUSE_JOB|INUSE_JOBSHARE)) != 0)
-		pnode->nd_state = INUSE_FREE;
-	psubn->allocto = (resource_t)0;
+  psubn->host  = pnode;
+  psubn->next  = NULL;
+  psubn->jobs  = NULL;
+  psubn->flag  = okay;
+  psubn->inuse = 0;
+  psubn->index = pnode->nd_nsn++;
 
-	nxtsn = &pnode->nd_psn;	   /* link subnode onto parent node's list */
-	while (*nxtsn)
-		nxtsn = &((*nxtsn)->next);
-	*nxtsn = psubn;
+  pnode->nd_nsnfree++;
 
-	return (psubn);
+  if ((pnode->nd_state & (INUSE_JOB|INUSE_JOBSHARE)) != 0)
+    pnode->nd_state = INUSE_FREE;
+
+  psubn->allocto = (resource_t)0;
+
+  nxtsn = &pnode->nd_psn;	   /* link subnode onto parent node's list */
+
+  while (*nxtsn)
+    nxtsn = &((*nxtsn)->next);
+
+  *nxtsn = psubn;
+
+  return(psubn);
   }  /* END create_subnode() */
 
 
@@ -1220,7 +1225,7 @@ int create_pbs_node(
 
   if ((rc = process_host_name_part(objname,&pul,&pname,&ntype)) != 0) 
     {
-    log_err(-1, "process_host_name_part", log_buffer);
+    log_err(-1,"process_host_name_part",log_buffer);
 
     return(rc);
     }

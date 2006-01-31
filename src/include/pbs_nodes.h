@@ -129,7 +129,7 @@ struct	pbsnode {
   short		 	 nd_nsnfree;	/* number of VPs free */
   short			 nd_nsnshared;	/* number of VPs shared */
   short			 nd_needed;	/* number of VPs needed */
-  unsigned short	 nd_state;
+  unsigned short	 nd_state;      /* node state (see INUSE_* #defines below) */
   unsigned short	 nd_ntype;	/* node type */
   short			 nd_order;	/* order of user's request */
   time_t                 nd_warnbad;

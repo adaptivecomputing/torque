@@ -404,7 +404,7 @@ void tfree(
 void update_node_state(
 
   struct pbsnode *np,         /* I (modified) */
-  int             newstate)   /* I */
+  int             newstate)   /* I (one of INUSE_*) */
 
   {
   char      *id = "update_node_state";
@@ -462,7 +462,6 @@ void update_node_state(
         sp->inuse &= ~INUSE_DOWN;
         }
       }
-
     }
   else if (newstate == INUSE_FREE)
     {
@@ -475,6 +474,48 @@ void update_node_state(
 
     np->nd_state &= ~INUSE_BUSY; 
     np->nd_state &= ~INUSE_UNKNOWN; 
+
+    /* FIXME - what about job exclusive? */
+
+    if ((np->nd_state & INUSE_JOB) || (np->nd_state & INUSE_JOBSHARED))
+      {
+      int snjcount;
+
+      /* count for jobs on all subnodes */
+
+      snjcount = 0;
+
+      for (sp = np->nd_psn;sp != NULL;sp = sp->next)
+        {
+        if (sp->jobs != NULL)
+          {
+          snjcount++;
+
+          sp->inuse &= ~(INUSE_JOB|INUSE_JOBSHARE);
+          }
+        }
+
+      if (snjcount == 0)
+        {
+        /* node has no jobs but is in allocated state - free subnodes */
+
+        np->nd_nsnfree = np->nd_nsn;
+
+        sprintf(log_buffer,"job allocation released on node %s - node marked free",
+          (np->nd_name != NULL) ? np->nd_name : "NULL");
+
+        np->inuse &= ~(INUSE_JOB|INUSE_JOBSHARE);
+        }
+      else if (np->nd_nsnfree < np->nd_nsn - snjcount)
+        {
+        np->nd_nsnfree = np->nd_nsn - snjcount;
+
+        sprintf(log_buffer,"job allocation released on node %s",
+          (np->nd_name != NULL) ? np->nd_name : "NULL");
+
+        np->inuse &= ~INUSE_JOBSHARE;
+        }
+      }
 
     if (np->nd_state & INUSE_DOWN)
       {
@@ -505,6 +546,9 @@ void update_node_state(
 
   return;
   }  /* END update_node_state() */
+
+
+
 
 
 /*
@@ -1147,7 +1191,7 @@ void is_request(
 
   if (LOGLEVEL >= 4)
     {
-    sprintf(log_buffer,"message received from stream %d (version %d)\n",
+    sprintf(log_buffer,"message received from stream %d (version %d)",
       stream,
       version);
 
@@ -1177,7 +1221,7 @@ void is_request(
 
   if (LOGLEVEL >= 3)
     {
-    sprintf(log_buffer,"message received from stream %s\n",
+    sprintf(log_buffer,"message received from stream %s",
       netaddr(addr));
 
     log_event(
@@ -1301,7 +1345,7 @@ found:
 
       if (LOGLEVEL >= 1)
         {
-        sprintf(log_buffer,"HELLO received from %s\n",
+        sprintf(log_buffer,"HELLO received from %s",
           node->nd_name);
 
         log_event(PBSEVENT_ADMIN,PBS_EVENTCLASS_SERVER,id,log_buffer);
@@ -1413,7 +1457,7 @@ found:
 
       if (LOGLEVEL >= 2)
         {
-        sprintf(log_buffer,"IS_STATUS received from %s\n",
+        sprintf(log_buffer,"IS_STATUS received from %s",
           node->nd_name);
 
         log_event(PBSEVENT_ADMIN,PBS_EVENTCLASS_SERVER,id,log_buffer);
@@ -1425,7 +1469,7 @@ found:
         {
         if (LOGLEVEL >= 1)
           {
-          sprintf(log_buffer,"IS_STATUS error %d on node %s\n",
+          sprintf(log_buffer,"IS_STATUS error %d on node %s",
             ret,
             node->nd_name);
 
@@ -2317,7 +2361,7 @@ static int nodecmp(
 
   if (aprim == bprim) 
     {
-    return (a->nd_nprops - b->nd_nprops);
+    return(a->nd_nprops - b->nd_nprops);
     } 
 
   return (aprim - bprim);
@@ -3005,10 +3049,10 @@ int node_reserve(
   resource_t  tag)   /* In/Out - tag for resource if reserved */
 
   {
-  static	char	id[] = "node_reserve";
+  static char    id[] = "node_reserve";
   int		 nrd;
-  struct  pbsnode *pnode;
-  struct	pbssubn	*snp;
+  struct pbsnode *pnode;
+  struct pbssubn *snp;
   int		 ret_val;
   int		 i;
 
@@ -3146,7 +3190,7 @@ char *find_ts_node()
     }
 
   return(NULL);
-  }
+  }  /* END find_ts_node() */
 
 
 
@@ -3163,7 +3207,7 @@ void free_nodes(
   {
   static char	id[] = "free_nodes";
   struct pbssubn *np;
-  struct pbssubn *xnp;
+  /* struct pbssubn *xnp; */
   struct pbsnode *pnode;
   struct jobinfo *jp, *prev;
   int             i;
@@ -3180,12 +3224,18 @@ void free_nodes(
       log_buffer);
     }
 
+  /* examine all nodes in cluster */
+
   for (i = 0;i < svr_totnodes;i++) 
     {
     pnode = pbsndlist[i];
 
+    /* examine all subnodes in node */
+
     for (np = pnode->nd_psn;np != NULL;np = np->next) 
       {
+      /* examine all jobs allocated to subnode */
+
       for (prev = NULL,jp = np->jobs;jp != NULL;prev = jp,jp = jp->next) 
         {
         if (jp->job != pjob)
@@ -3193,7 +3243,7 @@ void free_nodes(
 
         if (LOGLEVEL >= 4)
           {
-          sprintf(log_buffer,"freeing node %s/%d for job %s",
+          sprintf(log_buffer,"freeing node %s/%d from job %s",
             pnode->nd_name,
             np->index,
             pjob->ji_qs.ji_jobid);
@@ -3212,35 +3262,49 @@ void free_nodes(
 
         free(jp);
 
+        /* if no jobs are associated with subnode, mark subnode as free */
+
         if (np->jobs == NULL) 
           {
           pnode->nd_nsnfree++;	/* up count of free */
 
           if (LOGLEVEL >= 6)
             {
-            DBPRT(("%s: upping free count to %d\n", 
-              id, 
-              pnode->nd_nsnfree))
+            sprintf(log_buffer,"increased sub-node free count to %d of %d\n", 
+              pnode->nd_nsnfree,
+              pnode->nd_nsn);
+
+            log_record(
+              PBSEVENT_SCHED,
+              PBS_EVENTCLASS_REQUEST,
+              id,
+              log_buffer);
             }
 
           if (np->inuse & INUSE_JOBSHARE)
             pnode->nd_nsnshared--;
 
+          /* adjust node state (turn off job/job-exclusive) */
+
           np->inuse &= ~(INUSE_JOB|INUSE_JOBSHARE);
 
-          for (xnp = pnode->nd_psn;xnp;xnp = xnp->next) 
+          /* the following code does nothing - disabled */
+
+          /*
+          for (xnp = pnode->nd_psn;xnp;xnp = xnp->next)
             {
             if (xnp->inuse & (INUSE_JOB|INUSE_JOBSHARE))
               break;
             }
+          */
 
           pnode->nd_state &= ~(INUSE_JOB|INUSE_JOBSHARE);
           }
 
         break;
-        }
-      }
-    }    /* END for (i) */
+        }  /* END for (prev) */
+      }    /* END for (np) */
+    }      /* END for (i) */
 
   pjob->ji_qs.ji_svrflags &= ~JOB_SVFLG_HasNodes;
 
@@ -3315,7 +3379,7 @@ static void set_one_old(
     }
 
   return;
-  }
+  }  /* END set_one_old() */
 
 
 

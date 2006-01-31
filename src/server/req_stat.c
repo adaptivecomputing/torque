@@ -843,6 +843,8 @@ void req_stat_node(
   int	    type = 0;
   int	    i;
 
+  char     *id = "req_stat_node";
+
   /*
    * first, check that the server indeed has a list of nodes
    * and if it does, validate the name of the requested object--
@@ -850,7 +852,16 @@ void req_stat_node(
    * meaning request is for all nodes in the server's jurisdiction
    */
 
-  if ((pbsndmast == 0) || (svr_totnodes <= 0)) 
+  if (LOGLEVEL >= 6)
+    {
+    log_record(
+      PBSEVENT_SCHED,
+      PBS_EVENTCLASS_REQUEST,
+      id,
+      "entered");
+    }
+
+  if ((pbsndmast == NULL) || (svr_totnodes <= 0)) 
     {
     req_reject(PBSE_NONODES,0,preq,NULL,NULL);
 
@@ -881,11 +892,15 @@ void req_stat_node(
   CLEAR_HEAD(preply->brp_un.brp_status);
 
   if (type == 0) 
-    {		/*get status of the named node*/
+    {		
+    /* get status of the named node */
+
     rc = status_node(pnode,preq,&preply->brp_un.brp_status);
     } 
   else 
-    {			/*get status of all nodes     */
+    {			
+    /* get status of all nodes */
+
     for (i = 0;i < svr_totnodes;i++) 
       {
       pnode = pbsndmast[i];
@@ -951,7 +966,7 @@ static int status_node(
 	
   pstat = (struct brp_status *)malloc(sizeof (struct brp_status));
 
-  if (pstat == (struct brp_status *)0)
+  if (pstat == NULL)
     {
     return(PBSE_SYSTEM);
     }
@@ -966,7 +981,7 @@ static int status_node(
   /*add this new brp_status structure to the list hanging off*/
   /*the request's reply substructure                         */
 
-  append_link(pstathd, &pstat->brp_stlink, pstat);
+  append_link(pstathd,&pstat->brp_stlink,pstat);
 
   /*point to the list of node-attributes about which we want status*/
   /*hang that status information from the brp_attr field for this  */
