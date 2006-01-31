@@ -104,6 +104,7 @@
 #include "svrfunc.h"
 #include "net_connect.h"
 #include "pbs_nodes.h"
+#include "log.h"
 
 /* Global Data Items: */
 
@@ -114,10 +115,11 @@ extern char            server_name[];
 extern attribute_def   svr_attr_def[];
 extern attribute_def   que_attr_def[];
 extern attribute_def   job_attr_def[];
-extern int	           pbs_mom_port;
-extern time_t	         time_now;
-extern char	          *msg_init_norerun;
+extern int	       pbs_mom_port;
+extern time_t	       time_now;
+extern char	      *msg_init_norerun;
 extern struct pbsnode *tfind_addr();
+extern int             LOGLEVEL;
 
 /* Extern Functions */
 

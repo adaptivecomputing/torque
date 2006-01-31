@@ -477,7 +477,7 @@ void update_node_state(
 
     /* FIXME - what about job exclusive? */
 
-    if ((np->nd_state & INUSE_JOB) || (np->nd_state & INUSE_JOBSHARED))
+    if ((np->nd_state & INUSE_JOB) || (np->nd_state & INUSE_JOBSHARE))
       {
       int snjcount;
 
@@ -504,7 +504,7 @@ void update_node_state(
         sprintf(log_buffer,"job allocation released on node %s - node marked free",
           (np->nd_name != NULL) ? np->nd_name : "NULL");
 
-        np->inuse &= ~(INUSE_JOB|INUSE_JOBSHARE);
+        np->nd_state &= ~(INUSE_JOB|INUSE_JOBSHARE);
         }
       else if (np->nd_nsnfree < np->nd_nsn - snjcount)
         {
@@ -513,7 +513,7 @@ void update_node_state(
         sprintf(log_buffer,"job allocation released on node %s",
           (np->nd_name != NULL) ? np->nd_name : "NULL");
 
-        np->inuse &= ~INUSE_JOBSHARE;
+        np->nd_state &= ~INUSE_JOBSHARE;
         }
       }
 
