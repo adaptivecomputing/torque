@@ -1,3 +1,7 @@
+2.1.0p0
+
+  fixed job tracking with SMP job suspend/resume (MSIC)
+
 2.0.0p7
 
   fixed pbs_mom SEGV in req_stat_job()

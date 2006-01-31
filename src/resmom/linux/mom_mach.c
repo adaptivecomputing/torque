@@ -1117,7 +1117,7 @@ int mom_set_limits(
 
     assert(pname[0] != '\0');
 
-    if (strcmp(pname,"cput") == 0) 
+    if (!strcmp(pname,"cput")) 
       {
       /* cpu time - check, if less than pcput use it */
 
@@ -1130,7 +1130,7 @@ int mom_set_limits(
         return(error(pname,retval));
         }
       } 
-    else if (strcmp(pname,"pcput") == 0) 
+    else if (!strcmp(pname,"pcput")) 
       {
       /* process cpu time - set */
 
@@ -1209,7 +1209,7 @@ int mom_set_limits(
           }
         }
       } 
-    else if (strcmp(pname,"vmem") == 0) 
+    else if (!strcmp(pname,"vmem")) 
       {	
       /* check */
 
@@ -1225,7 +1225,7 @@ int mom_set_limits(
       if ((vmem_limit == 0) || (value < vmem_limit))
         vmem_limit = value;
       } 
-    else if (strcmp(pname,"pvmem") == 0) 
+    else if (!strcmp(pname,"pvmem")) 
       {	
       /* set */
 
@@ -1251,11 +1251,8 @@ int mom_set_limits(
           vmem_limit = value;
         }
       } 
-    else if (strcmp(pname,"mem") == 0) 
-      {	
-      /* ignore */
-      } 
-    else if (strcmp(pname,"pmem") == 0) 
+    else if ((!strcmp(pname,"mem") && (pjob->X)) ||
+              !strcmp(pname,"pmem")) 
       {	
       /* set */
 
@@ -1288,7 +1285,7 @@ int mom_set_limits(
           }
         }
       } 
-    else if (strcmp(pname,"walltime") == 0) 
+    else if (!strcmp(pname,"walltime")) 
       {	
       /* Check */
 
@@ -1299,7 +1296,7 @@ int mom_set_limits(
         return(error(pname,retval));
         }
       } 
-    else if (strcmp(pname,"nice") == 0) 
+    else if (!strcmp(pname,"nice")) 
       {	
       /* set nice */
 

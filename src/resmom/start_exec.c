@@ -934,8 +934,8 @@ int TMakeTmpDir(
 
 
 /* Sets up env for a user process, used by TMomFinalizeJob1, start_process,
- * and file copies
- */
+ * and file copies */
+
 int InitUserEnv(
 
   job            *pjob,   /* I */
@@ -1117,7 +1117,9 @@ int InitUserEnv(
     }
 
   return(0);
-  }
+  }  /* END InitUserEnv() */
+
+
 
 
 
@@ -1265,7 +1267,7 @@ int TMomFinalizeJob1(
       pjob->ji_qs.ji_jobid,
       log_buffer);
 
-	    *SC = JOB_EXEC_RETRY;
+    *SC = JOB_EXEC_RETRY;
 
     return(FAILURE);
     }
@@ -1285,7 +1287,7 @@ int TMomFinalizeJob1(
 
 #if MOM_CHECKPOINT == 1
 
-  /* Is the job to be periodic checkpointed */
+  /* Is the job to be periodically checkpointed */
 
   pattr = &pjob->ji_wattr[(int)JOB_ATR_chkpnt];
 
