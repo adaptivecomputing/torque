@@ -911,8 +911,8 @@ void stream_eof(
     }
 
   sprintf(log_buffer, "connection to %s dropped (%s).  setting node state to down\n",
-    dis_emsg[ret],
-    np->nd_name);
+    np->nd_name,
+    dis_emsg[ret]);
 
   log_err(-1,id,log_buffer);
 
