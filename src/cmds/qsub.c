@@ -247,6 +247,11 @@ int istext(
     return(0);
     }
 
+  if (fd == stdin)
+    {
+    return(1);
+    }
+
   /* read first characters to ensure this is ASCII text */
 
   for(i = 0; i < MMAX_VERIFY_BYTES; i++)
