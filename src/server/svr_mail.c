@@ -131,7 +131,8 @@ void svr_mailowner(
   struct array_strings *pas;
   char	*stdmessage = NULL;
 
-  if (!strcasecmp("never",server.sv_attr[(int)SRV_ATR_MailDomain].at_val.at_str))
+  if ((server.sv_attr[(int)SRV_ATR_MailDomain].at_val.at_str != NULL) &&
+      (!strcasecmp("never",server.sv_attr[(int)SRV_ATR_MailDomain].at_val.at_str)))
     {
     /* never send user mail under any conditions */
 
