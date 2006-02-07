@@ -282,7 +282,7 @@ static char stat_str[] = "%d (%[^)]) %c %*d %*d %d %*d %*d %u %*u \
  * Hertz is sysconf(_SC_CLK_TCK) in get_proc_stat()
 */
 
-#define JTOS(x)  x = (x) / Hertz;
+#define JTOS(x)  (x) / Hertz;
 
 /*
  * Linux /proc status routine.
