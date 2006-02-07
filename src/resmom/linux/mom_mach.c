@@ -282,7 +282,7 @@ static char stat_str[] = "%d (%[^)]) %c %*d %*d %d %*d %*d %u %*u \
  * Hertz is sysconf(_SC_CLK_TCK) in get_proc_stat()
 */
 
-#define JTOS(x)  x = x / Hertz;
+#define JTOS(x)  x = (x) / Hertz;
 
 /*
  * Linux /proc status routine.
@@ -301,7 +301,7 @@ proc_stat_t *get_proc_stat(
   static proc_stat_t	ps;
   static char		path[1024];
   FILE                 *fd;
-  unsigned		jiffies;
+  unsigned long         jiffies;
   struct stat		sb;
 
   static int Hertz  = 0;
@@ -360,13 +360,13 @@ proc_stat_t *get_proc_stat(
 
   ps.uid = sb.st_uid;
 
-  ps.start_time = linux_time + (jiffies / 100);
+  ps.start_time = linux_time + JTOS(jiffies);
   ps.name = path;
 
-  JTOS(ps.utime)
-  JTOS(ps.stime)
-  JTOS(ps.cutime)
-  JTOS(ps.cstime)
+  ps.utime = JTOS(ps.utime);
+  ps.stime = JTOS(ps.stime);
+  ps.cutime = JTOS(ps.cutime);
+  ps.cstime = JTOS(ps.cstime);
 
   fclose(fd);
 
@@ -707,13 +707,13 @@ static unsigned long cput_sum(
   job *pjob)  /* I */
 
   {
-  char			*id = "cput_sum";
-  struct dirent		*dent;
-  ulong			cputime;
-  int			nps = 0;
-  proc_stat_t		*ps;
+  char          *id = "cput_sum";
+  struct dirent	*dent;
+  ulong          cputime;
+  int            nps = 0;
+  proc_stat_t   *ps;
 
-  cputime = 0.0;
+  cputime = 0;
 
   rewinddir(pdir);
 
@@ -807,7 +807,9 @@ static int overcpu_proc(
     if (!injob(pjob,ps->session))
       continue;
 
-    cputime = (ulong)((double)(ps->cutime + ps->cstime) * cputfactor);
+    /* change from ps->cutime to ps->utime, and ps->cstime to ps->stime */
+
+    cputime = (ulong)((double)(ps->utime + ps->stime) * cputfactor);
 
     if (cputime > limit)
       {
@@ -1708,7 +1710,7 @@ int mom_set_use(
 
   lp = &pres->rs_value.at_val.at_size.atsv_num;
 
-  lnum = (mem_sum(pjob) + 1023) >> 10;	/* as KB */
+  lnum = (mem_sum(pjob) + 1023) >> pres->rs_value.at_val.at_size.atsv_shift;	/* as KB */
 
   *lp = MAX(*lp, lnum);
 
@@ -1737,7 +1739,7 @@ int mom_set_use(
 
   lp = &pres->rs_value.at_val.at_size.atsv_num;
 
-  lnum = (resi_sum(pjob) + 1023) >> 10;	/* as KB */
+  lnum = (resi_sum(pjob) + 1023) >> pres->rs_value.at_val.at_size.atsv_shift;	/* as KB */
 
   *lp = MAX(*lp,lnum);
 
@@ -2078,7 +2080,13 @@ char *cput_job(
 
     found = 1;
 
-    addtime = dsecs(ps->cutime) + dsecs(ps->cstime);
+    /* add utime and stime (AKE) */
+
+    addtime = 
+      dsecs(ps->utime) + 
+      dsecs(ps->stime) + 
+      dsecs(ps->cutime) + 
+      dsecs(ps->cstime);
 
     cputime += addtime;
 
