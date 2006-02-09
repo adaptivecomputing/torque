@@ -742,7 +742,8 @@ static void chk_svr_resc_limit(
   attribute *jobatr,
   attribute *queatr,
   attribute *svratr,
-  int	     qtype)  /* I */
+  int	     qtype,  /* I */
+  char      *EMsg)   /* O (optional,minsize=1024) */
 
   {
   int       dummy;
@@ -755,6 +756,9 @@ static void chk_svr_resc_limit(
   resource *svrc;
   resource *cmpwith;
 
+  int       LimitIsFromQueue;
+  char     *LimitName;
+
   static int SvrNodeCt = 0;
 
   static resource_def *noderesc = NULL;
@@ -762,6 +766,9 @@ static void chk_svr_resc_limit(
   static resource_def *nodectresc = NULL;
 
   /* NOTE:  server limits are specified with server.resources_available */
+
+  if (EMsg != NULL)
+    EMsg[0] = '\0';
 
   if (noderesc == NULL) 
     {
@@ -808,6 +815,9 @@ static void chk_svr_resc_limit(
       {
       qurc = find_resc_entry(queatr,jbrc->rs_defin);
 
+      LimitIsFromQueue = 0;
+      LimitName = jbrc->rs_defin->rs_name;
+
       if ((qurc == NULL) || ((qurc->rs_value.at_flags & ATR_VFLAG_SET) == 0)) 
         {
         /* queue limit not set, check server's */
@@ -822,6 +832,8 @@ static void chk_svr_resc_limit(
       else 
         {
         /* queue limit is set, use it */
+
+        LimitIsFromQueue = 1;
 
         cmpwith = qurc;
         }
@@ -841,9 +853,18 @@ static void chk_svr_resc_limit(
                &jbrc->rs_value);
 
         if (rc > 0)
+          {
           comp_resc_gt++;
+          }
         else if (rc < 0)
+          {
+          if ((EMsg != NULL) && (EMsg[0] == '\0'))
+            sprintf(EMsg,"cannot satisfy %s %s requirement",
+              (LimitIsFromQueue == 1) ? "queue" : "server",
+              (LimitName != NULL) ? LimitName : "resource");
+
           comp_resc_lt++;
+          }
         }
       }    /* END if () */
 
@@ -884,6 +905,9 @@ static void chk_svr_resc_limit(
             &dummy,
             &dummy) == -1)
         {
+        if (EMsg != NULL)
+          strcpy(EMsg,"cannot locate feasible nodes");
+
         comp_resc_lt++;
         }
       }
@@ -928,11 +952,12 @@ int chk_resc_limits(
     pattr,
     &pque->qu_attr[QA_ATR_ResourceMax],
     &server.sv_attr[SRV_ATR_ResourceMax],
-    pque->qu_qs.qu_type);
+    pque->qu_qs.qu_type,
+    EMsg);
 
   if (comp_resc_lt > 0)
     {
-    if (EMsg != NULL)
+    if ((EMsg != NULL) && (EMsg[0] == '\0'))
       strcpy(EMsg,"job violates queue/server max resource limits");
 
     return(PBSE_EXCQRESC);

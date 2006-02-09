@@ -4,6 +4,7 @@
   modify pbs_mom to enforce memory limits for serial jobs (GaTech)
     - linux only
   enable 'never' qmgr maildomain value to disable user mail
+  enable qsub reporting of job rejection reason
 
 2.0.0p7
 
