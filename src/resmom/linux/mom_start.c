@@ -238,7 +238,7 @@ char *set_shell(
 void scan_for_terminated()
 
   {
-  static char	id[] = "scan_for_terminated";
+  static char id[] = "scan_for_terminated";
   int	 exiteval = 0;
   pid_t	 pid;
   job	*pjob;
@@ -278,11 +278,11 @@ void scan_for_terminated()
       if (pid == pjob->ji_momsubt)
         break;
 
-      /*
-      ** look for task
-      */
+      /* look for task */
 
       ptask = (task *)GET_NEXT(pjob->ji_tasks);
+
+      /* locate task with associated process id */
 
       while (ptask != NULL) 
         {

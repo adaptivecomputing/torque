@@ -905,7 +905,8 @@ static void chk_svr_resc_limit(
 int chk_resc_limits(
 
   attribute *pattr,  /* I */
-  pbs_queue *pque)   /* I */
+  pbs_queue *pque,   /* I */
+  char      *EMsg)   /* O (optional,minsize=1024) */
 
   {
   /* NOTE:  comp_resc_gt and comp_resc_lt are global ints */
@@ -915,6 +916,9 @@ int chk_resc_limits(
   if ((comp_resc(&pque->qu_attr[QA_ATR_ResourceMin],pattr) == -1) ||
       (comp_resc_gt > 0))
     {
+    if (EMsg != NULL)
+      strcpy(EMsg,"job violates queue min resource limits");
+
     return(PBSE_EXCQRESC);
     }
 
@@ -928,8 +932,13 @@ int chk_resc_limits(
 
   if (comp_resc_lt > 0)
     {
+    if (EMsg != NULL)
+      strcpy(EMsg,"job violates queue/server max resource limits");
+
     return(PBSE_EXCQRESC);
     }
+
+  /* SUCCESS */
 
   return(0);
   }  /* END chk_resc_limits() */
@@ -953,12 +962,16 @@ int svr_chkque(
   job	    *pjob,
   pbs_queue *pque,
   char	    *hostname,
-  int	     mtype)	/* MOVE_TYPE_* type, see server_limits.h */
+  int	     mtype,     /* MOVE_TYPE_* type, see server_limits.h */
+  char      *EMsg)      /* O (optional,minsize=1024) */
 
   {
   int i;
   int failed_group_acl = 0;
   int failed_user_acl  = 0;
+
+  if (EMsg != NULL)
+    EMsg[0] = '\0';
 
   /*
    * 1. If the queue is an Execution queue ...
@@ -1168,13 +1181,17 @@ int svr_chkque(
 
     /* 6. resources of the job must be in the limits of the queue */
 
-    if ((i = chk_resc_limits(&pjob->ji_wattr[(int)JOB_ATR_resource],pque)) != 0)
+    if ((i = chk_resc_limits(&pjob->ji_wattr[(int)JOB_ATR_resource],pque,EMsg)) != 0)
       {
+      /* FAILURE */
+
       return(i);
       }
     }    /* END if (mtype != MOVE_TYPE_MgrMv) */
 
-  return(0);	/* all ok, job can enter queue */
+  /* SUCCESS - job can enter queue */
+
+  return(0);
   }  /* END svr_chkque() */
 
 

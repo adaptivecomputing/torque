@@ -129,7 +129,7 @@
 extern int  reply_jid A_((char *jobid));
 extern void start_exec A_((job *));
 extern int  svr_authorize_jobreq A_((struct batch_request *,job *));
-extern int  svr_chkque A_((job *,pbs_queue *,char *,int));
+extern int  svr_chkque A_((job *,pbs_queue *,char *,int,char *));
 extern int  job_route A_((job *));
 
 /* Global Data Items: */
@@ -220,6 +220,8 @@ void req_quejob(
   char		*qname;
   attribute	 tempattr;
 #endif /* server */
+
+  char           EMsg[1024];
 
   /* set basic (user) level access permission */
 
@@ -920,15 +922,15 @@ void req_quejob(
    * See if the job is qualified to go into the requested queue.
    * Note, if an execution queue, then ji_qs.ji_un.ji_exect is set up
    *
-   * svr_chkque is called way down here because it needs to have the
+   * svr_chkque() is called way down here because it needs to have the
    * job structure and attributes already set up.
    */
 
-  if ((rc = svr_chkque(pj,pque,preq->rq_host,MOVE_TYPE_Move))) 
+  if ((rc = svr_chkque(pj,pque,preq->rq_host,MOVE_TYPE_Move,EMsg))) 
     {
     job_purge(pj);
 
-    req_reject(rc,0,preq,NULL,NULL);
+    req_reject(rc,0,preq,NULL,EMsg);
 
     return;
     }

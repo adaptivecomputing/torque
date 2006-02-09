@@ -105,17 +105,17 @@ extern void  node_unreserve A_((resource_t handle));
 extern int   node_reserve A_((char *speclist, resource_t tag));
 
 #ifdef JOB_H
-extern int   set_nodes A_((job *pjob, char *spec, char	**rtnlist));
-extern int   is_ts_node A_((char * nodestr));
+extern int   set_nodes A_((job *,char *,char **));
+extern int   is_ts_node A_((char *));
 extern char *find_ts_node A_((void));
 extern void  free_nodes A_((job *));
 #endif	/* JOB_H */
 
 #ifdef ATTRIBUTE_H
-extern int   check_que_enable A_((attribute *, void *, int));
-extern int   set_queue_type A_((attribute *, void *, int));
+extern int   check_que_enable A_((attribute *,void *,int));
+extern int   set_queue_type A_((attribute *,void *,int));
 #ifdef QUEUE_H
-extern int   chk_resc_limits A_((attribute *, pbs_queue *));
+extern int   chk_resc_limits A_((attribute *,pbs_queue *,char *));
 #endif	/* QUEUE_H */
 #endif	/* ATTRIBUTE_H */
 

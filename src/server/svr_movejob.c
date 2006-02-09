@@ -285,7 +285,7 @@ static int local_move(
   if ((pbs_errno = svr_chkque(
         jobp,
         qp,
-        get_variable(jobp,pbs_o_host),mtype)))
+        get_variable(jobp,pbs_o_host),mtype,NULL)))
     {
     /* should this queue be retried? */
 

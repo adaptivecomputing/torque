@@ -350,7 +350,8 @@ int modify_job_attr(
         {
         rc = chk_resc_limits(
           &newattr[(int)JOB_ATR_resource],
-          pjob->ji_qhdr);
+          pjob->ji_qhdr,
+          NULL);
         }
       }
     }

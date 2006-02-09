@@ -747,10 +747,10 @@ extern struct batch_request *cpy_stage A_((struct batch_request *, job *, enum j
 #endif	/* BATCH_REQUEST_H */
 
 #ifdef QUEUE_H
-extern int   svr_chkque A_((job *, pbs_queue *, char *, int mtype));
-extern int   default_router A_((job *, pbs_queue *, long));
-extern int   site_alt_router A_((job *, pbs_queue *, long));
-extern int   site_acl_check A_((job *, pbs_queue *));
+extern int   svr_chkque A_((job *,pbs_queue *,char *,int,char *));
+extern int   default_router A_((job *,pbs_queue *,long));
+extern int   site_alt_router A_((job *,pbs_queue *,long));
+extern int   site_acl_check A_((job *,pbs_queue *));
 #endif	/* QUEUE_H */
 
 #ifdef WORK_TASK_H
