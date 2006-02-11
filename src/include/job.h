@@ -533,19 +533,19 @@ typedef struct	obitent {
 **	available to other tasks in the job.
 */
 typedef struct	infoent {
-	char		*ie_name;	/* published name */
-	void		*ie_info;	/* the glop */
-	size_t		ie_len;		/* how much glop */
-	list_link	ie_next;	/* link to next one */
-} infoent;
+  char		*ie_name;	/* published name */
+  void		*ie_info;	/* the glop */
+  size_t	ie_len;		/* how much glop */
+  list_link	ie_next;	/* link to next one */
+  } infoent;
 
 #define	TI_FLAGS_INIT		1		/* task has called tm_init */
 #define	TI_FLAGS_CHKPT		2		/* task has checkpointed */
 
-#define TI_STATE_EMBRYO		0
-#define	TI_STATE_RUNNING	1
-#define TI_STATE_EXITED		2		/* ti_exitstat valid */
-#define TI_STATE_DEAD		3
+#define TI_STATE_EMBRYO  0
+#define TI_STATE_RUNNING 1              /* includes suspended jobs */
+#define TI_STATE_EXITED	 2		/* ti_exitstat valid */
+#define TI_STATE_DEAD    3
 
 /*
 **      Here is the set of commands for InterMOM (IM) requests.

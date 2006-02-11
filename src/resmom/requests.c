@@ -378,8 +378,8 @@ static pid_t fork_to_user(
       hdir);
  
     log_record(
-      PBSEVENT_ADMIN,
-      PBS_EVENTCLASS_FILE,
+      PBSEVENT_JOB,
+      PBS_EVENTCLASS_JOB,
       (pjob != NULL) ? pjob->ji_qs.ji_jobid : "N/A",
       log_buffer);
     }
@@ -1209,8 +1209,8 @@ void req_modifyjob(
           tmpLine);
 
         log_record(
-          PBSEVENT_ADMIN,
-          PBS_EVENTCLASS_FILE,
+          PBSEVENT_JOB,
+          PBS_EVENTCLASS_JOB,
           (pjob != NULL) ? pjob->ji_qs.ji_jobid : "N/A",
           log_buffer);
         }
@@ -1374,9 +1374,11 @@ static void cray_susp_resum(
   reply_ack(preq);
 
   exit(0);
-  }
+  }  /* END cray_susp_resum() */
 
 #endif	/* _CRAY */
+
+
 
 
 
@@ -1397,17 +1399,34 @@ int MUSleep(
 
 
 
+
+
 static void resume_suspend( 
 
   job                  *pjob,
-  int                   susp,  /* I */
+  int                   susp,  /* I (0=FALSE, 1=TRUE) */
   struct batch_request *preq)
 
   {
+  static char *id[] = "resume_suspend";
+
   task *tp;
 
   int   stat = 0;
   int   savederr = 0;
+
+  if (LOGLEVEL >= 2)
+    {
+    sprintf(log_buffer,"%s job in %s",
+      (susp != 0) ? "suspending" : "resuming",
+      id);
+
+    log_record(
+      PBSEVENT_JOB,
+      PBS_EVENTCLASS_JOB,
+      (pjob != NULL) ? pjob->ji_qs.ji_jobid : "N/A",
+      log_buffer);
+    }
 
   /* First we need to send SIGTSTP to let reasonable mpi daemons stop
      their subprocesses, then we send SIGSTOP to stop all other types
@@ -1425,7 +1444,12 @@ static void resume_suspend(
      Fortunately only one SIGCONT is needed to resume.
    */
 
-  for (tp = (task *)GET_NEXT(pjob->ji_tasks);tp != NULL;tp = (task *)GET_NEXT(tp->ti_jobtask)) 
+  /* NOTE:  format {suspend[:X]|resume[:X]} should be supported to allow 
+            job state change AND custom suspend/resume signal (NYI) */
+
+  for (tp = (task *)GET_NEXT(pjob->ji_tasks);
+       tp != NULL;
+       tp = (task *)GET_NEXT(tp->ti_jobtask)) 
     {
     if (susp != 0)
       {
@@ -1446,15 +1470,31 @@ static void resume_suspend(
 
       savederr = errno;
 
+      if (LOGLEVEL >= 1)
+        {
+        sprintf(log_buffer,"cannot send signal %s to tasks of job in %s (errno=%d) - attempt aborted",
+          (susp != 0) ? "SIGTSTP" : "SIGCONT",
+          id, 
+          savederr);
+
+        log_record(
+          PBSEVENT_ERROR,
+          PBS_EVENTCLASS_JOB,
+          (pjob != NULL) ? pjob->ji_qs.ji_jobid : "N/A",
+          log_buffer);
+        }
+
       break;
-      }
+      }  /* END if (stat < 0) */
     }    /* END for (tp) */
 
   if ((susp != 0) && (stat >= 0))
     {
     MUSleep(50000);
  
-    for (tp = (task *)GET_NEXT(pjob->ji_tasks);tp != NULL;tp = (task *)GET_NEXT(tp->ti_jobtask)) 
+    for (tp = (task *)GET_NEXT(pjob->ji_tasks);
+         tp != NULL;
+         tp = (task *)GET_NEXT(tp->ti_jobtask)) 
       {
       stat = kill_task(tp,SIGSTOP);
 
@@ -1464,18 +1504,32 @@ static void resume_suspend(
 
         savederr = errno;
 
+        if (LOGLEVEL >= 1)
+          {
+          sprintf(log_buffer,"cannot send signal %s to tasks of job in %s (errno=%d) - attempt aborted",
+            "SIGSTOP",
+            id,
+            savederr);
+
+          log_record(
+            PBSEVENT_ERROR,
+            PBS_EVENTCLASS_JOB,
+            (pjob != NULL) ? pjob->ji_qs.ji_jobid : "N/A",
+            log_buffer);
+          }
+
         break;
         }
       }    /* END for (tp) */
-    }      /* END if  ((susp != 0) && (stat >= 0)) */
-
-  /* We're done sending signals, let's adjust some statuses */
+    }      /* END if ((susp != 0) && (stat >= 0)) */
 
   if (stat < 0) 
     {
     /* We couldn't signal all the tasks, signal them back to their old state */
     
-    for (tp = (task *)GET_NEXT(pjob->ji_tasks);tp != NULL;tp = (task *)GET_NEXT(tp->ti_jobtask)) 
+    for (tp = (task *)GET_NEXT(pjob->ji_tasks);
+         tp != NULL;
+         tp = (task *)GET_NEXT(tp->ti_jobtask)) 
       {
       if (susp)
         {
@@ -1497,7 +1551,9 @@ static void resume_suspend(
       {
       MUSleep(50000);
 
-      for (tp = (task *)GET_NEXT(pjob->ji_tasks);tp != NULL;tp = (task *)GET_NEXT(tp->ti_jobtask)) 
+      for (tp = (task *)GET_NEXT(pjob->ji_tasks);
+           tp != NULL;
+           tp = (task *)GET_NEXT(tp->ti_jobtask)) 
         {
         stat = kill_task(tp,SIGSTOP);
         }  /* END for (tp) */
@@ -1506,43 +1562,65 @@ static void resume_suspend(
     /* suspend/resume failued - report failure */
 
     req_reject(PBSE_SYSTEM,savederr,preq,NULL,NULL);      
+
+    return;
     }  /* END if (stat < 0) */ 
+
+  /* signals sent to all tasks, now adjust job state */
+
+  if (susp != 0) 
+    {
+    /* Successfully suspended, let's update status */
+    /* This is needed for calculating correct walltime */
+
+    pjob->ji_momstat = time_now;
+      
+    pjob->ji_qs.ji_substate = JOB_SUBSTATE_SUSPEND;
+    pjob->ji_qs.ji_svrflags |= JOB_SVFLG_Suspend;
+
+    if (LOGLEVEL >= 1)
+      {
+      log_record(
+        PBSEVENT_JOB,
+        PBS_EVENTCLASS_JOB,
+        (pjob != NULL) ? pjob->ji_qs.ji_jobid : "N/A",
+        "job suspended - adjusting job state");
+      }
+    } 
   else 
     {
-    if (susp != 0) 
-      {
-      /* Successfully suspended, let's update status */
-      /* This is needed for calculating correct walltime */
+    pjob->ji_qs.ji_substate = JOB_SUBSTATE_RUNNING;
 
-      pjob->ji_momstat = time_now;
+    /* Ok, we resumed'em, we have set ji_momstat to the time we suspended the
+       job.  We use this to compute a new start-time for the job, so that
+       walltime is computed correctly elsewhere */
       
-      pjob->ji_qs.ji_substate = JOB_SUBSTATE_SUSPEND;
-      pjob->ji_qs.ji_svrflags |= JOB_SVFLG_Suspend;
-      } 
-    else 
+    if (pjob->ji_qs.ji_svrflags & JOB_SVFLG_Suspend) 
       {
-      pjob->ji_qs.ji_substate = JOB_SUBSTATE_RUNNING;
+      /* If it's suspended, update the start time */
 
-      /* Ok, we resumed'em, we have set ji_momstat to the time we suspended the
-	 job.  We use this to compute a new start-time for the job, so that
-	 walltime is computed correctly elsewhere */
-      
-      if (pjob->ji_qs.ji_svrflags & JOB_SVFLG_Suspend) 
-        {
-        /* If it's suspended, update the start time */
-
-        pjob->ji_qs.ji_stime = pjob->ji_qs.ji_stime - pjob->ji_momstat + time_now;
-        }
-
-      /* Clear the Suspend bit */
-
-      pjob->ji_qs.ji_svrflags &= ~JOB_SVFLG_Suspend;
+      pjob->ji_qs.ji_stime = pjob->ji_qs.ji_stime - pjob->ji_momstat + time_now;
       }
 
-    /* Tell them we did it */
+    /* clear the Suspend bit */
 
-    reply_ack(preq);
-    }  /* else (stat < 0) */
+    pjob->ji_qs.ji_svrflags &= ~JOB_SVFLG_Suspend;
+
+    if (LOGLEVEL >= 1)
+      {
+      log_record(
+        PBSEVENT_JOB,
+        PBS_EVENTCLASS_JOB,
+        (pjob != NULL) ? pjob->ji_qs.ji_jobid : "N/A",
+        "job resumed - adjusting job state");
+      }
+    }    /* END else (susp != 0) */
+
+  /* acknowledge change to pbs_server */
+
+  reply_ack(preq);
+
+  /* SUCCESS */
  
   return;
   }  /* END resume_suspend() */
@@ -1559,7 +1637,7 @@ static void resume_suspend(
 
 void req_signaljob(
 
-  struct batch_request *preq)
+  struct batch_request *preq) /* I */
 
   {
   job            *pjob;
@@ -1579,10 +1657,19 @@ void req_signaljob(
 
   sname = preq->rq_ind.rq_signal.rq_signame;
 
-  DBPRT(("req_signaljob: Sending %s\n", 
-    sname))
+  if (LOGLEVEL >= 3)
+    {
+    sprintf(log_buffer,"signalling job with signal %s",
+      sname); 
 
-  if (strcmp(sname,SIG_SUSPEND) == 0) 
+    log_record(
+      PBSEVENT_JOB,
+      PBS_EVENTCLASS_JOB,
+      (pjob != NULL) ? pjob->ji_qs.ji_jobid : "N/A",
+      log_buffer);
+    }
+
+  if (!strcasecmp(sname,SIG_SUSPEND)) 
     {
     if (pjob->ji_qs.ji_substate != JOB_SUBSTATE_RUNNING) 
       {
@@ -1599,7 +1686,8 @@ void req_signaljob(
 
     return;
     } 
-  else if (strcmp(sname,SIG_RESUME) == 0) 
+
+  if (!strcasecmp(sname,SIG_RESUME)) 
     {
     if (pjob->ji_qs.ji_substate != JOB_SUBSTATE_SUSPEND) 
       {
@@ -1618,6 +1706,8 @@ void req_signaljob(
 
     return;
     }
+
+  /* standard signal received - signal tasks but do not change job state */
 
   if (isdigit((int)*sname))
     {
@@ -1653,7 +1743,7 @@ void req_signaljob(
     /* SIGNUL and no procs found, force job to exiting */
     /* force issue of (another) job obit */
 
-    sprintf(log_buffer,"Job recycled into exiting on SIGNULL from substate %d",
+    sprintf(log_buffer,"job recycled into exiting on SIGNULL from substate %d",
       pjob->ji_qs.ji_substate);
 
     LOG_EVENT(
@@ -1671,7 +1761,7 @@ void req_signaljob(
     {
     /* force issue of (another) job obit */
 
-    sprintf(log_buffer,"Job recycled into exiting on SIGKILL from substate %d",
+    sprintf(log_buffer,"job recycled into exiting on SIGKILL from substate %d",
       pjob->ji_qs.ji_substate);
 
     LOG_EVENT(

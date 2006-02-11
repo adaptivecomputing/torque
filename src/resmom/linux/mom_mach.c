@@ -1744,7 +1744,7 @@ int mom_set_use(
   *lp = MAX(*lp,lnum);
 
   return(PBSE_NONE);
-  }
+  }  /* END mom_set_use() */
 
 
 
@@ -1752,26 +1752,45 @@ int mom_set_use(
 /*
  *	Kill a task session.
  *	Call with the task pointer and a signal number.
+ *      return number of tasks signalled (0 = failure) 
  */
+
+/* NOTE:  should support killpg() or killpidtree() (NYI) 
+          may be required for suspend resume */
 
 int kill_task(
 
-  task *ptask,
-  int   sig)
+  task *ptask,  /* I */
+  int   sig)    /* I */
 
   {
-  char		*id = "kill_task";
-  int		ct = 0;
+  char          *id = "kill_task";
+
+  int            ct = 0;
   struct dirent	*dent;
   proc_stat_t	*ps;
-  int		sesid;
-  pid_t         mompid;
+  int            sesid;
+  pid_t          mompid;
 
   sesid = ptask->ti_qs.ti_sid;
   mompid = getpid();
 
   if (sesid <= 1)
     {
+    if (LOGLEVEL >= 3)
+      {
+      sprintf(log_buffer,"cannot send signal %d to task (no session id)",
+        sig);
+
+      log_record(
+        PBSEVENT_ERROR,
+        PBS_EVENTCLASS_JOB,
+        ptask->ti_job->ji_qs.ji_jobid,
+        log_buffer);
+      }
+
+    /* FAILURE */
+
     return(0);
     }
 
@@ -1786,6 +1805,8 @@ int kill_task(
       ptask->ti_job->ji_qs.ji_jobid,
       log_buffer);
     }
+
+  /* pdir is global */
 
   rewinddir(pdir);
 
@@ -1896,6 +1917,8 @@ int kill_task(
       }    /* END if (sesid == ps->session) */
     }      /* END while ((dent = readdir(pdir)) != NULL) */
 
+  /* SUCCESS */
+
   return(ct);
   }  /* END kill_task() */
 
@@ -1979,6 +2002,7 @@ int mach_checkpoint(
     /* launch the script and return success */
 
     pid = fork();
+
     if (pid > 0)
       {
       /* parent: pid = child's pid */
@@ -2027,14 +2051,16 @@ int mach_checkpoint(
  *	Return -1 on error or sid if okay.
  */
 
-long mach_restart(ptask, file)
-    task	*ptask;
-    char	*file;
-{
+long mach_restart(
+
+  task *ptask,
+  char *file)
+
+  {
   /* NOTE: Currently, we expect the application to handle this itself */
 
-	return (-1);
-}
+  return(-1);
+  }
 
 
 
@@ -3273,7 +3299,7 @@ void scan_non_child_tasks(void)
 
   DIR *pdir;  /* use local pdir to prevent race conditions associated w/global pdir (VPAC) */
 
-  pdir=opendir("/proc");
+  pdir = opendir("/proc");
 
   for (job = GET_NEXT(svr_alljobs);job != NULL;job = GET_NEXT(job->ji_alljobs)) 
     {

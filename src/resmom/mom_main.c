@@ -4008,24 +4008,51 @@ int rm_request(
 
             if ((pjob = (job *)GET_NEXT(svr_alljobs)) == NULL)
               {
-              sprintf(tmpLine,"JobList:                NONE\n");
+              sprintf(tmpLine,"NOTE:  no local jobs detected\n");
 
               MUStrNCat(&BPtr,&BSpace,tmpLine);
               }
             else
               {
-              int numvnodes = 0;
+              int   numvnodes = 0;
+              task *task;
+              char  SIDList[1024];
+
+              char *SPtr;
+              int   SSize;
 
               for (;pjob != NULL;pjob = (job *)GET_NEXT(pjob->ji_alljobs))
                 {
+                SPtr  = SIDList;
+                SSize = sizeof(SIDList);
+
+                for (task = GET_NEXT(job->ji_tasks);
+                     task != NULL;
+                     task = GET_NEXT(task->ti_jobtask))
+                  {
+                  /* only check on tasks that we think should still be around */
+
+                  if (task->ti_qs.ti_status != TI_STATE_RUNNING)
+                    continue;
+
+                  /* NOTE:  on linux systems, the session master should have 
+                     pid == sessionid */
+
+                  MUSNPrintF(&SPtr,&SSpace,"%s%d",
+                    (SIDList[0] != '\0') ? "," : "",
+                    task->ti_qs.ti_sid);
+                  }  /* END for (task) */
+
                 numvnodes += pjob->ji_numvnod;
 
-                sprintf(tmpLine,"Job[%s]  State=%s\n",
+                sprintf(tmpLine,"job[%s]  state=%s  sidlist=%s\n",
                   pjob->ji_qs.ji_jobid,
-                  PJobSubState[pjob->ji_qs.ji_substate]);
+                  PJobSubState[pjob->ji_qs.ji_substate],
+                  SIDList);
 
                 MUStrNCat(&BPtr,&BSpace,tmpLine);
-                }
+                }  /* END for (pjob) */
+
               sprintf(tmpLine,"Assigned CPU Count:     %d\n",
                 numvnodes);
 
