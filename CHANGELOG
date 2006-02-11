@@ -5,6 +5,8 @@
     - linux only
   enable 'never' qmgr maildomain value to disable user mail
   enable qsub reporting of job rejection reason
+  add suspend/resume diagnostics and logging
+  prevent stale job handler from destroying suspended jobs
 
 2.0.0p7
 

@@ -573,7 +573,7 @@ void update_node_state(
 job *find_job_by_node(
 
   struct pbsnode *pnode, /* I */
-  char *jobid)           /* I */
+  char           *jobid) /* I */
 
   {
   struct pbssubn *np;
@@ -586,33 +586,39 @@ job *find_job_by_node(
     *at = '\0'; /* strip off @server_name */
 
   /* for each subnode on node ... */
+
   for (np = pnode->nd_psn;np != NULL;np = np->next)
     {
-
     /* for each jobinfo on subnode on node ... */
+
     for (jp = np->jobs;jp != NULL;jp = jp->next)
       {
       if ((jp->job != NULL) && 
           (jp->job->ji_qs.ji_jobid != NULL) && 
           (strcmp(jobid,jp->job->ji_qs.ji_jobid) == 0))
         {
-        pjob=jp->job;
+        /* desired job located on node */
+
+        pjob = jp->job;
 
         break;
         }
       }
-    }
+    }    /* END for (np) */
 
-  if (at)                                                                                     
+  if (at != NULL)     
     *at = '@';  /* restore @server_name */
 
   return(pjob);
   } /* END find_job_by_node() */
 
 
+
+
 /*
  * sync_node_jobs() - determine if a MOM has a stale job and possibly delete it
  */
+
 void sync_node_jobs(
 
   struct pbsnode *np,            /* I */
@@ -625,47 +631,60 @@ void sync_node_jobs(
   struct batch_request *preq;
   int conn;
 
+  struct job *pjob;
+
   if ((jobstring_in == NULL) || (!isdigit(*jobstring_in)))
+    {
     return;
+    }
 
-  joblist=strdup(jobstring_in);
+  /* FORMAT <JOBID>[ <JOBID>]... */
 
-  jobidstr=strtok(joblist," ");
+  joblist = strdup(jobstring_in);
 
-  while((jobidstr!=NULL) && isdigit(*jobidstr))
+  jobidstr = strtok(joblist," ");
+
+  while ((jobidstr != NULL) && isdigit(*jobidstr))
     {
     if (strstr(jobidstr,server_name) != NULL)
       {
       if (find_job_by_node(np,jobidstr) == NULL)
         {
-        sprintf(log_buffer,"stray job %s found on %s",
-          jobidstr,
-          np->nd_name);
+        pjob = find_job(jobidstr);
 
-        log_err(-1,id,log_buffer);
-
-        if ((preq = alloc_br(PBS_BATCH_DeleteJob)) == NULL)
+        if ((pjob == NULL) || (pjob->ji_qs.ji_substate != JOB_SUBSTATE_SUSPEND))
           {
-          log_err(-1,id,"unable to allocate DeleteJob request - big trouble!");
+          /* server has no record of job on node */
 
-          break;
+          sprintf(log_buffer,"stray job %s found on %s",
+            jobidstr,
+            np->nd_name);
+
+          log_err(-1,id,log_buffer);
+
+          if ((preq = alloc_br(PBS_BATCH_DeleteJob)) == NULL)
+            {
+            log_err(-1,id,"unable to allocate DeleteJob request - big trouble!");
+
+            break;
+            }
+
+          conn = svr_connect(
+            np->nd_addrs[0],
+            pbs_mom_port,
+            process_Dreply,
+            ToServerDIS);
+
+          strcpy(preq->rq_ind.rq_delete.rq_objname,jobidstr);
+
+          issue_Drequest(conn,preq,release_req,0);
+  
+          /* release_req will free preq and close connection */
           }
-
-        conn = svr_connect(
-          np->nd_addrs[0],
-          pbs_mom_port,
-          process_Dreply,
-          ToServerDIS);
-
-        strcpy(preq->rq_ind.rq_delete.rq_objname,jobidstr);
-
-        issue_Drequest(conn,preq,release_req,0);
-
-        /* release_req will free preq and close connection */
         }
       }
 
-    jobidstr=strtok(NULL," ");
+    jobidstr = strtok(NULL," ");
     }
 
   free(joblist);
