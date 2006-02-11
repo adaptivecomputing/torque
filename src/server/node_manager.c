@@ -610,7 +610,7 @@ job *find_job_by_node(
     *at = '@';  /* restore @server_name */
 
   return(pjob);
-  } /* END find_job_by_node() */
+  }  /* END find_job_by_node() */
 
 
 
@@ -622,7 +622,7 @@ job *find_job_by_node(
 void sync_node_jobs(
 
   struct pbsnode *np,            /* I */
-  char           *jobstring_in)  /* I */
+  char           *jobstring_in)  /* I (space delimited list of jobs 'seen' by mom) */
 
   {
   char      *id = "sync_node_jobs";
@@ -652,13 +652,16 @@ void sync_node_jobs(
         {
         pjob = find_job(jobidstr);
 
-        if ((pjob == NULL) || (pjob->ji_qs.ji_substate != JOB_SUBSTATE_SUSPEND))
+        if ((pjob == NULL) || 
+           ((pjob->ji_qs.ji_substate != JOB_SUBSTATE_SUSPEND) &&
+            (pjob->ji_qs.ji_substate != JOB_SUBSTATE_RUNNING)))
           {
-          /* server has no record of job on node */
+          /* job is reported by mom but server has no record of job on node */
 
-          sprintf(log_buffer,"stray job %s found on %s",
+          sprintf(log_buffer,"stray job %s found on %s (substate=%d)",
             jobidstr,
-            np->nd_name);
+            np->nd_name,
+            (pjob != NULL) ? pjob->ji_qs.ji_substate : -1);
 
           log_err(-1,id,log_buffer);
 
@@ -689,6 +692,7 @@ void sync_node_jobs(
 
   free(joblist);
   }  /* END sync_node_jobs() */
+
 
 
 
@@ -797,9 +801,11 @@ int is_stat_get(
           }
         }
       else if (server.sv_attr[(int)SRV_ATR_MomJobSync].at_val.at_long && 
-               (strncmp(ret_info,"jobs=",5) == 0))
+               !strncmp(ret_info,"jobs=",5))
         {
-        sync_node_jobs(np,ret_info+5);
+        /* walk job list reported by mom */
+
+        sync_node_jobs(np,ret_info + strlen("jobs="));
         }
 
       free(ret_info);

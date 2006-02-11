@@ -102,14 +102,15 @@ struct	jobinfo {
 };
 
 struct	pbssubn {
-	struct pbsnode  *host;
-	struct pbssubn  *next;
-	struct	jobinfo	*jobs;
-	resource_t	allocto;
-	enum	psit	flag;		/* XXX */
-	unsigned short	inuse;
-	short		index;		/* subnode index */
-};
+  struct pbsnode *host;
+  struct pbssubn *next;
+  struct jobinfo *jobs;     /* list of jobs allocating resources within subnode */
+                            /* does this include suspended jobs? */
+  resource_t      allocto;
+  enum	psit      flag;		/* XXX */
+  unsigned short  inuse;
+  short           index;		/* subnode index */
+  };
 
 struct	pbsnode {
   char			*nd_name;	/* node's host name */

@@ -4026,6 +4026,8 @@ int rm_request(
                 SPtr   = SIDList;
                 SSpace = sizeof(SIDList);
 
+                SIDList[0] = '\0';
+
                 for (ptask = (task *)GET_NEXT(pjob->ji_tasks); 
                      ptask != NULL; 
                      ptask = (task *)GET_NEXT(ptask->ti_jobtask))

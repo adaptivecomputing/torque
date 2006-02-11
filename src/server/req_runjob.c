@@ -573,6 +573,8 @@ int svr_startjob(
 
       append_link(&pjob->ji_rejectdest,&bp->bp_link,bp);
 
+      /* FAILURE - cannot lookup master compute host */
+
       return(PBSE_RESCUNAV);
       }
 
@@ -605,6 +607,8 @@ int svr_startjob(
       strcpy(bp->bp_dest,nodestr);
 
       append_link(&pjob->ji_rejectdest,&bp->bp_link,bp);
+
+      /* FAILURE - cannot create socket for master compute host */
 
       return(PBSE_RESCUNAV);
       }
@@ -641,6 +645,8 @@ int svr_startjob(
       strcpy(bp->bp_dest,nodestr);
 
       append_link(&pjob->ji_rejectdest,&bp->bp_link,bp);
+
+      /* FAILURE - cannot connect to master compute host */
 
       return(PBSE_RESCUNAV);
       }
