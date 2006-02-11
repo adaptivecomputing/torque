@@ -1241,9 +1241,10 @@ int mom_set_use(pjob)
  *	Kill a task session.
  *	Call with the task pointer and a signal number.
  */
-int kill_task(ptask, sig)
+int kill_task(ptask, sig, pg)
     task	*ptask;
     int		sig;
+    int         pg;
 {
 	char		*id = "kill_task";
 	ash_t		ash;

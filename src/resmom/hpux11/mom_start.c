@@ -258,7 +258,7 @@ void scan_for_terminated()
 		}
 		DBPRT(("%s: task %d pid %d exit value %d\n", id,
 				ptask->ti_qs.ti_task, pid, exiteval))
-		kill_task(ptask, SIGKILL);
+		kill_task(ptask, SIGKILL,0);
 		ptask->ti_qs.ti_exitstat = exiteval;
 		ptask->ti_qs.ti_status = TI_STATE_EXITED;
 		ptask->ti_qs.ti_sid = 0;

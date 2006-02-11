@@ -4674,7 +4674,7 @@ void tcp_request(
 
 
 /*
- *	Kill a job.
+ *  Kill a job.
  *	Call with the job pointer and a signal number.
  */
 
@@ -4731,7 +4731,7 @@ int kill_job(
           "kill_job found a task to kill");
         }
 
-      ct += kill_task(ptask,sig);
+      ct += kill_task(ptask,sig,0);
       }
 
     ptask = (task *)GET_NEXT(ptask->ti_jobtask);

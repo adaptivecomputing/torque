@@ -557,6 +557,8 @@ static void add_bad_list(
 
 #define RT_BLK_SZ 4096 
 
+/* return 0 on failure */
+
 static int return_file(
 
   job	        *pjob,
@@ -620,7 +622,7 @@ static int return_file(
 
       break;
       }
-    }
+    }    /* END while ((amt = read()) */
 
   free_br(prq);
 
@@ -1273,10 +1275,10 @@ void req_modifyjob(
 
 void req_shutdown(
 
-  struct batch_request *preq)
+  struct batch_request *preq)  /* I */
 
   {
-  req_reject(PBSE_NOSUP, 0, preq,NULL,NULL);
+  req_reject(PBSE_NOSUP,0,preq,NULL,NULL);
 
   return;
   }
@@ -1455,13 +1457,13 @@ static void resume_suspend(
       {
       /* NOTE:  for suspend, changed signals to SIGTSTP for MPI jobs - NORWAY */
 
-      /* stat = kill_task(tp,SIGSTOP); */
+      /* stat = kill_task(tp,SIGSTOP,0); */
 
-      stat = kill_task(tp,SIGTSTP);
+      stat = kill_task(tp,SIGTSTP,0);
       }
     else
       {
-      stat = kill_task(tp,SIGCONT);
+      stat = kill_task(tp,SIGCONT,0);
       }
 
     if (stat < 0) 
@@ -1496,7 +1498,7 @@ static void resume_suspend(
          tp != NULL;
          tp = (task *)GET_NEXT(tp->ti_jobtask)) 
       {
-      stat = kill_task(tp,SIGSTOP);
+      stat = kill_task(tp,SIGSTOP,0);
 
       if (stat < 0) 
         {
@@ -1533,15 +1535,15 @@ static void resume_suspend(
       {
       if (susp)
         {
-        stat = kill_task(tp,SIGCONT);
+        stat = kill_task(tp,SIGCONT,0);
         }
       else
         {
         /* NOTE:  for suspend, changed signals to SIGTSTP for MPI jobs - NORWAY */
 
-	/* stat = kill_task(tp,SIGSTOP); */
+	/* stat = kill_task(tp,SIGSTOP,0); */
 
-        stat = kill_task(tp,SIGTSTP);
+        stat = kill_task(tp,SIGTSTP,0);
         }
       }  /* END for (tp) */
 
@@ -1555,7 +1557,7 @@ static void resume_suspend(
            tp != NULL;
            tp = (task *)GET_NEXT(tp->ti_jobtask)) 
         {
-        stat = kill_task(tp,SIGSTOP);
+        stat = kill_task(tp,SIGSTOP,0);
         }  /* END for (tp) */
       }
 
@@ -2122,7 +2124,7 @@ static int del_files(
       if (S_ISDIR(sb.st_mode)) 
         {
         /* have a directory, must append last segment */
-        /* of source name to it for  the unlink	      */
+        /* of source name to it for the unlink	      */
 
 #if NO_SPOOL_OUTPUT == 1
         /* check for  ~/.pbs_spool */
@@ -2225,6 +2227,8 @@ void req_rerunjob(
   struct batch_request *preq)
 
   {
+  static char   *id = "req_rerunjob";
+
   job		*pjob;
   unsigned int	 port;
   int		 rc;
@@ -2269,27 +2273,40 @@ void req_rerunjob(
 
   if (sock < 0) 
     {
+    /* FAILURE */
+
     LOG_EVENT(
       PBSEVENT_ERROR,
       PBS_EVENTCLASS_REQUEST,
-      "req_rerun", 
+      id, 
       "no contact with the server");
 
-    req_reject(PBSE_NOSERVER, 0, preq,NULL,NULL);
+    req_reject(PBSE_NOSERVER,0,preq,NULL,NULL);
 
     exit(0);
     }
 
   if (((rc = return_file(pjob,StdOut,sock)) != 0) ||
-      ((rc = return_file(pjob, StdErr, sock)) != 0) ||
-      ((rc = return_file(pjob, Chkpt, sock)) != 0)) 
+      ((rc = return_file(pjob,StdErr,sock)) != 0) ||
+      ((rc = return_file(pjob,Chkpt,sock)) != 0)) 
     {
-    req_reject(rc, 0, preq,NULL,NULL);
+    /* FAILURE - cannot report file to server */
+
+    LOG_EVENT(
+      PBSEVENT_ERROR,
+      PBS_EVENTCLASS_REQUEST,
+      id,
+      "cannot move output files to server");
+
+    req_reject(rc,0,preq,NULL,NULL);
     }
   else
     {
+    /* SUCCESS */
+
     reply_ack(preq);
-    (void)close(sock);
+
+    close(sock);
 
     exit(0);
     }

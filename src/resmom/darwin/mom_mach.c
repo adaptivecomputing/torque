@@ -1486,7 +1486,8 @@ int mom_set_use(pjob)
 int kill_task(
 
   task *ptask,
-  int   sig)
+  int   sig,
+  int   pg)
 
   {
   char	*id = "kill_task";

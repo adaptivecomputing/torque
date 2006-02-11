@@ -285,7 +285,7 @@ static void pelogalm(
  *		- argv[1] is the jobid
  *		- argv[2] is the user's name
  *		- argv[3] is the user's group name
- *		- the input file is a architecture dependent file
+ *		- the input file is an architecture-dependent file
  *		- the output and error are the job's output and error
  *	The epilogue also has:
  *		- argv[4] is the job name

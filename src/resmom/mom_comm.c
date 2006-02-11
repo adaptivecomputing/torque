@@ -2684,7 +2684,7 @@ void im_request(
         jobid,
         log_buffer);
 
-      kill_task(ptask,sig);
+      kill_task(ptask,sig,0);
 
       ret = im_compose(stream,jobid,cookie,IM_ALL_OKAY,event,fromtask);
 
@@ -4785,7 +4785,7 @@ int tm_request(
           log_buffer);
         }
 
-      kill_task(ptask,signum);
+      kill_task(ptask,signum,0);
 
       ret = tm_reply(fd,TM_OKAY,event);
 

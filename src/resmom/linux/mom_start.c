@@ -353,7 +353,7 @@ void scan_for_terminated()
         log_buffer);
       }
 
-    kill_task(ptask,SIGKILL);
+    kill_task(ptask,SIGKILL,0);
 
     ptask->ti_qs.ti_exitstat = exiteval;
     ptask->ti_qs.ti_status   = TI_STATE_EXITED;

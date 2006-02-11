@@ -1761,7 +1761,8 @@ int mom_set_use(
 int kill_task(
 
   task *ptask,  /* I */
-  int   sig)    /* I */
+  int   sig,    /* I */
+  int   pg)     /* I (1=signal process group, 0=signal master process only) */
 
   {
   char          *id = "kill_task";
@@ -1874,7 +1875,10 @@ int kill_task(
 
           /* give the process some time to quit gracefully first (up to 5 seconds) */
 
-          kill(ps->pid,SIGTERM);
+          if (pg == 0)
+            kill(ps->pid,SIGTERM);
+          else
+            killpg(ps->pid,SIGTERM);
 
           for (i = 0;i < 20;i++) 
             {
@@ -1909,7 +1913,10 @@ int kill_task(
 
           /* should this be replaced w/killpg() to kill all children? */
 
-          kill(ps->pid,sig);
+          if (pg == 0)
+            kill(ps->pid,sig);
+          else
+            killpg(ps->pid,sig);
           }
 
         ++ct;
