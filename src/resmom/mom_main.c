@@ -4014,25 +4014,25 @@ int rm_request(
               }
             else
               {
-              int   numvnodes = 0;
-              task *task;
-              char  SIDList[1024];
+              int    numvnodes = 0;
+              task  *ptask;
+              char   SIDList[1024];
 
               char *SPtr;
-              int   SSize;
+              int   SSpace;
 
               for (;pjob != NULL;pjob = (job *)GET_NEXT(pjob->ji_alljobs))
                 {
-                SPtr  = SIDList;
-                SSize = sizeof(SIDList);
+                SPtr   = SIDList;
+                SSpace = sizeof(SIDList);
 
-                for (task = GET_NEXT(job->ji_tasks);
-                     task != NULL;
-                     task = GET_NEXT(task->ti_jobtask))
+                for (ptask = (task *)GET_NEXT(pjob->ji_tasks); 
+                     ptask != NULL; 
+                     ptask = (task *)GET_NEXT(ptask->ti_jobtask))
                   {
                   /* only check on tasks that we think should still be around */
 
-                  if (task->ti_qs.ti_status != TI_STATE_RUNNING)
+                  if (ptask->ti_qs.ti_status != TI_STATE_RUNNING)
                     continue;
 
                   /* NOTE:  on linux systems, the session master should have 
@@ -4040,7 +4040,7 @@ int rm_request(
 
                   MUSNPrintF(&SPtr,&SSpace,"%s%d",
                     (SIDList[0] != '\0') ? "," : "",
-                    task->ti_qs.ti_sid);
+                    ptask->ti_qs.ti_sid);
                   }  /* END for (task) */
 
                 numvnodes += pjob->ji_numvnod;
@@ -5128,7 +5128,7 @@ int main(
   char *argv[])  /* I */
 
   {
-  static	char	id[] = "mom_main";
+  static	char id[] = "mom_main";
 
   int	 	errflg, c;
   FILE		*dummyfile;

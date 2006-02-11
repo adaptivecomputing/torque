@@ -1408,7 +1408,7 @@ static void resume_suspend(
   struct batch_request *preq)
 
   {
-  static char *id[] = "resume_suspend";
+  static char *id = "resume_suspend";
 
   task *tp;
 
