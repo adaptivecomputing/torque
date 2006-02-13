@@ -229,6 +229,7 @@ int             MOMPrologFailureCount;
 int             MOMRecvHelloCount[PBS_MAXSERVER];
 int             MOMRecvClusterAddrsCount[PBS_MAXSERVER];
 int             MOMSendHelloCount[PBS_MAXSERVER];
+time_t          MOMSendHelloTime[PBS_MAXSERVER];
 char            MOMSendStatFailure[PBS_MAXSERVER][MMAX_LINE];
 
 char            MOMConfigVersion[64];
@@ -5939,7 +5940,11 @@ int main(
       if (MOMRecvClusterAddrsCount[sindex] == 0)
         {
         if ((time_now - MOMLastSendToServerTime[sindex]) < 10)
+          {
+          /* message recently sent, do not resend */
+
           continue;
+          }
 
         MOMLastSendToServerTime[sindex]=time_now;
 
@@ -5972,6 +5977,18 @@ int main(
           pbs_servername[sindex]);
 
         log_record(PBSEVENT_SYSTEM,0,id,log_buffer);
+ 
+        if (MOMSendHelloTime[sindex] == time_now)
+          {
+          sprintf(log_buffer,"ERROR:  sending hello to server %s too rapidly... blocking for one second",
+            pbs_servername[sindex]);
+
+          log_record(PBSEVENT_SYSTEM,0,id,log_buffer);
+
+          sleep(1);
+          }
+
+        MOMSendHelloTime[sindex] = time_now;
         }  /* END if (SStream[sindex] == -1) */
 
       TotalClusterAddrsCount += MOMRecvClusterAddrsCount[sindex];
@@ -5984,6 +6001,10 @@ int main(
       {
       /* Don't do any other processing until we've re-established
        * contact with at least one server */
+
+      /* sleep to prevent too many messages sent to server under certain failure conditions */
+
+      sleep(1);
 
       continue;
       }
