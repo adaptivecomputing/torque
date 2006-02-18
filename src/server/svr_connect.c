@@ -105,6 +105,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include "libpbs.h"
+#include "log.h"
 #include "server_limits.h"
 #include "net_connect.h"
 #include "svrfunc.h"
