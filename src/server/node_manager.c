@@ -87,28 +87,28 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <netdb.h>
-#include 	<sys/types.h>
-#include	<netinet/in.h>
+#include <sys/types.h>
+#include <netinet/in.h>
 
-#include	"portability.h"
-#include	"libpbs.h"
-#include	"server_limits.h"
-#include	"list_link.h"
-#include	"attribute.h"
-#include	"resource.h"
-#include	"server.h"
-#include	"net_connect.h"
-#include	"batch_request.h"
-#include	"work_task.h"
-#include 	"svrfunc.h"
-#include	"job.h"
-#include	"log.h"
-#include	"pbs_nodes.h"
-#include	"rpp.h"
-#include	"dis.h"
-#include	"dis_init.h"
-#include	"resmon.h"
-#include  "query_configs.h"
+#include "portability.h"
+#include "libpbs.h"
+#include "server_limits.h"
+#include "list_link.h"
+#include "attribute.h"
+#include "resource.h"
+#include "server.h"
+#include "net_connect.h"
+#include "batch_request.h"
+#include "work_task.h"
+#include "svrfunc.h"
+#include "job.h"
+#include "log.h"
+#include "pbs_nodes.h"
+#include "rpp.h"
+#include "dis.h"
+#include "dis_init.h"
+#include "resmon.h"
+#include "query_configs.h"
 
 extern void DIS_rpp_reset A_((void));
 
@@ -145,9 +145,9 @@ extern char  server_name[];
 
 extern struct server server;
 
-#define		SKIP_NONE	0
-#define		SKIP_EXCLUSIVE	1
-#define		SKIP_ANYINUSE	2
+#define	SKIP_NONE	0
+#define	SKIP_EXCLUSIVE	1
+#define	SKIP_ANYINUSE	2
 
 static int hasprop(struct pbsnode *, struct prop *);
 
@@ -2702,7 +2702,7 @@ int set_nodes(
 
   int     NCount;
 
-  static char	*id = "set_nodes";
+  static char *id = "set_nodes";
 
   struct pbsnode *pnode;
   struct pbssubn *snp;
@@ -2726,6 +2726,15 @@ int set_nodes(
   if ((i = node_spec(spec,1,1)) == 0)	/* check spec */
     {
     /* no resources located, request failed */
+
+    sprintf(log_buffer,"could not locate requested resources '%s' (node_spec failed)",
+      spec);
+
+    log_record(
+      PBSEVENT_JOB,
+      PBS_EVENTCLASS_JOB,
+      pjob->ji_qs.ji_jobid,
+      log_buffer);
 
     return(PBSE_RESCUNAV);
     }
@@ -2835,7 +2844,7 @@ int set_nodes(
     {
     if (LOGLEVEL >= 1)
       {
-      sprintf(log_buffer,"ALERT:  no nodes can be allocated to job %s",
+      sprintf(log_buffer,"no nodes can be allocated to job %s",
         pjob->ji_qs.ji_jobid);
 
       log_record(

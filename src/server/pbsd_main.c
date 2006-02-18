@@ -1034,6 +1034,15 @@ int main(
     return(1);
     }
 
+  if (LOGLEVEL >= 5)
+    {
+    log_event(
+      PBSEVENT_SYSTEM | PBSEVENT_FORCE,
+      PBS_EVENTCLASS_SERVER,
+      msg_daemonname,
+      "creating rpp and private interfaces");
+    }
+
   add_conn(rppfd,Primary,(pbs_net_t)0,0,rpp_request);
   add_conn(privfd,Primary,(pbs_net_t)0,0,rpp_request);
 

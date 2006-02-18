@@ -551,10 +551,15 @@ int svr_startjob(
 
     if ((hp = gethostbyname(nodestr)) == NULL)
       {
-      sprintf(log_buffer,"could not contact %s (gethostbyname failed)",
-        nodestr);
+      sprintf(log_buffer,"could not contact %s (gethostbyname failed, errno: %d)",
+        nodestr,
+        errno);
 
-      log_err(errno,id,log_buffer);
+      log_record(
+        PBSEVENT_JOB,
+        PBS_EVENTCLASS_JOB,
+        pjob->ji_qs.ji_jobid,
+        log_buffer);
 
       /* Add this host to the reject destination list for the job */
 
@@ -584,10 +589,15 @@ int svr_startjob(
 
     if ((sock = socket(AF_INET,SOCK_STREAM,0)) == -1)
       {
-      sprintf(log_buffer,"could not contact %s (socket failed)",
-        nodestr);
+      sprintf(log_buffer,"could not contact %s (cannot create socket, errno: %d)",
+        nodestr,
+        errno);
 
-      log_err(errno,id,log_buffer);
+      log_record(
+        PBSEVENT_JOB,
+        PBS_EVENTCLASS_JOB,
+        pjob->ji_qs.ji_jobid,
+        log_buffer);
 
       /* Add this host to the reject destination list for the job */
 
@@ -599,7 +609,7 @@ int svr_startjob(
 
         log_err(errno,id,msg_err_malloc);
 
-        return;
+        return(PBSE_RESCUNAV);
         }
 
       CLEAR_LINK(bp->bp_link);
@@ -624,8 +634,15 @@ int svr_startjob(
 
     if (connect(sock,(struct sockaddr *)&saddr,sizeof(saddr)) < 0)
       {
-      sprintf(log_buffer,"could not contact %s (connect failed)",nodestr);
-      log_err(errno,id,log_buffer);
+      sprintf(log_buffer,"could not contact %s (connect failed, errno: %d)",
+        nodestr,
+        errno);
+
+      log_record(
+        PBSEVENT_JOB,
+        PBS_EVENTCLASS_JOB,
+        pjob->ji_qs.ji_jobid,
+        log_buffer);
 
       /* Add this host to the reject list for the job */
 
@@ -637,7 +654,7 @@ int svr_startjob(
 
         log_err(errno,id,msg_err_malloc);
 
-        return;
+        return(PBSE_RESCUNAV);
         }
 
       CLEAR_LINK(bp->bp_link);
@@ -686,7 +703,7 @@ int svr_startjob(
     rc = svr_strtjob2(pjob,preq);
     }
 
-  return (rc);
+  return(rc);
   }  /* END svr_startjob() */
 
 

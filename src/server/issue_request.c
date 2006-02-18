@@ -165,23 +165,29 @@ int relay_to_mom(
  * reissue_to_svr - recall issue_to_svr() after a delay to retry sending
  *	a request that failed for a temporary reason
  */
-static void reissue_to_svr(pwt)
-	struct work_task *pwt;
-{
-	struct batch_request *preq = pwt->wt_parm1;
 
-	/* if not timed-out, retry send to remote server */
+static void reissue_to_svr(
 
-	if (((time_now - preq->rq_time) > PBS_NET_RETRY_LIMIT) ||
-	    (issue_to_svr(preq->rq_host, preq, (void (*) (struct work_task *))pwt->wt_parm2) == -1)) {
+  struct work_task *pwt)
 
-		/* either timed-out or got hard error, tell post-function  */
-		pwt->wt_aux = -1;	/* seen as error by post function  */
-		pwt->wt_event = -1;	/* seen as connection by post func */
-		((void (*)())pwt->wt_parm2)(pwt);
-	}
-	return;
-}
+  {
+  struct batch_request *preq = pwt->wt_parm1;
+
+  /* if not timed-out, retry send to remote server */
+
+  if (((time_now - preq->rq_time) > PBS_NET_RETRY_LIMIT) ||
+       (issue_to_svr(preq->rq_host,preq,(void(*)(struct work_task *))pwt->wt_parm2) == -1)) 
+    {
+    /* either timed-out or got hard error, tell post-function  */
+
+    pwt->wt_aux = -1;	/* seen as error by post function  */
+    pwt->wt_event = -1;	/* seen as connection by post func */
+
+    ((void (*)())pwt->wt_parm2)(pwt);
+    }
+
+  return;
+  }
 	
 
 /*
@@ -198,9 +204,9 @@ static void reissue_to_svr(pwt)
 
 int issue_to_svr(
 
-  char 		     *servern,
+  char                 *servern,
   struct batch_request *preq,
-  void (*replyfunc) A_((struct work_task *)))
+  void (*replyfunc)     A_((struct work_task *)))
 
   {
   int	  do_retry = 0;
@@ -210,44 +216,63 @@ int issue_to_svr(
   unsigned int  port = pbs_server_port_dis;
   struct work_task *pwt;
 
-  strcpy(preq->rq_host, servern);
+  strcpy(preq->rq_host,servern);
 
   preq->rq_fromsvr = 1;
   preq->rq_perm = ATR_DFLAG_MGRD | ATR_DFLAG_MGWR | ATR_DFLAG_SvWR;
 
-  svrname = parse_servername(servern, &port);
+  svrname = parse_servername(servern,&port);
   svraddr = get_hostaddr(svrname);
 
   if (svraddr == (pbs_net_t)0) 
     {
-		if (pbs_errno == PBS_NET_RC_RETRY)
-		    /* Non fatal error - retry */
-		    do_retry = 1;
-	} else {
-		handle = svr_connect(svraddr,port, process_Dreply, ToServerDIS);
-		if (handle >= 0)
-			return ( issue_Drequest(handle, preq, replyfunc, 0) );
-		else if (handle == PBS_NET_RC_RETRY)
-			do_retry = 1;
-	}
+    if (pbs_errno == PBS_NET_RC_RETRY)
+      {
+      /* Non fatal error - retry */
 
-	/* if reached here, it didn`t go, do we retry? */
+      do_retry = 1;
+      } 
+    }
+  else 
+    {
+    handle = svr_connect(svraddr,port,process_Dreply,ToServerDIS);
 
-	if (do_retry) {
-		pwt = set_task(WORK_Timed, (long)(time_now+PBS_NET_RETRY_TIME),
-				reissue_to_svr, (void *)preq);
-		pwt->wt_parm2 = (void *)replyfunc;
-		return (0);
-	} else
-		return (-1);
-}
+    if (handle >= 0)
+      {
+      return(issue_Drequest(handle,preq,replyfunc,0));
+      }
+    else if (handle == PBS_NET_RC_RETRY)
+      {
+      do_retry = 1;
+      }
+    }
+
+  /* if reached here, it didn`t go, do we retry? */
+
+  if (do_retry) 
+    {
+    pwt = set_task(
+      WORK_Timed,
+      (long)(time_now + PBS_NET_RETRY_TIME),
+      reissue_to_svr, 
+      (void *)preq);
+
+    pwt->wt_parm2 = (void *)replyfunc;
+
+    return(0);
+    } 
+
+  /* FAILURE */
+
+  return(-1);
+  }  /* END issue_to_svr() */
 
 
 
 
 /*
  * release_req - this is the basic function to call after we are
- *	through with an internally generated  request to another server.
+ *	through with an internally generated request to another server.
  *	It frees the request structure and closes the connection (handle).
  *
  *	In the work task entry, wt_event is the connection handle and

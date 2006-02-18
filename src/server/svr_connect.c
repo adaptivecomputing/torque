@@ -121,6 +121,7 @@ extern int		 pbs_errno;
 extern unsigned int	 pbs_server_port_dis;
 extern struct connection svr_conn[];
 extern pbs_net_t	 pbs_server_addr;
+extern int               LOGLEVEL;
 
 extern int addr_ok(pbs_net_t);
 extern void bad_node_warning(pbs_net_t);
@@ -136,8 +137,23 @@ int svr_connect(
   enum conn_type cntype)
 
   {
+  static char *id = "svr_connect";
+
   int handle;
   int sock;
+
+  if (LOGLEVEL >= 4)
+    {
+    sprintf(log_buffer,"attempting connect to %s port %d",
+      (hostaddr == pbs_server_addr) ? "server" : "host",
+      port);
+
+   log_event(
+      PBSEVENT_ADMIN,
+      PBS_EVENTCLASS_SERVER,
+      id,
+      log_buffer);
+    }
 
   /* First, determine if the request is to another server or ourselves */
 
@@ -171,9 +187,15 @@ int svr_connect(
   if (func) 
     {
     if (cntype == ToServerASN)
+      {
       abort();	/* ASN kludge */	
+      }
     else
+      {
+      /* connect attempt to XXX? */
+
       add_conn(sock,ToServerDIS,hostaddr,port,func);
+      }
     }
 
   svr_conn[sock].cn_authen = PBS_NET_CONN_AUTHENTICATED;
