@@ -826,12 +826,18 @@ static void post_sendmom(
 
   {
   char	*id = "post_sendmom";
+
   int	 newstate;
   int	 newsub;
   int	 r;
   int	 stat;
   job	*jobp = (job *)pwt->wt_parm1;
   struct batch_request *preq = (struct batch_request *)pwt->wt_parm2;
+
+  char  *MOMName = NULL;
+
+  int    jindex;
+  long DTime = time_now - 10000;
 
   if (LOGLEVEL >= 6)
     {
@@ -868,28 +874,26 @@ static void post_sendmom(
 
   /* maintain local struct to associate job id with dispatch time */
 
+  for (jindex = 0;jindex < 20;jindex++)
+    {
+    if (DispatchJob[jindex] == jobp)
+      {
+      DTime = DispatchTime[jindex];
+
+      DispatchJob[jindex] = NULL;
+
+      MOMName = DispatchNode[jindex];
+
+      break;
+      }
+    }
+
   if (LOGLEVEL >= 1)
     {
-    int jindex;
-
-    long DTime = time_now - 10000;
-
-    for (jindex = 0;jindex < 20;jindex++)
-      {
-      if (DispatchJob[jindex] == jobp)
-        {
-        DTime = DispatchTime[jindex];
-
-        DispatchJob[jindex] = NULL;
-
-        break;
-        }
-      }
-
     sprintf(log_buffer,"child reported %s for job after %ld seconds (dest=%s), rc=%d",
       (r == 0) ? "success" : "failure",
       time_now - DTime,
-      (DispatchNode[jindex] != NULL) ? DispatchNode[jindex] : "???",
+      (MOMName != NULL) ? MOMName : "???",
       r);
 
     log_event(
@@ -971,7 +975,7 @@ static void post_sendmom(
       if (jobp->ji_qs.ji_substate != JOB_SUBSTATE_ABORT)
         {
         if (preq != NULL)
-          req_reject(PBSE_MOMREJECT,0,preq,NULL,"connection to mom timed out");
+          req_reject(PBSE_MOMREJECT,0,preq,MOMName,"connection to mom timed out");
 
         svr_evaljobstate(jobp,&newstate,&newsub,1);
 
@@ -980,7 +984,7 @@ static void post_sendmom(
       else
         {
         if (preq != NULL)
-          req_reject(PBSE_BADSTATE,0,preq,NULL,"job was aborted by mom");
+          req_reject(PBSE_BADSTATE,0,preq,MOMName,"job was aborted by mom");
         }
 
       break;
@@ -1019,10 +1023,11 @@ static void post_sendmom(
             }
           else
             { 
-            sprintf(tmpLine,"send failed, %s",
+            sprintf(tmpLine,"cannot send job to %s, state=%s",
+              (MOMName != NULL) ? MOMName : "mom",
               PJobSubState[jobp->ji_qs.ji_substate]);
           
-            req_reject(PBSE_MOMREJECT,0,preq,NULL,tmpLine);
+            req_reject(PBSE_MOMREJECT,0,preq,MOMName,tmpLine);
             }
           }
 
@@ -1046,7 +1051,7 @@ static void post_sendmom(
       else 
         {
         if (preq != NULL)
-          req_reject(PBSE_BADSTATE,0,preq,NULL,"send failed - abort");
+          req_reject(PBSE_BADSTATE,0,preq,MOMName,"send failed - abort");
         }
 			
       break;
