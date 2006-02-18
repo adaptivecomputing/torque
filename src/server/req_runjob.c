@@ -125,7 +125,7 @@ extern int LOGLEVEL;
 
 /* Public Functions in this file */
 
-int  svr_startjob A_((job *,struct batch_request *));
+int  svr_startjob A_((job *,struct batch_request *,char *,char *));
 
 /* Private Functions local to this file */
 
@@ -179,6 +179,9 @@ void req_runjob(
 
   int   setneednodes;
 
+  char  failhost[1024];
+  char  emsg[1024];
+
   /* chk_job_torun will extract job id and assign hostlist if specified */
 
   if (getenv("TORQUEAUTONN"))
@@ -222,7 +225,7 @@ void req_runjob(
 
   /* NOTE:  nodes assigned to job in svr_startjob() */
 
-  rc = svr_startjob(pjob,preq);
+  rc = svr_startjob(pjob,preq,failhost,emsg);
 
   if ((rc != 0) && (preq != NULL)) 
     {
@@ -236,7 +239,7 @@ void req_runjob(
       }
     else
       {
-      req_reject(rc,0,preq,NULL,NULL);
+      req_reject(rc,0,preq,failhost,emsg);
       }
     }
 
@@ -453,8 +456,10 @@ static int svr_stagein(
 
 int svr_startjob(
 
-  job                  *pjob,	/* job to run */
-  struct batch_request *preq)	/* Run Job batch request (optional) */
+  job                  *pjob,     /* I job to run (modified) */
+  struct batch_request *preq,     /* I Run Job batch request (optional) */
+  char                 *FailHost, /* O (optional,minsize=1024) */
+  char                 *EMsg)     /* O (optional,minsize=1024) */
 
   {
   int     f;
@@ -469,6 +474,12 @@ int svr_startjob(
   badplace *bp;
   char     *id = "svr_startjob";
 #endif
+
+  if (FailHost != NULL)
+    FailHost[0] = '\0';
+
+  if (EMsg != NULL)
+    EMsg[0] != '\0';
 
   /* if not already setup, transfer the control/script file basename */
   /* into an attribute accessible by MOM */
@@ -555,6 +566,12 @@ int svr_startjob(
         nodestr,
         errno);
 
+      if (FailHost != NULL)
+        strncpy(FailHost,nodestr,1024);
+
+      if (EMsg != NULL)
+        strncpy(EMsg,log_buffer,1024);
+
       log_record(
         PBSEVENT_JOB,
         PBS_EVENTCLASS_JOB,
@@ -583,7 +600,7 @@ int svr_startjob(
       return(PBSE_RESCUNAV);
       }
 
-    /* Open a socket. */
+    /* open a socket. */
 
     /* NOTE:  should change to PF_* */
 
@@ -592,6 +609,12 @@ int svr_startjob(
       sprintf(log_buffer,"could not contact %s (cannot create socket, errno: %d)",
         nodestr,
         errno);
+
+      if (FailHost != NULL)
+        strncpy(FailHost,nodestr,1024);
+
+      if (EMsg != NULL)
+        strncpy(EMsg,log_buffer,1024);
 
       log_record(
         PBSEVENT_JOB,
@@ -637,6 +660,12 @@ int svr_startjob(
       sprintf(log_buffer,"could not contact %s (connect failed, errno: %d)",
         nodestr,
         errno);
+
+      if (FailHost != NULL)
+        strncpy(FailHost,nodestr,1024);
+
+      if (EMsg != NULL)
+        strncpy(EMsg,log_buffer,1024);
 
       log_record(
         PBSEVENT_JOB,

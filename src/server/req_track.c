@@ -118,90 +118,121 @@ extern char 	     server_name[];
  * req_track - record job tracking information
  */
 
-void req_track(preq)
-	struct batch_request	*preq;
-{
-	struct tracking *empty = (struct tracking *)0;
-	int		 i;
-	int		 need;
-	struct tracking	*new;
-	struct tracking *ptk;
-	struct rq_track *prqt;
+void req_track(
 
-	/*  make sure request is from a server */
+  struct batch_request *preq)
 
-	if ( !preq->rq_fromsvr ) {
-		req_reject(PBSE_IVALREQ, 0, preq,NULL,NULL);
-		return;
-	}
+  {
+  struct tracking *empty = (struct tracking *)0;
+  int		 i;
+  int		 need;
+  struct tracking *new;
+  struct tracking *ptk;
+  struct rq_track *prqt;
 
-	/* attempt to locate tracking record for this job    */
-	/* also remember first empty slot in case its needed */
+  /*  make sure request is from a server */
 
-	prqt = &preq->rq_ind.rq_track;
+  if (!preq->rq_fromsvr) 
+    {
+    req_reject(PBSE_IVALREQ,0,preq,NULL,NULL);
+  
+    return;
+    }
 
-	ptk = server.sv_track;
-	for (i=0; i<server.sv_tracksize; i++) {
-	    if ( (ptk+i)->tk_mtime ) {
-		if ( !strcmp((ptk+i)->tk_jobid, prqt->rq_jid) ) {
+  /* attempt to locate tracking record for this job    */
+  /* also remember first empty slot in case its needed */
 
-		    /*
-		     * found record, discard it if state == exiting,
-		     * otherwise, update it if older
-		     */
+  prqt = &preq->rq_ind.rq_track;
 
-		    if ( *prqt->rq_state == 'E') {
-			(ptk+i)->tk_mtime = 0;
-		    } else if ( (ptk+i)->tk_hopcount < prqt->rq_hopcount) {
-			(ptk+i)->tk_hopcount = prqt->rq_hopcount;
-			(void)strcpy((ptk+i)->tk_location, prqt->rq_location);
-			(ptk+i)->tk_state = *prqt->rq_state;
-			(ptk+i)->tk_mtime = time_now;
-		    }
-		    server.sv_trackmodifed = 1;
-		    reply_ack(preq);
-		    return;
-		}
-	    } else if (empty == (struct tracking *)0) {
-		empty = ptk + i;
-	    }
-	}
+  ptk = server.sv_track;
 
-	/* if we got here, didn't find it... */
+  for (i = 0;i < server.sv_tracksize;i++) 
+    {
+    if ((ptk + i)->tk_mtime) 
+      {
+      if (!strcmp((ptk+i)->tk_jobid,prqt->rq_jid)) 
+        {
+        /* found record, discard it if state == exiting,
+         * otherwise, update it if older */
 
-	if (*prqt->rq_state != 'E') {
+        if (*prqt->rq_state == 'E') 
+          {
+          (ptk + i)->tk_mtime = 0;
+          } 
+        else if ((ptk + i)->tk_hopcount < prqt->rq_hopcount) 
+          {
+          (ptk + i)->tk_hopcount = prqt->rq_hopcount;
 
-		 /* and need to add it */
+          strcpy((ptk + i)->tk_location,prqt->rq_location);
 
-		if (empty == (struct tracking *)0) {
+          (ptk + i)->tk_state = *prqt->rq_state;
 
-	    		/* need to make room for more */
+          (ptk + i)->tk_mtime = time_now;
+          }
 
-	    		need = server.sv_tracksize * 3 / 2;
-	    		new  = (struct tracking *)realloc(server.sv_track,
-					       need * sizeof (struct tracking));
-	    		if (new == (struct tracking *)0) {
-				log_err(errno, "req_track", "malloc failed");
-				req_reject(PBSE_SYSTEM, 0, preq,NULL,NULL);
-				return;
-	    		}
-			empty = new + server.sv_tracksize; /* first new slot */
-			for (i = server.sv_tracksize; i < need; i++)
-				(new + i)->tk_mtime = 0;
-			server.sv_tracksize = need;
-			server.sv_track     = new;
-		}
+        server.sv_trackmodifed = 1;
+        reply_ack(preq);
 
-		empty->tk_mtime = time_now;
-		empty->tk_hopcount = prqt->rq_hopcount;
-		(void)strcpy(empty->tk_jobid, prqt->rq_jid);
-		(void)strcpy(empty->tk_location, prqt->rq_location);
-		empty->tk_state = *prqt->rq_state;
-		server.sv_trackmodifed = 1;
-	}
-	reply_ack(preq);
-	return;
-}
+        return;
+        }
+      } 
+    else if (empty == NULL) 
+      {
+      empty = ptk + i;
+      }
+    }
+
+  /* if we got here, didn't find it... */
+
+  if (*prqt->rq_state != 'E') 
+    {
+    /* and need to add it */
+
+    if (empty == NULL) 
+      {
+      /* need to make room for more */
+
+      need = server.sv_tracksize * 3 / 2;
+
+      new  = (struct tracking *)realloc(
+        server.sv_track,
+        need * sizeof (struct tracking));
+
+      if (new == NULL) 
+        {
+        /* FAILURE */
+
+        log_err(errno,"req_track","malloc failed");
+
+        req_reject(PBSE_SYSTEM,0,preq,NULL,NULL);
+
+        return;
+        }
+
+      empty = new + server.sv_tracksize; /* first new slot */
+
+      for (i = server.sv_tracksize;i < need;i++)
+        (new + i)->tk_mtime = 0;
+
+      server.sv_tracksize = need;
+      server.sv_track     = new;
+      }
+
+    empty->tk_mtime = time_now;
+    empty->tk_hopcount = prqt->rq_hopcount;
+    strcpy(empty->tk_jobid, prqt->rq_jid);
+    strcpy(empty->tk_location, prqt->rq_location);
+    empty->tk_state = *prqt->rq_state;
+    server.sv_trackmodifed = 1;
+    }
+
+  reply_ack(preq);
+
+  return;
+  }
+
+
+
 
 /*
  * track_save - save the tracking records to a file
@@ -213,13 +244,15 @@ void req_track(preq)
  *	On server shutdown, track_save is called with a null work task pointer.
  */
 
-void track_save(pwt)
-	struct work_task *pwt;	/* unused */
-{
-	int fd;
-	char *myid = "save_track";
+void track_save(
 
-	/* set task for next round trip */
+  struct work_task *pwt)  /* unused */
+
+  {
+  int fd;
+  char *myid = "save_track";
+
+  /* set task for next round trip */
 
 	if (pwt) { 	/* set up another work task for next time period */
 		if ( !set_task(WORK_Timed, (long)time_now + PBS_SAVE_TRACK_TM,
@@ -250,6 +283,9 @@ void track_save(pwt)
 	server.sv_trackmodifed = 0;
 	return;
 }
+
+
+
 
 /*
  * issue_track - issue a Track Job Request to another server

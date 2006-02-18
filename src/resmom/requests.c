@@ -868,7 +868,7 @@ void req_deletejob(
     }
 
   return;
-  }
+  }  /* END req_deletejob() */
 
 
 

@@ -115,44 +115,63 @@ extern void   set_old_nodes A_((job *));
  *	This request sends (via MOM) a signal to a running job.
  */
 
-void req_signaljob(preq)
-	struct batch_request *preq;
-{
-	job		 *pjob;
-	int		  rc;
+void req_signaljob(
 
-	if ((pjob = chk_job_request(preq->rq_ind.rq_signal.rq_jid, preq)) == 0)
-		return;
+  struct batch_request *preq)
 
-	/* the job must be running */
+  {
+  job *pjob;
+  int  rc;
 
-	if (pjob->ji_qs.ji_state != JOB_STATE_RUNNING) {
-		req_reject(PBSE_BADSTATE, 0, preq,NULL,NULL);
-		return;
-	}
+  if ((pjob = chk_job_request(preq->rq_ind.rq_signal.rq_jid, preq)) == 0)
+    {
+    return;
+    }
 
-	/* Special pseudo signals for suspend and resume require op/mgr */
+  /* the job must be running */
 
-	if ( (strcmp(preq->rq_ind.rq_signal.rq_signame, SIG_RESUME) == 0) ||
-	     (strcmp(preq->rq_ind.rq_signal.rq_signame, SIG_SUSPEND) == 0) ) {
+  if (pjob->ji_qs.ji_state != JOB_STATE_RUNNING) 
+    {
+    req_reject(PBSE_BADSTATE,0,preq,NULL,NULL);
 
-		if ((preq->rq_perm & (ATR_DFLAG_OPRD | ATR_DFLAG_OPWR |
-				      ATR_DFLAG_MGRD | ATR_DFLAG_MGWR)) == 0) {
-			/* for suspend/resume, must be mgr/op */
-			req_reject(PBSE_PERM, 0, preq,NULL,NULL);
-			return;
-		}
-		preq->rq_extra = pjob;	/* save job ptr for post_signal_req() */
-	}
+    return;
+    }
+
+  /* Special pseudo signals for suspend and resume require op/mgr */
+
+  if (!strcmp(preq->rq_ind.rq_signal.rq_signame,SIG_RESUME) ||
+      !strcmp(preq->rq_ind.rq_signal.rq_signame,SIG_SUSPEND)) 
+    {
+    if ((preq->rq_perm & (ATR_DFLAG_OPRD|ATR_DFLAG_OPWR|ATR_DFLAG_MGRD|ATR_DFLAG_MGWR)) == 0) 
+      {
+      /* for suspend/resume, must be mgr/op */
+
+      req_reject(PBSE_PERM,0,preq,NULL,NULL);
+
+      return;
+      }
+
+    preq->rq_extra = pjob;  /* save job ptr for post_signal_req() */
+    }
 	
-	/* pass the request on to MOM */
+  /* pass the request on to MOM */
 
-	if ((rc = relay_to_mom(pjob->ji_qs.ji_un.ji_exect.ji_momaddr,
-			       preq, post_signal_req)))
-		req_reject(rc, 0, preq,NULL,NULL);	/* unable to get to MOM */
+  if ((rc = relay_to_mom(
+        pjob->ji_qs.ji_un.ji_exect.ji_momaddr,
+        preq, 
+        post_signal_req)))
+    {
+    req_reject(rc,0,preq,NULL,NULL);  /* unable to get to MOM */
 
-	/* After MOM acts and replies to us, we pick up in post_signal_req() */
-}
+    return;
+    }
+
+  /* After MOM acts and replies to us, we pick up in post_signal_req() */
+
+  /* SUCCESS */
+
+  return;
+  }  /* END req_signaljob() */
 
 
 
@@ -252,5 +271,5 @@ static void post_signal_req(
   return;
   }  /* END post_signal_req() */
 
-/* END req_signla.c */
+/* END req_signal.c */
 

@@ -135,7 +135,7 @@ extern int schedule_jobs(void);
 extern void queue_route A_((pbs_queue *));
 extern void svr_shutdown(int);
 extern void acct_close(void);
-extern int  svr_startjob A_((job *,struct batch_request *)); 
+extern int  svr_startjob A_((job *,struct batch_request *,char *,char *)); 
 
 
 /* external data items */
@@ -1391,7 +1391,7 @@ static int start_hot_jobs(void)
         pjob->ji_qs.ji_jobid, 
         "attempting to hot start job");
 
-      svr_startjob(pjob,NULL);
+      svr_startjob(pjob,NULL,NULL,NULL);
 
       ct++;
       }
