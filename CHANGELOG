@@ -8,6 +8,7 @@
   add suspend/resume diagnostics and logging
   prevent stale job handler from destroying suspended jobs
   prevent rapid hello from MOM from doing DOS on pbs_server
+  add diagnostics for why node not considered available
 
 2.0.0p7
 

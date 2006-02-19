@@ -680,27 +680,32 @@ static int decode_nodes(
  *	plain number of nodes.
  */
 
-int ctnodes(spec)
-	char *spec;
-{
-	int   ct = 0;
-	char *pc;
+int ctnodes(
 
-	while (1) {
+  char *spec)
 
-		while (isspace((int)*spec))
-			++spec;
+  {
+  int   ct = 0;
+  char *pc;
 
-		if (isdigit((int)*spec))
-			ct += atoi(spec);
-		else
-			++ct;
-		if ((pc = strchr(spec, '+')) == (char *)0)
-			break;
-		spec = pc+1;
-	}
-	return (ct);
-}
+  while (1) 
+    {
+    while (isspace((int)*spec))
+      ++spec;
+
+    if (isdigit((int)*spec))
+      ct += atoi(spec);
+    else
+      ++ct;
+
+    if ((pc = strchr(spec,'+')) == NULL)
+      break;
+
+    spec = pc + 1;
+    }  /* END while (1) */
+
+  return(ct);
+  }  /* END ctnodes() */
 
 
 

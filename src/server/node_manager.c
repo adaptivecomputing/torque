@@ -2421,17 +2421,21 @@ static int node_spec(
 
   char	*spec,       /* I */
   int	 early,      /* I (boolean) */
-  int    exactmatch) /* I (boolean) */
+  int    exactmatch, /* I (boolean) */
+  char  *EMsg)       /* O (optioanl,minsize=1024) */
 
   {
-  static char	id[] = "node_spec";
+  static char id[] = "node_spec";
 
   struct pbsnode *pnode;
   struct pbssubn *snp;
   char	*str, *globs, *cp, *hold;
-  int	i, num;
-  int	rv;
+  int	 i, num;
+  int	 rv;
   static char shared[] = "shared";
+
+  if (EMsg != NULL)
+    EMsg[0] = '\0';
 
   if (LOGLEVEL >= 6)
     {
@@ -2482,7 +2486,7 @@ static int node_spec(
       }
 
     free(globs);
-    }
+    }  /* END if ((globs = strchr(spec,'#')) != NULL) */
 
   str = spec;
 		
@@ -2490,14 +2494,26 @@ static int node_spec(
 
   if (num > svr_clnodes) 
     {
+    /* FAILURE */
+
     free(spec);
+
+    sprintf(log_buffer,"job allocation request exceeds available cluster nodes, %d requested, %d available",
+      num,
+      svr_clnodes);
 
     if (LOGLEVEL >= 6)
       {
-      DBPRT(("%s: requested nodes exceeds available cluster nodes (%d > %d)\n",
+      log_record(
+        PBSEVENT_SCHED,
+        PBS_EVENTCLASS_REQUEST,
         id,
-        num,
-        svr_clnodes))
+        log_buffer);
+      }
+
+    if (EMsg != NULL)
+      {
+      strncpy(EMsg,log_buffer,1024);
       }
 
     return(-1);
@@ -2518,7 +2534,7 @@ static int node_spec(
 
   svr_numnodes = 0;
 
-  for (i=0;i < svr_totnodes;i++) 
+  for (i = 0;i < svr_totnodes;i++) 
     {
     pnode = pbsndlist[i];
 
@@ -2574,7 +2590,7 @@ static int node_spec(
       break;
 
     str++;
-    }
+    }  /* END for (i) */
 
   i = (int)*str;
 
@@ -2582,12 +2598,22 @@ static int node_spec(
 
   if (i != 0)					/* garbled list */
     {
-    /* failure */
+    /* FAILURE */
+
+    sprintf(log_buffer,"job allocation request is corrupt");
 
     if (LOGLEVEL >= 6)
       {
-      DBPRT(("%s: request is corrupt\n",
-        id))
+      log_record(
+        PBSEVENT_SCHED,
+        PBS_EVENTCLASS_REQUEST,
+        id,
+        log_buffer);
+      }
+
+    if (EMsg != NULL)
+      {
+      strncpy(EMsg,log_buffer,1024);
       }
 
     return(-1);
@@ -2595,12 +2621,24 @@ static int node_spec(
 
   if ((num > svr_numnodes) && early)	/* temp fail, not available */
     {
+    /* FAILURE */
+
+    sprintf(log_buffer,"job allocation request exceeds currently available cluster nodes, %d requested, %d available",
+      num,
+      svr_numnodes);
+
     if (LOGLEVEL >= 6)
       {
-      DBPRT(("%s: inadequate nodes currently in cluster (%d > %d)\n",
+      log_record(
+        PBSEVENT_SCHED,
+        PBS_EVENTCLASS_REQUEST,
         id,
-        num,
-        svr_numnodes))
+        log_buffer);
+      }
+
+    if (EMsg != NULL)
+      {
+      strncpy(EMsg,log_buffer,1024);
       }
 
     return(0);
@@ -2617,25 +2655,45 @@ static int node_spec(
     pnode = pbsndlist[i];
 
     if (pnode->nd_ntype != NTYPE_CLUSTER)
+      {
+      /* node is ok */
+ 
       continue;	
+      }
 
     if (pnode->nd_flag != thinking)  /* thinking is global */
+      {
+      /* node is ok */
+
       continue;
+      }
 
     if (pnode->nd_state == INUSE_FREE)  
       {
       if (pnode->nd_needed <= pnode->nd_nsnfree) 
+        {
+        /* adequate virtual nodes available - node is ok */
+
         continue;
+        }
 
       if (!exclusive && 
          (pnode->nd_needed < pnode->nd_nsnfree + pnode->nd_nsnshared))
-        continue;		/* shared node */
+        {
+        /* shared node - node is ok */
+
+        continue;
+        }
       } 
     else 
       {
       if (!exclusive && 
          (pnode->nd_needed <= pnode->nd_nsnfree + pnode->nd_nsnshared))
-        continue;		/* shared node */
+        {
+        /* shared node - node is ok */
+
+        continue;
+        }
       }
 
     /* otherwise find replacement node */
@@ -2648,29 +2706,53 @@ static int node_spec(
         pnode->nd_first,
         pnode->nd_needed, 
         (exclusive != 0) ? SKIP_ANYINUSE : SKIP_EXCLUSIVE,
-        pnode->nd_order,0)) 
+        pnode->nd_order,
+        0)) 
       {
+      /* node is ok */
+
       continue;
       }
 
     if (early != 0)
       {
+      char NodeState[1024];
+
+      /* FAILURE */
+
       /* specified node not available and replacement cannot be located */
+
+      __PNodeStateToString(pnode->nd_state,NodeState,sizeof(NodeState));
+
+      sprintf(log_buffer,"cannot allocate node '%s' to job - node not currently available (state: %s  nps needed: %d  nps free: %d)",
+        pnode->nd_name,
+        NodeState,
+        pnode->nd_needed,
+        pnode->nd_nsnfree);
 
       if (LOGLEVEL >= 6)
         {
-        DBPRT(("%s: cannot locate requested resource '%s'\n",
+        log_record(
+          PBSEVENT_SCHED,
+          PBS_EVENTCLASS_REQUEST,
           id,
-          pnode->nd_name))
+          log_buffer);
+        }
+
+      if (EMsg != NULL)
+        {
+        strncpy(EMsg,log_buffer,1024);
         }
 
       return(0);
-      }
+      }  /* END if (early != 0) */
 
     num = 0;
     }  /* END for (i) */
 
-  return(num);	/* spec ok */
+  /* SUCCESS - spec is ok */
+
+  return(num);	
   }  /* END node_spec() */
 
 
@@ -2702,6 +2784,8 @@ int set_nodes(
 
   int     NCount;
 
+  char    EMsg[1024];
+
   static char *id = "set_nodes";
 
   struct pbsnode *pnode;
@@ -2723,12 +2807,13 @@ int set_nodes(
 
   /* allocate nodes */
 
-  if ((i = node_spec(spec,1,1)) == 0)	/* check spec */
+  if ((i = node_spec(spec,1,1,EMsg)) == 0)	/* check spec */
     {
     /* no resources located, request failed */
 
-    sprintf(log_buffer,"could not locate requested resources '%s' (node_spec failed)",
-      spec);
+    sprintf(log_buffer,"could not locate requested resources '%s' (node_spec failed) %s",
+      spec,
+      EMsg);
 
     log_record(
       PBSEVENT_JOB,
@@ -2938,7 +3023,7 @@ int node_avail_complex(
 
   holdnum = svr_numnodes;
 
-  ret = node_spec(spec,1,0);
+  ret = node_spec(spec,1,0,NULL);
 
   svr_numnodes = holdnum;
 
@@ -3115,7 +3200,7 @@ int node_reserve(
     return(-1);
     }
 
-  if ((ret_val = node_spec(nspec,0,0)) >= 0) 
+  if ((ret_val = node_spec(nspec,0,0,NULL)) >= 0) 
     {
     /*
     ** Zero or more of the needed Nodes are available to be 
