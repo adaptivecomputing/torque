@@ -2422,7 +2422,8 @@ static int node_spec(
   char	*spec,       /* I */
   int	 early,      /* I (boolean) */
   int    exactmatch, /* I (boolean) */
-  char  *EMsg)       /* O (optioanl,minsize=1024) */
+  char  *FailNode,   /* O (optional,minsize=1024) */
+  char  *EMsg)       /* O (optional,minsize=1024) */
 
   {
   static char id[] = "node_spec";
@@ -2436,6 +2437,9 @@ static int node_spec(
 
   if (EMsg != NULL)
     EMsg[0] = '\0';
+
+  if (FailNode != NULL)
+    FailNode[0] = '\0';
 
   if (LOGLEVEL >= 6)
     {
@@ -2744,6 +2748,9 @@ static int node_spec(
         strncpy(EMsg,log_buffer,1024);
         }
 
+      if (FailNode != NULL)
+        strncpy(FailNode,1024,pnode->nd_name);
+
       return(0);
       }  /* END if (early != 0) */
 
@@ -2767,9 +2774,11 @@ static int node_spec(
 
 int set_nodes(
 
-  job   *pjob,    /* I */
-  char	*spec,    /* I */
-  char **rtnlist) /* O */
+  job   *pjob,        /* I */
+  char	*spec,        /* I */
+  char **rtnlist,     /* O */
+  char  *FailedHost,  /* O (optional,minsize=1024) */
+  char  *EMsg)        /* O (optional,minsize=1024) */
 
   {
   struct howl {
@@ -2784,13 +2793,17 @@ int set_nodes(
 
   int     NCount;
 
-  char    EMsg[1024];
-
   static char *id = "set_nodes";
 
   struct pbsnode *pnode;
   struct pbssubn *snp;
   char	*nodelist;
+
+  if (FailedHost != NULL)
+    FailedHost[0] = '\0';
+
+  if (EMsg != NULL)
+    EMsg[0] = '\0';
 
   if (LOGLEVEL >= 3)
     {
@@ -2807,7 +2820,7 @@ int set_nodes(
 
   /* allocate nodes */
 
-  if ((i = node_spec(spec,1,1,EMsg)) == 0)	/* check spec */
+  if ((i = node_spec(spec,1,1,FailHost,EMsg)) == 0)	/* check spec */
     {
     /* no resources located, request failed */
 
@@ -3023,7 +3036,7 @@ int node_avail_complex(
 
   holdnum = svr_numnodes;
 
-  ret = node_spec(spec,1,0,NULL);
+  ret = node_spec(spec,1,0,NULL,NULL);
 
   svr_numnodes = holdnum;
 
@@ -3200,7 +3213,7 @@ int node_reserve(
     return(-1);
     }
 
-  if ((ret_val = node_spec(nspec,0,0,NULL)) >= 0) 
+  if ((ret_val = node_spec(nspec,0,0,NULL,NULL)) >= 0) 
     {
     /*
     ** Zero or more of the needed Nodes are available to be 

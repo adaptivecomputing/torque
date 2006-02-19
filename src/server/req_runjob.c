@@ -133,7 +133,7 @@ static void post_sendmom A_((struct work_task *));
 static int  svr_stagein A_((job *,struct batch_request *,int,int)); 
 static int  svr_strtjob2 A_((job *,struct batch_request *));
 static job *chk_job_torun A_((struct batch_request *,int));
-static int  assign_hosts A_((job *,char *,int));
+static int  assign_hosts A_((job *,char *,int,char *,char *));
 
 /* Global Data Items: */
 
@@ -513,17 +513,26 @@ int svr_startjob(
     rc = assign_hosts(    /* inside req_runjob() */
            pjob,
            pjob->ji_wattr[(int)JOB_ATR_exec_host].at_val.at_str,
-           0);
+           0,
+           FailHost,
+           EMsg);
     } 
   else if (f == 0) 
     {
     /* exec_host not already set, get hosts and set it */
 
-    rc = assign_hosts(pjob,NULL,1);  /* inside req_runjob() */
+    rc = assign_hosts(
+      pjob,
+      NULL,
+      1,
+      FailHost,
+      EMsg);  /* inside req_runjob() */
     }
 
   if (rc != 0)
     {
+    /* FAILURE */
+
     return(rc);
     }
 
@@ -551,7 +560,7 @@ int svr_startjob(
 
   while (nodestr != NULL)
     {
-    /* Truncate from trailing slash on (if one exists). */
+    /* truncate from trailing slash on (if one exists). */
 
     if ((cp = strchr(nodestr,'/')) != NULL)
       {
@@ -697,9 +706,10 @@ int svr_startjob(
       return(PBSE_RESCUNAV);
       }
 
-    /* Clean up and get next host. */
+    /* clean up and get next host. */
 
     close(sock);
+
     nodestr = strtok(NULL,"+");
     }  /* END while (nodestr != NULL) */
 
@@ -1165,7 +1175,9 @@ static job *chk_job_torun(
       if ((rc = assign_hosts(  /* inside chk_job_torun() */
             pjob,
             pjob->ji_wattr[(int)JOB_ATR_exec_host].at_val.at_str,
-            0)) != 0) 
+            0,
+            NULL,
+            NULL)) != 0) 
         {
         req_reject(PBSE_EXECTHERE,0,preq,NULL,"cannot assign hosts");
 
@@ -1180,11 +1192,11 @@ static job *chk_job_torun(
 
     if (prun->rq_destin[0] == '\0') 
       {
-      rc = assign_hosts(pjob,NULL,1);  /* inside chk_job_torun() */
+      rc = assign_hosts(pjob,NULL,1,NULL,NULL);  /* inside chk_job_torun() */
       } 
     else 
       {
-      rc = assign_hosts(pjob,prun->rq_destin,1);  /* inside chk_job_torun() */
+      rc = assign_hosts(pjob,prun->rq_destin,1,NULL,NULL);  /* inside chk_job_torun() */
       }
 
     if (rc != 0) 
@@ -1243,7 +1255,9 @@ static int assign_hosts(
 
   job  *pjob,           /* I (modified) */
   char *given,          /* I (optional) list of requested hosts */
-  int   set_exec_host)  /* I (boolean) */
+  int   set_exec_host,  /* I (boolean) */
+  char *FailedHost,     /* O (optional,minsize=1024) */
+  char *EMsg)           /* O (optional,minsize=1024) */
 
   {
   unsigned int	 dummy;
@@ -1253,7 +1267,13 @@ static int assign_hosts(
   resource	*pres;
   int		 rc = 0;
   extern char 	*mom_host;
-	
+
+  if (EMsg != NULL)
+    EMsg[0] = '\0';
+
+  if (FailedHost != NULL)
+    FailedHost[0] = '\0';
+
 #ifdef __TREQSCHED
   if ((given == NULL) || (given[0] == '\0'))
     {
@@ -1338,7 +1358,7 @@ static int assign_hosts(
     {
     if ((rc = is_ts_node(hosttoalloc)) != 0) 
       {
-      rc = set_nodes(pjob,hosttoalloc,&list);
+      rc = set_nodes(pjob,hosttoalloc,&list,FailedHost,EMsg);
 
       set_exec_host = 1;	/* maybe new VPs, must set */
 
