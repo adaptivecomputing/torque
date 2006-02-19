@@ -543,7 +543,7 @@ int MUSNPrintF(
   *BSpace -= len;
 
   return(SUCCESS);
-  }  /* END MUSNPrintf() */
+  }  /* END MUSNPrintF() */
 
 
 

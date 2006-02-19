@@ -89,6 +89,7 @@
 #include <netdb.h>
 #include <sys/types.h>
 #include <netinet/in.h>
+#include <stdarg.h>
 
 #include "portability.h"
 #include "libpbs.h"
@@ -109,6 +110,7 @@
 #include "dis_init.h"
 #include "resmon.h"
 #include "query_configs.h"
+#include "mcom.h"
 
 extern void DIS_rpp_reset A_((void));
 
@@ -2406,6 +2408,43 @@ static int nodecmp(
 
 
 
+int MSNPrintF(
+
+  char **BPtr,   /* I */
+  int   *BSpace, /* I */
+  char  *Format, /* I */
+  ...)           /* I */
+
+  {
+  int len;
+
+  va_list Args;
+
+  if ((BPtr == NULL) ||
+      (BSpace == NULL) ||
+      (Format == NULL) ||
+      (*BSpace <= 0))
+    {
+    return(FAILURE);
+    }
+
+  va_start(Args,Format);
+
+  len = vsnprintf(*BPtr,*BSpace,Format,Args);
+
+  va_end(Args);
+
+  if (len <= 0)
+    {
+    return(FAILURE);
+    }
+
+  *BPtr += len;
+  *BSpace -= len;
+
+  return(SUCCESS);
+  }  /* END MSNPrintF() */
+
 
 /*
  *	Test a node specification.  
@@ -2720,19 +2759,66 @@ static int node_spec(
 
     if (early != 0)
       {
-      char NodeState[1024];
-
       /* FAILURE */
 
       /* specified node not available and replacement cannot be located */
 
-      __PNodeStateToString(pnode->nd_state,NodeState,sizeof(NodeState));
+      if (pnode->nd_needed > pnode->nd_nsnfree)
+        {
+        char JobList[1024];
 
-      sprintf(log_buffer,"cannot allocate node '%s' to job - node not currently available (state: %s  nps needed: %d  nps free: %d)",
-        pnode->nd_name,
-        NodeState,
-        pnode->nd_needed,
-        pnode->nd_nsnfree);
+        struct pbssubn *np;
+        struct jobinfo *jp;
+
+        char   *BPtr;
+        int     BSpace;
+
+        int     nindex;
+
+        JobList[0] = '\0';
+
+        BPtr = JobList;
+        BSpace = sizeof(JobList);
+
+        /* scheduler and pbs_server disagree on np availability - report current allocation */
+
+        /* show allocating jobs */
+
+        /* examine all subnodes in node */
+
+        nindex = 0;
+
+        for (np = pnode->nd_psn;np != NULL;np = np->next)
+          {
+          /* examine all jobs allocated to subnode */
+
+          for (jp = np->jobs;jp != NULL;jp = jp->next)
+            {
+            MSNPrintF(&BPtr,&BSpace,"%s%s:%d",
+              (JobList[0] != '\0') ? "," : "",
+              (jp->job != NULL) ? jp->job->ji_qs.ji_jobid : "???",
+              nindex);
+            }
+
+          nindex++;
+          }  /* END for (np) */
+
+        sprintf(log_buffer,"cannot allocate node '%s' to job - node not currently available (nps needed/free: %d/%d,  joblist: %s)",
+          pnode->nd_name,
+          pnode->nd_needed,
+          pnode->nd_nsnfree,
+          JobList);
+        }
+      else
+        {
+        char NodeState[1024];
+
+        __PNodeStateToString(pnode->nd_state,NodeState,sizeof(NodeState));
+
+        sprintf(log_buffer,"cannot allocate node '%s' to job - node not currently available (state: %s)",
+          pnode->nd_name,
+          NodeState);
+        }
 
       if (LOGLEVEL >= 6)
         {
@@ -2749,7 +2835,7 @@ static int node_spec(
         }
 
       if (FailNode != NULL)
-        strncpy(FailNode,1024,pnode->nd_name);
+        strncpy(FailNode,pnode->nd_name,1024);
 
       return(0);
       }  /* END if (early != 0) */
@@ -2774,11 +2860,11 @@ static int node_spec(
 
 int set_nodes(
 
-  job   *pjob,        /* I */
-  char	*spec,        /* I */
-  char **rtnlist,     /* O */
-  char  *FailedHost,  /* O (optional,minsize=1024) */
-  char  *EMsg)        /* O (optional,minsize=1024) */
+  job   *pjob,      /* I */
+  char	*spec,      /* I */
+  char **rtnlist,   /* O */
+  char  *FailHost,  /* O (optional,minsize=1024) */
+  char  *EMsg)      /* O (optional,minsize=1024) */
 
   {
   struct howl {
@@ -2799,8 +2885,8 @@ int set_nodes(
   struct pbssubn *snp;
   char	*nodelist;
 
-  if (FailedHost != NULL)
-    FailedHost[0] = '\0';
+  if (FailHost != NULL)
+    FailHost[0] = '\0';
 
   if (EMsg != NULL)
     EMsg[0] = '\0';
@@ -2903,7 +2989,7 @@ int set_nodes(
           pnode->nd_nsnshared++;
         }
 
-      jp  = (struct jobinfo *)malloc(sizeof(struct jobinfo));
+      jp = (struct jobinfo *)malloc(sizeof(struct jobinfo));
 
       jp->next = snp->jobs;
 
@@ -3505,7 +3591,7 @@ static void set_one_old(
 
             return;
             }
-          }
+          }    /* END for (snp) */
         }
       }
     }
