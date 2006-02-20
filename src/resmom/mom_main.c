@@ -188,6 +188,7 @@ char	       *path_server_name;
 char           *path_home = PBS_SERVER_HOME;
 char           *mom_home;
 char		pbs_current_user[PBS_MAXUSER] = "pbs_mom";  /* for libpbs.a */
+pbs_net_t       pbs_server_addr;
 char	       *msg_daemonname = pbs_current_user;          /* for logs     */
 int		pbs_errno;
 gid_t		pbsgroup;

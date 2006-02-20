@@ -127,7 +127,7 @@ pbs_net_t get_hostaddr(
   char *hostname) /* I */
 
   {
-  static struct in_addr  hostaddr;
+  static struct in_addr hostaddr;
   struct hostent *hp;
   extern int pbs_errno;
 
@@ -146,6 +146,6 @@ pbs_net_t get_hostaddr(
   memcpy((void *)&hostaddr,(void *)hp->h_addr_list[0],hp->h_length);
 
   return((pbs_net_t)ntohl(hostaddr.s_addr));
-  }
+  }  /* END get_hostaddr() */
 
 

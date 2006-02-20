@@ -177,7 +177,7 @@ int init_network(
     }
   else 
     {
-    return(-1);		/* too many main connections */
+    return(-1);	/* too many main connections */
     }
 
   net_set_type(type,FromClientDIS);
@@ -661,7 +661,7 @@ int get_connecthost(
   static struct in_addr  serveraddr;
   static char           *server_name = NULL;
 
-  if (server_name == NULL)
+  if ((server_name == NULL) && (pbs_server_addr != 0))
     {
     /* cache local server addr info */
 
@@ -685,7 +685,7 @@ int get_connecthost(
 
   if ((server_name != NULL) && (addr.s_addr == serveraddr.s_addr))
     {
-    /* lookup request for local server */
+    /* lookup request is for local server */
 
     strcpy(namebuf,server_name);
     }
