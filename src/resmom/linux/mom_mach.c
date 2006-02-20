@@ -1279,6 +1279,20 @@ int mom_set_limits(
           return(error("RLIMIT_RSS",PBSE_SYSTEM));
           }
 
+#ifdef __GATECH
+        /* NOTE:  best patch may be to change to 'vmem_limit = value;' */
+
+        if (setrlimit(RLIMIT_STACK,&reslim) < 0)
+          {
+          return(error("RLIMIT_STACK",PBSE_SYSTEM));
+          }
+
+        if (setrlimit(RLIMIT_AS,&reslim) < 0)
+          {
+          return(error("RLIMIT_AS",PBSE_SYSTEM));
+          }
+#endif /* __GATECH */
+
         mem_limit = value;
 
         if (getrlimit(RLIMIT_STACK,&reslim) >= 0)
@@ -1289,7 +1303,7 @@ int mom_set_limits(
       } 
     else if (!strcmp(pname,"walltime")) 
       {	
-      /* Check */
+      /* check */
 
       retval = gettime(pres,&value);
 
