@@ -2910,15 +2910,18 @@ int set_nodes(
     {
     /* no resources located, request failed */
 
-    sprintf(log_buffer,"could not locate requested resources '%s' (node_spec failed) %s",
-      spec,
-      EMsg);
+    if (EMsg != NULL)
+      {
+      sprintf(log_buffer,"could not locate requested resources '%s' (node_spec failed) %s",
+        spec,
+        EMsg);
 
-    log_record(
-      PBSEVENT_JOB,
-      PBS_EVENTCLASS_JOB,
-      pjob->ji_qs.ji_jobid,
-      log_buffer);
+      log_record(
+        PBSEVENT_JOB,
+        PBS_EVENTCLASS_JOB,
+        pjob->ji_qs.ji_jobid,
+        log_buffer);
+      }
 
     return(PBSE_RESCUNAV);
     }
