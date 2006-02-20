@@ -191,7 +191,7 @@ void req_runjob(
 
   if ((pjob = chk_job_torun(preq,setneednodes)) == NULL)
     {
-    /* FAILURE */
+    /* FAILURE - chk_job_torun performs req_reject internally */
 
     return;
     }
@@ -1087,9 +1087,14 @@ static job *chk_job_torun(
   int                   setnn) /* I */
 
   {
+  static char *id = "chk_job_torun";
+
   job              *pjob;
   struct rq_runjob *prun;
   int               rc;
+
+  char              EMsg[1024];
+  char              FailHost[1024];
 
   prun = &preq->rq_ind.rq_run;
 
@@ -1108,7 +1113,7 @@ static job *chk_job_torun(
     {
     /* FAILURE - job already started */
 
-    req_reject(PBSE_BADSTATE,0,preq,NULL,NULL);
+    req_reject(PBSE_BADSTATE,0,preq,NULL,"job already running");
 
     return(NULL);
     }
@@ -1138,7 +1143,7 @@ static job *chk_job_torun(
     {
     /* FAILURE - job must be in execution queue */
 
-    log_err(-1,"chk_job_torun","attempt to start job in non-execution queue");
+    log_err(-1,id,"attempt to start job in non-execution queue");
 
     req_reject(PBSE_IVALREQ,0,preq,NULL,"job not in execution queue");
 
@@ -1176,10 +1181,10 @@ static job *chk_job_torun(
             pjob,
             pjob->ji_wattr[(int)JOB_ATR_exec_host].at_val.at_str,
             0,
-            NULL,
-            NULL)) != 0) 
+            FailHost,
+            EMsg)) != 0) 
         {
-        req_reject(PBSE_EXECTHERE,0,preq,NULL,"cannot assign hosts");
+        req_reject(PBSE_EXECTHERE,0,preq,FailHost,EMsg);
 
         return(NULL);
         }
@@ -1192,18 +1197,18 @@ static job *chk_job_torun(
 
     if (prun->rq_destin[0] == '\0') 
       {
-      rc = assign_hosts(pjob,NULL,1,NULL,NULL);  /* inside chk_job_torun() */
+      rc = assign_hosts(pjob,NULL,1,FailHost,EMsg);  /* inside chk_job_torun() */
       } 
     else 
       {
-      rc = assign_hosts(pjob,prun->rq_destin,1,NULL,NULL);  /* inside chk_job_torun() */
+      rc = assign_hosts(pjob,prun->rq_destin,1,FailHost,EMsg);  /* inside chk_job_torun() */
       }
 
     if (rc != 0) 
       {
       /* FAILURE - cannot assign correct hosts */
 
-      req_reject(rc,0,preq,NULL,NULL);
+      req_reject(rc,0,preq,FailHost,EMsg);
 
       return(NULL);
       }
@@ -1256,7 +1261,7 @@ static int assign_hosts(
   job  *pjob,           /* I (modified) */
   char *given,          /* I (optional) list of requested hosts */
   int   set_exec_host,  /* I (boolean) */
-  char *FailedHost,     /* O (optional,minsize=1024) */
+  char *FailHost,       /* O (optional,minsize=1024) */
   char *EMsg)           /* O (optional,minsize=1024) */
 
   {
@@ -1271,8 +1276,8 @@ static int assign_hosts(
   if (EMsg != NULL)
     EMsg[0] = '\0';
 
-  if (FailedHost != NULL)
-    FailedHost[0] = '\0';
+  if (FailHost != NULL)
+    FailHost[0] = '\0';
 
 #ifdef __TREQSCHED
   if ((given == NULL) || (given[0] == '\0'))
@@ -1358,7 +1363,7 @@ static int assign_hosts(
     {
     if ((rc = is_ts_node(hosttoalloc)) != 0) 
       {
-      rc = set_nodes(pjob,hosttoalloc,&list,FailedHost,EMsg);
+      rc = set_nodes(pjob,hosttoalloc,&list,FailHost,EMsg);
 
       set_exec_host = 1;	/* maybe new VPs, must set */
 
