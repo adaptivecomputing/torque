@@ -131,7 +131,7 @@ extern void shutdown_ack ();
 extern void update_nodes_file A_((void));
 extern void tcp_settimeout(long);
 extern void poll_job_task(struct work_task *);
-extern int schedule_jobs(void);
+extern int  schedule_jobs(void);
 extern void queue_route A_((pbs_queue *));
 extern void svr_shutdown(int);
 extern void acct_close(void);
@@ -139,7 +139,8 @@ extern int  svr_startjob A_((job *,struct batch_request *,char *,char *));
 
 
 /* external data items */
-extern	int	svr_chngNodesfile;
+
+extern int    svr_chngNodesfile;
 
 
 /* Local Private Functions */
@@ -155,7 +156,7 @@ char	       *acct_file = NULL;
 char	       *log_file  = NULL;
 char	       *path_home = PBS_SERVER_HOME;
 char	       *path_acct;
-char	        path_log[MAXPATHLEN+1];
+char	        path_log[MAXPATHLEN + 1];
 char	       *path_priv;
 char	       *path_jobs;
 char	       *path_queues;

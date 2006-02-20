@@ -665,10 +665,10 @@ int get_connecthost(
     {
     /* cache local server addr info */
 
-    addr.s_addr = htonl(pbs_server_addr);
+    serveraddr.s_addr = htonl(pbs_server_addr);
 
     if ((phe = gethostbyaddr(
-            (char *)&addr,
+            (char *)&serveraddr,
             sizeof(struct in_addr),
             AF_INET)) == NULL)
       {
