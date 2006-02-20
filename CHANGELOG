@@ -9,6 +9,7 @@
   prevent stale job handler from destroying suspended jobs
   prevent rapid hello from MOM from doing DOS on pbs_server
   add diagnostics for why node not considered available
+  add caching of local serverhost addr lookup
 
 2.0.0p7
 

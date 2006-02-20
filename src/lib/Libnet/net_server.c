@@ -128,10 +128,11 @@ static int	max_connection = PBS_NET_MAX_CONNECTIONS;
 static int	num_connections = 0;
 static fd_set	readset;
 static void	(*read_func[2]) A_((int));
-static enum conn_type settype[2];		/* temp kludge */
-static char logbuf[256];
+static enum     conn_type settype[2];		/* temp kludge */
+static char     logbuf[256];
 
 extern int LOGLEVEL;
+extern pbs_net_t pbs_server_addr;
 
 /* Private function within this file */
 
@@ -646,32 +647,79 @@ int find_conn(
  * get_connecthost - return name of host connected via the socket
  */
 
-int get_connecthost(sock, namebuf, size)
-	int   sock;
-	char *namebuf;
-	int   size;
-{
-	struct hostent *phe;
-	struct in_addr  addr;
-	int	namesize = 0;
+int get_connecthost(
 
-	size--;
-	addr.s_addr = htonl(svr_conn[sock].cn_addr);
+  int   sock,     /* I */
+  char *namebuf,  /* O (minsize=size) */
+  int   size)     /* I */
 
-	if ((phe = gethostbyaddr((char *)&addr, sizeof(struct in_addr), 
-	     AF_INET)) == (struct hostent *)0) {
-		(void)strcpy(namebuf, inet_ntoa(addr));
-	}
-	else {
-		namesize = strlen(phe->h_name);
-		(void)strncpy(namebuf, phe->h_name, size);
-		*(namebuf+size) = '\0';
-	}
-	if (namesize > size)
-		return (-1);
-	else
-		return (0);
-}
+  {
+  struct hostent *phe;
+  struct in_addr  addr;
+  int             namesize = 0;
+
+  static struct in_addr  serveraddr;
+  static char           *server_name = NULL;
+
+  if (server_name == NULL)
+    {
+    /* cache local server addr info */
+
+    addr.s_addr = htonl(pbs_server_addr);
+
+    if ((phe = gethostbyaddr(
+            (char *)&addr,
+            sizeof(struct in_addr),
+            AF_INET)) == NULL)
+      {
+      server_name = strdup(inet_ntoa(addr));
+      }
+    else
+      {
+      server_name = strdup(phe->h_name);
+      }
+    }
+
+  size--;
+  addr.s_addr = htonl(svr_conn[sock].cn_addr);
+
+  if ((server_name != NULL) && (addr.s_addr == serveraddr.s_addr))
+    {
+    /* lookup request for local server */
+
+    strcpy(namebuf,server_name);
+    }
+  else if ((phe = gethostbyaddr(
+        (char *)&addr,
+        sizeof(struct in_addr), 
+        AF_INET)) == NULL) 
+    {
+    strcpy(namebuf,inet_ntoa(addr));
+    }
+  else 
+    {
+    namesize = strlen(phe->h_name);
+
+    strncpy(namebuf,phe->h_name,size);
+
+    *(namebuf + size) = '\0';
+    }
+
+  if (namesize > size)
+    {
+    /* FAILURE - buffer too small */
+
+    return(-1);
+    }
+
+  /* SUCCESS */
+
+  return(0);
+  }
+
+
+
+
 
 /*
  * net_set_type() - a temp kludge for supporting two protocols during
