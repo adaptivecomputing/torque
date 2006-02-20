@@ -319,11 +319,17 @@ void *tdelete(
 
   if (LOGLEVEL >= 6)
     {
-    DBPRT(("tdelete: %lu\n", 
-      key))
+    sprintf(log_buffer,"deleting key %lu",
+      key);
+
+    log_record(
+      PBSEVENT_SCHED,
+      PBS_EVENTCLASS_REQUEST,
+      "tdelete",
+      log_buffer);
     }
 
-  if (rootp == (struct tree_t **)0 || (p = *rootp) == (struct tree_t *)0)
+  if ((rootp == NULL) || ((p = *rootp) == NULL))
     {
     return(NULL);
     }
@@ -357,9 +363,13 @@ void *tdelete(
       q = r;
       }
     else 
-      {		/* D3: Find (struct tree_t *)0 link */
+      {	
+      /* D3: Find (struct tree_t *)0 link */
+
       for (q = r->left;q->left != NULL;q = r->left)
+        {
         r = q;
+        }
 
       r->left = q->right;
 
@@ -987,8 +997,14 @@ void ping_nodes(
   extern int RPPConfigure(int,int);
   extern int RPPReset(void);
 
-  DBPRT(("%s: entered\n",
-    id))
+  if (LOGLEVEL >= 6)
+    {
+    log_record(
+      PBSEVENT_SCHED,
+      PBS_EVENTCLASS_REQUEST,
+      id,
+      "starting");
+    }
 
   sprintf(log_buffer,"ping attempting to contact %d nodes\n",
     (svr_totnodes - startcount > 256) ? 
@@ -1042,9 +1058,17 @@ void ping_nodes(
       tinsert((u_long)np->nd_stream,np,&streams);
       }
 
-    DBPRT(("%s: ping %s\n",
-      id,
-      np->nd_name))
+    if (LOGLEVEL >= 6)
+      {
+      sprintf(log_buffer,"sending ping to %s",
+        np->nd_name);
+
+      log_record(
+        PBSEVENT_SCHED,
+        PBS_EVENTCLASS_REQUEST,
+        id,
+        log_buffer);
+      }
 
     /* nodes are down until proven otherwise */
 
