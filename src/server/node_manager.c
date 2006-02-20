@@ -493,8 +493,8 @@ void update_node_state(
     if ((np->nd_state & INUSE_JOB) || (np->nd_state & INUSE_JOBSHARE))
       {
       int snjcount;
-      struct jobinfo_t *jp;
-      struct jobinfo_t *jpprev;
+      struct jobinfo *jp;
+      struct jobinfo *jpprev;
 
       char   tmpLine[1024];
 
@@ -514,7 +514,7 @@ void update_node_state(
 
           jpprev = NULL;
 
-          for (jp = np->jobs;jp != NULL;jp = jp->next)
+          for (jp = sp->jobs;jp != NULL;jp = jp->next)
             {
             if ((jpprev != NULL) && (jpprev->job == jp->job))
               {
@@ -3044,9 +3044,9 @@ int set_nodes(
 
       /* NOTE:  search existing job array.  add job only if job not already in place */
 
-      for (jp = np->jobs;jp != NULL;jp = jp->next)
+      for (jp = snp->jobs;jp != NULL;jp = jp->next)
         {
-        if (snp->job == pjob)
+        if (jp->job == pjob)
           break;
         }
 
