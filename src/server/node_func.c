@@ -810,11 +810,11 @@ void effective_node_delete(
   rpp_close(pnode->nd_stream);
   free(pnode->nd_name);
 
-  pnode->nd_name = NULL;
-  pnode->nd_stream = -1;
-  pnode->nd_state  = INUSE_DELETED;
-  pnode->nd_nsn    = 0;
-  pnode->nd_nsnfree= 0;
+  pnode->nd_name    = NULL;
+  pnode->nd_stream  = -1;
+  pnode->nd_state   = INUSE_DELETED;
+  pnode->nd_nsn     = 0;
+  pnode->nd_nsnfree = 0;
 
   return;
   }

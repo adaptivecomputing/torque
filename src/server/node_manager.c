@@ -420,7 +420,7 @@ void update_node_state(
   int             newstate)   /* I (one of INUSE_*) */
 
   {
-  char      *id = "update_node_state";
+  char *id = "update_node_state";
 
   struct pbssubn *sp;
 
@@ -493,6 +493,10 @@ void update_node_state(
     if ((np->nd_state & INUSE_JOB) || (np->nd_state & INUSE_JOBSHARE))
       {
       int snjcount;
+      struct jobinfo_t *jp;
+      struct jobinfo_t *jpprev;
+
+      char   tmpLine[1024];
 
       /* count for jobs on all subnodes */
 
@@ -505,6 +509,38 @@ void update_node_state(
           snjcount++;
 
           sp->inuse &= ~(INUSE_JOB|INUSE_JOBSHARE);
+
+          /* look for and remove duplicate job entries in subnode job list */
+
+          jpprev = NULL;
+
+          for (jp = np->jobs;jp != NULL;jp = jp->next)
+            {
+            if ((jpprev != NULL) && (jpprev->job == jp->job))
+              {
+              /* duplicate job entry detected */
+
+              sprintf(tmpLine,"ALERT:  duplicate entry for job '%s' detected on node %s (clearing entry)",
+                (jp->job != NULL) ? jp->job->ji_qs.ji_jobid : "???",
+               np->nd_name);
+
+              log_record(
+                PBSEVENT_SCHED,
+                PBS_EVENTCLASS_REQUEST,
+                id,
+                tmpLine);
+
+              jpprev->next = jp->next;
+
+              free(jp);
+
+              np->nd_nsnfree++;
+
+              break;
+              }
+ 
+            jpprev = jp;
+            }  /* END for (jp); */
           }
         }
 
@@ -2907,7 +2943,7 @@ int set_nodes(
 
   struct pbsnode *pnode;
   struct pbssubn *snp;
-  char	*nodelist;
+  char           *nodelist;
 
   if (FailHost != NULL)
     FailHost[0] = '\0';
@@ -3006,23 +3042,36 @@ int set_nodes(
           log_buffer);
         }
 
-      if (snp->inuse == INUSE_FREE) 
+      /* NOTE:  search existing job array.  add job only if job not already in place */
+
+      for (jp = np->jobs;jp != NULL;jp = jp->next)
         {
-        snp->inuse = newstate;
-
-        pnode->nd_nsnfree--;		/* reduce free count */
-
-        if (!exclusive)
-          pnode->nd_nsnshared++;
+        if (snp->job == pjob)
+          break;
         }
 
-      jp = (struct jobinfo *)malloc(sizeof(struct jobinfo));
+      if (jp == NULL)
+        {
+        /* add job to front of subnode job array */
 
-      jp->next = snp->jobs;
+        jp = (struct jobinfo *)malloc(sizeof(struct jobinfo));
 
-      snp->jobs = jp;
+        jp->next = snp->jobs;
 
-      jp->job = pjob;
+        snp->jobs = jp;
+
+        jp->job = pjob;
+
+        if (snp->inuse == INUSE_FREE)
+          {
+          snp->inuse = newstate;
+
+          pnode->nd_nsnfree--;            /* reduce free count */
+
+          if (!exclusive)
+            pnode->nd_nsnshared++;
+          }
+        }
 
       /* build list of nodes ordered to match request */
 
@@ -3035,7 +3084,7 @@ int set_nodes(
         {
         if (curr->order <= hp->order)
           break;
-        }
+        }  /* END for (prev) */
 
       curr->next = hp;
 
@@ -3353,7 +3402,7 @@ int node_reserve(
           snp->inuse |= INUSE_RESERVE;
           snp->allocto = tag;
  
-          pnode->nd_nsnfree--;
+          pnode->nd_nsnfree--;  /* in reserve, not reached? */
 
           --pnode->nd_needed;
 
