@@ -487,7 +487,8 @@ void scan_for_exiting()
       ptask->ti_fd = -1;
       ptask->ti_qs.ti_status = TI_STATE_DEAD;
  
-      DBPRT(("%s: task is dead\n",id));
+      DBPRT(("%s: task is dead\n",
+        id));
  
       task_save(ptask);
       }  /* END for (ptask) */

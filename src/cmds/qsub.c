@@ -3153,8 +3153,13 @@ int load_config(
 
   int  length = strlen(PBS_SERVER_HOME) + strlen(TCONST_CFGFILE) + 1;
 
+  char *ptr;
+  char *tail;
+
   if (length >= MAXPATHLEN)
     {
+    /* FAILURE */
+
     return(1);
     }
 
@@ -3168,13 +3173,31 @@ int load_config(
 
   if ((config_stream = fopen(home_dir,"r")) == NULL)
     {
+    /* FAILURE */
+
     return(1);
     }
 
   if ((fread(config_buf,BufSize,1,config_stream) <= 0) && (ferror(config_stream) != 0))
     {
+    /* FAILURE */
+
     return(1);
     }
+
+  ptr = config_buf;
+
+  while ((ptr = strchr(ptr,'#')) != NULL)
+    {
+    ptr++;
+
+    for (;(*ptr != '\0') && (*ptr != '\n');ptr++)
+      {
+      *ptr = ' ';
+      }
+    }   /* END while ((ptr = strchr(ptr,'#')) != NULL) */ 
+
+  /* SUCCESS */
 
   return(0);
   }  /* END load_config() */
