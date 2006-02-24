@@ -950,7 +950,11 @@ int chk_resc_limits(
 
   /* first check against queue minimum */
 
-  if ((comp_resc(&pque->qu_attr[QA_ATR_ResourceMin],pattr,1,EMsg) == -1) ||
+  if ((comp_resc(
+         &pque->qu_attr[QA_ATR_ResourceMin],
+         pattr,
+         server.sv_attr[(int)SRV_ATR_QCQLimits].at_val.at_long,
+         EMsg) == -1) ||
       (comp_resc_gt > 0))
     {
     if ((EMsg != NULL) && (EMsg[0] == '\0'))

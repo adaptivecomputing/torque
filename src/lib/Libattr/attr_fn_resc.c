@@ -384,16 +384,16 @@ int set_resc(
  *		-1 if error
  */
 
-/* NOTE:  if IsJobCentric is 1, enforce for every job attr set, 
-          if IsJobCentric is 0, enforce for every queue attr set
+/* NOTE:  if IsQueueCentric is 0, enforce for every job attr set, 
+          if IsQueueCentric is 1, enforce for every queue attr set
           old default behavior was '1' */
 
 int comp_resc(
 
-  struct attribute *attr,          /* I queue's min/max attributes */
-  struct attribute *with,          /* I job's current requirements/attributes */
-  int               IsJobCentric,  /* I */
-  char             *EMsg)          /* O (optional,minsize=1024) */
+  struct attribute *attr,           /* I queue's min/max attributes */
+  struct attribute *with,           /* I job's current requirements/attributes */
+  int               IsQueueCentric, /* I */
+  char             *EMsg)           /* O (optional,minsize=1024) */
 
   {
   resource *atresc;
@@ -417,7 +417,7 @@ int comp_resc(
     return(-1);
     }
 
-  if (IsJobCentric == 0)
+  if (IsQueueCentric == 1)
     {
     /* comparison is queue centric */
 

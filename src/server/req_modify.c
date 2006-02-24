@@ -375,7 +375,7 @@ int modify_job_attr(
         if ((comp_resc(
               &pjob->ji_wattr[(int)JOB_ATR_resource],
               &newattr[(int)JOB_ATR_resource],
-              1,
+              server.sv_attr[(int)SRV_ATR_QCQLimits].at_val.at_long,
               NULL) == -1) ||
             (comp_resc_lt != 0))
           {
