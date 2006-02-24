@@ -272,7 +272,7 @@ int svr_enquejob(
     return(PBSE_UNKQUE);
     }
 
-  /* add job to server's all job list and update server counts */
+  /* add job to server's 'all job' list and update server counts */
 
 #ifndef NDEBUG
   sprintf(log_buffer, "enqueuing into %s, state %x hop %ld",
@@ -302,8 +302,7 @@ int svr_enquejob(
     {
     /* link first in server's list */
 
-    insert_link(&svr_alljobs, &pjob->ji_alljobs, pjob,
-      LINK_INSET_AFTER);
+    insert_link(&svr_alljobs,&pjob->ji_alljobs,pjob,LINK_INSET_AFTER);
     } 
   else 
     {
@@ -320,68 +319,78 @@ int svr_enquejob(
 
   pjob->ji_qhdr = pque;
 
-	pjcur = (job *)GET_PRIOR(pque->qu_jobs);
-	while (pjcur) {
-	    if ((unsigned long)pjob->ji_wattr[(int)JOB_ATR_qrank].at_val.at_long >= (unsigned long)pjcur->ji_wattr[(int)JOB_ATR_qrank].at_val.at_long)
-			break;
-		pjcur = (job *)GET_PRIOR(pjcur->ji_jobque);
-	}
-	if (pjcur == 0) {
-		/* link first in list */
-		insert_link(&pque->qu_jobs, &pjob->ji_jobque, pjob,
-			    LINK_INSET_AFTER);
-	} else {
-		/* link after 'current' job in list */
-		insert_link(&pjcur->ji_jobque, &pjob->ji_jobque, pjob,
-			    LINK_INSET_AFTER);
-	}
+  pjcur = (job *)GET_PRIOR(pque->qu_jobs);
 
-	/* update counts: queue and queue by state */
+  while (pjcur != NULL) 
+    {
+    if ((unsigned long)pjob->ji_wattr[(int)JOB_ATR_qrank].at_val.at_long >= 
+        (unsigned long)pjcur->ji_wattr[(int)JOB_ATR_qrank].at_val.at_long)
+      break;
 
-	pque->qu_numjobs++;
-	pque->qu_njstate[pjob->ji_qs.ji_state]++;
+    pjcur = (job *)GET_PRIOR(pjcur->ji_jobque);
+    }
 
-	/* update the current location and type attribute */
+  if (pjcur == NULL) 
+    {
+    /* link first in list */
 
-	pdef    = &job_attr_def[(int)JOB_ATR_in_queue];
-	pattrjb = &pjob->ji_wattr[(int)JOB_ATR_in_queue];
-	pdef->at_free(pattrjb);
-	pdef->at_decode(pattrjb, (char *)0, (char *)0, pque->qu_qs.qu_name);
+    insert_link(&pque->qu_jobs,&pjob->ji_jobque,pjob,LINK_INSET_AFTER);
+    } 
+  else 
+    {
+    /* link after 'current' job in list */
 
-	pjob->ji_wattr[(int)JOB_ATR_queuetype].at_val.at_char = 
-			*pque->qu_attr[(int)QA_ATR_QType].at_val.at_str;
-	pjob->ji_wattr[(int)JOB_ATR_queuetype].at_flags |= ATR_VFLAG_SET;
+    insert_link(&pjcur->ji_jobque,&pjob->ji_jobque,pjob,LINK_INSET_AFTER);
+    }
 
-	if ((pjob->ji_wattr[(int)JOB_ATR_qtime].at_flags & ATR_VFLAG_SET) ==0) {
-		pjob->ji_wattr[(int)JOB_ATR_qtime].at_val.at_long = time_now;
-		pjob->ji_wattr[(int)JOB_ATR_qtime].at_flags |= ATR_VFLAG_SET;
+  /* update counts: queue and queue by state */
 
-		/* issue enqueued accounting record */
+  pque->qu_numjobs++;
+  pque->qu_njstate[pjob->ji_qs.ji_state]++;
 
-		(void)sprintf(log_buffer, "queue=%s", pque->qu_qs.qu_name);
-		account_record(PBS_ACCT_QUEUE, pjob, log_buffer);
-	}
+  /* update the current location and type attribute */
+
+  pdef    = &job_attr_def[(int)JOB_ATR_in_queue];
+  pattrjb = &pjob->ji_wattr[(int)JOB_ATR_in_queue];
+  pdef->at_free(pattrjb);
+
+  pdef->at_decode(pattrjb,NULL,NULL,pque->qu_qs.qu_name);
+
+  pjob->ji_wattr[(int)JOB_ATR_queuetype].at_val.at_char = 
+    *pque->qu_attr[(int)QA_ATR_QType].at_val.at_str;
+
+  pjob->ji_wattr[(int)JOB_ATR_queuetype].at_flags |= ATR_VFLAG_SET;
+
+  if ((pjob->ji_wattr[(int)JOB_ATR_qtime].at_flags & ATR_VFLAG_SET) == 0) 
+    {
+    pjob->ji_wattr[(int)JOB_ATR_qtime].at_val.at_long = time_now;
+    pjob->ji_wattr[(int)JOB_ATR_qtime].at_flags |= ATR_VFLAG_SET;
+
+    /* issue enqueued accounting record */
+
+    sprintf(log_buffer,"queue=%s",pque->qu_qs.qu_name);
+    account_record(PBS_ACCT_QUEUE,pjob,log_buffer);
+    }
 	
-	/*
-	 * set any "unspecified" resources which have default values,
-	 * first with queue defaults, then with server defaults
-	 */
+  /*
+   * set any "unspecified" resources which have default values,
+   * first with queue defaults, then with server defaults
+   */
 
-	set_resc_deflt(pjob);
+  set_resc_deflt(pjob,NULL);
 
-	/*
-	 * See if we need to do anything special based on type of queue
-	 */
+  /* See if we need to do anything special based on type of queue */
 
-	if (pque->qu_qs.qu_type == QTYPE_Execution) {
+  if (pque->qu_qs.qu_type == QTYPE_Execution) 
+    {
+    /* set union to "EXEC" and clear mom's address */
 
-		/* set union to "EXEC" and clear mom's address */
-
-		if (pjob->ji_qs.ji_un_type != JOB_UNION_TYPE_EXEC) {
-			pjob->ji_qs.ji_un_type = JOB_UNION_TYPE_EXEC;
-			pjob->ji_qs.ji_un.ji_exect.ji_momaddr = 0;
-			pjob->ji_qs.ji_un.ji_exect.ji_exitstat = 0;
-		}
+    if (pjob->ji_qs.ji_un_type != JOB_UNION_TYPE_EXEC) 
+      {
+      pjob->ji_qs.ji_un_type = JOB_UNION_TYPE_EXEC;
+      pjob->ji_qs.ji_un.ji_exect.ji_momaddr = 0;
+      pjob->ji_qs.ji_un.ji_exect.ji_exitstat = 0;
+      }
 
     /* check the job checkpoint against the queue's  min */
 
@@ -398,7 +407,7 @@ int svr_enquejob(
              pjob,
              ATR_ACTION_NOOP)) != 0)
         {
-        return (rc);
+        return(rc);
         }
       }
 
@@ -1522,35 +1531,55 @@ static void set_deflt_resc(
 
 
 
+/* NOTE:  if ji_wattr parameter is passed in, update it */
+
 void set_resc_deflt(
 
-  job *pjob)
+  job       *pjob,     /* I (modified) */
+  attribute *ji_wattr) /* I (optional) decoded attributes  */
 
   {
+  attribute *ja;
+
   pbs_queue *pque;
 
   pque = pjob->ji_qhdr;
 
   assert(pque != NULL);
 
+  if (ja_wattr != NULL)
+    ja = ji_wattr;
+  else
+    ja = pjob->ji_wattr;
+
+  /* apply queue defaults first since they take precedence */
+
   set_deflt_resc(
-    &pjob->ji_wattr[(int)JOB_ATR_resource],
+    &ja[(int)JOB_ATR_resource],
     &pque->qu_attr[(int)QA_ATR_ResourceDefault]);
 
+  /* server defaults will only be applied to attributes which have
+     not yet been set */
+
   set_deflt_resc(
-    &pjob->ji_wattr[(int)JOB_ATR_resource],
+    &ja[(int)JOB_ATR_resource],
     &server.sv_attr[(int)SRV_ATR_resource_deflt]);
 
-  set_deflt_resc(
-    &pjob->ji_wattr[(int)JOB_ATR_resource],
-    &pque->qu_attr[(int)QA_ATR_ResourceMax]);
+  /* apply queue max limits first since they take precedence */
 
   set_deflt_resc(
-    &pjob->ji_wattr[(int)JOB_ATR_resource],
+    &ja[(int)JOB_ATR_resource],
+    &pque->qu_attr[(int)QA_ATR_ResourceMax]);
+
+  /* server max limits will only be applied to attributes which have
+     not yet been set */
+
+  set_deflt_resc(
+    &ja[(int)JOB_ATR_resource],
     &server.sv_attr[(int)SRV_ATR_ResourceMax]);
 
   return;
-  }
+  }  /* END set_resc_deflt() */
 
 
 

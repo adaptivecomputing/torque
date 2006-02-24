@@ -359,6 +359,9 @@ int set_resc(old, new, op)
 	return (0);
 }
 
+
+
+
 /*
  * comp_resc - compare two attributes of type ATR_TYPE_RESR
  *
@@ -379,8 +382,8 @@ int set_resc(old, new, op)
 
 int comp_resc(
 
-  struct attribute *attr,
-  struct attribute *with)
+  struct attribute *attr,  /* queue's min/max attributes */
+  struct attribute *with)  /* job's current requiremets/attributes */
 
   {
   resource *atresc;
@@ -392,21 +395,23 @@ int comp_resc(
   comp_resc_lt = 0;
   comp_resc_nc = 0;
 
-  if ((attr == (attribute *)0) || (with == (attribute *)0))
+  if ((attr == NULL) || (with == NULL))
     {
     return(-1);
     }
 
+  /* NOTE:  no violation unless attribute is set on job */
+
   wiresc = (resource *)GET_NEXT(with->at_val.at_list);
 
-  while (wiresc != (resource *)0) 
+  while (wiresc != NULL) 
     {
     if ((wiresc->rs_value.at_flags & ATR_VFLAG_SET) &&
        ((wiresc->rs_value.at_flags & ATR_VFLAG_DEFLT) == 0)) 
       {
       atresc = find_resc_entry(attr,wiresc->rs_defin);
 
-      if (atresc != (resource *)0) 
+      if (atresc != NULL) 
         {
 	if (atresc->rs_value.at_flags & ATR_VFLAG_SET)
           {
@@ -434,6 +439,18 @@ int comp_resc(
 
     wiresc = (resource *)GET_NEXT(wiresc->rs_link);
     }  /* END while() */
+ 
+  /* NOTE:  this check only enforces attributes if the job specifies the
+            attribute.  If the queue has a min requirement of resource X
+            and the job has no value set for this resource, this routine
+            will not trigger comp_resc_lt */
+
+  /* this should be changed to require all queue min requirements to be
+     set and satisfied (NYI) */
+
+  /* need rs_defin for 'ncpus' */
+
+  /* atresc = find_resc_entry(attr,wiresc->rs_defin); */
 
   return(0);
   }  /* END comp_resc() */

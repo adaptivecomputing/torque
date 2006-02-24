@@ -227,6 +227,9 @@ int svr_movejob(
   }  /* svr_movejob() */
 
 
+
+
+
 /*
  * local_move - internally move a job to another queue
  *
@@ -240,7 +243,7 @@ int svr_movejob(
 
 static int local_move(
 
-  job *jobp,
+  job                  *jobp,
   struct batch_request *req)
 
   {
@@ -279,7 +282,7 @@ static int local_move(
     } 
   else 
     {
-    mtype = MOVE_TYPE_Move;		/* non-privileged move */
+    mtype = MOVE_TYPE_Move;	/* non-privileged move */
     }
 
   if ((pbs_errno = svr_chkque(

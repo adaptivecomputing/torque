@@ -129,8 +129,8 @@ static void post_job_delete_nanny A_((struct work_task *));
 
 /* Public Functions in this file */
 
-struct work_task *apply_job_delete_nanny A_((struct job *, int));
-int has_job_delete_nanny A_((struct job *pjob));
+struct work_task *apply_job_delete_nanny A_((struct job *,int));
+int has_job_delete_nanny A_((struct job *));
  
 /* Private Data Items */
 
@@ -139,7 +139,7 @@ static char *delpurgestr = DELPURGE;
 
 /* Extern Functions */
 
-extern void set_resc_assigned(job *, enum batch_op op);
+extern void set_resc_assigned(job *,enum batch_op);
 
 
 /* 
@@ -674,7 +674,7 @@ static int forced_jobpurge(
 
   if (preq->rq_extend != NULL) 
     {
-    if (strncmp(preq->rq_extend,delpurgestr,strlen(delpurgestr)) == 0) 
+    if (!strncmp(preq->rq_extend,delpurgestr,strlen(delpurgestr))) 
       {
       if ((preq->rq_perm & (ATR_DFLAG_OPRD|ATR_DFLAG_OPWR|
                             ATR_DFLAG_MGRD|ATR_DFLAG_MGWR)) != 0)
@@ -699,6 +699,8 @@ static int forced_jobpurge(
         } 
       else
         {
+        /* FAILURE */
+
         req_reject(PBSE_PERM,0,preq,NULL,NULL);
 
         return(-1);

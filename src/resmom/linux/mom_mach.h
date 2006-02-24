@@ -99,21 +99,21 @@
 /* 			child back to parent			*/
 
 struct startjob_rtn {
-	int   sj_code;		/* error code	*/
-	pid_t sj_session;	/* session	*/
-};
+  int   sj_code;	/* error code	*/
+  pid_t sj_session;	/* session	*/
+  };
 	
-extern int mom_set_limits A_((job *pjob, int));	/* Set job's limits */
-extern int mom_do_poll A_((job *pjob));		/* Should limits be polled? */
+extern int mom_set_limits A_((job *,int));	/* Set job's limits */
+extern int mom_do_poll A_((job *));		/* Should limits be polled? */
 extern int mom_does_chkpnt();                   /* see if mom does chkpnt */
 extern int mom_open_poll A_(());		/* Initialize poll ability */
 extern int mom_get_sample A_(());		/* Sample kernel poll data */
-extern int mom_over_limit A_((job *pjob));	/* Is polled job over limit? */
-extern int mom_set_use A_((job *pjob));		/* Set resource_used list */
-extern int mom_kill A_((int sid, int sig));	/* Kill a session */
+extern int mom_over_limit A_((job *));		/* Is polled job over limit? */
+extern int mom_set_use A_((job *));		/* Set resource_used list */
+extern int mom_kill A_((int,int));		/* Kill a session */
 extern int mom_close_poll A_(());		/* Terminate poll ability */
-extern int mach_checkpoint A_((struct task *, char *path, int abt));
-extern long mach_restart A_((struct task *, char *path));	/* Restart checkpointed job */
+extern int mach_checkpoint A_((struct task *,char *,int));
+extern long mach_restart A_((struct task *,char *));	/* Restart checkpointed job */
 
 
 typedef struct proc_stat {

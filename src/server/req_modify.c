@@ -114,26 +114,46 @@ extern char *msg_mombadmodify;
 extern int   comp_resc_gt;
 extern int   comp_resc_lt;
 
+
+
+
+
 /*
  * post_modify_req - clean up after sending modify request to MOM
  */
-static void post_modify_req(pwt)
-	struct work_task *pwt;
-{
-	struct batch_request *preq;
 
-	svr_disconnect(pwt->wt_event);  /* close connection to MOM */
-	preq = pwt->wt_parm1;
-	preq->rq_conn = preq->rq_orgconn;  /* restore socket to client */
+static void post_modify_req(
 
-	if (preq->rq_reply.brp_code) {
-	    (void)sprintf(log_buffer, msg_mombadmodify,preq->rq_reply.brp_code);
-	    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB,
-		      preq->rq_ind.rq_modify.rq_objname, log_buffer);
-	    req_reject(preq->rq_reply.brp_code,0,preq,NULL,NULL);
-	} else
-	    reply_ack(preq);
-}
+  struct work_task *pwt)
+
+  {
+  struct batch_request *preq;
+
+  svr_disconnect(pwt->wt_event);  /* close connection to MOM */
+
+  preq = pwt->wt_parm1;
+
+  preq->rq_conn = preq->rq_orgconn;  /* restore socket to client */
+
+  if (preq->rq_reply.brp_code) 
+    {
+    sprintf(log_buffer,msg_mombadmodify,preq->rq_reply.brp_code);
+
+    log_event(
+      PBSEVENT_JOB, 
+      PBS_EVENTCLASS_JOB,
+      preq->rq_ind.rq_modify.rq_objname, 
+      log_buffer);
+
+    req_reject(preq->rq_reply.brp_code,0,preq,NULL,NULL);
+    } 
+  else
+    {
+    reply_ack(preq);
+    }
+
+  return;
+  }  /* END post_modify_req() */
 
 	
 
@@ -250,36 +270,53 @@ void req_modifyjob(
     return;
     }
 
-	/* Reset any defaults resource limit which might have been unset */
+  /* Reset any defaults resource limit which might have been unset */
 
-	set_resc_deflt(pjob);
+  set_resc_deflt(pjob,NULL);
 
-	/* if job is not running, may need to change its state */
+  /* if job is not running, may need to change its state */
 
-	if (pjob->ji_qs.ji_state != JOB_STATE_RUNNING) {
-		svr_evaljobstate(pjob, &newstate, &newsubstate, 0);
-		(void)svr_setjobstate(pjob, newstate, newsubstate);
-	} else {
-		(void)job_save(pjob, SAVEJOB_FULL);
-	}
-	(void)sprintf(log_buffer, msg_manager, msg_jobmod,
-		      preq->rq_user, preq->rq_host);
-	LOG_EVENT(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid,
-		  log_buffer);
+  if (pjob->ji_qs.ji_state != JOB_STATE_RUNNING) 
+    {
+    svr_evaljobstate(pjob,&newstate,&newsubstate,0);
 
-	/* if a resource limit changed for a running job, send to MOM */
+    svr_setjobstate(pjob, newstate, newsubstate);
+    } 
+  else 
+    {
+    job_save(pjob,SAVEJOB_FULL);
+    }
 
-	if (sendmom) {
-		if ((rc = relay_to_mom(pjob->ji_qs.ji_un.ji_exect.ji_momaddr,
-				      preq, post_modify_req)))
-			req_reject(rc,0,preq,NULL,NULL);    /* unable to get to MOM */
-		return;
-	}
+  sprintf(log_buffer,msg_manager,
+    msg_jobmod,
+    preq->rq_user, 
+    preq->rq_host);
+
+  LOG_EVENT(
+    PBSEVENT_JOB, 
+    PBS_EVENTCLASS_JOB, 
+    pjob->ji_qs.ji_jobid,
+    log_buffer);
+
+  /* if a resource limit changed for a running job, send to MOM */
+
+  if (sendmom) 
+    {
+    if ((rc = relay_to_mom(
+           pjob->ji_qs.ji_un.ji_exect.ji_momaddr,
+           preq, 
+           post_modify_req)))
+      {
+      req_reject(rc,0,preq,NULL,NULL);    /* unable to get to MOM */
+      }
+
+    return;
+    }
 
   reply_ack(preq);
 
   return;
-  }
+  }  /* END req_modifyjob() */
 
 
 

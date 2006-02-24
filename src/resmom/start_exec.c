@@ -1139,7 +1139,7 @@ int TMomFinalizeJob1(
   static char 	       *id = "TMomFinalizeJob1";
 
   /* socklen_t not portable */
-  unsigned int	        slen;
+  unsigned int	         slen;
 
   int                    i;
 
@@ -1147,7 +1147,7 @@ int TMomFinalizeJob1(
   attribute		*pattri;
   resource		*presc;
   resource_def		*prd;
-  struct sockaddr_in	saddr;
+  struct sockaddr_in     saddr;
 
 #if MOM_CHECKPOINT == 1
   char	   		buf[MAXPATHLEN + 2];
@@ -4384,7 +4384,7 @@ static void starter_return(
   int                  upfds,
   int                  downfds,
   int                  code,
-  struct startjob_rtn *sjrtn)
+  struct startjob_rtn *sjrtn)    /* I */
 
   {
   struct startjob_rtn ack;

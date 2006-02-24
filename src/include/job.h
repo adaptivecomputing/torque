@@ -462,8 +462,8 @@ struct job {
 	 * Its presence is for rapid acces to the attributes.
 	 */
 
-	attribute	ji_wattr[JOB_ATR_LAST]; /* decoded attributes  */
-};
+  attribute ji_wattr[JOB_ATR_LAST]; /* decoded attributes  */
+  };
 
 typedef struct job job;
 
@@ -726,24 +726,24 @@ extern job  *job_alloc();
 extern void  job_free A_((job *));
 extern void  job_purge A_((job *));
 extern job  *job_recov A_((char *));
-extern int   job_save A_((job *, int));
-extern int   modify_job_attr A_((job *, svrattrl *, int, int *));
-extern char *prefix_std_file A_((job *, int));
-extern int   set_jobexid A_((job *, attribute *));
-extern int   site_check_user_map A_((job *, char *));
+extern int   job_save A_((job *,int));
+extern int   modify_job_attr A_((job *,svrattrl *,int,int *));
+extern char *prefix_std_file A_((job *,int));
+extern int   set_jobexid A_((job *,attribute *));
+extern int   site_check_user_map A_((job *,char *));
 extern void  svr_dequejob A_((job *));
 extern int   svr_enquejob A_((job *));
-extern void  svr_evaljobstate A_((job *, int *, int *, int));
-extern void  svr_mailowner A_((job *, int mailtype, int force, char *));
-extern void  set_resc_deflt A_((job *));
+extern void  svr_evaljobstate A_((job *,int *,int *,int));
+extern void  svr_mailowner A_((job *,int,int,char *));
+extern void  set_resc_deflt A_((job *,attribute *));
 extern void  set_statechar A_((job *));
-extern int   svr_setjobstate A_((job *, int, int));
+extern int   svr_setjobstate A_((job *,int,int));
 
 #ifdef BATCH_REQUEST_H
 extern job  *chk_job_request A_((char *, struct batch_request *));
 extern int   net_move A_((job *, struct batch_request *));
-extern int   svr_chk_owner A_((struct batch_request *, job *));
-extern struct batch_request *cpy_stage A_((struct batch_request *, job *, enum job_atr, int));
+extern int   svr_chk_owner A_((struct batch_request *,job *));
+extern struct batch_request *cpy_stage A_((struct batch_request *,job *,enum job_atr,int));
 #endif	/* BATCH_REQUEST_H */
 
 #ifdef QUEUE_H

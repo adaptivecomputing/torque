@@ -3510,7 +3510,8 @@ void free_nodes(
   job *pjob)  /* I (modified) */
 
   {
-  static char	id[] = "free_nodes";
+  static char id[] = "free_nodes";
+
   struct pbssubn *np;
   struct pbsnode *pnode;
   struct jobinfo *jp, *prev;

@@ -110,7 +110,7 @@
 #endif
 
 /* External functions called */
-extern int svr_movejob A_((job *jobp, char *destination, struct batch_request  *req));
+extern int svr_movejob A_((job *,char *,struct batch_request *));
 
 /* Local Functions */
 
@@ -131,25 +131,35 @@ extern time_t	 time_now;
  *	Return: pointer to the new entry if it is added, NULL if not.
  */
 
-void add_dest(jobp)
-	job	*jobp;
-{
-	char	*id = "add_dest";
-	badplace	*bp;
-	char	*baddest = jobp->ji_qs.ji_destin;
+void add_dest(
 
-	bp = (badplace *)malloc(sizeof (badplace));
-        if (bp == (badplace *)0) {
-                log_err(errno, id, msg_err_malloc);
-                return;
-        }
-	CLEAR_LINK(bp->bp_link);
+  job *jobp)
 
-	strcpy(bp->bp_dest, baddest);
+  {
+  char      *id = "add_dest";
+  badplace  *bp;
+  char      *baddest = jobp->ji_qs.ji_destin;
+
+  bp = (badplace *)malloc(sizeof(badplace));
+
+  if (bp == NULL) 
+    {
+    log_err(errno,id,msg_err_malloc);
+
+    return;
+    }
+
+  CLEAR_LINK(bp->bp_link);
+
+  strcpy(bp->bp_dest,baddest);
 	
-	append_link(&jobp->ji_rejectdest, &bp->bp_link, bp);
-	return;
-}
+  append_link(&jobp->ji_rejectdest,&bp->bp_link,bp);
+
+  return;
+  }  /* END add_dest() */
+
+
+
 
 /*
  * Check the job for a match of dest in the list of rejected destinations.
@@ -157,20 +167,31 @@ void add_dest(jobp)
  *	Return: pointer if found, NULL if not.
  */
 
-badplace * is_bad_dest(jobp, dest)
-	job	*jobp;
-	char	*dest;
-{
-	badplace	*bp;
+badplace *is_bad_dest(
 
-	bp = (badplace *)GET_NEXT(jobp->ji_rejectdest);
-	while (bp) {
-		if (strcmp(bp->bp_dest, dest) == 0)
-			break;
-		bp = (badplace *)GET_NEXT(bp->bp_link);
-	}
-	return( bp );
-}
+  job  *jobp,
+  char *dest)
+
+  {
+  /* ji_rejectdest is set in add_dest if approved in ??? */
+
+  badplace *bp;
+
+  bp = (badplace *)GET_NEXT(jobp->ji_rejectdest);
+
+  while (bp != NULL) 
+    {
+    if (!strcmp(bp->bp_dest,dest))
+      break;
+
+    bp = (badplace *)GET_NEXT(bp->bp_link);
+    }
+
+  return(bp);
+  }  /* END is_bad_dest() */
+
+
+
 
 
 /*
@@ -182,61 +203,94 @@ badplace * is_bad_dest(jobp, dest)
  *	otherwise 0 is returned.
  */
 
-int default_router(jobp, qp, retry_time)
-	job		 *jobp;
-	struct pbs_queue *qp;
-	long		  retry_time;
-{
-	struct array_strings *dest_attr = NULL;
-	char		     *destination;
-	int		      last;
+int default_router(
 
-	if (qp->qu_attr[(int)QR_ATR_RouteDestin].at_flags & ATR_VFLAG_SET) {
-		dest_attr = qp->qu_attr[(int)QR_ATR_RouteDestin].at_val.at_arst;
-		last = dest_attr->as_usedptr;
-	} else
-		last = 0;
+  job              *jobp,
+  struct pbs_queue *qp,
+  long              retry_time)
+
+  {
+  struct array_strings *dest_attr = NULL;
+  char		     *destination;
+  int		      last;
+
+  if (qp->qu_attr[(int)QR_ATR_RouteDestin].at_flags & ATR_VFLAG_SET) 
+    {
+    dest_attr = qp->qu_attr[(int)QR_ATR_RouteDestin].at_val.at_arst;
+
+    last = dest_attr->as_usedptr;
+    } 
+  else
+    {
+    last = 0;
+    }
+
+  /* loop through all possible destinations */
+
+  jobp->ji_retryok = 0;
+
+  while (1) 
+    {
+    if (jobp->ji_lastdest >= last) 
+      {
+      jobp->ji_lastdest = 0;	/* have tried all */
+
+      if (jobp->ji_retryok == 0) 
+        {
+        log_event(
+          PBSEVENT_JOB, 
+          PBS_EVENTCLASS_JOB, 
+          jobp->ji_qs.ji_jobid, 
+          msg_routebad);
+
+        return(PBSE_ROUTEREJ);
+        } 
+      else 
+        {
+        /* set time to retry job */
+
+        jobp->ji_qs.ji_un.ji_routet.ji_rteretry = retry_time;
+
+        return(0);
+        }
+      }
+
+    destination = dest_attr->as_string[jobp->ji_lastdest++];
+
+    if (is_bad_dest(jobp,destination))
+      continue;
+
+    switch (svr_movejob(jobp,destination,NULL)) 
+      {
+      case -1:		/* permanent failure */
+   
+        add_dest(jobp);
+
+        break;
+
+      case 0:		/* worked */
+      case 2:		/* deferred */
+
+        return(0);
+
+        /*NOTREACHED*/
+
+        break;
+
+      case 1:		/* failed, but try destination again */
+
+        jobp->ji_retryok = 1;
+
+        break;
+      }
+    }
+
+  return(-1);
+  }  /* END default_router() */
 
 
-	/* loop through all possible destinations */
 
-	jobp->ji_retryok = 0;
-	while (1) {
-		if (jobp->ji_lastdest >= last) {
-			jobp->ji_lastdest = 0;	/* have tried all */
-			if (jobp->ji_retryok == 0) {
-				log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, 
-					  jobp->ji_qs.ji_jobid, msg_routebad);
-				return (PBSE_ROUTEREJ);
-			} else {
-			
-				/* set time to retry job */
-				jobp->ji_qs.ji_un.ji_routet.ji_rteretry = retry_time;
-				return (0);
-			}
-		}
 
-		destination = dest_attr->as_string[jobp->ji_lastdest++];
-
-		if (is_bad_dest(jobp, destination))
-			continue;
-
-		switch (svr_movejob(jobp, destination, NULL)) {
-
-		    case -1:		/* permanent failure */
-			add_dest(jobp);
-			break;
-
-		    case 0:		/* worked */
-		    case 2:		/* deferred */
-			return (0);
-
-		    case 1:		/* failed, but try destination again */
-			jobp->ji_retryok = 1;
-			break;
-		}
-	}
-}
 
 /*
  * job_route - route a job to another queue
@@ -253,82 +307,144 @@ int default_router(jobp, qp, retry_time)
  *	Returns: 0 on success, non-zero (error number) on failure
  */
 
-int job_route(jobp)
-	job	*jobp;		/* job to route */
-{
-	int			 bad_state = 0;
-	char			*id = "job_route";
-	time_t			 life;
-	struct pbs_queue	*qp;
-	long			 retry_time;
+int job_route(
 
-	/* see if the job is able to be routed */
+  job	*jobp)	/* job to route */
 
-	switch (jobp->ji_qs.ji_state) {
+  {
+  int		    bad_state = 0;
+  char		   *id = "job_route";
+  time_t	    life;
+  struct pbs_queue *qp;
+  long              retry_time;
 
-	    case JOB_STATE_TRANSIT:
-		return (0);		/* already going, ignore it */
+  /* see if the job is able to be routed */
 
-	    case JOB_STATE_QUEUED:
-		break;			/* ok to try */
+  switch (jobp->ji_qs.ji_state) 
+    {
+    case JOB_STATE_TRANSIT:
+    
+      return(0);		/* already going, ignore it */
 
-	    case JOB_STATE_HELD:
-		bad_state = !jobp->ji_qhdr->qu_attr[QR_ATR_RouteHeld].at_val.at_long;
-		break;
+      /*NOTREACHED*/
 
-	    case JOB_STATE_WAITING:
-		bad_state = !jobp->ji_qhdr->qu_attr[QR_ATR_RouteWaiting].at_val.at_long;
-		break;
+      break;
 
-	    default:
-		(void)sprintf(log_buffer, "%s %d", msg_badstate,
-						   jobp->ji_qs.ji_state);
-		(void)strcat(log_buffer, id);
-		log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, 
-			  jobp->ji_qs.ji_jobid, log_buffer);
-		return (0);
-	}
+    case JOB_STATE_QUEUED:
 
-	/* check the queue limits, can we route any (more) */
+      /* NO-OP */
 
-	qp = jobp->ji_qhdr;
-	if (qp->qu_attr[(int)QA_ATR_Started].at_val.at_long == 0)
-		return (0);	/* queue not started - no routing */
+      break;			/* ok to try */
 
-	if ((qp->qu_attr[(int)QA_ATR_MaxRun].at_flags & ATR_VFLAG_SET) &&
-	    (qp->qu_attr[(int)QA_ATR_MaxRun].at_val.at_long <=
-					qp->qu_njstate[JOB_STATE_TRANSIT]))
-			return(0);	/* max number of jobs being routed */
+    case JOB_STATE_HELD:
 
-	/* what is the retry time and life time of a job in this queue */
+      /* job may be acceptable */
 
-	if (qp->qu_attr[(int)QR_ATR_RouteRetryTime].at_flags & ATR_VFLAG_SET)
-		retry_time = (long)time_now +
-	 	         qp->qu_attr[(int)QR_ATR_RouteRetryTime].at_val.at_long;
-	else
-		retry_time = (long)time_now + PBS_NET_RETRY_TIME;
+      bad_state = !jobp->ji_qhdr->qu_attr[QR_ATR_RouteHeld].at_val.at_long;
+
+      break;
+
+    case JOB_STATE_WAITING:
+
+      /* job may be acceptable */
+
+      bad_state = !jobp->ji_qhdr->qu_attr[QR_ATR_RouteWaiting].at_val.at_long;
+
+      break;
+
+    default:
+
+      sprintf(log_buffer,"%s %d",msg_badstate,
+        jobp->ji_qs.ji_state);
+
+      strcat(log_buffer,id);
+
+      log_event(
+        PBSEVENT_DEBUG, 
+        PBS_EVENTCLASS_JOB, 
+        jobp->ji_qs.ji_jobid, 
+        log_buffer);
+
+      return(0);
+
+      /*NOTREACHED*/
+
+      break;
+    }
+
+  /* check the queue limits, can we route any (more) */
+
+  qp = jobp->ji_qhdr;
+
+  if (qp->qu_attr[(int)QA_ATR_Started].at_val.at_long == 0)
+    {
+    /* queue not started - no routing */
+
+    return(0);	
+    }
+
+  if ((qp->qu_attr[(int)QA_ATR_MaxRun].at_flags & ATR_VFLAG_SET) &&
+      (qp->qu_attr[(int)QA_ATR_MaxRun].at_val.at_long <= qp->qu_njstate[JOB_STATE_TRANSIT]))
+    {
+    /* max number of jobs being routed */
+
+    return(0);
+    }
+
+  /* what is the retry time and life time of a job in this queue */
+
+  if (qp->qu_attr[(int)QR_ATR_RouteRetryTime].at_flags & ATR_VFLAG_SET)
+    {
+    retry_time = 
+      (long)time_now + 
+      qp->qu_attr[(int)QR_ATR_RouteRetryTime].at_val.at_long;
+    }
+  else
+    {
+    retry_time = (long)time_now + PBS_NET_RETRY_TIME;
+    }
 		
-	if (qp->qu_attr[(int)QR_ATR_RouteLifeTime].at_flags & ATR_VFLAG_SET)
-		
-		life = jobp->ji_qs.ji_un.ji_routet.ji_quetime + 
-			 qp->qu_attr[(int)QR_ATR_RouteLifeTime].at_val.at_long;
-	else
-		life = 0;	/* forever */
+  if (qp->qu_attr[(int)QR_ATR_RouteLifeTime].at_flags & ATR_VFLAG_SET)
+    {		
+    life = 
+      jobp->ji_qs.ji_un.ji_routet.ji_quetime + 
+      qp->qu_attr[(int)QR_ATR_RouteLifeTime].at_val.at_long;
+    }
+  else
+    {
+    life = 0;	/* forever */
+    }
 
-	if (life && (life < time_now)) {
-		log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, 
-			  jobp->ji_qs.ji_jobid, msg_routexceed);
-		return (PBSE_ROUTEEXPD);   /* job too long in queue */
-	}
+  if (life && (life < time_now)) 
+    {
+    log_event(
+      PBSEVENT_JOB, 
+      PBS_EVENTCLASS_JOB, 
+      jobp->ji_qs.ji_jobid, 
+      msg_routexceed);
 
-	if (bad_state) 	/* not currently routing this job */
-		return (0);		   /* else ignore this job */
+    /* job too long in queue */
 
-	if (qp->qu_attr[(int)QR_ATR_AltRouter].at_val.at_long == 0)
-		return ( default_router(jobp, qp, retry_time) );
-	else
-		return ( site_alt_router(jobp, qp, retry_time) );
-}
+    return(PBSE_ROUTEEXPD);  
+    }
+
+  if (bad_state)
+    {
+    /* not currently routing this job */
+
+    return(0);		
+    }
+
+  if (qp->qu_attr[(int)QR_ATR_AltRouter].at_val.at_long == 0)
+    {
+    return(default_router(jobp,qp,retry_time));
+    }
+
+  return(site_alt_router(jobp,qp,retry_time));
+  }  /* END job_route() */
+
+
+
 
 
 /*

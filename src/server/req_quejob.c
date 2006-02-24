@@ -126,7 +126,7 @@
 
 /* External Functions Called: */
 
-extern int  reply_jid A_((char *jobid));
+extern int  reply_jid A_((char *));
 extern void start_exec A_((job *));
 extern int  svr_authorize_jobreq A_((struct batch_request *,job *));
 extern int  svr_chkque A_((job *,pbs_queue *,char *,int,char *));
@@ -634,7 +634,7 @@ void req_quejob(
 
         return;
         }
-      }
+      }    /* END if (rc != 0) */
 
 #else	/* PBS_MOM */
 

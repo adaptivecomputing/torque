@@ -169,10 +169,10 @@ union attr_val {		/* the attribute value	*/
 	long	at_long;		/* long integer */
 	Long	at_ll;			/* largest long integer */
 	char    at_char;		/* single character */
-	char *	at_str;			/* char string  */
-	struct array_strings *at_arst;	/* array of strings */
+	char   *at_str;			/* char string (alloc) */
+	struct array_strings *at_arst;	/* array of strings (alloc) */
 	struct size_value     at_size;	/* size value */
-	list_head	      at_list;	/* list of resources,  ... */
+	list_head	      at_list;	/* list of resources,  ... (alloc) */
 	struct  pbsnode	     *at_jinfo; /* ptr to node's job info  */
 	short		      at_short;	/* short int; node's state */
 };
