@@ -1547,7 +1547,7 @@ void set_resc_deflt(
 
   assert(pque != NULL);
 
-  if (ja_wattr != NULL)
+  if (ji_wattr != NULL)
     ja = ji_wattr;
   else
     ja = pjob->ji_wattr;
