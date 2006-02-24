@@ -203,7 +203,8 @@
 /*  - create #define ATTR_* in include/pbs_ifl.h
     - insert SRV_ATR_* in include/server.h
     - insert structure in server/svr_attr_def.c
-    - insert load usage code in proper location 
+        NOTE:  structure must be in same relative position as SRV_ATR_*
+    - insert usage code in proper location 
 */
 
 #define ATTR_aclroot	 "acl_roots"

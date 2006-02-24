@@ -1555,35 +1555,27 @@ void set_resc_deflt(
   assert(pque != NULL);
 
   if (ji_wattr != NULL)
-    ja = ji_wattr;
+    ja = &ji_wattr[(int)JOB_ATR_resource];
   else
-    ja = pjob->ji_wattr;
+    ja = &pjob->ji_wattr[(int)JOB_ATR_resource];
 
   /* apply queue defaults first since they take precedence */
 
-  set_deflt_resc(
-    &ja[(int)JOB_ATR_resource],
-    &pque->qu_attr[(int)QA_ATR_ResourceDefault]);
+  set_deflt_resc(ja,&pque->qu_attr[(int)QA_ATR_ResourceDefault]);
 
   /* server defaults will only be applied to attributes which have
      not yet been set */
 
-  set_deflt_resc(
-    &ja[(int)JOB_ATR_resource],
-    &server.sv_attr[(int)SRV_ATR_resource_deflt]);
+  set_deflt_resc(ja,&server.sv_attr[(int)SRV_ATR_resource_deflt]);
 
   /* apply queue max limits first since they take precedence */
 
-  set_deflt_resc(
-    &ja[(int)JOB_ATR_resource],
-    &pque->qu_attr[(int)QA_ATR_ResourceMax]);
+  set_deflt_resc(ja,&pque->qu_attr[(int)QA_ATR_ResourceMax]);
 
   /* server max limits will only be applied to attributes which have
      not yet been set */
 
-  set_deflt_resc(
-    &ja[(int)JOB_ATR_resource],
-    &server.sv_attr[(int)SRV_ATR_ResourceMax]);
+  set_deflt_resc(ja,&server.sv_attr[(int)SRV_ATR_ResourceMax]);
 
   return;
   }  /* END set_resc_deflt() */
