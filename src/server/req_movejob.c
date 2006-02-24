@@ -161,26 +161,50 @@ void req_movejob(
 
   switch (svr_movejob(jobp,req->rq_ind.rq_move.rq_destin,req)) 
     {
-	case 0:			/* success */
-		(void)strcpy(log_buffer, msg_movejob);
-		(void)sprintf(log_buffer+strlen(log_buffer), 
-			      msg_manager, req->rq_ind.rq_move.rq_destin,
-			      req->rq_user, req->rq_host);
-		log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB,
-			  jobp->ji_qs.ji_jobid, log_buffer);
-		reply_ack(req);
-		break;
-	case -1:
-	case 1:			/* fail */
-		req_reject(pbs_errno,0,req,NULL,NULL);
-		break;
-	case 2:			/* deferred, will be handled by 	   */
-				/* post_movejob() when the child completes */
-		break;
-	}
+    case 0:
+
+      /* success */
+
+      strcpy(log_buffer,msg_movejob);
+
+      sprintf(log_buffer + strlen(log_buffer),msg_manager, 
+        req->rq_ind.rq_move.rq_destin,
+        req->rq_user, 
+        req->rq_host);
+
+      log_event(
+        PBSEVENT_JOB, 
+        PBS_EVENTCLASS_JOB,
+        jobp->ji_qs.ji_jobid, 
+        log_buffer);
+
+      reply_ack(req);
+
+      break;
+
+    case -1:
+    case 1:	
+
+      /* fail */
+
+      /* NOTE:  can pass detailed response to requestor (NYI) */
+
+      req_reject(pbs_errno,0,req,NULL,NULL);
+
+      break;
+
+    case 2:
+
+      /* deferred, will be handled by    */
+      /* post_movejob() when the child completes */
+
+      /* NO-OP */
+
+      break;
+    }  /* END switch (svr_movejob(jobp,req->rq_ind.rq_move.rq_destin,req)) */
 
   return;
-  }
+  }  /* END req_movejob() */
 
 
 

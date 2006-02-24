@@ -295,8 +295,8 @@ static int local_move(
     return(should_retry_route(pbs_errno));
     }
 
-  /* dequeue job from present queue, update destination and	*/
-  /* queue_rank for new queue and enqueue into destination	*/
+  /* dequeue job from present queue, update destination and */
+  /* queue_rank for new queue and enqueue into destination  */
 
   svr_dequejob(jobp);
 
@@ -304,7 +304,9 @@ static int local_move(
 
   jobp->ji_wattr[(int)JOB_ATR_qrank].at_val.at_long = ++queue_rank;
 
-  if ((pbs_errno = svr_enquejob(jobp)))
+  pbs_errno = svr_enquejob(jobp);
+
+  if (pbs_errno != 0)
     {
     return(-1);	/* should never ever get here */
     }

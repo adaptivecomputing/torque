@@ -10,6 +10,7 @@
   prevent rapid hello from MOM from doing DOS on pbs_server
   add diagnostics for why node not considered available
   add caching of local serverhost addr lookup
+  enable job centric vs queue centric queue limit parameter
 
 2.0.0p7
 

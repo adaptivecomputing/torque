@@ -127,7 +127,7 @@ int resc_access_perm;
 int comp_resc_gt;	/* count of resources compared > */
 int comp_resc_eq;	/* count of resources compared = */
 int comp_resc_lt;	/* count of resources compared < */
-int comp_resc_nc;	/* count of resources not compared  */
+int comp_resc_nc;	/* count of resources not compared */
 
 extern resource_def svr_resc_def[];
 extern int	    svr_resc_size;
@@ -306,15 +306,17 @@ int encode_resc(attr, phead, atname, rsname, mode)
  *		>0 if error
  */
 
-int set_resc(old, new, op)
-	struct attribute *old;
-	struct attribute *new;
-	enum batch_op op;
-{
-	enum batch_op local_op;
-	resource *newresc;
-	resource *oldresc;
-	int	  rc;
+int set_resc(
+
+  struct attribute *old,
+  struct attribute *new,
+  enum batch_op     op)
+
+  {
+  enum batch_op local_op;
+  resource *newresc;
+  resource *oldresc;
+  int	  rc;
 
 	assert(old && new);
 
@@ -355,9 +357,11 @@ int set_resc(old, new, op)
 
 		newresc = (resource *)GET_NEXT(newresc->rs_link);
 	}
-	old->at_flags |= ATR_VFLAG_SET | ATR_VFLAG_MODIFY;
-	return (0);
-}
+
+  old->at_flags |= ATR_VFLAG_SET | ATR_VFLAG_MODIFY;
+
+  return(0);
+  }
 
 
 
@@ -380,10 +384,16 @@ int set_resc(old, new, op)
  *		-1 if error
  */
 
+/* NOTE:  if IsJobCentric is 1, enforce for every job attr set, 
+          if IsJobCentric is 0, enforce for every queue attr set
+          old default behavior was '1' */
+
 int comp_resc(
 
-  struct attribute *attr,  /* queue's min/max attributes */
-  struct attribute *with)  /* job's current requiremets/attributes */
+  struct attribute *attr,          /* I queue's min/max attributes */
+  struct attribute *with,          /* I job's current requirements/attributes */
+  int               IsJobCentric,  /* I */
+  char             *EMsg)          /* O (optional,minsize=1024) */
 
   {
   resource *atresc;
@@ -395,62 +405,123 @@ int comp_resc(
   comp_resc_lt = 0;
   comp_resc_nc = 0;
 
+  char *LimitName;
+
+  if (EMsg != NULL)
+    EMsg[0] = '\0';
+
   if ((attr == NULL) || (with == NULL))
     {
+    /* FAILURE */
+
     return(-1);
     }
 
-  /* NOTE:  no violation unless attribute is set on job */
-
-  wiresc = (resource *)GET_NEXT(with->at_val.at_list);
-
-  while (wiresc != NULL) 
+  if (IsJobCentric == 0)
     {
-    if ((wiresc->rs_value.at_flags & ATR_VFLAG_SET) &&
-       ((wiresc->rs_value.at_flags & ATR_VFLAG_DEFLT) == 0)) 
+    /* comparison is queue centric */
+
+    atresc = (resource *)GET_NEXT(attr->at_val.at_list);
+
+    while (atresc != NULL)
       {
-      atresc = find_resc_entry(attr,wiresc->rs_defin);
-
-      if (atresc != NULL) 
+      if (atresc->rs_value.at_flags & ATR_VFLAG_SET) 
         {
-	if (atresc->rs_value.at_flags & ATR_VFLAG_SET)
+        wiresc = find_resc_entry(with,atresc->rs_defin);
+
+        if (wiresc != NULL)
           {
-          if ((rc = atresc->rs_defin->rs_comp(
-              &atresc->rs_value,
-              &wiresc->rs_value)) > 0)
+          if ((wiresc->rs_value.at_flags & ATR_VFLAG_SET) &&
+              (wiresc->rs_value.at_flags & ATR_VFLAG_DEFLT))
             {
-            comp_resc_gt++;
+            if ((rc = atresc->rs_defin->rs_comp(
+                &atresc->rs_value,
+                &wiresc->rs_value)) > 0)
+              {
+              if ((EMsg != NULL) && (EMsg[0] == '\0'))
+                {
+                LimitName = atresc->rs_defin->rs_name;
+
+                sprintf(EMsg,"cannot satisfy queue min %s requirement",
+                  (LimitName != NULL) ? LimitName : "resource");
+                }
+
+              comp_resc_gt++;
+              }
+            else if (rc < 0)
+              {
+              comp_resc_lt++;
+              }
+            else
+              {
+              comp_resc_eq++;
+              }
             }
-          else if (rc < 0)
-            {
-            comp_resc_lt++;
-            }
-          else
-            {
-            comp_resc_eq++;
-            }
-          } 
-        } 
-      else 
-        {	
-        comp_resc_nc++;
+          }
+        else
+          {
+          comp_resc_nc++;
+          }
         }
+
+      atresc = (resource *)GET_NEXT(atresc->rs_link);
       }
+    }
+  else
+    {
+    /* comparison is job centric */
 
-    wiresc = (resource *)GET_NEXT(wiresc->rs_link);
-    }  /* END while() */
- 
-  /* NOTE:  this check only enforces attributes if the job specifies the
-            attribute.  If the queue has a min requirement of resource X
-            and the job has no value set for this resource, this routine
-            will not trigger comp_resc_lt */
+    /* NOTE:  this check only enforces attributes if the job specifies the
+              attribute.  If the queue has a min requirement of resource X
+              and the job has no value set for this resource, this routine
+              will not trigger comp_resc_lt */
 
-  /* this should be changed to require all queue min requirements to be
-     set and satisfied (NYI) */
+    wiresc = (resource *)GET_NEXT(with->at_val.at_list);
 
-  /* need rs_defin for 'ncpus' */
+    while (wiresc != NULL) 
+      {
+      if ((wiresc->rs_value.at_flags & ATR_VFLAG_SET) &&
+         ((wiresc->rs_value.at_flags & ATR_VFLAG_DEFLT) == 0)) 
+        {
+        atresc = find_resc_entry(attr,wiresc->rs_defin);
 
-  /* atresc = find_resc_entry(attr,wiresc->rs_defin); */
+        if (atresc != NULL) 
+          {
+          if (atresc->rs_value.at_flags & ATR_VFLAG_SET)
+            {
+            if ((rc = atresc->rs_defin->rs_comp(
+                &atresc->rs_value,
+                &wiresc->rs_value)) > 0)
+              {
+              if ((EMsg != NULL) && (EMsg[0] == '\0'))
+                {
+                LimitName = atresc->rs_defin->rs_name;
+
+                sprintf(EMsg,"cannot satisfy queue min %s requirement",
+                  (LimitName != NULL) ? LimitName : "resource");
+                }
+
+              comp_resc_gt++;
+              }
+            else if (rc < 0)
+              {
+              comp_resc_lt++;
+              }
+            else
+              {
+              comp_resc_eq++;
+              }
+            } 
+          } 
+        else 
+          {	
+          comp_resc_nc++;
+          }
+        }
+
+      wiresc = (resource *)GET_NEXT(wiresc->rs_link);
+      }  /* END while() */
+    }
 
   return(0);
   }  /* END comp_resc() */

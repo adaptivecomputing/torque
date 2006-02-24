@@ -374,8 +374,10 @@ int modify_job_attr(
         {
         if ((comp_resc(
               &pjob->ji_wattr[(int)JOB_ATR_resource],
-              &newattr[(int)JOB_ATR_resource]) == -1) ||
-            comp_resc_lt)
+              &newattr[(int)JOB_ATR_resource],
+              1,
+              NULL) == -1) ||
+            (comp_resc_lt != 0))
           {
           rc = PBSE_PERM;
           }
