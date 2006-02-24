@@ -676,8 +676,8 @@ static int forced_jobpurge(
     {
     if (!strncmp(preq->rq_extend,delpurgestr,strlen(delpurgestr))) 
       {
-      if ((preq->rq_perm & (ATR_DFLAG_OPRD|ATR_DFLAG_OPWR|
-                            ATR_DFLAG_MGRD|ATR_DFLAG_MGWR)) != 0)
+      if (((preq->rq_perm & (ATR_DFLAG_OPRD|ATR_DFLAG_OPWR|ATR_DFLAG_MGRD|ATR_DFLAG_MGWR)) != 0) || 
+          ((svr_chk_owner(preq,pjob) == 0) && (server.sv_attr[(int)SRV_ATR_OwnerPurge].at_val.at_long)))
         {
         sprintf(log_buffer,"purging job without checking MOM");
 

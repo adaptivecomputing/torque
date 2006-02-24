@@ -368,7 +368,9 @@ int svr_enquejob(
 
     /* issue enqueued accounting record */
 
-    sprintf(log_buffer,"queue=%s",pque->qu_qs.qu_name);
+    sprintf(log_buffer,"queue=%s",
+      pque->qu_qs.qu_name);
+
     account_record(PBS_ACCT_QUEUE,pjob,log_buffer);
     }
 	
@@ -392,7 +394,7 @@ int svr_enquejob(
       pjob->ji_qs.ji_un.ji_exect.ji_exitstat = 0;
       }
 
-    /* check the job checkpoint against the queue's  min */
+    /* check the job checkpoint against the queue's min */
 
     eval_chkpnt(
       &pjob->ji_wattr[(int)JOB_ATR_chkpnt],

@@ -199,6 +199,13 @@
 
 /* additional server attributes names */
 
+/* NOTE: steps for adding new attribute described in ??? */
+/*  - create #define ATTR_* in include/pbs_ifl.h
+    - insert SRV_ATR_* in include/server.h
+    - insert structure in server/svr_attr_def.c
+    - insert load usage code in proper location 
+*/
+
 #define ATTR_aclroot	 "acl_roots"
 #define ATTR_managers	 "managers"
 #define ATTR_dfltque	 "default_queue"
@@ -224,6 +231,8 @@
 #define ATTR_polljobs    "poll_jobs"
 #define ATTR_downonerror "down_on_error"
 #define ATTR_jobnanny    "job_nanny"
+#define ATTR_ownerpurge  "owner_purge"
+#define ATTR_qcqlimits   "queue_centric_limits"
 #define ATTR_momjobsync  "mom_job_sync"
 #define ATTR_maildomain  "mail_domain"
 #define ATTR_pbsversion  "pbs_version"

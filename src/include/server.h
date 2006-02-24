@@ -128,6 +128,8 @@ enum srv_atr {
         SRV_ATR_LogLevel,
         SRV_ATR_DownOnError,
         SRV_ATR_JobNanny,
+        SRV_ATR_OwnerPurge,
+        SRV_ATR_QCQLimits,
         SRV_ATR_MomJobSync,
         SRV_ATR_MailDomain,
 	SRV_ATR_version,
@@ -188,8 +190,8 @@ extern struct server server;
 
 /* function prototypes */
 
-extern int  svr_recov A_((char *));
-extern int  svr_save A_((struct server *, int mode));
+extern int svr_recov A_((char *));
+extern int svr_save A_((struct server *,int));
 
 
 /*
