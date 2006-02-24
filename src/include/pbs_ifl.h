@@ -202,6 +202,7 @@
 /* NOTE: steps for adding new attribute described in ??? */
 /*  - create #define ATTR_* in include/pbs_ifl.h
     - insert SRV_ATR_* in include/server.h
+    - add SRV_ATR_* in include/qmgr_svr_public.h
     - insert structure in server/svr_attr_def.c
         NOTE:  structure must be in same relative position as SRV_ATR_*
     - insert usage code in proper location 
