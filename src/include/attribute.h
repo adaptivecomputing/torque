@@ -380,27 +380,28 @@ extern int set_uacl  A_((attribute *attr,attribute *new, enum batch_op));
 extern int set_unkn A_((attribute *attr,attribute *new, enum batch_op));
 extern int set_depend A_((attribute *attr,attribute *new, enum batch_op));
 
-extern int comp_b A_((attribute *attr, attribute *with));
-extern int comp_c A_((attribute *attr, attribute *with));
-extern int comp_l A_((attribute *attr, attribute *with));
-extern int comp_ll A_((attribute *attr, attribute *with));
-extern int comp_size  A_((attribute *attr, attribute *with));
-extern int comp_str  A_((attribute *attr, attribute *with));
-extern int comp_arst A_((attribute *attr, attribute *with));
-extern int comp_resc A_((attribute *,attribute *,int,char *));
-extern int comp_unkn A_((attribute *attr, attribute *with));
-extern int comp_depend A_((attribute *attr, attribute *with));
-extern int comp_hold A_((attribute *attr, attribute *with));
+extern int comp_b A_((attribute *, attribute *));
+extern int comp_c A_((attribute *, attribute *));
+extern int comp_l A_((attribute *, attribute *));
+extern int comp_ll A_((attribute *, attribute *));
+extern int comp_size A_((attribute *,attribute *));
+extern int comp_str  A_((attribute *,attribute *));
+extern int comp_arst A_((attribute *,attribute *));
+extern int comp_resc A_((attribute *,attribute *));
+extern int comp_resc2 A_((attribute *,attribute *,int,char *));
+extern int comp_unkn A_((attribute *,attribute *));
+extern int comp_depend A_((attribute *,attribute *));
+extern int comp_hold A_((attribute *,attribute *));
 
-extern int action_depend A_((attribute *attr, void *pobj, int mode));
+extern int action_depend A_((attribute *,void *,int));
 
-extern void free_str  A_((attribute *attr));
-extern void free_arst A_((attribute *attr));
-extern void free_resc A_((attribute *attr));
-extern void free_depend A_((attribute *attr));
-extern void free_unkn A_((attribute *attr));
-extern int   parse_equal_string A_((char  *start, char **name, char **value));
-extern char *parse_comma_string A_((char *start));
+extern void free_str  A_((attribute *));
+extern void free_arst A_((attribute *));
+extern void free_resc A_((attribute *));
+extern void free_depend A_((attribute *));
+extern void free_unkn A_((attribute *));
+extern int   parse_equal_string A_((char *,char **,char **));
+extern char *parse_comma_string A_((char *));
 
 #define NULL_FUNC (int (*)())0
 

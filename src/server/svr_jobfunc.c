@@ -950,7 +950,7 @@ int chk_resc_limits(
 
   /* first check against queue minimum */
 
-  if ((comp_resc(
+  if ((comp_resc2(
          &pque->qu_attr[QA_ATR_ResourceMin],
          pattr,
          server.sv_attr[(int)SRV_ATR_QCQLimits].at_val.at_long,

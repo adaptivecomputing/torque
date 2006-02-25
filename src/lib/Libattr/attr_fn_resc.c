@@ -243,13 +243,15 @@ int decode_resc(
  *		 <0 if some resource entry had an encode error.
  */
 
-int encode_resc(attr, phead, atname, rsname, mode)
-	attribute	*attr;	  /* ptr to attribute to encode */
-	list_head	*phead;	  /* head of attrlist list */
-	char		*atname;   /* attribute name */
-	char		*rsname;   /* resource name, null on call */
-	int		 mode;	  /* encode mode */
-{
+int encode_resc(
+
+  attribute	*attr,	  /* ptr to attribute to encode */
+  list_head	*phead,	  /* head of attrlist list */
+  char		*atname,   /* attribute name */
+  char		*rsname,   /* resource name, null on call */
+  int		 mode)	  /* encode mode */
+
+  {
 	int	    dflt;
 	resource   *prsc;
 	int	    rc;
@@ -369,6 +371,102 @@ int set_resc(
 /*
  * comp_resc - compare two attributes of type ATR_TYPE_RESR
  *
+ *      DANGER Will Robinson, DANGER
+ *
+ *      As you can see from the returns, this is different from the
+ *      at_comp model...
+ *
+ *      Returns: 0 if compare successful:
+ *                 sets comp_resc_gt to count of "greater than" compares
+ *                              attr > with
+ *                 sets comp_resc_eq to count of "equal to" compares
+ *                              attr == with
+ *                 sets comp_resc_lt to count of "less than" compares
+ *                              attr < with
+ *              -1 if error
+ */
+
+/* NOTE:  if IsQueueCentric is 0, enforce for every job attr set,
+          if IsQueueCentric is 1, enforce for every queue attr set
+          old default behavior was '1' */
+
+int comp_resc(
+
+  struct attribute *attr,  /* I queue's min/max attributes */
+  struct attribute *with)  /* I job's current requirements/attributes */
+
+  {
+  resource *atresc;
+  resource *wiresc;
+  int rc;
+
+  comp_resc_gt = 0;
+  comp_resc_eq = 0;
+  comp_resc_lt = 0;
+  comp_resc_nc = 0;
+
+  if ((attr == NULL) || (with == NULL))
+    {
+    /* FAILURE */
+
+    return(-1);
+    }
+
+  /* comparison is job centric */
+
+  /* NOTE:  this check only enforces attributes if the job specifies the
+            attribute.  If the queue has a min requirement of resource X
+            and the job has no value set for this resource, this routine
+            will not trigger comp_resc_lt */
+
+  wiresc = (resource *)GET_NEXT(with->at_val.at_list);
+
+  while (wiresc != NULL)
+    {
+    if ((wiresc->rs_value.at_flags & ATR_VFLAG_SET) &&
+       ((wiresc->rs_value.at_flags & ATR_VFLAG_DEFLT) == 0))
+      {
+      atresc = find_resc_entry(attr,wiresc->rs_defin);
+
+      if (atresc != NULL)
+        {
+        if (atresc->rs_value.at_flags & ATR_VFLAG_SET)
+          {
+          if ((rc = atresc->rs_defin->rs_comp(
+              &atresc->rs_value,
+              &wiresc->rs_value)) > 0)
+            {
+            comp_resc_gt++;
+            }
+          else if (rc < 0)
+            {
+            comp_resc_lt++;
+            }
+          else
+            {
+            comp_resc_eq++;
+            }
+          }
+        }
+      else
+        {
+        comp_resc_nc++;
+        }
+      }
+
+    wiresc = (resource *)GET_NEXT(wiresc->rs_link);
+    }  /* END while() */
+
+  return(0);
+  }  /* END comp_resc() */
+
+
+
+
+
+/*
+ * comp_resc2 - compare two attributes of type ATR_TYPE_RESR
+ *
  *	DANGER Will Robinson, DANGER
  *
  *	As you can see from the returns, this is different from the
@@ -388,7 +486,7 @@ int set_resc(
           if IsQueueCentric is 1, enforce for every queue attr set
           old default behavior was '1' */
 
-int comp_resc(
+int comp_resc2(
 
   struct attribute *attr,           /* I queue's min/max attributes */
   struct attribute *with,           /* I job's current requirements/attributes */
@@ -524,7 +622,7 @@ int comp_resc(
     }
 
   return(0);
-  }  /* END comp_resc() */
+  }  /* END comp_resc2() */
 
 
 
