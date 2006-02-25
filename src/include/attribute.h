@@ -387,7 +387,7 @@ extern int comp_ll A_((attribute *attr, attribute *with));
 extern int comp_size  A_((attribute *attr, attribute *with));
 extern int comp_str  A_((attribute *attr, attribute *with));
 extern int comp_arst A_((attribute *attr, attribute *with));
-extern int comp_resc A_((attribute *attr, attribute *with));
+extern int comp_resc A_((attribute *,attribute *,int,char *));
 extern int comp_unkn A_((attribute *attr, attribute *with));
 extern int comp_depend A_((attribute *attr, attribute *with));
 extern int comp_hold A_((attribute *attr, attribute *with));
