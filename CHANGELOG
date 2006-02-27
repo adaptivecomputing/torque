@@ -11,6 +11,7 @@
   add diagnostics for why node not considered available
   add caching of local serverhost addr lookup
   enable job centric vs queue centric queue limit parameter
+  brand new autoconf+automake+libtool build system
 
 2.0.0p7
 

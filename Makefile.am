@@ -22,7 +22,7 @@ bin_SCRIPTS = pbs-config
 DISTCLEANFILES = pbs-config
 
 snap:
-	$(MAKE) VERSION=$(VERSION)-snap.`date +%Y%m%d%H%M` dist
+	$(MAKE) VERSION=$(VERSION)-snap.$${snapstamp:-`date +%Y%m%d%H%M`} dist
 
 dist-hook:
 	chmod u+w $(distdir)/README.torque $(distdir)/configure $(distdir)/torque.spec
