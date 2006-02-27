@@ -94,7 +94,6 @@
 #include "portability.h"
 #include "log.h"
 
-char *msg_daemonname = 0;	/* to satisfy the Cray linker */
 
 int main(
 

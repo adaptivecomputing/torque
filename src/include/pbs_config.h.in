@@ -1,275 +1,411 @@
-/*
-*         OpenPBS (Portable Batch System) v2.3 Software License
-* 
-* Copyright (c) 1999-2000 Veridian Information Solutions, Inc.
-* All rights reserved.
-* 
-* ---------------------------------------------------------------------------
-* For a license to use or redistribute the OpenPBS software under conditions
-* other than those described below, or to purchase support for this software,
-* please contact Veridian Systems, PBS Products Department ("Licensor") at:
-* 
-*    www.OpenPBS.org  +1 650 967-4675                  sales@OpenPBS.org
-*                        877 902-4PBS (US toll-free)
-* ---------------------------------------------------------------------------
-* 
-* This license covers use of the OpenPBS v2.3 software (the "Software") at
-* your site or location, and, for certain users, redistribution of the
-* Software to other sites and locations.  Use and redistribution of
-* OpenPBS v2.3 in source and binary forms, with or without modification,
-* are permitted provided that all of the following conditions are met.
-* After December 31, 2001, only conditions 3-6 must be met:
-* 
-* 1. Commercial and/or non-commercial use of the Software is permitted
-*    provided a current software registration is on file at www.OpenPBS.org.
-*    If use of this software contributes to a publication, product, or
-*    service, proper attribution must be given; see www.OpenPBS.org/credit.html
-* 
-* 2. Redistribution in any form is only permitted for non-commercial,
-*    non-profit purposes.  There can be no charge for the Software or any
-*    software incorporating the Software.  Further, there can be no
-*    expectation of revenue generated as a consequence of redistributing
-*    the Software.
-* 
-* 3. Any Redistribution of source code must retain the above copyright notice
-*    and the acknowledgment contained in paragraph 6, this list of conditions
-*    and the disclaimer contained in paragraph 7.
-* 
-* 4. Any Redistribution in binary form must reproduce the above copyright
-*    notice and the acknowledgment contained in paragraph 6, this list of
-*    conditions and the disclaimer contained in paragraph 7 in the
-*    documentation and/or other materials provided with the distribution.
-* 
-* 5. Redistributions in any form must be accompanied by information on how to
-*    obtain complete source code for the OpenPBS software and any
-*    modifications and/or additions to the OpenPBS software.  The source code
-*    must either be included in the distribution or be available for no more
-*    than the cost of distribution plus a nominal fee, and all modifications
-*    and additions to the Software must be freely redistributable by any party
-*    (including Licensor) without restriction.
-* 
-* 6. All advertising materials mentioning features or use of the Software must
-*    display the following acknowledgment:
-* 
-*     "This product includes software developed by NASA Ames Research Center,
-*     Lawrence Livermore National Laboratory, and Veridian Information 
-*     Solutions, Inc.
-*     Visit www.OpenPBS.org for OpenPBS software support,
-*     products, and information."
-* 
-* 7. DISCLAIMER OF WARRANTY
-* 
-* THIS SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND. ANY EXPRESS
-* OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
-* OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT
-* ARE EXPRESSLY DISCLAIMED.
-* 
-* IN NO EVENT SHALL VERIDIAN CORPORATION, ITS AFFILIATED COMPANIES, OR THE
-* U.S. GOVERNMENT OR ANY OF ITS AGENCIES BE LIABLE FOR ANY DIRECT OR INDIRECT,
-* INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-* LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
-* OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-* LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-* NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
-* EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-* 
-* This license will be governed by the laws of the Commonwealth of Virginia,
-* without reference to its choice of law rules.
-*/
-/* ./src/include/pbs_config.h.in.  Generated automatically from configure.in by autoheader.  */
+/* src/include/pbs_config.h.in.  Generated from configure.ac by autoheader.  */
+
 #ifndef _PBS_CONFIG_H_
 #define _PBS_CONFIG_H_
 
-
-/* Define if type char is unsigned and you are not using gcc.  */
-#ifndef __CHAR_UNSIGNED__
-#undef __CHAR_UNSIGNED__
-#endif
-
-/* PBS specific: turns on the compilation of DEBUG code */
+/* turns on the compilation of DEBUG code */
 #undef DEBUG
 
 /* are FD_SET and friends defined in sys/select.h */
 #undef FD_SET_IN_SYS_SELECT_H
 
-/* should we use setresuid instead os seteuid */
-#undef HAVE_SETRESUID
-#undef HAVE_SETRESGID
-#undef HAVE_SETEUID
+/* Define to 1 if you have the `alarm' function. */
+#undef HAVE_ALARM
+
+/* Define to 1 if you have the <arpa/inet.h> header file. */
+#undef HAVE_ARPA_INET_H
+
+/* Define to 1 if you have the `atexit' function. */
+#undef HAVE_ATEXIT
+
+/* Define to 1 if you have the <dirent.h> header file, and it defines `DIR'.
+   */
+#undef HAVE_DIRENT_H
+
+/* Define to 1 if you have the <dlfcn.h> header file. */
+#undef HAVE_DLFCN_H
+
+/* Define to 1 if you have the `dup2' function. */
+#undef HAVE_DUP2
+
+/* Define to 1 if you have the <fcntl.h> header file. */
+#undef HAVE_FCNTL_H
+
+/* Define to 1 if you have the <float.h> header file. */
+#undef HAVE_FLOAT_H
+
+/* Define if the C complier supports __func__ */
+#undef HAVE_FUNC
+
+/* Define if the C complier supports __FUNCTION__ */
+#undef HAVE_FUNCTION
+
+/* Define to 1 if you have the `getcwd' function. */
+#undef HAVE_GETCWD
+
+/* Define to 1 if you have the `gethostbyaddr' function. */
+#undef HAVE_GETHOSTBYADDR
+
+/* Define to 1 if you have the `gethostbyname' function. */
+#undef HAVE_GETHOSTBYNAME
+
+/* Define to 1 if you have the `gettimeofday' function. */
+#undef HAVE_GETTIMEOFDAY
+
+/* Define to 1 if you have the <inttypes.h> header file. */
+#undef HAVE_INTTYPES_H
+
+/* Define to 1 if you have the `elf' library (-lelf). */
+#undef HAVE_LIBELF
+
+/* Define to 1 if you have the `kvm' library (-lkvm). */
+#undef HAVE_LIBKVM
+
+/* Define to 1 if you have the `nsl' library (-lnsl). */
+#undef HAVE_LIBNSL
+
+/* Define to 1 if you have the `socket' library (-lsocket). */
+#undef HAVE_LIBSOCKET
+
+/* Define to 1 if you have the <limits.h> header file. */
+#undef HAVE_LIMITS_H
+
+/* Define to 1 if you have the <malloc.h> header file. */
+#undef HAVE_MALLOC_H
+
+/* Define to 1 if you have the `memchr' function. */
+#undef HAVE_MEMCHR
+
+/* Define to 1 if you have the <memory.h> header file. */
+#undef HAVE_MEMORY_H
+
+/* Define to 1 if you have the `memset' function. */
+#undef HAVE_MEMSET
+
+/* Define to 1 if you have the `mkdir' function. */
+#undef HAVE_MKDIR
+
+/* Define to 1 if you have the <ndir.h> header file, and it defines `DIR'. */
+#undef HAVE_NDIR_H
+
+/* Define to 1 if you have the <netdb.h> header file. */
+#undef HAVE_NETDB_H
+
+/* Define to 1 if you have the <netinet/in.h> header file. */
+#undef HAVE_NETINET_IN_H
+
+/* Define to 1 if you have the `on_exit' function. */
+#undef HAVE_ON_EXIT
+
+/* Define to 1 if you have the `putenv' function. */
+#undef HAVE_PUTENV
+
+/* include readline support */
+#undef HAVE_READLINE
+
+/* Define to 1 if you have the `rmdir' function. */
+#undef HAVE_RMDIR
+
+/* Define to 1 if you have the `select' function. */
+#undef HAVE_SELECT
+
+/* Define to 1 if you have the `setegid' function. */
 #undef HAVE_SETEGID
+
+/* Define to 1 if you have the `seteuid' function. */
+#undef HAVE_SETEUID
+
+/* Define to 1 if you have the `setresgid' function. */
+#undef HAVE_SETRESGID
+
+/* Define to 1 if you have the `setresuid' function. */
+#undef HAVE_SETRESUID
+
+/* Define to 1 if you have the `socket' function. */
+#undef HAVE_SOCKET
+
+/* Define to 1 if you have the <stddef.h> header file. */
+#undef HAVE_STDDEF_H
+
+/* Define to 1 if you have the <stdint.h> header file. */
+#undef HAVE_STDINT_H
+
+/* Define to 1 if you have the <stdlib.h> header file. */
+#undef HAVE_STDLIB_H
+
+/* Define to 1 if you have the `strcasecmp' function. */
+#undef HAVE_STRCASECMP
+
+/* Define to 1 if you have the `strchr' function. */
+#undef HAVE_STRCHR
+
+/* Define to 1 if you have the `strdup' function. */
+#undef HAVE_STRDUP
+
+/* Define to 1 if you have the `strerror' function. */
+#undef HAVE_STRERROR
+
+/* Define to 1 if you have the <strings.h> header file. */
+#undef HAVE_STRINGS_H
+
+/* Define to 1 if you have the <string.h> header file. */
+#undef HAVE_STRING_H
+
+/* Define to 1 if you have the `strpbrk' function. */
+#undef HAVE_STRPBRK
+
+/* Define to 1 if you have the `strrchr' function. */
+#undef HAVE_STRRCHR
+
+/* Define to 1 if you have the `strspn' function. */
+#undef HAVE_STRSPN
+
+/* Define to 1 if you have the `strstr' function. */
+#undef HAVE_STRSTR
+
+/* Define to 1 if you have the `strtol' function. */
+#undef HAVE_STRTOL
+
+/* Define to 1 if you have the `strtoul' function. */
+#undef HAVE_STRTOUL
+
+/* Define to 1 if you have the <syslog.h> header file. */
+#undef HAVE_SYSLOG_H
+
+/* Define to 1 if you have the <sys/dir.h> header file, and it defines `DIR'.
+   */
+#undef HAVE_SYS_DIR_H
+
+/* Define to 1 if you have the <sys/file.h> header file. */
+#undef HAVE_SYS_FILE_H
 
 /* does the header file sys/ioctl.h exist */
 #undef HAVE_SYS_IOCTL_H
 
+/* Define to 1 if you have the <sys/ndir.h> header file, and it defines `DIR'.
+   */
+#undef HAVE_SYS_NDIR_H
+
+/* Define to 1 if you have the <sys/param.h> header file. */
+#undef HAVE_SYS_PARAM_H
+
+/* Define to 1 if you have the <sys/socket.h> header file. */
+#undef HAVE_SYS_SOCKET_H
+
+/* Define to 1 if you have the <sys/stat.h> header file. */
+#undef HAVE_SYS_STAT_H
+
+/* Define to 1 if you have the <sys/time.h> header file. */
+#undef HAVE_SYS_TIME_H
+
+/* Define to 1 if you have the <sys/types.h> header file. */
+#undef HAVE_SYS_TYPES_H
+
+/* Define to 1 if you have <sys/wait.h> that is POSIX.1 compatible. */
+#undef HAVE_SYS_WAIT_H
+
+/* Define to 1 if you have the <termios.h> header file. */
+#undef HAVE_TERMIOS_H
+
+/* Define to 1 if you have the `uname' function. */
+#undef HAVE_UNAME
+
+/* Define to 1 if you have the <unistd.h> header file. */
+#undef HAVE_UNISTD_H
+
+/* Define to 1 if you have the `wordexp' function. */
+#undef HAVE_WORDEXP
+
 /* is the global int h_errno declared in netdb.h */
 #undef H_ERRNO_DECLARED
 
-/* PBS specific: defined if this is a darwin/Mac OS/X system */
-#undef __TDARWIN
-#undef __TDARWINBIND
-
-/* PBS specific: defined if this is a digital unix system */
-#undef __TDIGITAL
-
-/* PBS specific: defined if this is an AIX 5 system */
-#undef __TAIX_5
-
-/* PBS specific: defined if this is a linux system */
-#undef __TLINUX
-
-/* PBS specific: defined if this is a SUN OS 4 system */
-#undef __TSUNOS4
-
-/* PBS specific: defined if this is an SP2 */
+/* defined if this is an SP2 */
 #undef IBM_SP2
 
-/* PBS specific: the PBS style machine type name */
-#undef PBS_MACH
-
-/* PBS specific: the machine specific resc_def_* file name */
+/* the machine specific resc_def_* file name */
 #undef MACH_RESC_DEFS
 
-/* PBS specific: whether checkpointing is supported */
+/* whether checkpointing is supported */
 #undef MOM_CHECKPOINT
-
-/* PBS specific: Define if you will be using a nodefile */
-#undef NEEDNODES
-
-/* PBS specific: Define to the path of the default file */
-#undef PBS_DEFAULT_FILE
-
-/* PBS specific: Define to the path of the environment file */
-#undef PBS_ENVIRON
-
-/* PBS specific: Define if you are on a solaris box */
-#undef PBS_PUSH_STREAM
-
-/* PBS specific: Define to the path of the server home dir */
-#undef PBS_SERVER_HOME
-
-/* PBS specific: Select which daemons plock themselves, a bit pattern */
-#undef PLOCK_DAEMONS
-
-/* PBS specific: Define to the path of the qstat init file */
-#undef QSTATRC_PATH
-
-/* PBS specific: set the type of scheduler to use */
-#undef SCHD_TYPE
-
-/* PBS specific: Define to the path of scp if to be used for file delivery */
-#undef SCP_PATH
-
-/* PBS specific: full pathname of sendmail */
-#undef SENDMAIL_CMD
-
-/* PBS specific: set whether job scripts use a pipe */
-#undef SHELL_INVOKE
-
-/* PBS specific: set whether shell is invoked with job script on command line */
-#undef SHELL_USE_ARGV
-
-/* PBS Specific: Define if one should use NODEMASK on SGI O2k or Cray T3e */
-#undef NODEMASK
-
-/* PBS specific: Define if one should use SRFS on Crays */
-#undef SRFS
-
-/* PBS specific: Define if PBS should use syslog for error reporting */
-#undef SYSLOG
-
-/* PBS specific: Define if PBS should use Tcl in its tools */
-#undef TCL
-
-/* PBS specific: the seperator for Tcl attribute parsing */
-#undef TCL_ATRSEP
-
-/* PBS specific: Define if PBS should build qstat with Tcl or Tclx */
-#undef TCL_QSTAT
-
-/* PBS specific: Define if PBS should use Tclx in its tools */
-#undef TCLX
-
-/* PBS specific: The pathname of the temporary directory for mom */
-#undef TMP_DIR
-
-/* PBS specific: Define if PBS should use RPP/UDP for resource queries */
-#undef RPP
-
-/* PBS specific: Define default mail domain if other than localhost */
-#undef TMAILDOMAIN
-
-/* PBS specific: Define if PBS should use disable O_FSYNC for file open() calls */
-#undef TDISABLEFILESYNC
-
-/* PBS specific: Define if PBS should use spool job stdout/stderr before moving to $HOME */
-#undef NO_SPOOL_OUTPUT
-
-/* The number of bytes in a double.  */
-#undef SIZEOF_DOUBLE
-
-/* The number of bytes in a float.  */
-#undef SIZEOF_FLOAT
-
-/* The number of bytes in a int.  */
-#undef SIZEOF_INT
-
-/* The number of bytes in a long.  */
-#undef SIZEOF_LONG
-
-/* The number of bytes in a long double.  */
-#undef SIZEOF_LONG_DOUBLE
-
-/* The number of bytes in a short.  */
-#undef SIZEOF_SHORT
-
-/* The number of bytes in a signed char.  */
-#undef SIZEOF_SIGNED_CHAR
-
-/* The number of bytes in a unsigned.  */
-#undef SIZEOF_UNSIGNED
-
-/* The number of bytes in a unsigned char.  */
-#undef SIZEOF_UNSIGNED_CHAR
-
-/* The number of bytes in a unsigned int.  */
-#undef SIZEOF_UNSIGNED_INT
-
-/* The number of bytes in a unsigned long.  */
-#undef SIZEOF_UNSIGNED_LONG
-
-/* The number of bytes in a unsigned short.  */
-#undef SIZEOF_UNSIGNED_SHORT
-
-/* Define if you have the atexit function.  */
-#undef HAVE_ATEXIT
-
-/* Define if you have the on_exit function.  */
-#undef HAVE_ON_EXIT
-
-/* Define if you have the readline function.  */
-#undef HAVE_READLINE
-
-/* Define if you have the dl library (-ldl).  */
-#undef HAVE_LIBDL
-
-/* Define if you have the elf library (-lelf).  */
-#undef HAVE_LIBELF
-
-/* Define if you have the kvm library (-lkvm).  */
-#undef HAVE_LIBKVM
-
-/* Define if you have the nsl library (-lnsl).  */
-#undef HAVE_LIBNSL
-
-/* Define if you have the socket library (-lsocket).  */
-#undef HAVE_LIBSOCKET
-
-/* Define if you have the wordexp function. */
-#undef HAVE_WORDEXP
 
 #ifndef NEED_BLOCKING_CONNECTIONS
 #define write(a,b,c) write_nonblocking_socket(a,b,c)
 #define read(a,b,c) read_nonblocking_socket(a,b,c)
+#endif
+
+/* use nodemask-based scheduling on O2k */
+#undef NODEMASK
+
+/* directly use homedirs instead of $TORQUEHOME/spool */
+#undef NO_SPOOL_OUTPUT
+
+/* Name of package */
+#undef PACKAGE
+
+/* Define to the address where bug reports for this package should be sent. */
+#undef PACKAGE_BUGREPORT
+
+/* Define to the full name of this package. */
+#undef PACKAGE_NAME
+
+/* Define to the full name and version of this package. */
+#undef PACKAGE_STRING
+
+/* Define to the one symbol short name of this package. */
+#undef PACKAGE_TARNAME
+
+/* Define to the version of this package. */
+#undef PACKAGE_VERSION
+
+/* Path to file of default server name */
+#undef PBS_DEFAULT_FILE
+
+/* Define to the name of the default PBS server */
+#undef PBS_DEFAULT_SERVER
+
+/* Define to the path of the environment file */
+#undef PBS_ENVIRON
+
+/* the PBS style machine type name */
+#undef PBS_MACH
+
+/* Define to the path of the server home dir */
+#undef PBS_SERVER_HOME
+
+/* use pemask-based scheduling on Cray T3e */
+#undef PE_MASK
+
+/* Select which daemons plock themselves, a bit pattern */
+#undef PLOCK_DAEMONS
+
+/* Define if you are on a solaris box */
+#undef PUSH_STREAM
+
+/* Define to the path of the qstat init file */
+#undef QSTATRC_PATH
+
+/* Define to enable RPP resource queries */
+#undef RPP
+
+/* set the type of scheduler to use */
+#undef SCHD_TYPE
+
+/* Define to the path of scp if to be used for file delivery */
+#undef SCP_PATH
+
+/* full pathname of sendmail */
+#undef SENDMAIL_CMD
+
+/* set whether job scripts use a pipe */
+#undef SHELL_INVOKE
+
+/* job script name passed as the shell's arg */
+#undef SHELL_USE_ARGV
+
+/* The size of a `double', as computed by sizeof. */
+#undef SIZEOF_DOUBLE
+
+/* The size of a `float', as computed by sizeof. */
+#undef SIZEOF_FLOAT
+
+/* The size of a `int', as computed by sizeof. */
+#undef SIZEOF_INT
+
+/* The size of a `long', as computed by sizeof. */
+#undef SIZEOF_LONG
+
+/* The size of a `long double', as computed by sizeof. */
+#undef SIZEOF_LONG_DOUBLE
+
+/* The size of a `short', as computed by sizeof. */
+#undef SIZEOF_SHORT
+
+/* The size of a `signed char', as computed by sizeof. */
+#undef SIZEOF_SIGNED_CHAR
+
+/* The size of a `unsigned', as computed by sizeof. */
+#undef SIZEOF_UNSIGNED
+
+/* The size of a `unsigned char', as computed by sizeof. */
+#undef SIZEOF_UNSIGNED_CHAR
+
+/* The size of a `unsigned int', as computed by sizeof. */
+#undef SIZEOF_UNSIGNED_INT
+
+/* The size of a `unsigned long', as computed by sizeof. */
+#undef SIZEOF_UNSIGNED_LONG
+
+/* The size of a `unsigned short', as computed by sizeof. */
+#undef SIZEOF_UNSIGNED_SHORT
+
+/* include support for SRFS on Cray */
+#undef SRFS
+
+/* Define to 1 if you have the ANSI C header files. */
+#undef STDC_HEADERS
+
+/* Define to enable syslog */
+#undef SYSLOG
+
+/* Define if PBS should use Tcl in its tools */
+#undef TCL
+
+/* Define if PBS should use TclX in its tools */
+#undef TCLX
+
+/* the seperator for Tcl attribute parsing */
+#undef TCL_ATRSEP
+
+/* Define if PBS should build qstat with Tcl or Tclx */
+#undef TCL_QSTAT
+
+/* Define to prevent sync writes */
+#undef TDISABLEFILESYNC
+
+/* Define if PBS should use Tk in its tools */
+#undef TK
+
+/* Define if PBS should use Tkx in its tools */
+#undef TKX
+
+/* override the default domain for outgoing mail messages */
+#undef TMAILDOMAIN
+
+/* The pathname of the Cray temporary directory for mom */
+#undef TMP_DIR
+
+/* Version number of package */
+#undef VERSION
+
+/* Define to 1 if `lex' declares `yytext' as a `char *' by default, not a
+   `char[]'. */
+#undef YYTEXT_POINTER
+
+/* Define to 1 if type `char' is unsigned and you are not using gcc.  */
+#ifndef __CHAR_UNSIGNED__
+# undef __CHAR_UNSIGNED__
+#endif
+
+/* Define if on SUNOS4 */
+#undef __SUNOS4
+
+/* Define if on AIX5 */
+#undef __TAIX_5
+
+/* Define if on Darwin */
+#undef __TDARWIN
+
+/* Define if on Darwin 8.x */
+#undef __TDARWIN_8
+
+/* Define if on Linux */
+#undef __TLINUX
+
+/* Define on ancient linux distros */
+#undef __TOLDTTY
+
+#ifndef HAVE_FUNC
+#define __func__ __FUNCTION__
 #endif
 
 #endif /* _PBS_CONFIG_H_ */

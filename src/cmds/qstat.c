@@ -96,7 +96,6 @@
 #include "cmds.h"
 #include "mcom.h"
 
-#include "pbs_version.h"
 
 #include <pwd.h>
 
@@ -2025,7 +2024,7 @@ int main(
         if ((optarg != NULL) && !strcmp(optarg,"version"))
           {
           fprintf(stderr,"version: %s\n",
-            PBS_VERSION);
+            PACKAGE_VERSION);
 
           exit(0);
           }

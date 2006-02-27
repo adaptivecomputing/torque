@@ -133,7 +133,7 @@ char		*initfil = NULL;
 char		*bodyfil = "sched_tcl";
 char		*termfil = NULL;
 char		*body = NULL;
-char		*msg_daemonname = "pbs_sched";
+extern char		*msg_daemonname;
 char		**glob_argv = NULL;
 struct	sockaddr_in	saddr;
 

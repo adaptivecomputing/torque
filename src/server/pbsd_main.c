@@ -121,7 +121,6 @@
 #include "dis.h"
 #include "dis_init.h"
 #include "batch_request.h"
-#include "pbs_version.h"
 #include "pbs_proto.h"
 
 /* external functions called */
@@ -168,7 +167,7 @@ char	       *path_nodes;
 char	       *path_nodes_new;
 char	       *path_nodestate;
 char		pbs_current_user[PBS_MAXUSER]="PBS_Server"; /* for libpbs.a */
-char	       *msg_daemonname = pbs_current_user;
+extern char            *msg_daemonname;
 int		pbs_errno;
 char	       *pbs_o_host = "PBS_O_HOST";
 pbs_net_t	pbs_mom_addr;
@@ -176,7 +175,7 @@ unsigned int	pbs_mom_port;
 unsigned int	pbs_rm_port;
 pbs_net_t	pbs_scheduler_addr;
 unsigned int	pbs_scheduler_port;
-pbs_net_t	pbs_server_addr;
+extern pbs_net_t	pbs_server_addr;
 unsigned int	pbs_server_port_dis;
 int		queue_rank = 0;
 struct server	server;		/* the server structure */
@@ -473,12 +472,13 @@ int main(
 
   extern int   optind;
   extern char *optarg;
-  extern char *msg_daemonname;
   extern char *msg_svrdown;	/* log message   */
   extern char *msg_startup1;	/* log message   */
   extern char *msg_startup2;	/* log message   */
 
   ProgName = argv[0];
+
+  msg_daemonname=strdup(pbs_current_user);
 
   BufSize = 65536;
 
@@ -641,7 +641,7 @@ int main(
         if (!strcmp(optarg,"version"))
           {
           fprintf(stderr,"version: %s\n",
-            PBS_VERSION);
+            PACKAGE_VERSION);
 
           exit(0);
           }

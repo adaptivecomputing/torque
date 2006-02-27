@@ -113,7 +113,7 @@
 char log_buffer[LOG_BUF_SIZE];
 char log_directory[_POSIX_PATH_MAX/2];
 
-extern char *msg_daemonname;
+char *msg_daemonname = "unset";
 
 /* Local Data */
 

@@ -125,7 +125,6 @@
 
 #include "cmds.h"
 #include "net_connect.h"
-#include "pbs_version.h"
 
 static char *DefaultFilterPath = "/usr/local/sbin/torque_submitfilter";
 
@@ -2165,7 +2164,7 @@ int process_opts(
         if ((optarg != NULL) && !strcmp(optarg,"version"))
           {
           fprintf(stderr,"version: %s\n",
-            PBS_VERSION);
+            PACKAGE_VERSION);
 
           exit(0);
           }

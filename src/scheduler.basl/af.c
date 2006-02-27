@@ -275,7 +275,6 @@ unsigned long k;
 
 
 /* Global variables */
-char *msg_daemonname = "pbs_sched";	/* required by calls to log_* */
 /* External Variables */
 /* External Functions */
 /* Structures and Unions */

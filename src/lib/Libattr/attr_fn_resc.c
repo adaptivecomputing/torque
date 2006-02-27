@@ -334,7 +334,6 @@ int set_resc(
 			/* add new resource to list */
 			oldresc = add_resource_entry(old,newresc->rs_defin);
 			if (oldresc == (resource *)0) {
-				log_err(-1,"set_resc","Unable to malloc space");
 				return (PBSE_SYSTEM);
 			}
 		}
@@ -753,7 +752,6 @@ resource *add_resource_entry (pattr, prdef)
 	}
 	new = (resource *)malloc(sizeof (resource));
 	if (new == (resource *)0) {
-		log_err(-1, "add_resource_entry", "unable to malloc space");
 		return ((resource *)0);
 	}
 	CLEAR_LINK(new->rs_link);

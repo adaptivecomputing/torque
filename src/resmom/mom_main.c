@@ -137,7 +137,6 @@
 #include	"dis.h"
 #include	"dis_init.h"
 #include	"resmon.h"
-#include        "pbs_version.h"
 #include        "pbs_nodes.h"
 #include        "dis.h"
 
@@ -188,8 +187,7 @@ char	       *path_server_name;
 char           *path_home = PBS_SERVER_HOME;
 char           *mom_home;
 char		pbs_current_user[PBS_MAXUSER] = "pbs_mom";  /* for libpbs.a */
-pbs_net_t       pbs_server_addr;
-char	       *msg_daemonname = pbs_current_user;          /* for logs     */
+extern char    *msg_daemonname;          /* for logs     */
 int		pbs_errno;
 gid_t		pbsgroup;
 unsigned int	pbs_mom_port;
@@ -3777,7 +3775,7 @@ int rm_request(
             sprintf(tmpLine,"\nHost: %s/%s   Version: %s\n",
               mom_short_name,
               mom_host,
-              PBS_VERSION);
+              PACKAGE_VERSION);
 
             MUStrNCat(&BPtr,&BSpace,tmpLine);
 
@@ -5160,6 +5158,8 @@ int main(
   int           mlockall_return;
   int           MOMISLOCKED = 0;
 #endif /* __PPINMEM */
+
+msg_daemonname = pbs_current_user;
 
   time(&MOMStartTime);
 

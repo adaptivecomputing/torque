@@ -1,0 +1,73 @@
+include $(top_srcdir)/buildutils/config.mk
+
+AM_CPPFLAGS += -I../Libdis -I../Libifl -DIFF_PATH=\"$(IFF_PATH)\"
+
+EXTRA_DIST = ../Libdis/dis_.h
+
+lib_LTLIBRARIES = libpbs.la
+
+libpbs_la_SOURCES = ../Libdis/dis.c ../Libdis/discui_.c ../Libdis/discul_.c \
+		    ../Libdis/disi10d_.c ../Libdis/disi10l_.c \
+		    ../Libdis/disiui_.c ../Libdis/disp10d_.c \
+		    ../Libdis/disp10l_.c ../Libdis/disrcs.c \
+		    ../Libdis/disrd.c ../Libdis/disrf.c ../Libdis/disrfcs.c \
+		    ../Libdis/disrfst.c ../Libdis/disrl_.c ../Libdis/disrl.c \
+		    ../Libdis/disrsc.c ../Libdis/disrsi_.c \
+		    ../Libdis/disrsi.c ../Libdis/disrsl_.c \
+		    ../Libdis/disrsl.c ../Libdis/disrss.c ../Libdis/disrst.c \
+		    ../Libdis/disruc.c ../Libdis/disrui.c ../Libdis/disrul.c \
+		    ../Libdis/disrus.c ../Libdis/diswcs.c ../Libdis/diswf.c \
+		    ../Libdis/diswl_.c ../Libdis/diswsi.c ../Libdis/diswsl.c \
+		    ../Libdis/diswui_.c ../Libdis/diswui.c \
+		    ../Libdis/diswul.c ../Libifl/advise.c \
+		    ../Libifl/atexit.c \
+		    ../Libifl/dec_attrl.c ../Libifl/dec_attropl.c \
+		    ../Libifl/dec_Authen.c ../Libifl/dec_CpyFil.c \
+		    ../Libifl/dec_JobCred.c ../Libifl/dec_JobFile.c \
+		    ../Libifl/dec_JobId.c ../Libifl/dec_JobObit.c \
+		    ../Libifl/dec_Manage.c ../Libifl/dec_MoveJob.c \
+		    ../Libifl/dec_MsgJob.c ../Libifl/dec_QueueJob.c \
+		    ../Libifl/dec_Reg.c ../Libifl/dec_ReqExt.c \
+		    ../Libifl/dec_ReqHdr.c ../Libifl/dec_Resc.c \
+		    ../Libifl/dec_rpyc.c ../Libifl/dec_rpys.c \
+		    ../Libifl/dec_RunJob.c ../Libifl/dec_Shut.c \
+		    ../Libifl/dec_Sig.c ../Libifl/dec_Status.c \
+		    ../Libifl/dec_svrattrl.c ../Libifl/dec_Track.c \
+		    ../Libifl/enc_attrl.c ../Libifl/enc_attropl.c \
+		    ../Libifl/enc_CpyFil.c ../Libifl/enc_JobCred.c \
+		    ../Libifl/enc_JobFile.c ../Libifl/enc_JobId.c \
+		    ../Libifl/enc_JobObit.c ../Libifl/enc_Manage.c \
+		    ../Libifl/enc_MoveJob.c ../Libifl/enc_MsgJob.c \
+		    ../Libifl/enc_QueueJob.c ../Libifl/enc_Reg.c \
+		    ../Libifl/enc_reply.c ../Libifl/enc_ReqExt.c \
+		    ../Libifl/enc_ReqHdr.c ../Libifl/enc_RunJob.c \
+		    ../Libifl/enc_Shut.c ../Libifl/enc_Sig.c \
+		    ../Libifl/enc_Status.c ../Libifl/enc_svrattrl.c \
+		    ../Libifl/enc_Track.c ../Libifl/get_svrport.c \
+		    ../Libifl/nonblock.c ../Libifl/PBS_attr.c \
+		    ../Libifl/pbsD_alterjo.c ../Libifl/pbsD_asyrun.c \
+		    ../Libifl/PBS_data.c ../Libifl/pbsD_connect.c \
+		    ../Libifl/pbsD_deljob.c ../Libifl/pbsD_holdjob.c \
+		    ../Libifl/pbsD_locjob.c \
+		    ../Libifl/PBSD_manage2.c ../Libifl/pbsD_manager.c \
+		    ../Libifl/pbsD_movejob.c ../Libifl/PBSD_manager_caps.c \
+		    ../Libifl/PBSD_msg2.c ../Libifl/pbsD_msgjob.c \
+		    ../Libifl/pbsD_orderjo.c ../Libifl/PBSD_rdrpy.c \
+		    ../Libifl/pbsD_rerunjo.c ../Libifl/pbsD_resc.c \
+		    ../Libifl/pbsD_rlsjob.c ../Libifl/pbsD_runjob.c \
+		    ../Libifl/pbsD_selectj.c ../Libifl/PBSD_sig2.c \
+		    ../Libifl/pbsD_sigjob.c ../Libifl/pbsD_stagein.c \
+		    ../Libifl/pbsD_statjob.c ../Libifl/pbsD_statnode.c \
+		    ../Libifl/pbsD_statque.c ../Libifl/pbsD_statsrv.c \
+		    ../Libifl/PBSD_status2.c ../Libifl/PBSD_status.c \
+		    ../Libifl/pbsD_submit.c  ../Libifl/PBSD_submit_caps.c \
+		    ../Libifl/pbsD_termin.c ../Libifl/pbs_geterrmg.c \
+		    ../Libifl/pbs_statfree.c ../Libifl/rpp.c \
+		    ../Libifl/tcp_dis.c ../Libifl/tm.c ../Libifl/list_link.c
+
+
+
+#../Libnet/rm.c ../Libnet/get_hostaddr.c ../Libnet/get_hostname.c \
+#../Libnet/md5.c ../Libnet/net_client.c ../Libnet/net_server.c \
+#../Libnet/net_set_clse.c
+

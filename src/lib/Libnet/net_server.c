@@ -106,7 +106,6 @@
 
 /* External Functions Called */
 
-extern void log_err A_((int, char *, char *));
 extern void process_request A_((int));
 
 extern time_t time();
@@ -131,8 +130,7 @@ static void	(*read_func[2]) A_((int));
 static enum     conn_type settype[2];		/* temp kludge */
 static char     logbuf[256];
 
-extern int LOGLEVEL;
-extern pbs_net_t pbs_server_addr;
+pbs_net_t pbs_server_addr;
 
 /* Private function within this file */
 
@@ -191,7 +189,6 @@ int init_network(
 
   if (sock < 0) 
     {
-    log_err(errno,"init_network","socket() failed");
 
     return(-1);
     }
@@ -213,7 +210,6 @@ int init_network(
     {
     close(sock);
 
-    log_err(errno,"init_network","bind failed");
 
     return(-1);
     }
@@ -226,7 +222,6 @@ int init_network(
 
   if (listen(sock,512) < 0) 
     {
-    log_err(errno,"init_network","listen failed");
 
     return(-1);
     }
@@ -283,7 +278,6 @@ int wait_request(
       int i;
       struct stat fbuf;
      
-      log_err(errno,id,"select failed");
 
       /* check all file descriptors to verify they are valid */
 
@@ -304,7 +298,6 @@ int wait_request(
         sprintf(tmpLine,"fd %d was improperly closed - readset was not updated",
           i);
 
-        log_err(-1,id,tmpLine);
         }    /* END for (i) */
   
       return(-1);
@@ -342,7 +335,6 @@ int wait_request(
           i,
           num_connections);
 
-        log_err(-1,id,tmpLine);
         }
       }
     }    /* END for (i) */
@@ -387,7 +379,6 @@ int wait_request(
 
     /* NYI */
 
-    log_err(-1,id,logbuf);
 
     close_conn(i);
     }  /* END for (i) */
@@ -429,7 +420,6 @@ static void accept_conn(
 
   if (newsock == -1) 
     {
-    log_err(errno,"accept_conn","accept failed");
 
     return;
     }
@@ -472,21 +462,6 @@ void add_conn(
 
   {
   num_connections++;
-
-  if (LOGLEVEL >= 3)
-    {
-    char tmpLine[1024];
-
-    sprintf(tmpLine,"added connection to fd %d - num_connections=%d",
-      sock,
-      num_connections);
-
-    log_event(
-      PBSEVENT_DEBUG, 
-      PBS_EVENTCLASS_SERVER,
-      "add_conn", 
-      tmpLine);
-    }  /* END if (LOGLEVEL >= 3) */
 
   FD_SET(sock,&readset);
 
@@ -549,21 +524,6 @@ void close_conn(
   svr_conn[sd].cn_authen = 0;
 
   num_connections--;
-
-  if (LOGLEVEL >= 3)
-    {
-    char tmpLine[1024];
-
-    sprintf(tmpLine,"closed connection to fd %d - num_connections=%d",
-      sd,
-      num_connections);
-
-    log_event(
-      PBSEVENT_DEBUG, 
-      PBS_EVENTCLASS_SERVER,
-      "close_conn", 
-      tmpLine);
-    }  /* END if (LOGLEVEL >= 3) */
 
   return;
   }  /* END close_conn() */

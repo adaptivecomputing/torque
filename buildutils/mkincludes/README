@@ -1,7 +1,0 @@
-This directory contains files meant to be included in other
-makefiles. Because some of these include files need preprocessing
-by configure (thus ending up in the build tree) and others do not
-(i.e. remaining in the src tree) all of the make files are preprocessed
-even if no substitutions are needed. In this way they all end up in 
-the build tree and can be included in a uniform way.
-

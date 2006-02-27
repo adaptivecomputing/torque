@@ -110,7 +110,6 @@
 
 #include	"portability.h"
 #include	"pbs_ifl.h"
-#include        "pbs_version.h"
 #include        "mcom.h"
 #include        "cmds.h"
   
@@ -438,7 +437,7 @@ int main(
         if ((optarg != NULL) && !strcmp(optarg,"version"))
           {
           fprintf(stderr,"version: %s\n",
-            PBS_VERSION);
+            PACKAGE_VERSION);
 
           exit(0);
           }

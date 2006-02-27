@@ -1,0 +1,42 @@
+Torque:  New autoconf / automake realisation
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+OpenPBS - and hence Torque - was using a rather old autoconf setup together
+with several hand-made makefiles.  Both had a lot of problems:  missing
+DESTDIR support, included chowns and - last but not least - the configure.in
+was not compileable by a decent autoconf.
+
+This version now includes a partly rewritten autoconf script and was changed
+to use automake and libtool.  You need at least automake-1.5, libtool-1.4 and
+autoconf-2.53 to regenerate the buildsystem.
+
+Please be aware, that the behaviour of configure has changed:
+- server, mom, clients, gui and Tcl/Tk are _enabled_ by default
+- "--set-..." is now "--with-..."
+- "--with-tcl=..." now needs path and filename of your tclConfig.sh file!
+  (the same is true for Tclx, Tk, Tkx)
+  
+The Tcl-environment should get found automatically if it is located in usual
+places - but this is not the case for (some?) Debian systems.  If configure
+fails although you have Tcl installed, then please `locate` the file
+"tclConfig.sh" and provide full path and filename to the "--with-tcl="
+argument.  Repeat for the other Tcl parts.
+
+
+Please read INSTALL.GNU for generic instructions about configure.
+
+
+The configure script and the makefiles can be recreated by this
+mini-script:
+---------
+#! /bin/sh
+libtoolize --force --copy \
+&& aclocal \
+&& autoheader \
+&& automake --foreign --add-missing --force-missing --copy \
+&& autoconf
+---------
+If you encounter problems, then please make sure you are using at least
+above mentioned versions of these tools.
+
+				Karsten Petersen, Nov 2003 - Feb 2004
+				 <kapet@hrz.tu-chemnitz.de>

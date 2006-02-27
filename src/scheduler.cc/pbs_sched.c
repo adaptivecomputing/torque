@@ -121,7 +121,6 @@
 #include	"net_connect.h"
 #include	"rpp.h"
 #include	"rm.h"
-#include        "pbs_version.h"
 
 struct		connect_handle connection[PBS_NET_MAX_CONNECTIONS];
 int		pbs_errno;
@@ -137,7 +136,7 @@ int             mask_num = 0;
 char		*configfile = NULL;	/* name of config file */
 
 char		*oldpath;
-char		*msg_daemonname = "pbs_sched";
+extern char		*msg_daemonname;
 char		**glob_argv;
 char		usage[] = "[-S port][-d home][-p output][-c config][-a alarm]";
 struct	sockaddr_in	saddr;
@@ -711,6 +710,7 @@ int main(
 	pbs_rm_port = get_svrport(PBS_MANAGER_SERVICE_NAME, "tcp",
 			   PBS_MANAGER_SERVICE_PORT);
 
+msg_daemonname=strdup("pbs_sched");
 	opterr = 0;
 
         while ((c = getopt(argc, argv, "L:S:R:d:p:c:a:-:")) != EOF) {
@@ -721,7 +721,7 @@ int main(
                         }
 
                         if (!strcmp(optarg,"version")) {
-                                fprintf(stderr,"version: %s\n", PBS_VERSION);
+                                fprintf(stderr,"version: %s\n", PACKAGE_VERSION);
                                 exit(0);
                         } else {
                                 errflg = 1;

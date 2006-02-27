@@ -109,7 +109,6 @@
 #include "dis.h"
 #include "dis_init.h"
 #include "resmon.h"
-#include "query_configs.h"
 #include "mcom.h"
 
 extern void DIS_rpp_reset A_((void));

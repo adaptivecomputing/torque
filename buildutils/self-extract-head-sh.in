@@ -84,13 +84,13 @@ if test $extract -gt 0;then
      exit 1
   fi
 
-  tail +$SKIP $0 | gzip -dc | (cd $destdir; tar x$vopt)
+  tail +$SKIP $0 | gzip -dc | (cd $destdir; tar x${vopt}f -)
   echo "Done."
 fi
 
 # just list the files in the tarball
 if test $listfiles -gt 0;then
-  tail +$SKIP $0 | gzip -dc | tar t$vopt
+  tail +$SKIP $0 | gzip -dc | tar t${vopt}f -
 fi
 
 # install the tarball
@@ -112,12 +112,12 @@ if test $install -gt 0;then
   fi
 
   # take the archive portion of this file and pipe it to tar
-  tail +$SKIP $0 | gzip -dc | (cd $destdir; tar x$vopt )
+  tail +$SKIP $0 | gzip -dc | (cd $destdir; tar x${vopt}f - )
 
   # finallized files should be owned by root, not the package-builder
   if test $chownfiles -gt 0;then
     test $verbose -gt 0 && echo "setting file user and group ownerships"
-    tail +$SKIP $0 | gzip -dc | tar t | \
+    tail +$SKIP $0 | gzip -dc | tar tf - | \
       while read line;do
          chown $user $destdir$line; chgrp $group $destdir$line
       done

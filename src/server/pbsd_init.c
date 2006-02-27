@@ -113,7 +113,6 @@
 #include "tracking.h"
 #include "svrfunc.h"
 #include "acct.h"
-#include "pbs_version.h"
 #include "rpp.h"
 #include "net_connect.h"
 #include "pbs_proto.h"
@@ -538,7 +537,7 @@ int pbsd_init(
     &server.sv_attr[(int)SRV_ATR_version], 
     0, 
     0,
-    PBS_VERSION);
+    PACKAGE_VERSION);
 
   /* 6. open accounting file */
 

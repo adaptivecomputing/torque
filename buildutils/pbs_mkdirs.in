@@ -88,7 +88,6 @@
 #    -v     be verbose
 #    -c     allow usage of chk_tree (do not use this within a make install)
 #    what   select from the following list
-#              client   -- dirs needed by client programs
 #              server   -- dirs needed by pbs_server
 #              mom      -- dirs needed by pbs_mom
 #              aux      -- the aux directory
@@ -97,29 +96,27 @@
 #              all      -- do all of the above
 #
 #
+# $Id$
+#
 
 #
 # check tree should not be called until it is installed since
 # only relative paths are used by autoconf.
 #
-test -n "$prefix" || prefix=@prefix@
-test -n "$exec_prefix" || exec_prefix=@exec_prefix@
-test -n "$CHK_TREE" || CHK_TREE=@bindir@/chk_tree
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+CHK_TREE=${DESTDIR}@bindir@/chk_tree
 
+PBS_DEFAULT_SERVER=@PBS_DEFAULT_SERVER@
+
+# PBS_SERVER_HOME is defined without DESTDIR so that DEFAULT_FILE and EVIRON
+# can be based on SERVER_HOME.  SERVER_HOME is defined a second time to pick
+# up DESTDIR
 test -n "$PBS_SERVER_HOME" || PBS_SERVER_HOME=@PBS_SERVER_HOME@
-test -n "$PBS_DEFAULT_FILE" || PBS_DEFAULT_FILE=@PBS_DEFAULT_FILE@
-test -n "$PBS_DEFAULT_SERVER" || PBS_DEFAULT_SERVER=@PBS_DEFAULT_SERVER@
- 
-test -n "$PBS_ENVIRON" || PBS_ENVIRON=@PBS_ENVIRON@
+test -n "$PBS_DEFAULT_FILE" || PBS_DEFAULT_FILE=${DESTDIR}@PBS_DEFAULT_FILE@
+test -n "$PBS_ENVIRON" || PBS_ENVIRON=${DESTDIR}@PBS_ENVIRON@
 
-#
-# manual page directories are created by doc/ers/Makefile
-#
-
-test -n "$bindir" || bindir=@bindir@
-test -n "$sbindir" || sbindir=@sbindir@
-test -n "$libdir" || libdir=@libdir@
-test -n "$includedir" || includedir=@includedir@
+PBS_SERVER_HOME=${DESTDIR}$PBS_SERVER_HOME
 
 verbose=""
 
@@ -135,7 +132,6 @@ install_dir()
 	# use the id_ for namespace disambiguation
 	id_dname="$1"
 	id_mode=`test -n "$2" && echo "$2" || echo 755`
-	id_owner="$3"
 
 	# dlist will contain a list of directory names to make
 	id_dlist=""
@@ -144,13 +140,7 @@ install_dir()
 		"$id_dname" = "." \) ]; do
 
 		test -f $id_dname && return 1
-
-# solaris fails on 'test -d'
-#               test -d $id_dname && break
-
-		if [ -d $id_dname ]; then
-                  break;
-                fi
+		test -d $id_dname && break
 
 		id_dlist="`basename $id_dname` $id_dlist"
 		id_dname=`dirname "$id_dname"`
@@ -161,9 +151,6 @@ install_dir()
 		id_dir="$id_dir/$id_d"
 		test -z "$id_d" && return 0
 		mkdir $id_dir && chmod $id_mode $id_dir || return 1
-		if test -n "$id_owner"; then
-			chown $id_owner $id_dir || return 1
-		fi
 	done
 	return 0
 }
@@ -179,7 +166,6 @@ install_dir_by_varname()
 	idv_dname=`eval 'echo $'$idv_dvarname`
 
 	idv_mode=`test -n "$2" && echo "$2" || echo 755`
-	idv_owner="$3"
 
 	if [ X$idv_dname = X ] ; then
 		echo $idv_dvarname is not defined 1>&2
@@ -188,17 +174,12 @@ install_dir_by_varname()
 		echo $idv_dvarname exists and is not a directory 1>&2
 		return 1
 	elif [ -d $idv_dname ] ; then
-		chmod $idv_mode $idv_dname
-		test -n "$idv_owner" && chown $idv_owner $idv_dname
+		chmod $idv_mode $idv_dname || return 1
 		return 0
 	elif [ ! -d $idv_dname ] ; then
 		test -n "$verbose" && echo Creating $idv_dname
-		install_dir `dirname $idv_dname` 755 $idv_owner && \
+		install_dir `dirname $idv_dname` 755 && \
 		    mkdir $idv_dname && chmod $idv_mode $idv_dname || return 1
-		if test -n "$idv_owner"; then
-			chown $idv_owner $idv_name || return 1
-		fi
- 	
 	fi
 
 	return 0
@@ -208,72 +189,62 @@ check_env()
 {
 	test -n "$verbose" && echo Making environment file
 	if [ ! -f $PBS_ENVIRON ] ; then
-		install_dir `dirname $PBS_ENVIRON`
-		echo "PATH=/bin:/usr/bin" > $PBS_ENVIRON
+		install_dir `dirname $PBS_ENVIRON` || return 1
+		echo "PATH=/bin:/usr/bin" > $PBS_ENVIRON || return 1
 		if [ X$TZ != X ] ; then
-			echo "TZ=$TZ" >> $PBS_ENVIRON
+			echo "TZ=$TZ" >> $PBS_ENVIRON || return 1
 		fi
 		if [ X$LANG != X ] ; then
-			echo "LANG=$LANG" >> $PBS_ENVIRON
+			echo "LANG=$LANG" >> $PBS_ENVIRON || return 1
 		fi
 		if [ X$LC_ALL != X ] ; then
-			echo "LC_ALL=$LC_ALL" >> $PBS_ENVIRON
+			echo "LC_ALL=$LC_ALL" >> $PBS_ENVIRON || return 1
 		fi
 		if [ X$LC_COLLATE != X ] ; then
-			echo "LC_COLLATE=$LC_COLLATE" >> $PBS_ENVIRON
+			echo "LC_COLLATE=$LC_COLLATE" >> $PBS_ENVIRON || return 1
 		fi
 		if [ X$LC_CTYPE != X ] ; then
-			echo "LC_CTYPE=$LC_CTYPE" >> $PBS_ENVIRON
+			echo "LC_CTYPE=$LC_CTYPE" >> $PBS_ENVIRON || return 1
 		fi
 		if [ X$LC_MONETARY != X ] ; then
-			echo "LC_MONETARY=$LC_MONETARY" >> $PBS_ENVIRON
+			echo "LC_MONETARY=$LC_MONETARY" >> $PBS_ENVIRON || return 1
 		fi
 		if [ X$LC_NUMERIC != X ] ; then
-			echo "LC_NUMERIC=$LC_NUMERIC" >> $PBS_ENVIRON
+			echo "LC_NUMERIC=$LC_NUMERIC" >> $PBS_ENVIRON || return 1
 		fi
 		if [ X$LC_TIME != X ] ; then
-			echo "LC_TIME=$LC_TIME" >> $PBS_ENVIRON
+			echo "LC_TIME=$LC_TIME" >> $PBS_ENVIRON || return 1
 		fi
-		chmod 644 $PBS_ENVIRON
+		chmod 644 $PBS_ENVIRON || return 1
 	fi
 }
 
 chk_tree_wrap()
 {
-	test -n "$chktree" && $CHK_TREE $*
+	if test -n "$chktree";then
+		$CHK_TREE $* || return 1
+	fi
 }
-
-mk_cli_dirs()
-{
-	test -n "$verbose" && echo Creating Directories required for clients
-	install_dir_by_varname bindir 755 $owner
-	install_dir_by_varname sbindir 755 $owner
-	install_dir_by_varname libdir  755 $owner
-	install_dir_by_varname includedir 755 $owner
-
-	chk_tree_wrap -d -n $bindir $sbindir $libdir $includedir 
-}
-
 
 mk_server_dirs()
 {
 	test -n "$verbose" && echo Creating Directories required for the Server
-	install_dir_by_varname PBS_SERVER_HOME 755 $owner
+	install_dir_by_varname PBS_SERVER_HOME 755 || return 1
 
-	install_dir $PBS_SERVER_HOME/spool 1777 $owner
-	install_dir $PBS_SERVER_HOME/server_priv 750 $owner
-	install_dir $PBS_SERVER_HOME/server_priv/jobs 750 $owner
-	install_dir $PBS_SERVER_HOME/server_priv/queues 750 $owner
-	install_dir $PBS_SERVER_HOME/server_priv/acl_svr 750 $owner
-	install_dir $PBS_SERVER_HOME/server_priv/acl_hosts 750 $owner
-	install_dir $PBS_SERVER_HOME/server_priv/acl_users 750 $owner
-	install_dir $PBS_SERVER_HOME/server_priv/acl_groups 750 $owner
-	install_dir $PBS_SERVER_HOME/server_priv/accounting 755 $owner
-	install_dir $PBS_SERVER_HOME/server_logs 755 $owner
-	install_dir $PBS_SERVER_HOME/sched_priv 750 $owner
-	install_dir $PBS_SERVER_HOME/sched_logs 755 $owner
+	install_dir $PBS_SERVER_HOME/spool 1777 || return 1
+	install_dir $PBS_SERVER_HOME/server_priv 750 || return 1
+	install_dir $PBS_SERVER_HOME/server_priv/jobs 750 || return 1
+	install_dir $PBS_SERVER_HOME/server_priv/queues 750 || return 1
+	install_dir $PBS_SERVER_HOME/server_priv/acl_svr 750 || return 1
+	install_dir $PBS_SERVER_HOME/server_priv/acl_hosts 750 || return 1
+	install_dir $PBS_SERVER_HOME/server_priv/acl_users 750 || return 1
+	install_dir $PBS_SERVER_HOME/server_priv/acl_groups 750 || return 1
+	install_dir $PBS_SERVER_HOME/server_priv/accounting 755 || return 1
+	install_dir $PBS_SERVER_HOME/server_logs 755 || return 1
+	install_dir $PBS_SERVER_HOME/sched_priv 750 || return 1
+	install_dir $PBS_SERVER_HOME/sched_logs 755 || return 1
 
-	test -f $PBS_ENVIRON || check_env
+	test -f $PBS_ENVIRON || check_env || return 1
 
 	chk_tree_wrap -d -n $PBS_SERVER_HOME/server_priv/jobs \
 		$PBS_SERVER_HOME/server_priv/queues \
@@ -282,9 +253,9 @@ mk_server_dirs()
 		$PBS_SERVER_HOME/server_priv/acl_users \
 		$PBS_SERVER_HOME/server_priv/acl_groups \
 		$PBS_SERVER_HOME/server_priv/accounting \
-		$PBS_SERVER_HOME/server_logs
-	chk_tree_wrap -d -n -s $PBS_SERVER_HOME/spool
-	chk_tree_wrap -n $PBS_ENVIRON
+		$PBS_SERVER_HOME/server_logs || return 1
+	chk_tree_wrap -d -n -s $PBS_SERVER_HOME/spool || return 1
+	chk_tree_wrap -n $PBS_ENVIRON || return 1
 }
 
 
@@ -292,25 +263,25 @@ mk_mom_dirs()
 {
 	test -n "$verbose" && echo Creating Directories required for MOM
 
-	install_dir_by_varname PBS_SERVER_HOME 755 $owner
+	install_dir_by_varname PBS_SERVER_HOME 755 || return 1
 
 	test -d $PBS_SERVER_HOME/spool || \
-	    install_dir $PBS_SERVER_HOME/spool 1777 $owner
+	    install_dir $PBS_SERVER_HOME/spool 1777 || return 1
 
-	install_dir $PBS_SERVER_HOME/checkpoint 700 $owner
-	install_dir $PBS_SERVER_HOME/undelivered  1777 $owner
-	install_dir $PBS_SERVER_HOME/mom_priv 751 $owner
-	install_dir $PBS_SERVER_HOME/mom_priv/jobs 751 $owner
-	install_dir $PBS_SERVER_HOME/mom_logs 755 $owner
+	install_dir $PBS_SERVER_HOME/checkpoint 700 || return 1
+	install_dir $PBS_SERVER_HOME/undelivered  1777 || return 1
+	install_dir $PBS_SERVER_HOME/mom_priv 751 || return 1
+	install_dir $PBS_SERVER_HOME/mom_priv/jobs 751 || return 1
+	install_dir $PBS_SERVER_HOME/mom_logs 755 || return 1
 
-	test -f $PBS_ENVIRON || check_env
+	test -f $PBS_ENVIRON || check_env || return 1
 
 	chk_tree_wrap -d -n $PBS_SERVER_HOME/checkpoint \
 		$PBS_SERVER_HOME/mom_priv/jobs \
-		$PBS_SERVER_HOME/mom_logs
+		$PBS_SERVER_HOME/mom_logs || return 1
 	chk_tree_wrap -d -n -s $PBS_SERVER_HOME/spool \
-		$PBS_SERVER_HOME/undelivered
-	chk_tree_wrap -n $PBS_ENVIRON
+		$PBS_SERVER_HOME/undelivered || return 1
+	chk_tree_wrap -n $PBS_ENVIRON || return 1
 }
 
 
@@ -318,30 +289,23 @@ mk_default_file()
 {
 	test -n "$verbose" && echo Making default server file
 
-	install_dir `dirname $PBS_DEFAULT_FILE`
+	install_dir `dirname $PBS_DEFAULT_FILE` || return 1
 
 	# I think I know better than pbs.  --pw
-        #  if default already exists, leave alone 
-
-	# solaris fails on '-e', use '-f'
-	if [ ! -f $PBS_DEFAULT_FILE ]; then
+	if [ ! -e $PBS_DEFAULT_FILE ]; then
 	    rm -f $PBS_DEFAULT_FILE > /dev/null 2>&1
 	    echo $PBS_DEFAULT_SERVER > $PBS_DEFAULT_FILE && \
-		chmod 644 $PBS_DEFAULT_FILE
+		chmod 644 $PBS_DEFAULT_FILE || return 1
 	fi
 
-	chk_tree_wrap -n $PBS_DEFAULT_FILE
+	chk_tree_wrap -n $PBS_DEFAULT_FILE || return 1
 }
-
-
 
 mk_aux_dir()
 {
-	install_dir $PBS_SERVER_HOME/aux 755 $owner
-	chk_tree_wrap -d -n $PBS_SERVER_HOME/aux
+	install_dir $PBS_SERVER_HOME/aux 755 || return 1
+	chk_tree_wrap -d -n $PBS_SERVER_HOME/aux || return 1
 }
-
-
 
 do_check_tree()
 {
@@ -352,14 +316,14 @@ do_check_tree()
 		$PBS_SERVER_HOME/server_priv/acl_users \
 		$PBS_SERVER_HOME/server_priv/acl_groups \
 		$PBS_SERVER_HOME/server_priv/accounting \
-		$PBS_SERVER_HOME/server_logs
+		$PBS_SERVER_HOME/server_logs || return 1
 	chk_tree_wrap -d $PBS_SERVER_HOME/checkpoint \
 		$PBS_SERVER_HOME/mom_priv/jobs \
-		$PBS_SERVER_HOME/mom_logs
+		$PBS_SERVER_HOME/mom_logs || return 1
 	chk_tree_wrap -d -s $PBS_SERVER_HOME/spool \
-		$PBS_SERVER_HOME/undelivered
-	chk_tree_wrap -d $PBS_SERVER_HOME/aux
-	chk_tree_wrap $PBS_DEFAULT_FILE
+		$PBS_SERVER_HOME/undelivered || return 1
+	chk_tree_wrap -d $PBS_SERVER_HOME/aux || return 1
+	chk_tree_wrap $PBS_DEFAULT_FILE || return 1
 }
 
 
@@ -369,11 +333,10 @@ do_check_tree()
 mk_dirs()
 {
 	chktree=yes
-	mk_cli_dirs
-	mk_server_dirs
-	mk_mom_dirs
-	mk_default_file
-	mk_aux_dir
+	mk_server_dirs || return 1
+	mk_mom_dirs || return 1
+	mk_default_file || return 1
+	mk_aux_dir || return 1
 }
 
 while true; do
@@ -381,13 +344,12 @@ while true; do
 	    -v)       verbose=yes ; shift; continue ;;
 	    -c)       chktree=yes ; shift; continue ;;
 	    -d)	      shift; PBS_SERVER_HOME=$1; shift; continue;;
-	    cli*)     mk_cli_dirs ; break ;;
-	    serv*)    mk_server_dirs ; break ;;
-	    mom*)     mk_mom_dirs ; break ;;
-	    aux*)     mk_aux_dir ; break ;;
-	    default*) mk_default_file ; break ;;
-	    check*)   chktree=yes; do_check_tree ; break ;;
-	    all*)     mk_dirs ; break ;;
+	    serv*)    mk_server_dirs || exit 1 ; break ;;
+	    mom*)     mk_mom_dirs || exit 1; break ;;
+	    aux*)     mk_aux_dir || exit 1; break ;;
+	    default*) mk_default_file || exit 1; break ;;
+	    check*)   chktree=yes; do_check_tree || exit 1; break ;;
+	    all*)     mk_dirs || exit 1; break ;;
 	esac
 done
 

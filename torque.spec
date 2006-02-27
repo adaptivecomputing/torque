@@ -15,7 +15,6 @@
 #   --with[out] syslog
 #   --with[out] rpp
 #   --with[out] filesync
-#   --with[out] wordexp
 #   --with[out] gui
 #   --with[out] tcl
 # Note that prefix overrides homedir, libdir, and includedir
@@ -37,11 +36,10 @@
 %define use_rpp 1
 %define use_fsync 0
 %define use_tcl 1
-%define use_wordexp 1
 %define build_gui 1
 
 # these are non-defaults, but fit better into most RPM-based systems
-%define torquehomedir %{_localstatedir}/lib/%{name}
+%define torquehomedir %_localstatedir/torque
 %define _libdir       %{_prefix}/%{_lib}/%{name}/lib
 %define _includedir   %{_prefix}/%{_lib}/%{name}/include
 
@@ -55,7 +53,6 @@
 %{?_with_rpp: %{?_without_rpp: %{error: both _with_rpp and _without_rpp}}}
 %{?_with_scp: %{?_without_scp: %{error: both _with_scp and _without_scp}}}
 %{?_with_tcl: %{?_without_tcl: %{error: both _with_tcl and _without_tcl}}}
-%{?_with_wordexp: %{?_without_wordexp: %{error: both _with_wordexp and _without_wordexp}}}
 %{?_with_gui: %{?_without_gui: %{error: both _with_gui and _without_gui}}}
 
 # did we find any --with options?
@@ -64,24 +61,13 @@
 %{?_with_rpp: %define use_rpp 1}
 %{?_with_scp: %define use_scp 1}
 %{?_with_tcl: %define use_tcl 1}
-%{?_with_wordexp: %define use_wordexp 1}
 %{?_with_gui: %define build_gui 1}
 
 %{?_with_server_name:%define server_name %(set -- %{_with_server_name}; echo $1 | grep -v with | sed 's/=//')}
 %{?_with_homedir:%define torquehomedir %(set -- %{_with_homedir}; echo $1 | grep -v with | sed 's/=//')}
 %{?_with_libdir:%define _libdir %(set -- %{_with_libdir}; echo $1 | grep -v with | sed 's/=//')}
 %{?_with_includedir:%define _includedir %(set -- %{_with_includedir}; echo $1 | grep -v with | sed 's/=//')}
-
-%if %{?_with_prefix:1}%{!?_with_prefix:0}
-%define _prefix %(set -- %{_with_prefix}; echo $1 | grep -v with | sed 's/=//')
-%define torquehomedir %{_prefix}/spool
-%define _libdir %{_prefix}/lib
-%define _includedir %{_prefix}/include
-%define _mandir %{_prefix}/man
-%define _bindir %{_prefix}/bin
-%define _sbindir %{_prefix}/sbin
-%define _defaultdocdir %{_prefix}/doc
-%endif
+%{?_with_prefix:%define _prefix %(set -- %{_with_prefix}; echo $1 | grep -v with | sed 's/=//')}
 
 # did we find any --without options?
 %{?_without_filesync: %define use_fsync 0}
@@ -89,7 +75,6 @@
 %{?_without_rpp: %define use_rpp 0}
 %{?_without_scp: %define use_scp 0}
 %{?_without_tcl: %define use_tcl 0}
-%{?_without_wordexp: %define use_wordexp 0}
 %{?_without_gui: %define build_gui 0}
 
 # Set up all options as disabled
@@ -98,7 +83,6 @@
 %define rppflags    --disable-rpp
 %define scpflags    %{nil}
 %define tclflags    --without-tcl --without-tclx
-%define wordexpflags  --disable-wordexp
 %define guiflags    --disable-gui
 
 # Enable options that we want
@@ -113,9 +97,6 @@
 %endif
 %if %use_scp
 %define scpflags    --with-scp
-%endif
-%if %use_wordexp
-%define wordexpflags  --enable-wordexp
 %endif
 
 # dealing with tcl and gui is way too complicated
@@ -133,10 +114,10 @@
 %endif
 
 # finish up the configs...
-%define server_nameflags --set-default-server=%{server_name}
+%define server_nameflags --with-default-server=%{server_name}
 
 
-%define shared_description %(echo -e "TORQUE (Tera-scale Open-source Resource and QUEue manager) is a resource \\nmanager providing control over batch jobs and distributed compute nodes.  \\nTorque is based on OpenPBS version 2.3.12 and incorporates scalability, \\nfault tolerance, and feature extension patches provided by USC, NCSA, OSC, \\nthe U.S. Dept of Energy, Sandia, PNNL, U of Buffalo, TeraGrid, and many \\nother leading edge HPC organizations.\\n\\nThis build was configured with:\\n  %{fsyncflags}\\n  %{syslogflags}\\n  %{tclflags}\\n  %{rppflags}\\n  %{server_nameflags}\\n  %{guiflags}\\n  %{wordexpflags}\\n  %{scpflags}\\n")
+%define shared_description %(echo -e "TORQUE (Tera-scale Open-source Resource and QUEue manager) is a resource \\nmanager providing control over batch jobs and distributed compute nodes.  \\nTorque is based on OpenPBS version 2.3.12 and incorporates scalability, \\nfault tolerance, and feature extension patches provided by USC, NCSA, OSC, \\nthe U.S. Dept of Energy, Sandia, PNNL, U of Buffalo, TeraGrid, and many \\nother leading edge HPC organizations.\\n\\nThis build was configured with:\\n  %{fsyncflags}\\n  %{syslogflags}\\n  %{tclflags}\\n  %{rppflags}\\n  %{server_nameflags}\\n  %{guiflags}\\n  %{scpflags}\\n")
 
 
 Summary: Tera-scale Open-source Resource and QUEue manager
@@ -162,35 +143,21 @@ Obsoletes: torque-gui
 This package holds just a few shared files and directories.
 
 %prep
-%setup -n %{name}-%{version}
-echo '#define PBS_VERSION "%{version}-%{release}"' > src/include/pbs_version.h
+%setup -n %{name}-%{version}%{?snap:-snap.%snap}
 
 
 %build
-CFLAGS="-fPIC %optflags -Wall -Wno-unused -std=gnu99 -pedantic -D_GNU_SOURCE"
-export CFLAGS
+if test -f config.status ;then
+./config.status
+else
+CFLAGS=$RPMCFLAGS
+LDFLAGS=$RPMLDFLAGS
+%configure --with-server-home=%{torquehomedir} %{server_nameflags} \
+ %{guiflags} %{fsyncflags} \
+ %{syslogflags} %{tclflags} %{rppflags} %{scpflags}
+fi
 
-for i in $(find . -name config.guess -o -name config.sub) ; do
-   if [ -f /usr/lib/rpm/%{_host_vendor}/$(basename $i) ] ; then
-       %{__rm} -f $i && %{__cp} -fv /usr/lib/rpm/%{_host_vendor}/$(basename $i) $i
-   elif [ -f /usr/lib/rpm/$(basename $i) ] ; then
-        %{__rm} -f $i && %{__cp} -fv /usr/lib/rpm/$(basename $i) $i
-   fi
-done
-
-# autoconf and friends don't work with torque, so we can't use the
-# various configure macros
-./configure --prefix=%{_prefix} --sbindir=%{_sbindir} --bindir=%{_bindir} \
- --includedir=%{_includedir} --mandir=%{_mandir} --libdir=%{_libdir} \
- --enable-server --enable-clients --enable-mom --enable-docs %{guiflags} \
- --set-server-home=%{torquehomedir} %{server_nameflags} --set-cflags="$CFLAGS" \
- %{fsyncflags} %{syslogflags} %{tclflags} %{rppflags} %{scpflags} %{wordexpflags}
-
-
-
-%{__make} clean
-%{__make} depend
-%{__make} %{_smp_mflags} all
+%{__make} %{?_smp_mflags}
  
 
 
@@ -198,14 +165,7 @@ done
 [ "$RPM_BUILD_ROOT" != "/" ] && %{__rm} -rf "$RPM_BUILD_ROOT"
 
 # we don't use makeinstall because we don't support DESTDIR (as happens on Suse)
-%{__make} \
-    sbindir=$RPM_BUILD_ROOT%{_sbindir} \
-    bindir=$RPM_BUILD_ROOT%{_bindir} \
-    includedir=$RPM_BUILD_ROOT%{_includedir} \
-    mandir=$RPM_BUILD_ROOT%{_mandir} \
-    libdir=$RPM_BUILD_ROOT%{_libdir} \
-    PBS_SERVER_HOME=$RPM_BUILD_ROOT%{torquehomedir} \
-  install
+%{__make} DESTDIR=$RPM_BUILD_ROOT install
 
 # Correct the tclIndex files that are broken when installing into a fakeroot
 %if %build_gui
@@ -370,6 +330,7 @@ This package holds the command-line client programs.
 %{_bindir}/printjob
 %{_bindir}/printtracking
 %{_bindir}/tracejob
+%{_libdir}/*.so.*
 %attr(4755 root root) %{_sbindir}/pbs_iff
 %{_sbindir}/pbs_demux
 %if %use_tcl
@@ -441,7 +402,9 @@ necessary for developing programs which will use %{name}.
 %files devel
 %defattr(-, root, root)
 %{_libdir}/*.*a
+%{_libdir}/*.so
 %{_includedir}/*.h
+%{_bindir}/pbs-config
 
 %pre devel
 # previous versions of this spec file installed these as symlinks
