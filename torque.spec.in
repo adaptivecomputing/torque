@@ -335,7 +335,7 @@ Provides: xpbs xpbsmon
 %shared_description
 This package holds the graphical clients.
 
-%post
+%post gui
 cd %{_libdir}/xpbs && ./buildindex %{_libdir}/xpbs .
 cd %{_libdir}/xpbsmon && ./buildindex %{_libdir}/xpbsmon .
 
