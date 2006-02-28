@@ -347,6 +347,8 @@ cd %{_libdir}/xpbsmon && ./buildindex %{_libdir}/xpbsmon .
 %{_bindir}/xpbsmon
 %{_libdir}/xpbs
 %{_libdir}/xpbsmon
+%verify(not md5 size mtime) %{_libdir}/xpbs/tclIndex
+%verify(not md5 size mtime) %{_libdir}/xpbsmon/tclIndex
 %endif
 
 
