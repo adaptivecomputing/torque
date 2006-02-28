@@ -119,6 +119,13 @@ SUFFIXES = .1B .3B .7B .8B .1 .3 .7 .8 .so
 install_doc: install
 
 install-data-hook:
-	rm -f $(DESTDIR)$(man7dir)/pbs_resources.7
-	$(LN_S) pbs_resources_$(PBS_MACH).7 $(DESTDIR)$(man7dir)/pbs_resources.7
+	rm -f $(DESTDIR)$(man7dir)/pbs_resources.7 $(DESTDIR)$(man8dir)/pbs_sched.8
+	test -f $(DESTDIR)$(man7dir)/pbs_resources_$(PBS_MACH).7 && \
+	  $(LN_S) pbs_resources_$(PBS_MACH).7 $(DESTDIR)$(man7dir)/pbs_resources.7
+	test -f $(DESTDIR)$(man8dir)/pbs_sched_$(SCHD_TYPE).8 && \
+	  $(LN_S) pbs_sched_$(SCHD_TYPE).8 $(DESTDIR)$(man8dir)/pbs_sched.8
+
+uninstall-hook:
+	rm -f $(DESTDIR)$(man7dir)/pbs_resources.7 $(DESTDIR)$(man8dir)/pbs_sched.8
+
 
