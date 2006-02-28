@@ -378,6 +378,7 @@ if test "$SCHD_TYPE" != none; then
   SCHD_TYPE_SUBDIR=scheduler.$SCHD_TYPE
 fi
 AC_SUBST(SCHD_TYPE_SUBDIR)
+AC_SUBST(SCHD_TYPE)
 AM_CONDITIONAL(SCHD_BASL, test "x$SCHD_TYPE" = "xbasl")
 
 

@@ -108,6 +108,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <unistd.h>
 #include "server_limits.h"
 #include "list_link.h"
 #include "attribute.h"
@@ -2115,6 +2116,121 @@ int manager_oper_chk(
 
   return(err);
   }  /* END manager_oper_chk() */
+
+/*
+ * servername_chk - insure it is fully qualified.
+ *	This is the at_action() routine for the server attribute
+ *	"server_name"
+ */
+
+int servername_chk(
+
+  attribute *pattr,
+  void      *pobject,
+  int	     actmode)
+
+  {
+  int			 err = 0;
+  char			 hostname[PBS_MAXHOSTNAME + 1];
+  char *pstr;
+
+  extern char              server_name[];
+
+  if (actmode == ATR_ACTION_FREE)
+    {
+    if ((gethostname(hostname,PBS_MAXHOSTNAME) == -1) ||
+       (get_fullhostname(hostname,hostname,PBS_MAXHOSTNAME) == -1))
+      {
+      return(PBSE_BADHOST);
+      }
+
+    strcpy(server_name,hostname);
+
+    return(0);
+    }
+
+  pstr = pattr->at_val.at_str;
+
+  if (pstr == NULL)
+    {
+    return(PBSE_BADHOST);
+    }
+
+  /* must be fully qualified host */
+
+  if (get_fullhostname(pstr,hostname,PBS_MAXHOSTNAME) ||
+      strncmp(pstr,hostname,PBS_MAXHOSTNAME)) 
+    {
+    if (actmode == ATR_ACTION_RECOV) 
+      {
+      sprintf(log_buffer,"bad servername: %s",
+        pstr);
+
+      log_err(PBSE_BADHOST, 
+        "servername_chk",
+        log_buffer);
+      } 
+    else 
+      {
+      err = PBSE_BADHOST;
+      }
+    }
+  else
+    {
+    strcpy(server_name,hostname);
+    }
+
+  return(err);
+  }  /* END server_name_chk() */
+
+
+static int mgr_long_action_helper(
+
+  attribute *pattr,
+  int	     actmode,
+  long       minimum,
+  long       maximum)
+
+  {
+
+  int err = PBSE_NONE;
+
+  if (pattr->at_val.at_long < minimum)
+    {
+    err = PBSE_BADATVAL;
+    }
+
+  if (pattr->at_val.at_long > maximum)
+    {
+    err = PBSE_EXLIMIT;
+    }
+
+  if (err && (actmode == ATR_ACTION_RECOV)) 
+    {
+    pattr->at_val.at_long = maximum;
+    err = PBSE_NONE;
+    }
+
+  return(PBSE_NONE);
+  }  /* END mgr_long_action_helper() */
+
+/* END req_manager.c */
+
+/*
+ * schiter_chk - make sure values are sane
+ *	This is the at_action() routine for the server attribute
+ *	"scheduler_iteration"
+ */
+
+int schiter_chk(
+
+  attribute *pattr,
+  void      *pobject,
+  int	     actmode)
+
+  {
+  return(mgr_long_action_helper(pattr,actmode,1,PBS_SCHEDULE_CYCLE));
+  }  /* END schiter_chk() */
 
 /* END req_manager.c */
 

@@ -235,6 +235,7 @@ char            MOMConfigVersion[64];
 char            MOMUNameMissing[64];            
 
 int             MOMConfigDownOnError      = 0;
+int             MOMConfigRestart          = 0;
 long            system_ncpus=0;
 
 #define TMAX_JE  64
@@ -257,7 +258,8 @@ static char *log_file = NULL;
 enum PMOMStateEnum { 
   MOM_RUN_STATE_RUNNING, 
   MOM_RUN_STATE_EXIT, 
-  MOM_RUN_STATE_KILLALL };
+  MOM_RUN_STATE_KILLALL,
+  MOM_RUN_STATE_RESTART };
 
 static enum PMOMStateEnum mom_run_state;
 
@@ -283,6 +285,7 @@ static unsigned long setignwalltime(char *);
 static unsigned long setlogevent(char *);
 static unsigned long setloglevel(char *);
 static unsigned long setmaxload(char *);
+static unsigned long setenablemomrestart(char *);
 static unsigned long prologalarm(char *);
 static unsigned long restricted(char *);
 static unsigned long jobstartblocktime(char *);
@@ -311,6 +314,7 @@ static struct specials {
     { "logevent",     setlogevent },
     { "loglevel",     setloglevel },
     { "max_load",     setmaxload },
+    { "enablemomrestart",   setenablemomrestart },
     { "prologalarm",  prologalarm },
     { "restricted",   restricted },
     { "jobstartblocktime", jobstartblocktime },
@@ -388,6 +392,9 @@ static	char		config_file[_POSIX_PATH_MAX] = "config";
 char                    PBSNodeMsgBuf[1024];
 char                    PBSNodeCheckPath[1024];
 int                     PBSNodeCheckInterval;
+static char            *MOMExePath;
+static time_t           MOMExeTime;
+
 
 /* sync w/#define JOB_SUBSTATE_XXX (in include/job.h)*/
 
@@ -1601,6 +1608,57 @@ static u_long setdownonerror(
 
   return(1);
   }  /* END setdownonerror() */
+
+
+static u_long setenablemomrestart(
+
+  char *Value)  /* I */
+
+  {
+  static char   id[] = "setenablemomrestart";
+  int           enable = -1;
+
+  log_record(PBSEVENT_SYSTEM,PBS_EVENTCLASS_SERVER,id,Value);
+
+  if (Value == NULL)
+    {
+    /* FAILURE */
+
+    return(0);
+    }
+
+  /* accept various forms of "true", "yes", and "1" */
+  switch (Value[0])
+    {
+    case 't':
+    case 'T':
+    case 'y':
+    case 'Y':
+    case '1':
+
+      enable = 1;
+
+      break;
+    
+    case 'f':
+    case 'F':
+    case 'n':
+    case 'N':
+    case '0':
+      
+      enable = 0;
+
+      break;
+    
+    }
+
+  if (enable != -1)
+    {
+    MOMConfigRestart=enable;
+    }
+
+  return(1);
+  }  /* END setenablemomrestart() */
 
 
 
@@ -3746,6 +3804,18 @@ int rm_request(
             sprintf(output,"down_on_error=%d",
               MOMConfigDownOnError);
             }
+          else if (!strncasecmp(name,"enablemomrestart",strlen("enablemomrestart")))
+            {
+            /* set or report loglevel */
+
+            if ( (*curr == '=') && ((*curr)+1 != '\0' ))
+              {
+              setenablemomrestart(curr+1);
+              }
+
+            sprintf(output,"enablemomrestart=%d",
+              MOMConfigRestart);
+            }
           else if (!strncasecmp(name,"diag",strlen("diag")))
             {
             char tmpLine[1024];
@@ -5095,8 +5165,185 @@ void usage(
   }  /* END usage() */
 
 
+/*
+ * MOMFindMyExe - attempt to find my running executable file.
+ *                returns alloc'd memory that is never freed.
+ */
+
+static char *orig_path;
+
+char *MOMFindMyExe(
+
+  char *argv0)  /* I */
+  {
+  char *link;
+  char buf[6+10+5];
+  int  has_slash = 0;
+  char *p;
+  char *p_next;
+  char *path;
 
 
+  link = calloc(MAXPATHLEN+1,sizeof(char));
+
+  if (link == NULL)
+    return NULL;
+
+  /* Linux has a handy symlink, so try that first */
+
+  if (readlink("/proc/self/exe",link,MAXPATHLEN) > 0)
+    if (link[0] != '\0' && link[0] != '[')
+      return link;
+
+  /* if argv0 has a /, then it should exist relative to $PWD */
+
+  for (p = argv0; *p; p++)
+    if (*p == '/')
+      {
+      has_slash = 1;
+      break;
+      }
+
+  if (has_slash)
+    {
+    char resolvedpath[MAXPATHLEN+1];
+
+    if (argv0[0] == '/')
+      {
+      strcpy(link,argv0);
+      }
+    else
+      {
+      if (getcwd(link,MAXPATHLEN) == NULL)
+        {
+        free(link);
+        return NULL;
+        }
+      
+      strcat(link,"/");
+      strcat(link,argv0);
+      }
+    
+    if (realpath(link,resolvedpath) == NULL)
+      {
+      free(link);
+      return NULL;
+      }
+    
+    strcpy(link,resolvedpath);
+
+    if (access(link,X_OK) == 0)
+      return link;
+
+    return NULL;
+    }
+
+  /* argv0 doesn't have a /, so search $PATH */
+
+  path = getenv ("PATH");
+
+  if (path != NULL)
+    {
+    for (p = path; *p; p = p_next)
+      {
+      char *q;
+      size_t p_len;
+
+      for (q = p; *q; q++)
+        if (*q == ':')
+          break;
+
+      p_len = q - p;
+      p_next = (*q == '\0' ? q : q + 1);
+
+      /* We have a path item at p, of length p_len.
+         Now concatenate the path item and argv0.  */
+      if (p_len == 0)
+        {
+        /* An empty PATH element designates the current directory.  */
+
+        if (getcwd(link,MAXPATHLEN) == NULL)
+          {
+          free(link);
+          return NULL;
+          }
+        
+        strcat(link, "/");
+        strcat(link, argv0);
+        }
+      else
+        {
+        strncpy(link, p, p_len);
+        *(link+p_len)='\0';
+        strcat(link, "/");
+        strcat(link, argv0);
+        }
+
+      if (access(link,X_OK) == 0)
+        return link;
+      } /* END for (p = path; *p; p = p_next) */
+    }
+
+  return NULL;
+  } /* END MOMFindMyExe() */
+
+/*
+ * MOMGetFileMtime - return the mtime of a file
+ */
+
+time_t MOMGetFileMtime(const char *fpath)
+  {
+   struct stat sbuf;
+   int ret;
+   
+   if ((fpath == NULL) || (*fpath == '\0'))
+     return 0;
+
+   ret = stat(fpath, &sbuf);
+   if (ret == 0)
+     return sbuf.st_mtime;
+
+  return 0;
+  }  /* END MOMGetFileMtime */
+
+
+/*
+ * MOMCheckRestart() - set mom_run_state to restart if appropriate.
+ *                     this is called when no jobs are running (below
+ *                     in the main loop, and in job_purge().)
+ */
+
+void MOMCheckRestart(void)
+  {
+  time_t newmtime;
+
+  if ((MOMConfigRestart <= 0) || (MOMExeTime <= 0))
+    return;
+  
+  newmtime = MOMGetFileMtime(MOMExePath);
+
+  if ((newmtime > 0) && (newmtime != MOMExeTime))
+    {
+    if (mom_run_state == MOM_RUN_STATE_RUNNING)
+      mom_run_state = MOM_RUN_STATE_RESTART;
+
+    sprintf(
+      log_buffer,
+      "%s has changed, initiating re-exec (now: %ld, was: %ld)",
+      MOMExePath,
+      newmtime,
+      MOMExeTime);
+
+    if (LOGLEVEL > 6)
+      {
+      log_record(
+        PBSEVENT_SYSTEM, 
+        PBS_EVENTCLASS_SERVER,
+        msg_daemonname, 
+        log_buffer);
+      }
+    }
+  }  /* END MOMCheckRestart() */
 
 int MOMInitialize(void)
 
@@ -5184,6 +5431,15 @@ msg_daemonname = pbs_current_user;
 
   pbsgroup = getgid();
   loopcnt = time(NULL);
+
+  MOMExePath = MOMFindMyExe(argv[0]);
+  MOMExeTime = MOMGetFileMtime(MOMExePath);
+
+  /* PATH is restored before a restart */
+  if (getenv("PATH") != NULL)
+    {
+    orig_path = strdup(getenv("PATH"));
+    }
 
   /* Get our default service port */
 
@@ -5881,6 +6137,18 @@ msg_daemonname = pbs_current_user;
     msg_daemonname, 
     "Is up");
 
+  sprintf(
+    log_buffer,
+    "MOM executable path and mtime at launch: %s %ld",
+    MOMExePath == NULL ? "NULL" : MOMExePath,
+    MOMExeTime);
+
+  log_record(
+    PBSEVENT_SYSTEM,
+    PBS_EVENTCLASS_SERVER,
+    id,
+    log_buffer);
+  
   /*
    * Now at last, we are ready to do some work, the following
    * section constitutes the "main" loop of MOM
@@ -6042,7 +6310,11 @@ msg_daemonname = pbs_current_user;
     /* are there any jobs? */
 
     if ((pjob = (job *)GET_NEXT(svr_alljobs)) == NULL)
+      {
+      MOMCheckRestart();
+
       continue;
+      }
 
     /* there are jobs so update status */
 
@@ -6300,6 +6572,18 @@ msg_daemonname = pbs_current_user;
 
   net_close(-1);		/* close all network connections */
  
+  if (mom_run_state == MOM_RUN_STATE_RESTART)
+    {
+    sprintf(log_buffer,"Will be restarting: %s",MOMExePath);
+
+    log_record(
+      PBSEVENT_SYSTEM | PBSEVENT_FORCE, 
+      PBS_EVENTCLASS_SERVER,
+      msg_daemonname, 
+      log_buffer);
+    }
+
+    
   log_record(
     PBSEVENT_SYSTEM | PBSEVENT_FORCE, 
     PBS_EVENTCLASS_SERVER,
@@ -6307,6 +6591,26 @@ msg_daemonname = pbs_current_user;
     "Is down");
 
   log_close(1);
+
+  if (mom_run_state == MOM_RUN_STATE_RESTART)
+    {
+    char *envstr;
+
+    envstr = malloc(
+        (strlen("PATH") + strlen(orig_path) + 2) * sizeof(char));
+
+    strcpy(envstr,"PATH=");
+
+    strcat(envstr,orig_path);
+
+    putenv(envstr);
+
+    execvp(MOMExePath,argv);
+
+    sprintf(log_buffer,"Execing myself failed: %s (%d)",strerror(errno),errno);
+
+    log_err(errno,id,log_buffer);
+    }
 
   return(0);
   }  /* END main() */

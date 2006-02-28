@@ -274,14 +274,16 @@ Format: "resources_available.resource_name=value", see qmgr(1B).
 [internal type: resource]
 .Ig
 .Al keep_completed
-Number of seconds to retain completed jobs in the C state.  EXPERIMENTAL
+Number of seconds to retain completed jobs in the C state.  This overrides
+the server attribute of the same name.  EXPERIMENTAL
 Format: integer; default value: 0.
 .if !\n(Pb .ig Ig
 [internal type: integer]
 .Ig
 .Al kill_delay
 The amount of the time delay between the sending of SIGTERM and SIGKILL
-when a qdel command is issued against a running job.  Format: integer
+when a qdel command is issued against a running job.  This overrides the
+server attribute of the same name. Format: integer
 seconds; default value: 2 seconds.
 .if !\n(Pb .ig Ig
 [internal type: integer]

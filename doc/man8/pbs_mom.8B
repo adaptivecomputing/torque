@@ -341,6 +341,14 @@ logging.  Values may range between 0 and 7.
 .IP max_load
 maximum processor load.  Nodes over this load average are considered busy (see
 ideal_load above).
+.IP enablemomrestart
+enable automatic restarts of MOM.  If enabled, MOM will check if its binary has
+been updated and restart itself at a safe point when no jobs are running; thus
+making upgrades easier.  The check is made by comparing the mtime of the
+pbs_mom executable.  Command-line args, the process name, and the PATH env
+variable are preserved across restarts.  It is recommended that this not be
+enabled in the config file, but enabled when desired with momctl (see RESOURCES
+for more information.)
 .IP node_check_script
 specifies the fully qualified pathname of the health check script to run (see
 HEALTH CHECK for more information).
@@ -389,6 +397,8 @@ retrieve or set the $status_update_time parameter
 retrieve or set the $check_poll_time parameter
 .IP jobstartblocktime
 retrieve or set the $jobstartblocktime parameter
+.IP enablemomrestart
+retrieve or set the $enablemomrestart parameter.
 .IP loglevel
 retrieve or set the $loglevel parameter
 .IP down_on_error

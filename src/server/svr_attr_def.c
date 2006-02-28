@@ -90,6 +90,8 @@
 /* External Functions Referenced */
 
 extern int manager_oper_chk A_((attribute *pattr, void *pobject, int actmode));
+extern int servername_chk A_((attribute *pattr, void *pobject, int actmode));
+extern int schiter_chk A_((attribute *pattr, void *pobject, int actmode));
 extern int poke_scheduler A_((attribute *pattr, void *pobject, int actmode));
 
 extern int encode_svrstate A_((attribute *pattr, list_head *phead, char *aname,
@@ -443,7 +445,7 @@ attribute_def svr_attr_def[] = {
 	set_l,
 	comp_l,
 	free_noop,  /* disable unset */
-	NULL_FUNC,
+	schiter_chk,
 	NO_USER_SET,
 	ATR_TYPE_LONG,
 	PARENT_TYPE_SERVER
@@ -652,8 +654,72 @@ attribute_def svr_attr_def[] = {
 	READ_ONLY,
 	ATR_TYPE_STR,
 	PARENT_TYPE_SERVER
-    }
+    },
 
+/* SRV_ATR_KillDelay */
+    {   ATTR_killdelay,         /* "kill_delay" */
+        decode_l,
+        encode_l,
+        set_l,
+        comp_l,
+        free_null,
+        NULL_FUNC,
+        NO_USER_SET,
+        ATR_TYPE_LONG,
+        PARENT_TYPE_SERVER
+    },
+
+/* SRV_ATR_AclLogic */
+    {  ATTR_acllogic,          /* "acl_logic_or" */
+       decode_b,
+       encode_b,
+       set_b,
+       comp_b,
+       free_null,
+       NULL_FUNC,
+       NO_USER_SET,
+       ATR_TYPE_LONG,
+       PARENT_TYPE_SERVER
+     }, 
+
+/* SRV_ATR_AclGroupSloppy */
+    {  ATTR_aclgrpslpy,          /* "acl_group_sloppy" */
+       decode_b,
+       encode_b,
+       set_b,
+       comp_b,
+       free_null,
+       NULL_FUNC,
+       NO_USER_SET,
+       ATR_TYPE_LONG,
+       PARENT_TYPE_SERVER
+     }, 
+
+/* SVR_ATR_KeepCompleted */
+    {   ATTR_keepcompleted,     /* "keep_completed" */
+        decode_l,
+        encode_l,
+        set_l,
+        comp_l,
+        free_null,
+        NULL_FUNC,
+        NO_USER_SET,
+        ATR_TYPE_LONG,
+        PARENT_TYPE_SERVER
+    },
+
+/* SVR_ATR_ServerName */
+    {   ATTR_servername,     /* "server_name" */
+        decode_str,
+        encode_str,
+        set_str,
+        comp_str,
+        free_str,
+        servername_chk,
+        NO_USER_SET,
+        ATR_TYPE_STR,
+        PARENT_TYPE_SERVER
+    }
 /* site supplied server attribute definitions if any, see site_svr_attr_*.h  */
 #include "site_svr_attr_def.h"
 

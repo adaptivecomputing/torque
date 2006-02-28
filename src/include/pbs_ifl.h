@@ -238,6 +238,7 @@
 #define ATTR_momjobsync  "mom_job_sync"
 #define ATTR_maildomain  "mail_domain"
 #define ATTR_pbsversion  "pbs_version"
+#define ATTR_servername  "server_name"
 
 
 /* additional node "attributes" names */

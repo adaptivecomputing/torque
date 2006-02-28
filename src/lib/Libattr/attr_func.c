@@ -199,6 +199,27 @@ int find_attr(
   }
 
 
+/*
+ * attr_ifelse_long - if attr1 is set, return it, else
+ *                    if attr2 is set, return it, else
+ *                    return the default
+ */
+
+long attr_ifelse_long(
+
+  attribute *attr1,
+  attribute *attr2,
+  long deflong)
+
+  {
+
+  if (attr1->at_flags & ATR_VFLAG_SET)
+    return (attr1->at_val.at_long);
+  else if (attr2->at_flags & ATR_VFLAG_SET)
+    return (attr2->at_val.at_long);
+  else
+    return (deflong);
+  }
 
 
 

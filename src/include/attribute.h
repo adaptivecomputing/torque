@@ -313,6 +313,7 @@ extern void clear_attr A_((attribute *pattr, attribute_def *pdef));
 extern int  find_attr  A_((attribute_def *attrdef,char *name,int limit));
 extern int  recov_attr A_((int fd, void *parent, attribute_def *padef,
 			   attribute *pattr, int limit, int unknown));
+extern long attr_ifelse_long A_((attribute *,attribute *,long));
 extern void free_null  A_((attribute *attr));
 extern void free_noop  A_((attribute *attr));
 extern svrattrl *attrlist_alloc A_((int szname, int szresc, int szval));

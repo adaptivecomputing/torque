@@ -593,6 +593,7 @@ void job_purge(
   extern char  *msg_err_purgejob;
 #ifdef PBS_MOM
   int           rc;
+  extern void MOMCheckRestart A_((void));
 #endif
 
 #ifdef PBS_MOM
@@ -795,6 +796,13 @@ void job_purge(
     }
 
   job_free(pjob);
+
+#ifdef PBS_MOM
+  /* if no jobs are left, check if MOM should be restarted */
+
+  if (((job *)GET_NEXT(svr_alljobs)) == NULL)
+    MOMCheckRestart();
+#endif	/* PBS_MOM */
 
   return;
   }  /* END job_purge() */

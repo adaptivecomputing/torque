@@ -1061,14 +1061,18 @@ int svr_chkque(
     if (pque->qu_attr[QA_ATR_AclGroupEnabled].at_val.at_long)
       {
       int rc;
+      int slpygrp;
+
+      slpygrp = attr_ifelse_long(&pque->qu_attr[(int)QA_ATR_AclGroupSloppy],
+                                &server.sv_attr[(int)SRV_ATR_AclGroupSloppy],
+                                0);
 
       rc = acl_check(
          &pque->qu_attr[QA_ATR_AclGroup],
          pjob->ji_wattr[(int)JOB_ATR_egroup].at_val.at_str,
          ACL_Group);
 
-      if ((rc == 0) &&
-          (pque->qu_attr[QA_ATR_AclGroupSloppy].at_val.at_long))
+      if ((rc == 0) && slpygrp)
         {
         /* try again looking at the gids */
 
@@ -1078,8 +1082,7 @@ int svr_chkque(
            ACL_Gid);
         }
 
-      if ((rc == 0) &&
-          (pque->qu_attr[QA_ATR_AclGroupSloppy].at_val.at_long) &&
+      if ((rc == 0) && slpygrp &&
           (!(pjob->ji_wattr[(int)JOB_ATR_grouplst].at_flags & ATR_VFLAG_SET)))
         {
         /* check group acl against all accessible groups */
@@ -1127,8 +1130,13 @@ int svr_chkque(
 
         if (mtype != MOVE_TYPE_MgrMv) /* ok if mgr */
           {
-          if (pque->qu_attr[QA_ATR_AclLogic].at_val.at_long &&
-              pque->qu_attr[QA_ATR_AclUserEnabled].at_val.at_long)
+          int logic_or;
+
+          logic_or = attr_ifelse_long(&pque->qu_attr[(int)QA_ATR_AclLogic],
+                                      &server.sv_attr[(int)SRV_ATR_AclLogic],
+                                      0);
+              
+          if (logic_or && pque->qu_attr[QA_ATR_AclUserEnabled].at_val.at_long)
             {
             /* only fail if neither user nor group acls can be met */
 
@@ -1197,8 +1205,13 @@ int svr_chkque(
            pjob->ji_wattr[(int)JOB_ATR_job_owner].at_val.at_str,
            ACL_User) == 0)
         {
-        if (pque->qu_attr[QA_ATR_AclLogic].at_val.at_long &&
-            pque->qu_attr[QA_ATR_AclGroupEnabled].at_val.at_long)
+        int logic_or;
+        
+        logic_or = attr_ifelse_long(&pque->qu_attr[(int)QA_ATR_AclLogic],
+                                    &server.sv_attr[(int)SRV_ATR_AclLogic],
+                                    0);
+
+        if (logic_or && pque->qu_attr[QA_ATR_AclGroupEnabled].at_val.at_long)
           {
           /* only fail if neither user nor group acls can be met */
 

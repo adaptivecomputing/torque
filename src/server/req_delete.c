@@ -587,10 +587,9 @@ static void post_delete_mom1(
     {
     pque = pjob->ji_qhdr;
 
-    if (pque->qu_attr[(int)QE_ATR_KillDelay].at_flags & ATR_VFLAG_SET)
-      delay = pque->qu_attr[(int)QE_ATR_KillDelay].at_val.at_long;
-    else
-      delay = 2;
+    delay = attr_ifelse_long(&pque->qu_attr[(int)QE_ATR_KillDelay],
+                             &server.sv_attr[(int)SRV_ATR_KillDelay],
+                             2);
     }
 
   pwtnew = set_task(WORK_Timed,delay + time_now,post_delete_mom2,pjob);

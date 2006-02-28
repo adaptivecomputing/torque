@@ -133,6 +133,11 @@ enum srv_atr {
         SRV_ATR_MomJobSync,
         SRV_ATR_MailDomain,
 	SRV_ATR_version,
+	SRV_ATR_KillDelay,
+	SRV_ATR_AclLogic,
+	SRV_ATR_AclGroupSloppy,
+	SRV_ATR_KeepCompleted,
+	SRV_ATR_ServerName,
 #include "site_svr_attr_enum.h"
 	/* This must be last */
 	SRV_ATR_LAST

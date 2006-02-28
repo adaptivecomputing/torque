@@ -967,7 +967,9 @@ void on_job_exit(
 
       if ((pque = pjob->ji_qhdr) && (pque->qu_attr != NULL))
         {
-        KeepSeconds = (int)pque->qu_attr[(int)QE_ATR_KeepCompleted].at_val.at_long;
+        KeepSeconds = attr_ifelse_long(&pque->qu_attr[(int)QE_ATR_KeepCompleted],
+                                       &server.sv_attr[(int)SRV_ATR_KeepCompleted],
+                                       0);
         }
 
       if (KeepSeconds <= 0)
