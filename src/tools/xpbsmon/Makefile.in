@@ -134,7 +134,7 @@ SUFFIXES = .src
 bin_SCRIPTS = xpbsmon
 nodist_xpbsmon_DATA = xpbsmonrc tclIndex
 
-CLEANFILES = xpbsmon xpbsmonrc tclIndex
+CLEANFILES = xpbsmon xpbsmonrc tclIndex buildindex
 EXTRA_DIST = xpbsmon.src xpbsmonrc.src patch_scripts buildindex.src
 
 dist_xpbsmon_DATA = preferences.tcl auto_upd.tk bindings.tk box.tk button.tk \
@@ -354,6 +354,8 @@ info-am:
 
 install-data-am: install-dist_xpbsmonDATA install-dist_xpbsmonbitmapDATA \
 	install-dist_xpbsmonhelpDATA install-nodist_xpbsmonDATA
+	@$(NORMAL_INSTALL)
+	$(MAKE) $(AM_MAKEFLAGS) install-data-hook
 
 install-exec-am: install-binSCRIPTS
 
@@ -374,6 +376,8 @@ mostlyclean-am: mostlyclean-generic mostlyclean-libtool
 uninstall-am: uninstall-binSCRIPTS uninstall-dist_xpbsmonDATA \
 	uninstall-dist_xpbsmonbitmapDATA uninstall-dist_xpbsmonhelpDATA \
 	uninstall-info-am uninstall-nodist_xpbsmonDATA
+	@$(NORMAL_INSTALL)
+	$(MAKE) $(AM_MAKEFLAGS) uninstall-hook
 
 .PHONY: all all-am check check-am clean clean-generic clean-libtool \
 	distclean distclean-generic distclean-libtool distdir dvi \
@@ -399,8 +403,22 @@ xpbsmon: $(srcdir)/xpbsmon.src
 xpbsmonrc: $(srcdir)/xpbsmonrc.src
 	$(SHELL) $(srcdir)/patch_scripts "$(PBS_MACH)" "$(PBS_DEFAULT_SERVER)" "$?" "$@"
 
-tclIndex: $(dist_xpbsmon_DATA)
-	echo "auto_mkindex . $(srcdir)/*.{tcl,tk};exit" | @TCLSH_PROG@
+buildindex: $(srcdir)/buildindex.src
+	@echo Processing buildindex
+	@sed -e 's,#\!.*tclsh.*$$,#\!@TCLSH_PROG@,' $? > $@
+	@chmod +x $@
+
+tclIndex: $(dist_xpbs_DATA) buildindex
+	@echo Running buildindex \(locally\)
+	@./buildindex $(srcdir) .
+
+install-data-hook:
+	install -m755 buildindex $(DESTDIR)$(XPBSMON_DIR)/buildindex
+	rm -f $(DESTDIR)$(XPBSMON_DIR)/tclIndex
+	cd $(DESTDIR)$(XPBSMON_DIR) && ./buildindex $(DESTDIR)$(XPBSMON_DIR) . && chmod 644 tclIndex
+
+uninstall-hook:
+	rm -f $(DESTDIR)$(XPBS_DIR)/buildindex
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

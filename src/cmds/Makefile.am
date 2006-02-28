@@ -14,10 +14,13 @@ EXTRA_DIST = nqs2pbs sample.qstatrc
 
 LDADD = $(PBS_LIBS)
 
-pbspoe_CPPFLAGS = $(AM_CPPFLAGS) -DPBSPD=\"$(bindir)/pbspd\"
+AM_CFLAGS = $(MY_TCL_INCS) -DPBS_SERVER_HOME=\"$(PBS_SERVER_HOME)\" \
+	    -DPBSPD=\"$(bindir)/pbspd\"
 
-qstat_CPPFLAGS = $(AM_CPPFLAGS) $(MY_TCL_INCS)
-qstat_LDADD = $(PBS_LIBS) $(MY_TCL_LIBS)
+if USE_TCLQSTAT
+TCLQSTATLIBS = $(MY_TCL_LIBS)
+endif
+qstat_LDADD = $(PBS_LIBS) $(TCLQSTATLIBS)
 
 qmgr_LDADD = $(PBS_LIBS) $(READLINE_LIBS)
 
@@ -50,3 +53,6 @@ momctl_SOURCES = momctl.c
 install-exec-hook:
 	$(PBS_MKDIRS) aux
 	$(PBS_MKDIRS) default
+
+uninstall-hook:
+	rm -f $(DESTDIR)$(PBS_DEFAULT_FILE)

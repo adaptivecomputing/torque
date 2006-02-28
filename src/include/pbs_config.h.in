@@ -269,9 +269,6 @@
 /* the PBS style machine type name */
 #undef PBS_MACH
 
-/* Define to the path of the server home dir */
-#undef PBS_SERVER_HOME
-
 /* use pemask-based scheduling on Cray T3e */
 #undef PE_MASK
 

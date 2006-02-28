@@ -141,10 +141,12 @@ EXTRA_DIST = nqs2pbs sample.qstatrc
 
 LDADD = $(PBS_LIBS)
 
-pbspoe_CPPFLAGS = $(AM_CPPFLAGS) -DPBSPD=\"$(bindir)/pbspd\"
+AM_CFLAGS = $(MY_TCL_INCS) -DPBS_SERVER_HOME=\"$(PBS_SERVER_HOME)\" \
+	    -DPBSPD=\"$(bindir)/pbspd\"
 
-qstat_CPPFLAGS = $(AM_CPPFLAGS) $(MY_TCL_INCS)
-qstat_LDADD = $(PBS_LIBS) $(MY_TCL_LIBS)
+
+@USE_TCLQSTAT_TRUE@TCLQSTATLIBS = $(MY_TCL_LIBS)
+qstat_LDADD = $(PBS_LIBS) $(TCLQSTATLIBS)
 
 qmgr_LDADD = $(PBS_LIBS) $(READLINE_LIBS)
 
@@ -314,8 +316,12 @@ qstart_DEPENDENCIES = ../lib/Libcmds/libcmds.la ../lib/Libnet/libnet.la \
 qstart_LDFLAGS =
 am_qstat_OBJECTS = qstat.$(OBJEXT) MXML.$(OBJEXT)
 qstat_OBJECTS = $(am_qstat_OBJECTS)
-qstat_DEPENDENCIES = ../lib/Libcmds/libcmds.la ../lib/Libnet/libnet.la \
-	../lib/Libpbs/libpbs.la
+@USE_TCLQSTAT_TRUE@qstat_DEPENDENCIES = ../lib/Libcmds/libcmds.la \
+@USE_TCLQSTAT_TRUE@	../lib/Libnet/libnet.la \
+@USE_TCLQSTAT_TRUE@	../lib/Libpbs/libpbs.la
+@USE_TCLQSTAT_FALSE@qstat_DEPENDENCIES = ../lib/Libcmds/libcmds.la \
+@USE_TCLQSTAT_FALSE@	../lib/Libnet/libnet.la \
+@USE_TCLQSTAT_FALSE@	../lib/Libpbs/libpbs.la
 qstat_LDFLAGS =
 am_qstop_OBJECTS = qstop.$(OBJEXT)
 qstop_OBJECTS = $(am_qstop_OBJECTS)
@@ -740,6 +746,8 @@ mostlyclean-am: mostlyclean-compile mostlyclean-generic \
 
 uninstall-am: uninstall-binPROGRAMS uninstall-binSCRIPTS \
 	uninstall-info-am uninstall-sbinPROGRAMS
+	@$(NORMAL_INSTALL)
+	$(MAKE) $(AM_MAKEFLAGS) uninstall-hook
 
 .PHONY: GTAGS all all-am check check-am clean clean-binPROGRAMS \
 	clean-generic clean-libtool clean-sbinPROGRAMS distclean \
@@ -759,6 +767,9 @@ uninstall-am: uninstall-binPROGRAMS uninstall-binSCRIPTS \
 install-exec-hook:
 	$(PBS_MKDIRS) aux
 	$(PBS_MKDIRS) default
+
+uninstall-hook:
+	rm -f $(DESTDIR)$(PBS_DEFAULT_FILE)
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

@@ -135,6 +135,8 @@ PBS_LIBS = ../lib/Liblog/liblog.la \
 sbin_PROGRAMS = pbs_sched
 
 pbs_sched_LDADD = samples/@SCHD_CODE@/libfoo.la $(PBS_LIBS) 
+AM_CFLAGS = -DPBS_SERVER_HOME=\"$(PBS_SERVER_HOME)\"
+
 pbs_sched_SOURCES = pbs_sched.c get_4byte.c
 subdir = src/scheduler.cc
 mkinstalldirs = $(SHELL) $(top_srcdir)/buildutils/mkinstalldirs

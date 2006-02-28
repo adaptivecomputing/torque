@@ -11,7 +11,7 @@ SUFFIXES = .src
 bin_SCRIPTS = xpbs
 nodist_xpbs_DATA = xpbsrc tclIndex
 
-CLEANFILES = xpbs xpbsrc tclIndex
+CLEANFILES = xpbs xpbsrc tclIndex buildindex
 EXTRA_DIST = xpbs.src xpbsrc.src buildindex.src
 
 dist_xpbs_DATA = pbs.tcl preferences.tcl acctname.tk after_depend.tk \
@@ -55,6 +55,19 @@ xpbsrc: $(srcdir)/xpbsrc.src
 	    -e ' s,\*selectHosts:.*$$,\*selectHosts: $(PBS_DEFAULT_SERVER),' \
 	    $? > $@
 
-tclIndex: $(dist_xpbs_DATA)
-	echo "auto_mkindex . $(srcdir)/*.{tcl,tk};exit" | @TCLSH_PROG@
+buildindex: $(srcdir)/buildindex.src
+	@echo Processing buildindex
+	@sed -e 's,#\!.*tclsh.*$$,#\!@TCLSH_PROG@,' $? > $@
+	@chmod +x $@
 
+tclIndex: $(dist_xpbs_DATA) buildindex
+	@echo Running buildindex \(locally\)
+	@./buildindex $(srcdir) .
+
+install-data-hook:
+	install -m755 buildindex $(DESTDIR)$(XPBS_DIR)/buildindex
+	rm -f $(DESTDIR)$(XPBS_DIR)/tclIndex
+	cd $(DESTDIR)$(XPBS_DIR) && ./buildindex $(DESTDIR)$(XPBS_DIR) . && chmod 644 tclIndex
+
+uninstall-hook:
+	rm -f $(DESTDIR)$(XPBS_DIR)/buildindex

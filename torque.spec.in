@@ -163,19 +163,8 @@ fi
 
 %install
 [ "$RPM_BUILD_ROOT" != "/" ] && %{__rm} -rf "$RPM_BUILD_ROOT"
+%{makeinstall}
 
-# we don't use makeinstall because we don't support DESTDIR (as happens on Suse)
-%{__make} DESTDIR=$RPM_BUILD_ROOT install
-
-# Correct the tclIndex files that are broken when installing into a fakeroot
-%if %build_gui
-pat=$(echo $RPM_BUILD_ROOT | sed 's/\// /g')
-for indexfile in $RPM_BUILD_ROOT%{_libdir}/*/tclIndex; do
-  %__sed -e "s/$pat//" < $indexfile > tcltmp
-  %__cat < tcltmp > $indexfile
-done
-%__rm -f tcltmp
-%endif
 
 # install initscripts
 %{__mkdir_p} $RPM_BUILD_ROOT%{_initrddir}
@@ -345,6 +334,10 @@ Provides: xpbs xpbsmon
 %description gui
 %shared_description
 This package holds the graphical clients.
+
+%post
+cd %{_libdir}/xpbs && ./buildindex %{_libdir}/xpbs .
+cd %{_libdir}/xpbsmon && ./buildindex %{_libdir}/xpbsmon .
 
 %if %{build_gui}
 %files gui

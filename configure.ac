@@ -501,9 +501,9 @@ AC_DEFINE_UNQUOTED(TMAILDOMAIN, "${MAILDOMAIN}", [override the default domain fo
 AC_ARG_ENABLE(spool,
 [
   --disable-spool         if disabled, TORQUE will create output and error files
-                          directly in \$HOME/.pbs_spool if it exists or in \$HOME
+                          directly in $HOME/.pbs_spool if it exists or in $HOME
                           otherwise.  By default, TORQUE will spool files in
-                          \$TORQUEHOME/spool and copy them to the users home
+                          $TORQUEHOME/spool and copy them to the users home
                           directory when the job completes.],
 [case "${enableval}" in
   yes) NO_SPOOL_OUTPUT=0 ;;
@@ -537,13 +537,8 @@ AC_DEFINE_UNQUOTED(TMP_DIR, "${TMP_DIR}",
 
 AC_ARG_WITH(server_home,
     [  --with-server-home=DIR  set the server home/spool directory for PBS use
-                          defaults to "/usr/spool/PBS"],
-    [PBS_SERVER_HOME="${withval}"], [PBS_SERVER_HOME="/usr/spool/PBS"])
-case "${PBS_SERVER_HOME}" in
-  /*) AC_DEFINE_UNQUOTED(PBS_SERVER_HOME, "${PBS_SERVER_HOME}",
-          [Define to the path of the server home dir]) ;;
-  *)  AC_MSG_ERROR([--with-server-home=DIR must be given an absolute path]) ;;
-esac
+                          defaults to /var/spool/torque],
+    [PBS_SERVER_HOME="${withval}"], [PBS_SERVER_HOME="$localstatedir/spool/torque"])
 AC_SUBST(PBS_SERVER_HOME)
 
 
@@ -816,6 +811,8 @@ if test "${enable_tcl_qstat}" = "yes"; then
     fi
 fi
 AC_SUBST(EXTRA_QSTAT_LIBS)
+AM_CONDITIONAL(USE_TCLQSTAT, [test "x$enable_tcl_qstat" = "xyes"])
+
 
 
 dnl

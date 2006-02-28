@@ -117,7 +117,8 @@ AUTOMAKE_OPTIONS = foreign
 PBS_MKDIRS = $(SHELL) $(top_builddir)/buildutils/pbs_mkdirs
 
 AM_CPPFLAGS = -I$(top_srcdir)/src/include -I$(top_srcdir)/src/resmom/@PBS_MACH@ \
-	       -DPBS_MOM -DDEMUX=\"$(DEMUX_PATH)\" -DRCP_PATH=\"$(RCP_PATH)\"
+	       -DPBS_MOM -DDEMUX=\"$(DEMUX_PATH)\" -DRCP_PATH=\"$(RCP_PATH)\" \
+	       -DPBS_SERVER_HOME=\"$(PBS_SERVER_HOME)\"
 
 
 IFF_PATH = $(sbindir)/pbs_iff
@@ -683,6 +684,8 @@ mostlyclean-am: mostlyclean-compile mostlyclean-generic \
 	mostlyclean-libtool
 
 uninstall-am: uninstall-info-am uninstall-sbinPROGRAMS
+	@$(NORMAL_INSTALL)
+	$(MAKE) $(AM_MAKEFLAGS) uninstall-hook
 
 uninstall-info: uninstall-info-recursive
 
@@ -708,6 +711,9 @@ install-exec-hook:
 	chmod 700 $(DESTDIR)$(sbindir)/pbs_mom
 	$(PBS_MKDIRS) aux
 	$(PBS_MKDIRS) mom
+
+uninstall-hook:
+	rm -f $(DESTDIR)$(PBS_ENVIRON)
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

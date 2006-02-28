@@ -9,7 +9,7 @@ SUFFIXES = .src
 bin_SCRIPTS = xpbsmon
 nodist_xpbsmon_DATA = xpbsmonrc tclIndex
 
-CLEANFILES = xpbsmon xpbsmonrc tclIndex
+CLEANFILES = xpbsmon xpbsmonrc tclIndex buildindex
 EXTRA_DIST = xpbsmon.src xpbsmonrc.src patch_scripts buildindex.src
 
 dist_xpbsmon_DATA = preferences.tcl auto_upd.tk bindings.tk box.tk button.tk \
@@ -33,6 +33,20 @@ xpbsmon: $(srcdir)/xpbsmon.src
 xpbsmonrc: $(srcdir)/xpbsmonrc.src
 	$(SHELL) $(srcdir)/patch_scripts "$(PBS_MACH)" "$(PBS_DEFAULT_SERVER)" "$?" "$@"
 
-tclIndex: $(dist_xpbsmon_DATA)
-	echo "auto_mkindex . $(srcdir)/*.{tcl,tk};exit" | @TCLSH_PROG@
+buildindex: $(srcdir)/buildindex.src
+	@echo Processing buildindex
+	@sed -e 's,#\!.*tclsh.*$$,#\!@TCLSH_PROG@,' $? > $@
+	@chmod +x $@
+
+tclIndex: $(dist_xpbs_DATA) buildindex
+	@echo Running buildindex \(locally\)
+	@./buildindex $(srcdir) .
+
+install-data-hook:
+	install -m755 buildindex $(DESTDIR)$(XPBSMON_DIR)/buildindex
+	rm -f $(DESTDIR)$(XPBSMON_DIR)/tclIndex
+	cd $(DESTDIR)$(XPBSMON_DIR) && ./buildindex $(DESTDIR)$(XPBSMON_DIR) . && chmod 644 tclIndex
+
+uninstall-hook:
+	rm -f $(DESTDIR)$(XPBS_DIR)/buildindex
 

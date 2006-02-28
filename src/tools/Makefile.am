@@ -30,6 +30,8 @@ endif
 bin_PROGRAMS = chk_tree hostn printjob printtracking tracejob $(PROGRAMS_TCL) $(PROGRAMS_TK)
 
 LDADD = $(PBS_LIBS)
+AM_CFLAGS = $(AM_CPPFLAGS) -DPBS_SERVER_HOME=\"$(PBS_SERVER_HOME)\"
+
 chk_tree_SOURCES = chk_tree.c
 hostn_SOURCES = hostn.c
 printjob_SOURCES = printjob.c

@@ -9,6 +9,7 @@ PBS_LIBS = ../lib/Libattr/libattr.a \
 sbin_PROGRAMS = pbs_server
 
 pbs_server_LDADD = $(PBS_LIBS)
+AM_CFLAGS = -DPBS_SERVER_HOME=\"$(PBS_SERVER_HOME)\"
 
 pbs_server_SOURCES = accounting.c attr_recov.c dis_read.c geteusernam.c \
 		     issue_request.c job_attr_def.c job_func.c job_recov.c \
@@ -29,3 +30,6 @@ install-exec-hook:
 	chmod 700 $(DESTDIR)$(sbindir)/pbs_server
 	$(PBS_MKDIRS) aux
 	$(PBS_MKDIRS) server
+
+uninstall-hook:
+	rm -f $(DESTDIR)$(PBS_ENVIRON)
