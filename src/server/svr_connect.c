@@ -104,6 +104,7 @@
 #include <errno.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <stdio.h>
 #include "libpbs.h"
 #include "log.h"
 #include "server_limits.h"

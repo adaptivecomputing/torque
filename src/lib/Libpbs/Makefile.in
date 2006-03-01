@@ -143,7 +143,6 @@ libpbs_la_SOURCES = ../Libdis/dis.c ../Libdis/discui_.c ../Libdis/discul_.c \
 		    ../Libdis/diswl_.c ../Libdis/diswsi.c ../Libdis/diswsl.c \
 		    ../Libdis/diswui_.c ../Libdis/diswui.c \
 		    ../Libdis/diswul.c ../Libifl/advise.c \
-		    ../Libifl/atexit.c \
 		    ../Libifl/dec_attrl.c ../Libifl/dec_attropl.c \
 		    ../Libifl/dec_Authen.c ../Libifl/dec_CpyFil.c \
 		    ../Libifl/dec_JobCred.c ../Libifl/dec_JobFile.c \
@@ -202,29 +201,28 @@ am_libpbs_la_OBJECTS = dis.lo discui_.lo discul_.lo disi10d_.lo \
 	disrsc.lo disrsi_.lo disrsi.lo disrsl_.lo disrsl.lo disrss.lo \
 	disrst.lo disruc.lo disrui.lo disrul.lo disrus.lo diswcs.lo \
 	diswf.lo diswl_.lo diswsi.lo diswsl.lo diswui_.lo diswui.lo \
-	diswul.lo advise.lo atexit.lo dec_attrl.lo dec_attropl.lo \
-	dec_Authen.lo dec_CpyFil.lo dec_JobCred.lo dec_JobFile.lo \
-	dec_JobId.lo dec_JobObit.lo dec_Manage.lo dec_MoveJob.lo \
-	dec_MsgJob.lo dec_QueueJob.lo dec_Reg.lo dec_ReqExt.lo \
-	dec_ReqHdr.lo dec_Resc.lo dec_rpyc.lo dec_rpys.lo dec_RunJob.lo \
-	dec_Shut.lo dec_Sig.lo dec_Status.lo dec_svrattrl.lo \
-	dec_Track.lo enc_attrl.lo enc_attropl.lo enc_CpyFil.lo \
-	enc_JobCred.lo enc_JobFile.lo enc_JobId.lo enc_JobObit.lo \
-	enc_Manage.lo enc_MoveJob.lo enc_MsgJob.lo enc_QueueJob.lo \
-	enc_Reg.lo enc_reply.lo enc_ReqExt.lo enc_ReqHdr.lo \
-	enc_RunJob.lo enc_Shut.lo enc_Sig.lo enc_Status.lo \
-	enc_svrattrl.lo enc_Track.lo get_svrport.lo nonblock.lo \
-	PBS_attr.lo pbsD_alterjo.lo pbsD_asyrun.lo PBS_data.lo \
-	pbsD_connect.lo pbsD_deljob.lo pbsD_holdjob.lo pbsD_locjob.lo \
-	PBSD_manage2.lo pbsD_manager.lo pbsD_movejob.lo \
-	PBSD_manager_caps.lo PBSD_msg2.lo pbsD_msgjob.lo \
-	pbsD_orderjo.lo PBSD_rdrpy.lo pbsD_rerunjo.lo pbsD_resc.lo \
-	pbsD_rlsjob.lo pbsD_runjob.lo pbsD_selectj.lo PBSD_sig2.lo \
-	pbsD_sigjob.lo pbsD_stagein.lo pbsD_statjob.lo pbsD_statnode.lo \
-	pbsD_statque.lo pbsD_statsrv.lo PBSD_status2.lo PBSD_status.lo \
-	pbsD_submit.lo PBSD_submit_caps.lo pbsD_termin.lo \
-	pbs_geterrmg.lo pbs_statfree.lo rpp.lo tcp_dis.lo tm.lo \
-	list_link.lo
+	diswul.lo advise.lo dec_attrl.lo dec_attropl.lo dec_Authen.lo \
+	dec_CpyFil.lo dec_JobCred.lo dec_JobFile.lo dec_JobId.lo \
+	dec_JobObit.lo dec_Manage.lo dec_MoveJob.lo dec_MsgJob.lo \
+	dec_QueueJob.lo dec_Reg.lo dec_ReqExt.lo dec_ReqHdr.lo \
+	dec_Resc.lo dec_rpyc.lo dec_rpys.lo dec_RunJob.lo dec_Shut.lo \
+	dec_Sig.lo dec_Status.lo dec_svrattrl.lo dec_Track.lo \
+	enc_attrl.lo enc_attropl.lo enc_CpyFil.lo enc_JobCred.lo \
+	enc_JobFile.lo enc_JobId.lo enc_JobObit.lo enc_Manage.lo \
+	enc_MoveJob.lo enc_MsgJob.lo enc_QueueJob.lo enc_Reg.lo \
+	enc_reply.lo enc_ReqExt.lo enc_ReqHdr.lo enc_RunJob.lo \
+	enc_Shut.lo enc_Sig.lo enc_Status.lo enc_svrattrl.lo \
+	enc_Track.lo get_svrport.lo nonblock.lo PBS_attr.lo \
+	pbsD_alterjo.lo pbsD_asyrun.lo PBS_data.lo pbsD_connect.lo \
+	pbsD_deljob.lo pbsD_holdjob.lo pbsD_locjob.lo PBSD_manage2.lo \
+	pbsD_manager.lo pbsD_movejob.lo PBSD_manager_caps.lo \
+	PBSD_msg2.lo pbsD_msgjob.lo pbsD_orderjo.lo PBSD_rdrpy.lo \
+	pbsD_rerunjo.lo pbsD_resc.lo pbsD_rlsjob.lo pbsD_runjob.lo \
+	pbsD_selectj.lo PBSD_sig2.lo pbsD_sigjob.lo pbsD_stagein.lo \
+	pbsD_statjob.lo pbsD_statnode.lo pbsD_statque.lo \
+	pbsD_statsrv.lo PBSD_status2.lo PBSD_status.lo pbsD_submit.lo \
+	PBSD_submit_caps.lo pbsD_termin.lo pbs_geterrmg.lo \
+	pbs_statfree.lo rpp.lo tcp_dis.lo tm.lo list_link.lo
 libpbs_la_OBJECTS = $(am_libpbs_la_OBJECTS)
 
 DEFS = @DEFS@
@@ -243,8 +241,7 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/PBSD_status2.Plo \
 @AMDEP_TRUE@	./$(DEPDIR)/PBSD_submit_caps.Plo \
 @AMDEP_TRUE@	./$(DEPDIR)/PBS_attr.Plo ./$(DEPDIR)/PBS_data.Plo \
-@AMDEP_TRUE@	./$(DEPDIR)/advise.Plo ./$(DEPDIR)/atexit.Plo \
-@AMDEP_TRUE@	./$(DEPDIR)/dec_Authen.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/advise.Plo ./$(DEPDIR)/dec_Authen.Plo \
 @AMDEP_TRUE@	./$(DEPDIR)/dec_CpyFil.Plo \
 @AMDEP_TRUE@	./$(DEPDIR)/dec_JobCred.Plo \
 @AMDEP_TRUE@	./$(DEPDIR)/dec_JobFile.Plo \
@@ -407,7 +404,6 @@ diswui_.lo: ../Libdis/diswui_.c
 diswui.lo: ../Libdis/diswui.c
 diswul.lo: ../Libdis/diswul.c
 advise.lo: ../Libifl/advise.c
-atexit.lo: ../Libifl/atexit.c
 dec_attrl.lo: ../Libifl/dec_attrl.c
 dec_attropl.lo: ../Libifl/dec_attropl.c
 dec_Authen.lo: ../Libifl/dec_Authen.c
@@ -514,7 +510,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PBS_attr.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PBS_data.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/advise.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/atexit.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dec_Authen.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dec_CpyFil.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dec_JobCred.Plo@am__quote@
@@ -1276,24 +1271,6 @@ advise.lo: ../Libifl/advise.c
 @AMDEP_TRUE@	depfile='$(DEPDIR)/advise.Plo' tmpdepfile='$(DEPDIR)/advise.TPlo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(LIBTOOL) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o advise.lo `test -f '../Libifl/advise.c' || echo '$(srcdir)/'`../Libifl/advise.c
-
-atexit.o: ../Libifl/atexit.c
-@AMDEP_TRUE@	source='../Libifl/atexit.c' object='atexit.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/atexit.Po' tmpdepfile='$(DEPDIR)/atexit.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o atexit.o `test -f '../Libifl/atexit.c' || echo '$(srcdir)/'`../Libifl/atexit.c
-
-atexit.obj: ../Libifl/atexit.c
-@AMDEP_TRUE@	source='../Libifl/atexit.c' object='atexit.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/atexit.Po' tmpdepfile='$(DEPDIR)/atexit.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o atexit.obj `cygpath -w ../Libifl/atexit.c`
-
-atexit.lo: ../Libifl/atexit.c
-@AMDEP_TRUE@	source='../Libifl/atexit.c' object='atexit.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/atexit.Plo' tmpdepfile='$(DEPDIR)/atexit.TPlo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(LIBTOOL) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o atexit.lo `test -f '../Libifl/atexit.c' || echo '$(srcdir)/'`../Libifl/atexit.c
 
 dec_attrl.o: ../Libifl/dec_attrl.c
 @AMDEP_TRUE@	source='../Libifl/dec_attrl.c' object='dec_attrl.o' libtool=no @AMDEPBACKSLASH@

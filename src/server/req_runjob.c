@@ -479,7 +479,7 @@ int svr_startjob(
     FailHost[0] = '\0';
 
   if (EMsg != NULL)
-    EMsg[0] != '\0';
+    EMsg[0] = '\0';
 
   /* if not already setup, transfer the control/script file basename */
   /* into an attribute accessible by MOM */

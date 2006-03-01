@@ -2533,6 +2533,8 @@ static int node_spec(
   int	 rv;
   static char shared[] = "shared";
 
+  extern int __PNodeStateToString(int,char *,int);
+
   if (EMsg != NULL)
     EMsg[0] = '\0';
 

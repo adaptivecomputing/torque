@@ -15,6 +15,7 @@
   automatic MOM restarts for easier upgrades (USC)
   new server attributes: acl_group_sloppy, acl_logic_or, keep_completed, kill_delay
   new server attributes: server_name
+  enable large file support (USC)
 
 2.0.0p7
 
