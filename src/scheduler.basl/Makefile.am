@@ -7,7 +7,7 @@ PBS_LIBS = ../lib/Liblog/liblog.la \
 sbin_PROGRAMS = pbs_sched
 noinst_PROGRAMS = basl2c
 
-AM_CFLAGS = -DPBS_SERVER_HOME=\"$(PBS_SERVER_HOME)\"
+AM_CFLAGS = -DPBS_SERVER_HOME=\"$(PBS_SERVER_HOME)\" -DPBS_ENVIRON=\"$(PBS_ENVIRON)\"
 
 pbs_sched_LDADD = $(PBS_LIBS) pbs_sched.o
 pbs_sched_SOURCES = af.c af_cnode.c af_cnodemap.c af_config.c af_job.c \

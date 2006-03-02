@@ -1,6 +1,6 @@
 include $(top_srcdir)/buildutils/config.mk
 
-AM_CPPFLAGS += -I../Libdis -I../Libifl -DIFF_PATH=\"$(IFF_PATH)\"
+AM_CPPFLAGS += -I../Libdis -I../Libifl -DIFF_PATH=\"$(IFF_PATH)\" -DPBS_DEFAULT_FILE=\"$(PBS_DEFAULT_FILE)\"
 
 EXTRA_DIST = ../Libdis/dis_.h
 

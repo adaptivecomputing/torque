@@ -257,14 +257,8 @@
 /* Define to the version of this package. */
 #undef PACKAGE_VERSION
 
-/* Path to file of default server name */
-#undef PBS_DEFAULT_FILE
-
 /* Define to the name of the default PBS server */
 #undef PBS_DEFAULT_SERVER
-
-/* Define to the path of the environment file */
-#undef PBS_ENVIRON
 
 /* the PBS style machine type name */
 #undef PBS_MACH

@@ -539,8 +539,8 @@ AC_DEFINE_UNQUOTED(TMP_DIR, "${TMP_DIR}",
 
 AC_ARG_WITH(server_home,
     [  --with-server-home=DIR  set the server home/spool directory for PBS use
-                          defaults to /var/spool/torque],
-    [PBS_SERVER_HOME="${withval}"], [PBS_SERVER_HOME="$localstatedir/spool/torque"])
+                          defaults to /var/torque],
+    [PBS_SERVER_HOME="${withval}"], [PBS_SERVER_HOME="$localstatedir/torque"])
 AC_SUBST(PBS_SERVER_HOME)
 
 
@@ -556,13 +556,9 @@ AC_ARG_WITH(server_name_file,
                           this file will be set to "server_name".],
     [pbs_default_file="${withval}"], [pbs_default_file="server_name"])
 case "${pbs_default_file}" in
-  /*) PBS_DEFAULT_FILE="${pbs_default_file}"
-     _PBS_DEFAULT_FILE="${pbs_default_file}" ;;
-  *)  PBS_DEFAULT_FILE="\${PBS_SERVER_HOME}/${pbs_default_file}"
-     _PBS_DEFAULT_FILE="${PBS_SERVER_HOME}/${pbs_default_file}" ;;
+  /*) PBS_DEFAULT_FILE="${pbs_default_file}" ;;
+  *)  PBS_DEFAULT_FILE="\${PBS_SERVER_HOME}/${pbs_default_file}" ;;
 esac
-AC_DEFINE_UNQUOTED(PBS_DEFAULT_FILE, "${_PBS_DEFAULT_FILE}",
-	[Path to file of default server name])
 AC_SUBST(PBS_DEFAULT_FILE)
 
 
@@ -588,15 +584,10 @@ AC_ARG_WITH(environ,
 [pbs_environ="${withval}"], [pbs_environ="no"])
 case "${pbs_environ}" in
   yes) AC_MSG_ERROR([--with-environ must be given a path]) ;;
-  no)  PBS_ENVIRON="\${PBS_SERVER_HOME}/pbs_environment"
-      _PBS_ENVIRON="${PBS_SERVER_HOME}/pbs_environment" ;;
-  /*)  PBS_ENVIRON="${pbs_environ}"
-      _PBS_ENVIRON="${pbs_environ}" ;;
-  *)   PBS_ENVIRON="\${PBS_SERVER_HOME}/${pbs_environ}"
-      _PBS_ENVIRON="${PBS_SERVER_HOME}/${pbs_environ}" ;;
+  no)  PBS_ENVIRON="\${PBS_SERVER_HOME}/pbs_environment" ;;
+  /*)  PBS_ENVIRON="${pbs_environ}" ;;
+  *)   PBS_ENVIRON="\${PBS_SERVER_HOME}/${pbs_environ}" ;;
 esac
-AC_DEFINE_UNQUOTED(PBS_ENVIRON, "${_PBS_ENVIRON}",
-	[Define to the path of the environment file])
 AC_SUBST(PBS_ENVIRON)
 
 
@@ -637,14 +628,13 @@ dnl find sendmail and add it to defs
 AC_ARG_WITH(sendmail,
     [  --with-sendmail[[=FILE]]  sendmail executable to use],
     [SENDMAIL_CMD=$withval],
-    [sendmail_maybe_in="/usr/lib:/usr/sbin:/usr/bin:/etc:/usr/etc"
-     AC_PATH_PROGS(SENDMAIL_CMD, sendmail,
-		   AC_MSG_ERROR([could not find the sendmail executable]),
+    [sendmail_maybe_in="/usr/lib:/usr/sbin:/usr/bin:/etc:/usr/etc:$PATH"
+     AC_PATH_PROGS(SENDMAIL_CMD, sendmail, sendmail,
 		   ${sendmail_maybe_in})
     ])
 case "${SENDMAIL_CMD}" in
   /*) ;;
-  *)  AC_MSG_ERROR([full path of the sendmail executable must be given to --with-sendmail]) ;;
+  *) AC_MSG_WARN([emails might not be sent unless ${SENDMAIL_CMD} is found at run-time]) ;;
 esac
 AC_DEFINE_UNQUOTED(SENDMAIL_CMD, "${SENDMAIL_CMD}",
 	[full pathname of sendmail])

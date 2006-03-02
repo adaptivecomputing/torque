@@ -116,7 +116,7 @@ AUTOMAKE_OPTIONS = foreign
 
 PBS_MKDIRS = $(SHELL) $(top_builddir)/buildutils/pbs_mkdirs
 
-AM_CPPFLAGS = -I$(top_srcdir)/src/include -I../Libdis -I../Libifl -DIFF_PATH=\"$(IFF_PATH)\"
+AM_CPPFLAGS = -I$(top_srcdir)/src/include -I../Libdis -I../Libifl -DIFF_PATH=\"$(IFF_PATH)\" -DPBS_DEFAULT_FILE=\"$(PBS_DEFAULT_FILE)\"
 
 IFF_PATH = $(sbindir)/pbs_iff
 DEMUX_PATH = $(sbindir)/pbs_demux
