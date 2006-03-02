@@ -32,6 +32,7 @@ AC_CANONICAL_HOST
 # a better way of doing it. -garrick
 test "$libdir" = '${exec_prefix}/lib' && libdir='${exec_prefix}/lib/torque/lib'
 test "$includedir" = '${prefix}/include' && includedir='${prefix}/lib/torque/include'
+test "$localstatedir" = '${prefix}/var' && localstatedir='/var'
 
 
 AM_INIT_AUTOMAKE
@@ -539,8 +540,8 @@ AC_DEFINE_UNQUOTED(TMP_DIR, "${TMP_DIR}",
 
 AC_ARG_WITH(server_home,
     [  --with-server-home=DIR  set the server home/spool directory for PBS use
-                          defaults to /var/torque],
-    [PBS_SERVER_HOME="${withval}"], [PBS_SERVER_HOME="$localstatedir/torque"])
+                          defaults to /var/spool/torque],
+    [PBS_SERVER_HOME="${withval}"], [PBS_SERVER_HOME="$localstatedir/spool/torque"])
 AC_SUBST(PBS_SERVER_HOME)
 
 
