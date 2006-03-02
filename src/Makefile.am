@@ -21,7 +21,7 @@ CLIENTS_DIRS = iff cmds tools
 endif
 
 if INCLUDE_GUI
-GUI_DIRS = gui
+GUI_DIRS = gui tools
 endif
 
 SUBDIRS = include lib $(SERVER_DIRS) $(MOM_DIRS) $(CLIENTS_DIRS) $(GUI_DIRS)
@@ -36,7 +36,7 @@ install_clients:
 	for dir in $(CLIENTS_DIRS) ;do (cd $$dir && $(MAKE) install);done
 
 install_gui:
-	for dir in $(GUI_DIRS) ;do (cd $$dir && $(MAKE) install);done
+	for dir in $(GUI_DIRS) ;do (cd $$dir && $(MAKE) install_gui);done
 
 install_devel:
 	for dir in include lib ;do (cd $$dir && $(MAKE) install);done

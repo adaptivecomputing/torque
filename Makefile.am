@@ -115,7 +115,7 @@ if INCLUDE_GUI
 GUI_PKG = gui
 endif
 
-ALL_PKGS = $(SERVER_PKG) $(MOM_PKG) $(CLIENTS_PKG) $(GUI) devel doc
+ALL_PKGS = $(SERVER_PKG) $(MOM_PKG) $(CLIENTS_PKG) $(GUI_PKG) devel doc
 
 install_server install_mom install_clients install_gui install_devel:
 	(cd src && $(MAKE) $@)
@@ -143,8 +143,11 @@ packages:
              echo "Using override dir $(PKGOVERRIDE)/$$d"; \
              ( cd $(PKGOVERRIDE)/$$d && tar cf - . | (cd $$proot; tar xvf - ) ); \
            fi; \
+           test $$d = gui && echo dummy > $$proot/regen-tclIndex; \
            ( cd $$proot; tar cf - * ) | gzip > $$tarball && \
            ( cd $$proot; tar cf - \
+                           `test -f ./post-install && echo ./post-install` \
+                           `test -f ./regen-tclIndex && echo ./regen-tclIndex` \
                            `test -d .$(sbindir) && echo .$(sbindir)/*` \
                            `test -d .$(bindir) && echo .$(bindir)/*` \
                            `test -d .$(libdir) && echo .$(libdir)/*` \

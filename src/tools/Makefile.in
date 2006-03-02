@@ -674,6 +674,9 @@ uninstall-info: uninstall-info-recursive
 	uninstall-am uninstall-binPROGRAMS uninstall-info-am \
 	uninstall-info-recursive uninstall-recursive
 
+
+install_gui:
+	for dir in $(XPBSMON) ;do (cd $$dir && $(MAKE) install);done
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

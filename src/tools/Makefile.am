@@ -47,3 +47,7 @@ pbs_wish_CPPFLAGS = $(AM_CPPFLAGS) $(MY_TCL_INCS)
 pbs_wish_LDADD = $(PBS_LIBS) $(MY_TCL_LIBS)
 pbs_wish_SOURCES = pbsTkInit.c ../scheduler.tcl/pbs_tclWrap.c \
 		   ../scheduler.tcl/site_tclWrap.c
+
+install_gui:
+	for dir in $(XPBSMON) ;do (cd $$dir && $(MAKE) install);done
+

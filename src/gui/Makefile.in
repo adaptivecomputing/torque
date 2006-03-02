@@ -536,6 +536,8 @@ uninstall-info: uninstall-info-recursive
 	uninstall-recursive
 
 
+install_gui: install
+
 xpbs: $(srcdir)/xpbs.src
 	sed -e 's,#\!.*wish.*$$,#\!@WISH_PROG@,;' \
 	    -e 's,set  *libdir.*$$,set libdir $(xpbsdir),' \

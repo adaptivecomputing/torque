@@ -7,6 +7,12 @@ PBS_DEFAULT_FILE=@PBS_DEFAULT_FILE@
 PBS_ENVIRON=@PBS_ENVIRON@
 export PBS_SERVER_HOME PBS_DEFAULT_FILE PBS_ENVIRON
 
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+XPBS_DIR=@libdir@/xpbs
+XPBSMON_DIR=@libdir@/xpbsmon
+export XPBS_DIR XPBSMON_DIR
+
 conffiles="$PBS_SERVER_HOME/sched_priv/sched_config
            $PBS_SERVER_HOME/sched_priv/resource_group
            $PBS_SERVER_HOME/sched_priv/holidays
@@ -131,6 +137,17 @@ if test $install -gt 0;then
     done
   fi
 
+  # regen tclIndex files if required
+  if test -f ${destdir}regen-tclIndex;then
+    rm -f ${destdir}regen-tclIndex
+    if test $postscript -gt 0;then
+      (cd ${destdir}$XPBS_DIR && rm -f tclIndex && ./buildindex ${destdir}$XPBS_DIR . )
+      (cd ${destdir}$XPBSMON_DIR && rm -f tclIndex && ./buildindex ${destdir}$XPBSMON_DIR . )
+    else
+      echo "Skipping regen of tclIndex files"
+    fi
+  fi
+  
   # run user-specified post-install script
   if test -f ${destdir}post-install;then
     if test $postscript -gt 0;then

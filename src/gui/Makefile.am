@@ -44,6 +44,8 @@ dist_xpbshelp_DATA = help/after_depend.hlp help/auto_update.hlp \
 		     help/signal.hlp help/staging.hlp help/submit.hlp \
 		     help/terminate.hlp help/trackjob.hlp
 
+install_gui: install
+
 xpbs: $(srcdir)/xpbs.src
 	sed -e 's,#\!.*wish.*$$,#\!@WISH_PROG@,;' \
 	    -e 's,set  *libdir.*$$,set libdir $(xpbsdir),' \
