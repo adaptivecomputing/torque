@@ -21,6 +21,8 @@ bin_SCRIPTS = pbs-config
 
 DISTCLEANFILES = pbs-config
 
+DISTCHECK_CONFIGURE_FLAGS=--with-server-home=$$dc_install_base/spool
+
 snap:
 	$(MAKE) VERSION=$(VERSION)-snap.$${snapstamp:-`date +%Y%m%d%H%M`} dist
 
