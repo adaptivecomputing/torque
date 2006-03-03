@@ -2934,16 +2934,20 @@ AC_DEFUN(TEA_PUBLIC_TCL_HEADERS, [
     # Print a message based on how we determined the include path
 
     if test x"${ac_cv_c_tclh}" = x ; then
-	AC_MSG_ERROR([tcl.h not found.  Please specify its location with --with-tclinclude])
+	AC_MSG_WARN([tcl.h not found.  Please specify its location with --with-tclinclude])
     else
 	AC_MSG_RESULT([${ac_cv_c_tclh}])
     fi
 
     # Convert to a native path and substitute into the output files.
 
-    INCLUDE_DIR_NATIVE=`${CYGPATH} ${ac_cv_c_tclh}`
+    if test x"${ac_cv_c_tclh}" = x ; then
+        TCL_INCLUDES=none
+    else
+        INCLUDE_DIR_NATIVE=`${CYGPATH} ${ac_cv_c_tclh}`
 
-    TCL_INCLUDES=-I\"${INCLUDE_DIR_NATIVE}\"
+        TCL_INCLUDES=-I\"${INCLUDE_DIR_NATIVE}\"
+    fi
 
     AC_SUBST(TCL_INCLUDES)
 ])
@@ -3058,16 +3062,20 @@ AC_DEFUN(TEA_PUBLIC_TK_HEADERS, [
     # Print a message based on how we determined the include path
 
     if test x"${ac_cv_c_tkh}" = x ; then
-	AC_MSG_ERROR([tk.h not found.  Please specify its location with --with-tkinclude])
+	AC_MSG_WARN([tk.h not found.  Please specify its location with --with-tkinclude])
     else
 	AC_MSG_RESULT([${ac_cv_c_tkh}])
     fi
 
     # Convert to a native path and substitute into the output files.
 
-    INCLUDE_DIR_NATIVE=`${CYGPATH} ${ac_cv_c_tkh}`
+    if test x"${ac_cv_c_tkh}" = x ; then
+        TK_INCLUDES=none
+    else
+        INCLUDE_DIR_NATIVE=`${CYGPATH} ${ac_cv_c_tkh}`
 
-    TK_INCLUDES=-I\"${INCLUDE_DIR_NATIVE}\"
+        TK_INCLUDES=-I\"${INCLUDE_DIR_NATIVE}\"
+    fi
 
     AC_SUBST(TK_INCLUDES)
 

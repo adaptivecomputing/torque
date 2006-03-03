@@ -655,6 +655,7 @@ TKX=0
 if test "x${with_tcl}" != "xno" ; then
 	if test "x${with_tcl}" = "xyes" ; then
 		with_tcl=""
+		user_requested_tcl=yes
 	fi
 	# find and load tclConfig.sh
 	TEA_PATH_TCLCONFIG
@@ -664,11 +665,21 @@ if test "x${with_tcl}" != "xno" ; then
 	  TEA_LOAD_TCLCONFIG
 	  TCL=1
         fi
+	TEA_PUBLIC_TCL_HEADERS
+        if test "x$TCL_INCLUDES" = "xnone" ;then
+          TCL=0
+        else
+	  TCL=1
+        fi
+	if test "x$user_requested_tcl" = "xyes" -a $TCL = 0 ;then
+          AC_MSG_ERROR([Tcl was requested but not found])
+	fi
 fi
 
 if test "${TCL}" = "1" -a "x${with_tclx}" != "xno" ; then
 	if test "x${with_tclx}" = "xyes" ; then
 		with_tclx=""
+		user_requested_tclx=yes
 	fi
 	# find and load tclxConfig.sh
 	TEA_PATH_CONFIG([tclx])
@@ -678,11 +689,15 @@ if test "${TCL}" = "1" -a "x${with_tclx}" != "xno" ; then
 	  TEA_LOAD_CONFIG([tclx])
 	  TCLX=1
         fi
+	if test "x$user_requested_tclx" = "xyes" -a $TCLX = 0 ;then
+          AC_MSG_ERROR([TclX was requested but not found])
+	fi
 fi
 
 if test "${TCL}" = "1" -a "x${with_tk}" != "xno" ; then
 	if test "x${with_tk}" = "xyes" ; then
 		with_tk=""
+		user_requested_tk=yes
 	fi
 	# find and load tkConfig.sh
 	TEA_PATH_TKCONFIG
@@ -692,11 +707,21 @@ if test "${TCL}" = "1" -a "x${with_tk}" != "xno" ; then
 	  TEA_LOAD_TKCONFIG
 	  TK=1
         fi
+	TEA_PUBLIC_TK_HEADERS
+        if test "x$TK_INCLUDES" = "xnone" ; then
+          TK=0
+        else
+	  TK=1
+        fi
+	if test "x$user_requested_tk" = "xyes" -a $TK = 0 ;then
+          AC_MSG_ERROR([Tk was requested but not found])
+	fi
 fi
 
 if test "${TK}" = "1" -a "${TCLX}" = "1" -a "x${with_tkx}" != "xno" ; then
 	if test "x${with_tkx}" = "xyes" ; then
 		with_tkx=""
+		user_requested_tkx=yes
 	fi
 	# find and load tkxConfig.sh
 	TEA_PATH_CONFIG([tkx])
@@ -706,6 +731,9 @@ if test "${TK}" = "1" -a "${TCLX}" = "1" -a "x${with_tkx}" != "xno" ; then
 	  TEA_LOAD_CONFIG([tkx])
 	  TKX=1
         fi
+	if test "x$user_requested_tkx" = "xyes" -a $TK = 0 ;then
+          AC_MSG_ERROR([TkX was requested but not found])
+	fi
 fi
 
 AC_DEFINE_UNQUOTED(TCL, ${TCL}, [Define if PBS should use Tcl in its tools])
@@ -747,7 +775,6 @@ MY_TCL_INCS=""
 
 if test "${TCL}" = "1"; then
 	MY_TCL_LIBS="${MY_TCL_LIBS} ${TCL_LIB_SPEC} ${TCL_LIBS}"
-	TEA_PUBLIC_TCL_HEADERS
 	MY_TCL_INCS="${MY_TCL_INCS} ${TCL_INCLUDES}"
 fi
 
@@ -757,7 +784,6 @@ fi
 
 if test "${TK}" = "1"; then
 	MY_TCL_LIBS="${MY_TCL_LIBS} ${TK_LIB_SPEC} ${TK_XLIBSW}"
-	TEA_PUBLIC_TK_HEADERS
 	MY_TCL_INCS="${MY_TCL_INCS} ${TK_INCLUDES} ${TK_XINCLUDES}"
 fi
 
