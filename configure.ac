@@ -144,7 +144,8 @@ dnl  Libtool
 dnl AC_DISABLE_SHARED
 AC_PROG_LIBTOOL
 
-AC_SYS_LARGEFILE
+dnl this is causing problems with solaris procfs.h
+dnl AC_SYS_LARGEFILE
 
 
 AC_PROG_LN_S
