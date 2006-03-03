@@ -695,7 +695,7 @@ attribute_def svr_attr_def[] = {
        PARENT_TYPE_SERVER
      }, 
 
-/* SVR_ATR_KeepCompleted */
+/* SRV_ATR_KeepCompleted */
     {   ATTR_keepcompleted,     /* "keep_completed" */
         decode_l,
         encode_l,
@@ -708,7 +708,36 @@ attribute_def svr_attr_def[] = {
         PARENT_TYPE_SERVER
     },
 
-/* SVR_ATR_ServerName */
+/* SRV_ATR_SubmitHosts */
+    {   ATTR_submithosts,         /* "submit_hosts" */
+        decode_arst,
+        encode_arst,
+        set_arst,
+        comp_arst,
+        free_arst,
+        NULL_FUNC,
+        NO_USER_SET,
+        ATR_TYPE_ARST,
+        PARENT_TYPE_SERVER
+    },
+
+/* SRV_ATR_AllowNodeSubmit */
+    {   ATTR_allownodesubmit,     /* "allow_node_submit" */
+        decode_b,
+        encode_b,
+        set_b,
+        comp_b,
+        free_null,
+        NULL_FUNC,
+        NO_USER_SET,
+        ATR_TYPE_LONG,
+        PARENT_TYPE_SERVER
+    },
+
+/* site supplied server attribute definitions if any, see site_svr_attr_*.h  */
+#include "site_svr_attr_def.h"
+
+/* SRV_ATR_ServerName */
     {   ATTR_servername,     /* "server_name" */
         decode_str,
         encode_str,
@@ -720,7 +749,4 @@ attribute_def svr_attr_def[] = {
         ATR_TYPE_STR,
         PARENT_TYPE_SERVER
     }
-/* site supplied server attribute definitions if any, see site_svr_attr_*.h  */
-#include "site_svr_attr_def.h"
-
 };

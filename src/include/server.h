@@ -137,8 +137,10 @@ enum srv_atr {
 	SRV_ATR_AclLogic,
 	SRV_ATR_AclGroupSloppy,
 	SRV_ATR_KeepCompleted,
-	SRV_ATR_ServerName,
+	SRV_ATR_SubmitHosts,
+	SRV_ATR_AllowNodeSubmit,
 #include "site_svr_attr_enum.h"
+	SRV_ATR_ServerName,
 	/* This must be last */
 	SRV_ATR_LAST
 };

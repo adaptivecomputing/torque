@@ -14,7 +14,8 @@
   brand new autoconf+automake+libtool build system (USC)
   automatic MOM restarts for easier upgrades (USC)
   new server attributes: acl_group_sloppy, acl_logic_or, keep_completed, kill_delay
-  new server attributes: server_name
+  new server attributes: server_name, allow_node_submit, submit_hosts
+  torque.cfg no longer used by pbs_server
 
 2.0.0p7
 

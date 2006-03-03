@@ -238,6 +238,8 @@
 #define ATTR_momjobsync  "mom_job_sync"
 #define ATTR_maildomain  "mail_domain"
 #define ATTR_pbsversion  "pbs_version"
+#define ATTR_submithosts  "submit_hosts"
+#define ATTR_allownodesubmit  "allow_node_submit"
 #define ATTR_servername  "server_name"
 
 

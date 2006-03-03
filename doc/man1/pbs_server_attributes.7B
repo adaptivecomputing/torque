@@ -159,6 +159,13 @@ default value: no root jobs allowed.
 .if !\n(Pb .ig Ig
 [internal type:  access control list]
 .Ig
+.Al allow_node_submit
+Allow job submissions from compute nodes regardless of ruserok().
+Requires full manager privilege to set or alter.
+Format: boolean; default value: disabled.
+.if !\n(Pb .ig Ig
+[internal type: boolean]
+.Ig
 .Al comment
 A text string which may be set by the scheduler or other privileged client
 to provide information to the batch system users. 
@@ -428,6 +435,12 @@ specified, the value is recovered from the prior server run.  If it has never
 been set, the value is "false".
 .if !\n(Pb .ig Ig
 [internal type: boolean]
+.Ig
+.Al submit_hosts
+A list of hostnames allowed to submit jobs to this batch server regardless of
+ruserok().
+.if !\n(Pb .ig Ig
+[internal type: list]
 .Ig
 .Al system_cost
 An arbitrary value factored into the resource cost of any job managed by

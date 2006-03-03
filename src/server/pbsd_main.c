@@ -196,8 +196,6 @@ time_t		time_now = 0;
 
 int             LOGLEVEL = 0;
 int             DEBUGMODE = 0;
-int             TAllowComputeHostSubmit = FALSE;
-char          **TAllowSubmitHostList = NULL;
 
 char           *ProgName;
 
@@ -364,65 +362,6 @@ int PBSShowUsage(
 
 
 
-#define TCONST_CFGFILE "torque.cfg"
-
-int TLoadConfig(
-
-  char *Buffer,    /* O */
-  int   BufSize)   /* I */
-
-  {
-  FILE *config_stream;
-
-  char home_dir[MAXPATHLEN];
-
-  int  length = strlen(PBS_SERVER_HOME) + strlen(TCONST_CFGFILE) + 2;
-
-  if (Buffer == NULL)
-    {
-    /* FAILURE */
-
-    return(1);
-    }
-
-  if (length >= MAXPATHLEN)
-    {
-    /* FAILURE */
-
-    return(1);
-    }
-
-  home_dir[0] = '\0';
-
-  strcat(home_dir,PBS_SERVER_HOME);
-
-  strcat(home_dir,"/");
-
-  strcat(home_dir,TCONST_CFGFILE);
-
-  if ((config_stream = fopen(home_dir,"r")) == NULL)
-    {
-    /* FAILURE */
-
-    return(1);
-    }
-
-  if ((fread(Buffer,BufSize,1,config_stream) <= 0) && 
-      (ferror(config_stream) != 0))
-    {
-    /* FAILURE */
-
-    return(1);
-    }
-
-  fclose(config_stream);
-
-  /* SUCCESS */
-
-  return(0);
-  }  /* END TLoadConfig() */
-
-
 
 /*
  * main - the initialization and main loop of pbs_daemon
@@ -453,10 +392,6 @@ int main(
   time_t last_jobstat_time;
   int    when;
 
-  int    BufSize;
-
-  char   *Buffer;
-
   void	 ping_nodes A_((struct work_task *ptask));
   void   check_nodes A_((struct work_task *ptask));
 
@@ -480,10 +415,6 @@ int main(
 
   msg_daemonname=strdup(pbs_current_user);
 
-  BufSize = 65536;
-
-  Buffer = calloc(1,BufSize);
-
   /* if we are not running with real and effective uid of 0, forget it */
 
   if ((getuid() != 0) || (geteuid() != 0)) 
@@ -505,97 +436,6 @@ int main(
   /* find out who we are (hostname) */
 
   server_host[0] = '\0';
-
-  /* load/process config file first then override values with command line parameters */
-
-  if (TLoadConfig(Buffer,BufSize) == 0)
-    {
-    char *ptr;
-    char *tptr;
-
-    char *ltokptr;  /* line token pointer */
-    char *vtokptr;  /* value token pointer */
-
-    /* success - process config file */
-
-    ptr = strtok_r(Buffer,"\n",&ltokptr);
-
-    while (ptr != NULL)
-      {
-      if (ptr[0] == '#')
-        {
-        /* ignore comments */
-
-        ptr = strtok_r(NULL,"\n",&ltokptr);
-
-        continue;
-        }
-
-      if (!strncmp(ptr,"SERVERHOST",strlen("SERVERHOST")))
-        {
-        tptr = ptr + strlen("SERVERHOST");
-
-        while (isspace(*tptr) && (*tptr != '\0'))
-          tptr++;
-
-        if (sscanf(tptr,"%64s",server_host) != 1)
-          {
-          log_err(-1,"pbsd_main","parse error in config at SERVERHOST");
-
-          return(-1);
-          }
-        }
-      else if (!strncmp(ptr,"ALLOWCOMPUTEHOSTSUBMIT",strlen("ALLOWCOMPUTEHOSTSUBMIT")))
-        {
-        /* FORMAT:  ALLOWCOMPUTEHOSTSUBMIT  true */
-
-        tptr = ptr + strlen("ALLOWCOMPUTEHOSTSUBMIT");
-
-        while (isspace(*tptr) && (*tptr != '\0'))
-          tptr++;
-
-        if (!strncasecmp(tptr,"true",strlen("true")) ||
-            !strncasecmp(tptr,"on",strlen("on")) ||
-            !strncasecmp(tptr,"yes",strlen("yes")) ||
-            (*tptr == '1'))
-          {
-          TAllowComputeHostSubmit = TRUE;
-          }
-        }
-      else if (!strncmp(ptr,"SUBMITHOSTS",strlen("SUBMITHOSTS")))
-        {
-        int hcount;
-
-        /* FORMAT:  SUBMITHOSTS  <HOST>[,<HOST>]... */
-
-        tptr = ptr + strlen("SUBMITHOSTS");
-
-        TAllowSubmitHostList = (char **)calloc(1,sizeof(char *) * (2048 + 1));
-
-        hcount = 0;
-
-        tptr = strtok_r(tptr,"+,: \t\n",&vtokptr);
-
-        while (tptr != NULL)
-          {
-          TAllowSubmitHostList[hcount] = strdup(tptr);
-
-          hcount++;
-
-          if (hcount >= 2048)
-            break;
-
-          tptr = strtok_r(NULL,"+,: \t\n",&vtokptr);
-          }  /* END while (tptr != NULL) */
-
-        TAllowSubmitHostList[hcount] = NULL;
-        }  /* END else if (!strncmp(ptr,"SUBMITHOSTS",strlen("SUBMITHOSTS"))) */
-
-      ptr = strtok_r(NULL,"\n",&ltokptr);
-      }  /* END while (ptr != NULL) */
-    }    /* END if (TLoadConfig(Buffer,sizeof(Buffer)) == 0) */
-
-  free(Buffer);
 
   if (((server_host[0] == '\0') && (gethostname(server_host,PBS_MAXHOSTNAME) == -1)) ||
        (get_fullhostname(server_host,server_host,PBS_MAXHOSTNAME) == -1)) 

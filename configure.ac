@@ -779,16 +779,16 @@ if test "${TCL}" = "1"; then
 fi
 
 if test "${TCLX}" = "1"; then
-	MY_TCL_LIBS="${MY_TCL_LIBS} ${TCLX_LIB_SPEC} ${TCLX_LIBS}"
+	MY_TCL_LIBS="${TCLX_LIB_SPEC} ${TCLX_LIBS} ${MY_TCL_LIBS}"
 fi
 
 if test "${TK}" = "1"; then
-	MY_TCL_LIBS="${MY_TCL_LIBS} ${TK_LIB_SPEC} ${TK_XLIBSW}"
+	MY_TCL_LIBS="${TK_LIB_SPEC} ${TK_XLIBSW} ${MY_TCL_LIBS}"
 	MY_TCL_INCS="${MY_TCL_INCS} ${TK_INCLUDES} ${TK_XINCLUDES}"
 fi
 
 if test "${TKX}" = "1"; then
-	MY_TCL_LIBS="${MY_TCL_LIBS} ${TKX_LIB_SPEC} ${TKX_LIBS}"
+	MY_TCL_LIBS="${TKX_LIB_SPEC} ${TKX_LIBS} ${MY_TCL_LIBS}"
 fi
 
 AC_SUBST(MY_TCL_LIBS)

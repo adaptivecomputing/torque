@@ -86,6 +86,7 @@
 #include "list_link.h"
 #include "attribute.h"
 #include "server_limits.h"
+#include "server.h"
 #include "queue.h"
 #include "job.h"
 #include "log.h"
@@ -99,9 +100,6 @@
 extern char *pbs_o_host;
 extern char  server_host[];
 extern char *msg_orighost;	/* error message: no PBS_O_HOST */
-
-extern int    TAllowComputeHostSubmit;
-extern char **TAllowSubmitHostList;
 
 /*
  * site_check_u - site_check_user_map()
@@ -170,7 +168,9 @@ int site_check_user_map(
     *dptr = '\0';
     }
 
-  if ((TAllowComputeHostSubmit == TRUE) && (find_nodebyname(orighost) != NULL))
+  if ((server.sv_attr[(int)SRV_ATR_AllowNodeSubmit].at_flags & ATR_VFLAG_SET) && \
+      (server.sv_attr[(int)SRV_ATR_AllowNodeSubmit].at_val.at_long == 1) && \
+      (find_nodebyname(orighost) != NULL))
     {
     /* job submitted from compute host, access allowed */
 
@@ -180,16 +180,19 @@ int site_check_user_map(
     return(0);
     }
 
-  if (TAllowSubmitHostList != NULL)
+  if (server.sv_attr[(int)SRV_ATR_SubmitHosts].at_flags & ATR_VFLAG_SET)
     {
-    int hindex;
+    struct array_strings *submithosts = NULL;
+    char                 *testhost;
+    int                   hostnum = 0;
 
-    for (hindex = 0;hindex < 2048;hindex++)
+    submithosts = server.sv_attr[(int)SRV_ATR_SubmitHosts].at_val.at_arst;
+
+    for (hostnum = 0;hostnum < submithosts->as_usedptr;hostnum++)
       {
-      if (TAllowSubmitHostList[hindex] == NULL)
-        break;
+      testhost = submithosts->as_string[hostnum];
 
-      if (!strcasecmp(TAllowSubmitHostList[hindex],orighost))
+      if (!strcasecmp(testhost,orighost))
         {
         /* job submitted from host found in trusted submit host list, access allowed */
 
@@ -198,8 +201,8 @@ int site_check_user_map(
 
         return(0);
         }
-      }  /* END for (hindex) */
-    }
+    } /* END for (hostnum) */
+  } /* END if (SRV_ATR_SubmitHosts) */
 
   if (dptr != NULL)
     *dptr = '.';
