@@ -468,28 +468,45 @@ static void post_movejob(
     log_err(-1,id,log_buffer);
     }
 
-	if (WIFEXITED(stat)) {
-		r = WEXITSTATUS(stat);
+  if (WIFEXITED(stat)) 
+    {
+    r = WEXITSTATUS(stat);
 
-		if (r == 0) {	/* purge server's job structure */
-			if (jobp->ji_qs.ji_svrflags & JOB_SVFLG_StagedIn)
-				remove_stagein(jobp);
-			(void)strcpy(log_buffer, msg_movejob);
-			(void)sprintf(log_buffer+strlen(log_buffer),
-				      msg_manager, 
-				      req->rq_ind.rq_move.rq_destin,
-				      req->rq_user, req->rq_host);
-			job_purge(jobp);
-		} else
-			r = PBSE_ROUTEREJ;
-	}
-	else {
-		r = PBSE_SYSTEM;
-		(void)sprintf(log_buffer, msg_badexit, stat);
-		(void)strcat(log_buffer, id);
-		log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_JOB,
-			  jobp->ji_qs.ji_jobid, log_buffer);
-	}
+    if (r == 0) 
+      {
+      /* purge server's job structure */
+
+      if (jobp->ji_qs.ji_svrflags & JOB_SVFLG_StagedIn)
+        remove_stagein(jobp);
+
+      strcpy(log_buffer,msg_movejob);
+
+      sprintf(log_buffer + strlen(log_buffer),msg_manager, 
+        req->rq_ind.rq_move.rq_destin,
+        req->rq_user, 
+        req->rq_host);
+
+      job_purge(jobp);
+      } 
+    else
+      {
+      r = PBSE_ROUTEREJ;
+      }
+    }
+  else 
+    {
+    r = PBSE_SYSTEM;
+
+    sprintf(log_buffer,msg_badexit,stat);
+
+    strcat(log_buffer,id);
+
+    log_event(
+      PBSEVENT_SYSTEM, 
+      PBS_EVENTCLASS_JOB,
+      jobp->ji_qs.ji_jobid, 
+      log_buffer);
+    }
 
   if (r) 
     {

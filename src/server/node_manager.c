@@ -492,20 +492,23 @@ void update_node_state(
     if ((np->nd_state & INUSE_JOB) || (np->nd_state & INUSE_JOBSHARE))
       {
       int snjcount;
+      int snjacount;
+
       struct jobinfo *jp;
       struct jobinfo *jpprev;
 
       char   tmpLine[1024];
 
-      /* count for jobs on all subnodes */
+      /* count jobs on all subnodes */
 
       snjcount = 0;
+      snjacount = 0;
 
       for (sp = np->nd_psn;sp != NULL;sp = sp->next)
         {
         if (sp->jobs != NULL)
           {
-          snjcount++;
+          snjacount++;
 
           sp->inuse &= ~(INUSE_JOB|INUSE_JOBSHARE);
 
@@ -515,6 +518,9 @@ void update_node_state(
 
           for (jp = sp->jobs;jp != NULL;jp = jp->next)
             {
+            if (jp->job != NULL)
+              snjcount++;
+
             if ((jpprev != NULL) && (jpprev->job == jp->job))
               {
               /* duplicate job entry detected */
@@ -540,8 +546,8 @@ void update_node_state(
  
             jpprev = jp;
             }  /* END for (jp); */
-          }
-        }
+          }    /* END if (sp->jobs != NULL) */
+        }      /* END for (sp) */
 
       if (snjcount == 0)
         {
@@ -551,6 +557,11 @@ void update_node_state(
 
         sprintf(log_buffer,"job allocation released on node %s - node marked free",
           (np->nd_name != NULL) ? np->nd_name : "NULL");
+
+        if (snjacount > 0)
+          {
+          strcat(log_buffer," - subnode job array is corrupt");
+          }
 
         np->nd_state &= ~(INUSE_JOB|INUSE_JOBSHARE);
         }
@@ -2869,6 +2880,13 @@ static int node_spec(
           pnode->nd_needed,
           pnode->nd_nsnfree,
           JobList);
+
+        /* NOTE:  hack - should be moved to update node state */
+
+        if (JobList[0] == '\0')
+          {
+          pnode->nd_nsnfree = pnode->nd_nsn;
+          }
         }
       else
         {
@@ -3672,7 +3690,7 @@ static void set_one_old(
           }    /* END for (snp) */
         }
       }
-    }
+    }          /* END for (i) */
 
   return;
   }  /* END set_one_old() */
