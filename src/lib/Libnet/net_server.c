@@ -597,7 +597,7 @@ int find_conn(
     }    /* END for (index) */
 
   return(-1);
-  }
+  }  /* END find_conn() */
 
 
 

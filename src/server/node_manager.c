@@ -493,6 +493,8 @@ void update_node_state(
       {
       int snjcount;
       int snjacount;
+      int nsn_free;
+      int SNIsAllocated;
 
       struct jobinfo *jp;
       struct jobinfo *jpprev;
@@ -503,11 +505,14 @@ void update_node_state(
 
       snjcount = 0;
       snjacount = 0;
-
+      nsn_free = np->nd_nsn;
+      
       for (sp = np->nd_psn;sp != NULL;sp = sp->next)
         {
         if (sp->jobs != NULL)
           {
+          SNIsAllocated = 0;
+
           snjacount++;
 
           sp->inuse &= ~(INUSE_JOB|INUSE_JOBSHARE);
@@ -519,7 +524,22 @@ void update_node_state(
           for (jp = sp->jobs;jp != NULL;jp = jp->next)
             {
             if (jp->job != NULL)
+              {
+              if ((jp->job->ji_qs.ji_state != JOB_STATE_RUNNING) ||
+                  (jp->job->ji_qs.ji_substate == JOB_SUBSTATE_SUSPEND))
+                {
+                continue;
+                }
+           
               snjcount++;
+
+              if (SNIsAllocated == 0)
+                {
+                SNIsAllocated = 1;
+
+                nsn_free--;
+                }
+              }
 
             if ((jpprev != NULL) && (jpprev->job == jp->job))
               {
@@ -527,7 +547,7 @@ void update_node_state(
 
               sprintf(tmpLine,"ALERT:  duplicate entry for job '%s' detected on node %s (clearing entry)",
                 (jp->job != NULL) ? jp->job->ji_qs.ji_jobid : "???",
-               np->nd_name);
+                np->nd_name);
 
               log_record(
                 PBSEVENT_SCHED,
@@ -539,13 +559,11 @@ void update_node_state(
 
               free(jp);
 
-              np->nd_nsnfree++;
-
               break;
               }
  
             jpprev = jp;
-            }  /* END for (jp); */
+            }  /* END for (jp) */
           }    /* END if (sp->jobs != NULL) */
         }      /* END for (sp) */
 
@@ -567,17 +585,21 @@ void update_node_state(
         }
       else
         {
-        if (np->nd_nsnfree < np->nd_nsn - snjcount)
+        if (np->nd_nsnfree != nsn_free)
           {
-          np->nd_nsnfree = np->nd_nsn - snjcount;
+          sprintf(log_buffer,"subnode allocation adjusted on node %s (%d -> %d)",
+            (np->nd_name != NULL) ? np->nd_name : "NULL",
+            np->nd_nsnfree,
+            nsn_free);
 
-          sprintf(log_buffer,"job allocation released on node %s",
-            (np->nd_name != NULL) ? np->nd_name : "NULL");
+          np->nd_nsnfree = nsn_free;
 
+          /* what is the exact meaning of JOBSHARE? */
+ 
           np->nd_state &= ~INUSE_JOBSHARE;
           }
 
-        if (snjcount < np->nd_nsn)
+        if (np->nd_nsnfree > 0)
           {
           /* if any sub-nodes are free, job cannot be in job-exclusive */
 
