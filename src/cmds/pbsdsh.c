@@ -86,9 +86,24 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <strings.h>
+#include <string.h>
 #include <sys/signal.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <unistd.h>
+#include <fcntl.h>
+
 #include "tm.h"
 #include "mcom.h"
+
+extern int *tm_conn;
+
+#ifndef PBS_MAXNODENAME
+#define PBS_MAXNODENAME 80
+#endif
+#define RESCSTRLEN (PBS_MAXNODENAME+200)
 
 /*
  * a bit of code to map a tm_ error number to the symbol
@@ -116,6 +131,11 @@ tm_task_id *tid;
 int	    verbose = 0;
 sigset_t	allsigs;
 char		*id;
+
+int stdoutfd, stdoutport;
+fd_set permrfsd;
+int grabstdio=0;
+
 
 char *get_ecname(
 
@@ -260,6 +280,95 @@ void mom_reconnect()
   }  /* END mom_reconnect() */
 
 
+void getstdout()
+  {
+  struct timeval tv = { 0, 10000 };
+  fd_set rfsd;
+  int newfd,i;
+  char buf[1024];
+  ssize_t bytes;
+  int ret;
+  static int maxfd=-1;
+  int flags;
+
+  if (maxfd==-1)
+    {
+    if (stdoutfd > *tm_conn)
+      maxfd=stdoutfd;
+    else
+      maxfd=*tm_conn;
+    }
+
+  rfsd=permrfsd;
+
+  if (maxfd < FD_SETSIZE)
+    FD_SET(stdoutfd,&rfsd);
+
+  FD_SET(*tm_conn,&permrfsd);
+  
+  if ((ret=select(maxfd+1, &rfsd, NULL, NULL, &tv)) > 0)
+    {
+    if(FD_ISSET(*tm_conn, &rfsd))
+      {
+      return;
+      }
+
+    if(FD_ISSET(stdoutfd, &rfsd))
+      {
+      newfd=accept(stdoutfd,NULL,NULL);
+      if (newfd > maxfd)
+        maxfd=newfd;
+
+      flags = fcntl(newfd,F_GETFL);
+#if defined(FNDELAY) && !defined(__hpux)
+      flags |= FNDELAY;
+#else
+      flags |= O_NONBLOCK;
+#endif
+      fcntl(newfd,F_SETFL,flags);
+
+      FD_SET(newfd,&permrfsd);
+      FD_CLR(stdoutfd,&rfsd);
+      ret--;
+      }
+
+    if (ret)
+      {
+      for (i=0; i<=maxfd; i++)
+        {
+        if (FD_ISSET(i,&rfsd))
+          {
+          if ((bytes=read(i,&buf,1023)) > 0)
+            {
+            buf[bytes]='\0';
+            fprintf(stdout,"%s",buf);
+            }
+          else if (bytes==0)
+            {
+            FD_CLR(i,&permrfsd);
+            close(i);
+            if (i==maxfd)
+              {
+              maxfd=stdoutfd;
+              for (int j=0; j<i; j++)
+                if (FD_ISSET(j,&permrfsd))
+                  if (j>maxfd)
+                    maxfd=j;
+              }
+            }
+          else
+            {
+            fprintf(stderr,"error in read\n");
+            }
+          ret--;
+          if (ret<=0)
+            break;
+          }
+        }
+      }
+    }
+  }
+
 
 
 	
@@ -282,11 +391,11 @@ void wait_for_task(
 
   while (*nspawned || nobits) 
     {
+    if (grabstdio)
+      getstdout();
+
     if (verbose) 
       {
-      printf("pbsdsh: waiting on %d spawned and %d obits\n",
-        *nspawned, 
-        nobits);
       }
 
     if (fire_phasers) 
@@ -312,7 +421,7 @@ void wait_for_task(
 
     sigprocmask(SIG_UNBLOCK,&allsigs,NULL);
 
-    rc = tm_poll(TM_NULL_EVENT,&eventpolled,1,&tm_errno);
+    rc = tm_poll(TM_NULL_EVENT,&eventpolled,!grabstdio,&tm_errno);
 
     sigprocmask(SIG_BLOCK,&allsigs,NULL);
 
@@ -332,6 +441,9 @@ void wait_for_task(
         }
       }
 
+    if (eventpolled == TM_NULL_EVENT)
+      continue;
+
     for (c = 0;c < numnodes;++c) 
       {
       if (eventpolled == *(events_spawn + c)) 
@@ -340,8 +452,10 @@ void wait_for_task(
 
         if (verbose) 
           {
-          fprintf(stderr,"spawn event returned: %d\n",
-            c);
+          fprintf(stderr,"pbsdsh: spawn event returned: %d (%d spawns and %d obits outstanding)\n",
+            c,
+            *nspawned,
+            nobits);
           }
 
         (*nspawned)--;
@@ -394,8 +508,10 @@ void wait_for_task(
 
         if (verbose) 
           {
-          fprintf(stderr,"obit event returned: %d\n",
-            c);
+          fprintf(stderr,"pbsdsh: obit event returned: %d (%d spawns and %d obits outstanding)\n",
+            c,
+            *nspawned,
+            nobits);
           }
  				
         nobits--;
@@ -419,7 +535,164 @@ void wait_for_task(
   }  /* END wait_for_task() */
 
 
+/* ask TM for all node resc descriptions and parse the output
+ * for hostnames */
+char *gethostnames(
+  tm_node_id *nodelist)
+  {
+  char *allnodes;
+  char *rescinfo;
+  tm_event_t *rescevent;
+  tm_event_t resultevent;
+  char *hoststart;
+  int rc,tm_errno,i,j;
+  struct tm_roots rootrot;
 
+  allnodes=calloc(numnodes,PBS_MAXNODENAME+1+sizeof(char));
+  rescinfo=calloc(numnodes,RESCSTRLEN+1+sizeof(char));
+  rescevent=calloc(numnodes,sizeof(tm_event_t));
+
+  if (!allnodes || !rescinfo || !rescevent)
+    {
+    fprintf(stderr,"malloc failed!\n");
+    tm_finalize();
+    exit(1);
+    }
+
+  /* submit resource requests */
+  for (i=0;i<numnodes;i++)
+    {
+    if (tm_rescinfo(nodelist[i],
+          rescinfo+(i*RESCSTRLEN),
+          RESCSTRLEN-1,
+          rescevent+i) != TM_SUCCESS)
+      {
+      fprintf(stderr,"error from tm_rescinfo()\n");
+      tm_finalize();
+      exit(1);
+      }
+    }
+
+  /* read back resource requests */
+  for (j=0,i=0; i<numnodes; i++)
+    {
+    rc = tm_poll(TM_NULL_EVENT,&resultevent,1,&tm_errno);
+
+    if ((rc != TM_SUCCESS) || (tm_errno != TM_SUCCESS))
+      {
+      fprintf(stderr,"error from tm_poll() %d\n",rc);
+      tm_finalize();
+      exit(1);
+      }
+
+    for (j=0; j<numnodes; j++)
+      {
+      if (*(rescevent+j)==resultevent)
+        break;
+      }
+
+    if (j==numnodes)
+      {
+      fprintf(stderr,"unknown resource result\n");
+      tm_finalize();
+      exit(1);
+      }
+
+    if (verbose)
+      fprintf(stderr,"rescinfo from %d: %s\n",j,rescinfo+(j*RESCSTRLEN));
+
+    strtok(rescinfo+(j*RESCSTRLEN)," ");
+    hoststart=strtok(NULL," ");
+
+    if (hoststart==NULL)
+      {
+      fprintf(stderr,"can't find a hostname in resource result\n");
+      tm_finalize();
+      exit(1);
+      }
+      
+    strcpy(allnodes+(j*PBS_MAXNODENAME),hoststart);
+    }
+
+  free(rescinfo);
+  free(rescevent);
+
+  return(allnodes);
+}
+
+/* return a vnode number matching targethost */
+int findtargethost(char *allnodes,char *targethost)
+  {
+  int i;
+  char *ptr;
+  int vnode=0;
+
+  if ((ptr=strchr(targethost,'/')) != NULL)
+    {
+    *ptr='\0';
+    ptr++;
+    vnode=atoi(ptr);
+    }
+
+  for (i=0; i<numnodes; i++)
+    {
+    if (!strcmp(allnodes+(i*PBS_MAXNODENAME), targethost))
+      {
+      if (vnode==0)
+        return(i);
+      vnode--;
+      }
+    }
+  if (i==numnodes)
+    {
+    fprintf(stderr,"%s: %s not found\n",id,targethost);
+    tm_finalize();
+    exit(1);
+    }
+  return(-1);
+}
+
+/* prune nodelist down to a unique list by comparing with
+ * the hostnames in all nodes */
+int uniquehostlist(tm_node_id *nodelist,char *allnodes)
+{
+  int hole,i,j,umove=0;
+
+  for (hole=numnodes,i=0,j=1; j<numnodes; i++,j++)
+    {
+    if (strcmp(allnodes+(i*PBS_MAXNODENAME),allnodes+(j*PBS_MAXNODENAME)) == 0)
+      {
+      if (!umove)
+        {
+        umove=1;
+        hole=j;
+        }
+      }
+    else if (umove)
+      {
+      nodelist[hole++]=nodelist[j];
+      }
+    }
+  
+   return(hole);
+}
+
+static int
+build_listener(int *port)
+{
+    int s;
+    struct sockaddr_in addr;
+    socklen_t len = sizeof(addr);
+
+    if ((s = socket(AF_INET, SOCK_STREAM, 0)) < 0)
+        fprintf(stderr,"%s: socket", __func__);
+    if (listen(s, 1024) < 0)
+        fprintf(stderr,"%s: listen", __func__);
+    if (getsockname(s, (struct sockaddr *)&addr, &len) < 0)
+        fprintf(stderr,"%s: getsockname", __func__);
+    *port = ntohs(addr.sin_port);
+    return s;
+}
 
 
 int main(
@@ -440,14 +713,28 @@ int main(
   int start;
   int stop;
   int sync = 0;
-  int BreakLoop = FALSE;
+
+  int pernode = 0;
+  char *targethost = NULL;
+  char *allnodes;
 
   struct sigaction	act;
+
+  char **ioenv;
 
   extern int   optind;
   extern char *optarg;
 
-  while ((c = getopt(argc,argv,"c:n:sv-")) != EOF) 
+  int posixly_correct_set_by_caller = 0;
+                           
+#ifdef __GNUC__            
+  /* If it's already set, we won't unset it later */
+  if (getenv("POSIXLY_CORRECT") != NULL)
+    posixly_correct_set_by_caller=1;
+  setenv("POSIXLY_CORRECT", "", 0);
+#endif                     
+                           
+  while ((c = getopt(argc,argv,"c:n:h:osuv")) != EOF) 
     {
     switch (c) 
       {
@@ -462,6 +749,12 @@ int main(
 
         break;
 
+      case 'h':
+
+        targethost = strdup(optarg); /* run on this 1 hostname */
+
+        break;
+
       case 'n':
 
         onenode = atoi(optarg);
@@ -473,9 +766,20 @@ int main(
 
         break;
 
+      case 'o':
+        grabstdio=1;
+
+        break;
+
       case 's':
 
         sync = 1;	/* force synchronous spawns */
+
+        break;
+
+      case 'u':
+
+        pernode = 1;	/* run once per node (unique hostnames) */
 
         break;
 
@@ -485,14 +789,6 @@ int main(
 
         break;
  
-      case '-':
-
-        /* break out of arg processing loop */
-
-        BreakLoop = TRUE;
-
-        break;
-
       default:
 
         err = 1;
@@ -500,26 +796,33 @@ int main(
         break;
       }  /* END switch (c) */
 
-    if (BreakLoop == TRUE)
-      break;
     }    /* END while ((c = getopt()) != EOF) */
 
   if ((err != 0) || ((onenode >= 0) && (ncopies >= 1))) 
     {
-    fprintf(stderr,"Usage: %s [-c copies][-s][-v] [--] program [args]...]\n", 
+    fprintf(stderr,"Usage: %s [-c copies][-o][-s][-u][-v] program [args]...]\n", 
       argv[0]);
 
-    fprintf(stderr,"       %s [-n nodenumber][-s][-v] [--] program [args]...\n", 
+    fprintf(stderr,"       %s [-n nodenumber][-o][-s][-u][-v] program [args]...\n", 
+      argv[0]);
+    fprintf(stderr,"       %s [-h hostname][-o][-v] program [args]...\n", 
       argv[0]);
 
     fprintf(stderr, "Where -c copies =  run  copy of \"args\" on the first \"copies\" nodes,\n");
     fprintf(stderr, "      -n nodenumber = run a copy of \"args\" on the \"nodenumber\"-th node,\n");
+    fprintf(stderr, "      -o = capture stdout of processes,\n");
     fprintf(stderr, "      -s = forces synchronous execution,\n");
+    fprintf(stderr, "      -u = run on unique hostnames,\n");
+    fprintf(stderr, "      -h = run on this specific hostname,\n");
     fprintf(stderr, "      -v = forces verbose output.\n");
-    fprintf(stderr, "      -- = disables further argument processing.\n");
 
     exit(1);
     }
+
+#ifdef __GNUC__
+  if (!posixly_correct_set_by_caller)
+    unsetenv("POSIXLY_CORRECT");
+#endif
 
   id = argv[0];
 
@@ -531,6 +834,7 @@ int main(
     return(1);
     }
 
+    
   /*
    *	Set up interface to the Task Manager 
    */
@@ -584,6 +888,25 @@ int main(
     get_ecname(rc),rc);
 
     return(1);
+    }
+
+  /* nifty unique/hostname code */
+  if (pernode || targethost)
+    {
+    allnodes=gethostnames(nodelist);
+
+    if (targethost)
+      {
+      onenode=findtargethost(allnodes,targethost);
+      }
+    else
+      {
+      numnodes=uniquehostlist(nodelist,allnodes);
+      }
+
+    free(allnodes);
+    if (targethost)
+      free(targethost);
     }
 
   /* We already checked the lower bounds in the argument processing,
@@ -650,12 +973,24 @@ int main(
     stop  = numnodes;
     }
 
+  ioenv=calloc(2,sizeof(char));
+
+  if (grabstdio)
+    {
+    stdoutfd=build_listener(&stdoutport);
+
+    *ioenv=calloc(50,sizeof(char));
+    snprintf(*ioenv,49,"TM_STDOUT_PORT=%d",stdoutport);
+
+    FD_ZERO(&permrfsd);
+    }
+  
   sigprocmask(SIG_BLOCK,&allsigs,NULL);
 
 	for (c = start; c < stop; ++c) {
 		if ((rc = tm_spawn(argc-optind,
 			     argv+optind,
-			     NULL,
+			     ioenv,
 			     *(nodelist + c),
 			     tid + c,
 			     events_spawn + c)) != TM_SUCCESS)  {

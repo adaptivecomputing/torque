@@ -3193,6 +3193,7 @@ int start_process(
   if (pid != 0) 
     {		
     /* parent */
+    int gotsuccess=0;
 
     close(kid_read);
     close(kid_write);
@@ -3205,6 +3206,18 @@ int start_process(
 
       if ((i == -1) && (errno == EINTR))
         continue;
+
+      if ((i == sizeof(sjr)) && (sjr.sj_code == 0) && !gotsuccess)
+        {
+        gotsuccess=1;
+        write(parent_write,&sjr,sizeof(sjr));
+        continue;
+        }
+
+      if (gotsuccess)
+        {
+        i=sizeof(sjr);
+        }
 
       break;
       }  /* END for(;;) */
@@ -3267,6 +3280,12 @@ int start_process(
         case JOB_EXEC_RETRY: /* -3 */
 
           strcpy(tmpLine,"unable to set limits, retry will be attempted");
+
+          break;
+
+        case JOB_EXEC_CMDFAIL: /* -8 */
+
+          strcpy(tmpLine,"command exec failed");
 
           break;
 
@@ -3388,6 +3407,10 @@ int start_process(
   if ((fd0 = search_env_and_open("MPIEXEC_STDIN_PORT",ipaddr)) == -2)
     starter_return(kid_write,kid_read,JOB_EXEC_FAIL1,&sjr);
 
+  if (fd0 < 0)
+    if ((fd0 = search_env_and_open("TM_STDIN_PORT",ipaddr)) == -2)
+      starter_return(kid_write,kid_read,JOB_EXEC_FAIL1,&sjr);
+
   /* use /dev/null if no env var found */
 
   if ((fd0 < 0) && (fd0 = open("/dev/null",O_RDONLY)) == -1) 
@@ -3409,8 +3432,16 @@ int start_process(
   if ((fd1 = search_env_and_open("MPIEXEC_STDOUT_PORT",ipaddr)) == -2)
     starter_return(kid_write,kid_read,JOB_EXEC_FAIL1,&sjr);
 
+  if (fd1 < 0)
+    if ((fd1 = search_env_and_open("TM_STDOUT_PORT",ipaddr)) == -2)
+      starter_return(kid_write,kid_read,JOB_EXEC_FAIL1,&sjr);
+
   if ((fd2 = search_env_and_open("MPIEXEC_STDERR_PORT",ipaddr)) == -2)
     starter_return(kid_write,kid_read,JOB_EXEC_FAIL1,&sjr);
+
+  if (fd2 < 0)
+    if ((fd2 = search_env_and_open("TM_STDERR_PORT",ipaddr)) == -2)
+      starter_return(kid_write,kid_read,JOB_EXEC_FAIL1,&sjr);
 
   if (pjob->ji_numnodes > 1) 
     {
@@ -3649,6 +3680,7 @@ int start_process(
     JOB_EXEC_OK, 
     &sjr);
 
+  fcntl(kid_write, F_SETFD, FD_CLOEXEC);
 #if 0	/* def DEBUG */
   for (i=3; i< 40; ++i) 
     {	/* check for any extra open descriptors */
@@ -3670,6 +3702,8 @@ int start_process(
   write(2,log_buffer,strlen(log_buffer));
 
   fsync(2);
+
+  starter_return(kid_write,kid_read,JOB_EXEC_CMDFAIL,&sjr);
 
   exit(254);
 
@@ -4394,7 +4428,8 @@ static void starter_return(
   
   write(upfds,(char *)sjrtn,sizeof(*sjrtn));
 
-  close(upfds);
+  if (code < 0)
+    close(upfds);
 
   /* wait for acknowledgement */
 
@@ -5039,7 +5074,8 @@ static int search_env_and_open(
 
       if (*cq) 
         {
-        log_err(errno,id,"improper value for MPIEXEC_STD*_PORT");
+        sprintf(log_buffer,"improper value for %s", envname);
+        log_err(errno,id,log_buffer);
 
         return(-2);
         }
@@ -5050,8 +5086,8 @@ static int search_env_and_open(
 
       if ((fd = open_demux(ipaddr,port)) < 0) 
         {
-        log_err(errno,id,"failed connect to mpiexec process on MS");
-        log_err(errno,id,vtable.v_envp[i]);
+        sprintf(log_buffer,"failed connect to stdio on %s:%d",vtable.v_envp[i],port);
+        log_err(errno,id,log_buffer);
 
         return(-2);
         }

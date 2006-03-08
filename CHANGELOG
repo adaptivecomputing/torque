@@ -16,6 +16,13 @@
   new server attributes: acl_group_sloppy, acl_logic_or, keep_completed, kill_delay
   new server attributes: server_name, allow_node_submit, submit_hosts
   torque.cfg no longer used by pbs_server
+  pbsdsh and TM enhancements (USC)
+    - tm_spawn() returns an error if execution fails
+    - capture TM stdout with -o
+    - run on unique nodes with -u
+    - run on a given hostname with -h
+
+  pbsdsh 
 
 2.0.0p7
 

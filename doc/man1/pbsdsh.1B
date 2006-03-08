@@ -81,9 +81,11 @@
 .Sh NAME
 pbsdsh \- distribute task to nodes under pbs
 .Sh SYNOPSIS
-pbsdsh [-c copies] [-s] [-v] [--] program [args]
+pbsdsh [-c copies] [-o] [-s] [-u] [-v] program [args]
 .br
-pbsdsh [-n node] [-s] [-v] [--] program [args]
+pbsdsh [-n node] [-o] [-s] [-u] [-v] program [args]
+.br
+pbsdsh [-h nodename] [-o] [-v] program [args]
 .Sh DESCRIPTION
 Executes (spawns) a normal Unix program on one or more nodes under control of
 the Portable Batch System, PBS.  Pbsdsh uses the Task Manager
@@ -101,13 +103,18 @@ nodes allocated.  This option is mutual exclusive with -n.
 The program is spawned on one node which is the 
 .Ar node -th
 node allocted.  This option is mutual exclusive with -c.
+.IP "-h hostname"
+The program is spawned on the node specified.
+.IP -o
+Capture stdout of the spawned program.  Normally stdout goes to the job's output.
 .IP -s
 If this option is given, the program is run in turn on each 
 node, one after the other.
+.IP -u
+The program is run once on each node (unique).  This ignores the number
+of allocated processers on a given node.
 .IP -v
 Verbose output about error conditions and task exit status is produced.
-.IP --
-Disables further argument processing.  Useful if your program's arguments use dashes.
 .Sh OPERANDS
 The first operand,
 .Ar program ,

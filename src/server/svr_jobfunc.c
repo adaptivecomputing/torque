@@ -1535,7 +1535,7 @@ static void set_deflt_resc(
                   &prescdt->rs_value,
                   SET) == 0)
               {
-              prescjb->rs_value.at_flags |= (ATR_VFLAG_SET|ATR_VFLAG_DEFLT);
+              prescjb->rs_value.at_flags |= (ATR_VFLAG_SET|ATR_VFLAG_DEFLT|ATR_VFLAG_MODIFY);
               }
             }
           }
@@ -1562,6 +1562,8 @@ void set_resc_deflt(
   attribute *ja;
 
   pbs_queue *pque;
+  attribute_def *pdef;
+  int i,rc;
 
   pque = pjob->ji_qhdr;
 
@@ -1589,6 +1591,20 @@ void set_resc_deflt(
      not yet been set */
 
   set_deflt_resc(ja,&server.sv_attr[(int)SRV_ATR_ResourceMax]);
+
+  for (i = 0;i < JOB_ATR_LAST;++i)
+    {
+    pdef = &job_attr_def[i];
+
+    if ((pjob->ji_wattr[i].at_flags & ATR_VFLAG_SET) && (pdef->at_action))
+      {
+      if ((rc = pdef->at_action(&pjob->ji_wattr[i],pjob,ATR_ACTION_NEW)) != 0)
+        {
+        /* FIXME: return an actual error */
+        return;
+        }
+      }
+    }
 
   return;
   }  /* END set_resc_deflt() */

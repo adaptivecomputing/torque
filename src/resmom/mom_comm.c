@@ -2526,7 +2526,7 @@ void im_request(
             log_buffer);
           }
 
-        SEND_ERR(PBSE_SYSTEM)
+        SEND_ERR(TM_ESYSTEM)
 
         arrayfree(argv);
         arrayfree(envp);
@@ -4138,15 +4138,33 @@ int tm_request(
     }
   else if ((ptask->ti_fd != -1) && (ptask->ti_fd != fd)) 
     {
-    /* we should have a new fd or match the old */
+    /* someone is already connected, create a new task for the new conn */
 
-    sprintf(log_buffer,"extra TM connect from %s task %d",
-      jobid, 
-      fromtask);
+    ptask = pbs_task_create(pjob,TM_NULL_TASK);
 
-    log_err(-1,id,log_buffer);
+    if (ptask == NULL) 
+        goto err;
+      
+    strcpy(ptask->ti_qs.ti_parentjobid,jobid);
 
-    goto err;
+    ptask->ti_qs.ti_parentnode = pjob->ji_nodeid;
+    ptask->ti_qs.ti_parenttask = fromtask;
+
+    /* the initial connection is "from" task 1, we set this to not confuse the
+       new connection with the old */
+    fromtask = ptask->ti_qs.ti_task;
+
+    if (LOGLEVEL >= 6)
+      {
+      log_record(
+        PBSEVENT_ERROR,
+        PBS_EVENTCLASS_JOB,
+        pjob->ji_qs.ji_jobid,
+        "saving task (TM_SPAWN)");
+      }
+
+    if (task_save(ptask) == -1) 
+      goto err;
     }
 
   svr_conn[fd].cn_oncl = tm_eof;

@@ -710,6 +710,7 @@ task		*task_find	A_((	job		*pjob,
 #define JOB_EXEC_INITRST  -5	/* job aborted on MOM init, chkpt, no migrate */
 #define JOB_EXEC_INITRMG  -6	/* job aborted on MOM init, chkpt, ok migrate */
 #define JOB_EXEC_BADRESRT -7	/* job restart failed */
+#define JOB_EXEC_CMDFAIL  -8	/* exec() of user command failed */
 
 extern void  add_dest A_((job *));
 extern void  depend_clrrdy A_((job *));

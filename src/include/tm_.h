@@ -139,3 +139,10 @@ typedef unsigned int	tm_task_id;
 #define	TM_TODO_MOVE	5002	/* Move <what> to <where> */
 #define	TM_TODO_QUIT	5003	/* Terminate <what> */
 #define	TM_TODO_STOP	5004	/* Suspend execution of <what> */
+
+/*
+**	Features of this TM library
+*/
+#define TM_MULTIPLE_CONNS	1
+#define TM_SPAWN_EXEC_ERROR	1
+

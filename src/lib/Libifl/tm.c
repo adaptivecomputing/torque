@@ -134,6 +134,7 @@ static	tm_node_id	tm_jobndid = TM_ERROR_NODE;
 static	int		tm_momport = 0;
 static	int		local_conn = -1;
 static	int		init_done = 0;
+int *tm_conn = &local_conn;
 
 void	DIS_tcp_funcs();
 

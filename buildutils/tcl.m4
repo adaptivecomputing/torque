@@ -2946,7 +2946,9 @@ AC_DEFUN(TEA_PUBLIC_TCL_HEADERS, [
     else
         INCLUDE_DIR_NATIVE=`${CYGPATH} ${ac_cv_c_tclh}`
 
-        TCL_INCLUDES=-I\"${INCLUDE_DIR_NATIVE}\"
+        if test x"${INCLUDE_DIR_NATIVE}" != x/usr/include ;then
+          TCL_INCLUDES=-I${INCLUDE_DIR_NATIVE}
+        fi
     fi
 
     AC_SUBST(TCL_INCLUDES)
@@ -3074,7 +3076,9 @@ AC_DEFUN(TEA_PUBLIC_TK_HEADERS, [
     else
         INCLUDE_DIR_NATIVE=`${CYGPATH} ${ac_cv_c_tkh}`
 
-        TK_INCLUDES=-I\"${INCLUDE_DIR_NATIVE}\"
+        if test x"${INCLUDE_DIR_NATIVE}" != x/usr/include ;then
+          TK_INCLUDES=-I${INCLUDE_DIR_NATIVE}
+        fi
     fi
 
     AC_SUBST(TK_INCLUDES)
