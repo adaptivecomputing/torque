@@ -8153,6 +8153,373 @@ case $host_os in
 esac
 
 
+orig_CFLAGS="$CFLAGS"
+echo "$as_me:$LINENO: checking for lstat64" >&5
+echo $ECHO_N "checking for lstat64... $ECHO_C" >&6
+if test "${ac_cv_func_lstat64+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  cat >conftest.$ac_ext <<_ACEOF
+#line $LINENO "configure"
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+/* System header to define __stub macros and hopefully few prototypes,
+    which can conflict with char lstat64 (); below.
+    Prefer <limits.h> to <assert.h> if __STDC__ is defined, since
+    <limits.h> exists even on freestanding compilers.  */
+#ifdef __STDC__
+# include <limits.h>
+#else
+# include <assert.h>
+#endif
+/* Override any gcc2 internal prototype to avoid an error.  */
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+/* We use char because int might match the return type of a gcc2
+   builtin and then its argument prototype would still apply.  */
+char lstat64 ();
+/* The GNU C library defines this for functions which it implements
+    to always fail with ENOSYS.  Some functions are actually named
+    something starting with __ and the normal name is an alias.  */
+#if defined (__stub_lstat64) || defined (__stub___lstat64)
+choke me
+#else
+char (*f) () = lstat64;
+#endif
+#ifdef __cplusplus
+}
+#endif
+
+int
+main ()
+{
+return f != lstat64;
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+         { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_cv_func_lstat64=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+ac_cv_func_lstat64=no
+fi
+rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
+fi
+echo "$as_me:$LINENO: result: $ac_cv_func_lstat64" >&5
+echo "${ECHO_T}$ac_cv_func_lstat64" >&6
+if test $ac_cv_func_lstat64 = yes; then
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_LSTAT64 1
+_ACEOF
+
+else
+  CFLAGS="$CFLAGS -D_LARGEFILE64_SOURCE"
+   unset ac_cv_func_lstat64
+   echo "$as_me:$LINENO: checking for lstat64" >&5
+echo $ECHO_N "checking for lstat64... $ECHO_C" >&6
+if test "${ac_cv_func_lstat64+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  cat >conftest.$ac_ext <<_ACEOF
+#line $LINENO "configure"
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+/* System header to define __stub macros and hopefully few prototypes,
+    which can conflict with char lstat64 (); below.
+    Prefer <limits.h> to <assert.h> if __STDC__ is defined, since
+    <limits.h> exists even on freestanding compilers.  */
+#ifdef __STDC__
+# include <limits.h>
+#else
+# include <assert.h>
+#endif
+/* Override any gcc2 internal prototype to avoid an error.  */
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+/* We use char because int might match the return type of a gcc2
+   builtin and then its argument prototype would still apply.  */
+char lstat64 ();
+/* The GNU C library defines this for functions which it implements
+    to always fail with ENOSYS.  Some functions are actually named
+    something starting with __ and the normal name is an alias.  */
+#if defined (__stub_lstat64) || defined (__stub___lstat64)
+choke me
+#else
+char (*f) () = lstat64;
+#endif
+#ifdef __cplusplus
+}
+#endif
+
+int
+main ()
+{
+return f != lstat64;
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+         { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_cv_func_lstat64=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+ac_cv_func_lstat64=no
+fi
+rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
+fi
+echo "$as_me:$LINENO: result: $ac_cv_func_lstat64" >&5
+echo "${ECHO_T}$ac_cv_func_lstat64" >&6
+if test $ac_cv_func_lstat64 = yes; then
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_LSTAT64 1
+_ACEOF
+
+else
+  CFLAGS="$orig_CFLAGS"
+fi
+
+fi
+
+
+echo "$as_me:$LINENO: checking for struct stat64.st_mode" >&5
+echo $ECHO_N "checking for struct stat64.st_mode... $ECHO_C" >&6
+if test "${ac_cv_member_struct_stat64_st_mode+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  cat >conftest.$ac_ext <<_ACEOF
+#line $LINENO "configure"
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
+
+int
+main ()
+{
+static struct stat64 ac_aggr;
+if (ac_aggr.st_mode)
+return 0;
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext
+if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
+  (eval $ac_compile) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+         { ac_try='test -s conftest.$ac_objext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_cv_member_struct_stat64_st_mode=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+cat >conftest.$ac_ext <<_ACEOF
+#line $LINENO "configure"
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
+
+int
+main ()
+{
+static struct stat64 ac_aggr;
+if (sizeof ac_aggr.st_mode)
+return 0;
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext
+if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
+  (eval $ac_compile) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+         { ac_try='test -s conftest.$ac_objext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_cv_member_struct_stat64_st_mode=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+ac_cv_member_struct_stat64_st_mode=no
+fi
+rm -f conftest.$ac_objext conftest.$ac_ext
+fi
+rm -f conftest.$ac_objext conftest.$ac_ext
+fi
+echo "$as_me:$LINENO: result: $ac_cv_member_struct_stat64_st_mode" >&5
+echo "${ECHO_T}$ac_cv_member_struct_stat64_st_mode" >&6
+if test $ac_cv_member_struct_stat64_st_mode = yes; then
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_STRUCT_STAT64 1
+_ACEOF
+
+else
+  CFLAGS="$CFLAGS -D_LARGEFILE64_SOURCE"
+  unset ac_cv_member_struct_stat64_st_mode
+  echo "$as_me:$LINENO: checking for struct stat64.st_mode" >&5
+echo $ECHO_N "checking for struct stat64.st_mode... $ECHO_C" >&6
+if test "${ac_cv_member_struct_stat64_st_mode+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  cat >conftest.$ac_ext <<_ACEOF
+#line $LINENO "configure"
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
+
+int
+main ()
+{
+static struct stat64 ac_aggr;
+if (ac_aggr.st_mode)
+return 0;
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext
+if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
+  (eval $ac_compile) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+         { ac_try='test -s conftest.$ac_objext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_cv_member_struct_stat64_st_mode=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+cat >conftest.$ac_ext <<_ACEOF
+#line $LINENO "configure"
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
+
+int
+main ()
+{
+static struct stat64 ac_aggr;
+if (sizeof ac_aggr.st_mode)
+return 0;
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext
+if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
+  (eval $ac_compile) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+         { ac_try='test -s conftest.$ac_objext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_cv_member_struct_stat64_st_mode=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+ac_cv_member_struct_stat64_st_mode=no
+fi
+rm -f conftest.$ac_objext conftest.$ac_ext
+fi
+rm -f conftest.$ac_objext conftest.$ac_ext
+fi
+echo "$as_me:$LINENO: result: $ac_cv_member_struct_stat64_st_mode" >&5
+echo "${ECHO_T}$ac_cv_member_struct_stat64_st_mode" >&6
+if test $ac_cv_member_struct_stat64_st_mode = yes; then
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_STRUCT_STAT64 1
+_ACEOF
+
+else
+  CFLAGS="$orig_CFLAGS"
+fi
+
+fi
+
+
 
 
 echo "$as_me:$LINENO: checking whether ln -s works" >&5
@@ -10697,40 +11064,42 @@ if test "${TKX}" = "1"; then
 	MY_TCL_LIBS="${TKX_LIB_SPEC} ${TKX_LIBS} ${MY_TCL_LIBS}"
 fi
 
-# try to hack in a run-time search path if needed
-orig_MY_TCL_LIBS="$MY_TCL_LIBS"
-orig_libdir="$libdir"
-MY_TCL_LIBS=""
-for tcllib_part in $orig_MY_TCL_LIBS ;do
-  case $tcllib_part in
-    -L/*)
-      tcllibdir=`echo $tcllib_part | sed s/-L//`
-      tcldir_in_syslib_path=no
-      for sysdir in $sys_lib_dlsearch_path_spec ;do
-         if test "X$tcllibdir" = "X$sysdir" ;then
-             tcldir_in_syslib_path=yes
-             break
-         fi
-      done
-      MY_TCL_LIBS="${MY_TCL_LIBS} ${tcllib_part}"
-      if test "X$tcldir_in_syslib_path" = "Xno" ;then
-         libdir="$tcllibdir"
-         eval "new_lib_spec=\"$hardcode_libdir_flag_spec\""
-         MY_TCL_LIBS="${MY_TCL_LIBS} ${new_lib_spec}"
-      fi
-      ;;
-    -L)
-      ;;
-    *) MY_TCL_LIBS="${MY_TCL_LIBS} ${tcllib_part}"
-      ;;
-  esac
-done
-libdir="$orig_libdir"
+if test "${TCL}" = "1"; then
+  # try to hack in a run-time search path if needed
+  orig_MY_TCL_LIBS="$MY_TCL_LIBS"
+  orig_libdir="$libdir"
+  MY_TCL_LIBS=""
+  for tcllib_part in $orig_MY_TCL_LIBS ;do
+    case $tcllib_part in
+      -L/*)
+        tcllibdir=`echo $tcllib_part | sed s/-L//`
+        tcldir_in_syslib_path=no
+        for sysdir in $sys_lib_dlsearch_path_spec ;do
+           if test "X$tcllibdir" = "X$sysdir" ;then
+               tcldir_in_syslib_path=yes
+               break
+           fi
+        done
+        MY_TCL_LIBS="${MY_TCL_LIBS} ${tcllib_part}"
+        if test "X$tcldir_in_syslib_path" = "Xno" ;then
+           libdir="$tcllibdir"
+           eval "new_lib_spec=\"$hardcode_libdir_flag_spec\""
+           MY_TCL_LIBS="${MY_TCL_LIBS} ${new_lib_spec}"
+        fi
+        ;;
+      -L)
+        ;;
+      *) MY_TCL_LIBS="${MY_TCL_LIBS} ${tcllib_part}"
+        ;;
+    esac
+  done
+  libdir="$orig_libdir"
 
-{ echo "$as_me:$LINENO: TCL_LIBS: $MY_TCL_LIBS" >&5
+  { echo "$as_me:$LINENO: TCL_LIBS: $MY_TCL_LIBS" >&5
 echo "$as_me: TCL_LIBS: $MY_TCL_LIBS" >&6;}
-{ echo "$as_me:$LINENO: TCL_INCS: $MY_TCL_INCS" >&5
+  { echo "$as_me:$LINENO: TCL_INCS: $MY_TCL_INCS" >&5
 echo "$as_me: TCL_INCS: $MY_TCL_INCS" >&6;}
+fi
 
 
 

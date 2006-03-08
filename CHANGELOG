@@ -21,8 +21,8 @@
     - capture TM stdout with -o
     - run on unique nodes with -u
     - run on a given hostname with -h
+  larefile support when removing $TMPDIR (USC)
 
-  pbsdsh 
 
 2.0.0p7
 

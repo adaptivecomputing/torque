@@ -170,6 +170,29 @@ esac
 
 dnl this is causing problems with solaris procfs.h
 dnl AC_SYS_LARGEFILE
+orig_CFLAGS="$CFLAGS"
+AC_CHECK_FUNC(lstat64,
+  AC_DEFINE(HAVE_LSTAT64,1,[Define if lstat64() is available]),
+  [CFLAGS="$CFLAGS -D_LARGEFILE64_SOURCE"
+   unset ac_cv_func_lstat64
+   AC_CHECK_FUNC(lstat64,
+    AC_DEFINE(HAVE_LSTAT64,1,[Define if lstat64() is available]),
+     [CFLAGS="$orig_CFLAGS"])])
+
+AC_CHECK_MEMBER(struct stat64.st_mode,
+  AC_DEFINE(HAVE_STRUCT_STAT64,1,[Define if struct stat64 is available]),
+  CFLAGS="$CFLAGS -D_LARGEFILE64_SOURCE"
+  unset ac_cv_member_struct_stat64_st_mode
+  AC_CHECK_MEMBER(struct stat64.st_mode,
+    AC_DEFINE(HAVE_STRUCT_STAT64,1,[Define if struct stat64 is available]),
+                          [CFLAGS="$orig_CFLAGS"],
+[#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>]),
+[#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>])
+
 
 
 AC_PROG_LN_S
@@ -813,38 +836,40 @@ if test "${TKX}" = "1"; then
 	MY_TCL_LIBS="${TKX_LIB_SPEC} ${TKX_LIBS} ${MY_TCL_LIBS}"
 fi
 
-# try to hack in a run-time search path if needed
-orig_MY_TCL_LIBS="$MY_TCL_LIBS"
-orig_libdir="$libdir"
-MY_TCL_LIBS=""
-for tcllib_part in $orig_MY_TCL_LIBS ;do
-  case $tcllib_part in
-    -L/*)
-      tcllibdir=`echo $tcllib_part | sed s/-L//`
-      tcldir_in_syslib_path=no
-      for sysdir in $sys_lib_dlsearch_path_spec ;do
-         if test "X$tcllibdir" = "X$sysdir" ;then
-             tcldir_in_syslib_path=yes
-             break
-         fi
-      done
-      MY_TCL_LIBS="${MY_TCL_LIBS} ${tcllib_part}"
-      if test "X$tcldir_in_syslib_path" = "Xno" ;then
-         libdir="$tcllibdir"
-         eval "new_lib_spec=\"$hardcode_libdir_flag_spec\""
-         MY_TCL_LIBS="${MY_TCL_LIBS} ${new_lib_spec}"
-      fi
-      ;;
-    -L)
-      ;;
-    *) MY_TCL_LIBS="${MY_TCL_LIBS} ${tcllib_part}"
-      ;;
-  esac
-done
-libdir="$orig_libdir"
-
-AC_MSG_NOTICE([TCL_LIBS: $MY_TCL_LIBS])
-AC_MSG_NOTICE([TCL_INCS: $MY_TCL_INCS])
+if test "${TCL}" = "1"; then
+  # try to hack in a run-time search path if needed
+  orig_MY_TCL_LIBS="$MY_TCL_LIBS"
+  orig_libdir="$libdir"
+  MY_TCL_LIBS=""
+  for tcllib_part in $orig_MY_TCL_LIBS ;do
+    case $tcllib_part in
+      -L/*)
+        tcllibdir=`echo $tcllib_part | sed s/-L//`
+        tcldir_in_syslib_path=no
+        for sysdir in $sys_lib_dlsearch_path_spec ;do
+           if test "X$tcllibdir" = "X$sysdir" ;then
+               tcldir_in_syslib_path=yes
+               break
+           fi
+        done
+        MY_TCL_LIBS="${MY_TCL_LIBS} ${tcllib_part}"
+        if test "X$tcldir_in_syslib_path" = "Xno" ;then
+           libdir="$tcllibdir"
+           eval "new_lib_spec=\"$hardcode_libdir_flag_spec\""
+           MY_TCL_LIBS="${MY_TCL_LIBS} ${new_lib_spec}"
+        fi
+        ;;
+      -L)
+        ;;
+      *) MY_TCL_LIBS="${MY_TCL_LIBS} ${tcllib_part}"
+        ;;
+    esac
+  done
+  libdir="$orig_libdir"
+  
+  AC_MSG_NOTICE([TCL_LIBS: $MY_TCL_LIBS])
+  AC_MSG_NOTICE([TCL_INCS: $MY_TCL_INCS])
+fi
 
 AC_SUBST(MY_TCL_LIBS)
 AC_SUBST(MY_TCL_INCS)
