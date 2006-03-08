@@ -986,7 +986,7 @@ Data staging examples:
 .br
 .Ty "-W stagein=/tmp/input.txt@headnode:/home/user/input.txt"
 .br
-.Ty "-W stagein=/tmp/output.txt@headnode:/home/user/output.txt"
+.Ty "-W stageout=/tmp/output.txt@headnode:/home/user/output.txt"
 .br If TORQUE has been compiled with wordexp support, then variables can
 be used in the specified paths.  Currently only $PBS_JOBID, $HOME, and
 $TMPDIR are supported for stagein.
