@@ -349,8 +349,9 @@ void getstdout()
             close(i);
             if (i==maxfd)
               {
+              int j;
               maxfd=stdoutfd;
-              for (int j=0; j<i; j++)
+              for (j=0; j<i; j++)
                 if (FD_ISSET(j,&permrfsd))
                   if (j>maxfd)
                     maxfd=j;
