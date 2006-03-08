@@ -144,6 +144,30 @@ dnl  Libtool
 dnl AC_DISABLE_SHARED
 AC_PROG_LIBTOOL
 
+# my libtool seems to be missing the libsuff check for ppc64.  This is pretty
+# ugly, but hopefully temporary.
+case $host_os in
+  linux-gnu*)
+  case "$host_cpu" in
+  powerpc*|ppc*)
+    echo '[#]line __oline__ "configure"' > conftest.$ac_ext
+    if AC_TRY_EVAL(ac_compile); then
+      case `/usr/bin/file conftest.$ac_objext` in
+      *64-bit*)
+        libsuff=64
+        ;;
+      *) libsuff= ;;
+      esac
+    fi
+    rm -rf conftest*
+    sys_lib_dlsearch_path_spec="/lib${libsuff} /usr/lib${libsuff}"
+    sys_lib_search_path_spec="/lib${libsuff} /usr/lib${libsuff} /usr/local/lib${libsuff}"
+    ;;
+  esac
+  ;;
+esac
+
+
 dnl this is causing problems with solaris procfs.h
 dnl AC_SYS_LARGEFILE
 
@@ -663,13 +687,12 @@ if test "x${with_tcl}" != "xno" ; then
           TCL=0
         else
 	  TEA_LOAD_TCLCONFIG
-	  TCL=1
-        fi
-	TEA_PUBLIC_TCL_HEADERS
-        if test "x$TCL_INCLUDES" = "xnone" ;then
-          TCL=0
-        else
-	  TCL=1
+	  TEA_PUBLIC_TCL_HEADERS
+          if test "x$TCL_INCLUDES" = "xnone" ;then
+            TCL=0
+          else
+	    TCL=1
+          fi
         fi
 	if test "x$user_requested_tcl" = "xyes" -a $TCL = 0 ;then
           AC_MSG_ERROR([Tcl was requested but not found])
@@ -705,13 +728,12 @@ if test "${TCL}" = "1" -a "x${with_tk}" != "xno" ; then
           TK=0
         else
 	  TEA_LOAD_TKCONFIG
-	  TK=1
-        fi
-	TEA_PUBLIC_TK_HEADERS
-        if test "x$TK_INCLUDES" = "xnone" ; then
-          TK=0
-        else
-	  TK=1
+	  TEA_PUBLIC_TK_HEADERS
+          if test "x$TK_INCLUDES" = "xnone" ; then
+            TK=0
+          else
+	    TK=1
+          fi
         fi
 	if test "x$user_requested_tk" = "xyes" -a $TK = 0 ;then
           AC_MSG_ERROR([Tk was requested but not found])
@@ -791,11 +813,43 @@ if test "${TKX}" = "1"; then
 	MY_TCL_LIBS="${TKX_LIB_SPEC} ${TKX_LIBS} ${MY_TCL_LIBS}"
 fi
 
+# try to hack in a run-time search path if needed
+orig_MY_TCL_LIBS="$MY_TCL_LIBS"
+orig_libdir="$libdir"
+MY_TCL_LIBS=""
+for tcllib_part in $orig_MY_TCL_LIBS ;do
+  case $tcllib_part in
+    -L/*)
+      tcllibdir=`echo $tcllib_part | sed s/-L//`
+      tcldir_in_syslib_path=no
+      for sysdir in $sys_lib_dlsearch_path_spec ;do
+         if test "X$tcllibdir" = "X$sysdir" ;then
+             tcldir_in_syslib_path=yes
+             break
+         fi
+      done
+      MY_TCL_LIBS="${MY_TCL_LIBS} ${tcllib_part}"
+      if test "X$tcldir_in_syslib_path" = "Xno" ;then
+         libdir="$tcllibdir"
+         eval "new_lib_spec=\"$hardcode_libdir_flag_spec\""
+         MY_TCL_LIBS="${MY_TCL_LIBS} ${new_lib_spec}"
+      fi
+      ;;
+    -L)
+      ;;
+    *) MY_TCL_LIBS="${MY_TCL_LIBS} ${tcllib_part}"
+      ;;
+  esac
+done
+libdir="$orig_libdir"
+
+AC_MSG_NOTICE([TCL_LIBS: $MY_TCL_LIBS])
+AC_MSG_NOTICE([TCL_INCS: $MY_TCL_INCS])
+
 AC_SUBST(MY_TCL_LIBS)
 AC_SUBST(MY_TCL_INCS)
 AM_CONDITIONAL(USING_TCL, [test "$TCL" = "1"])
 AM_CONDITIONAL(USING_TK, [test "$TK" = "1"])
-
 
 dnl  Now look around for tclsh and wish
 if test "${TCL}" = "1"; then
@@ -813,25 +867,36 @@ AC_ARG_WITH(tclatrsep,
     [  --with-tclatrsep=CHAR   set the Tcl attribute separator character
                         this will default to "." if unspecified],
     [tcl_atrsep="${withval}"], [tcl_atrsep="."])
+if test "$TCL" = "1" ; then
+AC_MSG_CHECKING([checking for Tcl attribute seperator])
+AC_MSG_RESULT([$tcl_atrsep])
+fi
 AC_DEFINE_UNQUOTED(TCL_ATRSEP, "${tcl_atrsep}",
 	[the seperator for Tcl attribute parsing])
 
 
 AC_ARG_ENABLE(tcl-qstat,
    [  --enable-tcl-qstat       setting this builds qstat with Tcl interpreter
-                          features. This is normally disabled.])
+                          features. This is enabled if Tcl is enabled.])
+AC_MSG_CHECKING([whether to enable tcl-qstat])
 EXTRA_QSTAT_LIBS=""
-if test "${enable_tcl_qstat}" = "yes"; then
+if test "x${enable_tcl_qstat}" = "x" -o "x${enable_tcl_qstat}" != "xno"; then
     if test "$TCL" = "1" ; then
 	EXTRA_QSTAT_LIBS='$(EXTRA_QSTAT_LIBS)'
         AC_DEFINE(TCL_QSTAT, 1,
-		[Define if PBS should build qstat with Tcl or Tclx])
+		[Define if PBS should build qstat with Tcl])
+        enable_tcl_qstat=yes
     else
-        AC_MSG_ERROR([Cannot enable tcl-qstat without also using Tcl])
+        if test "${enable_tcl_qstat}" = "yes" ;then
+           AC_MSG_ERROR([Cannot enable tcl-qstat without also using Tcl])
+        else
+           enable_tcl_qstat=no
+        fi
     fi
 fi
+AC_MSG_RESULT($enable_tcl_qstat)
 AC_SUBST(EXTRA_QSTAT_LIBS)
-AM_CONDITIONAL(USE_TCLQSTAT, [test "x$enable_tcl_qstat" = "xyes"])
+AM_CONDITIONAL(USE_TCLQSTAT, [test "x$EXTRA_QSTAT_LIBS" != "x"])
 
 
 

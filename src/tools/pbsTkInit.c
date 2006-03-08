@@ -118,10 +118,18 @@ pbsTcl_Init(interp)
 		return TCL_ERROR;
 	Tcl_StaticPackage(interp, "Tk", Tk_Init, Tk_SafeInit);
 #if	TCLX
-	if (Tclx_Init(interp) == TCL_ERROR)
+#if     TCL_MINOR_VERSION < 5  && TCL_MAJOR_VERSION < 8
+        if (TclX_Init(interp) == TCL_ERROR) {
+#else
+        if (Tclx_Init(interp) == TCL_ERROR) {
+#endif
 		return TCL_ERROR;
+        }
+
+#if	TKX
 	if (Tkx_Init(interp) == TCL_ERROR)
 		return TCL_ERROR;
+#endif
 #endif
 
 	fullresp(0);

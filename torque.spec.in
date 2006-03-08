@@ -150,6 +150,7 @@ This package holds just a few shared files and directories.
 if test -f config.status ;then
 ./config.status
 else
+CC=$RPMCC
 CFLAGS=$RPMCFLAGS
 LDFLAGS=$RPMLDFLAGS
 %configure --with-server-home=%{torquehomedir} %{server_nameflags} \

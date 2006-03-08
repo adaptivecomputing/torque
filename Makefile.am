@@ -73,11 +73,12 @@ else
 scprpmflag=--with scp
 endif
 
+RPMCC=@CC@
 RPMCFLAGS=@CFLAGS@
 RPMLDFLAGS=@LDFLAGS@
 
 rpm: dist
-	RPMCFLAGS="$(RPMCFLAGS)" RPMLDFLAGS="$(RPMLDFLAGS)" rpmbuild -tb $(distdir).tar.gz \
+	RPMCC="$(RPMCC)" RPMCFLAGS="$(RPMCFLAGS)" RPMLDFLAGS="$(RPMLDFLAGS)" rpmbuild -tb $(distdir).tar.gz \
 	  $(tclrpmflag) $(guirpmflag) $(fsyncrpmflag) $(syslogrpmflag) $(rpprpmflag) $(scprpmflag) \
 	  --with server_name=$(PBS_DEFAULT_SERVER) \
 	  --with homedir=$(PBS_SERVER_HOME) \

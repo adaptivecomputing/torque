@@ -111,13 +111,19 @@ TRU64/DIGITALUNIX: If building for a TRU64/Digital Unix cluster, some
   the path to librt.a (ie, '/usr/lib/librt.a') to the pbs_mom linker 
   line in ~/src/resmom/Makefile
 
+
+Linux 32bit vs. 64bit: At least Suse 10.0 ppc64 wants to build 32bit by
+  default.  This is how you build 64bit TORQUE:
+  ./configure CC="gcc -m64"
+
+  Similarly, 32bit builds on an x86_64 platform:
+  ./configure CC="gcc -m32"
+
 -------------------------------------------------------------------
 
 CONFIGURATION: Once built, see online docs for MOM, scheduler, and 
   server configuration
 
-  MOM:       http://clusterresources.com/torquedocs/1.1momconfig.shtml
-  scheduler: http://clusterresources.com/moabdocs/pbsintegration.shtml 
-    (FIFO, Maui, or Moab)
-  server:    http://supercluster.org/torquedocs/1.3serverconfig.shtml
+  http://www.clusterresources.com/wiki/doku.php?id=torque:torque_wiki
+  http://www.clusterresources.com/products/documentation.shtml
 

@@ -110,10 +110,15 @@ pbsTcl_Init(interp)
 {
 	if (Tcl_Init(interp) == TCL_ERROR)
 		return TCL_ERROR;
-#if	TCLX
-	if (Tclx_Init(interp) == TCL_ERROR)
-		return TCL_ERROR;
+#if     TCLX
+#if     TCL_MINOR_VERSION < 5  && TCL_MAJOR_VERSION < 8
+        if (TclX_Init(interp) == TCL_ERROR) {
+#else
+        if (Tclx_Init(interp) == TCL_ERROR) {
 #endif
+		return TCL_ERROR;
+        }
+#endif  /* TCLX */
 
 	fullresp(0);
 	add_cmds(interp);

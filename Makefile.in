@@ -162,6 +162,7 @@ DISTCHECK_CONFIGURE_FLAGS = --with-server-home=$$dc_install_base/spool
 @INCLUDE_MOM_RCP_TRUE@scprpmflag = 
 @INCLUDE_MOM_RCP_FALSE@scprpmflag = --with scp
 
+RPMCC = @CC@
 RPMCFLAGS = @CFLAGS@
 RPMLDFLAGS = @LDFLAGS@
 
@@ -574,7 +575,7 @@ srpm: dist
 	rpmbuild -ts $(distdir).tar.gz
 
 rpm: dist
-	RPMCFLAGS="$(RPMCFLAGS)" RPMLDFLAGS="$(RPMLDFLAGS)" rpmbuild -tb $(distdir).tar.gz \
+	RPMCC="$(RPMCC)" RPMCFLAGS="$(RPMCFLAGS)" RPMLDFLAGS="$(RPMLDFLAGS)" rpmbuild -tb $(distdir).tar.gz \
 	  $(tclrpmflag) $(guirpmflag) $(fsyncrpmflag) $(syslogrpmflag) $(rpprpmflag) $(scprpmflag) \
 	  --with server_name=$(PBS_DEFAULT_SERVER) \
 	  --with homedir=$(PBS_SERVER_HOME) \

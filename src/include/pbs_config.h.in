@@ -347,7 +347,7 @@
 /* the seperator for Tcl attribute parsing */
 #undef TCL_ATRSEP
 
-/* Define if PBS should build qstat with Tcl or Tclx */
+/* Define if PBS should build qstat with Tcl */
 #undef TCL_QSTAT
 
 /* Define to prevent sync writes */
