@@ -568,7 +568,6 @@ PBS_StatJob(clientData, interp, argc, argv)
     char	*argv[];
 {
 	char	*msg;
-	int	i, num = 0;
 	struct	batch_status	*bs;
 
 	if (argc != 1) {
@@ -606,7 +605,6 @@ PBS_SelStat(clientData, interp, argc, argv)
     char	*argv[];
 {
 	char	*msg;
-	int	i, num = 0;
 	struct	batch_status	*bs;
 
 	static	struct	attropl	att1 = {
@@ -974,7 +972,6 @@ PBS_QueueOp(clientData, interp, argc, argv, attr)
     char		*argv[];
     struct attropl	*attr;
 {
-	char	*msg;
 	int	merr;
 
 	if (argc != 2) {
@@ -1245,10 +1242,8 @@ PBS_RescRelease(clientData, interp, objc, objv)
     Tcl_Obj	*CONST	objv[];
 {
 	char	*msg;
-	int	i, num, ret;
-	Tcl_Obj	**listp;
+	int	ret;
 	char	*cmd;
-	char	**res_array;
 	resource_t	resid;
 
 	if (objc != 2) {

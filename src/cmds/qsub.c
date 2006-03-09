@@ -3153,7 +3153,6 @@ int load_config(
   int  length = strlen(PBS_SERVER_HOME) + strlen(TCONST_CFGFILE) + 1;
 
   char *ptr;
-  char *tail;
 
   if (length >= MAXPATHLEN)
     {

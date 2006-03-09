@@ -1663,9 +1663,7 @@ tcl_init()
 {
 	struct	passwd	*pw;
 	uid_t		uid;
-	struct	stat	sb;
-	struct	batch_status	*bp;
-	int		i, ret = 1;
+	struct  stat    sb;
 
 	uid = getuid();
 	pw = getpwuid(uid);
@@ -1816,7 +1814,9 @@ int main(
   int any_failed=0;
   extern char *optarg;
   char *conflict = "qstat: conflicting options.\n";
+#if (TCL_QSTAT == 0)
   char *pc;
+#endif
   int located = FALSE;
 
   char option[3];

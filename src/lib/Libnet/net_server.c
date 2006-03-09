@@ -128,7 +128,6 @@ static int	num_connections = 0;
 static fd_set	readset;
 static void	(*read_func[2]) A_((int));
 static enum     conn_type settype[2];		/* temp kludge */
-static char     logbuf[256];
 
 pbs_net_t pbs_server_addr;
 
@@ -256,9 +255,6 @@ int wait_request(
   struct timeval timeout;
   void close_conn();
 
-  char tmpLine[1024];
-
-  char id[] = "wait_request";
 
   timeout.tv_usec = 0;
   timeout.tv_sec  = waittime;
@@ -295,9 +291,6 @@ int wait_request(
 
         FD_CLR(i,&readset);
 
-        sprintf(tmpLine,"fd %d was improperly closed - readset was not updated",
-          i);
-
         }    /* END for (i) */
   
       return(-1);
@@ -331,10 +324,6 @@ int wait_request(
 
         num_connections--;  /* added by CRI - should this be here? */
 
-        sprintf(tmpLine,"closed connection to fd %d - num_connections=%d (select bad socket)",
-          i,
-          num_connections);
-
         }
       }
     }    /* END for (i) */
@@ -350,7 +339,6 @@ int wait_request(
   for (i = 0;i < max_connection;i++) 
     {
     struct connection *cp;
-    u_long             ipaddr;
 
     cp = &svr_conn[i];
 
@@ -365,15 +353,6 @@ int wait_request(
 
     if (cp->cn_authen & PBS_NET_CONN_NOTIMEOUT)
       continue;	/* do not time-out this connection */
-
-    ipaddr = cp->cn_addr;
-
-    sprintf(logbuf,"timeout connection from %lu.%lu.%lu.%lu (%d seconds)",
-      (ipaddr & 0xff000000) >> 24,
-      (ipaddr & 0x00ff0000) >> 16,
-      (ipaddr & 0x0000ff00) >> 8,
-      (ipaddr & 0x000000ff),
-      (int)waittime);
 
     /* locate node associated with interface, mark node as down until node responds */
 

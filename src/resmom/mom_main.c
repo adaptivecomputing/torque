@@ -5177,7 +5177,6 @@ char *MOMFindMyExe(
   char *argv0)  /* I */
   {
   char *link;
-  char buf[6+10+5];
   int  has_slash = 0;
   char *p;
   char *p_next;

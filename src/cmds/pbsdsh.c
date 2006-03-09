@@ -547,7 +547,6 @@ char *gethostnames(
   tm_event_t resultevent;
   char *hoststart;
   int rc,tm_errno,i,j;
-  struct tm_roots rootrot;
 
   allnodes=calloc(numnodes,PBS_MAXNODENAME+1+sizeof(char));
   rescinfo=calloc(numnodes,RESCSTRLEN+1+sizeof(char));

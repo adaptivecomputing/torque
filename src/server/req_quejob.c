@@ -219,9 +219,8 @@ void req_quejob(
   pbs_queue	*pque;
   char		*qname;
   attribute	 tempattr;
-#endif /* server */
-
   char           EMsg[1024];
+#endif /* server */
 
   /* set basic (user) level access permission */
 
