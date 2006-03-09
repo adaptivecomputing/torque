@@ -170,6 +170,9 @@ esac
 
 dnl this is causing problems with solaris procfs.h
 dnl AC_SYS_LARGEFILE
+
+dnl largefile support: try 2!
+dnl this seems to work well, but did I over-design this?
 orig_CFLAGS="$CFLAGS"
 AC_CHECK_FUNC(stat64,
   AC_DEFINE(HAVE_STAT64,1,[Define if stat64() is available]),
@@ -934,8 +937,6 @@ dnl  nsl is needed on some systems but duplicates libc.a on others (O2000s)
 AC_CHECK_FUNC(xdr_int, , AC_CHECK_LIB(nsl, xdr_int))
 AC_CHECK_FUNC(ruserok, , AC_CHECK_LIB(socket, ruserok))
 
-AC_CHECK_FUNCS(wordexp)
-
 
 dnl  Readline
 if test "$HAVE_READLINE" = "yes" ; then
@@ -962,7 +963,7 @@ AC_CHECK_HEADER(sys/ioctl.h, [
 
 AC_CHECK_HEADERS([arpa/inet.h fcntl.h float.h limits.h malloc.h netdb.h \
 		  netinet/in.h stddef.h sys/file.h sys/param.h \
-		  sys/socket.h sys/time.h syslog.h termios.h unistd.h])
+		  sys/socket.h sys/time.h syslog.h termios.h])
 
 dnl  Readline
 if test "$HAVE_READLINE" = "yes" ; then
@@ -1016,10 +1017,7 @@ AC_CHECK_FUNCS(seteuid setresuid,break)
 AC_CHECK_FUNCS(setegid setresgid,break)
 
 
-AC_CHECK_FUNCS([gettimeofday alarm dup2 getcwd gethostbyaddr gethostbyname \
-		memchr memset mkdir putenv rmdir select socket strcasecmp \
-		strchr strdup strerror strpbrk strrchr strspn strstr strtol \
-		strtoul uname])
+AC_CHECK_FUNCS([gettimeofday bindresvport wordexp])
 
 dnl see if atexit() exists, if not check for on_exit(), if that fails, panic
 AC_CHECK_FUNCS(atexit on_exit, [ { found_an_exit=yes; break; } ])

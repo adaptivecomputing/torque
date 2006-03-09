@@ -22,6 +22,7 @@
     - run on unique nodes with -u
     - run on a given hostname with -h
   larefile support in staging code and when removing $TMPDIR (USC)
+  use bindresvport() instead of looping over calls to bind() (USC)
 
 
 2.0.0p7

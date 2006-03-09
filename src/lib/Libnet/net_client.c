@@ -177,6 +177,7 @@ int client_to_svr(
   
   local.sin_family = AF_INET;
   local.sin_addr.s_addr = 0;
+  local.sin_port = 0;
 
   tryport = IPPORT_RESERVED - 1;
 
@@ -220,9 +221,23 @@ retry:  /* retry goto added (rentec) */
       (void *)&one, 
       sizeof(one));
 
-    local.sin_port = htons(tryport);
-
 #if !defined(__TDARWIN) || defined(__TDARWINBIND)
+
+#ifdef HAVE_BINDRESVPORT
+    if (bindresvport(sock,&local) < 0)
+      {
+      close(sock);
+
+      if ((errno != EADDRINUSE) && (errno != EADDRNOTAVAIL)) 
+        {
+        return(PBS_NET_RC_FATAL);
+        } 
+
+      return(PBS_NET_RC_FATAL);
+      }
+
+#else
+    local.sin_port = htons(tryport);
 
     while (bind(sock,(struct sockaddr *)&local,sizeof(local)) < 0) 
       {
@@ -249,6 +264,7 @@ retry:  /* retry goto added (rentec) */
 
       local.sin_port = htons(tryport);
       }  /* END while (bind() < 0) */
+#endif /* HAVE_BINDRESVPORT */
 #endif /* !__TDARWIN || __TDARWINBIND */
     }    /* END if (local_port != FALSE) */
 			
