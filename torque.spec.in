@@ -33,7 +33,6 @@
 %define use_syslog 1
 %define use_scp 1
 %define use_rpp 1
-%define use_fsync 0
 %define use_tcl 1
 %define build_gui 1
 
@@ -139,11 +138,9 @@ This package holds just a few shared files and directories.
 
 
 %build
-CC=$RPMCC
-CFLAGS=$RPMCFLAGS
-LDFLAGS=$RPMLDFLAGS
-%configure --with-server-home=%{torquehomedir} %{server_nameflags} \
- %{guiflags} %{syslogflags} %{tclflags} %{rppflags} %{scpflags}
+./configure --prefix=%_prefix --mandir=%_mandir --libdir=%_libdir --includedir=%_includedir --with-server-home=%{torquehomedir} %{server_nameflags} \
+ %{guiflags} %{syslogflags} %{tclflags} %{rppflags} %{scpflags} \
+ CC="$RPMCC" CFLAGS="$RPMCFLAGS" LDFLAGS="$RPMLDFLAGS"
 
 %{__make} %{?_smp_mflags}
  

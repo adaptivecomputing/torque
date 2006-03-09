@@ -119,6 +119,15 @@ Linux 32bit vs. 64bit: At least Suse 10.0 ppc64 wants to build 32bit by
   Similarly, 32bit builds on an x86_64 platform:
   ./configure CC="gcc -m32"
 
+  And also, make yourself rpms:
+  ./configure --prefix=/usr --mandir=/usr/share/man \
+    --libdir=/usr/lib/torque/lib64 CC="gcc -m64"
+  make RPMOPTS="--target ppc64" rpm
+
+  ./configure --prefix=/usr --mandir=/usr/share/man \
+    CC="gcc -m32"
+  make RPMOPTS="--target i386" rpm
+
 -------------------------------------------------------------------
 
 CONFIGURATION: Once built, see online docs for MOM, scheduler, and 

@@ -500,7 +500,6 @@ AC_ARG_ENABLE(filesync,
   *)   AC_MSG_ERROR(--enable-filesync cannot take a value) ;;
 esac],[TDISABLEFILESYNC=1])dnl
 AC_DEFINE_UNQUOTED(TDISABLEFILESYNC, ${TDISABLEFILESYNC}, [Define to prevent sync writes])
-AM_CONDITIONAL(USING_FILESYNC, [test "$TDISABLEFILESYNC" = "0"])
 
 
 

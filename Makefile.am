@@ -52,11 +52,6 @@ guirpmflag=--with gui
 else
 guirpmflag=--without gui
 endif
-if USING_FILESYNC
-fsyncrpmflag=--with filesync
-else
-fsyncrpmflag=--without filesync
-endif
 if USING_SYSLOG
 syslogrpmflag=--with syslog
 else
@@ -78,8 +73,8 @@ RPMCFLAGS=@CFLAGS@
 RPMLDFLAGS=@LDFLAGS@
 
 rpm: dist
-	RPMCC="$(RPMCC)" RPMCFLAGS="$(RPMCFLAGS)" RPMLDFLAGS="$(RPMLDFLAGS)" rpmbuild -tb $(distdir).tar.gz \
-	  $(tclrpmflag) $(guirpmflag) $(fsyncrpmflag) $(syslogrpmflag) $(rpprpmflag) $(scprpmflag) \
+	RPMCC="$(RPMCC)" RPMCFLAGS="$(RPMCFLAGS)" RPMLDFLAGS="$(RPMLDFLAGS)" rpmbuild $(RPMOPTS) -tb $(distdir).tar.gz \
+	  $(tclrpmflag) $(guirpmflag) $(syslogrpmflag) $(rpprpmflag) $(scprpmflag) \
 	  --with server_name=$(PBS_DEFAULT_SERVER) \
 	  --with homedir=$(PBS_SERVER_HOME) \
 	  --with libdir=$(libdir) \

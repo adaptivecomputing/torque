@@ -153,8 +153,6 @@ DISTCHECK_CONFIGURE_FLAGS = --with-server-home=$$dc_install_base/spool
 @USING_TCL_FALSE@tclrpmflag = --without tcl
 @INCLUDE_GUI_TRUE@guirpmflag = --with gui
 @INCLUDE_GUI_FALSE@guirpmflag = --without gui
-@USING_FILESYNC_TRUE@fsyncrpmflag = --with filesync
-@USING_FILESYNC_FALSE@fsyncrpmflag = --without filesync
 @USING_SYSLOG_TRUE@syslogrpmflag = --with syslog
 @USING_SYSLOG_FALSE@syslogrpmflag = --without syslog
 @USING_RPP_TRUE@rpprpmflag = --with rpp
@@ -575,8 +573,8 @@ srpm: dist
 	rpmbuild -ts $(distdir).tar.gz
 
 rpm: dist
-	RPMCC="$(RPMCC)" RPMCFLAGS="$(RPMCFLAGS)" RPMLDFLAGS="$(RPMLDFLAGS)" rpmbuild -tb $(distdir).tar.gz \
-	  $(tclrpmflag) $(guirpmflag) $(fsyncrpmflag) $(syslogrpmflag) $(rpprpmflag) $(scprpmflag) \
+	RPMCC="$(RPMCC)" RPMCFLAGS="$(RPMCFLAGS)" RPMLDFLAGS="$(RPMLDFLAGS)" rpmbuild $(RPMOPTS) -tb $(distdir).tar.gz \
+	  $(tclrpmflag) $(guirpmflag) $(syslogrpmflag) $(rpprpmflag) $(scprpmflag) \
 	  --with server_name=$(PBS_DEFAULT_SERVER) \
 	  --with homedir=$(PBS_SERVER_HOME) \
 	  --with libdir=$(libdir) \
