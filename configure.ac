@@ -171,12 +171,12 @@ esac
 dnl this is causing problems with solaris procfs.h
 dnl AC_SYS_LARGEFILE
 orig_CFLAGS="$CFLAGS"
-AC_CHECK_FUNC(lstat64,
-  AC_DEFINE(HAVE_LSTAT64,1,[Define if lstat64() is available]),
+AC_CHECK_FUNC(stat64,
+  AC_DEFINE(HAVE_STAT64,1,[Define if stat64() is available]),
   [CFLAGS="$CFLAGS -D_LARGEFILE64_SOURCE"
-   unset ac_cv_func_lstat64
-   AC_CHECK_FUNC(lstat64,
-    AC_DEFINE(HAVE_LSTAT64,1,[Define if lstat64() is available]),
+   unset ac_cv_func_stat64
+   AC_CHECK_FUNC(stat64,
+    AC_DEFINE(HAVE_STAT64,1,[Define if stat64() is available]),
      [CFLAGS="$orig_CFLAGS"])])
 
 AC_CHECK_MEMBER(struct stat64.st_mode,

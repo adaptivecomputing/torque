@@ -236,13 +236,13 @@ int remtree(
 	char		namebuf[MAXPATHLEN], *filnam;
 	int		i;
 	int		rtnv = 0;
-#if defined(HAVE_STRUCT_STAT64) && defined(HAVE_LSTAT64)
+#if defined(HAVE_STRUCT_STAT64) && defined(HAVE_STAT64)
 	struct stat64	sb;
 #else
 	struct stat	sb;
 #endif
 
-#if defined(HAVE_STRUCT_STAT64) && defined(HAVE_LSTAT64)
+#if defined(HAVE_STRUCT_STAT64) && defined(HAVE_STAT64)
 	if (lstat64(dirname, &sb) == -1) {
 #else
 	if (lstat(dirname, &sb) == -1) {
@@ -270,7 +270,7 @@ int remtree(
 
 		(void)strcpy(filnam, pdir->d_name);
 
-#if defined(HAVE_STRUCT_STAT64) && defined(HAVE_LSTAT64)
+#if defined(HAVE_STRUCT_STAT64) && defined(HAVE_STAT64)
 		if (lstat64(namebuf, &sb) == -1) {
 #else
 		if (lstat(namebuf, &sb) == -1) {

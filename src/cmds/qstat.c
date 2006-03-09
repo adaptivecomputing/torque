@@ -102,6 +102,9 @@
 #if	TCL_QSTAT
 #include <sys/stat.h>
 #include <tcl.h>
+#if	TCLX
+#include <tclExtend.h>
+#endif
 #endif
 
 static void states();

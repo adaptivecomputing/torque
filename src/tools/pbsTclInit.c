@@ -85,6 +85,10 @@
 #include	"pbs_config.h"
 #include	<string.h>
 #include	"tcl.h"
+#if     TCLX
+#include <tclExtend.h>
+#endif
+
 
 static char ident[] = "@(#) $RCSfile$ $Revision$";
 

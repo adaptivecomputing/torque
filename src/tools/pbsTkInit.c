@@ -86,6 +86,10 @@
 
 #include	"tk.h"
 #include <string.h>
+#if     TCLX
+#include <tclExtend.h>
+#endif
+
 
 extern void fullresp(int);
 extern void add_cmds(Tcl_Interp *);
