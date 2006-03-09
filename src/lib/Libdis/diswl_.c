@@ -104,8 +104,14 @@
 
 /* to work around a problem in a compiler */
 #if SIZEOF_LONG_DOUBLE == SIZEOF_DOUBLE
+
+#ifdef LDBL_MAX
+#undef LDBL_MAX 
+#endif /* LDBL_MAX */
+
 #define LDBL_MAX DBL_MAX
-#endif 
+#endif /* SIZEOF_LONG_DOUBLE == SIZEOF_DOUBLE */
+
 
 int diswl_(stream, value, ndigs)
     int			stream;
