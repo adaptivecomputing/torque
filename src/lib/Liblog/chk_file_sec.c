@@ -94,6 +94,8 @@
 #define	S_ISLNK(m)	(((m) & S_IFMT) == S_IFLNK)
 #endif
 
+int chk_file_sec_stderr=0;
+
 /*
  * chk_file_sec() - Check file/directory security
  *      Part of the PBS System Security "Feature"
@@ -233,14 +235,30 @@ chkerr:
     {
     if ((error_buf = malloc(LOG_BUF_SIZE)) == 0) 
       {
-      log_err(rc,"chk_file_sec","Malloc failed");		
+      if (chk_file_sec_stderr)
+        {
+        fprintf(stdout, "chk_tree: Malloc failed: error #%d: (%s)\n", rc,
+          strerror(rc) ? strerror(rc) : "UNKNOWN");
+        }
+      else
+        {
+        log_err(rc,"chk_file_sec","Malloc failed");		
+        }
       } 
     else 
       {
       sprintf(error_buf,"Security violation with \"%s\"",
         path);
 
-      log_err(rc,"chk_file_sec",error_buf);
+      if (chk_file_sec_stderr)
+        {
+        fprintf(stdout, "chk_tree: %s: error #%d: (%s)\n", error_buf, rc,
+          strerror(rc) ? strerror(rc) : "UNKNOWN");
+        }
+      else
+        {
+        log_err(rc,"chk_file_sec",error_buf);
+        }
 
       free(error_buf);
       }

@@ -119,10 +119,10 @@
 #include "batch_request.h"
 
 
-#ifndef SIGKILL
+/*#ifndef SIGKILL*/
 /* there is some weird stuff in gcc include files signal.h & sys/params.h */
 #include <signal.h>
-#endif
+/*#endif*/
 
 #ifndef SUCCESS
 #define SUCCESS 1

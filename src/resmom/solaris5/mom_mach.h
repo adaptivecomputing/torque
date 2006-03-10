@@ -109,5 +109,6 @@ extern int mach_close_poll A_(());		/* Terminate poll ability */
 extern int mach_checkpoint A_((struct task *, char *path, int abt));
 						/* do the checkpoint */
 extern long mach_restart A_((struct task *,char *path));	/* Restart checkpointed task */
+extern int mom_close_poll A_(());           /* Terminate poll ability */
 
 #endif /* MOM_MACH */

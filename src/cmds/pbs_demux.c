@@ -96,6 +96,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <string.h>
 
 #if defined(FD_SET_IN_SYS_SELECT_H)
 #  include <sys/select.h>

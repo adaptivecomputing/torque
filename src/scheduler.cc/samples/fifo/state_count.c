@@ -169,7 +169,7 @@ void count_states( job_info **jobs, state_count *sc )
       else if( jobs[i] -> is_completed )
         sc -> completed++; 
       else
-	log( PBSEVENT_JOB, PBS_EVENTCLASS_JOB, jobs[i] -> name, "Job in unknown state");
+	sched_log( PBSEVENT_JOB, PBS_EVENTCLASS_JOB, jobs[i] -> name, "Job in unknown state");
     }
   }
 

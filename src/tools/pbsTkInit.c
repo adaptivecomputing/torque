@@ -84,6 +84,8 @@
 
 #include <pbs_config.h>
 
+#include        "libpbs.h"
+#include	"log.h"
 #include	"tk.h"
 #include <string.h>
 #if     TCLX
@@ -95,22 +97,6 @@ extern void fullresp(int);
 extern void add_cmds(Tcl_Interp *);
 
 static char ident[] = "@(#) $RCSfile$ $Revision$";
-
-char	log_buffer[1024];
-
-void
-log_err(errnum, func, text)
-    int		errnum;
-    char	*func;
-    char	*text;
-{
-  char *error_message = "Internal error";
-  if ( errnum >= 0 ) {
-    error_message = strerror(errnum);
-  }
-  fprintf(stderr, "%s: %s: %s\n",
-	  error_message,func, text);
-}
 
 int
 pbsTcl_Init(interp)
@@ -148,6 +134,7 @@ main(argc, argv)
     int		argc;
     char	*argv[];
 {
+	chk_file_sec_stderr=1;
 	Tk_Main(argc, argv, pbsTcl_Init);
 	return 0;
 }

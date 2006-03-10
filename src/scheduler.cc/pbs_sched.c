@@ -124,7 +124,6 @@
 
 struct		connect_handle connection[PBS_NET_MAX_CONNECTIONS];
 int		pbs_errno;
-char		pbs_current_user[PBS_MAXUSER] = "Scheduler";
 int		connector;
 int		server_sock;
 
@@ -710,7 +709,9 @@ int main(
 	pbs_rm_port = get_svrport(PBS_MANAGER_SERVICE_NAME, "tcp",
 			   PBS_MANAGER_SERVICE_PORT);
 
-msg_daemonname=strdup("pbs_sched");
+	strcpy(pbs_current_user,"Scheduler");
+	msg_daemonname=strdup("pbs_sched");
+
 	opterr = 0;
 
         while ((c = getopt(argc, argv, "L:S:R:d:p:c:a:-:")) != EOF) {

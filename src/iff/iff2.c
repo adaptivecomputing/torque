@@ -111,7 +111,7 @@
 int pbs_errno;
 struct connect_handle connection[NCONNECTS];
 
-char pbs_current_user[PBS_MAXUSER]="PBS_Server"; /* for libpbs.a */
+extern char pbs_current_user[PBS_MAXUSER]; /* for libpbs.a */
 
 
 
@@ -149,6 +149,8 @@ int main(
 
 
   int PBSLOGLEVEL = 0;
+
+  strcpy(pbs_current_user,"PBS_Server");
 
   if ((ptr = getenv("PBSLOGLEVEL")) != NULL)
     {

@@ -182,7 +182,7 @@ queue_info **query_queues( int pbs_sd, server_info *sinfo )
     {
       qinfo -> is_ok_to_run = 0;
       translate_queue_fail_code( ret, comment, log_msg );
-      log(PBSEVENT_DEBUG2, PBS_EVENTCLASS_QUEUE, qinfo -> name, log_msg);
+      sched_log(PBSEVENT_DEBUG2, PBS_EVENTCLASS_QUEUE, qinfo -> name, log_msg);
       update_jobs_cant_run(pbs_sd, qinfo -> jobs, NULL, comment,START_WITH_JOB);
     }
     

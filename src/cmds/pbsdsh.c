@@ -88,6 +88,7 @@
 #include <unistd.h>
 #include <strings.h>
 #include <string.h>
+#include <signal.h>
 #include <sys/signal.h>
 #include <sys/types.h>
 #include <sys/time.h>
@@ -727,12 +728,15 @@ int main(
   extern char *optarg;
 
   int posixly_correct_set_by_caller = 0;
+  char *envstr;
                            
 #ifdef __GNUC__            
   /* If it's already set, we won't unset it later */
   if (getenv("POSIXLY_CORRECT") != NULL)
     posixly_correct_set_by_caller=1;
-  setenv("POSIXLY_CORRECT", "", 0);
+
+  envstr=strdup("POSIXLY_CORRECT=1");
+  putenv(envstr);
 #endif                     
                            
   while ((c = getopt(argc,argv,"c:n:h:osuv")) != EOF) 
@@ -822,7 +826,10 @@ int main(
 
 #ifdef __GNUC__
   if (!posixly_correct_set_by_caller)
-    unsetenv("POSIXLY_CORRECT");
+    {
+    putenv("POSIXLY_CORRECT");
+    free(envstr);
+    }
 #endif
 
   id = argv[0];

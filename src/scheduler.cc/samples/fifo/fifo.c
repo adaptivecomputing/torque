@@ -252,7 +252,7 @@ int init_scheduling_cycle( server_info *sinfo )
     t = cstat.current_time;
     while(t - last_decay > conf.half_life)
     {
-      log(PBSEVENT_DEBUG2, PBS_EVENTCLASS_SERVER,"", "Decaying Fairshare Tree");
+      sched_log(PBSEVENT_DEBUG2, PBS_EVENTCLASS_SERVER,"", "Decaying Fairshare Tree");
       decay_fairshare_tree( conf.group_root );
       t -= conf.half_life;
       decayed = 1;
@@ -269,7 +269,7 @@ int init_scheduling_cycle( server_info *sinfo )
     {
       write_usage();
       last_sync = cstat.current_time;
-      log(PBSEVENT_DEBUG2, PBS_EVENTCLASS_SERVER, "", "Usage Sync");
+      sched_log(PBSEVENT_DEBUG2, PBS_EVENTCLASS_SERVER, "", "Usage Sync");
     }
   }
 
@@ -386,7 +386,7 @@ int scheduling_cycle( int sd )
   char comment[MAX_COMMENT_SIZE]; /* used to update comment of job */
 
 
-  log(PBSEVENT_DEBUG2, PBS_EVENTCLASS_REQUEST, "", "Entering Schedule");
+  sched_log(PBSEVENT_DEBUG2, PBS_EVENTCLASS_REQUEST, "", "Entering Schedule");
 
   update_cycle_status();
 
@@ -399,7 +399,7 @@ int scheduling_cycle( int sd )
 
   if( init_scheduling_cycle( sinfo ) == 0 )
   {
-    log(PBSEVENT_DEBUG, PBS_EVENTCLASS_SERVER, sinfo -> name, "init_scheduling_cycle failed.");
+    sched_log(PBSEVENT_DEBUG, PBS_EVENTCLASS_SERVER, sinfo -> name, "init_scheduling_cycle failed.");
     free_server(sinfo, 1);
     return 0;
   }
@@ -407,7 +407,7 @@ int scheduling_cycle( int sd )
   /* main scheduling loop */
   while( ( jinfo = next_job(sinfo, 0) ) )
   {
-    log(PBSEVENT_DEBUG2, PBS_EVENTCLASS_JOB, jinfo -> name, 
+    sched_log(PBSEVENT_DEBUG2, PBS_EVENTCLASS_JOB, jinfo -> name, 
 	"Considering job to run");
     if((ret = is_ok_to_run_job( sd, sinfo, jinfo -> queue, jinfo )) == SUCCESS)
       run_update_job( sd, sinfo, jinfo -> queue, jinfo );
@@ -415,7 +415,7 @@ int scheduling_cycle( int sd )
     {
       if( jinfo -> can_never_run )
       {
-	log(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, jinfo -> name, 
+	sched_log(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, jinfo -> name, 
 	      "Job Deleted because it would never run");
 	pbs_deljob(sd, jinfo -> name, "Job could never run");
       }
@@ -426,7 +426,7 @@ int scheduling_cycle( int sd )
 	 * if the reason for the job has not changed, we do not need to log it
 	 */
 	if( update_job_comment(sd, jinfo, comment) == 0 )
-	  log(PBSEVENT_SCHED, PBS_EVENTCLASS_JOB, jinfo -> name, log_msg);
+	  sched_log(PBSEVENT_SCHED, PBS_EVENTCLASS_JOB, jinfo -> name, log_msg);
       }
 
       if( ret != NOT_QUEUED && cstat.strict_fifo )
@@ -438,7 +438,7 @@ int scheduling_cycle( int sd )
   if( cstat.fair_share )
     update_last_running(sinfo);
   free_server(sinfo, 1);	/* free server and queues and jobs */
-  log(PBSEVENT_DEBUG2, PBS_EVENTCLASS_REQUEST, "", "Leaving schedule\n");
+  sched_log(PBSEVENT_DEBUG2, PBS_EVENTCLASS_REQUEST, "", "Leaving schedule\n");
   return 0;
 }
 
@@ -567,7 +567,7 @@ int run_update_job( int pbs_sd, server_info *sinfo, queue_info *qinfo,
     if( cstat.help_starving_jobs && jinfo == cstat.starving_job )
       jinfo -> sch_priority = 0;
 
-    log(PBSEVENT_SCHED, PBS_EVENTCLASS_JOB, jinfo -> name, "Job Run");
+    sched_log(PBSEVENT_SCHED, PBS_EVENTCLASS_JOB, jinfo -> name, "Job Run");
     update_server_on_run( sinfo, qinfo, jinfo );
     update_queue_on_run( qinfo, jinfo );
     update_job_on_run( pbs_sd, jinfo );

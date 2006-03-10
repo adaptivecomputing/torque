@@ -166,7 +166,6 @@ char 	       *path_track;
 char	       *path_nodes;
 char	       *path_nodes_new;
 char	       *path_nodestate;
-char		pbs_current_user[PBS_MAXUSER]="PBS_Server"; /* for libpbs.a */
 extern char            *msg_daemonname;
 int		pbs_errno;
 char	       *pbs_o_host = "PBS_O_HOST";
@@ -413,6 +412,7 @@ int main(
 
   ProgName = argv[0];
 
+  strcpy(pbs_current_user,"PBS_Server");
   msg_daemonname=strdup(pbs_current_user);
 
   /* if we are not running with real and effective uid of 0, forget it */

@@ -95,6 +95,7 @@
 #include <malloc.h>
 #include <errno.h>
 #include <string.h>
+#include <ctype.h>
 #include <pwd.h>
 #include <kvm.h>
 #include <sys/types.h>
@@ -105,8 +106,11 @@
 #include <sys/sysmacros.h>
 #include <sys/systeminfo.h>
 #include <sys/time.h>
+#include <sys/loadavg.h>
 #include <procfs.h>
 #include <sys/resource.h>
+#include <signal.h>
+
 
 #include "pbs_error.h"
 #include "portability.h"

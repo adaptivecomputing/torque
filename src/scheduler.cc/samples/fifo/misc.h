@@ -105,10 +105,10 @@ sch_resource_t res_to_num( char * res_str );
 int skip_line( char *line );
 
 /*
- *      log - write a log entry to the scheduler log file using log_record
+ *      sched_log - write a log entry to the scheduler log file using log_record
  */
  
-void log( int event, int class, char *name, char *text);
+void sched_log( int event, int class, char *name, char *text);
 
 /*
  *      break_comma_list - break apart a comma delemetd string into an arary

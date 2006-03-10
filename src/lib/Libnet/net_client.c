@@ -84,6 +84,7 @@
 #include <stdio.h>
 #include <errno.h>
 #include <netdb.h>
+#include <string.h>
 #include "portability.h"
 #include "server_limits.h"
 #include "net_connect.h"
@@ -92,6 +93,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/time.h>
+
 
 /*
 ** wait for connect to complete.  We use non-blocking sockets,

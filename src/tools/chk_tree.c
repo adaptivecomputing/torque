@@ -110,6 +110,7 @@ int main(
 	int sticky = 0;
 	extern int optind;
 
+        chk_file_sec_stderr=1;
 
 	while ((i = getopt(argc, argv, "dns")) != EOF) {
 	    switch (i) {
@@ -139,15 +140,3 @@ int main(
 		return (err);
 }
 
-/*
- * log_err - for this utility, write to stderr rather than logging.
- */
-
-void log_err(rc, routine, text)
-	int  rc;
-	char *routine;
-	char *text;
-{
-	fprintf(stdout, "chk_tree: %s: error #%d: (%s)\n", text, rc,
-		strerror(rc) ? strerror(rc) : "UNKNOWN");
-}

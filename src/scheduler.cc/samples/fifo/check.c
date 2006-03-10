@@ -493,7 +493,7 @@ int check_nodes( int pbs_sd, job_info *jinfo, node_info **ninfo_arr )
     if( (rc = pbs_rescquery(pbs_sd, &tmp, 1, &av, &al, &res, &down)) != 0 )
     {
       sprintf(errbuf, "pbs_resquery error: %d", rc);
-      log(PBSEVENT_SYSTEM, PBS_EVENTCLASS_NODE, jinfo -> name, errbuf );
+      sched_log(PBSEVENT_SYSTEM, PBS_EVENTCLASS_NODE, jinfo -> name, errbuf );
       return SCHD_ERROR;
     }
     else

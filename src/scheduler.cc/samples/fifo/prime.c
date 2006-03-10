@@ -115,7 +115,7 @@ enum prime_time is_prime_time( )
   if( conf.holiday_year != 0 ) /* year == 0: no prime-time */
   {
     if( tmptr -> tm_year > conf.holiday_year )
-      log(PBSEVENT_ADMIN, PBS_EVENTCLASS_FILE, "", "The holday file is out of date, please update it.");
+      sched_log(PBSEVENT_ADMIN, PBS_EVENTCLASS_FILE, "", "The holday file is out of date, please update it.");
     else if( tmptr -> tm_yday > last_day )
     {
       last_day = tmptr -> tm_yday;

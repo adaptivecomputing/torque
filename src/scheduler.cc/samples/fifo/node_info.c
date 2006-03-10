@@ -119,7 +119,7 @@ node_info **query_nodes( int pbs_sd, server_info *sinfo )
   {
     err = pbs_geterrmsg(pbs_sd);
     sprintf(errbuf, "Error getting nodes: %s", err);
-    log(PBSEVENT_SCHED, PBS_EVENTCLASS_NODE, "", errbuf);
+    sched_log(PBSEVENT_SCHED, PBS_EVENTCLASS_NODE, "", errbuf);
     return NULL;
   }
 
@@ -319,7 +319,7 @@ int set_node_type( node_info *ninfo, char *ntype )
     else
     {
       sprintf(errbuf, "Unknown node type: %s", ntype);
-      log( PBSEVENT_SCHED, PBS_EVENTCLASS_NODE, ninfo -> name, errbuf);
+      sched_log( PBSEVENT_SCHED, PBS_EVENTCLASS_NODE, ninfo -> name, errbuf);
       return 1;
     }
     return 0;
@@ -370,7 +370,7 @@ int set_node_state( node_info *ninfo, char *state )
       else
       {
 	sprintf(errbuf, "Unknown Node State: %s", tok);
-	log(PBSEVENT_SCHED, PBS_EVENTCLASS_NODE, ninfo -> name, errbuf);
+	sched_log(PBSEVENT_SCHED, PBS_EVENTCLASS_NODE, ninfo -> name, errbuf);
       }
 
       tok = strtok(NULL, ",");
@@ -411,7 +411,7 @@ int talk_with_mom(
     {
     if (( mom_sd = openrm(ninfo -> name, pbs_rm_port) ) < 0)
       {
-      log(PBSEVENT_SYSTEM, PBS_EVENTCLASS_REQUEST, ninfo -> name, "Can not open connection to mom");
+      sched_log(PBSEVENT_SYSTEM, PBS_EVENTCLASS_REQUEST, ninfo -> name, "Can not open connection to mom");
       return 1;
       }
 
@@ -466,7 +466,7 @@ int talk_with_mom(
       else
       {
 	sprintf(errbuf, "Unknown resource value[%d]: %s", i, mom_ans);
-	log(PBSEVENT_SCHED, PBS_EVENTCLASS_NODE, ninfo -> name, errbuf);
+	sched_log(PBSEVENT_SCHED, PBS_EVENTCLASS_NODE, ninfo -> name, errbuf);
       }
     }
     closerm(mom_sd);
@@ -607,7 +607,7 @@ node_info *find_best_node( job_info *jinfo, node_info **ninfo_arr )
 
   if( cstat.load_balancing_rr )
   {
-    log(PBSEVENT_DEBUG2, PBS_EVENTCLASS_NODE, last_node_name, "Last node a job was run on");
+    sched_log(PBSEVENT_DEBUG2, PBS_EVENTCLASS_NODE, last_node_name, "Last node a job was run on");
     /* find the node we last ran a job on */
     for(ln_i = 0; ninfo_arr[ln_i] != NULL && 
     	strcmp(ninfo_arr[ln_i] -> name, last_node_name); ln_i++)
@@ -688,7 +688,7 @@ node_info *find_best_node( job_info *jinfo, node_info **ninfo_arr )
       sprintf(logbuf, "Node Rejected, node does not fit job requirements.");
 
 
-    log(PBSEVENT_DEBUG2, PBS_EVENTCLASS_NODE, ninfo_arr[i] -> name, logbuf);
+    sched_log(PBSEVENT_DEBUG2, PBS_EVENTCLASS_NODE, ninfo_arr[i] -> name, logbuf);
     logbuf[0] = '\0';
     i++;
     if( ninfo_arr[i] == NULL )
@@ -699,14 +699,14 @@ node_info *find_best_node( job_info *jinfo, node_info **ninfo_arr )
   {
     if( cstat.load_balancing_rr )
       strcpy(last_node_name, possible_node -> name);
-    log(PBSEVENT_DEBUG2, PBS_EVENTCLASS_NODE, possible_node -> name, "Node Chosen to run job on");
+    sched_log(PBSEVENT_DEBUG2, PBS_EVENTCLASS_NODE, possible_node -> name, "Node Chosen to run job on");
     return possible_node;
   }
   else
   {
     if( cstat.load_balancing_rr )
       strcpy(last_node_name, good_node -> name);
-    log(PBSEVENT_DEBUG2, PBS_EVENTCLASS_NODE, good_node -> name, "Node Chosen to run job on");
+    sched_log(PBSEVENT_DEBUG2, PBS_EVENTCLASS_NODE, good_node -> name, "Node Chosen to run job on");
     return good_node;
   }
   return NULL;		/* should never get here */

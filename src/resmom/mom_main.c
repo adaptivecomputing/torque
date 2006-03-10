@@ -186,7 +186,6 @@ char	       *path_aux;
 char	       *path_server_name;
 char           *path_home = PBS_SERVER_HOME;
 char           *mom_home;
-char		pbs_current_user[PBS_MAXUSER] = "pbs_mom";  /* for libpbs.a */
 extern char    *msg_daemonname;          /* for logs     */
 int		pbs_errno;
 gid_t		pbsgroup;
@@ -5405,7 +5404,8 @@ int main(
   int           MOMISLOCKED = 0;
 #endif /* __PPINMEM */
 
-msg_daemonname = pbs_current_user;
+  strcpy(pbs_current_user,"pbs_mom");
+  msg_daemonname = pbs_current_user;
 
   time(&MOMStartTime);
 

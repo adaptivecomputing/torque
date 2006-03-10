@@ -97,6 +97,10 @@
 
 extern long *log_event_mask;
 
+/* set this to non-zero in calling app if errors go to stderr */
+extern int   chk_file_sec_stderr;
+
+
 extern void log_close A_((int));
 extern void log_err A_((int,char *,char *));
 extern void log_event A_((int,int,char *,char *));

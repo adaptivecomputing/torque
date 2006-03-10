@@ -226,7 +226,7 @@ int skip_line( char *line )
  *
  */
 
-void log( int event, int class, char *name, char *text)
+void sched_log( int event, int class, char *name, char *text)
 {
   if( !(conf.log_filter & event) && text[0] != '\0' )
     log_record(event, class, name, text);

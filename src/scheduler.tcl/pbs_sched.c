@@ -627,7 +627,6 @@ main(argc, argv)
 	caddr_t		curr_brk, next_brk;
 	extern	char	*optarg;
 	extern	int	optind, opterr;
-	extern	char	pbs_current_user[];
 	extern	int	rpp_fd;
 	fd_set		fdset;
 
