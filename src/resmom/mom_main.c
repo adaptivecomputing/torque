@@ -187,7 +187,7 @@ char	       *path_server_name;
 char           *path_home = PBS_SERVER_HOME;
 char           *mom_home;
 extern char    *msg_daemonname;          /* for logs     */
-int		pbs_errno;
+extern int	pbs_errno;
 gid_t		pbsgroup;
 unsigned int	pbs_mom_port;
 unsigned int	pbs_rm_port;

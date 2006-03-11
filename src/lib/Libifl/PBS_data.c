@@ -81,6 +81,7 @@
 #include <sys/types.h>
 
 #include "pbs_ifl.h"
+#include "server_limits.h"
 #include "libpbs.h"
 
 /*
@@ -89,7 +90,7 @@
 
 char pbs_current_user[PBS_MAXUSER];	      /* user name for batch request */
 
-struct connect_handle connection[NCONNECTS];  /* array of connection handles */
+struct connect_handle connection[PBS_NET_MAX_CONNECTIONS];  /* array of connection handles */
 
 int pbs_errno = 0;			      /* pbs error number */
 

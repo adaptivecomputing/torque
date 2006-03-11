@@ -48,6 +48,9 @@ static char sccsid[] = "@(#)util.c	8.2 (Berkeley) 4/2/94";
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#ifdef HAVE_ERR_H
+#include <err.h>
+#endif
 
 #include "extern.h"
 #include "pathnames.h"
@@ -144,7 +147,7 @@ allocbuf(bp, fd, blksize)
 	size = (((int)stb.st_blksize + blksize - 1) / blksize) * blksize;
 	if (size == 0)
 		size = blksize;
-	if (bp->cnt >= size)
+	if (bp->cnt >= (int)size)
 		return (bp);
 	if (bp->buf)
 		bp->buf = realloc(bp->buf, size);

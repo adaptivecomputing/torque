@@ -3866,15 +3866,15 @@ static char *quota(
     {
     case harddata:
 
-      sprintf(ret_string,"%ukb", 
-        qi.dqb_bhardlimit >> 10);
+      sprintf(ret_string,"%lukb", 
+        (u_long)qi.dqb_bhardlimit >> 10);
 
       break;
 
     case softdata:
 
-      sprintf(ret_string,"%ukb", 
-        qi.dqb_bsoftlimit >> 10);
+      sprintf(ret_string,"%lukb", 
+        (u_long)qi.dqb_bsoftlimit >> 10);
 
       break;
 
@@ -3882,11 +3882,11 @@ static char *quota(
 
 #if defined(TENABLEQUOTA)
 #if _LINUX_QUOTA_VERSION < 2
-      sprintf(ret_string,"%ukb",
-        qi.dqb_curblocks >> 10);
+      sprintf(ret_string,"%lukb",
+        (u_long)qi.dqb_curblocks >> 10);
 #else /* _LINUX_QUOTA_VERSION < 2 */
-      sprintf(ret_string,"%ukb",
-        (unsigned int)qi.dqb_curspace >> 10);
+      sprintf(ret_string,"%lukb",
+        (u_long)qi.dqb_curspace >> 10);
 #endif /* _LINUX_QUOTA_VERSION < 2 */
 #endif /* TENABLEQUOTA */
 
@@ -3894,22 +3894,22 @@ static char *quota(
 
     case hardfile:
 
-      sprintf(ret_string,"%u", 
-        qi.dqb_ihardlimit);
+      sprintf(ret_string,"%lu", 
+        (u_long)qi.dqb_ihardlimit);
 
       break;
 
     case softfile:
 
-      sprintf(ret_string,"%u", 
-        qi.dqb_isoftlimit);
+      sprintf(ret_string,"%lu", 
+        (u_long)qi.dqb_isoftlimit);
 
       break;
 
     case currfile:
 
-      sprintf(ret_string,"%u", 
-        qi.dqb_curinodes);
+      sprintf(ret_string,"%lu", 
+        (u_long)qi.dqb_curinodes);
 
       break;
 

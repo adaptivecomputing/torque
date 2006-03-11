@@ -121,9 +121,9 @@
 #include	"net_connect.h"
 #include	"rpp.h"
 #include	"rm.h"
+#include	"libpbs.h"
 
-struct		connect_handle connection[PBS_NET_MAX_CONNECTIONS];
-int		pbs_errno;
+extern int	pbs_errno;
 int		connector;
 int		server_sock;
 

@@ -60,6 +60,9 @@ static char copyright[] =
 #include <string.h>
 #include <string.h>
 #include <unistd.h>
+#ifdef HAVE_ERR_H
+#include <err.h>
+#endif
 
 #include "pathnames.h"
 #include "extern.h"
@@ -467,17 +470,10 @@ syserr:
 
     /* NOTE:  nothing defined which indicates this is Darwin/powerpc64 etc */
 
-#ifdef __TDARWIN
-    sprintf(buf,"C%04lo %qd %s\n",
-      stb.st_mode & MODMASK, 
-      stb.st_size, 
+    sprintf(buf,"C%04lo %lld %s\n",
+      (unsigned long int)stb.st_mode & MODMASK, 
+      (unsigned long long int)stb.st_size, 
       last);
-#else
-    sprintf(buf,"C%04lo %ld %s\n",
-      stb.st_mode & MODMASK, 
-      stb.st_size, 
-      last);
-#endif /* __TDARWIN */
 
     write(rem,buf,strlen(buf));
 
@@ -680,8 +676,9 @@ sink(argc, argv)
 		if (*cp++ != ' ')
 			SCREWUP("size not delimited");
 		if (targisdir) {
+			/* FIXME: this code is broken. cursize is never init. memory leak. */
 			static char *namebuf;
-			static int cursize;
+			static size_t cursize;
 			size_t need;
 
 			need = strlen(targ) + strlen(cp) + 250;

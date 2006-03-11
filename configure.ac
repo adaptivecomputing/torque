@@ -962,7 +962,7 @@ AC_CHECK_HEADER(sys/ioctl.h, [
 
 AC_CHECK_HEADERS([arpa/inet.h fcntl.h float.h limits.h malloc.h netdb.h \
 		  netinet/in.h stddef.h sys/file.h sys/param.h \
-		  sys/socket.h sys/time.h syslog.h termios.h])
+		  sys/socket.h sys/time.h syslog.h termios.h err.h])
 
 dnl  Readline
 if test "$HAVE_READLINE" = "yes" ; then

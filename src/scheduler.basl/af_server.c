@@ -124,7 +124,6 @@ struct ServerSortArgs {
 static SetServer AllServers;
 
 /* External Variables */
-extern  struct  connect_handle connection[];
 /* External Functions */
 /* Structures and Unions */
 /* External Functions */

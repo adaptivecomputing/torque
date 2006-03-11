@@ -121,7 +121,6 @@
 
 static char ident[] = "@(#) $RCSfile$ $Revision$";
 
-extern	struct	connect_handle connection[];
 extern	int	pbs_errno;
 extern	int	connector;
 int		server_sock;

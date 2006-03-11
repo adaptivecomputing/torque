@@ -115,7 +115,6 @@
 
 /* global data */
 
-struct connect_handle connection[PBS_NET_MAX_CONNECTIONS]; /* used by API */
 
 extern int		 errno;
 

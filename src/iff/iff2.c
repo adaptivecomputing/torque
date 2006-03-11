@@ -108,8 +108,7 @@
 */
 
 
-int pbs_errno;
-struct connect_handle connection[NCONNECTS];
+extern int pbs_errno;
 
 extern char pbs_current_user[PBS_MAXUSER]; /* for libpbs.a */
 
