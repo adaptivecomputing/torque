@@ -435,6 +435,11 @@ AC_SUBST(SCHD_TYPE_SUBDIR)
 AC_SUBST(SCHD_TYPE)
 AM_CONDITIONAL(SCHD_BASL, test "x$SCHD_TYPE" = "xbasl")
 
+if test "$SCHD_TYPE" = basl ;then
+    AC_CHECK_FUNC(sqrt, ,
+      AC_CHECK_LIB(m, sqrt, SCHD_LIBS="$SCHD_LIBS -lm"))
+fi
+AC_SUBST(SCHD_LIBS)
 
 AC_ARG_WITH(sched_code,
     [  --with-sched-code=PATH  sets the name of the scheduler to use.

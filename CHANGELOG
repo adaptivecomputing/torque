@@ -21,7 +21,7 @@
     - capture TM stdout with -o
     - run on unique nodes with -u
     - run on a given hostname with -h
-  larefile support in staging code and when removing $TMPDIR (USC)
+  largefile support in staging code and when removing $TMPDIR (USC)
   use bindresvport() instead of looping over calls to bind() (USC)
 
 

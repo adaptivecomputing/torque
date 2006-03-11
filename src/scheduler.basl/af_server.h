@@ -110,48 +110,48 @@
 /* File Scope Variables */
 /* The following are the query messages to the server. */
 static  struct attrl node_alist[] = {
-        {&node_alist[1], ATTR_NODE_state, "", ""},
-        {&node_alist[2], ATTR_NODE_properties, "", ""},
-        {NULL, 		 ATTR_NODE_ntype, "", ""}
+        {&node_alist[1], ATTR_NODE_state, "", "", DFLT},
+        {&node_alist[2], ATTR_NODE_properties, "", "", DFLT},
+        {NULL, 		 ATTR_NODE_ntype, "", "", DFLT}
 };
 
 static  struct attrl serv_alist[] = {
-        {&serv_alist[1], ATTR_status, "", ""},
-        {&serv_alist[2], ATTR_dfltque, "", ""},
-        {&serv_alist[3], ATTR_maxrun, "", ""},
-        {&serv_alist[4], ATTR_maxuserrun, "", ""},
-        {&serv_alist[5], ATTR_rescavail, "", ""},
-        {&serv_alist[6], ATTR_rescassn, "", ""},
-        {NULL, 		 ATTR_maxgrprun, "", ""}
+        {&serv_alist[1], ATTR_status, "", "", DFLT},
+        {&serv_alist[2], ATTR_dfltque, "", "", DFLT},
+        {&serv_alist[3], ATTR_maxrun, "", "", DFLT},
+        {&serv_alist[4], ATTR_maxuserrun, "", "", DFLT},
+        {&serv_alist[5], ATTR_rescavail, "", "", DFLT},
+        {&serv_alist[6], ATTR_rescassn, "", "", DFLT},
+        {NULL, 		 ATTR_maxgrprun, "", "", DFLT}
 };
 
 static  struct attrl que_alist[] = {
-        {&que_alist[1], ATTR_qtype, "", ""},
-        {&que_alist[2], ATTR_p, "", ""},
-        {&que_alist[3], ATTR_maxrun, "", ""},
-        {&que_alist[4], ATTR_maxuserrun, "", ""},
-        {&que_alist[5], ATTR_maxgrprun, "", ""},
-        {&que_alist[6], ATTR_rescavail, "", ""},
-        {&que_alist[7], ATTR_rescassn, "", ""},
-        {NULL, 		ATTR_start, "", ""}
+        {&que_alist[1], ATTR_qtype, "", "", DFLT},
+        {&que_alist[2], ATTR_p, "", "", DFLT},
+        {&que_alist[3], ATTR_maxrun, "", "", DFLT},
+        {&que_alist[4], ATTR_maxuserrun, "", "", DFLT},
+        {&que_alist[5], ATTR_maxgrprun, "", "", DFLT},
+        {&que_alist[6], ATTR_rescavail, "", "", DFLT},
+        {&que_alist[7], ATTR_rescassn, "", "", DFLT},
+        {NULL, 		ATTR_start, "", "", DFLT}
 };
 
 static  struct attrl job_alist[] = {
-        {&job_alist[1],ATTR_N, "", ""},
-        {&job_alist[2],ATTR_owner, "", ""},
-        {&job_alist[3],ATTR_euser, "", ""},
-        {&job_alist[4],ATTR_egroup, "", ""},
-        {&job_alist[5],ATTR_state, "", ""},
-        {&job_alist[6],ATTR_p, "", ""},
-        {&job_alist[7],ATTR_r, "", ""},
-        {&job_alist[8],ATTR_inter, "", ""},
-        {&job_alist[9],ATTR_M, "", ""},
-        {&job_alist[10],ATTR_l, "", ""},
-        {&job_alist[11],ATTR_used, "", ""},
-        {&job_alist[12],ATTR_queue, "", ""},
-        {&job_alist[13],ATTR_stagein, "", ""},
-        {&job_alist[14],ATTR_stageout, "", ""},
-        {NULL, ATTR_ctime, "", ""}
+        {&job_alist[1],ATTR_N, "", "", DFLT},
+        {&job_alist[2],ATTR_owner, "", "", DFLT},
+        {&job_alist[3],ATTR_euser, "", "", DFLT},
+        {&job_alist[4],ATTR_egroup, "", "", DFLT},
+        {&job_alist[5],ATTR_state, "", "", DFLT},
+        {&job_alist[6],ATTR_p, "", "", DFLT},
+        {&job_alist[7],ATTR_r, "", "", DFLT},
+        {&job_alist[8],ATTR_inter, "", "", DFLT},
+        {&job_alist[9],ATTR_M, "", "", DFLT},
+        {&job_alist[10],ATTR_l, "", "", DFLT},
+        {&job_alist[11],ATTR_used, "", "", DFLT},
+        {&job_alist[12],ATTR_queue, "", "", DFLT},
+        {&job_alist[13],ATTR_stagein, "", "", DFLT},
+        {&job_alist[14],ATTR_stageout, "", "", DFLT},
+        {NULL, ATTR_ctime, "", "", DFLT}
 };
 
 /* MACRO */

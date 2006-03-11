@@ -1750,7 +1750,7 @@ void *params;
      char	  act[15];
      char	  *bufstr;	
      char	  *tempstr = NULLSTR;
-     struct attrl attrib = {NULL, "", "", ""};
+     struct attrl attrib = {NULL, "", "", "", DFLT};
 
      if( job == NOJOB || JobStateGet(job) == DELETED )
 	return(FAIL);

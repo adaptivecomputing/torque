@@ -9,10 +9,11 @@ noinst_PROGRAMS = basl2c
 
 AM_CFLAGS = -DPBS_SERVER_HOME=\"$(PBS_SERVER_HOME)\" -DPBS_ENVIRON=\"$(PBS_ENVIRON)\"
 
-pbs_sched_LDADD = $(PBS_LIBS) pbs_sched.o
+pbs_sched_LDADD = $(PBS_LIBS) $(SCHD_LIBS) pbs_sched.o
 pbs_sched_SOURCES = af.c af_cnode.c af_cnodemap.c af_config.c af_job.c \
 		    af_que.c af_resmom.c af_server.c af_system.c af.h
 
+basl2c_LDADD = $(SCHD_LIBS)
 basl2c_SOURCES = af.c Basl2c.c CodeGen.c List.c Node.c Semantic.c SymTab.c \
 		 Lexer.l Parser.y CodeGen.h
 
@@ -36,7 +37,7 @@ dist-hook:
 AM_YFLAGS = -d
 
 pbs_sched.c: samples/$(SCHD_CODE) basl2c
-	./basl2c samples/$(SCHD_CODE)
+	./basl2c $(srcdir)/samples/$(SCHD_CODE)
 		
 Lexer.o: Lexer.c y.tab.h
 	

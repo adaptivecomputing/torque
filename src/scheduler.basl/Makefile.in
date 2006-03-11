@@ -98,6 +98,7 @@ RANLIB = @RANLIB@
 READLINE_LIBS = @READLINE_LIBS@
 ROFF = @ROFF@
 SCHD_CODE = @SCHD_CODE@
+SCHD_LIBS = @SCHD_LIBS@
 SCHD_TYPE = @SCHD_TYPE@
 SCHD_TYPE_SUBDIR = @SCHD_TYPE_SUBDIR@
 SCP_PATH = @SCP_PATH@
@@ -135,11 +136,12 @@ noinst_PROGRAMS = basl2c
 
 AM_CFLAGS = -DPBS_SERVER_HOME=\"$(PBS_SERVER_HOME)\" -DPBS_ENVIRON=\"$(PBS_ENVIRON)\"
 
-pbs_sched_LDADD = $(PBS_LIBS) pbs_sched.o
+pbs_sched_LDADD = $(PBS_LIBS) $(SCHD_LIBS) pbs_sched.o
 pbs_sched_SOURCES = af.c af_cnode.c af_cnodemap.c af_config.c af_job.c \
 		    af_que.c af_resmom.c af_server.c af_system.c af.h
 
 
+basl2c_LDADD = $(SCHD_LIBS)
 basl2c_SOURCES = af.c Basl2c.c CodeGen.c List.c Node.c Semantic.c SymTab.c \
 		 Lexer.l Parser.y CodeGen.h
 
@@ -174,7 +176,6 @@ am_basl2c_OBJECTS = af.$(OBJEXT) Basl2c.$(OBJEXT) CodeGen.$(OBJEXT) \
 	List.$(OBJEXT) Node.$(OBJEXT) Semantic.$(OBJEXT) \
 	SymTab.$(OBJEXT) Lexer.$(OBJEXT) Parser.$(OBJEXT)
 basl2c_OBJECTS = $(am_basl2c_OBJECTS)
-basl2c_LDADD = $(LDADD)
 basl2c_DEPENDENCIES =
 basl2c_LDFLAGS =
 am_pbs_sched_OBJECTS = af.$(OBJEXT) af_cnode.$(OBJEXT) \
@@ -512,7 +513,7 @@ dist-hook:
 	rm -f $(distdir)/Lexer.c $(distdir)/Parser.c
 
 pbs_sched.c: samples/$(SCHD_CODE) basl2c
-	./basl2c samples/$(SCHD_CODE)
+	./basl2c $(srcdir)/samples/$(SCHD_CODE)
 
 Lexer.o: Lexer.c y.tab.h
 
