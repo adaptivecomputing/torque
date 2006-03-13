@@ -105,6 +105,8 @@ MAC: If building for a Mac OS/X cluster, some users have reported issues
   executed.  Use '#!/bin/bash -l' at the start of the pbs command file
   to force this script to be run.
 
+  Some versions of OSX have a buggy bind() preventing binding to priviledged
+  ports.  In this case, --disable-privports should be used.
 
 TRU64/DIGITALUNIX: If building for a TRU64/Digital Unix cluster, some
   users have reported problems building pbs_mom.  To correct this add

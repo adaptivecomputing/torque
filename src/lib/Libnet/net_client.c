@@ -201,13 +201,13 @@ retry:  /* retry goto added (rentec) */
     return(PBS_NET_RC_RETRY);
     }
 
-#if !defined(__TDARWIN) || defined(__TDARWINBIND)
+#ifndef NOPRIVPORTS
 
   flags = fcntl(sock,F_GETFL);
   flags |= O_NONBLOCK;
   fcntl(sock,F_SETFL,flags);
 
-#endif /* !__TDARWIN || __TDARWINBIND */
+#endif /* !NOPRIVPORTS */
 
   /* If local privilege port requested, bind to one */
   /* must be root privileged to do this	*/
@@ -223,7 +223,7 @@ retry:  /* retry goto added (rentec) */
       (void *)&one, 
       sizeof(one));
 
-#if !defined(__TDARWIN) || defined(__TDARWINBIND)
+#ifndef NOPRIVPORTS
 
 #ifdef HAVE_BINDRESVPORT
     if (bindresvport(sock,&local) < 0)
@@ -267,7 +267,7 @@ retry:  /* retry goto added (rentec) */
       local.sin_port = htons(tryport);
       }  /* END while (bind() < 0) */
 #endif /* HAVE_BINDRESVPORT */
-#endif /* !__TDARWIN || __TDARWINBIND */
+#endif /* !NOPRIVPORTS */
     }    /* END if (local_port != FALSE) */
 			
   /* connect to specified server host and port	*/

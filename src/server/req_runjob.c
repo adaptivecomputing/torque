@@ -108,9 +108,9 @@
 #include "net_connect.h"
 #include "pbs_proto.h"
 
-#ifdef __TDARWIN
+#ifdef HAVE_NETINET_IN_H
 #include <netinet/in.h>
-#endif  /* END __TDARWIN */
+#endif  /* HAVE_NETINET_IN_H */
 
 /* External Functions Called: */
 

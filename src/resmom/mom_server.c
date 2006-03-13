@@ -96,12 +96,12 @@
 #include <netinet/in.h>
 #include <sys/time.h>
 
-#if defined(__TLINUX)
+#ifdef HAVE_SYS_VFS_H
 #include <sys/vfs.h>
-#elif defined(__TDARWIN)
-#include <sys/param.h> 
+#endif
+#ifdef HAVE_SYS_MOUNT_H
 #include <sys/mount.h>
-#endif /* __TLINUX */
+#endif 
 
 #include "pbs_ifl.h"
 #include "pbs_error.h"
@@ -872,7 +872,7 @@ void check_state(
 #define TMINSPOOLBLOCKS 100  /* blocks available in spool directory required for proper operation */
 
 
-#if defined(__TLINUX) || defined(__TDARWIN)
+#ifdef MOMCHECKLOCALSPOOL
   {
   struct statfs F;
 
@@ -892,7 +892,7 @@ void check_state(
     internal_state |= INUSE_DOWN;
     }
   }    /* END BLOCK */
-#endif /* __TLINUX || __TDARWIN */
+#endif /* MOMCHECKLOCALSPOOL */
 
   if (PBSNodeCheckPath[0] != '\0')
     {

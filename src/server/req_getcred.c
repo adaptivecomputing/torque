@@ -159,7 +159,7 @@ void req_authenuser(
       continue;
       }
 
-#if !defined(__TDARWIN) || defined(__TDARWINBIND)
+#ifndef NOPRIVPORTS
     if (svr_conn[s].cn_authen == 0)
 #endif
       {

@@ -67,14 +67,11 @@ AC_DEFINE_UNQUOTED(MACH_RESC_DEFS, "resc_def_${PBS_MACH}.c",
 # All of these need to go away!  The code needs to be fixed to use
 # feature-based defines with proper tests here
 case $PBS_MACH in
-  aix5) AC_DEFINE(__TAIX_5,1,[Define if on AIX5]) ;;
   darwin*) AC_DEFINE(__TDARWIN,1,[Define if on Darwin])
     case `uname -r` in
       8*) AC_DEFINE(__TDARWIN_8,1,[Define if on Darwin 8.x]) ;;
     esac
     ;;
-  linux) AC_DEFINE(__TLINUX,1,[Define if on Linux]) ;;
-  sunos4) AC_DEFINE(__SUNOS4,1,[Define if on SUNOS4]) ;;
 esac
 
 
@@ -343,9 +340,15 @@ case $PBS_MACH in
     AC_CHECK_FUNC(openpty, ,
       AC_CHECK_LIB(util, openpty, MOMLIBS="$MOMLIBS -lutil"),
         AC_MSG_WARN([This is an ancient distro... will open ptys directly])
-        AC_DEFINE([__TOLDTTY], 1, [Define on ancient linux distros]))
+        AC_DEFINE([USEOLDTTY], 1, [Define on ancient linux distros]))
     ;;
-  unicosmk*) MOM_ADDTL_OBJS="wait_job.o" ;;
+  darwin*) AC_DEFINE(SETCONTROLLINGTTY, 1, [Define to set the controlling tty])
+    ;;
+  digitalunix*) AC_DEFINE(SETCONTROLLINGTTY, 1, [Define to set the controlling tty])
+    ;;
+  unicosmk*) MOM_ADDTL_OBJS="wait_job.o"
+    AC_DEFINE(SETCONTROLLINGTTY, 1, [Define to set the controlling tty])
+    ;;
 esac
 
 case $PBS_MACH in
@@ -400,9 +403,9 @@ dnl  Readline
 AC_ARG_WITH(readline,
     [  --without-readline      do not include readline support
                           (default: included if found)],
-    [HAVE_READLINE="${withval}"], [HAVE_READLINE="yes"])
+    [HAVE_READLINE="${withval}"], [HAVE_READLINE="default"])
 case "$HAVE_READLINE" in
-	yes|no) ;;
+	yes|no|default) ;;
 	*) AC_MSG_ERROR([--with-readline only takes "yes" or "no" as arguments]) ;;
 esac
 
@@ -582,6 +585,27 @@ AC_ARG_ENABLE(shell-use-argv,
 esac],[SHELL_USE_ARGV=0])dnl
 AC_DEFINE_UNQUOTED(SHELL_USE_ARGV, ${SHELL_USE_ARGV}, [job script name passed as the shell's arg])
 
+
+AC_ARG_ENABLE(privports,
+[
+  --disable-privports     disable the use of priviledged ports for authentication.  Some versions of OSX have
+                          a buggy bind() and cannot bind to priviledged ports.],
+[case "${enableval}" in
+  yes)  ;;
+  no)  NOPRIVPORTS=1; AC_DEFINE(NOPRIVPORTS, 1, [Define to disable priviledged ports]) ;;
+  *)   AC_MSG_ERROR(--enable-privports cannot take a value) ;;
+esac])dnl
+
+
+AC_ARG_ENABLE(mom-checkspool,
+[
+  --disable-mom-checkspool
+                          Don't check free space on spool directory and set an error],
+[case "${enableval}" in
+  yes) MOMCHECKLOCALSPOOL=1; AC_DEFINE(NOPRIVPORTS, 1, [Define to error if spool is full on MOM]) ;;
+  no)  ;;
+  *)   AC_MSG_ERROR(--enable-privports cannot take a value) ;;
+esac])dnl
 
 
 AC_ARG_WITH(tmpdir,
@@ -943,6 +967,12 @@ AC_CHECK_FUNC(ruserok, , AC_CHECK_LIB(socket, ruserok))
 
 
 dnl  Readline
+if test "$HAVE_READLINE" = "default" ; then
+  case $PBS_MACH in
+    aix5|darwin) HAVE_READLINE="no";;
+    *) HAVE_READLINE="yes";;
+  esac
+fi
 if test "$HAVE_READLINE" = "yes" ; then
 AC_CHECK_LIB(ncurses, initscr, READLINE_LIBS="-lncurses")
 AC_CHECK_LIB(readline, rl_callback_handler_install,
@@ -961,13 +991,10 @@ AC_HEADER_DIRENT
 AC_HEADER_STDC
 AC_HEADER_SYS_WAIT
 
-AC_CHECK_HEADER(sys/ioctl.h, [
-    AC_DEFINE(HAVE_SYS_IOCTL_H, 1, [does the header file sys/ioctl.h exist])
-])
 
 AC_CHECK_HEADERS([arpa/inet.h fcntl.h float.h limits.h malloc.h netdb.h \
 		  netinet/in.h stddef.h sys/file.h sys/param.h \
-		  sys/socket.h sys/time.h syslog.h termios.h err.h])
+		  sys/socket.h sys/time.h sys/ioctl.h sys/mount.h sys/vfs.h sys/statfs.h syslog.h termios.h err.h])
 
 dnl  Readline
 if test "$HAVE_READLINE" = "yes" ; then

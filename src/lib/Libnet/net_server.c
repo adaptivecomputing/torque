@@ -450,14 +450,14 @@ void add_conn(
   svr_conn[sock].cn_func     = func;
   svr_conn[sock].cn_oncl     = 0;
 
-#if defined(__TDARWIN) && !defined(__TDARWINBIND)
+#ifndef NOPRIVPORTS
   svr_conn[sock].cn_authen = PBS_NET_CONN_FROM_PRIVIL;
-#else /* __TDARWIN && !__TDARWINBIND */
+#else /* !NOPRIVPORTS */
   if (port < IPPORT_RESERVED)
     svr_conn[sock].cn_authen = PBS_NET_CONN_FROM_PRIVIL;
   else
     svr_conn[sock].cn_authen = 0;
-#endif /* __TDARWIN && !__TDARWINBIND */
+#endif /* NOPRIVPORTS */
 
   return;
   }  /* END add_conn() */

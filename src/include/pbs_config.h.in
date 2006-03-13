@@ -125,8 +125,11 @@
 /* Define to 1 if you have the <sys/file.h> header file. */
 #undef HAVE_SYS_FILE_H
 
-/* does the header file sys/ioctl.h exist */
+/* Define to 1 if you have the <sys/ioctl.h> header file. */
 #undef HAVE_SYS_IOCTL_H
+
+/* Define to 1 if you have the <sys/mount.h> header file. */
+#undef HAVE_SYS_MOUNT_H
 
 /* Define to 1 if you have the <sys/ndir.h> header file, and it defines `DIR'.
    */
@@ -138,6 +141,9 @@
 /* Define to 1 if you have the <sys/socket.h> header file. */
 #undef HAVE_SYS_SOCKET_H
 
+/* Define to 1 if you have the <sys/statfs.h> header file. */
+#undef HAVE_SYS_STATFS_H
+
 /* Define to 1 if you have the <sys/stat.h> header file. */
 #undef HAVE_SYS_STAT_H
 
@@ -146,6 +152,9 @@
 
 /* Define to 1 if you have the <sys/types.h> header file. */
 #undef HAVE_SYS_TYPES_H
+
+/* Define to 1 if you have the <sys/vfs.h> header file. */
+#undef HAVE_SYS_VFS_H
 
 /* Define to 1 if you have <sys/wait.h> that is POSIX.1 compatible. */
 #undef HAVE_SYS_WAIT_H
@@ -178,6 +187,9 @@
 
 /* use nodemask-based scheduling on O2k */
 #undef NODEMASK
+
+/* Define to error if spool is full on MOM */
+#undef NOPRIVPORTS
 
 /* directly use homedirs instead of $TORQUEHOME/spool */
 #undef NO_SPOOL_OUTPUT
@@ -229,6 +241,9 @@
 
 /* full pathname of sendmail */
 #undef SENDMAIL_CMD
+
+/* Define to set the controlling tty */
+#undef SETCONTROLLINGTTY
 
 /* set whether job scripts use a pipe */
 #undef SHELL_INVOKE
@@ -308,6 +323,9 @@
 /* The pathname of the Cray temporary directory for mom */
 #undef TMP_DIR
 
+/* Define on ancient linux distros */
+#undef USEOLDTTY
+
 /* Version number of package */
 #undef VERSION
 
@@ -320,23 +338,11 @@
 # undef __CHAR_UNSIGNED__
 #endif
 
-/* Define if on SUNOS4 */
-#undef __SUNOS4
-
-/* Define if on AIX5 */
-#undef __TAIX_5
-
 /* Define if on Darwin */
 #undef __TDARWIN
 
 /* Define if on Darwin 8.x */
 #undef __TDARWIN_8
-
-/* Define if on Linux */
-#undef __TLINUX
-
-/* Define on ancient linux distros */
-#undef __TOLDTTY
 
 #ifndef HAVE_FUNC
 #define __func__ __FUNCTION__

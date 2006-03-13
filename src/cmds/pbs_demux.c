@@ -286,11 +286,7 @@ int main(
       {
       /* NOTE:  on TRU64, init process does not have pid==1 */
 
-#ifdef __TDIGITAL
       if (getppid() != parent) 
-#else /* __TDIGITAL */
-      if (getppid() == 1)
-#endif /* __TDIGITAL */
         {
 #ifdef DEBUG
         fprintf(stderr,"%s: Parent has gone, and so do I\n",

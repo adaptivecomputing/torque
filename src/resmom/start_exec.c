@@ -584,20 +584,18 @@ static int open_pty(
     fchown(pts,pjob->ji_qs.ji_un.ji_momt.ji_exuid,
       pjob->ji_qs.ji_un.ji_momt.ji_exgid);
 
+#ifdef SETCONTROLLINGTTY
+
 #if defined(_CRAY) 
- 
     ioctl(0,TCCLRCTTY,0);
     ioctl(pts,TCSETCTTY,0); /* make controlling */
-
-#elif defined(__TDARWIN) || defined(__TDIGITAL)
-
-#ifdef TCSETCTTY
+#elif defined(TCSETCTTY)
     ioctl(pts,TCSETCTTY,0); /* make controlling */
-#elif  defined(TIOCSCTTY)
+#elif defined(TIOCSCTTY)
     ioctl(pts,TIOCSCTTY,0);
-#endif  /* END TCSETCTTY */
+#endif 
 
-#endif	/* _CRAY || __TDARWIN || __TDIGITAL */
+#endif	/* SETCONTROLLINGTTY */
    }
 
   return(pts);
@@ -4390,9 +4388,9 @@ pid_t fork_me(
     /* release mlock; it seems to be inherited even though the
      * man page claims otherwise */
 
-#ifdef __PPINMEM
+#ifdef PPINMEM
     munlockall();
-#endif /* __PPINMEM */
+#endif /* PPINMEM */
     } 
   else if (pid < 0)
     {

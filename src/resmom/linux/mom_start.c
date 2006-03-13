@@ -90,9 +90,9 @@
 #include <sys/stat.h>
 #include <sys/wait.h>
 
-#ifndef __TOLDTTY
+#ifndef USEOLDTTY
 #include <pty.h>
-#endif /* __TOLDTTY */
+#endif /* USEOLDTTY */
 
 #include "list_link.h"
 #include "log.h"
@@ -390,7 +390,7 @@ void scan_for_terminated()
 
 #define PTY_SIZE 64
 
-#ifndef __TOLDTTY
+#ifndef USEOLDTTY
 
 int open_master(
 
@@ -420,7 +420,7 @@ int open_master(
   return(master);
   }  /* END open_master() */
 
-#else /* __TOLDTTY */
+#else /* USEOLDTTY */
 
 int open_master(
 
@@ -464,7 +464,7 @@ int open_master(
   return(-1);	/* tried all entries, give up */
   }  /* END open_master() */
 
-#endif /* __TOLDTTY */
+#endif /* USEOLDTTY */
 
 
 

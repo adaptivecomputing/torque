@@ -105,6 +105,8 @@
 #include <signal.h>
 #include <termios.h>
 #include <unistd.h>
+#include <stdlib.h>
+#include <assert.h>
 
 #ifdef sun
 #include <sys/stream.h>
@@ -565,10 +567,18 @@ void make_argv(
   char *line)
 
   {
-  char *l, *b, *c;
-  char buffer[4096];
+  char *l, *b, *c, *buffer;
   int len;
   char quote;
+
+  buffer = malloc(strlen(line) + 1);
+
+  if (buffer == NULL)
+    {
+    fprintf(stderr, "qsub: out of memory\n");
+
+    exit(2);
+    }
 
   *argc = 0;
 
@@ -612,6 +622,8 @@ void make_argv(
       {
       len = c - l;
 
+      assert(len > 0);
+
       if (argv[*argc] != NULL) 
         free(argv[*argc]);
 
@@ -645,6 +657,8 @@ void make_argv(
     {
     len = c - l;
 
+    assert(len > 0);
+
     if (argv[*argc] != NULL) 
       free(argv[*argc]);
 
@@ -660,6 +674,8 @@ void make_argv(
 
     strcpy(argv[(*argc)++],buffer);
     }
+
+  free(buffer);
 
   return;
   }  /* END make_argv() */
