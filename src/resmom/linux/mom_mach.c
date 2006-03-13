@@ -1134,37 +1134,43 @@ int mom_set_limits(
       } 
     else if (!strcmp(pname,"pcput")) 
       {
-      /* process cpu time - set */
-
-      retval = gettime(pres,&value);
-
-      if (retval != PBSE_NONE)
+      if (set_mode == SET_LIMIT_SET)
         {
-        log_buffer[0] = '\0';
+        /* process cpu time - set */
 
-        return(error(pname,retval));
-        }
+        retval = gettime(pres,&value);
 
-      reslim.rlim_cur = reslim.rlim_max = 
-        (unsigned long)((double)value / cputfactor);
+        if (retval != PBSE_NONE)
+          {
+          log_buffer[0] = '\0';
 
-      if (LOGLEVEL >= 2)
-        {
-        sprintf(log_buffer,"setting cpu time limit to %ld for job %s",
-          reslim.rlim_cur,
-          pjob->ji_qs.ji_jobid);
+          return(error(pname,retval));
+          }
 
-        log_record(PBSEVENT_SYSTEM,0,id,log_buffer);
+        reslim.rlim_cur = reslim.rlim_max = 
+          (unsigned long)((double)value / cputfactor);
 
-        log_buffer[0] = '\0';
-        }
+        if (LOGLEVEL >= 2)
+          {
+          sprintf(log_buffer,"setting cpu time limit to %ld for job %s",
+            reslim.rlim_cur,
+            pjob->ji_qs.ji_jobid);
 
-      if (setrlimit(RLIMIT_CPU,&reslim) < 0)
-        {
-        log_buffer[0] = '\0';
+          log_record(PBSEVENT_SYSTEM,0,id,log_buffer);
 
-        return(error("RLIMIT_CPU",PBSE_SYSTEM));
-        }
+          log_buffer[0] = '\0';
+          }
+
+        /* NOTE: some versions of linux have a bug which causes the parent 
+                 process to receive a SIGKILL if the child's cpu limit is exceeded */
+
+        if (setrlimit(RLIMIT_CPU,&reslim) < 0)
+          {
+          log_buffer[0] = '\0';
+
+          return(error("RLIMIT_CPU",PBSE_SYSTEM));
+          }
+        }    /* END if (set_mode == SET_LIMIT_SET) */
       } 
     else if (!strcmp(pname,"file")) 
       {	

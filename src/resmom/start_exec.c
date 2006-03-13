@@ -3560,7 +3560,6 @@ int start_process(
    * directly to fd 2, with a \n, and ended with fsync(2)
    *******************************************************/
 
-
   j = set_job(pjob,&sjr);
 
   if (j < 0) 
@@ -3673,7 +3672,6 @@ int start_process(
       }
     }
 
-
   starter_return(
     kid_write, 
     kid_read, 
@@ -3735,7 +3733,7 @@ void nodes_free(
     pj->ji_vnods = NULL;
     }
 
-  if (pj->ji_hosts) 
+  if (pj->ji_hosts != NULL) 
     {
     for (np = pj->ji_hosts;np->hn_node != TM_ERROR_NODE;np++) 
       {
@@ -3765,7 +3763,7 @@ void nodes_free(
     free(pj->ji_hosts);
 
     pj->ji_hosts = NULL;
-    }  /* END if (pj->ji_hosts) */
+    }  /* END if (pj->ji_hosts != NULL) */
 
   return;
   }  /* END nodes_free() */

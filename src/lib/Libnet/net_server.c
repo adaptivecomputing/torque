@@ -399,7 +399,6 @@ static void accept_conn(
 
   if (newsock == -1) 
     {
-
     return;
     }
 

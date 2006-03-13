@@ -289,7 +289,8 @@ static pid_t fork_to_user(
       }
     else
       {
-      sprintf(log_buffer,"cannot find group for user '%s' in password file",
+      sprintf(log_buffer,"cannot find group '%s' for user '%s' in password file",
+        preq->rq_ind.rq_cpyfile.rq_group,
         preq->rq_ind.rq_cpyfile.rq_user);
 
       if (EMsg != NULL)

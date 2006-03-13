@@ -167,12 +167,12 @@ typedef struct	badplace {
 
 #ifdef NGROUPS_MAX
 struct grpcache {
-	int    gc_ngroup;	/* number of active supplementary groups */
-	int    gc_groups[NGROUPS_MAX];
-	char   gc_homedir[1];	/* more space allocated as part of this	 */
-				/* structure following here		 */
-};
-#endif
+  int    gc_ngroup;	/* number of active supplementary groups */
+  int    gc_groups[NGROUPS_MAX];
+  char   gc_homedir[1];	/* more space allocated as part of this	 */
+			/* structure following here		 */
+  };
+#endif /* END NGROUPS_MAX */
 	
 /*
  * Job attributes/resources are maintained in one of two ways.
