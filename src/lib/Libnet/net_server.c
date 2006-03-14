@@ -451,12 +451,12 @@ void add_conn(
   svr_conn[sock].cn_oncl     = 0;
 
 #ifndef NOPRIVPORTS
-  svr_conn[sock].cn_authen = PBS_NET_CONN_FROM_PRIVIL;
-#else /* !NOPRIVPORTS */
   if (port < IPPORT_RESERVED)
     svr_conn[sock].cn_authen = PBS_NET_CONN_FROM_PRIVIL;
   else
     svr_conn[sock].cn_authen = 0;
+#else /* !NOPRIVPORTS */
+  svr_conn[sock].cn_authen = PBS_NET_CONN_FROM_PRIVIL;
 #endif /* NOPRIVPORTS */
 
   return;
