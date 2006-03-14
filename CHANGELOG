@@ -23,6 +23,7 @@
     - run on a given hostname with -h
   largefile support in staging code and when removing $TMPDIR (USC)
   use bindresvport() instead of looping over calls to bind() (USC)
+  fix qsub "out of memory" for large resource requests (SANDIA)
   pbsnodes default arg is now '-a' (USC)
   new ":property" node selection when node stat and manager set (pbsnodes) (USC)
 
