@@ -308,6 +308,9 @@
 /* Define if PBS should build qstat with Tcl */
 #undef TCL_QSTAT
 
+/* Define if on Darwin 8.x */
+#undef TDARWIN8
+
 /* Define to prevent sync writes */
 #undef TDISABLEFILESYNC
 
@@ -337,12 +340,6 @@
 #ifndef __CHAR_UNSIGNED__
 # undef __CHAR_UNSIGNED__
 #endif
-
-/* Define if on Darwin */
-#undef __TDARWIN
-
-/* Define if on Darwin 8.x */
-#undef __TDARWIN_8
 
 #ifndef HAVE_FUNC
 #define __func__ __FUNCTION__
