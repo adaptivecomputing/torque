@@ -156,7 +156,7 @@ extern	u_long		localaddr;
 extern int LOGLEVEL;
 extern long TJobStartBlockTime;
 
-extern char *__get_variable(job *,char *);
+extern char *get_job_envvar(job *,char *);
 
 
 int              mom_reader_go;		/* see catchinter() & mom_writer() */
@@ -2621,7 +2621,7 @@ int TMomFinalizeChild(
 
   endpwent();
 
-  if ((idir = __get_variable(pjob,"PBS_O_ROOTDIR")) != NULL)
+  if ((idir = get_job_envvar(pjob,"PBS_O_ROOTDIR")) != NULL)
     {
     if (chroot(idir) == -1)
       {
@@ -2661,7 +2661,7 @@ int TMomFinalizeChild(
    * cwd to PBS_O_INITDIR if specified, otherwise User's Home
    */
 
-  if ((idir = __get_variable(pjob,"PBS_O_INITDIR")) != NULL)
+  if ((idir = get_job_envvar(pjob,"PBS_O_INITDIR")) != NULL)
     {
     /* in TMomFinalizeChild() executed as user */
 
@@ -3605,7 +3605,7 @@ int start_process(
     starter_return(kid_write,kid_read,j,&sjr);
     }
 
-  if ((idir = __get_variable(pjob,"PBS_O_ROOTDIR")) != NULL)
+  if ((idir = get_job_envvar(pjob,"PBS_O_ROOTDIR")) != NULL)
     {
     if (chroot(idir) == -1)
       {
@@ -3635,7 +3635,7 @@ int start_process(
 
   /* cwd to PBS_O_INITDIR if specified, otherwise User's Home */
 
-  if ((idir = __get_variable(pjob,"PBS_O_INITDIR")) != NULL)
+  if ((idir = get_job_envvar(pjob,"PBS_O_INITDIR")) != NULL)
     {
     /* in start_process() executed as user */
 

@@ -644,9 +644,9 @@ int run_pelog(
     char *envname = "PBS_SCHED_HINT";
     char *envval;
     char *envstr;
-    extern char *__get_variable(job *,char *);
+    extern char *get_job_envvar(job *,char *);
   
-    if ((envval = __get_variable(pjob,envname)) != NULL)
+    if ((envval = get_job_envvar(pjob,envname)) != NULL)
       {
       envstr = malloc((strlen(envname) + strlen(envval) + 2) * sizeof(char));
 

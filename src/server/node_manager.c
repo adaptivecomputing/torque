@@ -2566,7 +2566,7 @@ static int node_spec(
   int	 rv;
   static char shared[] = "shared";
 
-  extern int __PNodeStateToString(int,char *,int);
+  extern int PNodeStateToString(int,char *,int);
 
   if (EMsg != NULL)
     EMsg[0] = '\0';
@@ -2914,7 +2914,7 @@ static int node_spec(
         {
         char NodeState[1024];
 
-        __PNodeStateToString(pnode->nd_state,NodeState,sizeof(NodeState));
+        PNodeStateToString(pnode->nd_state,NodeState,sizeof(NodeState));
 
         sprintf(log_buffer,"cannot allocate node '%s' to job - node not currently available (state: %s)",
           pnode->nd_name,

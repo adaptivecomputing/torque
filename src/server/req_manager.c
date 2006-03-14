@@ -570,86 +570,6 @@ static void update_subnode(
 
 
 		
-int __PNodeStateToString(
-
-  int   SBM,     /* I (state bitmap) */
-  char *Buf,     /* O */
-  int   BufSize) /* I */
-
-  {
-  if (Buf == NULL)
-    {
-    return(-1);
-    }
-
-  Buf[0] = '\0';
-
-  if (SBM & (INUSE_DOWN))
-    {
-    if (Buf[0] != '\0')
-      strcat(Buf,",");
-
-    strcat(Buf,ND_down);
-    }
-
-  if (SBM & (INUSE_OFFLINE))
-    {
-    if (Buf[0] != '\0')
-      strcat(Buf,",");
-
-    strcat(Buf,ND_offline);
-    }
-
-  if (SBM & (INUSE_JOB))
-    {
-    if (Buf[0] != '\0')
-      strcat(Buf,",");
-
-    strcat(Buf,ND_job_exclusive);
-    }
-
-  if (SBM & (INUSE_JOBSHARE))
-    {
-    if (Buf[0] != '\0')
-      strcat(Buf,",");
-
-    strcat(Buf,ND_job_sharing);
-    }
-
-  if (SBM & (INUSE_BUSY))
-    {
-    if (Buf[0] != '\0')
-      strcat(Buf,",");
-
-    strcat(Buf,ND_busy);
-    }
-
-  if (SBM & (INUSE_RESERVE))
-    {
-    if (Buf[0] != '\0')
-      strcat(Buf,",");
-
-    strcat(Buf,ND_reserve);
-    }
-
-  if (SBM & (INUSE_UNKNOWN))
-    {
-    if (Buf[0] != '\0')
-      strcat(Buf,",");
-
-    strcat(Buf,ND_state_unknown);
-    }
-
-  if (Buf[0] == '\0')
-    {
-    strcat(Buf,ND_free);
-    }
-
-  return(0);
-  }  /* END __PNodeStateToString() */
-
-
-
 
 
 /*
@@ -826,8 +746,8 @@ int mgr_set_node_attr(
  
     /* log change */
 
-    __PNodeStateToString(pnode->nd_state,OrigState,sizeof(OrigState));
-    __PNodeStateToString(tnode.nd_state,FinalState,sizeof(FinalState));
+    PNodeStateToString(pnode->nd_state,OrigState,sizeof(OrigState));
+    PNodeStateToString(tnode.nd_state,FinalState,sizeof(FinalState));
 
     sprintf(log_buffer,"node %s state changed from %s to %s\n",
       pnode->nd_name,

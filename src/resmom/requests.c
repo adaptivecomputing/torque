@@ -169,14 +169,14 @@ extern int  LOGLEVEL;
 
 /* prototypes */
 
-char *__get_variable(job *,char *);
+char *get_job_envvar(job *,char *);
 
 /* loaded in mom_mach.h */
 
 /* END prototypes */
 
 
-char *__get_variable(
+char *get_job_envvar(
 
   job  *pjob,     /* I */
   char *variable) /* I */
@@ -200,7 +200,7 @@ char *__get_variable(
     }
 
   return(pc);
-  }  /* END __get_variable() */
+  }  /* END get_job_envvar() */
 
 
 
@@ -250,7 +250,7 @@ static pid_t fork_to_user(
     ngroup  = pjob->ji_grpcache->gc_ngroup;
     groups  = pjob->ji_grpcache->gc_groups;
 
-    if ((idir = __get_variable(pjob,"PBS_O_INITDIR")) != NULL)
+    if ((idir = get_job_envvar(pjob,"PBS_O_INITDIR")) != NULL)
       {
       hdir = idir;
       }
@@ -310,7 +310,7 @@ static pid_t fork_to_user(
 
     /* determine user`s home directory */
 
-    if ((pjob != NULL) && ((idir = __get_variable(pjob,"PBS_O_INITDIR")) != NULL))
+    if ((pjob != NULL) && ((idir = get_job_envvar(pjob,"PBS_O_INITDIR")) != NULL))
       {
       hdir = idir;
       }
