@@ -81,29 +81,20 @@
 .Sh NAME
 pbsnodes \- pbs node manipulation
 .Sh SYNOPSIS
-pbsnodes [\^-{c|d|o|p|r}\^] [-q] [-s server] [nodename ...]
+pbsnodes [\^-{c|d|o|p|r}\^] [-q] [-s server] [nodename|:property ...]
 .br
 pbsnodes -l [-s server] [-q]
 .br
-pbsnodes [\^-{a|x}\^] [-s server] [-q] [node]
+pbsnodes [\^-{a|x}\^] [-s server] [-q] [node|:property]
 
 .Sh DESCRIPTION
 The 
 .B pbsnodes
 command is used to mark nodes down, free or offline.
 It can also be used to list nodes and their state.
-Node information is obtained by sending a request to the PBS job server.
-.LP
-If
-.B pbsnodes
-is run without options (other than
-.B \-s
-), the nodes specified as operands are marked DOWN and unavailable to run jobs.
-It is importaint that all the nodes known to be down are given as arguments
-on the command line.  This is because nodes which
-are not listed are assumed to be UP and will be indicated
-as such if they were previously marked DOWN.  None of the other options
-will change the marking for nodes which are not given on the command line.
+Node information is obtained by sending a request to the
+PBS job server.  Sets of nodes can be operated on at once
+by specifying a node property prefixed by a colon.
 .LP
 In order to execute pbsnodes with other than the
 .B \-a
@@ -112,7 +103,8 @@ or
 options, the user must have PBS Manager or Operator privilege.
 .Sh OPTIONS
 .IP "-a" 15
-All attributes of a node or all nodes are listed.
+All attributes of a node or all nodes are listed.  This is the default
+if no flag is given.
 .IP "-c" 15
 Clear OFFLINE from listed nodes. 
 .IP "-d" 15

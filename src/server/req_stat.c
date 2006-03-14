@@ -127,6 +127,7 @@ int status_job A_((job *,struct batch_request *,svrattrl *,list_head *,int *));
 int status_attrib A_((svrattrl *,attribute_def *,attribute *,int,int,list_head *,int *,int));
 extern int   svr_connect A_((pbs_net_t, unsigned int, void (*)(int), enum conn_type));
 extern int status_nodeattrib(svrattrl *,attribute_def *,struct pbsnode *,int,int,list_head *,int*);
+extern int hasprop(struct pbsnode *, struct prop *);
 
 /* Private Data Definitions */
 
@@ -844,6 +845,8 @@ void req_stat_node(
   int	    rc   = 0;
   int	    type = 0;
   int	    i;
+  struct prop props;
+
 
   char     *id = "req_stat_node";
 
@@ -876,6 +879,13 @@ void req_stat_node(
     {
     type = 1;
     }
+  else if ((*name == ':') && (*(name+1) != '\0'))
+    {
+    type = 2;
+    props.name = name+1;
+    props.mark = 1;
+    props.next = NULL;
+    }
   else 
     {
     pnode = find_nodebyname(name);
@@ -901,12 +911,15 @@ void req_stat_node(
     } 
   else 
     {			
-    /* get status of all nodes */
+    /* get status of all or several nodes */
 
     for (i = 0;i < svr_totnodes;i++) 
       {
       pnode = pbsndmast[i];
 
+      if ((type == 2) && !hasprop(pnode,&props))
+        continue;
+        
       if ((rc = status_node(pnode,preq,&preply->brp_un.brp_status)) != 0)
         break;
       }

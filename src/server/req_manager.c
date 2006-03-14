@@ -147,6 +147,7 @@ extern char *msg_man_uns;
 extern int que_purge(pbs_queue *);
 extern void save_characteristic(struct pbsnode *);
 extern int chk_characteristic(struct pbsnode *,int *);
+extern int hasprop(struct pbsnode *, struct prop *);
 
 
 
@@ -1327,6 +1328,7 @@ void mgr_node_set(
   static int	need_todo = 0;
 
   int		allnodes = 0;
+  int		propnodes = 0;
   int		bad = 0;
   svrattrl	*plist;
   struct pbsnode  *pnode;
@@ -1337,18 +1339,32 @@ void mgr_node_set(
   int		problem_cnt = 0;
   char		*problem_names;
   struct pbsnode  **problem_nodes = NULL;
+  struct prop props;
 
   if ((*preq->rq_ind.rq_manager.rq_objname == '\0') ||
-      (*preq->rq_ind.rq_manager.rq_objname == '@'))    
+      (*preq->rq_ind.rq_manager.rq_objname == '@') ||
+      ((*preq->rq_ind.rq_manager.rq_objname == ':') &&   
+      (*(preq->rq_ind.rq_manager.rq_objname+1) != '\0')))    
     {
     /*In this instance the set node req is to apply to all */
     /*nodes at the local ('\0')  or specified ('@') server */
 
     if ((pbsndlist != NULL) && svr_totnodes) 
       {
-      nodename = all_nodes;
       pnode = *pbsndlist;
-      allnodes = 1;
+      if (*preq->rq_ind.rq_manager.rq_objname == ':')
+        {
+        propnodes = 1;
+        nodename = preq->rq_ind.rq_manager.rq_objname;
+        props.name = nodename+1;
+        props.mark = 1;
+        props.next = NULL;
+        }
+      else
+        {
+        allnodes = 1;
+        nodename = all_nodes;
+        }
       }
     else 
       { 
@@ -1379,7 +1395,7 @@ void mgr_node_set(
 
   log_event(PBSEVENT_ADMIN,PBS_EVENTCLASS_NODE,nodename,log_buffer);
 
-  if (allnodes) 
+  if (allnodes || propnodes) 
     {
     pnode = pbsndlist[0];
 
@@ -1392,6 +1408,9 @@ void mgr_node_set(
 
   for (i = 0;i < svr_totnodes;i++,pnode = pbsndlist[i]) 
     {
+    if (propnodes && !hasprop(pnode,&props))
+      continue;
+
     save_characteristic(pnode);
 
     rc = mgr_set_node_attr(
@@ -1406,7 +1425,7 @@ void mgr_node_set(
 
     if (rc != 0) 
       {
-      if (allnodes) 
+      if (allnodes || propnodes) 
         {
         if (problem_nodes)     /*we have an array in which to save*/
           problem_nodes[ problem_cnt ] = pnode;
@@ -1458,7 +1477,7 @@ void mgr_node_set(
         pnode->nd_name);
       }
 
-    if (!allnodes)
+    if (!allnodes && !propnodes)
       break;
     }  /* END for (i) */
 
@@ -1480,7 +1499,7 @@ void mgr_node_set(
     need_todo &= ~(WRITE_NEW_NODESFILE);	 /*successful on update*/
     }
 
-	if (allnodes) {          /*modification was for all nodes  */ 
+	if (allnodes || propnodes) {          /*modification was for all nodes  */ 
 
 	   if ( problem_cnt ) {  /*one or more problems encountered*/
 		

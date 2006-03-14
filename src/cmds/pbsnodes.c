@@ -357,7 +357,7 @@ int main(
   extern int	 optind;
   char	       **pa;
   struct batch_status *pbstat;
-  int	flag = DOWN;
+  int	flag = ALLI;
 
   /* get default server, may be changed by -s option */
 

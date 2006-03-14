@@ -150,7 +150,7 @@ extern struct server server;
 #define	SKIP_EXCLUSIVE	1
 #define	SKIP_ANYINUSE	2
 
-static int hasprop(struct pbsnode *, struct prop *);
+int hasprop(struct pbsnode *, struct prop *);
 
 /*
 
@@ -1834,7 +1834,7 @@ void node_unreserve(
 **	those marked are contained in the node.
 */
 
-static int hasprop(
+int hasprop(
 
   struct pbsnode *pnode,
   struct prop    *props)
