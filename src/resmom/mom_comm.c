@@ -2909,6 +2909,15 @@ void im_request(
       if (ret != DIS_SUCCESS)
         break;
 
+      if (pjob->ji_qs.ji_state == JOB_STATE_TRANSIT)
+        {
+        /* first poll, set job to running */
+        pjob->ji_qs.ji_state    = JOB_STATE_RUNNING;
+        pjob->ji_qs.ji_substate = JOB_SUBSTATE_RUNNING;
+
+        job_save(pjob,SAVEJOB_QUICK);
+        }
+
       /* Now comes a recomendation for killing the job. */
 
       exitval = (pjob->ji_qs.ji_svrflags & (JOB_SVFLG_OVERLMT1|JOB_SVFLG_OVERLMT2)) ? 

@@ -3048,6 +3048,7 @@ int TMomFinalizeJob3(
 
   pjob->ji_qs.ji_state    = JOB_STATE_RUNNING;
   pjob->ji_qs.ji_substate = JOB_SUBSTATE_RUNNING;
+  pjob->ji_qs.ji_stime    = time_now;
 
   /* changed from SAVEJOB_QUICK to SAVEJOB_FULL (USC - 2/5/2005) */
 

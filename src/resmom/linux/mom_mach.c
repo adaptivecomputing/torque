@@ -1744,8 +1744,12 @@ int mom_set_use(
 
   assert(pres != NULL);
 
-  pres->rs_value.at_val.at_long = 
-    (long)((double)(time_now - pjob->ji_qs.ji_stime) * wallfactor);
+  /* NOTE: starting jobs can come through here before stime is recorded */
+  if (pjob->ji_qs.ji_stime == 0)
+    pres->rs_value.at_val.at_long = 0;
+  else
+    pres->rs_value.at_val.at_long = 
+      (long)((double)(time_now - pjob->ji_qs.ji_stime) * wallfactor);
 
   /* get memory */
 

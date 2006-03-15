@@ -26,6 +26,8 @@
   fix qsub "out of memory" for large resource requests (SANDIA)
   pbsnodes default arg is now '-a' (USC)
   new ":property" node selection when node stat and manager set (pbsnodes) (USC)
+  fix race with new jobs reporting wrong walltime (USC)
+  sister moms weren't setting job state to "running" (USC)
 
 
 2.0.0p7

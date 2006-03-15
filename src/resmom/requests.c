@@ -1994,7 +1994,7 @@ void req_stat_job(
   reply_send(preq);
 
   return;
-  }  /* END req_statjob() */
+  }  /* END req_stat_job() */
 
 
 
