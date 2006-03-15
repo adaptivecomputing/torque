@@ -195,6 +195,7 @@ time_t		time_now = 0;
 
 int             LOGLEVEL = 0;
 int             DEBUGMODE = 0;
+int             TForceUpdate = 0;  /* (boolean) */
 
 char           *ProgName;
 
@@ -467,7 +468,7 @@ int main(
 
   /* parse the parameters from the command line */
 
-  while ((c = getopt(argc,argv,"A:a:d:h:p:t:L:M:R:S:-:")) != -1) 
+  while ((c = getopt(argc,argv,"A:a:d:fh:p:t:L:M:R:S:-:")) != -1) 
     {
     switch (c) 
       {
@@ -508,6 +509,12 @@ int main(
 
         path_home = optarg;
 
+        break;
+
+      case 'f':
+
+        TForceUpdate = 1;
+ 
         break;
 
       case 'h':

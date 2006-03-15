@@ -256,6 +256,8 @@ int pbsd_init(
   struct sigaction act;
   struct sigaction oact;
 
+  extern int TForceUpdate;
+
   /* The following is code to reduce security risks */
 
   if (setup_env(PBS_ENVIRON) == -1) 
@@ -525,11 +527,18 @@ int pbsd_init(
       {	
       /* path_svrdb exists */
 
-      need_y_response(type);
+      /* will exit on (n)o response */
+
+      if (TForceUpdate == 0)
+        {
+        need_y_response(type);
+        }
+
+      /* (y)es response received */
 
       rm_files(path_priv);
 
-      svr_save(&server, SVR_SAVE_FULL);
+      svr_save(&server,SVR_SAVE_FULL);
       }
     }
 
@@ -1429,6 +1438,9 @@ static void resume_net_move(
   return;
   }
 
+
+
+
 /*
  * need_y_response - on create/clean initialization that would delete
  *	information, obtain the operator approval first.
@@ -1450,9 +1462,9 @@ static void need_y_response(
   fflush(stdin);
 
   if (type == RECOV_CREATE)
-    printf(msg_startup3, msg_daemonname, server_name, "Create","server database");
+    printf(msg_startup3,msg_daemonname,server_name,"Create","server database");
   else
-    printf(msg_startup3, msg_daemonname, server_name, "Cold", "jobs");
+    printf(msg_startup3,msg_daemonname,server_name,"Cold","jobs");
   
   while (1) 
     {
@@ -1493,7 +1505,7 @@ static void need_y_response(
     }
 
   return;
-  }
+  }  /* END need_y_response() */
 
 
 
