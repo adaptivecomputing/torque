@@ -283,8 +283,12 @@ int addr_ok(
       {
       /* NOTE:  should walk thru all nd_addrs for multi-homed hosts */
 
-      if (pbsndlist[i]->nd_addrs[0] != addr)
+      /* NOTE:  deleted node may have already freed nd_addrs */
+
+      if ((pbsndlist[i]->nd_addrs == NULL) || (pbsndlist[i]->nd_addrs[0] != addr))
         continue;
+
+      /* node matches addr */
 
       if (pbsndlist[i]->nd_state & (INUSE_DELETED|INUSE_UNKNOWN))
         {
@@ -295,9 +299,11 @@ int addr_ok(
       else if (pbsndlist[i]->nd_state & INUSE_DOWN)
         {
         /* the node is ok if it is still talking to us */
+
         int chk_len;
 
         chk_len = server.sv_attr[(int)SRV_ATR_check_rate].at_val.at_long;
+
         if (pbsndlist[i]->nd_lastupdate <= (time_now - chk_len))
           {
           status = 0;
@@ -311,7 +317,7 @@ int addr_ok(
 
       break;
       }
-    }
+    }    /* END if (pbsndlist != NULL) */
 
   return(status);
   }  /* END addr_ok() */
