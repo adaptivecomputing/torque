@@ -4031,13 +4031,13 @@ int rm_request(
               {
               struct stat s;
 
-              if (stat(path_prologp,&s) == -1)
+              if (stat(path_prolog,&s) == -1)
                 {
                 MUStrNCat(&BPtr,&BSpace,"NOTE:  no prolog configured\n");
                 }
               else
                 {
-                MUStrNCat(&BPtr,&BSpace,"NOTE:  prolog enabled");
+                MUStrNCat(&BPtr,&BSpace,"NOTE:  prolog enabled\n");
 
                 sprintf(tmpLine,"Prolog Alarm Time:      %d seconds\n",
                   pe_alarm_time);
