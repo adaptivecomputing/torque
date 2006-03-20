@@ -104,7 +104,7 @@ case "$PBS_MACH" in
 	    $xpbsmonrc_in > $xpbsmonrc_out
 	;;
 
-    linux|*bsd*|irix*|fujitsu|aix4)
+    linux|*bsd*|irix*|fujitsu|aix[45])
 	sed -e 's,\*sitesInfo:.*$,\*sitesInfo:		{Local;ICON;'$PBS_DEFAULT_SERVER';'$PBS_DEFAULT_SERVER';'$PBS_DEFAULT_SERVER';MOM;{{( ( totmem - availmem ) / totmem ) * 100} {Memory Usage:} SCALE} {{( loadave / ncpus ) * 100} {Cpu Usage:} SCALE} {nusers {Number of Users:} TEXT}},;' \
 	    -e 's,\*siteInView:.*$,\*siteInView:              Local,' \
 	    $xpbsmonrc_in > $xpbsmonrc_out
