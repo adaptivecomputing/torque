@@ -67,7 +67,7 @@ tclIndex: $(dist_xpbs_DATA) buildindex
 	@./buildindex $(srcdir) .
 
 install-data-hook:
-	install -m755 buildindex $(DESTDIR)$(XPBS_DIR)/buildindex
+	$(INSTALL_SCRIPT) buildindex $(DESTDIR)$(XPBS_DIR)/buildindex
 	rm -f $(DESTDIR)$(XPBS_DIR)/tclIndex
 	cd $(DESTDIR)$(XPBS_DIR) && ./buildindex $(DESTDIR)$(XPBS_DIR) . && chmod 644 tclIndex
 
