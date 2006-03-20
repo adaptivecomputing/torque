@@ -2564,6 +2564,18 @@ void req_cpyfile(
 
   if (LOGLEVEL >= 3)
     {
+    pair = (struct rqfpair *)GET_NEXT(preq->rq_ind.rq_cpyfile.rq_pair);
+
+    if ((pair != NULL) && (pair->fp_rmt != NULL))
+      {
+      sprintf(log_buffer,"attempting to copy file '%s'",
+        pair->fp_rmt);
+      }
+    else
+      {
+      sprintf(log_buffer,"copy file request is corrupt");
+      }
+
     LOG_EVENT(
       PBSEVENT_JOB,
       PBS_EVENTCLASS_JOB,
@@ -2619,6 +2631,7 @@ void req_cpyfile(
   strcat(homespool,"/.pbs_spool/");
 
   rcstat = stat(homespool,&myspooldir);
+
   if ((rcstat == 0) && S_ISDIR(myspooldir.st_mode))
     {
     havehomespool = 1;
@@ -2639,7 +2652,8 @@ void req_cpyfile(
      * has already set PBS_JOBID and HOME for us.  Now just fake a TMPDIR
      * if we need it. */
 
-    pjob=job_alloc();
+    pjob = job_alloc();
+
     strcpy(pjob->ji_qs.ji_jobid,preq->rq_ind.rq_cpyfile.rq_jobid);
 
     if (TTmpDirName(pjob,faketmpdir))
@@ -2647,8 +2661,9 @@ void req_cpyfile(
       if (!mkdirtree(faketmpdir,0755))
         {
         char *envstr;
-        envstr=malloc((strlen("TMPDIR=") + strlen(faketmpdir) + 1) * sizeof(char));
-        sprintf(envstr,"TMPDIR=%s",faketmpdir);
+        envstr = malloc((strlen("TMPDIR=") + strlen(faketmpdir) + 1) * sizeof(char));
+        sprintf(envstr,"TMPDIR=%s",
+          faketmpdir);
         putenv(envstr);
 
         madefaketmpdir = 1;
@@ -2747,7 +2762,6 @@ void req_cpyfile(
 
         strncpy(localname,pair->fp_local,sizeof(localname)-1);  /* from location */
         }
-
 
 #if SRFS
 
