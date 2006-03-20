@@ -136,6 +136,7 @@ dnl  Check for programs
 dnl
 
 AC_PROG_GCC_TRADITIONAL
+AC_CHECK_PROGS(AR,ar,exit)
 
 dnl  Libtool
 dnl AC_DISABLE_SHARED
