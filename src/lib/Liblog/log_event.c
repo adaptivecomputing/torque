@@ -105,6 +105,7 @@
 static long  log_event_lvl_priv = PBSEVENT_ERROR    | PBSEVENT_SYSTEM   |
 				  PBSEVENT_ADMIN    | PBSEVENT_JOB      | 
 				  PBSEVENT_JOB_USAGE| PBSEVENT_SECURITY |
+				  PBSEVENT_SCHED    |
 				  PBSEVENT_DEBUG    | PBSEVENT_DEBUG2;
 
 /* external global data */
