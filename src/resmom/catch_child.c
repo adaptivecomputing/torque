@@ -122,6 +122,7 @@
 
 extern char		*path_epilog;
 extern char             *path_epiloguser;
+extern char             *path_epiloguserp;
 extern char		*path_jobs;
 extern unsigned int	default_server_port;
 extern list_head	svr_alljobs, mom_polljobs;
@@ -134,7 +135,6 @@ extern char		*path_aux;
 
 extern int              LOGLEVEL;
 
-extern char             PBSNodeMsgBuf[];
 extern char            *PJobSubState[];
 
 
@@ -568,6 +568,30 @@ void scan_for_exiting()
       if (ptask != NULL)
         continue;
    
+      if ((pjob->ji_wattr[(int)JOB_ATR_interactive].at_flags & ATR_VFLAG_SET) &&
+           pjob->ji_wattr[(int)JOB_ATR_interactive].at_val.at_long) 
+        {
+        if (run_pelog(PE_EPILOG,path_epilogp,pjob,PE_IO_TYPE_NULL) != 0)
+          {
+          log_err(-1,id,"parallel epilog failed");
+          }
+        if (run_pelog(PE_EPILOGUSER,path_epiloguserp,pjob,PE_IO_TYPE_NULL) != 0)
+          {
+          log_err(-1,id,"user parallel epilog failed");
+          }
+        }
+      else
+        {
+        if (run_pelog(PE_EPILOG,path_epilogp,pjob,PE_IO_TYPE_STD) != 0)
+          {
+          log_err(-1,id,"parallel epilog failed");
+          }
+        if (run_pelog(PE_EPILOGUSER,path_epiloguserp,pjob,PE_IO_TYPE_STD) != 0)
+          {
+          log_err(-1,id,"user parallel epilog failed");
+          }
+        }
+                                   
       /*
       ** No tasks running ... format and send a
       ** reply to the mother superior and get rid of
@@ -726,15 +750,11 @@ void scan_for_exiting()
       if (run_pelog(PE_EPILOG,path_epilog,pjob,PE_IO_TYPE_NULL) != 0)
         {
         log_err(-1,id,"system epilog failed - interactive job");
-
-        sprintf(PBSNodeMsgBuf,"ERROR:  system epilog failed - interactive job");
         }
 
       if (run_pelog(PE_EPILOGUSER,path_epiloguser,pjob,PE_IO_TYPE_NULL) != 0)
         {
         log_err(-1,id,"user epilog failed - interactive job");
-
-        sprintf(PBSNodeMsgBuf,"ERROR:  user epilog failed - interactive job");
         }
       } 
     else 
@@ -749,15 +769,11 @@ void scan_for_exiting()
           rc);
 
         log_err(-1,id,log_buffer);
-
-        sprintf(PBSNodeMsgBuf,"ERROR:  system epilog failed");
         }
 
       if (run_pelog(PE_EPILOGUSER,path_epiloguser,pjob,PE_IO_TYPE_STD) != 0)
         {
         log_err(-1,id,"user epilog failed");
-
-        sprintf(PBSNodeMsgBuf,"ERROR:  user epilog failed");
         }
       }    /* END else (jobisinteractive) */
 

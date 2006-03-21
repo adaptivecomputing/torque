@@ -110,6 +110,7 @@ extern int  MOMPrologFailureCount;
 
 extern int  LOGLEVEL;
 extern int  lockfds;
+extern char *path_aux;
 
 unsigned int pe_alarm_time = PBS_PROLOG_TIME;
 static pid_t  child;
@@ -341,6 +342,15 @@ int run_pelog(
 
     return(pelog_err(pjob,pelog,errno,"cannot stat"));
     } 
+
+  if (LOGLEVEL >= 5)
+    {
+    sprintf(log_buffer,"running %s script '%s'",
+      PPEType[which],
+      (pelog != NULL) ? pelog : "NULL");
+
+    log_record(PBSEVENT_SYSTEM,0,id,log_buffer);
+    }
 
   /* script must be owned by root, be regular file, read and execute by user *
    * and not writeable by group or other */
@@ -654,6 +664,52 @@ int run_pelog(
       putenv(envstr);
       }
     }
+
+    /* Set PBS_NODENUM */
+    {
+    char *envname = "PBS_NODENUM";
+    char *envstr;
+  
+    sprintf(buf,"%d",pjob->ji_nodeid);
+
+    envstr = malloc((strlen(envname) + strlen(buf) + 2) * sizeof(char));
+
+    sprintf(envstr,"%s=%d",envname,pjob->ji_nodeid);
+    putenv(envstr);
+    }
+
+    /* Set PBS_MSHOST */
+    {
+    char *envname = "PBS_MSHOST";
+    char *envstr;
+  
+    if ((pjob->ji_vnods[0].vn_host != NULL) && (pjob->ji_vnods[0].vn_host->hn_host != NULL))
+      {
+      envstr = malloc((strlen(envname) + strlen(pjob->ji_vnods[0].vn_host->hn_host) + 2) * sizeof(char));
+
+      sprintf(envstr,"%s=%s",envname,pjob->ji_vnods[0].vn_host->hn_host);
+      putenv(envstr);
+      }
+    }
+
+    /* Set PBS_NODEFILE */
+    {
+    char *envname = "PBS_NODEFILE";
+    char *envstr;
+  
+    if (pjob->ji_flags & MOM_HAS_NODEFILE)
+      {
+      sprintf(buf,"%s/%s",
+        path_aux,
+        pjob->ji_qs.ji_jobid);
+
+      envstr = malloc((strlen(envname) + strlen(buf) + 2) * sizeof(char));
+
+      sprintf(envstr,"%s=%s",envname,buf);
+      putenv(envstr);
+      }
+    }
+
 
     execv(pelog,arg);
 
