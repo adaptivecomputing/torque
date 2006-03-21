@@ -907,6 +907,9 @@ static void chk_svr_resc_limit(
 
       if ((SvrNodeCt > 0) && (tmpI <= SvrNodeCt))
         IgnTest = 1;
+
+      if (server.sv_attr[(int)SRV_ATR_NodePack].at_val.at_long)
+        IgnTest = 1;
       }
 
     if (IgnTest == 0)

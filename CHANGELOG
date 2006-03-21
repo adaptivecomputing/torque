@@ -28,6 +28,7 @@
   new ":property" node selection when node stat and manager set (pbsnodes) (USC)
   fix race with new jobs reporting wrong walltime (USC)
   sister moms weren't setting job state to "running" (USC)
+  don't reject jobs if requested nodes is too large node_pack=T (USC)
 
 
 2.0.0p7
