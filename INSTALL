@@ -130,6 +130,13 @@ Linux 32bit vs. 64bit: At least Suse 10.0 ppc64 wants to build 32bit by
     CC="gcc -m32"
   make RPMOPTS="--target i386" rpm
 
+
+AIX 32bit vs. 64bit: AIX builds are 32bit by default. In order to build
+  build 64bit TORQUE use:
+  ./configure CC="xlc -q64" AR="ar -X 64" NM="nm -X 64 -B"
+
+  Using CC="gcc -m64" requires the same AR and NM settings.
+
 -------------------------------------------------------------------
 
 CONFIGURATION: Once built, see online docs for MOM, scheduler, and 
