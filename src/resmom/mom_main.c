@@ -4073,6 +4073,19 @@ int rm_request(
                 tmpLine);
               }
 
+            if (verbositylevel >= 1)
+              {
+              tmpLine[0] = '\0';
+
+              MUSNPrintF(&BPtr,&BSpace,"Configured to use %s\n",
+#ifdef SCP_PATH
+                SCP_PATH);
+#else
+                RCP_PATH);
+#endif /* SCP_PATH */
+              
+              }
+
             /* joblist */
 
             if ((pjob = (job *)GET_NEXT(svr_alljobs)) == NULL)
