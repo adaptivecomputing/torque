@@ -122,6 +122,7 @@
 
 extern char		*path_epilog;
 extern char             *path_epiloguser;
+extern char             *path_epilogp;
 extern char             *path_epiloguserp;
 extern char		*path_jobs;
 extern unsigned int	default_server_port;
