@@ -148,6 +148,7 @@ extern int que_purge(pbs_queue *);
 extern void save_characteristic(struct pbsnode *);
 extern int chk_characteristic(struct pbsnode *,int *);
 extern int hasprop(struct pbsnode *, struct prop *);
+extern int PNodeStateToString(int,char *,int);
 
 
 
