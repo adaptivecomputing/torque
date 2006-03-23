@@ -2362,15 +2362,8 @@ static int sys_copy(
     } 
   else
     {
-    /* use '-p' to preserve permissions */
-
-#ifdef SCP_PATH
-    ag0 = SCP_PATH;
-    ag1 = "-Brp";
-#else /* SCP_PATH */
     ag0 = RCP_PATH;
-    ag1 = "-rp";
-#endif	/* SCP_PATH */
+    ag1 = RCP_ARGS;
     } 
 
   if (LOGLEVEL >= 6)

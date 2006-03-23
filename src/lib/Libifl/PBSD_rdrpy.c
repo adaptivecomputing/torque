@@ -132,7 +132,7 @@ struct batch_reply *PBSD_rdrpy(
 
     if (DIS_tcp_istimeout(sock) == TRUE)
       {
-      /* CHANGE to correct error indicating request timed out (NYI) */
+      /* FIXME to correct error indicating request timed out (NYI) */
 
       pbs_errno = PBSE_PROTOCOL; 
       }

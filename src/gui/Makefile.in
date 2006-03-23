@@ -96,13 +96,15 @@ PBS_MACH = @PBS_MACH@
 PBS_SERVER_HOME = @PBS_SERVER_HOME@
 PIC = @PIC@
 RANLIB = @RANLIB@
+RCP_ARGS = @RCP_ARGS@
+RCP_PATH = @RCP_PATH@
 READLINE_LIBS = @READLINE_LIBS@
 ROFF = @ROFF@
+RSH_PATH = @RSH_PATH@
 SCHD_CODE = @SCHD_CODE@
 SCHD_LIBS = @SCHD_LIBS@
 SCHD_TYPE = @SCHD_TYPE@
 SCHD_TYPE_SUBDIR = @SCHD_TYPE_SUBDIR@
-SCP_PATH = @SCP_PATH@
 SENDMAIL_CMD = @SENDMAIL_CMD@
 STRIP = @STRIP@
 TBL = @TBL@
@@ -122,7 +124,6 @@ AM_CPPFLAGS = -I$(top_srcdir)/src/include
 
 IFF_PATH = $(sbindir)/pbs_iff
 DEMUX_PATH = $(sbindir)/pbs_demux
-RCP_PATH = $(sbindir)/pbs_rcp
 
 XPBS_DIR = $(libdir)/xpbs
 XPBSMON_DIR = $(libdir)/xpbsmon
@@ -544,6 +545,7 @@ xpbs: $(srcdir)/xpbs.src
 	sed -e 's,#\!.*wish.*$$,#\!@WISH_PROG@,;' \
 	    -e 's,set  *libdir.*$$,set libdir $(xpbsdir),' \
 	    -e 's,set  *appdefdir.*$$,set appdefdir $(xpbsdir),' \
+	    -e 's,RSH_PATH,$(RSH_PATH),' \
 	    $? > $@
 
 xpbsrc: $(srcdir)/xpbsrc.src

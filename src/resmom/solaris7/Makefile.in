@@ -96,13 +96,15 @@ PBS_MACH = @PBS_MACH@
 PBS_SERVER_HOME = @PBS_SERVER_HOME@
 PIC = @PIC@
 RANLIB = @RANLIB@
+RCP_ARGS = @RCP_ARGS@
+RCP_PATH = @RCP_PATH@
 READLINE_LIBS = @READLINE_LIBS@
 ROFF = @ROFF@
+RSH_PATH = @RSH_PATH@
 SCHD_CODE = @SCHD_CODE@
 SCHD_LIBS = @SCHD_LIBS@
 SCHD_TYPE = @SCHD_TYPE@
 SCHD_TYPE_SUBDIR = @SCHD_TYPE_SUBDIR@
-SCP_PATH = @SCP_PATH@
 SENDMAIL_CMD = @SENDMAIL_CMD@
 STRIP = @STRIP@
 TBL = @TBL@
@@ -118,11 +120,10 @@ AUTOMAKE_OPTIONS = foreign
 
 PBS_MKDIRS = $(SHELL) $(top_builddir)/buildutils/pbs_mkdirs
 
-AM_CPPFLAGS = -I$(top_srcdir)/src/include -DPBS_MOM -DDEMUX=\"$(DEMUX_PATH)\" -DRCP_PATH=\"$(RCP_PATH)\"
+AM_CPPFLAGS = -I$(top_srcdir)/src/include -DPBS_MOM -DDEMUX=\"$(DEMUX_PATH)\" 
 
 IFF_PATH = $(sbindir)/pbs_iff
 DEMUX_PATH = $(sbindir)/pbs_demux
-RCP_PATH = $(sbindir)/pbs_rcp
 
 XPBS_DIR = $(libdir)/xpbs
 XPBSMON_DIR = $(libdir)/xpbsmon

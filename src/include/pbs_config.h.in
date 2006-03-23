@@ -236,9 +236,6 @@
 /* set the type of scheduler to use */
 #undef SCHD_TYPE
 
-/* Define to the path of scp if to be used for file delivery */
-#undef SCP_PATH
-
 /* full pathname of sendmail */
 #undef SENDMAIL_CMD
 

@@ -690,20 +690,67 @@ AC_DEFINE_UNQUOTED(QSTATRC_PATH, "${QSTATRC_PATH}",
 	[Define to the path of the qstat init file])
 
 
-dnl Declare if scp is to be used for file delivery
-dnl The default is pbs_rcp (in mom_rcp) which is Berkley's rcp
-dnl We know it always returns a non-zero exit status for any error.
-dnl If scp is to be used and it fails, PBS falls back to rcp.
-SCP_PATH=""
+
+dnl Declare which of scp, rcp, or mom_rcp is to be used for file delivery
+dnl As of TORQUE 2.1.0, default to scp if found, otherwise use the internal mom_rcp
 AC_ARG_WITH(scp,
-    [  --with-scp              use scp instead of mom_rcp.],
-  [ AC_PATH_PROG(SCP_PATH, "scp", "error")
-    case "${SCP_PATH}" in
+    [  --with-scp              use scp instead of mom_rcp (deprecated, use 
+                          --with-rcp=scp).],
+  [ AC_MSG_WARN([--with-scp is deprecated, use --with-rcp=scp])
+    AC_PATH_PROG(RCP_PATH, "scp", "error")
+    case "${RCP_PATH}" in
       error) AC_MSG_ERROR([--with-scp scp not found in path]) ;;
-      *)     AC_DEFINE_UNQUOTED(SCP_PATH, "${SCP_PATH}",
-		[Define to the path of scp if to be used for file delivery]) ;;
+      *)     RCP_PATH="${RCP_PATH}" ;;
     esac])
-AM_CONDITIONAL(INCLUDE_MOM_RCP, [test "x$SCP_PATH" = "x"])
+
+AC_ARG_WITH(rcp,
+    [  --with-rcp              one of "scp", "rcp", "mom_rcp", or the fullpath of
+                          a remote file copy program.  scp is the default if
+                          found, otherwise mom_rcp is used.  Some rcp programs
+                          don't always exit with valid error codes in case of
+                          failure.  mom_rcp is a copy of BSD rcp included with
+                          this source that has correct error codes, but it is
+                          also old, unmaintained, and doesn't have largefile
+                          support. ],
+    [case "$with_rcp" in
+      yes|no) AC_MSG_ERROR([--with-rcp takes an argument]) ;;
+      *) RCP_PATH="$with_rcp" ;;
+    esac])
+
+# if noone requested an rcp prog, use scp if found, or use mom_rcp
+if test "x$RCP_PATH" = "x" ;then
+  AC_PATH_PROG(RCP_PATH, scp, error)
+  if test "x$RCP_PATH" = "xerror" ;then
+    RCP_PATH=mom_rcp
+  fi
+fi
+
+# figure out what was requested and turn that into a full path if necessary
+case "$RCP_PATH" in
+  mom_rcp|pbs_rcp) RCP_PATH="${sbindir}/pbs_rcp"; MOM_RCP=yes ;;
+  /*) ;;
+  *) AC_PATH_PROG(RCP_PATH, "$RCP_PATH", error)
+    if test "x$RCP_PATH" = "xerror" ;then
+      AC_MSG_ERROR([requested copy program not found in path])
+    fi ;;
+esac
+
+# figure out the required args
+if test "x$RCP_ARGS" = "x" ;then
+  case "$RCP_PATH" in
+    *rcp) RCP_ARGS="-rp"; RSH_PATH=rsh ;;
+    *scp) RCP_ARGS="-rpB"; RSH_PATH=ssh ;;
+    *) RCP_ARGS="-rp"; RSH_PATH=rsh; AC_MSG_WARN([not using rcp or scp, assuming -r]) ;;
+  esac
+fi
+AC_MSG_NOTICE([remote file copy program... $RCP_PATH $RCP_ARGS])
+
+AC_SUBST(RCP_PATH)
+AC_SUBST(RCP_ARGS)
+AC_SUBST(RSH_PATH)
+AM_CONDITIONAL(INCLUDE_MOM_RCP, [test "x$MOM_RCP" = "xyes"])
+
+
 
 dnl find sendmail and add it to defs
 AC_ARG_WITH(sendmail,
@@ -933,7 +980,7 @@ AC_DEFINE_UNQUOTED(TCL_ATRSEP, "${tcl_atrsep}",
 
 
 AC_ARG_ENABLE(tcl-qstat,
-   [  --enable-tcl-qstat       setting this builds qstat with Tcl interpreter
+   [  --enable-tcl-qstat      setting this builds qstat with Tcl interpreter
                           features. This is enabled if Tcl is enabled.])
 AC_MSG_CHECKING([whether to enable tcl-qstat])
 EXTRA_QSTAT_LIBS=""

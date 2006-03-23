@@ -137,7 +137,7 @@ set preferences { \
  {TEXTFONT textFont "7x13"}
  {SERVER_HOSTS serverHosts	""}
  {XTERM xtermCmd "xterm"}
- {RSH rshCmd "rsh"}
+ {RSH rshCmd "RSH_PATH"}
  {backgroundColor backgroundColor "#c8b9a6"}
  {foregroundColor foregroundColor "#150567"}
  {activeColor	  activeColor     "#9db2ff"}
@@ -300,7 +300,7 @@ if {[string compare $perm_level "user"] == 0} {
 set months {Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec}
 set default(trackjob_mins) 5
 set default(trackjob_location) local
-set default(trackjob_rsh_command) rsh
+set default(trackjob_rsh_command) RSH_PATH
 set default(auto_update_mins) 5
 set default(qterm_type) immediate
 
