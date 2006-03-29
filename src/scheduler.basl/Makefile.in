@@ -81,6 +81,7 @@ LEX_OUTPUT_ROOT = @LEX_OUTPUT_ROOT@
 LIBTOOL = @LIBTOOL@
 LN_S = @LN_S@
 MAINT = @MAINT@
+MAKE = @MAKE@
 MOMLIBS = @MOMLIBS@
 MOM_ADDTL_OBJS = @MOM_ADDTL_OBJS@
 MY_TCL_INCS = @MY_TCL_INCS@
@@ -128,10 +129,7 @@ DEMUX_PATH = $(sbindir)/pbs_demux
 XPBS_DIR = $(libdir)/xpbs
 XPBSMON_DIR = $(libdir)/xpbsmon
 
-PBS_LIBS = ../lib/Liblog/liblog.la \
-	   ../lib/Libnet/libnet.la \
-	   ../lib/Libpbs/libpbs.la
-
+PBS_LIBS = ../lib/Libpbs/libtorque.la
 
 sbin_PROGRAMS = pbs_sched
 noinst_PROGRAMS = basl2c
@@ -185,8 +183,7 @@ am_pbs_sched_OBJECTS = af.$(OBJEXT) af_cnode.$(OBJEXT) \
 	af_que.$(OBJEXT) af_resmom.$(OBJEXT) af_server.$(OBJEXT) \
 	af_system.$(OBJEXT)
 pbs_sched_OBJECTS = $(am_pbs_sched_OBJECTS)
-pbs_sched_DEPENDENCIES = ../lib/Liblog/liblog.la ../lib/Libnet/libnet.la \
-	../lib/Libpbs/libpbs.la pbs_sched.o
+pbs_sched_DEPENDENCIES = ../lib/Libpbs/libtorque.la pbs_sched.o
 pbs_sched_LDFLAGS =
 
 DEFS = @DEFS@

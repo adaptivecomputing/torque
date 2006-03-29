@@ -263,7 +263,7 @@ struct passwd *check_pwd(
 
   if (pjob->ji_grpcache != NULL)
     {
-    /* pwd previously loaded and cached */
+    /* group cache previously loaded and cached */
 
     return(pwdp);
     }
@@ -3169,10 +3169,6 @@ int start_process(
 
   if (!check_pwd(pjob)) 
     {
-    sprintf(log_buffer,"job %s task %d check_pwd failed",
-      pjob->ji_qs.ji_jobid,
-      ptask->ti_qs.ti_task);
-
     log_err(-1,id,log_buffer);
 
     return(-1);
@@ -4017,9 +4013,6 @@ void start_exec(
 
   if (!check_pwd(pjob)) 
     {
-    sprintf(log_buffer,"job %s check_pwd failed",
-      pjob->ji_qs.ji_jobid);
-
     log_err(-1,id,log_buffer);
 
     exec_bail(pjob,JOB_EXEC_FAIL1);

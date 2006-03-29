@@ -9,9 +9,7 @@ AM_CPPFLAGS += -I$(top_srcdir)/src/resmom/@PBS_MACH@ \
 	       -DPBS_SERVER_HOME=\"$(PBS_SERVER_HOME)\" -DPBS_ENVIRON=\"$(PBS_ENVIRON)\"
 
 PBS_LIBS = ../lib/Libattr/libattr.a \
-	   ../lib/Liblog/liblog.la \
-	   ../lib/Libnet/libnet.la \
-	   ../lib/Libpbs/libpbs.la \
+	   ../lib/Libpbs/libtorque.la \
 	   ../lib/Libsite/libsite.a
 
 EXTRA_DIST = rm_dep.h

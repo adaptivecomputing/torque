@@ -12,10 +12,7 @@ DIST_SUBDIRS = . xpbsmon
 
 EXTRA_DIST = tracejob.h init.d/pbs
 
-PBS_LIBS = ../lib/Libcmds/libcmds.la \
-	   ../lib/Liblog/liblog.la \
-	   ../lib/Libnet/libnet.la \
-	   ../lib/Libpbs/libpbs.la
+PBS_LIBS = ../lib/Libpbs/libtorque.la
 
 if USING_TCL
 PROGRAMS_TCL = pbs_tclsh

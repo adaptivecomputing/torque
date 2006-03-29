@@ -1,8 +1,6 @@
 include $(top_srcdir)/buildutils/config.mk
 
-PBS_LIBS = ../lib/Liblog/liblog.la \
-	   ../lib/Libnet/libnet.la \
-	   ../lib/Libpbs/libpbs.la
+PBS_LIBS = ../lib/Libpbs/libtorque.la
 
 sbin_PROGRAMS = pbs_sched
 noinst_PROGRAMS = basl2c

@@ -81,6 +81,7 @@ LEX_OUTPUT_ROOT = @LEX_OUTPUT_ROOT@
 LIBTOOL = @LIBTOOL@
 LN_S = @LN_S@
 MAINT = @MAINT@
+MAKE = @MAKE@
 MOMLIBS = @MOMLIBS@
 MOM_ADDTL_OBJS = @MOM_ADDTL_OBJS@
 MY_TCL_INCS = @MY_TCL_INCS@
@@ -129,9 +130,7 @@ XPBS_DIR = $(libdir)/xpbs
 XPBSMON_DIR = $(libdir)/xpbsmon
 
 PBS_LIBS = ../lib/Libattr/libattr.a \
-	   ../lib/Liblog/liblog.la \
-	   ../lib/Libnet/libnet.la \
-	   ../lib/Libpbs/libpbs.la \
+	   ../lib/Libpbs/libtorque.la \
 	   ../lib/Libsite/libsite.a
 
 
@@ -186,8 +185,7 @@ am_pbs_server_OBJECTS = accounting.$(OBJEXT) attr_recov.$(OBJEXT) \
 	svr_resccost.$(OBJEXT) svr_task.$(OBJEXT)
 pbs_server_OBJECTS = $(am_pbs_server_OBJECTS)
 pbs_server_DEPENDENCIES = ../lib/Libattr/libattr.a \
-	../lib/Liblog/liblog.la ../lib/Libnet/libnet.la \
-	../lib/Libpbs/libpbs.la ../lib/Libsite/libsite.a
+	../lib/Libpbs/libtorque.la ../lib/Libsite/libsite.a
 pbs_server_LDFLAGS =
 
 DEFS = @DEFS@

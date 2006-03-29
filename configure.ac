@@ -30,10 +30,14 @@ AC_CANONICAL_HOST
 # Change some defaults.
 # I'm not proud of just shoving this here in configure.ac, but I couldn't find
 # a better way of doing it. -garrick
-test "$libdir" = '${exec_prefix}/lib' && libdir='${exec_prefix}/lib/torque/lib'
-test "$includedir" = '${prefix}/include' && includedir='${prefix}/lib/torque/include'
-test "$localstatedir" = '${prefix}/var' && localstatedir='/var'
+#test "$libdir" = '${exec_prefix}/lib' && libdir='${exec_prefix}/lib/torque/lib'
+#test "$includedir" = '${prefix}/include' && includedir='${prefix}/lib/torque/include'
+#test "$localstatedir" = '${prefix}/var' && localstatedir='/var'
 
+AC_CHECK_PROGS(MAKE,$MAKE make gmake,error)
+if test "x$MAKE" = "xerror" ;then
+  AC_MSG_ERROR([cannot find a make command])
+fi
 
 AM_INIT_AUTOMAKE
 AM_MAINTAINER_MODE
@@ -621,9 +625,10 @@ AC_DEFINE_UNQUOTED(TMP_DIR, "${TMP_DIR}",
 AC_ARG_WITH(server_home,
     [  --with-server-home=DIR  set the server home/spool directory for PBS use
                           defaults to /var/spool/torque],
-    [PBS_SERVER_HOME="${withval}"], [PBS_SERVER_HOME="$localstatedir/spool/torque"])
+    [PBS_SERVER_HOME="${withval}"], [PBS_SERVER_HOME="/var/spool/torque"])
 AC_SUBST(PBS_SERVER_HOME)
 
+    dnl [PBS_SERVER_HOME="${withval}"], [PBS_SERVER_HOME="$localstatedir/spool/torque"])
 
 AC_ARG_WITH(server_name_file, 
     [  --with-server-name-file=FILE
@@ -1126,7 +1131,7 @@ dnl  ######################################################################
 dnl  Output
 dnl
 
-AC_CREATE_GENERIC_CONFIG([pbs],[-llog -lcmds -lnet -lpbs])
+AC_CREATE_GENERIC_CONFIG([pbs],[-ltorque])
 
 dnl these are quoted, and this removes them
 spec_name=$PACKAGE_TARNAME

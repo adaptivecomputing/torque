@@ -1,8 +1,6 @@
 include $(top_srcdir)/buildutils/config.mk
 
-PBS_LIBS = ../lib/Libcmds/libcmds.la \
-	   ../lib/Libnet/libnet.la \
-	   ../lib/Libpbs/libpbs.la
+PBS_LIBS = ../lib/Libpbs/libtorque.la
 
 bin_SCRIPTS = nqs2pbs
 sbin_PROGRAMS = pbs_demux momctl

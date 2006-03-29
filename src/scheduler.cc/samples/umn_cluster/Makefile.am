@@ -20,9 +20,7 @@ libfoo_la_SOURCES = acl_support.c cleanup.c comment.c evaluate_system.c \
 		    time_limits.c toolkit.c user_limits.c usersort.c \
 		    gblxvars.h  msgs.h  toolkit.h
 
-PBS_LIBS = ../lib/Libcmds/libcmds.la \
-	   ../lib/Libnet/libnet.la \
-	   ../lib/Libpbs/libpbs.la
+PBS_LIBS = ../lib/Libpbs/libtorque.la
 
 bin_PROGRAMS = qschedule
 qschedule_CPPFLAGS = $(AM_CPPFLAGS) \

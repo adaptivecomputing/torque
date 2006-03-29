@@ -1345,7 +1345,7 @@ void init_abort_jobs(
         {
         DBPRT(("init_abort_jobs: setting grpcache for job %s\n",
           pj->ji_qs.ji_jobid));
-          check_pwd(pj);
+        check_pwd(pj);
         }
       }
     }    /* END while ((pdirent = readdir(dir)) != (struct dirent *)0) */

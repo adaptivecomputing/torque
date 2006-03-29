@@ -81,6 +81,7 @@ LEX_OUTPUT_ROOT = @LEX_OUTPUT_ROOT@
 LIBTOOL = @LIBTOOL@
 LN_S = @LN_S@
 MAINT = @MAINT@
+MAKE = @MAKE@
 MOMLIBS = @MOMLIBS@
 MOM_ADDTL_OBJS = @MOM_ADDTL_OBJS@
 MY_TCL_INCS = @MY_TCL_INCS@
@@ -136,11 +137,7 @@ DIST_SUBDIRS = . xpbsmon
 
 EXTRA_DIST = tracejob.h init.d/pbs
 
-PBS_LIBS = ../lib/Libcmds/libcmds.la \
-	   ../lib/Liblog/liblog.la \
-	   ../lib/Libnet/libnet.la \
-	   ../lib/Libpbs/libpbs.la
-
+PBS_LIBS = ../lib/Libpbs/libtorque.la
 
 @USING_TCL_TRUE@PROGRAMS_TCL = pbs_tclsh
 
@@ -229,50 +226,37 @@ PROGRAMS = $(bin_PROGRAMS)
 am_chk_tree_OBJECTS = chk_tree.$(OBJEXT)
 chk_tree_OBJECTS = $(am_chk_tree_OBJECTS)
 chk_tree_LDADD = $(LDADD)
-chk_tree_DEPENDENCIES = ../lib/Libcmds/libcmds.la \
-	../lib/Liblog/liblog.la ../lib/Libnet/libnet.la \
-	../lib/Libpbs/libpbs.la
+chk_tree_DEPENDENCIES = ../lib/Libpbs/libtorque.la
 chk_tree_LDFLAGS =
 am_hostn_OBJECTS = hostn.$(OBJEXT)
 hostn_OBJECTS = $(am_hostn_OBJECTS)
 hostn_LDADD = $(LDADD)
-hostn_DEPENDENCIES = ../lib/Libcmds/libcmds.la ../lib/Liblog/liblog.la \
-	../lib/Libnet/libnet.la ../lib/Libpbs/libpbs.la
+hostn_DEPENDENCIES = ../lib/Libpbs/libtorque.la
 hostn_LDFLAGS =
 am_pbs_tclsh_OBJECTS = pbsTclInit.$(OBJEXT) pbs_tclWrap.$(OBJEXT) \
 	site_tclWrap.$(OBJEXT)
 pbs_tclsh_OBJECTS = $(am_pbs_tclsh_OBJECTS)
-pbs_tclsh_DEPENDENCIES = ../lib/Libcmds/libcmds.la \
-	../lib/Liblog/liblog.la ../lib/Libnet/libnet.la \
-	../lib/Libpbs/libpbs.la
+pbs_tclsh_DEPENDENCIES = ../lib/Libpbs/libtorque.la
 pbs_tclsh_LDFLAGS =
 am_pbs_wish_OBJECTS = pbsTkInit.$(OBJEXT) pbs_tclWrap.$(OBJEXT) \
 	site_tclWrap.$(OBJEXT)
 pbs_wish_OBJECTS = $(am_pbs_wish_OBJECTS)
-pbs_wish_DEPENDENCIES = ../lib/Libcmds/libcmds.la \
-	../lib/Liblog/liblog.la ../lib/Libnet/libnet.la \
-	../lib/Libpbs/libpbs.la
+pbs_wish_DEPENDENCIES = ../lib/Libpbs/libtorque.la
 pbs_wish_LDFLAGS =
 am_printjob_OBJECTS = printjob.$(OBJEXT)
 printjob_OBJECTS = $(am_printjob_OBJECTS)
 printjob_LDADD = $(LDADD)
-printjob_DEPENDENCIES = ../lib/Libcmds/libcmds.la \
-	../lib/Liblog/liblog.la ../lib/Libnet/libnet.la \
-	../lib/Libpbs/libpbs.la
+printjob_DEPENDENCIES = ../lib/Libpbs/libtorque.la
 printjob_LDFLAGS =
 am_printtracking_OBJECTS = printtracking.$(OBJEXT)
 printtracking_OBJECTS = $(am_printtracking_OBJECTS)
 printtracking_LDADD = $(LDADD)
-printtracking_DEPENDENCIES = ../lib/Libcmds/libcmds.la \
-	../lib/Liblog/liblog.la ../lib/Libnet/libnet.la \
-	../lib/Libpbs/libpbs.la
+printtracking_DEPENDENCIES = ../lib/Libpbs/libtorque.la
 printtracking_LDFLAGS =
 am_tracejob_OBJECTS = tracejob.$(OBJEXT)
 tracejob_OBJECTS = $(am_tracejob_OBJECTS)
 tracejob_LDADD = $(LDADD)
-tracejob_DEPENDENCIES = ../lib/Libcmds/libcmds.la \
-	../lib/Liblog/liblog.la ../lib/Libnet/libnet.la \
-	../lib/Libpbs/libpbs.la
+tracejob_DEPENDENCIES = ../lib/Libpbs/libtorque.la
 tracejob_LDFLAGS =
 
 DEFS = @DEFS@

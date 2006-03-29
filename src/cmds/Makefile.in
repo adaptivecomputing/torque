@@ -81,6 +81,7 @@ LEX_OUTPUT_ROOT = @LEX_OUTPUT_ROOT@
 LIBTOOL = @LIBTOOL@
 LN_S = @LN_S@
 MAINT = @MAINT@
+MAKE = @MAKE@
 MOMLIBS = @MOMLIBS@
 MOM_ADDTL_OBJS = @MOM_ADDTL_OBJS@
 MY_TCL_INCS = @MY_TCL_INCS@
@@ -128,10 +129,7 @@ DEMUX_PATH = $(sbindir)/pbs_demux
 XPBS_DIR = $(libdir)/xpbs
 XPBSMON_DIR = $(libdir)/xpbsmon
 
-PBS_LIBS = ../lib/Libcmds/libcmds.la \
-	   ../lib/Libnet/libnet.la \
-	   ../lib/Libpbs/libpbs.la
-
+PBS_LIBS = ../lib/Libpbs/libtorque.la
 
 bin_SCRIPTS = nqs2pbs
 sbin_PROGRAMS = pbs_demux momctl
@@ -195,154 +193,126 @@ PROGRAMS = $(bin_PROGRAMS) $(sbin_PROGRAMS)
 am_momctl_OBJECTS = momctl.$(OBJEXT)
 momctl_OBJECTS = $(am_momctl_OBJECTS)
 momctl_LDADD = $(LDADD)
-momctl_DEPENDENCIES = ../lib/Libcmds/libcmds.la ../lib/Libnet/libnet.la \
-	../lib/Libpbs/libpbs.la
+momctl_DEPENDENCIES = ../lib/Libpbs/libtorque.la
 momctl_LDFLAGS =
 am_pbs_demux_OBJECTS = pbs_demux.$(OBJEXT)
 pbs_demux_OBJECTS = $(am_pbs_demux_OBJECTS)
 pbs_demux_LDADD = $(LDADD)
-pbs_demux_DEPENDENCIES = ../lib/Libcmds/libcmds.la \
-	../lib/Libnet/libnet.la ../lib/Libpbs/libpbs.la
+pbs_demux_DEPENDENCIES = ../lib/Libpbs/libtorque.la
 pbs_demux_LDFLAGS =
 am_pbsdsh_OBJECTS = pbsdsh.$(OBJEXT)
 pbsdsh_OBJECTS = $(am_pbsdsh_OBJECTS)
 pbsdsh_LDADD = $(LDADD)
-pbsdsh_DEPENDENCIES = ../lib/Libcmds/libcmds.la ../lib/Libnet/libnet.la \
-	../lib/Libpbs/libpbs.la
+pbsdsh_DEPENDENCIES = ../lib/Libpbs/libtorque.la
 pbsdsh_LDFLAGS =
 am_pbsnodes_OBJECTS = pbsnodes.$(OBJEXT) MXML.$(OBJEXT)
 pbsnodes_OBJECTS = $(am_pbsnodes_OBJECTS)
 pbsnodes_LDADD = $(LDADD)
-pbsnodes_DEPENDENCIES = ../lib/Libcmds/libcmds.la \
-	../lib/Libnet/libnet.la ../lib/Libpbs/libpbs.la
+pbsnodes_DEPENDENCIES = ../lib/Libpbs/libtorque.la
 pbsnodes_LDFLAGS =
 am_pbspd_OBJECTS = pbspd.$(OBJEXT)
 pbspd_OBJECTS = $(am_pbspd_OBJECTS)
 pbspd_LDADD = $(LDADD)
-pbspd_DEPENDENCIES = ../lib/Libcmds/libcmds.la ../lib/Libnet/libnet.la \
-	../lib/Libpbs/libpbs.la
+pbspd_DEPENDENCIES = ../lib/Libpbs/libtorque.la
 pbspd_LDFLAGS =
 am_pbspoe_OBJECTS = pbspoe.$(OBJEXT)
 pbspoe_OBJECTS = $(am_pbspoe_OBJECTS)
 pbspoe_LDADD = $(LDADD)
-pbspoe_DEPENDENCIES = ../lib/Libcmds/libcmds.la ../lib/Libnet/libnet.la \
-	../lib/Libpbs/libpbs.la
+pbspoe_DEPENDENCIES = ../lib/Libpbs/libtorque.la
 pbspoe_LDFLAGS =
 am_qalter_OBJECTS = qalter.$(OBJEXT)
 qalter_OBJECTS = $(am_qalter_OBJECTS)
 qalter_LDADD = $(LDADD)
-qalter_DEPENDENCIES = ../lib/Libcmds/libcmds.la ../lib/Libnet/libnet.la \
-	../lib/Libpbs/libpbs.la
+qalter_DEPENDENCIES = ../lib/Libpbs/libtorque.la
 qalter_LDFLAGS =
 am_qdel_OBJECTS = qdel.$(OBJEXT)
 qdel_OBJECTS = $(am_qdel_OBJECTS)
 qdel_LDADD = $(LDADD)
-qdel_DEPENDENCIES = ../lib/Libcmds/libcmds.la ../lib/Libnet/libnet.la \
-	../lib/Libpbs/libpbs.la
+qdel_DEPENDENCIES = ../lib/Libpbs/libtorque.la
 qdel_LDFLAGS =
 am_qdisable_OBJECTS = qdisable.$(OBJEXT)
 qdisable_OBJECTS = $(am_qdisable_OBJECTS)
 qdisable_LDADD = $(LDADD)
-qdisable_DEPENDENCIES = ../lib/Libcmds/libcmds.la \
-	../lib/Libnet/libnet.la ../lib/Libpbs/libpbs.la
+qdisable_DEPENDENCIES = ../lib/Libpbs/libtorque.la
 qdisable_LDFLAGS =
 am_qenable_OBJECTS = qenable.$(OBJEXT)
 qenable_OBJECTS = $(am_qenable_OBJECTS)
 qenable_LDADD = $(LDADD)
-qenable_DEPENDENCIES = ../lib/Libcmds/libcmds.la ../lib/Libnet/libnet.la \
-	../lib/Libpbs/libpbs.la
+qenable_DEPENDENCIES = ../lib/Libpbs/libtorque.la
 qenable_LDFLAGS =
 am_qhold_OBJECTS = qhold.$(OBJEXT)
 qhold_OBJECTS = $(am_qhold_OBJECTS)
 qhold_LDADD = $(LDADD)
-qhold_DEPENDENCIES = ../lib/Libcmds/libcmds.la ../lib/Libnet/libnet.la \
-	../lib/Libpbs/libpbs.la
+qhold_DEPENDENCIES = ../lib/Libpbs/libtorque.la
 qhold_LDFLAGS =
 am_qmgr_OBJECTS = qmgr.$(OBJEXT)
 qmgr_OBJECTS = $(am_qmgr_OBJECTS)
-qmgr_DEPENDENCIES = ../lib/Libcmds/libcmds.la ../lib/Libnet/libnet.la \
-	../lib/Libpbs/libpbs.la
+qmgr_DEPENDENCIES = ../lib/Libpbs/libtorque.la
 qmgr_LDFLAGS =
 am_qmove_OBJECTS = qmove.$(OBJEXT)
 qmove_OBJECTS = $(am_qmove_OBJECTS)
 qmove_LDADD = $(LDADD)
-qmove_DEPENDENCIES = ../lib/Libcmds/libcmds.la ../lib/Libnet/libnet.la \
-	../lib/Libpbs/libpbs.la
+qmove_DEPENDENCIES = ../lib/Libpbs/libtorque.la
 qmove_LDFLAGS =
 am_qmsg_OBJECTS = qmsg.$(OBJEXT)
 qmsg_OBJECTS = $(am_qmsg_OBJECTS)
 qmsg_LDADD = $(LDADD)
-qmsg_DEPENDENCIES = ../lib/Libcmds/libcmds.la ../lib/Libnet/libnet.la \
-	../lib/Libpbs/libpbs.la
+qmsg_DEPENDENCIES = ../lib/Libpbs/libtorque.la
 qmsg_LDFLAGS =
 am_qorder_OBJECTS = qorder.$(OBJEXT)
 qorder_OBJECTS = $(am_qorder_OBJECTS)
 qorder_LDADD = $(LDADD)
-qorder_DEPENDENCIES = ../lib/Libcmds/libcmds.la ../lib/Libnet/libnet.la \
-	../lib/Libpbs/libpbs.la
+qorder_DEPENDENCIES = ../lib/Libpbs/libtorque.la
 qorder_LDFLAGS =
 am_qrerun_OBJECTS = qrerun.$(OBJEXT)
 qrerun_OBJECTS = $(am_qrerun_OBJECTS)
 qrerun_LDADD = $(LDADD)
-qrerun_DEPENDENCIES = ../lib/Libcmds/libcmds.la ../lib/Libnet/libnet.la \
-	../lib/Libpbs/libpbs.la
+qrerun_DEPENDENCIES = ../lib/Libpbs/libtorque.la
 qrerun_LDFLAGS =
 am_qrls_OBJECTS = qrls.$(OBJEXT)
 qrls_OBJECTS = $(am_qrls_OBJECTS)
 qrls_LDADD = $(LDADD)
-qrls_DEPENDENCIES = ../lib/Libcmds/libcmds.la ../lib/Libnet/libnet.la \
-	../lib/Libpbs/libpbs.la
+qrls_DEPENDENCIES = ../lib/Libpbs/libtorque.la
 qrls_LDFLAGS =
 am_qrun_OBJECTS = qrun.$(OBJEXT)
 qrun_OBJECTS = $(am_qrun_OBJECTS)
 qrun_LDADD = $(LDADD)
-qrun_DEPENDENCIES = ../lib/Libcmds/libcmds.la ../lib/Libnet/libnet.la \
-	../lib/Libpbs/libpbs.la
+qrun_DEPENDENCIES = ../lib/Libpbs/libtorque.la
 qrun_LDFLAGS =
 am_qselect_OBJECTS = qselect.$(OBJEXT)
 qselect_OBJECTS = $(am_qselect_OBJECTS)
 qselect_LDADD = $(LDADD)
-qselect_DEPENDENCIES = ../lib/Libcmds/libcmds.la ../lib/Libnet/libnet.la \
-	../lib/Libpbs/libpbs.la
+qselect_DEPENDENCIES = ../lib/Libpbs/libtorque.la
 qselect_LDFLAGS =
 am_qsig_OBJECTS = qsig.$(OBJEXT)
 qsig_OBJECTS = $(am_qsig_OBJECTS)
 qsig_LDADD = $(LDADD)
-qsig_DEPENDENCIES = ../lib/Libcmds/libcmds.la ../lib/Libnet/libnet.la \
-	../lib/Libpbs/libpbs.la
+qsig_DEPENDENCIES = ../lib/Libpbs/libtorque.la
 qsig_LDFLAGS =
 am_qstart_OBJECTS = qstart.$(OBJEXT)
 qstart_OBJECTS = $(am_qstart_OBJECTS)
 qstart_LDADD = $(LDADD)
-qstart_DEPENDENCIES = ../lib/Libcmds/libcmds.la ../lib/Libnet/libnet.la \
-	../lib/Libpbs/libpbs.la
+qstart_DEPENDENCIES = ../lib/Libpbs/libtorque.la
 qstart_LDFLAGS =
 am_qstat_OBJECTS = qstat.$(OBJEXT) MXML.$(OBJEXT)
 qstat_OBJECTS = $(am_qstat_OBJECTS)
-@USE_TCLQSTAT_TRUE@qstat_DEPENDENCIES = ../lib/Libcmds/libcmds.la \
-@USE_TCLQSTAT_TRUE@	../lib/Libnet/libnet.la \
-@USE_TCLQSTAT_TRUE@	../lib/Libpbs/libpbs.la
-@USE_TCLQSTAT_FALSE@qstat_DEPENDENCIES = ../lib/Libcmds/libcmds.la \
-@USE_TCLQSTAT_FALSE@	../lib/Libnet/libnet.la \
-@USE_TCLQSTAT_FALSE@	../lib/Libpbs/libpbs.la
+@USE_TCLQSTAT_TRUE@qstat_DEPENDENCIES = ../lib/Libpbs/libtorque.la
+@USE_TCLQSTAT_FALSE@qstat_DEPENDENCIES = ../lib/Libpbs/libtorque.la
 qstat_LDFLAGS =
 am_qstop_OBJECTS = qstop.$(OBJEXT)
 qstop_OBJECTS = $(am_qstop_OBJECTS)
 qstop_LDADD = $(LDADD)
-qstop_DEPENDENCIES = ../lib/Libcmds/libcmds.la ../lib/Libnet/libnet.la \
-	../lib/Libpbs/libpbs.la
+qstop_DEPENDENCIES = ../lib/Libpbs/libtorque.la
 qstop_LDFLAGS =
 am_qsub_OBJECTS = qsub.$(OBJEXT)
 qsub_OBJECTS = $(am_qsub_OBJECTS)
 qsub_LDADD = $(LDADD)
-qsub_DEPENDENCIES = ../lib/Libcmds/libcmds.la ../lib/Libnet/libnet.la \
-	../lib/Libpbs/libpbs.la
+qsub_DEPENDENCIES = ../lib/Libpbs/libtorque.la
 qsub_LDFLAGS =
 am_qterm_OBJECTS = qterm.$(OBJEXT)
 qterm_OBJECTS = $(am_qterm_OBJECTS)
 qterm_LDADD = $(LDADD)
-qterm_DEPENDENCIES = ../lib/Libcmds/libcmds.la ../lib/Libnet/libnet.la \
-	../lib/Libpbs/libpbs.la
+qterm_DEPENDENCIES = ../lib/Libpbs/libtorque.la
 qterm_LDFLAGS =
 SCRIPTS = $(bin_SCRIPTS)
 

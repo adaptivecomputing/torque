@@ -81,6 +81,7 @@ LEX_OUTPUT_ROOT = @LEX_OUTPUT_ROOT@
 LIBTOOL = @LIBTOOL@
 LN_S = @LN_S@
 MAINT = @MAINT@
+MAKE = @MAKE@
 MOMLIBS = @MOMLIBS@
 MOM_ADDTL_OBJS = @MOM_ADDTL_OBJS@
 MY_TCL_INCS = @MY_TCL_INCS@
@@ -147,10 +148,7 @@ libfoo_la_SOURCES = acl_support.c cleanup.c comment.c evaluate_system.c \
 		    gblxvars.h  msgs.h  toolkit.h
 
 
-PBS_LIBS = ../lib/Libcmds/libcmds.la \
-	   ../lib/Libnet/libnet.la \
-	   ../lib/Libpbs/libpbs.la
-
+PBS_LIBS = ../lib/Libpbs/libtorque.la
 
 bin_PROGRAMS = qschedule
 qschedule_CPPFLAGS = $(AM_CPPFLAGS) \
@@ -178,8 +176,7 @@ PROGRAMS = $(bin_PROGRAMS)
 
 am_qschedule_OBJECTS = qschedule.$(OBJEXT)
 qschedule_OBJECTS = $(am_qschedule_OBJECTS)
-qschedule_DEPENDENCIES = ../lib/Libcmds/libcmds.la \
-	../lib/Libnet/libnet.la ../lib/Libpbs/libpbs.la
+qschedule_DEPENDENCIES = ../lib/Libpbs/libtorque.la
 qschedule_LDFLAGS =
 
 DEFS = @DEFS@

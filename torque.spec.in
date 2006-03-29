@@ -38,8 +38,8 @@
 
 # these are non-defaults, but fit better into most RPM-based systems
 %define torquehomedir %_localstatedir/torque
-%define _libdir       %{_prefix}/%{_lib}/%{name}/lib
-%define _includedir   %{_prefix}/%{_lib}/%{name}/include
+#%%define _libdir       %{_prefix}/%{_lib}/%{name}/lib
+#%%define _includedir   %{_prefix}/%{_lib}/%{name}/include
 
 
 

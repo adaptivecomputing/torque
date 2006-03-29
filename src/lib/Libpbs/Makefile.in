@@ -81,6 +81,7 @@ LEX_OUTPUT_ROOT = @LEX_OUTPUT_ROOT@
 LIBTOOL = @LIBTOOL@
 LN_S = @LN_S@
 MAINT = @MAINT@
+MAKE = @MAKE@
 MOMLIBS = @MOMLIBS@
 MOM_ADDTL_OBJS = @MOM_ADDTL_OBJS@
 MY_TCL_INCS = @MY_TCL_INCS@
@@ -130,9 +131,9 @@ XPBSMON_DIR = $(libdir)/xpbsmon
 
 EXTRA_DIST = ../Libdis/dis_.h
 
-lib_LTLIBRARIES = libpbs.la
+lib_LTLIBRARIES = libtorque.la
 
-libpbs_la_SOURCES = ../Libdis/dis.c ../Libdis/discui_.c ../Libdis/discul_.c \
+libtorque_la_SOURCES = ../Libdis/dis.c ../Libdis/discui_.c ../Libdis/discul_.c \
 		    ../Libdis/disi10d_.c ../Libdis/disi10l_.c \
 		    ../Libdis/disiui_.c ../Libdis/disp10d_.c \
 		    ../Libdis/disp10l_.c ../Libdis/disrcs.c \
@@ -188,7 +189,15 @@ libpbs_la_SOURCES = ../Libdis/dis.c ../Libdis/discui_.c ../Libdis/discul_.c \
 		    ../Libifl/pbsD_submit.c  ../Libifl/PBSD_submit_caps.c \
 		    ../Libifl/pbsD_termin.c ../Libifl/pbs_geterrmg.c \
 		    ../Libifl/pbs_statfree.c ../Libifl/rpp.c \
-		    ../Libifl/tcp_dis.c ../Libifl/tm.c ../Libifl/list_link.c
+		    ../Libifl/tcp_dis.c ../Libifl/tm.c ../Libifl/list_link.c \
+		    ../Libcmds/ck_job_name.c ../Libcmds/cnt2server.c ../Libcmds/cvtdate.c ../Libcmds/get_server.c \
+                     ../Libcmds/locate_job.c ../Libcmds/parse_at.c ../Libcmds/parse_depend.c ../Libcmds/parse_destid.c \
+                     ../Libcmds/parse_equal.c ../Libcmds/parse_jobid.c ../Libcmds/parse_stage.c \
+                     ../Libcmds/prepare_path.c ../Libcmds/prt_job_err.c ../Libcmds/set_attr.c ../Libcmds/set_resource.c \
+		   ../Liblog/chk_file_sec.c ../Liblog/log_event.c ../Liblog/pbs_log.c ../Liblog/pbs_messages.c \
+                    ../Liblog/setup_env.c \
+		   ../Libnet/get_hostaddr.c ../Libnet/get_hostname.c ../Libnet/md5.c ../Libnet/net_client.c \
+                    ../Libnet/net_server.c ../Libnet/net_set_clse.c ../Libnet/rm.c
 
 subdir = src/lib/Libpbs
 mkinstalldirs = $(SHELL) $(top_srcdir)/buildutils/mkinstalldirs
@@ -196,9 +205,9 @@ CONFIG_HEADER = $(top_builddir)/src/include/pbs_config.h
 CONFIG_CLEAN_FILES =
 LTLIBRARIES = $(lib_LTLIBRARIES)
 
-libpbs_la_LDFLAGS =
-libpbs_la_LIBADD =
-am_libpbs_la_OBJECTS = dis.lo discui_.lo discul_.lo disi10d_.lo \
+libtorque_la_LDFLAGS =
+libtorque_la_LIBADD =
+am_libtorque_la_OBJECTS = dis.lo discui_.lo discul_.lo disi10d_.lo \
 	disi10l_.lo disiui_.lo disp10d_.lo disp10l_.lo disrcs.lo \
 	disrd.lo disrf.lo disrfcs.lo disrfst.lo disrl_.lo disrl.lo \
 	disrsc.lo disrsi_.lo disrsi.lo disrsl_.lo disrsl.lo disrss.lo \
@@ -225,8 +234,15 @@ am_libpbs_la_OBJECTS = dis.lo discui_.lo discul_.lo disi10d_.lo \
 	pbsD_statjob.lo pbsD_statnode.lo pbsD_statque.lo \
 	pbsD_statsrv.lo PBSD_status2.lo PBSD_status.lo pbsD_submit.lo \
 	PBSD_submit_caps.lo pbsD_termin.lo pbs_geterrmg.lo \
-	pbs_statfree.lo rpp.lo tcp_dis.lo tm.lo list_link.lo
-libpbs_la_OBJECTS = $(am_libpbs_la_OBJECTS)
+	pbs_statfree.lo rpp.lo tcp_dis.lo tm.lo list_link.lo \
+	ck_job_name.lo cnt2server.lo cvtdate.lo get_server.lo \
+	locate_job.lo parse_at.lo parse_depend.lo parse_destid.lo \
+	parse_equal.lo parse_jobid.lo parse_stage.lo prepare_path.lo \
+	prt_job_err.lo set_attr.lo set_resource.lo chk_file_sec.lo \
+	log_event.lo pbs_log.lo pbs_messages.lo setup_env.lo \
+	get_hostaddr.lo get_hostname.lo md5.lo net_client.lo \
+	net_server.lo net_set_clse.lo rm.lo
+libtorque_la_OBJECTS = $(am_libtorque_la_OBJECTS)
 
 DEFS = @DEFS@
 DEFAULT_INCLUDES =  -I. -I$(srcdir) -I$(top_builddir)/src/include
@@ -244,7 +260,10 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/PBSD_status2.Plo \
 @AMDEP_TRUE@	./$(DEPDIR)/PBSD_submit_caps.Plo \
 @AMDEP_TRUE@	./$(DEPDIR)/PBS_attr.Plo ./$(DEPDIR)/PBS_data.Plo \
-@AMDEP_TRUE@	./$(DEPDIR)/advise.Plo ./$(DEPDIR)/dec_Authen.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/advise.Plo ./$(DEPDIR)/chk_file_sec.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/ck_job_name.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/cnt2server.Plo ./$(DEPDIR)/cvtdate.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/dec_Authen.Plo \
 @AMDEP_TRUE@	./$(DEPDIR)/dec_CpyFil.Plo \
 @AMDEP_TRUE@	./$(DEPDIR)/dec_JobCred.Plo \
 @AMDEP_TRUE@	./$(DEPDIR)/dec_JobFile.Plo \
@@ -295,8 +314,22 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/enc_attropl.Plo \
 @AMDEP_TRUE@	./$(DEPDIR)/enc_reply.Plo \
 @AMDEP_TRUE@	./$(DEPDIR)/enc_svrattrl.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/get_hostaddr.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/get_hostname.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/get_server.Plo \
 @AMDEP_TRUE@	./$(DEPDIR)/get_svrport.Plo \
-@AMDEP_TRUE@	./$(DEPDIR)/list_link.Plo ./$(DEPDIR)/nonblock.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/list_link.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/locate_job.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/log_event.Plo ./$(DEPDIR)/md5.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/net_client.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/net_server.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/net_set_clse.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/nonblock.Plo ./$(DEPDIR)/parse_at.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/parse_depend.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/parse_destid.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/parse_equal.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/parse_jobid.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/parse_stage.Plo \
 @AMDEP_TRUE@	./$(DEPDIR)/pbsD_alterjo.Plo \
 @AMDEP_TRUE@	./$(DEPDIR)/pbsD_asyrun.Plo \
 @AMDEP_TRUE@	./$(DEPDIR)/pbsD_connect.Plo \
@@ -321,8 +354,15 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/pbsD_submit.Plo \
 @AMDEP_TRUE@	./$(DEPDIR)/pbsD_termin.Plo \
 @AMDEP_TRUE@	./$(DEPDIR)/pbs_geterrmg.Plo \
-@AMDEP_TRUE@	./$(DEPDIR)/pbs_statfree.Plo ./$(DEPDIR)/rpp.Plo \
-@AMDEP_TRUE@	./$(DEPDIR)/tcp_dis.Plo ./$(DEPDIR)/tm.Plo
+@AMDEP_TRUE@	./$(DEPDIR)/pbs_log.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/pbs_messages.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/pbs_statfree.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/prepare_path.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/prt_job_err.Plo ./$(DEPDIR)/rm.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/rpp.Plo ./$(DEPDIR)/set_attr.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/set_resource.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/setup_env.Plo ./$(DEPDIR)/tcp_dis.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/tm.Plo
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 LTCOMPILE = $(LIBTOOL) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) \
@@ -331,9 +371,9 @@ CCLD = $(CC)
 LINK = $(LIBTOOL) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(AM_LDFLAGS) $(LDFLAGS) -o $@
 CFLAGS = @CFLAGS@
-DIST_SOURCES = $(libpbs_la_SOURCES)
+DIST_SOURCES = $(libtorque_la_SOURCES)
 DIST_COMMON = Makefile.am Makefile.in
-SOURCES = $(libpbs_la_SOURCES)
+SOURCES = $(libtorque_la_SOURCES)
 
 all: all-am
 
@@ -493,8 +533,35 @@ rpp.lo: ../Libifl/rpp.c
 tcp_dis.lo: ../Libifl/tcp_dis.c
 tm.lo: ../Libifl/tm.c
 list_link.lo: ../Libifl/list_link.c
-libpbs.la: $(libpbs_la_OBJECTS) $(libpbs_la_DEPENDENCIES) 
-	$(LINK) -rpath $(libdir) $(libpbs_la_LDFLAGS) $(libpbs_la_OBJECTS) $(libpbs_la_LIBADD) $(LIBS)
+ck_job_name.lo: ../Libcmds/ck_job_name.c
+cnt2server.lo: ../Libcmds/cnt2server.c
+cvtdate.lo: ../Libcmds/cvtdate.c
+get_server.lo: ../Libcmds/get_server.c
+locate_job.lo: ../Libcmds/locate_job.c
+parse_at.lo: ../Libcmds/parse_at.c
+parse_depend.lo: ../Libcmds/parse_depend.c
+parse_destid.lo: ../Libcmds/parse_destid.c
+parse_equal.lo: ../Libcmds/parse_equal.c
+parse_jobid.lo: ../Libcmds/parse_jobid.c
+parse_stage.lo: ../Libcmds/parse_stage.c
+prepare_path.lo: ../Libcmds/prepare_path.c
+prt_job_err.lo: ../Libcmds/prt_job_err.c
+set_attr.lo: ../Libcmds/set_attr.c
+set_resource.lo: ../Libcmds/set_resource.c
+chk_file_sec.lo: ../Liblog/chk_file_sec.c
+log_event.lo: ../Liblog/log_event.c
+pbs_log.lo: ../Liblog/pbs_log.c
+pbs_messages.lo: ../Liblog/pbs_messages.c
+setup_env.lo: ../Liblog/setup_env.c
+get_hostaddr.lo: ../Libnet/get_hostaddr.c
+get_hostname.lo: ../Libnet/get_hostname.c
+md5.lo: ../Libnet/md5.c
+net_client.lo: ../Libnet/net_client.c
+net_server.lo: ../Libnet/net_server.c
+net_set_clse.lo: ../Libnet/net_set_clse.c
+rm.lo: ../Libnet/rm.c
+libtorque.la: $(libtorque_la_OBJECTS) $(libtorque_la_DEPENDENCIES) 
+	$(LINK) -rpath $(libdir) $(libtorque_la_LDFLAGS) $(libtorque_la_OBJECTS) $(libtorque_la_LIBADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT) core *.core
@@ -513,6 +580,10 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PBS_attr.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PBS_data.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/advise.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/chk_file_sec.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ck_job_name.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cnt2server.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cvtdate.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dec_Authen.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dec_CpyFil.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dec_JobCred.Plo@am__quote@
@@ -592,9 +663,24 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/enc_attropl.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/enc_reply.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/enc_svrattrl.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/get_hostaddr.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/get_hostname.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/get_server.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/get_svrport.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/list_link.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/locate_job.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/log_event.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/md5.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/net_client.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/net_server.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/net_set_clse.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/nonblock.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/parse_at.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/parse_depend.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/parse_destid.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/parse_equal.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/parse_jobid.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/parse_stage.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pbsD_alterjo.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pbsD_asyrun.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pbsD_connect.Plo@am__quote@
@@ -619,8 +705,16 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pbsD_submit.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pbsD_termin.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pbs_geterrmg.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pbs_log.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pbs_messages.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pbs_statfree.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/prepare_path.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/prt_job_err.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rm.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rpp.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/set_attr.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/set_resource.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/setup_env.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tcp_dis.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tm.Plo@am__quote@
 
@@ -2822,6 +2916,492 @@ list_link.lo: ../Libifl/list_link.c
 @AMDEP_TRUE@	depfile='$(DEPDIR)/list_link.Plo' tmpdepfile='$(DEPDIR)/list_link.TPlo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(LIBTOOL) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o list_link.lo `test -f '../Libifl/list_link.c' || echo '$(srcdir)/'`../Libifl/list_link.c
+
+ck_job_name.o: ../Libcmds/ck_job_name.c
+@AMDEP_TRUE@	source='../Libcmds/ck_job_name.c' object='ck_job_name.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/ck_job_name.Po' tmpdepfile='$(DEPDIR)/ck_job_name.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o ck_job_name.o `test -f '../Libcmds/ck_job_name.c' || echo '$(srcdir)/'`../Libcmds/ck_job_name.c
+
+ck_job_name.obj: ../Libcmds/ck_job_name.c
+@AMDEP_TRUE@	source='../Libcmds/ck_job_name.c' object='ck_job_name.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/ck_job_name.Po' tmpdepfile='$(DEPDIR)/ck_job_name.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o ck_job_name.obj `cygpath -w ../Libcmds/ck_job_name.c`
+
+ck_job_name.lo: ../Libcmds/ck_job_name.c
+@AMDEP_TRUE@	source='../Libcmds/ck_job_name.c' object='ck_job_name.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/ck_job_name.Plo' tmpdepfile='$(DEPDIR)/ck_job_name.TPlo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(LIBTOOL) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o ck_job_name.lo `test -f '../Libcmds/ck_job_name.c' || echo '$(srcdir)/'`../Libcmds/ck_job_name.c
+
+cnt2server.o: ../Libcmds/cnt2server.c
+@AMDEP_TRUE@	source='../Libcmds/cnt2server.c' object='cnt2server.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/cnt2server.Po' tmpdepfile='$(DEPDIR)/cnt2server.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o cnt2server.o `test -f '../Libcmds/cnt2server.c' || echo '$(srcdir)/'`../Libcmds/cnt2server.c
+
+cnt2server.obj: ../Libcmds/cnt2server.c
+@AMDEP_TRUE@	source='../Libcmds/cnt2server.c' object='cnt2server.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/cnt2server.Po' tmpdepfile='$(DEPDIR)/cnt2server.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o cnt2server.obj `cygpath -w ../Libcmds/cnt2server.c`
+
+cnt2server.lo: ../Libcmds/cnt2server.c
+@AMDEP_TRUE@	source='../Libcmds/cnt2server.c' object='cnt2server.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/cnt2server.Plo' tmpdepfile='$(DEPDIR)/cnt2server.TPlo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(LIBTOOL) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o cnt2server.lo `test -f '../Libcmds/cnt2server.c' || echo '$(srcdir)/'`../Libcmds/cnt2server.c
+
+cvtdate.o: ../Libcmds/cvtdate.c
+@AMDEP_TRUE@	source='../Libcmds/cvtdate.c' object='cvtdate.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/cvtdate.Po' tmpdepfile='$(DEPDIR)/cvtdate.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o cvtdate.o `test -f '../Libcmds/cvtdate.c' || echo '$(srcdir)/'`../Libcmds/cvtdate.c
+
+cvtdate.obj: ../Libcmds/cvtdate.c
+@AMDEP_TRUE@	source='../Libcmds/cvtdate.c' object='cvtdate.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/cvtdate.Po' tmpdepfile='$(DEPDIR)/cvtdate.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o cvtdate.obj `cygpath -w ../Libcmds/cvtdate.c`
+
+cvtdate.lo: ../Libcmds/cvtdate.c
+@AMDEP_TRUE@	source='../Libcmds/cvtdate.c' object='cvtdate.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/cvtdate.Plo' tmpdepfile='$(DEPDIR)/cvtdate.TPlo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(LIBTOOL) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o cvtdate.lo `test -f '../Libcmds/cvtdate.c' || echo '$(srcdir)/'`../Libcmds/cvtdate.c
+
+get_server.o: ../Libcmds/get_server.c
+@AMDEP_TRUE@	source='../Libcmds/get_server.c' object='get_server.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/get_server.Po' tmpdepfile='$(DEPDIR)/get_server.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o get_server.o `test -f '../Libcmds/get_server.c' || echo '$(srcdir)/'`../Libcmds/get_server.c
+
+get_server.obj: ../Libcmds/get_server.c
+@AMDEP_TRUE@	source='../Libcmds/get_server.c' object='get_server.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/get_server.Po' tmpdepfile='$(DEPDIR)/get_server.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o get_server.obj `cygpath -w ../Libcmds/get_server.c`
+
+get_server.lo: ../Libcmds/get_server.c
+@AMDEP_TRUE@	source='../Libcmds/get_server.c' object='get_server.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/get_server.Plo' tmpdepfile='$(DEPDIR)/get_server.TPlo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(LIBTOOL) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o get_server.lo `test -f '../Libcmds/get_server.c' || echo '$(srcdir)/'`../Libcmds/get_server.c
+
+locate_job.o: ../Libcmds/locate_job.c
+@AMDEP_TRUE@	source='../Libcmds/locate_job.c' object='locate_job.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/locate_job.Po' tmpdepfile='$(DEPDIR)/locate_job.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o locate_job.o `test -f '../Libcmds/locate_job.c' || echo '$(srcdir)/'`../Libcmds/locate_job.c
+
+locate_job.obj: ../Libcmds/locate_job.c
+@AMDEP_TRUE@	source='../Libcmds/locate_job.c' object='locate_job.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/locate_job.Po' tmpdepfile='$(DEPDIR)/locate_job.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o locate_job.obj `cygpath -w ../Libcmds/locate_job.c`
+
+locate_job.lo: ../Libcmds/locate_job.c
+@AMDEP_TRUE@	source='../Libcmds/locate_job.c' object='locate_job.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/locate_job.Plo' tmpdepfile='$(DEPDIR)/locate_job.TPlo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(LIBTOOL) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o locate_job.lo `test -f '../Libcmds/locate_job.c' || echo '$(srcdir)/'`../Libcmds/locate_job.c
+
+parse_at.o: ../Libcmds/parse_at.c
+@AMDEP_TRUE@	source='../Libcmds/parse_at.c' object='parse_at.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/parse_at.Po' tmpdepfile='$(DEPDIR)/parse_at.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o parse_at.o `test -f '../Libcmds/parse_at.c' || echo '$(srcdir)/'`../Libcmds/parse_at.c
+
+parse_at.obj: ../Libcmds/parse_at.c
+@AMDEP_TRUE@	source='../Libcmds/parse_at.c' object='parse_at.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/parse_at.Po' tmpdepfile='$(DEPDIR)/parse_at.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o parse_at.obj `cygpath -w ../Libcmds/parse_at.c`
+
+parse_at.lo: ../Libcmds/parse_at.c
+@AMDEP_TRUE@	source='../Libcmds/parse_at.c' object='parse_at.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/parse_at.Plo' tmpdepfile='$(DEPDIR)/parse_at.TPlo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(LIBTOOL) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o parse_at.lo `test -f '../Libcmds/parse_at.c' || echo '$(srcdir)/'`../Libcmds/parse_at.c
+
+parse_depend.o: ../Libcmds/parse_depend.c
+@AMDEP_TRUE@	source='../Libcmds/parse_depend.c' object='parse_depend.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/parse_depend.Po' tmpdepfile='$(DEPDIR)/parse_depend.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o parse_depend.o `test -f '../Libcmds/parse_depend.c' || echo '$(srcdir)/'`../Libcmds/parse_depend.c
+
+parse_depend.obj: ../Libcmds/parse_depend.c
+@AMDEP_TRUE@	source='../Libcmds/parse_depend.c' object='parse_depend.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/parse_depend.Po' tmpdepfile='$(DEPDIR)/parse_depend.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o parse_depend.obj `cygpath -w ../Libcmds/parse_depend.c`
+
+parse_depend.lo: ../Libcmds/parse_depend.c
+@AMDEP_TRUE@	source='../Libcmds/parse_depend.c' object='parse_depend.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/parse_depend.Plo' tmpdepfile='$(DEPDIR)/parse_depend.TPlo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(LIBTOOL) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o parse_depend.lo `test -f '../Libcmds/parse_depend.c' || echo '$(srcdir)/'`../Libcmds/parse_depend.c
+
+parse_destid.o: ../Libcmds/parse_destid.c
+@AMDEP_TRUE@	source='../Libcmds/parse_destid.c' object='parse_destid.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/parse_destid.Po' tmpdepfile='$(DEPDIR)/parse_destid.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o parse_destid.o `test -f '../Libcmds/parse_destid.c' || echo '$(srcdir)/'`../Libcmds/parse_destid.c
+
+parse_destid.obj: ../Libcmds/parse_destid.c
+@AMDEP_TRUE@	source='../Libcmds/parse_destid.c' object='parse_destid.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/parse_destid.Po' tmpdepfile='$(DEPDIR)/parse_destid.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o parse_destid.obj `cygpath -w ../Libcmds/parse_destid.c`
+
+parse_destid.lo: ../Libcmds/parse_destid.c
+@AMDEP_TRUE@	source='../Libcmds/parse_destid.c' object='parse_destid.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/parse_destid.Plo' tmpdepfile='$(DEPDIR)/parse_destid.TPlo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(LIBTOOL) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o parse_destid.lo `test -f '../Libcmds/parse_destid.c' || echo '$(srcdir)/'`../Libcmds/parse_destid.c
+
+parse_equal.o: ../Libcmds/parse_equal.c
+@AMDEP_TRUE@	source='../Libcmds/parse_equal.c' object='parse_equal.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/parse_equal.Po' tmpdepfile='$(DEPDIR)/parse_equal.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o parse_equal.o `test -f '../Libcmds/parse_equal.c' || echo '$(srcdir)/'`../Libcmds/parse_equal.c
+
+parse_equal.obj: ../Libcmds/parse_equal.c
+@AMDEP_TRUE@	source='../Libcmds/parse_equal.c' object='parse_equal.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/parse_equal.Po' tmpdepfile='$(DEPDIR)/parse_equal.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o parse_equal.obj `cygpath -w ../Libcmds/parse_equal.c`
+
+parse_equal.lo: ../Libcmds/parse_equal.c
+@AMDEP_TRUE@	source='../Libcmds/parse_equal.c' object='parse_equal.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/parse_equal.Plo' tmpdepfile='$(DEPDIR)/parse_equal.TPlo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(LIBTOOL) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o parse_equal.lo `test -f '../Libcmds/parse_equal.c' || echo '$(srcdir)/'`../Libcmds/parse_equal.c
+
+parse_jobid.o: ../Libcmds/parse_jobid.c
+@AMDEP_TRUE@	source='../Libcmds/parse_jobid.c' object='parse_jobid.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/parse_jobid.Po' tmpdepfile='$(DEPDIR)/parse_jobid.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o parse_jobid.o `test -f '../Libcmds/parse_jobid.c' || echo '$(srcdir)/'`../Libcmds/parse_jobid.c
+
+parse_jobid.obj: ../Libcmds/parse_jobid.c
+@AMDEP_TRUE@	source='../Libcmds/parse_jobid.c' object='parse_jobid.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/parse_jobid.Po' tmpdepfile='$(DEPDIR)/parse_jobid.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o parse_jobid.obj `cygpath -w ../Libcmds/parse_jobid.c`
+
+parse_jobid.lo: ../Libcmds/parse_jobid.c
+@AMDEP_TRUE@	source='../Libcmds/parse_jobid.c' object='parse_jobid.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/parse_jobid.Plo' tmpdepfile='$(DEPDIR)/parse_jobid.TPlo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(LIBTOOL) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o parse_jobid.lo `test -f '../Libcmds/parse_jobid.c' || echo '$(srcdir)/'`../Libcmds/parse_jobid.c
+
+parse_stage.o: ../Libcmds/parse_stage.c
+@AMDEP_TRUE@	source='../Libcmds/parse_stage.c' object='parse_stage.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/parse_stage.Po' tmpdepfile='$(DEPDIR)/parse_stage.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o parse_stage.o `test -f '../Libcmds/parse_stage.c' || echo '$(srcdir)/'`../Libcmds/parse_stage.c
+
+parse_stage.obj: ../Libcmds/parse_stage.c
+@AMDEP_TRUE@	source='../Libcmds/parse_stage.c' object='parse_stage.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/parse_stage.Po' tmpdepfile='$(DEPDIR)/parse_stage.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o parse_stage.obj `cygpath -w ../Libcmds/parse_stage.c`
+
+parse_stage.lo: ../Libcmds/parse_stage.c
+@AMDEP_TRUE@	source='../Libcmds/parse_stage.c' object='parse_stage.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/parse_stage.Plo' tmpdepfile='$(DEPDIR)/parse_stage.TPlo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(LIBTOOL) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o parse_stage.lo `test -f '../Libcmds/parse_stage.c' || echo '$(srcdir)/'`../Libcmds/parse_stage.c
+
+prepare_path.o: ../Libcmds/prepare_path.c
+@AMDEP_TRUE@	source='../Libcmds/prepare_path.c' object='prepare_path.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/prepare_path.Po' tmpdepfile='$(DEPDIR)/prepare_path.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o prepare_path.o `test -f '../Libcmds/prepare_path.c' || echo '$(srcdir)/'`../Libcmds/prepare_path.c
+
+prepare_path.obj: ../Libcmds/prepare_path.c
+@AMDEP_TRUE@	source='../Libcmds/prepare_path.c' object='prepare_path.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/prepare_path.Po' tmpdepfile='$(DEPDIR)/prepare_path.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o prepare_path.obj `cygpath -w ../Libcmds/prepare_path.c`
+
+prepare_path.lo: ../Libcmds/prepare_path.c
+@AMDEP_TRUE@	source='../Libcmds/prepare_path.c' object='prepare_path.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/prepare_path.Plo' tmpdepfile='$(DEPDIR)/prepare_path.TPlo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(LIBTOOL) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o prepare_path.lo `test -f '../Libcmds/prepare_path.c' || echo '$(srcdir)/'`../Libcmds/prepare_path.c
+
+prt_job_err.o: ../Libcmds/prt_job_err.c
+@AMDEP_TRUE@	source='../Libcmds/prt_job_err.c' object='prt_job_err.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/prt_job_err.Po' tmpdepfile='$(DEPDIR)/prt_job_err.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o prt_job_err.o `test -f '../Libcmds/prt_job_err.c' || echo '$(srcdir)/'`../Libcmds/prt_job_err.c
+
+prt_job_err.obj: ../Libcmds/prt_job_err.c
+@AMDEP_TRUE@	source='../Libcmds/prt_job_err.c' object='prt_job_err.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/prt_job_err.Po' tmpdepfile='$(DEPDIR)/prt_job_err.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o prt_job_err.obj `cygpath -w ../Libcmds/prt_job_err.c`
+
+prt_job_err.lo: ../Libcmds/prt_job_err.c
+@AMDEP_TRUE@	source='../Libcmds/prt_job_err.c' object='prt_job_err.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/prt_job_err.Plo' tmpdepfile='$(DEPDIR)/prt_job_err.TPlo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(LIBTOOL) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o prt_job_err.lo `test -f '../Libcmds/prt_job_err.c' || echo '$(srcdir)/'`../Libcmds/prt_job_err.c
+
+set_attr.o: ../Libcmds/set_attr.c
+@AMDEP_TRUE@	source='../Libcmds/set_attr.c' object='set_attr.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/set_attr.Po' tmpdepfile='$(DEPDIR)/set_attr.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o set_attr.o `test -f '../Libcmds/set_attr.c' || echo '$(srcdir)/'`../Libcmds/set_attr.c
+
+set_attr.obj: ../Libcmds/set_attr.c
+@AMDEP_TRUE@	source='../Libcmds/set_attr.c' object='set_attr.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/set_attr.Po' tmpdepfile='$(DEPDIR)/set_attr.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o set_attr.obj `cygpath -w ../Libcmds/set_attr.c`
+
+set_attr.lo: ../Libcmds/set_attr.c
+@AMDEP_TRUE@	source='../Libcmds/set_attr.c' object='set_attr.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/set_attr.Plo' tmpdepfile='$(DEPDIR)/set_attr.TPlo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(LIBTOOL) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o set_attr.lo `test -f '../Libcmds/set_attr.c' || echo '$(srcdir)/'`../Libcmds/set_attr.c
+
+set_resource.o: ../Libcmds/set_resource.c
+@AMDEP_TRUE@	source='../Libcmds/set_resource.c' object='set_resource.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/set_resource.Po' tmpdepfile='$(DEPDIR)/set_resource.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o set_resource.o `test -f '../Libcmds/set_resource.c' || echo '$(srcdir)/'`../Libcmds/set_resource.c
+
+set_resource.obj: ../Libcmds/set_resource.c
+@AMDEP_TRUE@	source='../Libcmds/set_resource.c' object='set_resource.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/set_resource.Po' tmpdepfile='$(DEPDIR)/set_resource.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o set_resource.obj `cygpath -w ../Libcmds/set_resource.c`
+
+set_resource.lo: ../Libcmds/set_resource.c
+@AMDEP_TRUE@	source='../Libcmds/set_resource.c' object='set_resource.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/set_resource.Plo' tmpdepfile='$(DEPDIR)/set_resource.TPlo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(LIBTOOL) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o set_resource.lo `test -f '../Libcmds/set_resource.c' || echo '$(srcdir)/'`../Libcmds/set_resource.c
+
+chk_file_sec.o: ../Liblog/chk_file_sec.c
+@AMDEP_TRUE@	source='../Liblog/chk_file_sec.c' object='chk_file_sec.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/chk_file_sec.Po' tmpdepfile='$(DEPDIR)/chk_file_sec.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o chk_file_sec.o `test -f '../Liblog/chk_file_sec.c' || echo '$(srcdir)/'`../Liblog/chk_file_sec.c
+
+chk_file_sec.obj: ../Liblog/chk_file_sec.c
+@AMDEP_TRUE@	source='../Liblog/chk_file_sec.c' object='chk_file_sec.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/chk_file_sec.Po' tmpdepfile='$(DEPDIR)/chk_file_sec.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o chk_file_sec.obj `cygpath -w ../Liblog/chk_file_sec.c`
+
+chk_file_sec.lo: ../Liblog/chk_file_sec.c
+@AMDEP_TRUE@	source='../Liblog/chk_file_sec.c' object='chk_file_sec.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/chk_file_sec.Plo' tmpdepfile='$(DEPDIR)/chk_file_sec.TPlo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(LIBTOOL) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o chk_file_sec.lo `test -f '../Liblog/chk_file_sec.c' || echo '$(srcdir)/'`../Liblog/chk_file_sec.c
+
+log_event.o: ../Liblog/log_event.c
+@AMDEP_TRUE@	source='../Liblog/log_event.c' object='log_event.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/log_event.Po' tmpdepfile='$(DEPDIR)/log_event.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o log_event.o `test -f '../Liblog/log_event.c' || echo '$(srcdir)/'`../Liblog/log_event.c
+
+log_event.obj: ../Liblog/log_event.c
+@AMDEP_TRUE@	source='../Liblog/log_event.c' object='log_event.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/log_event.Po' tmpdepfile='$(DEPDIR)/log_event.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o log_event.obj `cygpath -w ../Liblog/log_event.c`
+
+log_event.lo: ../Liblog/log_event.c
+@AMDEP_TRUE@	source='../Liblog/log_event.c' object='log_event.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/log_event.Plo' tmpdepfile='$(DEPDIR)/log_event.TPlo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(LIBTOOL) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o log_event.lo `test -f '../Liblog/log_event.c' || echo '$(srcdir)/'`../Liblog/log_event.c
+
+pbs_log.o: ../Liblog/pbs_log.c
+@AMDEP_TRUE@	source='../Liblog/pbs_log.c' object='pbs_log.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/pbs_log.Po' tmpdepfile='$(DEPDIR)/pbs_log.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o pbs_log.o `test -f '../Liblog/pbs_log.c' || echo '$(srcdir)/'`../Liblog/pbs_log.c
+
+pbs_log.obj: ../Liblog/pbs_log.c
+@AMDEP_TRUE@	source='../Liblog/pbs_log.c' object='pbs_log.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/pbs_log.Po' tmpdepfile='$(DEPDIR)/pbs_log.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o pbs_log.obj `cygpath -w ../Liblog/pbs_log.c`
+
+pbs_log.lo: ../Liblog/pbs_log.c
+@AMDEP_TRUE@	source='../Liblog/pbs_log.c' object='pbs_log.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/pbs_log.Plo' tmpdepfile='$(DEPDIR)/pbs_log.TPlo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(LIBTOOL) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o pbs_log.lo `test -f '../Liblog/pbs_log.c' || echo '$(srcdir)/'`../Liblog/pbs_log.c
+
+pbs_messages.o: ../Liblog/pbs_messages.c
+@AMDEP_TRUE@	source='../Liblog/pbs_messages.c' object='pbs_messages.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/pbs_messages.Po' tmpdepfile='$(DEPDIR)/pbs_messages.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o pbs_messages.o `test -f '../Liblog/pbs_messages.c' || echo '$(srcdir)/'`../Liblog/pbs_messages.c
+
+pbs_messages.obj: ../Liblog/pbs_messages.c
+@AMDEP_TRUE@	source='../Liblog/pbs_messages.c' object='pbs_messages.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/pbs_messages.Po' tmpdepfile='$(DEPDIR)/pbs_messages.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o pbs_messages.obj `cygpath -w ../Liblog/pbs_messages.c`
+
+pbs_messages.lo: ../Liblog/pbs_messages.c
+@AMDEP_TRUE@	source='../Liblog/pbs_messages.c' object='pbs_messages.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/pbs_messages.Plo' tmpdepfile='$(DEPDIR)/pbs_messages.TPlo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(LIBTOOL) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o pbs_messages.lo `test -f '../Liblog/pbs_messages.c' || echo '$(srcdir)/'`../Liblog/pbs_messages.c
+
+setup_env.o: ../Liblog/setup_env.c
+@AMDEP_TRUE@	source='../Liblog/setup_env.c' object='setup_env.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/setup_env.Po' tmpdepfile='$(DEPDIR)/setup_env.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o setup_env.o `test -f '../Liblog/setup_env.c' || echo '$(srcdir)/'`../Liblog/setup_env.c
+
+setup_env.obj: ../Liblog/setup_env.c
+@AMDEP_TRUE@	source='../Liblog/setup_env.c' object='setup_env.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/setup_env.Po' tmpdepfile='$(DEPDIR)/setup_env.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o setup_env.obj `cygpath -w ../Liblog/setup_env.c`
+
+setup_env.lo: ../Liblog/setup_env.c
+@AMDEP_TRUE@	source='../Liblog/setup_env.c' object='setup_env.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/setup_env.Plo' tmpdepfile='$(DEPDIR)/setup_env.TPlo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(LIBTOOL) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o setup_env.lo `test -f '../Liblog/setup_env.c' || echo '$(srcdir)/'`../Liblog/setup_env.c
+
+get_hostaddr.o: ../Libnet/get_hostaddr.c
+@AMDEP_TRUE@	source='../Libnet/get_hostaddr.c' object='get_hostaddr.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/get_hostaddr.Po' tmpdepfile='$(DEPDIR)/get_hostaddr.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o get_hostaddr.o `test -f '../Libnet/get_hostaddr.c' || echo '$(srcdir)/'`../Libnet/get_hostaddr.c
+
+get_hostaddr.obj: ../Libnet/get_hostaddr.c
+@AMDEP_TRUE@	source='../Libnet/get_hostaddr.c' object='get_hostaddr.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/get_hostaddr.Po' tmpdepfile='$(DEPDIR)/get_hostaddr.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o get_hostaddr.obj `cygpath -w ../Libnet/get_hostaddr.c`
+
+get_hostaddr.lo: ../Libnet/get_hostaddr.c
+@AMDEP_TRUE@	source='../Libnet/get_hostaddr.c' object='get_hostaddr.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/get_hostaddr.Plo' tmpdepfile='$(DEPDIR)/get_hostaddr.TPlo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(LIBTOOL) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o get_hostaddr.lo `test -f '../Libnet/get_hostaddr.c' || echo '$(srcdir)/'`../Libnet/get_hostaddr.c
+
+get_hostname.o: ../Libnet/get_hostname.c
+@AMDEP_TRUE@	source='../Libnet/get_hostname.c' object='get_hostname.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/get_hostname.Po' tmpdepfile='$(DEPDIR)/get_hostname.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o get_hostname.o `test -f '../Libnet/get_hostname.c' || echo '$(srcdir)/'`../Libnet/get_hostname.c
+
+get_hostname.obj: ../Libnet/get_hostname.c
+@AMDEP_TRUE@	source='../Libnet/get_hostname.c' object='get_hostname.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/get_hostname.Po' tmpdepfile='$(DEPDIR)/get_hostname.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o get_hostname.obj `cygpath -w ../Libnet/get_hostname.c`
+
+get_hostname.lo: ../Libnet/get_hostname.c
+@AMDEP_TRUE@	source='../Libnet/get_hostname.c' object='get_hostname.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/get_hostname.Plo' tmpdepfile='$(DEPDIR)/get_hostname.TPlo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(LIBTOOL) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o get_hostname.lo `test -f '../Libnet/get_hostname.c' || echo '$(srcdir)/'`../Libnet/get_hostname.c
+
+md5.o: ../Libnet/md5.c
+@AMDEP_TRUE@	source='../Libnet/md5.c' object='md5.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/md5.Po' tmpdepfile='$(DEPDIR)/md5.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o md5.o `test -f '../Libnet/md5.c' || echo '$(srcdir)/'`../Libnet/md5.c
+
+md5.obj: ../Libnet/md5.c
+@AMDEP_TRUE@	source='../Libnet/md5.c' object='md5.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/md5.Po' tmpdepfile='$(DEPDIR)/md5.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o md5.obj `cygpath -w ../Libnet/md5.c`
+
+md5.lo: ../Libnet/md5.c
+@AMDEP_TRUE@	source='../Libnet/md5.c' object='md5.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/md5.Plo' tmpdepfile='$(DEPDIR)/md5.TPlo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(LIBTOOL) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o md5.lo `test -f '../Libnet/md5.c' || echo '$(srcdir)/'`../Libnet/md5.c
+
+net_client.o: ../Libnet/net_client.c
+@AMDEP_TRUE@	source='../Libnet/net_client.c' object='net_client.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/net_client.Po' tmpdepfile='$(DEPDIR)/net_client.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o net_client.o `test -f '../Libnet/net_client.c' || echo '$(srcdir)/'`../Libnet/net_client.c
+
+net_client.obj: ../Libnet/net_client.c
+@AMDEP_TRUE@	source='../Libnet/net_client.c' object='net_client.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/net_client.Po' tmpdepfile='$(DEPDIR)/net_client.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o net_client.obj `cygpath -w ../Libnet/net_client.c`
+
+net_client.lo: ../Libnet/net_client.c
+@AMDEP_TRUE@	source='../Libnet/net_client.c' object='net_client.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/net_client.Plo' tmpdepfile='$(DEPDIR)/net_client.TPlo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(LIBTOOL) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o net_client.lo `test -f '../Libnet/net_client.c' || echo '$(srcdir)/'`../Libnet/net_client.c
+
+net_server.o: ../Libnet/net_server.c
+@AMDEP_TRUE@	source='../Libnet/net_server.c' object='net_server.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/net_server.Po' tmpdepfile='$(DEPDIR)/net_server.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o net_server.o `test -f '../Libnet/net_server.c' || echo '$(srcdir)/'`../Libnet/net_server.c
+
+net_server.obj: ../Libnet/net_server.c
+@AMDEP_TRUE@	source='../Libnet/net_server.c' object='net_server.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/net_server.Po' tmpdepfile='$(DEPDIR)/net_server.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o net_server.obj `cygpath -w ../Libnet/net_server.c`
+
+net_server.lo: ../Libnet/net_server.c
+@AMDEP_TRUE@	source='../Libnet/net_server.c' object='net_server.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/net_server.Plo' tmpdepfile='$(DEPDIR)/net_server.TPlo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(LIBTOOL) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o net_server.lo `test -f '../Libnet/net_server.c' || echo '$(srcdir)/'`../Libnet/net_server.c
+
+net_set_clse.o: ../Libnet/net_set_clse.c
+@AMDEP_TRUE@	source='../Libnet/net_set_clse.c' object='net_set_clse.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/net_set_clse.Po' tmpdepfile='$(DEPDIR)/net_set_clse.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o net_set_clse.o `test -f '../Libnet/net_set_clse.c' || echo '$(srcdir)/'`../Libnet/net_set_clse.c
+
+net_set_clse.obj: ../Libnet/net_set_clse.c
+@AMDEP_TRUE@	source='../Libnet/net_set_clse.c' object='net_set_clse.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/net_set_clse.Po' tmpdepfile='$(DEPDIR)/net_set_clse.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o net_set_clse.obj `cygpath -w ../Libnet/net_set_clse.c`
+
+net_set_clse.lo: ../Libnet/net_set_clse.c
+@AMDEP_TRUE@	source='../Libnet/net_set_clse.c' object='net_set_clse.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/net_set_clse.Plo' tmpdepfile='$(DEPDIR)/net_set_clse.TPlo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(LIBTOOL) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o net_set_clse.lo `test -f '../Libnet/net_set_clse.c' || echo '$(srcdir)/'`../Libnet/net_set_clse.c
+
+rm.o: ../Libnet/rm.c
+@AMDEP_TRUE@	source='../Libnet/rm.c' object='rm.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/rm.Po' tmpdepfile='$(DEPDIR)/rm.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o rm.o `test -f '../Libnet/rm.c' || echo '$(srcdir)/'`../Libnet/rm.c
+
+rm.obj: ../Libnet/rm.c
+@AMDEP_TRUE@	source='../Libnet/rm.c' object='rm.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/rm.Po' tmpdepfile='$(DEPDIR)/rm.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o rm.obj `cygpath -w ../Libnet/rm.c`
+
+rm.lo: ../Libnet/rm.c
+@AMDEP_TRUE@	source='../Libnet/rm.c' object='rm.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/rm.Plo' tmpdepfile='$(DEPDIR)/rm.TPlo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(LIBTOOL) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o rm.lo `test -f '../Libnet/rm.c' || echo '$(srcdir)/'`../Libnet/rm.c
 CCDEPMODE = @CCDEPMODE@
 
 mostlyclean-libtool:
