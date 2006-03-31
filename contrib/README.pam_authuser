@@ -1,59 +1,36 @@
-#  README.pam_authuser
-#  contributed by Jim Prewett 
-#  updated Feb 13, 2004
+Instructions for setting up pam_authuser PAM module to restrict user access on
+compute nodes
 
-pam_authuser version 0.1.1
+March 31, 2006
 
-Summary:
-pam_authuser is a PAM module designed to help control access to a compute cluster.
 
-Supported systems:
-pam_authuser should work on any system that supports linux-pam.  If it does not, it is a bug!  It has only been tested on GNU/Linux at this point.
+Description:
+--------------------------------------------------------------------------------
+The prologue* scripts are perl scripts that add the user of the job to
+/etc/authuser.  The epilogue* scripts then remove the first occurance of the
+user from /etc/authuser.  File locking is employed in all scripts to eliminate
+the chance of race conditions.  Also, in the epilogue* scripts, there is code
+that is commented out that when activated kills all processes owned by the user
+(using pkill), when that user does not have another valid job on the same node.
 
-Build:
-1. unpack the distribution
-2. run GNU Make (make) in the distribution directory.
+Instructions:
+--------------------------------------------------------------------------------
+Compile pam_authuser.c with make and make install on every compute node.
+Edit /etc/system-auth as described in README.pam_authuser on every compute node.
+Either make a tar ball of the epilogue* and prologue* scripts (to preserve the
+symbolic link) and untar it in $PBS_HOME/mom_priv, or just copy epilogue* and
+prologue* to $PBS_HOME/mom_priv/.
+Verify that they are readable and executable by root and NOT writable by anyone
+besides root (e.g., "-r-x------").
 
-Install:
-1. run make install (again with GNU Make) in the distribution directory.
 
-Usage:
-pam_authuser is intended to be included in one or more of your pam 
-configuration files.  I use it in the /etc/pam.d/system-auth file to control 
-access for anything that uses the system-auth configuration.  Obviously, it can be used just as any other account PAM module would be.
+Acknowledgments:
+--------------------------------------------------------------------------------
+Dan Sneddon at the Ira Fulton Supercomputing Laboratory at Brigham Young
+University (initial developement).
+Hyrum Carroll at Cluster Resources, Inc.
 
-The authuser file:
-One or more files containing lists of users that are allowed to log in may be listed in the configuration file.
-
-Netgroups:
-One or more netgroups containing users that are always allowed to log in may be listed in the configuration file.  I maintain a netgroup containing the set of system administrators for a particular machine.
-
-Basic configuration (with the system-auth file):
-My system-auth file looks like this:
-
-auth        required      /lib/security/pam_env.so
-auth        sufficient    /lib/security/pam_unix.so likeauth nullok
-auth        required      /lib/security/pam_deny.so
-
-account     required      /lib/security/pam_unix.so
-# allow the users listed in /etc/authuser or the users in the systaff netgroup 
-# to log into this machine
-account     sufficient    /lib/security/pam_authuser.so authuser=/etc/authuser netgroup=systaff
-account     required      /lib/security/pam_deny.so
-
-password    required      /lib/security/pam_cracklib.so retry=3 type=
-password    sufficient    /lib/security/pam_unix.so nullok use_authtok md5 shadow nis
-password    required      /lib/security/pam_deny.so
-
-session     required      /lib/security/pam_limits.so
-session     required      /lib/security/pam_unix.so
-
-Help:
 pam_authuser was originally developed by Shawn Sustaita and James E. Prewett 
 (download@hpc.unm.edu) at The Center for High Performance Computing at the 
-University of New Mexico.
-
-pam_authuser is currently being maintained by James E. Prewett (download@hpc.unm.edu).
-
-Patches/feature requests:
-All patches and feature requests should be sent to download@hpc.unm.edu.  I will gladly accept patches (that look OK) and will try to add useful features as time permits.
+University of New Mexico.  pam_authuser is currently being maintained by James
+E. Prewett (download@hpc.unm.edu).
