@@ -496,13 +496,12 @@ int comp_resc2(
   resource *atresc;
   resource *wiresc;
   int rc;
+  char *LimitName;
 
   comp_resc_gt = 0;
   comp_resc_eq = 0;
   comp_resc_lt = 0;
   comp_resc_nc = 0;
-
-  char *LimitName;
 
   if (EMsg != NULL)
     EMsg[0] = '\0';

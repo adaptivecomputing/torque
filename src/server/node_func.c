@@ -522,22 +522,10 @@ int chk_characteristic(
   tmp = pnode->nd_ntype;
 
   if (tmp != old_ntype)
-    {
-log_event(PBSEVENT_ADMIN,PBS_EVENTCLASS_SERVER,"chk_characteristic","tmp != old_ntype");
     *pneed_todo |= WRITE_NEW_NODESFILE;
-    }
 
-  if (old_first != pnode->nd_first)
-{
-log_event(PBSEVENT_ADMIN,PBS_EVENTCLASS_SERVER,"chk_characteristic","old_first != pnode->nd_first");
+  if ((old_nprops != pnode->nd_nprops) || (old_first != pnode->nd_first))
     *pneed_todo |= WRITE_NEW_NODESFILE;
-}
-
-  if (old_nprops != pnode->nd_nprops)
-{
-log_event(PBSEVENT_ADMIN,PBS_EVENTCLASS_SERVER,"chk_characteristic","old_nprops != pnode->nd_nprops");
-    *pneed_todo |= WRITE_NEW_NODESFILE;
-}
 
   old_address = NULL;
 
