@@ -1415,9 +1415,9 @@ static void clear_stream(
 
 
 /*
-**	Do a recvfrom call to get a packet off of all file descriptors.
-**	Return the index of the stream the packet belonged to
-**	or -2 if it was not data, or -1 if there was an error.
+**	Do a recvfrom() call to get a packet off of all file descriptors.
+**	Return the index of the stream the packet belonged to,
+**	-2 if it was no data, or -1 if there was an error.
 **	Return -3 if there was no data to read.
 **	MAY CAUSE STATE CHANGE!
 */
@@ -1432,14 +1432,14 @@ static int rpp_recv_pkt(
   unsigned int  flen;
 
   int		len;
-  struct	sockaddr_in	addr;
-  struct	hostent		*hp;
-  int		i, streamid;
-  struct	send_packet	*spp, *sprev;
-  struct	recv_packet	*rpp, *rprev;
-  struct	recv_packet	*pkt;
-  struct	stream		*sp;
-  char		*data;
+  struct sockaddr_in  addr;
+  struct hostent     *hp;
+  int                 i, streamid;
+  struct send_packet *spp, *sprev;
+  struct recv_packet *rpp, *rprev;
+  struct recv_packet *pkt;
+  struct stream      *sp;
+  char         *data;
   int		type;
   int		sequence;
   u_long	pktcrc;
@@ -1481,7 +1481,7 @@ static int rpp_recv_pkt(
       }
 
     return(-1);
-    }
+    }  /* END for (;;) */
 
   DBPRT((DBTO,"%s: addr %s len %d\n", 
     id, 
@@ -1556,120 +1556,193 @@ static int rpp_recv_pkt(
 
       if (spp != NULL) 
         {
-			DBPRT((DBTO, "%s: stream %d seq %d took %ld\n",
-				id, streamid, sequence,
-				(long)(time(NULL) - spp->time_sent)))
+        DBPRT((DBTO, "%s: stream %d seq %d took %ld\n",
+          id, 
+          streamid, 
+          sequence,
+          (long)(time(NULL) - spp->time_sent)))
 
-			if (sp->state == RPP_CLOSE_WAIT1 &&
-					spp->type == RPP_GOODBYE)
-				sp->state = RPP_CLOSE_WAIT2;
+        if ((sp->state == RPP_CLOSE_WAIT1) && (spp->type == RPP_GOODBYE))
+          sp->state = RPP_CLOSE_WAIT2;
 
-			if (sprev == NULL)
-				sp->send_head = spp->next;
-			else
-				sprev->next = spp->next;
-			if (sp->send_tail == spp)
-				sp->send_tail = sprev;
-			dqueue(spp);
+        if (sprev == NULL)
+          sp->send_head = spp->next;
+        else
+          sprev->next = spp->next;
 
-			if (sp->state == RPP_LAST_ACK &&
-					sp->send_head == NULL) {
-				clear_stream(sp);
-				return -2;
-			}
-		}
-		return streamid;
+        if (sp->send_tail == spp)
+          sp->send_tail = sprev;
 
-	case RPP_GOODBYE:
-		DBPRT((DBTO, "%s: GOODBYE stream %d sequence %d crc %08lX\n",
-				id, streamid, sequence, pktcrc))
-		free(data);
-		if ((sp = rpp_check_pkt(streamid, &addr)) == NULL)
-			return -2;
-		if (rpp_send_ack(sp, sequence) == -1)
-			return -1;
+        dqueue(spp);
 
-		switch (sp->state) {
+        if ((sp->state == RPP_LAST_ACK) && (sp->send_head == NULL)) 
+          {
+          clear_stream(sp);
 
-		case RPP_OPEN_PEND:
-		case RPP_OPEN_WAIT:
-		case RPP_CLOSE_PEND:
-		case RPP_LAST_ACK:
-			return -2;
+          return(-2);
+          }
+        }
 
-		case RPP_CLOSE_WAIT1:
-			sp->state = RPP_LAST_ACK;
-			return -2;
+      return(streamid);
 
-		case RPP_CLOSE_WAIT2:
-			clear_stream(sp);
-			return -2;
-		
-		default:
-			break;
-		}
+      /*NOTREACHED*/
 
-		sp->state = RPP_CLOSE_PEND;
-		clear_send(sp);		/* other side not reading now */
+      break;
 
-		for (rpp=sp->recv_head, rprev=NULL; rpp;
-				rprev=rpp, rpp=rpp->next) {
-			if (rpp->sequence >= sequence)
-				break;
-		}
-		if (rpp == NULL || rpp->sequence > sequence) {
-			DBPRT((DBTO, "%s: GOOD seq %d\n", id, sequence))
-			pkt = (struct recv_packet *)
-				malloc(sizeof(struct recv_packet));
-			assert(pkt != NULL);
-			pkt->type = type;
-			pkt->sequence = sequence;
-			pkt->len = 0;
-			pkt->data = NULL;
-			if (rprev == NULL) {
-				pkt->next = sp->recv_head;
-				sp->recv_head = pkt;
-			}
-			else {
-				pkt->next = rprev->next;
-				rprev->next = pkt;
-			}
-			if (sp->recv_tail == rprev)
-				sp->recv_tail = pkt;
-		}
-		else {
-			DBPRT((DBTO, "%s: DUPLICATE seq %d MAX seen %d\n",
-				id, sequence, rpp->sequence))
-		}
-		return -2;
+    case RPP_GOODBYE:
 
-	case RPP_DATA:
-	case RPP_EOD:
-		DBPRT((DBTO,
-			"%s: DATA stream %d sequence %d crc %08lX len %d\n",
-			id, streamid, sequence, pktcrc, len))
-		if ((sp = rpp_check_pkt(streamid, &addr)) == NULL)
-			goto err_out;
-		if (rpp_send_ack(sp, sequence) == -1) {
-			free(data);
-			return -1;
-		}
+      DBPRT((DBTO,"%s: GOODBYE stream %d sequence %d crc %08lX\n",
+        id,streamid,sequence,pktcrc))
 
-		switch (sp->state) {
-		case RPP_OPEN_WAIT:
-			DBPRT((DBTO,
-				"INPUT on unconnected stream %d\n", streamid))
-			free(data);
-			return -2;
-		case RPP_CLOSE_WAIT1:
-		case RPP_CLOSE_WAIT2:
-		case RPP_LAST_ACK:
-			DBPRT((DBTO, "INPUT on closed stream %d\n", streamid))
-			free(data);
-			return -2;
-		default:
-			break;
-		}
+      free(data);
+
+      if ((sp = rpp_check_pkt(streamid,&addr)) == NULL)
+        {
+        return(-2);
+        }
+
+      if (rpp_send_ack(sp,sequence) == -1)
+        {
+        return(-1);
+
+        switch (sp->state) 
+          {
+          case RPP_OPEN_PEND:
+          case RPP_OPEN_WAIT:
+          case RPP_CLOSE_PEND:
+          case RPP_LAST_ACK:
+
+            return(-2);
+
+            /*NOTREACHED*/
+
+            break;
+
+          case RPP_CLOSE_WAIT1:
+
+            sp->state = RPP_LAST_ACK;
+
+            return(-2);
+
+            /*NOTREACHED*/
+
+            break;
+
+          case RPP_CLOSE_WAIT2:
+
+            clear_stream(sp);
+
+            return(-2);
+	
+            /*NOTREACHED*/
+
+            break;
+	
+          default:
+
+            /* NO-OP */
+
+            break;
+          }  /* END switch (sp->state) */
+
+        sp->state = RPP_CLOSE_PEND;
+
+        clear_send(sp);		/* other side not reading now */
+
+        for (rpp = sp->recv_head,rprev = NULL;rpp != NULL;rprev = rpp,rpp = rpp->next) 
+          {
+          if (rpp->sequence >= sequence)
+            break;
+          }
+
+        if ((rpp == NULL) || (rpp->sequence > sequence)) 
+          {
+          DBPRT((DBTO,"%s: GOOD seq %d\n", 
+            id, 
+            sequence))
+
+          pkt = (struct recv_packet *)malloc(sizeof(struct recv_packet));
+
+          assert(pkt != NULL);
+
+          pkt->type = type;
+
+          pkt->sequence = sequence;
+          pkt->len = 0;
+          pkt->data = NULL;
+
+          if (rprev == NULL) 
+            {
+            pkt->next = sp->recv_head;
+
+            sp->recv_head = pkt;
+            }
+          else 
+            {
+            pkt->next = rprev->next;
+            rprev->next = pkt;
+            }
+
+          if (sp->recv_tail == rprev)
+            sp->recv_tail = pkt;
+          }
+        else 
+          {
+          DBPRT((DBTO, "%s: DUPLICATE seq %d MAX seen %d\n",
+            id,sequence,rpp->sequence))
+          }
+
+        return(-2);
+
+        /*NOTREACHED*/
+
+        break;
+
+      case RPP_DATA:
+      case RPP_EOD:
+
+        DBPRT((DBTO,"%s: DATA stream %d sequence %d crc %08lX len %d\n",
+          id,streamid,sequence,pktcrc,len))
+
+        if ((sp = rpp_check_pkt(streamid,&addr)) == NULL)
+          goto err_out;
+
+        if (rpp_send_ack(sp,sequence) == -1) 
+          {
+          free(data);
+
+          return(-1);
+          }
+
+        switch (sp->state) 
+          {
+          case RPP_OPEN_WAIT:
+
+            DBPRT((DBTO,"INPUT on unconnected stream %d\n", 
+              streamid))
+
+            free(data);
+
+            return(-2);
+
+          case RPP_CLOSE_WAIT1:
+          case RPP_CLOSE_WAIT2:
+          case RPP_LAST_ACK:
+
+            DBPRT((DBTO, "INPUT on closed stream %d\n", streamid))
+
+            free(data);
+
+            return(-2);
+
+            break;
+
+          default:
+
+            /* NO-OP */
+
+            break;
+          }
 
 		if (sequence < sp->recv_sequence) {
 			DBPRT((DBTO, "%s: OLD seq %d\n", id, sequence))
@@ -1839,16 +1912,19 @@ static int rpp_recv_pkt(
 			bottom = spp;
 		}
 
-		break;
+      break;
 
-	default:
-		DBPRT((DBTO, "%s: UNKNOWN packet type %d stream %d sequence %d\n",
-				id, type, streamid, sequence))
-		free(data);
-		break;
-	}
+    default:
 
-  return -2;
+      DBPRT((DBTO, "%s: UNKNOWN packet type %d stream %d sequence %d\n",
+        id, type, streamid, sequence))
+
+      free(data);
+
+      break;
+    }  /* END switch (type) */
+
+  return(-2);
 
 err_out:
 
@@ -1879,7 +1955,7 @@ static int rpp_recv_all(void)
 
     if (ret == -1)
       break;
-    }
+    }  /* END for (i) */
 
   return(rc);
   }
