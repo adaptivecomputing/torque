@@ -32,6 +32,7 @@
   add epilogue.parallel and epilogue.user.parallel (SARA)
   add $PBS_NODENUM, $PBS_MSHOST, and $PBS_NODEFILE to pelogs (USC)
   add more flexible --with-rcp='scp|rcp|mom_rcp' instead of --with-scp (USC)
+  build/install a single libtorque.so (USC)
 
 
 2.0.0p7

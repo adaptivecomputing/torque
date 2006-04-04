@@ -15,6 +15,10 @@ Please be aware, that the behaviour of configure has changed:
 - "--with-tcl=..." now needs path and filename of your tclConfig.sh file!
   (the same is true for Tclx, Tk, Tkx)
   
+Shared libs are now built by default if the build host supports it.  Only a
+single libtorque, instead of libnet, liblog, libpbs, etc. are now built and
+installed.
+
 The Tcl-environment should get found automatically if it is located in usual
 places - but this is not the case for (some?) Debian systems.  If configure
 fails although you have Tcl installed, then please `locate` the file
