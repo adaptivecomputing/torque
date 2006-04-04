@@ -33,6 +33,7 @@
   add $PBS_NODENUM, $PBS_MSHOST, and $PBS_NODEFILE to pelogs (USC)
   add more flexible --with-rcp='scp|rcp|mom_rcp' instead of --with-scp (USC)
   build/install a single libtorque.so (USC)
+  nodes are no longer checked against server host acl list (USC)
 
 
 2.0.0p7

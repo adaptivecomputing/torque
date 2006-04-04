@@ -380,7 +380,7 @@ void req_reject(
 
   snprintf(msgbuf2,sizeof(msgbuf2),"%s",msgbuf);
 
-  if (HostName != NULL)
+  if ((HostName != NULL) && (*HostName != '\0'))
     {
     snprintf(msgbuf,sizeof(msgbuf),"%s REJHOST=%s",
       msgbuf2,
@@ -389,7 +389,7 @@ void req_reject(
     snprintf(msgbuf2,sizeof(msgbuf2),"%s",msgbuf);
     }
 
-  if (Msg != NULL)
+  if ((Msg != NULL) && (*Msg != '\0'))
     {
     snprintf(msgbuf,sizeof(msgbuf),"%s MSG=%s",
       msgbuf2,

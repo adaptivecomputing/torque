@@ -145,6 +145,10 @@ static void free_rescrq A_((struct rq_rescq *));
 
 /* END private prototypes */
 
+#ifndef PBS_MOM
+extern struct pbsnode *PGetNodeFromAddr(pbs_net_t);
+#endif
+
 /* request processing prototypes */
 void req_quejob(struct batch_request *preq);
 void req_jobcredential(struct batch_request *preq);
@@ -308,13 +312,18 @@ void process_request(
 
   if (server.sv_attr[(int)SRV_ATR_acl_host_enable].at_val.at_long) 
     {
-    /* acl enabled, check it; always allow myself */
+    /* acl enabled, check it; always allow myself and nodes */
 
-    if ((acl_check(
+    struct pbsnode *isanode;
+
+    isanode=PGetNodeFromAddr(get_connectaddr(sfds));
+
+    if ((isanode == NULL) &&
+        (strcmp(server_host,request->rq_host) != 0) &&
+        (acl_check(
          &server.sv_attr[(int)SRV_ATR_acl_hosts],
          request->rq_host, 
-         ACL_Host) == 0) &&
-       (strcmp(server_host,request->rq_host) != 0)) 
+         ACL_Host) == 0))
       {
       req_reject(PBSE_BADHOST,0,request,NULL,NULL);
 
