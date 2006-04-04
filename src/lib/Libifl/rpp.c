@@ -1604,46 +1604,47 @@ static int rpp_recv_pkt(
       if (rpp_send_ack(sp,sequence) == -1)
         {
         return(-1);
+        }
 
-        switch (sp->state) 
-          {
-          case RPP_OPEN_PEND:
-          case RPP_OPEN_WAIT:
-          case RPP_CLOSE_PEND:
-          case RPP_LAST_ACK:
+      switch (sp->state) 
+        {
+        case RPP_OPEN_PEND:
+        case RPP_OPEN_WAIT:
+        case RPP_CLOSE_PEND:
+        case RPP_LAST_ACK:
 
-            return(-2);
+          return(-2);
 
-            /*NOTREACHED*/
+          /*NOTREACHED*/
 
-            break;
+          break;
 
-          case RPP_CLOSE_WAIT1:
+        case RPP_CLOSE_WAIT1:
 
-            sp->state = RPP_LAST_ACK;
+          sp->state = RPP_LAST_ACK;
 
-            return(-2);
+          return(-2);
 
-            /*NOTREACHED*/
+          /*NOTREACHED*/
 
-            break;
+          break;
 
-          case RPP_CLOSE_WAIT2:
+        case RPP_CLOSE_WAIT2:
 
-            clear_stream(sp);
+          clear_stream(sp);
 
-            return(-2);
-	
-            /*NOTREACHED*/
+          return(-2);
 
-            break;
-	
-          default:
+          /*NOTREACHED*/
 
-            /* NO-OP */
+          break;
 
-            break;
-          }  /* END switch (sp->state) */
+        default:
+
+          /* NO-OP */
+
+          break;
+        }  /* END switch (sp->state) */
 
         sp->state = RPP_CLOSE_PEND;
 
