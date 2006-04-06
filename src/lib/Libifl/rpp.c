@@ -2012,16 +2012,28 @@ static void rpp_stale(
 
     if (counter > 1024)
       {
-      /* stream is corrupt - destroy it */
- 
-      DBPRT((DBTO, "RPP PACKET is corrupt - seq %d sent %d of %d\n",
-        pp->sequence,
-        pp->sent_out,
-        sp->retry))
- 
-      clear_stream(sp);
+      if (pp->next == pp)
+        {
+        DBPRT((DBTO, "RPP PACKET is corrupt - fixing linked list\n",
+          pp->sequence,
+          pp->sent_out,
+          sp->retry))
 
-      return;
+        pp->next = NULL;
+        }
+      else
+        {
+        /* stream is corrupt - destroy it */
+ 
+        DBPRT((DBTO, "RPP PACKET is corrupt - seq %d sent %d of %d - destroying stream\n",
+          pp->sequence,
+          pp->sent_out,
+          sp->retry))
+
+        clear_stream(sp);
+      
+        return;
+        }
       }
     }  /* END for (pp) */
 
