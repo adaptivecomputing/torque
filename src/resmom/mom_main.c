@@ -480,15 +480,15 @@ const char *PBSServerCmds[] = {
 **	These routines are in the "dependent" code.
 */
 
-extern	void	dep_initialize A_((void));
-extern	void	dep_cleanup A_((void));
+extern	void dep_initialize A_((void));
+extern	void dep_cleanup A_((void));
 
 /* External Functions */
 
-extern void  catch_child A_((int));
-extern void  init_abort_jobs A_((int));
-extern void  scan_for_exiting();
-extern void  scan_for_terminated();
+extern void catch_child A_((int));
+extern void init_abort_jobs A_((int));
+extern void scan_for_exiting();
+extern void scan_for_terminated();
 extern int TMomCheckJobChild(pjobexec_t *,int,int *,int *);
 extern int TMomFinalizeJob3(pjobexec_t *,int,int,int *);
 extern void exec_bail(job *,int);
@@ -6132,7 +6132,7 @@ int main(
     return(3);
     }
 		
-  /* recover & abort Jobs which were under MOM's control */
+  /* recover & abort jobs which were under MOM's control */
 
   init_abort_jobs(recover);
 

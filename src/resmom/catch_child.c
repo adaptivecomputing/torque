@@ -1183,7 +1183,7 @@ void init_abort_jobs(
       {
       remtree(path);
 
-      if (rename(oldp, path) == -1)
+      if (rename(oldp,path) == -1)
         remtree(oldp);
       }
 #endif  /* END MOM_CHECKPOINT == 1 */
@@ -1348,7 +1348,7 @@ void init_abort_jobs(
         check_pwd(pj);
         }
       }
-    }    /* END while ((pdirent = readdir(dir)) != (struct dirent *)0) */
+    }    /* while ((pdirent = readdir(dir)) != NULL) */
 
   closedir(dir);
 

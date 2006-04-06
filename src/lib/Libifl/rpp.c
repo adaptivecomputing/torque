@@ -932,25 +932,37 @@ static struct stream *rpp_check_pkt(
     return(NULL);
     }
 
-	sp = &stream_array[index];
-	if (sp->state <= RPP_FREE) {
-		DBPRT((DBTO, "%s: FREE STREAM\n", id))
-		return NULL;
-	}
+  sp = &stream_array[index];
 
-	if (addrp->sin_port != sp->addr.sin_port)
-		goto bad;
-	if (addrp->sin_family != sp->addr.sin_family)
-		goto bad;
-	if (addrp->sin_addr.s_addr == sp->addr.sin_addr.s_addr)
-		return sp;
+  if (sp->state <= RPP_FREE) 
+    {
+    DBPRT((DBTO,"%s: FREE STREAM\n", 
+      id))
 
-	if ((addrs = sp->addr_array) != NULL) {
-		for (i=0; addrs[i].s_addr; i++) {
-			if (addrs[i].s_addr == addrp->sin_addr.s_addr)
-				return sp;
-		}
-	}
+    return(NULL);
+    }
+
+  if (addrp->sin_port != sp->addr.sin_port)
+    goto bad;
+
+  if (addrp->sin_family != sp->addr.sin_family)
+    goto bad;
+
+  if (addrp->sin_addr.s_addr == sp->addr.sin_addr.s_addr)
+    {
+    return(sp);
+    }
+
+  if ((addrs = sp->addr_array) != NULL) 
+    {
+    for (i = 0;addrs[i].s_addr;i++) 
+      {
+      if (addrs[i].s_addr == addrp->sin_addr.s_addr)
+        {
+        return(sp);
+        }
+      }
+    }
 
 bad:
 
@@ -958,13 +970,14 @@ bad:
     id))
 
   DBPRT((DBTO,"\tstream %d addr %s\n", 
-    index, netaddr(&sp->addr)))
+    index, 
+    netaddr(&sp->addr)))
 
   DBPRT((DBTO,"\tpkt addr %s\n", 
     netaddr(addrp)))
 
   return(NULL);
-  }
+  }  /* END rpp_check_pkt() */
 
 
 
@@ -985,14 +998,12 @@ static void rpp_send_out()
 
   curr = time(NULL);
 
-  for (pp = top; pp; pp = pp->down) 
+  for (pp = top;pp != NULL;pp = pp->down) 
     {
-    time_t sitting = curr - pp->time_sent;
-
-    if (sitting < RPPTimeOut)
+    if ((curr - pp->time_sent) < RPPTimeOut)
       continue;
 
-    if (pp->time_sent == 0 && pkts_sent >= RPP_HIGHWATER)
+    if ((pp->time_sent == 0) && (pkts_sent >= RPP_HIGHWATER))
       break;
 
     sp = &stream_array[pp->index];
@@ -1024,7 +1035,7 @@ static void rpp_send_out()
       continue;
       }
 
-    if (pp->time_sent == 0)		/* new one */
+    if (pp->time_sent == 0)  /* new one */
       pkts_sent++;
 
     pp->time_sent = curr;

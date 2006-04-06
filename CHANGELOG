@@ -28,6 +28,9 @@
   new ":property" node selection when node stat and manager set (pbsnodes) (USC)
   fix race with new jobs reporting wrong walltime (USC)
   sister moms weren't setting job state to "running" (USC)
+<<<<<<< CHANGELOG
+  fixed dynamic node destroy qmgr option
+=======
   don't reject jobs if requested nodes is too large node_pack=T (USC)
   add epilogue.parallel and epilogue.user.parallel (SARA)
   add $PBS_NODENUM, $PBS_MSHOST, and $PBS_NODEFILE to pelogs (USC)
@@ -35,6 +38,7 @@
   build/install a single libtorque.so (USC)
   nodes are no longer checked against server host acl list (USC)
 
+>>>>>>> 1.168
 
 2.0.0p7
 

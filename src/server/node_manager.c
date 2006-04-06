@@ -1486,6 +1486,8 @@ found:
       if (ret != DIS_SUCCESS)
         goto err;
 
+      /* should we cache this response and send it as a single string? */
+
       for (i = 0;i < svr_totnodes;i++) 
         {
         np = pbsndmast[i];
@@ -1495,7 +1497,7 @@ found:
 
         if (LOGLEVEL == 7)  /* higher loglevel gets more info below */
           {
-          sprintf(log_buffer,"adding node[%d] %s to hello response\n",
+          sprintf(log_buffer,"adding node[%d] %s to hello response",
             i,
             np->nd_name);
 
@@ -1508,7 +1510,7 @@ found:
 
           if (LOGLEVEL >= 8)
             {
-            sprintf(log_buffer,"adding node[%d] interface[%d] %ld.%ld.%ld.%ld to hello response\n",
+            sprintf(log_buffer,"adding node[%d] interface[%d] %ld.%ld.%ld.%ld to hello response",
               i,
               j,
               (ipaddr & 0xff000000) >> 24,
