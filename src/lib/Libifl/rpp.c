@@ -1373,7 +1373,7 @@ static void clear_send(
   sp->send_tail = NULL;
 
   return;
-  }
+  }  /* END clear_send() */
 
 
 
@@ -1389,7 +1389,7 @@ static void clear_stream(
   struct stream	*sp)
 
   {
-  struct	recv_packet	*rpp, *rprev;
+  struct recv_packet *rpp, *rprev;
 
   DBPRT((DBTO, "CLEAR stream %ld\n",
     ((long)sp - (long)stream_array)/sizeof(struct stream)))
@@ -1419,7 +1419,7 @@ static void clear_stream(
   sp->state = RPP_DEAD;
 
   return;
-  }
+  }  /* END clear_stream() */
 
 
 
@@ -1756,18 +1756,25 @@ static int rpp_recv_pkt(
             break;
           }
 
-		if (sequence < sp->recv_sequence) {
-			DBPRT((DBTO, "%s: OLD seq %d\n", id, sequence))
-			free(data);
-			return -2;
-		}
+        if (sequence < sp->recv_sequence) 
+          {
+          DBPRT((DBTO,"%s: OLD seq %d\n", 
+            id, 
+            sequence))
 
-		for (rpp=sp->recv_head, rprev=NULL; rpp;
-				rprev=rpp, rpp=rpp->next) {
-			if (rpp->sequence >= sequence)
-				break;
-		}
-		if (rpp == NULL || rpp->sequence > sequence) {
+          free(data);
+
+          return(-2);
+          }
+
+        for (rpp = sp->recv_head,rprev = NULL;rpp != NULL;rprev = rpp,rpp = rpp->next) 
+          {
+          if (rpp->sequence >= sequence)
+            break;
+          }
+
+        if ((rpp == NULL) || (rpp->sequence > sequence)) 
+          {
 			DBPRT((DBTO, "%s: GOOD seq %d\n", id, sequence))
 			data = realloc(data, len);
 			assert(data != NULL);
@@ -1987,17 +1994,36 @@ static void rpp_stale(
 
   {
   struct send_packet *pp;
+  int                 counter;
 
   if ((sp->state <= RPP_FREE) || (sp->state == RPP_STALE))
     {
     return;
     }
 
+  counter = 0;
+
   for (pp = sp->send_head;pp != NULL;pp = pp->next) 
     {
+    counter++;
+
     if (pp->sent_out >= sp->retry)
       break;
-    }
+
+    if (counter > 1024)
+      {
+      /* stream is corrupt - destroy it */
+ 
+      DBPRT((DBTO, "RPP PACKET is corrupt - seq %d sent %d of %d\n",
+        pp->sequence,
+        pp->sent_out,
+        sp->retry))
+ 
+      clear_stream(sp);
+
+      return;
+      }
+    }  /* END for (pp) */
 
   if (pp != NULL) 
     {
@@ -2026,7 +2052,7 @@ static void rpp_stale(
     }    /* END if (pp != NULL) */
 
   return;
-  }
+  }  /* END rpp_stale() */
 
 
 

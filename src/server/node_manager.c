@@ -1015,13 +1015,13 @@ void stream_eof(
     return;
     }
 
-  sprintf(log_buffer, "connection to %s dropped (%s).  setting node state to down\n",
+  sprintf(log_buffer, "connection to %s is corrupt or was dropped remotely (%s).  setting node state to down\n",
     np->nd_name,
     dis_emsg[ret]);
 
   log_err(-1,id,log_buffer);
 
-  /* mark down node and all subnodes */
+  /* mark node and all subnodes as down */
 
   update_node_state(np,INUSE_DOWN);
 
@@ -1107,11 +1107,13 @@ void ping_nodes(
 
     if (np->nd_stream < 0) 
       {
+      /* nodes are down until proven otherwise */
+
+      update_node_state(np,INUSE_DOWN);
+
       /* open new stream */
 
       np->nd_stream = rpp_open(np->nd_name,pbs_rm_port,NULL);
-
-      update_node_state(np,INUSE_DOWN);
 
       if (np->nd_stream == -1) 
         {
@@ -1124,7 +1126,7 @@ void ping_nodes(
 	}
 
       tinsert((u_long)np->nd_stream,np,&streams);
-      }
+      }  /* END if (np->nd_stream < 0) */
 
     if (LOGLEVEL >= 6)
       {

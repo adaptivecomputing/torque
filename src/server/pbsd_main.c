@@ -233,9 +233,10 @@ void do_rpp(
   {
   static char id[] = "do_rpp";
 
-  int	ret, proto, version;
-  void	is_request A_((int,int,int *));
-  void	stream_eof A_((int,u_long,int));
+  int  ret, proto, version;
+
+  void is_request A_((int,int,int *));
+  void stream_eof A_((int,u_long,int));
 
   if (LOGLEVEL >= 4)
     {
@@ -255,6 +256,18 @@ void do_rpp(
 
   if (ret != DIS_SUCCESS) 
     {
+    if (LOGLEVEL >= 1)
+      {
+      sprintf(log_buffer,"corrupt rpp request received on stream %d (invalid protocol)\n",
+        stream);
+
+      log_record(
+        PBSEVENT_SCHED,
+        PBS_EVENTCLASS_REQUEST,
+        id,
+        log_buffer);
+      }
+
     stream_eof(stream,0,ret);
 
     return;
@@ -264,6 +277,18 @@ void do_rpp(
 
   if (ret != DIS_SUCCESS) 
     {
+    if (LOGLEVEL >= 1)
+      {
+      sprintf(log_buffer,"corrupt rpp request received on stream %d (invalid version)\n",
+        stream);
+
+      log_record(
+        PBSEVENT_SCHED,
+        PBS_EVENTCLASS_REQUEST,
+        id,
+        log_buffer);
+      }
+
     stream_eof(stream,0,ret);
 
     return;
