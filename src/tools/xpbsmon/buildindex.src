@@ -83,17 +83,26 @@
 # file should end up. Normally the second arg defaults to be the same
 # as the first. This is to support separate src and build trees.
 #
+# an optional 3rd arg has been added to be the destdir
+#
 
 set libdir [lindex $argv 0]
 
-if {$argc == 2} {
+if {$argc == 3} {
   set tclIndex_dir [lindex $argv 1]
+  set destdir [lindex $argv 2]
+  set havedestdir 1
 } else {
-  if {$argc == 1} {
-    set tclIndex_dir $libdir
+  set havedestdir 0
+  if {$argc == 2} {
+    set tclIndex_dir [lindex $argv 1]
   } else {
-    puts "$argv0 libpath [tclIndex_dir]"
-    exit 1
+    if {$argc == 1} {
+      set tclIndex_dir $libdir
+    } else {
+      puts "$argv0 libpath [tclIndex_dir]"
+      exit 1
+    }
   }
 }
 
@@ -122,16 +131,29 @@ if { $doit } {
 
   set f [open tclIndex]
   while {[gets $f line] >= 0} {
-	set res [regsub {\$dir//} $line {/} match]
-	append entry "$match\n"
+        set res [regsub {\$dir//} $line {/} match]
+        append entry "$match\n"
   }
   close $f
 
   set f [open tclIndex w]
   puts $f $entry
   close $f
-
   puts "done"
 
+  if { $havedestdir } {
+    regsub -all {/} $libdir { } libdir_
+    regsub -all {/} $destdir { } destdir_
+    set f [open tclIndex]
+    while {[gets $f line] >= 0} {
+          set res [regsub $destdir_ $line {} match]
+          append entry_ "$match\n"
+    }
+    close $f
+
+    set f [open tclIndex w]
+    puts $f $entry_
+    close $f
+  }
 }
 exit 0

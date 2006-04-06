@@ -87,7 +87,7 @@
 %define rppflags    --enable-rpp
 %endif
 %if %use_scp
-%define scpflags    --with-scp
+%define scpflags    --with-rcp=scp
 %endif
 
 # dealing with tcl and gui is way too complicated
@@ -320,9 +320,6 @@ Provides: xpbs xpbsmon
 %shared_description
 This package holds the graphical clients.
 
-%post gui
-cd %{_libdir}/xpbs && ./buildindex %{_libdir}/xpbs .
-cd %{_libdir}/xpbsmon && ./buildindex %{_libdir}/xpbsmon .
 
 %if %{build_gui}
 %files gui
@@ -332,8 +329,6 @@ cd %{_libdir}/xpbsmon && ./buildindex %{_libdir}/xpbsmon .
 %{_bindir}/xpbsmon
 %{_libdir}/xpbs
 %{_libdir}/xpbsmon
-%verify(not md5 size mtime) %{_libdir}/xpbs/tclIndex
-%verify(not md5 size mtime) %{_libdir}/xpbsmon/tclIndex
 %endif
 
 

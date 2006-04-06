@@ -566,7 +566,8 @@ tclIndex: $(dist_xpbs_DATA) buildindex
 install-data-hook:
 	$(INSTALL_SCRIPT) buildindex $(DESTDIR)$(XPBS_DIR)/buildindex
 	rm -f $(DESTDIR)$(XPBS_DIR)/tclIndex
-	cd $(DESTDIR)$(XPBS_DIR) && ./buildindex $(DESTDIR)$(XPBS_DIR) . && chmod 644 tclIndex
+	cd $(DESTDIR)$(XPBS_DIR) && ./buildindex $(DESTDIR)$(XPBS_DIR) . $(DESTDIR)
+	chmod 644 $(DESTDIR)$(XPBS_DIR)/tclIndex
 
 uninstall-hook:
 	rm -f $(DESTDIR)$(XPBS_DIR)/buildindex
