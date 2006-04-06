@@ -345,7 +345,8 @@ int main(
 
   /* send back "type none" credential */
 
-  write(fileno(stdout),&auth_type,sizeof(int));
+  if (write(fileno(stdout),&auth_type,sizeof(int)) != sizeof(int))
+    fprintf(stderr,"pbs_iff: error writing to stdout?!\n");
 
   fclose(stdout);
 

@@ -1,5 +1,9 @@
+xpbs-1.2.12
+===========
+- minor fix for Tcl 8.4
+
 xpbs-1.1.11
-============
+===========
 - rid of the inefficient matrix of entry boxes and replaced them with
   specialized listboxes accompanied by input entry widgets.
 - the list of valid resources for the "Resource" box is now presented in

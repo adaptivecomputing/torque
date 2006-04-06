@@ -117,7 +117,6 @@ int main(
    * of the job.
    */
 
-  int id;                         /* Index into the job_id array (argv) */
   char job[PBS_MAXCLTJOBID];      /* Job Id */
   char server[MAXSERVERNAME];	  /* Server name */
   char *location = NULL;          /* Where to run the job */

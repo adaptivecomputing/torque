@@ -610,7 +610,8 @@ void rec_write_usage( group_info *root, FILE *fp )
     strcpy(grp.name, root -> name);
     grp.usage = root -> usage;
 
-    fwrite(&grp, sizeof(struct group_node_usage), 1, fp);
+    if (!fwrite(&grp, sizeof(struct group_node_usage), 1, fp))
+      return;
   }
 
   rec_write_usage(root -> sibling, fp);

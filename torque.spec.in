@@ -115,7 +115,7 @@ Summary: Tera-scale Open-source Resource and QUEue manager
 Name: %{name}
 Version: %{version}
 Release: %{?snap:snap.%snap.}%{release}
-Source: %{name}-%{version}%{?snap:-snap.%snap}.tar.gz
+Source: torque-%{version}%{?snap:-snap.%snap}.tar.gz
 License: distributable
 Group: System Environment/Daemons
 URL: http://www.clusterresources.com/products/torque/
@@ -134,11 +134,13 @@ Obsoletes: torque-gui
 This package holds just a few shared files and directories.
 
 %prep
-%setup -n %{name}-%{version}%{?snap:-snap.%snap}
+%setup -n torque-%{version}%{?snap:-snap.%snap}
 
 
 %build
-./configure --prefix=%_prefix --mandir=%_mandir --libdir=%_libdir --includedir=%_includedir --with-server-home=%{torquehomedir} %{server_nameflags} \
+./configure --prefix=%_prefix --mandir=%_mandir --libdir=%_libdir \
+ --includedir=%_includedir --with-server-home=%{torquehomedir} \
+ %{server_nameflags} \
  %{guiflags} %{syslogflags} %{tclflags} %{rppflags} %{scpflags} \
  CC="$RPMCC" CFLAGS="$RPMCFLAGS" LDFLAGS="$RPMLDFLAGS"
 

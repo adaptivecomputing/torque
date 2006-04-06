@@ -5869,12 +5869,22 @@ int main(
 
   /* write MOM's pid into lockfile */
 
-  ftruncate(lockfds,(off_t)0);
+  if (ftruncate(lockfds,(off_t)0) != 0)
+    {
+    log_err(errno,msg_daemonname,"failed to truncate lockfile");
+
+    return(2);
+    }
 
   sprintf(log_buffer,"%ld\n",
     (long)getpid());
 
-  write(lockfds,log_buffer,strlen(log_buffer) + 1);
+  if (write(lockfds,log_buffer,strlen(log_buffer) + 1) != (strlen(log_buffer) + 1))
+    {
+    log_err(errno,msg_daemonname,"failed to write to lockfile");
+
+    return(2);
+    }
 
 #if (PLOCK_DAEMONS & 4)
   plock(PROCLOCK);	/* lock daemon into memory */

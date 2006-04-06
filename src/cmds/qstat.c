@@ -1301,6 +1301,7 @@ void display_statque(
   /* determine number of nodes in each category */
 
   MaxCat = 0;
+  qmax = 0;
 
   p = status;
 

@@ -1669,7 +1669,12 @@ void send_winsize(
     wsz.ws_xpixel, 
     wsz.ws_ypixel);
 
-  write(sock,buf,PBS_TERM_BUF_SZ);
+  if (write(sock,buf,PBS_TERM_BUF_SZ) != sock,buf,PBS_TERM_BUF_SZ)
+    {
+    perror("sending winsize");
+
+    exit(2);
+    }
 
   return;
   } 
@@ -1699,7 +1704,12 @@ void send_term(
   else
     strncat(buf,term,PBS_TERM_BUF_SZ - 5);
 
-  write(sock, buf, PBS_TERM_BUF_SZ);
+  if (write(sock, buf, PBS_TERM_BUF_SZ) != PBS_TERM_BUF_SZ)
+    {
+    perror("sending term type");
+
+    exit(2);
+    }
 
   cc_array[0] = oldtio.c_cc[VINTR];
   cc_array[1] = oldtio.c_cc[VQUIT];
@@ -1708,7 +1718,12 @@ void send_term(
   cc_array[4] = oldtio.c_cc[VEOF];
   cc_array[5] = oldtio.c_cc[VSUSP];
 
-  write(sock, cc_array, PBS_TERM_CCA);
+  if (write(sock, cc_array, PBS_TERM_CCA) != PBS_TERM_CCA)
+    {
+    perror("sending term options");
+
+    exit(2);
+    }
 
   return;
   }

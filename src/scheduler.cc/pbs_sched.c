@@ -992,7 +992,12 @@ int main(
 
         (void)sprintf(log_buffer, "%ld\n", (long)pid);
 
-        (void)write(lockfds, log_buffer, strlen(log_buffer)+1);
+        if (write(lockfds, log_buffer, strlen(log_buffer)+1) != strlen(log_buffer))
+          {
+          perror("writing to lockfile");
+
+          exit(1);
+          }
 
 #if (PLOCK_DAEMONS & 2)
 	(void)plock(PROCLOCK);	/* lock daemon into memory */
