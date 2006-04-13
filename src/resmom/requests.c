@@ -2553,6 +2553,7 @@ void req_cpyfile(
   int            arg2index = -1;
   char		 faketmpdir[1024];
   job 		*pjob;
+  int		 wordexperr = 0;
 #endif
 
   if (LOGLEVEL >= 3)
@@ -2824,7 +2825,7 @@ void req_cpyfile(
       {
       case 0:
 
-        /* NO-OP */
+        wordexperr = 0;
 
         break; /* Successful */
 
@@ -2843,6 +2844,8 @@ void req_cpyfile(
 
         bad_files = 1;
 
+        wordexperr = 1;  /* ensure we don't attempt a second source file */
+
         goto error;
 
         /*NOTREACHED*/
@@ -2856,7 +2859,20 @@ void req_cpyfile(
       {
       case 0:
 
-        break; /* Successful */
+        /* success - allow if word count is 1 */
+
+        if (arg3exp.we_wordc == 1)
+          {
+          strcpy(arg3,arg3exp.we_wordv[0]);
+
+          wordfree(&arg3exp);
+
+          wordexperr = 0;
+
+          break; /* Successful */
+          }
+
+        /* fall through */
 
       case WRDE_NOSPACE:
 
@@ -2873,30 +2889,15 @@ void req_cpyfile(
 
         bad_files = 1;
 
+        wordexperr = 1;  /* ensure we don't attempt a second destination file */
+
         goto error;
 
         break;
       }  /* END switch () */
 
-    /* Note: more than one word is only allowed for arg3 (destination) */
+    /* Note: more than one word is only allowed for arg2 (source) */
 
-    if (arg3exp.we_wordc > 1)
-      {
-      sprintf(log_buffer,"Too many words after expanding destination path: %s",
-        arg3);
-
-      add_bad_list(&bad_list,log_buffer,2);
-
-      reply_text(preq,PBSE_NOCOPYFILE,bad_list);
-
-      bad_files = 1;
-
-      goto error;
-      }
-
-    strcpy(arg3,arg3exp.we_wordv[0]);
-
-    wordfree(&arg3exp);
 
     arg2index = -1;
 
@@ -3053,7 +3054,8 @@ error:
 
     unlink(rcperr);
 #ifdef HAVE_WORDEXP
-    goto nextword;  /* ugh, it's hard to use a real loop when your feature is #ifdef's out */
+    if (!wordexperr)
+      goto nextword;  /* ugh, it's hard to use a real loop when your feature is #ifdef's out */
 #endif
     }  /* END for(pair) */
 
