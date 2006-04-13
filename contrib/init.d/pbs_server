@@ -2,7 +2,7 @@
 #
 # pbs_server	This script will start and stop the PBS Server
 #
-# chkconfig: 345 85 85
+# chkconfig: 345 5 85
 # description: PBS is a versatile batch system for SMPs and clusters
 #
 # Source the library functions
@@ -26,23 +26,33 @@ case "$1" in
 		else
 			daemon $PBS_DAEMON -t create
 		fi
+		RET=$?
 		touch /var/lock/subsys/pbs_server
 		echo
 		;;
 	stop)
 		echo -n "Shutting down TORQUE Server: "
 		killproc pbs_server
+		RET=$?
 		rm -f /var/lock/subsys/pbs_server
 		echo
 		;;
 	status)
 		status pbs_server
+		RET=$?
 		;;
 	restart)
 		$0 stop
 		$0 start
 		;;
+	reload)
+		echo -n "Reloading pbs_server: "
+		killproc pbs_server -HUP
+		RET=$?
+		echo
+		;;
 	*)
-		echo "Usage: pbs_server {start|stop|restart|status}"
+		echo "Usage: pbs_server {start|stop|restart|status|reload}"
 		exit 1
 esac
+exit $RET

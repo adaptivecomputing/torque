@@ -2,7 +2,7 @@
 #
 # pbs_mom	This script will start and stop the PBS Mom
 #
-# chkconfig: 345 85 85
+# chkconfig: 345 5 99
 # description: TORQUE/PBS is a versatile batch system for SMPs and clusters
 #
 ulimit -n 32768
@@ -51,6 +51,7 @@ case "$1" in
 	start)
 		echo -n "Starting TORQUE Mom: "
 		daemon $PBS_DAEMON $args
+		RET=$?
 		touch /var/lock/subsys/pbs_mom
    		echo
 		;;
@@ -58,17 +59,21 @@ case "$1" in
 		[ -f /var/lock/subsys/pbs_mom ] && $0 stop
 		echo -n "Starting TORQUE Mom with purge: "
 		daemon $PBS_DAEMON -r
+		RET=$?
 		touch /var/lock/subsys/pbs_mom
    		echo
 		;;
 	stop)
 		echo -n "Shutting down TORQUE Mom: "
-		kill_pbs_mom && success "shutdown" || failure "shutdown"
+		kill_pbs_mom
+		RET=$?
+		[ $RET -eq 0 ] && success "shutdown" || failure "shutdown"
 		echo
 		rm -f /var/lock/subsys/pbs_mom
 		;;
 	status)
 		status pbs_mom
+		RET=$?
 		;;
 	restart)
 		$0 stop
@@ -77,12 +82,14 @@ case "$1" in
 		;;
 	reload)
 	        echo -n "Re-reading TORQUE Mom config file: "
-		kill -SIGHUP `pidof_pbs_mom` && success "HUP" || failure "HUP"
+		kill -SIGHUP `pidof_pbs_mom`
+		RET=$?
+		[ $RET -eq 0 ] && success "HUP" || failure "HUP"
 		echo
 	        ;;
 	*)
 		echo "Usage: pbs_mom {start|stop|restart|reload|status|purge}"
 		exit 1
 esac
-
+exit $RET
 
