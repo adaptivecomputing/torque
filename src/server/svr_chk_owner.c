@@ -134,6 +134,7 @@ int svr_chk_owner(
     }
 
   strncpy(rmtuser,pu,PBS_MAXUSER);
+  rmtuser[PBS_MAXUSER] = '\0';
 
   /*
    * Get job owner name without "@host" and then map to "local" name.
