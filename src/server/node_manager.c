@@ -1015,7 +1015,7 @@ void stream_eof(
     return;
     }
 
-  sprintf(log_buffer, "connection to %s is corrupt or was dropped remotely (%s).  setting node state to down\n",
+  sprintf(log_buffer,"connection to %s is corrupt or was dropped remotely (%s).  setting node state to down\n",
     np->nd_name,
     dis_emsg[ret]);
 

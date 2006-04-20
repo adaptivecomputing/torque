@@ -760,7 +760,7 @@ void req_quejob(
 
     /* set create time */
 
-    pj->ji_wattr[(int)JOB_ATR_ctime].at_val.at_long =(long)time_now;
+    pj->ji_wattr[(int)JOB_ATR_ctime].at_val.at_long = (long)time_now;
     pj->ji_wattr[(int)JOB_ATR_ctime].at_flags |= ATR_VFLAG_SET;
 
     /* set hop count = 1 */

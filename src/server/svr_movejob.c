@@ -1109,7 +1109,7 @@ int net_move(
     data      = 0;
     }
 
-  svr_setjobstate(jobp, JOB_STATE_TRANSIT, JOB_SUBSTATE_TRNOUT);
+  svr_setjobstate(jobp,JOB_STATE_TRANSIT,JOB_SUBSTATE_TRNOUT);
 
   return(send_job(
     jobp, 
@@ -1118,7 +1118,7 @@ int net_move(
     move_type, 
     post_func, 
     data));
-  }
+  }  /* END net_move() */
 
 
 
