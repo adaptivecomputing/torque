@@ -1669,7 +1669,7 @@ void send_winsize(
     wsz.ws_xpixel, 
     wsz.ws_ypixel);
 
-  if (write(sock,buf,PBS_TERM_BUF_SZ) != sock,buf,PBS_TERM_BUF_SZ)
+  if (write(sock,buf,PBS_TERM_BUF_SZ) != PBS_TERM_BUF_SZ)
     {
     perror("sending winsize");
 

@@ -992,7 +992,7 @@ int main(
 
         (void)sprintf(log_buffer, "%ld\n", (long)pid);
 
-        if (write(lockfds, log_buffer, strlen(log_buffer)+1) != strlen(log_buffer))
+        if (write(lockfds, log_buffer, strlen(log_buffer)+1) != strlen(log_buffer)+1)
           {
           perror("writing to lockfile");
 
