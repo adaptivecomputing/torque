@@ -1306,7 +1306,7 @@ int mom_set_limits(
           mem_limit = value + reslim.rlim_cur;
           }
         }
-      } 
+      }    /* END else if (!strcmp(pname,"mem") && ... */ 
     else if (!strcmp(pname,"walltime")) 
       {	
       /* check */
@@ -1331,6 +1331,10 @@ int mom_set_limits(
           return(error(pname,PBSE_BADATVAL));
           }
         }
+      }
+    else if (!strcmp(pname,"mem"))
+      {
+      /* ignore mem locally - for serial jobs, this is handled above */
       } 
     else if ((pres->rs_defin->rs_flags & ATR_DFLAG_RMOMIG) == 0)
       {
