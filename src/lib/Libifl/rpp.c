@@ -206,7 +206,7 @@ void rpp_shutdown_on_exit(int,void *);
 
 /*
 **	Several kinds of linked lists hang from each RPP stream structure.
-**	In particular, each stram structure has a list of send_packet
+**	In particular, each stream structure has a list of send_packet
 **	structures.  These structures record information that's necessary for
 **	managing a piece of data that's being sent to the other end of the
 **	connection.  Besides having a pointer that links it to the next
@@ -1051,7 +1051,7 @@ static void rpp_send_out()
 
 
 /*
-**	Create or reuse a possition in stream_array.
+**	Create or reuse a position in stream_array.
 */
 
 static int rpp_create_sp()

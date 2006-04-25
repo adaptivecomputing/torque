@@ -1259,6 +1259,10 @@ int mom_set_limits(
           vmem_limit = value;
         }
       } 
+    else if (!strcmp(pname,"mem") && (pjob->ji_numnodes != 1))
+      {	
+      /* ignore */
+      } 
     else if ((!strcmp(pname,"mem") && (pjob->ji_numnodes == 1)) ||
               !strcmp(pname,"pmem")) 
       {	
@@ -1332,10 +1336,6 @@ int mom_set_limits(
           }
         }
       }
-    else if (!strcmp(pname,"mem"))
-      {
-      /* ignore mem locally - for serial jobs, this is handled above */
-      } 
     else if ((pres->rs_defin->rs_flags & ATR_DFLAG_RMOMIG) == 0)
       {
       /* don't recognize and not marked as ignore by mom */
