@@ -95,8 +95,12 @@
 
 
 /* path from pbs home to the log files */
-const char *mid_path[] = {"server_priv/accounting", "server_logs", "mom_logs", 
-			  "sched_logs"};
+
+const char *mid_path[] = {
+  "server_priv/accounting", 
+  "server_logs", 
+  "mom_logs", 
+  "sched_logs"};
 
 struct log_entry *log_lines;
 int ll_cur_amm;
@@ -148,48 +152,70 @@ int main(
         break;
 
       case 'a':
+
 	no_acct = 1;
-      break;
+
+        break;
 
       case 's':
+
 	no_svr = 1;
-      break;
+
+        break;
 
       case 'm':
+
 	no_mom = 1;
-      break;
+
+        break;
 
       case 'l':
+
 	no_schd = 1;
-      break;
+
+        break;
 
       case 'z':
+
 	filter_excessive = filter_excessive ? 0 : 1;
-      break;
+
+        break;
 
       case 'c':
-	excessive_count = strtol(optarg, &endp, 10);
-	if( *endp != '\0' )
+
+	excessive_count = strtol(optarg,&endp,10);
+
+	if (*endp != '\0')
 	  error = 1;
-      break;
+
+        break;
 
       case 'w':
-	wrap = strtol(optarg, &endp, 10);
-	if( *endp != '\0' )
+
+	wrap = strtol(optarg,&endp,10);
+
+	if (*endp != '\0')
 	  error = 1;
-      break;
+
+        break;
 
       case 'p':
+
 	prefix_path = optarg;
-      break;
+
+        break;
 
       case 'n':
-	number_of_days = strtol(optarg, &endp, 10);
-	if( *endp != '\0' )
+
+	number_of_days = strtol(optarg,&endp,10);
+
+	if (*endp != '\0')
 	  error = 1;
-      break;
+
+        break;
 
       case 'f':
+
 	if( strcmp(optarg, "error") == 0 )
 	  log_filter |= PBSEVENT_ERROR;
 	else if( strcmp(optarg, "system") == 0 )
@@ -219,16 +245,19 @@ int main(
       break;
 
       default:
+
 	error = 1;
+
+        break;
+      }
     }
-  }
 
 
   /* no jobs */
 
-  if (error || argc == optind)
+  if ((error != 0) || (argc == optind))
     {
-    printf("USAGE: %s [-a|s|l|m|v] [-w size] [-p path] [-n days] [-f filter_type]\n", 
+    printf("USAGE: %s [-a|s|l|m|v] [-w size] [-p path] [-n days] [-f filter_type] <JOBID>\n", 
       strip_path(argv[0]));
 
     printf(
@@ -246,57 +275,62 @@ int main(
 "   -m : don't use mom log files\n"
 "   -v : verbose mode - show more error messages\n");
 
-    printf("default prefix path = %s\n", PBS_SERVER_HOME);
+    printf("default prefix path = %s\n", 
+      PBS_SERVER_HOME);
+
 #if defined(FILTER_EXCESSIVE)
     printf("filter_excessive: ON\n");
 #else
     printf("filter_excessive: OFF\n");
 #endif
-    return 1;
-  }
+    return(1);
+    }  /* END if ((error != 0) || (argc == optind)) */
 
-  if( wrap == -1 )
+  if (wrap == -1)
     wrap = get_cols();
 
   time(&t);
   t_save = t;
 
-  for( opt = optind; opt < argc; opt++ )
-  {
-    for(i = 0, t = t_save; i < number_of_days; i++, t -= SECONDS_IN_DAY)
+  for (opt = optind;opt < argc;opt++)
     {
+    for (i = 0,t = t_save;i < number_of_days;i++,t -= SECONDS_IN_DAY)
+      {
       tm_ptr = localtime( &t );
 
-      for( j = 0; j < 4; j++ )
-      {
-	if( (j == IND_ACCT && no_acct) || (j == IND_SERVER && no_svr) ||
-	    (j == IND_MOM && no_mom)   || (j == IND_SCHED && no_schd) )
+      for (j = 0;j < 4;j++)
+        {
+	if ((j == IND_ACCT && no_acct) || (j == IND_SERVER && no_svr) ||
+	    (j == IND_MOM && no_mom)   || (j == IND_SCHED && no_schd))
 	  continue;
 	
-	filename = log_path(prefix_path, j, tm_ptr);
+	filename = log_path(prefix_path,j,tm_ptr);
 
-	if( ( fp = fopen(filename, "r") ) == NULL )
-	{
-	  if( verbose )
-	    perror(filename);
-	  continue;
-	}
+	if ((fp = fopen(filename,"r")) == NULL)
+          {
+          if (verbose)
+            perror(filename);
 
-	parse_log(fp, argv[opt], j);
+          continue;
+          }
+
+	parse_log(fp,argv[opt],j);
 
 	fclose(fp);
-      }
-    }
+        }
+      }    /* END for (i) */
 
-    if( filter_excessive )
-      filter_excess( excessive_count);
+    if (filter_excessive)
+      filter_excess(excessive_count);
 
-    qsort(log_lines, ll_cur_amm, sizeof(struct log_entry) , sort_by_date);
+    qsort(log_lines,ll_cur_amm,sizeof(struct log_entry),sort_by_date);
 
-    if( ll_cur_amm != 0 )
-      printf("\nJob: %s\n\n", log_lines[0].name);
-    for( i = 0; i < ll_cur_amm; i++ )
-    {
+    if (ll_cur_amm != 0)
+      printf("\nJob: %s\n\n", 
+        log_lines[0].name);
+
+    for (i = 0;i < ll_cur_amm;i++)
+      {
       if (log_lines[i].log_file == 'A')
 	event_type = 0;
       else
@@ -304,14 +338,17 @@ int main(
 
       if (!( log_filter & event_type) && !(log_lines[i].no_print))
         {
-	printf("%-20s %-5c", log_lines[i].date, log_lines[i].log_file);
-	line_wrap(log_lines[i].msg, 26, wrap);
+	printf("%-20s %-5c", 
+          log_lines[i].date, 
+          log_lines[i].log_file);
+
+	line_wrap(log_lines[i].msg,26,wrap);
         }
       }
     }
 
   return(0);
-  }
+  }  /* END main() */
 
 
 
