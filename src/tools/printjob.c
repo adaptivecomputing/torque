@@ -89,6 +89,7 @@
 #include "attribute.h"
 #include "server_limits.h"
 #include "job.h"
+#include "tm.h"
 
 void
 prt_job_struct(pjob)
@@ -191,6 +192,42 @@ int read_attr(fd)
 	return 1;
 }
 
+int read_tm_info(int fds) {
+
+  int outport, errport;
+  tm_task_id taskid;
+  tm_task_id nodeid;
+
+  if (read(fds,(char *)&outport,sizeof(int)) != sizeof(int))
+    {
+	fprintf(stderr, "short read of TM info\n");
+	exit(2);
+    }
+
+  if (read(fds,(char *)&errport,sizeof(int)) != sizeof(int))
+    {
+	fprintf(stderr, "short read of TM info\n");
+	exit(2);
+    }
+
+  if (read(fds,(char *)&taskid,sizeof(tm_task_id)) != sizeof(tm_task_id))
+    {
+	fprintf(stderr, "short read of TM info\n");
+	exit(2);
+    }
+
+  if (read(fds,(char *)&nodeid,sizeof(tm_node_id)) != sizeof(tm_node_id))
+    {
+	fprintf(stderr, "short read of TM info\n");
+	exit(2);
+    }
+
+  printf("stdout port = %d\nstderr port = %d\ntaskid = %d\nnodeid = %d\n",
+    outport,errport,taskid,nodeid);
+
+  return(0);
+}
+
 int main(argc, argv)
 	int argc;
 	char *argv[];
@@ -239,6 +276,11 @@ int main(argc, argv)
 		if (no_attributes == 0) {
 			printf("--attributes--\n");
 			while (read_attr(fp)) ;
+		}
+
+		if (xjob.ji_qs.ji_un_type==JOB_UNION_TYPE_MOM) {
+			printf("--TM info--\n");
+			read_tm_info(fp);
 		}
 
 		(void)close(fp);

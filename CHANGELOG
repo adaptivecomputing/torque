@@ -37,6 +37,7 @@
   Tcl's buildindex now supports a 3rd arg for "destdir" to aid fakeroot installs (USC)
   fixed dynamic node destroy qmgr option
   install rm.h (USC)
+  printjob now prints saved TM info (USC)
 
 2.0.0p7
 
