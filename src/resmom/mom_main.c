@@ -5348,6 +5348,8 @@ void MOMCheckRestart(void)
         msg_daemonname, 
         log_buffer);
       }
+
+    DBPRT(("%s\n",log_buffer));
     }
   }  /* END MOMCheckRestart() */
 
@@ -6154,6 +6156,8 @@ int main(
     msg_daemonname, 
     "Is up");
 
+  DBPRT(("MOM is up\n"));
+
   sprintf(
     log_buffer,
     "MOM executable path and mtime at launch: %s %ld",
@@ -6343,6 +6347,9 @@ int main(
       if (pjob->ji_qs.ji_substate != JOB_SUBSTATE_RUNNING)
         continue;
 
+      if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HERE) == 0)
+        continue;
+
       /* update information for my tasks */
 
       mom_set_use(pjob);
@@ -6468,15 +6475,12 @@ int main(
 
         if (send_sisters(pjob,IM_POLL_JOB) != pjob->ji_numnodes - 1)
           {
-          sprintf(log_buffer,"cannot contact sisters - node %d failed",
-            pjob->ji_nodeid);
+          sprintf(log_buffer,"cannot contact all sisters");
 
           log_record(PBSEVENT_JOB | PBSEVENT_FORCE,
             PBS_EVENTCLASS_JOB,
             pjob->ji_qs.ji_jobid,
             log_buffer);
-
-          pjob->ji_nodekill = pjob->ji_nodeid;
           }
         }
 
@@ -6621,6 +6625,8 @@ int main(
     strcat(envstr,orig_path);
 
     putenv(envstr);
+
+    DBPRT(("Re-execing myself now...\n"));
 
     execvp(MOMExePath,argv);
 

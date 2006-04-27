@@ -740,14 +740,16 @@ int send_sisters(
       continue;
 
     if (np->hn_sister != SISTER_OKAY)	/* sister is gone? */
-      continue;
+      {
+      DBPRT(("send_sisters: nodeid %d is not okay\n",np->hn_node));
+
+      /* continue; I don't like this -garrick */
+      }
 
     if (np->hn_stream == -1)
       np->hn_stream = rpp_open(np->hn_host,pbs_rm_port,NULL);
 
     ep = event_alloc(com,np,TM_NULL_EVENT,TM_NULL_TASK);
-
-    np->hn_sister = SISTER_EOF;
 
     ret = im_compose(
       np->hn_stream, 
@@ -758,12 +760,22 @@ int send_sisters(
       TM_NULL_TASK);
 
     if (ret != DIS_SUCCESS)
+      {
+      rpp_close(np->hn_stream);
+      np->hn_stream = -1;
+      np->hn_sister = SISTER_EOF;
       continue;
+      }
 
     ret = rpp_flush(np->hn_stream);
 
     if (ret == -1)
+      {
+      rpp_close(np->hn_stream);
+      np->hn_stream = -1;
+      np->hn_sister = SISTER_EOF;
       continue;
+      }
 
     np->hn_sister = SISTER_OKAY;
 
@@ -1658,6 +1670,26 @@ void im_request(
   if (ret != DIS_SUCCESS)
     goto err;
 
+  cookie = disrst(stream,&ret);
+
+  if (ret != DIS_SUCCESS)
+    goto err;
+
+  command = disrsi(stream,&ret);
+
+  if (ret != DIS_SUCCESS)
+    goto err;
+
+  event = disrsi(stream,&ret);
+
+  if (ret != DIS_SUCCESS)
+    goto err;
+
+  fromtask = disrsi(stream,&ret);
+
+  if (ret != DIS_SUCCESS)
+    goto err;
+
   if (LOGLEVEL >= 3)
     {
     sprintf(log_buffer,"received request '%s' from %s",
@@ -1669,27 +1701,9 @@ void im_request(
       PBS_EVENTCLASS_JOB,
       jobid,
       log_buffer);
+
+    DBPRT(("%s\n",log_buffer));
     }
-
-  cookie = disrst(stream,&ret);
-
-  if (ret != DIS_SUCCESS)
-    goto err;
-
-  command = disrsi(stream,&ret);
-
-  if (ret != DIS_SUCCESS)
-    goto err;
-
-   event = disrsi(stream,&ret);
-
-  if (ret != DIS_SUCCESS)
-    goto err;
-
-  fromtask = disrsi(stream,&ret);
-
-  if (ret != DIS_SUCCESS)
-    goto err;
 
   switch (command) 
     {
@@ -1915,10 +1929,13 @@ void im_request(
       pjob->ji_wattr[(int)JOB_ATR_mtime].at_val.at_long = (long)time_now;
   
       pjob->ji_wattr[(int)JOB_ATR_mtime].at_flags |= ATR_VFLAG_SET;
+
+      /* check_pwd is setting up ji_un as type MOM
       pjob->ji_qs.ji_un_type = JOB_UNION_TYPE_NEW;
       pjob->ji_qs.ji_un.ji_newt.ji_fromsock = -1;
       pjob->ji_qs.ji_un.ji_newt.ji_fromaddr = addr->sin_addr.s_addr;
       pjob->ji_qs.ji_un.ji_newt.ji_scriptsz = 0;
+      */
  
       if (check_pwd(pjob) == NULL) 
         {
@@ -2265,6 +2282,8 @@ void im_request(
           PBS_EVENTCLASS_JOB,
           jobid,
           log_buffer);
+
+        DBPRT(("%s\n",log_buffer));
         }
 
       reply = 0;

@@ -268,6 +268,8 @@ struct passwd *check_pwd(
     return(pwdp);
     }
 
+  pjob->ji_qs.ji_un_type = JOB_UNION_TYPE_MOM;
+
   pjob->ji_qs.ji_un.ji_momt.ji_exuid = pwdp->pw_uid;
 
   pjob->ji_grpcache = malloc(sizeof(struct grpcache) + strlen(pwdp->pw_dir) + 1);

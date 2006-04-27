@@ -316,6 +316,13 @@ void scan_for_terminated()
       continue;
       }
 
+    if (WIFEXITED(statloc))
+      exiteval = WEXITSTATUS(statloc);
+    else if (WIFSIGNALED(statloc))
+      exiteval = WTERMSIG(statloc) + 0x100;
+    else 
+      exiteval = 1;
+
     if (pid == pjob->ji_momsubt) 
       {
       if (pjob->ji_mompost) 
@@ -330,13 +337,6 @@ void scan_for_terminated()
 
       continue;
       }
-
-    if (WIFEXITED(statloc))
-      exiteval = WEXITSTATUS(statloc);
-    else if (WIFSIGNALED(statloc))
-      exiteval = WTERMSIG(statloc) + 0x100;
-    else 
-      exiteval = 1;
 
     if (LOGLEVEL >= 2)
       {
