@@ -421,6 +421,8 @@ void scan_for_exiting()
           pjob->ji_qs.ji_jobid, 
           "Terminated");
 
+        DBPRT(("Terminating job, sending IM_KILL_JOB to sisters\n"));
+
         if (send_sisters(pjob,IM_KILL_JOB) == 0) 
           {
           pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITING;
@@ -535,6 +537,8 @@ void scan_for_exiting()
             "connection to server lost - killing job");
           }
 
+        DBPRT(("connection to server lost - killing job %s\n",pjob->ji_qs.ji_jobid));
+
         kill_job(pjob,SIGKILL);
 
         job_purge(pjob);
@@ -621,6 +625,8 @@ void scan_for_exiting()
           pjob->ji_qs.ji_jobid,
           "all tasks complete - purging job as sister");
         }
+
+      DBPRT(("all tasks complete - purging job as sister (%s)\n",pjob->ji_qs.ji_jobid));
 
       job_purge(pjob);
 
@@ -1112,36 +1118,6 @@ void init_abort_jobs(
       continue;
       }
 
-    for (j = 0;j < pj->ji_numnodes;j++)
-      {
-      if (LOGLEVEL >= 6)
-        {
-        sprintf(log_buffer,"%s: adding client %s",
-          id,
-          pj->ji_hosts[j].hn_host);
-
-        log_record(
-          PBSEVENT_ERROR,
-          PBS_EVENTCLASS_SERVER,
-          msg_daemonname,
-          log_buffer);
-        }
-
-      addclient(pj->ji_hosts[j].hn_host);
-      }  /* END for (j) */
-
-    if (LOGLEVEL >= 4)
-      {
-      sprintf(log_buffer,"successfully recovered job %s",
-        pj->ji_qs.ji_jobid);
-
-      log_record(
-        PBSEVENT_DEBUG,
-        PBS_EVENTCLASS_JOB,
-        id,
-        log_buffer);
-      }
-
     /* PW:  mpiexec patch - set the globid so mom does not coredump in response to tm_spawn */
 
     set_globid(pj,NULL);
@@ -1187,6 +1163,42 @@ void init_abort_jobs(
         remtree(oldp);
       }
 #endif  /* END MOM_CHECKPOINT == 1 */
+
+    /*
+     * make sure we trust connections from sisters in case we get an
+     * IM request before we get the real addr list from server.
+     * Note: this only works after the job_nodes() call above.
+     */
+
+    for (j = 0;j < pj->ji_numnodes;j++)
+      {
+      if (LOGLEVEL >= 6)
+        {
+        sprintf(log_buffer,"%s: adding client %s",
+          id,
+          pj->ji_hosts[j].hn_host);
+
+        log_record(
+          PBSEVENT_ERROR,
+          PBS_EVENTCLASS_SERVER,
+          msg_daemonname,
+          log_buffer);
+        }
+
+      addclient(pj->ji_hosts[j].hn_host);
+      }  /* END for (j) */
+
+    if (LOGLEVEL >= 4)
+      {
+      sprintf(log_buffer,"successfully recovered job %s",
+        pj->ji_qs.ji_jobid);
+
+      log_record(
+        PBSEVENT_DEBUG,
+        PBS_EVENTCLASS_JOB,
+        id,
+        log_buffer);
+      }
 
     if ((recover != 2) &&
        ((pj->ji_qs.ji_substate == JOB_SUBSTATE_RUNNING) ||

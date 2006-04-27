@@ -38,6 +38,7 @@
   fixed dynamic node destroy qmgr option
   install rm.h (USC)
   printjob now prints saved TM info (USC)
+  make MOM restarts with running jobs more reliable (USC)
 
 2.0.0p7
 
