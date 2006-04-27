@@ -371,6 +371,7 @@ static unsigned long cput_sum(phead)
 	char			procname[100];
 	ulong			cputime, addtime;
 	prpsinfo_t		pi;
+	int			nps=0;
 
 	DBPRT(("%s: entered\n", id))
 	cputime = 0.0;
@@ -390,11 +391,17 @@ static unsigned long cput_sum(phead)
 		}
 		if (!injob(phead, &pi))
 			continue;
+		nps++;
 		addtime = tv(pi.pr_time) + tv(pi.pr_ctime);
 		cputime += addtime;
 		DBPRT(("%s: ses %d pid %d cputime %d\n",
 				id, pi.pr_sid, pi.pr_pid, addtime, cputime))
 	}
+
+	if (nps == 0)
+		pjob->ji_flags |= MOM_NO_PROC;
+	else    
+		pjob->ji_flags &= ~MOM_NO_PROC;
 
 	return ((unsigned long)((double)cputime * cputfactor));
 }

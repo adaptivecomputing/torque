@@ -526,6 +526,8 @@ static unsigned long cput_sum(
  
   if (nps == 0)
     pjob->ji_flags |= MOM_NO_PROC;
+  else
+    pjob->ji_flags &= ~MOM_NO_PROC;
 
   return((unsigned long)((double)cputime * cputfactor));
   } /* END cput_sum() */
