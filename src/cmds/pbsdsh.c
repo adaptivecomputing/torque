@@ -410,7 +410,7 @@ void wait_for_task(
         if (*(tid + c) == TM_NULL_TASK)
           continue;
 
-        printf("pbsdsh: killing task %u signal %d\n",
+        fprintf(stderr,"pbsdsh: killing task %u signal %d\n",
           *(tid + c), 
           fire_phasers);
 
@@ -525,7 +525,7 @@ void wait_for_task(
 
         if ((verbose != 0) || (*(ev + c) != 0)) 
           {
-          printf("%s: task %d exit status %d\n",
+          fprintf(stderr,"%s: task %d exit status %d\n",
             id, 
             c, 
             *(ev + c));
@@ -684,7 +684,7 @@ build_listener(int *port)
 {
     int s;
     struct sockaddr_in addr;
-    socklen_t len = sizeof(addr);
+    unsigned int len = sizeof(addr);
 
     if ((s = socket(AF_INET, SOCK_STREAM, 0)) < 0)
         fprintf(stderr,"%s: socket", __func__);
@@ -878,12 +878,12 @@ int main(
 #ifdef DEBUG
   if (rootrot.tm_parent == TM_NULL_TASK) 
     {
-    printf("%s: I am the mother of all tasks\n", 
+    fprintf(stderr,"%s: I am the mother of all tasks\n", 
       id);
     } 
   else 
     {
-    printf("%s: I am but a child in the scheme of things\n", 
+    fprintf(stderr,"%s: I am but a child in the scheme of things\n", 
       id);
     }
 #endif /* DEBUG */
@@ -1006,7 +1006,7 @@ int main(
 				id, c, get_ecname(rc));
 		} else {
 			if (verbose)
-				printf("%s: spawned task %d\n", id, c);
+				fprintf(stderr,"%s: spawned task %d\n", id, c);
 			++nspawned;
 			if (sync)
 				wait_for_task(&nspawned); /* one at a time */
