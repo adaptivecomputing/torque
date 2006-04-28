@@ -108,19 +108,21 @@
 #include "dis.h"
 #include "dis_.h"
 
-int diswsl(stream, value)
-    int			stream;
-    long		value;
-    {
-	int		retval;
-	unsigned	ndigs;
-	unsigned long	ulval;
-	char		c;
-	char		*cp;
+int diswsl(
 
-	assert(stream >= 0);
-	assert(dis_puts != NULL);
-	assert(disw_commit != NULL);
+  int  stream,
+  long value)
+
+  {
+  int		retval;
+  unsigned	ndigs;
+  unsigned long	ulval;
+  char		c;
+  char		*cp;
+
+  assert(stream >= 0);
+  assert(dis_puts != NULL);
+  assert(disw_commit != NULL);
 
 	if (value < 0) {
 		ulval = (unsigned long)-(value + 1) + 1;

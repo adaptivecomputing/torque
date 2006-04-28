@@ -1977,7 +1977,7 @@ static int rpp_recv_all(void)
     }  /* END for (i) */
 
   return(rc);
-  }
+  }  /* rpp_recv_all() */
 
 
 
@@ -1990,7 +1990,7 @@ static int rpp_recv_all(void)
 
 static void rpp_stale(
 
-  struct stream *sp)
+  struct stream *sp)  /* I (cleared on corruption) */
 
   {
   struct send_packet *pp;
@@ -2050,6 +2050,8 @@ static void rpp_stale(
       case RPP_CLOSE_WAIT1:
       case RPP_CLOSE_WAIT2:
       case RPP_LAST_ACK:
+
+        /* what do these states indicate? */
 
         clear_stream(sp);
 
@@ -3474,8 +3476,10 @@ int rpp_wcommit(
     }  /* END switch (sp->state) */
 
   if (flag) 
-    {			/* commit */
-    if (rpp_dopending(index, FALSE))
+    {
+    /* commit */
+
+    if (rpp_dopending(index,FALSE))
       {
       return(-1);
       }
@@ -3504,13 +3508,13 @@ int rpp_wcommit(
     next = pp->next;
 
     free(pp);
-    }
+    }  /* for (pp) */
  
   sp->pend_head->next = NULL;
   sp->pend_tail = sp->pend_head;
 
   return(0);
-  }
+  }  /* rpp_wcommit() */
 
 
 

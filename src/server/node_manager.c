@@ -1308,7 +1308,8 @@ void is_request(
   int *cmdp)    /* O (optional) */
 
   {
-  static	char	id[] = "is_request";
+  static char   id[] = "is_request";
+
   int		command = 0;
   int		ret = DIS_SUCCESS;
   int		i, j;
@@ -1410,7 +1411,7 @@ void is_request(
       */
 
       return;
-      }
+      }  /* END if (node->nd_stream >= 0) */
 
     node->nd_stream = stream;
   

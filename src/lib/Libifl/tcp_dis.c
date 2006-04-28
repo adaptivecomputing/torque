@@ -464,6 +464,8 @@ int PConnTimeout(
 
   if (tcparray[sock]->IsTimeout == 1)
     {
+    /* timeout occurred, report 'TRUE' */
+
     return(1);
     }
 
@@ -483,14 +485,25 @@ int PConnTimeout(
 
 static int tcp_puts(
 
-  int         fd,
-  const char *str,
-  size_t      ct)
+  int         fd,  /* I */
+  const char *str, /* I */
+  size_t      ct)  /* I */
 
   {
+  char *id = "tcp_puts";
+
   struct tcpdisbuf *tp;
 
+  DBPRT(("%s: entered with fd=%d  size=%d\n", 
+    id,
+    fd,
+    (int)ct))
+
   tp = &tcparray[fd]->writebuf;
+
+  /* NOTE:  currently, failures may occur if THE_BUF_SIZE is not large enough */
+  /*        this should be changed to allow proper operation with degraded    */
+  /*        performance (how?) */
 
   if ((tp->tdis_thebuf + THE_BUF_SIZE - tp->tdis_leadp) < (ssize_t)ct) 
     {
@@ -499,7 +512,15 @@ static int tcp_puts(
     if ((DIS_tcp_wflush(fd) < 0) ||
        ((tp->tdis_thebuf + THE_BUF_SIZE - tp->tdis_leadp) < (ssize_t)ct))
       {
-      return(-1);		/* error */
+      /* FAILURE */
+
+      DBPRT(("%s: error!  out of space in buffer and cannot commit message (bufsize=%d, buflen=%d, ct=%d)\n",
+        id,
+        THE_BUF_SIZE,
+        (int)(tp->tdis_leadp - tp->tdis_thebuf)
+        (int)ct))
+
+      return(-1);	
       }
     }
 
@@ -508,7 +529,7 @@ static int tcp_puts(
   tp->tdis_leadp += ct;
 
   return(ct);
-  }
+  }  /* END tcp_puts() */
 
 
 
@@ -530,16 +551,18 @@ static int tcp_rcommit(
   if (commit_flag) 
     {
     /* commit by moving trailing up */
+
     tp->tdis_trailp = tp->tdis_leadp;
     } 
   else 
     {
     /* uncommit by moving leading back */
+
     tp->tdis_leadp = tp->tdis_trailp;
     }
 
   return(0);
-  }
+  }  /* END tcp_rcommit() */
 
 
 

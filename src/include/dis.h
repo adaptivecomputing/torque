@@ -235,7 +235,7 @@ int diswl_ A_((int stream, dis_long_double_t value, unsigned int ndigs));
 #define diswd(stream, value) diswl_(stream, (dis_long_double_t)(value), DBL_DIG)
 /*#if FLT_MANT_DIG == DBL_MANT_DIG || DBL_MANT_DIG == LDBL_MANT_DIG*/
 #if SIZEOF_FLOAT == SIZEOF_DOUBLE
-#define diswf(stream, value) diswl_(stream, (dis_long_double_t)(value), FLT_DIG)
+#define diswf(stream,value) diswl_(stream,(dis_long_double_t)(value),FLT_DIG)
 #else
 int diswf A_((int stream,double value));
 #endif
