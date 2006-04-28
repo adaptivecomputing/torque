@@ -3223,7 +3223,7 @@ int rpp_read(
     hold = 0;
 
     pp = pp->next;
-    }
+    }  /* END while () */
 
   return(hiwater);
   }  /* END rpp_read() */

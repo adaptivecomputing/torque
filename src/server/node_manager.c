@@ -828,7 +828,33 @@ int is_stat_get(
 
   while (rc != DIS_EOD)
     {
-    ++count;
+    if ((++count > 64) || (rc == DIS_EOF))
+      {
+      /* NOTE:  in some cases, corruption occurs and this routine loops forever  */
+
+      /* FIXME */
+
+      if (LOGLEVEL >= 0)
+        {
+        sprintf(log_buffer,"cannot read all stats from node %s, rc=%d, giving up after %d tries",
+          (np->nd_name != NULL) ? np->nd_name : "NULL",
+          rc,
+          count);
+
+        log_record(
+          PBSEVENT_SCHED,
+          PBS_EVENTCLASS_REQUEST,
+          id,
+          log_buffer);
+        }
+
+      /* FAILURE */
+
+      update_node_state(np,INUSE_DOWN);
+
+      return(DIS_NOCOMMIT);
+      }
+
     funcs_dis();
 
     if ((ret_info = disrst(stream,&rc)) != NULL)
@@ -889,7 +915,7 @@ int is_stat_get(
         }
 
       free(ret_info);
-      }
+      }  /* END if ((ret_info = disrst(stream,&rc)) != NULL) */
     }    /* END while (rc != DIS_EOD) */
 
   if (msg_error && server.sv_attr[(int)SRV_ATR_DownOnError].at_val.at_long)
@@ -1015,7 +1041,7 @@ void stream_eof(
     return;
     }
 
-  sprintf(log_buffer,"connection to %s is corrupt or was dropped remotely (%s).  setting node state to down\n",
+  sprintf(log_buffer,"connection to %s is bad, remote service may be down, message may be corrupt, or connection may have been dropped remotely (%s).  setting node state to down\n",
     np->nd_name,
     dis_emsg[ret]);
 
@@ -1660,7 +1686,7 @@ found:
       goto err;
 
       break;
-    }  /* END switch(command) */
+    }  /* END switch (command) */
 
   rpp_eom(stream);
 
@@ -1712,10 +1738,12 @@ void write_node_state()
 
   if (nstatef != NULL) 
     {
-    fseek(nstatef, 0L, SEEK_SET);	/* rewind and clear */
+    fseek(nstatef,0L,SEEK_SET);	/* rewind and clear */
+
     if (ftruncate(fileno(nstatef),(off_t)0) != 0)
       {
       log_err(errno,"write_node_state","could not truncate file");
+
       return;
       }
     } 
