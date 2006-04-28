@@ -209,8 +209,7 @@ int pbs_rescquery(
 
   reply = PBSD_rdrpy(c);
 
-  /* FIXME: this should be checking pbs_errno? */
-  if (rc == PBSE_NONE)
+  if (((rc = connection[c].ch_errno) == PBSE_NONE))
     {
     /* copy in available and allocated numbers */
 

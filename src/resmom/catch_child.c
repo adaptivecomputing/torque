@@ -949,6 +949,8 @@ static void obit_reply(
 
         case -1:
 
+          /* FIXME - causes epilogue to be run twice! */
+
           pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITING;
 
           exiting_tasks = 1;
