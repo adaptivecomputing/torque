@@ -93,6 +93,7 @@
 
 #include "dis.h"
 #include "dis_init.h"
+#include "log.h"
 
 static struct tcp_chan	**tcparray = NULL;
 static int		  tcparraymax = 0;
@@ -266,7 +267,7 @@ static int tcp_read(
 
   tp->tdis_eod += i;
  
-  return(i)
+  return(i);
   }  /* END tcp_read() */
 
 
@@ -510,7 +511,7 @@ int TConnGetReadErrno(
     return(0);
     }
 
-  return(tcparray[sock].ReadErrno);
+  return(tcparray[sock]->ReadErrno);
   }  /* END TConnGetReadErrno() */
 
 
@@ -527,7 +528,7 @@ int TConnGetSelectErrno(
     return(0);
     }
 
-  return(tcparray[sock].SelectErrno);
+  return(tcparray[sock]->SelectErrno);
   }  /* END TConnGetSelectErrno() */
 
 
@@ -576,7 +577,7 @@ static int tcp_puts(
       DBPRT(("%s: error!  out of space in buffer and cannot commit message (bufsize=%d, buflen=%d, ct=%d)\n",
         id,
         THE_BUF_SIZE,
-        (int)(tp->tdis_leadp - tp->tdis_thebuf)
+        (int)(tp->tdis_leadp - tp->tdis_thebuf),
         (int)ct))
 
       return(-1);	

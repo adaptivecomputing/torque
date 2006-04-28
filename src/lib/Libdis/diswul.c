@@ -108,6 +108,7 @@
 
 #include "dis.h"
 #include "dis_.h"
+#include "log.h"
 
 
 
@@ -128,13 +129,13 @@ int diswul(
 
   int           rc;
 
-  DOID("diswul")
+  const char *id = "diswul";
 
   assert(stream >= 0);
   assert(dis_puts != NULL);
   assert(disw_commit != NULL);
 
-  DBPRT((DBTO,"%s: entered stream=%d, value=%ld\n",
+  DBPRT(("%s: entered stream=%d, value=%ld\n",
     id,
     stream,
     value))
