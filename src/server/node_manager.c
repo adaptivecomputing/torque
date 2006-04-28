@@ -791,6 +791,9 @@ int is_stat_get(
   char       date_attrib[100];
   int        msg_error = 0;
 
+  extern int TConnGetSelectErrno();
+  extern int TConnGetReadErrno();
+
   if (LOGLEVEL >= 3)
     {
     sprintf(log_buffer,"received status from node %s",
@@ -836,11 +839,22 @@ int is_stat_get(
 
       if (LOGLEVEL >= 0)
         {
+        /* NOTE:  TConnGetSelectErrno()/TConnGetReadErrno() only work with TCP connections */
+
+/*
+        sprintf(log_buffer,"cannot read all stats from node %s, rc=%d, giving up after %d tries (SE: %d  RE: %d)",
+          (np->nd_name != NULL) ? np->nd_name : "NULL",
+          rc,
+          count,
+          TConnGetSelectErrno[stream],
+          TConnGetReadErrno[stream]);
+*/
+
         sprintf(log_buffer,"cannot read all stats from node %s, rc=%d, giving up after %d tries",
           (np->nd_name != NULL) ? np->nd_name : "NULL",
           rc,
           count);
-
+                           
         log_record(
           PBSEVENT_SCHED,
           PBS_EVENTCLASS_REQUEST,

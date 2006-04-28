@@ -99,35 +99,58 @@
 #include "batch_request.h"
 #include "dis.h"
 
-int decode_DIS_JobFile(sock, preq)
-	int	 sock;
-	struct batch_request *preq;
-{
-	int   rc;
-	size_t amt;
+int decode_DIS_JobFile(
 
-	preq->rq_ind.rq_jobfile.rq_data = 0;
+  int                   sock,
+  struct batch_request *preq)
 
-	preq->rq_ind.rq_jobfile.rq_sequence = disrui(sock, &rc);
-	if (rc) return rc;
+  {
+  int   rc;
+  size_t amt;
 
-	preq->rq_ind.rq_jobfile.rq_type = disrui(sock, &rc);
-	if (rc) return rc;
+  preq->rq_ind.rq_jobfile.rq_data = 0;
 
-	preq->rq_ind.rq_jobfile.rq_size = disrui(sock, &rc);
-	if (rc) return rc;
+  preq->rq_ind.rq_jobfile.rq_sequence = disrui(sock,&rc);
 
-	if ((rc = disrfst(sock, PBS_MAXSVRJOBID+1, preq->rq_ind.rq_jobfile.rq_jobid)) != 0)
-		return rc;
+  if (rc) 
+    {
+    return(rc);
+    }
 
-	preq->rq_ind.rq_jobfile.rq_data = disrcs(sock, &amt, &rc);
-	if (((long)amt != preq->rq_ind.rq_jobfile.rq_size) && (rc == 0))
-		rc = DIS_EOD;
-	if (rc) {
-		if (preq->rq_ind.rq_jobfile.rq_data)
-			(void)free(preq->rq_ind.rq_jobfile.rq_data);
-			preq->rq_ind.rq_jobfile.rq_data = 0;
-	}
+  preq->rq_ind.rq_jobfile.rq_type = disrui(sock,&rc);
 
-	return rc;
-}
+  if (rc) 
+    {
+    return(rc);
+    }
+
+  preq->rq_ind.rq_jobfile.rq_size = disrui(sock,&rc);
+
+  if (rc) 
+    {
+    return(rc);
+    }
+
+  if ((rc = disrfst(sock,PBS_MAXSVRJOBID + 1,preq->rq_ind.rq_jobfile.rq_jobid)) != 0)
+    {
+    return(rc);
+    }
+
+  preq->rq_ind.rq_jobfile.rq_data = disrcs(sock,&amt,&rc);
+
+  if (((long)amt != preq->rq_ind.rq_jobfile.rq_size) && (rc == 0))
+    rc = DIS_EOD;
+
+  if (rc) 
+    {
+    if (preq->rq_ind.rq_jobfile.rq_data)
+      free(preq->rq_ind.rq_jobfile.rq_data);
+
+    preq->rq_ind.rq_jobfile.rq_data = 0;
+    }
+
+  return(rc);
+  }
+
+/* END dec_JobFile.c */
+

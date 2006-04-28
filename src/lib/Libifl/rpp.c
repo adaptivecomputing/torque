@@ -3242,8 +3242,8 @@ int rpp_read(
 
 int rpp_rcommit(
 
-  int index,
-  int flag)
+  int index,  /* I */
+  int flag)   /* I */
 
   {
   DOID("rcommit")
@@ -3251,7 +3251,8 @@ int rpp_rcommit(
   struct stream *sp;
 
   DBPRT((DBTO,"%s: entered index %d\n", 
-    id, index))
+    id, 
+    index))
 
   if ((index < 0) || (index >= stream_num)) 
     {
@@ -3264,10 +3265,10 @@ int rpp_rcommit(
 
   switch (sp->state) 
     {
-    case RPP_CLOSE_WAIT1:			/* stream closed */
+    case RPP_CLOSE_WAIT1:	/* stream closed */
     case RPP_CLOSE_WAIT2:
     case RPP_LAST_ACK:
-    case RPP_OPEN_PEND:			/* shouldn't happen */
+    case RPP_OPEN_PEND:		/* shouldn't happen */
     case RPP_FREE:
     case RPP_DEAD:
 
@@ -3305,7 +3306,7 @@ int rpp_rcommit(
     }
 
   return(0);
-  }
+  }  /* END rpp_rcommit() */
 
 
 
@@ -3573,6 +3574,8 @@ int rpp_skip(
 
   if ((ret = rpp_okay(index)) <= 0)
     {
+    /* FAILURE - may be 0, -1, or -2 */
+
     return(ret);
     }
 
@@ -3703,11 +3706,22 @@ int rpp_getc(
 
   if ((ret = rpp_read(index,&c,1)) == 1)
     {
+    /* SUCCESS */
+
     return((int)c);
     }
 
-  return((ret == -2) ? -2 : -1);
-  }
+  if (ret == -2)
+    {
+    /* FAILURE:  type is ??? */
+
+    return(-2);
+    }
+
+  /* FAILURE */
+
+  return(-1);
+  }  /* END rpp_getc() */
 
 
 

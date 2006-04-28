@@ -85,106 +85,210 @@
 #include "dis.h"
 #include "dis_.h"
 
-int disrl_(stream, ldval, ndigs, nskips, sigd, count)
-    int			stream;
-    dis_long_double_t		*ldval;
-    unsigned		*ndigs;
-    unsigned		*nskips;
-    unsigned		sigd;
-    unsigned		count;
+int disrl_(
+
+  int                stream,
+  dis_long_double_t *ldval,
+  unsigned          *ndigs,
+  unsigned          *nskips,
+  unsigned           sigd,
+  unsigned           count)
+
+  {
+  int		c;
+  int		negate;
+  unsigned	unum;
+  char		*cp;
+  dis_long_double_t	fpnum;
+
+  assert(stream >= 0);
+  assert(dis_getc != NULL);
+  assert(disr_skip != NULL);
+
+  if (dis_umaxd == 0)
+    disiui_();
+
+  switch (c = (*dis_getc)(stream)) 
     {
-	int		c;
-	int		negate;
-	unsigned	unum;
-	char		*cp;
-	dis_long_double_t	fpnum;
+    case '-':
+    case '+':
 
-	assert(stream >= 0);
-	assert(dis_getc != NULL);
-	assert(disr_skip != NULL);
+      negate = c == '-';
 
-	if (dis_umaxd == 0)
-	        disiui_();
-	switch (c = (*dis_getc)(stream)) {
-	    case '-':
-	    case '+':
-		negate = c == '-';
-		*nskips = count > sigd ? count - sigd : 0;
-		count -= *nskips;
-		*ndigs = count;
-		fpnum = 0.0L;
-		do {
-			if ((c = (*dis_getc)(stream)) < '0' || c > '9') {
-				if (c < 0)
-				        return (DIS_EOD);
-				return (DIS_NONDIGIT);
-			}
-			fpnum = fpnum * 10.0L + (dis_long_double_t)(c - '0');
-		} while (--count);
-		if ((count = *nskips) > 0) {
-			count--;
-			switch ((*dis_getc)(stream)) {
-			    case '5':
-				if (count == 0)
-				        break;
-			    case '6':
-			    case '7':
-			    case '8':
-			    case '9':
-			        fpnum += 1.0L;
-			    case '0':
-			    case '1':
-			    case '2':
-			    case '3':
-			    case '4':
-				if (count > 0 &&
-				   (*disr_skip)(stream, (size_t)count) == (int)count)
-				        return (DIS_EOD);
-				break;
-			    default:
-				return (DIS_NONDIGIT);
-			}
-		}
-		*ldval = negate ? -fpnum : fpnum;
-		return (DIS_SUCCESS);
-	    case '0':
-		return (DIS_LEADZRO);
-	    case '1':
-	    case '2':
-	    case '3':
-	    case '4':
-	    case '5':
-	    case '6':
-	    case '7':
-	    case '8':
-	    case '9':
-		unum = c - '0';
-		if (count > 1) {
-			if ((*dis_gets)(stream, dis_buffer + 1, count - 1) !=
-								(int)count - 1)
-			        return (DIS_EOD);
-			cp = dis_buffer;
-			if (count >= dis_umaxd) {
-				if (count > dis_umaxd)
-				        break;
-				*cp = c;
-				if (memcmp(dis_buffer, dis_umax, dis_umaxd) > 0)
-				        break;
-			}
-			while (--count) {
-				if ((c = *++cp) < '0' || c > '9')
-				        return (DIS_NONDIGIT);
-				unum = unum * 10 + (unsigned)(c - '0');
-			}
-		}
-		return (disrl_(stream, ldval, ndigs, nskips, sigd, unum));
-	    case -1:
-		return (DIS_EOD);
-	    case -2:
-		return (DIS_EOF);
-	    default:
-		return (DIS_NONDIGIT);
-	}
-	*ldval = HUGE_VAL;
-	return (DIS_OVERFLOW);
-}
+      *nskips = count > sigd ? count - sigd : 0;
+
+      count -= *nskips;
+
+      *ndigs = count;
+
+      fpnum = 0.0L;
+
+      do 
+        {
+        if (((c = (*dis_getc)(stream)) < '0') || (c > '9')) 
+          {
+          if (c < 0)
+            {
+            /* end of data marker located */
+
+            return(DIS_EOD);
+            }
+
+          return(DIS_NONDIGIT);
+          }
+
+        fpnum = fpnum * 10.0L + (dis_long_double_t)(c - '0');
+        } while (--count);
+
+      count = *nskips;
+
+      if (count > 0) 
+        {
+        count--;
+
+        switch ((*dis_getc)(stream)) 
+          {
+          case '5':
+
+            if (count == 0)
+              break;
+
+            /* fall through */
+
+          case '6':
+          case '7':
+          case '8':
+          case '9':
+
+            fpnum += 1.0L;
+
+            /* fall through */
+
+          case '0':
+          case '1':
+          case '2':
+          case '3':
+          case '4':
+
+            if ((count > 0) &&
+               ((*disr_skip)(stream,(size_t)count) == (int)count))
+              {
+              /* all characters successfully read in */
+
+              return(DIS_EOD);
+              }
+
+            break;
+
+          default:
+
+            return(DIS_NONDIGIT);
+
+            /*NOTREACHED*/
+
+            break;
+          }  /* END switch ((*dis_getc)(stream)) */
+        }    /* END if (count > 0) */
+
+      *ldval = negate ? -fpnum : fpnum;
+
+      return(DIS_SUCCESS);
+
+      break;
+
+    case '0':
+
+      return(DIS_LEADZRO);
+
+      /*NOTREACHED*/
+
+      break;
+
+    case '1':
+    case '2':
+    case '3':
+    case '4':
+    case '5':
+    case '6':
+    case '7':
+    case '8':
+    case '9':
+
+      unum = c - '0';
+
+      if (count > 1) 
+        {
+        if ((*dis_gets)(stream,dis_buffer + 1,count - 1) != (int)count - 1)
+          {
+          /* cannot read all requested characters from stream */
+
+          /* FAILURE */
+
+          return(DIS_EOD);
+          }
+
+        cp = dis_buffer;
+
+        if (count >= dis_umaxd) 
+          {
+          if (count > dis_umaxd)
+            break;
+
+          *cp = c;
+
+          if (memcmp(dis_buffer,dis_umax,dis_umaxd) > 0)
+            break;
+          }
+
+        while (--count) 
+          {
+          if (((c = *++cp) < '0') || (c > '9'))
+            {
+            return(DIS_NONDIGIT);
+            }
+
+          unum = unum * 10 + (unsigned)(c - '0');
+          }
+        }    /* END if (count > 1) */
+
+      return(disrl_(stream,ldval,ndigs,nskips,sigd,unum));
+
+      /*NOTREACHED*/
+
+      break;
+
+    case -1:
+
+      /* -1 indicates tcp_gets() failed with ??? */
+
+      return(DIS_EOD);
+
+      /*NOTREACHED*/
+
+      break;
+
+    case -2:
+
+      /* -2 indicates tcp_gets() failed with ??? */
+
+      return(DIS_EOF);
+
+      /*NOTREACHED*/
+
+      break;
+
+    default:
+
+      return(DIS_NONDIGIT);
+ 
+      /*NOTREACHED*/
+
+      break;
+    }  /* END switch (c = (*dis_getc)(stream)) */
+
+  *ldval = HUGE_VAL;
+
+  return(DIS_OVERFLOW);
+  }  /* END disrl_() */
+
+/* END disrl_.c */

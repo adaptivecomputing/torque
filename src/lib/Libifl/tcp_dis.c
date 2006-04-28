@@ -202,6 +202,8 @@ static int tcp_read(
    */
 
   tcparray[fd]->IsTimeout = 0;
+  tcparray[fd]->SelectErrno = 0;
+  tcparray[fd]->ReadErrno = 0;
 
   do 
     {
@@ -219,16 +221,23 @@ static int tcp_read(
       &timeout);
     } while ((i == -1) && (errno == EINTR));
 
-  if (i <= 0)
+  if (i == 0)
     {
-    /* if i == 0, timeout has occurred */
+    /* timeout has occurred */
 
-    if (i == 0)
-      tcparray[fd]->IsTimeout = 1;
+    tcparray[fd]->IsTimeout = 1;
 
-    return(i);
+    return(0);
     }
-	
+  else if (i < 0)
+    {
+    /* select failed */
+
+    tcparray[fd]->SelectErrno = errno;
+
+    return(-1);
+    }
+  
   while ((i = read(
       fd,
       tp->tdis_eod,
@@ -238,10 +247,26 @@ static int tcp_read(
       break;
     }
 
-  if (i > 0)
-    tp->tdis_eod += i;
+  if (i < 0)
+    {
+    /* FAILURE - read failed */
 
-  return((i == 0) ? -2 : i);
+    tcparray[fd]->ReadErrno = errno;
+
+    return(-1);
+    }
+  else if (i == 0)
+    {
+    /* FAILURE - no data read */
+
+    return(-2);
+    }
+
+  /* SUCCESS */
+
+  tp->tdis_eod += i;
+ 
+  return(i)
   }  /* END tcp_read() */
 
 
@@ -334,7 +359,7 @@ void DIS_tcp_reset(
     DIS_tcp_clear(&tcp->writebuf);
 
   return;
-  }
+  }  /* END DIS_tcp_reset() */
 
 
 
@@ -471,6 +496,40 @@ int PConnTimeout(
 
   return(0);
   }  /* END PConnTimeout() */
+
+
+
+
+int TConnGetReadErrno(
+
+  int sock)  /* I */
+
+  {
+  if ((tcparray == NULL) || (tcparray[sock] == NULL))
+    {
+    return(0);
+    }
+
+  return(tcparray[sock].ReadErrno);
+  }  /* END TConnGetReadErrno() */
+
+
+
+
+
+int TConnGetSelectErrno(
+
+  int sock)  /* I */
+
+  {
+  if ((tcparray == NULL) || (tcparray[sock] == NULL))
+    {
+    return(0);
+    }
+
+  return(tcparray[sock].SelectErrno);
+  }  /* END TConnGetSelectErrno() */
+
 
 
 

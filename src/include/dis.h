@@ -268,6 +268,8 @@ struct tcp_chan {
   struct tcpdisbuf writebuf;
 
   int              IsTimeout;  /* (boolean)  1 - true */
+  int              ReadErrno;
+  int              SelectErrno;
   };
 
 #endif	/* DATA_IS_STRINGS_ */
