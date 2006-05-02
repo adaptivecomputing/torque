@@ -40,6 +40,8 @@
   printjob now prints saved TM info (USC)
   make MOM restarts with running jobs more reliable (USC)
   fix return check in pbs_rescquery ficing segfault in pbs_sched (USC)
+  workaround buggy recvfrom() in Tru64 (USC)
+  attempt to handly socklen_t portably (USC)
 
 2.0.0p7
 
