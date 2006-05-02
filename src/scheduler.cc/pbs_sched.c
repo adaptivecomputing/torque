@@ -576,7 +576,7 @@ int server_command()
   char	*id = "server_command";
 
   int           new_socket;
-  unsigned int	slen;
+  socklen_t	slen;
   int		i, cmd;
   pbs_net_t	addr;
 
@@ -992,7 +992,7 @@ int main(
 
         (void)sprintf(log_buffer, "%ld\n", (long)pid);
 
-        if (write(lockfds, log_buffer, strlen(log_buffer)+1) != strlen(log_buffer)+1)
+        if (write(lockfds, log_buffer, strlen(log_buffer)+1) != (ssize_t)(strlen(log_buffer)+1))
           {
           perror("writing to lockfile");
 

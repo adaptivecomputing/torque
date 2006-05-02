@@ -386,8 +386,7 @@ static void accept_conn(
   int newsock;
   struct sockaddr_in from;
 
-  /* socklen_t not portable */
-  unsigned int fromsize;
+  socklen_t fromsize;
 	
   /* update lasttime of main socket */
 

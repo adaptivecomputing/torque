@@ -684,7 +684,7 @@ build_listener(int *port)
 {
     int s;
     struct sockaddr_in addr;
-    unsigned int len = sizeof(addr);
+    socklen_t len = sizeof(addr);
 
     if ((s = socket(AF_INET, SOCK_STREAM, 0)) < 0)
         fprintf(stderr,"%s: socket", __func__);

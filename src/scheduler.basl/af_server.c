@@ -965,7 +965,8 @@ Server *server;
 {
        static  char    id[] = "ServerOpen"; 	
        struct sockaddr_in      saddr;
-       int                     new_socket, slen, sock, connect, port;
+       int                     new_socket, sock, connect, port;
+       socklen_t		slen;
        char		       server_name[PBS_MAXHOSTNAME];	
        char		       *sname;
 

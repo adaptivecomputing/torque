@@ -134,8 +134,7 @@ int main(
   int 		 sock;
   struct sockaddr_in sockname;
 
-  /* socklen_t not portable */
-  unsigned int socknamelen;
+  socklen_t socknamelen;
 
   int		 testmode = 0;
   int		 rc;

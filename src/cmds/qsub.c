@@ -1289,7 +1289,7 @@ final:
 char *interactive_port()
 
   {
-  unsigned int namelen;
+  socklen_t namelen;
   static char portstring[8];
   struct sockaddr_in myaddr;
   unsigned short port;
@@ -1309,11 +1309,12 @@ char *interactive_port()
     exit(1);
     }
 
+  namelen = sizeof(myaddr);
   myaddr.sin_family = AF_INET;
   myaddr.sin_addr.s_addr = INADDR_ANY;
   myaddr.sin_port = 0;
 
-  if (bind(inter_sock,(struct sockaddr *)&myaddr,sizeof(myaddr)) < 0) 
+  if (bind(inter_sock,(struct sockaddr *)&myaddr,namelen) < 0) 
     {
     perror("qsub: unable to bind to socket");
 
@@ -1321,8 +1322,6 @@ char *interactive_port()
     }
 
   /* get port number assigned */
-
-  namelen = sizeof(myaddr);
 
   if (getsockname(inter_sock,(struct sockaddr *)&myaddr,&namelen) < 0) 
     {
@@ -1903,7 +1902,7 @@ void interactive()
   {
   int  amt;
   char cur_server[PBS_MAXSERVERNAME + PBS_MAXPORTNUM + 2];
-  unsigned int fromlen;
+  socklen_t fromlen;
 
   char momjobid[PBS_MAXSVRJOBID+1];
   int  news;

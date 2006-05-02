@@ -540,7 +540,8 @@ server_command()
 {
 	static	char	id[] = "server_command";
 	int		new_socket;
-	int		i, slen;
+	int		i;
+	socklen_t	slen;
 	int		cmd;
 	pbs_net_t	addr;
 
