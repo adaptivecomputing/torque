@@ -744,7 +744,7 @@ static unsigned long cput_sum(
 
     if (LOGLEVEL >= 6)
       {
-      sprintf(log_buffer,"%s: session=%d pid=%d cputime=%lu (cputfactor=%lf)",
+      sprintf(log_buffer,"%s: session=%d pid=%d cputime=%lu (cputfactor=%f)",
         id, 
         ps->session, 
         ps->pid, 

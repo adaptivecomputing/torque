@@ -269,7 +269,7 @@ int MXMLSetAttr(
 
     case mdfDouble:
 
-      sprintf(tmpLine,"%lf",
+      sprintf(tmpLine,"%f",
         *(double *)V);
 
       ptr = tmpLine;
@@ -480,7 +480,7 @@ int MXMLSetVal(
 
     case mdfDouble:
 
-      sprintf(tmpLine,"%lf",
+      sprintf(tmpLine,"%f",
         *(double *)V);
 
       ptr = tmpLine;

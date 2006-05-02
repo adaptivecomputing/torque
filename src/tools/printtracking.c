@@ -107,7 +107,7 @@ prt_track_struct(struct tracking *ptrack)
 
 	printf("---------------------------------------------------\n");
 	printf("jobid:\t%s\n", ptrack->tk_jobid);
-	printf("mtime:\t\t%lu\n", ptrack->tk_mtime);
+	printf("mtime:\t\t%lu\n", (unsigned long int)ptrack->tk_mtime);
 	printf("hopcount:\t%d\n", ptrack->tk_hopcount);
 	printf("location:\t%s\n", ptrack->tk_location);
 	printf("state:\t\t%c\n", ptrack->tk_state);

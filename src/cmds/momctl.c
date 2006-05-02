@@ -54,7 +54,7 @@ enum MOMCmdEnum CmdIndex = momNONE;
 
 /* prototypes */
 
-int MCShowUsage(char *);
+void MCShowUsage(char *);
 
 /* END prototypes */
 
@@ -554,7 +554,7 @@ int main(
 
 
 
-int MCShowUsage(
+void MCShowUsage(
 
   char *Msg)  /* I (optional) */
 
