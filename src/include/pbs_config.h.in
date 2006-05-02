@@ -342,4 +342,7 @@
 #define __func__ __FUNCTION__
 #endif
 
+/* type to use in place of socklen_t if not defined */
+#undef socklen_t
+
 #endif /* _PBS_CONFIG_H_ */

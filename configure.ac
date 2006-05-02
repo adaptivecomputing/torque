@@ -170,6 +170,65 @@ case $host_os in
 esac
 
 
+dnl
+dnl  ######################################################################
+dnl  Check for headers
+dnl
+
+AC_HEADER_DIRENT
+AC_HEADER_STDC
+AC_HEADER_SYS_WAIT
+
+
+AC_CHECK_HEADERS([arpa/inet.h fcntl.h float.h limits.h malloc.h netdb.h \
+		  netinet/in.h stddef.h sys/file.h sys/param.h \
+		  sys/socket.h sys/time.h sys/ioctl.h sys/mount.h sys/vfs.h sys/statfs.h syslog.h termios.h err.h])
+
+
+dnl Check for socklen_t.  In traditional BSD this is an int, but some
+dnl OSes use a different type.  Test until we find something that will
+dnl work properly.  Test taken from curl, which was borrowed from a
+dnl patch submitted for Python.
+AC_CHECK_TYPE([socklen_t], ,[
+  AC_MSG_CHECKING([for socklen_t equivalent])
+  AC_CACHE_VAL([torque_cv_socklen_t_equiv],
+  [
+dnl Systems have either "struct sockaddr*" or "void*" as second
+dnl arg to getpeername.
+    torque_cv_socklen_t_equiv=no
+    for arg2 in "struct sockaddr" void ; do
+      for t in int size_t socklen_t unsigned long "unsigned long" void ; do
+        AC_TRY_COMPILE(
+[#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif
+#ifdef HAVE_SYS_SOCKET_H
+#include <sys/socket.h>
+#endif
+extern int getsockname (int, $arg2 *, $t *);],[],
+  [torque_cv_socklen_t_equiv="$t"
+  break])
+      done
+    done
+  ])
+  if test "$torque_cv_socklen_t_equiv" = "void"; then
+      torque_cv_socklen_t_equiv=int
+  fi
+  AC_MSG_RESULT($torque_cv_socklen_t_equiv)
+
+  if test "$torque_cv_socklen_t_equiv" = "no"; then
+      AC_MSG_ERROR([unable to find socklen_t equivalent])
+  fi
+  AC_DEFINE_UNQUOTED(socklen_t, $torque_cv_socklen_t_equiv,
+      [type to use in place of socklen_t if not defined])],
+  [#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif
+#ifdef HAVE_SYS_SOCKET_H
+#include <sys/socket.h>
+#endif])
+
+
 dnl this is causing problems with solaris procfs.h
 dnl AC_SYS_LARGEFILE
 
@@ -1035,19 +1094,6 @@ fi
 AC_SUBST(READLINE_LIBS)
 
 	     
-dnl
-dnl  ######################################################################
-dnl  Check for headers
-dnl
-
-AC_HEADER_DIRENT
-AC_HEADER_STDC
-AC_HEADER_SYS_WAIT
-
-
-AC_CHECK_HEADERS([arpa/inet.h fcntl.h float.h limits.h malloc.h netdb.h \
-		  netinet/in.h stddef.h sys/file.h sys/param.h \
-		  sys/socket.h sys/time.h sys/ioctl.h sys/mount.h sys/vfs.h sys/statfs.h syslog.h termios.h err.h])
 
 dnl  Readline
 if test "$HAVE_READLINE" = "yes" ; then
