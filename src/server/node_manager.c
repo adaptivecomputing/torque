@@ -824,55 +824,17 @@ int is_stat_get(
   if (decode_arst(&temp,NULL,NULL,NULL))
     {
     DBPRT(("is_stat_get:  cannot initialize attribute\n"));
-      rpp_eom(stream);
+
+    rpp_eom(stream);
 
     return(DIS_NOCOMMIT);
     }
 
-  while (rc != DIS_EOD)
+  funcs_dis();
+
+  while ( ((ret_info = disrst(stream,&rc)) != NULL) && (rc==DIS_SUCCESS) )
     {
-    if ((++count > 64) || (rc == DIS_EOF))
-      {
-      /* NOTE:  in some cases, corruption occurs and this routine loops forever  */
 
-      /* FIXME */
-
-      if (LOGLEVEL >= 0)
-        {
-        /* NOTE:  TConnGetSelectErrno()/TConnGetReadErrno() only work with TCP connections */
-
-/*
-        sprintf(log_buffer,"cannot read all stats from node %s, rc=%d, giving up after %d tries (SE: %d  RE: %d)",
-          (np->nd_name != NULL) ? np->nd_name : "NULL",
-          rc,
-          count,
-          TConnGetSelectErrno[stream],
-          TConnGetReadErrno[stream]);
-*/
-
-        sprintf(log_buffer,"cannot read all stats from node %s, rc=%d, giving up after %d tries",
-          (np->nd_name != NULL) ? np->nd_name : "NULL",
-          rc,
-          count);
-                           
-        log_record(
-          PBSEVENT_SCHED,
-          PBS_EVENTCLASS_REQUEST,
-          id,
-          log_buffer);
-        }
-
-      /* FAILURE */
-
-      update_node_state(np,INUSE_DOWN);
-
-      return(DIS_NOCOMMIT);
-      }
-
-    funcs_dis();
-
-    if ((ret_info = disrst(stream,&rc)) != NULL)
-      {
       /* add the info to the "temp" attribute */
 
       if (decode_arst(&temp,NULL,NULL,ret_info))
@@ -882,6 +844,8 @@ int is_stat_get(
         free_arst(&temp);
 
         free(ret_info);
+
+        rpp_eom(stream);
 
         return(DIS_NOCOMMIT);
         }
@@ -929,8 +893,22 @@ int is_stat_get(
         }
 
       free(ret_info);
-      }  /* END if ((ret_info = disrst(stream,&rc)) != NULL) */
     }    /* END while (rc != DIS_EOD) */
+
+  /* clear the transmission */
+
+  rpp_eom(stream);
+
+  /* DIS_EOD is the only valid final value of rc, check it */
+
+  if (rc != DIS_EOD)
+    {
+    update_node_state(np,INUSE_UNKNOWN);
+
+    free_arst(&temp);
+
+    return(rc);
+    }
 
   if (msg_error && server.sv_attr[(int)SRV_ATR_DownOnError].at_val.at_long)
     {
@@ -946,20 +924,21 @@ int is_stat_get(
     {
     DBPRT(("is_stat_get:  cannot add date_attrib\n"));
 
+    update_node_state(np,INUSE_UNKNOWN);
+
     free_arst(&temp);
 
     return(DIS_NOCOMMIT);
     }
 
-  /* clear the transmission */
-
-  rpp_eom(stream);
 
   /* insert the information from "temp" into np */
 
   if (node_status_list(&temp,np,ATR_ACTION_ALTER))
     {
     DBPRT(("is_stat_get: cannot set node status list\n"));
+
+    update_node_state(np,INUSE_UNKNOWN);
 
     return(DIS_NOCOMMIT);
     }
@@ -1292,7 +1271,7 @@ void check_nodes(
         {
         sprintf(log_buffer,"node %s not detected in %ld seconds, marking node down",
           np->nd_name,
-          (int)time_now - np->nd_lastupdate);
+          (long int)(time_now - np->nd_lastupdate));
 
         log_event(
           PBSEVENT_ADMIN,
