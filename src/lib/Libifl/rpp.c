@@ -942,6 +942,21 @@ static struct stream *rpp_check_pkt(
     return(NULL);
     }
 
+  if ((addrp->sin_family==0) || (addrp->sin_family >= AF_MAX))
+    {
+    /*
+     * Some systems have a buggy recvfrom() that doesn't set
+     * sin_family for UDP sockets.  This was directly observed
+     * on Sandia's Tru64 system -garrick
+     */
+
+    DBPRT((DBTO,"%s: buggy recvfrom(), fixing bogus sin_family value: %d\n",
+      id,
+      addrp->sin_family));
+
+    addrp->sin_family = sp->addr.sin_family;
+    }
+
   if (addrp->sin_port != sp->addr.sin_port)
     goto bad;
 
@@ -1440,7 +1455,7 @@ static int rpp_recv_pkt(
   {
   DOID("recv_pkt")
 
-  unsigned int  flen;
+  socklen_t  flen;
 
   int		len;
   struct sockaddr_in  addr;
