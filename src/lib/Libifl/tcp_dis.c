@@ -554,11 +554,6 @@ static int tcp_puts(
 
   struct tcpdisbuf *tp;
 
-  DBPRT(("%s: entered with fd=%d  size=%d\n", 
-    id,
-    fd,
-    (int)ct))
-
   tp = &tcparray[fd]->writebuf;
 
   /* NOTE:  currently, failures may occur if THE_BUF_SIZE is not large enough */

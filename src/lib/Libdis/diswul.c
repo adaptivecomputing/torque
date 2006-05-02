@@ -135,11 +135,6 @@ int diswul(
   assert(dis_puts != NULL);
   assert(disw_commit != NULL);
 
-  DBPRT(("%s: entered stream=%d, value=%ld\n",
-    id,
-    stream,
-    value))
-
   cp = discul_(&dis_buffer[DIS_BUFSIZ],value,&ndigs);
 
   *--cp = '+';
