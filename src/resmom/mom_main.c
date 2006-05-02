@@ -5337,8 +5337,8 @@ void MOMCheckRestart(void)
       log_buffer,
       "%s has changed, initiating re-exec (now: %ld, was: %ld)",
       MOMExePath,
-      newmtime,
-      MOMExeTime);
+      (long int)newmtime,
+      (long int)MOMExeTime);
 
     if (LOGLEVEL > 6)
       {
@@ -5881,7 +5881,7 @@ int main(
   sprintf(log_buffer,"%ld\n",
     (long)getpid());
 
-  if (write(lockfds,log_buffer,strlen(log_buffer) + 1) != (strlen(log_buffer) + 1))
+  if (write(lockfds,log_buffer,strlen(log_buffer) + 1) != (ssize_t)(strlen(log_buffer) + 1))
     {
     log_err(errno,msg_daemonname,"failed to write to lockfile");
 
@@ -6162,7 +6162,7 @@ int main(
     log_buffer,
     "MOM executable path and mtime at launch: %s %ld",
     MOMExePath == NULL ? "NULL" : MOMExePath,
-    MOMExeTime);
+    (long int)MOMExeTime);
 
   log_record(
     PBSEVENT_SYSTEM,

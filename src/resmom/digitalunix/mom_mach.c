@@ -95,6 +95,7 @@
 #include <string.h>
 #include <pwd.h>
 #include <unistd.h>
+#include <ctype.h>
 #include <sys/param.h>
 #include <sys/stat.h>
 #include <sys/statvfs.h>
@@ -121,6 +122,7 @@
 #include "job.h"
 #include "log.h"
 #include "mom_mach.h"
+#include "mom_func.h"
 #include "resmon.h"
 #include "../rm_dep.h"
 
@@ -356,7 +358,7 @@ static unsigned long cput_sum(pjob)
 	prstatus_t		*ps;
 	prpsinfo_t		*pi;
 
-	cputime = 0.0;
+	cputime = 0;
 	for (i=0; i<nproc; i++) {
 		pi = &proc_info[i];
 
@@ -365,7 +367,7 @@ static unsigned long cput_sum(pjob)
 		nps++;
 		if (pi->pr_state == SZOMB) {
 			cputime += tv(pi->pr_time);
-			DBPRT(("%s: ses %d pid %d (zombie) cputime %d\n",
+			DBPRT(("%s: ses %d pid %d (zombie) cputime %lu\n",
 					id, pi->pr_sid, pi->pr_pid, cputime))
 			continue;
 		}
@@ -375,7 +377,7 @@ static unsigned long cput_sum(pjob)
 			tv(ps->pr_cutime) + tv(ps->pr_cstime);
 
 		cputime += addtime;
-		DBPRT(("%s: ses %d pid %d cputime %d\n",
+		DBPRT(("%s: ses %d pid %d cputime %lu\n",
 				id, pi->pr_sid, ps->pr_pid, cputime))
 	}
 
@@ -824,7 +826,7 @@ int mom_over_limit(pjob)
 			num = (unsigned long)((double)(time_now - pjob->ji_qs.ji_stime) * wallfactor);
 			if (num > value) {
 				sprintf(log_buffer,
-					"walltime %d exceeded limit %d",
+					"walltime %lu exceeded limit %lu",
 					num, value);
 				if (ignwalltime == 0)
 					return (TRUE);
@@ -1024,7 +1026,7 @@ double
 dsecs(t)
 timestruc_t     *t;
 {
-	DBPRT(("\tsecs: %d\tnsecs: %d\n", t->tv_sec, t->tv_nsec))
+	DBPRT(("\tsecs: %lu\tnsecs: %lu\n", t->tv_sec, t->tv_nsec))
 	return ( (double)t->tv_sec + ((double)t->tv_nsec * 1.0e-9) );
 }
 
@@ -1104,7 +1106,7 @@ pid_t	pid;
 }
 
 
-static char *
+char *
 cput(attrib)
 struct	rm_attribute	*attrib;
 {
@@ -1162,11 +1164,11 @@ pid_t	jobid;
 
 		found = 1;
 		memsize += pi->pr_size;
-		DBPRT(("%s: total %d pid %d %d\n", id, memsize*page_size,
+		DBPRT(("%s: total %ld pid %d %ld\n", id, memsize*page_size,
 				pi->pr_pid, pi->pr_size*page_size))
 	}
 	if (found) {
-		sprintf(ret_string, "%ukb",(memsize*page_size) >> 10); /* KB */
+		sprintf(ret_string, "%ldkb",(memsize*page_size) >> 10); /* KB */
 		return ret_string;
 	}
 
@@ -1198,11 +1200,11 @@ pid_t	pid;
 		return NULL;
 	}
 
-	sprintf(ret_string, "%ukb", (pi->pr_size*page_size) >> 10); /* in KB */
+	sprintf(ret_string, "%ldkb", (pi->pr_size*page_size) >> 10); /* in KB */
 	return ret_string;
 }
 
-static char *
+char *
 mem(attrib)
 struct	rm_attribute	*attrib;
 {
@@ -1263,7 +1265,7 @@ pid_t	jobid;
 	}
 	if (found) {
 		/* in KB */
-		sprintf(ret_string, "%ukb", (resisize * page_size) >> 10);
+		sprintf(ret_string, "%ldkb", (resisize * page_size) >> 10);
 		return ret_string;
 	}
 
@@ -1295,7 +1297,7 @@ pid_t	pid;
 		return NULL;
 	}
 
-	sprintf(ret_string, "%ukb", (pi->pr_rssize * page_size) >> 10); /* KB */
+	sprintf(ret_string, "%ldkb", (pi->pr_rssize * page_size) >> 10); /* KB */
 	return ret_string;
 }
 
@@ -1333,7 +1335,7 @@ struct	rm_attribute	*attrib;
 	}
 }
 
-static char *
+char *
 sessions(attrib)
 struct	rm_attribute	*attrib;
 {
@@ -1405,7 +1407,7 @@ struct	rm_attribute	*attrib;
 	return ret_string;
 }
 
-static char *
+char *
 nsessions(attrib)
 struct	rm_attribute	*attrib;
 {
@@ -1423,7 +1425,7 @@ struct	rm_attribute	*attrib;
 	return ret_string;
 }
 
-static char *
+char *
 pids(attrib)
 struct	rm_attribute	*attrib;
 {
@@ -1485,7 +1487,7 @@ struct	rm_attribute	*attrib;
 	return ret_string;
 }
 
-static char *
+char *
 nusers(attrib)
 struct	rm_attribute	*attrib;
 {
@@ -1567,7 +1569,7 @@ static char *ncpus(
     return(NULL);
     }
 
-  sprintf(ret_string,"%d",
+  sprintf(ret_string,"%ld",
     sysconf(_SC_NPROCESSORS_ONLN));
 
   system_ncpus=sysconf(_SC_NPROCESSORS_ONLN);
@@ -1718,7 +1720,7 @@ static char *size_file(
 
 
 
-static char *size(
+char *size(
 
   struct rm_attribute *attrib)
 
@@ -1768,7 +1770,7 @@ static void setmax(dev)
 
 
 
-static char *
+char *
 idletime(attrib)
 struct	rm_attribute	*attrib;
 {
@@ -1933,7 +1935,7 @@ static char *cpuspeed(
     return NULL;
   }
 
-  err = getsysinfo(GSI_GET_HWRPB, &rpbbuf, sizeof(rpbbuf));
+  err = getsysinfo(GSI_GET_HWRPB, (caddr_t)&rpbbuf, sizeof(rpbbuf));
   if (err < 0) {
     freq = 233;
   } else {
@@ -1974,7 +1976,7 @@ struct	rm_attribute	*attrib;
 	  int         err;
 	  double freq;
 
-	  err = getsysinfo(GSI_PROC_TYPE, &cputype, sizeof(cputype));
+	  err = getsysinfo(GSI_PROC_TYPE, (caddr_t)&cputype, sizeof(cputype));
 	  if (err < 0) {
 	      cputype = -1;
 	      sprintf(errbuf, "[errno = %d]", errno);
@@ -1982,7 +1984,7 @@ struct	rm_attribute	*attrib;
 	  } else {
 	    CPU_TYPE_TO_TEXT(cputype & 0xfffff, cputypename);
 	    if ( strcmp(cputypename,"") == 0 ) {
-	      sprintf(errbuf, "[error, cputype = %d]", cputype);
+	      sprintf(errbuf, "[error, cputype = %ld]", cputype);
 	    }
 	  }
 	}
