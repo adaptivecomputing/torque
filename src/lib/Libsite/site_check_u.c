@@ -90,6 +90,8 @@
 #include "queue.h"
 #include "job.h"
 #include "log.h"
+#include "batch_request.h"
+#include "pbs_nodes.h"
 
 #ifndef TRUE
 #define TRUE 1
@@ -127,8 +129,6 @@ int site_check_user_map(
  
   char  *dptr;
 
-  extern struct pbsnode *find_nodebyname(char *);
-	
   /* get just the owner name, without the "@host" */
 	
   p1 = pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str;

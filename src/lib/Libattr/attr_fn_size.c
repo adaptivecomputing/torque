@@ -113,6 +113,11 @@
  */
 
 
+int to_size A_((char *,struct size_value *));
+void from_size A_((struct size_value *,char *));
+int normalize_size A_((struct size_value *a, struct size_value *b,
+	      struct size_value *c, struct size_value *d));
+
 /*
  * decode_size - decode size into attribute structure
  *
@@ -129,7 +134,6 @@ int decode_size(
   char             *val)	/* attribute value */
 
   {
-  int to_size A_((char *,struct size_value *));
 
   patr->at_val.at_size.atsv_num   = 0;
   patr->at_val.at_size.atsv_shift = 0;
@@ -177,7 +181,6 @@ int encode_size(
   size_t    ct;
   char	    cvnbuf[CVNBUFSZ];
   svrattrl *pal;
-  void from_size A_((struct size_value *,char *));
 
   if (attr == NULL)
     {
@@ -235,8 +238,6 @@ int set_size(attr, new, op)
 	unsigned long old;
 	struct size_value tmpa;	/* the two temps are used to insure that the */
 	struct size_value tmpn;	/* real attributes are not changed if error  */
-	int normalize_size A_((struct size_value *a, struct size_value *b,
-			      struct size_value *c, struct size_value *d));
 
 	assert ( attr && new && (new->at_flags & ATR_VFLAG_SET) );
 
@@ -290,8 +291,6 @@ int comp_size(attr, with)
 {
 	struct size_value tmpa;
 	struct size_value tmpw;
-	int normalize_size A_((struct size_value *a, struct size_value *b,
-			       struct size_value *c, struct size_value *d));
 
 	if (normalize_size(&attr->at_val.at_size, &with->at_val.at_size,
             &tmpa, &tmpw) != 0) {

@@ -325,7 +325,6 @@ static int set_allacl(attr, new, op, order_func)
 	struct array_strings *tmppas;
 	struct array_strings *pas;
 	struct array_strings *newpas;
-	extern void free_arst A_((attribute *));
 
 	assert(attr && new && (new->at_flags & ATR_VFLAG_SET));
 

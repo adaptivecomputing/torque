@@ -105,7 +105,6 @@ char **envp;
     int connect;
     int stat=0;
     int rc = 0;
-    extern char *PBS_get_server();
 
 
     if (argc != 3) {

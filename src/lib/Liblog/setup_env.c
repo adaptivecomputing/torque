@@ -85,6 +85,8 @@
 #include "portability.h"
 #include "log.h"
 
+extern char **environ;
+
 /*
  * setup_env - setup the daemon's environment
  *
@@ -115,7 +117,6 @@ int setup_env(
   int	     nstr = 0;
   char	    *pequal;
   char	    *pval = NULL;
-  extern char **environ;
 
   envp[0] = NULL;
 

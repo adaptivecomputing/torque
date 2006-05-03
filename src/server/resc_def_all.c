@@ -232,7 +232,7 @@ resource_def svr_resc_def[] = {
 	READ_WRITE | ATR_DFLAG_MOM | ATR_DFLAG_ALTRUN,
 	ATR_TYPE_LONG
     },
-#if NODEMASK != 0
+#ifdef NODEMASK
     {	"nodemask",
 	decode_ll,
 	encode_ll,
@@ -542,7 +542,7 @@ resource_def svr_resc_def[] = {
     },
 #endif	/* SRFS */
 
-#if PE_MASK != 0      /* PE mask on Cray T3e (similar to nodemask on SGI O2K */
+#ifdef PE_MASK      /* PE mask on Cray T3e (similar to nodemask on SGI O2K */
     {
 	"pe_mask",
 	decode_str,

@@ -446,7 +446,6 @@ int set_arst(
   struct array_strings *newpas;
   struct array_strings *pas;
   struct array_strings *xpasx;
-  void free_arst A_((attribute *));
 
   assert(attr && new && (new->at_flags & ATR_VFLAG_SET));
 

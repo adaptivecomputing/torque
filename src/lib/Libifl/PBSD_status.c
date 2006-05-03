@@ -100,7 +100,6 @@ struct batch_status *PBSD_status(
 
   {
   int rc;
-  struct batch_status *PBSD_status_get A_((int c));
 
   /* send the status request */
 

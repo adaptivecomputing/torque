@@ -342,7 +342,7 @@ int restricted(
   {
   static  char    id[] = "restricted";
 
-  struct  hostent         *host, *gethostbyname();
+  struct  hostent         *host;
   struct  in_addr saddr;
   pbs_net_t       *newclients;
  
@@ -389,7 +389,7 @@ int addclient(
 
   {
   static char     id[] = "addclient";
-  struct hostent *host, *gethostbyname();
+  struct hostent *host;
   struct in_addr  saddr;
 
   if ((host = gethostbyname(name)) == NULL) 

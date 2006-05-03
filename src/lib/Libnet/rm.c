@@ -1010,7 +1010,6 @@ int activereq(void)
 			return -1;
 		}
 		else {
-			extern	int	rpp_fd;
 
 			FD_SET(rpp_fd, &fdset);
 			tv.tv_sec = 5;
@@ -1075,7 +1074,6 @@ fullresp(flag)
      int	flag;
 {
 #if	RPP
-	extern	int	rpp_dbprt;
 
 	if (flag)
 		rpp_dbprt = 1 - rpp_dbprt;	/* toggle RPP debug */

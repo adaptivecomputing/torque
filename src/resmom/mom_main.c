@@ -1301,7 +1301,7 @@ u_long addclient(
 
   {
   static char	  id[] = "addclient";
-  struct hostent *host, *gethostbyname();
+  struct hostent *host;
   struct in_addr  saddr;
   u_long	  ipaddr;
 
@@ -1362,7 +1362,7 @@ static u_long setpbsserver(
   {
   static char	  id[] = "setpbsserver";
   int index;
-  struct hostent *host, *gethostbyname();
+  struct hostent *host;
   struct in_addr  saddr;
   u_long	  ipaddr;
   char            tmpname[PBS_MAXSERVERNAME + 0]; 
@@ -2983,7 +2983,7 @@ int bad_restrict(
   u_long ipadd)
 
   {
-  struct hostent *host, *gethostbyaddr();
+  struct hostent *host;
   struct in_addr in;
   int	i, len1, len2;
   char	*cp1, *cp2;

@@ -104,7 +104,6 @@ int main(
 	int err = 0;
 	int i;
 	int j;
-	int chk_file_sec();
 	int dir = 0;
 	int no_err = 0;
 	int sticky = 0;

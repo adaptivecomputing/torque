@@ -112,8 +112,8 @@
  * -------------------------------------------------------
  */
 
-static char *true_val  = ATR_TRUE;
-static char *false_val = ATR_FALSE;
+static char true_val[]  = ATR_TRUE;
+static char false_val[] = ATR_FALSE;
 
 /*
  * decode_b - decode string into boolean attribute

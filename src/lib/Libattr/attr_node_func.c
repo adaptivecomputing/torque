@@ -344,7 +344,6 @@ int	encode_ntype(pattr, ph, aname, rname, mode)
 {
         svrattrl *pal;
 	short	 ntype;
-	static	 char	*nt[] = { ND_cluster, ND_timeshared };
 
 	static   char	ntype_str[ MAX_ENCODE_BFR ];
 
@@ -356,10 +355,10 @@ int	encode_ntype(pattr, ph, aname, rname, mode)
 	
 	ntype = pattr->at_val.at_short & PBSNODE_NTYPE_MASK;
 	if (!ntype)
-	    strcpy( ntype_str, nt[0] );
+	    strcpy( ntype_str, ND_cluster );
 
 	else
-	    strcpy( ntype_str, nt[1] );
+	    strcpy( ntype_str, ND_timeshared );
 	
         pal = attrlist_create(aname,rname,(int)strlen(ntype_str)+1);
         if (pal == (svrattrl *)0)

@@ -114,7 +114,7 @@ static char dflt_server[PBS_MAXSERVERNAME + 1];
 static int got_dflt = FALSE;
 static char server_name[PBS_MAXSERVERNAME + 1];  /* definite conflicts */
 static unsigned int server_port;                 /* definite conflicts */
-static char *pbs_destn_file = PBS_DEFAULT_FILE;
+static const char *pbs_destn_file = PBS_DEFAULT_FILE;
 
 char *pbs_server = NULL;
 
@@ -366,7 +366,6 @@ int pbs_connect(
   {
   struct sockaddr_in server_addr;
   struct hostent *hp;
-  struct hostent *gethostbyname();
   int out;
   int i;
   struct passwd *pw;

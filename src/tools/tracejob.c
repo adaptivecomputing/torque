@@ -267,7 +267,8 @@ int main(
 "   -f : filter out types of log entries, multiple -f's can be specified\n"
 "        error, system, admin, job, job_usage, security, sched, debug, \n"
 "        debug2, or absolute numberic equiv\n"
-"   -z : toggle filtering excessive messages\n"
+"   -z : toggle filtering excessive messages\n");
+   printf(
 "   -c : what message count is considered excessive\n"
 "   -a : don't use accounting log files\n"
 "   -s : don't use server log files\n"

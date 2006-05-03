@@ -860,7 +860,6 @@ int set_job_env(
   char *s, *c, *env, l;
   unsigned   len;
   int   rc;
-  char *getcwd();
 
   int   eindex;
 

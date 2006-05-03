@@ -122,7 +122,6 @@ struct batch_status * pbs_selstat(c, attrib, extend)
 	struct attropl *attrib;
 	char *extend;
 {
-	extern struct batch_status *PBSD_status_get A_((int c));
 
 	if (PBSD_select_put(c, PBS_BATCH_SelStat, attrib, extend) == 0) 
 		return ( PBSD_status_get(c) );

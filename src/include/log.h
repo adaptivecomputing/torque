@@ -109,7 +109,6 @@ extern void log_record A_((int,int,char *,char *));
 extern char log_buffer[LOG_BUF_SIZE];
 
 extern int  chk_file_sec A_((char *,int,int,int,int));
-extern int  chk_path_sec A_((char *,int,int,int,int));
 extern int  setup_env A_((char *));
 
 
