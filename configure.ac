@@ -348,6 +348,7 @@ PBSPOE=""
 PBSPOEO=""
 AC_ARG_ENABLE(sp2,
     [  --enable-sp2            build PBS for an IBM SP2])
+IBM_SP2=0
 if test "x$enable_sp2" = "xyes" ; then
     MOMLIBS="-ljm_client -lSDR"
     case "$PBS_MACH" in
@@ -360,8 +361,8 @@ if test "x$enable_sp2" = "xyes" ; then
             ;;
       *) AC_MSG_ERROR([Cannot --enable-sp2 on a machine not running AIX]) ;;
     esac
-    AC_DEFINE_UNQUOTED(IBM_SP2, ${IBM_SP2}, [defined if this is an SP2])
 fi
+AC_DEFINE_UNQUOTED(IBM_SP2, ${IBM_SP2}, [defined if this is an SP2])
 AC_SUBST(PBSPOE)    
 AC_SUBST(PBSPOEO)
 

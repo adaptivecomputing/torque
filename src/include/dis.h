@@ -164,7 +164,7 @@ signed char disrsc A_((int stream, int *retval));
 
 /*#if CHAR_MIN, i.e. if chars are signed*/
 /* also, flip the order of statements */
-#if __CHAR_UNSIGNED__
+#ifdef __CHAR_UNSIGNED__
 #define disrc(retval, stream) (char)disruc(stream, (retval))
 #else
 #define disrc(stream, retval) (char)disrsc(stream, (retval))
@@ -221,7 +221,7 @@ int diswsi A_((int stream, int value));
 #define diswsc(stream, value) diswsi(stream, (int)(value))
 
 /*#if CHAR_MIN*/
-#if __CHAR_UNSIGNED__
+#ifdef __CHAR_UNSIGNED__
 #define diswc(stream, value) diswui(stream, (unsigned)(value))
 #else
 #define diswc(stream, value) diswsi(stream, (int)(value))
