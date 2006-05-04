@@ -881,19 +881,31 @@ hnodent	*find_node(
   **	we are fine.  Otherwise, a mixup has happened.
   */
 
+/*
   if (memcmp(
         &stream_addr->sin_addr,
         &node_addr->sin_addr,
         sizeof(node_addr->sin_addr)) != 0) 
     {
+*/
+  if (stream_addr->sin_addr.s_addr != node_addr->sin_addr.s_addr)
+    {
+    char *addr1;
+    char *addr2;
+
+    addr1=strdup(netaddr(stream_addr));
+    addr2=strdup(netaddr(node_addr));
     sprintf(log_buffer,"stream id %d does not match %d to node %d (stream=%s node=%s)",
       stream, 
       hp->hn_stream, 
       nodeid,
-      netaddr(stream_addr),
-      netaddr(node_addr));
+      addr1,
+      addr2);
 
     log_err(-1,id,log_buffer);
+
+    free(addr1);
+    free(addr2);
 
     return(NULL);
     }
@@ -4188,7 +4200,7 @@ int tm_request(
         PBSEVENT_ERROR,
         PBS_EVENTCLASS_JOB,
         pjob->ji_qs.ji_jobid,
-        "saving task (TM_SPAWN)");
+        "saving task (additional connection)");
       }
 
     if (task_save(ptask) == -1) 
@@ -4870,8 +4882,7 @@ int tm_request(
           }
 
         ret = im_compose(phost->hn_stream, jobid, cookie,
-
-        IM_OBIT_TASK, event, fromtask);
+                IM_OBIT_TASK, event, fromtask);
 
         if (ret != DIS_SUCCESS)
           goto done;
@@ -5137,7 +5148,7 @@ done:
       {
       sprintf(log_buffer,"comm failed %s", 
         dis_emsg[ret]);
-        log_err(errno, 
+      log_err(errno, 
         id, 
         log_buffer);
 
