@@ -4777,7 +4777,7 @@ int kill_job(
       (char *)id);
     }
 
-  /* NOTE:  should cahnge be made to only execute precancel epilog if job is active? (NYI) */
+  /* NOTE:  should change be made to only execute precancel epilog if job is active? (NYI) */
 
   /* NOTE:  epilog blocks until complete, which may cause issues if shutdown grace time is
             enabled.  Change model to allow epilog.precancel to run in background and have
