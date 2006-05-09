@@ -153,7 +153,20 @@ void req_signaljob(
 
     preq->rq_extra = pjob;  /* save job ptr for post_signal_req() */
     }
-	
+
+#ifdef DONOTSUSPINTJOB
+  /* interactive jobs don't resume correctly so don't allow a suspend */
+
+  if (!strcmp(preq->rq_ind.rq_signal.rq_signame,SIG_SUSPEND) &&
+      (pjob->ji_wattr[(int)JOB_ATR_interactive].at_flags & ATR_VFLAG_SET) &&
+      (pjob->ji_wattr[(int)JOB_ATR_interactive].at_val.at_long > 0))
+    {
+    req_reject(PBSE_JOBTYPE,0,preq,NULL,NULL);
+
+    return;
+    }
+#endif
+
   /* pass the request on to MOM */
 
   if ((rc = relay_to_mom(
