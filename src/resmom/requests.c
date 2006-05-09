@@ -117,6 +117,7 @@
 
 extern struct var_table vtable;      /* see start_exec.c */
 extern        char          **environ;
+extern int pbs_rm_port;
 
 extern int InitUserEnv(
       
@@ -1410,6 +1411,74 @@ int MUSleep(
 
 
 
+/* send a signal to all tasks on sisters */
+int sigalltasks_sisters(job *pjob, int signum)
+  {
+  char      id[] = "sigalltasks_sisters";
+  char     *cookie;
+  eventent *ep;
+  int i;
+
+  cookie = pjob->ji_wattr[(int)JOB_ATR_Cookie].at_val.at_str;
+
+  for (i = 0;i < pjob->ji_numnodes;i++)
+    {
+    int ret;
+    hnodent *np = &pjob->ji_hosts[i];
+
+    if (np->hn_node == pjob->ji_nodeid) /* this is me */
+      continue;
+
+    DBPRT(("%s: sending sig%d to all tasks on sister %s\n",id,signum,np->hn_host));
+
+    if (np->hn_stream == -1)
+      np->hn_stream = rpp_open(np->hn_host,pbs_rm_port,NULL);
+
+    ep = event_alloc(IM_SIGNAL_TASK,np,TM_NULL_EVENT,TM_NULL_TASK);
+
+    if (np->hn_stream == -1)
+      {
+      np->hn_stream = rpp_open(np->hn_host,pbs_rm_port,NULL);
+      }
+
+    ret = im_compose(np->hn_stream,pjob->ji_qs.ji_jobid,cookie,IM_SIGNAL_TASK,ep->ee_event,TM_NULL_TASK);
+
+    if (ret != DIS_SUCCESS)
+      {
+      return ret;
+      }
+
+    ret = diswui(np->hn_stream, pjob->ji_nodeid); /* XXX */
+
+    if (ret != DIS_SUCCESS)
+      {
+      return ret;
+      }
+
+    ret = diswsi(np->hn_stream, TM_NULL_TASK);
+
+    if (ret != DIS_SUCCESS)
+      {
+      return ret;
+      }
+
+    ret = diswsi(np->hn_stream, signum);
+
+    if (ret != DIS_SUCCESS)
+      {
+      return ret;
+      }
+
+    ret = rpp_flush(np->hn_stream);
+
+    if (ret != DIS_SUCCESS)
+      {
+      return ret;
+      }
+    }
+
+    return 0;
+  }
 
 
 static void resume_suspend( 
@@ -1426,11 +1495,16 @@ static void resume_suspend(
   int   stat = 0;
   int   savederr = 0;
 
+  int   signum;
+
+  signum = (susp == 1) ? SIGSTOP : SIGCONT;
+   
+
   if (LOGLEVEL >= 2)
     {
-    sprintf(log_buffer,"%s job in %s",
-      (susp != 0) ? "suspending" : "resuming",
-      id);
+    sprintf(log_buffer,"%s: %s job",
+      id,
+      (susp == 1) ? "suspending" : "resuming");
 
     log_record(
       PBSEVENT_JOB,
@@ -1439,147 +1513,117 @@ static void resume_suspend(
       log_buffer);
     }
 
-  /* First we need to send SIGTSTP to let reasonable mpi daemons stop
-     their subprocesses, then we send SIGSTOP to stop all other types
-     of processes.  This is split into two loops instead of doing them
-     right after each other because one needs a delay between the
-     SIGTSTP and SIGSTOP to give the mpi daemon time to stop all its
-     tasks.  Inserting a delay for each task would produce a very long
-     delay for jobs with large number of tasks.
+  /* Once upon a time, suspend/resume signals weren't propagated to
+     sisters.  Verily, the parallel jobs weren't correctly suspended
+     or resumed.
 
-     So, to summarize, we send all tasks SIGTSTP, then we wait for 1
-     second, then we send all tasks SIGSTOP.  Hopefully this should
-     cover all cases.  The delay should rather be configurable but I
-     don't have a clue how, nor time, to do that.
- 
-     Fortunately only one SIGCONT is needed to resume.
+     Then it was decided that SIGTSTP would be used instead of SIGSTOP
+     so that specially patched MPI launchers could suspend the sisters.
+     To keep serial jobs suspending, a delayed SIGSTOP was added after
+     the SIGTSTP.
+
+     Of course, non-MPI parallel jobs were still not suspended properly.
+
+     Now we are sending SIGTSTP only to the top-level task on MS, then
+     SIGSTOP to all tasks and given MOM the ability to propagate
+     suspend/resume signals to sisters.
+
+                             The End.
    */
+
 
   /* NOTE:  format {suspend[:X]|resume[:X]} should be supported to allow 
             job state change AND custom suspend/resume signal (NYI) */
 
+  if (susp == 1)
+    {
+    kill_task((task *)GET_NEXT(pjob->ji_tasks),SIGTSTP,0);
+
+    MUSleep(50000);
+    }
+    
   for (tp = (task *)GET_NEXT(pjob->ji_tasks);
        tp != NULL;
        tp = (task *)GET_NEXT(tp->ti_jobtask)) 
     {
-    if (susp != 0)
-      {
-      /* NOTE:  for suspend, changed signals to SIGTSTP for MPI jobs - NORWAY */
+    if (tp->ti_qs.ti_status != TI_STATE_RUNNING)
+      continue;
 
-      /* stat = kill_task(tp,SIGSTOP,0); */
+    DBPRT(("%s: inspecting %d from node %d\n",
+      id,
+      tp->ti_qs.ti_task,
+      tp->ti_qs.ti_parentnode));
 
-      stat = kill_task(tp,SIGTSTP,0);
-      }
-    else
-      {
-      stat = kill_task(tp,SIGCONT,0);
-      }
+    stat = kill_task(tp,signum,0);
 
     if (stat < 0) 
       {
       /* couldn't send signal, don't signal more tasks */
 
       savederr = errno;
-
-      if (LOGLEVEL >= 1)
-        {
-        sprintf(log_buffer,"cannot send signal %s to tasks of job in %s (errno=%d) - attempt aborted",
-          (susp != 0) ? "SIGTSTP" : "SIGCONT",
-          id, 
-          savederr);
-
-        log_record(
-          PBSEVENT_ERROR,
-          PBS_EVENTCLASS_JOB,
-          (pjob != NULL) ? pjob->ji_qs.ji_jobid : "N/A",
-          log_buffer);
-        }
-
       break;
       }  /* END if (stat < 0) */
     }    /* END for (tp) */
 
-  if ((susp != 0) && (stat >= 0))
+  if (stat >= 0)
     {
-    MUSleep(50000);
- 
-    for (tp = (task *)GET_NEXT(pjob->ji_tasks);
-         tp != NULL;
-         tp = (task *)GET_NEXT(tp->ti_jobtask)) 
+    if (pjob->ji_numnodes > 1)
       {
-      stat = kill_task(tp,SIGSTOP,0);
+      stat = sigalltasks_sisters(pjob,signum);
 
-      if (stat < 0) 
+      if (stat < 0)
         {
-        /* couldn't send signal, don't signal more tasks */
-
         savederr = errno;
-
-        if (LOGLEVEL >= 1)
-          {
-          sprintf(log_buffer,"cannot send signal %s to tasks of job in %s (errno=%d) - attempt aborted",
-            "SIGSTOP",
-            id,
-            savederr);
-
-          log_record(
-            PBSEVENT_ERROR,
-            PBS_EVENTCLASS_JOB,
-            (pjob != NULL) ? pjob->ji_qs.ji_jobid : "N/A",
-            log_buffer);
-          }
-
-        break;
         }
-      }    /* END for (tp) */
-    }      /* END if ((susp != 0) && (stat >= 0)) */
+      }
+    }
 
-  if (stat < 0) 
+  if (stat < 0)
     {
     /* We couldn't signal all the tasks, signal them back to their old state */
-    
-    for (tp = (task *)GET_NEXT(pjob->ji_tasks);
-         tp != NULL;
-         tp = (task *)GET_NEXT(tp->ti_jobtask)) 
+
+    if (LOGLEVEL >= 1)
       {
-      if (susp)
-        {
-        stat = kill_task(tp,SIGCONT,0);
-        }
-      else
-        {
-        /* NOTE:  for suspend, changed signals to SIGTSTP for MPI jobs - NORWAY */
-
-	/* stat = kill_task(tp,SIGSTOP,0); */
-
-        stat = kill_task(tp,SIGTSTP,0);
-        }
-      }  /* END for (tp) */
-
-    /* the same two signal exercise as above */
-
-    if (susp != 0)
-      {
-      MUSleep(50000);
-
-      for (tp = (task *)GET_NEXT(pjob->ji_tasks);
-           tp != NULL;
-           tp = (task *)GET_NEXT(tp->ti_jobtask)) 
-        {
-        stat = kill_task(tp,SIGSTOP,0);
-        }  /* END for (tp) */
+      sprintf(log_buffer,"cannot send signal %s to tasks of job in %s (errno=%d) - attempt aborted",
+        (susp == 1) ? "SIGSTOP" : "SIGCONT",
+        id,
+        savederr);
+      
+      log_record(
+        PBSEVENT_ERROR,
+        PBS_EVENTCLASS_JOB,
+        (pjob != NULL) ? pjob->ji_qs.ji_jobid : "N/A",
+        log_buffer);
       }
 
-    /* suspend/resume failued - report failure */
+    signum = (susp == 1) ? SIGCONT : SIGSTOP;
 
-    req_reject(PBSE_SYSTEM,savederr,preq,NULL,NULL);      
+    for (tp = (task *)GET_NEXT(pjob->ji_tasks);                                                       
+         tp != NULL;                                                                                  
+         tp = (task *)GET_NEXT(tp->ti_jobtask))                                                       
+      {
+      if (tp->ti_qs.ti_status != TI_STATE_RUNNING)
+        continue;
+
+      kill_task(tp,signum,0);
+      }
+
+    if (pjob->ji_numnodes > 1)
+      {
+      sigalltasks_sisters(pjob,signum);
+      }
+
+    /* report suspend/resume failure */
+
+    req_reject(PBSE_SYSTEM,savederr,preq,NULL,NULL);
 
     return;
-    }  /* END if (stat < 0) */ 
+    }  /* END if (stat < 0) */
+
 
   /* signals sent to all tasks, now adjust job state */
 
-  if (susp != 0) 
+  if (susp == 1) 
     {
     /* Successfully suspended, let's update status */
     /* This is needed for calculating correct walltime */
@@ -1595,7 +1639,7 @@ static void resume_suspend(
         PBSEVENT_JOB,
         PBS_EVENTCLASS_JOB,
         (pjob != NULL) ? pjob->ji_qs.ji_jobid : "N/A",
-        "job suspended - adjusting job state");
+        "job suspended - adjusted job state");
       }
     } 
   else 
@@ -1623,7 +1667,7 @@ static void resume_suspend(
         PBSEVENT_JOB,
         PBS_EVENTCLASS_JOB,
         (pjob != NULL) ? pjob->ji_qs.ji_jobid : "N/A",
-        "job resumed - adjusting job state");
+        "job resumed - adjusted job state");
       }
     }    /* END else (susp != 0) */
 

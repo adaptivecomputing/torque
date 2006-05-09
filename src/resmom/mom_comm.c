@@ -438,6 +438,12 @@ task *task_check(
   static char  id[] = "task_check";
   task        *ptask;
 
+  if (taskid == TM_NULL_TASK)
+    {
+    /* don't bother with the error messages */
+    return(NULL);
+    }
+
   ptask = task_find(pjob,taskid);
 
   if (ptask == NULL) 
@@ -2659,7 +2665,7 @@ void im_request(
 
       /*
       ** Sender is MOM sending a task and signal to
-      ** deliver.
+      ** deliver.  If taskid is 0, signal all tasks.
       **
       ** auxiliary info (
       **	sending node	tm_node_id;
@@ -2690,36 +2696,60 @@ void im_request(
       if (ret != DIS_SUCCESS)
         goto err;
 
-      DBPRT(("%s: SIGNAL_TASK %s from node %d task %d signal %d\n",
-        id, 
-        jobid, 
-        nodeid, 
-        taskid, 
-        sig))
-
-      ptask = task_find(pjob,taskid);
-
-      if (ptask == NULL) 
+      if (taskid == 0)
         {
-        SEND_ERR(PBSE_JOBEXIST)
+        DBPRT(("%s: SIGNAL_TASK %s from node %d all tasks signal %d\n",
+          id,jobid,nodeid,sig))
 
-        break;
+        for (
+            ptask = (task *)GET_NEXT(pjob->ji_tasks);
+            ptask != NULL;
+            ptask = (task *)GET_NEXT(ptask->ti_jobtask)) 
+          {
+          kill_task(ptask,sig,0);
+          }
+
+        /* if STOPing all tasks, we're obviously suspending the job */
+        if (sig == SIGSTOP)
+          {
+          pjob->ji_qs.ji_substate = JOB_SUBSTATE_SUSPEND;
+          pjob->ji_qs.ji_svrflags |= JOB_SVFLG_Suspend;
+          }
+        else if (sig == SIGCONT)
+          {
+          pjob->ji_qs.ji_substate = JOB_SUBSTATE_RUNNING;
+          pjob->ji_qs.ji_svrflags &= ~JOB_SVFLG_Suspend;
+          }
+        }
+      else
+        {
+        DBPRT(("%s: SIGNAL_TASK %s from node %d task %d signal %d\n",
+          id,jobid,nodeid,taskid,sig))
+
+        ptask = task_find(pjob,taskid);
+
+        if (ptask == NULL) 
+          {
+          SEND_ERR(PBSE_JOBEXIST)
+
+          break;
+          }
+
+        sprintf(log_buffer,"%s: SIGNAL_TASK %s from node %d task %d signal %d",
+          id,jobid,nodeid,taskid,sig);
+
+        LOG_EVENT(
+          PBSEVENT_JOB,
+          PBS_EVENTCLASS_JOB,
+          jobid,
+          log_buffer);
+
+        kill_task(ptask,sig,0);
         }
 
-      sprintf(log_buffer,"%s: SIGNAL_TASK %s from node %d task %d signal %d",
-        id,jobid,nodeid,taskid,sig);
+        ret = im_compose(stream,jobid,cookie,IM_ALL_OKAY,event,fromtask);
 
-      LOG_EVENT(
-        PBSEVENT_JOB,
-        PBS_EVENTCLASS_JOB,
-        jobid,
-        log_buffer);
-
-      kill_task(ptask,sig,0);
-
-      ret = im_compose(stream,jobid,cookie,IM_ALL_OKAY,event,fromtask);
-
-      break;
+        break;
 
     case IM_OBIT_TASK:
 

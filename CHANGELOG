@@ -42,8 +42,9 @@
   fix return check in pbs_rescquery fixing segfault in pbs_sched (USC)
   add README.pbstools to contrib directory
   workaround buggy recvfrom() in Tru64 (USC)
-  attempt to handly socklen_t portably (USC)
+  attempt to handle socklen_t portably (USC)
   fix infinite loop in is_stat_get() triggered by network congestion (USC)
+  job suspend/resume enhancements (see qsig manpage) (USC)
 
 2.0.0p7
 

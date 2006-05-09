@@ -132,7 +132,7 @@ int	    numnodes;
 tm_task_id *tid;
 int	    verbose = 0;
 sigset_t	allsigs;
-char		*id;
+char           *id;
 
 int stdoutfd, stdoutport;
 fd_set permrfsd;
@@ -196,14 +196,14 @@ int obit_submit(
       {
       if (verbose)
         {
-        fprintf(stderr,"task already dead\n");
+        fprintf(stderr,"%s: task already dead\n",id);
         }
       }
     else if (*(events_obit+c) == TM_ERROR_EVENT)
       {
       if (verbose)
         {
-        fprintf(stderr, "Error on Obit return\n");
+        fprintf(stderr, "%s: Error on Obit return\n",id);
         }
       }
     }
@@ -361,7 +361,7 @@ void getstdout()
             }
           else
             {
-            fprintf(stderr,"error in read\n");
+            fprintf(stderr,"%s: error in read\n",id);
             }
           ret--;
           if (ret<=0)
@@ -410,7 +410,8 @@ void wait_for_task(
         if (*(tid + c) == TM_NULL_TASK)
           continue;
 
-        fprintf(stderr,"pbsdsh: killing task %u signal %d\n",
+        fprintf(stderr,"%s: killing task %u signal %d\n",
+          id,
           *(tid + c), 
           fire_phasers);
 
@@ -455,7 +456,8 @@ void wait_for_task(
 
         if (verbose) 
           {
-          fprintf(stderr,"pbsdsh: spawn event returned: %d (%d spawns and %d obits outstanding)\n",
+          fprintf(stderr,"%s: spawn event returned: %d (%d spawns and %d obits outstanding)\n",
+            id,
             c,
             *nspawned,
             nobits);
@@ -465,7 +467,8 @@ void wait_for_task(
 
         if (tm_errno) 
           {
-          fprintf(stderr, "error %d on spawn\n", 
+          fprintf(stderr, "%s: error %d on spawn\n", 
+            id,
             tm_errno);
 
           continue;
@@ -490,7 +493,8 @@ void wait_for_task(
           {
           if (verbose)
             {
-            fprintf(stderr, "error TM_ESYSTEM on obit (resubmitting)\n");
+            fprintf(stderr, "%s: error TM_ESYSTEM on obit (resubmitting)\n",
+              id);
             }
          
           sleep(2);  /* Give the world a second to take a breath */
@@ -502,7 +506,8 @@ void wait_for_task(
 
         if (tm_errno != 0)
           {
-          fprintf(stderr, "error %d on obit for task %d\n",
+          fprintf(stderr, "%s: error %d on obit for task %d\n",
+            id,
             tm_errno,
             c);
           }
@@ -511,7 +516,8 @@ void wait_for_task(
 
         if (verbose) 
           {
-          fprintf(stderr,"pbsdsh: obit event returned: %d (%d spawns and %d obits outstanding)\n",
+          fprintf(stderr,"%s: obit event returned: %d (%d spawns and %d obits outstanding)\n",
+            id,
             c,
             *nspawned,
             nobits);
@@ -556,7 +562,7 @@ char *gethostnames(
 
   if (!allnodes || !rescinfo || !rescevent)
     {
-    fprintf(stderr,"malloc failed!\n");
+    fprintf(stderr,"%s: malloc failed!\n",id);
     tm_finalize();
     exit(1);
     }
@@ -569,7 +575,7 @@ char *gethostnames(
           RESCSTRLEN-1,
           rescevent+i) != TM_SUCCESS)
       {
-      fprintf(stderr,"error from tm_rescinfo()\n");
+      fprintf(stderr,"%s: error from tm_rescinfo()\n",id);
       tm_finalize();
       exit(1);
       }
@@ -582,7 +588,7 @@ char *gethostnames(
 
     if ((rc != TM_SUCCESS) || (tm_errno != TM_SUCCESS))
       {
-      fprintf(stderr,"error from tm_poll() %d\n",rc);
+      fprintf(stderr,"%s: error from tm_poll() %d\n",id,rc);
       tm_finalize();
       exit(1);
       }
@@ -595,20 +601,20 @@ char *gethostnames(
 
     if (j==numnodes)
       {
-      fprintf(stderr,"unknown resource result\n");
+      fprintf(stderr,"%s: unknown resource result\n",id);
       tm_finalize();
       exit(1);
       }
 
     if (verbose)
-      fprintf(stderr,"rescinfo from %d: %s\n",j,rescinfo+(j*RESCSTRLEN));
+      fprintf(stderr,"%s: rescinfo from %d: %s\n",id,j,rescinfo+(j*RESCSTRLEN));
 
     strtok(rescinfo+(j*RESCSTRLEN)," ");
     hoststart=strtok(NULL," ");
 
     if (hoststart==NULL)
       {
-      fprintf(stderr,"can't find a hostname in resource result\n");
+      fprintf(stderr,"%s: can't find a hostname in resource result\n",id);
       tm_finalize();
       exit(1);
       }
@@ -687,11 +693,11 @@ build_listener(int *port)
     socklen_t len = sizeof(addr);
 
     if ((s = socket(AF_INET, SOCK_STREAM, 0)) < 0)
-        fprintf(stderr,"%s: socket", __func__);
+        fprintf(stderr,"%s: %s: socket",id, __func__);
     if (listen(s, 1024) < 0)
-        fprintf(stderr,"%s: listen", __func__);
+        fprintf(stderr,"%s: %s: listen",id, __func__);
     if (getsockname(s, (struct sockaddr *)&addr, &len) < 0)
-        fprintf(stderr,"%s: getsockname", __func__);
+        fprintf(stderr,"%s: %s: getsockname",id, __func__);
     *port = ntohs(addr.sin_port);
     return s;
 }
@@ -730,6 +736,12 @@ int main(
   int posixly_correct_set_by_caller = 0;
   char *envstr;
                            
+  id=malloc(60*sizeof(char));
+  sprintf(id,"pbsdsh%s",
+    ((getenv("PBSDEBUG") != NULL) && (getenv("PBS_TASKNUM") != NULL))
+      ? getenv("PBS_TASKNUM")
+      : "");
+
 #ifdef __GNUC__            
   /* If it's already set, we won't unset it later */
   if (getenv("POSIXLY_CORRECT") != NULL)
@@ -832,7 +844,6 @@ int main(
     }
 #endif
 
-  id = argv[0];
 
   if (getenv("PBS_ENVIRONMENT") == NULL) 
     {
