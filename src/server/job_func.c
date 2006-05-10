@@ -128,6 +128,8 @@
 #include "acct.h"
 #include "net_connect.h"
 
+int conn_qsub(char *,long);
+
 
 /* External functions */
 
@@ -310,6 +312,34 @@ int remtree(
 #else	/* PBS_MOM */
 
 
+void send_qsub_delmsg(job *pjob, char *text)
+  {
+  char *phost;
+  attribute            *pattri;
+  int qsub_sock;
+
+
+    phost = arst_string("PBS_O_HOST",&pjob->ji_wattr[(int)JOB_ATR_variables]);
+
+    if ((phost == NULL) || ((phost = strchr(phost,'=')) == NULL))
+      {
+      return;
+      }
+
+    pattri = &pjob->ji_wattr[(int)JOB_ATR_interactive];
+
+    qsub_sock = conn_qsub(phost + 1,pattri->at_val.at_long);
+
+    if (qsub_sock < 0)
+      {
+      return;
+      }
+
+    write(qsub_sock,"PBS: ",5);
+    write(qsub_sock,text,strlen(text));
+
+    close(qsub_sock);
+  }
 
 
 /*
@@ -349,6 +379,15 @@ int job_abt(
 
     account_record(PBS_ACCT_ABT,pjob,"");
     svr_mailowner(pjob,MAIL_ABORT,MAIL_NORMAL,text);
+
+    if ((pjob->ji_qs.ji_state == JOB_STATE_QUEUED) &&
+        ((pjob->ji_wattr[(int)JOB_ATR_interactive].at_flags & ATR_VFLAG_SET) &&
+         pjob->ji_wattr[(int)JOB_ATR_interactive].at_val.at_long))
+      {
+      /* interactive and not yet running... send a note to qsub */
+
+      send_qsub_delmsg(pjob,text);
+      }
     }
 
   if (old_state == JOB_STATE_RUNNING) 
@@ -418,6 +457,55 @@ int job_abt(
 
 #endif	/* else PBS_MOM */
 
+
+/*
+ * conn_qsub - connect to the qsub that submitted this interactive job
+ * return >= 0 on SUCCESS, < 0 on FAILURE
+ * (this was moved from resmom/mom_inter.c)
+ */
+
+
+
+int conn_qsub(
+
+  char *hostname,
+  long  port)
+
+  {
+  pbs_net_t hostaddr;
+  int s;
+
+  int flags;
+
+  if ((hostaddr = get_hostaddr(hostname)) == (pbs_net_t)0)
+    {
+    return(-1);
+    }
+
+  s = client_to_svr(hostaddr,(unsigned int)port,0);
+
+  /* NOTE:  client_to_svr() can return 0 for SUCCESS */
+
+  /* assume SUCCESS requires s > 0 (USC) was 'if (s >= 0)' */
+  /* above comment not enabled */
+
+  if (s < 0)
+    {
+    /* FAILURE */
+
+    return(-1);
+    }
+
+  /* this socket should be blocking */
+
+  flags = fcntl(s,F_GETFL);
+
+  flags &= ~O_NONBLOCK;
+
+  fcntl(s,F_SETFL,flags);
+
+  return(s);
+  }  /* END conn_qsub() */
 
 
 

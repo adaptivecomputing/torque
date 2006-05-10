@@ -127,6 +127,7 @@
 
 #include "cmds.h"
 #include "net_connect.h"
+#include "log.h"
 
 static char *DefaultFilterPath = "/usr/local/sbin/torque_submitfilter";
 
@@ -1903,7 +1904,7 @@ void interactive()
   char cur_server[PBS_MAXSERVERNAME + PBS_MAXPORTNUM + 2];
   socklen_t fromlen;
 
-  char momjobid[PBS_MAXSVRJOBID+1];
+  char momjobid[LOG_BUF_SIZE+1];
   int  news;
   int  nsel;
   char *pc;
@@ -2016,7 +2017,7 @@ void interactive()
 
   /* When MOM connects, she will send the job id for us to verify */
 
-  amt = PBS_MAXSVRJOBID + 1;
+  amt = LOG_BUF_SIZE + 1;
 
   pc = momjobid;
 
@@ -2033,6 +2034,15 @@ void interactive()
       break;
 
     amt -= fromlen;
+    }
+
+  if (strncmp(momjobid,"PBS:",4) == 0) 
+    {
+    fprintf(stderr,"qsub: %s\n",momjobid);
+
+    shutdown(news,2);
+
+    exit(1);
     }
 
   if (strncmp(momjobid,new_jobname,PBS_MAXSVRJOBID) != 0) 

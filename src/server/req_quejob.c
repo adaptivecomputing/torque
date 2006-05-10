@@ -770,7 +770,8 @@ void req_quejob(
 
     /* Interactive jobs are necessarily not rerunable */
 
-    if (pj->ji_wattr[(int)JOB_ATR_interactive].at_val.at_long)
+    if ((pj->ji_wattr[(int)JOB_ATR_interactive].at_flags & ATR_VFLAG_SET) &&
+        pj->ji_wattr[(int)JOB_ATR_interactive].at_val.at_long)
       {
       pj->ji_wattr[(int)JOB_ATR_rerunable].at_val.at_long = 0;
       pj->ji_wattr[(int)JOB_ATR_rerunable].at_flags |= ATR_VFLAG_SET;

@@ -420,7 +420,7 @@ int mom_writer(
 
 
 
-
+#if 0
 /*
  * conn_qsub - connect to the qsub that submitted this interactive job
  * return >= 0 on SUCCESS, < 0 on FAILURE 
@@ -466,6 +466,7 @@ int conn_qsub(
 
   return(s);
   }  /* END conn_qsub() */
+#endif
 
 
 /* END mom_inter.c */
