@@ -139,7 +139,7 @@ EXTRA_DIST = man1/qalter.1B man1/qdel.1B man1/qhold.1B man1/qmove.1B \
 	     man1/qmsg.1B man1/qorder.1B man1/qrerun.1B man1/qrls.1B \
 	     man1/qselect.1B man1/qsig.1B man1/qstat.1B man1/qsub.1B \
 	     man1/pbs.1B man1/pbsdsh.1B man1/nqs2pbs.1B man1/basl2c.1B \
-	     man1/xpbs.1B man1/xpbsmon.1B \
+	     man1/xpbs.1B man1/xpbsmon.1B man1/qmgr.1B \
 	     \
 	     man3/pbs_alterjob.3B man3/pbs_connect.3B man3/pbs_default.3B \
 	     man3/pbs_deljob.3B man3/pbs_disconnect.3B man3/pbs_geterrmsg.3B \
@@ -169,7 +169,7 @@ EXTRA_DIST = man1/qalter.1B man1/qdel.1B man1/qhold.1B man1/qmove.1B \
 	     man8/pbs_mom.8B man8/pbsnodes.8B \
 	     man8/pbs_sched_basl.8B man8/pbs_sched_cc.8B \
 	     man8/pbs_sched_tcl.8B man8/pbs_server.8B \
-	     man8/qdisable.8B man8/qenable.8B man8/qmgr.8B \
+	     man8/qdisable.8B man8/qenable.8B \
 	     man8/qrun.8B man8/qstart.8B man8/qstop.8B \
 	     man8/qterm.8B \
 	     \
@@ -184,7 +184,7 @@ nodist_man1_MANS = man1/qalter.1 man1/qdel.1 man1/qhold.1 man1/qmove.1 \
 		   man1/qmsg.1 man1/qorder.1 man1/qrerun.1 man1/qrls.1 \
 		   man1/qselect.1 man1/qsig.1 man1/qstat.1 man1/qsub.1 \
 		   man1/pbs.1 man1/pbsdsh.1 man1/nqs2pbs.1 man1/basl2c.1 \
-		   man1/xpbs.1 man1/xpbsmon.1
+		   man1/xpbs.1 man1/xpbsmon.1 man1/qmgr.1
 
 
 nodist_man3_MANS = man3/pbs_alterjob.3 man3/pbs_connect.3 man3/pbs_default.3 \
@@ -219,7 +219,7 @@ nodist_man7_MANS = man1/pbs_job_attributes.7 man1/pbs_queue_attributes.7 \
 nodist_man8_MANS = man8/pbs_mom.8 man8/pbsnodes.8 \
 		   man8/pbs_sched_basl.8 man8/pbs_sched_cc.8 \
 		   man8/pbs_sched_tcl.8 man8/pbs_server.8 \
-		   man8/qdisable.8 man8/qenable.8 man8/qmgr.8 \
+		   man8/qdisable.8 man8/qenable.8 \
 		   man8/qrun.8 man8/qstart.8 man8/qstop.8 \
 		   man8/qterm.8
 

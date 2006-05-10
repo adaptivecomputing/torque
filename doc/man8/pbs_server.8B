@@ -221,7 +221,7 @@ server exits with a value greater than zero.
 .Sh SEE ALSO
 qsub (1B), pbs_connect(3B),
 pbs_mom(8B), pbs_sched_basl(8B), pbs_sched_tcl(8B),
-pbsnodes(8B), qdisable(8B), qenable(8B), qmgr(8B), qrun(8B), qstart(8B),
+pbsnodes(8B), qdisable(8B), qenable(8B), qmgr(1B), qrun(8B), qstart(8B),
 qstop(8B), qterm(8B), and the PBS External Reference Specification.
 .\" turn off any extra indent left by the Sh macro
 .RE

@@ -75,7 +75,7 @@
 .\" This license will be governed by the laws of the Commonwealth of Virginia,
 .\" without reference to its choice of law rules.
 .if \n(Pb .ig Iq
-.TH qmgr 8B "" Local PBS
+.TH qmgr 1B "" Local PBS
 .so ../ers/ers.macros
 .Iq
 .Sh NAME

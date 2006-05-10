@@ -135,6 +135,6 @@ command, the exit status will be a value of zero.
 If the qstop command fails to process any operand, the
 command exits with a value greater than zero.
 .Sh SEE ALSO
-pbs_server(8B), qstart(8B), and qmgr(8B)
+pbs_server(8B), qstart(8B), and qmgr(1B)
 .\" turn off any extra indent left by the Sh macro
 .RE

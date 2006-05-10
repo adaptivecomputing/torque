@@ -47,6 +47,7 @@
   job suspend/resume enhancements (see qsig manpage) (USC)
   support higher file descriptors in TM by using poll() instead of select() (USC)
   immediate job delete feedback to interactive queued jobs (USC)
+  move qmgr manpage from section 8 to section 1
 
 2.0.0p7
 

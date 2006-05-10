@@ -181,7 +181,7 @@ command, the exit status will be a value of zero.
 If the qterm command fails to process any operand, the
 command exits with a value greater than zero.
 .Sh SEE ALSO
-pbs_server(8B), qmgr(8B), 
+pbs_server(8B), qmgr(1B), 
 pbs_resources_aix4(7B), pbs_resources_irix5(7B),
 pbs_resources_sp2(7B), pbs_resources_sunos4(7B), and  pbs_resources_unicos8(7B)
 .\" turn off any extra indent left by the Sh macrO
