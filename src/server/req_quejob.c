@@ -173,12 +173,12 @@ extern  char *msg_daemonname;
 
 /* Private Functions in this file */
 
-static job *locate_new_job A_((int sock, char *jobid));
+static job *locate_new_job A_((int,char *));
 
 #ifdef PNOT
-static int user_account_verify A_((char *arguser, char* argaccount));
-static char *user_account_default A_((char *arguser));
-static int user_account_read_user A_((char *arguser));
+static int user_account_verify A_((char *,char *));
+static char *user_account_default A_((char *));
+static int user_account_read_user A_((char *));
 #endif /* PNOT */
 
 #ifndef PBS_MOM

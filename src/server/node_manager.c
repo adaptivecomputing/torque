@@ -126,7 +126,8 @@ int		 svr_chngNodesfile = 0;	/* 1 signals want nodes file update */
 					/* on server shutdown, (qmgr mods)  */
 struct pbsnode **pbsndlist = NULL;
 struct pbsnode **pbsndmast = NULL;
-static int	 svr_numnodes = 0;	/* number nodes currently available */
+static int	 svr_numnodes = 0;	/* number of nodes currently available (global!!! - set in node_spec) */
+static int       svr_numcfgnodes = 0;   /* number of nodes currently configured (global!!! - set in node_spec) */
 static int	 exclusive;		/* node allocation type */
 
 static FILE 	*nstatef = NULL;
@@ -150,7 +151,7 @@ extern struct server server;
 #define	SKIP_EXCLUSIVE	1
 #define	SKIP_ANYINUSE	2
 
-int hasprop(struct pbsnode *, struct prop *);
+int hasprop(struct pbsnode *,struct prop *);
 
 /*
 
@@ -2578,7 +2579,7 @@ static int node_spec(
 
   char	*spec,       /* I */
   int	 early,      /* I (boolean) */
-  int    exactmatch, /* I (boolean) */
+  int    exactmatch, /* I (boolean) - NOT USED */
   char  *FailNode,   /* O (optional,minsize=1024) */
   char  *EMsg)       /* O (optional,minsize=1024) */
 
@@ -2696,6 +2697,7 @@ static int node_spec(
   /* reset subnodes (VPs) to okay */
 
   svr_numnodes = 0;
+  svr_numcfgnodes = 0;
 
   for (i = 0;i < svr_totnodes;i++) 
     {
@@ -2728,10 +2730,20 @@ static int node_spec(
         }
       }
 
-    if ((pnode->nd_ntype == NTYPE_CLUSTER) &&
-       ((pnode->nd_state & (INUSE_OFFLINE|INUSE_DOWN|INUSE_RESERVE|INUSE_JOB)) == 0))
+    if (pnode->nd_ntype == NTYPE_CLUSTER)
       {
-      svr_numnodes++;
+      /* configured node located */
+
+      svr_numcfgnodes++;
+
+      if ((pnode->nd_state & (INUSE_OFFLINE|INUSE_DOWN|INUSE_RESERVE|INUSE_JOB)) == 0)
+        {
+        /* NOTE:  checking if node is not just up, but free */
+
+        /* available node located */
+
+        svr_numnodes++;
+        }
       }
     }    /* END for (i = 0) */
 
@@ -2805,7 +2817,7 @@ static int node_spec(
       }
 
     return(0);
-    }
+    }  /* END if ((num > svr_numnodes) && early) */
 
   /*
    * 	At this point we know the spec is legal.
