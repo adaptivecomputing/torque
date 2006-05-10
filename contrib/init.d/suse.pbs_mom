@@ -1,0 +1,89 @@
+#!/bin/sh
+#
+# pbs_mom	This script will start and stop the PBS Mom
+#
+# chkconfig: 345 5 99
+# description: TORQUE/PBS is a versatile batch system for SMPs and clusters
+#
+PBS_DAEMON=/usr/sbin/pbs_mom
+PBS_HOME=/var/torque
+PIDFILE=$PBS_HOME/mom_priv/mom.lock
+export PBS_DAEMON PBS_HOME PIDFILE
+
+
+ulimit -n 32768
+# Source the library functions
+. /etc/rc.status
+rc_reset
+
+[ -f /etc/sysconfig/pbs_mom ] && . /etc/sysconfig/pbs_mom
+[ -x $PBS_DAEMON ] || exit
+
+args=""
+if [ -z "$PREVLEVEL" ];then
+   # being run manually, don't disturb jobs
+   args="-p"
+fi
+
+pidof_pbs_mom() {
+   pid="-1"
+   if [ -f $PIDFILE ];then
+   	pid=`cat $PIDFILE`
+   fi
+   echo $pid
+}
+
+kill_pbs_mom() {
+   pid=`pidof_pbs_mom`
+
+   if [ $pid -le 1 ];then
+      return -1;
+   fi
+   retval=1
+   while kill -0 $pid 2>/dev/null;do
+      kill -TERM $pid
+      retval=$?
+      sleep 1
+   done
+   return $retval
+}
+	
+# how were we called
+case "$1" in
+	start)
+		echo -n "Starting TORQUE Mom: "
+		startproc $PBS_DAEMON $args $DAEMON_ARGS
+		rc_status -v
+		;;
+	purge)
+		[ -f /var/lock/subsys/pbs_mom ] && $0 stop
+		echo -n "Starting TORQUE Mom with purge: "
+		startproc $PBS_DAEMON -r $DAEMON_ARGS
+		rc_status -v
+		;;
+	stop)
+		echo -n "Shutting down TORQUE Mom: "
+		kill_pbs_mom
+		rc_status -v
+		;;
+	status)
+		checkproc -p $PIDFILE $PBS_DAEMON
+		rc_status -v
+		;;
+	restart)
+		$0 stop
+		sleep 1
+		$0 start
+		rc_status
+		;;
+	reload)
+	        echo -n "Re-reading TORQUE Mom config file: "
+		killproc -p $PIDFILE -HUP pbs_mom
+		rc_status -v
+	        ;;
+	*)
+		echo "Usage: pbs_mom {start|stop|restart|reload|status|purge}"
+		exit 1
+esac
+rc_exit
+

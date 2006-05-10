@@ -152,13 +152,18 @@ This package holds just a few shared files and directories.
 [ "$RPM_BUILD_ROOT" != "/" ] && %{__rm} -rf "$RPM_BUILD_ROOT"
 %{__make} DESTDIR=$RPM_BUILD_ROOT install
 
+if [ -f /etc/SuSE-release ];then
+  initpre="suse."
+else
+  initpre=""
+fi
 
 # install initscripts
 %{__mkdir_p} $RPM_BUILD_ROOT%{_initrddir}
 for initscript in pbs_mom pbs_sched pbs_server; do
   %__sed -e 's|^PBS_HOME=.*|PBS_HOME=%{torquehomedir}|' \
          -e 's|^PBS_DAEMON=.*|PBS_DAEMON=%{_sbindir}/'$initscript'|' \
-        < contrib/init.d/$initscript > $RPM_BUILD_ROOT%{_initrddir}/$initscript
+        < contrib/init.d/$initpre$initscript > $RPM_BUILD_ROOT%{_initrddir}/$initscript
   %__chmod 755 $RPM_BUILD_ROOT%{_initrddir}/$initscript
 done
 
