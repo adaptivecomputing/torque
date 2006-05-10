@@ -45,6 +45,7 @@
   attempt to handle socklen_t portably (USC)
   fix infinite loop in is_stat_get() triggered by network congestion (USC)
   job suspend/resume enhancements (see qsig manpage) (USC)
+  support higher file descriptors in TM by using poll() instead of select() (USC)
 
 2.0.0p7
 

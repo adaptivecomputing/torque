@@ -95,6 +95,10 @@
 #include "dis_init.h"
 #include "log.h"
 
+#ifdef HAVE_SYS_POLL_H
+#include <sys/poll.h>
+#endif
+
 static struct tcp_chan	**tcparray = NULL;
 static int		  tcparraymax = 0;
 
@@ -186,8 +190,13 @@ static int tcp_read(
  
   {
   int               i;
+#ifdef HAVE_POLL
+  struct pollfd pollset;
+  int timeout;
+#else
   fd_set            readset;
   struct timeval    timeout;
+#endif
   struct tcpdisbuf *tp;
 
   tp = &tcparray[fd]->readbuf;
@@ -208,6 +217,13 @@ static int tcp_read(
 
   do 
     {
+#ifdef HAVE_POLL
+    timeout = pbs_tcp_timeout*1000;
+    pollset.fd = fd;
+    pollset.events = POLLIN|POLLHUP;
+
+    i = poll(&pollset,1,timeout);
+#else
     timeout.tv_sec = pbs_tcp_timeout;
     timeout.tv_usec = 0;
 
@@ -215,11 +231,12 @@ static int tcp_read(
     FD_SET(fd,&readset);
 
     i = select(
-      FD_SETSIZE, 
+      fd+1, 
       &readset, 
       NULL,
       NULL, 
       &timeout);
+#endif
     } while ((i == -1) && (errno == EINTR));
 
   if (i == 0)

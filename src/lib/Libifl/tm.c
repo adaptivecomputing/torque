@@ -439,6 +439,14 @@ static int localmom()
       return(-1);
       }
 
+#ifndef HAVE_POLL
+    if (sock >= FD_SETSIZE)
+      {
+      close(sock);
+      return(-1);
+      }
+#endif
+
     /* make sure data goes out */
  
     ltime.l_onoff = 1;
@@ -705,6 +713,9 @@ tm_spawn(argc, argv, envp, where, tid, event)
 	}
 
 	/* send envp strings across */
+	if (getenv("PBSDEBUG") != NULL)
+		if (diswcs(local_conn, "PBSDEBUG=1", strlen("PBSDEBUG=1")) != DIS_SUCCESS)
+			return TM_ENOTCONNECTED;
 	if (envp != NULL) {
 		for (i=0; (cp = envp[i]) != NULL; i++) {
 			if (diswcs(local_conn, cp, strlen(cp)) != DIS_SUCCESS)
