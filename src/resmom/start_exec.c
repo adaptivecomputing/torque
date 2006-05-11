@@ -1742,7 +1742,7 @@ int TMomFinalizeChild(
   char                  *idir;
   char                  *termtype;
 
-  struct startjob_rtn   sjr;
+  struct startjob_rtn   sjr = {0,0};
 
 #if defined(PENABLE_DYNAMIC_CPUSETS)
 
@@ -2150,7 +2150,17 @@ int TMomFinalizeChild(
 
     sigaction(SIGALRM,&act,(struct sigaction *)0);
 
-    alarm(30);
+    /* only giving ourselves 5 seconds to connect to qsub
+     * and get term settings */
+    alarm(5);
+
+    /* once we connect to qsub and open a pty, the user can send us
+     * a ctrl-c.  It is important that we block this until we exec()
+     * the user's shell or we exit and the job gets stuck */
+
+    act.sa_handler = SIG_IGN;
+
+    sigaction(SIGINT,&act,(struct sigaction *)0);
 
     /* Set environment to reflect interactive */
 
@@ -2757,6 +2767,19 @@ int TMomFinalizeChild(
       } 
 #endif /* SHELL_USE_ARGV */
 
+    if (TJE->is_interactive == TRUE) 
+      {
+      struct sigaction act;
+
+      /* restore SIGINT so that the child shell can use ctrl-c */
+
+      sigemptyset(&act.sa_mask);
+      act.sa_flags   = 0;
+      act.sa_handler = SIG_DFL;
+
+      sigaction(SIGINT,&act,(struct sigaction *)0);
+      }
+
     execve(shell,arg,vtable.v_envp);
     }
   else if (cpid == 0)
@@ -3095,7 +3118,7 @@ int start_process(
   int	i, j;
   int	fd0, fd1, fd2;
   u_long ipaddr;
-  struct  startjob_rtn sjr;
+  struct  startjob_rtn sjr = {0,0};
 
   if (pipe(pipes) == -1)
     {

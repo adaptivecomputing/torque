@@ -2066,9 +2066,9 @@ void interactive()
   printf("qsub: job %s ready\n\n", 
     new_jobname);
 
-    /* set SIGINT, SIGTERM processing to default */
+    /* set SIGINT, SIGTERM processing to ignore */
 
-  act.sa_handler = SIG_DFL;
+  act.sa_handler = SIG_IGN;
 
   if ((sigaction(SIGINT, &act, (struct sigaction *)0) < 0)  ||
       (sigaction(SIGTERM, &act, (struct sigaction *)0) < 0) ||

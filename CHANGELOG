@@ -49,6 +49,8 @@
   immediate job delete feedback to interactive queued jobs (USC)
   move qmgr manpage from section 8 to section 1
   add SuSE initscripts to contrib/init.d/
+  fix ctrl-c race while starting interactive jobs (USC)
+  fix memory corruption when tm_spawn() is interrupted (USC)
 
 2.0.0p7
 

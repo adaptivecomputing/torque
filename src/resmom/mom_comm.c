@@ -4579,6 +4579,8 @@ int tm_request(
           }
 
         envp[i] = env;
+
+        envp[i+1] = NULL;
         }
 
       /* tack on PBS_VNODENUM */
