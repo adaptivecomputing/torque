@@ -166,6 +166,7 @@ static char   rcperr[MAXPATHLEN];	/* file to contain rcp error */
 extern char PBSNodeMsgBuf[1024];
 extern int  LOGLEVEL;
 
+extern int im_compose A_((int,char *,char *,int,tm_event_t,tm_task_id));
 
 
 /* prototypes */
