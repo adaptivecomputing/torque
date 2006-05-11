@@ -219,10 +219,10 @@ struct	config	dependent_config[] = {
   { NULL,	{nullproc} } };
 
 struct nlist nl[] = {
-	{ "_anoninfo" },	/* 0 */
-	{ "_cnt" },		/* 1 */
-	{ "_averunnable" },	/* 2 */
-	{ "" }
+	{ "_anoninfo",0,0,0,0 },	/* 0 */
+	{ "_cnt",0,0,0,0 },		/* 1 */
+	{ "_averunnable",0,0,0,0 },	/* 2 */
+	{ "",0,0,0,0 }
 };
 
 #define	KSYM_ANON		0
@@ -1738,7 +1738,8 @@ char *cput_proc(
   {
   char		*id = "cput_proc";
   struct	pstats		ps;
-  uint		i, cputime;
+  uint		cputime;
+  int           i;
 
   if (kd == NULL)
     {
@@ -2797,7 +2798,7 @@ char *size_file(
 		return NULL;
 	}
 
-	sprintf(ret_string, "%ukb", sbuf.st_size >> 10); /* in KB */
+	sprintf(ret_string, "%lldkb", sbuf.st_size >> 10); /* in KB */
 	return ret_string;
 }
 
@@ -2848,8 +2849,8 @@ void setmax(
 
   if (maxtm < sb.st_atime) 
     {
-    DBPRT(("setmax: dev %s access %d replaces max %ld\n",
-      dev,sb.st_atime,(long)maxtm))
+    DBPRT(("setmax: dev %s access %ld replaces max %ld\n",
+      dev,(long)sb.st_atime,(long)maxtm))
 
     maxtm = sb.st_atime;
     }
