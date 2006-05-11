@@ -85,6 +85,7 @@
 #include <signal.h>
 #include <string.h>
 #include <unistd.h>
+#include <stdio.h>
 #include <pwd.h>
 #include "portability.h"
 #include "libpbs.h"

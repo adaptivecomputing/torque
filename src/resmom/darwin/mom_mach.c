@@ -104,6 +104,7 @@
 #include	<stdio.h>
 #include	<stdbool.h>
 #include	<stdlib.h>
+#include	<unistd.h>
 #include	<ctype.h>
 #include	<dirent.h>
 #include	<string.h>
@@ -163,6 +164,7 @@
 #include	"job.h"
 #include	"mom_mach.h"
 #include	"resmon.h"
+#include	"mom_func.h"
 #include	"../rm_dep.h"
 
 #ifndef TRUE
@@ -517,7 +519,7 @@ static unsigned long cput_sum(
       cputime += tv(ru.ru_utime) + tv(ru.ru_stime);
       }
 
-    DBPRT(("%s: ses %d pid %d cputime %d\n", 
+    DBPRT(("%s: ses %d pid %d cputime %lu\n", 
       id,
       sess_tbl[i], 
       pp->kp_proc.p_pid, 
@@ -629,7 +631,7 @@ static unsigned long resi_sum(
 #else /* TDARWIN8 */
     memsize += ctob(pp->kp_eproc.e_vm.vm_rssize);
 
-    DBPRT(("%s: pid=%d ses=%d mem=%d totmem=%d\n",
+    DBPRT(("%s: pid=%d ses=%d mem=%d totmem=%lu\n",
       id,pp->kp_proc.p_pid,sess_tbl[i],pp->kp_eproc.e_vm.vm_rssize,memsize))
 #endif /* TDARWIN8 */
     }  /* END for (i) */
@@ -676,7 +678,7 @@ static int overmem_proc(
       return(TRUE);	
       }
 #else /* TDARWIN8 */
-    if (ctob(pp->kp_eproc.e_vm.vm_tsize +
+    if ((unsigned long)ctob(pp->kp_eproc.e_vm.vm_tsize +
              pp->kp_eproc.e_vm.vm_dsize +
              pp->kp_eproc.e_vm.vm_ssize) > limit)
       {
@@ -1364,7 +1366,7 @@ int mom_over_limit(
 
       if (num > value) 
         {
-        sprintf(log_buffer,"walltime %d exceeded limit %lu",
+        sprintf(log_buffer,"walltime %lu exceeded limit %lu",
           num,value);
 
 	if (ignwalltime == 0)
@@ -1716,7 +1718,7 @@ pid_t	jobid;
 			}
 			cputime += tv(ru.ru_utime) + tv(ru.ru_stime);
 		}
-		DBPRT(("%s: ses %d pid %d cputime %d\n", id,
+		DBPRT(("%s: ses %d pid %d cputime %lu\n", id,
 				jobid, pp->kp_proc.p_pid, cputime))
 
 	}
@@ -1898,7 +1900,7 @@ char *mem_job(
 
     memsize += addmem;
 
-    DBPRT(("%s: ses %d pid=%d totmem=%lu\n", 
+    DBPRT(("%s: ses %d pid=%d totmem=%d\n", 
       id, sess_tbl[i], pp->kp_proc.p_pid, memsize));
     }
 
@@ -3042,7 +3044,7 @@ u_long	secs;
 {
 	time_t	now = time((time_t *)NULL);
 
-	if (secs > now)		/* time is in the future */
+	if (secs > (u_long)now)		/* time is in the future */
 		return (secs - now);
 	else
 		return 0;
@@ -3212,10 +3214,10 @@ struct	rm_attribute	*attrib;
 		sprintf(ret_string, "%u", qi.dqb_curinodes);
 		break;
 	case timedata:
-		sprintf(ret_string, "%u", gracetime(qi.dqb_btime));
+		sprintf(ret_string, "%lu", gracetime(qi.dqb_btime));
 		break;
 	case timefile:
-		sprintf(ret_string, "%u", gracetime(qi.dqb_itime));
+		sprintf(ret_string, "%lu", gracetime(qi.dqb_itime));
 		break;
 	}
 
