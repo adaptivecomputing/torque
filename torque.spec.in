@@ -76,7 +76,7 @@
 %define syslogflags --disable-syslog
 %define rppflags    --disable-rpp
 %define scpflags    %{nil}
-%define tclflags    --without-tcl --without-tclx
+%define tclflags    --without-tcl
 %define guiflags    --disable-gui
 
 # Enable options that we want
@@ -98,9 +98,9 @@
 
 %if %use_tcl
 %if %build_gui
-%define tclflags    --with-tcl --with-tclx
+%define tclflags    --with-tcl
 %else
-%define tclflags    --with-tcl --without-tclx
+%define tclflags    --with-tcl
 %endif
 %endif
 
