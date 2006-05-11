@@ -117,7 +117,6 @@
 
 extern struct var_table vtable;      /* see start_exec.c */
 extern        char          **environ;
-extern int pbs_rm_port;
 
 extern int InitUserEnv(
       
@@ -153,6 +152,7 @@ extern int		resc_access_perm;	/* see encode_resc() */
 						/* in attr_fn_resc.c */
 
 extern char             MOMUNameMissing[];
+extern int              pbs_rm_port;
 
 /* Local Data Items */
 
