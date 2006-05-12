@@ -733,16 +733,13 @@ void sync_node_jobs(
         {
         pjob = find_job(jobidstr);
 
-        if ((pjob == NULL) || 
-           ((pjob->ji_qs.ji_substate != JOB_SUBSTATE_SUSPEND) &&
-            (pjob->ji_qs.ji_substate != JOB_SUBSTATE_RUNNING)))
+        if (pjob == NULL)
           {
-          /* job is reported by mom but server has no record of job on node */
+          /* job is reported by mom but server has no record of job */
 
-          sprintf(log_buffer,"stray job %s found on %s (substate=%d)",
+          sprintf(log_buffer,"stray job %s found on %s",
             jobidstr,
-            np->nd_name,
-            (pjob != NULL) ? pjob->ji_qs.ji_substate : -1);
+            np->nd_name);
 
           log_err(-1,id,log_buffer);
 

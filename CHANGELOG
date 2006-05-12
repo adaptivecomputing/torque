@@ -1,3 +1,6 @@
+2.1.1
+  fix rare race in mom_sync_job code that crashes pbs_server (USC)
+
 2.1.0p0
 
   fixed job tracking with SMP job suspend/resume (MSIC)
