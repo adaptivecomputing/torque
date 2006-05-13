@@ -743,24 +743,35 @@ void sync_node_jobs(
 
           log_err(-1,id,log_buffer);
 
-          if ((preq = alloc_br(PBS_BATCH_DeleteJob)) == NULL)
-            {
-            log_err(-1,id,"unable to allocate DeleteJob request - big trouble!");
-
-            break;
-            }
-
           conn = svr_connect(
             np->nd_addrs[0],
             pbs_mom_port,
             process_Dreply,
             ToServerDIS);
 
-          strcpy(preq->rq_ind.rq_delete.rq_objname,jobidstr);
+          if (conn >= 0)
+            {
+            if ((preq = alloc_br(PBS_BATCH_DeleteJob)) == NULL)
+              {
+              log_err(-1,id,"unable to allocate DeleteJob request - big trouble!");
 
-          issue_Drequest(conn,preq,release_req,0);
-  
-          /* release_req will free preq and close connection */
+              svr_disconnect(conn);
+              }
+            else
+              {
+              strcpy(preq->rq_ind.rq_delete.rq_objname,jobidstr);
+
+              if (issue_Drequest(conn,preq,release_req,0) != 0)
+                {
+                /* release_req will free preq and close connection if successful */
+                free_br(preq);
+
+                svr_disconnect(conn);
+                }
+              }
+            }
+
+          DIS_rpp_reset();
           }
         }
       }
