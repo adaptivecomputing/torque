@@ -669,10 +669,11 @@ AC_ARG_ENABLE(mom-checkspool,
   --disable-mom-checkspool
                           Don't check free space on spool directory and set an error],
 [case "${enableval}" in
-  yes) MOMCHECKLOCALSPOOL=1; AC_DEFINE(NOPRIVPORTS, 1, [Define to error if spool is full on MOM]) ;;
-  no)  ;;
+  yes) MOMCHECKLOCALSPOOL=1 ;;
+  no)  MOMCHECKLOCALSPOOL=0;;
   *)   AC_MSG_ERROR(--enable-privports cannot take a value) ;;
-esac])dnl
+esac],[MOMCHECKLOCALSPOOL=1])dnl
+AC_DEFINE_UNQUOTED(MOMCHECKLOCALSPOOL, ${MOMCHECKLOCALSPOOL}, [Define to error if spool is full on MOM])
 
 
 AC_ARG_WITH(tmpdir,

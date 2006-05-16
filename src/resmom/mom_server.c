@@ -872,7 +872,7 @@ void check_state(
 #define TMINSPOOLBLOCKS 100  /* blocks available in spool directory required for proper operation */
 
 
-#ifdef MOMCHECKLOCALSPOOL
+#if MOMCHECKLOCALSPOOL
   {
   struct statfs F;
 
