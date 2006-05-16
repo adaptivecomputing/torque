@@ -92,5 +92,6 @@
 
 ATTR_NODE_state,
 ATTR_NODE_properties,
+ATTR_NODE_np,
 ATTR_NODE_ntype,
 ATTR_NODE_status,
