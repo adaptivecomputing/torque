@@ -114,6 +114,8 @@ YACC = @YACC@
 am__include = @am__include@
 am__quote = @am__quote@
 install_sh = @install_sh@
+program_prefix = @program_prefix@
+program_suffix = @program_suffix@
 spec_name = @spec_name@
 spec_snap = @spec_snap@
 spec_version = @spec_version@
@@ -123,8 +125,8 @@ PBS_MKDIRS = $(SHELL) $(top_builddir)/buildutils/pbs_mkdirs
 
 AM_CPPFLAGS = -I$(top_srcdir)/src/include
 
-IFF_PATH = $(sbindir)/pbs_iff
-DEMUX_PATH = $(sbindir)/pbs_demux
+IFF_PATH = $(sbindir)/$(program_prefix)pbs_iff$(program_suffix)
+DEMUX_PATH = $(sbindir)/$(program_prefix)pbs_demux$(program_suffix)
 
 XPBS_DIR = $(libdir)/xpbs
 XPBSMON_DIR = $(libdir)/xpbsmon
@@ -546,6 +548,8 @@ xpbs: $(srcdir)/xpbs.src
 	sed -e 's,#\!.*wish.*$$,#\!@WISH_PROG@,;' \
 	    -e 's,set  *libdir.*$$,set libdir $(xpbsdir),' \
 	    -e 's,set  *appdefdir.*$$,set appdefdir $(xpbsdir),' \
+	    -e 's,set  *xpbs_datadump.*$$,set xpbs_datadump $(program_prefix)xpbs_datadump$(program_suffix),' \
+	    -e 's,set  *xpbs_scriptload.*$$,set xpbs_scriptload $(program_prefix)xpbs_scriptload$(program_suffix),' \
 	    -e 's,RSH_PATH,$(RSH_PATH),' \
 	    $? > $@
 

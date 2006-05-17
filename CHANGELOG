@@ -11,6 +11,7 @@
   set a node's np from the status' ncpus (only if ncpus > np) (USC)
   fix possible pbs_server crash when nodes are deleted in qmgr (USC)
   avoid dup streams with nodes for quicker pbs_server startup (USC)
+  configure program prefix/suffix will now across all subcomponents (USC)
 
 2.1.0p0
 

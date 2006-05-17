@@ -1442,22 +1442,22 @@ proc set_pbs_commands {} {
 
   global PBS_HOSTS_DETAIL_CMD PBS_QUEUES_DETAIL_CMD PBS_JOBS_DETAIL_CMD \
 	 PBS_QSTATDUMP_CMD LINES_TO_IGNORE PBS_SCRIPTLOAD_CMD cmdpath \
-	 bindir
+	 bindir xpbs_datadump xpbs_scriptload
 
 # COMMANDS
   set PBS_HOSTS_DETAIL_CMD "qstat -B -f"
   set PBS_QUEUES_DETAIL_CMD "qstat -Q -f"
   set PBS_JOBS_DETAIL_CMD "qstat -f"
-  if [file exists $bindir/xpbs_datadump] {
-  	set PBS_QSTATDUMP_CMD "$bindir/xpbs_datadump"
+  if [file exists $bindir/$xpbs_datadump] {
+  	set PBS_QSTATDUMP_CMD "$bindir/$xpbs_datadump"
   } else {
-  	set PBS_QSTATDUMP_CMD "./Ccode/xpbs_datadump"
+  	set PBS_QSTATDUMP_CMD "./Ccode/$xpbs_datadump"
   }
   set LINES_TO_IGNORE "Unknown Job Id"
-  if [file exists $bindir/xpbs_scriptload] {
-  	set PBS_SCRIPTLOAD_CMD "$bindir/xpbs_scriptload"
+  if [file exists $bindir/$xpbs_scriptload] {
+  	set PBS_SCRIPTLOAD_CMD "$bindir/$xpbs_scriptload"
   } else {
-  	set PBS_SCRIPTLOAD_CMD "./Ccode/xpbs_scriptload"
+  	set PBS_SCRIPTLOAD_CMD "./Ccode/$xpbs_scriptload"
   }
   set cmdpath(QRUN) "qrun"
   set cmdpath(QRERUN) "qrerun"

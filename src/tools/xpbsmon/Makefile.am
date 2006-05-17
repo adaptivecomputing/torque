@@ -25,7 +25,7 @@ dist_xpbsmonhelp_DATA = help/auto_update.hlp help/main.hlp help/notes.hlp \
 			help/pref.hlp help/prefQuery.hlp help/prefServer.hlp
 
 xpbsmon: $(srcdir)/xpbsmon.src
-	sed -e 's,#\!.*pbs_wish.*$$,#\!$(bindir)/pbs_wish -f,' \
+	sed -e 's,#\!.*pbs_wish.*$$,#\!$(bindir)/$(program_prefix)pbs_wish$(program_suffix) -f,' \
 	    -e 's,set  *libdir.*$$,set libdir $(xpbsmondir),' \
 	    -e 's,set  *appdefdir.*$$,set appdefdir $(xpbsmondir),' \
 	    $? > $@

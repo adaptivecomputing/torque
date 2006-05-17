@@ -27,13 +27,6 @@ AC_CONFIG_AUX_DIR([buildutils])
 AC_CANONICAL_HOST
 
 
-# Change some defaults.
-# I'm not proud of just shoving this here in configure.ac, but I couldn't find
-# a better way of doing it. -garrick
-#test "$libdir" = '${exec_prefix}/lib' && libdir='${exec_prefix}/lib/torque/lib'
-#test "$includedir" = '${prefix}/include' && includedir='${prefix}/lib/torque/include'
-#test "$localstatedir" = '${prefix}/var' && localstatedir='/var'
-
 AC_CHECK_PROGS(MAKE,$MAKE make gmake,error)
 if test "x$MAKE" = "xerror" ;then
   AC_MSG_ERROR([cannot find a make command])
@@ -41,6 +34,16 @@ fi
 
 AM_INIT_AUTOMAKE
 AM_MAINTAINER_MODE
+
+if test "$program_prefix" = "NONE";then
+  program_prefix=""
+fi
+if test "$program_suffix" = "NONE";then
+  program_suffix=""
+fi
+AC_SUBST(program_prefix)
+AC_SUBST(program_suffix)
+
 
 dnl  Instead of putting a long list of defines on the command line
 dnl  for each compile, use a file called "pbs_config.h" that will

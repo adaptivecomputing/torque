@@ -114,6 +114,8 @@ YACC = @YACC@
 am__include = @am__include@
 am__quote = @am__quote@
 install_sh = @install_sh@
+program_prefix = @program_prefix@
+program_suffix = @program_suffix@
 spec_name = @spec_name@
 spec_snap = @spec_snap@
 spec_version = @spec_version@
@@ -123,8 +125,8 @@ PBS_MKDIRS = $(SHELL) $(top_builddir)/buildutils/pbs_mkdirs
 
 AM_CPPFLAGS = -I$(top_srcdir)/src/include
 
-IFF_PATH = $(sbindir)/pbs_iff
-DEMUX_PATH = $(sbindir)/pbs_demux
+IFF_PATH = $(sbindir)/$(program_prefix)pbs_iff$(program_suffix)
+DEMUX_PATH = $(sbindir)/$(program_prefix)pbs_demux$(program_suffix)
 
 XPBS_DIR = $(libdir)/xpbs
 XPBSMON_DIR = $(libdir)/xpbsmon
@@ -765,14 +767,15 @@ uninstall-man: uninstall-man1 uninstall-man3 uninstall-man7 \
 install_doc: install
 
 install-data-hook:
-	rm -f $(DESTDIR)$(man7dir)/pbs_resources.7 $(DESTDIR)$(man8dir)/pbs_sched.8
-	test -f $(DESTDIR)$(man7dir)/pbs_resources_$(PBS_MACH).7 && \
-	  $(LN_S) pbs_resources_$(PBS_MACH).7 $(DESTDIR)$(man7dir)/pbs_resources.7
-	test -f $(DESTDIR)$(man8dir)/pbs_sched_$(SCHD_TYPE).8 && \
-	  $(LN_S) pbs_sched_$(SCHD_TYPE).8 $(DESTDIR)$(man8dir)/pbs_sched.8
+	rm -f $(DESTDIR)$(man7dir)/$(program_prefix)pbs_resources$(program_suffix).7 \
+	      $(DESTDIR)$(man8dir)/$(program_prefix)pbs_sched$(program_suffix).8
+	test -f $(DESTDIR)$(man7dir)/$(program_prefix)pbs_resources_$(PBS_MACH)$(program_suffix).7 && \
+	  $(LN_S) $(program_prefix)pbs_resources_$(PBS_MACH)$(program_suffix).7 $(DESTDIR)$(man7dir)/$(program_prefix)pbs_resources$(program_suffix).7
+	test -f $(DESTDIR)$(man8dir)/$(program_prefix)pbs_sched_$(SCHD_TYPE)$(program_suffix).8 && \
+	  $(LN_S) $(program_prefix)pbs_sched_$(SCHD_TYPE)$(program_suffix).8 $(DESTDIR)$(man8dir)/$(program_prefix)pbs_sched$(program_suffix).8
 
 uninstall-hook:
-	rm -f $(DESTDIR)$(man7dir)/pbs_resources.7 $(DESTDIR)$(man8dir)/pbs_sched.8
+	rm -f $(DESTDIR)$(man7dir)/$(program_prefix)pbs_resources$(program_suffix).7 $(DESTDIR)$(man8dir)/$(program_prefix)pbs_sched$(program_suffix).8
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

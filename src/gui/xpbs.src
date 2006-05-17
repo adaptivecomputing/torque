@@ -92,6 +92,8 @@ set bindir            $libdir/bin
 set auto_path         [linsert $auto_path 0 $libdir] 
 set auto_path         [linsert $auto_path 0 .]
 set appDefaultsFile   $appdefdir/xpbsrc
+set xpbs_datadump     xpbs_datadump
+set xpbs_scriptload   xpbs_scriptload
 
 set appname1 "xpbs"
 set appname "${appname1}${XPBS_VERSION}"

@@ -50,6 +50,8 @@ xpbs: $(srcdir)/xpbs.src
 	sed -e 's,#\!.*wish.*$$,#\!@WISH_PROG@,;' \
 	    -e 's,set  *libdir.*$$,set libdir $(xpbsdir),' \
 	    -e 's,set  *appdefdir.*$$,set appdefdir $(xpbsdir),' \
+	    -e 's,set  *xpbs_datadump.*$$,set xpbs_datadump $(program_prefix)xpbs_datadump$(program_suffix),' \
+	    -e 's,set  *xpbs_scriptload.*$$,set xpbs_scriptload $(program_prefix)xpbs_scriptload$(program_suffix),' \
 	    -e 's,RSH_PATH,$(RSH_PATH),' \
 	    $? > $@
 

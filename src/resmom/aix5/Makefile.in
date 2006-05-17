@@ -114,6 +114,8 @@ YACC = @YACC@
 am__include = @am__include@
 am__quote = @am__quote@
 install_sh = @install_sh@
+program_prefix = @program_prefix@
+program_suffix = @program_suffix@
 spec_name = @spec_name@
 spec_snap = @spec_snap@
 spec_version = @spec_version@
@@ -123,26 +125,26 @@ PBS_MKDIRS = $(SHELL) $(top_builddir)/buildutils/pbs_mkdirs
 
 AM_CPPFLAGS = -I$(top_srcdir)/src/include -DPBS_MOM -DDEMUX=\"$(DEMUX_PATH)\" 
 
-IFF_PATH = $(sbindir)/pbs_iff
-DEMUX_PATH = $(sbindir)/pbs_demux
+IFF_PATH = $(sbindir)/$(program_prefix)pbs_iff$(program_suffix)
+DEMUX_PATH = $(sbindir)/$(program_prefix)pbs_demux$(program_suffix)
 
 XPBS_DIR = $(libdir)/xpbs
 XPBSMON_DIR = $(libdir)/xpbsmon
 
-noinst_LIBRARIES = libfoo.a
+noinst_LIBRARIES = libmommach.a
 
-libfoo_a_SOURCES = mom_mach.c mom_mach.h mom_start.c pe_input.c
+libmommach_a_SOURCES = mom_mach.c mom_mach.h mom_start.c pe_input.c
 subdir = src/resmom/aix5
 mkinstalldirs = $(SHELL) $(top_srcdir)/buildutils/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/include/pbs_config.h
 CONFIG_CLEAN_FILES =
 LIBRARIES = $(noinst_LIBRARIES)
 
-libfoo_a_AR = $(AR) cru
-libfoo_a_LIBADD =
-am_libfoo_a_OBJECTS = mom_mach.$(OBJEXT) mom_start.$(OBJEXT) \
+libmommach_a_AR = $(AR) cru
+libmommach_a_LIBADD =
+am_libmommach_a_OBJECTS = mom_mach.$(OBJEXT) mom_start.$(OBJEXT) \
 	pe_input.$(OBJEXT)
-libfoo_a_OBJECTS = $(am_libfoo_a_OBJECTS)
+libmommach_a_OBJECTS = $(am_libmommach_a_OBJECTS)
 
 DEFS = @DEFS@
 DEFAULT_INCLUDES =  -I. -I$(srcdir) -I$(top_builddir)/src/include
@@ -161,9 +163,9 @@ CCLD = $(CC)
 LINK = $(LIBTOOL) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(AM_LDFLAGS) $(LDFLAGS) -o $@
 CFLAGS = @CFLAGS@
-DIST_SOURCES = $(libfoo_a_SOURCES)
+DIST_SOURCES = $(libmommach_a_SOURCES)
 DIST_COMMON = Makefile.am Makefile.in
-SOURCES = $(libfoo_a_SOURCES)
+SOURCES = $(libmommach_a_SOURCES)
 
 all: all-am
 
@@ -177,10 +179,10 @@ Makefile: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.in  $(top_builddir)/config.s
 
 clean-noinstLIBRARIES:
 	-test -z "$(noinst_LIBRARIES)" || rm -f $(noinst_LIBRARIES)
-libfoo.a: $(libfoo_a_OBJECTS) $(libfoo_a_DEPENDENCIES) 
-	-rm -f libfoo.a
-	$(libfoo_a_AR) libfoo.a $(libfoo_a_OBJECTS) $(libfoo_a_LIBADD)
-	$(RANLIB) libfoo.a
+libmommach.a: $(libmommach_a_OBJECTS) $(libmommach_a_DEPENDENCIES) 
+	-rm -f libmommach.a
+	$(libmommach_a_AR) libmommach.a $(libmommach_a_OBJECTS) $(libmommach_a_LIBADD)
+	$(RANLIB) libmommach.a
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT) core *.core

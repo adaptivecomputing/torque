@@ -25,7 +25,7 @@ pbs_server_SOURCES = accounting.c attr_recov.c dis_read.c geteusernam.c \
 		     svr_recov.c svr_resccost.c svr_task.c
 
 install-exec-hook:
-	chmod 700 $(DESTDIR)$(sbindir)/pbs_server
+	chmod 700 $(DESTDIR)$(sbindir)/$(program_prefix)pbs_server$(program_suffix)
 	$(PBS_MKDIRS) aux
 	$(PBS_MKDIRS) server
 

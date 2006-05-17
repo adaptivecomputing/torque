@@ -9,4 +9,5 @@ pbs_iff_LDADD = $(PBS_LIBS)
 pbs_iff_SOURCES = iff2.c
 
 install-exec-hook:
-	chmod u+s $(DESTDIR)$(sbindir)/pbs_iff
+	chmod u+s $(DESTDIR)$(sbindir)/$(program_prefix)pbs_iff$(program_suffix)
+
