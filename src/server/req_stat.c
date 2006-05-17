@@ -830,7 +830,7 @@ static int status_que(
  * req_stat_node - service the Status Node Request 
  *
  *	This request processes the request for status of a single node or
- *	set of nodes at a destinaion.
+ *	set of nodes at a destination.
  */
 
 void req_stat_node(
@@ -881,10 +881,17 @@ void req_stat_node(
     }
   else if ((*name == ':') && (*(name+1) != '\0'))
     {
-    type = 2;
-    props.name = name+1;
-    props.mark = 1;
-    props.next = NULL;
+    if (!strcmp(name+1,"ALL"))
+      {
+      type = 1;  /* psuedo-group for all nodes */
+      }
+    else
+      {
+      type = 2;
+      props.name = name+1;
+      props.mark = 1;
+      props.next = NULL;
+      }
     }
   else 
     {
