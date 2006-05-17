@@ -933,11 +933,11 @@ int main(
   /* do not check nodes immediately as they will initially be marked 
      down unless they have already reported in */
 
-  set_task(WORK_Immed,time_now + 60,check_nodes,NULL);
+  set_task(WORK_Timed,time_now + 60,check_nodes,NULL);
 
   /* Just check the nodes with check_nodes above and don't ping anymore. */
 
-  set_task(WORK_Immed,0,ping_nodes,NULL); 
+  set_task(WORK_Timed,time_now+2,ping_nodes,NULL); 
 
   /*
    * Now at last, we are ready to do some batch work.  The

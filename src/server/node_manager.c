@@ -938,7 +938,6 @@ void setup_notification(char *pname)
     append_link(&svr_newnodes,&nnew->nn_link,nnew);
   }
 
-DBPRT(("setting send_cluster_addrs task for %s\n",pname));
   set_task(
     WORK_Timed,
     time_now + 5,
@@ -1320,6 +1319,9 @@ void ping_nodes(
     if (np->nd_state & (INUSE_DELETED|INUSE_OFFLINE))
       continue;
 
+    if ((np->nd_state & INUSE_NEEDS_HELLO_PING) == 0)
+      continue;
+
     if (np->nd_stream < 0) 
       {
       /* nodes are down until proven otherwise */
@@ -1345,8 +1347,8 @@ void ping_nodes(
 
     if (LOGLEVEL >= 6)
       {
-      sprintf(log_buffer,"sending ping to %s",
-        np->nd_name);
+      sprintf(log_buffer,"sending ping to %s (new stream %d)",
+        np->nd_name,np->nd_stream);
 
       log_record(
         PBSEVENT_SCHED,
@@ -1365,8 +1367,8 @@ void ping_nodes(
       {
       if (rpp_flush(np->nd_stream) == 0)
         {
-        sprintf(log_buffer,"successful ping to node %s\n",
-          np->nd_name);
+        sprintf(log_buffer,"successful ping to node %s (stream %d)",
+          np->nd_name,np->nd_stream);
 
         log_record(
           PBSEVENT_SCHED,
@@ -1644,7 +1646,7 @@ void is_request(
       {
       if (LOGLEVEL >= 3)
         {
-        sprintf(log_buffer,"stream %d from node %s already open on %d (marking node state 'unknown'",
+        sprintf(log_buffer,"stream %d from node %s already open on %d (marking node state 'unknown')",
           stream,
           node->nd_name,
           node->nd_stream);
@@ -1721,11 +1723,12 @@ found:
 
   if (LOGLEVEL >= 3)
     {
-    sprintf(log_buffer,"message %s (%d) received from mom on host %s (%s)",
+    sprintf(log_buffer,"message %s (%d) received from mom on host %s (%s) (stream %d)",
       PBSServerCmds2[command],
       command,
       node->nd_name,
-      netaddr(addr));
+      netaddr(addr),
+      stream);
 
     log_event(
       PBSEVENT_ADMIN,
