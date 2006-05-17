@@ -3,6 +3,7 @@
   checking disk space in $PBS_SERVER_HOME was mistakenly disabled (USC)
   node's np now accessible in qmgr (USC)
   add ":ALL" as a special node selection when stat'ing nodes (USC)
+  momctl can now use :property node selection (USC)
 
 2.1.0p0
 

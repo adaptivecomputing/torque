@@ -35,6 +35,7 @@ char *FPtr     = NULL;
 char *JPtr     = NULL;
 
 char HostFile[256];
+char ConfigBuf[65536];
 
 int MOMPort = 0;  /* use default PBS MOM port */
 
@@ -55,6 +56,7 @@ enum MOMCmdEnum CmdIndex = momNONE;
 /* prototypes */
 
 void MCShowUsage(char *);
+int do_mom(char *,int,int);
 
 /* END prototypes */
 
@@ -71,14 +73,11 @@ int main(
   const char *OptString = "c:Cd:f:h:p:q:r:sv";
 
   char  HostList[65536];
-  char  tmpConfigBuf[65536];
 
   char *HPtr;
 
   char *HTok;
-  char *QTok;
  
-  int sd;
 
   int c;
 
@@ -88,7 +87,7 @@ int main(
   /* initialize */
 
   HostList[0]     = '\0';
-  tmpConfigBuf[0] = '\0';
+  ConfigBuf[0] = '\0';
 
   QueryString[0]  = '\0';
 
@@ -96,7 +95,7 @@ int main(
     {
     fprintf(stderr,"ERROR:  must be root to run this command\n");
 
-    exit(1);
+    exit(EXIT_FAILURE);
     }
 
   while ((c = getopt(ArgC,ArgV,OptString)) != EOF)
@@ -156,7 +155,7 @@ int main(
             errno,
             strerror(errno));
 
-          exit(1);
+          exit(EXIT_FAILURE);
           }
 
         rc = fread(HostList,sizeof(HostList),1,fp);
@@ -168,7 +167,7 @@ int main(
             errno,
             strerror(errno));
 
-          exit(1);
+          exit(EXIT_FAILURE);
           }
 
         size = ftell(fp);
@@ -243,9 +242,9 @@ int main(
           char *ptr;
           char *cptr;
 
-          strcpy(tmpConfigBuf,"CONFIG:");
+          strcpy(ConfigBuf,"CONFIG:");
 
-          cptr = tmpConfigBuf + strlen(tmpConfigBuf);
+          cptr = ConfigBuf + strlen(ConfigBuf);
 
           ptr = optarg + strlen("LOCAL:");
 
@@ -256,10 +255,10 @@ int main(
               errno,
               strerror(errno));
 
-            exit(1);
+            exit(EXIT_FAILURE);
             }
 
-          rc = fread(cptr,sizeof(tmpConfigBuf) - strlen(tmpConfigBuf),1,fp);
+          rc = fread(cptr,sizeof(ConfigBuf) - strlen(ConfigBuf),1,fp);
 
           if ((rc == 0) && (!feof(fp)))
             {
@@ -268,18 +267,18 @@ int main(
               errno,
               strerror(errno));
 
-            exit(1);
+            exit(EXIT_FAILURE);
             }
 
           size = ftell(fp);
 
-          tmpConfigBuf[MIN(size + strlen("CONFIG:"),sizeof(tmpConfigBuf) - 1)] = '\0';
+          ConfigBuf[MIN(size + strlen("CONFIG:"),sizeof(ConfigBuf) - 1)] = '\0';
 
           fclose(fp);
           }
         else
           {
-          strncpy(tmpConfigBuf,optarg,sizeof(tmpConfigBuf));
+          strncpy(ConfigBuf,optarg,sizeof(ConfigBuf));
           }
         }  /* END (case 'r') */
 
@@ -314,230 +313,69 @@ int main(
   HostCount = 0;
   FailCount = 0;
 
+  /* at this point, all args processing and setup is completed ...
+   * ... now we run through each comma-delimited word in HPtr */
+
   while (HPtr != NULL)
     {
-    if ((sd = openrm(HPtr,MOMPort)) < 0)
+    if ((*HPtr == ':') && (*(HPtr+1) != '\0'))
       {
-      extern char TRMEMsg[];
+      /* finds nodes with this property */
+      int con;
+      char *def_server, *pserver, *servername;
+      struct batch_status *bstatus, *pbstat;
 
-      fprintf(stderr,"cannot connect to MOM on node '%s', errno=%d (%s)\n",
-        HPtr,
-        pbs_errno,
-        strerror(pbs_errno));
+      def_server=pbs_default();
 
-      if (TRMEMsg[0] != '\0')
+      if ((pserver=strchr(HPtr,'@')) != NULL)
         {
-        fprintf(stderr," %s\n",
-          TRMEMsg);
+        *pserver='\0';
+        servername=pserver+1;
+        }
+      else
+        {
+        servername=def_server;
         }
 
-      HPtr = strtok_r(NULL,", \t\n",&HTok);
+      con=pbs_connect(servername);
+      if (con < 0)
+        {
+        fprintf(stderr,"failed to connect to pbs_server:%s\n",servername);
 
-      FailCount++;
+        exit(EXIT_FAILURE);
+        }
 
-      continue;
+      /* get a batch_status entry for each node in ":property" */
+      bstatus = pbs_statnode(con,HPtr,NULL,NULL);
+
+      if (bstatus != NULL)
+        {
+        for (pbstat = bstatus;pbstat != NULL;pbstat = pbstat->next)                                     
+          {                                                        
+          do_mom(pbstat->name,MOMPort,CmdIndex) >= 0 ? HostCount++ : FailCount++;
+          }
+
+        pbs_statfree(bstatus);
+        }
+      else
+        {
+        fprintf(stderr,"no nodes found in %s on %s\n",HPtr,servername);
+        }
+
+      pbs_disconnect(con);
+
+      if (pserver!=NULL)
+        *pserver='@';
+
       }
-
-    if (IsVerbose == TRUE)
+    else
       {
-      fprintf(stderr,"INFO:     successfully connected to %s\n",
-        HPtr);
-      }
-
-    switch (CmdIndex)
-      {
-      case momClear:
-
-        {
-        char tmpLine[1024];
-
-        char *Value;
-
-        snprintf(tmpLine,1024,"clearjob=%s",
-          (JPtr != NULL) ? JPtr : "all");
-  
-        if (addreq(sd,tmpLine) != 0)
-          {
-          fprintf(stderr,"ERROR:    cannot request job clear on %s (errno=%d:%d)\n",
-            HPtr,
-            errno,
-            pbs_errno);
-
-          FailCount++;
-
-          closerm(sd);
-
-          HPtr = strtok_r(NULL,", \t\n",&HTok);
-
-          continue;
-          }
-
-        if ((Value = (char *)getreq(sd)) == NULL)
-          {
-          fprintf(stderr,"ERROR:    job clear failed on %s (errno: %d:%d)\n",
-            HPtr,
-            errno,
-            pbs_errno);
-
-          FailCount++;
-
-          closerm(sd);
-
-          HPtr = strtok_r(NULL,", \t\n",&HTok);
-
-          continue;
-          }
-
-        /* job cleared */
-
-        fprintf(stdout,"job clear request successful on %s\n",
-          HPtr);
-        }  /* END BLOCK (case momClear) */
-
-        break;
-
-      case momShutdown:
-
-        {
-        int rc;
-
-        rc = downrm(sd);
-
-        if (rc != 0)
-          {
-          fprintf(stderr,"ERROR:    cannot shutdown mom daemon on %s (errno=%d:%d)\n",
-            HPtr,
-            errno,
-            pbs_errno);
-
-          FailCount++;
-
-          closerm(sd);
-
-          HPtr = strtok_r(NULL,", \t\n",&HTok);
-  
-          continue;
-          }
-
-        fprintf(stdout,"shutdown request successful on %s\n",
-          HPtr);
-        }    /* END BLOCK */
-
-        break;
-  
-      case momReconfig:
-
-        {
-        int rc;
-
-        rc = configrm(sd,tmpConfigBuf);
-
-        if (rc != 0)
-          {
-          fprintf(stderr,"ERROR:    cannot reconfigure mom on %s (errno=%d:%d)\n",
-            HPtr,
-            errno,
-            pbs_errno);
-
-          FailCount++;
-
-          closerm(sd);
-
-          HPtr = strtok_r(NULL,", \t\n",&HTok);
-
-          continue;
-          }
-
-        fprintf(stdout,"reconfig successful on %s\n",
-          HPtr);
-        }  /* END BLOCK (case momReconfig) */
-
-        break;
- 
-      case momQuery:
-      default:
-
-        {
-        char *Query[MAX_QUERY];
-
-        char *ptr;
-
-        int  RCount;
-        int  rindex;
-
-        char *Value;
-
-        rindex = 0;
-
-        ptr = strtok_r(QueryString,", \t\n",&QTok);
-
-        while (ptr != NULL)
-          {
-          if (addreq(sd,ptr) != 0)
-            {
-            fprintf(stderr,"ERROR:    cannot add query for '%s' on %s (errno=%d:%d)\n",
-              ptr,
-              HPtr,
-              errno,
-              pbs_errno);
-            }
-
-          Query[rindex] = ptr;
-
-          rindex++;
-
-          ptr = strtok_r(NULL,", \t\n",&QTok);
-          }
-
-        RCount = rindex;
-
-        Query[rindex] = NULL;
-
-        for (rindex = 0;rindex < RCount;rindex++)
-          {
-          if ((Value = (char *)getreq(sd)) == NULL)
-            {
-            fprintf(stderr,"ERROR:    query[%d] '%s' failed on %s (errno: %d:%d)\n",
-              rindex,
-              Query[rindex],
-              HPtr,
-              errno,
-              pbs_errno);
-            }
-          else
-            {
-            if (!strncmp(Query[rindex],"diag",strlen("diag")))
-              {
-              fprintf(stdout,"%s\n",
-                Value);
-              }
-            else if (!strncmp(Query[rindex],"cycle",strlen("cycle")))
-              {
-              fprintf(stdout,"mom %s successfully cycled %s\n",
-                HPtr,
-                Value);
-              }
-            else
-              {
-              fprintf(stdout,"%12s: %12s = '%s'\n",
-                HPtr,
-                Query[rindex],  
-                Value);
-              }
-            }
-          }  /* END for (rindex) */
-        }    /* END BLOCK (case momQuery) */
-  
-        break;
-      }  /* END switch(CmdIndex) */
-
-    closerm(sd);
+      do_mom(HPtr,MOMPort,CmdIndex) >= 0 ? HostCount++ : FailCount++;
+      } /* END if (*HPtr == ':') */
 
     HPtr = strtok_r(NULL,", \t\n",&HTok);
 
-    HostCount++;
     }  /* END while (HPtr != NULL) */
-
   if (IsVerbose == TRUE)
     {
     fprintf(stdout,"Node Summary:  %d Successful  %d Failed\n",
@@ -547,8 +385,218 @@ int main(
 
   /* SUCCESS */
 
-  exit(0);
+  exit(EXIT_SUCCESS);
   }  /* END main() */
+
+
+
+
+int do_mom(char *HPtr,int MOMPort,int CmdIndex)
+{
+  int sd;
+  char *QTok;
+
+  if ((sd = openrm(HPtr,MOMPort)) < 0)
+    {
+    extern char TRMEMsg[];
+
+    fprintf(stderr,"cannot connect to MOM on node '%s', errno=%d (%s)\n",
+      HPtr,
+      pbs_errno,
+      strerror(pbs_errno));
+
+    if (TRMEMsg[0] != '\0')
+      {
+      fprintf(stderr," %s\n",
+        TRMEMsg);
+      }
+
+    return sd;
+    }
+
+  if (IsVerbose == TRUE)
+    {
+    fprintf(stderr,"INFO:     successfully connected to %s\n",
+      HPtr);
+    }
+
+  switch (CmdIndex)
+    {
+    case momClear:
+
+      {
+      char tmpLine[1024];
+
+      char *Value;
+
+      snprintf(tmpLine,1024,"clearjob=%s",
+        (JPtr != NULL) ? JPtr : "all");
+
+      if (addreq(sd,tmpLine) != 0)
+        {
+        fprintf(stderr,"ERROR:    cannot request job clear on %s (errno=%d:%d)\n",
+          HPtr,
+          errno,
+          pbs_errno);
+
+        closerm(sd);
+
+        return -1;
+        }
+
+      if ((Value = (char *)getreq(sd)) == NULL)
+        {
+        fprintf(stderr,"ERROR:    job clear failed on %s (errno: %d:%d)\n",
+          HPtr,
+          errno,
+          pbs_errno);
+
+        closerm(sd);
+
+        return -1;
+        }
+
+      /* job cleared */
+
+      fprintf(stdout,"job clear request successful on %s\n",
+        HPtr);
+      }  /* END BLOCK (case momClear) */
+
+      break;
+
+    case momShutdown:
+
+      {
+      int rc;
+
+      rc = downrm(sd);
+
+      if (rc != 0)
+        {
+        fprintf(stderr,"ERROR:    cannot shutdown mom daemon on %s (errno=%d:%d)\n",
+          HPtr,
+          errno,
+          pbs_errno);
+
+        closerm(sd);
+
+        return -1;
+        }
+
+      fprintf(stdout,"shutdown request successful on %s\n",
+        HPtr);
+      }    /* END BLOCK */
+
+      break;
+  
+    case momReconfig:
+
+      {
+      int rc;
+
+      rc = configrm(sd,ConfigBuf);
+
+      if (rc != 0)
+        {
+        fprintf(stderr,"ERROR:    cannot reconfigure mom on %s (errno=%d:%d)\n",
+          HPtr,
+          errno,
+          pbs_errno);
+
+        closerm(sd);
+
+        return -1;
+        }
+
+      fprintf(stdout,"reconfig successful on %s\n",
+        HPtr);
+      }  /* END BLOCK (case momReconfig) */
+
+      break;
+
+    case momQuery:
+    default:
+
+      {
+      char *Query[MAX_QUERY];
+
+      char *ptr;
+
+      int  RCount;
+      int  rindex;
+
+      char *Value;
+
+      rindex = 0;
+
+      ptr = strtok_r(QueryString,", \t\n",&QTok);
+
+      while (ptr != NULL)
+        {
+        if (addreq(sd,ptr) != 0)
+          {
+          fprintf(stderr,"ERROR:    cannot add query for '%s' on %s (errno=%d:%d)\n",
+            ptr,
+            HPtr,
+            errno,
+            pbs_errno);
+          }
+
+        Query[rindex] = ptr;
+
+        rindex++;
+
+        ptr = strtok_r(NULL,", \t\n",&QTok);
+        }
+
+      RCount = rindex;
+
+      Query[rindex] = NULL;
+
+      for (rindex = 0;rindex < RCount;rindex++)
+        {
+        if ((Value = (char *)getreq(sd)) == NULL)
+          {
+          fprintf(stderr,"ERROR:    query[%d] '%s' failed on %s (errno: %d:%d)\n",
+            rindex,
+            Query[rindex],
+            HPtr,
+            errno,
+            pbs_errno);
+          }
+        else
+          {
+          if (!strncmp(Query[rindex],"diag",strlen("diag")))
+            {
+            fprintf(stdout,"%s\n",
+              Value);
+            }
+          else if (!strncmp(Query[rindex],"cycle",strlen("cycle")))
+            {
+            fprintf(stdout,"mom %s successfully cycled %s\n",
+              HPtr,
+              Value);
+            }
+          else
+            {
+            fprintf(stdout,"%12s: %12s = '%s'\n",
+              HPtr,
+              Query[rindex],  
+              Value);
+            }
+          }
+        }  /* END for (rindex) */
+      }    /* END BLOCK (case momQuery) */
+
+      break;
+    }  /* END switch(CmdIndex) */
+
+    closerm(sd);
+
+    return 0;
+  } /* END do_mom() */
+
+
 
 
 
@@ -578,6 +626,6 @@ void MCShowUsage(
     fprintf(stderr,"  %s\n",
       Msg);
 
-  exit(1);
+  exit(EXIT_FAILURE);
   }  /* END MCShowUsage() */
 
