@@ -863,7 +863,7 @@ int check_list(
      * if all objects of the same type are wanted
      */
 
-    if (!isalpha(*backptr) && (*backptr != '@'))
+    if (!isalpha(*backptr) && (*backptr != '@') && (*backptr != ':'))
       {
       return(backptr - list ? backptr - list : 1);
       }
@@ -1034,7 +1034,7 @@ void display(
       if( format ) 
       {
 	printf("#\n# Create and define node %s\n#\n", status->name);
-	printf("# create node %s\t# unsupported operation\n", status->name);
+	printf("# create node %s\n", status->name);
       } 
       else
 	printf("Node %s\n", status->name);
