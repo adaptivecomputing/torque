@@ -109,7 +109,14 @@ or the null string.  If
 specifies a node name, the status of that node will be returned.  If the
 .Ar id
 is a null string (or null pointer), the status of all
-nodes at the server will be returned.
+nodes at the server will be returned.  
+.LP
+In TORQUE 2.1.0, if the
+.Ar id
+starts with a ":" and followed by a node property, all nodes with that
+property are returned; creating a "node group" functionality.  The
+string ":ALL" is specially handled and is the same as passing a null
+string.
 .LP
 The parameter,
 .Ar attrib ,
