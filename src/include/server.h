@@ -216,4 +216,11 @@ extern int svr_save A_((struct server *,int));
 #define JobStatRate MAX(PBS_JOBSTAT_MIN,server.sv_attr[(int)SRV_ATR_JobStatRate].at_val.at_long)
 #endif
 
+
+/* maintain a list of new nodes */
+typedef struct new_node {
+        list_link            nn_link;   /* link to other resources in list */
+	char                *nn_name;   /* name of new node */
+} new_node;                                                                                           
+
 /* END server.h */

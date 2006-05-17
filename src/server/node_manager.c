@@ -90,6 +90,7 @@
 #include <sys/types.h>
 #include <netinet/in.h>
 #include <stdarg.h>
+#include <assert.h>
 
 #include "portability.h"
 #include "libpbs.h"
@@ -131,6 +132,7 @@ static int       svr_numcfgnodes = 0;   /* number of nodes currently configured 
 static int	 exclusive;		/* node allocation type */
 
 static FILE 	*nstatef = NULL;
+static int       num_addrnote_tasks = 0; /* number of outstanding send_cluster_addrs tasks */
 
 extern int	 server_init_type;
 extern int	 has_nodes;
@@ -146,12 +148,16 @@ extern unsigned int pbs_mom_port;
 extern char  server_name[];
 
 extern struct server server;
+extern list_head svr_newnodes;
 
 #define	SKIP_NONE	0
 #define	SKIP_EXCLUSIVE	1
 #define	SKIP_ANYINUSE	2
 
 int hasprop(struct pbsnode *,struct prop *);
+void send_cluster_addrs(struct work_task *);
+int add_cluster_addrs(int);
+int is_compose(int,int);
 
 /*
 
@@ -783,6 +789,170 @@ void sync_node_jobs(
   }  /* END sync_node_jobs() */
 
 
+/*
+ * send_cluster_addrs - sends IS_CLUSTER_ADDRS messages to a set of nodes
+ *                      called from a work task, all nodes will eventually
+ *                      be send the current list of IPs.
+ */
+void send_cluster_addrs(
+
+  struct work_task *ptask)
+  {
+  char id[] = "send_cluster_addrs";
+  static int startcount = 0;
+  struct pbsnode *np;
+  new_node *nnew;
+  int i, ret;
+  
+  if (--num_addrnote_tasks > 0)
+    {
+    /* new nodes are still being added... don't bother yet or start over */
+
+    DBPRT(("%s: not sending addrs yet, %d tasks exist\n",id,num_addrnote_tasks));
+
+    startcount = 0;
+
+    return;
+    }
+  
+  for (i = startcount;i < svr_totnodes;i++)
+    {
+    if (i - startcount > 50)
+      {
+      /* only ping 50 nodes at a time, ping next batch later */
+
+      break;
+      }
+    
+    np = pbsndmast[i];
+
+    /* Don't bother with nodes that we don't currently have a connection,
+     * otherwise we'll get bogged down.  The skipped nodes will get the
+     * updated info when they reconnect. 
+     */
+    if ((np == NULL) || (np->nd_state & INUSE_DELETED) || (np->nd_stream < 0))
+      continue;
+
+    ret = is_compose(np->nd_stream,IS_CLUSTER_ADDRS);
+
+    if (ret == DIS_SUCCESS)
+      {
+      if (add_cluster_addrs(np->nd_stream) == DIS_SUCCESS)
+        {
+        if (rpp_flush(np->nd_stream) == DIS_SUCCESS)
+          {
+          sprintf(log_buffer,"successful addr to node %s\n",
+            np->nd_name);
+          
+          log_record(
+            PBSEVENT_SYSTEM,                                                                        
+            PBS_EVENTCLASS_SERVER,
+            id,
+            log_buffer);
+
+          continue;
+          }
+        }
+
+      ret = DIS_NOCOMMIT;
+      }
+
+    /* ping unsuccessful, mark node down, clear stream */
+
+    update_node_state(np,INUSE_DOWN);
+
+    sprintf(log_buffer,"%s %d to %s",
+      dis_emsg[ret],
+      errno,
+      np->nd_name);
+
+    log_err(-1,id,log_buffer);
+
+    rpp_close(np->nd_stream);
+
+    tdelete((u_long)np->nd_stream,&streams);
+
+    np->nd_stream = -1;
+    }  /* END for (i) */
+
+  startcount = i;
+
+  /* only ping nodes once (disable new task) */
+
+  if (startcount < svr_totnodes)
+    {
+    /* continue outstanding pings after checking for other requests */
+
+    set_task(WORK_Timed,time_now,send_cluster_addrs,NULL);
+    }
+  else
+    {
+    /* all nodes have new addr list, so clear the new nodes */
+    while ((nnew = (new_node *)GET_NEXT(svr_newnodes)) != NULL)
+      {
+      np=find_nodebyname(nnew->nn_name);
+      if (np != NULL)
+        {
+        np->nd_state &= ~INUSE_OFFLINE;
+        }
+      delete_link(&nnew->nn_link);
+      }
+    }
+  } /* END send_cluster_addrs */
+
+/*
+ *      setup_notification -  Sets up the  mechanism for notifying
+ *                            other members of the server's node
+ *                            pool that a new node was added manually
+ *                            via qmgr.  Actual notification occurs some
+ *                            time later through the send_cluster_addrs mechanism
+ */
+
+void setup_notification(char *pname)
+
+  {
+  int i;
+  struct pbsnode *pnode;
+  new_node       *nnew;
+
+  if (pname != NULL)
+    {
+    pnode=find_nodebyname(pname);
+
+    assert(pnode != NULL);
+
+    /* call it offline until after all nodes get the new ipaddr */                                    
+    pnode->nd_state |= INUSE_OFFLINE;                                                                 
+
+    nnew = malloc(sizeof (new_node));
+
+    if (nnew == NULL)
+      {
+      return;
+      }
+
+    CLEAR_LINK(nnew->nn_link);
+
+    nnew->nn_name=strdup(pname);
+
+    append_link(&svr_newnodes,&nnew->nn_link,nnew);
+  }
+
+DBPRT(("setting send_cluster_addrs task for %s\n",pname));
+  set_task(
+    WORK_Timed,
+    time_now + 5,
+    send_cluster_addrs,
+    NULL);
+
+  num_addrnote_tasks++;
+
+  return;
+  }
+
+
+
+
 
 
 int is_stat_get(
@@ -899,6 +1069,23 @@ int is_stat_get(
         /* walk job list reported by mom */
 
         sync_node_jobs(np,ret_info + strlen("jobs="));
+        }
+      else if (!strncmp(ret_info,"ncpus=",6))
+        {
+        struct attribute nattr;
+
+        /* first we decode ret_info into nattr... */
+        if ((node_attr_def + NODE_ATR_np)->at_decode(&nattr,ATTR_NODE_np,NULL,ret_info+6) == 0)
+          {
+          /* ... and if MOM's ncpus is higher than our np... */
+          if (nattr.at_val.at_long > np->nd_nsn)
+            {
+            /* ... then we do the defined magic to create new subnodes */
+            (node_attr_def + NODE_ATR_np)->at_action(&nattr,(void *)np,ATR_ACTION_ALTER);
+
+            update_nodes_file();
+            }
+          }
         }
 
       free(ret_info);
@@ -1231,6 +1418,60 @@ void ping_nodes(
   }  /* END ping_nodes() */
 
 
+/*
+ * add_cluster_addrs - add the IPaddr of every node to the stream
+ */
+int add_cluster_addrs(int stream)
+  {
+  char id[]="add_cluster_addrs";
+  int i,j,ret;
+  struct pbsnode *np;
+
+  /* should we cache this response and send it as a single string? */
+
+  for (i = 0;i < svr_totnodes;i++)
+    {
+    np = pbsndmast[i];
+
+    if (np->nd_state & INUSE_DELETED)
+      continue;
+        
+    if (LOGLEVEL == 7)  /* higher loglevel gets more info below */
+      {
+      sprintf(log_buffer,"adding node[%d] %s to hello response",
+        i,
+        np->nd_name);
+      
+      log_event(PBSEVENT_ADMIN,PBS_EVENTCLASS_SERVER,id,log_buffer);
+      }
+  
+    for (j = 0;np->nd_addrs[j];j++)
+      {                                                                                           
+      u_long ipaddr = np->nd_addrs[j];                                                             
+                                                                                                   
+      if (LOGLEVEL >= 8)
+        {
+        sprintf(log_buffer,"adding node[%d] interface[%d] %ld.%ld.%ld.%ld to hello response",
+          i,
+          j,
+          (ipaddr & 0xff000000) >> 24,
+          (ipaddr & 0x00ff0000) >> 16,
+          (ipaddr & 0x0000ff00) >> 8,
+          (ipaddr & 0x000000ff));
+
+        log_event(PBSEVENT_ADMIN,PBS_EVENTCLASS_SERVER,id,log_buffer);
+        }
+
+      ret = diswul(stream,ipaddr);
+
+      if (ret != DIS_SUCCESS)
+        return ret;
+      }  /* END for (j) */
+    }    /* END for (i) */
+
+  return DIS_SUCCESS;
+  } /* END add_cluster_addrs */
+
 
 
  /*
@@ -1517,47 +1758,8 @@ found:
       if (ret != DIS_SUCCESS)
         goto err;
 
-      /* should we cache this response and send it as a single string? */
-
-      for (i = 0;i < svr_totnodes;i++) 
-        {
-        np = pbsndmast[i];
-
-        if (np->nd_state & INUSE_DELETED)
-          continue;
-
-        if (LOGLEVEL == 7)  /* higher loglevel gets more info below */
-          {
-          sprintf(log_buffer,"adding node[%d] %s to hello response",
-            i,
-            np->nd_name);
-
-          log_event(PBSEVENT_ADMIN,PBS_EVENTCLASS_SERVER,id,log_buffer);
-          }
-
-        for (j = 0;np->nd_addrs[j];j++) 
-          {
-          u_long ipaddr = np->nd_addrs[j];
-
-          if (LOGLEVEL >= 8)
-            {
-            sprintf(log_buffer,"adding node[%d] interface[%d] %ld.%ld.%ld.%ld to hello response",
-              i,
-              j,
-              (ipaddr & 0xff000000) >> 24,
-              (ipaddr & 0x00ff0000) >> 16,
-              (ipaddr & 0x0000ff00) >> 8,
-              (ipaddr & 0x000000ff));
-
-            log_event(PBSEVENT_ADMIN,PBS_EVENTCLASS_SERVER,id,log_buffer);
-            }
-
-          ret = diswul(stream,ipaddr);
-
-          if (ret != DIS_SUCCESS)
-            goto err;
-          }  /* END for (j) */
-        }    /* END for (i) */
+      if (add_cluster_addrs(stream) != DIS_SUCCESS)
+        goto err;
 
       /* NOTE:  re-enabled rpp_flush/disabled rpp_eom (CRI) */
 
@@ -2710,6 +2912,9 @@ static int node_spec(
   for (i = 0;i < svr_totnodes;i++) 
     {
     pnode = pbsndlist[i];
+
+    if (pnode->nd_state & INUSE_DELETED)
+      continue;
 
     if (LOGLEVEL >= 6)
       {

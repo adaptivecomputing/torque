@@ -214,7 +214,7 @@ extern int addr_ok(pbs_net_t addr);
 #ifdef BATCH_REQUEST_H
 extern	void	initialize_pbssubn A_((struct pbsnode *,struct pbssubn *,struct prop *));
 extern	void	effective_node_delete A_((struct pbsnode *));
-extern	void	setup_notification A_((void));
+extern	void	setup_notification A_((char *));
 extern  struct pbssubn  *find_subnodebyname A_((char *));
 extern	struct pbsnode  *find_nodebyname A_((char *));
 extern	void	free_prop_list A_((struct prop*));

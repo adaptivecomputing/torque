@@ -184,6 +184,7 @@ extern list_head svr_newjobs;
 extern list_head svr_alljobs;
 extern list_head svr_queues;
 extern list_head svr_requests;
+extern list_head svr_newnodes;
 extern list_head task_list_immed;
 extern list_head task_list_timed;
 extern list_head task_list_event;
@@ -446,6 +447,7 @@ int pbsd_init(
   CLEAR_HEAD(svr_queues);
   CLEAR_HEAD(svr_alljobs);
   CLEAR_HEAD(svr_newjobs);
+  CLEAR_HEAD(svr_newnodes);
 
   time_now = time((time_t *)0);
 

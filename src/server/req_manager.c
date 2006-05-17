@@ -1353,7 +1353,8 @@ void mgr_node_set(
     if ((pbsndlist != NULL) && svr_totnodes) 
       {
       pnode = *pbsndlist;
-      if (*preq->rq_ind.rq_manager.rq_objname == ':')
+      if ((*preq->rq_ind.rq_manager.rq_objname == ':') && 
+          (strcmp(preq->rq_ind.rq_manager.rq_objname+1,"ALL") != 0))
         {
         propnodes = 1;
         nodename = preq->rq_ind.rq_manager.rq_objname;
@@ -1807,7 +1808,7 @@ void mgr_node_create(
     PBS_EVENTCLASS_NODE, 
     preq->rq_ind.rq_manager.rq_objname);
 
-  setup_notification();	    /* set mechanism for notifying */
+  setup_notification(preq->rq_ind.rq_manager.rq_objname);	    /* set mechanism for notifying */
 			    /* other nodes of new member   */
 
   if (update_nodes_file()) 

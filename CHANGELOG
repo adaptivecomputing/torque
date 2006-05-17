@@ -4,6 +4,12 @@
   node's np now accessible in qmgr (USC)
   add ":ALL" as a special node selection when stat'ing nodes (USC)
   momctl can now use :property node selection (USC)
+  send cluster addrs to all nodes when a node is created in qmgr (USC)
+    - new nodes are marked offline
+    - all nodes get new cluster ipaddr list
+    - new nodes are cleared of offline bit
+  set a node's np from the status' ncpus (only if ncpus > np) (USC)
+  fix possible pbs_server crash when nodes are deleted in qmgr (USC)
 
 2.1.0p0
 

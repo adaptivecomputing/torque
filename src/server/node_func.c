@@ -827,30 +827,6 @@ void effective_node_delete(
 
 
 
-/*
- *	setup_notification -  Sets up the  mechanism for notifying
- *			      other members of the server's node
- *			      pool that a new node was added manually
- *			      via qmgr.  Actual notification occurs some
- *			      time later through the ping_nodes mechanism
-*/
-
-void setup_notification()
-
-  {
-  int i;
-
-  for (i = 0;i < svr_totnodes;i++) 
-    {
-    if (pbsndlist[i]->nd_state & INUSE_DELETED)
-      continue;
-
-    pbsndlist[i]->nd_state |= INUSE_NEEDS_HELLO_PING;
-    }
-
-  return;
-  }
-
 
 
 

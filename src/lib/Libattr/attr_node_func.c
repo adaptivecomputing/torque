@@ -942,17 +942,6 @@ int node_prop_list(
 
       /* update node with new attr_strings */
 
-      if (np->nd_prop != NULL)
-        {
-        /* NO-OP */
-
-        if (LOGLEVEL >= 1)
-          {
-          fprintf(stderr,"ERROR:  possible memory leak in node %s node_prop_list()\n",
-            np->nd_name);
-          }
-        }
-
       np->nd_prop = new->at_val.at_arst;
 
       /* update number of properties listed in node */

@@ -187,6 +187,7 @@ int		svr_do_schedule = SCH_SCHEDULE_NULL;
 list_head	svr_queues;            /* list of queues                   */
 list_head	svr_alljobs;           /* list of all jobs in server       */
 list_head	svr_newjobs;           /* list of incoming new jobs        */
+list_head	svr_newnodes;          /* list of newly created nodes      */
 list_head	task_list_immed;
 list_head	task_list_timed;
 list_head	task_list_event;
