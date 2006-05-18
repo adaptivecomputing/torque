@@ -27,16 +27,19 @@ endif
 SUBDIRS = include lib $(SERVER_DIRS) $(MOM_DIRS) $(CLIENTS_DIRS) $(GUI_DIRS)
 
 install_mom:
-	for dir in $(MOM_DIRS) ;do (cd $$dir && $(MAKE) install);done
+	for dir in $(MOM_DIRS) lib ;do (cd $$dir && $(MAKE) install);done
 
 install_server:
-	for dir in $(SERVER_DIRS) ;do (cd $$dir && $(MAKE) install);done
+	for dir in $(SERVER_DIRS) lib ;do (cd $$dir && $(MAKE) install);done
 
 install_clients:
-	for dir in $(CLIENTS_DIRS) ;do (cd $$dir && $(MAKE) install);done
+	for dir in $(CLIENTS_DIRS) lib ;do (cd $$dir && $(MAKE) install);done
 
 install_gui:
 	for dir in $(GUI_DIRS) ;do (cd $$dir && $(MAKE) install_gui);done
 
 install_devel:
 	for dir in include lib ;do (cd $$dir && $(MAKE) install);done
+
+install_lib:
+	for dir in lib ;do (cd $$dir && $(MAKE) install);done

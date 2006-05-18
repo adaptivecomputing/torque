@@ -4430,7 +4430,7 @@ relink_command=\"$relink_command\""
 	    fi
 	    libfile="$libdir/"`$echo "X$lib" | $Xsed -e 's%^.*/%%g'` ### testsuite: skip nested quoting test
 	    if test -n "$libdir" && test ! -f "$libfile"; then
-	      $echo "$modename: warning: \`$lib' has not been installed in \`$libdir'" 1>&2
+
 	      finalize=no
 	    fi
 	  done

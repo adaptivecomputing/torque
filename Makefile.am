@@ -114,10 +114,12 @@ endif
 
 ALL_PKGS = $(SERVER_PKG) $(MOM_PKG) $(CLIENTS_PKG) $(GUI_PKG) devel doc
 
-install_server install_mom install_clients install_gui install_devel:
+install_server install_mom install_clients install_gui install_lib:
 	(cd src && $(MAKE) $@)
 install_doc:
 	(cd doc && $(MAKE) $@)
+install_devel: install-binSCRIPTS
+	(cd src && $(MAKE) $@)
 
 packages:
 	@if `echo $(PKGROOT) | grep ^/ >/dev/null`;then \
@@ -136,6 +138,10 @@ packages:
            pkgfile=./torque-$$pname-$$d-$$phost.sh; \
            echo "Building $$pkgfile ..."; \
            $(MAKE) DESTDIR=$$proot install_$$d >/dev/null || exit 1; \
+	   case $$d in \
+	      devel) :;; \
+	      *) rm -f $$proot/$(libdir)/*a $$proot/$(libdir)/*.so;; \
+	   esac; \
            if test -d $(PKGOVERRIDE)/$$d ;then \
              echo "Using override dir $(PKGOVERRIDE)/$$d"; \
              ( cd $(PKGOVERRIDE)/$$d && tar cf - . | (cd $$proot; tar xvf - ) ); \

@@ -12,6 +12,7 @@
   fix possible pbs_server crash when nodes are deleted in qmgr (USC)
   avoid dup streams with nodes for quicker pbs_server startup (USC)
   configure program prefix/suffix will now across all subcomponents (USC)
+  handle shared libs in tpackages (USC)
 
 2.1.0p0
 
