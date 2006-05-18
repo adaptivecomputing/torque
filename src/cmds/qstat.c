@@ -141,6 +141,9 @@ extern int MXMLToString(mxml_t *,char *,int,int *,mbool_t);
 /* globals */
 
 mbool_t DisplayXML = FALSE;
+#define maxlinesize 65536
+int   linesize = 77;
+
 
 /* END globals */
 
@@ -324,7 +327,7 @@ void prt_attr(
 
   while (c != NULL) 
     {
-    if ((l = strlen(c)) + start < 78) 
+    if ((l = strlen(c)) + start < linesize) 
       {
       printf("%s", 
         c);
@@ -344,7 +347,7 @@ void prt_attr(
         {
         putchar(*c++);
 
-        if (++start > 78) 
+        if (++start > linesize) 
           {
           start = 8;
 
@@ -420,14 +423,11 @@ static char *findattrl(
 
 static void prt_nodes(
 
-  char *nodes,   /* I */
-  int   option)  /* I */
+  char *nodes)   /* I */
 
   {
   int   i;
   char *stp;
-
-  int   linesize;
 
   char  linebuf[65536];
 
@@ -436,15 +436,6 @@ static void prt_nodes(
     /* FAILURE - node is invalid */
 
     return;
-    }
-
-  if (option & ALT_DISPLAY_o) 
-    {
-    linesize = sizeof(linebuf);        
-    }
-  else
-    {
-    linesize = 77;
     }
 
   i = 0;
@@ -776,14 +767,14 @@ static void altdsp_statjob(
         usecput ? eltimecpu : eltimewal);
       }
 
-    if (!(alt_opt & ALT_DISPLAY_o)) 
+    if (linesize < maxlinesize) 
       printf("\n");
 
     if (alt_opt & ALT_DISPLAY_n) 
       {
       /* print assigned nodes */
 
-      prt_nodes(exechost,alt_opt);
+      prt_nodes(exechost);
       }
 
     if (alt_opt & ALT_DISPLAY_s) 
@@ -2153,11 +2144,17 @@ int main(
     errflg++;
     }
 
-  if ((alt_opt & ALT_DISPLAY_o) && !(alt_opt & ALT_DISPLAY_n))
+  if ((alt_opt & ALT_DISPLAY_o) && !((alt_opt & ALT_DISPLAY_n)||(f_opt)))
     {
     fprintf(stderr,conflict);
 
     errflg++;
+    }
+
+  if (alt_opt & ALT_DISPLAY_o) 
+    {
+    linesize = maxlinesize;
+    alt_opt &= ~ALT_DISPLAY_o;
     }
 
 #endif /* PBS_NO_POSIX_VIOLATION */
@@ -2165,11 +2162,11 @@ int main(
   if (errflg) 
     {
     static char usage[]="usage: \n\
-qstat [-f] [-W site_specific] [ job_identifier... | destination... ]\n\
+qstat [-f] [-1] [-W site_specific] [ job_identifier... | destination... ]\n\
 qstat [-a|-i|-r|-e] [-u user] [-n [-1]] [-s] [-G|-M] [-R] [job_id... | destination...]\n\
-qstat -Q [-f] [-W site_specific] [ destination... ]\n\
+qstat -Q [-f [-1]] [-W site_specific] [ destination... ]\n\
 qstat -q [-G|-M] [ destination... ]\n\
-qstat -B [-f] [-W site_specific] [ server_name... ]\n";
+qstat -B [-f [-1]] [-W site_specific] [ server_name... ]\n";
 
     fprintf(stderr,usage);
 
