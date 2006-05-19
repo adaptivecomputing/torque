@@ -218,7 +218,12 @@ static int tcp_read(
   do 
     {
 #ifdef HAVE_POLL
-    timeout = pbs_tcp_timeout*1000;
+    /* poll()'s timeout is only a signed int, must be careful not to overflow */
+    if (INT_MAX/1000 > pbs_tcp_timeout)
+      timeout = pbs_tcp_timeout*1000;
+    else
+      timeout=INT_MAX;
+
     pollset.fd = fd;
     pollset.events = POLLIN|POLLHUP;
 

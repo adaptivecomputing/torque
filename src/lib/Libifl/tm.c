@@ -1225,6 +1225,12 @@ int tm_poll(
 
 		node_table = (tm_node_id *)calloc(nnodes+1,
 				sizeof(tm_node_id));
+		if (node_table == NULL)
+		  {
+		  perror("Memory allocation failed");
+		  goto err;
+		  }
+
 		DBPRT(("%s: INIT nodes %d\n", id, nnodes))
 		for (i=0; i<nnodes; i++) {
 			node_table[i] = disrsi(local_conn, &ret);
