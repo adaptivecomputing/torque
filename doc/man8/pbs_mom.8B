@@ -395,6 +395,8 @@ forces an immediate MOM cycle.
 retrieve or set the $status_update_time parameter
 .IP check_poll_time
 retrieve or set the $check_poll_time parameter
+.IP configversion
+retrieve the config version
 .IP jobstartblocktime
 retrieve or set the $jobstartblocktime parameter
 .IP enablemomrestart
@@ -405,6 +407,8 @@ retrieve or set the $loglevel parameter
 retrieve or set the EXPERIMENTAL $down_on_error parameter
 .IP "diag0 - diag4"
 retrieves various diagnostic information
+.IP version
+retrieves the pbs_mom version
 .Sh HEALTH CHECK
 The health check script is executed directly by the pbs_mom daemon under the
 root user id. It must be accessible from the compute node and may be a script

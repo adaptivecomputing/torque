@@ -3815,6 +3815,20 @@ int rm_request(
             sprintf(output,"enablemomrestart=%d",
               MOMConfigRestart);
             }
+          else if (!strncasecmp(name,"version",strlen("version")))
+            {
+            /* report version */
+
+            sprintf(output,"version=%s",
+              PACKAGE_VERSION);
+            }
+          else if ((!strncasecmp(name,"configversion",strlen("configversion"))) && (MOMConfigVersion[0] != '\0'))
+            {
+            /* report configversion */
+
+            sprintf(output,"configversion=%s",
+              MOMConfigVersion);
+            }
           else if (!strncasecmp(name,"diag",strlen("diag")))
             {
             char tmpLine[1024];
