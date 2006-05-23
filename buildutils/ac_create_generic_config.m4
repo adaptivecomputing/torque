@@ -56,7 +56,13 @@ echo 'includedir="'$includedir'"' >>$F
 echo 'target="'$target'"' >>$F
 echo 'host="'$host'"' >>$F
 echo 'build="'$build'"' >>$F
-echo 'libs="'$L `eval echo $hardcode_libdir_flag_spec`'"' >>$F
+echo 'hardcode_libdir_flag="'`eval echo $hardcode_libdir_flag_spec`'"' >>$F
+echo 'sys_lib_dlsearch_path="'`eval echo $sys_lib_dlsearch_path_spec`'"' >>$F
+echo 'case " $sys_lib_dlsearch_path " in' >>$F
+echo '      *" '$libdir' "*) libs="'$L'" ;;' >>$F
+echo '      *) libs="-L$libdir '$L' $hardcode_libdir_flag" ;;' >>$F
+echo 'esac' >>$F
+
 echo ' ' >>$F
 echo 'if test "'"\$""#"'" -eq 0; then' >>$F
 echo '   cat <<EOF' >>$F
@@ -82,7 +88,7 @@ echo '  --version)   o="$o $version" ;;' >>$F
 echo '  --cflags) if test "_$includedir" != "_/usr/include"' >>$F
 echo '          then o="$o -I$includedir" ; fi' >>$F
 echo '  ;;' >>$F
-echo '  --libs)      o="$o -L$libdir $libs" ;;' >>$F
+echo '  --libs)                  o="$o $libs" ;;' >>$F
 echo '  --exec_prefix|--eprefix) o="$o $exec_prefix" ;;' >>$F
 echo '  --bindir)                o="$o $bindir" ;;' >>$F
 echo '  --sbindir)               o="$o $sbindir" ;;' >>$F

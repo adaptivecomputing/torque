@@ -16,6 +16,7 @@
   qstat's -1 option can now be used with -f for easier parsing (USC)
   fix broken TM on OSX (USC)
   add "version" and "configversion" RM requests (USC)
+  in pbs-config --libs, don't print rpath if libdir is in the sys dlsearch path (USC)
 
 2.1.0p0
 
