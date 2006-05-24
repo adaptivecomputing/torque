@@ -1305,6 +1305,8 @@ u_long addclient(
   struct in_addr  saddr;
   u_long	  ipaddr;
 
+  /* FIXME: must be able to retry failed lookups later */
+
   if ((host = gethostbyname(name)) == NULL) 
     {
     sprintf(log_buffer,"host %s not found", 
@@ -1389,12 +1391,14 @@ static u_long setpbsserver(
 
     log_err(-1,id,log_buffer);
 
-    return(0);
+    ipaddr = 0;
     }
+  else
+    {
+    memcpy(&saddr,host->h_addr,host->h_length);
 
-  memcpy(&saddr,host->h_addr,host->h_length);
-
-  ipaddr = ntohl(saddr.s_addr);
+    ipaddr = ntohl(saddr.s_addr);
+    }
 
   for (index = 0;index < PBS_MAXSERVER;index++)
     {
@@ -1407,10 +1411,13 @@ static u_long setpbsserver(
 
       log_record(PBSEVENT_SYSTEM,PBS_EVENTCLASS_SERVER,id,log_buffer);
 
-      return(1);
+      if (MOMServerAddrs[index])
+        return(1);
+      else
+        break;
       }
 
-    if (MOMServerAddrs[index] == ipaddr)
+    if (ipaddr && (MOMServerAddrs[index] == ipaddr))
       {
       /* IGNORE DUPLICATE IPADDR REQUEST */
 
@@ -1446,7 +1453,8 @@ static u_long setpbsserver(
 
   MOMServerAddrs[index] = ipaddr;
 
-  tinsert(ipaddr,&okclients);
+  if (ipaddr)
+    tinsert(ipaddr,&okclients);
 
   return(1);
   }  /* END setpbsserver() */
@@ -2481,6 +2489,28 @@ int read_config(
   ap->c_name = NULL;		/* one extra */
 
   fclose(conf);
+
+  if (pbs_servername[0][0] == '\0')
+    {
+    FILE *server_file;
+    /* no $pbsserver parameters in config, use server_name as last-resort */
+
+    if ((server_file = fopen(path_server_name,"r")) != NULL)
+      {
+      char tmpLine[PBS_MAXSERVERNAME + 1];
+      char *pn;
+      
+      if (fgets(tmpLine,sizeof(tmpLine),server_file) != NULL)
+        {
+        if ((pn = strchr(tmpLine,'\n')))
+          *pn = '\0';
+
+        setpbsserver(tmpLine);
+        }
+      
+      fclose(server_file);
+      }
+    }
 
   return(0);
   }  /* END read_config() */
@@ -6123,27 +6153,6 @@ int main(
     exit(1);
     }
 
-  if (pbs_servername[0][0] == '\0')
-    {
-    /* no $pbsserver paramters in config, use server_name as last-resort */
-
-    if ((file = fopen(path_server_name,"r")) != NULL)
-      {
-      char tmpLine[PBS_MAXSERVERNAME + 1];
-      char *pn;
-
-      if (fgets(tmpLine,sizeof(tmpLine),file) != NULL)
-        {
-        if ((pn = strchr(tmpLine,'\n')))
-          *pn = '\0';
-
-        setpbsserver(tmpLine);
-        }
-
-      fclose(file);
-      }
-    }
-
   initialize();		/* init RM code */
 
   add_conn(rppfd,Primary,(pbs_net_t)0,0,rpp_request);
@@ -6227,6 +6236,18 @@ int main(
       {
       if (pbs_servername[sindex][0] == '\0')
         break;
+
+      if (MOMServerAddrs[sindex] == 0)
+        {
+        /* server is defined, but we don't have an IP */
+        setpbsserver(pbs_servername[sindex]);
+        }
+
+      if (MOMServerAddrs[sindex] == 0)
+        {
+        /* hrm, something wrong, skip this server */
+        continue;
+        }
 
       if (SStream[sindex] == -1)
         {

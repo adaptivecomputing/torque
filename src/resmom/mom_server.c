@@ -508,6 +508,9 @@ void is_request(
 
     for (sindex = 0;sindex < PBS_MAXSERVER;sindex++)
       {
+      if (pbs_servername[sindex][0] == '\0')
+        break;
+
       if (ipaddr == MOMServerAddrs[sindex])
         {
         ServerIndex = sindex;
