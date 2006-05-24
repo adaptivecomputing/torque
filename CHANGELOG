@@ -1,25 +1,27 @@
+c - crash     b - bug fix    e - enhancement    f - new feature
+
 2.1.1
-  fix mom_sync_job code that crashes pbs_server (USC)
-  checking disk space in $PBS_SERVER_HOME was mistakenly disabled (USC)
-  node's np now accessible in qmgr (USC)
-  add ":ALL" as a special node selection when stat'ing nodes (USC)
-  momctl can now use :property node selection (USC)
-  send cluster addrs to all nodes when a node is created in qmgr (USC)
-    - new nodes are marked offline
-    - all nodes get new cluster ipaddr list
-    - new nodes are cleared of offline bit
-  set a node's np from the status' ncpus (only if ncpus > np) (USC)
-  fix possible pbs_server crash when nodes are deleted in qmgr (USC)
-  avoid dup streams with nodes for quicker pbs_server startup (USC)
-  configure program prefix/suffix will now across all subcomponents (USC)
-  handle shared libs in tpackages (USC)
-  qstat's -1 option can now be used with -f for easier parsing (USC)
-  fix broken TM on OSX (USC)
-  add "version" and "configversion" RM requests (USC)
-  in pbs-config --libs, don't print rpath if libdir is in the sys dlsearch path (USC)
-  don't reject job submits if nodes are temporarily down (USC)
-  if MOM can't resolve $pbsserver at startup, try again later (USC)
-    - $pbsclient still suffers this problem
+  c - fix mom_sync_job code that crashes pbs_server (USC)
+  b - checking disk space in $PBS_SERVER_HOME was mistakenly disabled (USC)
+  e - node's np now accessible in qmgr (USC)
+  f - add ":ALL" as a special node selection when stat'ing nodes (USC)
+  f - momctl can now use :property node selection (USC)
+  f - send cluster addrs to all nodes when a node is created in qmgr (USC)
+      - new nodes are marked offline
+      - all nodes get new cluster ipaddr list
+      - new nodes are cleared of offline bit
+  f - set a node's np from the status' ncpus (only if ncpus > np) (USC)
+  c - fix possible pbs_server crash when nodes are deleted in qmgr (USC)
+  e - avoid dup streams with nodes for quicker pbs_server startup (USC)
+  b - configure program prefix/suffix will now work correctly (USC)
+  b - handle shared libs in tpackages (USC)
+  f - qstat's -1 option can now be used with -f for easier parsing (USC)
+  b - fix broken TM on OSX (USC)
+  f - add "version" and "configversion" RM requests (USC)
+  b - in pbs-config --libs, don't print rpath if libdir is in the sys dlsearch path (USC)
+  e - don't reject job submits if nodes are temporarily down (USC)
+  e - if MOM can't resolve $pbsserver at startup, try again later (USC)
+      - $pbsclient still suffers this problem
 
 2.1.0p0
 
