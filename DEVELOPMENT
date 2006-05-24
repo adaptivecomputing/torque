@@ -1,7 +1,6 @@
 Current active development projects (to be released soon)
 
 TODO:  route job start failure messages from sister to mother superior
-TODO:  job session ID not reported to pbs_server for parallel jobs (CHPC)
 TODO:  add queue hostlist attribute (CRI)
 TODO:  enable background epilog.precancel script management
 
