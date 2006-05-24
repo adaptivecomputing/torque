@@ -921,7 +921,7 @@ static void chk_svr_resc_limit(
             &dummy,
             &dummy) == -1)
         {
-        if (EMsg != NULL)
+        if ((EMsg != NULL) && (EMsg[0] == '\0'))
           strcpy(EMsg,"cannot locate feasible nodes");
 
         comp_resc_lt++;
@@ -1414,6 +1414,17 @@ static void default_std(
 
   while (isdigit((int)*pd))       
     *(to + len++) = *pd++;
+
+#ifdef JOBARRAYTESTING
+  if (isdigit((int)*(pd+1)))
+    {
+    /* add the jatid (job array taskid) */
+    *(to + len++) = *pd++;
+
+    while (isdigit((int)*pd))       
+      *(to + len++) = *pd++;
+    }
+#endif
 
   *(to + len) = '\0';
 

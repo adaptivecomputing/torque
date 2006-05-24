@@ -259,8 +259,14 @@ void req_quejob(
 
     created_here = JOB_SVFLG_HERE;
 
+#ifdef JOBARRAYTESTING
+    sprintf(jidbuf,"%d-%d.",
+      server.sv_qs.sv_jobidnumber,1);
+#else
     sprintf(jidbuf,"%d.",
       server.sv_qs.sv_jobidnumber);
+#endif
+
 
     strcat(jidbuf,server_name);
 
@@ -934,6 +940,8 @@ void req_quejob(
 
     return;
     }
+
+  /* FIXME: if EMsg[0] != '\0', send a warning email to the user */
 
   strcpy(pj->ji_qs.ji_queue,pque->qu_qs.qu_name);
 

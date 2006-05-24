@@ -17,6 +17,7 @@
   fix broken TM on OSX (USC)
   add "version" and "configversion" RM requests (USC)
   in pbs-config --libs, don't print rpath if libdir is in the sys dlsearch path (USC)
+  don't reject job submits if nodes are temporarily down (USC)
 
 2.1.0p0
 

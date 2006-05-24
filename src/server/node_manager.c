@@ -2212,11 +2212,16 @@ static int search(
 
     if (pnode->nd_ntype  == NTYPE_CLUSTER) 
       {
+      if (pnode->nd_state & INUSE_DELETED)
+        continue;
+
       if (pnode->nd_flag != okay)
         continue;
 
+/* FIXME: this is rejecting job submits?
       if (pnode->nd_state & pass)
         continue;
+*/
 
       if (!hasprop(pnode,glorf))
         continue;
