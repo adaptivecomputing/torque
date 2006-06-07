@@ -223,39 +223,54 @@ void bad_node_warning(
       continue;
       }
 
-    if (pbsndlist[i]->nd_addrs[0] == addr) 
+    if (pbsndlist[i]->nd_addrs == NULL)
       {
-      now = time(0);
+      /* node was deleted */
 
-      last = pbsndlist[i]->nd_warnbad;
+      continue;
+      }
+
+    if (pbsndlist[i]->nd_addrs[0] != addr) 
+      {
+      /* node does not match */
+
+      continue;
+      }
+
+    /* matching node located */
+
+    now = time(0);
+
+    last = pbsndlist[i]->nd_warnbad;
  
-      if (last && (now - last < 3600))
-        {
-        return;
-        }
+    if (last && (now - last < 3600))
+      {
+      /* bad node warning already sent within the last hour */
 
-      /*
-      ** once per hour, log a warning that we can't reach the node, and
-      ** ping_nodes to check and reset the node's state.
-      */
+      return;
+      }
 
-      sprintf(log_buffer,"ALERT: unable to contact node %s",
-        pbsndlist[i]->nd_name);
+    /*
+    ** once per hour, log a warning that we can't reach the node, and
+    ** ping_nodes to check and reset the node's state.
+    */
 
-      log_event(
-        PBSEVENT_ADMIN, 
-        PBS_EVENTCLASS_SERVER, 
-        "WARNING",
-        log_buffer);
+    sprintf(log_buffer,"ALERT: unable to contact node %s",
+      pbsndlist[i]->nd_name);
 
-      /*
-       *  (void)set_task(WORK_Timed,now + 5,ping_nodes,NULL);
-       */
+    log_event(
+      PBSEVENT_ADMIN, 
+      PBS_EVENTCLASS_SERVER, 
+      "WARNING",
+      log_buffer);
 
-      pbsndlist[i]->nd_warnbad = now;
+    /*
+     *  (void)set_task(WORK_Timed,now + 5,ping_nodes,NULL);
+     */
 
-      break;
-      }  /* END if (pbsndlist[i]->nd_addrs[0] == addr) */
+    pbsndlist[i]->nd_warnbad = now;
+
+    break;
     }    /* END for (i = 0) */
 
   return;
