@@ -1,6 +1,7 @@
 c - crash     b - bug fix    e - enhancement    f - new feature
 
 2.1.1
+
   c - fix mom_sync_job code that crashes pbs_server (USC)
   b - checking disk space in $PBS_SERVER_HOME was mistakenly disabled (USC)
   e - node's np now accessible in qmgr (USC)
@@ -22,6 +23,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature
   e - don't reject job submits if nodes are temporarily down (USC)
   e - if MOM can't resolve $pbsserver at startup, try again later (USC)
       - $pbsclient still suffers this problem
+  c - fix nd_addrs usage in bad_node_warning() (MSIC)
+  b - enable build of xpbsmom on darwin systems (JAX)
 
 2.1.0p0
 
