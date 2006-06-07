@@ -713,15 +713,25 @@ void sync_node_jobs(
 
   {
   char      *id = "sync_node_jobs";
+
   char      *joblist;
   char      *jobidstr;
   struct batch_request *preq;
-  int conn;
+  int        conn;
 
   struct job *pjob;
 
   if ((jobstring_in == NULL) || (!isdigit(*jobstring_in)))
     {
+    /* NO-OP */
+
+    return;
+    }
+
+  if (np->nd_state & INUSE_DELETED)
+    {
+    /* should never happen */
+
     return;
     }
 
@@ -748,6 +758,9 @@ void sync_node_jobs(
             np->nd_name);
 
           log_err(-1,id,log_buffer);
+
+          /* NOTE:  node is actively reporting so should not be deleted and 
+                    np->nd_addrs[] should not be NULL */
 
           conn = svr_connect(
             np->nd_addrs[0],
@@ -1420,12 +1433,18 @@ void ping_nodes(
   }  /* END ping_nodes() */
 
 
-/*
- * add_cluster_addrs - add the IPaddr of every node to the stream
- */
-int add_cluster_addrs(int stream)
+
+
+
+/* add_cluster_addrs - add the IPaddr of every node to the stream */
+
+int add_cluster_addrs(
+
+  int stream)
+
   {
-  char id[]="add_cluster_addrs";
+  char id[] = "add_cluster_addrs";
+
   int i,j,ret;
   struct pbsnode *np;
 
@@ -1448,9 +1467,8 @@ int add_cluster_addrs(int stream)
       }
   
     for (j = 0;np->nd_addrs[j];j++)
-      {                                                                                           
+      {   
       u_long ipaddr = np->nd_addrs[j];                                                             
-                                                                                                   
       if (LOGLEVEL >= 8)
         {
         sprintf(log_buffer,"adding node[%d] interface[%d] %ld.%ld.%ld.%ld to hello response",
@@ -1467,12 +1485,17 @@ int add_cluster_addrs(int stream)
       ret = diswul(stream,ipaddr);
 
       if (ret != DIS_SUCCESS)
-        return ret;
+        {
+        /* FAILURE */
+
+        return(ret);
+        }
       }  /* END for (j) */
     }    /* END for (i) */
 
-  return DIS_SUCCESS;
+  return(DIS_SUCCESS);
   } /* END add_cluster_addrs */
+
 
 
 

@@ -178,7 +178,7 @@ struct pbsnode *PGetNodeFromAddr(
   for (nindex = 0;nindex < svr_totnodes;nindex++)
     {
     if ((pbsndlist[nindex] == NULL) || 
-        (pbsndlist[nindex]->nd_addrs == NULL))
+        (pbsndlist[nindex]->nd_state & INUSE_DELETED))
       continue;
 
     for (aindex = 0;aindex < 10;aindex++)
@@ -223,7 +223,7 @@ void bad_node_warning(
       continue;
       }
 
-    if (pbsndlist[i]->nd_addrs == NULL)
+    if (pbsndlist[i]->nd_state & INUSE_DELETED)
       {
       /* node was deleted */
 
@@ -298,7 +298,11 @@ int addr_ok(
       {
       /* NOTE:  should walk thru all nd_addrs for multi-homed hosts */
 
-      /* NOTE:  deleted node may have already freed nd_addrs */
+      if (pbsndlist[i]->nd_state & INUSE_DELETED)
+        continue;
+
+      /* NOTE:  deleted node may have already freed nd_addrs - 
+                check should be redundant */
 
       if ((pbsndlist[i]->nd_addrs == NULL) || (pbsndlist[i]->nd_addrs[0] != addr))
         continue;
@@ -767,20 +771,27 @@ static void initialize_pbsnode(
  *	by marking it deleted
  */
 
-static void subnode_delete(psubn)
-	struct pbssubn *psubn;
-{
-	struct jobinfo	*jip, *jipt;
+static void subnode_delete(
 
-	for (jip = psubn->jobs; jip; jip = jipt) {
-       		jipt = jip->next;
-       		free (jip); 
-	}
-	psubn->host  = (struct pbsnode *)0;
-	psubn->jobs  = (struct jobinfo *)0;
-	psubn->next  = (struct pbssubn *)0;
-	psubn->inuse = INUSE_DELETED; 
-}
+  struct pbssubn *psubn)
+
+  {
+  struct jobinfo *jip, *jipt;
+
+  for (jip = psubn->jobs;jip;jip = jipt) 
+    {
+    jipt = jip->next;
+
+    free(jip); 
+    }
+
+  psubn->host  = NULL;
+  psubn->jobs  = NULL;
+  psubn->next  = NULL;
+  psubn->inuse = INUSE_DELETED; 
+
+  return;
+  }
 
 
 
@@ -796,7 +807,7 @@ void effective_node_delete(
 
   psubn = pnode->nd_psn;
 
-  while (psubn) 
+  while (psubn != NULL) 
     {
     pnxt = psubn->next;
 
@@ -805,25 +816,30 @@ void effective_node_delete(
     psubn = pnxt;
     }
 
-  pnode->nd_last->next = (struct prop *)0; /*just in case*/
-  pnode->nd_last = (struct prop *)0;
+  pnode->nd_last->next = NULL;      /* just in case */
+  pnode->nd_last       = NULL;
 
-  free_prop_list (pnode->nd_first);
+  free_prop_list(pnode->nd_first);
 
-  pnode->nd_first = (struct prop *)0;
+  pnode->nd_first = NULL;
 
-  for (up = pnode->nd_addrs;*up != 0;up++) 
+  if (pnode->nd_addrs != NULL)
     {
-    /* del node's IP addresses from tree  */
+    for (up = pnode->nd_addrs;*up != 0;up++) 
+      {
+      /* del node's IP addresses from tree  */
 
-    tdelete(*up,&ipaddrs);
-    }
+      tdelete(*up,&ipaddrs);
+      }
 
-  if (pnode->nd_addrs != NULL) 
-    {	/* remove array of IP addresses */
-    free(pnode->nd_addrs);
+    if (pnode->nd_addrs != NULL) 
+      {	
+      /* remove array of IP addresses */
 
-    pnode->nd_addrs = NULL;
+      free(pnode->nd_addrs);
+
+      pnode->nd_addrs = NULL;
+      }
     }
 
   tdelete((u_long)pnode->nd_stream,&streams); /*take stream out of tree*/
@@ -838,7 +854,7 @@ void effective_node_delete(
   pnode->nd_nsnfree = 0;
 
   return;
-  }
+  }  /* END effective_node_delete() */
 
 
 
