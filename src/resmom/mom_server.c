@@ -859,11 +859,11 @@ void check_state(
     ICount = 0;
     }
 
-  /* clear node messages */
-
-  PBSNodeMsgBuf[0] = '\0';
+  /* clear node state and node messages */
 
   internal_state &= ~INUSE_DOWN;
+
+  PBSNodeMsgBuf[0] = '\0';
 
   /* conditions:  external state should be down if
      - inadequate file handles available (for period X) 
@@ -882,6 +882,7 @@ void check_state(
   if (statfs(path_spool,&F) == -1)
     {
     /* cannot check filesystem */
+
     log_err(errno,"check_state","statfs() failed");
     }
   else if (F.f_bavail < TMINSPOOLBLOCKS)

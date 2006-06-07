@@ -305,6 +305,7 @@ typedef struct	noderes {
 
 
 /* mother superior to sister communication */
+/*   (sync w/TSisterFailure[] in resmom/mom_main.c) */
 
 #define	SISTER_OKAY	0
 #define SISTER_KILLDONE	1000

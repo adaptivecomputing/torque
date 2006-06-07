@@ -747,7 +747,8 @@ int send_sisters(
 
     if (np->hn_sister != SISTER_OKAY)	/* sister is gone? */
       {
-      DBPRT(("send_sisters: nodeid %d is not okay\n",np->hn_node));
+      DBPRT(("send_sisters: nodeid %d is not okay\n",
+        np->hn_node));
 
       /* continue; I don't like this -garrick */
       }
@@ -768,8 +769,10 @@ int send_sisters(
     if (ret != DIS_SUCCESS)
       {
       rpp_close(np->hn_stream);
+
       np->hn_stream = -1;
       np->hn_sister = SISTER_EOF;
+
       continue;
       }
 
@@ -778,8 +781,10 @@ int send_sisters(
     if (ret == -1)
       {
       rpp_close(np->hn_stream);
+
       np->hn_stream = -1;
       np->hn_sister = SISTER_EOF;
+
       continue;
       }
 

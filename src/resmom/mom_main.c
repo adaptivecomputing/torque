@@ -5101,9 +5101,13 @@ int job_over_limit(
     return(1);
     }
 
-  if ((pjob->ji_numnodes == 1) ||		/* no other nodes */
-     ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HERE) == 0))	/* not MS */
+  if ((pjob->ji_numnodes == 1) ||	
+     ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HERE) == 0))	
     {
+    /* no other nodes or not mother superior */
+
+    /* SUCCESS */
+
     return(0);
     }
 
@@ -5113,14 +5117,48 @@ int job_over_limit(
 
     if (pnode->hn_sister != 0)
       {
-      sprintf(log_buffer,"node %d (%s) requested job die, code %d",
-        pjob->ji_nodekill, 
-        pnode->hn_host, 
-        pnode->hn_sister);
+      char *KillDone = "KillDone";
+      char *BadPoll  = "BadPoll";
+   
+      switch (pnode->hn_sister)
+        {
+        case SISTER_KILLDONE:
+
+          sprintf(log_buffer,"node %d (%s) requested job die, '%s' (code %d)",
+            pjob->ji_nodekill,
+            pnode->hn_host,
+            "killdone",
+            pnode->hn_sister);
+
+          break;
+
+        case SISTER_BADPOLL:
+
+          sprintf(log_buffer,"node %d (%s) requested job die, '%s' (code %d)",
+            pjob->ji_nodekill,
+            pnode->hn_host,
+            "badpoll",
+            pnode->hn_sister);
+
+          break;
+
+        case SISTER_EOF:
+        default:
+
+          sprintf(log_buffer,"node %d (%s) requested job die, '%s' (code %d) - internal or network failure attempting to communicate with sister MOM's",
+            pjob->ji_nodekill,
+            pnode->hn_host,
+            "EOF",
+            pnode->hn_sister);
+
+          break;
+        }  /* END switch (pnode->hn_sister) */
+ 
+      /* FAILURE */
 
       return(1);
       }
-    }
+    }    /* END if (pjob->ji_nodekill != TM_ERROR_NODE) */
 
   attr = &pjob->ji_wattr[JOB_ATR_resource];
   used = &pjob->ji_wattr[JOB_ATR_resc_used];
