@@ -23,8 +23,10 @@ c - crash     b - bug fix    e - enhancement    f - new feature
   e - don't reject job submits if nodes are temporarily down (USC)
   e - if MOM can't resolve $pbsserver at startup, try again later (USC)
       - $pbsclient still suffers this problem
-  c - fix nd_addrs usage in bad_node_warning() (MSIC)
+  c - fix nd_addrs usage in bad_node_warning() after deleting nodes (MSIC)
   b - enable build of xpbsmom on darwin systems (JAX)
+  e - run-time config of MOM's rcp cmd (see pbs_mom(8)) (USC)
+  e - momctl can now accept query strings with spaces, multiple -q opts (USC)
 
 2.1.0p0
 

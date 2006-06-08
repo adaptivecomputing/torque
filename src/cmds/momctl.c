@@ -25,11 +25,14 @@ extern char *optarg;
 #include "resmon.h"
 #include "rm.h"
 
+#define MAX_QUERY  128
+
 char *LocalHost = "localhost";
 
 char *DiagPtr  = "diag";
 
-char QueryString[1024];
+char *Query[MAX_QUERY];
+int   QueryI   = 0;
 
 char *FPtr     = NULL;
 char *JPtr     = NULL;
@@ -41,7 +44,6 @@ int MOMPort = 0;  /* use default PBS MOM port */
 
 mbool_t IsVerbose = FALSE;
 
-#define MAX_QUERY  128
 
 enum MOMCmdEnum {
   momNONE = 0,
@@ -89,8 +91,6 @@ int main(
   HostList[0]     = '\0';
   ConfigBuf[0] = '\0';
 
-  QueryString[0]  = '\0';
-
   if (getuid() != 0)
     {
     fprintf(stderr,"ERROR:  must be root to run this command\n");
@@ -118,7 +118,9 @@ int main(
 
         CmdIndex = momQuery;
 
-        strcpy(QueryString,"cycle");
+        Query[QueryI]=strdup("cycle");
+
+        QueryI++;
 
         break;
 
@@ -126,16 +128,20 @@ int main(
 
         CmdIndex = momQuery;
 
+        Query[QueryI]=calloc(strlen(DiagPtr)+3,sizeof(char));
+
         if (optarg == NULL)        
           {
-          strcpy(QueryString,DiagPtr);
+          strncpy(Query[QueryI],DiagPtr,strlen(DiagPtr));
           }
         else 
           {
-          snprintf(QueryString,sizeof(QueryString),"%s%s",
+          snprintf(Query[QueryI],strlen(DiagPtr)+2,"%s%s",
             DiagPtr,
             optarg);
           }
+
+        QueryI++;
 
         break;
 
@@ -207,13 +213,15 @@ int main(
           {
           MCShowUsage("query not specified");
 
-          strcpy(QueryString,DiagPtr);
+          Query[QueryI]=strdup(DiagPtr);
           }
         else
           {
-          strncpy(QueryString,optarg,sizeof(QueryString));
+          Query[QueryI]=strdup(optarg);
           }
  
+        QueryI++;
+
         CmdIndex = momQuery;
   
         break;
@@ -518,43 +526,31 @@ int do_mom(char *HPtr,int MOMPort,int CmdIndex)
     default:
 
       {
-      char *Query[MAX_QUERY];
-
       char *ptr;
 
-      int  RCount;
       int  rindex;
 
       char *Value;
 
-      rindex = 0;
-
-      ptr = strtok_r(QueryString,", \t\n",&QTok);
-
-      while (ptr != NULL)
+      for (rindex = 0;rindex < QueryI;rindex++)
         {
-        if (addreq(sd,ptr) != 0)
+        if (addreq(sd,Query[rindex]) != 0)
           {
           fprintf(stderr,"ERROR:    cannot add query for '%s' on %s (errno=%d:%d)\n",
-            ptr,
+            Query[rindex],
             HPtr,
             errno,
             pbs_errno);
           }
-
-        Query[rindex] = ptr;
-
-        rindex++;
-
-        ptr = strtok_r(NULL,", \t\n",&QTok);
         }
 
-      RCount = rindex;
-
-      Query[rindex] = NULL;
-
-      for (rindex = 0;rindex < RCount;rindex++)
+      for (rindex = 0;rindex < QueryI;rindex++)
         {
+        if ((ptr=strchr(Query[rindex],'=')) != NULL)
+          {
+          *ptr='\0';
+          }
+
         if ((Value = (char *)getreq(sd)) == NULL)
           {
           fprintf(stderr,"ERROR:    query[%d] '%s' failed on %s (errno: %d:%d)\n",

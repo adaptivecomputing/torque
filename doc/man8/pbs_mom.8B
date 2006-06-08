@@ -359,6 +359,15 @@ mom interval. (see HEALTH CHECK for more information)
 .IP prologalarm
 Specifies maximum duration (in seconds) which the mom will wait for the job prolog
 or job job epilog to complete.  This parameter default to 300 seconds (5 minutes)
+.IP rcpcmd
+Specify the the full path and argument to be used for remote file copies.  This overrides
+the compile-time default found in configure.  This must contain 2 words: the full path to
+the command and the switches.  The copy command must be able to recursively copy files to
+the remote host and accept arguments of the form "user@host:files"  For example:
+.IP
+.Ty "$rcpcmd /usr/bin/rcp -rp
+.br
+.Ty "$rcpcmd /usr/bin/scp -rpB
 .IP timeout
 Specifies the number of seconds before TCP messages will time out.  TCP messages include job obituaries, and TM requests if RPP is disabled.
 Default is 60 seconds.
@@ -390,7 +399,7 @@ set pbs_mom options.  Any configured static resource may be retrieved with a
 request of the same name.  These are resource requests not otherwise documented
 in the PBS ERS.
 .IP cycle
-forces an immediate MOM cycle.
+forces an immediate MOM cycle
 .IP status_update_time
 retrieve or set the $status_update_time parameter
 .IP check_poll_time
@@ -400,13 +409,15 @@ retrieve the config version
 .IP jobstartblocktime
 retrieve or set the $jobstartblocktime parameter
 .IP enablemomrestart
-retrieve or set the $enablemomrestart parameter.
+retrieve or set the $enablemomrestart parameter
 .IP loglevel
 retrieve or set the $loglevel parameter
 .IP down_on_error
 retrieve or set the EXPERIMENTAL $down_on_error parameter
 .IP "diag0 - diag4"
 retrieves various diagnostic information
+.IP rcpcmd
+retrieve or set the $rcpcmd parameter
 .IP version
 retrieves the pbs_mom version
 .Sh HEALTH CHECK

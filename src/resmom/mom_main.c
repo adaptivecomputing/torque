@@ -216,6 +216,9 @@ extern time_t   pbs_tcp_timeout;
 
 char            tmpdir_basename[MAXPATHLEN];  /* for $TMPDIR */
 
+char            rcp_path[MAXPATHLEN];
+char            rcp_args[MAXPATHLEN];
+
 time_t          LastServerUpdateTime = 0;  /* NOTE: all servers updated together */
 
 time_t          MOMStartTime              = 0;
@@ -276,6 +279,7 @@ struct	config_list {
 /* NOTE:  must adjust RM_NPARM in resmom.h to be larger than number of parameters
           specified below */
 
+static unsigned long setrcpcmd(char *);
 static unsigned long setpbsclient(char *);
 static unsigned long configversion(char *);
 static unsigned long cputmult(char *);
@@ -305,6 +309,8 @@ static struct specials {
   char            *name;
   u_long          (*handler)();
   } special[] = {
+    { "rcpcmd",      setrcpcmd },
+    { "rcp_cmd",      setrcpcmd },
     { "pbsclient",    setpbsclient },
     { "configversion",configversion },
     { "cputmult",     cputmult },
@@ -1482,6 +1488,41 @@ static u_long settmpdir(
 
   return(1);
   }
+
+
+static u_long setrcpcmd(
+
+  char *Value)
+
+  {
+  static  char    id[] = "rcpcmd";
+  static  char *ptr;
+
+  log_record(PBSEVENT_SYSTEM,PBS_EVENTCLASS_SERVER,id,Value);
+
+  if (*Value != '/')
+    {
+    log_err(-1,id,"tmpdir must be a full path");
+
+    return(0);
+    }
+
+  strncpy(rcp_path,Value,sizeof(rcp_path));
+  strcpy(rcp_args,"");
+
+  if ((ptr=strchr(rcp_path,' ')) != NULL)
+    {
+    *ptr='\0';
+
+    if (*(ptr+1) != '\0')
+      {
+      strncpy(rcp_args,ptr+1,sizeof(rcp_args));
+      }
+    }
+
+  return(1);
+  }
+
 
 
 
@@ -3823,7 +3864,7 @@ int rm_request(
             }
           else if (!strncasecmp(name,"down_on_error",strlen("down_on_error")))
             {
-            /* set or report loglevel */
+            /* set or report down_on_error */
 
             if ( (*curr == '=') && ((*curr)+1 != '\0' ))
               {
@@ -3835,7 +3876,7 @@ int rm_request(
             }
           else if (!strncasecmp(name,"enablemomrestart",strlen("enablemomrestart")))
             {
-            /* set or report loglevel */
+            /* set or report enablemomrestart */
 
             if ( (*curr == '=') && ((*curr)+1 != '\0' ))
               {
@@ -3844,6 +3885,18 @@ int rm_request(
 
             sprintf(output,"enablemomrestart=%d",
               MOMConfigRestart);
+            }
+          else if (!strncasecmp(name,"rcpcmd",strlen("rcpcmd")))
+            {
+            /* set or report rcp_path and rcp_args */
+
+            if ( (*curr == '=') && ((*curr)+1 != '\0' ))
+              {
+              setrcpcmd(curr+1);
+              }
+
+            sprintf(output,"rcpcmd=%s %s",
+              rcp_path,rcp_args);
             }
           else if (!strncasecmp(name,"version",strlen("version")))
             {
@@ -4121,8 +4174,8 @@ int rm_request(
               {
               tmpLine[0] = '\0';
 
-              MUSNPrintF(&BPtr,&BSpace,"Configured to use %s\n",
-                RCP_PATH);
+              MUSNPrintF(&BPtr,&BSpace,"Configured to use %s %s\n",
+                rcp_path, rcp_args );
               }
 
             /* joblist */
@@ -5525,6 +5578,9 @@ int main(
 
   MOMExePath = MOMFindMyExe(argv[0]);
   MOMExeTime = MOMGetFileMtime(MOMExePath);
+
+  strcpy(rcp_path,RCP_PATH);
+  strcpy(rcp_args,RCP_ARGS);
 
   /* PATH is restored before a restart */
   if (getenv("PATH") != NULL)

@@ -2071,6 +2071,9 @@ void node_unreserve(
     {
     np = pbsndlist[i];
 
+    if (np->nd_state & INUSE_DELETED)
+      continue;
+
     for (sp = np->nd_psn;sp;sp = sp->next) 
       {
       if (sp->inuse & INUSE_RESERVE) 
@@ -2233,11 +2236,11 @@ static int search(
     {
     pnode = pbsndlist[i];
 
+    if (pnode->nd_state & INUSE_DELETED)
+      continue;
+
     if (pnode->nd_ntype  == NTYPE_CLUSTER) 
       {
-      if (pnode->nd_state & INUSE_DELETED)
-        continue;
-
       if (pnode->nd_flag != okay)
         continue;
 
@@ -2291,6 +2294,9 @@ static int search(
   for (i = 0;i < svr_totnodes;i++) 
     {
     pnode = pbsndlist[i];
+
+    if (pnode->nd_state & INUSE_DELETED)
+      continue;
 
     if (pnode->nd_ntype == NTYPE_CLUSTER) 
       {
@@ -2568,6 +2574,9 @@ static int listelem(
   for (i = 0;i < svr_totnodes;i++) 
     {
     pnode = pbsndlist[i];
+
+    if (pnode->nd_state & INUSE_DELETED)
+      continue;
 
     if (pnode->nd_ntype == NTYPE_CLUSTER) 
       {
@@ -3073,6 +3082,9 @@ static int node_spec(
     {
     pnode = pbsndlist[i];
 
+    if (pnode->nd_state & INUSE_DELETED)
+      continue;
+
     if (pnode->nd_ntype != NTYPE_CLUSTER)
       {
       /* node is ok */
@@ -3330,6 +3342,9 @@ int set_nodes(
     struct jobinfo *jp;
 
     pnode = pbsndlist[i];
+
+    if (pnode->nd_state & INUSE_DELETED)
+      continue;
 
     if (pnode->nd_flag != thinking)
       continue;			/* skip this one */
@@ -3606,6 +3621,9 @@ int node_avail(
       {
       pn = pbsndlist[i];
 
+      if (pn->nd_state & INUSE_DELETED)
+        continue;
+
       if ((pn->nd_ntype == NTYPE_CLUSTER) && hasprop(pn,prop)) 
         {
         if (pn->nd_state & (INUSE_OFFLINE|INUSE_DOWN))
@@ -3708,6 +3726,9 @@ int node_reserve(
     for (i = 0;i < svr_totnodes;i++) 
       {
       pnode = pbsndlist[i];
+
+      if (pnode->nd_state & INUSE_DELETED)
+        continue;
 
       if (pnode->nd_flag != thinking)
         continue;			/* skip this one */
@@ -3857,6 +3878,9 @@ void free_nodes(
   for (i = 0;i < svr_totnodes;i++) 
     {
     pnode = pbsndlist[i];
+
+    if (pnode->nd_state & INUSE_DELETED)
+      continue;
 
     /* examine all subnodes in node */
 

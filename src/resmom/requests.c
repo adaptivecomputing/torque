@@ -153,6 +153,8 @@ extern int		resc_access_perm;	/* see encode_resc() */
 
 extern char             MOMUNameMissing[];
 extern int              pbs_rm_port;
+extern char             rcp_path[];
+extern char             rcp_args[];
 
 /* Local Data Items */
 
@@ -2407,8 +2409,8 @@ static int sys_copy(
     } 
   else
     {
-    ag0 = RCP_PATH;
-    ag1 = RCP_ARGS;
+    ag0 = rcp_path;
+    ag1 = rcp_args;
     } 
 
   if (LOGLEVEL >= 6)
