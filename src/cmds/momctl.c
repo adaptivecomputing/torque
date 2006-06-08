@@ -603,6 +603,10 @@ void MCShowUsage(
   char *Msg)  /* I (optional) */
 
   {
+  if (Msg != NULL)
+    fprintf(stderr,"  %s\n",
+      Msg);
+
   fprintf(stderr,"USAGE:  momctl <ARGS>\n");
 
   fprintf(stderr,"            [ -c {JOB|'all'} ]    // CLEAR STALE JOB\n");
@@ -616,11 +620,8 @@ void MCShowUsage(
   fprintf(stderr,"            [ -s ]                // SHUTDOWN\n");
   fprintf(stderr,"\n");
 
-  fprintf(stderr," one of c, C, d, q, r, or s must be specified\n");
-
-  if (Msg != NULL)
-    fprintf(stderr,"  %s\n",
-      Msg);
+  fprintf(stderr," Only one of c, C, d, q, r, or s must be specified, but -q may\n");
+  fprintf(stderr," be used multiple times. HOST may be a hostname or \":property\".\n");
 
   exit(EXIT_FAILURE);
   }  /* END MCShowUsage() */
