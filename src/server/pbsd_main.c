@@ -370,7 +370,7 @@ int PBSShowUsage(
   char *EMsg)  /* I (optional) */
 
   {
-  const char *Msg = "[ -A <ACCTFILE> ] [ -a <ATTR> ] [ -d <HOMEDIR> ] [ -L <LOGFILE> ] [ -M <MOMPORT> ]\n  [ -p <SERVERPORT> ] [ -R <RMPORT> ] [ -S <SCHEDULERPORT> ] [ -t <TYPE> ]\n  [ --version ]\n";
+  const char *Msg = "[ -A <ACCTFILE> ] [ -a <ATTR> ] [ -d <HOMEDIR> ] [ -L <LOGFILE> ] [ -M <MOMPORT> ]\n  [ -p <SERVERPORT> ] [ -R <RMPORT> ] [ -S <SCHEDULERPORT> ] [ -t <TYPE> ]\n  [ --version|--help ]\n";
 
   fprintf(stderr,"usage:  %s %s\n",
     ProgName,
@@ -502,7 +502,9 @@ int main(
 
         if ((optarg == NULL) || (optarg[0] == '\0'))
           {
-          exit(0);
+          PBSShowUsage("empty command line arg");
+
+          exit(1);
           }
 
         if (!strcmp(optarg,"version"))
@@ -511,6 +513,18 @@ int main(
             PACKAGE_VERSION);
 
           exit(0);
+          }
+        else if (!strcmp(optarg,"help"))
+          {
+          PBSShowUsage(NULL);
+    
+          exit(1);
+          }
+        else
+          {
+          PBSShowUsage("invalid command line arg");
+
+          exit(1);
           }
 
         break;
