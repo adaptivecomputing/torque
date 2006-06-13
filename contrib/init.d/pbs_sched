@@ -2,7 +2,7 @@
 #
 # pbs_sched	This script will start and stop the PBS Scheduler
 #
-# chkconfig: 345 5 99
+# chkconfig: 345 95 5
 # description: PBS is a batch versatile batch system for SMPs and clusters
 #
 # Source the library functions

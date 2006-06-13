@@ -2,7 +2,7 @@
 #
 # pbs_server	This script will start and stop the PBS Server
 #
-# chkconfig: 345 5 85
+# chkconfig: 345 95 5
 # description: PBS is a versatile batch system for SMPs and clusters
 #
 
