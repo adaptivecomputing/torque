@@ -225,19 +225,28 @@ retry:  /* retry goto added (rentec) */
 #ifndef NOPRIVPORTS
 
 #ifdef HAVE_BINDRESVPORT
-    if (bindresvport(sock,&local) < 0)
+    /*
+     * bondresvport seems to cause connect() failures in some odd corner case when
+     * talking to a local daemon.  So we'll only try this once and fallback to
+     * the slow loop around bind() if connect() failes with EADDRINUSE
+     * or EADDRNOTAVAIL.
+     * http://www.supercluster.org/pipermail/torqueusers/2006-June/003740.html
+     */
+
+    if (tryport == (IPPORT_RESERVED - 1))
       {
-      close(sock);
-
-      if ((errno != EADDRINUSE) && (errno != EADDRNOTAVAIL)) 
+      if (bindresvport(sock,&local) < 0)
         {
+        close(sock);
+
         return(PBS_NET_RC_FATAL);
-        } 
-
-      return(PBS_NET_RC_FATAL);
+        }
       }
+    else
+      {
 
-#else
+#endif
+
     local.sin_port = htons(tryport);
 
     while (bind(sock,(struct sockaddr *)&local,sizeof(local)) < 0) 
@@ -265,6 +274,8 @@ retry:  /* retry goto added (rentec) */
 
       local.sin_port = htons(tryport);
       }  /* END while (bind() < 0) */
+#ifdef HAVE_BINDRESVPORT
+      } /* END if (tryport == (IPPORT_RESERVED - 1)) else */
 #endif /* HAVE_BINDRESVPORT */
 #endif /* !NOPRIVPORTS */
     }    /* END if (local_port != FALSE) */
@@ -296,6 +307,7 @@ retry:  /* retry goto added (rentec) */
     case EADDRINUSE:
     case EADDRNOTAVAIL:
 
+#ifndef NOPRIVPORTS
       if (local_port != FALSE) 
         {
         /* continue port search (rentec) */
@@ -306,6 +318,7 @@ retry:  /* retry goto added (rentec) */
 
         goto retry;
         }
+#endif
 
       /* fall through to next case */
 
