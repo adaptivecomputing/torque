@@ -1,8 +1,8 @@
 include $(top_srcdir)/buildutils/config.mk
 
 PBS_LIBS = ../lib/Libattr/libattr.a \
-	   ../lib/Libpbs/libtorque.la \
-	   ../lib/Libsite/libsite.a
+	   ../lib/Libsite/libsite.a \
+	   ../lib/Libpbs/libtorque.la
 
 sbin_PROGRAMS = pbs_server
 

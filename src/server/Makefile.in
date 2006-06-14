@@ -132,8 +132,8 @@ XPBS_DIR = $(libdir)/xpbs
 XPBSMON_DIR = $(libdir)/xpbsmon
 
 PBS_LIBS = ../lib/Libattr/libattr.a \
-	   ../lib/Libpbs/libtorque.la \
-	   ../lib/Libsite/libsite.a
+	   ../lib/Libsite/libsite.a \
+	   ../lib/Libpbs/libtorque.la
 
 
 sbin_PROGRAMS = pbs_server
@@ -187,7 +187,7 @@ am_pbs_server_OBJECTS = accounting.$(OBJEXT) attr_recov.$(OBJEXT) \
 	svr_resccost.$(OBJEXT) svr_task.$(OBJEXT)
 pbs_server_OBJECTS = $(am_pbs_server_OBJECTS)
 pbs_server_DEPENDENCIES = ../lib/Libattr/libattr.a \
-	../lib/Libpbs/libtorque.la ../lib/Libsite/libsite.a
+	../lib/Libsite/libsite.a ../lib/Libpbs/libtorque.la
 pbs_server_LDFLAGS =
 
 DEFS = @DEFS@

@@ -11,13 +11,13 @@ AM_CPPFLAGS += -I$(top_srcdir)/src/resmom/@PBS_MACH@ -DPBS_MOM \
 	       -DPBS_SERVER_HOME=\"$(PBS_SERVER_HOME)\" -DPBS_ENVIRON=\"$(PBS_ENVIRON)\"
 
 PBS_LIBS = ../lib/Libattr/libattr.a \
-	   ../lib/Libpbs/libtorque.la \
-	   ../lib/Libsite/libsite.a
+	   ../lib/Libsite/libsite.a \
+	   ../lib/Libpbs/libtorque.la
 
 EXTRA_DIST = rm_dep.h
 sbin_PROGRAMS = pbs_mom
 
-LDADD = $(PBS_LIBS) $(MOMLIBS) @PBS_MACH@/libmommach.a
+LDADD = @PBS_MACH@/libmommach.a $(MOMLIBS) $(PBS_LIBS)
 
 pbs_mom_SOURCES = catch_child.c mom_comm.c mom_inter.c mom_main.c \
 		   mom_server.c prolog.c requests.c start_exec.c tmsock_recov.c \

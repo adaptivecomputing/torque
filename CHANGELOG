@@ -27,6 +27,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature
   b - enable build of xpbsmom on darwin systems (JAX)
   e - run-time config of MOM's rcp cmd (see pbs_mom(8)) (USC)
   e - momctl can now accept query strings with spaces, multiple -q opts (USC)
+  b - fix linking order for single-pass linkers like IRIX (ncifcrf)
 
 2.1.0p0
 
