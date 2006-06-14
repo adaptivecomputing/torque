@@ -28,7 +28,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature
   e - run-time config of MOM's rcp cmd (see pbs_mom(8)) (USC)
   e - momctl can now accept query strings with spaces, multiple -q opts (USC)
   b - fix linking order for single-pass linkers like IRIX (ncifcrf)
-  b - fix mom compile on solaris with statfs
+  b - fix mom compile on solaris with statfs (USC)
+  b - memory corruption on job exit causing cpu0 to be allocated more than once (USC)
 
 2.1.0p0
 

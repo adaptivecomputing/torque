@@ -1056,6 +1056,8 @@ int main(
     if (server.sv_attr[(int)SRV_ATR_PollJobs].at_val.at_long && 
        (last_jobstat_time + JobStatRate <= time_now))
       {
+      struct work_task *ptask;
+
       for (pjob = (job *)GET_NEXT(svr_alljobs);
            pjob != NULL;
            pjob = (job *)GET_NEXT(pjob->ji_alljobs)) 
@@ -1066,7 +1068,12 @@ int main(
 
           when = pjob->ji_wattr[(int)JOB_ATR_qrank].at_val.at_long % JobStatRate;
     
-          set_task(WORK_Timed,when + time_now,poll_job_task,pjob);
+          ptask = set_task(WORK_Timed,when + time_now,poll_job_task,pjob);
+
+          if (ptask)
+            {
+            append_link(&pjob->ji_svrtask,&ptask->wt_linkobj,ptask);
+            }
           }
         }
 
