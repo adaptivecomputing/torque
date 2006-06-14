@@ -102,6 +102,9 @@
 #ifdef HAVE_SYS_MOUNT_H
 #include <sys/mount.h>
 #endif 
+#ifdef HAVE_SYS_STATVFS_H
+#include <sys/statvfs.h>
+#endif
 
 #include "pbs_ifl.h"
 #include "pbs_error.h"
@@ -877,9 +880,9 @@ void check_state(
 
 #if MOMCHECKLOCALSPOOL
   {
-  struct statfs F;
+  struct statvfs F;
 
-  if (statfs(path_spool,&F) == -1)
+  if (statvfs(path_spool,&F) == -1)
     {
     /* cannot check filesystem */
 
