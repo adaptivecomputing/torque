@@ -96,16 +96,6 @@
 #include <netinet/in.h>
 #include <sys/time.h>
 
-#ifdef HAVE_SYS_VFS_H
-#include <sys/vfs.h>
-#endif
-#ifdef HAVE_SYS_MOUNT_H
-#include <sys/mount.h>
-#endif 
-#ifdef HAVE_SYS_STATVFS_H
-#include <sys/statvfs.h>
-#endif
-
 #include "pbs_ifl.h"
 #include "pbs_error.h"
 #include "log.h"
@@ -880,15 +870,16 @@ void check_state(
 
 #if MOMCHECKLOCALSPOOL
   {
-  struct statvfs F;
+  char *sizestr;
+  long long freespace;
+  extern char *size_fs(char *);  /* FIXME: put this in a header file */
 
-  if (statvfs(path_spool,&F) == -1)
-    {
-    /* cannot check filesystem */
+  /* size_fs() is arch-specific method in mom_mach.c */
+  sizestr=size_fs(path_spool);  /* returns "free:total" */
 
-    log_err(errno,"check_state","statfs() failed");
-    }
-  else if (F.f_bavail < TMINSPOOLBLOCKS)
+  freespace=atoll(sizestr);
+
+  if (freespace < TMINSPOOLBLOCKS)
     {
     /* inadequate disk space in spool directory */
 
