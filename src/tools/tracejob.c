@@ -126,7 +126,7 @@ int main(
   short error = 0;
   int opt;
   char no_acct = 0, no_svr = 0, no_mom = 0, no_schd = 0;
-  char verbose = 0;
+  char verbosity = 1;
   int wrap = -1;
   int log_filter = 0;
   int event_type;
@@ -141,13 +141,19 @@ int main(
   excessive_count = EXCESSIVE_COUNT;
 #endif
 
-  while ((c = getopt(argc,argv,"zvamslw:p:n:f:c:")) != EOF)
+  while ((c = getopt(argc,argv,"qzvamslw:p:n:f:c:")) != EOF)
     {
     switch(c)
       {
+      case 'q':
+
+        verbosity = 0;
+
+        break;
+
       case 'v':
 
-	verbose = 1;
+	verbosity = 2;
 
         break;
 
@@ -216,33 +222,35 @@ int main(
 
       case 'f':
 
-	if( strcmp(optarg, "error") == 0 )
+	if (!strcmp(optarg,"error"))
 	  log_filter |= PBSEVENT_ERROR;
-	else if( strcmp(optarg, "system") == 0 )
+	else if (!strcmp(optarg,"system"))
 	  log_filter |= PBSEVENT_SYSTEM;
-	else if( strcmp(optarg, "admin") == 0 )
+	else if (!strcmp(optarg,"admin"))
 	  log_filter |= PBSEVENT_ADMIN;
-	else if( strcmp(optarg, "job") == 0 )
+	else if (!strcmp(optarg,"job"))
 	  log_filter |= PBSEVENT_JOB;
-	else if( strcmp(optarg, "job_usage") == 0 )
+	else if (!strcmp(optarg,"job_usage"))
 	  log_filter |= PBSEVENT_JOB_USAGE;
-	else if( strcmp(optarg, "security") == 0 )
+	else if (!strcmp(optarg,"security"))
 	  log_filter |= PBSEVENT_SECURITY;
-	else if( strcmp(optarg, "sched") == 0 )
+	else if (!strcmp(optarg,"sched"))
 	  log_filter |= PBSEVENT_SCHED;
-	else if( strcmp(optarg, "debug") == 0 )
+	else if (!strcmp(optarg,"debug"))
 	  log_filter |= PBSEVENT_DEBUG;
-	else if( strcmp(optarg, "debug2") == 0 )
+	else if (!strcmp(optarg,"debug2"))
 	  log_filter |= PBSEVENT_DEBUG2;
-	else if( isdigit(optarg[0]) )
-	{
-	  log_filter = strtol(optarg, &endp, 16);
-	  if( *endp != '\0' )
-	    error = 1;
-	}
-	else
-	  error = 1;  
-      break;
+	else if (isdigit(optarg[0]))
+          {
+          log_filter = strtol(optarg, &endp, 16);
+ 
+          if (*endp != '\0')
+            error = 1;
+          }
+        else
+          error = 1;  
+
+        break;
 
       default:
 
@@ -250,14 +258,14 @@ int main(
 
         break;
       }
-    }
+    }    /* END while ((c = getopt(argc,argv,"zvamslw:p:n:f:c:")) != EOF) */
 
 
   /* no jobs */
 
   if ((error != 0) || (argc == optind))
     {
-    printf("USAGE: %s [-a|s|l|m|v] [-w size] [-p path] [-n days] [-f filter_type] <JOBID>\n", 
+    printf("USAGE: %s [-a|s|l|m|q|v|z] [-c count] [-w size] [-p path] [-n days] [-f filter_type] <JOBID>\n", 
       strip_path(argv[0]));
 
     printf(
@@ -266,7 +274,7 @@ int main(
 "   -n : number of days in the past to look for job(s) [default 1]\n"
 "   -f : filter out types of log entries, multiple -f's can be specified\n"
 "        error, system, admin, job, job_usage, security, sched, debug, \n"
-"        debug2, or absolute numberic equiv\n"
+"        debug2, or absolute numeric hex equivalent\n"
 "   -z : toggle filtering excessive messages\n");
    printf(
 "   -c : what message count is considered excessive\n"
@@ -274,6 +282,7 @@ int main(
 "   -s : don't use server log files\n"
 "   -l : don't use scheduler log files\n"
 "   -m : don't use mom log files\n"
+"   -q : quiet mode - hide all error messages\n"
 "   -v : verbose mode - show more error messages\n");
 
     printf("default prefix path = %s\n", 
@@ -297,7 +306,7 @@ int main(
     {
     for (i = 0,t = t_save;i < number_of_days;i++,t -= SECONDS_IN_DAY)
       {
-      tm_ptr = localtime( &t );
+      tm_ptr = localtime(&t);
 
       for (j = 0;j < 4;j++)
         {
@@ -309,13 +318,27 @@ int main(
 
 	if ((fp = fopen(filename,"r")) == NULL)
           {
-          if (verbose)
+          if (verbosity >= 1)
             perror(filename);
 
           continue;
           }
 
-	parse_log(fp,argv[opt],j);
+	if (parse_log(fp,argv[opt],j) < 0)
+          {
+          /* no valid entries located in file */
+
+          if (verbosity >= 1)
+            {
+            fprintf(stderr,"%s: No matching job records located\n",
+              filename);
+            }
+          }
+        else if (verbosity >= 2)
+          {
+          fprintf(stderr,"%s: Successfully located matching job records\n",
+            filename);
+          } 
 
 	fclose(fp);
         }
@@ -327,17 +350,19 @@ int main(
     qsort(log_lines,ll_cur_amm,sizeof(struct log_entry),sort_by_date);
 
     if (ll_cur_amm != 0)
+      {
       printf("\nJob: %s\n\n", 
         log_lines[0].name);
+      }
 
     for (i = 0;i < ll_cur_amm;i++)
       {
       if (log_lines[i].log_file == 'A')
 	event_type = 0;
       else
-        event_type = strtol(log_lines[i].event, &endp, 16);
+        event_type = strtol(log_lines[i].event,&endp,16);
 
-      if (!( log_filter & event_type) && !(log_lines[i].no_print))
+      if (!(log_filter & event_type) && !(log_lines[i].no_print))
         {
 	printf("%-20s %-5c", 
           log_lines[i].date, 
@@ -346,7 +371,7 @@ int main(
 	line_wrap(log_lines[i].msg,26,wrap);
         }
       }
-    }
+    }    /* END for (opt) */
 
   return(0);
   }  /* END main() */
@@ -368,7 +393,7 @@ int main(
  *
  */
 
-void parse_log(
+int parse_log(
 
   FILE *fp,   /* I */
   char *job,  /* I */
@@ -382,7 +407,9 @@ void parse_log(
   int j = 0;
   struct tm tms;	/* used to convert date to unix date */
   static char none[1] = { '\0' };
-  int lineno		= 0;
+  int lineno = 0;
+
+  int logcount = 0;
 
   tms.tm_isdst = -1;	/* mktime() will attempt to figure it out */
 
@@ -412,36 +439,47 @@ void parse_log(
 
           break;
 
-	case FLD_EVENT:
-	  tmp.event = p;
-	break;
+        case FLD_EVENT:
 
-	case FLD_OBJ:
-	  tmp.obj = p;
-	break;
+          tmp.event = p;
 
-	case FLD_TYPE:
-	  tmp.type = p;
-	break;
+          break;
 
-	case FLD_NAME:
-	  tmp.name = p;
-	break;
+        case FLD_OBJ:
 
-	case FLD_MSG:
-	  tmp.msg = p;
-	break;
+          tmp.obj = p;
 
-	default:
+          break;
 
-	  printf("Field count too big!\n");
-	  printf("%s\n", p);
+        case FLD_TYPE:
+
+          tmp.type = p;
+
+          break;
+
+        case FLD_NAME:
+
+          tmp.name = p;
+
+          break;
+
+        case FLD_MSG:
+
+          tmp.msg = p;
+
+          break;
+
+        default:
+
+          printf("Field count too big!\n");
+
+          printf("%s\n",p);
 
           break;
         }
 
       p = strtok(NULL, ";");
-      }
+      }  /* END for (field_count) */
 
   if ((tmp.name != NULL) && 
       !strncmp(job,tmp.name,strlen(job)) &&
@@ -503,12 +541,30 @@ void parse_log(
 	break;
 	default:
 	  log_lines[ll_cur_amm].log_file = 'U';	/* undefined */
-      }
+        }
+
       log_lines[ll_cur_amm].lineno = lineno;
+
       ll_cur_amm++;
+
+      logcount++;
+      }
+    }    /* END while (fgets(buf,sizeof(buf),fp) != NULL) */
+
+  if (logcount == 0)
+    {
+    /* FAILURE */
+
+    return(-1);
     }
-  }
-}
+
+  /* SUCCESS */
+
+  return(0);
+  }  /* END parse_log() */
+
+
+
 
 /*
  *
@@ -517,29 +573,43 @@ void parse_log(
  *
  */
 
-int sort_by_date( const void *v1, const void *v2 )
-{
+int sort_by_date( 
+
+  const void *v1,  /* I */
+  const void *v2)  /* I */
+
+  {
   struct log_entry *l1, *l2;
 
   l1 = (struct log_entry*) v1;
   l2 = (struct log_entry*) v2;
 
-  if( l1 -> date_time < l2 -> date_time )
-    return -1;
-  else if( l1 -> date_time > l2 -> date_time )
-    return 1;
-  else
-  {
-    if( l1 -> log_file == l2 -> log_file )
+  if (l1->date_time < l2->date_time)
     {
-      if( l1 -> lineno < l2 -> lineno )
-	return -1;
-      else if( l1 -> lineno > l2 -> lineno )
-	return 1;
+    return(-1);
     }
-    return 0;
+  else if (l1->date_time > l2->date_time )
+    {
+    return(1);
+    }
+
+  if (l1->log_file == l2->log_file)
+    {
+    if (l1->lineno < l2->lineno)
+      {
+      return(-1);
+      }
+    else if (l1->lineno > l2->lineno)
+      {
+      return(1);
+      }
+    }
+
+  return(0);
   }
-}
+
+
+
 
 /*
  *
@@ -634,6 +704,7 @@ void free_log_entry( struct log_entry *lg )
  *	returns nothing
  *
  */
+
 void line_wrap(char *line, int start, int end)
 {
   int wrap_at;
@@ -684,6 +755,10 @@ void line_wrap(char *line, int start, int end)
   }
 }
 
+
+
+
+
 /*
  *
  *	log_path - create the path to a log file
@@ -695,19 +770,28 @@ void line_wrap(char *line, int start, int end)
  *	returns path to log file
  *
  */
-char *log_path( char *path, int index, struct tm *tm_ptr )
-{
+
+char *log_path( 
+
+  char      *path, 
+  int        index, 
+  struct tm *tm_ptr)
+
+  {
   static char buf[256];
  
-  if( path != NULL )
-    sprintf(buf, "%s/%s/%04d%02d%02d", path, mid_path[index],
-	tm_ptr -> tm_year + 1900, tm_ptr -> tm_mon + 1, tm_ptr -> tm_mday);
-  else
-    sprintf(buf, "%s/%s/%04d%02d%02d", PBS_SERVER_HOME, mid_path[index],
-	tm_ptr -> tm_year + 1900, tm_ptr -> tm_mon + 1, tm_ptr -> tm_mday);
+  sprintf(buf,"%s/%s/%04d%02d%02d", 
+    (path != NULL) ? path : PBS_SERVER_HOME, 
+    mid_path[index],
+    tm_ptr->tm_year + 1900, 
+    tm_ptr->tm_mon + 1, 
+    tm_ptr->tm_mday);
 
-  return buf;
-}
+  return(buf);
+  }
+
+
+
 
 int get_cols()
 {
@@ -740,10 +824,14 @@ void alloc_more_space( )
   memset(&log_lines[old_amm], 0, (ll_max_amm - old_amm) * sizeof( struct log_entry));
 }
 
+
+
+
+
 /*
  *
  *	filter_excess - count and set the no_print flags if the count goes over
- *		       the message thrashold
+ *		       the message threshold
  *
  *	  threshold - if the number of messages exceeds this, don't print them
  *
@@ -751,6 +839,7 @@ void alloc_more_space( )
  *
  *	NOTE: log_lines array will be sorted in place
  */
+
 void filter_excess( int threshold )
 {
   int cur_count = 1;

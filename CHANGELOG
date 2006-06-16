@@ -30,6 +30,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature
   b - fix linking order for single-pass linkers like IRIX (ncifcrf)
   b - fix mom compile on solaris with statfs (USC)
   b - memory corruption on job exit causing cpu0 to be allocated more than once (USC)
+  e - add increased verbosity to tracejob and added '-q' commandline option
 
 2.1.0p0
 

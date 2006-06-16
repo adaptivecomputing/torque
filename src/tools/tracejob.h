@@ -147,7 +147,7 @@ struct log_entry
  
 /* prototypes */
 int sort_by_date( const void *v1, const void *v2 );
-void parse_log(FILE *fp, char *job, int act);
+int parse_log(FILE *,char *,int);
 char *strip_path( char *path );
 void free_log_entry( struct log_entry *lg );
 void line_wrap(char *line, int start, int end);
