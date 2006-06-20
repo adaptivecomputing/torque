@@ -1284,30 +1284,8 @@ void display_statque(
   char *type;
   char format[80];
 
-  int  MaxCat;
-  int  qmax;
-  int  NUML;
+  int  NUML=5;
 
-  /* determine number of nodes in each category */
-
-  MaxCat = 0;
-  qmax = 0;
-
-  p = status;
-
-  while (p != NULL)
-    {
-    if ((p->attribs != NULL) && (p->attribs->value != NULL))
-      maxstate(p->attribs->value,&qmax);
-
-    MaxCat = MAX(MaxCat,qmax);
-
-    p = p->next;
-    }
-
-
-  NUML = MAX(MINNUML,NUML);
-  NUML = MIN(MAXNUML,NUML);
 
   sprintf(format,"%%-%ds %%%ds %%%ds %%%ds %%%ds %%%ds %%%ds %%%ds %%%ds %%%ds %%%ds %%-%ds\n", 
     NAMEL, 
