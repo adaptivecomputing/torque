@@ -32,6 +32,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature
   b - fix mom compile on solaris with statfs (USC)
   b - memory corruption on job exit causing cpu0 to be allocated more than once (USC)
   e - add increased verbosity to tracejob and added '-q' commandline option
+  e - support larger values in qstat output (might break scripts!) (USC)
 
 2.1.0p0
 

@@ -407,7 +407,7 @@ static char *findattrl(
 
 
 #define NAMEL   16  /* printf of jobs, queues, and servers */
-#define OWNERL  16  /* printf of jobs */
+#define OWNERL  15  /* printf of jobs */
 #define TIMEUL  8   /* printf of jobs */
 #define STATEL  1   /* printf of jobs */
 #define LOCL    15  /* printf of jobs */
@@ -847,8 +847,8 @@ static void altdsp_statque(
   struct attrl *pat;
 
   printf("\nserver: %s\n\n", serv);
-  printf("Queue            Memory CPU Time Walltime Node Run Que Lm  State\n");
-  printf("---------------- ------ -------- -------- ---- --- --- --  -----\n");
+  printf("Queue            Memory CPU Time Walltime Node  Run Que Lm  State\n");
+  printf("---------------- ------ -------- -------- ----  --- --- --  -----\n");
 
   while (pstat != NULL) 
     {
@@ -911,8 +911,8 @@ static void altdsp_statque(
 		pstat = pstat->next;
 	}
 
-  printf("                                               --- ---\n");
-  printf("                                               %3d %3d\n", 
+  printf("                                               ----- -----\n");
+  printf("                                               %5d %5d\n", 
     tot_jrun, 
     tot_jque);
 
@@ -994,9 +994,8 @@ void display_statjob(
     if (prtheader) 
       {
       /* display summary header */
-
-      printf("Job id              Name             User             Time Use S Queue\n");
-      printf("------------------- ---------------- ---------------- -------- - -----\n");
+      printf("Job id              Name             User            Time Use S Queue\n");
+      printf("------------------- ---------------- --------------- -------- - -----\n");
       }
     }    /* END if (!full) */
 
@@ -1257,7 +1256,7 @@ void display_statjob(
 
 
 #define MINNUML    3
-#define MAXNUML    4
+#define MAXNUML    5
 #define TYPEL     10
 
 void display_statque(
@@ -1306,10 +1305,6 @@ void display_statque(
     p = p->next;
     }
 
-  if (MaxCat >= 1000)
-    NUML = 4;
-  else
-    NUML = 3;
 
   NUML = MAX(MINNUML,NUML);
   NUML = MIN(MAXNUML,NUML);
@@ -1330,16 +1325,8 @@ void display_statque(
 
   if (!full && prtheader) 
     {
-    if (NUML == 3)
-      {
-      printf("Queue            Max Tot Ena Str Que Run Hld Wat Trn Ext Type\n");
-      printf("---------------- --- --- --- --- --- --- --- --- --- --- ----------\n");
-      }
-    else 
-      {
-      printf("Queue            Max  Tot  Ena Str Que  Run  Hld  Wat  Trn  Ext  Type\n");
-      printf("---------------- ---- ---- --- --- ---- ---- ---- ---- ---- ---- ----------\n");
-      }
+    printf(format,"Queue","Max","Tot","Ena","Str","Que","Run","Hld","Wat","Trn","Ext","T");
+    printf(format,"----------------","---","---","---","---","---","---","---","---","---","---","-");
     }
 
   p = status;
@@ -1446,16 +1433,9 @@ void display_statque(
             } 
           else if (strcmp(a->name,ATTR_qtype) == 0) 
             {
-            l = strlen(a->value);
-
-            if (l > TYPEL) 
-              {
-              c = a->value + TYPEL;
-
-              *c = '\0';
-              }
-
             type = a->value;
+
+            *(type +1) = '\0';
             }
           }
 
@@ -1531,8 +1511,8 @@ void display_statserver(
 
   if (!full && prtheader) 
     {
-    printf("Server           Max Tot Que Run Hld Wat Trn Ext Status\n");
-    printf("---------------- --- --- --- --- --- --- --- --- ----------\n");
+    printf(format,"Server","Max","Tot","Que","Run","Hld","Wat","Trn","Ext","Status");
+    printf(format,"----------------","---","---","---","---","---","---","---","---","----------");
     }
 
     p = status;
