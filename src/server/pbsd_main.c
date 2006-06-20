@@ -1119,6 +1119,7 @@ int main(
     update_nodes_file();
     }
 
+  RPPConfigure(1,0);  /* help rpp_shutdown go a bit faster */
   rpp_shutdown();
 
   shutdown_ack();

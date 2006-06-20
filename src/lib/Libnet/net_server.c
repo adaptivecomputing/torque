@@ -255,6 +255,10 @@ int wait_request(
   struct timeval timeout;
   void close_conn();
 
+  long OrigState=0;
+
+  if (SState != NULL)
+    OrigState=*SState;
 
   timeout.tv_usec = 0;
   timeout.tv_sec  = waittime;
@@ -311,9 +315,9 @@ int wait_request(
         {
         svr_conn[i].cn_func(i);
 
-        /* NOTE:  breakout if shutdown request received */
+        /* NOTE:  breakout if state changed (probably received shutdown request) */
 
-        if ((SState != NULL) && (*SState == 0))
+        if ((SState != NULL) && (OrigState != *SState))
           break;
         } 
       else 
@@ -330,7 +334,8 @@ int wait_request(
 
   /* NOTE:  break out if shutdown request received */
 
-  /* NYI */
+  if ((SState != NULL) && (OrigState != *SState))
+    return(0);
 
   /* have any connections timed out ?? */
 
@@ -341,9 +346,6 @@ int wait_request(
     struct connection *cp;
 
     cp = &svr_conn[i];
-
-    if ((SState != NULL) && (*SState == 0))
-      break;
 
     if ((cp->cn_active != FromClientASN) && (cp->cn_active != FromClientDIS))
       continue;
@@ -486,6 +488,7 @@ void close_conn(
     }
 
   close(sd);
+fprintf(stderr,"close(%d)\n",sd);
 
   /* if there is a function to call on close, do it */
 

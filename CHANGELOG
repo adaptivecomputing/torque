@@ -33,6 +33,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature
   b - memory corruption on job exit causing cpu0 to be allocated more than once (USC)
   e - add increased verbosity to tracejob and added '-q' commandline option
   e - support larger values in qstat output (might break scripts!) (USC)
+  e - help server shutdown faster (USC)
 
 2.1.0p0
 
