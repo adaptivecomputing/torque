@@ -166,6 +166,14 @@ Format: boolean; default value: disabled.
 .if !\n(Pb .ig Ig
 [internal type: boolean]
 .Ig
+.Al auto_node_np 
+Automatically configure a node's np value based on the ncpus value from
+the status update.
+Requires full manager privilege to set or alter.
+Format: boolean; default value: disabled.
+.if !\n(Pb .ig Ig
+[internal type: boolean]
+.Ig 
 .Al comment
 A text string which may be set by the scheduler or other privileged client
 to provide information to the batch system users. 

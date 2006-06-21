@@ -1082,7 +1082,8 @@ int is_stat_get(
 
         sync_node_jobs(np,ret_info + strlen("jobs="));
         }
-      else if (!strncmp(ret_info,"ncpus=",6))
+      else if (server.sv_attr[(int)SRV_ATR_AutoNodeNP].at_val.at_long &&
+               !strncmp(ret_info,"ncpus=",6))
         {
         struct attribute nattr;
 

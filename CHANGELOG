@@ -13,6 +13,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature
       - all nodes get new cluster ipaddr list
       - new nodes are cleared of offline bit
   f - set a node's np from the status' ncpus (only if ncpus > np) (USC)
+      - controlled by new server attribute "auto_node_np"
   c - fix possible pbs_server crash when nodes are deleted in qmgr (USC)
   e - avoid dup streams with nodes for quicker pbs_server startup (USC)
   b - configure program prefix/suffix will now work correctly (USC)

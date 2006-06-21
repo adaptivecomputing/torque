@@ -139,6 +139,7 @@ enum srv_atr {
 	SRV_ATR_KeepCompleted,
 	SRV_ATR_SubmitHosts,
 	SRV_ATR_AllowNodeSubmit,
+	SRV_ATR_AutoNodeNP,
 #include "site_svr_attr_enum.h"
 	SRV_ATR_ServerName,
 	/* This must be last */
