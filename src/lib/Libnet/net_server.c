@@ -488,7 +488,6 @@ void close_conn(
     }
 
   close(sd);
-fprintf(stderr,"close(%d)\n",sd);
 
   /* if there is a function to call on close, do it */
 
