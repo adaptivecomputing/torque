@@ -805,7 +805,7 @@ void sync_node_jobs(
 /*
  * send_cluster_addrs - sends IS_CLUSTER_ADDRS messages to a set of nodes
  *                      called from a work task, all nodes will eventually
- *                      be send the current list of IPs.
+ *                      be sent the current list of IPs.
  */
 void send_cluster_addrs(
 
@@ -817,7 +817,9 @@ void send_cluster_addrs(
   new_node *nnew;
   int i, ret;
   
-  if (--num_addrnote_tasks > 0)
+  num_addrnote_tasks--;
+ 
+  if (num_addrnote_tasks > 0)
     {
     /* new nodes are still being added... don't bother yet or start over */
 
