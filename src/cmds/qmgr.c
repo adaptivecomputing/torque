@@ -1034,7 +1034,7 @@ void display(
       if( format ) 
       {
 	printf("#\n# Create and define node %s\n#\n", status->name);
-	printf("# create node %s\n", status->name);
+	printf("create node %s\n", status->name);
       } 
       else
 	printf("Node %s\n", status->name);
