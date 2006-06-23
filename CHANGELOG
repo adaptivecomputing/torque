@@ -1,5 +1,7 @@
 c - crash     b - bug fix    e - enhancement    f - new feature
 
+2.1.2
+  b - fix momctl queries with multiple hosts
 
 2.1.1
 

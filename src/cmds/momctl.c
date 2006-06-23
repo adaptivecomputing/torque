@@ -581,6 +581,11 @@ int do_mom(char *HPtr,int MOMPort,int CmdIndex)
               Value);
             }
           }
+
+        if (ptr != NULL)
+          {
+          *ptr='=';
+          }
         }  /* END for (rindex) */
       }    /* END BLOCK (case momQuery) */
 
