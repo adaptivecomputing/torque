@@ -4,7 +4,7 @@
 
 Homepage:                     http://clusterresources.com/torque
 Latest release available at:  http://clusterresources.com/downloads/torque
-Documentation:                http://clusterresources.com/torquedocs20
+Documentation:                http://clusterresources.com/torquedocs21
 Mailing list:                 torqueusers@supercluster.org
 
 OVERVIEW --------------------
@@ -27,12 +27,12 @@ INSTALL ----------------------
 
   Install directions are available at 
 
-  http://clusterresources.com/torquedocs/torquequickstart.shtml
+  http://clusterresources.com/torquedocs21/torquequickstart.shtml
 
   More detailed instructions are available in the PBS Administrator's Guide 
 available in the 'doc' subdirectory or at
 
-  http://clusterresources.com/torquedocs/admin_guide.ps
+  http://clusterresources.com/torquedocs21/admin_guide.ps
 
 * TORQUE is not endorsed by nor affiliated with Altair.
 
