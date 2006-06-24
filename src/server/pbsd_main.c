@@ -135,6 +135,7 @@ extern void queue_route A_((pbs_queue *));
 extern void svr_shutdown(int);
 extern void acct_close(void);
 extern int  svr_startjob A_((job *,struct batch_request *,char *,char *)); 
+extern int RPPConfigure(int,int);
 
 
 /* external data items */
