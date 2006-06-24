@@ -332,6 +332,9 @@ int main(
       int con;
       char *def_server, *pserver, *servername;
       struct batch_status *bstatus, *pbstat;
+#ifdef MOMCTLSKIPDOWN
+      struct attrl *nodeattrs;
+#endif
 
       def_server=pbs_default();
 
@@ -358,10 +361,29 @@ int main(
 
       if (bstatus != NULL)
         {
-        for (pbstat = bstatus;pbstat != NULL;pbstat = pbstat->next)                                     
-          {                                                        
+        for (pbstat = bstatus;pbstat != NULL;pbstat = pbstat->next)
+          {
+#ifdef MOMCTLSKIPDOWN
+          /* check state first, only do_mom() if not down */
+          for (nodeattrs = pbstat->attribs;nodeattrs != NULL; nodeattrs = nodeattrs->next)
+            {
+            if (!strcmp(nodeattrs->name,ATTR_NODE_state))
+              {
+              if (!strstr(nodeattrs->value,ND_down))
+                {
+                do_mom(pbstat->name,MOMPort,CmdIndex) >= 0 ? HostCount++ : FailCount++;
+                }
+              else
+                {
+                fprintf(stderr,"%12s:   skipping down node\n",pbstat->name);
+                }
+              break;
+              } /* END if (attrib name eq state) */
+            } /* END foreach nodeattrib */
+#else
           do_mom(pbstat->name,MOMPort,CmdIndex) >= 0 ? HostCount++ : FailCount++;
-          }
+#endif
+          } /* END foreach node */
 
         pbs_statfree(bstatus);
         }
