@@ -113,6 +113,7 @@ extern char *msg_manager;
 extern char *msg_mombadmodify;
 extern int   comp_resc_gt;
 extern int   comp_resc_lt;
+extern int   LOGLEVEL;
 
 
 
@@ -442,6 +443,17 @@ int modify_job_attr(
     {
     if (newattr[i].at_flags & ATR_VFLAG_MODIFY) 
       {
+      if (LOGLEVEL >= 7)
+        {
+        sprintf(log_buffer,"attr %s modified",job_attr_def[i].at_name);
+
+        LOG_EVENT(
+          PBSEVENT_JOB, 
+          PBS_EVENTCLASS_JOB, 
+          pjob->ji_qs.ji_jobid,
+          log_buffer);
+        }
+
       job_attr_def[i].at_free(pattr + i);
 
       if ((newattr[i].at_type == ATR_TYPE_LIST) ||
