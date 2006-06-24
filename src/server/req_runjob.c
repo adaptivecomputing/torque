@@ -510,7 +510,7 @@ int svr_startjob(
       (pjob->ji_qs.ji_svrflags & JOB_SVFLG_CHKPT)) && 
      ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HasNodes) == 0)) 
     {
-    rc = assign_hosts(    /* inside req_runjob() */
+    rc = assign_hosts(    /* inside svr_startjob() */
            pjob,
            pjob->ji_wattr[(int)JOB_ATR_exec_host].at_val.at_str,
            0,
@@ -526,7 +526,7 @@ int svr_startjob(
       NULL,
       1,
       FailHost,
-      EMsg);  /* inside req_runjob() */
+      EMsg);  /* inside svr_startjob() */
     }
 
   if (rc != 0)
@@ -1157,7 +1157,11 @@ static job *chk_job_torun(
     /* job has been checkpointed or files already staged in */
     /* in this case, exec_host must be already set	 	*/
 
+#ifdef SCALABLERUNJOB
+    if (prun->rq_destin != 0) 
+#else
     if (prun->rq_destin[0] != '\0') 
+#endif
       {
       /* specified destination must match exec_host */
 
@@ -1195,7 +1199,11 @@ static job *chk_job_torun(
     /* job has not run before or need not run there again */
     /* reserve nodes and set new exec_host */
 
+#ifdef SCALABLERUNJOB
+    if (prun->rq_destin == 0) 
+#else
     if (prun->rq_destin[0] == '\0') 
+#endif
       {
       rc = assign_hosts(pjob,NULL,1,FailHost,EMsg);  /* inside chk_job_torun() */
       } 

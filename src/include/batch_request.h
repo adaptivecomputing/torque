@@ -191,7 +191,11 @@ struct rq_rescq {
 
 struct rq_runjob {
   char	rq_jid[PBS_MAXSVRJOBID + 1];  /* requested job id */
+#ifdef SCALABLERUNJOB
+  char  *rq_destin;   /* destination hostlist */
+#else
   char	rq_destin[PBS_MAXDEST + 1];   /* destination hostlist */
+#endif
   unsigned int rq_resch;
   };
 
