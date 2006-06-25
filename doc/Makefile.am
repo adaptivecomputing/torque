@@ -121,10 +121,10 @@ install_doc: install
 install-data-hook:
 	rm -f $(DESTDIR)$(man7dir)/$(program_prefix)pbs_resources$(program_suffix).7 \
 	      $(DESTDIR)$(man8dir)/$(program_prefix)pbs_sched$(program_suffix).8
-	test -f $(DESTDIR)$(man7dir)/$(program_prefix)pbs_resources_$(PBS_MACH)$(program_suffix).7 && \
-	  $(LN_S) $(program_prefix)pbs_resources_$(PBS_MACH)$(program_suffix).7 $(DESTDIR)$(man7dir)/$(program_prefix)pbs_resources$(program_suffix).7
-	test -f $(DESTDIR)$(man8dir)/$(program_prefix)pbs_sched_$(SCHD_TYPE)$(program_suffix).8 && \
-	  $(LN_S) $(program_prefix)pbs_sched_$(SCHD_TYPE)$(program_suffix).8 $(DESTDIR)$(man8dir)/$(program_prefix)pbs_sched$(program_suffix).8
+	$(LN_S) $(program_prefix)pbs_resources_$(PBS_MACH)$(program_suffix).7 $(DESTDIR)$(man7dir)/$(program_prefix)pbs_resources$(program_suffix).7
+	case $(SCHD_TYPE) in none) : ;; *) \
+	  $(LN_S) $(program_prefix)pbs_sched_$(SCHD_TYPE)$(program_suffix).8 $(DESTDIR)$(man8dir)/$(program_prefix)pbs_sched$(program_suffix).8 ;; \
+	esac
 
 uninstall-hook:
 	rm -f $(DESTDIR)$(man7dir)/$(program_prefix)pbs_resources$(program_suffix).7 $(DESTDIR)$(man8dir)/$(program_prefix)pbs_sched$(program_suffix).8

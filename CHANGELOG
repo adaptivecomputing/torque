@@ -2,6 +2,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature
 
 2.1.2
   b - fix momctl queries with multiple hosts
+  b - don't fail make install if --without-sched
 
 2.1.1
 
