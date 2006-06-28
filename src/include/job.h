@@ -261,7 +261,7 @@ enum job_atr {
 };
 
 /*
- * The "definations" for the job attributes are in the following array,
+ * The "definitions" for the job attributes are in the following array,
  * it is also indexed by the JOB_ATR_... enums.
  */
 
