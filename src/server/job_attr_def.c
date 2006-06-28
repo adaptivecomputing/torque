@@ -412,7 +412,7 @@ attribute_def job_attr_def[] = {
 	PARENT_TYPE_JOB
     },
 /* JOB_ATR_qtime */
-    {	"qtime",		/* "qtime"  (time entered queue) */
+    {	ATTR_qtime,		/* "qtime"  (time entered queue) */
 	decode_l,
 	encode_l,
 	set_l,
