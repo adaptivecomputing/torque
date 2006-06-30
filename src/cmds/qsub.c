@@ -1636,7 +1636,7 @@ int getwinsize(
   struct winsize *wsz)
 
   {
-  if (ioctl(0,TIOCGWINSZ,&wsz) < 0) 
+  if (ioctl(0,TIOCGWINSZ,wsz) < 0) 
     {
     perror("qsub: unable to get window size");
 
