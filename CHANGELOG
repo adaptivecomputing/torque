@@ -93,6 +93,11 @@ c - crash     b - bug fix    e - enhancement    f - new feature
   fix ctrl-c race while starting interactive jobs (USC)
   fix memory corruption when tm_spawn() is interrupted (USC)
 
+2.0.0p8
+  really fix torque.cfg parsing (USC)
+  fix possible overlapping memcpy in ACL parsing (USC)
+  fix rare self-inflicted sigkill in MOM (USC)
+
 2.0.0p7
 
   fixed pbs_mom SEGV in req_stat_job()
