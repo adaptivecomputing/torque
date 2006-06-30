@@ -82,7 +82,6 @@
 #include "prev_job_info.h"
 #include "job_info.h"
 
-static char *ident = "$Id$";
 
 /*
  *

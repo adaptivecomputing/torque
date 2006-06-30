@@ -171,67 +171,69 @@ int PNodeStateToString(
     return(-1);
     }
 
+  BufSize--;
+
   Buf[0] = '\0';
 
   if (SBM & (INUSE_DOWN))
     {
     if (Buf[0] != '\0')
-      strcat(Buf,",");
+      strncat(Buf,",",BufSize-strlen(Buf));
 
-    strcat(Buf,ND_down);
+    strncat(Buf,ND_down,BufSize-strlen(Buf));
     }
 
   if (SBM & (INUSE_OFFLINE))
     {
     if (Buf[0] != '\0')
-      strcat(Buf,",");
+      strncat(Buf,",",BufSize-strlen(Buf));
 
-    strcat(Buf,ND_offline);
+    strncat(Buf,ND_offline,BufSize-strlen(Buf));
     }
 
   if (SBM & (INUSE_JOB))
     {
     if (Buf[0] != '\0')
-      strcat(Buf,",");
+      strncat(Buf,",",BufSize-strlen(Buf));
 
-    strcat(Buf,ND_job_exclusive);
+    strncat(Buf,ND_job_exclusive,BufSize-strlen(Buf));
     }
 
   if (SBM & (INUSE_JOBSHARE))
     {
     if (Buf[0] != '\0')
-      strcat(Buf,",");
+      strncat(Buf,",",BufSize-strlen(Buf));
 
-    strcat(Buf,ND_job_sharing);
+    strncat(Buf,ND_job_sharing,BufSize-strlen(Buf));
     }
 
   if (SBM & (INUSE_BUSY))
     {
     if (Buf[0] != '\0')
-      strcat(Buf,",");
+      strncat(Buf,",",BufSize-strlen(Buf));
 
-    strcat(Buf,ND_busy);
+    strncat(Buf,ND_busy,BufSize-strlen(Buf));
     }
 
   if (SBM & (INUSE_RESERVE))
     {
     if (Buf[0] != '\0')
-      strcat(Buf,",");
+      strncat(Buf,",",BufSize-strlen(Buf));
 
-    strcat(Buf,ND_reserve);
+    strncat(Buf,ND_reserve,BufSize-strlen(Buf));
     }
 
   if (SBM & (INUSE_UNKNOWN))
     {
     if (Buf[0] != '\0')
-      strcat(Buf,",");
+      strncat(Buf,",",BufSize-strlen(Buf));
 
-    strcat(Buf,ND_state_unknown);
+    strncat(Buf,ND_state_unknown,BufSize-strlen(Buf));
     }
 
   if (Buf[0] == '\0')
     {
-    strcat(Buf,ND_free);
+    strncpy(Buf,ND_free,BufSize);
     }
 
   return(0);

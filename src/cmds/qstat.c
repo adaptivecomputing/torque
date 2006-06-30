@@ -193,26 +193,6 @@ int istrue(
 
 
 
-static void maxstate(
-
-  char *string, /* I */
-  int  *cnt)
-
-  {
-  char *ptr;
-
-  *cnt = 0;
-
-  for (ptr = strchr(string,':');ptr != NULL;ptr = strchr(ptr + 1,':'))
-    {
-    *cnt = MAX(*cnt,(int)strtol(ptr + 1,NULL,10));
-    }
-
-  return;
-  }
-
-
-
 
 static void states(
 
@@ -1755,8 +1735,7 @@ void tcl_run(
 int main(
 
   int    argc,
-  char **argv,
-  char **envp)
+  char **argv)
 
   {
   int c;

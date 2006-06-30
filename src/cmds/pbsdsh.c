@@ -706,8 +706,7 @@ build_listener(int *port)
 int main(
 
   int   argc,
-  char *argv[],
-  char *envp[])
+  char *argv[])
 
   {
   int c;

@@ -89,7 +89,6 @@
 #include "misc.h"
 #include "globals.h"
 
-static char *ident = "$Id$";
 
 /* Internal functions */
 int set_node_type( node_info *ninfo, char *ntype );

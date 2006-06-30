@@ -926,7 +926,6 @@ void send_cluster_addrs(
 void setup_notification(char *pname)
 
   {
-  int i;
   struct pbsnode *pnode;
   new_node       *nnew;
 
@@ -978,7 +977,6 @@ int is_stat_get(
 
   int stream = np->nd_stream;
   int        rc;
-  int        count = 0;
   char      *ret_info;
   attribute  temp;
   char       date_attrib[100];
@@ -1609,11 +1607,11 @@ void is_request(
 
   int		command = 0;
   int		ret = DIS_SUCCESS;
-  int		i, j;
+  int		i;
 
   unsigned long	ipaddr;
   struct	sockaddr_in *addr;
-  struct	pbsnode	*np = NULL, *node;
+  struct	pbsnode	*node;
   struct pbssubn *sp;
 
   if (cmdp != NULL)

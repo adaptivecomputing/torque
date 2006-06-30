@@ -85,7 +85,6 @@
 #include "dedtime.h"
 #include "globals.h"
 
-static char *ident = "$Id$";
 
 /*
  *

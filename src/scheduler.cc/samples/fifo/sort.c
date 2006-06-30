@@ -85,7 +85,6 @@
 #include "globals.h"
 #include "fairshare.h"
 
-static char *ident = "$Id$";
 
 
 /*

@@ -105,8 +105,6 @@
 #include <ctype.h>
 #include <signal.h>
 
-static char ident[] = "@(#) $RCSfile$ $Revision$";
-
 static int connect;
 static sigjmp_buf env_alrm;
 static void no_hang(sig)

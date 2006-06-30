@@ -128,8 +128,6 @@
 #include "cmds.h"
 
 
-static char ident[] = "@(#) $RCSfile$ $Revision$";
-
 #define MAX_QSUB_PREFIX_LEN 32
 
 #ifndef PBS_DEPEND_LEN

@@ -87,7 +87,6 @@
 #include "constant.h"
 #include "misc.h"
 
-static char *ident = "$Id$";
 
 
 /*

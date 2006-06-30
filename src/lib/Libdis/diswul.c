@@ -120,16 +120,11 @@ int diswul(
   unsigned long value)   /* I */
 
   {
-  struct pending *pp, *next;
-  struct stream  *sp;
-
   int		retval;
   unsigned	ndigs;
   char         *cp;
 
   int           rc;
-
-  const char *id = "diswul";
 
   assert(stream >= 0);
   assert(dis_puts != NULL);

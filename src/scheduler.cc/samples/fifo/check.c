@@ -101,8 +101,6 @@ int check_starvation( job_info *jinfo );
 int check_ded_time_boundry( job_info *jinfo );
 
 
-static char *ident = "$Id$";
-
 /*
  *
  *	is_ok_to_run_in_queue - check to see if jobs can be run in a queue

@@ -96,8 +96,6 @@
 
 extern void site_cmds(Tcl_Interp *);
 
-static char ident[] = "@(#) $RCSfile$ $Revision$";
-
 char	badparm[] = "%s: bad parameter";
 char	missingfd[] = "%s: missing file descriptor";
 char	not_connected[] = "not connected";

@@ -89,7 +89,6 @@
 #include "prime.h"
 #include "misc.h"
 
-static char *ident = "$Id$";
 
 /*
  *

@@ -424,7 +424,6 @@ int main(
 int do_mom(char *HPtr,int MOMPort,int CmdIndex)
 {
   int sd;
-  char *QTok;
 
   if ((sd = openrm(HPtr,MOMPort)) < 0)
     {

@@ -92,7 +92,6 @@
 #include "prime.h"
 #include "node_info.h"
 
-static char *ident = "$Id$";
 
 /*
  *

@@ -92,8 +92,6 @@
 #endif
 
 
-static char ident[] = "@(#) $RCSfile$ $Revision$";
-
 extern void add_cmds(Tcl_Interp *);
 extern void fullresp(int);
 

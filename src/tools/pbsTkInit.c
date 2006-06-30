@@ -96,8 +96,6 @@
 extern void fullresp(int);
 extern void add_cmds(Tcl_Interp *);
 
-static char ident[] = "@(#) $RCSfile$ $Revision$";
-
 int
 pbsTcl_Init(interp)
     Tcl_Interp	*interp;		/* Interpreter for application. */

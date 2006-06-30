@@ -103,7 +103,6 @@
 #include "prime.h"
 #include "dedtime.h"
 
-static char *ident = "$Id$";
 
 /* a list of running jobs from the last scheduling cycle */
 static prev_job_info *last_running = NULL;

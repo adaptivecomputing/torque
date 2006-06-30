@@ -83,8 +83,6 @@
 #include	"pbs_error.h"
 #include	"log.h"
 
-static char ident[] = "@(#) $RCSfile$ $Revision$";
-
 /*
 **	This is a site dependent routine provided as a place holder
 **	for whatever C code which may be required for your scheduler.

@@ -88,7 +88,6 @@
 #include "constant.h"
 #include "config.h"
 
-static char *ident = "$Id$";
 
 /*
  *
