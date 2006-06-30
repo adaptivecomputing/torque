@@ -714,7 +714,6 @@ int do_dir(
 
 int inter_sock;
 struct termios oldtio;
-struct winsize wsz;
 
 struct attrl *attrib = NULL;
 char *new_jobname;                  /* return from submit request */
@@ -1634,7 +1633,7 @@ void writer(
 
 int getwinsize(
 
-  struct winsize *pwsz)
+  struct winsize *wsz)
 
   {
   if (ioctl(0,TIOCGWINSZ,&wsz) < 0) 
@@ -1657,16 +1656,17 @@ int getwinsize(
 
 void send_winsize(
 
-  int sock)
+  int sock,
+  struct winsize *wsz)
 
   {
   char  buf[PBS_TERM_BUF_SZ];
 
   sprintf(buf,"WINSIZE %hu,%hu,%hu,%hu", 
-    wsz.ws_row, 
-    wsz.ws_col,
-    wsz.ws_xpixel, 
-    wsz.ws_ypixel);
+    wsz->ws_row, 
+    wsz->ws_col,
+    wsz->ws_xpixel, 
+    wsz->ws_ypixel);
 
   if (write(sock,buf,PBS_TERM_BUF_SZ) != PBS_TERM_BUF_SZ)
     {
@@ -2061,7 +2061,7 @@ void interactive()
    */
 
   send_term(news);
-  send_winsize(news);
+  send_winsize(news,&wsz);
 
   printf("qsub: job %s ready\n\n", 
     new_jobname);
