@@ -947,7 +947,7 @@ char **argv;
 {
     int c;
     int errflg=0;
-    int any_failed=0;
+    volatile int any_failed=0;
 
     char server_out[MAXSERVERNAME];
     char full_server_name[MAXSERVERNAME];
@@ -978,9 +978,9 @@ char **argv;
     int u_cnt, o_cnt, s_cnt, n_cnt;
     time_t after;
     char a_value[80];
-    int do_job_only = FALSE;
-    int do_trackjob_only = FALSE;
-    int timeout_secs = 30;	/* # of seconds before timing out waiting */
+    volatile int do_job_only = FALSE;
+    volatile int do_trackjob_only = FALSE;
+    volatile int timeout_secs = 30;	/* # of seconds before timing out waiting */
 				/* for a connection to the server */
 
     struct sigaction act;
