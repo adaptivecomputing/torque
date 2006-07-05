@@ -110,6 +110,7 @@
 
 
 /* Global Data Items */
+#include "Long.h"
 
 extern	unsigned int	default_server_port;
 extern	char		mom_host[];
@@ -871,13 +872,13 @@ void check_state(
 #if MOMCHECKLOCALSPOOL
   {
   char *sizestr;
-  long long freespace;
+  u_Long freespace;
   extern char *size_fs(char *);  /* FIXME: put this in a header file */
 
   /* size_fs() is arch-specific method in mom_mach.c */
   sizestr=size_fs(path_spool);  /* returns "free:total" */
 
-  freespace=atoll(sizestr);
+  freespace=strTouL(sizestr,NULL,10);
 
   if (freespace < TMINSPOOLBLOCKS)
     {
