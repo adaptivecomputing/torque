@@ -722,9 +722,11 @@ char path_out[MAXPATHLEN + 1];
 char destination[PBS_MAXDEST];
 static char server_out[PBS_MAXSERVERNAME + PBS_MAXPORTNUM + 2];
 char server_host[PBS_MAXHOSTNAME + 1];
+long cnt2server_retry=-100;
 
 /* state booleans for protecting already-set options */
 int a_opt = FALSE;
+int b_opt = FALSE;
 int c_opt = FALSE;
 int e_opt = FALSE;
 int h_opt = FALSE;
@@ -2168,7 +2170,7 @@ int process_opts(
   int tmpfd;
 
 #if !defined(PBS_NO_POSIX_VIOLATION)
-#define GETOPT_ARGS "a:A:c:C:d:D:e:hIj:k:l:m:M:N:o:p:q:r:S:u:v:VW:z-:"
+#define GETOPT_ARGS "a:A:b:c:C:d:D:e:hIj:k:l:m:M:N:o:p:q:r:S:u:v:VW:z-:"
 #else
 #define GETOPT_ARGS "a:A:c:C:e:hj:k:l:m:M:N:o:p:q:r:S:u:v:VW:z"
 #endif	/* PBS_NO_POSIX_VIOLATION */
@@ -2255,6 +2257,17 @@ int process_opts(
           A_opt = passet;
 
           set_attr(&attrib,ATTR_A,optarg);
+          }
+
+        break;
+
+      case 'b':
+
+        if_cmd_line(b_opt) 
+          {
+          b_opt = passet;
+
+          cnt2server_retry=atoi(optarg);
           }
 
         break;
@@ -3306,17 +3319,22 @@ int main(
   char config_buf[MAX_LINE_LEN];      /* Buffer holds config file */
   char *param_val;                    /* value of parameter returned from config */
 
+  if ((param_val=getenv("PBS_CLIENTRETRY")) != NULL)
+    {
+    cnt2server_retry=atoi(param_val);
+    }
 
   errflg = process_opts(argc,argv,0);  /* get cmd-line options */
 
   if (errflg || ((optind + 1) < argc)) 
     {
     static char usage[] =
-"usage: qsub [-a date_time] [-A account_string] [-c { c[=<INTERVAL>] | s | n }]\n\
-[-C directive_prefix] [-d path] --D path] [-e path] [-h] [-I] [-j oe] [-k {oe}]\n\
-[-l resource_list] [-m {abe}] [-M user_list] [-N jobname] [-o path]\n\
-[-p priority] [-q queue] [-r y|n] [-S path] [-u user_list]\n\
-[-W otherattributes=value...] [-v variable_list] [-V ] [-z] [script]\n";
+"usage: qsub [-a date_time] [-A account_string] [-b secs]\n\
+[-c { c[=<INTERVAL>] | s | n }] [-C directive_prefix] [-d path] [-D path]\n\
+[-e path] [-h] [-I] [-j oe] [-k {oe}] [-l resource_list] [-m {abe}]\n\
+[-M user_list] [-N jobname] [-o path] [-p priority] [-q queue] [-r y|n]\n\
+[-S path] [-u user_list] [-W otherattributes=value...] [-v variable_list]\n\
+[-V ] [-z] [script]\n";
 
     fprintf(stderr,usage);
 
@@ -3345,6 +3363,12 @@ int main(
       {
       strncpy(server_host,param_val,sizeof(server_host));
       server_host[sizeof(server_host) - 1] = '\0';
+      }
+
+    if ((param_val = get_param("CLIENTRETRY",config_buf)) != NULL)
+      {
+      if (cnt2server_retry == -100)
+        cnt2server_retry=atoi(param_val);
       }
     }
 
@@ -3464,6 +3488,9 @@ int main(
     }
 
   /* Connect to the server */
+
+  if (cnt2server_retry != -100)
+    cnt2server_conf(cnt2server_retry); /* set number of seconds to retry */
 
   connect = cnt2server(server_out);
 

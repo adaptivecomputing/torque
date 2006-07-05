@@ -81,7 +81,7 @@
 .Sh NAME
 qsub \- submit pbs job
 .Sh SYNOPSIS
-qsub [-a date_time] [-A account_string] [-c interval] [-C directive_prefix]
+qsub [-a date_time] [-A account_string] [-b secs] [-c interval] [-C directive_prefix]
 [-d path] [-D path] [-e path] [-h] [-I] [-j join] [-k keep] [-l resource_list]
 [-m mail_options] [-M user_list] [-N name] [-o path] 
 [-p priority] [-q destination] [-r c] [-S path_list]
@@ -213,6 +213,18 @@ The
 attribute is set to the account string.
 If account_string is unset, it is not passed with the job to the job executor.
 .Ig
+.IP "-b seconds"
+Defines the maximum number of seconds qsub will block attempting to contact
+pbs_server.  If pbs_server is down, or for a variety of communication failures,
+qsub will continually retry connecting to pbs_server for job submission.  This
+value overrides the 
+.B CLIENTRETRY
+parameter in 
+.B torque.cfg.
+This is a non-portable TORQUE extension.  Portability-minded users can use the
+.B PBS_CLIENTRETRY
+environmental variable.  A negative value is
+interpreted as infinity.  The default is 0.
 .IP "-c interval"
 Defines the interval at which the job will be checkpointed.  If the job
 executes upon a host which does not support checkpoint, this option will
@@ -1050,6 +1062,12 @@ established file.
 The environment variable
 .B PBS_DPREFIX
 determines the prefix string which identifies directives in the script.
+.LP
+The environment variable
+.B PBS_CLIENTRETRY
+defines the maximum number of seconds qsub will block.  See the -b option
+above.  Despite the name, currently qsub is the only client that supports
+this option.
 .Sh EXTENDED DESCRIPTION
 .LP
 Script Processing:

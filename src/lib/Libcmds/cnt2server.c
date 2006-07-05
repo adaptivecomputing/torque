@@ -98,8 +98,24 @@
 
 #include <errno.h>
 #include <stdio.h>
+#include <time.h>
+#include <stdlib.h>
+#include <unistd.h>
 #include "pbs_ifl.h"
 #include "pbs_error.h"
+
+#define CNTRETRYDELAY 5
+
+/* >0 is number of seconds to retry, -1 is infinity */
+static long cnt2server_retry=0;
+
+int cnt2server_conf(
+  long retry)
+  {
+  cnt2server_retry=retry;
+
+  return(0);
+  }
 
 int cnt2server( 
 
@@ -107,6 +123,14 @@ int cnt2server(
 
   {
   int connect;
+  time_t firsttime=0, thistime=0;
+
+  if (cnt2server_retry > 0)
+    {
+    firsttime=time(NULL);
+    }
+
+start:
 
   connect = pbs_connect(server);
 
@@ -124,7 +148,11 @@ int cnt2server(
 
         case PBSE_NOCONNECTS:
 
-          fprintf(stderr,"Too many open connections.\n");
+          if (thistime==0)
+            fprintf(stderr,"Too many open connections.\n");
+
+          if (cnt2server_retry != 0)
+            goto retry;
 
           break;
 		
@@ -136,31 +164,75 @@ int cnt2server(
 		
         case PBSE_SYSTEM:
 
-          fprintf(stderr,"System call failure.\n");
+          if (thistime==0)
+            fprintf(stderr,"System call failure.\n");
+
+          if (cnt2server_retry != 0)
+            goto retry;
 
           break;
 		
         case PBSE_PERM:
 
-          fprintf(stderr,"No Permission.\n");
+          if (thistime==0)
+            fprintf(stderr,"No Permission.\n");
+
+          if (cnt2server_retry != 0)
+            goto retry;
 
           break;
 		
         case PBSE_PROTOCOL:
         default:
 
-          fprintf(stderr,"Communication failure.\n");
+          if (thistime==0)
+            fprintf(stderr,"Communication failure.\n");
+
+          if (cnt2server_retry != 0)
+            goto retry;
 
           break;
         }
       } 
     else 
       {
-      perror(NULL);
+      if (thistime==0)
+        perror(NULL);
+
+      if (cnt2server_retry != 0)
+        goto retry;
+
       }
     }
 
   return(connect);
+
+retry:
+
+  if (thistime==0)
+    {
+    fprintf(stderr,"Retrying for %d seconds\n",(int)cnt2server_retry);
+    }
+
+  thistime = time(NULL);
+
+  if (cnt2server_retry > 0) /* negative is infinite */
+    {
+    if ((thistime-firsttime) > cnt2server_retry)
+      {
+      return(connect);
+      }
+
+    if (getenv("PBSDEBUG") != NULL)
+      fprintf(stderr,"seconds remaining: %d\n",(int)(cnt2server_retry-(thistime-firsttime)));
+    }
+  else
+    if (getenv("PBSDEBUG") != NULL)
+      fprintf(stderr,"retrying...\n");
+
+  sleep(CNTRETRYDELAY);
+
+  goto start;
   }
 
 
