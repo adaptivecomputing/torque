@@ -226,7 +226,7 @@ retry:  /* retry goto added (rentec) */
 
 #ifdef HAVE_BINDRESVPORT
     /*
-     * bondresvport seems to cause connect() failures in some odd corner case when
+     * bindresvport seems to cause connect() failures in some odd corner case when
      * talking to a local daemon.  So we'll only try this once and fallback to
      * the slow loop around bind() if connect() failes with EADDRINUSE
      * or EADDRNOTAVAIL.

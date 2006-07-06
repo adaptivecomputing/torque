@@ -400,7 +400,7 @@ static void post_routejob(
       /* force re-eval of job state out of Transit */
 
       svr_evaljobstate(jobp,&newstate,&newsub,1);
-      svr_setjobstate(jobp, newstate, newsub);
+      svr_setjobstate(jobp,newstate,newsub);
 
       if ((r = job_route(jobp)) == PBSE_ROUTEREJ)
         job_abt(&jobp,msg_routebad);
@@ -408,7 +408,7 @@ static void post_routejob(
         job_abt(&jobp,msg_routexceed);
 
       break;
-    }  /* END switch(r) */
+    }  /* END switch (r) */
 
   return;
   }  /* END post_routejob() */

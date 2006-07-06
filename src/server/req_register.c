@@ -1135,8 +1135,10 @@ static void set_depend_hold(
         (pjob->ji_qs.ji_substate == JOB_SUBSTATE_DEPNHOLD))
       {
       pjob->ji_wattr[(int)JOB_ATR_hold].at_val.at_long &= ~HOLD_s;
-      svr_evaljobstate(pjob, &newstate, &newsubst, 0);
-      svr_setjobstate(pjob, newstate, newsubst);
+
+      svr_evaljobstate(pjob,&newstate,&newsubst,0);
+
+      svr_setjobstate(pjob,newstate,newsubst);
       }
     }
   else
@@ -1145,11 +1147,12 @@ static void set_depend_hold(
 
     pjob->ji_wattr[(int)JOB_ATR_hold].at_val.at_long |= HOLD_s;
     pjob->ji_wattr[(int)JOB_ATR_hold].at_flags |= ATR_VFLAG_SET;
-    svr_setjobstate(pjob, JOB_STATE_HELD, substate);
+
+    svr_setjobstate(pjob,JOB_STATE_HELD,substate);
     }
 
   return;
-  }
+  }  /* END set_depend_hold() */
 
 
 

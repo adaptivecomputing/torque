@@ -281,7 +281,7 @@ void req_modifyjob(
     {
     svr_evaljobstate(pjob,&newstate,&newsubstate,0);
 
-    svr_setjobstate(pjob, newstate, newsubstate);
+    svr_setjobstate(pjob,newstate,newsubstate);
     } 
   else 
     {

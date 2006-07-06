@@ -193,7 +193,7 @@ int job_save(
       snprintf(tmpLine,sizeof(tmpLine),"cannot open file '%s' for job %s in state %s (%s)",
         namebuf1,
         pjob->ji_qs.ji_jobid,
-        PJobSubState[pjob->ji_qs.ji_substate],
+        PJobSubState[MAX(0,pjob->ji_qs.ji_substate)],
         (updatetype == 0) ? "quick" : "full");
  
       log_err(errno,"job_save",tmpLine);

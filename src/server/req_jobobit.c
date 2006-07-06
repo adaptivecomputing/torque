@@ -1680,9 +1680,9 @@ void req_jobobit(
 
         pjob->ji_qs.ji_svrflags |= JOB_SVFLG_HASRUN|JOB_SVFLG_CHKPT;
 
-        svr_evaljobstate(pjob, &newstate, &newsubst, 1);
+        svr_evaljobstate(pjob,&newstate,&newsubst,1);
 
-        svr_setjobstate(pjob, newstate, newsubst);
+        svr_setjobstate(pjob,newstate,newsubst);
 
         svr_disconnect(pjob->ji_momhandle);
 
@@ -1783,7 +1783,9 @@ void req_jobobit(
       return;
       }
 
-    svr_setjobstate(pjob,JOB_STATE_EXITING, 
+    svr_setjobstate(
+      pjob,
+      JOB_STATE_EXITING, 
       pjob->ji_qs.ji_substate);
 
     ptask = set_task(WORK_Immed,0,on_job_rerun,(void *)pjob);

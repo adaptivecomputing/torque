@@ -372,7 +372,7 @@ static void post_stagein(
         svr_setjobstate(pjob,newstate,newsub);
         }
       }
-    }
+    }    /* END if (pjob != NULL) */
 
   release_req(pwt);	/* close connection and release request */
 

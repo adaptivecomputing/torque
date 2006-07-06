@@ -146,22 +146,27 @@ int chk_hold_priv(val, perm)
  *	The state of the job may change as a result.
  */
 
-void req_holdjob(preq)
-	struct batch_request *preq;
-{
-	long		*hold_val;
-	int		 newstate;
-	int		 newsub;
-	long		 old_hold;
-	job		*pjob;
-	char		*pset;
-	int		 rc;
+void req_holdjob(
 
-	pjob = chk_job_request(preq->rq_ind.rq_hold.rq_orig.rq_objname, preq);
-	if (pjob == (job *)0)
-		return;
+  struct batch_request *preq)
 
-	/* cannot do anything until we decode the holds to be set */
+  {
+  long		*hold_val;
+  int		 newstate;
+  int		 newsub;
+  long		 old_hold;
+  job		*pjob;
+  char		*pset;
+  int		 rc;
+
+  pjob = chk_job_request(preq->rq_ind.rq_hold.rq_orig.rq_objname,preq);
+
+  if (pjob == NULL)
+    {
+    return;
+    }
+
+  /* cannot do anything until we decode the holds to be set */
 
 	if ( (rc=get_hold(&preq->rq_ind.rq_hold.rq_orig.rq_attr, &pset)) != 0) {
 		req_reject(rc,0,preq,NULL,NULL);
@@ -200,21 +205,35 @@ void req_holdjob(preq)
 			LOG_EVENT(PBSEVENT_JOB, PBS_EVENTCLASS_JOB,
 				  pjob->ji_qs.ji_jobid, log_buffer);
 		}
-	} else {
+	} 
+  else 
+    {
+    /* everything went well, may need to update the job state */
 
-		/* every thing went well, may need to update the job state */
+    LOG_EVENT(
+      PBSEVENT_JOB, 
+      PBS_EVENTCLASS_JOB,
+      pjob->ji_qs.ji_jobid, 
+      log_buffer);
 
-		LOG_EVENT(PBSEVENT_JOB, PBS_EVENTCLASS_JOB,
-			  pjob->ji_qs.ji_jobid, log_buffer);
-		if (old_hold != *hold_val) {
-			/* indicate attributes changed     */
-			pjob->ji_modified = 1;	 
-			svr_evaljobstate(pjob, &newstate, &newsub, 0);
-			(void)svr_setjobstate(pjob, newstate, newsub);
-		}
-		reply_ack(preq);
-	}
-}
+    if (old_hold != *hold_val) 
+      {
+      /* indicate attributes changed     */
+
+      pjob->ji_modified = 1;	 
+
+      svr_evaljobstate(pjob,&newstate,&newsub,0);
+
+      svr_setjobstate(pjob,newstate,newsub);
+      }
+
+    reply_ack(preq);
+    }
+
+  return;
+  }  /* END req_holdjob() */
+
+
 
 
 /*
@@ -224,22 +243,26 @@ void req_holdjob(preq)
  *	As a result, the job might change state.
  */
 
-void req_releasejob(preq)
-	struct batch_request *preq;	/* ptr to the decoded request   */
-{
-	int		 newstate;
-	int		 newsub;
-	long		 old_hold;
-	job		*pjob;
-	char		*pset;
-	int		 rc;
+void req_releasejob(
 
+  struct batch_request *preq)	/* ptr to the decoded request   */
 
-	pjob = chk_job_request(preq->rq_ind.rq_release.rq_objname, preq);
-	if (pjob == (job *)0)
-		return;
+  {
+  int		 newstate;
+  int		 newsub;
+  long		 old_hold;
+  job		*pjob;
+  char		*pset;
+  int		 rc;
 
-	/* cannot do anything until we decode the holds to be set */
+  pjob = chk_job_request(preq->rq_ind.rq_release.rq_objname,preq);
+
+  if (pjob == NULL)
+    {
+    return;
+    }
+
+  /* cannot do anything until we decode the holds to be set */
 
 	if ( (rc=get_hold(&preq->rq_ind.rq_hold.rq_orig.rq_attr, &pset)) != 0) {
 		req_reject(rc, 0, preq,NULL,NULL);
@@ -261,19 +284,29 @@ void req_releasejob(preq)
 		return;
 	}
 
-	/* every thing went well, if holds changed, update the job state */
+  /* everything went well, if holds changed, update the job state */
 
-	if (old_hold != pjob->ji_wattr[(int)JOB_ATR_hold].at_val.at_long) {
-		pjob->ji_modified = 1;	/* indicates attributes changed    */
-		svr_evaljobstate(pjob, &newstate, &newsub, 0);
-		(void)svr_setjobstate(pjob, newstate, newsub); /* saves job */
-	}
-	(void)sprintf(log_buffer, msg_jobholdrel, pset, preq->rq_user,
-		      preq->rq_host);
-	LOG_EVENT(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid,
-		  log_buffer);
-	reply_ack(preq);
-}
+  if (old_hold != pjob->ji_wattr[(int)JOB_ATR_hold].at_val.at_long) 
+    {
+    pjob->ji_modified = 1;	/* indicates attributes changed */
+
+    svr_evaljobstate(pjob,&newstate,&newsub, 0);
+
+    svr_setjobstate(pjob,newstate,newsub); /* saves job */
+    }
+
+  sprintf(log_buffer,msg_jobholdrel, 
+    pset, 
+    preq->rq_user,
+    preq->rq_host);
+
+  LOG_EVENT(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid,
+    log_buffer);
+
+  reply_ack(preq);
+
+  return;
+  }  /* END req_releasejob() */
 
 
 

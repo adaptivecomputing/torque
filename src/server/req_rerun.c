@@ -113,30 +113,45 @@ extern char *msg_jobrerun;
  *	If mom rejected the signal for unknown jobid, then force local requeue.
  */
 
-static void post_rerun(pwt)
-	struct work_task *pwt;
-{
-	int	 newstate;
-	int	 newsub;
-	job	*pjob;
-	struct batch_request *preq;
+static void post_rerun(
 
-	preq = (struct batch_request *)pwt->wt_parm1;
+  struct work_task *pwt)
+
+  {
+  int	 newstate;
+  int	 newsub;
+  job	*pjob;
+  struct batch_request *preq;
+
+  preq = (struct batch_request *)pwt->wt_parm1;
 	
-	if (preq->rq_reply.brp_code != 0) {
-		(void)sprintf(log_buffer, "rerun signal reject by mom: %d",
-			      preq->rq_reply.brp_code);
-		log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, 
-			  preq->rq_ind.rq_signal.rq_jid, log_buffer);
+  if (preq->rq_reply.brp_code != 0) 
+    {
+    sprintf(log_buffer,"rerun signal reject by mom: %d",
+      preq->rq_reply.brp_code);
+
+    log_event(
+      PBSEVENT_JOB, 
+      PBS_EVENTCLASS_JOB, 
+      preq->rq_ind.rq_signal.rq_jid, 
+      log_buffer);
 			
-		if ((pjob = find_job(preq->rq_ind.rq_signal.rq_jid))) {
-			svr_evaljobstate(pjob, &newstate, &newsub, 1);
-			(void)svr_setjobstate(pjob, newstate, newsub);
-		}
-	}
-	release_req(pwt);
-	return;
-}
+    if ((pjob = find_job(preq->rq_ind.rq_signal.rq_jid))) 
+      {
+      svr_evaljobstate(pjob,&newstate,&newsub,1);
+
+      svr_setjobstate(pjob,newstate,newsub);
+      }
+    }
+
+  release_req(pwt);
+
+  return;
+  }  /* END post_rerun() */
+
+
+
+
 
 /*
  * req_rerunjob - service the Rerun Job Request
