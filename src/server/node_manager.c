@@ -419,6 +419,8 @@ void tfree(
 
 
 /* update_node_state - central location for updating node state */
+/* NOTE:  called each time a node is marked down, each time a MOM reports node  */
+/*        status, and when pbs_server sends hello/cluster_addrs */
 
 void update_node_state(
 
@@ -456,8 +458,8 @@ void update_node_state(
         }
       }
           
-    /* ignoring the obvious possiblity of a "down,busy" node */
-    }
+    /* ignoring the obvious possibility of a "down,busy" node */
+    }  /* END if (newstate & INUSE_DOWN) */
   else if (newstate & INUSE_BUSY)
     { 
     if ((!(np->nd_state & INUSE_BUSY) && (LOGLEVEL >= 4)) ||  
@@ -481,7 +483,7 @@ void update_node_state(
         sp->inuse &= ~INUSE_DOWN;
         }
       }
-    }
+    }  /* END else if (newstate & INUSE_BUSY) */
   else if (newstate == INUSE_FREE)
     {
     if (((np->nd_state & INUSE_DOWN) && (LOGLEVEL >= 2)) ||
@@ -498,10 +500,11 @@ void update_node_state(
 
     if ((np->nd_state & INUSE_JOB) || (np->nd_state & INUSE_JOBSHARE))
       {
-      int snjcount;
-      int snjacount;
+      int snjcount;   /* total number of jobs assigned to nodes */
+      int snjacount;  /* number of subnodes with job array associated with them */
+
       int nsn_free;
-      int SNIsAllocated;
+      int SNIsAllocated;  /* boolean */
 
       struct jobinfo *jp;
       struct jobinfo *jpprev;
@@ -512,13 +515,16 @@ void update_node_state(
 
       snjcount = 0;
       snjacount = 0;
+
+      /* initially set free subnode count to config subnode count */
+
       nsn_free = np->nd_nsn;
       
       for (sp = np->nd_psn;sp != NULL;sp = sp->next)
         {
         if (sp->jobs != NULL)
           {
-          SNIsAllocated = 0;
+          SNIsAllocated = 0;  /* mark subnode allocated only after job detected */
 
           snjacount++;
 
@@ -535,6 +541,8 @@ void update_node_state(
               if ((jp->job->ji_qs.ji_state != JOB_STATE_RUNNING) ||
                   (jp->job->ji_qs.ji_substate == JOB_SUBSTATE_SUSPEND))
                 {
+                /* only count suspended and running jobs */
+
                 continue;
                 }
            
@@ -612,8 +620,8 @@ void update_node_state(
 
           np->nd_state &= ~INUSE_JOB;
           }
-        }
-      }    /* END if ((np->nd_state & INUSE_JOB) || ...) */
+        }    /* END else (snjcount == 0) */
+      }      /* END if ((np->nd_state & INUSE_JOB) || ...) */
 
     if (np->nd_state & INUSE_DOWN)
       {
@@ -633,7 +641,7 @@ void update_node_state(
     np->nd_state |= INUSE_UNKNOWN;
     }                                                                                    
 
-  if (log_buffer[0] != '\0')
+  if ((LOGLEVEL >= 2) && (log_buffer[0] != '\0'))
     {
     log_record(
       PBSEVENT_SCHED,
@@ -802,11 +810,15 @@ void sync_node_jobs(
   }  /* END sync_node_jobs() */
 
 
+
+
+
 /*
  * send_cluster_addrs - sends IS_CLUSTER_ADDRS messages to a set of nodes
  *                      called from a work task, all nodes will eventually
  *                      be sent the current list of IPs.
  */
+
 void send_cluster_addrs(
 
   struct work_task *ptask)
