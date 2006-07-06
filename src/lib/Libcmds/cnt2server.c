@@ -119,7 +119,7 @@ int cnt2server_conf(
 
 int cnt2server( 
 
-  char *server)
+  char *server)  /* I */
 
   {
   int connect;
@@ -193,7 +193,7 @@ start:
 
           break;
         }
-      } 
+      }    /* END if (pbs_errno > PBSE_) */ 
     else 
       {
       if (thistime==0)
@@ -203,15 +203,16 @@ start:
         goto retry;
 
       }
-    }
+    }    /* END if (connect <= 0) */
 
   return(connect);
 
 retry:
 
-  if (thistime==0)
+  if (thistime == 0)
     {
-    fprintf(stderr,"Retrying for %d seconds\n",(int)cnt2server_retry);
+    fprintf(stderr,"Retrying for %d seconds\n",
+      (int)cnt2server_retry);
     }
 
   thistime = time(NULL);
@@ -224,15 +225,19 @@ retry:
       }
 
     if (getenv("PBSDEBUG") != NULL)
-      fprintf(stderr,"seconds remaining: %d\n",(int)(cnt2server_retry-(thistime-firsttime)));
+      fprintf(stderr,"seconds remaining: %d\n",
+        (int)(cnt2server_retry-(thistime-firsttime)));
     }
   else
+    {
     if (getenv("PBSDEBUG") != NULL)
       fprintf(stderr,"retrying...\n");
+    }
 
   sleep(CNTRETRYDELAY);
 
   goto start;
-  }
+  }  /* END cnt2server() */
+
 
 
