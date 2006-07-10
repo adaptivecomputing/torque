@@ -10,6 +10,8 @@
 #include <sys/stat.h>
 #include <pwd.h>
 #include <dirent.h>
+#include <syslog.h>
+#include <errno.h>
 
 #include "portability.h"
 #include "list_link.h"

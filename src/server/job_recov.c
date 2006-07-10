@@ -105,6 +105,7 @@
 #include "job.h"
 #include "log.h"
 #include "svrfunc.h"
+#include "server.h"
 #if __STDC__ != 1
 #include <memory.h>
 #endif
