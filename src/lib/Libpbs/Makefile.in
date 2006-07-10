@@ -119,6 +119,7 @@ program_suffix = @program_suffix@
 spec_name = @spec_name@
 spec_snap = @spec_snap@
 spec_version = @spec_version@
+xauth_path = @xauth_path@
 AUTOMAKE_OPTIONS = foreign
 
 PBS_MKDIRS = $(SHELL) $(top_builddir)/buildutils/pbs_mkdirs
@@ -192,14 +193,21 @@ libtorque_la_SOURCES = ../Libdis/dis.c ../Libdis/discui_.c ../Libdis/discul_.c \
 		    ../Libifl/pbsD_termin.c ../Libifl/pbs_geterrmg.c \
 		    ../Libifl/pbs_statfree.c ../Libifl/rpp.c \
 		    ../Libifl/tcp_dis.c ../Libifl/tm.c ../Libifl/list_link.c \
-		    ../Libcmds/ck_job_name.c ../Libcmds/cnt2server.c ../Libcmds/cvtdate.c ../Libcmds/get_server.c \
-                     ../Libcmds/locate_job.c ../Libcmds/parse_at.c ../Libcmds/parse_depend.c ../Libcmds/parse_destid.c \
-                     ../Libcmds/parse_equal.c ../Libcmds/parse_jobid.c ../Libcmds/parse_stage.c \
-                     ../Libcmds/prepare_path.c ../Libcmds/prt_job_err.c ../Libcmds/set_attr.c ../Libcmds/set_resource.c \
-		   ../Liblog/chk_file_sec.c ../Liblog/log_event.c ../Liblog/pbs_log.c ../Liblog/pbs_messages.c \
+		    ../Libcmds/ck_job_name.c ../Libcmds/cnt2server.c \
+		    ../Libcmds/cvtdate.c ../Libcmds/get_server.c \
+                    ../Libcmds/locate_job.c ../Libcmds/parse_at.c \
+		    ../Libcmds/parse_depend.c ../Libcmds/parse_destid.c \
+                    ../Libcmds/parse_equal.c ../Libcmds/parse_jobid.c \
+		    ../Libcmds/parse_stage.c \
+                    ../Libcmds/prepare_path.c ../Libcmds/prt_job_err.c \
+		    ../Libcmds/set_attr.c ../Libcmds/set_resource.c \
+		    ../Liblog/chk_file_sec.c ../Liblog/log_event.c \
+		    ../Liblog/pbs_log.c ../Liblog/pbs_messages.c \
                     ../Liblog/setup_env.c \
-		   ../Libnet/get_hostaddr.c ../Libnet/get_hostname.c ../Libnet/md5.c ../Libnet/net_client.c \
-                    ../Libnet/net_server.c ../Libnet/net_set_clse.c ../Libnet/rm.c
+		    ../Libnet/get_hostaddr.c ../Libnet/get_hostname.c \
+		    ../Libnet/md5.c ../Libnet/net_client.c \
+                    ../Libnet/net_server.c ../Libnet/net_set_clse.c \
+		    ../Libnet/rm.c ../Libnet/port_forwarding.c
 
 subdir = src/lib/Libpbs
 mkinstalldirs = $(SHELL) $(top_srcdir)/buildutils/mkinstalldirs
@@ -243,7 +251,7 @@ am_libtorque_la_OBJECTS = dis.lo discui_.lo discul_.lo disi10d_.lo \
 	prt_job_err.lo set_attr.lo set_resource.lo chk_file_sec.lo \
 	log_event.lo pbs_log.lo pbs_messages.lo setup_env.lo \
 	get_hostaddr.lo get_hostname.lo md5.lo net_client.lo \
-	net_server.lo net_set_clse.lo rm.lo
+	net_server.lo net_set_clse.lo rm.lo port_forwarding.lo
 libtorque_la_OBJECTS = $(am_libtorque_la_OBJECTS)
 
 DEFS = @DEFS@
@@ -359,6 +367,7 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/pbs_log.Plo \
 @AMDEP_TRUE@	./$(DEPDIR)/pbs_messages.Plo \
 @AMDEP_TRUE@	./$(DEPDIR)/pbs_statfree.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/port_forwarding.Plo \
 @AMDEP_TRUE@	./$(DEPDIR)/prepare_path.Plo \
 @AMDEP_TRUE@	./$(DEPDIR)/prt_job_err.Plo ./$(DEPDIR)/rm.Plo \
 @AMDEP_TRUE@	./$(DEPDIR)/rpp.Plo ./$(DEPDIR)/set_attr.Plo \
@@ -562,6 +571,7 @@ net_client.lo: ../Libnet/net_client.c
 net_server.lo: ../Libnet/net_server.c
 net_set_clse.lo: ../Libnet/net_set_clse.c
 rm.lo: ../Libnet/rm.c
+port_forwarding.lo: ../Libnet/port_forwarding.c
 libtorque.la: $(libtorque_la_OBJECTS) $(libtorque_la_DEPENDENCIES) 
 	$(LINK) -rpath $(libdir) $(libtorque_la_LDFLAGS) $(libtorque_la_OBJECTS) $(libtorque_la_LIBADD) $(LIBS)
 
@@ -710,6 +720,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pbs_log.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pbs_messages.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pbs_statfree.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/port_forwarding.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/prepare_path.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/prt_job_err.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rm.Plo@am__quote@
@@ -3404,6 +3415,24 @@ rm.lo: ../Libnet/rm.c
 @AMDEP_TRUE@	depfile='$(DEPDIR)/rm.Plo' tmpdepfile='$(DEPDIR)/rm.TPlo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(LIBTOOL) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o rm.lo `test -f '../Libnet/rm.c' || echo '$(srcdir)/'`../Libnet/rm.c
+
+port_forwarding.o: ../Libnet/port_forwarding.c
+@AMDEP_TRUE@	source='../Libnet/port_forwarding.c' object='port_forwarding.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/port_forwarding.Po' tmpdepfile='$(DEPDIR)/port_forwarding.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o port_forwarding.o `test -f '../Libnet/port_forwarding.c' || echo '$(srcdir)/'`../Libnet/port_forwarding.c
+
+port_forwarding.obj: ../Libnet/port_forwarding.c
+@AMDEP_TRUE@	source='../Libnet/port_forwarding.c' object='port_forwarding.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/port_forwarding.Po' tmpdepfile='$(DEPDIR)/port_forwarding.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o port_forwarding.obj `cygpath -w ../Libnet/port_forwarding.c`
+
+port_forwarding.lo: ../Libnet/port_forwarding.c
+@AMDEP_TRUE@	source='../Libnet/port_forwarding.c' object='port_forwarding.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/port_forwarding.Plo' tmpdepfile='$(DEPDIR)/port_forwarding.TPlo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(LIBTOOL) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o port_forwarding.lo `test -f '../Libnet/port_forwarding.c' || echo '$(srcdir)/'`../Libnet/port_forwarding.c
 CCDEPMODE = @CCDEPMODE@
 
 mostlyclean-libtool:
@@ -3560,10 +3589,6 @@ uninstall-am: uninstall-info-am uninstall-libLTLIBRARIES
 	mostlyclean-generic mostlyclean-libtool tags uninstall \
 	uninstall-am uninstall-info-am uninstall-libLTLIBRARIES
 
-
-#../Libnet/rm.c ../Libnet/get_hostaddr.c ../Libnet/get_hostname.c \
-#../Libnet/md5.c ../Libnet/net_client.c ../Libnet/net_server.c \
-#../Libnet/net_set_clse.c
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

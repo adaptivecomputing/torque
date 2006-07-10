@@ -119,6 +119,7 @@ program_suffix = @program_suffix@
 spec_name = @spec_name@
 spec_snap = @spec_snap@
 spec_version = @spec_version@
+xauth_path = @xauth_path@
 AUTOMAKE_OPTIONS = foreign
 
 PBS_MKDIRS = $(SHELL) $(top_builddir)/buildutils/pbs_mkdirs

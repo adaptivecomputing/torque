@@ -81,6 +81,7 @@
 #include <sys/types.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
+#include <netdb.h>
 
 #include <errno.h>
 #include <fcntl.h>
@@ -88,6 +89,7 @@
 #include <string.h>
 #include <termios.h>
 #include <unistd.h>
+#include <stdlib.h>
 #ifdef sun
 #include <sys/stream.h>
 #include <sys/stropts.h>
@@ -98,15 +100,26 @@
 #if !defined(sgi) && !defined(_AIX) && !defined(linux)
 #include <sys/tty.h>
 #endif  /* ! sgi */
+
 #include "portability.h"
 #include "pbs_ifl.h"
 #include "server_limits.h"
 #include "net_connect.h"
+#include "log.h"
+#include "list_link.h"
+#include "attribute.h"
+#include "job.h"
+#include "port_forwarding.h"
 
 static char cc_array[PBS_TERM_CCA];
 static struct winsize wsz;
 
 extern int mom_reader_go;
+
+static int IPv4or6 = AF_UNSPEC;
+extern int conn_qsub(char *,int);
+extern char xauth_path[];
+extern int DEBUGMODE;
 
 /*
  * read_net - read data from network till received amount expected
@@ -418,55 +431,185 @@ int mom_writer(
   }  /* END mom_writer */
 
 
-
-
-#if 0
+/* adapted from openssh */
 /*
- * conn_qsub - connect to the qsub that submitted this interactive job
- * return >= 0 on SUCCESS, < 0 on FAILURE 
+ * Creates an internet domain socket for listening for X11 connections.
+ * Returns a suitable display number (>0) for the DISPLAY variable
+ * or -1 if an error occurs.
  */
 
-int conn_qsub(
+int x11_create_display(
 
-  char *hostname,
-  long  port)
+  int x11_use_localhost, /* non-zero to use localhost only */
+  char *display,         /* O */
+  char *phost,           /* hostname where qsub is waiting */
+  int pport,             /* port where qsub is waiting */
+  char *homedir,         /* need to set $HOME for xauth */
+  char *x11authstr)      /* proto:data:screen */
 
-  {
-  pbs_net_t hostaddr;
-  int s;
+{       
+        int display_number, sock;
+        u_short port;
+        struct addrinfo hints, *ai, *aitop;
+        char strport[NI_MAXSERV];
+        int gaierr, n, num_socks = 0;
+	unsigned int x11screen;
+        char x11proto[512],x11data[512],cmd[512];
+        char auth_display[512];
+	FILE *f;
+        pid_t childpid;
+        struct pfwdsock *socks;
+        char *homeenv;
 
-  int flags;
+        *display='\0';
 
-  if ((hostaddr = get_hostaddr(hostname)) == (pbs_net_t)0)
-    {
-    return(-1);
-    }
+        socks=calloc(sizeof (struct pfwdsock),NUM_SOCKS);
 
-  s = client_to_svr(hostaddr,(unsigned int)port,0);
+        homeenv=malloc(strlen("HOME=") + strlen(homedir) + 2);
+        sprintf(homeenv,"HOME=%s",homedir);
+        putenv(homeenv);
 
-  /* NOTE:  client_to_svr() can return 0 for SUCCESS */
+        for (n=0;n<NUM_SOCKS;n++)
+           (socks+n)->active=0;
 
-  /* assume SUCCESS requires s > 0 (USC) was 'if (s >= 0)' */
-  /* above comment not enabled */
+        x11proto[0] = x11data[0] = '\0';
 
-  if (s < 0)
-    {
-    /* FAILURE */
+        errno=0;
+        if ((n=sscanf(x11authstr,"%511[^:]:%511[^:]:%u",x11proto,x11data,&x11screen)) != 3)
+          {
+          fprintf(stderr,"sscanf(%s)=%d failed: %s\n",x11authstr,n,strerror(errno));
+          free(socks);
+          return -1;
+          }
 
-    return(-1);
-    }
 
-  /* this socket should be blocking */
+        for (display_number = X11OFFSET; display_number < MAX_DISPLAYS; display_number++) {
+                port = 6000 + display_number;
+                memset(&hints, 0, sizeof(hints));
+                hints.ai_family = IPv4or6;
+                hints.ai_flags = x11_use_localhost ? 0: AI_PASSIVE;
+                hints.ai_socktype = SOCK_STREAM;
+                snprintf(strport, sizeof strport, "%d", port);
+                if ((gaierr = getaddrinfo(NULL, strport, &hints, &aitop)) != 0) {
+                        fprintf(stderr,"getaddrinfo: %.100s\n", gai_strerror(gaierr));
+                        free(socks);
+                        return -1;
+                }
+                /* create a socket and bind it to display_number foreach address */
+                for (ai = aitop; ai; ai = ai->ai_next) {
+                        if (ai->ai_family != AF_INET && ai->ai_family != AF_INET6)
+                                continue;
+                        sock = socket(ai->ai_family, SOCK_STREAM, 0);
+                        if (sock < 0) {
+                                if ((errno != EINVAL) && (errno != EAFNOSUPPORT)) {
+                                        fprintf(stderr,"socket: %.100s\n", strerror(errno));
+                                        free(socks);
+                                        return -1;
+                                } else {
+                                        DBPRT(("x11_create_display: Socket family %d *NOT* supported\n",
+                                                 ai->ai_family));
+                                        continue;
+                                }
+                        }
+                        DBPRT(("x11_create_display: Socket family %d is supported\n",
+                          ai->ai_family));
+#ifdef IPV6_V6ONLY      
+                        if (ai->ai_family == AF_INET6) {
+                                int on = 1;
+                                if (setsockopt(sock, IPPROTO_IPV6, IPV6_V6ONLY, &on, sizeof(on)) < 0)
+                                        DBPRT(("setsockopt IPV6_V6ONLY: %.100s\n", strerror(errno)));
+                        }
+#endif                  
+                        if (bind(sock, ai->ai_addr, ai->ai_addrlen) < 0) {
+                                DBPRT(("bind port %d: %.100s\n", port, strerror(errno)));
+                                close(sock);                                                
+                                                                                            
+                                if (ai->ai_next)
+                                        continue;
 
-  flags = fcntl(s,F_GETFL);
-
-  flags &= ~O_NONBLOCK;
-
-  fcntl(s,F_SETFL,flags);
-
-  return(s);
-  }  /* END conn_qsub() */
+                                for (n = 0; n < num_socks; n++) {
+                                        close((socks+n)->sock);
+                                }
+                                num_socks = 0;
+                                break;
+                        }
+                        (socks+num_socks)->sock = sock;
+                        (socks+num_socks)->active=1;
+                        num_socks++;
+#ifndef DONT_TRY_OTHER_AF
+                        if (num_socks == NUM_SOCKS)
+                                break;
+#else
+                        if (x11_use_localhost) {
+                                if (num_socks == NUM_SOCKS)
+                                        break;
+                        } else {
+                                break;
+                        }
 #endif
+                }
+                freeaddrinfo(aitop);
+                if (num_socks > 0)
+                        break;
+        }                                                                                   
+        if (display_number >= MAX_DISPLAYS) {
+                fprintf(stderr,"Failed to allocate internet-domain X11 display socket.\n");
+                free(socks);
+                return -1;
+        }
+        /* Start listening for connections on the socket. */
+        for (n = 0; n < num_socks; n++) {
+                DBPRT(("listening on fd %d\n",(socks+n)->sock));
+                if (listen((socks+n)->sock, 5) < 0) {
+                        fprintf(stderr,"listen: %.100s\n", strerror(errno));
+                        close((socks+n)->sock);
+                        free(socks);
+                        return -1;
+                }
+                (socks+n)->listening=1;
+        }
+
+        /* setup local xauth */
+        sprintf(display, "localhost:%u.%u",
+          display_number, x11screen);
+        snprintf(auth_display, sizeof auth_display, "unix:%u.%u",
+          display_number, x11screen);
+
+        snprintf(cmd, sizeof cmd, "%s %s -",xauth_path,DEBUGMODE?"-v":"-q");
+        f = popen(cmd, "w");
+        if (f) {
+          fprintf(f, "remove %s\n", auth_display);
+          fprintf(f, "add %s %s %s\n",auth_display,x11proto,x11data);
+          pclose(f);
+        } else {
+          fprintf(stderr, "Could not run %s\n",
+            cmd);
+          free(socks);
+          return(-1);
+        }
+
+        
+        if ((childpid=fork()) > 0)
+          {
+          free(socks);
+          DBPRT(("successful x11 init, returning display %d\n",display_number));
+          return (display_number);
+          }
+        else if (childpid < 0)
+          {
+          fprintf(stderr,"failed x11 init fork\n");
+          free(socks);
+          return(-1);
+          }
+        else
+          {
+          DBPRT(("entering port_forwarder\n"));
+          port_forwarder(socks,conn_qsub,phost,pport);
+          }
+
+        exit(EXIT_FAILURE);
+}
+
 
 
 /* END mom_inter.c */

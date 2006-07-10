@@ -203,6 +203,7 @@ static int search_env_and_open(const char *,u_long);
 extern int TMOMJobGetStartInfo(job *,pjobexec_t **);
 extern int mom_reader(int,int);
 extern int mom_writer(int,int);
+extern int x11_create_display(int, char *,char *phost,int pport,char *homedir,char *x11authstr);
 
 
 /* END prototypes */
@@ -1733,8 +1734,8 @@ int TMomFinalizeChild(
   char                  buf[MAXPATHLEN + 2];
   pid_t                 cpid;
   int                   i, j, vnodenum;
-  attribute            *pattri;
-  char                 *phost;
+  char                 *phost = NULL;
+  int                   pport = 0;
   int                   pts;
   int                   qsub_sock;
   char                  *shell;
@@ -2169,6 +2170,7 @@ int TMomFinalizeChild(
     /* get host where qsub resides */
 
     phost = arst_string("PBS_O_HOST",&pjob->ji_wattr[(int)JOB_ATR_variables]);
+    pport = pjob->ji_wattr[(int)JOB_ATR_interactive].at_val.at_long;
 
     if ((phost == NULL) || ((phost = strchr(phost,'=')) == NULL)) 
       {
@@ -2181,9 +2183,9 @@ int TMomFinalizeChild(
       exit(1);
       }
 
-    pattri = &pjob->ji_wattr[(int)JOB_ATR_interactive];
+    phost++;
 
-    qsub_sock = conn_qsub(phost + 1,pattri->at_val.at_long);
+    qsub_sock = conn_qsub(phost,pport);
 
     if (qsub_sock < 0) 
       {
@@ -2626,9 +2628,6 @@ int TMomFinalizeChild(
     return(-1);
     }
 
-  /* NULL terminate the envp array, This is MUST DO */
-
-  *(vtable.v_envp + vtable.v_used) = NULL;
 
   endpwent();
 
@@ -2715,6 +2714,34 @@ int TMomFinalizeChild(
       }
     }
 	
+  /* X11 forwarding init */
+
+  if ((TJE->is_interactive == TRUE) && pjob->ji_wattr[(int)JOB_ATR_forwardx11].at_val.at_str)
+    {
+    char display[512];
+
+    if(x11_create_display(1, /* use localhost only */
+                          display, /* output */
+                          phost, pport,
+                          pjob->ji_grpcache->gc_homedir,
+                          pjob->ji_wattr[(int)JOB_ATR_forwardx11].at_val.at_str) >= 0)
+      {
+      bld_env_variables(&vtable,"DISPLAY",display);
+      }
+    else
+      {
+      sprintf(log_buffer,"PBS: X11 forwarding init failed\n");
+
+      write(2,log_buffer,strlen(log_buffer));
+
+      fsync(2);
+      }
+    }
+
+  /* NULL terminate the envp array, This is MUST DO */
+
+  *(vtable.v_envp + vtable.v_used) = NULL;
+
   /* tell mom we are going */
 
   starter_return(TJE->upfds,TJE->downfds,JOB_EXEC_OK,&sjr);

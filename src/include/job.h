@@ -254,6 +254,7 @@ enum job_atr {
 	JOB_ATR_altid,		/* alternate job id, for irix6 = array id */
 	JOB_ATR_etime,		/* time job became eligible to run	  */
 	JOB_ATR_exitstat,	/* exit status of job			  */
+	JOB_ATR_forwardx11,
 #include "site_job_attr_enum.h"
 
 	JOB_ATR_UNKN,		/* the special "unknown" type		  */

@@ -64,21 +64,20 @@ libtorque_la_SOURCES = ../Libdis/dis.c ../Libdis/discui_.c ../Libdis/discul_.c \
 		    ../Libifl/pbsD_termin.c ../Libifl/pbs_geterrmg.c \
 		    ../Libifl/pbs_statfree.c ../Libifl/rpp.c \
 		    ../Libifl/tcp_dis.c ../Libifl/tm.c ../Libifl/list_link.c \
-		    ../Libcmds/ck_job_name.c ../Libcmds/cnt2server.c ../Libcmds/cvtdate.c ../Libcmds/get_server.c \
-                     ../Libcmds/locate_job.c ../Libcmds/parse_at.c ../Libcmds/parse_depend.c ../Libcmds/parse_destid.c \
-                     ../Libcmds/parse_equal.c ../Libcmds/parse_jobid.c ../Libcmds/parse_stage.c \
-                     ../Libcmds/prepare_path.c ../Libcmds/prt_job_err.c ../Libcmds/set_attr.c ../Libcmds/set_resource.c \
-		   ../Liblog/chk_file_sec.c ../Liblog/log_event.c ../Liblog/pbs_log.c ../Liblog/pbs_messages.c \
+		    ../Libcmds/ck_job_name.c ../Libcmds/cnt2server.c \
+		    ../Libcmds/cvtdate.c ../Libcmds/get_server.c \
+                    ../Libcmds/locate_job.c ../Libcmds/parse_at.c \
+		    ../Libcmds/parse_depend.c ../Libcmds/parse_destid.c \
+                    ../Libcmds/parse_equal.c ../Libcmds/parse_jobid.c \
+		    ../Libcmds/parse_stage.c \
+                    ../Libcmds/prepare_path.c ../Libcmds/prt_job_err.c \
+		    ../Libcmds/set_attr.c ../Libcmds/set_resource.c \
+		    ../Liblog/chk_file_sec.c ../Liblog/log_event.c \
+		    ../Liblog/pbs_log.c ../Liblog/pbs_messages.c \
                     ../Liblog/setup_env.c \
-		   ../Libnet/get_hostaddr.c ../Libnet/get_hostname.c ../Libnet/md5.c ../Libnet/net_client.c \
-                    ../Libnet/net_server.c ../Libnet/net_set_clse.c ../Libnet/rm.c
+		    ../Libnet/get_hostaddr.c ../Libnet/get_hostname.c \
+		    ../Libnet/md5.c ../Libnet/net_client.c \
+                    ../Libnet/net_server.c ../Libnet/net_set_clse.c \
+		    ../Libnet/rm.c ../Libnet/port_forwarding.c
 
-
-
-
-
-
-#../Libnet/rm.c ../Libnet/get_hostaddr.c ../Libnet/get_hostname.c \
-#../Libnet/md5.c ../Libnet/net_client.c ../Libnet/net_server.c \
-#../Libnet/net_set_clse.c
 

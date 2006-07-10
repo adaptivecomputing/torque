@@ -85,7 +85,7 @@ qsub [-a date_time] [-A account_string] [-b secs] [-c interval] [-C directive_pr
 [-d path] [-D path] [-e path] [-h] [-I] [-j join] [-k keep] [-l resource_list]
 [-m mail_options] [-M user_list] [-N name] [-o path] 
 [-p priority] [-q destination] [-r c] [-S path_list]
-[-u user_list] [-v variable_list] [-V] [-W additional_attributes] [-z]
+[-u user_list] [-v variable_list] [-V] [-W additional_attributes] [-X] [-z]
 [script]
 .Sh DESCRIPTION
 To create a job is to submit an executable script to a batch server.
@@ -1002,6 +1002,8 @@ Data staging examples:
 .br If TORQUE has been compiled with wordexp support, then variables can
 be used in the specified paths.  Currently only $PBS_JOBID, $HOME, and
 $TMPDIR are supported for stagein.
+.IP "-X" 8
+Enables X11 forwarding.  The DISPLAY environment variable must be set.
 .IP "-z" 8
 Directs that the qsub
 command is not to write the job identifier assigned to the job to 

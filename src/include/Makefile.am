@@ -9,7 +9,7 @@ noinst_HEADERS = acct.h attribute.h batch_request.h cmds.h credential.h \
 		 qmgr_node_public.h qmgr_node_readonly.h qmgr_que_public.h \
 		 qmgr_que_readonly.h qmgr_svr_public.h qmgr_svr_readonly.h \
 		 queue.h resmon.h resource.h sched_cmds.h server.h \
-		 server_limits.h svrfunc.h tracking.h work_task.h
+		 server_limits.h svrfunc.h tracking.h work_task.h port_forwarding.h
 
 BUILT_SOURCES = site_job_attr_def.h site_job_attr_enum.h \
 		site_qmgr_node_print.h site_qmgr_que_print.h \

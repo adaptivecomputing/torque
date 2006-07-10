@@ -218,6 +218,7 @@ char            tmpdir_basename[MAXPATHLEN];  /* for $TMPDIR */
 
 char            rcp_path[MAXPATHLEN];
 char            rcp_args[MAXPATHLEN];
+char            xauth_path[MAXPATHLEN];
 
 time_t          LastServerUpdateTime = 0;  /* NOTE: all servers updated together */
 
@@ -279,6 +280,7 @@ struct	config_list {
 /* NOTE:  must adjust RM_NPARM in resmom.h to be larger than number of parameters
           specified below */
 
+static unsigned long setxauthpath(char *);
 static unsigned long setrcpcmd(char *);
 static unsigned long setpbsclient(char *);
 static unsigned long configversion(char *);
@@ -309,7 +311,8 @@ static struct specials {
   char            *name;
   u_long          (*handler)();
   } special[] = {
-    { "rcpcmd",      setrcpcmd },
+    { "xauthpath",    setxauthpath },
+    { "rcpcmd",       setrcpcmd },
     { "rcp_cmd",      setrcpcmd },
     { "pbsclient",    setpbsclient },
     { "configversion",configversion },
@@ -1485,6 +1488,27 @@ static u_long settmpdir(
     }
 
   strncpy(tmpdir_basename,Value,sizeof(tmpdir_basename));
+
+  return(1);
+  }
+
+static u_long setxauthpath(
+
+  char *Value)
+
+  {
+  static  char    id[] = "setxauthpath";
+
+  log_record(PBSEVENT_SYSTEM,PBS_EVENTCLASS_SERVER,id,Value);
+
+  if (*Value != '/')
+    {
+    log_err(-1,id,"xauthpath must be a full path");
+
+    return(0);
+    }
+
+  strncpy(xauth_path,Value,sizeof(xauth_path));
 
   return(1);
   }
@@ -5575,6 +5599,7 @@ int main(
   MOMExePath = MOMFindMyExe(argv[0]);
   MOMExeTime = MOMGetFileMtime(MOMExePath);
 
+  strcpy(xauth_path,XAUTH_PATH);
   strcpy(rcp_path,RCP_PATH);
   strcpy(rcp_args,RCP_ARGS);
 

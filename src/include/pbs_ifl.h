@@ -159,6 +159,7 @@
 #define ATTR_altid	"alt_id"
 #define ATTR_etime	"etime"
 #define ATTR_exitstat	"exit_status"
+#define ATTR_forwardx11 "forward_x11"
 
 /* additional queue attributes names */
 
