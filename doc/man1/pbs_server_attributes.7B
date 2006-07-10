@@ -444,6 +444,15 @@ been set, the value is "false".
 .if !\n(Pb .ig Ig
 [internal type: boolean]
 .Ig
+.Al server_name
+The name of the server which is the same as the host name.  If the hostname resolves
+to an external IP address, then set this to a name that resolves to the internal IP.
+.if !\n(Pb .ig Ig
+If the server is listening to a non-standard port, the port number is
+appended, with a colon, to the host name.  For example: 
+.Ty host.domain:9999 .
+[internal type: string]
+.Ig
 .Al submit_hosts
 A list of hostnames allowed to submit jobs to this batch server regardless of
 ruserok().
@@ -474,14 +483,6 @@ and cannot be changed by a client.
 The total amount of certain types of resources allocated to running jobs.
 .if !\n(Pb .ig Ig
 [internal type: resource]
-.Ig
-.Al server_name
-The name of the server which is the same as the host name.
-.if !\n(Pb .ig Ig
-If the server is listening to a non-standard port, the port number is
-appended, with a colon, to the host name.  For example: 
-.Ty host.domain:9999 .
-[internal type: string]
 .Ig
 .Al server_state
 The current state of the server: 
