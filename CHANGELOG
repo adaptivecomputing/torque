@@ -3,7 +3,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature
 2.1.2
   b - fix momctl queries with multiple hosts
   b - don't fail make install if --without-sched
-  b - correctly MOM compile error with atol()
+  b - correct MOM compile error with atol()
   f - qsub will now retry connecting to pbs_server (see manpage)
 
 2.1.1
