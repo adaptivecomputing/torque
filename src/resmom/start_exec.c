@@ -451,6 +451,8 @@ void exec_bail(
   pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITING;
   pjob->ji_qs.ji_un.ji_momt.ji_exitstat = code;
 
+  job_save(pjob,SAVEJOB_QUICK);
+
   exiting_tasks = 1;
   
   if (pjob->ji_stdout > 0)
@@ -1331,6 +1333,7 @@ int TMomFinalizeJob1(
         PBS_EVENTCLASS_JOB,
         pjob->ji_qs.ji_jobid,
         log_buffer);
+      /* FIXME: do we need to return failure at this point? */
       }
 
     if ((i = mom_restart_job(pjob,buf)) > 0) 

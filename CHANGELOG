@@ -5,6 +5,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature
   b - don't fail make install if --without-sched
   b - correct MOM compile error with atol()
   f - qsub will now retry connecting to pbs_server (see manpage)
+  f - X11 forwarding for single-node, interactive jobs with qsub -X
+  f - new pam_pbssimpleauth PAM module, requires --with-pam=DIR
 
 2.1.1
 

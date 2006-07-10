@@ -85,6 +85,9 @@
 /* include readline support */
 #undef HAVE_READLINE
 
+/* Define to 1 if you have the <security/pam_modules.h> header file. */
+#undef HAVE_SECURITY_PAM_MODULES_H
+
 /* Define to 1 if you have the `setegid' function. */
 #undef HAVE_SETEGID
 

@@ -426,6 +426,7 @@ void scan_for_exiting()
         if (send_sisters(pjob,IM_KILL_JOB) == 0) 
           {
           pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITING;
+          job_save(pjob,SAVEJOB_QUICK);
           }
         }
 

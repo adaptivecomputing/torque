@@ -112,9 +112,13 @@ if INCLUDE_GUI
 GUI_PKG = gui
 endif
 
-ALL_PKGS = $(SERVER_PKG) $(MOM_PKG) $(CLIENTS_PKG) $(GUI_PKG) devel doc
+if INCLUDE_PAM
+PAM_PKG = pam
+endif
 
-install_server install_mom install_clients install_gui install_lib:
+ALL_PKGS = $(SERVER_PKG) $(MOM_PKG) $(CLIENTS_PKG) $(GUI_PKG) $(PAM_PKG) devel doc
+
+install_server install_mom install_clients install_gui install_lib install_pam:
 	(cd src && $(MAKE) $@)
 install_doc:
 	(cd doc && $(MAKE) $@)
@@ -156,6 +160,7 @@ packages:
                            `test -d .$(libdir) && echo .$(libdir)/*` \
                            `test -d .$(mandir) && echo .$(mandir)/*/*` \
                            `test -d .$(includedir) && echo .$(includedir)/*` \
+                           `test -d .$(pammoddir) && echo .$(pammoddir)/*` \
                            `test -d .$(PBS_SERVER_HOME) && echo .$(PBS_SERVER_HOME)/*` ) \
                            | gzip > $$tarball && \
            cat ./buildutils/self-extract-head-sh > $$pkgfile && \

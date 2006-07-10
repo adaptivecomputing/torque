@@ -114,6 +114,7 @@ YACC = @YACC@
 am__include = @am__include@
 am__quote = @am__quote@
 install_sh = @install_sh@
+pammoddir = @pammoddir@
 program_prefix = @program_prefix@
 program_suffix = @program_suffix@
 spec_name = @spec_name@

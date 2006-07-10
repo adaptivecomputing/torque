@@ -139,7 +139,7 @@ This package holds just a few shared files and directories.
 
 %build
 ./configure --prefix=%_prefix --mandir=%_mandir --libdir=%_libdir \
- --includedir=%_includedir --with-server-home=%{torquehomedir} \
+ --includedir=%_includedir --with-server-home=%{torquehomedir} --with-pam \
  %{server_nameflags} \
  %{guiflags} %{syslogflags} %{tclflags} %{rppflags} %{scpflags} \
  CC="$RPMCC" CFLAGS="$RPMCFLAGS" LDFLAGS="$RPMLDFLAGS"
@@ -395,4 +395,15 @@ test -L %{_includedir} && rm -f %{_includedir}
 exit 0
 
 
+%package pam
+Summary: PAM module for PBS MOM nodes.
+Group: System Environment/Base
 
+%description pam
+%shared_description
+A simple PAM module to authorize users on PBS MOM nodes with a running job.
+
+%files pam
+%defattr(-, root, root)
+%doc src/pam/README.pam
+/%{_lib}/security/pam_pbssimpleauth.so

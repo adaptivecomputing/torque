@@ -187,7 +187,7 @@ AC_CHECK_HEADERS([arpa/inet.h fcntl.h float.h limits.h malloc.h netdb.h \
 		  netinet/in.h stddef.h sys/file.h sys/param.h \
 		  sys/socket.h sys/time.h sys/ioctl.h sys/mount.h \
                   sys/vfs.h sys/statfs.h sys/statvfs.h syslog.h termios.h err.h \
-                  sys/poll.h])
+                  sys/poll.h security/pam_modules.h])
 
 
 dnl Check for socklen_t.  In traditional BSD this is an int, but some
@@ -839,7 +839,29 @@ AC_DEFINE_UNQUOTED(SENDMAIL_CMD, "${SENDMAIL_CMD}",
 	[full pathname of sendmail])
 
 
+dnl attempt to find a location to install PAM modules
+pammoddir=disabled
+AC_ARG_WITH(pam,
+    [  --with-pamdir=DIR            Directory that holds the system PAM modules.
+                             Defaults to /lib(64)/security on Linux.],
+    [pammoddir=$withval])
+case "$pammoddir" in
+  disabled) ;;
+  yes)
+    case "${PBS_MACH}" in
+      linux) pammoddir=/lib$libsuff/security;;
+      *) AC_MSG_ERROR([--with-pam takes a full path to a directory]);;
+    esac ;;
+  /*) ;;
+  *) AC_MSG_ERROR([--with-pam takes a full path to a directory $pammoddir]);;
+esac
+AC_MSG_CHECKING([for PAM install directory])
+AC_MSG_RESULT([$pammoddir])
+AC_SUBST(pammoddir)
+AM_CONDITIONAL(INCLUDE_PAM, [test "x$pammoddir" != "xdisabled"])
+      
 
+dnl find default xauth run-time path
 AC_ARG_WITH(xauth,
         [  --with-xauth=PATH       Specify path to xauth program ],
         [
@@ -1295,5 +1317,6 @@ AC_OUTPUT(buildutils/pbs_mkdirs
 	  src/scheduler.tcl/Makefile
 	  src/server/Makefile
 	  src/tools/Makefile
-	  src/tools/xpbsmon/Makefile)
+	  src/tools/xpbsmon/Makefile
+	  src/pam/Makefile)
 
