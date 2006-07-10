@@ -1,0 +1,15 @@
+This is a simple PAM module to be used on PBS pbs_mom hosts used to authorize
+users that having a running job.  You'll want something like this in your PAM
+config:
+
+   account    sufficient   pam_pbssimpleauth.so
+
+If other users should having login priviledges (such as the cluster admins),
+then use the pam_access module after the pam_pbssimpleauth module.
+
+   account    sufficient   pam_pbssimpleauth.so debug
+   account    required     pam_access.so
+
+/etc/security/access.conf can then have something like:
+  -:ALL EXCEPT root admgroup:ALL
+
