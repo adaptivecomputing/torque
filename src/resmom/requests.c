@@ -1219,7 +1219,7 @@ void req_modifyjob(
             newattr[i].at_val.at_long);
           }         
 
-        sprintf(log_buffer,"modifying attribute %s of job (value: '%s'",
+        sprintf(log_buffer,"modifying attribute %s of job (value: '%s')",
           TJobAttr[i],
           tmpLine);
 

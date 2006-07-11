@@ -342,9 +342,9 @@ void scan_for_exiting()
   char		*svrport;
   char		*cookie;
   unsigned int	port;
-  u_long	gettime		A_((resource *pres));
-  u_long	getsize		A_((resource *pres));
-  task         *task_find	A_((job	*pjob,tm_task_id taskid));
+  u_long	gettime		A_((resource *));
+  u_long	getsize		A_((resource *));
+  task         *task_find	A_((job	*,tm_task_id));
   int im_compose A_((int,char *,char *,int,tm_event_t,tm_task_id));
 
 #ifdef  PENABLE_DYNAMIC_CPUSETS
@@ -419,7 +419,7 @@ void scan_for_exiting()
           PBSEVENT_JOB, 
           PBS_EVENTCLASS_JOB,
           pjob->ji_qs.ji_jobid, 
-          "Terminated");
+          "job was terminated");
 
         DBPRT(("Terminating job, sending IM_KILL_JOB to sisters\n"));
 

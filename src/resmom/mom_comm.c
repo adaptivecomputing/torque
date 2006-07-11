@@ -386,7 +386,7 @@ task *pbs_task_create(
   memset(ptask->ti_qs.ti_parentjobid,0,sizeof(ptask->ti_qs.ti_parentjobid));
 
   ptask->ti_qs.ti_parentnode = TM_ERROR_NODE;
-  ptask->ti_qs.ti_parenttask = 0;
+  ptask->ti_qs.ti_parenttask = TM_NULL_TASK;
   ptask->ti_qs.ti_task = ((taskid == TM_NULL_TASK) ?
     pjob->ji_taskid++ : 
     taskid);
@@ -4303,12 +4303,12 @@ int tm_request(
       if (ret != DIS_SUCCESS)
         goto done;
 
-      ret = diswsi(fd, ptask->ti_qs.ti_parentnode);	/* dad node */
+      ret = diswsi(fd,ptask->ti_qs.ti_parentnode);	/* dad node */
 
       if (ret != DIS_SUCCESS)
         goto done;
 
-      ret = diswsi(fd, ptask->ti_qs.ti_parenttask);	/* dad task */
+      ret = diswsi(fd,ptask->ti_qs.ti_parenttask);	/* dad task */
 
       if (ret != DIS_SUCCESS)
         goto done;

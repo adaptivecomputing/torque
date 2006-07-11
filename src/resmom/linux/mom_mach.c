@@ -1299,6 +1299,8 @@ int mom_set_limits(
           return(error("RLIMIT_STACK",PBSE_SYSTEM));
           }
 
+        /* set address space */
+
         if (setrlimit(RLIMIT_AS,&reslim) < 0)
           {
           return(error("RLIMIT_AS",PBSE_SYSTEM));
@@ -1309,6 +1311,8 @@ int mom_set_limits(
 
         if (getrlimit(RLIMIT_STACK,&reslim) >= 0)
           {
+          /* NOTE:  mem_limit no longer used with UMU patch in place */
+
           mem_limit = value + reslim.rlim_cur;
           }
         }
