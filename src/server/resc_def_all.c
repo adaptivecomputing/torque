@@ -572,6 +572,7 @@ resource_def svr_resc_def[] = {
     { "jgroup", decode_str, encode_str, set_str, comp_str, free_str, NULL_FUNC, READ_WRITE, ATR_TYPE_STR },
     { "latency", decode_str, encode_str, set_str, comp_str, free_str, NULL_FUNC, READ_WRITE, ATR_TYPE_STR },
     { "loglevel", decode_str, encode_str, set_str, comp_str, free_str, NULL_FUNC, READ_WRITE, ATR_TYPE_STR },
+    { "minprocspeed", decode_str, encode_str, set_str, comp_str, free_str, NULL_FUNC, READ_WRITE, ATR_TYPE_STR },
     { "minpreempttime", decode_str, encode_str, set_str, comp_str, free_str, NULL_FUNC, READ_WRITE, ATR_TYPE_STR },
     { "naccesspolicy", decode_str, encode_str, set_str, comp_str, free_str, NULL_FUNC, READ_WRITE, ATR_TYPE_STR },
     { "nallocpolicy", decode_str, encode_str, set_str, comp_str, free_str, NULL_FUNC, READ_WRITE, ATR_TYPE_STR },
