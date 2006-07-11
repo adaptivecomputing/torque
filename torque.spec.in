@@ -139,7 +139,8 @@ This package holds just a few shared files and directories.
 
 %build
 ./configure --prefix=%_prefix --mandir=%_mandir --libdir=%_libdir \
- --includedir=%_includedir --with-server-home=%{torquehomedir} --with-pam \
+ --includedir=%_includedir --with-server-home=%{torquehomedir} \
+ --with-pam=/%{_lib}/security \
  %{server_nameflags} \
  %{guiflags} %{syslogflags} %{tclflags} %{rppflags} %{scpflags} \
  CC="$RPMCC" CFLAGS="$RPMCFLAGS" LDFLAGS="$RPMLDFLAGS"
@@ -166,6 +167,10 @@ for initscript in pbs_mom pbs_sched pbs_server; do
         < contrib/init.d/$initpre$initscript > $RPM_BUILD_ROOT%{_initrddir}/$initscript
   %__chmod 755 $RPM_BUILD_ROOT%{_initrddir}/$initscript
 done
+
+# remove libtool droppings
+%{__rm} -f $RPM_BUILD_ROOT/%{_lib}/security/pam_pbssimpleauth.{a,la}
+
 
 %clean
 [ "$RPM_BUILD_ROOT" != "/" ] && %{__rm} -rf $RPM_BUILD_ROOT

@@ -363,8 +363,6 @@ info: info-am
 info-am:
 
 install-data-am: install-pammodLTLIBRARIES
-	@$(NORMAL_INSTALL)
-	$(MAKE) $(AM_MAKEFLAGS) install-data-hook
 
 install-exec-am:
 
@@ -397,20 +395,6 @@ uninstall-am: uninstall-info-am uninstall-pammodLTLIBRARIES
 	mostlyclean-generic mostlyclean-libtool tags uninstall \
 	uninstall-am uninstall-info-am uninstall-pammodLTLIBRARIES
 
-
-# ugly, ugly, gross, yuck, ugly... but this is the cleanest way to
-# avoid libtool droppings in the PAM module directory.
-install-data-hook:
-	@$(NORMAL_INSTALL)
-	$(mkinstalldirs) $(DESTDIR)$(pammoddir)
-	@list='$(pammod_LTLIBRARIES)'; for p in $$list; do \
-          if test -f $$p; then \
-            f="`echo $$p | sed -e 's|^.*/||'`"; \
-            b="`echo $$f | sed -e 's|\.la$$||'`"; \
-          echo " rm -f $(DESTDIR)$(pammoddir)/$$b.a $(DESTDIR)$(pammoddir)/$$b.la"; \
-          rm -f $(DESTDIR)$(pammoddir)/$$b.a $(DESTDIR)$(pammoddir)/$$b.la; \
-          else :; fi; \
-        done
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:
