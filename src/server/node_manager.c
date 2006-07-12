@@ -498,7 +498,9 @@ void update_node_state(
 
     /* FIXME - what about job exclusive? */
 
-    if ((np->nd_state & INUSE_JOB) || (np->nd_state & INUSE_JOBSHARE))
+    if ((np->nd_state & INUSE_JOB) || 
+        (np->nd_state & INUSE_JOBSHARE) ||
+        (np->nd_nsn != np->nd_nsnfree))
       {
       int snjcount;   /* total number of jobs assigned to nodes */
       int snjacount;  /* number of subnodes with job array associated with them */
@@ -613,6 +615,18 @@ void update_node_state(
  
           np->nd_state &= ~INUSE_JOBSHARE;
           }
+        else
+          {
+          /* subnode availability values are correct */
+
+          if (LOGLEVEL >= 7)
+            {
+            sprintf(log_buffer,"subnode allocation correct on node %s (%d free, %d configured)\n",
+              (np->nd_name != NULL) ? np->nd_name : "NULL",
+              np->nd_nsnfree,
+              np->nd_nsn);
+            }
+          }
 
         if (np->nd_nsnfree > 0)
           {
@@ -622,6 +636,19 @@ void update_node_state(
           }
         }    /* END else (snjcount == 0) */
       }      /* END if ((np->nd_state & INUSE_JOB) || ...) */
+    else
+      {
+      /* skipping subnode allocation check */
+
+      if (LOGLEVEL >= 7)
+        {
+        sprintf(log_buffer,"skipping subnode allocation test for node %s in state %d (%d free, %d configured)\n",
+          (np->nd_name != NULL) ? np->nd_name : "NULL",
+          np->nd_state,
+          np->nd_nsnfree,
+          np->nd_nsn);
+        }
+      }
 
     if (np->nd_state & INUSE_DOWN)
       {
@@ -639,7 +666,7 @@ void update_node_state(
   if (newstate & INUSE_UNKNOWN)
     {
     np->nd_state |= INUSE_UNKNOWN;
-    }                                                                                    
+    } 
 
   if ((LOGLEVEL >= 2) && (log_buffer[0] != '\0'))
     {
