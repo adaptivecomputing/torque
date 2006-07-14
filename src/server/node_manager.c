@@ -512,6 +512,7 @@ void update_node_state(
 
     /* FIXME - what about job exclusive? */
 
+#ifndef VNODETESTING
     if ((np->nd_state & INUSE_JOB) || 
         (np->nd_state & INUSE_JOBSHARE) ||
         (np->nd_nsn != np->nd_nsnfree))
@@ -676,6 +677,7 @@ void update_node_state(
           np->nd_nsn);
         }
       }
+#endif VNODETESTING
 
     if (np->nd_state & INUSE_DOWN)
       {
@@ -3264,12 +3266,14 @@ static int node_spec(
           pnode->nd_nsnfree,
           JobList);
 
+#ifndef VNODETESTING
         /* NOTE:  hack - should be moved to update node state */
 
         if (JobList[0] == '\0')
           {
           pnode->nd_nsnfree = pnode->nd_nsn;
           }
+#endif
         }
       else
         {
@@ -3467,11 +3471,17 @@ int set_nodes(
 
         jp->job = pjob;
 
+#ifdef VNODETESTING
+        pnode->nd_nsnfree--;            /* reduce free count */
+#endif
+
         if (snp->inuse == INUSE_FREE)
           {
           snp->inuse = newstate;
 
+#ifndef VNODETESTING
           pnode->nd_nsnfree--;            /* reduce free count */
+#endif
 
           if (!exclusive)
             pnode->nd_nsnshared++;
@@ -3981,11 +3991,17 @@ void free_nodes(
 
         free(jp);
 
+#ifdef VNODETESTING
+          pnode->nd_nsnfree++;	/* up count of free */
+#endif
+
         /* if no jobs are associated with subnode, mark subnode as free */
 
         if (np->jobs == NULL) 
           {
+#ifndef VNODETESTING
           pnode->nd_nsnfree++;	/* up count of free */
+#endif
 
           if (LOGLEVEL >= 6)
             {
@@ -4127,6 +4143,7 @@ void set_old_nodes(
         }
       }
 
+#ifndef VNODETESTING
     if ((pjob->ji_wattr[JOB_ATR_state].at_val.at_char == 'S') ||
         (pjob->ji_qs.ji_substate == JOB_SUBSTATE_SUSPEND))
       {
@@ -4134,6 +4151,7 @@ void set_old_nodes(
 
       shared = INUSE_JOBSHARE;
       }
+#endif
 
     old = strdup(pjob->ji_wattr[(int)JOB_ATR_exec_host].at_val.at_str);
 
