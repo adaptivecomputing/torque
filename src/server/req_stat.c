@@ -337,13 +337,13 @@ static void req_stat_job_step2(
     if (cntl->sc_conn >= 0)
       svr_disconnect(cntl->sc_conn); 	/* close connection to MOM */
 
-    if (rc) 
+    if (rc != 0) 
       {
       free(cntl);
 
       reply_free(preply);
 
-      req_reject(rc,0,preq,NULL,NULL);
+      req_reject(rc,0,preq,NULL,"cannot get update from mom");
 
       return;
       }
@@ -383,7 +383,7 @@ static void req_stat_job_step2(
 
     rc = status_job(pjob,preq,pal,&preply->brp_un.brp_status,&bad);
 
-    if (rc && (rc != PBSE_PERM)) 
+    if ((rc != 0) && (rc != PBSE_PERM)) 
       {
       req_reject(rc,bad,preq,NULL,NULL);
 
@@ -695,7 +695,7 @@ void req_stat_que(
 
     if (pque == NULL) 
       {
-      req_reject(PBSE_UNKQUE,0,preq,NULL,NULL);
+      req_reject(PBSE_UNKQUE,0,preq,NULL,"cannot located queue");
 
       return;
       }
@@ -738,7 +738,7 @@ void req_stat_que(
     {
     reply_free(preply);
 
-    req_reject(rc,bad,preq,NULL,NULL);
+    req_reject(rc,bad,preq,NULL,"status_queue failed");
     } 
   else 
     {
@@ -868,7 +868,7 @@ void req_stat_node(
 
   if ((pbsndmast == NULL) || (svr_totnodes <= 0)) 
     {
-    req_reject(PBSE_NONODES,0,preq,NULL,NULL);
+    req_reject(PBSE_NONODES,0,preq,NULL,"node list is empty");
 
     return;
     }
@@ -899,7 +899,7 @@ void req_stat_node(
 
     if (pnode == NULL) 
       {
-      req_reject(PBSE_UNKNODE,0,preq,NULL,NULL);
+      req_reject(PBSE_UNKNODE,0,preq,NULL,"cannot located specified node");
 
       return;
       }

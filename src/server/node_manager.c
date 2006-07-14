@@ -555,7 +555,8 @@ void update_node_state(
             if (jp->job != NULL)
               {
               if ((jp->job->ji_qs.ji_state != JOB_STATE_RUNNING) ||
-                  (jp->job->ji_qs.ji_substate == JOB_SUBSTATE_SUSPEND))
+                  (jp->job->ji_qs.ji_substate == JOB_SUBSTATE_SUSPEND) ||
+                  (jp->job->ji_wattr[JOB_ATR_state].at_val.at_char == 'S'))
                 {
                 /* only count suspended and running jobs */
 
@@ -4124,6 +4125,14 @@ void set_old_nodes(
         if (strstr(++po,"shared") != NULL) 
           shared = INUSE_JOBSHARE;
         }
+      }
+
+    if ((pjob->ji_wattr[JOB_ATR_state].at_val.at_char == 'S') ||
+        (pjob->ji_qs.ji_substate == JOB_SUBSTATE_SUSPEND))
+      {
+      /* NODE is shared if job is suspended */
+
+      shared = INUSE_JOBSHARE;
       }
 
     old = strdup(pjob->ji_wattr[(int)JOB_ATR_exec_host].at_val.at_str);
