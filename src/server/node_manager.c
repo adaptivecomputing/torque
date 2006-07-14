@@ -438,6 +438,20 @@ void update_node_state(
    *          (busy|free)->down changes are always logged
    */          
 
+  if (LOGLEVEL >= 3)
+    {
+    sprintf(log_buffer,"adjusting state for node %s - state=%d, newstate=%d",
+      (np->nd_name != NULL) ? np->nd_name : "NULL",
+      np->nd_state,
+      newstate);
+
+    log_record(
+      PBSEVENT_SCHED,
+      PBS_EVENTCLASS_REQUEST,
+      id,
+      log_buffer);
+    }
+
   log_buffer[0] = '\0';
 
   if (newstate & INUSE_DOWN)
@@ -621,7 +635,7 @@ void update_node_state(
 
           if (LOGLEVEL >= 7)
             {
-            sprintf(log_buffer,"subnode allocation correct on node %s (%d free, %d configured)\n",
+            sprintf(log_buffer,"subnode allocation correct on node %s (%d free, %d configured)",
               (np->nd_name != NULL) ? np->nd_name : "NULL",
               np->nd_nsnfree,
               np->nd_nsn);
@@ -637,7 +651,7 @@ void update_node_state(
           if (LOGLEVEL >= 3)
             {
             if (log_buffer[0] == '\0')
-              sprintf(log_buffer,"unset job-exclusive state for node %s in state %d (%d free, %d configured)\n",
+              sprintf(log_buffer,"unset job-exclusive state for node %s in state %d (%d free, %d configured)",
                 (np->nd_name != NULL) ? np->nd_name : "NULL",
                 np->nd_state,
                 np->nd_nsnfree,
