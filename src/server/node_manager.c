@@ -633,6 +633,18 @@ void update_node_state(
           /* if any sub-nodes are free, job cannot be in job-exclusive */
 
           np->nd_state &= ~INUSE_JOB;
+
+          if (LOGLEVEL >= 3)
+            {
+            if (log_buffer[0] == '\0')
+              sprintf(log_buffer,"unset job-exclusive state for node %s in state %d (%d free, %d configured)\n",
+                (np->nd_name != NULL) ? np->nd_name : "NULL",
+                np->nd_state,
+                np->nd_nsnfree,
+                np->nd_nsn);
+            else
+              strcat(log_buffer,"(unset job-exclusive state)");
+            }
           }
         }    /* END else (snjcount == 0) */
       }      /* END if ((np->nd_state & INUSE_JOB) || ...) */
