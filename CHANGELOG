@@ -7,7 +7,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature
   f - qsub will now retry connecting to pbs_server (see manpage)
   f - X11 forwarding for single-node, interactive jobs with qsub -X
   f - new pam_pbssimpleauth PAM module, requires --with-pam=DIR
-
+  e - add logging for node state adjustment
+  f - correctly track node state and allocation based for suspended jobs
 
 2.1.1
 
