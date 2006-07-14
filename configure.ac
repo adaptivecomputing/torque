@@ -124,6 +124,7 @@ AC_MSG_RESULT($include_clients)
 AM_CONDITIONAL(INCLUDE_CLIENTS, [test "x$include_clients" = "xyes"])
 
 
+
 dnl
 dnl  ######################################################################
 dnl  Check for the C compiler (some tests rely on it)
@@ -394,6 +395,22 @@ AC_ARG_ENABLE(array,
         AC_MSG_ERROR([Cannot use --en/disable-array unless configuring for IRIX 6.x or above])
     fi
 ])
+
+
+dnl
+dnl enable BLCR support
+dnl
+AC_MSG_CHECKING([whether to build BLCR support])
+AC_ARG_ENABLE(blcr,
+    [  --enable-blcr           enable BLCR support],
+    BLCR=$enableval,BLCR=no)
+case "$BLCR" in
+  yes) AC_DEFINE([ENABLE_BLCR], 1, [Define to enable BLCR support]) ;;
+  no) : ;;
+  *) AC_MSG_ERROR([--enable-blcr should be yes or no ($BLCR)]) ;;
+esac
+AC_MSG_RESULT($BLCR)
+
 
 dnl
 dnl arch-specific libs
