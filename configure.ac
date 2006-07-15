@@ -187,8 +187,9 @@ AC_HEADER_SYS_WAIT
 AC_CHECK_HEADERS([arpa/inet.h fcntl.h float.h limits.h malloc.h netdb.h \
 		  netinet/in.h stddef.h sys/file.h sys/param.h \
 		  sys/socket.h sys/time.h sys/ioctl.h sys/mount.h \
-                  sys/vfs.h sys/statfs.h sys/statvfs.h syslog.h termios.h err.h \
-                  sys/poll.h security/pam_modules.h])
+                  sys/vfs.h sys/statfs.h sys/statvfs.h syslog.h \
+                  termios.h err.h sys/poll.h security/pam_modules.h \
+                  cpalib.h])
 
 
 dnl Check for socklen_t.  In traditional BSD this is an int, but some
@@ -396,6 +397,20 @@ AC_ARG_ENABLE(array,
     fi
 ])
 
+dnl
+dnl enable IPV6 support
+dnl
+AC_MSG_CHECKING([whether to build IPV6 support])
+AC_ARG_ENABLE(ipv6,
+    [  --enable-ipv6           enable IPV6 support],
+    IPV6=$enableval,IPV6=no)
+AC_MSG_RESULT($IPV6)
+case "$IPV6" in
+  yes) AC_DEFINE([ENABLE_IPV6], 1, [Define to enable IPV6 support]) ;;
+  no) : ;;
+  *) AC_MSG_ERROR([--enable-ipv6 should be yes or no]) ;;
+esac
+
 
 dnl
 dnl enable BLCR support
@@ -404,12 +419,31 @@ AC_MSG_CHECKING([whether to build BLCR support])
 AC_ARG_ENABLE(blcr,
     [  --enable-blcr           enable BLCR support],
     BLCR=$enableval,BLCR=no)
+AC_MSG_RESULT($BLCR)
 case "$BLCR" in
   yes) AC_DEFINE([ENABLE_BLCR], 1, [Define to enable BLCR support]) ;;
   no) : ;;
-  *) AC_MSG_ERROR([--enable-blcr should be yes or no ($BLCR)]) ;;
+  *) AC_MSG_ERROR([--enable-blcr should be yes or no]) ;;
 esac
-AC_MSG_RESULT($BLCR)
+
+dnl
+dnl enable Cray's CPA support
+dnl
+AC_MSG_CHECKING([whether to build Cray's CPA support])
+AC_ARG_ENABLE(cpa,
+    [  --enable-cpa           enable Cray's CPA support],
+    CPA=$enableval,CPA=no)   
+AC_MSG_RESULT($CPA)
+case "$CPA" in
+  yes) AC_DEFINE([ENABLE_CPA], 1, [Define to enable Cray's CPA support])
+    AC_CHECK_FUNC(cpa_lookup_nodes, ,
+      AC_CHECK_LIB(cpa, cpa_lookup_nodes, MOMLIBS="$MOMLIBS -lcpa",
+      AC_MSG_ERROR([cpa functions are missing]))) ;;
+  no) : ;;
+  *) AC_MSG_ERROR([--enable-cpa should be yes or no]) ;;
+esac
+
+
 
 
 dnl

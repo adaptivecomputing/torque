@@ -9,6 +9,12 @@
 /* Define to enable BLCR support */
 #undef ENABLE_BLCR
 
+/* Define to enable Cray's CPA support */
+#undef ENABLE_CPA
+
+/* Define to enable IPV6 support */
+#undef ENABLE_IPV6
+
 /* are FD_SET and friends defined in sys/select.h */
 #undef FD_SET_IN_SYS_SELECT_H
 
@@ -20,6 +26,9 @@
 
 /* Define to 1 if you have the `bindresvport' function. */
 #undef HAVE_BINDRESVPORT
+
+/* Define to 1 if you have the <cpalib.h> header file. */
+#undef HAVE_CPALIB_H
 
 /* Define to 1 if you have the <dirent.h> header file, and it defines `DIR'.
    */
