@@ -677,7 +677,7 @@ void update_node_state(
           np->nd_nsn);
         }
       }
-#endif VNODETESTING
+#endif /* VNODETESTING */
 
     if (np->nd_state & INUSE_DOWN)
       {
