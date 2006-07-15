@@ -196,6 +196,7 @@ extern struct server server;
 #define SVR_HOT_CYCLE	15	/* retry mom every n sec on hot start     */
 #define SVR_HOT_LIMIT	300	/* after n seconds, drop out of hot start */
 
+
 /* function prototypes */
 
 extern int svr_recov A_((char *));

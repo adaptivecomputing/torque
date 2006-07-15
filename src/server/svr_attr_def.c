@@ -92,6 +92,7 @@
 extern int manager_oper_chk A_((attribute *pattr, void *pobject, int actmode));
 extern int servername_chk A_((attribute *pattr, void *pobject, int actmode));
 extern int schiter_chk A_((attribute *pattr, void *pobject, int actmode));
+
 extern int poke_scheduler A_((attribute *pattr, void *pobject, int actmode));
 
 extern int encode_svrstate A_((attribute *pattr, list_head *phead, char *aname,

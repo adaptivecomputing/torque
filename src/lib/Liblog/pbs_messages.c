@@ -321,6 +321,7 @@ char *msg_siscomm       = "sister could not communicate";
 char *msg_sisreject     = "sister rejected";
 char *msg_toomany       = "Too many submit retries";
 char *msg_jobtype       = "Wrong job type";
+char *msg_badaclhost	= "Bad ACL entry in host list";
 
 /*
  * The following table connects error numbers with text
@@ -406,6 +407,7 @@ struct pbs_err_to_txt pbs_err_to_txt[] = {
         { PBSE_SISREJECT, &msg_sisreject },
         { PBSE_TOOMANY, &msg_toomany },
 	{ PBSE_JOBTYPE, &msg_jobtype },
+        { PBSE_BADACLHOST, &msg_badaclhost },
         { PBSE_NONE, &msg_none },
 	{ 0, (char **)0 }		/* MUST be the last entry */
 };

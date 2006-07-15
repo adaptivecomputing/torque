@@ -381,6 +381,11 @@ static int mgr_set_attr(
        *  new value.  If the action fails, undo everything.
        */
 
+/* if we are removing an existing manager entry the at action will be 
+   slightly different */
+if (plist->al_op == DECR && strcmp(plist->al_name, ATTR_managers) == 0)
+   mode = ATR_ACTION_ACL_REMOVE;
+
       if ((pdef + index)->at_action) 
         {
         if ((rc = (pdef + index)->at_action(new + index,parent,mode))) 
@@ -1004,6 +1009,7 @@ void mgr_server_set(
   svrattrl *plist;
   int	    rc;
 
+
   plist = (svrattrl *)GET_NEXT(preq->rq_ind.rq_manager.rq_attr);
 
   rc = mgr_set_attr(
@@ -1016,7 +1022,60 @@ void mgr_server_set(
     (void *)&server,
     ATR_ACTION_ALTER);
 
-  if (rc != 0)
+  /* PBSE_BADACLHOST - lets show the user the first bad host in the ACL  */
+  if (rc == PBSE_BADACLHOST)
+    {
+    char     *bad_host;
+    char     *host_entry;
+    char      hostname[PBS_MAXHOSTNAME + 1];
+    attribute temp;
+    int       index;
+    int       i;
+    struct    array_strings *pstr;
+
+
+    index = find_attr(svr_attr_def, plist->al_name, SRV_ATR_LAST); 
+
+    bad_host = (char*)malloc(sizeof(char) * (PBS_MAXHOSTNAME + 17));
+    clear_attr(&temp, &svr_attr_def[index]);
+    svr_attr_def[index].at_decode(&temp,plist->al_name,plist->al_resc,plist->al_value); 
+
+    pstr = temp.at_val.at_arst;
+    
+    bad_host[0] = (char)NULL;
+    
+    /* loop over all hosts and perform same check as manager_oper_chk*/
+    for (i = 0; i < pstr->as_usedptr; ++i)
+      {
+
+      host_entry = strchr(pstr->as_string[i], (int)'@');
+ 
+      /* if wildcard, we can't check */
+      if (host_entry[1] != '*')
+        {
+        if (get_fullhostname(host_entry,hostname,PBS_MAXHOSTNAME) ||
+            strncmp(host_entry,hostname,PBS_MAXHOSTNAME))
+          {
+          sprintf(bad_host, "First bad host: %s", host_entry+1);;
+          break;
+          }
+
+        }
+
+      }
+
+     if (bad_host != NULL) /* we found a fully qualified host that was bad */
+       {
+       req_reject(PBSE_BADACLHOST, 0, preq, NULL, bad_host); 
+       }
+    else /* this shouldn't happen (return PBSE_BADACLHOST, but now we can't find the bad host) */
+       {
+       reply_badattr(PBSE_BADHOST, bad_attr, plist, preq);
+       }
+
+    return;
+    } /* end PBSE_BADACLHOST */
+  else if (rc != 0)
     {
     reply_badattr(rc,bad_attr,plist,preq);
  
@@ -1981,8 +2040,6 @@ void req_manager(
 
 
 
-
-
 /*
  * manager_oper_chk - check the @host part of a manager or operator acl
  *	entry to insure it is fully qualified.  This is to prevent
@@ -2007,6 +2064,16 @@ int manager_oper_chk(
   if (actmode == ATR_ACTION_FREE)
     {
     return(0);	/* no checking on free */
+    }
+
+  /* no check when removing - You should always be able
+     to remove entries even if there are other invalid entries
+     in the existing list.  The only way that can happen is if there
+     are hosts that no longer exist. 
+   */
+  if (actmode == ATR_ACTION_ACL_REMOVE)
+    {
+    return 0;
     }
 
   pstr = pattr->at_val.at_arst;
@@ -2043,13 +2110,20 @@ int manager_oper_chk(
           sprintf(log_buffer,"bad entry in acl: %s",
             pstr->as_string[i]);
 
-          log_err(PBSE_BADHOST, 
+          log_err(PBSE_BADACLHOST, 
             "manager_oper_chk",
             log_buffer);
           } 
         else 
           {
-          err = PBSE_BADHOST;
+          sprintf(log_buffer,"bad entry in acl: %s",
+            pstr->as_string[i]);
+
+          log_err(PBSE_BADACLHOST,
+            "manager_oper_chk",
+            log_buffer);
+
+          err = PBSE_BADACLHOST;
           }
         }
       }

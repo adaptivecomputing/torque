@@ -160,6 +160,7 @@
 #define PBSE_NORELYMOM	15070		/* could not contact Mom */
 #define PBSE_NOTSNODE	15071		/* no time-shared nodes */
 #define PBSE_JOBTYPE	15072		/* wrong job type (batch or interactive) */
+#define PBSE_BADACLHOST	15073		/* bad entry in ACL host list */
 
 /*
 ** 	Resource monitor specific
