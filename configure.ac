@@ -1257,6 +1257,8 @@ AC_CHECK_FUNCS(setegid setresgid,break)
 
 AC_CHECK_FUNCS([gettimeofday bindresvport wordexp poll])
 
+AC_FUNC_GETGROUPS
+
 dnl see if atexit() exists, if not check for on_exit(), if that fails, panic
 AC_CHECK_FUNCS(atexit on_exit, [ { found_an_exit=yes; break; } ])
 if test "$found_an_exit" != yes; then
@@ -1272,6 +1274,7 @@ if test "${ac_cv_c_var_func}" != "yes" ; then
 		AC_MSG_ERROR([$CC must support __func__ or __FUNCTION__])
 	fi
 fi
+
 
 dnl possibly define __func__ as __FUNCTION__
 AH_VERBATIM([__func__],
