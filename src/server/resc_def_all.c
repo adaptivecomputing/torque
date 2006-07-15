@@ -232,7 +232,6 @@ resource_def svr_resc_def[] = {
 	READ_WRITE | ATR_DFLAG_MOM | ATR_DFLAG_ALTRUN,
 	ATR_TYPE_LONG
     },
-#ifdef NODEMASK
     {	"nodemask",
 	decode_ll,
 	encode_ll,
@@ -243,7 +242,6 @@ resource_def svr_resc_def[] = {
 	NO_USER_SET | ATR_DFLAG_MOM | ATR_DFLAG_RMOMIG,
 	ATR_TYPE_LL
     },
-#endif /*NODEMASK*/
     {	"host",				/* host to execute on */
 	decode_str,
 	encode_str,
@@ -499,7 +497,6 @@ resource_def svr_resc_def[] = {
         READ_WRITE | ATR_DFLAG_MOM | ATR_DFLAG_ALTRUN,
         ATR_TYPE_SIZE
     },
-#if	SRFS
     {	"srfs_tmp",			/* SRFS TMPDIR allocation */
 	decode_size,
         encode_size,
@@ -540,9 +537,7 @@ resource_def svr_resc_def[] = {
 	ATR_DFLAG_OPRD | ATR_DFLAG_MGRD | ATR_DFLAG_SvRD | ATR_DFLAG_SvWR | ATR_DFLAG_MOM,
 	ATR_TYPE_LONG
     },
-#endif	/* SRFS */
 
-#ifdef PE_MASK      /* PE mask on Cray T3e (similar to nodemask on SGI O2K */
     {
 	"pe_mask",
 	decode_str,
@@ -554,7 +549,11 @@ resource_def svr_resc_def[] = {
 	NO_USER_SET | ATR_DFLAG_MOM | ATR_DFLAG_RMOMIG,
 	ATR_TYPE_STR
     },
-#endif	/* PE_MASK */
+    /* Cray CPA partitions */
+    { "size", decode_l, encode_l, set_l, comp_l, free_null, NULL_FUNC, READ_WRITE | ATR_DFLAG_MOM, ATR_TYPE_LONG },
+    { "cpapartid", decode_str, encode_str, set_str, comp_str, free_str, NULL_FUNC, READ_WRITE, ATR_TYPE_STR },
+    { "cpacookie", decode_str, encode_str, set_str, comp_str, free_str, NULL_FUNC, READ_WRITE, ATR_TYPE_STR },
+
     /* support external resource manager extensions */
 
     /* NOTE:  should enable expansion of this list dynamically (NYI) */
@@ -585,7 +584,7 @@ resource_def svr_resc_def[] = {
     { "queuejob", decode_str, encode_str, set_str, comp_str, free_str, NULL_FUNC, READ_WRITE, ATR_TYPE_STR },
     { "rmtype", decode_str, encode_str, set_str, comp_str, free_str, NULL_FUNC, READ_WRITE, ATR_TYPE_STR },
     { "sid", decode_str, encode_str, set_str, comp_str, free_str, NULL_FUNC, READ_WRITE, ATR_TYPE_STR },
-    { "size", decode_str, encode_str, set_str, comp_str, free_str, NULL_FUNC, READ_WRITE, ATR_TYPE_STR },
+    { "cpapartitionid", decode_str, encode_str, set_str, comp_str, free_str, NULL_FUNC, READ_WRITE, ATR_TYPE_STR },
     { "stagein", decode_str, encode_str, set_str, comp_str, free_str, NULL_FUNC, READ_WRITE, ATR_TYPE_STR },
     { "spriority", decode_str, encode_str, set_str, comp_str, free_str, NULL_FUNC, READ_WRITE, ATR_TYPE_STR },
     { "gres", decode_str, encode_str, set_str, comp_str, free_str, NULL_FUNC, READ_WRITE, ATR_TYPE_STR },

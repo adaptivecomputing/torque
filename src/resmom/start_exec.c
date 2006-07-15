@@ -128,6 +128,9 @@
 #include "batch_request.h"
 #include "md5.h"
 #include "mcom.h"
+#ifdef ENABLE_CPA
+#include "pbs_cpa.h"
+#endif
 
 #define EXTRA_VARIABLE_SPACE 2000
 #define EXTRA_ENV_PTRS	       32
@@ -2121,6 +2124,11 @@ int TMomFinalizeChild(
 #endif  /* PENABLE_DYNAMIC_CPUSETS */
 
 #endif  /* (PENABLE_CPUSETS || PENABLE_DYNAMIC_CPUSETS) */
+
+#ifdef ENABLE_CPA
+  /* Cray CPA setup */
+  CPACreatePartition(pjob,&vtable);
+#endif
 
   /* specific system related variables */
 
