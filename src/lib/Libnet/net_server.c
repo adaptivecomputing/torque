@@ -156,7 +156,7 @@ int init_network(
   int		 i;
   static int	 initialized = 0;
   int 		 sock;
-#ifdef HAVE_IPV6
+#ifdef ENABLE_IPV6
   struct sockaddr_in6 socname;
 #else
   struct sockaddr_in  socname;
@@ -205,7 +205,7 @@ int init_network(
 
   /* name that socket "in three notes" */
 
-#ifdef HAVE_IPV6
+#ifdef ENABLE_IPV6
   socname.sin6_port= htons((unsigned short)port);
   socname.sin6_addr.s6_addr32[0] = INADDR_ANY;
   socname.sin6_family = AF_INET6;
@@ -396,7 +396,7 @@ static void accept_conn(
 
   {
   int newsock;
-#ifdef HAVE_IPV6
+#ifdef ENABLE_IPV6
   struct sockaddr_in6 from;
 #else
   struct sockaddr_in  from;
@@ -430,7 +430,7 @@ static void accept_conn(
   add_conn(
     newsock, 
     FromClientDIS, 
-#ifdef HAVE_IPV6
+#ifdef ENABLE_IPV6
     (pbs_net_t)ntohl(from.sin6_addr.s6_addr32[0]),
     (unsigned int)ntohs(from.sin6_port),
 #else

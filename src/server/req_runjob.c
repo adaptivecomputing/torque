@@ -469,7 +469,7 @@ int svr_startjob(
   struct  hostent *hp;
   char   *nodestr, *cp, *hostlist;
   int     size;
-#ifdef HAVE_IPV6
+#ifdef ENABLE_IPV6
   struct  sockaddr_in6 saddr;
 #else
   struct  sockaddr_in  saddr;

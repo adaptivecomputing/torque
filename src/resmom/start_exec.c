@@ -482,13 +482,13 @@ int open_demux(
   static char id[] = "open_demux";
   int         sock;
   int         i;
-#ifdef HAVE_IPV6
+#ifdef ENABLE_IPV6
   struct sockaddr_in6 remote;
 #else
   struct sockaddr_in remote;
 #endif
 
-#ifdef HAVE_IPV6
+#ifdef ENABLE_IPV6
   remote.sin6_addr.s6_addr32[0] = addr;
   remote.sin6_port = htons((unsigned short)port);
   remote.sin6_family=AF_INET6;
@@ -1162,7 +1162,7 @@ int TMomFinalizeJob1(
   attribute		*pattri;
   resource		*presc;
   resource_def		*prd;
-#ifdef HAVE_IPV6
+#ifdef ENABLE_IPV6
   struct sockaddr_in6    saddr;
 #else
   struct sockaddr_in     saddr;
@@ -1221,7 +1221,7 @@ int TMomFinalizeJob1(
       return(FAILURE);
       }
 
-#ifdef HAVE_IPV6
+#ifdef ENABLE_IPV6
     TJE->port_out = (int)ntohs(saddr.sin6_port);
 #else
     TJE->port_out = (int)ntohs(saddr.sin_port);
@@ -1241,7 +1241,7 @@ int TMomFinalizeJob1(
       return(FAILURE);
       }
 
-#ifdef HAVE_IPV6
+#ifdef ENABLE_IPV6
     TJE->port_err = (int)ntohs(saddr.sin6_port);
 #else
     TJE->port_err = (int)ntohs(saddr.sin_port);
@@ -3233,7 +3233,7 @@ int start_process(
     }
   else 
     {
-#ifdef HAVE_IPV6
+#ifdef ENABLE_IPV6
     struct sockaddr_in6	*ap;
 #else
     struct sockaddr_in	*ap;
@@ -3255,7 +3255,7 @@ int start_process(
       return(-1);
       }
 
-#ifdef HAVE_IPV6
+#ifdef ENABLE_IPV6
     ipaddr = ap->sin6_addr.s6_addr32[0];
 #else
     ipaddr = ap->sin_addr.s_addr;
@@ -4049,7 +4049,7 @@ void start_exec(
   eventent	*ep;
   int		i, nodenum;
   int		ports[2], socks[2];
-#ifdef HAVE_IPV6
+#ifdef ENABLE_IPV6
   struct	sockaddr_in6 saddr;
 #else
   struct	sockaddr_in  saddr;
@@ -4200,7 +4200,7 @@ void start_exec(
 	
       memset(&saddr,'\0',sizeof(saddr));
 
-#ifdef HAVE_IPV6
+#ifdef ENABLE_IPV6
       saddr.sin6_addr.s6_addr32[0] = INADDR_ANY;
       saddr.sin6_family = AF_INET6;
 #else
@@ -4222,7 +4222,7 @@ void start_exec(
       if (getsockname(socks[i],(struct sockaddr *)&saddr,&slen) == -1)
         break;
 
-#ifdef HAVE_IPV6
+#ifdef ENABLE_IPV6
       ports[i] = (int)ntohs(saddr.sin6_port);
 #else
       ports[i] = (int)ntohs(saddr.sin_port);

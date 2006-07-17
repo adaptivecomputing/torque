@@ -364,7 +364,7 @@ int pbs_connect(
   char *server)  /* I (FORMAT:  NULL | HOSTNAME | HOSTNAME:PORT )*/
 
   {
-#ifdef HAVE_IPV6
+#ifdef ENABLE_IPV6
   struct sockaddr_in6 server_addr;
 #else
   struct sockaddr_in  server_addr;
@@ -464,7 +464,7 @@ int pbs_connect(
 
   pbs_server = server;    /* set for error messages from commands */
 	
-#ifdef HAVE_IPV6
+#ifdef ENABLE_IPV6
   server_addr.sin6_family = AF_INET6;
 #else
   server_addr.sin_family  = AF_INET;
@@ -489,7 +489,7 @@ int pbs_connect(
     return(-1);
     }
 
-#ifdef HAVE_IPV6
+#ifdef ENABLE_IPV6
   memcpy((char *)&server_addr.sin6_addr,hp->h_addr_list[0],hp->h_length);
   server_addr.sin6_port = htons(server_port);
 #else

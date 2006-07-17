@@ -1392,7 +1392,7 @@ char *interactive_port(int *sock)
   {
   socklen_t namelen;
   static char portstring[8];
-#ifdef HAVE_IPV6
+#ifdef ENABLE_IPV6
   struct sockaddr_in6 myaddr;
 #else
   struct sockaddr_in  myaddr;
@@ -1415,7 +1415,7 @@ char *interactive_port(int *sock)
     }
 
   namelen = sizeof(myaddr);
-#ifdef HAVE_IPV6
+#ifdef ENABLE_IPV6
   myaddr.sin6_family = AF_INET6;
   myaddr.sin6_addr.s6_addr32[0] = INADDR_ANY;
   myaddr.sin6_port = 0;
@@ -1441,7 +1441,7 @@ char *interactive_port(int *sock)
     exit(1);
     }
 
-#ifdef HAVE_IPV6
+#ifdef ENABLE_IPV6
   port = ntohs(myaddr.sin6_port);
 #else
   port = ntohs(myaddr.sin_port);
@@ -2065,7 +2065,7 @@ void interactive()
   char *pc;
   fd_set selset;
   struct sigaction act;
-#ifdef HAVE_IPV6
+#ifdef ENABLE_IPV6
   struct sockaddr_in6 from;
 #else
   struct sockaddr_in  from;

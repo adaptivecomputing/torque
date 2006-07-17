@@ -828,7 +828,7 @@ hnodent	*find_node(
   int			i;
   vnodent		*vp;
   hnodent		*hp;
-#ifdef HAVE_IPV6
+#ifdef ENABLE_IPV6
   struct  sockaddr_in6  *stream_addr;
   struct  sockaddr_in6  *node_addr;
 #else
@@ -904,7 +904,7 @@ hnodent	*find_node(
         sizeof(node_addr->sin_addr)) != 0) 
     {
 */
-#ifdef HAVE_IPV6
+#ifdef ENABLE_IPV6
   if (stream_addr->sin6_addr.s6_addr32[0] != node_addr->sin6_addr.s6_addr32[0])
 #else
   if (stream_addr->sin_addr.s_addr != node_addr->sin_addr.s_addr)
@@ -1257,7 +1257,7 @@ void im_eof(
   int                   num;
   job                  *pjob;
   hnodent              *np;
-#ifdef HAVE_IPV6
+#ifdef ENABLE_IPV6
   struct sockaddr_in6  *addr;
 #else
   struct sockaddr_in   *addr;
@@ -1369,7 +1369,7 @@ int check_ms(
   {
   static char id[] = "check_ms";
 
-#ifdef HAVE_IPV6
+#ifdef ENABLE_IPV6
   struct sockaddr_in6 *addr;
 #else
   struct sockaddr_in  *addr;
@@ -1378,7 +1378,7 @@ int check_ms(
 
   addr = rpp_getaddr(stream);
 
-#ifdef HAVE_IPV6
+#ifdef ENABLE_IPV6
   if ((port_care != 0) && (ntohs(addr->sin6_port) >= IPPORT_RESERVED))
 #else
   if ((port_care != 0) && (ntohs(addr->sin_port) >= IPPORT_RESERVED))
@@ -1639,7 +1639,7 @@ void im_request(
   hnodent		*np;
   eventent		*ep = NULL;
   infoent		*ip;
-#ifdef HAVE_IPV6
+#ifdef ENABLE_IPV6
   struct sockaddr_in6	*addr;
 #else
   struct sockaddr_in	*addr;
@@ -1683,7 +1683,7 @@ void im_request(
   /* check that machine is known */
 
   addr = rpp_getaddr(stream);
-#ifdef HAVE_IPV6
+#ifdef ENABLE_IPV6
   ipaddr = ntohl(addr->sin6_addr.s6_addr32[0]);
 #else
   ipaddr = ntohl(addr->sin_addr.s_addr);

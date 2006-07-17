@@ -169,7 +169,7 @@ int client_to_svr(
   int           local_port)	/* BOOLEAN:  not 0 if use local reserved port */
 
   {
-#ifdef HAVE_IPV6
+#ifdef ENABLE_IPV6
   struct sockaddr_in6 local;
   struct sockaddr_in6 remote;
 #else
@@ -181,7 +181,7 @@ int client_to_svr(
   int                flags;
   int               one = 1;
   
-#ifdef HAVE_IPV6
+#ifdef ENABLE_IPV6
   local.sin6_family = AF_INET6;
   local.sin6_addr.s6_addr32[0] = 0;
   local.sin6_port = 0;
@@ -246,7 +246,7 @@ retry:  /* retry goto added (rentec) */
 
     if (tryport == (IPPORT_RESERVED - 1))
       {
-#ifdef HAVE_IPV6
+#ifdef ENABLE_IPV6
       if (bindresvport_sa(sock,&local) < 0)
 #else
       if (bindresvport(sock,&local) < 0)
@@ -262,7 +262,7 @@ retry:  /* retry goto added (rentec) */
 
 #endif
 
-#ifdef HAVE_IPV6
+#ifdef ENABLE_IPV6
     local.sin6_port = htons(tryport);
 #else
     local.sin_port = htons(tryport);
@@ -291,7 +291,7 @@ retry:  /* retry goto added (rentec) */
         return(PBS_NET_RC_RETRY);
         }
 
-#ifdef HAVE_IPV6
+#ifdef ENABLE_IPV6
       local.sin6_port = htons(tryport);
 #else
       local.sin_port = htons(tryport);
@@ -305,7 +305,7 @@ retry:  /* retry goto added (rentec) */
 			
   /* connect to specified server host and port	*/
 
-#ifdef HAVE_IPV6
+#ifdef ENABLE_IPV6
   remote.sin6_addr.s6_addr32[0] = htonl(hostaddr);
   remote.sin6_port = htons((unsigned short)port);
   remote.sin6_family = AF_INET6;

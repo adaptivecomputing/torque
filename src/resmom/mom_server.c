@@ -441,7 +441,7 @@ void is_request(
   int		ret = DIS_SUCCESS;
   u_long	ipaddr;
   short		port;
-#ifdef HAVE_IPV6
+#ifdef ENABLE_IPV6
   struct	sockaddr_in6 *addr = NULL;
 #else
   struct	sockaddr_in  *addr = NULL;
@@ -500,7 +500,7 @@ void is_request(
 
   if (ServerIndex == -1)
     {
-#ifdef HAVE_IPV6
+#ifdef ENABLE_IPV6
     port = ntohs((unsigned short)addr->sin6_port);
     ipaddr = ntohl(addr->sin6_addr.s6_addr32[0]);
 #else

@@ -3639,7 +3639,7 @@ int rm_request(
   char		*curr, *value, *cp, *body;
   struct	config		*ap;
   struct	rm_attribute	*attr;
-#ifdef HAVE_IPV6
+#ifdef ENABLE_IPV6
   struct	sockaddr_in6	*addr;
 #else
   struct	sockaddr_in	*addr;
@@ -3666,7 +3666,7 @@ int rm_request(
   else 
     {
     addr = rpp_getaddr(iochan);
-#ifdef HAVE_IPV6
+#ifdef ENABLE_IPV6
     ipadd = ntohl(addr->sin6_addr.s6_addr32[0]);
     port = ntohs((unsigned short)addr->sin6_port);
 #else
