@@ -1040,7 +1040,17 @@ void mgr_server_set(
     struct    array_strings *pstr;
     int       bhstrlen;
 
-    /* look into plist to find the offending attr */
+    bhstrlen = PBS_MAXHOSTNAME + 17;
+    bad_host = malloc(sizeof(char) * (bhstrlen+1));
+
+    if (bad_host==NULL)
+      {
+      reply_badattr(PBSE_BADHOST, bad_attr, plist, preq);
+
+      return;
+      }
+
+    /* look into plist to find an offending attr */
     while (plist != NULL)
       {
       /* only concerned about operators and managers */
@@ -1050,12 +1060,8 @@ void mgr_server_set(
         continue;
         }
 
-DBPRT(("plist->al_name=%s\n",plist->al_name));
-
       index = find_attr(svr_attr_def, plist->al_name, SRV_ATR_LAST); 
 
-      bhstrlen = PBS_MAXHOSTNAME + 17;
-      bad_host = malloc(sizeof(char) * (bhstrlen+1));
       clear_attr(&temp, &svr_attr_def[index]);
       svr_attr_def[index].at_decode(&temp,plist->al_name,plist->al_resc,plist->al_value); 
 
@@ -1063,7 +1069,8 @@ DBPRT(("plist->al_name=%s\n",plist->al_name));
     
       bad_host[0] = '\0';
     
-      /* loop over all hosts in the request and perform same check as manager_oper_chk*/
+      /* loop over all hosts in the request and perform same
+         check as manager_oper_chk*/
       for (i = 0; i < pstr->as_usedptr; ++i)
         {
         host_entry = strchr(pstr->as_string[i], (int)'@');
@@ -1080,24 +1087,25 @@ DBPRT(("plist->al_name=%s\n",plist->al_name));
           }
         }
 
-      if (bad_host[0] == '\0')
-        {
-        /* nothing wrong found in the request, let's try again with the current list */
-        pstr = server.sv_attr[(int)index].at_val.at_arst;
+      if (bad_host[0] != '\0')
+        break;
 
-        for (i = 0; i < pstr->as_usedptr; ++i)
+      /* nothing wrong found in the request, let's try again
+         with the server's list */
+      pstr = server.sv_attr[(int)index].at_val.at_arst;
+
+      for (i = 0; i < pstr->as_usedptr; ++i)
+        {
+        host_entry = strchr(pstr->as_string[i], (int)'@');
+
+        /* if wildcard, we can't check */
+        if ((host_entry != NULL) && host_entry[1] != '*')
           {
-          host_entry = strchr(pstr->as_string[i], (int)'@');
- 
-          /* if wildcard, we can't check */
-          if ((host_entry != NULL) && host_entry[1] != '*')
+          if (get_fullhostname(host_entry+1,hostname,PBS_MAXHOSTNAME) ||
+              strncmp(host_entry+1,hostname,PBS_MAXHOSTNAME))
             {
-            if (get_fullhostname(host_entry+1,hostname,PBS_MAXHOSTNAME) ||
-                strncmp(host_entry+1,hostname,PBS_MAXHOSTNAME))
-              {
-              snprintf(bad_host,bhstrlen,"First bad host: %s",host_entry+1);;
-              break;
-              }
+            snprintf(bad_host,bhstrlen,"First bad host: %s",host_entry+1);;
+            break;
             }
           }
         }
@@ -1109,13 +1117,13 @@ DBPRT(("plist->al_name=%s\n",plist->al_name));
       }
 
     if (bad_host[0] != '\0') /* we found a fully qualified host that was bad */
-       {
-       req_reject(PBSE_BADACLHOST, 0, preq, NULL, bad_host); 
-       }
+      {
+      req_reject(PBSE_BADACLHOST, 0, preq, NULL, bad_host); 
+      }
     else /* this shouldn't happen (return PBSE_BADACLHOST, but now we can't find the bad host) */
-       {
-       reply_badattr(PBSE_BADHOST, bad_attr, plist, preq);
-       }
+      {
+      reply_badattr(PBSE_BADHOST, bad_attr, plist, preq);
+      }
 
     return;
     } /* end PBSE_BADACLHOST */
