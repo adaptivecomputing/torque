@@ -134,7 +134,11 @@ char		*termfil = NULL;
 char		*body = NULL;
 extern char		*msg_daemonname;
 char		**glob_argv = NULL;
+#ifdef HAVE_IPV6
+struct	sockaddr_in6	saddr;
+#else
 struct	sockaddr_in	saddr;
+#endif
 
 #if TCL_MAJOR_VERSION >= 8
 Tcl_Obj         *body_obj = NULL; /* allow compiled body code for TCL-8 */

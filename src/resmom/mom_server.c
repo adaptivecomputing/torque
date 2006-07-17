@@ -441,7 +441,11 @@ void is_request(
   int		ret = DIS_SUCCESS;
   u_long	ipaddr;
   short		port;
-  struct	sockaddr_in *addr = NULL;
+#ifdef HAVE_IPV6
+  struct	sockaddr_in6 *addr = NULL;
+#else
+  struct	sockaddr_in  *addr = NULL;
+#endif
   void		init_addrs();
 
   int           ServerIndex;
@@ -496,9 +500,13 @@ void is_request(
 
   if (ServerIndex == -1)
     {
+#ifdef HAVE_IPV6
+    port = ntohs((unsigned short)addr->sin6_port);
+    ipaddr = ntohl(addr->sin6_addr.s6_addr32[0]);
+#else
     port = ntohs((unsigned short)addr->sin_port);
-
     ipaddr = ntohl(addr->sin_addr.s_addr);
+#endif
 
     for (sindex = 0;sindex < PBS_MAXSERVER;sindex++)
       {

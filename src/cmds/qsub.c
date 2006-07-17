@@ -1392,7 +1392,11 @@ char *interactive_port(int *sock)
   {
   socklen_t namelen;
   static char portstring[8];
-  struct sockaddr_in myaddr;
+#ifdef HAVE_IPV6
+  struct sockaddr_in6 myaddr;
+#else
+  struct sockaddr_in  myaddr;
+#endif
   unsigned short port;
 
   if ((isatty(0) == 0) || (isatty(1) == 0)) 
@@ -1411,9 +1415,15 @@ char *interactive_port(int *sock)
     }
 
   namelen = sizeof(myaddr);
+#ifdef HAVE_IPV6
+  myaddr.sin6_family = AF_INET6;
+  myaddr.sin6_addr.s6_addr32[0] = INADDR_ANY;
+  myaddr.sin6_port = 0;
+#else
   myaddr.sin_family = AF_INET;
   myaddr.sin_addr.s_addr = INADDR_ANY;
   myaddr.sin_port = 0;
+#endif
 
   if (bind(*sock,(struct sockaddr *)&myaddr,namelen) < 0) 
     {
@@ -1431,7 +1441,11 @@ char *interactive_port(int *sock)
     exit(1);
     }
 
+#ifdef HAVE_IPV6
+  port = ntohs(myaddr.sin6_port);
+#else
   port = ntohs(myaddr.sin_port);
+#endif
 
   sprintf(portstring,"%u", 
     (unsigned int)port);
@@ -2051,7 +2065,11 @@ void interactive()
   char *pc;
   fd_set selset;
   struct sigaction act;
-  struct sockaddr_in from;
+#ifdef HAVE_IPV6
+  struct sockaddr_in6 from;
+#else
+  struct sockaddr_in  from;
+#endif
   socklen_t fromlen;
   struct timeval timeout;
   struct winsize wsz;

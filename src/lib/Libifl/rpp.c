@@ -336,12 +336,17 @@ struct stream {
   int state;		/* state of this end of the */
 			/* connection; RPP_OPEN, etc */
 
-  struct sockaddr_in addr;	/* address of the other end; */
-				/* port/family/IPadrs */
+#ifdef HAVE_IPV6
+  struct sockaddr_in6 addr;	/* address of the other end; */
+#else                    	/* port/family/IPadrs */
+  struct sockaddr_in  addr;
+#endif
 
-  struct in_addr *addr_array;	/* array of alternate network */
-				/* addresses for other end */
-				/* of the connection */
+#ifdef HAVE_IPV6
+  struct in6_addr *addr_array;	/* array of alternate network */
+#else                           /* addresses for other end */
+  struct in_addr  *addr_array;  /* of the connection */
+#endif
 
   int fd;		/* must be in rpp_fd_array */
 
@@ -802,6 +807,7 @@ next_seq(seq)
 **	Put a human readable representation of a network addres into
 **	a staticly allocated string.
 */
+#ifndef HAVE_IPV6
 char *
 netaddr(ap)
     struct sockaddr_in *ap;
@@ -822,7 +828,28 @@ netaddr(ap)
 		ntohs(ap->sin_port));
 	return out;
 }
+#else
+char *netaddr(
 
+  struct sockaddr_in6 *ap)
+
+  {
+  char addr[INET6_ADDRSTRLEN];
+
+  static char out[INET6_ADDRSTRLEN + 10];
+
+  if (ap == NULL)
+    return "unknown";
+
+  inet_ntop(AF_INET6,ap,addr,sizeof(addr));
+
+  snprintf(out,sizeof(out),"%s:%d",
+    addr,
+    ntohs(ap->sin6_port));
+
+  return out;
+  }
+#endif
 
 
 
@@ -915,13 +942,21 @@ static void rpp_form_pkt(
 static struct stream *rpp_check_pkt(
 
   int                 index,
-  struct sockaddr_in *addrp)
+#ifdef HAVE_IPV6
+  struct sockaddr_in6 *addrp)
+#else
+  struct sockaddr_in  *addrp)
+#endif
 
   {
   DOID("check_pkt")
 
   struct stream  *sp;
-  struct in_addr *addrs;
+#ifdef HAVE_IPV6
+  struct in6_addr *addrs;
+#else
+  struct in_addr  *addrs;
+#endif
   int             i;
 
   if ((index < 0) || (index >= stream_num)) 
@@ -942,7 +977,11 @@ static struct stream *rpp_check_pkt(
     return(NULL);
     }
 
+#ifdef HAVE_IPV6
+  if ((addrp->sin6_family==0) || (addrp->sin6_family >= AF_MAX))
+#else
   if ((addrp->sin_family==0) || (addrp->sin_family >= AF_MAX))
+#endif
     {
     /*
      * Some systems have a buggy recvfrom() that doesn't set
@@ -954,25 +993,49 @@ static struct stream *rpp_check_pkt(
       id,
       addrp->sin_family));
 
+#ifdef HAVE_IPV6
+    addrp->sin6_family = sp->addr.sin6_family;
+#else
     addrp->sin_family = sp->addr.sin_family;
+#endif
     }
 
+#ifdef HAVE_IPV6
+  if (addrp->sin6_port != sp->addr.sin6_port)
+#else
   if (addrp->sin_port != sp->addr.sin_port)
+#endif
     goto bad;
 
+#ifdef HAVE_IPV6
+  if (addrp->sin6_family != sp->addr.sin6_family)
+#else
   if (addrp->sin_family != sp->addr.sin_family)
+#endif
     goto bad;
 
+#ifdef HAVE_IPV6
+  if (addrp->sin6_addr.s6_addr32[0] == sp->addr.sin6_addr.s6_addr32[0])
+#else
   if (addrp->sin_addr.s_addr == sp->addr.sin_addr.s_addr)
+#endif
     {
     return(sp);
     }
 
   if ((addrs = sp->addr_array) != NULL) 
     {
+#ifdef HAVE_IPV6
+    for (i = 0;addrs[i].s6_addr;i++) 
+#else
     for (i = 0;addrs[i].s_addr;i++) 
+#endif
       {
+#ifdef HAVE_IPV6
+      if (addrs[i].s6_addr32[0] == addrp->sin6_addr.s6_addr32[0])
+#else
       if (addrs[i].s_addr == addrp->sin_addr.s_addr)
+#endif
         {
         return(sp);
         }
@@ -1038,7 +1101,11 @@ static void rpp_send_out()
          RPP_PKT_HEAD + pp->len,
          0, 
          (struct sockaddr *)&sp->addr,
+#ifdef HAVE_IPV6
+         sizeof(struct sockaddr_in6)) == -1) 
+#else
          sizeof(struct sockaddr_in)) == -1) 
+#endif
       {
       DBPRT((DBTO,"%s: SENDTO errno %d (%s)\n", 
         id,
@@ -1162,7 +1229,11 @@ static int rpp_create_sp()
 
 static struct hostent *rpp_get_cname(
 
-  struct sockaddr_in *addr)
+#ifdef HAVE_IPV6
+  struct sockaddr_in6 *addr)
+#else
+  struct sockaddr_in  *addr)
+#endif
 
   {
   DOID("get_cname")
@@ -1171,9 +1242,15 @@ static struct hostent *rpp_get_cname(
   char           *hname;
 
   if ((hp = gethostbyaddr(
+#ifdef HAVE_IPV6
+        (void *)&addr->sin6_addr,
+        sizeof(struct in6_addr),
+        addr->sin6_family)) == NULL) 
+#else
         (void *)&addr->sin_addr,
         sizeof(struct in_addr),
         addr->sin_family)) == NULL) 
+#endif
     {
     DBPRT((DBTO,"%s: addr not found, h_errno=%d errno=%d\n",
       id, h_errno, errno))
@@ -1222,19 +1299,31 @@ static void rpp_alist(
     return;
     }
 
+#ifdef HAVE_IPV6
+  sp->addr_array = (struct in6_addr *)calloc(i, sizeof(struct in6_addr));
+#else
   sp->addr_array = (struct in_addr *)calloc(i, sizeof(struct in_addr));
+#endif
 
   j = 0;
 
   for (i = 0;hp->h_addr_list[i];i++) 
     {
+#ifdef HAVE_IPV6
+    if (memcmp(&sp->addr.sin6_addr,hp->h_addr_list[i],hp->h_length) == 0)
+#else
     if (memcmp(&sp->addr.sin_addr,hp->h_addr_list[i],hp->h_length) == 0)
+#endif
       continue;
 
     memcpy(&sp->addr_array[j++],hp->h_addr_list[i],hp->h_length);
     }
 
+#ifdef HAVE_IPV6
+  sp->addr_array[j].s6_addr32[0] = 0;
+#else
   sp->addr_array[j].s_addr = 0;
+#endif
 
   return;
   }
@@ -1282,7 +1371,11 @@ static int rpp_send_ack(
         RPP_PKT_HEAD, 
         0, 
         (struct sockaddr *)&sp->addr,
+#ifdef HAVE_IPV6
+        sizeof(struct sockaddr_in6)) == -1) 
+#else
         sizeof(struct sockaddr_in)) == -1) 
+#endif
     {
     DBPRT((DBTO,"%s: ACK error %d\n", 
       id, 
@@ -1458,7 +1551,11 @@ static int rpp_recv_pkt(
   socklen_t  flen;
 
   int		len;
-  struct sockaddr_in  addr;
+#ifdef HAVE_IPV6
+  struct sockaddr_in6  addr;
+#else
+  struct sockaddr_in   addr;
+#endif
   struct hostent     *hp;
   int                 i, streamid;
   struct send_packet *spp, *sprev;
@@ -1474,7 +1571,11 @@ static int rpp_recv_pkt(
 
   assert(data != NULL);
 
+#ifdef HAVE_IPV6
+  flen = sizeof(struct sockaddr_in6);
+#else
   flen = sizeof(struct sockaddr_in);
+#endif
 
   /*
   **	Loop so we can avoid failing on EINTR.  Thanks to
@@ -2257,7 +2358,11 @@ int rpp_bind(
   uint port)
 
   {
-  struct sockaddr_in from;
+#ifdef HAVE_IPV6
+  struct sockaddr_in6 from;
+#else
+  struct sockaddr_in  from;
+#endif
   int                flags;
 
   if (rpp_fd == -1) 
@@ -2330,9 +2435,15 @@ int rpp_bind(
     }
 
   memset(&from, '\0', sizeof(from));
+#ifdef HAVE_IPV6
+  from.sin6_family = AF_INET6;
+  from.sin6_addr.s6_addr32[0] = htonl(INADDR_ANY);
+  from.sin6_port = htons((u_short)port);
+#else
   from.sin_family = AF_INET;
   from.sin_addr.s_addr = htonl(INADDR_ANY);
   from.sin_port = htons((u_short)port);
+#endif
 
   if (bind(rpp_fd,(struct sockaddr *)&from,sizeof(from)) == -1)
     {
@@ -2446,6 +2557,16 @@ int rpp_open(
     if (sp->state <= RPP_FREE)
       continue;
 
+#ifdef HAVE_IPV6
+    if (memcmp(&sp->addr.sin6_addr,hp->h_addr,hp->h_length))
+      continue;
+
+    if (sp->addr.sin6_port != htons((unsigned short)port))
+      continue;
+
+    if (sp->addr.sin6_family != hp->h_addrtype)
+      continue;
+#else
     if (memcmp(&sp->addr.sin_addr,hp->h_addr,hp->h_length))
       continue;
 
@@ -2454,6 +2575,7 @@ int rpp_open(
 
     if (sp->addr.sin_family != hp->h_addrtype)
       continue;
+#endif
 
     if (sp->state > RPP_CLOSE_PEND) 
       {
@@ -2502,9 +2624,15 @@ int rpp_open(
   ** can send out on the preferred interface.
   */
 
+#ifdef HAVE_IPV6
+  memcpy(&sp->addr.sin6_addr, hp->h_addr, hp->h_length);
+  sp->addr.sin6_port = htons((unsigned short)port);
+  sp->addr.sin6_family = hp->h_addrtype;
+#else
   memcpy(&sp->addr.sin_addr, hp->h_addr, hp->h_length);
   sp->addr.sin_port = htons((unsigned short)port);
   sp->addr.sin_family = hp->h_addrtype;
+#endif
   sp->fd = rpp_fd;
   sp->retry = RPPRetry;
 
@@ -2558,7 +2686,11 @@ int rpp_open(
 **	Return the network address for a stream.
 */
 
-struct	sockaddr_in *rpp_getaddr(
+#ifdef HAVE_IPV6
+struct	sockaddr_in6 *rpp_getaddr(
+#else
+struct	sockaddr_in  *rpp_getaddr(
+#endif
 
   int index)
 

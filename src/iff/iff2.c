@@ -132,7 +132,11 @@ int main(
   struct passwd   *pwent;
   int	 	servport = -1;
   int 		 sock;
-  struct sockaddr_in sockname;
+#ifdef HAVE_IPV6
+  struct sockaddr_in6 sockname;
+#else
+  struct sockaddr_in  sockname;
+#endif
 
   socklen_t socknamelen;
 
@@ -302,7 +306,11 @@ int main(
     return(3);
     }
 
+#ifdef HAVE_IPV6
+  parentport = ntohs(sockname.sin6_port);
+#else
   parentport = ntohs(sockname.sin_port);
+#endif
 
   /* send authentication information */
 

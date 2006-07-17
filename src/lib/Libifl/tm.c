@@ -398,10 +398,18 @@ static int localmom()
 
   {
   static int            have_addr = 0;
-  static struct in_addr hostaddr;
+#ifdef HAVE_IPV6
+  static struct in6_addr hostaddr;
+#else
+  static struct in_addr  hostaddr;
+#endif
   struct hostent       *hp;
   int		        i;
+#ifdef HAVE_IPV6
+  struct sockaddr_in6   remote;
+#else
   struct sockaddr_in    remote;
+#endif
   int                   sock;
   struct linger         ltime;
 
@@ -456,9 +464,16 @@ static int localmom()
 			
     /* connect to specified local pbs_mom and port */
 
+#ifdef HAVE_IPV6
+    remote.sin6_addr = hostaddr;
+    remote.sin6_port = htons((unsigned short)tm_momport);
+    remote.sin6_family = AF_INET6;
+#else
     remote.sin_addr = hostaddr;
     remote.sin_port = htons((unsigned short)tm_momport);
     remote.sin_family = AF_INET;
+#endif
+
 
     if (connect(sock,(struct sockaddr *)&remote,sizeof(remote)) < 0) 
       {

@@ -828,8 +828,13 @@ hnodent	*find_node(
   int			i;
   vnodent		*vp;
   hnodent		*hp;
+#ifdef HAVE_IPV6
+  struct  sockaddr_in6  *stream_addr;
+  struct  sockaddr_in6  *node_addr;
+#else
   struct  sockaddr_in   *stream_addr;
   struct  sockaddr_in   *node_addr;
+#endif
 
   for (vp = pjob->ji_vnods,i = 0;i < pjob->ji_numvnod;vp++,i++) 
     {
@@ -899,7 +904,11 @@ hnodent	*find_node(
         sizeof(node_addr->sin_addr)) != 0) 
     {
 */
+#ifdef HAVE_IPV6
+  if (stream_addr->sin6_addr.s6_addr32[0] != node_addr->sin6_addr.s6_addr32[0])
+#else
   if (stream_addr->sin_addr.s_addr != node_addr->sin_addr.s_addr)
+#endif
     {
     char *addr1;
     char *addr2;
@@ -1248,7 +1257,11 @@ void im_eof(
   int                   num;
   job                  *pjob;
   hnodent              *np;
+#ifdef HAVE_IPV6
+  struct sockaddr_in6  *addr;
+#else
   struct sockaddr_in   *addr;
+#endif
   int                   sindex;
 
   addr = rpp_getaddr(stream);
@@ -1356,12 +1369,20 @@ int check_ms(
   {
   static char id[] = "check_ms";
 
-  struct sockaddr_in *addr;
+#ifdef HAVE_IPV6
+  struct sockaddr_in6 *addr;
+#else
+  struct sockaddr_in  *addr;
+#endif
   hnodent            *np;
 
   addr = rpp_getaddr(stream);
 
+#ifdef HAVE_IPV6
+  if ((port_care != 0) && (ntohs(addr->sin6_port) >= IPPORT_RESERVED))
+#else
   if ((port_care != 0) && (ntohs(addr->sin_port) >= IPPORT_RESERVED))
+#endif
     {
     sprintf(log_buffer,"non-privileged connection from %s", 
       netaddr(addr));
@@ -1618,7 +1639,11 @@ void im_request(
   hnodent		*np;
   eventent		*ep = NULL;
   infoent		*ip;
+#ifdef HAVE_IPV6
+  struct sockaddr_in6	*addr;
+#else
   struct sockaddr_in	*addr;
+#endif
   u_long		ipaddr;
   int			i, j, errcode, nodeidx = 0;
   int			reply;
@@ -1658,7 +1683,11 @@ void im_request(
   /* check that machine is known */
 
   addr = rpp_getaddr(stream);
+#ifdef HAVE_IPV6
+  ipaddr = ntohl(addr->sin6_addr.s6_addr32[0]);
+#else
   ipaddr = ntohl(addr->sin_addr.s_addr);
+#endif
 
   if (LOGLEVEL >= 3)
     {
