@@ -188,8 +188,7 @@ AC_CHECK_HEADERS([arpa/inet.h fcntl.h float.h limits.h malloc.h netdb.h \
 		  netinet/in.h stddef.h sys/file.h sys/param.h \
 		  sys/socket.h sys/time.h sys/ioctl.h sys/mount.h \
                   sys/vfs.h sys/statfs.h sys/statvfs.h syslog.h \
-                  termios.h err.h sys/poll.h security/pam_modules.h \
-                  cpalib.h])
+                  termios.h err.h sys/poll.h security/pam_modules.h])
 
 
 dnl Check for socklen_t.  In traditional BSD this is an int, but some
@@ -434,15 +433,37 @@ AC_ARG_ENABLE(cpa,
     [  --enable-cpa           enable Cray's CPA support],
     CPA=$enableval,CPA=no)   
 AC_MSG_RESULT($CPA)
+
+AC_ARG_WITH(cpa_include,
+    [  --with-cpa-include=DIR  include path for cpalib.h],
+    cpainclude=$withval,cpainclude=none)   
+AC_ARG_WITH(cpa_lib,
+    [  --with-cpa-lib=DIR      lib path for libcpalib],
+    cpalib=$withval,cpalib=none)   
+
+if test "x$cpainclude" != "xnone" ;then
+  CPPFLAGS="$CPPFLAGS -I$cpainclude"
+fi
+LDFLAGS_cpasave="$LDFLAGS"
+if test "x$cpalib" != "xnone" ;then
+  LDFLAGS="$LDFLAGS -L$cpalib"
+fi
 case "$CPA" in
   yes) AC_DEFINE([ENABLE_CPA], 1, [Define to enable Cray's CPA support])
-    AC_CHECK_FUNC(cpa_lookup_nodes, ,
-      AC_CHECK_LIB(cpa, cpa_lookup_nodes, MOMLIBS="$MOMLIBS -lcpa",
-      AC_MSG_ERROR([cpa functions are missing]))) ;;
+    AC_CHECK_HEADERS([cpalib.h], [ :],
+      AC_MSG_ERROR([pass the path to cpalib.h to --with-cpa-include]))
+    AC_CHECK_LIB(cpalib, cpa_new_node_req, [ :],
+      AC_MSG_ERROR([pass the path to libcpalib to --with-cpa-lib]))
+      if test "x$cpalib" != "xnone" ;then
+        MOMLIBS="$MOMLIBS -L$cpalib -lcpalib"
+      else
+        MOMLIBS="$MOMLIBS -lcpalib"
+      fi
+      ;;
   no) : ;;
   *) AC_MSG_ERROR([--enable-cpa should be yes or no]) ;;
 esac
-
+LDFLAGS="$LDFLAGS_cpasave"
 
 
 
