@@ -383,16 +383,22 @@ static int mgr_set_attr(
 
 /* if we are removing an existing manager entry the at action will be 
    slightly different */
+/*
 if (plist->al_op == DECR && strcmp(plist->al_name, ATTR_managers) == 0)
    mode = ATR_ACTION_ACL_REMOVE;
+*/
 
       if ((pdef + index)->at_action) 
         {
         if ((rc = (pdef + index)->at_action(new + index,parent,mode))) 
           {
-          attr_atomic_kill(new,pdef,limit);
+             /* always allow removing from ACLs */
+          if (!(plist->al_op == DECR) && ((pdef + index)->at_type == ATR_TYPE_ACL))
+            {
+            attr_atomic_kill(new,pdef,limit);
 
-          return(rc);
+            return(rc);
+            }
           }
         }
 
