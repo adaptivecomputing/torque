@@ -1032,17 +1032,19 @@ void mgr_server_set(
     int       index;
     int       i;
     struct    array_strings *pstr;
+    int       bhstrlen;
 
 
     index = find_attr(svr_attr_def, plist->al_name, SRV_ATR_LAST); 
 
-    bad_host = (char*)malloc(sizeof(char) * (PBS_MAXHOSTNAME + 17));
+    bhstrlen = PBS_MAXHOSTNAME + 17;
+    bad_host = malloc(sizeof(char) * (bhstrlen+1));
     clear_attr(&temp, &svr_attr_def[index]);
     svr_attr_def[index].at_decode(&temp,plist->al_name,plist->al_resc,plist->al_value); 
 
     pstr = temp.at_val.at_arst;
     
-    bad_host[0] = (char)NULL;
+    bad_host[0] = '\0';
     
     /* loop over all hosts and perform same check as manager_oper_chk*/
     for (i = 0; i < pstr->as_usedptr; ++i)
@@ -1051,12 +1053,12 @@ void mgr_server_set(
       host_entry = strchr(pstr->as_string[i], (int)'@');
  
       /* if wildcard, we can't check */
-      if (host_entry[1] != '*')
+      if ((host_entry != NULL) && host_entry[1] != '*')
         {
         if (get_fullhostname(host_entry,hostname,PBS_MAXHOSTNAME) ||
             strncmp(host_entry,hostname,PBS_MAXHOSTNAME))
           {
-          sprintf(bad_host, "First bad host: %s", host_entry+1);;
+          snprintf(bad_host,bhstrlen,"First bad host: %s",host_entry+1);;
           break;
           }
 
@@ -1064,7 +1066,7 @@ void mgr_server_set(
 
       }
 
-     if (bad_host != NULL) /* we found a fully qualified host that was bad */
+     if (bad_host[0] != '\0') /* we found a fully qualified host that was bad */
        {
        req_reject(PBSE_BADACLHOST, 0, preq, NULL, bad_host); 
        }
