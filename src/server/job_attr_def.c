@@ -699,7 +699,7 @@ attribute_def job_attr_def[] = {
 	comp_str,
 	free_str,
 	NULL_FUNC,
-	ATR_DFLAG_MGRD | ATR_DFLAG_SELEQ | ATR_DFLAG_MOM,
+	ATR_DFLAG_USWR | ATR_DFLAG_MGRD | ATR_DFLAG_SELEQ | ATR_DFLAG_MOM,
 	ATR_TYPE_STR,
 	PARENT_TYPE_JOB
     },
