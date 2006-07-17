@@ -1052,27 +1052,46 @@ void mgr_server_set(
     
     bad_host[0] = '\0';
     
-    /* loop over all hosts and perform same check as manager_oper_chk*/
+    /* loop over all hosts in the request and perform same check as manager_oper_chk*/
     for (i = 0; i < pstr->as_usedptr; ++i)
       {
-
       host_entry = strchr(pstr->as_string[i], (int)'@');
  
       /* if wildcard, we can't check */
       if ((host_entry != NULL) && host_entry[1] != '*')
         {
-        if (get_fullhostname(host_entry,hostname,PBS_MAXHOSTNAME) ||
-            strncmp(host_entry,hostname,PBS_MAXHOSTNAME))
+        if (get_fullhostname(host_entry+1,hostname,PBS_MAXHOSTNAME) ||
+            strncmp(host_entry+1,hostname,PBS_MAXHOSTNAME))
           {
           snprintf(bad_host,bhstrlen,"First bad host: %s",host_entry+1);;
           break;
           }
-
         }
-
       }
 
-     if (bad_host[0] != '\0') /* we found a fully qualified host that was bad */
+    if (bad_host[0] == '\0')
+      {
+      /* nothing wrong found in the request, let's try again with the current list */
+      pstr = server.sv_attr[(int)index].at_val.at_arst;
+
+      for (i = 0; i < pstr->as_usedptr; ++i)
+        {
+        host_entry = strchr(pstr->as_string[i], (int)'@');
+ 
+        /* if wildcard, we can't check */
+        if ((host_entry != NULL) && host_entry[1] != '*')
+          {
+          if (get_fullhostname(host_entry+1,hostname,PBS_MAXHOSTNAME) ||
+              strncmp(host_entry+1,hostname,PBS_MAXHOSTNAME))
+            {
+            snprintf(bad_host,bhstrlen,"First bad host: %s",host_entry+1);;
+            break;
+            }
+          }
+        }
+      }
+
+    if (bad_host[0] != '\0') /* we found a fully qualified host that was bad */
        {
        req_reject(PBSE_BADACLHOST, 0, preq, NULL, bad_host); 
        }
