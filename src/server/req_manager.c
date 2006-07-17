@@ -1081,7 +1081,7 @@ void mgr_server_set(
           if (get_fullhostname(host_entry+1,hostname,PBS_MAXHOSTNAME) ||
               strncmp(host_entry+1,hostname,PBS_MAXHOSTNAME))
             {
-            snprintf(bad_host,bhstrlen,"First bad host: %s",host_entry+1);;
+            snprintf(bad_host,bhstrlen,"First bad host: %s",host_entry+1);
             break;
             }
           }
@@ -1104,7 +1104,7 @@ void mgr_server_set(
           if (get_fullhostname(host_entry+1,hostname,PBS_MAXHOSTNAME) ||
               strncmp(host_entry+1,hostname,PBS_MAXHOSTNAME))
             {
-            snprintf(bad_host,bhstrlen,"First bad host: %s",host_entry+1);;
+            snprintf(bad_host,bhstrlen,"First bad host: %s",host_entry+1);
             break;
             }
           }
