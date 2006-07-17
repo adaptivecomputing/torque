@@ -5,12 +5,7 @@
 
 int CPACreatePartition(job *pjob,struct var_table *vtab);
 
-int CPADestroyPartition(
-
-  unsigned long      ParID,         /* I */
-  unsigned long long AdminCookie,   /* I */
-  int *ErrorP)        /* O - non-zero if users of partition encountered error */
-;
+int CPADestroyPartition(job *pjob);
 
 int CPASetJobEnv(
 

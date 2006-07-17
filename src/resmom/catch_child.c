@@ -111,6 +111,9 @@
 #include "pbs_error.h"
 #include "pbs_proto.h"
 #include "rpp.h"
+#ifdef ENABLE_CPA
+#include "pbs_cpa.h"
+#endif
 
 #if defined(PENABLE_DYNAMIC_CPUSETS)
 #include <cpuset.h>
@@ -651,6 +654,11 @@ void scan_for_exiting()
     pjob->ji_qs.ji_svrflags &= ~JOB_SVFLG_Suspend;
 
     kill_job(pjob,SIGKILL);
+
+#ifdef ENABLE_CPA
+    if (CPADestroyPartition(pjob) != 0)
+      continue;
+#endif
 
     delete_link(&pjob->ji_jobque);	/* unlink for poll list */
 

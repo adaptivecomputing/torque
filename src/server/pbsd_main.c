@@ -1058,6 +1058,7 @@ int main(
        (last_jobstat_time + JobStatRate <= time_now))
       {
       struct work_task *ptask;
+      int numjobs=0;
 
       for (pjob = (job *)GET_NEXT(svr_alljobs);
            pjob != NULL;
@@ -1075,11 +1076,16 @@ int main(
             {
             append_link(&pjob->ji_svrtask,&ptask->wt_linkobj,ptask);
             }
+
+          numjobs++;
           }
         }
 
+      server.sv_attr[(int)SRV_ATR_JobStatRate].at_val.at_long=
+          MAX(PBS_JOBSTAT_MIN,(numjobs / server.sv_attr[(int)SRV_ATR_JobStatRate].at_val.at_long));
+
       last_jobstat_time = time_now;
-      }  /* END if (...) */
+      }  /* END if (should poll jobs now) */
 
     if (*state == SV_STATE_SHUTSIG) 
       svr_shutdown(SHUT_SIG);	/* caught sig */

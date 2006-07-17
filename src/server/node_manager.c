@@ -545,7 +545,7 @@ void update_node_state(
 
           snjacount++;
 
-          sp->inuse &= ~(INUSE_JOB|INUSE_JOBSHARE);
+          sp->inuse &= ~(INUSE_JOB|INUSE_JOBSHARE);  /* FIXME: this line is breaking things */
 
           /* look for and remove duplicate job entries in subnode job list */
 
@@ -2922,9 +2922,14 @@ static int node_spec(
 
   if (LOGLEVEL >= 6)
     {
-    DBPRT(("%s: entered spec=%s\n", 
-      id, 
-      spec))
+    sprintf(log_buffer,"entered spec=%s",spec);
+      log_record(
+        PBSEVENT_SCHED,
+        PBS_EVENTCLASS_REQUEST,
+        id,
+        log_buffer);
+
+    DBPRT(("%s\n", log_buffer));
     }
 
   exclusive = 1;	/* by default, nodes (VPs) are requested exclusively */
@@ -3002,6 +3007,21 @@ static int node_spec(
     return(-1);
     }
 
+  if (LOGLEVEL >=6)
+    {
+    sprintf(log_buffer,"job allocation debug: %d requested, %d svr_clnodes, %d svr_totnodes",
+      num,
+      svr_clnodes, svr_totnodes);
+
+    log_record(
+      PBSEVENT_SCHED,
+      PBS_EVENTCLASS_REQUEST,
+      id,
+      log_buffer);
+
+    DBPRT(("%s\n", log_buffer));
+    }
+
   /*
    * if SRV_ATR_NodePack set (true or false), then
    * sort nodes by state, number of VPs and number of attributes;
@@ -3027,11 +3047,12 @@ static int node_spec(
 
     if (LOGLEVEL >= 6)
       {
-      DBPRT(("%s: %s nsn %d, nsnfree %d\n", 
+      DBPRT(("%s: %s nsn %d, nsnfree %d, nsnshared %d\n", 
         id, 
         pnode->nd_name,
         pnode->nd_nsn, 
-        pnode->nd_nsnfree))
+        pnode->nd_nsnfree,
+        pnode->nd_nsnshared))
       }
 
     pnode->nd_flag   = okay;
@@ -3141,6 +3162,20 @@ static int node_spec(
     return(0);
     }  /* END if ((num > svr_numnodes) && early) */
 
+  if (LOGLEVEL >=6)
+    {
+    sprintf(log_buffer,"job allocation debug(2): %d requested, %d svr_numnodes",
+      num,
+      svr_numnodes);
+
+    log_record(
+      PBSEVENT_SCHED,
+      PBS_EVENTCLASS_REQUEST,
+      id,
+      log_buffer);
+
+    DBPRT(("%s\n", log_buffer));
+    }
   /*
    * 	At this point we know the spec is legal.
    *	Here we find a replacement for any nodes chosen above
@@ -3310,6 +3345,20 @@ static int node_spec(
     }  /* END for (i) */
 
   /* SUCCESS - spec is ok */
+
+  if (LOGLEVEL >=6)
+    {
+    sprintf(log_buffer,"job allocation debug(3): returning %d requested",
+      num);
+
+    log_record(
+      PBSEVENT_SCHED,
+      PBS_EVENTCLASS_REQUEST,
+      id,
+      log_buffer);
+
+    DBPRT(("%s\n", log_buffer));
+    }
 
   return(num);	
   }  /* END node_spec() */

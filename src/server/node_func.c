@@ -1676,7 +1676,7 @@ int setup_nodes(void)
 
         if (strcmp(np->nd_name,line) == 0) 
           {
-          np->nd_state = num;
+          np->nd_state = num|INUSE_NEEDS_HELLO_PING;
 
           break;
           }

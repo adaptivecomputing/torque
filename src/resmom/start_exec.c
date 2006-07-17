@@ -2125,9 +2125,16 @@ int TMomFinalizeChild(
 
 #endif  /* (PENABLE_CPUSETS || PENABLE_DYNAMIC_CPUSETS) */
 
+
 #ifdef ENABLE_CPA
   /* Cray CPA setup */
-  CPACreatePartition(pjob,&vtable);
+
+  if ((j = CPACreatePartition(pjob,&vtable)) != 0)
+    {
+    log_err(-1,id,"CPACreatePartition failed");
+
+    starter_return(TJE->upfds,TJE->downfds,j,&sjr);	/* exits */
+    }
 #endif
 
   /* specific system related variables */
