@@ -1040,40 +1040,30 @@ void mgr_server_set(
     struct    array_strings *pstr;
     int       bhstrlen;
 
-
-    index = find_attr(svr_attr_def, plist->al_name, SRV_ATR_LAST); 
-
-    bhstrlen = PBS_MAXHOSTNAME + 17;
-    bad_host = malloc(sizeof(char) * (bhstrlen+1));
-    clear_attr(&temp, &svr_attr_def[index]);
-    svr_attr_def[index].at_decode(&temp,plist->al_name,plist->al_resc,plist->al_value); 
-
-    pstr = temp.at_val.at_arst;
-    
-    bad_host[0] = '\0';
-    
-    /* loop over all hosts in the request and perform same check as manager_oper_chk*/
-    for (i = 0; i < pstr->as_usedptr; ++i)
+    /* look into plist to find the offending attr */
+    while (plist != NULL)
       {
-      host_entry = strchr(pstr->as_string[i], (int)'@');
- 
-      /* if wildcard, we can't check */
-      if ((host_entry != NULL) && host_entry[1] != '*')
+      /* only concerned about operators and managers */
+      if (strcmp(plist->al_name,ATTR_managers) && strcmp(plist->al_name,ATTR_operators))
         {
-        if (get_fullhostname(host_entry+1,hostname,PBS_MAXHOSTNAME) ||
-            strncmp(host_entry+1,hostname,PBS_MAXHOSTNAME))
-          {
-          snprintf(bad_host,bhstrlen,"First bad host: %s",host_entry+1);;
-          break;
-          }
+        plist = (svrattrl *)GET_NEXT(plist->al_link);
+        continue;
         }
-      }
 
-    if (bad_host[0] == '\0')
-      {
-      /* nothing wrong found in the request, let's try again with the current list */
-      pstr = server.sv_attr[(int)index].at_val.at_arst;
+DBPRT(("plist->al_name=%s\n",plist->al_name));
 
+      index = find_attr(svr_attr_def, plist->al_name, SRV_ATR_LAST); 
+
+      bhstrlen = PBS_MAXHOSTNAME + 17;
+      bad_host = malloc(sizeof(char) * (bhstrlen+1));
+      clear_attr(&temp, &svr_attr_def[index]);
+      svr_attr_def[index].at_decode(&temp,plist->al_name,plist->al_resc,plist->al_value); 
+
+      pstr = temp.at_val.at_arst;
+    
+      bad_host[0] = '\0';
+    
+      /* loop over all hosts in the request and perform same check as manager_oper_chk*/
       for (i = 0; i < pstr->as_usedptr; ++i)
         {
         host_entry = strchr(pstr->as_string[i], (int)'@');
@@ -1089,6 +1079,33 @@ void mgr_server_set(
             }
           }
         }
+
+      if (bad_host[0] == '\0')
+        {
+        /* nothing wrong found in the request, let's try again with the current list */
+        pstr = server.sv_attr[(int)index].at_val.at_arst;
+
+        for (i = 0; i < pstr->as_usedptr; ++i)
+          {
+          host_entry = strchr(pstr->as_string[i], (int)'@');
+ 
+          /* if wildcard, we can't check */
+          if ((host_entry != NULL) && host_entry[1] != '*')
+            {
+            if (get_fullhostname(host_entry+1,hostname,PBS_MAXHOSTNAME) ||
+                strncmp(host_entry+1,hostname,PBS_MAXHOSTNAME))
+              {
+              snprintf(bad_host,bhstrlen,"First bad host: %s",host_entry+1);;
+              break;
+              }
+            }
+          }
+        }
+
+      if (bad_host[0] != '\0')
+        break;
+
+      plist = (svrattrl *)GET_NEXT(plist->al_link);
       }
 
     if (bad_host[0] != '\0') /* we found a fully qualified host that was bad */
