@@ -2359,7 +2359,7 @@ int process_opts(
 
   passet = pass + 1;
 
-  if ( pass > 0 ) 
+  if (pass > 0) 
     {
 #ifdef linux
     optind = 0;  /* prime getopt's starting point */
