@@ -2045,7 +2045,11 @@ void write_node_state()
 
   /* don't store volatile states like down and unknown */
 
+#ifdef VNODETESTING
+  savemask = INUSE_OFFLINE|INUSE_RESERVE;
+#else
   savemask = INUSE_OFFLINE|INUSE_DELETED|INUSE_RESERVE|INUSE_JOB|INUSE_JOBSHARE;
+#endif
 
   if (nstatef != NULL) 
     {
