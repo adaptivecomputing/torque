@@ -29,11 +29,7 @@ int port_forwarder(struct pfwdsock *socks,int(*connfunc)(char *,int),char *phost
   {
   fd_set rfdset, wfdset, efdset;
   int rc, maxsock=0;
-#ifdef ENABLE_IPV6
-  struct sockaddr_in6 from;
-#else
-  struct sockaddr_in  from;
-#endif
+  struct sockaddr_in from;
   socklen_t fromlen;
   int n,n2,sock;
 

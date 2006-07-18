@@ -138,11 +138,7 @@ char		*oldpath;
 extern char		*msg_daemonname;
 char		**glob_argv;
 char		usage[] = "[-S port][-d home][-p output][-c config][-a alarm]";
-#ifdef ENABLE_IPV6
-struct	sockaddr_in6	saddr;
-#else
 struct	sockaddr_in	saddr;
-#endif
 sigset_t	allsigs;
 int		alarm_time;
 static char    *logfile = (char *)0;
@@ -537,29 +533,17 @@ badconn(msg)
     char	*msg;
 {
 	static	char	id[] = "badconn";
-#ifdef ENABLE_IPV6
-	struct	in6_addr addr;
-#else
-	struct	in_addr	 addr;
-#endif
+	struct	in_addr	addr;
 	char		buf[5*sizeof(addr) + 100];
 	struct	hostent	*phe;
 
-#ifdef ENABLE_IPV6
-	addr = saddr.sin6_addr;
-#else
 	addr = saddr.sin_addr;
-#endif
 	phe = gethostbyaddr((void *)&addr, sizeof(addr), AF_INET);
 	if (phe == NULL) {
 		char	hold[6];
 		int	i;
 		union {
-#ifdef ENABLE_IPV6
-			struct	in6_addr aa;
-#else
-			struct	in_addr  aa;
-#endif
+			struct	in_addr aa;
 			u_char		bb[sizeof(addr)];
 		} uu;
 
@@ -576,11 +560,7 @@ badconn(msg)
 	}
 
 	sprintf(log_buffer, "%s on port %u %s",
-#ifdef ENABLE_IPV6
-			buf, ntohs(saddr.sin6_port), msg);
-#else
 			buf, ntohs(saddr.sin_port), msg);
-#endif
 	log_err(-1, id, log_buffer);
 
   return;
@@ -611,16 +591,9 @@ int server_command()
     return(SCH_ERROR);
     }
 
-#ifdef ENABLE_IPV6
-  addr = (pbs_net_t)saddr.sin6_addr.s6_addr32[0];
-
-  if (ntohs(saddr.sin6_port) >= IPPORT_RESERVED) 
-#else
   addr = (pbs_net_t)saddr.sin_addr.s_addr;
-
-  if (ntohs(saddr.sin_port) >= IPPORT_RESERVED) 
-#endif
  
+  if (ntohs(saddr.sin_port) >= IPPORT_RESERVED) 
     {
     for (i = 0;i < mask_num;i++) 
       {
@@ -890,15 +863,9 @@ int main(
 		log_err(errno, id, "setsockopt");
 		die(0);
 	}
-#ifdef ENABLE_IPV6
-	saddr.sin6_family = AF_INET6;
-	saddr.sin6_port = htons(port);
-	memcpy (&saddr.sin6_addr, hp->h_addr, hp->h_length);
-#else
 	saddr.sin_family = AF_INET;
 	saddr.sin_port = htons(port);
 	memcpy (&saddr.sin_addr, hp->h_addr, hp->h_length);
-#endif
 	if (bind (server_sock, (struct sockaddr *)&saddr, sizeof(saddr)) < 0) {
 		log_err(errno, id, "bind");
 		die(0);

@@ -245,11 +245,7 @@ int openrm(
   if ((stream = socket(AF_INET,SOCK_STREAM,0)) != -1) 
     {
     int	tryport = IPPORT_RESERVED;
-#ifdef ENABLE_IPV6
-    struct	sockaddr_in6	addr;
-#else
     struct	sockaddr_in	addr;
-#endif
     struct	hostent		*hp;
 
     if ((hp = gethostbyname(host)) == NULL) 
@@ -263,21 +259,12 @@ int openrm(
       }
 
     memset(&addr,'\0',sizeof(addr));
-#ifdef ENABLE_IPV6
-    addr.sin6_family = AF_INET;
-    addr.sin6_addr.s6_addr32[0] = htonl(INADDR_ANY);
-#else
     addr.sin_family = AF_INET;
     addr.sin_addr.s_addr = htonl(INADDR_ANY);
-#endif
 
     while (--tryport > 0) 
       {
-#ifdef ENABLE_IPV6
-      addr.sin6_port = htons((u_short)tryport);
-#else
       addr.sin_port = htons((u_short)tryport);
-#endif
 
       if (bind(stream,(struct sockaddr *)&addr,sizeof(addr)) != -1)
         break;
@@ -288,15 +275,10 @@ int openrm(
 
     memset(&addr,'\0',sizeof(addr));
 
-#ifdef ENABLE_IPV6
-    addr.sin6_family = hp->h_addrtype;
-    addr.sin6_port = htons((unsigned short)port);
-    memcpy(&addr.sin6_addr,hp->h_addr,hp->h_length);
-#else
     addr.sin_family = hp->h_addrtype;
     addr.sin_port = htons((unsigned short)port);
+
     memcpy(&addr.sin_addr,hp->h_addr,hp->h_length);
-#endif
 
     if (connect(stream,(struct sockaddr *)&addr,sizeof(addr)) == -1) 
       {

@@ -156,11 +156,7 @@ int init_network(
   int		 i;
   static int	 initialized = 0;
   int 		 sock;
-#ifdef ENABLE_IPV6
-  struct sockaddr_in6 socname;
-#else
-  struct sockaddr_in  socname;
-#endif
+  struct sockaddr_in socname;
   enum conn_type   type;
 
   if (initialized == 0) 
@@ -205,15 +201,9 @@ int init_network(
 
   /* name that socket "in three notes" */
 
-#ifdef ENABLE_IPV6
-  socname.sin6_port= htons((unsigned short)port);
-  socname.sin6_addr.s6_addr32[0] = INADDR_ANY;
-  socname.sin6_family = AF_INET6;
-#else
   socname.sin_port= htons((unsigned short)port);
   socname.sin_addr.s_addr = INADDR_ANY;
   socname.sin_family = AF_INET;
-#endif
 
   if (bind(sock,(struct sockaddr *)&socname,sizeof(socname)) < 0) 
     {
@@ -396,11 +386,7 @@ static void accept_conn(
 
   {
   int newsock;
-#ifdef ENABLE_IPV6
-  struct sockaddr_in6 from;
-#else
-  struct sockaddr_in  from;
-#endif
+  struct sockaddr_in from;
 
   socklen_t fromsize;
 	
@@ -430,13 +416,8 @@ static void accept_conn(
   add_conn(
     newsock, 
     FromClientDIS, 
-#ifdef ENABLE_IPV6
-    (pbs_net_t)ntohl(from.sin6_addr.s6_addr32[0]),
-    (unsigned int)ntohs(from.sin6_port),
-#else
     (pbs_net_t)ntohl(from.sin_addr.s_addr),
     (unsigned int)ntohs(from.sin_port),
-#endif
     read_func[(int)svr_conn[sd].cn_active]);
 
   return;

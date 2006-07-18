@@ -396,20 +396,6 @@ AC_ARG_ENABLE(array,
     fi
 ])
 
-dnl
-dnl enable IPV6 support
-dnl
-AC_MSG_CHECKING([whether to build IPV6 support])
-AC_ARG_ENABLE(ipv6,
-    [  --enable-ipv6           enable IPV6 support],
-    IPV6=$enableval,IPV6=no)
-AC_MSG_RESULT($IPV6)
-case "$IPV6" in
-  yes) AC_DEFINE([ENABLE_IPV6], 1, [Define to enable IPV6 support]) ;;
-  no) : ;;
-  *) AC_MSG_ERROR([--enable-ipv6 should be yes or no]) ;;
-esac
-
 
 dnl
 dnl enable BLCR support

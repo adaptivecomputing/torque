@@ -12,9 +12,6 @@
 /* Define to enable Cray's CPA support */
 #undef ENABLE_CPA
 
-/* Define to enable IPV6 support */
-#undef ENABLE_IPV6
-
 /* are FD_SET and friends defined in sys/select.h */
 #undef FD_SET_IN_SYS_SELECT_H
 

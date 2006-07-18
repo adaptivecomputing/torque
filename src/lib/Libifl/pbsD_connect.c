@@ -364,11 +364,7 @@ int pbs_connect(
   char *server)  /* I (FORMAT:  NULL | HOSTNAME | HOSTNAME:PORT )*/
 
   {
-#ifdef ENABLE_IPV6
-  struct sockaddr_in6 server_addr;
-#else
-  struct sockaddr_in  server_addr;
-#endif
+  struct sockaddr_in server_addr;
   struct hostent *hp;
   int out;
   int i;
@@ -464,11 +460,7 @@ int pbs_connect(
 
   pbs_server = server;    /* set for error messages from commands */
 	
-#ifdef ENABLE_IPV6
-  server_addr.sin6_family = AF_INET6;
-#else
-  server_addr.sin_family  = AF_INET;
-#endif
+  server_addr.sin_family = AF_INET;
   hp = NULL;
   hp = gethostbyname(server);
 
@@ -489,13 +481,8 @@ int pbs_connect(
     return(-1);
     }
 
-#ifdef ENABLE_IPV6
-  memcpy((char *)&server_addr.sin6_addr,hp->h_addr_list[0],hp->h_length);
-  server_addr.sin6_port = htons(server_port);
-#else
   memcpy((char *)&server_addr.sin_addr,hp->h_addr_list[0],hp->h_length);
   server_addr.sin_port = htons(server_port);
-#endif
 	
   if (connect(
         connection[out].ch_socket,

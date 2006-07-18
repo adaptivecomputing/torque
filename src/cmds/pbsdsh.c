@@ -689,11 +689,7 @@ static int
 build_listener(int *port)
 {
     int s;
-#ifdef ENABLE_IPV6
-    struct sockaddr_in6 addr;
-#else
-    struct sockaddr_in  addr;
-#endif
+    struct sockaddr_in addr;
     socklen_t len = sizeof(addr);
 
     if ((s = socket(AF_INET, SOCK_STREAM, 0)) < 0)
@@ -702,11 +698,7 @@ build_listener(int *port)
         fprintf(stderr,"%s: %s: listen",id, __func__);
     if (getsockname(s, (struct sockaddr *)&addr, &len) < 0)
         fprintf(stderr,"%s: %s: getsockname",id, __func__);
-#ifdef ENABLE_IPV6
-    *port = ntohs(addr.sin6_port);
-#else
     *port = ntohs(addr.sin_port);
-#endif
     return s;
 }
 

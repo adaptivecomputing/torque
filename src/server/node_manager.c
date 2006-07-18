@@ -1352,11 +1352,7 @@ void ping_nodes(
   {
   static  char	        *id = "ping_nodes";
   struct  pbsnode	*np;
-#ifdef ENABLE_IPV6
-  struct  sockaddr_in6	*addr;
-#else
   struct  sockaddr_in	*addr;
-#endif
   int                    i, ret, com;
   extern  int            pbs_rm_port;
 
@@ -1682,11 +1678,7 @@ void is_request(
   int		i;
 
   unsigned long	ipaddr;
-#ifdef ENABLE_IPV6
-  struct	sockaddr_in6 *addr;
-#else
-  struct	sockaddr_in  *addr;
-#endif
+  struct	sockaddr_in *addr;
   struct	pbsnode	*node;
   struct pbssubn *sp;
 
@@ -1738,11 +1730,7 @@ void is_request(
   if ((node = tfind((u_long)stream,&streams)) != NULL)
     goto found;
 
-#ifdef ENABLE_IPV6
-  ipaddr = ntohl(addr->sin6_addr.s6_addr32[0]);
-#else
   ipaddr = ntohl(addr->sin_addr.s_addr);
-#endif
 
   if ((node = tfind(ipaddr,&ipaddrs)) != NULL) 
     {
