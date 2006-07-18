@@ -3500,16 +3500,18 @@ int set_nodes(
 
       if (LOGLEVEL >= 5)
         {
-        sprintf(log_buffer,"allocated node %s/%d to job %s",
+        sprintf(log_buffer,"allocated node %s/%d to job %s (nsnfree=%d)",
           pnode->nd_name, 
           snp->index,
-          pjob->ji_qs.ji_jobid);
+          pjob->ji_qs.ji_jobid,
+          pnode->nd_nsnfree);
 
         log_record(
           PBSEVENT_SCHED,
           PBS_EVENTCLASS_REQUEST,
           id,
           log_buffer);
+DBPRT(("%s\n",log_buffer));
         }
 
       /* NOTE:  search existing job array.  add job only if job not already in place */
@@ -4033,10 +4035,11 @@ void free_nodes(
 
         if (LOGLEVEL >= 4)
           {
-          sprintf(log_buffer,"freeing node %s/%d from job %s",
+          sprintf(log_buffer,"freeing node %s/%d from job %s (nsnfree=%d)",
             pnode->nd_name,
             np->index,
-            pjob->ji_qs.ji_jobid);
+            pjob->ji_qs.ji_jobid,
+            pnode->nd_nsnfree);
 
           log_record(
             PBSEVENT_SCHED,
@@ -4053,7 +4056,21 @@ void free_nodes(
         free(jp);
 
 #ifdef VNODETESTING
-          pnode->nd_nsnfree++;	/* up count of free */
+        pnode->nd_nsnfree++;	/* up count of free */
+
+        if (LOGLEVEL >= 6)
+          {
+          sprintf(log_buffer,"increased sub-node free count to %d of %d\n", 
+            pnode->nd_nsnfree,
+            pnode->nd_nsn);
+
+          log_record(
+            PBSEVENT_SCHED,
+            PBS_EVENTCLASS_REQUEST,
+            id,
+            log_buffer);
+          }
+        pnode->nd_state &= ~(INUSE_JOB|INUSE_JOBSHARE);
 #endif
 
         /* if no jobs are associated with subnode, mark subnode as free */
@@ -4062,7 +4079,6 @@ void free_nodes(
           {
 #ifndef VNODETESTING
           pnode->nd_nsnfree++;	/* up count of free */
-#endif
 
           if (LOGLEVEL >= 6)
             {
@@ -4076,6 +4092,7 @@ void free_nodes(
               id,
               log_buffer);
             }
+#endif
 
           if (np->inuse & INUSE_JOBSHARE)
             pnode->nd_nsnshared--;
@@ -4084,7 +4101,9 @@ void free_nodes(
 
           np->inuse &= ~(INUSE_JOB|INUSE_JOBSHARE);
 
+#ifndef VNODETESTING
           pnode->nd_state &= ~(INUSE_JOB|INUSE_JOBSHARE);
+#endif
           }
 
         break;

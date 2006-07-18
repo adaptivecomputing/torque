@@ -133,8 +133,6 @@ int conn_qsub(char *,long);
 
 /* External functions */
 
-void on_job_exit A_((struct work_task *));
-
 #ifdef PBS_MOM
 #if IBM_SP2==2		/* IBM SP PSSP 3.1 */
 void unload_sp_switch A_((job *pjob));
