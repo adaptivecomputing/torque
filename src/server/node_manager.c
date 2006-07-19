@@ -4171,10 +4171,11 @@ static void set_one_old(
 
 #ifdef VNODETESTING
             if (--pnode->nd_nsnfree <= 0)
+              pnode->nd_state |= shared;
 #else
             if (--pnode->nd_nsnfree == 0)
-#endif
               pnode->nd_state = shared;
+#endif
 
             return;
             }
