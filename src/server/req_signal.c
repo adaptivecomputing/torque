@@ -154,6 +154,9 @@ void req_signaljob(
     preq->rq_extra = pjob;  /* save job ptr for post_signal_req() */
     }
 
+/* FIXME: need a race-free check for available free subnodes before
+ * resuming a suspended job */
+
 #ifdef DONOTSUSPINTJOB
   /* interactive jobs don't resume correctly so don't allow a suspend */
 
