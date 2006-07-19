@@ -381,13 +381,6 @@ static int mgr_set_attr(
        *  new value.  If the action fails, undo everything.
        */
 
-/* if we are removing an existing manager entry the at action will be 
-   slightly different */
-/*
-if (plist->al_op == DECR && strcmp(plist->al_name, ATTR_managers) == 0)
-   mode = ATR_ACTION_ACL_REMOVE;
-*/
-
       if ((pdef + index)->at_action) 
         {
         if ((rc = (pdef + index)->at_action(new + index,parent,mode))) 
@@ -2116,16 +2109,6 @@ int manager_oper_chk(
   if (actmode == ATR_ACTION_FREE)
     {
     return(0);	/* no checking on free */
-    }
-
-  /* no check when removing - You should always be able
-     to remove entries even if there are other invalid entries
-     in the existing list.  The only way that can happen is if there
-     are hosts that no longer exist. 
-   */
-  if (actmode == ATR_ACTION_ACL_REMOVE)
-    {
-    return 0;
     }
 
   pstr = pattr->at_val.at_arst;

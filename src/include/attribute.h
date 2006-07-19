@@ -281,7 +281,6 @@ typedef struct attribute_def attribute_def;
 #define ATR_ACTION_ALTER     2
 #define ATR_ACTION_RECOV     3
 #define ATR_ACTION_FREE      4
-#define ATR_ACTION_ACL_REMOVE 5
 
 /*
  * values for the mode parameter to at_encode(), determines:
