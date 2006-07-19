@@ -1295,6 +1295,9 @@ dnl  ######################################################################
 dnl  Output
 dnl
 
+AC_MSG_NOTICE([Enabling VNODETESTING.  Remove it from src/include/pbs_config.h if you don't want to this test])
+AC_DEFINE(VNODETESTING,1,[Define to enable some testing code])
+
 AC_CREATE_GENERIC_CONFIG([pbs],[-ltorque])
 
 dnl these are quoted, and this removes them

@@ -360,6 +360,9 @@
 /* Version number of package */
 #undef VERSION
 
+/* Define to enable some testing code */
+#undef VNODETESTING
+
 /* Define to the path of xauth */
 #undef XAUTH_PATH
 
