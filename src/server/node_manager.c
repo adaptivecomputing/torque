@@ -3566,7 +3566,11 @@ DBPRT(("%s\n",log_buffer));
       --pnode->nd_needed;
       }  /* END for (snp) */
 
+#ifdef VNODETESTING
+    if (pnode->nd_nsnfree <= 0)	    /* if no free VPs, set node state */
+#else
     if (pnode->nd_nsnfree == 0)	    /* if no free VPs, set node state */
+#endif
       pnode->nd_state = newstate;
     }    /* END for (i) */
 
@@ -4165,7 +4169,11 @@ static void set_one_old(
 
             jp->job = pjob;
 
+#ifdef VNODETESTING
+            if (--pnode->nd_nsnfree <= 0)
+#else
             if (--pnode->nd_nsnfree == 0)
+#endif
               pnode->nd_state = shared;
 
             return;
