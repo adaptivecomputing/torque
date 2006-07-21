@@ -108,6 +108,7 @@
 /* data global to this file */
 
 extern char *path_queues;
+extern time_t        time_now;
 
 /*
  * que_save() - Saves a queue structure image on disk
@@ -133,6 +134,9 @@ int que_save(
   char   *myid = "que_save";
   char	namebuf1[MAXPATHLEN];
   char	namebuf2[MAXPATHLEN];
+
+  pque->qu_attr[QA_ATR_MTime].at_val.at_long = time_now;
+  pque->qu_attr[QA_ATR_MTime].at_flags = ATR_VFLAG_SET;
 
   strcpy(namebuf1, path_queues);
   strcat(namebuf1, pque->qu_qs.qu_name);
@@ -298,6 +302,16 @@ pbs_queue *que_recov(
   /* all done recovering the queue */
 
   close(fds);
+
+  if ((pq->qu_attr[QA_ATR_MTime].at_flags & ATR_VFLAG_SET) == 0)
+    {
+    /* if we are recovering a pre-2.1.2 queue, save a new mtime */
+
+    pq->qu_attr[QA_ATR_MTime].at_val.at_long = time_now;
+    pq->qu_attr[QA_ATR_MTime].at_flags = ATR_VFLAG_SET;
+
+    que_save(pq);
+    }
 
   return(pq);
   }

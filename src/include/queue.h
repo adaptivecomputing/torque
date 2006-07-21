@@ -129,6 +129,7 @@ enum queueattr {
         QA_ATR_AclGroup,
         QA_ATR_AclLogic,
         QA_ATR_AclGroupSloppy,
+        QA_ATR_MTime,
 
 	/* The following attributes apply only to exection queues */
 

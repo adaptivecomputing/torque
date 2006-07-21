@@ -12,6 +12,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature
   e - entries can always be deleted from manager ACL, even if ACL contains host(s) 
       that no longer exist
   e - more informative error message when modifying manager ACL
+  f - all queue create, set, and unset operations now set a queue mtime
 
 2.1.1
 

@@ -328,6 +328,18 @@ attribute_def que_attr_def[] = {
        ATR_TYPE_LONG,
        PARENT_TYPE_QUE_ALL
      },
+/* QS_ATR_MTime */
+    {	ATTR_mtime,		/* "mtime" */
+	decode_l,
+	encode_l,
+	set_null,
+	comp_l,
+	free_null,
+	NULL_FUNC,
+	READ_ONLY,
+	ATR_TYPE_LONG,
+	PARENT_TYPE_QUE_ALL
+    },
 
    /* for execution queues only */
 

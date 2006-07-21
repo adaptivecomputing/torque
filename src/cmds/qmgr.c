@@ -1099,7 +1099,15 @@ void display(
 	if ( attr->resource != NULL ) 
 	  printf(".%s", attr->resource);
 
-	if ( attr->value != NULL ) 
+	if ( (attr->value != NULL) && (attr->name != NULL) && !strcmp(attr->name,ATTR_mtime) ) 
+          {
+          time_t epoch;
+
+          epoch = (time_t)atoi(attr->value);
+          printf(" = %s",ctime(&epoch));
+          }
+           
+	else if ( attr->value != NULL ) 
 	{
 	  l = strlen(attr->name)+8;
 
