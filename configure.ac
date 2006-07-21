@@ -511,6 +511,7 @@ case "$PBS_MACH" in
                   CC='cc -64'
 		fi
               fi ;;
+    linux)  if test "$BLCR" = "yes" ;then MOM_CHECKPOINT=1;fi ;;
 esac
 AC_DEFINE_UNQUOTED(MOM_CHECKPOINT, ${MOM_CHECKPOINT},
 	[whether checkpointing is supported])
