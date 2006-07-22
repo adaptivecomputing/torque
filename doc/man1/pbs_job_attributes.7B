@@ -534,5 +534,5 @@ on file staging for why it is available to the scheduler.
 .if \n(Pb .ig Ig
 .\" man page only
 .SH SEE ALSO
-PBS ERS, qsub(1B), qalter(1B)
+PBS ERS, qsub(1B), qalter(1B), pbs_resources(7B)
 .Ig

@@ -268,7 +268,7 @@ If the qmgr command fails to process any operand, the
 command exits with a value greater than zero.
 .Sh SEE ALSO
 pbs_server(8B), pbs_queue_attributes(7B), pbs_server_attributes(7B),
-qstart(8B), qstop(8B), qenable(8B), qdisable(8),
+qstart(8B), qstop(8B), qenable(8B), qdisable(8), pbs_resources(7B)
 and the PBS External Reference Specification
 .\" turn off any extra indent left by the Sh macro
 .RE

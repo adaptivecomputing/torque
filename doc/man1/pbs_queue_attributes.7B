@@ -390,5 +390,5 @@ from this queue.
 .if \n(Pb .ig Ig
 .\" man page only
 .SH SEE ALSO
-the PBS ERS, qmgr(1B)
+the PBS ERS, qmgr(1B), pbs_resources(7B)
 .Ig
