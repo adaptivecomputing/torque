@@ -204,6 +204,9 @@ char	       *path_checkpoint = (char *)0;
 static resource_def *rdcput;
 #endif	/* MOM_CHECKPOINT */
 double		wallfactor = 1.00;
+long		log_file_max_size = 0;
+long		log_file_roll_depth = 1;
+time_t		last_log_check;
 
 /* externs */
 
@@ -305,7 +308,8 @@ static unsigned long setdownonerror(char *);
 static unsigned long setstatusupdatetime(char *);
 static unsigned long setcheckpolltime(char *);
 static unsigned long settmpdir(char *);
-
+static unsigned long setlogfilemaxsize(char *);
+static unsigned long setlogfilerolldepth(char *);
 
 static struct specials {
   char            *name;
@@ -338,6 +342,8 @@ static struct specials {
     { "status_update_time", setstatusupdatetime },
     { "check_poll_time", setcheckpolltime },
     { "tmpdir",       settmpdir },
+    { "log_file_max_size", setlogfilemaxsize},
+    { "log_file_roll_depth", setlogfilerolldepth},
     { NULL,           NULL } };
 
 
@@ -520,7 +526,7 @@ int         TMOMScanForStarting(void);
 
 static char *mk_dirs A_((char *));
 void is_update_stat(int);
-
+void check_log A_((void));
 
 int MUSNPrintF(
 
@@ -2314,7 +2320,52 @@ static unsigned long setcheckpointscript(
 
 
 
+static unsigned long setlogfilemaxsize(
 
+  char *value)  /* I */
+  {
+  log_file_max_size = strtol(value, NULL, 10);
+
+  if (log_file_max_size < 0)
+     {
+     log_file_max_size = 0;
+     return(0);
+     }
+
+  return(1);
+  }
+
+
+static unsigned long setlogfilerolldepth(
+
+  char *value)  /* I */
+   {
+   log_file_roll_depth = strtol(value, NULL, 10);
+   if (log_file_roll_depth < 1)
+      {
+      log_file_roll_depth = 1;
+      return 0;
+      }
+   }
+
+
+void check_log()
+   {
+   last_log_check = time_now;
+   if (log_file_max_size <= 0)
+      return;
+
+   if (log_size() >= log_file_max_size)
+      {
+      log_event(
+         PBSEVENT_SYSTEM | PBSEVENT_FORCE,
+         PBS_EVENTCLASS_SERVER,
+         msg_daemonname,
+         "Rolling log file");
+
+      log_roll(log_file_roll_depth);
+      }
+   }
 
 /*
 **	Open and read the config file.  Save information in a linked
@@ -2962,6 +3013,7 @@ static void catch_hup(
 
   rpp_dbprt = 1 - rpp_dbprt;	/* toggle debug prints for RPP */
 
+
   return;
   }  /* END catch_hup() */
 
@@ -2984,8 +3036,10 @@ static void process_hup()
 
   log_close(1);
   log_open(log_file,path_log);
-
+  log_file_max_size = 0;
+  log_file_roll_depth = 1;
   read_config(NULL);
+  check_log();
   cleanup();
 
   initialize();
@@ -5914,6 +5968,8 @@ int main(
     return(1);
     }
 
+  check_log(); /* see if this log should be rolled */
+
   lockfds = open("mom.lock",O_CREAT|O_WRONLY,0644);
 
   if (lockfds < 0) 
@@ -6340,6 +6396,12 @@ int main(
 
       check_busy(myla);
       }
+
+    /* should we check the log file ?*/
+    if (time_now - last_log_check >= 300)
+       {
+       check_log();
+       }
 
     /* are we connected to any server? */
 
