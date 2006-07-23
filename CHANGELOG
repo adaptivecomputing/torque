@@ -13,6 +13,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature
       that no longer exist
   e - more informative error message when modifying manager ACL
   f - all queue create, set, and unset operations now set a queue mtime
+  e - added support for log rolling to libtorque
+  e - pbs_server has two new attributes log_file_max_size, log_file_roll_depth
 
 2.1.1
 

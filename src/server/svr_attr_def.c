@@ -746,6 +746,30 @@ attribute_def svr_attr_def[] = {
         ATR_TYPE_LONG,
         PARENT_TYPE_SERVER
     },
+/* SVR_LogFileMaxSize */
+    {   ATTR_logfilemaxsize,
+        decode_l,
+        encode_l,
+        set_l,
+        comp_l,
+        free_null,
+	NULL_FUNC,
+        NO_USER_SET,
+        ATR_TYPE_LONG,
+        PARENT_TYPE_SERVER
+    },
+/* SVR_LogFileRollDepth */
+    {   ATTR_logfilerolldepth,
+        decode_l,
+        encode_l,
+        set_l,
+        comp_l,
+        free_null,
+	NULL_FUNC,
+        MGR_ONLY_SET,
+        ATR_TYPE_LONG,
+        PARENT_TYPE_SERVER
+    },
 
 /* site supplied server attribute definitions if any, see site_svr_attr_*.h  */
 #include "site_svr_attr_def.h"
@@ -762,4 +786,5 @@ attribute_def svr_attr_def[] = {
         ATR_TYPE_STR,
         PARENT_TYPE_SERVER
     }
+
 };

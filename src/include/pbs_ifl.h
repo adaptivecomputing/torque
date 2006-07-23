@@ -243,7 +243,8 @@
 #define ATTR_allownodesubmit  "allow_node_submit"
 #define ATTR_autonodenp  "auto_node_np"
 #define ATTR_servername  "server_name"
-
+#define ATTR_logfilemaxsize "log_file_max_size"
+#define ATTR_logfilerolldepth "log_file_roll_depth"
 
 /* additional node "attributes" names */
 
