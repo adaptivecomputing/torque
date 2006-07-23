@@ -253,6 +253,19 @@ default value: 511, all events.
 .if !\n(Pb .ig Ig
 [internal type: integer]
 .Ig
+.Al log_file_max_size
+If this is set to a value > 0 then pbs_server will roll the current log file
+to logfile.1 when its size is greater than or equal to the value of
+log_file_max_size. This value is interpreted as kilobytes.
+.if !\n(Pb .ig Ig
+[internal type: integer]
+.Ig
+.Al log_file_roll_depth
+If this is set to a value >=1 and log_file_max_size is set then pbs_server
+will continue rolling the log files to logfile.log_file_roll_depth.
+.if !\n(Pb .ig Ig
+[internal type: integer]
+.Ig
 .Al log_level
 Controls the verbosity of server logs.  This value ranges from 0 to 7 with
 7 representing maximum verbosity.  Format: integer; default value: 0, 

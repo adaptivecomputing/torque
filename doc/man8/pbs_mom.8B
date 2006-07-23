@@ -338,6 +338,17 @@ that are currently busy will consider itself free after falling below ideal_load
 .IP loglevel
 specifies the verbosity of logging with higher numbers specifying more verbose
 logging.  Values may range between 0 and 7.
+.IP log_file_max_size
+If  this  is set to a value > 0 then pbs_mom will roll the
+current log file to log-file-name.1 when its size is  greater  than
+or  equal  to  the  value of log_file_max_size. This value is
+interpreted as kilobytes.
+.
+.IP log_file_roll_depth
+If this is set to a value >=1 and  log_file_max_size  is  set
+then  pbs_mom  will continue rolling the log files to 
+log-file-name.log_file_roll_depth.
+.
 .IP max_load
 maximum processor load.  Nodes over this load average are considered busy (see
 ideal_load above).
