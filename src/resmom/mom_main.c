@@ -2346,6 +2346,7 @@ static unsigned long setlogfilerolldepth(
       log_file_roll_depth = 1;
       return 0;
       }
+   return 1;
    }
 
 

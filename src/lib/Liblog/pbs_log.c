@@ -227,7 +227,7 @@ int log_open(
     fds = log_opened;
     }
 
-  /* save the path of the last opened logfile for roll_log */
+  /* save the path of the last opened logfile for log_roll */
   if (logpath != filename)
      {
      if (logpath != NULL)

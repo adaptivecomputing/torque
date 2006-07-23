@@ -1153,8 +1153,8 @@ void   check_log(
    {
    int depth = 0;
 
-   if (server.sv_attr[(int)SRV_ATR_LogFileMaxSize].at_flags 
-       & ATR_VFLAG_SET != 0)
+   if ((server.sv_attr[(int)SRV_ATR_LogFileMaxSize].at_flags 
+       & ATR_VFLAG_SET) != 0)
       {
       if (log_size() 
             >=  server.sv_attr[(int)SRV_ATR_LogFileMaxSize].at_val.at_long)
@@ -1165,8 +1165,8 @@ void   check_log(
          msg_daemonname,
          "Rolling log file");
 
-         if (server.sv_attr[(int)SRV_ATR_LogFileRollDepth].at_flags 
-             & ATR_VFLAG_SET != 0)
+         if ((server.sv_attr[(int)SRV_ATR_LogFileRollDepth].at_flags 
+             & ATR_VFLAG_SET) != 0)
            {
            depth = server.sv_attr[(int)SRV_ATR_LogFileRollDepth].at_val.at_long;
            if (depth < 1)
