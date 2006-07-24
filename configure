@@ -2192,7 +2192,7 @@ if test "${enable_server+set}" = set; then
   enableval="$enable_server"
   include_server=$enableval
 else
-  include_server=yes
+  include_server=$partdefault
 fi;
 echo "$as_me:$LINENO: result: $include_server" >&5
 echo "${ECHO_T}$include_server" >&6

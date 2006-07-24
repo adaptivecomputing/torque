@@ -108,7 +108,7 @@ fi
 AC_MSG_CHECKING([whether to include server and scheduler])
 AC_ARG_ENABLE(server,
     [  --disable-server        do not include server and scheduler],
-    include_server=$enableval, include_server=yes)
+    include_server=$enableval, include_server=$partdefault)
 AC_MSG_RESULT($include_server)
 AM_CONDITIONAL(INCLUDE_SERVER, [test "x$include_server" = "xyes"])
 
