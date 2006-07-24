@@ -1,0 +1,36 @@
+TORQUE clients can be built and used under Cygwin, but be aware that there is
+basicly no security.  Windows doesn't have a concept of setuid root programs
+and priviledged ports.  This means that any user on cygwin can impersonate any
+user on your cluster[1].  You have been warned!
+
+To install Cygwin, browse to http://www.cygwin.com and click the "Install
+Cygwin Now" link.  Download and run setup.exe to install the base packages.
+After installation, run setup.exe again, click through the defaults and under
+the package selection, select the gcc and make packages.
+
+Run Cygwin and you should be looking at a terminal window with bash.  Download
+the TORQUE tarball with wget, untar it, and ./configure, make, make install as
+usual.  The configure script will warn that cygwin is an unsupported OS and
+disable the server[2] and mom components.  After the install, put your TORQUE
+server name in $PBS_SERVER_HOME/server_name.
+
+As of July 24, 2006, Cygwin doesn't yet support getaddrinfo() which means that
+X11 forwarding won't be built.  Tcl/Tk components are untested.  Interactive
+jobs are untested.
+
+If your server has a host_acl, add the DNS hostname of your Cygwin box to it
+and you should be able to run qstat and pbsnodes.
+
+Now add the hostname to your server's submit_hosts and check your Cygwin
+username with 'id' in your bash shell.  If it matches a username on your
+cluster, you can now submit jobs!  If it doesn't match, edit /etc/passwd to
+change your uid to the desired username.
+
+
+[1] Someone should write a service to take the place of the setuid root
+    pbs_iff, or wait for the forthcoming kerberos support.
+
+[2] The server and scheduler components will successfully build under Cygwin,
+    but these components are disabled by default because actually running them
+    on Cygwin isn't practical.
+
