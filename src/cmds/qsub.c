@@ -116,7 +116,7 @@
 #include <sys/ioctl.h>
 #endif	/* HAVE_SYS_IOCTL_H */
 
-#if !defined(sgi) && !defined(_AIX) && !defined(linux)
+#if defined(HAVE_SYS_TTY_H)
 #include <sys/tty.h>
 #endif
 
