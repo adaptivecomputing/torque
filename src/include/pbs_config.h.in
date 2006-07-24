@@ -178,6 +178,9 @@
 /* Define to 1 if you have the <sys/time.h> header file. */
 #undef HAVE_SYS_TIME_H
 
+/* Define to 1 if you have the <sys/tty.h> header file. */
+#undef HAVE_SYS_TTY_H
+
 /* Define to 1 if you have the <sys/types.h> header file. */
 #undef HAVE_SYS_TYPES_H
 
@@ -353,6 +356,9 @@
 
 /* The pathname of the Cray temporary directory for mom */
 #undef TMP_DIR
+
+/* Define if building on unsupported OS */
+#undef UNSUPPORTED_MACH
 
 /* Define on ancient linux distros */
 #undef USEOLDTTY

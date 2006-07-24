@@ -59,7 +59,7 @@ AC_CACHE_CHECK([PBS machine type], pbs_cv_type_mach,
 	       [pbs_cv_type_mach=`$ac_aux_dir/pbs_mach_type`])
 PBS_MACH=$pbs_cv_type_mach
 if test "x$PBS_MACH" = "xunknown"; then
-	AC_MSG_WARNING([MOM Machine type "$hostos" is not supported.])
+	AC_MSG_WARN([MOM Machine type "$hostos" is not supported.])
         AC_DEFINE(UNSUPPORTED_MACH,1,[Define if building on unsupported OS])
 fi
 AC_SUBST(PBS_MACH)
