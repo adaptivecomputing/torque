@@ -130,7 +130,7 @@ char *pbs_submit(
 
   if ((script != NULL) && (*script != '\0')) 
     {
-    if (PBSD_jscript(c,script) != 0) 
+    if (PBSD_jscript(c,script,NULL) != 0) 
       {
       pbs_errno = PBSE_BADSCRIPT;
 

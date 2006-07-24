@@ -882,7 +882,7 @@ int send_job(
 
       if (jobp->ji_qs.ji_svrflags & JOB_SVFLG_SCRIPT) 
         {
-        if (PBSD_jscript(con,script_name) != 0)
+        if (PBSD_jscript(con,script_name,jobp->ji_qs.ji_jobid) != 0)
           continue;
         }
 

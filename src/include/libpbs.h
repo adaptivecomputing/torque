@@ -271,7 +271,7 @@ int
 PBSD_jcred A_((int connect, char *buf, int len));
 
 int
-PBSD_jscript A_((int connect, char *script_file));
+PBSD_jscript A_((int connect, char *script_file, char *jobid));
 
 int
 PBSD_mgr_put A_((int connect, int func, int cmd, int objtype, char *objname, struct attropl *al, char *extend));

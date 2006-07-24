@@ -259,9 +259,7 @@ static int PBSD_scbuf(
  *	transfer chunks of the script to the server.
 */
 
-int PBSD_jscript(c, script_file)
-	int c;
-	char *script_file;
+int PBSD_jscript(int c, char *script_file, char *jobid)
 {
 	int i;
 	int fd;
@@ -273,7 +271,7 @@ int PBSD_jscript(c, script_file)
 	}
 	i = 0;
 	cc = read(fd, s_buf, SCRIPT_CHUNK_Z);
-	while ((cc > 0) && (PBSD_scbuf(c,PBS_BATCH_jobscript,i,s_buf,cc,(char *)0,JScript) == 0)) {
+	while ((cc > 0) && (PBSD_scbuf(c,PBS_BATCH_jobscript,i,s_buf,cc,jobid,JScript) == 0)) {
 		i++;
 		cc = read(fd, s_buf, SCRIPT_CHUNK_Z);
 	}
