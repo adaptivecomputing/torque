@@ -1886,7 +1886,7 @@ static job *locate_new_job(
        ((pj->ji_qs.ji_un.ji_newt.ji_fromsock == sock) &&
         (pj->ji_qs.ji_un.ji_newt.ji_fromaddr == get_connectaddr(sock)))) 
       {
-      if (jobid != NULL) 
+      if ((jobid != NULL) && (*jobid != '\0')) 
         {
         if (!strncmp(pj->ji_qs.ji_jobid,jobid,PBS_MAXSVRJOBID))
           {
