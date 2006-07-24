@@ -19,6 +19,7 @@
 
 #include "port_forwarding.h"
 
+
 /* handy utility to handle forwarding socket connections to another host
  * pass in an initialized pfwdsock struct with sockets to listen on, a function
  * pointer to get a new socket for forwarding, and a hostname and port number to 
@@ -232,6 +233,13 @@ connect_local_xsocket(u_int dnr)
 int
 x11_connect_display(char *display,int alsounused)
 {       
+#ifndef HAVE_GETADDRINFO
+  /* this was added for cygwin which doesn't seem to have a working
+   * getaddrinfo() yet.
+  /* this will have to be figured out later */
+  return -1;
+#else
+
         int display_number, sock = 0;
         char buf[1024], *cp;
         struct addrinfo hints, *ai, *aitop;
@@ -315,6 +323,7 @@ x11_connect_display(char *display,int alsounused)
         }
         set_nodelay(sock);
         return sock;                                                                        
+#endif /* HAVE_GETADDRINFO */
 }
 
 
