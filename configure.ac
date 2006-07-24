@@ -116,7 +116,7 @@ AM_CONDITIONAL(INCLUDE_SERVER, [test "x$include_server" = "xyes"])
 AC_MSG_CHECKING([whether to include the mom daemon])
 AC_ARG_ENABLE(mom,
     [  --disable-mom           do not include the mom daemon],
-    include_mom=$enableval, include_mom=yes)
+    include_mom=$enableval, include_mom=$partdefault)
 AC_MSG_RESULT($include_mom)
 AM_CONDITIONAL(INCLUDE_MOM, [test "x$include_mom" = "xyes"])
 

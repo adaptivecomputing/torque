@@ -2215,7 +2215,7 @@ if test "${enable_mom+set}" = set; then
   enableval="$enable_mom"
   include_mom=$enableval
 else
-  include_mom=yes
+  include_mom=$partdefault
 fi;
 echo "$as_me:$LINENO: result: $include_mom" >&5
 echo "${ECHO_T}$include_mom" >&6
