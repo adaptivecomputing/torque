@@ -530,7 +530,7 @@ uninstall-am: uninstall-info-am uninstall-sbinPROGRAMS
 
 install-exec-hook:
 	chmod 700 $(DESTDIR)$(sbindir)/$(program_prefix)pbs_server$(program_suffix)
-	$(PBS_MKDIRS) aux
+	$(PBS_MKDIRS) aux || :
 	$(PBS_MKDIRS) server
 
 uninstall-hook:

@@ -742,7 +742,7 @@ uninstall-am: uninstall-binPROGRAMS uninstall-binSCRIPTS \
 
 
 install-exec-hook:
-	$(PBS_MKDIRS) aux
+	$(PBS_MKDIRS) aux || :
 	$(PBS_MKDIRS) default
 
 uninstall-hook:

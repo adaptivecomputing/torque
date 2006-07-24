@@ -719,7 +719,7 @@ uninstall-info: uninstall-info-recursive
 
 install-exec-hook:
 	chmod 700 $(DESTDIR)$(sbindir)/$(program_prefix)pbs_mom$(program_suffix)
-	$(PBS_MKDIRS) aux
+	$(PBS_MKDIRS) aux || :
 	$(PBS_MKDIRS) mom
 
 uninstall-hook:

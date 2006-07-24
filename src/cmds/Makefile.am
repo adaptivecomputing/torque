@@ -49,7 +49,7 @@ qterm_SOURCES = qterm.c
 momctl_SOURCES = momctl.c
 
 install-exec-hook:
-	$(PBS_MKDIRS) aux
+	$(PBS_MKDIRS) aux || :
 	$(PBS_MKDIRS) default
 
 uninstall-hook:
