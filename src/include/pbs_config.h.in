@@ -53,6 +53,9 @@
 /* Define if the C complier supports __FUNCTION__ */
 #undef HAVE_FUNCTION
 
+/* Define to 1 if you have the `getaddrinfo' function. */
+#undef HAVE_GETADDRINFO
+
 /* Define to 1 if your system has a working `getgroups' function. */
 #undef HAVE_GETGROUPS
 
