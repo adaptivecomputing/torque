@@ -87,9 +87,12 @@
 
 /*
  * This is used only in mom and needs PBS_MOM defined in order to
- * have things from other .h files (such as struct task) be defined
+ * have things from other .h files (such as struct task) be defined.
+ * If UNSUPPORTED_MACH is defined, then we just fake it.
  */
+#ifndef UNSUPPORTED_MACH
 #define PBS_MOM
+#endif
 
 #include <sys/types.h>
 #include <pwd.h>
@@ -98,8 +101,10 @@
 #include "server_limits.h"
 #include "attribute.h"
 #include "job.h"
+#ifndef UNSUPPORTED_MACH
 #include "mom_mach.h"
 #include "mom_func.h"
+#endif
 
 /*
  * site_mom_postchk() - Post-checkpoint stub for MOM.

@@ -59,7 +59,8 @@ AC_CACHE_CHECK([PBS machine type], pbs_cv_type_mach,
 	       [pbs_cv_type_mach=`$ac_aux_dir/pbs_mach_type`])
 PBS_MACH=$pbs_cv_type_mach
 if test "x$PBS_MACH" = "xunknown"; then
-	AC_MSG_ERROR([Machine type "$PBS_MACH" is not supported.])
+	AC_MSG_WARNING([MOM Machine type "$hostos" is not supported.])
+        AC_DEFINE(UNSUPPORTED_MACH,1,[Define if building on unsupported OS])
 fi
 AC_SUBST(PBS_MACH)
 AC_DEFINE_UNQUOTED(PBS_MACH, "${PBS_MACH}",
@@ -100,6 +101,10 @@ dnl
 dnl  ######################################################################
 dnl  Let the user choose, what parts of PBS he wants to compile and install
 dnl
+partdefault=yes
+if test "x$PBS_MACH" = "xunknown"; then
+    partdefault=no
+fi
 AC_MSG_CHECKING([whether to include server and scheduler])
 AC_ARG_ENABLE(server,
     [  --disable-server        do not include server and scheduler],
