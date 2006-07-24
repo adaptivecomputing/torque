@@ -15,6 +15,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature
   f - all queue create, set, and unset operations now set a queue mtime
   e - added support for log rolling to libtorque
   e - pbs_server and pbs_mom have two new attributes log_file_max_size, log_file_roll_depth
+  e - support installing client libs and cmds on unsupported OSes (like cygwin)
 
 2.1.1
 
