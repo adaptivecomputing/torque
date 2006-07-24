@@ -206,6 +206,7 @@ int main(
 
   myeuid = geteuid();
 
+#ifndef __CYGWIN__
   if (!testmode && (myeuid != 0))
     {
     fprintf(stderr,"pbs_iff: file not setuid root, likely misconfigured\n");
@@ -214,8 +215,8 @@ int main(
      syslog(LOG_ERR|LOG_DAEMON,"not setuid 0, likely misconfigured");
 #endif
 
-    return(1);
     }  /* END if (!testmode && (myeuid != 0)) */
+#endif
 
   /* first, make sure we have a valid server (host), and ports */
 
