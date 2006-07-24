@@ -121,7 +121,10 @@ install_doc: install
 install-data-hook:
 	rm -f $(DESTDIR)$(man7dir)/$(program_prefix)pbs_resources$(program_suffix).7 \
 	      $(DESTDIR)$(man8dir)/$(program_prefix)pbs_sched$(program_suffix).8
-	$(LN_S) $(program_prefix)pbs_resources_$(PBS_MACH)$(program_suffix).7 $(DESTDIR)$(man7dir)/$(program_prefix)pbs_resources$(program_suffix).7
+	case $(PBS_MACH) in \
+	  unknown) : ;; \
+	  *) $(LN_S) $(program_prefix)pbs_resources_$(PBS_MACH)$(program_suffix).7 $(DESTDIR)$(man7dir)/$(program_prefix)pbs_resources$(program_suffix).7 ;; \
+	esac
 	case $(SCHD_TYPE) in \
 	  cc|tcl|basl) $(LN_S) $(program_prefix)pbs_sched_$(SCHD_TYPE)$(program_suffix).8 $(DESTDIR)$(man8dir)/$(program_prefix)pbs_sched$(program_suffix).8 ;; \
 	  none) : ;; \

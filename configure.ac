@@ -561,6 +561,9 @@ AC_ARG_WITH(sched,
   basl|BASL)    SCHD_TYPE=basl ;;
   *)            SCHD_TYPE=none ;;
 esac],[SCHD_TYPE=cc])
+if test "x$include_server" != "xyes" ;then
+   SCHD_TYPE=none
+fi
 AC_DEFINE_UNQUOTED(SCHD_TYPE, "${SCHD_TYPE}",
 	[set the type of scheduler to use])
 
