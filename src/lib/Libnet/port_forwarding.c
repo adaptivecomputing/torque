@@ -236,7 +236,7 @@ x11_connect_display(char *display,int alsounused)
 #ifndef HAVE_GETADDRINFO
   /* this was added for cygwin which doesn't seem to have a working
    * getaddrinfo() yet.
-  /* this will have to be figured out later */
+   * this will have to be figured out later */
   return -1;
 #else
 
