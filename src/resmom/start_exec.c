@@ -4133,14 +4133,19 @@ void start_exec(
       {
       np = &pjob->ji_hosts[i];
 
+      log_buffer[0] = '\0';
+
       /* rpp_open() will succeed even if MOM is down */
 
-      np->hn_stream = rpp_open(np->hn_host,pbs_rm_port,NULL);
+      np->hn_stream = rpp_open(np->hn_host,pbs_rm_port,log_buffer);
 
       if (np->hn_stream < 0) 
         {
-        sprintf(log_buffer,"rpp_open failed on %s",
-          np->hn_host);
+        if (log_buffer[0] != '\0')
+          {
+          sprintf(log_buffer,"rpp_open failed on %s",
+            np->hn_host);
+          }
 
         log_err(errno,id,log_buffer);
 
