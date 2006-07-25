@@ -16,6 +16,11 @@ c - crash     b - bug fix    e - enhancement    f - new feature
   e - added support for log rolling to libtorque
   e - pbs_server and pbs_mom have two new attributes log_file_max_size, log_file_roll_depth
   e - support installing client libs and cmds on unsupported OSes (like cygwin)
+  b - fix subnode allocation with pbs_sched
+  b - fix node allocation with suspend-resume
+  b - fix stale job-exclusive state when restarting pbs_server
+  b - don't fall over when duplicate subnodes are assigned after suspend-resume
+  b - handle suspended jobs correctly when restarting pbs_server
 
 2.1.1
 

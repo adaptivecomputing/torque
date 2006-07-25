@@ -510,9 +510,7 @@ void update_node_state(
     np->nd_state &= ~INUSE_BUSY; 
     np->nd_state &= ~INUSE_UNKNOWN; 
 
-    /* FIXME - what about job exclusive? */
-
-#ifndef VNODETESTING
+#ifdef BROKENVNODECHECKS
     if ((np->nd_state & INUSE_JOB) || 
         (np->nd_state & INUSE_JOBSHARE) ||
         (np->nd_nsn != np->nd_nsnfree))
@@ -545,7 +543,7 @@ void update_node_state(
 
           snjacount++;
 
-          sp->inuse &= ~(INUSE_JOB|INUSE_JOBSHARE);  /* FIXME: this line is breaking things */
+          sp->inuse &= ~(INUSE_JOB|INUSE_JOBSHARE);
 
           /* look for and remove duplicate job entries in subnode job list */
 
@@ -677,7 +675,7 @@ void update_node_state(
           np->nd_nsn);
         }
       }
-#endif /* VNODETESTING */
+#endif /* BROKENVNODECHECKS */
 
     if (np->nd_state & INUSE_DOWN)
       {
@@ -2033,11 +2031,7 @@ void write_node_state()
 
   /* don't store volatile states like down and unknown */
 
-#ifdef VNODETESTING
   savemask = INUSE_OFFLINE|INUSE_RESERVE;
-#else
-  savemask = INUSE_OFFLINE|INUSE_DELETED|INUSE_RESERVE|INUSE_JOB|INUSE_JOBSHARE;
-#endif
 
   if (nstatef != NULL) 
     {
@@ -3305,7 +3299,7 @@ static int node_spec(
           pnode->nd_nsnfree,
           JobList);
 
-#ifndef VNODETESTING
+#ifdef BROKENVNODECHECKS
         /* NOTE:  hack - should be moved to update node state */
 
         if (JobList[0] == '\0')
@@ -3526,17 +3520,11 @@ DBPRT(("%s\n",log_buffer));
 
         jp->job = pjob;
 
-#ifdef VNODETESTING
         pnode->nd_nsnfree--;            /* reduce free count */
-#endif
 
         if (snp->inuse == INUSE_FREE)
           {
           snp->inuse = newstate;
-
-#ifndef VNODETESTING
-          pnode->nd_nsnfree--;            /* reduce free count */
-#endif
 
           if (!exclusive)
             pnode->nd_nsnshared++;
@@ -3566,11 +3554,7 @@ DBPRT(("%s\n",log_buffer));
       --pnode->nd_needed;
       }  /* END for (snp) */
 
-#ifdef VNODETESTING
     if (pnode->nd_nsnfree <= 0)	    /* if no free VPs, set node state */
-#else
-    if (pnode->nd_nsnfree == 0)	    /* if no free VPs, set node state */
-#endif
       pnode->nd_state = newstate;
     }    /* END for (i) */
 
@@ -4051,7 +4035,6 @@ void free_nodes(
 
         free(jp);
 
-#ifdef VNODETESTING
         pnode->nd_nsnfree++;	/* up count of free */
 
         if (LOGLEVEL >= 6)
@@ -4067,39 +4050,17 @@ void free_nodes(
             log_buffer);
           }
         pnode->nd_state &= ~(INUSE_JOB|INUSE_JOBSHARE);
-#endif
 
         /* if no jobs are associated with subnode, mark subnode as free */
 
         if (np->jobs == NULL) 
           {
-#ifndef VNODETESTING
-          pnode->nd_nsnfree++;	/* up count of free */
-
-          if (LOGLEVEL >= 6)
-            {
-            sprintf(log_buffer,"increased sub-node free count to %d of %d\n", 
-              pnode->nd_nsnfree,
-              pnode->nd_nsn);
-
-            log_record(
-              PBSEVENT_SCHED,
-              PBS_EVENTCLASS_REQUEST,
-              id,
-              log_buffer);
-            }
-#endif
-
           if (np->inuse & INUSE_JOBSHARE)
             pnode->nd_nsnshared--;
 
           /* adjust node state (turn off job/job-exclusive) */
 
           np->inuse &= ~(INUSE_JOB|INUSE_JOBSHARE);
-
-#ifndef VNODETESTING
-          pnode->nd_state &= ~(INUSE_JOB|INUSE_JOBSHARE);
-#endif
           }
 
         break;
@@ -4169,13 +4130,8 @@ static void set_one_old(
 
             jp->job = pjob;
 
-#ifdef VNODETESTING
             if (--pnode->nd_nsnfree <= 0)
               pnode->nd_state |= shared;
-#else
-            if (--pnode->nd_nsnfree == 0)
-              pnode->nd_state = shared;
-#endif
 
             return;
             }
@@ -4223,16 +4179,6 @@ void set_old_nodes(
           shared = INUSE_JOBSHARE;
         }
       }
-
-#ifndef VNODETESTING
-    if ((pjob->ji_wattr[JOB_ATR_state].at_val.at_char == 'S') ||
-        (pjob->ji_qs.ji_substate == JOB_SUBSTATE_SUSPEND))
-      {
-      /* NODE is shared if job is suspended */
-
-      shared = INUSE_JOBSHARE;
-      }
-#endif
 
     old = strdup(pjob->ji_wattr[(int)JOB_ATR_exec_host].at_val.at_str);
 

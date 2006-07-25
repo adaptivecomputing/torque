@@ -1677,9 +1677,9 @@ int setup_nodes(void)
         if (strcmp(np->nd_name,line) == 0) 
           {
           np->nd_state = num|INUSE_NEEDS_HELLO_PING;
-#ifdef VNODETESTING
+
+          /* exclusive bits are calculated later in set_old_nodes() */
           np->nd_state &= ~(INUSE_JOB|INUSE_JOBSHARE);
-#endif
 
           break;
           }

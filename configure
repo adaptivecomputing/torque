@@ -18804,14 +18804,6 @@ fi
 
 
 
-{ echo "$as_me:$LINENO: Enabling VNODETESTING.  Remove it from src/include/pbs_config.h if you don't want to this test" >&5
-echo "$as_me: Enabling VNODETESTING.  Remove it from src/include/pbs_config.h if you don't want to this test" >&6;}
-
-cat >>confdefs.h <<\_ACEOF
-#define VNODETESTING 1
-_ACEOF
-
-
 # create a generic PACKAGE-config file
 P=`echo pbs`
 L=`echo -ltorque`

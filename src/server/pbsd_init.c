@@ -1082,14 +1082,11 @@ static int pbsd_init_job(
 
       set_resc_assigned(pjob,INCR);
 
-#ifdef VNODETESTING
+      /* suspended jobs don't get reassigned to nodes */
       if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_Suspend) == 0)
         {
         set_old_nodes(pjob);
         }
-#else
-      set_old_nodes(pjob);
-#endif
 
       if (type == RECOV_HOT)
         pjob->ji_qs.ji_svrflags |= JOB_SVFLG_HOTSTART;
