@@ -106,19 +106,13 @@ int decode_DIS_RunJob(sock, preq)
 {
 	int rc;
 
-#ifdef SCALABLERUNJOB
         preq->rq_ind.rq_run.rq_destin = 0;
-#endif
 
 	rc = disrfst(sock, PBS_MAXSVRJOBID+1, preq->rq_ind.rq_run.rq_jid);
 	if (rc) return rc;
 
 	/* This will need to be changed for nodes for FPA */
-#ifdef SCALABLERUNJOB
 	preq->rq_ind.rq_run.rq_destin = disrst(sock, &rc);
-#else
-	rc = disrfst(sock, PBS_MAXDEST+1, preq->rq_ind.rq_run.rq_destin);
-#endif
 	if (rc) return rc;
 	
 	preq->rq_ind.rq_run.rq_resch = disrui(sock, &rc);

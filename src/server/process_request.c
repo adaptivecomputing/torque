@@ -1024,10 +1024,8 @@ void free_br(
     case PBS_BATCH_RunJob:
     case PBS_BATCH_AsyrunJob:
 
-#ifdef SCALABLERUNJOB
       if (preq->rq_ind.rq_run.rq_destin)
         free(preq->rq_ind.rq_run.rq_destin);
-#endif
 
       break;
 

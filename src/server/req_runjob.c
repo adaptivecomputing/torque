@@ -1157,11 +1157,7 @@ static job *chk_job_torun(
     /* job has been checkpointed or files already staged in */
     /* in this case, exec_host must be already set	 	*/
 
-#ifdef SCALABLERUNJOB
     if (prun->rq_destin != 0) 
-#else
-    if (prun->rq_destin[0] != '\0') 
-#endif
       {
       /* specified destination must match exec_host */
 
@@ -1199,11 +1195,7 @@ static job *chk_job_torun(
     /* job has not run before or need not run there again */
     /* reserve nodes and set new exec_host */
 
-#ifdef SCALABLERUNJOB
     if (prun->rq_destin == 0) 
-#else
-    if (prun->rq_destin[0] == '\0') 
-#endif
       {
       rc = assign_hosts(pjob,NULL,1,FailHost,EMsg);  /* inside chk_job_torun() */
       } 
