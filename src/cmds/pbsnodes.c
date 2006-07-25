@@ -107,6 +107,7 @@
 #include	<unistd.h>
 #include	<string.h>
 #include	<stdlib.h>
+#include	<limits.h>
 
 #include	"portability.h"
 #include	"pbs_ifl.h"
@@ -130,7 +131,7 @@ extern int MXMLCreateE(mxml_t **,char *);
 extern int MXMLAddE(mxml_t *,mxml_t *);
 extern int MXMLSetVal(mxml_t *,char *);
 extern int MXMLDestroyE(mxml_t **);
-extern int MXMLToString(mxml_t *,char *,int,int *,mbool_t);
+extern int MXMLToXString(mxml_t *,char **,int *,int, char **,mbool_t);
 
 /* END prototypes */
 
@@ -637,7 +638,8 @@ int main(
         {
         struct attrl *pat;
 
-        char tmpBuf[400000];
+        char *tmpBuf=NULL, *tail=NULL;
+        int  bufsize;
 
         mxml_t *DE;
         mxml_t *NE;
@@ -670,7 +672,7 @@ int main(
             }
           }    /* END for (pbstat) */
 
-        MXMLToString(DE,tmpBuf,sizeof(tmpBuf),NULL,TRUE);
+        MXMLToXString(DE,&tmpBuf,&bufsize,INT_MAX,&tail,TRUE);
 
         MXMLDestroyE(&DE);
 

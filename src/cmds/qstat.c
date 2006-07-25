@@ -98,6 +98,7 @@
 
 
 #include <pwd.h>
+#include <limits.h>
 
 #if	TCL_QSTAT
 #include <sys/stat.h>
@@ -134,7 +135,7 @@ extern int MXMLCreateE(mxml_t **,char *);
 extern int MXMLAddE(mxml_t *,mxml_t *);
 extern int MXMLSetVal(mxml_t *,char *);
 extern int MXMLDestroyE(mxml_t **);
-extern int MXMLToString(mxml_t *,char *,int,int *,mbool_t);
+extern int MXMLToXString(mxml_t *,char **,int *,int, char **,mbool_t);
 
 /* END prototypes */
 
@@ -1220,9 +1221,10 @@ void display_statjob(
 
   if (DisplayXML == TRUE)
     {
-    char tmpBuf[400000];
+    char *tmpBuf=NULL, *tail=NULL;
+    int  bufsize;
 
-    MXMLToString(DE,tmpBuf,sizeof(tmpBuf),NULL,TRUE);
+    MXMLToXString(DE,&tmpBuf,&bufsize,INT_MAX,&tail,TRUE);
 
     MXMLDestroyE(&DE);
 
