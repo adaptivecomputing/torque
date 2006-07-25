@@ -243,6 +243,7 @@ void free_null(
 
   attr->at_val.at_size.atsv_num   = 0;
   attr->at_val.at_size.atsv_shift = 0;
+  attr->at_val.at_size.atsv_units = 0;
   attr->at_flags &= ~ATR_VFLAG_SET;
 
   return;

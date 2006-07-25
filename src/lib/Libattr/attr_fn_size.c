@@ -402,7 +402,8 @@ int to_size(
 
   switch (*pc) 
     {
-    case '\0':	break;
+    case '\0':	psize->atsv_shift = 0;
+        break;
     case 'k':
     case 'K':	psize->atsv_shift = 10;
 	break;
