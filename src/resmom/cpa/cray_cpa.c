@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
+#include <stdlib.h>
 #include <pwd.h>
 #ifdef HAVE_CPALIB_H
 #include <cpalib.h>
@@ -16,8 +17,6 @@
 #include "mom_func.h"
 #include "resource.h"
 
-
-#ifdef ENABLE_CPA
 
 extern int LOGLEVEL;
 extern char mom_host[];
@@ -396,4 +395,3 @@ int CPASetJobEnv(
   return(0);
   }  /* END CPASetJobEnv() */
 
-#endif /* ENABLE_CPA */

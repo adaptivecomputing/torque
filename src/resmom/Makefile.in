@@ -138,9 +138,12 @@ DEMUX_PATH = $(sbindir)/$(program_prefix)pbs_demux$(program_suffix)
 XPBS_DIR = $(libdir)/xpbs
 XPBSMON_DIR = $(libdir)/xpbsmon
 
-SUBDIRS = @PBS_MACH@
+@BUILDCPA_TRUE@cpasubdir = cpa
+@BUILDCPA_TRUE@momcpalib = cpa/libmomcpa.a
+
+SUBDIRS = @PBS_MACH@ $(cpasubdir)
 DIST_SUBDIRS = aix4 aix5 darwin digitalunix freebsd fujitsu hpux10 hpux11 \
-	irix5 irix6 irix6array linux netbsd solaris5 solaris7 sunos4 unicos8 unicosmk2
+	irix5 irix6 irix6array linux netbsd solaris5 solaris7 sunos4 unicos8 unicosmk2 cpa
 
 
 PBS_LIBS = ../lib/Libattr/libattr.a \
@@ -151,11 +154,11 @@ PBS_LIBS = ../lib/Libattr/libattr.a \
 EXTRA_DIST = rm_dep.h
 sbin_PROGRAMS = pbs_mom
 
-LDADD = @PBS_MACH@/libmommach.a $(MOMLIBS) $(PBS_LIBS)
+LDADD = @PBS_MACH@/libmommach.a $(MOMLIBS) $(PBS_LIBS) $(momcpalib)
 
 pbs_mom_SOURCES = catch_child.c mom_comm.c mom_inter.c mom_main.c \
 		   mom_server.c prolog.c requests.c start_exec.c \
-                   tmsock_recov.c cray_cpa.c \
+                   tmsock_recov.c \
 		   ../server/attr_recov.c ../server/dis_read.c \
 		   ../server/job_attr_def.c ../server/job_func.c \
 		   ../server/job_recov.c  \
@@ -172,15 +175,20 @@ PROGRAMS = $(sbin_PROGRAMS)
 am_pbs_mom_OBJECTS = catch_child.$(OBJEXT) mom_comm.$(OBJEXT) \
 	mom_inter.$(OBJEXT) mom_main.$(OBJEXT) mom_server.$(OBJEXT) \
 	prolog.$(OBJEXT) requests.$(OBJEXT) start_exec.$(OBJEXT) \
-	tmsock_recov.$(OBJEXT) cray_cpa.$(OBJEXT) attr_recov.$(OBJEXT) \
-	dis_read.$(OBJEXT) job_attr_def.$(OBJEXT) job_func.$(OBJEXT) \
-	job_recov.$(OBJEXT) process_request.$(OBJEXT) \
-	reply_send.$(OBJEXT) req_quejob.$(OBJEXT) \
-	resc_def_all.$(OBJEXT)
+	tmsock_recov.$(OBJEXT) attr_recov.$(OBJEXT) dis_read.$(OBJEXT) \
+	job_attr_def.$(OBJEXT) job_func.$(OBJEXT) job_recov.$(OBJEXT) \
+	process_request.$(OBJEXT) reply_send.$(OBJEXT) \
+	req_quejob.$(OBJEXT) resc_def_all.$(OBJEXT)
 pbs_mom_OBJECTS = $(am_pbs_mom_OBJECTS)
 pbs_mom_LDADD = $(LDADD)
-pbs_mom_DEPENDENCIES = @PBS_MACH@/libmommach.a ../lib/Libattr/libattr.a \
-	../lib/Libsite/libsite.a ../lib/Libpbs/libtorque.la
+@BUILDCPA_TRUE@pbs_mom_DEPENDENCIES = @PBS_MACH@/libmommach.a \
+@BUILDCPA_TRUE@	../lib/Libattr/libattr.a \
+@BUILDCPA_TRUE@	../lib/Libsite/libsite.a \
+@BUILDCPA_TRUE@	../lib/Libpbs/libtorque.la cpa/libmomcpa.a
+@BUILDCPA_FALSE@pbs_mom_DEPENDENCIES = @PBS_MACH@/libmommach.a \
+@BUILDCPA_FALSE@	../lib/Libattr/libattr.a \
+@BUILDCPA_FALSE@	../lib/Libsite/libsite.a \
+@BUILDCPA_FALSE@	../lib/Libpbs/libtorque.la
 pbs_mom_LDFLAGS =
 
 DEFS = @DEFS@
@@ -191,11 +199,11 @@ LIBS = @LIBS@
 depcomp = $(SHELL) $(top_srcdir)/buildutils/depcomp
 am__depfiles_maybe = depfiles
 @AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/attr_recov.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/catch_child.Po ./$(DEPDIR)/cray_cpa.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/dis_read.Po ./$(DEPDIR)/job_attr_def.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/job_func.Po ./$(DEPDIR)/job_recov.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/mom_comm.Po ./$(DEPDIR)/mom_inter.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/mom_main.Po ./$(DEPDIR)/mom_server.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/catch_child.Po ./$(DEPDIR)/dis_read.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/job_attr_def.Po ./$(DEPDIR)/job_func.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/job_recov.Po ./$(DEPDIR)/mom_comm.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/mom_inter.Po ./$(DEPDIR)/mom_main.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/mom_server.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/process_request.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/prolog.Po ./$(DEPDIR)/reply_send.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/req_quejob.Po ./$(DEPDIR)/requests.Po \
@@ -278,7 +286,6 @@ distclean-compile:
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/attr_recov.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/catch_child.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cray_cpa.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dis_read.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/job_attr_def.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/job_func.Po@am__quote@

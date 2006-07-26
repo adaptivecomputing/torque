@@ -439,6 +439,7 @@ LDFLAGS_cpasave="$LDFLAGS"
 if test "x$cpalib" != "xnone" ;then
   LDFLAGS="$LDFLAGS -L$cpalib"
 fi
+buildcpa="no"
 case "$CPA" in
   yes) AC_DEFINE([ENABLE_CPA], 1, [Define to enable Cray's CPA support])
     AC_CHECK_HEADERS([cpalib.h], [ :],
@@ -450,10 +451,12 @@ case "$CPA" in
       else
         MOMLIBS="$MOMLIBS -lcpalib"
       fi
+      buildcpa="yes"
       ;;
   no) : ;;
   *) AC_MSG_ERROR([--enable-cpa should be yes or no]) ;;
 esac
+AM_CONDITIONAL([BUILDCPA], test "$buildcpa" = yes)
 LDFLAGS="$LDFLAGS_cpasave"
 
 
@@ -1375,6 +1378,7 @@ AC_OUTPUT(buildutils/pbs_mkdirs
 	  src/resmom/sunos4/Makefile
 	  src/resmom/unicos8/Makefile
 	  src/resmom/unicosmk2/Makefile
+	  src/resmom/cpa/Makefile
 	  src/scheduler.basl/Makefile
 	  src/scheduler.cc/Makefile
 	  src/scheduler.cc/samples/Makefile
