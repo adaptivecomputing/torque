@@ -1148,35 +1148,42 @@ int main(
   }  /* END main() */
 
 
-void   check_log(
-   struct work_task *ptask)
+void check_log(
+
+ struct work_task *ptask)
+
+ {
+ long depth = 1;
+
+ if ((server.sv_attr[(int)SRV_ATR_LogFileMaxSize].at_flags 
+      & ATR_VFLAG_SET) != 0)
    {
-   int depth = 0;
+   if (log_size() >= server.sv_attr[(int)SRV_ATR_LogFileMaxSize].at_val.at_long)
+     {
+     log_event(
+       PBSEVENT_SYSTEM | PBSEVENT_FORCE,
+       PBS_EVENTCLASS_SERVER,
+       msg_daemonname,
+       "Rolling log file");
 
-   if ((server.sv_attr[(int)SRV_ATR_LogFileMaxSize].at_flags 
-       & ATR_VFLAG_SET) != 0)
-      {
-      if (log_size() 
-            >=  server.sv_attr[(int)SRV_ATR_LogFileMaxSize].at_val.at_long)
-         {
-         log_event(
-         PBSEVENT_SYSTEM | PBSEVENT_FORCE,
-         PBS_EVENTCLASS_SERVER,
-         msg_daemonname,
-         "Rolling log file");
+      if ((server.sv_attr[(int)SRV_ATR_LogFileRollDepth].at_flags 
+           & ATR_VFLAG_SET) != 0)
+        {
+        depth = server.sv_attr[(int)SRV_ATR_LogFileRollDepth].at_val.at_long;
+        }
 
-         if ((server.sv_attr[(int)SRV_ATR_LogFileRollDepth].at_flags 
-             & ATR_VFLAG_SET) != 0)
-           {
-           depth = server.sv_attr[(int)SRV_ATR_LogFileRollDepth].at_val.at_long;
-           if (depth < 1)
-              depth = 1;
-           }
-         log_roll(depth);
-         }
+      if ((depth >= INT_MAX) || (depth < 1))
+        {
+        log_err(-1,"check_log","log roll cancelled, logfile depth is out of range");
+        }
+      else
+        {
+        log_roll(depth);
+        }
       }
-   set_task(WORK_Timed,time_now + 300, check_log, NULL);   
-   } /* END check_log */
+    }
+ set_task(WORK_Timed,time_now + 300, check_log, NULL);   
+ } /* END check_log */
 
 
 

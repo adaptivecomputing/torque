@@ -556,9 +556,17 @@ done_roll:
 /* return size of log file in kilobyes */
 long log_size(void)
 {
+#if defined(HAVE_STRUCT_STAT64) && defined(HAVE_STAT64)
+   struct stat64 file_stat;
+#else
    struct stat file_stat;
+#endif
 
+#if defined(HAVE_STRUCT_STAT64) && defined(HAVE_STAT64)
+   if (log_opened && fstat64(fileno(logfile), &file_stat) == 0)
+#else
    if (log_opened && fstat(fileno(logfile), &file_stat) == 0)
+#endif
       {
       return (file_stat.st_size / 1024);
       }
