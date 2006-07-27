@@ -23,6 +23,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature
   b - handle suspended jobs correctly when restarting pbs_server
   b - allow long host lists in runjob request
   b - fix truncated XML output in qstat and pbsnodes
+  b - typo broke compile on irix6array and unicos8
 
 2.1.1
 
