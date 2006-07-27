@@ -24,6 +24,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature
   b - allow long host lists in runjob request
   b - fix truncated XML output in qstat and pbsnodes
   b - typo broke compile on irix6array and unicos8
+  e - momctl now skips down nodes when selecting by property
 
 2.1.1
 
