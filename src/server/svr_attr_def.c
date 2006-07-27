@@ -746,7 +746,7 @@ attribute_def svr_attr_def[] = {
         ATR_TYPE_LONG,
         PARENT_TYPE_SERVER
     },
-/* SVR_LogFileMaxSize */
+/* SRV_ATR_LogFileMaxSize */
     {   ATTR_logfilemaxsize,
         decode_l,
         encode_l,
@@ -758,7 +758,7 @@ attribute_def svr_attr_def[] = {
         ATR_TYPE_LONG,
         PARENT_TYPE_SERVER
     },
-/* SVR_LogFileRollDepth */
+/* SRV_ATR_LogFileRollDepth */
     {   ATTR_logfilerolldepth,
         decode_l,
         encode_l,
