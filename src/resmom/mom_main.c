@@ -4314,6 +4314,19 @@ int rm_request(
               MUStrNCat(&BPtr,&BSpace,tmpLine);
               }
 
+#ifdef DIAGNEWJOBS
+            if ((pjob = (job *)GET_NEXT(svr_newjobs)) != NULL)
+              {
+              while (pjob != NULL)
+                {
+                sprintf(tmpLine,"job[%s]  state=NEW\n",
+                  pjob->ji_qs.ji_jobid ? pjob->ji_qs.ji_jobid : "NULL");
+
+                MUStrNCat(&BPtr,&BSpace,tmpLine);
+                }
+              }
+#endif
+                
             MUStrNCat(&BPtr,&BSpace,"\ndiagnostics complete\n");
 
             log_record(PBSEVENT_SYSTEM,0,id,"internal diagnostics complete");
