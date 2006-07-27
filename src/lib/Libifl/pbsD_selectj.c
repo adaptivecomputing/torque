@@ -96,7 +96,6 @@
 
 static int PBSD_select_put A_((int, int, struct attropl *, char *));
 static char **PBSD_select_get A_((int));
-static int PBSD_select_put A_((int, int, struct attropl *, char *));
 
 char ** pbs_selectjob(c, attrib, extend)
 	int c;

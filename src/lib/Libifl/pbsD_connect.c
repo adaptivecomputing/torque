@@ -105,8 +105,6 @@
 
 static uid_t pbs_current_uid;               /* only one uid per requestor */
 
-extern char pbs_current_user[PBS_MAXUSER];  /* only one uname per requestor */
-
 extern time_t pbs_tcp_timeout;              /* source? */
 
 static unsigned int dflt_port = 0;
