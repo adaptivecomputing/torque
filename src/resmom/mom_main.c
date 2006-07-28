@@ -4320,7 +4320,7 @@ int rm_request(
               while (pjob != NULL)
                 {
                 sprintf(tmpLine,"job[%s]  state=NEW\n",
-                  pjob->ji_qs.ji_jobid ? pjob->ji_qs.ji_jobid : "NULL");
+                  pjob->ji_qs.ji_jobid);
 
                 MUStrNCat(&BPtr,&BSpace,tmpLine);
                 }
