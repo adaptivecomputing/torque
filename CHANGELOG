@@ -13,8 +13,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature
       that no longer exist
   e - more informative error message when modifying manager ACL
   f - all queue create, set, and unset operations now set a queue mtime
-  e - added support for log rolling to libtorque
-  e - pbs_server and pbs_mom have two new attributes log_file_max_size, log_file_roll_depth
+  f - added support for log rolling to libtorque
+  f - pbs_server and pbs_mom have two new attributes log_file_max_size, log_file_roll_depth
   e - support installing client libs and cmds on unsupported OSes (like cygwin)
   b - fix subnode allocation with pbs_sched
   b - fix node allocation with suspend-resume
@@ -25,7 +25,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature
   b - fix truncated XML output in qstat and pbsnodes
   b - typo broke compile on irix6array and unicos8
   e - momctl now skips down nodes when selecting by property
-  e - added submit_args job attribute
+  f - added submit_args job attribute
 
 2.1.1
 
