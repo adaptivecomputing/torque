@@ -178,6 +178,13 @@ case $host_os in
   ;;
 esac
 
+# patch libtool to remove that annoying lib install warning
+test -f libtool.old || (mv libtool libtool.old && cp libtool.old libtool)
+sed -e '/.*has not been installed in.*/d' <libtool >libtool.new
+(test -s libtool.new || rm libtool.new) 2>/dev/null
+test -f libtool.new && mv libtool.new libtool # not 2>/dev/null !!
+test -f libtool     || mv libtool.old libtool
+test -f libtool.old && rm -f libtool.old
 
 dnl
 dnl  ######################################################################
