@@ -2920,7 +2920,7 @@ static int node_spec(
 
   if (LOGLEVEL >= 6)
     {
-    sprintf(log_buffer,"entered spec=%s",spec);
+    sprintf(log_buffer,"entered spec=%.4000s",spec);
       log_record(
         PBSEVENT_SCHED,
         PBS_EVENTCLASS_REQUEST,
@@ -3293,7 +3293,7 @@ static int node_spec(
           nindex++;
           }  /* END for (np) */
 
-        sprintf(log_buffer,"cannot allocate node '%s' to job - node not currently available (nps needed/free: %d/%d,  joblist: %s)",
+        snprintf(log_buffer,sizeof(log_buffer),"cannot allocate node '%s' to job - node not currently available (nps needed/free: %d/%d,  joblist: %s)",
           pnode->nd_name,
           pnode->nd_needed,
           pnode->nd_nsnfree,
@@ -3406,7 +3406,7 @@ int set_nodes(
 
   if (LOGLEVEL >= 3)
     {
-    sprintf(log_buffer,"allocating nodes for job %s with node expression '%s'",
+    sprintf(log_buffer,"allocating nodes for job %s with node expression '%.4000s'",
       pjob->ji_qs.ji_jobid,
       spec);
 
@@ -3425,7 +3425,7 @@ int set_nodes(
 
     if (EMsg != NULL)
       {
-      sprintf(log_buffer,"could not locate requested resources '%s' (node_spec failed) %s",
+      sprintf(log_buffer,"could not locate requested resources '%.4000s' (node_spec failed) %s",
         spec,
         EMsg);
 
@@ -3613,7 +3613,7 @@ DBPRT(("%s\n",log_buffer));
 
   if (LOGLEVEL >= 3)
     {
-    snprintf(log_buffer,sizeof(log_buffer),"job %s allocated %d nodes (nodelist=%s)",
+    snprintf(log_buffer,sizeof(log_buffer),"job %s allocated %d nodes (nodelist=%.4000s)",
       pjob->ji_qs.ji_jobid,
       NCount,
       nodelist);
@@ -3882,7 +3882,7 @@ int node_reserve(
     {
     /* could never satisfy the reservation */
 
-    sprintf(log_buffer,"can never reserve %s",
+    snprintf(log_buffer,sizeof(log_buffer),"can never reserve %s",
       nspec);
 
     log_record(
