@@ -160,6 +160,7 @@
 #define ATTR_etime	"etime"
 #define ATTR_exitstat	"exit_status"
 #define ATTR_forwardx11 "forward_x11"
+#define ATTR_submit_args "submit_args"
 
 /* additional queue attributes names */
 

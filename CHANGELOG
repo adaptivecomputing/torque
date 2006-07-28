@@ -25,6 +25,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature
   b - fix truncated XML output in qstat and pbsnodes
   b - typo broke compile on irix6array and unicos8
   e - momctl now skips down nodes when selecting by property
+  e - added submit_args job attribute
 
 2.1.1
 

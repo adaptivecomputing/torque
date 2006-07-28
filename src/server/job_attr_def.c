@@ -704,6 +704,18 @@ attribute_def job_attr_def[] = {
 	PARENT_TYPE_JOB
     },
 	
+/* JOB_ATR_submit_args */
+    {	ATTR_submit_args,
+	decode_str,
+	encode_str,
+	set_str,
+	comp_str,
+	free_str,
+	NULL_FUNC,
+	READ_ONLY | ATR_DFLAG_SvRD | ATR_DFLAG_Creat,
+	ATR_TYPE_STR,
+	PARENT_TYPE_JOB
+    },
 /* Site defined attributes if any, see site_job_attr_*.h  */
 #include "site_job_attr_def.h"
 

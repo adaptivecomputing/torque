@@ -3555,6 +3555,27 @@ int main(
   if (optind < argc) 
     strcpy(script,argv[optind]);
 
+  /* set the submit_args */
+  char *submit_args_str;
+  int   argi, argslen = 0;
+
+  for (argi = 1; argi < optind; argi++)
+    argslen += strlen(argv[argi]) + 1;
+
+  if (argslen > 0)
+    {
+    submit_args_str = (char*)malloc(sizeof(char) * argslen);
+    submit_args_str[0] = '\0';
+    for (argi = 1; argi < optind; argi++)
+       {
+       strcat(submit_args_str, argv[argi]);
+       if (argi != optind - 1)
+          strcat(submit_args_str, " ");
+       }
+    set_attr(&attrib, ATTR_submit_args, submit_args_str);
+    free(submit_args_str);
+    }
+  /* end setting submit_args */
 
   if (Forwardx11_opt)
     {
