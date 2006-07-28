@@ -3489,6 +3489,9 @@ int main(
   char config_buf[MAX_LINE_LEN];      /* Buffer holds config file */
   char *param_val;                    /* value of parameter returned from config */
 
+  char *submit_args_str;              /* buffer to hold args */
+  int   argi, argslen = 0;
+
   if ((param_val=getenv("PBS_CLIENTRETRY")) != NULL)
     {
     cnt2server_retry=atoi(param_val);
@@ -3556,23 +3559,36 @@ int main(
     strcpy(script,argv[optind]);
 
   /* set the submit_args */
-  char *submit_args_str;
-  int   argi, argslen = 0;
-
   for (argi = 1; argi < optind; argi++)
+    {
     argslen += strlen(argv[argi]) + 1;
+    }
 
   if (argslen > 0)
     {
-    submit_args_str = (char*)malloc(sizeof(char) * argslen);
-    submit_args_str[0] = '\0';
-    for (argi = 1; argi < optind; argi++)
-       {
-       strcat(submit_args_str, argv[argi]);
-       if (argi != optind - 1)
-          strcat(submit_args_str, " ");
-       }
-    set_attr(&attrib, ATTR_submit_args, submit_args_str);
+    submit_args_str = malloc(sizeof(char) * argslen);
+
+    if (submit_args_str == NULL)
+      {
+      fprintf(stderr,"qsub: out of memory\n");
+  
+      exit(2);
+      }
+
+    *submit_args_str = '\0';
+
+    for (argi = 1;argi < optind;argi++)
+      {
+      strcat(submit_args_str,argv[argi]);
+
+      if (argi != optind - 1)
+        {
+        strcat(submit_args_str," ");
+        }
+      }
+
+    set_attr(&attrib,ATTR_submit_args,submit_args_str);
+
     free(submit_args_str);
     }
   /* end setting submit_args */
