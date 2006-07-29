@@ -386,7 +386,7 @@ static int mgr_set_attr(
         if ((rc = (pdef + index)->at_action(new + index,parent,mode))) 
           {
              /* always allow removing from ACLs */
-          if (!(plist->al_op == DECR) && ((pdef + index)->at_type == ATR_TYPE_ACL))
+          if (!((plist->al_op == DECR) && (pdef + index)->at_type == ATR_TYPE_ACL))
             {
             attr_atomic_kill(new,pdef,limit);
 
