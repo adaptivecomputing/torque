@@ -4323,6 +4323,8 @@ int rm_request(
                   pjob->ji_qs.ji_jobid);
 
                 MUStrNCat(&BPtr,&BSpace,tmpLine);
+
+                pjob = (job *)GET_NEXT(pjob->ji_alljobs);
                 }
               }
 #endif
