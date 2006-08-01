@@ -590,6 +590,8 @@ resource_def svr_resc_def_const[] = {
     { "sid", decode_str, encode_str, set_str, comp_str, free_str, NULL_FUNC, READ_WRITE, ATR_TYPE_STR },
     { "stagein", decode_str, encode_str, set_str, comp_str, free_str, NULL_FUNC, READ_WRITE, ATR_TYPE_STR },
     { "spriority", decode_str, encode_str, set_str, comp_str, free_str, NULL_FUNC, READ_WRITE, ATR_TYPE_STR },
+    { "subnode", decode_str, encode_str, set_str, comp_str, free_str, NULL_FUNC, READ_WRITE, ATR_TYPE_STR },
+    { "subnode_list", decode_str, encode_str, set_str, comp_str, free_str, NULL_FUNC, READ_WRITE, ATR_TYPE_STR },
     { "gres", decode_str, encode_str, set_str, comp_str, free_str, NULL_FUNC, READ_WRITE, ATR_TYPE_STR },
     { "taskdistpolicy", decode_str, encode_str, set_str, comp_str, free_str, NULL_FUNC, READ_WRITE, ATR_TYPE_STR },
     { "termsig", decode_str, encode_str, set_str, comp_str, free_str, NULL_FUNC, READ_WRITE, ATR_TYPE_STR },
