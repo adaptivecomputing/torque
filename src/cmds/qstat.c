@@ -1475,19 +1475,22 @@ void display_statserver(
     printf(format,"----------------","---","---","---","---","---","---","---","---","----------");
     }
 
-    p = status;
-    while ( p != NULL ) {
-        name = NULL;
-        max = "0";
-        tot = "0";
-        strcpy(que, "0");
-        strcpy(run, "0");
-        strcpy(hld, "0");
-        strcpy(wat, "0");
-        strcpy(trn, "0");
-        strcpy(ext, "0");
-        stats = "";
-        if (full) {
+  p = status;
+
+  while (p != NULL) 
+    {
+    name = NULL;
+    max = "0";
+    tot = "0";
+    strcpy(que, "0");
+    strcpy(run, "0");
+    strcpy(hld, "0");
+    strcpy(wat, "0");
+    strcpy(trn, "0");
+    strcpy(ext, "0");
+    stats = "";
+
+    if (full) {
             printf("Server: %s\n", p->name);
             a = p->attribs;
             while ( a != NULL ) {
@@ -1557,32 +1560,50 @@ char *attrlist(
   struct attrl *ap)
 
   {
-	char	nameres[256];
-	char	*argv[ARGNUM];
-	char	*ret;
-	int	i, num = 0;
+  char	nameres[256];
+  char	*argv[ARGNUM];
+  char	*ret;
+  int	i, num = 0;
 
-	while (ap) {
-		char	*twol[2];
+  while (ap) 
+    {
+    char *twol[2];
 
-		if (ap->resource) {
-			sprintf(nameres, "%s%s%s",
-					ap->name, TCL_ATRSEP, ap->resource);
-			twol[0] = nameres;
-		}
-		else
-			twol[0] = ap->name;
-		twol[1] = ap->value;
-		argv[num++] = Tcl_Merge(2, twol);
-		if (num == ARGNUM)
-			break;
-		ap = ap->next;
-	}
-	ret = Tcl_Merge(num, argv);
-	for (i=0; i<num; i++)
-		free(argv[i]);
-	return (ret);
-}
+    if (ap->resource != NULL) 
+      {
+      sprintf(nameres,"%s%s%s",
+        ap->name, 
+        TCL_ATRSEP, 
+        ap->resource);
+
+      twol[0] = nameres;
+      }
+    else
+      {
+      twol[0] = ap->name;
+      }
+
+    twol[1] = ap->value;
+
+    argv[num++] = Tcl_Merge(2,twol);
+
+    if (num == ARGNUM)
+      break;
+
+    ap = ap->next;
+    }
+
+  ret = Tcl_Merge(num,argv);
+
+  for (i = 0;i < num;i++)
+    free(argv[i]);
+
+  return(ret);
+  }
+
+
+
+
 
 Tcl_Interp	*interp = NULL;
 char		script[200];
@@ -1644,50 +1665,69 @@ tcl_addarg(name, arg)
 			TCL_APPEND_VALUE);
 }
 
-int
-tcl_stat(type, bs, f_opt)
-    char	*type;
-    struct	batch_status	*bs;
-    int		f_opt;
-{
-	struct	batch_status	*bp;
-	char	*twol[2];
-	char	*argv[ARGNUM];
-	int	i, num = 0;
-	char	*result;
 
-	if (interp == NULL)
-		return 1;
 
-	if (f_opt == 0)
-		return 1;
 
-	twol[0] = type;
-	for (bp=bs; bp; bp=bp->next) {
-		char	*threel[3];
 
-		threel[0] = bp->name;
-		threel[1] = attrlist(bp->attribs);
-		threel[2] = bp->text;
+int tcl_stat(
 
-		argv[num++] = Tcl_Merge(3, threel);
-		free(threel[1]);	/* malloc'ed in attrlist() */
-		if (num == ARGNUM)
-			break;
-	}
-	twol[1] = Tcl_Merge(num, argv);
-	for (i=0; i<num; i++)
-		free(argv[i]);
+  char                *type,
+  struct batch_status *bs,
+  int                  f_opt)
 
-	result = Tcl_Merge(2, twol);
-	Tcl_SetVar(interp, "objects", result,
-				TCL_GLOBAL_ONLY|
-				TCL_LIST_ELEMENT|
-				TCL_APPEND_VALUE);
-	free(twol[1]);
-	free(result);
-	return 0;
-}
+  {
+  struct	batch_status	*bp;
+  char	*twol[2];
+  char	*argv[ARGNUM];
+  int	i, num = 0;
+  char	*result;
+
+  if (interp == NULL)
+    {
+    return(1);
+    }
+
+  if (f_opt == 0)
+    {
+    return(1);
+    }
+
+  twol[0] = type;
+
+  for (bp = bs;bp != NULL;bp = bp->next) 
+    {
+    char *threel[3];
+
+    threel[0] = bp->name;
+    threel[1] = attrlist(bp->attribs);
+    threel[2] = bp->text;
+
+    argv[num++] = Tcl_Merge(3,threel);
+
+    free(threel[1]);	/* malloc'ed in attrlist() */
+
+    if (num == ARGNUM)
+      break;
+    }
+
+  twol[1] = Tcl_Merge(num,argv);
+
+  for (i = 0;i < num;i++)
+    free(argv[i]);
+
+  result = Tcl_Merge(2,twol);
+
+  Tcl_SetVar(
+    interp, 
+    "objects", 
+    result,
+    TCL_GLOBAL_ONLY|TCL_LIST_ELEMENT|TCL_APPEND_VALUE);
+
+  free(twol[1]);
+  free(result);
+
+  return(0);
+  }
 
 
 

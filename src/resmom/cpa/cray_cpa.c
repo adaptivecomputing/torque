@@ -21,15 +21,23 @@
 extern int LOGLEVEL;
 extern char mom_host[];
 
+/* NOTE:  may use CPA_MAX_NODES at some point */
+
+unsigned int MaxListSize = CPA_MAX_PART;
+unsigned int MaxNID = CPA_MAX_NID;
 
 /* CPACreatePartition - Cray's cpalib support
  * gets the "size" resource from the job, converts that to a CPA Node Request,
  * creates a partition, assigns it to JobID string, stores the partid and
  * cookies in the job, and sets some env vars in vtable */
-int CPACreatePartition(job *pjob, struct var_table *vtab)
+
+int CPACreatePartition(
+
+  job              *pjob,   /* I */
+  struct var_table *vtab)   /* I */
 
   {
-  char id[]="CPACreatePartition";
+  char id[] = "CPACreatePartition";
 
   cpa_node_req_t *NodeReq;
 
@@ -41,22 +49,27 @@ int CPACreatePartition(job *pjob, struct var_table *vtab)
 
   int   PPN;
   int   Flags;
-  int   Size=0;
+  int   Size = 0;
   int   UID;
   char *AcctID = NULL;
   char *JobID;
+  char *HostList = NULL;  /* scheduler specified list of hosts to allocate (optional) */
+
   unsigned long      ParID;       /* O - partition id */
   unsigned long long AdminCookie; /* O - admin cookie */
   unsigned long long AllocCookie; /* O - alloc cookie */
   char longbuf[1024];
 
-  resource              *presc;         /* Requested Resource List */
-  resource_def          *prd;
-  attribute            *pattr;
+  resource            *presc;         /* Requested Resource List */
+  resource_def        *prd;
+  attribute           *pattr;
 
-  cpa_nid_list_t Wanted;
+  int                  rc;
 
-  /* first, get the size, uid, and jobid from the job */
+  cpa_nid_list_t       Wanted;
+
+  /* first, get the size, uid, jobid, and subnodelist from the job */
+
   pattr = &pjob->ji_wattr[(int)JOB_ATR_resource];
   prd = find_resc_def(svr_resc_def,"size",svr_resc_size);
   presc = find_resc_entry(pattr,prd);
@@ -81,9 +94,20 @@ int CPACreatePartition(job *pjob, struct var_table *vtab)
     return(1);
     }
 
+  /* GARRICK --- FIXME */
+
+  pattr = &pjob->ji_wattr[(int)JOB_ATR_resource];
+  prd = find_resc_def(svr_resc_def,"subnodelist",svr_resc_size);
+  presc = find_resc_entry(pattr,prd);
+
+  if (presc != NULL)
+    {
+    HostList = presc->rs_value.at_val.at_string;
+    }
+
   if (pjob->ji_wattr[(int)JOB_ATR_account].at_flags & ATR_VFLAG_SET)
     {
-    AcctID=pjob->ji_wattr[(int)JOB_ATR_account].at_val.at_str;
+    AcctID = pjob->ji_wattr[(int)JOB_ATR_account].at_val.at_str;
     }
 
   JobID = pjob->ji_qs.ji_jobid;
@@ -91,14 +115,78 @@ int CPACreatePartition(job *pjob, struct var_table *vtab)
   PPN = 1;       /* NOTE:  not really supported w/in CPA, always use 1 */
   Flags = 0;     /* NOTE:  only allocate compute hosts, always use 0 */
   Spec = NULL;   /* NOTE: required node specification, not used */
-  Wanted = NULL; /* NOTE: list of nodes from which to select resources, not used */
+
+  if (HostList != NULL)
+    {
+    rc = nid_list_create(
+      0,
+      MaxListSize,  /* max count */
+      0,
+      MaxNID,       /* max value */
+      &Wanted);     /* O */
+
+    if (rc != 0)
+      {
+      /* FAILURE */
+
+      printf("nid_list_create: rc=%d (%s)\n",
+        rc,
+        cpa_rc2str(rc));
+
+      return(1);
+      }
+
+    rc = nid_list_destringify(HostList,Wanted);
+
+    if (rc != 0)
+      {
+      /* FAILURE */
+
+      printf("nid_list_destringify: rc=%d (%s)\n",
+        rc,
+        cpa_rc2str(rc));
+
+      return(1);
+      }
+
+    if (loglevel >= 3)
+      {
+      char *buf = NULL;
+      int   bufsize = 0;
+
+      rc = nid_list_stringify(Wanted,&buf,&bufsize);
+
+      if (rc == 0)
+        {
+        snprintf(log_buffer,sizeof(log_buffer),"CPANodeList: %s\n",
+          buf);
+        }
+      else
+        {
+        snprintf(log_buffer,sizeof(log_buffer),"CPA nid_list_stringify: rc=%d\n",
+          rc);
+        }
+
+      log_record(
+        PBSEVENT_JOB,
+        PBS_EVENTCLASS_JOB,
+        pjob->ji_qs.ji_jobid,
+        log_buffer);
+
+      free(buf);
+      }
+    }
+  else
+    {
+    Wanted = NULL;
+    }
 
   NodeReq = cpa_new_node_req(
     Size, /* number of procs/nodes required by job */
     PPN,
     Flags,
     Spec,
-    Wanted);
+    Wanted);  /* I */
 
   if (NodeReq == NULL)
     {
@@ -107,6 +195,8 @@ int CPACreatePartition(job *pjob, struct var_table *vtab)
     sprintf(log_buffer,"cpa_new_node_req: NULL\n");
 
     log_err(-1,id,log_buffer);
+
+    nid_list_destroy(Wanted);
 
     return(1);
     }
@@ -131,6 +221,8 @@ int CPACreatePartition(job *pjob, struct var_table *vtab)
 
     log_err(-1,id,log_buffer);
 
+    nid_list_destroy(Wanted);
+
     return(1);
     }
 
@@ -139,6 +231,10 @@ int CPACreatePartition(job *pjob, struct var_table *vtab)
     (cpa_cookie_t)AdminCookie,
     JobID,
     1);     /* NOT CURRENTLY USED - should be set to NID of 'master host' */
+
+  /* free memory, nid list no longer required */
+
+  nid_list_destroy(Wanted);
 
   if (rc != 0)
     {
