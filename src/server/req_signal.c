@@ -196,27 +196,42 @@ void req_signaljob(
  * issue_signal - send an internally generated signal to a running job
  */
 
-int issue_signal(pjob, signame, func, extra)
-	job  *pjob;
-	char *signame;	/* name of the signal to send */
-	void (*func) A_((struct work_task *));
-	void *extra;	/* extra parameter to be stored in sig request */
-{
-	struct batch_request *newreq;
+int issue_signal(
 
-	/* build up a Signal Job batch request */
+  job  *pjob,
+  char *signame,	/* name of the signal to send */
+  void (*func) A_((struct work_task *)),
+  void *extra)	/* extra parameter to be stored in sig request */
 
-	if ((newreq = alloc_br(PBS_BATCH_SignalJob))==(struct batch_request *)0)
-		return (PBSE_SYSTEM);
+  {
+  int rc;
 
-	newreq->rq_extra = extra;
-	(void)strcpy(newreq->rq_ind.rq_signal.rq_jid, pjob->ji_qs.ji_jobid);
-	(void)strncpy(newreq->rq_ind.rq_signal.rq_signame, signame, PBS_SIGNAMESZ);
-	return (relay_to_mom(pjob->ji_qs.ji_un.ji_exect.ji_momaddr,
-			      newreq, func)); 
+  struct batch_request *newreq;
 
-	/* when MOM replies, we just free the request structure */
-}
+  /* build up a Signal Job batch request */
+
+  if ((newreq = alloc_br(PBS_BATCH_SignalJob)) == NULL)
+    {
+    /* FAILURE */
+
+    return(PBSE_SYSTEM);
+    }
+
+  newreq->rq_extra = extra;
+
+  strcpy(newreq->rq_ind.rq_signal.rq_jid,pjob->ji_qs.ji_jobid);
+
+  strncpy(newreq->rq_ind.rq_signal.rq_signame,signame,PBS_SIGNAMESZ);
+
+  rc = relay_to_mom(
+    pjob->ji_qs.ji_un.ji_exect.ji_momaddr,
+    newreq,
+    func); 
+
+  /* when MOM replies, we just free the request structure */
+
+  return(rc);
+  }  /* END issue_signal() */
 
 
 

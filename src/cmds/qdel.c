@@ -103,8 +103,8 @@ int main(
 
   {
   int c;
-  int errflg=0;
-  int any_failed=0;
+  int errflg = 0;
+  int any_failed = 0;
   char *pc;
 
   char job_id[PBS_MAXCLTJOBID];	/* from the command line */
@@ -129,6 +129,8 @@ int main(
 
         if (extend[0] != '\0')
           {
+          /* extension option already specified */
+
           errflg++;
 
           break;
@@ -136,6 +138,8 @@ int main(
 
         if (strchr(optarg,'='))
           {
+          /* message cannot contain '=' character */
+
           errflg++;
 
           break;

@@ -161,54 +161,128 @@ static void post_rerun(
  *		marking the job as being rerun by setting the substate.
  */
 
-void req_rerunjob(preq)
-	struct batch_request *preq;
-{
-	job		 *pjob;
+void req_rerunjob(
 
-	if ((pjob = chk_job_request(preq->rq_ind.rq_rerun, preq)) == 0)
-		return;
+  struct batch_request *preq) /* I */
 
-	if ((preq->rq_perm & ( ATR_DFLAG_MGWR | ATR_DFLAG_OPWR )) == 0) {
-		req_reject(PBSE_PERM, 0, preq,NULL,NULL);
-		return;
-	}
+  {
+  job *pjob;
 
-	/* the job must be running */
+  int  Force;
 
-	if (pjob->ji_qs.ji_state != JOB_STATE_RUNNING) {
-		req_reject(PBSE_BADSTATE, 0, preq,NULL,NULL);
-		return;
-	}
+  int  rc;
 
-	/* the job must be rerunnable */
+  if ((pjob = chk_job_request(preq->rq_ind.rq_rerun,preq)) == 0)
+    {
+    /* FAILURE */
 
-	if (pjob->ji_wattr[(int)JOB_ATR_rerunable].at_val.at_long == 0) {
-		req_reject(PBSE_NORERUN, 0, preq,NULL,NULL);
-		return;
-	}
+    /* why no req_reject? */
 
-	/* ask MOM to kill off the job */
+    return;
+    }
 
-	if (issue_signal(pjob, "SIGKILL", post_rerun, 0) != 0) {
-		req_reject(PBSE_MOMREJECT, 0, preq,NULL,NULL);
-		return;
-	}
-	
-	/* So job has run and is to be rerun (not restarted) */
+  if (!strncasecmp(preq->rq_extend,"force",strlen("force")))
+    Force = 1;
+  else
+    Force = 0;
 
-	pjob->ji_qs.ji_substate  = JOB_SUBSTATE_RERUN;
-	pjob->ji_qs.ji_svrflags = (pjob->ji_qs.ji_svrflags & 
-				  ~(JOB_SVFLG_CHKPT | JOB_SVFLG_ChkptMig)) |
-				  JOB_SVFLG_HASRUN;
+  if ((preq->rq_perm & (ATR_DFLAG_MGWR|ATR_DFLAG_OPWR)) == 0) 
+    {
+    /* FAILURE */
+
+    req_reject(PBSE_PERM,0,preq,NULL,NULL);
+
+    return;
+    }
+
+  /* the job must be running */
+
+  if (pjob->ji_qs.ji_state != JOB_STATE_RUNNING) 
+    {
+    /* FAILURE */
+
+    req_reject(PBSE_BADSTATE,0,preq,NULL,NULL);
+
+    return;
+    }
+
+  /* the job must be rerunnable */
+
+  if (pjob->ji_wattr[(int)JOB_ATR_rerunable].at_val.at_long == 0) 
+    {
+    /* NOTE:  should force override this constraint? maybe (???) */
+
+    req_reject(PBSE_NORERUN,0,preq,NULL,NULL);
+
+    return;
+    }
+
+  /* ask MOM to kill off the job */
+
+  rc = issue_signal(pjob,"SIGKILL",post_rerun,0);
+
+  switch (rc) 
+    {
+    case 0:
+
+      /* requeue request successful */
+
+      /* NO-OP */
+
+      break;
+
+    case PBSE_SYSTEM:
+
+      req_reject(PBSE_SYSTEM,0,preq,NULL,"cannot allocate memory");
+
+      return;
+
+      /*NOTREACHED*/
+
+      break;
+
+    default:
+
+      if (Force == 0)
+        {
+        req_reject(PBSE_MOMREJECT,0,preq,NULL,NULL);
+
+        return;
+        }
+      else
+        {
+        /* cannot communicate with MOM, requeue job locally and update 
+           MOM when it responds */
+
+        /* NYI */
+        }
+  
+      break;
+    }  /* END switch (rc) */
+  	
+  /* So job has run and is to be rerun (not restarted) */
+
+  pjob->ji_qs.ji_substate  = JOB_SUBSTATE_RERUN;
+  pjob->ji_qs.ji_svrflags = (pjob->ji_qs.ji_svrflags & 
+    ~(JOB_SVFLG_CHKPT|JOB_SVFLG_ChkptMig)) | JOB_SVFLG_HASRUN;
 		
-	(void)sprintf(log_buffer, msg_manager, msg_jobrerun, 
-		      preq->rq_user, preq->rq_host);
-	log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid,
-		  log_buffer);
-	reply_ack(preq);
+  sprintf(log_buffer,msg_manager, 
+    msg_jobrerun, 
+    preq->rq_user, 
+    preq->rq_host);
 
-	/* note in accounting file */
+  log_event(
+    PBSEVENT_JOB,
+    PBS_EVENTCLASS_JOB, 
+    pjob->ji_qs.ji_jobid,
+    log_buffer);
 
-	account_record(PBS_ACCT_RERUN, pjob, (char *)0);
-}
+  reply_ack(preq);
+
+  /* note in accounting file */
+
+  account_record(PBS_ACCT_RERUN,pjob,NULL);
+  }  /* END req_rerunjob() */
+
+
+

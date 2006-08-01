@@ -119,7 +119,7 @@ extern unsigned int pbs_mom_port;
 extern unsigned int pbs_server_port_dis;
 extern struct  connection svr_conn[];
 
-int issue_to_svr A_((char *svr, struct batch_request *, void (*func)(struct work_task *)));
+int issue_to_svr A_((char *,struct batch_request *,void (*f)(struct work_task *)));
 
 /*
  * relay_to_mom - relay a (typically existing) batch_request to MOM 
@@ -155,7 +155,7 @@ int relay_to_mom(
 
   request->rq_orgconn = request->rq_conn;	/* save client socket */
 
-  return(issue_Drequest(conn,request,func,0));
+  return(issue_Drequest(conn,request,func,NULL));
   }  /* END relay_to_mom() */
 
 
@@ -239,7 +239,7 @@ int issue_to_svr(
 
     if (handle >= 0)
       {
-      return(issue_Drequest(handle,preq,replyfunc,0));
+      return(issue_Drequest(handle,preq,replyfunc,NULL));
       }
     else if (handle == PBS_NET_RC_RETRY)
       {
@@ -386,7 +386,7 @@ int issue_Drequest(
 
   /* the request is bound to another server, encode/send the request */
 
-  switch(request->rq_type) 
+  switch (request->rq_type) 
     {
 #ifndef PBS_MOM
 
@@ -405,52 +405,69 @@ int issue_Drequest(
 
     case PBS_BATCH_HoldJob:
 
-		attrl_fixlink(&request->rq_ind.rq_hold.rq_orig.rq_attr);
-		psvratl = (struct svrattrl *)GET_NEXT(
-				request->rq_ind.rq_hold.rq_orig.rq_attr);
-		patrl = &psvratl->al_atopl;
-		rc =  PBSD_mgr_put(conn, 
-				PBS_BATCH_HoldJob,
-				MGR_CMD_SET,
-				MGR_OBJ_JOB,
-				request->rq_ind.rq_hold.rq_orig.rq_objname,
-				patrl,
-				(char *)0) ;
-		break;
+      attrl_fixlink(&request->rq_ind.rq_hold.rq_orig.rq_attr);
 
-	    case PBS_BATCH_MessJob:
-		rc =  PBSD_msg_put(conn,
-				request->rq_ind.rq_message.rq_jid,
-				request->rq_ind.rq_message.rq_file,
-				request->rq_ind.rq_message.rq_text,
-				(char *)0);
-		break;
+      psvratl = (struct svrattrl *)GET_NEXT(request->rq_ind.rq_hold.rq_orig.rq_attr);
 
-	    case PBS_BATCH_ModifyJob:
-		attrl_fixlink(&request->rq_ind.rq_modify.rq_attr);
-		patrl = (struct attropl *)&((struct svrattrl *)GET_NEXT(
-			request->rq_ind.rq_modify.rq_attr))->al_atopl;
-		rc =   PBSD_mgr_put(conn,
-				PBS_BATCH_ModifyJob,
-				MGR_CMD_SET,
-				MGR_OBJ_JOB,
-				request->rq_ind.rq_modify.rq_objname,
-				patrl,
-				(char *)0);
-		break;
+      patrl = &psvratl->al_atopl;
 
-	    case PBS_BATCH_Rerun:
-		if ((rc=encode_DIS_ReqHdr(sock,PBS_BATCH_Rerun, msg_daemonname)))
-			break;
-		if ((rc=encode_DIS_JobId(sock, request->rq_ind.rq_rerun)))
-			break;
-		if ((rc=encode_DIS_ReqExtend(sock, 0))) 
-			break;
-		rc = DIS_tcp_wflush(sock);
-		break;
+      rc = PBSD_mgr_put(
+        conn, 
+        PBS_BATCH_HoldJob,
+        MGR_CMD_SET,
+        MGR_OBJ_JOB,
+        request->rq_ind.rq_hold.rq_orig.rq_objname,
+        patrl,
+        NULL);
+
+      break;
+
+    case PBS_BATCH_MessJob:
+
+      rc = PBSD_msg_put(
+        conn,
+        request->rq_ind.rq_message.rq_jid,
+        request->rq_ind.rq_message.rq_file,
+        request->rq_ind.rq_message.rq_text,
+        NULL);
+
+      break;
+
+    case PBS_BATCH_ModifyJob:
+
+      attrl_fixlink(&request->rq_ind.rq_modify.rq_attr);
+
+      patrl = (struct attropl *)&((struct svrattrl *)GET_NEXT(
+        request->rq_ind.rq_modify.rq_attr))->al_atopl;
+
+      rc = PBSD_mgr_put(
+        conn,
+        PBS_BATCH_ModifyJob,
+        MGR_CMD_SET,
+        MGR_OBJ_JOB,
+        request->rq_ind.rq_modify.rq_objname,
+        patrl,
+        NULL);
+
+      break;
+
+    case PBS_BATCH_Rerun:
+
+      if ((rc = encode_DIS_ReqHdr(sock,PBS_BATCH_Rerun,msg_daemonname)))
+        break;
+
+      if ((rc = encode_DIS_JobId(sock,request->rq_ind.rq_rerun)))
+        break;
+
+      if ((rc = encode_DIS_ReqExtend(sock,0))) 
+        break;
+
+      rc = DIS_tcp_wflush(sock);
+
+      break;
 		
-		
-	    case PBS_BATCH_RegistDep:
+    case PBS_BATCH_RegistDep:
+
 		if ((rc=encode_DIS_ReqHdr(sock,PBS_BATCH_RegistDep, msg_daemonname)))
 			break;
 		if ((rc=encode_DIS_Register(sock, request)))
