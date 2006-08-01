@@ -126,8 +126,8 @@ typedef struct resource_def {
 /* the resource definition array, only the fixed resources */
 extern resource_def svr_resc_def_const[];  
 
-/* svr_resc_def_const + resource in $PBSCONFDIR/server_priv/resources */
-extern resource_def svr_resc_def[];        
+/* svr_resc_def_const + resource in $PBS_SERVER_HOME/resourcedef */
+extern resource_def *svr_resc_def;        
 
 /* size (num elements) in above  */
 extern int         svr_resc_size;       

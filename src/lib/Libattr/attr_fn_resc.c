@@ -129,8 +129,6 @@ int comp_resc_eq;	/* count of resources compared = */
 int comp_resc_lt;	/* count of resources compared < */
 int comp_resc_nc;	/* count of resources not compared */
 
-extern resource_def svr_resc_def[];
-extern int	    svr_resc_size;
 
 
 /*

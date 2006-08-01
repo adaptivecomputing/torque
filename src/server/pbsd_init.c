@@ -176,6 +176,7 @@ extern char	*path_track;
 extern char	*path_nodes;
 extern char	*path_nodes_new;
 extern char	*path_nodestate;
+extern char	*path_resources;
 
 extern int	 queue_rank;
 extern char	 server_name[];
@@ -424,6 +425,9 @@ int pbsd_init(
   path_nodes	 = build_path(path_priv, NODE_DESCRIP, NULL);
   path_nodes_new = build_path(path_priv, NODE_DESCRIP, new_tag);
   path_nodestate = build_path(path_priv, NODE_STATUS,  NULL);
+  path_resources = build_path(path_home, PBS_RESOURCES,  NULL);
+
+  init_resc_defs(path_resources);
 
 #if !defined(DEBUG) && !defined(NO_SECURITY_CHECK)
 

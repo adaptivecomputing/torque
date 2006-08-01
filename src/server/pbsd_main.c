@@ -167,6 +167,7 @@ char 	       *path_track;
 char	       *path_nodes;
 char	       *path_nodes_new;
 char	       *path_nodestate;
+char	       *path_resources;
 extern char    *msg_daemonname;
 extern int	pbs_errno;
 char	       *pbs_o_host = "PBS_O_HOST";

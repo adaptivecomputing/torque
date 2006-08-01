@@ -85,6 +85,7 @@
 
 #include <stdlib.h>
 #include <ctype.h>
+#include <stdio.h>
 #include "pbs_ifl.h" 
 #include <string.h>
 #include "list_link.h" 
@@ -109,8 +110,9 @@
 static int decode_nodes A_((struct attribute *, char *, char *, char *));
 static int set_node_ct A_((resource *, attribute *, int actmode));
 
+resource_def *svr_resc_def;
 
-resource_def svr_resc_def[] = {
+resource_def svr_resc_def_const[] = {
 
     {	"arch",				/* system architecture type */
 	decode_str,
@@ -605,7 +607,91 @@ resource_def svr_resc_def[] = {
     /* DO NOT ADD DEFINITIONS AFTER "unknown", ONLY BEFORE */
 };
 
-int svr_resc_size = sizeof(svr_resc_def) / sizeof(resource_def);
+int svr_resc_size = sizeof(svr_resc_def_const) / sizeof(resource_def);
+
+
+int init_resc_defs(char *path)
+  {
+  FILE *fp;
+  char buff[65];
+  resource_def *tmpresc;
+  int rindex=0, dindex=0, unkindex=0;
+
+  fp = fopen(path,"r");
+  if (fp)
+    {
+
+    tmpresc=calloc(MAX_RESOURCES,sizeof(resource_def));
+
+    if (tmpresc == NULL)
+      {
+      fclose(fp);
+      return -1;
+      }
+
+    while (fscanf(fp,"%64s",buff) == 1)
+      {
+      if (strlen(buff) <= 1)
+        continue;
+
+      (tmpresc+dindex)->rs_name=strdup(buff);
+      (tmpresc+dindex)->rs_decode=decode_str;
+      (tmpresc+dindex)->rs_encode=encode_str;
+      (tmpresc+dindex)->rs_set=set_str;
+      (tmpresc+dindex)->rs_comp=comp_str;
+      (tmpresc+dindex)->rs_free=free_str;
+      (tmpresc+dindex)->rs_action=NULL_FUNC;
+      (tmpresc+dindex)->rs_flags=READ_WRITE;
+      (tmpresc+dindex)->rs_type=ATR_TYPE_STR;
+
+      dindex++;
+
+      if (dindex >= MAX_RESOURCES)
+        break;
+      }
+
+    }
+
+  svr_resc_def=calloc(svr_resc_size+dindex,sizeof(resource_def));
+
+  /* copy all const resources, except for the last "unknown" */
+  for (rindex=0; rindex < (svr_resc_size-1); rindex++)
+    {
+    memcpy(svr_resc_def+rindex,svr_resc_def_const+rindex,sizeof(resource_def));
+    }
+  unkindex=rindex;
+
+  /* copy our dynamic resources */
+  if (fp)
+    {
+    for (dindex=0; (tmpresc+dindex)->rs_decode; dindex++)
+      {
+      if (find_resc_def(svr_resc_def,(tmpresc+dindex)->rs_name,rindex) == NULL)
+        {
+        memcpy(svr_resc_def+rindex,tmpresc+dindex,sizeof(resource_def));
+        rindex++;
+        }
+      }
+
+    fclose(fp);
+
+    free(tmpresc);
+    }
+  
+  /* copy the last "unknown" resource */
+  memcpy(svr_resc_def+rindex,svr_resc_def_const+unkindex,sizeof(resource_def));
+
+  svr_resc_size = rindex + 1;
+  
+/* uncomment if you feel like debugging this
+  for (rindex=0; rindex<svr_resc_size; rindex++)
+    {
+    fprintf(stderr,"resource: %s (%d)\n",(svr_resc_def+rindex)->rs_name,rindex);
+    }
+*/
+  return 0;
+  }
+    
 
 
 

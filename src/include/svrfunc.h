@@ -103,6 +103,7 @@ extern int   node_avail A_((char *spec, int  *navail,
 			    int *nalloc, int *nreserved, int *ndown));
 extern void  node_unreserve A_((resource_t handle));
 extern int   node_reserve A_((char *speclist, resource_t tag));
+extern int   init_resc_defs A_((char *));
 
 #ifdef JOB_H
 extern int   set_nodes A_((job *,char *,char **,char *,char *));
