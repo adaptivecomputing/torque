@@ -94,8 +94,7 @@ int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc,
     return PAM_SERVICE_ERR;
     }
 
-  if (_pam_getpwnam_r(username, &pwd, &ubuf, &ubuflen, &user_pwd) != 0)
-    user_pwd = NULL;
+  user_pwd = getpwnam(username);
 
   /* no early returns from this point on because we need to free ubuf */
 
