@@ -1,8 +1,9 @@
 c - crash     b - bug fix    e - enhancement    f - new feature
 
-2.1.3
+2.2.0
 
   f - dynamic resources
+  b - correct run-time symbol in pam module on RHEL4
 
 2.1.2
 
