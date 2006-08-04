@@ -1701,8 +1701,9 @@ char *size_fs(
 
   /* in KB */
 
-  sprintf(ret_string,"%lukb", 
-    (unsigned long)(((double)fsbuf.f_bsize * (double)fsbuf.f_bfree) / 1024.0));
+  sprintf(ret_string,"%lukb:%lukb", 
+    (unsigned long)(((double)fsbuf.f_bsize * (double)fsbuf.f_bfree) / 1024.0),
+    (unsigned long)(((double)fsbuf.f_bsize * (double)fsbuf.f_blocks) / 1024.0));
 
   return(ret_string);
   }  /* END size_fs() */

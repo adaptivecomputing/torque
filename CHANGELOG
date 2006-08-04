@@ -5,6 +5,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature
   f - dynamic resources
   b - correct run-time symbol in pam module on RHEL4
   f - allow manager to set "next job number" vi hidden qmgr attribute next_job_number
+  b - some minor hpux11 build fixes (PACCAR)
+
 2.1.2
 
   b - fix momctl queries with multiple hosts

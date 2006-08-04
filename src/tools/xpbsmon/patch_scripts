@@ -110,7 +110,7 @@ case "$PBS_MACH" in
 	    $xpbsmonrc_in > $xpbsmonrc_out
 	;;
 
-    solaris[57]|hpux10)
+    solaris[57]|hpux10|hpux11)
 	sed -e 's,\*sitesInfo:.*$,\*sitesInfo:		{Local;ICON;'$PBS_DEFAULT_SERVER';'$PBS_DEFAULT_SERVER';'$PBS_DEFAULT_SERVER';MOM;{{( loadave / ncpus ) * 100} {Cpu Usage:} SCALE} {nusers {Number of Users:} TEXT}},;' \
 	    -e 's,\*siteInView:.*$,\*siteInView:              Local,' \
 	    $xpbsmonrc_in > $xpbsmonrc_out

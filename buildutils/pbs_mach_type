@@ -132,7 +132,7 @@ case "$OS" in
         esac ;;
 
   hp*) case "$REL" in
-          B.1[1-9].[2-9]*) mach=hpux11 ;;
+          B.1[1-9].[1-9]*) mach=hpux11 ;;
           *)  mach=hpux10 ;;
         esac ;;
 
