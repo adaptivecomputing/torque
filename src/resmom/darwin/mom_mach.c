@@ -133,10 +133,6 @@
 #include	<ifaddrs.h>
 #include	<mach/vm_map.h>
 
-/* where to put these defines?? */
-/* #define VM_SWAPUSAGE 0 - no this is only for Tiger!! */
-/* #define HW_MEMSIZE 1 - and this is defined in sysctl.h - so will be defined!! */
-#define TUSEMEMSIZE 1
 
 /*  additional header files required for darwin 8.0.0 */
 #ifdef TDARWIN8
@@ -2682,7 +2678,7 @@ static char *physmem(
     return(NULL);
     }
 
-#ifdef TUSEMEMSIZE
+#ifdef HW_MEMSIZE
 
   {
   /* NOTE:  patch by UMaine */
@@ -2732,7 +2728,7 @@ static char *physmem(
 
   }  /* END BLOCK */
 
-#endif /* TUSEMEMSIZE */
+#endif /* HW_MEMSIZE */
 
   return(ret_string);
   }  /* END physmem() */
