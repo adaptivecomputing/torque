@@ -11,4 +11,5 @@ EXTRA_DIST = README.pam
 
 pam_pbssimpleauth_la_SOURCES = pam_pbssimpleauth.c
 pam_pbssimpleauth_la_LDFLAGS = -no-undefined -module -avoid-version
+pam_pbssimpleauth_la_LIBADD = -lpam
 

@@ -1,5 +1,7 @@
 /* pam_pbssimpleauth module */
 
+#define NEED_BLOCKING_CONNECTIONS
+#include "pbs_config.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -12,6 +14,7 @@
 #include <dirent.h>
 #include <syslog.h>
 #include <errno.h>
+#include <string.h>
 
 #include "portability.h"
 #include "list_link.h"
@@ -31,10 +34,15 @@
 
 #define PAM_SM_AUTH
 #define PAM_SM_ACCOUNT
+#ifdef HAVE_SECURITY_PAM_MODULES_H
 #include <security/pam_modules.h>
+#else
+#ifdef HAVE_PAM_PAM_MODULES_H
+#include <pam/pam_modules.h>
+#endif
+#endif
 
-#define PAM_GETPWNAM_R
-#include <security/_pam_macros.h>
+
 
 /* --- authentication management functions (only) --- */
 

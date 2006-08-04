@@ -200,7 +200,7 @@ AC_CHECK_HEADERS([arpa/inet.h fcntl.h float.h limits.h malloc.h netdb.h \
 		  netinet/in.h stddef.h sys/file.h sys/param.h sys/tty.h \
 		  sys/socket.h sys/time.h sys/ioctl.h sys/mount.h \
                   sys/vfs.h sys/statfs.h sys/statvfs.h syslog.h \
-                  termios.h err.h sys/poll.h security/pam_modules.h])
+                  termios.h err.h sys/poll.h security/pam_modules.h pam/pam_modules.h])
 
 
 dnl Check for socklen_t.  In traditional BSD this is an int, but some

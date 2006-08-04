@@ -142,13 +142,14 @@ EXTRA_DIST = README.pam
 
 pam_pbssimpleauth_la_SOURCES = pam_pbssimpleauth.c
 pam_pbssimpleauth_la_LDFLAGS = -no-undefined -module -avoid-version
+pam_pbssimpleauth_la_LIBADD = -lpam
 subdir = src/pam
 mkinstalldirs = $(SHELL) $(top_srcdir)/buildutils/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/include/pbs_config.h
 CONFIG_CLEAN_FILES =
 LTLIBRARIES = $(pammod_LTLIBRARIES)
 
-pam_pbssimpleauth_la_LIBADD =
+pam_pbssimpleauth_la_DEPENDENCIES =
 am_pam_pbssimpleauth_la_OBJECTS = pam_pbssimpleauth.lo
 pam_pbssimpleauth_la_OBJECTS = $(am_pam_pbssimpleauth_la_OBJECTS)
 
