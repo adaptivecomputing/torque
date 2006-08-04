@@ -1183,7 +1183,7 @@ void check_log(
         }
       }
     }
- set_task(WORK_Timed,time_now + 300, check_log, NULL);   
+ set_task(WORK_Timed,time_now + PBS_LOG_CHECK_RATE, check_log, NULL);   
  } /* END check_log */
 
 

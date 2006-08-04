@@ -2282,5 +2282,58 @@ int schiter_chk(
   return(mgr_long_action_helper(pattr,actmode,1,PBS_SCHEDULE_CYCLE));
   }  /* END schiter_chk() */
 
+/* nextjobnum_action - makes sure value is sane (>=0)
+   actually updates server.sv_qs.sv_jobidnumber
+   unsets attribute so it is "hidden" in qmgr */
+int nextjobnum_chk(
+
+  attribute *pattr,
+  void      *pobject,
+  int        actmode)
+  {
+
+  if (pattr->at_val.at_long >= 0)
+    {
+    server.sv_qs.sv_jobidnumber = pattr->at_val.at_long;
+    pattr->at_flags &= ~ATR_VFLAG_SET;
+    svr_save(&server,SVR_SAVE_FULL);
+    return(PBSE_NONE);
+    }
+  else if (pattr->at_val.at_long > PBS_SEQNUMTOP)
+    {
+    return(PBSE_EXLIMIT);
+    }
+  else
+    {
+    return(PBSE_BADATVAL);
+    } 
+  }
+
+int set_nextjobnum(
+
+  struct attribute *attr,
+  struct attribute *new,
+  enum batch_op op)
+
+  {
+  /* this is almost identical to set_l, but we need to grab the 
+     current value of server.sv_qs.sv_jobidnumber before we INCR/DECR the value of 
+     attr->at_val.at_long.  In fact, it probably should be moved to Libattr/ */
+
+
+  switch (op) 
+    {
+    case SET:   attr->at_val.at_long = new->at_val.at_long;
+                break;
+
+    case INCR:  attr->at_val.at_long = server.sv_qs.sv_jobidnumber += new->at_val.at_long;
+                break;
+
+    case DECR:  attr->at_val.at_long = server.sv_qs.sv_jobidnumber -= new->at_val.at_long;
+                break;
+    }
+  attr->at_flags |= ATR_VFLAG_SET | ATR_VFLAG_MODIFY;
+  return 0;
+  }
 /* END req_manager.c */
 

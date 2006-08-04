@@ -93,6 +93,9 @@ extern int manager_oper_chk A_((attribute *pattr, void *pobject, int actmode));
 extern int servername_chk A_((attribute *pattr, void *pobject, int actmode));
 extern int schiter_chk A_((attribute *pattr, void *pobject, int actmode));
 
+extern int nextjobnum_chk A_((attribute *pattr, void *pobject, int actmode));
+extern int set_nextjobnum A_((attribute *attr, attribute *new, enum batch_op op));
+
 extern int poke_scheduler A_((attribute *pattr, void *pobject, int actmode));
 
 extern int encode_svrstate A_((attribute *pattr, list_head *phead, char *aname,
@@ -766,10 +769,23 @@ attribute_def svr_attr_def[] = {
         comp_l,
         free_null,
 	NULL_FUNC,
-        MGR_ONLY_SET,
+        NO_USER_SET,
         ATR_TYPE_LONG,
         PARENT_TYPE_SERVER
     },
+/* SVR_ATR_NextJobNumber */
+    {	ATTR_nextjobnum,
+	decode_l,
+	encode_l,
+	set_nextjobnum,
+	comp_l,
+	free_noop,
+	nextjobnum_chk,
+	MGR_ONLY_SET,
+	ATR_TYPE_LONG,
+	PARENT_TYPE_SERVER
+    },
+	
 
 /* site supplied server attribute definitions if any, see site_svr_attr_*.h  */
 #include "site_svr_attr_def.h"

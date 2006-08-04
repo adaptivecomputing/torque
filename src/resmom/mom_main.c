@@ -6418,7 +6418,7 @@ int main(
       }
 
     /* should we check the log file ?*/
-    if (time_now - last_log_check >= 300)
+    if (time_now - last_log_check >= PBS_LOG_CHECK_RATE)
        {
        check_log();
        }
