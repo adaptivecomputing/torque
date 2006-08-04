@@ -2291,17 +2291,16 @@ int nextjobnum_chk(
   void      *pobject,
   int        actmode)
   {
-
-  if (pattr->at_val.at_long >= 0)
+  if (pattr->at_val.at_long > PBS_SEQNUMTOP)
+    {
+    return(PBSE_EXLIMIT);
+    }
+  else if (pattr->at_val.at_long >= 0)
     {
     server.sv_qs.sv_jobidnumber = pattr->at_val.at_long;
     pattr->at_flags &= ~ATR_VFLAG_SET;
     svr_save(&server,SVR_SAVE_FULL);
     return(PBSE_NONE);
-    }
-  else if (pattr->at_val.at_long > PBS_SEQNUMTOP)
-    {
-    return(PBSE_EXLIMIT);
     }
   else
     {
