@@ -120,6 +120,7 @@
 #define ATTR_p "Priority"
 #define ATTR_q "destination"
 #define ATTR_r "Rerunable"
+#define ATTR_t "job_array_size"
 #define ATTR_u "User_List"
 #define ATTR_v "Variable_List"
 #define ATTR_A "Account_Name"

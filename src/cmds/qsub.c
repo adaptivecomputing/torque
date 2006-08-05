@@ -837,6 +837,7 @@ int o_opt = FALSE;
 int p_opt = FALSE;
 int q_opt = FALSE;
 int r_opt = FALSE;
+int t_opt = FALSE;
 int u_opt = FALSE;
 int v_opt = FALSE;
 int z_opt = FALSE;
@@ -2326,7 +2327,7 @@ int process_opts(
   int tmpfd;
 
 #if !defined(PBS_NO_POSIX_VIOLATION)
-#define GETOPT_ARGS "a:A:b:c:C:d:D:e:hIj:k:l:m:M:N:o:p:q:r:S:u:v:VW:Xz-:"
+#define GETOPT_ARGS "a:A:b:c:C:d:D:e:hIj:k:l:m:M:N:o:p:q:r:S:t:u:v:VW:Xz-:"
 #else
 #define GETOPT_ARGS "a:A:c:C:e:hj:k:l:m:M:N:o:p:q:r:S:u:v:VW:z"
 #endif	/* PBS_NO_POSIX_VIOLATION */
@@ -2942,6 +2943,25 @@ int process_opts(
 
         break;
 
+      case 't':
+
+        if_cmd_line(t_opt)
+          {
+          t_opt = passet;
+          i = atoi(optarg);
+          if (i <= 0)
+            {
+            fprintf(stderr, "qsub: illegal -t value\n");
+
+            errflg++;
+
+            break;
+            }
+          set_attr(&attrib,ATTR_t,optarg);
+          }
+
+        break;
+
       case 'u':
 
         if_cmd_line(u_opt) 
@@ -3087,6 +3107,23 @@ int process_opts(
                 }
  
               set_attr(&attrib,ATTR_stageout,valuewd);
+              }
+            }
+          else if (!strcmp(keyword,ATTR_t))
+            {
+            if_cmd_line(t_opt)
+              {
+              t_opt = passet;
+
+              if (atoi(valuewd) <= 0)
+                {
+                fprintf(stderr, "qsub: illegal -t value\n");
+
+                errflg++;
+
+                break;
+                }
+              set_attr(&attrib,ATTR_t,valuewd);
               }
             } 
           else if (!strcmp(keyword,ATTR_g)) 
@@ -3492,12 +3529,13 @@ int main(
   char *submit_args_str;              /* buffer to hold args */
   int   argi, argslen = 0;
 
+
   if ((param_val=getenv("PBS_CLIENTRETRY")) != NULL)
     {
     cnt2server_retry=atoi(param_val);
     }
 
-  errflg = process_opts(argc,argv,0);  /* get cmd-line options */
+  errflg = process_opts(argc,argv,0); /* get cmd-line options */
 
   if (errflg || ((optind + 1) < argc)) 
     {
@@ -3506,8 +3544,8 @@ int main(
 [-c { c[=<INTERVAL>] | s | n }] [-C directive_prefix] [-d path] [-D path]\n\
 [-e path] [-h] [-I] [-j oe] [-k {oe}] [-l resource_list] [-m {abe}]\n\
 [-M user_list] [-N jobname] [-o path] [-p priority] [-q queue] [-r y|n]\n\
-[-S path] [-u user_list] [-X] [-W otherattributes=value...] [-v variable_list]\n\
-[-V ] [-z] [script]\n";
+[-S path] [-t number_to_submit] [-u user_list] [-X] [-W otherattributes=value...]\n\
+[-v variable_list] [-V ] [-z] [script]\n";
 
     fprintf(stderr,usage);
 
