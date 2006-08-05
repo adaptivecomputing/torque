@@ -331,6 +331,19 @@ removed in the future.  Format: boolean; default value: false.
 .if !\n(Pb .ig Ig
 [internal type: boolean]
 .Ig
+.Al next_job_number
+This hidden attribute is used to allow a manager to set the value of the 
+next job ID via qmgr. This attribute should rarely be modified. Some sites 
+may find it useful if they need to recreate their pbs_server 
+database (perhaps due to a format change between major TORQUE versions) and 
+they keep a database of job information indexed by the job ID. The manager 
+should be careful to avoid setting the value to something that would allow 
+the next job number to conflict with a job already queued, however Torque 
+will handle this in a sane manner: the job submission will be rejected and 
+the next job number will be incremented.
+.if !\n(Pb .ig Ig
+[internal type: integer]
+.Ig
 .Al node_check_rate
 In OpenPBS, this was the rate at which pbs_server would poll each node.  In
 TORQUE, nodes periodically send updates without solicitation from pbs_server;
