@@ -747,36 +747,42 @@ uninstall-man: uninstall-man1 uninstall-man3 uninstall-man7 \
 
 
 .so.7B:
-	cp $< $@
+	@echo "Creating $@"
+	@cp $< $@
 
 .1B.1: soelim
-	./soelim -d $(srcdir)/ers $< > $@.tmp
-	sed -e 's/^\.Sh/.SH/' < $@.tmp >$@ && rm -f $@.tmp
-	rm -f $@.tmp
+	@echo "Creating $@"
+	@./soelim -d $(srcdir)/ers $< > $@.tmp
+	@sed -e 's/^\.Sh/.SH/' < $@.tmp >$@ && rm -f $@.tmp
 
 .3B.3: soelim
-	./soelim -d $(srcdir)/ers $< > $@.tmp
-	sed -e 's/^\.Sh/.SH/' < $@.tmp >$@ && rm -f $@.tmp
+	@echo "Creating $@"
+	@./soelim -d $(srcdir)/ers $< > $@.tmp
+	@sed -e 's/^\.Sh/.SH/' < $@.tmp >$@ && rm -f $@.tmp
 
 .7B.7: soelim
-	./soelim -d $(srcdir)/ers $< > $@.tmp
-	sed -e 's/^\.Sh/.SH/' < $@.tmp >$@ && rm -f $@.tmp
+	@echo "Creating $@"
+	@./soelim -d $(srcdir)/ers $< > $@.tmp
+	@sed -e 's/^\.Sh/.SH/' < $@.tmp >$@ && rm -f $@.tmp
 
 .8B.8: soelim
-	./soelim -d $(srcdir)/ers $< > $@.tmp
-	sed -e 's/^\.Sh/.SH/' < $@.tmp >$@ && rm -f $@.tmp
+	@echo "Creating $@"
+	@./soelim -d $(srcdir)/ers $< > $@.tmp
+	@sed -e 's/^\.Sh/.SH/' < $@.tmp >$@ && rm -f $@.tmp
 
 install_doc: install
 
 install-data-hook:
 	rm -f $(DESTDIR)$(man7dir)/$(program_prefix)pbs_resources$(program_suffix).7 \
 	      $(DESTDIR)$(man8dir)/$(program_prefix)pbs_sched$(program_suffix).8
-	case $(PBS_MACH) in \
+	@case $(PBS_MACH) in \
 	  unknown) : ;; \
-	  *) $(LN_S) $(program_prefix)pbs_resources_$(PBS_MACH)$(program_suffix).7 $(DESTDIR)$(man7dir)/$(program_prefix)pbs_resources$(program_suffix).7 ;; \
+	  *) echo $(LN_S) $(program_prefix)pbs_resources_$(PBS_MACH)$(program_suffix).7 $(DESTDIR)$(man7dir)/$(program_prefix)pbs_resources$(program_suffix).7 ; \
+	     $(LN_S) $(program_prefix)pbs_resources_$(PBS_MACH)$(program_suffix).7 $(DESTDIR)$(man7dir)/$(program_prefix)pbs_resources$(program_suffix).7 ;; \
 	esac
-	case $(SCHD_TYPE) in \
-	  cc|tcl|basl) $(LN_S) $(program_prefix)pbs_sched_$(SCHD_TYPE)$(program_suffix).8 $(DESTDIR)$(man8dir)/$(program_prefix)pbs_sched$(program_suffix).8 ;; \
+	@case $(SCHD_TYPE) in \
+	  cc|tcl|basl) echo $(LN_S) $(program_prefix)pbs_sched_$(SCHD_TYPE)$(program_suffix).8 $(DESTDIR)$(man8dir)/$(program_prefix)pbs_sched$(program_suffix).8 ; \
+	               $(LN_S) $(program_prefix)pbs_sched_$(SCHD_TYPE)$(program_suffix).8 $(DESTDIR)$(man8dir)/$(program_prefix)pbs_sched$(program_suffix).8 ;; \
 	  none) : ;; \
 	  *) echo "Unknown scheduler type"; exit 1 ;; \
 	esac
