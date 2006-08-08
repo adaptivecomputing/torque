@@ -1541,7 +1541,7 @@ int kill_task(
       }
  
     sprintf(log_buffer,"%s: killing pid %d task %d with sig %d",
-      (char *)__func__,
+      id,
       pp->kp_proc.p_pid,
       ptask->ti_qs.ti_task,
       sig);
