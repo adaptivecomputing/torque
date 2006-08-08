@@ -7,6 +7,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature
   f - allow manager to set "next job number" vi hidden qmgr attribute next_job_number
   b - some minor hpux11 build fixes (PACCAR)
   e - allow pam_pbssimpleauth to be built on OSX
+  b - fix bug with log roll and automatic log filenames
 
 2.1.2
 
