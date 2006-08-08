@@ -464,7 +464,7 @@ void log_close(
 
 void log_roll(int max_depth)
    {
-   int i, suffix_size, file_buf_len;
+   int i, suffix_size, file_buf_len, as;
    int err = 0;
    char *source  = NULL; 
    char *dest    = NULL;
@@ -474,6 +474,9 @@ void log_roll(int max_depth)
       return;
       }
    
+   /* save value of log_auto_switch */
+   as = log_auto_switch;
+
    log_close(1);
 
    /* find out how many characters the suffix could be. (save in suffix_size)
@@ -524,7 +527,7 @@ void log_roll(int max_depth)
 
 done_roll:
 
-   if (log_auto_switch)
+   if (as)
       {
       log_open(NULL, log_directory);
       }
