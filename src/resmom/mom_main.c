@@ -1383,15 +1383,17 @@ static u_long setpbsserver(
   struct hostent *host;
   struct in_addr  saddr;
   u_long	  ipaddr;
-  char            tmpname[PBS_MAXSERVERNAME + 0]; 
+  char            tmpname[PBS_MAXSERVERNAME + 1]; 
   char           *portstr;
 
-  if ((value == NULL) || (value[0] == '\0'))
+  if ((value == NULL) || (*value == '\0'))
     {
     /* FAILURE */
 
     return(1);
     }
+
+  log_record(PBSEVENT_SYSTEM,PBS_EVENTCLASS_SERVER,id,value);
 
   strncpy(tmpname,value,PBS_MAXSERVERNAME);
 
@@ -1405,9 +1407,13 @@ static u_long setpbsserver(
     sprintf(log_buffer,"server host %s not found", 
       tmpname);
 
+    log_record(PBSEVENT_SYSTEM,PBS_EVENTCLASS_SERVER,id,log_buffer);
+
     log_err(-1,id,log_buffer);
 
     ipaddr = 0;
+    /* don't return because we still want to add the hostname to
+     * pbs_servername[] and attempt a gethostbyname() later */
     }
   else
     {
@@ -1466,6 +1472,9 @@ static u_long setpbsserver(
     }
 
   strncpy(pbs_servername[index],value,PBS_MAXSERVERNAME);
+
+  sprintf(log_buffer,"server %s added", pbs_servername[index]);
+  log_record(PBSEVENT_SYSTEM,PBS_EVENTCLASS_SERVER,id,log_buffer);
 
   MOMServerAddrs[index] = ipaddr;
 
@@ -4030,10 +4039,13 @@ int rm_request(
               if (pbs_servername[sindex][0] == '\0')
                 break;
 
-              sprintf(tmpLine,"Server[%d]: %s (%s)\n",
+              sprintf(tmpLine,"Server[%d]: %s (%ld.%ld.%ld.%ld)\n",
                 sindex,
                 pbs_servername[sindex],  
-                (SStream[sindex] != -1) ? "connection is active" : "connection is down");
+                (MOMServerAddrs[sindex] & 0xff000000) >> 24,
+                (MOMServerAddrs[sindex] & 0x00ff0000) >> 16,
+                (MOMServerAddrs[sindex] & 0x0000ff00) >> 8,
+                (MOMServerAddrs[sindex] & 0x000000ff));
 
               MUStrNCat(&BPtr,&BSpace,tmpLine);
 
