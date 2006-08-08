@@ -617,7 +617,7 @@ int init_resc_defs(char *path)
   {
   FILE *fp;
   char buff[65];
-  resource_def *tmpresc;
+  resource_def *tmpresc = NULL;
   int rindex=0, dindex=0, unkindex=0;
 
   fp = fopen(path,"r");
@@ -667,18 +667,21 @@ int init_resc_defs(char *path)
   /* copy our dynamic resources */
   if (fp)
     {
-    for (dindex=0; (tmpresc+dindex)->rs_decode; dindex++)
+    if (tmpresc)
       {
-      if (find_resc_def(svr_resc_def,(tmpresc+dindex)->rs_name,rindex) == NULL)
+      for (dindex=0; (tmpresc+dindex)->rs_decode; dindex++)
         {
-        memcpy(svr_resc_def+rindex,tmpresc+dindex,sizeof(resource_def));
-        rindex++;
+        if (find_resc_def(svr_resc_def,(tmpresc+dindex)->rs_name,rindex) == NULL)
+          {
+          memcpy(svr_resc_def+rindex,tmpresc+dindex,sizeof(resource_def));
+          rindex++;
+          }
         }
-      }
+
+     free(tmpresc);
+     }
 
     fclose(fp);
-
-    free(tmpresc);
     }
   
   /* copy the last "unknown" resource */
