@@ -471,7 +471,6 @@ LDFLAGS="$LDFLAGS_cpasave"
 dnl
 dnl arch-specific libs
 dnl
-MOM_ADDTL_OBJS=""
 case $PBS_MACH in
   aix4|aix5) MOMLIBS="$MOMLIBS -lodm -lcfg"
     ;;
@@ -489,8 +488,7 @@ case $PBS_MACH in
     ;;
   digitalunix*) AC_DEFINE(SETCONTROLLINGTTY, 1, [Define to set the controlling tty])
     ;;
-  unicosmk*) MOM_ADDTL_OBJS="wait_job.o"
-    AC_DEFINE(SETCONTROLLINGTTY, 1, [Define to set the controlling tty])
+  unicosmk*) AC_DEFINE(SETCONTROLLINGTTY, 1, [Define to set the controlling tty])
     ;;
 esac
 
@@ -503,8 +501,6 @@ case $PBS_MACH in
 sunos4|solaris5|netbsd|freebsd|darwin)
   AC_CHECK_LIB(kvm, kvm_open) ;;
 esac
-
-AC_SUBST(MOM_ADDTL_OBJS)
 
 
 
