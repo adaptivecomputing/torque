@@ -11,7 +11,7 @@ if [ "$1" = "" ] ; then
 # create default queue
 # enable operator privileges
 
-USER=$1@`hostname -f`
+USER=$1@`hostname`
 
 echo "initializing TORQUE (admin: $USER)"
 
