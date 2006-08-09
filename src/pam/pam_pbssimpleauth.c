@@ -34,12 +34,22 @@
 
 #define PAM_SM_AUTH
 #define PAM_SM_ACCOUNT
+
+#ifdef HAVE_SECURITY_PAM_APPL_H
+#include <security/pam_appl.h>
+#endif
+
 #ifdef HAVE_SECURITY_PAM_MODULES_H
 #include <security/pam_modules.h>
 #else
 #ifdef HAVE_PAM_PAM_MODULES_H
 #include <pam/pam_modules.h>
 #endif
+#endif
+
+/* this isn't defined on solaris */
+#ifndef PAM_EXTERN
+#define PAM_EXTERN
 #endif
 
 
@@ -88,11 +98,14 @@ int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc,
 
   /* get the username and passwd, allow uid 0 */
   retval = pam_get_user(pamh, &username, NULL);
+
+#if defined(PAM_CONV_AGAIN) && defined(PAM_INCOMPLETE)
   if (retval == PAM_CONV_AGAIN)
     {
     closelog();
     return PAM_INCOMPLETE;
     }
+#endif
 
   if ((retval != PAM_SUCCESS) || !username)
     {
