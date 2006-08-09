@@ -481,7 +481,7 @@ case $PBS_MACH in
   aix4|aix5) MOMLIBS="$MOMLIBS -lodm -lcfg"
     ;;
 
-  irix6array) MOMLIBS="-larray"
+  irix6array) MOMLIBS="$MOMLIBS -larray"
     ;;
 
   linux)
