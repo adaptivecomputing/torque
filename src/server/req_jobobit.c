@@ -659,7 +659,10 @@ void on_job_exit(
 
   {
   int    handle;
-  job   *pjob, *pj;
+  job   *pjob;
+#ifdef VNODETESTING
+  job *pj;
+#endif
   struct batch_request *preq;
 
   int    IsFaked = 0;
