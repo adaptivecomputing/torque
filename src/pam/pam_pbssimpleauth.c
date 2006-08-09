@@ -61,7 +61,7 @@ int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc,
                         const char **argv)
 {
   int retval = PAM_SERVICE_ERR;
-  const char *username;
+  pam_get_user_2nd_arg_t *username;
   struct passwd *user_pwd;
   char *ubuf = NULL;
   struct dirent *jdent;

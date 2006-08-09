@@ -200,7 +200,13 @@ AC_CHECK_HEADERS([arpa/inet.h fcntl.h float.h limits.h malloc.h netdb.h \
 		  netinet/in.h stddef.h sys/file.h sys/param.h sys/tty.h \
 		  sys/socket.h sys/time.h sys/ioctl.h sys/mount.h \
                   sys/vfs.h sys/statfs.h sys/statvfs.h syslog.h \
-                  termios.h err.h sys/poll.h security/pam_modules.h pam/pam_modules.h])
+                  termios.h err.h sys/poll.h pam/pam_modules.h security/pam_appl.h])
+
+AC_CHECK_HEADERS([security/pam_modules.h], [], [],
+[#if HAVE_SECURITY_PAM_APPL_H
+# include <security/pam_appl.h>
+# endif
+])
 
 
 dnl Check for socklen_t.  In traditional BSD this is an int, but some
@@ -913,6 +919,7 @@ AC_DEFINE_UNQUOTED(SENDMAIL_CMD, "${SENDMAIL_CMD}",
 
 
 dnl attempt to find a location to install PAM modules
+AC_MSG_CHECKING([for PAM install directory])
 pammoddir=disabled
 AC_ARG_WITH(pam,
     [  --with-pamdir=DIR            Directory that holds the system PAM modules.
@@ -920,6 +927,7 @@ AC_ARG_WITH(pam,
     [pammoddir=$withval])
 case "$pammoddir" in
   disabled) ;;
+  no) pammoddir=disabled ;;
   yes)
     case "${PBS_MACH}" in
       linux) pammoddir=/lib$libsuff/security;;
@@ -928,11 +936,49 @@ case "$pammoddir" in
   /*) ;;
   *) AC_MSG_ERROR([--with-pam takes a full path to a directory $pammoddir]);;
 esac
-AC_MSG_CHECKING([for PAM install directory])
 AC_MSG_RESULT([$pammoddir])
 AC_SUBST(pammoddir)
 AM_CONDITIONAL(INCLUDE_PAM, [test "x$pammoddir" != "xdisabled"])
       
+AC_MSG_CHECKING([for pam_get_user() calling type])
+tac_pam_get_user_2nd_arg=none
+ for t in "char" "const char" ; do
+    AC_TRY_COMPILE([
+#ifdef HAVE_SECURITY_PAM_APPL_H
+#include <security/pam_appl.h>
+#endif
+
+#ifdef HAVE_SECURITY_PAM_MODULES_H
+#include <security/pam_modules.h>
+#else
+#ifdef HAVE_PAM_PAM_MODULES_H
+#include <pam/pam_modules.h>
+#endif
+#endif
+
+extern int
+pam_get_user(
+        pam_handle_t *pamh,             /* PAM handle */
+        $t **user,                    /* User Name */
+        const char *prompt              /* Prompt */
+);
+
+               ],[
+                  $t* username;
+                  pam_get_user(0,&username,0);
+               ],[
+                  tac_pam_get_user_2nd_arg="$t"
+                  break
+               ])
+            done
+AC_MSG_RESULT([$tac_pam_get_user_2nd_arg])
+AC_DEFINE_UNQUOTED(pam_get_user_2nd_arg_t, $tac_pam_get_user_2nd_arg,
+                        [type to use for 2nd arg of pam_get_user])
+
+
+
+
+
 
 dnl find default xauth run-time path
 AC_ARG_WITH(xauth,
@@ -1287,22 +1333,6 @@ if test "$found_an_exit" != yes; then
     AC_MSG_ERROR([Must have atexit() or on_exit()])
 fi
 
-dnl detect if __func__ is usable
-AC_C_VAR_FUNC
-if test "${ac_cv_c_var_func}" != "yes" ; then
-	dnl __func__ is not usable so check for __FUNCTION__
-	AC_C_VAR_FUNCTION
-	if test "${ac_cv_c_var_function}" != "yes" ; then
-		AC_MSG_ERROR([$CC must support __func__ or __FUNCTION__])
-	fi
-fi
-
-
-dnl possibly define __func__ as __FUNCTION__
-AH_VERBATIM([__func__],
-[#ifndef HAVE_FUNC
-#define __func__ __FUNCTION__
-#endif])
 
 
 dnl

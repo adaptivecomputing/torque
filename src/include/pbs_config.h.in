@@ -47,12 +47,6 @@
 /* Define to 1 if you have the <float.h> header file. */
 #undef HAVE_FLOAT_H
 
-/* Define if the C complier supports __func__ */
-#undef HAVE_FUNC
-
-/* Define if the C complier supports __FUNCTION__ */
-#undef HAVE_FUNCTION
-
 /* Define to 1 if you have the `getaddrinfo' function. */
 #undef HAVE_GETADDRINFO
 
@@ -106,6 +100,9 @@
 
 /* include readline support */
 #undef HAVE_READLINE
+
+/* Define to 1 if you have the <security/pam_appl.h> header file. */
+#undef HAVE_SECURITY_PAM_APPL_H
 
 /* Define to 1 if you have the <security/pam_modules.h> header file. */
 #undef HAVE_SECURITY_PAM_MODULES_H
@@ -384,12 +381,11 @@
 # undef __CHAR_UNSIGNED__
 #endif
 
-#ifndef HAVE_FUNC
-#define __func__ __FUNCTION__
-#endif
-
 /* Define to `int' if <sys/types.h> doesn't define. */
 #undef gid_t
+
+/* type to use for 2nd arg of pam_get_user */
+#undef pam_get_user_2nd_arg_t
 
 /* Define to `unsigned' if <sys/types.h> does not define. */
 #undef size_t

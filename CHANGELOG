@@ -6,7 +6,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature
   b - correct run-time symbol in pam module on RHEL4
   f - allow manager to set "next job number" vi hidden qmgr attribute next_job_number
   b - some minor hpux11 build fixes (PACCAR)
-  e - allow pam_pbssimpleauth to be built on OSX
+  e - allow pam_pbssimpleauth to be built on OSX and Solaris
   b - fix bug with log roll and automatic log filenames
   e - use mlockall() in pbs_mom if _POSIX_MEMLOCK
 
