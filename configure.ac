@@ -72,16 +72,6 @@ AC_DEFINE_UNQUOTED(MACH_RESC_DEFS, "resc_def_${PBS_MACH}.c",
 		   [the machine specific resc_def_* file name])
 
 
-# All of these need to go away!  The code needs to be fixed to use
-# feature-based defines with proper tests here
-case $PBS_MACH in
-  darwin*)
-    case `uname -r` in
-      8*) AC_DEFINE(TDARWIN8,1,[Define if on Darwin 8.x]) ;;
-    esac
-    ;;
-esac
-
 
 dnl
 dnl  ######################################################################

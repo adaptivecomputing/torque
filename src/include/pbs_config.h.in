@@ -342,9 +342,6 @@
 /* Define if PBS should build qstat with Tcl */
 #undef TCL_QSTAT
 
-/* Define if on Darwin 8.x */
-#undef TDARWIN8
-
 /* Define to prevent sync writes */
 #undef TDISABLEFILESYNC
 
