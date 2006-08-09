@@ -1010,6 +1010,7 @@ static void rpp_send_out()
   struct	send_packet	*pp;
   struct	stream		*sp;
   time_t			curr;
+  socklen_t                     len;
 
   curr = time(NULL);
 
@@ -1032,13 +1033,15 @@ static void rpp_send_out()
       netaddr(&sp->addr),
       (char *)&pp->data[pp->len+RPP_PKT_CRC]))
 
+    len = sizeof(struct sockaddr_in);
+
     if (sendto(
          sp->fd,
          (char *)pp->data,
          RPP_PKT_HEAD + pp->len,
          0, 
          (struct sockaddr *)&sp->addr,
-         sizeof(struct sockaddr_in)) == -1) 
+         len) == -1) 
       {
       DBPRT((DBTO,"%s: SENDTO errno %d (%s)\n", 
         id,
