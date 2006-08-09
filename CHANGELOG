@@ -8,6 +8,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature
   b - some minor hpux11 build fixes (PACCAR)
   e - allow pam_pbssimpleauth to be built on OSX
   b - fix bug with log roll and automatic log filenames
+  e - use mlockall() in pbs_mom if _POSIX_MEMLOCK
 
 2.1.2
 

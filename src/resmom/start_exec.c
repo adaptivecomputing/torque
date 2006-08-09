@@ -4455,9 +4455,9 @@ pid_t fork_me(
     /* release mlock; it seems to be inherited even though the
      * man page claims otherwise */
 
-#ifdef PPINMEM
+#ifdef _POSIX_MEMLOCK
     munlockall();
-#endif /* PPINMEM */
+#endif /* _POSIX_MEMLOCK */
     } 
   else if (pid < 0)
     {

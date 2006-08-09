@@ -142,9 +142,9 @@
 
 #include        "mcom.h"
 
-#ifdef PPINMEM
+#ifdef _POSIX_MEMLOCK
 #include <sys/mman.h>
-#endif /* PPINMEM */
+#endif /* _POSIX_MEMLOCK */
 
 #define CHECK_POLL_TIME     45
 #define DEFAULT_SERVER_STAT_UPDATES 45
@@ -5647,10 +5647,10 @@ int main(
   resource	*prscput;
 #endif /* MOM_CHECKPOINT */
 
-#ifdef PPINMEM
+#ifdef _POSIX_MEMLOCK
   int           mlockall_return;
   int           MOMISLOCKED = 0;
-#endif /* PPINMEM */
+#endif /* _POSIX_MEMLOCK */
 
   strcpy(pbs_current_user,"pbs_mom");
   msg_daemonname = pbs_current_user;
@@ -6775,7 +6775,7 @@ int main(
         }
       }    /* END for (pjob) */
 
-#ifdef PPINMEM
+#ifdef _POSIX_MEMLOCK
     /* call mlockall() only 1 time, since it seems to leak mem */
 
     if (MOMISLOCKED == 0)
@@ -6793,7 +6793,7 @@ int main(
 
       MOMISLOCKED = 1;
       }
-#endif /* PPINMEM */
+#endif /* _POSIX_MEMLOCK */
     }  /* END for (;mom_run_state == MOM_RUN_STATE_RUNNING;) */
  
   /* have exited main loop */
