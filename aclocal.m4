@@ -94,6 +94,37 @@ ac_cv_c_var_function=no) )
 ])dnl
 
 
+dnl
+dnl largefile support
+dnl
+dnl We can't just use AC_SYS_LARGEFILE because that breaks kernel ABIs on Solaris.
+dnl Instead, we just figure out if we have stat64() and stat64.st_mode.
+AC_DEFUN([TAC_SYS_LARGEFILE],[
+orig_CFLAGS="$CFLAGS"
+AC_CHECK_FUNC(stat64,
+  AC_DEFINE(HAVE_STAT64,1,[Define if stat64() is available]),
+  [CFLAGS="$CFLAGS -D_LARGEFILE64_SOURCE"
+   unset ac_cv_func_stat64
+   AC_CHECK_FUNC(stat64,
+    AC_DEFINE(HAVE_STAT64,1,[Define if stat64() is available]),
+     [CFLAGS="$orig_CFLAGS"])])
+
+AC_CHECK_MEMBER(struct stat64.st_mode,
+  AC_DEFINE(HAVE_STRUCT_STAT64,1,[Define if struct stat64 is available]),
+  CFLAGS="$CFLAGS -D_LARGEFILE64_SOURCE"
+  unset ac_cv_member_struct_stat64_st_mode
+  AC_CHECK_MEMBER(struct stat64.st_mode,
+    AC_DEFINE(HAVE_STRUCT_STAT64,1,[Define if struct stat64 is available]),
+                          [CFLAGS="$orig_CFLAGS"],
+[#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>]),
+[#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>])
+])
+
+
 # Do all the work for Automake.                            -*- Autoconf -*-
 
 # This macro actually does too much some checks are only needed if

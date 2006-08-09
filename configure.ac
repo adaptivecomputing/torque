@@ -243,34 +243,8 @@ extern int getsockname (int, $arg2 *, $t *);],[],
 #endif])
 
 
-dnl this is causing problems with solaris procfs.h
-dnl AC_SYS_LARGEFILE
-
-dnl largefile support: try 2!
-dnl this seems to work well, but did I over-design this?
-orig_CFLAGS="$CFLAGS"
-AC_CHECK_FUNC(stat64,
-  AC_DEFINE(HAVE_STAT64,1,[Define if stat64() is available]),
-  [CFLAGS="$CFLAGS -D_LARGEFILE64_SOURCE"
-   unset ac_cv_func_stat64
-   AC_CHECK_FUNC(stat64,
-    AC_DEFINE(HAVE_STAT64,1,[Define if stat64() is available]),
-     [CFLAGS="$orig_CFLAGS"])])
-
-AC_CHECK_MEMBER(struct stat64.st_mode,
-  AC_DEFINE(HAVE_STRUCT_STAT64,1,[Define if struct stat64 is available]),
-  CFLAGS="$CFLAGS -D_LARGEFILE64_SOURCE"
-  unset ac_cv_member_struct_stat64_st_mode
-  AC_CHECK_MEMBER(struct stat64.st_mode,
-    AC_DEFINE(HAVE_STRUCT_STAT64,1,[Define if struct stat64 is available]),
-                          [CFLAGS="$orig_CFLAGS"],
-[#include <sys/types.h>
-#include <sys/stat.h>
-#include <unistd.h>]),
-[#include <sys/types.h>
-#include <sys/stat.h>
-#include <unistd.h>])
-
+dnl Torque's own largefile support
+TAC_SYS_LARGEFILE
 
 
 AC_PROG_LN_S
