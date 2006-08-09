@@ -2727,14 +2727,12 @@ char *nsessions(
 
   {
   char	*result, *ch;
-  int    num;
+  int    num = 1;
 
   if ((result = sessions(attrib)) == NULL)
     {
     return(result);
     }
-
-  num = 1;
 
   for (ch = result;*ch;ch++) 
     {

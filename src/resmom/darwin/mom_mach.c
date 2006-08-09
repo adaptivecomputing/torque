@@ -2265,7 +2265,7 @@ char *nsessions(
 
   {
   char *result, *ch;
-  int   num = 0;
+  int   num = 1;
 
   if ((result = sessions(attrib)) == NULL)
     { 

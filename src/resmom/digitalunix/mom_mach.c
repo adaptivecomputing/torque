@@ -1400,7 +1400,10 @@ struct	rm_attribute	*attrib;
 	fmt = ret_string;
 	for (j=0; j<njids; j++) {
 		checkret(&fmt, 100);
-		sprintf(fmt, " %d", (int)jids[j]);
+                if (j==0)
+		  sprintf(fmt, "%d", (int)jids[j]);
+                else
+		  sprintf(fmt, " %d", (int)jids[j]);
 		fmt += strlen(fmt);
 	}
 	free(jids);
@@ -1412,7 +1415,7 @@ nsessions(attrib)
 struct	rm_attribute	*attrib;
 {
 	char	*result, *ch;
-	int	num = 0;
+	int	num = 1;
 
 	if ((result = sessions(attrib)) == NULL)
 		return result;
