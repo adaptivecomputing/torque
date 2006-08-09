@@ -94,10 +94,8 @@ int CPACreatePartition(
     return(1);
     }
 
-  /* GARRICK --- FIXME */
-
   pattr = &pjob->ji_wattr[(int)JOB_ATR_resource];
-  prd = find_resc_def(svr_resc_def,"subnodelist",svr_resc_size);
+  prd = find_resc_def(svr_resc_def,"subnode_list",svr_resc_size);
   presc = find_resc_entry(pattr,prd);
 
   if (presc != NULL)
