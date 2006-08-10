@@ -3119,7 +3119,7 @@ AC_DEFUN(TEA_PROG_TCLSH, [
 	    # which means target tclsh cannot be run (cross-compile)
 	    search_path=`echo ${PATH} | sed -e 's/:/ /g'`
 	else
-	    search_path=`echo ${TCL_BIN_DIR}:${TCL_BIN_DIR}/../bin:${exec_prefix}/bin:${prefix}/bin:${PATH} | sed -e 's/:/ /g'`
+	    search_path=`echo ${TCL_EXEC_PREFIX}/bin:${TCL_BIN_DIR}:${TCL_BIN_DIR}/../bin:${exec_prefix}/bin:${prefix}/bin:${PATH} | sed -e 's/:/ /g'`
 	fi
 	for dir in $search_path ; do
 	    for j in `ls -r $dir/tclsh[[8-9]]*${EXEEXT} 2> /dev/null` \
@@ -3168,7 +3168,7 @@ AC_DEFUN(TEA_PROG_WISH, [
 	    # which means target wish cannot be run (cross-compile)
 	    search_path=`echo ${PATH} | sed -e 's/:/ /g'`
 	else
-	    search_path=`echo ${TK_BIN_DIR}:${TK_BIN_DIR}/../bin:${TCL_BIN_DIR}:${TCL_BIN_DIR}/../bin:${exec_prefix}/bin:${prefix}/bin:${PATH} | sed -e 's/:/ /g'`
+	    search_path=`echo ${TK_EXEC_PREFIX}/bin:${TK_BIN_DIR}:${TK_BIN_DIR}/../bin:${TCL_EXEC_PREFIX}/bin:${TCL_BIN_DIR}:${TCL_BIN_DIR}/../bin:${exec_prefix}/bin:${prefix}/bin:${PATH} | sed -e 's/:/ /g'`
 	fi
 	for dir in $search_path ; do
 	    for j in `ls -r $dir/wish[[8-9]]*${EXEEXT} 2> /dev/null` \
