@@ -176,12 +176,12 @@ void req_rerunjob(
     {
     /* FAILURE */
 
-    /* why no req_reject? */
+    /* chk_job_request calls req_reject() */
 
     return;
     }
 
-  if (!strncasecmp(preq->rq_extend,"force",strlen("force")))
+  if (preq->rq_extend && !strncasecmp(preq->rq_extend,"force",strlen("force")))
     Force = 1;
   else
     Force = 0;
@@ -211,6 +211,9 @@ void req_rerunjob(
   if (pjob->ji_wattr[(int)JOB_ATR_rerunable].at_val.at_long == 0) 
     {
     /* NOTE:  should force override this constraint? maybe (???) */
+    /*          no, the user is saying that the job will break, and
+                IEEE Std 1003.1 specifically says rerun is to be rejected
+                if rerunable==FALSE -garrick */
 
     req_reject(PBSE_NORERUN,0,preq,NULL,NULL);
 
