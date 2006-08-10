@@ -584,6 +584,7 @@ resource_def svr_resc_def_const[] = {
     { "gmetric", decode_str, encode_str, set_str, comp_str, free_str, NULL_FUNC, READ_WRITE, ATR_TYPE_STR },
     { "gres", decode_str, encode_str, set_str, comp_str, free_str, NULL_FUNC, READ_WRITE, ATR_TYPE_STR },
     { "hostlist", decode_str, encode_str, set_str, comp_str, free_str, NULL_FUNC, READ_WRITE, ATR_TYPE_STR },
+    { "image", decode_str, encode_str, set_str, comp_str, free_str, NULL_FUNC, READ_WRITE, ATR_TYPE_STR },
     { "jgroup", decode_str, encode_str, set_str, comp_str, free_str, NULL_FUNC, READ_WRITE, ATR_TYPE_STR },
     { "latency", decode_str, encode_str, set_str, comp_str, free_str, NULL_FUNC, READ_WRITE, ATR_TYPE_STR },
     { "loglevel", decode_str, encode_str, set_str, comp_str, free_str, NULL_FUNC, READ_WRITE, ATR_TYPE_STR },
