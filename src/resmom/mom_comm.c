@@ -108,6 +108,7 @@
 #include	"resource.h"
 #include	"server_limits.h"
 #include	"job.h"
+#include        "pbs_nodes.h"
 #include	"pbs_error.h"
 #include	"log.h"
 #include	"net_connect.h"
@@ -134,7 +135,7 @@ extern	list_head	mom_polljobs;	/* must have resource limits polled */
 extern	list_head	svr_alljobs;	/* all jobs under MOM's control */
 extern	int		termin_child;
 extern	time_t		time_now;
-extern	void           *okclients;	/* accept connections from */
+extern	node           *okclients;	/* accept connections from */
 extern	int		SStream[];
 extern  int             SIndex;         /* master server index */
 extern  int             port_care;
@@ -172,7 +173,6 @@ extern int TMomFinalizeJob3(pjobexec_t *,int,int,int *);
 extern int TMOMJobGetStartInfo(job *,pjobexec_t **) ;
 extern int TMomCheckJobChild(pjobexec_t *,int,int *,int *);
 extern void job_nodes(job *);
-extern int tfind(const u_long,void **);
 extern int tlist(void **,char *,int);
 extern void DIS_tcp_funcs();
 extern int TTmpDirName (job *,char *);
@@ -1672,13 +1672,13 @@ void im_request(
       log_buffer);
     }
 
-  if (!tfind(ipaddr,&okclients)) 
+  if (tfind(ipaddr,&okclients) == NULL) 
     {
     char tmpLine[1024];
 
     tmpLine[0] = '\0';
 
-    tlist(okclients,tmpLine,1024);
+    tlist((void **)okclients,tmpLine,1024);
 
     sprintf(log_buffer,"bad connect from %s - unauthorized (okclients: %s)",
       netaddr(addr),

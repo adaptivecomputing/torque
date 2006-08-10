@@ -83,7 +83,7 @@
 
 
 
-enum	psit {
+enum psit {
 	okay,
 	thinking,
 	conflict,
@@ -112,7 +112,7 @@ struct	pbssubn {
   short           index;		/* subnode index */
   };
 
-struct	pbsnode {
+struct pbsnode {
   char			*nd_name;	/* node's host name */
   struct pbssubn	*nd_psn;	/* ptr to list of subnodes */
   struct prop           *nd_first;	/* first and last property */
@@ -137,10 +137,31 @@ struct	pbsnode {
   time_t                 nd_lastupdate; /* time of last update. */
   };
 	
+typedef struct tree_t {
+  u_long          key;
+  struct pbsnode *nodep;
+  struct tree_t  *left;
+  struct tree_t  *right;
+  } tree;
+
+/* NOTE:  should remove all node references and replace with 'tree' objects (NYI) */
+
+typedef struct node_t {
+  u_long         key;
+  struct node_t *left;
+  struct node_t *right;
+  } node;
+
+#ifndef PBS_MOM
+struct pbsnode *tfind(const u_long,tree **);
+#else /* PBS_MOM */
+struct pbsnode *tfind(const u_long,node **);
+#endif /* PBS_MOM */
 
 /*
  * The following INUSE_ are used in both subnode.inuse and in node.nd_state
  */
+
 #define	INUSE_FREE	 0x00	/* Node/VP is available			*/
 #define	INUSE_OFFLINE	 0x01	/* Node was removed by administrator	*/
 #define	INUSE_DOWN	 0x02	/* Node is down/unresponsive 		*/
@@ -198,15 +219,15 @@ enum nodeattr {
 };
 
 extern struct attribute_def  node_attr_def[];	/* node attributes defs */
-extern	struct pbsnode	**pbsndmast;		/* array of ptr to nodes  */
-extern	struct pbsnode	**pbsndlist;		/* array of ptr to nodes  */
-extern  int		  svr_totnodes;		/* number of nodes (hosts) */
-extern  int		  svr_tsnodes;		/* number of timeshared nodes */
-extern	int		  svr_clnodes;		/* number of cluster nodes */
-extern	struct tree_t	 *ipaddrs;
-extern	struct tree_t	 *streams;
+extern struct pbsnode	**pbsndmast;		/* array of ptr to nodes  */
+extern struct pbsnode	**pbsndlist;		/* array of ptr to nodes  */
+extern int		  svr_totnodes;		/* number of nodes (hosts) */
+extern int		  svr_tsnodes;		/* number of timeshared nodes */
+extern int		  svr_clnodes;		/* number of cluster nodes */
+extern struct tree_t	 *ipaddrs;
+extern struct tree_t	 *streams;
 
-extern	int	update_nodes_file A_(());
+extern int update_nodes_file A_((void));
 
 extern void bad_node_warning(pbs_net_t addr);
 extern int addr_ok(pbs_net_t addr);

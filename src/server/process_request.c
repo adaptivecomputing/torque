@@ -179,9 +179,6 @@ void req_stagein(struct batch_request *preq);
 
 /* END request processing prototypes */
 
-#ifdef PBS_MOM
-extern int tfind(const u_long,void **);
-#endif
                        
 
 /*

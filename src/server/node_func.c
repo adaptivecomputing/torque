@@ -121,7 +121,7 @@
 #if !defined(H_ERRNO_DECLARED)
 extern int h_errno;
 #endif
-extern time_t      time_now;
+extern time_t  time_now;
 
 
 /* Global Data */
@@ -344,11 +344,6 @@ int addr_ok(
 
 
 /* FIXME: this should all be in a seperate header file */
-typedef struct tree_t {
-       u_long          key;
-       struct pbsnode  *nodep;
-       struct tree_t   *left, *right;
-} tree;
 
 extern void tinsert(const u_long key, struct pbsnode *nodep, tree **rootp);
 extern void *tdelete(const u_long key, tree **rootp);

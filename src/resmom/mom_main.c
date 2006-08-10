@@ -389,7 +389,7 @@ int			port_care = TRUE;	/* secure connecting ports */
 uid_t			uid = 0;		/* uid we are running with */
 int			alarm_time = 10;	/* time before alarm */
 
-extern void            *okclients;		/* accept connections from */
+extern tree            *okclients;		/* accept connections from */
 char                  **maskclient = NULL;	/* wildcard connections */
 int			mask_num = 0;
 int			mask_max = 0;
@@ -511,7 +511,6 @@ extern void exec_bail(job *,int);
 extern int is_compose(int,int);
 extern void check_state(int);
 extern void tinsert(const u_long,void **);
-extern int tfind(const u_long,void **);
 extern int tlist(void **,char *,int);
 extern void DIS_tcp_funcs();
 
@@ -1337,7 +1336,7 @@ u_long addclient(
 
   ipaddr = ntohl(saddr.s_addr);
 
-  tinsert(ipaddr,&okclients);
+  tinsert(ipaddr,(void **)&okclients);
 
   return(ipaddr);
   }  /* END addclient() */
@@ -1478,8 +1477,8 @@ static u_long setpbsserver(
 
   MOMServerAddrs[index] = ipaddr;
 
-  if (ipaddr)
-    tinsert(ipaddr,&okclients);
+  if (ipaddr != 0)
+    tinsert(ipaddr,(void **)&okclients);
 
   return(1);
   }  /* END setpbsserver() */
@@ -3743,7 +3742,7 @@ int rm_request(
     }
 
   if (((port_care != FALSE) && (port >= IPPORT_RESERVED)) ||
-      !tfind(ipadd,&okclients)) 
+      (tfind(ipadd,&okclients) == NULL)) 
     {
     if (bad_restrict(ipadd)) 
       {
@@ -4256,7 +4255,7 @@ int rm_request(
 
               tmpLine[0] = '\0';
 
-              tlist(okclients,tmpLine,sizeof(tmpLine));
+              tlist((void **)okclients,tmpLine,sizeof(tmpLine));
 
               MUSNPrintF(&BPtr,&BSpace,"Trusted Client List:    %s\n",
                 tmpLine);
@@ -4923,7 +4922,7 @@ void tcp_request(
 
   DIS_tcp_setup(fd);
 
-  if (!tfind(ipadd,&okclients)) 
+  if (tfind(ipadd,&okclients) == NULL) 
     {
     sprintf(log_buffer,"bad connect from %s", 
       address);

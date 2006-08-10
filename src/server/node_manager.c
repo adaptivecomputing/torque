@@ -105,7 +105,7 @@
 #include "svrfunc.h"
 #include "job.h"
 #include "log.h"
-#include "pbs_nodes.h"
+#include "pbs_nodes.h" 
 #include "rpp.h"
 #include "dis.h"
 #include "dis_init.h"
@@ -203,14 +203,8 @@ static void funcs_dis() /* The equivalent of DIS_tcp_funcs() */
 **      Modified by Tom Proett <proett@nas.nasa.gov> for PBS.
 */
 
-typedef struct tree_t {
-  u_long		key;
-  struct pbsnode	*nodep;
-  struct tree_t	*left, *right;
-  } tree;
-
-tree	*ipaddrs = NULL;	/* tree of ip addrs */
-tree	*streams = NULL;	/* tree of stream numbers */
+tree *ipaddrs = NULL;	/* tree of ip addrs */
+tree *streams = NULL;	/* tree of stream numbers */
 
 
 
@@ -218,20 +212,20 @@ tree	*streams = NULL;	/* tree of stream numbers */
 
 struct pbsnode *tfind(
 
-  const u_long   key,	/* key to be located */
-  tree         **rootp)	/* address of tree root */
+  const u_long   key,	/* I - key to be located */
+  tree         **rootp)	/* O - address of tree root */
 
   {
   if (rootp == NULL)
     {
-    return NULL;
+    return(NULL);
     }
 
   while (*rootp != NULL) 
     {		/* Knuth's T1: */
     if (key == (*rootp)->key)	/* T2: */
       {
-      return(*rootp)->nodep;	/* we found it! */
+      return((*rootp)->nodep);	/* we found it! */
       }
 
     rootp = (key < (*rootp)->key) ?

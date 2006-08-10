@@ -111,6 +111,7 @@
 #include "job.h"
 #include "queue.h"
 #include "server.h"
+#include "pbs_nodes.h"
 #include "net_connect.h"
 #include "credential.h"
 #include "svrfunc.h"
@@ -127,7 +128,7 @@
 
 extern int  pbsd_init A_((int));
 extern void shutdown_ack ();
-extern void update_nodes_file A_((void));
+extern int  update_nodes_file A_((void));
 extern void tcp_settimeout(long);
 extern void poll_job_task(struct work_task *);
 extern int  schedule_jobs(void);
@@ -263,6 +264,8 @@ void do_rpp(
       {
       struct pbsnode *node;
 
+      extern tree *streams;        /* tree of stream numbers */
+
       /* NOTE:  report IP associated w/stream - NYI */
 
       node = tfind((u_long)stream,&streams);
@@ -293,7 +296,7 @@ void do_rpp(
       {
       sprintf(log_buffer,"corrupt rpp request received on stream %d - invalid version - rc=%d (%s)\n",
         stream,
-        rc,
+        ret,
         dis_emsg[ret]);
 
       log_record(

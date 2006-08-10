@@ -159,11 +159,6 @@ extern void DIS_rpp_reset A_((void));
 **	Modified by Tom Proett <proett@nas.nasa.gov> for PBS.
 */
 
-typedef struct node_t {
-  u_long         key;
-  struct node_t	*left, *right;
-  } node;
-
 node *okclients = NULL;	/* tree of ip addrs */
 
 
@@ -248,18 +243,17 @@ int tlist(
 
 /* find value in tree, return 1 if found, 0 if not */
 
-int tfind(
+struct pbsnode *tfind(
 
   const u_long   key,	/* key to be located */
   node         **rootp)	/* address of tree root */
 
   {
-
   if (rootp == NULL)
     {
     /* empty tree - failure */
 
-    return(0);
+    return(NULL);
     }
 
   while (*rootp != NULL) 
@@ -272,7 +266,7 @@ int tfind(
 
       /* we found it! */
 
-      return(1);
+      return((struct pbsnode *)1);
       }
 
     rootp = (key < (*rootp)->key) ?
@@ -282,7 +276,7 @@ int tfind(
 
   /* cannot locate value in tree - failure */
 
-  return(0);
+  return(NULL);
   }  /* END tfind() */
 
 

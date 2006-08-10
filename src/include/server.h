@@ -177,6 +177,7 @@ struct server {
 
 extern struct server server;
 
+
 /*
  * server state values 
  */
