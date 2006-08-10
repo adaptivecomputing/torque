@@ -261,8 +261,17 @@ void do_rpp(
     {
     if (LOGLEVEL >= 1)
       {
-      sprintf(log_buffer,"corrupt rpp request received on stream %d (invalid protocol)\n",
-        stream);
+      struct pbsnode *node;
+
+      /* NOTE:  report IP associated w/stream - NYI */
+
+      node = tfind((u_long)stream,&streams);
+
+      sprintf(log_buffer,"corrupt rpp request received on stream %d (node: %s) - invalid protocol - rc=%d (%s)\n",
+        stream,
+        (node != NULL) ? node->nd_name : "NULL",
+        ret,
+        dis_emsg[ret]);
 
       log_record(
         PBSEVENT_SCHED,
@@ -282,8 +291,10 @@ void do_rpp(
     {
     if (LOGLEVEL >= 1)
       {
-      sprintf(log_buffer,"corrupt rpp request received on stream %d (invalid version)\n",
-        stream);
+      sprintf(log_buffer,"corrupt rpp request received on stream %d - invalid version - rc=%d (%s)\n",
+        stream,
+        rc,
+        dis_emsg[ret]);
 
       log_record(
         PBSEVENT_SCHED,
@@ -1057,7 +1068,6 @@ int main(
 
     if (!getenv("PBSLOGLEVEL"))
       LOGLEVEL = server.sv_attr[(int)SRV_ATR_LogLevel].at_val.at_long;
-    
 
     /* any running jobs need a status update? */ 
 

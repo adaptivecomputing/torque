@@ -105,7 +105,7 @@
 #define DIS_NULLSTR	6	/* String read has an embedded ASCII NUL */
 #define DIS_EOD		7	/* Premature end of message */
 #define DIS_NOMALLOC	8	/* Unable to malloc space for string */
-#define DIS_PROTO	9	/* Supporting protocol failure */
+#define DIS_PROTO       9	/* Supporting protocol failure */
 #define DIS_NOCOMMIT	10	/* Protocol failure in commit */
 #define DIS_EOF		11	/* End of File */
 

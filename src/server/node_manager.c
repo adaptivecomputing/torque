@@ -1507,7 +1507,7 @@ void ping_nodes(
 
 int add_cluster_addrs(
 
-  int stream)
+  int stream) /* I */
 
   {
   char id[] = "add_cluster_addrs";
