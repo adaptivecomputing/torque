@@ -66,7 +66,7 @@ int CPACreatePartition(
 
   int                  rc;
 
-  cpa_nid_list_t       Wanted;
+  cpa_nid_list_t       Wanted = NULL;
 
   /* first, get the size, uid, jobid, and subnodelist from the job */
 
@@ -110,12 +110,15 @@ int CPACreatePartition(
 
   JobID = pjob->ji_qs.ji_jobid;
 
-  PPN = 1;       /* NOTE:  not really supported w/in CPA, always use 1 */
-  Flags = 0;     /* NOTE:  only allocate compute hosts, always use 0 */
+  PPN = 1;       /* NOTE: not really supported w/in CPA, always use 1 */
+  Flags = 0;     /* NOTE: only allocate compute hosts, always use 0 */
   Spec = NULL;   /* NOTE: required node specification, not used */
 
   if (HostList != NULL)
     {
+    char tmpBuffer[256000];
+    int  index;
+
     rc = nid_list_create(
       0,
       MaxListSize,  /* max count */
@@ -134,7 +137,16 @@ int CPACreatePartition(
       return(1);
       }
 
-    rc = nid_list_destringify(HostList,Wanted);
+    strncpy(tmpBuffer,HostList,sizeof(tmpBuffer));
+    tmpBuffer[sizeof(tmpBuffer) - 1] = '\0';
+
+    for (index = 0;tmpBuffer[index] != '\0';index++)
+      {
+      if (tmpBuffer[index] == ':')
+        tmpBuffer[index] = ',';
+      }
+
+    rc = nid_list_destringify(tmpBuffer,Wanted);
 
     if (rc != 0)
       {
@@ -143,6 +155,8 @@ int CPACreatePartition(
       printf("nid_list_destringify: rc=%d (%s)\n",
         rc,
         cpa_rc2str(rc));
+
+      nid_list_destroy(Wanted);
 
       return(1);
       }

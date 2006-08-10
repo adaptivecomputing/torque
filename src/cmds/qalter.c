@@ -101,8 +101,8 @@ int main(
 
   {
   int c;
-  int errflg=0;
-  int any_failed=0;
+  int errflg = 0;
+  int any_failed = 0;
   char *pc;
   int i;
   int u_cnt, o_cnt, s_cnt, n_cnt;
@@ -128,9 +128,9 @@ int main(
       {
       case 'a':
 
-        if ((after = cvtdate(optarg)) < 0 ) 
+        if ((after = cvtdate(optarg)) < 0) 
           {
-          fprintf(stderr, "qalter: illegal -a value\n");
+          fprintf(stderr,"qalter: illegal -a value\n");
           errflg++;
 
           break;
@@ -145,7 +145,7 @@ int main(
 
       case 'A':
 
-        set_attr(&attrib, ATTR_A, optarg);
+        set_attr(&attrib,ATTR_A,optarg);
 
         break;
 
@@ -208,69 +208,114 @@ int main(
 
       case 'e':
 
-            if ( prepare_path(optarg, path_out) == 0 ) {
-                set_attr(&attrib, ATTR_e, path_out);
-            } else {
-                fprintf(stderr, "qalter: illegal -e value\n");
-                errflg++;
-            }
-	    break;
-        case 'h':
-	    while ( isspace((int)*optarg) ) optarg++;
-            if ( strlen(optarg) == 0 ) {
-                fprintf(stderr, "qalter: illegal -h value\n");
-                errflg++;
-		break;
-            }
-	    pc = optarg;
-	    u_cnt = o_cnt = s_cnt = n_cnt = 0;
-            while ( *pc) {
-	        if ( *pc == 'u' )
-		    u_cnt++;
-                else if ( *pc == 'o' )
-		    o_cnt++;
-                else if ( *pc == 's' )
-		    s_cnt++;
-                else if ( *pc == 'n' )
-		    n_cnt++;
-		else {
-		    fprintf(stderr, "qalter: illegal -h value\n");
-		    errflg++;
-		    break;
-		}
-                pc++;
-            }
-            if ( n_cnt && (u_cnt + o_cnt + s_cnt) ) {
-                fprintf(stderr, "qalter: illegal -h value\n");
-                errflg++;
-		break;
-            }
-            set_attr(&attrib, ATTR_h, optarg);
+        if (prepare_path(optarg,path_out) == 0) 
+          {
+          set_attr(&attrib,ATTR_e,path_out);
+          } 
+        else 
+          {
+          fprintf(stderr,"qalter: illegal -e value\n");
+ 
+          errflg++;
+          }
+
+        break;
+
+      case 'h':
+
+        /* hold */
+
+        while (isspace((int)*optarg)) 
+          optarg++;
+
+        if (strlen(optarg) == 0) 
+          {
+          fprintf(stderr,"qalter: illegal -h value\n");
+            errflg++;
+
+          break;
+          }
+
+        pc = optarg;
+
+        u_cnt = o_cnt = s_cnt = n_cnt = 0;
+
+        while (*pc) 
+          {
+          if (*pc == 'u')
+            u_cnt++;
+          else if (*pc == 'o')
+            o_cnt++;
+          else if (*pc == 's')
+            s_cnt++;
+          else if (*pc == 'n')
+            n_cnt++;
+          else 
+            {
+            fprintf(stderr,"qalter: illegal -h value\n");
+
+            errflg++;
+
             break;
-        case 'j':
-	    if ( strcmp(optarg, "oe") != 0 &&
-		 strcmp(optarg, "eo") != 0 &&
-		 strcmp(optarg,  "n") != 0 ) {
-		fprintf(stderr, "qalter: illegal -j value\n");
-		errflg++;
-		break;
-	    }
-            set_attr(&attrib, ATTR_j, optarg);
-            break;
-        case 'k':
-            if ( strcmp(optarg,  "o") != 0 &&
-                 strcmp(optarg,  "e") != 0 &&
-                 strcmp(optarg, "oe") != 0 &&
-                 strcmp(optarg, "eo") != 0 &&
-                 strcmp(optarg,  "n") != 0 ) {
-                fprintf(stderr, "qalter: illegal -k value\n");
-                errflg++;
-		break;
             }
-            set_attr(&attrib, ATTR_k, optarg);
-            break;
+
+          pc++;
+          }
+
+        if (n_cnt && (u_cnt + o_cnt + s_cnt)) 
+          {
+          fprintf(stderr, "qalter: illegal -h value\n");
+
+          errflg++;
+
+          break;
+          }
+
+        set_attr(&attrib,ATTR_h,optarg);
+
+        break;
+
+      case 'j':
+
+        if ((strcmp(optarg,"oe") != 0) &&
+            (strcmp(optarg,"eo") != 0) &&
+            (strcmp(optarg,"n")  != 0)) 
+          {
+          fprintf(stderr, "qalter: illegal -j value\n");
+
+          errflg++;
+ 
+          break;
+          }
+
+        set_attr(&attrib,ATTR_j,optarg);
+
+        break;
+
+      case 'k':
+
+        /* keep */
+
+        if ((strcmp(optarg,"o")  != 0) &&
+            (strcmp(optarg,"e")  != 0) &&
+            (strcmp(optarg,"oe") != 0) &&
+            (strcmp(optarg,"eo") != 0) &&
+            (strcmp(optarg,"n")  != 0)) 
+          {
+          fprintf(stderr,"qalter: illegal -k value\n");
+
+          errflg++;
+
+          break;
+          }
+
+        set_attr(&attrib,ATTR_k,optarg);
+
+        break;
 
       case 'l':
+
+        /* resource requirements */
 
         if (set_resources(&attrib,optarg,TRUE)) 
           {
@@ -283,148 +328,277 @@ int main(
 
       case 'm':
 
+        /* mail event */
+
         while (isspace((int)*optarg)) 
           optarg++;
 
-            if ( strlen(optarg) == 0 ) {
-                fprintf(stderr, "qalter: illegal -m value\n");
-                errflg++;
-		break;
+        if (strlen(optarg) == 0) 
+          {
+          fprintf(stderr,"qalter: illegal -m value\n");
+            errflg++;
+
+          break;
+          }
+
+        if (strcmp(optarg,"n") != 0) 
+          {
+          pc = optarg;
+
+          while (*pc) 
+            {
+            if ((*pc != 'a') && (*pc != 'b') && (*pc != 'e')) 
+              {
+              fprintf(stderr,"qalter: illegal -m value\n");
+
+              errflg++;
+
+              break;
+              }
+
+            pc++;
             }
-            if ( strcmp(optarg, "n") != 0 ) {
-                pc = optarg;
-                while (*pc) {
-                    if ( *pc != 'a' && *pc != 'b' && *pc != 'e' ) {
-                        fprintf(stderr, "qalter: illegal -m value\n");
-                        errflg++;
-			break;
-                    }
-                    pc++;
-                }
-            }
-            set_attr(&attrib, ATTR_m, optarg);
+          }
+
+        set_attr(&attrib,ATTR_m,optarg);
+
+        break;
+
+      case 'M':
+
+        /* mail destination */
+
+        if (parse_at_list(optarg,FALSE,FALSE)) 
+          {
+          fprintf(stderr,"qalter: illegal -M value\n");
+            errflg++;
+
+          break;
+          }
+
+        set_attr(&attrib,ATTR_M,optarg);
+
+        break;
+
+      case 'N':
+
+        /* name */
+
+        if (check_job_name(optarg,1) == 0) 
+          {
+          set_attr(&attrib,ATTR_N,optarg);
+          } 
+        else 
+          {
+          fprintf(stderr, "qalter: illegal -N value\n");
+
+          errflg++;
+          }
+
+        break;
+
+      case 'o':
+
+        /* output */
+
+        if (prepare_path(optarg,path_out) == 0) 
+          {
+          set_attr(&attrib,ATTR_o,path_out);
+          } 
+        else 
+          {
+          fprintf(stderr,"qalter: illegal -o value\n");
+
+          errflg++;
+          }
+
+        break;
+
+      case 'p':
+
+        /* priority */
+
+        while (isspace((int)*optarg)) 
+          optarg++;
+
+        pc = optarg;
+
+        if ((*pc == '-') || (*pc == '+')) 
+          pc++;
+
+        if (strlen(pc) == 0) 
+          {
+          fprintf(stderr,"qalter: illegal -p value\n");
+
+          errflg++;
+
+          break;
+          }
+
+        while (*pc != '\0') 
+          {
+          if (!isdigit(*pc)) 
+            {
+            fprintf(stderr,"qalter: illegal -p value\n");
+
+            errflg++;
+
             break;
-        case 'M':
-            if ( parse_at_list(optarg, FALSE, FALSE) ) {
-                fprintf(stderr, "qalter: illegal -M value\n");
-                errflg++;
-		break;
             }
-            set_attr(&attrib, ATTR_M, optarg);
-            break;
-        case 'N':
-	    if (check_job_name(optarg, 1) == 0) {
-		set_attr(&attrib, ATTR_N, optarg);
-	    } else {
-		fprintf(stderr, "qalter: illegal -N value\n");
-		errflg++;
-	    }
-            break;
-        case 'o':
-            if ( prepare_path(optarg, path_out) == 0 ) {
-                set_attr(&attrib, ATTR_o, path_out);
-            } else {
-                fprintf(stderr, "qalter: illegal -o value\n");
-                errflg++;
+
+          pc++;
+          }
+
+        i = atoi(optarg);
+
+        if ((i < -1024) || (i > 1023)) 
+          {
+          fprintf(stderr,"qalter: illegal -p value\n");
+         
+          errflg++;
+
+          break;
+          }
+
+        set_attr(&attrib,ATTR_p,optarg);
+
+        break;
+
+      case 'r':
+
+        /* rerun */
+
+        if (strlen(optarg) != 1) 
+          {
+          fprintf(stderr,"qalter: illegal -r value\n");
+
+          errflg++;
+
+          break;
+          }
+
+        if ((*optarg != 'y') && (*optarg != 'n')) 
+          {
+          fprintf(stderr, "qalter: illegal -r value\n");
+
+          errflg++;
+
+          break;
+          }
+
+        set_attr(&attrib,ATTR_r,optarg);
+
+        break;
+
+      case 'S':
+
+        if (parse_at_list(optarg,TRUE,TRUE)) 
+          {
+          fprintf(stderr,"qalter: illegal -S value\n");
+
+          errflg++;
+
+          break;
+          }
+
+        set_attr(&attrib,ATTR_S,optarg);
+
+        break;
+
+      case 'u':
+
+        if (parse_at_list(optarg,TRUE,FALSE)) 
+          {
+          fprintf(stderr,"qalter: illegal -u value\n");
+ 
+          errflg++;
+
+          break;
+          }
+
+        set_attr(&attrib,ATTR_u,optarg);
+
+        break;
+
+      case 'W':
+
+        while (isspace((int)*optarg)) 
+          optarg++;
+
+        if (strlen(optarg) == 0) 
+          {
+          fprintf(stderr,"qalter: illegal -W value\n");
+
+          errflg++;
+
+          break;
+          }
+
+        i = parse_equal_string(optarg,&keyword,&valuewd);
+
+        while (i == 1) 
+          {
+          if (strcmp(keyword,ATTR_depend) == 0) 
+            {
+            pdepend = malloc(PBS_DEPEND_LEN);
+
+            if (parse_depend_list(valuewd,pdepend,PBS_DEPEND_LEN)) 
+              {
+              fprintf(stderr,"qalter: illegal -W value\n");
+
+              errflg++;
+
+              break;
+              }
+
+            valuewd = pdepend;
+            } 
+          else if (strcmp(keyword,ATTR_stagein) == 0) 
+            {
+            if (parse_stage_list(valuewd)) 
+              {
+              fprintf(stderr, "qalter: illegal -W value\n");
+ 
+              errflg++;
+
+              break;
+              }
+            } 
+          else if (strcmp(keyword,ATTR_stageout) == 0) 
+            {
+            if (parse_stage_list(valuewd)) 
+              {
+              fprintf(stderr,"qalter: illegal -W value\n");
+ 
+              errflg++;
+
+              break;
+              }
+            } 
+          else if (strcmp(keyword,ATTR_g) == 0) 
+            {
+            if (parse_at_list(valuewd,TRUE,FALSE)) 
+              {
+              fprintf(stderr,"qalter: illegal -W value\n");
+
+              errflg++;
+
+              break;
+              }
             }
-	    break;
-        case 'p':
-	    while ( isspace((int)*optarg) ) optarg++;
-            pc = optarg;
-            if ( *pc == '-' || *pc == '+' ) pc++;
-            if ( strlen(pc) == 0 ) {
-                fprintf(stderr, "qalter: illegal -p value\n");
-                errflg++;
-		break;
-            }
-            while ( *pc != '\0' ) {
-                if ( ! isdigit(*pc) ) {
-                    fprintf(stderr, "qalter: illegal -p value\n");
-                    errflg++;
-		    break;
-                }
-                pc++;
-            }
-            i = atoi(optarg);
-            if ( i < -1024 || i > 1023 ) {
-                fprintf(stderr, "qalter: illegal -p value\n");
-                errflg++;
-		break;
-            }
-            set_attr(&attrib, ATTR_p, optarg);
-            break;
-        case 'r':
-            if ( strlen(optarg) != 1 ) {
-                fprintf(stderr, "qalter: illegal -r value\n");
-                errflg++;
-		break;
-            }
-            if ( *optarg != 'y' && *optarg != 'n' ) {
-                fprintf(stderr, "qalter: illegal -r value\n");
-                errflg++;
-		break;
-            }
-            set_attr(&attrib, ATTR_r, optarg);
-            break;
-        case 'S':
-            if ( parse_at_list(optarg, TRUE, TRUE) ) {
-                fprintf(stderr, "qalter: illegal -S value\n");
-                errflg++;
-		break;
-            }
-            set_attr(&attrib, ATTR_S, optarg);
-            break;
-        case 'u':
-            if ( parse_at_list(optarg, TRUE, FALSE) ) {
-                fprintf(stderr, "qalter: illegal -u value\n");
-                errflg++;
-		break;
-            }
-            set_attr(&attrib, ATTR_u, optarg);
-            break;
-	case 'W':
-            while ( isspace((int)*optarg) ) optarg++;
-            if ( strlen(optarg) == 0 ) {
-                fprintf(stderr, "qalter: illegal -W value\n");
-                errflg++;
-		break;
-            }
-	    i = parse_equal_string(optarg, &keyword, &valuewd);
-	    while (i == 1) {
-		if (strcmp(keyword, ATTR_depend) == 0) {
-		    pdepend = malloc(PBS_DEPEND_LEN);
-                    if ( parse_depend_list(valuewd, pdepend, PBS_DEPEND_LEN) ) {
-                        fprintf(stderr, "qalter: illegal -W value\n");
-                        errflg++;
-			break;
-                    }
-		    valuewd = pdepend;
-		} else if (strcmp(keyword, ATTR_stagein) == 0) {
-                    if ( parse_stage_list(valuewd) ) {
-                        fprintf(stderr, "qalter: illegal -W value\n");
-                        errflg++;
-			break;
-                    }
-		} else if (strcmp(keyword, ATTR_stageout) == 0) {
-                    if ( parse_stage_list(valuewd) ) {
-                        fprintf(stderr, "qalter: illegal -W value\n");
-                        errflg++;
-			break;
-                    }
-		} else if (strcmp(keyword, ATTR_g) == 0) {
-                    if ( parse_at_list(valuewd, TRUE, FALSE) ) {
-                        fprintf(stderr, "qalter: illegal -W value\n");
-                        errflg++;
-			break;
-                    }
-		}
-		set_attr(&attrib, keyword, valuewd);
-		i = parse_equal_string((char *)0, &keyword, &valuewd);
-	    }
-	    if (i == -1) {
-                fprintf(stderr, "qalter: illegal -W value\n");
-                errflg++;
-	    }
+
+          set_attr(&attrib,keyword,valuewd);
+
+          i = parse_equal_string(NULL,&keyword,&valuewd);
+          }
+
+        if (i == -1) 
+          {
+          fprintf(stderr,"qalter: illegal -W value\n");
+
+          errflg++;
+          }
+
         break;
 
       case 'x':
@@ -457,42 +631,67 @@ int main(
     exit(2);
     }
 
-    for ( ; optind < argc; optind++) {
-        int connect;
-        int stat=0;
-	int located = FALSE;
+  for (;optind < argc;optind++) 
+    {
+    int connect;
+    int stat = 0;
+    int located = FALSE;
 
-        strcpy(job_id, argv[optind]);
-        if ( get_server(job_id, job_id_out, server_out) ) {
-            fprintf(stderr, "qalter: illegally formed job identifier: %s\n", job_id);
-            any_failed = 1;
-            continue;
-        }
+    strcpy(job_id,argv[optind]);
+
+    if (get_server(job_id,job_id_out,server_out)) 
+      {
+      fprintf(stderr,"qalter: illegally formed job identifier: %s\n", 
+        job_id);
+
+      any_failed = 1;
+
+      continue;
+      }
+
 cnt:
-        connect = cnt2server(server_out);
-        if ( connect <= 0 ) {
-            fprintf(stderr, "qalter: cannot connect to server %s (errno=%d)\n",
-                    pbs_server, pbs_errno);
-            any_failed = pbs_errno;
-            continue;
+
+    connect = cnt2server(server_out);
+
+    if (connect <= 0) 
+      {
+      fprintf(stderr, "qalter: cannot connect to server %s (errno=%d)\n",
+        pbs_server, 
+        pbs_errno);
+
+      any_failed = pbs_errno;
+
+      continue;
+      }
+
+    stat = pbs_alterjob(connect,job_id_out,attrib,NULL);
+
+    if (stat && (pbs_errno != PBSE_UNKJOBID)) 
+      {
+      prt_job_err("qalter",connect,job_id_out);
+    
+      any_failed = pbs_errno;
+      } 
+    else if (stat && (pbs_errno == PBSE_UNKJOBID) && !located) 
+      {
+      located = TRUE;
+
+      if (locate_job(job_id_out,server_out,rmt_server)) 
+        {
+        pbs_disconnect(connect);
+
+        strcpy(server_out,rmt_server);
+
+        goto cnt;
         }
 
-        stat = pbs_alterjob(connect, job_id_out, attrib, NULL);
-        if ( stat && (pbs_errno != PBSE_UNKJOBID) ) {
-	    prt_job_err("qalter", connect, job_id_out);
-            any_failed = pbs_errno;
-        } else if ( stat && (pbs_errno == PBSE_UNKJOBID) && !located ) {
-	    located = TRUE;
-	    if ( locate_job(job_id_out, server_out, rmt_server) ) {
-	        pbs_disconnect(connect);
-		strcpy(server_out, rmt_server);
-		goto cnt;
-	    }
-	    prt_job_err("qalter", connect, job_id_out);
-	    any_failed = pbs_errno;
-	}
+      prt_job_err("qalter",connect,job_id_out);
 
-        pbs_disconnect(connect);
-    }
-    exit(any_failed);
-}
+      any_failed = pbs_errno;
+      }  /* END else if (stat && ...) */
+
+    pbs_disconnect(connect);
+    }  /* END for (optind) */
+
+  exit(any_failed);
+  }  /* END main() */
