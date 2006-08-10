@@ -115,7 +115,7 @@ int main(
 
   char c;
 
-  static char usage[] = "usage: qrerun [ -W force] <JOBID>[ <JOBID>]...\n";
+  static char usage[] = "usage: qrerun [-f] <JOBID>[ <JOBID>]...\n";
 
   if (argc < 2) 
     {
