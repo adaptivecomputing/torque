@@ -124,7 +124,7 @@ int main(
     exit(2);
     }
 
-#define GETOPT_ARGS "m:W:"
+#define GETOPT_ARGS "m:f"
 
   extend[0] = '\0';
 
@@ -158,10 +158,7 @@ int main(
 
         break;
 
-      case 'W':
-
-        {
-        char *pc;
+      case 'f':
 
         if (extend[0] != '\0')
           {
@@ -170,35 +167,10 @@ int main(
           break;
           }
 
-        pc = optarg;
-
-        if (strlen(pc) == 0)
-          {
-          fprintf(stderr,"qrerun: illegal -W value\n");
-
-          errflg++;
-
-          break;
-          }
-
-        while (*pc != '\0')
-          {
-          if (!isdigit(*pc))
-            {
-            fprintf(stderr,"qrerun: illegal -W value\n");
-
-            errflg++;
-
-            break;
-            }
-
-          pc++;
-          }
-
         strcpy(extend,"FORCE");
-        }  /* END BLOCK (case 'W') */
 
         break;
+
       }  /* END switch (c) */
     }    /* END while ((c = getopt(argc,argv,GETOPT_ARGS)) != EOF) */
 
@@ -209,7 +181,7 @@ int main(
     exit(2);
     }
 
-  for (optind = 1;optind < argc;optind++) 
+  for (;optind < argc;optind++) 
     {
     int connect;
     int stat = 0;
