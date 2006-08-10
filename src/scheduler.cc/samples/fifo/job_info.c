@@ -817,6 +817,11 @@ int translate_job_fail_code( int fail_code, char *comment_msg, char *log_msg )
         strcpy(comment_msg, COMMENT_SCHD_ERROR);
 	strcpy(log_msg, INFO_SCHD_ERROR);
       break;
+      case SERVER_TOKEN_UTILIZATION:
+	strcpy(comment_msg, COMMENT_TOKEN_UTILIZATION);
+	sprintf(log_msg, INFO_TOKEN_UTILIZATION);
+      break;
+
       default:
         rc = 0;
         comment_msg[0] = '\0';

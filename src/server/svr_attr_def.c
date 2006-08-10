@@ -109,6 +109,10 @@ extern void free_rcost A_((attribute *attr));
 extern int decode_null A_((attribute *patr, char *name, char *rn, char *val));
 extern int set_null A_((attribute *patr, attribute *new, enum batch_op op));
 
+extern int token_chk A_((attribute *pattr, void *pobject, int actmode));
+extern int set_tokens A_((struct attribute *attr, struct attribute *new, enum batch_op op));
+
+
 /*
  * The entries for each attribute are (see attribute.h):
  *	name,
@@ -785,6 +789,19 @@ attribute_def svr_attr_def[] = {
 	ATR_TYPE_LONG,
 	PARENT_TYPE_SERVER
     },
+/* SVR_ATR_tokens */
+    { ATTR_tokens,
+	decode_arst,
+	encode_arst,
+	set_tokens,
+	comp_arst,
+	free_arst,
+	token_chk,
+	MGR_ONLY_SET,
+	ATR_TYPE_ARST,
+	PARENT_TYPE_SERVER
+    },
+
 	
 
 /* site supplied server attribute definitions if any, see site_svr_attr_*.h  */

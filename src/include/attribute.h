@@ -435,6 +435,10 @@ extern int      node_ntype A_(( attribute*, void*, int));
 extern int      node_prop_list A_(( attribute*, void*, int));
 extern int      node_status_list A_(( attribute*, void*, int));
 
+/* Token manipulation functions */
+
+extern int  decode_tokens A_((attribute *,char *, char *, char *));
+
 /* "type" to pass to acl_check() */
 #define ACL_Host  1
 #define ACL_User  2

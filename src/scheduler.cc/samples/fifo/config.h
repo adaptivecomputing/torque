@@ -149,6 +149,7 @@
 #define INFO_NOT_ENOUGH_NODES_AVAIL "Not enough of the right type of nodes available"
 #define INFO_JOB_STARVING "Draining system to allow %s to run"
 #define INFO_SCHD_ERROR "Internal Scheduling Error"
+#define INFO_TOKEN_UTILIZATION "Max token usage reached"
 
 #define COMMENT_QUEUE_NOT_STARTED "Not Running: Queue not started."
 #define COMMENT_QUEUE_NOT_EXEC    "Not Running: Queue not an execution queue."
@@ -165,6 +166,7 @@
 #define COMMENT_NOT_QUEUED "Not Running: Job not in queued state"
 #define COMMENT_NOT_ENOUGH_NODES_AVAIL "Not Running: Not enough of the right type of nodes are available"
 #define COMMENT_JOB_STARVING "Not Running: Draining system to allow starving job to run"
+#define COMMENT_TOKEN_UTILIZATION "Not Running: Max token usage reached"
 #define COMMENT_SCHD_ERROR "Not Running: An internal scheduling error has occured"
 
 #endif

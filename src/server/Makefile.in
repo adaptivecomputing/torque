@@ -155,7 +155,7 @@ pbs_server_SOURCES = accounting.c attr_recov.c dis_read.c geteusernam.c \
 		     req_track.c resc_def_all.c run_sched.c stat_job.c \
 		     svr_attr_def.c svr_chk_owner.c svr_connect.c \
 		     svr_func.c svr_jobfunc.c svr_mail.c svr_movejob.c \
-		     svr_recov.c svr_resccost.c svr_task.c
+		     svr_recov.c svr_resccost.c svr_task.c req_tokens.c
 
 subdir = src/server
 mkinstalldirs = $(SHELL) $(top_srcdir)/buildutils/mkinstalldirs
@@ -185,7 +185,7 @@ am_pbs_server_OBJECTS = accounting.$(OBJEXT) attr_recov.$(OBJEXT) \
 	svr_chk_owner.$(OBJEXT) svr_connect.$(OBJEXT) \
 	svr_func.$(OBJEXT) svr_jobfunc.$(OBJEXT) svr_mail.$(OBJEXT) \
 	svr_movejob.$(OBJEXT) svr_recov.$(OBJEXT) \
-	svr_resccost.$(OBJEXT) svr_task.$(OBJEXT)
+	svr_resccost.$(OBJEXT) svr_task.$(OBJEXT) req_tokens.$(OBJEXT)
 pbs_server_OBJECTS = $(am_pbs_server_OBJECTS)
 pbs_server_DEPENDENCIES = ../lib/Libattr/libattr.a \
 	../lib/Libsite/libsite.a ../lib/Libpbs/libtorque.la
@@ -227,7 +227,7 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/req_runjob.Po ./$(DEPDIR)/req_select.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/req_shutdown.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/req_signal.Po ./$(DEPDIR)/req_stat.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/req_track.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/req_tokens.Po ./$(DEPDIR)/req_track.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/resc_def_all.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/run_sched.Po ./$(DEPDIR)/stat_job.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/svr_attr_def.Po \
@@ -333,6 +333,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/req_shutdown.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/req_signal.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/req_stat.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/req_tokens.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/req_track.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/resc_def_all.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/run_sched.Po@am__quote@

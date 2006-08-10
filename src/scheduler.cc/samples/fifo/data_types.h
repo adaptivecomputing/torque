@@ -96,6 +96,7 @@ struct holiday;
 struct prev_job_info;
 struct group_info;
 struct usage_info;
+struct token;
 
 typedef struct state_count state_count;
 typedef struct server_info server_info;
@@ -107,10 +108,18 @@ typedef struct resource_req resource_req;
 typedef struct usage_info usage_info;
 typedef struct group_info group_info;
 typedef struct prev_job_info prev_job_info;
+typedef struct token token;
 
 typedef RESOURCE_TYPE sch_resource_t;
 /* since resource values and usage values are linked */
 typedef sch_resource_t usage_t;
+
+struct token
+{
+  char* identifier;             /* Token identifier */
+  float count;                  /* The number of tokens available of type identifier */
+};
+
 
 struct state_count
 {
@@ -141,6 +150,7 @@ struct server_info
   job_info **running_jobs;	/* array of jobs in the running state */
   node_info **nodes;		/* array of nodes associated with the server */
   node_info **timesharing_nodes;/* array of timesharing nodes */
+  token **tokens;               /* array of tokens */
 };
 
 struct queue_info {

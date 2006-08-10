@@ -162,6 +162,7 @@
 #define ATTR_exitstat	"exit_status"
 #define ATTR_forwardx11 "forward_x11"
 #define ATTR_submit_args "submit_args"
+#define ATTR_tokens 	"tokens"
 
 /* additional queue attributes names */
 

@@ -193,6 +193,7 @@ server_info *query_server_info( struct batch_status *server )
   resource *resp;	/* a resource to help create the resource list */
   sch_resource_t count;	/* used to convert string -> integer */
   char *endp;		/* used with strtol() */
+  int i;
 
   if( ( sinfo = new_server_info() ) == NULL )
     return NULL;  		/* error */
@@ -253,6 +254,10 @@ server_info *query_server_info( struct batch_status *server )
       if( resp != NULL )
 	resp -> assigned = count;
     }
+    else if( !strcmp(attrp -> name, ATTR_tokens) ) /* tokens */
+    {
+      sinfo->tokens = get_token_array(attrp -> value);
+    }      
 
     attrp = attrp -> next;
   }
@@ -412,6 +417,7 @@ server_info *new_server_info( )
   sinfo -> max_run = INFINITY;
   sinfo -> max_user_run = INFINITY;
   sinfo -> max_group_run = INFINITY;
+  sinfo -> tokens = NULL;
   init_state_count( &(sinfo -> sc) );
 
   return sinfo;
@@ -500,6 +506,8 @@ void free_server( server_info *sinfo, int free_objs_too )
     free_nodes( sinfo -> nodes );
   }
 
+  free_token_list(sinfo -> tokens);
+
   free_server_info( sinfo );
 }
 
@@ -582,3 +590,70 @@ int check_run_job( job_info *job, void *arg )
   return job -> is_running;
 }
 
+token** get_token_array(char* tokenlist){
+  char **list;
+  token **token_array; 
+  char * colon;
+  int i, count;
+
+  list = break_comma_list(string_dup(tokenlist));
+
+  count = 0;
+  while(list[count] != NULL){
+    count++;
+  }
+
+  token_array = (token **)malloc(sizeof(token *) * (count + 1));
+  for(i = 0;  i < count; i++){
+    token_array[i] = get_token(list[i]);
+  }
+  token_array[count] = NULL;
+
+  free_string_array(list);
+
+  return token_array;
+}
+
+token* get_token(char* token_string){
+
+  char *colon;
+  token *this_token = (token *) malloc(sizeof(token));
+  char *work_string = string_dup(token_string);
+  colon = strstr(work_string, ":");
+  this_token->count = atof(colon + 1);
+  *colon = 0;
+  this_token->identifier = work_string;
+
+  return this_token;
+}
+
+/*
+ * Free a token list
+ *
+ */
+
+void free_token_list(token ** tokens){
+  int i;
+  token *this_token;
+  if(tokens != NULL){
+    for(i = 0; (this_token = tokens[i]) != NULL; i++){
+      free_token(this_token);
+    }
+    free(tokens);
+  }
+}
+
+/*
+ * Free an individual token
+ *
+ */
+
+void free_token(token* token_ptr){
+  if(token_ptr != NULL){
+    if(token_ptr->identifier != NULL){
+      free(token_ptr->identifier);
+    }
+    free(token_ptr);
+  }
+}
+  

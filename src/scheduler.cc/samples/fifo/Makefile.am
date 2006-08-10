@@ -14,4 +14,5 @@ libfoo_la_SOURCES = check.c dedtime.c fairshare.c fifo.c globals.c \
 		    check.h config.h constant.h data_types.h dedtime.h \
 		    fairshare.h fifo.h globals.h job_info.h misc.h node_info.h \
 		    parse.h prev_job_info.h prime.h queue_info.h server_info.h \
-		    sort.h state_count.h
+		    sort.h state_count.h \
+	            token_acct.h token_accounting.c

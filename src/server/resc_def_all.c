@@ -92,6 +92,7 @@
 #include "attribute.h" 
 #include "resource.h" 
 #include "pbs_error.h"
+#include <stdio.h>
 
 /*
  * The entries for each attribute are (see attribute.h):
@@ -109,6 +110,7 @@
 
 static int decode_nodes A_((struct attribute *, char *, char *, char *));
 static int set_node_ct A_((resource *, attribute *, int actmode));
+static int set_tokens A_((struct attribute *attr, struct attribute *new, enum batch_op actmode));
 
 resource_def *svr_resc_def;
 
@@ -551,6 +553,17 @@ resource_def svr_resc_def_const[] = {
 	NO_USER_SET | ATR_DFLAG_MOM | ATR_DFLAG_RMOMIG,
 	ATR_TYPE_STR
     },
+    { ATTR_tokens,                               /* tokens required to run */
+	decode_tokens,
+	encode_str,
+	set_tokens,
+	comp_str,
+	free_str,
+	NULL_FUNC,
+	READ_WRITE,
+	ATR_TYPE_STR
+    },
+
     /* Cray CPA partitions */
     { "size", decode_l, encode_l, set_l, comp_l, free_null, NULL_FUNC, READ_WRITE | ATR_DFLAG_MOM, ATR_TYPE_LONG },
     { "cpapartitionid", decode_str, encode_str, set_str, comp_str, free_str, NULL_FUNC, READ_WRITE, ATR_TYPE_STR },
@@ -895,3 +908,37 @@ static int set_node_ct(
   }  /* END set_node_ct() */
 
 
+/*
+ * set_tokens = set node count
+ *
+ */
+
+static int set_tokens(attr, new, op)
+      struct attribute *attr;
+      struct attribute *new;
+      enum batch_op op;
+{
+  char * colon = NULL;
+  float count = 0;
+
+  int ret = 0;
+
+  if(new != NULL){
+    colon = strchr(new->at_val.at_str, (int)':');
+    if(colon == NULL){
+      ret = PBSE_BADATVAL;
+    } else {
+
+      colon++;
+      count = atof(colon);
+      if(count <= 0 || count > 1000){
+      ret = PBSE_BADATVAL;
+      }
+    }
+  }
+  if(ret == 0){
+    ret = set_str(attr, new, op);
+  }
+
+  return ret;
+}

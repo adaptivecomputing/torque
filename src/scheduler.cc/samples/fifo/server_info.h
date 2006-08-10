@@ -162,4 +162,26 @@ void set_jobs( server_info *sinfo );
  */
 int check_run_job( job_info *job, void *arg );
 
+/*
+ *      free_token_list - free a list of tokens
+ */
+void free_token_list( token **token_list );
+
+/*
+ *      count_tokens - count the number of comma separated tokens
+ */
+int count_tokens( const char* tokenlist );
+
+/*
+ *      get_token - get token number out of a comma separated list
+ */
+token** get_token_array(char* tokenlist);
+
+token* get_token(char* tokenstring);
+
+void free_token(token* token_ptr);
+
+
+
+
 #endif

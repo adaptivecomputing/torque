@@ -91,6 +91,7 @@
 #include "constant.h"
 #include "globals.h"
 #include "dedtime.h"
+#include "token_acct.h"
 
 /* Internal functions */
 int check_server_max_run( server_info *sinfo );
@@ -185,6 +186,9 @@ int is_ok_to_run_job( int pbs_sd, server_info *sinfo, queue_info *qinfo,
     return rc;
 
   if( ( rc = check_avail_resources(sinfo -> res, jinfo) ) != SUCCESS )
+    return rc;
+
+  if( ( rc = check_token_utilization(sinfo, jinfo) ) != SUCCESS)
     return rc;
 
   return SUCCESS;
@@ -675,3 +679,170 @@ int check_starvation( job_info *jinfo )
   else
     return JOB_STARVING;
 }
+
+static token **token_used = NULL;
+static token **token_pool = NULL;
+
+/*
+ *
+ *   sum_tokens - Add to the list of tokens. If the type already exists add the count
+ *                otherwise insert a new entry
+ *
+ *      this_token - token to add to the list
+ *      token_list - list of tokens
+ *
+ */
+
+void sum_tokens(token *this_token, token ***token_list){
+  int i;
+  if (*token_list == NULL){
+    *token_list = (token**)malloc(sizeof(token *) * 1000);
+    memset(*token_list, 0, sizeof(token *) * 1000);
+  }
+
+  for(i = 0; (*token_list)[i] != NULL; i++){
+    if(strcmp(this_token->identifier, (*token_list)[i]->identifier) == 0){
+      (*token_list)[i]->count += this_token->count;
+      break;
+    }
+  }
+  if((*token_list)[i] == NULL){
+    (*token_list)[i] = (token*)malloc(sizeof(token));
+    (*token_list)[i]->identifier = strdup(this_token->identifier);
+    (*token_list)[i]->count = this_token->count;
+  }
+}
+
+/*
+ *
+ *   get_token_consumption - Create accouting record from list of tokens
+ *
+ *      buffer - string buffer for the accounting record output
+ *      token_list - list of tokens to create record from
+ *
+ */
+
+
+void get_token_consumption(char * buffer, token ***token_list){
+  int i = 0;
+  char print_buffer[1024]; 
+  
+  memset(buffer, 0 , TOKEN_ACCT_MAX_RCD);
+
+  if(*token_list != NULL){
+
+    for(i = 0; (*token_list)[i] !=NULL; i++){
+      if(i > 0)
+	buffer = strcat(buffer, ",");
+      sprintf(print_buffer, "%s:%.2f", (*token_list)[i]->identifier, (*token_list)[i]->count);
+      buffer = strcat(buffer, print_buffer);
+      free((*token_list)[i]->identifier);
+      free((*token_list)[i]);
+    }
+    free(*token_list);
+    *token_list=NULL;
+  }
+}
+
+/*
+ *
+ *    check_token_utiliztion
+ *
+ *      sinfo - the current server state
+ *
+ *    returns 
+ *      0: If token utiliztion has not reach max
+ *      SERVER_TOKEN_UTILIZATION if max token usage has been reached
+ *
+ */
+
+int check_token_utilization( server_info *sinfo, job_info *jinfo )
+{
+  resource_req *tokens_req;
+  resource_req *running_job_tokens_req;
+
+  token *running_job_tokens;
+  token *job_tokens;
+  token *server_tokens;
+
+  tokens_req = find_resource_req(jinfo -> resreq, ATTR_tokens);
+
+  job_info **job_ptr = 0;
+  int i = 0;
+  float count_used = 0.0;
+  float max_count = 0.0;
+  float count_requested = 0.0;
+
+  char token_log_message[TOKEN_ACCT_MAX_RCD];
+
+  int ret = SUCCESS;
+  
+  if(tokens_req != NULL){
+
+    /* Pull out the jobs token request */
+    job_tokens = get_token(tokens_req->res_str);
+    count_requested = job_tokens->count;
+
+    /* Now dig through the running jobs to find what is being used */
+    /* Sum up the total usage */
+
+    job_ptr = sinfo->running_jobs;
+
+    for(i = 0; job_ptr[i] != NULL; i++){
+
+      running_job_tokens_req = find_resource_req(job_ptr[i]->resreq, ATTR_tokens);
+      
+      /* If the job didn't ask for any tokens don't process it */
+      if(running_job_tokens_req != NULL){
+
+	running_job_tokens = get_token(running_job_tokens_req->res_str);
+
+	/* Sum up all tokens in use for accounting purposes */
+	sum_tokens(running_job_tokens, &token_used);
+
+	/* Check if the running job is using a token of the same type that is being requested */
+	if(strcmp(running_job_tokens->identifier, job_tokens->identifier) == 0){
+	  /* Got it */
+
+	  count_used += running_job_tokens->count;
+	}
+	free_token(running_job_tokens);
+      }
+    }
+
+    /* Check what the max limit is for this server */
+    /* Loop through all the tokens until we find the right kind */
+    /* Also, sum up all the tokens in the server pool for accounting purposes */
+
+    for(i = 0; (server_tokens = sinfo->tokens[i]) != NULL; i++){
+
+      sum_tokens(server_tokens, &token_pool);
+      if (!strcmp(server_tokens->identifier, job_tokens->identifier)){
+	max_count = server_tokens->count;
+      }
+    }
+
+
+    /* Finally check if the requested plus the used exceeds the allowed */
+
+    if(count_used + count_requested > max_count){
+      ret = SERVER_TOKEN_UTILIZATION;
+      /* Have to call these functions just for cleanup */
+      get_token_consumption(token_log_message, &token_used);
+      get_token_consumption(token_log_message, &token_pool);
+    } else{
+      /* Write accounting record for the event of allocating tokens to this job */
+      token_account_record(TOKEN_ACCT_RUN, jinfo->name, tokens_req->res_str);
+      /* Write accounting record of what is currently being used */
+      sum_tokens(job_tokens, &token_used);
+      get_token_consumption(token_log_message, &token_used);
+      token_account_record(TOKEN_ACCT_ABT, NULL, token_log_message);
+      /* Write accounting record of the current pool (total of unused and used) */
+      get_token_consumption(token_log_message, &token_pool);
+      token_account_record(TOKEN_ACCT_POOL, NULL, token_log_message);
+    }
+    free_token(job_tokens);
+  }
+  return ret;
+}
+

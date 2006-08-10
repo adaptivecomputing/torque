@@ -139,7 +139,7 @@ libattr_a_SOURCES = attr_atomic.c attr_fn_acl.c attr_fn_arst.c attr_fn_b.c \
 		     attr_fn_ll.c attr_fn_resc.c attr_fn_size.c \
 		     attr_fn_str.c attr_fn_time.c attr_fn_unkn.c \
 		     attr_func.c attr_node_func.c Long_.c LTostr.c strToL.c \
-		     strTouL.c uLTostr.c
+		     strTouL.c uLTostr.c attr_fn_tokens.c
 
 subdir = src/lib/Libattr
 mkinstalldirs = $(SHELL) $(top_srcdir)/buildutils/mkinstalldirs
@@ -157,7 +157,7 @@ am_libattr_a_OBJECTS = attr_atomic.$(OBJEXT) attr_fn_acl.$(OBJEXT) \
 	attr_fn_time.$(OBJEXT) attr_fn_unkn.$(OBJEXT) \
 	attr_func.$(OBJEXT) attr_node_func.$(OBJEXT) Long_.$(OBJEXT) \
 	LTostr.$(OBJEXT) strToL.$(OBJEXT) strTouL.$(OBJEXT) \
-	uLTostr.$(OBJEXT)
+	uLTostr.$(OBJEXT) attr_fn_tokens.$(OBJEXT)
 libattr_a_OBJECTS = $(am_libattr_a_OBJECTS)
 
 DEFS = @DEFS@
@@ -179,6 +179,7 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/attr_fn_size.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/attr_fn_str.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/attr_fn_time.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/attr_fn_tokens.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/attr_fn_unkn.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/attr_func.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/attr_node_func.Po ./$(DEPDIR)/strToL.Po \
@@ -233,6 +234,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/attr_fn_size.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/attr_fn_str.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/attr_fn_time.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/attr_fn_tokens.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/attr_fn_unkn.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/attr_func.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/attr_node_func.Po@am__quote@

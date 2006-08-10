@@ -102,6 +102,7 @@
 #include "fairshare.h"
 #include "prime.h"
 #include "dedtime.h"
+#include "token_acct.h"
 
 
 /* a list of running jobs from the last scheduling cycle */
@@ -151,6 +152,8 @@ int schedinit( int argc, char *argv[] )
      */
     last_sync = last_decay = cstat.current_time;
   }
+
+  token_acct_open((char *)0);
 
   return 0;
 }

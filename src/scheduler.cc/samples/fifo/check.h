@@ -172,6 +172,11 @@ int is_node_available( job_info *jinfo, node_info **ninfo_arr );
  */
 int check_ded_time_queue( queue_info *qinfo );
 
+/*
+ *      check_token_utilization - check if the necessary Ab Initio tokens
+ *                                are available
+ */
+int check_token_utilization( server_info *sinfo, job_info *jinfo );
 
 #endif
 
