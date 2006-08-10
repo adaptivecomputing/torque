@@ -611,7 +611,7 @@ int get_connecthost(
             sizeof(struct in_addr),
             AF_INET)) == NULL)
       {
-      server_name = strdup(inet_ntoa(addr));
+      server_name = strdup(inet_ntoa(serveraddr));
       }
     else
       {
