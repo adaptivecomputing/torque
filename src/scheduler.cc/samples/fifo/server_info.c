@@ -193,7 +193,6 @@ server_info *query_server_info( struct batch_status *server )
   resource *resp;	/* a resource to help create the resource list */
   sch_resource_t count;	/* used to convert string -> integer */
   char *endp;		/* used with strtol() */
-  int i;
 
   if( ( sinfo = new_server_info() ) == NULL )
     return NULL;  		/* error */
@@ -593,7 +592,6 @@ int check_run_job( job_info *job, void *arg )
 token** get_token_array(char* tokenlist){
   char **list;
   token **token_array; 
-  char * colon;
   int i, count;
 
   list = break_comma_list(string_dup(tokenlist));
