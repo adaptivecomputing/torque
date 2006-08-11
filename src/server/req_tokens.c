@@ -36,10 +36,10 @@ int token_chk(pattr, pobject, actmode)
      void *pobject;
      int actmode;
 {
-  char			*entry, *entry2;
+  char			*entry;
   int			 err = 0;
   float                   count = 0;
-  int   			 i, j;
+  int   			 i;
   struct array_strings	*pstr;
 
   if (actmode == ATR_ACTION_FREE)
