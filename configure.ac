@@ -192,6 +192,7 @@ AC_CHECK_HEADERS([arpa/inet.h fcntl.h float.h limits.h malloc.h netdb.h \
                   sys/vfs.h sys/statfs.h sys/statvfs.h syslog.h \
                   termios.h err.h sys/poll.h pam/pam_modules.h security/pam_appl.h])
 
+# On Solaris, pam_modules.h requires pam_appl.h
 AC_CHECK_HEADERS([security/pam_modules.h], [], [],
 [#if HAVE_SECURITY_PAM_APPL_H
 # include <security/pam_appl.h>
@@ -199,48 +200,31 @@ AC_CHECK_HEADERS([security/pam_modules.h], [], [],
 ])
 
 
-dnl Check for socklen_t.  In traditional BSD this is an int, but some
-dnl OSes use a different type.  Test until we find something that will
-dnl work properly.  Test taken from curl, which was borrowed from a
-dnl patch submitted for Python.
-AC_CHECK_TYPE([socklen_t], ,[
-  AC_MSG_CHECKING([for socklen_t equivalent])
-  AC_CACHE_VAL([torque_cv_socklen_t_equiv],
-  [
-dnl Systems have either "struct sockaddr*" or "void*" as second
-dnl arg to getpeername.
-    torque_cv_socklen_t_equiv=no
-    for arg2 in "struct sockaddr" void ; do
-      for t in int size_t socklen_t unsigned long "unsigned long" void ; do
-        AC_TRY_COMPILE(
-[#ifdef HAVE_SYS_TYPES_H
-#include <sys/types.h>
-#endif
-#ifdef HAVE_SYS_SOCKET_H
-#include <sys/socket.h>
-#endif
-extern int getsockname (int, $arg2 *, $t *);],[],
-  [torque_cv_socklen_t_equiv="$t"
-  break])
-      done
-    done
-  ])
-  if test "$torque_cv_socklen_t_equiv" = "void"; then
-      torque_cv_socklen_t_equiv=int
-  fi
-  AC_MSG_RESULT($torque_cv_socklen_t_equiv)
+dnl
+dnl get socklen_t or equivalent.  If hpux and gcc, force the XOPEN interface.
+AC_MSG_CHECKING([whether to force XOPEN networking stack])
+AC_ARG_ENABLE(xopen_networking,
+    [  --disable-xopen-networking      With HPUX and GCC, don't force usage of XOPEN and libxnet])
+if test "${enable_xopen_networking}" != "no" ; then
+case $GCC,$PBS_MACH in
+  yes,hpux*) AC_MSG_RESULT([yes])
+             AC_MSG_WARN([On HPUX and gcc, forcing XOPEN network stack.])
+             AC_MSG_WARN([Use --disable-xopen-networking to prevent it])
+             AC_CHECK_LIB([xnet], [getpeername], 
+              [LIBS="-lxnet $LIBS"
+               CFLAGS="$CFLAGS -D_XOPEN_SOURCE -D_XOPEN_SOURCE_EXTENDED=1"],
+              [AC_MSG_WARN([This build will likely fail in mysterious ways at run-time])
+               sleep 10])
+  ;;
+  *) AC_MSG_RESULT([no... phew!])
+esac
+else
+  AC_MSG_RESULT([disabled])
+fi
+AC_CHECK_TYPE([socklen_t],
+  [AC_DEFINE_UNQUOTED([torque_socklen_t],[socklen_t],[type to use in place of socklen_t])],
+  [TAC_SOCKLEN_EQUIV([torque_socklen_t])])
 
-  if test "$torque_cv_socklen_t_equiv" = "no"; then
-      AC_MSG_ERROR([unable to find socklen_t equivalent])
-  fi
-  AC_DEFINE_UNQUOTED(socklen_t, $torque_cv_socklen_t_equiv,
-      [type to use in place of socklen_t if not defined])],
-  [#ifdef HAVE_SYS_TYPES_H
-#include <sys/types.h>
-#endif
-#ifdef HAVE_SYS_SOCKET_H
-#include <sys/socket.h>
-#endif])
 
 
 dnl Torque's own largefile support
@@ -1296,6 +1280,25 @@ AC_CHECK_FUNCS(atexit on_exit, [ { found_an_exit=yes; break; } ])
 if test "$found_an_exit" != yes; then
     AC_MSG_ERROR([Must have atexit() or on_exit()])
 fi
+
+AC_CHECK_FUNC(ntohl, [ :],
+  AC_MSG_CHECKING([for ntohl in arpa/inet.h])
+  torque_cv_ntohl_needs_arpa_inet_h="no"
+  AC_TRY_COMPILE([
+  #ifdef HAVE_SYS_TYPES_H
+  #include <sys/types.h>
+  #endif
+  #ifdef HAVE_NETINET_IN_H
+  #include <netinet/in.h>
+  #endif
+  #ifdef HAVE_ARPA_INET_H
+  #include <arpa/inet.h>
+  #endif
+  ],[exit(ntohl(0));],
+    [torque_cv_ntohl_needs_arpa_inet_h="yes"
+     AC_DEFINE_UNQUOTED([NTOHL_NEEDS_ARPA_INET_H],1,[Define if ntohl() is declared in arpa/inet.h])])
+  AC_MSG_RESULT($torque_cv_ntohl_needs_arpa_inet_h)
+)
 
 
 

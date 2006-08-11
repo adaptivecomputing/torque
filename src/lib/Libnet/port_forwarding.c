@@ -31,7 +31,7 @@ int port_forwarder(struct pfwdsock *socks,int(*connfunc)(char *,int),char *phost
   fd_set rfdset, wfdset, efdset;
   int rc, maxsock=0;
   struct sockaddr_in from;
-  socklen_t fromlen;
+  torque_socklen_t fromlen;
   int n,n2,sock;
 
 
@@ -192,7 +192,7 @@ void
 set_nodelay(int fd)
 {       
         int opt;
-        socklen_t optlen;
+        torque_socklen_t optlen;
         
         optlen = sizeof opt;
         if (getsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &opt, &optlen) == -1) {

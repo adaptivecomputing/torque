@@ -1024,6 +1024,7 @@ Optional Features:
   --enable-static=PKGS  build static libraries default=yes
   --enable-fast-install=PKGS  optimize for fast installation default=yes
   --disable-libtool-lock  avoid locking (might break parallel builds)
+  --disable-xopen-networking      With HPUX and GCC, don't force usage of XOPEN and libxnet
   --enable-nodemask       enable nodemask-based scheduling on the Origin 2000
   --enable-pemask         enable pemask-based scheduling on the Cray T3e
   --enable-srfs           enable support for SRFS on Cray
@@ -5002,7 +5003,7 @@ test "x$enable_libtool_lock" != xno && enable_libtool_lock=yes
 case $host in
 *-*-irix6*)
   # Find out which ABI we are using.
-  echo '#line 5005 "configure"' > conftest.$ac_ext
+  echo '#line 5006 "configure"' > conftest.$ac_ext
   if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   (eval $ac_compile) 2>&5
   ac_status=$?
@@ -5531,7 +5532,7 @@ chmod -w .
 save_CFLAGS="$CFLAGS"
 CFLAGS="$CFLAGS -o out/conftest2.$ac_objext"
 compiler_c_o=no
-if { (eval echo configure:5534: \"$ac_compile\") 1>&5; (eval $ac_compile) 2>out/conftest.err; } && test -s out/conftest2.$ac_objext; then
+if { (eval echo configure:5535: \"$ac_compile\") 1>&5; (eval $ac_compile) 2>out/conftest.err; } && test -s out/conftest2.$ac_objext; then
   # The compiler can only warn and ignore the option if not recognized
   # So say no if there are warnings
   if test -s out/conftest.err; then
@@ -6715,7 +6716,7 @@ linux-gnu*)
   libsuff=
   case "$host_cpu" in
   x86_64*|s390x*)
-    echo '#line 6718 "configure"' > conftest.$ac_ext
+    echo '#line 6719 "configure"' > conftest.$ac_ext
     if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   (eval $ac_compile) 2>&5
   ac_status=$?
@@ -7387,7 +7388,7 @@ else
     lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 7390 "configure"
+#line 7391 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -7485,7 +7486,7 @@ else
     lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 7488 "configure"
+#line 7489 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -8219,7 +8220,7 @@ case $host_os in
   linux-gnu*)
   case "$host_cpu" in
   powerpc*|ppc*)
-    echo '#line 8222 "configure"' > conftest.$ac_ext
+    echo '#line 8223 "configure"' > conftest.$ac_ext
     if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   (eval $ac_compile) 2>&5
   ac_status=$?
@@ -8924,6 +8925,7 @@ fi
 done
 
 
+# On Solaris, pam_modules.h requires pam_appl.h
 
 for ac_header in security/pam_modules.h
 do
@@ -8981,6 +8983,92 @@ done
 
 
 
+echo "$as_me:$LINENO: checking whether to force XOPEN networking stack" >&5
+echo $ECHO_N "checking whether to force XOPEN networking stack... $ECHO_C" >&6
+# Check whether --enable-xopen_networking or --disable-xopen_networking was given.
+if test "${enable_xopen_networking+set}" = set; then
+  enableval="$enable_xopen_networking"
+
+fi;
+if test "${enable_xopen_networking}" != "no" ; then
+case $GCC,$PBS_MACH in
+  yes,hpux*) echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+             { echo "$as_me:$LINENO: WARNING: On HPUX and gcc, forcing XOPEN network stack." >&5
+echo "$as_me: WARNING: On HPUX and gcc, forcing XOPEN network stack." >&2;}
+             { echo "$as_me:$LINENO: WARNING: Use --disable-xopen-networking to prevent it" >&5
+echo "$as_me: WARNING: Use --disable-xopen-networking to prevent it" >&2;}
+             echo "$as_me:$LINENO: checking for getpeername in -lxnet" >&5
+echo $ECHO_N "checking for getpeername in -lxnet... $ECHO_C" >&6
+if test "${ac_cv_lib_xnet_getpeername+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lxnet  $LIBS"
+cat >conftest.$ac_ext <<_ACEOF
+#line $LINENO "configure"
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+/* Override any gcc2 internal prototype to avoid an error.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+/* We use char because int might match the return type of a gcc2
+   builtin and then its argument prototype would still apply.  */
+char getpeername ();
+int
+main ()
+{
+getpeername ();
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+         { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_cv_lib_xnet_getpeername=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+ac_cv_lib_xnet_getpeername=no
+fi
+rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+echo "$as_me:$LINENO: result: $ac_cv_lib_xnet_getpeername" >&5
+echo "${ECHO_T}$ac_cv_lib_xnet_getpeername" >&6
+if test $ac_cv_lib_xnet_getpeername = yes; then
+  LIBS="-lxnet $LIBS"
+               CFLAGS="$CFLAGS -D_XOPEN_SOURCE -D_XOPEN_SOURCE_EXTENDED=1"
+else
+  { echo "$as_me:$LINENO: WARNING: This build will likely fail in mysterious ways at run-time" >&5
+echo "$as_me: WARNING: This build will likely fail in mysterious ways at run-time" >&2;}
+               sleep 10
+fi
+
+  ;;
+  *) echo "$as_me:$LINENO: result: no... phew!" >&5
+echo "${ECHO_T}no... phew!" >&6
+esac
+else
+  echo "$as_me:$LINENO: result: disabled" >&5
+echo "${ECHO_T}disabled" >&6
+fi
 echo "$as_me:$LINENO: checking for socklen_t" >&5
 echo $ECHO_N "checking for socklen_t... $ECHO_C" >&6
 if test "${ac_cv_type_socklen_t+set}" = set; then
@@ -8993,13 +9081,7 @@ _ACEOF
 cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
-#ifdef HAVE_SYS_TYPES_H
-#include <sys/types.h>
-#endif
-#ifdef HAVE_SYS_SOCKET_H
-#include <sys/socket.h>
-#endif
-
+$ac_includes_default
 int
 main ()
 {
@@ -9035,35 +9117,47 @@ fi
 echo "$as_me:$LINENO: result: $ac_cv_type_socklen_t" >&5
 echo "${ECHO_T}$ac_cv_type_socklen_t" >&6
 if test $ac_cv_type_socklen_t = yes; then
-  :
+
+cat >>confdefs.h <<_ACEOF
+#define torque_socklen_t socklen_t
+_ACEOF
+
 else
 
-  echo "$as_me:$LINENO: checking for socklen_t equivalent" >&5
+      echo "$as_me:$LINENO: checking for socklen_t equivalent" >&5
 echo $ECHO_N "checking for socklen_t equivalent... $ECHO_C" >&6
-  if test "${torque_cv_socklen_t_equiv+set}" = set; then
+      if test "${curl_cv_socklen_t_equiv+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
 
-    torque_cv_socklen_t_equiv=no
-    for arg2 in "struct sockaddr" void ; do
-      for t in int size_t socklen_t unsigned long "unsigned long" void ; do
-        cat >conftest.$ac_ext <<_ACEOF
+         # Systems have either "struct sockaddr *" or
+         # "void *" as the second argument to getpeername
+         curl_cv_socklen_t_equiv=
+         for arg2 in "struct sockaddr" void; do
+            for t in int size_t unsigned long "unsigned long" socklen_t; do
+               cat >conftest.$ac_ext <<_ACEOF
 #line $LINENO "configure"
 /* confdefs.h.  */
 _ACEOF
 cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
-#ifdef HAVE_SYS_TYPES_H
-#include <sys/types.h>
-#endif
-#ifdef HAVE_SYS_SOCKET_H
-#include <sys/socket.h>
-#endif
-extern int getsockname (int, $arg2 *, $t *);
+
+                  #ifdef HAVE_SYS_TYPES_H
+                  #include <sys/types.h>
+                  #endif
+                  #ifdef HAVE_SYS_SOCKET_H
+                  #include <sys/socket.h>
+                  #endif
+
+                  extern int getpeername (int, $arg2 *, $t *);
+
 int
 main ()
 {
+
+                  $t len;
+                  getpeername(0,0,&len);
 
   ;
   return 0;
@@ -9081,36 +9175,38 @@ if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   ac_status=$?
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); }; }; then
-  torque_cv_socklen_t_equiv="$t"
-  break
+
+                  curl_cv_socklen_t_equiv="$t"
+                  break
+
 else
   echo "$as_me: failed program was:" >&5
 sed 's/^/| /' conftest.$ac_ext >&5
 
 fi
 rm -f conftest.$ac_objext conftest.$ac_ext
-      done
-    done
+            done
+         done
+
+         if test "x$curl_cv_socklen_t_equiv" = x; then
+         # take a wild guess
+            curl_cv_socklen_t_equiv="socklen_t"
+            { echo "$as_me:$LINENO: WARNING: Cannot find a type to use in place of socklen_t, guessing socklen_t" >&5
+echo "$as_me: WARNING: Cannot find a type to use in place of socklen_t, guessing socklen_t" >&2;}
+         fi
 
 fi
 
-  if test "$torque_cv_socklen_t_equiv" = "void"; then
-      torque_cv_socklen_t_equiv=int
-  fi
-  echo "$as_me:$LINENO: result: $torque_cv_socklen_t_equiv" >&5
-echo "${ECHO_T}$torque_cv_socklen_t_equiv" >&6
-
-  if test "$torque_cv_socklen_t_equiv" = "no"; then
-      { { echo "$as_me:$LINENO: error: unable to find socklen_t equivalent" >&5
-echo "$as_me: error: unable to find socklen_t equivalent" >&2;}
-   { (exit 1); exit 1; }; }
-  fi
+      echo "$as_me:$LINENO: result: $curl_cv_socklen_t_equiv" >&5
+echo "${ECHO_T}$curl_cv_socklen_t_equiv" >&6
 
 cat >>confdefs.h <<_ACEOF
-#define socklen_t $torque_cv_socklen_t_equiv
+#define torque_socklen_t $curl_cv_socklen_t_equiv
 _ACEOF
 
+
 fi
+
 
 
 
@@ -18826,6 +18922,140 @@ if test "$found_an_exit" != yes; then
 echo "$as_me: error: Must have atexit() or on_exit()" >&2;}
    { (exit 1); exit 1; }; }
 fi
+
+echo "$as_me:$LINENO: checking for ntohl" >&5
+echo $ECHO_N "checking for ntohl... $ECHO_C" >&6
+if test "${ac_cv_func_ntohl+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  cat >conftest.$ac_ext <<_ACEOF
+#line $LINENO "configure"
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+/* System header to define __stub macros and hopefully few prototypes,
+    which can conflict with char ntohl (); below.
+    Prefer <limits.h> to <assert.h> if __STDC__ is defined, since
+    <limits.h> exists even on freestanding compilers.  */
+#ifdef __STDC__
+# include <limits.h>
+#else
+# include <assert.h>
+#endif
+/* Override any gcc2 internal prototype to avoid an error.  */
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+/* We use char because int might match the return type of a gcc2
+   builtin and then its argument prototype would still apply.  */
+char ntohl ();
+/* The GNU C library defines this for functions which it implements
+    to always fail with ENOSYS.  Some functions are actually named
+    something starting with __ and the normal name is an alias.  */
+#if defined (__stub_ntohl) || defined (__stub___ntohl)
+choke me
+#else
+char (*f) () = ntohl;
+#endif
+#ifdef __cplusplus
+}
+#endif
+
+int
+main ()
+{
+return f != ntohl;
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+         { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_cv_func_ntohl=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+ac_cv_func_ntohl=no
+fi
+rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
+fi
+echo "$as_me:$LINENO: result: $ac_cv_func_ntohl" >&5
+echo "${ECHO_T}$ac_cv_func_ntohl" >&6
+if test $ac_cv_func_ntohl = yes; then
+   :
+else
+  echo "$as_me:$LINENO: checking for ntohl in arpa/inet.h" >&5
+echo $ECHO_N "checking for ntohl in arpa/inet.h... $ECHO_C" >&6
+  torque_cv_ntohl_needs_arpa_inet_h="no"
+  cat >conftest.$ac_ext <<_ACEOF
+#line $LINENO "configure"
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+  #ifdef HAVE_SYS_TYPES_H
+  #include <sys/types.h>
+  #endif
+  #ifdef HAVE_NETINET_IN_H
+  #include <netinet/in.h>
+  #endif
+  #ifdef HAVE_ARPA_INET_H
+  #include <arpa/inet.h>
+  #endif
+
+int
+main ()
+{
+exit(ntohl(0));
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext
+if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
+  (eval $ac_compile) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+         { ac_try='test -s conftest.$ac_objext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  torque_cv_ntohl_needs_arpa_inet_h="yes"
+
+cat >>confdefs.h <<_ACEOF
+#define NTOHL_NEEDS_ARPA_INET_H 1
+_ACEOF
+
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+fi
+rm -f conftest.$ac_objext conftest.$ac_ext
+  echo "$as_me:$LINENO: result: $torque_cv_ntohl_needs_arpa_inet_h" >&5
+echo "${ECHO_T}$torque_cv_ntohl_needs_arpa_inet_h" >&6
+
+fi
+
 
 
 

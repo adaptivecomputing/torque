@@ -83,6 +83,10 @@
 #include <netdb.h>
 #include <netinet/in.h>
 #include <memory.h>
+#if defined(NTOHL_NEEDS_ARPA_INET_H) && defined(HAVE_ARPA_INET_H)
+#include <arpa/inet.h>
+#endif
+
 #include "portability.h"
 #include "server_limits.h"
 #include "net_connect.h"

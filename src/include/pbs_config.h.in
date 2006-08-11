@@ -231,6 +231,9 @@
 /* directly use homedirs instead of $TORQUEHOME/spool */
 #undef NO_SPOOL_OUTPUT
 
+/* Define if ntohl() is declared in arpa/inet.h */
+#undef NTOHL_NEEDS_ARPA_INET_H
+
 /* Name of package */
 #undef PACKAGE
 
@@ -388,7 +391,7 @@
 #undef size_t
 
 /* type to use in place of socklen_t if not defined */
-#undef socklen_t
+#undef torque_socklen_t
 
 /* Define to `int' if <sys/types.h> doesn't define. */
 #undef uid_t

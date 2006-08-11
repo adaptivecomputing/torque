@@ -95,6 +95,10 @@
 #include <sys/stat.h>
 #include <netinet/in.h>
 #include <sys/time.h>
+#if defined(NTOHL_NEEDS_ARPA_INET_H) && defined(HAVE_ARPA_INET_H)
+#include <arpa/inet.h>
+#endif
+
 
 #include "pbs_ifl.h"
 #include "pbs_error.h"

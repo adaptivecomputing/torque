@@ -103,6 +103,10 @@
 #include <netinet/in.h>
 #include <netdb.h>
 #include <time.h>
+#if defined(NTOHL_NEEDS_ARPA_INET_H) && defined(HAVE_ARPA_INET_H)
+#include <arpa/inet.h>
+#endif
+
 #include "pbs_ifl.h"
 #include "libpbs.h"
 #include "list_link.h"

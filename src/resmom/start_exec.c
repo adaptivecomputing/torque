@@ -1144,7 +1144,7 @@ int TMomFinalizeJob1(
   {
   static char 	       *id = "TMomFinalizeJob1";
 
-  socklen_t	         slen;
+  torque_socklen_t	         slen;
 
   int                    i;
 
@@ -4027,7 +4027,7 @@ void start_exec(
   int		stream;
   char		tmpdir[MAXPATHLEN];
 
-  socklen_t slen;
+  torque_socklen_t slen;
 
   void im_compose A_((int stream,
     char	*jobid,

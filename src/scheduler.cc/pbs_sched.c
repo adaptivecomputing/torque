@@ -577,7 +577,7 @@ int server_command()
   char	*id = "server_command";
 
   int           new_socket;
-  socklen_t	slen;
+  torque_socklen_t	slen;
   int		i, cmd;
   pbs_net_t	addr;
 

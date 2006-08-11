@@ -11,6 +11,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature
   b - fix bug with log roll and automatic log filenames
   e - use mlockall() in pbs_mom if _POSIX_MEMLOCK
   f - consumable resource "tokens" support (Harte-Hanks)
+  b - networking fixes for HPUX, fixes pbs_iff (PACCAR)
 
 2.1.2
 

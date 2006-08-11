@@ -91,6 +91,10 @@
 #include <netinet/in.h>
 #include <stdarg.h>
 #include <assert.h>
+#if defined(NTOHL_NEEDS_ARPA_INET_H) && defined(HAVE_ARPA_INET_H)
+#include <arpa/inet.h>
+#endif
+
 
 #include "portability.h"
 #include "libpbs.h"

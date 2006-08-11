@@ -107,6 +107,10 @@
 #include	<sys/socket.h>
 #include	<sys/time.h>
 #include	<netinet/in.h>
+#if defined(NTOHL_NEEDS_ARPA_INET_H) && defined(HAVE_ARPA_INET_H)
+#include <arpa/inet.h>
+#endif
+
 #include	"rpp.h"
 
 #if !defined(H_ERRNO_DECLARED)
@@ -1010,7 +1014,7 @@ static void rpp_send_out()
   struct	send_packet	*pp;
   struct	stream		*sp;
   time_t			curr;
-  socklen_t                     len;
+  torque_socklen_t              len;
 
   curr = time(NULL);
 
@@ -1458,7 +1462,7 @@ static int rpp_recv_pkt(
   {
   DOID("recv_pkt")
 
-  socklen_t  flen;
+  torque_socklen_t  flen;
 
   int		len;
   struct sockaddr_in  addr;

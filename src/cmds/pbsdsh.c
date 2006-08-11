@@ -690,7 +690,7 @@ build_listener(int *port)
 {
     int s;
     struct sockaddr_in addr;
-    socklen_t len = sizeof(addr);
+    torque_socklen_t len = sizeof(addr);
 
     if ((s = socket(AF_INET, SOCK_STREAM, 0)) < 0)
         fprintf(stderr,"%s: socket",id);

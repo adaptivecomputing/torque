@@ -134,7 +134,7 @@ int main(
   int 		 sock;
   struct sockaddr_in sockname;
 
-  socklen_t socknamelen;
+  torque_socklen_t socknamelen;
 
   int		 testmode = 0;
   int		 rc;

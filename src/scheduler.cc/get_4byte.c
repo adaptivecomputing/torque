@@ -80,6 +80,10 @@
 
 #include <sys/types.h>
 #include <netinet/in.h>
+#if defined(NTOHL_NEEDS_ARPA_INET_H) && defined(HAVE_ARPA_INET_H)
+#include <arpa/inet.h>
+#endif
+
 
 
 /* FIXME: needs to move to a header file */

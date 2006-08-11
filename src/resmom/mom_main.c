@@ -119,6 +119,10 @@
 #include	<sys/time.h>
 #include	<sys/resource.h>
 #include	<sys/utsname.h>
+#if defined(NTOHL_NEEDS_ARPA_INET_H) && defined(HAVE_ARPA_INET_H)
+#include <arpa/inet.h>
+#endif
+
 
 #include 	"libpbs.h"
 #include 	"pbs_ifl.h"

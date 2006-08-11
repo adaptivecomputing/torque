@@ -91,6 +91,10 @@
 #include <string.h>
 #include <time.h>
 #include <unistd.h>
+#if defined(NTOHL_NEEDS_ARPA_INET_H) && defined(HAVE_ARPA_INET_H)
+#include <arpa/inet.h>
+#endif
+
 
 /* local headers */
 #include "portability.h"
@@ -966,7 +970,7 @@ Server *server;
        static  char    id[] = "ServerOpen"; 	
        struct sockaddr_in      saddr;
        int                     new_socket, sock, connect, port;
-       socklen_t		slen;
+       torque_socklen_t		slen;
        char		       server_name[PBS_MAXHOSTNAME];	
        char		       *sname;
 
