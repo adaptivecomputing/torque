@@ -613,7 +613,7 @@ int mom_comm(
  * rel_resc - release resources assigned to the job
  */
 
-static void rel_resc(
+void rel_resc(
 
   job *pjob)  /* I (modified) */
 
@@ -1480,12 +1480,15 @@ void req_jobobit(
   job		 *pjob;
   struct work_task *ptask;
   svrattrl	 *patlist;
+  unsigned int dummy;
 
   pjob = find_job(preq->rq_ind.rq_jobobit.rq_jid);
 
-  if (pjob == NULL) 
+  if ((pjob == NULL) ||
+      (pjob->ji_qs.ji_un.ji_exect.ji_momaddr != get_hostaddr(
+              parse_servername(preq->rq_host,&dummy)))) 
     {
-    /* not found */
+    /* not found or from wrong node */
 
     if ((server_init_type == RECOV_COLD) ||
         (server_init_type == RECOV_CREATE)) 
