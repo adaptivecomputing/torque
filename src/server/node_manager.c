@@ -809,6 +809,18 @@ void sync_node_jobs(
         {
         pjob = find_job(jobidstr);
 
+        if (pjob != NULL)
+          {
+          /* job exists, but doesn't currently have resources assigned to this node */
+
+          /* double check the job struct because we could be in the middle of moving
+             the job around because of data staging, suspend, or rerun */
+          if (strstr(pjob->ji_wattr[(int)JOB_ATR_exec_host].at_val.at_str,np->nd_name) == NULL)
+            {
+            pjob=NULL;
+            }
+          }
+          
         if (pjob == NULL)
           {
           /* job is reported by mom but server has no record of job */
