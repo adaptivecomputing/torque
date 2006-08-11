@@ -106,6 +106,7 @@
 extern char *msg_manager;
 extern char *msg_jobrerun;
 
+extern void rel_resc(job *);
 
 /*
  * post_rerun - handler for reply from mom on signal_job sent in req_rerunjob
@@ -181,7 +182,7 @@ void req_rerunjob(
     return;
     }
 
-  if (preq->rq_extend && !strncasecmp(preq->rq_extend,"force",strlen("force")))
+  if (preq->rq_extend && !strncasecmp(preq->rq_extend,RERUNFORCE,strlen(RERUNFORCE)))
     Force = 1;
   else
     Force = 0;
@@ -230,7 +231,7 @@ void req_rerunjob(
 
       /* requeue request successful */
 
-      /* NO-OP */
+      pjob->ji_qs.ji_substate  = JOB_SUBSTATE_RERUN;
 
       break;
 
@@ -254,10 +255,48 @@ void req_rerunjob(
         }
       else
         {
-        /* cannot communicate with MOM, requeue job locally and update 
-           MOM when it responds */
+        int newstate, newsubst;
+        unsigned int dummy;
 
-        /* NYI */
+        /* Cannot communicate with MOM, forcibly requeue job.
+           This is a relatively disgusting thing to do */
+
+        sprintf(log_buffer,"rerun req to %s failed (rc=%d), forcibly requeueing job",
+          parse_servername(pjob->ji_wattr[(int)JOB_ATR_exec_host].at_val.at_str,&dummy),
+          rc);
+
+        log_event(
+          PBSEVENT_ERROR|PBSEVENT_ADMIN|PBSEVENT_JOB,
+          PBS_EVENTCLASS_JOB,
+          pjob->ji_qs.ji_jobid,
+          log_buffer);
+
+        log_err(-1,"req_rerunjob",log_buffer);
+
+        strcat(log_buffer,", previous output files may be lost");
+
+        svr_mailowner(pjob,MAIL_OTHER,MAIL_FORCE,log_buffer);
+
+        svr_setjobstate(pjob,JOB_STATE_EXITING,JOB_SUBSTATE_RERUN3);
+
+        rel_resc(pjob); /* free resc assigned to job */
+
+        if ((pjob->ji_qs.ji_svrflags | JOB_SVFLG_HOTSTART) == 0)
+          {
+          /* in case of server shutdown, don't clear exec_host */
+          /* will use it on hotstart when next comes up        */
+
+          job_attr_def[(int)JOB_ATR_exec_host].at_free(
+            &pjob->ji_wattr[(int)JOB_ATR_exec_host]);
+          }
+      
+        pjob->ji_modified = 1;    /* force full job save */
+        pjob->ji_momhandle = -1;
+        pjob->ji_qs.ji_svrflags &= ~JOB_SVFLG_StagedIn;
+
+        svr_evaljobstate(pjob,&newstate,&newsubst,0);
+
+        svr_setjobstate(pjob,newstate,newsubst);
         }
   
       break;
@@ -265,7 +304,6 @@ void req_rerunjob(
   	
   /* So job has run and is to be rerun (not restarted) */
 
-  pjob->ji_qs.ji_substate  = JOB_SUBSTATE_RERUN;
   pjob->ji_qs.ji_svrflags = (pjob->ji_qs.ji_svrflags & 
     ~(JOB_SVFLG_CHKPT|JOB_SVFLG_ChkptMig)) | JOB_SVFLG_HASRUN;
 		

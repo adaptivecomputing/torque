@@ -111,9 +111,9 @@ identifies which job is to be rerun it is specified in the form:
 The parameter,
 .Ar extend ,
 is reserved for implementation defined extensions.
-.if !\n(Pb .ig Ig
-It is not
-currently used by this function.
+As if TORQUE 2.2, the string define
+.I RERUNFORCE
+may be used to force a rerun if the mini-server fails.  This is dangerous.  Do not used it.
 .Ig
 .Sh "SEE ALSO"
 qrerun(1B), qsub(1B), and pbs_connect(3B)

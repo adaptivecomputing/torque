@@ -167,7 +167,7 @@ int main(
           break;
           }
 
-        strcpy(extend,"FORCE");
+        strcpy(extend,RERUNFORCE);
 
         break;
 

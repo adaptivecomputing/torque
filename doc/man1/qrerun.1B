@@ -81,14 +81,14 @@
 .Sh NAME
 qrerun \- rerun a pbs batch job
 .Sh SYNOPSIS
-qrerun
+qrerun [-f]
 job_identifier ...
 .Sh DESCRIPTION
 The 
 .B qrerun
 command directs that the specified jobs are to be rerun if possible.
 .LP
-To rerun a job is is to terminate the session leader of the job
+To rerun a job is to terminate the session leader of the job
 and return the job to the queued state in the execution queue in which
 the job currently resides.
 .LP
@@ -100,6 +100,14 @@ batch request to the server which owns the job.
 .LP
 If a job is marked as not rerunable then the rerun request
 will fail for that job.
+If the mini-server running the job is down, or the rejects the request, the
+.I "Rerun Job"
+batch request will return a failure unless -f is used.
+.LP
+Using -f violates IEEE Batch Processing Services Std and should be handled with
+great care.  It should only be used under exceptional circumstances.  Best
+practice is to fix the problem mini-server host and letting qrerun run
+normally.  The previous nodes may need manual cleaning.  
 See the
 .if !\n(Pb .ig Ig
 .At Rerunable
