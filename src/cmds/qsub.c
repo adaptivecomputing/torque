@@ -2422,7 +2422,7 @@ int process_opts(
           {
           b_opt = passet;
 
-          cnt2server_retry=atoi(optarg);
+          cnt2server_retry = atoi(optarg);
           }
 
         break;
@@ -3529,10 +3529,9 @@ int main(
   char *submit_args_str;              /* buffer to hold args */
   int   argi, argslen = 0;
 
-
-  if ((param_val=getenv("PBS_CLIENTRETRY")) != NULL)
+  if ((param_val = getenv("PBS_CLIENTRETRY")) != NULL)
     {
-    cnt2server_retry=atoi(param_val);
+    cnt2server_retry = atoi(param_val);
     }
 
   errflg = process_opts(argc,argv,0); /* get cmd-line options */
@@ -3589,7 +3588,7 @@ int main(
     if ((param_val = get_param("CLIENTRETRY",config_buf)) != NULL)
       {
       if (cnt2server_retry == -100)
-        cnt2server_retry=atoi(param_val);
+        cnt2server_retry = atoi(param_val);
       }
     }
 

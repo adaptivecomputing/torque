@@ -163,7 +163,7 @@ extern void DIS_rpp_reset A_((void));
 **	Modified by Tom Proett <proett@nas.nasa.gov> for PBS.
 */
 
-node *okclients = NULL;	/* tree of ip addrs */
+tree *okclients = NULL; /* tree of ip addrs */
 
 
 
@@ -173,7 +173,7 @@ node *okclients = NULL;	/* tree of ip addrs */
 
 int tlist(
 
-  node *rootp,   /* I */
+  tree *rootp,   /* I */
   char *Buf,     /* O (modified) */
   int   BufSize) /* I */
 
@@ -250,7 +250,7 @@ int tlist(
 struct pbsnode *tfind(
 
   const u_long   key,	/* key to be located */
-  node         **rootp)	/* address of tree root */
+  tree         **rootp)	/* address of tree root */
 
   {
   if (rootp == NULL)
@@ -292,10 +292,10 @@ struct pbsnode *tfind(
 void tinsert(
 
   const u_long   key,	/* key to be located */
-  node         **rootp)	/* address of tree root */
+  tree         **rootp)	/* address of tree root */
 
   {
-  register node *q;
+  register tree *q;
 
   if (rootp == NULL)
     {
@@ -320,9 +320,9 @@ void tinsert(
       &(*rootp)->right;	/* T4: follow right branch */
     }
   
-  /* create new node */
+  /* create new tree node */
 
-  q = (node *)malloc(sizeof(node));	/* T5: key not found */
+  q = (tree *)malloc(sizeof(tree));	/* T5: key not found */
 
   if (q == NULL) 
     {
@@ -331,11 +331,11 @@ void tinsert(
     return;
     }
 
-  /* make new node */
+  /* make new tree */
 
   *rootp = q;			/* link new node to old */
 
-  q->key = key;			/* initialize new node */
+  q->key = key;			/* initialize new tree node */
 
   q->left = NULL;
   q->right = NULL;
@@ -351,7 +351,7 @@ void tinsert(
 
 void tfree(
 
-  node **rootp)
+  tree **rootp)
 
   {
   if (rootp == NULL || *rootp == NULL)

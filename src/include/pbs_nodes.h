@@ -81,6 +81,7 @@
 **	Header file used for the node tracking routines.
 */
 
+/* NOTE:  requires server_limits.h */
 
 
 enum psit {
@@ -146,17 +147,17 @@ typedef struct tree_t {
 
 /* NOTE:  should remove all node references and replace with 'tree' objects (NYI) */
 
+/*
 typedef struct node_t {
   u_long         key;
   struct node_t *left;
   struct node_t *right;
   } node;
+*/
 
-#ifndef PBS_MOM
 struct pbsnode *tfind(const u_long,tree **);
-#else /* PBS_MOM */
-struct pbsnode *tfind(const u_long,node **);
-#endif /* PBS_MOM */
+int tlist(tree *,char *,int);
+
 
 /*
  * The following INUSE_ are used in both subnode.inuse and in node.nd_state
@@ -209,14 +210,14 @@ struct pbsnode *tfind(const u_long,node **);
  */
 
 enum nodeattr {
-	ND_ATR_state,
-	NODE_ATR_np,
-	ND_ATR_properties,
-	ND_ATR_ntype,
-	ND_ATR_jobs,
-        NODE_ATR_status,
-	ND_ATR_LAST	/* WARNING: Must be the highest valued enum */
-};
+  ND_ATR_state,
+  NODE_ATR_np,
+  ND_ATR_properties,
+  ND_ATR_ntype,
+  ND_ATR_jobs,
+  NODE_ATR_status,
+  ND_ATR_LAST }; /* WARNING: Must be the highest valued enum */
+
 
 extern struct attribute_def  node_attr_def[];	/* node attributes defs */
 extern struct pbsnode	**pbsndmast;		/* array of ptr to nodes  */
@@ -229,8 +230,8 @@ extern struct tree_t	 *streams;
 
 extern int update_nodes_file A_((void));
 
-extern void bad_node_warning(pbs_net_t addr);
-extern int addr_ok(pbs_net_t addr);
+extern void bad_node_warning(pbs_net_t);
+extern int addr_ok(pbs_net_t);
 
 #ifdef BATCH_REQUEST_H
 extern	void	initialize_pbssubn A_((struct pbsnode *,struct pbssubn *,struct prop *));

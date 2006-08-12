@@ -1564,6 +1564,7 @@ static void resume_suspend(
       /* couldn't send signal, don't signal more tasks */
 
       savederr = errno;
+
       break;
       }  /* END if (stat < 0) */
     }    /* END for (tp) */

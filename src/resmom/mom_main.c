@@ -411,8 +411,8 @@ static	char		config_file[_POSIX_PATH_MAX] = "config";
 char                    PBSNodeMsgBuf[1024];
 char                    PBSNodeCheckPath[1024];
 int                     PBSNodeCheckInterval;
-static char            *MOMExePath;
-static time_t           MOMExeTime;
+static char            *MOMExePath = NULL;
+static time_t           MOMExeTime = 0;
 
 
 /* sync w/#define JOB_SUBSTATE_XXX (in include/job.h)*/
@@ -514,8 +514,7 @@ extern int TMomFinalizeJob3(pjobexec_t *,int,int,int *);
 extern void exec_bail(job *,int);
 extern int is_compose(int,int);
 extern void check_state(int);
-extern void tinsert(const u_long,void **);
-extern int tlist(void **,char *,int);
+extern void tinsert(const u_long,tree **);
 extern void DIS_tcp_funcs();
 
 
@@ -1340,7 +1339,7 @@ u_long addclient(
 
   ipaddr = ntohl(saddr.s_addr);
 
-  tinsert(ipaddr,(void **)&okclients);
+  tinsert(ipaddr,&okclients);
 
   return(ipaddr);
   }  /* END addclient() */
@@ -1482,7 +1481,7 @@ static u_long setpbsserver(
   MOMServerAddrs[index] = ipaddr;
 
   if (ipaddr != 0)
-    tinsert(ipaddr,(void **)&okclients);
+    tinsert(ipaddr,&okclients);
 
   return(1);
   }  /* END setpbsserver() */
@@ -4259,7 +4258,7 @@ int rm_request(
 
               tmpLine[0] = '\0';
 
-              tlist((void **)okclients,tmpLine,sizeof(tmpLine));
+              tlist(okclients,tmpLine,sizeof(tmpLine));
 
               MUSNPrintF(&BPtr,&BSpace,"Trusted Client List:    %s\n",
                 tmpLine);

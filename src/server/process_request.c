@@ -90,6 +90,7 @@
 #include "libpbs.h"
 #include "pbs_error.h"
 #include "server_limits.h"
+#include "pbs_nodes.h"
 #include "list_link.h"
 #include "attribute.h"
 #include "job.h"
@@ -416,7 +417,7 @@ void process_request(
 #else	/* THIS CODE FOR MOM ONLY */
 
   {
-  extern void *okclients;
+  extern tree *okclients;
   
   extern int  MOMLastRecvFromServerTime;
   extern char MOMLastRecvFromServerCmd[];
