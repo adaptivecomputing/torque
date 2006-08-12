@@ -765,8 +765,6 @@ int check_token_utilization( server_info *sinfo, job_info *jinfo )
   token *job_tokens;
   token *server_tokens;
 
-  tokens_req = find_resource_req(jinfo -> resreq, ATTR_tokens);
-
   job_info **job_ptr = 0;
   int i = 0;
   float count_used = 0.0;
@@ -777,6 +775,8 @@ int check_token_utilization( server_info *sinfo, job_info *jinfo )
 
   int ret = SUCCESS;
   
+  tokens_req = find_resource_req(jinfo -> resreq, ATTR_tokens);
+
   if(tokens_req != NULL){
 
     /* Pull out the jobs token request */

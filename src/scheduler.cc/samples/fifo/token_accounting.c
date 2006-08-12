@@ -105,15 +105,14 @@ void token_acct_close()
 void token_account_record(int acctype, char *job_id, char *text)
 {
   time_t now;
+  char jobid[1024];
+  struct tm *ptm;
 
   time(&now);
-
-  char jobid[1024];
   memset(jobid, 0, 1024);
   if(job_id != NULL){
     strncpy(jobid, job_id, 1023);
   }
-  struct tm *ptm;
 
   ptm = localtime(&now);
 
