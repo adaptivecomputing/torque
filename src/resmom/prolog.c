@@ -120,7 +120,7 @@ static int run_exit;
 
 extern int pe_input A_((char *));
 extern int TTmpDirName A_((job *,char *tmpdir));
-extern void encode_used A_((job *,list_head *));
+extern void encode_used A_((job *,tlist_head *));
 
 /* END extern prototypes */
 
@@ -148,7 +148,7 @@ static char *resc_to_string(
   {
   int        need;
   svrattrl  *patlist;
-  list_head  svlist;
+  tlist_head  svlist;
   attribute *pattr;
 
   int       isfirst = 1;

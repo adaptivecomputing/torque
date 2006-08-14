@@ -134,8 +134,8 @@ extern	int		pbs_errno;
 extern	unsigned int	pbs_mom_port;
 extern	unsigned int	pbs_rm_port;
 extern	unsigned int	pbs_tm_port;
-extern	list_head	mom_polljobs;	/* must have resource limits polled */
-extern	list_head	svr_alljobs;	/* all jobs under MOM's control */
+extern	tlist_head	mom_polljobs;	/* must have resource limits polled */
+extern	tlist_head	svr_alljobs;	/* all jobs under MOM's control */
 extern	int		termin_child;
 extern	time_t		time_now;
 extern	tree           *okclients;	/* accept connections from */
@@ -1528,7 +1528,7 @@ char *resc_string(
   attribute		*at;
   attribute_def		*ad;
   svrattrl		*pal;
-  list_head		lhead;
+  tlist_head		lhead;
   int			len, used, tot;
   char			*res_str, *ch;
   char			*getuname();
@@ -1637,7 +1637,7 @@ void im_request(
   size_t		len;
   tm_event_t		event;
   fwdevent		efwd;
-  list_head		lhead;
+  tlist_head		lhead;
   svrattrl		*psatl;
   attribute_def		*pdef;
   struct passwd		*check_pwd();

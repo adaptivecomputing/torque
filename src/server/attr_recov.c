@@ -308,7 +308,7 @@ int save_attr(
   {
   svrattrl	 dummy;
   int		 errct = 0;
-  list_head 	 lhead;
+  tlist_head 	 lhead;
   int		 i;
   svrattrl	*pal;
   int		 rc;

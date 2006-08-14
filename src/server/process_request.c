@@ -117,13 +117,13 @@
 
 /* global data items */
 
-list_head svr_requests;
+tlist_head svr_requests;
 
 extern struct    connection svr_conn[];
 extern struct    credential conn_credent[PBS_NET_MAX_CONNECTIONS];
 extern struct server server;
 extern char      server_host[];
-extern list_head svr_newjobs;
+extern tlist_head svr_newjobs;
 extern time_t    time_now;
 extern char  *msg_err_noqueue;
 extern char  *msg_err_malloc;

@@ -113,7 +113,7 @@
 
 int decode_DIS_svrattrl(sock, phead)
 	int 	   sock;
-	list_head *phead;
+	tlist_head *phead;
 {
 	unsigned int	i;
 	unsigned int	hasresc;

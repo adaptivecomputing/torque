@@ -109,7 +109,7 @@
 
 extern struct connect_handle connection[];
 extern char     *msg_daemonname;
-extern list_head task_list_event;
+extern tlist_head task_list_event;
 extern time_t	time_now;
 extern char	*msg_daemonname;
 extern char	*msg_issuebad;

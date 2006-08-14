@@ -115,8 +115,8 @@ extern char *msg_daemonname;
 extern char *msg_system;
 
 #ifndef PBS_MOM
-extern list_head task_list_event;
-extern list_head task_list_immed;
+extern tlist_head task_list_event;
+extern tlist_head task_list_immed;
 #endif	/* PBS_MOM */
 
 extern struct pbs_err_to_txt pbs_err_to_txt[];

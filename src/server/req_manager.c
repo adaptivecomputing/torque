@@ -131,7 +131,7 @@
 /* Global Data Items: */
 
 extern struct server server;
-extern list_head     svr_queues;
+extern tlist_head     svr_queues;
 extern attribute_def que_attr_def[];
 extern attribute_def svr_attr_def[];
 extern int  svr_chngNodesfile;

@@ -132,7 +132,7 @@ static char *acct_job(
   char *pb)	/* buffer in which data is to be placed */
 
   {
-  list_head attrlist;
+  tlist_head attrlist;
   svrattrl *pal;
 
   CLEAR_HEAD(attrlist);

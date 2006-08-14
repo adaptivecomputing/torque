@@ -175,7 +175,7 @@ int decode_b(patr, name, rescn, val)
 
 int encode_b(attr, phead, atname, rsname, mode)
 	attribute	*attr;		/* ptr to attribute */
-	list_head	*phead;		/* head of attribute list */
+	tlist_head	*phead;		/* head of attribute list */
 	char		*atname;	/* attribute name */
 	char		*rsname;	/* resource name or null */
 	int		 mode;		/* encode mode, unused here */

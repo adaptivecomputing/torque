@@ -105,7 +105,7 @@
 
 /* Private Functions Local to this file */
 
-static int get_hold A_((list_head *, char **));
+static int get_hold A_((tlist_head *, char **));
 static void post_hold A_((struct work_task *));
 
 /* Global Data Items: */
@@ -323,7 +323,7 @@ void req_releasejob(
 
 static int get_hold(
 
-  list_head *phead,
+  tlist_head *phead,
   char      **pset)  /* O - ptr to hold value */
 
   {

@@ -196,13 +196,13 @@ extern int	pbs_errno;
 gid_t		pbsgroup;
 unsigned int	pbs_mom_port;
 unsigned int	pbs_rm_port;
-list_head	mom_polljobs;	/* jobs that must have resource limits polled */
-list_head	svr_newjobs;	/* jobs being sent to MOM */
-list_head	svr_alljobs;	/* all jobs under MOM's control */
+tlist_head	mom_polljobs;	/* jobs that must have resource limits polled */
+tlist_head	svr_newjobs;	/* jobs being sent to MOM */
+tlist_head	svr_alljobs;	/* all jobs under MOM's control */
 int		termin_child = 0;
 time_t		time_now = 0;
 time_t		polltime = 0;
-extern list_head svr_requests;
+extern tlist_head svr_requests;
 extern struct var_table vtable;	/* see start_exec.c */
 #if MOM_CHECKPOINT == 1
 char	       *path_checkpoint = (char *)0;

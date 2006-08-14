@@ -172,7 +172,7 @@ void insert_link(
 
 void append_link(
 
-  list_head *head, /* ptr to head of list */
+  tlist_head *head, /* ptr to head of list */
   list_link *new,  /* ptr to new entry */
   void      *pobj) /* ptr to object to link in */
 
@@ -374,8 +374,8 @@ void *get_prior(
  */
 
 void list_move(from, to)
-	list_head *from;
-	list_head *to;
+	tlist_head *from;
+	tlist_head *to;
 {
 	if (from->ll_next == from) {
 		to->ll_next = to;

@@ -114,7 +114,7 @@
 extern char     *msg_err_unlink;
 extern char	*path_queues;
 extern struct    server server;
-extern list_head svr_queues;
+extern tlist_head svr_queues;
 
 /*
  * que_alloc - allocate space for a queue structure and initialize 

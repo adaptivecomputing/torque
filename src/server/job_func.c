@@ -158,8 +158,8 @@ extern char  server_name[];
 extern time_t time_now;
 extern int   LOGLEVEL;
 
-extern list_head svr_newjobs;
-extern list_head svr_alljobs;
+extern tlist_head svr_newjobs;
+extern tlist_head svr_alljobs;
 
 
 #ifdef PBS_MOM

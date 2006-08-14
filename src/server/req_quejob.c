@@ -154,8 +154,8 @@ const char *TJobFileType[] = {
   NULL };
 
 extern int	 resc_access_perm;
-extern list_head svr_alljobs;
-extern list_head svr_newjobs;
+extern tlist_head svr_alljobs;
+extern tlist_head svr_newjobs;
 extern attribute_def job_attr_def[];
 extern char *path_jobs;
 extern char *pbs_o_host;

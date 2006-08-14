@@ -166,7 +166,7 @@ extern attribute_def que_attr_def[];
  
 struct pbs_queue {
 	list_link	qu_link;		/* forward/backward links */
-	list_head	qu_jobs;		/* jobs in this queue */
+	tlist_head	qu_jobs;		/* jobs in this queue */
 
 	struct queuefix {
 		int	qu_modified;		/* != 0 => update disk file */

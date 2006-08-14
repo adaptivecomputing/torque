@@ -107,7 +107,7 @@
 
 extern int	 exiting_tasks;
 extern char	 mom_host[];
-extern list_head svr_alljobs;
+extern tlist_head svr_alljobs;
 extern int	 termin_child;
 
 extern int       LOGLEVEL;

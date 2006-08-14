@@ -570,7 +570,7 @@ int status_nodeattrib(
   int              limit,	/*number of array elts in padef */
   int              priv,	/*requester's privilege		*/
 
-  list_head       *phead,	/*heads list of svrattrl structs that hang */
+  tlist_head       *phead,	/*heads list of svrattrl structs that hang */
 				/*off the brp_attr member of the status sub*/
 				/*structure in the request's "reply area"  */
 
@@ -1455,7 +1455,7 @@ int setup_nodes(void)
   char      xchar;
   svrattrl *pal;
   int	  perm = ATR_DFLAG_MGRD|ATR_DFLAG_MGWR;
-  list_head atrlist;
+  tlist_head atrlist;
 
   extern char server_name[];
   extern resource_t next_resource_tag;

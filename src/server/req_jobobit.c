@@ -651,7 +651,7 @@ void rel_resc(
  *	rq_extra field in the request points to the job.
  */
 
-extern list_head svr_alljobs;
+extern tlist_head svr_alljobs;
 
 void on_job_exit(
 

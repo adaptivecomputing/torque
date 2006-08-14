@@ -223,7 +223,7 @@ badval:
 int encode_time(
 
   attribute *attr,   /* ptr to attribute (value in attr->at_val.at_long) */
-  list_head *phead,  /* head of attrlist list (optional) */
+  tlist_head *phead,  /* head of attrlist list (optional) */
   char      *atname, /* attribute name */
   char      *rsname, /* resource name (optional) */
   int        mode)   /* encode mode (not used) */

@@ -113,7 +113,7 @@ static struct batch_request *pshutdown_request = 0;
 
 /* Global Data Items: */
 
-extern list_head svr_alljobs;
+extern tlist_head svr_alljobs;
 extern char *msg_abort_on_shutdown;
 extern char *msg_daemonname;
 extern char *msg_init_queued;
@@ -124,7 +124,7 @@ extern char *msg_stillrunning;
 extern char *msg_on_shutdown;
 extern char *msg_job_abort;
 
-extern list_head task_list_event;
+extern tlist_head task_list_event;
 extern struct server server;
 extern attribute_def svr_attr_def[];
 

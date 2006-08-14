@@ -185,7 +185,7 @@ int decode_unkn(patr, name, rescn, value)
 
 int encode_unkn(attr, phead, atname, rsname, mode)
 	attribute	*attr;	  /* ptr to attribute to encode */
-	list_head	*phead;	  /* list to place entry in */
+	tlist_head	*phead;	  /* list to place entry in */
 	char 		*atname;  /* attribute name, not used here */
 	char	 	*rsname;  /* resource name, not used here */
 	int		 mode;	  /* encode mode, unused here */

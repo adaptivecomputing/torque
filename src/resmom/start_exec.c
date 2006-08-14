@@ -142,7 +142,7 @@ extern  int		num_var_env;
 extern	char	      **environ;
 extern	int		exiting_tasks;
 extern	int		lockfds;
-extern	list_head	mom_polljobs;
+extern	tlist_head	mom_polljobs;
 extern	char		*path_checkpoint;
 extern	char		*path_jobs;
 extern	char		*path_prolog;
@@ -4022,7 +4022,7 @@ void start_exec(
   struct	sockaddr_in saddr;
   hnodent	*np;
   attribute	*pattr;
-  list_head	phead;
+  tlist_head	phead;
   svrattrl	*psatl;
   int		stream;
   char		tmpdir[MAXPATHLEN];

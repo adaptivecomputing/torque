@@ -98,9 +98,9 @@
 
 /* Global Data Items: */
 
-extern list_head task_list_immed;
-extern list_head task_list_timed;
-extern list_head task_list_event;
+extern tlist_head task_list_immed;
+extern tlist_head task_list_timed;
+extern tlist_head task_list_event;
 
 
 

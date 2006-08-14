@@ -1771,7 +1771,7 @@ static int dup_depend(
 
 int encode_depend(attr, phead, atname, rsname, mode)
 	attribute     *attr;	/* ptr to attribute to encode */
-	list_head     *phead;	/* ptr to head of attrlist list */
+	tlist_head     *phead;	/* ptr to head of attrlist list */
 	char	      *atname;	/* attribute name */
 	char	      *rsname;	/* resource name or null */
 	int	       mode;	/* encode mode, unused here */

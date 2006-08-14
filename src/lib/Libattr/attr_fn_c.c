@@ -148,7 +148,7 @@ int decode_c(patr, name, rescn, val)
 
 int encode_c(attr, phead, atname, rsname, mode)
 	attribute	*attr;		/* ptr to attribute */
-	list_head	*phead;		/* head of attrlist list */
+	tlist_head	*phead;		/* head of attrlist list */
 	char		*atname;	/* attribute name */
 	char		*rsname;	/* resource name or null */
 	int		mode;		/* encode mode, unused here */

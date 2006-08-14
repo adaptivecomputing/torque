@@ -137,12 +137,12 @@ static void eval_chkpnt A_((attribute *j, attribute *q));
 
 extern struct server server;
 
-extern list_head svr_alljobs;
+extern tlist_head svr_alljobs;
 extern char  *msg_badwait;		/* error message */
 extern char  *msg_daemonname;
 extern char  *pbs_o_host;
 extern char   server_name[];
-extern list_head svr_queues;
+extern tlist_head svr_queues;
 extern int    comp_resc_lt;
 extern int    comp_resc_gt;
 extern int    svr_do_schedule;

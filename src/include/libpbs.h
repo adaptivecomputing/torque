@@ -159,7 +159,7 @@ struct brp_status {		/* reply to Status Job/Queue/Server Request */
 	list_link brp_stlink;
 	int	  brp_objtype;
 	char	  brp_objname[(PBS_MAXSVRJOBID > PBS_MAXDEST ? PBS_MAXSVRJOBID:PBS_MAXDEST)+1];
-	list_head brp_attr;		/* head of svrattrlist */
+	tlist_head brp_attr;		/* head of svrattrlist */
 };
 
 struct brp_cmdstat {
@@ -198,7 +198,7 @@ struct batch_reply {
 	union {
 		char	  brp_jid[PBS_MAXSVRJOBID+1];
 		struct brp_select *brp_select;	/* select replies */
-		list_head 	   brp_status;	/* status (svr) replies */
+		tlist_head 	   brp_status;	/* status (svr) replies */
 		struct brp_cmdstat *brp_statc;  /* status (cmd) replies) */
 		struct {
 			int   brp_txtlen;

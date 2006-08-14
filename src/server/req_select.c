@@ -106,7 +106,7 @@
 
 /* Extenal functions called */
 
-extern int   status_job A_((job *, struct batch_request *, svrattrl *, list_head *, int *));
+extern int   status_job A_((job *, struct batch_request *, svrattrl *, tlist_head *, int *));
 extern int   svr_authorize_jobreq A_((struct batch_request *,job *));
 
 
@@ -114,7 +114,7 @@ extern int   svr_authorize_jobreq A_((struct batch_request *,job *));
 
 extern struct server server;
 extern int	 resc_access_perm;
-extern list_head svr_alljobs;
+extern tlist_head svr_alljobs;
 extern time_t	 time_now;
 
 /* Private Functions  */

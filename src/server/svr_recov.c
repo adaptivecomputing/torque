@@ -107,7 +107,7 @@
 /* Global Data Items: */
 
 extern struct server server;
-extern list_head svr_queues;
+extern tlist_head svr_queues;
 extern attribute_def svr_attr_def[];
 extern char	    *path_svrdb;
 extern char	    *path_svrdb_new;
@@ -341,7 +341,7 @@ int save_acl(
   int  fds;
   char filename1[MAXPATHLEN];
   char filename2[MAXPATHLEN];
-  list_head    head;
+  tlist_head    head;
   int	     i;
   svrattrl    *pentry;
 

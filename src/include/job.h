@@ -107,7 +107,7 @@ struct depend {
 	short	  dp_numexp;	/* num jobs expected (on or syncct only) */
 	short	  dp_numreg;	/* num jobs registered (syncct only)     */
 	short	  dp_released;	/* This job released to run (syncwith)   */
-	list_head dp_jobs;	/* list of related jobs  (all)           */
+	tlist_head dp_jobs;	/* list of related jobs  (all)           */
 };
 
 /*
@@ -282,7 +282,7 @@ typedef	struct	hnodent {
 	char	       *hn_host;	/* hostname of node */
 	int		hn_stream;	/* stream to MOM on node */
 	int		hn_sister;	/* save error for KILL_JOB event */
-	list_head	hn_events;	/* pointer to list of events */
+	tlist_head	hn_events;	/* pointer to list of events */
   } hnodent;
 
 
@@ -405,18 +405,18 @@ struct job {
 	hnodent	       *ji_hosts;	/* ptr to job host management stuff */
 	vnodent	       *ji_vnods;	/* ptr to job vnode management stuff */
 	noderes	       *ji_resources;	/* ptr to array of node resources */
-	list_head       ji_tasks;	/* list of task structs */
+	tlist_head       ji_tasks;	/* list of task structs */
 	tm_node_id	ji_nodekill;	/* set to nodeid requesting job die */
 	int		ji_flags;	/* mom only flags */
 	char	       *ji_globid;	/* global job id */
 	int		ji_stdout;	/* port for stdout */
 	int		ji_stderr;	/* port for stderr */
 #else					/* END MOM ONLY */
-	list_head	ji_svrtask;	/* links to svr work_task list */
+	tlist_head	ji_svrtask;	/* links to svr work_task list */
 	struct pbs_queue  *ji_qhdr;	/* current queue header */
 	int		ji_lastdest;	/* last destin tried by route */
 	int		ji_retryok;	/* ok to retry, some reject was temp */
-	list_head	ji_rejectdest;	/* list of rejected destinations */
+	tlist_head	ji_rejectdest;	/* list of rejected destinations */
 #endif					/* END SERVER ONLY */
 
 	/*
@@ -482,8 +482,8 @@ typedef struct	task {
 	int		ti_fd;		/* DIS file descriptor to task */
 	int		ti_flags;	/* task internal flags */
 	tm_event_t	ti_register;	/* event if task registers */
-	list_head	ti_obits;	/* list of obit events */
-	list_head	ti_info;	/* list of named info */
+	tlist_head	ti_obits;	/* list of obit events */
+	tlist_head	ti_info;	/* list of named info */
 	struct taskfix {
 		char    	ti_parentjobid[PBS_MAXSVRJOBID+1];
 		tm_node_id	ti_parentnode;

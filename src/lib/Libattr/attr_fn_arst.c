@@ -310,7 +310,7 @@ int decode_arst(
 int encode_arst(
 
   attribute   *attr,	/* I: ptr to attribute to encode */
-  list_head   *phead,	/* O: ptr to head of attrlist list */
+  tlist_head   *phead,	/* O: ptr to head of attrlist list */
   char	      *atname,	/* I: attribute name */
   char	      *rsname,	/* I: resource name or NULL (optional) */
   int	       mode)	/* I: encode mode */

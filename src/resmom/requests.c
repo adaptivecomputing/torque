@@ -138,7 +138,7 @@ extern int TTmpDirName( job*,char *);
 
 extern unsigned int	default_server_port;
 extern int		exiting_tasks;
-extern list_head	svr_alljobs;
+extern tlist_head	svr_alljobs;
 extern char		mom_host[];
 extern char		*msg_err_unlink;
 extern char		*path_checkpoint;
@@ -1843,7 +1843,7 @@ void req_signaljob(
 void encode_used(
 
   job       *pjob,   /* I */
-  list_head *phead)  /* O */
+  tlist_head *phead)  /* O */
 
   {
   unsigned long		lnum;

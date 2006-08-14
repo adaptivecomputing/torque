@@ -114,7 +114,7 @@ typedef struct resource {
 typedef struct resource_def {
   char   *rs_name;
   int   (*rs_decode)A_((attribute *,char *,char *,char *));
-  int   (*rs_encode)A_((attribute *,list_head *,char *,char *,int));
+  int   (*rs_encode)A_((attribute *,tlist_head *,char *,char *,int));
   int   (*rs_set)A_((attribute *,attribute *,enum batch_op));
   int   (*rs_comp)A_((attribute *,attribute *));
   void  (*rs_free)A_((attribute *));

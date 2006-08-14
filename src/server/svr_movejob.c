@@ -557,7 +557,7 @@ int send_job(
   void	    *data)	/* ptr to optional batch_request to be put */
 			/* in the work task structure */
   {
-  list_head	 attrl;
+  tlist_head	 attrl;
   enum conn_type cntype = ToServerDIS;
   int		 con;
   char		*destin = jobp->ji_qs.ji_destin;

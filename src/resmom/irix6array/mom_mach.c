@@ -898,7 +898,7 @@ int mom_get_sample()
 	aspidlist_t		*taskpids = 0;
 	ash_t			ash;
 	extern aserror_t 	aserrorcode;
-	extern list_head	svr_alljobs;
+	extern tlist_head	svr_alljobs;
 	
 
 	DBPRT(("%s: entered pagesize %d\n", id, pagesize))

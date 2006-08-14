@@ -105,7 +105,7 @@
 
 
 extern int     svr_authorize_jobreq A_((struct batch_request *,job *));
-int status_attrib A_((svrattrl *,attribute_def *,attribute *,int,int,list_head *,int *,int));
+int status_attrib A_((svrattrl *,attribute_def *,attribute *,int,int,tlist_head *,int *,int));
 
 /* Global Data Items: */
 
@@ -122,7 +122,7 @@ int status_job(
   job	  *pjob,	/* ptr to job to status */
   struct batch_request *preq,
   svrattrl  *pal,	/* specific attributes to status */
-  list_head *pstathd,	/* RETURN: head of list to append status to */
+  tlist_head *pstathd,	/* RETURN: head of list to append status to */
   int       *bad)	/* RETURN: index of first bad attribute */
 
   {
@@ -201,7 +201,7 @@ int status_attrib(
   attribute	*pattr,
   int		 limit,
   int		 priv,
-  list_head	*phead,
+  tlist_head	*phead,
   int		*bad,
   int            IsOwner)  /* 0 == FALSE, 1 == TRUE */
 

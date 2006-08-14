@@ -126,7 +126,7 @@ static char *svr_state_names[] = {
 int encode_svrstate(
 
   attribute       *pattr,    /* ptr to attribute */
-  list_head       *phead,   /* head of attrlist list */
+  tlist_head       *phead,   /* head of attrlist list */
   char            *atname,  /* attribute name */
   char            *rsname,  /* null */
   int             mode)     /* encode mode */

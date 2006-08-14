@@ -255,7 +255,7 @@ int PNodeStateToString(
 int encode_state(
 
   attribute *pattr,	/*struct attribute being encoded  */
-  list_head *ph,	/*head of a list of  "svrattrl"   */
+  tlist_head *ph,	/*head of a list of  "svrattrl"   */
 			/*structs which are to be returned*/
 
   char      *aname,	/*attribute's name		  */
@@ -336,7 +336,7 @@ int encode_state(
  
 int	encode_ntype(pattr, ph, aname, rname, mode)
 	attribute	 *pattr;	/*struct attribute being encoded  */
-	list_head	 *ph;		/*head of a list of  "svrattrl"   */
+	tlist_head	 *ph;		/*head of a list of  "svrattrl"   */
 					/*structs which are to be returned*/
 
 	char		 *aname;	/*attribute's name		  */
@@ -395,7 +395,7 @@ int	encode_ntype(pattr, ph, aname, rname, mode)
 int encode_jobs(
 
   attribute *pattr,	/*struct attribute being encoded  */
-  list_head *ph,	/*head of a  list of "svrattrl"   */
+  tlist_head *ph,	/*head of a  list of "svrattrl"   */
 			/*structs which are to be returned*/
   char      *aname,	/*attribute's name		  */
   char      *rname,	/*resource's name (null if none)  */

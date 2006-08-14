@@ -183,7 +183,7 @@ int decode_str(
 int encode_str(
 
   attribute *attr,    /* ptr to attribute */
-  list_head *phead,   /* head of attrlist */
+  tlist_head *phead,   /* head of attrlist */
   char      *atname,  /* name of attribute */
   char      *rsname,  /* resource name or null */
   int        mode)    /* encode mode, unused here */

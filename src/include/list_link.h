@@ -99,7 +99,7 @@ typedef struct list_link {
 	struct list_link *ll_next;
 	void		 *ll_struct;
 } list_link;
-typedef list_link list_head;
+typedef list_link tlist_head;
 
 
 /* macros to clear list head or link */
@@ -121,11 +121,11 @@ typedef list_link list_head;
 /* function prototypes */
 
 extern void insert_link A_((list_link *old,list_link *new,void *pobj, int pos));
-extern void append_link A_((list_head *head, list_link *new, void *pnewobj));
+extern void append_link A_((tlist_head *head, list_link *new, void *pnewobj));
 extern void delete_link A_((list_link *old));
 extern void swap_link   A_((list_link *, list_link *));
 extern int  is_linked A_((list_link *head, list_link *old));
-extern void list_move A_((list_head *old, list_head *new));
+extern void list_move A_((tlist_head *old, tlist_head *new));
 
 #ifndef NDEBUG
 extern void *get_next A_((list_link, char *file, int line));

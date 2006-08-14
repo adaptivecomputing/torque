@@ -152,7 +152,7 @@ extern unsigned int pbs_mom_port;
 extern char  server_name[];
 
 extern struct server server;
-extern list_head svr_newnodes;
+extern tlist_head svr_newnodes;
 
 #define	SKIP_NONE	0
 #define	SKIP_EXCLUSIVE	1

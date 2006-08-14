@@ -336,7 +336,7 @@ static int gettime(pres, ret)
 static
 int
 injob(phead, psp)
-    list_head	*phead;
+    tlist_head	*phead;
     prpsinfo_t	*psp;
 {
 	task		*ptask;
@@ -363,7 +363,7 @@ injob(phead, psp)
  */
 
 static unsigned long cput_sum(phead)
-    list_head	*phead;
+    tlist_head	*phead;
 {
 	char			*id = "cput_sum";
 	int			fd;
@@ -410,7 +410,7 @@ static unsigned long cput_sum(phead)
  * Return TRUE if any process in the job is over limit for cputime usage.
  */
 static int overcpu_proc(phead, limit)
-    list_head		*phead;
+    tlist_head		*phead;
     unsigned long	limit;
 {
 	char		*id = "overcpu_proc";
@@ -450,7 +450,7 @@ static int overcpu_proc(phead, limit)
  *	space consumed by all current tasks within the list of tasks.
  */
 static unsigned long mem_sum(phead)
-    list_head	*phead;
+    tlist_head	*phead;
 {
 	static	char		id[] = "mem_sum";
 	int			fd;
@@ -498,7 +498,7 @@ static unsigned long mem_sum(phead)
  * Internal session mem (workingset) size function.
  */
 static unsigned long resi_sum(phead)
-    list_head		*phead;
+    tlist_head		*phead;
 {
 	static	char		id[]="resi_ses";
 	ulong			resisize, resisub;
@@ -575,7 +575,7 @@ static unsigned long resi_sum(phead)
  * Return TRUE if any process in the session is over limit for memory usage.
  */
 static int overmem_proc(phead, limit)
-    list_head		*phead;
+    tlist_head		*phead;
     unsigned long	limit;
 {
 	char		*id = "overmem_proc";
@@ -1238,7 +1238,7 @@ mem_job(sid)
 pid_t	sid;
 {
 	ulong	memsize;
-	static	list_head	taskhead;
+	static	tlist_head	taskhead;
 	static	task		onetask;
 	static	int		first = 1;
 

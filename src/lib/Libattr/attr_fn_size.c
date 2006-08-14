@@ -172,7 +172,7 @@ int decode_size(
 int encode_size(
 
   attribute *attr,    /* ptr to attribute */
-  list_head *phead,   /* head of attrlist list */
+  tlist_head *phead,   /* head of attrlist list */
   char      *atname,  /* attribute name */
   char      *rsname,  /* resource name (optional) */
   int        mode)    /* encode mode (not used) */

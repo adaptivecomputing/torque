@@ -381,7 +381,7 @@ static int gettime(pres, ret)
 static
 int
 injob(phead, psp)
-    list_head 	*phead;
+    tlist_head 	*phead;
     prpsinfo_t	*psp;
 {
 	task		*ptask;
@@ -412,7 +412,7 @@ static unsigned long cput_sum(pjob)
 	int			i;
 	ulong			cputime;
 	int			nps = 0;
-	list_head		*phead;
+	tlist_head		*phead;
 	ulong			proctime;
 	prpsinfo_t		*pi;
 
@@ -442,7 +442,7 @@ static unsigned long cput_sum(pjob)
  * Return TRUE if any process in the job is over limit for cputime usage.
  */
 static int overcpu_proc(phead, limit)
-    list_head		*phead;
+    tlist_head		*phead;
     unsigned long	limit;
 {
 	ulong		cputime;
@@ -471,7 +471,7 @@ static int overcpu_proc(phead, limit)
  *      consumed by all current tasks within the list of tasks.
  */
 static rlim64_t mem_sum(phead)
-    list_head	*phead;
+    tlist_head	*phead;
 {
 	static	char		id[] = "mem_sum";
 	int			i;
@@ -504,7 +504,7 @@ static rlim64_t mem_sum(phead)
  *	Returns in a 64 bit intege the number of bytes used by session
  */
 static rlim64_t resi_sum(phead)
-    list_head		*phead;
+    tlist_head		*phead;
 {
 	static	char		id[] = "resi_sum";
 	rlim64_t		resisize, resisub;
@@ -565,7 +565,7 @@ static rlim64_t resi_sum(phead)
  *	Returns in a 64 bit intege the number of bytes used by session
  */
 static rlim64_t resi_sum(phead)
-    list_head		*phead;
+    tlist_head		*phead;
 {
 	static	char		id[] = "resi_sum";
 	int			i;
@@ -596,7 +596,7 @@ static rlim64_t resi_sum(phead)
  * Return TRUE if any process in the session is over limit for Vir memory usage.
  */
 static int overmem_proc(phead, limit)
-    list_head		*phead;
+    tlist_head		*phead;
     rlim64_t		limit;
 {
 	ulong		memsize;
@@ -1461,7 +1461,7 @@ mem_job(sid)
 pid_t	sid;
 {
 	rlim64_t memsize;
-	static  list_head       taskhead;
+	static  tlist_head       taskhead;
 	static  task            onetask;
 	static  int             first = 1;
 
@@ -1556,7 +1556,7 @@ resi_job(jobid)
 pid_t	jobid;
 {
 	rlim64_t memsize;
-	static  list_head       taskhead;
+	static  tlist_head       taskhead;
 	static  task            onetask;
 	static  int             first = 1;
 

@@ -92,8 +92,8 @@
 /*
 * extern int decode_state A_((struct attribute *patr, char *nam, char *rn, char *val));
 * extern int decode_props A_((struct attribute *patr, char *nam, char *rn, char *val));
-* extern int encode_state	     A_((struct attribute *patr, list_head *ph, char *anm, char *rmn, int mode));
-* extern int encode_props	     A_((struct attribute *patr, list_head *ph, char *anm, char *rmn, int mode));
+* extern int encode_state	     A_((struct attribute *patr, tlist_head *ph, char *anm, char *rmn, int mode));
+* extern int encode_props	     A_((struct attribute *patr, tlist_head *ph, char *anm, char *rmn, int mode));
 * extern int set_node_state    A_((attribute *patr, attribute *new, enum batch_op));
 * extern int set_node_props    A_((attribute *patr, attribute *new, enum batch_op));
 * extern int node_state        A_((attribute *patr, void *pobj, int actmode));
