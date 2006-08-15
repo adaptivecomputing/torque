@@ -338,6 +338,16 @@ AC_DEFINE_UNQUOTED(IBM_SP2, ${IBM_SP2}, [defined if this is an SP2])
 AC_SUBST(PBSPOE)    
 AC_SUBST(PBSPOEO)
 
+AC_ARG_ENABLE(cpuset,[--disable-cpuset  enable Linux 2.6 kernel cpusets])
+if test "x$enable_cpuset" != "xno" ;then
+  AC_CHECK_LIB(cpuset, cpuset_cpus_weight, 
+    [AC_CHECK_LIB(bitmask, bitmask_alloc,
+      [MOMLIBS="$MOMLIBS -lcpuset -lbitmask"
+       AC_DEFINE(PENABLE_LINUX26_CPUSETS, 1, [Define to enable Linux 2.6 cpusets])
+      ])
+    ])
+fi
+
 
 dnl  irix6 can be changed to irix6array explicitly with an
 dnl  --enable-array and irix6array can be made into irix6 with a

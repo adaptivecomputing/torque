@@ -13,6 +13,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature
   f - consumable resource "tokens" support (Harte-Hanks)
   b - networking fixes for HPUX, fixes pbs_iff (PACCAR)
   e - fix "list_head" symbol clash on Solaris 10
+  f - Linux 2.6 cpuset support
 
 2.1.2
 

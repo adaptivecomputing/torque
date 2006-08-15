@@ -134,7 +134,7 @@ XPBSMON_DIR = $(libdir)/xpbsmon
 
 noinst_LIBRARIES = libmommach.a
 
-libmommach_a_SOURCES = mom_mach.c mom_mach.h mom_start.c pe_input.c
+libmommach_a_SOURCES = mom_mach.c mom_mach.h mom_start.c pe_input.c cpuset.c
 subdir = src/resmom/linux
 mkinstalldirs = $(SHELL) $(top_srcdir)/buildutils/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/include/pbs_config.h
@@ -144,7 +144,7 @@ LIBRARIES = $(noinst_LIBRARIES)
 libmommach_a_AR = $(AR) cru
 libmommach_a_LIBADD =
 am_libmommach_a_OBJECTS = mom_mach.$(OBJEXT) mom_start.$(OBJEXT) \
-	pe_input.$(OBJEXT)
+	pe_input.$(OBJEXT) cpuset.$(OBJEXT)
 libmommach_a_OBJECTS = $(am_libmommach_a_OBJECTS)
 
 DEFS = @DEFS@
@@ -154,8 +154,8 @@ LDFLAGS = @LDFLAGS@
 LIBS = @LIBS@
 depcomp = $(SHELL) $(top_srcdir)/buildutils/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/mom_mach.Po ./$(DEPDIR)/mom_start.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/pe_input.Po
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/cpuset.Po ./$(DEPDIR)/mom_mach.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/mom_start.Po ./$(DEPDIR)/pe_input.Po
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 LTCOMPILE = $(LIBTOOL) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) \
@@ -191,6 +191,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cpuset.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mom_mach.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mom_start.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pe_input.Po@am__quote@

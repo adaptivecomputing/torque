@@ -165,6 +165,13 @@ extern int task_save(task *) ;
 extern void DIS_rpp_reset A_((void));
 extern void checkret A_((char **,int));
 
+#ifdef PENABLE_LINUX26_CPUSETS
+extern void initialize_root_cpuset();
+extern int create_job_set (char *, char *, int , int);
+extern int get_cpuset_size( struct bitmask *, struct bitmask *, char *);
+extern int find_free_cpuset_space(struct bitmask *, struct bitmask *, char *);
+#endif
+
 /* defined in mach-dependant mom_mach.c */
 extern int kill_task A_((struct task *,int,int));
 

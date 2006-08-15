@@ -692,6 +692,9 @@ void job_purge(
 #ifdef PBS_MOM
   int           rc;
   extern void MOMCheckRestart A_((void));
+#ifdef PENABLE_LINUX26_CPUSETS 
+  char                 cpuset_name[MAXPATHLEN + 1];
+#endif
 #endif
 
 #ifdef PBS_MOM
@@ -756,6 +759,14 @@ void job_purge(
       pjob->ji_flags &= ~MOM_HAS_TMPDIR;
       }
     }
+
+#ifdef PENABLE_LINUX26_CPUSETS 
+
+    /* Delete the cpuset for the job. */
+    sprintf (cpuset_name, "torque/%s", pjob->ji_qs.ji_jobid);
+    cpuset_delete(cpuset_name);
+
+#endif /* PENABLE_CPUSETS */
 
   /* delete the nodefile if still hanging around */
 

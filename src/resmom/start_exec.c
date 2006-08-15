@@ -1773,6 +1773,13 @@ int TMomFinalizeChild(
   resource              *presc;         /* Requested Resource List */
   resource_def          *prd;
 
+#elif defined(PENABLE_LINUX26_CPUSETS)
+  attribute            *pattr;
+  resource              *presc;         /* Requested Resource List */
+  resource_def          *prd;
+  int                  num_mems;
+  int                  num_cpus;
+  char                 cpuset_name[MAXPATHLEN + 1];
 #endif  /* PENABLE_DYNAMIC_CPUSETS */
 
   job                  *pjob;
@@ -2123,6 +2130,84 @@ int TMomFinalizeChild(
 
 #endif  /* PENABLE_DYNAMIC_CPUSETS */
 
+#elif defined(PENABLE_LINUX26_CPUSETS)
+
+  /* Determine the number of cpus to insert into the cpuset from the request */
+
+  /* TODO: nodes */
+
+  /*
+  pattr = &pjob->ji_wattr[(int)JOB_ATR_resource];
+  prd = find_resc_def(svr_resc_def,"nodes",svr_resc_size);
+  presc = find_resc_entry(pattr,prd);
+
+  if (presc != NULL)
+    {
+    printf ("nodes = %s\n", 
+      presc->rs_value.at_val.at_str);
+    }
+  */
+
+  /* TODO: neednodes */
+
+  /*
+  pattr = &pjob->ji_wattr[(int)JOB_ATR_resource];
+  prd = find_resc_def(svr_resc_def,"neednodes",svr_resc_size);
+  presc = find_resc_entry(pattr,prd);
+
+  if (presc != NULL)
+    {
+    printf ("neednodes = %s\n", 
+      presc->rs_value.at_val.at_str);
+    }
+  */
+
+  /* ncpus */
+
+  pattr = &pjob->ji_wattr[(int)JOB_ATR_resource];
+  prd = find_resc_def(svr_resc_def,"ncpus",svr_resc_size);
+  presc = find_resc_entry(pattr,prd);
+
+ 
+  if ( presc == NULL )
+  {
+      sprintf (log_buffer,"presc is NULL, cpuset code skipped.");
+      log_err(-1,id,log_buffer);
+  }
+  else
+  {
+        /* Setting the number of cpus in the cpuset to what was requested by ncpus */
+        num_cpus = presc->rs_value.at_val.at_long;
+
+/* PME!! need figure out what to do about memory! */
+/*
+ * One mem is hard coded temporarily here.  Need to look at the memory request and decide how many mems
+ * are needed.  For our site, we never want jobs sharing node boards, not necessarily the case at other
+ * sites.
+ */
+       num_mems = 1;
+       sprintf (cpuset_name, "torque/%s", pjob->ji_qs.ji_jobid);
+
+       if (create_job_set(pjob->ji_qs.ji_jobid, cpuset_name, num_cpus, num_mems) != 0)
+       {
+           sprintf (log_buffer, "Could not create cpuset for job %s.\n", pjob->ji_qs.ji_jobid);
+           log_err(-1,id,log_buffer);
+           starter_return(TJE->upfds,TJE->downfds,JOB_EXEC_RETRY,&sjr);
+       }
+       else
+       {
+           /* Move this mom process into the cpuset so the job will start in it. */
+	   if (cpuset_move(0, cpuset_name) != 0)
+           {
+               /* Remove cpuset, created but the process couldn't be placed in it. */
+	       cpuset_delete(cpuset_name);
+
+               sprintf (log_buffer, "Could not move job %s into its cpuset.\n", pjob->ji_qs.ji_jobid);
+               log_err(-1,id,log_buffer);
+               starter_return(TJE->upfds,TJE->downfds,JOB_EXEC_RETRY,&sjr);
+           }
+       }
+  }
 #endif  /* (PENABLE_CPUSETS || PENABLE_DYNAMIC_CPUSETS) */
 
 
