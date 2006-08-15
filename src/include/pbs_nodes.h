@@ -219,7 +219,6 @@ enum nodeattr {
   ND_ATR_LAST }; /* WARNING: Must be the highest valued enum */
 
 
-extern struct attribute_def  node_attr_def[];	/* node attributes defs */
 extern struct pbsnode	**pbsndmast;		/* array of ptr to nodes  */
 extern struct pbsnode	**pbsndlist;		/* array of ptr to nodes  */
 extern int		  svr_totnodes;		/* number of nodes (hosts) */

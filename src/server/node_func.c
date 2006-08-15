@@ -137,6 +137,7 @@ extern char	*path_nodes_new;
 extern char	*path_nodes;
 extern char	*path_nodestate;
 extern int       LOGLEVEL;
+extern attribute_def  node_attr_def[];   /* node attributes defs */
 
 
 /* Functions in this file

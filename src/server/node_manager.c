@@ -153,6 +153,7 @@ extern char  server_name[];
 
 extern struct server server;
 extern tlist_head svr_newnodes;
+extern attribute_def  node_attr_def[];   /* node attributes defs */
 
 #define	SKIP_NONE	0
 #define	SKIP_EXCLUSIVE	1

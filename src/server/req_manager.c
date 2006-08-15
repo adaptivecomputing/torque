@@ -134,6 +134,7 @@ extern struct server server;
 extern tlist_head     svr_queues;
 extern attribute_def que_attr_def[];
 extern attribute_def svr_attr_def[];
+extern attribute_def  node_attr_def[];   /* node attributes defs */
 extern int  svr_chngNodesfile;
 extern char *msg_attrtype;
 extern char *msg_daemonname;
