@@ -1643,7 +1643,7 @@ static char *availmem(
 
 
 
-static char *size_fs(
+char *size_fs(
 
   char *param)
 

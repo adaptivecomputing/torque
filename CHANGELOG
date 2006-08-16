@@ -14,6 +14,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature
   b - networking fixes for HPUX, fixes pbs_iff (PACCAR)
   e - fix "list_head" symbol clash on Solaris 10
   f - Linux 2.6 cpuset support
+  b - compile error with size_fs() on digitalunix
 
 2.1.2
 
