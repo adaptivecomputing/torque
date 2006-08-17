@@ -802,6 +802,19 @@ attribute_def svr_attr_def[] = {
 	PARENT_TYPE_SERVER
     },
 
+/* SRV_ATR_NetCounter */
+    {	ATTR_netcounter,		/* "net_counter" */
+	decode_null,
+	encode_str,
+	set_null,
+	comp_str,
+	free_null,
+	NULL_FUNC,
+	READ_ONLY,
+	ATR_TYPE_STR,
+	PARENT_TYPE_SERVER
+    },
+
 	
 
 /* site supplied server attribute definitions if any, see site_svr_attr_*.h  */

@@ -140,8 +140,67 @@ pbs_net_t pbs_server_addr;
 static void accept_conn();
 
 
+static struct netcounter nc_list[60];
 
+void netcounter_incr()
+  {
+  time_t now, lastmin;
+  int i;
 
+  now = time(NULL);
+  lastmin = now - 60;
+
+  if (nc_list[0].time == now)
+    {
+    nc_list[0].counter++;
+    }
+  else 
+    {
+    memmove(&nc_list[1],&nc_list[0],sizeof(struct netcounter)*59);
+    
+    nc_list[0].time=now;
+    nc_list[0].counter=1;
+
+    for (i=0;i<60;i++)
+      {
+      if (nc_list[i].time < lastmin)
+        {
+        nc_list[i].time=0;
+        nc_list[i].counter=0;
+        }
+      }
+    }
+  }
+
+int *netcounter_get()
+  {
+  static int netrates[3];
+  int netsums[3]={0,0,0};
+  int i;
+  
+  for (i=0;i<5;i++)
+    {
+    netsums[0]+=nc_list[i].counter;
+    netsums[1]+=nc_list[i].counter;
+    netsums[2]+=nc_list[i].counter;
+    }
+  for (i=5;i<30;i++)
+    {
+    netsums[1]+=nc_list[i].counter;
+    netsums[2]+=nc_list[i].counter;
+    }
+  for (i=30;i<60;i++)
+    {
+    netsums[2]+=nc_list[i].counter;
+    }
+  netrates[0]=netsums[0]/5;
+  netrates[1]=netsums[1]/30;
+  netrates[2]=netsums[2]/60;
+
+  return netrates;
+  }
+    
+    
 
 /*
  * init_network - initialize the network interface
@@ -229,6 +288,12 @@ int init_network(
     return(-1);
     }
 
+  /* allocate a minute's worth of counter structs */
+  for (i=0;i<60;i++)
+    {
+    nc_list[i].time=0;
+    nc_list[i].counter=0;
+    }
   return (0);
   }  /* END init_network() */
 
@@ -317,6 +382,7 @@ int wait_request(
 
       if (svr_conn[i].cn_active != Idle) 
         {
+        netcounter_incr();
         svr_conn[i].cn_func(i);
 
         /* NOTE:  breakout if state changed (probably received shutdown request) */

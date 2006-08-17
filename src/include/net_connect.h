@@ -166,3 +166,10 @@ struct connection {
 	void		(*cn_func) A_((int)); /* read function when data rdy */
 	void		(*cn_oncl) A_((int)); /* func to call on close */
 };
+
+struct netcounter {
+   time_t  time;
+   int     counter;
+};
+
+int *netcounter_get();

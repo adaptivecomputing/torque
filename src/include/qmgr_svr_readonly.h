@@ -96,4 +96,5 @@ ATTR_rescassn,
 ATTR_count,
 ATTR_status,
 ATTR_total,
+ATTR_netcounter,
 

@@ -163,6 +163,7 @@
 #define ATTR_forwardx11 "forward_x11"
 #define ATTR_submit_args "submit_args"
 #define ATTR_tokens 	"tokens"
+#define ATTR_netcounter "net_counter"
 
 /* additional queue attributes names */
 

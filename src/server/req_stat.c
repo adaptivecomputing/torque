@@ -1044,6 +1044,8 @@ void req_stat_svr(
   svrattrl	   *pal;
   struct batch_reply *preply;
   struct brp_status  *pstat;
+  int *nc;
+  static char nc_buf[128];
 
   /* update count and state counts from sv_numjobs and sv_jobstates */
 
@@ -1054,6 +1056,11 @@ void req_stat_svr(
     &server.sv_attr[(int)SRV_ATR_JobsByState],
     server.sv_jobstates,
     server.sv_jobstbuf);
+
+  nc=netcounter_get();
+  sprintf(nc_buf,"%d %d %d",*nc, *(nc+1), *(nc+2));
+  server.sv_attr[(int)SRV_ATR_NetCounter].at_val.at_str=nc_buf;
+  server.sv_attr[(int)SRV_ATR_NetCounter].at_flags |= ATR_VFLAG_SET;
 
   /* allocate a reply structure and a status sub-structure */
 
