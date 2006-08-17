@@ -193,9 +193,19 @@ int *netcounter_get()
     {
     netsums[2]+=nc_list[i].counter;
     }
-  netrates[0]=netsums[0]/5;
-  netrates[1]=netsums[1]/30;
-  netrates[2]=netsums[2]/60;
+
+  if (netsums[0] > 0)
+    {
+    netrates[0]=netsums[0]/5;
+    netrates[1]=netsums[1]/30;
+    netrates[2]=netsums[2]/60;
+    }
+  else
+    {
+    netrates[0]=0;
+    netrates[1]=0;
+    netrates[2]=0;
+    }
 
   return netrates;
   }
