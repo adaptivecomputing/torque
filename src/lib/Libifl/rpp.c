@@ -1231,6 +1231,11 @@ static void rpp_alist(
 
   sp->addr_array = (struct in_addr *)calloc(i, sizeof(struct in_addr));
 
+  if (sp->addr_array == NULL)
+    {
+    return;
+    }
+
   j = 0;
 
   for (i = 0;hp->h_addr_list[i];i++) 
