@@ -286,15 +286,19 @@ static void pelogalm(
  *		- argv[1] is the jobid
  *		- argv[2] is the user's name
  *		- argv[3] is the user's group name
+ *              - argv[4] is the job name
  *		- the input file is an architecture-dependent file
  *		- the output and error are the job's output and error
  *	The epilogue also has:
- *		- argv[4] is the job name
  *		- argv[5] is the session id
  *		- argv[6] is the list of resource limits specified
  *		- argv[7] is the list of resources used
  *		- argv[8] is the queue in which the job resides
  *		- argv[9] is the account under which the job run
+ *      The prologue also has:
+ *              - argv[5] is the list of resource limits specified
+ *              - argv[6] is the queue in which the job resides
+ *              - argv[7] is the account under which the job is run
  */
 
 int run_pelog(
