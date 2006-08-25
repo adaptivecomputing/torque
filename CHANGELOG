@@ -644,11 +644,6 @@ Patches incorporated prior to patch 2:
   NCSA MOM Pin
 
     pin PBS MOM into memory to keep it from getting swapped
-    (NOTE:  Linux conditionals must be added - NYI)
-
-  Buffalo -- Sep 2002 (???)
-
-    ???
 
   ANL RPP Tuning -- Sep 2000 (J Navarro)
 
@@ -662,7 +657,7 @@ Patches incorporated prior to patch 2:
 
     processes are killed with SIGTERM followed by SIGKILL
 
-  PNNL SSS Patch -- Jun 2002 (???)
+  PNNL SSS Patch -- Jun 2002 (Skousen)
 
     improves server-mom communication and server-scheduler
 

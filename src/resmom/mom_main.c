@@ -4222,14 +4222,28 @@ int rm_request(
               {
               struct stat s;
 
-              if (stat(path_prolog,&s) == -1)
-                {
-                MUStrNCat(&BPtr,&BSpace,"NOTE:  no prolog configured\n");
-                }
-              else
+              int prologfound = 0;
+
+              if (stat(path_prolog,&s) != -1)
                 {
                 MUStrNCat(&BPtr,&BSpace,"NOTE:  prolog enabled\n");
 
+                prologfound = 1;
+                }
+              else if (verbositylevel >= 2)
+                {
+                MUStrNCat(&BPtr,&BSpace,"NOTE:  no prolog configured\n");
+                }
+
+              if (stat(path_prologp,&s) != -1)
+                {
+                MUStrNCat(&BPtr,&BSpace,"NOTE:  prolog.parallel enabled\n");
+
+                prologfound = 1;
+                }
+
+              if (prologfound == 1)
+                {
                 sprintf(tmpLine,"Prolog Alarm Time:      %d seconds\n",
                   pe_alarm_time);
 

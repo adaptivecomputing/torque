@@ -155,18 +155,20 @@ static int await_connect(
  *		 PBS_NET_RC_FATAL (-1) if fatal error, just quit, or
  *		 PBS_NET_RC_RETRY (-2) if temp error, should retry
  *
- * Note, the server's host address and port are was chosen as parameters
+ * NOTE: the server's host address and port were chosen as parameters
  * rather than their names to possibly save extra look-ups.  It seems likely
  * that the caller "might" make several calls to the same host or different
- * hosts with the same port.  Let the caller keep the addresses arround
+ * hosts with the same port.  Let the caller keep the addresses around
  * rather than look it up each time.
  */
 
+/* NOTE:  make connection on reserved port to validate root/trusted authority */
+
 int client_to_svr(
 
-  pbs_net_t     hostaddr,	/* Internet addr  of host */
-  unsigned int  port,		/* port to which to connect */
-  int           local_port)	/* BOOLEAN:  not 0 if use local reserved port */
+  pbs_net_t     hostaddr,	/* I - internet addr of host */
+  unsigned int  port,		/* I - port to which to connect */
+  int           local_port)	/* I - BOOLEAN:  not 0 if use local reserved port */
 
   {
   struct sockaddr_in local;
@@ -245,7 +247,7 @@ retry:  /* retry goto added (rentec) */
     else
       {
 
-#endif
+#endif /* HAVE_BINDRESVPORT */
 
     local.sin_port = htons(tryport);
 
@@ -276,8 +278,8 @@ retry:  /* retry goto added (rentec) */
       }  /* END while (bind() < 0) */
 #ifdef HAVE_BINDRESVPORT
       } /* END if (tryport == (IPPORT_RESERVED - 1)) else */
-#endif /* HAVE_BINDRESVPORT */
-#endif /* !NOPRIVPORTS */
+#endif  /* HAVE_BINDRESVPORT */
+#endif  /* !NOPRIVPORTS */
     }    /* END if (local_port != FALSE) */
 			
   /* connect to specified server host and port	*/
@@ -318,7 +320,7 @@ retry:  /* retry goto added (rentec) */
 
         goto retry;
         }
-#endif
+#endif /* NOPRIVPORTS */
 
       /* fall through to next case */
 

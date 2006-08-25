@@ -946,8 +946,12 @@ void job_start_error(
   static  char  id[] = "job_start_error";
   int           nodes;
 
-  static char abortjobid[64];
-  static int  abortcount = -1;
+  static char   abortjobid[64];
+  static int    abortcount = -1;
+
+  attribute    *pattr;
+
+  char          tmpLine[1024];
 
   if (abortcount == -1)
     {
@@ -986,17 +990,31 @@ void job_start_error(
     abortcount = 1;
     }
 
-  nodes = send_sisters(pjob,IM_ABORT_JOB);
+  /* annotate job with failed node info */
 
-  if (nodes != pjob->ji_numnodes - 1) 
-    {
-    sprintf(log_buffer,"%s: sent %d ABORT requests, should be %d",
-      id,
-      nodes,
-      pjob->ji_numnodes - 1);
+  snprintf(tmpLine,sizeof(tmpLine),"REJHOST=%s",
+    nodename);
 
-    log_err(-1,id,log_buffer);
-    }
+  pattr = &pjob->ji_wattr[(int)JOB_ATR_sched_hint];
+
+  job_attr_def[(int)JOB_ATR_sched_hint].at_free(pattr);
+
+  job_attr_def[(int)JOB_ATR_sched_hint].at_decode(
+    pattr,
+    NULL,
+    NULL,
+    tmpLine);
+
+  pjob->ji_wattr[(int)JOB_ATR_errpath].at_flags =
+    (ATR_VFLAG_SET | ATR_VFLAG_MODIFY | ATR_VFLAG_SEND);
+
+  /* NOTE:  is there a way to force the updated 'sched_hint' info to pbs_server 
+            before the obit to avoid a race condition? */
+
+  /*        Perhaps, pbs_mom could register job and perform 'exec_bail' after 
+            next job status query from pbs_server? */
+
+  /* NOTE:  exec_bail will issue 'send_sisters(pjob,IM_ABORT_JOB);' */
 
   exec_bail(pjob,JOB_EXEC_RETRY);
 
@@ -1013,7 +1031,7 @@ void job_start_error(
 
 void arrayfree(
 
-  char **array)
+  char **array)  /* I - freed */
 
   {
   int i;
@@ -1056,7 +1074,7 @@ void node_bailout(
 
         /*
         ** I'm MS and a node has failed to respond to the
-        ** call.  Maybe in the future the use can specify
+        ** call.  Maybe in the future the user can specify
         ** the job can start with a range of nodes so
         ** one (or more) missing can be tolerated.  Not
         ** for now.

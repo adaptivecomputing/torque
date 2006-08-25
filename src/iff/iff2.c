@@ -116,9 +116,9 @@ extern char pbs_current_user[PBS_MAXUSER]; /* for libpbs.a */
 
 int main(
 
-  int     argc,
-  char   *argv[],
-  char   *envp[])
+  int     argc,   /* I */
+  char   *argv[], /* I */
+  char   *envp[]) /* I */
 
   {
   int		 auth_type = PBS_credentialtype_none;
@@ -139,7 +139,7 @@ int main(
   int		 testmode = 0;
   int		 rc;
   struct batch_reply   *reply;
-  char *parse_servername A_((char *, short *));
+  char *parse_servername A_((char *,short *));
   extern int   optind;
   extern char *optarg;
 
@@ -212,15 +212,17 @@ int main(
 
 #if SYSLOG
      syslog(LOG_ERR|LOG_DAEMON,"not setuid 0, likely misconfigured");
-#endif
+#endif  /* SYSLOG */
 
-    }  /* END if (!testmode && (myeuid != 0)) */
-#endif
+    }   /* END if (!testmode && (myeuid != 0)) */
+#endif  /* __CYGWIN__ */
 
   /* first, make sure we have a valid server (host), and ports */
 
   if ((hostaddr = get_hostaddr(argv[optind])) == (pbs_net_t)0) 
     {
+    /* FAILURE */
+
     fprintf(stderr,"pbs_iff: unknown host %s\n", 
       argv[optind]);
 
@@ -229,6 +231,8 @@ int main(
 
   if ((servport = atoi(argv[++optind])) <= 0)
     {
+    /* FAILURE */
+
     return(1);
     }
 

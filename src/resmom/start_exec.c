@@ -447,9 +447,23 @@ void exec_bail(
   int  code)  /* I */
 
   {
-  /* inform non-MS nodes that job is aborting */
+  static char id[] = "exec_bail";
 
-  send_sisters(pjob,IM_ABORT_JOB);  
+  int nodecount;
+
+  nodecount = send_sisters(pjob,IM_ABORT_JOB);
+
+  if (nodecount != pjob->ji_numnodes - 1)
+    {
+    sprintf(log_buffer,"%s: sent %d ABORT requests, should be %d",
+      id,
+      nodecount,
+      pjob->ji_numnodes - 1);
+
+    log_err(-1,id,log_buffer);
+    }
+
+  /* inform non-MS nodes that job is aborting */
 
   pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITING;
   pjob->ji_qs.ji_un.ji_momt.ji_exitstat = code;
@@ -1488,7 +1502,6 @@ int TMomFinalizeJob1(
 
     pjob->ji_wattr[(int)JOB_ATR_errpath].at_flags =
       (ATR_VFLAG_SET | ATR_VFLAG_MODIFY | ATR_VFLAG_SEND);
-
     }  /* END if (TJE->is_interactive == TRUE) */
 
 #if SHELL_USE_ARGV == 0
@@ -4277,6 +4290,8 @@ void start_exec(
 
     if (i < 2) 
       {
+      /* ERROR:  cannot open sockets for stdout and stderr */
+
       log_err(errno,id,"stdout/err socket");
 
       for (i = 0;i < 2;i++) 
