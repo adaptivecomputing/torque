@@ -130,7 +130,10 @@
 #include "log.h"
 #include "port_forwarding.h"
 
+/* DefaultFilterPath is used to fall back on in order to maintain backwards compatibility. 
+   the new preferred path for the submit filter is ${libexecdir}/qsub_filter */
 static char *DefaultFilterPath = "/usr/local/sbin/torque_submitfilter";
+
 static char *DefaultXauthPath = XAUTH_PATH;
 
 #define SUBMIT_FILTER_ADMIN_REJECT_CODE -1 
@@ -3553,8 +3556,17 @@ int main(
 
   /* check TORQUE config settings */
 
-  strcpy(PBS_Filter,DefaultFilterPath);
-  strcpy(xauth_path,DefaultXauthPath);
+  
+  strncpy(PBS_Filter, SUBMIT_FILTER_PATH, 255);
+
+  /* check to see if PBS_Filter exists.  If not then fall back to the old hard coded file */
+  if (stat(PBS_Filter,&statbuf) == -1)
+    {
+    strncpy(PBS_Filter,DefaultFilterPath,255);
+    }
+
+  strncpy(xauth_path,DefaultXauthPath,255);
+
   server_host[0] = '\0';
 
   if (getenv("PBSDEBUG") != NULL)
@@ -3591,6 +3603,13 @@ int main(
         cnt2server_retry = atoi(param_val);
       }
     }
+
+  /* check to see if PBS_Filter exists.  If not then fall back to the old hard coded file */
+    if (stat(PBS_Filter,&statbuf) == -1)
+      {
+      strncpy(PBS_Filter,DefaultFilterPath,255);
+      }
+
 
   if (optind < argc) 
     strcpy(script,argv[optind]);

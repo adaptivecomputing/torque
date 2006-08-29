@@ -9,3 +9,5 @@ DEMUX_PATH = $(sbindir)/$(program_prefix)pbs_demux$(program_suffix)
 
 XPBS_DIR = $(libdir)/xpbs
 XPBSMON_DIR = $(libdir)/xpbsmon
+
+SUBMIT_FILTER_PATH = $(libexecdir)/qsub_filter
