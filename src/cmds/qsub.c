@@ -3515,7 +3515,6 @@ int main(
   int errflg;                         /* option error */
   static char script[MAXPATHLEN + 1] = ""; /* name of script file */
   char script_tmp[MAXPATHLEN + 1] = "";    /* name of script file copy */
-  char  basename[16];			/* base name of script for job name*/
   char *bnp;
   FILE *f;                            /* FILE pointer to the script */
   char *q_n_out;                      /* queue part of destination */
@@ -3724,13 +3723,9 @@ int main(
         else
           bnp = script;
 
-        strncpy(basename, bnp, 15);
-
-        basename[15] = '\0';
-
-        if (check_job_name(basename,0) == 0) 
+        if (check_job_name(bnp,0) == 0) 
           {
-          set_attr(&attrib,ATTR_N,basename);
+          set_attr(&attrib,ATTR_N,bnp);
           } 
         else 
           {
