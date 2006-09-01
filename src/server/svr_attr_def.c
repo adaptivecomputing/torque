@@ -112,6 +112,7 @@ extern int set_null A_((attribute *patr, attribute *new, enum batch_op op));
 extern int token_chk A_((attribute *pattr, void *pobject, int actmode));
 extern int set_tokens A_((struct attribute *attr, struct attribute *new, enum batch_op op));
 
+/* DIAGTODO: write diag_attr_def.c */
 
 /*
  * The entries for each attribute are (see attribute.h):

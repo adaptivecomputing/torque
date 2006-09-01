@@ -293,6 +293,7 @@ int dis_request_read(
     case PBS_BATCH_StatusNode:
     case PBS_BATCH_StatusQue:
     case PBS_BATCH_StatusSvr:
+/* DIAGTODO: add PBS_BATCH_StatusDiag */
     
       rc = decode_DIS_Status(sfds,request);
 

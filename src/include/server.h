@@ -77,6 +77,7 @@
 * without reference to its choice of law rules.
 */
 
+/* DIAGTODO: write diag.h and fill out new attrs */
 /*
  * server.h - definitions for the server object (structure)
  *

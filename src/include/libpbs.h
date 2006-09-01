@@ -260,7 +260,7 @@ enum PBatchReqTypeEnum {
   PBS_BATCH_MvJobFile	= 57,
   PBS_BATCH_StatusNode	= 58,
   PBS_BATCH_Disconnect	= 59 };
-
+/* DIAGTODO: define PBS_BATCH_StatusDiag */
 #define PBS_BATCH_FileOpt_Default	0
 #define PBS_BATCH_FileOpt_OFlg		1
 #define PBS_BATCH_FileOpt_EFlg		2

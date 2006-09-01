@@ -272,6 +272,7 @@ typedef struct attribute_def attribute_def;
 #define PARENT_TYPE_QUE_PULL	 5
 #define PARENT_TYPE_SERVER	 6
 #define PARENT_TYPE_NODE	 7
+/* DIAGTODO: define PARENT_TYPE_DIAG, but atrpart field isn't wide enough */
 
 /*
  * values for the "actmode" parameter to at_action()

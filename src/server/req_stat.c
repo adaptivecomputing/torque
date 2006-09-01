@@ -1116,7 +1116,7 @@ void req_stat_svr(
   return;
   }  /* END req_stat_svr() */
 
-
+/* DIAGTODO: write req_stat_diag() */
 
 
 

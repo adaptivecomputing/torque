@@ -351,6 +351,7 @@ extern void  req_runjob A_((struct batch_request *req));
 extern void  req_selectjobs A_((struct batch_request *req));
 extern void  req_stat_que A_((struct batch_request *req));
 extern void  req_stat_svr A_((struct batch_request *req));
+/* DIAGTODO: declr req_stat_diag() */
 extern void  req_trackjob A_((struct batch_request *req));
 #else
 extern void  req_cpyfile A_((struct batch_request *req));

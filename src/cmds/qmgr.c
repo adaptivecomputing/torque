@@ -1383,6 +1383,7 @@ int execute(
 	else
 	  pstderr("No Active Nodes, nothing done.\n");
         break;
+/* DIAGTODO: handle new diag type */
       }
     }
   else
@@ -1423,6 +1424,8 @@ int execute(
 	  case MGR_OBJ_NODE:
 	    ss = pbs_statnode(sp -> s_connect, pname -> obj_name, sa, NULL);
 	  break;
+/* DIAGTODO: handle new diag type for list */
+/* DIAGTODO: create a pbs_statdiag() */
 	}
 	freeattrl(sa);
 	perr = (ss == NULL);
@@ -1451,6 +1454,7 @@ int execute(
 	  case MGR_OBJ_NODE:
 	    ss = pbs_statnode(sp->s_connect,pname->obj_name,sa,NULL);
 	  break;
+/* DIAGTODO: handle new diag type for print */
 	}
 
 	freeattrl(sa);
@@ -1971,6 +1975,7 @@ int is_attr(
     NULL
   };
 
+/* DIAGTODO: need a list of public and read-only diag attrs */
   char **attr_public = NULL;
   char **attr_readonly = NULL;
   int ret = FALSE;
@@ -2196,6 +2201,7 @@ int parse(
       *type = MGR_OBJ_QUEUE;
     else if (strncmp(req[1],"node",lp) == 0) 
       *type = MGR_OBJ_NODE;
+/* DIAGTODO: allow new object type */
     else 
       {
       pstderr1("qmgr: Illegal object type: %s.\n", 
