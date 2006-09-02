@@ -1344,6 +1344,19 @@ AH_VERBATIM([NEED_BLOCKING_CONNECTIONS],
 #define read(a,b,c) read_nonblocking_socket(a,b,c)
 #endif])
 
+pbs_build_host=`uname -n`
+pbs_build_date=`date`
+pbs_build_dir=`pwd`
+pbs_source_dir=`cd $srcdir && pwd`
+pbs_config_args=$@
+AC_DEFINE_UNQUOTED([PBS_BUILD_HOST],"${pbs_build_host}",[Define to the build hostname])
+AC_DEFINE_UNQUOTED([PBS_BUILD_DATE],"${pbs_build_date}",[Define to the build date])
+AC_DEFINE_UNQUOTED([PBS_BUILD_DIR],"${pbs_build_dir}",[Define to the build directory])
+AC_DEFINE_UNQUOTED([PBS_SOURCE_DIR],"${pbs_source_dir}",[Define to the source directory])
+AC_DEFINE_UNQUOTED([PBS_BUILD_USER],"${USER}",[Define to the building username])
+AC_DEFINE_UNQUOTED([PBS_INSTALL_DIR],"${prefix}",[Define to the install directory])
+AC_DEFINE_UNQUOTED([PBS_CONFIG_ARGS],"${ac_configure_args}",[Define to the install directory])
+AC_DEFINE_UNQUOTED([PBS_CFLAGS],"${CFLAGS}",[Define to the install directory])
 
 AC_OUTPUT(buildutils/pbs_mkdirs
 	  buildutils/self-extract-head-sh

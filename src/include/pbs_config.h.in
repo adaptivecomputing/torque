@@ -252,11 +252,35 @@
 /* Define to the version of this package. */
 #undef PACKAGE_VERSION
 
+/* Define to the build date */
+#undef PBS_BUILD_DATE
+
+/* Define to the build directory */
+#undef PBS_BUILD_DIR
+
+/* Define to the build hostname */
+#undef PBS_BUILD_HOST
+
+/* Define to the building username */
+#undef PBS_BUILD_USER
+
+/* Define to the install directory */
+#undef PBS_CFLAGS
+
+/* Define to the install directory */
+#undef PBS_CONFIG_ARGS
+
 /* Define to the name of the default PBS server */
 #undef PBS_DEFAULT_SERVER
 
+/* Define to the install directory */
+#undef PBS_INSTALL_DIR
+
 /* the PBS style machine type name */
 #undef PBS_MACH
+
+/* Define to the source directory */
+#undef PBS_SOURCE_DIR
 
 /* Define to enable Linux 2.6 cpusets */
 #undef PENABLE_LINUX26_CPUSETS
