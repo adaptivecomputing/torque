@@ -2946,15 +2946,16 @@ int process_opts(
 
         break;
 
+#if !defined(PBS_NO_POSIX_VIOLATION)
       case 't':
 
         if_cmd_line(t_opt)
           {
           t_opt = passet;
           i = atoi(optarg);
-          if (i <= 0)
+          if (i <= 0 || i > PBS_MAXJOBARRAY)
             {
-            fprintf(stderr, "qsub: illegal -t value\n");
+            fprintf(stderr, "qsub: illegal -t value (must be 1 through %d)\n", PBS_MAXJOBARRAY);
 
             errflg++;
 
@@ -2964,6 +2965,7 @@ int process_opts(
           }
 
         break;
+#endif
 
       case 'u':
 
@@ -3188,6 +3190,7 @@ int process_opts(
 
         break;
 
+#if !defined(PBS_NO_POSIX_VIOLATION)
       case 'X':
 
         if_cmd_line(Forwardx11_opt) 
@@ -3203,7 +3206,7 @@ int process_opts(
           }
 
         break;
-
+#endif
       case 'z':
  
         if_cmd_line(z_opt) 

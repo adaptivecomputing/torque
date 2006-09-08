@@ -128,7 +128,7 @@ char **arg_current_server;
 
     /* Looking for a seq_number */
     while ( *c != '\0' ) {
-        if ( isdigit(*c) ) {
+        if ( isdigit(*c) || *c =='-') {
 	    if ( s_pos >= PBS_MAXSEQNUM ) return 3;
             seq_number[s_pos++]=*c;
         } else
