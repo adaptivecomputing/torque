@@ -79,7 +79,7 @@
 /*
  * Machine-dependent definitions for the Machine Oriented Miniserver
  *
- * Target System: solaris5
+ * Target System: solaris7
  */
 
 #ifndef MOM_MACH

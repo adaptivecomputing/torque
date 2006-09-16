@@ -79,13 +79,13 @@
 /*
  * Machine-dependent definitions for the Machine Oriented Miniserver
  *
- * Target System: aix4
+ * Target System: aix5
  */
 
 
 
 #ifndef MOM_MACH
-#define MOM_MACH "aix4"
+#define MOM_MACH "aix5"
 
 #define SET_LIMIT_SET   1
 #define SET_LIMIT_ALTER 0

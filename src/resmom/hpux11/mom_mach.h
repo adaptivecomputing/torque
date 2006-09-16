@@ -79,11 +79,11 @@
 /*
  * Machine-dependent definitions for the Machine Oriented Miniserver
  *
- * Target System: hpux10
+ * Target System: hpux11
  */
 
 #ifndef MOM_MACH
-#define MOM_MACH "hpux10"
+#define MOM_MACH "hpux11"
 
 #define SET_LIMIT_SET   1
 #define SET_LIMIT_ALTER 0
