@@ -457,12 +457,12 @@ case $PBS_MACH in
 esac
 
 case $PBS_MACH in
-aix4|aix5|sunos4|solaris5|freebsd|darwin|fujitsu)
+aix4|aix5|sunos4|solaris5|freebsd|freebsd5|darwin|fujitsu)
   AC_CHECK_FUNC(nlist, , AC_CHECK_LIB(elf, nlist)) ;;
 esac
 
 case $PBS_MACH in
-sunos4|solaris5|netbsd|freebsd|darwin)
+sunos4|solaris5|netbsd|freebsd|freebsd5|darwin)
   AC_CHECK_LIB(kvm, kvm_open) ;;
 esac
 
@@ -1388,6 +1388,7 @@ AC_OUTPUT(buildutils/pbs_mkdirs
 	  src/resmom/darwin/Makefile
 	  src/resmom/digitalunix/Makefile
 	  src/resmom/freebsd/Makefile
+	  src/resmom/freebsd5/Makefile
 	  src/resmom/fujitsu/Makefile
 	  src/resmom/hpux10/Makefile
 	  src/resmom/hpux11/Makefile

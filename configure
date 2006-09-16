@@ -10802,7 +10802,7 @@ _ACEOF
 esac
 
 case $PBS_MACH in
-aix4|aix5|sunos4|solaris5|freebsd|darwin|fujitsu)
+aix4|aix5|sunos4|solaris5|freebsd|freebsd5|darwin|fujitsu)
   echo "$as_me:$LINENO: checking for nlist" >&5
 echo $ECHO_N "checking for nlist... $ECHO_C" >&6
 if test "${ac_cv_func_nlist+set}" = set; then
@@ -10947,7 +10947,7 @@ fi
 esac
 
 case $PBS_MACH in
-sunos4|solaris5|netbsd|freebsd|darwin)
+sunos4|solaris5|netbsd|freebsd|freebsd5|darwin)
 
 echo "$as_me:$LINENO: checking for kvm_open in -lkvm" >&5
 echo $ECHO_N "checking for kvm_open in -lkvm... $ECHO_C" >&6
@@ -19395,7 +19395,7 @@ cat >>confdefs.h <<_ACEOF
 _ACEOF
 
 
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    ac_config_files="$ac_config_files buildutils/pbs_mkdirs buildutils/self-extract-head-sh Makefile torque.spec doc/Makefile doc/man1/Makefile doc/man3/Makefile doc/man8/Makefile src/Makefile src/cmds/Makefile src/iff/Makefile src/gui/Makefile src/gui/Ccode/Makefile src/include/Makefile src/lib/Makefile src/lib/Libattr/Makefile src/lib/Libcmds/Makefile src/lib/Libdis/Makefile src/lib/Libifl/Makefile src/lib/Liblog/Makefile src/lib/Libnet/Makefile src/lib/Libpbs/Makefile src/lib/Libsite/Makefile src/mom_rcp/Makefile src/resmom/Makefile src/resmom/aix4/Makefile src/resmom/aix5/Makefile src/resmom/darwin/Makefile src/resmom/digitalunix/Makefile src/resmom/freebsd/Makefile src/resmom/fujitsu/Makefile src/resmom/hpux10/Makefile src/resmom/hpux11/Makefile src/resmom/irix5/Makefile src/resmom/irix6/Makefile src/resmom/irix6array/Makefile src/resmom/linux/Makefile src/resmom/netbsd/Makefile src/resmom/solaris5/Makefile src/resmom/solaris7/Makefile src/resmom/sunos4/Makefile src/resmom/unicos8/Makefile src/resmom/unicosmk2/Makefile src/resmom/cpa/Makefile src/scheduler.basl/Makefile src/scheduler.cc/Makefile src/scheduler.cc/samples/Makefile src/scheduler.cc/samples/cray_t3e/Makefile src/scheduler.cc/samples/dec_cluster/Makefile src/scheduler.cc/samples/fifo/Makefile src/scheduler.cc/samples/msic_cluster/Makefile src/scheduler.cc/samples/sgi_origin/Makefile src/scheduler.cc/samples/umn_cluster/Makefile src/scheduler.tcl/Makefile src/server/Makefile src/tools/Makefile src/tools/xpbsmon/Makefile src/pam/Makefile"
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    ac_config_files="$ac_config_files buildutils/pbs_mkdirs buildutils/self-extract-head-sh Makefile torque.spec doc/Makefile doc/man1/Makefile doc/man3/Makefile doc/man8/Makefile src/Makefile src/cmds/Makefile src/iff/Makefile src/gui/Makefile src/gui/Ccode/Makefile src/include/Makefile src/lib/Makefile src/lib/Libattr/Makefile src/lib/Libcmds/Makefile src/lib/Libdis/Makefile src/lib/Libifl/Makefile src/lib/Liblog/Makefile src/lib/Libnet/Makefile src/lib/Libpbs/Makefile src/lib/Libsite/Makefile src/mom_rcp/Makefile src/resmom/Makefile src/resmom/aix4/Makefile src/resmom/aix5/Makefile src/resmom/darwin/Makefile src/resmom/digitalunix/Makefile src/resmom/freebsd/Makefile src/resmom/freebsd5/Makefile src/resmom/fujitsu/Makefile src/resmom/hpux10/Makefile src/resmom/hpux11/Makefile src/resmom/irix5/Makefile src/resmom/irix6/Makefile src/resmom/irix6array/Makefile src/resmom/linux/Makefile src/resmom/netbsd/Makefile src/resmom/solaris5/Makefile src/resmom/solaris7/Makefile src/resmom/sunos4/Makefile src/resmom/unicos8/Makefile src/resmom/unicosmk2/Makefile src/resmom/cpa/Makefile src/scheduler.basl/Makefile src/scheduler.cc/Makefile src/scheduler.cc/samples/Makefile src/scheduler.cc/samples/cray_t3e/Makefile src/scheduler.cc/samples/dec_cluster/Makefile src/scheduler.cc/samples/fifo/Makefile src/scheduler.cc/samples/msic_cluster/Makefile src/scheduler.cc/samples/sgi_origin/Makefile src/scheduler.cc/samples/umn_cluster/Makefile src/scheduler.tcl/Makefile src/server/Makefile src/tools/Makefile src/tools/xpbsmon/Makefile src/pam/Makefile"
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
 # tests run on this system so they can be shared between configure
@@ -20065,6 +20065,7 @@ do
   "src/resmom/darwin/Makefile" ) CONFIG_FILES="$CONFIG_FILES src/resmom/darwin/Makefile" ;;
   "src/resmom/digitalunix/Makefile" ) CONFIG_FILES="$CONFIG_FILES src/resmom/digitalunix/Makefile" ;;
   "src/resmom/freebsd/Makefile" ) CONFIG_FILES="$CONFIG_FILES src/resmom/freebsd/Makefile" ;;
+  "src/resmom/freebsd5/Makefile" ) CONFIG_FILES="$CONFIG_FILES src/resmom/freebsd5/Makefile" ;;
   "src/resmom/fujitsu/Makefile" ) CONFIG_FILES="$CONFIG_FILES src/resmom/fujitsu/Makefile" ;;
   "src/resmom/hpux10/Makefile" ) CONFIG_FILES="$CONFIG_FILES src/resmom/hpux10/Makefile" ;;
   "src/resmom/hpux11/Makefile" ) CONFIG_FILES="$CONFIG_FILES src/resmom/hpux11/Makefile" ;;
