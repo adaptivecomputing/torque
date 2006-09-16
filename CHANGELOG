@@ -19,7 +19,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature
       we fall back to /usr/local/sbin/torque_submitfilter to maintain compatibility
   e - allow long job names when not using -N
   e - pbs_server will now print build details with --about
-  e - new freebsd5 mom arch for Freebsd 5.x and 6.x
+  e - new freebsd5 mom arch for Freebsd 5.x and 6.x (trasz)
 
 2.1.2
 
