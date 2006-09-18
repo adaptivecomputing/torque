@@ -291,6 +291,7 @@ char *msg_sched_nocall  = "Could not contact Scheduler";
 char *msg_stageinfail	= "Stage In of files failed";
 char *msg_rescunav	= "Resource temporarily unavailable";
 char *msg_maxqueued	= "Maximum number of jobs already in queue";
+char *msg_maxuserqued   = "Maximum number of jobs already in queue for user";
 char *msg_chkpointbusy	= "Checkpoint busy, may retry";
 char *msg_exceedlmt	= "Resource limit exceeds allowable";
 char *msg_badacct	= "Invalid Account";
@@ -376,6 +377,7 @@ struct pbs_err_to_txt pbs_err_to_txt[] = {
 	{ PBSE_RESCUNAV, &msg_rescunav },
 	{ PBSE_BADGRP,  &msg_badgrp },
 	{ PBSE_MAXQUED, &msg_maxqueued },
+	{ PBSE_MAXUSERQUED, &msg_maxuserqued },
 	{ PBSE_CKPBSY, &msg_chkpointbusy },
 	{ PBSE_EXLIMIT, &msg_exceedlmt },
 	{ PBSE_BADACCT, &msg_badacct },

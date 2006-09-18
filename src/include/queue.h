@@ -114,6 +114,7 @@ enum queueattr {
 	QA_ATR_QType,
 	QA_ATR_Priority,
 	QA_ATR_MaxJobs,
+	QA_ATR_MaxUserJobs,
 	QA_ATR_TotalJobs,
 	QA_ATR_JobsByState,
 	QA_ATR_MaxRun,

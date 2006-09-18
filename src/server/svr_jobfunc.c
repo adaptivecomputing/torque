@@ -1014,6 +1014,8 @@ int svr_chkque(
   int i;
   int failed_group_acl = 0;
   int failed_user_acl  = 0;
+  int user_jobs;
+  job *pj;
 
   if (EMsg != NULL)
     EMsg[0] = '\0';
@@ -1171,6 +1173,27 @@ int svr_chkque(
         (pque->qu_numjobs >= pque->qu_attr[QA_ATR_MaxJobs].at_val.at_long))
       {
       return(PBSE_MAXQUED);
+      }
+
+    if ((pque->qu_attr[QA_ATR_MaxUserJobs].at_flags & ATR_VFLAG_SET) &&
+        (pque->qu_attr[QA_ATR_MaxUserJobs].at_val.at_long >= 0))
+      {
+      /* count number of jobs user has in queue */
+      user_jobs = 0;
+      pj = (job *)GET_NEXT(pque->qu_jobs);
+      while (pj)
+        {
+        if (!strcmp(pj->ji_wattr[JOB_ATR_job_owner].at_val.at_str,  pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str))
+          {
+          user_jobs++;
+          }
+        pj = (job *)GET_NEXT(pj->ji_jobque);
+        }
+
+      if (user_jobs >= pque->qu_attr[QA_ATR_MaxUserJobs].at_val.at_long)
+        {
+        return(PBSE_MAXUSERQUED);
+        }
       }
     
     /* 3. if "from_route_only" is true, only local route allowed */

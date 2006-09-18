@@ -146,6 +146,18 @@ attribute_def que_attr_def[] = {
 	NO_USER_SET,
 	ATR_TYPE_LONG,
 	PARENT_TYPE_QUE_ALL
+    }, 
+/* QA_ATR_MaxUserJobs */	/* max number of jobs per user allowed in queue */
+    {	ATTR_maxuserque,	/* max_user_queuable */
+	decode_l,
+	encode_l,
+	set_l,
+	comp_l,
+	free_null,
+	NULL_FUNC,
+	NO_USER_SET,
+	ATR_TYPE_LONG,
+	PARENT_TYPE_QUE_ALL
     },
 /* QS_ATR_TotalJobs */		/* current number of jobs in queue */
     {	ATTR_total,		/* "total_jobs" */

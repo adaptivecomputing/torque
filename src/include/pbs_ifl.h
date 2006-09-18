@@ -180,6 +180,7 @@
 #define ATTR_killdelay  "kill_delay"
 #define ATTR_maxgrprun  "max_group_run"
 #define ATTR_maxque     "max_queuable"
+#define ATTR_maxuserque "max_user_queuable"
 #define ATTR_maxuserrun "max_user_run"
 #define ATTR_qtype      "queue_type"
 #define ATTR_rescassn   "resources_assigned"
