@@ -6144,7 +6144,8 @@ int main(
   sprintf(log_buffer,"%ld\n",
     (long)getpid());
 
-  if (write(lockfds,log_buffer,strlen(log_buffer) + 1) != (ssize_t)(strlen(log_buffer) + 1))
+  if (write(lockfds,log_buffer,strlen(log_buffer) + 1) != 
+      (ssize_t)(strlen(log_buffer) + 1))
     {
     log_err(errno,msg_daemonname,"failed to write to lockfile");
 
@@ -6446,6 +6447,7 @@ int main(
       }
 
     /* should we check the log file ?*/
+
     if (time_now - last_log_check >= PBS_LOG_CHECK_RATE)
        {
        check_log();
@@ -6465,6 +6467,7 @@ int main(
       if (MOMServerAddrs[sindex] == 0)
         {
         /* server is defined, but we don't have an IP */
+
         setpbsserver(pbs_servername[sindex]);
         }
 
@@ -6489,14 +6492,14 @@ int main(
 
       if (MOMRecvClusterAddrsCount[sindex] == 0)
         {
-        if ((time_now - MOMLastSendToServerTime[sindex]) < 10)
+        if ((time_now - MOMLastSendToServerTime[sindex]) < ServerStatUpdateInterval)
           {
           /* message recently sent, do not resend */
 
           continue;
           }
 
-        MOMLastSendToServerTime[sindex]=time_now;
+        MOMLastSendToServerTime[sindex] = time_now;
 
         if (is_compose(SStream[sindex],IS_HELLO) == -1)
           {
