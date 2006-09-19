@@ -1183,7 +1183,9 @@ int svr_chkque(
       pj = (job *)GET_NEXT(pque->qu_jobs);
       while (pj)
         {
-        if (!strcmp(pj->ji_wattr[JOB_ATR_job_owner].at_val.at_str,  pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str))
+        if ((pj->ji_qs.ji_state <= JOB_STATE_RUNNING) &&
+            (!strcmp(pj->ji_wattr[JOB_ATR_job_owner].at_val.at_str,
+                     pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str)))
           {
           user_jobs++;
           }
