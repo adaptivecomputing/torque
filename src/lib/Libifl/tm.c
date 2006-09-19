@@ -670,64 +670,107 @@ tm_nodeinfo(list, nnodes)
 		np[i] = node_table[i];
 	*list = np;
 	*nnodes = i;
-	return TM_SUCCESS;
-}
+
+  return(TM_SUCCESS);
+  }
+
+
+
 
 
 /*
 **	Starts <argv>[0] with environment <envp> at <where>.
 */
-int
-tm_spawn(argc, argv, envp, where, tid, event)
-    int		 argc;		/* in  */
-    char       **argv;		/* in  */
-    char       **envp;		/* in  */
-    tm_node_id	 where;		/* in  */
-    tm_task_id	*tid;		/* out */
-    tm_event_t	*event;		/* out */
-{
-	char		*cp;
-	int		i;
 
-	if (!init_done)
-		return TM_BADINIT;
-	if (argc <= 0 || argv == NULL || argv[0] == NULL || *argv[0] == '\0')
-		return TM_ENOTFOUND;
+int tm_spawn(
 
-	*event = new_event();
-	if (startcom(TM_SPAWN, *event) != DIS_SUCCESS)
-		return TM_ENOTCONNECTED;
+  int          argc,	/* in  */
+  char       **argv,	/* in  */
+  char       **envp,	/* in  */
+  tm_node_id   where,	/* in  */
+  tm_task_id  *tid,	/* out */
+  tm_event_t  *event)	/* out */
 
-	if (diswsi(local_conn, where) != DIS_SUCCESS)	/* send where */
-		return TM_ENOTCONNECTED;
+  {
+  char *cp;
+  int   i;
 
-	if (diswsi(local_conn, argc) != DIS_SUCCESS)	/* send argc */
-		return TM_ENOTCONNECTED;
+  /* NOTE: init_done is global */
 
-	/* send argv strings across */
+  if (!init_done)
+    {
+    return(TM_BADINIT);
+    }
 
-	for (i=0; i < argc; i++) {
-		cp = argv[i];
-		if (diswcs(local_conn, cp, strlen(cp)) != DIS_SUCCESS)
-			return TM_ENOTCONNECTED;
-	}
+  if ((argc <= 0) || (argv == NULL) || (argv[0] == NULL) || (*argv[0] == '\0'))
+    {
+    return(TM_ENOTFOUND);
+    }
 
-	/* send envp strings across */
-	if (getenv("PBSDEBUG") != NULL)
-		if (diswcs(local_conn, "PBSDEBUG=1", strlen("PBSDEBUG=1")) != DIS_SUCCESS)
-			return TM_ENOTCONNECTED;
-	if (envp != NULL) {
-		for (i=0; (cp = envp[i]) != NULL; i++) {
-			if (diswcs(local_conn, cp, strlen(cp)) != DIS_SUCCESS)
-				return TM_ENOTCONNECTED;
-		}
-	}
-	if (diswcs(local_conn, "", 0) != DIS_SUCCESS)
-		return TM_ENOTCONNECTED;
-	DIS_tcp_wflush(local_conn);
-	add_event(*event, where, TM_SPAWN, (void *)tid);
-	return TM_SUCCESS;
-}
+  *event = new_event();
+
+  if (startcom(TM_SPAWN,*event) != DIS_SUCCESS)
+    {
+    return(TM_ENOTCONNECTED);
+    }
+
+  if (diswsi(local_conn,where) != DIS_SUCCESS)	/* send where */
+    {
+    return(TM_ENOTCONNECTED);
+    }
+
+  if (diswsi(local_conn,argc) != DIS_SUCCESS)	/* send argc */
+    {
+    return(TM_ENOTCONNECTED);
+    }
+
+  /* send argv strings across */
+
+  for (i = 0;i < argc;i++) 
+    {
+    cp = argv[i];
+
+    if (diswcs(local_conn,cp,strlen(cp)) != DIS_SUCCESS)
+      {
+      return(TM_ENOTCONNECTED);
+      }
+    }
+
+  /* send envp strings across */
+
+  if (getenv("PBSDEBUG") != NULL)
+    {
+    if (diswcs(local_conn,"PBSDEBUG=1",strlen("PBSDEBUG=1")) != DIS_SUCCESS)
+      {
+      return(TM_ENOTCONNECTED);
+      }
+    }
+
+  if (envp != NULL) 
+    {
+    for (i = 0;(cp = envp[i]) != NULL;i++) 
+      {
+      if (diswcs(local_conn,cp,strlen(cp)) != DIS_SUCCESS)
+        {
+        return(TM_ENOTCONNECTED);
+        }
+      }
+    }
+
+  if (diswcs(local_conn,"",0) != DIS_SUCCESS)
+    {
+    return(TM_ENOTCONNECTED);
+    }
+
+  DIS_tcp_wflush(local_conn);
+
+  add_event(*event,where,TM_SPAWN,(void *)tid);
+
+  return(TM_SUCCESS);
+  }  /* END tm_spawn() */
+
+
+
 
 /*
 **	Sends a <sig> signal to all the process groups in the task
