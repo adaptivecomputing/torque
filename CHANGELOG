@@ -21,6 +21,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature
   e - pbs_server will now print build details with --about
   e - new freebsd5 mom arch for Freebsd 5.x and 6.x (trasz)
   f - new queue attribute "max_user_queable"
+  e - optimize acl_group_sloppy
 
 2.1.2
 

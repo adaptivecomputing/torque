@@ -1016,6 +1016,8 @@ int svr_chkque(
   int failed_user_acl  = 0;
   int user_jobs;
   job *pj;
+  struct array_strings *pas;
+  int j=0;
 
   if (EMsg != NULL)
     EMsg[0] = '\0';
@@ -1099,34 +1101,26 @@ int svr_chkque(
 
         strncpy(uname,pjob->ji_wattr[(int)JOB_ATR_euser].at_val.at_str,PBS_MAXUSER);
 
-        setgrent();
+        /* fetch the groups in the ACL and look for matching user membership */
 
-        /* walk all groups looking for matching user membership */
+	pas = pque->qu_attr[QA_ATR_AclGroup].at_val.at_arst;
+	for (i=0;i<pas->as_usedptr;i++) 
+	  {
+          if ((grp = getgrnam(pas->as_string[i])) == NULL) 
+            continue;
 
-        while ((grp = getgrent()))
-          {
-          for (i = 0;grp->gr_mem[i] != NULL;i++)
+          for (j=0;grp->gr_mem[j] != NULL;j++) 
             {
-            if (strcmp(grp->gr_mem[i],uname))
-              continue;
-
-            rc = acl_check(
-              &pque->qu_attr[QA_ATR_AclGroup],
-              grp->gr_name,
-              ACL_Gid);
-
-            break;
+            if (!strcmp(grp->gr_mem[j],uname))
+              {
+              rc = 1;
+              break;
+              }
             }
 
-          if (rc != 0)
-            {
-            /* match found */
-
+          if (rc == 1)
             break;
-            }
-          }  /* END while (grp) */
-
-        endgrent();
+          }
         }    /* END if (rc == 0) && AclGroupSloppy...) */
 
       if (rc == 0)
