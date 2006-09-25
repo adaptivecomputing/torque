@@ -194,12 +194,18 @@ Format: integer; default value: infinite.
 .if !\n(Pb .ig Ig
 [internal type: integer]
 .Ig
+.Al max_user_queuable
+The maximum number of jobs owned by a single user that are allowed to reside 
+in the queue at any given time.
+Format: integer; default value: infinite.
+.if !\n(Pb .ig Ig
+[internal type: integer]
+.Ig
 .Al max_running
 The maximum number of jobs allowed to be selected from this queue for routing
-or execution
-at any given time.  For a routing queue, this is enforced, if set, by the
-server.  For an execution queue, this attribute is advisory to the Scheduler,
-it is not enforced by the server.  Format: integer.
+or execution at any given time.  For a routing queue, this is enforced, if 
+set, by the server.  For an execution queue, this attribute is advisory to 
+the Scheduler, it is not enforced by the server.  Format: integer.
 .if !\n(Pb .ig Ig
 [internal type: integer]
 .Ig
