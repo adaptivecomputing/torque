@@ -1382,7 +1382,7 @@ void ping_nodes(
       "starting");
     }
 
-  sprintf(log_buffer,"ping attempting to contact %d nodes\n",
+  sprintf(log_buffer,"ping attempting to contact %d nodes",
     (svr_totnodes - startcount > TNODE_PINGCOUNT) ? 
       TNODE_PINGCOUNT : 
       (svr_totnodes - startcount < 0) ? 

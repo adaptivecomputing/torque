@@ -1461,7 +1461,7 @@ int setup_nodes(void)
   extern char server_name[];
   extern resource_t next_resource_tag;
 
-  sprintf(log_buffer,"%s()\n",
+  sprintf(log_buffer,"%s()",
     id);
 
   log_record(
