@@ -128,96 +128,176 @@ extern time_t	     time_now;
 
 static char *acct_job(
 
-  job  *pjob,
-  char *pb)	/* buffer in which data is to be placed */
+  job  *pjob,    /* I */
+  char *Buf,     /* O - buffer in which data is to be placed */
+  int   BufSize) /* I */
 
   {
+  char *ptr;
+  int   Len;
+
   tlist_head attrlist;
   svrattrl *pal;
 
+  if (pjob == NULL)
+    {
+    return(Buf);
+    }
+
   CLEAR_HEAD(attrlist);
+
+  ptr = Buf;
 
   /* user */
 
-  (void)sprintf(pb, "user=%s ",
+  sprintf(ptr,"user=%s ",
     pjob->ji_wattr[(int)JOB_ATR_euser].at_val.at_str);
 
-  pb += strlen(pb);
+  ptr += strlen(ptr);
 
-/* group */
-(void)sprintf(pb, "group=%s ",
-pjob->ji_wattr[(int)JOB_ATR_egroup].at_val.at_str);
-pb += strlen(pb);
+  /* group */
 
-/* account */
-if (pjob->ji_wattr[(int)JOB_ATR_account].at_flags & ATR_VFLAG_SET) {
-(void)sprintf(pb, "account=%s ",
-pjob->ji_wattr[(int)JOB_ATR_account].at_val.at_str);
-pb += strlen(pb);
-}
+  sprintf(ptr,"group=%s ",
+    pjob->ji_wattr[(int)JOB_ATR_egroup].at_val.at_str);
 
-	/* job name */
-	(void)sprintf(pb, "jobname=%s ",
-		      pjob->ji_wattr[(int)JOB_ATR_jobname].at_val.at_str);
-	pb += strlen(pb);
+  ptr += strlen(ptr);
 
-	/* queue name */
-	(void)sprintf(pb, "queue=%s ",
-		      pjob->ji_qhdr->qu_qs.qu_name);
-	pb += strlen(pb);
+  /* account */
 
-	/* create time */
-	(void)sprintf(pb, "ctime=%ld ",
-		      pjob->ji_wattr[(int)JOB_ATR_ctime].at_val.at_long);
-	pb += strlen(pb);
+  if (pjob->ji_wattr[(int)JOB_ATR_account].at_flags & ATR_VFLAG_SET) 
+    {
+    sprintf(ptr,"account=%s ",
+      pjob->ji_wattr[(int)JOB_ATR_account].at_val.at_str);
 
-	/* queued time */
-	(void)sprintf(pb, "qtime=%ld ",
-		      pjob->ji_wattr[(int)JOB_ATR_qtime].at_val.at_long);
-	pb += strlen(pb);
+    ptr += strlen(ptr);
+    }
 
-	/* eligible time, how long ready to run */
-	(void)sprintf(pb, "etime=%ld ", pjob->ji_wattr[(int)JOB_ATR_etime].at_val.at_long);
-	pb += strlen(pb);
+  /* job name */
 
-	/* execution start time */
+  sprintf(ptr,"jobname=%s ",
+    pjob->ji_wattr[(int)JOB_ATR_jobname].at_val.at_str);
 
-	sprintf(pb,"start=%ld ",
-          (long)pjob->ji_qs.ji_stime);
+  ptr += strlen(ptr);
 
-	pb += strlen(pb);
+  /* queue name */
 
-	/* execution host name */
-	(void)sprintf(pb, "exec_host=%s ",
-		      pjob->ji_wattr[(int)JOB_ATR_exec_host].at_val.at_str);
-	pb += strlen(pb);
+  sprintf(ptr,"queue=%s ",
+    pjob->ji_qhdr->qu_qs.qu_name);
 
-	/* now encode the job's resource_list attribute */
+  ptr += strlen(ptr);
 
-	resc_access_perm = READ_ONLY;
-	(void)job_attr_def[(int)JOB_ATR_resource].at_encode(
-			&pjob->ji_wattr[(int)JOB_ATR_resource],
-			&attrlist,
-			job_attr_def[(int)JOB_ATR_resource].at_name,
-			(char *)0,
-			ATR_ENCODE_CLIENT);
+  /* create time */
 
-	while ((pal = GET_NEXT(attrlist)) != NULL) 
-          {
-		(void)strcat(pb, pal->al_name);
-		if (pal->al_resc) {
-			(void)strcat(pb, ".");
-			(void)strcat(pb, pal->al_resc);
-		}
-		(void)strcat(pb, "=");
-		(void)strcat(pb, pal->al_value);
-		(void)strcat(pb, " ");
-		delete_link(&pal->al_link);
-		(void)free(pal);
-		pb += strlen(pb);
-	}
-	return (pb);
-}
+  sprintf(ptr,"ctime=%ld ",
+    pjob->ji_wattr[(int)JOB_ATR_ctime].at_val.at_long);
+
+  ptr += strlen(ptr);
+
+  /* queued time */
+
+  sprintf(ptr,"qtime=%ld ",
+    pjob->ji_wattr[(int)JOB_ATR_qtime].at_val.at_long);
+
+  ptr += strlen(ptr);
+
+  /* eligible time, how long ready to run */
+
+  sprintf(ptr,"etime=%ld ", 
+    pjob->ji_wattr[(int)JOB_ATR_etime].at_val.at_long);
+
+  ptr += strlen(ptr);
+
+  /* execution start time */
+
+  sprintf(ptr,"start=%ld ",
+    (long)pjob->ji_qs.ji_stime);
+
+  ptr += strlen(ptr);
+
+  /* execution host name */
+
+  BufSize -= strlen(Buf);
+
+  snprintf(ptr,BufSize,"exec_host=%s ",
+    pjob->ji_wattr[(int)JOB_ATR_exec_host].at_val.at_str);
+
+  Len = strlen(ptr);
+
+  BufSize -= Len;
+
+  if (BufSize <= 100)
+    {
+    char tmpLine[1024];
+
+    sprintf(tmpLine,"account record for job %s too long, not fully recorded - increase PBS_ACCT_MAX_RCD",
+      pjob->ji_qs.ji_jobid);
+
+    log_record(PBSEVENT_SYSTEM,PBS_EVENTCLASS_SERVER,"Act",tmpLine);
+
+    return(ptr);
+    }
+
+  ptr += Len;
+
+  /* now encode the job's resource_list attribute */
+
+  resc_access_perm = READ_ONLY;
+
+  job_attr_def[(int)JOB_ATR_resource].at_encode(
+    &pjob->ji_wattr[(int)JOB_ATR_resource],
+    &attrlist,
+    job_attr_def[(int)JOB_ATR_resource].at_name,
+    NULL,
+    ATR_ENCODE_CLIENT);
+
+  while ((pal = GET_NEXT(attrlist)) != NULL) 
+    {
+    strcat(ptr,pal->al_name);
+
+    if (pal->al_resc != NULL) 
+      {
+      strcat(ptr,".");
+      strcat(ptr,pal->al_resc);
+      }
+
+    strcat(ptr,"=");
+    strcat(ptr,pal->al_value);
+    strcat(ptr," ");
+
+    delete_link(&pal->al_link);
+
+    free(pal);
+
+    Len = strlen(ptr);
+
+    BufSize -= Len;
+
+    ptr += Len;
+
+    if (BufSize <= 100)
+      {
+      char tmpLine[1024];
+
+      sprintf(tmpLine,"account record for job %s too long, not fully recorded - increase PBS_ACCT_MAX_RCD",
+        pjob->ji_qs.ji_jobid);
+
+      log_record(PBSEVENT_SYSTEM,PBS_EVENTCLASS_SERVER,"Act",tmpLine);
+
+      return(ptr);
+      }
+    }  /* END while (pal != NULL) */
+
+  /* SUCCESS */
+
+  return(ptr);
+  }  /* END acct_job() */
+
+
+
+
+
+
+
 /*
  * acct_open() - open the acct file for append.
  *
@@ -226,91 +306,146 @@ pb += strlen(pb);
  *	the old file is closed.  Otherwise the old file is left open.
  */
 
-int acct_open(filename)
-	char *filename;		/* abs pathname or NULL */
-{
-	char  filen[_POSIX_PATH_MAX];
-	char  logmsg[_POSIX_PATH_MAX+80];
-	FILE *newacct;
-	time_t now;
-	struct tm *ptm;
+int acct_open(
 
-	if (filename == (char *)0) {	/* go with default */
-		now = time(0);
-		ptm = localtime(&now);
-		(void)sprintf(filen, "%s%04d%02d%02d",
-			      path_acct,
-			      ptm->tm_year+1900, ptm->tm_mon+1, ptm->tm_mday);
-		filename = filen;
-		acct_auto_switch = 1;
-		acct_opened_day = ptm->tm_yday;
-	} else if (*filename == '\0') {	/* a null name is not an error */
-		return (0);		/* turns off account logging.  */
-	} else if (*filename != '/') {
-		return (-1);		/* not absolute */
-	}
-	if ((newacct = fopen(filename, "a")) == NULL) {
-		log_err(errno, "acct_open", filename);
-		return (-1);
-	}
-	setbuf(newacct, NULL);		/* set no buffering */
+  char *filename)  /* abs pathname or NULL */
 
-	if (acct_opened > 0) 		/* if acct was open, close it */
-		(void)fclose(acctfile);
+  {
+  char  filen[_POSIX_PATH_MAX];
+  char  logmsg[_POSIX_PATH_MAX + 80];
+  FILE *newacct;
+  time_t now;
+  struct tm *ptm;
+
+  if (filename == NULL) 
+    {
+    /* go with default */
+
+    now = time(0);
+
+    ptm = localtime(&now);
+
+    sprintf(filen,"%s%04d%02d%02d",
+      path_acct,
+      ptm->tm_year + 1900, 
+      ptm->tm_mon + 1, 
+      ptm->tm_mday);
+
+    filename = filen;
+
+    acct_auto_switch = 1;
+
+    acct_opened_day = ptm->tm_yday;
+    } 
+  else if (*filename == '\0') 
+    {
+    /* a null name is not an error */
+
+    return(0);  /* turns off account logging.  */
+    } 
+  else if (*filename != '/') 
+    {
+    /* not absolute */
+
+    return(-1);	
+    }
+
+  if ((newacct = fopen(filename,"a")) == NULL) 
+    {
+    log_err(errno,"acct_open",filename);
+
+    return(-1);
+    }
+
+  setbuf(newacct,NULL);         /* set no buffering */
+
+  if (acct_opened > 0)          /* if acct was open, close it */
+    fclose(acctfile);
 		
-	acctfile = newacct;
-	acct_opened = 1;			/* note that file is open */
-	(void)sprintf(logmsg, "Account file %s opened", filename);
-	log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, "Act", logmsg);
+  acctfile = newacct;
 
-	return (0);
-}
+  acct_opened = 1;		/* note that file is open */
+
+  sprintf(logmsg,"Account file %s opened", 
+    filename);
+
+  log_record(PBSEVENT_SYSTEM,PBS_EVENTCLASS_SERVER,"Act",logmsg);
+
+  return(0);
+  }  /* END acct_open() */
+
+
+
+
 
 /*
  * acct_close - close the current open log file
  */
 
 void acct_close()
-{
-	if (acct_opened == 1) {
-		(void)fclose(acctfile);
-		acct_opened = 0;
-	}
-}
+
+  {
+  if (acct_opened == 1) 
+    {
+    fclose(acctfile);
+
+    acct_opened = 0;
+    }
+
+  return;
+  }  /* END acct_close() */
+
+
+
+
 
 /*
  * account_record - write basic accounting record
  */
 
-void account_record(acctype, pjob, text)
-	int 	 acctype;	/* accounting record type */
-	job	*pjob;
-	char	*text;		/* text to log, may be null */
-{
-	struct tm *ptm;
+void account_record(
 
-	if (acct_opened == 0)
-		return;		/* file not open, don't bother */
+  int   acctype,	/* accounting record type */
+  job  *pjob,
+  char *text)		/* text to log, may be null */
 
-	ptm = localtime(&time_now);
+  {
+  struct tm *ptm;
 
-	/* Do we need to switch files */
+  if (acct_opened == 0)
+    {
+    /* file not open, don't bother */
 
-	if (acct_auto_switch && (acct_opened_day != ptm->tm_yday)) {
-		acct_close();
-		acct_open((char *)0);
-	}
-	if (text == (char *)0)
-		text = "";
+    return;
+    }
 
-	(void)fprintf(acctfile,
-		      "%02d/%02d/%04d %02d:%02d:%02d;%c;%s;%s\n",
-		      ptm->tm_mon+1, ptm->tm_mday, ptm->tm_year+1900,
-		      ptm->tm_hour, ptm->tm_min, ptm->tm_sec,
-		      (char)acctype,
-		      pjob->ji_qs.ji_jobid,
-		      text);
-}
+  ptm = localtime(&time_now);
+
+  /* Do we need to switch files */
+
+  if ((acct_auto_switch != 0) && (acct_opened_day != ptm->tm_yday)) 
+    {
+    acct_close();
+
+    acct_open(NULL);
+    }
+
+  if (text == NULL)
+    text = "";
+
+  fprintf(acctfile,"%02d/%02d/%04d %02d:%02d:%02d;%c;%s;%s\n",
+    ptm->tm_mon + 1, 
+    ptm->tm_mday, 
+    ptm->tm_year + 1900,
+    ptm->tm_hour, 
+    ptm->tm_min, 
+    ptm->tm_sec,
+    (char)acctype,
+    pjob->ji_qs.ji_jobid,
+    text);
+  
+  return;
+  }  /* END account_record() */
 
 
 
@@ -330,7 +465,7 @@ void account_jobstr(
 
   /* pack in general information about the job */
 
-  acct_job(pjob,buf);
+  acct_job(pjob,buf,sizeof(buf));
 
   buf[PBS_ACCT_MAX_RCD] = '\0';
 
@@ -354,12 +489,12 @@ void account_jobend(
   char	*used)	/* job usage information, see req_jobobit() */
 
   {
-  char	  buf[PBS_ACCT_MAX_RCD+1];
+  char	  buf[PBS_ACCT_MAX_RCD + 1];
   char	 *pb;
 	
   /* pack in general information about the job */
 
-  pb = acct_job(pjob, buf);
+  pb = acct_job(pjob,buf,sizeof(buf));
 
   /* session */
 

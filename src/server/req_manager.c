@@ -756,7 +756,7 @@ int mgr_set_node_attr(
     PNodeStateToString(pnode->nd_state,OrigState,sizeof(OrigState));
     PNodeStateToString(tnode.nd_state,FinalState,sizeof(FinalState));
 
-    sprintf(log_buffer,"node %s state changed from %s to %s\n",
+    sprintf(log_buffer,"node %s state changed from %s to %s",
       pnode->nd_name,
       OrigState,
       FinalState);
