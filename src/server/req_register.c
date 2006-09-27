@@ -402,12 +402,14 @@ void req_register(
 
           if (pdep != NULL) 
             {
+            char tmpcoststr[64];
             pdep->dp_released = 1;
 
             set_depend_hold(pjob,pattr);
 
-            pjob->ji_wattr[(int)JOB_ATR_sched_hint].at_val.at_long = 
-             preq->rq_ind.rq_register.rq_cost;
+            sprintf(tmpcoststr,"%ld",preq->rq_ind.rq_register.rq_cost);
+            pjob->ji_wattr[(int)JOB_ATR_sched_hint].at_val.at_str = 
+             strdup(tmpcoststr);
  
             pjob->ji_wattr[(int)JOB_ATR_sched_hint].at_flags |= ATR_VFLAG_SET;
             } 
