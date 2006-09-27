@@ -262,6 +262,7 @@ int status_attrib(
                 (padef + index)->at_name,
                 job_attr_def[(int)JOB_ATR_variables].at_name))
             {
+		/* FIXME: this is an old hack that needs to be fixed in job_attr_def.c */
             /* do not display privileged attributes */
 
             continue;
