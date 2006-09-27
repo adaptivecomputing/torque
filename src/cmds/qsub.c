@@ -410,11 +410,10 @@ int get_script(
   char cfilter[MAXPATHLEN + 1024];
 
   char tmp_name2[]="/tmp/qsub.XXXXXX";
-  char tmp_name3[]="/tmp/qsub.XXXXXX";
 
   struct stat sfilter;
   FILE       *filesaved;
-
+  FILE *filter_pipe;
   int         rc;
 
   /*  If the submitfilter exists, run it.                               */
@@ -431,48 +430,16 @@ int get_script(
 
   if (stat(PBS_Filter,&sfilter) != -1) 
     {
-    /* Create a copy of the script to run through the submit filter. */
+
+
+
+    /* run the copy through the submit filter. */
 
     if ((tmpfd = mkstemp(tmp_name2)) < 0) 
       {
       fprintf(stderr,
-        "qsub: could not create filter i/p %s\n",
-        tmp_name2);
-
-      return(4);
-      }
-
-    if ((TMP_FILE = fdopen(tmpfd,"w+")) == NULL) 
-      {
-      fprintf(stderr, "qsub: could not create filter i/p %s\n", 
-        tmp_name);
-
-      return(4);
-      }
-
-    while ((in = fgets(s,MAX_LINE_LEN,file)) != NULL) 
-      {
-      if (fputs(in,TMP_FILE) < 0) 
-        {
-        fprintf(stderr,"qsub: error writing filter i/p, %s\n",
-          tmp_name);
-
-        fclose(TMP_FILE);
-        unlink(tmp_name2);
-
-        return(3);
-        }
-      }
-
-    fclose(TMP_FILE);
-
-    /* run the copy through the submit filter. */
-
-    if ((tmpfd = mkstemp(tmp_name3)) < 0) 
-      {
-      fprintf(stderr,
         "qsub: could not create filter o/p %s\n",
-        tmp_name3);
+        tmp_name2);
 
       return(4);
       }
@@ -491,23 +458,23 @@ int get_script(
         }
       }    /* END for (index) */
  
-    strcat(cfilter," <");
-    strcat(cfilter,tmp_name2);
     strcat(cfilter," >");
-    strcat(cfilter,tmp_name3);
-
-    rc = system(cfilter);
-
-    if (rc == -1)
+    strcat(cfilter,tmp_name2);
+    filter_pipe = popen(cfilter, "w");
+    while ((in = fgets(s,MAX_LINE_LEN,file)) != NULL)
       {
-      fprintf( stderr, "qsub: failed to execute submit filter, %s\n",
-        tmp_name3);
+      if (fputs(in,filter_pipe) < 0)
+        {
+        fprintf(stderr,"qsub: error writing to filter stdin\n");
 
-      unlink(tmp_name2);
-      unlink(tmp_name3);
+        fclose(filter_pipe);
+        unlink(tmp_name2);
 
-      return(3);
+        return(3);
+        }
       }
+
+    rc = fclose(filter_pipe);
 
     if (WEXITSTATUS(rc) == (unsigned char)SUBMIT_FILTER_ADMIN_REJECT_CODE)
       {
@@ -515,7 +482,6 @@ int get_script(
       fprintf(stderr,"qsub: There may be a more detailed explanation prior to this notice.\n");
 
       unlink(tmp_name2);
-      unlink(tmp_name3);
 
       return(3);
       }
@@ -525,14 +491,12 @@ int get_script(
       fprintf(stderr,"qsub: submit filter returned an error code, aborting job submission.\n");
 
       unlink(tmp_name2);
-      unlink(tmp_name3);
 
       return(3);
       }
 
     /* get rid of the i/p copy. */
 
-    unlink(tmp_name2);
 
     /* preserve the original pointer. */
 
@@ -540,12 +504,12 @@ int get_script(
 
     /* open the filtered script. */
 
-    if ((file = fopen(tmp_name3,"r")) == NULL) 
+    if ((file = fopen(tmp_name2,"r")) == NULL) 
       {
       fprintf(stderr,"qsub: could not open filter o/p %s\n",
-        tmp_name3);
+        tmp_name2);
 
-      unlink(tmp_name3);
+      unlink(tmp_name2);
 
       file = filesaved;
 
@@ -555,7 +519,7 @@ int get_script(
     /* Get rid of the filtered o/p; data remains accessible until    */
     /* file is closed.                                               */
 
-    unlink(tmp_name3);
+    unlink(tmp_name2);
 
     /* Complete redirection.                                         */
 
