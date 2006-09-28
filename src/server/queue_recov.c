@@ -257,7 +257,7 @@ pbs_queue *que_recov(
     {
     log_err(errno,"que_recov","open error");
 
-    que_free((char *)pq);
+    que_free(pq);
 
     return(NULL);
     }
@@ -267,7 +267,7 @@ pbs_queue *que_recov(
 	if (read(fds, (char *)&pq->qu_qs, sizeof(struct queuefix)) !=
 	    sizeof(struct queuefix)) {
 		log_err(errno, "que_recov", "read error");
-		que_free((char *)pq);
+		que_free(pq);
 		(void)close(fds);
 		return ((pbs_queue *)0);
 	}
