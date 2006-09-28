@@ -1642,13 +1642,6 @@ void check_nodes(
 
   if (ptask->wt_parm1 == NULL) 
     {
-    if (server_init_type == RECOV_HOT)
-      {
-      /* rapid ping rate while hot restart */
-
-      chk_len = 15;  /* doesn't do much good, this routine only check nodes to mark them down, not up? */
-      }
-
     set_task(
       WORK_Timed,
       time_now + chk_len, 
@@ -1870,7 +1863,10 @@ found:
 
       /* NOTE:  re-enabled rpp_flush/disabled rpp_eom (CRI) */
 
-      rpp_flush(stream);
+      ret = rpp_flush(stream);
+
+      if (ret != DIS_SUCCESS)
+        goto err;
 
       if (LOGLEVEL >= 3)
         {
