@@ -4858,12 +4858,12 @@ int open_std_file(
       return(-1);
       }
 
-    if (pjob->ji_wattr[(int)JOB_ATR_umask].at_flags | ATR_VFLAG_SET)
+    if (pjob->ji_wattr[(int)JOB_ATR_umask].at_flags & ATR_VFLAG_SET)
       {
       old_umask = umask(pjob->ji_wattr[(int)JOB_ATR_umask].at_val.at_long);
       }
     fds = open(path,mode,0666);
-    if (pjob->ji_wattr[(int)JOB_ATR_umask].at_flags | ATR_VFLAG_SET)
+    if (pjob->ji_wattr[(int)JOB_ATR_umask].at_flags & ATR_VFLAG_SET)
       {
       umask(old_umask);
       }
@@ -4882,12 +4882,12 @@ int open_std_file(
       }
 
 
-    if (pjob->ji_wattr[(int)JOB_ATR_umask].at_flags | ATR_VFLAG_SET)
+    if (pjob->ji_wattr[(int)JOB_ATR_umask].at_flags & ATR_VFLAG_SET)
       {
       old_umask = umask(pjob->ji_wattr[(int)JOB_ATR_umask].at_val.at_long);
       }
     fds = open(path,mode,0666);
-    if (pjob->ji_wattr[(int)JOB_ATR_umask].at_flags | ATR_VFLAG_SET)
+    if (pjob->ji_wattr[(int)JOB_ATR_umask].at_flags & ATR_VFLAG_SET)
       {
       umask(old_umask);
       }
@@ -4903,12 +4903,12 @@ int open_std_file(
     {
 
 
-    if (pjob->ji_wattr[(int)JOB_ATR_umask].at_flags | ATR_VFLAG_SET)
+    if (pjob->ji_wattr[(int)JOB_ATR_umask].at_flags & ATR_VFLAG_SET)
       {
       old_umask = umask(pjob->ji_wattr[(int)JOB_ATR_umask].at_val.at_long);
       }
     fds = open(path,mode,0666);
-    if (pjob->ji_wattr[(int)JOB_ATR_umask].at_flags | ATR_VFLAG_SET)
+    if (pjob->ji_wattr[(int)JOB_ATR_umask].at_flags & ATR_VFLAG_SET)
       {
       umask(old_umask);
       }
