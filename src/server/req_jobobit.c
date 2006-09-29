@@ -574,6 +574,7 @@ int mom_comm(
 
   {
   unsigned int dummy;
+  struct work_task *pwt;
 
   if (pjob->ji_momhandle < 0) 
     {
@@ -593,11 +594,18 @@ int mom_comm(
 
     if (pjob->ji_momhandle < 0) 
       {
-      set_task(
+      pwt = set_task(
         WORK_Timed,
         (long)(time_now + PBS_NET_RETRY_TIME), 
         func, 
         (void *)pjob);
+
+      if (pwt)
+        {
+        /* insure that work task will be removed if job goes away */
+
+        append_link(&pjob->ji_svrtask,&pwt->wt_linkobj,pwt);
+        }
 
       return(-1);
       }
@@ -795,6 +803,11 @@ void on_job_exit(
 
           ptask = set_task(WORK_Immed,0,on_job_exit,pjob);
 
+          if (ptask)
+            {
+            append_link(&pjob->ji_svrtask,&ptask->wt_linkobj,ptask);
+            }
+
           return;
           }
         }    /* END if (ptask->wt_type != WORK_Deferred_Reply) */
@@ -917,6 +930,11 @@ void on_job_exit(
           svr_setjobstate(pjob,JOB_STATE_EXITING,JOB_SUBSTATE_EXITED);
 
           ptask = set_task(WORK_Immed,0,on_job_exit,pjob);
+
+          if (ptask)
+            {
+            append_link(&pjob->ji_svrtask,&ptask->wt_linkobj,ptask);
+            }
 
           return;
           }
@@ -1101,6 +1119,11 @@ void on_job_rerun(
 
           ptask = set_task(WORK_Immed,0,on_job_rerun,pjob);
 
+          if (ptask)
+            {
+            append_link(&pjob->ji_svrtask,&ptask->wt_linkobj,ptask);
+            }
+
           return;
           }
 			
@@ -1219,6 +1242,11 @@ void on_job_rerun(
 
           ptask = set_task(WORK_Immed,0,on_job_rerun,pjob);
 
+          if (ptask)
+            {
+            append_link(&pjob->ji_svrtask,&ptask->wt_linkobj,ptask);
+            }
+
           return;
           }
         }
@@ -1313,6 +1341,11 @@ void on_job_rerun(
           svr_setjobstate(pjob,JOB_STATE_EXITING,JOB_SUBSTATE_RERUN3);
 
           ptask = set_task(WORK_Immed,0,on_job_rerun,pjob);
+
+          if (ptask)
+            {
+            append_link(&pjob->ji_svrtask,&ptask->wt_linkobj,ptask);
+            }
 
           return;
           }
@@ -1795,6 +1828,11 @@ void req_jobobit(
 			
     ptask = set_task(WORK_Immed, 0, on_job_exit, (void *)pjob);
 
+    if (ptask)
+      {
+      append_link(&pjob->ji_svrtask,&ptask->wt_linkobj,ptask);
+      }
+
     /* "on_job_exit()" will be dispatched out of the main loop */
     } 
   else 
@@ -1829,6 +1867,11 @@ void req_jobobit(
       pjob->ji_qs.ji_substate);
 
     ptask = set_task(WORK_Immed,0,on_job_rerun,(void *)pjob);
+
+    if (ptask)
+      {
+      append_link(&pjob->ji_svrtask,&ptask->wt_linkobj,ptask);
+      }
 
     /* "on_job_rerun()" will be dispatched out of the main loop */
     }

@@ -448,7 +448,12 @@ jump:
 
     /* force new connection */
 
-    set_task(WORK_Immed,0,on_job_exit,(void *)pjob);
+    pwtnew = set_task(WORK_Immed,0,on_job_exit,(void *)pjob);
+
+    if (pwtnew)
+      {
+      append_link(&pjob->ji_svrtask,&pwtnew->wt_linkobj,pwtnew);
+      }
     } 
   else if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_StagedIn) != 0) 
     {
