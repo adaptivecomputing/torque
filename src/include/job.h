@@ -257,6 +257,7 @@ enum job_atr {
 	JOB_ATR_forwardx11,
 	JOB_ATR_submit_args,
 	JOB_ATR_job_array_size,
+	JOB_ATR_umask,
 #include "site_job_attr_enum.h"
 
 	JOB_ATR_UNKN,		/* the special "unknown" type		  */

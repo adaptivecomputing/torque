@@ -820,6 +820,7 @@ int Stagein_opt   = FALSE;
 int Stageout_opt  = FALSE;
 int Grouplist_opt = FALSE;
 int Forwardx11_opt = FALSE;
+int Umask_opt = FALSE;
 char *v_value = NULL;
 
 
@@ -3135,6 +3136,11 @@ int process_opts(
               set_attr(&attrib,ATTR_inter,interactive_port(&inter_sock));
               }
             } 
+          else if (!strcmp(keyword,ATTR_umask))
+            {
+            Umask_opt = passet;
+            set_attr(&attrib,ATTR_umask,valuewd);
+            }
           else 
             {
             /* generic job attribute specified */

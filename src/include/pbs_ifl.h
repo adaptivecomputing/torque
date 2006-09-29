@@ -164,6 +164,7 @@
 #define ATTR_submit_args "submit_args"
 #define ATTR_tokens      "tokens"
 #define ATTR_netcounter "net_counter"
+#define ATTR_umask	"umask"
 
 /* additional queue attributes names */
 
