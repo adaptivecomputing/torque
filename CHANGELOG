@@ -26,6 +26,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature
   f - may now specify umask to use while creating stderr and stdout spools
       e.g. qsub -W umask=22
   c - races with down nodes and purging jobs crashed pbs_server
+  b - staged out files will retain proper permission bits
 
 2.1.2
 
