@@ -706,6 +706,9 @@ err:
 
   rpp_close(stream);
 
+  if (ServerIndex != -1)
+    SStream[ServerIndex] = -1;
+
   return;
   }  /* END is_request() */
 
