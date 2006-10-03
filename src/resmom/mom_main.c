@@ -2124,10 +2124,6 @@ static unsigned long setidealload(
 
   strcat(newstr,value);
 
-  add_static(newstr,"config",0);
-
-  nconfig++;
-
   return(1);
   }  /* END setidealload() */
 
@@ -2157,10 +2153,6 @@ static unsigned long setignwalltime(
     }
 
   strcat(newstr,value);
-
-  add_static(newstr,"config",0);
-
-  nconfig++;
 
   /* SUCCESS */
 
@@ -2199,10 +2191,6 @@ static unsigned long setnodecheckscript(
 
   strcat(newstr,value);
 
-  add_static(newstr,"config",0);
-
-  nconfig++;
-
   /* SUCCESS */
 
   return(1);
@@ -2229,10 +2217,6 @@ static unsigned long setnodecheckinterval(
 
   strcat(newstr,value);
 
-  add_static(newstr,"config",0);
-
-  nconfig++;
-
   return(1);
   }  /* END setnodecheckinterval() */
 
@@ -2258,10 +2242,6 @@ static unsigned long settimeout(
   snprintf(newstr,sizeof(newstr),"%s %s",
     "timeout",
     value);
-
-  add_static(newstr,"config",0);
-
-  nconfig++;
 
   return(1);
   }  /* END settimeout() */
@@ -2293,10 +2273,6 @@ static unsigned long setmaxload(
     ideal_load_val = val;
 
   strcat(newstr,value);
-
-  add_static(newstr,"config",0);
-
-  nconfig++;
 
   return(1);
   }  /* END max_load() */
