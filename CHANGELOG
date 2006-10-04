@@ -27,6 +27,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature
       e.g. qsub -W umask=22
   c - races with down nodes and purging jobs crashed pbs_server
   b - staged out files will retain proper permission bits
+  f - new MOM $varattr config
 
 2.1.2
 

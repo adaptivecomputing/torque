@@ -399,6 +399,18 @@ specifies (in seconds) how often MOM updates its status information to
 pbs_server.  This value should correlate with the server's scheduling interval.
 High values increase the load of pbs_server and the network.  Low values cause
 pbs_server to report stale information.  Default is 45 seconds.
+.IP varattr
+This is similar to a shell escape above, but includes a TTL.  The command will
+only be run every TTL seconds.  A TTL of -1 will cause the command to be
+executed only once.  A TTL of 0 will cause the command to be run everytime
+varattr is requested.  This parameter may be used multiple times, but all
+output will be grouped into a single "varattr" attribute in the request and
+status output.  If the command has no output, the name will be skipped in the
+output.
+.IP
+.Ty "$varattr seta 3600 /path/to/script seta
+.Ty "$varattr setb 3600 /path/to/script setb
+.IP
 .RE
 .LP
 The configuration file must be "secure".  It must be owned by a user id and

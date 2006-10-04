@@ -112,6 +112,17 @@ struct cphosts {
 };
 extern int cphosts_num;
 
+/* holds the varattrs */
+
+struct varattr {
+	list_link   va_link;
+	char       *va_name;
+        int         va_ttl;
+        char       *va_cmd;
+        char       *va_value;
+        time_t      va_lasttime;
+};
+
 /* public funtions within MOM */
 
 #ifdef _CRAY
