@@ -1148,6 +1148,7 @@ static int should_retry_route(
     case PBSE_INTERNAL:
     case PBSE_EXPIRED:
     case PBSE_MAXQUED:
+    case PBSE_MAXUSERQUED:
     case PBSE_QUNOENB:
     case PBSE_NOCONNECTS:
 
