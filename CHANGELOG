@@ -28,6 +28,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature
   c - races with down nodes and purging jobs crashed pbs_server
   b - staged out files will retain proper permission bits
   f - new MOM $varattr config
+  e - queue attribute max_queuable accounts for C jobs
 
 2.1.2
 

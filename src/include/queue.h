@@ -178,6 +178,7 @@ struct pbs_queue {
 	} qu_qs;
 
 	int	qu_numjobs;			/* current numb jobs in queue */
+	int	qu_numcompleted;		/* current numb completed jobs in queue */
 	int	qu_njstate[PBS_NUMJOBSTATE];	/* # of jobs per state */
 	char	qu_jobstbuf[100];
 

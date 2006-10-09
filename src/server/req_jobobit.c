@@ -1014,6 +1014,11 @@ void on_job_exit(
 
       svr_setjobstate(pjob,JOB_STATE_COMPLETE,JOB_SUBSTATE_COMPLETE);
 
+      if ((pque = pjob->ji_qhdr) && (pque != NULL))
+        {
+        pque->qu_numcompleted++;
+        }
+
       ptask->wt_type = WORK_Immed;
 
       /* NO BREAK, FALL INTO NEXT CASE */

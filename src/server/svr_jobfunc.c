@@ -480,6 +480,10 @@ void svr_dequejob(
 
       if (--pque->qu_njstate[pjob->ji_qs.ji_state] < 0)
         bad_ct = 1;
+
+      if (pjob->ji_qs.ji_state == JOB_STATE_COMPLETE)
+        if (--pque->qu_numcompleted < 0)
+          bad_ct = 1;
       }
 
     pjob->ji_qhdr = (pbs_queue *)0;
@@ -1164,7 +1168,7 @@ int svr_chkque(
       }
 
     if ((pque->qu_attr[QA_ATR_MaxJobs].at_flags & ATR_VFLAG_SET) &&
-        (pque->qu_numjobs >= pque->qu_attr[QA_ATR_MaxJobs].at_val.at_long))
+        ((pque->qu_numjobs - pque->qu_numcompleted) >= pque->qu_attr[QA_ATR_MaxJobs].at_val.at_long))
       {
       return(PBSE_MAXQUED);
       }
@@ -1756,9 +1760,10 @@ static void correct_ct(
     {
     pc = log_buffer + strlen(log_buffer);
 
-    sprintf(pc,"; queue %s %d: ", 
+    sprintf(pc,"; queue %s %d (completed: %d): ", 
       pqj->qu_qs.qu_name,
-      pqj->qu_numjobs);
+      pqj->qu_numjobs,
+      pqj->qu_numcompleted);
 
     for (i = 0;i < PBS_NUMJOBSTATE;++i) 
       {
@@ -1776,6 +1781,7 @@ static void correct_ct(
        pque = (pbs_queue *)GET_NEXT(pque->qu_link)) 
     {
     pque->qu_numjobs = 0;
+    pque->qu_numcompleted = 0;
 
     for (i = 0;i < PBS_NUMJOBSTATE;++i)
       pque->qu_njstate[i] = 0;
@@ -1790,6 +1796,10 @@ static void correct_ct(
 
     (pjob->ji_qhdr)->qu_numjobs++;
     (pjob->ji_qhdr)->qu_njstate[pjob->ji_qs.ji_state]++;
+
+    if (pjob->ji_qs.ji_state == JOB_STATE_COMPLETE)
+      pque->qu_numcompleted++;
+
     }  /* END for (pjob) */
 
   return;
