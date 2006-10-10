@@ -534,7 +534,7 @@ int main(
         else if (!strcmp(optarg,"about"))
           {
 	  printf("package: %s\n",PACKAGE_STRING);
-	  printf("sourcedir %s\n",PBS_SOURCE_DIR);
+	  printf("sourcedir: %s\n",PBS_SOURCE_DIR);
 	  printf("configure: %s\n",PBS_CONFIG_ARGS);
 	  printf("buildcflags: %s\n",PBS_CFLAGS);
 	  printf("buildhost: %s\n",PBS_BUILD_HOST);
