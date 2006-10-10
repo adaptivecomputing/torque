@@ -29,6 +29,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature
   b - staged out files will retain proper permission bits
   f - new MOM $varattr config
   e - queue attribute max_queuable accounts for C jobs
+  e - daemons are no longer installed 700
 
 2.1.2
 

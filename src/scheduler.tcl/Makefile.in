@@ -398,8 +398,6 @@ info-am:
 install-data-am:
 
 install-exec-am: install-sbinPROGRAMS
-	@$(NORMAL_INSTALL)
-	$(MAKE) $(AM_MAKEFLAGS) install-exec-hook
 
 install-info: install-info-am
 
@@ -430,8 +428,6 @@ uninstall-am: uninstall-info-am uninstall-sbinPROGRAMS
 	mostlyclean-libtool tags uninstall uninstall-am \
 	uninstall-info-am uninstall-sbinPROGRAMS
 
-install-exec-hook:
-	chmod 700 $(DESTDIR)$(sbindir)/$(progam_prefix)pbs_sched$(progam_suffix)
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

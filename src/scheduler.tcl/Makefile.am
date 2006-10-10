@@ -11,6 +11,4 @@ pbs_sched_SOURCES = pbs_sched.c pbs_tclWrap.c site_tclWrap.c \
 		    ../scheduler.cc/get_4byte.c
 
 EXTRA_DIST = sample_scripts/README sample_scripts/loadave
-install-exec-hook:
-	chmod 700 $(DESTDIR)$(sbindir)/$(progam_prefix)pbs_sched$(progam_suffix)
 

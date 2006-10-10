@@ -49,6 +49,4 @@ Parser.c: Parser.y
 
 MOSTLYCLEANFILES = Parser.c y.tab.h Lexer.c pbs_sched.c
 
-install-exec-hook:
-	chmod 700 $(DESTDIR)$(sbindir)/$(program_prefix)pbs_sched$(program_suffix)
 

@@ -480,8 +480,6 @@ info-am:
 install-data-am:
 
 install-exec-am: install-sbinPROGRAMS
-	@$(NORMAL_INSTALL)
-	$(MAKE) $(AM_MAKEFLAGS) install-exec-hook
 
 install-info: install-info-am
 
@@ -528,9 +526,6 @@ y.tab.h: Parser.c
 
 Parser.c: Parser.y
 	$(YACCCOMPILE) $< && mv y.tab.c $@
-
-install-exec-hook:
-	chmod 700 $(DESTDIR)$(sbindir)/$(program_prefix)pbs_sched$(program_suffix)
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

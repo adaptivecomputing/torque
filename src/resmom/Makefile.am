@@ -34,7 +34,6 @@ pbs_mom_SOURCES = catch_child.c mom_comm.c mom_inter.c mom_main.c \
 		   ../server/req_quejob.c ../server/resc_def_all.c
 
 install-exec-hook:
-	chmod 700 $(DESTDIR)$(sbindir)/$(program_prefix)pbs_mom$(program_suffix)
 	$(PBS_MKDIRS) aux || :
 	$(PBS_MKDIRS) mom
 
