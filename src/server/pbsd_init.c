@@ -434,7 +434,7 @@ int pbsd_init(
   rc  = chk_file_sec(path_jobs,  1,0,S_IWGRP|S_IWOTH,1);
   rc |= chk_file_sec(path_queues,1,0,S_IWGRP|S_IWOTH,0);
   rc |= chk_file_sec(path_spool, 1,1,S_IWOTH,        0);
-  rc |= chk_file_sec(path_acct,	 1,1,S_IWGRP|S_IWOTH,0);
+  rc |= chk_file_sec(path_acct,	 1,0,S_IWGRP|S_IWOTH,0);
   rc |= chk_file_sec(PBS_ENVIRON,0,0,S_IWGRP|S_IWOTH,1);
 
   if (rc) 

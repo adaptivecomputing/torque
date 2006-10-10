@@ -210,6 +210,15 @@ int chk_file_sec(
     {
     rc = ENOTDIR;
     } 
+  else if (isdir && sticky && !fullpath)
+    {
+    if ((S_ISDIR(sbuf.st_mode) == 0) ||
+        ((sbuf.st_mode & S_ISVTX) == 0) ||
+        ( i != (S_IRWXU | S_IRWXG | S_IRWXO) ))
+      {
+      rc = EACCES;
+      }
+    }
   else if (i & disallow)	
     {
     /* if group write, gid must be less than 10 */
