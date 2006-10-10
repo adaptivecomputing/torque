@@ -363,7 +363,7 @@ void req_quejob(
     {
     /* FAILURE */
 
-    log_err(errno,id,"requested queue not found");
+    log_err(-1,id,"requested queue not found");
 
     req_reject(rc,0,preq,NULL,"cannot locate queue"); /* not there   */
 
