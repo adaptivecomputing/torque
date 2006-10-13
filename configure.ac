@@ -880,7 +880,7 @@ dnl attempt to find a location to install PAM modules
 AC_MSG_CHECKING([for PAM install directory])
 pammoddir=disabled
 AC_ARG_WITH(pam,
-    [  --with-pamdir=DIR            Directory that holds the system PAM modules.
+    [  --with-pam=DIR            Directory that holds the system PAM modules.
                              Defaults to /lib(64)/security on Linux.],
     [pammoddir=$withval])
 case "$pammoddir" in
