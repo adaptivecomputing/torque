@@ -148,7 +148,7 @@ int 		pbs_rm_port;
 
 int	schedreq();
 
-extern int get_4byte(int,int *);
+extern int get_4byte(int, unsigned int *);
 
 
 /*
@@ -253,8 +253,7 @@ static int server_disconnect(
 **	Got an alarm call.
 */
 void
-toolong(sig)
-int	sig;
+toolong(int sig)
 {
 	char	*id = "toolong";
 	struct	stat	sb;
@@ -313,9 +312,10 @@ int	sig;
 	exit(0);
 }
 
+
+/* sock refers to an opened socket */
 int
-socket_to_conn(sock)
-    int sock;		/* opened socket */
+socket_to_conn(int sock)
 {
 	int     i;
 
@@ -510,8 +510,7 @@ static int read_config(
 }
 
 void
-restart(sig)
-    int	sig;
+restart(int sig)
 {
 	char    *id = "restart";
 
@@ -530,8 +529,7 @@ restart(sig)
 }
 
 void
-badconn(msg)
-    char	*msg;
+badconn(char *msg)
 {
 	static	char	id[] = "badconn";
 	struct	in_addr	addr;
@@ -652,11 +650,11 @@ int server_command()
 
 /*
  * lock_out - lock out other daemons from this directory.
+ *
+ * op is either F_WRLCK or F_UNLCK
  */
 
-static void lock_out(fds, op)
-	int fds;
-	int op;		/* F_WRLCK  or  F_UNLCK */
+static void lock_out(int fds, int op)
 {
 	struct flock flock;
 
