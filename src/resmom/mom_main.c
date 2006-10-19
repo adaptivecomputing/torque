@@ -6805,7 +6805,8 @@ int main(
       /* update information for my tasks */
 
       mom_set_use(pjob);
-      rpp_io();
+
+      rpp_io();  /* FIXME: this call seems oddly placed... is this needed? */
 
       /* has all job processes vanished undetected ?       */
       /* double check by sig0 to session pid for each task */
@@ -6825,11 +6826,10 @@ int main(
           c = atoi(pjob->ji_globid);
 
           if ((kill((pid_t)c,0) == -1) && (errno == ESRCH)) 
-            {
 #else	/* not cray */
           if ((kill(ptask->ti_qs.ti_sid,0) == -1) && (errno == ESRCH)) 
-            {
 #endif	/* not cray */
+            {
 
             if (LOGLEVEL >= 3)
               {
@@ -6874,6 +6874,8 @@ int main(
       prscput = find_resc_entry(
         &pjob->ji_wattr[(int)JOB_ATR_resc_used],
         rdcput);
+
+      /* FIXME: check prscput == NULL? */
 
       if (pjob->ji_chkptnext>prscput->rs_value.at_val.at_long)
         continue;

@@ -3019,6 +3019,9 @@ void im_request(
       if (ret != DIS_SUCCESS)
         break;
 
+      /* get fresh resource usage */
+      mom_set_use(pjob);
+
       /* ** Send the information tallied for the job.  */
 
       ret = diswul(stream,resc_used(pjob,"cput",gettime));

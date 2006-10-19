@@ -1626,6 +1626,13 @@ void req_jobobit(
   pjob->ji_wattr[(int)JOB_ATR_exitstat].at_flags |=ATR_VFLAG_SET;
 
   patlist = (svrattrl *)GET_NEXT(preq->rq_ind.rq_jobobit.rq_attr);
+ 
+  /* Encode the final resources_used into the job (useful for keep_completed) */
+  modify_job_attr(
+    pjob,
+    patlist,
+    ATR_DFLAG_MGWR | ATR_DFLAG_SvWR,
+    &bad);
 
   sprintf(acctbuf,msg_job_end_stat, 
     pjob->ji_qs.ji_un.ji_exect.ji_exitstat);

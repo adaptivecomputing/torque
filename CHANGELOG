@@ -31,6 +31,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature
   e - queue attribute max_queuable accounts for C jobs
   e - daemons are no longer installed 700
   e - tighten directory path checks
+  b - fix cput job status
 
 2.1.2
 
