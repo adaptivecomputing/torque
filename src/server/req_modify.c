@@ -362,7 +362,7 @@ int modify_job_attr(
     perm,         /* I */
     bad);         /* O */
 
-  /* If resource limits are being changing ... */
+  /* If resource limits are being changed ... */
 
   if ((rc == 0) &&
       (newattr[(int)JOB_ATR_resource].at_flags & ATR_VFLAG_SET))
