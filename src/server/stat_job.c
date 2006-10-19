@@ -84,7 +84,7 @@
  * Functions which support the Status Job Batch Request.
  *
  * Included funtions are:
- *	status_jobs()
+ *	status_job()
  *	status_attrib()
  */
 #include <sys/types.h>
