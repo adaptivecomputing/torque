@@ -2459,6 +2459,7 @@ static int sys_copy(
     else 
       {
       int fd;
+      int flags;
 
       /* child - exec the copy command */
 
@@ -2468,7 +2469,12 @@ static int sys_copy(
 
       /* redirect stderr to make error from rcp available to MOM */
 
-      if ((fd = open(rcperr,O_RDWR|O_CREAT|O_EXCL,0644)) < 0) 
+      if (loop == 1)
+        flags=O_WRONLY|O_CREAT|O_EXCL;
+      else
+        flags=O_WRONLY|O_APPEND;
+
+      if ((fd = open(rcperr,flags,0644)) < 0) 
         {
         sprintf(log_buffer,"can't open %s, error = %d",
           rcperr,errno);

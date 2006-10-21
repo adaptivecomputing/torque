@@ -4844,6 +4844,11 @@ int open_std_file(
     return(-1);
     }
 
+  if (keeping)
+    {
+    mode &= ~O_EXCL; 
+    }
+
     /* in user's home,  may be NFS mounted, must create as user */
 
 #if defined(HAVE_SETEUID) && defined(HAVE_SETEGID)
