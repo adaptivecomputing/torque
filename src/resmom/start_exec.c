@@ -678,7 +678,7 @@ static int open_std_out_err(
   int i;
   int file_out = -2;
   int file_err = -2;
-  int filemode = O_CREAT | O_WRONLY | O_APPEND;
+  int filemode = O_CREAT | O_WRONLY | O_APPEND | O_EXCL;
 
   /* if std out/err joined (set and != "n"), which file is first */
 	
@@ -4844,8 +4844,6 @@ int open_std_file(
     return(-1);
     }
 
-  if (keeping != 0) 
-    {
     /* in user's home,  may be NFS mounted, must create as user */
 
 #if defined(HAVE_SETEUID) && defined(HAVE_SETEGID)
@@ -4898,34 +4896,6 @@ int open_std_file(
 #else	/* Neither */
     Crash and Burn - need seteuid/setegid or need setresuid/setresgid
 #endif	/* HAVE_SETRESUID */
-    } 
-  else 
-    {
-
-
-    if (pjob->ji_wattr[(int)JOB_ATR_umask].at_flags & ATR_VFLAG_SET)
-      {
-      old_umask = umask(pjob->ji_wattr[(int)JOB_ATR_umask].at_val.at_long);
-      }
-    fds = open(path,mode,0666);
-    if (pjob->ji_wattr[(int)JOB_ATR_umask].at_flags & ATR_VFLAG_SET)
-      {
-      umask(old_umask);
-      }
-
-
-    if (fds >= 0) 
-      {
-      /* change file uid/gid to execution user of job  */
-
-      if (fchown(fds,pjob->ji_qs.ji_un.ji_momt.ji_exuid,exgid) != 0)
-        {
-        close(fds);
-
-        return(-1);
-        }
-      }
-    }
 
   return(fds);
   }  /* END open_std_file() */

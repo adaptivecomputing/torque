@@ -2468,7 +2468,7 @@ static int sys_copy(
 
       /* redirect stderr to make error from rcp available to MOM */
 
-      if ((fd = open(rcperr,O_RDWR|O_CREAT,0644)) < 0) 
+      if ((fd = open(rcperr,O_RDWR|O_CREAT|O_EXCL,0644)) < 0) 
         {
         sprintf(log_buffer,"can't open %s, error = %d",
           rcperr,errno);
