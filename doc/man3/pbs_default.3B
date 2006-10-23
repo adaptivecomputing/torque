@@ -78,9 +78,9 @@
 .TH pbs_default 3B "" Local PBS
 .so ../ers/ers.macros
 .Ig
-.Sh NAME
+.SH NAME
 pbs_default - return the pbs default server name
-.Sh SYNOPSIS
+.SH SYNOPSIS
 #include <pbs_error.h>
 .br
 #include <pbs_ifl.h>
@@ -90,7 +90,7 @@ pbs_default - return the pbs default server name
 int pbs_default()
 .ft 1
 .fi
-.Sh DESCRIPTION
+.SH DESCRIPTION
 A character string is returned containing the name of the default
 PBS server.
 The default server is defined
@@ -105,11 +105,11 @@ which contains a destination, or (b) the destination in the batch administrator
 established file
 .Av {PBS_DIR}/default_destn .
 .Ig
-.Sh SEE ALSO
+.SH SEE ALSO
 qsub(1B),
 pbs_connect(3B), pbs_disconnect(3B),
 and the PBS External Reference Specification
-.Sh DIAGNOSTICS
+.SH DIAGNOSTICS
 If the default server cannot be determined, a NULL value is
 returned.
 \" turn off any extra indent left by the Sh macro

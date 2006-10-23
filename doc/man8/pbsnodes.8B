@@ -78,16 +78,16 @@
 .TH pbsnodes 8B "" Local PBS
 .so ../ers/ers.macros
 .Iq
-.Sh NAME
+.SH NAME
 pbsnodes \- pbs node manipulation
-.Sh SYNOPSIS
+.SH SYNOPSIS
 pbsnodes [\^-{c|d|o|p|r}\^] [-q] [-s server] [nodename|:property ...]
 .br
 pbsnodes -l [-s server] [-q]
 .br
 pbsnodes [\^-{a|x}\^] [-s server] [-q] [node|:property]
 
-.Sh DESCRIPTION
+.SH DESCRIPTION
 The 
 .B pbsnodes
 command is used to mark nodes down, free or offline.
@@ -101,7 +101,7 @@ In order to execute pbsnodes with other than the
 or
 .B \-l
 options, the user must have PBS Manager or Operator privilege.
-.Sh OPTIONS
+.SH OPTIONS
 .IP "-a" 15
 All attributes of a node or all nodes are listed.  This is the default
 if no flag is given.
@@ -131,5 +131,5 @@ pbs_server will ping the node and set the state appropriately.
 Specify the PBS server's hostname or IP address.
 .IP "-x" 15
 Same as -a, but the output has an XML-like format.
-.Sh SEE ALSO
+.SH SEE ALSO
 pbs_server(8B) and the PBS External Reference Specification

@@ -78,12 +78,12 @@
 .TH qrerun 1B "" Local PBS
 .so ../ers/ers.macros
 .Iq
-.Sh NAME
+.SH NAME
 qrerun \- rerun a pbs batch job
-.Sh SYNOPSIS
+.SH SYNOPSIS
 qrerun [-f]
 job_identifier ...
-.Sh DESCRIPTION
+.SH DESCRIPTION
 The 
 .B qrerun
 command directs that the specified jobs are to be rerun if possible.
@@ -119,7 +119,7 @@ option on the
 and
 .B qalter
 commands.
-.Sh  OPERANDS
+.SH  OPERANDS
 The qrerun
 command accepts one or more
 .Ar job_identifier
@@ -130,17 +130,17 @@ operands of the form:
 .if !\n(Pb .ig Ig
 See the description under "Job Identifier" in section \*(Ji in this ERS.
 .Ig
-.Sh STANDARD ERROR
+.SH STANDARD ERROR
 The
 qrerun
 command will write a diagnostic message to standard error for
 each error occurrence.
-.Sh EXIT STATUS
+.SH EXIT STATUS
 Upon successful processing of all the operands presented to the
 qrerun command, the exit status will be a value of zero.
 .LP
 If the qrerun command fails to process any operand, the
 command exits with a value greater than zero.
-.Sh SEE ALSO
+.SH SEE ALSO
 qsub(1B), qalter(1B), pbs_alterjob(3B), pbs_rerunjob(3B)
 .RE

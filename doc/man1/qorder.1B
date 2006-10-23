@@ -78,11 +78,11 @@
 .TH qorder 1B "" Local PBS
 .so ../ers/ers.macros
 .Iq
-.Sh NAME
+.SH NAME
 qorder \- exchange order of two pbs batch jobs in a queue.
-.Sh SYNOPSIS
+.SH SYNOPSIS
 qorder job_identifier job_identifier
-.Sh DESCRIPTION
+.SH DESCRIPTION
 To order two jobs is to exchange the jobs positions in the queue or queues in
 which the jobs resides.  The two jobs must be located at the same server.
 .if !\n(Pb .ig Ig
@@ -102,7 +102,7 @@ job scheduled policy, contact your systems administrator.
 A job in the
 .B running
 state cannot be reordered.
-.Sh OPERANDS
+.SH OPERANDS
 Both operands are
 .Ar job_identifiers
 which specify the jobs to be exchanged.
@@ -118,16 +118,16 @@ location of the two job IDs.
 .if !\n(Pb .ig Ig
 See the description under "Job Identifier" in section \*(Ji in this ERS.
 .Ig
-.Sh STANDARD ERROR
+.SH STANDARD ERROR
 The qorder command will write diagnostic messages to standard error for each
 error occurrence.
-.Sh EXIT STATUS
+.SH EXIT STATUS
 Upon successful processing of all the operands presented to the
 qorder command, the exit status will be a value of zero.
 .LP
 If the qorder command fails to process any operand, the
 command exits with a value greater than zero.
 \" turn off any extra indent left by the Sh macro
-.Sh SEE ALSO
+.SH SEE ALSO
 qsub(1B), qmove(1B), pbs_orderjob(3B), pbs_movejob(3B)
 .RE

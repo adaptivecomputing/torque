@@ -78,13 +78,13 @@
 .TH qhold 1B "" Local PBS
 .so ../ers/ers.macros
 .Iq
-.Sh NAME
+.SH NAME
 qhold - hold pbs batch jobs
-.Sh SYNOPSIS
+.SH SYNOPSIS
 qhold
 [\-h hold_list]
 job_identifier ...
-.Sh DESCRIPTION
+.SH DESCRIPTION
 The 
 .B qhold 
 command requests that a server place one or more holds on
@@ -149,7 +149,7 @@ command.
 The qhold command sends a
 .I "Hold Job"
 batch request to the server as described in the general section.
-.Sh OPTIONS
+.SH OPTIONS
 .IP "\-h hold_list" 15
 Defines the types of holds to be placed on the job.
 .IP
@@ -175,7 +175,7 @@ Repetition of characters is permitted, but "n" may not appear in the same
 option argument with the other three characters.
 .Ig
 .LP
-.Sh OPERANDS
+.SH OPERANDS
 The qhold command accepts one or more
 .Ar job_identifier
 operands of the form:
@@ -186,16 +186,16 @@ operands of the form:
 See the description under "Job Identifier" in section \*(Ji in this ERS.
 .Ig
 .LP
-.Sh STANDARD ERROR
+.SH STANDARD ERROR
 The qhold command will write a diagnostic message to standard error for each
 error occurrence.
-.Sh EXIT STATUS
+.SH EXIT STATUS
 Upon successful processing of all the operands presented to the
 qhold command, the exit status will be a value of zero.
 .LP
 If the qhold command fails to process any operand, the
 command exits with a value greater than zero.
-.Sh SEE ALSO
+.SH SEE ALSO
 qrls(1B), qalter(1B), qsub(1B), pbs_alterjob(3B), pbs_holdjob(3B),
 pbs_rlsjob(3B), pbs_job_attributes(7B), pbs_resources_unicos8(7B)
 \" turn off any extra indent left by the Sh macro

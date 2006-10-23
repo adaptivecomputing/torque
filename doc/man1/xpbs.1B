@@ -78,21 +78,21 @@
 .TH xpbs 1B "" Local PBS
 .so ../ers/ers.macros
 .Iq
-.Sh NAME
+.SH NAME
 xpbs \- GUI front end to PBS commands
-.Sh SYNOPSIS
+.SH SYNOPSIS
 xpbs [-admin]
-.Sh DESCRIPTION
+.SH DESCRIPTION
 The \f3xpbs\fP command provides a user-friendly point-and-click interface to
 PBS commands. Please see the sections below for a tour and tutorials. Also, 
 within every dialog box, a \f3Help\fP button can be found for assistance.
-.Sh OPTIONS
+.SH OPTIONS
 .IP "-admin" 8
 A mode where additional buttons are made available for terminating PBS servers,
 starting/stopping/disabling/enabling queues, and running/rerunning jobs.
 .in 0
 .LP
-.Sh GETTING STARTED
+.SH GETTING STARTED
 Running \f3xpbs\fP will initialize the X resource database from various sources
 in the following order:
 .IP "1."
@@ -106,7 +106,7 @@ User's ~/.xpbsrc file - this file defines various X resources like fonts,
 colors, list
 of PBS hosts to query, criteria for listing queues and jobs, and various view
 states. See PREFERENCES section below for a list of resources that can be set.
-.Sh RUNNING XPBS
+.SH RUNNING XPBS
 .LP
 To run \f3xpbs\fP as a regular, non-privileged user, type:
 .RS
@@ -132,7 +132,7 @@ remote host, should be sufficient.
 .sp
 Also, be sure that the PBS client commands are in the default PATH because
 \f3xpbs\fP will call these commands.  
-.Sh THE XPBS DISPLAY
+.SH THE XPBS DISPLAY
 This section describes the main parts of the \f3xpbs\fP display. The main 
 window is composed of 5 distinct areas (subwindows) arranged 
 vertically (one on top of another) in the following order:
@@ -305,7 +305,7 @@ by \f3xpbs\fP. Look into this box for errors. The INFO bar also contains a
 minimize/maximize button for displaying or iconizing the Info
 region.
 .RE
-.Sh WIDGETS USED IN XPBS
+.SH WIDGETS USED IN XPBS
 Some of the widgets used in \f3xpbs\fP and how they are manipulated are
 described in the following:
 .sp
@@ -412,7 +412,7 @@ backspace/delete key, mouse selection of text for deletion or
 overwrite, copying and pasting with sole use of mouse buttons
 are permitted. This widget is usually accompanied by a scrollbar
 for vertically scanning a long entry.
-.Sh SUBMITTING JOBS
+.SH SUBMITTING JOBS
 Submitting a PBS job requires only to manipulate the widgets found in the
 Submit window.
 The submit dialog box is composed of 4 distinct regions:
@@ -490,7 +490,7 @@ button that you click to save the current widget values to
 the specified file in a form that can later be read by \f3xpbs\fP
 or by the \f3qsub\fP command.
 .RE
-.Sh MODIFYING ATTRIBUTES OF JOBS
+.SH MODIFYING ATTRIBUTES OF JOBS
 Modifying a PBS job requires only to manipulate the widgets found
 in the Modify window. To modify a job or jobs, do the following
 steps:
@@ -511,7 +511,7 @@ Click on the
 .Ar "confirm modify"
 button located at the bottom of the dialog box.
 .RE
-.Sh DELETING JOBS
+.SH DELETING JOBS
 Deleting a PBS job requires only to manipulate the widgets found
 in the Delete window. To delete a job or jobs, do the following
 steps:
@@ -533,7 +533,7 @@ Click on the
 button located at the bottom of the
 dialog box.
 .RE
-.Sh TRACKING RETURNED OUTPUT FILES
+.SH TRACKING RETURNED OUTPUT FILES
 If you want to be informed of returned output files of
 current jobs, and be able to quickly see the
 contents of those files, then enable the
@@ -600,13 +600,13 @@ on a job id to see the contents of the output file and the error file.
 Click
 .Ar "stop tracking"
 if you want to cancel tracking.
-.Sh LEAVING XPBS
+.SH LEAVING XPBS
 Click on the Close button located in the Menu bar to leave \f3xpbs\fP.
 If anything had changed, it will bring up a dialog box asking for a confirmation
 in regards to saving state information like the view states (minimize/maximize) of
 the HOSTS, QUEUES, JOBS, and INFO subwindows, and various criteria for
 listing queues and jobs. The information is saved in ~/.xpbsrc file.
-.Sh PREFERENCES
+.SH PREFERENCES
 The resources that can be set in the X resources file, ~/.xpbsrc, are:
 .IP *serverHosts
 list of server hosts (space separated) to query by \f3xpbs\fP.
@@ -737,7 +737,7 @@ architecture known to xpbs. The format is as follows:
 .br
 { <arch-typeN> resname1 resname2 ... resnameN }
 .LP
-.Sh XPBS AND PBS COMMANDS
+.SH XPBS AND PBS COMMANDS
 \f3xpbs\fP calls PBS commands as follows:
 .IP "\f3Command Button\fP" 22
 \f3PBS Command\fP
@@ -778,12 +778,12 @@ qmove <selected job(s)>
 .IP "order" 22
 qorder <selected job(s)>
 .LP
-.Sh EXIT STATUS
+.SH EXIT STATUS
 Upon successful processing, the \f3xpbs\fP exit status will be a value of zero.
 .LP
 If the xpbs command fails, the
 command exits with a value greater than zero.
-.Sh SEE ALSO
+.SH SEE ALSO
 qalter(1B), qdel(1B), qhold(1B), qmove(1B), qmsg(1B), qrerun(1B),
 qrls(1B), qselect(1B), qsig(1B), qstat(1B), qorder(1B), qsub(1B),
 qdisable(8B), qenable(8B), qrun(8B), qstart(8B), qstop(8B), qterm(8B).

@@ -103,23 +103,19 @@ SUFFIXES = .1B .3B .7B .8B .1 .3 .7 .8 .so
 
 .1B.1: soelim
 	@echo "Creating $@"
-	@./soelim -d $(srcdir)/ers $< > $@.tmp
-	@sed -e 's/^\.Sh/.SH/' < $@.tmp >$@ && rm -f $@.tmp
+	@./soelim -d $(srcdir)/ers $< > $@
 
 .3B.3: soelim
 	@echo "Creating $@"
-	@./soelim -d $(srcdir)/ers $< > $@.tmp
-	@sed -e 's/^\.Sh/.SH/' < $@.tmp >$@ && rm -f $@.tmp
+	@./soelim -d $(srcdir)/ers $< > $@
 
 .7B.7: soelim
 	@echo "Creating $@"
-	@./soelim -d $(srcdir)/ers $< > $@.tmp
-	@sed -e 's/^\.Sh/.SH/' < $@.tmp >$@ && rm -f $@.tmp
+	@./soelim -d $(srcdir)/ers $< > $@
 
 .8B.8: soelim
 	@echo "Creating $@"
-	@./soelim -d $(srcdir)/ers $< > $@.tmp
-	@sed -e 's/^\.Sh/.SH/' < $@.tmp >$@ && rm -f $@.tmp
+	@./soelim -d $(srcdir)/ers $< > $@
 
 install_doc: install
 

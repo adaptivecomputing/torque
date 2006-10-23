@@ -78,12 +78,12 @@
 .TH qmgr 1B "" Local PBS
 .so ../ers/ers.macros
 .Iq
-.Sh NAME
+.SH NAME
 qmgr \- pbs batch system manager
-.Sh SYNOPSIS
+.SH SYNOPSIS
 qmgr [\^-a\^] [\^-c\ command\^] [\^-e\^] [\^-n\^]
 [\^-z\^] [\^server...]
-.Sh DESCRIPTION
+.SH DESCRIPTION
 The
 .B qmgr
 command provides an administrator interface to the batch system.
@@ -95,7 +95,7 @@ batch server or servers.
 The list or print subcommands of qmgr can be executed by general users.
 Creating or deleting a queue requries PBS Manager privilege.  Setting or
 unsetting server or queue attributes requires PBS Operator or Manager privilege.
-.Sh OPTIONS
+.SH OPTIONS
 .IP "-a" 12
 Abort
 .B qmgr 
@@ -112,7 +112,7 @@ No commands are executed, syntax checking only is performed.
 .IP "-z"
 No errors are written to standard error.
 .LP
-.Sh OPERANDS
+.SH OPERANDS
 The
 .Ar server 
 operands identify the name of the batch server to which the administrator
@@ -134,7 +134,7 @@ If
 .Ar server
 is not specified, the administrator requests are sent to the local
 server.
-.Sh STANDARD INPUT
+.SH STANDARD INPUT
 The
 .B qmgr
 command reads standard input for directives until end of file is reached,
@@ -143,7 +143,7 @@ or the
 or
 .I quit
 directive is read.
-.Sh STANDARD OUTPUT
+.SH STANDARD OUTPUT
 If Standard Output is connected to a terminal, a command prompt will
 be written to standard output when qmgr is ready to read a directive.
 .LP
@@ -152,12 +152,12 @@ If the
 option is specified, 
 .B qmgr
 will echo the directives read from standard input to standard output.
-.Sh STANDARD ERROR
+.SH STANDARD ERROR
 If the
 .Ar -z
 option is not specified, the qmgr command will write a diagnostic message
 to standard error for each error occurrence.
-.Sh EXTENDED DESCRIPTION
+.SH EXTENDED DESCRIPTION
 If
 .B qmgr
 is invoked without the
@@ -174,7 +174,7 @@ with a back-slash "\\".
 .LP
 Comments begin with the # character and continue to end of the line.
 Comments and blank lines are ignored by qmgr.
-.Sh DIRECTIVE SYNTAX
+.SH DIRECTIVE SYNTAX
 A qmgr directive is one of the following forms:
 .sp
 .Ty "command\ server\ [names]\ [attr\ OP\ value[,attr\ OP\ value,...]]"
@@ -259,14 +259,14 @@ set queue max_running = 10	- uses active queues
 .fi
 .ft 1
 .LP
-.Sh EXIT STATUS
+.SH EXIT STATUS
 Upon successful processing of all the operands presented to the
 qmgr
 command, the exit status will be a value of zero.
 .LP
 If the qmgr command fails to process any operand, the
 command exits with a value greater than zero.
-.Sh SEE ALSO
+.SH SEE ALSO
 pbs_server(8B), pbs_queue_attributes(7B), pbs_server_attributes(7B),
 qstart(8B), qstop(8B), qenable(8B), qdisable(8), pbs_resources(7B)
 and the PBS External Reference Specification

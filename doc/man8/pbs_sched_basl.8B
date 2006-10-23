@@ -82,12 +82,12 @@
 .TH pbs_scheduler_basl 8B "" Local PBS
 .so ../ers/ers.macros
 .Iq
-.Sh NAME
+.SH NAME
 pbs_sched_basl \- pbs BASL scheduler
-.Sh SYNOPSIS
+.SH SYNOPSIS
 pbs_sched\ [\^-d home\^] [\^-L logfile\^] [\^-p print_file\^]
 [\^-a alarm\^] [\^-S port\^] [\^-c configfile\^]
-.Sh DESCRIPTION
+.SH DESCRIPTION
 The
 .B pbs_sched
 command starts the operation of a batch scheduler on the local host.
@@ -101,7 +101,7 @@ Typically, this command will be in a local boot file such as
 .I /etc/rc.local .
 .LP
 pbs_sched must be executed with root permission.
-.Sh OPTIONS
+.SH OPTIONS
 .IP "-d home"
 Specifies the name of the PBS home directory, PBS_HOME.
 If not specified, the value
@@ -133,7 +133,7 @@ If the -c option is not supplied, pbs_sched will not attempt to open a
 configuration file. In BASL, this config file is almost always needed because
 it is where the list of servers, nodes, and host resource queries are specified by the administrator.
 .LP
-.Sh USAGE
+.SH USAGE
 This version of the scheduler requires knowledge of the BASL language. The
 site must first write a function called
 .I sched_main()
@@ -156,7 +156,7 @@ information about server(s), jobs, queues, and execution host(s) are obtained,
 and then
 .I sched_main()
 is called.
-.Sh SCHEDULING LANGUAGE
+.SH SCHEDULING LANGUAGE
 The BAtch Scheduling Language (BASL) is a C-like procedural language. It
 provides a number
 of constructs and predefined functions that facilitate dealing with
@@ -194,7 +194,7 @@ sched_main()
 .LP
 For a more complete discussion of the Batch Scheduler Language, see
 .B "basl2c(1B)".
-.Sh CONFIGURATION FILE
+.SH CONFIGURATION FILE
 A configuration file may be specified with the -c option.
 This file is used to specify the (1) hosts which are allowed to
 connect to pbs_sched, (2) the list of server hosts for which the scheduler
@@ -488,12 +488,12 @@ group id less than 10 and not be world writable.
 On receipt of a SIGHUP signal, the scheduler will close and reopen
 its log file and reread its configuration file (if any).
 .LP
-.Sh FILES
+.SH FILES
 .IP $PBS_SERVER_HOME/sched_priv 10
 the default directory for configuration files, typically
 (/usr/spool/pbs)/sched_priv.
 .LP
-.Sh Signal Handling
+.SH Signal Handling
 A C based scheduler will handle the following signals:
 .IP SIGHUP
 The server will close and reopen its log file and reread the config file
@@ -505,9 +505,9 @@ will cause the scheduler to attempt to core dump and restart itself.
 Will result in an orderly shutdown of the scheduler.
 .LP
 All other signals have the default action installed.
-.Sh "EXIT STATUS"
+.SH "EXIT STATUS"
 Upon normal termination, an exit status of zero is returned.
-.Sh "SEE ALSO"
+.SH "SEE ALSO"
 basl2c(1B), pbs_sched_tcl(8B), pbs_server(8B), and pbs_mom(8B).
 .br
 PBS Internal Design Specification

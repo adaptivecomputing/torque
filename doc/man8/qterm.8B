@@ -78,11 +78,11 @@
 .TH qterm 8B "" Local PBS
 .so ../ers/ers.macros
 .Iq
-.Sh NAME
+.SH NAME
 qterm \- terminate processing by a pbs batch server
-.Sh SYNOPSIS
+.SH SYNOPSIS
 qterm \^-t\ type\^ [server...]
-.Sh DESCRIPTION
+.SH DESCRIPTION
 The
 .B qterm 
 command terminates a batch server.
@@ -110,7 +110,7 @@ procedure.
 .LP
 In order to execute qterm, the user must have PBS Operation or Manager
 privilege.
-.Sh OPTIONS
+.SH OPTIONS
 .IP "-t type" 10
 Specifies the type of shut down.  The types are:
 .RS
@@ -163,24 +163,24 @@ request is
 .Ig
 .RE
 .LP
-.Sh OPERANDS
+.SH OPERANDS
 The
 .Ar server
 operand specifies which servers are to shutdown.
 If no servers are given, then the default server will be terminated.
-.Sh STANDARD ERROR
+.SH STANDARD ERROR
 The
 qterm
 command will write a diagnostic message to standard error for
 each error occurrence.
-.Sh EXIT STATUS
+.SH EXIT STATUS
 Upon successful processing of all the operands presented to the
 qterm
 command, the exit status will be a value of zero.
 .LP
 If the qterm command fails to process any operand, the
 command exits with a value greater than zero.
-.Sh SEE ALSO
+.SH SEE ALSO
 pbs_server(8B), qmgr(1B), 
 pbs_resources_aix4(7B), pbs_resources_irix5(7B),
 pbs_resources_sp2(7B), pbs_resources_sunos4(7B), and  pbs_resources_unicos8(7B)

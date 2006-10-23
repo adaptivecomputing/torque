@@ -78,13 +78,13 @@
 .TH qsig 1B "" Local PBS
 .so ../ers/ers.macros
 .Iq
-.Sh NAME
+.SH NAME
 qsig \- signal pbs batch job
-.Sh SYNOPSIS
+.SH SYNOPSIS
 qsig
 [-s\ signal]
 job_identifier ...
-.Sh DESCRIPTION
+.SH DESCRIPTION
 The
 .B qsig
 command requests that a signal be sent to executing batch jobs.
@@ -110,7 +110,7 @@ The qsig
 command sends a 
 .I "Signal Job"
 batch request to the server which owns the job.
-.Sh OPTIONS
+.SH OPTIONS
 .IP "-s signal" 15
 Declares which signal is sent to the job.
 .RS
@@ -150,7 +150,7 @@ batch request with a signal that is unsupported on the server host,
 the server will reject the request.
 .Ig
 .RE
-.Sh  OPERANDS
+.SH  OPERANDS
 The qsig command accepts one or more
 .Ar job_identifier
 operands of the form:
@@ -160,16 +160,16 @@ operands of the form:
 .if !\n(Pb .ig Ig
 See the description under "Job Identifier" in section \*(Ji in this ERS.
 .Ig
-.Sh STANDARD ERROR
+.SH STANDARD ERROR
 The qsig command will write a diagnostic messages to standard error for
 each error occurrence.
-.Sh EXIT STATUS
+.SH EXIT STATUS
 Upon successful processing of all the operands presented to the
 qsig command, the exit status will be a value of zero.
 .LP
 If the qsig command fails to process any operand, the
 command exits with a value greater than zero.
-.Sh SEE ALSO
+.SH SEE ALSO
 qsub(1B), pbs_sigjob(3B),
 pbs_resources_*(7B) where * is system type, and the PBS ERS.
 \" turn off any extra indent left by the Sh macro

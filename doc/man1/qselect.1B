@@ -78,14 +78,14 @@
 .TH qselect 1B "" Local PBS
 .so ../ers/ers.macros
 .Iq
-.Sh NAME
+.SH NAME
 qselect \- select pbs batch jobs
-.Sh SYNOPSIS
+.SH SYNOPSIS
 qselect
 [-a [op]date_time] [-A account_string] [-e] [-c [op]interval]
 [-h hold_list] [-l resource_list] [-N name] [-p [op]priority]
 [-q destination] [-r rerun] [-s states] [-u user_list]
-.Sh DESCRIPTION
+.SH DESCRIPTION
 The
 .B qselect
 command provides a method to list the job identifier of those
@@ -112,7 +112,7 @@ Operators and system administrators have the privilege to select all jobs.
 Other uses access depends on the setting of the server attribute 
 .At query_other_jobs .
 .Ig
-.Sh OPTIONS
+.SH OPTIONS
 When an option is specified with a optional
 .Ar op
 component to the option argument, then
@@ -518,7 +518,7 @@ User_name without a "@host" is equivalent to "user_name@*", that is at any host.
 Jobs will be selected which are owned by the listed users at the
 corresponding hosts.
 .RE
-.Sh STANDARD OUTPUT
+.SH STANDARD OUTPUT
 The list of job identifiers of selected jobs is written to standard output.
 Each job identifier is separated by white space.
 Each job identifier is of the form:
@@ -531,16 +531,16 @@ is the identifier assigned at submission time, see
 .BR qsub .
 .Ty @server
 identifies the server which currently owns the job.
-.Sh STANDARD ERROR
+.SH STANDARD ERROR
 The qselect command will write a diagnostic message to standard error for
 each error occurrence.
-.Sh EXIT STATUS
+.SH EXIT STATUS
 Upon successful processing of all options presented to the
 qselect command, the exit status will be a value of zero.
 .LP
 If the qselect command fails to process any option, the
 command exits with a value greater than zero.
-.Sh SEE ALSO
+.SH SEE ALSO
 qsub(1B), qstat(1B), pbs_selectjob(3B), pbs_selstat(3B), pbs_statjob(3B)
 \" turn off any extra indent left by the Sh macro
 .RE

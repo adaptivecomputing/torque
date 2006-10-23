@@ -78,11 +78,11 @@
 .TH qenable 8B "" Local PBS
 .so ../ers/ers.macros
 .Iq
-.Sh NAME
+.SH NAME
 qenable \- enable input to a pbs destination
-.Sh SYNOPSIS
+.SH SYNOPSIS
 qenable destination ...
-.Sh DESCRIPTION
+.SH DESCRIPTION
 The
 .B qenable
 command directs that a destination should accept batch jobs.
@@ -105,7 +105,7 @@ requests which specified the queue.
 .LP
 In order to execute qenable, the user must have PBS Operation or Manager
 privilege.
-.Sh  OPERANDS
+.SH  OPERANDS
 The qenable command accepts one or more
 .Ar destination
 operands.  The operands are one of three forms:
@@ -125,18 +125,18 @@ form is given, the request is to enable all the queues at that server.
 If a full destination identifier,
 .Ty queue@server ,
 is given, the request is to enable the named queue at the named server.
-.Sh STANDARD ERROR
+.SH STANDARD ERROR
 The qenable
 command will write a diagnostic message to standard error for
 each error occurrence.
-.Sh EXIT STATUS
+.SH EXIT STATUS
 Upon successful processing of all the operands presented to the
 qenable
 command, the exit status will be a value of zero.
 .LP
 If the qenable command fails to process any operand, the
 command exits with a value greater than zero.
-.Sh SEE ALSO
+.SH SEE ALSO
 pbs_server(8B), qdisable(8B), and qmgr(1B)
 .\" turn off any extra indent left by the Sh macro
 .RE

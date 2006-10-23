@@ -78,9 +78,9 @@
 .TH pbs_rescreserve 3B "" Local PBS
 .so ../ers/ers.macros
 .Ig
-.Sh NAME
+.SH NAME
 pbs_rescreserve, pbs_rescrelease - reserve/free batch resources
-.Sh SYNOPSIS
+.SH SYNOPSIS
 #include <pbs_error.h>
 .br
 #include <pbs_ifl.h>
@@ -93,7 +93,7 @@ resource_t *resource_id\^)
 int pbs_rescrelease\^(\^int connect, resource_t resource_id\^)
 .fi
 .ft 1
-.Sh DESCRIPTION
+.SH DESCRIPTION
 .if \n(Pb .ig Ig
 .HP 2
 .Ig
@@ -149,10 +149,10 @@ is the connection returned by \f3pbs_connect\fP().
 .LP
 Both functions require that the issuing user have operator or administrator
 privilege.
-.Sh "SEE ALSO"
+.SH "SEE ALSO"
 qsub(1B), pbs_connect(3B), pbs_disconnect(3B), pbs_rescquery(3B) and
 pbs_resources(7B)
-.Sh DIAGNOSTICS
+.SH DIAGNOSTICS
 pbs_rescreserve() and pbs_rescrelease() return zero on success.
 Otherwise, a non zero error is returned.  The error number is also set
 in pbs_errno.

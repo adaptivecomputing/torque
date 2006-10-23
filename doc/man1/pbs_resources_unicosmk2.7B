@@ -177,7 +177,7 @@ or in a qsub script as directives:
 .\" for ers only
 .RE
 .Ig
-.Sh "SPECIAL FEATURES"
+.SH "SPECIAL FEATURES"
 Cray Unicos MK supports checkpoint and restart.   Any description of checkpoint
 features in PBS are applicable to Unicos MK.
 .RE

@@ -78,11 +78,11 @@
 .TH qstop 8B "" Local PBS
 .so ../ers/ers.macros
 .Iq
-.Sh NAME
+.SH NAME
 qstop \- stop pbs batch job processing at a destination
-.Sh SYNOPSIS
+.SH SYNOPSIS
 qstop destination ...
-.Sh DESCRIPTION
+.SH DESCRIPTION
 The
 .B qstop
 command directs that a destination should stop processing batch jobs.
@@ -103,7 +103,7 @@ queue attribute is set to FALSE.
 .LP
 In order to execute qstop, the user must have PBS Operation or Manager
 privilege.
-.Sh  OPERANDS
+.SH  OPERANDS
 The qstop command accepts one or more
 .Ar destination
 operands.  The operands are one of three forms:
@@ -123,18 +123,18 @@ form is given, the request is to stop all the queues at that server.
 If a full destination identifier,
 .Ty queue@server ,
 is given, the request is to stop the named queue at the named server.
-.Sh STANDARD ERROR
+.SH STANDARD ERROR
 The qstop
 command will write a diagnostic message to standard error for
 each error occurrence.
-.Sh EXIT STATUS
+.SH EXIT STATUS
 Upon successful processing of all the operands presented to the
 qstop
 command, the exit status will be a value of zero.
 .LP
 If the qstop command fails to process any operand, the
 command exits with a value greater than zero.
-.Sh SEE ALSO
+.SH SEE ALSO
 pbs_server(8B), qstart(8B), and qmgr(1B)
 .\" turn off any extra indent left by the Sh macro
 .RE

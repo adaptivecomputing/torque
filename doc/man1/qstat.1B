@@ -78,9 +78,9 @@
 .TH qstat 1B "" Local PBS
 .so ../ers/ers.macros
 .Iq
-.Sh NAME
+.SH NAME
 qstat \- show status of pbs batch jobs
-.Sh SYNOPSIS
+.SH SYNOPSIS
 qstat [-f [-1]][-W site_specific] [\^job_identifier... | destination...\^]
 .sp
 qstat [-a|-i|-r|-e] [-n [-1]] [-s] [-G|-M] [-R] [-u user_list] [\^job_identifier... |\ 
@@ -91,7 +91,7 @@ qstat -Q [-f [-1]][-W site_specific] [\^destination...\^]
 qstat -q [-G|-M] [\^destination...\^]
 .sp
 qstat -B [-f [-1]][-W site_specific] [\^server_name...\^]
-.Sh DESCRIPTION
+.SH DESCRIPTION
 The
 .B qstat
 command is used to request the status of jobs, queues, or a batch server.
@@ -126,7 +126,7 @@ will output information about each
 .if !\n(Pb .ig Ig
 The syntax using the [-a|-i|-r|-e] line or the -q line are extensions to POSIX.
 .Ig
-.Sh OPTIONS
+.SH OPTIONS
 .IP "-f" 10
 Specifies that a full status display be written to standard out.
 .IP "-a" 10
@@ -190,7 +190,7 @@ the alternative format.
 Specifies that the request is for batch server status and that the operands
 are the names of servers.
 .LP
-.Sh  OPERANDS
+.SH  OPERANDS
 If neither the
 .Ar -Q
 nor the
@@ -257,7 +257,7 @@ server will be given.
 If the
 .Ar -B
 option is given, the operand is the name of a server.
-.Sh STANDARD OUTPUT
+.SH STANDARD OUTPUT
 Displaying Job Status
 .LP
 If job status is being displayed in the default format and the
@@ -508,10 +508,10 @@ Followed by one line per server attribute of the form:
 The server attributes are listed in the same format as job attributes.
 .Ig
 .LP
-.Sh STANDARD ERROR
+.SH STANDARD ERROR
 The qstat command will write a diagnostic message to standard error for
 each error occurrence.
-.Sh CONFIGURATION
+.SH CONFIGURATION
 If
 .B qstat
 is compiled with an option to include a
@@ -581,13 +581,13 @@ list whose elements correspond with the
 .Ty attrl
 structure.  Each will be a list with two elements.  The first will be
 the attribute name and the second will be the attribute value.
-.Sh EXIT STATUS
+.SH EXIT STATUS
 Upon successful processing of all the operands presented to the
 qstat command, the exit status will be a value of zero.
 .LP
 If the qstat command fails to process any operand, the
 command exits with a value greater than zero.
-.Sh SEE ALSO
+.SH SEE ALSO
 qalter(1B), qsub(1B), pbs_alterjob(3B), pbs_statjob(3B), pbs_statque(3B),
 pbs_statserver(3B), pbs_submit(3B),
 pbs_job_attributes(7B), pbs_queue_attributes(7B), pbs_server_attributes(7B),

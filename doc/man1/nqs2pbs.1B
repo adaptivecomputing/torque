@@ -78,11 +78,11 @@
 .TH nqs2pbs 1B "" Local PBS
 .so ../ers/ers.macros
 .Iq
-.Sh NAME
+.SH NAME
 nqs2pbs \- convert NQS job scripts to PBS
-.Sh SYNOPSIS
+.SH SYNOPSIS
 nqs2pbs nqs_script [\^pbs_script\^]
-.Sh DESCRIPTION
+.SH DESCRIPTION
 This utility converts a existing NQS job script to work with PBS and NQS.
 The existing script is copied and PBS directives,
 .I #PBS ,
@@ -98,7 +98,7 @@ the script on which it occurred.
 .LP
 If any unrecognizable NQS directives are encountered, an error message
 is displayed.  The new PBS script will be deleted if any errors occur.
-.Sh OPERANDS
+.SH OPERANDS
 .IP nqs_script
 Specifies the file name of the NQS script to convert.  This file is not
 changed.
@@ -107,7 +107,7 @@ If specified, it is the name of the new PBS script.   If not specified,
 the new file name is
 .I nqs_script.new .
 .LP
-.Sh NOTES
+.SH NOTES
 Converting NQS date specifications to the PBS form may result in a warning
 message and an incompleted converted date.  PBS does not support date
 specifications of "today", "tomorrow", or the name of the days of the week
@@ -127,6 +127,6 @@ will become eligible to run at that time tomorrow.
 .LP
 PBS does not support time zone identifiers.  All times are taken as local
 time.
-.Sh SEE ALSO
+.SH SEE ALSO
 qsub(1B)
 .RE

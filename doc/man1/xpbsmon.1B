@@ -78,11 +78,11 @@
 .TH xpbsmon 1B "" Local PBS
 .so ../ers/ers.macros
 .Iq
-.Sh NAME
+.SH NAME
 xpbsmon \- GUI for displaying, monitoring the nodes/execution hosts under PBS
-.Sh SYNOPSIS
+.SH SYNOPSIS
 xpbsmon
-.Sh DESCRIPTION
+.SH DESCRIPTION
 The \f3xpbsmon\fP command provides a way to graphically display the various
 nodes that run jobs. A node or execution host can be running a \f3pbs_mom\fP
 daemon, or not running the daemon. For the latter case, it could just
@@ -96,7 +96,7 @@ how many nodes are available, free, down, reserved, offline, of unknown
 status,  in use running multiple jobs or executing only 1 job.
 Please see the sections below for a tour and tutorials of xpbsmon. Also, within
 every dialog box, a \f3Help\fP button can be found for assistance.
-.Sh GETTING STARTED
+.SH GETTING STARTED
 Running  xpbsmon will initialize the X resource database from various sources
 in the following order:
 .IP "1."
@@ -112,7 +112,7 @@ list of PBS sites to query, list of server hosts on each site, list of
 nodes/execution hosts on each server host, list of system resource queries to
 send to the nodes' pbs_mom, and various view states. See PREFERENCES section
 below for a list of resources that can be set.
-.Sh RUNNING XPBSMON
+.SH RUNNING XPBSMON
 .LP
 \f3xpbsmon\fP can be run either as a regular user or superuser.  If you
 run it with less privilege, you may not be able to see all the information for
@@ -135,7 +135,7 @@ To run \f3xpbsmon\fP, type:
 .RE
 If you are running the GUI and only interested in jobs data, then be sure to
 set all the nodes' type to NOMOM in the \f3Pref\fP  dialog box.
-.Sh THE XPBSMON DISPLAY
+.SH THE XPBSMON DISPLAY
 This section describes the main parts of the \f3xpbsmon\fP display. The main
 window is composed of 3 distinct areas (subwindows) arranged vertically (one
 on top of another)  in  the following order:
@@ -230,7 +230,7 @@ modified by setting the X resources: *nodeColorNOINFO, *nodeColorFREE,
 .LP
 \f3Info\fP. The Info Area shows the progress of some of the background
 actions performed by \f3xpbsmon\fP. Look into this box for errors.
-.Sh WIDGETS USED IN XPBSMON
+.SH WIDGETS USED IN XPBSMON
 Some of the widgets used in \f3xpbsmon\fP and how they are manipulated are
 described in the following:
 .sp
@@ -303,7 +303,7 @@ the up/down arrows.
 pressed that invokes an action when clicked with the left
 mouse button.  When the button appears pressed, then hitting
 the <RETURN> key will automatically select the button.
-.Sh UPDATING PREFERENCES
+.SH UPDATING PREFERENCES
 .IP "CASE 1: Time Sharing"
 .sp
 Suppose you have a time-sharing environment where the front-end is
@@ -385,14 +385,14 @@ and then click \f3add\fP.
 .IP "CASE 3: Hybrid Time Sharing/Space Sharing Environment"
 A cluster of heterogeneous machines, time-sharing or jobs exclusive,  could
 easily be represented in \f3xpbsmon\fP by combining steps in CASE 1 and CASE 2.
-.Sh LEAVING XPBSMON
+.SH LEAVING XPBSMON
 Click on the \f3Close\fP button located in the Menu bar to leave \f3xpbsmon\fP.
 If anything had changed, it will bring up a  dialog box  asking  for a
 confirmation in regards to saving preferences information about list of sites,
 their view types, list of servers on each site, the list of nodes known to each
 server, and the list of queries to be sent to the pbs_mom of each node.  The
 information  is saved in ~/.xpbsmonrc file.
-.Sh PREFERENCES
+.SH PREFERENCES
 The resources that can be set in the X resources file, ~/.xpbsmonrc, are
 described in the following:
 .sp
@@ -633,7 +633,7 @@ Example:
 *rcSiteInfoDelimeterChar ;
 .br
 *sitesInfo:     {Mars;ICON;newton;Newton;newton3;NOMOM;} {Langley;FULL;db;DB;db.OpenPBS.org;MOM;{{ ( availmem / totmem ) * 100} {Memory Usage:} SCALE} {{ ( loadave / ncpus ) * 100} {Cpu Usage:} SCALE} {ncpus {Number of Cpus:} TEXT} {physmem {Physical Memory:} TEXT} {idletime {Idle Time (s):} TEXT} {loadave {Load Avg:} TEXT}} {Mars;ICON;newton;Newton;newton4;NOMOM;} {Mars;ICON;newton;Newton;newton1;NOMOM;} {Mars;ICON;newton;Newton;newton2;NOMOM;} {Mars;ICON;b0101;DB;aspasia.OpenPBS.org;MOM;{{ ( availmem / totmem ) * 100} {Memory Usage:} SCALE} {{ ( loadave / ncpus ) * 100} {Cpu Usage:} SCALE} {ncpus {Number of Cpus:} TEXT} {physmem {Physical Memory:} TEXT} {idletime {Idle Time (s):} TEXT} {loadave {Load Avg:} TEXT}} {Mars;ICON;newton;Newton;newton7;NOMOM;}
-.Sh EXIT STATUS
+.SH EXIT STATUS
 Upon successful processing, the \f3xpbsmon\fP exit status will be a value of zero.
 .LP
 If the xpbsmon command fails, the
@@ -647,6 +647,6 @@ Internal error: pbsstatnode: End of File (15031)
 .sp
 .RE
 The above message can be safely ignored.
-.Sh SEE ALSO
+.SH SEE ALSO
 pbs_sched_tcl(8B) and pbs_mom(8B).
 \" turn off any extra indent left by the Sh macro

@@ -78,13 +78,13 @@
 .TH pbs_sched 8B "" Local PBS
 .so ../ers/ers.macros
 .Iq
-.Sh NAME
+.SH NAME
 pbs_sched_tcl \- pbs Tcl scheduler
-.Sh SYNOPSIS
+.SH SYNOPSIS
 pbs_sched [\^-a\ alarm\^] [\^-b\ file\^] [\^-d\ home\^] [\^-i\ file\^]
 [\^-L\ logfile\^] [\^-p\ file\^] [\^-S\ port\^] [\^-t\ file\^]
 [\^-v\^] [\^-c\ file\^]
-.Sh DESCRIPTION
+.SH DESCRIPTION
 The
 .B pbs_sched
 program runs in conjunction with the PBS server.  It queries the
@@ -94,7 +94,7 @@ to get information about the status of running jobs, memory available etc.
 It then makes decisions as to what jobs to run.
 .LP
 pbs_sched must be executed with root permission.
-.Sh OPTIONS
+.SH OPTIONS
 .IP "-a alarm" 15
 This specifies the time in seconds to wait for a schedule run to finish.
 If a script takes too long to finish, an alarm signal is sent, and
@@ -155,7 +155,7 @@ attempt to open a configuration file.
 The options that specify file names may be absolute or relative.
 If they are relative, their root directory will be PBS_HOME/sched_priv.
 .LP
-.Sh USAGE
+.SH USAGE
 This version of the scheduler requires knowledge of the Tcl
 language.  A set of functions to communicate with the PBS
 server and resource monitor have been added to those normally
@@ -474,7 +474,7 @@ which talk to the server will work unless
 .B pbsconnect
 is called first.  The "body" file is run with a connection to
 the server already established.
-.Sh CONFIGURATION FILE
+.SH CONFIGURATION FILE
 A configuration file may be specified with the -c option.  
 This file may be used to specify the hosts (servers) which are allowed to
 connect to pbs_sched.  The hosts are specified in the configuration file
@@ -492,12 +492,12 @@ names need not be specified in the configuration file.
 The configuration file must be "secure".  It must be owned by a user id and
 group id less than 10 and not be world writable.
 .LP
-.Sh FILES
+.SH FILES
 .IP $PBS_SERVER_HOME/sched_priv 10
 the default directory for configuration files, typically
 (/usr/spool/pbs)/sched_priv.
 .LP
-.Sh Signal Handling
+.SH Signal Handling
 A C based scheduler will handle the following signals:
 .IP SIGHUP
 The server will close and reopen its log file and reread the config file
@@ -509,9 +509,9 @@ will cause the scheduler to attempt to core dump and restart itself.
 Will result in an orderly shutdown of the scheduler.
 .LP
 All other signals have the default action installed.
-.Sh "EXIT STATUS"
+.SH "EXIT STATUS"
 Upon normal termination, an exit status of zero is returned.
-.Sh "SEE ALSO"
+.SH "SEE ALSO"
 pbs_scheduler_cc(8B), pbs_scheduler_rule(8B), pbs_server(8B), and pbs_mom(8B).
 .br
 PBS Internal Design Specification

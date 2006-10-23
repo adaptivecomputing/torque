@@ -78,9 +78,9 @@
 .TH pbs_connect 3B "" Local PBS
 .so ../ers/ers.macros
 .Ig
-.Sh NAME
+.SH NAME
 pbs_connect - connect to a pbs batch server
-.Sh SYNOPSIS
+.SH SYNOPSIS
 #include <pbs_error.h>
 .br
 #include <pbs_ifl.h>
@@ -92,7 +92,7 @@ int pbs_connect(\^char *server\^)
 extern char *pbs_server;
 .ft 1
 .fi
-.Sh DESCRIPTION
+.SH DESCRIPTION
 A virtual stream (TCP/IP) connection is established with the server
 specified by
 .Ar server .
@@ -138,7 +138,7 @@ The variable
 declared in pbs_ifl.h,
 is set on return to point to the server
 name to which pbs_connect() connected or attempted to connect.
-.Sh SEE ALSO
+.SH SEE ALSO
 qsub(1B),
 pbs_alterjob(3B), pbs_deljob(3B), pbs_disconnect(3B), pbs_geterrmsg(3B), 
 pbs_holdjob(3B), pbs_locate(3B), pbs_manager(3B), pbs_movejob(3B), 
@@ -147,7 +147,7 @@ pbs_selectjob(3B), pbs_selstat(3B), pbs_sigjob(3B), pbs_statjob(3B),
 pbs_statque(3B), pbs_statserver(3B), pbs_submit(3B), pbs_terminate(3B),
 pbs_server(8B),
 and the PBS External Reference Specification
-.Sh DIAGNOSTICS
+.SH DIAGNOSTICS
 When the connection to batch server
 has been successfully created, the routine will return a connection
 identifier which is positive.

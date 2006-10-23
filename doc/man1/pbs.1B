@@ -78,9 +78,9 @@
 .TH pbs 1B "" Local PBS
 .so ../ers/ers.macros
 .Iq
-.Sh NAME
+.SH NAME
 pbs - general information on pbs
-.Sh DESCRIPTION
+.SH DESCRIPTION
 PBS stands for
 .I "Portable Batch System."
 It is a networked subsystem for submitting, monitoring, and controlling a
@@ -170,7 +170,7 @@ Obtain a list of jobs that met certain criteria.
 .IP qsig
 Send a signal to an executing job.
 .LP
-.Sh SEE ALSO
+.SH SEE ALSO
 qalter(1B), qdel(1B), qhold(1B), qmove(1B), qmsg(1B), qrerun(1B), qrls(1B),
 qselect(1B), qsig(1B), qsub(1B) and the PBS User Guide.
 Starting with qsub(1B), you can find all other available PBS man pages by

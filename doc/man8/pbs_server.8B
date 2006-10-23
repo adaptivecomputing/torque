@@ -78,13 +78,13 @@
 .TH pbs_server 8B "" Local PBS
 .so ../ers/ers.macros
 .Iq
-.Sh NAME
+.SH NAME
 pbs_server \- start a pbs batch server
-.Sh SYNOPSIS
+.SH SYNOPSIS
 pbs_server\ [-a active] [-d\ config_path\^]\ [-p\ port\^] [\^-A\ acctfile\^]
 [\^-L\ logfile\^] [-M\ mom_port\^] [-R\ momRPP_port] [-S\ scheduler_port\^]
 [-h\ hostname\^] [-t\ type\^]
-.Sh DESCRIPTION
+.SH DESCRIPTION
 The
 .B pbs_server
 command starts the operation of a batch server on the local host.
@@ -103,7 +103,7 @@ error occurrence.  The log files are maintained in the server_logs
 directory below the home directory of the server.
 If the log file cannot be opened, the diagnostic message is written
 to the system console.
-.Sh OPTIONS
+.SH OPTIONS
 .IP "-a active" 15
 Specifies if scheduling is active or not.  This sets the server attribute
 .At scheduling .
@@ -192,13 +192,13 @@ and initialize configuration files to the default values.  The server is
 idled.
 .RE
 .LP
-.Sh FILES
+.SH FILES
 .IP $PBS_SERVER_HOME/server_priv 15
 default directory for configuration files, typically
 /usr/spool/pbs/server_priv
 .IP $PBS_SERVER_HOME/server_logs 15
 directory for log files recorded by the server.
-.Sh Signal Handling
+.SH Signal Handling
 On receipt of the following signals, the server performs the defined action:
 .IP SIGHUP
 The current server log and accounting log are closed and reopened.  This 
@@ -215,10 +215,10 @@ shutdown of the server.
 These signals are ignored.
 .LP
 All other signals have their default behavior installed.
-.Sh EXIT STATUS
+.SH EXIT STATUS
 If the server command fails to begin batch operation, the
 server exits with a value greater than zero.
-.Sh SEE ALSO
+.SH SEE ALSO
 qsub (1B), pbs_connect(3B),
 pbs_mom(8B), pbs_sched_basl(8B), pbs_sched_tcl(8B),
 pbsnodes(8B), qdisable(8B), qenable(8B), qmgr(1B), qrun(8B), qstart(8B),

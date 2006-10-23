@@ -78,16 +78,16 @@
 .TH qalter 1B "" Local PBS
 .so ../ers/ers.macros
 .Iq
-.Sh NAME
+.SH NAME
 qalter \- alter pbs batch job
-.Sh SYNOPSIS
+.SH SYNOPSIS
 qalter
 [\-a date_time] [\-A account_string] [\-c interval] [\-e path]
 [\-h hold_list] [\-j join] [\-k keep] [\-l resource_list] 
 [\-m mail_options] [\-M user_list] [\-N name] [\-o path] [\-p priority]
 [\-r c] [-S path] [\-u user_list] [\-W additional_attributes]
 job_identifier...
-.Sh DESCRIPTION
+.SH DESCRIPTION
 The
 .B qalter
 command modifies the attributes of the job or jobs specified
@@ -102,7 +102,7 @@ The qalter
 command accomplishes the modifications by sending a
 .I "Modify Job"
 batch request to the batch server which owns each job.
-.Sh OPTIONS
+.SH OPTIONS
 .IP "\-a date_time" 8
 Replaces the 
 .if !\n(Pb .ig Ig
@@ -766,7 +766,7 @@ These options are extensions to the POSIX 1003.2d standard.
 .NL
 .Ig
 .LP
-.Sh OPERANDS
+.SH OPERANDS
 The qalter command accepts one or more
 .Ar job_identifier
 operands of the form:
@@ -776,17 +776,17 @@ operands of the form:
 .if !\n(Pb .ig Ig
 See the description under "Job Identifier" in section \*(Ji in this ERS.
 .Ig
-.Sh STANDARD ERROR
+.SH STANDARD ERROR
 Any error condition, either in processing the options or the operands,
 or any error received in reply to the batch requests will
 result in a error message being written to standard error.
-.Sh EXIT STATUS
+.SH EXIT STATUS
 Upon successful processing of all the operands presented to the
 qalter command, the exit status will be a value of zero.
 .LP
 If the qalter command fails to process any operand, the
 command exits with a value greater than zero.
-.Sh SEE ALSO
+.SH SEE ALSO
 qsub(1B), qstat(1B), pbs_alterjob(3B), pbs_statjob(3B), pbs_selectjob(3B),
 pbs_resources_*(7B), where * is system type, and the PBS ERS.
 .RE

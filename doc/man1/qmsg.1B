@@ -78,13 +78,13 @@
 .TH qmsg 1B "" Local PBS
 .so ../ers/ers.macros
 .Iq
-.Sh NAME
+.SH NAME
 qmsg \- send message to pbs batch jobs
-.Sh SYNOPSIS
+.SH SYNOPSIS
 qmsg
 [-E] [-O] message_string
 job_identifier ...
-.Sh DESCRIPTION
+.SH DESCRIPTION
 To send a message to a job is to write a message string into one or
 more output files of the job.  Typically this is done to leave an
 informative message in the output of the job.
@@ -97,7 +97,7 @@ by sending a
 batch request to the batch server that owns the job.
 The qmsg
 command does not directly write the message into the files of the job.
-.Sh OPTIONS
+.SH OPTIONS
 .IP "-E" 15
 Specifies that the message is written to the standard error of each job.
 .IP "-O" 15
@@ -109,7 +109,7 @@ nor the
 .Ar -O
 option is specified, the message will be written to the standard error
 of the job.
-.Sh  OPERANDS
+.SH  OPERANDS
 The first operand,
 .Ar message_string ,
 is the message to be written.  If the string contains blanks, the string
@@ -129,17 +129,17 @@ operands of the form:
 .if !\n(Pb .ig Ig
 See the description under "Job Identifier" in section \*(Ji in this ERS.
 .Ig
-.Sh STANDARD ERROR
+.SH STANDARD ERROR
 The qmsg
 command will write a diagnostic message to standard error for
 each error occurrence.
-.Sh EXIT STATUS
+.SH EXIT STATUS
 Upon successful processing of all the operands presented to the
 qmsg
 command, the exit status will be a value of zero.
 .LP
 If the qmsg command fails to process any operand, the
 command exits with a value greater than zero.
-.Sh SEE ALSO
+.SH SEE ALSO
 qsub(1B), pbs_msgjob(3B)
 .RE

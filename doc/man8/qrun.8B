@@ -78,11 +78,11 @@
 .TH qrun 8B "" Local PBS
 .so ../ers/ers.macros
 .Iq
-.Sh NAME
+.SH NAME
 qrun \- run a pbs batch job
-.Sh SYNOPSIS
+.SH SYNOPSIS
 qrun [\^-H\ host\^] job_identifier ...
-.Sh DESCRIPTION
+.SH DESCRIPTION
 The
 .B qrun
 command is used to force a batch server to initiate the execution
@@ -92,7 +92,7 @@ or state.
 .LP
 In order to execute qrun, the user must have PBS Operation or Manager
 privilege.
-.Sh OPTIONS
+.SH OPTIONS
 .IP "-H host" 15
 Specifies the host within the cluster on which the job(s) are to be run.
 The
@@ -102,7 +102,7 @@ managed by the server.
 If the option is not specified, the server will select the "worst possible"
 host on which to execute the job.
 .LP
-.Sh OPERANDS
+.SH OPERANDS
 The qrun command accepts one or more
 .Ar job_identifier
 operands of the form:
@@ -112,19 +112,19 @@ operands of the form:
 .if !\n(Pb .ig Ig
 See the description under "Job Identifier" in section \*(Ji in the ERS.
 .Ig
-.Sh STANDARD ERROR
+.SH STANDARD ERROR
 The
 qrun
 command will write a diagnostic message to standard error for
 each error occurrence.
-.Sh EXIT STATUS
+.SH EXIT STATUS
 Upon successful processing of all the operands presented to the
 qrun
 command, the exit status will be a value of zero.
 .LP
 If the qrun command fails to process any operand, the
 command exits with a value greater than zero.
-.Sh SEE ALSO
+.SH SEE ALSO
 pbs_server(8B), pbs_sched(8B), qmgr(1B)
 .\" turn off any extra indent left by the Sh macro
 .RE

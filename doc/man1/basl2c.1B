@@ -82,14 +82,14 @@
 .TH basl2c 1B "" Local PBS
 .so ../ers/ers.macros
 .Iq
-.Sh NAME
+.SH NAME
 basl2c \- converts a BASL (BAtch Scheduling Language) code into a C scheduler
 code.
-.Sh SYNOPSIS
+.SH SYNOPSIS
 basl2c [\^-d\^] [\^-l lexerDebugFile\^] [\^-p parserDebugFile\^]
 [\^-y symtabDebugFile\^] [\^-s semanticDebugFile\^] [\^-g codegenDebugFile\^]
 [\^-c cFile\^] baslFile
-.Sh DESCRIPTION
+.SH DESCRIPTION
 .B basl2c
 is the BASL to C compiler that produces an intermediate code that can be
 fed into a regular C compiler, and linked with the PBS libraries to produce the
@@ -107,7 +107,7 @@ The full pathname to the resulting C file is what needs to be specified in the
 variable in local.mk before compiling the BASL scheduler to produce the
 .Ar "pbs_sched"
 executable.
-.Sh OPTIONS
+.SH OPTIONS
 .IP "-d" 5
 Prints additional debugging messages to the lexer (see -l option),
 parser (see -p option),
@@ -138,7 +138,7 @@ generated while converting BASL statements to C statements.
 .IP "-c cFile" 5
 .Ar cFile
 is the name of a file where the generated C code is written into.
-.Sh MAIN STRUCTURE
+.SH MAIN STRUCTURE
 The basic structure of a scheduler code written in BASL is as follows:
 .BP
 .ft 3
@@ -181,7 +181,7 @@ For example,
 .LP
 .Ty sched_main()
 is the function that gets called at every scheduling iteration.
-.Sh FUNCTIONS
+.SH FUNCTIONS
 To define a function that can be called in subsequent functions, the syntax is:
 .sp
 .ft 3
@@ -261,7 +261,7 @@ a definition for, while predefined functions are those that can immediately be
 called without a need for defining it. For a list of predefined functions, 
 see section on
 .B "PREDEFINED FUNCTIONS" .
-.Sh VARIABLE DECLARATIONS
+.SH VARIABLE DECLARATIONS
 Like in C, all variables in a BASL code must be explicitly declared before use.
 Those variables declared outside of any function are referred to
 as global variables, while variables that are declared within a function body
@@ -283,7 +283,7 @@ can be: Int, Float, Dayofweek, DateTime, String, Size, Server, Que,
 Job, CNode, Set Server, Set Que, Set Job, Set CNode, Range Int, Range Float,
 Range Dayofweek, Range DateTime, Range Size.
 .sp
-.Sh "DATA TYPE"
+.SH "DATA TYPE"
 .IP \f3Void\f1 8
 used for functions that don't return a value.
 .IP \f3Int\f1 8
@@ -432,7 +432,7 @@ list of Job objects.
 .br
 Sample constant: EMPTYSETJOB
 .sp
-.Sh "BASL-DEFINED CONSTANTS"
+.SH "BASL-DEFINED CONSTANTS"
 These are constants that cannot be used for naming an identifier (see next
 topic). These are always in uppercase.  
 .sp
@@ -472,12 +472,12 @@ topic). These are always in uppercase.
 .fi
 .ft 1
 .sp
-.Sh IDENTIFIER
+.SH IDENTIFIER
 Identifiers (used for variable names and function names) are in alphanumeric
 format, with the special underscore (_)  character allowed. Currently, BASL can
 only handle identifiers with length of up to 80 chars. Also, you cannot use the
 BASL-defined constant names for naming an identifier.
-.Sh STATEMENTS
+.SH STATEMENTS
 In BASL(2), you can have a single statement terminated by a semi-colon, or a
 group of statements (called compound statement or block) delimited
 by '{' and '}'. The different kinds of statements that can appear in a BASL
@@ -1319,7 +1319,7 @@ These are statements prefixed by "//" and they are ignored by the BASL compiler.
 .sp
 .ft 1
 .RE
-.Sh OPERATOR PRECEDENCE AND ASSOCIATIVITY
+.SH OPERATOR PRECEDENCE AND ASSOCIATIVITY
 The following table shows the various operator precedence levels and
 associativity defined in the BASL language.  The operators are listed in the
 order of decreasing precedence. The higher the precedence of an operator, the
@@ -1342,7 +1342,7 @@ are seen from right to left.
     =                                            right
 .fi
 .ft 1
-.Sh PREDEFINED FUNCTIONS
+.SH PREDEFINED FUNCTIONS
 In BASL(2), a
 .B Server
 data type maps directly to a batch server object.  Similarly,
@@ -2780,7 +2780,7 @@ Examples:
 .fi
 .RE
 .RE
-.Sh CNode..Get() FUNCTIONS
+.SH CNode..Get() FUNCTIONS
 The return values of the CNode..Get() functions discussed in the previous
 section are obtained by sending resource queries to the CNode's MOM
 at every scheduling iteration.  For example,
@@ -2806,7 +2806,7 @@ For all architectures:
 .fi
 .ft 1
 .sp
-.Sh SEE ALSO
+.SH SEE ALSO
 pbs_sched_basl(8B) pbs_job_attributes(7B), pbs_queue_attributes(7B),
 pbs_resources_irix5(7B), pbs_resources_sp2(7B), pbs_resources_sunos4(7B),
 pbs_resources_unicos8(7B), pbs_server_attributes(7B), and pbs_server(8B),

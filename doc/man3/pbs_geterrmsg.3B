@@ -78,9 +78,9 @@
 .TH pbs_geterrmsg 3B "" Local PBS
 .so ../ers/ers.macros
 .Ig
-.Sh NAME
+.SH NAME
 pbs_geterrmsg - get error message for last pbs batch operation
-.Sh SYNOPSIS
+.SH SYNOPSIS
 #include <pbs_error.h>
 .br
 #include <pbs_ifl.h>
@@ -90,7 +90,7 @@ pbs_geterrmsg - get error message for last pbs batch operation
 char *pbs_geterrmsg(int connect)
 .ft 1
 .fi
-.Sh DESCRIPTION
+.SH DESCRIPTION
 Return the error message text associated with a batch server
 request.
 .LP
@@ -105,9 +105,9 @@ If the preceding batch interface library call over the connection specified by
 resulted in an error return from the server,
 there may be an associated text message.  If it exists, this function
 will return a pointer to the null terminated text string.
-.Sh SEE ALSO
+.SH SEE ALSO
 pbs_connect(3B)
-.Sh DIAGNOSTICS
+.SH DIAGNOSTICS
 If an error text message was returned by a server in reply to the previous
 call to a batch interface library function, \f3pbs_geterrmsg\f1()
 will return a pointer to it.

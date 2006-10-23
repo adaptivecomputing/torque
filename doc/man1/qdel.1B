@@ -78,14 +78,14 @@
 .TH qdel 1B "" Local PBS
 .so ../ers/ers.macros
 .Iq
-.Sh NAME
+.SH NAME
 qdel - delete pbs batch job
-.Sh SYNOPSIS
+.SH SYNOPSIS
 qdel
 [\-W delay]
 [\p]
 job_identifier ...
-.Sh DESCRIPTION
+.SH DESCRIPTION
 The 
 .B qdel 
 command deletes jobs in the order in which
@@ -110,7 +110,7 @@ This delay may be overridden by the
 option.
 .LP
 See the PBS ERS section 3.1.3.3, "Delete Job Request", for more information.
-.Sh OPTIONS
+.SH OPTIONS
 .IP "\-W delay" 15
 Specify the delay between the sending of the SIGTERM and SIGKILL
 signals.   The argument
@@ -124,7 +124,7 @@ This option is an extension to POSIX 1003.2d.
 .IP "\-p" 15
 Forcibly purge the job from the server.  This should only be used if a running job will not exit because its allocated nodes are unreachable.  The admin should make every attempt at resolving the problem on the nodes.  If a job's mother superior recovers after purging the job, any epilogue scripts may still run.  This option is only available to a batch operator or the batch administrator.
 .LP
-.Sh OPERANDS
+.SH OPERANDS
 The qdel command accepts one or more
 .Ar job_identifier
 operands of the form:
@@ -134,16 +134,16 @@ operands of the form:
 .if !\n(Pb .ig Ig
 See the description under "Job Identifier" in section \*(Ji in this ERS.
 .Ig
-.Sh STANDARD ERROR
+.SH STANDARD ERROR
 The qdel command will write a diagnostic messages to standard error for each
 error occurrence.
-.Sh EXIT STATUS
+.SH EXIT STATUS
 Upon successful processing of all the operands presented to the
 qdel command, the exit status will be a value of zero.
 .LP
 If the qdel command fails to process any operand, the
 command exits with a value greater than zero.
-.Sh SEE ALSO
+.SH SEE ALSO
 qsub(1B), qsig(1B), and pbs_deljob(3B)
 \" turn off any extra indent left by the Sh macro
 .RE

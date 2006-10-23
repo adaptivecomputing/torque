@@ -78,11 +78,11 @@
 .TH pbs_mom 8B "" Local PBS
 .so ../ers/ers.macros
 .Iq
-.Sh NAME
+.SH NAME
 pbs_mom \- start a pbs batch execution mini-server
-.Sh SYNOPSIS
+.SH SYNOPSIS
 pbs_mom [\^-C\ chkdirectory\^] [\^-c\ config\^] [\^-d\ directory] [\^-L\ logfile] [\^-M\ MOMport\^] [\^-R\ RPPport\^] [\^-p\^|\^-r] [\^-x]
-.Sh DESCRIPTION
+.SH DESCRIPTION
 The
 .B pbs_mom
 command starts the operation of a batch \f3M\f1achine \f3O\f1riented
@@ -113,7 +113,7 @@ error occurrence.  The log files are maintained in the
 directory below the home directory of the server.
 If the log file cannot be opened, the diagnostic message is written
 to the system console.
-.Sh OPTIONS
+.SH OPTIONS
 .IP "-C chkdirectory" 16
 Specifieds the path of the directory used to hold checkpoint files.
 [Currently this is only valid on Cray systems.]
@@ -186,7 +186,7 @@ Disables the check for privileged port resource monitor connections.  This is
 used mainly for testing since the privileged port is the only
 mechanism used to prevent any ordinary user from connecting.
 .LP
-.Sh CONFIGURATION FILE
+.SH CONFIGURATION FILE
 The configuration file may be specified on the command line at
 program start with the -c flag.  The use of this file is
 to provide several types of run time information to pbs_mom:
@@ -416,7 +416,7 @@ output.
 The configuration file must be "secure".  It must be owned by a user id and
 group id less than 10 and not be world writtable.
 .LP
-.Sh RESOURCES
+.SH RESOURCES
 Resource Monitor queries can be made with momctl's -q option to retrieve and
 set pbs_mom options.  Any configured static resource may be retrieved with a
 request of the same name.  These are resource requests not otherwise documented
@@ -443,7 +443,7 @@ retrieves various diagnostic information
 retrieve or set the $rcpcmd parameter
 .IP version
 retrieves the pbs_mom version
-.Sh HEALTH CHECK
+.SH HEALTH CHECK
 The health check script is executed directly by the pbs_mom daemon under the
 root user id. It must be accessible from the compute node and may be a script
 or compiled executable program.  It may make any needed system calls and execute
@@ -468,7 +468,7 @@ enabled which has the same effect but moves the decision to pbs_server.  It is
 redundant to have MOM's $down_on_error and pbs_server's down_on_error features
 enabled.  See "down_on_error" in pbs_server_attributes(7B).
 .LP
-.Sh FILES
+.SH FILES
 .IP $PBS_SERVER_HOME/server_name
 contains the hostname running pbs_server.
 .IP $PBS_SERVER_HOME/mom_priv 10
@@ -480,7 +480,7 @@ directory for log files recorded by the server.
 the administrative script to be run before job execution.
 .IP $PBS_SERVER_HOME/mom_priv/epilogue 10
 the administrative script to be run after job execution.
-.Sh SIGNAL HANDLING
+.SH SIGNAL HANDLING
 pbs_mom handles the following signals:
 .IP SIGHUP
 causes pbs_mom to re-read its configuration file, close and reopen the log
@@ -502,10 +502,10 @@ cause a core dump if the PBSCOREDUMP environmental variable is defined.
 are ignored.
 .LP
 All other signals have their default behavior installed.
-.Sh EXIT STATUS
+.SH EXIT STATUS
 If the mini-server command fails to begin operation, the
 server exits with a value greater than zero.
-.Sh SEE ALSO
+.SH SEE ALSO
 pbs_server(8B), pbs_scheduler_basl(8B), pbs_scheduler_tcl(8B),
 the PBS External Reference Specification, and the PBS Administrator's Guide.
 .\" turn off any extra indent left by the Sh macro
