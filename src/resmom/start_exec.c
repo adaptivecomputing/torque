@@ -4838,18 +4838,52 @@ int open_std_file(
   int   keeping;
   char *path;
   int   old_umask;
+  struct stat statbuf;
 
   if ((path = std_file_name(pjob,which,&keeping)) == NULL)
     {
     return(-1);
     }
 
+  /* these checks are a bit complicated.  If keeping, we do what the user
+   * says.  Otherwise, make sure we aren't following a symlink and that
+     the user owns the file without breaking /dev/null. */
+
   if (keeping)
     {
     mode &= ~O_EXCL; 
     }
+  else
+    {
+    if (lstat(path,&statbuf) == 0)
+      {
+      if (S_ISLNK(statbuf.st_mode))
+        {
+        log_err(-1,"open_std_file","std file is symlink, someone is doing something fishy");
 
-    /* in user's home,  may be NFS mounted, must create as user */
+        return(-1);
+        }
+
+      if (S_ISREG(statbuf.st_mode))
+        {
+        if (statbuf.st_uid != pjob->ji_qs.ji_un.ji_momt.ji_exuid)
+          {
+          log_err(-1,"open_std_file","std file exists with the wrong owner, someone is doing something fishy");
+
+          return(-1);
+          }
+        if (statbuf.st_gid != exgid)
+          {
+          log_err(-1,"open_std_file","std file exists with the wrong group, someone is doing something fishy");
+
+          return(-1);
+          }
+        }
+
+      /* seems reasonably safe to append to the existing file */
+      mode &= ~O_EXCL; 
+      }
+    }
 
 #if defined(HAVE_SETEUID) && defined(HAVE_SETEGID)
 

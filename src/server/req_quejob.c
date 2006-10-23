@@ -1310,7 +1310,10 @@ void req_mvjobfile(  /* NOTE:  routine for server only - mom code follows this r
     }
 
   if (preq->rq_ind.rq_jobfile.rq_sequence == 0)
-    fds = open(namebuf,O_WRONLY|O_CREAT|O_TRUNC|O_Sync,0600);
+    {
+    unlink(namebuf);
+    fds = open(namebuf,O_WRONLY|O_CREAT|O_EXCL|O_Sync,0600);
+    }
   else
     fds = open(namebuf,O_WRONLY|O_APPEND|O_Sync,0600);
 
