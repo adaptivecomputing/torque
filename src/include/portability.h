@@ -100,3 +100,14 @@
 #define volatile
 
 #endif
+
+/* The following macros are for HPUX */
+#if defined(HAVE_SETRESUID) && defined(HAVE_SETRESGID)
+# ifndef seteuid
+#  define seteuid(e) (setresuid(-1,e,-1))
+# endif
+# ifndef setegid
+#  define setegid(e) (setresgid(-1,e,-1))
+# endif
+#endif
+

@@ -861,13 +861,8 @@ int TMakeTmpDir(
   int			retval;
   struct stat		sb;
 
-#if defined(HAVE_SETEUID) && defined(HAVE_SETEGID)
   if ((setegid(pjob->ji_qs.ji_un.ji_momt.ji_exgid) == -1) ||
       (seteuid(pjob->ji_qs.ji_un.ji_momt.ji_exuid) == -1))
-#elif defined(HAVE_SETRESUID) && defined(HAVE_SETRESGID)
-  if ((setresgid(-1,pjob->ji_qs.ji_un.ji_momt.ji_exgid,-1) == -1) ||
-      (setresuid(-1,pjob->ji_qs.ji_un.ji_momt.ji_exuid,-1) == -1))
-#endif
     {
     return(0);
     }
@@ -937,13 +932,8 @@ int TMakeTmpDir(
     }
   }
 
-#if defined(HAVE_SETEUID) && defined(HAVE_SETEGID)
   seteuid(0);
   setegid(pbsgroup);
-#elif defined(HAVE_SETRESUID) && defined(HAVE_SETRESGID)
-  setresuid(-1,0,-1);
-  setresgid(-1,pbsgroup,-1);
-#endif  /* HAVE_SETRESUID */
 
   if (retval != 0)
     log_err(retval,id,log_buffer);
@@ -4770,10 +4760,6 @@ char *std_file_name(
 
     strncat(path_alt,"/.pbs_spool/",sizeof(path_alt));
 
-#if defined(HAVE_SETEUID) && defined(HAVE_SETEGID)
-
-    /* most systems */
-
     if (seteuid(pjob->ji_qs.ji_un.ji_momt.ji_exuid) == -1)
       {
       return(NULL);
@@ -4782,20 +4768,6 @@ char *std_file_name(
     rcstat = stat(path_alt,&myspooldir);
 		
     seteuid(0);
-
-#elif defined(HAVE_SETRESUID) && defined(HAVE_SETRESGID)
-
-    /* HPUX and the like */
-
-    if (setresuid(-1,pjob->ji_qs.ji_un.ji_momt.ji_exuid,-1) == -1)
-      {
-      return(NULL);
-      }
-
-    rcstat = stat(path_alt,&myspooldir);
-
-    setresuid(-1,0,-1);
-#endif  /* HAVE_SETRESUID and friends */
 
     if ((rcstat == 0) && (S_ISDIR(myspooldir.st_mode)))
       strncpy(path,path_alt,sizeof(path));
@@ -4837,7 +4809,7 @@ int open_std_file(
   int   fds;
   int   keeping;
   char *path;
-  int   old_umask;
+  int   old_umask = 0;
   struct stat statbuf;
 
   if ((path = std_file_name(pjob,which,&keeping)) == NULL)
@@ -4885,56 +4857,26 @@ int open_std_file(
       }
     }
 
-#if defined(HAVE_SETEUID) && defined(HAVE_SETEGID)
+  if ((setegid(exgid) == -1) || 
+      (seteuid(pjob->ji_qs.ji_un.ji_momt.ji_exuid) == -1))
+    {
+    return(-1);
+    }
 
-    /* most systems */
+  if (pjob->ji_wattr[(int)JOB_ATR_umask].at_flags & ATR_VFLAG_SET)
+    {
+    old_umask = umask(pjob->ji_wattr[(int)JOB_ATR_umask].at_val.at_long);
+    }
 
-    if ((setegid(exgid) == -1) || 
-        (seteuid(pjob->ji_qs.ji_un.ji_momt.ji_exuid) == -1))
-      {
-      return(-1);
-      }
+  fds = open(path,mode,0666);
 
-    if (pjob->ji_wattr[(int)JOB_ATR_umask].at_flags & ATR_VFLAG_SET)
-      {
-      old_umask = umask(pjob->ji_wattr[(int)JOB_ATR_umask].at_val.at_long);
-      }
-    fds = open(path,mode,0666);
-    if (pjob->ji_wattr[(int)JOB_ATR_umask].at_flags & ATR_VFLAG_SET)
-      {
-      umask(old_umask);
-      }
+  if (old_umask)
+    {
+    umask(old_umask);
+    }
 
-    seteuid(0);
-    setegid(pbsgroup);
-
-#elif defined(HAVE_SETRESUID) && defined(HAVE_SETRESGID)
-
-    /* HPUX and the like */
-
-    if ((setresgid(-1,exgid,-1) == -1) ||
-        (setresuid(-1,pjob->ji_qs.ji_un.ji_momt.ji_exuid,-1) == -1))
-      {
-      return(-1);
-      }
-
-
-    if (pjob->ji_wattr[(int)JOB_ATR_umask].at_flags & ATR_VFLAG_SET)
-      {
-      old_umask = umask(pjob->ji_wattr[(int)JOB_ATR_umask].at_val.at_long);
-      }
-    fds = open(path,mode,0666);
-    if (pjob->ji_wattr[(int)JOB_ATR_umask].at_flags & ATR_VFLAG_SET)
-      {
-      umask(old_umask);
-      }
-
-    setresuid(-1,0,-1);
-    setresgid(-1,pbsgroup,-1);
-
-#else	/* Neither */
-    Crash and Burn - need seteuid/setegid or need setresuid/setresgid
-#endif	/* HAVE_SETRESUID */
+  seteuid(0);
+  setegid(pbsgroup);
 
   return(fds);
   }  /* END open_std_file() */

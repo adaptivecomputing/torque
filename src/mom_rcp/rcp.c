@@ -66,6 +66,7 @@ static char copyright[] =
 
 #include "pathnames.h"
 #include "extern.h"
+#include "portability.h"
 
 #ifndef MAXPATHLEN
 #define MAXPATHLEN 1024
@@ -381,9 +382,6 @@ tolocal(argc, argv)
 			++errs;
 			continue;
 		}
-#if defined(HAVE_SETRESUID)
-#  define seteuid(e) (setresuid(-1, (e), -1))
-#endif
 		(void)seteuid(userid);
 		sink(1, argv + argc - 1);
 		(void)seteuid(0);

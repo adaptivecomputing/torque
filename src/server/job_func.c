@@ -127,6 +127,7 @@
 #include "svrfunc.h"
 #include "acct.h"
 #include "net_connect.h"
+#include "portability.h"
 
 int conn_qsub(char *,long);
 
@@ -711,10 +712,6 @@ void job_purge(
         pjob->ji_qs.ji_jobid,
         log_buffer);
       
-#if defined(HAVE_SETEUID) && defined(HAVE_SETEGID)
-
-      /* most systems */
-
       if ((setegid(pjob->ji_qs.ji_un.ji_momt.ji_exgid) == -1) ||
           (seteuid(pjob->ji_qs.ji_un.ji_momt.ji_exuid) == -1))
         {
@@ -727,25 +724,6 @@ void job_purge(
 
       seteuid(0);
       setegid(pbsgroup);
-
-#elif defined(HAVE_SETRESUID) && defined(HAVE_SETRESGID)
-
-      /* HPUX and the like */
-
-      if ((setresgid(-1,pjob->ji_qs.ji_un.ji_momt.ji_exgid,-1) == -1) ||
-          (setresuid(-1,pjob->ji_qs.ji_un.ji_momt.ji_exuid,-1) == -1))
-        {
-        /* FAILURE */
-
-        return;
-        }
-    
-      rc = remtree(namebuf);
-
-      setresuid(-1,0,-1);
-      setresgid(-1,pbsgroup,-1);
-
-#endif  /* HAVE_SETRESUID */
 
       if ((rc != 0) && (LOGLEVEL >= 5))
         {
