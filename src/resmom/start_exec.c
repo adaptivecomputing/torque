@@ -4853,7 +4853,7 @@ int open_std_file(
         }
 
       /* seems reasonably safe to append to the existing file */
-      mode &= ~O_EXCL; 
+      mode &= ~(O_EXCL|O_CREAT); 
       }
     }
 
