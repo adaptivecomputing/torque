@@ -1847,6 +1847,10 @@ int TMomFinalizeChild(
       log_err(errno,id,log_buffer);
 
       starter_return(TJE->upfds,TJE->downfds,JOB_EXEC_FAIL1,&sjr);
+
+      /*NOTREACHED*/
+
+      exit(1);
       }
 
     /*
@@ -1865,6 +1869,10 @@ int TMomFinalizeChild(
       fclose(nhow);
 
       starter_return(TJE->upfds,TJE->downfds,JOB_EXEC_FAIL1,&sjr);
+
+      /*NOTREACHED*/
+
+      exit(1);
       }
 
     for (j = 0;j < vnodenum;j++) 
@@ -2172,18 +2180,17 @@ int TMomFinalizeChild(
   prd = find_resc_def(svr_resc_def,"ncpus",svr_resc_size);
   presc = find_resc_entry(pattr,prd);
 
- 
-  if ( presc == NULL )
-  {
-      sprintf (log_buffer,"presc is NULL, cpuset code skipped.");
-      log_err(-1,id,log_buffer);
-  }
+  if (presc == NULL)
+    {
+    sprintf(log_buffer,"presc is NULL, cpuset code skipped.");
+    log_err(-1,id,log_buffer);
+    }
   else
-  {
-        /* Setting the number of cpus in the cpuset to what was requested by ncpus */
-        num_cpus = presc->rs_value.at_val.at_long;
+    {
+    /* Setting the number of cpus in the cpuset to what was requested by ncpus */
+    num_cpus = presc->rs_value.at_val.at_long;
 
-/* PME!! need figure out what to do about memory! */
+    /* PME!! need figure out what to do about memory! */
 /*
  * One mem is hard coded temporarily here.  Need to look at the memory request and decide how many mems
  * are needed.  For our site, we never want jobs sharing node boards, not necessarily the case at other
@@ -2223,6 +2230,10 @@ int TMomFinalizeChild(
     log_err(-1,id,"CPACreatePartition failed");
 
     starter_return(TJE->upfds,TJE->downfds,j,&sjr);	/* exits */
+
+    /*NOTREACHED*/
+
+    exit(1);
     }
 #endif
 
@@ -2235,6 +2246,10 @@ int TMomFinalizeChild(
     log_err(-1,id,"failed to set mach vars");
 
     starter_return(TJE->upfds,TJE->downfds,j,&sjr);	/* exits */
+
+    /*NOTREACHED*/
+
+    exit(1);
     }
 	
   umask(077);
@@ -2371,6 +2386,10 @@ int TMomFinalizeChild(
       log_err(-1,id,log_buffer);
 
       starter_return(TJE->upfds,TJE->downfds,JOB_EXEC_FAIL1,&sjr); 
+
+      /*NOTREACHED*/
+
+      exit(1);
       }
 
     /* open the slave pty as the controlling tty */
@@ -2380,6 +2399,10 @@ int TMomFinalizeChild(
       log_err(errno,id,"cannot open slave");
 
       starter_return(TJE->upfds,TJE->downfds,JOB_EXEC_FAIL1,&sjr);
+
+      /*NOTREACHED*/
+
+      exit(1);
       }
 
     act.sa_handler = SIG_IGN;	/* setup to ignore SIGTERM */ 
@@ -2571,6 +2594,10 @@ int TMomFinalizeChild(
       log_err(errno,id,"Unable to open script");
 
       starter_return(TJE->upfds,TJE->downfds,JOB_EXEC_FAIL1,&sjr);
+
+      /*NOTREACHED*/
+
+      exit(1);
       }
 
     FDMOVE(script_in);	/* make sure descriptor > 2 */
@@ -2587,6 +2614,10 @@ int TMomFinalizeChild(
       log_err(-1,id,"unable to open stdout/stderr descriptors");
 
       starter_return(TJE->upfds,TJE->downfds,JOB_EXEC_FAIL1,&sjr);
+
+      /*NOTREACHED*/
+
+      exit(1);
       }
 
     /* run prolog - standard batch job */
@@ -4242,6 +4273,11 @@ void start_exec(
     {
     if (!TMakeTmpDir(pjob,tmpdir))
       {
+      snprintf(log_buffer,1024,"cannot create temp dir '%s'",
+        tmpdir);
+
+      log_err(-1,id,log_buffer);
+
       exec_bail(pjob,JOB_EXEC_FAIL1);
 
       return;
@@ -4289,6 +4325,8 @@ void start_exec(
 
       if (np->hn_stream < 0) 
         {
+        pjob->ji_nodekill = i;
+
         if (log_buffer[0] != '\0')
           {
           sprintf(log_buffer,"rpp_open failed on %s",
@@ -4297,8 +4335,6 @@ void start_exec(
 
         log_err(errno,id,log_buffer);
 
-	pjob->ji_nodekill = i;
-	
         exec_bail(pjob,JOB_EXEC_FAIL1);
 
         return;
@@ -4342,8 +4378,6 @@ void start_exec(
       {
       /* ERROR:  cannot open sockets for stdout and stderr */
 
-      log_err(errno,id,"stdout/err socket");
-
       for (i = 0;i < 2;i++) 
         {
         if (socks[i] != -1)
@@ -4351,6 +4385,8 @@ void start_exec(
         }
 
       /* command sisters to abort job and continue */
+
+      log_err(errno,id,"stdout/err socket");
 
       exec_bail(pjob,JOB_EXEC_FAIL1);
 
