@@ -155,33 +155,39 @@ int do_dir(char *);
 int process_opts(int,char **,int);
 
 /* adapted from openssh */
-static char *
-x11_get_proto(void)
-{       
-        char line[512];
-        char proto[512], data[512], screen[512];
-        char *authstring;
-        FILE *f;
-        int got_data = 0;
-        char *display, *p;
-        struct stat st;
 
-        proto[0] = data[0] = screen[0] = '\0';
+static char *x11_get_proto(
 
-        if ((display = getenv("DISPLAY")) == NULL)
-          {
-          fprintf(stderr,"qsub: DISPLAY not set\n");
-          return (NULL);
-          }
+  void)
 
-        if (stat(xauth_path,&st))
-          {
-          perror("qsub: xauth: ");
-          return (NULL);
-          }
+  {       
+  char line[512];
+  char proto[512], data[512], screen[512];
+  char *authstring;
+  FILE *f;
+  int got_data = 0;
+  char *display, *p;
+  struct stat st;
 
-        /* Try to get Xauthority information for the display. */
-        if (strncmp(display, "localhost:", 10) == 0)
+  proto[0] = data[0] = screen[0] = '\0';
+
+  if ((display = getenv("DISPLAY")) == NULL)
+    {
+    fprintf(stderr,"qsub: DISPLAY not set\n");
+
+    return(NULL);
+    }
+
+  if (stat(xauth_path,&st))
+    {
+    perror("qsub: xauth: ");
+
+    return(NULL);
+    }
+
+  /* Try to get Xauthority information for the display. */
+
+  if (strncmp(display,"localhost:",10) == 0)
                 /*
                  * Handle FamilyLocal case where $DISPLAY does
                  * not match an authorization entry.  For this we
@@ -788,6 +794,8 @@ char path_out[MAXPATHLEN + 1];
 char destination[PBS_MAXDEST];
 static char server_out[PBS_MAXSERVERNAME + PBS_MAXPORTNUM + 2];
 char server_host[PBS_MAXHOSTNAME + 1];
+char qsub_host[PBS_MAXHOSTNAME + 1];
+
 long cnt2server_retry=-100;
 
 /* state booleans for protecting already-set options */
@@ -1055,7 +1063,12 @@ int set_job_env(
     strcat(job_env,c);
     }
 
-  if ((server_host[0] != '\0') || 
+  if (qsub_host[0] != '\0')
+    {
+    strcat(job_env,",PBS_O_HOST=");
+    strcat(job_env,qsub_host);
+    }
+  else if ((server_host[0] != '\0') || 
      ((rc = gethostname(server_host,PBS_MAXHOSTNAME + 1)) == 0))
     {
     if ((rc = get_fullhostname(server_host,server_host,PBS_MAXHOSTNAME)) == 0) 
@@ -1486,14 +1499,14 @@ void stopme(
 
 int reader(
 
-  int s,	/* reading socket */
-  int d)        /* writing socket */
+  int s,	/* I - reading socket */
+  int d)        /* I - writing socket */
 
   {
-  char buf[4096];
-  int  c;
+  char  buf[4096];
+  int   c;
   char *p;
-  int  wc;
+  int   wc;
 
   /* read from the socket, and write to d */
 
@@ -1515,12 +1528,10 @@ int reader(
             {
             continue;
             } 
-          else 
-            {
-            perror("qsub: write error");
 
-            return(-1);
-            }
+          perror("qsub: write error");
+
+          return(-1);
           }
 
          c -= wc;
@@ -3562,6 +3573,7 @@ int main(
   strncpy(PBS_Filter, SUBMIT_FILTER_PATH, 255);
 
   /* check to see if PBS_Filter exists.  If not then fall back to the old hard coded file */
+
   if (stat(PBS_Filter,&statbuf) == -1)
     {
     strncpy(PBS_Filter,DefaultFilterPath,255);
@@ -3570,6 +3582,7 @@ int main(
   strncpy(xauth_path,DefaultXauthPath,255);
 
   server_host[0] = '\0';
+  qsub_host[0] = '\0';
 
   if (getenv("PBSDEBUG") != NULL)
     fprintf(stderr,"xauth_path=%s\n",xauth_path);
@@ -3591,6 +3604,12 @@ int main(
       {
       strncpy(server_host,param_val,sizeof(server_host));
       server_host[sizeof(server_host) - 1] = '\0';
+      }
+
+    if ((param_val = get_param("QSUBHOST",config_buf)) != NULL)
+      {
+      strncpy(qsub_host,param_val,sizeof(qsub_host));
+      qsub_host[sizeof(qsub_host) - 1] = '\0';
       }
 
     if ((param_val = get_param("XAUTHPATH",config_buf)) != NULL)
@@ -3617,6 +3636,7 @@ int main(
     strcpy(script,argv[optind]);
 
   /* store the saved args string int "submit_args" attribute */
+
   if (submit_args_str != NULL)
     {
     set_attr(&attrib,ATTR_submit_args,submit_args_str);
@@ -3633,8 +3653,8 @@ int main(
     /* get the DISPLAY's auth proto, data, and screen number */
     if ((x11authstr = x11_get_proto()) != NULL)
       {
-
       /* stuff this info into the job */
+
       set_attr(&attrib,ATTR_forwardx11,x11authstr);
 
       if (getenv("PBSDEBUG") != NULL)
