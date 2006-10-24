@@ -88,12 +88,14 @@
 #include <stdlib.h>
 #include "libpbs.h"
 
+/* returns pbs_errno */
+
 int pbs_alterjob(
 
-  int           c,
-  char         *jobid,
-  struct attrl *attrib,
-  char         *extend)
+  int           c,       /* I */
+  char         *jobid,   /* I */
+  struct attrl *attrib,  /* I */
+  char         *extend)  /* I */
 
   {
   struct attropl *ap = (struct attropl *)NULL;

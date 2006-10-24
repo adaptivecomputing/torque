@@ -1296,7 +1296,7 @@ static void pbsd_init_reque(
 
 static void catch_abort(
 
-  int sig)
+  int sig)  /* I */
 
   {
   struct rlimit rlimit;

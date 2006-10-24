@@ -85,7 +85,11 @@
  * header file supporting PBS accounting information
  */
 
-#define PBS_ACCT_MAX_RCD 131072 /* increased from 4095 */
+/* NOTE:  PBS_ACCT_MAX_RCD must be large enought to handle full job
+          accounting record - this is usually ~1KB + <MAX_JOB_TASK_COUNT> *
+          (<HOSTNAME_SIZE + 2) - see THE_BUF_SIZE in dis.h */
+
+#define PBS_ACCT_MAX_RCD 262144         /* increased from 4095 */
 
 #define PBS_ACCT_QUEUE	(int)'Q'	/* Job Queued record */
 #define PBS_ACCT_RUN	(int)'S'	/* Job run (Started) */

@@ -254,7 +254,10 @@ extern int  PConnTimeout(int);
 
 /* NOTE:  increase THE_BUF_SIZE to 131072 for systems > 5k nodes */
 
-#define THE_BUF_SIZE 65536 /* max size of tcp send buffer (must be big enough to contain all job attributes) */
+/* NOTE: THE_BUF_SZIE will be similar in size to PBS_ACCT_MAX_RCD in acct.h */
+
+#define THE_BUF_SIZE 262144 /* max size of tcp send buffer (must be big enough to contain all job attributes) */
+
 
 struct tcpdisbuf {
   char *tdis_leadp;

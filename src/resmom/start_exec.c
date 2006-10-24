@@ -494,6 +494,7 @@ int open_demux(
 
   {
   static char id[] = "open_demux";
+
   int         sock;
   int         i;
   struct sockaddr_in remote;
@@ -3092,7 +3093,7 @@ int TMomFinalizeJob3(
 
     tmpLine[0] = '\0';
 
-    switch(sjr.sj_code)
+    switch (sjr.sj_code)
       {
       case JOB_EXEC_OK:  /* 0 */
 
@@ -3515,15 +3516,19 @@ int start_process(
   close(parent_read);
   close(parent_write);
 
-  /*
-   * set up the Environmental Variables to be given to the job 
-   */
+  /* set up the environmental variables to be given to the job */
+
+  /* NOTE:  use log_err beyond this point to write messages to syslog */
 
   if (InitUserEnv(pjob,ptask,envp,NULL,NULL) < 0)
     {
     log_err(errno,id,"failed to setup user env");
 
     starter_return(kid_write,kid_read,JOB_EXEC_RETRY,&sjr);
+
+    /*NOTREACHED*/
+
+    exit(1);
     }
 
   if (set_mach_vars(pjob,&vtable) != 0) 
@@ -3541,7 +3546,7 @@ int start_process(
 
   umask(077);
 
-  /* set Environment to reflect batch */
+  /* set environment to reflect batch */
 
   bld_env_variables(&vtable,"PBS_ENVIRONMENT","PBS_BATCH");
   bld_env_variables(&vtable,"ENVIRONMENT",    "BATCH");
@@ -3557,11 +3562,26 @@ int start_process(
   /* look through env for a port# on MS we should use for stdin */
 
   if ((fd0 = search_env_and_open("MPIEXEC_STDIN_PORT",ipaddr)) == -2)
+    {
+    log_err(errno,id,"cannot locate MPIEXEC_STDIN_PORT");
+
     starter_return(kid_write,kid_read,JOB_EXEC_FAIL1,&sjr);
 
-  if (fd0 < 0)
-    if ((fd0 = search_env_and_open("TM_STDIN_PORT",ipaddr)) == -2)
-      starter_return(kid_write,kid_read,JOB_EXEC_FAIL1,&sjr);
+    /*NOTREACHED*/
+
+    exit(1);
+    }
+
+  if ((fd0 < 0) && ((fd0 = search_env_and_open("TM_STDIN_PORT",ipaddr)) == -2))
+    {
+    log_err(errno,id,"cannot locate TM_STDIN_PORT");
+
+    starter_return(kid_write,kid_read,JOB_EXEC_FAIL1,&sjr);
+
+    /*NOTREACHED*/
+
+    exit(1);
+    }
 
   /* use /dev/null if no env var found */
 
@@ -3582,18 +3602,50 @@ int start_process(
   /* look through env for a port# on MS we should use for stdout/err */
 
   if ((fd1 = search_env_and_open("MPIEXEC_STDOUT_PORT",ipaddr)) == -2)
+    {
+    log_err(errno,id,"cannot locate MPIEXEC_STDOUT_PORT");
+
     starter_return(kid_write,kid_read,JOB_EXEC_FAIL1,&sjr);
+
+    /*NOTREACHED*/
+
+    exit(1);
+    }
 
   if (fd1 < 0)
     if ((fd1 = search_env_and_open("TM_STDOUT_PORT",ipaddr)) == -2)
+      {
+      log_err(errno,id,"cannot locate TM_STDOUT_PORT");
+
       starter_return(kid_write,kid_read,JOB_EXEC_FAIL1,&sjr);
 
+      /*NOTREACHED*/
+
+      exit(1);
+      }
+
   if ((fd2 = search_env_and_open("MPIEXEC_STDERR_PORT",ipaddr)) == -2)
+    {
+    log_err(errno,id,"cannot locate MPIEXEC_STDERR_PORT");
+
     starter_return(kid_write,kid_read,JOB_EXEC_FAIL1,&sjr);
+
+    /*NOTREACHED*/
+
+    exit(1);
+    }
 
   if (fd2 < 0)
     if ((fd2 = search_env_and_open("TM_STDERR_PORT",ipaddr)) == -2)
+      {
+      log_err(errno,id,"cannot locate TM_STDERR_PORT");
+
       starter_return(kid_write,kid_read,JOB_EXEC_FAIL1,&sjr);
+
+      /*NOTREACHED*/
+
+      exit(1);
+      }
 
   if (pjob->ji_numnodes > 1) 
     {
@@ -3603,6 +3655,8 @@ int start_process(
 
     if ((fd1 < 0) && ((fd1 = open_demux(ipaddr,pjob->ji_stdout)) == -1))
       {
+      log_err(errno,id,"cannot open mux stdout port");
+
       starter_return(kid_write,kid_read,JOB_EXEC_FAIL1,&sjr);
   
       /*NOTREACHED*/
@@ -3617,6 +3671,8 @@ int start_process(
 
     if ((fd2 < 0) && ((fd2 = open_demux(ipaddr,pjob->ji_stderr)) == -1))
       {
+      log_err(errno,id,"cannot open mux stderr port");
+
       starter_return(kid_write,kid_read,JOB_EXEC_FAIL1,&sjr);
 
       /*NOTREACHED*/
@@ -3653,6 +3709,10 @@ int start_process(
         log_err(errno,id,"cannot open slave pty");
 
         starter_return(kid_write,kid_read,JOB_EXEC_FAIL1,&sjr);
+
+        /*NOTREACHED*/
+
+        exit(1);
         }
 
       if (fd1 < 0)
@@ -3669,7 +3729,7 @@ int start_process(
       close(fd1);
 
     if (fd2 != pts)
-       close(fd2);
+      close(fd2);
     }
   else 
     {
@@ -3771,7 +3831,7 @@ int start_process(
 
       fsync(2);
 
-      starter_return(kid_write, kid_read, JOB_EXEC_FAIL2, &sjr);
+      starter_return(kid_write,kid_read,JOB_EXEC_FAIL2,&sjr);
       }
     }
 
