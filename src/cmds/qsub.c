@@ -938,7 +938,7 @@ int set_job_env(
   char *job_env;
   char *s, *c, *env, l;
   unsigned   len;
-  int   rc;
+  int   rc = 0;
 
   int   eindex;
 
