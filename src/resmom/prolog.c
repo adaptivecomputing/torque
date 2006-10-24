@@ -364,7 +364,7 @@ int run_pelog(
       ((sbuf.st_mode & (S_IRUSR|S_IXUSR)) != (S_IRUSR|S_IXUSR)) ||
       (sbuf.st_mode & (S_IWGRP|S_IWOTH))) 
     {
-    return(pelog_err(pjob,pelog,-1,"Permission Error"));
+    return(pelog_err(pjob,pelog,-1,"permission Error"));
     }
 
   if ((which == PE_PROLOGUSER) || (which == PE_EPILOGUSER))
@@ -373,7 +373,7 @@ int run_pelog(
 
     if ((sbuf.st_mode & (S_IROTH|S_IXOTH)) != (S_IROTH|S_IXOTH))
       {
-      return(pelog_err(pjob,pelog,-1,"Permission Error"));
+      return(pelog_err(pjob,pelog,-1,"permission Error"));
       }
     }
 
@@ -461,6 +461,7 @@ int run_pelog(
     alarm(0);
 
     /* restore the previous handler */
+
     sigaction(SIGALRM,&oldact,0);
 
     if (run_exit == 0) 

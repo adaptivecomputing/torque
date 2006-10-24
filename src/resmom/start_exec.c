@@ -1732,6 +1732,7 @@ int TMomFinalizeJob2(
 
 
 /* child portion of job launch executed as user - called by TMomFinalize2() */
+/* will execute run_pelog() */
 
 int TMomFinalizeChild(
 
@@ -1758,12 +1759,12 @@ int TMomFinalizeChild(
 #if defined(PENABLE_DYNAMIC_CPUSETS)
 
   attribute            *pattr;
-  char                  cQueueName[16];  /* Unique CpuSet Name */
-  char                  cPermFile[1024]; /* Unique File Name */
-  FILE                  *fp;            /* file pointer into /proc/cpuinfo */
+  char                  cQueueName[16];         /* unique CpuSet Name */
+  char                  cPermFile[1024];        /* unique File Name */
+  FILE                 *fp;                     /* file pointer into /proc/cpuinfo */
   char                  cBuffer[CBUFFERSIZE + 1];  /* char buffer used for counting procs */
-  int                   nCPUS = 0;              /* Number of cpus the machine has */
-  int                   nCpuId = 0;             /* CpuId */
+  int                   nCPUS = 0;              /* number of cpus the machine has */
+  int                   nCpuId = 0;             /* cpuId */
 
   struct CpuSetMap {
     short CpuId;
@@ -2235,7 +2236,7 @@ int TMomFinalizeChild(
 
     exit(1);
     }
-#endif
+#endif /* END ENABLE_CPA */
 
   /* specific system related variables */
 
@@ -2275,6 +2276,7 @@ int TMomFinalizeChild(
 
     /* only giving ourselves 5 seconds to connect to qsub
      * and get term settings */
+
     alarm(5);
 
     /* once we connect to qsub and open a pty, the user can send us
@@ -2311,7 +2313,11 @@ int TMomFinalizeChild(
 
     if (qsub_sock < 0) 
       {
-      log_err(errno,id,"cannot open qsub sock");
+      snprintf(log_buffer,1024,"cannot open interactive qsub socket to host %s:%d - check routing tables/multi-homed host issues",
+        phost,
+        pport);
+
+      log_err(errno,id,log_buffer);
 
       starter_return(TJE->upfds,TJE->downfds,JOB_EXEC_FAIL1,&sjr);
 
@@ -2454,7 +2460,6 @@ int TMomFinalizeChild(
            pjob,
            PE_IO_TYPE_ASIS) != 0) 
         {
-
         log_err(-1,id,"interactive prolog failed");
 
         starter_return(TJE->upfds,TJE->downfds,JOB_EXEC_FAIL2,&sjr);
@@ -2696,6 +2701,8 @@ int TMomFinalizeChild(
       starter_return(TJE->upfds,TJE->downfds,JOB_EXEC_FAIL2,&sjr);
 
       /*NOTREACHED*/
+
+      exit(1);
       }
     }    /* END else (TJE->is_interactive == TRUE) */
 
