@@ -1745,7 +1745,7 @@ void tcl_run(
     {
     char *trace;
 
-    trace = Tcl_GetVar(interp,"errorInfo",0);
+    trace = (char *)Tcl_GetVar(interp,"errorInfo",0);
 
     if (trace == NULL)
       trace = interp->result;
