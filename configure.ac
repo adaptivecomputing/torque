@@ -1365,6 +1365,7 @@ AC_OUTPUT(buildutils/pbs_mkdirs
 	  doc/Makefile
 	  doc/man1/Makefile
 	  doc/man3/Makefile
+	  doc/man7/Makefile
 	  doc/man8/Makefile
 	  src/Makefile
 	  src/cmds/Makefile

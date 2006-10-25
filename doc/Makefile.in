@@ -157,20 +157,20 @@ EXTRA_DIST = man1/qalter.1B man1/qdel.1B man1/qhold.1B man1/qmove.1B \
 	     man3/pbs_statque.3B man3/pbs_statserver.3B man3/pbs_submit.3B \
 	     man3/pbs_terminate.3B \
 	     \
-	     man1/pbs_job_attributes.7B man1/pbs_queue_attributes.7B \
-	     man1/pbs_server_attributes.7B \
-	     man1/pbs_resources_aix4.7B man1/pbs_resources_digitalunix.7B \
-	     man1/pbs_resources_aix5.7B man1/pbs_resources_darwin.7B \
-	     man1/pbs_resources_freebsd.7B man1/pbs_resources_freebsd5.7B \
-	     man1/pbs_resources_fujitsu.7B \
-	     man1/pbs_resources_hpux10.7B man1/pbs_resources_irix5.7B \
-	     man1/pbs_resources_hpux11.7B \
-	     man1/pbs_resources_irix5.7B \
-	     man1/pbs_resources_irix6.7B man1/pbs_resources_irix6array.7B \
-	     man1/pbs_resources_linux.7B man1/pbs_resources_netbsd.7B \
-	     man1/pbs_resources_solaris5.7B man1/pbs_resources_solaris7.7B \
-	     man1/pbs_resources_sp2.7B man1/pbs_resources_sunos4.7B \
-	     man1/pbs_resources_unicos8.7B man1/pbs_resources_unicosmk2.7B \
+	     man7/pbs_job_attributes.7B man7/pbs_queue_attributes.7B \
+	     man7/pbs_server_attributes.7B \
+	     man7/pbs_resources_aix4.7B man7/pbs_resources_digitalunix.7B \
+	     man7/pbs_resources_aix5.7B man7/pbs_resources_darwin.7B \
+	     man7/pbs_resources_freebsd.7B man7/pbs_resources_freebsd5.7B \
+	     man7/pbs_resources_fujitsu.7B \
+	     man7/pbs_resources_hpux10.7B man7/pbs_resources_irix5.7B \
+	     man7/pbs_resources_hpux11.7B \
+	     man7/pbs_resources_irix5.7B \
+	     man7/pbs_resources_irix6.7B man7/pbs_resources_irix6array.7B \
+	     man7/pbs_resources_linux.7B man7/pbs_resources_netbsd.7B \
+	     man7/pbs_resources_solaris5.7B man7/pbs_resources_solaris7.7B \
+	     man7/pbs_resources_sp2.7B man7/pbs_resources_sunos4.7B \
+	     man7/pbs_resources_unicos8.7B man7/pbs_resources_unicosmk2.7B \
 	     \
 	     man8/pbs_mom.8B man8/pbsnodes.8B \
 	     man8/pbs_sched_basl.8B man8/pbs_sched_cc.8B \
@@ -207,19 +207,19 @@ nodist_man3_MANS = man3/pbs_alterjob.3 man3/pbs_connect.3 man3/pbs_default.3 \
 
 dist_man3_MANS = man3/rpp.3 man3/tm.3
 
-nodist_man7_MANS = man1/pbs_job_attributes.7 man1/pbs_queue_attributes.7 \
-		   man1/pbs_server_attributes.7 \
-		   man1/pbs_resources_aix4.7 man1/pbs_resources_digitalunix.7 \
-		   man1/pbs_resources_aix5.7 man1/pbs_resources_darwin.7 \
-		   man1/pbs_resources_freebsd.7 man1/pbs_resources_fujitsu.7 \
-		   man1/pbs_resources_hpux10.7 man1/pbs_resources_irix5.7 \
-		   man1/pbs_resources_hpux11.7 \
-		   man1/pbs_resources_irix5.7 \
-		   man1/pbs_resources_irix6.7 man1/pbs_resources_irix6array.7 \
-		   man1/pbs_resources_linux.7 man1/pbs_resources_netbsd.7 \
-		   man1/pbs_resources_solaris5.7 man1/pbs_resources_solaris7.7 \
-		   man1/pbs_resources_sp2.7 man1/pbs_resources_sunos4.7 \
-		   man1/pbs_resources_unicos8.7 man1/pbs_resources_unicosmk2.7
+nodist_man7_MANS = man7/pbs_job_attributes.7 man7/pbs_queue_attributes.7 \
+		   man7/pbs_server_attributes.7 \
+		   man7/pbs_resources_aix4.7 man7/pbs_resources_digitalunix.7 \
+		   man7/pbs_resources_aix5.7 man7/pbs_resources_darwin.7 \
+		   man7/pbs_resources_freebsd.7 man7/pbs_resources_fujitsu.7 \
+		   man7/pbs_resources_hpux10.7 man7/pbs_resources_irix5.7 \
+		   man7/pbs_resources_hpux11.7 \
+		   man7/pbs_resources_irix5.7 \
+		   man7/pbs_resources_irix6.7 man7/pbs_resources_irix6array.7 \
+		   man7/pbs_resources_linux.7 man7/pbs_resources_netbsd.7 \
+		   man7/pbs_resources_solaris5.7 man7/pbs_resources_solaris7.7 \
+		   man7/pbs_resources_sp2.7 man7/pbs_resources_sunos4.7 \
+		   man7/pbs_resources_unicos8.7 man7/pbs_resources_unicosmk2.7
 
 
 nodist_man8_MANS = man8/pbs_mom.8 man8/pbsnodes.8 \
@@ -612,7 +612,7 @@ top_distdir = ..
 distdir = $(top_distdir)/$(PACKAGE)-$(VERSION)
 
 distdir: $(DISTFILES)
-	$(mkinstalldirs) $(distdir)/ers $(distdir)/man1 $(distdir)/man3 $(distdir)/man8
+	$(mkinstalldirs) $(distdir)/ers $(distdir)/man1 $(distdir)/man3 $(distdir)/man7 $(distdir)/man8
 	@list='$(DISTFILES)'; for file in $$list; do \
 	  if test -f $$file || test -d $$file; then d=.; else d=$(srcdir); fi; \
 	  dir=`echo "$$file" | sed -e 's,/[^/]*$$,,'`; \
