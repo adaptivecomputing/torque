@@ -33,6 +33,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature
   e - tighten directory path checks
   b - fix cput job status
   b - Fix "Spool Job Race condition"
+  b - fix bison syntax error in Parser.y
 
 2.1.2
 

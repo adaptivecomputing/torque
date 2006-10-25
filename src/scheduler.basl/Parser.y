@@ -1411,8 +1411,6 @@ caseElementHead:	CASE intConst ':' {
 
 
 						}
-		;
-
 
 		|	CASE floatConst ':' {
 					ParserCondPrint("caseElementHead");
