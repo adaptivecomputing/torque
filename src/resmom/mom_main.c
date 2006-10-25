@@ -7133,7 +7133,7 @@ static char *mk_dirs(
  * stop_me = signal handler for SIGTERM
  */
 
-void stop_me(
+static void stop_me(
 
   int sig)  /* I */
 
@@ -7162,7 +7162,7 @@ void stop_me(
 
 
 
-void PBSAdjustLogLevel(
+static void PBSAdjustLogLevel(
 
   int sig)  /* I */
 
