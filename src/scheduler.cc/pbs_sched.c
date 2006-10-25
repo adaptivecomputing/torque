@@ -576,7 +576,8 @@ int server_command()
 
   int           new_socket;
   torque_socklen_t	slen;
-  int		i, cmd;
+  int		i;
+  unsigned int  cmd;
   pbs_net_t	addr;
 
   slen = sizeof(saddr);
@@ -641,7 +642,7 @@ int server_command()
     return(SCH_ERROR);
     }
 
-  return(cmd);
+  return((int)cmd);
   }
 
 
