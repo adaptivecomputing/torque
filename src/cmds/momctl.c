@@ -78,8 +78,6 @@ int main(
 
   char *HPtr;
 
-  char *HTok;
- 
 
   int c;
 
@@ -316,7 +314,7 @@ int main(
   if (HostList[0] == '\0')
     strcpy(HostList,LocalHost);
 
-  HPtr = strtok_r(HostList,", \t\n",&HTok);
+  HPtr = strtok(HostList,", \t\n");
 
   HostCount = 0;
   FailCount = 0;
@@ -397,7 +395,7 @@ int main(
       do_mom(HPtr,MOMPort,CmdIndex) >= 0 ? HostCount++ : FailCount++;
       } /* END if (*HPtr == ':') */
 
-    HPtr = strtok_r(NULL,", \t\n",&HTok);
+    HPtr = strtok(NULL,", \t\n");
 
     }  /* END while (HPtr != NULL) */
   if (IsVerbose == TRUE)
