@@ -864,7 +864,7 @@ struct work_task *apply_job_delete_nanny(
  * We are also called from pbsd_init_job() after recovering EXITING jobs.
  */
 
-void job_delete_nanny(
+static void job_delete_nanny(
       
   struct work_task *pwt)
     
