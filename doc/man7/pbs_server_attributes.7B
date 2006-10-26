@@ -344,6 +344,13 @@ the next job number will be incremented.
 .if !\n(Pb .ig Ig
 [internal type: integer]
 .Ig
+.Al net_counter
+Lists the 3 numbers representing the number of connections in the last 5
+seconds, 30 seconds, and 60 seconds.  This is a read-only attribute.
+Format: string; default value: none.
+.if !\n(Pb .ig Ig
+[internal type: string]
+.Ig
 .Al node_check_rate
 In OpenPBS, this was the rate at which pbs_server would poll each node.  In
 TORQUE, nodes periodically send updates without solicitation from pbs_server;
