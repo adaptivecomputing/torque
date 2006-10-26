@@ -83,6 +83,8 @@ LN_S = @LN_S@
 MAINT = @MAINT@
 MAKE = @MAKE@
 MOMLIBS = @MOMLIBS@
+MY_TCLTK_INCS = @MY_TCLTK_INCS@
+MY_TCLTK_LIBS = @MY_TCLTK_LIBS@
 MY_TCL_INCS = @MY_TCL_INCS@
 MY_TCL_LIBS = @MY_TCL_LIBS@
 OBJDUMP = @OBJDUMP@
@@ -214,10 +216,10 @@ RECURSIVE_TARGETS = info-recursive dvi-recursive install-info-recursive \
 	install-exec-recursive installdirs-recursive install-recursive \
 	uninstall-recursive check-recursive installcheck-recursive
 DIST_COMMON = INSTALL Makefile.am Makefile.in acinclude.m4 aclocal.m4 \
-	buildutils/config.guess buildutils/config.sub \
-	buildutils/depcomp buildutils/install-sh buildutils/ltmain.sh \
-	buildutils/missing buildutils/mkinstalldirs configure \
-	configure.ac torque.spec.in
+	buildutils/compile buildutils/config.guess \
+	buildutils/config.sub buildutils/depcomp buildutils/install-sh \
+	buildutils/ltmain.sh buildutils/missing \
+	buildutils/mkinstalldirs configure configure.ac torque.spec.in
 DIST_SUBDIRS = $(SUBDIRS)
 all: all-recursive
 

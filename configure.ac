@@ -1058,37 +1058,6 @@ if test "${TK}" = "1" -a "${TCLX}" = "1" -a "x${with_tkx}" != "xno" ; then
 	fi
 fi
 
-AC_DEFINE_UNQUOTED(TCL, ${TCL}, [Define if PBS should use Tcl in its tools])
-AC_DEFINE_UNQUOTED(TCLX, ${TCLX}, [Define if PBS should use TclX in its tools])
-AC_DEFINE_UNQUOTED(TK, ${TK}, [Define if PBS should use Tk in its tools])
-AC_DEFINE_UNQUOTED(TKX, ${TKX}, [Define if PBS should use Tkx in its tools])
-
-
-dnl  It is possible that the user has asked for a gui but no Tk
-dnl  libraries were found. In this case we must disable the gui.
-AC_MSG_CHECKING([whether to include the GUI-clients])
-AC_ARG_ENABLE(gui,
-    [  --disable-gui           do not include the GUI-clients],
-    include_gui=$enableval)
-if test "x${include_clients}" != "xyes" -a "x${include_gui}" = "xyes"; then
-	AC_MSG_ERROR([the GUI can not be build independent of the clients])
-fi
-if test "x${include_clients}" != "xyes" -a "x${include_gui}" = "x"; then
-	include_gui=no 
-fi
-if test "x${include_gui}" = "xyes" -a "${TK}" != "1"; then
-	AC_MSG_ERROR([cannot build GUI without Tk library])
-fi
-if test "x${include_gui}" = "x" -a "${TK}" = "1"; then
-	include_gui=yes
-fi
-if test "x${include_gui}" = "x"; then
-	include_gui=no
-fi
-AC_MSG_RESULT($include_gui)
-AM_CONDITIONAL(INCLUDE_GUI, [test "x$include_gui" = "xyes"])
-
-
 
 
 dnl  Now assemble appropriate compiler flags for includes and linking.
@@ -1098,6 +1067,8 @@ MY_TCL_INCS=""
 if test "${TCL}" = "1"; then
 	MY_TCL_LIBS="${MY_TCL_LIBS} ${TCL_LIB_SPEC} ${TCL_LIBS}"
 	MY_TCL_INCS="${MY_TCL_INCS} ${TCL_INCLUDES}"
+else
+	AC_MSG_NOTICE([Tcl support disabled])
 fi
 
 if test "${TCLX}" = "1"; then
@@ -1105,12 +1076,14 @@ if test "${TCLX}" = "1"; then
 fi
 
 if test "${TK}" = "1"; then
-	MY_TCL_LIBS="${TK_LIB_SPEC} ${TK_XLIBSW} ${MY_TCL_LIBS}"
-	MY_TCL_INCS="${MY_TCL_INCS} ${TK_INCLUDES} ${TK_XINCLUDES}"
+	MY_TCLTK_LIBS="${TK_LIB_SPEC} ${TK_XLIBSW} ${MY_TCL_LIBS}"
+	MY_TCLTK_INCS="${MY_TCL_INCS} ${TK_INCLUDES} ${TK_XINCLUDES}"
+else
+	AC_MSG_NOTICE([Tk support disabled])
 fi
 
 if test "${TKX}" = "1"; then
-	MY_TCL_LIBS="${TKX_LIB_SPEC} ${TKX_LIBS} ${MY_TCL_LIBS}"
+	MY_TCLTK_LIBS="${TKX_LIB_SPEC} ${TKX_LIBS} ${MY_TCLTK_LIBS}"
 fi
 
 if test "${TCL}" = "1"; then
@@ -1144,12 +1117,101 @@ if test "${TCL}" = "1"; then
   done
   libdir="$orig_libdir"
   
-  AC_MSG_NOTICE([TCL_LIBS: $MY_TCL_LIBS])
-  AC_MSG_NOTICE([TCL_INCS: $MY_TCL_INCS])
+  orig_LIBS="$LIBS"
+  orig_CFLAGS="$CFLAGS"
+  LIBS="$LIBS $MY_TCL_LIBS"
+  CFLAGS="$CFLAGS $MY_TCL_INCS"
+  AC_CHECK_FUNC(Tcl_Init, ,[
+	if test "x$user_requested_tcl" = "xyes" ;then
+          AC_MSG_ERROR([Your Tcl install is broken.  Rerun configure with --without-tcl])
+        else
+          AC_MSG_NOTICE([Your Tcl install is broken.  Disabling Tcl support.])
+          TCL=0; TCLX=0; TK=0; TKX=0;
+	fi])
+  LIBS="$orig_LIBS"
+  CFLAGS="$orig_CFLAGS"
 fi
+
+if test "${TK}" = "1"; then
+  # try to hack in a run-time search path if needed
+  orig_MY_TCLTK_LIBS="$MY_TCLTK_LIBS"
+  orig_libdir="$libdir"
+  MY_TCLTK_LIBS=""
+  for tcllib_part in $orig_MY_TCLTK_LIBS ;do
+    case $tcllib_part in
+      -L/*)
+        tcllibdir=`echo $tcllib_part | sed s/-L//`
+        tcldir_in_syslib_path=no
+        for sysdir in $sys_lib_dlsearch_path_spec ;do
+           if test "X$tcllibdir" = "X$sysdir" ;then
+               tcldir_in_syslib_path=yes
+               break
+           fi
+        done
+        MY_TCLTK_LIBS="${MY_TCLTK_LIBS} ${tcllib_part}"
+        if test "X$tcldir_in_syslib_path" = "Xno" ;then
+           libdir="$tcllibdir"
+           eval "new_lib_spec=\"$hardcode_libdir_flag_spec\""
+           MY_TCLTK_LIBS="${MY_TCLTK_LIBS} ${new_lib_spec}"
+        fi
+        ;;
+      -L)
+        ;;
+      *) MY_TCLTK_LIBS="${MY_TCLTK_LIBS} ${tcllib_part}"
+        ;;
+    esac
+  done
+  libdir="$orig_libdir"
+
+  orig_LIBS="$LIBS"
+  orig_CFLAGS="$CFLAGS"
+  LIBS="$LIBS $MY_TCLTK_LIBS"
+  CFLAGS="$CFLAGS $MY_TCLTK_INCS"
+  AC_CHECK_FUNC(Tk_Init, ,[
+	if test "x$user_requested_tk" = "xyes" ;then
+          AC_MSG_ERROR([Your Tk install is broken.  Rerun configure with --without-tk])
+        else
+          AC_MSG_NOTICE([Your Tk install is broken.  Disabling Tk support.])
+           TK=0; TKX=0;
+	fi])
+  LIBS="$orig_LIBS"
+  CFLAGS="$orig_CFLAGS"
+fi
+
+dnl  It is possible that the user has asked for a gui but no Tk
+dnl  libraries were found. In this case we must disable the gui.
+AC_MSG_CHECKING([whether to include the GUI-clients])
+AC_ARG_ENABLE(gui,
+    [  --disable-gui           do not include the GUI-clients],
+    include_gui=$enableval)
+if test "x${include_clients}" != "xyes" -a "x${include_gui}" = "xyes"; then
+	AC_MSG_ERROR([the GUI can not be build independent of the clients])
+fi
+if test "x${include_clients}" != "xyes" -a "x${include_gui}" = "x"; then
+	include_gui=no 
+fi
+if test "x${include_gui}" = "xyes" -a "${TK}" != "1"; then
+	AC_MSG_ERROR([cannot build GUI without Tk library])
+fi
+if test "x${include_gui}" = "x" -a "${TK}" = "1"; then
+	include_gui=yes
+fi
+if test "x${include_gui}" = "x"; then
+	include_gui=no
+fi
+AC_MSG_RESULT($include_gui)
+AM_CONDITIONAL(INCLUDE_GUI, [test "x$include_gui" = "xyes"])
+
+
+AC_DEFINE_UNQUOTED(TCL, ${TCL}, [Define if PBS should use Tcl in its tools])
+AC_DEFINE_UNQUOTED(TCLX, ${TCLX}, [Define if PBS should use TclX in its tools])
+AC_DEFINE_UNQUOTED(TK, ${TK}, [Define if PBS should use Tk in its tools])
+AC_DEFINE_UNQUOTED(TKX, ${TKX}, [Define if PBS should use Tkx in its tools])
 
 AC_SUBST(MY_TCL_LIBS)
 AC_SUBST(MY_TCL_INCS)
+AC_SUBST(MY_TCLTK_LIBS)
+AC_SUBST(MY_TCLTK_INCS)
 AM_CONDITIONAL(USING_TCL, [test "$TCL" = "1"])
 AM_CONDITIONAL(USING_TK, [test "$TK" = "1"])
 
@@ -1199,6 +1261,10 @@ fi
 AC_MSG_RESULT($enable_tcl_qstat)
 AC_SUBST(EXTRA_QSTAT_LIBS)
 AM_CONDITIONAL(USE_TCLQSTAT, [test "x$EXTRA_QSTAT_LIBS" != "x"])
+
+if test "$SCHD_TYPE" = "tcl" -a "$TCL" = "0" ;then
+  AC_MSG_ERROR([Tcl scheduler cannot be built without Tcl support])
+fi
 
 
 

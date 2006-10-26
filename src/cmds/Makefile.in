@@ -83,6 +83,8 @@ LN_S = @LN_S@
 MAINT = @MAINT@
 MAKE = @MAKE@
 MOMLIBS = @MOMLIBS@
+MY_TCLTK_INCS = @MY_TCLTK_INCS@
+MY_TCLTK_LIBS = @MY_TCLTK_LIBS@
 MY_TCL_INCS = @MY_TCL_INCS@
 MY_TCL_LIBS = @MY_TCL_LIBS@
 OBJDUMP = @OBJDUMP@
@@ -147,15 +149,17 @@ EXTRA_DIST = nqs2pbs sample.qstatrc
 
 LDADD = $(PBS_LIBS)
 
-AM_CFLAGS = $(MY_TCL_INCS) -DPBS_SERVER_HOME=\"$(PBS_SERVER_HOME)\" \
-	    -DPBSPD=\"$(bindir)/pbspd\" \
-	    -DSUBMIT_FILTER_PATH=\"$(SUBMIT_FILTER_PATH)\"
-
-
 @USE_TCLQSTAT_TRUE@TCLQSTATLIBS = $(MY_TCL_LIBS)
+@USE_TCLQSTAT_TRUE@TCLQSTATCFLAGS = $(MY_TCL_INCS)
 qstat_LDADD = $(PBS_LIBS) $(TCLQSTATLIBS)
+qstat_CFLAGS = $(TCLQSTATCFLAGS)
 
 qmgr_LDADD = $(PBS_LIBS) $(READLINE_LIBS)
+
+pbspoe_CFLAGS = -DPBSPD=\"$(bindir)/pbspd\"
+qsub_CFLAGS = -DSUBMIT_FILTER_PATH=\"$(SUBMIT_FILTER_PATH)\" \
+              -DPBS_SERVER_HOME=\"$(PBS_SERVER_HOME)\"
+
 
 pbs_demux_SOURCES = pbs_demux.c
 pbsdsh_SOURCES = pbsdsh.c
@@ -221,7 +225,7 @@ pbspd_OBJECTS = $(am_pbspd_OBJECTS)
 pbspd_LDADD = $(LDADD)
 pbspd_DEPENDENCIES = ../lib/Libpbs/libtorque.la
 pbspd_LDFLAGS =
-am_pbspoe_OBJECTS = pbspoe.$(OBJEXT)
+am_pbspoe_OBJECTS = pbspoe-pbspoe.$(OBJEXT)
 pbspoe_OBJECTS = $(am_pbspoe_OBJECTS)
 pbspoe_LDADD = $(LDADD)
 pbspoe_DEPENDENCIES = ../lib/Libpbs/libtorque.la
@@ -300,7 +304,7 @@ qstart_OBJECTS = $(am_qstart_OBJECTS)
 qstart_LDADD = $(LDADD)
 qstart_DEPENDENCIES = ../lib/Libpbs/libtorque.la
 qstart_LDFLAGS =
-am_qstat_OBJECTS = qstat.$(OBJEXT) MXML.$(OBJEXT)
+am_qstat_OBJECTS = qstat-qstat.$(OBJEXT) qstat-MXML.$(OBJEXT)
 qstat_OBJECTS = $(am_qstat_OBJECTS)
 @USE_TCLQSTAT_TRUE@qstat_DEPENDENCIES = ../lib/Libpbs/libtorque.la
 @USE_TCLQSTAT_FALSE@qstat_DEPENDENCIES = ../lib/Libpbs/libtorque.la
@@ -310,7 +314,7 @@ qstop_OBJECTS = $(am_qstop_OBJECTS)
 qstop_LDADD = $(LDADD)
 qstop_DEPENDENCIES = ../lib/Libpbs/libtorque.la
 qstop_LDFLAGS =
-am_qsub_OBJECTS = qsub.$(OBJEXT)
+am_qsub_OBJECTS = qsub-qsub.$(OBJEXT)
 qsub_OBJECTS = $(am_qsub_OBJECTS)
 qsub_LDADD = $(LDADD)
 qsub_DEPENDENCIES = ../lib/Libpbs/libtorque.la
@@ -333,7 +337,7 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/MXML.Po ./$(DEPDIR)/momctl.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/pbs_demux.Po ./$(DEPDIR)/pbsdsh.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/pbsnodes.Po ./$(DEPDIR)/pbspd.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/pbspoe.Po ./$(DEPDIR)/qalter.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/pbspoe-pbspoe.Po ./$(DEPDIR)/qalter.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/qdel.Po ./$(DEPDIR)/qdisable.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/qenable.Po ./$(DEPDIR)/qhold.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/qmgr.Po ./$(DEPDIR)/qmove.Po \
@@ -341,8 +345,9 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/qrerun.Po ./$(DEPDIR)/qrls.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/qrun.Po ./$(DEPDIR)/qselect.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/qsig.Po ./$(DEPDIR)/qstart.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/qstat.Po ./$(DEPDIR)/qstop.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/qsub.Po ./$(DEPDIR)/qterm.Po
+@AMDEP_TRUE@	./$(DEPDIR)/qstat-MXML.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/qstat-qstat.Po ./$(DEPDIR)/qstop.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/qsub-qsub.Po ./$(DEPDIR)/qterm.Po
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 LTCOMPILE = $(LIBTOOL) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) \
@@ -445,6 +450,7 @@ pbsnodes$(EXEEXT): $(pbsnodes_OBJECTS) $(pbsnodes_DEPENDENCIES)
 pbspd$(EXEEXT): $(pbspd_OBJECTS) $(pbspd_DEPENDENCIES) 
 	@rm -f pbspd$(EXEEXT)
 	$(LINK) $(pbspd_LDFLAGS) $(pbspd_OBJECTS) $(pbspd_LDADD) $(LIBS)
+pbspoe-pbspoe.$(OBJEXT): pbspoe.c
 pbspoe$(EXEEXT): $(pbspoe_OBJECTS) $(pbspoe_DEPENDENCIES) 
 	@rm -f pbspoe$(EXEEXT)
 	$(LINK) $(pbspoe_LDFLAGS) $(pbspoe_OBJECTS) $(pbspoe_LDADD) $(LIBS)
@@ -493,12 +499,15 @@ qsig$(EXEEXT): $(qsig_OBJECTS) $(qsig_DEPENDENCIES)
 qstart$(EXEEXT): $(qstart_OBJECTS) $(qstart_DEPENDENCIES) 
 	@rm -f qstart$(EXEEXT)
 	$(LINK) $(qstart_LDFLAGS) $(qstart_OBJECTS) $(qstart_LDADD) $(LIBS)
+qstat-qstat.$(OBJEXT): qstat.c
+qstat-MXML.$(OBJEXT): MXML.c
 qstat$(EXEEXT): $(qstat_OBJECTS) $(qstat_DEPENDENCIES) 
 	@rm -f qstat$(EXEEXT)
 	$(LINK) $(qstat_LDFLAGS) $(qstat_OBJECTS) $(qstat_LDADD) $(LIBS)
 qstop$(EXEEXT): $(qstop_OBJECTS) $(qstop_DEPENDENCIES) 
 	@rm -f qstop$(EXEEXT)
 	$(LINK) $(qstop_LDFLAGS) $(qstop_OBJECTS) $(qstop_LDADD) $(LIBS)
+qsub-qsub.$(OBJEXT): qsub.c
 qsub$(EXEEXT): $(qsub_OBJECTS) $(qsub_DEPENDENCIES) 
 	@rm -f qsub$(EXEEXT)
 	$(LINK) $(qsub_LDFLAGS) $(qsub_OBJECTS) $(qsub_LDADD) $(LIBS)
@@ -538,7 +547,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pbsdsh.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pbsnodes.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pbspd.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pbspoe.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pbspoe-pbspoe.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/qalter.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/qdel.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/qdisable.Po@am__quote@
@@ -554,9 +563,10 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/qselect.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/qsig.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/qstart.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/qstat.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/qstat-MXML.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/qstat-qstat.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/qstop.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/qsub.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/qsub-qsub.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/qterm.Po@am__quote@
 
 distclean-depend:
@@ -579,6 +589,78 @@ distclean-depend:
 @AMDEP_TRUE@	depfile='$(DEPDIR)/$*.Plo' tmpdepfile='$(DEPDIR)/$*.TPlo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(LTCOMPILE) -c -o $@ `test -f '$<' || echo '$(srcdir)/'`$<
+
+pbspoe-pbspoe.o: pbspoe.c
+@AMDEP_TRUE@	source='pbspoe.c' object='pbspoe-pbspoe.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/pbspoe-pbspoe.Po' tmpdepfile='$(DEPDIR)/pbspoe-pbspoe.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(pbspoe_CFLAGS) $(CFLAGS) -c -o pbspoe-pbspoe.o `test -f 'pbspoe.c' || echo '$(srcdir)/'`pbspoe.c
+
+pbspoe-pbspoe.obj: pbspoe.c
+@AMDEP_TRUE@	source='pbspoe.c' object='pbspoe-pbspoe.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/pbspoe-pbspoe.Po' tmpdepfile='$(DEPDIR)/pbspoe-pbspoe.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(pbspoe_CFLAGS) $(CFLAGS) -c -o pbspoe-pbspoe.obj `cygpath -w pbspoe.c`
+
+pbspoe-pbspoe.lo: pbspoe.c
+@AMDEP_TRUE@	source='pbspoe.c' object='pbspoe-pbspoe.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/pbspoe-pbspoe.Plo' tmpdepfile='$(DEPDIR)/pbspoe-pbspoe.TPlo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(LIBTOOL) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(pbspoe_CFLAGS) $(CFLAGS) -c -o pbspoe-pbspoe.lo `test -f 'pbspoe.c' || echo '$(srcdir)/'`pbspoe.c
+
+qstat-qstat.o: qstat.c
+@AMDEP_TRUE@	source='qstat.c' object='qstat-qstat.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/qstat-qstat.Po' tmpdepfile='$(DEPDIR)/qstat-qstat.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(qstat_CFLAGS) $(CFLAGS) -c -o qstat-qstat.o `test -f 'qstat.c' || echo '$(srcdir)/'`qstat.c
+
+qstat-qstat.obj: qstat.c
+@AMDEP_TRUE@	source='qstat.c' object='qstat-qstat.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/qstat-qstat.Po' tmpdepfile='$(DEPDIR)/qstat-qstat.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(qstat_CFLAGS) $(CFLAGS) -c -o qstat-qstat.obj `cygpath -w qstat.c`
+
+qstat-qstat.lo: qstat.c
+@AMDEP_TRUE@	source='qstat.c' object='qstat-qstat.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/qstat-qstat.Plo' tmpdepfile='$(DEPDIR)/qstat-qstat.TPlo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(LIBTOOL) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(qstat_CFLAGS) $(CFLAGS) -c -o qstat-qstat.lo `test -f 'qstat.c' || echo '$(srcdir)/'`qstat.c
+
+qstat-MXML.o: MXML.c
+@AMDEP_TRUE@	source='MXML.c' object='qstat-MXML.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/qstat-MXML.Po' tmpdepfile='$(DEPDIR)/qstat-MXML.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(qstat_CFLAGS) $(CFLAGS) -c -o qstat-MXML.o `test -f 'MXML.c' || echo '$(srcdir)/'`MXML.c
+
+qstat-MXML.obj: MXML.c
+@AMDEP_TRUE@	source='MXML.c' object='qstat-MXML.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/qstat-MXML.Po' tmpdepfile='$(DEPDIR)/qstat-MXML.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(qstat_CFLAGS) $(CFLAGS) -c -o qstat-MXML.obj `cygpath -w MXML.c`
+
+qstat-MXML.lo: MXML.c
+@AMDEP_TRUE@	source='MXML.c' object='qstat-MXML.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/qstat-MXML.Plo' tmpdepfile='$(DEPDIR)/qstat-MXML.TPlo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(LIBTOOL) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(qstat_CFLAGS) $(CFLAGS) -c -o qstat-MXML.lo `test -f 'MXML.c' || echo '$(srcdir)/'`MXML.c
+
+qsub-qsub.o: qsub.c
+@AMDEP_TRUE@	source='qsub.c' object='qsub-qsub.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/qsub-qsub.Po' tmpdepfile='$(DEPDIR)/qsub-qsub.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(qsub_CFLAGS) $(CFLAGS) -c -o qsub-qsub.o `test -f 'qsub.c' || echo '$(srcdir)/'`qsub.c
+
+qsub-qsub.obj: qsub.c
+@AMDEP_TRUE@	source='qsub.c' object='qsub-qsub.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/qsub-qsub.Po' tmpdepfile='$(DEPDIR)/qsub-qsub.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(qsub_CFLAGS) $(CFLAGS) -c -o qsub-qsub.obj `cygpath -w qsub.c`
+
+qsub-qsub.lo: qsub.c
+@AMDEP_TRUE@	source='qsub.c' object='qsub-qsub.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/qsub-qsub.Plo' tmpdepfile='$(DEPDIR)/qsub-qsub.TPlo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(LIBTOOL) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(qsub_CFLAGS) $(CFLAGS) -c -o qsub-qsub.lo `test -f 'qsub.c' || echo '$(srcdir)/'`qsub.c
 CCDEPMODE = @CCDEPMODE@
 
 mostlyclean-libtool:

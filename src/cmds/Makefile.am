@@ -12,16 +12,18 @@ EXTRA_DIST = nqs2pbs sample.qstatrc
 
 LDADD = $(PBS_LIBS)
 
-AM_CFLAGS = $(MY_TCL_INCS) -DPBS_SERVER_HOME=\"$(PBS_SERVER_HOME)\" \
-	    -DPBSPD=\"$(bindir)/pbspd\" \
-	    -DSUBMIT_FILTER_PATH=\"$(SUBMIT_FILTER_PATH)\"
-
 if USE_TCLQSTAT
 TCLQSTATLIBS = $(MY_TCL_LIBS)
+TCLQSTATCFLAGS = $(MY_TCL_INCS)
 endif
 qstat_LDADD = $(PBS_LIBS) $(TCLQSTATLIBS)
+qstat_CFLAGS = $(TCLQSTATCFLAGS)
 
 qmgr_LDADD = $(PBS_LIBS) $(READLINE_LIBS)
+
+pbspoe_CFLAGS = -DPBSPD=\"$(bindir)/pbspd\"
+qsub_CFLAGS = -DSUBMIT_FILTER_PATH=\"$(SUBMIT_FILTER_PATH)\" \
+              -DPBS_SERVER_HOME=\"$(PBS_SERVER_HOME)\"
 
 pbs_demux_SOURCES = pbs_demux.c
 pbsdsh_SOURCES = pbsdsh.c
