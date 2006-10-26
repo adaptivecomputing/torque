@@ -4,7 +4,7 @@ noinst_PROGRAMS = soelim
 soelim_SOURCES = soelim.c
 BUILT_SOURCES = soelim
 
-SUBDIRS = man1 man3 man8
+SUBDIRS = man1 man3 man7 man8
 
 EXTRA_DIST = man1/qalter.1B man1/qdel.1B man1/qhold.1B man1/qmove.1B \
 	     man1/qmsg.1B man1/qorder.1B man1/qrerun.1B man1/qrls.1B \
