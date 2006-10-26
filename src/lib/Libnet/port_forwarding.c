@@ -26,7 +26,8 @@
  * pass to the function pointer, and it will do the rest. The caller probably
  * should fork first since this function is an infinite loop and never returns */
 
-int port_forwarder(struct pfwdsock *socks,int(*connfunc)(char *,int),char *phost,int pport)
+/* __attribute__((noreturn)) - how do I do this portably? */
+void port_forwarder(struct pfwdsock *socks,int(*connfunc)(char *,int),char *phost,int pport)
   {
   fd_set rfdset, wfdset, efdset;
   int rc, maxsock=0;
