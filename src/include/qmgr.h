@@ -196,6 +196,8 @@ void disconnect_from_server();
 
 
 /* help messages */
+/* some of these are split into multiple strings to keep the string within
+ * the 509 character ISO C89 limit */
 
 #define HELP_DEFAULT \
 "General syntax: command [object][@server] [name attribute[.resource] OP value]\n" \
@@ -210,7 +212,9 @@ void disconnect_from_server();
 "The active command will set the active objects.  The active objects are used\n" \
 "when no name is specified for different commands.\n" \
 "If no server is specified for nodes or queues, the command will be sent\n" \
-"to all active servers.\n" \
+"to all active servers.\n"
+
+#define HELP_ACTIVE2 \
 "Examples:\n" \
 "active queue q1,batch@server1\n" \
 "active server server2,server3\n" \
@@ -245,7 +249,9 @@ void disconnect_from_server();
 "The \"set\" command sets the value for an attribute on the specified object.\n" \
 "If the object is \"server\" and name is not specified, the attribute will be\n" \
 "set on all the servers specified on the command line.\n" \
-"For multiple names, use a comma separated list with no intervening whitespace.\n" \
+"For multiple names, use a comma separated list with no intervening whitespace.\n"
+
+#define HELP_SET2 \
 "Examples:\n" \
 "set server s1 max_running = 5\n" \
 "set server managers = root\n" \
@@ -346,14 +352,18 @@ void disconnect_from_server();
 "acl_users - list of users allowed/denied access to server\n" \
 "comment - informational text string about the server\n" \
 "default_queue - default queue used when a queue is not specified\n" \
-"log_events - a bit string which specfiies what is logged\n" \
+"log_events - a bit string which specfiies what is logged\n"
+
+#define HELP_SERVERPUBLIC2 \
 "mail_uid - uid of sender of mail which is sent by the server\n" \
 "managers - list of users granted administrator privledges\n" \
 "max_running - maximum number of jobs that can run on the server\n" \
 "max_user_run - maximum number of jobs that a user can run on the server\n" \
 "max_grou_run - maximum number of jobs a UNIX group can run on the server\n" \
 "operators - list of users granted operator privledges\n" \
-"query_other_jobs - when true users can query jobs owned by other users\n" \
+"query_other_jobs - when true users can query jobs owned by other users\n"
+
+#define HELP_SERVERPUBLIC3 \
 "resources_available - ammount of resources which are available to the server\n" \
 "resources_cost - the cost factors of resources.  Used for sync. job starting\n" \
 "resources_default - the default resource value when the job does not specify\n" \
@@ -377,13 +387,17 @@ void disconnect_from_server();
 "acl_groups - list of groups which have been allowed or denied access\n" \
 "acl_host_enable - enables host level access control on the queue\n" \
 "acl_hosts - list of hosts which have been allowed or denied access\n" \
-"acl_user_enable - enables user level access control on the queue\n" \
+"acl_user_enable - enables user level access control on the queue\n"
+
+#define HELP_QUEUEPUBLIC2 \
 "acl_users - list of users which have been allowed or denied access\n" \
 "enabled - when true users can enqueue jobs\n" \
 "from_route_only - when true queue only accepts jobs when routed by servers\n" \
 "max_queueable - maximum number of jobs allowed to reside in the queue\n" \
 "max_running - maximum number of jobs in the queue that can be routed or running\n" \
-"priority - the priority of the queue\n" \
+"priority - the priority of the queue\n"
+
+#define HELP_QUEUEPUBLIC3 \
 "queue_type - type of queue: execution or routing\n" \
 "resources_max - maximum ammount of a resource which can be requested by a job\n" \
 "resources_min - minimum ammount of a resource which can be requested by a job\n" \

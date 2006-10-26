@@ -2046,13 +2046,13 @@ void show_help(
   if( str[0] == '\0' )
     printf( HELP_DEFAULT );
   else if( strncmp(str, "active", 6) == 0 )
-    printf( HELP_ACTIVE );
+    printf( "%s%s", HELP_ACTIVE,HELP_ACTIVE2 );
   else if( strncmp(str, "create", 6) == 0 )
     printf( HELP_CREATE );
   else if( strncmp(str, "delete", 6) == 0 )
     printf( HELP_DELETE );
   else if( strncmp(str, "set", 3) == 0 )
-    printf( HELP_SET );
+    printf( "%s%s", HELP_SET,HELP_SET2 );
   else if( strncmp(str, "unset", 5) == 0 )
     printf( HELP_UNSET );
   else if( strncmp(str, "list", 4) == 0 )
@@ -2072,11 +2072,11 @@ void show_help(
   else if( strncmp(str, "attribute", 9) == 0 )
     printf( HELP_ATTRIBUTE );
   else if( strncmp(str, "serverpublic", 12) == 0 )
-    printf( HELP_SERVERPUBLIC );
+    printf( "%s%s%s", HELP_SERVERPUBLIC,HELP_SERVERPUBLIC2,HELP_SERVERPUBLIC3 );
   else if( strncmp(str, "serverro", 8) == 0 )
     printf( HELP_SERVERRO );
   else if( strncmp(str, "queuepublic", 11) == 0 )
-    printf( HELP_QUEUEPUBLIC );
+    printf( "%s%s%s", HELP_QUEUEPUBLIC,HELP_QUEUEPUBLIC2,HELP_QUEUEPUBLIC3 );
   else if( strncmp(str, "queueexec", 9) == 0)
     printf( HELP_QUEUEEXEC );
   else if( strncmp(str, "queueroute", 10) == 0 )
