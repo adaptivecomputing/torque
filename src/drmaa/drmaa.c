@@ -95,7 +95,7 @@ struct drmaa_attr_values_s
 {
   char* attr_value;
   drmaa_attr_values_t* next;
-  drmaa_attr_values_t* iterator; // pointer used in the the get_next function
+  drmaa_attr_values_t* iterator; /* pointer used in the the get_next function*/
 };
 
 struct drmaa_job_ids_s
@@ -105,7 +105,7 @@ struct drmaa_job_ids_s
   drmaa_job_ids_t* iterator;
 };
 
-// job template struct definition
+/* job template struct definition*/
 struct drmaa_job_template_s
 {
   drmaa_attr_names_t* _attr_names;
@@ -125,7 +125,7 @@ int drmaa_get_next_attr_name(drmaa_attr_names_t* values, char *value, int value_
   if (_connect == -1)
     return DRMAA_ERRNO_NO_ACTIVE_SESSION;
 
-  //printf("next value from %p asked\n",values);
+  /*printf("next value from %p asked\n",values);*/
 
   if (values && values->iterator){
     strncpy(value,values->iterator->attr_name,value_len-1);
@@ -134,7 +134,7 @@ int drmaa_get_next_attr_name(drmaa_attr_names_t* values, char *value, int value_
     return DRMAA_ERRNO_SUCCESS;
   }
   else{
-    //printf("no more elements\n");
+    /*printf("no more elements\n");*/
     return DRMAA_ERRNO_NO_MORE_ELEMENTS;
   }
 }
@@ -144,7 +144,7 @@ int drmaa_get_next_attr_value(drmaa_attr_values_t* values, char *value, int valu
   if (_connect == -1)
     return DRMAA_ERRNO_NO_ACTIVE_SESSION;
 
-  //printf ("in drmaa_get_next_attr_value, values = %p, values->iterator = %p\n");
+  /*printf ("in drmaa_get_next_attr_value, values = %p, values->iterator = %p\n");*/
 
   if (values){
     strncpy(value,values->iterator->attr_value,value_len-1);
@@ -168,15 +168,15 @@ int drmaa_get_next_job_id(drmaa_job_ids_t* values, char *value, int value_len)
     return DRMAA_ERRNO_SUCCESS;
   }
   else{
-    //printf("no more element\n");
+    /*printf("no more element\n");*/
     return DRMAA_ERRNO_NO_MORE_ELEMENTS;
   }
 }
 
 int add_attr_name(drmaa_attr_names_t* values, char *value)
 {
-  //printf("Add_attr_name\n");
-  //printf("adding %s to values\n",value);
+  /*printf("Add_attr_name\n");*/
+  /*printf("adding %s to values\n",value);*/
   drmaa_attr_names_t* current = values;
   if (!values->attr_name)
     {
@@ -187,7 +187,7 @@ int add_attr_name(drmaa_attr_names_t* values, char *value)
       current->iterator = current;
     }
   else{
-    //printf("Non empty list\n");
+    /*printf("Non empty list\n");*/
     while (current->next)
       current=current->next;
     if ((current->next = (drmaa_attr_names_t*) calloc(1,sizeof (drmaa_attr_names_t)))==NULL)
@@ -224,7 +224,7 @@ void drmaa_release_attr_values(drmaa_attr_values_t* values)
   drmaa_attr_values_t* next;
   while (values){
     next = values->next;
-    //printf("freeing %s\n",values->attr_value);
+    /*printf("freeing %s\n",values->attr_value);*/
     free (values->attr_value);
     free (values);
     values = next;
@@ -236,7 +236,7 @@ void drmaa_release_job_ids( drmaa_job_ids_t* values )
   while (values){
     current = values->next;
     free(values->job_ids);
-    //values->job_ids=NULL;
+    /*values->job_ids=NULL;*/
     free(values);
     values = current;
   }
@@ -257,7 +257,7 @@ int drmaa_init(const char *contact, char *error_diagnosis, size_t error_diag_len
   fprintf(stderr,"libdrmaa for pbs version 0.0.1, init...\n");
   if ((_supported_attr_names = (drmaa_attr_names_t*)calloc(1,sizeof(drmaa_attr_names_t)))==NULL)
     return DRMAA_ERRNO_NO_MEMORY;
-  //printf("Filling attr_names\n");
+  /*printf("Filling attr_names\n");*/
   add_attr_name(_supported_attr_names,"drmaa_remote_command");
   add_attr_name(_supported_attr_names,"drmaa_js_state");
   add_attr_name(_supported_attr_names,"drmaa_wd");
@@ -276,7 +276,7 @@ int drmaa_init(const char *contact, char *error_diagnosis, size_t error_diag_len
   add_attr_name(_supported_attr_names,"drmaa_wct_slimit");
   add_attr_name(_supported_attr_names,"drmaa_duration_hlimit");
   add_attr_name(_supported_attr_names,"drmaa_duration_slimit");
-  //printf("filling done\n");
+  /*printf("filling done\n");*/
 
   if ((_supported_attr_v_names = (drmaa_attr_names_t*)calloc(1,sizeof(drmaa_attr_names_t)))==NULL)
     return DRMAA_ERRNO_NO_MEMORY;
@@ -297,8 +297,8 @@ int drmaa_init(const char *contact, char *error_diagnosis, size_t error_diag_len
   }
   fprintf (stderr,"connecting to %s\n",pbs_contact);
   _connect = pbs_connect((char *)contact);
-  //printf("Connect = %d\n",_connect);
-  if (_connect < 0) { // si erreur
+  /*printf("Connect = %d\n",_connect);*/
+  if (_connect < 0) { /* si erreur*/
     fprintf(stderr,"Error!\n");
     char* errmsg = pbs_geterrmsg(_connect);
     fprintf(stderr,"Error is: %s\n",errmsg);
@@ -318,7 +318,7 @@ int drmaa_init(const char *contact, char *error_diagnosis, size_t error_diag_len
     drmaa_release_attr_names(_supported_attr_v_names);
     return DRMAA_ERRNO_DRMS_INIT_FAILED;
   }
-  //fprintf(stderr,"OK\n");
+  /*fprintf(stderr,"OK\n");*/
   return DRMAA_ERRNO_SUCCESS;
 
 }
@@ -334,10 +334,10 @@ int drmaa_exit(char *error_diagnosis, size_t error_diag_len)
 {
   if (_connect == -1)
     return DRMAA_ERRNO_NO_ACTIVE_SESSION;
-  //drmaa_release_job_ids();
-  // On se deconnecte du serveur PBS
+  /*drmaa_release_job_ids();*/
+  /* On se deconnecte du serveur PBS*/
   int rc = pbs_disconnect(_connect);
-  if (rc < 0) { // si erreur
+  if (rc < 0) { /* si erreur*/
     char* msg = "PBS Server";
     char* errmsg = pbs_geterrmsg(_connect);
     strcat(msg,(errmsg ? errmsg : "Reason unknown"));
@@ -354,12 +354,12 @@ int drmaa_exit(char *error_diagnosis, size_t error_diag_len)
   pthread_mutex_lock(&_job_list_lock);
   int ret;
   struct job_list_s* current = job_list;
-  //fprintf(stderr,"Freeing the running jobs list\n");
+  /*fprintf(stderr,"Freeing the running jobs list\n");*/
   while(job_list){
     current = job_list;
     job_list = job_list->next;
     if (current->job){
-      //fprintf(stderr,"The job %s has its job template still defined, calling drmaa_delete_job_template\n",current->job_id);
+      /*fprintf(stderr,"The job %s has its job template still defined, calling drmaa_delete_job_template\n",current->job_id);*/
       ret = drmaa_delete_job_template(current->job, error_diagnosis,error_diag_len);
       if ( ret != DRMAA_ERRNO_SUCCESS )
 	return ret;
@@ -406,22 +406,22 @@ int drmaa_delete_job_template(drmaa_job_template_t *jt, char *error_diagnosis, s
 {
   if (_connect == -1)
     return DRMAA_ERRNO_NO_ACTIVE_SESSION;
-  //fprintf(stderr,"In drmaa_delete_job_template: deleting job attr_names\n");
+  /*fprintf(stderr,"In drmaa_delete_job_template: deleting job attr_names\n");*/
   drmaa_release_attr_names(jt->_attr_names);
-  //fprintf(stderr,"deleting job attr_v_names\n");
+  /*fprintf(stderr,"deleting job attr_v_names\n");*/
   drmaa_release_attr_names(jt->_attr_v_names);
-  //fprintf(stderr,"deleting job attr_values\n");
+  /*fprintf(stderr,"deleting job attr_values\n");*/
   drmaa_release_attr_values(jt->_attr_values);
   int i = 0;
   while (i < 3){
     drmaa_release_attr_values(jt->_attr_v_values[i++]);
   }
 
-  //for each job in job_list, set the job pointer to NULL if job == jt
+  /*for each job in job_list, set the job pointer to NULL if job == jt*/
   struct job_list_s* current = job_list;
   while(current){
     if (current->job == jt){
-      //fprintf(stderr,"In drmaa_delete_job_template: \"job\" param for job %s in job_list will be set to NULL\n",current->job_id);
+      /*fprintf(stderr,"In drmaa_delete_job_template: \"job\" param for job %s in job_list will be set to NULL\n",current->job_id);*/
       pthread_mutex_lock(&_job_list_lock);
       current->job = NULL;
       pthread_mutex_unlock(&_job_list_lock);      
@@ -453,43 +453,43 @@ int drmaa_set_attribute(drmaa_job_template_t *jt, const char *name, const char *
       || !strcmp(DRMAA_DURATION_HLIMIT,name) || !strcmp(DRMAA_DURATION_SLIMIT,name))
     {
 	
-      //fprintf(stderr,"set_attribute %s to %s\n",name,value);
+      /*fprintf(stderr,"set_attribute %s to %s\n",name,value);*/
       drmaa_attr_names_t* current_attr_name = jt->_attr_names;
       drmaa_attr_values_t* current_attr_value = jt->_attr_values;
 
       if (jt->_attr_names == NULL){
-	// first element
-	//fprintf(stderr,"Attribute %s doesn't exist, adding it as first element\n",name);
+	/* first element*/
+	/*fprintf(stderr,"Attribute %s doesn't exist, adding it as first element\n",name);*/
 	if ((jt->_attr_names = (drmaa_attr_names_t*) calloc(1,sizeof(drmaa_attr_names_t)))==NULL)
 	  return DRMAA_ERRNO_NO_MEMORY;
-	jt->_attr_names->next = NULL;//(drmaa_attr_names_t*) calloc(1,sizeof (drmaa_attr_names_t));
+	jt->_attr_names->next = NULL;/*(drmaa_attr_names_t*) calloc(1,sizeof (drmaa_attr_names_t));*/
 	if ((jt->_attr_names->attr_name = (char*)calloc(1,(strlen(name)+1)*sizeof(char)))==NULL)
 	  return DRMAA_ERRNO_NO_MEMORY;    
 	strncpy(jt->_attr_names->attr_name,name,strlen(name)+1);
 	jt->_attr_names->iterator = jt->_attr_names;
-	//fprintf(stderr,"Name %s added to the attr_name list, which is now %s\n",name,jt->_attr_names->attr_name);
-	//fprintf(stderr,"The iterator of %p is now %p\n",jt->_attr_names,jt->_attr_names->iterator);
-	//fprintf(stderr,"So jt->_attr_names->iterator->attr_name = %s\n",jt->_attr_names->iterator->attr_name);
+	/*fprintf(stderr,"Name %s added to the attr_name list, which is now %s\n",name,jt->_attr_names->attr_name);*/
+	/*fprintf(stderr,"The iterator of %p is now %p\n",jt->_attr_names,jt->_attr_names->iterator);*/
+	/*fprintf(stderr,"So jt->_attr_names->iterator->attr_name = %s\n",jt->_attr_names->iterator->attr_name);*/
 
 	if ((jt->_attr_values = (drmaa_attr_values_t*) calloc(1,sizeof (drmaa_attr_values_t)))==NULL)
 	  return DRMAA_ERRNO_NO_MEMORY;    
-	jt->_attr_values->next = NULL;//(drmaa_attr_values_t*) calloc(1,sizeof (drmaa_attr_values_t));
+	jt->_attr_values->next = NULL;/*(drmaa_attr_values_t*) calloc(1,sizeof (drmaa_attr_values_t));*/
 	if ((jt->_attr_values->attr_value = (char*)calloc(1,(strlen(value)+1)*sizeof(char)))==NULL)
 	  return DRMAA_ERRNO_NO_MEMORY;
 	strncpy(jt->_attr_values->attr_value,value,strlen(value)+1);
 	jt->_attr_values->iterator = jt->_attr_values;
-	//fprintf(stderr,"Value %s added to the attr_value list, which is now %s\n",value,jt->_attr_values->attr_value);
+	/*fprintf(stderr,"Value %s added to the attr_value list, which is now %s\n",value,jt->_attr_values->attr_value);*/
       }
       else{
-	//fprintf(stderr,"locating attribute %s\n",name);
+	/*fprintf(stderr,"locating attribute %s\n",name);*/
 	while (current_attr_name->next && strcmp(current_attr_name->attr_name,name)){
-	  //fprintf(stderr,"one loop\n");
+	  /*fprintf(stderr,"one loop\n");*/
 	  current_attr_name=current_attr_name->next;
 	  current_attr_value=current_attr_value->next;
 	}
 	if (current_attr_name->attr_name != NULL && !strcmp(current_attr_name->attr_name,name)){
-	  //fprintf(stderr,"Attribute %s already exists, modifying\n",name);
-	  //value is modified
+	  /*fprintf(stderr,"Attribute %s already exists, modifying\n",name);*/
+	  /*value is modified*/
 	  if (current_attr_value->attr_value)
 	    free(current_attr_value->attr_value);
 	  if ((current_attr_value->attr_value = (char*) calloc(1,(strlen(value)+1)*sizeof(char)))==NULL)
@@ -497,15 +497,15 @@ int drmaa_set_attribute(drmaa_job_template_t *jt, const char *name, const char *
 	  strncpy(current_attr_value->attr_value,value,strlen(value)+1);
 	}
 	else{
-	  //value is added at the end of the vector
-	  //fprintf(stderr,"Attribute %s doesn't exist, adding it to the non null list\n",name);
+	  /*value is added at the end of the vector*/
+	  /*fprintf(stderr,"Attribute %s doesn't exist, adding it to the non null list\n",name);*/
 	  if ((current_attr_name->next = (drmaa_attr_names_t*) calloc(1,sizeof (drmaa_attr_names_t)))==NULL)
 	    return DRMAA_ERRNO_NO_MEMORY;
 	  if ((current_attr_name->next->attr_name = (char*)calloc(1,(strlen(name)+1)*sizeof(char)))==NULL)
 	    return DRMAA_ERRNO_NO_MEMORY;
 	  strncpy(current_attr_name->next->attr_name,name,strlen(name)+1);
 	  current_attr_name->next->next = NULL;
-	  //fprintf(stderr,"Name %s added to the attr_name list\n",current_attr_name->next->attr_name);
+	  /*fprintf(stderr,"Name %s added to the attr_name list\n",current_attr_name->next->attr_name);*/
 
 	  if ((current_attr_value->next = (drmaa_attr_values_t*) calloc(1,sizeof (drmaa_attr_values_t)))==NULL)
 	    return DRMAA_ERRNO_NO_MEMORY;
@@ -513,7 +513,7 @@ int drmaa_set_attribute(drmaa_job_template_t *jt, const char *name, const char *
 	    return DRMAA_ERRNO_NO_MEMORY;
 	  strncpy(current_attr_value->next->attr_value,value,strlen(value)+1);
 	  current_attr_value->next->next = NULL;
-	  //fprintf(stderr,"Value %s added to the attr_value list\n",current_attr_value->next->attr_value);
+	  /*fprintf(stderr,"Value %s added to the attr_value list\n",current_attr_value->next->attr_value);*/
 	}
       }
       return DRMAA_ERRNO_SUCCESS;
@@ -548,8 +548,8 @@ int drmaa_get_attribute(drmaa_job_template_t *jt, const char *name, char *value,
 	current_attr_value=current_attr_value->next;
       }
       if (!strcmp(current_attr_name->attr_name,name)){
-	//printf ("found %s: current_attr_value->attr_value = %s\n",name, current_attr_value->attr_value);
-	//value is modified
+	/*printf ("found %s: current_attr_value->attr_value = %s\n",name, current_attr_value->attr_value);*/
+	/*value is modified*/
 	strncpy(value,current_attr_value->attr_value,value_len);
 	return DRMAA_ERRNO_SUCCESS;
       }
@@ -568,21 +568,21 @@ int drmaa_set_vector_attribute(drmaa_job_template_t *jt, const char *name, const
   if (_connect == -1)
     return DRMAA_ERRNO_NO_ACTIVE_SESSION;
 
-  //printf("\n\ndrmaa_set_vector_attribute\n\n\n");
+  /*printf("\n\ndrmaa_set_vector_attribute\n\n\n");*/
 
   int i,count = 0;
-  //fprintf(stderr,"setting a vector attribute\n");
+  /*fprintf(stderr,"setting a vector attribute\n");*/
   while ( value[count] != NULL )
     count++;
-  //printf ("%d values found\n",count);
+  /*printf ("%d values found\n",count);*/
   if (!strcmp(DRMAA_V_ARGV,name) || !strcmp(DRMAA_V_ENV,name) || !strcmp(DRMAA_V_EMAIL,name))
     {
       drmaa_attr_names_t* current_attr_name = jt->_attr_v_names;
       drmaa_attr_values_t **current_attr_value, *c, *prec_attr_value;
       current_attr_value = jt->_attr_v_values;
       if (jt->_attr_v_names == NULL){
-	//printf("No value yet for vector attributes (names), adding a new name for %s\n",name);
-	// first element
+	/*printf("No value yet for vector attributes (names), adding a new name for %s\n",name);*/
+	/* first element*/
 	if ((jt->_attr_v_names = (drmaa_attr_names_t*) calloc(1,sizeof(drmaa_attr_names_t)))==NULL)
 	  return DRMAA_ERRNO_NO_MEMORY;
 	jt->_attr_v_names->next = NULL;
@@ -593,22 +593,22 @@ int drmaa_set_vector_attribute(drmaa_job_template_t *jt, const char *name, const
 	current_attr_value = jt->_attr_v_values;
       }
       else{
-	//printf("A vector attribute names list is already defined, looking for %s...\n",name);
+	/*printf("A vector attribute names list is already defined, looking for %s...\n",name);*/
 
-        //printf("current attr_v_name is %s\n",current_attr_name->attr_name);
+        /*printf("current attr_v_name is %s\n",current_attr_name->attr_name);*/
 
 	while (current_attr_name->next && strcmp(current_attr_name->attr_name,name)){
 	  current_attr_name=current_attr_name->next;
-	  current_attr_value++; // current_attr_value is an array of drmaa_attr_value lists
-          //printf("current attr_v_name is %s\n",current_attr_name->attr_name);     
+	  current_attr_value++; /* current_attr_value is an array of drmaa_attr_value lists*/
+          /*printf("current attr_v_name is %s\n",current_attr_name->attr_name);     */
 	}
 	if (current_attr_name->attr_name != NULL && !strcmp(current_attr_name->attr_name,name)){
-	  //value is modified, erase the list
-          //printf("A value list is already defined for %s... Clean it\n",name);
+	  /*value is modified, erase the list*/
+          /*printf("A value list is already defined for %s... Clean it\n",name);*/
 	  if ((*current_attr_value) && (*current_attr_value)->attr_value != NULL){
 		c=(*current_attr_value);
 		while (c){
-		      //printf("Cleaning %s\n",c->attr_value);
+		      /*printf("Cleaning %s\n",c->attr_value);*/
 		      prec_attr_value = c;
 		      c=c->next;
 		      free(prec_attr_value->attr_value);
@@ -617,8 +617,8 @@ int drmaa_set_vector_attribute(drmaa_job_template_t *jt, const char *name, const
 	   }
 	}
 	else{
-          //printf("No value yet for %s, adding a new value list\n",name);
-	  //value is added at the end of the vector
+          /*printf("No value yet for %s, adding a new value list\n",name);*/
+	  /*value is added at the end of the vector*/
 	  if ((current_attr_name->next = (drmaa_attr_names_t*) calloc(1,sizeof (drmaa_attr_names_t)))==NULL)
 	    return DRMAA_ERRNO_NO_MEMORY;
 	  if ((current_attr_name->next->attr_name = (char*)calloc(1,(strlen(name)+1)*sizeof(char)))==NULL)
@@ -627,8 +627,8 @@ int drmaa_set_vector_attribute(drmaa_job_template_t *jt, const char *name, const
 	  current_attr_name->next->next = NULL;
 	}
       }
-      //printf("Name %s exists but has no value (not yet filled or just cleaned), adding a new value list\n",name);
-      // first
+      /*printf("Name %s exists but has no value (not yet filled or just cleaned), adding a new value list\n",name);*/
+      /* first*/
       if ((*current_attr_value = (drmaa_attr_values_t*)calloc(1,sizeof(drmaa_attr_values_t)))==NULL)
         return DRMAA_ERRNO_NO_MEMORY;
       c = *current_attr_value;
@@ -636,7 +636,7 @@ int drmaa_set_vector_attribute(drmaa_job_template_t *jt, const char *name, const
         return DRMAA_ERRNO_NO_MEMORY;
       c->next = NULL;
       strncpy(c->attr_value,value[0],strlen(value[0])+1);
-      //printf("Added value %s\n",c->attr_value);
+      /*printf("Added value %s\n",c->attr_value);*/
       prec_attr_value = c;
       for ( i = 1 ; i < count ; i++ ){
 	if ((c=(drmaa_attr_values_t*)calloc(1,sizeof(drmaa_attr_values_t)))==NULL)
@@ -646,7 +646,7 @@ int drmaa_set_vector_attribute(drmaa_job_template_t *jt, const char *name, const
 	c->next = NULL;
 	prec_attr_value->next = c;
 	strncpy(c->attr_value,value[i],strlen(value[i])+1);
-	//printf("Added value %s\n",c->attr_value);
+	/*printf("Added value %s\n",c->attr_value);*/
 	prec_attr_value = c;
       }
       return DRMAA_ERRNO_SUCCESS;
@@ -660,7 +660,7 @@ int drmaa_set_vector_attribute(drmaa_job_template_t *jt, const char *name, const
  */
 int drmaa_get_vector_attribute(drmaa_job_template_t *jt, const char *name, drmaa_attr_values_t **values, char *error_diagnosis, size_t error_diag_len)
 {
-  //printf("\n\nIn drmaa_get_vector_attribute\n\n\n");
+  /*printf("\n\nIn drmaa_get_vector_attribute\n\n\n");*/
 
   if (_connect == -1)
     return DRMAA_ERRNO_NO_ACTIVE_SESSION;
@@ -671,28 +671,28 @@ int drmaa_get_vector_attribute(drmaa_job_template_t *jt, const char *name, drmaa
   drmaa_attr_names_t* current_attr_name = jt->_attr_v_names;
   drmaa_attr_values_t** current_attr_value = jt->_attr_v_values, *ref, *c,*p;
   if (!jt->_attr_v_values){
-    //printf("jt->_attr_v_values is null\n");
+    /*printf("jt->_attr_v_values is null\n");*/
     values = NULL;
     return DRMAA_ERRNO_SUCCESS;
   }
-  //printf ("current_attr_name->attr_name = %s\n",current_attr_name->attr_name);
+  /*printf ("current_attr_name->attr_name = %s\n",current_attr_name->attr_name);*/
   while (current_attr_name->attr_name && strcmp(current_attr_name->attr_name,name)){
-    //printf ("current_attr_name->attr_name = %s\n",current_attr_name->attr_name);
+    /*printf ("current_attr_name->attr_name = %s\n",current_attr_name->attr_name);*/
     current_attr_name=current_attr_name->next;
     current_attr_value++;
   }
   if (!strcmp(current_attr_name->attr_name,name)){
-    //printf("found %s, copying values to \"values\": ",name);
+    /*printf("found %s, copying values to \"values\": ",name);*/
     ref = (*current_attr_value);
     if (ref->attr_value){
-      // first
+      /* first*/
       if ((*values = (drmaa_attr_values_t*) calloc(1,sizeof(drmaa_attr_values_t)))==NULL)
         return DRMAA_ERRNO_NO_MEMORY;
       c = *values;
       if ((c->attr_value = (char*) calloc(1,(strlen((*current_attr_value)->attr_value)+1)*sizeof(char)))==NULL)
         return DRMAA_ERRNO_NO_MEMORY;
       strncpy(c->attr_value,(*current_attr_value)->attr_value,strlen((*current_attr_value)->attr_value)+1);
-      //printf("%s; ",c->attr_value);
+      /*printf("%s; ",c->attr_value);*/
       c->next = NULL;
       c->iterator = c;
       p = c;
@@ -704,16 +704,16 @@ int drmaa_get_vector_attribute(drmaa_job_template_t *jt, const char *name, drmaa
 	  return DRMAA_ERRNO_NO_MEMORY;
 	strncpy(c->attr_value,ref->attr_value,strlen(ref->attr_value)+1);
 	c->next = NULL;
-        //printf("%s; ",c->attr_value);
+        /*printf("%s; ",c->attr_value);*/
 	p->next = c;
 	p = c;
 	ref = ref->next;
       }
     }
-    //printf("\n");
+    /*printf("\n");*/
   }
   else{
-    //printf("jt->_attr_v_values[%s] is null\n",name);
+    /*printf("jt->_attr_v_values[%s] is null\n",name);*/
     values = NULL;
   }
   return DRMAA_ERRNO_SUCCESS;
@@ -734,10 +734,10 @@ int drmaa_get_attribute_names( drmaa_attr_names_t **values, char *error_diagnosi
   drmaa_attr_names_t* current_attr_name = _supported_attr_names;
   if (((*values) = (drmaa_attr_names_t*) calloc(1,sizeof(drmaa_attr_names_t)))==NULL)
     return DRMAA_ERRNO_NO_MEMORY;
-  //fprintf(stderr,"Getting names\n");
+  /*fprintf(stderr,"Getting names\n");*/
   while (current_attr_name != NULL){
     if (current_attr_name->attr_name!=NULL){
-      //printf ("name=%s\n",current_attr_name->attr_name);
+      /*printf ("name=%s\n",current_attr_name->attr_name);*/
     }
     else{
       fprintf(stderr,"name is null, error\n");
@@ -755,17 +755,17 @@ int drmaa_get_attribute_names( drmaa_attr_names_t **values, char *error_diagnosi
  */
 int drmaa_get_vector_attribute_names(drmaa_attr_names_t **values, char *error_diagnosis, size_t error_diag_len)
 {
-  //should copy the whole thing
+  /*should copy the whole thing*/
   if (_connect == -1)
     return DRMAA_ERRNO_NO_ACTIVE_SESSION;
-  // test
+  /* test*/
   /*printf("_supported_attr_v_names (%p -> %p) = ", &_supported_attr_v_names,_supported_attr_v_names );
   drmaa_attr_names_t* current = _supported_attr_v_names->iterator;
   while (current){
-	//printf("%s ; ",current->attr_name);
+	printf("%s ; ",current->attr_name);
 	current = current->next;
   }
-  //printf("\n");*/
+  printf("\n");*/
 
   (*values) = _supported_attr_v_names;
   return DRMAA_ERRNO_SUCCESS;
@@ -773,50 +773,50 @@ int drmaa_get_vector_attribute_names(drmaa_attr_names_t **values, char *error_di
 
 
 int addAttrop(struct attropl** target, char* name, char* value){
-  //printf("In addatrop, target = %p, name = %s, value = %s\n",*target,name,value);
+  /*printf("In addatrop, target = %p, name = %s, value = %s\n",*target,name,value);*/
   if (_connect == -1)
     return DRMAA_ERRNO_NO_ACTIVE_SESSION;
   struct attropl* current = NULL;
   if (*target == NULL){
-    //fprintf(stderr,"target == NULL\n");
+    /*fprintf(stderr,"target == NULL\n");*/
     if ((*target = (struct attropl*)calloc(1,sizeof(struct attropl)))==NULL)
       return DRMAA_ERRNO_NO_MEMORY;
     current = *target;
   }
   else{
-    //fprintf(stderr,"target != NULL\n");
+    /*fprintf(stderr,"target != NULL\n");*/
     current = *target;
     struct attropl* prev = NULL;
-    //seek the last entry
+    /*seek the last entry*/
     while (current ){
       prev = current;
       current=current->next;
     }
-    //fprintf(stderr,"allocating current\n");
+    /*fprintf(stderr,"allocating current\n");*/
     fflush(stdout);
     if ((current = (struct attropl*)calloc(1,sizeof(struct attropl)))==NULL){
       return DRMAA_ERRNO_NO_MEMORY;
     }
-    //fprintf(stderr,"setting prev->next = current\n");
+    /*fprintf(stderr,"setting prev->next = current\n");*/
     fflush(stdout);
     prev->next = current;
   }
-  //fprintf(stderr,"Allocating ressources for name and value\n");
+  /*fprintf(stderr,"Allocating ressources for name and value\n");*/
   if ((current->name = (char*)calloc(1,(strlen(name)+1)*sizeof(char)))==NULL)
     return DRMAA_ERRNO_NO_MEMORY;
   if ((current->value = (char*)calloc(1,(strlen(value)+1)*sizeof(char)))==NULL)
     return DRMAA_ERRNO_NO_MEMORY;
-  //fprintf(stderr,"Copying name and value\n");
+  /*fprintf(stderr,"Copying name and value\n");*/
   strncpy(current->name,name,strlen(name)+1);
   strncpy(current->value,value,strlen(value)+1);
-  //fprintf(stderr,"setting current->next=NULL (normally useless as calloc was used\n");
+  /*fprintf(stderr,"setting current->next=NULL (normally useless as calloc was used\n");*/
   current->next = NULL;
-  //fprintf(stderr,"Done\n");
+  /*fprintf(stderr,"Done\n");*/
   return DRMAA_ERRNO_SUCCESS;
 }
 
 int addAttrop_v(struct attropl** target, char* name, drmaa_attr_values_t** value){
-  //fprintf(stderr,"addAttrop_v (%p,%s, %s)\n",target,name,(*value)->attr_value);
+  /*fprintf(stderr,"addAttrop_v (%p,%s, %s)\n",target,name,(*value)->attr_value);*/
   if (_connect == -1)
     return DRMAA_ERRNO_NO_ACTIVE_SESSION;
   if (!*value){
@@ -833,9 +833,9 @@ int addAttrop_v(struct attropl** target, char* name, drmaa_attr_values_t** value
   drmaa_attr_values_t* values = *value;
   int len = 0;
   while (values){
-    //fprintf(stderr,"value = %s\nlen(value) = %d\n",values->attr_value,strlen(values->attr_value)+1);
+    /*fprintf(stderr,"value = %s\nlen(value) = %d\n",values->attr_value,strlen(values->attr_value)+1);*/
     len+=(strlen(values->attr_value)+1);
-    //fprintf(stderr,"total length = %d\n",len);
+    /*fprintf(stderr,"total length = %d\n",len);*/
     count++;
     values=values->next;
   }
@@ -848,21 +848,21 @@ int addAttrop_v(struct attropl** target, char* name, drmaa_attr_values_t** value
   char *array;
   if (( array = (char*)calloc(len+1,sizeof(char)))==NULL)
     return DRMAA_ERRNO_NO_MEMORY;
-  //printf("%d bytes alloc'd, copying %d chars of %s in it\n",len,strlen(values->attr_value)+1,values->attr_value);
+  /*printf("%d bytes alloc'd, copying %d chars of %s in it\n",len,strlen(values->attr_value)+1,values->attr_value);*/
   strncpy(array,values->attr_value, strlen(values->attr_value)+1);
   strcat(array,",");
-  //fprintf(stderr,"0 : %s\n",array);
+  /*fprintf(stderr,"0 : %s\n",array);*/
   values = values->next;
   for (i = 1 ; i < count ; ++i){
-    //fprintf(stderr,"adding %d chars of %s\n",strlen(values->attr_value), values->attr_value);
+    /*fprintf(stderr,"adding %d chars of %s\n",strlen(values->attr_value), values->attr_value);*/
     strcat(array,(values->attr_value));
     strcat(array,",");
-    //fprintf(stderr,"%d : %s\n",i,array);
+    /*fprintf(stderr,"%d : %s\n",i,array);*/
     values = values->next;
   }
-  //replace last ',' by '\0' to finish the string
+  /*replace last ',' by '\0' to finish the string*/
   array[len-1]='\0';
-  //fprintf(stderr,"finally : %s\n",array);
+  /*fprintf(stderr,"finally : %s\n",array);*/
 
   if ((current = (struct attropl*)calloc(1,sizeof(struct attropl)))==NULL)
     return DRMAA_ERRNO_NO_MEMORY;
@@ -872,7 +872,7 @@ int addAttrop_v(struct attropl** target, char* name, drmaa_attr_values_t** value
     return DRMAA_ERRNO_NO_MEMORY;
   strncpy(current->name,name,strlen(name)+1);
   current->value = array;
-  //fprintf(stderr,"value = %s\n",current->value);
+  /*fprintf(stderr,"value = %s\n",current->value);*/
   return DRMAA_ERRNO_SUCCESS;
 }
 
@@ -895,7 +895,7 @@ int drmaa_run_job(char *job_id, size_t job_id_len, drmaa_job_template_t *jt, cha
   char* pbs_native_attribs[] = {ATTR_l,ATTR_p,ATTR_q,ATTR_c,ATTR_k,ATTR_r,ATTR_u,ATTR_v,ATTR_stagein,ATTR_stageout,
 				ATTR_exechost,ATTR_comment,ATTR_cookie,NULL};
 
-  //fprintf(stderr,"Entering drmaa_run_job\n");
+  /*fprintf(stderr,"Entering drmaa_run_job\n");*/
   struct attropl *attroplist = NULL;
   drmaa_attr_names_t* attr_names = jt->_attr_names;
   drmaa_attr_names_t* attr_v_names = jt->_attr_v_names;
@@ -904,26 +904,26 @@ int drmaa_run_job(char *job_id, size_t job_id_len, drmaa_job_template_t *jt, cha
   char *script;
   char *new_param_hd, *new_param;
 
-  //defaults
+  /*defaults*/
   addAttrop (&attroplist,ATTR_c,CHECKPOINT_UNSPECIFIED);
-  //fprintf(stderr,"Defining default values2\n");
+  /*fprintf(stderr,"Defining default values2\n");*/
   addAttrop (&attroplist,ATTR_h,NO_HOLD);
-  //fprintf(stderr,"Defining default values3\n");
+  /*fprintf(stderr,"Defining default values3\n");*/
   addAttrop (&attroplist,ATTR_j,NO_JOIN);
-  //fprintf(stderr,"Defining default values4\n");
+  /*fprintf(stderr,"Defining default values4\n");*/
   addAttrop (&attroplist,ATTR_k,NO_KEEP);
-  //  fprintf(stderr,"Defining default values5\n");
+  /*  fprintf(stderr,"Defining default values5\n");*/
   addAttrop (&attroplist,ATTR_m,MAIL_AT_ABORT);
-  //  fprintf(stderr,"Defining default values6\n");
+  /*  fprintf(stderr,"Defining default values6\n");*/
   addAttrop (&attroplist,ATTR_p,"0");
-  //  fprintf(stderr,"Defining default values7\n");
+  /*  fprintf(stderr,"Defining default values7\n");*/
   addAttrop (&attroplist,ATTR_r,"TRUE");
 
-  //fprintf(stderr,"In drmaa_run_job: defining pbs job\n");
+  /*fprintf(stderr,"In drmaa_run_job: defining pbs job\n");*/
   while (attr_names){
-    // add the correct pbs attrop
-    //fprintf(stderr,"handling %s\n",attr_names->attr_name);
-    // replace placeholders for home and execution dir
+    /* add the correct pbs attrop*/
+    /*fprintf(stderr,"handling %s\n",attr_names->attr_name);*/
+    /* replace placeholders for home and execution dir*/
     new_param_hd = replacePattern(attr_values->attr_value,DRMAA_PLACEHOLDER_HD,getenv("HOME"));
     if (!new_param_hd)
       return DRMAA_ERRNO_NO_MEMORY;
@@ -934,13 +934,13 @@ int drmaa_run_job(char *job_id, size_t job_id_len, drmaa_job_template_t *jt, cha
       return DRMAA_ERRNO_NO_MEMORY;    
     
     if (!strcmp(DRMAA_REMOTE_COMMAND,attr_names->attr_name)){
-      //addAttrop (&attroplist,ATTR_N,new_param);
+      /*addAttrop (&attroplist,ATTR_N,new_param);*/
       script=strdup(new_param);
-      //fprintf(stderr,"script: %s\n",script);
-      // todo : verify the script presence
+      /*fprintf(stderr,"script: %s\n",script);*/
+      /* todo : verify the script presence*/
     }
     else if (!strcmp(DRMAA_JS_STATE,attr_names->attr_name)){
-	//printf("DRMAA_JS_STATE, new_param = %s\n",new_param);
+	/*printf("DRMAA_JS_STATE, new_param = %s\n",new_param);*/
       if (!strcmp(new_param,DRMAA_SUBMISSION_STATE_HOLD))
 	addAttrop (&attroplist,ATTR_h,"u");
     }
@@ -950,12 +950,12 @@ int drmaa_run_job(char *job_id, size_t job_id_len, drmaa_job_template_t *jt, cha
     }
     else if (!strcmp(DRMAA_NATIVE_SPECIFICATION,attr_names->attr_name)){
 
-      // handle different properties, parse attr_values->attr_value, looks like "attrib=value"
+      /* handle different properties, parse attr_values->attr_value, looks like "attrib=value"*/
   
-      //printf("in run_job: DRMAA_NATIVE_SPECIFICATION, attr_name = %s\nattr_value = %s\n",attr_names->attr_name,attr_values->attr_value);
+      /*printf("in run_job: DRMAA_NATIVE_SPECIFICATION, attr_name = %s\nattr_value = %s\n",attr_names->attr_name,attr_values->attr_value);*/
 
-      // we'll use ';' as a separator for different native spec, for example "Resource_List=nodes=3;Rerunable=true"
-      // split the attribute value for ';'
+      /* we'll use ';' as a separator for different native spec, for example "Resource_List=nodes=3;Rerunable=true"*/
+      /* split the attribute value for ';'*/
       
       char* values_parser = attr_values->attr_value;
       char* current_value;
@@ -965,7 +965,7 @@ int drmaa_run_job(char *job_id, size_t job_id_len, drmaa_job_template_t *jt, cha
         size_t len = index(values_parser,';') - values_parser;
 	current_value = malloc(len*sizeof(char));
 	strncpy(current_value,values_parser,len);
-	//printf("extracted %s from %s\n",current_value, values_parser);
+	/*printf("extracted %s from %s\n",current_value, values_parser);*/
 	
 
         i = 0;
@@ -973,7 +973,7 @@ int drmaa_run_job(char *job_id, size_t job_id_len, drmaa_job_template_t *jt, cha
       	while (pbs_native_attribs[i] != NULL && !found){
 	  char* native_attr = pbs_native_attribs[i];
 	  if (!strncasecmp(current_value,native_attr,min(strlen(current_value),strlen(native_attr)))){
-	     //printf("\"%s\" found, adding %s to the pbs property\n",native_attr,strchr(current_value,'=')+1);
+	     /*printf("\"%s\" found, adding %s to the pbs property\n",native_attr,strchr(current_value,'=')+1);*/
 	     found = 1;
 	     if (strchr(current_value,'='))
 	        addAttrop (&attroplist,native_attr,strchr(current_value,'=')+1);
@@ -985,20 +985,20 @@ int drmaa_run_job(char *job_id, size_t job_id_len, drmaa_job_template_t *jt, cha
 	free(current_value);
 	current_value=NULL;
 	values_parser = index (values_parser,';');
-	// if values_parser is not NULL, increment it so as to skip the ';' char
+	/* if values_parser is not NULL, increment it so as to skip the ';' char*/
 	if (values_parser){
 	   values_parser++;
-	   //printf("values_parser = %s\n",values_parser);
+	   /*printf("values_parser = %s\n",values_parser);*/
 	}
       }
-      // last element
+      /* last element*/
       current_value = values_parser;
       i = 0;
 
       while (pbs_native_attribs[i] != NULL){
         char* native_attr = pbs_native_attribs[i];
 	if (!strncasecmp(current_value,native_attr,min(strlen(current_value),strlen(native_attr)))){
-             //printf("\"%s\" found, adding %s to the pbs property\n",native_attr,strchr(current_value,'=')+1);
+             /*printf("\"%s\" found, adding %s to the pbs property\n",native_attr,strchr(current_value,'=')+1);*/
              if (strchr(current_value,'='))
                 addAttrop (&attroplist,native_attr,strchr(current_value,'=')+1);
         }
@@ -1027,7 +1027,7 @@ int drmaa_run_job(char *job_id, size_t job_id_len, drmaa_job_template_t *jt, cha
       addAttrop (&attroplist,ATTR_j,new_param);
     }
     else if (!strcmp(DRMAA_TRANSFER_FILES,attr_names->attr_name)){
-      //addAttrop (&attroplist,ATTR_j,new_param);
+      /*addAttrop (&attroplist,ATTR_j,new_param);*/
     }
     else if (!strcmp(DRMAA_DEADLINE_TIME,attr_names->attr_name)){
     }
@@ -1047,48 +1047,48 @@ int drmaa_run_job(char *job_id, size_t job_id_len, drmaa_job_template_t *jt, cha
     }
     
   }
-  //fprintf(stderr,"handling attr_v\n");
+  /*fprintf(stderr,"handling attr_v\n");*/
   int val = 0;
   while (attr_v_names){
     attr_v_values = jt->_attr_v_values[val];
     if (!strcmp(DRMAA_V_ARGV,attr_v_names->attr_name)){
-      //addAttrop_v (&attroplist,ATTR_v,attr_v_values);
+      /*addAttrop_v (&attroplist,ATTR_v,attr_v_values);*/
     }
     else if (!strcmp(DRMAA_V_ENV,attr_v_names->attr_name)){
-      //fprintf(stderr,"found DRMAA_V_ENV, adding it to the attr_v\n");
+      /*fprintf(stderr,"found DRMAA_V_ENV, adding it to the attr_v\n");*/
       addAttrop_v (&attroplist,ATTR_v,&attr_v_values);
     }
     else if (!strcmp(DRMAA_V_EMAIL,attr_v_names->attr_name)){
       addAttrop_v (&attroplist,ATTR_M,&attr_v_values);
-      //fprintf(stderr,"found DRMAA_V_EMAIL, adding it to the attr_v\n");
+      /*fprintf(stderr,"found DRMAA_V_EMAIL, adding it to the attr_v\n");*/
     }
     attr_v_names = attr_v_names->next;
-    //*attr_v_values = (*attr_v_values)->next;
+    /**attr_v_values = (*attr_v_values)->next;*/
     val++;
   }
-  //fprintf(stderr,"job ready\n");
+  /*fprintf(stderr,"job ready\n");*/
   char destination[30]; /* FORMAT:  <QUEUE>@<HOST>:<PORT> */
-  //fprintf(stderr,"In drmaa_run_job, submitting job\n");
-  //fprintf(stderr,"\t_connect = %d\n\tattroplist=%p\n\tscrit=%s\n",_connect,&attroplist,script);
+  /*fprintf(stderr,"In drmaa_run_job, submitting job\n");*/
+  /*fprintf(stderr,"\t_connect = %d\n\tattroplist=%p\n\tscrit=%s\n",_connect,&attroplist,script);*/
   
   /**
    * debug
    */
-  //{
-    //struct attropl* currentAttropl = attroplist;
-    //while(currentAttropl){
-      //fprintf(stderr,"\tname:%s\t",currentAttropl->name);
-      //fprintf(stderr,"\tvalue:%s\n",currentAttropl->value);
-      //fflush(stdout);
-      //currentAttropl = currentAttropl->next;
-    //}
-  //}
+  /*{*/
+    /*struct attropl* currentAttropl = attroplist;*/
+    /*while(currentAttropl){*/
+      /*fprintf(stderr,"\tname:%s\t",currentAttropl->name);*/
+      /*fprintf(stderr,"\tvalue:%s\n",currentAttropl->value);*/
+      /*fflush(stdout);*/
+      /*currentAttropl = currentAttropl->next;*/
+    /*}*/
+  /*}*/
   /***************************************************/
 
   fprintf(stderr,"Submitting\n");
   char* id=NULL;
   
-  //fprintf(stderr,"id defined as NULL\n");
+  /*fprintf(stderr,"id defined as NULL\n");*/
   pthread_mutex_lock(&_submit_lock);
   id = pbs_submit(_connect, attroplist, script, NULL, NULL);
   fprintf(stderr,"submit done\n");
@@ -1122,20 +1122,20 @@ int drmaa_run_job(char *job_id, size_t job_id_len, drmaa_job_template_t *jt, cha
     strncpy(error_diagnosis,msg,error_diag_len);
     fprintf(stderr,"Error: %s\n", error_diagnosis);
     free (msg);
-    // we don't know that for sure
+    /* we don't know that for sure*/
     return DRMAA_ERRNO_DENIED_BY_DRM;
   }
   else{
-    //printf("job submitted: ID=%s\n",id);
+    /*printf("job submitted: ID=%s\n",id);*/
     strncpy(job_id,id,job_id_len);
-    //printf("adding to the list\n");
+    /*printf("adding to the list\n");*/
     if(id){
       free(id);
       id=NULL;
     }
     if (!job_list){
       pthread_mutex_lock(&_job_list_lock);
-      //printf("job list is empty, allocating memory\n");
+      /*printf("job list is empty, allocating memory\n");*/
       if ((job_list = (struct job_list_s*)calloc(1,sizeof(struct job_list_s)))==NULL)
         return DRMAA_ERRNO_NO_MEMORY;
       job_list->job = jt;
@@ -1156,7 +1156,7 @@ int drmaa_run_job(char *job_id, size_t job_id_len, drmaa_job_template_t *jt, cha
       current->next->next = NULL;
       pthread_mutex_unlock(&_job_list_lock);
     }
-    //printf("return\n");
+    /*printf("return\n");*/
     return DRMAA_ERRNO_SUCCESS;
   }
 }
@@ -1178,19 +1178,19 @@ int drmaa_run_bulk_jobs( drmaa_job_ids_t **jobids, drmaa_job_template_t *jt, int
 {
   if (_connect == -1)
     return DRMAA_ERRNO_NO_ACTIVE_SESSION;
-  //  fprintf(stderr,"In libdrmaa: drmaa_run_bulk_jobs (jobids, template, %d, %d, %d, diag, len)\n",start,end,incr);
+  /*  fprintf(stderr,"In libdrmaa: drmaa_run_bulk_jobs (jobids, template, %d, %d, %d, diag, len)\n",start,end,incr);*/
 
   if (incr < 1 || start < 1 || end > 2147483647 || end < start) 
     return DRMAA_ERRNO_CONFLICTING_ATTRIBUTE_VALUES;
 
-  //  fprintf(stderr,"start, end, incr, and job template OK\n");
+  /*  fprintf(stderr,"start, end, incr, and job template OK\n");*/
 
   if ( !jt ){
-    //printf("jt is null!\n");
+    /*printf("jt is null!\n");*/
     return DRMAA_ERRNO_INVALID_ARGUMENT;
   }
   else if (!(jt->_attr_names) || !(jt->_attr_values) ){
-    //printf("!(jt->_attr_names) || !(jt->_attr_values)\n");
+    /*printf("!(jt->_attr_names) || !(jt->_attr_values)\n");*/
     return DRMAA_ERRNO_INVALID_ARGUMENT;
   }
 
@@ -1202,13 +1202,13 @@ int drmaa_run_bulk_jobs( drmaa_job_ids_t **jobids, drmaa_job_template_t *jt, int
    */
   drmaa_attr_names_t *names_init = jt->_attr_names, *param_names=NULL,*param_names_current=NULL;
   drmaa_attr_values_t* values_init = jt->_attr_values, *param_values=NULL, *param_values_current=NULL;
-  //  fprintf(stderr,"Searching parametrics properties in the job template...\n");
+  /*  fprintf(stderr,"Searching parametrics properties in the job template...\n");*/
   while (names_init){
     if (strstr(values_init->attr_value,DRMAA_PLACEHOLDER_INCR)){
-      //printf("%s = %s contains the DRMAA_PLACEHOLDER_INCR value, adding it to the list\n",names_init->attr_name, values_init->attr_value);
-      // a parametric property has been found
+      /*printf("%s = %s contains the DRMAA_PLACEHOLDER_INCR value, adding it to the list\n",names_init->attr_name, values_init->attr_value);*/
+      /* a parametric property has been found*/
       if (!param_names){
-	//	printf("First element of the list..\n");
+	/*	printf("First element of the list..\n");*/
 	if ((param_names = (drmaa_attr_names_t *)calloc(1,sizeof(drmaa_attr_names_t)))==NULL)
 	  return DRMAA_ERRNO_NO_MEMORY;
 	if ((param_names->attr_name = (char*)calloc(1,(strlen(names_init->attr_name)+1)*sizeof(char)))==NULL)
@@ -1226,7 +1226,7 @@ int drmaa_run_bulk_jobs( drmaa_job_ids_t **jobids, drmaa_job_template_t *jt, int
 	param_values_current = param_values;
       }
       else{
-	//	printf("The list is not empty...\n");
+	/*	printf("The list is not empty...\n");*/
 	if ((param_names_current->next = (drmaa_attr_names_t *)calloc(1,sizeof(drmaa_attr_names_t)))==NULL)
 	  return DRMAA_ERRNO_NO_MEMORY;
 	if((param_names_current->next->attr_name = (char*)calloc(1,(strlen(names_init->attr_name)+1)*sizeof(char)))==NULL)
@@ -1251,7 +1251,7 @@ int drmaa_run_bulk_jobs( drmaa_job_ids_t **jobids, drmaa_job_template_t *jt, int
   /*
    *  now param_names contains parametric properties. If non null, we can update the job property for each iteration
    */
-  // fprintf(stderr,"Launching jobs\n");
+  /* fprintf(stderr,"Launching jobs\n");*/
   int i = start;
   if ((*jobids = (drmaa_job_ids_t *)calloc(1,sizeof(drmaa_job_ids_t)))==NULL)
     return DRMAA_ERRNO_NO_MEMORY;
@@ -1269,11 +1269,11 @@ int drmaa_run_bulk_jobs( drmaa_job_ids_t **jobids, drmaa_job_template_t *jt, int
   if ((currentJob->job_ids = (char*)calloc(1,DRMAA_JOBNAME_BUFFER*sizeof(char)))==NULL)
     return DRMAA_ERRNO_NO_MEMORY;
   currentJob->next = NULL;
-  //printf("run_bulk_jobs follows\n");
+  /*printf("run_bulk_jobs follows\n");*/
 
   sprintf(replacement,"%d",i);
 
-  //for each param, replace DRMAA_PLACEHOLDER_INCR by i
+  /*for each param, replace DRMAA_PLACEHOLDER_INCR by i*/
   param_names_current = param_names;
   param_values_current = param_values;
   while (param_names_current){
@@ -1305,57 +1305,57 @@ int drmaa_run_bulk_jobs( drmaa_job_ids_t **jobids, drmaa_job_template_t *jt, int
     if ((currentJob->next = (drmaa_job_ids_t *)calloc(1,sizeof(drmaa_job_ids_t)))==NULL)
       return DRMAA_ERRNO_NO_MEMORY;
     currentJob->next->next = NULL;
-    //printf("In drmaa_run_bulk_jobs, running job %d\n",i);
+    /*printf("In drmaa_run_bulk_jobs, running job %d\n",i);*/
 
     /******************************************************************************
      * for each param, replace DRMAA_PLACEHOLDER_INCR by i
      ******************************************************************************/
 
-    // place param_(names/values)_current on the first element
+    /* place param_(names/values)_current on the first element*/
     param_names_current = param_names;
     param_values_current = param_values;
-    // for each element call replacePattern, replacing DRMAA_PLACEHOLDER_INCR by the incr value (as string)
+    /* for each element call replacePattern, replacing DRMAA_PLACEHOLDER_INCR by the incr value (as string)*/
     while (param_names_current){
       if (new_param_value)
 	free(new_param_value);
       new_param_value = replacePattern(param_values_current->attr_value,DRMAA_PLACEHOLDER_INCR,replacement);
-      // set the current_job_attribute to the new value (erasing the previous one)
+      /* set the current_job_attribute to the new value (erasing the previous one)*/
       drmaa_set_attribute(jt,param_names_current->attr_name,new_param_value,error_diagnosis,error_diag_len);
-      // go for the next param_(name/value)
+      /* go for the next param_(name/value)*/
       param_names_current = param_names_current->next;
       param_values_current = param_values_current->next;
     }
     if (new_param_value)
       free(new_param_value);
-    // run the job
+    /* run the job*/
 
-    //printf("run the job %d\n",i);
+    /*printf("run the job %d\n",i);*/
     res = drmaa_run_job(current_job_id, DRMAA_JOBNAME_BUFFER, jt, error_diagnosis, error_diag_len);
-    //printf("job %d submitted\n",i);
+    /*printf("job %d submitted\n",i);*/
     if (res != DRMAA_ERRNO_SUCCESS){
       fprintf(stderr,"Error, %s\n",error_diagnosis);
       return res;
     }
-    // and add it to the job_ids list
+    /* and add it to the job_ids list*/
     if ((currentJob->next->job_ids = (char*)calloc(1,DRMAA_JOBNAME_BUFFER*sizeof(char)))==NULL)
       return DRMAA_ERRNO_NO_MEMORY;
     strncpy(currentJob->next->job_ids,current_job_id,DRMAA_JOBNAME_BUFFER);
     i+=incr;
-    // go to next job
+    /* go to next job*/
     currentJob = currentJob->next;
   }
   
-  //printf ("Finished submitting jobs\n");
+  /*printf ("Finished submitting jobs\n");*/
 
   /*
    *  free memory
    */
   param_names_current = param_names;
   param_values_current = param_values;
-  //printf("Begining free\n");
+  /*printf("Begining free\n");*/
 
   while (param_names_current){
-    //printf("freeing param : %s = %s\n",param_names_current->attr_name,param_values_current->attr_value);
+    /*printf("freeing param : %s = %s\n",param_names_current->attr_name,param_values_current->attr_value);*/
     param_names = param_names_current->next;
     param_values = param_values_current->next;
     free (param_names_current->attr_name);
@@ -1364,12 +1364,12 @@ int drmaa_run_bulk_jobs( drmaa_job_ids_t **jobids, drmaa_job_template_t *jt, int
     free (param_values_current);
     param_names_current = param_names;
     param_values_current = param_values;
-    //printf("freed\n");
+    /*printf("freed\n");*/
   }
   param_names = NULL;
   param_values = NULL;
   
-  //printf("Memory freed\n");
+  /*printf("Memory freed\n");*/
   return DRMAA_ERRNO_SUCCESS;
 }
 
@@ -1406,7 +1406,7 @@ int drmaa_control(const char *jobid, int action, char *error_diagnosis, size_t e
   case DRMAA_CONTROL_SUSPEND:
     free (job_id_cpy);
     job_id_cpy=NULL;
-    //return DRMAA_ERRNO_SUSPEND_INCONSISTENT_STATE;
+    /*return DRMAA_ERRNO_SUSPEND_INCONSISTENT_STATE;*/
     break;
   case DRMAA_CONTROL_RESUME:
     if (strcmp(jobid,DRMAA_JOB_IDS_SESSION_ALL))
@@ -1426,17 +1426,17 @@ int drmaa_control(const char *jobid, int action, char *error_diagnosis, size_t e
     if (strcmp(jobid,DRMAA_JOB_IDS_SESSION_ALL))
         pbs_rlsjob(_connect, job_id_cpy, USER_HOLD, NULL);
     else{
-	//printf("In drmaa_control, jobid is %s, setting function to pbs_rljob\n",jobid);
+	/*printf("In drmaa_control, jobid is %s, setting function to pbs_rljob\n",jobid);*/
         function = &pbs_rlsjob;
         strcpy(arg3,USER_HOLD);
     }
     break;
   case DRMAA_CONTROL_TERMINATE:
     if (!strcmp(jobid,DRMAA_JOB_IDS_SESSION_ALL)){
-        //printf("terminate all jobs in the session\n");
+        /*printf("terminate all jobs in the session\n");*/
         struct job_list_s* cur = job_list, *prec=NULL;
         while (cur){
-            //printf("deleting job %s\n",cur->job_id);
+            /*printf("deleting job %s\n",cur->job_id);*/
             pbs_deljob(_connect,cur->job_id,NULL);
             cur = cur->next;
         }
@@ -1447,7 +1447,7 @@ int drmaa_control(const char *jobid, int action, char *error_diagnosis, size_t e
     break;
   }
 
-  // do the job
+  /* do the job*/
 
   if (function){
      struct job_list_s* cur = job_list;
@@ -1460,7 +1460,7 @@ int drmaa_control(const char *jobid, int action, char *error_diagnosis, size_t e
   if (job_id_cpy)
     free(job_id_cpy);
   if (errno){
-    //printf("In drmaa_control(%s,%d), error: %s\n",jobid, action, pbs_geterrmsg(_connect)); 
+    /*printf("In drmaa_control(%s,%d), error: %s\n",jobid, action, pbs_geterrmsg(_connect)); */
     strncpy(error_diagnosis,pbs_geterrmsg(_connect),error_diag_len);
     return DRMAA_ERRNO_INTERNAL_ERROR;
   }
@@ -1489,7 +1489,7 @@ int drmaa_synchronize(const char *job_ids[], signed long timeout, int dispose, c
   if (_connect == -1)
     return DRMAA_ERRNO_NO_ACTIVE_SESSION;
   char waitForAll = !strcmp(job_ids[0],DRMAA_JOB_IDS_SESSION_ALL);
-  //printf("In drmaa_synchronize, waitForAll = %d\n",waitForAll);
+  /*printf("In drmaa_synchronize, waitForAll = %d\n",waitForAll);*/
   signed long callTime,returnTime;
   char id_out[DRMAA_JOBNAME_BUFFER];
   int status=-1;
@@ -1500,53 +1500,53 @@ int drmaa_synchronize(const char *job_ids[], signed long timeout, int dispose, c
     timeout=0;
 
   if ( waitForAll ){
-    //wait for all jobs
-    //fprintf(stderr,"[drmaa_synchronize]Waiting for all jobs\n");
+    /*wait for all jobs*/
+    /*fprintf(stderr,"[drmaa_synchronize]Waiting for all jobs\n");*/
     struct job_list_s *current_job = job_list;
     while (current_job){
       callTime = time(NULL);
-      //printf("[drmaa_synchronize]: now waiting for job %s\n",current_job->job_id);
+      /*printf("[drmaa_synchronize]: now waiting for job %s\n",current_job->job_id);*/
       ret = drmaa_wait_job (current_job->job_id,id_out,DRMAA_JOBNAME_BUFFER,&status,timeout,NULL, dispose,error_diagnosis,error_diag_len);
       if (ret != DRMAA_ERRNO_SUCCESS){
-	//printf("[drmaa_synchronize]drmaa_wait returned %d\n",ret);
+	/*printf("[drmaa_synchronize]drmaa_wait returned %d\n",ret);*/
 	return ret;
       }
       returnTime = time(NULL);
       if (!dispose){
-	// advance in the list
-        //printf("[drmaa_synchronize]Job won\'t be reaped off, switching to the next job\n");
+	/* advance in the list*/
+        /*printf("[drmaa_synchronize]Job won\'t be reaped off, switching to the next job\n");*/
 	current_job = current_job->next;
       }
       else{
-	// the first job has been waited and reaped off, reset current_job to the first of the list
-        //printf("[drmaa_synchronize]Job should now be reaped off, setting current_job to job_list again\n");
+	/* the first job has been waited and reaped off, reset current_job to the first of the list*/
+        /*printf("[drmaa_synchronize]Job should now be reaped off, setting current_job to job_list again\n");*/
 	current_job = job_list;
       }
       if ( timeout != DRMAA_TIMEOUT_WAIT_FOREVER ){
         timeout -= ( returnTime - callTime );
         if ( timeout <= 0 ){
-          //printf ("[drmaa_synchronize]Timeout!\n");
+          /*printf ("[drmaa_synchronize]Timeout!\n");*/
           return DRMAA_ERRNO_EXIT_TIMEOUT;
         }
       }
     }
   }
   else{
-    //fprintf(stderr,"drmaa_synchronize(): waiting for provided jobs:\n");
-    //fprintf(stderr,"received job_ids = %p\n",job_ids);  
+    /*fprintf(stderr,"drmaa_synchronize(): waiting for provided jobs:\n");*/
+    /*fprintf(stderr,"received job_ids = %p\n",job_ids);  */
     int i = 0;
     while (job_ids[i]){
-      //fprintf(stderr,"[drmaa_synchronize]job_ids[%d] = %s \n",i,job_ids[i]);
+      /*fprintf(stderr,"[drmaa_synchronize]job_ids[%d] = %s \n",i,job_ids[i]);*/
       i++;
     }
-    //fprintf(stderr,"\n");
+    /*fprintf(stderr,"\n");*/
     i = 0;
     while (job_ids[i]){
       fprintf(stderr,"[drmaa_synchronize]waiting for job %s\n",job_ids[i]);
       /*if ( timeout != DRMAA_TIMEOUT_WAIT_FOREVER ){
 	timeout -= ( returnTime - callTime );
 	if ( timeout <= 0 ){
-	  //printf ("[drmaa_synchronize]Timeout!\n");
+	  printf ("[drmaa_synchronize]Timeout!\n");
 	  return DRMAA_ERRNO_EXIT_TIMEOUT;
 	}
       }*/
@@ -1554,12 +1554,12 @@ int drmaa_synchronize(const char *job_ids[], signed long timeout, int dispose, c
       ret = drmaa_wait_job (job_ids[i],id_out,DRMAA_JOBNAME_BUFFER,&status,timeout,NULL,dispose,error_diagnosis,error_diag_len);
       if (ret != DRMAA_ERRNO_SUCCESS)
 	return ret;
-      //fprintf(stderr,"[drmaa_synchronize]%s finished\n",job_ids[i]);
+      /*fprintf(stderr,"[drmaa_synchronize]%s finished\n",job_ids[i]);*/
       returnTime = time(NULL);
       if ( timeout != DRMAA_TIMEOUT_WAIT_FOREVER ){
         timeout -= ( returnTime - callTime );
         if ( timeout <= 0 ){
-          //printf ("[drmaa_synchronize]Timeout!\n");
+          /*printf ("[drmaa_synchronize]Timeout!\n");*/
           return DRMAA_ERRNO_EXIT_TIMEOUT;
         }
       }
@@ -1593,7 +1593,7 @@ int drmaa_synchronize(const char *job_ids[], signed long timeout, int dispose, c
 int drmaa_wait(const char *jobid, char *job_id_out, size_t job_id_out_len, int *stat,
                signed long timeout, drmaa_attr_values_t **rusage,
                char *error_diagnosis, size_t error_diagnosis_len){
-	//kind of wrapper, just to allow a drmaa_wait function with a conditional reap of the job (useful for drmaa_synchronize)
+	/*kind of wrapper, just to allow a drmaa_wait function with a conditional reap of the job (useful for drmaa_synchronize)*/
 
 	return drmaa_wait_job(jobid, job_id_out, job_id_out_len, stat, timeout, rusage, 1, error_diagnosis, error_diagnosis_len);
 }
@@ -1610,45 +1610,45 @@ int drmaa_wait_job(const char *jobid, char *job_id_out, size_t job_id_out_len, i
   signed long deadline = time(NULL) + timeout;
   char *job_id = (char*)strdup(jobid);
 
-  //fprintf(stderr,"in drmaa_wait: id %s provided\n",job_id);
+  /*fprintf(stderr,"in drmaa_wait: id %s provided\n",job_id);*/
   if (strcmp(job_id,DRMAA_JOB_IDS_SESSION_ANY)){
-    // first verify if job is in current job_list:
+    /* first verify if job is in current job_list:*/
     char found = 0;
-    //printf("asking for job_list_lock\n");
+    /*printf("asking for job_list_lock\n");*/
     pthread_mutex_lock(&_job_list_lock);
-    //printf("Got lock on job list\n");
+    /*printf("Got lock on job list\n");*/
     struct job_list_s* cur = job_list, *prec=NULL;
     while (!found && cur){
-      //printf("Looking for %s, current job_id is %s\n",job_id,cur->job_id);
+      /*printf("Looking for %s, current job_id is %s\n",job_id,cur->job_id);*/
       if (!strcmp(cur->job_id,job_id)){
 	found = 1;
-	//printf("Found a match\n");
+	/*printf("Found a match\n");*/
       }
       else{
 	printf("getting next job from the list\n");
 	prec = cur;
 	cur = cur->next;
-	//printf("The current job_id is now %s\n",cur->job_id);
+	/*printf("The current job_id is now %s\n",cur->job_id);*/
       }
     }
-    //printf("releasing job_list_lock\n");
+    /*printf("releasing job_list_lock\n");*/
     pthread_mutex_unlock(&_job_list_lock);
     if (!found){
-      // job id is not in the list, return DRMAA_ERRNO_INVALID_JOB
+      /* job id is not in the list, return DRMAA_ERRNO_INVALID_JOB*/
       if(job_id){
 	free(job_id);
 	job_id=NULL;
       }
-      //printf("Job not found\n");
+      /*printf("Job not found\n");*/
 	strncpy(error_diagnosis, "The job ", error_diagnosis_len);
       strncat(error_diagnosis, jobid, error_diagnosis_len-8);
       strncat(error_diagnosis, " is not queued/unknown.",error_diagnosis_len-8-strlen(jobid));
       return DRMAA_ERRNO_INVALID_JOB;
     }
 
-    //fprintf(stderr,"[drmaa_wait]Waiting for job %s to finish\n",job_id);
+    /*fprintf(stderr,"[drmaa_wait]Waiting for job %s to finish\n",job_id);*/
 
-    //wait for job job_id to finish for a maximum time of timeout
+    /*wait for job job_id to finish for a maximum time of timeout*/
     char finished = 0;
     struct batch_status* state = NULL;
     #define STATUS_SIZE 2
@@ -1656,32 +1656,32 @@ int drmaa_wait_job(const char *jobid, char *job_id_out, size_t job_id_out_len, i
     formerStatus[0]='\0';
     status[0]='\0';
 
-    //define a attribute list containing only job_state - that makes the server return only this attribute
+    /*define a attribute list containing only job_state - that makes the server return only this attribute*/
     struct attrl* att;
     if ((att= (struct attrl*)calloc(1,sizeof (struct attrl)))==NULL)
       return DRMAA_ERRNO_NO_MEMORY;
     att->name="job_state";
-    //fprintf(stderr,"[drmaa_wait]Asking pbs server for the job state\n");
+    /*fprintf(stderr,"[drmaa_wait]Asking pbs server for the job state\n");*/
     signed long endTime;
     do{
-      //printf("asking for wait_lock\n");
+      /*printf("asking for wait_lock\n");*/
       pthread_mutex_lock(&_wait_lock);
-      //printf("got wait_lock\n");
+      /*printf("got wait_lock\n");*/
 
-      //printf("calling pbs_statjob(%d,%s,att,NULL)\n",_connect,job_id);
+      /*printf("calling pbs_statjob(%d,%s,att,NULL)\n",_connect,job_id);*/
       state = pbs_statjob(_connect,(char*)job_id,att,NULL);
-      //printf("server answered\n");
+      /*printf("server answered\n");*/
       pthread_mutex_unlock(&_wait_lock);
       if ( state == NULL ){
-	//printf("[drmaa_wait]job state is NULL, job has finished\n");
+	/*printf("[drmaa_wait]job state is NULL, job has finished\n");*/
 	strncpy(job_id_out,job_id,job_id_out_len);
-	//printf("errno = %d\n",pbs_errno);
-	//char* errmsg = pbs_geterrmsg(_connect);
-	//if (errmsg){
-	//   printf("error message is: \"%s\"\n",errmsg);
-	//}
+	/*printf("errno = %d\n",pbs_errno);*/
+	/*char* errmsg = pbs_geterrmsg(_connect);*/
+	/*if (errmsg){*/
+	/*   printf("error message is: \"%s\"\n",errmsg);*/
+	/*}*/
 	if (stat)
-	   *stat = DRMAA_PS_DONE; //DRMAA_PS_UNDETERMINED; /* process status is finished, but cannot be determined as success or failure */
+	   *stat = DRMAA_PS_DONE; /*DRMAA_PS_UNDETERMINED;  process status is finished, but cannot be determined as success or failure */
 	finished = 1;
         pbs_statfree(state);
 	state=NULL;
@@ -1691,12 +1691,12 @@ int drmaa_wait_job(const char *jobid, char *job_id_out, size_t job_id_out_len, i
         pbs_statfree(state);
 	state=NULL;
 
-	//printf("Comparing status and formerStatus\n");
-	if (strcmp(status,formerStatus)){ // display change
-	  //printf("\nstatus->name = %s\n",state->name);
+	/*printf("Comparing status and formerStatus\n");*/
+	if (strcmp(status,formerStatus)){ /* display change*/
+	  /*printf("\nstatus->name = %s\n",state->name);*/
 	  strncpy(formerStatus,status,STATUS_SIZE);
-	  //fprintf(stderr,"\njob status = %s\n",status);
-	  //printf("errno is %d\n",pbs_errno);
+	  /*fprintf(stderr,"\njob status = %s\n",status);*/
+	  /*printf("errno is %d\n",pbs_errno);*/
 	} 
 	else if (!strcmp(status,"R")||!strcmp(status,"E")){
         if (stat)
@@ -1709,14 +1709,14 @@ int drmaa_wait_job(const char *jobid, char *job_id_out, size_t job_id_out_len, i
 	          return DRMAA_ERRNO_NO_MEMORY;
 		}
 	        resources->name=ATTR_l;
-	        //fprintf(stderr,"Asking pbs server for the job resources\n");
+	        /*fprintf(stderr,"Asking pbs server for the job resources\n");*/
 	        state = pbs_statjob(_connect,(char*)job_id,resources,NULL);
 	        if (state){
 	           struct attrl* current_resource = state->attribs;
 		   do{
-	                //fprintf(stderr,"Got %s = %s\n",current_resource->resource,current_resource->value);
-			// translate to drmaa values
-			// todo
+	                /*fprintf(stderr,"Got %s = %s\n",current_resource->resource,current_resource->value);*/
+			/* translate to drmaa values*/
+			/* todo*/
 	                current_resource = current_resource->next;
 	           } while (current_resource->next);
 		   free(state);
@@ -1724,8 +1724,8 @@ int drmaa_wait_job(const char *jobid, char *job_id_out, size_t job_id_out_len, i
 	    }
 	}
 	else{
-	  //fprintf(stderr,".");
-	  //fflush(stderr);
+	  /*fprintf(stderr,".");*/
+	  /*fflush(stderr);*/
 	}
 	if (timeout != DRMAA_TIMEOUT_NO_WAIT)
 	  sleep(1);
@@ -1733,9 +1733,9 @@ int drmaa_wait_job(const char *jobid, char *job_id_out, size_t job_id_out_len, i
 	  break;
 	 
       }
-      //pthread_mutex_unlock(&_wait_lock);
+      /*pthread_mutex_unlock(&_wait_lock);*/
     }while((!finished && ((timeout == DRMAA_TIMEOUT_WAIT_FOREVER) || ((endTime = time(NULL)) < deadline))));
-    //printf("while loop exiting, finished = %d\n",finished);
+    /*printf("while loop exiting, finished = %d\n",finished);*/
 
     pthread_mutex_lock(&_wait_lock);
 
@@ -1744,7 +1744,7 @@ int drmaa_wait_job(const char *jobid, char *job_id_out, size_t job_id_out_len, i
     if (finished)
  	strncpy(job_id_out,job_id,job_id_out_len);
     if (timeout == DRMAA_TIMEOUT_NO_WAIT){
-      //printf("in drmaa_wait: no wait\n");
+      /*printf("in drmaa_wait: no wait\n");*/
       if (!strcmp(status,"Q")){
 	if (stat)
 	   *stat = DRMAA_PS_QUEUED_ACTIVE; /* job is queued and active */
@@ -1765,12 +1765,12 @@ int drmaa_wait_job(const char *jobid, char *job_id_out, size_t job_id_out_len, i
           return DRMAA_ERRNO_NO_MEMORY;
 	}
         resources->name=ATTR_l;
-        //fprintf(stderr,"Asking pbs server for the job resources\n");
+        /*fprintf(stderr,"Asking pbs server for the job resources\n");*/
         state = pbs_statjob(_connect,(char*)job_id,resources,NULL);
         if (state){
 	   struct attrl* current_resource = state->attribs;
 	   do{
-		//fprintf(stderr,"Got %s = %s\n",state->attribs->resource,state->attribs->value);
+		/*fprintf(stderr,"Got %s = %s\n",state->attribs->resource,state->attribs->value);*/
 		current_resource = current_resource->next;
 	   } while (current_resource->next);	
 	  
@@ -1782,14 +1782,14 @@ int drmaa_wait_job(const char *jobid, char *job_id_out, size_t job_id_out_len, i
       }
       else{
 	if (stat)
-	   *stat = DRMAA_PS_DONE; //DRMAA_PS_UNDETERMINED; /* process status cannot be determined */
+	   *stat = DRMAA_PS_DONE; /*DRMAA_PS_UNDETERMINED;  process status cannot be determined */
       }
     }
 
     pthread_mutex_unlock(&_wait_lock);
 
     if (!finished){
-      //printf("in drmaa_wait: timeout\n");
+      /*printf("in drmaa_wait: timeout\n");*/
       pbs_statfree(state);
       free(state);
       if(job_id)
@@ -1803,13 +1803,13 @@ int drmaa_wait_job(const char *jobid, char *job_id_out, size_t job_id_out_len, i
 	 * reap off the job
 	 */
       pthread_mutex_lock(&_job_list_lock);
-      //printf ("Reap off the finished job:\n");
+      /*printf ("Reap off the finished job:\n");*/
       if (!prec){
-	//printf ("prec pointer not pointing to anything, setting job_list to current->next\n");
+	/*printf ("prec pointer not pointing to anything, setting job_list to current->next\n");*/
 	job_list = cur->next;
       }
       else{
-	//printf("prec pointer (%p) is %s\nSetting prec to current->next\n",prec,prec->job_id);
+	/*printf("prec pointer (%p) is %s\nSetting prec to current->next\n",prec,prec->job_id);*/
 	prec->next = cur->next;
       }
       if (cur){
@@ -1823,29 +1823,29 @@ int drmaa_wait_job(const char *jobid, char *job_id_out, size_t job_id_out_len, i
       pthread_mutex_unlock(&_job_list_lock);
     }
     else
-	//printf("No reap\n");
+	/*printf("No reap\n");*/
 
     pbs_statfree(state);
     state = NULL;
-    //free(state);
+    /*free(state);*/
     if (job_id){
       free(job_id);
       job_id=0;
     }
-    //fprintf(stderr,"freeing att\n");
+    /*fprintf(stderr,"freeing att\n");*/
     if (att)
       free(att);
-    //printf("returning from drmaa_wait\n");
+    /*printf("returning from drmaa_wait\n");*/
     return DRMAA_ERRNO_SUCCESS;
   }
   else{
-    // wait for any job
-    // loops through the list of executing jobs and call drmaa_wait(NO_WAIT) until one is finished
+    /* wait for any job*/
+    /* loops through the list of executing jobs and call drmaa_wait(NO_WAIT) until one is finished*/
 
     struct job_list_s* jobs = job_list;
 
     if (!jobs){
-	//empty list, no job running
+	/*empty list, no job running*/
 	return DRMAA_ERRNO_INVALID_JOB;
     }
 
@@ -1856,11 +1856,11 @@ int drmaa_wait_job(const char *jobid, char *job_id_out, size_t job_id_out_len, i
     int ret;
     callTime = time(NULL);
     returnTime = callTime;
-    //    fprintf(stderr,"Waiting for all jobs\n");
+    /*    fprintf(stderr,"Waiting for all jobs\n");*/
     while (!finished){
 	while(jobs && !finished){
 	    callTime = time(NULL);
-      	    // drmaa_wait_job in itself is thread safe
+      	    /* drmaa_wait_job in itself is thread safe*/
 	    ret = drmaa_wait_job (job_list->job_id,id_out,DRMAA_JOBNAME_BUFFER,&job_status,DRMAA_TIMEOUT_NO_WAIT,rusage,dispose,error_diagnosis,error_diagnosis_len);
 	    if (ret == DRMAA_ERRNO_SUCCESS){
 		finished = 1;
@@ -1870,12 +1870,12 @@ int drmaa_wait_job(const char *jobid, char *job_id_out, size_t job_id_out_len, i
             if ( timeout != DRMAA_TIMEOUT_WAIT_FOREVER ){
                 timeout -= ( returnTime - callTime );
                 if ( timeout <= 0 && !finished){
-                  //printf ("Timeout!\n");
+                  /*printf ("Timeout!\n");*/
                   return DRMAA_ERRNO_EXIT_TIMEOUT;
                 }
             }
     	}
-	//sleep(1);
+	/*sleep(1);*/
 	jobs = job_list;
      }
      return ret;
@@ -1896,9 +1896,9 @@ int drmaa_wifexited(int *exited, int stat, char *error_diagnosis, size_t error_d
   if (_connect == -1)
     return DRMAA_ERRNO_NO_ACTIVE_SESSION;
   strncpy(error_diagnosis,"Not implemented",error_diag_len);
-  //return DRMAA_ERRNO_INTERNAL_ERROR;
+  /*return DRMAA_ERRNO_INTERNAL_ERROR;*/
   *exited = 1;
-  //printf ("wifexited sets exited to %d\n",*exited);
+  /*printf ("wifexited sets exited to %d\n",*exited);*/
   return DRMAA_ERRNO_SUCCESS;
 }
 
@@ -1913,8 +1913,8 @@ int drmaa_wexitstatus(int *exit_status, int stat, char *error_diagnosis, size_t 
   if (_connect == -1)
     return DRMAA_ERRNO_NO_ACTIVE_SESSION;
   strncpy(error_diagnosis,"Not implemented",error_diag_len);
-  //return DRMAA_ERRNO_INTERNAL_ERROR;
-  //*exit_status = 0;
+  /*return DRMAA_ERRNO_INTERNAL_ERROR;*/
+  /**exit_status = 0;*/
   return DRMAA_ERRNO_SUCCESS;
 }
 
@@ -1932,7 +1932,7 @@ int drmaa_wifsignaled(int *signaled, int stat, char *error_diagnosis, size_t err
   if (_connect == -1)
     return DRMAA_ERRNO_NO_ACTIVE_SESSION;
   strncpy(error_diagnosis,"Not implemented",error_diag_len);
-  //return DRMAA_ERRNO_INTERNAL_ERROR;
+  /*return DRMAA_ERRNO_INTERNAL_ERROR;*/
   return DRMAA_ERRNO_SUCCESS;
 }
 
@@ -1949,7 +1949,7 @@ int drmaa_wtermsig(char *signal, size_t signal_len, int stat, char *error_diagno
   if (_connect == -1)
     return DRMAA_ERRNO_NO_ACTIVE_SESSION;
   strncpy(error_diagnosis,"Not implemented",error_diag_len);
-  //return DRMAA_ERRNO_INTERNAL_ERROR;
+  /*return DRMAA_ERRNO_INTERNAL_ERROR;*/
   return DRMAA_ERRNO_SUCCESS;
 }
 
@@ -1964,7 +1964,7 @@ int drmaa_wcoredump(int *core_dumped, int stat, char *error_diagnosis, size_t er
   if (_connect == -1)
     return DRMAA_ERRNO_NO_ACTIVE_SESSION;
   strncpy(error_diagnosis,"Not implemented",error_diag_len);
-  //return DRMAA_ERRNO_INTERNAL_ERROR;
+  /*return DRMAA_ERRNO_INTERNAL_ERROR;*/
   return DRMAA_ERRNO_SUCCESS;
 }
 
@@ -1978,7 +1978,7 @@ int drmaa_wifaborted(int *aborted, int stat, char *error_diagnosis, size_t error
   if (_connect == -1)
     return DRMAA_ERRNO_NO_ACTIVE_SESSION;
   strncpy(error_diagnosis,"Not implemented",error_diag_len);
-  //return DRMAA_ERRNO_INTERNAL_ERROR;
+  /*return DRMAA_ERRNO_INTERNAL_ERROR;*/
   return DRMAA_ERRNO_SUCCESS;
 }
 
@@ -2118,7 +2118,7 @@ char* replacePattern(char* source, char* pattern,char* replacement){
   char* index=NULL;
   int times = 0;
 
-  // compute the final size of dest
+  /* compute the final size of dest*/
   index = source;
   do{
     index = strstr(index,pattern);
@@ -2129,64 +2129,64 @@ char* replacePattern(char* source, char* pattern,char* replacement){
   }while (index);
   
   if (!times){
-    //printf("No occurence of %s in %s\n",pattern,source);
+    /*printf("No occurence of %s in %s\n",pattern,source);*/
     return strdup(source);
   }
 
-  // diff is the size difference between pattern and remplacement
+  /* diff is the size difference between pattern and remplacement*/
   diff = strlen(pattern) - strlen(replacement);
 
-  // size is the predicted size of the destination buffer
+  /* size is the predicted size of the destination buffer*/
   size = strlen(source)-(times*diff);
-  //printf("dest size = %d - ((%d) X (%d)) = %d\n",strlen(source),times,diff,size);
+  /*printf("dest size = %d - ((%d) X (%d)) = %d\n",strlen(source),times,diff,size);*/
 
-  // we work on the destination buffer, so its size must be at least equal to the
-  // source's size, greater if strlen(remplacement)>strlen(pattern)
+  /* we work on the destination buffer, so its size must be at least equal to the*/
+  /* source's size, greater if strlen(remplacement)>strlen(pattern)*/
   
   dest = (char*) calloc ((size > strlen(source))?size+1:strlen(source)+1,sizeof(char));
   temp = (char*) calloc ((size > strlen(source))?size+1:strlen(source)+1,sizeof(char));
   strncpy (temp, source, strlen(source)+1);
   
   while(!end){
-    //printf("source temp = %s\nSize = %d\n\n",temp,strlen(temp));
+    /*printf("source temp = %s\nSize = %d\n\n",temp,strlen(temp));*/
     
-    //printf("DRMAA_PLACEHOLDER_INCR = %s\nSize = %d\n\n",DRMAA_PLACEHOLDER_INCR,strlen(DRMAA_PLACEHOLDER_INCR ));
+    /*printf("DRMAA_PLACEHOLDER_INCR = %s\nSize = %d\n\n",DRMAA_PLACEHOLDER_INCR,strlen(DRMAA_PLACEHOLDER_INCR ));*/
     
-    //printf("incr = %s\nSize = %d\n\n",replacement,strlen(replacement));
+    /*printf("incr = %s\nSize = %d\n\n",replacement,strlen(replacement));*/
     index = strstr(temp,pattern);
-    //printf("At index, temp = %s\n\n",index);
+    /*printf("At index, temp = %s\n\n",index);*/
     if (!index){
-      //printf("No %s found in %s\n",pattern,temp);
+      /*printf("No %s found in %s\n",pattern,temp);*/
       end = 1;
     }
     else{
       size = index-temp;
-      //printf("size = index-temp = %d\n",size);
-      //printf("strncpy(%s,%s,%d)\n",dest,temp,size);
+      /*printf("size = index-temp = %d\n",size);*/
+      /*printf("strncpy(%s,%s,%d)\n",dest,temp,size);*/
       strncpy(dest,temp,size);
       dest[size]='\0';
-      //printf("dest = %s\n\n",dest);
+      /*printf("dest = %s\n\n",dest);*/
       
-      // add the replacement
+      /* add the replacement*/
       strcat(dest,replacement);
       
-      // add the end of the source
-      // place index on the first char following the pattern
+      /* add the end of the source*/
+      /* place index on the first char following the pattern*/
       index += (strlen(pattern));
-      //printf("Next char = %c\n",*index);
-      //printf("%d chars left\n",strlen(index));
+      /*printf("Next char = %c\n",*index);*/
+      /*printf("%d chars left\n",strlen(index));*/
       strncat(dest,index,strlen(index)+1);
-      //printf("Dest = %s\n",dest);
+      /*printf("Dest = %s\n",dest);*/
       
       strncpy(temp,dest,strlen(dest)+1);
     }
   }
   
-  // realloc to set the buffer size to the string size
+  /* realloc to set the buffer size to the string size*/
   size = strlen(dest)+1;
   realloc(dest,size*sizeof(char));
   free (temp);
-  //printf("dest = %s\n",dest);
+  /*printf("dest = %s\n",dest);*/
   return dest;
 }
 
@@ -2195,6 +2195,6 @@ char* replacePattern(char* source, char* pattern,char* replacement){
 }
 #endif
 
-//#endif /* __DRMAA_H */
+/*#endif*/ /* __DRMAA_H */
 
 
