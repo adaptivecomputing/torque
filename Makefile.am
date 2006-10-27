@@ -116,9 +116,13 @@ if INCLUDE_PAM
 PAM_PKG = pam
 endif
 
-ALL_PKGS = $(SERVER_PKG) $(MOM_PKG) $(CLIENTS_PKG) $(GUI_PKG) $(PAM_PKG) devel doc
+if INCLUDE_DRMAA
+DRMAA_PKG = drmaa
+endif
 
-install_server install_mom install_clients install_gui install_lib install_pam:
+ALL_PKGS = $(SERVER_PKG) $(MOM_PKG) $(CLIENTS_PKG) $(GUI_PKG) $(PAM_PKG) $(DRMAA_PKG) devel doc
+
+install_server install_mom install_clients install_gui install_lib install_pam install_drmaa:
 	(cd src && $(MAKE) $@)
 install_doc:
 	(cd doc && $(MAKE) $@)

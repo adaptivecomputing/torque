@@ -118,6 +118,12 @@ AC_ARG_ENABLE(clients,
 AC_MSG_RESULT($include_clients)
 AM_CONDITIONAL(INCLUDE_CLIENTS, [test "x$include_clients" = "xyes"])
 
+AC_MSG_CHECKING([whether to build DRMAA lib])
+AC_ARG_ENABLE(drmaa,
+    [  --disable-drmaa       do not build the DRMAA 1.0 library],
+    include_drmaa=$enableval, include_drmaa=yes)
+AC_MSG_RESULT($include_drmaa)
+AM_CONDITIONAL(INCLUDE_DRMAA, [test "x$include_drmaa" = "xyes"])
 
 
 dnl
@@ -1483,5 +1489,6 @@ AC_OUTPUT(buildutils/pbs_mkdirs
 	  src/server/Makefile
 	  src/tools/Makefile
 	  src/tools/xpbsmon/Makefile
+	  src/drmaa/Makefile
 	  src/pam/Makefile)
 

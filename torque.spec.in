@@ -169,7 +169,7 @@ for initscript in pbs_mom pbs_sched pbs_server; do
 done
 
 # remove libtool droppings
-%{__rm} -f $RPM_BUILD_ROOT/%{_lib}/security/pam_pbssimpleauth.{a,la}
+%{__rm} -f $RPM_BUILD_ROOT/%{_lib}/security/pam_pbssimpleauth.{a,la} $RPM_BUILD_ROOT/%{_libdir}/*.la
 
 
 %clean
@@ -201,6 +201,7 @@ fi
 %config(noreplace) %{torquehomedir}/server_name
 %{torquehomedir}/aux
 %{torquehomedir}/spool
+%{_libdir}/libtorque.so.*
 
 
 %package docs
@@ -316,7 +317,6 @@ This package holds the command-line client programs.
 %{_bindir}/printjob
 %{_bindir}/printtracking
 %{_bindir}/tracejob
-%{_libdir}/*.so.*
 %attr(4755 root root) %{_sbindir}/pbs_iff
 %{_sbindir}/pbs_demux
 %if %use_tcl
@@ -388,9 +388,14 @@ necessary for developing programs which will use %{name}.
 
 %files devel
 %defattr(-, root, root)
-%{_libdir}/*.*a
-%{_libdir}/*.so
-%{_includedir}/*.h
+%{_libdir}/libtorque.a
+%{_libdir}/libtorque.so
+%{_includedir}/pbs_error.h
+%{_includedir}/pbs_ifl.h
+%{_includedir}/rm.h
+%{_includedir}/rpp.h
+%{_includedir}/tm_.h
+%{_includedir}/tm.h
 %{_bindir}/pbs-config
 
 %pre devel
@@ -412,3 +417,20 @@ A simple PAM module to authorize users on PBS MOM nodes with a running job.
 %defattr(-, root, root)
 %doc src/pam/README.pam
 /%{_lib}/security/pam_pbssimpleauth.so
+
+
+%package drmaa
+Summary: DRMAA 1.0 implementation for PBS/TORQUE
+Group: System Environment/Base
+
+%description drmaa
+%shared_description
+An API specification for the submission and control of jobs to one or more
+Distributed Resource Management (DRM) systems.
+
+%files drmaa
+%defattr(-, root, root)
+%{_libdir}/libdrmaa.*
+%{_includedir}/drmaa.h
+
+

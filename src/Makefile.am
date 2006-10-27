@@ -1,7 +1,7 @@
 include $(top_srcdir)/buildutils/config.mk
 
 DIST_SUBDIRS =   cmds  iff      lib      resmom          scheduler.cc   server \
- gui scheduler.basl   include  mom_rcp    scheduler.tcl  tools pam
+ gui scheduler.basl   include  mom_rcp    scheduler.tcl  tools pam drmaa
 
 
 if INCLUDE_SERVER
@@ -28,7 +28,11 @@ if INCLUDE_PAM
 PAM_DIRS = pam
 endif
 
-SUBDIRS = include lib $(SERVER_DIRS) $(MOM_DIRS) $(CLIENTS_DIRS) $(GUI_DIRS) $(PAM_DIRS)
+if INCLUDE_DRMAA
+DRMAA_DIRS = drmaa
+endif
+
+SUBDIRS = include lib $(SERVER_DIRS) $(MOM_DIRS) $(CLIENTS_DIRS) $(GUI_DIRS) $(PAM_DIRS) $(DRMAA_DIRS)
 
 install_mom:
 	for dir in $(MOM_DIRS) lib ;do (cd $$dir && $(MAKE) install);done
@@ -50,3 +54,6 @@ install_lib:
 
 install_pam:
 	for dir in $(PAM_DIRS) ;do (cd $$dir && $(MAKE) install);done
+
+install_drmaa:
+	for dir in $(DRMAA_DIRS) ;do (cd $$dir && $(MAKE) install);done
