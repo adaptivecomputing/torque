@@ -200,7 +200,9 @@ PKGROOT = $(PWD)/tpackages
 
 @INCLUDE_PAM_TRUE@PAM_PKG = pam
 
-ALL_PKGS = $(SERVER_PKG) $(MOM_PKG) $(CLIENTS_PKG) $(GUI_PKG) $(PAM_PKG) devel doc
+@INCLUDE_DRMAA_TRUE@DRMAA_PKG = drmaa
+
+ALL_PKGS = $(SERVER_PKG) $(MOM_PKG) $(CLIENTS_PKG) $(GUI_PKG) $(PAM_PKG) $(DRMAA_PKG) devel doc
 subdir = .
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 mkinstalldirs = $(SHELL) $(top_srcdir)/buildutils/mkinstalldirs
@@ -595,7 +597,7 @@ rpm: dist
 	  --with includedir=$(includedir) \
 	  --with prefix=$(prefix)
 
-install_server install_mom install_clients install_gui install_lib install_pam:
+install_server install_mom install_clients install_gui install_lib install_pam install_drmaa:
 	(cd src && $(MAKE) $@)
 install_doc:
 	(cd doc && $(MAKE) $@)

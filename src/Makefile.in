@@ -137,7 +137,7 @@ XPBSMON_DIR = $(libdir)/xpbsmon
 SUBMIT_FILTER_PATH = $(libexecdir)/qsub_filter
 
 DIST_SUBDIRS = cmds  iff      lib      resmom          scheduler.cc   server \
- gui scheduler.basl   include  mom_rcp    scheduler.tcl  tools pam
+ gui scheduler.basl   include  mom_rcp    scheduler.tcl  tools pam drmaa
 
 
 @INCLUDE_SERVER_TRUE@SERVER_DIRS = server @SCHD_TYPE_SUBDIR@
@@ -152,7 +152,9 @@ DIST_SUBDIRS = cmds  iff      lib      resmom          scheduler.cc   server \
 
 @INCLUDE_PAM_TRUE@PAM_DIRS = pam
 
-SUBDIRS = include lib $(SERVER_DIRS) $(MOM_DIRS) $(CLIENTS_DIRS) $(GUI_DIRS) $(PAM_DIRS)
+@INCLUDE_DRMAA_TRUE@DRMAA_DIRS = drmaa
+
+SUBDIRS = include lib $(SERVER_DIRS) $(MOM_DIRS) $(CLIENTS_DIRS) $(GUI_DIRS) $(PAM_DIRS) $(DRMAA_DIRS)
 subdir = src
 mkinstalldirs = $(SHELL) $(top_srcdir)/buildutils/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/include/pbs_config.h
@@ -422,6 +424,9 @@ install_lib:
 
 install_pam:
 	for dir in $(PAM_DIRS) ;do (cd $$dir && $(MAKE) install);done
+
+install_drmaa:
+	for dir in $(DRMAA_DIRS) ;do (cd $$dir && $(MAKE) install);done
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:
