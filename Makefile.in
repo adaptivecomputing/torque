@@ -72,6 +72,7 @@ AWK = @AWK@
 CC = @CC@
 DEPDIR = @DEPDIR@
 DLLTOOL = @DLLTOOL@
+DOXYGEN = @DOXYGEN@
 ECHO = @ECHO@
 EXTRA_QSTAT_LIBS = @EXTRA_QSTAT_LIBS@
 INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
@@ -390,7 +391,7 @@ distcleancheck_listfiles = find . -type f -print
 distdir: $(DISTFILES)
 	$(am__remove_distdir)
 	mkdir $(distdir)
-	$(mkinstalldirs) $(distdir)/. $(distdir)/buildutils $(distdir)/contrib $(distdir)/contrib/init.d $(distdir)/contrib/pestat-1.0
+	$(mkinstalldirs) $(distdir)/. $(distdir)/buildutils $(distdir)/contrib $(distdir)/contrib/init.d $(distdir)/contrib/pestat-1.0 $(distdir)/src/drmaa
 	@list='$(DISTFILES)'; for file in $$list; do \
 	  if test -f $$file || test -d $$file; then d=.; else d=$(srcdir); fi; \
 	  dir=`echo "$$file" | sed -e 's,/[^/]*$$,,'`; \

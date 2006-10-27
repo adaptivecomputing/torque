@@ -1382,7 +1382,57 @@ AC_CHECK_FUNC(ntohl, [ :],
   AC_MSG_RESULT($torque_cv_ntohl_needs_arpa_inet_h)
 )
 
+if test "$include_drmaa" = "yes" ;then
+ AX_PROG_GPERF
+AX_PROG_DOT
+AC_PATH_PROG(DOXYGEN, "doxygen", "none")
+DOXYGEN=none
+AM_CONDITIONAL(DRMAA_DOCS, [test "$DOXYGEN" != "none"])
+AC_C_BIGENDIAN_CROSS
+ACX_PTHREAD(,[AC_MSG_ERROR([POSIX threads library is required by DRMAA.])])
 
+AC_CHECK_HEADERS([stddef.h limits.h])
+AC_HEADER_STDBOOL
+
+#AC_FUNC_MALLOC
+#AC_FUNC_REALLOC
+AC_FUNC_STRERROR_R
+AC_FUNC_STRFTIME
+AC_CHECK_FUNCS([getcwd strchr strdup strerror mkstemp fstat strlcpy asprintf vasprintf])
+
+AH_TEMPLATE([HAVE_VA_COPY],
+                [Define to 1 if you have the va_copy function.])
+AC_MSG_CHECKING([for va_copy])
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <stdarg.h>]],
+                        [[va_list a, b; va_copy(a, b);]])],[
+  AC_MSG_RESULT([yes])
+  AC_DEFINE([HAVE_VA_COPY])
+  ],[
+      AC_MSG_RESULT([no])
+  ],[
+      AC_MSG_RESULT([no])
+])
+
+AH_TEMPLATE([HAVE___VA_COPY],
+                [Define to 1 if you have the __va_copy function.])
+AC_MSG_CHECKING([for __va_copy])
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <stdarg.h>]],
+                        [[va_list a, b; __va_copy(a, b);]])],[
+  AC_MSG_RESULT([yes])
+  AC_DEFINE([HAVE___VA_COPY])
+        AH_BOTTOM([
+#ifndef HAVE_VA_COPY
+#       define va_copy(a,b) __va_copy(a,b)
+#endif
+])
+  ],[
+  AC_MSG_RESULT([no])
+  ], [
+  AC_MSG_RESULT([no])
+])
+
+  
+fi
 
 dnl
 dnl  ######################################################################
@@ -1406,7 +1456,12 @@ dnl  Head and bottom for the config-file
 AH_TOP([#ifndef _PBS_CONFIG_H_
 #define _PBS_CONFIG_H_])
 
-AH_BOTTOM([#endif /* _PBS_CONFIG_H_ */])
+AH_BOTTOM([
+#ifndef __GNUC__
+#       define __attribute__ /* nothing */
+#endif
+#endif /* _PBS_CONFIG_H_ */
+])
 
 
 dnl  Include the Cplant Fault Recovery Patch jugglery
@@ -1490,5 +1545,8 @@ AC_OUTPUT(buildutils/pbs_mkdirs
 	  src/tools/Makefile
 	  src/tools/xpbsmon/Makefile
 	  src/drmaa/Makefile
+	  src/drmaa/src/Makefile
+	  src/drmaa/test/Makefile
+	  src/drmaa/Doxyfile
 	  src/pam/Makefile)
 

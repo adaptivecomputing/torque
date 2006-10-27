@@ -13,6 +13,10 @@
 
 m4_include([buildutils/tcl.m4])
 m4_include([buildutils/ac_create_generic_config.m4])
+m4_include([buildutils/acx_pthread.m4])
+m4_include([buildutils/ax_prog_gperf.m4])
+m4_include([buildutils/ax_prog_dot.m4])
+m4_include([buildutils/ac_c_bigendian_cross.m4])
 
 
 dnl

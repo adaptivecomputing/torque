@@ -3,6 +3,9 @@
 #ifndef _PBS_CONFIG_H_
 #define _PBS_CONFIG_H_
 
+/* 1234 = LIL_ENDIAN, 4321 = BIGENDIAN */
+#undef BYTEORDER
+
 /* turns on the compilation of DEBUG code */
 #undef DEBUG
 
@@ -22,6 +25,9 @@
 /* Define to 1 if you have the <arpa/inet.h> header file. */
 #undef HAVE_ARPA_INET_H
 
+/* Define to 1 if you have the `asprintf' function. */
+#undef HAVE_ASPRINTF
+
 /* Define to 1 if you have the `atexit' function. */
 #undef HAVE_ATEXIT
 
@@ -30,6 +36,10 @@
 
 /* Define to 1 if you have the <cpalib.h> header file. */
 #undef HAVE_CPALIB_H
+
+/* Define to 1 if you have the declaration of `strerror_r', and to 0 if you
+   don't. */
+#undef HAVE_DECL_STRERROR_R
 
 /* Define to 1 if you have the <dirent.h> header file, and it defines `DIR'.
    */
@@ -47,8 +57,14 @@
 /* Define to 1 if you have the <float.h> header file. */
 #undef HAVE_FLOAT_H
 
+/* Define to 1 if you have the `fstat' function. */
+#undef HAVE_FSTAT
+
 /* Define to 1 if you have the `getaddrinfo' function. */
 #undef HAVE_GETADDRINFO
+
+/* Define to 1 if you have the `getcwd' function. */
+#undef HAVE_GETCWD
 
 /* Define to 1 if your system has a working `getgroups' function. */
 #undef HAVE_GETGROUPS
@@ -80,6 +96,9 @@
 /* Define to 1 if you have the <memory.h> header file. */
 #undef HAVE_MEMORY_H
 
+/* Define to 1 if you have the `mkstemp' function. */
+#undef HAVE_MKSTEMP
+
 /* Define to 1 if you have the <ndir.h> header file, and it defines `DIR'. */
 #undef HAVE_NDIR_H
 
@@ -97,6 +116,9 @@
 
 /* Define to 1 if you have the `poll' function. */
 #undef HAVE_POLL
+
+/* Define if you have POSIX threads libraries and header files. */
+#undef HAVE_PTHREAD
 
 /* include readline support */
 #undef HAVE_READLINE
@@ -122,6 +144,9 @@
 /* Define if stat64() is available */
 #undef HAVE_STAT64
 
+/* Define to 1 if stdbool.h conforms to C99. */
+#undef HAVE_STDBOOL_H
+
 /* Define to 1 if you have the <stddef.h> header file. */
 #undef HAVE_STDDEF_H
 
@@ -131,11 +156,29 @@
 /* Define to 1 if you have the <stdlib.h> header file. */
 #undef HAVE_STDLIB_H
 
+/* Define to 1 if you have the `strchr' function. */
+#undef HAVE_STRCHR
+
+/* Define to 1 if you have the `strdup' function. */
+#undef HAVE_STRDUP
+
+/* Define to 1 if you have the `strerror' function. */
+#undef HAVE_STRERROR
+
+/* Define to 1 if you have the `strerror_r' function. */
+#undef HAVE_STRERROR_R
+
+/* Define to 1 if you have the `strftime' function. */
+#undef HAVE_STRFTIME
+
 /* Define to 1 if you have the <strings.h> header file. */
 #undef HAVE_STRINGS_H
 
 /* Define to 1 if you have the <string.h> header file. */
 #undef HAVE_STRING_H
+
+/* Define to 1 if you have the `strlcpy' function. */
+#undef HAVE_STRLCPY
 
 /* Define if struct stat64 is available */
 #undef HAVE_STRUCT_STAT64
@@ -199,8 +242,20 @@
 /* Define to 1 if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H
 
+/* Define to 1 if you have the `vasprintf' function. */
+#undef HAVE_VASPRINTF
+
+/* Define to 1 if you have the va_copy function. */
+#undef HAVE_VA_COPY
+
 /* Define to 1 if you have the `wordexp' function. */
 #undef HAVE_WORDEXP
+
+/* Define to 1 if the system has the type `_Bool'. */
+#undef HAVE__BOOL
+
+/* Define to 1 if you have the __va_copy function. */
+#undef HAVE___VA_COPY
 
 /* is the global int h_errno declared in netdb.h */
 #undef H_ERRNO_DECLARED
@@ -291,6 +346,10 @@
 /* Select which daemons plock themselves, a bit pattern */
 #undef PLOCK_DAEMONS
 
+/* Define to necessary symbol if this constant uses a non-standard name on
+   your system. */
+#undef PTHREAD_CREATE_JOINABLE
+
 /* Define if you are on a solaris box */
 #undef PUSH_STREAM
 
@@ -357,6 +416,9 @@
 /* Define to 1 if you have the ANSI C header files. */
 #undef STDC_HEADERS
 
+/* Define to 1 if strerror_r returns char *. */
+#undef STRERROR_R_CHAR_P
+
 /* Define to enable syslog */
 #undef SYSLOG
 
@@ -396,6 +458,9 @@
 /* Version number of package */
 #undef VERSION
 
+/* whether byteorder is bigendian */
+#undef WORDS_BIGENDIAN
+
 /* Define to the path of xauth */
 #undef XAUTH_PATH
 
@@ -423,4 +488,15 @@
 /* Define to `int' if <sys/types.h> doesn't define. */
 #undef uid_t
 
+
+#ifndef HAVE_VA_COPY
+#       define va_copy(a,b) __va_copy(a,b)
+#endif
+
+
+
+#ifndef __GNUC__
+#       define __attribute__ /* nothing */
+#endif
 #endif /* _PBS_CONFIG_H_ */
+

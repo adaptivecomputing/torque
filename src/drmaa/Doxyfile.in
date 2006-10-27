@@ -1,0 +1,35 @@
+
+PROJECT_NAME           = "@PACKAGE_NAME@"
+PROJECT_NUMBER         = @PACKAGE_VERSION@
+INPUT                  = @top_srcdir@/src/drmaa/src
+EXCLUDE                = @top_srcdir@/src/drmaa/src/drmaa_attrib.c \
+                         @top_srcdir@/src/drmaa/src/pbs_attrib.c
+OUTPUT_DIRECTORY       = doc
+
+ENABLE_PREPROCESSING   = YES
+PREDEFINED             = __GNUC__
+
+JAVADOC_AUTOBRIEF      = YES
+EXTRACT_ALL            = NO
+HIDE_UNDOC_MEMBERS     = YES
+SORT_BRIEF_DOCS        = NO
+SORT_MEMBER_DOCS       = NO
+DETAILS_AT_TOP         = YES
+OPTIMIZE_OUTPUT_FOR_C  = YES
+TAB_SIZE               = 2
+HAVE_DOT               = @HAVE_DOT@
+CALL_GRAPH             = YES
+GENERATE_TODOLIST      = YES
+SHOW_DIRECTORIES       = NO
+
+GENERATE_HTML          = YES
+
+GENERATE_LATEX         = YES
+USE_PDFLATEX           = YES
+PDF_HYPERLINKS         = YES
+COMPACT_LATEX          = YES
+LATEX_BATCHMODE        = YES
+
+GENERATE_MAN           = YES
+#MAN_LINKS              = YES
+

@@ -1,0 +1,59 @@
+%{
+/* $Id: drmaa_attrib.gperf,v 1.4 2006/06/05 23:27:17 ciesnik Exp $ */
+/*
+ *  DRMAA library for Torque/PBS
+ *  Copyright (C) 2006  Poznan Supercomputing and Networking Center
+ *                      DSP team <dsp-devel@hedera.man.poznan.pl>
+ *
+ *  This library is free software; you can redistribute it and/or
+ *  modify it under the terms of the GNU Lesser General Public
+ *  License as published by the Free Software Foundation; either
+ *  version 2.1 of the License, or (at your option) any later version.
+ *
+ *  This library is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ *  Lesser General Public License for more details.
+ *
+ *  You should have received a copy of the GNU Lesser General Public
+ *  License along with this library; if not, write to the Free Software
+ *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ */
+#ifdef HAVE_CONFIG_H
+#	include <pbs_config.h>
+#endif
+
+#include <attrib.h>
+
+#ifndef lint
+static char rcsid[]
+#	ifdef __GNUC__
+		__attribute__ ((unused))
+#	endif
+	= "$Id: drmaa_attrib.gperf,v 1.4 2006/06/05 23:27:17 ciesnik Exp $";
+#endif
+%}
+struct drmaa_attrib { const char *name; int code; };
+%%
+drmaa_job_name,              ATTR_JOB_NAME
+drmaa_remote_command,        ATTR_JOB_PATH
+drmaa_v_argv,                ATTR_ARGV
+drmaa_v_env,                 ATTR_ENV
+drmaa_input_path,            ATTR_INPUT_PATH
+drmaa_output_path,           ATTR_OUTPUT_PATH
+drmaa_error_path,            ATTR_ERROR_PATH
+drmaa_join_files,            ATTR_JOIN_FILES
+drmaa_transfer_files,        ATTR_TRANSFER_FILES
+drmaa_wd,                    ATTR_JOB_WORKING_DIR
+drmaa_v_email,               ATTR_EMAIL
+drmaa_block_email,           ATTR_BLOCK_EMAIL
+drmaa_start_time,            ATTR_START_TIME
+drmaa_js_state,              ATTR_JOB_SUBMIT_STATE
+drmaa_duration_hlimit,       ATTR_HARD_CPU_TIME_LIMIT
+drmaa_duration_slimit,       ATTR_SOFT_CPU_TIME_LIMIT
+drmaa_wct_hlimit,            ATTR_HARD_WCT_LIMIT
+drmaa_wct_slimit,            ATTR_SOFT_WCT_LIMIT
+drmaa_deadline_time,         ATTR_DEADLINE_TIME
+drmaa_job_category,          ATTR_JOB_CATEGORY
+drmaa_native_specification,  ATTR_NATIVE
+# vim: syn=c

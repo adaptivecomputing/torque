@@ -1,0 +1,77 @@
+PBS DRMAA 1.0 library for Torque/PBS
+
+********************************************************************
+*	Copyright (C) 2006
+*   
+*	FedStage Systems (www.fedstage.com),
+*	Poznan Supercomputing and Networking Center (www.man.poznan.pl),
+*	and the OpenDSP project (http://sourceforge.net/projects/opendsp)
+*
+*	This library is free software; you can redistribute it and/or
+*	modify it under the terms of the GNU Lesser General Public
+*	License as published by the Free Software Foundation; either
+*	version 2.1 of the License, or (at your option) any later version.
+*
+*	This library is distributed in the hope that it will be useful,
+*	but WITHOUT ANY WARRANTY; without even the implied warranty of
+*	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+*	Lesser General Public License for more details.
+*
+*	You should have received a copy of the GNU Lesser General Public
+*	License along with this library; if not, write to the Free Software
+*	Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+*
+********************************************************************
+
+Installation
+============
+
+To compile the library just go to the main source directory and type:
+
+ ./configure [--prefix=/installation/directory] && make
+
+If you had installed Torque in a non standard directory pass it
+in --with-pbs configure parameter.
+If you have taken sources directly from a CVS repository you would
+need _gperf_ perfect hash function generator for compilation
+(http://www.gnu.org/projects/gperf).
+
+For further information regarding GNU build system see the INSTALL file.
+
+To setup and use the DRMAA 1.0 library a default Torque batch queue must be configured so
+it leaves jobs after the completion. To achieve this simply type the following commands:
+
+ $ qmgr
+ Qmgr: set queue batch keep_completed = 60
+ Qmgr: quit
+
+The actual value of the keep_completed parameter denotes a number of seconds jobs 
+will have to wait in the queue after the completion. It enables the DRMAA library 
+to retrieve the information about finished jobs.
+
+Known bugs and limitations
+==========================
+
+The PBS DRMAA 1.0 library is meant to be compliant with the Global Grid Forum DRMAA
+1.0 specification. Although Torque APIs impose some limitations:
+  - Waiting functions (drmaa_wait() and drmaa_synchronize())
+    must pool DRM to find out whether job finished.
+  - Resource usage information is not provided.
+  - "start_time" attribute is missing.
+  - Job termination (when job is running) is realized
+    by Torque by sending SIGTERM and/or SIGKILL
+    therefore retrieving those signals cannot be distinguished
+    from abort using drmaa_control(DRMAA_CONTROL_TERMINATE).
+    Then job termination state is marked as "aborted"
+    and "signaled" whatever is the state.
+  - drmaa_wcoredump() always returns false.
+
+Please send your comments or questions to the following mailing list:
+<dsp-devel@hedera.man.poznan.pl>
+
+Please also visit the PBS DRMAA sourceforge project webpage to find news and new releases of our software.
+
+http://sourceforge.net/projects/pbs-drmaa/
+
+The PBS DRMAA 1.0 library was successfully tested with Torque 2.0.0p8 and 2.1.2 on Linux OS.
+

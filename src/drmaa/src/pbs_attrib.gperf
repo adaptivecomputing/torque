@@ -1,0 +1,87 @@
+%{
+/* $Id: pbs_attrib.gperf,v 1.4 2006/06/05 23:27:18 ciesnik Exp $ */
+/*
+ *  DRMAA library for Torque/PBS
+ *  Copyright (C) 2006  Poznan Supercomputing and Networking Center
+ *                      DSP team <dsp-devel@hedera.man.poznan.pl>
+ *
+ *  This library is free software; you can redistribute it and/or
+ *  modify it under the terms of the GNU Lesser General Public
+ *  License as published by the Free Software Foundation; either
+ *  version 2.1 of the License, or (at your option) any later version.
+ *
+ *  This library is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ *  Lesser General Public License for more details.
+ *
+ *  You should have received a copy of the GNU Lesser General Public
+ *  License along with this library; if not, write to the Free Software
+ *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ */
+#ifdef HAVE_CONFIG_H
+#	include <pbs_config.h>
+#endif
+
+#include <attrib.h>
+
+#ifndef lint
+static char rcsid[]
+#	ifdef __GNUC__
+		__attribute__ ((unused))
+#	endif
+	= "$Id: pbs_attrib.gperf,v 1.4 2006/06/05 23:27:18 ciesnik Exp $";
+#endif
+%}
+struct pbs_attrib{ const char *name; int code; };
+%%
+# used by used user commands
+Job_Name,            ATTR_JOB_NAME
+Variable_List,       ATTR_ENV
+Output_Path,         ATTR_OUTPUT_PATH
+Error_Path,          ATTR_ERROR_PATH
+Join_Path,           ATTR_JOIN_FILES
+Mail_User,           ATTR_EMAIL
+Mail_Points,         ATTR_MAIL_POINTS
+stagein,             ATTR_STAGEIN
+stageout,            ATTR_STAGEOUT
+Keep_Files,          ATTR_KEEP_FILES
+Execution_Time,      ATTR_SOFT_CPU_TIME_LIMIT
+Checkpoint,          ATTR_CHECKPOINT
+group_list,          ATTR_GROUP_LIST
+Hold_Types,          ATTR_HOLD_TYPES
+Resource_List,       ATTR_RESOURCES
+Priority,            ATTR_PRIORITY
+destination,         ATTR_DESTINATION_QUEUE
+Rerunable,           ATTR_RERUNABLE
+User_List,           ATTR_USER_LIST
+Account_Name,        ATTR_REMOTE_USER
+Shell_Path_List,     ATTR_SHELL
+depend,              ATTR_DEPENDENCIES
+interactive,         ATTR_INTERACTIVE
+# additional job and general attribute names
+job_state,           ATTR_JOB_STATE
+ctime,               ATTR_CTIME
+etime,               ATTR_ETIME
+qtime,               ATTR_QTIME
+resources_used,      ATTR_RESOURCES_USED
+exit_status,         ATTR_EXIT_STATUS
+substate,            ATTR_JOB_SUBMIT_STATE
+Job_Owner,           ATTR_JOB_OWNER
+euser,               ATTR_EUSER
+egroup,              ATTR_EGROUP
+hop_count,           ATTR_HOP_COUNT
+security,            ATTR_SECURITY
+sched_hint,          ATTR_SCHEDULER_HINT
+server,              ATTR_SERVER
+queue,               ATTR_QUEUE
+queue_rank,          ATTR_QUEUE_RANK
+exec_host,           ATTR_EXECUTION_HOST
+total_jobs,          ATTR_TOTAL_JOBS
+max_running,         ATTR_MAX_RUNNING
+comment,             ATTR_COMMENT
+cookie,              ATTR_JOB_COOKIE
+hashname,            ATTR_HASHNAME
+session_id,          ATTR_SESSION_ID
+alt_id,              ATTR_ALT_ID
+# vim: syn=c
