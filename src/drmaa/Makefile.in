@@ -153,9 +153,7 @@ pkgdocdir = $(docdir)/@PACKAGE@-drmaa-0.1.1
 @DRMAA_DOCS_TRUE@pdf_doc = drmaa.pdf
 pkgdoc_DATA = $(pdf_doc)
 
-CLEANFILES = doc-timestamp
-DISTCLEANFILES = doc
-MAINTAINERCLEANFILES = drmaa.pdf
+DISTCLEANFILES = doc-timestamp doc/html/* doc/latex/* doc/man/man*/* drmaa.pdf
 subdir = src/drmaa
 mkinstalldirs = $(SHELL) $(top_srcdir)/buildutils/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/include/pbs_config.h
@@ -368,7 +366,6 @@ install-strip:
 mostlyclean-generic:
 
 clean-generic:
-	-test -z "$(CLEANFILES)" || rm -f $(CLEANFILES)
 
 distclean-generic:
 	-rm -f Makefile $(CONFIG_CLEAN_FILES)
@@ -377,7 +374,6 @@ distclean-generic:
 maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
 	@echo "it deletes files that may require special tools to rebuild."
-	-test -z "$(MAINTAINERCLEANFILES)" || rm -f $(MAINTAINERCLEANFILES)
 clean: clean-recursive
 
 clean-am: clean-generic clean-libtool mostlyclean-am

@@ -57,9 +57,7 @@ doc-timestamp:
 			fi \
 	fi
 
-CLEANFILES = doc-timestamp
-DISTCLEANFILES = doc
-MAINTAINERCLEANFILES = drmaa.pdf
+DISTCLEANFILES = doc-timestamp doc/html/* doc/latex/* doc/man/man*/* drmaa.pdf
 
 maintainer-clean-local:
 	-rm -rf doc
