@@ -27,7 +27,9 @@
 #endif
 
 #include <sys/types.h>
+#ifdef HAVE_STDBOOL_H
 #include <stdbool.h>
+#endif
 #include <drmaa.h>
 
 typedef struct drmaa_attrib_info_s drmaa_attrib_info_t;
