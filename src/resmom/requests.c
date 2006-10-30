@@ -860,7 +860,7 @@ static int is_file_same(
 
 void req_deletejob(
 
-  struct batch_request *preq)
+  struct batch_request *preq)  /* I */
 
   {
   job *pjob;
@@ -869,6 +869,15 @@ void req_deletejob(
 
   if (pjob != NULL) 
     {
+    if (LOGLEVEL >= 3)
+      {
+      log_record(
+        PBSEVENT_JOB,
+        PBS_EVENTCLASS_JOB,
+        pjob->ji_qs.ji_jobid, 
+        "deleting job");
+      }
+
     /* assume success? */
 
     mom_deljob(pjob);
@@ -1147,6 +1156,15 @@ void req_modifyjob(
     req_reject(PBSE_UNKJOBID,0,preq,mom_host,tmpLine);
 
     return;
+    }
+
+  if (LOGLEVEL >= 3)
+    {
+    log_record(
+      PBSEVENT_JOB,
+      PBS_EVENTCLASS_JOB,
+      pjob->ji_qs.ji_jobid,
+      "modifying job");
     }
 
   plist = (svrattrl *)GET_NEXT(preq->rq_ind.rq_modify.rq_attr);
@@ -1724,7 +1742,7 @@ void req_signaljob(
     log_record(
       PBSEVENT_JOB,
       PBS_EVENTCLASS_JOB,
-      (pjob != NULL) ? pjob->ji_qs.ji_jobid : "N/A",
+      pjob->ji_qs.ji_jobid,
       log_buffer);
     }
 
@@ -1928,7 +1946,7 @@ void encode_used(
 
 void req_stat_job(
 
-  struct batch_request *preq)
+  struct batch_request *preq)  /* I */
 
   {
   int			all;
@@ -2280,7 +2298,7 @@ static int del_files(
 
 void req_rerunjob(
 
-  struct batch_request *preq)
+  struct batch_request *preq)  /* I */
 
   {
   static char   *id = "req_rerunjob";
@@ -2298,6 +2316,15 @@ void req_rerunjob(
     req_reject(PBSE_UNKJOBID,0,preq,NULL,NULL);
 
     return;
+    }
+
+  if (LOGLEVEL >= 3)
+    {
+    log_record(
+      PBSEVENT_JOB,
+      PBS_EVENTCLASS_JOB,
+      pjob->ji_qs.ji_jobid,
+      "rerunning job");
     }
 
   /* fork to send files back */
