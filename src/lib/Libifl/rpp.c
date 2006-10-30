@@ -2391,7 +2391,7 @@ int rpp_bind(
 
 
 /*
-**	Allocate a communication stream.
+**	Allocate a communication stream - return -1 on FAILURE 
 */
 
 int rpp_open(
@@ -2420,6 +2420,8 @@ int rpp_open(
     if (EMsg != NULL)
       sprintf(EMsg,"cannot bind rpp socket");
 
+    /* FAILURE */
+
     return(-1);
     }
 
@@ -2441,6 +2443,8 @@ int rpp_open(
         name,
         h_errno);
       }
+
+    /* FAILURE */
 
     return(-1);
     }
@@ -2501,6 +2505,8 @@ int rpp_open(
       sprintf(EMsg,"cannot create new stream");
       }
 
+    /* FAILURE */
+
     return(-1);
     }
 
@@ -2531,7 +2537,9 @@ int rpp_open(
         sprintf(EMsg,"cannot lookup cname for host '%s'",
           name);
         }
-    
+  
+      /* FAILURE */
+  
       return(-1);
       }
     }
@@ -2552,6 +2560,8 @@ int rpp_open(
       {
       sprintf(EMsg,"rpp_recv_all failed");
       }
+
+    /* FAILURE */
 
     return(-1);
     }

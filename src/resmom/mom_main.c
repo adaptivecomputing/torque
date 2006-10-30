@@ -5424,7 +5424,8 @@ unsigned long gettime(
     }
 
   return((unsigned long)pres->rs_value.at_val.at_long);
-  }
+  }  /* END getttime() */
+
 
 
 
@@ -5471,6 +5472,8 @@ int job_over_limit(
 
   if (pjob->ji_nodekill != TM_ERROR_NODE) 
     {
+    /* one of the sister nodes reports a fatal error */
+
     hnodent *pnode = &pjob->ji_hosts[pjob->ji_nodekill];
 
     if (pnode->hn_sister != 0)
@@ -5512,7 +5515,7 @@ int job_over_limit(
       /* FAILURE */
 
       return(1);
-      }
+      }  /* END if (pnode->hn_sister != 0) */
     }    /* END if (pjob->ji_nodekill != TM_ERROR_NODE) */
 
   attr = &pjob->ji_wattr[JOB_ATR_resource];
