@@ -1236,6 +1236,17 @@ void node_bailout(
         ** this is an error reply to a poll request.
         */
 
+#ifdef __TRR  /* roadrunner */          
+
+        sprintf(log_buffer, "%s POLL failed from node %s %d - recovery attempted - job will not be killed)",
+          pjob->ji_qs.ji_jobid,
+          np->hn_host,
+          np->hn_node);
+
+        log_err(-1,id,log_buffer);       
+
+#else /* __TRR */
+
         sprintf(log_buffer, "%s POLL failed from node %s %d - recovery not attempted - job will be killed)",
           pjob->ji_qs.ji_jobid, 
           np->hn_host,
@@ -1246,6 +1257,8 @@ void node_bailout(
         /* we should be more patient - how do we recover this connection? (NYI) */
 
         pjob->ji_nodekill = np->hn_node;
+
+#endif /* __TRR */
 
         break;
 
