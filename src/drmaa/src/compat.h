@@ -46,5 +46,17 @@ int asprintf( char **strp, const char *fmt, ... );
 int vasprintf( char **strp, const char *fmt, va_list ap );
 #endif
 
+#ifndef HAVE_STDBOOL_H
+# ifndef bool
+#  define bool int
+# endif
+# ifndef true
+#  define true 1
+# endif
+# ifndef false
+#  define false 0
+# endif
+#endif
+
 #endif /* __DRMAA__COMPAT_H */
 

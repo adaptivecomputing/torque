@@ -60,6 +60,4 @@ libdrmaa_la_LIBADD  = $(PBS_LIBS) @PTHREAD_LIBS@
 	then exit 0; \
 	else rm $@; exit 1; \
 	fi
-# gperf produce not lint validating code; suppress compiler warnings
-drmaa_attrib.lo pbs_attrib.lo: CFLAGS += -w
 

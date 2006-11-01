@@ -15,7 +15,13 @@
 #	include <pbs_config.h>
 #endif
 
-#include <stdint.h>
+#ifdef HAVE_STDINT_H
+# include <stdint.h>
+#else
+# ifdef HAVE_INTTYPES_H
+#  include <inttypes.h>
+# endif
+#endif
 
 uint32_t hashword( const uint32_t *k, size_t length, uint32_t initval );
 uint32_t hashlittle( const void *key, size_t length, uint32_t initval );

@@ -62,7 +62,7 @@ asprintf( char **strp, const char *fmt, ... )
 	va_list args;
 	int result;
 	va_start( args, fmt );
-	result = vasprintf( strp, fmt args );
+	result = vasprintf( strp, fmt, args );
 	va_end( args );
 	return result;
 }

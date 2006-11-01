@@ -96,6 +96,8 @@ DLLTOOL = @DLLTOOL@
 DOXYGEN = @DOXYGEN@
 ECHO = @ECHO@
 EXTRA_QSTAT_LIBS = @EXTRA_QSTAT_LIBS@
+
+GPERF = @GPERF@
 INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
 LEX = @LEX@
 LEXLIB = @LEXLIB@
@@ -161,8 +163,6 @@ SUBMIT_FILTER_PATH = $(libexecdir)/qsub_filter
 PBS_LIBS = ../../lib/Libpbs/libtorque.la
 
 AM_CFLAGS = @PTHREAD_CFLAGS@
-
-GPERF = @GPERF@
 GPERFFLAGS = --language=ANSI-C --struct-type --readonly-tables --includes --pic
 
 lib_LTLIBRARIES = libdrmaa.la
@@ -492,8 +492,6 @@ uninstall-am: uninstall-includeHEADERS uninstall-info-am \
 	then exit 0; \
 	else rm $@; exit 1; \
 	fi
-# gperf produce not lint validating code; suppress compiler warnings
-drmaa_attrib.lo pbs_attrib.lo: CFLAGS += -w
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

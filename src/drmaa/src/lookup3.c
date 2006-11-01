@@ -30,7 +30,15 @@ Code changed for ANSI C compilers and autotools by Łukasz Cieśnik.
 #endif
 
 #include <stddef.h>
-#include <stdint.h>
+
+#ifdef HAVE_STDINT_H
+# include <stdint.h>
+#else
+# ifdef HAVE_INTTYPES_H
+#  include <inttypes.h>
+# endif
+#endif
+
 
 #ifdef SELF_TEST
 #include <stdio.h>
