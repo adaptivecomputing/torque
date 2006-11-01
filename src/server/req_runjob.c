@@ -951,8 +951,6 @@ static void post_sendmom(
       if (jobp->ji_wattr[(int)JOB_ATR_depend].at_flags & ATR_VFLAG_SET)
         depend_on_exec(jobp);
 
-      svr_mailowner(jobp,MAIL_BEGIN,MAIL_NORMAL,NULL);
-
       /*
        * it is unfortunate, but while the job has gone into execution,
        * there is no way of obtaining the session id except by making

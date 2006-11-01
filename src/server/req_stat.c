@@ -568,6 +568,8 @@ static void stat_update(
           /* must save session id	   */
 
           job_save(pjob,SAVEJOB_FULL);
+
+          svr_mailowner(pjob,MAIL_BEGIN,MAIL_NORMAL,NULL);
           }
 
         pjob->ji_momstat = time_now;
