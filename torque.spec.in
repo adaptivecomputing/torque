@@ -140,7 +140,7 @@ This package holds just a few shared files and directories.
 %build
 ./configure --prefix=%_prefix --mandir=%_mandir --libdir=%_libdir \
  --includedir=%_includedir --with-server-home=%{torquehomedir} \
- --with-pam=/%{_lib}/security \
+ --with-pam=/%{_lib}/security --enable-drmaa \
  %{server_nameflags} \
  %{guiflags} %{syslogflags} %{tclflags} %{rppflags} %{scpflags} \
  CC="$RPMCC" CFLAGS="$RPMCFLAGS" LDFLAGS="$RPMLDFLAGS"
@@ -376,7 +376,7 @@ qmgr -c "s s default_queue=batch"
 qmgr -c "s n `/bin/hostname --long` state=free" -e
 
 %package devel
-Summary: Development tools for programs which will use the %{name} library.
+Summary: Development tools for programs which will use the %{name} library
 Group: Development/Libraries
 Provides: lib%{name}-devel
 Requires: %{name} = %{?epoch:%{epoch}:}%{version}-%{release}
@@ -406,7 +406,7 @@ exit 0
 
 
 %package pam
-Summary: PAM module for PBS MOM nodes.
+Summary: PAM module for PBS MOM nodes
 Group: System Environment/Base
 
 %description pam

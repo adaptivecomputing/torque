@@ -120,8 +120,8 @@ AM_CONDITIONAL(INCLUDE_CLIENTS, [test "x$include_clients" = "xyes"])
 
 AC_MSG_CHECKING([whether to build DRMAA lib])
 AC_ARG_ENABLE(drmaa,
-    [  --disable-drmaa       do not build the DRMAA 1.0 library],
-    include_drmaa=$enableval, include_drmaa=yes)
+    [  --disable-drmaa       do not build the DRMAA 1.0 library (default is off)],
+    include_drmaa=$enableval, include_drmaa=no)
 AC_MSG_RESULT($include_drmaa)
 AM_CONDITIONAL(INCLUDE_DRMAA, [test "x$include_drmaa" = "xyes"])
 
@@ -1382,16 +1382,18 @@ AC_CHECK_FUNC(ntohl, [ :],
   AC_MSG_RESULT($torque_cv_ntohl_needs_arpa_inet_h)
 )
 
+
+dnl
+dnl Checks needed to build DRMAA
+dnl
 if test "$include_drmaa" = "yes" ;then
- AX_PROG_GPERF
+AC_PATH_PROG(GPERF, "gperf")
 AX_PROG_DOT
 AC_PATH_PROG(DOXYGEN, "doxygen", "none")
-DOXYGEN=none
-AM_CONDITIONAL(DRMAA_DOCS, [test "$DOXYGEN" != "none"])
 AC_C_BIGENDIAN_CROSS
 ACX_PTHREAD(,[AC_MSG_ERROR([POSIX threads library is required by DRMAA.])])
 
-AC_CHECK_HEADERS([stddef.h limits.h])
+AC_CHECK_HEADERS([stddef.h limits.h stdint.h inttypes.h])
 AC_HEADER_STDBOOL
 
 #AC_FUNC_MALLOC
@@ -1431,8 +1433,10 @@ AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <stdarg.h>]],
   AC_MSG_RESULT([no])
 ])
 
-  
+else  
+  DOXYGEN=none
 fi
+AM_CONDITIONAL(DRMAA_DOCS, [test "$DOXYGEN" != "none"])
 
 dnl
 dnl  ######################################################################

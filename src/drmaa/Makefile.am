@@ -43,17 +43,18 @@ install-doc: doc
 doc: doc-timestamp
 drmaa.pdf: doc-timestamp
 doc-timestamp:
-	if [ ! -f $@ \
+	@if [ ! -f $@ \
 		-o `find $(srcdir)/src \( -name '*.c' -o -name '*.h' \) -a -newer $@ \
 			| wc -l` -gt 0 \
 		-o Doxyfile -nt $@ \
 		]; then \
 			rm -rf doc; \
-			doxygen && touch $@ || exit 1; \
+			echo "$(DOXYGEN)"; \
+			$(DOXYGEN) && touch $@ || exit 1; \
 			if [ -d doc/latex ]; then \
-				$(MAKE) -C doc/latex || exit 1; \
+				(cd doc/latex && $(MAKE) $(AM_MAKEFLAGS) ) || exit 1; \
 				mv doc/latex/refman.pdf drmaa.pdf; \
-				$(MAKE) -C doc/latex clean; \
+				(cd doc/latex && $(MAKE) $(AM_MAKEFLAGS) clean ); \
 			fi \
 	fi
 
