@@ -783,7 +783,6 @@ int send_sisters(
           id,
           i,
           (np->hn_host != NULL) ? np->hn_host : "NULL",
-          np->hn_sister,
           EMsg);
 
         log_record(
@@ -823,7 +822,6 @@ int send_sisters(
         id,
         i,
         (np->hn_host != NULL) ? np->hn_host : "NULL",
-        np->hn_sister,
         ret);
 
       log_record(
@@ -847,8 +845,7 @@ int send_sisters(
       snprintf(log_buffer,1024,"%s:  cannot flush message to sister #%d (%s)",
         id,
         i,
-        (np->hn_host != NULL) ? np->hn_host : "NULL",
-        np->hn_sister);
+        (np->hn_host != NULL) ? np->hn_host : "NULL");
 
       log_record(
         PBSEVENT_ERROR,
