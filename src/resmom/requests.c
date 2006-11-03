@@ -710,6 +710,7 @@ static int wchost_match(
 
 
 
+/* Determine which local path to copy to if specified using $usecp */
 
 static int told_to_cp(
 
@@ -720,6 +721,8 @@ static int told_to_cp(
   {
   int    i;
   int    nh;
+
+  const char *id = "told_to_cp";
 
   static char newp[MAXPATHLEN + 1];
   extern struct cphosts *pcphosts;
@@ -746,6 +749,19 @@ static int told_to_cp(
     }
 
    /* failure */
+
+  if (LOGLEVEL >= 3)
+    {
+    sprintf(log_buffer,"no local path matches host '%s' and path '%s'\n",
+      host,
+      oldpath);
+
+    log_record(
+      PBSEVENT_SYSTEM,
+      PBS_EVENTCLASS_SERVER,
+      (char *)id,
+      log_buffer);
+    }
 
   return(0);
   }  /* END told_to_cp() */

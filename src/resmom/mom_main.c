@@ -1952,7 +1952,7 @@ static u_long usecp(
   char *value)  /* I */
 
   {
-  char *pnxt;
+  char        *pnxt;
   static int   cphosts_max = 0;
 
   static char *id = "usecp";
