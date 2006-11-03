@@ -6993,7 +6993,8 @@ int main(
 
       if (job_over_limit(pjob) != 0) 
         {
-        log_record(PBSEVENT_JOB | PBSEVENT_FORCE,
+        log_record(
+          PBSEVENT_JOB | PBSEVENT_FORCE,
           PBS_EVENTCLASS_JOB,
           pjob->ji_qs.ji_jobid,
           log_buffer);
@@ -7266,11 +7267,25 @@ int TMOMScanForStarting(void)
   int  RC;
   int  SC;
 
+  const char *id = "TMOMScanForStarting";
+
   pjob = (job *)GET_NEXT(svr_alljobs);
                                                                                 
   while (pjob != NULL)
     {
     nextjob = (job *)GET_NEXT(pjob->ji_alljobs);
+
+    if (LOGLEVEL >= 2)
+      {
+      snprintf(log_buffer,1024,"checking job start in %s",
+        id);
+
+      log_record(
+        PBSEVENT_JOB | PBSEVENT_FORCE,
+        PBS_EVENTCLASS_JOB,
+        pjob->ji_qs.ji_jobid,
+        log_buffer);
+      }
 
     if (pjob->ji_qs.ji_substate == JOB_SUBSTATE_STARTING)
       {
