@@ -2563,6 +2563,10 @@ int read_config(
   int                    linenum;
   int                    i;
 
+  int                    IgnConfig = 0;
+
+  int                    rc;
+
   if (LOGLEVEL >= 3)
     {
     sprintf(log_buffer,"updating configuration using file '%s'",
@@ -2585,6 +2589,8 @@ int read_config(
   if (file == NULL)
     file = config_file;
 
+  rc = 0;
+
   if (file[0] == '\0')
     {
     log_record(
@@ -2593,17 +2599,19 @@ int read_config(
       id,
       "ALERT:  no config file specified");
 
-    return(0);	/* no config file */
+    IgnConfig = 1;  /* no config file */
     }
 
-  if (stat(file,&sb) == -1) 
+  if ((IgnConfig == 0) && (stat(file,&sb) == -1))
     {
+    IgnConfig = 1;
+
     sprintf(log_buffer,"fstat: %s", 
       file);
 
     log_err(errno,id,log_buffer);
 
-    if (config_file_specified)
+    if (config_file_specified != 0)
       {
       /* file specified and not there, return failure */
 
@@ -2613,173 +2621,188 @@ int read_config(
         id,
         "ALERT:  cannot open config file - no file");
 
-      return(1); 
+      rc = 1; 
       }
-
-    /* "config" file not located, return success */
-
-    if (LOGLEVEL >= 3)
+    else
       {
-      sprintf(log_buffer,"cannot open file '%s'",
-        file);
+      /* "config" file not located, return success */
 
-      log_record(
-        PBSEVENT_SYSTEM,
-        PBS_EVENTCLASS_SERVER,
-        id,
-        log_buffer);
+      if (LOGLEVEL >= 3)
+        {
+        sprintf(log_buffer,"cannot open file '%s'",
+          file);
+
+        log_record(
+          PBSEVENT_SYSTEM,
+          PBS_EVENTCLASS_SERVER,
+          id,
+          log_buffer);
+        }
+
+      rc = 0; 
       }
+    }  /* END if ((IgnConfig == 0) && (stat(file,&sb) == -1)) */
 
-    return(0); 
-    }
-
+  if (IgnConfig == 0)
+    {
 #if !defined(DEBUG) && !defined(NO_SECURITY_CHECK)
 
-  if (chk_file_sec(file,0,0,S_IWGRP|S_IWOTH,1))
-    {
-    /* not authorized to access specified file, return failure */
-
-    log_record(
-      PBSEVENT_SYSTEM,
-      PBS_EVENTCLASS_SERVER,
-      id,
-      "ALERT:  cannot open config file - permissions");
-
-    return(1);
-    }
-
-#endif	/* NO_SECURITY_CHECK */
-
-  if ((conf = fopen(file,"r")) == NULL) 
-    {
-    sprintf(log_buffer,"fopen: %s",
-      file);
-
-    log_err(errno,id,log_buffer);
-
-    return(1);
-    }
-
-  nconfig = 0;
-  linenum = 0;
-
-  while (fgets(line,sizeof(line),conf)) 
-    {
-    linenum++;
-
-    if (line[0] == '#')	/* comment */
-      continue;
-
-    if ((ptr = strchr(line,'#')) != NULL)
+    if (chk_file_sec(file,0,0,S_IWGRP|S_IWOTH,1))
       {
-      /* allow inline comments */
-
-      *ptr = '\0';
-      }
- 
-    str = skipwhite(line);	/* pass over initial whitespace */
-
-    if (*str == '\0')
-      continue;
-
-    if (LOGLEVEL >= 6)
-      {
-      sprintf(log_buffer,"processing config line '%.64s'",
-        str);
+      /* not authorized to access specified file, return failure */
 
       log_record(
         PBSEVENT_SYSTEM,
         PBS_EVENTCLASS_SERVER,
         id,
-        log_buffer);
+        "ALERT:  cannot open config file - permissions");
+
+      IgnConfig = 1;
+
+      rc = 1;
       }
+#endif  /* NO_SECURITY_CHECK */
+    }    /* END if (ignConfig == 0) */
 
-    if (*str == '$') 
-      {	
-      /* special command */
+  if (IgnConfig == 0)
+    {   
+    if ((conf = fopen(file,"r")) == NULL) 
+      {
+      sprintf(log_buffer,"fopen: %s",
+        file);
 
-      str = tokcpy(++str,name); /* resource name */
+      log_err(errno,id,log_buffer);
 
-      for (i = 0;special[i].name;i++) 
+      IgnConfig = 1;
+
+      rc = 1;
+      }
+    }    /* END if (IgnConfig == 0) */
+
+  if (IgnConfig == 0)
+    {
+    nconfig = 0;
+    linenum = 0;
+
+    while (fgets(line,sizeof(line),conf)) 
+      {
+      linenum++;
+
+      if (line[0] == '#')	/* comment */
+        continue;
+
+      if ((ptr = strchr(line,'#')) != NULL)
         {
-        if (strcasecmp(name,special[i].name) == 0)
-          break;
-        }  /* END for (i) */
+        /* allow inline comments */
 
-      if (special[i].name == NULL) 
+        *ptr = '\0';
+        }
+ 
+      str = skipwhite(line);	/* pass over initial whitespace */
+
+      if (*str == '\0')
+        continue;
+
+      if (LOGLEVEL >= 6)
         {
-	/* didn't find it */
+        sprintf(log_buffer,"processing config line '%.64s'",
+          str);
 
-        sprintf(log_buffer,"special command name %s not found (ignoring line)",
-          name);
+        log_record(
+          PBSEVENT_SYSTEM,
+          PBS_EVENTCLASS_SERVER,
+          id,
+          log_buffer);
+        }
 
-        log_err(-1,id,log_buffer);
+      if (*str == '$') 
+        {	
+        /* special command */
+
+        str = tokcpy(++str,name); /* resource name */
+
+        for (i = 0;special[i].name;i++) 
+          {
+          if (strcasecmp(name,special[i].name) == 0)
+            break;
+          }  /* END for (i) */
+
+        if (special[i].name == NULL) 
+          {
+          /* didn't find it */
+
+          sprintf(log_buffer,"special command name %s not found (ignoring line)",
+            name);
+
+          log_err(-1,id,log_buffer);
+
+          continue;
+          }
+
+        str = skipwhite(str);		/* command param */
+
+        rmnl(str);
+
+        if (special[i].handler(str) == 0) 
+          {
+          sprintf(log_buffer,"%s[%d] special command %s failed with %s",
+            file,
+            linenum,
+            name,
+            str);
+
+          log_err(-1,id,log_buffer);
+          }
 
         continue;
         }
 
-      str = skipwhite(str);		/* command param */
+      add_static(str,file,linenum);
 
-      rmnl(str);
+      nconfig++;
+      }  /* END while (fgets()) */
+		
+    /*
+    **	Create a new array.
+    */
 
-      if (special[i].handler(str) == 0) 
+    if (config_array != NULL) 
+      {
+      for (ap = config_array;ap->c_name != NULL;ap++) 
         {
-        sprintf(log_buffer,"%s[%d] special command %s failed with %s",
-          file,
-          linenum,
-          name,
-          str);
-
-        log_err(-1,id,log_buffer);
+        free(ap->c_name);
+        free(ap->c_u.c_value);
         }
 
-      continue;
+      free(config_array);
       }
 
-    add_static(str,file,linenum);
+    config_array = (struct config *)calloc(nconfig + 1,sizeof(struct config));
 
-    nconfig++;
-    }  /* END while (fgets()) */
-		
-  /*
-  **	Create a new array.
-  */
+    memcheck((char *)config_array);
 
-  if (config_array != NULL) 
-    {
-    for (ap = config_array;ap->c_name != NULL;ap++) 
+    /*
+    **	Copy in the new information saved from the file.
+    */
+
+    for (i = 0,ap = config_array;i < nconfig;i++,ap++) 
       {
-      free(ap->c_name);
-      free(ap->c_u.c_value);
+      *ap = config_list->c;
+      cp = config_list->c_link;
+
+      free(config_list);	/* don't free name and value strings */
+      config_list = cp;	/* they carry over from the list */
       }
 
-    free(config_array);
-    }
+    ap->c_name = NULL;		/* one extra */
 
-  config_array = (struct config *)calloc(nconfig + 1,sizeof(struct config));
-
-  memcheck((char *)config_array);
-
-  /*
-  **	Copy in the new information saved from the file.
-  */
-
-  for (i = 0,ap = config_array;i < nconfig;i++,ap++) 
-    {
-    *ap = config_list->c;
-    cp = config_list->c_link;
-
-    free(config_list);	/* don't free name and value strings */
-    config_list = cp;	/* they carry over from the list */
-    }
-
-  ap->c_name = NULL;		/* one extra */
-
-  fclose(conf);
+    fclose(conf);
+    }  /* END if (IgnConfig == 0) */
 
   if (pbs_servername[0][0] == '\0')
     {
     FILE *server_file;
+
     /* no $pbsserver parameters in config, use server_name as last-resort */
 
     if ((server_file = fopen(path_server_name,"r")) != NULL)
@@ -2799,7 +2822,7 @@ int read_config(
       }
     }
 
-  return(0);
+  return(rc);
   }  /* END read_config() */
 
 
