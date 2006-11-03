@@ -746,15 +746,16 @@ static int told_to_cp(
         return(1);
         }
       }
-    }
+    }    /* END for (nh) */
 
    /* failure */
 
   if (LOGLEVEL >= 3)
     {
-    sprintf(log_buffer,"no local path matches host '%s' and path '%s'\n",
+    sprintf(log_buffer,"no local path matches host '%s' and path '%s' (%d paths checked)\n",
       host,
-      oldpath);
+      oldpath,
+      nh);
 
     log_record(
       PBSEVENT_SYSTEM,
