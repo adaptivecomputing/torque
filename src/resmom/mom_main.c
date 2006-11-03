@@ -322,37 +322,37 @@ static struct specials {
   char            *name;
   u_long          (*handler)();
   } special[] = {
-    { "xauthpath",    setxauthpath },
-    { "rcpcmd",       setrcpcmd },
-    { "rcp_cmd",      setrcpcmd },
-    { "pbsclient",    setpbsclient },
-    { "configversion",configversion },
-    { "cputmult",     cputmult },
-    { "ideal_load",   setidealload },
-    { "ignwalltime",  setignwalltime },
-    { "logevent",     setlogevent },
-    { "loglevel",     setloglevel },
-    { "max_load",     setmaxload },
-    { "enablemomrestart",   setenablemomrestart },
-    { "prologalarm",  prologalarm },
-    { "restricted",   restricted },
-    { "jobstartblocktime", jobstartblocktime },
-    { "usecp",        usecp },
-    { "wallmult",     wallmult },
-    { "clienthost",   setpbsserver },  /* deprecated - use pbsserver */
-    { "pbsserver",    setpbsserver },
-    { "node_check_script", setnodecheckscript },
+    { "xauthpath",           setxauthpath },
+    { "rcpcmd",              setrcpcmd },
+    { "rcp_cmd",             setrcpcmd },
+    { "pbsclient",           setpbsclient },
+    { "configversion",       configversion },
+    { "cputmult",            cputmult },
+    { "ideal_load",          setidealload },
+    { "ignwalltime",         setignwalltime },
+    { "logevent",            setlogevent },
+    { "loglevel",            setloglevel },
+    { "max_load",            setmaxload },
+    { "enablemomrestart",    setenablemomrestart },
+    { "prologalarm",         prologalarm },
+    { "restricted",          restricted },
+    { "jobstartblocktime",   jobstartblocktime },
+    { "usecp",               usecp },
+    { "wallmult",            wallmult },
+    { "clienthost",          setpbsserver },  /* deprecated - use pbsserver */
+    { "pbsserver",           setpbsserver },
+    { "node_check_script",   setnodecheckscript },
     { "node_check_interval", setnodecheckinterval },
-    { "timeout",      settimeout },
-    { "checkpoint_script", setcheckpointscript },
-    { "down_on_error", setdownonerror },
-    { "status_update_time", setstatusupdatetime },
-    { "check_poll_time", setcheckpolltime },
-    { "tmpdir",       settmpdir },
-    { "log_file_max_size", setlogfilemaxsize},
-    { "log_file_roll_depth", setlogfilerolldepth},
-    { "varattr",       setvarattr},
-    { NULL,           NULL } };
+    { "timeout",             settimeout },
+    { "checkpoint_script",   setcheckpointscript },
+    { "down_on_error",       setdownonerror },
+    { "status_update_time",  setstatusupdatetime },
+    { "check_poll_time",     setcheckpolltime },
+    { "tmpdir",              settmpdir },
+    { "log_file_max_size",   setlogfilemaxsize },
+    { "log_file_roll_depth", setlogfilerolldepth },
+    { "varattr",             setvarattr },
+    { NULL,                  NULL } };
 
 
 static char *arch(struct rm_attribute *);
@@ -1661,13 +1661,15 @@ static u_long setxauthpath(
   }
 
 
+
+
 static u_long setrcpcmd(
 
-  char *Value)
+  char *Value)  /* I */
 
   {
-  static  char    id[] = "rcpcmd";
-  static  char *ptr;
+  static char  id[] = "rcpcmd";
+  static char *ptr;
 
   log_record(PBSEVENT_SYSTEM,PBS_EVENTCLASS_SERVER,id,Value);
 
@@ -1675,24 +1677,29 @@ static u_long setrcpcmd(
     {
     log_err(-1,id,"tmpdir must be a full path");
 
+    /* FAILURE */
+
     return(0);
     }
 
   strncpy(rcp_path,Value,sizeof(rcp_path));
   strcpy(rcp_args,"");
 
-  if ((ptr=strchr(rcp_path,' ')) != NULL)
+  if ((ptr = strchr(rcp_path,' ')) != NULL)
     {
-    *ptr='\0';
+    *ptr = '\0';
 
-    if (*(ptr+1) != '\0')
+    if (*(ptr + 1) != '\0')
       {
-      strncpy(rcp_args,ptr+1,sizeof(rcp_args));
+      strncpy(rcp_args,ptr + 1,sizeof(rcp_args));
       }
     }
 
+  /* SUCCESS */
+
   return(1);
-  }
+  }  /* END setrcpcmd() */
+
 
 
 
@@ -4093,7 +4100,7 @@ int rm_request(
 
             if ( (*curr == '=') && ((*curr)+1 != '\0' ))
               {
-              setstatusupdatetime(curr+1);
+              setstatusupdatetime(curr + 1);
               }
 
             sprintf(output,"status_update_time=%d",
@@ -4103,9 +4110,9 @@ int rm_request(
             {
             /* set or report check_poll_time */
 
-            if ( (*curr == '=') && ((*curr)+1 != '\0' ))
+            if ( (*curr == '=') && ((*curr) + 1 != '\0' ))
               {
-              setcheckpolltime(curr+1);
+              setcheckpolltime(curr + 1);
               }
 
             sprintf(output,"check_poll_time=%d",
@@ -4151,9 +4158,9 @@ int rm_request(
             {
             /* set or report enablemomrestart */
 
-            if ( (*curr == '=') && ((*curr)+1 != '\0' ))
+            if ( (*curr == '=') && ((*curr) + 1 != '\0' ))
               {
-              setenablemomrestart(curr+1);
+              setenablemomrestart(curr + 1);
               }
 
             sprintf(output,"enablemomrestart=%d",
@@ -4163,9 +4170,9 @@ int rm_request(
             {
             /* set or report rcp_path and rcp_args */
 
-            if ( (*curr == '=') && ((*curr)+1 != '\0' ))
+            if ((*curr == '=') && ((*curr) + 1 != '\0'))
               {
-              setrcpcmd(curr+1);
+              setrcpcmd(curr + 1);
               }
 
             sprintf(output,"rcpcmd=%s %s",
