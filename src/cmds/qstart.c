@@ -111,24 +111,28 @@ int exitstatus = 0; /* Exit Status */
 static void execute ();
 
 
-int main ( argc, argv )
-int argc;
-char **argv;
-{
-/*
- *  This routine sends a Manage request to the batch server specified by
- * the destination.  The STARTED queue attribute is set to {True}.  If the
- * batch request is accepted, the server will start scheduling or routing
- * requests in the specified queue.
- */
+int main ( 
 
-    int dest;		/* Index into the destination array (argv) */
-    char *queue;	/* Queue name part of destination */
-    char *server;	/* Server name part of destination */
+  int    argc,
+  char **argv)
+
+  {
+  /*
+   *  This routine sends a Manage request to the batch server specified by
+   * the destination.  The STARTED queue attribute is set to {True}.  If the
+   * batch request is accepted, the server will start scheduling or routing
+   * requests in the specified queue.
+   */
+
+  int dest;		/* Index into the destination array (argv) */
+  char *queue;	/* Queue name part of destination */
+  char *server;	/* Server name part of destination */
     
-    if ( argc == 1 ) {
-        fprintf(stderr, "Usage: qstart [queue][@server] ...\n");
-        exit(1);
+  if (argc == 1) 
+    {
+    fprintf(stderr, "Usage: qstart [queue][@server] ...\n");
+
+    exit(1);
     }
     
     for ( dest=1; dest<argc; dest++ )

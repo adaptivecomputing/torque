@@ -783,7 +783,7 @@ static char *getjoblist(
     listlen = BUFSIZ;
     }
 
-  *list='\0'; /* reset the list */
+  *list = '\0'; /* reset the list */
 
   if ((pjob = (job *)GET_NEXT(svr_alljobs)) == NULL)
     {
@@ -7267,8 +7267,22 @@ int TMOMScanForStarting(void)
   int  RC;
   int  SC;
 
+#ifdef MSIC
+  list_link *tmpL;
+#endif
+
   const char *id = "TMOMScanForStarting";
 
+#ifdef MSIC
+  /* NOTE:  solaris system is choking on GET_NEXT - isolate */
+
+  tmpL = GET_NEXT(svr_alljobs);
+
+  tmpL = svr_alljobs.ll_next->ll_struct;
+
+  pjob = (job *)tmpL;
+#endif /* MSIC */
+   
   pjob = (job *)GET_NEXT(svr_alljobs);
                                                                                 
   while (pjob != NULL)
@@ -7286,7 +7300,7 @@ int TMOMScanForStarting(void)
         pjob->ji_qs.ji_jobid,
         log_buffer);
       }
-
+ 
     if (pjob->ji_qs.ji_substate == JOB_SUBSTATE_STARTING)
       {
       pjobexec_t *TJE;

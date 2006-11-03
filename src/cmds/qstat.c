@@ -144,7 +144,6 @@ mbool_t DisplayXML = FALSE;
 #define maxlinesize 65536
 int   linesize = 77;
 
-
 /* END globals */
 
 
@@ -184,9 +183,9 @@ int istrue(
     return(TRUE);
     }
 
-  if ( strcmp(string,"True") == 0 ) return TRUE;
-  if ( strcmp(string,"true") == 0 ) return TRUE;
-  if ( strcmp(string,"1") == 0 ) return TRUE;
+  if (strcmp(string,"True") == 0) return TRUE;
+  if (strcmp(string,"true") == 0) return TRUE;
+  if (strcmp(string,"1") == 0) return TRUE;
 
   return(FALSE);
   }
@@ -1526,7 +1525,7 @@ void display_statserver(
                         }
                         tot = a->value;
                     } else if ( strcmp(a->name,ATTR_count) == 0 ) {
-                        states(a->value, que, run, hld, wat, trn, ext, NUML);
+                        states(a->value,que,run,hld,wat,trn,ext,NUML);
                     } else if ( strcmp(a->name,ATTR_status) == 0 ) {
                         l = strlen(a->value);
                         if ( l > STATUSL ) {
