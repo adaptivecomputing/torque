@@ -283,13 +283,18 @@ void process_request(
 
   if (get_connecthost(sfds,request->rq_host,PBS_MAXHOSTNAME) != 0) 
     {
+    char tmpLine[1024];
+
     sprintf(log_buffer,"%s: %lu",
       msg_reqbadhost,
       get_connectaddr(sfds));
 
     LOG_EVENT(PBSEVENT_DEBUG,PBS_EVENTCLASS_REQUEST,"",log_buffer);
 
-    req_reject(PBSE_BADHOST,0,request,NULL,NULL);
+    snprintf(tmpLine,sizeof(tmpLine),"cannot determine hostname for connection from %lu",
+      get_connectaddr(sfds));
+
+    req_reject(PBSE_BADHOST,0,request,NULL,tmpLine);
 
     return;
     }
@@ -314,7 +319,7 @@ void process_request(
 
     struct pbsnode *isanode;
 
-    isanode=PGetNodeFromAddr(get_connectaddr(sfds));
+    isanode = PGetNodeFromAddr(get_connectaddr(sfds));
 
     if ((isanode == NULL) &&
         (strcmp(server_host,request->rq_host) != 0) &&
@@ -323,7 +328,12 @@ void process_request(
          request->rq_host, 
          ACL_Host) == 0))
       {
-      req_reject(PBSE_BADHOST,0,request,NULL,NULL);
+      char tmpLine[1024];
+
+      snprintf(tmpLine,sizeof(tmpLine),"request not authorized from host %s",
+        request->rq_host);
+
+      req_reject(PBSE_BADHOST,0,request,NULL,tmpLine);
 
       close_client(sfds);
 

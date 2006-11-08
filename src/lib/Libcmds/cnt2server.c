@@ -107,15 +107,21 @@
 #define CNTRETRYDELAY 5
 
 /* >0 is number of seconds to retry, -1 is infinity */
-static long cnt2server_retry=0;
+
+static long cnt2server_retry = 0;
 
 int cnt2server_conf(
+
   long retry)
+
   {
-  cnt2server_retry=retry;
+  cnt2server_retry = retry;
 
   return(0);
   }
+
+
+
 
 int cnt2server( 
 
@@ -127,7 +133,7 @@ int cnt2server(
 
   if (cnt2server_retry > 0)
     {
-    firsttime=time(NULL);
+    firsttime = time(NULL);
     }
 
 start:
@@ -148,7 +154,7 @@ start:
 
         case PBSE_NOCONNECTS:
 
-          if (thistime==0)
+          if (thistime == 0)
             fprintf(stderr,"Too many open connections.\n");
 
           if (cnt2server_retry != 0)
@@ -164,7 +170,7 @@ start:
 		
         case PBSE_SYSTEM:
 
-          if (thistime==0)
+          if (thistime == 0)
             fprintf(stderr,"System call failure.\n");
 
           if (cnt2server_retry != 0)
@@ -174,7 +180,7 @@ start:
 		
         case PBSE_PERM:
 
-          if (thistime==0)
+          if (thistime == 0)
             fprintf(stderr,"No Permission.\n");
 
           if (cnt2server_retry != 0)
@@ -185,7 +191,7 @@ start:
         case PBSE_PROTOCOL:
         default:
 
-          if (thistime==0)
+          if (thistime == 0)
             fprintf(stderr,"Communication failure.\n");
 
           if (cnt2server_retry != 0)
@@ -196,7 +202,7 @@ start:
       }    /* END if (pbs_errno > PBSE_) */ 
     else 
       {
-      if (thistime==0)
+      if (thistime == 0)
         perror(NULL);
 
       if (cnt2server_retry != 0)
@@ -226,7 +232,7 @@ retry:
 
     if (getenv("PBSDEBUG") != NULL)
       fprintf(stderr,"seconds remaining: %d\n",
-        (int)(cnt2server_retry-(thistime-firsttime)));
+        (int)(cnt2server_retry - (thistime - firsttime)));
     }
   else
     {

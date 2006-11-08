@@ -1012,9 +1012,9 @@ void req_jobcredential(
 
 #ifndef PBS_MOM
 
-  if (svr_authorize_jobreq(preq, pj) == -1) 
+  if (svr_authorize_jobreq(preq,pj) == -1) 
     {
-    req_reject(PBSE_PERM,0,preq,NULL,NULL);
+    req_reject(PBSE_PERM,0,preq,NULL,"job request not authorized");
 
     return;
     }
@@ -1113,7 +1113,7 @@ void req_jobscript(
 
     log_err(errno,id,"cannot authorize request");
 
-    req_reject(PBSE_PERM,0,preq,NULL,NULL);
+    req_reject(PBSE_PERM,0,preq,NULL,"cannot receive job script");
 
     return;
     }
@@ -1466,7 +1466,7 @@ void req_mvjobfile(  /* routine for MOM only - server routine listed above */
 
 void req_rdytocommit(
 
-  struct batch_request *preq)
+  struct batch_request *preq)  /* I */
 
   {
   job *pj;

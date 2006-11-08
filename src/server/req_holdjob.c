@@ -127,16 +127,25 @@ static attribute temphold;
  * chk_hold_priv - check that client has privilege to set/clear hold
  */
 
-int chk_hold_priv(val, perm)
-	long	val;	/* hold bits being changed */
-	int	perm;	/* client privilege */
-{
-	if ( (val & HOLD_s) && ((perm & ATR_DFLAG_MGWR) == 0) )
-		return (PBSE_PERM);
-	if ( (val & HOLD_o) && ((perm & (ATR_DFLAG_MGWR|ATR_DFLAG_OPWR)) == 0) )
-		return (PBSE_PERM);
-	return (PBSE_NONE);
-}
+int chk_hold_priv(
+
+  long val,   /* hold bits being changed */
+  int  perm)  /* client privilege */
+
+  {
+  if ((val & HOLD_s) && ((perm & ATR_DFLAG_MGWR) == 0))
+    {
+    return(PBSE_PERM);
+    }
+
+  if ((val & HOLD_o) && ((perm & (ATR_DFLAG_MGWR|ATR_DFLAG_OPWR)) == 0))
+    {
+    return(PBSE_PERM);
+    }
+
+  return(PBSE_NONE);
+  }  /* END chk_hold_priv() */
+
 
 
 /*

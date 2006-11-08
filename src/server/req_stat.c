@@ -698,7 +698,7 @@ void req_stat_que(
 
     if (pque == NULL) 
       {
-      req_reject(PBSE_UNKQUE,0,preq,NULL,"cannot located queue");
+      req_reject(PBSE_UNKQUE,0,preq,NULL,"cannot locate queue");
 
       return;
       }
@@ -902,7 +902,7 @@ void req_stat_node(
 
     if (pnode == NULL) 
       {
-      req_reject(PBSE_UNKNODE,0,preq,NULL,"cannot located specified node");
+      req_reject(PBSE_UNKNODE,0,preq,NULL,"cannot locate specified node");
 
       return;
       }

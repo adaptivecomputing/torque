@@ -148,17 +148,15 @@ char PBS_RootDir[256];
 
 char xauth_path[256];
 
-int interactivechild=0;
-int x11child=0;
+int interactivechild = 0;
+int x11child = 0;
 
 int do_dir(char *);
 int process_opts(int,char **,int);
 
 /* adapted from openssh */
 
-static char *x11_get_proto(
-
-  void)
+static char *x11_get_proto(void)
 
   {       
   char line[512];
@@ -169,7 +167,9 @@ static char *x11_get_proto(
   char *display, *p;
   struct stat st;
 
-  proto[0] = data[0] = screen[0] = '\0';
+  proto[0]  = '\0';
+  data[0]   = '\0';
+  screen[0] = '\0';
 
   if ((display = getenv("DISPLAY")) == NULL)
     {
@@ -188,36 +188,53 @@ static char *x11_get_proto(
   /* Try to get Xauthority information for the display. */
 
   if (strncmp(display,"localhost:",10) == 0)
-                /*
-                 * Handle FamilyLocal case where $DISPLAY does
-                 * not match an authorization entry.  For this we
-                 * just try "xauth list unix:displaynum.screennum".
-                 * XXX: "localhost" match to determine FamilyLocal
-                 *      is not perfect.
-                 */
-                snprintf(line, sizeof line, "%s list unix:%s 2>/dev/null",
-                    xauth_path,display+10);
-        else    
-                snprintf(line, sizeof line, "%s list %.200s 2>/dev/null",
-                    xauth_path,display);
+    {
+    /*
+     * Handle FamilyLocal case where $DISPLAY does
+     * not match an authorization entry.  For this we
+     * just try "xauth list unix:displaynum.screennum".
+     * XXX: "localhost" match to determine FamilyLocal
+     *      is not perfect.
+     */
 
-	p = strchr(display,':');
-        if (p)
-          p = strchr(p,'.');
-        if (p)
-          strncpy(screen,p+1,512);
-        else
-          strcpy(screen,"0");
+    snprintf(line,sizeof(line),"%s list unix:%s 2>/dev/null",
+      xauth_path,
+      display + 10);
+    }
+  else    
+    {
+    snprintf(line,sizeof(line),"%s list %.200s 2>/dev/null",
+      xauth_path,
+      display);
+    }
 
-        if (getenv("PBSDEBUG") != NULL)
-          fprintf(stderr,"x11_get_proto: %s\n", line);
+  p = strchr(display,':');
 
-        f = popen(line, "r");
-        if (f && fgets(line, sizeof(line), f) &&
-            sscanf(line, "%*s %511s %511s", proto, data) == 2)
-                got_data = 1;
-        if (f)  
-                pclose(f);
+  if (p != NULL)
+    p = strchr(p,'.');
+
+  if (p != NULL)
+    strncpy(screen,p + 1,sizeof(screen));
+  else
+    strcpy(screen,"0");
+
+  if (getenv("PBSDEBUG") != NULL)
+    fprintf(stderr,"x11_get_proto: %s\n", 
+      line);
+
+  f = popen(line,"r");
+
+  if ((f != NULL) && 
+      fgets(line,sizeof(line),f) &&
+      sscanf(line,"%*s %511s %511s", 
+        proto, 
+        data) == 2)
+    {
+    got_data = 1;
+    }
+
+  if (f != NULL)  
+    pclose(f);
 
 #if 0 /* we aren't inspecting the returned xauth data yet */
         /*
@@ -243,15 +260,20 @@ static char *x11_get_proto(
         }
 #endif
 
-    if (!got_data)
-      return(NULL);
+  if (!got_data)
+    {
+    return(NULL);
+    }
 
-    authstring = malloc(strlen(proto) + strlen(data) + strlen(screen) +4);
-    sprintf(authstring,"%s:%s:%s",proto, data, screen);
+  authstring = malloc(strlen(proto) + strlen(data) + strlen(screen) + 4);
 
-    return(authstring);
+  sprintf(authstring,"%s:%s:%s",
+    proto, 
+    data, 
+    screen);
 
-}
+  return(authstring);
+  }  /* END x11_get_proto() */
 
 
 
@@ -796,7 +818,7 @@ static char server_out[PBS_MAXSERVERNAME + PBS_MAXPORTNUM + 2];
 char server_host[PBS_MAXHOSTNAME + 1];
 char qsub_host[PBS_MAXHOSTNAME + 1];
 
-long cnt2server_retry=-100;
+long cnt2server_retry = -100;
 
 /* state booleans for protecting already-set options */
 int a_opt = FALSE;
@@ -3521,7 +3543,8 @@ int main(
     }
 
   /* set the submit_args */
-  for (argi = 1; argi < argc; argi++)
+
+  for (argi = 1;argi < argc;argi++)
     {
     argslen += strlen(argv[argi]) + 1;
     }

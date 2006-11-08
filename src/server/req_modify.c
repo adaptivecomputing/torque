@@ -408,29 +408,37 @@ int modify_job_attr(
 
   if (rc == 0) 
     {
-	    for (i=0; i<JOB_ATR_LAST; i++) {
-		if (newattr[i].at_flags & ATR_VFLAG_MODIFY) {
-			if (job_attr_def[i].at_action) {
-				rc = job_attr_def[i].at_action(&newattr[i],
-					        pjob, ATR_ACTION_ALTER);
-				if (rc)
-					break;
-			}
-		}
-	    }
-	    if ((rc == 0) &&
-	        ((newattr[(int)JOB_ATR_userlst].at_flags & ATR_VFLAG_MODIFY) ||
-                 (newattr[(int)JOB_ATR_grouplst].at_flags & ATR_VFLAG_MODIFY))){
-		/* Need to reset execution uid and gid */
-		rc = set_jobexid(pjob, newattr);
-	    }
-			
+    for (i = 0;i < JOB_ATR_LAST;i++) 
+      {
+      if (newattr[i].at_flags & ATR_VFLAG_MODIFY) 
+        {
+        if (job_attr_def[i].at_action) 
+          {
+          rc = job_attr_def[i].at_action(
+            &newattr[i],
+            pjob, 
+            ATR_ACTION_ALTER);
+
+          if (rc)
+            break;
+          }
+        }
+      }    /* END for (i) */
+
+    if ((rc == 0) &&
+       ((newattr[(int)JOB_ATR_userlst].at_flags & ATR_VFLAG_MODIFY) ||
+       (newattr[(int)JOB_ATR_grouplst].at_flags & ATR_VFLAG_MODIFY)))
+      {
+      /* need to reset execution uid and gid */
+
+      rc = set_jobexid(pjob,newattr,NULL);
+      }
     }  /* END if (rc == 0) */
 
   if (rc != 0) 
     {
     for (i = 0;i < JOB_ATR_LAST;i++)
-      job_attr_def[i].at_free(newattr+i);
+      job_attr_def[i].at_free(newattr + i);
 
     /* FAILURE */
 

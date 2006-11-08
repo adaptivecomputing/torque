@@ -117,8 +117,9 @@ extern char *msg_orighost;	/* error message: no PBS_O_HOST */
 
 int site_check_user_map(
 
-  job  *pjob,	
-  char *luser)
+  job  *pjob,  /* I */	
+  char *luser, /* I */
+  char *EMsg)  /* O (optional,minsize=1024) */
 
   {
   char *orighost;
@@ -128,6 +129,9 @@ int site_check_user_map(
   int   rc;
  
   char  *dptr;
+
+  if (EMsg != NULL)
+    EMsg[0] = '\0';
 
   /* get just the owner name, without the "@host" */
 	
@@ -150,6 +154,9 @@ int site_check_user_map(
       PBS_EVENTCLASS_JOB, 
       pjob->ji_qs.ji_jobid, 
       msg_orighost);
+
+    if (EMsg != NULL)
+      strcpy(EMsg,"source host not specified");
 
     return(-1);
     }
@@ -201,17 +208,23 @@ int site_check_user_map(
 
         return(0);
         }
-    } /* END for (hostnum) */
-  } /* END if (SRV_ATR_SubmitHosts) */
+    }  /* END for (hostnum) */
+  }    /* END if (SRV_ATR_SubmitHosts) */
 
   if (dptr != NULL)
     *dptr = '.';
 
   rc = ruserok(orighost,0,owner,luser);
 
+  if (EMsg != NULL)
+    snprintf(EMsg,1024,"ruserok failed validating %s/%s from %s",
+      owner,
+      luser,
+      orighost);
+
 #ifdef sun
-  /* broken Sun ruserok() sets process so it appears to be owned	*/
-  /* by the luser, change it back for cosmetic reasons		*/
+  /* broken Sun ruserok() sets process so it appears to be owned */
+  /* by the luser, change it back for cosmetic reasons           */
 
   setuid(0);
 #endif	/* sun */

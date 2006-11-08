@@ -630,7 +630,7 @@ void net_close(
 
 pbs_net_t get_connectaddr(
 
-  int sock)
+  int sock)  /* I */
 
   {
   return(svr_conn[sock].cn_addr);
@@ -734,7 +734,7 @@ int get_connecthost(
   /* SUCCESS */
 
   return(0);
-  }
+  }  /* END get_connecthost() */
 
 
 
@@ -745,11 +745,17 @@ int get_connecthost(
  *	the conversion from ASN.1 to PBS DIS
  */
 
-void net_set_type(which, type)
-	enum conn_type which;
-	enum conn_type type;
-{
-	settype[(int)which] = type;
-}
+void net_set_type(
 
+  enum conn_type which,
+  enum conn_type type)
+
+  {
+  settype[(int)which] = type;
+
+  return;
+  }  /* END net_set_type() */
+
+
+/* END net_server.c */
 
