@@ -2473,7 +2473,6 @@ int TMomFinalizeChild(
            pjob,
            PE_IO_TYPE_ASIS) != 0)
         {
-
         log_err(-1,id,"interactive user prolog failed");
 
         starter_return(TJE->upfds,TJE->downfds,JOB_EXEC_FAIL2,&sjr);
@@ -2596,7 +2595,7 @@ int TMomFinalizeChild(
 
     if (script_in < 0) 
       {
-      log_err(errno,id,"Unable to open script");
+      log_err(errno,id,"unable to open script");
 
       starter_return(TJE->upfds,TJE->downfds,JOB_EXEC_FAIL1,&sjr);
 
@@ -2734,6 +2733,8 @@ int TMomFinalizeChild(
 
     fsync(2);
 
+    log_err(errno,id,log_buffer);
+
     starter_return(TJE->upfds,TJE->downfds,JOB_EXEC_FAIL2,&sjr); /* exits */
 
     /*NOTREACHED*/
@@ -2766,13 +2767,14 @@ int TMomFinalizeChild(
       j = JOB_EXEC_FAIL2;
       }
 
+    log_err(errno,id,log_buffer);
+
     starter_return(TJE->upfds,TJE->downfds,j,&sjr); /* exits */
 
     /*NOTREACHED*/
 
     return(-1);
     }
-
 
   endpwent();
 
@@ -2787,6 +2789,8 @@ int TMomFinalizeChild(
       write(2,log_buffer,strlen(log_buffer));
 
       fsync(2);
+
+      log_err(errno,id,log_buffer);
 
       starter_return(TJE->upfds,TJE->downfds,JOB_EXEC_FAIL2,&sjr);
 
@@ -2830,6 +2834,8 @@ int TMomFinalizeChild(
 
       fsync(2);
 
+      log_err(errno,id,log_buffer);
+
       starter_return(TJE->upfds,TJE->downfds,JOB_EXEC_FAIL2,&sjr);
 
       /*NOTREACHED*/
@@ -2851,6 +2857,8 @@ int TMomFinalizeChild(
 
       fsync(2);
 
+      log_err(errno,id,log_buffer);
+
       starter_return(TJE->upfds,TJE->downfds,JOB_EXEC_FAIL2,&sjr);
 
       /*NOTREACHED*/
@@ -2861,7 +2869,8 @@ int TMomFinalizeChild(
 	
   /* X11 forwarding init */
 
-  if ((TJE->is_interactive == TRUE) && pjob->ji_wattr[(int)JOB_ATR_forwardx11].at_val.at_str)
+  if ((TJE->is_interactive == TRUE) && 
+       pjob->ji_wattr[(int)JOB_ATR_forwardx11].at_val.at_str)
     {
     char display[512];
 
@@ -3818,12 +3827,14 @@ int start_process(
       {
       /* set_job didn't leave message in log_buffer */
 
-      strcpy(log_buffer,"PBS: Unable to set task session\n");
+      strcpy(log_buffer,"PBS: unable to set task session\n");
       }
 
     write(2,log_buffer,strlen(log_buffer));
 
     fsync(2);
+
+    log_err(errno,id,log_buffer);
 
     starter_return(kid_write,kid_read,JOB_EXEC_FAIL2,&sjr);
     }
@@ -3842,7 +3853,7 @@ int start_process(
       fsync(2);
       }
 
-    sprintf(log_buffer,"PBS: Unable to set limits, err=%d\n",
+    sprintf(log_buffer,"PBS: unable to set limits, err=%d\n",
       i);
 
     write(2,log_buffer,strlen(log_buffer));
@@ -3853,6 +3864,8 @@ int start_process(
       j = JOB_EXEC_RETRY;
     else
       j = JOB_EXEC_FAIL2;
+
+    log_err(errno,id,log_buffer);
 
     starter_return(kid_write,kid_read,j,&sjr);
     }
@@ -3868,6 +3881,8 @@ int start_process(
       write(2,log_buffer,strlen(log_buffer));
 
       fsync(2);
+
+      log_err(errno,id,log_buffer);
 
       starter_return(kid_write,kid_read,JOB_EXEC_FAIL2,&sjr);
       }
@@ -3901,6 +3916,8 @@ int start_process(
 
       fsync(2);
 
+      log_err(errno,id,log_buffer);
+
       starter_return(kid_write,kid_read,JOB_EXEC_FAIL2,&sjr);
       }
     }
@@ -3917,6 +3934,8 @@ int start_process(
       write(2,log_buffer,strlen(log_buffer));
 
       fsync(2);
+
+      log_err(errno,id,log_buffer);
 
       starter_return(kid_write,kid_read,JOB_EXEC_FAIL2,&sjr);
       }
@@ -3950,6 +3969,8 @@ int start_process(
   write(2,log_buffer,strlen(log_buffer));
 
   fsync(2);
+
+  log_err(errno,id,log_buffer);
 
   starter_return(kid_write,kid_read,JOB_EXEC_CMDFAIL,&sjr);
 
@@ -4671,9 +4692,9 @@ pid_t fork_me(
 
 static void starter_return(
 
-  int                  upfds,
-  int                  downfds,
-  int                  code,
+  int                  upfds,    /* I */
+  int                  downfds,  /* I */
+  int                  code,     /* I */
   struct startjob_rtn *sjrtn)    /* I */
 
   {
