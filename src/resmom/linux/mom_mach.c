@@ -1321,8 +1321,7 @@ int mom_set_limits(
 
         if (setrlimit(RLIMIT_STACK,&reslim) < 0)
           {
-          sprintf(log_buffer,"cannot set stack limit to %ld for job %s (setrlimit failed w
-/errno=%d - check default user limits)",
+          sprintf(log_buffer,"cannot set stack limit to %ld for job %s (setrlimit failed w/errno=%d - check default user limits)",
             reslim.rlim_max,
             pjob->ji_qs.ji_jobid,
             errno);
@@ -1334,8 +1333,7 @@ int mom_set_limits(
 
         if (setrlimit(RLIMIT_AS,&reslim) < 0)
           {
-          sprintf(log_buffer,"cannot set AS limit to %ld for job %s (setrlimit failed w
-/errno=%d - check default user limits)",
+          sprintf(log_buffer,"cannot set AS limit to %ld for job %s (setrlimit failed w/errno=%d - check default user limits)",
             reslim.rlim_max,
             pjob->ji_qs.ji_jobid,
             errno);
