@@ -1901,7 +1901,7 @@ int TMomFinalizeChild(
 
   /* Get the number of Active CPUs in the system. */
 
-  if ((fp = fopen( "/proc/cpuinfo","r")) == NULL) 
+  if ((fp = fopen("/proc/cpuinfo","r")) == NULL) 
     {
     sprintf(log_buffer,"cannot open /proc/cpuinfo");
 
@@ -2330,7 +2330,10 @@ int TMomFinalizeChild(
 
     /* send job id as validation to qsub */
 
-    if (write(qsub_sock,pjob->ji_qs.ji_jobid,PBS_MAXSVRJOBID + 1) != PBS_MAXSVRJOBID + 1) 
+    if (write(
+          qsub_sock,
+          pjob->ji_qs.ji_jobid,
+          PBS_MAXSVRJOBID + 1) != PBS_MAXSVRJOBID + 1) 
       {
       log_err(errno,id,"cannot write jobid");
 
@@ -2690,7 +2693,7 @@ int TMomFinalizeChild(
         {
         /* set_job didn't leave message in log_buffer */
 
-        strcpy(log_buffer,"Unable to set session");
+        strcpy(log_buffer,"unable to set session");
         }
 
       /* set_job leaves message in log_buffer */
@@ -2767,7 +2770,14 @@ int TMomFinalizeChild(
       j = JOB_EXEC_FAIL2;
       }
 
-    log_err(errno,id,log_buffer);
+    if (log_buffer[0] != '\0')
+      {
+      log_err(errno,id,log_buffer);
+      }
+    else
+      {
+      log_err(errno,id,"mom_set_limits failed");
+      }
 
     starter_return(TJE->upfds,TJE->downfds,j,&sjr); /* exits */
 
@@ -3030,7 +3040,7 @@ int TMomFinalizeChild(
     {
     struct stat buf;
 
-    if (stat(shell, &buf) != 0)
+    if (stat(shell,&buf) != 0)
       {
       DBPRT(("stat of shell \"%s\" failed with error %d\n",
         shell, 
@@ -3393,7 +3403,8 @@ int start_process(
   if (pid != 0) 
     {		
     /* parent */
-    int gotsuccess=0;
+
+    int gotsuccess = 0;
 
     close(kid_read);
     close(kid_write);
