@@ -1384,11 +1384,18 @@ int mom_set_limits(
           }
         }
       }
+    else if (!strcmp(pname,"size"))
+      {
+      /* ignore */
+
+      /* NO-OP */
+      }
     else if ((pres->rs_defin->rs_flags & ATR_DFLAG_RMOMIG) == 0)
       {
       /* don't recognize and not marked as ignore by mom */
 
-      sprintf(log_buffer,"flag mismatch in %s\n",
+      sprintf(log_buffer,"do not know how to process resource '%s' in %s\n",
+        pname,
         id);
 
       return(error(pname,PBSE_UNKRESC));
