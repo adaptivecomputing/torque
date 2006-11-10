@@ -96,8 +96,8 @@
 
 int main(
 
-  int    argc,
-  char **argv)
+  int    argc,  /* I */
+  char **argv)  /* I */
 
   {
   int c;
@@ -125,38 +125,58 @@ int main(
       {
       case 'h':
 
-        while ( isspace((int)*optarg) ) optarg++;
-            if ( strlen(optarg) == 0 ) {
-                fprintf(stderr, "qrls: illegal -h value\n");
-                errflg++;
-		break;
-            }
-            pc = optarg;
-            u_cnt = o_cnt = s_cnt = n_cnt = 0;
-            while ( *pc) {
-                if ( *pc == 'u' )
-                    u_cnt++;
-                else if ( *pc == 'o' )
-                    o_cnt++;
-                else if ( *pc == 's' )
-                    s_cnt++;
-                else if ( *pc == 'n' )
-                    n_cnt++;
-                else {
-                    fprintf(stderr, "qrls: illegal -h value\n");
-                    errflg++;
-		    break;
-                }
-                pc++;
-            }
-            if ( n_cnt && (u_cnt + o_cnt + s_cnt) ) {
-                fprintf(stderr, "qrls: illegal -h value\n");
-                errflg++;
-		break;
-            }
-            strcpy(hold_type, optarg);
+        while (isspace((int)*optarg)) 
+          optarg++;
+
+        if (strlen(optarg) == 0) 
+          {
+          fprintf(stderr,"qrls: illegal -h value\n");
+
+          errflg++;
+
+          break;
+          }
+
+        pc = optarg;
+
+        u_cnt = o_cnt = s_cnt = n_cnt = 0;
+
+        while (*pc) 
+          {
+          if (*pc == 'u')
+            u_cnt++;
+          else if (*pc == 'o')
+            o_cnt++;
+          else if (*pc == 's')
+            s_cnt++;
+          else if (*pc == 'n')
+            n_cnt++;
+          else 
+            {
+            fprintf(stderr,"qrls: illegal -h value\n");
+           
+            errflg++;
+
             break;
-      default :
+            }
+
+          pc++;
+          }
+
+        if (n_cnt && (u_cnt + o_cnt + s_cnt)) 
+          {
+          fprintf(stderr,"qrls: illegal -h value\n");
+
+          errflg++;
+
+          break;
+          }
+
+        strcpy(hold_type,optarg);
+
+        break;
+
+      default:
 
         errflg++;
 
@@ -166,7 +186,7 @@ int main(
 
   if (errflg || optind >= argc) 
     {
-    static char usage[]="usage: qrls [-h hold_list] job_identifier...\n";
+    static char usage[]="usage: qrls [-h {uos}] job_identifier...\n";
 
     fprintf(stderr,usage);
 
@@ -176,10 +196,10 @@ int main(
   for (;optind < argc;optind++) 
     {
     int connect;
-    int stat=0;
+    int stat = 0;
     int located = FALSE;
 
-    strcpy(job_id, argv[optind]);
+    strcpy(job_id,argv[optind]);
 
     if (get_server(job_id,job_id_out,server_out)) 
       {
@@ -187,6 +207,7 @@ int main(
         job_id);
 
       any_failed = 1;
+
       continue;
       }
 
@@ -238,4 +259,7 @@ cnt:
 
   return(0);
   }  /* END main() */
+
+
+/* END qrls.c */
 
