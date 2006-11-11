@@ -176,27 +176,34 @@ static int cmp_node_name(
     }
 
   return(1);
-  }
+  }  /* END cmp_node_name() */
 
 
 
 
 static void prt_node_attr(
 
-  struct batch_status *pbs)  /* I */
+  struct batch_status *pbs,         /* I */
+  int                  IsVerbose)   /* I */
 
   {
   struct attrl *pat;
 
   for (pat = pbs->attribs;pat;pat = pat->next) 
     {
+    if ((pat->value == NULL) || (pat->value[0] == '?'))
+      {
+      if (IsVerbose == 0)
+        continue;
+      }
+
     printf("     %s = %s\n", 
       pat->name, 
       pat->value);
-    }
+    }  /* END for (pat) */
 
   return;
-  }
+  }  /* END prt_node_attr() */
 
 
 
@@ -681,14 +688,17 @@ int main(
         }
       else
         {
+        char *ptr;
+
         for (pbstat = bstatus;pbstat;pbstat = pbstat->next) 
           {
           printf("%s\n", 
             pbstat->name);
-            prt_node_attr(pbstat);
+
+          prt_node_attr(pbstat,0);
 
           putchar('\n');
-          }
+          }  /* END for (bpstat) */
         }
 
       break;

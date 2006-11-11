@@ -787,7 +787,9 @@ static char *getjoblist(
 
   if ((pjob = (job *)GET_NEXT(svr_alljobs)) == NULL)
     {
-    return(NULL);
+    /* no jobs - return space character */
+
+    return(" ");
     }
 
   for (;pjob != NULL;pjob = (job *)GET_NEXT(pjob->ji_alljobs))
@@ -843,7 +845,7 @@ static char *reqvarattr(
 
   if ((pva = (struct varattr *)GET_NEXT(mom_varattrs)) == NULL)
     {
-    return(NULL);
+    return(" ");
     }
 
   for (;pva != NULL;pva = (struct varattr *)GET_NEXT(pva->va_link))
