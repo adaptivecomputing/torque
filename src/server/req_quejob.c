@@ -1369,7 +1369,9 @@ void req_mvjobfile(  /* NOTE:  routine for server only - mom code follows this r
  *	on the compile option, see std_file_name().
  */
 
-void req_mvjobfile(  /* routine for MOM only - server routine listed above */
+/* routine for MOM only - server routine listed above */
+
+void req_mvjobfile( 
 
   struct batch_request *preq)  /* I */
 
@@ -1415,7 +1417,9 @@ void req_mvjobfile(  /* routine for MOM only - server routine listed above */
   if (((pwd = getpwnam(pj->ji_wattr[(int)JOB_ATR_euser].at_val.at_str)) == NULL) || 
       ((fds = open_std_file(pj,jft,oflag,pwd->pw_gid)) < 0)) 
     {
-    req_reject(PBSE_MOMREJECT,0,preq,NULL,NULL);
+    /* FAILURE */
+
+    req_reject(PBSE_MOMREJECT,0,preq,NULL,"password lookup failed");
 
     return;
     }
@@ -1425,7 +1429,7 @@ void req_mvjobfile(  /* routine for MOM only - server routine listed above */
        preq->rq_ind.rq_jobfile.rq_data, 
        preq->rq_ind.rq_jobfile.rq_size) != preq->rq_ind.rq_jobfile.rq_size)
     {
-    req_reject(PBSE_SYSTEM,0,preq,NULL,NULL);
+    req_reject(PBSE_SYSTEM,0,preq,NULL,"cannot create file");
     }
   else
     {

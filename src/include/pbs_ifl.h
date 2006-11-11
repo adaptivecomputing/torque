@@ -239,6 +239,7 @@
 #define ATTR_jobstatrate "job_stat_rate"
 #define ATTR_polljobs    "poll_jobs"
 #define ATTR_downonerror "down_on_error"
+#define ATTR_disableserveridcheck "disable_server_id_check"
 #define ATTR_jobnanny    "job_nanny"
 #define ATTR_ownerpurge  "owner_purge"
 #define ATTR_qcqlimits   "queue_centric_limits"

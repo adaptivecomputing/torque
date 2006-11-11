@@ -129,7 +129,9 @@ int svr_chk_owner(
   pu = site_map_user(preq->rq_user,preq->rq_host);
 
   if (pu == NULL)
-    {
+    {  
+    /* FAILURE */
+
     return(-1);
     }
 

@@ -291,6 +291,15 @@ int set_jobexid(
   /* use the passed User_List if set, may be a newly modified one     */
   /* if not set, fall back to the job's actual User_List, may be same */
 
+  if (server.sv_attr[(int)SRV_ATR_DisableServerIdCheck].at_val.at_long)
+    {
+    /* NO-OP */
+
+    /* SUCCESS */
+
+    return(0);
+    }
+
   if ((attrry + (int)JOB_ATR_userlst)->at_flags & ATR_VFLAG_SET)
     pattr = attrry + (int)JOB_ATR_userlst;
   else
@@ -444,7 +453,7 @@ int set_jobexid(
         return(PBSE_BADGRP);	/* user not in group */
         } 
       }
-    }
+    }    /* END if ((pgrpn = getegroup(pjob,pattr))) */
   else 
     {
     /* use user login group */
@@ -471,7 +480,9 @@ int set_jobexid(
      */
 
     addflags = ATR_VFLAG_DEFLT;
-    }
+    }  /* END else ((pgrpn = getegroup(pjob,pattr))) */
+
+  /* set new group */
 
   pattr = attrry + (int)JOB_ATR_egroup;
 

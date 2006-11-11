@@ -98,9 +98,17 @@
 #include <string.h>
 
 /* ARGSUSED */
-char *site_map_user(uname, host)
-	char *uname;
-	char *host;
-{
-	return (uname);
-}
+
+char *site_map_user(
+
+  char *uname,   /* I */
+  char *host)    /* I (pbs_o_host) */
+
+  {
+  /* NO-OP */
+
+  return(uname);
+  }
+
+/* END site_map_usr.c */
+
