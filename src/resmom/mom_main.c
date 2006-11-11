@@ -632,7 +632,7 @@ char *nullproc(
 
 static char *arch(
 
-  struct rm_attribute *attrib)
+  struct rm_attribute *attrib)  /* I */
 
   {
   char *id = "arch";
@@ -768,13 +768,13 @@ static char *reqmsg(
 
 static char *getjoblist(
 
-  struct rm_attribute *attrib)
+  struct rm_attribute *attrib) /* I */
 
   {
-  static char *list=NULL;
-  static int listlen=0;
+  static char *list = NULL;
+  static int listlen = 0;
   job *pjob;
-  int firstjob=1;
+  int firstjob = 1;
 
   if (list == NULL)
     {
@@ -789,40 +789,48 @@ static char *getjoblist(
     {
     return(NULL);
     }
-  else
+
+  for (;pjob != NULL;pjob = (job *)GET_NEXT(pjob->ji_alljobs))
     {
-    for (;pjob != NULL;pjob = (job *)GET_NEXT(pjob->ji_alljobs))
+    if (!firstjob)
+      strcat(list," ");
+
+    strcat(list,pjob->ji_qs.ji_jobid);
+
+    if ((int)strlen(list) >= listlen)
       {
-      if (!firstjob)
-        strcat(list," ");
-
-      strcat(list,pjob->ji_qs.ji_jobid);
-
-      if ((int)strlen(list) >= listlen)
-        {
-        listlen += BUFSIZ;
-        list=realloc(list,listlen);
-        }
-
-      firstjob = 0;
+      listlen += BUFSIZ;
+      list = realloc(list,listlen);
       }
+
+    firstjob = 0;
+    }
+
+  if (list[0] == '\0')
+    {
+    /* no jobs - return space character */
+
+    strcat(list," ");
     }
 
   return(list);
-  }
+  }  /* END getjoblist() */
+
+
+
+
 
 static char *reqvarattr(
   
-  struct rm_attribute *attrib)
+  struct rm_attribute *attrib)  /* I */
   
   {           
   static char id[] = "reqvarattr";
-  static char *list=NULL,*child_spot;
-  static int listlen=0;
+  static char *list = NULL,*child_spot;
+  static int listlen = 0;
   struct varattr *pva;
   int   i, fd, len, child_len;
   FILE  *child;
-
 
   if (list == NULL)
     {
@@ -831,108 +839,110 @@ static char *reqvarattr(
     listlen = BUFSIZ;
     }
     
-  *list='\0'; /* reset the list */
+  *list = '\0'; /* reset the list */
 
   if ((pva = (struct varattr *)GET_NEXT(mom_varattrs)) == NULL)
     {
     return(NULL);
     }
-  else
+
+  for (;pva != NULL;pva = (struct varattr *)GET_NEXT(pva->va_link))
     {
-    for (;pva != NULL;pva = (struct varattr *)GET_NEXT(pva->va_link))
+    if ((pva->va_lasttime == 0) || (time_now >= (pva->va_ttl + pva->va_lasttime)))
       {
-      if ((pva->va_lasttime==0) || (time_now >= (pva->va_ttl + pva->va_lasttime)))
-        {
-        if ((pva->va_ttl == -1) && (pva->va_lasttime != 0))
-          continue;  /* ttl of -1 is only run once */
+      if ((pva->va_ttl == -1) && (pva->va_lasttime != 0))
+        continue;  /* ttl of -1 is only run once */
           
-        pva->va_lasttime=time_now;
+      pva->va_lasttime = time_now;
 
-        if (pva->va_value == NULL)
-          pva->va_value=calloc(128,sizeof(char));
+      if (pva->va_value == NULL)
+        pva->va_value = calloc(128,sizeof(char));
 
-        /* execute script and get a new value */
-        if ((child = popen(pva->va_cmd,"r")) == NULL) 
+      /* execute script and get a new value */
+
+      if ((child = popen(pva->va_cmd,"r")) == NULL) 
+        {
+        sprintf(pva->va_value,"error: %d %s",
+          errno,
+          strerror(errno));
+        }
+      else
+        {
+        fd = fileno(child);
+
+        child_spot = pva->va_value;
+        child_len = 0;
+        child_spot[0] = '\0';
+
+retryread:
+        while ((len = read(fd,child_spot,127 - child_len)) > 0)
           {
-          sprintf(pva->va_value,"error: %d %s",errno,strerror(errno));
+          for (i = 0;i < len;i++)
+            {
+            if (child_spot[i] == '\n')
+              break;
+            }
+
+          if (i < len)
+            {
+            /* found newline */
+        
+            child_len += i + 1;
+
+            break;
+            }
+
+          child_len += len;
+          child_spot += len;
+
+          if (child_len >= 127)
+            break;
+          }
+
+        if (len == -1)
+          {
+          if (errno == EINTR)
+            goto retryread;
+
+          log_err(errno,id,"pipe read");
+
+          sprintf(pva->va_value,"? %d",
+            RM_ERR_SYSTEM);
+
+          fclose(child);
           }
         else
           {
+          pclose(child);
 
-          fd = fileno(child);
-
-          child_spot = pva->va_value;
-          child_len = 0;
-          child_spot[0] = '\0';
-
-retryread:
-          while ((len = read(fd,child_spot,127 - child_len)) > 0)
-            {
-            for (i = 0;i < len;i++)
-              {
-              if (child_spot[i] == '\n')
-                break;
-              }
-
-            if (i < len)
-              {
-              /* found newline */
-        
-              child_len += i + 1;
-
-              break;
-              }
-
-            child_len += len;
-            child_spot += len;
-
-            if (child_len >= 127)
-              break;
-            }
-
-          if (len == -1)
-            {
-            if (errno==EINTR)
-              goto retryread;
-
-            log_err(errno,id,"pipe read");
-
-            sprintf(pva->va_value,"? %d",
-              RM_ERR_SYSTEM);
-
-            fclose(child);
-            }
-          else
-            {
-            pclose(child);
-
-            if (child_len > 0)
-              pva->va_value[child_len - 1] = '\0';   /* hack off newline */
-            }
-          } /* END popen */
-        } /* END execute command */
+          if (child_len > 0)
+            pva->va_value[child_len - 1] = '\0';   /* hack off newline */
+          }
+        }    /* END else ((child = popen(pva->va_cmd,"r")) == NULL) */
+      }      /* END if ((pva->va_lasttime == 0) || ...) */
                      
-      if (pva->va_value[0] != '\0')
-        {
-        if (*list != '\0')
-          strcat(list,"+");
+    if (pva->va_value[0] != '\0')
+      {
+      if (*list != '\0')
+        strcat(list,"+");
 
-        strcat(list,pva->va_name);
-        strcat(list,":");
-        strcat(list,pva->va_value);
-        }
-
-      if ((int)strlen(list) >= listlen)
-        {
-        listlen += BUFSIZ;
-        list=realloc(list,listlen);
-        }
-
+      strcat(list,pva->va_name);
+      strcat(list,":");
+      strcat(list,pva->va_value);
       }
-    }
+
+    if ((int)strlen(list) >= listlen)
+      {
+      listlen += BUFSIZ;
+      list = realloc(list,listlen);
+      }
+    }    /* END for () */
+
+  if (list[0] == '\0')
+    strcat(list," ");
 
   return(list);
-  }
+  }  /* END reqvarattr() */
 
 
 
@@ -1154,8 +1164,8 @@ char *loadave(
 
 struct config *rm_search(
 
-  struct config	*where,
-  char          *what)
+  struct config	*where,  /* I */
+  char          *what)   /* I */
 
   {
   struct config	*cp;
@@ -1186,8 +1196,8 @@ struct config *rm_search(
 
 char *dependent(
 
-  char	              *res,
-  struct rm_attribute *attr)
+  char	              *res,  /* I */
+  struct rm_attribute *attr) /* I */
 
   {
   struct config	       *ap;

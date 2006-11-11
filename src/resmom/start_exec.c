@@ -5330,12 +5330,14 @@ static void catchinter(
 
 static int search_env_and_open(
 
-  const char *envname, 
-  u_long      ipaddr)
+  const char *envname,   /* I */
+  u_long      ipaddr)    /* I */
 
   {
   static char *id = "search_env_and_open";
-  int i, len = strlen(envname);
+  int i, len;
+
+  len = strlen(envname);
 
   for (i = 0;i < vtable.v_used;i++)
     {
@@ -5359,12 +5361,15 @@ static int search_env_and_open(
         }
 
 #if 0       /* debugging */
-     log_err(0, "search_env_and_open attempting open", vtable.v_envp[i]);
+     log_err(0,"search_env_and_open attempting open",vtable.v_envp[i]);
 #endif
 
       if ((fd = open_demux(ipaddr,port)) < 0) 
         {
-        sprintf(log_buffer,"failed connect to stdio on %s:%d",vtable.v_envp[i],port);
+        sprintf(log_buffer,"failed connect to stdio on %s:%d",
+          vtable.v_envp[i],
+          port);
+
         log_err(errno,id,log_buffer);
 
         return(-2);
