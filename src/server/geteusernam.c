@@ -153,7 +153,9 @@ static char *geteusernam(
     }
 
   if (!hit) 
-    {	/* default to the job owner ( 3.) */
+    {	
+    /* default to the job owner ( 3.) */
+
     hit = pjob->ji_wattr[(int)JOB_ATR_job_owner].at_val.at_str;
 
     rule3 = 1;
@@ -293,12 +295,37 @@ int set_jobexid(
 
   if (server.sv_attr[(int)SRV_ATR_DisableServerIdCheck].at_val.at_long)
     {
-    /* NO-OP */
+    char tmpLine[1024];
+
+    char *ptr;
+
+    /* NOTE: use owner, not userlist - should this be changed? */
+
+    if (pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str != NULL)
+      {
+      strncpy(
+        tmpLine,
+        pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str,
+        sizeof(tmpLine));
+
+      /* FORMAT: <USER>@<HOST> */
+
+      ptr = strchr(tmpLine,'@');
+
+      if (ptr != NULL)
+        *ptr = '\0';
+
+      pattr = attrry + (int)JOB_ATR_euser;
+
+      job_attr_def[(int)JOB_ATR_euser].at_free(pattr);
+
+      job_attr_def[(int)JOB_ATR_euser].at_decode(pattr,NULL,NULL,tmpLine);
+      }
 
     /* SUCCESS */
 
     return(0);
-    }
+    }  /* END if (server.sv_attr[...].at_val.at_long) */
 
   if ((attrry + (int)JOB_ATR_userlst)->at_flags & ATR_VFLAG_SET)
     pattr = attrry + (int)JOB_ATR_userlst;

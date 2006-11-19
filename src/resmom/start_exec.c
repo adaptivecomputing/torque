@@ -253,20 +253,37 @@ struct passwd *check_pwd(
   struct passwd	*pwdp;
   struct group	*grpp;
 
+  char          *ptr;
+
   /* NOTE:  should cache entire pwd object (NYI) */
 
-  pwdp = getpwnam(pjob->ji_wattr[(int)JOB_ATR_euser].at_val.at_str);
+  ptr = pjob->ji_wattr[(int)JOB_ATR_euser].at_val.at_str;
+
+  if (ptr == NULL)
+    {
+    /* FAILURE */
+
+    sprintf(log_buffer,"no user specified for job");
+
+    return(NULL);
+    }
+
+  pwdp = getpwnam(ptr);
 
   if (pwdp == NULL) 
     {
-    sprintf(log_buffer,"No Password Entry for User %s",
-      pjob->ji_wattr[(int)JOB_ATR_euser].at_val.at_str);
+    /* FAILURE */
+
+    sprintf(log_buffer,"no password entry for user %s",
+      ptr);
  
     return(NULL);
     }
 
   if (pjob->ji_grpcache != NULL)
     {
+    /* SUCCESS */
+
     /* group cache previously loaded and cached */
 
     return(pwdp);
@@ -276,11 +293,14 @@ struct passwd *check_pwd(
 
   pjob->ji_qs.ji_un.ji_momt.ji_exuid = pwdp->pw_uid;
 
-  pjob->ji_grpcache = malloc(sizeof(struct grpcache) + strlen(pwdp->pw_dir) + 1);
+  pjob->ji_grpcache = malloc(
+    sizeof(struct grpcache) + strlen(pwdp->pw_dir) + 1);
 
   if (pjob->ji_grpcache == NULL) 
     {
-    sprintf(log_buffer,"Malloc failed");
+    /* FAILURE */
+
+    sprintf(log_buffer,"malloc failed");
 
     return(NULL);
     }
@@ -298,7 +318,9 @@ struct passwd *check_pwd(
 
     if (grpp == NULL) 
       {
-      sprintf(log_buffer,"No Group Entry for Group %s",
+      /* FAILURE */
+
+      sprintf(log_buffer,"no group entry for group %s",
         pjob->ji_wattr[(int)JOB_ATR_egroup].at_val.at_str);
 
       return(NULL);
@@ -319,7 +341,9 @@ struct passwd *check_pwd(
         NGROUPS_MAX,
         pjob->ji_grpcache->gc_groups)) < 0) 
     {
-    sprintf(log_buffer,"Too many group entries");
+    /* FAILURE */
+
+    sprintf(log_buffer,"too many group entries");
 
     return(NULL);
     }
@@ -328,10 +352,14 @@ struct passwd *check_pwd(
 
   if (site_mom_chkuser(pjob)) 
     {
+    /* FAILURE */
+
     sprintf(log_buffer,"site_mom_chkuser failed");
 
     return(NULL);
     }
+
+  /* SUCCESS */
 
   return(pwdp);
   }  /* END check_pwd() */
