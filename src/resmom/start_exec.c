@@ -5007,7 +5007,7 @@ int open_std_file(
 
           return(-1);
           }
-        if (statbuf.st_gid != exgid)
+        if ((statbuf.st_gid != exgid) && (statbuf.st_gid != 0))
           {
           log_err(-1,"open_std_file","std file exists with the wrong group, someone is doing something fishy");
 
