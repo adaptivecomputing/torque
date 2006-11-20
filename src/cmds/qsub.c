@@ -817,6 +817,7 @@ char destination[PBS_MAXDEST];
 static char server_out[PBS_MAXSERVERNAME + PBS_MAXPORTNUM + 2];
 char server_host[PBS_MAXHOSTNAME + 1];
 char qsub_host[PBS_MAXHOSTNAME + 1];
+int  owner_uid[1024 + 1];
 
 long cnt2server_retry = -100;
 
@@ -1098,6 +1099,12 @@ int set_job_env(
       strcat(job_env,",PBS_O_HOST=");
       strcat(job_env,server_host);
       }
+    }
+
+  if (owner_uid[0] != '\0')
+    {
+    strcat(job_env,",PBS_O_UID=");
+    strcat(job_env,owner_uid);
     }
 
   if (rc != 0) 
@@ -3606,6 +3613,7 @@ int main(
 
   server_host[0] = '\0';
   qsub_host[0] = '\0';
+  owner_uid[0] = '\0';
 
   if (getenv("PBSDEBUG") != NULL)
     fprintf(stderr,"xauth_path=%s\n",xauth_path);
@@ -3633,6 +3641,11 @@ int main(
       {
       strncpy(qsub_host,param_val,sizeof(qsub_host));
       qsub_host[sizeof(qsub_host) - 1] = '\0';
+      }
+
+    if ((param_val = get_param("QSUBSENDUID",config_buf)) != NULL)
+      {
+      sprintf(owner_uid,"%d",getuid());
       }
 
     if ((param_val = get_param("XAUTHPATH",config_buf)) != NULL)
