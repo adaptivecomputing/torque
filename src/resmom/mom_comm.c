@@ -1016,7 +1016,6 @@ void job_start_error(
 
   {
   static  char  id[] = "job_start_error";
-  int           nodes;
 
   static char   abortjobid[64];
   static int    abortcount = -1;

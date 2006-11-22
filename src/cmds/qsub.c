@@ -817,7 +817,7 @@ char destination[PBS_MAXDEST];
 static char server_out[PBS_MAXSERVERNAME + PBS_MAXPORTNUM + 2];
 char server_host[PBS_MAXHOSTNAME + 1];
 char qsub_host[PBS_MAXHOSTNAME + 1];
-int  owner_uid[1024 + 1];
+char  owner_uid[1024 + 1];
 
 long cnt2server_retry = -100;
 

@@ -94,6 +94,7 @@
 #include "server.h"
 #include "pbs_error.h"
 #include "svrfunc.h"
+#include "log.h"
 #ifdef _CRAY
 #include <udb.h>
 #endif /* _CRAY */

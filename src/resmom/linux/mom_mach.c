@@ -1377,8 +1377,8 @@ int mom_set_limits(
         if ((nice((int)pres->rs_value.at_val.at_long) == -1) && (errno != 0))
           {
           sprintf(log_buffer,"nice() failed w/errno=%d in %s\n",
-            id,
-            errno);
+            errno,
+            id);
 
           return(error(pname,PBSE_BADATVAL));
           }

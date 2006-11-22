@@ -688,8 +688,6 @@ int main(
         }
       else
         {
-        char *ptr;
-
         for (pbstat = bstatus;pbstat;pbstat = pbstat->next) 
           {
           printf("%s\n", 
