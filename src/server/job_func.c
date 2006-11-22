@@ -702,7 +702,7 @@ job *job_clone(
   pnewjob->ji_qs.ji_jobid[PBS_MAXSVRJOBID] = '\0';
   snprintf(pnewjob->ji_qs.ji_jobid,PBS_MAXSVRJOBID,"%s-%d.%s",
            oldid,taskid,hostname);
-
+  free(oldid);
   /* update the job filename
    * We could optimize the sub-jobs to all use the same file. We would need a 
    * way to track the number of tasks still using the job file so we know when
