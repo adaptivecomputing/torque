@@ -190,21 +190,21 @@ int get_server(
 
   if (notNULL(parent_server)) 
     {
-    if (get_fullhostname(parent_server,host_server,PBS_MAXSERVERNAME) == 0) 
+    if (get_fullhostname(parent_server,host_server,PBS_MAXSERVERNAME,NULL) != 0) 
       {
-      strcat(job_id_out, host_server);
+      /* FAILURE */
 
-      if ((c = strchr(parent_server,':')) != 0) 
-        {
-        if (*(c - 1) == '\\') 
-          c--;
-
-        strcat(job_id_out, c);
-        }
-      } 
-    else
-      {
       return(1);
+      }
+
+    strcat(job_id_out, host_server);
+
+    if ((c = strchr(parent_server,':')) != 0) 
+      {
+      if (*(c - 1) == '\\') 
+        c--;
+
+      strcat(job_id_out, c);
       }
     } 
   else 
@@ -227,21 +227,21 @@ int get_server(
 
     *c = '\0';
 
-    if (get_fullhostname(def_server,host_server,PBS_MAXSERVERNAME) == 0) 
+    if (get_fullhostname(def_server,host_server,PBS_MAXSERVERNAME,NULL) != 0) 
       {
-      strcat(job_id_out,host_server);
+      /* FAILURE */
 
-      if ((c = strchr(def_server,':')) != 0) 
-        {
-        if (*(c - 1) == '\\') 
-          c--;
-
-        strcat(job_id_out, c);
-        }
-      } 
-    else
-      {
       return(1);
+      }
+
+    strcat(job_id_out,host_server);
+
+    if ((c = strchr(def_server,':')) != 0) 
+      {
+      if (*(c - 1) == '\\') 
+        c--;
+
+      strcat(job_id_out, c);
       }
     }    /* END else */
 

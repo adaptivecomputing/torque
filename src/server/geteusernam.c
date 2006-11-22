@@ -392,7 +392,7 @@ int set_jobexid(
 	
 #ifdef _CRAY
 
-  /* On cray check UDB (user data base) for permission to batch it */
+  /* on cray check UDB (user data base) for permission to batch it */
 
   pudb = getudbuid(pwent->pw_uid);
 
@@ -425,7 +425,7 @@ int set_jobexid(
       (char *)acid2nam(pudb->ue_acids[0]));
     }
 
-#endif	/* _CRAY */
+#endif /* _CRAY */
 
   /*
    * now figure out the group name under which the job should execute

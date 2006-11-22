@@ -438,6 +438,8 @@ int main(
   void   check_nodes A_((struct work_task *ptask));
   void   check_log A_((struct work_task *ptask));
 
+  char   EMsg[1024];
+
   static struct {
     char *it_name;
     int   it_type;
@@ -481,26 +483,50 @@ int main(
 
   server_host[0] = '\0';
 
-  if (((server_host[0] == '\0') && (gethostname(server_host,PBS_MAXHOSTNAME) == -1)) ||
-       (get_fullhostname(server_host,server_host,PBS_MAXHOSTNAME) == -1)) 
-    {
-    log_err(-1,"pbsd_main","Unable to get my host name");
+  EMsg[0] = '\0';
 
-    return(-1);
+  if (((server_host[0] == '\0') && (gethostname(server_host,PBS_MAXHOSTNAME) == -1)) ||
+       (get_fullhostname(server_host,server_host,PBS_MAXHOSTNAME,EMsg) == -1)) 
+    {
+    /* FAILURE - shutdown */
+
+    if (EMsg[0] != '\0')
+      {
+      char tmpLine[1024];
+
+      snprintf(tmpLine,sizeof(tmpLine),"unable to determine local server hostname - %s",
+        EMsg);
+
+      log_err(-1,"pbsd_main",tmpLine);
+      }
+    else
+      {
+      log_err(-1,"pbsd_main","unable to determine local server hostname");
+      }
+
+    exit(1);
     }
 
   /* initialize service port numbers for self, Scheduler, and MOM */
 
-  pbs_server_port_dis = get_svrport(PBS_BATCH_SERVICE_NAME,"tcp", 
+  pbs_server_port_dis = get_svrport(
+    PBS_BATCH_SERVICE_NAME,
+    "tcp", 
     PBS_BATCH_SERVICE_PORT_DIS);
 
-  pbs_scheduler_port = get_svrport(PBS_SCHEDULER_SERVICE_NAME,"tcp",
+  pbs_scheduler_port = get_svrport(
+    PBS_SCHEDULER_SERVICE_NAME,
+    "tcp",
     PBS_SCHEDULER_SERVICE_PORT);
 
-  pbs_mom_port = get_svrport(PBS_MOM_SERVICE_NAME,"tcp",
+  pbs_mom_port = get_svrport(
+    PBS_MOM_SERVICE_NAME,
+    "tcp",
     PBS_MOM_SERVICE_PORT);
 
-  pbs_rm_port = get_svrport(PBS_MANAGER_SERVICE_NAME,"tcp",
+  pbs_rm_port = get_svrport(
+    PBS_MANAGER_SERVICE_NAME,
+    "tcp",
     PBS_MANAGER_SERVICE_PORT);
 
   strcpy(server_name,server_host);	/* by default server = host */
@@ -571,7 +597,7 @@ int main(
           (void)fprintf(stderr,"%s: bad -a option\n", 
             argv[0]);
 
-          return(1);
+          exit(1);
           }
 
         break;
@@ -595,11 +621,26 @@ int main(
 
         strncpy(server_host,optarg,PBS_MAXHOSTNAME);
 
-        if (get_fullhostname(server_host,server_host,PBS_MAXHOSTNAME) == -1)
+        if (get_fullhostname(server_host,server_host,PBS_MAXHOSTNAME,EMsg) == -1)
           {
-          log_err(-1,"pbsd_main","Unable to get host name");
+          /* FAILURE */
 
-          return(1);
+          if (EMsg[0] != '\0')
+            {
+            char tmpLine[1024];
+
+            snprintf(tmpLine,sizeof(tmpLine),"unable to determine full hostname for specified server host '%s' - %s",
+              server_host,
+              EMsg);
+
+            log_err(-1,"pbsd_main",tmpLine);
+            }
+          else
+            {
+            log_err(-1,"pbsd_main","unable to determine full server hostname");
+            }
+
+          exit(1);
           }
 
         strcpy(server_name,server_host);
@@ -621,7 +662,7 @@ int main(
             fprintf(stderr,"%s: -h host too long\n", 
               argv[0]);
 
-            return(1);
+            exit(1);
             }
 
           strcat(server_name,":");
@@ -638,7 +679,7 @@ int main(
             fprintf(stderr, "%s: -h host invalid\n", 
               argv[0]);
 
-            return(1);
+            exit(1);
             }
           }    /* END if (strlen(servicename) > 0) */
 
@@ -653,7 +694,7 @@ int main(
           fprintf(stderr,"%s: -p host:port too long\n",
             argv[0]);
 
-          return(1);
+          exit(1);
           }
 
         strcat(server_name,":");
@@ -664,7 +705,7 @@ int main(
           fprintf(stderr,"%s: -p host:port invalid\n", 
             argv[0]);
 
-          return(1);
+          exit(1);
           }
 
         break;
@@ -686,7 +727,7 @@ int main(
           fprintf(stderr, "%s -t bad recovery type\n",
             argv[0]);
 
-          return(1);
+          exit(1);
           }
 
         break;
@@ -711,7 +752,7 @@ int main(
             argv[0],
             optarg);
 
-          return(1);
+          exit(1);
           }
 
         if (isalpha((int)*optarg)) 
@@ -732,7 +773,7 @@ int main(
             argv[0], 
             optarg);
 
-          return(1);
+          exit(1);
           }
 
         break;
@@ -748,7 +789,7 @@ int main(
             argv[0],
             optarg);
 
-          return(1);
+          exit(1);
           }
 
         break;
@@ -759,7 +800,7 @@ int main(
           argv[0],
           c);
 
-        return(1);
+        exit(1);
 
         break;
       }  /* END switch(c) */
@@ -770,7 +811,7 @@ int main(
     fprintf(stderr, "%s: invalid operand\n", 
       argv[0]);
 
-    return(1);
+    exit(1);
     }
 
   /* make sure no other server is running with this home directory */
@@ -789,7 +830,7 @@ int main(
 
     log_err(errno,msg_daemonname,log_buffer);
 
-    return(2);
+    exit(2);
     }
 
   lock_out(lockfds,F_WRLCK);
@@ -838,7 +879,7 @@ int main(
     {
     log_err(-1,msg_daemonname,"pbsd_init failed");
 
-    return(3);
+    exit(3);
     }
 
   /* initialize the network interface */
@@ -860,7 +901,7 @@ int main(
 
     log_err(-1,msg_daemonname,"init_network failed dis");
 
-    return(3);
+    exit(3);
     }
 
   net_set_type(Secondary,FromClientDIS);	/* "there" */
@@ -882,7 +923,7 @@ int main(
       {
       log_err(errno,msg_daemonname,"setsid failed");
 
-      return(2);
+      exit(2);
       }
 
     lock_out(lockfds,F_WRLCK);
@@ -919,7 +960,7 @@ int main(
     {
     log_err(errno,msg_daemonname,"failed to write pid to lockfile");
 
-    return(-1);
+    exit(-1);
     }
 
 #if (PLOCK_DAEMONS & 1)
@@ -930,7 +971,7 @@ int main(
     {
     log_err(errno,msg_daemonname,"rpp_bind");
 
-    return(1);
+    exit(1);
     }
 
   rpp_fd = -1;		/* force rpp_bind() to get another socket */
@@ -952,7 +993,7 @@ int main(
     {
     log_err(errno,msg_daemonname,"no privileged ports");
 
-    return(1);
+    exit(1);
     }
 
   if (LOGLEVEL >= 5)
@@ -981,6 +1022,7 @@ int main(
      down unless they have already reported in */
 
   when = server.sv_attr[(int)SRV_ATR_check_rate].at_val.at_long + time_now;
+
   if (svr_totnodes > 1024)
     {
     /* for large systems, give newly reported nodes more time before 
@@ -1117,11 +1159,10 @@ int main(
     
           ptask = set_task(WORK_Timed,when + time_now,poll_job_task,pjob);
 
-          if (ptask)
+          if (ptask != NULL)
             {
             append_link(&pjob->ji_svrtask,&ptask->wt_linkobj,ptask);
             }
-
           }
         }
 
@@ -1184,7 +1225,7 @@ int main(
 
   log_close(1);
 
-  return(0);
+  exit(0);
   }  /* END main() */
 
 

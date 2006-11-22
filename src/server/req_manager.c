@@ -974,22 +974,45 @@ void mgr_queue_delete(
   pbs_queue *pque;
   int    rc;
 
-	pque = find_queuebyname(preq->rq_ind.rq_manager.rq_objname);
-	if (pque == (pbs_queue *)0) {
-		req_reject(PBSE_UNKQUE, 0, preq,NULL,NULL);
-		return;
-	}
-	if ((rc = que_purge(pque)) != 0)
-		req_reject(rc, 0, preq,NULL,NULL);
-	else {
-		svr_save(&server, SVR_SAVE_QUICK);
-		(void)sprintf(log_buffer, msg_manager, msg_man_del,
-			      preq->rq_user, preq->rq_host);
-		log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_QUEUE, 
-			  preq->rq_ind.rq_manager.rq_objname, log_buffer);
-		reply_ack(preq);
-	}
-}
+  pque = find_queuebyname(preq->rq_ind.rq_manager.rq_objname);
+
+  if (pque == NULL) 
+    {
+    /* FAILURE */
+
+    req_reject(PBSE_UNKQUE,0,preq,NULL,NULL);
+
+    return;
+    }
+
+  if ((rc = que_purge(pque)) != 0)
+    {
+    /* FAILURE */
+
+    req_reject(rc,0,preq,NULL,NULL);
+
+    return;
+    }
+
+  svr_save(&server,SVR_SAVE_QUICK);
+
+  sprintf(log_buffer,msg_manager, 
+    msg_man_del,
+    preq->rq_user, 
+    preq->rq_host);
+
+  log_event(
+    PBSEVENT_ADMIN, 
+    PBS_EVENTCLASS_QUEUE, 
+    preq->rq_ind.rq_manager.rq_objname, 
+    log_buffer);
+
+  reply_ack(preq);
+
+  /* SUCCESS */
+
+  return;
+  }  /* END mgr_queue_delete() */
 
 
 
@@ -1002,7 +1025,7 @@ void mgr_queue_delete(
 
 void mgr_server_set(
 
-  struct batch_request *preq)
+  struct batch_request *preq) /* I */
 
   {
   int       bad_attr = 0;
@@ -1023,6 +1046,7 @@ void mgr_server_set(
     ATR_ACTION_ALTER);
 
   /* PBSE_BADACLHOST - lets show the user the first bad host in the ACL  */
+
   if (rc == PBSE_BADACLHOST)
     {
     char     *bad_host;
@@ -1035,22 +1059,25 @@ void mgr_server_set(
     int       bhstrlen;
 
     bhstrlen = PBS_MAXHOSTNAME + 17;
-    bad_host = malloc(sizeof(char) * (bhstrlen+1));
+    bad_host = malloc(sizeof(char) * (bhstrlen + 1));
 
-    if (bad_host==NULL)
+    if (bad_host == NULL)
       {
-      reply_badattr(PBSE_BADHOST, bad_attr, plist, preq);
+      reply_badattr(PBSE_BADHOST,bad_attr,plist,preq);
 
       return;
       }
 
     /* look into plist to find an offending attr */
+
     while (plist != NULL)
       {
       /* only concerned about operators and managers */
+
       if (strcmp(plist->al_name,ATTR_managers) && strcmp(plist->al_name,ATTR_operators))
         {
         plist = (svrattrl *)GET_NEXT(plist->al_link);
+
         continue;
         }
 
@@ -1065,17 +1092,21 @@ void mgr_server_set(
     
       /* loop over all hosts in the request and perform same
          check as manager_oper_chk*/
-      for (i = 0; i < pstr->as_usedptr; ++i)
+
+      for (i = 0;i < pstr->as_usedptr;++i)
         {
-        host_entry = strchr(pstr->as_string[i], (int)'@');
+        host_entry = strchr(pstr->as_string[i],(int)'@');
  
         /* if wildcard, we can't check */
+
         if ((host_entry != NULL) && host_entry[1] != '*')
           {
-          if (get_fullhostname(host_entry+1,hostname,PBS_MAXHOSTNAME) ||
-              strncmp(host_entry+1,hostname,PBS_MAXHOSTNAME))
+          if (get_fullhostname(host_entry + 1,hostname,PBS_MAXHOSTNAME,NULL) ||
+              strncmp(host_entry + 1,hostname,PBS_MAXHOSTNAME))
             {
-            snprintf(bad_host,bhstrlen,"First bad host: %s",host_entry+1);
+            snprintf(bad_host,bhstrlen,"First bad host: %s",
+              host_entry + 1);
+
             break;
             }
           }
@@ -1086,6 +1117,7 @@ void mgr_server_set(
 
       /* nothing wrong found in the request, let's try again
          with the server's list */
+
       pstr = server.sv_attr[(int)index].at_val.at_arst;
 
       for (i = 0; i < pstr->as_usedptr; ++i)
@@ -1095,10 +1127,12 @@ void mgr_server_set(
         /* if wildcard, we can't check */
         if ((host_entry != NULL) && host_entry[1] != '*')
           {
-          if (get_fullhostname(host_entry+1,hostname,PBS_MAXHOSTNAME) ||
+          if (get_fullhostname(host_entry+1,hostname,PBS_MAXHOSTNAME,NULL) ||
               strncmp(host_entry+1,hostname,PBS_MAXHOSTNAME))
             {
-            snprintf(bad_host,bhstrlen,"First bad host: %s",host_entry+1);
+            snprintf(bad_host,bhstrlen,"First bad host: %s",
+              host_entry + 1);
+
             break;
             }
           }
@@ -1112,15 +1146,18 @@ void mgr_server_set(
 
     if (bad_host[0] != '\0') /* we found a fully qualified host that was bad */
       {
-      req_reject(PBSE_BADACLHOST, 0, preq, NULL, bad_host); 
+      req_reject(PBSE_BADACLHOST,0,preq,NULL,bad_host); 
       }
-    else /* this shouldn't happen (return PBSE_BADACLHOST, but now we can't find the bad host) */
+    else 
       {
-      reply_badattr(PBSE_BADHOST, bad_attr, plist, preq);
+      /* this shouldn't happen (return PBSE_BADACLHOST, but now we can't 
+         find the bad host) */
+
+      reply_badattr(PBSE_BADHOST,bad_attr,plist,preq);
       }
 
     return;
-    } /* end PBSE_BADACLHOST */
+    } /* END if (rc == PBSE_BADACLHOST) */
   else if (rc != 0)
     {
     reply_badattr(rc,bad_attr,plist,preq);
@@ -2138,7 +2175,7 @@ int manager_oper_chk(
 
       /* if not wild card, must be fully qualified host */
 
-      if (get_fullhostname(entry,hostname,PBS_MAXHOSTNAME) ||
+      if (get_fullhostname(entry,hostname,PBS_MAXHOSTNAME,NULL) ||
           strncmp(entry,hostname,PBS_MAXHOSTNAME)) 
         {
         if (actmode == ATR_ACTION_RECOV) 
@@ -2176,9 +2213,9 @@ int manager_oper_chk(
 
 int servername_chk(
 
-  attribute *pattr,
-  void      *pobject,
-  int	     actmode)
+  attribute *pattr,   /* I */
+  void      *pobject, /* I */
+  int	     actmode) /* I */
 
   {
   int			 err = 0;
@@ -2190,7 +2227,7 @@ int servername_chk(
   if (actmode == ATR_ACTION_FREE)
     {
     if ((gethostname(hostname,PBS_MAXHOSTNAME) == -1) ||
-       (get_fullhostname(hostname,hostname,PBS_MAXHOSTNAME) == -1))
+       (get_fullhostname(hostname,hostname,PBS_MAXHOSTNAME,NULL) == -1))
       {
       return(PBSE_BADHOST);
       }
@@ -2209,7 +2246,7 @@ int servername_chk(
 
   /* must be fully qualified host */
 
-  if (get_fullhostname(pstr,hostname,PBS_MAXHOSTNAME) ||
+  if (get_fullhostname(pstr,hostname,PBS_MAXHOSTNAME,NULL) ||
       strncmp(pstr,hostname,PBS_MAXHOSTNAME)) 
     {
     if (actmode == ATR_ACTION_RECOV) 

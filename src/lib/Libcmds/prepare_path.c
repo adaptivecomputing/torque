@@ -177,36 +177,46 @@ int prepare_path(
 
     while (*c != '\0') 
       {
-      if (isgraph(*c))
-        path_name[p_pos++] = *c;
-      else
+      if (!isgraph(*c))
         break;
+
+      path_name[p_pos++] = *c;
 
       c++;
       }
     }
 
-  /* we had trailing trash, or a parse error */
-
   if (*c != '\0') 
+    {
+    /* FAILURE - we had trailing trash, or a parse error */
+
     return(1);
+    }
 
   if (strlen(path_name) == 0) 
+    {
+    /* FAILURE */
+
     return(1);
+    }
 
   /* get full host name */
 
   if (host_name[0] == '\0') 
     {
     if (gethostname(host_name,PBS_MAXSERVERNAME) != 0) 
+      {
+      /* FAILURE */
+
       return(2);
+      }
     }
 /*
   This is obnoxious.  If you are submitting from outside of the cluster, you
   tend to get the wrong hostname.  Instead, just stop surprising the user
   and just do what they said.
 
-  if (get_fullhostname(host_name, host_name, PBS_MAXSERVERNAME) != 0) 
+  if (get_fullhostname(host_name,host_name,PBS_MAXSERVERNAME,NULL) != 0) 
     return(2);
 */
 
@@ -234,6 +244,8 @@ int prepare_path(
 
         if (stat(".",&statbuf) < 0) 
           {
+          /* FAILURE */
+
           perror("prepare_path: cannot stat current directory:");
 
           return(1);
@@ -258,7 +270,9 @@ int prepare_path(
 
       if (c == NULL) 
         {
-        perror("prepare_path: getcwd failed : ");
+        /* FAILURE */
+
+        perror("prepare_path: getcwd failed: ");
 
         return(1);
         }
@@ -269,6 +283,8 @@ int prepare_path(
     }
 
   strcat(path_out,path_name);
+
+  /* SUCCESS */
 
   return(0);
   }  /* END prepare_path() */

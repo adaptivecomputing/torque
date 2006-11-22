@@ -128,28 +128,27 @@ typedef unsigned long pbs_net_t;        /* for holding host addresses */
 #define PBS_NET_RC_RETRY -2
 
 enum conn_type {
-	Primary = 0,
-	Secondary,
-	FromClientASN,
-	FromClientDIS,
-	ToServerASN,
-	ToServerDIS,
-	TaskManagerDIS,
-	Idle
-};
+  Primary = 0,
+  Secondary,
+  FromClientASN,
+  FromClientDIS,
+  ToServerASN,
+  ToServerDIS,
+  TaskManagerDIS,
+  Idle };
 
 /* functions available in libnet.a */
 
-void add_conn A_((int sock, enum conn_type, pbs_net_t, unsigned int port, void (*func) A_((int)) ));
+void add_conn A_((int,enum conn_type,pbs_net_t,unsigned int,void (*func) A_((int))));
 int  find_conn A_((pbs_net_t));
-int  client_to_svr A_((pbs_net_t, unsigned int port, int));
-void close_conn A_((int socket));
-pbs_net_t get_connectaddr A_((int sock));
-int  get_connecthost A_((int sock, char *namebuf, int size));
-pbs_net_t get_hostaddr A_((char *hostname));
-int  get_fullhostname A_((char *shortname, char *namebuf, int size));
+int  client_to_svr A_((pbs_net_t,unsigned int,int));
+void close_conn A_((int));
+pbs_net_t get_connectaddr A_((int));
+int  get_connecthost A_((int sock,char *,int));
+pbs_net_t get_hostaddr A_((char *));
+int  get_fullhostname A_((char *,char *,int,char *));
 unsigned int  get_svrport A_((char *,char *,unsigned int));
-int  init_network A_((unsigned int, void (*readfunc)()));
+int  init_network A_((unsigned int,void (*readfunc)()));
 void net_close A_((int));
 int  wait_request(time_t waittime,long *);
 void net_add_close_func A_((int,void(*)()));

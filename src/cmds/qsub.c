@@ -1094,7 +1094,7 @@ int set_job_env(
   else if ((server_host[0] != '\0') || 
      ((rc = gethostname(server_host,PBS_MAXHOSTNAME + 1)) == 0))
     {
-    if ((rc = get_fullhostname(server_host,server_host,PBS_MAXHOSTNAME)) == 0) 
+    if ((rc = get_fullhostname(server_host,server_host,PBS_MAXHOSTNAME,NULL)) == 0) 
       {
       strcat(job_env,",PBS_O_HOST=");
       strcat(job_env,server_host);

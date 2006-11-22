@@ -101,7 +101,8 @@ int get_fullhostname(
 
   char *shortname,  /* I */
   char *namebuf,    /* O */
-  int   bufsize)    /* I */
+  int   bufsize,    /* I */
+  char *EMsg)       /* O (optional,minsize=1024) */
 
   {
   char *pbkslh = NULL;
@@ -111,6 +112,16 @@ int get_fullhostname(
   struct in_addr  ina;
 
   int   index;
+
+  if ((shortname == NULL) || (shortname[0] == '\0'))
+    {
+    /* FAILURE */
+
+    if (EMsg != NULL)
+      strcpy(EMsg,"host name not specified");
+
+    return(-1);
+    }
 
   if ((pcolon = strchr(shortname,':')) != NULL) 
     {
@@ -136,6 +147,13 @@ int get_fullhostname(
 
   if (phe == NULL)
     {
+    /* FAILURE - cannot gethostbyname() */
+
+    if (EMsg != NULL)
+      snprintf(EMsg,1024,"gethostbyname(%s) failed, h_errno=%d",
+        shortname,
+        h_errno);
+
     return(-1);
     }
 
@@ -150,12 +168,26 @@ int get_fullhostname(
       fprintf(stderr,"Unable to lookup host '%s' by address (check /etc/hosts or DNS reverse name lookup)\n", 
         shortname); 
       }
-	    
+
+    if (EMsg != NULL)
+      snprintf(EMsg,1024,"gethostbyname(%s) failed, h_errno=%d",
+        shortname,
+        h_errno);
+	
+    /* FAILURE - cannot get host by address */
+ 
     return(-1);
     }
 
   if ((size_t)bufsize < strlen(phe->h_name))
     {
+    /* FAILURE - name too long */
+
+    if (EMsg != NULL)
+      snprintf(EMsg,1024,"hostname (%.32s...) is too long (> %d chars)",
+        phe->h_name,
+        bufsize);
+
     return(-1);
     }
 
@@ -170,6 +202,8 @@ int get_fullhostname(
 
     namebuf[index] = tolower(namebuf[index]);
     }  /* END for (index) */
+
+  /* SUCCESS */
 
   return(0);
   }  /* END get_fullhostname() */

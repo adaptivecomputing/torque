@@ -6575,7 +6575,7 @@ int main(
     {
     strcpy(mom_short_name,mom_host);
 
-    c = get_fullhostname(mom_host,mom_host,PBS_MAXHOSTNAME);
+    c = get_fullhostname(mom_host,mom_host,PBS_MAXHOSTNAME,NULL);
 
     if (c != 0)
       {
