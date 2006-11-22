@@ -335,6 +335,13 @@ the future.  See HEALTH CHECK below.
 .IP ideal_load
 ideal processor load.  Represents a low water mark for the load average.  Nodes
 that are currently busy will consider itself free after falling below ideal_load.
+.IP auto_ideal_load
+if jobs are running, sets idea_load based on a simple expression.  The expressions
+start with the variable 't' (total assigned CPUs) or 'c' (existing CPUs), an
+operator (+ - / *), and followed by a float constant.
+.IP
+.Ty "$auto_ideal_load t-0.2"
+.br
 .IP loglevel
 specifies the verbosity of logging with higher numbers specifying more verbose
 logging.  Values may range between 0 and 7.
@@ -352,6 +359,10 @@ log-file-name.log_file_roll_depth.
 .IP max_load
 maximum processor load.  Nodes over this load average are considered busy (see
 ideal_load above).
+.IP auto_max_load
+if jobs are running, sets max_load based on a simple expression.  The expressions
+start with the variable 't' (total assigned CPUs) or 'c' (existing CPUs), an
+operator (+ - / *), and followed by a float constant.
 .IP enablemomrestart
 enable automatic restarts of MOM.  If enabled, MOM will check if its binary has
 been updated and restart itself at a safe point when no jobs are running; thus

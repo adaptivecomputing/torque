@@ -249,6 +249,8 @@ char            MOMUNameMissing[64];
 int             MOMConfigDownOnError      = 0;
 int             MOMConfigRestart          = 0;
 long            system_ncpus=0;
+char           *auto_ideal_load=NULL;
+char           *auto_max_load=NULL;
 
 #define TMAX_JE  64
 
@@ -317,11 +319,16 @@ static unsigned long settmpdir(char *);
 static unsigned long setlogfilemaxsize(char *);
 static unsigned long setlogfilerolldepth(char *);
 static unsigned long setvarattr(char *);
+static unsigned long setautoidealload(char *);
+static unsigned long setautomaxload(char *);
+
 
 static struct specials {
   char            *name;
   u_long          (*handler)();
   } special[] = {
+    { "auto_ideal_load",     setautoidealload },
+    { "auto_max_load",       setautomaxload },
     { "xauthpath",           setxauthpath },
     { "rcpcmd",              setrcpcmd },
     { "rcp_cmd",             setrcpcmd },
@@ -2308,7 +2315,50 @@ static unsigned long setignwalltime(
   }  /* END setidealload() */
 
 
+static unsigned long setautoidealload(
 
+  char *value)
+
+  {
+  log_record(
+    PBSEVENT_SYSTEM, 
+    PBS_EVENTCLASS_SERVER,
+    "auto_ideal_load",
+    value);
+
+  auto_ideal_load=strdup(value);
+
+/*
+  add_static(auto_ideal_load,"config",0);
+
+  nconfig++;
+*/
+
+  return(1);
+  }  /* END setautoidealload() */
+
+
+static unsigned long setautomaxload(
+
+  char *value)
+
+  {
+  log_record(
+    PBSEVENT_SYSTEM, 
+    PBS_EVENTCLASS_SERVER,
+    "auto_max_load",
+    value);
+
+  auto_max_load=strdup(value);
+
+/*
+  add_static(auto_ideal_load,"config",0);
+
+  nconfig++;
+*/
+
+  return(1);
+  }  /* END setautomaxload() */
 
 
 static unsigned long setnodecheckscript(

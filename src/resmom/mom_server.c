@@ -111,6 +111,8 @@
 #include "attribute.h"
 #include "pbs_nodes.h"
 #include "resmon.h"
+#include "server_limits.h"
+#include "job.h"
 
 
 /* Global Data Items */
@@ -135,6 +137,7 @@ extern  int             MOMRecvClusterAddrsCount[];
 extern  time_t          LastServerUpdateTime;
 extern  int             ServerStatUpdateInterval;
 extern  char            pbs_servername[PBS_MAXSERVER][PBS_MAXSERVERNAME + 1];
+extern  long            system_ncpus;
 extern  u_long          MOMServerAddrs[PBS_MAXSERVER];
 
 int			SStream[PBS_MAXSERVER];  /* streams to pbs_server daemons */
@@ -715,6 +718,70 @@ err:
 
 
 
+float compute_load_threshold(char *config,int numvnodes,float threshold)
+  {
+  float retval=-1;
+  float tmpval;
+  char  *op;
+
+  if (numvnodes <= 0)
+    return(threshold);
+
+  if ((config == NULL) || (*config == '0'))
+    return(threshold);
+
+  switch (*config)
+    {
+    case 'c':
+      retval=system_ncpus;
+      break;
+    case 't':
+      retval=numvnodes;
+      break;
+    default:
+      return(threshold);
+    }
+
+  config++;
+
+  switch (*config)
+    {
+    case '+':
+    case '-':
+    case '*':
+    case '/':
+      op=config;
+      break;
+    default:
+      return(retval);
+    }
+
+  config++;
+
+  tmpval=atof(config);
+  if (!tmpval)
+     return(retval);
+
+  switch (*op)
+    {
+    case '+':
+      retval=retval+tmpval;
+      break;
+    case '-':
+      retval=retval-tmpval;
+      break;
+    case '*':
+      retval=retval*tmpval;
+      break;
+    case '/':
+      retval=retval/tmpval;
+      break;
+    }
+  
+  return(retval);
+  }
+
+   
 /*
  * check_busy() - 
  *	If current load average ge max_load_val and busy not already set
@@ -728,13 +795,38 @@ void check_busy(
   double mla) /* I */
 
   {
+  int sindex;
+  int numvnodes=0;
+  job *pjob;
+  float myideal_load;
+  float mymax_load;
+
   extern int   internal_state;
   extern float ideal_load_val;
   extern float max_load_val;
+  extern char *auto_ideal_load;
+  extern char *auto_max_load;
+  extern tlist_head  svr_alljobs;
 
-  int sindex;
+  if ((auto_max_load != NULL) || (auto_ideal_load != NULL))
+    {
+    if ((pjob = (job *)GET_NEXT(svr_alljobs)) != NULL)
+      {
+      for (;pjob != NULL;pjob = (job *)GET_NEXT(pjob->ji_alljobs))
+        numvnodes+=pjob->ji_numvnod;
+      }
 
-  if ((mla >= max_load_val) && 
+    mymax_load=compute_load_threshold(auto_max_load,numvnodes,max_load_val);
+
+    myideal_load=compute_load_threshold(auto_ideal_load,numvnodes,ideal_load_val);
+    }
+  else
+    {                                                                                     
+    mymax_load=max_load_val;
+    myideal_load=ideal_load_val;
+    }
+
+  if ((mla >= mymax_load) && 
      ((internal_state & INUSE_BUSY) == 0))
     {
     /* node transitioned from free to busy, report state */
@@ -747,7 +839,7 @@ void check_busy(
         ReportMomState[sindex] = 1;
       }
     }
-  else if ((mla < ideal_load_val) && 
+  else if ((mla < myideal_load) && 
           ((internal_state & INUSE_BUSY) != 0))
     {
     /* node transitioned from busy to free, report state */
