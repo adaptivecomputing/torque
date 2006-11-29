@@ -803,12 +803,12 @@ int main(
         exit(1);
 
         break;
-      }  /* END switch(c) */
+      }  /* END switch (c) */
     }    /* END while (c) */
 
   if (optind < argc) 
     {
-    fprintf(stderr, "%s: invalid operand\n", 
+    fprintf(stderr,"%s: invalid operand\n", 
       argv[0]);
 
     exit(1);
@@ -820,10 +820,11 @@ int main(
     path_home,
     PBS_SVR_PRIVATE);
 
-  if ((lockfds = open(lockfile,O_CREAT | O_TRUNC | O_WRONLY, 0600)) < 0) 
+  if ((lockfds = open(lockfile,O_CREAT|O_TRUNC|O_WRONLY,0600)) < 0) 
     {
-    sprintf(log_buffer, "%s: unable to open lock file",
-      msg_daemonname);
+    sprintf(log_buffer, "%s: unable to open lock file '%s'",
+      msg_daemonname,
+      lockfile);
 
     fprintf(stderr,"%s\n", 
       log_buffer);

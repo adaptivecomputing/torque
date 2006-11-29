@@ -879,13 +879,16 @@ int TTmpDirName(
   }
 
 
+
+
+
 int TMakeTmpDir(
 
   job  *pjob,   /* I */
   char *tmpdir) /* I */
   {
 
-  char id[]="TMakeTmpDir";
+  char id[] = "TMakeTmpDir";
   int			rc;
   int			retval;
   struct stat		sb;
@@ -896,19 +899,20 @@ int TMakeTmpDir(
     return(0);
     }
 
-  retval=mkdirtree(tmpdir,0755);
+  retval = mkdirtree(tmpdir,0755);
 
   if (retval == 0)
     {
     /* We made it, it's ours */
+
     pjob->ji_flags |= MOM_HAS_TMPDIR;
     }
   else
     {
-    rc=stat(tmpdir,&sb);
+    rc = stat(tmpdir,&sb);
 
     if (rc)
-      rc=errno;
+      rc = errno;
 
     switch (rc)
       {
@@ -922,11 +926,11 @@ int TMakeTmpDir(
 
       case 0:
 
-        if(S_ISDIR(sb.st_mode))
+        if (S_ISDIR(sb.st_mode))
           {
           if (sb.st_uid == pjob->ji_qs.ji_un.ji_momt.ji_exuid)
             {
-            retval=0;  /* owned by the job, allowed */
+            retval = 0;  /* owned by the job, allowed */
             }
           else
             {
@@ -935,7 +939,7 @@ int TMakeTmpDir(
               tmpdir,
               sb.st_uid);
 
-            retval=-1;
+            retval = -1;
             }
           }
         else
@@ -944,22 +948,22 @@ int TMakeTmpDir(
             "Job transient tmpdir %s exists, but is not a directory",
             tmpdir);
 
-          retval=-1;
+          retval = -1;
           }
 
-      break;
+        break;
 
-    default:
+      default:
 
-      sprintf(log_buffer,
-        "Cannot name job tmp directory %s (on stat)",
-        tmpdir);
+        sprintf(log_buffer,
+          "Cannot name job tmp directory %s (on stat)",
+          tmpdir);
 
-      return(0);
+        return(0);
 
-      break;
+        break;
+      }
     }
-  }
 
   seteuid(0);
   setegid(pbsgroup);
@@ -968,7 +972,8 @@ int TMakeTmpDir(
     log_err(retval,id,log_buffer);
 
   return(retval == 0);  /* return boolean */
-  }
+  }  /* END TMakeTmpDir() */
+
 
 
 
@@ -984,13 +989,13 @@ int InitUserEnv(
   char           *shell)  /* I (optional) */
 
   {
-  char id[]="InitUserEnv";
+  char id[] = "InitUserEnv";
 
   struct array_strings *vstrs;
-  int j=0;
-  int ebsize=0;
+  int j = 0;
+  int ebsize = 0;
   char  buf[MAXPATHLEN + 2];
-  int usertmpdir=0;
+  int usertmpdir = 0;
 
   if (pjob == NULL)
     {
@@ -1101,7 +1106,6 @@ int InitUserEnv(
     bld_env_variables(&vtable,variables_else[6],pwdp->pw_name);
 
   /* PBS_JOBCOOKIE */                                                                          
-                                                                                               
   bld_env_variables(
     &vtable,
     variables_else[7],
@@ -4350,9 +4354,9 @@ void start_exec(
       return;
       }
     }
-  
 
-  /* if nodecount > 1, return once joins are sent, if nodecount == 1, return once job is started */
+  /* if nodecount > 1, return once joins are sent, if nodecount == 1, 
+     return once job is started */
 
   if (nodenum > 1) 
     {
