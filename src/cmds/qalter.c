@@ -96,8 +96,8 @@
 
 int main(
 
-  int    argc,
-  char **argv)
+  int    argc,  /* I */
+  char **argv)  /* I */
 
   {
   int c;
@@ -120,7 +120,7 @@ int main(
   char rmt_server[MAXSERVERNAME];
   char path_out[MAXPATHLEN + 1];
 
-#define GETOPT_ARGS "a:A:c:e:h:j:k:l:m:M:N:o:p:r:S:u:W:x:"
+#define GETOPT_ARGS "a:A:c:e:h:j:k:l:m:M:N:o:p:r:S:u:v:W:x:"
                  
   while ((c = getopt(argc,argv,GETOPT_ARGS)) != EOF)
     {
@@ -520,6 +520,12 @@ int main(
 
         break;
 
+      case 'v':
+
+        set_attr(&attrib,ATTR_v,optarg);
+
+        break;
+
       case 'W':
 
         while (isspace((int)*optarg)) 
@@ -624,7 +630,8 @@ int main(
 [-a date_time] [-A account_string] [-c interval] [-e path] \n\
 [-h hold_list] [-j y|n] [-k keep] [-l resource_list] [-m mail_options] \n\
 [-M user_list] [-N jobname] [-o path] [-p priority] [-r y|n] [-S path] \n\
-[-u user_list] [-W dependency_list] [-x exec_host] job_identifier...\n";
+[-u user_list] [-v variable_list] [-W dependency_list] [-x exec_host] \n\
+job_identifier...\n";
 
     fprintf(stderr,usage);
 
