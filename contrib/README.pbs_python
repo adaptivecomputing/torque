@@ -1,71 +1,60 @@
 #  README.pbs_python
 #  contributed by Bas van der Vlies
-#  updated Feb 10, 2004
+#  updated Dec 1, 2006
 
 The latest stable pbs_python interface is available from:
         ftp://ftp.sara.nl/pub/outgoing/pbs_python.tar.gz
 
-Pbs_python interface is a wrapper class for the OPENPBS/TORQUE C LIB API.
-Now you can write utilities/extensions in Python instead of C.
+Information, documentation and reporting bugs for the package:
+        https://subtrac.sara.nl/oss/pbs_python
+
+===== Brief description =========================================
+
+Pbs_python interface is a wrapper class for the OPENPBS/TORQUE C LIB
+API. Now you can write utilities/extensions in Python instead of C.
 
 The Python wrapper class is tested on:
-  - Intel cluster debian GNU/LINUX woody OPENPBS 2.3.16,
-    TORQUE 1.0.1p4
 
-  - Compaq Alpha cluster debian GNU/LINUX woody OPENPBS 2.3.16
+  - Intel cluster debian GNU/LINUX woody/sarge OPENPBS 2.3.16,
+    TORQUE 1.0.1p4, 1.1.0p4 and up
 
-  - SGI Origin 3000: Irix 6.5, OPENPBS 2.3.16
+  - For X86_64 systems you have to compile torque/openpbs with
+    the -fPIC option. Else you can not build the python module
 
   - TRU64 system, NOTE: must rename libnet.a to libpbs_net.a and edit
-    setup.py to reflect the change. There is also a system wide libnet.so.
+    setup.py to reflect the change. There is also a system wide
+    libnet.so.
 
   - It should run on different OSes.
 
-In the past our Alpha cluster was redhat (6.2)  and we had to add '-lots'
-to the LIBS line
+In the past our Alpha cluster was redhat (6.2)  and we had to add
+'-lots' to the LIBS line
 
---- Compile and install the package:
+--- Compile and install the package: (Require python 2.1 and higher)
 
   As for python version 1.6 and higher the procedure is:
-    python setup.py install
-
-  Python versions lower then 1.6 do not have the distutils
-  package default in their installation. You can test it:
-    python
-    import distutils
-
-  If this succeed then use the above procedure else use the procedure below:
-    cd src
-    Adjust the Makefile to where you installed Python and OPENPBS libraries.
+    ./configure
     make
+    make install
 
-    The python PBS module consists of the following files:
-      _pbs.so
-      pbs.py
-      pbs.pyc ( will be generated from pbs.py. The first time you load
-              the module).
-
-    You can install these file in your own directory and use the PYTHONPATH
-    environment variable or install it in a system wide directory, eg:
-      /usr/lib/python1.5/site-packages
+  Debian package:
+    debian/rules binary
 
 --- Testing the package:
 
-The test programs are include as a reference how to use the PBS
+The test programs are include as a reference how to use the pbs
 python module. You have to edit some test programs to reflect
-your PBS installation.
+your PBS/Torque installation.
 
-pbsmon.py       - ascii xpbsmon
-pbsnodes-a.py   - pbsnodes -a
-pbs_version.py  - print server version
-set_property.py - set some node properties
-resmom_info.py  - queries the pbs_mom daemon on the nodes
-logpbs.py       - Shows the usage of the PBS logging routines
+pbsmon.py        - ascii xpbsmon
+rack_pbsmon.py   - ascii xpbsmon by rack layout
+pbsnodes-a.py    - pbsnodes -a
+pbs_version.py   - print server version
+set_property.py  - set some node properties
+resmom_info.py   - queries the pbs_mom daemon on the nodes
+logpbs.py        - Shows the usage of the PBS logging routines
+new_interface.py - Example how to use PBSQuery module
+PBSQuery.py      - python <install_path>/PBSQuery.py (has builtin demo)
 
-
-Comments,suggestions or bugfixes mail them to: Bas van der Vlies <basv@sara.nl>
 For more info about SARA see:
         http://www.sara.nl/index_eng.html
-
-
-
