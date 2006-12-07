@@ -1,0 +1,75 @@
+#  README.pbs_ganglia_jobmonarch
+#  contributed by Ramon Bastiaans
+#  updated Dec 7, 2006
+
+DESCRIPTION
+===========
+
+Job Monarch is an addon to the Ganglia Monitoring System that provides (batch) job monitoring and graphical overview of clusters and assorted batch systems. Monarch is an abbreviation for Monitoring and Archiving, as Monarch also provides the ability to archive these job (monitoring) statistics so that your (batch) cluster users may lookup job information of old (and possibly failed) jobs to analyze possible problems.
+
+Job Monarch currently supports gathering job information from PBS and Torque and support for more batch systems is expected.
+The (PBS/Torque) job information is then displayed through your own Ganglia website, using this addon.
+
+HOMEPAGE
+========
+
+For more details visit Job Monarch's website: 		https://subtrac.sara.nl/oss/jobmonarch/
+You can see a working example of Job Monarch here:	http://ganglia.sara.nl/
+
+FEATURES
+========
+
+Job Monarch stands for 'Job Monitoring and Archiving' tool and consists of three (3) components:
+
+- jobmond)
+
+   The Job Monitoring Daemon.
+
+   Gathers (PBS/Torque) batch statistics on jobs/nodes and submits them into Ganglia's XML stream.
+
+   Through this daemon, users are able to view the (PBS/Torque) batch system and the jobs/nodes that are in it (be it either running or queued).
+
+- jobarchived (optionally))
+
+   The Job Archiving Daemon.
+
+   Listens to Ganglia's XML stream and archives the job and node statistics. It stores the job statistics in a Postgres SQL database and the node statistics in RRD files.
+
+   Through this daemon, users are able to lookup a old/finished job and view all it's statistics.
+
+   Optionally: You can either choose to use this daemon if your users have use for it. As it can be a heavy application to run and not everyone may have a need for it.
+
+   * Key features
+     * Multithreaded
+       Will not miss any data regardless of (slow) storage
+     * Staged writing
+       Spread load over bigger time periods
+     * High precision RRDs
+       Allow for zooming on old periods with large precision
+     * Timeperiod RRDs
+       Allow for smaller number of files while still keeping advantage of small disk space 
+
+- web)
+
+   The Job Monarch web interface.
+
+   This interfaces with the jobmond data and (optionally) the jobarchived and presents the data and graphs.
+
+   It does this in a similar layout/setup as Ganglia itself, so the navigation and usage is intuitive.
+
+   * Key features
+     * Graphical usage
+       Displays graphical cluster overview so you can see the cluster (job) state in one view/image and additional pie chart with relevant information on your current view
+     * Filters
+       Ability to filter output to limit information displayed (usefull for those clusters with 500+ jobs). This also filters the graphical overview images output and pie chart so you only see the filter relevant data
+     * Archive
+       When enabling jobarchived, users can go back as far as recorded in the database or archived RRDs to find out what happened to a crashed or old job
+     * Zoom ability
+       Users can zoom into a timepriod as small as the smallest grain of the RRDS (typically up to 10 seconds) when a jobarchived is present 
+
+CONTACT
+=======
+
+Visit Job Monarch's website:	https://subtrac.sara.nl/oss/jobmonarch/
+
+Or contact the author:		Ramon Bastiaans < bastiaans (. a . t .) sara (. d . o . t .) nl >
