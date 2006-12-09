@@ -105,8 +105,38 @@ MAC: If building for a Mac OS/X cluster, some users have reported issues
   executed.  Use '#!/bin/bash -l' at the start of the pbs command file
   to force this script to be run.
 
-  Some versions of OSX have a buggy bind() preventing binding to priviledged
+  Some versions of OSX have a buggy bind() preventing binding to privileged
   ports.  In this case, --disable-privports should be used.
+
+  OS X on x86:
+
+  Apple is phasing out /dev/mem and /dev/kmem support in their kernel.
+  The kernel for OS X "Tiger" x86 is the first kernel to be shipped with 
+  support for /dev/mem and /dev/kmem to be disabled. Since pbs_mom uses 
+  libkvm (kvm_open, kvm_read) on Darwin, and libkvm depends on /dev/kmem, 
+  pbs_mom will not run on any Intel based Macs.
+
+  There is a temporary work around for this.  Even though /dev/mem and 
+  /dev/kmem are not enabled by default on x86 Macs,  the kernel still
+  supports these devices. In order to re-enable /dev/kmem, and therefore 
+  allow current versions of TORQUE to work, you must set the "kmem=1" boot
+  argument. This argument will tell the kernel to enable the /dev/mem 
+  and /dev/kmem devices. You can enable this boot argument by adding 
+  kmem=1 to the boot-args nvram variable.  
+
+  First check to see if there are already boot arguments by typing 
+  "nvram -p | grep boot-args".  If there are already boot arguments, you
+  should copy these arguments when you set the new value.  If there are no
+  boot args, then just run nvram boot-args="kmem=1" as root.
+ 
+  Reboot the system, and check to see if /dev/mem and /dev/kmem exist.  If
+  they do then you are ready to run TORQUE on your Intel Macintosh 
+  computer.
+
+  This is only a temporary fix, as it is expected this support will be
+  completely removed from future kernel releases. Any functionality 
+  obtained through libkvm will have to be re-implmented using other kernel
+  interfaces available. This work is currently in progress.  
 
 TRU64/DIGITALUNIX: If building for a TRU64/Digital Unix cluster, some
   users have reported problems building pbs_mom.  To correct this add
