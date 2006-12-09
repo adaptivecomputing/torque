@@ -146,7 +146,7 @@
 
 #include        "mcom.h"
 
-#ifdef _POSIX_MEMLOCK
+#ifdef _POSIX_MEMLOCK 
 #include <sys/mman.h>
 #endif /* _POSIX_MEMLOCK */
 
@@ -7080,7 +7080,6 @@ int main(
         pjob->ji_qs.ji_svrflags |= JOB_SVFLG_OVERLMT1;
         }
       }    /* END for (pjob) */
-
 #ifdef _POSIX_MEMLOCK
     /* call mlockall() only 1 time, since it seems to leak mem */
 
@@ -7090,7 +7089,8 @@ int main(
 
       mlockall_return = mlockall(MCL_CURRENT | MCL_FUTURE);
 
-      if (mlockall_return == -1)
+      /* exit iff mlock failed, but ignore function not implemented error */
+      if (mlockall_return == -1 && errno != ENOSYS)
         {
         perror("pbs_mom:mom_main.c:mlockall()");
 
