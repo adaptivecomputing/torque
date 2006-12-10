@@ -35,7 +35,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature
   b - Fix "Spool Job Race condition"
   b - fix bison syntax error in Parser.y
   f - new mom configs: $auto_ideal_load and $auto_max_load
-
+  b - OS X memlockall "function not implemented" work around
 2.1.2
 
   b - fix momctl queries with multiple hosts
