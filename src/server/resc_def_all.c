@@ -604,6 +604,7 @@ resource_def svr_resc_def_const[] = {
     { "rmtype", decode_str, encode_str, set_str, comp_str, free_str, NULL_FUNC, READ_WRITE, ATR_TYPE_STR },
     { "select", decode_str, encode_str, set_str, comp_str, free_str, NULL_FUNC, READ_WRITE, ATR_TYPE_STR },
     { "sid", decode_str, encode_str, set_str, comp_str, free_str, NULL_FUNC, READ_WRITE, ATR_TYPE_STR },
+    { "signal", decode_str, encode_str, set_str, comp_str, free_str, NULL_FUNC, READ_WRITE, ATR_TYPE_STR },
     { "stagein", decode_str, encode_str, set_str, comp_str, free_str, NULL_FUNC, READ_WRITE, ATR_TYPE_STR },
     { "spriority", decode_str, encode_str, set_str, comp_str, free_str, NULL_FUNC, READ_WRITE, ATR_TYPE_STR },
     { "subnode", decode_str, encode_str, set_str, comp_str, free_str, NULL_FUNC, READ_WRITE, ATR_TYPE_STR },
@@ -629,7 +630,10 @@ resource_def svr_resc_def_const[] = {
 int svr_resc_size = sizeof(svr_resc_def_const) / sizeof(resource_def);
 
 
-int init_resc_defs(char *path)
+int init_resc_defs(
+
+  char *path)
+
   {
   FILE *fp;
   char buff[65];
@@ -637,15 +641,16 @@ int init_resc_defs(char *path)
   int rindex=0, dindex=0, unkindex=0;
 
   fp = fopen(path,"r");
-  if (fp)
-    {
 
-    tmpresc=calloc(MAX_RESOURCES,sizeof(resource_def));
+  if (fp != NULL)
+    {
+    tmpresc = calloc(MAX_RESOURCES,sizeof(resource_def));
 
     if (tmpresc == NULL)
       {
       fclose(fp);
-      return -1;
+
+      return(-1);
       }
 
     while (fscanf(fp,"%64s",buff) == 1)

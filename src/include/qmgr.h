@@ -364,17 +364,17 @@ void disconnect_from_server();
 "query_other_jobs - when true users can query jobs owned by other users\n"
 
 #define HELP_SERVERPUBLIC3 \
-"resources_available - ammount of resources which are available to the server\n" \
+"resources_available - amount of resources which are available to the server\n" \
 "resources_cost - the cost factors of resources.  Used for sync. job starting\n" \
 "resources_default - the default resource value when the job does not specify\n" \
-"resource_max - the maximum ammount of resources that are on the system\n" \
-"scheduler_iteration - the ammount of seconds between timed scheduler iterations\n" \
+"resource_max - the maximum amount of resources that are on the system\n" \
+"scheduler_iteration - the amount of seconds between timed scheduler iterations\n" \
 "scheduling - when true the server should tell the scheduler to run\n" \
 "system_cost - arbitirary value factored into resource costs\n" \
 
 #define HELP_SERVERRO \
 "Server Read Only Attributes:\n" \
-"resources_assigned - total ammount of resources allocated to running jobs\n" \
+"resources_assigned - total amount of resources allocated to running jobs\n" \
 "server_name - the name of the server and possibly a port number\n" \
 "server_state - the current state of the server\n" \
 "state_count - total number of jobs in each state\n" \
@@ -399,16 +399,16 @@ void disconnect_from_server();
 
 #define HELP_QUEUEPUBLIC3 \
 "queue_type - type of queue: execution or routing\n" \
-"resources_max - maximum ammount of a resource which can be requested by a job\n" \
-"resources_min - minimum ammount of a resource which can be requested by a job\n" \
+"resources_max - maximum amount of a resource which can be requested by a job\n" \
+"resources_min - minimum amount of a resource which can be requested by a job\n" \
 "resources_default - the default resource value when the job does not specify\n" \
 "started - when true jobs can be scheduled for execution\n"
 
 #define HELP_QUEUEEXEC \
 "Attributes for Execution queues only:\n" \
 "checkpoint_min - min. number of mins. of CPU time allowed bwtween checkpointing\n" \
-"resources_available - ammount of resources which are available to the queue\n" \
-"kill_delay - ammount of time between SIGTERM and SIGKILL when deleting a job\n" \
+"resources_available - amount of resources which are available to the queue\n" \
+"kill_delay - amount of time between SIGTERM and SIGKILL when deleting a job\n" \
 "max_user_run - maximum number of jobs a user can run in the queue\n" \
 "max_group_run - maximum number of jobs a UNIX group can run in a queue\n"
 
@@ -419,13 +419,13 @@ void disconnect_from_server();
 "route_held_jobs - when true held jobs may be routed from this queue\n" \
 "route_waiting_jobs - when true waiting jobs may be routed from this queue\n" \
 "route_retry_time - time delay between route retries.\n" \
-"route_lifetime - maximum ammount of time a job can be in this routing queue\n"
+"route_lifetime - maximum amount of time a job can be in this routing queue\n"
 
 #define HELP_QUEUERO \
 "Queue read only attributes:\n" \
 "total_jobs - total number of jobs in queue\n" \
 "state_count - total number of jobs in each state in the queue\n" \
-"resources_assigned - ammount of resources allocated to jobs running in queue\n"
+"resources_assigned - amount of resources allocated to jobs running in queue\n"
 
 #define HELP_NODEATTR \
 "Node attributes:\n" \

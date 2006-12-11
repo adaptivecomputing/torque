@@ -381,13 +381,15 @@ int decode_null(patr, name, rn, val)
  * set_null - Null set routine for Read Only attributes. 
  */
 
-int set_null(pattr, new, op)
-	attribute *pattr;
-	attribute *new;
-	enum batch_op op;
-{
-	return 0;
-}
+int set_null(
+
+  attribute     *pattr,
+  attribute     *new,
+  enum batch_op  op)
+
+  {
+  return(0);
+  }
 
 
 

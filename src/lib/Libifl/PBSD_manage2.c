@@ -90,13 +90,13 @@
 
 int PBSD_mgr_put(
 
-  int   c,
-  int   function,
-  int   command,
-  int   objtype,
-  char *objname,
-  struct attropl *aoplp,
-  char *extend)
+  int             c,        /* I */
+  int             function, /* I */
+  int             command,  /* I */
+  int             objtype,  /* I */
+  char           *objname,  /* I */
+  struct attropl *aoplp,    /* I */
+  char           *extend)   /* I */
 
   {
   int rc;

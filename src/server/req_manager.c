@@ -2302,7 +2302,9 @@ static int mgr_long_action_helper(
   return(PBSE_NONE);
   }  /* END mgr_long_action_helper() */
 
-/* END req_manager.c */
+
+
+
 
 /*
  * schiter_chk - make sure values are sane

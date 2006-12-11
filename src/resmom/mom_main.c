@@ -5574,7 +5574,7 @@ int job_over_limit(
         {
         case SISTER_KILLDONE:
 
-          sprintf(log_buffer,"node %d (%s) requested job die, '%s' (code %d)",
+          sprintf(log_buffer,"node %d (%s) requested job terminate, '%s' (%d)",
             pjob->ji_nodekill,
             pnode->hn_host,
             "killdone",
@@ -5584,7 +5584,7 @@ int job_over_limit(
 
         case SISTER_BADPOLL:
 
-          sprintf(log_buffer,"node %d (%s) requested job die, '%s' (code %d)",
+          sprintf(log_buffer,"node %d (%s) requested job terminate, '%s' (code %d)",
             pjob->ji_nodekill,
             pnode->hn_host,
             "badpoll",
@@ -5595,7 +5595,7 @@ int job_over_limit(
         case SISTER_EOF:
         default:
 
-          sprintf(log_buffer,"node %d (%s) requested job die, '%s' (code %d) - internal or network failure attempting to communicate with sister MOM's",
+          sprintf(log_buffer,"node %d (%s) requested job terminate, '%s' (code %d) - internal or network failure attempting to communicate with sister MOM's",
             pjob->ji_nodekill,
             pnode->hn_host,
             "EOF",
@@ -5924,10 +5924,10 @@ int main(
   int	 	errflg, c;
   FILE		*dummyfile;
   task		*ptask;
-  char		*ptr;
+  char		*ptr;                   /* local tmp variable */
   int		tryport;
   int		rppfd;			/* fd for rm and im comm */
-  int		privfd = 0;			/* fd for sending job info */
+  int		privfd = 0;		/* fd for sending job info */
   double	myla;
   struct sigaction act;
   job		*pjob;
@@ -6693,7 +6693,20 @@ int main(
     PBS_EVENTCLASS_SERVER,
     id,
     log_buffer);
-  
+ 
+  ptr = getenv("MOMSLEEPTIME");
+
+  if (ptr != NULL)
+    {
+    long tmpL;
+
+    tmpL = strtol(ptr,NULL,10);
+
+    srand(getpid());
+
+    sleep(tmpL % (rand() + 1));
+    }  /* END if (ptr != NULL) */
+ 
   /*
    * Now at last, we are ready to do some work, the following
    * section constitutes the "main" loop of MOM

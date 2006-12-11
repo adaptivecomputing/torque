@@ -186,7 +186,7 @@ static void tcp_pack_buff(
 
 static int tcp_read(
 
-  int fd)
+  int fd)  /* I */
  
   {
   int               i;
@@ -220,9 +220,9 @@ static int tcp_read(
 #ifdef HAVE_POLL
     /* poll()'s timeout is only a signed int, must be careful not to overflow */
     if (INT_MAX/1000 > pbs_tcp_timeout)
-      timeout = pbs_tcp_timeout*1000;
+      timeout = pbs_tcp_timeout * 1000;
     else
-      timeout=INT_MAX;
+      timeout = INT_MAX;
 
     pollset.fd = fd;
     pollset.events = POLLIN|POLLHUP;
@@ -323,24 +323,37 @@ int DIS_tcp_wflush(
     {
     if (i == -1)  
       {
-      if (errno != EINTR)
+      if (errno == EINTR)
         {
-        return(-1);
+        continue;
         }
 
-      continue;
-      }
+      /* FAILURE */
+
+      if (getenv("PBSDEBUG") != NULL)
+        {
+        fprintf(stderr,"TCP write of %d bytes (%.32s) failed, errno=%d (%s)\n",
+          ct,
+          pb,
+          errno,
+          strerror(errno));
+        }
+
+      return(-1);
+      }  /* END if (i == -1) */
 
     ct -= i;
     pb += i;
-    }
-  
+    }  /* END while (i) */
+ 
+  /* SUCCESS */
+ 
   tp->tdis_eod = tp->tdis_leadp;
 
   tcp_pack_buff(tp);
 
   return(0);
-  }
+  }  /* END DIS_tcp_wflush() */
 
 
 

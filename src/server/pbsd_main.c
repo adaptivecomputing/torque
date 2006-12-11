@@ -780,6 +780,8 @@ int main(
 
       case 'S':
 
+        /* FORMAT: ??? */
+
         if (get_port(
               optarg, 
               &pbs_scheduler_port,
@@ -1266,8 +1268,14 @@ void check_log(
         }
       }
     }
- set_task(WORK_Timed,time_now + PBS_LOG_CHECK_RATE, check_log, NULL);   
- } /* END check_log */
+
+  set_task(WORK_Timed,time_now + PBS_LOG_CHECK_RATE,check_log,NULL);   
+
+  return;
+  } /* END check_log */
+
+
+
 
 
 
@@ -1300,18 +1308,20 @@ static int get_port(
     {
     name = parse_servername(arg,port);
 
-    if (name != NULL) 
+    if (name == NULL) 
       {
-      *addr = get_hostaddr(name);
-      } 
-    else 
-      {
+      /* FAILURE */
+
       return(-1);
       }
+
+    *addr = get_hostaddr(name);
     }
 
   if ((*port <= 0) || (*addr == 0))
     {
+    /* FAILURE */
+
     return(-1);
     }
 

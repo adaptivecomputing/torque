@@ -143,7 +143,7 @@ const char *PSchedCmdType[] = {
 
 static int contact_sched(
 
-  int cmd)
+  int cmd)  /* I */
 
   {
   int sock;
@@ -152,7 +152,8 @@ static int contact_sched(
 
   char *id = "contact_sched";
 
-	/* connect to the Scheduler */
+  /* connect to the Scheduler */
+
 #if 0   /* don't check if scheduler runs on same node as server */
         if (!addr_ok(pbs_scheduler_addr)) {
 	    pbs_errno = EHOSTDOWN;
@@ -164,6 +165,8 @@ static int contact_sched(
 
   if (sock < 0) 
     {
+    /* FAILURE */
+
     bad_node_warning(pbs_scheduler_addr);
 
     sprintf(tmpLine,"%s - port %d",
