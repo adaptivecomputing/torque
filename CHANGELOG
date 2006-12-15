@@ -4,38 +4,58 @@ c - crash     b - bug fix    e - enhancement    f - new feature
 
   e - improve RPP logging for corruption issues
   f - dynamic resources
-  b - correct run-time symbol in pam module on RHEL4
   f - allow manager to set "next job number" vi hidden qmgr attribute next_job_number
-  b - some minor hpux11 build fixes (PACCAR)
-  e - allow pam_pbssimpleauth to be built on OSX and Solaris
-  b - fix bug with log roll and automatic log filenames
   e - use mlockall() in pbs_mom if _POSIX_MEMLOCK
   f - consumable resource "tokens" support (Harte-Hanks)
-  b - networking fixes for HPUX, fixes pbs_iff (PACCAR)
-  e - fix "list_head" symbol clash on Solaris 10
   f - Linux 2.6 cpuset support
-  b - compile error with size_fs() on digitalunix
   e - build process sets default submit filter path to ${libexecdir}/qsub_filter
       we fall back to /usr/local/sbin/torque_submitfilter to maintain compatibility
   e - allow long job names when not using -N
-  e - pbs_server will now print build details with --about
-  e - new freebsd5 mom arch for Freebsd 5.x and 6.x (trasz)
-  f - new queue attribute "max_user_queuable"
-  e - optimize acl_group_sloppy
-  c - using depend=syncwith crashed pbs_server
-  f - may now specify umask to use while creating stderr and stdout spools
-      e.g. qsub -W umask=22
-  c - races with down nodes and purging jobs crashed pbs_server
-  b - staged out files will retain proper permission bits
   f - new MOM $varattr config
-  e - queue attribute max_queuable accounts for C jobs
   e - daemons are no longer installed 700
   e - tighten directory path checks
+  f - new mom configs: $auto_ideal_load and $auto_max_load
+
+2.1.7
+  b - fix bison syntax error in Parser.y
+  b - fix 2.1.4 regression with spool file group owner on freebsd
+
+2.1.6
+  b - freebsd5 build fix
+  b - fix 2.1.4 regression with TM on single-node jobs
+  b - fix 2.1.4 regression with rerunning jobs
+  b - additional spool handling security fixes
+
+2.1.5
+  b - fix 2.1.4 regression with -o/dev/null
+
+2.1.4
   b - fix cput job status
   b - Fix "Spool Job Race condition"
-  b - fix bison syntax error in Parser.y
-  f - new mom configs: $auto_ideal_load and $auto_max_load
+
+2.1.3
+  
+  b - correct run-time symbol in pam module on RHEL4
+  b - some minor hpux11 build fixes (PACCAR)
+  b - fix bug with log roll and automatic log filenames
+  b - compile error with size_fs() on digitalunix
+  e - pbs_server will now print build details with --about
+  e - new freebsd5 mom arch for Freebsd 5.x and 6.x (trasz)
+  f - backported new queue attribute "max_user_queuable"
+  e - optimize acl_group_sloppy
+  e - fix "list_head" symbol clash on Solaris 10
+  e - allow pam_pbssimpleauth to be built on OSX and Solaris
+  b - networking fixes for HPUX, fixes pbs_iff (PACCAR)
+  e - allow long job names when not using -N
+  c - using depend=syncwith crashed pbs_server
+  c - races with down nodes and purging jobs crashed pbs_server
+  b - staged out files will retain proper permission bits
+  f - may now specify umask to use while creating stderr and stdout spools
+      e.g. qsub -W umask=22
+  b - correct some fast startup behaviour
+  e - queue attribute max_queuable accounts for C jobs
   b - OS X memlockall "function not implemented" work around
+
 2.1.2
 
   b - fix momctl queries with multiple hosts
