@@ -424,7 +424,7 @@ int main(
   int	 privfd;		/* fd to send is messages */
   uint	 tryport;
   char	 lockfile[MAXPATHLEN + 1];
-  char	*pc;
+  char	*pc = NULL;
   job	*pjob;
   pbs_queue *pque;
   char	*servicename = NULL;
@@ -955,7 +955,7 @@ int main(
     }  /* END if (TDoBackground == 1) */
   else
     {
-    if (isdigit(pc[0]))
+    if ((pc != NULL) && isdigit(pc[0]))
       LOGLEVEL = (int)strtol(pc,NULL,0);
 
     sid = getpid();
