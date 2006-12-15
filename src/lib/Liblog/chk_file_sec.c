@@ -192,10 +192,24 @@ int chk_file_sec(
       pc[1] = '\0';
       }
 
-    /* append symlink string to end of directory */
+    /* now figure out how to follow the symlink */
 
-    strcat(shorter,symlink);
+    if (stat(path,&sbuf) == -1) 
+      {
+      rc = errno;
 
+      goto chkerr;
+      }
+
+    if (S_ISDIR(sbuf.st_mode) != 0)
+      {
+      strcat(shorter,symlink);
+      }
+    else
+      {
+      strcpy(shorter,symlink);
+      }
+    
     return(chk_file_sec(shorter,isdir,sticky,disallow,fullpath));
     }
 			
