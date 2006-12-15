@@ -388,6 +388,7 @@ struct config common_config[] = {
 
 int                     LOGLEVEL = 0;  /* valid values (0 - 10) */
 int                     DEBUGMODE = 0;
+int                     DOBACKGROUND = 1;
 char                    CHECKPOINT_SCRIPT[1024];
 long                    TJobStartBlockTime = 5; /* seconds to wait for job to launch before backgrounding */
 long                    TJobStartTimeout = 300; /* seconds to wait for job to launch before purging */
@@ -5691,6 +5692,7 @@ void usage(
   fprintf(stderr,"  -C <PATH> \\\\ CHECKPOINT DIR\n");
   fprintf(stderr,"  -d <PATH> \\\\ HOME DIR\n");
   fprintf(stderr,"  -C <PATH> \\\\ CHECKPOINT DIR\n");
+  fprintf(stderr,"  -D        \\\\ DEBUG - do not background\n");
   fprintf(stderr,"  -L <PATH> \\\\ LOGFILE\n");
   fprintf(stderr,"  -M <INT>  \\\\ MOM PORT\n");
   fprintf(stderr,"  -p        \\\\ recover jobs\n");
@@ -6000,7 +6002,7 @@ int main(
 
   errflg = 0;
 
-  while ((c = getopt(argc,argv,"a:c:C:d:L:M:prR:S:vx")) != -1) 
+  while ((c = getopt(argc,argv,"a:c:C:d:DL:M:prR:S:vx")) != -1) 
     {
     switch (c) 
       {
@@ -6053,6 +6055,12 @@ int main(
       case 'd': /* directory */
 
         path_home = optarg;
+
+        break;
+
+      case 'D':  /* debug */
+ 
+        DOBACKGROUND = 0;
 
         break;
 
@@ -6162,6 +6170,8 @@ int main(
   if (getenv("PBSDEBUG") != NULL)
     {
     DEBUGMODE = 1;
+
+    DOBACKGROUND = 0;
     }
 
   /* modify program environment */
@@ -6361,11 +6371,11 @@ int main(
 
   mom_lock(lockfds,F_UNLCK);	/* unlock so child can relock */
 
-  if (DEBUGMODE == 0)
+  if (DOBACKGROUND == 1) 
     {
     if (fork() > 0)
       {
-      return (0);	/* parent goes away */
+      return(0);	/* parent goes away */
       }
 
     if (setsid() == -1) 
@@ -6387,7 +6397,7 @@ int main(
 
     dummyfile = fopen("/dev/null","w");
     assert((dummyfile != 0) && (fileno(dummyfile) == 2));
-    }  /* END if (DEBUGMODE == 0) */
+    }  /* END if (DOBACKGROUND == 1) */
 
   mom_lock(lockfds,F_WRLCK);	/* lock out other MOMs */
 	

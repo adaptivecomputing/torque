@@ -199,6 +199,7 @@ time_t		time_now = 0;
 
 int             LOGLEVEL = 0;
 int             DEBUGMODE = 0;
+int             TDoBackground = 1;  /* background daemon */
 int             TForceUpdate = 0;  /* (boolean) */
 
 char           *ProgName;
@@ -212,9 +213,9 @@ void DIS_rpp_reset()
   if (dis_getc != rpp_getc) 
     {
     dis_getc    = rpp_getc;
-    dis_puts    = (int (*) A_((int,const char *,size_t)))rpp_write;
-    dis_gets    = (int (*) A_((int,char *,size_t)))rpp_read;
-    disr_skip   = (int (*) A_((int,size_t)))rpp_skip;
+    dis_puts    = (int (*)A_((int,const char *,size_t)))rpp_write;
+    dis_gets    = (int (*)A_((int,char *,size_t)))rpp_read;
+    disr_skip   = (int (*)A_((int,size_t)))rpp_skip;
     disr_commit = rpp_rcommit;
     disw_commit = rpp_wcommit;
     }
@@ -386,7 +387,7 @@ int PBSShowUsage(
   char *EMsg)  /* I (optional) */
 
   {
-  const char *Msg = "[ -A <ACCTFILE> ] [ -a <ATTR> ] [ -d <HOMEDIR> ] [ -L <LOGFILE> ] [ -M <MOMPORT> ]\n  [ -p <SERVERPORT> ] [ -R <RMPORT> ] [ -S <SCHEDULERPORT> ] [ -t <TYPE> ]\n  [ --version|--help ]\n";
+  const char *Msg = "[ -A <ACCTFILE> ] [ -a <ATTR> ] [ -d <HOMEDIR> ] [ -D ] [ -L <LOGFILE> ] [ -M <MOMPORT> ]\n  [ -p <SERVERPORT> ] [ -R <RMPORT> ] [ -S <SCHEDULERPORT> ] [ -t <TYPE> ]\n  [ --version|--help ]\n";
 
   fprintf(stderr,"usage:  %s %s\n",
     ProgName,
@@ -459,13 +460,14 @@ int main(
   ProgName = argv[0];
 
   strcpy(pbs_current_user,"PBS_Server");
-  msg_daemonname=strdup(pbs_current_user);
+
+  msg_daemonname = strdup(pbs_current_user);
 
   /* if we are not running with real and effective uid of 0, forget it */
 
   if ((getuid() != 0) || (geteuid() != 0)) 
     {
-    fprintf(stderr,"%s: Must be run by root\n", 
+    fprintf(stderr,"%s: must be run by root\n", 
       ProgName);
 
     return(1);
@@ -537,7 +539,7 @@ int main(
 
   /* parse the parameters from the command line */
 
-  while ((c = getopt(argc,argv,"A:a:d:fh:p:t:L:M:R:S:-:")) != -1) 
+  while ((c = getopt(argc,argv,"A:a:d:Dfh:p:t:L:M:R:S:-:")) != -1) 
     {
     switch (c) 
       {
@@ -605,6 +607,12 @@ int main(
       case 'd':
 
         path_home = optarg;
+
+        break;
+
+      case 'D':
+
+        TDoBackground = 0;
 
         break;
 
@@ -874,6 +882,7 @@ int main(
   if ((pc = getenv("PBSDEBUG")) != NULL)
     {
     DEBUGMODE = 1;
+    TDoBackground = 0;
     }
 
   /* NOTE:  env cleared in pbsd_init() */
@@ -909,7 +918,7 @@ int main(
 
   net_set_type(Secondary,FromClientDIS);	/* "there" */
 
-  if (DEBUGMODE == 0)
+  if (TDoBackground == 1)
     {
     /* go into the background and become own session/process group */
 
@@ -943,7 +952,7 @@ int main(
 
     dummyfile = fopen("/dev/null","w");
     assert((dummyfile != 0) && (fileno(dummyfile) == 2));
-    }
+    }  /* END if (TDoBackground == 1) */
   else
     {
     if (isdigit(pc[0]))
