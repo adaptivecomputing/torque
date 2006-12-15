@@ -149,7 +149,7 @@ EXTRA_DIST = CHANGELOG INSTALL.GNU README.configure README.mpiexec \
 	     contrib/README.pestat contrib/README.pbstop \
 	     contrib/README.qpeek contrib/pestat-1.0/pestat.c \
 	     contrib/pestat-1.0/README contrib/pestat-1.0/Makefile \
-	     contrib/README.pbs_ganglia contrib/pam_authuser.tar.gz \
+	     contrib/README.pbs_ganglia_jobmonarch contrib/pam_authuser.tar.gz \
 	     contrib/README.pam_authuser contrib/pbstop \
 	     contrib/README.pbs_python contrib/README.pbs_weblite \
 	     contrib/qpeek \
