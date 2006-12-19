@@ -135,7 +135,7 @@ int             mask_num = 0;
 char		*configfile = NULL;	/* name of config file */
 
 char		*oldpath;
-extern char		*msg_daemonname;
+extern char	*msg_daemonname;
 char		**glob_argv;
 char		usage[] = "[-S port][-d home][-p output][-c config][-a alarm]";
 struct	sockaddr_in	saddr;
@@ -146,9 +146,9 @@ static char	path_log[_POSIX_PATH_MAX];
 char	path_acct[_POSIX_PATH_MAX];
 int 		pbs_rm_port;
 
-int	schedreq();
+int             schedreq();
 
-extern int get_4byte(int, unsigned int *);
+extern int get_4byte(int,unsigned int *);
 
 
 /*
@@ -218,8 +218,8 @@ static void catch_abort(
   rlimit.rlim_cur = RLIM_INFINITY;
   rlimit.rlim_max = RLIM_INFINITY;
 
-  (void)setrlimit(RLIMIT_CORE, &rlimit);
-  (void)abort();
+  setrlimit(RLIMIT_CORE, &rlimit);
+  abort();
 
   return;
   }  /* END catch_abort() */
@@ -455,7 +455,7 @@ static int read_config(
 
 
 #if !defined(DEBUG) && !defined(NO_SECURITY_CHECK)
-  if (chk_file_sec(file,0,0,S_IWGRP|S_IWOTH, 1))
+  if (chk_file_sec(file,0,0,S_IWGRP|S_IWOTH,1))
     {
     return(-1);
     }

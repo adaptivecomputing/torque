@@ -150,7 +150,10 @@ extern int    LOGLEVEL;
 
 extern time_t time_now;
 
-/* Externl Functions */
+int           SvrNodeCt = 0;  /* cfg nodes or num nodes specified via resources_available */
+
+
+/* External Functions */
 
 extern int node_avail_complex(char *,int *,int *,int *,int *);
 
@@ -773,8 +776,6 @@ static void chk_svr_resc_limit(
 
   int       LimitIsFromQueue;
   char     *LimitName;
-
-  static int SvrNodeCt = 0;
 
   static resource_def *noderesc = NULL;
   static resource_def *needresc = NULL;

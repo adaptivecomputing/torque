@@ -290,27 +290,43 @@ static void scheduler_close(
 	}
 }
 
+
+
+
+
 /*
  * put_4byte() - write a 4 byte integer in network order
  *
  *	Returns:  0 for sucess, -1 if error.
  */
 
-static int put_4byte(sock, val)
-	int		sock;	/* socket to read from */
-	unsigned int	val;	/* 4 byte interger to write */
-{
-	
-	int amt;
-	union {
-		int unl;
-		char unc[sizeof (unsigned int)];
-	} un;
+static int put_4byte(
 
-	un.unl = htonl(val);
-	amt = write(sock, (char *)(un.unc+sizeof(unsigned int)-4), 4);
-	if (amt == 4)
-		return (0);
-	else 
-		return (-1);
-}
+  int          sock,	/* socket to read from */
+  unsigned int val)	/* 4 byte interger to write */
+
+  {
+  int amt;
+
+  union {
+    int unl;
+    char unc[sizeof(unsigned int)];
+    } un;
+
+  un.unl = htonl(val);
+
+  amt = write(sock,(char *)(un.unc + sizeof(unsigned int)-4),4);
+
+  if (amt != 4)
+    {
+    /* FAILURE */
+
+    return(-1);
+    }
+
+  /* SUCCESS */
+
+  return(0);
+  }
+
+

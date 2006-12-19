@@ -154,10 +154,12 @@ extern char  server_name[];
 extern struct server server;
 extern tlist_head svr_newnodes;
 extern attribute_def  node_attr_def[];   /* node attributes defs */
+extern int            SvrNodeCt;
 
 #define	SKIP_NONE	0
 #define	SKIP_EXCLUSIVE	1
 #define	SKIP_ANYINUSE	2
+#define SKIP_NONE_REUSE 3
 
 int hasprop(struct pbsnode *,struct prop *);
 void send_cluster_addrs(struct work_task *);
@@ -2226,7 +2228,9 @@ static int hasppn(
   int             free)      /* I */
 
   {
-  if ((free != SKIP_NONE) && (pnode->nd_nsnfree >= node_req))
+  if ((free != SKIP_NONE) && 
+      (free != SKIP_NONE_REUSE) && 
+      (pnode->nd_nsnfree >= node_req))
     {
     return(1);
     }
@@ -2249,7 +2253,7 @@ static int hasppn(
 
 static void mark(
 
-  struct pbsnode *pnode,
+  struct pbsnode *pnode,  /* I */
   struct prop    *props)
 
   {
@@ -2274,7 +2278,7 @@ static void mark(
     }
 
   return;
-  }
+  }  /* END mark() */
 
 
 
@@ -2329,7 +2333,7 @@ static int search(
       if (!hasprop(pnode,glorf))
         continue;
 
-      if (skip == SKIP_NONE)  
+      if ((skip == SKIP_NONE) || (skip == SKIP_NONE_REUSE))
         {
         if (vpreq > pnode->nd_nsn)
           continue;
@@ -2346,9 +2350,15 @@ static int search(
         continue;
         }
  
-      pnode->nd_flag = thinking;
+      if (skip != SKIP_NONE_REUSE)
+        {
+        /* allow node re-use if SKIP_NONE_REUSE is set */
+
+        pnode->nd_flag = thinking;
+        }
 
       mark(pnode,glorf);
+        
 
       pnode->nd_needed = vpreq;
       pnode->nd_order  = order;
@@ -2422,7 +2432,9 @@ static int search(
 
   /* FAILURE */
 
-  return(0);	/* not found */
+  /* not found */
+
+  return(0);	
   }  /* END search() */
 
 
@@ -2617,15 +2629,21 @@ static int listelem(
   struct pbsnode *pnode;
   int	node_req = 1;
 
-  if ((i = number(str, &num)) == -1)	/* get number */
+  if ((i = number(str,&num)) == -1)	/* get number */
     {
+    /* FAILURE */
+
     return(ret);
     }
 
   if (i == 0) 
-    {				/* number exists */
+    {
+    /* number exists */
+
     if (**str == ':') 
-      {		/* there are properties */
+      {
+      /* there are properties */
+
       (*str)++;
 
       if (proplist(str,&prop,&node_req))
@@ -2635,7 +2653,9 @@ static int listelem(
       } 
     }
   else 
-    {					/* no number */
+    {
+    /* no number */
+
     if (proplist(str,&prop,&node_req))
       {
       /* must be a prop list with no number in front */
@@ -2665,22 +2685,45 @@ static int listelem(
         break;		/* found enough  */
         }
       }
-    }
+    }    /* END for (i) */
 
-  if (hit < num)			/* can never be satisfied */
-    goto done;
+  if (hit < num)	
+    {
+    /* request exceeds configured nodes */
+
+    if ((SvrNodeCt == 0) || (SvrNodeCt < num))
+      {
+      /* request exceeds server resources_available */
+
+      /* request can never be satisfied */
+
+      goto done;
+      }
+    }
 
   /*
   ** Find an initial set of nodes to satisfy the request.
-  ** Go ahead and use any nodes no mater what state they are in.
+  ** Go ahead and use any nodes no matter what state they are in.
   */
+
+  /* NOTE:  SKIP_NONE_REUSE will not mark nodes as inuse, ie allow node re-use */
 
   for (i = 0;i < num;i++) 
     {
-    if (search(prop,node_req,SKIP_NONE,order,0))
-      continue;
+    if (SvrNodeCt == 0)
+      {
+      if (search(prop,node_req,SKIP_NONE,order,0))
+        continue;
+      }
+    else
+      {
+      if (search(prop,node_req,SKIP_NONE_REUSE,order,0))
+        continue;
+      }
 
-    goto done;		/* can never be satisfied */
+    /* can never be satisfied */
+
+    goto done;
     }
 
   ret = 1;
@@ -2892,6 +2935,9 @@ int MSNPrintF(
   }  /* END MSNPrintF() */
 
 
+
+
+
 /*
  *	Test a node specification.  
  *
@@ -2930,14 +2976,17 @@ static int node_spec(
 
   if (LOGLEVEL >= 6)
     {
-    sprintf(log_buffer,"entered spec=%.4000s",spec);
-      log_record(
-        PBSEVENT_SCHED,
-        PBS_EVENTCLASS_REQUEST,
-        id,
-        log_buffer);
+    sprintf(log_buffer,"entered spec=%.4000s",
+      spec);
 
-    DBPRT(("%s\n", log_buffer));
+    log_record(
+      PBSEVENT_SCHED,
+      PBS_EVENTCLASS_REQUEST,
+      id,
+      log_buffer);
+
+    DBPRT(("%s\n",
+      log_buffer));
     }
 
   exclusive = 1;	/* by default, nodes (VPs) are requested exclusively */
@@ -3015,7 +3064,7 @@ static int node_spec(
     return(-1);
     }
 
-  if (LOGLEVEL >=6)
+  if (LOGLEVEL >= 6)
     {
     sprintf(log_buffer,"job allocation debug: %d requested, %d svr_clnodes, %d svr_totnodes",
       num,
@@ -3027,7 +3076,8 @@ static int node_spec(
       id,
       log_buffer);
 
-    DBPRT(("%s\n", log_buffer));
+    DBPRT(("%s\n",
+      log_buffer));
     }
 
   /*
@@ -3170,7 +3220,7 @@ static int node_spec(
     return(0);
     }  /* END if ((num > svr_numnodes) && early) */
 
-  if (LOGLEVEL >=6)
+  if (LOGLEVEL >= 6)
     {
     sprintf(log_buffer,"job allocation debug(2): %d requested, %d svr_numnodes",
       num,
@@ -3182,8 +3232,10 @@ static int node_spec(
       id,
       log_buffer);
 
-    DBPRT(("%s\n", log_buffer));
+    DBPRT(("%s\n",
+      log_buffer));
     }
+
   /*
    * 	At this point we know the spec is legal.
    *	Here we find a replacement for any nodes chosen above
@@ -3354,7 +3406,7 @@ static int node_spec(
 
   /* SUCCESS - spec is ok */
 
-  if (LOGLEVEL >=6)
+  if (LOGLEVEL >= 6)
     {
     sprintf(log_buffer,"job allocation debug(3): returning %d requested",
       num);
@@ -3365,7 +3417,8 @@ static int node_spec(
       id,
       log_buffer);
 
-    DBPRT(("%s\n", log_buffer));
+    DBPRT(("%s\n", 
+      log_buffer));
     }
 
   return(num);	
@@ -3646,10 +3699,11 @@ DBPRT(("%s\n",log_buffer));
 
 /*
  * node_avail_complex - 
- *		*navail is set to number available
- *		*nalloc is set to number allocated
- *		*nresvd is set to number reserved 
- *		*ndown  is set to number down/offline
+ *	*navail is set to number available
+ *	*nalloc is set to number allocated
+ *	*nresvd is set to number reserved 
+ *	*ndown  is set to number down/offline
+ *      return -1 on failure
  */
 
 int node_avail_complex(
