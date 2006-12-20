@@ -194,7 +194,7 @@ char           *mom_home;
 extern char    *msg_daemonname;          /* for logs     */
 extern int	pbs_errno;
 gid_t		pbsgroup;
-unsigned int	pbs_mom_port;
+unsigned int	pbs_mom_port = 0;
 unsigned int	pbs_rm_port;
 tlist_head	mom_polljobs;	/* jobs that must have resource limits polled */
 tlist_head	svr_newjobs;	/* jobs being sent to MOM */
@@ -5370,7 +5370,7 @@ static void finish_loop(
   tmpTime = MAX(1,tmpTime);
 
   if (LastServerUpdateTime == 0)
-    tmpTime=1;
+    tmpTime = 1;
 
   /* wait for a request to process */
 
@@ -5991,13 +5991,27 @@ int main(
 
   /* Get our default service port */
 
-  pbs_mom_port = get_svrport(PBS_MOM_SERVICE_NAME,"tcp",
-    PBS_MOM_SERVICE_PORT);
+  ptr = getenv("PBS_MOM_SERVER_PORT");
 
-  default_server_port = get_svrport(PBS_BATCH_SERVICE_NAME,"tcp",
+  if (ptr != NULL)
+    {
+    pbs_mom_port = (int)strtol(ptr,NULL,10);
+    }
+
+  if (pbs_mom_port <= 0)
+     {
+     pbs_mom_port = get_svrport(PBS_MOM_SERVICE_NAME,"tcp",
+       PBS_MOM_SERVICE_PORT);
+     }
+
+  default_server_port = get_svrport(
+    PBS_BATCH_SERVICE_NAME,
+    "tcp",
     PBS_BATCH_SERVICE_PORT_DIS);
 
-  pbs_rm_port = get_svrport(PBS_MANAGER_SERVICE_NAME,"tcp", 
+  pbs_rm_port = get_svrport(
+    PBS_MANAGER_SERVICE_NAME,
+    "tcp", 
     PBS_MANAGER_SERVICE_PORT);
 
   errflg = 0;
