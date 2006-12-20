@@ -512,15 +512,35 @@ int main(
 
   /* initialize service port numbers for self, Scheduler, and MOM */
 
-  pbs_server_port_dis = get_svrport(
-    PBS_BATCH_SERVICE_NAME,
-    "tcp", 
-    PBS_BATCH_SERVICE_PORT_DIS);
+  ptr = getenv("PBS_BATCH_SERVICE_PORT");
 
-  pbs_scheduler_port = get_svrport(
-    PBS_SCHEDULER_SERVICE_NAME,
-    "tcp",
-    PBS_SCHEDULER_SERVICE_PORT);
+  if (ptr != NULL)
+    {
+    pbs_server_port_dis = (int)strtol(ptr,NULL,10);
+    }
+
+  if (pbs_server_port_dis <= 0)
+    {
+    pbs_server_port_dis = get_svrport(
+      PBS_BATCH_SERVICE_NAME,
+      "tcp", 
+      PBS_BATCH_SERVICE_PORT_DIS);
+    }
+
+  ptr = getenv("PBS_SCHEDULER_SERVICE_PORT");
+
+  if (ptr != NULL)
+    {
+    pbs_scheduler_port = (int)strtol(ptr,NULL,10);
+    }
+
+  if (pbs_scheduler_port <= 0)
+    { 
+    pbs_scheduler_port = get_svrport(
+      PBS_SCHEDULER_SERVICE_NAME,
+      "tcp",
+      PBS_SCHEDULER_SERVICE_PORT);
+    }
 
   ptr = getenv("PBS_MOM_SERVICE_PORT");
 
@@ -537,10 +557,20 @@ int main(
       PBS_MOM_SERVICE_PORT);
     }
 
-  pbs_rm_port = get_svrport(
-    PBS_MANAGER_SERVICE_NAME,
-    "tcp",
-    PBS_MANAGER_SERVICE_PORT);
+  ptr = getenv("PBS_MANAGER_SERVICE_PORT");
+
+  if (ptr != NULL)
+    {
+    pbs_rm_port = (int)strtol(ptr,NULL,10);
+    }
+
+  if (pbs_rm_port <= 0)
+    {
+    pbs_rm_port = get_svrport(
+      PBS_MANAGER_SERVICE_NAME,
+      "tcp",
+      PBS_MANAGER_SERVICE_PORT);
+    }
 
   strcpy(server_name,server_host);	/* by default server = host */
 

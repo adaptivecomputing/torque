@@ -356,16 +356,34 @@
 /* PBS_*_SERVICE_NAME form will be used, maybe			*/
 
 #define PBS_BATCH_SERVICE_NAME		"pbs"
-#define PBS_BATCH_SERVICE_PORT		15001
-#define PBS_BATCH_SERVICE_NAME_DIS	"pbs_dis"	/* new DIS port   */
-#define PBS_BATCH_SERVICE_PORT_DIS	15001		/* new DIS port   */
-#define PBS_MOM_SERVICE_NAME		"pbs_mom"
-#define PBS_MOM_SERVICE_PORT		15002
-#define PBS_MANAGER_SERVICE_NAME	"pbs_resmon"
-#define PBS_MANAGER_SERVICE_PORT	15003
-#define PBS_SCHEDULER_SERVICE_NAME	"pbs_sched"
-#define PBS_SCHEDULER_SERVICE_PORT	15004
 
+#ifndef PBS_BATCH_SERVICE_PORT
+#define PBS_BATCH_SERVICE_PORT		15001
+#endif /* PBS_BATCH_SERVICE_PORT */
+
+#define PBS_BATCH_SERVICE_NAME_DIS	"pbs_dis"	/* new DIS port   */
+
+#ifndef PBS_BATCH_SERVICE_PORT_DIS
+#define PBS_BATCH_SERVICE_PORT_DIS	15001		/* new DIS port   */
+#endif /* PBS_BATCH_SERVICE_PORT_DIS */
+
+#define PBS_MOM_SERVICE_NAME		"pbs_mom"
+
+#ifndef PBS_MOM_SERVICE_PORT
+#define PBS_MOM_SERVICE_PORT		15002
+#endif /* PBS_MOM_SERVICE_PORT */
+
+#define PBS_MANAGER_SERVICE_NAME	"pbs_resmon"
+
+#ifndef PBS_MANAGER_SERVICE_PORT
+#define PBS_MANAGER_SERVICE_PORT	15003
+#endif /* PBS_MANAGER_SERVICE_PORT */
+
+#define PBS_SCHEDULER_SERVICE_NAME	"pbs_sched"
+
+#ifndef PBS_SCHEDULER_SERVICE_PORT
+#define PBS_SCHEDULER_SERVICE_PORT	15004
+#endif /* PBS_SCHEDULER_SERVICE_PORT */
 
 enum batch_op {	SET, UNSET, INCR, DECR, EQ, NE, GE, GT, LE, LT, DFLT };
 

@@ -161,7 +161,7 @@ int             ServerStatUpdateInterval = DEFAULT_SERVER_STAT_UPDATES;
 int             CheckPollTime            = CHECK_POLL_TIME;
 
 double		cputfactor = 1.00;
-unsigned int	default_server_port;
+unsigned int	default_server_port = 0;
 int		exiting_tasks = 0;
 float		ideal_load_val = -1.0;
 int		internal_state = 0;
@@ -195,7 +195,7 @@ extern char    *msg_daemonname;          /* for logs     */
 extern int	pbs_errno;
 gid_t		pbsgroup;
 unsigned int	pbs_mom_port = 0;
-unsigned int	pbs_rm_port;
+unsigned int	pbs_rm_port = 0;
 tlist_head	mom_polljobs;	/* jobs that must have resource limits polled */
 tlist_head	svr_newjobs;	/* jobs being sent to MOM */
 tlist_head	svr_alljobs;	/* all jobs under MOM's control */
@@ -1550,7 +1550,7 @@ static u_long setpbsserver(
 
   if ((portstr = strchr(tmpname,':')) != NULL)
     {
-    *portstr='\0';
+    *portstr = '\0';
     }
 
   if ((host = gethostbyname(tmpname)) == NULL) 
@@ -1563,6 +1563,7 @@ static u_long setpbsserver(
     log_err(-1,id,log_buffer);
 
     ipaddr = 0;
+
     /* don't return because we still want to add the hostname to
      * pbs_servername[] and attempt a gethostbyname() later */
     }
@@ -5989,9 +5990,9 @@ int main(
     orig_path = strdup(getenv("PATH"));
     }
 
-  /* Get our default service port */
+  /* get default service port */
 
-  ptr = getenv("PBS_MOM_SERVER_PORT");
+  ptr = getenv("PBS_MOM_SERVICE_PORT");
 
   if (ptr != NULL)
     {
@@ -6000,19 +6001,41 @@ int main(
 
   if (pbs_mom_port <= 0)
      {
-     pbs_mom_port = get_svrport(PBS_MOM_SERVICE_NAME,"tcp",
+     pbs_mom_port = get_svrport(
+       PBS_MOM_SERVICE_NAME,
+       "tcp",
        PBS_MOM_SERVICE_PORT);
      }
 
-  default_server_port = get_svrport(
-    PBS_BATCH_SERVICE_NAME,
-    "tcp",
-    PBS_BATCH_SERVICE_PORT_DIS);
+  ptr = getenv("PBS_BATCH_SERVICE_PORT");
 
-  pbs_rm_port = get_svrport(
-    PBS_MANAGER_SERVICE_NAME,
-    "tcp", 
-    PBS_MANAGER_SERVICE_PORT);
+  if (ptr != NULL)
+    {
+    default_server_port = (int)strtol(ptr,NULL,10);
+    }
+
+  if (default_server_port <= 0)
+    {
+    default_server_port = get_svrport(
+      PBS_BATCH_SERVICE_NAME,
+      "tcp",
+      PBS_BATCH_SERVICE_PORT_DIS);
+    }
+
+  ptr = getenv("PBS_MANAGER_SERVICE_PORT");
+
+  if (ptr != NULL)
+    {
+    pbs_rm_port = (int)strtol(ptr,NULL,10);
+    }
+
+  if (pbs_rm_port <= 0)
+    {
+    pbs_rm_port = get_svrport(
+      PBS_MANAGER_SERVICE_NAME,
+      "tcp", 
+      PBS_MANAGER_SERVICE_PORT);
+    }
 
   errflg = 0;
 
