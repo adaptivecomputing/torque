@@ -2320,10 +2320,17 @@ static int search(
     if (pnode->nd_state & INUSE_DELETED)
       continue;
 
-    if (pnode->nd_ntype  == NTYPE_CLUSTER) 
+    if (pnode->nd_ntype == NTYPE_CLUSTER) 
       {
       if (pnode->nd_flag != okay)
-        continue;
+        {
+        if ((skip != SKIP_NONE_REUSE) || (pnode->nd_flag != thinking))
+          {
+          /* allow node re-use if SKIP_NONE_REUSE is set */
+
+          continue;
+          }
+        }
 
 /* FIXME: this is rejecting job submits?
       if (pnode->nd_state & pass)
@@ -2350,15 +2357,11 @@ static int search(
         continue;
         }
  
-      if (skip != SKIP_NONE_REUSE)
-        {
-        /* allow node re-use if SKIP_NONE_REUSE is set */
+      /* NOTE: allow node re-use if SKIP_NONE_REUSE by ignoring 'thinking' above */
 
-        pnode->nd_flag = thinking;
-        }
+      pnode->nd_flag = thinking;
 
       mark(pnode,glorf);
-        
 
       pnode->nd_needed = vpreq;
       pnode->nd_order  = order;
@@ -2388,7 +2391,11 @@ static int search(
     if (pnode->nd_ntype == NTYPE_CLUSTER) 
       {
       if (pnode->nd_flag != thinking)
+        {
+        /* only shuffle nodes which have been selected above */
+
         continue;
+        }
     
       if (pnode->nd_state & pass)
         continue;
@@ -3528,7 +3535,13 @@ int set_nodes(
       continue;
 
     if (pnode->nd_flag != thinking)
-      continue;			/* skip this one */
+      {
+      /* node is not considered/eligible for job - see search() */
+
+      /* skip node */
+
+      continue;	
+      }
 
     /* within the node, check each subnode */
 
@@ -3635,8 +3648,11 @@ DBPRT(("%s\n",log_buffer));
         log_buffer);
       }
 
+    if (EMsg != NULL)
+      sprintf(EMsg,"no nodes can be allocated to job");
+
     return(PBSE_RESCUNAV);
-    }
+    }  /* END if (hlist == NULL) */
 
   pjob->ji_qs.ji_svrflags |= JOB_SVFLG_HasNodes;  /* indicate has nodes */
 
