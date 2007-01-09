@@ -430,39 +430,17 @@ extern char *
 pbs_server;		/* server attempted to connect | connected to */
 			/* see pbs_connect(3B)			      */
 
-extern char *
-avail A_((int connect, char *resc));
-
-extern int
-pbs_asyrunjob A_((int c, char *jobid, char *location, char *extend));
-
-extern int 
-pbs_alterjob A_((int connect, char *job_id, struct attrl *attrib,
-	char *extend));
-
-extern int 
-pbs_connect A_((char *server));
-
-extern int
-pbs_query_max_connections();
-
-extern char *
-pbs_default A_((void));
-
-extern int 
-pbs_deljob A_((int connect, char *job_id, char *extend));
-
-extern int 
-pbs_disconnect A_((int connect));
-
-extern char *
-pbs_geterrmsg A_((int connect));
-
-extern int 
-pbs_holdjob A_((int connect, char *job_id, char *hold_type, char *extend));
-
-extern char *
-pbs_locjob A_((int connect, char *job_id, char *extend));
+extern char *avail A_((int connect,char *resc));
+extern int pbs_asyrunjob A_((int c,char *jobid,char *location,char *extend));
+extern int pbs_alterjob A_((int connect,char *job_id,struct attrl *attrib,char *extend));
+extern int pbs_connect A_((char *server));
+extern int pbs_query_max_connections();
+extern char *pbs_default A_((void));
+extern int pbs_deljob A_((int connect,char *job_id,char *extend));
+extern int pbs_disconnect A_((int connect));
+extern char *pbs_geterrmsg A_((int connect));
+extern int pbs_holdjob A_((int connect,char *job_id,char *hold_type,char *extend));
+extern char *pbs_locjob A_((int connect,char *job_id,char *extend));
 
 extern int 
 pbs_manager A_((int connect, int command, int obj_type, char *obj_name,
