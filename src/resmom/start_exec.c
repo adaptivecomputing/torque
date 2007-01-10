@@ -1797,6 +1797,9 @@ int TMomFinalizeChild(
   char                  buf[MAXPATHLEN + 2];
   pid_t                 cpid;
   int                   i, j, vnodenum;
+
+  char                  qsubhostname[1024];
+
   char                 *phost = NULL;
   int                   pport = 0;
   int                   pts;
@@ -1831,15 +1834,15 @@ int TMomFinalizeChild(
   resource_def          *prd;
 
 #elif defined(PENABLE_LINUX26_CPUSETS)
-  attribute            *pattr;
+  attribute             *pattr;
   resource              *presc;         /* Requested Resource List */
   resource_def          *prd;
-  int                  num_mems;
-  int                  num_cpus;
-  char                 cpuset_name[MAXPATHLEN + 1];
+  int                    num_mems;
+  int                    num_cpus;
+  char                   cpuset_name[MAXPATHLEN + 1];
 #endif  /* PENABLE_DYNAMIC_CPUSETS */
 
-  job                  *pjob;
+  job                   *pjob;
   task                 *ptask;
 
   struct passwd        *pwdp;
@@ -2250,37 +2253,45 @@ int TMomFinalizeChild(
   else
     {
     /* Setting the number of cpus in the cpuset to what was requested by ncpus */
+
     num_cpus = presc->rs_value.at_val.at_long;
 
     /* PME!! need figure out what to do about memory! */
+
 /*
  * One mem is hard coded temporarily here.  Need to look at the memory request and decide how many mems
  * are needed.  For our site, we never want jobs sharing node boards, not necessarily the case at other
  * sites.
  */
-       num_mems = 1;
-       sprintf (cpuset_name, "torque/%s", pjob->ji_qs.ji_jobid);
 
-       if (create_job_set(pjob->ji_qs.ji_jobid, cpuset_name, num_cpus, num_mems) != 0)
-       {
-           sprintf (log_buffer, "Could not create cpuset for job %s.\n", pjob->ji_qs.ji_jobid);
-           log_err(-1,id,log_buffer);
-           starter_return(TJE->upfds,TJE->downfds,JOB_EXEC_RETRY,&sjr);
-       }
-       else
-       {
-           /* Move this mom process into the cpuset so the job will start in it. */
-	   if (cpuset_move(0, cpuset_name) != 0)
-           {
-               /* Remove cpuset, created but the process couldn't be placed in it. */
-	       cpuset_delete(cpuset_name);
+    num_mems = 1;
 
-               sprintf (log_buffer, "Could not move job %s into its cpuset.\n", pjob->ji_qs.ji_jobid);
-               log_err(-1,id,log_buffer);
-               starter_return(TJE->upfds,TJE->downfds,JOB_EXEC_RETRY,&sjr);
-           }
+    sprintf(cpuset_name,"torque/%s",pjob->ji_qs.ji_jobid);
+
+    if (create_job_set(pjob->ji_qs.ji_jobid,cpuset_name,num_cpus,num_mems) != 0)
+      {
+      sprintf (log_buffer, "Could not create cpuset for job %s.\n", pjob->ji_qs.ji_jobid);
+      log_err(-1,id,log_buffer);
+      starter_return(TJE->upfds,TJE->downfds,JOB_EXEC_RETRY,&sjr);
        }
-  }
+     else
+       {
+       /* Move this mom process into the cpuset so the job will start in it. */
+
+       if (cpuset_move(0,cpuset_name) != 0)
+         {
+         /* Remove cpuset, created but the process couldn't be placed in it. */
+
+         cpuset_delete(cpuset_name);
+
+         sprintf(log_buffer,"Could not move job %s into its cpuset.\n", 
+           pjob->ji_qs.ji_jobid);
+
+         log_err(-1,id,log_buffer);
+         starter_return(TJE->upfds,TJE->downfds,JOB_EXEC_RETRY,&sjr);
+         }
+       }
+     }
 #endif  /* (PENABLE_CPUSETS || PENABLE_DYNAMIC_CPUSETS) */
 
 
@@ -2370,12 +2381,23 @@ int TMomFinalizeChild(
 
     phost++;
 
-    qsub_sock = conn_qsub(phost,pport);
+    if (nodefile_suffix != NULL)
+      {
+      snprintf(qsubhostname,sizeof(qsubhostname),"%s%s",
+        phost,
+        nodefile_suffix);
+      }
+    else
+      {
+      strncpy(qsubhostname,phost,sizeof(qsubhostname));
+      }
+
+    qsub_sock = conn_qsub(qsubhostname,pport);
 
     if (qsub_sock < 0) 
       {
       snprintf(log_buffer,1024,"cannot open interactive qsub socket to host %s:%d - check routing tables/multi-homed host issues",
-        phost,
+        qsubhostname,
         pport);
 
       log_err(errno,id,log_buffer);
@@ -2945,11 +2967,13 @@ int TMomFinalizeChild(
     {
     char display[512];
 
-    if(x11_create_display(1, /* use localhost only */
-                          display, /* output */
-                          phost, pport,
-                          pjob->ji_grpcache->gc_homedir,
-                          pjob->ji_wattr[(int)JOB_ATR_forwardx11].at_val.at_str) >= 0)
+    if (x11_create_display(
+          1, /* use localhost only */
+          display, /* output */
+          qsubhostname, 
+          pport,
+          pjob->ji_grpcache->gc_homedir,
+          pjob->ji_wattr[(int)JOB_ATR_forwardx11].at_val.at_str) >= 0)
       {
       bld_env_variables(&vtable,"DISPLAY",display);
       }
