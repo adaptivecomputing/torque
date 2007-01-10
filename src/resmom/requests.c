@@ -2752,7 +2752,8 @@ void req_cpyfile(
         if (TNoSpoolDirList[dindex] == NULL)
           break;
 
-        if (!strcasecmp(TNoSpoolDirList[dindex],"$WORKDIR"))
+        if (!strcasecmp(TNoSpoolDirList[dindex],"$WORKDIR") || 
+            !strcmp(TNoSpoolDirList[dindex],"*"))
           {
           havehomespool = 1;
 
