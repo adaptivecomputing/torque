@@ -206,13 +206,14 @@ time_t		polltime = 0;
 extern tlist_head svr_requests;
 extern struct var_table vtable;	/* see start_exec.c */
 #if MOM_CHECKPOINT == 1
-char	       *path_checkpoint = (char *)0;
+char	       *path_checkpoint = NULL;
 static resource_def *rdcput;
 #endif	/* MOM_CHECKPOINT */
 double		wallfactor = 1.00;
 long		log_file_max_size = 0;
 long		log_file_roll_depth = 1;
 time_t		last_log_check;
+char           *nodefile_suffix = NULL;  /* suffix to append to each host listed in job host file */
 
 /* externs */
 
@@ -231,7 +232,7 @@ char            xauth_path[MAXPATHLEN];
 
 time_t          LastServerUpdateTime = 0;  /* NOTE: all servers updated together */
 
-time_t          MOMStartTime              = 0;
+time_t          MOMStartTime         = 0;
 time_t          MOMLastSendToServerTime[PBS_MAXSERVER];
 time_t          MOMLastRecvFromServerTime[PBS_MAXSERVER];
 char            MOMLastRecvFromServerCmd[PBS_MAXSERVER][MMAX_LINE];
@@ -321,7 +322,7 @@ static unsigned long setlogfilerolldepth(char *);
 static unsigned long setvarattr(char *);
 static unsigned long setautoidealload(char *);
 static unsigned long setautomaxload(char *);
-
+static unsigned long setnodefilesuffix(char *);
 
 static struct specials {
   char            *name;
@@ -359,6 +360,7 @@ static struct specials {
     { "log_file_max_size",   setlogfilemaxsize },
     { "log_file_roll_depth", setlogfilerolldepth },
     { "varattr",             setvarattr },
+    { "nodefile_suffix",     setnodefilesuffix },
     { NULL,                  NULL } };
 
 
@@ -2511,12 +2513,14 @@ static unsigned long setcheckpointscript(
 static unsigned long setlogfilemaxsize(
 
   char *value)  /* I */
+
   {
-  log_file_max_size = strtol(value, NULL, 10);
+  log_file_max_size = strtol(value,NULL,10);
 
   if (log_file_max_size < 0)
      {
      log_file_max_size = 0;
+
      return(0);
      }
 
@@ -2527,15 +2531,21 @@ static unsigned long setlogfilemaxsize(
 static unsigned long setlogfilerolldepth(
 
   char *value)  /* I */
-   {
-   log_file_roll_depth = strtol(value, NULL, 10);
-   if (log_file_roll_depth < 1)
-      {
-      log_file_roll_depth = 1;
-      return 0;
-      }
-   return 1;
-   }
+
+  {
+  log_file_roll_depth = strtol(value,NULL,10);
+
+  if (log_file_roll_depth < 1)
+    {
+    log_file_roll_depth = 1;
+
+    return(0);
+    }
+
+  return(1);
+  }
+
+
 
 
 static u_long setvarattr(
@@ -2551,69 +2561,112 @@ static u_long setvarattr(
 
   if (pva == NULL)
     {
+    /* FAILURE */
+
     log_err(errno,id,"no memory");
 
-    return 0;
+    return(0);
     }
+
   CLEAR_LINK(pva->va_link);
 
   pva->va_name = strdup(value);
 
   /* step forward to get the ttl value */
-  tmpc=strchr(pva->va_name,' ');
+
+  tmpc = strchr(pva->va_name,' ');
+
   if (tmpc == NULL)
     {
+    /* FAILURE */
+
     free(pva->va_name);
     free(pva);
-    return 0;
+
+    return(0);
     }
 
   *tmpc='\0';
   tmpc++;
-  pva->va_ttl = strtol(tmpc, NULL, 10);
+  pva->va_ttl = strtol(tmpc,NULL,10);
   
   /* step forward to get the command */
-  tmpc=strchr(tmpc,' ');
+
+  tmpc = strchr(tmpc,' ');
+
   if (tmpc == NULL)
     {
     free(pva->va_name);
     free(pva);
-    return 0;
+
+    return(0);
     }
 
-  *tmpc='\0';
+  /* SUCCESS */
+
+  *tmpc = '\0';
   tmpc++;
-  pva->va_cmd=tmpc;
+  pva->va_cmd = tmpc;
 
   append_link(&mom_varattrs,&pva->va_link,pva);
 
-  return 1; 
-}
+  return(1); 
+  }  /* END setvarattr() */
+
+
+
+
+
+static unsigned long setnodefilesuffix(
+
+  char *value)  /* I */
+
+  {
+  nodefile_suffix = strdup(value);
+
+  /* SUCCESS */
+
+  return(1);
+  }  /* END setnodexfilesuffix() */
+
+
 
 
 void check_log()
-   {
-   last_log_check = time_now;
-   if (log_file_max_size <= 0)
-      return;
 
-   if (log_size() >= log_file_max_size)
-      {
-      log_event(
-         PBSEVENT_SYSTEM | PBSEVENT_FORCE,
-         PBS_EVENTCLASS_SERVER,
-         msg_daemonname,
-         "Rolling log file");
+  {
+  last_log_check = time_now;
 
-      log_roll(log_file_roll_depth);
-      }
-   }
+  if (log_file_max_size <= 0)
+    {
+    return;
+    }
+
+  if (log_size() >= log_file_max_size)
+    {
+    log_event(
+      PBSEVENT_SYSTEM | PBSEVENT_FORCE,
+      PBS_EVENTCLASS_SERVER,
+      msg_daemonname,
+      "Rolling log file");
+
+    log_roll(log_file_roll_depth);
+    }
+
+  return;
+  }  /* END check_log() */
+
+
+
+
 
 /*
 **	Open and read the config file.  Save information in a linked
 **	list.  After reading the file, create an array, copy the list
 **	elements to the array and free the list.
 */
+
+/* NOTE:  add new mom config parameters to 'special[]' */
 
 int read_config(
 

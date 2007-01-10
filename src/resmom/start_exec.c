@@ -155,6 +155,7 @@ extern	gid_t		 pbsgroup;
 extern	time_t		time_now;
 extern	unsigned int	pbs_rm_port;
 extern	u_long		localaddr;
+extern  char            *nodefile_suffix;
 
 extern int LOGLEVEL;
 extern long TJobStartBlockTime;
@@ -174,6 +175,24 @@ static pid_t	 writerpid;	/* writer side of interactive job */
 static pid_t	 shellpid;	/* shell part of interactive job  */
 
 
+/* sync w/variables_else[] */
+
+enum TVarElseEnum {
+  tveHome = 0,
+  tveLogName,
+  tveJobName,
+  tveJobID,
+  tveQueue,
+  tveShell,
+  tveUser,
+  tveJobCookie,
+  tveNodeNum,
+  tveTaskNum,
+  tveMOMPort,
+  tveNodeFile,
+  tveTmpDir,
+  tveLAST };
+
 static	char *variables_else[] = {	/* variables to add, value computed */
   "HOME",
   "LOGNAME",
@@ -187,9 +206,10 @@ static	char *variables_else[] = {	/* variables to add, value computed */
   "PBS_TASKNUM",
   "PBS_MOMPORT",
   "PBS_NODEFILE",
-  "TMPDIR" };
+  "TMPDIR",
+  NULL };
 
-static	int num_var_else = sizeof(variables_else) / sizeof(char *);
+static int num_var_else = tveLAST;
 
 /* prototypes */
 
@@ -1062,7 +1082,7 @@ int InitUserEnv(
       {
       bld_env_variables(&vtable,vstrs->as_string[j],NULL);
 
-      if (!strncmp(vstrs->as_string[j],variables_else[12],strlen(variables_else[12])))
+      if (!strncmp(vstrs->as_string[j],variables_else[tveTmpDir],strlen(variables_else[tveTmpDir])))
         usertmpdir = 1;
       }
     }
@@ -1070,45 +1090,45 @@ int InitUserEnv(
   /* HOME */
 
   if (pjob->ji_grpcache != NULL)
-    bld_env_variables(&vtable,variables_else[0],pjob->ji_grpcache->gc_homedir);
+    bld_env_variables(&vtable,variables_else[tveHome],pjob->ji_grpcache->gc_homedir);
   
   /* LOGNAME */
 
   if (pwdp != NULL)
-    bld_env_variables(&vtable,variables_else[1],pwdp->pw_name);
+    bld_env_variables(&vtable,variables_else[tveLogName],pwdp->pw_name);
 
   /* PBS_JOBNAME */
 
   bld_env_variables(
     &vtable,
-    variables_else[2],
+    variables_else[tveJobName],
     pjob->ji_wattr[(int)JOB_ATR_jobname].at_val.at_str);
   
   /* PBS_JOBID */
 
-  bld_env_variables(&vtable,variables_else[3],pjob->ji_qs.ji_jobid);
+  bld_env_variables(&vtable,variables_else[tveJobID],pjob->ji_qs.ji_jobid);
   
   /* PBS_QUEUE */
 
   bld_env_variables(
     &vtable,
-    variables_else[4],
+    variables_else[tveQueue],
     pjob->ji_wattr[(int)JOB_ATR_in_queue].at_val.at_str);
   
   /* SHELL */
 
   if (shell != NULL)
-    bld_env_variables(&vtable,variables_else[5],shell);
+    bld_env_variables(&vtable,variables_else[tveShell],shell);
 
   /* USER, for compatability */
 
   if (pwdp != NULL)
-    bld_env_variables(&vtable,variables_else[6],pwdp->pw_name);
+    bld_env_variables(&vtable,variables_else[tveUser],pwdp->pw_name);
 
   /* PBS_JOBCOOKIE */                                                                          
   bld_env_variables(
     &vtable,
-    variables_else[7],
+    variables_else[tveJobCookie],
     pjob->ji_wattr[(int)JOB_ATR_Cookie].at_val.at_str);
 
   /* PBS_NODENUM */
@@ -1116,7 +1136,7 @@ int InitUserEnv(
   sprintf(buf,"%d",
     pjob->ji_nodeid);
 
-  bld_env_variables(&vtable,variables_else[8],buf);
+  bld_env_variables(&vtable,variables_else[tveNodeNum],buf);
 
   /* PBS_TASKNUM */
 
@@ -1125,7 +1145,7 @@ int InitUserEnv(
     sprintf(buf,"%d",
       (int)ptask->ti_qs.ti_task);
 
-    bld_env_variables(&vtable,variables_else[9],buf);
+    bld_env_variables(&vtable,variables_else[tveTaskNum],buf);
     }
 
   /* PBS_MOMPORT */
@@ -1133,7 +1153,7 @@ int InitUserEnv(
   sprintf(buf,"%d",
     pbs_rm_port);
 
-  bld_env_variables(&vtable,variables_else[10],buf);
+  bld_env_variables(&vtable,variables_else[tveMOMPort],buf);
 
   /* PBS_NODEFILE */
 
@@ -1143,13 +1163,13 @@ int InitUserEnv(
       path_aux,
       pjob->ji_qs.ji_jobid);
 
-    bld_env_variables(&vtable,variables_else[11],buf);
+    bld_env_variables(&vtable,variables_else[tveNodeFile],buf);
     }
 
   /* setup TMPDIR */
 
   if (!usertmpdir && TTmpDirName(pjob,buf))
-    bld_env_variables(&vtable,variables_else[12],buf);
+    bld_env_variables(&vtable,variables_else[tveTmpDir],buf);
 
   /* passed-in environment for tasks */
 
@@ -1912,8 +1932,17 @@ int TMomFinalizeChild(
       {
       vnodent *vp = &pjob->ji_vnods[j];
 
-      fprintf(nhow,"%s\n", 
-        vp->vn_host->hn_host);
+      if (nodefile_suffix != NULL)
+        {
+        fprintf(nhow,"%s%s\n", 
+          vp->vn_host->hn_host,
+          nodefile_suffix);
+        }
+      else
+        {
+        fprintf(nhow,"%s\n",
+          vp->vn_host->hn_host);
+        }
       }
 
     fclose(nhow);
