@@ -214,6 +214,7 @@ long		log_file_max_size = 0;
 long		log_file_roll_depth = 1;
 time_t		last_log_check;
 char           *nodefile_suffix = NULL;  /* suffix to append to each host listed in job host file */
+char           *TNoSpoolDirList[TMAX_NSDCOUNT];
 
 /* externs */
 
@@ -323,6 +324,7 @@ static unsigned long setvarattr(char *);
 static unsigned long setautoidealload(char *);
 static unsigned long setautomaxload(char *);
 static unsigned long setnodefilesuffix(char *);
+static unsigned long setnospooldirlist(char *);
 
 static struct specials {
   char            *name;
@@ -361,6 +363,7 @@ static struct specials {
     { "log_file_roll_depth", setlogfilerolldepth },
     { "varattr",             setvarattr },
     { "nodefile_suffix",     setnodefilesuffix },
+    { "nospool_dir_list",    setnospooldirlist },
     { NULL,                  NULL } };
 
 
@@ -2628,6 +2631,53 @@ static unsigned long setnodefilesuffix(
 
   return(1);
   }  /* END setnodexfilesuffix() */
+
+
+
+
+static unsigned long setnospooldirlist(
+
+  char *value)  /* I */
+
+  {
+  char *TokPtr;
+  char *ptr;
+
+  int   index = 0;
+
+  char  tmpLine[1024];
+
+  ptr = strtok_r(value," \t\n:,",&TokPtr);
+
+  while (ptr != NULL)
+    {
+    TNoSpoolDirList[index] = strdup(ptr);
+
+    snprintf(tmpLine,sizeof(tmpLine),"added NoSpoolDir[%d] '%s'",
+      index,
+      ptr);
+
+    log_record(
+      PBSEVENT_SYSTEM,
+      PBS_EVENTCLASS_SERVER,
+      "setnospooldirlist",
+      tmpLine);
+
+    index++;
+
+    if (index >= TMAX_NSDCOUNT)
+      break;
+
+    ptr = strtok_r(NULL," \t\n:,",&TokPtr);
+    }  /* END while (ptr != NULL) */
+
+  /* SUCCESS */
+
+  return(1);
+  }  /* END setnospooldirlist() */
+
+
+
 
 
 

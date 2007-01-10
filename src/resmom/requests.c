@@ -107,6 +107,7 @@
 #include "mom_func.h"
 #include "log.h"
 #include "rpp.h"
+#include "resmon.h"
 #include "net_connect.h"
 #ifdef _CRAY
 #include <sys/category.h>
@@ -116,7 +117,7 @@
 #include <wordexp.h>
 
 extern struct var_table vtable;      /* see start_exec.c */
-extern        char          **environ;
+extern char           **environ;
 
 extern int InitUserEnv(
       
@@ -140,13 +141,13 @@ extern unsigned int	default_server_port;
 extern int		exiting_tasks;
 extern tlist_head	svr_alljobs;
 extern char		mom_host[];
-extern char		*msg_err_unlink;
-extern char		*path_checkpoint;
-extern char		*path_spool;
-extern char		*path_undeliv;
+extern char            *msg_err_unlink;
+extern char            *path_checkpoint;
+extern char            *path_spool;
+extern char            *path_undeliv;
 extern attribute_def	job_attr_def[];
-extern char		*msg_jobmod;
-extern char		*msg_manager;
+extern char            *msg_jobmod;
+extern char            *msg_manager;
 extern time_t		time_now;
 extern int		resc_access_perm;	/* see encode_resc() */
 						/* in attr_fn_resc.c */
@@ -155,6 +156,7 @@ extern char             MOMUNameMissing[];
 extern int              pbs_rm_port;
 extern char             rcp_path[];
 extern char             rcp_args[];
+extern char            *TNoSpoolDirList[];
 
 /* Local Data Items */
 
@@ -2617,10 +2619,10 @@ void req_cpyfile(
   int		 bad_files = 0;
   char		*bad_list = NULL;
   int		 dir;		
-  int		 from_spool;
+  int		 from_spool;  /* boolean - set if file must be removed from spool after copy */
   int		 len;
   char		 localname[MAXPATHLEN + 1];  /* used only for in-bound */
-  struct rqfpair  *pair;
+  struct rqfpair *pair;
   char		*prmt;
   int		 rc;
   int		 rmtflag;
@@ -2628,13 +2630,11 @@ void req_cpyfile(
 #ifdef  _CRAY
   char		 tmpdirname[MAXPATHLEN + 1];
 #endif 	/* _CRAY */
-#if NO_SPOOL_OUTPUT == 1
   char		 localname_alt[MAXPATHLEN + 1];
   struct stat	 myspooldir;
   int		 rcstat;
   char           homespool[MAXPATHLEN + 1];
-  int            havehomespool = 0;
-#endif
+  int            havehomespool;
 
   char           EMsg[1024];
   char           HDir[1024];
@@ -2714,8 +2714,8 @@ void req_cpyfile(
   /* now running as user in the user's home directory */
 
 #if NO_SPOOL_OUTPUT == 1
-  strcpy(homespool,HDir); 
-  strcat(homespool,"/.pbs_spool/");
+  snprintf(homespool,sizeof(homespool),"%s/.pbs_spool/",
+    HDir);
 
   rcstat = stat(homespool,&myspooldir);
 
@@ -2727,7 +2727,39 @@ void req_cpyfile(
     {
     havehomespool = 0;
     }
+#else  /* NO_SPOOL_OUTPUT == 1 */
+  homespool[0]  = '\0';
+  havehomespool = 0;
 #endif /* END NO_SPOOL_OUTPUT == 1 */
+
+  if ((havehomespool == 0) && (TNoSpoolDirList[0] != NULL))
+    {
+    int dindex;
+
+    char *idir;
+
+    idir = get_job_envvar(pjob,"PBS_O_INITDIR");
+
+    if (idir != NULL)
+      {
+      /* check if job's work dir matches the no-spool directory list */
+
+      for (dindex = 0;dindex < TMAX_NSDCOUNT;dindex++)
+        {
+        if (TNoSpoolDirList[dindex] == NULL)
+          break;
+
+        if (strncmp(TNoSpoolDirList[dindex],idir,strlen(TNoSpoolDirList[dindex])))
+          continue; 
+
+        havehomespool = 1;
+
+        strncpy(homespool,idir,sizeof(homespool));
+     
+        break;
+        }  /* END for (dindex) */
+      }    /* END if (idir != NULL) */    
+    }      /* END if ((havehomespool == 0) && (TNoSpoolDirList != NULL)) */
 
 #ifdef HAVE_WORDEXP
   faketmpdir[0] = '\0';
@@ -2748,9 +2780,12 @@ void req_cpyfile(
       if (!mkdirtree(faketmpdir,0755))
         {
         char *envstr;
+
         envstr = malloc((strlen("TMPDIR=") + strlen(faketmpdir) + 1) * sizeof(char));
+
         sprintf(envstr,"TMPDIR=%s",
           faketmpdir);
+
         putenv(envstr);
 
         madefaketmpdir = 1;
@@ -2811,12 +2846,29 @@ void req_cpyfile(
         {
 #if NO_SPOOL_OUTPUT == 0
 
-        /* stdout | stderr from MOM's spool area (ie, /usr/spool/PBS/spool ) */
+        if (havehomespool == 1)
+          {
+          /* only use spooldir if the job file exists */
 
-        strcpy(localname,path_spool);
-        strcat(localname,pair->fp_local);  /* from location */
+          strcpy(localname_alt,homespool);
+          strcat(localname_alt,pair->fp_local);
 
-        from_spool = 1;	/* flag as being in spool dir */
+          rcstat = stat(localname_alt,&myspooldir);
+
+          if ((rcstat == 0) && S_ISREG(myspooldir.st_mode))
+            {
+            strcpy(localname,localname_alt);
+            }
+          }
+        else
+          {
+          /* stdout | stderr from MOM's spool area (ie, /var/spool/torque/spool ) */
+
+          strcpy(localname,path_spool);
+          strcat(localname,pair->fp_local);  /* from location */
+
+          from_spool = 1;	/* flag as being in spool dir */
+          }
 #else
         strcpy(localname,pair->fp_local);  /* from location */
 
@@ -2828,14 +2880,14 @@ void req_cpyfile(
           strcat(localname_alt,pair->fp_local);
 
           rcstat = stat(localname_alt,&myspooldir);
+
           if ((rcstat == 0) && S_ISREG(myspooldir.st_mode))
             {
             strcpy(localname,localname_alt);
             }
           }
-       
 #endif	/* NO_SPOOL_OUTPUT */
-        }
+        }  /* END if (pair->fp_flag == STDJOBFILE) */
 #if MOM_CHECKPOINT == 1
       else if (pair->fp_flag == JOBCKPFILE) 
         {
@@ -2851,7 +2903,6 @@ void req_cpyfile(
         }
 
 #if SRFS
-
       /* Is this file part of $BIGDIR or $FASTDIR ? */
 
       if (!strncmp(localname,"/BIGDIR",7)) 
@@ -2870,7 +2921,6 @@ void req_cpyfile(
 
         strcpy(localname,tmpname);
         }
-
 #endif /* SRFS */
 
       strcpy(arg2,localname);
@@ -3185,7 +3235,7 @@ error:
 
 void req_delfile(
 
-  struct batch_request *preq)
+  struct batch_request *preq)  /* I */
 
   {
   int	 rc;

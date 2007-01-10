@@ -89,7 +89,7 @@ struct rm_attribute {
 ** for the name in question.
 */
 
-typedef	char	*(*confunc) A_((struct rm_attribute *));
+typedef	char *(*confunc) A_((struct rm_attribute *));
 struct	config {
 	char	*c_name;
 	union	{
@@ -110,6 +110,7 @@ struct	config {
 
 #define PBS_MAXSERVER   4
 
+#define TMAX_NSDCOUNT   32
 
 
 /*
