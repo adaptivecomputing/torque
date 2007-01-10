@@ -457,52 +457,55 @@ static pid_t fork_to_user(
       }
     }
 
-    
 #ifdef HAVE_WORDEXP
   {
-    /* set some useful env variables */
+  /* set some useful env variables */
 
-    char *envstr;
+  char *envstr;
 
-    envstr=malloc((strlen("HOME=") + strlen(hdir) + 1) * sizeof(char));
+  envstr = malloc((strlen("HOME=") + strlen(hdir) + 1) * sizeof(char));
 
-    if (envstr == NULL)
-      {
-      sprintf(log_buffer,"malloc failed, errno=%d (%s)",
-        errno,
-        strerror(errno));
+  if (envstr == NULL)
+    {
+    sprintf(log_buffer,"malloc failed, errno=%d (%s)",
+      errno,
+      strerror(errno));
 
-      log_err(-1,id,log_buffer);
+    log_err(-1,id,log_buffer);
 
-      if (EMsg != NULL)
-        strncpy(EMsg,log_buffer,1024);
+    if (EMsg != NULL)
+      strncpy(EMsg,log_buffer,1024);
 
-      return(-PBSE_SYSTEM);
-      }
+    return(-PBSE_SYSTEM);
+    }
 
-    sprintf(envstr,"HOME=%s",hdir);
-    putenv(envstr);
+  sprintf(envstr,"HOME=%s",
+    hdir);
 
-    envstr=malloc((strlen("PBS_JOBID=") + strlen(preq->rq_ind.rq_cpyfile.rq_jobid) + 1) * sizeof(char));
+  putenv(envstr);
 
-    if (envstr == NULL)
-      {
-      sprintf(log_buffer,"malloc failed, errno=%d (%s)",
-        errno,
-        strerror(errno));
+  envstr = malloc((strlen("PBS_JOBID=") + strlen(preq->rq_ind.rq_cpyfile.rq_jobid) + 1) * sizeof(char));
 
-      log_err(-1,id,log_buffer);
+  if (envstr == NULL)
+    {
+    sprintf(log_buffer,"malloc failed, errno=%d (%s)",
+      errno,
+      strerror(errno));
 
-      if (EMsg != NULL)
-        strncpy(EMsg,log_buffer,1024);
+    log_err(-1,id,log_buffer);
 
-      return(-PBSE_SYSTEM);
-      }
+    if (EMsg != NULL)
+      strncpy(EMsg,log_buffer,1024);
 
-    sprintf(envstr,"PBS_JOBID=%s",preq->rq_ind.rq_cpyfile.rq_jobid);
-    putenv(envstr);
+    return(-PBSE_SYSTEM);
+    }
+
+  sprintf(envstr,"PBS_JOBID=%s",
+    preq->rq_ind.rq_cpyfile.rq_jobid);
+
+  putenv(envstr);
   }
-#endif
+#endif /* END HAVE_WORDEXP */
 
   return(pid);
   }  /* END fork_to_user() */
@@ -2736,11 +2739,11 @@ void req_cpyfile(
     {
     int dindex;
 
-    char *idir;
+    char *wdir;
 
-    idir = get_job_envvar(pjob,"PBS_O_INITDIR");
+    wdir = get_job_envvar(pjob,"PBS_O_WORKDIR");
 
-    if (idir != NULL)
+    if (wdir != NULL)
       {
       /* check if job's work dir matches the no-spool directory list */
 
@@ -2749,16 +2752,25 @@ void req_cpyfile(
         if (TNoSpoolDirList[dindex] == NULL)
           break;
 
-        if (strncmp(TNoSpoolDirList[dindex],idir,strlen(TNoSpoolDirList[dindex])))
-          continue; 
+        if (!strcasecmp(TNoSpoolDirList[dindex],"$WORKDIR"))
+          {
+          havehomespool = 1;
 
-        havehomespool = 1;
+          strncpy(homespool,wdir,sizeof(homespool));
 
-        strncpy(homespool,idir,sizeof(homespool));
-     
-        break;
+          break;
+          }
+
+        if (!strncmp(TNoSpoolDirList[dindex],wdir,strlen(TNoSpoolDirList[dindex])))
+          {
+          havehomespool = 1;
+
+          strncpy(homespool,wdir,sizeof(homespool));
+      
+          break;
+          }
         }  /* END for (dindex) */
-      }    /* END if (idir != NULL) */    
+      }    /* END if (wdir != NULL) */    
     }      /* END if ((havehomespool == 0) && (TNoSpoolDirList != NULL)) */
 
 #ifdef HAVE_WORDEXP
