@@ -84,7 +84,7 @@
  *
  * Synopsis:
  *
- *	int cnt2server( char *server )
+ *	int cnt2server(char *server)
  *
  *	server	The name of the server to connect to. A NULL or null string
  *		for the default server.
@@ -112,7 +112,7 @@ static long cnt2server_retry = 0;
 
 int cnt2server_conf(
 
-  long retry)
+  long retry)  /* I */
 
   {
   cnt2server_retry = retry;
@@ -125,11 +125,11 @@ int cnt2server_conf(
 
 int cnt2server( 
 
-  char *server)  /* I */
+  char *server)  /* I (optional) */
 
   {
   int connect;
-  time_t firsttime=0, thistime=0;
+  time_t firsttime = 0, thistime = 0;
 
   if (cnt2server_retry > 0)
     {
@@ -148,7 +148,16 @@ start:
         {
         case PBSE_BADHOST:
 
-          fprintf(stderr,"Unknown Host.\n");
+          if ((server == NULL) || (server[0] == '\0'))
+            {
+            fprintf(stderr,"Cannot resolve default server host '%s' - check server_name file.\n",
+              pbs_default());
+            }
+          else
+            {
+            fprintf(stderr,"Cannot resolve specified server host '%s'.\n",
+              server);
+            }
 
           break;
 
@@ -164,7 +173,7 @@ start:
 		
         case PBSE_NOSERVER:
 
-          fprintf(stderr,"No default server name.\n");
+          fprintf(stderr,"No default server name - check server_name file.\n");
 
           break;
 		
@@ -203,11 +212,28 @@ start:
     else 
       {
       if (thistime == 0)
-        perror(NULL);
+        {
+        if (errno == ECONNREFUSED)
+          {
+          if ((server == NULL) || (server[0] == '\0'))
+            {
+            fprintf(stderr,"Cannot connect to default server host '%s' - check pbs_server daemon.\n",
+              pbs_default());
+            }
+          else
+            {
+            fprintf(stderr,"Cannot connect to specified server host '%s'.\n",
+              server);
+            }
+          }
+        else
+          {
+          perror(NULL);
+          }
+        }
 
       if (cnt2server_retry != 0)
         goto retry;
-
       }
     }    /* END if (connect <= 0) */
 

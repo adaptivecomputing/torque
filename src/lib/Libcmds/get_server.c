@@ -156,7 +156,7 @@ int get_server(
   char host_server[PBS_MAXSERVERNAME + 1];
   char *c;
 
-    /* parse the job_id_in into components */
+  /* parse the job_id_in into components */
 
   if (parse_jobid(job_id_in,&seq_number,&parent_server,&current_server))
     {
@@ -185,8 +185,8 @@ int get_server(
     
   /* Make a fully quaified name of the job id. */
 
-  strcpy(job_id_out, seq_number);
-  strcat(job_id_out, ".");
+  strcpy(job_id_out,seq_number);
+  strcat(job_id_out,".");
 
   if (notNULL(parent_server)) 
     {
@@ -197,7 +197,7 @@ int get_server(
       return(1);
       }
 
-    strcat(job_id_out, host_server);
+    strcat(job_id_out,host_server);
 
     if ((c = strchr(parent_server,':')) != 0) 
       {

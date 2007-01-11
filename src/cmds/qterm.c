@@ -117,8 +117,8 @@ static void execute();
 
 int main(
 
-  int    argc,
-  char **argv)
+  int    argc,  /* I */
+  char **argv)  /* I */
 
   {
   /*
@@ -202,7 +202,7 @@ int main(
 
     for (;optind < argc;optind++)
       {
-      execute(manner, argv[optind]);
+      execute(manner,argv[optind]);
       }
     }
   else
@@ -224,7 +224,7 @@ int main(
 
 
 /*
- * void execute( int manner, char *server )
+ * void execute(int manner,char *server)
  *
  * manner   The manner in which to terminate the server.
  * server   The name of the server to terminate.
@@ -235,30 +235,56 @@ int main(
  * File Variables:
  *  exitstatus  Set to two if an error occurs.
  */
-static void
-execute( manner, server )
-int manner;
-char *server;
-{
-    int ct;         /* Connection to the server */
-    int err;        /* Error return from pbs_terminate */
-    char *errmsg;   /* Error message from pbs_terminate */
+
+static void execute(
+
+  int   manner,  /* I */
+  char *server)  /* I */
+
+  {
+  int ct;         /* Connection to the server */
+  int err;        /* Error return from pbs_terminate */
+  char *errmsg;   /* Error message from pbs_terminate */
     
-    if ( (ct = cnt2server(server)) > 0 ) {
-        err = pbs_terminate(ct, manner, NULL);
-        if ( err != 0 ) {
-            errmsg = pbs_geterrmsg(ct);
-            if ( errmsg != NULL ) {
-                fprintf(stderr, "qterm: %s ", errmsg);
-            } else {
-                fprintf(stderr, "qterm: Error (%d) terminating server ", pbs_errno);
-            }
-            fprintf(stderr, "%s\n", server);
-            exitstatus = 2;
+  if ((ct = cnt2server(server)) > 0) 
+    {
+    err = pbs_terminate(ct,manner,NULL);
+
+    if (err != 0) 
+      {
+      errmsg = pbs_geterrmsg(ct);
+
+      if (errmsg != NULL) 
+        {
+        fprintf(stderr,"qterm: %s", 
+          errmsg);
+        } 
+      else 
+        {
+        fprintf(stderr,"qterm: Error (%d) terminating server ", 
+          pbs_errno);
         }
-        pbs_disconnect(ct);
-    } else {
-        fprintf(stderr, "qterm: could not connect to server %s (%d)\n", server, pbs_errno);
-        exitstatus = 2;
+
+      fprintf(stderr,"%s\n", 
+        server);
+
+      exitstatus = 2;
+      }
+
+    pbs_disconnect(ct);
+    } 
+  else 
+    {
+    /* FAILURE */
+
+    fprintf(stderr,"qterm: could not connect to server '%s' (%d)\n", 
+      server, 
+      pbs_errno);
+
+    exitstatus = 2;
     }
-}
+
+  return;
+  }  /* END execute() */
+
+

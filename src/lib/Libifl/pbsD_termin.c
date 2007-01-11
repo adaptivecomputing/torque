@@ -87,39 +87,54 @@
 #include "libpbs.h"
 #include "dis.h"
 
-int pbs_terminate(c, manner, extend)
-	int c;
-	int manner;
-	char *extend;
-{
-	struct batch_reply *reply;
-	int rc = 0;
-	int sock;
+int pbs_terminate(
 
-	/* send request */
+  int   c,      /* I */
+  int   manner, /* I */
+  char *extend) /* I */
 
-	sock = connection[c].ch_socket;
+  {
+  struct batch_reply *reply;
 
-	/* setup DIS support routines for following DIS calls */
+  int rc = 0;
+  int sock;
 
-	DIS_tcp_setup(sock);
+  /* send request */
 
-	if ( (rc=encode_DIS_ReqHdr(sock,PBS_BATCH_Shutdown,pbs_current_user)) ||
-	     (rc = encode_DIS_ShutDown(sock, manner)) ||
-	     (rc = encode_DIS_ReqExtend(sock, extend)) )   {
-		connection[c].ch_errtxt = strdup(dis_emsg[rc]);
-		return (pbs_errno = PBSE_PROTOCOL);
-	}
-	if (DIS_tcp_wflush(sock)) {
-		return (pbs_errno = PBSE_PROTOCOL);
-	}
+  sock = connection[c].ch_socket;
 
-	/* read in reply */
+  /* setup DIS support routines for following DIS calls */
 
-	reply = PBSD_rdrpy(c);
-	rc = connection[c].ch_errno;
+  DIS_tcp_setup(sock);
+
+  if ((rc = encode_DIS_ReqHdr(sock,PBS_BATCH_Shutdown,pbs_current_user)) ||
+      (rc = encode_DIS_ShutDown(sock,manner)) ||
+      (rc = encode_DIS_ReqExtend(sock,extend)))   
+    {
+    connection[c].ch_errtxt = strdup(dis_emsg[rc]);
+
+    pbs_errno = PBSE_PROTOCOL;
+
+    return(pbs_errno);
+    }
+
+  if (DIS_tcp_wflush(sock)) 
+    {
+    pbs_errno = PBSE_PROTOCOL;
+    
+    return(pbs_errno);
+    }
+
+  /* read in reply */
+
+  reply = PBSD_rdrpy(c);
+
+  rc = connection[c].ch_errno;
 	
-	PBSD_FreeReply(reply);
+  PBSD_FreeReply(reply);
 
-	return rc;
-}
+  return(rc);
+  }  /* END pbs_terminate() */
+
+
+
