@@ -114,7 +114,7 @@
 #include	<nlist.h>
 #include	<fstab.h>
 #include	<kvm.h>
-#include        <sys/socket.h>
+#include <sys/socket.h>
 #include	<sys/types.h>
 #include	<sys/time.h>
 #include	<sys/param.h>
@@ -131,10 +131,9 @@
 #include	<ufs/ufs/quota.h>
 #include	<net/if.h>
 #include	<ifaddrs.h>
+
 #include	<mach/vm_map.h>
-
-
-#include 	<mach/mach_host.h>
+#include <mach/mach_host.h>
 #include	<mach/mach_port.h>
 #include	<mach/mach_traps.h>
 #include	<mach/shared_memory_server.h>
@@ -189,6 +188,8 @@ extern char *loadave	A_((struct rm_attribute *attrib));
 extern char *nullproc	A_((struct rm_attribute *attrib));
 
 int		get_tinfo_by_pid  A_((struct task_basic_info *t_info, unsigned int pid));
+int		get_time_info_by_pid  A_((struct task_thread_times_info *t_info, unsigned int pid));
+
 
 struct	config	dependent_config[] = {
   { "resi",	{resi} },
@@ -214,7 +215,7 @@ struct nlist nl[] = {
 #define KSYM_LOAD		2
 
 time_t			wait_time = 10;
-kvm_t			*kd = NULL;
+/*kvm_t			*kd = NULL;*/
 struct	kinfo_proc	*proc_tbl = NULL;
 pid_t			*sess_tbl = NULL;
 int			nproc = 0;
@@ -232,6 +233,7 @@ void dep_initialize()
   int    mib[2];
   size_t len;
 
+/*
   if (kd == NULL) 
     {
     kd = kvm_open(NULL,NULL,NULL,O_RDONLY,"resmom");
@@ -250,7 +252,7 @@ void dep_initialize()
 
     return;
     }
-
+*/
   mib[0] = CTL_HW;	/* get number of processors */
   mib[1] = HW_NCPU;
 
@@ -270,12 +272,12 @@ void dep_cleanup()
   char *id = "dep_cleanup";
 
   log_record(PBSEVENT_SYSTEM,0,id,"dependent cleanup");
-
+/*
   if (kd != NULL)
     kvm_close(kd);
 
   kd = NULL;
-
+*/
   return;
   }
 
@@ -417,6 +419,9 @@ static unsigned long cput_sum(
   int         i;
   u_long      cputime;
   int         nps = 0;
+  time_value_t   total_time, system_time;
+  task_basic_info_data_t     mach_task_stats;
+  int ret;
   
   cputime = 0;
 
@@ -432,75 +437,20 @@ static unsigned long cput_sum(
   
     if (pp->kp_proc.p_ru == NULL)
       {
-      time_value_t               total_time, system_time, tutime, tstime;
-      mach_port_t                mytaskport;
-      task_basic_info_data_t     mystats;
-      task_thread_times_info_data_t   mythreadinfo;
-      kern_return_t              myerror;
-      mach_msg_type_number_t     mycount = TASK_BASIC_INFO_COUNT;
-  
-      DBPRT(("%s: p_stat 0x%lx\n", 
-        id,
-        (u_long)pp->kp_proc.p_stat))
-  
-      myerror = task_for_pid(mach_task_self(),pp->kp_proc.p_pid,&mytaskport);
-
-      if (myerror != KERN_SUCCESS)
-        {
-        continue;
-        }
-      
-      myerror = task_info(mytaskport,TASK_BASIC_INFO,(host_info_t)&mystats,&mycount);
-      
-      if (myerror != KERN_SUCCESS)
-        {
-        continue;
-        }
-      
-      mycount = TASK_THREAD_TIMES_INFO_COUNT;
-
-      myerror = task_info(
-        mytaskport, 
-        TASK_THREAD_TIMES_INFO, 
-        (host_info_t)&mythreadinfo, 
-        &mycount);
-        
-      if (myerror != KERN_SUCCESS)
-        {
-        tutime.seconds = 0;
-        tutime.microseconds = 0;
-        tstime.seconds = 0;
-        tstime.microseconds = 0;
-        }
-      else
-        {
-        tutime = mythreadinfo.user_time;
-        tstime = mythreadinfo.system_time;
-        }
-       
-      total_time = mystats.user_time;
-      system_time = mystats.system_time;
-      time_value_add(&total_time,&tutime)
-      time_value_add(&system_time,&tstime)
+      ret = get_tinfo_by_pid(&mach_task_stats, pp->kp_proc.p_pid);
+      if (ret != 0)
+         {
+         continue;
+         }
+             
+      total_time =  mach_task_stats.user_time;
+      system_time = mach_task_stats.system_time;
       time_value_add(&total_time,&system_time)
       cputime += total_time.seconds;
       }
     else
       {
-      struct rusage ru;
-  
-      DBPRT(("%s: p_ru 0x%lx\n", 
-        id,
-        (u_long)pp->kp_proc.p_ru))
-       
-      if (kvm_read(kd,(u_long)pp->kp_proc.p_ru,&ru,sizeof(ru)) != sizeof(ru))
-        {
-        log_err(errno,id,"kvm_read(session)");
-       
-        continue;
-        }
-       
-      cputime += tv(ru.ru_utime) + tv(ru.ru_stime);
+      cputime += pp->kp_proc.p_ru->ru_utime.tv_sec + pp->kp_proc.p_ru->ru_stime.tv_sec;
       }
 
     DBPRT(("%s: ses %d pid %d cputime %lu\n", 
@@ -869,7 +819,7 @@ int mom_open_poll()
 
   DBPRT(("%s: entered\n", 
     id))
-
+/*
   if (kd == NULL) 
     {
     kd = kvm_open(NULL,NULL,NULL,O_RDONLY,"mom");
@@ -881,6 +831,7 @@ int mom_open_poll()
       return(PBSE_SYSTEM);
       }
     }
+    */
 
   /*
   if (kvm_nlist(kd,nl) == -1) 
@@ -1046,11 +997,12 @@ int mom_get_sample()
 
   if (sess_tbl != NULL)
     free(sess_tbl);
-
+/*
   if (kd == NULL)
     {
     return(PBSE_INTERNAL);
     }
+    */
 
   proc_tbl = GetBSDProcessList(proc_tbl,&nproc);
 
@@ -1063,8 +1015,8 @@ int mom_get_sample()
 
   if (proc_tbl == NULL)
     {
-    sprintf(log_buffer,"kvm_getprocs: %s",
-      kvm_geterr(kd));
+    
+    sprintf(log_buffer,"kvm_getprocs: GetBSDProcessList returned NULL");
 
     log_err(errno,id,log_buffer);
 
@@ -1428,7 +1380,7 @@ int mom_close_poll()
     {
     log_record(PBSEVENT_SYSTEM,0,id,"entered");
     }
-
+/*
   if (kd != NULL) 
     {
     if (kvm_close(kd) != 0) 
@@ -1440,6 +1392,7 @@ int mom_close_poll()
 
     kd = NULL;
     }
+    */
 
   return(PBSE_NONE);
   }
@@ -1517,48 +1470,57 @@ pid_t	jobid;
 	double			ses_time;
 	int			i;
 	unsigned long		cputime;
+ 	time_value_t   total_time;
+ 	time_value_t   system_time;
+ 	time_value_t   utime;
+ 	time_value_t   stime;
+ 	task_basic_info_data_t     mach_task_stats;
+ 	task_thread_times_info_data_t   mach_time_info;
+   int ret;
 
 	if (getprocs() == 0) {
 		rm_errno = RM_ERR_SYSTEM;
 		return NULL;
 	}
-
+	
 	cputime = 0;
-	for (i=0; i<nproc; i++) {
-		struct kinfo_proc	*pp = &proc_tbl[i];
+	
+	for (i=0; i<nproc; i++)
+	  {
+     struct kinfo_proc	*pp = &proc_tbl[i];
+	
+     if (jobid != sess_tbl[i])
+       continue;
 
-		if (jobid != sess_tbl[i])
-			continue;
+     cputime += tvk(pp->kp_proc.p_rtime);
 
-		cputime += tvk(pp->kp_proc.p_rtime);
+     if (pp->kp_proc.p_ru == NULL) 
+       {
+       ret = get_tinfo_by_pid(&mach_task_stats, pp->kp_proc.p_pid);
+       if (ret != 0)
+         {
+         continue;
+         }
+         
+             
+       total_time =  mach_task_stats.user_time;
+       system_time = mach_task_stats.system_time;
+       time_value_add(&total_time,&system_time)
 
-		if (pp->kp_proc.p_ru == NULL) {
-			struct	pstats	ps;
-
-			if (pp->kp_proc.p_stat == NULL)
-				continue;
-
-			if (kvm_read(kd, (u_long)pp->kp_proc.p_stat, &ps,
-					sizeof(ps)) != sizeof(ps)) {
-				log_err(errno, id, "kvm_read(pstats)");
-				continue;
-			}
-			cputime += tv(ps.p_ru.ru_utime) +
-				tv(ps.p_ru.ru_stime) +
-				tv(ps.p_cru.ru_utime) +
-				tv(ps.p_cru.ru_stime);
-		}
-		else {
-			struct	rusage	ru;
-
-			if (kvm_read(kd, (u_long)pp->kp_proc.p_ru, &ru,
-					sizeof(ru)) != sizeof(ru)) {
-				log_err(errno, id, "kvm_read(session)");
-				continue;
-			}
-			cputime += tv(ru.ru_utime) + tv(ru.ru_stime);
-		}
-		DBPRT(("%s: ses %d pid %d cputime %lu\n", id,
+       ret = get_time_info_by_pid(&mach_time_info, pp->kp_proc.p_pid);
+       if (ret == 0)
+         {
+         time_value_add(&total_time, &(mach_time_info.user_time));
+         time_value_add(&total_time, &(mach_time_info.system_time));
+         }
+      
+       cputime += total_time.seconds;
+		 }
+     else 
+		 {
+       cputime += pp->kp_proc.p_ru->ru_utime.tv_sec + pp->kp_proc.p_ru->ru_stime.tv_sec;      
+		 }
+	  DBPRT(("%s: ses %d pid %d cputime %lu\n", id,
 				jobid, pp->kp_proc.p_pid, cputime))
 
 	}
@@ -1580,15 +1542,14 @@ char *cput_proc(
   struct	pstats		ps;
   uint		cputime;
   int           i;
+  time_value_t   total_time;
+  time_value_t   system_time;
+  time_value_t   utime;
+  time_value_t   stime;
+  task_basic_info_data_t     mach_task_stats;
+  task_thread_times_info_data_t   mach_time_info;
+  int ret;
 
-  if (kd == NULL)
-    {
-    log_err(errno,id,"null kd");
-
-    rm_errno = RM_ERR_EXIST;
-
-    return(NULL);
-    }
 
   for (i = 0;i < nproc;i++) 
     {
@@ -1601,43 +1562,29 @@ char *cput_proc(
 
     if (pp->kp_proc.p_ru == NULL) 
       {
-      struct pstats ps;
+      ret = get_tinfo_by_pid(&mach_task_stats, pp->kp_proc.p_pid);
+      if (ret != 0)
+         {
+         continue;
+         }
+         
+             
+      total_time =  mach_task_stats.user_time;
+      system_time = mach_task_stats.system_time;
+      time_value_add(&total_time,&system_time)
 
-      if (pp->kp_proc.p_stat == NULL)
-        break;
-
-      if (kvm_read(
-           kd,
-           (u_long)pp->kp_proc.p_stat,
-           &ps,
-           sizeof(ps)) != sizeof(ps)) 
+      ret = get_time_info_by_pid(&mach_time_info, pp->kp_proc.p_pid);
+      if (ret == 0)
         {
-        log_err(errno,id,"kvm_read(pstats)");
-
-        break;
+        time_value_add(&total_time, &(mach_time_info.user_time));
+        time_value_add(&total_time, &(mach_time_info.system_time));
         }
-
-      cputime += tv(ps.p_ru.ru_utime) +
-                 tv(ps.p_ru.ru_stime) +
-                 tv(ps.p_cru.ru_utime) +
-                 tv(ps.p_cru.ru_stime);
+      
+      cputime += total_time.seconds;
       }
     else 
       {
-      struct rusage ru;
-
-      if (kvm_read(
-            kd,
-            (u_long)pp->kp_proc.p_ru, 
-            &ru,
-            sizeof(ru)) != sizeof(ru)) 
-        {
-        log_err(errno,id,"kvm_read(session)");
-
-        break;
-        }
-
-      cputime += tv(ru.ru_utime) + tv(ru.ru_stime);
+      cputime += pp->kp_proc.p_ru->ru_utime.tv_sec + pp->kp_proc.p_ru->ru_stime.tv_sec;
       }
 
     DBPRT(("%s: pid %d cputime %d\n", id, pid, cputime))
@@ -2320,7 +2267,7 @@ static char *availmem(
   {
   char *id = "availmem";
   struct vm_statistics stat;
-  int              count = HOST_VM_INFO_COUNT;
+  mach_msg_type_number_t count = HOST_VM_INFO_COUNT;
   uint64_t         mem = 0;
   int              mib[2];
   size_t           len;
@@ -2775,19 +2722,18 @@ struct	rm_attribute	*attrib;
 				continue;
 		}
 
-		if (pp->kp_proc.p_stat == NULL) {
+		if (pp->kp_proc.p_stat != SIDL || 
+		    pp->kp_proc.p_stat != SRUN ||
+		    pp->kp_proc.p_stat != SSLEEP ||
+		    pp->kp_proc.p_stat != SSTOP ||
+		    pp->kp_proc.p_stat != SZOMB )
+		   {
 			rm_errno = RM_ERR_SYSTEM;
 			return NULL;
-		}
+		   }
 
-		if (kvm_read(kd, (u_long)pp->kp_proc.p_stat, &ps,
-				sizeof(ps)) != sizeof(ps)) {
-			log_err(errno, id, "kvm_read(pstats)");
-			rm_errno = RM_ERR_SYSTEM;
-			return NULL;
-		}
 		found = 1;
-		start = MIN(start, ps.p_start.tv_sec);
+		start = MIN(start, pp->kp_proc.p_un.__p_starttime.tv_sec);
 	}
 	if (found) {
 		sprintf(ret_string, "%ld", (long)((double)(now - start) * wallfactor));
@@ -2950,7 +2896,7 @@ struct	rm_attribute	*attrib;
 	dirdev = sb.st_dev;
 	DBPRT(("dir has devnum %d\n", dirdev))
 
-	if (setfsent() == NULL) {
+	if (setfsent() == 0) {
 		log_err(errno, id, "setfsent");
 		rm_errno = RM_ERR_SYSTEM;
                 return NULL;
@@ -3102,9 +3048,10 @@ int get_tinfo_by_pid(
 
     return(errno);
     }
+    
 
   /*
-   * From 'ps' source
+   * From Darwin 'ps' source
    * "Check for firmware split libraries"
    * We'll modify t_info inline here.
    */
@@ -3119,4 +3066,39 @@ int get_tinfo_by_pid(
   return(0);
   }
 
+
+
+/* get the system time and user time for live threads for a task by pid */
+int get_time_info_by_pid( 
+
+  struct task_thread_times_info *t_info, 
+  unsigned int            pid)
+  
+  {
+  task_t				task;
+  mach_msg_type_number_t		t_info_count = TASK_THREAD_TIMES_INFO;
+  mach_port_t			object_name;
+  kern_return_t			errno;
+
+  if (task_for_pid(mach_task_self(),pid,&task) != KERN_SUCCESS)
+    {
+    DBPRT(("get_time_info_by_pid:  pid is not a valid process id.\n"));
+
+    return(-1);
+    }
+
+  if ((errno = task_info(
+          task,
+          TASK_THREAD_TIMES_INFO,
+          (task_info_t)t_info,
+          &t_info_count) != KERN_SUCCESS))
+    {
+    DBPRT(("get_time_info_by_pid: error(%d) in task_info\n", 
+      errno));
+
+    return(errno);
+    }
+
+  return(0);
+  }
 
