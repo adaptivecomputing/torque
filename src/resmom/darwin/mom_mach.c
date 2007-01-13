@@ -419,8 +419,9 @@ static unsigned long cput_sum(
   int         i;
   u_long      cputime;
   int         nps = 0;
-  time_value_t   total_time, system_time;
+  time_value_t   total_time;
   task_basic_info_data_t     mach_task_stats;
+  task_thread_times_info_data_t   mach_time_info;
   int ret;
   
   cputime = 0;
@@ -438,15 +439,24 @@ static unsigned long cput_sum(
     if (pp->kp_proc.p_ru == NULL)
       {
       ret = get_tinfo_by_pid(&mach_task_stats, pp->kp_proc.p_pid);
+     
       if (ret != 0)
          {
          continue;
          }
              
       total_time =  mach_task_stats.user_time;
-      system_time = mach_task_stats.system_time;
-      time_value_add(&total_time,&system_time)
+      time_value_add(&total_time,&(mach_task_stats.system_time))
+
+      ret = get_time_info_by_pid(&mach_time_info, pp->kp_proc.p_pid);
+      if (ret == 0)
+        {
+        time_value_add(&total_time, &(mach_time_info.user_time));
+        time_value_add(&total_time, &(mach_time_info.system_time));
+        }
+
       cputime += total_time.seconds;
+
       }
     else
       {
@@ -3076,7 +3086,7 @@ int get_time_info_by_pid(
   
   {
   task_t				task;
-  mach_msg_type_number_t		t_info_count = TASK_THREAD_TIMES_INFO;
+  mach_msg_type_number_t		t_info_count = TASK_THREAD_TIMES_INFO_COUNT;
   mach_port_t			object_name;
   kern_return_t			errno;
 
