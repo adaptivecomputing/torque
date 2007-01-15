@@ -468,7 +468,7 @@ aix4|aix5|sunos4|solaris5|freebsd|freebsd5|darwin|fujitsu)
 esac
 
 case $PBS_MACH in
-sunos4|solaris5|netbsd|freebsd|freebsd5|darwin)
+sunos4|solaris5|netbsd|freebsd|freebsd5)
   AC_CHECK_LIB(kvm, kvm_open) ;;
 esac
 
