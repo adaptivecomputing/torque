@@ -15,6 +15,9 @@ c - crash     b - bug fix    e - enhancement    f - new feature
   e - daemons are no longer installed 700
   e - tighten directory path checks
   f - new mom configs: $auto_ideal_load and $auto_max_load
+  e - pbs_mom on Darwin (OS X) no longer depends on libkvm  (now works on all
+      versions without need to re-enable /dev/kmem on newer PPC or all x86
+      versions)
 
 2.1.7
   b - fix bison syntax error in Parser.y
