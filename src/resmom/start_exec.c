@@ -190,6 +190,7 @@ enum TVarElseEnum {
   tveTaskNum,
   tveMOMPort,
   tveNodeFile,
+  tveNumNodes,
   tveTmpDir,
   tveLAST };
 
@@ -206,6 +207,7 @@ static	char *variables_else[] = {	/* variables to add, value computed */
   "PBS_TASKNUM",
   "PBS_MOMPORT",
   "PBS_NODEFILE",
+  "PBS_NNODES",    /* number of nodes */
   "TMPDIR",
   NULL };
 
@@ -1017,6 +1019,10 @@ int InitUserEnv(
   char  buf[MAXPATHLEN + 2];
   int usertmpdir = 0;
 
+  attribute            *pattr;
+  resource             *presc;
+  resource_def         *prd;
+
   if (pjob == NULL)
     {
     sprintf(log_buffer,"passed a NULL pjob!");
@@ -1030,7 +1036,7 @@ int InitUserEnv(
 
   if (envp != NULL)
     {
-    for (j = 0,ebsize = 0;envp[j]; j++)
+    for (j = 0,ebsize = 0;envp[j];j++)
       ebsize += strlen(envp[j]);
     }
 
@@ -1126,6 +1132,7 @@ int InitUserEnv(
     bld_env_variables(&vtable,variables_else[tveUser],pwdp->pw_name);
 
   /* PBS_JOBCOOKIE */                                                                          
+
   bld_env_variables(
     &vtable,
     variables_else[tveJobCookie],
@@ -1166,6 +1173,19 @@ int InitUserEnv(
     bld_env_variables(&vtable,variables_else[tveNodeFile],buf);
     }
 
+  /* PBS_NNODES */
+
+  pattr = &pjob->ji_wattr[(int)JOB_ATR_resource];
+
+  prd = find_resc_def(svr_resc_def,"size",svr_resc_size);
+
+  presc = find_resc_entry(pattr,prd);
+
+  if (presc != NULL)
+    {
+    bld_env_variables(&vtable,variables_else[tveNumNodes],presc->rs_value.at_val.at_str);
+    }
+
   /* setup TMPDIR */
 
   if (!usertmpdir && TTmpDirName(pjob,buf))
@@ -1199,9 +1219,9 @@ int TMomFinalizeJob1(
   int        *SC)    /* O */
 
   {
-  static char 	       *id = "TMomFinalizeJob1";
+  static char 	        *id = "TMomFinalizeJob1";
 
-  torque_socklen_t	         slen;
+  torque_socklen_t	 slen;
 
   int                    i;
 

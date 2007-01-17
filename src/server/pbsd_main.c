@@ -600,7 +600,8 @@ int main(
 
           exit(0);
           }
-        else if (!strcmp(optarg,"about"))
+
+        if (!strcmp(optarg,"about"))
           {
 	  printf("package: %s\n",PACKAGE_STRING);
 	  printf("sourcedir: %s\n",PBS_SOURCE_DIR);
@@ -612,20 +613,22 @@ int main(
 	  printf("builduser: %s\n",PBS_BUILD_USER);
 	  printf("installdir: %s\n",PBS_INSTALL_DIR);
 	  printf("serverhome: %s\n",PBS_SERVER_HOME);
+
           exit(0);
           }
-        else if (!strcmp(optarg,"help"))
+
+        if (!strcmp(optarg,"help"))
           {
           PBSShowUsage(NULL);
     
           exit(1);
           }
-        else
-          {
-          PBSShowUsage("invalid command line arg");
 
-          exit(1);
-          }
+        PBSShowUsage("invalid command line arg");
+
+        exit(1);
+
+        /*NOTREACHED*/
 
         break;
 
