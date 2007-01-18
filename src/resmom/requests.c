@@ -2642,13 +2642,14 @@ void req_cpyfile(
   char           EMsg[1024];
   char           HDir[1024];
 
+  job           *pjob = NULL;
+
 #ifdef HAVE_WORDEXP
   int		 madefaketmpdir=0;
   int		 usedfaketmpdir=0;
   wordexp_t	 arg2exp, arg3exp;
   int            arg2index = -1;
   char		 faketmpdir[1024];
-  job 		*pjob;
   int		 wordexperr = 0;
 #endif
 
@@ -2737,11 +2738,18 @@ void req_cpyfile(
 
   if ((havehomespool == 0) && (TNoSpoolDirList[0] != NULL))
     {
-    int dindex;
+    int   dindex;
 
     char *wdir;
 
-    wdir = get_job_envvar(pjob,"PBS_O_WORKDIR");
+    if ((pjob = find_job(preq->rq_ind.rq_cpyfile.rq_jobid)) == NULL)
+      {
+      wdir = NULL;
+      }
+    else
+      {
+      wdir = get_job_envvar(pjob,"PBS_O_WORKDIR");
+      }
 
     if (wdir != NULL)
       {
