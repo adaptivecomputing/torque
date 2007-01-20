@@ -977,7 +977,7 @@ int set_job_env(
 
   /* Calculate how big to make the variable string. */
 
-  len = PBS_MAXHOSTNAME + MAXPATHLEN;
+  len = PBS_MAXHOSTNAME*2 + MAXPATHLEN;
 
   if (v_opt) 
     {
@@ -1017,6 +1017,7 @@ int set_job_env(
   }
 
   len += strlen("PBS_O_WORKDIR=") + 1;
+  len += strlen("PBS_SERVER=") + 1;
 
   len++; /* Terminating '0' */
 
@@ -1097,6 +1098,16 @@ int set_job_env(
     if ((rc = get_fullhostname(server_host,server_host,PBS_MAXHOSTNAME,NULL)) == 0) 
       {
       strcat(job_env,",PBS_O_HOST=");
+      strcat(job_env,server_host);
+      }
+    }
+
+  if ((server_host[0] != '\0') || 
+     ((rc = gethostname(server_host,PBS_MAXHOSTNAME + 1)) == 0))
+    {
+    if ((rc = get_fullhostname(server_host,server_host,PBS_MAXHOSTNAME,NULL)) == 0) 
+      {
+      strcat(job_env,",PBS_SERVER=");
       strcat(job_env,server_host);
       }
     }
