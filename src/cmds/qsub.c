@@ -1092,15 +1092,6 @@ int set_job_env(
     strcat(job_env,",PBS_O_HOST=");
     strcat(job_env,qsub_host);
     }
-  else if ((server_host[0] != '\0') || 
-     ((rc = gethostname(server_host,PBS_MAXHOSTNAME + 1)) == 0))
-    {
-    if ((rc = get_fullhostname(server_host,server_host,PBS_MAXHOSTNAME,NULL)) == 0) 
-      {
-      strcat(job_env,",PBS_O_HOST=");
-      strcat(job_env,server_host);
-      }
-    }
 
   if ((server_host[0] != '\0') || 
      ((rc = gethostname(server_host,PBS_MAXHOSTNAME + 1)) == 0))
@@ -1109,6 +1100,12 @@ int set_job_env(
       {
       strcat(job_env,",PBS_SERVER=");
       strcat(job_env,server_host);
+      
+      if (qsub_host[0] == '\0')
+        {
+	strcat(job_env,",PBS_O_HOST=");
+        strcat(job_env,server_host);
+	}
       }
     }
 
