@@ -763,6 +763,8 @@ job *job_clone(
   close(fds);
   strcpy(pnewjob->ji_qs.ji_fileprefix,basename);
 
+  /* end making new job file name */
+
   /* copy job attributes. some of these are going to have to be modified */
   for (i = 0; i < JOB_ATR_LAST; i++)
     {

@@ -372,8 +372,8 @@ void req_quejob(
 
   /*
    * make up job file name, it is based on the jobid, however the
-   * minimun file name is only 14 character in POSIX, so we may have
-   * to "hash" the name slightly
+   * minimun acceptable file name limit is only 14 character in POSIX, 
+   * so we may have to "hash" the name slightly
    */
 
   strncpy(basename,jid,PBS_JOBBASE);
