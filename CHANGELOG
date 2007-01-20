@@ -22,6 +22,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature
 2.1.7
   b - fix bison syntax error in Parser.y
   b - fix 2.1.4 regression with spool file group owner on freebsd
+  b - don't exit if mlockall sets errno ENOSYS (function not implemented)
 
 2.1.6
   b - freebsd5 build fix
@@ -57,7 +58,6 @@ c - crash     b - bug fix    e - enhancement    f - new feature
       e.g. qsub -W umask=22
   b - correct some fast startup behaviour
   e - queue attribute max_queuable accounts for C jobs
-  b - OS X memlockall "function not implemented" work around
 
 2.1.2
 
