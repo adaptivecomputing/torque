@@ -647,7 +647,9 @@ void job_free(
 
   return;
   }  /* END job_free() */
+  
 
+#ifndef PBS_MOM
 
 /*
  * job_clone - create a clone of a job for use with job arrays
@@ -691,11 +693,27 @@ job *job_clone(
   /* new job structure is allocated, 
      now we need to copy the old job, but modify based on taskid */
 
-  /* first copy the fixed size quick save information */
+  pnewjob->ji_alljobs = poldjob->ji_alljobs;	/* links to all jobs in server */
+  pnewjob->ji_jobque = poldjob->ji_jobque;	/* SVR: links to jobs in same queue */
+  pnewjob->ji_modified = 1;			/* struct changed, needs to be saved */
+  pnewjob->ji_svrtask = poldjob->ji_svrtask;	/* links to svr work_task list */
+  pnewjob->ji_qhdr = poldjob->ji_qhdr;		/* current queue header */
+  CLEAR_HEAD(pnewjob->ji_rejectdest);		/* list of rejected destinations */
+	
+	
+  /* copy the fixed size quick save information */
   memcpy(&pnewjob->ji_qs, &poldjob->ji_qs, sizeof(struct jobfix));
+
+  pnewjob->ji_qs.ji_arrayid = taskid;
 
   /* find the job id for the cloned job */
   oldid = strdup(poldjob->ji_qs.ji_jobid);
+  if (oldid == NULL)
+    {
+    log_err(errno,id,"no memory");
+    job_free(pnewjob);
+    return(NULL);
+    }
 
   hostname = index(oldid, '.');
   *(hostname++) = '\0';
@@ -795,7 +813,7 @@ job *job_clone(
   return pnewjob;
   } /* END job_clone() */
 
-
+#endif
 
 /*
  * job_init_wattr - initialize job working attribute array

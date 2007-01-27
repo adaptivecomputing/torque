@@ -257,6 +257,7 @@ enum job_atr {
   JOB_ATR_forwardx11,
   JOB_ATR_submit_args,
   JOB_ATR_job_array_size,
+  JOB_ATR_job_array_id,
   JOB_ATR_umask,
 #include "site_job_attr_enum.h"
 
@@ -439,6 +440,7 @@ struct job {
 	    char    ji_queue[PBS_MAXQUEUENAME + 1];  /* name of current queue */
 	    char    ji_destin[PBS_MAXROUTEDEST + 1]; /* dest from qmove/route */
 	    int	    ji_un_type;		/* type of ji_un union */
+	    int     ji_arrayid;		/* job array id */
 	    union {	/* depends on type of queue currently in */
 		struct {	/* if in execution queue .. */
 	     	    pbs_net_t ji_momaddr;  /* host addr of Server */
