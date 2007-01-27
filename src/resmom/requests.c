@@ -1455,9 +1455,15 @@ int MUSleep(
 
 
 /* send a signal to all tasks on sisters */
-int sigalltasks_sisters(job *pjob, int signum)
+
+int sigalltasks_sisters(
+
+  job *pjob, 
+  int  signum)
+
   {
   char      id[] = "sigalltasks_sisters";
+
   char     *cookie;
   eventent *ep;
   int i;
@@ -1520,8 +1526,10 @@ int sigalltasks_sisters(job *pjob, int signum)
       }
     }
 
-    return 0;
-  }
+  return(0);
+  }  /* END sigalltasks_sisters() */
+
+
 
 
 static void resume_suspend( 
@@ -1835,6 +1843,15 @@ void req_signaljob(
     req_reject(PBSE_UNKSIG,0,preq,NULL,NULL);
 
     return;
+    }
+
+  if ((sig == SIGTERM) && (pjob->ji_qs.ji_substate == JOB_SUBSTATE_SUSPEND))
+    {
+    /* if job is suspended, resume, and then kill - allow job to clean up on sigterm */
+
+    kill_job(pjob,SIGCONT);
+
+    sleep(1);
     }
 
   if ((kill_job(pjob,sig) == 0) && (sig == 0)) 

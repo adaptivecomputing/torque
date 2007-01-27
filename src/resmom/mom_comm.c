@@ -2781,7 +2781,7 @@ void im_request(
 
       for (ptask = (task *)GET_NEXT(pjob->ji_tasks);ptask != NULL;ptask = (task *)GET_NEXT(ptask->ti_jobtask))
         {
-        ret = diswsi(stream, ptask->ti_qs.ti_task);
+        ret = diswsi(stream,ptask->ti_qs.ti_task);
 
         if (ret != DIS_SUCCESS)
           break;
@@ -2827,7 +2827,10 @@ void im_request(
       if (taskid == 0)
         {
         DBPRT(("%s: SIGNAL_TASK %s from node %d all tasks signal %d\n",
-          id,jobid,nodeid,sig))
+          id,
+          jobid,
+          nodeid,
+          sig))
 
         for (
             ptask = (task *)GET_NEXT(pjob->ji_tasks);
@@ -2852,7 +2855,11 @@ void im_request(
       else
         {
         DBPRT(("%s: SIGNAL_TASK %s from node %d task %d signal %d\n",
-          id,jobid,nodeid,taskid,sig))
+          id,
+          jobid,
+          nodeid,
+          taskid,
+          sig))
 
         ptask = task_find(pjob,taskid);
 
@@ -2864,7 +2871,11 @@ void im_request(
           }
 
         sprintf(log_buffer,"%s: SIGNAL_TASK %s from node %d task %d signal %d",
-          id,jobid,nodeid,taskid,sig);
+          id,
+          jobid,
+          nodeid,
+          taskid,
+          sig);
 
         LOG_EVENT(
           PBSEVENT_JOB,

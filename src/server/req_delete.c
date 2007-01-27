@@ -288,7 +288,7 @@ void req_deletejob(
   if (pjob->ji_qs.ji_substate == JOB_SUBSTATE_PRERUN) 
     {
     /* being sent to MOM, wait till she gets it going */
-    /* retry in one second				  */
+    /* retry in one second                            */
 
     static time_t  cycle_check_when = 0;
     static char    cycle_check_jid[PBS_MAXSVRJOBID + 1];
@@ -436,7 +436,7 @@ jump:
       log_buffer);
 
     return; 
-    } 
+    }  /* END if (pjob->ji_qs.ji_state == JOB_STATE_RUNNING) */ 
 
   if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_CHKPT) != 0) 
     {
