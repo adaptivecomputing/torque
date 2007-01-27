@@ -672,12 +672,14 @@ job *job_clone(
   char		*hostname;
   char		basename[PBS_JOBBASE+1];
   char		namebuf[MAXPATHLEN + 1];
+  char		copybuf[4096];
   char		buf[256];
   char		*pc;
   int		fds;
+  int		fds_source;
 
   int 		i;
-
+  int		rc;
 
   pnewjob = job_alloc();
 
@@ -782,7 +784,39 @@ job *job_clone(
   close(fds);
   strcpy(pnewjob->ji_qs.ji_fileprefix,basename);
 
-  /* end making new job file name */
+  /* end making new job file name now we need to copy the contents of the old 
+     file into the file for this cloned job */
+  strcpy(namebuf,path_jobs);
+  strcat(namebuf,basename);
+  strcat(namebuf,JOB_FILE_SUFFIX);
+  fds = open(namebuf,O_WRONLY);
+  if (fds < 0)
+    {
+    log_err(errno,id,"cannot create job file");
+    job_free(pnewjob);
+    return NULL;
+    }
+    
+  strcpy(namebuf,path_jobs);
+  strcat(namebuf,poldjob->ji_qs.ji_fileprefix);
+  strcat(namebuf,JOB_FILE_SUFFIX);
+  fds_source = open(namebuf,O_RDONLY);
+  if (fds_source < 0)
+    {
+    log_err(errno,id,"cannot copy job file");
+    job_free(pnewjob);
+    return NULL;
+    }
+    
+  rc = read(fds_source, copybuf, 4096);
+  while (rc > 0)
+    {
+      write(fds, copybuf, rc);
+      rc = read(fds_source, copybuf, 4096);
+    }
+  
+  close(fds);
+  close(fds_source);
 
   /* copy job attributes. some of these are going to have to be modified */
   for (i = 0; i < JOB_ATR_LAST; i++)
