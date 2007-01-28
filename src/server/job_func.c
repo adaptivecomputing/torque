@@ -706,7 +706,7 @@ job *job_clone(
   /* copy the fixed size quick save information */
   memcpy(&pnewjob->ji_qs, &poldjob->ji_qs, sizeof(struct jobfix));
 
-  pnewjob->ji_qs.ji_arrayid = taskid;
+  /* pnewjob->ji_qs.ji_arrayid = taskid; */
 
   /* find the job id for the cloned job */
   oldid = strdup(poldjob->ji_qs.ji_jobid);
@@ -818,7 +818,8 @@ job *job_clone(
   close(fds);
   close(fds_source);
 
-  /* copy job attributes. some of these are going to have to be modified */
+  /* copy job attributes. some of these are going to have to be modified 
+     but many aren't set yet */
   for (i = 0; i < JOB_ATR_LAST; i++)
     {
     if(poldjob->ji_wattr[i].at_flags & ATR_VFLAG_SET)
@@ -828,7 +829,12 @@ job *job_clone(
       }
     }
 
-  /* set PBS_ARRAYID */
+
+  /* set JOB_ATR_job_array_id */
+  pnewjob->ji_wattr[(int)JOB_ATR_job_array_id].at_val.at_long = taskid;
+  pnewjob->ji_wattr[(int)JOB_ATR_job_array_id].at_flags |= ATR_VFLAG_SET;
+  
+  /* set PBS_ARRAYID var */
   clear_attr(&tempattr,&job_attr_def[(int)JOB_ATR_variables]);
   sprintf(buf,",PBS_ARRAYID=%d",taskid);
 
@@ -847,7 +853,49 @@ job *job_clone(
   return pnewjob;
   } /* END job_clone() */
 
-#endif
+/*
+ * job_clone_wt - worktask to clone jobs for job array
+ */
+void job_clone_wt(
+
+struct work_task *ptask)
+  {
+  static char id[] = "job_clone_wt";
+  job *pjob;
+  job *pjobclone;
+  struct work_task *new_task;
+  int i;
+  int startindex;
+  
+  
+  pjob = (job*)(ptask->wt_parm1);
+  startindex = ptask->wt_aux;
+  
+  /* do the clones in batches of 100 */
+  
+  
+  for (i=startindex; 
+       i<startindex+100 && i < pjob->ji_wattr[(int)JOB_ATR_job_array_size].at_val.at_long;
+       i++)
+    {
+    pjobclone = job_clone(pjob, i);
+    if (pjobclone == NULL)
+      {
+      log_err(-1, id, "unable to clone job in job_clone_wt");
+      }
+    
+    }
+  
+  if (i < pjob->ji_wattr[(int)JOB_ATR_job_array_size].at_val.at_long)
+    {
+    new_task = set_task(WORK_Timed,time_now,job_clone_wt,ptask->wt_parm1);
+    new_task->wt_aux = startindex+100;
+    }
+  } /* end jow_clone_tw */
+  
+  
+
+#endif /* end ifndef PBS_MOM */
 
 /*
  * job_init_wattr - initialize job working attribute array

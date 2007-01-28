@@ -729,7 +729,20 @@ attribute_def job_attr_def[] = {
 	ATR_TYPE_LONG,
 	PARENT_TYPE_JOB
     },
-
+    
+/* JOB_ATR_job_array_size */
+    {	ATTR_array_id,
+	decode_l,
+	encode_l,
+	set_l,
+	comp_l,
+	free_null,
+	NULL_FUNC,
+	ATR_DFLAG_SvRD | READ_ONLY,
+	ATR_TYPE_LONG,
+	PARENT_TYPE_JOB
+    },
+    
 /* JOB_ATR_umask */
     {	ATTR_umask,
 	decode_l,

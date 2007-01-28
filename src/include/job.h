@@ -436,11 +436,11 @@ struct job {
 	    int	    ji_priority;	/* internal priority */
 	    time_t  ji_stime;		/* time job started execution */
 	    char    ji_jobid[PBS_MAXSVRJOBID + 1];   /* job identifier */
+	    /* int     ji_arrayid; */		/* job array id */
 	    char    ji_fileprefix[PBS_JOBBASE + 1];  /* job file prefix */
 	    char    ji_queue[PBS_MAXQUEUENAME + 1];  /* name of current queue */
 	    char    ji_destin[PBS_MAXROUTEDEST + 1]; /* dest from qmove/route */
 	    int	    ji_un_type;		/* type of ji_un union */
-	    int     ji_arrayid;		/* job array id */
 	    union {	/* depends on type of queue currently in */
 		struct {	/* if in execution queue .. */
 	     	    pbs_net_t ji_momaddr;  /* host addr of Server */
@@ -731,6 +731,7 @@ extern int   init_chkmom A_((job *));
 extern void  issue_track A_((job *));
 extern int   job_abt A_((job **,char *));
 extern job  *job_alloc();
+extern job  *job_clone A_((job *,int));
 extern void  job_free A_((job *));
 extern void  job_purge A_((job *));
 extern job  *job_recov A_((char *));
@@ -762,6 +763,7 @@ extern int   site_acl_check A_((job *,pbs_queue *));
 #endif	/* QUEUE_H */
 
 #ifdef WORK_TASK_H
+extern void  job_clone_wt A_((struct work_task *));
 extern int   issue_signal A_((job *,char *,void(*)(struct work_task *),void *));
 extern void   on_job_exit A_((struct work_task *));
 #endif	/* WORK_TASK_H */
