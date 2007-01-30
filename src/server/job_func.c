@@ -88,6 +88,7 @@
  *   job_purge	  purge job from server
  *
  *   job_clone    clones a job (for use with job_arrays)
+ *   job_clone_wt work task for cloning a job
  *
  * Include private function:
  *   job_init_wattr() initialize job working attribute array to "unspecified"
@@ -150,6 +151,7 @@ static void job_init_wattr A_((job *));
 
 #ifndef PBS_MOM
 extern struct server   server;
+extern int queue_rank;
 #else
 extern gid_t pbsgroup;
 #endif	/* PBS_MOM */
@@ -786,24 +788,24 @@ job *job_clone(
 
   /* end making new job file name now we need to copy the contents of the old 
      file into the file for this cloned job */
-  strcpy(namebuf,path_jobs);
+ /* strcpy(namebuf,path_jobs);
   strcat(namebuf,basename);
-  strcat(namebuf,JOB_FILE_SUFFIX);
+  strcat(namebuf,JOB_SCRIPT_SUFFIX);
   fds = open(namebuf,O_WRONLY);
   if (fds < 0)
     {
-    log_err(errno,id,"cannot create job file");
+    log_err(errno,id,"cannot create job script");
     job_free(pnewjob);
     return NULL;
     }
     
   strcpy(namebuf,path_jobs);
   strcat(namebuf,poldjob->ji_qs.ji_fileprefix);
-  strcat(namebuf,JOB_FILE_SUFFIX);
+  strcat(namebuf,JOB_SCRIPT_SUFFIX);
   fds_source = open(namebuf,O_RDONLY);
   if (fds_source < 0)
     {
-    log_err(errno,id,"cannot copy job file");
+    log_err(errno,id,"cannot copy job script");
     job_free(pnewjob);
     return NULL;
     }
@@ -817,7 +819,7 @@ job *job_clone(
   
   close(fds);
   close(fds_source);
-
+*/
   /* copy job attributes. some of these are going to have to be modified 
      but many aren't set yet */
   for (i = 0; i < JOB_ATR_LAST; i++)
@@ -866,16 +868,20 @@ struct work_task *ptask)
   struct work_task *new_task;
   int i;
   int startindex;
+  int newstate;
+  int newsub;
+  int rc;
   
   
   pjob = (job*)(ptask->wt_parm1);
   startindex = ptask->wt_aux;
   
-  /* do the clones in batches of 100 */
+  /* do the clones in batches of 256 */
   
   
   for (i=startindex; 
-       i<startindex+100 && i < pjob->ji_wattr[(int)JOB_ATR_job_array_size].at_val.at_long;
+       i<startindex+256 
+       && i < pjob->ji_wattr[(int)JOB_ATR_job_array_size].at_val.at_long;
        i++)
     {
     pjobclone = job_clone(pjob, i);
@@ -883,15 +889,30 @@ struct work_task *ptask)
       {
       log_err(-1, id, "unable to clone job in job_clone_wt");
       }
+
+    svr_evaljobstate(pjobclone,&newstate,&newsub,1);
+    svr_setjobstate(pjobclone,newstate,newsub);
+    pjobclone->ji_wattr[(int)JOB_ATR_qrank].at_val.at_long = ++queue_rank;
+    pjobclone->ji_wattr[(int)JOB_ATR_qrank].at_flags |= ATR_VFLAG_SET;
+    
+    if ((rc = svr_enquejob(pjobclone))) 
+      {
+      job_purge(pjobclone);
+      }
+      
+    if (job_save(pjobclone,SAVEJOB_FULL) != 0) 
+      {
+      job_purge(pjobclone);
+      }
     
     }
   
   if (i < pjob->ji_wattr[(int)JOB_ATR_job_array_size].at_val.at_long)
     {
     new_task = set_task(WORK_Timed,time_now,job_clone_wt,ptask->wt_parm1);
-    new_task->wt_aux = startindex+100;
+    new_task->wt_aux = startindex+256;
     }
-  } /* end jow_clone_tw */
+  } /* end job_clone_tw */
   
   
 
