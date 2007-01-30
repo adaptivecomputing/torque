@@ -4,7 +4,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature
 
   e - improve RPP logging for corruption issues
   f - dynamic resources
-  f - allow manager to set "next job number" vi hidden qmgr attribute next_job_number
+  f - allow manager to set "next job number" via hidden qmgr attribute next_job_number
   e - use mlockall() in pbs_mom if _POSIX_MEMLOCK
   f - consumable resource "tokens" support (Harte-Hanks)
   f - Linux 2.6 cpuset support
