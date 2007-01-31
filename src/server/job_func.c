@@ -788,10 +788,10 @@ job *job_clone(
 
   /* end making new job file name now we need to copy the contents of the old 
      file into the file for this cloned job */
- /* strcpy(namebuf,path_jobs);
+  strcpy(namebuf,path_jobs);
   strcat(namebuf,basename);
   strcat(namebuf,JOB_SCRIPT_SUFFIX);
-  fds = open(namebuf,O_WRONLY);
+  fds = open(namebuf,O_WRONLY|O_CREAT);
   if (fds < 0)
     {
     log_err(errno,id,"cannot create job script");
@@ -802,6 +802,7 @@ job *job_clone(
   strcpy(namebuf,path_jobs);
   strcat(namebuf,poldjob->ji_qs.ji_fileprefix);
   strcat(namebuf,JOB_SCRIPT_SUFFIX);
+
   fds_source = open(namebuf,O_RDONLY);
   if (fds_source < 0)
     {
@@ -819,7 +820,7 @@ job *job_clone(
   
   close(fds);
   close(fds_source);
-*/
+
   /* copy job attributes. some of these are going to have to be modified 
      but many aren't set yet */
   for (i = 0; i < JOB_ATR_LAST; i++)
@@ -851,6 +852,8 @@ job *job_clone(
     INCR);  
 
   
+  delete_link(&pnewjob->ji_alljobs); 
+  delete_link(&pnewjob->ji_jobque);
 
   return pnewjob;
   } /* END job_clone() */
@@ -895,6 +898,7 @@ struct work_task *ptask)
     pjobclone->ji_wattr[(int)JOB_ATR_qrank].at_val.at_long = ++queue_rank;
     pjobclone->ji_wattr[(int)JOB_ATR_qrank].at_flags |= ATR_VFLAG_SET;
     
+    
     if ((rc = svr_enquejob(pjobclone))) 
       {
       job_purge(pjobclone);
@@ -911,6 +915,11 @@ struct work_task *ptask)
     {
     new_task = set_task(WORK_Timed,time_now,job_clone_wt,ptask->wt_parm1);
     new_task->wt_aux = startindex+256;
+    }
+  else
+    {
+    /* should I clean up the placeholder here ? */
+    
     }
   } /* end job_clone_tw */
   
