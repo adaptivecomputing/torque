@@ -113,8 +113,7 @@
 #include	<pwd.h>
 #include	<nlist.h>
 #include	<fstab.h>
-#include	<kvm.h>
-#include <sys/socket.h>
+#include	<sys/socket.h>
 #include	<sys/types.h>
 #include	<sys/time.h>
 #include	<sys/param.h>
