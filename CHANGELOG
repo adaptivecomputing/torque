@@ -19,6 +19,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature
       versions without need to re-enable /dev/kmem on newer PPC or all x86
       versions)
   e - added PBS_SERVER env variable for job scripts
+  e - add nodeid to pbsnodes XML output (NCIFCRF)
 
 2.1.7
   b - fix bison syntax error in Parser.y

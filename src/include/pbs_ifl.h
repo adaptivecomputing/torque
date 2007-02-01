@@ -393,12 +393,12 @@ enum batch_op {	SET, UNSET, INCR, DECR, EQ, NE, GE, GT, LE, LT, DFLT };
 ** interchangably.  The op field is not used.
 */
 struct attrl {
-	struct attrl *next;
-	char	     *name;
-	char	     *resource;
-	char	     *value;
-	enum batch_op 	 op;	/* not used */
-};
+  struct attrl  *next;
+  char          *name;
+  char          *resource;
+  char          *value;
+  enum batch_op  op;	/* not used */
+  };
 
 struct attropl {
   struct attropl *next;
@@ -409,11 +409,11 @@ struct attropl {
   };
 
 struct batch_status {
-	struct batch_status *next;
-	char		    *name;
-	struct attrl	    *attribs;
-	char		    *text;
-};
+  struct batch_status *next;
+  char                *name;
+  struct attrl        *attribs;
+  char                *text;
+  };
 
 
 

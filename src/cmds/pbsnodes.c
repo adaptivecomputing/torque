@@ -664,6 +664,13 @@ int main(
 
           MXMLAddE(DE,NE);
 
+          /* add nodeid */
+
+          AE = NULL;
+          MXMLCreateE(&AE,"name");
+          MXMLSetVal(AE,pbstat->name);
+          MXMLAddE(NE,AE);
+
           for (pat = pbstat->attribs;pat;pat = pat->next)
             {
             AE = NULL;
