@@ -1762,7 +1762,7 @@ void req_commit(
     {
     wt = set_task(WORK_Timed,time_now,job_clone_wt,(void*)pj);
     wt->wt_aux = 0;
-    svr_setjobstate(pj,JOB_STATE_HELD,JOB_SUBSTATE_HELD);
+    /* svr_setjobstate(pj,JOB_STATE_HELD,JOB_SUBSTATE_HELD);*/
     
     reply_jobid(preq,pj->ji_qs.ji_jobid,BATCH_REPLY_CHOICE_Commit);
     return;

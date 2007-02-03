@@ -882,6 +882,7 @@ job *job_clone(
   
   delete_link(&pnewjob->ji_alljobs); 
   delete_link(&pnewjob->ji_jobque);
+  delete_link(&pnewjob->ji_svrtask);
 
   return pnewjob;
   } /* END job_clone() */
@@ -947,7 +948,7 @@ struct work_task *ptask)
   else
     {
     /* should I clean up the placeholder here ? */
-    
+    job_purge((job*)(ptask->wt_parm1));
     }
   } /* end job_clone_tw */
   
