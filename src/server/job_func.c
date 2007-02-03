@@ -672,6 +672,7 @@ job *job_clone(
 
   char		*oldid;
   char		*hostname;
+  char          *tmpstr;
   char		basename[PBS_JOBBASE+1];
   char		namebuf[MAXPATHLEN + 1];
   char		copybuf[4096];
@@ -682,7 +683,15 @@ job *job_clone(
 
   int 		i;
   int		rc;
+  int           slen;
 
+  
+  if (taskid > PBS_MAXJOBARRAY)
+    {
+    log_err(-1, id, "taskid out of range");
+    return(NULL);
+    }
+  
   pnewjob = job_alloc();
 
   if (pnewjob == NULL)
@@ -821,14 +830,33 @@ job *job_clone(
   close(fds);
   close(fds_source);
 
-  /* copy job attributes. some of these are going to have to be modified 
-     but many aren't set yet */
+  /* copy job attributes. some of these are going to have to be modified  */
   for (i = 0; i < JOB_ATR_LAST; i++)
     {
     if(poldjob->ji_wattr[i].at_flags & ATR_VFLAG_SET)
       {
-      job_attr_def[i].at_set(&(pnewjob->ji_wattr[i]),
+      if (i == JOB_ATR_errpath || i == JOB_ATR_outpath)
+        {
+	/* modify the errpath adn outpath */
+	slen = strlen(poldjob->ji_wattr[i].at_val.at_str);
+	tmpstr = (char*)malloc(sizeof(char) * (slen + PBS_MAXJOBARRAYLEN + 1));
+	sprintf(tmpstr, "%s-%d", poldjob->ji_wattr[i].at_val.at_str, taskid);
+	clear_attr(&tempattr,&job_attr_def[i]);
+	job_attr_def[i].at_decode(&tempattr,
+	    NULL,
+	    NULL,
+	    tmpstr);
+	job_attr_def[i].at_set(
+	    &pnewjob->ji_wattr[i],
+	    &tempattr,
+	    SET);
+	free(tmpstr);
+	}
+      else
+        {
+        job_attr_def[i].at_set(&(pnewjob->ji_wattr[i]),
                              &(poldjob->ji_wattr[i]),SET);
+        }
       }
     }
 

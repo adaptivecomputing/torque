@@ -3679,7 +3679,7 @@ int main(
   if (optind < argc) 
     strcpy(script,argv[optind]);
 
-  /* store the saved args string int "submit_args" attribute */
+  /* store the saved args string in "submit_args" attribute */
 
   if (submit_args_str != NULL)
     {
@@ -3801,6 +3801,14 @@ int main(
       exit(8);
       }
     }
+
+  /* interactive job can not be job array */
+  if (Interact_opt && t_opt)
+  {
+     fprintf(stderr, "qsub: Interactive job can not be job array.\n");
+     unlink(script_tmp);
+     exit(2);
+  }
 
   set_opt_defaults();		/* set option default values */
   server_out[0] = '\0';
