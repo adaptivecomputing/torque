@@ -132,7 +132,7 @@
 #include	<ifaddrs.h>
 
 #include	<mach/vm_map.h>
-#include <mach/mach_host.h>
+#include	<mach/mach_host.h>
 #include	<mach/mach_port.h>
 #include	<mach/mach_traps.h>
 #include	<mach/shared_memory_server.h>
@@ -186,8 +186,8 @@ static char *netload	A_((struct rm_attribute *attrib));
 extern char *loadave	A_((struct rm_attribute *attrib));
 extern char *nullproc	A_((struct rm_attribute *attrib));
 
-int		get_tinfo_by_pid  A_((struct task_basic_info *t_info, unsigned int pid));
-int		get_time_info_by_pid  A_((struct task_thread_times_info *t_info, unsigned int pid));
+int	get_tinfo_by_pid  A_((struct task_basic_info *t_info, unsigned int pid));
+int	get_time_info_by_pid  A_((struct task_thread_times_info *t_info, unsigned int pid));
 
 
 struct	config	dependent_config[] = {
@@ -214,7 +214,6 @@ struct nlist nl[] = {
 #define KSYM_LOAD		2
 
 time_t			wait_time = 10;
-/*kvm_t			*kd = NULL;*/
 struct	kinfo_proc	*proc_tbl = NULL;
 pid_t			*sess_tbl = NULL;
 int			nproc = 0;
@@ -224,6 +223,7 @@ extern	char		no_parm[];
 char			nokernel[] = "kernel not available";
 char			noproc[] = "process %d does not exist";
 static  int		nncpus = 0;
+unsigned int		gpagesize;
 
 void dep_initialize()
 
@@ -232,32 +232,15 @@ void dep_initialize()
   int    mib[2];
   size_t len;
 
-/*
-  if (kd == NULL) 
-    {
-    kd = kvm_open(NULL,NULL,NULL,O_RDONLY,"resmom");
 
-    if (kd == NULL) 
-      {
-      log_err(errno,id,"kvm_open");
-
-      return;
-      }
-    }
-
-  if (kvm_nlist(kd,nl) == -1) 
-    {
-    log_err(errno,id,"kvm_nlist");
-
-    return;
-    }
-*/
   mib[0] = CTL_HW;	/* get number of processors */
   mib[1] = HW_NCPU;
 
   len = sizeof(nncpus);
 
   sysctl(mib,2,&nncpus,&len,NULL,0);
+
+  gpagesize=4096;
 
   return;
   }
@@ -271,12 +254,7 @@ void dep_cleanup()
   char *id = "dep_cleanup";
 
   log_record(PBSEVENT_SYSTEM,0,id,"dependent cleanup");
-/*
-  if (kd != NULL)
-    kvm_close(kd);
 
-  kd = NULL;
-*/
   return;
   }
 
@@ -828,28 +806,7 @@ int mom_open_poll()
 
   DBPRT(("%s: entered\n", 
     id))
-/*
-  if (kd == NULL) 
-    {
-    kd = kvm_open(NULL,NULL,NULL,O_RDONLY,"mom");
 
-    if (kd == NULL) 
-      {
-      log_err(errno,id,"kvm_open");
-
-      return(PBSE_SYSTEM);
-      }
-    }
-    */
-
-  /*
-  if (kvm_nlist(kd,nl) == -1) 
-    {
-    log_err(errno,id,"kvm_nlist");
-
-    return(PBSE_SYSTEM);
-    }
-  */
 
   return(PBSE_NONE);
   }
@@ -2179,7 +2136,11 @@ static char *totmem(
 
   {
   char             *id = "totmem";
+#ifdef HW_MEMSIZE
   uint64_t          mem = 0;
+#else
+  int               mem = 0;
+#endif
   int               mib[2];
   size_t            len;
 
@@ -2203,7 +2164,7 @@ static char *totmem(
    * defined on pre 10.3
    */
 
-  len = sizeof( uint64_t );
+  len = sizeof( mem );
 
 #ifdef HW_MEMSIZE
   if (sysctlbyname("hw.memsize",&mem,&len,NULL,0) != 0)
@@ -2330,7 +2291,7 @@ static char *availmem(
 
   /* assume 4k blocks - NOTE: this should be looked up */
 
-  mem += (uint64_t)stat.free_count * 4096;
+  mem += (uint64_t)stat.free_count * gpagesize;
 
   if (LOGLEVEL >= 6)
     {
@@ -2570,7 +2531,7 @@ char *size_file(
 	return ret_string;
 }
 
-char	*
+char	*maxtm
 size(attrib)
 struct	rm_attribute	*attrib;
 {
@@ -2774,36 +2735,6 @@ get_la(rv)
 	*rv = (double)la.ldavg[0]/la.fscale;
 	return 0;
 }
-
-#if 0
-static char	*
-physmem(attrib)
-struct	rm_attribute	*attrib;
-{
-	char	*id = "physmem";
-	int	mib[2];
-	int	physmem;
-	size_t len = sizeof(physmem);
-
-	if (attrib) {
-		log_err(-1, id, extra_parm);
-		rm_errno = RM_ERR_BADPARAM;
-		return NULL;
-	}
-
-	mib[0] = CTL_HW;
-	mib[1] = HW_PHYSMEM;
-
-	if (sysctl(mib, 2, &physmem, &len, NULL, 0) < 0) {
-		log_err(errno, id, "sysctl");
-		rm_errno = RM_ERR_SYSTEM;
-		return NULL;
-	}
-
-	sprintf(ret_string, "%ukb", physmem >> 10);	/* in KB */
-	return ret_string;
-}
-#endif
 
 
 u_long
@@ -3084,8 +3015,8 @@ int get_time_info_by_pid(
   unsigned int            pid)
   
   {
-  task_t				task;
-  mach_msg_type_number_t		t_info_count = TASK_THREAD_TIMES_INFO_COUNT;
+  task_t			task;
+  mach_msg_type_number_t	t_info_count = TASK_THREAD_TIMES_INFO_COUNT;
   mach_port_t			object_name;
   kern_return_t			errno;
 
