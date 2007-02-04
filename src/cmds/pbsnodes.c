@@ -449,6 +449,12 @@ int main(
 
           exit(0);
           }
+        else if ((optarg != NULL) && !strcmp(optarg,"about"))
+          {
+          TShowAbout();
+
+          exit(0);
+          }
 
         errflg = 1;
 

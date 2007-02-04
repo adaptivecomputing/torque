@@ -2380,6 +2380,12 @@ int process_opts(
 
           exit(0);
           }
+        else if ((optarg != NULL) && !strcmp(optarg,"about"))
+          {
+          TShowAbout();
+
+          exit(0);
+          }
         else if ((optarg != NULL) && !strncmp(optarg,"port=",strlen("port=")))
           {
           /* NOTE: mothballed, server can be specified via '-q' */
