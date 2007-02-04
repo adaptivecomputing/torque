@@ -20,6 +20,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature
       versions)
   e - added PBS_SERVER env variable for job scripts
   e - add nodeid to pbsnodes XML output (NCIFCRF)
+  e - add --about support to daemons and client commands
 
 2.1.7
   b - fix bison syntax error in Parser.y
