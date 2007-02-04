@@ -150,20 +150,35 @@ int TShowAbout()
   char *dserver;
   char *servervar;
 
+  char  tmpLine[1024];
+
   dserver = pbs_default();
 
   servervar = getenv("PBS_DEFAULT");
 
-  fprintf(stderr,"HomeDir:  %s  InstallDir: %s  Server: %s%s\n",
-    "/var/spool/torque",
+  strcpy(tmpLine,PBS_DEFAULT_FILE);
+
+  tmpLine[strlen(tmpLine) - strlen("/pbs_server") - 1] = '\0';
+
+  fprintf(stderr,"HomeDir:   %s  InstallDir: %s  Server: %s%s\n",
+    tmpLine,
     PBS_INSTALL_DIR,
     dserver,
     (servervar != NULL) ? " (PBS_DEFAULT is set)" : "");
 
-  fprintf(stderr,"BuildDir: %s\n",
+  fprintf(stderr,"BuildDir:  %s\n",
     PBS_SOURCE_DIR);
 
-  fprintf(stderr,"Version:  %s\n",
+  fprintf(stderr,"BuildUser: %s\n",
+    PBS_BUILD_USER);
+
+  fprintf(stderr,"BuildHost: %s\n",
+    PBS_BUILD_HOST);
+
+  fprintf(stderr,"BuildDate: %s\n",
+    PBS_BUILD_DATE);
+
+  fprintf(stderr,"Version:   %s\n",
     PACKAGE_VERSION);
 
   return(0);
