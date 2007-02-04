@@ -1774,8 +1774,8 @@ void tcl_run(
 
 int main(
 
-  int    argc,
-  char **argv)
+  int    argc,  /* I */
+  char **argv)  /* I */
 
   {
   int c;
@@ -1812,7 +1812,7 @@ int main(
   struct batch_status *p_server;
   struct attropl *p_atropl = 0;
   char *errmsg;
-  int exec_only=0;
+  int exec_only = 0;
 
 #ifndef mbool
 #define mbool char
@@ -1997,6 +1997,12 @@ int main(
           {
           fprintf(stderr,"version: %s\n",
             PACKAGE_VERSION);
+
+          exit(0);
+          }
+        else if ((optarg != NULL) && !strcmp(optarg,"about"))
+          {
+          TShowAbout();
 
           exit(0);
           }

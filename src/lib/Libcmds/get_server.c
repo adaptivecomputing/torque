@@ -140,7 +140,36 @@
 
 #define notNULL(x) (((x)!=NULL) && (strlen(x)>(size_t)0))
 
-extern int parse_jobid A_((char *jodid, char **seq, char **parent, char **current));
+extern int parse_jobid A_((char *,char **,char **,char **));
+
+
+
+int TShowAbout()
+
+  {
+  char *dserver;
+  char *servervar;
+
+  dserver = pbs_default();
+
+  servervar = getenv("PBS_DEFAULT");
+
+  fprintf(stderr,"HomeDir:  %s  InstallDir: %s  Server: %s%s\n",
+    "/var/spool/torque",
+    PBS_INSTALL_DIR,
+    dserver,
+    (servervar != NULL) ? " (PBS_DEFAULT is set)" : "");
+
+  fprintf(stderr,"BuildDir: %s\n",
+    PBS_SOURCE_DIR);
+
+  fprintf(stderr,"Version:  %s\n",
+    PACKAGE_VERSION);
+
+  return(0);
+  }  /* END TShowAbout() */
+
+
 
 int get_server(
 
@@ -168,12 +197,16 @@ int get_server(
   */
 
   if (notNULL(current_server)) 
-    {		/* @server found */
-    strcpy(server_out, current_server);
+    {		
+    /* @server found */
+
+    strcpy(server_out,current_server);
     } 
   else if (notNULL(parent_server)) 
-    {	/* .server found */
-    strcpy(server_out, parent_server);
+    {	
+    /* .server found */
+
+    strcpy(server_out,parent_server);
     } 
   else 
     {  
@@ -183,7 +216,7 @@ int get_server(
     server_out[0] = '\0';
     }
     
-  /* Make a fully quaified name of the job id. */
+  /* Make a fully qualified name of the job id. */
 
   strcpy(job_id_out,seq_number);
   strcat(job_id_out,".");
@@ -215,10 +248,8 @@ int get_server(
       {
       return(1);
       }
-    else 
-      {
-      strncpy(def_server,parent_server,PBS_MAXSERVERNAME);
-      }
+
+    strncpy(def_server,parent_server,PBS_MAXSERVERNAME);
 
     c = def_server;
 
