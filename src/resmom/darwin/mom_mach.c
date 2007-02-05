@@ -2535,7 +2535,7 @@ char *size_file(
 	return ret_string;
 }
 
-char	*maxtm
+char	*
 size(attrib)
 struct	rm_attribute	*attrib;
 {
