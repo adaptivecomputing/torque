@@ -223,7 +223,7 @@ extern	char		no_parm[];
 char			nokernel[] = "kernel not available";
 char			noproc[] = "process %d does not exist";
 static  int		nncpus = 0;
-unsigned int		gpagesize;
+int		gpagesize;
 
 void dep_initialize()
 
@@ -240,7 +240,11 @@ void dep_initialize()
 
   sysctl(mib,2,&nncpus,&len,NULL,0);
 
-  gpagesize=4096;
+  len = sizeof(gpagesize);
+  if (sysctlbyname("hw.pagesize",&gpagesize,&len,NULL,0) != 0)
+    {
+    gpagesize=4096;
+    }
 
   return;
   }

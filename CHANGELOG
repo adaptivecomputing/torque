@@ -1,15 +1,16 @@
 c - crash     b - bug fix    e - enhancement    f - new feature
 
 2.2.0
-
   e - improve RPP logging for corruption issues
   f - dynamic resources
-  f - allow manager to set "next job number" via hidden qmgr attribute next_job_number
+  f - allow manager to set "next job number" via hidden qmgr attribute 
+      next_job_number
   e - use mlockall() in pbs_mom if _POSIX_MEMLOCK
   f - consumable resource "tokens" support (Harte-Hanks)
   f - Linux 2.6 cpuset support
   e - build process sets default submit filter path to ${libexecdir}/qsub_filter
-      we fall back to /usr/local/sbin/torque_submitfilter to maintain compatibility
+      we fall back to /usr/local/sbin/torque_submitfilter to maintain 
+      compatibility
   e - allow long job names when not using -N
   f - new MOM $varattr config
   e - daemons are no longer installed 700
@@ -73,12 +74,13 @@ c - crash     b - bug fix    e - enhancement    f - new feature
   f - new pam_pbssimpleauth PAM module, requires --with-pam=DIR
   e - add logging for node state adjustment
   f - correctly track node state and allocation based for suspended jobs
-  e - entries can always be deleted from manager ACL, even if ACL contains host(s) 
-      that no longer exist
+  e - entries can always be deleted from manager ACL, 
+      even if ACL contains host(s) that no longer exist
   e - more informative error message when modifying manager ACL
   f - all queue create, set, and unset operations now set a queue mtime
   f - added support for log rolling to libtorque
-  f - pbs_server and pbs_mom have two new attributes log_file_max_size, log_file_roll_depth
+  f - pbs_server and pbs_mom have two new attributes 
+      log_file_max_size, log_file_roll_depth
   e - support installing client libs and cmds on unsupported OSes (like cygwin)
   b - fix subnode allocation with pbs_sched
   b - fix node allocation with suspend-resume
