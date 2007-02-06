@@ -595,15 +595,15 @@ void end_proc()
 
 static int getsize(
 
-  resource	*pres,
-  unsigned long	*ret)
+  resource	*pres,  /* I */
+  unsigned long	*ret)   /* O */
 
   {
   unsigned long	value;
 
   if (pres->rs_value.at_type != ATR_TYPE_SIZE)
     {
-    return (PBSE_ATTRTYPE);
+    return(PBSE_ATTRTYPE);
     }
 
   value = pres->rs_value.at_val.at_size.atsv_num;
@@ -618,15 +618,15 @@ static int getsize(
     value *= sizeof(int);
     }
 
-  if (value > ULONG_MAX >> pres->rs_value.at_val.at_size.atsv_shift)
+  if (value > (ULONG_MAX >> pres->rs_value.at_val.at_size.atsv_shift))
     {
     return(PBSE_BADATVAL);
     }
 
-  *ret = value << pres->rs_value.at_val.at_size.atsv_shift;
+  *ret = (value << pres->rs_value.at_val.at_size.atsv_shift);
 
   return(PBSE_NONE);
-  }
+  }  /* END getsize() */
 
 
 

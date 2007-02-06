@@ -4584,18 +4584,21 @@ int rm_request(
 
               if (stat(path_prolog,&s) != -1)
                 {
-                MUStrNCat(&BPtr,&BSpace,"NOTE:  prolog enabled\n");
+                MUSNPrintF(&BPtr,&BSpace,"Prolog:                 %s (enabled)\n",
+                  path_prolog);
 
                 prologfound = 1;
                 }
               else if (verbositylevel >= 2)
                 {
-                MUStrNCat(&BPtr,&BSpace,"NOTE:  no prolog configured\n");
+                MUSNPrintF(&BPtr,&BSpace,"Prolog:                 %s (disabled)\n",
+                  path_prolog);
                 }
 
               if (stat(path_prologp,&s) != -1)
                 {
-                MUStrNCat(&BPtr,&BSpace,"NOTE:  prolog.parallel enabled\n");
+                MUSNPrintF(&BPtr,&BSpace,"Parallel Prolog:        %s (enabled)\n",
+                  path_prologp);
 
                 prologfound = 1;
                 }
