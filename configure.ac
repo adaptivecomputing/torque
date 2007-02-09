@@ -151,28 +151,6 @@ dnl  Libtool
 dnl AC_DISABLE_SHARED
 AC_PROG_LIBTOOL
 
-# my libtool seems to be missing the libsuff check for ppc64.  This is pretty
-# ugly, but hopefully temporary.
-case $host_os in
-  linux-gnu*)
-  case "$host_cpu" in
-  powerpc*|ppc*)
-    echo '[#]line __oline__ "configure"' > conftest.$ac_ext
-    if AC_TRY_EVAL(ac_compile); then
-      case `/usr/bin/file conftest.$ac_objext` in
-      *64-bit*)
-        libsuff=64
-        ;;
-      *) libsuff= ;;
-      esac
-    fi
-    rm -rf conftest*
-    sys_lib_dlsearch_path_spec="/lib${libsuff} /usr/lib${libsuff}"
-    sys_lib_search_path_spec="/lib${libsuff} /usr/lib${libsuff} /usr/local/lib${libsuff}"
-    ;;
-  esac
-  ;;
-esac
 
 # patch libtool to remove that annoying lib install warning
 test -f libtool.old || (mv libtool libtool.old && cp libtool.old libtool)

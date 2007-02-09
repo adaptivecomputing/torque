@@ -16,6 +16,7 @@
 #   --with[out] rpp
 #   --with[out] gui
 #   --with[out] tcl
+#   --with[out] drmaa
 # Note that prefix overrides homedir, libdir, and includedir
 
 
@@ -35,6 +36,7 @@
 %define use_rpp 1
 %define use_tcl 1
 %define build_gui 1
+%define build_drmaa 0
 
 # these are non-defaults, but fit better into most RPM-based systems
 %define torquehomedir %_localstatedir/torque
@@ -51,6 +53,7 @@
 %{?_with_scp: %{?_without_scp: %{error: both _with_scp and _without_scp}}}
 %{?_with_tcl: %{?_without_tcl: %{error: both _with_tcl and _without_tcl}}}
 %{?_with_gui: %{?_without_gui: %{error: both _with_gui and _without_gui}}}
+%{?_with_drmaa: %{?_without_drmaa: %{error: both _with_drmaa and _without_drmaa}}}
 
 # did we find any --with options?
 %{?_with_syslog: %define use_syslog 1}
@@ -58,6 +61,7 @@
 %{?_with_scp: %define use_scp 1}
 %{?_with_tcl: %define use_tcl 1}
 %{?_with_gui: %define build_gui 1}
+%{?_with_drmaa: %define build_drmaa 1}
 
 %{?_with_server_name:%define server_name %(set -- %{_with_server_name}; echo $1 | grep -v with | sed 's/=//')}
 %{?_with_homedir:%define torquehomedir %(set -- %{_with_homedir}; echo $1 | grep -v with | sed 's/=//')}
@@ -71,6 +75,7 @@
 %{?_without_scp: %define use_scp 0}
 %{?_without_tcl: %define use_tcl 0}
 %{?_without_gui: %define build_gui 0}
+%{?_without_drmaa: %define build_drmaa 0}
 
 # Set up all options as disabled
 %define syslogflags --disable-syslog
@@ -78,6 +83,7 @@
 %define scpflags    %{nil}
 %define tclflags    --without-tcl
 %define guiflags    --disable-gui
+%define drmaaflags    --disable-drmaa
 
 # Enable options that we want
 %if %use_syslog
@@ -88,6 +94,9 @@
 %endif
 %if %use_scp
 %define scpflags    --with-rcp=scp
+%endif
+%if %build_drmaa
+%define drmaaflags    --enable-drmaa
 %endif
 
 # dealing with tcl and gui is way too complicated
@@ -140,9 +149,9 @@ This package holds just a few shared files and directories.
 %build
 ./configure --prefix=%_prefix --mandir=%_mandir --libdir=%_libdir \
  --includedir=%_includedir --with-server-home=%{torquehomedir} \
- --with-pam=/%{_lib}/security --enable-drmaa \
+ --with-pam=/%{_lib}/security \
  %{server_nameflags} \
- %{guiflags} %{syslogflags} %{tclflags} %{rppflags} %{scpflags} \
+ %{guiflags} %{syslogflags} %{tclflags} %{rppflags} %{scpflags} %{drmaaflags} \
  CC="$RPMCC" CFLAGS="$RPMCFLAGS" LDFLAGS="$RPMLDFLAGS"
 
 %{__make} %{?_smp_mflags}
@@ -428,9 +437,11 @@ Group: System Environment/Base
 An API specification for the submission and control of jobs to one or more
 Distributed Resource Management (DRM) systems.
 
+%if %drmaa
 %files drmaa
 %defattr(-, root, root)
 %{_libdir}/libdrmaa.*
 %{_includedir}/drmaa.h
+%endif
 
 
