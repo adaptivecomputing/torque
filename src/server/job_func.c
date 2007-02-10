@@ -534,6 +534,8 @@ job *job_alloc()
     return(NULL);
     }
 
+  pj->ji_qs.v = PBS_JOB_MAGIC_NUM;
+
   CLEAR_LINK(pj->ji_alljobs);
   CLEAR_LINK(pj->ji_jobque);
 

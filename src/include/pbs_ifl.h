@@ -352,6 +352,7 @@
 #define PBS_TERM_BUF_SZ		80	/* Interactive term buffer size */
 #define PBS_TERM_CCA		6	/* Interactive term cntl char array */
 
+#define PBS_JOB_MAGIC_NUM	0x00020200 /* magic number used to determine version of pbs job quick save struct */
 
 /* someday the PBS_*_PORT definition will go away and only the	*/
 /* PBS_*_SERVICE_NAME form will be used, maybe			*/

@@ -428,6 +428,7 @@ struct job {
 	 */
 
 	struct jobfix {
+	    int     v;			/* magic number */
 	    int	    ji_state;		/* internal copy of state */
 	    int	    ji_substate;	/* job sub-state */
 	    int	    ji_svrflags;	/* server flags */
@@ -436,7 +437,6 @@ struct job {
 	    int	    ji_priority;	/* internal priority */
 	    time_t  ji_stime;		/* time job started execution */
 	    char    ji_jobid[PBS_MAXSVRJOBID + 1];   /* job identifier */
-	    /* int     ji_arrayid; */		/* job array id */
 	    char    ji_fileprefix[PBS_JOBBASE + 1];  /* job file prefix */
 	    char    ji_queue[PBS_MAXQUEUENAME + 1];  /* name of current queue */
 	    char    ji_destin[PBS_MAXROUTEDEST + 1]; /* dest from qmove/route */

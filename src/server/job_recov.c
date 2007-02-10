@@ -110,6 +110,10 @@
 #include <memory.h>
 #endif
 
+#ifndef TRUE
+#define TRUE 1
+#define FALSE 0
+#endif
 
 #define JOBBUFSIZE 2048
 #define MAX_SAVE_TRIES 3
@@ -118,6 +122,8 @@
 int save_tmsock(job *);
 int recov_tmsock(int,job *);
 #endif
+
+extern int job_qs_upgrade A_((job *, int));
 
 /* global data items */
 
@@ -366,6 +372,9 @@ job *job_recov(
   job	*pj;
   char	*pn;
   char	 namebuf[MAXPATHLEN];
+  int    qs_upgrade;
+  
+  qs_upgrade = FALSE;
 
   pj = job_alloc();	/* allocate & initialize job structure space */
 
@@ -409,6 +418,46 @@ job *job_recov(
     close(fds);
 
     return(NULL);
+    }
+    
+  /* is ji_qs the version we expect? */
+  if (pj->ji_qs.v != PBS_JOB_MAGIC_NUM)
+    {
+    /* ji_qs is older version */
+    sprintf(log_buffer, 
+        "%s appears to be from an old version. Attempting to convert.\n",
+         namebuf);
+    log_err(-1,"job_recov",log_buffer);
+    
+    /* reset the file descriptor */
+    if (lseek(fds, 0, SEEK_SET) != 0)
+      {
+      sprintf(log_buffer, "unable to upgrade %s\n", namebuf);
+      
+      log_err(-1,"job_recov",log_buffer);
+      
+      free((char *)pj);
+
+      close(fds);
+
+      return(NULL);      
+      }
+      
+    if (job_qs_upgrade(pj, fds) != 0)
+      {
+      sprintf(log_buffer, "unable to upgrade %s\n", namebuf);
+      
+      log_err(-1,"job_recov",log_buffer);
+      
+      free((char *)pj);
+
+      close(fds);
+
+      return(NULL);    
+      }
+      
+    qs_upgrade = TRUE;
+    
     }
 
   /* Does file name match the internal name? */
@@ -470,6 +519,11 @@ job *job_recov(
   close(fds);
 
   /* all done recovering the job */
+
+  if (qs_upgrade == TRUE)
+    {
+    job_save(pj, 1);
+    }
 
   return(pj);
   }  /* END job_recov() */

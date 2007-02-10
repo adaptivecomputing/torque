@@ -31,7 +31,8 @@ pbs_mom_SOURCES = catch_child.c mom_comm.c mom_inter.c mom_main.c \
 		   ../server/job_attr_def.c ../server/job_func.c \
 		   ../server/job_recov.c  \
 		   ../server/process_request.c ../server/reply_send.c \
-		   ../server/req_quejob.c ../server/resc_def_all.c
+		   ../server/req_quejob.c ../server/resc_def_all.c \
+		   ../server/job_qs_upgrade.c
 
 install-exec-hook:
 	$(PBS_MKDIRS) aux || :
