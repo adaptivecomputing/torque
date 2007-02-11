@@ -93,8 +93,8 @@ int job_qs_upgrade (job *pj, int fds)
   strcpy(pj->ji_qs.ji_destin, qs_old.ji_destin);
   
   /* no change in these unions for 2.1.x -> 2.2.0, just copy the whole thing
-     I'm not even sure how you would do this without any idea of what is being 
-     stored in the union */
+     If the union contents did change, I'm not even sure how you would do 
+     this without any idea of what is being stored in the union */
   memcpy(&pj->ji_qs.ji_un, &qs_old.ji_un, sizeof(qs_old.ji_un));
       
   return 0;
