@@ -64,7 +64,8 @@ am_pbs_mom_OBJECTS = catch_child.$(OBJEXT) mom_comm.$(OBJEXT) \
 	tmsock_recov.$(OBJEXT) attr_recov.$(OBJEXT) dis_read.$(OBJEXT) \
 	job_attr_def.$(OBJEXT) job_func.$(OBJEXT) job_recov.$(OBJEXT) \
 	process_request.$(OBJEXT) reply_send.$(OBJEXT) \
-	req_quejob.$(OBJEXT) resc_def_all.$(OBJEXT) job_qs_upgrade.$(OBJEXT)
+	req_quejob.$(OBJEXT) resc_def_all.$(OBJEXT) \
+	job_qs_upgrade.$(OBJEXT)
 pbs_mom_OBJECTS = $(am_pbs_mom_OBJECTS)
 pbs_mom_LDADD = $(LDADD)
 am__DEPENDENCIES_1 =
@@ -345,7 +346,8 @@ pbs_mom_SOURCES = catch_child.c mom_comm.c mom_inter.c mom_main.c \
 		   ../server/job_attr_def.c ../server/job_func.c \
 		   ../server/job_recov.c  \
 		   ../server/process_request.c ../server/reply_send.c \
-		   ../server/req_quejob.c ../server/resc_def_all.c ../server/job_qs_upgrade.c
+		   ../server/req_quejob.c ../server/resc_def_all.c \
+		   ../server/job_qs_upgrade.c
 
 all: all-recursive
 
@@ -423,6 +425,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dis_read.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/job_attr_def.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/job_func.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/job_qs_upgrade.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/job_recov.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mom_comm.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mom_inter.Po@am__quote@
@@ -432,7 +435,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/prolog.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/reply_send.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/req_quejob.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/job_qs_upgrde.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/requests.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/resc_def_all.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/start_exec.Po@am__quote@
@@ -571,21 +573,6 @@ req_quejob.obj: ../server/req_quejob.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o req_quejob.obj `if test -f '../server/req_quejob.c'; then $(CYGPATH_W) '../server/req_quejob.c'; else $(CYGPATH_W) '$(srcdir)/../server/req_quejob.c'; fi`
 
-job_qs_upgrade.o: ../server/job_qs_upgrade.c
-@am__fastdepCC_TRUE@	 if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT job_qs_upgrade.o -MD -MP -MF "$(DEPDIR)/job_qs_upgrade.Tpo" -c -o job_qs_upgrade.o `test -f '../server/job_qs_upgrade.c' || echo '$(srcdir)/'`../server/job_qs_upgrade.c; \
-@am__fastdepCC_TRUE@	 then mv -f "$(DEPDIR)/job_qs_upgrade.Tpo" "$(DEPDIR)/job_qs_upgrade.Po"; else rm -f "$(DEPDIR)/job_qs_upgrade.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	 source='../server/job_qs_upgrade.c' object='job_qs_upgrade.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	 DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o job_qs_upgrade.o `test -f '../server/job_qs_upgrade.c' || echo '$(srcdir)/'`../server/job_qs_upgrade.c
-
-job_qs_upgrade.obj: ../server/job_qs_upgrade.c
-@am__fastdepCC_TRUE@	 if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT job_qs_upgrade.obj -MD -MP -MF "$(DEPDIR)/job_qs_upgrade.Tpo" -c -o job_qs_upgrade.obj `if test -f '../server/job_qs_upgrade.c'; then $(CYGPATH_W) '../server/job_qs_upgrade.c'; else $(CYGPATH_W) '$(srcdir)/../server/job_qs_upgrade.c'; fi`; \
-@am__fastdepCC_TRUE@	 then mv -f "$(DEPDIR)/job_qs_upgrade.Tpo" "$(DEPDIR)/job_qs_upgrade.Po"; else rm -f "$(DEPDIR)/job_qs_upgrade.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	 source='../server/job_qs_upgrade.c' object='job_qs_upgrade.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	 DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o job_qs_upgrade.obj `if test -f '../server/job_qs_upgrade.c'; then $(CYGPATH_W) '../server/job_qs_upgrade.c'; else $(CYGPATH_W) '$(srcdir)/../server/job_qs_upgrade.c'; fi`
-
-
 resc_def_all.o: ../server/resc_def_all.c
 @am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT resc_def_all.o -MD -MP -MF "$(DEPDIR)/resc_def_all.Tpo" -c -o resc_def_all.o `test -f '../server/resc_def_all.c' || echo '$(srcdir)/'`../server/resc_def_all.c; \
 @am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/resc_def_all.Tpo" "$(DEPDIR)/resc_def_all.Po"; else rm -f "$(DEPDIR)/resc_def_all.Tpo"; exit 1; fi
@@ -599,6 +586,20 @@ resc_def_all.obj: ../server/resc_def_all.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='../server/resc_def_all.c' object='resc_def_all.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o resc_def_all.obj `if test -f '../server/resc_def_all.c'; then $(CYGPATH_W) '../server/resc_def_all.c'; else $(CYGPATH_W) '$(srcdir)/../server/resc_def_all.c'; fi`
+
+job_qs_upgrade.o: ../server/job_qs_upgrade.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT job_qs_upgrade.o -MD -MP -MF "$(DEPDIR)/job_qs_upgrade.Tpo" -c -o job_qs_upgrade.o `test -f '../server/job_qs_upgrade.c' || echo '$(srcdir)/'`../server/job_qs_upgrade.c; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/job_qs_upgrade.Tpo" "$(DEPDIR)/job_qs_upgrade.Po"; else rm -f "$(DEPDIR)/job_qs_upgrade.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='../server/job_qs_upgrade.c' object='job_qs_upgrade.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o job_qs_upgrade.o `test -f '../server/job_qs_upgrade.c' || echo '$(srcdir)/'`../server/job_qs_upgrade.c
+
+job_qs_upgrade.obj: ../server/job_qs_upgrade.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT job_qs_upgrade.obj -MD -MP -MF "$(DEPDIR)/job_qs_upgrade.Tpo" -c -o job_qs_upgrade.obj `if test -f '../server/job_qs_upgrade.c'; then $(CYGPATH_W) '../server/job_qs_upgrade.c'; else $(CYGPATH_W) '$(srcdir)/../server/job_qs_upgrade.c'; fi`; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/job_qs_upgrade.Tpo" "$(DEPDIR)/job_qs_upgrade.Po"; else rm -f "$(DEPDIR)/job_qs_upgrade.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='../server/job_qs_upgrade.c' object='job_qs_upgrade.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o job_qs_upgrade.obj `if test -f '../server/job_qs_upgrade.c'; then $(CYGPATH_W) '../server/job_qs_upgrade.c'; else $(CYGPATH_W) '$(srcdir)/../server/job_qs_upgrade.c'; fi`
 
 mostlyclean-libtool:
 	-rm -f *.lo
