@@ -32,6 +32,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature
   e - add "other" resource to pelog's 5th argument
   b - stop possible memory corruption with an invalid request type (StockholmU)
   b - correct Resource_list in qstat XML output (NCIFCRF)
+  b - pam_authuser fixes from uam.es
 
 2.1.6
   b - freebsd5 build fix
