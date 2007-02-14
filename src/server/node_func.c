@@ -215,7 +215,7 @@ void bad_node_warning(
 
   for (i = 0;i < svr_totnodes;i++) 
     {
-    if (pbsndlist[i] == NULL)
+    if (pbsndlist[i] == NULL || pbsndlist[i]->nd_addrs == NULL)
       {
       sprintf(log_buffer,"ALERT:  node table is corrupt at index %d",
         i);
