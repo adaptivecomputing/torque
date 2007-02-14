@@ -673,13 +673,13 @@ cnt:
 
     stat = pbs_alterjob(connect,job_id_out,attrib,NULL);
 
-    if ((stat != NULL) && (pbs_errno != PBSE_UNKJOBID)) 
+    if ((stat != 0) && (pbs_errno != PBSE_UNKJOBID)) 
       {
       prt_job_err("qalter",connect,job_id_out);
     
       any_failed = pbs_errno;
       } 
-    else if ((stat != NULL) && (pbs_errno == PBSE_UNKJOBID) && !located) 
+    else if ((stat != 0) && (pbs_errno == PBSE_UNKJOBID) && !located) 
       {
       located = TRUE;
 

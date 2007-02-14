@@ -222,7 +222,7 @@ int main(
 
   stat = pbs_orderjob(connect,job_id1_out,job_id2_out,NULL);
 
-  if (stat != NULL) 
+  if (stat != 0) 
     {
     prt_job_err("qorder",connect,"");
 
