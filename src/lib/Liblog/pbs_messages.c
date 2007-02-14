@@ -453,7 +453,7 @@ const char *reqtype_to_txt(
   int reqtype)
 
   {
-  if (reqtype >= 0 && reqtype < NPBatchReqType && PBatchReqType[reqtype])
+  if (reqtype >= 0 && reqtype < (int)NPBatchReqType && PBatchReqType[reqtype])
     return(PBatchReqType[reqtype]);
   else
     return("NONE");
