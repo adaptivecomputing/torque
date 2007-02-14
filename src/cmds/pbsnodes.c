@@ -125,15 +125,6 @@
 
 int quiet = 0;
 
-/* prototypes */
-
-extern int MXMLCreateE(mxml_t **,char *);
-extern int MXMLAddE(mxml_t *,mxml_t *);
-extern int MXMLSetVal(mxml_t *,char *);
-extern int MXMLDestroyE(mxml_t **);
-extern int MXMLToXString(mxml_t *,char **,int *,int, char **,mbool_t);
-
-/* END prototypes */
 
 /* globals */
 
@@ -674,7 +665,7 @@ int main(
 
           AE = NULL;
           MXMLCreateE(&AE,"name");
-          MXMLSetVal(AE,pbstat->name);
+          MXMLSetVal(AE,pbstat->name,mdfString);
           MXMLAddE(NE,AE);
 
           for (pat = pbstat->attribs;pat;pat = pat->next)
@@ -686,7 +677,7 @@ int main(
 
             MXMLCreateE(&AE,pat->name);
 
-            MXMLSetVal(AE,pat->value);
+            MXMLSetVal(AE,pat->value,mdfString);
 
             MXMLAddE(NE,AE);
             }

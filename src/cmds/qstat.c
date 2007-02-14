@@ -128,15 +128,6 @@ static void states();
 #endif /* not PBS_NO_POSIX_VIOLATION */
 
 
-/* prototypes */
-
-extern int MXMLCreateE(mxml_t **,char *);
-extern int MXMLAddE(mxml_t *,mxml_t *);
-extern int MXMLSetVal(mxml_t *,char *);
-extern int MXMLDestroyE(mxml_t **);
-extern int MXMLToXString(mxml_t *,char **,int *,int, char **,mbool_t);
-
-/* END prototypes */
 
 /* globals */
 
@@ -954,6 +945,7 @@ void display_statjob(
   mxml_t *DE;
   mxml_t *JE;
   mxml_t *AE;
+  mxml_t *RE1;
 
   /* XML only support for full output */
 
@@ -1004,7 +996,7 @@ void display_statjob(
 
         MXMLCreateE(&JE,"Job");
 
-        MXMLSetVal(JE,p->name);
+        MXMLSetVal(JE,p->name,mdfString);
 
         MXMLAddE(DE,JE);
         }      
@@ -1016,6 +1008,7 @@ void display_statjob(
 
       a = p->attribs;
 
+      RE1 = NULL;
       while (a != NULL) 
         {
         if (a->name != NULL) 
@@ -1025,12 +1018,24 @@ void display_statjob(
             /* lookup a->name -> XML attr name */
 
             AE = NULL;
-
-            MXMLCreateE(&AE,a->name);
-
-            MXMLSetVal(AE,a->value);
-
-            MXMLAddE(JE,AE);
+            if (a->resource != NULL)
+              {
+              if (RE1 == NULL)
+                {
+                MXMLCreateE(&RE1,a->name);
+                MXMLAddE(JE,RE1);
+                }
+              MXMLCreateE(&AE,a->resource);
+              MXMLSetVal(AE,a->value,mdfString);
+              MXMLAddE(RE1,AE);
+              }
+            else
+              {
+              RE1 = NULL;
+              MXMLCreateE(&AE,a->name);
+              MXMLSetVal(AE,a->value,mdfString);
+              MXMLAddE(JE,AE);
+              }
             }
           else
             {

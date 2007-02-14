@@ -224,6 +224,13 @@ enum MSocketAttrEnum {
   msockaRemotePort,
   msockaLAST };
 
+
+extern int MXMLCreateE(mxml_t **,char *);
+extern int MXMLAddE(mxml_t *,mxml_t *);
+extern int MXMLSetVal(mxml_t *,void *,enum MDataFormatEnum);
+extern int MXMLDestroyE(mxml_t **);
+extern int MXMLToXString(mxml_t *,char **,int *,int, char **,mbool_t);
+
 #ifdef __M32COMPAT
 
 #define mlog_t dlog_t
