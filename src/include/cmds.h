@@ -129,4 +129,4 @@ int parse_at_list A_((char *,int, int));
 int parse_depend_list A_((char *,char *,int));
 int parse_stage_list A_((char *));
 int cnt2server_conf A_((long));
-
+int TShowAbout(void);
