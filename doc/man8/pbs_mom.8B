@@ -81,7 +81,7 @@
 .SH NAME
 pbs_mom \- start a pbs batch execution mini-server
 .SH SYNOPSIS
-pbs_mom [\^-C\ chkdirectory\^] [\^-c\ config\^] [\^-d\ directory] [\^-L\ logfile] [\^-M\ MOMport\^] [\^-R\ RPPport\^] [\^-p\^|\^-r] [\^-x]
+pbs_mom [\^-C\ chkdirectory\^] [\^-c\ config\^] [\^-d\ directory] [\^-h\ hostname] [\^-L\ logfile] [\^-M\ MOMport\^] [\^-R\ RPPport\^] [\^-p\^|\^-r] [\^-x]
 .SH DESCRIPTION
 The
 .B pbs_mom
@@ -127,6 +127,8 @@ see the -d option.  If the specified file cannot be opened, pbs_mom will abort.
 If the -c option is not supplied, pbs_mom will attempt to open the default
  configuration file "config" in PBS_HOME/mom_priv.  If this file is not
 present, pbs_mom will log the fact and continue.
+.IP "-h hostname" 16
+Set MOM's hostname.  This can be useful on multi-homed networks.
 .IP "-d directory" 16
 Specifies the path of the directory which is the home of the servers
 working files, PBS_HOME.
