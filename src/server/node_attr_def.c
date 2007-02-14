@@ -195,5 +195,19 @@ attribute_def node_attr_def[] = {
         MGR_ONLY_SET,
         ATR_TYPE_ARST,
         PARENT_TYPE_NODE,
-    }
+    },
+
+/* NODE_ATR_note */
+    {	ATTR_NODE_note,	/* "note" */
+	decode_str,
+	encode_str,
+	set_note_str,
+	comp_str,
+	free_str,
+	node_note,
+	NO_USER_SET,
+	ATR_TYPE_STR,
+	PARENT_TYPE_NODE,
+    },
+	
 };

@@ -96,6 +96,10 @@
 #include "job.h"
 #include "pbs_nodes.h"
 #include "pbs_error.h"
+#include "log.h"
+#if SYSLOG
+#include <syslog.h>
+#endif
 
 extern int LOGLEVEL;
 
@@ -1052,6 +1056,128 @@ int node_status_list(
   return(rc);
   }  /* END node_status_list() */
 
+/*
+ * node_note - Either derive a note attribute from the node
+ *             or update node's note from attribute's list.
+ */
+
+int node_note(
+
+  attribute *new,           /*derive status into this attribute*/
+  void      *pnode,         /*pointer to a pbsnode struct     */
+  int        actmode)       /*action mode; "NEW" or "ALTER"   */
+
+  {
+  int              rc = 0;
+  struct pbsnode  *np;
+  attribute        temp;
+
+  np = (struct pbsnode *)pnode;    /* because of at_action arg type */
+
+  switch(actmode) 
+    {
+    case ATR_ACTION_NEW:
+
+      /* if node has a note, then copy string into temp  */
+      /* to use to setup a copy, otherwise setup empty   */
+
+      if (np->nd_note != NULL) 
+        {
+        /* setup temporary attribute with the string from the node */
+
+        temp.at_val.at_str = np->nd_note;
+        temp.at_flags = ATR_VFLAG_SET;
+        temp.at_type  = ATR_TYPE_STR;
+
+        rc = set_note_str(new,&temp,SET);
+        } 
+      else 
+        {
+        /* node has no properties, setup empty attribute */
+
+        new->at_val.at_str  = NULL;
+        new->at_flags       = 0;
+        new->at_type        = ATR_TYPE_STR;
+        }
+
+      break;
+
+    case ATR_ACTION_ALTER:
+
+      if (np->nd_note != NULL)
+        {
+        free(np->nd_note);
+
+        np->nd_note = NULL;
+        }
+
+      /* update node with new string */
+
+      np->nd_note = new->at_val.at_str;
+
+      new->at_val.at_str = NULL;
+
+      break;
+
+    default:    
+       
+      rc = PBSE_INTERNAL;
+
+      break;
+    }  /* END switch(actmode) */
+
+  return(rc);
+  }  /* END node_note() */
+
+
+
+/*
+ * a set_str() wrapper with sanity checks for notes
+ */
+int set_note_str(attr, new, op)
+	struct attribute *attr;
+	struct attribute *new;
+	enum batch_op op;
+  {
+  static char id[] = "set_note_str";
+  size_t nsize;
+  int rc = 0;
+
+  assert( attr && new && new->at_val.at_str && (new->at_flags & ATR_VFLAG_SET));
+  nsize = strlen(new->at_val.at_str);    /* length of new note */
+
+  if (nsize > MAX_NOTE)
+    {
+    sprintf(log_buffer,"Warning: Client attempted to set note with len (%d) > MAX_NOTE (%d)",
+      nsize,
+      MAX_NOTE);
+
+    log_record(
+      PBSEVENT_SECURITY,
+      PBS_EVENTCLASS_REQUEST,
+      id,
+      log_buffer);
+
+    rc = PBSE_BADNDATVAL;
+    }
+
+  if ( strchr(new->at_val.at_str,'\n') != NULL )
+    {
+    sprintf(log_buffer,"Warning: Client attempted to set note with a newline char");
+
+    log_record(
+      PBSEVENT_SECURITY,
+      PBS_EVENTCLASS_REQUEST,
+      id,
+      log_buffer);
+
+    rc = PBSE_BADNDATVAL;
+    }
+
+  if ( rc )
+    return rc;
+  else
+    return set_str(attr,new,op);
+  }  /* END set_note_str() */
+
 /* END attr_node_func.c */
-
-

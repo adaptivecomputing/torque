@@ -136,6 +136,7 @@ static int       svr_numcfgnodes = 0;   /* number of nodes currently configured 
 static int	 exclusive;		/* node allocation type */
 
 static FILE 	*nstatef = NULL;
+static FILE 	*nnotef  = NULL;
 static int       num_addrnote_tasks = 0; /* number of outstanding send_cluster_addrs tasks */
 
 extern int	 server_init_type;
@@ -148,6 +149,8 @@ extern char	*path_home;
 extern char	*path_nodes;
 extern char	*path_nodes_new;
 extern char	*path_nodestate;
+extern char	*path_nodenote;
+extern char	*path_nodenote_new;
 extern unsigned int pbs_mom_port;
 extern char  server_name[];
 
@@ -2099,6 +2102,94 @@ void write_node_state()
   return;
   }  /* END write_node_state() */
 
+
+
+/* Create a new node_note file then overwrite the previous one.
+ *
+ *   The note file could get up to:
+ *      (# of nodes) * (2 + MAX_NODE_NAME + MAX_NOTE)  bytes in size
+ */
+int write_node_note()
+  {
+  static char id[] = "write_node_note";
+  struct pbsnode *np;
+  int	i, j;
+  FILE	*nin;
+
+  if (LOGLEVEL >= 2)
+    {
+    DBPRT(("%s: entered\n",
+      id))
+    }
+
+  if ((nin = fopen(path_nodenote_new,"w")) == NULL) 
+    goto err1;
+
+  if ((svr_totnodes == 0) || (pbsndmast == NULL)) 
+    {
+    log_event(
+      PBSEVENT_ADMIN, 
+      PBS_EVENTCLASS_SERVER, 
+      "node_note",
+      "Server has empty nodes list");
+
+    fclose(nin);
+
+    return(-1);
+    }
+
+  /* for each node ... */
+
+  for (i = 0;i < svr_totnodes;++i) 
+    {
+    np = pbsndmast[i];
+
+    if (np->nd_state & INUSE_DELETED)
+      continue;
+
+    /* write node name followed by its note string */
+
+    if (np->nd_note != NULL && np->nd_note != '\0')
+      {
+      fprintf(nin,"%s %s\n",
+        np->nd_name,
+        np->nd_note);
+      }
+    }
+
+   fflush(nin);
+
+   if (ferror(nin)) 
+     {
+     fclose(nin);
+     goto err1;
+     }
+
+  fclose(nin);
+
+  if (rename(path_nodenote_new, path_nodenote) != 0)
+    {
+    log_event(
+      PBSEVENT_ADMIN, 
+      PBS_EVENTCLASS_SERVER, 
+      "node_note",
+      "replacing old node note file failed");
+
+    return(-1);
+    }
+
+  return(0);
+
+  err1:
+    log_event(
+      PBSEVENT_ADMIN, 
+      PBS_EVENTCLASS_SERVER, 
+      "node_note",
+      "Node note file update failed");
+
+    return(-1);
+
+  }  /* END write_node_note() */
 
 
 

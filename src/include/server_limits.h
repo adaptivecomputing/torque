@@ -124,6 +124,7 @@
 #define PBS_TRACKING		"tracking"
 #define NODE_DESCRIP		"nodes"
 #define NODE_STATUS		"node_status"
+#define NODE_NOTE		"node_note"
 
 
 #define PBS_NET_MAX_CONNECTIONS 1024  /* increased from 256 */

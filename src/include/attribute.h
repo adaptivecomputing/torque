@@ -435,6 +435,8 @@ extern int      node_np_action  A_(( attribute*, void*, int));
 extern int      node_ntype A_(( attribute*, void*, int));
 extern int      node_prop_list A_(( attribute*, void*, int));
 extern int      node_status_list A_(( attribute*, void*, int));
+extern int      node_note        A_(( attribute*, void*, int));
+extern int      set_note_str     A_((attribute *attr,attribute *new, enum batch_op));
 
 /* Token manipulation functions */
 

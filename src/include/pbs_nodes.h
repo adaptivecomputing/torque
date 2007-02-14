@@ -123,6 +123,7 @@ struct pbsnode {
   u_long		*nd_addrs;	/* IP addresses of host */
   struct array_strings	*nd_prop;	/* array of properities */
   struct array_strings  *nd_status;
+  char           *nd_note;  /* note set by administrator */
   int		 	 nd_stream;	/* RPP stream to Mom on host */
   enum	psit		 nd_flag;
   short		 	 nd_nprops;	/* number of properties */
@@ -195,6 +196,7 @@ int tlist(tree *,char *,int);
 
 #define WRITENODE_STATE		0x1		 /*associated w/ offline*/
 #define WRITE_NEW_NODESFILE	0x2 /*changed: deleted,ntype,or properties*/
+#define WRITENODE_NOTE 		0x4		 /*associated w/ note*/
 
 /*
  * Although at the present time a struct pbssnode doesn't have an array of
@@ -216,6 +218,7 @@ enum nodeattr {
   ND_ATR_ntype,
   ND_ATR_jobs,
   NODE_ATR_status,
+  NODE_ATR_note,
   ND_ATR_LAST }; /* WARNING: Must be the highest valued enum */
 
 

@@ -24,6 +24,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature
   e - add --about support to daemons and client commands
   e - added qsub -t (primitive job array)
   e - add PBS_RESOURCE_GRES to prolog/epilog environment
+  f - "node notes" with pbsnodes -n (sandia)
 
 2.1.7
   b - fix bison syntax error in Parser.y

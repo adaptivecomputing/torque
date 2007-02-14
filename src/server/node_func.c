@@ -136,6 +136,7 @@ extern int	 svr_clnodes;
 extern char	*path_nodes_new;
 extern char	*path_nodes;
 extern char	*path_nodestate;
+extern char	*path_nodenote;
 extern int       LOGLEVEL;
 extern attribute_def  node_attr_def[];   /* node attributes defs */
 
@@ -430,6 +431,7 @@ static short		old_state = (short)0xdead;	/*node's   state   */
 static short		old_ntype = (short)0xdead;	/*node's   ntype   */
 static int		old_nprops = 0xdead;		/*node's   nprops  */
 static int             old_nstatus = 0xdead;            /*node's   nstatus */
+static char           *old_note    = NULL;              /*node's   note    */
 
 
 
@@ -456,6 +458,18 @@ void save_characteristic(
   old_nstatus = pnode->nd_nstatus;
   old_first =   pnode->nd_first;
   old_f_st =    pnode->nd_f_st;
+
+  /* if there was a previous note stored here, free it first */
+  if (old_note != NULL)
+    {
+    free(old_note);
+    old_note = NULL;
+    }
+
+  if (pnode->nd_note != NULL)
+    {
+    old_note = strdup(pnode->nd_note);
+    }
 
   return;
   }  /* END save_characteristic() */
@@ -546,6 +560,18 @@ int chk_characteristic(
   if ((old_nprops != pnode->nd_nprops) || (old_first != pnode->nd_first))
     *pneed_todo |= WRITE_NEW_NODESFILE;
 
+  if (pnode->nd_note != old_note)    /* not both NULL or with the same address */
+    {
+    if (pnode->nd_note == NULL || old_note == NULL)
+      {
+        *pneed_todo |= WRITENODE_NOTE;	       /*node's note changed*/
+      }
+    else if (strcmp(pnode->nd_note,old_note))
+      {
+        *pneed_todo |= WRITENODE_NOTE;	       /*node's note changed*/
+      }
+    }
+
   old_address = NULL;
 
   return(0);
@@ -603,6 +629,8 @@ int status_nodeattrib(
       atemp[i].at_val.at_jinfo = pnode;
     else if (!strcmp ((padef + i)->at_name, ATTR_NODE_np))
       atemp[i].at_val.at_long = pnode->nd_nsn;
+    else if (!strcmp ((padef + i)->at_name, ATTR_NODE_note))
+      atemp[i].at_val.at_str  = pnode->nd_note;
     else 
       {
       /*we don't ever expect this*/
@@ -729,6 +757,7 @@ static void initialize_pbsnode(
   pnode->nd_order   = 0;
   pnode->nd_prop    = NULL;
   pnode->nd_status  = NULL;
+  pnode->nd_note    = NULL;
   pnode->nd_psn     = NULL;
   pnode->nd_state   = INUSE_NEEDS_HELLO_PING | INUSE_DOWN;
   pnode->nd_first   = init_prop(pnode->nd_name);
@@ -1446,6 +1475,7 @@ int setup_nodes(void)
 
   FILE	 *nin;
   char	  line[256];
+  char	  note[MAX_NOTE+1];
   char	 *nodename;
   char	  propstr[256];
   char	 *token;
@@ -1680,6 +1710,47 @@ int setup_nodes(void)
 
           /* exclusive bits are calculated later in set_old_nodes() */
           np->nd_state &= ~(INUSE_JOB|INUSE_JOBSHARE);
+
+          break;
+          }
+        }
+      }	
+
+    fclose(nin);
+    }
+
+  /* initialize note attributes */
+  nin = fopen(path_nodenote,"r");
+
+  if (nin != NULL)
+    {
+
+    while (fscanf(nin,"%s %" MAX_NOTE_STR "[^\n]",
+        line,
+        note) == 2)
+      {
+      for (i = 0;i < svr_totnodes;i++)
+        {
+        np = pbsndmast[i];
+
+        if (np->nd_state & INUSE_DELETED)
+          continue;
+
+        if (strcmp(np->nd_name,line) == 0)
+          {
+          np->nd_note = strdup(note);
+
+          if ( np->nd_note == NULL )
+            {
+              sprintf(log_buffer,"couldn't allocate space for note (node = %s)",
+                np->nd_name);
+
+              log_record(
+                PBSEVENT_SCHED,
+                PBS_EVENTCLASS_REQUEST,
+                id,
+                log_buffer);
+            }
 
           break;
           }

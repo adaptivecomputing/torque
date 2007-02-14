@@ -98,6 +98,7 @@ extern void  svr_disconnect A_((int));
 extern int   svr_get_privilege A_((char *, char *));
 extern int   srv_shutdown A_((int));
 extern void  write_node_state A_((void ));
+extern int  write_node_note A_((void ));
 extern int   setup_nodes A_((void));
 extern int   node_avail A_((char *spec, int  *navail,
 			    int *nalloc, int *nreserved, int *ndown));

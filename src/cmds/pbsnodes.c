@@ -122,6 +122,7 @@
 #define ALLI	5
 #define PURGE   6
 #define DIAG    7
+#define NOTE    8
 
 int quiet = 0;
 
@@ -131,6 +132,48 @@ int quiet = 0;
 mbool_t DisplayXML = FALSE;
 
 /* END globals */
+
+
+/*
+ * set_note - set the note attribute for a node
+ *
+ */
+static int set_note(
+  int   con, 
+  char  *name,
+  char  *msg
+)
+{
+  char	         *errmsg;
+  struct attropl  new;
+  int             rc;
+
+  new.name     = ATTR_NODE_note;
+  new.resource = NULL;
+  new.value    = msg;
+  new.op       = SET;
+  new.next     = NULL;
+
+  rc = pbs_manager(
+    con, 
+    MGR_CMD_SET, 
+    MGR_OBJ_NODE, 
+    name, 
+    &new, 
+    NULL);
+
+  if (rc && !quiet) 
+    {
+    fprintf(stderr,"Error setting note attribute for %s - ", name);
+
+    if ((errmsg = pbs_geterrmsg(con)) != NULL)
+      fprintf(stderr,"%s\n", errmsg);
+    else
+      fprintf(stderr,"(error %d)\n", pbs_errno);
+    }
+
+  return rc;
+}
 
 
 /*
@@ -357,6 +400,9 @@ int main(
   char	       **pa;
   struct batch_status *pbstat;
   int	flag = ALLI;
+  char	*note;
+  int	note_flag = 0;
+  int	len;
 
   /* get default server, may be changed by -s option */
 
@@ -365,7 +411,7 @@ int main(
   if (def_server == NULL)
     def_server = "";
 
-  while ((i = getopt(argc,argv,"acdlopqrs:x-:")) != EOF)
+  while ((i = getopt(argc,argv,"acdlopqrs:x-:n:")) != EOF)
     {
     switch(i) 
       {
@@ -431,6 +477,39 @@ int main(
 
         break;
 
+      case 'n':
+
+        note_flag = 1;
+
+        /* preserve any previous option other than the default,
+         * to allow -n to be combined with -o, -c, etc
+         */
+        if ( flag == ALLI )
+          flag = NOTE;
+
+        note = strdup(optarg);
+
+        if ( note != NULL )
+          {
+          /* -n n is the same as -n ""  -- it clears the note */
+          if ( !strcmp(note,"n") )
+            {
+            *note = '\0';
+            }
+
+          len = strlen(note);
+
+          if ( len > MAX_NOTE )
+            fprintf(stderr,"Warning: note exceeds length limit (%d) - server may reject it...\n",
+              MAX_NOTE);
+
+          if ( strchr(note,'\n') != NULL )
+            fprintf(stderr,"Warning: note contains a newline - server may reject it...\n");
+
+          }
+
+        break;
+
       case '-':
 
         if ((optarg != NULL) && !strcmp(optarg,"version"))
@@ -464,7 +543,7 @@ int main(
     {
     if (!quiet)
       {
-      fprintf(stderr,"usage:\t%s [-{c|d|o|p|r}][-s server] [-q] node node ...\n",
+      fprintf(stderr,"usage:\t%s [-{c|d|o|p|r}][-s server] [-n \"note\"] [-q] node node ...\n",
         argv[0]);
 
       fprintf(stderr,"\t%s -l [-s server] [-q]\n",
@@ -542,6 +621,16 @@ int main(
       exit(0);
       }
     }    /* END if ((flag == ALLI) || (flag == DOWN) || (flag == LIST) || (flag == DIAG)) */
+
+
+  if ( note_flag )
+    {
+    /* set the note attrib string on specified nodes */
+    for (pa = argv + optind;*pa;pa++) 
+      {
+      set_note(con,*pa,note);
+      }
+    }
 
   switch (flag) 
     {
