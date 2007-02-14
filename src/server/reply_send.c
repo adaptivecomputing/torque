@@ -120,7 +120,6 @@ extern tlist_head task_list_immed;
 #endif	/* PBS_MOM */
 
 extern struct pbs_err_to_txt pbs_err_to_txt[];
-extern const char *PBatchReqType[];
 
 #define ERR_MSG_SIZE 127
 
@@ -402,7 +401,7 @@ void req_reject(
     code, 
     msgbuf,
     aux, 
-    PBatchReqType[preq->rq_type], 
+    reqtype_to_txt(preq->rq_type), 
     preq->rq_user, 
     preq->rq_host);
 

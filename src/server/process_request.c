@@ -130,8 +130,6 @@ extern char  *msg_err_malloc;
 extern char  *msg_reqbadhost;
 extern char  *msg_request;
 
-extern const char *PBatchReqType[];
-
 extern int LOGLEVEL;
 
 /* private functions local to this file */
@@ -302,7 +300,7 @@ void process_request(
   sprintf(
     log_buffer,
     msg_request,
-    PBatchReqType[request->rq_type],
+    reqtype_to_txt(request->rq_type),
     request->rq_user,
     request->rq_host,
     sfds);
@@ -437,7 +435,7 @@ void process_request(
   if (LOGLEVEL >= 6)
     {
     sprintf(log_buffer,"request type %s from host %s received",
-      PBatchReqType[request->rq_type],
+      reqtype_to_txt(request->rq_type),
       request->rq_host);
 
     log_record(
@@ -450,7 +448,7 @@ void process_request(
   if (!tfind(svr_conn[sfds].cn_addr,&okclients)) 
     {
     sprintf(log_buffer,"request type %s from host %s rejected (host not authorized)",
-      PBatchReqType[request->rq_type],
+      reqtype_to_txt(request->rq_type),
       request->rq_host);
 
     log_record(
@@ -469,7 +467,7 @@ void process_request(
   if (LOGLEVEL >= 3)
     {
     sprintf(log_buffer,"request type %s from host %s allowed",
-      PBatchReqType[request->rq_type],
+      reqtype_to_txt(request->rq_type),
       request->rq_host);
 
     log_record(
@@ -480,7 +478,7 @@ void process_request(
     }
 
   MOMLastRecvFromServerTime = time_now;
-  strcpy(MOMLastRecvFromServerCmd,PBatchReqType[request->rq_type]);
+  strcpy(MOMLastRecvFromServerCmd,reqtype_to_txt(request->rq_type));
   }    /* END BLOCK */
 		
   request->rq_fromsvr = 1;
@@ -526,7 +524,7 @@ void dispatch_request(
   if (LOGLEVEL >= 5)
     {
     sprintf(log_buffer,"dispatching request %s on sd=%d",
-      PBatchReqType[request->rq_type],
+      reqtype_to_txt(request->rq_type),
       sfds);
 
     log_record(

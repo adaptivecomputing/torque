@@ -30,6 +30,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature
   b - fix 2.1.4 regression with spool file group owner on freebsd
   b - don't exit if mlockall sets errno ENOSYS (function not implemented)
   e - add "other" resource to pelog's 5th argument
+  b - stop possible memory corruption with an invalid request type (StockholmU)
 
 2.1.6
   b - freebsd5 build fix

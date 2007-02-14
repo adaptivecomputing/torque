@@ -172,7 +172,7 @@ char *msg_svrdown	= "Server shutdown completed";
 
 /* sync w/enum PBatchReqTypeEnum in libpbs.h */
 
-const char *PBatchReqType[] = {
+static const char *PBatchReqType[] = {
   "Connect",
   "QueueJob",
   "JobCred",
@@ -234,6 +234,8 @@ const char *PBatchReqType[] = {
   "StatusNode",
   "Disconnect",
   NULL };
+
+#define NPBatchReqType (sizeof(PBatchReqType)/sizeof(PBatchReqType[0]))
 
 /*
  * This next set of messages are returned to the client on an error.
@@ -442,4 +444,17 @@ char *pbse_to_txt(
   }  /* END pbse_to_txt() */
 
 
+/*
+ * rqtype_to_txt()	- Return the printable name of a request type
+ */
 
+const char *reqtype_to_txt(
+
+  int reqtype)
+
+  {
+  if (reqtype >= 0 && reqtype < NPBatchReqType && PBatchReqType[reqtype])
+    return(PBatchReqType[reqtype]);
+  else
+    return("NONE");
+  }  /* END reqtype_to_txt() */

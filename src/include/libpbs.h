@@ -266,6 +266,7 @@ enum PBatchReqTypeEnum {
 #define PBS_BATCH_FileOpt_EFlg		2
 
 #define PBS_credentialtype_none 0
+const char *reqtype_to_txt(int);
 
 void
 PBS_free_aopl A_(( struct attropl * aoplp ));
