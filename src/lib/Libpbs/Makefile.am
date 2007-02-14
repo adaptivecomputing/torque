@@ -6,6 +6,7 @@ EXTRA_DIST = ../Libdis/dis_.h
 
 lib_LTLIBRARIES = libtorque.la
 
+libtorque_la_LDFLAGS = -version-info 1:0:1
 
 libtorque_la_SOURCES = ../Libdis/dis.c ../Libdis/discui_.c ../Libdis/discul_.c \
 		    ../Libdis/disi10d_.c ../Libdis/disi10l_.c \
