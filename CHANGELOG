@@ -25,6 +25,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature
   e - added qsub -t (primitive job array)
   e - add PBS_RESOURCE_GRES to prolog/epilog environment
   f - "node notes" with pbsnodes -n (sandia)
+  e - add -h hostname to pbs_mom (NCIFCRF)
 
 2.1.7
   b - fix bison syntax error in Parser.y

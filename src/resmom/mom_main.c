@@ -169,6 +169,7 @@ int             ignwalltime = 0;        /* by default, enable mom based walltime
 int		lockfds = -1;
 time_t		loopcnt;		/* used for MD5 calc */
 float		max_load_val = -1.0;
+int		hostname_specified = 0;
 char		mom_host[PBS_MAXHOSTNAME + 1];
 char		pbs_servername[PBS_MAXSERVER][PBS_MAXSERVERNAME + 1];
 u_long		MOMServerAddrs[PBS_MAXSERVER];
@@ -6145,7 +6146,7 @@ int main(
 
   errflg = 0;
 
-  while ((c = getopt(argc,argv,"a:c:C:d:DL:M:prR:S:vx-:")) != -1) 
+  while ((c = getopt(argc,argv,"a:c:C:d:Dh:L:M:prR:S:vx-:")) != -1) 
     {
     switch (c) 
       {
@@ -6191,6 +6192,14 @@ int main(
         config_file_specified = 1;
 
         strcpy(config_file,optarg);	/* remember name */
+
+        break;
+
+      case 'h':	/* multihomed host */
+
+        hostname_specified = 1;
+
+        strncpy(mom_host,optarg,PBS_MAXHOSTNAME);	/* remember name */
 
         break;
 
@@ -6747,7 +6756,7 @@ int main(
   CLEAR_HEAD(svr_requests);
   CLEAR_HEAD(mom_varattrs);
 
-  if ((c = gethostname(mom_host,PBS_MAXHOSTNAME)) == 0) 
+  if ( hostname_specified || ( (c = gethostname(mom_host,PBS_MAXHOSTNAME)) == 0) ) 
     {
     strcpy(mom_short_name,mom_host);
 
