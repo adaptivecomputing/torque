@@ -1419,7 +1419,7 @@ void on_job_rerun(
 
       /* Now re-queue the job */
 
-      if ((pjob->ji_qs.ji_svrflags | JOB_SVFLG_HOTSTART) == 0) 
+      if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HOTSTART) == 0) 
         {
         /* in case of server shutdown, don't clear exec_host */
         /* will use it on hotstart when next comes up	     */
