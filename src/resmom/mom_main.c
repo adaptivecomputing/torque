@@ -6422,6 +6422,8 @@ int main(
   path_aux         = mk_dirs("aux/");
   path_server_name = mk_dirs("server_name");
 
+  init_resc_defs(path_resources);
+
 #if MOM_CHECKPOINT == 1
 
   if (path_checkpoint == NULL)	/* if not -C option */
@@ -6437,8 +6439,6 @@ int main(
 
 #endif  /* not DEBUG and not NO_SECURITY_CHECK */
 #endif	/* MOM_CHECKPOINT */
-
-  init_resc_defs(path_resources);
 
   /* change working directory to mom_priv */
 
