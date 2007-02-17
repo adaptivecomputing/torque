@@ -22,7 +22,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature
   e - added PBS_SERVER env variable for job scripts
   e - add nodeid to pbsnodes XML output (NCIFCRF)
   e - add --about support to daemons and client commands
-  e - added qsub -t (primitive job array)
+  f - added qsub -t (primitive job array)
   e - add PBS_RESOURCE_GRES to prolog/epilog environment
   f - "node notes" with pbsnodes -n (sandia)
   e - add -h hostname to pbs_mom (NCIFCRF)
