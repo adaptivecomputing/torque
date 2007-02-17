@@ -81,9 +81,7 @@
 .SH NAME
 pbsnodes \- pbs node manipulation
 .SH SYNOPSIS
-pbsnodes [\^-{c|d|o|p|r}\^] [-q] [-s server] [nodename|:property ...]
-.br
-pbsnodes -l [-s server] [-q]
+pbsnodes [\^-{c|d|l|o|p|r}\^] [-q] [-s server] [nodename|:property ...]
 .br
 pbsnodes [\^-{a|x}\^] [-s server] [-q] [node|:property]
 
@@ -111,7 +109,7 @@ Clear OFFLINE from listed nodes.
 Print MOM diagnosis on the listed nodes.  Not yet implemented.  
 Use momctl instead.
 .IP "-l" 15
-List all nodes marked as DOWN, OFFLINE, or UNKNOWN.
+List nodes marked as DOWN, OFFLINE, or UNKNOWN.
 .IP "-o" 15
 Mark listed nodes as OFFLINE even if currently in use.
 This is different from being marked DOWN.

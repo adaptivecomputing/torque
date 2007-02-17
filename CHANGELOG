@@ -27,6 +27,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature
   f - "node notes" with pbsnodes -n (sandia)
   e - add -h hostname to pbs_mom (NCIFCRF)
   b - clear exec_host on job requeue
+  e - allow 'pbsnodes -l' to work with a node spec
 
 2.1.7
   b - fix bison syntax error in Parser.y
