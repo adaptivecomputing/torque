@@ -1878,6 +1878,13 @@ int TMomFinalizeChild(
   /*                                         */
   /*******************************************/
 
+  /* NOTE:  This child is launched on the mother superior node.
+            It does not have access to stdout/stderr, failure 
+            messages will route to syslog via log_err() */
+
+  if (LOGLEVEL >= 7)
+    log_err(-1,id,"starting");
+
   if (lockfds >= 0)
     {
     close(lockfds);
@@ -1894,6 +1901,9 @@ int TMomFinalizeChild(
 
   shell = set_shell(pjob,pwdp);	/* in the machine dependent section */
 
+  if (LOGLEVEL >= 7)
+    log_err(-1,id,"shell initialized");
+
   /* Setup user env */
 
   if (InitUserEnv(pjob,ptask,NULL,pwdp,shell) < 0)
@@ -1902,6 +1912,9 @@ int TMomFinalizeChild(
 
     starter_return(TJE->upfds,TJE->downfds,JOB_EXEC_RETRY,&sjr);
     }
+
+  if (LOGLEVEL >= 7)
+    log_err(-1,id,"env initialized");
 
   /* Create the job's nodefile */
 
@@ -1970,6 +1983,9 @@ int TMomFinalizeChild(
 
     fclose(nhow);
     }  /* END if (pjob->ji_flags & MOM_HAS_NODEFILE) */
+
+  if (LOGLEVEL >= 7)
+    log_err(-1,id,"node file created");
 
   /* Set PBS_VNODENUM */
 
@@ -2314,7 +2330,6 @@ int TMomFinalizeChild(
      }
 #endif  /* (PENABLE_CPUSETS || PENABLE_DYNAMIC_CPUSETS) */
 
-
 #ifdef ENABLE_CPA
   /* Cray CPA setup */
 
@@ -2344,6 +2359,9 @@ int TMomFinalizeChild(
 
     exit(1);
     }
+
+  if (LOGLEVEL >= 7)
+    log_err(-1,id,"system vars set");
 	
   umask(077);
 
@@ -2699,6 +2717,9 @@ int TMomFinalizeChild(
       }
 #endif  /* SHELL_USE_ARGV */
 
+    if (LOGLEVEL >= 7)
+      log_err(-1,id,"opening script");
+
     if (script_in < 0) 
       {
       log_err(errno,id,"unable to open script");
@@ -2730,6 +2751,9 @@ int TMomFinalizeChild(
       exit(1);
       }
 
+    if (LOGLEVEL >= 7)
+      log_err(-1,id,"stdout/stderr opened");
+
     /* run prolog - standard batch job */
 		
     if ((j = run_pelog(
@@ -2755,6 +2779,9 @@ int TMomFinalizeChild(
 
       /*NOTREACHED*/
       } 
+
+    if (LOGLEVEL >= 7)
+      log_err(-1,id,"prolog complete");
 
     /* run user prolog */
 
@@ -2785,6 +2812,9 @@ int TMomFinalizeChild(
     /* set up the job session (update sjr) */
 
     j = set_job(pjob,&sjr);
+
+    if (LOGLEVEL >= 7)
+      log_err(-1,id,"et_job complete");
 
     memcpy(TJE->sjr,&sjr,sizeof(sjr));
 
@@ -2846,6 +2876,9 @@ int TMomFinalizeChild(
     /*NOTREACHED*/
     }
 
+  if (LOGLEVEL >= 7)
+    log_err(-1,id,"setting system limits");
+
   log_buffer[0] = '\0';
 
   if ((i = mom_set_limits(pjob,SET_LIMIT_SET)) != PBSE_NONE) 
@@ -2887,9 +2920,12 @@ int TMomFinalizeChild(
     /*NOTREACHED*/
 
     return(-1);
-    }
+    }  /* END if (mom_set_limits() == 0) */
 
   endpwent();
+
+  if (LOGLEVEL >= 7)
+    log_err(-1,id,"system limits set");
 
   if ((idir = get_job_envvar(pjob,"PBS_O_ROOTDIR")) != NULL)
     {
@@ -2916,6 +2952,9 @@ int TMomFinalizeChild(
   /*
    * become the user, execv the shell and become the real job 
    */
+
+  if (LOGLEVEL >= 7)
+    log_err(-1,id,"setting user/group credentials");
 
   setgroups(
     pjob->ji_grpcache->gc_ngroup,
@@ -2979,6 +3018,9 @@ int TMomFinalizeChild(
       return(-1);
       }
     }
+
+  if (LOGLEVEL >= 7)
+    log_err(-1,id,"initial directory set");
 	
   /* X11 forwarding init */
 
@@ -3012,6 +3054,9 @@ int TMomFinalizeChild(
   *(vtable.v_envp + vtable.v_used) = NULL;
 
   /* tell mom we are going */
+
+  if (LOGLEVEL >= 7)
+    log_err(-1,id,"forking child");
 
   starter_return(TJE->upfds,TJE->downfds,JOB_EXEC_OK,&sjr);
 
@@ -3175,8 +3220,10 @@ int TMomFinalizeChild(
 
 
 
-/* child has already reported in via pipe.  Perform final job tasks */
-/* change pjob substate from JOB_SUBSTATE_PRERUN to JOB_SUBSTATE_RUNNING */
+/* child has already reported in via pipe which was created in 
+   TMomFinalizeJob2->TMomFinalizeChild.  
+   Perform final job tasks.  Change pjob substate from JOB_SUBSTATE_PRERUN 
+   to JOB_SUBSTATE_RUNNING */
 
 int TMomFinalizeJob3(
 
@@ -3532,7 +3579,7 @@ int start_process(
 
       if (gotsuccess)
         {
-        i=sizeof(sjr);
+        i = sizeof(sjr);
         }
 
       break;
@@ -4343,6 +4390,8 @@ void job_nodes(
    TMomFinalizeJob1() 
    TMomFinalizeJob2() 
    TMomFinalizeJob3() */
+
+/* start_process() called for sisters after receiving IM_SPAWN_TASK request */
 
 
 
