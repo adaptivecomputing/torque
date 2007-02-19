@@ -1014,10 +1014,10 @@ int InitUserEnv(
   char id[] = "InitUserEnv";
 
   struct array_strings *vstrs;
-  int j = 0;
-  int ebsize = 0;
-  char  buf[MAXPATHLEN + 2];
-  int usertmpdir = 0;
+  int                   j = 0;
+  int                   ebsize = 0;
+  char                  buf[MAXPATHLEN + 2];
+  int                   usertmpdir = 0;
 
   attribute            *pattr;
   resource             *presc;
@@ -3287,7 +3287,7 @@ int TMomFinalizeJob3(
           sjr.sj_code);
 
         break;
-      }
+      }  /* END switch (sjr.sj_code) */
 
     sprintf(log_buffer,"job not started, %s %s",
       (sjr.sj_code == JOB_EXEC_RETRY) ? "Retry" : "Failure",
@@ -3462,7 +3462,7 @@ int start_process(
     }
   else 
     {
-    struct sockaddr_in	*ap;
+    struct sockaddr_in *ap;
 
     /*
     ** We always have a stream open to MS at node 0.
@@ -3669,6 +3669,9 @@ int start_process(
   /* The child process - will become the TASK	  */
   /************************************************/
 
+  if (LOGLEVEL >= 7)
+    log_err(-1,id,"child starting");
+    
   if (lockfds >= 0)
     {
     close(lockfds);
@@ -3694,6 +3697,9 @@ int start_process(
     exit(1);
     }
 
+  if (LOGLEVEL >= 7)
+    log_err(-1,id,"user env initialized");
+
   if (set_mach_vars(pjob,&vtable) != 0) 
     {
     strcpy(log_buffer,"PBS: machine dependent environment variable setup failed\n");
@@ -3706,6 +3712,9 @@ int start_process(
 
     exit(1);
     }
+
+  if (LOGLEVEL >= 7)
+    log_err(-1,id,"mach vars set");
 
   umask(077);
 
@@ -3809,6 +3818,9 @@ int start_process(
 
       exit(1);
       }
+
+  if (LOGLEVEL >= 7)
+    log_err(-1,id,"MPI/TM variables set");
 
   if (pjob->ji_numnodes > 1) 
     {
@@ -3935,6 +3947,9 @@ int start_process(
    * directly to fd 2, with a \n, and ended with fsync(2)
    *******************************************************/
 
+  if (LOGLEVEL >= 7)
+    log_err(-1,id,"about to perform set_job");
+
   j = set_job(pjob,&sjr);
 
   if (j < 0) 
@@ -3985,6 +4000,9 @@ int start_process(
 
     starter_return(kid_write,kid_read,j,&sjr);
     }
+
+  if (LOGLEVEL >= 7)
+    log_err(-1,id,"set_job complete");
 
   if ((idir = get_job_envvar(pjob,"PBS_O_ROOTDIR")) != NULL)
     {
@@ -4057,18 +4075,22 @@ int start_process(
       }
     }
 
+  if (LOGLEVEL >= 7)
+    log_err(-1,id,"done - writing pipe and exec'ing");
+
   starter_return(
     kid_write, 
     kid_read, 
     JOB_EXEC_OK, 
     &sjr);
 
-  fcntl(kid_write, F_SETFD, FD_CLOEXEC);
+  fcntl(kid_write,F_SETFD,FD_CLOEXEC);
+
 #if 0	/* def DEBUG */
-  for (i=3; i< 40; ++i) 
+  for (i = 3;i< 40;++i) 
     {	/* check for any extra open descriptors */
     if (close(i) >= 0)
-      fprintf(stderr, "Closed file %d\n", i);
+      fprintf(stderr,"Closed file %d\n",i);
     }
 #endif	/* DEBUG */
 
