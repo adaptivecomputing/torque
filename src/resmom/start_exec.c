@@ -164,7 +164,7 @@ extern char *get_job_envvar(job *,char *);
 
 
 int              mom_reader_go;		/* see catchinter() & mom_writer() */
-struct var_table vtable;		/* for building up Job's environ */
+struct var_table vtable;		/* for building up job's environ */
 
 extern char             tmpdir_basename[];  /* for TMPDIR */
 
@@ -1036,10 +1036,19 @@ int InitUserEnv(
 
   if (envp != NULL)
     {
-    for (j = 0,ebsize = 0;envp[j];j++)
+    for (j = 0,ebsize = 0;envp[j] != NULL;j++)
       ebsize += strlen(envp[j]);
     }
 
+  if (LOGLEVEL >= 7)
+    {
+    sprintf(log_buffer,"creating env buffer, count: %d  size: %d",
+      j,
+      ebsize);
+   
+    log_err(errno,id,log_buffer);
+    }
+ 
   vstrs = pjob->ji_wattr[(int)JOB_ATR_variables].at_val.at_arst;
 
   vtable.v_bsize = ebsize + EXTRA_VARIABLE_SPACE +
@@ -1057,8 +1066,12 @@ int InitUserEnv(
     return(-1);
     }
 
-  vtable.v_ensize = num_var_else + num_var_env + j + EXTRA_ENV_PTRS +
-                      (vstrs != NULL ? vstrs->as_usedptr : 0);
+  vtable.v_ensize = 
+    num_var_else + 
+    num_var_env + 
+    j + 
+    EXTRA_ENV_PTRS +
+    (vstrs != NULL ? vstrs->as_usedptr : 0);
 
   vtable.v_used = 0;
 
@@ -1079,8 +1092,16 @@ int InitUserEnv(
   for (j = 0;j < num_var_env;++j)
     bld_env_variables(&vtable,environ[j],NULL);
 
+  if (LOGLEVEL >= 7)
+    {
+    sprintf(log_buffer,"local env added, count: %d",
+      j);
+
+    log_err(errno,id,log_buffer);
+    }
+
   /* Next, the variables passed with the job.  They may   */
-  /* be overwritten with new correct values for this job        */
+  /* be overwritten with new correct values for this job  */
 
   if (vstrs != NULL)
     {
@@ -1088,10 +1109,21 @@ int InitUserEnv(
       {
       bld_env_variables(&vtable,vstrs->as_string[j],NULL);
 
-      if (!strncmp(vstrs->as_string[j],variables_else[tveTmpDir],strlen(variables_else[tveTmpDir])))
+      if (!strncmp(
+            vstrs->as_string[j],
+            variables_else[tveTmpDir],
+            strlen(variables_else[tveTmpDir])))
         usertmpdir = 1;
       }
-    }
+
+    if (LOGLEVEL >= 7)
+      {
+      sprintf(log_buffer,"job env added, count: %d",
+        j);
+
+      log_err(errno,id,log_buffer);
+      }
+    }    /* END if (vstrs != NULL) */
 
   /* HOME */
 
@@ -5236,9 +5268,9 @@ static int find_env_slot(
 
 void bld_env_variables(
 
-  struct var_table *vtable,
-  char             *name,
-  char             *value)
+  struct var_table *vtable,  /* I (modified) */
+  char             *name,    /* I (required) */
+  char             *value)   /* I (optional) */
 
   {
   int amt;
@@ -5246,7 +5278,30 @@ void bld_env_variables(
 
   if (vtable->v_used == vtable->v_ensize)
     {
-    return;			/* no room for pointer */
+    /* FAILURE - no room for pointer */
+
+    return;
+    }
+
+  if ((name == NULL) || (name[0] == '\0'))
+    {
+    /* FAILURE - name required */
+
+    if (LOGLEVEL >= 7)
+      {
+      log_err(-1,"bld_env_variables","invalid name passed");
+      }
+    }
+
+  if (LOGLEVEL >= 7)
+    {
+    char tmpLine[1024];
+
+    snprintf(tmpLine,sizeof(tmpLine),"building var '%s' (value: '%.64s')",
+      name,
+      (value != NULL) ? value : "NULL");
+
+    log_err(-1,"bld_env_variables",tmpLine);
     }
 
   amt = strlen(name) + 1;
@@ -5254,8 +5309,10 @@ void bld_env_variables(
   if (value != NULL)
     amt += strlen(value) + 1;	/* plus 1 for "="     */
 
-  if (amt > vtable->v_bsize)	 	/* no room for string */
+  if (amt > vtable->v_bsize)	
     {
+    /* FAILURE - no room for string */
+
     return;
     }
 
