@@ -123,7 +123,7 @@ int save_tmsock(job *);
 int recov_tmsock(int,job *);
 #endif
 
-extern int job_qs_upgrade A_((job *, int));
+extern int job_qs_upgrade A_((job *,int));
 
 /* global data items */
 

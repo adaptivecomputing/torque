@@ -145,7 +145,7 @@ The following are established by the server executing the job,
 not the qsub command.
 .Ig
 .IP \f3PBS_ARRAYID\fP
-each member of a job array is assinged a unique number from 0 to array_size-1
+each member of a job array is assigned a unique number from 0 to array_size-1 (see -t)
 .IP \f3PBS_ENVIRONMENT\fP
 set to 
 .Ty PBS_BATCH
@@ -757,7 +757,7 @@ The
 .Ar array_size
 argument is an integer from 1 to PBS_MAXJOBARRAY
 .Ig
-if not specified, array_size will be set to 1
+if not specified, array_size will be set to 1 (see PBS_ARRAYID)
 .IP "\-u user_list" 8
 Defines the user name under which the job is to run on the execution system.
 .IP
