@@ -882,9 +882,9 @@ job *job_clone(
     INCR);  
 
   
-  delete_link(&pnewjob->ji_alljobs); 
-  delete_link(&pnewjob->ji_jobque);
-  delete_link(&pnewjob->ji_svrtask);
+  CLEAR_LINK(pnewjob->ji_alljobs); 
+  CLEAR_LINK(pnewjob->ji_jobque);
+  CLEAR_LINK(pnewjob->ji_svrtask);
 
   return pnewjob;
   } /* END job_clone() */
@@ -944,7 +944,7 @@ struct work_task *ptask)
   
   if (i < pjob->ji_wattr[(int)JOB_ATR_job_array_size].at_val.at_long)
     {
-    new_task = set_task(WORK_Timed,time_now,job_clone_wt,ptask->wt_parm1);
+    new_task = set_task(WORK_Timed,time_now+1,job_clone_wt,ptask->wt_parm1);
     new_task->wt_aux = startindex+256;
     }
   else

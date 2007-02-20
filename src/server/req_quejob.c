@@ -1760,7 +1760,7 @@ void req_commit(
      *** job array under development */
   if (pj->ji_wattr[(int)JOB_ATR_job_array_size].at_val.at_long > 1)
     {
-    wt = set_task(WORK_Timed,time_now,job_clone_wt,(void*)pj);
+    wt = set_task(WORK_Timed,time_now+1,job_clone_wt,(void*)pj);
     wt->wt_aux = 0;
     /* svr_setjobstate(pj,JOB_STATE_HELD,JOB_SUBSTATE_HELD);*/
     
