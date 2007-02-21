@@ -1120,11 +1120,7 @@ void job_purge(
   strcpy(namebuf,path_jobs);      /* job directory path */
   strcat(namebuf,pjob->ji_qs.ji_fileprefix);
   strcat(namebuf,JOB_TASKDIR_SUFFIX);
-  if (unlink(namebuf) < 0)
-    {
-    if (errno != ENOENT)
-      log_err(errno,id,msg_err_purgejob);
-    }
+  remtree(namebuf);
 
 #if MOM_CHECKPOINT == 1
   {
