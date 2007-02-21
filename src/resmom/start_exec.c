@@ -1215,7 +1215,10 @@ int InitUserEnv(
 
   if (presc != NULL)
     {
-    bld_env_variables(&vtable,variables_else[tveNumNodes],presc->rs_value.at_val.at_str);
+    sprintf(buf,"%ld",
+      presc->rs_value.at_val.at_long);
+
+    bld_env_variables(&vtable,variables_else[tveNumNodes],buf);
     }
 
   /* setup TMPDIR */
