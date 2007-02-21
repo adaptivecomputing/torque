@@ -345,7 +345,7 @@ void log_err(
     syslogopen = 1;
     }
 
-  syslog(LOG_ERR|LOG_DAEMON,buf);
+  syslog(LOG_ERR|LOG_DAEMON,"%s",buf);
 #endif	/* SYSLOG */
 
   return;
