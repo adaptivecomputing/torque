@@ -1097,7 +1097,7 @@ int InitUserEnv(
     sprintf(log_buffer,"local env added, count: %d",
       j);
 
-    log_err(errno,id,log_buffer);
+    log_err(-1,id,log_buffer);
     }
 
   /* Next, the variables passed with the job.  They may   */
@@ -1121,7 +1121,7 @@ int InitUserEnv(
       sprintf(log_buffer,"job env added, count: %d",
         j);
 
-      log_err(errno,id,log_buffer);
+      log_err(-1,id,log_buffer);
       }
     }    /* END if (vstrs != NULL) */
 
