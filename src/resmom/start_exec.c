@@ -1046,7 +1046,7 @@ int InitUserEnv(
       j,
       ebsize);
    
-    log_err(errno,id,log_buffer);
+    log_err(-1,id,log_buffer);
     }
  
   vstrs = pjob->ji_wattr[(int)JOB_ATR_variables].at_val.at_arst;
