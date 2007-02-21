@@ -214,14 +214,11 @@ int task_save(
   int	fds;
   int	i;
   char	namebuf[MAXPATHLEN];
-  char	filnam[MAXPATHLEN];
   int	openflags;
 
   strcpy(namebuf,path_jobs);      /* job directory path */
   strcat(namebuf,pjob->ji_qs.ji_fileprefix);
   strcat(namebuf,JOB_TASKDIR_SUFFIX);
-  sprintf(filnam,task_fmt,ptask->ti_qs.ti_task);
-  strcat(namebuf,filnam);
 
   openflags = O_WRONLY|O_CREAT|O_Sync;
 
@@ -246,11 +243,16 @@ int task_save(
     return(-1);
     }
 
-  /* NOTE:  to avoid partial write failures in fs full situations,             */
-  /*        attempt write of empty buffer, if success, then write actual task? */
-  /*        (NYI) */
-
   /* just write the "critical" base structure to the file */
+
+ if (lseek(fds,(off_t)sizeof(ptask->ti_qs) * ptask->ti_qs.ti_task,SEEK_SET) < 0) 
+    {
+    log_err(errno,id,"lseek");
+
+    close(fds);
+
+    return(-1);
+    }
 
   while ((i = write(
       fds, 
@@ -261,7 +263,7 @@ int task_save(
       {	
       /* retry the write */
 
-      if (lseek(fds,(off_t)0,SEEK_SET) < 0) 
+      if (lseek(fds,(off_t)sizeof(ptask->ti_qs) * ptask->ti_qs.ti_task,SEEK_SET) < 0) 
         {
         log_err(errno,id,"lseek");
 
@@ -496,60 +498,30 @@ int task_recov(
   static	char	id[] = "task_recov";
   int		fds;
   task		*pt;
-  char		dirname[MAXPATHLEN];
   char		namebuf[MAXPATHLEN];
-  DIR		*dir;
-  struct	dirent	*pdirent;
   struct	taskfix	task_save;
 
-  strcpy(dirname,path_jobs);      /* job directory path */
-  strcat(dirname,pjob->ji_qs.ji_fileprefix);
-  strcat(dirname,JOB_TASKDIR_SUFFIX);
+  strcpy(namebuf,path_jobs);      /* job directory path */
+  strcat(namebuf,pjob->ji_qs.ji_fileprefix);
+  strcat(namebuf,JOB_TASKDIR_SUFFIX);
 
-  if ((dir = opendir(dirname)) == NULL)
+  if ((fds = open(namebuf,O_RDONLY,0)) < 0)
     {
+    log_err(errno,id,"open of task file");
+
     return(-1);
     }
 
-  strcat(dirname,"/");
-
-  while ((pdirent = readdir(dir)) != NULL) 
-    {
-    if (pdirent->d_name[0] == '.')
-      continue;
-
-    strcpy(namebuf,dirname);
-    strcat(namebuf,pdirent->d_name);
-
-    fds = open(namebuf,O_RDONLY,0);
-
-    if (fds < 0) 
-      {
-      log_err(errno,id,"open of task file");
-
-      unlink(namebuf);
-
-      continue;
-      }
-
     /* read in task quick save sub-structure */
+  while (read(fds,(char *)&task_save,sizeof(task_save)) == sizeof(task_save)) 
+    {
 
-    if (read(fds,(char *)&task_save,sizeof(task_save)) != sizeof(task_save)) 
-      {
-      log_err(errno,id,"read");
-
-      unlink(namebuf);
-
-      close(fds);
-
+    if (task_save.ti_task == 0)
       continue;
-      }
 
     if ((pt = pbs_task_create(pjob,TM_NULL_TASK)) == NULL)  
       {
       log_err(errno,id,"cannot create task");
-
-      unlink(namebuf);
 
       close(fds);
 
@@ -557,11 +529,9 @@ int task_recov(
       }
 
     pt->ti_qs = task_save;
-
-    close(fds);
     }  /* END while ((pdirent = readdir(dir)) != NULL) */
 
-  closedir(dir);
+  close(fds);
 
   /* SUCCESS */
 
@@ -2185,23 +2155,6 @@ void im_request(
 
       job_save(pjob,SAVEJOB_FULL);
 
-      strcpy(namebuf,path_jobs);      /* job directory path */
-      strcat(namebuf,pjob->ji_qs.ji_fileprefix);
-      strcat(namebuf,JOB_TASKDIR_SUFFIX);
-  
-      if (mkdir(namebuf,0700) == -1) 
-        {
-        log_err(-1,id,"cannot create temporary directory");
-
-        job_purge(pjob);
-
-        /* cannot create temporary job directory */
-
-        SEND_ERR(PBSE_SYSTEM)
-  
-        goto done;
-        }
-  
       sprintf(log_buffer,"JOIN JOB as node %d", 
         nodeid);
   

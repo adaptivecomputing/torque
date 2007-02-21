@@ -524,28 +524,6 @@ void req_quejob(
 
       return;
       }
-
-    strcpy(namebuf,path_jobs);      /* job directory path */
-    strcat(namebuf,basename);
-    strcat(namebuf,JOB_TASKDIR_SUFFIX);
-
-    if ((mkdir(namebuf,0700) == -1) && (errno != EEXIST))
-      {
-      /* FAILURE */
-
-      char tmpLine[1024];
-
-      sprintf(tmpLine,"cannot create directory '%s'",
-        namebuf);
-
-      log_err(errno,tmpLine,msg_init_abt);
-
-      job_purge(pj);
-
-      req_reject(PBSE_SYSTEM,0,preq,NULL,tmpLine);
-
-      return;
-      }
     }    /* END else (pj != NULL) */
 
 #endif  /* PBS_MOM */
