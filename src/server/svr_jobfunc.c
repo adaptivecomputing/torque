@@ -757,9 +757,9 @@ char *get_variable(
 
 static void chk_svr_resc_limit(
 
-  attribute *jobatr,
-  attribute *queatr,
-  attribute *svratr,
+  attribute *jobatr, /* I */
+  attribute *queatr, /* I */
+  attribute *svratr, /* I */
   int	     qtype,  /* I */
   char      *EMsg)   /* O (optional,minsize=1024) */
 

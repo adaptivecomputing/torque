@@ -235,38 +235,46 @@ int remtree(
   char *dirname)
 
   {
-	static	char	id[] = "remtree";
-	DIR		*dir;
-	struct dirent	*pdir;
-	char		namebuf[MAXPATHLEN], *filnam;
-	int		i;
-	int		rtnv = 0;
+  static	char	id[] = "remtree";
+  DIR		*dir;
+  struct dirent	*pdir;
+  char		namebuf[MAXPATHLEN], *filnam;
+  int		i;
+  int		rtnv = 0;
 #if defined(HAVE_STRUCT_STAT64) && defined(HAVE_STAT64)
-	struct stat64	sb;
+  struct stat64	sb;
 #else
-	struct stat	sb;
+  struct stat	sb;
 #endif
 
 #if defined(HAVE_STRUCT_STAT64) && defined(HAVE_STAT64)
-	if (lstat64(dirname, &sb) == -1) {
+  if (lstat64(dirname,&sb) == -1) 
 #else
-	if (lstat(dirname, &sb) == -1) {
+  if (lstat(dirname,&sb) == -1) 
 #endif
-		if (errno != ENOENT)
-			log_err(errno, id, "stat");
-		return -1;
-	}
-	if (S_ISDIR(sb.st_mode)) {
-	    if ((dir = opendir(dirname)) == NULL) {
-		if (errno != ENOENT)
-			log_err(errno, id, "opendir");
-		return -1;
-	    }
+    {
+  if (errno != ENOENT)
+    log_err(errno,id,"stat");
 
-	    (void)strcpy(namebuf, dirname);
-	    (void)strcat(namebuf, "/");
-	    i = strlen(namebuf);
-	    filnam = &namebuf[i];
+  return(-1);
+  }
+
+  if (S_ISDIR(sb.st_mode)) 
+    {
+    if ((dir = opendir(dirname)) == NULL) 
+      {
+      if (errno != ENOENT)
+        log_err(errno,id,"opendir");
+
+      return(-1);
+      }
+
+    strcpy(namebuf,dirname);
+    strcat(namebuf,"/");
+
+    i = strlen(namebuf);
+
+    filnam = &namebuf[i];
 
 	    while ((pdir = readdir(dir)) != NULL) {
 		if ( pdir->d_name[0] == '.' &&
@@ -315,34 +323,41 @@ int remtree(
 #else	/* PBS_MOM */
 
 
-void send_qsub_delmsg(job *pjob, char *text)
+void send_qsub_delmsg(
+
+  job  *pjob,  /* I */
+  char *text)  /* I */
+
   {
   char *phost;
   attribute            *pattri;
   int qsub_sock;
 
+  phost = arst_string("PBS_O_HOST",&pjob->ji_wattr[(int)JOB_ATR_variables]);
 
-    phost = arst_string("PBS_O_HOST",&pjob->ji_wattr[(int)JOB_ATR_variables]);
+  if ((phost == NULL) || ((phost = strchr(phost,'=')) == NULL))
+    {
+    return;
+    }
 
-    if ((phost == NULL) || ((phost = strchr(phost,'=')) == NULL))
-      {
-      return;
-      }
+  pattri = &pjob->ji_wattr[(int)JOB_ATR_interactive];
 
-    pattri = &pjob->ji_wattr[(int)JOB_ATR_interactive];
+  qsub_sock = conn_qsub(phost + 1,pattri->at_val.at_long);
 
-    qsub_sock = conn_qsub(phost + 1,pattri->at_val.at_long);
+  if (qsub_sock < 0)
+    {
+    return;
+    }
 
-    if (qsub_sock < 0)
-      {
-      return;
-      }
+  write(qsub_sock,"PBS: ",5);
+  write(qsub_sock,text,strlen(text));
 
-    write(qsub_sock,"PBS: ",5);
-    write(qsub_sock,text,strlen(text));
+  close(qsub_sock);
 
-    close(qsub_sock);
+  return;
   }
+
+
 
 
 /*
