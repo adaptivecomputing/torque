@@ -221,7 +221,7 @@ cnt:
 
     if (err && (pbs_errno == PBSE_UNKNODE))
       {
-      fprintf(stderr,"qrun: Unknown node '%s...' for job %s\n",
+      fprintf(stderr,"qrun: Unknown node in hostlist '%.16s...' for job %s\n",
         location,
         job);
 
