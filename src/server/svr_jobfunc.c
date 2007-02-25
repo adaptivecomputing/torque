@@ -751,7 +751,7 @@ char *get_variable(
  * compare the job resource limit against the system limit
  * unless a queue limit exists, it takes priority
  *
- * returns number of .gt. and .lt. comparision in comp_resc_gt and comp_resc_lt
+ * returns number of .gt. and .lt. comparison in comp_resc_gt and comp_resc_lt
  *	does not make use of comp_resc_eq or comp_resc_nc
  */
 
@@ -781,13 +781,22 @@ static void chk_svr_resc_limit(
   static resource_def *needresc = NULL;
   static resource_def *nodectresc = NULL;
 
+  static time_t UpdateTime = 0;
+  static time_t now;
+
   /* NOTE:  server limits are specified with server.resources_available */
 
   if (EMsg != NULL)
     EMsg[0] = '\0';
 
-  if (noderesc == NULL) 
+  time(&now);
+
+  if ((noderesc == NULL) || (now > UpdateTime + 30))
     {
+    UpdateTime = now;
+
+    /* NOTE:  to optimize, only update once per 30 seconds */
+
     noderesc = find_resc_def(svr_resc_def,"nodes",svr_resc_size);
     needresc = find_resc_def(svr_resc_def,"neednodes",svr_resc_size);
     nodectresc = find_resc_def(svr_resc_def,"nodect",svr_resc_size);
