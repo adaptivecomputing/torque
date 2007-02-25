@@ -227,7 +227,7 @@ cnt:
 
       exitstatus = 2;
       }
-    if (err && (pbs_errno != PBSE_UNKJOBID)) 
+    else if (err && (pbs_errno != PBSE_UNKJOBID)) 
       {
       prt_job_err("qrun",ct,job);
 
