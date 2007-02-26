@@ -26,6 +26,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature
   f - "node notes" with pbsnodes -n (sandia)
   e - add -h hostname to pbs_mom (NCIFCRF)
   e - filesec enhancements (StockholmU)
+  e - added ERS and IDS documentation 
 
 2.1.8
   b - stop possible memory corruption with an invalid request type (StockholmU)

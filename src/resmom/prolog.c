@@ -113,13 +113,13 @@ extern int  lockfds;
 extern char *path_aux;
 
 unsigned int pe_alarm_time = PBS_PROLOG_TIME;
-static pid_t  child;
-static int run_exit;
+static pid_t child;
+static int   run_exit;
 
 /* external prototypes */
 
 extern int pe_input A_((char *));
-extern int TTmpDirName A_((job *,char *tmpdir));
+extern int TTmpDirName A_((job *,char *));
 extern void encode_used A_((job *,tlist_head *));
 
 /* END extern prototypes */
@@ -685,7 +685,10 @@ int run_pelog(
       {
       envstr = malloc((strlen(envname) + strlen(envval) + 2) * sizeof(char));
 
-      sprintf(envstr,"%s=%s",envname,envval);
+      sprintf(envstr,"%s=%s",
+        envname,
+        envval);
+
       putenv(envstr);
       }
     }
@@ -695,11 +698,15 @@ int run_pelog(
     char *envname = "PBS_NODENUM";
     char *envstr;
   
-    sprintf(buf,"%d",pjob->ji_nodeid);
+    sprintf(buf,"%d",
+      pjob->ji_nodeid);
 
     envstr = malloc((strlen(envname) + strlen(buf) + 2) * sizeof(char));
 
-    sprintf(envstr,"%s=%d",envname,pjob->ji_nodeid);
+    sprintf(envstr,"%s=%d",
+      envname,
+      pjob->ji_nodeid);
+
     putenv(envstr);
     }
 
@@ -712,7 +719,10 @@ int run_pelog(
       {
       envstr = malloc((strlen(envname) + strlen(pjob->ji_vnods[0].vn_host->hn_host) + 2) * sizeof(char));
 
-      sprintf(envstr,"%s=%s",envname,pjob->ji_vnods[0].vn_host->hn_host);
+      sprintf(envstr,"%s=%s",
+        envname,
+        pjob->ji_vnods[0].vn_host->hn_host);
+
       putenv(envstr);
       }
     }
@@ -730,11 +740,50 @@ int run_pelog(
 
       envstr = malloc((strlen(envname) + strlen(buf) + 2) * sizeof(char));
 
-      sprintf(envstr,"%s=%s",envname,buf);
+      sprintf(envstr,"%s=%s",
+        envname,
+        buf);
+
       putenv(envstr);
       }
     }
 
+#ifdef LANL
+    /* SET BEOWULF_PROCLIST */
+
+    {
+    struct array_strings *vstrs;
+
+    char *envstr;
+
+    vstrs = pjob->ji_wattr[(int)JOB_ATR_variables].at_val.at_arst;
+
+    for (j = 0;j < vstrs->as_usedptr;++j)
+      {
+      bld_env_variables(&vtable,vstrs->as_string[j],NULL);
+
+      if (!strncmp(
+            vstrs->as_string[j],
+            variables_else[tveTmpDir],
+            strlen(variables_else[tveTmpDir])))
+        usertmpdir = 1;
+
+    if (VarIsSet)
+      {
+      sprintf(buf,"%s/%s",
+        path_aux,
+        pjob->ji_qs.ji_jobid);
+
+      envstr = malloc((strlen(envname) + strlen(buf) + 2) * sizeof(char));
+
+      sprintf(envstr,"%s=%s",
+        envname,
+        buf);
+
+      putenv(envstr);
+      }
+    }
+#endif
 
     execv(pelog,arg);
 
