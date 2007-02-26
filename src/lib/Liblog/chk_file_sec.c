@@ -250,6 +250,12 @@ int chk_file_sec(
         rc = EACCES;
         }
       }
+
+    /* check any remaining bits */
+
+    if (i & disallow & ~(S_IWGRP|S_IWOTH))
+      rc = EACCES;
+
     }
 
 chkerr:
