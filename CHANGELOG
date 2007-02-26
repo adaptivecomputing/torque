@@ -36,6 +36,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature
   b - clear exec_host and session_id on job requeue
   b - fix mom child segfault when a user env var has a '%'
   b - correct buggy logging in chk_job_request() (StockholmU)
+  e - pbs_mom shouldn't require server_name file unless it is
+      actually going to be read (StockholmU)
 
 2.1.7
   b - fix bison syntax error in Parser.y
