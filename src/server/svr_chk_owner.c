@@ -361,7 +361,7 @@ job *chk_job_request(
     log_event(
       PBSEVENT_DEBUG, 
       PBS_EVENTCLASS_JOB,
-      preq->rq_ind.rq_move.rq_jid, 
+      jobid, 
       msg_unkjobid);
 
     req_reject(PBSE_UNKJOBID,0,preq,NULL,"cannot locate job");
