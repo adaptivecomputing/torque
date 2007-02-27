@@ -78,7 +78,7 @@ int job_qs_upgrade (job *pj, int fds)
     return -1;
     }
   
-  pj->ji_qs.v = PBS_JOB_MAGIC_NUM;
+  pj->ji_qs.qs_version  = PBS_QS_VERSION;
   pj->ji_qs.ji_state    = qs_old.ji_state;
   pj->ji_qs.ji_substate = qs_old.ji_substate;
   pj->ji_qs.ji_svrflags = qs_old.ji_svrflags;

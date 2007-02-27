@@ -422,7 +422,7 @@ job *job_recov(
     
   /* is ji_qs the version we expect? */
 
-  if (pj->ji_qs.v != PBS_JOB_MAGIC_NUM)
+  if (pj->ji_qs.qs_version != PBS_QS_VERSION)
     {
     /* ji_qs is older version */
     sprintf(log_buffer, 
@@ -458,7 +458,7 @@ job *job_recov(
       }
       
     qs_upgrade = TRUE;
-    }  /* END if (pj->ji_qs.v != PBS_JOB_MAGIC_NUM) */
+    }  /* END if (pj->ji_qs.qs_version != PBS_QS_VERSION) */
 
   /* Does file name match the internal name? */
   /* This detects ghost files */

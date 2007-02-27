@@ -428,7 +428,7 @@ struct job {
 	 */
 
 	struct jobfix {
-	    int     v;			/* magic number */
+	    int     qs_version;		/* quick save version */
 	    int	    ji_state;		/* internal copy of state */
 	    int	    ji_substate;	/* job sub-state */
 	    int	    ji_svrflags;	/* server flags */
