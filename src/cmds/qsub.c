@@ -502,7 +502,7 @@ int get_script(
         }
       }
 
-    rc = fclose(filter_pipe);
+    rc = pclose(filter_pipe);
 
     if (WEXITSTATUS(rc) == (unsigned char)SUBMIT_FILTER_ADMIN_REJECT_CODE)
       {
