@@ -421,13 +421,21 @@ output will be grouped into a single "varattr" attribute in the request and
 status output.  If the command has no output, the name will be skipped in the
 output.
 .IP
-.Ty "$varattr seta 3600 /path/to/script seta
-.Ty "$varattr setb 3600 /path/to/script setb
+.Ty $varattr seta 3600 /path/to/script [<ARGS>]...
+.br
+.Ty $varattr setb 3600 /path/to/script [<ARGS>]...
 .IP
 .RE
 .LP
 The configuration file must be "secure".  It must be owned by a user id and
-group id less than 10 and not be world writtable.
+group id less than 10 and not be world writable.  Output from this file must be in
+the format $VAR=$VAL, i.e.,
+.IP
+.Ty dataset13=20070104
+.br
+.Ty dataset22=20070202
+.br
+.Ty viraltest=abdd3
 .LP
 .SH RESOURCES
 Resource Monitor queries can be made with momctl's -q option to retrieve and
