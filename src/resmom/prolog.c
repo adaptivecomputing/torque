@@ -748,8 +748,7 @@ int run_pelog(
       }
     }
 
-#ifdef XXX
-    /* SET BEOWULF_PROCLIST */
+    /* SET BEOWULF_JOB_MAP */
 
     {
     struct array_strings *vstrs;
@@ -763,8 +762,8 @@ int run_pelog(
       {
       if (!strncmp(
             vstrs->as_string[j],
-            "BEOWULF_PROCLIST=",
-            strlen("BEOWULF_PROCLIST=")))
+            "BEOWULF_JOB_MAP=",
+            strlen("BEOWULF_JOB_MAP=")))
         {
         VarIsSet = 1;
 
@@ -783,7 +782,6 @@ int run_pelog(
       putenv(envstr);
       }
     }
-#endif /* XXX */
 
     execv(pelog,arg);
 
