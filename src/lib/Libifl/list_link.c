@@ -144,7 +144,7 @@ void insert_link(
     if (new->ll_next != (list_link *)new)
       fprintf(stderr,"ERROR:  bad new->ll_next pointer in insert_link\n");
       
-    fprintf(stderr, "%p %p %p\n", new->ll_next, new->ll_prior, new);
+    fprintf(stderr, "%p %p %p\n", (void *)new->ll_next, (void *)new->ll_prior, (void *)new);
       
     abort();
     }
