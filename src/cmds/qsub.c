@@ -2002,7 +2002,15 @@ void catchint(
       exit(0);
       } 
 
-    printf("yes or no please\n");
+    if (printf("yes or no please\n") < 0)
+      {
+      /* terminal probably went away */
+      bailout();
+
+      /*NOTREACHED*/
+
+      exit(0);
+      } 
 
     while ((c != '\n') && (c != EOF))
       c = getchar();
