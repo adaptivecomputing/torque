@@ -2559,7 +2559,7 @@ static u_long setvarattr(
   {
   static char *id = "setvarattr";
   struct varattr *pva;
-  char *tmpc;
+  char           *ptr;
 
   pva = calloc(1,sizeof(struct varattr));
 
@@ -2574,15 +2574,20 @@ static u_long setvarattr(
 
   CLEAR_LINK(pva->va_link);
 
+  /* FORMAT:  <NAME> <TTL> <PATH> */
+
   pva->va_name = strdup(value);
 
   /* step forward to get the ttl value */
 
-  tmpc = strchr(pva->va_name,' ');
+  ptr = pva->va_name;
 
-  if (tmpc == NULL)
+  while (!isspace(ptr))
+    ptr++;
+
+  if (*ptr == '\0')
     {
-    /* FAILURE */
+    /* FAILURE - cannot locate ttl or path */
 
     free(pva->va_name);
     free(pva);
@@ -2590,15 +2595,25 @@ static u_long setvarattr(
     return(0);
     }
 
-  *tmpc='\0';
-  tmpc++;
-  pva->va_ttl = strtol(tmpc,NULL,10);
+  *ptr = '\0';
+
+  /* skip white space */
+
+  ptr++;
+
+  while (isspace(ptr))
+    ptr++;
+
+  /* extract TTL */
+
+  pva->va_ttl = strtol(ptr,NULL,10);
   
-  /* step forward to get the command */
+  /* step forward to end of TTL */
 
-  tmpc = strchr(tmpc,' ');
-
-  if (tmpc == NULL)
+  while (!isspace(ptr))
+    ptr++;
+  
+  if (*ptr == '\0')
     {
     free(pva->va_name);
     free(pva);
@@ -2606,13 +2621,26 @@ static u_long setvarattr(
     return(0);
     }
 
-  /* SUCCESS */
+  /* skip white space */
 
-  *tmpc = '\0';
-  tmpc++;
-  pva->va_cmd = tmpc;
+  while (isspace(ptr))
+    ptr++;
+
+  if (*ptr == '\0')
+    {
+    free(pva->va_name);
+    free(pva);
+
+    return(0);
+    }
+
+  /* preserve command and args */
+
+  pva->va_cmd = ptr;
 
   append_link(&mom_varattrs,&pva->va_link,pva);
+
+  /* SUCCESS */
 
   return(1); 
   }  /* END setvarattr() */

@@ -27,7 +27,9 @@ c - crash     b - bug fix    e - enhancement    f - new feature
   e - add -h hostname to pbs_mom (NCIFCRF)
   e - filesec enhancements (StockholmU)
   e - added ERS and IDS documentation 
+  e - allow export of specific variables into prolog/epilog environment
   b - change fclose to pclose to close submit filter pipe (ABCC)
+
 2.1.8
   b - stop possible memory corruption with an invalid request type (StockholmU)
   b - add node name to pbsnodes XML output (NCIFCRF)
