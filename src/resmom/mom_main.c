@@ -835,6 +835,7 @@ static char *getjoblist(
 
 
 
+#define TMAX_VARBUF   65536
 
 static char *reqvarattr(
   
@@ -842,15 +843,21 @@ static char *reqvarattr(
   
   {           
   static char id[] = "reqvarattr";
-  static char *list = NULL,*child_spot;
-  static int listlen = 0;
+  static char    *list = NULL,*child_spot;
+  static int      listlen = 0;
   struct varattr *pva;
-  int   i, fd, len, child_len;
-  FILE  *child;
+  int             i, fd, len, child_len;
+  FILE           *child;
+
+  char           *ptr;
+  char           *ptr2;
+  char           *TokPtr;
+
+  char            tmpBuf[TMAX_VARBUF + 1];
 
   if (list == NULL)
     {
-    list = calloc(BUFSIZ + 50,sizeof(char));
+    list = calloc(BUFSIZ + 1024,sizeof(char));
 
     listlen = BUFSIZ;
     }
@@ -864,15 +871,19 @@ static char *reqvarattr(
 
   for (;pva != NULL;pva = (struct varattr *)GET_NEXT(pva->va_link))
     {
+    /* loop for each $varattr parameter */
+
     if ((pva->va_lasttime == 0) || (time_now >= (pva->va_ttl + pva->va_lasttime)))
       {
       if ((pva->va_ttl == -1) && (pva->va_lasttime != 0))
         continue;  /* ttl of -1 is only run once */
-          
+      
+      /* TTL is satisfied, reload value */
+    
       pva->va_lasttime = time_now;
 
       if (pva->va_value == NULL)
-        pva->va_value = calloc(128,sizeof(char));
+        pva->va_value = calloc(TMAX_VARBUF,sizeof(char));
 
       /* execute script and get a new value */
 
@@ -886,12 +897,12 @@ static char *reqvarattr(
         {
         fd = fileno(child);
 
-        child_spot = pva->va_value;
-        child_len = 0;
+        child_spot = tmpBuf;
+        child_len  = 0;
         child_spot[0] = '\0';
 
 retryread:
-        while ((len = read(fd,child_spot,127 - child_len)) > 0)
+        while ((len = read(fd,child_spot,TMAX_VARBUF - child_len)) > 0)
           {
           for (i = 0;i < len;i++)
             {
@@ -911,12 +922,14 @@ retryread:
           child_len += len;
           child_spot += len;
 
-          if (child_len >= 127)
+          if (child_len >= TMAX_VARBUF - 1)
             break;
-          }
+          }  /* END while ((len = read() > 0) */
 
         if (len == -1)
           {
+          /* FAILURE - cannot read var script output */
+
           if (errno == EINTR)
             goto retryread;
 
@@ -926,14 +939,35 @@ retryread:
             RM_ERR_SYSTEM);
 
           fclose(child);
-          }
-        else
-          {
-          pclose(child);
 
-          if (child_len > 0)
-            pva->va_value[child_len - 1] = '\0';   /* hack off newline */
+          continue;
           }
+
+        /* SUCCESS */
+
+        pclose(child);
+
+        /* migrate attr/val values into var value field */
+
+        ptr = strtok(tmpBuf," \t\n;");
+
+        ptr2 = pva->va_value;
+
+        ptr2[0] = '\0';
+
+        /* NOTE:  no bounds checking (NYI) */
+
+        /* OUTPUT FORMAT:  <VAR>=<VAL>[+<VAR>=<VAL>]... */
+
+        while (ptr != NULL)
+          {
+          if (ptr2[0] != '\0')
+            strcat(ptr2,"+");
+
+          strcat(ptr2,ptr);
+
+          ptr = strtok(NULL," \t\n;");
+          }  /* END while (ptr != NULL) */
         }    /* END else ((child = popen(pva->va_cmd,"r")) == NULL) */
       }      /* END if ((pva->va_lasttime == 0) || ...) */
                      
@@ -942,8 +976,6 @@ retryread:
       if (*list != '\0')
         strcat(list,"+");
 
-      strcat(list,pva->va_name);
-      strcat(list,":");
       strcat(list,pva->va_value);
       }
 
@@ -2582,7 +2614,7 @@ static u_long setvarattr(
 
   ptr = pva->va_name;
 
-  while (!isspace(ptr))
+  while (!isspace(*ptr))
     ptr++;
 
   if (*ptr == '\0')
@@ -2601,7 +2633,7 @@ static u_long setvarattr(
 
   ptr++;
 
-  while (isspace(ptr))
+  while (isspace(*ptr))
     ptr++;
 
   /* extract TTL */
@@ -2610,7 +2642,7 @@ static u_long setvarattr(
   
   /* step forward to end of TTL */
 
-  while (!isspace(ptr))
+  while (!isspace(*ptr))
     ptr++;
   
   if (*ptr == '\0')
@@ -2623,7 +2655,7 @@ static u_long setvarattr(
 
   /* skip white space */
 
-  while (isspace(ptr))
+  while (isspace(*ptr))
     ptr++;
 
   if (*ptr == '\0')
