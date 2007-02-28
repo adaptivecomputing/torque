@@ -748,42 +748,39 @@ int run_pelog(
       }
     }
 
-#ifdef LANL
     /* SET BEOWULF_PROCLIST */
 
     {
     struct array_strings *vstrs;
 
-    char *envstr;
+    int    VarIsSet = 0;
+    int    j;
 
     vstrs = pjob->ji_wattr[(int)JOB_ATR_variables].at_val.at_arst;
 
     for (j = 0;j < vstrs->as_usedptr;++j)
       {
-      bld_env_variables(&vtable,vstrs->as_string[j],NULL);
-
       if (!strncmp(
             vstrs->as_string[j],
-            variables_else[tveTmpDir],
-            strlen(variables_else[tveTmpDir])))
-        usertmpdir = 1;
+            "BEOWULF_PROCLIST=",
+            strlen("BEOWULF_PROCLIST=")))
+        {
+        VarIsSet = 1;
 
-    if (VarIsSet)
+        break;
+        }
+
+    if (VarIsSet == 1)
       {
-      sprintf(buf,"%s/%s",
-        path_aux,
-        pjob->ji_qs.ji_jobid);
+      char *envstr;
 
-      envstr = malloc((strlen(envname) + strlen(buf) + 2) * sizeof(char));
+      envstr = malloc((strlen(vstrs->as_string[j])) * sizeof(char));
 
-      sprintf(envstr,"%s=%s",
-        envname,
-        buf);
+      strcpy(envstr,vstrs->as_string[j]);
 
       putenv(envstr);
       }
     }
-#endif
 
     execv(pelog,arg);
 

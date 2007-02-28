@@ -1822,14 +1822,14 @@ void req_signaljob(
     }
   else 
     {
-    if (!strncmp("SIG",sname,3))
+    if (!strncasecmp("SIG",sname,3))
       sname += 3;
 
     psigt = sig_tbl;
 
     while (psigt->sig_name != NULL) 
       {
-      if (!strcmp(sname,psigt->sig_name)) 
+      if (!strcasecmp(sname,psigt->sig_name)) 
         break;
 
       psigt++;
@@ -1899,7 +1899,7 @@ void req_signaljob(
 
 void encode_used(
 
-  job       *pjob,   /* I */
+  job        *pjob,   /* I */
   tlist_head *phead)  /* O */
 
   {

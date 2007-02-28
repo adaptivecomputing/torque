@@ -45,7 +45,7 @@ EXTRA_DIST = man1/qalter.1B man1/qdel.1B man1/qhold.1B man1/qmove.1B \
 	     man8/qrun.8B man8/qstart.8B man8/qstop.8B \
 	     man8/qterm.8B \
 	     \
-	     READ_ME admin_guide.ps doc_fonts \
+	     READ_ME admin_guide.ps v2_2_ers.pdf v2_2_ids.pdf doc_fonts \
 	     ers/ers.macros ers/ers_setup.ms ers/pbs_resources_all.so \
 	     man1/Makefile.am man1/Makefile.in \
 	     man3/Makefile.am man3/Makefile.in \
