@@ -748,6 +748,7 @@ int run_pelog(
       }
     }
 
+#ifdef XXX
     /* SET BEOWULF_PROCLIST */
 
     {
@@ -769,6 +770,7 @@ int run_pelog(
 
         break;
         }
+      }
 
     if (VarIsSet == 1)
       {
@@ -781,6 +783,7 @@ int run_pelog(
       putenv(envstr);
       }
     }
+#endif /* XXX */
 
     execv(pelog,arg);
 
