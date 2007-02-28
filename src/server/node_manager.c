@@ -136,7 +136,6 @@ static int       svr_numcfgnodes = 0;   /* number of nodes currently configured 
 static int	 exclusive;		/* node allocation type */
 
 static FILE 	*nstatef = NULL;
-static FILE 	*nnotef  = NULL;
 static int       num_addrnote_tasks = 0; /* number of outstanding send_cluster_addrs tasks */
 
 extern int	 server_init_type;
@@ -2113,7 +2112,7 @@ int write_node_note()
   {
   static char id[] = "write_node_note";
   struct pbsnode *np;
-  int	i, j;
+  int	i;
   FILE	*nin;
 
   if (LOGLEVEL >= 2)

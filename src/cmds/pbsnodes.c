@@ -400,7 +400,7 @@ int main(
   char	       **pa;
   struct batch_status *pbstat;
   int	flag = ALLI;
-  char	*note;
+  char	*note = NULL;
   int	note_flag = 0;
   int	len;
 
@@ -620,7 +620,7 @@ int main(
     }    /* END if ((flag == ALLI) || (flag == DOWN) || (flag == LIST) || (flag == DIAG)) */
 
 
-  if ( note_flag )
+  if ( note_flag && (note != NULL) )
     {
     /* set the note attrib string on specified nodes */
     for (pa = argv + optind;*pa;pa++) 
