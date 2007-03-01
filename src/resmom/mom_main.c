@@ -948,6 +948,8 @@ retryread:
 
         pclose(child);
 
+        tmpBuf[child_len] = '\0';
+
         /* migrate attr/val values into var value field */
 
         ptr = strtok(tmpBuf," \t\n;");
