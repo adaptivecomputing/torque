@@ -904,22 +904,7 @@ static char *reqvarattr(
 retryread:
         while ((len = read(fd,child_spot,TMAX_VARBUF - child_len)) > 0)
           {
-          for (i = 0;i < len;i++)
-            {
-            if (child_spot[i] == '\n')
-              break;
-            }
-
-          if (i < len)
-            {
-            /* found newline */
-        
-            child_len += i + 1;
-
-            break;
-            }
-
-          child_len += len;
+          child_len  += len;
           child_spot += len;
 
           if (child_len >= TMAX_VARBUF - 1)
