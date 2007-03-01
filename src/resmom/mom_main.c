@@ -876,7 +876,23 @@ static char *reqvarattr(
     if ((pva->va_lasttime == 0) || (time_now >= (pva->va_ttl + pva->va_lasttime)))
       {
       if ((pva->va_ttl == -1) && (pva->va_lasttime != 0))
+        {
+        if (pva->va_value[0] != '\0')
+          {
+          if (*list != '\0')
+            strcat(list,"+");
+     
+          strcat(list,pva->va_value);
+          }
+     
+        if ((int)strlen(list) >= listlen)
+          {
+          listlen += BUFSIZ;
+          list = realloc(list,listlen);
+          }
+
         continue;  /* ttl of -1 is only run once */
+        }
       
       /* TTL is satisfied, reload value */
     
