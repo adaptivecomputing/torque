@@ -116,6 +116,7 @@
 #include "server_limits.h"
 #include "attribute.h"
 #include "resource.h"
+#include "resmon.h"
 #include "job.h"
 #include "log.h"
 #include "rpp.h"
@@ -723,7 +724,7 @@ int is_joined(
 
 static int open_std_out_err(
 
-  job *pjob)
+  job *pjob)  /* I */
 
   {
   int i;
@@ -772,7 +773,9 @@ static int open_std_out_err(
 
   if ((file_out < 0) || (file_err < 0)) 
     {
-    log_err(errno,"open_std_out_err",
+    log_err(
+      errno,
+      "open_std_out_err",
       "Unable to open standard output/error");
 
     return(-1);
@@ -797,6 +800,9 @@ static int open_std_out_err(
 
   return(0);
   }  /* END open_std_out_err() */
+
+
+
 
 
 int mkdirtree(
@@ -2700,9 +2706,10 @@ int TMomFinalizeChild(
 
         exit(0);
         }
-      } 
+      }    /* END if (writerpid > 0) */ 
     else 
-      { /* error */
+      { 
+      /* FAILURE - fork failed */
 
       log_err(errno,id,"cannot fork nanny");
 
@@ -4959,27 +4966,59 @@ static void starter_return(
 /*
  * std_file_name - generate the fully qualified path/name for a
  *		   job standard stream
+ *
+ *   called by 
+       TMomFinalizeJob2
+         fork_me
+           TMomFinalizeChild
+             open_std_out_err
+               open_std_file
+                 std_file_name
  */
 
 char *std_file_name(
 
-  job		*pjob,
-  enum job_file	 which,
-  int		*keeping)	/* RETURN */
+  job		*pjob,      /* I */
+  enum job_file	 which,     /* I */
+  int		*keeping)   /* O (0 is no keep, 1 is keep) */
 
   {
+  char id[] = "std_file_name";
+
   static char  path[MAXPATHLEN + 1];
   char  key;
   int   len;
   char *pd;
   char *suffix;
   char *jobpath = NULL;
+  int   havehomespool = 0;
+
+  extern char *TNoSpoolDirList[];
 
 #if NO_SPOOL_OUTPUT == 1
   struct stat myspooldir;
   static char  path_alt[MAXPATHLEN + 1];
   int   rcstat;
 #endif /* NO_SPOOL_OUTPUT */
+
+  if (LOGLEVEL >= 5)
+    {
+    sprintf(log_buffer,"getting %s file name",
+      (which == StdOut) ? "stdout" : "stderr");
+
+    log_record(
+      PBSEVENT_JOB,
+      PBS_EVENTCLASS_JOB,
+      pjob->ji_qs.ji_jobid,
+      log_buffer);
+    }
+
+  if (keeping == NULL)
+    {
+    /* FAILURE */
+
+    return(NULL);
+    }
 
   if ((pjob->ji_wattr[(int)JOB_ATR_interactive].at_flags & ATR_VFLAG_SET) &&
       (pjob->ji_wattr[(int)JOB_ATR_interactive].at_val.at_long > 0)) 
@@ -4993,7 +5032,7 @@ char *std_file_name(
 
   if (pjob->ji_grpcache == NULL)
     {
-    /* ji_grpcache required for gc_homedir information */
+    /* FAILURE - ji_grpcache required for gc_homedir information */
 
     return(NULL);
     }
@@ -5002,7 +5041,7 @@ char *std_file_name(
     {
     case StdOut:
 
-      key = 'o';
+      key    = 'o';
       suffix = JOB_STDOUT_SUFFIX;
 
       if (pjob->ji_wattr[(int)JOB_ATR_outpath].at_flags & ATR_VFLAG_SET)
@@ -5031,7 +5070,7 @@ char *std_file_name(
       suffix = JOB_CKPT_SUFFIX;
 
       break;
-    }  /* END switch(which) */
+    }  /* END switch (which) */
 
   /* Is file to be kept?, if so use default name in Home directory */
 
@@ -5069,16 +5108,15 @@ char *std_file_name(
     } 
   else 
     {
-
     /* don't bother keeping output if the user actually wants to discard it */
 
     if ((jobpath != NULL) && (*jobpath != '\0'))
       {
       char *ptr;
 
-      if ((ptr=strchr(jobpath,':')) != NULL)
+      if ((ptr = strchr(jobpath,':')) != NULL)
         {
-        jobpath = ptr+1;
+        jobpath = ptr + 1;
         }
 
       if (!strcmp(jobpath,"/dev/null"))
@@ -5092,6 +5130,14 @@ char *std_file_name(
       }
 
     /* put into spool directory unless NO_SPOOL_OUTPUT is defined */
+
+    if (LOGLEVEL >= 5)
+      {
+      sprintf(log_buffer,"std_file_name path before NO_SPOOL_OUTPUT: %s", 
+        path);
+     
+      log_err(-1,"std_file_name",log_buffer);
+      }
 
 #if NO_SPOOL_OUTPUT == 1		
 
@@ -5122,17 +5168,105 @@ char *std_file_name(
 
     *keeping = 1;
 
+    if (LOGLEVEL >= 5)
+      {
+      sprintf(log_buffer,"std_file_name path in NO_SPOOL_OUTPUT: %s", 
+        path);
+
+      log_err(-1,"std_file_name",log_buffer);
+      }
 #else	/* NO_SPOOL_OUTPUT */
 
-    strncpy(path,path_spool,sizeof(path));
+     if ((TNoSpoolDirList[0] != NULL))
+       {
+       int   dindex;
+ 
+       char *wdir;
+ 
+       wdir = get_job_envvar(pjob,"PBS_O_WORKDIR");
+
+       if (LOGLEVEL >= 5)
+         { 
+         sprintf(log_buffer,"wdir: %s", 
+           wdir);
+
+         log_err(-1,"std_file_name",log_buffer);
+         }
+
+       if (wdir != NULL)
+         {
+         /* check if job's work dir matches the no-spool directory list */
+
+         if (LOGLEVEL >= 8) 
+           log_err(-1,"std_file_name","inside wdir != NULL");
+
+         for (dindex = 0;dindex < TMAX_NSDCOUNT;dindex++)
+           {
+           if (TNoSpoolDirList[dindex] == NULL)
+             break;
+ 
+           if (!strcasecmp(TNoSpoolDirList[dindex],"$WORKDIR") ||
+               !strcmp(TNoSpoolDirList[dindex],"*"))
+             {
+             havehomespool = 1;
+
+             if (LOGLEVEL >= 8) 
+               log_err(-1,"std_file_name","inside !strcasecmp");
+ 
+             strncpy(path,wdir,sizeof(path));
+ 
+             break;
+             }
+ 
+           if (!strncmp(TNoSpoolDirList[dindex],wdir,strlen(TNoSpoolDirList[dindex])))
+             {
+             havehomespool = 1;
+
+             if (LOGLEVEL >= 8) 
+               log_err(-1,"std_file_name","inside !strncmp");
+ 
+             strncpy(path,wdir,sizeof(path));
+ 
+             break;
+             }
+           }  /* END for (dindex) */
+         }    /* END if (wdir != NULL) */
+       }      /* END if (TNoSpoolDirList != NULL) */
+ 
+     if (havehomespool == 0)
+       {
+       strncpy(path,path_spool,sizeof(path));
+       }
+     else
+       {
+       strncat(path,"/",sizeof(path));
+       }
 
     *keeping = 0;
+
+    if (LOGLEVEL >= 5)
+      {
+      sprintf(log_buffer,"std_file_name path in else NO_SPOOL_OUTPUT: %s", 
+        path);
+
+      log_err(-1,"std_file_name",log_buffer);
+      }
 
 #endif	/* NO_SPOOL_OUTPUT */
 
     strncat(path,pjob->ji_qs.ji_fileprefix,sizeof(path));
     strncat(path,suffix,sizeof(path));
-    }  /* END else */
+
+    if (LOGLEVEL >= 5)
+      {
+      sprintf(log_buffer,"path: '%s'  prefix: '%s'  suffix: '%s'",
+        path,
+        pjob->ji_qs.ji_fileprefix,
+        suffix);
+
+      log_err(-1,"std_file_name",log_buffer);
+      }
+    }    /* END else ((pjob->ji_wattr[(int)JOB_ATR_keep].at_flags & ...)) */
 
   return(path);
   }  /* END std_file_name() */
@@ -5146,10 +5280,10 @@ char *std_file_name(
 
 int open_std_file(
 
-  job		*pjob,
-  enum job_file	 which,		/* which file */
-  int		 mode,		/* file mode */
-  gid_t		 exgid)		/* gid for file */
+  job		*pjob,    /* I */
+  enum job_file	 which,	  /* which file */
+  int		 mode,	  /* file mode */
+  gid_t		 exgid)	  /* gid for file */
 
   {
   int   fds;
