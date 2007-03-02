@@ -171,6 +171,8 @@ int client_to_svr(
   int           local_port)	/* I - BOOLEAN:  not 0 if use local reserved port */
 
   {
+  const char id[] = "client_to_svr";
+
   struct sockaddr_in local;
   struct sockaddr_in remote;
   int                sock;
@@ -192,11 +194,15 @@ retry:  /* retry goto added (rentec) */
 
   if (sock < 0) 
     {
+    log_err(errno,id,"cannot create socket");
+
     return(PBS_NET_RC_FATAL);
     } 
 
   if (sock >= PBS_NET_MAX_CONNECTIONS) 
     {
+    log_err(-1,id,"PBS_NET_MAX_CONNECTIONS exceeded");
+
     close(sock);		/* too many connections */
 
     return(PBS_NET_RC_RETRY);
@@ -239,6 +245,8 @@ retry:  /* retry goto added (rentec) */
       {
       if (bindresvport(sock,&local) < 0)
         {
+        log_err(errno,id,"cannot bind to reserved port");
+
         close(sock);
 
         return(PBS_NET_RC_FATAL);
@@ -262,6 +270,8 @@ retry:  /* retry goto added (rentec) */
 
       if ((errno != EADDRINUSE) && (errno != EADDRNOTAVAIL)) 
         {
+        log_err(errno,id,"cannot bind to port");
+
         close(sock);
 
         return(PBS_NET_RC_FATAL);
@@ -269,6 +279,8 @@ retry:  /* retry goto added (rentec) */
    
       if (--tryport < (unsigned short)(IPPORT_RESERVED / 2)) 
         {
+        log_err(errno,id,"cannot bind to port - too many tries");
+
         close(sock);
 
         return(PBS_NET_RC_RETRY);
@@ -349,6 +361,8 @@ retry:  /* retry goto added (rentec) */
       break;
 
     default:
+
+      log_err(errno,id,"connect failed");
 
       close(sock);
 

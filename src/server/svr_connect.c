@@ -133,11 +133,13 @@ extern ssize_t read_blocking_socket(int,void *,ssize_t);
 int svr_connect(
 
   pbs_net_t      hostaddr,		/* host order */
-  unsigned int   port,			/* host order */
+  unsigned int   port,			/* I */
   void	         (*func) A_((int)),
   enum conn_type cntype)
 
   {
+  extern char *PAddrToString(pbs_net_t *);
+
   static char *id = "svr_connect";
 
   int handle;
@@ -145,8 +147,9 @@ int svr_connect(
 
   if (LOGLEVEL >= 4)
     {
-    sprintf(log_buffer,"attempting connect to %s port %d",
+    sprintf(log_buffer,"attempting connect to %s %s port %d",
       (hostaddr == pbs_server_addr) ? "server" : "host",
+      PAddrToString(&hostaddr),
       port);
 
    log_event(
@@ -322,29 +325,39 @@ void svr_disconnect(
  *		  -1 if error, error number set in pbs_errno.
  */
 
-int socket_to_handle(sock)
-	int sock;	/* opened socket */
-{
-	int	i;
+int socket_to_handle(
 
-	for (i=0; i<PBS_NET_MAX_CONNECTIONS; i++) {
-		if (connection[i].ch_inuse == 0) {
+  int sock)  /* opened socket */
 
-			connection[i].ch_stream = 0;
-			connection[i].ch_inuse = 1;
-			connection[i].ch_errno = 0;
-			connection[i].ch_socket= sock;
-			connection[i].ch_errtxt = 0;
+  {
+  const char *id = "socket_to_handle";
 
-			/* save handle for later close */
+  int i;
 
-			svr_conn[sock].cn_handle = i;
-			return (i);
-		}
-	}
-	pbs_errno = PBSE_NOCONNECTS;
-	return (-1);
-}
+  for (i = 0;i < PBS_NET_MAX_CONNECTIONS;i++) 
+    {
+    if (connection[i].ch_inuse != 0) 
+      continue;
+
+    connection[i].ch_stream = 0;
+    connection[i].ch_inuse  = 1;
+    connection[i].ch_errno  = 0;
+    connection[i].ch_socket = sock;
+    connection[i].ch_errtxt = 0;
+
+    /* SUCCESS - save handle for later close */
+
+    svr_conn[sock].cn_handle = i;
+
+    return(i);
+    }  /* END for (i) */
+
+  log_err(-1,id,"internal socket table full");
+
+  pbs_errno = PBSE_NOCONNECTS;
+
+  return(-1);
+  }  /* END socket_to_handle() */
 
 
 

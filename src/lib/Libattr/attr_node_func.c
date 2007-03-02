@@ -1134,10 +1134,13 @@ int node_note(
 /*
  * a set_str() wrapper with sanity checks for notes
  */
-int set_note_str(attr, new, op)
-	struct attribute *attr;
-	struct attribute *new;
-	enum batch_op op;
+
+int set_note_str(
+
+  struct attribute *attr,
+  struct attribute *new,
+  enum batch_op     op)
+
   {
   static char id[] = "set_note_str";
   size_t nsize;
@@ -1161,7 +1164,7 @@ int set_note_str(attr, new, op)
     rc = PBSE_BADNDATVAL;
     }
 
-  if ( strchr(new->at_val.at_str,'\n') != NULL )
+  if (strchr(new->at_val.at_str,'\n') != NULL)
     {
     sprintf(log_buffer,"Warning: Client attempted to set note with a newline char");
 
@@ -1174,10 +1177,13 @@ int set_note_str(attr, new, op)
     rc = PBSE_BADNDATVAL;
     }
 
-  if ( rc )
-    return rc;
-  else
-    return set_str(attr,new,op);
+  if (rc != 0)
+    return(rc);
+
+  rc = set_str(attr,new,op);
+
+  return(rc);
   }  /* END set_note_str() */
 
 /* END attr_node_func.c */
+
