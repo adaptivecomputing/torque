@@ -178,11 +178,11 @@ int client_to_svr(
   int                sock;
   unsigned short     tryport;
   int                flags;
-  int               one = 1;
+  int                one = 1;
   
-  local.sin_family = AF_INET;
+  local.sin_family      = AF_INET;
   local.sin_addr.s_addr = 0;
-  local.sin_port = 0;
+  local.sin_port        = 0;
 
   tryport = IPPORT_RESERVED - 1;
 
@@ -209,11 +209,10 @@ retry:  /* retry goto added (rentec) */
     }
 
 #ifndef NOPRIVPORTS
-
   flags = fcntl(sock,F_GETFL);
   flags |= O_NONBLOCK;
-  fcntl(sock,F_SETFL,flags);
 
+  fcntl(sock,F_SETFL,flags);
 #endif /* !NOPRIVPORTS */
 
   /* If local privilege port requested, bind to one */
@@ -254,45 +253,44 @@ retry:  /* retry goto added (rentec) */
       }
     else
       {
-
 #endif /* HAVE_BINDRESVPORT */
 
-    local.sin_port = htons(tryport);
+      local.sin_port = htons(tryport);
 
-    while (bind(sock,(struct sockaddr *)&local,sizeof(local)) < 0) 
-      {
+      while (bind(sock,(struct sockaddr *)&local,sizeof(local)) < 0) 
+        {
 #ifdef NDEBUG2
-      fprintf(stderr,"INFO:  cannot bind to port %d, errno: %d - %s\n",
-        tryport,
-        errno,
-        strerror(errno));
+        fprintf(stderr,"INFO:  cannot bind to port %d, errno: %d - %s\n",
+          tryport,
+          errno,
+          strerror(errno));
 #endif /* NDEBUG2 */
 
-      if ((errno != EADDRINUSE) && (errno != EADDRNOTAVAIL)) 
-        {
-        log_err(errno,id,"cannot bind to port");
+        if ((errno != EADDRINUSE) && (errno != EADDRNOTAVAIL)) 
+          {
+          log_err(errno,id,"cannot bind to port");
 
-        close(sock);
+          close(sock);
 
-        return(PBS_NET_RC_FATAL);
-        } 
+          return(PBS_NET_RC_FATAL);
+          } 
    
-      if (--tryport < (unsigned short)(IPPORT_RESERVED / 2)) 
-        {
-        log_err(errno,id,"cannot bind to port - too many tries");
+        if (--tryport < (unsigned short)(IPPORT_RESERVED / 2)) 
+          {
+          log_err(errno,id,"cannot bind to port - too many tries");
 
-        close(sock);
+          close(sock);
 
-        return(PBS_NET_RC_RETRY);
-        }
+          return(PBS_NET_RC_RETRY);
+          }
 
-      local.sin_port = htons(tryport);
-      }  /* END while (bind() < 0) */
+        local.sin_port = htons(tryport);
+        }  /* END while (bind() < 0) */
 #ifdef HAVE_BINDRESVPORT
-      } /* END if (tryport == (IPPORT_RESERVED - 1)) else */
-#endif  /* HAVE_BINDRESVPORT */
-#endif  /* !NOPRIVPORTS */
-    }    /* END if (local_port != FALSE) */
+      }    /* END if (tryport == (IPPORT_RESERVED - 1)) else */
+#endif     /* HAVE_BINDRESVPORT */
+#endif     /* !NOPRIVPORTS */
+    }      /* END if (local_port != FALSE) */
 			
   /* connect to specified server host and port	*/
 
@@ -351,6 +349,8 @@ retry:  /* retry goto added (rentec) */
       /* fall through to next case */
 
     case ECONNREFUSED:
+
+      log_err(errno,id,"connect refused");
 
       close(sock);
 
