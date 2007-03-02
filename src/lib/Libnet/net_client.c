@@ -180,6 +180,8 @@ int client_to_svr(
   unsigned short     tryport;
   int                flags;
   int                one = 1;
+
+  int                trycount;
  
   if (EMsg != NULL)
     EMsg[0] = '\0';
@@ -228,6 +230,8 @@ retry:  /* retry goto added (rentec) */
   /* If local privilege port requested, bind to one */
   /* must be root privileged to do this	*/
 
+  trycount = 0;
+
   if (local_port != FALSE) 
     {
     /* set REUSEADDR (rentec) */
@@ -245,7 +249,7 @@ retry:  /* retry goto added (rentec) */
     /*
      * bindresvport seems to cause connect() failures in some odd corner case when
      * talking to a local daemon.  So we'll only try this once and fallback to
-     * the slow loop around bind() if connect() failes with EADDRINUSE
+     * the slow loop around bind() if connect() fails with EADDRINUSE
      * or EADDRNOTAVAIL.
      * http://www.supercluster.org/pipermail/torqueusers/2006-June/003740.html
      */
@@ -291,6 +295,8 @@ retry:  /* retry goto added (rentec) */
 
           return(PBS_NET_RC_FATAL);
           } 
+
+        trycount++;
    
         if (--tryport < (unsigned short)(IPPORT_RESERVED / 2)) 
           {
@@ -311,6 +317,8 @@ retry:  /* retry goto added (rentec) */
 #endif     /* HAVE_BINDRESVPORT */
 #endif     /* !NOPRIVPORTS */
     }      /* END if (local_port != FALSE) */
+
+  /* bind successful!!! */
 			
   /* connect to specified server host and port	*/
 

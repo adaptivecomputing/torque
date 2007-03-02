@@ -105,9 +105,13 @@ static void post_signal_req A_((struct work_task *));
 
 /* Global Data Items: */
 
+extern int   LOGLEVEL;
 extern char *msg_momreject;
 
 extern void   set_old_nodes A_((job *));
+
+
+
 
 /*
  * req_signaljob - service the Signal Job Request
@@ -117,13 +121,13 @@ extern void   set_old_nodes A_((job *));
 
 void req_signaljob(
 
-  struct batch_request *preq)
+  struct batch_request *preq)  /* I */
 
   {
   job *pjob;
   int  rc;
 
-  if ((pjob = chk_job_request(preq->rq_ind.rq_signal.rq_jid, preq)) == 0)
+  if ((pjob = chk_job_request(preq->rq_ind.rq_signal.rq_jid,preq)) == 0)
     {
     return;
     }
@@ -169,6 +173,18 @@ void req_signaljob(
     return;
     }
 #endif
+
+  if (LOGLEVEL >= 6)
+    {
+    sprintf(log_buffer,"relaying signal request to mom %lu",
+      pjob->ji_qs.ji_un.ji_exect.ji_momaddr);
+
+    log_record(
+      PBSEVENT_SCHED,
+      PBS_EVENTCLASS_REQUEST,
+      "req_signaljob",
+      log_buffer);
+    }
 
   /* pass the request on to MOM */
 
