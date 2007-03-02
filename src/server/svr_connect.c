@@ -124,8 +124,8 @@ extern struct connection svr_conn[];
 extern pbs_net_t	 pbs_server_addr;
 extern int               LOGLEVEL;
 
-extern int addr_ok(pbs_net_t);
-extern void bad_node_warning(pbs_net_t);
+extern int     addr_ok(pbs_net_t);
+extern void    bad_node_warning(pbs_net_t);
 extern ssize_t read_blocking_socket(int,void *,ssize_t);
 
 
@@ -151,7 +151,7 @@ int svr_connect(
     {
     sprintf(log_buffer,"attempting connect to %s %s port %d",
       (hostaddr == pbs_server_addr) ? "server" : "host",
-      PAddrToString(&hostaddr),
+      ((int)hostaddr != 0) ? PAddrToString(&hostaddr) : "localhost",
       port);
 
    log_event(
@@ -333,7 +333,7 @@ int socket_to_handle(
   int sock)  /* opened socket */
 
   {
-  const char *id = "socket_to_handle";
+  char *id = "socket_to_handle";
 
   int i;
 

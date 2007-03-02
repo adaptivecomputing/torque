@@ -119,6 +119,8 @@ extern unsigned int pbs_mom_port;
 extern unsigned int pbs_server_port_dis;
 extern struct  connection svr_conn[];
 
+extern int       LOGLEVEL;
+
 int issue_to_svr A_((char *,struct batch_request *,void (*f)(struct work_task *)));
 
 /*
@@ -138,8 +140,24 @@ int relay_to_mom(
   void                 (*func) A_((struct work_task *)))
 
   {
+  extern char *PAddrToString(pbs_net_t *);
+
+  char *id = "relay_to_mom";
+
   int	conn;	/* a client style connection handle */
   int   rc;
+
+  if (LOGLEVEL >= 7)
+    {
+    sprintf(log_buffer,"momaddr=%s",
+      PAddrToString(&momaddr));
+
+    log_record(
+      PBSEVENT_SCHED,
+      PBS_EVENTCLASS_REQUEST,
+      id,
+      log_buffer);
+    }
 
   conn = svr_connect(
     momaddr,
@@ -194,7 +212,8 @@ static void reissue_to_svr(
     }
 
   return;
-  }
+  }  /* END resissue_to_svr() */
+
 	
 
 /*
@@ -211,9 +230,9 @@ static void reissue_to_svr(
 
 int issue_to_svr(
 
-  char                 *servern,
-  struct batch_request *preq,
-  void (*replyfunc)     A_((struct work_task *)))
+  char                 *servern,                  /* I */
+  struct batch_request *preq,                     /* I */
+  void (*replyfunc)     A_((struct work_task *))) /* I */
 
   {
   int	  do_retry = 0;
