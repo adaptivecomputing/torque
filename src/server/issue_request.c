@@ -133,14 +133,19 @@ int issue_to_svr A_((char *,struct batch_request *,void (*f)(struct work_task *)
 
 int relay_to_mom(
 
-  pbs_net_t	        momaddr,	/* address of mom */
-  struct batch_request *request,	/* the request to send */
-  void                (*func) A_((struct work_task *)))
+  pbs_net_t	         momaddr,	/* address of mom */
+  struct batch_request  *request,	/* the request to send */
+  void                 (*func) A_((struct work_task *)))
 
   {
   int	conn;	/* a client style connection handle */
+  int   rc;
 
-  conn = svr_connect(momaddr,pbs_mom_port,process_Dreply,ToServerDIS);
+  conn = svr_connect(
+    momaddr,
+    pbs_mom_port,
+    process_Dreply,
+    ToServerDIS);
 
   if (conn < 0) 
     {
@@ -155,7 +160,9 @@ int relay_to_mom(
 
   request->rq_orgconn = request->rq_conn;	/* save client socket */
 
-  return(issue_Drequest(conn,request,func,NULL));
+  rc = issue_Drequest(conn,request,func,NULL);
+
+  return(rc);
   }  /* END relay_to_mom() */
 
 

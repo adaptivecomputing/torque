@@ -167,6 +167,19 @@ int svr_connect(
 
   if (!addr_ok(hostaddr)) 
     {
+    if (LOGLEVEL >= 4)
+      {
+      sprintf(log_buffer,"cannot connect to %s port %d - target is down",
+        (hostaddr == pbs_server_addr) ? "server" : "host",
+        port);
+
+      log_event(
+        PBSEVENT_ADMIN,
+        PBS_EVENTCLASS_SERVER,
+        id,
+        log_buffer);
+      }
+
     pbs_errno = EHOSTDOWN;
 
     return(PBS_NET_RC_RETRY);
@@ -176,6 +189,19 @@ int svr_connect(
 
   if (sock < 0) 
     {
+    if (LOGLEVEL >= 4)
+      {
+      sprintf(log_buffer,"cannot connect to %s port %d - cannot establish connection",
+        (hostaddr == pbs_server_addr) ? "server" : "host",
+        port);
+
+     log_event(
+        PBSEVENT_ADMIN,
+        PBS_EVENTCLASS_SERVER,
+        id,
+        log_buffer);
+      }
+
     bad_node_warning(hostaddr);
 
     pbs_errno = errno;
@@ -207,6 +233,19 @@ int svr_connect(
 
   if (handle == -1) 
     {
+    if (LOGLEVEL >= 4)
+      {
+      sprintf(log_buffer,"cannot connect to %s port %d - cannot get handle",
+        (hostaddr == pbs_server_addr) ? "server" : "host",
+        port);
+
+     log_event(
+        PBSEVENT_ADMIN,
+        PBS_EVENTCLASS_SERVER,
+        id,
+        log_buffer);
+      }
+
     close_conn(sock);
 
     return(PBS_NET_RC_RETRY);
