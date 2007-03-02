@@ -2387,11 +2387,11 @@ void req_rerunjob(
   svrport = strchr(pjob->ji_wattr[(int)JOB_ATR_at_server].at_val.at_str,(int)':');
 
   if (svrport)
-    port = atoi(svrport+1);
+    port = atoi(svrport + 1);
   else
     port = default_server_port;
 
-  sock = client_to_svr(pjob->ji_qs.ji_un.ji_momt.ji_svraddr,port,1);
+  sock = client_to_svr(pjob->ji_qs.ji_un.ji_momt.ji_svraddr,port,1,NULL);
 
   if (sock < 0) 
     {

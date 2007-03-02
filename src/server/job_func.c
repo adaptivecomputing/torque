@@ -486,8 +486,8 @@ int job_abt(
 
 int conn_qsub(
 
-  char *hostname,
-  long  port)
+  char *hostname,  /* I */
+  long  port)      /* I */
 
   {
   pbs_net_t hostaddr;
@@ -500,7 +500,7 @@ int conn_qsub(
     return(-1);
     }
 
-  s = client_to_svr(hostaddr,(unsigned int)port,0);
+  s = client_to_svr(hostaddr,(unsigned int)port,0,NULL);
 
   /* NOTE:  client_to_svr() can return 0 for SUCCESS */
 

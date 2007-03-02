@@ -140,6 +140,8 @@ int svr_connect(
   {
   extern char *PAddrToString(pbs_net_t *);
 
+  char         EMsg[1024];
+
   static char *id = "svr_connect";
 
   int handle;
@@ -188,15 +190,16 @@ int svr_connect(
     return(PBS_NET_RC_RETRY);
     }
 
-  sock = client_to_svr(hostaddr,port,1);
+  sock = client_to_svr(hostaddr,port,1,EMsg);
 
   if (sock < 0) 
     {
     if (LOGLEVEL >= 4)
       {
-      sprintf(log_buffer,"cannot connect to %s port %d - cannot establish connection",
+      sprintf(log_buffer,"cannot connect to %s port %d - cannot establish connection (%s)",
         (hostaddr == pbs_server_addr) ? "server" : "host",
-        port);
+        port,
+        EMsg);
 
      log_event(
         PBSEVENT_ADMIN,

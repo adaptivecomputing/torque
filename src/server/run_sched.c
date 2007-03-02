@@ -149,6 +149,7 @@ static int contact_sched(
   int sock;
 
   char  tmpLine[1024];
+  char  EMsg[1024];
 
   char *id = "contact_sched";
 
@@ -161,7 +162,7 @@ static int contact_sched(
         }
 #endif
 
-  sock = client_to_svr(pbs_scheduler_addr,pbs_scheduler_port,1);
+  sock = client_to_svr(pbs_scheduler_addr,pbs_scheduler_port,1,EMsg);
 
   if (sock < 0) 
     {
@@ -169,9 +170,10 @@ static int contact_sched(
 
     bad_node_warning(pbs_scheduler_addr);
 
-    sprintf(tmpLine,"%s - port %d",
+    sprintf(tmpLine,"%s - port %d %s",
       msg_sched_nocall,
-      pbs_scheduler_port);
+      pbs_scheduler_port,
+      EMsg);
     
     log_err(errno,id,tmpLine);
 

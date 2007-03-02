@@ -168,7 +168,8 @@ int client_to_svr(
 
   pbs_net_t     hostaddr,	/* I - internet addr of host */
   unsigned int  port,		/* I - port to which to connect */
-  int           local_port)	/* I - BOOLEAN:  not 0 if use local reserved port */
+  int           local_port,	/* I - BOOLEAN:  not 0 if use local reserved port */
+  char         *EMsg)           /* O (optional,minsize=1024) */
 
   {
   const char id[] = "client_to_svr";
@@ -179,7 +180,10 @@ int client_to_svr(
   unsigned short     tryport;
   int                flags;
   int                one = 1;
-  
+ 
+  if (EMsg != NULL)
+    EMsg[0] = '\0';
+ 
   local.sin_family      = AF_INET;
   local.sin_addr.s_addr = 0;
   local.sin_port        = 0;
@@ -194,14 +198,20 @@ retry:  /* retry goto added (rentec) */
 
   if (sock < 0) 
     {
-    log_err(errno,id,"cannot create socket");
+    if (EMsg != NULL)
+      sprintf(EMsg,"cannot create socket in %s - errno: %d %s",
+        id,
+        errno,
+        strerror(errno));
 
     return(PBS_NET_RC_FATAL);
     } 
 
   if (sock >= PBS_NET_MAX_CONNECTIONS) 
     {
-    log_err(-1,id,"PBS_NET_MAX_CONNECTIONS exceeded");
+    if (EMsg != NULL)
+      sprintf(EMsg,"PBS_NET_MAX_CONNECTIONS exceeded in %s",
+        id);
 
     close(sock);		/* too many connections */
 
@@ -244,7 +254,9 @@ retry:  /* retry goto added (rentec) */
       {
       if (bindresvport(sock,&local) < 0)
         {
-        log_err(errno,id,"cannot bind to reserved port");
+        if (EMsg != NULL)
+          sprintf(EMsg,"cannot bind to reserved port in %s",
+            id);
 
         close(sock);
 
@@ -268,7 +280,12 @@ retry:  /* retry goto added (rentec) */
 
         if ((errno != EADDRINUSE) && (errno != EADDRNOTAVAIL)) 
           {
-          log_err(errno,id,"cannot bind to port");
+          if (EMsg != NULL)
+            sprintf(EMsg,"cannot bind to port %d in %s - errno: %d %s",
+              tryport,
+              id,
+              errno,
+              strerror(errno));
 
           close(sock);
 
@@ -277,7 +294,10 @@ retry:  /* retry goto added (rentec) */
    
         if (--tryport < (unsigned short)(IPPORT_RESERVED / 2)) 
           {
-          log_err(errno,id,"cannot bind to port - too many tries");
+          if (EMsg != NULL)
+            sprintf(EMsg,"cannot bind to port %d in %s - too many retries",
+              tryport,
+              id);
 
           close(sock);
 
@@ -350,7 +370,10 @@ retry:  /* retry goto added (rentec) */
 
     case ECONNREFUSED:
 
-      log_err(errno,id,"connect refused");
+      if (EMsg != NULL)
+        sprintf(EMsg,"cannot bind to port %d in %s - connection refused",
+          tryport,
+          id);
 
       close(sock);
 
@@ -362,7 +385,12 @@ retry:  /* retry goto added (rentec) */
 
     default:
 
-      log_err(errno,id,"connect failed");
+      if (EMsg != NULL)
+        sprintf(EMsg,"cannot bind to port %d in %s - errno:%d %s",
+          tryport,
+          id,
+          errno,
+          strerror(errno));
 
       close(sock);
 

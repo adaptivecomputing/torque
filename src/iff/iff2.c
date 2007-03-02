@@ -143,6 +143,8 @@ int main(
   extern int   optind;
   extern char *optarg;
 
+  char  EMsg[1024];
+
   char *ptr;
 
   int PBSLOGLEVEL = 0;
@@ -240,7 +242,7 @@ int main(
 
   for (i = 0;i < 10;i++) 
     {
-    sock = client_to_svr(hostaddr,(unsigned int)servport,1);
+    sock = client_to_svr(hostaddr,(unsigned int)servport,1,EMsg);
 
     if (sock != PBS_NET_RC_RETRY)
       break;
@@ -252,12 +254,13 @@ int main(
     {
     /* FAILURE */
 
-    fprintf(stderr,"pbs_iff: cannot connect to %s:%d - %s, errno=%d (%s)\n",
+    fprintf(stderr,"pbs_iff: cannot connect to %s:%d - %s, errno=%d (%s) %s\n",
       argv[optind - 1],
       servport,
       (sock == PBS_NET_RC_FATAL) ? "fatal error" : "timeout",
       errno,
-      strerror(errno));
+      strerror(errno),
+      EMsg);
 
     return(4);
     }

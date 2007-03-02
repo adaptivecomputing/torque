@@ -141,7 +141,7 @@ enum conn_type {
 
 void add_conn A_((int,enum conn_type,pbs_net_t,unsigned int,void (*func) A_((int))));
 int  find_conn A_((pbs_net_t));
-int  client_to_svr A_((pbs_net_t,unsigned int,int));
+int  client_to_svr A_((pbs_net_t,unsigned int,int,char *));
 void close_conn A_((int));
 pbs_net_t get_connectaddr A_((int));
 int  get_connecthost A_((int sock,char *,int));

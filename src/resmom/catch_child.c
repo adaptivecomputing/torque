@@ -679,7 +679,7 @@ void scan_for_exiting()
     else
       port = default_server_port;
 
-    sock = client_to_svr(pjob->ji_qs.ji_un.ji_momt.ji_svraddr,port,1);
+    sock = client_to_svr(pjob->ji_qs.ji_un.ji_momt.ji_svraddr,port,1,NULL);
 
     if (sock < 0) 
       {
