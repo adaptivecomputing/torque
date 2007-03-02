@@ -363,8 +363,10 @@ static void req_stat_job_step2(
     pjob = (job *)GET_NEXT(svr_alljobs);
 
   if (preq->rq_extend != NULL)
+    {
     if (!strncmp(preq->rq_extend,EXECQUEONLY,strlen(EXECQUEONLY)))
       exec_only = 1;
+    }
 
   free(cntl);
 
@@ -374,7 +376,7 @@ static void req_stat_job_step2(
 
     if (exec_only)
       {
-      pque=find_queuebyname(pjob->ji_qs.ji_queue);
+      pque = find_queuebyname(pjob->ji_qs.ji_queue);
 
       if (pque->qu_qs.qu_type != QTYPE_Execution)
          goto nextjob;
@@ -456,19 +458,20 @@ nextjob:
  * contact request.
  */
 
+/* NOTE:  called by qstat */
+
 int stat_to_mom(
 
-  job              *pjob,
-  struct stat_cntl *cntl)
+  job              *pjob,  /* I */
+  struct stat_cntl *cntl)  /* I/O */
 
   {
   struct batch_request *newrq;
-  int		                rc;
+  int		        rc;
   struct work_task     *pwt = 0;
-  struct pbsnode *node;
+  struct pbsnode       *node;
 
-
-  if ((newrq = alloc_br(PBS_BATCH_StatusJob)) == (struct batch_request *)0)
+  if ((newrq = alloc_br(PBS_BATCH_StatusJob)) == NULL)
     {
     return(PBSE_SYSTEM);
     }
@@ -489,6 +492,19 @@ int stat_to_mom(
   if (((node = tfind_addr(pjob->ji_qs.ji_un.ji_exect.ji_momaddr)) != NULL) &&
        (node->nd_state & (INUSE_DELETED|INUSE_DOWN)))
     {
+    if (LOGLEVEL >= 6)
+      {
+      sprintf(log_buffer,"node '%s' is allocated to job but in state '%s'",
+        node->nd_name,
+        (node->nd_state & INUSE_DELETED) ? "deleted" : "down");
+ 
+      log_event(
+        PBSEVENT_SYSTEM,
+        PBS_EVENTCLASS_JOB,
+        pjob->ji_qs.ji_jobid,
+        log_buffer);
+      }
+ 
     return(PBSE_NORELYMOM);
     }
 
@@ -514,7 +530,7 @@ int stat_to_mom(
 
     if (cntl->sc_conn >= 0)
       svr_disconnect(cntl->sc_conn);
-    }
+    }  /* END if (rc != NULL) */
 
   return(rc);
   }  /* END stat_to_mom() */
