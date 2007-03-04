@@ -135,10 +135,18 @@ mbool_t DisplayXML = FALSE;
 #define maxlinesize 65536
 int   linesize = 77;
 
+int   tasksize;
+
 /* END globals */
 
 
+#ifdef TXT
+#define DEFTASKSIZE 5
+#else
+#define DEFTASKSIZE 3
+#endif
 
+int   tasksize = DEFTASKSIZE;
 
 
 
@@ -473,21 +481,24 @@ static void prt_nodes(
  *	gb    for	  -G
  */
 
-static char *cnv_size(value, opt)
-        char *value;
-        int   opt;
-{
-        static int sift_factor[3][5] = {
-		{ -20, -10, 0, 10, 20 },	/* mb conversion */
-		{ -23, -13, -3, 7, 17 },	/* mw conversion */
-		{ -30, -20, -10, 0, 10 } };	/* gb conversion */
-	int in;
-	int out;
-	int sft;
-	unsigned long nval;
-	char *pc;
-	char *suffix;
-	static char outbuf[25];
+static char *cnv_size(
+
+  char *value,
+  int   opt)
+
+  {
+  static int sift_factor[3][5] = {
+    { -20, -10, 0, 10, 20 },	/* mb conversion */
+    { -23, -13, -3, 7, 17 },	/* mw conversion */
+    { -30, -20, -10, 0, 10 } };	/* gb conversion */
+
+  int in;
+  int out;
+  int sft;
+  unsigned long nval;
+  char *pc;
+  char *suffix;
+  static char outbuf[25];
 
 	if (opt & ALT_DISPLAY_Mb) {
 		out = 0;
@@ -522,9 +533,12 @@ static char *cnv_size(value, opt)
 		nval = nval << sft;
 	}
 
-	(void)sprintf(outbuf, "%lu%s", nval, suffix);
-        return outbuf;
-}
+  sprintf(outbuf,"%lu%s", 
+    nval, 
+    suffix);
+
+  return(outbuf);
+  }
 
 
 
@@ -536,9 +550,9 @@ static char *cnv_size(value, opt)
 
 static void altdsp_statjob(
 
-  struct batch_status *pstat,
-  struct batch_status *prtheader,
-  int                  alt_opt)
+  struct batch_status *pstat,     /* I */
+  struct batch_status *prtheader, /* I */
+  int                  alt_opt)   /* I */
 
   {
   char *comment;
@@ -581,7 +595,15 @@ static void altdsp_statjob(
       printf("Job ID               Username Queue    NDS   TSK Memory Time  S Time   BIG  FAST   PFS\n");
 
       printf("-------------------- -------- -------- ----- --- ------ ----- - ----- ----- ----- -----\n"); 
-      } 
+      }
+    else if (tasksize == 5)
+      {
+      printf("\n                                                                     Req'd  Req'd   Elap\n");
+
+      printf("Job ID               Username Queue    Jobname    SessID NDS   Tasks Memory Time  S Time\n");
+
+      printf("-------------------- -------- -------- ---------- ------ ----- ----- ------ ----- - -----\n");
+      }
     else 
       {
       printf("\n                                                                   Req'd  Req'd   Elap\n");
@@ -657,6 +679,11 @@ static void altdsp_statjob(
           if (strcmp(pat->value,"0"))
             tasks = pat->value;
           } 
+        else if (!strcmp(pat->resource,"size")) 
+          {
+          if (strcmp(pat->value,"0"))
+            tasks = pat->value;
+          } 
         else if (!strcmp(pat->resource,"mem")) 
           {
           strncpy(rqmem,cnv_size(pat->value,alt_opt),SIZEL);
@@ -713,8 +740,10 @@ static void altdsp_statjob(
 
     if (alt_opt & ALT_DISPLAY_R) 
       {
-      printf("%5.5s %3.3s %6.6s %5.5s %1.1s %5.5s %5.5s %5.5s %5.5s", 
+      printf("%5.5s %*.*s %6.6s %5.5s %1.1s %5.5s %5.5s %5.5s %5.5s", 
         nodect, 
+        tasksize,
+        tasksize,
         tasks, 
         rqmem, 
         usecput ? rqtimecpu : rqtimewal,
@@ -726,10 +755,12 @@ static void altdsp_statjob(
       } 
     else 
       {
-      printf("%-10.10s %6.6s %5.5s %3.3s %6.6s %5.5s %1.1s %5.5s",
+      printf("%-10.10s %6.6s %5.5s %*.*s %6.6s %5.5s %1.1s %5.5s",
         jobn, 
         sess, 
         nodect, 
+        tasksize,
+        tasksize,
         tasks, 
         rqmem,
         usecput ? rqtimecpu : rqtimewal,
@@ -769,24 +800,38 @@ static void altdsp_statjob(
  * get_ct - get count of jobs in queue/run state
  *	support function for altdsp_statque()
  */
-static void get_ct(str, jque, jrun)
-	char *str;
-	int  *jque;
-	int  *jrun;
-{
-	char *ps;
-	int   colon = (int)':';
 
-	ps = strchr(str, colon);	/* Transit - skip */
-	ps = strchr(ps+1, colon);	/* Queued  - add to jque */
-	*jque += atoi(ps+1);
-	ps = strchr(ps+1, colon);	/* Held    - add to jque  */
-	*jque += atoi(ps+1);
-	ps = strchr(ps+1, colon);	/* Waiting - add to jque  */
-	*jque += atoi(ps+1);
-	ps = strchr(ps+1, colon);	/* Running - add to jrun  */
-	*jrun += atoi(ps+1);
-}
+static void get_ct(
+
+  char *str,
+  int  *jque,
+  int  *jrun)
+
+  {
+  char *ps;
+  int   colon = (int)':';
+
+  ps = strchr(str,colon);	/* Transit - skip */
+
+  ps = strchr(ps + 1,colon);	/* Queued  - add to jque */
+
+  *jque += atoi(ps + 1);
+
+  ps = strchr(ps + 1,colon);	/* Held    - add to jque  */
+
+  *jque += atoi(ps + 1);
+
+  ps = strchr(ps + 1,colon);	/* Waiting - add to jque  */
+
+  *jque += atoi(ps + 1);
+
+  ps = strchr(ps+1,colon);	/* Running - add to jrun  */
+
+  *jrun += atoi(ps + 1);
+
+  return;
+  }  /* END get_ct() */
+
 
 
 
@@ -797,9 +842,9 @@ static void get_ct(str, jque, jrun)
 
 static void altdsp_statque(
 
-  char *serv,
+  char                *serv,
   struct batch_status *pstat,
-  int  opt)
+  int                  opt)
 
   {
   char  rmem[SIZEL];
@@ -850,36 +895,60 @@ static void altdsp_statque(
         } 
       else if (strcmp(pat->name,ATTR_start) == 0) 
         {
-				if (*pat->value == 'T')
-					qstarted = 'R';
-				else
-					qstarted = 'S';
-			} else if (strcmp(pat->name, ATTR_count) == 0) {
-				get_ct(pat->value, &jque, &jrun);
-				tot_jque += jque;
-				tot_jrun += jrun;
-			} else if (strcmp(pat->name, ATTR_rescmax) == 0) {
-				if (strcmp(pat->resource, "mem") == 0) {
-				    (void)strncpy(rmem,
-					  cnv_size(pat->value, opt), SIZEL);
-				} else if (strcmp(pat->resource, "cput") == 0) {
-				    cput = pat->value;
-			 	} else if (strcmp(pat->resource,"walltime")==0){
-				    wallt = pat->value;
-				} else if (strcmp(pat->resource, "nodect")==0) {
-				    nodect = pat->value;
-				}
-			}
-			pat = pat->next;
-		}
+        if (*pat->value == 'T')
+          qstarted = 'R';
+        else
+          qstarted = 'S';
+        } 
+     else if (strcmp(pat->name,ATTR_count) == 0) 
+        {
+        get_ct(pat->value,&jque,&jrun);
 
-		printf("%-16.16s %6.6s %8.8s %8.8s %5.5s ",
-		       pstat->name, rmem, cput, wallt, nodect);
-		printf("%3d %3d %2.2s   %c %c\n",
-		       jrun, jque, jmax, qenabled, qstarted);
+        tot_jque += jque;
+        tot_jrun += jrun;
+        } 
+      else if (strcmp(pat->name,ATTR_rescmax) == 0) 
+        {
+        if (strcmp(pat->resource, "mem") == 0) 
+          {
+          strncpy(
+            rmem,
+            cnv_size(pat->value,opt), 
+            SIZEL);
+          } 
+        else if (strcmp(pat->resource,"cput") == 0) 
+          {
+          cput = pat->value;
+          } 
+        else if (strcmp(pat->resource,"walltime") == 0)
+          {
+          wallt = pat->value;
+          } 
+        else if (strcmp(pat->resource,"nodect") == 0) 
+          {
+          nodect = pat->value;
+          }
+        }
 
-		pstat = pstat->next;
-	}
+      pat = pat->next;
+      }
+
+    printf("%-16.16s %6.6s %8.8s %8.8s %5.5s ",
+      pstat->name, 
+      rmem, 
+      cput, 
+      wallt, 
+      nodect);
+
+    printf("%3d %3d %2.2s   %c %c\n",
+      jrun, 
+      jque, 
+      jmax, 
+      qenabled, 
+      qstarted);
+
+    pstat = pstat->next;
+    }  /* END while (pstat != NULL) */
 
   printf("                                               ----- -----\n");
   printf("                                               %5d %5d\n", 
@@ -887,7 +956,7 @@ static void altdsp_statque(
     tot_jque);
 
   return;
-  }
+  }  /* END altdsp_statque() */
 
 
 
@@ -895,27 +964,36 @@ static void altdsp_statque(
 
 /* build and add an attropl struct to the list */
 
-static void add_atropl(list, name, resc, value, op)
-	struct attropl **list;
-	char		*name;
-	char		*resc;
-	char		*value;
-	enum batch_op	 op;
-{
-	struct attropl *patro;
+static void add_atropl(
 
-	patro = (struct attropl *)malloc(sizeof (struct attropl));
-	if (patro == 0) {
-		fprintf(stderr, "cannot malloc space\n");
-		exit (1);
-	}
-	patro->next     = *list;
-	patro->name     = name;
-	patro->resource = resc;
-	patro->value    = value;
-	patro->op       = op;
-	*list = patro;
-}
+  struct attropl **list,
+  char            *name,
+  char            *resc,
+  char            *value,
+  enum batch_op	   op)
+
+  {
+  struct attropl *patro;
+
+  patro = (struct attropl *)malloc(sizeof (struct attropl));
+
+  if (patro == NULL) 
+    {
+    fprintf(stderr,"cannot malloc space\n");
+
+    exit(1);
+    }
+
+  patro->next     = *list;
+  patro->name     = name;
+  patro->resource = resc;
+  patro->value    = value;
+  patro->op       = op;
+  
+  *list = patro;
+
+  return;
+  }  /* END add_atropl() */
 
 
 
