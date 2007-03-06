@@ -1666,7 +1666,7 @@ char *attrlist(
 
     twol[1] = ap->value;
 
-    argv[num++] = Tcl_Merge(2,twol);
+    argv[num++] = Tcl_Merge(2,(const char **)twol);
 
     if (num == ARGNUM)
       break;
@@ -1674,7 +1674,7 @@ char *attrlist(
     ap = ap->next;
     }
 
-  ret = Tcl_Merge(num,argv);
+  ret = Tcl_Merge(num,(const char **)argv);
 
   for (i = 0;i < num;i++)
     free(argv[i]);
@@ -1783,7 +1783,7 @@ int tcl_stat(
     threel[1] = attrlist(bp->attribs);
     threel[2] = bp->text;
 
-    argv[num++] = Tcl_Merge(3,threel);
+    argv[num++] = Tcl_Merge(3,(const char **)threel);
 
     free(threel[1]);	/* malloc'ed in attrlist() */
 
@@ -1791,12 +1791,12 @@ int tcl_stat(
       break;
     }
 
-  twol[1] = Tcl_Merge(num,argv);
+  twol[1] = Tcl_Merge(num,(const char **)argv);
 
   for (i = 0;i < num;i++)
     free(argv[i]);
 
-  result = Tcl_Merge(2,twol);
+  result = Tcl_Merge(2,(const char **)twol);
 
   Tcl_SetVar(
     interp, 
