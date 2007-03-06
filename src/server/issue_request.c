@@ -201,14 +201,14 @@ static void reissue_to_svr(
   /* if not timed-out, retry send to remote server */
 
   if (((time_now - preq->rq_time) > PBS_NET_RETRY_LIMIT) ||
-       (issue_to_svr(preq->rq_host,preq,(void(*)(struct work_task *))pwt->wt_parm2) == -1)) 
+       (issue_to_svr(preq->rq_host,preq,pwt->wt_parmfunc) == -1)) 
     {
     /* either timed-out or got hard error, tell post-function  */
 
     pwt->wt_aux = -1;	/* seen as error by post function  */
     pwt->wt_event = -1;	/* seen as connection by post func */
 
-    ((void (*)())pwt->wt_parm2)(pwt);
+    ((void (*)())pwt->wt_parmfunc)(pwt);
     }
 
   return;
@@ -283,7 +283,7 @@ int issue_to_svr(
       reissue_to_svr, 
       (void *)preq);
 
-    pwt->wt_parm2 = (void *)replyfunc;
+    pwt->wt_parmfunc = replyfunc;
 
     return(0);
     } 

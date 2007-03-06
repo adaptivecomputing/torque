@@ -116,6 +116,8 @@ struct work_task  {
 					/* function to perform task */
 	void		*wt_parm1;	/* obj pointer for use by func */
 	void		*wt_parm2;	/* optional pointer for use by func */
+        void           (*wt_parmfunc) A_((struct work_task *));
+                                        /* used in reissue_to_svr to store wt_func */
 	int		 wt_aux;	/* optional info: e.g. child status */
 };
 

@@ -101,7 +101,6 @@
 #include "resource.h"
 #include "job.h"
 #include "log.h"
-#include "work_task.h"
 #include "credential.h"
 #include "batch_request.h"
 #include "net_connect.h"
