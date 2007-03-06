@@ -151,6 +151,18 @@ dnl  Libtool
 dnl AC_DISABLE_SHARED
 AC_PROG_LIBTOOL
 
+gcc_warning_flags="-W -Wall -Wno-unused-parameter -Wno-long-long -pedantic -Werror"
+AC_ARG_ENABLE(gcc_warnings,
+    [  --enable-gcc-warnings   If using gcc, use strict warnings])
+if test "x$GCC" = "xyes" ;then
+  AC_MSG_CHECKING([whether to use strict gcc warnings])
+  if test "${enable_gcc_warnings}" == "yes" ; then
+    CFLAGS="$CFLAGS $gcc_warning_flags"
+    AC_MSG_RESULT([yes])
+  else
+    AC_MSG_RESULT([no])
+  fi
+fi
 
 # patch libtool to remove that annoying lib install warning
 test -f libtool.old || (mv libtool libtool.old && cp libtool.old libtool)
@@ -322,7 +334,7 @@ AC_DEFINE_UNQUOTED(IBM_SP2, ${IBM_SP2}, [defined if this is an SP2])
 AC_SUBST(PBSPOE)    
 AC_SUBST(PBSPOEO)
 
-AC_ARG_ENABLE(cpuset,[--disable-cpuset  enable Linux 2.6 kernel cpusets])
+AC_ARG_ENABLE(cpuset,[  --disable-cpuset        enable Linux 2.6 kernel cpusets])
 build_l26_cpuset=no
 if test "x$enable_cpuset" != "xno" ;then
   AC_CHECK_LIB(cpuset, cpuset_cpus_weight, 
@@ -379,7 +391,7 @@ dnl enable Cray's CPA support
 dnl
 AC_MSG_CHECKING([whether to build Cray's CPA support])
 AC_ARG_ENABLE(cpa,
-    [  --enable-cpa           enable Cray's CPA support],
+    [  --enable-cpa            enable Cray's CPA support],
     CPA=$enableval,CPA=no)   
 AC_MSG_RESULT($CPA)
 
@@ -867,8 +879,8 @@ dnl attempt to find a location to install PAM modules
 AC_MSG_CHECKING([for PAM install directory])
 pammoddir=disabled
 AC_ARG_WITH(pam,
-    [  --with-pam=DIR            Directory that holds the system PAM modules.
-                             Defaults to /lib(64)/security on Linux.],
+    [  --with-pam=DIR          Directory that holds the system PAM modules.
+                          Defaults to /lib(64)/security on Linux.],
     [pammoddir=$withval])
 case "$pammoddir" in
   disabled) ;;
