@@ -846,12 +846,11 @@ static char *reqvarattr(
   static char    *list = NULL,*child_spot;
   static int      listlen = 0;
   struct varattr *pva;
-  int             i, fd, len, child_len;
+  int             fd, len, child_len;
   FILE           *child;
 
   char           *ptr;
   char           *ptr2;
-  char           *TokPtr;
 
   char            tmpBuf[TMAX_VARBUF + 1];
 
@@ -939,7 +938,7 @@ retryread:
           sprintf(pva->va_value,"? %d",
             RM_ERR_SYSTEM);
 
-          fclose(child);
+          pclose(child);
 
           continue;
           }

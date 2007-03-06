@@ -4983,8 +4983,6 @@ char *std_file_name(
   int		*keeping)   /* O (0 is no keep, 1 is keep) */
 
   {
-  char id[] = "std_file_name";
-
   static char  path[MAXPATHLEN + 1];
   char  key;
   int   len;
