@@ -323,14 +323,17 @@ AC_SUBST(PBSPOE)
 AC_SUBST(PBSPOEO)
 
 AC_ARG_ENABLE(cpuset,[--disable-cpuset  enable Linux 2.6 kernel cpusets])
+build_l26_cpuset=no
 if test "x$enable_cpuset" != "xno" ;then
   AC_CHECK_LIB(cpuset, cpuset_cpus_weight, 
     [AC_CHECK_LIB(bitmask, bitmask_alloc,
-      [MOMLIBS="$MOMLIBS -lcpuset -lbitmask"
+      [build_l26_cpuset=yes
+       MOMLIBS="$MOMLIBS -lcpuset -lbitmask"
        AC_DEFINE(PENABLE_LINUX26_CPUSETS, 1, [Define to enable Linux 2.6 cpusets])
       ])
     ])
 fi
+AM_CONDITIONAL([BUILD_L26_CPUSETS], test "$build_l26_cpuset" = yes)
 
 
 dnl  irix6 can be changed to irix6array explicitly with an
@@ -1506,6 +1509,7 @@ AC_OUTPUT(buildutils/pbs_mkdirs
 	  src/resmom/irix6/Makefile
 	  src/resmom/irix6array/Makefile
 	  src/resmom/linux/Makefile
+	  src/resmom/linux/cpuset/Makefile
 	  src/resmom/netbsd/Makefile
 	  src/resmom/solaris5/Makefile
 	  src/resmom/solaris7/Makefile

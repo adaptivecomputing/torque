@@ -1,6 +1,5 @@
 #include <pbs_config.h>
 
-#if defined(PENABLE_LINUX26_CPUSETS)
 #include <bitmask.h>
 #include <cpuset.h>
 #include <sys/stat.h>
@@ -507,6 +506,5 @@ int find_free_cpuset_space(
     cpuset_free(child_cpuset);
     return 0;
 }
-#endif
 
 
