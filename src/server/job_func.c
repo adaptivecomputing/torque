@@ -702,7 +702,8 @@ job *job_clone(
   int		rc;
   int           slen;
 
-  
+  pbs_queue *pque;
+
   if (taskid > PBS_MAXJOBARRAY)
     {
     log_err(-1, id, "taskid out of range");
@@ -723,12 +724,12 @@ job *job_clone(
   /* new job structure is allocated, 
      now we need to copy the old job, but modify based on taskid */
 
-  pnewjob->ji_alljobs = poldjob->ji_alljobs;	/* links to all jobs in server */
-  pnewjob->ji_jobque = poldjob->ji_jobque;	/* SVR: links to jobs in same queue */
+
+  CLEAR_LINK(pnewjob->ji_alljobs);
+  CLEAR_LINK(pnewjob->ji_jobque);
+  CLEAR_LINK(pnewjob->ji_svrtask); 
+  CLEAR_HEAD(pnewjob->ji_rejectdest);
   pnewjob->ji_modified = 1;			/* struct changed, needs to be saved */
-  pnewjob->ji_svrtask = poldjob->ji_svrtask;	/* links to svr work_task list */
-  pnewjob->ji_qhdr = poldjob->ji_qhdr;		/* current queue header */
-  CLEAR_HEAD(pnewjob->ji_rejectdest);		/* list of rejected destinations */
 	
 	
   /* copy the fixed size quick save information */
@@ -895,11 +896,6 @@ job *job_clone(
     &pnewjob->ji_wattr[(int)JOB_ATR_variables],
     &tempattr, 
     INCR);  
-
-  
-  CLEAR_LINK(pnewjob->ji_alljobs); 
-  CLEAR_LINK(pnewjob->ji_jobque);
-  CLEAR_LINK(pnewjob->ji_svrtask);
 
   return pnewjob;
   } /* END job_clone() */
