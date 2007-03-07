@@ -1278,7 +1278,7 @@ static void pbsd_init_reque(
       pjob->ji_qs.ji_jobid, 
       pjob->ji_qs.ji_queue);
 
-    log_err(-1,"pbsd_init",logbuf);
+    log_err(-1,"pbsd_init_reque",logbuf);
 
     job_abt(&pjob,logbuf);
 
