@@ -533,7 +533,7 @@ void svr_dequejob(
   svr_do_schedule = SCH_SCHEDULE_TERM;
 
   return;
-  }  /* END svr_dequeuejob() */
+  }  /* END svr_dequejob() */
 
 
 
