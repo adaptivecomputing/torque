@@ -702,8 +702,6 @@ job *job_clone(
   int		rc;
   int           slen;
 
-  pbs_queue *pque;
-
   if (taskid > PBS_MAXJOBARRAY)
     {
     log_err(-1, id, "taskid out of range");
