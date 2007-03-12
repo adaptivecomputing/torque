@@ -3489,8 +3489,8 @@ int TMomFinalizeJob3(
 int start_process(
 
   task	 *ptask,  /* I */
-  char	**argv,
-  char	**envp)
+  char	**argv,   /* I */
+  char	**envp)   /* I */
 
   {
   static char id[] = "start_process";
@@ -4111,7 +4111,7 @@ int start_process(
       }
     }
 
-  /* become the user and  execv the shell and become the real job */
+  /* become the user and execv the shell and become the real job */
 
   setgroups(pjob->ji_grpcache->gc_ngroup,
     (gid_t *)pjob->ji_grpcache->gc_groups);
@@ -4176,7 +4176,7 @@ int start_process(
   fcntl(kid_write,F_SETFD,FD_CLOEXEC);
 
 #if 0	/* def DEBUG */
-  for (i = 3;i< 40;++i) 
+  for (i = 3;i < 40;++i) 
     {	/* check for any extra open descriptors */
     if (close(i) >= 0)
       fprintf(stderr,"Closed file %d\n",i);
@@ -4218,13 +4218,14 @@ int start_process(
 
 void nodes_free(
 
-  job *pj)
+  job *pj)  /* I */
 
   {
-  void	arrayfree  A_((char **array));
-  hnodent	 *np;
+  void arrayfree A_((char **));
 
-  if (pj->ji_vnods) 
+  hnodent *np;
+
+  if (pj->ji_vnods != NULL) 
     {
     free(pj->ji_vnods);
 
@@ -4291,7 +4292,7 @@ void job_nodes(
   char		*cp, *nodestr;
   hnodent	*hp;
   vnodent	*np;
-  extern	char	mom_host[];
+  extern char    mom_host[];
 
   nodes_free(pjob);
 
