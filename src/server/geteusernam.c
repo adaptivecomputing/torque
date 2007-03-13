@@ -377,7 +377,7 @@ int set_jobexid(
 
       return(PBSE_BADUSER); /* root not allowed */
       }
-    }
+    }    /* END if (pwent->pw_uid == 0) */
 
   if (site_check_user_map(pjob,puser,EMsg) == -1)
     {
