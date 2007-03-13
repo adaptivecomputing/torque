@@ -458,6 +458,7 @@ const char *NState[] = {
   "down",
   "free",
   "offline",
+  "unknown",
   "up",
   NULL };
 
