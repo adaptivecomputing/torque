@@ -483,6 +483,7 @@ int main(
   char	*note = NULL;
   int	note_flag = 0;
   int	len;
+  char  NodeArg[256000];
 
   enum NStateEnum ListType = tnsNONE;
 
@@ -493,7 +494,7 @@ int main(
   if (def_server == NULL)
     def_server = "";
 
-  while ((i = getopt(argc,argv,"acdl:opqrs:x-:n:")) != EOF)
+  while ((i = getopt(argc,argv,"acdlopqrs:x-:n:")) != EOF)
     {
     switch(i) 
       {
@@ -518,21 +519,6 @@ int main(
       case 'l':
 
         flag = LIST;
-
-        if ((optarg != NULL) && (optarg[0] != '\0'))
-          {
-          int lindex;
-
-          for (lindex = 1;lindex < tnsLAST;lindex++)
-            {
-            if (!strcasecmp(NState[lindex],optarg))
-              {
-              ListType = lindex;
-
-              break;
-              }
-            }
-          }
 
         break;
 
@@ -668,23 +654,43 @@ int main(
 
   /* if flag is ALLI, DOWN or LIST, get status of all nodes */
 
+  NodeArg[0] = '\0';
+
   if ((flag == ALLI) || (flag == DOWN) || (flag == LIST) || (flag == DIAG)) 
     {
     if ((flag == ALLI) || (flag == LIST) || (flag == DIAG))
       {
+      if (flag == LIST)
+        {
+        /* allow state specification */
+
+        if (argv[optind] != NULL)
+          {
+          int lindex;
+
+          for (lindex = 1;lindex < tnsLAST;lindex++)
+            {
+            if (!strcasecmp(NState[lindex],optarg))
+              {
+              ListType = lindex;
+
+              optind++;
+
+              break;
+              }
+            }
+          } 
+        }
+
       /* allow node specification */
 
       if (argv[optind] != NULL)
-        bstatus = pbs_statnode(con,argv[optind],NULL,NULL);
-      else
-        bstatus = pbs_statnode(con,"",NULL,NULL);
+        {
+        strcpy(NodeArg,argv[optind]);
+        }
       }
-    else
-      {
-      /* node specification not allowed */
 
-      bstatus = pbs_statnode(con,"",NULL,NULL);
-      }
+    bstatus = pbs_statnode(con,NodeArg,NULL,NULL);
 
     if (bstatus == NULL) 
       {
@@ -969,7 +975,7 @@ int main(
 
           case tnsUnknown:  /* node is unknown - no contact recieved */
 
-            if (strcmp(S,ND_state_unknown))
+            if (!strcmp(S,ND_state_unknown))
               {
               Display = 1;
               }
