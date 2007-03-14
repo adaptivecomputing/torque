@@ -671,7 +671,7 @@ int main(
 
           for (lindex = 1;lindex < tnsLAST;lindex++)
             {
-            if (!strcasecmp(NState[lindex],optarg))
+            if (!strcasecmp(NState[lindex],argv[optind]))
               {
               ListType = lindex;
 
