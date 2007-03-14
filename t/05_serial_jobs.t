@@ -4,6 +4,8 @@ use strict;
 use warnings;
 use Test::More tests => 10;
 
+diag('Submitting a serial job to TORQUE - this may take a minute');
+
 # Check Test User
 ok(exists $ENV{'TORQUE_TEST_USER'}, 'Test User Exists') or
   BAIL_OUT('Test user does not exist');
