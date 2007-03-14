@@ -4,7 +4,7 @@ use strict;
 use warnings;
 use Test::More tests => 10;
 
-diag('Submitting a serial job to TORQUE - this may take a minute');
+diag('Submitting a serial job to TORQUE - this may take several minutes');
 
 # Check Test User
 ok(exists $ENV{'TORQUE_TEST_USER'}, 'Test User Exists') or
@@ -64,9 +64,9 @@ my $outputfile = "STDIN.o$job";
 my $errorfile  = "STDIN.e$job";
 sleep $remaining if ($remaining > 0);
 ok(-T $outputfile, 'Output File') or
-  diag('Submitted job output file not copied - check data staging - see Section 6.3');
+  BAIL_OUT('Submitted job output file not copied - check data staging - see Section 6');
 ok(-T $errorfile, 'Error File') or
-  diag('Submitted job error file not copied - check data staging - see Section 6.3');
+  BAIL_OUT('Submitted job error file not copied - check data staging - see Section 6');
 unlink $outputfile if -T $outputfile;
 unlink $errorfile  if -T $errorfile;
 
