@@ -10,7 +10,7 @@ ok($> == 0, "Running as 'root'") or
 my $message = "A username must be supplied for testing job submission.\n"
             . "Do one of the following:\n"
             . "- Set the username using the -u commandline parameter\n"
-            . "  torquetest.pl -u <USERNAME>\n"
+            . "  torque.test -u <USERNAME>\n"
             . "- Set the \$TORQUE_TEST_USER environment variable.\n";
 
 ok(exists $ENV{'TORQUE_TEST_USER'}, 'Test User Exists') or

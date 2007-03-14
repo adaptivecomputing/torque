@@ -28,7 +28,7 @@ my %schedulers;
     unless defined $schedulers{FIFO};
 }
 ok(scalar (keys %schedulers), 'Installed Scheduler') or
-  diag("No recognized scheduler is installed - install Moab, Maui, or pbs_sched and rerun test - see Section XXX");
+  diag("No recognized scheduler is installed - install Moab, Maui, or pbs_sched and rerun test - see Section 5.1");
 
 # Active Schedulers
 {
@@ -57,5 +57,5 @@ ok(scalar (keys %schedulers), 'Installed Scheduler') or
     }
 }
 ok(scalar (keys %schedulers), 'Active Scheduler') or
-  diag("No recognized scheduler is running - jobs will not start, start Moab, Maui, or pbs_sched and rerun test - see Section XXX");
+  diag("No recognized scheduler is running - jobs will not start, start Moab, Maui, or pbs_sched and rerun test - see Section 5.1");
 

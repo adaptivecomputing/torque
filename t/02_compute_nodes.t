@@ -28,14 +28,14 @@ ok(-d $torquehome, 'TORQUE Home Directory Exists') or
 my $nodesfile = "$torquehome/server_priv/nodes";
    $nodesfile =~ s#//#/#g;
 ok(-T $nodesfile, 'Nodes File Exists') or
-  BAIL_OUT("TORQUE 'nodes' file not created, setup $nodesfile and restart pbs_server - see Section XXX");
+  BAIL_OUT("TORQUE 'nodes' file not created, setup $nodesfile and restart pbs_server - see Section 1.2.2");
 my @pbsnodes = map  { s/\s+$//g; $_ }
                grep { /^\S/         }
                `pbsnodes -a`;
 ok(scalar @pbsnodes, 'pbsnodes Reports Nodes') or
-  BAIL_OUT("TORQUE 'nodes' file not created, setup $nodesfile and restart pbs_server - see Section XXX");
+  BAIL_OUT("TORQUE 'nodes' file not created, setup $nodesfile and restart pbs_server - see Section 1.2.2");
 ok($pbsnodes[0] ne 'no nodes', 'pbsnodes Lists Nodes') or
-  BAIL_OUT("TORQUE 'nodes' file not created, setup $nodesfile and restart pbs_server - see Section XXX");
+  BAIL_OUT("TORQUE 'nodes' file not created, setup $nodesfile and restart pbs_server - see Section 1.2.2");
 
 # Node Count
 my $nodecount = scalar @pbsnodes;

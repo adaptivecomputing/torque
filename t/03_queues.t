@@ -31,9 +31,9 @@ foreach my $queue (keys %queues)
   }
 # - Verify that queues exist
 ok(scalar (keys %queues), 'Configured Queues') or
-  BAIL_OUT('No TORQUE queues are configured - run torque.setup or see Section XXX');
+  BAIL_OUT('No TORQUE queues are configured - run torque.setup or see Sections 1.2.1 & 4.1');
 ok(scalar @xqueues, 'Execution Queues') or
-  BAIL_OUT('No execution queues are configured - run torque.setup or see Section XXX');
+  BAIL_OUT('No execution queues are configured - run torque.setup or see Sections 1.2.1 & 4.1');
 
 # Queue Check
 my $queuesOK = 1;
@@ -42,16 +42,16 @@ foreach my $queue (keys %queues)
   ok($queues{$queue}{'enabled'} =~ /^True$/i, "Queue '$queue' Enabled") or
     do
       {
-      diag("TORQUE queue '$queue' has not been enabled - see Section XXX");
+      diag("TORQUE queue '$queue' has not been enabled - see Section 4.1");
       $queuesOK = 0;
       };
   ok($queues{$queue}{'started'} =~ /^True$/i, "Queue '$queue' Started") or
     do
       {
-      diag("TORQUE queue '$queue' has not been started - see Section XXX");
+      diag("TORQUE queue '$queue' has not been started - see Section 4.1");
       $queuesOK = 0;
       };
   }
 ok($queuesOK, 'TORQUE Queues Configured') or
-  BAIL_OUT("TORQUE queues have not been correctly configured - run torque.setup or see section XXX");
+  BAIL_OUT("TORQUE queues have not been correctly configured - run torque.setup or see section 4.1");
 
