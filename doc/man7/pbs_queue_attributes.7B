@@ -173,6 +173,18 @@ default value: all users allowed.
 .if !\n(Pb .ig Ig
 [internal type:  access control list]
 .Ig
+.Al allow_batch
+Queue will or will not accept batch jobs. Format: boolean (see acl_group_enable);
+If unset, batch jobs are allowed
+.if !\n(Pb .ig Ig
+[internal type: boolean]
+.Ig
+.Al allow_interactive
+Queue will or will not accept interactive jobs. Format: boolean (see acl_group_enable);
+If unset, interactive jobs are allowed
+.if !\n(Pb .ig Ig
+[internal type: boolean]
+.Ig
 .Al enabled
 Queue will or will not accept new jobs.  When false the queue is \*Qdisabled\*U
 and will not accept jobs.  Format: boolean (see acl_group_enable);

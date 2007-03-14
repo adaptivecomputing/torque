@@ -122,4 +122,5 @@ ATTR_start,
 ATTR_acllogic,  /* contributed by USC */
 ATTR_aclgrpslpy,
 ATTR_keepcompleted,
-
+ATTR_allowinteractive,
+ATTR_allowbatch,

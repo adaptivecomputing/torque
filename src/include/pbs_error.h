@@ -162,6 +162,8 @@
 #define PBSE_JOBTYPE	15072		/* wrong job type (batch or interactive) */
 #define PBSE_BADACLHOST	15073		/* bad entry in ACL host list */
 #define PBSE_MAXUSERQUED 15074		/* max number of jobs queued for user */
+#define PBSE_NOINTERACTIVE 15075	/* interactive jobs not allowed */
+#define PBSE_NOBATCH       15076	/* batch jobs not allowed */
 /*
 ** 	Resource monitor specific
 */
