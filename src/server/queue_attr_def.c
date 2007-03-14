@@ -340,7 +340,7 @@ attribute_def que_attr_def[] = {
        ATR_TYPE_LONG,
        PARENT_TYPE_QUE_ALL
      },
-/* QA_ATR_MTime */
+/* QS_ATR_MTime */
     {	ATTR_mtime,		/* "mtime" */
 	decode_l,
 	encode_l,
@@ -351,30 +351,6 @@ attribute_def que_attr_def[] = {
 	READ_ONLY,
 	ATR_TYPE_LONG,
 	PARENT_TYPE_QUE_ALL
-    },
-/* QA_ATR_AllowInteractive */
-    {   ATTR_allowinteractive,  /* allow_interactive */
-        decode_b,
-        encode_b,
-        set_b,
-        comp_b,
-        free_null,
-        NULL_FUNC,
-        NO_USER_SET,
-        ATR_TYPE_LONG,
-        PARENT_TYPE_QUE_ALL
-    },
-/* QA_ATR_AllowBatch */
-    {   ATTR_allowbatch,  /* allow_batch */
-        decode_b,
-        encode_b,
-        set_b,
-        comp_b,
-        free_null,
-        NULL_FUNC,
-        NO_USER_SET,
-        ATR_TYPE_LONG,
-        PARENT_TYPE_QUE_ALL
     },
 
    /* for execution queues only */

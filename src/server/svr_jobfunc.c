@@ -127,14 +127,6 @@
 #include "sched_cmds.h"
 #include "pbs_proto.h"
 
-#ifndef TRUE
-#define TRUE 1
-#endif
-
-#ifndef FALSE
-#define FALSE 0
-#endif
-
 
 /* Private Functions */
 
@@ -1175,28 +1167,6 @@ int svr_chkque(
         }
       }
     }
-
-  /* reject if queue attribute allow_interactive is set to false and job is
-     interactive */
-  if ((pjob->ji_wattr[(int)JOB_ATR_interactive].at_flags & ATR_VFLAG_SET) &&
-      (pjob->ji_wattr[(int)JOB_ATR_interactive].at_val.at_long > 0) &&
-      (pque->qu_attr[QA_ATR_AllowInteractive].at_flags & ATR_VFLAG_SET) &&
-      (pque->qu_attr[QA_ATR_AllowInteractive].at_val.at_long == FALSE))
-    {
-    return PBSE_NOINTERACTIVE;
-    }
-
-  /* reject if queue attribute allow_batch is set to false and job is 
-     not interactive */
-  if (((pjob->ji_wattr[(int)JOB_ATR_interactive].at_flags & ATR_VFLAG_SET == 0) ||
-       (pjob->ji_wattr[(int)JOB_ATR_interactive].at_val.at_long == 0)) &&
-      (pque->qu_attr[QA_ATR_AllowBatch].at_flags & ATR_VFLAG_SET) &&
-      (pque->qu_attr[QA_ATR_AllowBatch].at_val.at_long == FALSE))
-    {
-    return PBSE_NOBATCH;
-    }
-
-
 
   /* checks 2 and 3 are bypassed for a move by manager or qorder */
 

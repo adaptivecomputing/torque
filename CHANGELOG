@@ -30,7 +30,6 @@ c - crash     b - bug fix    e - enhancement    f - new feature
   e - allow export of specific variables into prolog/epilog environment
   b - change fclose to pclose to close submit filter pipe (ABCC)
   e - add support for Cray XT size and larger qstat task reporting (ORNL)
-  f - new queue attributes: allow_batch, and allow_interactive
 
 2.1.8
   b - stop possible memory corruption with an invalid request type (StockholmU)

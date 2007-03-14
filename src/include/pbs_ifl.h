@@ -203,8 +203,7 @@
 #define ATTR_acllogic   "acl_logic_or"
 #define ATTR_aclgrpslpy "acl_group_sloppy"
 #define ATTR_keepcompleted "keep_completed"
-#define ATTR_allowinteractive "allow_interactive"
-#define ATTR_allowbatch  "allow_batch"
+
 
 /* additional server attributes names */
 

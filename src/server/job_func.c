@@ -812,7 +812,7 @@ job *job_clone(
   strcpy(pnewjob->ji_qs.ji_fileprefix,basename);
 
   /* end making new job file name now we need to copy the contents of the old 
-     script file into the file for this cloned job */
+     file into the file for this cloned job */
   strcpy(namebuf,path_jobs);
   strcat(namebuf,basename);
   strcat(namebuf,JOB_SCRIPT_SUFFIX);
