@@ -203,7 +203,7 @@
 #define ATTR_acllogic   "acl_logic_or"
 #define ATTR_aclgrpslpy "acl_group_sloppy"
 #define ATTR_keepcompleted "keep_completed"
-
+#define ATTR_disallowedtypes "disallowed_types"
 
 /* additional server attributes names */
 
@@ -297,6 +297,10 @@
 #define ND_state_unknown	"state-unknown"
 #define ND_timeshared		"time-shared"
 #define ND_cluster		"cluster"
+
+/* queue disallowed types */
+#define Q_DT_batch              "batch"
+#define Q_DT_interactive        "interactive"
 
 /*constant related to sum of string lengths for above strings*/
 #define	MAX_ENCODE_BFR		100
