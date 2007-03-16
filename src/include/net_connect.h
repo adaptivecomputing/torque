@@ -156,14 +156,14 @@ void net_set_type A_((enum conn_type,enum conn_type));
 
 
 struct connection {
-	pbs_net_t	cn_addr;	/* internet address of client */
-	int		cn_handle;	/* handle for API, see svr_connect() */
-	unsigned int	cn_port;	/* internet port number of client */
-	unsigned short  cn_authen;	/* authentication flags */
-	enum conn_type	cn_active;	/* idle or type if active */
-	time_t		cn_lasttime;	/* time last active */
-	void		(*cn_func) A_((int)); /* read function when data rdy */
-	void		(*cn_oncl) A_((int)); /* func to call on close */
+  pbs_net_t	cn_addr;	/* internet address of client */
+  int		cn_handle;	/* handle for API, see svr_connect() */
+  unsigned int	cn_port;	/* internet port number of client */
+  unsigned short cn_authen;	/* authentication flags */
+  enum conn_type cn_active;     /* idle or type if active */
+  time_t	cn_lasttime;    /* time last active */
+  void		(*cn_func) A_((int)); /* read function when data rdy */
+  void		(*cn_oncl) A_((int)); /* func to call on close */
 };
 
 struct netcounter {

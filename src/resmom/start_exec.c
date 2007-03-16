@@ -1852,35 +1852,35 @@ int TMomFinalizeChild(
   pjobexec_t *TJE)   /* I */
 
   {
-  static char          *id = "TMomFinalizeChild";
+  static char           *id = "TMomFinalizeChild";
 
-  char                 *arg[3];
-  char                  buf[MAXPATHLEN + 2];
-  pid_t                 cpid;
-  int                   i, j, vnodenum;
+  char                  *arg[3];
+  char                   buf[MAXPATHLEN + 2];
+  pid_t                  cpid;
+  int                    i, j, vnodenum;
 
-  char                  qsubhostname[1024];
+  char                   qsubhostname[1024];
 
-  char                 *phost = NULL;
-  int                   pport = 0;
-  int                   pts;
-  int                   qsub_sock;
+  char                  *phost = NULL;
+  int                    pport = 0;
+  int                    pts;
+  int                    qsub_sock;
   char                  *shell;
   char                  *shellname;
   char                  *idir;
   char                  *termtype;
 
-  struct startjob_rtn   sjr = {0,0};
+  struct startjob_rtn    sjr = {0,0};
 
 #if defined(PENABLE_DYNAMIC_CPUSETS)
 
-  attribute            *pattr;
-  char                  cQueueName[16];         /* unique CpuSet Name */
-  char                  cPermFile[1024];        /* unique File Name */
-  FILE                 *fp;                     /* file pointer into /proc/cpuinfo */
-  char                  cBuffer[CBUFFERSIZE + 1];  /* char buffer used for counting procs */
-  int                   nCPUS = 0;              /* number of cpus the machine has */
-  int                   nCpuId = 0;             /* cpuId */
+  attribute             *pattr;
+  char                   cQueueName[16];         /* unique CpuSet Name */
+  char                   cPermFile[1024];        /* unique File Name */
+  FILE                  *fp;                     /* file pointer into /proc/cpuinfo */
+  char                   cBuffer[CBUFFERSIZE + 1];  /* char buffer used for counting procs */
+  int                    nCPUS = 0;              /* number of cpus the machine has */
+  int                    nCpuId = 0;             /* cpuId */
 
   struct CpuSetMap {
     short CpuId;
@@ -1904,9 +1904,11 @@ int TMomFinalizeChild(
 #endif  /* PENABLE_DYNAMIC_CPUSETS */
 
   job                   *pjob;
-  task                 *ptask;
+  task                  *ptask;
 
-  struct passwd        *pwdp;
+  struct passwd         *pwdp;
+
+  char                   EMsg[1024];
 
   pjob  = (job *)TJE->pjob;
   ptask = (task *)TJE->ptask;
@@ -2471,13 +2473,14 @@ int TMomFinalizeChild(
       strncpy(qsubhostname,phost,sizeof(qsubhostname));
       }
 
-    qsub_sock = conn_qsub(qsubhostname,pport);
+    qsub_sock = conn_qsub(qsubhostname,pport,EMsg);
 
     if (qsub_sock < 0) 
       {
-      snprintf(log_buffer,1024,"cannot open interactive qsub socket to host %s:%d - check routing tables/multi-homed host issues",
+      snprintf(log_buffer,1024,"cannot open interactive qsub socket to host %s:%d - '%s' - check routing tables/multi-homed host issues",
         qsubhostname,
-        pport);
+        pport,
+        EMsg);
 
       log_err(errno,id,log_buffer);
 

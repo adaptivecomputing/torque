@@ -2025,7 +2025,10 @@ void catchint(
   }  /* END catchint() */
 
 
-void x11handler(int inter_sock)
+void x11handler(
+
+  int inter_sock)
+
   {
   struct pfwdsock *socks;
   int n;
@@ -2054,10 +2057,10 @@ void x11handler(int inter_sock)
     return;
   }
 
-  port_forwarder(socks,x11_connect_display,display,0);
+  port_forwarder(socks,x11_connect_display,display,0,NULL);
 
   exit(EXIT_FAILURE);
-}
+  }
 
 
 /*

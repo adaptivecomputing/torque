@@ -27,7 +27,15 @@
  * should fork first since this function is an infinite loop and never returns */
 
 /* __attribute__((noreturn)) - how do I do this portably? */
-void port_forwarder(struct pfwdsock *socks,int(*connfunc)(char *,int),char *phost,int pport)
+
+void port_forwarder(
+
+  struct pfwdsock *socks,
+  int (*connfunc)(char *,int,char *),
+  char            *phost,
+  int              pport,
+  char            *EMsg)  /* O */
+
   {
   fd_set rfdset, wfdset, efdset;
   int rc, maxsock=0;
@@ -35,12 +43,10 @@ void port_forwarder(struct pfwdsock *socks,int(*connfunc)(char *,int),char *phos
   torque_socklen_t fromlen;
   int n,n2,sock;
 
-
   fromlen = sizeof(from);
 
   while (1)
     {
-
     FD_ZERO(&rfdset);
     FD_ZERO(&wfdset);
     FD_ZERO(&efdset);
@@ -109,16 +115,16 @@ void port_forwarder(struct pfwdsock *socks,int(*connfunc)(char *,int),char *phos
             else
               break;
             }
+
           (socks+newsock)->sock     =(socks+peersock)->remotesock=sock;
           (socks+newsock)->listening=(socks+peersock)->listening =0;
           (socks+newsock)->active   =(socks+peersock)->active    =1;
-          (socks+newsock)->peer     =(socks+peersock)->sock      =connfunc(phost,pport);
+          (socks+newsock)->peer     =(socks+peersock)->sock      =connfunc(phost,pport,EMsg);
           (socks+newsock)->bufwritten   =(socks+peersock)->bufwritten      =0;
           (socks+newsock)->bufavail =(socks+peersock)->bufavail  =0;
           (socks+newsock)->buff[0]  =(socks+peersock)->buff[0]   = '\0';
           (socks+newsock)->peer=peersock;                                                   
           (socks+peersock)->peer=newsock;
-
           }
         else
           {
@@ -185,8 +191,13 @@ void port_forwarder(struct pfwdsock *socks,int(*connfunc)(char *,int),char *phos
         (socks+n)->active=0;
         }
       }
-   } /* END while(1) */
-}
+    }   /* END while(1) */
+  }     /* END port_forwarder() */
+
+
+
+
+
 
 /* disable nagle on a socket */
 void    
@@ -208,6 +219,9 @@ set_nodelay(int fd)
         if (setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &opt, sizeof opt) == -1)
                 fprintf(stderr,"setsockopt TCP_NODELAY: %.100s", strerror(errno)); 
 }                           
+
+
+
 
 /* return a socket to the specified X11 unix socket */
 int
@@ -231,21 +245,33 @@ connect_local_xsocket(u_int dnr)
         return -1;
 }
 
-int
-x11_connect_display(char *display,int alsounused)
-{       
+
+
+
+
+int x11_connect_display(
+
+  char *display,
+  int   alsounused,
+  char *EMsg)        /* O */
+
+  { 
+  if (EMsg != NULL)
+    EMsg[0] = '\0';
+      
 #ifndef HAVE_GETADDRINFO
   /* this was added for cygwin which doesn't seem to have a working
    * getaddrinfo() yet.
    * this will have to be figured out later */
-  return -1;
+
+  return(-1);
 #else
 
-        int display_number, sock = 0;
-        char buf[1024], *cp;
-        struct addrinfo hints, *ai, *aitop;
-        char strport[NI_MAXSERV];
-        int gaierr;
+  int display_number, sock = 0;
+  char buf[1024], *cp;
+  struct addrinfo hints, *ai, *aitop;
+  char strport[NI_MAXSERV];
+  int gaierr;
 
         /*
          * Now we decode the value of the DISPLAY variable and make a

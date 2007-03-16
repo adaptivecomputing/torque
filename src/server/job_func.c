@@ -116,6 +116,8 @@
 #include <dirent.h>
 #include <stdlib.h>
 #include <string.h>
+#include <netdb.h>
+
 #include "pbs_ifl.h"
 #include "list_link.h"
 #include "work_task.h"
@@ -132,7 +134,7 @@
 #include "net_connect.h"
 #include "portability.h"
 
-int conn_qsub(char *,long);
+int conn_qsub(char *,long,char *);
 
 
 /* External functions */
@@ -276,45 +278,69 @@ int remtree(
 
     filnam = &namebuf[i];
 
-	    while ((pdir = readdir(dir)) != NULL) {
-		if ( pdir->d_name[0] == '.' &&
-		    (pdir->d_name[1] == '\0' || pdir->d_name[1] == '.'))
-			continue;
+    while ((pdir = readdir(dir)) != NULL) 
+      {
+      if ((pdir->d_name[0] == '.') &&
+         ((pdir->d_name[1] == '\0') || (pdir->d_name[1] == '.')))
+        continue;
 
-		(void)strcpy(filnam, pdir->d_name);
+      strcpy(filnam,pdir->d_name);
 
 #if defined(HAVE_STRUCT_STAT64) && defined(HAVE_STAT64)
-		if (lstat64(namebuf, &sb) == -1) {
+      if (lstat64(namebuf,&sb) == -1) 
 #else
-		if (lstat(namebuf, &sb) == -1) {
+      if (lstat(namebuf,&sb) == -1) 
 #endif
-			log_err(errno, id, "stat");
-			rtnv = -1;
-			continue;
-		}
-		if (S_ISDIR(sb.st_mode)) {
-			rtnv = remtree(namebuf);
-		} else if (unlink(namebuf) < 0) {
-			if (errno != ENOENT) {
-			    sprintf(log_buffer, "unlink failed on %s", namebuf);
-			    log_err(errno, id, log_buffer);
-			    rtnv = -1;
-			}
-		}
-	    }
-	    (void)closedir(dir);
-	    if (rmdir(dirname) < 0) {
-		if ((errno != ENOENT) && (errno != EINVAL)) {
-			sprintf(log_buffer, "rmdir failed on %s", dirname);
-			log_err(errno, id, log_buffer);
-			rtnv = -1;
-		}
-	    }
-	} else if (unlink(dirname) < 0) {
-		sprintf(log_buffer, "unlink failed on %s", dirname);
-		log_err(errno, id, log_buffer);
-		rtnv = -1;
-	}
+        {
+        log_err(errno,id,"stat");
+ 
+        rtnv = -1;
+ 
+        continue;
+        }
+
+      if (S_ISDIR(sb.st_mode)) 
+        {
+        rtnv = remtree(namebuf);
+        }
+      else if (unlink(namebuf) < 0) 
+        {
+        if (errno != ENOENT) 
+          {
+          sprintf(log_buffer,"unlink failed on %s", 
+            namebuf);
+
+          log_err(errno,id,log_buffer);
+
+          rtnv = -1;
+          }
+        }
+      }    /* END while ((pdir = readdir(dir)) != NULL) */
+
+    closedir(dir);
+
+    if (rmdir(dirname) < 0) 
+      {
+      if ((errno != ENOENT) && (errno != EINVAL)) 
+        {
+        sprintf(log_buffer,"rmdir failed on %s", 
+          dirname);
+
+        log_err(errno,id,log_buffer);
+
+        rtnv = -1;
+        }
+      }
+    } 
+  else if (unlink(dirname) < 0) 
+    {
+    sprintf(log_buffer,"unlink failed on %s", 
+      dirname);
+
+    log_err(errno,id,log_buffer);
+
+    rtnv = -1;
+    }
 
   return(rtnv);
   }  /* END remtree() */
@@ -329,9 +355,9 @@ void send_qsub_delmsg(
   char *text)  /* I */
 
   {
-  char *phost;
-  attribute            *pattri;
-  int qsub_sock;
+  char      *phost;
+  attribute *pattri;
+  int        qsub_sock;
 
   phost = arst_string("PBS_O_HOST",&pjob->ji_wattr[(int)JOB_ATR_variables]);
 
@@ -342,7 +368,7 @@ void send_qsub_delmsg(
 
   pattri = &pjob->ji_wattr[(int)JOB_ATR_interactive];
 
-  qsub_sock = conn_qsub(phost + 1,pattri->at_val.at_long);
+  qsub_sock = conn_qsub(phost + 1,pattri->at_val.at_long,NULL);
 
   if (qsub_sock < 0)
     {
@@ -355,7 +381,7 @@ void send_qsub_delmsg(
   close(qsub_sock);
 
   return;
-  }
+  }  /* END send_qsub_delmsg() */
 
 
 
@@ -487,7 +513,8 @@ int job_abt(
 int conn_qsub(
 
   char *hostname,  /* I */
-  long  port)      /* I */
+  long  port,      /* I */
+  char *EMsg)      /* O (optional,minsize=1024) */
 
   {
   pbs_net_t hostaddr;
@@ -495,12 +522,26 @@ int conn_qsub(
 
   int flags;
 
+  if (EMsg != NULL)
+    EMsg[0] = '\0';
+
   if ((hostaddr = get_hostaddr(hostname)) == (pbs_net_t)0)
     {
+    extern int h_errno;
+
+    /* FAILURE */
+
+    if (EMsg != NULL)
+      {
+      snprintf(EMsg,1024,"cannot get address for host '%s', h_errno=%d",
+        hostname,
+        h_errno);
+      }
+
     return(-1);
     }
 
-  s = client_to_svr(hostaddr,(unsigned int)port,0,NULL);
+  s = client_to_svr(hostaddr,(unsigned int)port,0,EMsg);
 
   /* NOTE:  client_to_svr() can return 0 for SUCCESS */
 
@@ -513,6 +554,8 @@ int conn_qsub(
 
     return(-1);
     }
+
+  /* SUCCESS */
 
   /* this socket should be blocking */
 

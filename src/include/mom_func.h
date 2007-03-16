@@ -162,7 +162,7 @@ extern int   site_mom_postchk A_((job *, int));
 extern int   site_mom_prerst A_((job *));
 extern int   reader A_((int, int));
 extern int   writer A_((int, int));
-extern int   conn_qsub A_((char *,unsigned int));
+extern int   conn_qsub A_((char *,unsigned int,char *));  /* NOTE:  should be moved out of here to job_func proto header */
 extern int   run_pelog A_((int, char *,job *,int));
 extern int   is_joined A_((job *));
 extern void  check_busy A_((double));
