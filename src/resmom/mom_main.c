@@ -326,6 +326,8 @@ static unsigned long setautoidealload(char *);
 static unsigned long setautomaxload(char *);
 static unsigned long setnodefilesuffix(char *);
 static unsigned long setnospooldirlist(char *);
+static unsigned long setmomhost(char *);
+
 
 static struct specials {
   char            *name;
@@ -365,6 +367,7 @@ static struct specials {
     { "varattr",             setvarattr },
     { "nodefile_suffix",     setnodefilesuffix },
     { "nospool_dir_list",    setnospooldirlist },
+    { "mom_host",            setmomhost },
     { NULL,                  NULL } };
 
 
@@ -2694,6 +2697,24 @@ static unsigned long setnodefilesuffix(
 
   return(1);
   }  /* END setnodexfilesuffix() */
+
+
+
+
+static unsigned long setmomhost(
+
+  char *value)  /* I */
+
+  {
+  hostname_specified = 1;
+
+  strncpy(mom_host,value,PBS_MAXHOSTNAME);       /* remember name */
+
+  /* SUCCESS */
+
+  return(1);
+  }  /* END setmomhost() */
+
 
 
 
@@ -6391,7 +6412,7 @@ int main(
  
         break;
       }  /* END switch(c) */
-    }    /* END while ((c = getopt(argc,argv,"d:c:M:S:R:L:a:xC:pr")) != -1) */
+    }    /* END while ((c = getopt(argc,argv,"a:c:C:d:Dh:L:M:prR:S:vx-:")) != -1) */
 
   if ((errflg > 0) || (optind != argc))
     {
@@ -6821,7 +6842,7 @@ int main(
   CLEAR_HEAD(svr_requests);
   CLEAR_HEAD(mom_varattrs);
 
-  if ( hostname_specified || ( (c = gethostname(mom_host,PBS_MAXHOSTNAME)) == 0) ) 
+  if ((hostname_specified != 0) || ((c = gethostname(mom_host,PBS_MAXHOSTNAME)) == 0)) 
     {
     strcpy(mom_short_name,mom_host);
 
