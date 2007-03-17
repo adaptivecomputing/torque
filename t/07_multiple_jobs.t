@@ -6,12 +6,9 @@ use Test::More qw(no_plan);
 use subs qw(check_jobs cancel_jobs cleanup_jobs);
 our @Jobs    = ();
 our @Running = ();
+our $MAX_CANCEL_TRIES = 5;
 
-diag('SKIPPED: This test is still under development');
-ok(1,'');
-
-__END__
-diag('Submitting multiple jobs to TORQUE - this may take several minutes');
+diag('Testing multiple jobs on TORQUE - this may take several minutes');
 
 # Check Test User
 ok(exists $ENV{'TORQUE_TEST_USER'}, 'Test User Exists') or
@@ -47,43 +44,36 @@ ok($proccount, 'Processor Count') or
   BAIL_OUT('TORQUE reported 0 processors');
 
 # Submit Jobs
-my $joblength = 300; # seconds
-my $walltime  = 2 * $joblength;
+our $joblength = 300 + ($proccount * 30); # seconds
+my  $walltime  = 1.1 * $joblength;
 for my $i (0..($jobcount-1))
   {
   $Jobs[$i] = `su $testuser -c 'echo "sleep $joblength" | qsub -l nodes=1,walltime=$walltime'` || undef;
-  ok(defined $Jobs[$i], 'Job Submission') or
+  ok(defined $Jobs[$i], "Job Submission ($i.1)") or
     BAIL_OUT("Unable to submit job #$i to TORQUE as '$testuser' - see Section 2.1");
-  ok($Jobs[$i] =~ /^\d+\S*\s*$/, 'Job Submission') or
+  ok($Jobs[$i] =~ /^\d+\S*\s*$/, "Job Submission ($i.2)") or
     BAIL_OUT("Unable to submit job #$i to TORQUE as '$testuser' - see Section 2.1");
   }
 
 # Jobs In Queue
+sleep 10;
 for my $i (0..($jobcount-1))
   {
   $Jobs[$i] =~ s/\D//g;
   my $qstat = `qstat | grep $Jobs[$i]` || undef;
-  ok(defined $qstat, 'Job in Queue') or
+  ok(defined $qstat, "Job in Queue ($i)") or
     BAIL_OUT('Submitted job does not appear in the TORQUE queue');
   }
 
 # Job Set 1 (first half)
-diag("BP: 1");
 check_jobs   0, int($jobcount / 2) - 1;
-diag("BP: 2");
 cancel_jobs  0, int($jobcount / 2) - 1;
-diag("BP: 3");
 cleanup_jobs 0, int($jobcount / 2) - 1;
-diag("BP: 4");
 
 # Job Set 2 (second half)
-diag("BP: 5");
 check_jobs   int($jobcount / 2), $jobcount - 1;
-diag("BP: 6");
 cancel_jobs  int($jobcount / 2), $jobcount - 1;
-diag("BP: 7");
 cleanup_jobs int($jobcount / 2), $jobcount - 1;
-diag("BP: 8");
 
 
 #------------------------------------------------------------------------------
@@ -92,18 +82,16 @@ sub check_jobs ($$)
   {
   my ($first, $last, undef) = @_;
   my %checkjob = ();
-  my $waittime = int($joblength * .75) + 1;
-     $waittime = 45 if $waittime < 45;
+  my $waittime = int($joblength * .25) + 1;
+     $waittime = 181 if $waittime < 180;
 
   # Wait up to $waittime seconds for job to start
-  TIMER: for (0..($waittime - 1))
+  ROUND: for my $second (0..($waittime - 1))
     {
-    sleep 1;
-    next unless $_ % 5;
 
     # Gather Information
     my $qstat = `qstat` || undef;
-    ok(defined $qstat, 'qstat Results') or
+    ok(defined $qstat, "qstat Results ($second/".($waittime-1).')') or
       BAIL_OUT("Cannot gather information from qstat");
     foreach my $line (split /[\r\n]+/, $qstat)
       {
@@ -116,15 +104,29 @@ sub check_jobs ($$)
     for my $i ($first..$last)
       {
       next if $Running[$i];
-      $Running[$i]++ if exists $checkjob{$i};
-      last TIMER;
+      $Running[$i]++ if exists $checkjob{$Jobs[$i]};
       }
+    my $complete = 1;
+    for my $i ($first..$last)
+      {
+      unless ($Running[$i])
+        {
+      $complete = 0;
+        next ROUND;
+        }
+      }
+    last ROUND if $complete;
+
+    sleep 1;
+
     }
+
   for my $i ($first..$last)
     {
     ok($Running[$i], 'Job Running') or
-      BAIL_OUT("Submitted job #$i has failed to start within $waittime seconds - check scheduler - see Section 5.1");
+      BAIL_OUT("Submitted job #$i ($Jobs[$i]) has failed to start within $waittime seconds - check scheduler - see Section 5.1");
     }
+
   }
 #
 #------------------------------------------------------------------------------
@@ -132,11 +134,21 @@ sub check_jobs ($$)
 sub cancel_jobs ($$)
   {
   my ($first, $last, undef) = @_;
-  for my $i ($first..$last)
-   {
-     my $qdel = `qdel $Jobs[$i]` || undef;
-    ok(!defined $qdel, "Cancel Job #$i") or
-      BAIL_OUT("Submitted job #$i could not be cancelled");
+  my $tries = 0;
+  CANCEL: for my $i ($first..$last)
+  {
+    my $qdel = `qdel $Jobs[$i] 2>&1` || undef;
+       $qdel = undef if $qdel =~ /MSG=invalid state for job/i;
+    if (!defined($qdel) and ($tries < $MAX_CANCEL_TRIES))
+      {
+      $tries++;
+      sleep 1;
+      diag("Failed to cancel job $i ($Jobs[$i]) - Retry $tries/$MAX_CANCEL_TRIES");
+      redo CANCEL;
+      }
+    ok(!defined $qdel, "Cancel Job ($i.$Jobs[$i])") or
+      BAIL_OUT("Submitted job #$i ($Jobs[$i]) could not be cancelled");
+    $tries = 0;
     }
   }
 #
@@ -145,13 +157,14 @@ sub cancel_jobs ($$)
 sub cleanup_jobs ($$)
   {
   my ($first, $last, undef) = @_;
+  sleep 10;
   for my $i ($first..$last)
     {
-    my $outputfile = "STDIN.o$i";
-    my $errorfile  = "STDIN.e$i";
-    ok(-T $outputfile, 'Output File') or
+    my $outputfile = "STDIN.o$Jobs[$i]";
+    my $errorfile  = "STDIN.e$Jobs[$i]";
+    ok(-T $outputfile, "Output File ($i.$Jobs[$i])") or
       BAIL_OUT("Submitted job #$i output file not copied - check data staging - see Section 6");
-    ok(-T $errorfile, 'Error File') or
+    ok(-T $errorfile, "Error File ($i.$Jobs[$i])") or
       BAIL_OUT("Submitted job #$i error file not copied - check data staging - see Section 6");
     unlink $outputfile if -T $outputfile;
     unlink $errorfile  if -T $errorfile;

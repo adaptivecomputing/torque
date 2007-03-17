@@ -6,7 +6,7 @@ use Test::More tests => 17;
 use subs qw(submit_job job_in_queue job_running cleanup_job);
 our $Joblength = 20; # seconds
 
-diag('Submitting parallel jobs to TORQUE - this may take several minutes');
+diag('Testing parallel jobs on TORQUE - this may take several minutes');
 
 # Check Test User
 ok(exists $ENV{'TORQUE_TEST_USER'}, 'Test User Exists') or
@@ -73,6 +73,7 @@ sub submit_job ($)
 sub job_in_queue ($)
   {
   my $job = $_[0];
+  sleep 1;
   my $qstat = `qstat | grep $job` || undef;
   ok(defined $qstat, 'Job in Queue') or
     BAIL_OUT('Submitted job does not appear in the TORQUE queue');

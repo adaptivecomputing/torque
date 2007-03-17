@@ -4,7 +4,7 @@ use strict;
 use warnings;
 use Test::More tests => 10;
 
-diag('Submitting a serial job to TORQUE - this may take several minutes');
+diag('Testing serial jobs on TORQUE - this may take several minutes');
 
 # Check Test User
 ok(exists $ENV{'TORQUE_TEST_USER'}, 'Test User Exists') or
@@ -17,7 +17,7 @@ my $testuser = $ENV{'TORQUE_TEST_USER'};
 
 # Clear Queue
 my $joblist = `qstat` || undef;
-ok(!defined($joblist), 'Cleared Queue') or
+ok(!defined($joblist), 'Queue Empty') or
   BAIL_OUT("Queue must be empty to run job submission tests - cancel all jobs and rerun test");
 
 # Submit Job
@@ -31,6 +31,7 @@ ok($job =~ /^\d+\S*\s*$/, 'Job Submission') or
 
 # Job In Queue
 $job =~ s/\D//g;
+sleep 1;
 my $qstat = `qstat | grep $job` || undef;
 ok(defined $qstat, 'Job in Queue') or
   BAIL_OUT('Submitted job does not appear in the TORQUE queue');
