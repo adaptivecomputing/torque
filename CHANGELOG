@@ -31,6 +31,10 @@ c - crash     b - bug fix    e - enhancement    f - new feature
   b - change fclose to pclose to close submit filter pipe (ABCC)
   e - add support for Cray XT size and larger qstat task reporting (ORNL)
 
+2.1.9
+  f - new queue attribute disallowed_types, currently recognized types:
+      interactive and batch
+
 2.1.8
   b - stop possible memory corruption with an invalid request type (StockholmU)
   b - add node name to pbsnodes XML output (NCIFCRF)

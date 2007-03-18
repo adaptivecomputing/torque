@@ -1084,6 +1084,7 @@ int svr_chkque(
            i < (pque->qu_attr[QA_ATR_DisallowedTypes]).at_val.at_arst->as_usedptr;
            i++)
         {
+	/* if job is interactive...*/
         if ((pjob->ji_wattr[(int)JOB_ATR_interactive].at_flags & ATR_VFLAG_SET) &&
             (pjob->ji_wattr[(int)JOB_ATR_interactive].at_val.at_long > 0))
           {
@@ -1093,7 +1094,7 @@ int svr_chkque(
             return (PBSE_NOINTERACTIVE);
             }
           }
-        else
+        else /* else job is batch... */
           {
 	   if (strcmp(Q_DT_batch, 
                  pque->qu_attr[QA_ATR_DisallowedTypes].at_val.at_arst->as_string[i]) == 0)

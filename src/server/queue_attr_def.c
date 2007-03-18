@@ -96,7 +96,6 @@ extern int set_null A_((attribute *patr, attribute *new, enum batch_op op));
 extern int disallowed_types_chk A_((attribute *pattr, void *pobject, int actmode));
 
 /* array of allowable strings in queue attribute disallowed_types */
-
 char* array_disallowed_types[] = {
    Q_DT_batch,
    Q_DT_interactive,
