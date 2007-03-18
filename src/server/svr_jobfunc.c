@@ -1076,8 +1076,37 @@ int svr_chkque(
       {
       return(PBSE_NOATTR);
       }
-			
-    /* 1e. if enabled, check the queue's group ACL */
+
+    /* 1e. check queue's disallowed_types */
+    if (pque->qu_attr[QA_ATR_DisallowedTypes].at_flags & ATR_VFLAG_SET)
+      {
+      for (i = 0; 
+           i < (pque->qu_attr[QA_ATR_DisallowedTypes]).at_val.at_arst->as_usedptr;
+           i++)
+        {
+        if ((pjob->ji_wattr[(int)JOB_ATR_interactive].at_flags & ATR_VFLAG_SET) &&
+            (pjob->ji_wattr[(int)JOB_ATR_interactive].at_val.at_long > 0))
+          {
+          if (strcmp(Q_DT_interactive, 
+                pque->qu_attr[QA_ATR_DisallowedTypes].at_val.at_arst->as_string[i]) == 0)
+            {
+            return (PBSE_NOINTERACTIVE);
+            }
+          }
+        else
+          {
+	   if (strcmp(Q_DT_batch, 
+                 pque->qu_attr[QA_ATR_DisallowedTypes].at_val.at_arst->as_string[i]) == 0)
+             {
+             return (PBSE_NOBATCH);
+             }
+          }
+
+
+        }	
+      }
+		
+    /* 1f. if enabled, check the queue's group ACL */
 
     if (pque->qu_attr[QA_ATR_AclGroupEnabled].at_val.at_long)
       {

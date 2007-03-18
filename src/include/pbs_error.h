@@ -161,8 +161,10 @@
 #define PBSE_NOTSNODE	15071		/* no time-shared nodes */
 #define PBSE_JOBTYPE	15072		/* wrong job type (batch or interactive) */
 #define PBSE_BADACLHOST	15073		/* bad entry in ACL host list */
-#define PBSE_MAXUSERQUED 15074		/* max number of jobs queued for user */
+#define PBSE_MAXUSERQUED     15074		/* max number of jobs queued for user */
 #define PBSE_BADDISALLOWTYPE 15075      /* bad type in disallowed_types queue attribute */
+#define PBSE_NOINTERACTIVE   15076      /* interactive jobs not allowed in queue */
+#define PBSE_NOBATCH    15077           /* batch jobs not allowed in queue */ 
 /*
 ** 	Resource monitor specific
 */
