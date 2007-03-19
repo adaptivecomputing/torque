@@ -256,13 +256,13 @@ int x11_connect_display(
   char *EMsg)        /* O */
 
   { 
-  if (EMsg != NULL)
-    EMsg[0] = '\0';
-      
 #ifndef HAVE_GETADDRINFO
   /* this was added for cygwin which doesn't seem to have a working
    * getaddrinfo() yet.
    * this will have to be figured out later */
+
+  if (EMsg != NULL)
+    EMsg[0] = '\0';
 
   return(-1);
 #else
@@ -273,10 +273,13 @@ int x11_connect_display(
   char strport[NI_MAXSERV];
   int gaierr;
 
-        /*
-         * Now we decode the value of the DISPLAY variable and make a
-         * connection to the real X server.
-         */
+  if (EMsg != NULL)
+    EMsg[0] = '\0';
+
+  /*
+   * Now we decode the value of the DISPLAY variable and make a
+   * connection to the real X server.
+  */
         
         /*
          * Check if it is a unix domain socket.  Unix domain displays are in
