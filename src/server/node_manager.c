@@ -820,7 +820,11 @@ void sync_node_jobs(
 
           /* double check the job struct because we could be in the middle of moving
              the job around because of data staging, suspend, or rerun */
-          if (strstr(pjob->ji_wattr[(int)JOB_ATR_exec_host].at_val.at_str,np->nd_name) == NULL)
+          if (pjob->ji_wattr[(int)JOB_ATR_exec_host].at_val.at_str == NULL)
+            {
+            pjob=NULL;
+            }
+          else if (strstr(pjob->ji_wattr[(int)JOB_ATR_exec_host].at_val.at_str,np->nd_name) == NULL)
             {
             pjob=NULL;
             }
