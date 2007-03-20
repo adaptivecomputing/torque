@@ -98,7 +98,7 @@
 #define MAXSERVERNAME PBS_MAXSERVERNAME+PBS_MAXPORTNUM+2
 #define ISNAMECHAR(x) ( (isgraph(x)) && ((x) != '#') && ( (x) != '@') )
 
-static char seq_number[PBS_MAXSEQNUM+1]; 
+static char seq_number[PBS_MAXSEQNUM+PBS_MAXJOBARRAYLEN+1]; 
 static int s_pos;
 static char parent_server[MAXSERVERNAME]; 
 static int p_pos;
@@ -115,7 +115,7 @@ char **arg_current_server;
     char *c;
 
     /* initialize static data for this parsing call */
-    for ( i=0; i<PBS_MAXSEQNUM+1; i++ ) seq_number[i]='\0';
+    for ( i=0; i<PBS_MAXSEQNUM+PBS_MAXJOBARRAYLEN+1; i++ ) seq_number[i]='\0';
     s_pos = 0;
     for ( i=0; i<MAXSERVERNAME; i++ ) parent_server[i]='\0';
     p_pos = 0;
@@ -129,7 +129,7 @@ char **arg_current_server;
     /* Looking for a seq_number */
     while ( *c != '\0' ) {
         if ( isdigit(*c) || *c =='-') {
-	    if ( s_pos >= PBS_MAXSEQNUM ) return 3;
+	    if ( s_pos >= PBS_MAXSEQNUM+PBS_MAXJOBARRAYLEN ) return 3;
             seq_number[s_pos++]=*c;
         } else
             break;
