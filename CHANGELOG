@@ -23,7 +23,6 @@ c - crash     b - bug fix    e - enhancement    f - new feature
   e - add --about support to daemons and client commands
   f - added qsub -t (primitive job array)
   e - add PBS_RESOURCE_GRES to prolog/epilog environment
-  f - "node notes" with pbsnodes -n (sandia)
   e - add -h hostname to pbs_mom (NCIFCRF)
   e - filesec enhancements (StockholmU)
   e - added ERS and IDS documentation 
@@ -46,6 +45,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature
   b - correct buggy logging in chk_job_request() (StockholmU)
   e - pbs_mom shouldn't require server_name file unless it is
       actually going to be read (StockholmU)
+  f - "node notes" with pbsnodes -n (sandia)
 
 2.1.7
   b - fix bison syntax error in Parser.y
