@@ -574,6 +574,14 @@ int main(
     errflg = 1;
     }
 
+  for (pa = argv + optind;*pa;pa++)
+    {
+    if (strlen(*pa) == 0)
+      {
+      errflg = 1;
+      }
+    }
+
   if (errflg != 0) 
     {
     if (!quiet)
