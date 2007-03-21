@@ -1762,6 +1762,8 @@ void im_request(
   u_long gettime	A_((resource *));
   u_long getsize	A_((resource *));
 
+  memset(&efwd,0,sizeof(efwd));
+
   if (version != IM_PROTOCOL_VER) 
     {
     sprintf(log_buffer,"protocol version %d unknown",
