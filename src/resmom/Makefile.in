@@ -14,7 +14,7 @@
 
 @SET_MAKE@
 
-SOURCES = $(pbs_mom_SOURCES)
+SOURCES = $(pbs_demux_SOURCES) $(pbs_mom_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -40,7 +40,7 @@ build_triplet = @build@
 host_triplet = @host@
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in \
 	$(top_srcdir)/buildutils/config.mk
-sbin_PROGRAMS = pbs_mom$(EXEEXT)
+sbin_PROGRAMS = pbs_mom$(EXEEXT) pbs_demux$(EXEEXT)
 subdir = src/resmom
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/acinclude.m4 \
@@ -58,6 +58,15 @@ CONFIG_CLEAN_FILES =
 am__installdirs = "$(DESTDIR)$(sbindir)"
 sbinPROGRAMS_INSTALL = $(INSTALL_PROGRAM)
 PROGRAMS = $(sbin_PROGRAMS)
+am_pbs_demux_OBJECTS = pbs_demux.$(OBJEXT)
+pbs_demux_OBJECTS = $(am_pbs_demux_OBJECTS)
+pbs_demux_LDADD = $(LDADD)
+am__DEPENDENCIES_1 =
+am__DEPENDENCIES_2 = ../lib/Libattr/libattr.a ../lib/Libsite/libsite.a \
+	../lib/Libpbs/libtorque.la
+@BUILDCPA_TRUE@am__DEPENDENCIES_3 = cpa/libmomcpa.a
+pbs_demux_DEPENDENCIES = @PBS_MACH@/libmommach.a $(am__DEPENDENCIES_1) \
+	$(am__DEPENDENCIES_2) $(am__DEPENDENCIES_3)
 am_pbs_mom_OBJECTS = catch_child.$(OBJEXT) mom_comm.$(OBJEXT) \
 	mom_inter.$(OBJEXT) mom_main.$(OBJEXT) mom_server.$(OBJEXT) \
 	prolog.$(OBJEXT) requests.$(OBJEXT) start_exec.$(OBJEXT) \
@@ -68,10 +77,6 @@ am_pbs_mom_OBJECTS = catch_child.$(OBJEXT) mom_comm.$(OBJEXT) \
 	job_qs_upgrade.$(OBJEXT)
 pbs_mom_OBJECTS = $(am_pbs_mom_OBJECTS)
 pbs_mom_LDADD = $(LDADD)
-am__DEPENDENCIES_1 =
-am__DEPENDENCIES_2 = ../lib/Libattr/libattr.a ../lib/Libsite/libsite.a \
-	../lib/Libpbs/libtorque.la
-@BUILDCPA_TRUE@am__DEPENDENCIES_3 = cpa/libmomcpa.a
 pbs_mom_DEPENDENCIES = @PBS_MACH@/libmommach.a $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_2) $(am__DEPENDENCIES_3)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src/include
@@ -85,8 +90,8 @@ LTCOMPILE = $(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) \
 CCLD = $(CC)
 LINK = $(LIBTOOL) --mode=link --tag=CC $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(AM_LDFLAGS) $(LDFLAGS) -o $@
-SOURCES = $(pbs_mom_SOURCES)
-DIST_SOURCES = $(pbs_mom_SOURCES)
+SOURCES = $(pbs_demux_SOURCES) $(pbs_mom_SOURCES)
+DIST_SOURCES = $(pbs_demux_SOURCES) $(pbs_mom_SOURCES)
 RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
 	html-recursive info-recursive install-data-recursive \
 	install-exec-recursive install-info-recursive \
@@ -351,6 +356,7 @@ pbs_mom_SOURCES = catch_child.c mom_comm.c mom_inter.c mom_main.c \
 		   ../server/req_quejob.c ../server/resc_def_all.c \
 		   ../server/job_qs_upgrade.c
 
+pbs_demux_SOURCES = pbs_demux.c
 all: all-recursive
 
 .SUFFIXES:
@@ -412,6 +418,9 @@ clean-sbinPROGRAMS:
 	  echo " rm -f $$p $$f"; \
 	  rm -f $$p $$f ; \
 	done
+pbs_demux$(EXEEXT): $(pbs_demux_OBJECTS) $(pbs_demux_DEPENDENCIES) 
+	@rm -f pbs_demux$(EXEEXT)
+	$(LINK) $(pbs_demux_LDFLAGS) $(pbs_demux_OBJECTS) $(pbs_demux_LDADD) $(LIBS)
 pbs_mom$(EXEEXT): $(pbs_mom_OBJECTS) $(pbs_mom_DEPENDENCIES) 
 	@rm -f pbs_mom$(EXEEXT)
 	$(LINK) $(pbs_mom_LDFLAGS) $(pbs_mom_OBJECTS) $(pbs_mom_LDADD) $(LIBS)
@@ -433,6 +442,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mom_inter.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mom_main.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mom_server.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pbs_demux.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/process_request.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/prolog.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/reply_send.Po@am__quote@
