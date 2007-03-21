@@ -29,6 +29,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature
   e - allow export of specific variables into prolog/epilog environment
   b - change fclose to pclose to close submit filter pipe (ABCC)
   e - add support for Cray XT size and larger qstat task reporting (ORNL)
+  b - pbs_demux is now built with pbs_mom instead of with clients
 
 2.1.9
   f - new queue attribute disallowed_types, currently recognized types:
