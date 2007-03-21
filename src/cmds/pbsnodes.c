@@ -124,6 +124,8 @@
 #define DIAG    7
 #define NOTE    8
 
+enum note_flags {unused, set, list};
+
 int quiet = 0;
 
 
@@ -292,89 +294,25 @@ static int is_down(
 
 
 
-static int is_offline(
 
-  struct batch_status *pbs)
+/* returns a pointer to the note if there is one, otherwise NULL */
+static char *get_note(
 
-  {
-  if (strstr(get_nstate(pbs),ND_offline) != NULL)
-    {
-    return(1);
-    }
-
-  return(0);
-  }
-
-
-
-
-static int is_busy(
-
-  struct batch_status *pbs)
+  struct batch_status *pbs)  /* I */
 
   {
-  if (strstr(get_nstate(pbs),ND_busy) != NULL)
+  struct attrl *pat;
+
+  for (pat = pbs->attribs;pat != NULL;pat = pat->next) 
     {
-    return(1);
+    if (strcmp(pat->name,ATTR_NODE_note) == 0)
+      {
+      return(pat->value);
+      }
     }
 
-  return(0);
+  return(NULL);
   }
-
-
-
-
-static int is_active(
-
-  struct batch_status *pbs)
-
-  {
-  char *ptr;
-
-  ptr = get_nstate(pbs);
-
-  if ((strstr(ptr,ND_busy) != NULL) ||
-      (strstr(ptr,ND_job_sharing) != NULL) ||
-      (strstr(ptr,ND_job_exclusive) != NULL))
-    {
-    return(1);
-    }
-
-  return(0);
-  }
-
-
-
-
-static int is_free(
-
-  struct batch_status *pbs)
-
-  {
-  if (strstr(get_nstate(pbs),ND_free) != NULL)
-    {
-    return(1);
-    }
-
-  return(0);
-  }
-
-
-
-
-static int is_unknown(
-
-  struct batch_status *pbs)
-
-  {
-  if (strstr(get_nstate(pbs),ND_state_unknown) != NULL)
-    {
-    return(1);
-    }
-
-  return(0);
-  }
-
 
 
 
@@ -482,8 +420,7 @@ int main(
   struct batch_status *pbstat;
   int	flag = ALLI;
   char	*note = NULL;
-  int	note_flag = 0;
-  int	len;
+  enum  note_flags note_flag = unused;
   char  NodeArg[256000];
 
   enum NStateEnum ListType = tnsNONE;
@@ -495,7 +432,7 @@ int main(
   if (def_server == NULL)
     def_server = "";
 
-  while ((i = getopt(argc,argv,"acdlopqrs:x-:n:")) != EOF)
+  while ((i = getopt(argc,argv,"acdlopqrs:x-:N:n")) != EOF)
     {
     switch(i) 
       {
@@ -561,12 +498,10 @@ int main(
 
         break;
 
-      case 'n':
-
-        note_flag = 1;
+      case 'N':
 
         /* preserve any previous option other than the default,
-         * to allow -n to be combined with -o, -c, etc
+         * to allow -N to be combined with -o, -c, etc
          */
 
         if (flag == ALLI)
@@ -574,24 +509,33 @@ int main(
 
         note = strdup(optarg);
 
-        if (note != NULL)
+        if (note == NULL)
           {
-          /* -n n is the same as -n ""  -- it clears the note */
+          perror("Error: strdup() returned NULL");
+          exit(1);
+          }
+        else
+          {
+          note_flag = set;
+
+          /* -N n is the same as -N ""  -- it clears the note */
 
           if (!strcmp(note,"n"))
-            {
             *note = '\0';
-            }
 
-          len = strlen(note);
-
-          if (len > MAX_NOTE)
+          if (strlen(note) > MAX_NOTE)
             fprintf(stderr,"Warning: note exceeds length limit (%d) - server may reject it...\n",
               MAX_NOTE);
 
           if (strchr(note,'\n') != NULL)
             fprintf(stderr,"Warning: note contains a newline - server may reject it...\n");
           }
+
+        break;
+
+      case 'n':
+
+        note_flag = list;
 
         break;
 
@@ -622,16 +566,22 @@ int main(
 
         break;
       }  /* END switch (i) */
-    }    /* END while (i == getopt()) */
+    }    /* END while (i = getopt()) */
+
+  if ((note_flag == list) && (flag != LIST))
+    {
+    fprintf(stderr,"Error: -n requires -l\n");
+    errflg = 1;
+    }
 
   if (errflg != 0) 
     {
     if (!quiet)
       {
-      fprintf(stderr,"usage:\t%s [-{c|d|l|o|p|r}][-s server] [-n \"note\"] [-q] node node ...\n",
+      fprintf(stderr,"usage:\t%s [-{c|d|l|o|p|r}] [-s server] [-n] [-N \"note\"] [-q] node ...\n",
         argv[0]);
 
-      fprintf(stderr,"\t%s -{a|x} [-s server] [-q] [node]\n",
+      fprintf(stderr,"\t%s [-{a|x}] [-s server] [-q] [node]\n",
         argv[0]);
       }
 
@@ -724,7 +674,7 @@ int main(
       }
     }    /* END if ((flag == ALLI) || (flag == DOWN) || (flag == LIST) || (flag == DIAG)) */
 
-  if (note_flag && (note != NULL))
+  if ((note_flag == set) && (note != NULL))
     {
     /* set the note attrib string on specified nodes */
     for (pa = argv + optind;*pa;pa++) 
@@ -899,7 +849,6 @@ int main(
 
       {
       char *S;
-      int   NState;
 
       int   Display;
 
@@ -916,7 +865,7 @@ int main(
           case tnsNONE:  /* display down, offline, and unknown nodes */
           default:
 
-            if (!strcmp(S,ND_down) || !strcmp(S,ND_offline) || !strcmp(S,ND_state_unknown)) 
+            if (strstr(S,ND_down) || strstr(S,ND_offline) || strstr(S,ND_state_unknown)) 
               {
               Display = 1;
               }
@@ -925,7 +874,7 @@ int main(
 
           case tnsActive:   /* one or more jobs running on node */
 
-            if (!strcmp(S,ND_busy) || !strcmp(S,ND_job_exclusive) || !strcmp(S,ND_job_sharing))
+            if (strstr(S,ND_busy) || strstr(S,ND_job_exclusive) || strstr(S,ND_job_sharing))
               {
               Display = 1;
               }
@@ -940,7 +889,7 @@ int main(
 
           case tnsBusy:     /* node cannot accept additional workload */
 
-            if (!strcmp(S,ND_busy))
+            if (strstr(S,ND_busy))
               {
               Display = 1;
               }
@@ -949,7 +898,7 @@ int main(
 
           case tnsDown:     /* node is down or unknown */
 
-            if (!strcmp(S,ND_down) || !strcmp(S,ND_state_unknown))
+            if (strstr(S,ND_down) || strstr(S,ND_state_unknown))
               {
               Display = 1;
               }
@@ -958,7 +907,7 @@ int main(
 
           case tnsFree:     /* node is idle/free */
 
-            if (!strcmp(S,ND_free))
+            if (strstr(S,ND_free))
               {
               Display = 1;
               }
@@ -967,7 +916,7 @@ int main(
 
           case tnsOffline:  /* node is offline */
 
-            if (!strcmp(S,ND_offline))
+            if (strstr(S,ND_offline))
               {
               Display = 1;
               }
@@ -976,7 +925,7 @@ int main(
 
           case tnsUnknown:  /* node is unknown - no contact recieved */
 
-            if (!strcmp(S,ND_state_unknown))
+            if (strstr(S,ND_state_unknown))
               {
               Display = 1;
               }
@@ -985,7 +934,7 @@ int main(
 
           case tnsUp:       /* node is healthy */
 
-            if (strcmp(S,ND_down) && strcmp(S,ND_offline) && strcmp(S,ND_state_unknown))
+            if (!strstr(S,ND_down) && !strstr(S,ND_offline) && !strstr(S,ND_state_unknown))
               {
               Display = 1;
               }
@@ -995,9 +944,21 @@ int main(
 
         if (Display == 1)
           {
-          printf("%-20.20s %s\n",
-            pbstat->name,
-            S);
+          char *n;
+
+          if ((note_flag == list) && (n = get_note(pbstat)))
+            {
+            printf("%-20.20s %-26.26s %s\n",
+              pbstat->name,
+              S,
+              n);
+            }
+          else
+            {
+            printf("%-20.20s %s\n",
+              pbstat->name,
+              S);
+            }
           }
         }
       }    /* END BLOCK (case LIST) */
