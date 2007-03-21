@@ -3,7 +3,7 @@ include $(top_srcdir)/buildutils/config.mk
 PBS_LIBS = ../lib/Libpbs/libtorque.la
 
 bin_SCRIPTS = nqs2pbs
-sbin_PROGRAMS = pbs_demux momctl
+sbin_PROGRAMS = momctl
 bin_PROGRAMS = qalter qdel qhold qmove qorder qmsg qrerun qrls qselect qsig \
 	       qstat qsub pbsdsh qdisable qenable qrun qstart qstop qterm \
 	       pbsnodes qmgr @PBSPOE@
@@ -25,7 +25,6 @@ pbspoe_CFLAGS = -DPBSPD=\"$(bindir)/pbspd\"
 qsub_CFLAGS = -DSUBMIT_FILTER_PATH=\"$(SUBMIT_FILTER_PATH)\" \
               -DPBS_SERVER_HOME=\"$(PBS_SERVER_HOME)\"
 
-pbs_demux_SOURCES = pbs_demux.c
 pbsdsh_SOURCES = pbsdsh.c
 pbsnodes_SOURCES = pbsnodes.c MXML.c
 pbspd_SOURCES = pbspd.c

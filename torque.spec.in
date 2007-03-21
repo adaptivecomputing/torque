@@ -289,6 +289,7 @@ This package holds the execute daemon required on every node.
 %files mom
 %defattr(-, root, root)
 %{_sbindir}/pbs_mom
+%{_sbindir}/pbs_demux
 %{_initrddir}/pbs_mom
 %if ! %{use_scp}
 %attr(4755 root root) %{_sbindir}/pbs_rcp
@@ -327,7 +328,6 @@ This package holds the command-line client programs.
 %{_bindir}/printtracking
 %{_bindir}/tracejob
 %attr(4755 root root) %{_sbindir}/pbs_iff
-%{_sbindir}/pbs_demux
 %if %use_tcl
 %{_bindir}/pbs_tclsh
 %endif

@@ -20,7 +20,7 @@ PBS_LIBS = ../lib/Libattr/libattr.a \
 	   ../lib/Libpbs/libtorque.la
 
 EXTRA_DIST = rm_dep.h
-sbin_PROGRAMS = pbs_mom
+sbin_PROGRAMS = pbs_mom pbs_demux
 
 LDADD = @PBS_MACH@/libmommach.a $(MOMLIBS) $(PBS_LIBS) $(momcpalib)
 
@@ -33,6 +33,8 @@ pbs_mom_SOURCES = catch_child.c mom_comm.c mom_inter.c mom_main.c \
 		   ../server/process_request.c ../server/reply_send.c \
 		   ../server/req_quejob.c ../server/resc_def_all.c \
 		   ../server/job_qs_upgrade.c
+
+pbs_demux_SOURCES = pbs_demux.c
 
 install-exec-hook:
 	$(PBS_MKDIRS) aux || :
