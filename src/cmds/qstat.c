@@ -1033,7 +1033,7 @@ void display_statjob(
   if (!full)
     {
     sprintf(format,"%%-%ds %%-%ds %%-%ds %%%ds %%%ds %%-%ds\n", 
-      PBS_MAXSEQNUM + 11, 
+      PBS_MAXSEQNUM + PBS_MAXJOBARRAYLEN + 11, 
       NAMEL, 
       OWNERL, 
       TIMEUL, 
@@ -1042,9 +1042,10 @@ void display_statjob(
 
     if (prtheader) 
       {
-      /* display summary header */
-      printf("Job id              Name             User            Time Use S Queue\n");
-      printf("------------------- ---------------- --------------- -------- - -----\n");
+      /* display summary header TODO - the sizes of these fields should be determined from 
+         #defines in pbs_ifl.h */
+      printf("Job id                    Name             User            Time Use S Queue\n");
+      printf("------------------------- ---------------- --------------- -------- - -----\n");
       }
     }    /* END if (!full) */
 
@@ -1159,11 +1160,11 @@ void display_statjob(
 
         l = strlen(p->name);
 
-        if (l > (PBS_MAXSEQNUM + 8)) 
+        if (l > (PBS_MAXSEQNUM + PBS_MAXJOBARRAYLEN + 8)) 
           {
           /* truncate job name */
 
-          c = p->name + PBS_MAXSEQNUM + 14;
+          c = p->name + PBS_MAXSEQNUM + PBS_MAXJOBARRAYLEN + 14;
 
           *c = '\0';
           }
