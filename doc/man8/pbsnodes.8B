@@ -81,7 +81,7 @@
 .SH NAME
 pbsnodes \- pbs node manipulation
 .SH SYNOPSIS
-pbsnodes [\^-{c|d|l|o|p|r}\^] [-q] [-s server] [nodename|:property ...]
+pbsnodes [\^-{c|d|l|o|p|r}\^] [-q] [-s server] [-n] [-N "note"] [nodename|:property ...]
 .br
 pbsnodes [\^-{a|x}\^] [-s server] [-q] [node|:property]
 
@@ -129,5 +129,12 @@ pbs_server will ping the node and set the state appropriately.
 Specify the PBS server's hostname or IP address.
 .IP "-x" 15
 Same as -a, but the output has an XML-like format.
+.IP "-N" 15
+Specify a "note" attribute.  This allows an administrator to add an
+arbitrary annotation to the listed nodes.  To clear a note, use
+-N "" or -N n.
+.IP "-n" 15
+Show the "note" attribute for nodes that are DOWN, OFFLINE, or UNKNOWN.
+This option requires -l.
 .SH SEE ALSO
 pbs_server(8B) and the PBS External Reference Specification
