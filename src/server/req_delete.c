@@ -149,7 +149,7 @@ extern void set_resc_assigned(job *,enum batch_op);
 
 void remove_stagein(
 
-  job *pjob)
+  job *pjob)  /* I */
 
   {
   struct batch_request *preq = 0;
@@ -202,7 +202,7 @@ void remove_stagein(
 
 void req_deletejob(
 
-  struct batch_request *preq)
+  struct batch_request *preq)  /* I */
 
   {
   job              *pjob;
@@ -219,10 +219,16 @@ void req_deletejob(
     return;
     }
 
+  /* NOTE:  should support rq_objname={<JOBID>|ALL|<name:<JOBNAME>} */
+
+  /* NYI */
+
   pjob = chk_job_request(preq->rq_ind.rq_delete.rq_objname,preq);
 
   if (pjob == NULL)
     {
+    /* NOTE:  chk_job_request() will issue req_reject() */
+
     return;
     }
 
@@ -343,7 +349,7 @@ void req_deletejob(
       req_reject(PBSE_SYSTEM,0,preq,NULL,NULL);
 
     return;
-    }
+    }  /* END if (pjob->ji_qs.ji_substate == JOB_SUBSTATE_PRERUN) */
 
 jump:
 
@@ -422,7 +428,11 @@ jump:
      */
 
     if ((rc = issue_signal(pjob,sigt,post_delete_mom1,preq)))
-      req_reject(rc,0,preq,NULL,NULL);   /* cant send to MOM */
+      {
+      /* cant send to MOM */
+
+      req_reject(rc,0,preq,NULL,NULL);   
+      }
 
     /* normally will ack reply when mom responds */
 
@@ -471,7 +481,7 @@ jump:
      */
 
     job_abt(&pjob,Msg);
-    }
+    }  /* END else if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_CHKPT) != 0) */
 
   reply_ack(preq);
 

@@ -2324,9 +2324,9 @@ void interactive()
 
 int process_opts(
 
-  int    argc,
-  char **argv,
-  int    pass)
+  int    argc,  /* I */
+  char **argv,  /* I */
+  int    pass)  /* I */
 
   {
   int i;
@@ -2738,11 +2738,14 @@ int process_opts(
         if (Interact_opt == 1) 
           {
           char tmpLine[4096];
+
           /* Queue interactive resources to temp file. */
 
           strcpy(tmpLine,tmpResources);
 
-          sprintf(tmpResources,"%s#PBS -l %s\n",tmpLine,optarg);
+          sprintf(tmpResources,"%s#PBS -l %s\n",
+            tmpLine,
+            optarg);
           } 
         else 
           {
@@ -3375,7 +3378,7 @@ int process_opts(
       }
 
     fclose(fP);
-    }
+    }    /* END if (Interact_opt == 1) */
 
 /* END ORNL WRAPPER */
 
@@ -3623,9 +3626,8 @@ int main(
     }
 
   /* check TORQUE config settings */
-
   
-  strncpy(PBS_Filter, SUBMIT_FILTER_PATH, 255);
+  strncpy(PBS_Filter,SUBMIT_FILTER_PATH,255);
 
   /* check to see if PBS_Filter exists.  If not then fall back to the old hard coded file */
 
@@ -3687,10 +3689,11 @@ int main(
     }
 
   /* check to see if PBS_Filter exists.  If not then fall back to the old hard coded file */
-    if (stat(PBS_Filter,&statbuf) == -1)
-      {
-      strncpy(PBS_Filter,DefaultFilterPath,255);
-      }
+
+  if (stat(PBS_Filter,&statbuf) == -1)
+    {
+    strncpy(PBS_Filter,DefaultFilterPath,255);
+    }
 
 
   if (optind < argc) 

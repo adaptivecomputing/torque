@@ -98,9 +98,9 @@
 
 int set_resources(
 
-  struct attrl **attrib,
-  char          *resources,
-  int            add)
+  struct attrl **attrib,    /* I */
+  char          *resources, /* I */
+  int            add)       /* I */
 
   {
   char *r, *eq, *v, *e = NULL;
@@ -156,13 +156,17 @@ int set_resources(
 
       while ((*e != ',') && (*e != '\0')) 
         {
+        /* NOTE:  <ATTR>=<VAL> already tokenized by getopt() which will support
+                  quoted whitespace, do not fail on spaces */
+
+#ifdef TNOT
         if (isspace((int)*e)) 
           {
           /* FAILURE */
  
           return(1);
           }
-
+#endif /* TNOT */
         e++;
         }
       } 
@@ -210,7 +214,7 @@ int set_resources(
       exit(2);
       }
 
-    strncpy(str, r, len);
+    strncpy(str,r,len);
 
     str[len] = '\0';
 
