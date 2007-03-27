@@ -10,7 +10,7 @@ our $Jobcount  = 0;
 our $Joblength = 1200; # seconds (Default)
 our $Testuser  = undef;
 
-diag('Testing multiple jobs on TORQUE - this may take several minutes');
+diag('Testing job arrays on TORQUE - this may take several minutes');
 
 # Check Test User
   {
