@@ -377,6 +377,19 @@ typedef struct {
   int       downfds;
   } pjobexec_t;
 
+#ifndef PBS_MOM
+
+  /* pbs_server will keep a list of these structs, with one struct per job array*/
+  struct array_job_list {
+     list_link all_arrays;
+     tlist_head array_alljobs;
+     char parent_id[PBS_MAXSVRJOBID + 1];
+  
+  };
+  
+  typedef struct array_job_list array_job_list;
+
+#endif
 
 
 struct job {
@@ -419,6 +432,8 @@ struct job {
 	int		ji_lastdest;	/* last destin tried by route */
 	int		ji_retryok;	/* ok to retry, some reject was temp */
 	tlist_head	ji_rejectdest;	/* list of rejected destinations */
+	list_link	ji_arrayjobs;	/* links to all jobs in same array */
+	array_job_list	*ji_arrayjoblist; /* pointer to array_job_list for this array */
 #endif					/* END SERVER ONLY */
 
 	/*
@@ -473,6 +488,7 @@ struct job {
   };
 
 typedef struct job job;
+
 
 #ifdef	PBS_MOM
 /*

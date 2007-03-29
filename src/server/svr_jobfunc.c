@@ -138,6 +138,7 @@ static void eval_chkpnt A_((attribute *j, attribute *q));
 extern struct server server;
 
 extern tlist_head svr_alljobs;
+extern tlist_head svr_jobarrays;
 extern char  *msg_badwait;		/* error message */
 extern char  *msg_daemonname;
 extern char  *pbs_o_host;
@@ -471,7 +472,22 @@ void svr_dequejob(
     if (--server.sv_jobstates[pjob->ji_qs.ji_state] < 0)
       bad_ct = 1;
     }
-
+    
+  /* if part of job array then remove from array's job list */ 
+  if (pjob->ji_wattr[(int)JOB_ATR_job_array_size].at_val.at_long > 1 )
+    {
+    
+    delete_link(&pjob->ji_arrayjobs);
+    /* if the only thing in the array alljobs list is the head, then we can 
+       clean that up too */
+    if ( GET_NEXT(pjob->ji_arrayjoblist->array_alljobs) == pjob->ji_arrayjoblist->array_alljobs.ll_struct)
+      {
+      delete_link(&pjob->ji_arrayjoblist->all_arrays);
+      free(pjob->ji_arrayjoblist);
+      
+      }
+    }
+    
   if ((pque = pjob->ji_qhdr) != (pbs_queue *)0) 
     {
     if (is_linked(&pque->qu_jobs, &pjob->ji_jobque)) 
@@ -1080,10 +1096,12 @@ int svr_chkque(
     /* 1e. check queue's disallowed_types */
     if (pque->qu_attr[QA_ATR_DisallowedTypes].at_flags & ATR_VFLAG_SET)
       {
+      
       for (i = 0; 
            i < (pque->qu_attr[QA_ATR_DisallowedTypes]).at_val.at_arst->as_usedptr;
            i++)
         {
+	
 	/* if job is interactive...*/
         if ((pjob->ji_wattr[(int)JOB_ATR_interactive].at_flags & ATR_VFLAG_SET) &&
             (pjob->ji_wattr[(int)JOB_ATR_interactive].at_val.at_long > 0))
@@ -1102,7 +1120,14 @@ int svr_chkque(
              return (PBSE_NOBATCH);
              }
           }
-
+	  
+	if (strcmp(Q_DT_rerunable,
+	      pque->qu_attr[QA_ATR_DisallowedTypes].at_val.at_arst->as_string[i]) == 0
+            && (pjob->ji_wattr[(int)JOB_ATR_rerunable].at_flags & ATR_VFLAG_SET &&
+	        pjob->ji_wattr[(int)JOB_ATR_rerunable].at_val.at_long > 0))
+	  {
+	  return (PBSE_NORERUNABLE);
+	  }
 
         }	
       }

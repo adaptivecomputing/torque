@@ -33,7 +33,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature
 
 2.1.9
   f - new queue attribute disallowed_types, currently recognized types:
-      interactive and batch
+      interactive, batch, and rerunable
 
 2.1.8
   b - stop possible memory corruption with an invalid request type (StockholmU)

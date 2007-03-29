@@ -325,9 +325,10 @@ char *msg_sisreject     = "sister rejected";
 char *msg_toomany       = "Too many submit retries";
 char *msg_jobtype       = "Wrong job type";
 char *msg_badaclhost	= "Bad ACL entry in host list";
-char *msg_baddisallowtype = "Bad type";
+char *msg_baddisallowtype = "Bad type in disallowed_types list";
 char *msg_nointeractive = "Queue does not allow interactive jobs";
 char *msg_nobatch       = "Queue does not allow batch jobs";
+char *msg_norerunable   = "Queue does not allow rerunnable jobs";
 
 /*
  * The following table connects error numbers with text
@@ -418,6 +419,7 @@ struct pbs_err_to_txt pbs_err_to_txt[] = {
         { PBSE_BADDISALLOWTYPE, &msg_baddisallowtype },
         { PBSE_NOINTERACTIVE, &msg_nointeractive },
         { PBSE_NOBATCH, &msg_nobatch },
+	{ PBSE_NORERUNABLE, &msg_norerunable },
         { PBSE_NONE, &msg_none },
 	{ 0, (char **)0 }		/* MUST be the last entry */
 };

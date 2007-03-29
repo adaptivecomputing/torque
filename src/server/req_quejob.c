@@ -144,6 +144,7 @@ extern char *path_spool;
 extern struct server server;
 extern char  server_name[];
 extern int   queue_rank;
+extern tlist_head	svr_jobarrays; 
 #endif	/* !PBS_MOM */
 
 extern const char *PJobSubState[];
@@ -1760,6 +1761,15 @@ void req_commit(
      *** job array under development */
   if (pj->ji_wattr[(int)JOB_ATR_job_array_size].at_val.at_long > 1)
     {
+    array_job_list *pajl;
+    
+    /* setup a link to this job array in the servers all_arrays list */
+    pajl = (array_job_list*)malloc(sizeof(array_job_list));
+    strcpy(pajl->parent_id, pj->ji_qs.ji_jobid);
+    CLEAR_LINK(pajl->all_arrays);
+    CLEAR_HEAD(pajl->array_alljobs);
+    append_link(&svr_jobarrays, &pajl->all_arrays, (void*)pajl);
+    
     wt = set_task(WORK_Timed,time_now+1,job_clone_wt,(void*)pj);
     wt->wt_aux = 0;
     /* svr_setjobstate(pj,JOB_STATE_HELD,JOB_SUBSTATE_HELD);*/

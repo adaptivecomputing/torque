@@ -99,6 +99,7 @@ extern int disallowed_types_chk A_((attribute *pattr, void *pobject, int actmode
 char* array_disallowed_types[] = {
    Q_DT_batch,
    Q_DT_interactive,
+   Q_DT_rerunable,
    "_END_" /* must be last string */
 };
 

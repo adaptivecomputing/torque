@@ -193,6 +193,7 @@ tlist_head	svr_queues;            /* list of queues                   */
 tlist_head	svr_alljobs;           /* list of all jobs in server       */
 tlist_head	svr_newjobs;           /* list of incoming new jobs        */
 tlist_head	svr_newnodes;          /* list of newly created nodes      */
+tlist_head	svr_jobarrays;         /* list of all job arrays           */
 tlist_head	task_list_immed;
 tlist_head	task_list_timed;
 tlist_head	task_list_event;

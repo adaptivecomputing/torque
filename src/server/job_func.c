@@ -154,6 +154,7 @@ static void job_init_wattr A_((job *));
 #ifndef PBS_MOM
 extern struct server   server;
 extern int queue_rank;
+extern tlist_head svr_jobarrays;
 #else
 extern gid_t pbsgroup;
 #endif	/* PBS_MOM */
@@ -615,6 +616,7 @@ job *job_alloc()
 #else	/* SERVER */
   CLEAR_HEAD(pj->ji_svrtask);
   CLEAR_HEAD(pj->ji_rejectdest);
+  CLEAR_LINK(pj->ji_arrayjobs);
 #endif  /* else PBS_MOM */
 
   pj->ji_momhandle = -1;		/* mark mom connection invalid */
@@ -744,6 +746,8 @@ job *job_clone(
   int 		i;
   int		rc;
   int           slen;
+  
+  array_job_list *pajl;
 
   if (taskid > PBS_MAXJOBARRAY)
     {
@@ -761,7 +765,7 @@ job *job_clone(
     }
 
   job_init_wattr(pnewjob);
- 
+  
   /* new job structure is allocated, 
      now we need to copy the old job, but modify based on taskid */
 
@@ -937,6 +941,19 @@ job *job_clone(
     &pnewjob->ji_wattr[(int)JOB_ATR_variables],
     &tempattr, 
     INCR);  
+
+  /* we need to link the cloned job into the array task list */
+  pajl = (array_job_list*)GET_NEXT(svr_jobarrays);
+  while (pajl != NULL)
+    {
+    if (strcmp(pajl->parent_id, poldjob->ji_qs.ji_jobid) == 0)
+      break;
+    pajl = (array_job_list*)GET_NEXT(pajl->all_arrays);
+  
+    }
+    CLEAR_LINK(pnewjob->ji_arrayjobs);
+    append_link(&pajl->array_alljobs, &pnewjob->ji_arrayjobs, (void*)pnewjob);
+    pnewjob->ji_arrayjoblist = pajl;
 
   return pnewjob;
   } /* END job_clone() */

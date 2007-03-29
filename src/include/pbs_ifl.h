@@ -301,6 +301,7 @@
 /* queue disallowed types */
 #define Q_DT_batch              "batch"
 #define Q_DT_interactive        "interactive"
+#define Q_DT_rerunable         "rerunable"
 
 /*constant related to sum of string lengths for above strings*/
 #define	MAX_ENCODE_BFR		100
