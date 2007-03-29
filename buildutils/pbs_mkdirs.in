@@ -239,6 +239,7 @@ mk_server_dirs()
 	install_dir $PBS_SERVER_HOME/server_priv/acl_hosts 750 || return 1
 	install_dir $PBS_SERVER_HOME/server_priv/acl_users 750 || return 1
 	install_dir $PBS_SERVER_HOME/server_priv/acl_groups 750 || return 1
+	install_dir $PBS_SERVER_HOME/server_priv/disallowed_types 750 || return 1
 	install_dir $PBS_SERVER_HOME/server_priv/accounting 755 || return 1
 	install_dir $PBS_SERVER_HOME/server_logs 755 || return 1
 	install_dir $PBS_SERVER_HOME/sched_priv 750 || return 1
