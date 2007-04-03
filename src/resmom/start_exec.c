@@ -1967,6 +1967,8 @@ int TMomFinalizeChild(
     {
     FILE *nhow;
 
+    char *BPtr;
+
     sprintf(buf,"%s/%s",
       path_aux, 
       pjob->ji_qs.ji_jobid);
@@ -2007,23 +2009,61 @@ int TMomFinalizeChild(
       exit(1);
       }
 
-    for (j = 0;j < vnodenum;j++) 
-      {
-      vnodent *vp = &pjob->ji_vnods[j];
+    /* NOTE:  if BEOWULF_JOB_MAP is set, populate node file with this info */
 
-      if (nodefile_suffix != NULL)
+    extern char *get_job_envvar(job *,char *);
+
+    BPtr = get_job_envvar(pjob,"BEOWULF_JOB_MAP");
+
+    if (BPtr != NULL)
+      {
+      char tmpBuffer[1000000];
+
+      char *ptr;
+
+      /* FORMAT:  <HOST>[:<HOST>]... */
+
+      strncpy(tmpBuffer,BPtr,sizeof(tmpBuffer));
+
+      ptr = strtok(tmpBuffer,":");
+
+      while (ptr != NULL)
         {
-        fprintf(nhow,"%s%s\n", 
-          vp->vn_host->hn_host,
-          nodefile_suffix);
-        }
-      else
-        {
-        fprintf(nhow,"%s\n",
-          vp->vn_host->hn_host);
+        if (nodefile_suffix != NULL)
+          {
+          fprintf(nhow,"%s%s\n",
+            ptr,
+            nodefile_suffix);
+          }
+        else
+          {
+          fprintf(nhow,"%s\n",
+            ptr);
+          }
+
+        ptr = strtok(NULL,":");
         }
       }
+    else
+      {
+      for (j = 0;j < vnodenum;j++) 
+        {
+        vnodent *vp = &pjob->ji_vnods[j];
 
+        if (nodefile_suffix != NULL)
+          {
+          fprintf(nhow,"%s%s\n", 
+            vp->vn_host->hn_host,
+            nodefile_suffix);
+          }
+        else
+          {
+          fprintf(nhow,"%s\n",
+            vp->vn_host->hn_host);
+          }
+        }   /* END for (j) */
+      }
+ 
     fclose(nhow);
     }  /* END if (pjob->ji_flags & MOM_HAS_NODEFILE) */
 
