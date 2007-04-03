@@ -1046,7 +1046,7 @@ int InitUserEnv(
       ebsize += strlen(envp[j]);
     }
 
-  if (LOGLEVEL >= 7)
+  if (LOGLEVEL >= 10)
     {
     sprintf(log_buffer,"creating env buffer, count: %d  size: %d",
       j,
@@ -1098,7 +1098,7 @@ int InitUserEnv(
   for (j = 0;j < num_var_env;++j)
     bld_env_variables(&vtable,environ[j],NULL);
 
-  if (LOGLEVEL >= 7)
+  if (LOGLEVEL >= 10)
     {
     sprintf(log_buffer,"local env added, count: %d",
       j);
@@ -1122,7 +1122,7 @@ int InitUserEnv(
         usertmpdir = 1;
       }
 
-    if (LOGLEVEL >= 7)
+    if (LOGLEVEL >= 10)
       {
       sprintf(log_buffer,"job env added, count: %d",
         j);
@@ -1925,7 +1925,7 @@ int TMomFinalizeChild(
             It does not have access to stdout/stderr, failure 
             messages will route to syslog via log_err() */
 
-  if (LOGLEVEL >= 7)
+  if (LOGLEVEL >= 10)
     log_err(-1,id,"starting");
 
   if (lockfds >= 0)
@@ -1944,7 +1944,7 @@ int TMomFinalizeChild(
 
   shell = set_shell(pjob,pwdp);	/* in the machine dependent section */
 
-  if (LOGLEVEL >= 7)
+  if (LOGLEVEL >= 10)
     log_err(-1,id,"shell initialized");
 
   /* Setup user env */
@@ -1956,7 +1956,7 @@ int TMomFinalizeChild(
     starter_return(TJE->upfds,TJE->downfds,JOB_EXEC_RETRY,&sjr);
     }
 
-  if (LOGLEVEL >= 7)
+  if (LOGLEVEL >= 10)
     log_err(-1,id,"env initialized");
 
   /* Create the job's nodefile */
@@ -2067,7 +2067,7 @@ int TMomFinalizeChild(
     fclose(nhow);
     }  /* END if (pjob->ji_flags & MOM_HAS_NODEFILE) */
 
-  if (LOGLEVEL >= 7)
+  if (LOGLEVEL >= 10)
     log_err(-1,id,"node file created");
 
   /* Set PBS_VNODENUM */
@@ -2443,7 +2443,7 @@ int TMomFinalizeChild(
     exit(1);
     }
 
-  if (LOGLEVEL >= 7)
+  if (LOGLEVEL >= 10)
     log_err(-1,id,"system vars set");
 	
   umask(077);
@@ -2802,7 +2802,7 @@ int TMomFinalizeChild(
       }
 #endif  /* SHELL_USE_ARGV */
 
-    if (LOGLEVEL >= 7)
+    if (LOGLEVEL >= 10)
       log_err(-1,id,"opening script");
 
     if (script_in < 0) 
@@ -2836,7 +2836,7 @@ int TMomFinalizeChild(
       exit(1);
       }
 
-    if (LOGLEVEL >= 7)
+    if (LOGLEVEL >= 10)
       log_err(-1,id,"stdout/stderr opened");
 
     /* run prolog - standard batch job */
@@ -2865,7 +2865,7 @@ int TMomFinalizeChild(
       /*NOTREACHED*/
       } 
 
-    if (LOGLEVEL >= 7)
+    if (LOGLEVEL >= 10)
       log_err(-1,id,"prolog complete");
 
     /* run user prolog */
@@ -2898,8 +2898,8 @@ int TMomFinalizeChild(
 
     j = set_job(pjob,&sjr);
 
-    if (LOGLEVEL >= 7)
-      log_err(-1,id,"et_job complete");
+    if (LOGLEVEL >= 10)
+      log_err(-1,id,"set_job complete");
 
     memcpy(TJE->sjr,&sjr,sizeof(sjr));
 
@@ -2961,7 +2961,7 @@ int TMomFinalizeChild(
     /*NOTREACHED*/
     }
 
-  if (LOGLEVEL >= 7)
+  if (LOGLEVEL >= 10)
     log_err(-1,id,"setting system limits");
 
   log_buffer[0] = '\0';
@@ -3009,7 +3009,7 @@ int TMomFinalizeChild(
 
   endpwent();
 
-  if (LOGLEVEL >= 7)
+  if (LOGLEVEL >= 10)
     log_err(-1,id,"system limits set");
 
   if ((idir = get_job_envvar(pjob,"PBS_O_ROOTDIR")) != NULL)
@@ -3038,7 +3038,7 @@ int TMomFinalizeChild(
    * become the user, execv the shell and become the real job 
    */
 
-  if (LOGLEVEL >= 7)
+  if (LOGLEVEL >= 10)
     log_err(-1,id,"setting user/group credentials");
 
   setgroups(
@@ -3104,7 +3104,7 @@ int TMomFinalizeChild(
       }
     }
 
-  if (LOGLEVEL >= 7)
+  if (LOGLEVEL >= 10)
     log_err(-1,id,"initial directory set");
 	
   /* X11 forwarding init */
@@ -3140,7 +3140,7 @@ int TMomFinalizeChild(
 
   /* tell mom we are going */
 
-  if (LOGLEVEL >= 7)
+  if (LOGLEVEL >= 10)
     log_err(-1,id,"forking child");
 
   starter_return(TJE->upfds,TJE->downfds,JOB_EXEC_OK,&sjr);
@@ -3801,7 +3801,7 @@ int start_process(
   /* The child process - will become the TASK	  */
   /************************************************/
 
-  if (LOGLEVEL >= 7)
+  if (LOGLEVEL >= 10)
     log_err(-1,id,"child starting");
     
   if (lockfds >= 0)
@@ -3829,7 +3829,7 @@ int start_process(
     exit(1);
     }
 
-  if (LOGLEVEL >= 7)
+  if (LOGLEVEL >= 10)
     log_err(-1,id,"user env initialized");
 
   if (set_mach_vars(pjob,&vtable) != 0) 
@@ -3845,7 +3845,7 @@ int start_process(
     exit(1);
     }
 
-  if (LOGLEVEL >= 7)
+  if (LOGLEVEL >= 10)
     log_err(-1,id,"mach vars set");
 
   umask(077);
@@ -3951,7 +3951,7 @@ int start_process(
       exit(1);
       }
 
-  if (LOGLEVEL >= 7)
+  if (LOGLEVEL >= 10)
     log_err(-1,id,"MPI/TM variables set");
 
   if (pjob->ji_numnodes > 1) 
@@ -4079,7 +4079,7 @@ int start_process(
    * directly to fd 2, with a \n, and ended with fsync(2)
    *******************************************************/
 
-  if (LOGLEVEL >= 7)
+  if (LOGLEVEL >= 10)
     log_err(-1,id,"about to perform set_job");
 
   j = set_job(pjob,&sjr);
@@ -4133,7 +4133,7 @@ int start_process(
     starter_return(kid_write,kid_read,j,&sjr);
     }
 
-  if (LOGLEVEL >= 7)
+  if (LOGLEVEL >= 10)
     log_err(-1,id,"set_job complete");
 
   if ((idir = get_job_envvar(pjob,"PBS_O_ROOTDIR")) != NULL)
@@ -4207,7 +4207,7 @@ int start_process(
       }
     }
 
-  if (LOGLEVEL >= 7)
+  if (LOGLEVEL >= 10)
     log_err(-1,id,"done - writing pipe and exec'ing");
 
   starter_return(
@@ -5173,7 +5173,7 @@ char *std_file_name(
 
     /* put into spool directory unless NO_SPOOL_OUTPUT is defined */
 
-    if (LOGLEVEL >= 5)
+    if (LOGLEVEL >= 10)
       {
       sprintf(log_buffer,"std_file_name path before NO_SPOOL_OUTPUT: %s", 
         path);
@@ -5210,7 +5210,7 @@ char *std_file_name(
 
     *keeping = 1;
 
-    if (LOGLEVEL >= 5)
+    if (LOGLEVEL >= 10)
       {
       sprintf(log_buffer,"std_file_name path in NO_SPOOL_OUTPUT: %s", 
         path);
@@ -5227,7 +5227,7 @@ char *std_file_name(
  
        wdir = get_job_envvar(pjob,"PBS_O_WORKDIR");
 
-       if (LOGLEVEL >= 5)
+       if (LOGLEVEL >= 10)
          { 
          sprintf(log_buffer,"wdir: %s", 
            wdir);
@@ -5239,7 +5239,7 @@ char *std_file_name(
          {
          /* check if job's work dir matches the no-spool directory list */
 
-         if (LOGLEVEL >= 8) 
+         if (LOGLEVEL >= 10) 
            log_err(-1,"std_file_name","inside wdir != NULL");
 
          for (dindex = 0;dindex < TMAX_NSDCOUNT;dindex++)
@@ -5252,7 +5252,7 @@ char *std_file_name(
              {
              havehomespool = 1;
 
-             if (LOGLEVEL >= 8) 
+             if (LOGLEVEL >= 10) 
                log_err(-1,"std_file_name","inside !strcasecmp");
  
              strncpy(path,wdir,sizeof(path));
@@ -5264,7 +5264,7 @@ char *std_file_name(
              {
              havehomespool = 1;
 
-             if (LOGLEVEL >= 8) 
+             if (LOGLEVEL >= 10) 
                log_err(-1,"std_file_name","inside !strncmp");
  
              strncpy(path,wdir,sizeof(path));
@@ -5286,7 +5286,7 @@ char *std_file_name(
 
     *keeping = 0;
 
-    if (LOGLEVEL >= 5)
+    if (LOGLEVEL >= 10)
       {
       sprintf(log_buffer,"std_file_name path in else NO_SPOOL_OUTPUT: %s", 
         path);
@@ -5299,7 +5299,7 @@ char *std_file_name(
     strncat(path,pjob->ji_qs.ji_fileprefix,sizeof(path));
     strncat(path,suffix,sizeof(path));
 
-    if (LOGLEVEL >= 5)
+    if (LOGLEVEL >= 10)
       {
       sprintf(log_buffer,"path: '%s'  prefix: '%s'  suffix: '%s'",
         path,
@@ -5472,7 +5472,7 @@ void bld_env_variables(
       }
     }
 
-  if (LOGLEVEL >= 7)
+  if (LOGLEVEL >= 10)
     {
     char tmpLine[1024];
 
