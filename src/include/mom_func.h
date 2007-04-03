@@ -175,6 +175,7 @@ extern int send_sisters(job *,int);
 extern int task_save(task *) ;
 extern void DIS_rpp_reset A_((void));
 extern void checkret A_((char **,int));
+extern char *get_job_envvar A_((job *,char *));
 
 #ifdef PENABLE_LINUX26_CPUSETS
 extern void initialize_root_cpuset();

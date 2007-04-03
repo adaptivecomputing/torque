@@ -161,8 +161,6 @@ extern  char            *nodefile_suffix;
 extern int LOGLEVEL;
 extern long TJobStartBlockTime;
 
-extern char *get_job_envvar(job *,char *);
-
 
 int              mom_reader_go;		/* see catchinter() & mom_writer() */
 struct var_table vtable;		/* for building up job's environ */
@@ -2010,8 +2008,6 @@ int TMomFinalizeChild(
       }
 
     /* NOTE:  if BEOWULF_JOB_MAP is set, populate node file with this info */
-
-    extern char *get_job_envvar(job *,char *);
 
     BPtr = get_job_envvar(pjob,"BEOWULF_JOB_MAP");
 

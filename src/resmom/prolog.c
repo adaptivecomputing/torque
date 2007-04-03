@@ -679,7 +679,6 @@ int run_pelog(
     char *envname = "PBS_SCHED_HINT";
     char *envval;
     char *envstr;
-    extern char *get_job_envvar(job *,char *);
   
     if ((envval = get_job_envvar(pjob,envname)) != NULL)
       {
