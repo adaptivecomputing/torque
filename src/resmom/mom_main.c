@@ -497,7 +497,7 @@ const char *PJobSubState[] = {
   "ABORT",     /* job is being aborted by server  */
   "SUBSTATE55",
   "SUBSTATE56",
-  "SUBSTATE57",
+  "PREOBIT",   /* preobit job status */
   "OBIT",      /* (MOM) job obit notice sent */
   "COMPLETED",
   "RERUN",     /* job is rerun, recover output stage */

@@ -700,6 +700,7 @@ task		*task_find	A_((	job		*pjob,
 #define JOB_SUBSTATE_STAGEDEL	52	/* job deleteing staged out files  */
 #define JOB_SUBSTATE_EXITED	53	/* job exit processing completed   */
 #define JOB_SUBSTATE_ABORT      54	/* job is being aborted by server  */
+#define JOB_SUBSTATE_PREOBIT    57	/* (MOM) preobit jobstat sent */
 #define JOB_SUBSTATE_OBIT       58	/* (MOM) job obit notice sent */
 #define JOB_SUBSTATE_COMPLETE   59	/* job is complete */
 
