@@ -7635,22 +7635,22 @@ int TMOMScanForStarting(void)
     {
     nextjob = (job *)GET_NEXT(pjob->ji_alljobs);
 
-    if (LOGLEVEL >= 2)
-      {
-      snprintf(log_buffer,1024,"checking job start in %s",
-        id);
-
-      log_record(
-        PBSEVENT_JOB | PBSEVENT_FORCE,
-        PBS_EVENTCLASS_JOB,
-        pjob->ji_qs.ji_jobid,
-        log_buffer);
-      }
- 
     if (pjob->ji_qs.ji_substate == JOB_SUBSTATE_STARTING)
       {
       pjobexec_t *TJE;
 
+      if (LOGLEVEL >= 2)
+        {
+        snprintf(log_buffer,1024,"checking job start in %s",
+          id);
+
+        log_record(
+          PBSEVENT_JOB | PBSEVENT_FORCE,
+          PBS_EVENTCLASS_JOB,
+          pjob->ji_qs.ji_jobid,
+          log_buffer);
+        }
+ 
       if (TMOMJobGetStartInfo(pjob,&TJE) == FAILURE)
         {
         sprintf(log_buffer,"job %s start data lost, server will retry",
@@ -7739,7 +7739,7 @@ int TMOMScanForStarting(void)
             }
           }
         }    /* END else (TMomCheckJobChild() == FAILURE) */
-      }      /* END if (pjob->ji_qs.ji_substate == JOB_SUBSTATE_PRERUN) */
+      }      /* END if (pjob->ji_qs.ji_substate == JOB_SUBSTATE_STARTING) */
 
     pjob = nextjob;
     }        /* END while (pjob != NULL) */
