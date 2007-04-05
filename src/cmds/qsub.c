@@ -2762,7 +2762,6 @@ int process_opts(
             {
             struct attrl *attr;
             char   *ptr;
-            char    tmpLine[1024];
 
             /* if walltime range specified, break into minwclimit and walltime resources */
 
