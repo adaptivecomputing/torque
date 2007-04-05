@@ -2757,7 +2757,51 @@ int process_opts(
 
             errflg++;
             }
-          }
+  
+          if (strstr(optarg,"walltime") != NULL)
+            {
+            struct attrl *attr;
+            char   *ptr;
+            char    tmpLine[1024];
+
+            /* if walltime range specified, break into minwclimit and walltime resources */
+
+            for (attr = attrib;attr != NULL;attr = attr->next)
+              {
+              if (!strcmp(attr->resource,"walltime"))
+                {
+                if ((ptr = strchr(attr->value,'-')))
+                  {
+                  char tmpLine[1024];
+
+                  *ptr = '\0'; 
+
+                  ptr++;
+
+                  /* set minwclimit to min walltime range value */
+
+                  snprintf(tmpLine,sizeof(tmpLine),"minwclimit=%s",
+                    attr->value);
+
+                  if (set_resources(&attrib,tmpLine,(pass == 0)) != 0)
+                    {
+                    fprintf(stderr,"qsub: illegal -l value\n");
+
+                    errflg++;
+                    }
+
+                  /* set walltime to max walltime range value */
+
+                  strcpy(tmpLine,ptr);
+
+                  strcpy(attr->value,tmpLine);
+                  }
+
+                break;
+                }
+              }  /* END for (attr) */
+            }
+          }      /* END else (Interact_opt == 1) */
 
 /* END ORNL WRAPPER */
 

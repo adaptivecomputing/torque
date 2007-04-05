@@ -135,7 +135,7 @@ int set_resources(
       }
 
     /*
-     * Count the number of non-space character that make up the
+     * Count the number of non-space characters that make up the
      * resource name.  Count only up to the last character before the
      * separator ('\0', ',' or '=').
      */
