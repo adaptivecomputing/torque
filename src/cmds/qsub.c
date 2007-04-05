@@ -226,9 +226,9 @@ static char *x11_get_proto(void)
 
   if ((f != NULL) && 
       fgets(line,sizeof(line),f) &&
-      sscanf(line,"%*s %511s %511s", 
+      (sscanf(line,"%*s %511s %511s", 
         proto, 
-        data) == 2)
+        data) == 2))
     {
     got_data = 1;
     }
@@ -3560,8 +3560,8 @@ int main(
   FILE *f;                            /* FILE pointer to the script */
   char *q_n_out;                      /* queue part of destination */
   char *s_n_out;                      /* server part of destination */
-                                        /* server:port to send request to */
-  int connect;                        /* return from pbs_connect */
+                                      /* server:port to send request to */
+  int   connect;                      /* return from pbs_connect */
   char *errmsg;                       /* return from pbs_geterrmsg */
   struct stat statbuf;
   struct sigaction act;
@@ -3688,13 +3688,12 @@ int main(
       }
     }
 
-  /* check to see if PBS_Filter exists.  If not then fall back to the old hard coded file */
+  /* check to see if PBS_Filter exists.  If not then fall back to the old hard-coded file */
 
   if (stat(PBS_Filter,&statbuf) == -1)
     {
     strncpy(PBS_Filter,DefaultFilterPath,255);
     }
-
 
   if (optind < argc) 
     strcpy(script,argv[optind]);
@@ -3823,12 +3822,15 @@ int main(
     }
 
   /* interactive job can not be job array */
+
   if (Interact_opt && t_opt)
-  {
-     fprintf(stderr, "qsub: Interactive job can not be job array.\n");
-     unlink(script_tmp);
-     exit(2);
-  }
+    {
+    fprintf(stderr,"qsub: interactive job can not be job array.\n");
+
+    unlink(script_tmp);
+
+    exit(2);
+    }
 
   set_opt_defaults();		/* set option default values */
   server_out[0] = '\0';

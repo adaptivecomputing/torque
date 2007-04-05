@@ -47,7 +47,7 @@ bin_PROGRAMS = qalter$(EXEEXT) qdel$(EXEEXT) qhold$(EXEEXT) \
 	qrls$(EXEEXT) qselect$(EXEEXT) qsig$(EXEEXT) qstat$(EXEEXT) \
 	qsub$(EXEEXT) pbsdsh$(EXEEXT) qdisable$(EXEEXT) \
 	qenable$(EXEEXT) qrun$(EXEEXT) qstart$(EXEEXT) qstop$(EXEEXT) \
-	qterm$(EXEEXT) pbsnodes$(EXEEXT) qmgr$(EXEEXT) @PBSPOE@
+	qterm$(EXEEXT) pbsnodes$(EXEEXT) qnodes$(EXEEXT) qmgr$(EXEEXT) @PBSPOE@
 EXTRA_PROGRAMS = pbspd$(EXEEXT) pbspoe$(EXEEXT)
 subdir = src/cmds
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -558,6 +558,9 @@ pbsdsh$(EXEEXT): $(pbsdsh_OBJECTS) $(pbsdsh_DEPENDENCIES)
 	$(LINK) $(pbsdsh_LDFLAGS) $(pbsdsh_OBJECTS) $(pbsdsh_LDADD) $(LIBS)
 pbsnodes$(EXEEXT): $(pbsnodes_OBJECTS) $(pbsnodes_DEPENDENCIES) 
 	@rm -f pbsnodes$(EXEEXT)
+	$(LINK) $(pbsnodes_LDFLAGS) $(pbsnodes_OBJECTS) $(pbsnodes_LDADD) $(LIBS)
+qnodes$(EXEEXT): $(pbsnodes_OBJECTS) $(pbsnodes_DEPENDENCIES)
+	@rm -f qnodes$(EXEEXT)
 	$(LINK) $(pbsnodes_LDFLAGS) $(pbsnodes_OBJECTS) $(pbsnodes_LDADD) $(LIBS)
 pbspd$(EXEEXT): $(pbspd_OBJECTS) $(pbspd_DEPENDENCIES) 
 	@rm -f pbspd$(EXEEXT)
