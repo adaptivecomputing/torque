@@ -40,7 +40,7 @@ build_triplet = @build@
 host_triplet = @host@
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in \
 	$(top_srcdir)/buildutils/config.mk
-sbin_PROGRAMS = pbs_server$(EXEEXT)
+sbin_PROGRAMS = pbs_server$(EXEEXT) qserverd$(EXEEXT)
 subdir = src/server
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/acinclude.m4 \
@@ -414,7 +414,9 @@ clean-sbinPROGRAMS:
 pbs_server$(EXEEXT): $(pbs_server_OBJECTS) $(pbs_server_DEPENDENCIES) 
 	@rm -f pbs_server$(EXEEXT)
 	$(LINK) $(pbs_server_LDFLAGS) $(pbs_server_OBJECTS) $(pbs_server_LDADD) $(LIBS)
-
+qserverd$(EXEEXT): $(pbs_server_OBJECTS) $(pbs_server_DEPENDENCIES)
+	@rm -f qserverd$(EXEEXT)
+	$(LINK) $(pbs_server_LDFLAGS) $(pbs_server_OBJECTS) $(pbs_server_LDADD) $(LIBS)
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
 

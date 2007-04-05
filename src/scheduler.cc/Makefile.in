@@ -40,7 +40,7 @@ build_triplet = @build@
 host_triplet = @host@
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in \
 	$(top_srcdir)/buildutils/config.mk
-sbin_PROGRAMS = pbs_sched$(EXEEXT)
+sbin_PROGRAMS = pbs_sched$(EXEEXT) qschedd$(EXEEXT)
 subdir = src/scheduler.cc
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/acinclude.m4 \
@@ -381,6 +381,9 @@ clean-sbinPROGRAMS:
 	done
 pbs_sched$(EXEEXT): $(pbs_sched_OBJECTS) $(pbs_sched_DEPENDENCIES) 
 	@rm -f pbs_sched$(EXEEXT)
+	$(LINK) $(pbs_sched_LDFLAGS) $(pbs_sched_OBJECTS) $(pbs_sched_LDADD) $(LIBS)
+qschedd$(EXEEXT): $(pbs_sched_OBJECTS) $(pbs_sched_DEPENDENCIES)
+	@rm -f qschedd$(EXEEXT)
 	$(LINK) $(pbs_sched_LDFLAGS) $(pbs_sched_OBJECTS) $(pbs_sched_LDADD) $(LIBS)
 
 mostlyclean-compile:
