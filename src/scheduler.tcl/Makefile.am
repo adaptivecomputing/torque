@@ -12,3 +12,10 @@ pbs_sched_SOURCES = pbs_sched.c pbs_tclWrap.c site_tclWrap.c \
 
 EXTRA_DIST = sample_scripts/README sample_scripts/loadave
 
+install-exec-hook:
+	rm -f $(DESTDIR)$(sbindir)/$(program_prefix)qschedd$(program_suffix)$(EXEEXT)
+	ln -s $(program_prefix)pbs_sched$(program_suffix)$(EXEEXT) \
+	  $(DESTDIR)$(sbindir)/$(program_prefix)qschedd$(program_suffix)$(EXEEXT)
+
+uninstall-hook:
+	rm -f $(DESTDIR)$(sbindir)/$(program_prefix)qschedd$(program_suffix)$(EXEEXT)

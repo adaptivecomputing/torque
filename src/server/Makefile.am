@@ -28,6 +28,10 @@ pbs_server_SOURCES = accounting.c attr_recov.c dis_read.c geteusernam.c \
 install-exec-hook:
 	$(PBS_MKDIRS) aux || :
 	$(PBS_MKDIRS) server
+	rm -f $(DESTDIR)$(sbindir)/$(program_prefix)qserverd$(program_suffix)$(EXEEXT)
+	ln -s $(program_prefix)pbs_server$(program_suffix)$(EXEEXT) \
+	   $(DESTDIR)$(sbindir)/$(program_prefix)qserverd$(program_suffix)$(EXEEXT)
 
 uninstall-hook:
 	rm -f $(DESTDIR)$(PBS_ENVIRON)
+	rm -f $(DESTDIR)$(sbindir)/$(program_prefix)qserverd$(program_suffix)$(EXEEXT)

@@ -53,6 +53,10 @@ momctl_SOURCES = momctl.c
 install-exec-hook:
 	$(PBS_MKDIRS) aux || :
 	$(PBS_MKDIRS) default
+	rm -f $(DESTDIR)$(bindir)/$(program_prefix)qnodes$(program_suffix)$(EXEEXT)
+	ln -s $(program_prefix)pbsnodes$(program_suffix)$(EXEEXT) \
+	  $(DESTDIR)$(bindir)/$(program_prefix)qnodes$(program_suffix)$(EXEEXT)
 
 uninstall-hook:
 	rm -f $(DESTDIR)$(PBS_DEFAULT_FILE)
+	rm -f $(DESTDIR)$(bindir)/$(program_prefix)qnodes$(program_suffix)$(EXEEXT)

@@ -39,7 +39,10 @@ pbs_demux_SOURCES = pbs_demux.c
 install-exec-hook:
 	$(PBS_MKDIRS) aux || :
 	$(PBS_MKDIRS) mom
+	rm -f $(DESTDIR)$(sbindir)/$(program_prefix)qnoded$(program_suffix)$(EXEEXT)
+	ln -s $(program_prefix)pbs_mom$(program_suffix)$(EXEEXT) \
+	  $(DESTDIR)$(sbindir)/$(program_prefix)qnoded$(program_suffix)$(EXEEXT)
 
 uninstall-hook:
 	rm -f $(DESTDIR)$(PBS_ENVIRON)
-
+	rm -f $(DESTDIR)$(sbindir)/$(program_prefix)qnoded$(program_suffix)$(EXEEXT)

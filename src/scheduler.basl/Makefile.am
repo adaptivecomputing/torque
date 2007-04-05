@@ -50,3 +50,10 @@ Parser.c: Parser.y
 MOSTLYCLEANFILES = Parser.c y.tab.h Lexer.c pbs_sched.c
 
 
+install-exec-hook:
+	rm -f $(DESTDIR)$(sbindir)/$(program_prefix)qschedd$(program_suffix)$(EXEEXT)
+	ln -s $(program_prefix)pbs_sched$(program_suffix)$(EXEEXT) \
+	  $(DESTDIR)$(sbindir)/$(program_prefix)qschedd$(program_suffix)$(EXEEXT)
+
+uninstall-hook:
+	rm -f $(DESTDIR)$(sbindir)/$(program_prefix)qschedd$(program_suffix)$(EXEEXT)

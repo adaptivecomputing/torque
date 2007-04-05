@@ -40,7 +40,7 @@ build_triplet = @build@
 host_triplet = @host@
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in \
 	$(top_srcdir)/buildutils/config.mk
-sbin_PROGRAMS = pbs_mom$(EXEEXT) qnoded$(EXEEXT) pbs_demux$(EXEEXT)
+sbin_PROGRAMS = pbs_mom$(EXEEXT) pbs_demux$(EXEEXT)
 subdir = src/resmom
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/acinclude.m4 \
@@ -423,9 +423,6 @@ pbs_demux$(EXEEXT): $(pbs_demux_OBJECTS) $(pbs_demux_DEPENDENCIES)
 	$(LINK) $(pbs_demux_LDFLAGS) $(pbs_demux_OBJECTS) $(pbs_demux_LDADD) $(LIBS)
 pbs_mom$(EXEEXT): $(pbs_mom_OBJECTS) $(pbs_mom_DEPENDENCIES) 
 	@rm -f pbs_mom$(EXEEXT)
-	$(LINK) $(pbs_mom_LDFLAGS) $(pbs_mom_OBJECTS) $(pbs_mom_LDADD) $(LIBS)
-qnoded$(EXEEXT): $(pbs_mom_OBJECTS) $(pbs_mom_DEPENDENCIES)
-	@rm -f qnoded$(EXEEXT)
 	$(LINK) $(pbs_mom_LDFLAGS) $(pbs_mom_OBJECTS) $(pbs_mom_LDADD) $(LIBS)
 
 mostlyclean-compile:
@@ -897,9 +894,13 @@ uninstall-info: uninstall-info-recursive
 install-exec-hook:
 	$(PBS_MKDIRS) aux || :
 	$(PBS_MKDIRS) mom
+	rm -f $(DESTDIR)$(sbindir)/$(program_prefix)qnoded$(program_suffix)$(EXEEXT)
+	ln -s $(program_prefix)pbs_mom$(program_suffix)$(EXEEXT) \
+	  $(DESTDIR)$(sbindir)/$(program_prefix)qnoded$(program_suffix)$(EXEEXT)
 
 uninstall-hook:
 	rm -f $(DESTDIR)$(PBS_ENVIRON)
+	rm -f $(DESTDIR)$(sbindir)/$(program_prefix)qnoded$(program_suffix)$(EXEEXT)
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

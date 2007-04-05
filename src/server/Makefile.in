@@ -40,7 +40,7 @@ build_triplet = @build@
 host_triplet = @host@
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in \
 	$(top_srcdir)/buildutils/config.mk
-sbin_PROGRAMS = pbs_server$(EXEEXT) qserverd$(EXEEXT)
+sbin_PROGRAMS = pbs_server$(EXEEXT)
 subdir = src/server
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/acinclude.m4 \
@@ -414,9 +414,7 @@ clean-sbinPROGRAMS:
 pbs_server$(EXEEXT): $(pbs_server_OBJECTS) $(pbs_server_DEPENDENCIES) 
 	@rm -f pbs_server$(EXEEXT)
 	$(LINK) $(pbs_server_LDFLAGS) $(pbs_server_OBJECTS) $(pbs_server_LDADD) $(LIBS)
-qserverd$(EXEEXT): $(pbs_server_OBJECTS) $(pbs_server_DEPENDENCIES)
-	@rm -f qserverd$(EXEEXT)
-	$(LINK) $(pbs_server_LDFLAGS) $(pbs_server_OBJECTS) $(pbs_server_LDADD) $(LIBS)
+
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
 
@@ -687,9 +685,13 @@ uninstall-am: uninstall-info-am uninstall-sbinPROGRAMS
 install-exec-hook:
 	$(PBS_MKDIRS) aux || :
 	$(PBS_MKDIRS) server
+	rm -f $(DESTDIR)$(sbindir)/$(program_prefix)qserverd$(program_suffix)$(EXEEXT)
+	ln -s $(program_prefix)pbs_server$(program_suffix)$(EXEEXT) \
+	   $(DESTDIR)$(sbindir)/$(program_prefix)qserverd$(program_suffix)$(EXEEXT)
 
 uninstall-hook:
 	rm -f $(DESTDIR)$(PBS_ENVIRON)
+	rm -f $(DESTDIR)$(sbindir)/$(program_prefix)qserverd$(program_suffix)$(EXEEXT)
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:
