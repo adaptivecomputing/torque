@@ -239,6 +239,7 @@ This package holds the fifo C scheduler.
 %files scheduler
 %defattr(-, root, root)
 %{_sbindir}/pbs_sched
+%{_sbindir}/qschedd
 %{_initrddir}/pbs_sched
 %dir %{torquehomedir}/sched_priv
 %config(noreplace) %{torquehomedir}/sched_priv/*
@@ -264,6 +265,7 @@ This package holds the server.
 %files server
 %defattr(-, root, root)
 %{_sbindir}/pbs_server
+%{_sbindir}/qserverd
 %{_sbindir}/momctl
 %{_initrddir}/pbs_server
 %{torquehomedir}/server_logs
@@ -289,6 +291,7 @@ This package holds the execute daemon required on every node.
 %files mom
 %defattr(-, root, root)
 %{_sbindir}/pbs_mom
+%{_sbindir}/qnoded
 %{_sbindir}/pbs_demux
 %{_initrddir}/pbs_mom
 %if ! %{use_scp}
