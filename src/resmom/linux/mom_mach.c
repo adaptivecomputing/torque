@@ -3693,7 +3693,7 @@ static char *walltime(
 
 int get_la(
 
-  double *rv)
+  double *rv)  /* O */
 
   {
   FILE	*fp;
@@ -3707,9 +3707,10 @@ int get_la(
     return(rm_errno);
     }
 
-  if (fscanf(fp,"%f",&load) != 1) 
+  if (fscanf(fp,"%f",
+        &load) != 1) 
     {
-    log_err(errno, id, "fscanf of load in /proc/loadavg");
+    log_err(errno,id,"fscanf of load in /proc/loadavg");
 
     fclose(fp);
 
@@ -3723,7 +3724,7 @@ int get_la(
   fclose(fp);
 
   return(0);
-  }
+  }  /* END get_la() */
 
 
 

@@ -718,28 +718,48 @@ err:
 
 
 
-float compute_load_threshold(char *config,int numvnodes,float threshold)
+float compute_load_threshold(
+
+  char  *config,
+  int    numvnodes,
+  float  threshold)
+
   {
-  float retval=-1;
-  float tmpval;
+  float  retval = -1;
+  float  tmpval;
   char  *op;
 
   if (numvnodes <= 0)
+    {
     return(threshold);
+    }
 
   if ((config == NULL) || (*config == '0'))
+    {
     return(threshold);
+    }
 
   switch (*config)
     {
     case 'c':
-      retval=system_ncpus;
+
+      retval = system_ncpus;
+
       break;
+
     case 't':
-      retval=numvnodes;
+
+      retval = numvnodes;
+
       break;
+
     default:
+
       return(threshold);
+
+      /*NOTREACHED*/
+
+      break;
     }
 
   config++;
@@ -750,36 +770,61 @@ float compute_load_threshold(char *config,int numvnodes,float threshold)
     case '-':
     case '*':
     case '/':
-      op=config;
+
+      op = config;
+
       break;
+
     default:
+
       return(retval);
+
+      /*NOTREACHED*/
+
+      break;
     }
 
   config++;
 
-  tmpval=atof(config);
+  tmpval = atof(config);
+
   if (!tmpval)
-     return(retval);
+    {
+    return(retval);
+    }
 
   switch (*op)
     {
     case '+':
-      retval=retval+tmpval;
+
+      retval = retval + tmpval;
+
       break;
+
     case '-':
-      retval=retval-tmpval;
+
+      retval = retval - tmpval;
+
       break;
+
     case '*':
-      retval=retval*tmpval;
+
+      retval = retval * tmpval;
+
       break;
+
     case '/':
-      retval=retval/tmpval;
+
+      retval = retval / tmpval;
+
       break;
     }
   
   return(retval);
-  }
+  }  /* END compute_load_threshold() */
+
+
+
 
    
 /*
@@ -795,8 +840,10 @@ void check_busy(
   double mla) /* I */
 
   {
+  const char *id = "check_busy";
+
   int sindex;
-  int numvnodes=0;
+  int numvnodes = 0;
   job *pjob;
   float myideal_load;
   float mymax_load;
@@ -813,23 +860,36 @@ void check_busy(
     if ((pjob = (job *)GET_NEXT(svr_alljobs)) != NULL)
       {
       for (;pjob != NULL;pjob = (job *)GET_NEXT(pjob->ji_alljobs))
-        numvnodes+=pjob->ji_numvnod;
+        numvnodes += pjob->ji_numvnod;
       }
 
-    mymax_load=compute_load_threshold(auto_max_load,numvnodes,max_load_val);
+    mymax_load = compute_load_threshold(auto_max_load,numvnodes,max_load_val);
 
-    myideal_load=compute_load_threshold(auto_ideal_load,numvnodes,ideal_load_val);
+    myideal_load = compute_load_threshold(auto_ideal_load,numvnodes,ideal_load_val);
     }
   else
     {                                                                                     
-    mymax_load=max_load_val;
-    myideal_load=ideal_load_val;
+    mymax_load = max_load_val;
+    myideal_load = ideal_load_val;
     }
 
   if ((mla >= mymax_load) && 
      ((internal_state & INUSE_BUSY) == 0))
     {
     /* node transitioned from free to busy, report state */
+
+    if (LOGLEVEL >= 2)
+      {
+      sprintf(log_buffer,"state changed from idle to busy (load max=%lf  detected=%lf)\n",
+        mymax_load,
+        mla);
+
+      log_record(
+        PBSEVENT_ERROR,
+        PBS_EVENTCLASS_JOB,
+        id,
+        log_buffer);
+      }
 
     internal_state |= INUSE_BUSY;
 
@@ -843,6 +903,19 @@ void check_busy(
           ((internal_state & INUSE_BUSY) != 0))
     {
     /* node transitioned from busy to free, report state */
+
+    if (LOGLEVEL >= 4)
+      {
+      sprintf(log_buffer,"state changed from busy to idle (load max=%lf  detected=%lf)\n",
+        mymax_load,
+        mla);
+
+      log_record(
+        PBSEVENT_ERROR,
+        PBS_EVENTCLASS_JOB,
+        id,
+        log_buffer);
+      }
 
     internal_state = (internal_state & ~INUSE_BUSY);
 
