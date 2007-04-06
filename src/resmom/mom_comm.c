@@ -1591,7 +1591,7 @@ void task_saveinfo(
   task *ptask,
   char *name,
   void *info,
-  int	len)
+  size_t	len)
 
   {
   infoent *ip;
@@ -4227,7 +4227,8 @@ int tm_request(
   task		*ptask;
   vnodent	*pnode;
   hnodent	*phost;
-  int		i, len, event, numele;
+  int		i, event, numele;
+  size_t	len;
   long		ipadd;
   char		**argv, **envp;
   char		*name, *info;
@@ -4472,7 +4473,7 @@ int tm_request(
       if (ret != DIS_SUCCESS)
         goto err;
 
-      info = disrcs(fd, (size_t *)&len, &ret);
+      info = disrcs(fd, &len, &ret);
 
       if (ret != DIS_SUCCESS) 
         {
@@ -4483,7 +4484,7 @@ int tm_request(
 
       DBPRT(("%s: POSTINFO %s task %d sent info %s:%s(%d)\n", 
         id,
-        jobid, fromtask, name, info, len))
+        jobid, fromtask, name, info, (int)len))
 
       if (prev_error)
         goto done;
