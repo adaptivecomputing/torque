@@ -6606,7 +6606,7 @@ int main(
 
 #endif  /* not DEBUG and not NO_SECURITY_CHECK */
 
-  if (hostname_specified != 0) 
+  if (hostname_specified == 0) 
     {
     hostc = gethostname(mom_host,PBS_MAXHOSTNAME);
     }
