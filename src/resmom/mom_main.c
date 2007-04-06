@@ -6269,7 +6269,7 @@ int main(
 
   errflg = 0;
 
-  while ((c = getopt(argc,argv,"a:c:C:d:Dh:l:L:M:prR:S:vx-:")) != -1) 
+  while ((c = getopt(argc,argv,"a:c:C:d:Dh:l:L:M:prR:s:S:vx-:")) != -1) 
     {
     switch (c) 
       {
@@ -6417,6 +6417,12 @@ int main(
 
           exit(1);
           }
+
+        break;
+
+      case 's':
+
+        log_init(optarg,NULL);
 
         break;
 
