@@ -1152,7 +1152,7 @@ int set_note_str(
   if (nsize > MAX_NOTE)
     {
     sprintf(log_buffer,"Warning: Client attempted to set note with len (%d) > MAX_NOTE (%d)",
-      nsize,
+      (int)nsize,
       MAX_NOTE);
 
     log_record(
