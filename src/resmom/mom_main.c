@@ -213,6 +213,7 @@ static resource_def *rdcput;
 double		wallfactor = 1.00;
 long		log_file_max_size = 0;
 long		log_file_roll_depth = 1;
+
 time_t		last_log_check;
 char           *nodefile_suffix = NULL;  /* suffix to append to each host listed in job host file */
 char           *TNoSpoolDirList[TMAX_NSDCOUNT];
@@ -251,9 +252,9 @@ char            MOMUNameMissing[64];
 
 int             MOMConfigDownOnError      = 0;
 int             MOMConfigRestart          = 0;
-long            system_ncpus=0;
-char           *auto_ideal_load=NULL;
-char           *auto_max_load=NULL;
+long            system_ncpus = 0;
+char           *auto_ideal_load = NULL;
+char           *auto_max_load   = NULL;
 
 #define TMAX_JE  64
 
@@ -321,6 +322,8 @@ static unsigned long setcheckpolltime(char *);
 static unsigned long settmpdir(char *);
 static unsigned long setlogfilemaxsize(char *);
 static unsigned long setlogfilerolldepth(char *);
+static unsigned long setlogfilesuffix(char *);
+static unsigned long setlogdirectory(char *);
 static unsigned long setvarattr(char *);
 static unsigned long setautoidealload(char *);
 static unsigned long setautomaxload(char *);
@@ -362,8 +365,10 @@ static struct specials {
     { "status_update_time",  setstatusupdatetime },
     { "check_poll_time",     setcheckpolltime },
     { "tmpdir",              settmpdir },
+    { "log_directory",       setlogdirectory },
     { "log_file_max_size",   setlogfilemaxsize },
     { "log_file_roll_depth", setlogfilerolldepth },
+    { "log_file_suffix",     setlogfilesuffix },
     { "varattr",             setvarattr },
     { "nodefile_suffix",     setnodefilesuffix },
     { "nospool_dir_list",    setnospooldirlist },
@@ -2569,6 +2574,8 @@ static unsigned long setlogfilemaxsize(
   }
 
 
+
+
 static unsigned long setlogfilerolldepth(
 
   char *value)  /* I */
@@ -2585,6 +2592,32 @@ static unsigned long setlogfilerolldepth(
 
   return(1);
   }
+
+
+
+static unsigned long setlogdirectory(
+
+  char *value)  /* I */
+
+  {
+  path_log = strdup(value);
+
+  return(1);
+  }
+
+
+
+
+static unsigned long setlogfilesuffix(
+
+  char *value)  /* I */
+
+  {
+  log_init(value,NULL);
+
+  return(1);
+  }
+
 
 
 
@@ -6082,6 +6115,9 @@ void MOMCheckRestart(void)
     }
   }  /* END MOMCheckRestart() */
 
+
+
+
 int MOMInitialize(void)
 
   {
@@ -6118,7 +6154,7 @@ int main(
   {
   static	char id[] = "mom_main";
 
-  int	 	errflg, c;
+  int	 	errflg, c, hostc;
   FILE		*dummyfile;
   task		*ptask;
   char		*ptr;                   /* local tmp variable */
@@ -6233,7 +6269,7 @@ int main(
 
   errflg = 0;
 
-  while ((c = getopt(argc,argv,"a:c:C:d:Dh:L:M:prR:S:vx-:")) != -1) 
+  while ((c = getopt(argc,argv,"a:c:C:d:Dh:l:L:M:prR:S:vx-:")) != -1) 
     {
     switch (c) 
       {
@@ -6323,6 +6359,12 @@ int main(
       case 'D':  /* debug */
  
         DOBACKGROUND = 0;
+
+        break;
+
+      case 'l':
+
+        path_log = strdup(optarg);
 
         break;
 
@@ -6477,7 +6519,7 @@ int main(
   setrlimit(RLIMIT_FSIZE, &rlimit);
   setrlimit(RLIMIT_DATA,  &rlimit);
 #ifdef	RLIMIT_RSS
-  setrlimit(RLIMIT_RSS  , &rlimit);
+  setrlimit(RLIMIT_RSS,   &rlimit);
 #endif	/* RLIMIT_RSS */
 #ifdef	RLIMIT_VMEM
   setrlimit(RLIMIT_VMEM, &rlimit);
@@ -6503,7 +6545,9 @@ int main(
   path_epilogpdel  = mk_dirs("mom_priv/epilogue.precancel");
   path_resources   = mk_dirs(PBS_RESOURCES);
 
-  path_log         = mk_dirs("mom_logs");
+  if (path_log == NULL)
+    path_log       = mk_dirs("mom_logs");
+
   path_spool       = mk_dirs("spool/");
   path_undeliv     = mk_dirs("undelivered/");
   path_aux         = mk_dirs("aux/");
@@ -6522,7 +6566,7 @@ int main(
 
 #if !defined(DEBUG) && !defined(NO_SECURITY_CHECK)
 
-  c = chk_file_sec(path_checkpoint, 1, 0, S_IWGRP|S_IWOTH, 1);
+  c = chk_file_sec(path_checkpoint,1,0,S_IWGRP|S_IWOTH,1);
 
 #endif  /* not DEBUG and not NO_SECURITY_CHECK */
 #endif	/* MOM_CHECKPOINT */
@@ -6543,11 +6587,11 @@ int main(
 
 #if !defined(DEBUG) && !defined(NO_SECURITY_CHECK)
 
-  c |= chk_file_sec(path_jobs,        1, 0, S_IWGRP|S_IWOTH, 1);
-  c |= chk_file_sec(path_aux,         1, 0, S_IWGRP|S_IWOTH, 1);
-  c |= chk_file_sec(path_spool,       1, 1, S_IWOTH,         0);
-  c |= chk_file_sec(path_undeliv,     1, 1, S_IWOTH,         0);
-  c |= chk_file_sec(PBS_ENVIRON,      0, 0, S_IWGRP|S_IWOTH, 0);
+  c |= chk_file_sec(path_jobs,    1, 0, S_IWGRP|S_IWOTH, 1);
+  c |= chk_file_sec(path_aux,     1, 0, S_IWGRP|S_IWOTH, 1);
+  c |= chk_file_sec(path_spool,   1, 1, S_IWOTH,         0);
+  c |= chk_file_sec(path_undeliv, 1, 1, S_IWOTH,         0);
+  c |= chk_file_sec(PBS_ENVIRON,  0, 0, S_IWGRP|S_IWOTH, 0);
 
   if (c)
     {
@@ -6555,6 +6599,13 @@ int main(
     }
 
 #endif  /* not DEBUG and not NO_SECURITY_CHECK */
+
+  if (hostname_specified != 0) 
+    {
+    hostc = gethostname(mom_host,PBS_MAXHOSTNAME);
+    }
+
+  log_init(NULL,mom_host);
 
   /* open log file while std in,out,err still open, forces to fd 4 */
 
@@ -6842,7 +6893,7 @@ int main(
   CLEAR_HEAD(svr_requests);
   CLEAR_HEAD(mom_varattrs);
 
-  if ((hostname_specified != 0) || ((c = gethostname(mom_host,PBS_MAXHOSTNAME)) == 0)) 
+  if ((hostname_specified != 0) || (hostc == 0)) 
     {
     strcpy(mom_short_name,mom_host);
 
