@@ -14,7 +14,7 @@ dnl  if it is not available do a "extern int h_errno;" in the code.
 dnl
 dnl  This test was taken from the original OpenPBS buildsystem
 dnl
-AC_DEFUN(AC_DECL_H_ERRNO,
+AC_DEFUN([AC_DECL_H_ERRNO],
 [AC_CACHE_CHECK([for h_errno declaration in netdb.h],
   ac_cv_decl_h_errno,
 [AC_TRY_COMPILE([#include <sys/types.h>
@@ -37,7 +37,7 @@ dnl  definition of FD_* macros for select bitmask handling.
 dnl 
 dnl  This test was taken from the original OpenPBS buildsystem
 dnl
-AC_DEFUN(AC_DECL_FD_SET_SYS_SELECT_H,
+AC_DEFUN([AC_DECL_FD_SET_SYS_SELECT_H],
 [AC_CACHE_CHECK([for FD_SET declaration in sys/select.h],
   ac_cv_decl_fdset_sys_select_h,
 [AC_EGREP_CPP(oh_yeah, [#include <sys/select.h> 
