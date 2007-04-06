@@ -6154,7 +6154,7 @@ int main(
   {
   static	char id[] = "mom_main";
 
-  int	 	errflg, c, hostc;
+  int	 	errflg, c, hostc=0;
   FILE		*dummyfile;
   task		*ptask;
   char		*ptr;                   /* local tmp variable */

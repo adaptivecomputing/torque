@@ -109,6 +109,7 @@ extern void log_record A_((int,int,char *,char *));
 extern void log_roll A_((int));
 extern long log_size A_((void));
 extern char log_buffer[LOG_BUF_SIZE];
+int log_init A_((char *,char *));
 
 extern int  chk_file_sec A_((char *,int,int,int,int));
 extern int  setup_env A_((char *));

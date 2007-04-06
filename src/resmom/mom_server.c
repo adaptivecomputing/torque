@@ -840,7 +840,7 @@ void check_busy(
   double mla) /* I */
 
   {
-  const char *id = "check_busy";
+  static char id[] = "check_busy";
 
   int sindex;
   int numvnodes = 0;
@@ -880,7 +880,7 @@ void check_busy(
 
     if (LOGLEVEL >= 2)
       {
-      sprintf(log_buffer,"state changed from idle to busy (load max=%lf  detected=%lf)\n",
+      sprintf(log_buffer,"state changed from idle to busy (load max=%f  detected=%f)\n",
         mymax_load,
         mla);
 
@@ -906,7 +906,7 @@ void check_busy(
 
     if (LOGLEVEL >= 4)
       {
-      sprintf(log_buffer,"state changed from busy to idle (load max=%lf  detected=%lf)\n",
+      sprintf(log_buffer,"state changed from busy to idle (load max=%f  detected=%f)\n",
         mymax_load,
         mla);
 
@@ -1117,7 +1117,7 @@ void state_to_server(
   int force)        /* I (boolean) */
 
   {
-  char *id = "state_to_server";
+  static char id[] = "state_to_server";
 
   if ((force == 0) && (ReportMomState[ServerIndex] == 0))
     {
