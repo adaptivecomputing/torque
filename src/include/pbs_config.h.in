@@ -9,6 +9,12 @@
 /* turns on the compilation of DEBUG code */
 #undef DEBUG
 
+/* Alternate directory for MOM logs */
+#undef DEFAULT_MOMLOGDIR
+
+/* Alternate suffix for MOM logs */
+#undef DEFAULT_MOMLOGSUFFIX
+
 /* Define to enable BLCR support */
 #undef ENABLE_BLCR
 

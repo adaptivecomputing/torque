@@ -213,7 +213,7 @@ int log_init(
     strncpy(log_suffix,suffix,sizeof(log_suffix));
 
   if (hostname != NULL)
-    strncpy(log_host,hostname,sizeof(hostname));
+    strncpy(log_host,hostname,sizeof(log_host));
 
   return(0);
   }  /* END log_init() */

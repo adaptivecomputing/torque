@@ -6154,7 +6154,7 @@ int main(
   {
   static	char id[] = "mom_main";
 
-  int	 	errflg, c, hostc=0;
+  int	 	errflg, c, hostc=1;
   FILE		*dummyfile;
   task		*ptask;
   char		*ptr;                   /* local tmp variable */
@@ -6213,6 +6213,12 @@ int main(
   strcpy(xauth_path,XAUTH_PATH);
   strcpy(rcp_path,RCP_PATH);
   strcpy(rcp_args,RCP_ARGS);
+#ifdef DEFAULT_MOMLOGDIR
+  path_log=strdup(DEFAULT_MOMLOGDIR);
+#endif
+#ifdef DEFAULT_MOMLOGSUFFIX
+  log_init(DEFAULT_MOMLOGSUFFIX,NULL);
+#endif
 
   /* PATH is restored before a restart */
   if (getenv("PATH") != NULL)
@@ -6551,8 +6557,10 @@ int main(
   path_epilogpdel  = mk_dirs("mom_priv/epilogue.precancel");
   path_resources   = mk_dirs(PBS_RESOURCES);
 
+#ifndef DEFAULT_MOMLOGDIR
   if (path_log == NULL)
     path_log       = mk_dirs("mom_logs");
+#endif
 
   path_spool       = mk_dirs("spool/");
   path_undeliv     = mk_dirs("undelivered/");
