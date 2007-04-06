@@ -333,7 +333,7 @@ int DIS_tcp_wflush(
       if (getenv("PBSDEBUG") != NULL)
         {
         fprintf(stderr,"TCP write of %d bytes (%.32s) failed, errno=%d (%s)\n",
-          ct,
+          (int)ct,
           pb,
           errno,
           strerror(errno));
