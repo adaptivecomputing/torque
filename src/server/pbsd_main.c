@@ -467,16 +467,6 @@ int main(
 
   msg_daemonname = strdup(pbs_current_user);
 
-  /* if we are not running with real and effective uid of 0, forget it */
-
-  if ((getuid() != 0) || (geteuid() != 0)) 
-    {
-    fprintf(stderr,"%s: must be run by root\n", 
-      ProgName);
-
-    return(1);
-    }
-
   /* set standard umask */
 
   umask(022);
@@ -869,6 +859,16 @@ int main(
       argv[0]);
 
     exit(1);
+    }
+
+  /* if we are not running with real and effective uid of 0, forget it */
+
+  if ((getuid() != 0) || (geteuid() != 0)) 
+    {
+    fprintf(stderr,"%s: must be run by root\n", 
+      ProgName);
+
+    return(1);
     }
 
   /* make sure no other server is running with this home directory */
