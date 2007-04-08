@@ -22,10 +22,10 @@ foreach my $queue (keys %queues)
   {
   my $data = `qmgr -c 'p queue $queue'`;
   push(@xqueues, $queue)
-    if $data =~ /^set queue batch queue_type\s+=\s+Execution/im;
+    if $data =~ /^set queue $queue queue_type\s+=\s+Execution/im;
   foreach my $line (split /[\r\n]+/, $data)
     {
-    next unless $line =~ /^set queue batch (\S+) = (\S+)/;
+    next unless $line =~ /^set queue $queue (\S+) = (\S+)/;
     $queues{$queue}{$1} = $2;
     }
   }
