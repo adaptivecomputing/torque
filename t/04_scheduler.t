@@ -13,17 +13,17 @@ my %schedulers;
 # Installed Schedulers
 {
   # Check Maui
-  $schedulers{MAUI} = `which maui` || undef;
+  $schedulers{MAUI} = `which maui 2>/dev/null` || undef;
   delete $schedulers{MAUI}
     unless defined $schedulers{MAUI};
 
   # Check Moab
-  $schedulers{MOAB} = `which moab` || undef;
+  $schedulers{MOAB} = `which moab 2>/dev/null` || undef;
   delete $schedulers{MOAB}
     unless defined $schedulers{MOAB};
 
   # Check FIFO
-  $schedulers{FIFO} = `which pbs_sched` || undef;
+  $schedulers{FIFO} = `which pbs_sched 2>/dev/null` || undef;
   delete $schedulers{FIFO}
     unless defined $schedulers{FIFO};
 }
