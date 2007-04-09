@@ -193,8 +193,8 @@ attribute_def que_attr_def[] = {
 	ATR_TYPE_STR,
 	PARENT_TYPE_QUE_ALL
     },
-/* QA_ATR_MaxRun */		/* max number of jobs allowed to run */
-    {	ATTR_maxrun,		/* "max_running" */
+/* QA_ATR_MaxReport */		/* max number of jobs reported for truncated output */
+    {	ATTR_maxreport,		/* "max_report" */
 	decode_l,
 	encode_l,
 	set_l,
@@ -204,6 +204,18 @@ attribute_def que_attr_def[] = {
 	NO_USER_SET,
 	ATR_TYPE_LONG,
 	PARENT_TYPE_QUE_ALL
+    },
+/* QA_ATR_MaxRun */             /* max number of jobs allowed to run */
+    {   ATTR_maxrun,            /* "max_running" */
+        decode_l,
+        encode_l,
+        set_l,
+        comp_l,
+        free_null,
+        NULL_FUNC,
+        NO_USER_SET,
+        ATR_TYPE_LONG,
+        PARENT_TYPE_QUE_ALL
     },
 /* QA_ATR_AclHostEnabled */	/* Host ACL to be used */
     {	ATTR_aclhten,		/* "acl_host_enable" */

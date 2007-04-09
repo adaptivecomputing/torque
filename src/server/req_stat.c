@@ -162,7 +162,8 @@ enum TJobStatTypeEnum {
   tjstJob,
   tjstQueue,
   tjstServer,
-  tjstTruncated,
+  tjstTruncatedQueue,
+  tjstTruncatedServer,
   tjstLAST };
 
 void req_stat_job(
@@ -175,6 +176,8 @@ void req_stat_job(
   job		   *pjob = NULL;
   pbs_queue	   *pque = NULL;
   int		    rc = 0;
+
+  int               tlen;
 
   enum TJobStatTypeEnum type = tjstNONE;
 
@@ -189,36 +192,57 @@ void req_stat_job(
 
   if (isdigit((int)*name)) 
     {
-    pjob = find_job(name);	         /* status a single job */
+    /* status a single job */
 
-    if (pjob != NULL)
-      type = tjstJob;	
-    else
+    type = tjstJob;
+
+    if ((pjob = find_job(name)) == NULL)
+      {
       rc = PBSE_UNKJOBID;
+      }
     } 
-  else if (isalpha((int)*name)) 
+  else if (isalpha((int)*name) && !strcasecmp("truncated",name)) 
     {
-    pque = find_queuebyname(name);       /* status jobs in a queue */
+    /* status jobs in a queue */
 
-    if (pque)
-      type = tjstQueue;
+    int tlen = strlen("truncated:");
+
+    if (!strncasecmp(name,"truncated:",tlen))
+      {
+      /* format: truncated:queue */
+
+      name += tlen;
+
+      type = tjstTruncatedQueue;
+      }
     else
+      { 
+      type = tjstQueue;
+      }
+ 
+    if ((pque = find_queuebyname(name)) == NULL)
+      {
       rc = PBSE_UNKQUE;
-    } 
-  else if ((*name == '\0') || (*name == '@')) 
-    {
-    type = tjstServer;  /* status all jobs at server */
+      }
     } 
   else if (!strcasecmp(name,"truncated"))
     {
-    type = tjstTruncated;
+    /* status all jobs at server */
+
+    type = tjstTruncatedServer;
     }
+  else if ((*name == '\0') || (*name == '@')) 
+    {
+    /* status all jobs at server */
+
+    type = tjstServer;  
+    } 
   else
     {
     rc = PBSE_IVALREQ;
     }
 
-  if (type == 0) 
+  if (rc != 0) 
     {		
     /* is invalid - an error */
 
@@ -319,7 +343,7 @@ static void req_stat_job_step2(
           }
         else
           {
-          if (type == tjstTruncated)
+          if ((type == tjstTruncatedServer) || (type == tjstTruncatedQueue))
             IsTruncated = TRUE;
 
           pjob = (job *)GET_NEXT(svr_alljobs);

@@ -117,6 +117,7 @@ enum queueattr {
 	QA_ATR_MaxUserJobs,
 	QA_ATR_TotalJobs,
 	QA_ATR_JobsByState,
+        QA_ATR_MaxReport,
 	QA_ATR_MaxRun,
 	QA_ATR_AclHostEnabled,
 	QA_ATR_AclHost,

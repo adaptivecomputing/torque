@@ -154,6 +154,7 @@
 #define ATTR_queue      "queue"
 #define ATTR_server     "server"
 #define ATTR_maxrun     "max_running"
+#define ATTR_maxreport  "max_report"
 #define ATTR_total      "total_jobs"
 #define ATTR_comment    "comment"
 #define ATTR_cookie     "cookie"
