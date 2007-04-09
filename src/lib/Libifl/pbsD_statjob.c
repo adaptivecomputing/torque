@@ -85,7 +85,7 @@
 
 #include "libpbs.h"
 
-struct batch_status * pbs_statjob(
+struct batch_status *pbs_statjob(
 
   int           c,       /* I - socket descriptor */
   char         *id,      /* I - job id (optional) */
