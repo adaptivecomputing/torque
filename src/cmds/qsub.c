@@ -2767,7 +2767,7 @@ int process_opts(
 
             for (attr = attrib;attr != NULL;attr = attr->next)
               {
-              if (!strcmp(attr->resource,"walltime"))
+              if (!strcmp(attr->name,"walltime"))
                 {
                 if ((ptr = strchr(attr->value,'-')))
                   {
