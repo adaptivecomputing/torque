@@ -139,7 +139,6 @@ static int bad;
 static void update_state_ct A_((attribute *,int *,char *));
 static int  status_que A_((pbs_queue *,struct batch_request *,tlist_head *));
 static int  status_node A_((struct pbsnode *,struct batch_request *,tlist_head *));
-static void req_stat_job_step(struct batch_request *);
 static void req_stat_job_step2 A_((struct stat_cntl *));
 static void stat_update A_((struct work_task *));
 
@@ -177,7 +176,6 @@ void req_stat_job(
   pbs_queue	   *pque = NULL;
   int		    rc = 0;
 
-  int               tlen;
 
   enum TJobStatTypeEnum type = tjstNONE;
 
