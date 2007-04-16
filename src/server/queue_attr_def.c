@@ -133,7 +133,7 @@ attribute_def que_attr_def[] = {
 	ATR_TYPE_STR,
 	PARENT_TYPE_QUE_ALL
     },
-/* QA_ATR_Priority */		/* priority of queue releative to others */
+/* QA_ATR_Priority */		/* priority of queue relative to others */
     {	ATTR_p,			/* "priority" */
 	decode_l,
 	encode_l,
@@ -144,6 +144,30 @@ attribute_def que_attr_def[] = {
 	NO_USER_SET,
 	ATR_TYPE_LONG,
 	PARENT_TYPE_QUE_ALL
+    },
+/* QA_ATR_Hostlist */           /* hostlist */
+    {   ATTR_hostlist,          /* "hostlist" */
+        decode_l,
+        encode_l,
+        set_l,
+        comp_l,
+        free_null,
+        NULL_FUNC,
+        NO_USER_SET,
+        ATR_TYPE_LONG,
+        PARENT_TYPE_QUE_ALL
+    },
+/* QA_ATR_Restartable */    /* restartable */
+    {   ATTR_restartable,   /* "restartable" */
+        decode_l,
+        encode_l,
+        set_l,
+        comp_l,
+        free_null,
+        NULL_FUNC,
+        NO_USER_SET,
+        ATR_TYPE_LONG,
+        PARENT_TYPE_QUE_ALL
     },
 /* QA_ATR_MaxJobs */		/* max number of jobs allowed in queue */
     {	ATTR_maxque,		/* "max_queuable" */

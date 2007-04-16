@@ -592,16 +592,19 @@ typedef struct	infoent {
 
 #define IM_MAX          12
 
-eventent	*event_alloc	A_((	int		command,
-					hnodent		*pnode,
-					tm_event_t	event,
-					tm_task_id	taskid));
+eventent *event_alloc A_((
+  int		command,
+  hnodent	*pnode,
+  tm_event_t	event,
+  tm_task_id	taskid));
 
-task		*pbs_task_create	A_((	job		*pjob,
-					tm_task_id	taskid));
+task *pbs_task_create A_((	
+  job *pjob,
+  tm_task_id	taskid));
 
-task		*task_find	A_((	job		*pjob,
-					tm_task_id	taskid));
+task *task_find A_((
+  job *pjob,
+  tm_task_id	taskid));
 
 #endif	/* MOM */
 

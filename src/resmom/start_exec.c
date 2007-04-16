@@ -335,14 +335,18 @@ struct passwd *check_pwd(
     {
     /* execution group specified and not default of login group */
 
+    /* NOTE:  egroup should be groupname, not groupid */
+
     grpp = getgrnam(pjob->ji_wattr[(int)JOB_ATR_egroup].at_val.at_str);
 
     if (grpp == NULL) 
       {
       /* FAILURE */
 
-      sprintf(log_buffer,"no group entry for group %s",
-        pjob->ji_wattr[(int)JOB_ATR_egroup].at_val.at_str);
+      sprintf(log_buffer,"no group entry for group %s, errno=%d (%s)",
+        pjob->ji_wattr[(int)JOB_ATR_egroup].at_val.at_str,
+        errno,
+        strerror(errno));
 
       return(NULL);
       }
