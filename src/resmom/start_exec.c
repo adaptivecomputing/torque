@@ -343,8 +343,9 @@ struct passwd *check_pwd(
       {
       /* FAILURE */
 
-      sprintf(log_buffer,"no group entry for group %s, errno=%d (%s)",
+      sprintf(log_buffer,"no group entry for group %s, user=%s, errno=%d (%s)",
         pjob->ji_wattr[(int)JOB_ATR_egroup].at_val.at_str,
+        ptr,
         errno,
         strerror(errno));
 
