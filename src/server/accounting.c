@@ -214,6 +214,13 @@ static char *acct_job(
 
   ptr += strlen(ptr);
 
+  /* user */
+
+  sprintf(ptr,"owner=%s ",
+    pjob->ji_wattr[(int)JOB_ATR_job_owner].at_val.at_str);
+
+  ptr += strlen(ptr);
+
   /* execution host name */
 
   BufSize -= strlen(Buf);
