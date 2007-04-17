@@ -145,30 +145,35 @@ attribute_def que_attr_def[] = {
 	ATR_TYPE_LONG,
 	PARENT_TYPE_QUE_ALL
     },
-/* QA_ATR_Hostlist */           /* hostlist */
-    {   ATTR_hostlist,          /* "hostlist" */
-        decode_l,
-        encode_l,
-        set_l,
-        comp_l,
-        free_null,
+
+#ifdef DOG
+/* QA_ATR_HostList */            /* HostList */
+    {   ATTR_hostlist,           /* "hostlist" */
+        decode_arst,
+        encode_arst,
+        set_hostacl,
+        comp_arst,
+        free_arst,
         NULL_FUNC,
         NO_USER_SET,
-        ATR_TYPE_LONG,
+        ATR_TYPE_ACL,
         PARENT_TYPE_QUE_ALL
     },
+
 /* QA_ATR_Restartable */    /* restartable */
     {   ATTR_restartable,   /* "restartable" */
-        decode_l,
-        encode_l,
-        set_l,
-        comp_l,
+        decode_b,
+        encode_b,
+        set_b,
+        comp_b,
         free_null,
         NULL_FUNC,
         NO_USER_SET,
         ATR_TYPE_LONG,
         PARENT_TYPE_QUE_ALL
     },
+#endif
+
 /* QA_ATR_MaxJobs */		/* max number of jobs allowed in queue */
     {	ATTR_maxque,		/* "max_queuable" */
 	decode_l,

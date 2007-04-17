@@ -128,7 +128,7 @@ enum queueattr {
 	QA_ATR_ResourceMin,
 	QA_ATR_ResourceDefault,
         QA_ATR_AclGroupEnabled,
-        QA_ATR_AclGroup,
+        QA_ATR_AclGroup,          /* 17 */
         QA_ATR_AclLogic,
         QA_ATR_AclGroupSloppy,
         QA_ATR_MTime,

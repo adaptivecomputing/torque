@@ -241,12 +241,12 @@ int read_attr(
 
   pal->al_name = (char *)pal + sizeof(svrattrl);
 
-  if (pal->al_rescln != NULL)
+  if (pal->al_rescln != 0)
     pal->al_resc = pal->al_name + pal->al_nameln;
   else
     pal->al_resc = NULL;
 
-  if (pal->al_valln != NULL)
+  if (pal->al_valln != 0)
     pal->al_value = pal->al_name + pal->al_nameln + pal->al_rescln;
   else
     pal->al_value = NULL;

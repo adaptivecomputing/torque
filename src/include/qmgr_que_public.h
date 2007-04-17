@@ -97,7 +97,10 @@ ATTR_acluser,
 ATTR_chkptmin,
 ATTR_enable,
 ATTR_fromroute,
+/* 
 ATTR_hostlist,
+ATTR_restartable,
+*/
 ATTR_killdelay,
 ATTR_maxque,
 ATTR_maxuserque,
