@@ -234,6 +234,7 @@ mk_server_dirs()
 	install_dir $PBS_SERVER_HOME/spool 1777 || return 1
 	install_dir $PBS_SERVER_HOME/server_priv 750 || return 1
 	install_dir $PBS_SERVER_HOME/server_priv/jobs 750 || return 1
+	install_dir $PBS_SERVER_HOME/server_priv/hostlist 750 || return 1
 	install_dir $PBS_SERVER_HOME/server_priv/queues 750 || return 1
 	install_dir $PBS_SERVER_HOME/server_priv/acl_svr 750 || return 1
 	install_dir $PBS_SERVER_HOME/server_priv/acl_hosts 750 || return 1
@@ -249,6 +250,7 @@ mk_server_dirs()
 	test -f $PBS_ENVIRON || check_env || return 1
 
 	chk_tree_wrap -d -n $PBS_SERVER_HOME/server_priv/jobs \
+		$PBS_SERVER_HOME/server_priv/hostlist \
 		$PBS_SERVER_HOME/server_priv/queues \
 		$PBS_SERVER_HOME/server_priv/acl_svr \
 		$PBS_SERVER_HOME/server_priv/acl_hosts \
