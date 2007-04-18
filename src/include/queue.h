@@ -111,56 +111,57 @@
  */
 
 enum queueattr {
-	QA_ATR_QType,
-	QA_ATR_Priority,
-	QA_ATR_MaxJobs,
-	QA_ATR_MaxUserJobs,
-	QA_ATR_TotalJobs,
-	QA_ATR_JobsByState,
-        QA_ATR_MaxReport,
-	QA_ATR_MaxRun,
-	QA_ATR_AclHostEnabled,
-	QA_ATR_AclHost,
-	QA_ATR_AclUserEnabled,
-	QA_ATR_AclUsers,
-	QA_ATR_FromRouteOnly,
-	QA_ATR_ResourceMax,
-	QA_ATR_ResourceMin,
-	QA_ATR_ResourceDefault,
-        QA_ATR_AclGroupEnabled,
-        QA_ATR_AclGroup,          /* 17 */
-        QA_ATR_AclLogic,
-        QA_ATR_AclGroupSloppy,
-        QA_ATR_MTime,
-        QA_ATR_DisallowedTypes,
+  QA_ATR_QType,
+  QA_ATR_Priority,
+  QA_ATR_Hostlist,
+  QA_ATR_Rerunnable,
+  QA_ATR_MaxJobs,
+  QA_ATR_MaxUserJobs,
+  QA_ATR_TotalJobs,
+  QA_ATR_JobsByState,
+  QA_ATR_MaxReport,
+  QA_ATR_MaxRun,
+  QA_ATR_AclHostEnabled,
+  QA_ATR_AclHost,
+  QA_ATR_AclUserEnabled,
+  QA_ATR_AclUsers,
+  QA_ATR_FromRouteOnly,
+  QA_ATR_ResourceMax,
+  QA_ATR_ResourceMin,
+  QA_ATR_ResourceDefault,
+  QA_ATR_AclGroupEnabled,
+  QA_ATR_AclGroup,          /* 19 */
+  QA_ATR_AclLogic,
+  QA_ATR_AclGroupSloppy,
+  QA_ATR_MTime,
+  QA_ATR_DisallowedTypes,
      
-	/* The following attributes apply only to exection queues */
+  /* The following attributes apply only to exection queues */
 
-	QE_ATR_ChkptMim,
-	QE_ATR_RendezvousRetry,
-	QE_ATR_ReservedExpedite,
-	QE_ATR_ReservedSync,
-	QE_ATR_ResourceAvail,
-	QE_ATR_ResourceAssn,
-	QE_ATR_KillDelay,
-	QE_ATR_MaxUserRun,
-	QE_ATR_MaxGrpRun,
-	QE_ATR_KeepCompleted,
+  QE_ATR_ChkptMim,
+  QE_ATR_RendezvousRetry,
+  QE_ATR_ReservedExpedite,
+  QE_ATR_ReservedSync,
+  QE_ATR_ResourceAvail,
+  QE_ATR_ResourceAssn,
+  QE_ATR_KillDelay,
+  QE_ATR_MaxUserRun,
+  QE_ATR_MaxGrpRun,
+  QE_ATR_KeepCompleted,
 
-	/* The following attribute apply only to routing queues... */
+  /* The following attribute apply only to routing queues... */
 
-	QR_ATR_RouteDestin,
-	QR_ATR_AltRouter,
-	QR_ATR_RouteHeld,
-	QR_ATR_RouteWaiting,
-	QR_ATR_RouteRetryTime,
-	QR_ATR_RouteLifeTime,
+  QR_ATR_RouteDestin,
+  QR_ATR_AltRouter,
+  QR_ATR_RouteHeld,
+  QR_ATR_RouteWaiting,
+  QR_ATR_RouteRetryTime,
+  QR_ATR_RouteLifeTime,
 
 #include "site_que_attr_enum.h"
-	QA_ATR_Enabled,	/* these are last for qmgr print function   */
-	QA_ATR_Started,
-	QA_ATR_LAST	/* WARNING: Must be the highest valued enum */
-};
+  QA_ATR_Enabled,	/* these are last for qmgr print function   */
+  QA_ATR_Started,
+  QA_ATR_LAST };        /* WARNING: Must be the highest valued enum */
 
 extern attribute_def que_attr_def[];
 

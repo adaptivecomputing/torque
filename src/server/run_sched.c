@@ -276,21 +276,25 @@ static void scheduler_close(
   {
   scheduler_sock = -1;
 
-/*
- *	This bit of code is intended to support the scheduler - server - mom
- *	sequence.  A scheduler script may bes written to run only one job per
- *	cycle to  ensure its newly taken resources are considered by the
- *	scheduler before selecting another job.  In that case, rather than
- *	wait a full cycle before scheduling the next job, we check for
- *	one (and only one) job was run by the scheduler.  If true, then
- *	recycle the scheduler.
- */
+  /*
+   *	This bit of code is intended to support the scheduler - server - mom
+   *	sequence.  A scheduler script may best written to run only one job per
+   *	cycle to ensure its newly taken resources are considered by the
+   *	scheduler before selecting another job.  In that case, rather than
+   *	wait a full cycle before scheduling the next job, we check for
+   *	one (and only one) job was run by the scheduler.  If true, then
+   *	recycle the scheduler.
+   */
 
-	if (scheduler_jobct == 1) {
-		/* recycle the scheduler */
-		svr_do_schedule = SCH_SCHEDULE_RECYC;
-	}
-}
+  if (scheduler_jobct == 1) 
+    {
+    /* recycle the scheduler */
+
+    svr_do_schedule = SCH_SCHEDULE_RECYC;
+    }
+
+  return;
+  }
 
 
 

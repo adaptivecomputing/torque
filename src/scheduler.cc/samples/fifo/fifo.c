@@ -329,26 +329,41 @@ int init_scheduling_cycle( server_info *sinfo )
  *
  *	returns 1: continue calling scheduling cycles, 0: exit scheduler
  */
-int schedule(int cmd, int sd)
-{
-  switch(cmd)
+
+int schedule(
+
+  int cmd, 
+  int sd)
+
   {
+  switch (cmd)
+    {
     case SCH_ERROR:
     case SCH_SCHEDULE_NULL:
     case SCH_RULESET:
     case SCH_SCHEDULE_RECYC:
-    /* ignore and end cycle */
-    break;
+
+      /* ignore and end cycle */
+
+      break;
 
     case SCH_SCHEDULE_NEW:
     case SCH_SCHEDULE_TERM:
     case SCH_SCHEDULE_FIRST:
     case SCH_SCHEDULE_CMD:
     case SCH_SCHEDULE_TIME:
-      return scheduling_cycle(sd);
+
+      return(scheduling_cycle(sd));
+
+      /*NOTREACHED*/
+
+      break;
+
     case SCH_CONFIGURE:
-      if( conf.prime_fs || conf.non_prime_fs )
+
+      if ( conf.prime_fs || conf.non_prime_fs )
         write_usage();
+
       reinit_config();
       parse_config(CONFIG_FILE);
       parse_holidays(HOLIDAYS_FILE);
@@ -365,9 +380,13 @@ int schedule(int cmd, int sd)
       return 1;		/* have the scheduler exit nicely */
     default:
       return 0;
-  }
-  return 0;
-}
+    }
+
+  return(0);
+  }  /* END schedule() */
+
+
+
 
 /*
  *
@@ -379,70 +398,112 @@ int schedule(int cmd, int sd)
  *
  */
 
-int scheduling_cycle( int sd )
-{
+int scheduling_cycle( 
+
+  int sd)
+
+  {
   server_info *sinfo;		/* ptr to the server/queue/job/node info */
   job_info *jinfo;		/* ptr to the job to see if it can run */
   int ret = SUCCESS;		/* return code from is_ok_to_run_job() */
   char log_msg[MAX_LOG_SIZE];	/* used to log an message about job */
   char comment[MAX_COMMENT_SIZE]; /* used to update comment of job */
 
-
-  sched_log(PBSEVENT_DEBUG2, PBS_EVENTCLASS_REQUEST, "", "Entering Schedule");
+  sched_log(PBSEVENT_DEBUG2,PBS_EVENTCLASS_REQUEST,"","Entering Schedule");
 
   update_cycle_status();
 
   /* create the server / queue / job / node structures */
-  if( ( sinfo = query_server( sd ) ) == NULL )
-  {
-    fprintf(stderr, "Problem with creating server data strucutre\n");
-    return 0;
-  }
 
-  if( init_scheduling_cycle( sinfo ) == 0 )
-  {
-    sched_log(PBSEVENT_DEBUG, PBS_EVENTCLASS_SERVER, sinfo -> name, "init_scheduling_cycle failed.");
+  if ((sinfo = query_server(sd)) == NULL)
+    {
+    fprintf(stderr,"Problem with creating server data strucutre\n");
+
+    return(0);
+    }
+
+  if (init_scheduling_cycle(sinfo) == 0)
+    {
+    sched_log(
+      PBSEVENT_DEBUG,
+      PBS_EVENTCLASS_SERVER,
+      sinfo -> name,
+      "init_scheduling_cycle failed.");
+
     free_server(sinfo, 1);
-    return 0;
-  }
+
+    return(0);
+    }
 
   /* main scheduling loop */
-  while( ( jinfo = next_job(sinfo, 0) ) )
-  {
-    sched_log(PBSEVENT_DEBUG2, PBS_EVENTCLASS_JOB, jinfo -> name, 
-	"Considering job to run");
-    if((ret = is_ok_to_run_job( sd, sinfo, jinfo -> queue, jinfo )) == SUCCESS)
-      run_update_job( sd, sinfo, jinfo -> queue, jinfo );
-    else
+
+  while ((jinfo = next_job(sinfo,0)))
     {
-      if( jinfo -> can_never_run )
+    sched_log(
+      PBSEVENT_DEBUG2, 
+      PBS_EVENTCLASS_JOB, 
+      jinfo->name, 
+      "Considering job to run");
+
+    if ((ret = is_ok_to_run_job(sd,sinfo,jinfo->queue,jinfo)) == SUCCESS)
       {
-	sched_log(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, jinfo -> name, 
-	      "Job Deleted because it would never run");
-	pbs_deljob(sd, jinfo -> name, "Job could never run");
+      run_update_job(sd,sinfo,jinfo->queue,jinfo);
       }
-      jinfo -> can_not_run = 1;
-      if( translate_job_fail_code( ret, comment, log_msg ) )
+    else
       {
+      if (jinfo->can_never_run)
+        {
+	sched_log(
+          PBSEVENT_JOB, 
+          PBS_EVENTCLASS_JOB, 
+          jinfo->name, 
+	  "Job Deleted because it would never run");
+
+	pbs_deljob(sd,jinfo->name,"Job could never run");
+        }
+
+      jinfo->can_not_run = 1;
+
+      if (translate_job_fail_code(ret,comment,log_msg))
+        {
 	/* if the comment doesn't get changed, its because it hasn't changed. 
 	 * if the reason for the job has not changed, we do not need to log it
 	 */
-	if( update_job_comment(sd, jinfo, comment) == 0 )
-	  sched_log(PBSEVENT_SCHED, PBS_EVENTCLASS_JOB, jinfo -> name, log_msg);
-      }
 
-      if( ret != NOT_QUEUED && cstat.strict_fifo )
-	update_jobs_cant_run( sd, jinfo -> queue -> jobs, jinfo, 
-	      COMMENT_STRICT_FIFO, START_AFTER_JOB);
+	if (update_job_comment(sd,jinfo,comment) == 0)
+          {
+	  sched_log(
+            PBSEVENT_SCHED, 
+            PBS_EVENTCLASS_JOB, 
+            jinfo->name,
+            log_msg);
+          }
+        }
+
+      if ((ret != NOT_QUEUED) && cstat.strict_fifo)
+        {
+	update_jobs_cant_run( 
+          sd, 
+          jinfo->queue->jobs, 
+          jinfo, 
+	  COMMENT_STRICT_FIFO, 
+          START_AFTER_JOB);
+        }
+      } 
     }
+
+  if (cstat.fair_share)
+    update_last_running(sinfo);
+
+  free_server(sinfo,1);	/* free server and queues and jobs */
+
+  sched_log(PBSEVENT_DEBUG2,PBS_EVENTCLASS_REQUEST,"","Leaving schedule\n");
+
+  return 0;
   }
 
-  if( cstat.fair_share )
-    update_last_running(sinfo);
-  free_server(sinfo, 1);	/* free server and queues and jobs */
-  sched_log(PBSEVENT_DEBUG2, PBS_EVENTCLASS_REQUEST, "", "Leaving schedule\n");
-  return 0;
-}
+
+
 
 /*
  *

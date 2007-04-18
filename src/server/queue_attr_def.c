@@ -117,6 +117,8 @@ char* array_disallowed_types[] = {
  *	value type
  */
 
+/* NOTE:  que_attr_def[] should be ordered with QA_ATR_* enum */
+
  /* for all queues */
 
 attribute_def que_attr_def[] = {
@@ -146,7 +148,6 @@ attribute_def que_attr_def[] = {
 	PARENT_TYPE_QUE_ALL
     },
 
-#ifdef DOG
 /* QA_ATR_HostList */            /* HostList */
     {   ATTR_hostlist,           /* "hostlist" */
         decode_arst,
@@ -160,8 +161,8 @@ attribute_def que_attr_def[] = {
         PARENT_TYPE_QUE_ALL
     },
 
-/* QA_ATR_Restartable */    /* restartable */
-    {   ATTR_restartable,   /* "restartable" */
+/* QA_ATR_Rerunnable */    /* rerunnable */
+    {   ATTR_rerunnable,   /* "rerunnable" */
         decode_b,
         encode_b,
         set_b,
@@ -172,7 +173,6 @@ attribute_def que_attr_def[] = {
         ATR_TYPE_LONG,
         PARENT_TYPE_QUE_ALL
     },
-#endif
 
 /* QA_ATR_MaxJobs */		/* max number of jobs allowed in queue */
     {	ATTR_maxque,		/* "max_queuable" */

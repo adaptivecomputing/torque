@@ -191,7 +191,7 @@
 #define ATTR_rescdflt    "resources_default"
 #define ATTR_rescmax     "resources_max"
 #define ATTR_rescmin     "resources_min"
-#define ATTR_restartable "restartable"      /* TORQUE only */
+#define ATTR_rerunnable  "restartable"      /* TORQUE only */
 #define ATTR_rndzretry   "rendezvous_retry"
 #define ATTR_routedest   "route_destinations"
 #define ATTR_routeheld   "route_held_jobs"
@@ -304,7 +304,7 @@
 /* queue disallowed types */
 #define Q_DT_batch              "batch"
 #define Q_DT_interactive        "interactive"
-#define Q_DT_rerunable         "rerunable"
+#define Q_DT_rerunable          "rerunable"
 
 /*constant related to sum of string lengths for above strings*/
 #define	MAX_ENCODE_BFR		100
@@ -431,17 +431,15 @@ struct batch_status {
 
 
 /* Resource Reservation Information */
-typedef int	resource_t;	/* resource reservation handle */
+typedef int resource_t;		/* resource reservation handle */
 
 #define RESOURCE_T_NULL		(resource_t)0
 #define RESOURCE_T_ALL		(resource_t)-1
 
-extern int
-pbs_errno;		/* error number */
+extern int pbs_errno;		/* error number */
 
-extern char *
-pbs_server;		/* server attempted to connect | connected to */
-			/* see pbs_connect(3B)			      */
+extern char *pbs_server;	/* server attempted to connect | connected to */
+				/* see pbs_connect(3B)			      */
 
 extern char *avail A_((int connect,char *resc));
 extern int pbs_asyrunjob A_((int c,char *jobid,char *location,char *extend));

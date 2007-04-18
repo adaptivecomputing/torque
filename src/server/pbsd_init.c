@@ -1583,6 +1583,7 @@ static void rm_files(
     "acl_hosts",
     "acl_svr",
     "acl_users",
+    "hostlist",
     "queues",
     NULL };      /* keep as last entry */
 

@@ -332,10 +332,10 @@ int svr_save(
 
 int save_acl(
 
-  attribute     *attr,	/* acl attribute */
-  attribute_def *pdef,	/* attribute def structure */
-  char          *subdir,	/* sub-directory path */
-  char          *name)	/* parent object name = file name */
+  attribute     *attr,	 /* acl attribute */
+  attribute_def *pdef,	 /* attribute def structure */
+  char          *subdir, /* sub-directory path */
+  char          *name)	 /* parent object name = file name */
 
   {
   int  fds;
@@ -369,42 +369,65 @@ int save_acl(
   strcpy(filename2,filename1);
   strcat(filename2,".new");
 
-	fds = open(filename2, O_WRONLY|O_CREAT|O_TRUNC|O_Sync, 0600);
-	if (fds < 0) {
-		log_err(errno, "save_acl", "unable to open acl file");
-		return (-1);
-	}
-	
-	CLEAR_HEAD(head);
-	i = pdef->at_encode(attr,&head,pdef->at_name,(char *)0,ATR_ENCODE_SAVE);
-	if (i < 0) {
-		log_err(-1, "save_acl", "unable to encode acl");
-		(void)close(fds);
-		(void)unlink(filename2);
-		return (-1);
-	}
-	
-	pentry = (svrattrl *)GET_NEXT(head);
-	if (pentry != (svrattrl *)0) {
-		/* write entry, but without terminating null */
-		while ((i = write(fds, pentry->al_value, pentry->al_valln - 1))
-		      != pentry->al_valln - 1) {
-			if ((i == -1) && (errno == EINTR))
-				continue;
-			log_err(errno,"save_acl","wrote incorrect amount");	
-			(void)close(fds);
-			(void)unlink(filename2);
-			return (-1);
-		}
-		(void)free(pentry);
-	}
+  fds = open(filename2,O_WRONLY|O_CREAT|O_TRUNC|O_Sync,0600);
 
-	(void)close(fds);
-	(void)unlink(filename1);
-	if (link(filename2, filename1) < 0) {
-		log_err(errno, "save_acl", "unable to relink file");
-		return (-1);
-	}
+  if (fds < 0) 
+    {
+    snprintf(log_buffer,1024,"unable to open acl file '%s'",
+      filename2);
+
+    log_err(errno,"save_acl",log_buffer);
+
+    return(-1);
+    }
+	
+  CLEAR_HEAD(head);
+
+  i = pdef->at_encode(attr,&head,pdef->at_name,(char *)0,ATR_ENCODE_SAVE);
+
+  if (i < 0) 
+    {
+    log_err(-1,"save_acl","unable to encode acl");
+
+    close(fds);
+
+    unlink(filename2);
+
+    return(-1);
+    }
+	
+  pentry = (svrattrl *)GET_NEXT(head);
+
+  if (pentry != NULL) 
+    {
+    /* write entry, but without terminating null */
+
+    while ((i = write(fds,pentry->al_value,pentry->al_valln - 1)) != pentry->al_valln - 1)
+      {
+      if ((i == -1) && (errno == EINTR))
+        continue;
+
+      log_err(errno,"save_acl","wrote incorrect amount");	
+
+      close(fds);
+
+      unlink(filename2);
+
+      return(-1);
+      }
+
+    free(pentry);
+    }
+
+  close(fds);
+  unlink(filename1);
+
+  if (link(filename2,filename1) < 0) 
+    {
+    log_err(errno,"save_acl","unable to relink file");
+
+    return(-1);
+    }
 
   unlink(filename2);
 

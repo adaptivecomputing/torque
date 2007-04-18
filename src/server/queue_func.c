@@ -123,70 +123,91 @@ extern tlist_head svr_queues;
  *	Returns: pointer to structure or null is space not available.
  */
 
-pbs_queue *que_alloc(name)
-	char *name;
-{
-	int        i;
-	pbs_queue *pq;
+pbs_queue *que_alloc(
+
+  char *name)
+
+  {
+  int        i;
+  pbs_queue *pq;
+
+  pq = (pbs_queue *)malloc(sizeof(pbs_queue));
+
+  if (pq == NULL) 
+    {
+    log_err(errno,"que_alloc","no memory");
+
+    return(NULL);
+    }
+
+  memset((char *)pq,(int)0,(size_t)sizeof(pbs_queue));
+
+  pq->qu_qs.qu_type = QTYPE_Unset;
+
+  CLEAR_HEAD(pq->qu_jobs);
+  CLEAR_LINK(pq->qu_link);
+
+  strncpy(pq->qu_qs.qu_name,name,PBS_MAXQUEUENAME);
+
+  append_link(&svr_queues,&pq->qu_link,pq);
+
+  server.sv_qs.sv_numque++;
+
+  /* set the working attributes to "unspecified" */
+
+  for (i = 0;i < (int)QA_ATR_LAST;i++) 
+    {
+    clear_attr(&pq->qu_attr[i],&que_attr_def[i]);
+    }
+
+  return(pq);
+  }  /* END que_alloc() */
 
 
-	pq = (pbs_queue *)malloc(sizeof (pbs_queue));
-	if (pq == (pbs_queue *)0) {
-		log_err(errno, "que_alloc", "no memory");
-		return ((pbs_queue *)0);
-	}
-	(void)memset((char *)pq, (int)0, (size_t)sizeof(pbs_queue));
-	pq->qu_qs.qu_type = QTYPE_Unset;
-	CLEAR_HEAD(pq->qu_jobs);
-	CLEAR_LINK(pq->qu_link);
-
-	strncpy(pq->qu_qs.qu_name, name, PBS_MAXQUEUENAME);
-	append_link(&svr_queues, &pq->qu_link, pq);
-	server.sv_qs.sv_numque++;
-
-	/* set the working attributes to "unspecified" */
-
-	for (i=0; i<(int)QA_ATR_LAST; i++) {
-		clear_attr(&pq->qu_attr[i], &que_attr_def[i]);
-	}
-
-	return (pq);
-}
 
 
 /*
  * que_free - free queue structure and its various sub-structures
  */
 
-void que_free (pq)
-	pbs_queue	*pq;
-{
-	int		 i;
-	attribute	*pattr;
-	attribute_def	*pdef;
+void que_free(
+
+  pbs_queue *pq)
+
+  {
+  int		 i;
+  attribute	*pattr;
+  attribute_def	*pdef;
 	
-	/* remove any malloc working attribute space */
+  /* remove any malloc working attribute space */
 
-	for (i=0; i < (int)QA_ATR_LAST; i++) {
-		pdef  = &que_attr_def[i];
-		pattr = &pq->qu_attr[i];
+  for (i = 0;i < (int)QA_ATR_LAST;i++) 
+    {
+    pdef  = &que_attr_def[i];
+    pattr = &pq->qu_attr[i];
 
-		pdef->at_free(pattr);
+    pdef->at_free(pattr);
 
-		/* remove any acl lists associated with the queue */
+    /* remove any acl lists associated with the queue */
 
-		if (pdef->at_type == ATR_TYPE_ACL)  {
-			pattr->at_flags |= ATR_VFLAG_MODIFY;
-			save_acl(pattr, pdef, pdef->at_name, pq->qu_qs.qu_name);
-		}
-	}
+    if (pdef->at_type == ATR_TYPE_ACL)  
+      {
+      pattr->at_flags |= ATR_VFLAG_MODIFY;
 
-	/* now free the main structure */
+      save_acl(pattr,pdef,pdef->at_name,pq->qu_qs.qu_name);
+      }
+    }
 
-	server.sv_qs.sv_numque--;
-	delete_link(&pq->qu_link);
-	(void)free((char *)pq);
-}
+  /* now free the main structure */
+
+  server.sv_qs.sv_numque--;
+  delete_link(&pq->qu_link);
+
+  free((char *)pq);
+
+  return;
+  }  /* END que_free() */
+
 
 
 
@@ -197,63 +218,96 @@ void que_free (pq)
  * If the queue contains any jobs, the purge is not allowed.
  */
 
-int que_purge(pque)
-	pbs_queue *pque;
-{
-	char     namebuf[MAXPATHLEN];
+int que_purge(
 
-	if (pque->qu_numjobs != 0)
-		return (PBSE_QUEBUSY);
+  pbs_queue *pque)
 
+  {
+  char     namebuf[MAXPATHLEN];
+
+  if (pque->qu_numjobs != 0)
+    {
+    return(PBSE_QUEBUSY);
+    }
 	
-	(void)strcpy(namebuf, path_queues);	/* delete queue file */
-	(void)strcat(namebuf, pque->qu_qs.qu_name);
-	if (unlink(namebuf) < 0) {
-		(void)sprintf(log_buffer, msg_err_unlink, "Queue", namebuf);
-		log_err(errno, "queue_purge", log_buffer);
-	}
+  strcpy(namebuf,path_queues);	/* delete queue file */
 
-	que_free(pque);
+  strcat(namebuf,pque->qu_qs.qu_name);
 
-	return (0);
-}
+  if (unlink(namebuf) < 0) 
+    {
+    sprintf(log_buffer,msg_err_unlink,"Queue",namebuf);
+
+    log_err(errno,"queue_purge",log_buffer);
+    }
+
+  que_free(pque);
+
+  return(0);
+  }
+
+
+
+
 
 /*
  * find_queuebyname() - find a queue by its name
  */
 
-pbs_queue *find_queuebyname(quename)
-	char *quename;
-{
-	char  *pc;
-	pbs_queue *pque;
-	char   qname[PBS_MAXDEST + 1];
+pbs_queue *find_queuebyname(
 
-	(void)strncpy(qname, quename, PBS_MAXDEST);
-	qname[PBS_MAXDEST] ='\0';
-	pc = strchr(qname, (int)'@');	/* strip off server (fragment) */
-	if (pc)
-		*pc = '\0';
-	pque = (pbs_queue *)GET_NEXT(svr_queues);
-	while (pque != (pbs_queue *)0) {
-		if (strcmp(qname, pque->qu_qs.qu_name) == 0)
-			break;
-		pque = (pbs_queue *)GET_NEXT(pque->qu_link);
-	}
-	if (pc)
-		*pc = '@';	/* restore '@' server portion */
-	return (pque);
-}
+  char *quename)
+
+  {
+  char  *pc;
+  pbs_queue *pque;
+  char   qname[PBS_MAXDEST + 1];
+
+  strncpy(qname,quename,PBS_MAXDEST);
+
+  qname[PBS_MAXDEST] = '\0';
+
+  pc = strchr(qname,(int)'@');	/* strip off server (fragment) */
+  
+  if (pc != NULL)
+    *pc = '\0';
+
+  pque = (pbs_queue *)GET_NEXT(svr_queues);
+
+  while (pque != NULL) 
+    {
+    if (!strcmp(qname,pque->qu_qs.qu_name))
+      break;
+
+    pque = (pbs_queue *)GET_NEXT(pque->qu_link);
+    }
+
+  if (pc != NULL)
+    *pc = '@';	/* restore '@' server portion */
+
+  return(pque);
+  }  /* END find_queuebyname() */
+
+
+
+
 
 /*
- * get_dftque - get the default queue (if declared)
+ * get_dfltque - get the default queue (if declared)
  */
 
-pbs_queue *get_dfltque()
-{
-	pbs_queue *pq = (pbs_queue *)0;
+pbs_queue *get_dfltque(void)
 
-	if (server.sv_attr[SRV_ATR_dflt_que].at_flags & ATR_VFLAG_SET)
-		pq = find_queuebyname(server.sv_attr[SRV_ATR_dflt_que].at_val.at_str);
-	return (pq);
-}
+  {
+  pbs_queue *pq = NULL;
+
+  if (server.sv_attr[SRV_ATR_dflt_que].at_flags & ATR_VFLAG_SET)
+    {
+    pq = find_queuebyname(server.sv_attr[SRV_ATR_dflt_que].at_val.at_str);
+    }
+
+  return(pq);
+  }
+
+/* END queue_func.c */
+
