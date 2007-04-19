@@ -829,7 +829,7 @@ job *job_clone(
         {
         pc = basename + strlen(basename) - 1;
 
-        while (!isprint((int)*pc)) 
+        while (!isprint((int)*pc) || *pc == '-') 
           {
           pc--;
 
