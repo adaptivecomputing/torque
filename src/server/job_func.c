@@ -1018,7 +1018,6 @@ struct work_task *ptask)
     }
   else
     {
-    /* should I clean up the placeholder here ? */
     job_purge((job*)(ptask->wt_parm1));
     }
   } /* end job_clone_tw */

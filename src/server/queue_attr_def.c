@@ -100,6 +100,7 @@ char* array_disallowed_types[] = {
    Q_DT_batch,
    Q_DT_interactive,
    Q_DT_rerunable,
+   Q_DT_nonrerunable,
    "_END_" /* must be last string */
 };
 

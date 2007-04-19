@@ -1128,6 +1128,13 @@ int svr_chkque(
 	  {
 	  return (PBSE_NORERUNABLE);
 	  }
+	if (strcmp(Q_DT_nonrerunable,
+	      pque->qu_attr[QA_ATR_DisallowedTypes].at_val.at_arst->as_string[i]) == 0
+            && (!(pjob->ji_wattr[(int)JOB_ATR_rerunable].at_flags & ATR_VFLAG_SET) ||
+	        pjob->ji_wattr[(int)JOB_ATR_rerunable].at_val.at_long == 0))
+	  {
+	  return (PBSE_NONONRERUNABLE);
+	  }
 
         }	
       }

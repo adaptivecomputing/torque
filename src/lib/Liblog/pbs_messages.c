@@ -328,8 +328,8 @@ char *msg_badaclhost	= "Bad ACL entry in host list";
 char *msg_baddisallowtype = "Bad type in disallowed_types list";
 char *msg_nointeractive = "Queue does not allow interactive jobs";
 char *msg_nobatch       = "Queue does not allow batch jobs";
-char *msg_norerunable   = "Queue does not allow rerunnable jobs";
-
+char *msg_norerunable   = "Queue does not allow rerunable jobs";
+char *msg_nononrerunable = "Queue does not allow nonrerunable jobs";
 /*
  * The following table connects error numbers with text
  * to be returned to the client.  Each is guaranteed to be pure text.
@@ -420,6 +420,7 @@ struct pbs_err_to_txt pbs_err_to_txt[] = {
         { PBSE_NOINTERACTIVE, &msg_nointeractive },
         { PBSE_NOBATCH, &msg_nobatch },
 	{ PBSE_NORERUNABLE, &msg_norerunable },
+	{ PBSE_NONONRERUNABLE, &msg_nononrerunable },
         { PBSE_NONE, &msg_none },
 	{ 0, (char **)0 }		/* MUST be the last entry */
 };

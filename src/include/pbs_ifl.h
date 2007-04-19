@@ -305,6 +305,7 @@
 #define Q_DT_batch              "batch"
 #define Q_DT_interactive        "interactive"
 #define Q_DT_rerunable          "rerunable"
+#define Q_DT_nonrerunable       "nonrerunable"
 
 /*constant related to sum of string lengths for above strings*/
 #define	MAX_ENCODE_BFR		100
