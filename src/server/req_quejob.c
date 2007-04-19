@@ -1766,6 +1766,7 @@ void req_commit(
     /* setup a link to this job array in the servers all_arrays list */
     pajl = (array_job_list*)malloc(sizeof(array_job_list));
     strcpy(pajl->parent_id, pj->ji_qs.ji_jobid);
+    pajl->num_cloned = 0;
     CLEAR_LINK(pajl->all_arrays);
     CLEAR_HEAD(pajl->array_alljobs);
     append_link(&svr_jobarrays, &pajl->all_arrays, (void*)pajl);

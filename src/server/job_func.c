@@ -954,6 +954,7 @@ job *job_clone(
     CLEAR_LINK(pnewjob->ji_arrayjobs);
     append_link(&pajl->array_alljobs, &pnewjob->ji_arrayjobs, (void*)pnewjob);
     pnewjob->ji_arrayjoblist = pajl;
+    pajl->num_cloned++;
 
   return pnewjob;
   } /* END job_clone() */
@@ -991,6 +992,7 @@ struct work_task *ptask)
     if (pjobclone == NULL)
       {
       log_err(-1, id, "unable to clone job in job_clone_wt");
+      continue;
       }
 
     svr_evaljobstate(pjobclone,&newstate,&newsub,1);

@@ -384,6 +384,7 @@ typedef struct {
      list_link all_arrays;
      tlist_head array_alljobs;
      char parent_id[PBS_MAXSVRJOBID + 1];
+     int num_cloned; 
   
   };
   
