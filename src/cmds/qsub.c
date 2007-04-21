@@ -163,7 +163,7 @@ static char *x11_get_proto(void)
   char proto[512], data[512], screen[512];
   char *authstring;
   FILE *f;
-  int got_data = 0;
+  int  got_data = 0;
   char *display, *p;
   struct stat st;
 
@@ -3728,6 +3728,18 @@ int main(
       {
       if (cnt2server_retry == -100)
         cnt2server_retry = atoi(param_val);
+      }
+
+    if ((param_val = get_param("VALIDATEGROUP",config_buf)) != NULL)
+      {
+      void *gptr;
+
+      if (getgrgid(getgid()) == NULL)
+        {
+        fprintf(stderr,"qsub: cannot validate submit group.\n");
+
+        exit(1);
+        }
       }
     }
 
