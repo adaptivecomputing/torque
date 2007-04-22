@@ -179,7 +179,7 @@ extern  char    PBSNodeMsgBuf[1024];
 /*
 ** external functions and data
 */
-extern	struct	config		*search A_((struct config *, char *));
+extern	struct	config		*search A_((struct config *,char *));
 extern	struct	rm_attribute	*momgetattr A_((char *));
 extern	int                      rm_errno;
 extern	double	cputfactor;
@@ -227,7 +227,7 @@ struct config dependent_config[] = {
   { "quota",	{quota} },
   { "netload",  {netload} },
   { "size",     {size} },
-  { NULL,	{nullproc} },
+  { NULL,	{nullproc} }
 };
 
 unsigned linux_time = 0;
@@ -272,8 +272,10 @@ void proc_get_btime()
   return;
   }  /* END proc_get_btime() */
 
+/* NOTE:  leading '*' indicates that field should be ignored */
+
 static char stat_str[] = "%d (%[^)]) %c %*d %*d %d %*d %*d %u %*u \
-%*u %*u %*u %d %d %d %d %*d %*d %*u %*u %u %lu %lu %*u %*u \
+%*u %*u %*u %d %d %d %d %*d %*d %*u %*u %u %llu %llu %*u %*u \
 %*u %*u %*u %*u %*u %*u %*u %*u %*u %*u %*u";
 
 /*
@@ -669,7 +671,7 @@ static int gettime(
 static int injob(
 
   job   *pjob,
-  pid_t	sid)
+  pid_t	 sid)
 
   {
   task *ptask;
@@ -688,7 +690,7 @@ static int injob(
     }
 
   return(FALSE);
-  }
+  }  /* END injob() */
 
 
 
@@ -833,14 +835,16 @@ static int overcpu_proc(
  *	space consumed by all current processes within the job.
  */
 
-static unsigned long mem_sum(
+/* NOTE:  routine should be modified to return llu */
+
+static unsigned long long mem_sum(
 
   job *pjob)
 
   {
   char			*id = "mem_sum";
   struct dirent		*dent;
-  unsigned long		segadd;
+  unsigned long	long     segadd;
   proc_stat_t		*ps;
 
   segadd = 0;
@@ -941,12 +945,12 @@ static unsigned long resi_sum(
 
 static int overmem_proc(
 
-  job		*pjob,
-  unsigned long	limit)
+  job		     *pjob,
+  unsigned long	long  limit)
 
   {
   char		*id = "overmem_proc";
-  ulong		memsize;
+  unsigned long long memsize;
   struct dirent	*dent;
   proc_stat_t	*ps;
 
@@ -979,7 +983,7 @@ static int overmem_proc(
       {
       return(TRUE);
       }
-    }
+    }    /* END while ((dent = readdir(pdir)) != NULL) */
 
   return(FALSE);
   }  /* END overmem_proc() */
@@ -1587,7 +1591,10 @@ int mom_over_limit(
   {
   char		*pname;
   int		retval;
-  unsigned long	value, num;
+  unsigned long	value;
+  unsigned long num;
+  unsigned long numll;
+
   resource	*pres;
 
   assert(pjob != NULL);
@@ -1643,10 +1650,10 @@ int mom_over_limit(
       if (retval != PBSE_NONE)
         continue;
 
-      if ((num = mem_sum(pjob)) > value) 
+      if ((numll = mem_sum(pjob)) > value) 
         {
-        sprintf(log_buffer,"vmem %lu exceeded limit %lu",
-          num, 
+        sprintf(log_buffer,"vmem %llu exceeded limit %lu",
+          numll, 
           value);
 
         return(TRUE);
@@ -1654,14 +1661,18 @@ int mom_over_limit(
       } 
     else if (strcmp(pname,"pvmem") == 0) 
       {
+      unsigned long long valuell;
+
       retval = getsize(pres,&value);
 
       if (retval != PBSE_NONE)
         continue;
 
-      if (overmem_proc(pjob,value)) 
+      valuell = (unsigned long long)value;
+
+      if (overmem_proc(pjob,valuell)) 
         {
-        sprintf(log_buffer,"pvmem exceeded limit %lu",
+        sprintf(log_buffer,"pvmem exceeded limit %llu",
           value);
 
         return(TRUE);
@@ -2113,7 +2124,8 @@ int mach_checkpoint(
 
       return(0);
       }
-    else if (pid == 0)
+
+    if (pid == 0)
       {
       /* child: execv the script */
 
@@ -2137,11 +2149,11 @@ int mach_checkpoint(
        *       the child to see what it's exit status is.  We are delaying
        *       the full implementation for now.  NYI
        */
-      }
+      }  /* END if (pid == 0) */
     }
 
   return(-1);
-  }
+  }  /* END mach_checkpoint() */
 
 
 
@@ -2336,13 +2348,15 @@ char *cput(
 
 char *mem_job(
 
-  pid_t sid)
+  pid_t sid)  /* I */
 
   {
-  static	char	id[] = "mem_job";
-  ulong			memsize;
-  struct dirent		*dent;
-  proc_stat_t		*ps;
+  static char         id[] = "mem_job";
+  unsigned long long  memsize;
+  struct dirent      *dent;
+  proc_stat_t        *ps;
+
+  /* max memsize ??? */
 
   memsize = 0;
 
@@ -2370,7 +2384,7 @@ char *mem_job(
       continue;
 
     memsize += ps->vsize;
-    }
+    }  /* END while ((dent = readdir(pdir)) != NULL) */
 
   if (memsize == 0) 
     {
@@ -2380,7 +2394,7 @@ char *mem_job(
     }
   else 
     {
-    sprintf(ret_string,"%lukb", 
+    sprintf(ret_string,"%llukb", 
       memsize >> 10); /* KB */
 
     return(ret_string);
@@ -2415,8 +2429,8 @@ char *mem_proc(
     return(NULL);
     }
 
-  sprintf(ret_string,"%lukb",
-    (ulong)ps->vsize >> 10); /* KB */
+  sprintf(ret_string,"%llukb",
+    (unsigned long long)ps->vsize >> 10); /* KB */
 
   return(ret_string);
   }  /* END mem_proc() */

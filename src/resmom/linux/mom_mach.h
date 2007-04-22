@@ -117,22 +117,22 @@ extern long mach_restart A_((struct task *,char *));	/* Restart checkpointed job
 
 
 typedef struct proc_stat {
-	int		session;	/* session id */
-	char		state;		/* one of RSDZT: Running, Sleeping,
-					   Sleeping (uninterruptable), Zombie, 
-					   Traced or stopped on signal */
-	unsigned	utime;		/* utime this process */
-	unsigned	stime;		/* stime this process */
-	unsigned	cutime;		/* sum of children's utime */
-	unsigned	cstime;		/* sum of children's stime */
-	int		pid;		/* process id */
-	char		*name;		/* name of exec'd command */
-	unsigned long   vsize;		/* virtual memory size for proc */
-	unsigned long   rss;		/* resident set size */
-	unsigned	start_time;	/* start time of this process */
-	unsigned	flags;		/* the flags of the process */
-	unsigned	uid;		/* uid of the process owner */
-} proc_stat_t;
+  int	          session;	/* session id */
+  char	          state;	/* one of RSDZT: Running, Sleeping,
+				   Sleeping (uninterruptable), Zombie, 
+				   Traced or stopped on signal */
+  unsigned        utime;	/* utime this process */
+  unsigned        stime;	/* stime this process */
+  unsigned        cutime;	/* sum of children's utime */
+  unsigned        cstime;	/* sum of children's stime */
+  int	          pid;		/* process id */
+  char           *name;		/* name of exec'd command */
+  unsigned long long vsize;	/* virtual memory size for proc */
+  unsigned long long rss;	/* resident set size */
+  unsigned        start_time;	/* start time of this process */
+  unsigned        flags;	/* the flags of the process */
+  unsigned        uid;		/* uid of the process owner */
+  } proc_stat_t;
 
 
 typedef	struct	proc_map {
