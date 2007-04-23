@@ -107,6 +107,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <assert.h>
+#include <grp.h>
 
 #ifdef sun
 #include <sys/stream.h>
@@ -3732,8 +3733,6 @@ int main(
 
     if ((param_val = get_param("VALIDATEGROUP",config_buf)) != NULL)
       {
-      void *gptr;
-
       if (getgrgid(getgid()) == NULL)
         {
         fprintf(stderr,"qsub: cannot validate submit group.\n");
