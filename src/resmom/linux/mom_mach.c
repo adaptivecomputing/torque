@@ -1593,7 +1593,7 @@ int mom_over_limit(
   int		retval;
   unsigned long	value;
   unsigned long num;
-  unsigned long numll;
+  unsigned long long numll;
 
   resource	*pres;
 
@@ -1673,7 +1673,7 @@ int mom_over_limit(
       if (overmem_proc(pjob,valuell)) 
         {
         sprintf(log_buffer,"pvmem exceeded limit %llu",
-          value);
+          valuell);
 
         return(TRUE);
         }
