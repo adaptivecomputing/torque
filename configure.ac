@@ -153,14 +153,14 @@ AC_PROG_LIBTOOL
 
 gcc_warning_flags="-W -Wall -Wno-unused-parameter -Wno-long-long -pedantic -Werror"
 AC_ARG_ENABLE(gcc_warnings,
-    [  --enable-gcc-warnings   If using gcc, use strict warnings])
+    [  --disable-gcc-warnings   If using gcc, use strict warnings])
 if test "x$GCC" = "xyes" ;then
   AC_MSG_CHECKING([whether to use strict gcc warnings])
-  if test "${enable_gcc_warnings}" == "yes" ; then
-    CFLAGS="$CFLAGS $gcc_warning_flags"
-    AC_MSG_RESULT([yes])
-  else
+  if test "${enable_gcc_warnings}" == "no" ; then
     AC_MSG_RESULT([no])
+  else
+    AC_MSG_RESULT([yes])
+    CFLAGS="$CFLAGS $gcc_warning_flags"
   fi
 fi
 
