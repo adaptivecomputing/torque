@@ -141,6 +141,7 @@ enum srv_atr {
 	SRV_ATR_KeepCompleted,
 	SRV_ATR_SubmitHosts,
 	SRV_ATR_AllowNodeSubmit,
+        SRV_ATR_AllowProxyUser,
 	SRV_ATR_AutoNodeNP,
 	SRV_ATR_LogFileMaxSize,
 	SRV_ATR_LogFileRollDepth,

@@ -755,6 +755,20 @@ attribute_def svr_attr_def[] = {
         ATR_TYPE_LONG,
         PARENT_TYPE_SERVER
     },
+
+/* SRV_ATR_AllowProxyUser */
+    {   ATTR_allowproxyuser,     /* "allow_proxy_user" */
+        decode_b,
+        encode_b,
+        set_b,
+        comp_b,
+        free_null,
+        NULL_FUNC,
+        NO_USER_SET,
+        ATR_TYPE_LONG,
+        PARENT_TYPE_SERVER
+    },
+
 /* SRV_ATR_AutoNodeNP */
     {   ATTR_autonodenp,          /* "auto_node_np" */
         decode_b,

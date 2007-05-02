@@ -252,6 +252,7 @@
 #define ATTR_pbsversion  "pbs_version"
 #define ATTR_submithosts  "submit_hosts"
 #define ATTR_allownodesubmit  "allow_node_submit"
+#define ATTR_allowproxyuser   "allow_proxy_user"
 #define ATTR_autonodenp  "auto_node_np"
 #define ATTR_servername  "server_name"
 #define ATTR_logfilemaxsize "log_file_max_size"

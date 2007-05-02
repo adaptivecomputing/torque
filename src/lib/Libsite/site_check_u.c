@@ -129,6 +129,10 @@ int site_check_user_map(
   char *p2;
   int   rc;
  
+  int   ProxyAllowed = 0;
+  int   ProxyRequested = 0;
+  int   HostAllowed = 0;
+ 
   char  *dptr;
 
   if (EMsg != NULL)
@@ -162,11 +166,29 @@ int site_check_user_map(
     return(-1);
     }
 
+  if ((server.sv_attr[(int)SRV_ATR_AllowProxyUser].at_flags & ATR_VFLAG_SET) && \
+      (server.sv_attr[(int)SRV_ATR_AllowProxyUser].at_val.at_long == 1))
+    {
+    ProxyAllowed = 1;
+    }
+
+  if (!strcmp(owner,luser))
+    {
+    ProxyRequested = 1;
+    }
+
   if (!strcmp(orighost,server_host) && !strcmp(owner,luser))
     {
     /* submitting from server host, access allowed */
 
-    return(0);
+    if ((ProxyRequested == 0) || (ProxyAllowed == 1))
+      {
+      return(0);
+      }
+
+    /* host is fine, must validate proxy via ruserok() */
+
+    HostAllowed = 1;
     }
 
   /* make short host name */
@@ -176,8 +198,9 @@ int site_check_user_map(
     *dptr = '\0';
     }
 
-  if ((server.sv_attr[(int)SRV_ATR_AllowNodeSubmit].at_flags & ATR_VFLAG_SET) && \
-      (server.sv_attr[(int)SRV_ATR_AllowNodeSubmit].at_val.at_long == 1) && \
+  if ((HostAllowed == 0) &&
+      (server.sv_attr[(int)SRV_ATR_AllowNodeSubmit].at_flags & ATR_VFLAG_SET) && 
+      (server.sv_attr[(int)SRV_ATR_AllowNodeSubmit].at_val.at_long == 1) && 
       (find_nodebyname(orighost) != NULL))
     {
     /* job submitted from compute host, access allowed */
@@ -185,10 +208,18 @@ int site_check_user_map(
     if (dptr != NULL)
        *dptr = '.';
 
-    return(0);
+    if ((ProxyRequested == 0) || (ProxyAllowed == 1))
+      {
+      return(0);
+      }
+
+    /* host is fine, must validate proxy via ruserok() */
+
+    HostAllowed = 1;
     }
 
-  if (server.sv_attr[(int)SRV_ATR_SubmitHosts].at_flags & ATR_VFLAG_SET)
+  if ((HostAllowed == 0) &&
+      (server.sv_attr[(int)SRV_ATR_SubmitHosts].at_flags & ATR_VFLAG_SET))
     {
     struct array_strings *submithosts = NULL;
     char                 *testhost;
@@ -207,10 +238,19 @@ int site_check_user_map(
         if (dptr != NULL)
           *dptr = '.';
 
-        return(0);
+        if ((ProxyRequested == 0) || (ProxyAllowed == 1))
+          {
+          return(0);
+          }
+
+        /* host is fine, must validate proxy via ruserok() */
+
+        HostAllowed = 1;
+
+        break;
         }
-    }  /* END for (hostnum) */
-  }    /* END if (SRV_ATR_SubmitHosts) */
+      }  /* END for (hostnum) */
+    }    /* END if (SRV_ATR_SubmitHosts) */
 
   if (dptr != NULL)
     *dptr = '.';

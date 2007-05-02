@@ -3566,6 +3566,10 @@ char *get_param(
 
   /* NOTE:  does not support comments */
 
+  /* if (strcasestr() == NULL) */
+
+  /* NOTE: currently case-sensitive (FIXME) */
+
   if ((param_val = strstr(config_buf,param)) == NULL)
     {
     return(NULL);
