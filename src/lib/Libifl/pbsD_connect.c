@@ -243,39 +243,73 @@ static int PBSD_authenticate(
   FILE	*piff;
   char  *ptr;
 
-  char   tmpLine[1024];
-
   struct stat buf;
+
+  static char iffpath[1024];
+
+  int    rc;
 
   /* use pbs_iff to authenticate me */
 
-  if ((ptr = getenv("PBSBINDIR")) != NULL)
+  if (iffpath[0] == '\0')
     {
-    snprintf(tmpLine,sizeof(tmpLine),"%s/pbs_iff",
-      ptr);
-    }
-  else
-    {
-    strcpy(tmpLine,IFF_PATH);
-    }
-
-  if (stat(tmpLine,&buf) == -1)
-    {
-    /* FAILURE */
-
-    if (getenv("PBSDEBUG"))
+    if ((ptr = getenv("PBSBINDIR")) != NULL)
       {
-      fprintf(stderr,"ALERT:  cannot verify file '%s', errno=%d (%s)\n",
-        cmd,
-        errno,
-        strerror(errno));
+      snprintf(iffpath,sizeof(iffpath),"%s/pbs_iff",
+        ptr);
+      }
+    else
+      {
+      strcpy(iffpath,IFF_PATH);
       }
 
-    return(-1);
-    }
+    rc = stat(iffpath,&buf);
+
+    if (rc == -1)
+      {
+      /* cannot locate iff in default location - search PATH */
+
+      if ((ptr = getenv("PATH")) != NULL)
+        {
+        ptr = strtok(ptr,";");
+
+        while (ptr != NULL)
+          {
+          snprintf(iffpath,sizeof(iffpath),"%s/pbs_iff",
+            ptr);
+
+          rc = stat(iffpath,&buf);
+
+          if (rc != -1)
+            break;
+
+          ptr = strtok(NULL,";");
+          }  /* END while (ptr != NULL) */
+        }    /* END if ((ptr = getenv("PATH")) != NULL) */
+
+      if (rc == -1)
+        {
+        /* FAILURE */
+
+        if (getenv("PBSDEBUG"))
+          {
+          fprintf(stderr,"ALERT:  cannot verify file '%s', errno=%d (%s)\n",
+            cmd,
+            errno,
+            strerror(errno));
+          }
+
+        /* cannot locate iff in default location - search PATH */
+
+        iffpath[0] = '\0';
+
+        return(-1);
+        }
+      }
+    }    /* END if (iffpath[0] == '\0') */
 
   snprintf(cmd,sizeof(cmd),"%s %s %u %d", 
-    tmpLine, 
+    iffpath, 
     server_name, 
     server_port,
     psock);
@@ -321,7 +355,7 @@ static int PBSD_authenticate(
     pclose(piff);
 
     return(-1);
-    }
+    }  /* END if ((i != sizeof(int)) || ...) */
 
   j = pclose(piff);
 
