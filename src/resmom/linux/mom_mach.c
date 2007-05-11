@@ -265,7 +265,7 @@ void proc_get_btime()
 
       return;
       }
-    }
+    }    /* END while (!feof(fp)) */
 
   fclose(fp);
 

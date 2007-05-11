@@ -1153,7 +1153,7 @@ static job *chk_job_torun(
   if (pjob->ji_qs.ji_svrflags & (JOB_SVFLG_CHKPT|JOB_SVFLG_StagedIn)) 
     {
     /* job has been checkpointed or files already staged in */
-    /* in this case, exec_host must be already set	 	*/
+    /* in this case, exec_host must be already set          */
 
     if (prun->rq_destin != 0) 
       {

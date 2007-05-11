@@ -132,7 +132,7 @@ int site_check_user_map(
   int   ProxyAllowed = 0;
   int   ProxyRequested = 0;
   int   HostAllowed = 0;
- 
+
   char  *dptr;
 
   if (EMsg != NULL)
@@ -172,7 +172,7 @@ int site_check_user_map(
     ProxyAllowed = 1;
     }
 
-  if (!strcmp(owner,luser))
+  if (strcmp(owner,luser) != 0)
     {
     ProxyRequested = 1;
     }
@@ -199,8 +199,8 @@ int site_check_user_map(
     }
 
   if ((HostAllowed == 0) &&
-      (server.sv_attr[(int)SRV_ATR_AllowNodeSubmit].at_flags & ATR_VFLAG_SET) && 
-      (server.sv_attr[(int)SRV_ATR_AllowNodeSubmit].at_val.at_long == 1) && 
+      (server.sv_attr[SRV_ATR_AllowNodeSubmit].at_flags & ATR_VFLAG_SET) && 
+      (server.sv_attr[SRV_ATR_AllowNodeSubmit].at_val.at_long == 1) &&
       (find_nodebyname(orighost) != NULL))
     {
     /* job submitted from compute host, access allowed */

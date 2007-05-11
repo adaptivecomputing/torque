@@ -90,11 +90,11 @@
 
 /* Extern functions (at_action) called */
 
-extern int job_set_wait A_((attribute *, void *, int));
-extern int action_resc A_((attribute *pattr, void *pobject, int actmode));
-extern int ck_chkpnt A_((attribute *pattr, void *pobject, int actmode));
-extern int depend_on_que A_((attribute *, void *, int));
-extern int comp_chkpnt A_((attribute *, attribute *));
+extern int job_set_wait A_((attribute *,void *,int));
+extern int action_resc A_((attribute *,void *,int));
+extern int ck_chkpnt A_((attribute *,void *,int));
+extern int depend_on_que A_((attribute *,void *,int));
+extern int comp_chkpnt A_((attribute *,attribute *));
 
 #define ATR_DFLAG_SSET  (ATR_DFLAG_SvWR | ATR_DFLAG_SvRD)
 
@@ -271,7 +271,7 @@ attribute_def job_attr_def[] = {
 	comp_str,
 	free_str,
 	NULL_FUNC,
-	READ_ONLY | ATR_DFLAG_MOM,
+	READ_ONLY | ATR_DFLAG_MOM | ATR_DFLAG_OPWR | ATR_DFLAG_SvWR,  /* allow operator/scheduler to modify exec_host */
 	ATR_TYPE_STR,
 	PARENT_TYPE_JOB
     },
