@@ -261,6 +261,8 @@ int pbsd_init(
   struct sigaction act;
   struct sigaction oact;
 
+  char   EMsg[1024];
+
   extern int TForceUpdate;
 
   /* The following is code to reduce security risks */
@@ -300,10 +302,10 @@ int pbsd_init(
   setrlimit(RLIMIT_DATA,  &rlimit);
   setrlimit(RLIMIT_STACK, &rlimit);
 #ifdef	RLIMIT_RSS
-  setrlimit(RLIMIT_RSS  , &rlimit);
+  setrlimit(RLIMIT_RSS,   &rlimit);
 #endif	/* RLIMIT_RSS */
 #ifdef	RLIMIT_VMEM
-  setrlimit(RLIMIT_VMEM  , &rlimit);
+  setrlimit(RLIMIT_VMEM,  &rlimit);
 #endif	/* RLIMIT_VMEM */
   }
 #endif	/* not _CRAY */
@@ -376,11 +378,11 @@ int pbsd_init(
     act.sa_handler = catch_abort;   /* make sure we core dump */
 
     sigaction(SIGSEGV, &act, NULL);
-    sigaction(SIGBUS, &act, NULL);
-    sigaction(SIGFPE, &act, NULL);
-    sigaction(SIGILL, &act, NULL);
+    sigaction(SIGBUS,  &act, NULL);
+    sigaction(SIGFPE,  &act, NULL);
+    sigaction(SIGILL,  &act, NULL);
     sigaction(SIGTRAP, &act, NULL);
-    sigaction(SIGSYS, &act, NULL);
+    sigaction(SIGSYS,  &act, NULL);
     }
 
   act.sa_handler = catch_child;
@@ -428,21 +430,21 @@ int pbsd_init(
   path_nodes	 = build_path(path_priv, NODE_DESCRIP, NULL);
   path_nodes_new = build_path(path_priv, NODE_DESCRIP, new_tag);
   path_nodestate = build_path(path_priv, NODE_STATUS,  NULL);
-  path_nodenote  = build_path(path_priv, NODE_NOTE,  NULL);
+  path_nodenote  = build_path(path_priv, NODE_NOTE,    NULL);
   path_nodenote_new = build_path(path_priv, NODE_NOTE, new_tag);
-  path_resources = build_path(path_home, PBS_RESOURCES,  NULL);
+  path_resources = build_path(path_home, PBS_RESOURCES, NULL);
 
   init_resc_defs(path_resources);
 
 #if !defined(DEBUG) && !defined(NO_SECURITY_CHECK)
 
-  rc  = chk_file_sec(path_jobs,  1,0,S_IWGRP|S_IWOTH,1);
-  rc |= chk_file_sec(path_queues,1,0,S_IWGRP|S_IWOTH,0);
-  rc |= chk_file_sec(path_spool, 1,1,S_IWOTH,        0);
-  rc |= chk_file_sec(path_acct,	 1,0,S_IWGRP|S_IWOTH,0);
-  rc |= chk_file_sec(PBS_ENVIRON,0,0,S_IWGRP|S_IWOTH,1);
+  rc  = chk_file_sec(path_jobs,  1,0,S_IWGRP|S_IWOTH,1,EMsg);
+  rc |= chk_file_sec(path_queues,1,0,S_IWGRP|S_IWOTH,0,EMsg);
+  rc |= chk_file_sec(path_spool, 1,1,S_IWOTH,        0,EMsg);
+  rc |= chk_file_sec(path_acct,	 1,0,S_IWGRP|S_IWOTH,0,EMsg);
+  rc |= chk_file_sec(PBS_ENVIRON,0,0,S_IWGRP|S_IWOTH,1,EMsg);
 
-  if (rc) 
+  if (rc != 0) 
     {
     return(3);
     }
@@ -861,7 +863,7 @@ int pbsd_init(
 
 #if !defined(DEBUG) && !defined(NO_SECURITY_CHECK)
   
-  if (chk_file_sec(path_track,0,0,S_IWGRP|S_IWOTH,0) != 0)
+  if (chk_file_sec(path_track,0,0,S_IWGRP|S_IWOTH,0,EMsg) != 0)
     {
     return(-1);
     }

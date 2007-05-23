@@ -458,7 +458,7 @@ static int read_config(
 
 
 #if !defined(DEBUG) && !defined(NO_SECURITY_CHECK)
-  if (chk_file_sec(file,0,0,S_IWGRP|S_IWOTH,1))
+  if (chk_file_sec(file,0,0,S_IWGRP|S_IWOTH,1,NULL))
     {
     return(-1);
     }
@@ -468,10 +468,13 @@ static int read_config(
  
   mask_num = 0;
 
-	if ((conf = fopen(file, "r")) == NULL) {
-		log_err(errno, id, "cannot open config file");
-		return (-1);
-	}
+  if ((conf = fopen(file,"r")) == NULL) 
+    {
+    log_err(errno,id,"cannot open config file");
+
+    return(-1);
+    }
+
 	while (fgets(line, CONF_LINE_LEN, conf)) {
 
 		if ((line[0] == '#') || (line[0] == '\n'))
@@ -792,8 +795,8 @@ int main(
 
 	(void)sprintf(log_buffer, "%s/sched_priv", homedir);
 #if !defined(DEBUG) && !defined(NO_SECURITY_CHECK)
-	c  = chk_file_sec(log_buffer, 1, 0, S_IWGRP|S_IWOTH, 1);
-	c |= chk_file_sec(PBS_ENVIRON, 0, 0, S_IWGRP|S_IWOTH, 0);
+	c  = chk_file_sec(log_buffer,1,0,S_IWGRP|S_IWOTH,1,NULL);
+	c |= chk_file_sec(PBS_ENVIRON,0,0,S_IWGRP|S_IWOTH,0,NULL);
 	if (c != 0) exit(1);
 #endif  /* not DEBUG and not NO_SECURITY_CHECK */
 	if (chdir(log_buffer) == -1) {

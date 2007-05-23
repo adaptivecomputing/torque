@@ -2938,7 +2938,7 @@ int read_config(
     {
 #if !defined(DEBUG) && !defined(NO_SECURITY_CHECK)
 
-    if (chk_file_sec(file,0,0,S_IWGRP|S_IWOTH,1))
+    if (chk_file_sec(file,0,0,S_IWGRP|S_IWOTH,1,NULL))
       {
       /* not authorized to access specified file, return failure */
 
@@ -3098,7 +3098,7 @@ int read_config(
 
     if (
 #if !defined(DEBUG) && !defined(NO_SECURITY_CHECK)
-        !chk_file_sec(path_server_name, 0, 0, S_IWGRP|S_IWOTH, 1) &&
+        !chk_file_sec(path_server_name, 0, 0, S_IWGRP|S_IWOTH, 1,NULL) &&
 #endif
         (server_file = fopen(path_server_name,"r")) != NULL)
       {
@@ -6580,7 +6580,7 @@ int main(
 
 #if !defined(DEBUG) && !defined(NO_SECURITY_CHECK)
 
-  c = chk_file_sec(path_checkpoint,1,0,S_IWGRP|S_IWOTH,1);
+  c = chk_file_sec(path_checkpoint,1,0,S_IWGRP|S_IWOTH,1,NULL);
 
 #endif  /* not DEBUG and not NO_SECURITY_CHECK */
 #endif	/* MOM_CHECKPOINT */
@@ -6601,11 +6601,11 @@ int main(
 
 #if !defined(DEBUG) && !defined(NO_SECURITY_CHECK)
 
-  c |= chk_file_sec(path_jobs,    1, 0, S_IWGRP|S_IWOTH, 1);
-  c |= chk_file_sec(path_aux,     1, 0, S_IWGRP|S_IWOTH, 1);
-  c |= chk_file_sec(path_spool,   1, 1, S_IWOTH,         0);
-  c |= chk_file_sec(path_undeliv, 1, 1, S_IWOTH,         0);
-  c |= chk_file_sec(PBS_ENVIRON,  0, 0, S_IWGRP|S_IWOTH, 0);
+  c |= chk_file_sec(path_jobs,    1, 0, S_IWGRP|S_IWOTH, 1,NULL);
+  c |= chk_file_sec(path_aux,     1, 0, S_IWGRP|S_IWOTH, 1,NULL);
+  c |= chk_file_sec(path_spool,   1, 1, S_IWOTH,         0,NULL);
+  c |= chk_file_sec(path_undeliv, 1, 1, S_IWOTH,         0,NULL);
+  c |= chk_file_sec(PBS_ENVIRON,  0, 0, S_IWGRP|S_IWOTH, 0,NULL);
 
   if (c)
     {

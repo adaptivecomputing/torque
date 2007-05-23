@@ -1488,7 +1488,7 @@ void mgr_node_set(
   if ((*preq->rq_ind.rq_manager.rq_objname == '\0') ||
       (*preq->rq_ind.rq_manager.rq_objname == '@') ||
       ((*preq->rq_ind.rq_manager.rq_objname == ':') &&   
-      (*(preq->rq_ind.rq_manager.rq_objname+1) != '\0')))    
+      (*(preq->rq_ind.rq_manager.rq_objname + 1) != '\0')))    
     {
     /*In this instance the set node req is to apply to all */
     /*nodes at the local ('\0')  or specified ('@') server */
@@ -1497,11 +1497,11 @@ void mgr_node_set(
       {
       pnode = *pbsndlist;
       if ((*preq->rq_ind.rq_manager.rq_objname == ':') && 
-          (strcmp(preq->rq_ind.rq_manager.rq_objname+1,"ALL") != 0))
+          (strcmp(preq->rq_ind.rq_manager.rq_objname + 1,"ALL") != 0))
         {
         propnodes = 1;
         nodename = preq->rq_ind.rq_manager.rq_objname;
-        props.name = nodename+1;
+        props.name = nodename + 1;
         props.mark = 1;
         props.next = NULL;
         }
@@ -1653,46 +1653,60 @@ void mgr_node_set(
     need_todo &= ~(WRITE_NEW_NODESFILE);	 /*successful on update*/
     }
 
-	if (allnodes || propnodes) {          /*modification was for all nodes  */ 
+  if (allnodes || propnodes) 
+    {
+    /* modification was for all nodes */ 
 
-	   if ( problem_cnt ) {  /*one or more problems encountered*/
+    if (problem_cnt) 
+      {  
+      /* one or more problems encountered */
 		
-		for( len=0, i=0; i<problem_cnt; i++ )
-		     len += strlen( problem_nodes[i]->nd_name ) + 3;
+      for (len = 0,i = 0;i < problem_cnt;i++)
+        len += strlen(problem_nodes[i]->nd_name) + 3;
 
-		len += strlen (pbse_to_txt (PBSE_GMODERR));
+      len += strlen (pbse_to_txt(PBSE_GMODERR));
 
-		if ((problem_names = malloc (len))) {
+      if ((problem_names = malloc(len))) 
+        {
+        strcpy(problem_names,pbse_to_txt(PBSE_GMODERR));
 
-		    strcpy (problem_names, pbse_to_txt (PBSE_GMODERR));
-		    for (i=0; i<problem_cnt; i++) {
-			 if (i)
-			     strcat (problem_names, ", ");
-			 strcat (problem_names, problem_nodes[i]->nd_name);
-		    }
+        for (i = 0;i < problem_cnt;i++) 
+          {
+          if (i)
+            strcat(problem_names,", ");
 
-		    reply_text (preq, PBSE_GMODERR, problem_names);
-		    free (problem_names);
-		} else {
-		    reply_text (preq, PBSE_GMODERR, pbse_to_txt (PBSE_GMODERR));
-		}
-	    }
+          strcat(problem_names,problem_nodes[i]->nd_name);
+          }
 
-	    if (problem_nodes)
-		free (problem_nodes);
+        reply_text(preq,PBSE_GMODERR,problem_names);
 
-	    if (problem_cnt) {		/*reply has already been sent  */
-	 	recompute_ntype_cnts ();
-	        return ;
-	    }
-	}
+        free(problem_names);
+        } 
+      else 
+        {
+        reply_text(preq,PBSE_GMODERR,pbse_to_txt(PBSE_GMODERR));
+        }
+      }
 
-  recompute_ntype_cnts ();
+    if (problem_nodes != NULL)
+      free(problem_nodes);
+
+    if (problem_cnt) 
+      {
+      /* reply has already been sent */
+
+      recompute_ntype_cnts();
+
+      return;
+      }
+    }    /* END if (allnodes || propnodes) */
+
+  recompute_ntype_cnts();
 
   reply_ack(preq);		/*request completely successful*/
 
   return;
-  }
+  }  /* END void mgr_node_set() */
 
 
 

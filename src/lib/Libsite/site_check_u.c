@@ -286,9 +286,11 @@ int site_check_user_map(
  *    Return -1 for access denied, otherwise 0 for ok.
  */
 
-int site_acl_check(pjob, pque)
-	job		*pjob;
-	pbs_queue	*pque;
-{
-	return (0);
-}
+int site_acl_check(
+
+  job       *pjob,
+  pbs_queue *pque)
+
+  {
+  return(0);
+  }

@@ -102,16 +102,17 @@ int main(
   char *argv[])
 
   {
-	int err = 0;
-	int i;
-	int j;
-	int dir = 0;
-	int no_err = 0;
-	int sticky = 0;
-	int umask = S_IWGRP | S_IWOTH;
-	extern int optind;
+  int err = 0;
+  int i;
+  int j;
+  int dir = 0;
+  int no_err = 0;
+  int sticky = 0;
+  int umask = S_IWGRP | S_IWOTH;
 
-        chk_file_sec_stderr=1;
+  extern int optind;
+
+  chk_file_sec_stderr = 1;
 
 	while ((i = getopt(argc, argv, "dnsu")) != EOF) {
 	    switch (i) {
@@ -133,7 +134,7 @@ int main(
 	}
 
 	for (i=optind; i < argc; ++i)
-		if ((j=chk_file_sec(argv[i], dir, sticky, umask, 1))) {
+		if ((j=chk_file_sec(argv[i], dir, sticky, umask, 1,NULL))) {
 			err=1;
 		}
 

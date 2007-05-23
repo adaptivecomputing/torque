@@ -94,7 +94,7 @@
 #define	S_ISLNK(m)	(((m) & S_IFMT) == S_IFLNK)
 #endif
 
-int chk_file_sec_stderr=0;
+int chk_file_sec_stderr = 0;
 
 /*
  * chk_file_sec() - Check file/directory security
@@ -118,7 +118,8 @@ int chk_file_sec(
   int   isdir,	  /* 1 = path is directory, 0 = file */
   int   sticky,	  /* allow write on directory if sticky set */
   int   disallow, /* perm bits to disallow */
-  int   fullpath) /* recursively check full path */
+  int   fullpath, /* recursively check full path */
+  char *EMsg)     /* O (optional,minsize=1024) */
 
   {
   int    i;
@@ -128,6 +129,9 @@ int chk_file_sec(
   struct stat sbuf;
   char   shorter[_POSIX_PATH_MAX];
   char   symlink[_POSIX_PATH_MAX];
+
+  if (EMsg != NULL)
+    EMsg[0] = '\0';
 	
   if ((*path == '/') && fullpath) 
     {
@@ -146,7 +150,7 @@ int chk_file_sec(
 
       *pc = '\0';
 
-      if ((rc = chk_file_sec(shorter,1,sticky,S_IWGRP|S_IWOTH,1)) != 0) 
+      if ((rc = chk_file_sec(shorter,1,sticky,S_IWGRP|S_IWOTH,1,EMsg)) != 0) 
         {
         return(rc);
         }
@@ -156,6 +160,13 @@ int chk_file_sec(
   if (lstat(path,&sbuf) == -1) 
     {
     rc = errno;
+
+    /* FAILURE */
+
+    snprintf(EMsg,1024,"%s cannot be lstat'd - errno=%d, %s",
+      path,
+      rc,
+      strerror(rc));
 
     goto chkerr;
     }
@@ -171,6 +182,13 @@ int chk_file_sec(
       {
       rc = errno;
 
+      /* FAILURE */
+
+      snprintf(EMsg,1024,"%s cannot be read as link, errno=%d, %s",
+        path,
+        rc,
+        strerror(rc));
+
       goto chkerr;
       }
 
@@ -178,7 +196,7 @@ int chk_file_sec(
 
     if (symlink[0] == '/') 
       {
-      return(chk_file_sec(symlink,isdir,sticky,disallow,fullpath));
+      return(chk_file_sec(symlink,isdir,sticky,disallow,fullpath,EMsg));
       } 
 
     strcpy(shorter,path);
@@ -198,6 +216,13 @@ int chk_file_sec(
       {
       rc = errno;
 
+      /* FAILURE */
+
+      snprintf(EMsg,1024,"%s cannot be stat'd - errno=%d, %s",
+        path,
+        rc,
+        strerror(rc));
+
       goto chkerr;
       }
 
@@ -210,26 +235,41 @@ int chk_file_sec(
       strcpy(shorter,symlink);
       }
     
-    return(chk_file_sec(shorter,isdir,sticky,disallow,fullpath));
+    return(chk_file_sec(shorter,isdir,sticky,disallow,fullpath,EMsg));
     }
 			
-  i = sbuf.st_mode & (S_IRWXU | S_IRWXG | S_IRWXO);
+  i = sbuf.st_mode & (S_IRWXU|S_IRWXG|S_IRWXO);
 
   if (sbuf.st_uid > 10) 
     {
     rc = EPERM;
+
+    /* FAILURE */
+
+    snprintf(EMsg,1024,"%s is not owned by admin user",
+      path);
     } 
   else if (((isdir == 1) && (S_ISDIR(sbuf.st_mode) == 0)) ||
            ((isdir == 0) && (S_ISREG(sbuf.st_mode) == 0))) 
     {
+    /* FAILURE */
+
+    snprintf(EMsg,1024,"%s is not directory",
+      path);
+
     rc = ENOTDIR;
     } 
   else if (isdir && sticky && !fullpath)
     {
     if ((S_ISDIR(sbuf.st_mode) == 0) ||
         ((sbuf.st_mode & S_ISVTX) == 0) ||
-        ( i != (S_IRWXU | S_IRWXG | S_IRWXO) ))
+        (i != (S_IRWXU|S_IRWXG|S_IRWXO)))
       {
+      /* FAILURE */
+
+      snprintf(EMsg,1024,"%s cannot be accessed",
+        path);
+
       rc = EACCES;
       }
     }
@@ -238,7 +278,14 @@ int chk_file_sec(
     /* if group write, gid must be less than 10 */
 
     if ((i & disallow & S_IWGRP) && (sbuf.st_gid > 9))
+      {
+      /* FAILURE */
+
+      snprintf(EMsg,1024,"%s is group writable",
+        path);
+
       rc = EPERM;
+      }
 
     /* if world write, sticky bit must be set and "sticky" ok */
 
@@ -247,6 +294,11 @@ int chk_file_sec(
       if ((S_ISDIR(sbuf.st_mode) == 0) || 
         (((sbuf.st_mode & S_ISVTX) == 0) || (sticky != 1)))
         {
+        /* FAILURE */
+
+        snprintf(EMsg,1024,"%s is world writable and not sticky",
+          path);
+
         rc = EACCES;
         }
       }
@@ -254,19 +306,26 @@ int chk_file_sec(
     /* check any remaining bits */
 
     if (i & disallow & ~(S_IWGRP|S_IWOTH))
-      rc = EACCES;
+      {
+      /* FAILURE */
 
+      snprintf(EMsg,1024,"%s is writable by group or other",
+        path);
+
+      rc = EACCES;
+      }
     }
 
 chkerr:
 
   if (rc != 0) 
     {
-    if ((error_buf = malloc(LOG_BUF_SIZE)) == 0) 
+    if ((error_buf = malloc(LOG_BUF_SIZE)) == NULL) 
       {
       if (chk_file_sec_stderr)
         {
-        fprintf(stdout, "chk_tree: Malloc failed: error #%d: (%s)\n", rc,
+        fprintf(stdout, "chk_tree: Malloc failed: error #%d: (%s)\n", 
+          rc,
           strerror(rc) ? strerror(rc) : "UNKNOWN");
         }
       else
@@ -276,22 +335,36 @@ chkerr:
       } 
     else 
       {
-      sprintf(error_buf,"Security violation with \"%s\"",
-        path);
+      if (EMsg != NULL)
+        {
+        sprintf(error_buf,"Security violation with \"%s\" - %s",
+          path,
+          EMsg);
+        }
+      else
+        {
+        sprintf(error_buf,"Security violation with \"%s\", errno=%d, %s",
+          path,
+          rc,
+          strerror(rc));
+        }
 
       if (chk_file_sec_stderr)
         {
-        fprintf(stdout, "chk_tree: %s: error #%d: (%s)\n", error_buf, rc,
+        fprintf(stdout, "chk_tree: %s: error #%d: (%s)\n", 
+          error_buf, 
+          rc,
           strerror(rc) ? strerror(rc) : "UNKNOWN");
         }
       else
         {
-        log_err(rc,"chk_file_sec",error_buf);
+        log_err(rc,"chk_file_sec",
+          error_buf);
         }
 
       free(error_buf);
       }
-    }
+    }    /* END if (rc != 0) */
 
   return(rc);
   }  /* END chk_sec_file.c */

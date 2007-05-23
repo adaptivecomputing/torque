@@ -579,24 +579,26 @@ void scan_for_exiting()
       if ((pjob->ji_wattr[(int)JOB_ATR_interactive].at_flags & ATR_VFLAG_SET) &&
            pjob->ji_wattr[(int)JOB_ATR_interactive].at_val.at_long) 
         {
-        if (run_pelog(PE_EPILOG,path_epilogp,pjob,PE_IO_TYPE_NULL) != 0)
-          {
-          log_err(-1,id,"parallel epilog failed");
-          }
         if (run_pelog(PE_EPILOGUSER,path_epiloguserp,pjob,PE_IO_TYPE_NULL) != 0)
           {
           log_err(-1,id,"user parallel epilog failed");
           }
-        }
-      else
-        {
-        if (run_pelog(PE_EPILOG,path_epilogp,pjob,PE_IO_TYPE_STD) != 0)
+
+        if (run_pelog(PE_EPILOG,path_epilogp,pjob,PE_IO_TYPE_NULL) != 0)
           {
           log_err(-1,id,"parallel epilog failed");
           }
+        }
+      else
+        {
         if (run_pelog(PE_EPILOGUSER,path_epiloguserp,pjob,PE_IO_TYPE_STD) != 0)
           {
           log_err(-1,id,"user parallel epilog failed");
+          }
+
+        if (run_pelog(PE_EPILOG,path_epilogp,pjob,PE_IO_TYPE_STD) != 0)
+          {
+          log_err(-1,id,"parallel epilog failed");
           }
         }
                                    
@@ -1119,14 +1121,14 @@ log_record(
     {
     /* job is interactive */
 
-    if (run_pelog(PE_EPILOG,path_epilog,pjob,PE_IO_TYPE_NULL) != 0)
-      {
-      log_err(-1,id,"system epilog failed - interactive job");
-      }
-
     if (run_pelog(PE_EPILOGUSER,path_epiloguser,pjob,PE_IO_TYPE_NULL) != 0)
       {
       log_err(-1,id,"user epilog failed - interactive job");
+      }
+
+    if (run_pelog(PE_EPILOG,path_epilog,pjob,PE_IO_TYPE_NULL) != 0)
+      {
+      log_err(-1,id,"system epilog failed - interactive job");
       }
     } 
   else 
@@ -1135,17 +1137,17 @@ log_record(
 
     int rc;
 
+    if (run_pelog(PE_EPILOGUSER,path_epiloguser,pjob,PE_IO_TYPE_STD) != 0)
+      {
+      log_err(-1,id,"user epilog failed");
+      }
+
     if ((rc = run_pelog(PE_EPILOG,path_epilog,pjob,PE_IO_TYPE_STD)) != 0)
       {
       sprintf(log_buffer,"system epilog failed w/rc=%d",
         rc);
 
       log_err(-1,id,log_buffer);
-      }
-
-    if (run_pelog(PE_EPILOGUSER,path_epiloguser,pjob,PE_IO_TYPE_STD) != 0)
-      {
-      log_err(-1,id,"user epilog failed");
       }
     }    /* END else (jobisinteractive) */
 
