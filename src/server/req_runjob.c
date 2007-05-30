@@ -1165,7 +1165,10 @@ static job *chk_job_torun(
         {
         /* FAILURE */
 
-        req_reject(PBSE_EXECTHERE,0,preq,NULL,NULL);
+        if (pjob->ji_qs.ji_svrflags & (JOB_SVFLG_CHKPT))
+          req_reject(PBSE_EXECTHERE,0,preq,NULL,"allocated nodes must match checkpoint location");
+        else
+          req_reject(PBSE_EXECTHERE,0,preq,NULL,"allocated nodes must match input file stagein location");
 
         return(NULL);
         }
@@ -1180,7 +1183,7 @@ static job *chk_job_torun(
             pjob->ji_wattr[(int)JOB_ATR_exec_host].at_val.at_str,
             0,
             FailHost,
-            EMsg)) != 0) 
+            EMsg)) != 0)   /* O */
         {
         req_reject(PBSE_EXECTHERE,0,preq,FailHost,EMsg);
 
