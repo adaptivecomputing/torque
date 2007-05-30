@@ -190,27 +190,27 @@ extern  int     ignwalltime;
 /*
 ** local functions and data
 */
-static char	*resi		A_((struct rm_attribute *attrib));
-static char	*totmem		A_((struct rm_attribute *attrib));
-static char	*availmem	A_((struct rm_attribute *attrib));
-static char	*physmem	A_((struct rm_attribute *attrib));
-static char	*ncpus		A_((struct rm_attribute *attrib));
-static char	*walltime	A_((struct rm_attribute *attrib));
-static char	*quota		A_((struct rm_attribute *attrib));
-static char     *netload        A_((struct rm_attribute *attrib));
+static char	*resi		A_((struct rm_attribute *));
+static char	*totmem		A_((struct rm_attribute *));
+static char	*availmem	A_((struct rm_attribute *));
+static char	*physmem	A_((struct rm_attribute *));
+static char	*ncpus		A_((struct rm_attribute *));
+static char	*walltime	A_((struct rm_attribute *));
+static char	*quota		A_((struct rm_attribute *));
+static char     *netload        A_((struct rm_attribute *));
 
-extern char	*loadave	A_((struct rm_attribute *attrib));
-extern char	*nullproc	A_((struct rm_attribute *attrib));
+extern char	*loadave	A_((struct rm_attribute *));
+extern char	*nullproc	A_((struct rm_attribute *));
 
 time_t	wait_time = 10;
 
 typedef	struct proc_mem {
-  unsigned long mem_total;
-  unsigned long mem_used;
-  unsigned long mem_free;
-  unsigned long swap_total;
-  unsigned long swap_used;
-  unsigned long swap_free;
+  unsigned long long mem_total;
+  unsigned long long mem_used;
+  unsigned long long mem_free;
+  unsigned long long swap_total;
+  unsigned long long swap_used;
+  unsigned long long swap_free;
   } proc_mem_t;
 
 /*
@@ -381,10 +381,10 @@ proc_stat_t *get_proc_stat(
 proc_mem_t *get_proc_mem()
 
   {
-  static proc_mem_t  mm;
-  FILE              *fp;
-  char               str[32];
-  unsigned long      bfsz, casz;
+  static proc_mem_t   mm;
+  FILE               *fp;
+  char                str[32];
+  unsigned long long  bfsz, casz;
 
   if ((fp = fopen("/proc/meminfo","r")) == NULL) 
     {
@@ -404,7 +404,7 @@ proc_mem_t *get_proc_mem()
 
     /* umu vmem patch */
 
-    fscanf(fp,"%*s %lu %lu %lu %*u %lu %lu",
+    fscanf(fp,"%*s %llu %llu %llu %*u %llu %llu",
        &mm.mem_total,
        &mm.mem_used,
        &mm.mem_free,
@@ -420,7 +420,7 @@ proc_mem_t *get_proc_mem()
       &mm.mem_free);
 */
 
-    fscanf(fp,"%*s %lu %lu %lu %*[^\n]%*c",
+    fscanf(fp,"%*s %llu %llu %llu %*[^\n]%*c",
       &mm.swap_total,
       &mm.swap_used,
       &mm.swap_free);
@@ -433,42 +433,42 @@ proc_mem_t *get_proc_mem()
 
       if (!strncmp(str,"MemTotal:",sizeof(str))) 
         {
-        fscanf(fp,"%lu",
+        fscanf(fp,"%llu",
           &mm.mem_total);
 
         mm.mem_total *= 1024; /* the unit is kB */
         } 
       else if (!strncmp(str,"MemFree:",sizeof(str))) 
         {
-        fscanf(fp,"%lu",
+        fscanf(fp,"%llu",
           &mm.mem_free);
 
         mm.mem_free *= 1024;
         } 
       else if (!strncmp(str,"Buffers:",sizeof(str))) 
         {
-        fscanf(fp,"%lu",
+        fscanf(fp,"%llu",
           &bfsz);
  
         mm.mem_free += bfsz * 1024;
         } 
       else if (!strncmp(str,"Cached:",sizeof(str))) 
         {
-        fscanf(fp,"%lu",
+        fscanf(fp,"%llu",
           &casz);
  
         mm.mem_free += casz * 1024;
         } 
       else if (!strncmp(str,"SwapTotal:",sizeof(str))) 
         {
-        fscanf(fp,"%lu",
+        fscanf(fp,"%llu",
           &mm.swap_total);
 
         mm.swap_total *= 1024;
         } 
       else if (!strncmp(str,"SwapFree:",sizeof(str))) 
         {
-        fscanf(fp,"%lu",
+        fscanf(fp,"%llu",
           &mm.swap_free);
 
         mm.swap_free *= 1024;
@@ -3069,7 +3069,7 @@ static char *totmem(
  
   if (LOGLEVEL >= 6)
     {
-    sprintf(log_buffer,"%s: total mem=%lu", 
+    sprintf(log_buffer,"%s: total mem=%llu", 
       id, 
       mm->mem_total + mm->swap_total);
 
@@ -3114,7 +3114,7 @@ static char *availmem(
 
   if (LOGLEVEL >= 6)
     {
-    sprintf(log_buffer,"%s: free mem=%lu", 
+    sprintf(log_buffer,"%s: free mem=%llu", 
       id, 
       mm->mem_free + mm->swap_free);
 
@@ -3135,9 +3135,10 @@ static char *ncpus(
   struct rm_attribute *attrib)
 
   {
-  char		*id = "ncpus", label[128];
+  char		*id = "ncpus"; 
+  char           label[128];
   FILE		*fp;
-  int		procs;
+  int		 procs;
 
   if (attrib != NULL) 
     {
