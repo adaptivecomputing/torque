@@ -32,6 +32,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature
   b - pbs_demux is now built with pbs_mom instead of with clients
   e - epilogue will only run if job is still valid on exec node
   e - add qnodes, qnoded, qserverd, and qschedd symlinks
+  e - enable DEFAULTCKPT torque.cfg parameter
 
 2.1.9
   f - new queue attribute disallowed_types, currently recognized types:
