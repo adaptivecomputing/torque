@@ -1764,6 +1764,15 @@ void req_jobobit(
         /* MOM abort job on init, job has checkpoint file	*/
         /* Requeue it, and thats all folks.			*/
 
+        if (LOGLEVEL >= 1)
+          {
+          log_event(
+            PBSEVENT_JOB_USAGE|PBSEVENT_JOB_USAGE,
+            PBS_EVENTCLASS_JOB,
+            pjob->ji_qs.ji_jobid,
+            "received JOB_EXEC_INITRST, setting job CHKPT flag");
+          }
+
         rel_resc(pjob);
 
         pjob->ji_qs.ji_svrflags |= JOB_SVFLG_HASRUN|JOB_SVFLG_CHKPT;
@@ -1783,7 +1792,7 @@ void req_jobobit(
       case JOB_EXEC_INITRMG:
 
         /* MOM abort job on init, job has migratable checkpoint */
-        /* Must recover output and checkpoint file, do eoj	    */
+        /* Must recover output and checkpoint file, do eoj      */
 
         alreadymailed = setrerun(pjob);
 

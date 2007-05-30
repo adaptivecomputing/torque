@@ -127,6 +127,9 @@ extern char *msg_job_abort;
 extern tlist_head task_list_event;
 extern struct server server;
 extern attribute_def svr_attr_def[];
+extern int    LOGLEVEL;
+
+
 
 
 /*
@@ -235,7 +238,9 @@ void svr_shutdown(
     }
 
   return;
-  }
+  }  /* END svr_shutdown() */
+
+
 
 
 
@@ -296,7 +301,7 @@ void req_shutdown(
   svr_shutdown(preq->rq_ind.rq_shutdown);
 
   return;
-  }
+  }  /* END req_shutdown() */
 
 
 
@@ -306,38 +311,68 @@ void req_shutdown(
  * shutdown_chkpt - perform checkpoint of job by issuing a hold request to mom
  */
 
-static int shutdown_chkpt(pjob)
-	job *pjob;
-{
-	struct batch_request *phold;
-	attribute 	      temp;
+static int shutdown_chkpt(
 
-	phold = alloc_br(PBS_BATCH_HoldJob);
-	if (phold == (struct batch_request *)0) 
-		return (PBSE_SYSTEM);
+  job *pjob)
 
-	temp.at_flags = ATR_VFLAG_SET;
-	temp.at_type  = job_attr_def[(int)JOB_ATR_hold].at_type;
-	temp.at_val.at_long = HOLD_s;
+  {
+  struct batch_request *phold;
+  attribute 	      temp;
 
-	phold->rq_perm = ATR_DFLAG_MGRD | ATR_DFLAG_MGWR;
-	(void)strcpy(phold->rq_ind.rq_hold.rq_orig.rq_objname, pjob->ji_qs.ji_jobid);
-	CLEAR_HEAD(phold->rq_ind.rq_hold.rq_orig.rq_attr);
-	if (job_attr_def[(int)JOB_ATR_hold].at_encode(&temp,
-				&phold->rq_ind.rq_hold.rq_orig.rq_attr,
-				job_attr_def[(int)JOB_ATR_hold].at_name,
-				(char *)0,
-				ATR_ENCODE_CLIENT) < 0)
-		return (PBSE_SYSTEM);
+  phold = alloc_br(PBS_BATCH_HoldJob);
 
-	if ( relay_to_mom(pjob->ji_qs.ji_un.ji_exect.ji_momaddr, phold, post_chkpt) == 0) {
-		pjob->ji_qs.ji_substate  = JOB_SUBSTATE_RERUN;
-		pjob->ji_qs.ji_svrflags |= JOB_SVFLG_HASRUN | JOB_SVFLG_CHKPT;
-		(void)job_save(pjob, SAVEJOB_QUICK);
-		return (0);
-	} else
-		return (-1);
-}
+  if (phold == NULL) 
+    {
+    return(PBSE_SYSTEM);
+    }
+
+  temp.at_flags = ATR_VFLAG_SET;
+  temp.at_type  = job_attr_def[(int)JOB_ATR_hold].at_type;
+  temp.at_val.at_long = HOLD_s;
+
+  phold->rq_perm = ATR_DFLAG_MGRD | ATR_DFLAG_MGWR;
+
+  strcpy(phold->rq_ind.rq_hold.rq_orig.rq_objname, pjob->ji_qs.ji_jobid);
+
+  CLEAR_HEAD(phold->rq_ind.rq_hold.rq_orig.rq_attr);
+
+  if (job_attr_def[(int)JOB_ATR_hold].at_encode(
+        &temp,
+        &phold->rq_ind.rq_hold.rq_orig.rq_attr,
+        job_attr_def[(int)JOB_ATR_hold].at_name,
+        NULL,
+        ATR_ENCODE_CLIENT) < 0)
+    {
+    return(PBSE_SYSTEM);
+    }
+
+  if (relay_to_mom(pjob->ji_qs.ji_un.ji_exect.ji_momaddr,phold,post_chkpt) != 0) 
+    {
+    /* FAILURE */
+
+    return(-1);
+    }
+
+  pjob->ji_qs.ji_substate = JOB_SUBSTATE_RERUN;
+
+  pjob->ji_qs.ji_svrflags |= JOB_SVFLG_HASRUN | JOB_SVFLG_CHKPT;
+
+  if (LOGLEVEL >= 1)
+    {
+    log_event(
+      PBSEVENT_SYSTEM|PBSEVENT_JOB|PBSEVENT_DEBUG,
+      PBS_EVENTCLASS_JOB, 
+      pjob->ji_qs.ji_jobid,
+      "shutting down with active checkpointable job");
+    }
+
+  job_save(pjob,SAVEJOB_QUICK);
+
+  return(0);
+  }  /* END shutdown_chkpt() */
+
+
+
 
 /*
  * post-chkpt - clean up after shutdown_chkpt
@@ -347,11 +382,13 @@ static int shutdown_chkpt(pjob)
  *	the job.
  */
 
-static void post_chkpt(ptask)
-	struct work_task *ptask;
-{
-	job		     *pjob;
-	struct batch_request *preq;
+static void post_chkpt(
+
+  struct work_task *ptask)
+
+  {
+  job                  *pjob;
+  struct batch_request *preq;
 
 	preq = (struct batch_request *)ptask->wt_parm1;
 	pjob = find_job(preq->rq_ind.rq_hold.rq_orig.rq_objname);
@@ -374,7 +411,9 @@ static void post_chkpt(ptask)
 	}
 
 	release_req(ptask);
-}
+
+  return;
+  }  /* END post_chkpt() */
 
 
 
@@ -411,8 +450,10 @@ static void rerun_or_kill(
 
     /* need to record log message before purging job */
 
-    log_event(PBSEVENT_SYSTEM|PBSEVENT_JOB|PBSEVENT_DEBUG,
-      PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid,
+    log_event(
+      PBSEVENT_SYSTEM|PBSEVENT_JOB|PBSEVENT_DEBUG,
+      PBS_EVENTCLASS_JOB, 
+      pjob->ji_qs.ji_jobid,
       log_buffer);
 
     job_abt(&pjob,log_buffer);

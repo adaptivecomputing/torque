@@ -148,6 +148,7 @@ char PBS_InitDir[256];
 char PBS_RootDir[256];
 
 char xauth_path[256];
+char default_ckpt[256];
 
 int interactivechild = 0;
 int x11child = 0;
@@ -3030,9 +3031,11 @@ int process_opts(
           {
           t_opt = passet;
           i = atoi(optarg);
+
           if (i <= 0 || i > PBS_MAXJOBARRAY)
             {
-            fprintf(stderr, "qsub: illegal -t value (must be 1 through %d)\n", PBS_MAXJOBARRAY);
+            fprintf(stderr, "qsub: illegal -t value (must be 1 through %d)\n", 
+              PBS_MAXJOBARRAY);
 
             errflg++;
 
@@ -3459,7 +3462,7 @@ void set_opt_defaults()
 
   {
   if (c_opt == FALSE)
-    set_attr(&attrib,ATTR_c,CHECKPOINT_UNSPECIFIED);
+    set_attr(&attrib,ATTR_c,default_ckpt);
 
   if (h_opt == FALSE)
     set_attr(&attrib,ATTR_h,NO_HOLD);
@@ -3685,6 +3688,7 @@ int main(
     }
 
   strncpy(xauth_path,DefaultXauthPath,255);
+  strncpy(default_ckpt,CHECKPOINT_UNSPECIFIED,sizeof(default_ckpt));
 
   server_host[0] = '\0';
   qsub_host[0] = '\0';
@@ -3743,6 +3747,11 @@ int main(
 
         exit(1);
         }
+      }
+
+    if ((param_val = get_param("DEFAULTCKPT",config_buf)) != NULL)
+      {
+      strncpy(default_ckpt,param_val,sizeof(default_ckpt));
       }
     }
 
