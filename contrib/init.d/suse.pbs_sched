@@ -2,9 +2,16 @@
 #
 # pbs_sched	This script will start and stop the PBS Scheduler
 #
-# chkconfig: 345 95 5
-# description: PBS is a batch versatile batch system for SMPs and clusters
-#
+### BEGIN INIT INFO
+# Provides:       pbs_sched
+# Required-Start: $local_fs
+# Should-Start: pbs_server
+# Required-Stop:
+# Should-Stop:
+# Default-Start:  2 3 5
+# Default-Stop:
+# Description: Torque is a versatile batch system for SMPs and clusters
+### END INIT INFO
 
 PBS_DAEMON=/usr/sbin/pbs_sched
 PBS_HOME=/var/torque
@@ -37,13 +44,17 @@ case "$1" in
 		$0 start
 		rc_status
 		;;
-	reload) 
+	try-restart)
+		$0 status >/dev/null && $0 restart
+		rc_status
+		;;
+	reload|force-reload) 
 		echo -n "Reloading TORQUE Scheduler: "
 		killproc pbs_sched -HUP
 		rc_status -v
 		;;
 	*)
-		echo "Usage: pbs_sched {start|stop|restart|status}"
+		echo "Usage: pbs_sched {start|stop|status|try-restart|restart|force-reload|reload}"
 		exit 1
 rc_exit
 esac

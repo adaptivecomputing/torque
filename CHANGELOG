@@ -33,6 +33,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature
   e - epilogue will only run if job is still valid on exec node
   e - add qnodes, qnoded, qserverd, and qschedd symlinks
   e - enable DEFAULTCKPT torque.cfg parameter
+  e - update suse initscripts
 
 2.1.9
   f - new queue attribute disallowed_types, currently recognized types:

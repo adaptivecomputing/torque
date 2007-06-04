@@ -2,9 +2,17 @@
 #
 # pbs_mom	This script will start and stop the PBS Mom
 #
-# chkconfig: 345 95 5
-# description: TORQUE/PBS is a versatile batch system for SMPs and clusters
-#
+### BEGIN INIT INFO
+# Provides:       pbs_mom
+# Required-Start: $local_fs
+# Should-Start: pbs_server pbs_sched
+# Required-Stop:
+# Should-Stop:
+# Default-Start:  2 3 5
+# Default-Stop:
+# Description: Torque is a versatile batch system for SMPs and clusters
+### END INIT INFO
+
 PBS_DAEMON=/usr/sbin/pbs_mom
 PBS_HOME=/var/torque
 PIDFILE=$PBS_HOME/mom_priv/mom.lock
@@ -25,29 +33,7 @@ if [ -z "$PREVLEVEL" ];then
    args="-p"
 fi
 
-pidof_pbs_mom() {
-   pid="-1"
-   if [ -f $PIDFILE ];then
-   	pid=`cat $PIDFILE`
-   fi
-   echo $pid
-}
 
-kill_pbs_mom() {
-   pid=`pidof_pbs_mom`
-
-   if [ $pid -le 1 ];then
-      return -1;
-   fi
-   retval=1
-   while kill -0 $pid 2>/dev/null;do
-      kill -TERM $pid
-      retval=$?
-      sleep 1
-   done
-   return $retval
-}
-	
 # how were we called
 case "$1" in
 	start)
@@ -63,10 +49,11 @@ case "$1" in
 		;;
 	stop)
 		echo -n "Shutting down TORQUE Mom: "
-		kill_pbs_mom
+		killproc -p $PIDFILE $PBS_DAEMON
 		rc_status -v
 		;;
 	status)
+		echo -n "Checking TORQUE Mom: "
 		checkproc -p $PIDFILE $PBS_DAEMON
 		rc_status -v
 		;;
@@ -76,14 +63,17 @@ case "$1" in
 		$0 start
 		rc_status
 		;;
-	reload)
+	try-restart)
+		$0 status >/dev/null && $0 restart
+		rc_status
+		;;
+	reload|force-reload)
 	        echo -n "Re-reading TORQUE Mom config file: "
 		killproc -p $PIDFILE -HUP pbs_mom
 		rc_status -v
 	        ;;
 	*)
-		echo "Usage: pbs_mom {start|stop|restart|reload|status|purge}"
+		echo "Usage: pbs_mom {start|stop|status|try-restart|restart|force-reload|reload|purge}"
 		exit 1
 esac
 rc_exit
-
