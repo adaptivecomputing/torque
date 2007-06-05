@@ -135,7 +135,7 @@
 #include "portability.h"
 
 int conn_qsub(char *,long,char *);
-
+void job_purge(job *);
 
 /* External functions */
 
@@ -408,8 +408,6 @@ int job_abt(
   int	rc = 0;
 
   job *pjob = *pjobp;
-
-  void job_purge A_((job *));
 
   /* save old state and update state to Exiting */
 
@@ -983,8 +981,8 @@ struct work_task *ptask)
   /* do the clones in batches of 256 */
   
   
-  for (i=startindex; 
-       i<startindex+256 
+  for (i = startindex; 
+       i < startindex + 256 
        && i < pjob->ji_wattr[(int)JOB_ATR_job_array_size].at_val.at_long;
        i++)
     {
@@ -1010,13 +1008,12 @@ struct work_task *ptask)
       {
       job_purge(pjobclone);
       }
-    
     }
   
   if (i < pjob->ji_wattr[(int)JOB_ATR_job_array_size].at_val.at_long)
     {
-    new_task = set_task(WORK_Timed,time_now+1,job_clone_wt,ptask->wt_parm1);
-    new_task->wt_aux = startindex+256;
+    new_task = set_task(WORK_Timed,time_now + 1,job_clone_wt,ptask->wt_parm1);
+    new_task->wt_aux = startindex + 256;
     }
   else
     {
@@ -1024,9 +1021,10 @@ struct work_task *ptask)
     }
   } /* end job_clone_tw */
   
-  
+#endif /* END !PBS_MOM */
 
-#endif /* end ifndef PBS_MOM */
+
+
 
 /*
  * job_init_wattr - initialize job working attribute array
@@ -1062,7 +1060,7 @@ static void job_init_wattr(
 
 void job_purge(
 
-  job *pjob)
+  job *pjob)  /* I (modified) */
 
   {
   static char   id[] = "job_purge";
