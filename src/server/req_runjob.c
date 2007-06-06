@@ -265,7 +265,14 @@ void req_stagein(
   job *pjob;
   int  rc;
 
-  if ((pjob = chk_job_torun(preq,0)) == NULL) 
+  int  setneednodes;
+
+  if (getenv("TORQUEAUTONN"))
+    setneednodes = 1;
+  else
+    setneednodes = 0;
+
+  if ((pjob = chk_job_torun(preq,setneednodes)) == NULL) 
     {
     return;
     } 
@@ -1215,9 +1222,9 @@ static job *chk_job_torun(
       }
     }
 
+#ifdef __TDEV
   if (setnn == 1)
     {
-#ifdef __TDEV
     resource *prescjb = find_resc_entry(pjob,"neednodes");
 
     if ((prescjb == NULL) ||
@@ -1239,8 +1246,8 @@ static job *chk_job_torun(
           }
         }
       }
+    }    /* END if (setnn == 1) */
 #endif /* __TDEV */
-    }
 
   return(pjob);
   }  /* END chk_job_torun() */
