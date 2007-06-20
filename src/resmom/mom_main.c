@@ -158,6 +158,7 @@
 /* Global Data Items */
 
 int             MOMIsLocked = 0;
+int             MOMIsPLocked = 0;
 int             ServerStatUpdateInterval = DEFAULT_SERVER_STAT_UPDATES;
 int             CheckPollTime            = CHECK_POLL_TIME;
 
@@ -4521,10 +4522,11 @@ int rm_request(
             BPtr = output;
             BSpace = sizeof(output);
 
-            sprintf(tmpLine,"\nHost: %s/%s   Version: %s\n",
+            sprintf(tmpLine,"\nHost: %s/%s   Version: %s   PID: %ld\n",
               mom_short_name,
               mom_host,
-              PACKAGE_VERSION);
+              PACKAGE_VERSION,
+              (long)getpid());
 
             MUStrNCat(&BPtr,&BSpace,tmpLine);
 
@@ -4617,14 +4619,6 @@ int rm_request(
               MUStrNCat(&BPtr,&BSpace,tmpLine);
               }
 
-            if (verbositylevel >= 2)
-              {
-              sprintf(tmpLine,"PID:                    %ld\n",
-                (long)getpid());
-
-              MUStrNCat(&BPtr,&BSpace,tmpLine);
-              }
-
             sprintf(tmpLine,"HomeDirectory:          %s\n",
               (mom_home != NULL) ? mom_home : "N/A");
 
@@ -4684,7 +4678,7 @@ int rm_request(
               MUStrNCat(&BPtr,&BSpace,tmpLine);
               }
 
-            sprintf(tmpLine,"LOGLEVEL:               %d (use SIGUSR1/SIGUSR2 to adjust)\n",
+            sprintf(tmpLine,"LogLevel:               %d (use SIGUSR1/SIGUSR2 to adjust)\n",
               LOGLEVEL);
 
             MUStrNCat(&BPtr,&BSpace,tmpLine);
@@ -4701,11 +4695,22 @@ int rm_request(
 
               MUStrNCat(&BPtr,&BSpace,tmpLine);
 
-              if (MOMIsLocked == 1)
+              if ((MOMIsLocked == 1) || (MOMIsPLocked == 1) || (verbositylevel >= 4))
                 {
-                MUStrNCat(&BPtr,&BSpace,"MemLocked:              TRUE\n");
+                sprintf(tmpLine,"MemLocked:              %s",
+                  (MOMIsLocked == 0) ? "FALSE" : "TRUE");
+
+                if (MOMIsLocked == 1)
+                  strcat(tmpLine,"  (mlock)");
+ 
+                if (MOMIsPLocked == 1)
+                  strcat(tmpLine,"  (plocked)");
+
+                strcat(tmpLine,"\n");
+
+                MUStrNCat(&BPtr,&BSpace,tmpLine);
                 }
-              }
+              }    /* END if (verbositylevel >= 1) */
 
             if ((verbositylevel >= 1) && (pbs_tcp_timeout > 0))
               {
@@ -4782,8 +4787,9 @@ int rm_request(
               {
               tmpLine[0] = '\0';
 
-              MUSNPrintF(&BPtr,&BSpace,"Configured to use %s %s\n",
-                rcp_path, rcp_args );
+              MUSNPrintF(&BPtr,&BSpace,"Copy Command:           %s %s\n",
+                rcp_path, 
+                rcp_args );
               }
 
             /* joblist */
@@ -4861,14 +4867,15 @@ int rm_request(
             if ((pva = (struct varattr *)GET_NEXT(mom_varattrs)) != NULL)
               {
               MUStrNCat(&BPtr,&BSpace,"Varattrs:\n");
+
               while (pva != NULL)
                 {
-                sprintf(tmpLine,"  name=%s  ttl=%d last=%s    cmd=%s value=%s\n",
+                sprintf(tmpLine,"  name=%s  ttl=%d  last=%s  cmd=%s  value=%s\n\n",
                   pva->va_name,
                   pva->va_ttl,
                   ctime(&pva->va_lasttime),
                   pva->va_cmd,
-                  pva->va_value);
+                  (pva->va_value != NULL) ? pva->va_value : "NULL");
 
                 MUStrNCat(&BPtr,&BSpace,tmpLine);
 
@@ -6230,10 +6237,6 @@ int main(
   resource	*prscput;
 #endif /* MOM_CHECKPOINT */
 
-#ifdef _POSIX_MEMLOCK
-  int           mlockall_return;
-#endif /* _POSIX_MEMLOCK */
-
   strcpy(pbs_current_user,"pbs_mom");
   msg_daemonname = pbs_current_user;
 
@@ -6823,8 +6826,19 @@ int main(
     }
 
 #if (PLOCK_DAEMONS & 4)
-  plock(PROCLOCK);	/* lock daemon into memory */
-#endif
+  /* lock daemon into memory */
+
+  /* NOTE:  should reduce maximum stack limit using ulimit() before calling plock */
+
+  if (plock(PROCLOCK) == -1)
+    {
+    log_err(errno,msg_daemonname,"failed to lock mom into memory with plock");
+    }
+  else
+    {
+    MOMIsPLocked = 1;
+    }
+#endif /* PLOCK_DAEMONS */
 	
   sigemptyset(&allsigs);
   act.sa_mask = allsigs;
@@ -6854,7 +6868,7 @@ int main(
   **	We want to abort system calls
   **	and call a function.
   */
-#ifdef	SA_INTERRUPT
+#ifdef SA_INTERRUPT
   act.sa_flags |= SA_INTERRUPT;	/* don't restart system calls */
 #endif
 
@@ -7049,7 +7063,7 @@ int main(
   add_conn(rppfd,Primary,(pbs_net_t)0,0,rpp_request);
   add_conn(privfd,Primary,(pbs_net_t)0,0,rpp_request);
 
-  /* initialize machine dependent polling routines */
+  /* initialize machine-dependent polling routines */
 
   if ((c = mom_open_poll()) != PBSE_NONE) 
     {
@@ -7061,6 +7075,30 @@ int main(
   /* recover & abort jobs which were under MOM's control */
 
   init_abort_jobs(recover);
+
+#ifdef _POSIX_MEMLOCK
+  /* call mlockall() only 1 time, since it seems to leak mem */
+
+  if (MOMIsLocked == 0)
+    {
+    int mlockall_return;
+
+    /* make sure pbs_mom stays in RAM and doesn't get paged out */
+
+    mlockall_return = mlockall(MCL_CURRENT|MCL_FUTURE);
+
+    /* exit iff mlock failed, but ignore function not implemented error */
+
+    if ((mlockall_return == -1) && (errno != ENOSYS))
+      {
+      perror("pbs_mom:mom_main.c:mlockall()");
+
+      exit(1);
+      }
+
+    MOMIsLocked = 1;
+    }
+#endif /* _POSIX_MEMLOCK */
 
   /* record the fact that we are up and running */
 
@@ -7483,27 +7521,7 @@ int main(
         pjob->ji_qs.ji_svrflags |= JOB_SVFLG_OVERLMT1;
         }
       }    /* END for (pjob) */
-#ifdef _POSIX_MEMLOCK
-    /* call mlockall() only 1 time, since it seems to leak mem */
-
-    if (MOMIsLocked == 0)
-      {
-      /* make sure pbs_mom stays in RAM and doesn't get paged out */
-
-      mlockall_return = mlockall(MCL_CURRENT | MCL_FUTURE);
-
-      /* exit iff mlock failed, but ignore function not implemented error */
-      if (mlockall_return == -1 && errno != ENOSYS)
-        {
-        perror("pbs_mom:mom_main.c:mlockall()");
-
-        exit(1);
-        }
-
-      MOMIsLocked = 1;
-      }
-#endif /* _POSIX_MEMLOCK */
-    }  /* END for (;mom_run_state == MOM_RUN_STATE_RUNNING;) */
+    }      /* END for (;mom_run_state == MOM_RUN_STATE_RUNNING;) */
  
   /* have exited main loop */
 
