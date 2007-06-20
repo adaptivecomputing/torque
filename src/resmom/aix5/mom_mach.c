@@ -2382,7 +2382,7 @@ get_la(rv)
 	double	*rv;
 {
 	char	*id = "get_la";
-	long	load;
+	long	load[3];
 
 	if (kd == NULL) {
 		log_err(-1, id, nokernel);
@@ -2394,7 +2394,7 @@ get_la(rv)
 		return (rm_errno = RM_ERR_SYSTEM);
 	}
 
-	*rv = (double)load/FSCALE;
+	*rv = (double)load[1]/FSCALE;
 	return 0;
 }
 
