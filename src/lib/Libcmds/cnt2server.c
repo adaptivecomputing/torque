@@ -98,6 +98,7 @@
 
 #include <errno.h>
 #include <stdio.h>
+#include <string.h>
 #include <time.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -118,27 +119,41 @@ int cnt2server_conf(
   cnt2server_retry = retry;
 
   return(0);
-  }
+  }  /* END cnt2server_conf() */
+
 
 
 
 
 int cnt2server( 
 
-  char *server)  /* I (optional) */
+  char *SpecServer)  /* I (optional) */
 
   {
   int connect;
   time_t firsttime = 0, thistime = 0;
+
+  char Server[1024];
 
   if (cnt2server_retry > 0)
     {
     firsttime = time(NULL);
     }
 
+  if (SpecServer != NULL)
+    {
+    strncpy(Server,SpecServer,sizeof(Server));
+
+    Server[sizeof(Server) - 1] = '\0';
+    }
+  else
+    {
+    Server[0] = '\0';
+    }
+  
 start:
 
-  connect = pbs_connect(server);
+  connect = pbs_connect(Server);
 
   if (connect <= 0) 
     {
@@ -148,7 +163,7 @@ start:
         {
         case PBSE_BADHOST:
 
-          if ((server == NULL) || (server[0] == '\0'))
+          if ((Server == NULL) || (Server[0] == '\0'))
             {
             fprintf(stderr,"Cannot resolve default server host '%s' - check server_name file.\n",
               pbs_default());
@@ -156,7 +171,7 @@ start:
           else
             {
             fprintf(stderr,"Cannot resolve specified server host '%s'.\n",
-              server);
+              Server);
             }
 
           break;
@@ -215,15 +230,34 @@ start:
         {
         if (errno == ECONNREFUSED)
           {
-          if ((server == NULL) || (server[0] == '\0'))
+          if ((Server == NULL) || (Server[0] == '\0'))
             {
+            char *fbserver;
+
+            fbserver = pbs_fbserver();
+
+            if ((fbserver != NULL) && (fbserver[0] != '\0'))
+              {
+              strncpy(Server,fbserver,sizeof(Server));
+ 
+              Server[sizeof(Server) - 1] = '\0';
+
+              if (getenv("PBSDEBUG") != NULL)
+                {
+                fprintf(stderr,"attempting fallback server %s\n",
+                  fbserver);
+                }
+
+              goto start;
+              }
+
             fprintf(stderr,"Cannot connect to default server host '%s' - check pbs_server daemon.\n",
               pbs_default());
             }
           else
             {
             fprintf(stderr,"Cannot connect to specified server host '%s'.\n",
-              server);
+              Server);
             }
           }
         else
@@ -251,14 +285,16 @@ retry:
 
   if (cnt2server_retry > 0) /* negative is infinite */
     {
-    if ((thistime-firsttime) > cnt2server_retry)
+    if ((thistime - firsttime) > cnt2server_retry)
       {
       return(connect);
       }
 
     if (getenv("PBSDEBUG") != NULL)
+      {
       fprintf(stderr,"seconds remaining: %d\n",
         (int)(cnt2server_retry - (thistime - firsttime)));
+      }
     }
   else
     {

@@ -449,6 +449,8 @@ extern int pbs_alterjob A_((int connect,char *job_id,struct attrl *attrib,char *
 extern int pbs_connect A_((char *server));
 extern int pbs_query_max_connections();
 extern char *pbs_default A_((void));
+extern char *pbs_fbserver A_((void));
+
 extern int pbs_deljob A_((int connect,char *job_id,char *extend));
 extern int pbs_disconnect A_((int connect));
 extern char *pbs_geterrmsg A_((int connect));

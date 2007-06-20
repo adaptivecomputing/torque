@@ -76,9 +76,10 @@
 * This license will be governed by the laws of the Commonwealth of Virginia,
 * without reference to its choice of law rules.
 */
+
 /*	pbs_connect.c
  *
- *	Open a connection with the pbs server.  At this point several
+ *	Open a connection with the TORQUE server.  At this point several
  *	things are stubbed out, and other things are hard-wired.
  *
  */
@@ -109,6 +110,8 @@ extern time_t pbs_tcp_timeout;              /* source? */
 
 static unsigned int dflt_port = 0;
 static char dflt_server[PBS_MAXSERVERNAME + 1];
+static char fb_server[PBS_MAXSERVERNAME + 1];
+
 static int got_dflt = FALSE;
 static char server_name[PBS_MAXSERVERNAME + 1];  /* definite conflicts */
 static unsigned int server_port;                 /* definite conflicts */
@@ -118,6 +121,8 @@ char *pbs_server = NULL;
 
 
 
+/* NOTE:  PBS_DEFAULT format:    <SERVER>[,<FBSERVER>] */
+/*        pbs_destn_file format: <SERVER>[,<FBSERVER>] */
 
 char *pbs_default()
 
@@ -125,6 +130,8 @@ char *pbs_default()
   FILE *fd;
   char *pn;
   char *server;
+
+  char *ptr;
 
   if (got_dflt != TRUE) 
     {
@@ -159,6 +166,11 @@ char *pbs_default()
     got_dflt = TRUE;
     }  /* END if (got_dflt != TRUE) */
 
+  ptr = strchr(dflt_server,',');
+
+  if (ptr != NULL)
+    *ptr = '\0';
+
   strcpy(server_name,dflt_server);
 
   return(dflt_server);
@@ -167,9 +179,77 @@ char *pbs_default()
 
 
 
+
+char *pbs_fbserver()
+
+  {
+  FILE *fd;
+  char *pn;
+  char *server;
+
+  char  tmpLine[PBS_MAXSERVERNAME << 2];
+
+  if (got_dflt != TRUE)
+    {
+    server = getenv("PBS_DEFAULT");
+
+    if ((server == NULL) || (*server == '\0'))
+      {
+      fd = fopen(pbs_destn_file,"r");
+
+      if (fd == NULL)
+        {
+        return(NULL);
+        }
+
+      if (fgets(tmpLine,sizeof(tmpLine),fd) == NULL)
+        {
+        fclose(fd);
+
+        return(NULL);
+        }
+
+      if ((pn = strchr(tmpLine,'\n')) != NULL)
+        *pn = '\0';
+
+      if ((pn = strchr(tmpLine,',')) != NULL)
+        {
+        strncpy(fb_server,pn + 1,PBS_MAXSERVERNAME);
+        }
+      else
+        {
+        fb_server[0] = '\0';
+        }
+
+      fclose(fd);
+      }  /* END if ((server == NULL) || (*server == '\0')) */
+    else
+      {
+      strncpy(tmpLine,server,sizeof(tmpLine));
+
+      if ((pn = strchr(tmpLine,',')) != NULL)
+        {
+        strncpy(fb_server,pn + 1,PBS_MAXSERVERNAME);
+        }
+      else
+        {
+        fb_server[0] = '\0';
+        }
+      }  /* END else ((server == NULL) || (*server == '\0')) */
+
+    got_dflt = TRUE;
+    }  /* END if (got_dflt != TRUE) */
+
+  return(fb_server);
+  }  /* END pbs_fbserver() */
+
+
+
+
+
 static char *PBS_get_server(
 
-  char         *server,  /* I (modified) */
+  char         *server,  /* I (NULL|'\0' for not set,modified) */
   unsigned int *port)    /* O */
 
   {
@@ -385,7 +465,7 @@ static int PBSD_authenticate(
 
 /* returns socket descriptor or negative value (-1) on failure */
 
-/* NOTE:  cannot use globals or static infomration as API
+/* NOTE:  cannot use globals or static information as API
    may be used to connect a single server to multiple TORQUE
    interfaces */
 
@@ -393,7 +473,7 @@ static int PBSD_authenticate(
 
 int pbs_connect(
 
-  char *server)  /* I (FORMAT:  NULL | HOSTNAME | HOSTNAME:PORT )*/
+  char *server)  /* I (FORMAT:  NULL | '\0' | HOSTNAME | HOSTNAME:PORT )*/
 
   {
   struct sockaddr_in server_addr;

@@ -198,8 +198,12 @@ int openrm(
   unsigned int  port)  /* I (optional,0=DEFAULT) */
 
   {
-  int    stream;
+  int                   stream;
+
+#if RPP
   static int		first = 1;
+#endif /* RPP */
+
   static unsigned int	gotport = 0;
 
   pbs_errno = 0;
@@ -320,30 +324,38 @@ int openrm(
 **	and free the "out" structure.
 **	Return 0 if all is well, -1 on error.
 */
-static
-int
-delrm(stream)
-     int	stream;
-{
-	struct	out	*op, *prev = NULL;
 
-	for (op=outs[stream % HASHOUT]; op; op=op->next) {
-		if (op->stream == stream)
-			break;
-		prev = op;
-	}
-	if (op) {
-		close_dis(stream);
+static int delrm(
 
-		if (prev)
-			prev->next = op->next;
-		else
-			outs[stream % HASHOUT] = op->next;
-		free(op);
-		return 0;
-	}
-	return -1;
-}
+  int stream)
+
+  {
+  struct out *op, *prev = NULL;
+
+  for (op = outs[stream % HASHOUT];op;op = op->next) 
+    {
+    if (op->stream == stream)
+      break;
+
+    prev = op;
+    }  /* END for (op) */
+
+  if (op != NULL) 
+    {
+    close_dis(stream);
+
+    if (prev != NULL)
+      prev->next = op->next;
+    else
+      outs[stream % HASHOUT] = op->next;
+
+    free(op);
+
+    return(0);
+    }
+
+  return(-1);
+  }  /* END delrm() */
 
 
 
@@ -735,20 +747,29 @@ int addreq(
 **	Add a request to every stream.
 **	Return the number of streams acted upon.
 */
-int
-allreq(line)
-     char	*line;
-{
-	struct	out	*op, *prev;
-	int		i, num;
 
-	funcs_dis();
-	pbs_errno = 0;
-	num = 0;
-	for (i=0; i<HASHOUT; i++) {
-		prev=NULL;
-		op=outs[i];
-		while (op) {
+int allreq(
+
+  char *line)
+
+  {
+  struct out *op, *prev;
+  int         i, num;
+
+  funcs_dis();
+
+  pbs_errno = 0;
+
+  num = 0;
+
+  for (i = 0; i < HASHOUT;i++) 
+    {
+    prev = NULL;
+
+    op = outs[i];
+
+    while (op != NULL) 
+      {
 			if (doreq(op, line) == -1) {
 				struct	out	*hold = op;
 
@@ -766,9 +787,10 @@ allreq(line)
 				num++;
 			}
 		}
-	}
-	return num;
-}
+    }
+
+  return(num);
+  }  /* END allreq() */
 
 
 
@@ -786,7 +808,7 @@ char *getreq(
 
   {
   char	*startline;
-  struct	out	*op;
+  struct out	*op;
   int	ret;
 
   pbs_errno = 0;
@@ -887,8 +909,8 @@ char *getreq(
 int flushreq()
 
   {
-  struct	out	*op, *prev;
-  int	did, i;
+  struct out *op, *prev;
+  int         did, i;
 
   pbs_errno = 0;
 
@@ -976,40 +998,57 @@ int flushreq()
 int activereq(void)
 
   {
-	static	char	id[] = "activereq";
-	struct	out	*op;
-	int		try, i, num;
-	int		bucket;
-	struct	timeval	tv;
-	fd_set		fdset;
+  static char	id[] = "activereq";
 
-	pbs_errno = 0;
-	flushreq();
-	FD_ZERO(&fdset);
+#if RPP
+  struct out *op;
+  int	      try;
+  int         bucket;
+#endif /* RPP */
 
-#if	RPP
-	for (try=0; try<3;) {
-		if ((i = rpp_poll()) >= 0) {
-			if ((op = findout(i)) != NULL)
-				return i;
+  int            i, num;
+  struct timeval tv;
+  fd_set         fdset;
 
-			op = (struct out *)malloc(sizeof(struct out));
-			if (op == NULL) {
-				pbs_errno = errno;
-				return -1;
-			}
+  pbs_errno = 0;
+  flushreq();
+  FD_ZERO(&fdset);
 
-			bucket = i % HASHOUT;
-			op->stream = i;
-			op->len = -2;
-			op->next = outs[bucket];
-			outs[bucket] = op;
-		}
-		else if (i == -1) {
-			pbs_errno = errno;
-			return -1;
-		}
-		else {
+#if RPP
+  for (try = 0;try < 3;) 
+    {
+    if ((i = rpp_poll()) >= 0) 
+      {
+      if ((op = findout(i)) != NULL)
+        {
+        return(i);
+        }
+
+      op = (struct out *)malloc(sizeof(struct out));
+
+      if (op == NULL) 
+        {
+        pbs_errno = errno;
+
+        return(-1);
+        }
+
+      bucket = i % HASHOUT;
+
+      op->stream = i;
+      op->len = -2;
+      op->next = outs[bucket];
+
+      outs[bucket] = op;
+      }
+    else if (i == -1) 
+      {
+      pbs_errno = errno;
+
+      return(-1);
+      }
+    else 
+      {
 
 			FD_SET(rpp_fd, &fdset);
 			tv.tv_sec = 5;
@@ -1059,9 +1098,14 @@ int activereq(void)
 			op = op->next;
 		}
 	}
-	return -2;
+
+  return(-2);
 #endif
-}
+  }  /* END activereq() */
+
+
+
+
 
 /*
 **	If flag is true, turn on "full response" mode where getreq

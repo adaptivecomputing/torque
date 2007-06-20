@@ -168,7 +168,7 @@ int isjobid(
     result = 0;  /* who knows - probably a syntax error */
 
   return(result);
-  }
+  }  /* END isjobid() */
 
 
 
@@ -177,17 +177,28 @@ int istrue(
   char *string)
 
   {
-  if (strcmp(string,"TRUE") == 0) 
+  if (!strcmp(string,"TRUE")) 
     {
     return(TRUE);
     }
 
-  if (strcmp(string,"True") == 0) return TRUE;
-  if (strcmp(string,"true") == 0) return TRUE;
-  if (strcmp(string,"1") == 0) return TRUE;
+  if (!strcmp(string,"True")) 
+    {
+    return(TRUE);
+    }
+
+  if (!strcmp(string,"true")) 
+    {
+    return(TRUE);
+    }
+
+  if (!strcmp(string,"1"))
+    {
+    return(TRUE);
+    }
 
   return(FALSE);
-  }
+  }  /* END istrue() */
 
 
 

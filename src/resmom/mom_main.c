@@ -157,6 +157,7 @@
 
 /* Global Data Items */
 
+int             MOMIsLocked = 0;
 int             ServerStatUpdateInterval = DEFAULT_SERVER_STAT_UPDATES;
 int             CheckPollTime            = CHECK_POLL_TIME;
 
@@ -1543,6 +1544,8 @@ u_long addclient(
 
 
 
+
+
 static u_long setpbsclient(
 
   char *value)  /* I */
@@ -1561,6 +1564,8 @@ static u_long setpbsclient(
 
   if (rc != 0)
     {
+    /* FAILURE */
+
     return(1);
     }
 
@@ -1587,7 +1592,7 @@ static u_long setpbsserver(
 
   if ((value == NULL) || (*value == '\0'))
     {
-    /* FAILURE */
+    /* FAILURE - nothing specified */
 
     return(1);
     }
@@ -1634,9 +1639,13 @@ static u_long setpbsserver(
       log_record(PBSEVENT_SYSTEM,PBS_EVENTCLASS_SERVER,id,log_buffer);
 
       if (MOMServerAddrs[index])
+        {
+        /* SUCCESS */
+        
         return(1);
-      else
-        break;
+        }
+
+      break;
       }
 
     if (ipaddr && (MOMServerAddrs[index] == ipaddr))
@@ -1650,6 +1659,8 @@ static u_long setpbsserver(
          (ipaddr & 0x000000ff));
 
       log_record(PBSEVENT_SYSTEM,PBS_EVENTCLASS_SERVER,id,log_buffer);
+
+      /* SUCCESS */
 
       return(1);
       }
@@ -1680,6 +1691,8 @@ static u_long setpbsserver(
 
   if (ipaddr != 0)
     tinsert(ipaddr,&okclients);
+
+  /* SUCCESS */
 
   return(1);
   }  /* END setpbsserver() */
@@ -4687,6 +4700,11 @@ int rm_request(
                 );
 
               MUStrNCat(&BPtr,&BSpace,tmpLine);
+
+              if (MOMIsLocked == 1)
+                {
+                MUStrNCat(&BPtr,&BSpace,"MemLocked:              TRUE\n");
+                }
               }
 
             if ((verbositylevel >= 1) && (pbs_tcp_timeout > 0))
@@ -5934,6 +5952,9 @@ void usage(
   }  /* END usage() */
 
 
+
+
+
 /*
  * MOMFindMyExe - attempt to find my running executable file.
  *                returns alloc'd memory that is never freed.
@@ -5955,22 +5976,31 @@ char *MOMFindMyExe(
   link = calloc(MAXPATHLEN+1,sizeof(char));
 
   if (link == NULL)
-    return NULL;
+    {
+    return(NULL);
+    }
 
   /* Linux has a handy symlink, so try that first */
 
   if (readlink("/proc/self/exe",link,MAXPATHLEN) > 0)
+    {
     if (link[0] != '\0' && link[0] != '[')
-      return link;
+      {
+      return(link);
+      }
+    }
 
   /* if argv0 has a /, then it should exist relative to $PWD */
 
   for (p = argv0; *p; p++)
+    {
     if (*p == '/')
       {
       has_slash = 1;
+
       break;
       }
+    }
 
   if (has_slash)
     {
@@ -5985,7 +6015,8 @@ char *MOMFindMyExe(
       if (getcwd(link,MAXPATHLEN) == NULL)
         {
         free(link);
-        return NULL;
+
+        return(NULL);
         }
       
       strcat(link,"/");
@@ -5995,20 +6026,23 @@ char *MOMFindMyExe(
     if (realpath(link,resolvedpath) == NULL)
       {
       free(link);
-      return NULL;
+
+      return(NULL);
       }
     
     strcpy(link,resolvedpath);
 
     if (access(link,X_OK) == 0)
-      return link;
+      {
+      return(link);
+      }
 
-    return NULL;
+    return(NULL);
     }
 
   /* argv0 doesn't have a /, so search $PATH */
 
-  path = getenv ("PATH");
+  path = getenv("PATH");
 
   if (path != NULL)
     {
@@ -6017,9 +6051,11 @@ char *MOMFindMyExe(
       char *q;
       size_t p_len;
 
-      for (q = p; *q; q++)
+      for (q = p;*q;q++)
+        {
         if (*q == ':')
           break;
+        }
 
       p_len = q - p;
       p_next = (*q == '\0' ? q : q + 1);
@@ -6033,7 +6069,8 @@ char *MOMFindMyExe(
         if (getcwd(link,MAXPATHLEN) == NULL)
           {
           free(link);
-          return NULL;
+
+          return(NULL);
           }
         
         strcat(link, "/");
@@ -6048,31 +6085,47 @@ char *MOMFindMyExe(
         }
 
       if (access(link,X_OK) == 0)
-        return link;
-      } /* END for (p = path; *p; p = p_next) */
+        {
+        return(link);
+        }
+      }  /* END for (p = path; *p; p = p_next) */
     }
 
-  return NULL;
-  } /* END MOMFindMyExe() */
+  return(NULL);
+  }  /* END MOMFindMyExe() */
+
+
+
+
 
 /*
  * MOMGetFileMtime - return the mtime of a file
  */
 
-time_t MOMGetFileMtime(const char *fpath)
+time_t MOMGetFileMtime(
+
+  const char *fpath)
+
   {
    struct stat sbuf;
    int ret;
    
    if ((fpath == NULL) || (*fpath == '\0'))
-     return 0;
+     {
+     return(0);
+     }
 
-   ret = stat(fpath, &sbuf);
+   ret = stat(fpath,&sbuf);
+
    if (ret == 0)
-     return sbuf.st_mtime;
+     {
+     return(sbuf.st_mtime);
+     }
 
-  return 0;
+  return(0);
   }  /* END MOMGetFileMtime */
+
+
 
 
 /*
@@ -6086,8 +6139,10 @@ void MOMCheckRestart(void)
   time_t newmtime;
 
   if ((MOMConfigRestart <= 0) || (MOMExeTime <= 0))
+    {
     return;
-  
+    }
+
   newmtime = MOMGetFileMtime(MOMExePath);
 
   if ((newmtime > 0) && (newmtime != MOMExeTime))
@@ -6177,7 +6232,6 @@ int main(
 
 #ifdef _POSIX_MEMLOCK
   int           mlockall_return;
-  int           MOMISLOCKED = 0;
 #endif /* _POSIX_MEMLOCK */
 
   strcpy(pbs_current_user,"pbs_mom");
@@ -7432,7 +7486,7 @@ int main(
 #ifdef _POSIX_MEMLOCK
     /* call mlockall() only 1 time, since it seems to leak mem */
 
-    if (MOMISLOCKED == 0)
+    if (MOMIsLocked == 0)
       {
       /* make sure pbs_mom stays in RAM and doesn't get paged out */
 
@@ -7446,7 +7500,7 @@ int main(
         exit(1);
         }
 
-      MOMISLOCKED = 1;
+      MOMIsLocked = 1;
       }
 #endif /* _POSIX_MEMLOCK */
     }  /* END for (;mom_run_state == MOM_RUN_STATE_RUNNING;) */
