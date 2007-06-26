@@ -3658,8 +3658,10 @@ int start_process(
 
       if ((i == sizeof(sjr)) && (sjr.sj_code == 0) && !gotsuccess)
         {
-        gotsuccess=1;
+        gotsuccess = 1;
+
         write(parent_write,&sjr,sizeof(sjr));
+
         continue;
         }
 

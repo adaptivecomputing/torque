@@ -112,6 +112,7 @@ extern int	 termin_child;
 
 extern int       LOGLEVEL;
 
+extern char     *AllocParCmd;
 
 
 /* Private variables */
@@ -120,6 +121,8 @@ extern int       LOGLEVEL;
  * set_job - set up a new job session
  * 	Set session id and whatever else is required on this machine
  *	to create a new job.
+ *
+ * NOTE:  This routine is run as {root,user}??? 
  *
  *      Return: session/job id or if error:
  *		-1 - if setsid() fails
@@ -132,10 +135,27 @@ int set_job(
   struct startjob_rtn *sjr)   /* I (modified) */
 
   {
+  char *ptr;
+
   sjr->sj_session = setsid();
 
+  if ((ptr = get_job_envvar(pjob,"BATCH_PAR")) != NULL)
+    {
+    char  tmpLine[1024];
+
+    if (AllocParCmd == NULL)
+      AllocParCmd = strdup("apbasil");
+
+    snprintf(tmpLine,sizeof(tmpLine),"%s %s %ld",
+      AllocParCmd,
+      ptr,
+      (long)sjr->sj_session);
+
+    system(tmpLine); 
+    }
+
   return(sjr->sj_session);
-  }
+  }  /* END set_job() */
 
 
 

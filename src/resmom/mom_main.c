@@ -220,6 +220,9 @@ time_t		last_log_check;
 char           *nodefile_suffix = NULL;  /* suffix to append to each host listed in job host file */
 char           *TNoSpoolDirList[TMAX_NSDCOUNT];
 
+char           *AllocParCmd = NULL;  /* (alloc) */
+
+
 /* externs */
 
 extern int      SStream[];   /* connection to pbs_server... */
@@ -302,6 +305,7 @@ static unsigned long setrcpcmd(char *);
 static unsigned long setpbsclient(char *);
 static unsigned long configversion(char *);
 static unsigned long cputmult(char *);
+static unsigned long setallocparcmd(char *);
 static unsigned long setidealload(char *);
 static unsigned long setignwalltime(char *);
 static unsigned long setlogevent(char *);
@@ -338,6 +342,7 @@ static struct specials {
   char            *name;
   u_long          (*handler)();
   } special[] = {
+    { "alloc_par_cmd",       setallocparcmd },
     { "auto_ideal_load",     setautoidealload },
     { "auto_max_load",       setautomaxload },
     { "xauthpath",           setxauthpath },
@@ -2400,6 +2405,29 @@ static unsigned long setautoidealload(
 
   return(1);
   }  /* END setautoidealload() */
+
+
+
+
+
+static unsigned long setallocparcmd(
+
+  char *value)  /* I */
+
+  {
+  log_record(
+    PBSEVENT_SYSTEM,
+    PBS_EVENTCLASS_SERVER,
+    "allocparcmd",
+    value);
+
+  AllocParCmd = strdup(value);
+
+  return(1);
+  }  /* END setallocparcmd() */
+
+
+
 
 
 static unsigned long setautomaxload(
