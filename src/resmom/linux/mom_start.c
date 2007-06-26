@@ -139,16 +139,17 @@ int set_job(
 
   sjr->sj_session = setsid();
 
-  if ((ptr = get_job_envvar(pjob,"BATCH_PAR")) != NULL)
+  if ((ptr = get_job_envvar(pjob,"BATCH_PARTITION_ID")) != NULL)
     {
     char  tmpLine[1024];
 
     if (AllocParCmd == NULL)
-      AllocParCmd = strdup("apbasil");
+      AllocParCmd = strdup("partition.create.xt4.pl");
 
-    snprintf(tmpLine,sizeof(tmpLine),"%s %s %ld",
+    snprintf(tmpLine,sizeof(tmpLine),"%s --confirm -p %s -j %s -a %ld",
       AllocParCmd,
       ptr,
+      pjob->ji_qs.ji_jobid,
       (long)sjr->sj_session);
 
     system(tmpLine); 
