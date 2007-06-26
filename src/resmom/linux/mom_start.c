@@ -135,6 +135,8 @@ int set_job(
   struct startjob_rtn *sjr)   /* I (modified) */
 
   {
+  char id[] = "set_job";
+
   char *ptr;
 
   sjr->sj_session = setsid();
@@ -151,6 +153,12 @@ int set_job(
       ptr,
       pjob->ji_qs.ji_jobid,
       (long)sjr->sj_session);
+
+    log_record(
+      PBSEVENT_SYSTEM,
+      PBS_EVENTCLASS_SERVER,
+      id,
+      tmpLine);
 
     system(tmpLine); 
     }

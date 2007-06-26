@@ -98,12 +98,14 @@
 int check_job_name(
 
   char *name,
-  int   chk_alpha)
+  int   chk_alpha)  /* I (boolean) */
 
   {
   if ((strlen(name) > (size_t)PBS_MAXJOBNAMELEN) ||
      ((chk_alpha == 1) && (isalpha((int)*name) == 0)))
     {
+    /* FAILURE */
+
     return(-1);
     }
 
@@ -111,6 +113,8 @@ int check_job_name(
     {
     if (isgraph((int)*name++) == 0)	/* disallow any non-printing */
       {
+      /* FAILURE */
+
       return(-1);
       }
     }

@@ -2877,7 +2877,10 @@ int process_opts(
           {
           N_opt = passet;
 
-          if (check_job_name(optarg,1) == 0) 
+          /* NOTE:  did enforce alpha start previously - relax this constraint
+                    allowing numeric job names (CRI - 6/26/07) */
+
+          if (check_job_name(optarg,0) == 0) 
             {
             set_attr(&attrib,ATTR_N,optarg);
             } 
