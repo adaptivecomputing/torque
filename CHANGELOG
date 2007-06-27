@@ -39,6 +39,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature
   f - new queue attribute disallowed_types, currently recognized types:
       interactive, batch, rerunable, and nonrerunable
   e - create modified $PBS_NODEFILE file for BProc systems
+  b - fix sum buffer length checks in pbs_mom
 
 2.1.8
   b - stop possible memory corruption with an invalid request type (StockholmU)

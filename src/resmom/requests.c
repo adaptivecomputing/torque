@@ -3199,9 +3199,9 @@ error:
         /* move to "undelivered" directory         */
 
         strncpy(localname,path_spool,sizeof(localname));
-        strncat(localname,pair->fp_local,sizeof(localname));
+        strncat(localname,pair->fp_local,(sizeof(localname) - strlen(localname) - 1));
         strncpy(undelname,path_undeliv,sizeof(undelname));
-        strncat(undelname,pair->fp_local,sizeof(undelname));
+        strncat(undelname,pair->fp_local,(sizeof(undelname) - strlen(undelname) - 1));
 
         if (rename(localname,undelname) == 0) 
           {

@@ -1103,7 +1103,7 @@ static char *reqgres(
       cp->c_name,
       cp->c_u.c_value);
 
-    strncat(GResBuf,tmpLine,1024);
+    strncat(GResBuf,tmpLine,(sizeof(GResBuf) - strlen(GResBuf) - 1));
     }  /* END for (cp) */
 
   return(GResBuf);

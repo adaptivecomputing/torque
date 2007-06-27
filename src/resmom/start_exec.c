@@ -5299,8 +5299,8 @@ char *std_file_name(
 
 #endif	/* NO_SPOOL_OUTPUT */
 
-    strncat(path,pjob->ji_qs.ji_fileprefix,sizeof(path));
-    strncat(path,suffix,sizeof(path));
+    strncat(path,pjob->ji_qs.ji_fileprefix,(sizeof(path) - strlen(path) - 1));
+    strncat(path,suffix,(sizeof(path) - strlen(path) - 1));
 
     if (LOGLEVEL >= 10)
       {
