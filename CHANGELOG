@@ -40,6 +40,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature
       interactive, batch, rerunable, and nonrerunable
   e - create modified $PBS_NODEFILE file for BProc systems
   b - fix sum buffer length checks in pbs_mom
+  b - fix memory leak in fifo scheduler
 
 2.1.8
   b - stop possible memory corruption with an invalid request type (StockholmU)
