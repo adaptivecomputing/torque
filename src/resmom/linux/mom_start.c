@@ -146,7 +146,7 @@ int set_job(
     char  tmpLine[1024];
 
     if (AllocParCmd == NULL)
-      AllocParCmd = strdup("partition.create.xt4.pl");
+      AllocParCmd = strdup("/opt/moab/default/tools/partition.create.xt4.pl");
 
     snprintf(tmpLine,sizeof(tmpLine),"%s --confirm -p %s -j %s -a %ld",
       AllocParCmd,
