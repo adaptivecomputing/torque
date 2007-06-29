@@ -986,6 +986,15 @@ static int process_host_name_part(
 
     totalipcount = 0;
 
+    if (hsuffix != NULL)
+      {
+      /* NOTE:  extract outside of loop because hname will be freed */
+
+      snprintf(tmpHName,sizeof(tmpHName),"%s%s",
+        hname,
+        hsuffix);
+      }
+
     for (hindex = 0;hindex < 2;hindex++)
       {
       if (hindex == 0)
@@ -994,10 +1003,6 @@ static int process_host_name_part(
         }
       else if (hsuffix != NULL) 
         {
-        snprintf(tmpHName,sizeof(tmpHName),"%s%s",
-          hname,
-          hsuffix);  
-
         hptr = tmpHName;
         }     
       else
