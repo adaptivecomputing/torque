@@ -157,6 +157,7 @@ extern	time_t		time_now;
 extern	unsigned int	pbs_rm_port;
 extern	u_long		localaddr;
 extern  char            *nodefile_suffix;
+extern  char            *submithost_suffix;
 
 extern int LOGLEVEL;
 extern long TJobStartBlockTime;
@@ -2503,11 +2504,11 @@ int TMomFinalizeChild(
 
     phost++;
 
-    if (nodefile_suffix != NULL)
+    if (submithost_suffix != NULL)
       {
       snprintf(qsubhostname,sizeof(qsubhostname),"%s%s",
         phost,
-        nodefile_suffix);
+        submithost_suffix);
       }
     else
       {

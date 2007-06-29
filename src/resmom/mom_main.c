@@ -217,7 +217,8 @@ long		log_file_max_size = 0;
 long		log_file_roll_depth = 1;
 
 time_t		last_log_check;
-char           *nodefile_suffix = NULL;  /* suffix to append to each host listed in job host file */
+char           *nodefile_suffix = NULL;    /* suffix to append to each host listed in job host file */
+char           *submithost_suffix = NULL;  /* suffix to append to submithost for interactive jobs */
 char           *TNoSpoolDirList[TMAX_NSDCOUNT];
 
 char           *AllocParCmd = NULL;  /* (alloc) */
@@ -2766,7 +2767,16 @@ static unsigned long setnodefilesuffix(
   char *value)  /* I */
 
   {
-  nodefile_suffix = strdup(value);
+  char *ptr;
+
+  ptr = strtok(value,",");
+
+  nodefile_suffix = strdup(ptr);
+
+  ptr = strtok(NULL,",");
+
+  if (ptr != NULL)
+    submithost_suffix = strdup(ptr);
 
   /* SUCCESS */
 
@@ -4660,6 +4670,15 @@ int rm_request(
               MUStrNCat(&BPtr,&BSpace,tmpLine);
               }
 
+            if (verbositylevel >= 3)
+              {
+#if SYSLOG
+              MUStrNCat(&BPtr,&BSpace,"NOTE:  syslog enabled\n");
+#else /* SYSLOG */
+              MUStrNCat(&BPtr,&BSpace,"NOTE:  syslog not enabled (use 'configure --enable-syslog' to enable)\n");
+#endif /* SYSLOG */
+              }  
+ 
             sprintf(tmpLine,"MOM active:             %ld seconds\n",
               (long)Now - MOMStartTime);
 

@@ -173,6 +173,8 @@ extern void ping_nodes(struct work_task *);
 
 
 
+/* us IP address to look up matchin node structure */
+
 struct pbsnode *PGetNodeFromAddr(
 
   pbs_net_t addr)  /* I */
@@ -749,7 +751,7 @@ static void initialize_pbsnode(
 
   pnode->nd_name    = pname;
   pnode->nd_stream  = -1;
-  pnode->nd_addrs   = pul;	    /*list of host byte order */
+  pnode->nd_addrs   = pul;       /* list of host byte order */
   pnode->nd_ntype   = ntype;
   pnode->nd_nsn     = 0;
   pnode->nd_nsnfree = 0;
@@ -900,8 +902,16 @@ static int process_host_name_part(
   {
   struct hostent *hp;
   struct in_addr  addr;
-  char		 *phostname;     /*caller supplied hostname   */
-  int		  len, i;
+  char		 *phostname;     /* caller supplied hostname   */
+  int             ipcount;
+  int		  len, totalipcount;
+
+  char            tmpHName[1024];
+  char           *hptr;
+  char           *hsuffix;
+
+  int             hindex;
+  int             size;
 
   len = strlen(objname);
 
@@ -912,12 +922,14 @@ static int process_host_name_part(
 
   phostname = strdup(objname);
 
-  if (phostname == NULL)
+  if ((phostname == NULL) || (pul == NULL))
     {
     return(PBSE_SYSTEM);
     }
 
   *ntype = NTYPE_CLUSTER;
+
+  *pul = NULL;
 
   if ((len >= 3) && !strcmp(&phostname[len - 3],":ts")) 
     {
@@ -958,7 +970,7 @@ static int process_host_name_part(
       return(PBSE_UNKNODE);
       }
 	
-    hname = (char *)strdup(hp->h_name); /*canonical name in theory*/
+    hname = (char *)strdup(hp->h_name); /* canonical name in theory */
 
     if (hname == NULL) 
       {
@@ -967,43 +979,81 @@ static int process_host_name_part(
       return(PBSE_SYSTEM);
       }
 
-    if ((hp = gethostbyname(hname)) == NULL) 
+    hsuffix = getenv("PBSHOSTSUFFIX");
+
+    totalipcount = 0;
+
+    for (hindex = 0;hindex < 2;hindex++)
       {
-      sprintf(log_buffer,"bad cname %s, h_errno=%d errno=%d",
-        hname,
-        h_errno,errno);
+      if (hindex == 0)
+        {
+        hptr = hname;
+        }
+      else if (hsuffix != NULL) 
+        {
+        snprintf(tmpHName,sizeof(tmpHName),"%s%s",
+          hname,
+          hsuffix);  
+
+        hptr = tmpHName;
+        }     
+      else
+        {
+        continue;
+        }
+
+      if ((hp = gethostbyname(hptr)) == NULL) 
+        {
+        sprintf(log_buffer,"bad cname %s, h_errno=%d errno=%d",
+          hname,
+          h_errno,
+          errno);
+
+        free(hname);
+
+        free(phostname);
+
+        return(PBSE_UNKNODE);
+        }
 
       free(hname);
+      }  /* END if (hp->h_addr_list[1] == NULL) */
 
-      free(phostname);
+    /* count host ipaddrs */
 
-      return(PBSE_UNKNODE);
+    for (ipcount = 0;hp->h_addr_list[ipcount];ipcount++); 
+
+    if (*pul == NULL)
+      {
+      size = sizeof(u_long) * (ipcount + 1);
+
+      *pul = (u_long *)malloc(size);  /* zero-terminate list */
+      }
+    else
+      {
+      size += sizeof(u_long) * ipcount;
+
+      *pul = (u_long *)realloc(*pul,size);
       }
 
-    free(hname);
-    }  /* END if (hp->h_addr_list[1] == NULL) */
+    if (*pul == NULL) 
+      {
+      free(phostname);
+      }
+    
+    for (ipcount = 0;hp->h_addr_list[ipcount];ipcount++,totalipcount++) 
+      {
+      u_long ipaddr;
 
-  for (i = 0;hp->h_addr_list[i];i++);	              /* count ipaddrs */
+      memcpy((char *)&addr,hp->h_addr_list[ipcount],hp->h_length);
 
-  *pul = (u_long *)malloc(sizeof(u_long) * (i + 1));  /*null end it*/
+      ipaddr = ntohl(addr.s_addr);
 
-  if (*pul == NULL) 
-    {
-    free(phostname);
-    }
+      (*pul)[totalipcount] = ipaddr;
+      }
 
-  for (i = 0;hp->h_addr_list[i];i++) 
-    {
-    u_long	ipaddr;
-
-    memcpy((char *)&addr,hp->h_addr_list[i],hp->h_length);
-
-    ipaddr = ntohl(addr.s_addr);
-
-    (*pul)[i] = ipaddr;
-    }
-
-  (*pul)[i] = 0;			/* null term array ip addrs */
+    (*pul)[totalipcount] = 0;		/* zero-term array ip addrs */
+    }  /* END for (hindex) */
 
   *pname = phostname;			/* return node name	    */
 
@@ -1259,9 +1309,9 @@ int create_pbs_node(
   {
   struct pbsnode  *pnode = NULL;
   struct pbsnode **tmpndlist;
-  int              ntype;	/*node type; time-shared, not */
-  char            *pname;	/*node name w/o any :ts       */
-  u_long          *pul;		/*0 terminated host adrs array*/
+  int              ntype;	/* node type; time-shared, not */
+  char            *pname;	/* node name w/o any :ts       */
+  u_long          *pul;		/* 0 terminated host adrs array*/
   int              rc;
   int              iht;
 

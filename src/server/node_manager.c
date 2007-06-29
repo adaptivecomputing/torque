@@ -908,7 +908,9 @@ void send_cluster_addrs(
     {
     /* new nodes are still being added... don't bother yet or start over */
 
-    DBPRT(("%s: not sending addrs yet, %d tasks exist\n",id,num_addrnote_tasks));
+    DBPRT(("%s: not sending addrs yet, %d tasks exist\n",
+      id,
+      num_addrnote_tasks));
 
     startcount = 0;
 
@@ -930,6 +932,7 @@ void send_cluster_addrs(
      * otherwise we'll get bogged down.  The skipped nodes will get the
      * updated info when they reconnect. 
      */
+
     if ((np == NULL) || (np->nd_state & INUSE_DELETED) || (np->nd_stream < 0))
       continue;
 
@@ -988,17 +991,25 @@ void send_cluster_addrs(
   else
     {
     /* all nodes have new addr list, so clear the new nodes */
+
     while ((nnew = (new_node *)GET_NEXT(svr_newnodes)) != NULL)
       {
-      np=find_nodebyname(nnew->nn_name);
+      np = find_nodebyname(nnew->nn_name);
+
       if (np != NULL)
         {
         np->nd_state &= ~INUSE_OFFLINE;
         }
+
       delete_link(&nnew->nn_link);
       }
     }
-  } /* END send_cluster_addrs */
+  }     /* END send_cluster_addrs */
+
+
+
+
+
 
 /*
  *      setup_notification -  Sets up the  mechanism for notifying
@@ -1558,6 +1569,7 @@ int add_cluster_addrs(
     for (j = 0;np->nd_addrs[j];j++)
       {   
       u_long ipaddr = np->nd_addrs[j];                                                             
+
       if (LOGLEVEL >= 8)
         {
         sprintf(log_buffer,"adding node[%d] interface[%d] %ld.%ld.%ld.%ld to hello response",
