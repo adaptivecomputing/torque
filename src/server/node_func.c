@@ -943,6 +943,7 @@ static int process_host_name_part(
       objname);
 
     free(phostname);
+    phostname = NULL;
 
     return(PBSE_UNKNODE);
     }
@@ -966,6 +967,7 @@ static int process_host_name_part(
         errno);
 
       free(phostname);
+      phostname = NULL;
 
       return(PBSE_UNKNODE);
       }
@@ -975,6 +977,7 @@ static int process_host_name_part(
     if (hname == NULL) 
       {
       free(phostname);
+      phostname = NULL;
 
       return(PBSE_SYSTEM);
       }
@@ -1005,55 +1008,58 @@ static int process_host_name_part(
       if ((hp = gethostbyname(hptr)) == NULL) 
         {
         sprintf(log_buffer,"bad cname %s, h_errno=%d errno=%d",
-          hname,
+          hptr,
           h_errno,
           errno);
 
         free(hname);
+        hname = NULL;
 
         free(phostname);
+        phostname = NULL;
 
         return(PBSE_UNKNODE);
         }
 
       free(hname);
-      }  /* END if (hp->h_addr_list[1] == NULL) */
 
-    /* count host ipaddrs */
+      /* count host ipaddrs */
 
-    for (ipcount = 0;hp->h_addr_list[ipcount];ipcount++); 
+      for (ipcount = 0;hp->h_addr_list[ipcount];ipcount++); 
 
-    if (*pul == NULL)
-      {
-      size = sizeof(u_long) * (ipcount + 1);
+      if (*pul == NULL)
+        {
+        size = sizeof(u_long) * (ipcount + 1);
 
-      *pul = (u_long *)malloc(size);  /* zero-terminate list */
-      }
-    else
-      {
-      size += sizeof(u_long) * ipcount;
+        *pul = (u_long *)malloc(size);  /* zero-terminate list */
+        }
+      else
+        {
+        size += sizeof(u_long) * ipcount;
 
-      *pul = (u_long *)realloc(*pul,size);
-      }
+        *pul = (u_long *)realloc(*pul,size);
+        }
 
-    if (*pul == NULL) 
-      {
-      free(phostname);
-      }
+      if (*pul == NULL) 
+        {
+        free(phostname);
+        phostname = NULL;
+        }
     
-    for (ipcount = 0;hp->h_addr_list[ipcount];ipcount++,totalipcount++) 
-      {
-      u_long ipaddr;
+      for (ipcount = 0;hp->h_addr_list[ipcount];ipcount++,totalipcount++) 
+        {
+        u_long ipaddr;
 
-      memcpy((char *)&addr,hp->h_addr_list[ipcount],hp->h_length);
+        memcpy((char *)&addr,hp->h_addr_list[ipcount],hp->h_length);
 
-      ipaddr = ntohl(addr.s_addr);
+        ipaddr = ntohl(addr.s_addr);
 
-      (*pul)[totalipcount] = ipaddr;
-      }
+        (*pul)[totalipcount] = ipaddr;
+        }
 
-    (*pul)[totalipcount] = 0;		/* zero-term array ip addrs */
-    }  /* END for (hindex) */
+      (*pul)[totalipcount] = 0;		/* zero-term array ip addrs */
+      }  /* END for (hindex) */
+    }    /* END if (hp->h_addr_list[1] == NULL) */
 
   *pname = phostname;			/* return node name	    */
 
