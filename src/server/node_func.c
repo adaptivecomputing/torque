@@ -988,11 +988,29 @@ static int process_host_name_part(
 
     if (hsuffix != NULL)
       {
+      char *ptr;
+
       /* NOTE:  extract outside of loop because hname will be freed */
 
-      snprintf(tmpHName,sizeof(tmpHName),"%s%s",
-        hname,
-        hsuffix);
+      ptr = strchr(hname,'.');
+
+      if (ptr != NULL)
+        {
+        *ptr = '\0';
+
+        snprintf(tmpHName,sizeof(tmpHName),"%s%s.%s",
+          hname,
+          hsuffix,
+          ptr + 1);
+
+        *ptr = '.';
+        }
+      else
+        {
+        snprintf(tmpHName,sizeof(tmpHName),"%s%s",
+          hname,
+          hsuffix);
+        }
       }
 
     for (hindex = 0;hindex < 2;hindex++)
