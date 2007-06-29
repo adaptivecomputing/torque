@@ -1035,16 +1035,26 @@ static int process_host_name_part(
           h_errno,
           errno);
 
-        free(hname);
-        hname = NULL;
+        if (hname != NULL)
+          {
+          free(hname);
+          hname = NULL;
+          }
 
-        free(phostname);
-        phostname = NULL;
+        if (phostname != NULL)
+          {
+          free(phostname);
+          phostname = NULL;
+          }
 
         return(PBSE_UNKNODE);
         }
 
-      free(hname);
+      if (hname != NULL)
+        {
+        free(hname);
+        hname = NULL;
+        }
 
       /* count host ipaddrs */
 
@@ -1065,8 +1075,11 @@ static int process_host_name_part(
 
       if (*pul == NULL) 
         {
-        free(phostname);
-        phostname = NULL;
+        if (phostname != NULL)
+          {
+          free(phostname);
+          phostname = NULL;
+          }
         }
     
       for (ipcount = 0;hp->h_addr_list[ipcount];ipcount++,totalipcount++) 
