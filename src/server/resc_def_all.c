@@ -564,11 +564,91 @@ resource_def svr_resc_def_const[] = {
 	ATR_TYPE_STR
     },
 
-    /* Cray CPA partitions */
+    /* Cray XT */
     { "size", decode_l, encode_l, set_l, comp_l, free_null, NULL_FUNC, READ_WRITE | ATR_DFLAG_MOM, ATR_TYPE_LONG },
     { "cpapartitionid", decode_str, encode_str, set_str, comp_str, free_str, NULL_FUNC, READ_WRITE, ATR_TYPE_STR },
     { "cpaalloccookie", decode_str, encode_str, set_str, comp_str, free_str, NULL_FUNC, READ_WRITE, ATR_TYPE_STR },
     { "cpaadmincookie", decode_str, encode_str, set_str, comp_str, free_str, NULL_FUNC, READ_WRITE, ATR_TYPE_STR },
+    {   "mppwidth",     /* Number mpp PEs (processing elements) */
+        decode_l,    /* PE = ALPS launched binary invocation on compute node */
+        encode_l,
+        set_l,
+        comp_l,
+        free_null,
+        NULL_FUNC,
+        READ_WRITE,
+        ATR_TYPE_LONG
+    },
+    {   "mppdepth",    /* Number of threads per PE */
+        decode_l,
+        encode_l,
+        set_l,
+        comp_l,
+        free_null,
+        NULL_FUNC,
+        READ_WRITE,
+        ATR_TYPE_LONG
+    },
+    {   "mppnppn",    /* number of PEs per Node */
+        decode_l,     /* applies to multi-core systems only */
+        encode_l,
+        set_l,
+        comp_l,
+        free_null,
+        NULL_FUNC,
+        READ_WRITE,
+        ATR_TYPE_LONG
+    },
+    {   "mppnodes",    /* node list (can be of the form 1,3-7) */
+        decode_str,
+        encode_str,
+        set_str,
+        comp_str,
+        free_str,
+        NULL_FUNC,
+        READ_WRITE,
+        ATR_TYPE_STR
+    },
+    {   "mpplabels",    /* compute node features */
+        decode_str,
+        encode_str,
+        set_str,
+        comp_str,
+        free_str,
+        NULL_FUNC,
+        READ_WRITE,
+        ATR_TYPE_STR
+    },
+    {   "mpptimeMPP",   /* NYI */
+        decode_time,
+        encode_time,
+        set_l,
+        comp_l,
+        free_null,
+        NULL_FUNC,
+        READ_WRITE,
+        ATR_TYPE_LONG
+    },
+    {   "mpphostMPP",
+        decode_str,
+        encode_str,
+        set_str,
+        comp_str,
+        free_str,
+        NULL_FUNC,
+        READ_WRITE,
+        ATR_TYPE_STR
+    },
+    {   "mpparchMPP",    /* node architecture (XT3, XT4, etc.) */
+        decode_str,
+        encode_str,
+        set_str,
+        comp_str,
+        free_str,
+        NULL_FUNC,
+        READ_WRITE,
+        ATR_TYPE_STR
+    },
 
     /* support external resource manager extensions */
 
