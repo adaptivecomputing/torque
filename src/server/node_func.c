@@ -911,7 +911,7 @@ static int process_host_name_part(
   char           *hsuffix;
 
   int             hindex;
-  int             size;
+  int             size = 0;
 
   len = strlen(objname);
 
