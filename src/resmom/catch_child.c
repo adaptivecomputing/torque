@@ -873,7 +873,9 @@ void post_epilogue(
     PBS_EVENTCLASS_JOB,
     pjob->ji_qs.ji_jobid, 
     "Obit sent");
-}
+  }
+
+
 
 
 
@@ -882,7 +884,8 @@ static void preobit_reply(
   int sock)
 
   {
-  char id[]="preobit_reply";
+  char id[] = "preobit_reply";
+
   pid_t cpid;
   job *pjob;
   int irtn;
@@ -892,13 +895,13 @@ static void preobit_reply(
   int  runepilogue = 0;
   int  deletejob = 0;
 
-  /*struct batch_status *bsp = NULL;*/
+  /* struct batch_status *bsp = NULL; */
 
-      log_record(
-        PBSEVENT_DEBUG,
-        PBS_EVENTCLASS_SERVER,
-        id,
-        "top of preobit_reply");
+  log_record(
+    PBSEVENT_DEBUG,
+    PBS_EVENTCLASS_SERVER,
+    id,
+    "top of preobit_reply");
 
   /* read and decode the reply */
 
@@ -921,24 +924,24 @@ static void preobit_reply(
     preq->rq_reply.brp_code = -1;
     }
 
-log_record(
-  PBSEVENT_DEBUG,
-  PBS_EVENTCLASS_SERVER,
-  id,
-  "decode_DIS_Status worked, top of while loop");
-
+  log_record(
+    PBSEVENT_DEBUG,
+    PBS_EVENTCLASS_SERVER,
+    id,
+    "decode_DIS_Status worked, top of while loop");
 
   /* find the job that triggered this req */
+
   pjob = (job *)GET_NEXT(svr_alljobs);
 
   while (pjob != NULL) 
     {
-
     if ((pjob->ji_qs.ji_substate == JOB_SUBSTATE_PREOBIT) &&
         (pjob->ji_momhandle == sock)) 
       {
       break;
       }
+
     pjob = (job *)GET_NEXT(pjob->ji_alljobs);
     }
 
@@ -962,10 +965,11 @@ log_record(
     case PBSE_UNKJOBID:
 
       /* this is the simple case of the job being purged from the server */
+
       sprintf(log_buffer,
         "preobit_reply, unknown on server, deleting locally");
 
-      deletejob=1;
+      deletejob = 1;
 
       break;  /* not reached */
 
@@ -983,7 +987,8 @@ log_record(
         }
       else
         {
-        sprintf(log_buffer,"BUG: preq->rq_reply.brp_choice==%d",preq->rq_reply.brp_choice);
+        sprintf(log_buffer,"BUG: preq->rq_reply.brp_choice==%d",
+          preq->rq_reply.brp_choice);
 
         break;
         }
@@ -1010,13 +1015,19 @@ log_record(
         {
         if (!strcmp(sattrl->al_name,ATTR_exechost))
           {
-          runepilogue=1;
+          runepilogue = 1;
+
           if (strncmp(sattrl->al_value,pjob->ji_hosts[0].hn_host,strlen(pjob->ji_hosts[0].hn_host)))
             {
             /* the job was re-run elsewhere */
-            sprintf(log_buffer,"first host DOES NOT match me: %s!=%s",sattrl->al_value,pjob->ji_hosts[0].hn_host);
-            runepilogue=0;
-            deletejob=1;
+
+            sprintf(log_buffer,"first host DOES NOT match me: %s!=%s",
+              sattrl->al_value,
+              pjob->ji_hosts[0].hn_host);
+
+            runepilogue = 0;
+
+            deletejob = 1;
             }
             
           break;
@@ -1028,13 +1039,15 @@ log_record(
       break;
 
     default:
-        /* not sure what happened */
 
-        sprintf(log_buffer,
-          "something bad happened: %d",preq->rq_reply.brp_code);
+      /* not sure what happened */
+
+      sprintf(log_buffer,
+        "something bad happened: %d",
+        preq->rq_reply.brp_code);
 
       break;
-    } /* END switch (preq->rq_reply.brp_code) */
+    }  /* END switch (preq->rq_reply.brp_code) */
 
 
   /* we've inspected the server's response and can now act */
@@ -1082,7 +1095,6 @@ log_record(
 
     return;
     }
-
 
   /* at this point, server gave us a valid response so we can run epilogue */
 

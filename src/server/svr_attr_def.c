@@ -534,7 +534,18 @@ attribute_def svr_attr_def[] = {
 	ATR_TYPE_LONG,
 	PARENT_TYPE_SERVER
     },
-
+/* SRV_ATR_NodeSuffix */
+    {   ATTR_nodesuffix,        /* "node_suffix" */
+        decode_str,
+        encode_str,
+        set_str,
+        comp_str,
+        free_str,
+        NULL_FUNC,
+        MGR_ONLY_SET,
+        ATR_TYPE_STR,
+        PARENT_TYPE_SERVER
+    },
 /* SRV_ATR_JobStatRate */
     {	ATTR_jobstatrate,	/* "job_stat_rate" */
 	decode_l,

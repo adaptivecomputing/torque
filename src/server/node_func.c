@@ -908,7 +908,8 @@ static int process_host_name_part(
 
   char            tmpHName[1024];
   char           *hptr;
-  char           *hsuffix;
+
+  extern char    *NodeSuffix;
 
   int             hindex;
   int             size = 0;
@@ -982,11 +983,9 @@ static int process_host_name_part(
       return(PBSE_SYSTEM);
       }
 
-    hsuffix = getenv("PBSHOSTSUFFIX");
-
     totalipcount = 0;
 
-    if (hsuffix != NULL)
+    if (NodeSuffix != NULL)
       {
       char *ptr;
 
@@ -1000,7 +999,7 @@ static int process_host_name_part(
 
         snprintf(tmpHName,sizeof(tmpHName),"%s%s.%s",
           hname,
-          hsuffix,
+          NodeSuffix,
           ptr + 1);
 
         *ptr = '.';
@@ -1009,7 +1008,7 @@ static int process_host_name_part(
         {
         snprintf(tmpHName,sizeof(tmpHName),"%s%s",
           hname,
-          hsuffix);
+          NodeSuffix);
         }
       }
 
@@ -1019,7 +1018,7 @@ static int process_host_name_part(
         {
         hptr = hname;
         }
-      else if (hsuffix != NULL) 
+      else if (NodeSuffix != NULL) 
         {
         hptr = tmpHName;
         }     

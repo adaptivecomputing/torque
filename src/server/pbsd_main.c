@@ -179,7 +179,7 @@ unsigned int	pbs_mom_port = 0;
 unsigned int	pbs_rm_port;
 pbs_net_t	pbs_scheduler_addr;
 unsigned int	pbs_scheduler_port;
-extern pbs_net_t	pbs_server_addr;
+extern pbs_net_t pbs_server_addr;
 unsigned int	pbs_server_port_dis;
 int		queue_rank = 0;
 struct server	server;		/* the server structure */
@@ -206,7 +206,7 @@ int             TDoBackground = 1;  /* background daemon */
 int             TForceUpdate = 0;  /* (boolean) */
 
 char           *ProgName;
-
+char           *NodeSuffix = NULL;
 
 
 
@@ -1197,6 +1197,12 @@ int main(
 
     if (!getenv("PBSLOGLEVEL"))
       LOGLEVEL = server.sv_attr[(int)SRV_ATR_LogLevel].at_val.at_long;
+
+    if (((server.sv_attr[(int)SRV_ATR_NodeSuffix].at_flags & ATR_VFLAG_SET) != 0) &&
+         (server.sv_attr[(int)SRV_ATR_NodeSuffix].at_val.at_str != NULL))
+      {
+      NodeSuffix = strdup(server.sv_attr[(int)SRV_ATR_NodeSuffix].at_val.at_str);
+      }
 
     /* any running jobs need a status update? */ 
 

@@ -124,6 +124,7 @@ enum srv_atr {
 	SRV_ATR_Comment,
 	SRV_ATR_DefNode,
 	SRV_ATR_NodePack,              /* 30 */
+        SRV_ATR_NodeSuffix,
         SRV_ATR_JobStatRate,
 	SRV_ATR_PollJobs,
         SRV_ATR_LogLevel,
@@ -132,8 +133,8 @@ enum srv_atr {
         SRV_ATR_JobNanny,
         SRV_ATR_OwnerPurge,
         SRV_ATR_QCQLimits,
-        SRV_ATR_MomJobSync,
-        SRV_ATR_MailDomain,            /* 40 */
+        SRV_ATR_MomJobSync,            /* 40 */
+        SRV_ATR_MailDomain,            
 	SRV_ATR_version,
 	SRV_ATR_KillDelay,
 	SRV_ATR_AclLogic,
