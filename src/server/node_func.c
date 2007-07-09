@@ -909,7 +909,9 @@ static int process_host_name_part(
   char            tmpHName[1024];
   char           *hptr;
 
-  extern char    *NodeSuffix;
+  static int      NodeSuffixIsSet = 0;
+
+  static char    *NodeSuffix;
 
   int             hindex;
   int             size = 0;
@@ -984,6 +986,17 @@ static int process_host_name_part(
       }
 
     totalipcount = 0;
+
+    if (NodeSuffixIsSet == 0)
+      {
+      if (((server.sv_attr[(int)SRV_ATR_NodeSuffix].at_flags & ATR_VFLAG_SET) != 0) &&
+           (server.sv_attr[(int)SRV_ATR_NodeSuffix].at_val.at_str != NULL))
+        {
+        NodeSuffix = strdup(server.sv_attr[(int)SRV_ATR_NodeSuffix].at_val.at_str);
+        }
+
+      NodeSuffixIsSet = 1;
+      }
 
     if (NodeSuffix != NULL)
       {

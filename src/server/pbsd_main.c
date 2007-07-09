@@ -1198,12 +1198,6 @@ int main(
     if (!getenv("PBSLOGLEVEL"))
       LOGLEVEL = server.sv_attr[(int)SRV_ATR_LogLevel].at_val.at_long;
 
-    if (((server.sv_attr[(int)SRV_ATR_NodeSuffix].at_flags & ATR_VFLAG_SET) != 0) &&
-         (server.sv_attr[(int)SRV_ATR_NodeSuffix].at_val.at_str != NULL))
-      {
-      NodeSuffix = strdup(server.sv_attr[(int)SRV_ATR_NodeSuffix].at_val.at_str);
-      }
-
     /* any running jobs need a status update? */ 
 
     if (server.sv_attr[(int)SRV_ATR_PollJobs].at_val.at_long && 
