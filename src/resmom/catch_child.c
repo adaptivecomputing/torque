@@ -361,6 +361,15 @@ void scan_for_exiting()
   ** on whether this is the Mother Superior or not.
   */
 
+  if (LOGLEVEL >= 3)
+    {
+    log_record(
+      PBSEVENT_DEBUG,
+      PBS_EVENTCLASS_SERVER,
+      id,
+      "searching for exiting jobs");
+    }
+
   for (pjob = (job *)GET_NEXT(svr_alljobs);pjob != NULL;pjob = nxjob) 
     {
     nxjob = (job *)GET_NEXT(pjob->ji_alljobs);
@@ -398,7 +407,7 @@ void scan_for_exiting()
     cookie = pjob->ji_wattr[(int)JOB_ATR_Cookie].at_val.at_str;
 
     /*
-    ** Check each EXITED task.  They transistion to DEAD here.
+    ** Check each EXITED task.  They transition to DEAD here.
     */
 
     for (
@@ -415,6 +424,8 @@ void scan_for_exiting()
 
       if (ptask->ti_qs.ti_parenttask == TM_NULL_TASK) 
         {
+        /* master task is in state TI_STATE_EXITED */
+
         pjob->ji_qs.ji_un.ji_momt.ji_exitstat = ptask->ti_qs.ti_exitstat;
 
         LOG_EVENT(
@@ -423,14 +434,21 @@ void scan_for_exiting()
           pjob->ji_qs.ji_jobid, 
           "job was terminated");
 
-        DBPRT(("Terminating job, sending IM_KILL_JOB to sisters\n"));
+        if (LOGLEVEL >= 3)
+          {
+          LOG_EVENT(
+            PBSEVENT_JOB,
+            PBS_EVENTCLASS_JOB,
+            pjob->ji_qs.ji_jobid,
+            "master task has exited - sending kill job request to all sisters");
+          }
 
         if (send_sisters(pjob,IM_KILL_JOB) == 0) 
           {
           pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITING;
           job_save(pjob,SAVEJOB_QUICK);
           }
-        }
+        }    /* END for (ptask) */
 
       /*
       ** process any TM client obits waiting.
@@ -492,10 +510,16 @@ void scan_for_exiting()
 
       ptask->ti_fd = -1;
       ptask->ti_qs.ti_status = TI_STATE_DEAD;
- 
-      DBPRT(("%s: task is dead\n",
-        id));
- 
+
+      if (LOGLEVEL >= 3)
+        { 
+        LOG_EVENT(
+          PBSEVENT_JOB,
+          PBS_EVENTCLASS_JOB,
+          pjob->ji_qs.ji_jobid,
+          "task is dead");
+        }
+
       task_save(ptask);
       }  /* END for (ptask) */
 
@@ -505,7 +529,21 @@ void scan_for_exiting()
     */
 
     if (pjob->ji_qs.ji_substate != JOB_SUBSTATE_EXITING)
+      {
+      if (LOGLEVEL >= 3)
+        {
+        snprintf(log_buffer,1024,"job is in non-exiting substate %d, no obit sent at this time",
+          pjob->ji_qs.ji_substate);
+
+        LOG_EVENT(
+          PBSEVENT_JOB,
+          PBS_EVENTCLASS_JOB,
+          pjob->ji_qs.ji_jobid,
+          log_buffer);
+        }
+
       continue;
+      }
 
     /*
     ** Look to see if I am a regular sister.  If so,
@@ -531,16 +569,14 @@ void scan_for_exiting()
 
       if (stream == -1) 
         {
-        if (LOGLEVEL >= 6)
+        if (LOGLEVEL >= 3)
           {
           LOG_EVENT(
             PBSEVENT_JOB,
             PBS_EVENTCLASS_JOB,
             pjob->ji_qs.ji_jobid,
-            "connection to server lost - killing job");
+            "connection to server lost - killing job - no obit sent");
           }
-
-        DBPRT(("connection to server lost - killing job %s\n",pjob->ji_qs.ji_jobid));
 
         kill_job(pjob,SIGKILL);
 
@@ -555,7 +591,18 @@ void scan_for_exiting()
       */
 
       if (pjob->ji_obit == TM_NULL_EVENT)
+        {
+        if (LOGLEVEL >= 3)
+          {
+          LOG_EVENT(
+            PBSEVENT_JOB,
+            PBS_EVENTCLASS_JOB,
+            pjob->ji_qs.ji_jobid,
+            "obit method not specified for job - no obit sent");
+          }
+
         continue;
+        }
 
       /*
       ** Check to see if any tasks are running.
@@ -574,7 +621,18 @@ void scan_for_exiting()
       /* Still somebody there so don't send it yet.  */
 
       if (ptask != NULL)
+        {
+        if (LOGLEVEL >= 3)
+          {
+          LOG_EVENT(
+            PBSEVENT_JOB,
+            PBS_EVENTCLASS_JOB,
+            pjob->ji_qs.ji_jobid,
+            "one or more running tasks found - no obit sent");
+          }
+
         continue;
+        }
    
       if ((pjob->ji_wattr[(int)JOB_ATR_interactive].at_flags & ATR_VFLAG_SET) &&
            pjob->ji_wattr[(int)JOB_ATR_interactive].at_val.at_long) 
@@ -631,7 +689,8 @@ void scan_for_exiting()
           "all tasks complete - purging job as sister");
         }
 
-      DBPRT(("all tasks complete - purging job as sister (%s)\n",pjob->ji_qs.ji_jobid));
+      DBPRT(("all tasks complete - purging job as sister (%s)\n",
+        pjob->ji_qs.ji_jobid));
 
       job_purge(pjob);
 
@@ -763,12 +822,18 @@ void scan_for_exiting()
   }  /* END scan_for_exiting() */
 
 
+
+
+
+
 void post_epilogue(
 
   job *pjob,
   int  ev)
 
-{
+  {
+  char id[] = "post_epilogue";
+
   int sock;
   char *svrport;
   int port;
@@ -776,7 +841,17 @@ void post_epilogue(
   static char noconnect[] =
     "No contact with server at hostaddr %x, port %d, jobid %s errno %d";
 
+  if (LOGLEVEL >= 2)
+    {
+    LOG_EVENT(
+      PBSEVENT_DEBUG,
+      PBS_EVENTCLASS_REQUEST,
+      id,
+      "preparing obit message");
+    }
+
   /* open new connection */
+
   svrport = strchr(pjob->ji_wattr[(int)JOB_ATR_at_server].at_val.at_str,(int)':');
 
   if (svrport)
@@ -797,7 +872,7 @@ void post_epilogue(
     LOG_EVENT(
       PBSEVENT_DEBUG,
       PBS_EVENTCLASS_REQUEST,
-      "post_epilogue",
+      id,
       log_buffer);
 
     /*
@@ -845,8 +920,18 @@ void post_epilogue(
 
   preq = alloc_br(PBS_BATCH_JobObit);
 
-  if (preq==NULL)
+  if (preq == NULL)
+    {
+    sprintf(log_buffer,"cannot allocate memory for obit message");
+
+    LOG_EVENT(
+      PBSEVENT_DEBUG,
+      PBS_EVENTCLASS_REQUEST,
+      id,
+      log_buffer);
+
     return;
+    }
 
   strcpy(preq->rq_ind.rq_jobobit.rq_jid,pjob->ji_qs.ji_jobid);
 
@@ -864,7 +949,17 @@ void post_epilogue(
   if (encode_DIS_ReqHdr(sock,PBS_BATCH_JobObit,pbs_current_user) ||
       encode_DIS_JobObit(sock,preq) ||
       encode_DIS_ReqExtend(sock,0))
+    {
+    sprintf(log_buffer,"cannot create obit message");
+
+    LOG_EVENT(
+      PBSEVENT_DEBUG,
+      PBS_EVENTCLASS_REQUEST,
+      id,
+      log_buffer);
+
     return;
+    }
 
   DIS_tcp_wflush(sock);
 
@@ -872,12 +967,16 @@ void post_epilogue(
     PBSEVENT_DEBUG, 
     PBS_EVENTCLASS_JOB,
     pjob->ji_qs.ji_jobid, 
-    "Obit sent");
-  }
+    "Obit sent to server");
+
+  return;
+  }  /* END post_epilog() */
 
 
 
 
+
+/* Garrick, what does this routine do, and in what context?  What is the correct response if an EOF is detected? */
 
 static void preobit_reply(
 
@@ -905,7 +1004,6 @@ static void preobit_reply(
 
   /* read and decode the reply */
 
-
   preq = alloc_br(PBS_BATCH_StatusJob);
 
   CLEAR_HEAD(preq->rq_ind.rq_status.rq_attr);
@@ -915,20 +1013,26 @@ static void preobit_reply(
 
   if (irtn != 0) 
     {
-    sprintf(log_buffer,"decode_DIS_Status failed, rc=%d sock=%d",
+    sprintf(log_buffer,"DIS_reply_read/decode_DIS_replySvr failed, rc=%d sock=%d",
       irtn, 
       sock);
+
+    /* NOTE:  irtn=11 indicates EOF */
+
+    /* NOTE:  errno not set, thus log_err say success in spite of failure */
 
     log_err(errno,id,log_buffer);
 
     preq->rq_reply.brp_code = -1;
     }
-
-  log_record(
-    PBSEVENT_DEBUG,
-    PBS_EVENTCLASS_SERVER,
-    id,
-    "decode_DIS_Status worked, top of while loop");
+  else
+    {
+    log_record(
+      PBSEVENT_DEBUG,
+      PBS_EVENTCLASS_SERVER,
+      id,
+      "DIS_reply_read/decode_DIS_replySvr worked, top of while loop");
+    }
 
   /* find the job that triggered this req */
 
@@ -943,7 +1047,7 @@ static void preobit_reply(
       }
 
     pjob = (job *)GET_NEXT(pjob->ji_alljobs);
-    }
+    }  /* END while (pjob != NULL) */
 
   if (pjob == NULL)
     {
@@ -1038,6 +1142,13 @@ static void preobit_reply(
       
       break;
 
+    case -1:
+
+      sprintf(log_buffer,
+        "EOF? received attempting to process obit reply");
+
+      break;
+
     default:
 
       /* not sure what happened */
@@ -1048,7 +1159,6 @@ static void preobit_reply(
 
       break;
     }  /* END switch (preq->rq_reply.brp_code) */
-
 
   /* we've inspected the server's response and can now act */
 
@@ -1178,10 +1288,10 @@ static void preobit_reply(
 
 static void obit_reply(
 
-  int sock)
+  int sock)  /* I */
 
   {
-  int			irtn;
+  int                    irtn;
   job			*nxjob;
   job			*pjob;
   attribute		*pattr;
@@ -1199,6 +1309,8 @@ static void obit_reply(
 
   if (irtn != 0) 
     {
+    /* NOTE:  irtn is of type DIS_* in include/dis.h, see dis_emsg[] */
+
     sprintf(log_buffer,"DIS_reply_read failed, rc=%d sock=%d",
       irtn, 
       sock);
@@ -1298,7 +1410,7 @@ static void obit_reply(
                 preq->rq_reply.brp_code);
 
               break;
-            }  /* END switch(preq->rq_reply.brp_code) */
+            }  /* END switch (preq->rq_reply.brp_code) */
 
           LOG_EVENT(
             PBSEVENT_ERROR,

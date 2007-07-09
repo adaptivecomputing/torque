@@ -251,7 +251,7 @@ char *set_shell(
     }
 
   return(shell);
-  }
+  }  /* END set_shell() */
 
 
 
@@ -354,10 +354,16 @@ void scan_for_terminated()
 
     if (pid == pjob->ji_momsubt) 
       {
-      if (pjob->ji_mompost) 
+      log_record(
+        PBSEVENT_JOB,
+        PBS_EVENTCLASS_JOB,
+        id,
+        "checking job post-processing routine");
+
+      if (pjob->ji_mompost != NULL) 
         {
         pjob->ji_mompost(pjob,exiteval);
-        pjob->ji_mompost = 0;
+        pjob->ji_mompost = NULL;
         }
 
       pjob->ji_momsubt = 0;
@@ -389,7 +395,7 @@ void scan_for_terminated()
 
     task_save(ptask);
 
-    sprintf(log_buffer,"%s: job %s task %d terminated, sid %d",
+    sprintf(log_buffer,"%s: job %s task %d terminated, sid=%d",
       id,
       pjob->ji_qs.ji_jobid,
       ptask->ti_qs.ti_task,

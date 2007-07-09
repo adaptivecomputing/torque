@@ -422,8 +422,8 @@ int dis_request_read(
 
 int DIS_reply_read(
 
-  int                 sock,
-  struct batch_reply *preply)
+  int                 sock,    /* I */
+  struct batch_reply *preply)  /* I (modified) */
 
   {
   DIS_tcp_setup(sock);

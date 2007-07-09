@@ -644,7 +644,7 @@ void process_Dreply(
 
   /* read and decode the reply */
 
-  if ((rc = DIS_reply_read(sock, &request->rq_reply)) != 0) 
+  if ((rc = DIS_reply_read(sock,&request->rq_reply)) != 0) 
     {
     close_conn(sock);
 
@@ -657,7 +657,7 @@ void process_Dreply(
   dispatch_task(ptask);
 
   return;
-  }
+  }  /* END process_Dreply() */
 
 /* END issue_request.c */
 
