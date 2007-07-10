@@ -1202,6 +1202,7 @@ static void preobit_reply(
 
     pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITING;
     pjob->ji_momhandle = -1;
+    exiting_tasks = 1;  /* job exit will be picked up again */
 
     return;
     }
