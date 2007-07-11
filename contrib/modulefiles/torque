@@ -9,8 +9,7 @@ proc ModulesHelp { } {
     regsub "/.*" $nameversion "" name
     regsub ".*/" $nameversion "" version
     puts stderr "\tLoads the $version $name environment"
-    puts stderr "\n\tThe PATH is modified and MOABHOMEDIR is set"
-    puts stderr "\n\tThe default link is modified if root uses module switch"
+    puts stderr "\n\tThe PATH is modified"
 }
 
 # Set variables
