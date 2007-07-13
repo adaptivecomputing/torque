@@ -408,7 +408,7 @@ int mom_restart_job(
   DIR		*dir;
   struct	dirent	*pdir;
   tm_task_id	taskid;
-  task		*ptask;
+  task         *ptask;
   int		tcount = 0;
   long		mach_restart A_((task *, char *path));
 
@@ -3423,7 +3423,7 @@ int TMomFinalizeJob3(
         break;
       }  /* END switch (sjr.sj_code) */
 
-    sprintf(log_buffer,"job not started, %s %s",
+    sprintf(log_buffer,"job not started, %s %s (see syslog for more information)",
       (sjr.sj_code == JOB_EXEC_RETRY) ? "Retry" : "Failure",
       tmpLine);
 

@@ -143,10 +143,12 @@ int dis_request_read(
       return(EOF);
       }
 
-    sprintf(log_buffer,"req header bad, dis error %d", 
-      rc);
+    sprintf(log_buffer,"req header bad, dis error %d (%s), type=%s", 
+      rc,
+      dis_emsg[rc],
+      reqtype_to_txt(request->rq_type));
 
-    LOG_EVENT(PBSEVENT_DEBUG,PBS_EVENTCLASS_REQUEST,"?",
+    LOG_EVENT(PBSEVENT_DEBUG,PBS_EVENTCLASS_REQUEST,id,
       log_buffer);
 
     return(PBSE_DISPROTO);
@@ -158,7 +160,7 @@ int dis_request_read(
       proto_ver,
       PBS_BATCH_PROT_VER);
 
-    LOG_EVENT(PBSEVENT_DEBUG,PBS_EVENTCLASS_REQUEST,"?",
+    LOG_EVENT(PBSEVENT_DEBUG,PBS_EVENTCLASS_REQUEST,id,
       log_buffer);
 
     return(PBSE_DISPROTO);
@@ -169,7 +171,7 @@ int dis_request_read(
     sprintf(log_buffer,"invalid request type: %d",
       request->rq_type);
 
-    LOG_EVENT(PBSEVENT_DEBUG,PBS_EVENTCLASS_REQUEST,"?",
+    LOG_EVENT(PBSEVENT_DEBUG,PBS_EVENTCLASS_REQUEST,id,
       log_buffer);
 
     return(PBSE_DISPROTO);
