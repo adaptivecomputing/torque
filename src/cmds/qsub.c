@@ -156,9 +156,13 @@ int x11child = 0;
 int do_dir(char *);
 int process_opts(int,char **,int);
 
+
+
 /* adapted from openssh */
 
-static char *x11_get_proto(void)
+static char *x11_get_proto(
+
+  char *EMsg)  /* O (optional,minsize=1024) */
 
   {       
   char line[512];
@@ -172,6 +176,9 @@ static char *x11_get_proto(void)
   proto[0]  = '\0';
   data[0]   = '\0';
   screen[0] = '\0';
+
+  if (EMsg != NULL)
+    EMsg[0] = '\0';
 
   if ((display = getenv("DISPLAY")) == NULL)
     {
@@ -226,12 +233,29 @@ static char *x11_get_proto(void)
 
   f = popen(line,"r");
 
-  if ((f != NULL) && 
-      fgets(line,sizeof(line),f) &&
-      (sscanf(line,"%*s %511s %511s", 
-        proto, 
-        data) == 2))
+  if (f == NULL)
     {
+    fprintf(stderr,"execution of '%s' failed, errno=%d\n",
+      line,
+      errno);
+    }
+  else if (fgets(line,sizeof(line),f) == 0)
+    {
+    fprintf(stderr,"cannot read data from '%s', errno=%d\n",
+      line,
+      errno);
+    }
+  else if (sscanf(line,"%*s %511s %511s",
+             proto,
+             data) != 2)
+    {
+    fprintf(stderr,"cannot parse output from '%s'\n",
+      line);
+    }
+  else
+    {
+    /* SUCCESS */
+
     got_data = 1;
     }
 
@@ -264,6 +288,8 @@ static char *x11_get_proto(void)
 
   if (!got_data)
     {
+    /* FAILURE */
+
     return(NULL);
     }
 
@@ -3784,18 +3810,20 @@ int main(
     char *x11authstr;
 
     /* get the DISPLAY's auth proto, data, and screen number */
-    if ((x11authstr = x11_get_proto()) != NULL)
+
+    if ((x11authstr = x11_get_proto(NULL)) != NULL)
       {
       /* stuff this info into the job */
 
       set_attr(&attrib,ATTR_forwardx11,x11authstr);
 
       if (getenv("PBSDEBUG") != NULL)
-        fprintf(stderr,"x11auth string: %s\n",x11authstr);
+        fprintf(stderr,"x11auth string: %s\n",
+          x11authstr);
       }
     else
       {
-      fprintf(stderr,"qsub: Failed to get xauth data.\n");
+      fprintf(stderr,"qsub: Failed to get xauth data (check $DISPLAY variable)\n");
 
       exit(1);
       }
