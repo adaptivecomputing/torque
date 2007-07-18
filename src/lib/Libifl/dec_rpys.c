@@ -202,7 +202,7 @@ int decode_DIS_replySvr(
 		/* text reply */
 
 		reply->brp_un.brp_txt.brp_str = disrcs(sock,
-				(size_t *)&reply->brp_un.brp_txt.brp_txtlen,
+				&reply->brp_un.brp_txt.brp_txtlen,
 				&rc);
 		break;
 

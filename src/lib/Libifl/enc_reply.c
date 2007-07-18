@@ -188,7 +188,7 @@ int encode_DIS_reply(sock, reply)
 		/* text reply */
 
 		if ((rc = diswcs(sock, reply->brp_un.brp_txt.brp_str,
-				      (size_t)reply->brp_un.brp_txt.brp_txtlen)))	
+				      reply->brp_un.brp_txt.brp_txtlen)))	
 			return rc;
 		break;
 

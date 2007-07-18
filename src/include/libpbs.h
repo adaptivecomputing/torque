@@ -210,7 +210,7 @@ struct batch_reply {
 		tlist_head 	   brp_status;	/* status (svr) replies */
 		struct brp_cmdstat *brp_statc;  /* status (cmd) replies) */
 		struct {
-			int   brp_txtlen;
+			size_t   brp_txtlen;
 			char *brp_str;
 		} brp_txt;		/* text and credential reply */
 		char	  brp_locate[PBS_MAXDEST+1];
