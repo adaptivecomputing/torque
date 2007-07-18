@@ -81,7 +81,7 @@
  * include file for error/event logging
  */
 
-#define LOG_BUF_SIZE		4096
+#define LOG_BUF_SIZE		16384
 
 /* The following macro assist in sharing code between the Server and Mom */
 #define LOG_EVENT log_event
