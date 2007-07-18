@@ -137,20 +137,25 @@ int set_job(
   {
   char id[] = "set_job";
 
-  char *ptr;
+  char *PPtr;
+  char *CPtr;
 
   sjr->sj_session = setsid();
 
-  if ((ptr = get_job_envvar(pjob,"BATCH_PARTITION_ID")) != NULL)
+  /* NOTE:  only activate partition create script for XT4+ environments */
+
+  if (((PPtr = get_job_envvar(pjob,"BATCH_PARTITION_ID")) != NULL) &&
+      ((CPtr = get_job_envvar(pjob,"BATCH_ALLOC_COOKIE")) != NULL) &&
+       !strcmp(CPtr,"0"))
     {
     char  tmpLine[1024];
-
+    
     if (AllocParCmd == NULL)
       AllocParCmd = strdup("/opt/moab/default/tools/partition.create.xt4.pl");
 
     snprintf(tmpLine,sizeof(tmpLine),"%s --confirm -p %s -j %s -a %ld",
       AllocParCmd,
-      ptr,
+      PPtr,
       pjob->ji_qs.ji_jobid,
       (long)sjr->sj_session);
 
@@ -161,7 +166,7 @@ int set_job(
       tmpLine);
 
     system(tmpLine); 
-    }
+    }  /* END if (((PPtr = get_job_envvar(pjob,"BATCH_PARTITION_ID")) != NULL) && ...) */
 
   return(sjr->sj_session);
   }  /* END set_job() */
