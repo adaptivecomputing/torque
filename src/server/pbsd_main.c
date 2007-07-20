@@ -264,6 +264,8 @@ void do_rpp(
 
   if (ret != DIS_SUCCESS) 
     {
+    /* FAILURE */
+
     if (LOGLEVEL >= 1)
       {
       struct pbsnode *node;
@@ -290,7 +292,7 @@ void do_rpp(
     stream_eof(stream,0,ret);
 
     return;
-    }
+    }  /* END if (ret != DIS_SUCCESS) */
 
   version = disrsi(stream,&ret);
 

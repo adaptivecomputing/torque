@@ -256,7 +256,7 @@ int que_purge(
 
 pbs_queue *find_queuebyname(
 
-  char *quename)
+  char *quename) /* I */
 
   {
   char  *pc;
@@ -307,7 +307,7 @@ pbs_queue *get_dfltque(void)
     }
 
   return(pq);
-  }
+  }  /* END get_dfltque() */
 
 /* END queue_func.c */
 

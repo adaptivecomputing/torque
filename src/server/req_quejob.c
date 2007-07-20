@@ -196,6 +196,8 @@ static char *pbs_o_que = "PBS_O_QUEUE=";
 
 /*
  * req_quejob - Queue Job Batch Request processing routine
+ *  NOTE:  calls svr_chkque() to validate queue access
+ *
  */
 
 void req_quejob(
@@ -272,7 +274,6 @@ void req_quejob(
     sprintf(jidbuf,"%d.",
       server.sv_qs.sv_jobidnumber);
 #endif
-
 
     strcat(jidbuf,server_name);
 
@@ -2073,7 +2074,7 @@ user_account_default_done:
     log_buffer);
 
   return(rc);
-  }
+  }  /* END user_account_default() */
 
 
 
@@ -2095,7 +2096,7 @@ int user_account_read_user(
   {
   char  proj_file[] = AcctFile;
   int   fd;
-  char  s_buf[64*1024];
+  char  s_buf[128*1024];
   int   readsize;
   int   scanmode = AcctScanUser;
   int   i, j;
@@ -2118,54 +2119,95 @@ int user_account_read_user(
     return(0);
     }
 
-        readsize = read(fd, s_buf, sizeof(s_buf));
-        close(fd);
-       if (readsize < 1 || readsize > sizeof(s_buf))
-           return(0);                       /* Bail if not sane */
+  readsize = read(fd,s_buf,sizeof(s_buf));
 
-       for (i=0; i<readsize; ++i) {
-           /* First,  handle comments and whitespace */
-           if (scanmode == AcctScanLine) {  /* Looking for new line */
-               if (s_buf[i] == '\n')        /* Found it */
-                   scanmode = AcctScanUser;
-               continue;
-           }
-           if (isspace(s_buf[i]))            /* Skip spaces */
-                continue;
-           if (s_buf[i] == '#') {            /* Comment found */
-               scanmode = AcctScanLine;
-                continue;
-            }
+  close(fd);
 
-           /* Next, handle user and account scanning */
-            if (scanmode == AcctScanUser) {
-               if ((i+arguserlen) > readsize) /* Past the end */
-                   return(0);
-               if (strncmp(&s_buf[i], arguser, arguserlen)) {
-                   scanmode = AcctScanLine;   /* Not arguser, next line */
-                    continue;
-                }
-               if (isspace(s_buf[i+arguserlen]) ||
-                           s_buf[i+arguserlen] == ':') {
-                  i += arguserlen;            /* Is arguser */
-                  scanmode = AcctScanAcct;
-                } else {                       /* Whatever, ignore it */
-                  scanmode = AcctScanLine;
-                  continue;
-               }
-           } else {                           /* scanmode == AcctScanAcct */
-              if (s_buf[i] == ':' || isspace(s_buf[i]))
-                  continue;
-               for (j=i; j<readsize; j++) {
-                  if (isspace(s_buf[j])) {
-                      strncpy(UserAcct.ActRaw, &s_buf[i], j-i);
-                      UserAcct.ActRaw[j-i] = '\0';
-                      goto have_account;
-                   }
-             }
-              return(0);
-           }
-       }
+  if ((readsize < 1) || (readsize > sizeof(s_buf)))
+    {
+    /* bail if not sane */
+
+    return(0);   
+    }
+
+  for (i = 0;i < readsize;++i) 
+    {
+    /* First, handle comments and whitespace */
+
+    if (scanmode == AcctScanLine) 
+      {  
+      /* Looking for new line */
+
+      if (s_buf[i] == '\n')        /* Found it */
+        scanmode = AcctScanUser;
+
+      continue;
+      }
+
+    if (isspace(s_buf[i]))            /* Skip spaces */
+      continue;
+
+    if (s_buf[i] == '#') 
+      {
+      /* Comment found */
+
+      scanmode = AcctScanLine;
+
+      continue;
+      }
+
+    /* Next, handle user and account scanning */
+
+    if (scanmode == AcctScanUser) 
+      {
+      if ((i + arguserlen) > readsize) /* Past the end */
+        {
+        return(0);
+        }
+
+      if (strncmp(&s_buf[i],arguser,arguserlen)) 
+        {
+        scanmode = AcctScanLine;   /* Not arguser, next line */
+
+        continue;
+        }
+
+      if (isspace(s_buf[i + arguserlen]) ||
+          s_buf[i + arguserlen] == ':') 
+        {
+        i += arguserlen;            /* Is arguser */
+
+        scanmode = AcctScanAcct;
+        } 
+      else 
+        {
+        /* Whatever, ignore it */
+
+        scanmode = AcctScanLine;
+
+        continue;
+        }
+      } 
+    else 
+      {                           
+      /* scanmode == AcctScanAcct */
+
+      if ((s_buf[i] == ':') || isspace(s_buf[i]))
+        continue;
+
+      for (j = i;j < readsize;j++) 
+        {
+        if (isspace(s_buf[j])) 
+          {
+          strncpy(UserAcct.ActRaw, &s_buf[i], j-i);
+          UserAcct.ActRaw[j-i] = '\0';
+          goto have_account;
+          }
+        }
+
+      return(0);
+      }
+    }    /* END for (i) */
 
   return(0);                             /* Never found it */
 

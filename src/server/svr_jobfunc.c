@@ -793,9 +793,15 @@ static void chk_svr_resc_limit(
   int       LimitIsFromQueue;
   char     *LimitName;
 
-  static resource_def *noderesc = NULL;
-  static resource_def *needresc = NULL;
-  static resource_def *nodectresc = NULL;
+  /* NOTE:  support Cray-specific evaluation */
+
+  int       MPPWidth = 0;
+  int       PPN = 0;
+
+  static resource_def *noderesc     = NULL;
+  static resource_def *needresc     = NULL;
+  static resource_def *nodectresc   = NULL;
+  static resource_def *mppwidthresc = NULL;
 
   static time_t UpdateTime = 0;
   static time_t now;
@@ -813,9 +819,10 @@ static void chk_svr_resc_limit(
 
     /* NOTE:  to optimize, only update once per 30 seconds */
 
-    noderesc = find_resc_def(svr_resc_def,"nodes",svr_resc_size);
-    needresc = find_resc_def(svr_resc_def,"neednodes",svr_resc_size);
-    nodectresc = find_resc_def(svr_resc_def,"nodect",svr_resc_size);
+    noderesc     = find_resc_def(svr_resc_def,"nodes",svr_resc_size);
+    needresc     = find_resc_def(svr_resc_def,"neednodes",svr_resc_size);
+    nodectresc   = find_resc_def(svr_resc_def,"nodect",svr_resc_size);
+    mppwidthresc = find_resc_def(svr_resc_def,"mppwidth",svr_resc_size);
 
     if (nodectresc != NULL)
       {
@@ -839,7 +846,7 @@ static void chk_svr_resc_limit(
         svrc = (resource *)GET_NEXT(svrc->rs_link);
         } /* END while (svrc != NULL) */
       }   /* END if (nodectresc != NULL) */
-    }     /* END if (noderesc == NULL) */
+    }     /* END if ((noderesc == NULL) || ...) */
 
   /* return values via global comp_resc_gt and comp_resc_lt */
 
@@ -884,6 +891,13 @@ static void chk_svr_resc_limit(
         /* NOTE:  process after loop so SvrNodeCt is loaded */
 
         jbrc_nodes = jbrc;
+        }
+      else if (jbrc->rs_defin == mppwidthresc)
+        {
+        if (jbrc->rs_value.at_flags & ATR_VFLAG_SET)
+          {
+          MPPWidth = jbrc->rs_value.at_val.at_long;
+          }
         }
       else if ((cmpwith != NULL) && (jbrc->rs_defin != needresc)) 
         {
@@ -957,6 +971,14 @@ static void chk_svr_resc_limit(
         comp_resc_lt++;
         }
       }
+    }    /* END if (jbrc_nodes != NULL) */
+
+  if (MPPWidth > 0)
+    {
+    /* NYI */
+
+    if (PPN == 0)
+      strcpy(EMsg,"MPP Width Detected");
     }
 
   return;
@@ -1026,8 +1048,10 @@ int chk_resc_limits(
  *
  *	returns 0 for yes, 1 for no
  *
- * Note: the following fields must be set in the job struture before
- *	 calling svr_chkque(): 	ji_wattr[JOB_ATR_job_owner]
+ * NOTE: the following fields must be set in the job struture before
+ *   calling svr_chkque():  ji_wattr[JOB_ATR_job_owner]
+ * NOTE: calls chk_resc_limits() to validate resource request
+ *
  * Also if the job is being considered for an execution queue, then
  * set_jobexid() will be called.
  */
@@ -1094,31 +1118,31 @@ int svr_chkque(
       }
 
     /* 1e. check queue's disallowed_types */
+
     if (pque->qu_attr[QA_ATR_DisallowedTypes].at_flags & ATR_VFLAG_SET)
       {
-      
       for (i = 0; 
            i < (pque->qu_attr[QA_ATR_DisallowedTypes]).at_val.at_arst->as_usedptr;
            i++)
         {
-	
 	/* if job is interactive...*/
+
         if ((pjob->ji_wattr[(int)JOB_ATR_interactive].at_flags & ATR_VFLAG_SET) &&
             (pjob->ji_wattr[(int)JOB_ATR_interactive].at_val.at_long > 0))
           {
           if (strcmp(Q_DT_interactive, 
                 pque->qu_attr[QA_ATR_DisallowedTypes].at_val.at_arst->as_string[i]) == 0)
             {
-            return (PBSE_NOINTERACTIVE);
+            return(PBSE_NOINTERACTIVE);
             }
           }
         else /* else job is batch... */
           {
-	   if (strcmp(Q_DT_batch, 
-                 pque->qu_attr[QA_ATR_DisallowedTypes].at_val.at_arst->as_string[i]) == 0)
-             {
-             return (PBSE_NOBATCH);
-             }
+          if (strcmp(Q_DT_batch, 
+               pque->qu_attr[QA_ATR_DisallowedTypes].at_val.at_arst->as_string[i]) == 0)
+            {
+            return(PBSE_NOBATCH);
+            }
           }
 	  
 	if (strcmp(Q_DT_rerunable,
@@ -1126,18 +1150,18 @@ int svr_chkque(
             && (pjob->ji_wattr[(int)JOB_ATR_rerunable].at_flags & ATR_VFLAG_SET &&
 	        pjob->ji_wattr[(int)JOB_ATR_rerunable].at_val.at_long > 0))
 	  {
-	  return (PBSE_NORERUNABLE);
+	  return(PBSE_NORERUNABLE);
 	  }
+
 	if (strcmp(Q_DT_nonrerunable,
 	      pque->qu_attr[QA_ATR_DisallowedTypes].at_val.at_arst->as_string[i]) == 0
             && (!(pjob->ji_wattr[(int)JOB_ATR_rerunable].at_flags & ATR_VFLAG_SET) ||
 	        pjob->ji_wattr[(int)JOB_ATR_rerunable].at_val.at_long == 0))
 	  {
-	  return (PBSE_NONONRERUNABLE);
+	  return(PBSE_NONONRERUNABLE);
 	  }
-
         }	
-      }
+      }    /* END if (pque->qu_attr[QA_ATR_DisallowedTypes].at_flags & ATR_VFLAG_SET) */
 		
     /* 1f. if enabled, check the queue's group ACL */
 
@@ -1227,8 +1251,8 @@ int svr_chkque(
             }
           }
         }
-      }
-    }
+      }    /* END if (pque->qu_attr[QA_ATR_AclGroupEnabled].at_val.at_long) */
+    }      /* END if (pque->qu_qs.qu_type == QTYPE_Execution) */
 
   /* checks 2 and 3 are bypassed for a move by manager or qorder */
 
