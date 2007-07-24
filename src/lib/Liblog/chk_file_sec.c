@@ -119,7 +119,7 @@ int chk_file_sec(
   int   sticky,	  /* allow write on directory if sticky set */
   int   disallow, /* perm bits to disallow */
   int   fullpath, /* recursively check full path */
-  char *EMsg)     /* O (optional,minsize=1024) */
+  char *SEMsg)    /* O (optional,minsize=1024) */
 
   {
   int    i;
@@ -130,8 +130,16 @@ int chk_file_sec(
   char   shorter[_POSIX_PATH_MAX];
   char   symlink[_POSIX_PATH_MAX];
 
-  if (EMsg != NULL)
-    EMsg[0] = '\0';
+  char   tmpLine[1024];
+
+  char  *EMsg;
+
+  if (SEMsg != NULL)
+    EMsg = SEMsg;
+  else
+    EMsg = tmpLine;
+
+  EMsg[0] = '\0';
 	
   if ((*path == '/') && fullpath) 
     {
@@ -163,10 +171,11 @@ int chk_file_sec(
 
     /* FAILURE */
 
-    snprintf(EMsg,1024,"%s cannot be lstat'd - errno=%d, %s",
-      path,
-      rc,
-      strerror(rc));
+    if (EMsg != NULL)
+      snprintf(EMsg,1024,"%s cannot be lstat'd - errno=%d, %s",
+        path,
+        rc,
+        strerror(rc));
 
     goto chkerr;
     }
@@ -335,7 +344,7 @@ chkerr:
       } 
     else 
       {
-      if (EMsg != NULL)
+      if (EMsg[0] != '\0')
         {
         sprintf(error_buf,"Security violation with \"%s\" - %s",
           path,
@@ -351,7 +360,7 @@ chkerr:
 
       if (chk_file_sec_stderr)
         {
-        fprintf(stdout, "chk_tree: %s: error #%d: (%s)\n", 
+        fprintf(stdout,"chk_tree: %s: error #%d: (%s)\n", 
           error_buf, 
           rc,
           strerror(rc) ? strerror(rc) : "UNKNOWN");
