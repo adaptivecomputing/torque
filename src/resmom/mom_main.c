@@ -6318,7 +6318,7 @@ int main(
   strcpy(rcp_path,RCP_PATH);
   strcpy(rcp_args,RCP_ARGS);
 #ifdef DEFAULT_MOMLOGDIR
-  path_log=strdup(DEFAULT_MOMLOGDIR);
+  path_log = strdup(DEFAULT_MOMLOGDIR);
 #endif
 #ifdef DEFAULT_MOMLOGSUFFIX
   log_init(DEFAULT_MOMLOGSUFFIX,NULL);

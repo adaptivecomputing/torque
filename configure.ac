@@ -694,11 +694,11 @@ AC_DEFINE_UNQUOTED(SHELL_USE_ARGV, ${SHELL_USE_ARGV}, [job script name passed as
 
 AC_ARG_ENABLE(privports,
 [
-  --disable-privports     disable the use of priviledged ports for authentication.  Some versions of OSX have
-                          a buggy bind() and cannot bind to priviledged ports.],
+  --disable-privports     disable the use of privileged ports for authentication.  Some versions of OSX have
+                          a buggy bind() and cannot bind to privileged ports.],
 [case "${enableval}" in
   yes)  ;;
-  no)  NOPRIVPORTS=1; AC_DEFINE(NOPRIVPORTS, 1, [Define to disable priviledged ports]) ;;
+  no)  NOPRIVPORTS=1; AC_DEFINE(NOPRIVPORTS, 1, [Define to disable privileged ports]) ;;
   *)   AC_MSG_ERROR(--enable-privports cannot take a value) ;;
 esac])dnl
 

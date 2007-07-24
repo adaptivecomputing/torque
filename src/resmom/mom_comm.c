@@ -2085,6 +2085,8 @@ void im_request(
  
       if (check_pwd(pjob) == NULL) 
         {
+        /* log_buffer populated in check_pwd() */
+
         LOG_EVENT(
           PBSEVENT_JOB, 
           PBS_EVENTCLASS_JOB,

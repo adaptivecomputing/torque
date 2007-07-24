@@ -1085,8 +1085,8 @@ Optional Features:
                           command line that invokes the shell.  Not on by
                           default.  Ignores --enable-shell-pipe setting.
 
-  --disable-privports     disable the use of priviledged ports for authentication.  Some versions of OSX have
-                          a buggy bind() and cannot bind to priviledged ports.
+  --disable-privports     disable the use of privileged ports for authentication.  Some versions of OSX have
+                          a buggy bind() and cannot bind to privileged ports.
 
   --disable-mom-checkspool
                           Don't check free space on spool directory and set an error
@@ -1178,12 +1178,12 @@ Optional Packages:
   --with-xauth=PATH       Specify path to xauth program
   --with-tcl              directory containing tcl configuration (tclConfig.sh)
   --with-tclinclude       directory containing the public Tcl header files
-  --with-tclx              directory containing tclx configuration (tclxConfig.sh)
+  --with-tclx             directory containing tclx configuration (tclxConfig.sh)
   --with-tk               directory containing tk configuration (tkConfig.sh)
-  --with-tkinclude      directory containing the public Tk header files.
+  --with-tkinclude        directory containing the public Tk header files.
   --with-tkx              directory containing tkx configuration (tkxConfig.sh)
   --with-tclatrsep=CHAR   set the Tcl attribute separator character
-                        this will default to "." if unspecified
+                          This will default to "." if unspecified
 
 Some influential environment variables:
   CC          C compiler command
