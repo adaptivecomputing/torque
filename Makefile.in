@@ -39,6 +39,8 @@ host_triplet = @host@
 DIST_COMMON = $(am__configure_deps) $(srcdir)/Makefile.am \
 	$(srcdir)/Makefile.in $(srcdir)/torque.spec.in \
 	$(top_srcdir)/buildutils/config.mk \
+	$(top_srcdir)/buildutils/modulefiles.in \
+	$(top_srcdir)/buildutils/modulefiles.vers.in \
 	$(top_srcdir)/buildutils/pbs_mkdirs.in \
 	$(top_srcdir)/buildutils/self-extract-head-sh.in \
 	$(top_srcdir)/configure INSTALL buildutils/compile \
@@ -61,7 +63,8 @@ am__CONFIG_DISTCLEAN_FILES = config.status config.cache config.log \
 mkinstalldirs = $(SHELL) $(top_srcdir)/buildutils/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/include/pbs_config.h
 CONFIG_CLEAN_FILES = buildutils/pbs_mkdirs \
-	buildutils/self-extract-head-sh torque.spec
+	buildutils/self-extract-head-sh buildutils/modulefiles \
+	buildutils/modulefiles.vers torque.spec
 am__installdirs = "$(DESTDIR)$(bindir)"
 binSCRIPT_INSTALL = $(INSTALL_SCRIPT)
 SCRIPTS = $(bin_SCRIPTS)
@@ -143,6 +146,8 @@ INCLUDE_PAM_TRUE = @INCLUDE_PAM_TRUE@
 INCLUDE_SERVER_FALSE = @INCLUDE_SERVER_FALSE@
 INCLUDE_SERVER_TRUE = @INCLUDE_SERVER_TRUE@
 INSTALL_DATA = @INSTALL_DATA@
+INSTALL_MODULEFILES_FALSE = @INSTALL_MODULEFILES_FALSE@
+INSTALL_MODULEFILES_TRUE = @INSTALL_MODULEFILES_TRUE@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
 INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
@@ -160,6 +165,7 @@ MAINTAINER_MODE_FALSE = @MAINTAINER_MODE_FALSE@
 MAINTAINER_MODE_TRUE = @MAINTAINER_MODE_TRUE@
 MAKE = @MAKE@
 MAKEINFO = @MAKEINFO@
+MODULEFILES_DIR = @MODULEFILES_DIR@
 MOMLIBS = @MOMLIBS@
 MY_TCLTK_INCS = @MY_TCLTK_INCS@
 MY_TCLTK_LIBS = @MY_TCLTK_LIBS@
@@ -321,6 +327,7 @@ EXTRA_DIST = CHANGELOG INSTALL.GNU README.configure README.mpiexec \
 	     buildutils/tcl.m4 buildutils/self-extract-head-sh.in \
 	     buildutils/pbs_mkdirs.in buildutils/pbs_mach_type \
 	     buildutils/config.mk buildutils/ac_create_generic_config.m4 \
+	     buildutils/modulefiles.in buildutils/modulefiles.vers.in \
 	     contrib/README.pestat contrib/README.pbstop \
 	     contrib/README.qpeek contrib/pestat-1.0/pestat.c \
 	     contrib/pestat-1.0/README contrib/pestat-1.0/Makefile \
@@ -407,6 +414,10 @@ $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 buildutils/pbs_mkdirs: $(top_builddir)/config.status $(top_srcdir)/buildutils/pbs_mkdirs.in
 	cd $(top_builddir) && $(SHELL) ./config.status $@
 buildutils/self-extract-head-sh: $(top_builddir)/config.status $(top_srcdir)/buildutils/self-extract-head-sh.in
+	cd $(top_builddir) && $(SHELL) ./config.status $@
+buildutils/modulefiles: $(top_builddir)/config.status $(top_srcdir)/buildutils/modulefiles.in
+	cd $(top_builddir) && $(SHELL) ./config.status $@
+buildutils/modulefiles.vers: $(top_builddir)/config.status $(top_srcdir)/buildutils/modulefiles.vers.in
 	cd $(top_builddir) && $(SHELL) ./config.status $@
 torque.spec: $(top_builddir)/config.status $(srcdir)/torque.spec.in
 	cd $(top_builddir) && $(SHELL) ./config.status $@
@@ -738,6 +749,8 @@ distclean-generic:
 maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
 	@echo "it deletes files that may require special tools to rebuild."
+@INSTALL_MODULEFILES_FALSE@install-data-hook:
+@INSTALL_MODULEFILES_FALSE@uninstall-hook:
 clean: clean-recursive
 
 clean-am: clean-generic clean-libtool mostlyclean-am
@@ -759,6 +772,8 @@ info: info-recursive
 info-am:
 
 install-data-am:
+	@$(NORMAL_INSTALL)
+	$(MAKE) $(AM_MAKEFLAGS) install-data-hook
 
 install-exec-am: install-binSCRIPTS
 
@@ -787,6 +802,8 @@ ps: ps-recursive
 ps-am:
 
 uninstall-am: uninstall-binSCRIPTS uninstall-info-am
+	@$(NORMAL_INSTALL)
+	$(MAKE) $(AM_MAKEFLAGS) uninstall-hook
 
 uninstall-info: uninstall-info-recursive
 
@@ -797,14 +814,15 @@ uninstall-info: uninstall-info-recursive
 	distclean-generic distclean-libtool distclean-recursive \
 	distclean-tags distcleancheck distdir distuninstallcheck dvi \
 	dvi-am html html-am info info-am install install-am \
-	install-binSCRIPTS install-data install-data-am install-exec \
-	install-exec-am install-info install-info-am install-man \
-	install-strip installcheck installcheck-am installdirs \
-	installdirs-am maintainer-clean maintainer-clean-generic \
-	maintainer-clean-recursive mostlyclean mostlyclean-generic \
-	mostlyclean-libtool mostlyclean-recursive pdf pdf-am ps ps-am \
-	tags tags-recursive uninstall uninstall-am \
-	uninstall-binSCRIPTS uninstall-info-am
+	install-binSCRIPTS install-data install-data-am \
+	install-data-hook install-exec install-exec-am install-info \
+	install-info-am install-man install-strip installcheck \
+	installcheck-am installdirs installdirs-am maintainer-clean \
+	maintainer-clean-generic maintainer-clean-recursive \
+	mostlyclean mostlyclean-generic mostlyclean-libtool \
+	mostlyclean-recursive pdf pdf-am ps ps-am tags tags-recursive \
+	uninstall uninstall-am uninstall-binSCRIPTS uninstall-hook \
+	uninstall-info-am
 
 
 snap:
@@ -888,6 +906,15 @@ packages:
 	@echo ""
 	@echo "The package files are self-extracting packages that can be copied"; \
         echo "and executed on your production machines.  Use --help for options.";
+
+@INSTALL_MODULEFILES_TRUE@install-data-hook:
+@INSTALL_MODULEFILES_TRUE@	$(INSTALL_DATA) -D ./buildutils/modulefiles $(DESTDIR)$(MODULEFILES_DIR)/$(PACKAGE_NAME)/$(PACKAGE_VERSION)
+@INSTALL_MODULEFILES_TRUE@	$(INSTALL_DATA) ./buildutils/modulefiles.vers $(DESTDIR)$(MODULEFILES_DIR)/$(PACKAGE_NAME)/.version
+
+@INSTALL_MODULEFILES_TRUE@uninstall-hook:
+@INSTALL_MODULEFILES_TRUE@	rm -f $(DESTDIR)$(MODULEFILES_DIR)/$(PACKAGE_NAME)/$(PACKAGE_VERSION)
+@INSTALL_MODULEFILES_TRUE@	rm -f $(DESTDIR)$(MODULEFILES_DIR)/$(PACKAGE_NAME)/.version
+@INSTALL_MODULEFILES_TRUE@	rmdir $(DESTDIR)$(MODULEFILES_DIR)/$(PACKAGE_NAME)
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

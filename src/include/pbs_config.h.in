@@ -286,7 +286,7 @@
 /* use nodemask-based scheduling on O2k */
 #undef NODEMASK
 
-/* Define to disable priviledged ports */
+/* Define to disable privileged ports */
 #undef NOPRIVPORTS
 
 /* directly use homedirs instead of $TORQUEHOME/spool */

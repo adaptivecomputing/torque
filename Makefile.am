@@ -8,6 +8,7 @@ EXTRA_DIST = CHANGELOG INSTALL.GNU README.configure README.mpiexec \
 	     buildutils/tcl.m4 buildutils/self-extract-head-sh.in \
 	     buildutils/pbs_mkdirs.in buildutils/pbs_mach_type \
 	     buildutils/config.mk buildutils/ac_create_generic_config.m4 \
+	     buildutils/modulefiles.in buildutils/modulefiles.vers.in \
 	     contrib/README.pestat contrib/README.pbstop \
 	     contrib/README.qpeek contrib/pestat-1.0/pestat.c \
 	     contrib/pestat-1.0/README contrib/pestat-1.0/Makefile \
@@ -175,4 +176,18 @@ packages:
 	@echo ""
 	@echo "The package files are self-extracting packages that can be copied"; \
         echo "and executed on your production machines.  Use --help for options.";
+
+
+if INSTALL_MODULEFILES
+install-data-hook:
+	$(INSTALL_DATA) -D ./buildutils/modulefiles $(DESTDIR)$(MODULEFILES_DIR)/$(PACKAGE_NAME)/$(PACKAGE_VERSION)
+	$(INSTALL_DATA) ./buildutils/modulefiles.vers $(DESTDIR)$(MODULEFILES_DIR)/$(PACKAGE_NAME)/.version
+	
+
+
+uninstall-hook:
+	rm -f $(DESTDIR)$(MODULEFILES_DIR)/$(PACKAGE_NAME)/$(PACKAGE_VERSION)
+	rm -f $(DESTDIR)$(MODULEFILES_DIR)/$(PACKAGE_NAME)/.version
+	rmdir $(DESTDIR)$(MODULEFILES_DIR)/$(PACKAGE_NAME)
+endif
 

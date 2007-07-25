@@ -1276,21 +1276,20 @@ if test "$SCHD_TYPE" = "tcl" -a "$TCL" = "0" ;then
 fi
 
 
-#AC_ARG_WITH(modulefiles,
-#    AC_HELP_STRING([--with-modulefiles@<:@=DIR@:>@], [use modulefiles in specified directory [[/etc/modulefiles]]]),
-#[], [with_modulefiles="no"])
-#if test "$with_modulefiles" != 'no'; then
-#  MODULEFILES_TARGET=""
-#  if test "$with_modulefiles" = 'yes'; then
-#    MODULEFILES_DIR="/etc/modulefiles"
-#  else
-#    MODULEFILES_DIR="$with_modulefiles"
-#  fi
-#else
-#  MODULEFILES_TARGET="modulefiles"
-#fi
-#AC_SUBST(MODULEFILES_TARGET)
-#AC_SUBST(MODULEFILES_DIR)
+AC_ARG_WITH(modulefiles,
+    AC_HELP_STRING([--with-modulefiles@<:@=DIR@:>@], [use modulefiles in specified directory [[/etc/modulefiles]]]),
+[], [with_modulefiles="no"])
+if test "$with_modulefiles" != 'no'; then
+  if test "$with_modulefiles" = 'yes'; then
+    MODULEFILES_DIR="/etc/modulefiles"
+  else
+    MODULEFILES_DIR="$with_modulefiles"
+  fi
+else
+  MODULEFILES_DIR=no
+fi
+AM_CONDITIONAL(INSTALL_MODULEFILES, [test "x$MODULEFILES_DIR" != "xno"])
+AC_SUBST(MODULEFILES_DIR)
 
 
 dnl
@@ -1510,6 +1509,8 @@ AC_DEFINE_UNQUOTED([PBS_CFLAGS],"${CFLAGS}",[Define to the install directory])
 
 AC_OUTPUT(buildutils/pbs_mkdirs
 	  buildutils/self-extract-head-sh
+	  buildutils/modulefiles
+	  buildutils/modulefiles.vers
 	  Makefile
 	  torque.spec
 	  doc/Makefile
