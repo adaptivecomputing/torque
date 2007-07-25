@@ -1276,6 +1276,8 @@ if test "$SCHD_TYPE" = "tcl" -a "$TCL" = "0" ;then
 fi
 
 
+AC_MSG_CHECKING([whether to install modulefiles])
+
 AC_ARG_WITH(modulefiles,
     AC_HELP_STRING([--with-modulefiles@<:@=DIR@:>@], [use modulefiles in specified directory [[/etc/modulefiles]]]),
 [], [with_modulefiles="no"])
@@ -1286,10 +1288,15 @@ if test "$with_modulefiles" != 'no'; then
     MODULEFILES_DIR="$with_modulefiles"
   fi
 else
-  MODULEFILES_DIR=no
+  if test -d /etc/modulefiles;then
+    MODULEFILES_DIR=/etc/modulefiles
+  else
+    MODULEFILES_DIR=no
+  fi
 fi
 AM_CONDITIONAL(INSTALL_MODULEFILES, [test "x$MODULEFILES_DIR" != "xno"])
 AC_SUBST(MODULEFILES_DIR)
+AC_MSG_RESULT($MODULEFILES_DIR)
 
 
 dnl
