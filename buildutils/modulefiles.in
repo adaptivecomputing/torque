@@ -1,0 +1,17 @@
+#%Module######################################################################
+##
+## Torque Module
+##
+proc ModulesHelp { } {
+puts stderr " TORQUE modulefile"
+}
+set sys [uname sysname]
+set host [uname nodename]
+set os [uname release]
+set version @PACKAGE_VERSION@
+set prefix @prefix@
+set exec_prefix @exec_prefix@
+
+prepend-path PATH @bindir@
+prepend-path PATH @sbindir@
+prepend-path MANPATH @mandir@
