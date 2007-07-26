@@ -174,20 +174,10 @@ int isjobid(
 
 int istrue(
 
-  char *string)
+  char *string)  /* I */
 
   {
-  if (!strcmp(string,"TRUE")) 
-    {
-    return(TRUE);
-    }
-
-  if (!strcmp(string,"True")) 
-    {
-    return(TRUE);
-    }
-
-  if (!strcmp(string,"true")) 
+  if (!strcasecmp(string,"TRUE")) 
     {
     return(TRUE);
     }
@@ -274,7 +264,7 @@ static void states(
     }
 
   return;
-  }
+  }  /* END states() */
 
 
 
@@ -286,9 +276,9 @@ static void states(
 
 void prt_attr(
 
-  char *n,
-  char *r,
-  char *v)
+  char *n,  /* I name */
+  char *r,  /* I resource (optional) */
+  char *v)  /* I value */
 
   {
   char *c;
@@ -354,7 +344,7 @@ void prt_attr(
     }
 
   return;
-  }
+  }  /* END prt_attr() */
 
 
 
@@ -1946,8 +1936,8 @@ int main(
     {
     option[1] = (char)c;
 
-    tcl_addarg(flags, option);
-    tcl_addarg(flags, optarg);
+    tcl_addarg(flags,option);
+    tcl_addarg(flags,optarg);
 
     switch (c) 
       {
@@ -1997,7 +1987,7 @@ int main(
 
         alt_opt |= ALT_DISPLAY_r;
 
-        add_atropl(&p_atropl, ATTR_state, (char *)0, "RS", EQ);
+        add_atropl(&p_atropl,ATTR_state,NULL,"RS",EQ);
 
         break;
 
@@ -2011,7 +2001,7 @@ int main(
 
         alt_opt |= ALT_DISPLAY_u;
 
-        add_atropl(&p_atropl, ATTR_u, (char *)0, optarg, EQ);
+        add_atropl(&p_atropl,ATTR_u,NULL,optarg,EQ);
 
         break;
 
@@ -2095,7 +2085,8 @@ int main(
 
           exit(0);
           }
-        else if ((optarg != NULL) && !strcmp(optarg,"about"))
+
+        if ((optarg != NULL) && !strcmp(optarg,"about"))
           {
           TShowAbout();
 
@@ -2176,7 +2167,7 @@ int main(
 		++pc;
 	    }
 #endif	/* (TCL_QSTAT == 0) */
-	    break;
+        break;
 
       case '?':
       default:
@@ -2282,7 +2273,7 @@ qstat -B [-f [-1]] [-W site_specific] [ server_name... ]\n";
         server_out[0] = '@';
         strcpy(&server_out[1],def_server);
 
-        tcl_addarg(ops, server_out);
+        tcl_addarg(ops,server_out);
 
         queue_name_out = NULL;
 
@@ -2321,9 +2312,9 @@ qstat -B [-f [-1]] [-W site_specific] [ server_name... ]\n";
 
     located = FALSE;
 
-    strcpy(operand, argv[optind]);
+    strcpy(operand,argv[optind]);
 
-    tcl_addarg(ops, operand);
+    tcl_addarg(ops,operand);
 
     switch (mode) 
       {
@@ -2339,7 +2330,7 @@ qstat -B [-f [-1]] [-W site_specific] [ server_name... ]\n";
 
           if (get_server(job_id,job_id_out,server_out)) 
             {
-            fprintf(stderr, "qstat: illegally formed job identifier: %s\n", 
+            fprintf(stderr,"qstat: illegally formed job identifier: %s\n", 
               job_id);
 
             ret = tcl_stat(error,NULL,f_opt);
@@ -2355,15 +2346,21 @@ qstat -B [-f [-1]] [-W site_specific] [ server_name... ]\n";
 
           stat_single_job = 0;
 
-                strcpy(destination, operand);
-                if ( parse_destination_id(destination,
-                                          &queue_name_out,
-                                          &server_name_out) ) {
-                    fprintf(stderr, "qstat: illegally formed destination: %s\n", destination);
-		    ret = tcl_stat(error, NULL, f_opt);
-                    any_failed = 1;
-                    break;
-                } else {
+          strcpy(destination,operand);
+
+          if (parse_destination_id(
+                destination,
+                &queue_name_out,
+                &server_name_out)) 
+            {
+            fprintf(stderr, "qstat: illegally formed destination: %s\n", destination);
+
+            ret = tcl_stat(error, NULL, f_opt);
+            any_failed = 1;
+            break;
+            } 
+          else 
+            {
                     if ( notNULL(server_name_out) ) {
                         strcpy(server_out, server_name_out);
                     } else {
@@ -2388,7 +2385,7 @@ job_no_args:
             pbs_server, 
             pbs_errno);
 
-          ret = tcl_stat(error, NULL, f_opt);
+          ret = tcl_stat(error,NULL,f_opt);
 
           any_failed = connect;
 

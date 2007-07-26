@@ -103,6 +103,8 @@ extern char *msg_permlog;
 extern char *msg_unkjobid;
 extern time_t time_now;
 
+extern char *PJobState[];
+
 extern int site_allow_u(char *,char *);
 
 
@@ -391,9 +393,11 @@ job *chk_job_request(
 
   if (pjob->ji_qs.ji_state >= JOB_STATE_EXITING) 
     {
-    sprintf(log_buffer,"%s %d", 
+    char tmpLine[1024];
+
+    sprintf(log_buffer,"%s %s", 
       msg_badstate,
-      pjob->ji_qs.ji_state);
+      PJobState[pjob->ji_qs.ji_state]);
 
     log_event(
       PBSEVENT_DEBUG, 
@@ -401,7 +405,10 @@ job *chk_job_request(
       pjob->ji_qs.ji_jobid, 
       log_buffer);
 
-    req_reject(PBSE_BADSTATE,0,preq,NULL,"invalid state for job");
+    sprintf(tmpLine,"invalid state for job - %s",
+      PJobState[pjob->ji_qs.ji_state]);
+
+    req_reject(PBSE_BADSTATE,0,preq,NULL,tmpLine);
 
     return(NULL);
     }
