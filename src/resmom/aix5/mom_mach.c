@@ -2377,26 +2377,40 @@ struct  rm_attribute    *attrib;
 
 #define	FSCALE	(1<<16)
 
-int
-get_la(rv)
-	double	*rv;
-{
-	char	*id = "get_la";
-	long	load[3];
+int get_la(
 
-	if (kd == NULL) {
-		log_err(-1, id, nokernel);
-		return (rm_errno = RM_ERR_SYSTEM);
-	}
-	if (kvm_read(kd, nl[KSYM_LOAD].n_value, (char *)&load,
-		     sizeof(load)) != sizeof(load)) {
-		log_err(errno, id, "kvm_read");
-		return (rm_errno = RM_ERR_SYSTEM);
-	}
+  double *rv)
 
-	*rv = (double)load[1]/FSCALE;
-	return 0;
-}
+  {
+  char  *id = "get_la";
+  long   load[3];
+
+  if (kd == NULL) 
+    {
+    log_err(-1, id, nokernel);
+    
+    return (rm_errno = RM_ERR_SYSTEM);
+    }
+
+  if (kvm_read(
+        kd, 
+        nl[KSYM_LOAD].n_value, 
+        (char *)&load,
+        sizeof(load)) != sizeof(load)) 
+    {
+    log_err(errno, id, "kvm_read");
+
+    return (rm_errno = RM_ERR_SYSTEM);
+    }
+
+    if (load[0] != 0)
+      *rv = (double)load[0]/FSCALE;
+    else
+      *rv = (double)load[1]/FSCALE;
+
+    return 0;
+  }  /* END get_la() */
+
 
 #if IBM_SP2==1
 /*
