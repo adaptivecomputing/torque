@@ -150,6 +150,7 @@ extern int    svr_do_schedule;
 extern int    LOGLEVEL;
 
 extern time_t time_now;
+extern int    DEBUGMODE;
 
 int           SvrNodeCt = 0;  /* cfg nodes or num nodes specified via resources_available */
 

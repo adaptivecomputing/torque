@@ -109,6 +109,8 @@ extern int  MOMPrologTimeoutCount;
 extern int  MOMPrologFailureCount;
 
 extern int  LOGLEVEL;
+extern int  DEBUGMODE;
+
 extern int  lockfds;
 extern char *path_aux;
 
@@ -324,6 +326,11 @@ int run_pelog(
   char		 buf[MAXPATHLEN + 2];
 
   resource      *r;
+
+  char          *EmptyString = "";
+
+  int            LastArg;
+  int            aindex;
 
   if (stat(pelog,&sbuf) == -1) 
     {
@@ -570,6 +577,18 @@ int run_pelog(
 
     /* for both prolog and epilog */
 
+    if (DEBUGMODE == 1)
+      {
+      fprintf(stderr,"PELOGINFO:  script:'%s'  jobid:'%s'  euser:'%s'  egroup:'%s'  jobname:'%s' SSID:'%ld'  RESC:'%s'\n",
+        pelog,
+        pjob->ji_qs.ji_jobid,
+        pjob->ji_wattr[(int)JOB_ATR_euser].at_val.at_str,
+        pjob->ji_wattr[(int)JOB_ATR_egroup].at_val.at_str,
+        pjob->ji_wattr[(int)JOB_ATR_jobname].at_val.at_str,
+        pjob->ji_wattr[(int)JOB_ATR_session_id].at_val.at_long,
+        resc_to_string(pjob,(int)JOB_ATR_resource,resc_list,sizeof(resc_list)));
+      }
+ 
     arg[0] = pelog;
     arg[1] = pjob->ji_qs.ji_jobid;
     arg[2] = pjob->ji_wattr[(int)JOB_ATR_euser].at_val.at_str;
@@ -591,6 +610,8 @@ int run_pelog(
       arg[8] = pjob->ji_wattr[(int)JOB_ATR_in_queue].at_val.at_str;
       arg[9] = pjob->ji_wattr[(int)JOB_ATR_account].at_val.at_str;
       arg[10] = NULL;
+
+      LastArg = 10;
       } 
     else 
       {
@@ -600,7 +621,15 @@ int run_pelog(
       arg[6] = pjob->ji_wattr[(int)JOB_ATR_in_queue].at_val.at_str;
       arg[7] = pjob->ji_wattr[(int)JOB_ATR_account].at_val.at_str;
       arg[8] = NULL;		
+
+      LastArg = 8;
       }
+
+    for (aindex = 0;aindex < LastArg;aindex++)
+      {
+      if (arg[aindex] == NULL)
+        arg[aindex] = EmptyString;
+      }  /* END for (aindex) */
 
     /*
      * Pass Resource_List.nodes request in environment
