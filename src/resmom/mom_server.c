@@ -134,6 +134,7 @@ extern  int             PBSNodeCheckInterval;
 extern  char            PBSNodeMsgBuf[1024];
 extern  int             MOMRecvHelloCount[];
 extern  int             MOMRecvClusterAddrsCount[];
+extern  char            TMOMRejectConn[];
 extern  time_t          LastServerUpdateTime;
 extern  int             ServerStatUpdateInterval;
 extern  char            pbs_servername[PBS_MAXSERVER][PBS_MAXSERVERNAME + 1];
@@ -425,8 +426,8 @@ done:
 
 
 /*
-**	Input is coming from another server over a DIS rpp stream.
-**	Read the stream to get a Inter-Server request.
+** Input is coming from another server over a DIS rpp stream.
+** Read the stream to get a Inter-Server request.
 */
 
 void is_request(
@@ -534,6 +535,10 @@ void is_request(
       {
       sprintf(log_buffer,"bad connect from %s - unauthorized server",
         netaddr(addr));
+
+      sprintf(TMOMRejectConn,"%s  %s",
+        netaddr(addr),
+        "(server not authorized)");
 
       log_err(-1,id,log_buffer);
 

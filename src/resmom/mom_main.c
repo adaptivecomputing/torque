@@ -175,6 +175,7 @@ int		hostname_specified = 0;
 char		mom_host[PBS_MAXHOSTNAME + 1];
 char		pbs_servername[PBS_MAXSERVER][PBS_MAXSERVERNAME + 1];
 u_long		MOMServerAddrs[PBS_MAXSERVER];
+char            TMOMRejectConn[1024];   /* most recent rejected connection */
 char		mom_short_name[PBS_MAXHOSTNAME + 1];
 int		num_var_env;
 char	       *path_epilog;
@@ -4206,17 +4207,17 @@ void is_update_stat(
     /* It would be redundant to send state since it is already in status */
   
     ReportMomState[ServerIndex] = 0;
-  
     }
 
+  return;
   }  /* END is_update_stat() */
 
 
 
 
 /*
-**	Process a request for the resource monitor.  The i/o
-**	will take place using DIS over a tcp fd or an rpp stream.
+** Process a request for the resource monitor.  The i/o
+** will take place using DIS over a tcp fd or an rpp stream.
 */
 
 int rm_request(
@@ -4238,9 +4239,11 @@ int rm_request(
   struct	sockaddr_in	*addr;
   unsigned long	ipadd;
   u_short	port;
-  void		(*close_io)	A_((int));
-  int		(*flush_io)	A_((int));
-  extern struct	connection	svr_conn[];
+  void		(*close_io) A_((int));
+  int		(*flush_io) A_((int));
+  extern struct	connection svr_conn[];
+
+  int   NotTrusted = 0;
 
   char *BPtr;
   int   BSpace;
@@ -4280,6 +4283,8 @@ int rm_request(
       {
       sprintf(log_buffer,"bad attempt to connect - unauthorized (port: %d)",
         port);
+
+      NotTrusted = 1;
 
       goto bad;
       }
@@ -4486,9 +4491,9 @@ int rm_request(
             {
             /* set or report down_on_error */
 
-            if ( (*curr == '=') && ((*curr)+1 != '\0' ))
+            if ( (*curr == '=') && ((*curr) + 1 != '\0' ))
               {
-              setdownonerror(curr+1);
+              setdownonerror(curr + 1);
               }
 
             sprintf(output,"down_on_error=%d",
@@ -4621,6 +4626,12 @@ int rm_request(
                     "");
 
                 MUStrNCat(&BPtr,&BSpace,tmpLine);
+                }
+
+              if (TMOMRejectConn[0] != '\0')
+                {
+                MUSNPrintF(&BPtr,&BSpace,"  WARNING:  invalid attempt to connect from server %s\n",
+                  TMOMRejectConn);
                 }
 
               if (MOMLastRecvFromServerTime[sindex] > 0)
@@ -5160,6 +5171,14 @@ bad:
     (ipadd & 0x00ff0000) >> 16,
     (ipadd & 0x0000ff00) >> 8,
     (ipadd & 0x000000ff));
+
+  sprintf(TMOMRejectConn,"%ld.%ld.%ld.%ld:%d  %s",
+    (ipadd & 0xff000000) >> 24,
+    (ipadd & 0x00ff0000) >> 16,
+    (ipadd & 0x0000ff00) >> 8,
+    (ipadd & 0x000000ff),
+    port,
+    (NotTrusted == 1) ? "(server not authorized)" : "(request corrupt)");
 
   strcat(log_buffer,output);
 
