@@ -377,7 +377,7 @@ PKGROOT = $(PWD)/tpackages
 ALL_PKGS = $(SERVER_PKG) $(MOM_PKG) $(CLIENTS_PKG) $(GUI_PKG) $(PAM_PKG) $(DRMAA_PKG) devel doc
 all: all-recursive
 
-.SUFFIXES:
+.SUFFIXES: 
 am--refresh:
 	@:
 $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am $(top_srcdir)/buildutils/config.mk $(am__configure_deps)
@@ -823,7 +823,6 @@ uninstall-info: uninstall-info-recursive
 	mostlyclean-recursive pdf pdf-am ps ps-am tags tags-recursive \
 	uninstall uninstall-am uninstall-binSCRIPTS uninstall-hook \
 	uninstall-info-am
-
 
 snap:
 	$(MAKE) VERSION=$(VERSION)-snap.$${snapstamp:-`date +%Y%m%d%H%M`} dist
