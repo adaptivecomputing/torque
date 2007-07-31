@@ -54,7 +54,7 @@ ok(!scalar(@upnodes), 'Nodes Have Connected to Server') or
     . "- pbs_mom daemons are running on hosts\n"
     . "- compute hostnames match names listed in $torquehome/server_priv/nodes\n"
     . "- compute hosts are network-accessible from the head node\n"
-    . "- the command 'momctl -d3 $pbsnodes[0]' does not report any errors\n"
+    . "- the command 'momctl -d3 -h $pbsnodes[0]' does not report any errors\n"
     );
   BAIL_OUT('Compute nodes have not contacted pbs_server');
   }
