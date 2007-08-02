@@ -1082,7 +1082,7 @@ static void post_sendmom(
 
 /*
  * chk_job_torun - check state and past execution host of a job for which
- *	files are about to be staged in or the job is about to be run.
+ *	files are about to be staged in or for a job that is about to be run.
  * 	Returns pointer to job if all is ok, else returns NULL.
  */
 
@@ -1222,32 +1222,46 @@ static job *chk_job_torun(
       }
     }
 
-#ifdef __TDEV
   if (setnn == 1)
     {
-    resource *prescjb = find_resc_entry(pjob,"neednodes");
+#ifdef TDEV
+    /* what should neednodes be set to? */
 
-    if ((prescjb == NULL) ||
-       ((prescjb->rs_value.at_flags & ATR_VFLAG_SET) == 0))
+    resource_def *DRes;  /* resource definition */
+
+    resource *JRes;      /* resource on job */
+
+    attribute *Attr;     /* 'neednodes' attribute */
+
+    Attr = &pjob->ji_wattr[(int)JOB_ATR_resource];
+
+    DRes = find_resc_def(svr_resc_def,"neednodes",svr_resc_size);
+
+    JRes = find_resc_entry(Attr,DRes);
+
+    if ((JRes == NULL) ||
+       ((JRes->rs_value.at_flags & ATR_VFLAG_SET) == 0))
       {
       /* resource does not exist or value is not set */
 
-      if (prescjb == NULL)
-        prescjb = add_resource_entry(pjob,"neednodes");
-
-      if (prescjb != NULL)
+      if (JRes == NULL)
         {
-        if (prescdt->rs_defin->rs_set(
-              &prescjb->rs_value,
-              &prescdt->rs_value,
+        JRes = add_resource_entry(Attr,DRes);
+        }
+
+      if (JRes != NULL)
+        {
+        if (DRes->rs_defin->rs_set(
+              &JRes->rs_value,
+              &DRes->rs_value,
               SET) == 0)
           {
-          prescjb->rs_value.at_flags |= ATR_VFLAG_SET;
+          JRes->rs_value.at_flags |= ATR_VFLAG_SET;
           }
         }
       }
+#endif /* TDEV */
     }    /* END if (setnn == 1) */
-#endif /* __TDEV */
 
   return(pjob);
   }  /* END chk_job_torun() */

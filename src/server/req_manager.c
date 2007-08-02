@@ -510,34 +510,45 @@ int mgr_unset_attr(
 	
   while (plist != NULL) 
     {
-		index = find_attr(pdef, plist->al_name, limit);
-		if ( ((pdef+index)->at_type == ATR_TYPE_RESC) &&
-		     (plist->al_resc != (char *)0) )   {
+    index = find_attr(pdef,plist->al_name,limit);
 
-			/* free resource member, not the attribute */
+    if (((pdef + index)->at_type == ATR_TYPE_RESC) &&
+         (plist->al_resc != NULL))   
+      {
+      /* free resource member, not the attribute */
 
-			prsdef = find_resc_def(svr_resc_def, plist->al_resc,
-					       svr_resc_size);
-			if ((presc = find_resc_entry(pattr+index, prsdef))) {
-			    if ( (pdef->at_parent != PARENT_TYPE_SERVER) ||
-				 (index != (int)SRV_ATR_resource_cost) )   {
-					prsdef->rs_free(&presc->rs_value);
-			    }
-			    delete_link(&presc->rs_link);
-			}
-			free(presc);
+      prsdef = find_resc_def(
+        svr_resc_def, 
+        plist->al_resc,
+        svr_resc_size);
 
-		} else {
+      if ((presc = find_resc_entry(pattr + index,prsdef))) 
+        {
+        if ((pdef->at_parent != PARENT_TYPE_SERVER) ||
+            (index != (int)SRV_ATR_resource_cost))   
+          {
+          prsdef->rs_free(&presc->rs_value);
+          }
 
-			/* free the whole attribute */
+        delete_link(&presc->rs_link);
+        }
 
-			(pdef+index)->at_free(pattr+index);
-			(pattr+index)->at_flags |= ATR_VFLAG_MODIFY;
-		}
-		plist = (svrattrl *)GET_NEXT(plist->al_link);
-	}
-	return (0);
-}
+      free(presc);
+      } 
+    else 
+      {
+      /* free the whole attribute */
+
+      (pdef + index)->at_free(pattr+index);
+
+      (pattr + index)->at_flags |= ATR_VFLAG_MODIFY;
+      }
+
+    plist = (svrattrl *)GET_NEXT(plist->al_link);
+    }  /* END while (plist != NULL) */
+
+  return(0);
+  }  /* END mgr_unset_attr() */
 
 
 

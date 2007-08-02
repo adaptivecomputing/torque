@@ -979,7 +979,10 @@ static void chk_svr_resc_limit(
     /* NYI */
 
     if (PPN == 0)
-      strcpy(EMsg,"MPP Width Detected");
+      {
+      if (EMsg != NULL)
+        strcpy(EMsg,"MPP Width Detected");
+      }
     }
 
   return;
@@ -1003,6 +1006,9 @@ int chk_resc_limits(
 
   {
   /* NOTE:  comp_resc_gt and comp_resc_lt are global ints */
+
+  if (EMsg != NULL)
+    EMsg[0] = '\0';
 
   /* first check against queue minimum */
 
@@ -1615,19 +1621,26 @@ char *prefix_std_file(
  *	The "to" buffer must be large enought (PBS_MAXUSER+1).
  */
 
-void get_jobowner(from, to)
-	char *from;
-	char *to;
-{
-	int i;
+void get_jobowner(
 
-	for (i=0; i<PBS_MAXUSER; ++i) {
-		if ( (*(from+i) == '@') || (*(from+i) == '\0') )
-			break;
-		*(to+i) = *(from+i);
-	}
-	*(to+i) = '\0';
-}
+  char *from,
+  char *to)
+
+  {
+  int i;
+
+  for (i = 0;i < PBS_MAXUSER;++i) 
+    {
+    if ((*(from + i) == '@') || (*(from + i) == '\0'))
+      break;
+
+    *(to + i) = *(from + i);
+    }
+
+  *(to + i) = '\0';
+
+  return;
+  }
 
 
 
@@ -1791,30 +1804,44 @@ void set_statechar(
  *	to the queue min time. 
  */
 
-static void eval_chkpnt(jobckp, queckp)
-	attribute *jobckp;	/* job's checkpoint attribute */
-	attribute *queckp;	/* queue's checkpoint attribute */
-{
-	int jobs;
-	char queues[30];
-	char *pv;
-	
-	if ( ((jobckp->at_flags & ATR_VFLAG_SET) == 0)  ||
-	     ((queckp->at_flags & ATR_VFLAG_SET) == 0) )
-		return;		/* need do nothing */
+static void eval_chkpnt(
 
-	pv = jobckp->at_val.at_str;
-	if (*pv++ == 'c') {
-		if (*pv == '=')
-			pv++;
-		jobs = atoi(pv);
-		if (jobs < queckp->at_val.at_long) {
-			(void)sprintf(queues, "c=%ld", queckp->at_val.at_long);
-			free_str(jobckp);
-			(void)decode_str(jobckp, 0, 0, queues);
-		}
-	}
-}
+  attribute *jobckp,	/* job's checkpoint attribute */
+  attribute *queckp)	/* queue's checkpoint attribute */
+
+  {
+  int jobs;
+  char queues[30];
+  char *pv;
+	
+  if (((jobckp->at_flags & ATR_VFLAG_SET) == 0) ||
+      ((queckp->at_flags & ATR_VFLAG_SET) == 0))
+    {
+    return;		/* need do nothing */
+    }
+
+  pv = jobckp->at_val.at_str;
+
+  if (*pv++ == 'c') 
+    {
+    if (*pv == '=')
+      pv++;
+
+    jobs = atoi(pv);
+
+    if (jobs < queckp->at_val.at_long) 
+      {
+      sprintf(queues,"c=%ld", 
+        queckp->at_val.at_long);
+
+      free_str(jobckp);
+
+      decode_str(jobckp,0,0,queues);
+      }
+    }
+
+  return;
+  }  /* END eval_chkpnt() */
 
 
 

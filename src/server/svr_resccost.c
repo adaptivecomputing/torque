@@ -119,30 +119,44 @@
  */
 
 struct resource_cost {
-	list_link	rc_link;
-	resource_def   *rc_def;
-	long		rc_cost;
-};
+  list_link	rc_link;
+  resource_def   *rc_def;
+  long		rc_cost;
+  };
+
+
+
 
 /*
  * add_cost_entry - add a new cost entry to the resource_cost list
  */
 
-static struct resource_cost *add_cost_entry(patr, prdef)
-	attribute    *patr;
-	resource_def *prdef;
-{
-	struct resource_cost *pcost;
+static struct resource_cost *add_cost_entry(
 
-	pcost = malloc(sizeof (struct resource_cost));
-	if (pcost) {
-		CLEAR_LINK(pcost->rc_link);
-		pcost->rc_def = prdef;
-		pcost->rc_cost = 0;
-		append_link(&patr->at_val.at_list, &pcost->rc_link, pcost);
-	}
-	return (pcost);
-}
+  attribute    *patr,
+  resource_def *prdef)
+
+  {
+  struct resource_cost *pcost;
+
+  pcost = malloc(sizeof (struct resource_cost));
+
+  if (pcost != NULL) 
+    {
+    CLEAR_LINK(pcost->rc_link);
+
+    pcost->rc_def = prdef;
+    pcost->rc_cost = 0;
+
+    append_link(&patr->at_val.at_list,&pcost->rc_link,pcost);
+    }
+
+  return(pcost);
+  }
+
+
+
+
 
 /*
  * decode_rcost - decode string into resource cost value
@@ -152,43 +166,66 @@ static struct resource_cost *add_cost_entry(patr, prdef)
  *		*patr elements set
  */
 
-int decode_rcost(patr, name, rescn, val)
-	struct attribute *patr;
-	char *name;		/* attribute name */
-	char *rescn;		/* resource name, unused here */
-	char *val;		/* attribute value */
-{
-	resource_def *prdef;
-	struct resource_cost *pcost;
-	void free_rcost A_((attribute *));
-	
+int decode_rcost(
 
-	if ((val == (char *)0) || (rescn == (char *)0)) {
-		patr->at_flags = (patr->at_flags & ~ATR_VFLAG_SET) |
-				 ATR_VFLAG_MODIFY;
-		return (0);
-	}
-	if (patr->at_flags & ATR_VFLAG_SET) {
-		free_rcost(patr);
-	}
+  struct attribute *patr,
+  char             *name,	/* attribute name */
+  char             *rescn,	/* resource name, unused here */
+  char             *val)	/* attribute value */
 
-	prdef = find_resc_def(svr_resc_def, rescn, svr_resc_size);
-	if (prdef == (resource_def *)0)
-		return (PBSE_UNKRESC);
-	pcost = (struct resource_cost *)GET_NEXT(patr->at_val.at_list);
-	while (pcost) {
-		if (pcost->rc_def == prdef)
-			break;	/* have entry in attr already */
-		pcost = (struct resource_cost *)GET_NEXT(pcost->rc_link);
-	}
-	if (pcost == (struct resource_cost *)0) {	/* add entry */
-		if ((pcost=add_cost_entry(patr,prdef)) == (struct resource_cost *)0)
-			return (PBSE_SYSTEM);
-	}
-	pcost->rc_cost = atol(val);
-	patr->at_flags |= ATR_VFLAG_SET | ATR_VFLAG_MODIFY;
-	return (0);
-}
+  {
+  resource_def *prdef;
+  struct resource_cost *pcost;
+  void free_rcost A_((attribute *));
+
+  if ((val == NULL) || (rescn == NULL)) 
+    {
+    patr->at_flags = (patr->at_flags & ~ATR_VFLAG_SET) | ATR_VFLAG_MODIFY;
+
+    return(0);
+    }
+
+  if (patr->at_flags & ATR_VFLAG_SET) 
+    {
+    free_rcost(patr);
+    }
+
+  prdef = find_resc_def(svr_resc_def,rescn,svr_resc_size);
+
+  if (prdef == NULL)
+    {
+    return(PBSE_UNKRESC);
+    }
+
+  pcost = (struct resource_cost *)GET_NEXT(patr->at_val.at_list);
+
+  while (pcost != NULL) 
+    {
+    if (pcost->rc_def == prdef)
+      break;	/* have entry in attr already */
+
+    pcost = (struct resource_cost *)GET_NEXT(pcost->rc_link);
+    }
+
+  if (pcost == NULL) 
+    {
+    /* add entry */
+
+    if ((pcost = add_cost_entry(patr,prdef)) == NULL)
+      {
+      return(PBSE_SYSTEM);
+      }
+    }
+
+  pcost->rc_cost = atol(val);
+  patr->at_flags |= ATR_VFLAG_SET | ATR_VFLAG_MODIFY;
+
+  return(0);
+  }
+
+
+
+
 
 /*
  * encode_rcost - encode attribute of type long into attr_extern

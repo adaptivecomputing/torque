@@ -144,7 +144,7 @@ int decode_resc(
 
   struct attribute *patr,  /* Modified on Return */
   char             *name,  /* attribute name */
-  char             *rescn, /* I: resource name - is used here */
+  char             *rescn, /* I resource name - is used here */
   char             *val)   /* resource value */
 
   {
@@ -192,7 +192,7 @@ int decode_resc(
 
   /* note special use of ATR_DFLAG_ACCESS, see server/attr_recov() */
 
-  if (((prsc->rs_defin->rs_flags&resc_access_perm&ATR_DFLAG_WRACC) == 0) &&
+  if (((prsc->rs_defin->rs_flags & resc_access_perm & ATR_DFLAG_WRACC) == 0) &&
        (resc_access_perm != ATR_DFLAG_ACCESS))
     {
     return(PBSE_ATTRRO);
@@ -250,27 +250,33 @@ int encode_resc(
   int		 mode)	  /* encode mode */
 
   {
-	int	    dflt;
-	resource   *prsc;
-	int	    rc;
-	int	    grandtotal = 0;
-	int	    perm;
+int	    dflt;
+resource   *prsc;
+int	    rc;
+int	    grandtotal = 0;
+int	    perm;
 
-	if ( !attr )
-		return (-1);
-	if ( !(attr->at_flags & ATR_VFLAG_SET))
-		return (0);	/* no resources at all */
+  if (attr == NULL)
+    {
+    return(-1);
+    }
 
-	/* ok now do each separate resource */
+  if (!(attr->at_flags & ATR_VFLAG_SET))
+    {
+    return(0);	/* no resources at all */
+    }
 
-	prsc = (resource *)GET_NEXT(attr->at_val.at_list);
-	while (prsc != (resource *)0) {
+  /* ok now do each separate resource */
 
-	    /*
-	     * encode if sending to client or MOM with permission
-	     * encode if saving and not default value
-	     * encode if sending to server and not default and have permission
-	     */
+  prsc = (resource *)GET_NEXT(attr->at_val.at_list);
+
+  while (prsc != NULL) 
+    {
+    /*
+     * encode if sending to client or MOM with permission
+     * encode if saving and not default value
+     * encode if sending to server and not default and have permission
+     */
 
 	    perm = prsc->rs_defin->rs_flags & resc_access_perm ;
 	    dflt = prsc->rs_value.at_flags & ATR_VFLAG_DEFLT;
@@ -288,8 +294,9 @@ int encode_resc(
 	    }
 	    prsc = (resource *)GET_NEXT(prsc->rs_link);
 	}
-	return (grandtotal);
-}
+
+  return(grandtotal);
+  }
 	
 
 
@@ -318,23 +325,29 @@ int set_resc(
   resource *oldresc;
   int	  rc;
 
-	assert(old && new);
+  assert(old && new);
 
-	newresc = (resource *)GET_NEXT(new->at_val.at_list);
-	while (newresc != (resource *)0) {
+  newresc = (resource *)GET_NEXT(new->at_val.at_list);
 
-		local_op = op;
+  while (newresc != NULL) 
+    {
+    local_op = op;
 	
-		/* search for old that has same definition as new */
+    /* search for old that has same definition as new */
 
-		oldresc = find_resc_entry(old, newresc->rs_defin);
-		if (oldresc == (resource *)0) {
-			/* add new resource to list */
-			oldresc = add_resource_entry(old,newresc->rs_defin);
-			if (oldresc == (resource *)0) {
-				return (PBSE_SYSTEM);
-			}
-		}
+    oldresc = find_resc_entry(old,newresc->rs_defin);
+
+    if (oldresc == NULL) 
+      {
+      /* add new resource to list */
+
+      oldresc = add_resource_entry(old,newresc->rs_defin);
+
+      if (oldresc == NULL) 
+        {
+        return(PBSE_SYSTEM);
+        }
+      }
 
 		/*
 		 * unlike other attributes, resources can be "unset"
@@ -697,27 +710,38 @@ resource_def *find_resc_def(
 
 
 
+
+
 /*
  * find_resc_entry - find a resource (value) entry in a list headed in an
  * an attribute that points to the specified resource_def structure 
  *
- *	Returns: pointer to struct resource  or NULL
+ *	Returns: pointer to struct resource or NULL
  */
 
-resource *find_resc_entry(pattr, rscdf)
-	attribute	*pattr;
-	resource_def	*rscdf;
-{
-	resource *pr;
+resource *find_resc_entry(
 
-	pr = (resource *)GET_NEXT(pattr->at_val.at_list);
-	while (pr != (resource *)0) {
-		if (pr->rs_defin == rscdf)
-			break;
-		pr = (resource *)GET_NEXT(pr->rs_link);
-	}
-	return (pr);
-}
+  attribute    *pattr,
+  resource_def *rscdf)
+
+  {
+  resource *pr;
+
+  pr = (resource *)GET_NEXT(pattr->at_val.at_list);
+
+  while (pr != NULL) 
+    {
+    if (pr->rs_defin == rscdf)
+      break;
+
+    pr = (resource *)GET_NEXT(pr->rs_link);
+    }
+
+  return(pr);
+  }  /* END find_resc_entry() */
+
+
+
 
 /* 
  * add_resource_entry - add and "unset" entry for a resource type to a
@@ -730,17 +754,22 @@ resource *find_resc_entry(pattr, rscdf)
  *		 exists (it shouldn't) then that one is returned.
  */
 
-resource *add_resource_entry (pattr, prdef)
-	attribute	*pattr;
-	resource_def	*prdef;
-{
-	int 		 i;
-	resource	*new;
-	resource	*pr;
+resource *add_resource_entry(
 
-	pr = (resource *)GET_NEXT(pattr->at_val.at_list);
-	while (pr != (resource *)0) {
-		i = strcmp(pr->rs_defin->rs_name, prdef->rs_name);
+  attribute    *pattr,
+  resource_def *prdef)
+
+  {
+  int 		 i;
+  resource	*new;
+  resource	*pr;
+
+  pr = (resource *)GET_NEXT(pattr->at_val.at_list);
+
+  while (pr != NULL) 
+    {
+    i = strcmp(pr->rs_defin->rs_name, prdef->rs_name);
+
 		if (i == 0)	/* found an matching entry */
 			return (pr);
 		else if (i > 0)
@@ -763,8 +792,13 @@ resource *add_resource_entry (pattr, prdef)
 		append_link(&pattr->at_val.at_list, &new->rs_link, new);
 	}
 	pattr->at_flags |= ATR_VFLAG_SET | ATR_VFLAG_MODIFY;
-	return (new);
-}
+
+  return(new);
+  }
+
+
+
+
 
 /*
  * action_resc - the at_action for the resource_list attribute
@@ -772,21 +806,27 @@ resource *add_resource_entry (pattr, prdef)
  *	call it.
  */
 
-int action_resc(pattr, pobject, actmode)
-	attribute *pattr;
-	void *pobject;
-	int actmode;
-{
-	resource *pr;
+int action_resc(
 
-	pr = (resource *)GET_NEXT(pattr->at_val.at_list);
-	while (pr) {
-		if ( (pr->rs_value.at_flags & ATR_VFLAG_MODIFY) &&
-		     (pr->rs_defin->rs_action) ) 
-			    pr->rs_defin->rs_action(pr, pattr, actmode);
+  attribute *pattr,
+  void      *pobject,
+  int        actmode)
 
-		pr->rs_value.at_flags &= ~ATR_VFLAG_MODIFY;
-		pr = (resource *)GET_NEXT(pr->rs_link);
-	}
-	return (0);
-}
+  {
+  resource *pr;
+
+  pr = (resource *)GET_NEXT(pattr->at_val.at_list);
+
+  while (pr != NULL) 
+    {
+    if ((pr->rs_value.at_flags & ATR_VFLAG_MODIFY) &&
+        (pr->rs_defin->rs_action)) 
+      pr->rs_defin->rs_action(pr,pattr,actmode);
+
+    pr->rs_value.at_flags &= ~ATR_VFLAG_MODIFY;
+
+    pr = (resource *)GET_NEXT(pr->rs_link);
+    }
+
+  return(0);
+  }

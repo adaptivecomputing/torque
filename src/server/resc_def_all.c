@@ -971,7 +971,7 @@ static int set_node_ct(
 
   pnct->rs_value.at_flags |= ATR_VFLAG_SET;
 
-  /* Set "neednodes" to "nodes", may be altered by Scheduler */
+  /* Set "neednodes" to "nodes", may be altered by scheduler */
 
   pndef = find_resc_def(svr_resc_def,"neednodes",svr_resc_size);
 
@@ -1002,37 +1002,52 @@ static int set_node_ct(
   }  /* END set_node_ct() */
 
 
+
+
+
 /*
  * set_tokens = set node count
  *
  */
 
-static int set_tokens(attr, new, op)
-      struct attribute *attr;
-      struct attribute *new;
-      enum batch_op op;
-{
-  char * colon = NULL;
-  float count = 0;
+static int set_tokens(
+
+  struct attribute *attr,
+  struct attribute *new,
+  enum batch_op     op)
+
+  {
+  char  *colon = NULL;
+  float  count = 0;
 
   int ret = 0;
 
-  if(new != NULL){
-    colon = strchr(new->at_val.at_str, (int)':');
-    if(colon == NULL){
-      ret = PBSE_BADATVAL;
-    } else {
+  if (new != NULL)
+    {
+    colon = strchr(new->at_val.at_str,(int)':');
 
+    if (colon == NULL)
+      {
+      ret = PBSE_BADATVAL;
+      } 
+    else 
+      {
       colon++;
       count = atof(colon);
-      if(count <= 0 || count > 1000){
-      ret = PBSE_BADATVAL;
+
+      if ((count <= 0) || (count > 1000))
+        {
+        ret = PBSE_BADATVAL;
+        }
       }
     }
-  }
-  if(ret == 0){
-    ret = set_str(attr, new, op);
-  }
 
-  return ret;
-}
+  if (ret == 0)
+    {
+    ret = set_str(attr,new,op);
+    }
+
+  return(ret);
+  }  /* END set_tokens() */
+
+
