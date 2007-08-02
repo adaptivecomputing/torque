@@ -412,6 +412,8 @@ void log_err(
  * log_record - log a message to the log file
  *	The log file must have been opened by log_open().
  *
+ * NOTE:  do not use in pbs_mom spawned children - does not write to syslog!!!
+ *
  *	The caller should ensure proper formating of the message if "text"
  *	is to contain "continuation lines".
  */

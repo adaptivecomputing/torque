@@ -122,7 +122,8 @@ extern char     *AllocParCmd;
  * 	Set session id and whatever else is required on this machine
  *	to create a new job.
  *
- * NOTE:  This routine is run as {root,user}??? 
+ * NOTE:  This routine is run as root after fork for both parallel and serial jobs
+ * NOTE:  This routine is called by TMOMFinalizeChild()
  *
  *      Return: session/job id or if error:
  *		-1 - if setsid() fails
@@ -140,8 +141,23 @@ int set_job(
   char *PPtr;
   char *CPtr;
 
+#ifdef __XTTEST
+  char  tmpLine[1024];
+#endif /* __ XTTEST */
+
   sjr->sj_session = setsid();
 
+#ifdef __XTTEST
+  PPtr = get_job_envvar(pjob,"BATCH_PARTITION_ID");
+  CPtr = get_job_envvar(pjob,"BATCH_ALLOC_COOKIE");
+
+  sprintf(tmpLine,"echo \"P:'%s' C:'%s'\" >> /tmp/dog",
+    (PPtr != NULL) ? PPtr : "NULL",
+    (CPtr != NULL) ? CPtr : "NULL");
+
+  system(tmpLine);
+#endif /* __ XTTEST */
+ 
   /* NOTE:  only activate partition create script for XT4+ environments */
 
   if (((PPtr = get_job_envvar(pjob,"BATCH_PARTITION_ID")) != NULL) &&
@@ -159,9 +175,8 @@ int set_job(
       pjob->ji_qs.ji_jobid,
       (long)sjr->sj_session);
 
-    log_record(
-      PBSEVENT_SYSTEM,
-      PBS_EVENTCLASS_SERVER,
+    log_err(
+      errno,
       id,
       tmpLine);
 
