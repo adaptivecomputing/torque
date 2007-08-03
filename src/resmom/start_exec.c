@@ -5449,6 +5449,8 @@ int open_std_file(
 
       /* seems reasonably safe to append to the existing file */
 
+      /* file exists - do not need to create or open exclusive */
+
       mode &= ~(O_EXCL|O_CREAT); 
       }  /* END if (lstat(path,&statbuf) == 0) */
     else
@@ -5459,17 +5461,22 @@ int open_std_file(
         sprintf(log_buffer,"cannot stat stdout/stderr file '%s' (timeout)",
           path);
       else
-        sprintf(log_buffer,"cannot stat stdout/stderr file '%s'",
+        sprintf(log_buffer,"cannot stat stdout/stderr file '%s' - file does not exist, will create",
           path);
 
-      log_err(errno,"open_std_file",log_buffer);
+      if (LOGLEVEL >= 6)
+        log_err(errno,"open_std_file",log_buffer);
 
       if (errno == EINTR)
         {
+        /* fail on timeout */
+
         return(-2);
         }
       }
     }    /* END else (keeping) */
+
+  /* become user to create file */
 
   if ((setegid(exgid) == -1) || 
       (seteuid(pjob->ji_qs.ji_un.ji_momt.ji_exuid) == -1))
@@ -5484,6 +5491,8 @@ int open_std_file(
     old_umask = umask(pjob->ji_wattr[(int)JOB_ATR_umask].at_val.at_long);
     }
 
+  /* open file */
+
   fds = open(path,mode,0666);
 
   if (fds == -1)
@@ -5492,6 +5501,17 @@ int open_std_file(
       path);
 
     log_err(errno,"open_std_file",log_buffer);
+
+    if (errno == ENOENT)
+      {
+      char tmpLine[1024];
+
+      /* parent directory does not exist - find out what part of subtree exists */
+
+      strncpy(tmpLine,path,sizeof(tmpLine));
+
+      /* NYI */
+      }
     }
 
   if (old_umask)
@@ -5516,10 +5536,13 @@ int open_std_file(
 
   if (LOGLEVEL >= 4)
     {
-    sprintf(log_buffer,"successfully created/opened stdout/stderr file '%s'",
-      path);
+    if (fds >= 0)
+      {
+      sprintf(log_buffer,"successfully created/opened stdout/stderr file '%s'",
+        path);
 
-    log_err(0,"open_std_file",log_buffer);
+      log_err(0,"open_std_file",log_buffer);
+      }
     }
 
   return(fds);

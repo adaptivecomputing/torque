@@ -176,7 +176,7 @@ int set_job(
       (long)sjr->sj_session);
 
     log_err(
-      errno,
+      0,
       id,
       tmpLine);
 
