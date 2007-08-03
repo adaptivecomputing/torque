@@ -5380,6 +5380,9 @@ char *std_file_name(
 /*
  * open_std_file - open/create either standard output or standard error 
                    for the job.
+ * NOTE:           called by pbs_mom child - cannot log to mom log file - use
+                   log_err to report to syslog
+ *
  * RETURN:         -1 on failure, -2 on timeout, or file descriptor on success
  */
 
