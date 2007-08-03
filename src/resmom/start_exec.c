@@ -5372,7 +5372,8 @@ char *std_file_name(
 
 
 /*
- * open_std_file - open either standard output or standard error for the job.
+ * open_std_file - open/create either standard output or standard error 
+                   for the job.
  * RETURN:         -1 on failure, -2 on timeout, or file descriptor on success
  */
 
@@ -5442,6 +5443,11 @@ int open_std_file(
       {
       /* lstat failed - should we return failure in all cases? */
 
+      sprintf(log_buffer,"cannot stat stdout/stderr file '%s'",
+        path);
+
+      log_err(errno,"open_std_file",log_buffer);
+
       if (errno == EINTR)
         {
         return(-2);
@@ -5462,6 +5468,14 @@ int open_std_file(
 
   fds = open(path,mode,0666);
 
+  if (fds == -1)
+    {
+    sprintf(log_buffer,"cannot open/create stdout/stderr file '%s'",
+      path);
+
+    log_err(errno,"open_std_file",log_buffer);
+    }
+
   if (old_umask)
     {
     umask(old_umask);
@@ -5480,6 +5494,14 @@ int open_std_file(
 
       return(-2);
       }
+    }
+
+  if (LOGLEVEL >= 4)
+    {
+    sprintf(log_buffer,"successfully created/opened stdout/stderr file '%s'",
+      path);
+
+    log_err(0,"open_std_file",log_buffer);
     }
 
   return(fds);
