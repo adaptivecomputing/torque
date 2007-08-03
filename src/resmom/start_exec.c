@@ -5504,15 +5504,39 @@ int open_std_file(
 
     if (errno == ENOENT)
       {
-      char tmpLine[1024];
+      char *ptr;
+      char  tmpLine[1024];
 
       /* parent directory does not exist - find out what part of subtree exists */
 
       strncpy(tmpLine,path,sizeof(tmpLine));
 
-      /* NYI */
-      }
-    }
+      while ((ptr = strrchr(tmpLine,'/')) != NULL)
+        {
+        *ptr = '\0';
+     
+        if (lstat(tmpLine,&statbuf) == 0)
+          {
+          /* lstat succeeded */
+     
+          sprintf(log_buffer,"'%s' exists\n",tmpLine);
+     
+          break;
+          }  /* END if (lstat(tmpLine,&statbuf) == 0) */
+        else
+          {
+          /* lstat failed - should we return failure in all cases? */
+     
+          if (errno == EINTR)
+            sprintf(log_buffer,"cannot stat stdout/stderr file '%s' (timeout)\n",
+              tmpLine);
+          else
+            sprintf(log_buffer,"cannot stat stdout/stderr file '%s' - file does not exist\n",
+              tmpLine);
+          }
+        }   /* END while ((ptr = strrchr(tmpLine,'/')) != NULL) */
+      }     /* END if (errno == ENOENT) */
+    }       /* END if (fds == -1) */
 
   if (old_umask)
     {
