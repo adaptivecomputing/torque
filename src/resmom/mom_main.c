@@ -7844,7 +7844,7 @@ int TMOMScanForStarting(void)
 
       if (LOGLEVEL >= 2)
         {
-        snprintf(log_buffer,1024,"checking job start in %s",
+        snprintf(log_buffer,1024,"checking job start in %s - examining pipe from child",
           id);
 
         log_record(

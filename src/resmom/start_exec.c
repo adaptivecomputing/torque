@@ -728,7 +728,8 @@ int is_joined(
 
 static int open_std_out_err(
 
-  job *pjob)  /* I */
+  job *pjob,    /* I */
+  int  timeout) /* I (optional,>0 to set) */
 
   {
   int i;
@@ -739,6 +740,11 @@ static int open_std_out_err(
   /* if std out/err joined (set and != "n"), which file is first */
 	
   i = is_joined(pjob);
+
+  if (timeout > 0)
+    {
+    alarm(timeout);
+    }
 
   if (i == 1) 
     {
@@ -775,15 +781,41 @@ static int open_std_out_err(
       filemode,
       pjob->ji_qs.ji_un.ji_momt.ji_exgid);
 
+  alarm(0);  /* disable alarm */
+
   if ((file_out < 0) || (file_err < 0)) 
     {
-    log_err(
-      errno,
-      "open_std_out_err",
-      "Unable to open standard output/error");
+    /* FAILURE - cannot load files */
+
+    if ((file_out == -2) || (file_err == -2))
+      {
+      /* timeout occurred */
+
+      char *path;
+
+      int   keeping;
+
+      path = std_file_name(pjob,StdOut,&keeping);
+
+      sprintf(log_buffer,"unable to stat/open file '%s' within %d seconds - check filesystem",
+        (path != NULL) ? path : "???",
+        timeout);
+
+      log_err(
+        errno,
+        "open_std_out_err",
+        log_buffer);
+      }
+    else
+      {
+      log_err(
+        errno,
+        "open_std_out_err",
+        "unable to open standard output/error");
+      }
 
     return(-1);
-    }
+    }  /* END if ((file_out < 0) || (file_err < 0)) */
 
   FDMOVE(file_out);	/* make sure descriptor > 2       */
   FDMOVE(file_err);	/* so don't clobber stdin/out/err */
@@ -1741,6 +1773,21 @@ int TMomFinalizeJob2(
   pjob  = (job *)TJE->pjob;
   ptask = (task *)TJE->ptask;
 
+  if (LOGLEVEL >= 4)
+    {
+    log_record(
+      PBSEVENT_ERROR,
+      PBS_EVENTCLASS_JOB,
+      pjob->ji_qs.ji_jobid,
+      "about to fork child which will become job");
+
+    log_record(
+      PBSEVENT_ERROR,
+      PBS_EVENTCLASS_JOB,
+      id,
+      log_buffer);
+    }
+
   /*
   ** fork the child that will become the job.
   */
@@ -1821,7 +1868,7 @@ int TMomFinalizeJob2(
       }	
 
     close(TJE->pipe_script[1]);
-    }
+    }  /* END if (TJE->is_interactive == FALSE) */
 
 #endif	/* SHELL_INVOKE */
 #endif  /* !SHELL_USE_ARGV */
@@ -2391,28 +2438,30 @@ int TMomFinalizeChild(
 
     if (create_job_set(pjob->ji_qs.ji_jobid,cpuset_name,num_cpus,num_mems) != 0)
       {
-      sprintf (log_buffer, "Could not create cpuset for job %s.\n", pjob->ji_qs.ji_jobid);
+      sprintf(log_buffer,"Could not create cpuset for job %s.\n", 
+        pjob->ji_qs.ji_jobid);
+
       log_err(-1,id,log_buffer);
       starter_return(TJE->upfds,TJE->downfds,JOB_EXEC_RETRY,&sjr);
-       }
-     else
-       {
-       /* Move this mom process into the cpuset so the job will start in it. */
+      }
+    else
+      {
+      /* Move this mom process into the cpuset so the job will start in it. */
 
-       if (cpuset_move(0,cpuset_name) != 0)
-         {
-         /* Remove cpuset, created but the process couldn't be placed in it. */
+      if (cpuset_move(0,cpuset_name) != 0)
+        {
+        /* Remove cpuset, created but the process couldn't be placed in it. */
 
-         cpuset_delete(cpuset_name);
+        cpuset_delete(cpuset_name);
 
-         sprintf(log_buffer,"Could not move job %s into its cpuset.\n", 
-           pjob->ji_qs.ji_jobid);
+        sprintf(log_buffer,"Could not move job %s into its cpuset.\n", 
+          pjob->ji_qs.ji_jobid);
 
-         log_err(-1,id,log_buffer);
-         starter_return(TJE->upfds,TJE->downfds,JOB_EXEC_RETRY,&sjr);
-         }
-       }
-     }
+        log_err(-1,id,log_buffer);
+        starter_return(TJE->upfds,TJE->downfds,JOB_EXEC_RETRY,&sjr);
+        }
+      }
+    }
 #endif  /* (PENABLE_CPUSETS || PENABLE_DYNAMIC_CPUSETS) */
 
 #ifdef ENABLE_CPA
@@ -2827,7 +2876,9 @@ int TMomFinalizeChild(
       close(script_in);
       }
 
-    if (open_std_out_err(pjob) == -1) 
+    /* NOTE:  set arg2 to 5 to enable file open timeout check */
+
+    if (open_std_out_err(pjob,0) == -1) 
       {
       log_err(-1,id,"unable to open stdout/stderr descriptors");
 
@@ -4050,7 +4101,7 @@ int start_process(
 
     if ((fd1 < 0) || (fd2 < 0))
       {
-      if (open_std_out_err(pjob) == -1)
+      if (open_std_out_err(pjob,-1) == -1)
         {
         log_err(errno,id,"cannot open job stderr/stdout files");
 
@@ -5322,6 +5373,7 @@ char *std_file_name(
 
 /*
  * open_std_file - open either standard output or standard error for the job.
+ * RETURN:         -1 on failure, -2 on timeout, or file descriptor on success
  */
 
 int open_std_file(
@@ -5340,6 +5392,8 @@ int open_std_file(
 
   if ((path = std_file_name(pjob,which,&keeping)) == NULL)
     {
+    /* FAILURE - cannot determine filename */
+
     return(-1);
     }
 
@@ -5355,6 +5409,8 @@ int open_std_file(
     {
     if (lstat(path,&statbuf) == 0)
       {
+      /* lstat succeeded */
+
       if (S_ISLNK(statbuf.st_mode))
         {
         log_err(-1,"open_std_file","std file is symlink, someone is doing something fishy");
@@ -5379,9 +5435,19 @@ int open_std_file(
         }
 
       /* seems reasonably safe to append to the existing file */
+
       mode &= ~(O_EXCL|O_CREAT); 
+      }  /* END if (lstat(path,&statbuf) == 0) */
+    else
+      {
+      /* lstat failed - should we return failure in all cases? */
+
+      if (errno == EINTR)
+        {
+        return(-2);
+        }
       }
-    }
+    }    /* END else (keeping) */
 
   if ((setegid(exgid) == -1) || 
       (seteuid(pjob->ji_qs.ji_un.ji_momt.ji_exuid) == -1))
@@ -5403,6 +5469,18 @@ int open_std_file(
 
   seteuid(0);
   setegid(pbsgroup);
+
+  if (fds == -1)
+    {
+    /* FAILURE - cannot open file */
+
+    if (errno == EINTR)
+      {
+      /* TIMEOUT */
+
+      return(-2);
+      }
+    }
 
   return(fds);
   }  /* END open_std_file() */
@@ -5843,7 +5921,7 @@ int TMomCheckJobChild(
 
   if (rc <= 0)
     {
-    /* data not yet available */
+    /* TIMEOUT - data not yet available */
 
     return(FAILURE);
     }
@@ -5863,6 +5941,15 @@ int TMomCheckJobChild(
 
   *RC = errno;
   *Count = i;
+
+  if (LOGLEVEL >= 4)
+    {
+    log_record(
+      PBSEVENT_ERROR,
+      PBS_EVENTCLASS_JOB,
+      (TJE->pjob != NULL) ? ((job *)TJE->pjob)->ji_qs.ji_jobid : "???",
+      "task/session info loaded");
+    }
 
   return(SUCCESS);
   }  /* END TMomCheckJobChild() */
