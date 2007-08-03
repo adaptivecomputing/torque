@@ -843,11 +843,10 @@ static int open_std_out_err(
 
 int mkdirtree(
 
-  char *dirpath, /* I */
-  mode_t mode)   /* I */
+  char   *dirpath, /* I */
+  mode_t  mode)    /* I */
 
   {
-
   char *part;
   int rc = 0;
   mode_t oldmask = 0;
@@ -861,23 +860,26 @@ int mkdirtree(
     }
 
   /* make a copy to scribble NULLs on */
-  if ((path=strdup(dirpath)) == NULL)
+
+  if ((path = strdup(dirpath)) == NULL)
     {
-    rc=-1;
+    rc = -1;
 
     goto done;
     }
 
-  oldmask=umask(0000);
+  oldmask = umask(0000);
 
-  part=strtok(path,"/");
+  part = strtok(path,"/");
+
   if (part == NULL)
     {
-    rc=-1;
+    rc = -1;
 
     goto done;
     }
-  *(part-1)='/';  /* leading / */
+
+  *(part - 1) = '/';  /* leading '/' */
 
   while((part = strtok(NULL,"/")) != NULL)
     {
@@ -885,16 +887,17 @@ int mkdirtree(
       {
       if (errno != EEXIST)
         {
-        rc=errno;
+        rc = errno;
 
         goto done;
         }
       }
 
-    *(part-1)='/';
+    *(part-1) = '/';
     }
 
   /* very last component */
+
   if (mkdir(path,mode) == -1)
     {
     if (errno != EEXIST)
@@ -914,18 +917,20 @@ done:
     free(path);
 
   return(rc);
-}
+  }  /* END mkdirtree() */
 
   
 
+
+
 /* If our config allows it, construct tmpdir path */
+
 int TTmpDirName(
 
   job  *pjob,   /* I */
   char *tmpdir) /* O */
 
   {
-
   if (tmpdir_basename[0] == '/')
     {
     snprintf(tmpdir,
@@ -950,9 +955,10 @@ int TMakeTmpDir(
 
   job  *pjob,   /* I */
   char *tmpdir) /* I */
-  {
 
+  {
   char id[] = "TMakeTmpDir";
+
   int			rc;
   int			retval;
   struct stat		sb;
@@ -1027,7 +1033,7 @@ int TMakeTmpDir(
 
         break;
       }
-    }
+    }    /* END if (retval == 0) */
 
   seteuid(0);
   setegid(pbsgroup);
@@ -5393,6 +5399,8 @@ int open_std_file(
 
   if ((path = std_file_name(pjob,which,&keeping)) == NULL)
     {
+    log_err(-1,"open_std_file","cannot determine filename");
+
     /* FAILURE - cannot determine filename */
 
     return(-1);
@@ -5427,6 +5435,7 @@ int open_std_file(
 
           return(-1);
           }
+
         if ((statbuf.st_gid != exgid) && (statbuf.st_gid != 0))
           {
           log_err(-1,"open_std_file","std file exists with the wrong group, someone is doing something fishy");
@@ -5443,8 +5452,12 @@ int open_std_file(
       {
       /* lstat failed - should we return failure in all cases? */
 
-      sprintf(log_buffer,"cannot stat stdout/stderr file '%s'",
-        path);
+      if (errno == EINTR)
+        sprintf(log_buffer,"cannot stat stdout/stderr file '%s' (timeout)",
+          path);
+      else
+        sprintf(log_buffer,"cannot stat stdout/stderr file '%s'",
+          path);
 
       log_err(errno,"open_std_file",log_buffer);
 
@@ -5458,6 +5471,8 @@ int open_std_file(
   if ((setegid(exgid) == -1) || 
       (seteuid(pjob->ji_qs.ji_un.ji_momt.ji_exuid) == -1))
     {
+    log_err(errno,"open_std_file","cannot set user/group permissions on stdout/stderr file");
+
     return(-1);
     }
 
