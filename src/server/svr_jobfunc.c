@@ -893,13 +893,16 @@ static void chk_svr_resc_limit(
 
         jbrc_nodes = jbrc;
         }
+#ifdef NERSCDEV
       else if (jbrc->rs_defin == mppwidthresc)
         {
+
         if (jbrc->rs_value.at_flags & ATR_VFLAG_SET)
           {
           MPPWidth = jbrc->rs_value.at_val.at_long;
           }
         }
+#endif /* NERSCDEV */
       else if ((cmpwith != NULL) && (jbrc->rs_defin != needresc)) 
         {
         /* don't check neednodes */
