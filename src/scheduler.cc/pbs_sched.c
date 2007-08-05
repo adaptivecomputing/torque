@@ -262,8 +262,9 @@ void toolong(
   struct	stat	sb;
   pid_t	cpid;
 
-	log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, id, "alarm call");
-	DBPRT(("alarm call\n"))
+	log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, id, 
+                   "scheduling iteration took too long");
+	DBPRT(("scheduling iteration too long\n"))
 
 	if (connector >= 0 && server_disconnect(connector))
 		log_err(errno, id, "server_disconnect");
