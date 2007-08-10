@@ -4673,6 +4673,36 @@ int rm_request(
 
             MUStrNCat(&BPtr,&BSpace,tmpLine);
 
+#ifdef HAVE_SYS_STATVFS_H
+            {
+            #include <sys/statvfs.h>
+
+            struct statvfs VFSStat;
+
+            if (statvfs(path_spool,&VFSStat) < 0)
+              {
+              MUSNPrintF(&BPtr,&BSpace,"ALERT:  cannot stat stdout/stderr spool directory '%s' (errno=%d)\n",
+                path_spool,
+                errno);
+              }
+            else
+              {
+              if (VFSStat.f_bavail > 0)
+                {
+                if (verbositylevel >= 1)
+                  MUSNPrintF(&BPtr,&BSpace,"stdout/stderr spool directory: '%s' (%d blocks available)\n",
+                    path_spool,
+                    VFSStat.f_bavail);
+                }
+              else
+                {
+                MUSNPrintF(&BPtr,&BSpace,"ALERT:  stdout/stderr spool directory '%s' is full\n",
+                  path_spool);
+                }
+              }
+            }    /* END BLOCK */
+#endif /* HAVE_SYS_STATVFS_H */
+
             if (MOMConfigVersion[0] != '\0')
               {
               sprintf(tmpLine,"ConfigVersion:          %s\n",
