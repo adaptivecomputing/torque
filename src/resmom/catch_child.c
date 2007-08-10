@@ -350,6 +350,7 @@ void scan_for_exiting()
   int im_compose A_((int,char *,char *,int,tm_event_t,tm_task_id));
 
   static int ForceObit = -1;
+  static int ObitsAllowed = 2;
 
 #ifdef  PENABLE_DYNAMIC_CPUSETS
   char           cQueueName[8];
@@ -374,10 +375,23 @@ void scan_for_exiting()
 
   if (ForceObit == -1)
     {
-    if (getenv("TORQUEFORCESEND"))
+    char *ptr;
+
+    if ((ptr = getenv("TORQUEFORCESEND")) != NULL)
+      {
+      int tmpI;
+
+      tmpI = (int)strtol(ptr,NULL,10);
+
+      if (tmpI > 0)
+        ObitsAllowed = tmpI;
+
       ForceObit = 1;
+      }
     else
+      {
       ForceObit = 0;
+      }
     }
 
   for (pjob = (job *)GET_NEXT(svr_alljobs);pjob != NULL;pjob = nxjob) 
@@ -808,9 +822,11 @@ void scan_for_exiting()
 
     if (ForceObit == 0)
       {
-      if (found_one++ >= 2) 
+      if (found_one++ >= ObitsAllowed) 
         {
-        break;	/* two at a time is our limit */
+        /* do not exceed max obits per iteration limit */
+
+        break;
         }
       }
 
@@ -829,9 +845,11 @@ void scan_for_exiting()
 
     if (ForceObit == 1)
       {
-      if (found_one++ >= 2)
+      if (found_one++ >= ObitsAllowed)
         {
-        break;    /* two at a time is our limit */
+        /* do not exceed max obits per iteration limit */
+
+        break; 
         }
       }
     }  /* END for (pjob) */
