@@ -152,8 +152,8 @@ static struct batch_request *setup_cpyfiles A_((struct batch_request *,job *,cha
 
 static char *setup_from(
 
-  job  *pjob,
-  char *suffix)
+  job  *pjob,   /* I */
+  char *suffix) /* I */
 
   {
   char *from;
@@ -285,8 +285,8 @@ static struct batch_request *setup_cpyfiles(
 
 static int is_joined(
 
-  job          *pjob,
-  enum job_atr  ati)
+  job          *pjob,  /* I */
+  enum job_atr  ati)   /* I */
 
   {
   char       key;
@@ -1616,7 +1616,7 @@ static int setrerun(
 
 void req_jobobit(
 
-  struct batch_request *preq)
+  struct batch_request *preq)  /* I */
 
   {
   int		  alreadymailed = 0;
@@ -1670,7 +1670,7 @@ void req_jobobit(
       log_buffer);
 
     return;
-    }  /* END if (pjob == NULL) */
+    }  /* END if ((pjob == NULL) || ...) */
 
   if (pjob->ji_qs.ji_state != JOB_STATE_RUNNING)  
     {
@@ -1708,7 +1708,7 @@ void req_jobobit(
       NULL);
 
     return;
-    }
+    }  /* END if (pjob->ji_qs.ji_state != JOB_STATE_RUNNING) */
 
   if (pjob->ji_qs.ji_substate == JOB_SUBSTATE_PRERUN) 
     {

@@ -349,6 +349,8 @@ void scan_for_exiting()
   task         *task_find	A_((job	*,tm_task_id));
   int im_compose A_((int,char *,char *,int,tm_event_t,tm_task_id));
 
+  static int ForceObit = -1;
+
 #ifdef  PENABLE_DYNAMIC_CPUSETS
   char           cQueueName[8];
   char           cPermFile[1024];
@@ -368,6 +370,14 @@ void scan_for_exiting()
       PBS_EVENTCLASS_SERVER,
       id,
       "searching for exiting jobs");
+    }
+
+  if (ForceObit == -1)
+    {
+    if (getenv("TORQUEFORCESEND"))
+      ForceObit = 1;
+    else
+      ForceObit = 0;
     }
 
   for (pjob = (job *)GET_NEXT(svr_alljobs);pjob != NULL;pjob = nxjob) 
@@ -761,7 +771,7 @@ void scan_for_exiting()
        */
 
       return;
-      } 
+      }  /* END if (sock < 0) */
 
     if (sock < 3) 
       {
@@ -796,9 +806,12 @@ void scan_for_exiting()
 
     pjob->ji_qs.ji_substate = JOB_SUBSTATE_PREOBIT;
 
-    if (found_one++ >= 2) 
+    if (ForceObit == 0)
       {
-      break;	/* two at a time is our limit */
+      if (found_one++ >= 2) 
+        {
+        break;	/* two at a time is our limit */
+        }
       }
 
     /* send the pre-obit job stat request */
@@ -813,7 +826,15 @@ void scan_for_exiting()
       }
 
     DIS_tcp_wflush(sock3);
-    }
+
+    if (ForceObit == 1)
+      {
+      if (found_one++ >= 2)
+        {
+        break;    /* two at a time is our limit */
+        }
+      }
+    }  /* END for (pjob) */
 
   if (pjob == 0) 
     exiting_tasks = 0; /* went through all jobs */
@@ -828,8 +849,8 @@ void scan_for_exiting()
 
 void post_epilogue(
 
-  job *pjob,
-  int  ev)
+  job *pjob,  /* I */
+  int  ev)    /* I */
 
   {
   char id[] = "post_epilogue";
@@ -980,7 +1001,7 @@ void post_epilogue(
 
 static void preobit_reply(
 
-  int sock)
+  int sock)  /* I */
 
   {
   char id[] = "preobit_reply";
@@ -1043,6 +1064,8 @@ static void preobit_reply(
     if ((pjob->ji_qs.ji_substate == JOB_SUBSTATE_PREOBIT) &&
         (pjob->ji_momhandle == sock)) 
       {
+      /* located job that triggered req from server */
+
       break;
       }
 
@@ -1051,6 +1074,14 @@ static void preobit_reply(
 
   if (pjob == NULL)
     {
+    /* FAILURE - cannot locate job that triggered req */
+
+    log_record(
+      PBSEVENT_DEBUG,
+      PBS_EVENTCLASS_SERVER,
+      id,
+      "cannot locate job that triggered req");
+
     free_br(preq);
 
     shutdown(sock,SHUT_RDWR);
@@ -1168,7 +1199,7 @@ static void preobit_reply(
 
   close_conn(sock);
 
-  if (deletejob)
+  if (deletejob == 1)
     {
     log_record(
       PBSEVENT_ERROR,
@@ -1180,6 +1211,7 @@ static void preobit_reply(
         (pjob->ji_wattr[(int)JOB_ATR_interactive].at_val.at_long == 0))
       {
       int x;	/* dummy */
+
       /* do this if not interactive */
 
       unlink(std_file_name(pjob,StdOut,&x));
