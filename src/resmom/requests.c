@@ -2572,7 +2572,7 @@ static int sys_copy(
     /* copy did not work, try again */
 
     if ((loop % 2) == 0)
-      sleep(loop/2 * 3 + 1);
+      sleep(loop / 2 * 3 + 1);
     }  /* END for (loop) */
 
   /* tried a bunch of times, just give up */

@@ -94,14 +94,14 @@
 
 void set_attr(
 
-  struct attrl **attrib,
-  char          *attrib_name,
-  char          *attrib_value)
+  struct attrl **attrib,        /* I */
+  char          *attrib_name,   /* I */
+  char          *attrib_value)  /* I */
 
   {
   struct attrl *attr, *ap;
     
-  attr = (struct attrl *) malloc(sizeof(struct attrl));
+  attr = (struct attrl *)malloc(sizeof(struct attrl));
 
   if (attr == NULL) 
     {

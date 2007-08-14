@@ -98,7 +98,7 @@
 
 int set_resources(
 
-  struct attrl **attrib,    /* I */
+  struct attrl **attrib,    /* I/O */
   char          *resources, /* I */
   int            add)       /* I */
 
@@ -109,23 +109,25 @@ int set_resources(
 
   int found, len;
 
+  char *qptr = NULL;
+
   r = resources;
 
   while (*r != '\0') 
     {
-    /* Skip any leading whitespace */
+    /* skip leading whitespace */
 
     while (isspace((int)*r))
       r++;
 
-    /* Get the resource name */
+    /* get resource name */
 
     eq = r;
 
     while ((*eq != '=') && (*eq != ',') && (*eq != '\0')) 
       eq++;
 	
-    /* Make sure there is a resource name */
+    /* make sure there is a resource name */
 
     if (r == eq) 
       {
@@ -143,21 +145,51 @@ int set_resources(
     for (str = r,len = 0;(str < eq) && !isspace((int)*str);str++)
       len++;
 
-    /* If separated by an equal sign, get the value */
+    /* if separated by an equal sign, get the value */
 
     if (*eq == '=') 
       {
+      char *ptr;
+
       v = eq + 1;
 
       while (isspace((int)*v)) 
         v++;
 
+      /* FORMAT: <ATTR>=[{'"}]<VAL>,<VAL>[{'"}][,<ATTR>=...]... */
+
+      ptr = strchr(v,',');
+
+      if (((qptr = strchr(v,'\'')) != NULL) && (ptr != NULL) && (qptr < ptr))
+        {
+        v = qptr + 1;
+        }
+      else if (((qptr = strchr(v,'\"')) != NULL) && (ptr != NULL) && (qptr < ptr))
+        {
+        v = qptr + 1;
+        }
+
       e = v;
 
-      while ((*e != ',') && (*e != '\0')) 
+      while (*e != '\0')
         {
-        /* NOTE:  <ATTR>=<VAL> already tokenized by getopt() which will support
-                  quoted whitespace, do not fail on spaces */
+        /* FORMAT: <ATTR>=[{'"}]<VAL>,<VAL>[{'"}][,<ATTR>=...]... */
+
+        /* NOTE    already tokenized by getopt() which will support
+                   quoted whitespace, do not fail on spaces */
+
+        if (qptr != NULL)
+          {
+          /* value contains quote - only terminate with quote */
+
+          if ((*e == '\'') || (*e == '\"'))
+            break;
+          }
+        else 
+          {
+          if (*e == ',')
+            break;
+          }
 
 #ifdef TNOT
         if (isspace((int)*e)) 
@@ -167,9 +199,10 @@ int set_resources(
           return(1);
           }
 #endif /* TNOT */
+
         e++;
-        }
-      } 
+        }  /* END while (*e != '\0') */
+      }    /* END if (*eq == '=') */ 
     else
       {
       v = NULL;
@@ -287,6 +320,14 @@ int set_resources(
       }
 
     /* Get ready for next resource/value pair */
+
+    if (qptr != NULL)
+      {
+      /* skip quotes looking for ',' */
+
+      while ((*e == '\'') || (*e == '\"'))
+        e++;
+      }
 
     if (v != NULL)
       r = e;
