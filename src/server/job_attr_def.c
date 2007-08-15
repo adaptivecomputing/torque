@@ -730,7 +730,7 @@ attribute_def job_attr_def[] = {
 	PARENT_TYPE_JOB
     },
     
-/* JOB_ATR_job_array_size */
+/* JOB_ATR_job_array_id */
     {	ATTR_array_id,
 	decode_l,
 	encode_l,
