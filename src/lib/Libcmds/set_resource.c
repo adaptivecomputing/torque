@@ -168,6 +168,10 @@ int set_resources(
         {
         v = qptr + 1;
         }
+      else
+        {
+        qptr = NULL;
+        }
 
       e = v;
 
