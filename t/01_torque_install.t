@@ -34,10 +34,10 @@ my $pid = `ps -ef | grep pbs_server | grep -v grep`;
    $pid =~ /^\S+\s+(\d+)\s+/;
    $pid = $1 || undef;
 ok(defined $pid, 'TORQUE Currently Running') or
-  BAIL_OUT('pbs_server not running, start pbs_server and rerun test - see Section 1.2.4');
+  BAIL_OUT('pbs_server not running, start pbs_server and rerun test - see TORQUE docs, Section 1.2.4');
 
 # qmgr - TORQUE Database Created
 my $qmgr = `qmgr -c 'p s'` || undef;
 ok(defined $qmgr, 'Database Created') or
-  BAIL_OUT("TORQUE database not created, restart pbs_server using 'pbs_server -t create' - see Section 1.2.1");
+  BAIL_OUT("TORQUE database not created, restart pbs_server using 'pbs_server -t create' - see TORQUE docs, Section 1.2.1");
 

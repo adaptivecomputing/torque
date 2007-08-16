@@ -20,7 +20,7 @@ if (defined($qmgr) and $qmgr)
   {
 
   # - Default Queue
-  warning('No default_queue set - see Section 4.1.3')
+  warning('No default_queue set - see TORQUE docs, Section 4.1.3')
     unless ($qmgr =~ /^set server default_queue = \S+/mi);
 
   # - Queue Defaults
@@ -36,9 +36,9 @@ if (defined($qmgr) and $qmgr)
   # - - Check Queue Information
   foreach $queue (sort keys %queues)
     {
-    warning("No default nodes for queue '$queue' set - see Section 4.1.2")
+    warning("No default nodes for queue '$queue' set - see TORQUE docs, Section 4.1.2")
       unless exists $queues{$queue}{'resources_default.nodes'};
-    warning("No default walltime for queue '$queue' set - see Section 4.1.2.")
+    warning("No default walltime for queue '$queue' set - see TORQUE docs, Section 4.1.2.")
       unless exists $queues{$queue}{'resources_default.walltime'};
     }
 

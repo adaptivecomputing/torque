@@ -74,9 +74,9 @@ SKIP:
     my $baseid   = `su $Testuser -c 'echo "sleep $Joblength" | qsub -k oe -l nodes=1,walltime=$walltime -t $Jobcount'` || undef;
        $baseid   =~ s/\D//g if defined $baseid;
     ok(defined $baseid, "Job Submission") or
-      BAIL_OUT("Unable to submit job to TORQUE as '$Testuser' - see Section 2.1");
+      BAIL_OUT("Unable to submit job to TORQUE as '$Testuser' - see TORQUE docs, Section 2.1");
     ok($baseid =~ /^\d+\S*\s*$/, "Job Submission") or
-      BAIL_OUT("Unable to submit job to TORQUE as '$Testuser' - see Section 2.1");
+      BAIL_OUT("Unable to submit job to TORQUE as '$Testuser' - see TORQUE docs, Section 2.1");
     @Jobs = map { "$baseid-$_" } (0..($Jobcount-1));
     }
 
@@ -139,7 +139,7 @@ sub check_jobs ($$)
   for my $i ($first..$last)
     {
     ok($complete{$Jobs[$i]}, "Job Running ($Jobs[$i])") or
-      BAIL_OUT("Submitted job ($Jobs[$i]) has failed to start within $waittime seconds - check scheduler - see Section 5.1");
+      BAIL_OUT("Submitted job ($Jobs[$i]) has failed to start within $waittime seconds - check scheduler - see TORQUE docs, Section 5.1");
     }
 
   }

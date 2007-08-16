@@ -25,9 +25,9 @@ my $joblength = 10; # seconds
 my $walltime  = 2 * $joblength;
 my $job       = `su $testuser -c 'echo "sleep $joblength" | qsub -l nodes=1,walltime=$walltime'` || undef;
 ok(defined $job, 'Job Submission') or
-  BAIL_OUT("Unable to submit job to TORQUE as '$testuser' - see Section 2.1");
+  BAIL_OUT("Unable to submit job to TORQUE as '$testuser' - see TORQUE docs, Section 2.1");
 ok($job =~ /^\d+\S*\s*$/, 'Job Submission') or
-  BAIL_OUT("Unable to submit job to TORQUE as '$testuser' - see Section 2.1");
+  BAIL_OUT("Unable to submit job to TORQUE as '$testuser' - see TORQUE docs, Section 2.1");
 
 # Job In Queue
 $job =~ s/\D//g;
@@ -57,7 +57,7 @@ for (1..$waittime) # Wait up to $waittime seconds for job to start
   $timer++;
   }
 ok($running, 'Job Running') or
-  BAIL_OUT("Submitted job has failed to start within $waittime seconds - check scheduler - see Section 5.1");
+  BAIL_OUT("Submitted job has failed to start within $waittime seconds - check scheduler - see TORQUE docs, Section 5.1");
 
 # Check Output Files
 my $remaining  = $joblength - $timer + 1;
@@ -65,9 +65,9 @@ my $outputfile = "STDIN.o$job";
 my $errorfile  = "STDIN.e$job";
 sleep $remaining if ($remaining > 0);
 ok(-T $outputfile, 'Output File') or
-  BAIL_OUT('Submitted job output file not copied - check data staging - see Section 6');
+  BAIL_OUT('Submitted job output file not copied - check data staging - see TORQUE docs, Section 6');
 ok(-T $errorfile, 'Error File') or
-  BAIL_OUT('Submitted job error file not copied - check data staging - see Section 6');
+  BAIL_OUT('Submitted job error file not copied - check data staging - see TORQUE docs, Section 6');
 unlink $outputfile if -T $outputfile;
 unlink $errorfile  if -T $errorfile;
 
