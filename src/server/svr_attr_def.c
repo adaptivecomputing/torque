@@ -650,7 +650,9 @@ attribute_def svr_attr_def[] = {
         PARENT_TYPE_SERVER
     },
 
-/* SRV_ATR_MomJobSync */
+/* NOTE:  use if state=PRERUN failure detected */
+
+/* SRV_ATR_MomJobSync */ 
     {	ATTR_momjobsync,	/* "mom_job_sync" */
 	decode_b,
 	encode_b,
