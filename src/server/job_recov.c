@@ -176,8 +176,15 @@ int job_save(
   strcpy(namebuf1,path_jobs);	/* job directory path */
   strcat(namebuf1,pjob->ji_qs.ji_fileprefix);
   strcpy(namebuf2,namebuf1);	/* setup for later */
-  strcat(namebuf1,JOB_FILE_SUFFIX);
-
+  if (updatetype == SAVEJOB_ARY)
+    {
+    strcat(namebuf1, ".AR");
+    }
+  else
+    {
+    strcat(namebuf1,JOB_FILE_SUFFIX);
+    }
+    
   /* if ji_modified is set, ie an attribute changed, then update mtime */
 
   if (pjob->ji_modified) 
@@ -242,8 +249,8 @@ int job_save(
       }
 
     close(fds);
-    } 
-  else 
+    }
+  else /* SAVEJOB_FULL, SAVEJOB_NEW, SAVEJOB_TMP */
     {
     /*
      * write the whole structure to the file.
@@ -262,7 +269,7 @@ int job_save(
 
     /* NOTE:  create file if required */
 
-    if (updatetype == SAVEJOB_NEW)
+    if (updatetype == SAVEJOB_NEW || updatetype == SAVEJOB_ARY)
       fds = open(namebuf1,openflags,0600);
     else
       fds = open(namebuf2,openflags,0600);

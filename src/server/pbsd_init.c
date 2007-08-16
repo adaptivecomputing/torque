@@ -167,6 +167,7 @@ extern char	*path_home;
 extern char	*path_acct;
 extern char	path_log[];
 extern char	*path_priv;
+extern char	*path_arrays;
 extern char	*path_jobs;
 extern char	*path_queues;
 extern char	*path_spool;
@@ -420,6 +421,7 @@ int pbsd_init(
   /* 2. set up the various paths and other global variables we need */
 
   path_priv      = build_path(path_home, PBS_SVR_PRIVATE, suffix_slash);
+  path_arrays	 = build_path(path_priv, PBS_ARRAYDIR, suffix_slash);
   path_spool     = build_path(path_home, PBS_SPOOLDIR, suffix_slash);
   path_queues    = build_path(path_priv, PBS_QUEDIR,   suffix_slash);
   path_jobs      = build_path(path_priv, PBS_JOBDIR,   suffix_slash);

@@ -1766,11 +1766,30 @@ void req_commit(
     
     /* setup a link to this job array in the servers all_arrays list */
     pajl = (array_job_list*)malloc(sizeof(array_job_list));
-    strcpy(pajl->parent_id, pj->ji_qs.ji_jobid);
-    pajl->num_cloned = 0;
+    strcpy(pajl->ai_qs.parent_id, pj->ji_qs.ji_jobid);
+    strcpy(pajl->ai_qs.fileprefix, pj->ji_qs.ji_fileprefix);
+    pajl->ai_qs.num_cloned = 0;
     CLEAR_LINK(pajl->all_arrays);
     CLEAR_HEAD(pajl->array_alljobs);
     append_link(&svr_jobarrays, &pajl->all_arrays, (void*)pajl);
+    
+    if (job_save(pj,SAVEJOB_ARY) != 0) 
+      {
+      job_purge(pj);
+
+      req_reject(PBSE_SYSTEM,0,preq,NULL,NULL);
+
+      if (LOGLEVEL >= 6)
+        {
+        log_record(
+          PBSEVENT_JOB,
+          PBS_EVENTCLASS_JOB,
+          (pj != NULL) ? pj->ji_qs.ji_jobid : "NULL",
+          "cannot save job");
+        }
+
+      return;
+      }
     
     wt = set_task(WORK_Timed,time_now+1,job_clone_wt,(void*)pj);
     wt->wt_aux = 0;

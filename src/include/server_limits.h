@@ -113,6 +113,7 @@
 
 #define PBS_SVR_PRIVATE		"server_priv"
 #define PBS_ACCT		"accounting"
+#define PBS_ARRAYDIR		"arrays"
 #define PBS_JOBDIR		"jobs"
 #define PBS_SPOOLDIR		"spool"
 #define PBS_QUEDIR		"queues"

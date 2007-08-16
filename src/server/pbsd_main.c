@@ -159,6 +159,7 @@ char	       *path_home = PBS_SERVER_HOME;
 char	       *path_acct;
 char	        path_log[MAXPATHLEN + 1];
 char	       *path_priv;
+char	       *path_arrays;
 char	       *path_jobs;
 char	       *path_queues;
 char	       *path_spool;

@@ -376,15 +376,30 @@ typedef struct {
   int       mjspipe[2];     /* MOM to job starter for ack */
   int       downfds;
   } pjobexec_t;
+  
+  
+  
+  
 
+/* job array stuff.  I was going to put this in a separate include file, 
+    but then that file would have to be included in every other file 
+    that includes job.h, so I just stuck this all in here */
 #ifndef PBS_MOM
+
+#define ARRAY_FILE_SUFFIX ".ARY"
+
 
   /* pbs_server will keep a list of these structs, with one struct per job array*/
   struct array_job_list {
      list_link all_arrays;
      tlist_head array_alljobs;
-     char parent_id[PBS_MAXSVRJOBID + 1];
-     int num_cloned; 
+
+     struct array_info {
+       char parent_id[PBS_MAXSVRJOBID + 1];
+       char fileprefix[PBS_JOBBASE + 1];
+       int num_cloned;
+       int last_clone;
+     } ai_qs; 
   
   };
   
@@ -633,6 +648,7 @@ task *task_find A_((
 #define SAVEJOB_QUICK 0
 #define SAVEJOB_FULL  1
 #define SAVEJOB_NEW   2
+#define SAVEJOB_ARY   3  /* used to temporarily save the "parent" for a job array */
 
 #define MAIL_NONE  (int)'n'
 #define MAIL_ABORT (int)'a'

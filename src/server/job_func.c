@@ -944,7 +944,7 @@ job *job_clone(
   pajl = (array_job_list*)GET_NEXT(svr_jobarrays);
   while (pajl != NULL)
     {
-    if (strcmp(pajl->parent_id, poldjob->ji_qs.ji_jobid) == 0)
+    if (strcmp(pajl->ai_qs.parent_id, poldjob->ji_qs.ji_jobid) == 0)
       break;
     pajl = (array_job_list*)GET_NEXT(pajl->all_arrays);
   
@@ -952,7 +952,7 @@ job *job_clone(
     CLEAR_LINK(pnewjob->ji_arrayjobs);
     append_link(&pajl->array_alljobs, &pnewjob->ji_arrayjobs, (void*)pnewjob);
     pnewjob->ji_arrayjoblist = pajl;
-    pajl->num_cloned++;
+    pajl->ai_qs.num_cloned++;
 
   return pnewjob;
   } /* END job_clone() */
@@ -973,7 +973,7 @@ struct work_task *ptask)
   int newstate;
   int newsub;
   int rc;
-  
+  char namebuf[MAXPATHLEN];
   
   pjob = (job*)(ptask->wt_parm1);
   startindex = ptask->wt_aux;
@@ -1017,6 +1017,10 @@ struct work_task *ptask)
     }
   else
     {
+    strcpy(namebuf, path_jobs);
+    strcat(namebuf, pjob->ji_qs.ji_fileprefix);
+    strcat(namebuf, ".AR");
+    unlink(namebuf);
     job_purge((job*)(ptask->wt_parm1));
     }
   } /* end job_clone_tw */
