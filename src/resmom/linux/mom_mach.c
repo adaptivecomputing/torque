@@ -278,11 +278,15 @@ void proc_get_btime()
   return;
   }  /* END proc_get_btime() */
 
+/* NOTE:  see 'man 5 proc' for /proc/pid/stat format and description */
+
 /* NOTE:  leading '*' indicates that field should be ignored */
 
-static char stat_str[] = "%d (%[^)]) %c %*d %*d %d %*d %*d %u %*u \
-%*u %*u %*u %d %d %d %d %*d %*d %*u %*u %u %llu %llu %*u %*u \
-%*u %*u %*u %*u %*u %*u %*u %*u %*u %*u %*u";
+/* FORMAT: <PID> <COMM> <STATE> <PPID> <PGRP> <SESSION> [<TTY_NR>] [<TPGID>] <FLAGS> [<MINFLT>] [<CMINFLT>] [<MAJFLT>] [<CMAJFLT>] <UTIME> <STIME> <CUTIME> <CSTIME> [<PRIORITY>] [<NICE>] [<0>] [<ITREALVALUE>] <STARTTIME> <VSIZE> <RSS> [<RLIM>] [<STARTCODE>] ... */
+
+static char stat_str[] = "%d (%[^)]) %c %d %d %d %*d %*d %u %*u \
+%*u %*u %*u %lu %lu %lu %lu %*ld %*ld %*u %*ld %lu %llu %lld %*lu %*lu \
+%*lu %*lu %*lu %*lu %*lu %*lu %*lu %*lu %*lu %*lu %*lu";
 
 /*
  * Convert jiffies to seconds.
@@ -309,7 +313,7 @@ proc_stat_t *get_proc_stat(
   static proc_stat_t	ps;
   static char		path[1024];
   FILE                 *fd;
-  unsigned long         jiffies;
+  unsigned long         jstarttime;  /* number of jiffies since OS start time when process started */
   struct stat		sb;
 
   static int Hertz  = 0;
@@ -340,20 +344,28 @@ proc_stat_t *get_proc_stat(
     return(NULL);
     }
 
+  /* use 'man 5 proc' for /proc/pid/stat format */
+
+  /* see stat_str[] value for mapping 'stat' format */
+
   if (fscanf(fd,stat_str, 
-        &ps.pid, 
-        path, 
-        &ps.state,
-        &ps.session, 
-        &ps.flags, 
-        &ps.utime, 
-        &ps.stime, 
-        &ps.cutime, 
-        &ps.cstime, 
-        &jiffies, 
-        &ps.vsize,
-        &ps.rss) != 12)  
+        &ps.pid,       /* PID */
+        path,          /* exe */
+        &ps.state,     /* state (one of RSDZTW) */
+        &ps.ppid,      /* ppid */
+        &ps.pgrp,      /* pgrp */
+        &ps.session,   /* session id */
+        &ps.flags,     /* flags - kernel flags of the process, see the PF_* in <linux/sched.h> */
+        &ps.utime,     /* utime - jiffies that this process has been scheduled in user mode */
+        &ps.stime,     /* stime - jiffies that this process has been scheduled in kernel mode */
+        &ps.cutime,    /* cutime - jiffies that this process’s waited-for children have been scheduled in user mode */
+        &ps.cstime,    /* cstime - jiffies that this process’s waited-for children have been scheduled in kernel mode */
+        &jstarttime,   /* starttime */
+        &ps.vsize,     /* vsize */
+        &ps.rss) != 14)   /* rss */
     {
+    /* FAILURE */
+
     fclose(fd);
 
     return(NULL);
@@ -368,7 +380,7 @@ proc_stat_t *get_proc_stat(
 
   ps.uid = sb.st_uid;
 
-  ps.start_time = linux_time + JTOS(jiffies);
+  ps.start_time = linux_time + JTOS(jstarttime);
   ps.name = path;
 
   ps.utime = JTOS(ps.utime);
@@ -1970,6 +1982,10 @@ int kill_task(
 
   /* pdir is global */
 
+  /* NOTE:  do not use cached proc-buffer since we need up-to-date info */
+
+  /* pdir is global */
+
   rewinddir(pdir);
 
   while ((dent = readdir(pdir)) != NULL) 
@@ -2000,8 +2016,10 @@ int kill_task(
          * group of the current process'.
          */
 
-        sprintf(log_buffer,"%s: not killing pid 0 with sig %d",
+        sprintf(log_buffer,"%s: not killing process (pid=%d/state=%c) with sig %d",
           id,
+          ps->pid,
+          ps->state,
           sig);
 
         log_record(
@@ -2009,7 +2027,7 @@ int kill_task(
           PBS_EVENTCLASS_JOB,
           ptask->ti_job->ji_qs.ji_jobid,
           log_buffer);
-        }
+        }  /* END if ((ps->state == 'Z') || (ps->pid == 0)) */
       else
         {
         int i = 0;
@@ -2070,13 +2088,43 @@ int kill_task(
 
         if (i >= 20)
           {
-          /* kill process hard */
+          /* NOTE: handle race-condition where process goes zombie as a result of previous SIGTERM */
 
-          if (pg == 0)
-            kill(ps->pid,sig);
-          else
-            killpg(ps->pid,sig);
-          }
+          /* update proc info from /proc/<PID>/stat */
+
+          if ((ps = get_proc_stat(ps->pid)) != NULL)
+            {
+            if (ps->state == 'Z')
+              {
+              /*
+               * Killing a zombie is sure death! Its pid is zero,
+               * which to kill(2) means 'every process in the process
+               * group of the current process'.
+               */
+
+              sprintf(log_buffer,"%s: not killing process (pid=%d/state=%c) with sig %d",
+                id,
+                ps->pid,
+                ps->state,
+                sig);
+
+              log_record(
+                PBSEVENT_JOB,
+                PBS_EVENTCLASS_JOB,
+                ptask->ti_job->ji_qs.ji_jobid,
+                log_buffer);
+              }  /* END if ((ps->state == 'Z') || (ps->pid == 0)) */
+            else
+              { 
+              /* kill process hard */
+
+              if (pg == 0)
+                kill(ps->pid,sig);
+              else
+                killpg(ps->pid,sig);
+              }
+            }
+          }    /* END if (i >= 20) */
 
         ++ct;
         }  /* END else ((ps->state == 'Z') || (ps->pid == 0)) */
