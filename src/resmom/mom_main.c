@@ -7167,8 +7167,21 @@ int main(
 
     return(3);
     }
-		
+
+  if (mom_get_sample() != PBSE_NONE)
+    {
+    log_err(c,msg_daemonname,"mom_get_sample failed after mom_open_poll");
+
+    return(3);
+    }
+
   /* recover & abort jobs which were under MOM's control */
+
+  log_record(
+    PBSEVENT_DEBUG, 
+    PBS_EVENTCLASS_SERVER,
+    msg_daemonname, 
+    "before init_abort_jobs");
 
   init_abort_jobs(recover);
 
