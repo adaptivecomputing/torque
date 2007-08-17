@@ -137,6 +137,12 @@
 int conn_qsub(char *,long,char *);
 void job_purge(job *);
 
+#ifndef CPUSETISREADY
+#ifdef PENABLE_DYNAMIC_CPUSETS
+  #undef PENABLE_DYNAMIC_CPUSETS
+#endif /* PENABLE_DYNAMIC_CPUSETS */
+#endif /* !CPUSETISREADY */
+
 /* External functions */
 
 #ifdef PBS_MOM

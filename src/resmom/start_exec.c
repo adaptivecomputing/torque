@@ -105,6 +105,12 @@
 #include <st_client.h>
 #endif	/* IBM SP */
 
+#ifndef CPUSETISREADY
+#ifdef PENABLE_DYNAMIC_CPUSETS
+  #undef PENABLE_DYNAMIC_CPUSETS
+#endif /* PENABLE_DYNAMIC_CPUSETS */
+#endif /* !CPUSETISREADY */
+
 #if defined(PENABLE_DYNAMIC_CPUSETS)
 # define CBUFFERSIZE 4095
 # include <cpuset.h>

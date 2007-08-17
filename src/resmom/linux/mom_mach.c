@@ -2370,7 +2370,7 @@ char *cput_proc(
       sprintf(log_buffer,"%d: get_proc_stat", 
         pid);
 
-      log_err(errno, id, log_buffer);
+      log_err(errno,id,log_buffer);
       }
 
     rm_errno = RM_ERR_SYSTEM;

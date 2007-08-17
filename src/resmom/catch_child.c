@@ -114,6 +114,12 @@
 #include "pbs_cpa.h"
 #endif
 
+#ifndef CPUSETISREADY
+#ifdef PENABLE_DYNAMIC_CPUSETS
+  #undef PENABLE_DYNAMIC_CPUSETS
+#endif /* PENABLE_DYNAMIC_CPUSETS */
+#endif /* !CPUSETISREADY */
+
 #if defined(PENABLE_DYNAMIC_CPUSETS)
 #include <cpuset.h>
 #endif /* PENABLE_DYNAMIC_CPUSETS */
