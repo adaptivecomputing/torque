@@ -246,6 +246,7 @@ mk_server_dirs()
 	install_dir $PBS_SERVER_HOME/sched_priv 750 || return 1
 	install_dir $PBS_SERVER_HOME/sched_priv/accounting 755 || return 1
 	install_dir $PBS_SERVER_HOME/sched_logs 755 || return 1
+        install_dir $PBS_SERVER_HOME/server_priv/arrays 750 || return 1
 
 	test -f $PBS_ENVIRON || check_env || return 1
 
@@ -257,7 +258,8 @@ mk_server_dirs()
 		$PBS_SERVER_HOME/server_priv/acl_users \
 		$PBS_SERVER_HOME/server_priv/acl_groups \
 		$PBS_SERVER_HOME/server_priv/accounting \
-		$PBS_SERVER_HOME/server_logs || return 1
+		$PBS_SERVER_HOME/server_logs \
+		$PBS_SERVER_HOME/server_priv/arrays || return 1
 	chk_tree_wrap -d -n -s $PBS_SERVER_HOME/spool || return 1
 	chk_tree_wrap -n $PBS_ENVIRON || return 1
 }
