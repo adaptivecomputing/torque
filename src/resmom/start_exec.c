@@ -5719,12 +5719,13 @@ int init_groups(
 
   /* return -1 on failure */
 
-  char id[]="init_groups";
+  char id[] = "init_groups";
+
   extern sigset_t allsigs; /* set up at the start of mom_main */
   sigset_t savedset;
 
   int n, nsaved;
-  gid_t savedgroups[NGROUPS_MAX + 1]; /* plus one for the egid below */
+  gid_t savedgroups[NGROUPS_MAX + 16]; /* plus one for the egid below */
 
   gid_t momegid;
   int i;
@@ -5776,6 +5777,11 @@ int init_groups(
     pwgrp = pwe->pw_gid;
     }
 
+  if (LOGLEVEL >= 4)
+    {
+    log_err(0,id,"pre-sigprocmask");
+    }
+
   /* Block signals while we do this or else the signal handler might
      run with strange group access */
 
@@ -5797,6 +5803,11 @@ int init_groups(
   else 
     {
     n = getgroups(groupsize,(gid_t *)groups);
+    }
+
+  if (LOGLEVEL >= 4)
+    {
+    log_err(0,id,"post-initgroups");
     }
 
   /* restore state */
