@@ -474,20 +474,7 @@ void svr_dequejob(
       bad_ct = 1;
     }
     
-  /* if part of job array then remove from array's job list */ 
-  if (pjob->ji_wattr[(int)JOB_ATR_job_array_size].at_val.at_long > 1 )
-    {
-    
-    delete_link(&pjob->ji_arrayjobs);
-    /* if the only thing in the array alljobs list is the head, then we can 
-       clean that up too */
-    if ( GET_NEXT(pjob->ji_arrayjoblist->array_alljobs) == pjob->ji_arrayjoblist->array_alljobs.ll_struct)
-      {
-      delete_link(&pjob->ji_arrayjoblist->all_arrays);
-      free(pjob->ji_arrayjoblist);
-      
-      }
-    }
+
     
   if ((pque = pjob->ji_qhdr) != (pbs_queue *)0) 
     {

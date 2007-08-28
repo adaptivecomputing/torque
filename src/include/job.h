@@ -381,12 +381,10 @@ typedef struct {
   
   
 
-/* job array stuff.  I was going to put this in a separate include file, 
-    but then that file would have to be included in every other file 
-    that includes job.h, so I just stuck this all in here */
+/* job array stuff. */ 
 #ifndef PBS_MOM
 
-#define ARRAY_FILE_SUFFIX ".ARY"
+#define ARRAY_FILE_SUFFIX ".AR"
 
 
   /* pbs_server will keep a list of these structs, with one struct per job array*/

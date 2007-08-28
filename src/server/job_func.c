@@ -134,6 +134,7 @@
 #include "net_connect.h"
 #include "portability.h"
 
+
 int conn_qsub(char *,long,char *);
 void job_purge(job *);
 
@@ -151,6 +152,10 @@ void unload_sp_switch A_((job *pjob));
 #endif			/* IBM SP */
 #endif	/*  PBS_MOM */
 
+#ifndef PBS_MOM
+extern int array_save(array_job_list *);
+#endif
+
 /* Local Private Functions */
 
 static void job_init_wattr A_((job *));
@@ -161,6 +166,7 @@ static void job_init_wattr A_((job *));
 extern struct server   server;
 extern int queue_rank;
 extern tlist_head svr_jobarrays;
+extern char *path_arrays;
 #else
 extern gid_t pbsgroup;
 #endif	/* PBS_MOM */
@@ -959,6 +965,7 @@ job *job_clone(
     append_link(&pajl->array_alljobs, &pnewjob->ji_arrayjobs, (void*)pnewjob);
     pnewjob->ji_arrayjoblist = pajl;
     pajl->ai_qs.num_cloned++;
+    array_save(pajl);
 
   return pnewjob;
   } /* END job_clone() */
@@ -983,6 +990,12 @@ struct work_task *ptask)
   
   pjob = (job*)(ptask->wt_parm1);
   startindex = ptask->wt_aux;
+  
+  
+  strcpy(namebuf, path_jobs);
+  strcat(namebuf, pjob->ji_qs.ji_fileprefix);
+  strcat(namebuf, ".AR");
+  
   
   /* do the clones in batches of 256 */
   
@@ -1023,11 +1036,15 @@ struct work_task *ptask)
     }
   else
     {
+
+
     strcpy(namebuf, path_jobs);
     strcat(namebuf, pjob->ji_qs.ji_fileprefix);
-    strcat(namebuf, ".AR");
+    strcat(namebuf, "TA");
+    pjob->ji_wattr[(int)JOB_ATR_job_array_size].at_val.at_long = 1;
+    job_purge(pjob);
     unlink(namebuf);
-    job_purge((job*)(ptask->wt_parm1));
+
     }
   } /* end job_clone_tw */
   
@@ -1084,6 +1101,8 @@ void job_purge(
   char                 cpuset_name[MAXPATHLEN + 1];
 #endif
 #endif
+
+
 
 #ifdef PBS_MOM
 
@@ -1175,6 +1194,24 @@ void job_purge(
       (pjob->ji_qs.ji_substate != JOB_SUBSTATE_TRANSICM))
     {
     svr_dequejob(pjob);
+    }
+    
+  /* if part of job array then remove from array's job list */ 
+  if (pjob->ji_wattr[(int)JOB_ATR_job_array_size].at_val.at_long > 1 )
+    {
+    
+    delete_link(&pjob->ji_arrayjobs);
+    /* if the only thing in the array alljobs list is the head, then we can 
+       clean that up too */
+    if ( GET_NEXT(pjob->ji_arrayjoblist->array_alljobs) == pjob->ji_arrayjoblist->array_alljobs.ll_struct)
+      {
+      delete_link(&pjob->ji_arrayjoblist->all_arrays);
+      free(pjob->ji_arrayjoblist);
+      strcpy(namebuf, path_arrays);
+      strcat(namebuf, pjob->ji_arrayjoblist->ai_qs.fileprefix);
+      strcat(namebuf, ARRAY_FILE_SUFFIX);
+      unlink(namebuf);
+      }
     }
 
 #endif  /* PBS_MOM */

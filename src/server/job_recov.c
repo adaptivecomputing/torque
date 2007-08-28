@@ -178,7 +178,7 @@ int job_save(
   strcpy(namebuf2,namebuf1);	/* setup for later */
   if (updatetype == SAVEJOB_ARY)
     {
-    strcat(namebuf1, ".AR");
+    strcat(namebuf1, "TA");
     }
   else
     {
