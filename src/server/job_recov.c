@@ -521,7 +521,19 @@ job *job_recov(
 
     log_err(-1,"job_recov",log_buffer);
     }
-#endif /* PBS_MOM */
+#else /* PBS_MOM */
+
+  if (pj->ji_wattr[(int)JOB_ATR_job_array_size].at_val.at_long > 1 )
+    {
+    /* job is part of an array.  We need to put a link back to the server job array struct
+       for this array. We also have to link this job into the linked list of jobs belonging 
+       to the array. */
+       
+      /* TODO */
+    
+    }
+
+#endif
 
   close(fds);
 
