@@ -96,10 +96,7 @@ INSTALL: The standard "install" target will install all of the
 
 OS NOTES
 
-MAC: If building for a Mac OS/X cluster, some users have reported issues 
-  with using the tool 'stuffit' (corrupt the creation of the library 
-  libpbs.a).  To work around this, download the file to the desktop, 
-  open up the terminal and unpack it manually with gzip and tar.  
+MAC: 
 
   If using 'bash' as the job execution shell, '.bashrc' may not be 
   executed.  Use '#!/bin/bash -l' at the start of the pbs command file
@@ -107,6 +104,10 @@ MAC: If building for a Mac OS/X cluster, some users have reported issues
 
   Some versions of OSX have a buggy bind() preventing binding to privileged
   ports.  In this case, --disable-privports should be used.
+
+  gcc 4.0 on OS X will not compile TORQUE with -pendantic -Werror.  run 
+  configure with the --disable-gcc-warnings to build TORQUE with gcc 4.0
+  on OS X
 
   OS X on x86:
 
