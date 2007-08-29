@@ -1036,11 +1036,17 @@ struct work_task *ptask)
     }
   else
     {
+     /* this is the last batch of jobs, we can purge the "parent" job and 
+        telete the temporary job file (called TA, T for temp, A for array) */
 
-
+    /* setup the path to the temproary job file */
     strcpy(namebuf, path_jobs);
     strcat(namebuf, pjob->ji_qs.ji_fileprefix);
     strcat(namebuf, "TA");
+    
+    /* job purge looks for jobs with array_size > 1 and does some special actions,
+       even though the "parent" job has an array_size > 1 we don't want job_purge
+       to do anything out of the ordinary, so we set the array_size back to 1 */
     pjob->ji_wattr[(int)JOB_ATR_job_array_size].at_val.at_long = 1;
     job_purge(pjob);
     unlink(namebuf);

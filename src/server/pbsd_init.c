@@ -251,6 +251,7 @@ int pbsd_init(
   static char id[] = "pbsd_init";
   char	*job_suffix = JOB_FILE_SUFFIX;
   int	 job_suf_len = strlen(job_suffix);
+  int    array_suf_len = strlen(ARRAY_FILE_SUFFIX);
   int	 logtype;
   char	*new_tag = ".new";
   job	*pjob;
@@ -261,6 +262,8 @@ int pbsd_init(
   char	*suffix_slash = "/";
   struct sigaction act;
   struct sigaction oact;
+  
+  array_job_list *pajl;
 
   char   EMsg[1024];
 
@@ -671,6 +674,77 @@ int pbsd_init(
    *    If a a create or clean recovery, delete any jobs.
    */
 
+ /* 9.a, recover job array info */
+  
+   if (chdir(path_arrays) != 0) 
+    {
+    sprintf(log_buffer,msg_init_chdir,
+      path_arrays);
+
+    log_err(errno,"pbsd_init",log_buffer);
+
+    return(-1);
+    }
+    
+  dir = opendir(".");  
+  while ((pdirent = readdir(dir)) != NULL) 
+     {       
+
+     if (chk_save_file(pdirent->d_name) == 0) 
+       {
+       /* if not create or clean recovery, recover arrays */
+       
+       if ((type != RECOV_CREATE) && (type != RECOV_COLD))
+         {
+	 /* skip files without the proper suffix */
+	 baselen = strlen(pdirent->d_name) - array_suf_len;
+
+         psuffix = pdirent->d_name + baselen;
+
+         if (strcmp(psuffix,ARRAY_FILE_SUFFIX))
+           continue;
+	 
+	 
+	 pajl = (array_job_list*)malloc(sizeof(array_job_list));
+	 CLEAR_LINK(pajl->all_arrays);
+	 CLEAR_HEAD(pajl->array_alljobs);
+	 
+	 fd = open(pdirent->d_name, O_RDONLY,0);
+	 
+	 if (chdir(path_jobs) != 0) 
+           {
+           sprintf(log_buffer,"unable to open %s", pdirent->d_name);
+
+           log_err(errno,"pbsd_init",log_buffer);
+
+           return(-1);
+           }
+	 
+	 if (read(fd, &(pajl->ai_qs), sizeof(pajl->ai_qs)) != sizeof(pajl->ai_qs))
+	   {
+	   sprintf(log_buffer,"unable to read %s", pdirent->d_name);
+
+           log_err(errno,"pbsd_init",log_buffer);
+
+           return(-1);
+	   }
+	   
+	 close(fd);
+	 
+	 append_link(&svr_jobarrays, &pajl->all_arrays, (void*)pajl);
+	 
+	 }
+       else
+         {
+	 unlink(pdirent->d_name);
+	 }
+       
+       }
+     }
+  closedir(dir);    
+  
+  /* 9.b,  recover jobs */
+
   if (chdir(path_jobs) != 0) 
     {
     sprintf(log_buffer,msg_init_chdir,
@@ -840,6 +914,9 @@ int pbsd_init(
       pjob = (job *)GET_NEXT(pjob->ji_alljobs);
       }
     }
+    
+  /* look for empty arrays */
+  /* TODO */
 
   /* Put us back in the Server's Private directory */
 
@@ -852,6 +929,7 @@ int pbsd_init(
     return(3);
     }
 
+     
   /* 10. Open and read in tracking records */
 
   fd = open(path_track,O_RDONLY|O_CREAT,0600);

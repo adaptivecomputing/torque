@@ -250,7 +250,7 @@ int job_save(
 
     close(fds);
     }
-  else /* SAVEJOB_FULL, SAVEJOB_NEW, SAVEJOB_TMP */
+  else /* SAVEJOB_FULL, SAVEJOB_NEW, SAVEJOB_ARY */
     {
     /*
      * write the whole structure to the file.
