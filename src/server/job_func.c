@@ -154,6 +154,7 @@ void unload_sp_switch A_((job *pjob));
 
 #ifndef PBS_MOM
 extern int array_save(array_job_list *);
+extern array_job_list *get_array(char *id);
 #endif
 
 /* Local Private Functions */
@@ -953,19 +954,13 @@ job *job_clone(
     INCR);  
 
   /* we need to link the cloned job into the array task list */
-  pajl = (array_job_list*)GET_NEXT(svr_jobarrays);
-  while (pajl != NULL)
-    {
-    if (strcmp(pajl->ai_qs.parent_id, poldjob->ji_qs.ji_jobid) == 0)
-      break;
-    pajl = (array_job_list*)GET_NEXT(pajl->all_arrays);
+  pajl = get_array(poldjob->ji_qs.ji_jobid);
   
-    }
-    CLEAR_LINK(pnewjob->ji_arrayjobs);
-    append_link(&pajl->array_alljobs, &pnewjob->ji_arrayjobs, (void*)pnewjob);
-    pnewjob->ji_arrayjoblist = pajl;
-    pajl->ai_qs.num_cloned++;
-    array_save(pajl);
+  CLEAR_LINK(pnewjob->ji_arrayjobs);
+  append_link(&pajl->array_alljobs, &pnewjob->ji_arrayjobs, (void*)pnewjob);
+  pnewjob->ji_arrayjoblist = pajl;
+  pajl->ai_qs.num_cloned++;
+  array_save(pajl);
 
   return pnewjob;
   } /* END job_clone() */

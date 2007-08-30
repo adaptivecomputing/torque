@@ -710,16 +710,7 @@ int pbsd_init(
 	 CLEAR_HEAD(pajl->array_alljobs);
 	 
 	 fd = open(pdirent->d_name, O_RDONLY,0);
-	 
-	 if (chdir(path_jobs) != 0) 
-           {
-           sprintf(log_buffer,"unable to open %s", pdirent->d_name);
-
-           log_err(errno,"pbsd_init",log_buffer);
-
-           return(-1);
-           }
-	 
+	 	 	 
 	 if (read(fd, &(pajl->ai_qs), sizeof(pajl->ai_qs)) != sizeof(pajl->ai_qs))
 	   {
 	   sprintf(log_buffer,"unable to read %s", pdirent->d_name);

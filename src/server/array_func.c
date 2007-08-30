@@ -39,14 +39,9 @@ extern char *path_arrays;
 /* search job array list to determine if id is a job array */
 int is_array(char *id)
   {
-  
-  char *at;
 
   array_job_list *pajl;
   
-  if ((at = strchr(id,(int)'@')) != NULL)
-    *at = '\0'; /* strip off @server_name */
-    
   
     
   pajl = (array_job_list*)GET_NEXT(svr_jobarrays);  
@@ -54,20 +49,31 @@ int is_array(char *id)
     {
     if (strcmp(pajl->ai_qs.parent_id, id) == 0)
       {
-      if (at)
-        *at = '@';  /* restore @server_name */
-	
       return TRUE;
       }
     pajl = (array_job_list*)GET_NEXT(pajl->all_arrays);
     }
   
-  if (at)
-    *at = '@';  /* restore @server_name */
-    
   return FALSE;
+  }
   
-
+/* return a server's array info struct corresponding to an array id */
+array_job_list *get_array(char *id)
+  {
+  array_job_list *pajl;
+   
+    
+  pajl = (array_job_list*)GET_NEXT(svr_jobarrays);  
+  while (pajl != NULL)
+    {
+    if (strcmp(pajl->ai_qs.parent_id, id) == 0)
+      {
+      return pajl;
+      }
+    pajl = (array_job_list*)GET_NEXT(pajl->all_arrays);
+    }
+    
+  return (array_job_list*)NULL;
   }
   
   
@@ -100,4 +106,34 @@ int array_save(array_job_list *pajl)
   return 0;
   }
   
+  
+void get_parent_id(char *job_id, char *parent_id)
+  {
+  char *c;
+  char *pid;
+  
+  c = job_id;
+  *parent_id = '\0';
+  pid = parent_id;
+  
+  /* copy until the '-' */
+  while (*c != '-' && *c != '\0')
+    {
+    *pid = *c;
+    c++;
+    pid++;
+    } 
+    
+  /* skip the until the first '.' */
+  while (*c != '.' && *c != '\0')
+    {
+    c++;
+    }
+    
+  /* copy the rest of the id */
+  *pid = '\0';
+  strcat(pid, c);
+
+
+  }  
 

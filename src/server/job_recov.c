@@ -123,8 +123,11 @@ int save_tmsock(job *);
 int recov_tmsock(int,job *);
 #endif
 
-extern int job_qs_upgrade A_((job *,int));
-
+extern int job_qs_upgrade(job *,int);
+#ifndef PBS_MOM
+extern void get_parent_id(char *job_id, char *parent_id);
+extern array_job_list *get_array(char *id);
+#endif
 /* global data items */
 
 extern char  *path_jobs;
@@ -380,6 +383,10 @@ job *job_recov(
   char	*pn;
   char	 namebuf[MAXPATHLEN];
   int    qs_upgrade;
+  char   parent_id[PBS_MAXSVRJOBID + 1];
+#ifndef PBS_MOM
+  array_job_list *pajl;
+#endif
   
   qs_upgrade = FALSE;
 
@@ -529,8 +536,21 @@ job *job_recov(
        for this array. We also have to link this job into the linked list of jobs belonging 
        to the array. */
        
-      /* TODO */
-    
+      get_parent_id(pj->ji_qs.ji_jobid, parent_id);
+      pajl = get_array(parent_id);
+      
+      if (pajl == NULL)
+        {
+        /* couldn't find array struct, it must not have been recovered, 
+           treat job as indepentent job */
+        pj->ji_wattr[(int)JOB_ATR_job_array_size].at_val.at_long = 1;
+        }
+      else
+        {
+	 CLEAR_LINK(pj->ji_arrayjobs);
+	 append_link(&pajl->array_alljobs, &pj->ji_arrayjobs, (void*)pj);
+	 pj->ji_arrayjoblist = pajl;
+	}
     }
 
 #endif
