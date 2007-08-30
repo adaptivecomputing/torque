@@ -383,8 +383,8 @@ job *job_recov(
   char	*pn;
   char	 namebuf[MAXPATHLEN];
   int    qs_upgrade;
-  char   parent_id[PBS_MAXSVRJOBID + 1];
 #ifndef PBS_MOM
+  char   parent_id[PBS_MAXSVRJOBID + 1];
   array_job_list *pajl;
 #endif
   
