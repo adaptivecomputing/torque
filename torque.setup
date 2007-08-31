@@ -23,7 +23,7 @@ echo "initializing TORQUE (admin: $USER)"
 
 ps -ef | grep -v grep | grep pbs_server 
 
-if [ "$?" != "0" ] ; then
+if [ "$?" -eq "0" ] ; then
   echo "ERROR: pbs_server already running... run 'qterm' to stop pbs_server and rerun"
   exit 1;
 fi
@@ -32,7 +32,7 @@ pbs_server -t create
 
 echo set server operators += $USER | qmgr
 
-if [ "$?" != "0" ] ; then
+if [ "$?" -ne "0" ] ; then
   echo "ERROR: cannot set TORQUE admins"
   qterm
   exit 1;
