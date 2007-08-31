@@ -652,29 +652,40 @@ struct sig_tbl sig_tbl[] = {
 	{ (char *)0, -1 }
 };
 
+
+
+
 /*
  * post_suspend - post exit of child for suspending a job
  */
 
-void post_suspend(pjob, err)
-	job *pjob;
-	int  err;
-{
-	if (err == 0) {
-		pjob->ji_qs.ji_substate = JOB_SUBSTATE_SUSPEND;
-		pjob->ji_qs.ji_svrflags |= JOB_SVFLG_Suspend;
-	}
-}
+int post_suspend(
+
+  job *pjob,
+  int  err)
+
+  {
+  if (err == 0) 
+    {
+    pjob->ji_qs.ji_substate = JOB_SUBSTATE_SUSPEND;
+    pjob->ji_qs.ji_svrflags |= JOB_SVFLG_Suspend;
+    }
+
+  return(0);
+  }
 
 /*
  * post_resume - post exit of child for suspending a job
  */
 
-void post_resume(pjob, err)
-	job *pjob;
-	int  err;
-{
-	if (err == 0) {
+int post_resume(
+
+  job *pjob,
+  int  err)
+
+  {
+  if (err == 0) 
+    {
 		/*
 		 * adjust walltime for time suspended, ji_momstat contains
 	 	 * time when suspended, ji_stime when job started; adjust
@@ -688,5 +699,7 @@ void post_resume(pjob, err)
 		pjob->ji_qs.ji_substate = JOB_SUBSTATE_RUNNING;
 		pjob->ji_qs.ji_svrflags &= ~JOB_SVFLG_Suspend;
 
-	}
-}
+    }
+
+  return(0);
+  }

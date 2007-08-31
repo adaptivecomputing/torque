@@ -282,7 +282,13 @@ char *set_shell(
  * scan_for_terminated - scan the list of running jobs for one whose
  *	session id matches that of a terminated child pid.  Mark that
  *	job as Exiting.
+ *
+ * NOTE: called by finish_loop() by main pbs_mom thread
+ *
  */
+
+#define TMAX_TJCACHESIZE 128
+
 
 void scan_for_terminated()
 
@@ -293,6 +299,14 @@ void scan_for_terminated()
   job	*pjob;
   task	*ptask = NULL;
   int	statloc;
+
+  static job *TJCache[TMAX_TJCACHESIZE];
+
+  int tjcindex;
+
+#ifdef CACHEOBITFAILURES
+  int TJCIndex = 0;
+#endif
 
   /* update the latest intelligence about the running jobs;         */
   /* must be done before we reap the zombies, else we lose the info */
@@ -310,6 +324,40 @@ void scan_for_terminated()
       pjob = (job *)GET_NEXT(pjob->ji_alljobs);
       }
     }
+
+#ifdef CACHEOBITFAILURES
+  /* process cached obit failures */
+
+  for (TJCIndex = 0;TJCIndex < TMAX_TJCACHESIZE;TJCIndex++)
+    {
+    if (TJCache[TJCIndex] == NULL)
+      break;
+
+    if (TJCache[TJCIndex] == (job *)1)
+      continue;
+
+    /* attempt to send obit again */
+
+    if (pjob->ji_mompost(pjob,exiteval) != 0)
+      {
+      /* attempt failed again */
+
+      termin_child = 1;
+
+      continue;
+      }
+
+    /* success */
+
+    pjob->ji_mompost = NULL;
+
+    /* clear mom sub-task */
+
+    pjob->ji_momsubt = 0;
+
+    job_save(pjob,SAVEJOB_QUICK);
+    }  /* END for (TJIndex) */
+#endif /* CACHEOBITFAILURES */
 
   /* Now figure out which task(s) have terminated (are zombies) */
 
@@ -374,6 +422,8 @@ void scan_for_terminated()
 
     if (pid == pjob->ji_momsubt) 
       {
+      /* PID matches job mom subtask */
+
       log_record(
         PBSEVENT_JOB,
         PBS_EVENTCLASS_JOB,
@@ -382,16 +432,38 @@ void scan_for_terminated()
 
       if (pjob->ji_mompost != NULL) 
         {
-        pjob->ji_mompost(pjob,exiteval);
-        pjob->ji_mompost = NULL;
+        if (pjob->ji_mompost(pjob,exiteval) == 0)
+          {
+          /* success */
+
+          pjob->ji_mompost = NULL;
+          }
+        else
+          {
+          for (tjcindex = 0;tjcindex < TMAX_TJCACHESIZE;tjcindex++)
+            {
+            if ((TJCache[tjcindex] == NULL) || (TJCache[tjcindex] == (job *)1))
+              {
+              TJCache[tjcindex] = pjob;
+
+              break;
+              }
+            }    /* END for (tjcindex) */
+
+          continue;
+          }
         }
+
+      /* clear mom sub-task */
 
       pjob->ji_momsubt = 0;
 
       job_save(pjob,SAVEJOB_QUICK);
 
       continue;
-      }
+      }  /* END if (pid == pjob->ji_momsubt) */
+
+    /* what happens if mom PID is reaped before subtask? */
 
     if (LOGLEVEL >= 2)
       {
@@ -407,6 +479,8 @@ void scan_for_terminated()
         id,
         log_buffer);
       }
+
+    /* where is job purged?  How do we keep job from progressing in state until the obit is sent? */
 
     kill_task(ptask,SIGKILL,0);
 

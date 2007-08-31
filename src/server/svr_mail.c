@@ -119,7 +119,7 @@ void svr_mailowner(
 
   job	*pjob,       /* I */
   int 	 mailpoint,  /* note, single character  */
-  int	 force,	     /* if set, force mail delivery */
+  int	 force,	     /* if set to MAIL_FORCE, force mail delivery */
   char	*text)	     /* (optional) additional message text */
 
   {
@@ -163,12 +163,14 @@ void svr_mailowner(
     {
     /* see if user specified mail of this type */
 
-    if (pjob->ji_wattr[(int)JOB_ATR_mailpnts].at_flags &ATR_VFLAG_SET) 
+    if (pjob->ji_wattr[(int)JOB_ATR_mailpnts].at_flags & ATR_VFLAG_SET) 
       {
       if (strchr(
             pjob->ji_wattr[(int)JOB_ATR_mailpnts].at_val.at_str,
             mailpoint) == NULL)
         {
+        /* do not send mail */
+
         return;
         }
       } 

@@ -424,7 +424,7 @@ struct job {
 	time_t		ji_chkptnext;	/* next checkpoint time */
 	time_t		ji_sampletim;	/* last usage sample time, irix only */
 	pid_t		ji_momsubt;	/* pid of mom subtask   */
-	void	      (*ji_mompost)();	/* ptr to post processing func  */
+	int	      (*ji_mompost)();	/* ptr to post processing func  */
 	struct batch_request *ji_preq;	/* hold request until finish_exec */
 	int		ji_numnodes;	/* number of nodes (at least 1) */
 	int		ji_numvnod;	/* number of virtual nodes */

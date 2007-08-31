@@ -414,7 +414,7 @@ int istext(
 
   /* read first characters to ensure this is ASCII text */
 
-  for(i = 0; i < MMAX_VERIFY_BYTES; i++)
+  for (i = 0;i < MMAX_VERIFY_BYTES;i++)
     {
     c = fgetc(fd);
 
@@ -427,7 +427,7 @@ int istext(
 
       return(0);
       }
-    }  /* END for(i) */
+    }  /* END for (i) */
 
   if (IsText != NULL)
     *IsText = TRUE;
@@ -440,24 +440,25 @@ int istext(
 
 
 
+/* return 3, 4, 5, 6, -1 on FAILURE, 0 on success */
 
 int get_script(
 
-  int    ArgC,  /* I */
-  char **ArgV,  /* I */
-  FILE  *file,
-  char  *script,
-  char  *prefix)
+  int    ArgC,    /* I */
+  char **ArgV,    /* I */
+  FILE  *file,    /* I */
+  char  *script,  /* O (minsize=X) */
+  char  *prefix)  /* I */
 
   {
-  char s[MAX_LINE_LEN + 1];
+  char  s[MAX_LINE_LEN + 1];
   char *sopt;
-  int exec = FALSE;
+  int   exec = FALSE;
   char *cont;
-  char tmp_name[]="/tmp/qsub.XXXXXX";
+  char  tmp_name[] = "/tmp/qsub.XXXXXX";
   FILE *TMP_FILE;
   char *in;
-  int tmpfd;
+  int   tmpfd;
 
   int   index;
 
@@ -465,14 +466,14 @@ int get_script(
 
   char cfilter[MAXPATHLEN + 1024];
 
-  char tmp_name2[]="/tmp/qsub.XXXXXX";
+  char tmp_name2[] = "/tmp/qsub.XXXXXX";
 
-  struct stat sfilter;
-  FILE       *filesaved;
-  FILE *filter_pipe;
-  int         rc;
+  struct stat  sfilter;
+  FILE        *filesaved;
+  FILE        *filter_pipe;
+  int          rc;
 
-  /*  If the submitfilter exists, run it.                               */
+  /* if the submitfilter exists, run it.                               */
 
   /* check that the file is text */
 
@@ -486,9 +487,6 @@ int get_script(
 
   if (stat(PBS_Filter,&sfilter) != -1) 
     {
-
-
-
     /* run the copy through the submit filter. */
 
     if ((tmpfd = mkstemp(tmp_name2)) < 0) 
@@ -516,7 +514,8 @@ int get_script(
  
     strcat(cfilter," >");
     strcat(cfilter,tmp_name2);
-    filter_pipe = popen(cfilter, "w");
+    filter_pipe = popen(cfilter,"w");
+
     while ((in = fgets(s,MAX_LINE_LEN,file)) != NULL)
       {
       if (fputs(in,filter_pipe) < 0)
@@ -553,7 +552,6 @@ int get_script(
 
     /* get rid of the i/p copy. */
 
-
     /* preserve the original pointer. */
 
     filesaved = file;
@@ -580,7 +578,7 @@ int get_script(
     /* Complete redirection.                                         */
 
     fclose(filesaved);
-    }
+    }  /* END if (stat(PBS_Filter,&sfilter) != -1) */
 
   /* END WRAPPER */
 
@@ -596,6 +594,8 @@ int get_script(
     {
     fprintf(stderr, "qsub: could not create copy of script %s\n", 
       tmp_name);
+
+    unlink(tmp_name);
 
     return(4);
     }
@@ -624,10 +624,12 @@ int get_script(
 
         if (fputs(in,TMP_FILE) < 0) 
           {
-          fprintf(stderr, "qsub: error writing copy of script, %s\n", 
+          fprintf(stderr,"qsub: error writing copy of script, %s\n", 
             tmp_name);
 
           fclose(TMP_FILE);
+
+          unlink(tmp_name);
 
           return(3);
           }
@@ -639,6 +641,8 @@ int get_script(
           fprintf(stderr,"qsub: unexpected end-of-file or read error in script\n");
 
           fclose(TMP_FILE);
+
+          unlink(tmp_name);
 
           return(6);
           }
@@ -656,10 +660,12 @@ int get_script(
 
     if (fputs(in,TMP_FILE) < 0) 
       {
-      fprintf(stderr, "qsub: error writing copy of script, %s\n", 
+      fprintf(stderr,"qsub: error writing copy of script, %s\n", 
         tmp_name);
 
       fclose(TMP_FILE);
+
+      unlink(tmp_name);
 
       return(3);
       }
@@ -669,7 +675,7 @@ int get_script(
 
   if (ferror(file)) 
     {
-    fprintf(stderr, "qsub: error reading script file\n");
+    fprintf(stderr,"qsub: error reading script file\n");
 
     return(5);
     } 
@@ -2368,9 +2374,11 @@ int process_opts(
   char *pc;
   char *pdepend;
 
-  FILE *fP=NULL;
-  char tmp_name[]="/tmp/qsub.XXXXXX";
-  char tmp_name2[]="/tmp/qsub.XXXXXX";
+  FILE *fP = NULL;
+
+  char tmp_name[] = "/tmp/qsub.XXXXXX";
+  char tmp_name2[] = "/tmp/qsub.XXXXXX";
+
   char cline[4096];
   char tmpResources[4096]="";
   char *cP;
@@ -2870,7 +2878,7 @@ int process_opts(
 
               pc++;
               }
-            }
+            }    /* END if (strcmp(optarg,"n") != 0) */
 
           set_attr(&attrib,ATTR_m,optarg);
           }
@@ -3358,6 +3366,8 @@ int process_opts(
       {
       fprintf(stderr, "qsub: could not create tmp job file %s\n",
         tmp_name);
+
+      unlink(tmp_name);
       
       errflg++;
 
@@ -3368,6 +3378,10 @@ int process_opts(
       {
       fprintf(stderr, "qsub: unable to write to tmp job file %s\n",
         tmp_name);
+
+      fclose(fP);
+
+      unlink(tmp_name);
 
       errflg++;
 
@@ -3414,7 +3428,7 @@ int process_opts(
 
       if (system(cline) == -1)
         {
-        fprintf( stderr, "qsub: error writing filter o/p, %s\n",
+        fprintf(stderr,"qsub: error writing filter o/p, %s\n",
           tmp_name2);
 
         exit(1);
@@ -3424,10 +3438,11 @@ int process_opts(
 
       unlink(tmp_name2);
       unlink(tmp_name);
-      }
+      }  /* END if (stat(PBS_Filter,&sfilter) != -1) */
     else
       {
       fP = fopen(tmp_name,"r+");
+
       unlink(tmp_name);
       }
 
@@ -3459,6 +3474,7 @@ int process_opts(
 /* END ORNL WRAPPER */
 
 err:
+
   if (!errflg && pass) 
     {
     errflg = (optind != argc);
@@ -3695,7 +3711,7 @@ int main(
     static char usage[] =
 "usage: qsub [-a date_time] [-A account_string] [-b secs]\n\
 [-c { c[=<INTERVAL>] | s | n }] [-C directive_prefix] [-d path] [-D path]\n\
-[-e path] [-h] [-I] [-j oe] [-k {oe}] [-l resource_list] [-m {abe}]\n\
+[-e path] [-h] [-I] [-j oe] [-k {oe}] [-l resource_list] [-m n|{abe}]\n\
 [-M user_list] [-N jobname] [-o path] [-p priority] [-q queue] [-r y|n]\n\
 [-S path] [-t number_to_submit] [-u user_list] [-X] [-W otherattributes=value...]\n\
 [-v variable_list] [-V ] [-z] [script]\n";
@@ -3724,7 +3740,8 @@ int main(
   owner_uid[0] = '\0';
 
   if (getenv("PBSDEBUG") != NULL)
-    fprintf(stderr,"xauth_path=%s\n",xauth_path);
+    fprintf(stderr,"xauth_path=%s\n",
+      xauth_path);
 
   if (load_config(config_buf,sizeof(config_buf)) == 0)
     {
@@ -3831,7 +3848,7 @@ int main(
 
   /* if script is empty, get standard input */
 
-  if ((strcmp(script,"") == 0) || (strcmp(script,"-") == 0) ) 
+  if (!strcmp(script,"") || !strcmp(script,"-")) 
     {
     if (!N_opt) 
       set_attr(&attrib,ATTR_N,"STDIN");
@@ -3842,19 +3859,22 @@ int main(
             argc,
             argv,
             stdin, 
-            script_tmp, 
+            script_tmp,    /* O */
             set_dir_prefix(dir_prefix,C_opt))) > 0) 
         {
         unlink(script_tmp);
 
         exit(1);
         } 
-      else if (errflg < 0) 
+
+      if (errflg < 0) 
         {
+        unlink(script_tmp);
+
         exit(1);
         }
       }
-    } 
+    }    /* END if (!strcmp(script,"") || !strcmp(script,"-")) */ 
   else 
     {  
     /* non-empty script, read it for directives */
@@ -3877,7 +3897,7 @@ int main(
       {
       if (!N_opt) 
         {
-        if ((bnp = strrchr(script, (int)'/')))
+        if ((bnp = strrchr(script,(int)'/')))
           bnp++;
         else
           bnp = script;
@@ -3898,7 +3918,7 @@ int main(
              argc,
              argv,
              f,
-             script_tmp,
+             script_tmp, /* O */
              set_dir_prefix(dir_prefix,C_opt))) > 0) 
         {
         unlink(script_tmp);
@@ -3908,16 +3928,20 @@ int main(
 
       if (errflg < 0) 
         {
+        unlink(script_tmp);
+
         exit(1);
         }
-      } 
+      }    /* END if ((f = fopen(script,"r")) != NULL) */ 
     else 
       {
       perror("qsub: opening script file:");
 
+      unlink(script_tmp);
+
       exit(8);
       }
-    }
+    }    /* END else (!strcmp(script,"") || !strcmp(script,"-")) */
 
   /* interactive job can not be job array */
 
@@ -3978,6 +4002,8 @@ int main(
     {
     fprintf(stderr, "qsub: cannot send environment with the job\n");
 
+    unlink(script_tmp);
+
     exit(3);
     }
 
@@ -3990,6 +4016,8 @@ int main(
   if (sigaction(SIGTSTP,&act,(struct sigaction *)0) < 0) 
     {
     perror("unable to catch signals");
+
+    unlink(script_tmp);
 
     exit(1);
     }

@@ -338,7 +338,7 @@ void scan_for_exiting()
   char         *id = "scan_for_exiting";
 
   static char noconnect[] =
-    "No contact with server at hostaddr %x, port %d, jobid %s errno %d";
+    "no contact with server at hostaddr %x, port %d, jobid %s errno %d";
 
   int		found_one = 0;
   job		*nxjob;
@@ -785,6 +785,11 @@ void scan_for_exiting()
         "scan_for_exiting", 
         log_buffer);
 
+      if ((errno == EINPROGRESS) || (errno == ETIMEDOUT) || (errno == EINTR))
+        {
+        sprintf(log_buffer,"connect to server unsuccessful after 5 seconds - will retry");
+        }
+
       /*
        * return (break out of loop), leave exiting_tasks set
        * so Mom will retry Obit when server is available
@@ -860,8 +865,12 @@ void scan_for_exiting()
       }
     }  /* END for (pjob) */
 
-  if (pjob == 0) 
+  if (pjob == NULL) 
+    {
+    /* search finished */
+
     exiting_tasks = 0; /* went through all jobs */
+    }
 
   return;
   }  /* END scan_for_exiting() */
@@ -870,11 +879,13 @@ void scan_for_exiting()
 
 
 
+/* called from scan_for_terminated() */
+/* sends obit to server */
 
-void post_epilogue(
+int post_epilogue(
 
   job *pjob,  /* I */
-  int  ev)    /* I */
+  int  ev)    /* I exit value (not used) */
 
   {
   char id[] = "post_epilogue";
@@ -884,7 +895,7 @@ void post_epilogue(
   int port;
   struct batch_request *preq;
   static char noconnect[] =
-    "No contact with server at hostaddr %x, port %d, jobid %s errno %d";
+    "cannot send obit to server at hostaddr=%x:%d, jobid=%s errno=%d";
 
   if (LOGLEVEL >= 2)
     {
@@ -904,15 +915,15 @@ void post_epilogue(
   else
     port = default_server_port;
 
-  sock = client_to_svr(pjob->ji_qs.ji_un.ji_momt.ji_svraddr,port,1,NULL);
+  /* allocate memory */
 
-  if (sock < 0)
+  preq = alloc_br(PBS_BATCH_JobObit);
+
+  if (preq == NULL)
     {
-    sprintf(log_buffer,noconnect,
-      pjob->ji_qs.ji_un.ji_momt.ji_svraddr,
-      port,
-      pjob->ji_qs.ji_jobid,
-      errno);
+    /* FAILURE */
+
+    sprintf(log_buffer,"cannot allocate memory for obit message");
 
     LOG_EVENT(
       PBSEVENT_DEBUG,
@@ -920,12 +931,48 @@ void post_epilogue(
       id,
       log_buffer);
 
-    /*
-     * return (break out of loop), leave exiting_tasks set
-     * so Mom will retry Obit when server is available
-     */
+    return(1);
+    }
 
-    return;
+  sock = client_to_svr(pjob->ji_qs.ji_un.ji_momt.ji_svraddr,port,1,NULL);
+
+  if (sock < 0)
+    {
+    /* FAILURE */
+
+    if ((errno == EINTR) || (errno == ETIMEDOUT) || (errno == EINPROGRESS))
+      {
+      /* transient failure - server/network up but busy... retry */
+
+      int retrycount;
+
+      for (retrycount = 0;retrycount < 2;retrycount++)
+        {
+        sock = client_to_svr(pjob->ji_qs.ji_un.ji_momt.ji_svraddr,port,1,NULL);
+
+        if (sock >= 0) 
+          break;
+        }  /* END for (retrycount) */
+      }
+
+    if (sock < 0)
+      {
+      sprintf(log_buffer,noconnect,
+        pjob->ji_qs.ji_un.ji_momt.ji_svraddr,
+        port,
+        pjob->ji_qs.ji_jobid,
+        errno);
+
+      LOG_EVENT(
+        PBSEVENT_DEBUG,
+        PBS_EVENTCLASS_REQUEST,
+        id,
+        log_buffer);
+
+      /* We are trying to send obit, but failed - where is this retried? */
+
+      return(1);
+      }
     }
 
   pjob->ji_momhandle = sock;
@@ -941,6 +988,7 @@ void post_epilogue(
 
   /* FIXME: this is the wrong place for this code.
    * it should be called from job_purge() */
+
   pwdp = getpwuid(pjob->ji_qs.ji_un.ji_momt.ji_exuid);
   strncpy(cQueueName,pwdp->pw_name,3);
   strncat(cQueueName,pjob->ji_qs.ji_jobid,5);
@@ -967,6 +1015,8 @@ void post_epilogue(
 
   if (preq == NULL)
     {
+    /* FAILURE */
+
     sprintf(log_buffer,"cannot allocate memory for obit message");
 
     LOG_EVENT(
@@ -975,7 +1025,7 @@ void post_epilogue(
       id,
       log_buffer);
 
-    return;
+    return(1);
     }
 
   strcpy(preq->rq_ind.rq_jobobit.rq_jid,pjob->ji_qs.ji_jobid);
@@ -995,6 +1045,8 @@ void post_epilogue(
       encode_DIS_JobObit(sock,preq) ||
       encode_DIS_ReqExtend(sock,0))
     {
+    /* FAILURE */
+
     sprintf(log_buffer,"cannot create obit message");
 
     LOG_EVENT(
@@ -1003,18 +1055,26 @@ void post_epilogue(
       id,
       log_buffer);
 
-    return;
+    close(sock);
+
+    free_br(preq);
+
+    return(1);
     }
 
-  DIS_tcp_wflush(sock);
+  DIS_tcp_wflush(sock);  /* does flush close sock? */
+
+  /* SUCCESS */
+
+  /* Who closes sock and unsets pjob->ji_momhandle? */
 
   log_record(
     PBSEVENT_DEBUG, 
     PBS_EVENTCLASS_JOB,
     pjob->ji_qs.ji_jobid, 
-    "Obit sent to server");
+    "obit sent to server");
 
-  return;
+  return(0);
   }  /* END post_epilog() */
 
 
@@ -1286,8 +1346,11 @@ static void preobit_reply(
 
     return;
     } 
-  else if (cpid < 0)
+
+  if (cpid < 0)
     {
+    /* FAILURE */
+
     return;
     }
 

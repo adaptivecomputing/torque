@@ -204,7 +204,7 @@ tlist_head	mom_polljobs;	/* jobs that must have resource limits polled */
 tlist_head	svr_newjobs;	/* jobs being sent to MOM */
 tlist_head	svr_alljobs;	/* all jobs under MOM's control */
 tlist_head	mom_varattrs;	/* variable attributes */
-int		termin_child = 0;
+int		termin_child = 0;  /* boolean - one or more children need to be terminated this iteration */
 time_t		time_now = 0;
 time_t		polltime = 0;
 extern tlist_head svr_requests;
@@ -5692,7 +5692,7 @@ static void finish_loop(
 
   rpp_request(42);
 
-  if (termin_child)
+  if (termin_child != 0)
     scan_for_terminated();
 
   /* if -p, must poll tasks inside jobs to look for completion */
@@ -7658,7 +7658,7 @@ int main(
       pjob = (job *)GET_NEXT(pjob->ji_alljobs);
       }  /* END while (pjob != NULL) */
 
-    if (termin_child)
+    if (termin_child != 0)
       scan_for_terminated();
 
     if (exiting_tasks)

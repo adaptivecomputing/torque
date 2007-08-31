@@ -160,9 +160,11 @@ static int await_connect(
  * that the caller "might" make several calls to the same host or different
  * hosts with the same port.  Let the caller keep the addresses around
  * rather than look it up each time.
+ *
+ * NOTE:  will wait up to 5 seconds (not configurable) for transient network failures
  */
 
-/* NOTE:  make connection on reserved port to validate root/trusted authority */
+/* NOTE:  create new connection on reserved port to validate root/trusted authority */
 
 int client_to_svr(
 
@@ -185,6 +187,8 @@ int client_to_svr(
  
   if (EMsg != NULL)
     EMsg[0] = '\0';
+
+  errno = 0;
  
   local.sin_family      = AF_INET;
   local.sin_addr.s_addr = 0;
@@ -407,7 +411,7 @@ retry:  /* retry goto added (rentec) */
       /*NOTREACHED*/
 
       break;
-    }  /* END switch(errno) */
+    }  /* END switch (errno) */
 
   /* SUCCESS */
 			
