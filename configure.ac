@@ -1017,12 +1017,14 @@ if test "${TCL}" = "1" -a "x${with_tclx}" != "xno" ; then
 	TEA_PATH_CONFIG([tclx])
         if test "x$tclx_BIN_DIR" != "xnone" ; then
 	  TEA_LOAD_CONFIG([tclx])
-        fi
 
-        orig_CFLAGS="$CFLAGS"
-        CFLAGS="$TCL_INCLUDES"
-        AC_CHECK_HEADER([tclExtend.h], [TCLX=1], [TCLX=0])
-        CFLAGS="$orig_CFLAGS"
+          orig_CFLAGS="$CFLAGS"
+          CFLAGS="$TCL_INCLUDES"
+          AC_CHECK_HEADER([tclExtend.h], [TCLX=1], [TCLX=0])
+          CFLAGS="$orig_CFLAGS"
+        else
+          TCLX=0
+        fi
 
 	if test "x$user_requested_tclx" = "xyes" -a $TCLX = 0 ;then
           AC_MSG_ERROR([TclX was requested but not found])
