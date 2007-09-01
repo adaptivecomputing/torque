@@ -35,6 +35,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature
   e - enable DEFAULTCKPT torque.cfg parameter
   e - allow compute host and submit host suffix with nodefile_suffix
   f - add --with-modulefiles=[DIR] support
+  b - be more careful about broken tclx installs
 
 2.1.9
   f - new queue attribute disallowed_types, currently recognized types:

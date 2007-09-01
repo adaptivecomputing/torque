@@ -1013,14 +1013,17 @@ if test "${TCL}" = "1" -a "x${with_tclx}" != "xno" ; then
 		with_tclx=""
 		user_requested_tclx=yes
 	fi
-	# find and load tclxConfig.sh
+	# find and load tclxConfig.sh which only exists for older versions
 	TEA_PATH_CONFIG([tclx])
-        if test "x$tclx_BIN_DIR" = "xnone" ; then
-          TCLX=0
-        else
+        if test "x$tclx_BIN_DIR" != "xnone" ; then
 	  TEA_LOAD_CONFIG([tclx])
-	  TCLX=1
         fi
+
+        orig_CFLAGS="$CFLAGS"
+        CFLAGS="$TCL_INCLUDES"
+        AC_CHECK_HEADER([tclExtend.h], [TCLX=1], [TCLX=0])
+        CFLAGS="$orig_CFLAGS"
+
 	if test "x$user_requested_tclx" = "xyes" -a $TCLX = 0 ;then
           AC_MSG_ERROR([TclX was requested but not found])
 	fi
@@ -1097,34 +1100,7 @@ fi
 
 if test "${TCL}" = "1"; then
   # try to hack in a run-time search path if needed
-  orig_MY_TCL_LIBS="$MY_TCL_LIBS"
-  orig_libdir="$libdir"
-  MY_TCL_LIBS=""
-  for tcllib_part in $orig_MY_TCL_LIBS ;do
-    case $tcllib_part in
-      -L/*)
-        tcllibdir=`echo $tcllib_part | sed s/-L//`
-        tcldir_in_syslib_path=no
-        for sysdir in $sys_lib_dlsearch_path_spec ;do
-           if test "X$tcllibdir" = "X$sysdir" ;then
-               tcldir_in_syslib_path=yes
-               break
-           fi
-        done
-        MY_TCL_LIBS="${MY_TCL_LIBS} ${tcllib_part}"
-        if test "X$tcldir_in_syslib_path" = "Xno" ;then
-           libdir="$tcllibdir"
-           eval "new_lib_spec=\"$hardcode_libdir_flag_spec\""
-           MY_TCL_LIBS="${MY_TCL_LIBS} ${new_lib_spec}"
-        fi
-        ;;
-      -L)
-        ;;
-      *) MY_TCL_LIBS="${MY_TCL_LIBS} ${tcllib_part}"
-        ;;
-    esac
-  done
-  libdir="$orig_libdir"
+  T_ADD_RPATH([MY_TCL_LIBS])
   
   orig_LIBS="$LIBS"
   orig_CFLAGS="$CFLAGS"
@@ -1143,34 +1119,7 @@ fi
 
 if test "${TK}" = "1"; then
   # try to hack in a run-time search path if needed
-  orig_MY_TCLTK_LIBS="$MY_TCLTK_LIBS"
-  orig_libdir="$libdir"
-  MY_TCLTK_LIBS=""
-  for tcllib_part in $orig_MY_TCLTK_LIBS ;do
-    case $tcllib_part in
-      -L/*)
-        tcllibdir=`echo $tcllib_part | sed s/-L//`
-        tcldir_in_syslib_path=no
-        for sysdir in $sys_lib_dlsearch_path_spec ;do
-           if test "X$tcllibdir" = "X$sysdir" ;then
-               tcldir_in_syslib_path=yes
-               break
-           fi
-        done
-        MY_TCLTK_LIBS="${MY_TCLTK_LIBS} ${tcllib_part}"
-        if test "X$tcldir_in_syslib_path" = "Xno" ;then
-           libdir="$tcllibdir"
-           eval "new_lib_spec=\"$hardcode_libdir_flag_spec\""
-           MY_TCLTK_LIBS="${MY_TCLTK_LIBS} ${new_lib_spec}"
-        fi
-        ;;
-      -L)
-        ;;
-      *) MY_TCLTK_LIBS="${MY_TCLTK_LIBS} ${tcllib_part}"
-        ;;
-    esac
-  done
-  libdir="$orig_libdir"
+  T_ADD_RPATH([MY_TCLTK_LIBS])
 
   orig_LIBS="$LIBS"
   orig_CFLAGS="$CFLAGS"
