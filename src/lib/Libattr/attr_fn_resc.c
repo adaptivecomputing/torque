@@ -721,8 +721,8 @@ resource_def *find_resc_def(
 
 resource *find_resc_entry(
 
-  attribute    *pattr,
-  resource_def *rscdf)
+  attribute    *pattr,  /* I */
+  resource_def *rscdf)  /* I */
 
   {
   resource *pr;

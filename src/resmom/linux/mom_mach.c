@@ -1612,7 +1612,7 @@ int mom_get_sample()
 
       max_proc *= 2;
 
-      hold = (proc_stat_t *)realloc(proc_array,max_proc*sizeof(proc_stat_t));
+      hold = (proc_stat_t *)realloc(proc_array,(max_proc + 100) * sizeof(proc_stat_t));
 
       if (proc_array == NULL)
         {
@@ -1785,9 +1785,9 @@ int mom_over_limit(
 /*
  * Update the job attribute for resources used.
  *
- *	The first time this is called for a job, set up resource entries for
- *	each resource that can be reported for this machine.  Fill in the
- *	correct values.  Return an error code.
+ * The first time this is called for a job, set up resource entries for
+ * each resource that can be reported for this machine.  Fill in the
+ * correct values.  Return an error code.
  */
 
 int mom_set_use(
@@ -1849,7 +1849,7 @@ int mom_set_use(
     pres->rs_value.at_type = ATR_TYPE_SIZE;
     pres->rs_value.at_val.at_size.atsv_shift = 10;	/* KB */
     pres->rs_value.at_val.at_size.atsv_units = ATR_SV_BYTESZ;
-    }
+    }  /* END if ((at->at_flags & ATR_VFLAG_SET) == 0) */
 
   /* get cputime */
 
