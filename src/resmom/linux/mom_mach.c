@@ -1601,7 +1601,9 @@ int mom_get_sample()
       continue;
       }
 
-    if (++nproc == max_proc)
+    nproc++;
+
+    if (nproc >= max_proc)
       {
       proc_stat_t *hold;
 
@@ -1612,7 +1614,7 @@ int mom_get_sample()
 
       max_proc *= 2;
 
-      hold = (proc_stat_t *)realloc(proc_array,(max_proc + 100) * sizeof(proc_stat_t));
+      hold = (proc_stat_t *)realloc(proc_array,(max_proc + 1) * sizeof(proc_stat_t));
 
       if (proc_array == NULL)
         {
@@ -1620,6 +1622,8 @@ int mom_get_sample()
 
         return(PBSE_SYSTEM);
         }
+
+      proc_array = hold;
 
       memset(&proc_array[nproc],'\0',sizeof(proc_stat_t) * (max_proc >> 1));
       }  /* END if (++nproc == max_proc) */
