@@ -3,8 +3,6 @@ c - crash     b - bug fix    e - enhancement    f - new feature
 2.2.0
   e - improve RPP logging for corruption issues
   f - dynamic resources
-  f - allow manager to set "next job number" via hidden qmgr attribute 
-      next_job_number
   e - use mlockall() in pbs_mom if _POSIX_MEMLOCK
   f - consumable resource "tokens" support (Harte-Hanks)
   f - Linux 2.6 cpuset support
@@ -48,6 +46,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature
   b - fix memory leak in fifo scheduler
   b - fix nonstandard usage of 'tail' in tpackage
   b - fix aliasing error with brp_txtlen
+  f - allow manager to set "next job number" via hidden qmgr attribute
+      next_job_number
 
 2.1.8
   b - stop possible memory corruption with an invalid request type (StockholmU)
