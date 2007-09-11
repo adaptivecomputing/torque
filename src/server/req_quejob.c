@@ -267,13 +267,10 @@ void req_quejob(
 
     created_here = JOB_SVFLG_HERE;
 
-#ifdef JOBARRAYTESTING
-    sprintf(jidbuf,"%d-%d.",
-      server.sv_qs.sv_jobidnumber,1);
-#else
+
     sprintf(jidbuf,"%d.",
-      server.sv_qs.sv_jobidnumber);
-#endif
+    server.sv_qs.sv_jobidnumber);
+
 
     strcat(jidbuf,server_name);
 
@@ -1766,6 +1763,9 @@ void req_commit(
     
     /* setup a link to this job array in the servers all_arrays list */
     pajl = (array_job_list*)malloc(sizeof(array_job_list));
+    
+    pajl->ai_qs.struct_version = ARRAY_STRUCT_VERSION;
+    pajl->ai_qs.array_size = pj->ji_wattr[(int)JOB_ATR_job_array_size].at_val.at_long;
     strcpy(pajl->ai_qs.parent_id, pj->ji_qs.ji_jobid);
     strcpy(pajl->ai_qs.fileprefix, pj->ji_qs.ji_fileprefix);
     pajl->ai_qs.num_cloned = 0;
@@ -1797,7 +1797,7 @@ void req_commit(
     
     reply_jobid(preq,pj->ji_qs.ji_jobid,BATCH_REPLY_CHOICE_Commit);
     return;
-    }
+    }  /* end if (pj->ji_wattr[(int)JOB_ATR_job_array_size].at_val.at_long > 1) */
 
   svr_evaljobstate(pj,&newstate,&newsub,1);
 

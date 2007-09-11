@@ -386,6 +386,7 @@ typedef struct {
 
 #define ARRAY_FILE_SUFFIX ".AR"
 
+#define ARRAY_STRUCT_VERSION 1
 
   /* pbs_server will keep a list of these structs, with one struct per job array*/
   struct array_job_list {
@@ -393,10 +394,11 @@ typedef struct {
      tlist_head array_alljobs;
 
      struct array_info {
+       int  struct_version;
        char parent_id[PBS_MAXSVRJOBID + 1];
+       int  array_size;
        char fileprefix[PBS_JOBBASE + 1];
-       int num_cloned;
-       int last_clone;
+       int  num_cloned;
      } ai_qs; 
   
   };

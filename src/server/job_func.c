@@ -959,8 +959,7 @@ job *job_clone(
   CLEAR_LINK(pnewjob->ji_arrayjobs);
   append_link(&pajl->array_alljobs, &pnewjob->ji_arrayjobs, (void*)pnewjob);
   pnewjob->ji_arrayjoblist = pajl;
-  pajl->ai_qs.num_cloned++;
-  array_save(pajl);
+ 
 
   return pnewjob;
   } /* END job_clone() */
@@ -982,9 +981,11 @@ struct work_task *ptask)
   int newsub;
   int rc;
   char namebuf[MAXPATHLEN];
-  
+  array_job_list *pajl;
   pjob = (job*)(ptask->wt_parm1);
   startindex = ptask->wt_aux;
+  
+  pajl = get_array(pjob->ji_qs.ji_jobid);
   
   
   strcpy(namebuf, path_jobs);
@@ -1023,6 +1024,9 @@ struct work_task *ptask)
       job_purge(pjobclone);
       }
     }
+  
+  pajl->ai_qs.num_cloned++;
+  array_save(pajl);
   
   if (i < pjob->ji_wattr[(int)JOB_ATR_job_array_size].at_val.at_long)
     {
