@@ -155,6 +155,7 @@ void unload_sp_switch A_((job *pjob));
 #ifndef PBS_MOM
 extern int array_save(array_job_list *);
 extern array_job_list *get_array(char *id);
+extern int delete_array_struct(array_job_list *pajl);
 #endif
 
 /* Local Private Functions */
@@ -1210,12 +1211,7 @@ void job_purge(
        clean that up too */
     if ( GET_NEXT(pjob->ji_arrayjoblist->array_alljobs) == pjob->ji_arrayjoblist->array_alljobs.ll_struct)
       {
-      delete_link(&pjob->ji_arrayjoblist->all_arrays);
-      free(pjob->ji_arrayjoblist);
-      strcpy(namebuf, path_arrays);
-      strcat(namebuf, pjob->ji_arrayjoblist->ai_qs.fileprefix);
-      strcat(namebuf, ARRAY_FILE_SUFFIX);
-      unlink(namebuf);
+      delete_array_struct(pjob->ji_arrayjoblist);
       }
     }
 

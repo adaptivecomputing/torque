@@ -206,7 +206,7 @@ extern void   set_old_nodes A_((job *));
 extern void   acct_close A_((void));
 extern struct work_task *apply_job_delete_nanny A_((struct job *,int));
 extern int     net_move A_((job *,struct batch_request *));
-
+extern int delete_array_struct(array_job_list *pajl);
 
 /* Private functions in this file */
 
@@ -731,6 +731,7 @@ int pbsd_init(
 	 }
        
        }
+              
      }
   closedir(dir);    
   
@@ -906,9 +907,23 @@ int pbsd_init(
       }
     }
     
-  /* look for empty arrays */
-  /* TODO */
-
+  /* look for empty arrays and delete them */
+  pajl = (array_job_list*)GET_NEXT(svr_jobarrays);  
+  while (pajl != NULL)
+    {
+    if (GET_NEXT(pajl->array_alljobs) == pajl->array_alljobs.ll_struct)
+      {
+      array_job_list *temp = (array_job_list*)GET_NEXT(pajl->all_arrays);
+      delete_array_struct(pajl);
+      pajl = temp;
+      }
+    else
+      {
+      pajl = (array_job_list*)GET_NEXT(pajl->all_arrays);
+      }
+    }
+    
+    
   /* Put us back in the Server's Private directory */
 
   if (chdir(path_priv) != 0) 

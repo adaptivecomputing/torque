@@ -177,3 +177,22 @@ array_job_list *recover_array_struct(char *path)
    return pajl;
 
 }
+
+int delete_array_struct(array_job_list *pajl)
+  {
+ 
+  char namebuf[MAXPATHLEN + 1];
+  
+   
+  delete_link(&pajl->all_arrays);
+  
+  strcpy(namebuf, path_arrays);
+  strcat(namebuf, pajl->ai_qs.fileprefix);
+  strcat(namebuf, ARRAY_FILE_SUFFIX);
+  
+  free(pajl);
+  
+  unlink(namebuf);
+  
+  return TRUE;
+  }
