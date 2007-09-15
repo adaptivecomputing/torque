@@ -763,7 +763,14 @@ int send_job(
   /* put together the job script file name */
 
   strcpy(script_name,path_jobs);
-  strcat(script_name,jobp->ji_qs.ji_fileprefix);
+  if (jobp->ji_wattr[(int)JOB_ATR_job_array_size].at_val.at_long > 1)
+    {
+    strcat(script_name, jobp->ji_arrayjoblist->ai_qs.fileprefix);
+    }
+  else
+    {
+    strcat(script_name,jobp->ji_qs.ji_fileprefix);
+    }
   strcat(script_name,JOB_SCRIPT_SUFFIX);
 
   /* save the job id for when after we purge the job */

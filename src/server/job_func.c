@@ -752,17 +752,14 @@ job *job_clone(
 
   char		*oldid;
   char		*hostname;
-  char          *tmpstr;
+  char		*tmpstr;
   char		basename[PBS_JOBBASE+1];
   char		namebuf[MAXPATHLEN + 1];
-  char		copybuf[4096];
   char		buf[256];
   char		*pc;
   int		fds;
-  int		fds_source;
 
   int 		i;
-  int		rc;
   int           slen;
   
   array_job_list *pajl;
@@ -876,41 +873,7 @@ job *job_clone(
   close(fds);
   strcpy(pnewjob->ji_qs.ji_fileprefix,basename);
 
-  /* end making new job file name now we need to copy the contents of the old 
-     file into the file for this cloned job */
-  strcpy(namebuf,path_jobs);
-  strcat(namebuf,basename);
-  strcat(namebuf,JOB_SCRIPT_SUFFIX);
-  fds = open(namebuf,O_WRONLY|O_CREAT);
-  if (fds < 0)
-    {
-    log_err(errno,id,"cannot create job script");
-    job_free(pnewjob);
-    return NULL;
-    }
-    
-  strcpy(namebuf,path_jobs);
-  strcat(namebuf,poldjob->ji_qs.ji_fileprefix);
-  strcat(namebuf,JOB_SCRIPT_SUFFIX);
-
-  fds_source = open(namebuf,O_RDONLY);
-  if (fds_source < 0)
-    {
-    log_err(errno,id,"cannot copy job script");
-    job_free(pnewjob);
-    return NULL;
-    }
-    
-  rc = read(fds_source, copybuf, 4096);
-  while (rc > 0)
-    {
-      write(fds, copybuf, rc);
-      rc = read(fds_source, copybuf, 4096);
-    }
-  
-  close(fds);
-  close(fds_source);
-
+ 
   /* copy job attributes. some of these are going to have to be modified  */
   for (i = 0; i < JOB_ATR_LAST; i++)
     {
@@ -1219,7 +1182,34 @@ void job_purge(
     delete_link(&pjob->ji_alljobs);
     }
 
+
+  if (pjob->ji_wattr[(int)JOB_ATR_job_array_size].at_val.at_long == 1)
+    {
+    strcpy(namebuf,path_jobs);	/* delete script file */
+    strcat(namebuf,pjob->ji_qs.ji_fileprefix);
+    strcat(namebuf,JOB_SCRIPT_SUFFIX);
+
+    if (unlink(namebuf) < 0)
+      {
+      if (errno != ENOENT)
+        log_err(errno,id,msg_err_purgejob);
+      }
+    else if (LOGLEVEL >= 6)
+      {
+      sprintf(log_buffer,"removed job script");
+
+      log_record(PBSEVENT_DEBUG,
+        PBS_EVENTCLASS_JOB,
+        pjob->ji_qs.ji_jobid,
+        log_buffer);
+      }
+    }
+
 #endif  /* PBS_MOM */
+
+
+
+#ifdef PBS_MOM
 
   strcpy(namebuf,path_jobs);	/* delete script file */
   strcat(namebuf,pjob->ji_qs.ji_fileprefix);
@@ -1240,7 +1230,7 @@ void job_purge(
       log_buffer);
     }
 
-#ifdef PBS_MOM
+
 #if IBM_SP2==2        /* IBM SP PSSP 3.1 */
   unload_sp_switch(pjob);
 #endif			/* IBM SP */

@@ -122,6 +122,7 @@
 #ifndef PBS_MOM
 #include "work_task.h"
 extern void  job_clone_wt A_((struct work_task *));
+extern int setup_array_struct(job *pjob);
 #endif
 
 #ifdef PBS_MOM
@@ -1638,7 +1639,6 @@ void req_commit(
   int	   newsub;
   pbs_queue *pque;
   int	   rc;
-  struct work_task *wt;
 #endif /* SERVER only */
 
   pj = locate_new_job(preq->rq_conn,preq->rq_ind.rq_commit);
@@ -1777,40 +1777,12 @@ void req_commit(
      *** job array under development */
   if (pj->ji_wattr[(int)JOB_ATR_job_array_size].at_val.at_long > 1)
     {
-    array_job_list *pajl;
-    
-    /* setup a link to this job array in the servers all_arrays list */
-    pajl = (array_job_list*)malloc(sizeof(array_job_list));
-    
-    pajl->ai_qs.struct_version = ARRAY_STRUCT_VERSION;
-    pajl->ai_qs.array_size = pj->ji_wattr[(int)JOB_ATR_job_array_size].at_val.at_long;
-    strcpy(pajl->ai_qs.parent_id, pj->ji_qs.ji_jobid);
-    strcpy(pajl->ai_qs.fileprefix, pj->ji_qs.ji_fileprefix);
-    pajl->ai_qs.num_cloned = 0;
-    CLEAR_LINK(pajl->all_arrays);
-    CLEAR_HEAD(pajl->array_alljobs);
-    append_link(&svr_jobarrays, &pajl->all_arrays, (void*)pajl);
-    
-    if (job_save(pj,SAVEJOB_FULL) != 0) 
+    	
+    if (setup_array_struct(pj))
       {
-      job_purge(pj);
-
       req_reject(PBSE_SYSTEM,0,preq,NULL,NULL);
-
-      if (LOGLEVEL >= 6)
-        {
-        log_record(
-          PBSEVENT_JOB,
-          PBS_EVENTCLASS_JOB,
-          (pj != NULL) ? pj->ji_qs.ji_jobid : "NULL",
-          "cannot save job");
-        }
-
       return;
-      }
-    
-    wt = set_task(WORK_Timed,time_now+1,job_clone_wt,(void*)pj);
-    /* svr_setjobstate(pj,JOB_STATE_HELD,JOB_SUBSTATE_HELD);*/
+      }	
     
     reply_jobid(preq,pj->ji_qs.ji_jobid,BATCH_REPLY_CHOICE_Commit);
     return;
