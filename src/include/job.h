@@ -89,6 +89,7 @@
 
 #ifndef JOB_H
 #define JOB_H 1
+
 /*
  * Dependent Job Structures
  *
@@ -392,6 +393,8 @@ typedef struct {
   struct array_job_list {
      list_link all_arrays;
      tlist_head array_alljobs;
+     
+     int jobs_recovered;
 
      struct array_info {
        int  struct_version;
@@ -450,6 +453,7 @@ struct job {
 	tlist_head	ji_rejectdest;	/* list of rejected destinations */
 	list_link	ji_arrayjobs;	/* links to all jobs in same array */
 	array_job_list	*ji_arrayjoblist; /* pointer to array_job_list for this array */
+        int		ji_isparent;    /* set to TRUE if this is a "parent job"*/
 #endif					/* END SERVER ONLY */
 
 	/*
@@ -668,7 +672,7 @@ task *task_find A_((
 #define JOB_CKPT_SUFFIX    ".CK"	/* job checkpoint file */
 #define JOB_TASKDIR_SUFFIX ".TK"	/* job task directory */
 #define JOB_BAD_SUFFIX	   ".BD"	/* save bad job file */
-
+#define JOB_FILE_TMP_SUFFIX ".TA"	/* temporary job array parent file suffix */
 /*
  * Job states are defined by POSIX as:
  */

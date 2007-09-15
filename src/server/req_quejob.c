@@ -386,8 +386,8 @@ void req_quejob(
   do {
     strcpy(namebuf,path_jobs);
     strcat(namebuf,basename);
-    strcat(namebuf,JOB_FILE_SUFFIX);
-
+    strcat(namebuf, JOB_FILE_SUFFIX);
+    
     fds = open(namebuf,O_CREAT|O_EXCL|O_WRONLY,0600);
 
     if (fds < 0) 
@@ -1484,6 +1484,10 @@ void req_rdytocommit(
   int  OrigSState;
   char OrigSChar;
   long OrigFlags;
+  
+#ifndef PBS_MOM
+  char namebuf[MAXPATHLEN+1];
+#endif
 
   pj = locate_new_job(sock,preq->rq_ind.rq_rdytocommit);
 
@@ -1540,6 +1544,20 @@ void req_rdytocommit(
   pj->ji_qs.ji_substate = JOB_SUBSTATE_TRANSICM;
   pj->ji_wattr[(int)JOB_ATR_state].at_val.at_char = 'T';
   pj->ji_wattr[(int)JOB_ATR_state].at_flags |= ATR_VFLAG_SET;
+  
+#ifndef PBS_MOM
+
+  if (pj->ji_wattr[(int)JOB_ATR_job_array_size].at_val.at_long > 1)
+    {
+    pj->ji_isparent = TRUE;
+        
+    strcpy(namebuf,path_jobs);
+    strcat(namebuf,pj->ji_qs.ji_fileprefix);
+    strcat(namebuf, JOB_FILE_SUFFIX);
+    unlink(namebuf);
+        
+    }
+#endif
 
   if (job_save(pj,SAVEJOB_NEW) == -1) 
     {
@@ -1773,7 +1791,7 @@ void req_commit(
     CLEAR_HEAD(pajl->array_alljobs);
     append_link(&svr_jobarrays, &pajl->all_arrays, (void*)pajl);
     
-    if (job_save(pj,SAVEJOB_ARY) != 0) 
+    if (job_save(pj,SAVEJOB_FULL) != 0) 
       {
       job_purge(pj);
 
@@ -1792,7 +1810,6 @@ void req_commit(
       }
     
     wt = set_task(WORK_Timed,time_now+1,job_clone_wt,(void*)pj);
-    wt->wt_aux = 0;
     /* svr_setjobstate(pj,JOB_STATE_HELD,JOB_SUBSTATE_HELD);*/
     
     reply_jobid(preq,pj->ji_qs.ji_jobid,BATCH_REPLY_CHOICE_Commit);

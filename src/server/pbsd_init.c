@@ -207,6 +207,7 @@ extern void   acct_close A_((void));
 extern struct work_task *apply_job_delete_nanny A_((struct job *,int));
 extern int     net_move A_((job *,struct batch_request *));
 extern int delete_array_struct(array_job_list *pajl);
+extern void  job_clone_wt A_((struct work_task *));
 
 /* Private functions in this file */
 
@@ -263,6 +264,8 @@ int pbsd_init(
   struct sigaction act;
   struct sigaction oact;
   
+  
+  struct work_task *wt;
   array_job_list *pajl;
 
   char   EMsg[1024];
@@ -708,6 +711,7 @@ int pbsd_init(
 	 pajl = (array_job_list*)malloc(sizeof(array_job_list));
 	 CLEAR_LINK(pajl->all_arrays);
 	 CLEAR_HEAD(pajl->array_alljobs);
+	 pajl->jobs_recovered = 0;
 	 
 	 fd = open(pdirent->d_name, O_RDONLY,0);
 	 	 	 
@@ -788,6 +792,21 @@ int pbsd_init(
 
         psuffix = pdirent->d_name + baselen;
 
+        if (!strcmp(psuffix, ".TA"))
+	  {
+	  if ((pjob = job_recov(pdirent->d_name)) != NULL) 
+            {
+	    append_link(&svr_alljobs,&pjob->ji_alljobs,pjob);
+	    pjob ->ji_isparent = TRUE;
+	    }
+	  else
+	    {
+	    /* should we do something here?  we won't beable to finish cloning this array */
+	    }
+	  continue;
+	  }
+	
+	
         if (strcmp(psuffix,job_suffix))
           continue;
 
@@ -907,11 +926,26 @@ int pbsd_init(
       }
     }
     
-  /* look for empty arrays and delete them */
+  /* look for empty arrays and delete them 
+     also look for arrays that weren't fully built and setup a work task to 
+     continue the cloning process*/
   pajl = (array_job_list*)GET_NEXT(svr_jobarrays);  
   while (pajl != NULL)
     {
-    if (GET_NEXT(pajl->array_alljobs) == pajl->array_alljobs.ll_struct)
+    if (pajl->ai_qs.num_cloned != pajl->ai_qs.array_size)
+      {
+      
+      job *pjob = find_job(pajl->ai_qs.parent_id);
+      if (pjob == NULL)
+        {
+        /* TODO, we need to so something here! */
+	}
+      wt = set_task(WORK_Timed,time_now+1,job_clone_wt,(void*)pjob);
+      wt->wt_aux = pajl->ai_qs.num_cloned;
+      
+      pajl = (array_job_list*)GET_NEXT(pajl->all_arrays);
+      }
+    else if (GET_NEXT(pajl->array_alljobs) == pajl->array_alljobs.ll_struct)
       {
       array_job_list *temp = (array_job_list*)GET_NEXT(pajl->all_arrays);
       delete_array_struct(pajl);

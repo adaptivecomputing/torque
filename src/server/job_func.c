@@ -135,6 +135,11 @@
 #include "portability.h"
 
 
+#ifndef TRUE
+#define TRUE 1
+#define FALSE 0
+#endif
+
 int conn_qsub(char *,long,char *);
 void job_purge(job *);
 
@@ -629,6 +634,7 @@ job *job_alloc()
   CLEAR_HEAD(pj->ji_svrtask);
   CLEAR_HEAD(pj->ji_rejectdest);
   CLEAR_LINK(pj->ji_arrayjobs);
+  pj->ji_isparent = FALSE;
 #endif  /* else PBS_MOM */
 
   pj->ji_momhandle = -1;		/* mark mom connection invalid */
@@ -984,10 +990,10 @@ struct work_task *ptask)
   char namebuf[MAXPATHLEN];
   array_job_list *pajl;
   pjob = (job*)(ptask->wt_parm1);
-  startindex = ptask->wt_aux;
   
   pajl = get_array(pjob->ji_qs.ji_jobid);
   
+  startindex = pajl->ai_qs.num_cloned;
   
   strcpy(namebuf, path_jobs);
   strcat(namebuf, pjob->ji_qs.ji_fileprefix);
@@ -1024,32 +1030,24 @@ struct work_task *ptask)
       {
       job_purge(pjobclone);
       }
+      
+    pajl->ai_qs.num_cloned++;
+    array_save(pajl);
     }
   
-  pajl->ai_qs.num_cloned++;
-  array_save(pajl);
+  
+
+  
   
   if (i < pjob->ji_wattr[(int)JOB_ATR_job_array_size].at_val.at_long)
     {
     new_task = set_task(WORK_Timed,time_now + 1,job_clone_wt,ptask->wt_parm1);
-    new_task->wt_aux = startindex + 256;
     }
   else
     {
-     /* this is the last batch of jobs, we can purge the "parent" job and 
-        telete the temporary job file (called TA, T for temp, A for array) */
+     /* this is the last batch of jobs, we can purge the "parent" job */
 
-    /* setup the path to the temproary job file */
-    strcpy(namebuf, path_jobs);
-    strcat(namebuf, pjob->ji_qs.ji_fileprefix);
-    strcat(namebuf, "TA");
-    
-    /* job purge looks for jobs with array_size > 1 and does some special actions,
-       even though the "parent" job has an array_size > 1 we don't want job_purge
-       to do anything out of the ordinary, so we set the array_size back to 1 */
-    pjob->ji_wattr[(int)JOB_ATR_job_array_size].at_val.at_long = 1;
     job_purge(pjob);
-    unlink(namebuf);
 
     }
   } /* end job_clone_tw */
@@ -1203,7 +1201,8 @@ void job_purge(
     }
     
   /* if part of job array then remove from array's job list */ 
-  if (pjob->ji_wattr[(int)JOB_ATR_job_array_size].at_val.at_long > 1 )
+  if (pjob->ji_wattr[(int)JOB_ATR_job_array_size].at_val.at_long > 1 
+      && pjob->ji_isparent == FALSE)
     {
     
     delete_link(&pjob->ji_arrayjobs);
@@ -1213,6 +1212,11 @@ void job_purge(
       {
       delete_array_struct(pjob->ji_arrayjoblist);
       }
+    }
+    
+  if (pjob->ji_isparent == TRUE)
+    {
+    delete_link(&pjob->ji_alljobs);
     }
 
 #endif  /* PBS_MOM */
@@ -1295,10 +1299,23 @@ void job_purge(
     }
 #endif	/* PBS_MOM */
 
+
+
   strcpy(namebuf,path_jobs);	/* delete job file */
   strcat(namebuf,pjob->ji_qs.ji_fileprefix);
-  strcat(namebuf,JOB_FILE_SUFFIX);
-
+#ifdef PBS_MOM
+   strcat(namebuf,JOB_FILE_SUFFIX);
+#else  
+  if (pjob->ji_isparent == TRUE)
+    {
+    strcat(namebuf, JOB_FILE_TMP_SUFFIX);
+    }
+  else
+    {
+    strcat(namebuf,JOB_FILE_SUFFIX);
+    }
+#endif
+    
   if (unlink(namebuf) < 0)
     {
     if (errno != ENOENT)

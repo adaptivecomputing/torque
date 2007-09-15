@@ -179,15 +179,20 @@ int job_save(
   strcpy(namebuf1,path_jobs);	/* job directory path */
   strcat(namebuf1,pjob->ji_qs.ji_fileprefix);
   strcpy(namebuf2,namebuf1);	/* setup for later */
-  if (updatetype == SAVEJOB_ARY)
+
+#ifdef PBS_MOM
+  strcat(namebuf1,JOB_FILE_SUFFIX);
+#else
+  if (pjob->ji_isparent == TRUE)
     {
-    strcat(namebuf1, "TA");
+    strcat(namebuf1, JOB_FILE_TMP_SUFFIX);
     }
   else
     {
     strcat(namebuf1,JOB_FILE_SUFFIX);
     }
-    
+#endif
+
   /* if ji_modified is set, ie an attribute changed, then update mtime */
 
   if (pjob->ji_modified) 
@@ -550,6 +555,7 @@ job *job_recov(
 	 CLEAR_LINK(pj->ji_arrayjobs);
 	 append_link(&pajl->array_alljobs, &pj->ji_arrayjobs, (void*)pj);
 	 pj->ji_arrayjoblist = pajl;
+	 pajl->jobs_recovered++;
 	}
     }
 

@@ -141,6 +141,9 @@ void get_parent_id(char *job_id, char *parent_id)
   }  
 
 
+
+/* recover_array_struct reads in  an array struct saved to disk and inserts it into 
+   the servers list of arrays */
 array_job_list *recover_array_struct(char *path)
 {
    extern tlist_head svr_jobarrays;
@@ -178,21 +181,30 @@ array_job_list *recover_array_struct(char *path)
 
 }
 
+
+/* delete a job array struct from memory and disk. This is used when the number of 
+   jobs that belong to the array becomes zero */
 int delete_array_struct(array_job_list *pajl)
   {
  
-  char namebuf[MAXPATHLEN + 1];
+  char path[MAXPATHLEN + 1];
   
    
   delete_link(&pajl->all_arrays);
   
-  strcpy(namebuf, path_arrays);
-  strcat(namebuf, pajl->ai_qs.fileprefix);
-  strcat(namebuf, ARRAY_FILE_SUFFIX);
+  strcpy(path, path_arrays);
+  strcat(path, pajl->ai_qs.fileprefix);
+  strcat(path, ARRAY_FILE_SUFFIX);
   
   free(pajl);
   
-  unlink(namebuf);
+  if (unlink(path))
+    {
+    sprintf(log_buffer, "unable to delete %s", path);
+    log_err(errno, "delete_array_struct", log_buffer);
+    
+    return 1;
+    }
   
-  return TRUE;
+  return 0;
   }
