@@ -38,7 +38,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature
 
 2.1.10
   b - fix buffer overflow in rm_request,
-      fixe 2 printf that should be sprintf (Umea University)
+      fix 2 printf that should be sprintf (Umea University)
 
 2.1.9
   f - new queue attribute disallowed_types, currently recognized types:
