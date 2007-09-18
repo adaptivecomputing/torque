@@ -652,7 +652,6 @@ task *task_find A_((
 #define SAVEJOB_QUICK 0
 #define SAVEJOB_FULL  1
 #define SAVEJOB_NEW   2
-#define SAVEJOB_ARY   3  /* used to temporarily save the "parent" for a job array */
 
 #define MAIL_NONE  (int)'n'
 #define MAIL_ABORT (int)'a'
@@ -664,14 +663,14 @@ task *task_find A_((
 #define MAIL_NORMAL 0
 #define MAIL_FORCE  1
 
-#define JOB_FILE_COPY      ".JC"	/* tmp copy while updating */
-#define JOB_FILE_SUFFIX    ".JB"	/* job control file */
-#define JOB_SCRIPT_SUFFIX  ".SC"	/* job script file  */
-#define JOB_STDOUT_SUFFIX  ".OU"	/* job standard out */
-#define JOB_STDERR_SUFFIX  ".ER"	/* job standard error */
-#define JOB_CKPT_SUFFIX    ".CK"	/* job checkpoint file */
-#define JOB_TASKDIR_SUFFIX ".TK"	/* job task directory */
-#define JOB_BAD_SUFFIX	   ".BD"	/* save bad job file */
+#define JOB_FILE_COPY       ".JC"	/* tmp copy while updating */
+#define JOB_FILE_SUFFIX     ".JB"	/* job control file */
+#define JOB_SCRIPT_SUFFIX   ".SC"	/* job script file  */
+#define JOB_STDOUT_SUFFIX   ".OU"	/* job standard out */
+#define JOB_STDERR_SUFFIX   ".ER"	/* job standard error */
+#define JOB_CKPT_SUFFIX     ".CK"	/* job checkpoint file */
+#define JOB_TASKDIR_SUFFIX  ".TK"	/* job task directory */
+#define JOB_BAD_SUFFIX	    ".BD"	/* save bad job file */
 #define JOB_FILE_TMP_SUFFIX ".TA"	/* temporary job array parent file suffix */
 /*
  * Job states are defined by POSIX as:
@@ -746,6 +745,9 @@ task *task_find A_((
 #define HOLD_u 1
 #define HOLD_o 2
 #define HOLD_s 4
+/* jobs in a job array are held until the whole array is ready for now this is 
+ * a system hold, but it may be a special hold in the future */
+#define HOLD_a HOLD_s  
 
 /* Special Job Exit Values,  Set by the job starter (child of MOM)   */
 /* see server/req_jobobit() & mom/start_exec.c			     */

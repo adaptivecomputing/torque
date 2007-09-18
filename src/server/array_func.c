@@ -85,7 +85,14 @@ array_job_list *get_array(char *id)
       {
       return pajl;
       }
-    pajl = (array_job_list*)GET_NEXT(pajl->all_arrays);
+    if (pajl == GET_NEXT(pajl->all_arrays))
+      {
+      pajl = NULL;
+      }
+    else
+      {
+      pajl = (array_job_list*)GET_NEXT(pajl->all_arrays);
+      }
     }
     
   return (array_job_list*)NULL;

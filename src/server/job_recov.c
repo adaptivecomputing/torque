@@ -277,7 +277,7 @@ int job_save(
 
     /* NOTE:  create file if required */
 
-    if (updatetype == SAVEJOB_NEW || updatetype == SAVEJOB_ARY)
+    if (updatetype == SAVEJOB_NEW)
       fds = open(namebuf1,openflags,0600);
     else
       fds = open(namebuf2,openflags,0600);

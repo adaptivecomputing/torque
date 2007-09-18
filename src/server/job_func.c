@@ -904,6 +904,10 @@ job *job_clone(
       }
     }
 
+  /* put a system hold on the job.  we'll take the hold off once the 
+   * entire array is cloned */
+  pnewjob->ji_wattr[(int)JOB_ATR_hold].at_val.at_long |= HOLD_a;
+  pnewjob->ji_wattr[(int)JOB_ATR_hold].at_flags |= ATR_VFLAG_SET;
 
   /* set JOB_ATR_job_array_id */
   pnewjob->ji_wattr[(int)JOB_ATR_job_array_id].at_val.at_long = taskid;
@@ -1011,7 +1015,34 @@ struct work_task *ptask)
      /* this is the last batch of jobs, we can purge the "parent" job */
 
     job_purge(pjob);
-
+    
+    /* scan over all the jobs in the array and unset the hold */
+    pjob = GET_NEXT(pajl->array_alljobs);
+    while (pjob != NULL)
+      {
+      	
+      pjob->ji_wattr[(int)JOB_ATR_hold].at_val.at_long &= ~HOLD_a;
+      if (pjob->ji_wattr[(int)JOB_ATR_hold].at_val.at_long == 0)
+        {
+        pjob->ji_wattr[(int)JOB_ATR_hold].at_flags &= ~ATR_VFLAG_SET;	
+        }
+      else
+        {
+        pjob->ji_wattr[(int)JOB_ATR_hold].at_flags |= ATR_VFLAG_SET;
+        }
+      
+      svr_evaljobstate(pjob,&newstate,&newsub,1);
+      svr_setjobstate(pjob,newstate,newsub);
+     
+      if (pjob == (job*)GET_NEXT(pjob->ji_arrayjobs))
+        {
+         pjob = NULL;
+        }
+      else
+        {
+        pjob = (job*)GET_NEXT(pjob->ji_arrayjobs);
+        }
+      }
     }
   } /* end job_clone_tw */
   
