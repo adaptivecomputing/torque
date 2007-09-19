@@ -141,6 +141,8 @@ int set_job(
   char *PPtr;
   char *CPtr;
 
+  int   rc;
+
 #ifdef __XTTEST
   char  tmpLine[1024];
 #endif /* __ XTTEST */
@@ -155,7 +157,15 @@ int set_job(
     (PPtr != NULL) ? PPtr : "NULL",
     (CPtr != NULL) ? CPtr : "NULL");
 
-  system(tmpLine);
+  rc = system(tmpLine);
+
+  if (WIFEXIT(rc) < 0)
+    {
+    snprintf(log_buffer,1024,"cannot create alloc partition");
+
+    return(-2);
+    }
+
 #endif /* __ XTTEST */
  
   /* NOTE:  only activate partition create script for XT4+ environments */
@@ -180,8 +190,15 @@ int set_job(
       id,
       tmpLine);
 
-    system(tmpLine); 
-    }  /* END if (((PPtr = get_job_envvar(pjob,"BATCH_PARTITION_ID")) != NULL) && ...) */
+    rc = system(tmpLine); 
+
+    if ((WEXITSTATUS(rc) < 0) || (WEXITSTATUS(rc) > 127))
+      {
+      snprintf(log_buffer,1024,"cannot create alloc partition");
+
+      return(-2);
+      }
+    }    /* END if (((PPtr = get_job_envvar(pjob,"BATCH_PARTITION_ID")) != NULL) && ...) */
 
   return(sjr->sj_session);
   }  /* END set_job() */
