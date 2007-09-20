@@ -1897,17 +1897,22 @@ void req_signaljob(
 
 
 
+
+/* encode used resource info for sending to pbs_server in job obit */
+
 void encode_used(
 
   job        *pjob,   /* I */
   tlist_head *phead)  /* O */
 
   {
-  unsigned long		lnum;
-  int			i;
-  attribute		*at;
-  attribute_def		*ad;
-  resource		*rs;
+  unsigned long  lnum;
+  int            i;
+  attribute     *at;
+  attribute_def *ad;
+  resource      *rs;
+
+  task *ptask;
 
   at = &pjob->ji_wattr[JOB_ATR_resc_used];
   ad = &job_attr_def[JOB_ATR_resc_used];
@@ -1971,6 +1976,24 @@ void encode_used(
     if (rc < 0)
       break;
     }  /* END for (rs) */
+
+  ptask = (task *)GET_NEXT(pjob->ji_tasks);
+
+  if ((ptask != NULL) && (ptask->ti_qs.ti_sid < 0))
+    {
+    attribute val;
+
+    val.at_val.at_long = ptask->ti_qs.ti_sid;
+    val.at_flags |= ATR_VFLAG_SET;
+    val.at_type = ATR_TYPE_LONG;
+
+    rd->rs_encode(
+      &val,
+      phead,
+      ATTR_session,
+      NULL,
+      ATR_ENCODE_CLIENT);
+    }
 
   return;
   }  /* END encode_used() */

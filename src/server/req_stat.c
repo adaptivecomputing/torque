@@ -645,7 +645,7 @@ static void stat_update(
         }
 
       pstatus = (struct brp_status *)GET_NEXT(pstatus->brp_stlink);
-      }  /* END while (pstatus) */
+      }  /* END while (pstatus != NULL) */
     }    /* END if (preply->brp_choice == BATCH_REPLY_CHOICE_Status) */
 
   release_req(pwt);

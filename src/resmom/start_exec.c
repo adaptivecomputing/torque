@@ -3377,8 +3377,8 @@ int TMomFinalizeChild(
 
 
 
-/* child has already reported in via pipe which was created in 
-   TMomFinalizeJob2->TMomFinalizeChild.  
+/* Child has already reported in via pipe (info in TJE->sjr) which was 
+   created in TMomFinalizeJob2->TMomFinalizeChild.  
    Perform final job tasks.  Change pjob substate from JOB_SUBSTATE_PRERUN 
    to JOB_SUBSTATE_RUNNING */
 
@@ -3482,6 +3482,13 @@ int TMomFinalizeJob3(
       case JOB_EXEC_RETRY: /* -3 */
 
         strcpy(tmpLine,"job exec failure, retry will be attempted");
+
+        if (sjr.sj_sid < 0)
+          {
+          /* NOTE:  push sjr.sj_sid into job attribute X to be used by encode_used */
+
+          ptask->ti_qs.ti_sid = sjr.sj_session;
+          }
 
         break;
 
@@ -3830,7 +3837,7 @@ int start_process(
         log_buffer);
 
       return(-1);
-      }
+      }  /* END if (sjr.sj_code < 0) */
 
     set_globid(pjob,&sjr);
 

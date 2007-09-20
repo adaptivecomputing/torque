@@ -119,11 +119,11 @@ extern struct server server;
 
 int status_job(
 
-  job	  *pjob,	/* ptr to job to status */
+  job	     *pjob,	/* ptr to job to status */
   struct batch_request *preq,
-  svrattrl  *pal,	/* specific attributes to status */
+  svrattrl   *pal,	/* specific attributes to status */
   tlist_head *pstathd,	/* RETURN: head of list to append status to */
-  int       *bad)	/* RETURN: index of first bad attribute */
+  int        *bad)	/* RETURN: index of first bad attribute */
 
   {
   struct brp_status *pstat;
@@ -262,7 +262,8 @@ int status_attrib(
                 (padef + index)->at_name,
                 job_attr_def[(int)JOB_ATR_variables].at_name))
             {
-		/* FIXME: this is an old hack that needs to be fixed in job_attr_def.c */
+            /* FIXME: this is an old hack that needs to be fixed in job_attr_def.c */
+
             /* do not display privileged attributes */
 
             continue;

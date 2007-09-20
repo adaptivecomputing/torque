@@ -735,13 +735,14 @@ void job_free(
 
 /*
  * job_clone - create a clone of a job for use with job arrays
- *   pj is the job to clone, and taksid is the job array id of the 
+ *   pj is the job to clone, and taskid is the job array id of the 
  *   newly cloned job
  */
+
 job *job_clone(
+
   job *poldjob,
-  int taskid
-  )
+  int  taskid)
   
   {
 

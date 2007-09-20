@@ -264,9 +264,9 @@ struct rqfpair {
 /* Job Obituary (MOM -> Server Only) */
 
 struct rq_jobobit {
-	char    rq_jid[PBS_MAXSVRJOBID+1];
-	int	rq_status;
-	tlist_head    rq_attr;   /* svrattrlist */
+  char       rq_jid[PBS_MAXSVRJOBID+1];
+  int        rq_status;
+  tlist_head rq_attr;   /* svrattrlist */
 };
 
 /*
@@ -275,24 +275,24 @@ struct rq_jobobit {
  */
 
 struct batch_request {
-	list_link rq_link;	/* linkage of all requests 		*/
-	int	  rq_type;	/* type of request			*/
-	int	  rq_perm;	/* access permissions for the user	*/
-	int	  rq_fromsvr;	/* true if request from another server	*/
-	int	  rq_conn;	/* socket connection to client/server	*/
-	int	  rq_orgconn;	/* original socket if relayed to MOM	*/
-	int	  rq_extsz;	/* size of "extension" data		*/
-	long	  rq_time;	/* time batch request created		*/
-	char	  rq_user[PBS_MAXUSER+1];     /* user name request is from    */
-	char	  rq_host[PBS_MAXHOSTNAME+1]; /* name of host sending request */
-int rq_XXXX;
-	void  	 *rq_extra;	/* optional ptr to extra info		*/
-int rq_XXXY;
-	char	 *rq_extend;	/* request "extension" data		*/
+  list_link rq_link;	/* linkage of all requests 		*/
+  int	rq_type;	/* type of request			*/
+  int	rq_perm;	/* access permissions for the user	*/
+  int	rq_fromsvr;	/* true if request from another server	*/
+  int	rq_conn;	/* socket connection to client/server	*/
+  int	rq_orgconn;	/* original socket if relayed to MOM	*/
+  int	rq_extsz;	/* size of "extension" data		*/
+  long	rq_time;	/* time batch request created		*/
+  char	rq_user[PBS_MAXUSER+1];     /* user name request is from    */
+  char	rq_host[PBS_MAXHOSTNAME+1]; /* name of host sending request */
+  int   rq_XXXX;
+  void *rq_extra;	/* optional ptr to extra info		*/
+  int   rq_XXXY;
+  char *rq_extend;	/* request "extension" data		*/
 
-	struct batch_reply  rq_reply;	  /* the reply area for this request */
+  struct batch_reply  rq_reply;	  /* the reply area for this request */
 
-	union indep_request {
+  union indep_request {
 		struct rq_authen	rq_authen;
 		int			rq_connect;
 		struct rq_queuejob	rq_queuejob;

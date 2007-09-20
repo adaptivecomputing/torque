@@ -724,7 +724,7 @@ int init_resc_defs(
   FILE *fp;
   char buff[65];
   resource_def *tmpresc = NULL;
-  int rindex=0, dindex=0, unkindex=0;
+  int rindex = 0, dindex = 0, unkindex = 0;
 
   fp = fopen(path,"r");
 

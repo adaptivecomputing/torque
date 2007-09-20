@@ -250,7 +250,7 @@ static struct batch_request *setup_cpyfiles(
     pcf = &preq->rq_ind.rq_cpyfile;
     }
  
-   pair = (struct rqfpair *)malloc(sizeof (struct rqfpair));
+   pair = (struct rqfpair *)malloc(sizeof(struct rqfpair));
 
   if (pair == NULL) 
     {
@@ -690,13 +690,13 @@ void on_job_exit(
   int    handle;
   job   *pjob;
 #ifdef VNODETESTING
-  job *pj;
+  job   *pj;
 #endif
   struct batch_request *preq;
 
   int    IsFaked = 0;
   int	 KeepSeconds = 0;
-  pbs_queue          *pque;
+  pbs_queue *pque;
 
   extern void remove_job_delete_nanny(struct job *);
 
@@ -716,11 +716,12 @@ void on_job_exit(
 #ifdef VNODETESTING
 /* FIXME: there might be a race with calling on_job_exit after a job has
  * already been free'd.  This is temp code */
+
   pj = (job *)GET_NEXT(svr_alljobs);
   
   while (pj != NULL)
     {
-    if (pjob==pj)
+    if (pjob == pj)
       break;
     
     pj = (job *)GET_NEXT(pj->ji_alljobs);
@@ -734,7 +735,8 @@ void on_job_exit(
   else
     {
     sprintf(log_buffer,"on_job_exit valid pjob: %p (substate=%d)",
-      pjob,pjob->ji_qs.ji_substate);
+      pjob,
+      pjob->ji_qs.ji_substate);
     }
 
   log_event(
@@ -1157,7 +1159,7 @@ void on_job_exit(
 
         ptask = set_task(WORK_Timed,time_now + KeepSeconds,on_job_exit,pjob);
 
-        if (ptask)
+        if (ptask != NULL)
           {
           /* insure that work task will be removed if job goes away */
 
@@ -1868,6 +1870,25 @@ void req_jobobit(
           /* have mom remove job files, not saving them, and requeue job */ 
 
           pjob->ji_qs.ji_substate = JOB_SUBSTATE_RERUN1;
+
+          /* transient failure detected */
+
+          /* load session id info from prq->rq_ind.rq_jobobit->rq_attr->Session */
+
+          /*
+          memset(&tA,0,sizeof(tA));
+
+          tA.al_name  = "sched_hint";
+          tA.al_resc  = "";
+          tA.al_value = log_buffer;
+          tA.al_op    = SET;
+
+          modify_job_attr(
+            pjob,
+            &tA,                           
+            ATR_DFLAG_MGWR | ATR_DFLAG_SvWR,
+            &bad);
+          */
           }
 
         break;

@@ -196,12 +196,14 @@ int set_job(
       {
       snprintf(log_buffer,1024,"cannot create alloc partition");
 
+      sjr->sj_session = -3;
+
       log_err(
         -1,
         id,
         log_buffer);
 
-      return(-3);
+      return(sjr->sj_session);
       }
     }    /* END if (((PPtr = get_job_envvar(pjob,"BATCH_PARTITION_ID")) != NULL) && ...) */
 

@@ -103,12 +103,12 @@
  */
 
 struct depend {
-	list_link dp_link;	/* link to next dependency, if any       */
-	short	  dp_type;	/* type of dependency (all) 	         */
-	short	  dp_numexp;	/* num jobs expected (on or syncct only) */
-	short	  dp_numreg;	/* num jobs registered (syncct only)     */
-	short	  dp_released;	/* This job released to run (syncwith)   */
-	tlist_head dp_jobs;	/* list of related jobs  (all)           */
+  list_link dp_link;	/* link to next dependency, if any       */
+  short	  dp_type;	/* type of dependency (all) 	         */
+  short	  dp_numexp;	/* num jobs expected (on or syncct only) */
+  short	  dp_numreg;	/* num jobs registered (syncct only)     */
+  short	  dp_released;	/* This job released to run (syncwith)   */
+  tlist_head dp_jobs;	/* list of related jobs  (all)           */
 };
 
 /*
@@ -537,15 +537,17 @@ typedef struct	task {
 	} ti_qs;
 } task;
 
+
+
 /*
 **	Events need to be linked to either a task or another event
 **	waiting at another MOM.  This is the information needed so
 **	we can forward the event to another MOM.
 */
-typedef struct	fwdevent {
-	tm_node_id	fe_node;	/* where does notification go */
-	tm_event_t	fe_event;	/* event number */
-	tm_task_id	fe_taskid;	/* which task id */
+typedef struct fwdevent {
+  tm_node_id fe_node;	/* where does notification go */
+  tm_event_t fe_event;	/* event number */
+  tm_task_id fe_taskid;	/* which task id */
 } fwdevent;
 
 /*
