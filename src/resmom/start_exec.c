@@ -3483,7 +3483,7 @@ int TMomFinalizeJob3(
 
         strcpy(tmpLine,"job exec failure, retry will be attempted");
 
-        if (sjr.sj_sid < 0)
+        if (sjr.sj_session < 0)
           {
           /* NOTE:  push sjr.sj_sid into job attribute X to be used by encode_used */
 

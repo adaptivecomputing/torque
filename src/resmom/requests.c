@@ -1987,12 +1987,14 @@ void encode_used(
     val.at_flags |= ATR_VFLAG_SET;
     val.at_type = ATR_TYPE_LONG;
 
+/*
     rd->rs_encode(
       &val,
       phead,
       ATTR_session,
       NULL,
       ATR_ENCODE_CLIENT);
+*/
     }
 
   return;
