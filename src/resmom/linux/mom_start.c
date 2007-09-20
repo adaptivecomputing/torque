@@ -159,7 +159,7 @@ int set_job(
 
   rc = system(tmpLine);
 
-  if (WIFEXIT(rc) < 0)
+  if (WEXITSTATUS(rc) != 0)
     {
     snprintf(log_buffer,1024,"cannot create alloc partition");
 
@@ -186,17 +186,22 @@ int set_job(
       (long)sjr->sj_session);
 
     log_err(
-      0,
+      -1,
       id,
       tmpLine);
 
     rc = system(tmpLine); 
 
-    if ((WEXITSTATUS(rc) < 0) || (WEXITSTATUS(rc) > 127))
+    if (WEXITSTATUS(rc) != 0)
       {
       snprintf(log_buffer,1024,"cannot create alloc partition");
 
-      return(-2);
+      log_err(
+        -1,
+        id,
+        log_buffer);
+
+      return(-3);
       }
     }    /* END if (((PPtr = get_job_envvar(pjob,"BATCH_PARTITION_ID")) != NULL) && ...) */
 

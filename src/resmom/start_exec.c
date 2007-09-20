@@ -2972,7 +2972,7 @@ int TMomFinalizeChild(
       {
       /* FAILURE */
 
-      if (j != -2) 
+      if (j != -2 && j != -3) 
         {
         /* set_job didn't leave message in log_buffer */
 
@@ -2983,7 +2983,14 @@ int TMomFinalizeChild(
 
       log_err(-1,id,log_buffer);
 
-      starter_return(TJE->upfds,TJE->downfds,JOB_EXEC_FAIL2,&sjr);
+      if (j == -3)
+        {
+        starter_return(TJE->upfds,TJE->downfds,JOB_EXEC_RETRY,&sjr);
+        }
+      else
+        {
+        starter_return(TJE->upfds,TJE->downfds,JOB_EXEC_FAIL2,&sjr);
+        }
 
       /*NOTREACHED*/
 
