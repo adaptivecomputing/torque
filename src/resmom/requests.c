@@ -1912,7 +1912,12 @@ void encode_used(
   attribute_def *ad;
   resource      *rs;
 
+  attribute      val;
+  int            rc;
+
   task *ptask;
+
+  resource_def *rd = NULL;
 
   at = &pjob->ji_wattr[JOB_ATR_resc_used];
   ad = &job_attr_def[JOB_ATR_resc_used];
@@ -1926,9 +1931,7 @@ void encode_used(
        rs != NULL;
        rs = (resource *)GET_NEXT(rs->rs_link)) 
     {
-    resource_def *rd = rs->rs_defin;
-    attribute     val;
-    int           rc;
+    rd = rs->rs_defin;
 
     if ((rd->rs_flags & resc_access_perm) == 0)
       continue;
@@ -1981,24 +1984,34 @@ void encode_used(
 
   if ((ptask != NULL) && (ptask->ti_qs.ti_sid < 0))
     {
-    attribute val;
+    /* pass session info through obit as attribute to allow detection of various failures 
+       by pbs_server */
 
-    val.at_val.at_long = ptask->ti_qs.ti_sid;
-    val.at_flags |= ATR_VFLAG_SET;
-    val.at_type = ATR_TYPE_LONG;
+    at = &pjob->ji_wattr[JOB_ATR_session_id];
+    ad = &job_attr_def[JOB_ATR_session_id];
 
-/*
-    rd->rs_encode(
-      &val,
-      phead,
-      ATTR_session,
-      NULL,
-      ATR_ENCODE_CLIENT);
-*/
-    }
+    rs = (resource *)GET_NEXT(at->at_val.at_list);
+
+    if (rs != NULL)
+      {
+      rd = rs->rs_defin;
+
+      val.at_val.at_long = ptask->ti_qs.ti_sid;
+      val.at_flags |= ATR_VFLAG_SET;
+      val.at_type = ATR_TYPE_LONG;
+
+      rd->rs_encode(
+        &val,
+        phead,
+        ATTR_session,
+        NULL,
+        ATR_ENCODE_CLIENT);
+      }
+    }    /* END if ((ptask != NULL) && (ptask->ti_qs.ti_sid < 0)) */
 
   return;
   }  /* END encode_used() */
+
 
 
 
