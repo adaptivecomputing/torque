@@ -1034,6 +1034,8 @@ struct work_task *ptask)
       
       svr_evaljobstate(pjob,&newstate,&newsub,1);
       svr_setjobstate(pjob,newstate,newsub);
+      
+      job_save(pjob,SAVEJOB_FULL);
      
       if (pjob == (job*)GET_NEXT(pjob->ji_arrayjobs))
         {

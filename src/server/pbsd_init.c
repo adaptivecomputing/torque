@@ -838,6 +838,7 @@ int pbsd_init(
 
           if ((type != RECOV_COLD) &&
               (type != RECOV_CREATE) &&
+	       pjob->ji_wattr[(int)JOB_ATR_job_array_size].at_val.at_long == 1 &&
               (pjob->ji_qs.ji_svrflags & JOB_SVFLG_SCRIPT))
             {
             strcpy(basen,pdirent->d_name);
@@ -938,12 +939,20 @@ int pbsd_init(
       job *pjob = find_job(pajl->ai_qs.parent_id);
       if (pjob == NULL)
         {
-        /* TODO, we need to so something here! */
+        /* TODO, we need to so something here, we can't finish cloning the array! */
+	
 	}
-      wt = set_task(WORK_Timed,time_now+1,job_clone_wt,(void*)pjob);
-      wt->wt_aux = pajl->ai_qs.num_cloned;
+      else
+        {
+	/* TODO if num_cloned != num_recovered then something strange happend
+	   it is possible num_recovered == num_cloned+1.  That means that the server
+	   terminated after cloning a job but before updating the saved array_info struct.
+	   we probably should delete that last job and start the cloning process off at 
+	   num_cloned */
+        wt = set_task(WORK_Timed,time_now+1,job_clone_wt,(void*)pjob);
+        wt->wt_aux = pajl->ai_qs.num_cloned;
+        }
       
-      pajl = (array_job_list*)GET_NEXT(pajl->all_arrays);
       }
     else if (GET_NEXT(pajl->array_alljobs) == pajl->array_alljobs.ll_struct)
       {
@@ -951,10 +960,9 @@ int pbsd_init(
       delete_array_struct(pajl);
       pajl = temp;
       }
-    else
-      {
-      pajl = (array_job_list*)GET_NEXT(pajl->all_arrays);
-      }
+    
+    pajl = (array_job_list*)GET_NEXT(pajl->all_arrays);
+      
     }
     
     
