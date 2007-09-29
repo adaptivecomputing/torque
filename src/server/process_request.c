@@ -102,6 +102,9 @@
 #include "svrfunc.h"
 #include "pbs_proto.h"
 
+#ifndef PBS_MOM
+#include "array.h"
+#endif
 
 /*
  * process_request - this function gets, checks, and invokes the proper
@@ -174,6 +177,8 @@ void req_stat_node(struct batch_request *preq);
 void req_track(struct batch_request *preq);
 void req_jobobit(struct batch_request *preq);
 void req_stagein(struct batch_request *preq);
+
+void req_deletearray(struct batch_request *preq);
 #endif
 
 /* END request processing prototypes */
@@ -572,8 +577,19 @@ void dispatch_request(
 
     case PBS_BATCH_DeleteJob: 
 
+#ifdef PBS_MOM
       req_deletejob(request); 
-
+#else
+      if (is_array(request->rq_ind.rq_delete.rq_objname))
+        {
+        printf("DELETE REQUEST FOR ARRAY%s\n", request->rq_ind.rq_delete.rq_objname);
+        req_deletearray(request);
+        }
+      else
+        {
+        req_deletejob(request);
+        }
+#endif
       break; 
 
     case PBS_BATCH_HoldJob: 

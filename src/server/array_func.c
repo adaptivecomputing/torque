@@ -33,12 +33,9 @@
 
 #include "work_task.h"
 
-/* #include "array.h" */
+#include "array.h"
 
-#ifndef TRUE
-#define TRUE 1
-#define FALSE 0
-#endif
+
 
 extern void  job_clone_wt A_((struct work_task *));
 
