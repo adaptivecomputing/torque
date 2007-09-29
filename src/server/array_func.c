@@ -159,6 +159,7 @@ void get_parent_id(char *job_id, char *parent_id)
   *pid = '\0';
   strcat(pid, c);
 
+
   }  
 
 

@@ -961,7 +961,10 @@ int pbsd_init(
       pajl = temp;
       }
     
-    pajl = (array_job_list*)GET_NEXT(pajl->all_arrays);
+    if (pajl != NULL)
+      {
+      pajl = (array_job_list*)GET_NEXT(pajl->all_arrays);
+      }
       
     }
     

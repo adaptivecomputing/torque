@@ -535,7 +535,7 @@ job *job_recov(
     }
 #else /* PBS_MOM */
 
-  if (pj->ji_wattr[(int)JOB_ATR_job_array_size].at_val.at_long > 1 )
+  if (pj->ji_wattr[(int)JOB_ATR_job_array_size].at_val.at_long > 1)
     {
     /* job is part of an array.  We need to put a link back to the server job array struct
        for this array. We also have to link this job into the linked list of jobs belonging 
@@ -543,19 +543,25 @@ job *job_recov(
        
       get_parent_id(pj->ji_qs.ji_jobid, parent_id);
       pajl = get_array(parent_id);
-      
-      if (pajl == NULL)
+      if (strcmp(parent_id, pj->ji_qs.ji_jobid) == 0)
         {
-        /* couldn't find array struct, it must not have been recovered, 
-           treat job as indepentent job */
-        pj->ji_wattr[(int)JOB_ATR_job_array_size].at_val.at_long = 1;
-        }
+	pj->ji_isparent = TRUE;
+	}
       else
         {
-	 CLEAR_LINK(pj->ji_arrayjobs);
-	 append_link(&pajl->array_alljobs, &pj->ji_arrayjobs, (void*)pj);
-	 pj->ji_arrayjoblist = pajl;
-	 pajl->jobs_recovered++;
+        if (pajl == NULL)
+          {
+          /* couldn't find array struct, it must not have been recovered, 
+             treat job as indepentent job */
+          pj->ji_wattr[(int)JOB_ATR_job_array_size].at_val.at_long = 1;
+          }
+        else
+          {
+	   CLEAR_LINK(pj->ji_arrayjobs);
+	   append_link(&pajl->array_alljobs, &pj->ji_arrayjobs, (void*)pj);
+	   pj->ji_arrayjoblist = pajl;
+	   pajl->jobs_recovered++;
+	  }
 	}
     }
 

@@ -1020,8 +1020,7 @@ struct work_task *ptask)
     /* scan over all the jobs in the array and unset the hold */
     pjob = GET_NEXT(pajl->array_alljobs);
     while (pjob != NULL)
-      {
-      printf("*");	
+      {	
       pjob->ji_wattr[(int)JOB_ATR_hold].at_val.at_long &= ~HOLD_a;
       if (pjob->ji_wattr[(int)JOB_ATR_hold].at_val.at_long == 0)
         {
@@ -1037,14 +1036,9 @@ struct work_task *ptask)
       
       job_save(pjob,SAVEJOB_FULL);
      
-      if (pjob == (job*)GET_NEXT(pjob->ji_arrayjobs))
-        {
-         pjob = NULL;
-        }
-      else
-        {
-        pjob = (job*)GET_NEXT(pjob->ji_arrayjobs);
-        }
+      
+      pjob = (job*)GET_NEXT(pjob->ji_arrayjobs);
+        
       }
     }
   } /* end job_clone_tw */
