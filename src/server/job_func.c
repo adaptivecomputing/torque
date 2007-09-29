@@ -1021,7 +1021,7 @@ struct work_task *ptask)
     pjob = GET_NEXT(pajl->array_alljobs);
     while (pjob != NULL)
       {
-      	
+      printf("*");	
       pjob->ji_wattr[(int)JOB_ATR_hold].at_val.at_long &= ~HOLD_a;
       if (pjob->ji_wattr[(int)JOB_ATR_hold].at_val.at_long == 0)
         {
