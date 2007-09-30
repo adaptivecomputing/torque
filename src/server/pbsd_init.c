@@ -206,7 +206,7 @@ extern void   set_old_nodes A_((job *));
 extern void   acct_close A_((void));
 extern struct work_task *apply_job_delete_nanny A_((struct job *,int));
 extern int     net_move A_((job *,struct batch_request *));
-extern int delete_array_struct(array_job_list *pajl);
+extern int delete_array_struct(job_array *pa);
 extern void  job_clone_wt A_((struct work_task *));
 
 /* Private functions in this file */
@@ -266,7 +266,7 @@ int pbsd_init(
   
   
   struct work_task *wt;
-  array_job_list *pajl;
+  job_array *pa;
 
   char   EMsg[1024];
 
@@ -708,14 +708,14 @@ int pbsd_init(
            continue;
 	 
 	 
-	 pajl = (array_job_list*)malloc(sizeof(array_job_list));
-	 CLEAR_LINK(pajl->all_arrays);
-	 CLEAR_HEAD(pajl->array_alljobs);
-	 pajl->jobs_recovered = 0;
+	 pa = (job_array*)malloc(sizeof(job_array));
+	 CLEAR_LINK(pa->all_arrays);
+	 CLEAR_HEAD(pa->array_alljobs);
+	 pa->jobs_recovered = 0;
 	 
 	 fd = open(pdirent->d_name, O_RDONLY,0);
 	 	 	 
-	 if (read(fd, &(pajl->ai_qs), sizeof(pajl->ai_qs)) != sizeof(pajl->ai_qs))
+	 if (read(fd, &(pa->ai_qs), sizeof(pa->ai_qs)) != sizeof(pa->ai_qs))
 	   {
 	   sprintf(log_buffer,"unable to read %s", pdirent->d_name);
 
@@ -726,7 +726,7 @@ int pbsd_init(
 	   
 	 close(fd);
 	 
-	 append_link(&svr_jobarrays, &pajl->all_arrays, (void*)pajl);
+	 append_link(&svr_jobarrays, &pa->all_arrays, (void*)pa);
 	 
 	 }
        else
@@ -930,13 +930,13 @@ int pbsd_init(
   /* look for empty arrays and delete them 
      also look for arrays that weren't fully built and setup a work task to 
      continue the cloning process*/
-  pajl = (array_job_list*)GET_NEXT(svr_jobarrays);  
-  while (pajl != NULL)
+  pa = (job_array*)GET_NEXT(svr_jobarrays);  
+  while (pa != NULL)
     {
-    if (pajl->ai_qs.num_cloned != pajl->ai_qs.array_size)
+    if (pa->ai_qs.num_cloned != pa->ai_qs.array_size)
       {
       
-      job *pjob = find_job(pajl->ai_qs.parent_id);
+      job *pjob = find_job(pa->ai_qs.parent_id);
       if (pjob == NULL)
         {
         /* TODO, we need to so something here, we can't finish cloning the array! */
@@ -950,20 +950,20 @@ int pbsd_init(
 	   we probably should delete that last job and start the cloning process off at 
 	   num_cloned */
         wt = set_task(WORK_Timed,time_now+1,job_clone_wt,(void*)pjob);
-        wt->wt_aux = pajl->ai_qs.num_cloned;
+        wt->wt_aux = pa->ai_qs.num_cloned;
         }
       
       }
-    else if (GET_NEXT(pajl->array_alljobs) == pajl->array_alljobs.ll_struct)
+    else if (GET_NEXT(pa->array_alljobs) == pa->array_alljobs.ll_struct)
       {
-      array_job_list *temp = (array_job_list*)GET_NEXT(pajl->all_arrays);
-      delete_array_struct(pajl);
-      pajl = temp;
+      job_array *temp = (job_array*)GET_NEXT(pa->all_arrays);
+      delete_array_struct(pa);
+      pa = temp;
       }
     
-    if (pajl != NULL)
+    if (pa != NULL)
       {
-      pajl = (array_job_list*)GET_NEXT(pajl->all_arrays);
+      pa = (job_array*)GET_NEXT(pa->all_arrays);
       }
       
     }

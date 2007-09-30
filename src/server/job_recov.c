@@ -126,7 +126,7 @@ int recov_tmsock(int,job *);
 extern int job_qs_upgrade(job *,int);
 #ifndef PBS_MOM
 extern void get_parent_id(char *job_id, char *parent_id);
-extern array_job_list *get_array(char *id);
+extern job_array *get_array(char *id);
 #endif
 /* global data items */
 
@@ -390,7 +390,7 @@ job *job_recov(
   int    qs_upgrade;
 #ifndef PBS_MOM
   char   parent_id[PBS_MAXSVRJOBID + 1];
-  array_job_list *pajl;
+  job_array *pa;
 #endif
   
   qs_upgrade = FALSE;
@@ -542,14 +542,14 @@ job *job_recov(
        to the array. */
        
       get_parent_id(pj->ji_qs.ji_jobid, parent_id);
-      pajl = get_array(parent_id);
+      pa = get_array(parent_id);
       if (strcmp(parent_id, pj->ji_qs.ji_jobid) == 0)
         {
 	pj->ji_isparent = TRUE;
 	}
       else
         {
-        if (pajl == NULL)
+        if (pa == NULL)
           {
           /* couldn't find array struct, it must not have been recovered, 
              treat job as indepentent job */
@@ -558,9 +558,9 @@ job *job_recov(
         else
           {
 	   CLEAR_LINK(pj->ji_arrayjobs);
-	   append_link(&pajl->array_alljobs, &pj->ji_arrayjobs, (void*)pj);
-	   pj->ji_arrayjoblist = pajl;
-	   pajl->jobs_recovered++;
+	   append_link(&pa->array_alljobs, &pj->ji_arrayjobs, (void*)pj);
+	   pj->ji_arrayjoblist = pa;
+	   pa->jobs_recovered++;
 	  }
 	}
     }

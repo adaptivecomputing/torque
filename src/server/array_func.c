@@ -53,52 +53,52 @@ extern char *pbs_o_host;
 int is_array(char *id)
   {
 
-  array_job_list *pajl;
+  job_array *pa;
   
   
     
-  pajl = (array_job_list*)GET_NEXT(svr_jobarrays);  
-  while (pajl != NULL)
+  pa = (job_array*)GET_NEXT(svr_jobarrays);  
+  while (pa != NULL)
     {
-    if (strcmp(pajl->ai_qs.parent_id, id) == 0)
+    if (strcmp(pa->ai_qs.parent_id, id) == 0)
       {
       return TRUE;
       }
-    pajl = (array_job_list*)GET_NEXT(pajl->all_arrays);
+    pa = (job_array*)GET_NEXT(pa->all_arrays);
     }
   
   return FALSE;
   }
   
 /* return a server's array info struct corresponding to an array id */
-array_job_list *get_array(char *id)
+job_array *get_array(char *id)
   {
-  array_job_list *pajl;
+  job_array *pa;
    
     
-  pajl = (array_job_list*)GET_NEXT(svr_jobarrays);  
-  while (pajl != NULL)
+  pa = (job_array*)GET_NEXT(svr_jobarrays);  
+  while (pa != NULL)
     {
-    if (strcmp(pajl->ai_qs.parent_id, id) == 0)
+    if (strcmp(pa->ai_qs.parent_id, id) == 0)
       {
-      return pajl;
+      return pa;
       }
-    if (pajl == GET_NEXT(pajl->all_arrays))
+    if (pa == GET_NEXT(pa->all_arrays))
       {
-      pajl = NULL;
+      pa = NULL;
       }
     else
       {
-      pajl = (array_job_list*)GET_NEXT(pajl->all_arrays);
+      pa = (job_array*)GET_NEXT(pa->all_arrays);
       }
     }
     
-  return (array_job_list*)NULL;
+  return (job_array*)NULL;
   }
   
   
 /* save a job array struct to disk returns zero if no errors*/  
-int array_save(array_job_list *pajl)
+int array_save(job_array *pa)
 
   { 
   int fds;
@@ -106,7 +106,7 @@ int array_save(array_job_list *pajl)
   char namebuf[MAXPATHLEN];
   
   strcpy(namebuf, path_arrays);
-  strcat(namebuf, pajl->ai_qs.fileprefix);
+  strcat(namebuf, pa->ai_qs.fileprefix);
   strcat(namebuf, ARRAY_FILE_SUFFIX);
   
   
@@ -118,7 +118,7 @@ int array_save(array_job_list *pajl)
     return -1;
     }
     
-  write(fds,  &(pajl->ai_qs), sizeof(pajl->ai_qs));  
+  write(fds,  &(pa->ai_qs), sizeof(pa->ai_qs));  
   close(fds);
   
   return 0;
@@ -164,45 +164,45 @@ void get_parent_id(char *job_id, char *parent_id)
 
 /* recover_array_struct reads in  an array struct saved to disk and inserts it into 
    the servers list of arrays */
-array_job_list *recover_array_struct(char *path)
+job_array *recover_array_struct(char *path)
 {
    extern tlist_head svr_jobarrays;
-   array_job_list *pajl;
+   job_array *pa;
    int fd;
    
    /* allocate the storage for the struct */
-   pajl = (array_job_list*)malloc(sizeof(array_job_list));
+   pa = (job_array*)malloc(sizeof(job_array));
    
-   if (pajl == NULL)
+   if (pa == NULL)
      {
      return NULL;
      }
     
    /* initialize the linked list nodes */  
-   CLEAR_LINK(pajl->all_arrays);
-   CLEAR_HEAD(pajl->array_alljobs);
+   CLEAR_LINK(pa->all_arrays);
+   CLEAR_HEAD(pa->array_alljobs);
 	 
    fd = open(path, O_RDONLY,0);
    
    /* read the file into the struct previously allocated. 
     * TODO - check version of struct before trying to read the whole thing
     */
-   if (read(fd, &(pajl->ai_qs), sizeof(pajl->ai_qs)) != sizeof(pajl->ai_qs))
+   if (read(fd, &(pa->ai_qs), sizeof(pa->ai_qs)) != sizeof(pa->ai_qs))
      {
      sprintf(log_buffer,"unable to read %s", path);
 
      log_err(errno,"pbsd_init",log_buffer);
 
-     free(pajl);
+     free(pa);
      return(NULL);
      }
      
    close(fd);
 	 
    /* link the struct into the servers list of job arrays */ 
-   append_link(&svr_jobarrays, &pajl->all_arrays, (void*)pajl);
+   append_link(&svr_jobarrays, &pa->all_arrays, (void*)pa);
    
-   return pajl;
+   return pa;
 
 }
 
@@ -211,16 +211,16 @@ array_job_list *recover_array_struct(char *path)
  *  of jobs that belong to the array becomes zero.
  *  returns zero if there are no errors, non-zero otherwise
  */
-int delete_array_struct(array_job_list *pajl)
+int delete_array_struct(job_array *pa)
   {
  
   char path[MAXPATHLEN + 1];
   
   /* first thing to do is take this out of the servers list of all arrays */
-  delete_link(&pajl->all_arrays);
+  delete_link(&pa->all_arrays);
   
   strcpy(path, path_arrays);
-  strcat(path, pajl->ai_qs.fileprefix);
+  strcat(path, pa->ai_qs.fileprefix);
   strcat(path, ARRAY_FILE_SUFFIX);
   
  
@@ -233,7 +233,7 @@ int delete_array_struct(array_job_list *pajl)
     }
     
   strcpy(path,path_jobs);	/* delete script file */
-  strcat(path,pajl->ai_qs.fileprefix);
+  strcat(path,pa->ai_qs.fileprefix);
   strcat(path,JOB_SCRIPT_SUFFIX);
 
   if (unlink(path) < 0)
@@ -248,34 +248,34 @@ int delete_array_struct(array_job_list *pajl)
 
     log_record(PBSEVENT_DEBUG,
       PBS_EVENTCLASS_JOB,
-      pajl->ai_qs.parent_id,
+      pa->ai_qs.parent_id,
       log_buffer);
     }
 
   /* free the memory allocated for the struct */
-  free(pajl);  
+  free(pa);  
   return 0;
   }
   
   
 int setup_array_struct(job *pjob)
   {
-  array_job_list *pajl;
+  job_array *pa;
   struct work_task *wt;
   
   /* setup a link to this job array in the servers all_arrays list */
-  pajl = (array_job_list*)malloc(sizeof(array_job_list));
+  pa = (job_array*)malloc(sizeof(job_array));
     
-  pajl->ai_qs.struct_version = ARRAY_STRUCT_VERSION;
-  pajl->ai_qs.array_size = pjob->ji_wattr[(int)JOB_ATR_job_array_size].at_val.at_long;
-  strcpy(pajl->ai_qs.parent_id, pjob->ji_qs.ji_jobid);
-  strcpy(pajl->ai_qs.fileprefix, pjob->ji_qs.ji_fileprefix);
-  strncpy(pajl->ai_qs.owner, pjob->ji_wattr[(int)JOB_ATR_job_owner].at_val.at_str, PBS_MAXUSER + PBS_MAXSERVERNAME + 2);
-  strncpy(pajl->ai_qs.submit_host, get_variable(pjob,pbs_o_host), PBS_MAXSERVERNAME);
-  pajl->ai_qs.num_cloned = 0;
-  CLEAR_LINK(pajl->all_arrays);
-  CLEAR_HEAD(pajl->array_alljobs);
-  append_link(&svr_jobarrays, &pajl->all_arrays, (void*)pajl);
+  pa->ai_qs.struct_version = ARRAY_STRUCT_VERSION;
+  pa->ai_qs.array_size = pjob->ji_wattr[(int)JOB_ATR_job_array_size].at_val.at_long;
+  strcpy(pa->ai_qs.parent_id, pjob->ji_qs.ji_jobid);
+  strcpy(pa->ai_qs.fileprefix, pjob->ji_qs.ji_fileprefix);
+  strncpy(pa->ai_qs.owner, pjob->ji_wattr[(int)JOB_ATR_job_owner].at_val.at_str, PBS_MAXUSER + PBS_MAXSERVERNAME + 2);
+  strncpy(pa->ai_qs.submit_host, get_variable(pjob,pbs_o_host), PBS_MAXSERVERNAME);
+  pa->ai_qs.num_cloned = 0;
+  CLEAR_LINK(pa->all_arrays);
+  CLEAR_HEAD(pa->array_alljobs);
+  append_link(&svr_jobarrays, &pa->all_arrays, (void*)pa);
     
   if (job_save(pjob,SAVEJOB_FULL) != 0) 
     {

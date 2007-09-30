@@ -18,11 +18,11 @@
 #endif
 
 int is_array(char *id);
-array_job_list *get_array(char *id);
-int array_save(array_job_list *pajl);
+job_array *get_array(char *id);
+int array_save(job_array *pa);
 void get_parent_id(char *job_id, char *parent_id);
-array_job_list *recover_array_struct(char *path);
-int delete_array_struct(array_job_list *pajl);
+job_array *recover_array_struct(char *path);
+int delete_array_struct(job_array *pa);
 int setup_array_struct(job *pjob);
 
 

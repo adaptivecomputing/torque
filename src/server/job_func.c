@@ -158,9 +158,9 @@ void unload_sp_switch A_((job *pjob));
 #endif	/*  PBS_MOM */
 
 #ifndef PBS_MOM
-extern int array_save(array_job_list *);
-extern array_job_list *get_array(char *id);
-extern int delete_array_struct(array_job_list *pajl);
+extern int array_save(job_array *);
+extern job_array *get_array(char *id);
+extern int delete_array_struct(job_array *pa);
 #endif
 
 /* Local Private Functions */
@@ -763,7 +763,7 @@ job *job_clone(
   int 		i;
   int           slen;
   
-  array_job_list *pajl;
+  job_array *pa;
 
   if (taskid > PBS_MAXJOBARRAY)
     {
@@ -929,11 +929,11 @@ job *job_clone(
     INCR);  
 
   /* we need to link the cloned job into the array task list */
-  pajl = get_array(poldjob->ji_qs.ji_jobid);
+  pa = get_array(poldjob->ji_qs.ji_jobid);
   
   CLEAR_LINK(pnewjob->ji_arrayjobs);
-  append_link(&pajl->array_alljobs, &pnewjob->ji_arrayjobs, (void*)pnewjob);
-  pnewjob->ji_arrayjoblist = pajl;
+  append_link(&pa->array_alljobs, &pnewjob->ji_arrayjobs, (void*)pnewjob);
+  pnewjob->ji_arrayjoblist = pa;
  
 
   return pnewjob;
@@ -956,12 +956,12 @@ struct work_task *ptask)
   int newsub;
   int rc;
   char namebuf[MAXPATHLEN];
-  array_job_list *pajl;
+  job_array *pa;
   pjob = (job*)(ptask->wt_parm1);
   
-  pajl = get_array(pjob->ji_qs.ji_jobid);
+  pa = get_array(pjob->ji_qs.ji_jobid);
   
-  startindex = pajl->ai_qs.num_cloned;
+  startindex = pa->ai_qs.num_cloned;
   
   strcpy(namebuf, path_jobs);
   strcat(namebuf, pjob->ji_qs.ji_fileprefix);
@@ -999,8 +999,8 @@ struct work_task *ptask)
       job_purge(pjobclone);
       }
       
-    pajl->ai_qs.num_cloned++;
-    array_save(pajl);
+    pa->ai_qs.num_cloned++;
+    array_save(pa);
     }
   
   
@@ -1018,7 +1018,7 @@ struct work_task *ptask)
     job_purge(pjob);
     
     /* scan over all the jobs in the array and unset the hold */
-    pjob = GET_NEXT(pajl->array_alljobs);
+    pjob = GET_NEXT(pa->array_alljobs);
     while (pjob != NULL)
       {	
       pjob->ji_wattr[(int)JOB_ATR_hold].at_val.at_long &= ~HOLD_a;

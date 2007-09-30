@@ -390,7 +390,7 @@ typedef struct {
 #define ARRAY_STRUCT_VERSION 1
 
   /* pbs_server will keep a list of these structs, with one struct per job array*/
-  struct array_job_list {
+  struct job_array {
      list_link all_arrays;
      tlist_head array_alljobs;
      
@@ -409,7 +409,7 @@ typedef struct {
   
   };
   
-  typedef struct array_job_list array_job_list;
+  typedef struct job_array job_array;
 
 #endif
 
@@ -455,7 +455,7 @@ struct job {
 	int		ji_retryok;	/* ok to retry, some reject was temp */
 	tlist_head	ji_rejectdest;	/* list of rejected destinations */
 	list_link	ji_arrayjobs;	/* links to all jobs in same array */
-	array_job_list	*ji_arrayjoblist; /* pointer to array_job_list for this array */
+	job_array	*ji_arrayjoblist; /* pointer to job_array for this array */
         int		ji_isparent;    /* set to TRUE if this is a "parent job"*/
 #endif					/* END SERVER ONLY */
 

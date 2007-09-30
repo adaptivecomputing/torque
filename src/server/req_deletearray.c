@@ -27,15 +27,15 @@ extern char *msg_permlog;
 
 void req_deletearray(struct batch_request *preq)
   {
-  array_job_list *pajl;
+  job_array *pa;
   
-  pajl = get_array(preq->rq_ind.rq_delete.rq_objname);
+  pa = get_array(preq->rq_ind.rq_delete.rq_objname);
   
   /* this should be impossible since prior to calling req_deletearray we checked the objname 
    * to see if it is an array.  Unless something is confirmed as an array id it is treated as a job id, 
    * so all unknown id errors end up being handled by the req_delete() function 
    */
-  if (pajl == NULL)
+  if (pa == NULL)
     {
     log_event(
       PBSEVENT_DEBUG, 
@@ -45,7 +45,7 @@ void req_deletearray(struct batch_request *preq)
     req_reject(PBSE_INTERNAL,0,preq,NULL, "cannot locate job array");
     }
   
-  if (svr_authorize_req(preq, pajl->ai_qs.owner,pajl->ai_qs.submit_host) == -1)
+  if (svr_authorize_req(preq, pa->ai_qs.owner,pa->ai_qs.submit_host) == -1)
     {
     sprintf(log_buffer,msg_permlog, 
       preq->rq_type,
