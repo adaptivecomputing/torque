@@ -21,13 +21,23 @@
 #include "array.h"
 
 extern int svr_authorize_req(struct batch_request *preq, char *owner, char *submit_host);
+extern void job_purge(job *pjob);
+extern struct work_task *apply_job_delete_nanny(struct job *,int);
+extern int has_job_delete_nanny(struct job *);
+extern void remove_stagein(job *pjob);
 
 extern char *msg_unkarrayid;
 extern char *msg_permlog;
+extern time_t time_now;
+
+static void post_delete_mom(struct work_task *pwt);
 
 void req_deletearray(struct batch_request *preq)
   {
   job_array *pa;
+  job *pjob;
+  job *next;
+
   
   pa = get_array(preq->rq_ind.rq_delete.rq_objname);
   
@@ -45,6 +55,7 @@ void req_deletearray(struct batch_request *preq)
     req_reject(PBSE_INTERNAL,0,preq,NULL, "cannot locate job array");
     }
   
+  /* check authorization */
   if (svr_authorize_req(preq, pa->ai_qs.owner,pa->ai_qs.submit_host) == -1)
     {
     sprintf(log_buffer,msg_permlog, 
@@ -63,8 +74,87 @@ void req_deletearray(struct batch_request *preq)
     req_reject(PBSE_PERM,0,preq,NULL,"operation not permitted");
     }
   
-  req_reject(PBSE_INTERNAL,0,preq, NULL,"whole array deletion not yet implemented");
-  /* reply_ack(preq); */
+  /* req_reject(PBSE_INTERNAL,0,preq, NULL,"whole array deletion not yet implemented");*/
+  
+  
+  /* iterate over list of jobs and delete each one */
+  pjob = (job*)GET_NEXT(pa->array_alljobs);
+  while (pjob != NULL)
+    {
+    
+    /* grab the pointer to the next job now so when we call job_abt
+     * on the current job we will still have the pointer to the next */
+    next = (job*)GET_NEXT(pjob->ji_arrayjobs);
+    if (pjob->ji_qs.ji_state >= JOB_STATE_EXITING)
+      {
+      /* invalid state for request,  skip */
+      pjob = next;
+      continue;
+      }
+    
+    
+    if (pjob->ji_qs.ji_state == JOB_STATE_TRANSIT) 
+      {
+      /* TODO */	
+      }  /* END if (pjob->ji_qs.ji_state == JOB_SUBSTATE_TRANSIT) */
+      
+    else if (pjob->ji_qs.ji_substate == JOB_SUBSTATE_PRERUN) 
+      {
+        
+      }  /* END if (pjob->ji_qs.ji_substate == JOB_SUBSTATE_PRERUN) */
+      
+    if (pjob->ji_qs.ji_state == JOB_STATE_RUNNING) 
+      {
+      /* set up nanny */
+     
+      if (!has_job_delete_nanny(pjob))
+        {
+          
+        apply_job_delete_nanny(pjob,time_now + 60);
+         
+        /* need to issue a signal to the mom, but we don't want to sent an ack to the 
+         * client when the mom replies */
+        issue_signal(pjob,"SIGTERM",post_delete_mom,NULL);
+        }
+        
+      pjob = next;
+      continue;  
+      }  /* END if (pjob->ji_qs.ji_state == JOB_STATE_RUNNING) */
+      
+      
+    if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_CHKPT) != 0) 
+      {
+      /* job has restart file at mom, do end job processing */
+
+      
+      } 
+    else if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_StagedIn) != 0) 
+      {
+      /* job has staged-in file, should remove them */
+
+      remove_stagein(pjob);
+
+      job_abt(&pjob,NULL);
+      } 
+    else 
+      {
+      job_abt(&pjob, NULL);
+      }
+      
+    pjob = next;  
+    }
+  
+  /* now that the whole array is deleted, we should mail the user if necessary */
+  
+  reply_ack(preq); 
 
   return;
+  }
+  
+  
+  
+  
+  static void post_delete_mom(struct work_task *pwt)
+  {
+  	/* no op - do not reply to client */
   }
