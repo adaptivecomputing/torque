@@ -282,7 +282,7 @@ extern attribute_def job_attr_def[];
 */
 typedef	struct	hnodent {
 	int		hn_node;	/* host (node) identifier (index) */
-	char	       *hn_host;	/* hostname of node */
+	char	*hn_host;	/* hostname of node */
 	int		hn_stream;	/* stream to MOM on node */
 	int		hn_sister;	/* save error for KILL_JOB event */
 	tlist_head	hn_events;	/* pointer to list of events */
@@ -398,10 +398,13 @@ typedef struct {
 
      struct array_info {
        int  struct_version;
-       char parent_id[PBS_MAXSVRJOBID + 1];
        int  array_size;
-       char fileprefix[PBS_JOBBASE + 1];
        int  num_cloned;
+       char owner[PBS_MAXUSER + PBS_MAXSERVERNAME + 2]; /* max user name, server name, 1 for the @, and one for the NULL */
+       char parent_id[PBS_MAXSVRJOBID + 1];
+       char fileprefix[PBS_JOBBASE + 1];
+       char submit_host[PBS_MAXSERVERNAME +1];
+       
      } ai_qs; 
   
   };

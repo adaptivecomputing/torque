@@ -107,6 +107,9 @@ extern char *PJobState[];
 
 extern int site_allow_u(char *,char *);
 
+int svr_chk_owner_generic(struct batch_request *preq, char *owner, char *submit_host);
+int svr_authorize_req(struct batch_request *preq, char *owner, char *submit_host);
+
 
 /*
  * svr_chk_owner - compare a user name from a request and the name of
@@ -123,6 +126,22 @@ int svr_chk_owner(
 
   {
   char  owner[PBS_MAXUSER + 1];
+  
+  get_jobowner(pjob->ji_wattr[(int)JOB_ATR_job_owner].at_val.at_str,owner);
+  
+  
+  return svr_chk_owner_generic(preq, owner, get_variable(pjob,pbs_o_host));
+  }  /* END svr_chk_owner() */
+
+
+int svr_chk_owner_generic(
+
+  struct batch_request *preq,
+  char *owner,
+  char *submit_host)
+  
+  {
+  
   char *pu;
   char  rmtuser[PBS_MAXUSER + 1];
 
@@ -140,25 +159,11 @@ int svr_chk_owner(
   strncpy(rmtuser,pu,PBS_MAXUSER);
   rmtuser[PBS_MAXUSER] = '\0';
 
-  /*
-   * Get job owner name without "@host" and then map to "local" name.
-   *
-   * This is a bit of a kludge, the POSIX 1003.15 standard forgot to
-   * include a separate attribute for the submitting (qsub) host.  At
-   * present, the only place defined where this can be found is the 
-   * value of the environmental variable POSIX2_PBS_O_HOST in the
-   * "variable-list" job attribute.
-   */
+  
+  pu = site_map_user(owner,submit_host);
 
-  get_jobowner(pjob->ji_wattr[(int)JOB_ATR_job_owner].at_val.at_str,owner);
-
-  pu = site_map_user(owner,get_variable(pjob,pbs_o_host));
-
-  return(strcmp(rmtuser,pu));
-  }  /* END svr_chk_owner() */
-
-
-
+  return(strcmp(rmtuser,pu));	
+  }
 
 
 /*
@@ -176,7 +181,23 @@ int svr_authorize_jobreq(
   job                  *pjob)  /* I */
 
   {
-  /* does requestor have special privileges? */
+  char  owner[PBS_MAXUSER + 1];
+  
+  get_jobowner(pjob->ji_wattr[(int)JOB_ATR_job_owner].at_val.at_str,owner);
+  
+  return svr_authorize_req(preq, owner, get_variable(pjob,pbs_o_host));
+  
+  }  /* END svr_authorize_jobreq() */
+
+
+int svr_authorize_req(
+
+  struct batch_request *preq,
+  char *owner,
+  char *submit_host)
+  
+  {
+    /* does requestor have special privileges? */
 
   if ((preq->rq_perm & (ATR_DFLAG_OPRD|ATR_DFLAG_OPWR|
                         ATR_DFLAG_MGRD|ATR_DFLAG_MGWR)) != 0)
@@ -188,7 +209,7 @@ int svr_authorize_jobreq(
 
   /* is requestor the job owner? */
 
-  if (svr_chk_owner(preq,pjob) == 0)
+  if (svr_chk_owner_generic(preq,owner, submit_host) == 0)
     {
     /* request authorized */
 
@@ -198,10 +219,7 @@ int svr_authorize_jobreq(
   /* not authorized */
 
   return(-1);
-  }  /* END svr_authorize_jobreq() */
-
-
-
+  }
 
 
 /*

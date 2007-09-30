@@ -580,9 +580,13 @@ void dispatch_request(
 #ifdef PBS_MOM
       req_deletejob(request); 
 #else
+      /* if this is a server size job delete request, then the request could also be 
+       * for an entire array.  we check to see if the request object name is an array id.  
+       * if so we hand off the the req_deletearray() function.  If not we pass along to the 
+       * normal req_deltejob() function. 
+       */
       if (is_array(request->rq_ind.rq_delete.rq_objname))
         {
-        printf("DELETE REQUEST FOR ARRAY%s\n", request->rq_ind.rq_delete.rq_objname);
         req_deletearray(request);
         }
       else

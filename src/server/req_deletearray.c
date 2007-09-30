@@ -18,10 +18,52 @@
 #include "log.h"
 #include "svrfunc.h"
 
+#include "array.h"
+
+extern int svr_authorize_req(struct batch_request *preq, char *owner, char *submit_host);
+
+extern char *msg_unkarrayid;
+extern char *msg_permlog;
+
 void req_deletearray(struct batch_request *preq)
   {
-  	
-  req_reject(PBSE_INTERNAL,0,preq,"whole array deletion not yet implemented",NULL);
+  array_job_list *pajl;
+  
+  pajl = get_array(preq->rq_ind.rq_delete.rq_objname);
+  
+  /* this should be impossible since prior to calling req_deletearray we checked the objname 
+   * to see if it is an array.  Unless something is confirmed as an array id it is treated as a job id, 
+   * so all unknown id errors end up being handled by the req_delete() function 
+   */
+  if (pajl == NULL)
+    {
+    log_event(
+      PBSEVENT_DEBUG, 
+      PBS_EVENTCLASS_JOB,
+      preq->rq_ind.rq_delete.rq_objname, 
+      msg_unkarrayid);
+    req_reject(PBSE_INTERNAL,0,preq,NULL, "cannot locate job array");
+    }
+  
+  if (svr_authorize_req(preq, pajl->ai_qs.owner,pajl->ai_qs.submit_host) == -1)
+    {
+    sprintf(log_buffer,msg_permlog, 
+      preq->rq_type,
+      "Array", 
+      preq->rq_ind.rq_delete.rq_objname,
+      preq->rq_user, 
+      preq->rq_host);
+
+    log_event(
+      PBSEVENT_SECURITY, 
+      PBS_EVENTCLASS_JOB,
+      preq->rq_ind.rq_delete.rq_objname, 
+      log_buffer);
+
+    req_reject(PBSE_PERM,0,preq,NULL,"operation not permitted");
+    }
+  
+  req_reject(PBSE_INTERNAL,0,preq, NULL,"whole array deletion not yet implemented");
   /* reply_ack(preq); */
 
   return;

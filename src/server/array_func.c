@@ -47,6 +47,7 @@ extern char *path_arrays;
 extern char *path_jobs;
 extern time_t time_now;
 extern int    LOGLEVEL;
+extern char *pbs_o_host;
 
 /* search job array list to determine if id is a job array */
 int is_array(char *id)
@@ -269,6 +270,8 @@ int setup_array_struct(job *pjob)
   pajl->ai_qs.array_size = pjob->ji_wattr[(int)JOB_ATR_job_array_size].at_val.at_long;
   strcpy(pajl->ai_qs.parent_id, pjob->ji_qs.ji_jobid);
   strcpy(pajl->ai_qs.fileprefix, pjob->ji_qs.ji_fileprefix);
+  strncpy(pajl->ai_qs.owner, pjob->ji_wattr[(int)JOB_ATR_job_owner].at_val.at_str, PBS_MAXUSER + PBS_MAXSERVERNAME + 2);
+  strncpy(pajl->ai_qs.submit_host, get_variable(pjob,pbs_o_host), PBS_MAXSERVERNAME);
   pajl->ai_qs.num_cloned = 0;
   CLEAR_LINK(pajl->all_arrays);
   CLEAR_HEAD(pajl->array_alljobs);

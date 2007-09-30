@@ -167,6 +167,7 @@
 #define PBSE_NOBATCH    15077		/* batch jobs not allowed in queue */ 
 #define PBSE_NORERUNABLE     15078	/* rerunable jobs not allowed in queue */
 #define PBSE_NONONRERUNABLE  15079	/* nonrerunable jobs not allowed in queue */
+#define PBSE_UNKARRAYID 15080		/* unknown array id */
 /*
 ** 	Resource monitor specific
 */
