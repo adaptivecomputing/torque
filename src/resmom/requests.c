@@ -447,7 +447,13 @@ static pid_t fork_to_user(
     setgroups(ngroup,(gid_t *)groups);
 
     setgid(usergid);
-    setuid(useruid);   /* run as the user */
+    
+    if (setuid(useruid) == -1)
+      {
+      /* cannot run as the user */
+
+      return(-PBSE_BADUSER); 
+      }
 
     if (chdir(hdir) == -1)
       {
@@ -2254,16 +2260,30 @@ static int del_files(
       }
 
 #ifdef HAVE_WORDEXP
-    switch (wordexp(path,&pathexp, WRDE_NOCMD|WRDE_UNDEF))
+    switch (wordexp(path,&pathexp,WRDE_NOCMD|WRDE_UNDEF))
       {
       case 0:
+
         break; /* Successful */
+
       case WRDE_NOSPACE:
+
         wordfree(&pathexp);
+
+        /* fall through */
+
       default:
-        sprintf(log_buffer,">>> failed to delete files, expansion of %s failed",path);
+
+        sprintf(log_buffer,">>> failed to delete files, expansion of %s failed",
+          path);
+
         add_bad_list(pbadfile,log_buffer,1);
+
         return(-1);
+
+        /*NOTREACHED*/
+
+        break;
       }
 
     strcpy(path,pathexp.we_wordv[0]);

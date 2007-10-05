@@ -325,6 +325,8 @@ proc_stat_t *get_proc_stat(
 
     if (Hertz <= 0)
       {
+      /* FAILURE */
+
       if (!Hertz_errored)
         log_err(errno,"get_proc_stat","sysconf(_SC_CLK_TCK) failed, unable to monitor processes");
 
@@ -341,6 +343,8 @@ proc_stat_t *get_proc_stat(
 
   if ((fd = fopen(path,"r")) == NULL)
     {
+    /* FAILURE */
+
     return(NULL);
     }
 
@@ -373,6 +377,8 @@ proc_stat_t *get_proc_stat(
 
   if (fstat(fileno(fd),&sb) == -1)  
     {
+    /* FAILURE */
+
     fclose(fd);
 
     return(NULL);
@@ -387,6 +393,8 @@ proc_stat_t *get_proc_stat(
   ps.stime = JTOS(ps.stime);
   ps.cutime = JTOS(ps.cutime);
   ps.cstime = JTOS(ps.cstime);
+
+  /* SUCCESS */
 
   fclose(fd);
 
@@ -841,7 +849,7 @@ static int overcpu_proc(
     }
 
   return(FALSE);
-  }
+  }  /* END overcpu_proc() */
 
 
 
@@ -2361,7 +2369,7 @@ char *cput_proc(
   pid_t pid)
 
   {
-  char		*id = "cput_pid";
+  char		*id = "cput_proc";
   double	cputime;
   proc_stat_t	*ps;
 
@@ -2388,7 +2396,7 @@ char *cput_proc(
     cputime * cputfactor);
 
   return(ret_string);
-  }
+  }  /* END cput_proc() */
 
 
 
@@ -2526,6 +2534,8 @@ char *mem_proc(
 
   return(ret_string);
   }  /* END mem_proc() */
+
+
 
 
 

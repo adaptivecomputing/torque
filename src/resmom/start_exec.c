@@ -3119,7 +3119,20 @@ int TMomFinalizeChild(
 
   setgid(pjob->ji_qs.ji_un.ji_momt.ji_exgid);
 
-  setuid(pjob->ji_qs.ji_un.ji_momt.ji_exuid);
+  if (setuid(pjob->ji_qs.ji_un.ji_momt.ji_exuid) < 0)
+    {
+    sprintf(log_buffer,"PBS: setuid to %dfailed: %s\n",
+      pjob->ji_qs.ji_un.ji_momt.ji_exuid,
+      strerror(errno));
+
+    write(2,log_buffer,strlen(log_buffer));
+
+    fsync(2);
+
+    log_err(errno,id,log_buffer);
+
+    starter_return(TJE->upfds,TJE->downfds,JOB_EXEC_FAIL2,&sjr);
+    }
 
 #ifdef _CRAY
   seteuid(pjob->ji_qs.ji_un.ji_momt.ji_exuid); /* cray kludge */
@@ -4241,7 +4254,21 @@ int start_process(
     (gid_t *)pjob->ji_grpcache->gc_groups);
 
   setgid(pjob->ji_qs.ji_un.ji_momt.ji_exgid);
-  setuid(pjob->ji_qs.ji_un.ji_momt.ji_exuid);
+
+  if (setuid(pjob->ji_qs.ji_un.ji_momt.ji_exuid) < 0)
+    {
+    sprintf(log_buffer,"PBS: setuid to %dfailed: %s\n",
+      pjob->ji_qs.ji_un.ji_momt.ji_exuid,
+      strerror(errno));
+
+    write(2,log_buffer,strlen(log_buffer));
+
+    fsync(2);
+
+    log_err(errno,id,log_buffer);
+
+    starter_return(kid_write,kid_read,JOB_EXEC_FAIL2,&sjr);
+    }
 
 #ifdef _CRAY
   seteuid(pjob->ji_qs.ji_un.ji_momt.ji_exuid); /* cray kludge */
