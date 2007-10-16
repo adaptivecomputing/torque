@@ -39,6 +39,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature
 2.1.10
   b - fix buffer overflow in rm_request,
       fix 2 printf that should be sprintf (Umea University)
+  b - correct updating trusted client list (Yahoo)
 
 2.1.9
   f - new queue attribute disallowed_types, currently recognized types:

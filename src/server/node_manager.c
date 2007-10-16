@@ -1003,6 +1003,9 @@ void send_cluster_addrs(
 
       delete_link(&nnew->nn_link);
       }
+
+      /* reset startcount, as we've sent the updates for all servers */
+      startcount = 0;
     }
   }     /* END send_cluster_addrs */
 
