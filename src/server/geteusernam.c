@@ -298,23 +298,30 @@ int set_jobexid(
     {
     char tmpLine[1024];
 
-    char *ptr;
-
     /* NOTE: use owner, not userlist - should this be changed? */
+    /* Yes, changed 10/17/2007 */
 
     if (pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str != NULL)
       {
-      strncpy(
-        tmpLine,
-        pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str,
-        sizeof(tmpLine));
 
-      /* FORMAT: <USER>@<HOST> */
+      /* start of change to use userlist instead of owner 10/17/2007 */
+      
+      if ((attrry + (int)JOB_ATR_userlst)->at_flags & ATR_VFLAG_SET)
+        pattr = attrry + (int)JOB_ATR_userlst;
+      else
+        pattr = &pjob->ji_wattr[(int)JOB_ATR_userlst];
 
-      ptr = strchr(tmpLine,'@');
+      if ((puser = geteusernam(pjob,pattr)) == NULL)
+        {
+        if (EMsg != NULL)
+          snprintf(EMsg,1024,"cannot locate user name in job");
 
-      if (ptr != NULL)
-        *ptr = '\0';
+        return(PBSE_BADUSER);
+        }
+      
+      sprintf (tmpLine, "%s", puser);
+      
+      /* end of change to use userlist instead of owner 10/17/2007 */
 
       pattr = attrry + (int)JOB_ATR_euser;
 
