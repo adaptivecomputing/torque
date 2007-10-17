@@ -2508,8 +2508,8 @@ void req_rerunjob(
 static int sys_copy(
 
   int   rmtflg,  /* I */
-  char *ag2,     /* I */
-  char *ag3,     /* I */
+  char *ag2,     /* I (is this source or destination?) */
+  char *ag3,     /* I (is this source or destination?) */
   int   conn)    /* I */
 
   {
@@ -2611,6 +2611,8 @@ static int sys_copy(
         close(fd);
         }
 
+      /* NOTE:  arg2 should be source, arg3 should be destination */
+
       execl(ag0,ag0,ag1,ag2,ag3,NULL);
 
       /* reached only if execl() fails */
@@ -2625,7 +2627,7 @@ static int sys_copy(
       log_err(errno,id,log_buffer);
 
       exit(13);	/* 13, an unlucky number */
-      }
+      }    /* END else ((rc = fork()) > 0) */
 
     /* copy did not work, try again */
 

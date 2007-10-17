@@ -1908,7 +1908,8 @@ int TMomFinalizeJob2(
 
 
 /* child portion of job launch executed as user - called by TMomFinalize2() */
-/* will execute run_pelog() */
+/* will execute run_pelog()
+ * issues setuid to pjob->ji_qs.ji_un.ji_momt.ji_exuid */
 
 int TMomFinalizeChild(
 
@@ -3111,7 +3112,13 @@ int TMomFinalizeChild(
    */
 
   if (LOGLEVEL >= 10)
-    log_err(-1,id,"setting user/group credentials");
+    {
+    sprintf(log_buffer,"setting user/group credentials to %d/%d",
+      pjob->ji_qs.ji_un.ji_momt.ji_exuid,
+      pjob->ji_qs.ji_un.ji_momt.ji_exgid);
+
+    log_err(-1,id,log_buffer);
+    }
 
   setgroups(
     pjob->ji_grpcache->gc_ngroup,
@@ -3121,7 +3128,7 @@ int TMomFinalizeChild(
 
   if (setuid(pjob->ji_qs.ji_un.ji_momt.ji_exuid) < 0)
     {
-    sprintf(log_buffer,"PBS: setuid to %dfailed: %s\n",
+    sprintf(log_buffer,"PBS: setuid to %d failed: %s\n",
       pjob->ji_qs.ji_un.ji_momt.ji_exuid,
       strerror(errno));
 
