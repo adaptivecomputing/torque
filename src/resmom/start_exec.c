@@ -4264,7 +4264,7 @@ int start_process(
 
   if (setuid(pjob->ji_qs.ji_un.ji_momt.ji_exuid) < 0)
     {
-    sprintf(log_buffer,"PBS: setuid to %dfailed: %s\n",
+    sprintf(log_buffer,"PBS: setuid to %d failed: %s\n",
       pjob->ji_qs.ji_un.ji_momt.ji_exuid,
       strerror(errno));
 

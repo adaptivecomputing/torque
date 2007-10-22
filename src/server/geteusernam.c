@@ -253,7 +253,7 @@ static char *getegroup(
 
 
 /*
- * set_jobexid - validate and set the execution uid (JOB_ATR_euser) and
+ * set_jobexid - validate and set the execution user (JOB_ATR_euser) and
  *	execution group (JOB_ATR_egroup) job attributes.
  *	
  *	1.  Get the execution user name.
