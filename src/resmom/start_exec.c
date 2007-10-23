@@ -5148,11 +5148,12 @@ char *std_file_name(
   char *pd;
   char *suffix;
   char *jobpath = NULL;
+
+#if NO_SPOOL_OUTPUT == 0
   int   havehomespool = 0;
 
   extern char *TNoSpoolDirList[];
-
-#if NO_SPOOL_OUTPUT == 1
+#else /* NO_SPOOL_OUTPUT */
   struct stat myspooldir;
   static char  path_alt[MAXPATHLEN + 1];
   int   rcstat;

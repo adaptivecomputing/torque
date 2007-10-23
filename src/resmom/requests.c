@@ -164,7 +164,10 @@ static uid_t  useruid;
 static gid_t  usergid;
 static int    ngroup;
 static int   *groups;
+#if NO_SPOOL_OUTPUT == 0
 static char  *output_retained = "Output retained on that host in: ";
+#endif /* !NO_SPOOL_OUTPUT */
+
 static char   rcperr[MAXPATHLEN];	/* file to contain rcp error */
 
 extern char PBSNodeMsgBuf[1024];
@@ -2706,7 +2709,10 @@ void req_cpyfile(
   char		*prmt;
   int		 rc;
   int		 rmtflag;
+#if NO_SPOOL_OUTPUT == 0
   char		 undelname[MAXPATHLEN + 1];
+#endif /* !NO_SPOOL_OUTPUT */
+
 #ifdef  _CRAY
   char		 tmpdirname[MAXPATHLEN + 1];
 #endif 	/* _CRAY */
