@@ -54,6 +54,8 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 mkinstalldirs = $(SHELL) $(top_srcdir)/buildutils/mkinstalldirs
 CONFIG_HEADER = pbs_config.h
 CONFIG_CLEAN_FILES =
+depcomp =
+am__depfiles_maybe =
 SOURCES =
 DIST_SOURCES =
 am__vpath_adj_setup = srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`;
@@ -299,7 +301,8 @@ XPBS_DIR = $(libdir)/xpbs
 XPBSMON_DIR = $(libdir)/xpbsmon
 SUBMIT_FILTER_PATH = $(libexecdir)/qsub_filter
 include_HEADERS = pbs_error.h pbs_ifl.h tm.h tm_.h rpp.h rm.h
-noinst_HEADERS = acct.h array.h attribute.h batch_request.h cmds.h credential.h \
+noinst_HEADERS = acct.h array.h attribute.h batch_request.h cmds.h \
+		 credential.h \
 		 dis.h dis_init.h job.h libpbs.h list_link.h log.h Long_.h \
 		 Long.h mcom.h md5.h mom_func.h net_connect.h pbs_assert.h \
 		 pbs_nodes.h pbs_proto.h portability.h qmgr.h \
@@ -337,9 +340,9 @@ $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am $(top_srcdir
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign  src/include/Makefile'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign  --ignore-deps src/include/Makefile'; \
 	cd $(top_srcdir) && \
-	  $(AUTOMAKE) --foreign  src/include/Makefile
+	  $(AUTOMAKE) --foreign  --ignore-deps src/include/Makefile
 .PRECIOUS: Makefile
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@case '$?' in \

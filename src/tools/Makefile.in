@@ -93,8 +93,8 @@ tracejob_OBJECTS = $(am_tracejob_OBJECTS)
 tracejob_LDADD = $(LDADD)
 tracejob_DEPENDENCIES = $(am__DEPENDENCIES_1)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src/include
-depcomp = $(SHELL) $(top_srcdir)/buildutils/depcomp
-am__depfiles_maybe = depfiles
+depcomp =
+am__depfiles_maybe =
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 LTCOMPILE = $(LIBTOOL) --tag=CC --mode=compile $(CC) $(DEFS) \
@@ -385,9 +385,9 @@ $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am $(top_srcdir
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign  src/tools/Makefile'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign  --ignore-deps src/tools/Makefile'; \
 	cd $(top_srcdir) && \
-	  $(AUTOMAKE) --foreign  src/tools/Makefile
+	  $(AUTOMAKE) --foreign  --ignore-deps src/tools/Makefile
 .PRECIOUS: Makefile
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@case '$?' in \
@@ -461,136 +461,56 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/chk_tree.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hostn.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pbs_tclsh-pbsTclInit.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pbs_tclsh-pbs_tclWrap.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pbs_tclsh-site_tclWrap.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pbs_wish-pbsTkInit.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pbs_wish-pbs_tclWrap.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pbs_wish-site_tclWrap.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/printjob.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/printtracking.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tracejob-tracejob.Po@am__quote@
-
 .c.o:
-@am__fastdepCC_TRUE@	if $(COMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/$*.Tpo" "$(DEPDIR)/$*.Po"; else rm -f "$(DEPDIR)/$*.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(COMPILE) -c $<
+	$(COMPILE) -c $<
 
 .c.obj:
-@am__fastdepCC_TRUE@	if $(COMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ `$(CYGPATH_W) '$<'`; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/$*.Tpo" "$(DEPDIR)/$*.Po"; else rm -f "$(DEPDIR)/$*.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(COMPILE) -c `$(CYGPATH_W) '$<'`
+	$(COMPILE) -c `$(CYGPATH_W) '$<'`
 
 .c.lo:
-@am__fastdepCC_TRUE@	if $(LTCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/$*.Tpo" "$(DEPDIR)/$*.Plo"; else rm -f "$(DEPDIR)/$*.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LTCOMPILE) -c -o $@ $<
+	$(LTCOMPILE) -c -o $@ $<
 
 pbs_tclsh-pbsTclInit.o: pbsTclInit.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(pbs_tclsh_CFLAGS) $(CFLAGS) -MT pbs_tclsh-pbsTclInit.o -MD -MP -MF "$(DEPDIR)/pbs_tclsh-pbsTclInit.Tpo" -c -o pbs_tclsh-pbsTclInit.o `test -f 'pbsTclInit.c' || echo '$(srcdir)/'`pbsTclInit.c; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/pbs_tclsh-pbsTclInit.Tpo" "$(DEPDIR)/pbs_tclsh-pbsTclInit.Po"; else rm -f "$(DEPDIR)/pbs_tclsh-pbsTclInit.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='pbsTclInit.c' object='pbs_tclsh-pbsTclInit.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(pbs_tclsh_CFLAGS) $(CFLAGS) -c -o pbs_tclsh-pbsTclInit.o `test -f 'pbsTclInit.c' || echo '$(srcdir)/'`pbsTclInit.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(pbs_tclsh_CFLAGS) $(CFLAGS) -c -o pbs_tclsh-pbsTclInit.o `test -f 'pbsTclInit.c' || echo '$(srcdir)/'`pbsTclInit.c
 
 pbs_tclsh-pbsTclInit.obj: pbsTclInit.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(pbs_tclsh_CFLAGS) $(CFLAGS) -MT pbs_tclsh-pbsTclInit.obj -MD -MP -MF "$(DEPDIR)/pbs_tclsh-pbsTclInit.Tpo" -c -o pbs_tclsh-pbsTclInit.obj `if test -f 'pbsTclInit.c'; then $(CYGPATH_W) 'pbsTclInit.c'; else $(CYGPATH_W) '$(srcdir)/pbsTclInit.c'; fi`; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/pbs_tclsh-pbsTclInit.Tpo" "$(DEPDIR)/pbs_tclsh-pbsTclInit.Po"; else rm -f "$(DEPDIR)/pbs_tclsh-pbsTclInit.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='pbsTclInit.c' object='pbs_tclsh-pbsTclInit.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(pbs_tclsh_CFLAGS) $(CFLAGS) -c -o pbs_tclsh-pbsTclInit.obj `if test -f 'pbsTclInit.c'; then $(CYGPATH_W) 'pbsTclInit.c'; else $(CYGPATH_W) '$(srcdir)/pbsTclInit.c'; fi`
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(pbs_tclsh_CFLAGS) $(CFLAGS) -c -o pbs_tclsh-pbsTclInit.obj `if test -f 'pbsTclInit.c'; then $(CYGPATH_W) 'pbsTclInit.c'; else $(CYGPATH_W) '$(srcdir)/pbsTclInit.c'; fi`
 
 pbs_tclsh-pbs_tclWrap.o: ../scheduler.tcl/pbs_tclWrap.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(pbs_tclsh_CFLAGS) $(CFLAGS) -MT pbs_tclsh-pbs_tclWrap.o -MD -MP -MF "$(DEPDIR)/pbs_tclsh-pbs_tclWrap.Tpo" -c -o pbs_tclsh-pbs_tclWrap.o `test -f '../scheduler.tcl/pbs_tclWrap.c' || echo '$(srcdir)/'`../scheduler.tcl/pbs_tclWrap.c; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/pbs_tclsh-pbs_tclWrap.Tpo" "$(DEPDIR)/pbs_tclsh-pbs_tclWrap.Po"; else rm -f "$(DEPDIR)/pbs_tclsh-pbs_tclWrap.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='../scheduler.tcl/pbs_tclWrap.c' object='pbs_tclsh-pbs_tclWrap.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(pbs_tclsh_CFLAGS) $(CFLAGS) -c -o pbs_tclsh-pbs_tclWrap.o `test -f '../scheduler.tcl/pbs_tclWrap.c' || echo '$(srcdir)/'`../scheduler.tcl/pbs_tclWrap.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(pbs_tclsh_CFLAGS) $(CFLAGS) -c -o pbs_tclsh-pbs_tclWrap.o `test -f '../scheduler.tcl/pbs_tclWrap.c' || echo '$(srcdir)/'`../scheduler.tcl/pbs_tclWrap.c
 
 pbs_tclsh-pbs_tclWrap.obj: ../scheduler.tcl/pbs_tclWrap.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(pbs_tclsh_CFLAGS) $(CFLAGS) -MT pbs_tclsh-pbs_tclWrap.obj -MD -MP -MF "$(DEPDIR)/pbs_tclsh-pbs_tclWrap.Tpo" -c -o pbs_tclsh-pbs_tclWrap.obj `if test -f '../scheduler.tcl/pbs_tclWrap.c'; then $(CYGPATH_W) '../scheduler.tcl/pbs_tclWrap.c'; else $(CYGPATH_W) '$(srcdir)/../scheduler.tcl/pbs_tclWrap.c'; fi`; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/pbs_tclsh-pbs_tclWrap.Tpo" "$(DEPDIR)/pbs_tclsh-pbs_tclWrap.Po"; else rm -f "$(DEPDIR)/pbs_tclsh-pbs_tclWrap.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='../scheduler.tcl/pbs_tclWrap.c' object='pbs_tclsh-pbs_tclWrap.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(pbs_tclsh_CFLAGS) $(CFLAGS) -c -o pbs_tclsh-pbs_tclWrap.obj `if test -f '../scheduler.tcl/pbs_tclWrap.c'; then $(CYGPATH_W) '../scheduler.tcl/pbs_tclWrap.c'; else $(CYGPATH_W) '$(srcdir)/../scheduler.tcl/pbs_tclWrap.c'; fi`
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(pbs_tclsh_CFLAGS) $(CFLAGS) -c -o pbs_tclsh-pbs_tclWrap.obj `if test -f '../scheduler.tcl/pbs_tclWrap.c'; then $(CYGPATH_W) '../scheduler.tcl/pbs_tclWrap.c'; else $(CYGPATH_W) '$(srcdir)/../scheduler.tcl/pbs_tclWrap.c'; fi`
 
 pbs_tclsh-site_tclWrap.o: ../scheduler.tcl/site_tclWrap.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(pbs_tclsh_CFLAGS) $(CFLAGS) -MT pbs_tclsh-site_tclWrap.o -MD -MP -MF "$(DEPDIR)/pbs_tclsh-site_tclWrap.Tpo" -c -o pbs_tclsh-site_tclWrap.o `test -f '../scheduler.tcl/site_tclWrap.c' || echo '$(srcdir)/'`../scheduler.tcl/site_tclWrap.c; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/pbs_tclsh-site_tclWrap.Tpo" "$(DEPDIR)/pbs_tclsh-site_tclWrap.Po"; else rm -f "$(DEPDIR)/pbs_tclsh-site_tclWrap.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='../scheduler.tcl/site_tclWrap.c' object='pbs_tclsh-site_tclWrap.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(pbs_tclsh_CFLAGS) $(CFLAGS) -c -o pbs_tclsh-site_tclWrap.o `test -f '../scheduler.tcl/site_tclWrap.c' || echo '$(srcdir)/'`../scheduler.tcl/site_tclWrap.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(pbs_tclsh_CFLAGS) $(CFLAGS) -c -o pbs_tclsh-site_tclWrap.o `test -f '../scheduler.tcl/site_tclWrap.c' || echo '$(srcdir)/'`../scheduler.tcl/site_tclWrap.c
 
 pbs_tclsh-site_tclWrap.obj: ../scheduler.tcl/site_tclWrap.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(pbs_tclsh_CFLAGS) $(CFLAGS) -MT pbs_tclsh-site_tclWrap.obj -MD -MP -MF "$(DEPDIR)/pbs_tclsh-site_tclWrap.Tpo" -c -o pbs_tclsh-site_tclWrap.obj `if test -f '../scheduler.tcl/site_tclWrap.c'; then $(CYGPATH_W) '../scheduler.tcl/site_tclWrap.c'; else $(CYGPATH_W) '$(srcdir)/../scheduler.tcl/site_tclWrap.c'; fi`; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/pbs_tclsh-site_tclWrap.Tpo" "$(DEPDIR)/pbs_tclsh-site_tclWrap.Po"; else rm -f "$(DEPDIR)/pbs_tclsh-site_tclWrap.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='../scheduler.tcl/site_tclWrap.c' object='pbs_tclsh-site_tclWrap.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(pbs_tclsh_CFLAGS) $(CFLAGS) -c -o pbs_tclsh-site_tclWrap.obj `if test -f '../scheduler.tcl/site_tclWrap.c'; then $(CYGPATH_W) '../scheduler.tcl/site_tclWrap.c'; else $(CYGPATH_W) '$(srcdir)/../scheduler.tcl/site_tclWrap.c'; fi`
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(pbs_tclsh_CFLAGS) $(CFLAGS) -c -o pbs_tclsh-site_tclWrap.obj `if test -f '../scheduler.tcl/site_tclWrap.c'; then $(CYGPATH_W) '../scheduler.tcl/site_tclWrap.c'; else $(CYGPATH_W) '$(srcdir)/../scheduler.tcl/site_tclWrap.c'; fi`
 
 pbs_wish-pbsTkInit.o: pbsTkInit.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(pbs_wish_CFLAGS) $(CFLAGS) -MT pbs_wish-pbsTkInit.o -MD -MP -MF "$(DEPDIR)/pbs_wish-pbsTkInit.Tpo" -c -o pbs_wish-pbsTkInit.o `test -f 'pbsTkInit.c' || echo '$(srcdir)/'`pbsTkInit.c; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/pbs_wish-pbsTkInit.Tpo" "$(DEPDIR)/pbs_wish-pbsTkInit.Po"; else rm -f "$(DEPDIR)/pbs_wish-pbsTkInit.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='pbsTkInit.c' object='pbs_wish-pbsTkInit.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(pbs_wish_CFLAGS) $(CFLAGS) -c -o pbs_wish-pbsTkInit.o `test -f 'pbsTkInit.c' || echo '$(srcdir)/'`pbsTkInit.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(pbs_wish_CFLAGS) $(CFLAGS) -c -o pbs_wish-pbsTkInit.o `test -f 'pbsTkInit.c' || echo '$(srcdir)/'`pbsTkInit.c
 
 pbs_wish-pbsTkInit.obj: pbsTkInit.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(pbs_wish_CFLAGS) $(CFLAGS) -MT pbs_wish-pbsTkInit.obj -MD -MP -MF "$(DEPDIR)/pbs_wish-pbsTkInit.Tpo" -c -o pbs_wish-pbsTkInit.obj `if test -f 'pbsTkInit.c'; then $(CYGPATH_W) 'pbsTkInit.c'; else $(CYGPATH_W) '$(srcdir)/pbsTkInit.c'; fi`; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/pbs_wish-pbsTkInit.Tpo" "$(DEPDIR)/pbs_wish-pbsTkInit.Po"; else rm -f "$(DEPDIR)/pbs_wish-pbsTkInit.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='pbsTkInit.c' object='pbs_wish-pbsTkInit.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(pbs_wish_CFLAGS) $(CFLAGS) -c -o pbs_wish-pbsTkInit.obj `if test -f 'pbsTkInit.c'; then $(CYGPATH_W) 'pbsTkInit.c'; else $(CYGPATH_W) '$(srcdir)/pbsTkInit.c'; fi`
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(pbs_wish_CFLAGS) $(CFLAGS) -c -o pbs_wish-pbsTkInit.obj `if test -f 'pbsTkInit.c'; then $(CYGPATH_W) 'pbsTkInit.c'; else $(CYGPATH_W) '$(srcdir)/pbsTkInit.c'; fi`
 
 pbs_wish-pbs_tclWrap.o: ../scheduler.tcl/pbs_tclWrap.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(pbs_wish_CFLAGS) $(CFLAGS) -MT pbs_wish-pbs_tclWrap.o -MD -MP -MF "$(DEPDIR)/pbs_wish-pbs_tclWrap.Tpo" -c -o pbs_wish-pbs_tclWrap.o `test -f '../scheduler.tcl/pbs_tclWrap.c' || echo '$(srcdir)/'`../scheduler.tcl/pbs_tclWrap.c; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/pbs_wish-pbs_tclWrap.Tpo" "$(DEPDIR)/pbs_wish-pbs_tclWrap.Po"; else rm -f "$(DEPDIR)/pbs_wish-pbs_tclWrap.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='../scheduler.tcl/pbs_tclWrap.c' object='pbs_wish-pbs_tclWrap.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(pbs_wish_CFLAGS) $(CFLAGS) -c -o pbs_wish-pbs_tclWrap.o `test -f '../scheduler.tcl/pbs_tclWrap.c' || echo '$(srcdir)/'`../scheduler.tcl/pbs_tclWrap.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(pbs_wish_CFLAGS) $(CFLAGS) -c -o pbs_wish-pbs_tclWrap.o `test -f '../scheduler.tcl/pbs_tclWrap.c' || echo '$(srcdir)/'`../scheduler.tcl/pbs_tclWrap.c
 
 pbs_wish-pbs_tclWrap.obj: ../scheduler.tcl/pbs_tclWrap.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(pbs_wish_CFLAGS) $(CFLAGS) -MT pbs_wish-pbs_tclWrap.obj -MD -MP -MF "$(DEPDIR)/pbs_wish-pbs_tclWrap.Tpo" -c -o pbs_wish-pbs_tclWrap.obj `if test -f '../scheduler.tcl/pbs_tclWrap.c'; then $(CYGPATH_W) '../scheduler.tcl/pbs_tclWrap.c'; else $(CYGPATH_W) '$(srcdir)/../scheduler.tcl/pbs_tclWrap.c'; fi`; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/pbs_wish-pbs_tclWrap.Tpo" "$(DEPDIR)/pbs_wish-pbs_tclWrap.Po"; else rm -f "$(DEPDIR)/pbs_wish-pbs_tclWrap.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='../scheduler.tcl/pbs_tclWrap.c' object='pbs_wish-pbs_tclWrap.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(pbs_wish_CFLAGS) $(CFLAGS) -c -o pbs_wish-pbs_tclWrap.obj `if test -f '../scheduler.tcl/pbs_tclWrap.c'; then $(CYGPATH_W) '../scheduler.tcl/pbs_tclWrap.c'; else $(CYGPATH_W) '$(srcdir)/../scheduler.tcl/pbs_tclWrap.c'; fi`
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(pbs_wish_CFLAGS) $(CFLAGS) -c -o pbs_wish-pbs_tclWrap.obj `if test -f '../scheduler.tcl/pbs_tclWrap.c'; then $(CYGPATH_W) '../scheduler.tcl/pbs_tclWrap.c'; else $(CYGPATH_W) '$(srcdir)/../scheduler.tcl/pbs_tclWrap.c'; fi`
 
 pbs_wish-site_tclWrap.o: ../scheduler.tcl/site_tclWrap.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(pbs_wish_CFLAGS) $(CFLAGS) -MT pbs_wish-site_tclWrap.o -MD -MP -MF "$(DEPDIR)/pbs_wish-site_tclWrap.Tpo" -c -o pbs_wish-site_tclWrap.o `test -f '../scheduler.tcl/site_tclWrap.c' || echo '$(srcdir)/'`../scheduler.tcl/site_tclWrap.c; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/pbs_wish-site_tclWrap.Tpo" "$(DEPDIR)/pbs_wish-site_tclWrap.Po"; else rm -f "$(DEPDIR)/pbs_wish-site_tclWrap.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='../scheduler.tcl/site_tclWrap.c' object='pbs_wish-site_tclWrap.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(pbs_wish_CFLAGS) $(CFLAGS) -c -o pbs_wish-site_tclWrap.o `test -f '../scheduler.tcl/site_tclWrap.c' || echo '$(srcdir)/'`../scheduler.tcl/site_tclWrap.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(pbs_wish_CFLAGS) $(CFLAGS) -c -o pbs_wish-site_tclWrap.o `test -f '../scheduler.tcl/site_tclWrap.c' || echo '$(srcdir)/'`../scheduler.tcl/site_tclWrap.c
 
 pbs_wish-site_tclWrap.obj: ../scheduler.tcl/site_tclWrap.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(pbs_wish_CFLAGS) $(CFLAGS) -MT pbs_wish-site_tclWrap.obj -MD -MP -MF "$(DEPDIR)/pbs_wish-site_tclWrap.Tpo" -c -o pbs_wish-site_tclWrap.obj `if test -f '../scheduler.tcl/site_tclWrap.c'; then $(CYGPATH_W) '../scheduler.tcl/site_tclWrap.c'; else $(CYGPATH_W) '$(srcdir)/../scheduler.tcl/site_tclWrap.c'; fi`; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/pbs_wish-site_tclWrap.Tpo" "$(DEPDIR)/pbs_wish-site_tclWrap.Po"; else rm -f "$(DEPDIR)/pbs_wish-site_tclWrap.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='../scheduler.tcl/site_tclWrap.c' object='pbs_wish-site_tclWrap.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(pbs_wish_CFLAGS) $(CFLAGS) -c -o pbs_wish-site_tclWrap.obj `if test -f '../scheduler.tcl/site_tclWrap.c'; then $(CYGPATH_W) '../scheduler.tcl/site_tclWrap.c'; else $(CYGPATH_W) '$(srcdir)/../scheduler.tcl/site_tclWrap.c'; fi`
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(pbs_wish_CFLAGS) $(CFLAGS) -c -o pbs_wish-site_tclWrap.obj `if test -f '../scheduler.tcl/site_tclWrap.c'; then $(CYGPATH_W) '../scheduler.tcl/site_tclWrap.c'; else $(CYGPATH_W) '$(srcdir)/../scheduler.tcl/site_tclWrap.c'; fi`
 
 tracejob-tracejob.o: tracejob.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tracejob_CFLAGS) $(CFLAGS) -MT tracejob-tracejob.o -MD -MP -MF "$(DEPDIR)/tracejob-tracejob.Tpo" -c -o tracejob-tracejob.o `test -f 'tracejob.c' || echo '$(srcdir)/'`tracejob.c; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/tracejob-tracejob.Tpo" "$(DEPDIR)/tracejob-tracejob.Po"; else rm -f "$(DEPDIR)/tracejob-tracejob.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='tracejob.c' object='tracejob-tracejob.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tracejob_CFLAGS) $(CFLAGS) -c -o tracejob-tracejob.o `test -f 'tracejob.c' || echo '$(srcdir)/'`tracejob.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tracejob_CFLAGS) $(CFLAGS) -c -o tracejob-tracejob.o `test -f 'tracejob.c' || echo '$(srcdir)/'`tracejob.c
 
 tracejob-tracejob.obj: tracejob.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tracejob_CFLAGS) $(CFLAGS) -MT tracejob-tracejob.obj -MD -MP -MF "$(DEPDIR)/tracejob-tracejob.Tpo" -c -o tracejob-tracejob.obj `if test -f 'tracejob.c'; then $(CYGPATH_W) 'tracejob.c'; else $(CYGPATH_W) '$(srcdir)/tracejob.c'; fi`; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/tracejob-tracejob.Tpo" "$(DEPDIR)/tracejob-tracejob.Po"; else rm -f "$(DEPDIR)/tracejob-tracejob.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='tracejob.c' object='tracejob-tracejob.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tracejob_CFLAGS) $(CFLAGS) -c -o tracejob-tracejob.obj `if test -f 'tracejob.c'; then $(CYGPATH_W) 'tracejob.c'; else $(CYGPATH_W) '$(srcdir)/tracejob.c'; fi`
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tracejob_CFLAGS) $(CFLAGS) -c -o tracejob-tracejob.obj `if test -f 'tracejob.c'; then $(CYGPATH_W) 'tracejob.c'; else $(CYGPATH_W) '$(srcdir)/tracejob.c'; fi`
 
 mostlyclean-libtool:
 	-rm -f *.lo
@@ -814,7 +734,6 @@ clean: clean-recursive
 clean-am: clean-binPROGRAMS clean-generic clean-libtool mostlyclean-am
 
 distclean: distclean-recursive
-	-rm -rf ./$(DEPDIR)
 	-rm -f Makefile
 distclean-am: clean-am distclean-compile distclean-generic \
 	distclean-libtool distclean-tags
@@ -840,7 +759,6 @@ install-man:
 installcheck-am:
 
 maintainer-clean: maintainer-clean-recursive
-	-rm -rf ./$(DEPDIR)
 	-rm -f Makefile
 maintainer-clean-am: distclean-am maintainer-clean-generic
 
