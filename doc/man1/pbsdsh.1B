@@ -75,7 +75,7 @@
 .\" This license will be governed by the laws of the Commonwealth of Virginia,
 .\" without reference to its choice of law rules.
 .if \n(Pb .ig Iq
-.TH qsub 1B "" Local PBS
+.TH pbsdsh 1B "" Local PBS
 .so ../ers/ers.macros
 .Iq
 .SH NAME
@@ -94,6 +94,15 @@ API, see tm_spawn(3), to distribute the program on the allocated nodes.
 When run without the -c or the -n option, pbsdsh will spawn the program
 on all nodes allocated to the PBS job.  The spawns take place concurrently \-
 all execute at (about) the same time.
+.LP
+Users will find the
+.B PBS_TASKNUM
+,
+.B PBS_NODENUM
+, and the
+.B PBS_VNODENUM
+environmental variables useful.  They contain the TM task id, the node
+identifier, and the cpu (virtual node) identifier.
 .SH OPTIONS
 .IP "-c copies"
 The program is spawned on the first

@@ -391,7 +391,14 @@ number.  When this event is returned by
 .B tm_poll ,
 the tm_task_id pointed to by
 .IR tid
-will contain the task id of the newly created task.
+will contain the task id of the newly created task.  In addition,
+the tid is available to the process in the
+.B PBS_TASKNUM
+environment variable.  Similarly, the node number is in the
+.B PBS_NODENUM
+variable and the cpu number is in the
+.B PBS_VNODENUM
+variable.
 .LP
 .B tm_kill(\|)
 sends a signal specified by
