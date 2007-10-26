@@ -41,6 +41,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature
       fix 2 printf that should be sprintf (Umea University)
   b - correct updating trusted client list (Yahoo)
   b - Catch newlines in log messages, split messages text (Eygene Ryabinkin)
+  e - pbs_mom remote reconfig pbs_mom now disabled by default
+      use $remote_reconfig to enable it
 
 2.1.9
   f - new queue attribute disallowed_types, currently recognized types:

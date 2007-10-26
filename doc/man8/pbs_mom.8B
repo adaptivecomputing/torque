@@ -392,6 +392,8 @@ the remote host and accept arguments of the form "user@host:files"  For example:
 .Ty "$rcpcmd /usr/bin/rcp -rp
 .br
 .Ty "$rcpcmd /usr/bin/scp -rpB
+.IP remote_reconfig
+Enables the ability to remotely reconfigure pbs_mom with a new config file.  Default is disabled.
 .IP timeout
 Specifies the number of seconds before TCP messages will time out.  TCP messages include job obituaries, and TM requests if RPP is disabled.
 Default is 60 seconds.

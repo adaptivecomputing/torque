@@ -259,6 +259,7 @@ char            MOMUNameMissing[64];
 
 int             MOMConfigDownOnError      = 0;
 int             MOMConfigRestart          = 0;
+int             MOMConfigRReconfig        = 0;
 long            system_ncpus = 0;
 char           *auto_ideal_load = NULL;
 char           *auto_max_load   = NULL;
@@ -338,6 +339,7 @@ static unsigned long setautomaxload(char *);
 static unsigned long setnodefilesuffix(char *);
 static unsigned long setnospooldirlist(char *);
 static unsigned long setmomhost(char *);
+static unsigned long setrreconfig(char *);
 
 
 static struct specials {
@@ -382,6 +384,7 @@ static struct specials {
     { "nodefile_suffix",     setnodefilesuffix },
     { "nospool_dir_list",    setnospooldirlist },
     { "mom_host",            setmomhost },
+    { "remote_reconfig",     setrreconfig},
     { NULL,                  NULL } };
 
 
@@ -2802,8 +2805,56 @@ static unsigned long setmomhost(
   }  /* END setmomhost() */
 
 
+static u_long setrreconfig(
 
+  char *Value)  /* I */
 
+  {
+  static char   id[] = "setrreconfig";
+  int           enable = -1;
+
+  log_record(PBSEVENT_SYSTEM,PBS_EVENTCLASS_SERVER,id,Value);
+
+  if (Value == NULL)
+    {
+    /* FAILURE */
+
+    return(0);
+    }
+  
+  /* accept various forms of "true", "yes", and "1" */
+  switch (Value[0])
+    {
+    case 't':
+    case 'T':
+    case 'y': 
+    case 'Y':
+    case '1':
+
+      enable = 1;
+  
+      break;
+    
+    case 'f':
+    case 'F':
+    case 'n':
+    case 'N':
+    case '0':
+      
+      enable = 0;
+
+      break;
+
+    } 
+
+  if (enable != -1) 
+    {
+    MOMConfigRReconfig=enable;
+    }
+
+  return(1);
+  }  /* END setrreconfig() */
+  
 
 static unsigned long setnospooldirlist(
 
@@ -5042,6 +5093,14 @@ int rm_request(
 
       {
       char *ptr;
+
+      if (MOMConfigRReconfig == FALSE)
+        {
+        log_err(-1,id,
+         "remote reconfiguration disabled, ignoring request");
+
+        goto bad;
+        }
 
       if (restrictrm) 
         {
