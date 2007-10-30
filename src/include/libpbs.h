@@ -271,8 +271,6 @@ const char *reqtype_to_txt(int);
 void
 PBS_free_aopl A_(( struct attropl * aoplp ));
 
-void
-advise ();
 
 int
 PBSD_commit A_((int connect, char *jobid));

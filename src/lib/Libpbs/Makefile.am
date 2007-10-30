@@ -21,7 +21,7 @@ libtorque_la_SOURCES = ../Libdis/dis.c ../Libdis/discui_.c ../Libdis/discul_.c \
 		    ../Libdis/disrus.c ../Libdis/diswcs.c ../Libdis/diswf.c \
 		    ../Libdis/diswl_.c ../Libdis/diswsi.c ../Libdis/diswsl.c \
 		    ../Libdis/diswui_.c ../Libdis/diswui.c \
-		    ../Libdis/diswul.c ../Libifl/advise.c \
+		    ../Libdis/diswul.c \
 		    ../Libifl/dec_attrl.c ../Libifl/dec_attropl.c \
 		    ../Libifl/dec_Authen.c ../Libifl/dec_CpyFil.c \
 		    ../Libifl/dec_JobCred.c ../Libifl/dec_JobFile.c \
