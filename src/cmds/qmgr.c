@@ -150,15 +150,9 @@
 
 /* Global Variables */
 
-/*
- * This variable represents the use of the -z option on the command line.
- * It is declared here because it must be used by the pstderr routine to
- * determine if any message should be printed to standard error.
- */
-int zopt = FALSE;		/* -z option */
-
 struct server *servers = NULL;  /* Linked list of server structures */
 int nservers = 0;               /* Number of servers */
+int zopt = FALSE;		/* -z option */
 
 /* active objects */
 struct objname *active_servers;
@@ -233,7 +227,7 @@ int main(
 
   if (errflg) 
     {
-    pstderr(usage);
+    if( ! zopt ) fprintf(stderr,usage);
 
     exit(1);
     }
@@ -721,7 +715,7 @@ struct server *make_connection(
     }
   else
     {
-    pstderr1("qmgr: cannot connect to server %s\n", 
+    if( ! zopt ) fprintf(stderr,"qmgr: cannot connect to server %s\n", 
       name);
     }
 
@@ -785,7 +779,7 @@ int connect_servers(
   }
   else
   {
-    pstderr("qmgr: max server connections reached.\n");
+    if( ! zopt ) fprintf(stderr,"qmgr: max server connections reached.\n");
     error = 1;
   }
   return error;
@@ -819,11 +813,11 @@ void blanks(
 
     spaces[i] = '\0';
 
-    pstderr(spaces);
+    if( ! zopt ) fprintf(stderr,spaces);
     }
   else
     {
-    pstderr("Too many blanks requested.\n");
+    if( ! zopt ) fprintf(stderr,"Too many blanks requested.\n");
     }
 
   return;
@@ -1225,7 +1219,7 @@ struct objname *obj_names;
 
 	  if( !is_valid_object( cur_obj, MGR_OBJ_QUEUE ) )
 	  {
-	    pstderr1("Queue does not exist: %s.\n", cur_obj -> obj_name);
+	    if( ! zopt ) fprintf(stderr,"Queue does not exist: %s.\n", cur_obj -> obj_name);
 	    error = 1;
 	  }
 
@@ -1250,7 +1244,7 @@ struct objname *obj_names;
 	  }
 	  if( !is_valid_object( cur_obj, MGR_OBJ_NODE ) )
 	  {
-	    pstderr1("Node does not exist: %s.\n", cur_obj -> obj_name);
+	    if( ! zopt ) fprintf(stderr,"Node does not exist: %s.\n", cur_obj -> obj_name);
 	    error = 1;
 	  }
 
@@ -1373,7 +1367,7 @@ int execute(
 	if (active_queues != NULL)
 	  pname = active_queues;
 	else
-	  pstderr("No Active Queues, nothing done.\n");
+	  if( ! zopt ) fprintf(stderr,"No Active Queues, nothing done.\n");
         break;
 
       case MGR_OBJ_NODE:
@@ -1381,7 +1375,7 @@ int execute(
 	if( active_nodes != NULL )
 	  pname = active_nodes;
 	else
-	  pstderr("No Active Nodes, nothing done.\n");
+	  if( ! zopt ) fprintf(stderr,"No Active Nodes, nothing done.\n");
         break;
 /* DIAGTODO: handle new diag type */
       }
@@ -1485,7 +1479,7 @@ int execute(
 	  {
 	     sprintf(errnomsg, "qmgr obj=%s svr=%s: %s\n", 
 		     pname -> obj_name, Svrname(sp),  errmsg);
-	     pstderr(errnomsg);
+	     if( ! zopt ) fprintf(stderr,errnomsg);
 	  }
 	  else
 	  {/*obviously, this is to cover a highly unlikely case*/
@@ -1495,11 +1489,11 @@ int execute(
 	} 
 	else if ( pbs_errno == PBSE_PROTOCOL ) 
 	{
-	  pstderr("qmgr: Protocol error, server disconnected\n");
+	  if( ! zopt ) fprintf(stderr,"qmgr: Protocol error, server disconnected\n");
 	  exit(1);
 	} 
 	else 
-	  pstderr1("qmgr: Error (%d) returned from server\n", pbs_errno);
+	  if( ! zopt ) fprintf(stderr,"qmgr: Error (%d) returned from server\n", pbs_errno);
 
 	if ( aopt ) 
 	  return perr;
@@ -2179,7 +2173,7 @@ int parse(
       clean_up_and_exit(0);
     else 
       {
-      pstderr1("qmgr: Illegal operation: %s\n"
+      if( ! zopt ) fprintf(stderr,"qmgr: Illegal operation: %s\n"
 	"Try 'help' if you are having trouble.\n", 
         req[IND_CMD]);
 
@@ -2188,7 +2182,7 @@ int parse(
     
     if (EOL(req[IND_OBJ][0])) 
       {
-      pstderr("qmgr: No object type given\n");
+      if( ! zopt ) fprintf(stderr,"qmgr: No object type given\n");
 
       return(2);
       }
@@ -2204,7 +2198,7 @@ int parse(
 /* DIAGTODO: allow new object type */
     else 
       {
-      pstderr1("qmgr: Illegal object type: %s.\n", 
+      if( ! zopt ) fprintf(stderr,"qmgr: Illegal object type: %s.\n", 
         req[IND_OBJ]);
 
       return(2);
@@ -2224,7 +2218,7 @@ int parse(
 
         if (error != 0)
           {
-          pstderr("qmgr: syntax error - checklist failed\n");
+          if( ! zopt ) fprintf(stderr,"qmgr: syntax error - checklist failed\n");
 
           CaretErr(request, len - (int)strlen(req[IND_NAME]) + error - 1);
 
@@ -2240,7 +2234,7 @@ int parse(
 
     if ((error = attributes(request + len,attr,*oper)) != 0) 
       {
-      pstderr("qmgr: Syntax error - cannot locate attribute\n");
+      if( ! zopt ) fprintf(stderr,"qmgr: Syntax error - cannot locate attribute\n");
 
       CaretErr(request, len + error);
 
@@ -2249,7 +2243,7 @@ int parse(
 
     if (((*oper == MGR_CMD_SET) || (*oper == MGR_CMD_UNSET)) && (*attr == NULL))
       {
-      pstderr("qmgr: Syntax error - attribute required for operation\n");
+      if( ! zopt ) fprintf(stderr,"qmgr: Syntax error - attribute required for operation\n");
 
       CaretErr(request, len + error);
 
@@ -2258,7 +2252,7 @@ int parse(
 
     if ((*oper == MGR_CMD_ACTIVE) && (*attr != NULL))
       {
-      pstderr("qmgr: Syntax error - operation does not allow attribute\n");
+      if( ! zopt ) fprintf(stderr,"qmgr: Syntax error - operation does not allow attribute\n");
       CaretErr(request,len);
 
       return(4);
@@ -2271,24 +2265,6 @@ int parse(
 
 
 
-
-/*
- * 	pstderr - prints error message to standard error.  It will not be 
- *		  printed if the "-z" option was given on the command line
- *
- * 	  string       The error message to print.
- *
- * 	Returns:
- *      	Nothing.
- *
- * 	Global Variable: zopt
- */
-void
-pstderr( string )
-    char *string;
-{
-    if ( ! zopt ) fprintf(stderr,"%s",string);
-}
 
 
 /*
@@ -2317,35 +2293,20 @@ void pstderr_big(
   char *errmesg)
 
   {
-  pstderr("qmgr obj=");
-  pstderr(objname);
-  pstderr(" svr=");
-  pstderr(svrname);
-  pstderr(": ");
-  pstderr(errmesg);
-  pstderr("\n");
+  if( ! zopt )
+    {
+    fprintf(stderr,"qmgr obj=");
+    fprintf(stderr,objname);
+    fprintf(stderr," svr=");
+    fprintf(stderr,svrname);
+    fprintf(stderr,": ");
+    fprintf(stderr,errmesg);
+    fprintf(stderr,"\n");
+    }
 
   return;
   }
 
-/*
- *
- *	pstderr1 - print error message to stdard error with one argument.
- *		   Message will not be printed if "-z" option was specifed
- *
- *	  string - format string to fprintf
- *	  arg    - argument to be printed
- *
- *	returns nothing
- *
- */
-void
-pstderr1( string, arg )
-char *string;
-char *arg;
-{
-  if( ! zopt ) fprintf(stderr, string, arg);
-}
 
 /*
  *
@@ -2610,7 +2571,7 @@ int is_valid_object(
       {
       errmsg = pbs_geterrmsg(obj->svr->s_connect);
 
-      pstderr1("qmgr: %s.\n", 
+      if( ! zopt ) fprintf(stderr,"qmgr: %s.\n", 
         errmsg);
 
       valid = 0;
@@ -2787,7 +2748,7 @@ int parse_request(
       {
       error = 1;
       chars_parsed = (int)(foreptr - request);
-      pstderr("qmgr: max word length exceeded\n");
+      if( ! zopt ) fprintf(stderr,"qmgr: max word length exceeded\n");
       CaretErr(request,chars_parsed);
       }
 

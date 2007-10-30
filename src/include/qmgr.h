@@ -126,12 +126,12 @@
  
 /* This macro will allocate memory for a character string */
 #define Mstring(x,y)    if ( (x=(char *)malloc(y)) == NULL ) { \
-                            pstderr("qmgr: Out of memory\n"); \
+                            if( ! zopt ) fprintf(stderr,"qmgr: Out of memory\n"); \
                             clean_up_and_exit(5); \
                         }
 /* This macro will allocate memory for some fixed size object */
 #define Mstruct(x,y)    if ( (x=(y *)malloc(sizeof(y))) == NULL ) { \
-                            pstderr("qmgr: Out of memory\n"); \
+                            if( ! zopt ) fprintf(stderr,"qmgr: Out of memory\n"); \
                             clean_up_and_exit(5); \
                         }
 /* server name: "" is the default server and NULL is all active servers */
@@ -139,7 +139,7 @@
                         ( ( strlen((x) -> s_name) ) ? \
                         (x) -> s_name : DEFAULT_SERVER) )
 /* print an input line and then a caret under where the error has occured */
-#define CaretErr(x, y)  pstderr1("%s\n", (x)); blanks((y)); pstderr("^\n");
+#define CaretErr(x, y)  if( ! zopt ) fprintf(stderr,"%s\n", (x)); blanks((y)); if( ! zopt ) fprintf(stderr,"^\n");
 
 /* structures */
 
@@ -178,9 +178,7 @@ int parse_request( );
 void clean_up_and_exit();
 void freeattrl();
 void freeattropl();
-void pstderr();
 void pstderr_big();
-void pstderr1();
 void free_objname_list();
 void free_server();
 void free_objname();
