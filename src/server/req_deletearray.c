@@ -30,29 +30,34 @@ extern char *msg_unkarrayid;
 extern char *msg_permlog;
 extern time_t time_now;
 
-static void post_delete_mom(struct work_task *pwt);
+static void post_delete(struct work_task *pwt);
+
+void array_delete_wt(struct work_task *ptask);
+
+
 
 void req_deletearray(struct batch_request *preq)
   {
   job_array *pa;
   job *pjob;
   job *next;
+  
+  struct work_task *pwtold;
+  struct work_task *ptask;
+  struct work_task *pwtnew;
+
+  int num_skipped;
 
   
   pa = get_array(preq->rq_ind.rq_delete.rq_objname);
+  num_skipped = 0;
   
-  /* this should be impossible since prior to calling req_deletearray we checked the objname 
-   * to see if it is an array.  Unless something is confirmed as an array id it is treated as a job id, 
-   * so all unknown id errors end up being handled by the req_delete() function 
-   */
+  
+  
   if (pa == NULL)
     {
-    log_event(
-      PBSEVENT_DEBUG, 
-      PBS_EVENTCLASS_JOB,
-      preq->rq_ind.rq_delete.rq_objname, 
-      msg_unkarrayid);
-    req_reject(PBSE_INTERNAL,0,preq,NULL, "cannot locate job array");
+    reply_ack(preq);
+    return;
     }
   
   /* check authorization */
@@ -74,8 +79,7 @@ void req_deletearray(struct batch_request *preq)
     req_reject(PBSE_PERM,0,preq,NULL,"operation not permitted");
     }
   
-  /* req_reject(PBSE_INTERNAL,0,preq, NULL,"whole array deletion not yet implemented");*/
-  
+   
   
   /* iterate over list of jobs and delete each one */
   pjob = (job*)GET_NEXT(pa->array_alljobs);
@@ -85,6 +89,7 @@ void req_deletearray(struct batch_request *preq)
     /* grab the pointer to the next job now so when we call job_abt
      * on the current job we will still have the pointer to the next */
     next = (job*)GET_NEXT(pjob->ji_arrayjobs);
+    
     if (pjob->ji_qs.ji_state >= JOB_STATE_EXITING)
       {
       /* invalid state for request,  skip */
@@ -95,15 +100,44 @@ void req_deletearray(struct batch_request *preq)
     
     if (pjob->ji_qs.ji_state == JOB_STATE_TRANSIT) 
       {
-      /* TODO */	
+      /*
+       * Find pid of router from existing work task entry,
+       * then establish another work task on same child.
+       * Next, signal the router and wait for its completion;
+       */
+
+      pwtold = (struct work_task *)GET_NEXT(pjob->ji_svrtask);
+
+      while (pwtold != NULL) 
+        {
+        if ((pwtold->wt_type == WORK_Deferred_Child) ||
+            (pwtold->wt_type == WORK_Deferred_Cmp)) 
+          {
+          
+
+
+            kill((pid_t)pwtold->wt_event,SIGTERM);
+
+            pjob->ji_qs.ji_substate = JOB_SUBSTATE_ABORT;
+
+            
+          }
+
+        pwtold = (struct work_task *)GET_NEXT(pwtold->wt_linkobj);
+        }
+
+      num_skipped++;
+
+      continue;
       }  /* END if (pjob->ji_qs.ji_state == JOB_SUBSTATE_TRANSIT) */
       
     else if (pjob->ji_qs.ji_substate == JOB_SUBSTATE_PRERUN) 
       {
-        
+      /* we'll wait for the mom to get this job, then delete it */
+      num_skipped++;
       }  /* END if (pjob->ji_qs.ji_substate == JOB_SUBSTATE_PRERUN) */
       
-    if (pjob->ji_qs.ji_state == JOB_STATE_RUNNING) 
+    else if (pjob->ji_qs.ji_state == JOB_STATE_RUNNING) 
       {
       /* set up nanny */
      
@@ -114,7 +148,7 @@ void req_deletearray(struct batch_request *preq)
          
         /* need to issue a signal to the mom, but we don't want to sent an ack to the 
          * client when the mom replies */
-        issue_signal(pjob,"SIGTERM",post_delete_mom,NULL);
+        issue_signal(pjob,"SIGTERM",post_delete,NULL);
         }
         
       pjob = next;
@@ -125,6 +159,19 @@ void req_deletearray(struct batch_request *preq)
     if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_CHKPT) != 0) 
       {
       /* job has restart file at mom, do end job processing */
+
+      svr_setjobstate(pjob,JOB_STATE_EXITING,JOB_SUBSTATE_EXITING);
+
+      pjob->ji_momhandle = -1;	
+
+      /* force new connection */
+
+      pwtnew = set_task(WORK_Immed,0,on_job_exit,(void *)pjob);
+
+      if (pwtnew)
+        {
+        append_link(&pjob->ji_svrtask,&pwtnew->wt_linkobj,pwtnew);
+        }
 
       
       } 
@@ -144,6 +191,18 @@ void req_deletearray(struct batch_request *preq)
     pjob = next;  
     }
   
+  if ((pa = get_array(preq->rq_ind.rq_delete.rq_objname)) != NULL)
+    {
+    /* some jobs were not deleted.  They must have been running or had 
+       JOB_SUBSTATE_TRANSIT */
+    if (num_skipped != 0)
+      {
+      ptask = set_task(WORK_Timed,time_now + 2,array_delete_wt,preq);
+      return;
+      }
+    }
+     
+  
   /* now that the whole array is deleted, we should mail the user if necessary */
   
   reply_ack(preq); 
@@ -153,8 +212,125 @@ void req_deletearray(struct batch_request *preq)
   
   
   
-  
-  static void post_delete_mom(struct work_task *pwt)
-  {
+  static void post_delete(struct work_task *pwt)
+    {
   	/* no op - do not reply to client */
-  }
+    }
+    
+    
+/* if jobs were in the prerun state , this attempts to keep track 
+   of if it was called continuously on the same array for over 10 seconds. 
+   If that is the case then it deletes prerun jobs no matter what. 
+   if it has been less than 10 seconds or if there are jobs in 
+   other statest then req_deletearray is called again */
+   
+  void array_delete_wt(struct work_task *ptask)
+    {
+    struct batch_request *preq;
+    job_array *pa;
+    /*struct work_task *pnew_task;*/
+    struct work_task *pwtnew;
+   
+    
+    static int last_check = 0;
+    static char *last_id = NULL;
+    
+    preq = ptask->wt_parm1;
+    
+    pa = get_array(preq->rq_ind.rq_delete.rq_objname);
+    
+    if (pa == NULL)
+      {
+      /* jobs must have exited already */
+      reply_ack(preq);
+      last_check = 0;
+      free(last_id);
+      last_id = NULL;
+      return;
+      }
+    
+    if (last_id == NULL)
+      {
+      last_id = strdup(preq->rq_ind.rq_delete.rq_objname);
+      last_check = time_now;
+      }    
+    else if (strcmp(last_id, preq->rq_ind.rq_delete.rq_objname) != 0)
+      {
+      last_check = time_now;
+      free(last_id);
+      last_id = strdup(preq->rq_ind.rq_delete.rq_objname);
+      }
+    else if (time_now - last_check > 10)
+      {
+      int num_jobs;
+      int num_prerun;
+      job *pjob;
+      job *next;
+      
+      num_jobs = 0;
+      num_prerun = 0;
+ 
+      pjob = (job*)GET_NEXT(pa->array_alljobs);
+      while (pjob != NULL)
+        {
+	num_jobs++;
+	/* grab the pointer to the next job now so when we call job_abt
+         * on the current job we will still have the pointer to the next */
+        next = (job*)GET_NEXT(pjob->ji_arrayjobs);
+	
+	if (pjob->ji_qs.ji_substate == JOB_SUBSTATE_PRERUN)
+	  {
+	  num_prerun++;
+	  /* mom still hasn't gotten job?? delete anyway */
+	  if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_CHKPT) != 0) 
+            {
+	    /* job has restart file at mom, do end job processing */
+
+            svr_setjobstate(pjob,JOB_STATE_EXITING,JOB_SUBSTATE_EXITING);
+
+            pjob->ji_momhandle = -1;	
+
+            /* force new connection */
+
+            pwtnew = set_task(WORK_Immed,0,on_job_exit,(void *)pjob);
+
+            if (pwtnew)
+              {
+              append_link(&pjob->ji_svrtask,&pwtnew->wt_linkobj,pwtnew);
+              }
+
+	    }
+	  else if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_StagedIn) != 0) 
+            {
+            /* job has staged-in file, should remove them */
+
+            remove_stagein(pjob);
+
+            job_abt(&pjob,NULL);
+            } 
+          else 
+	    {
+            job_abt(&pjob,NULL);
+            }
+	    
+	  }
+	
+	pjob = next;
+	}
+      
+      if (num_jobs == num_prerun)
+        {
+	reply_ack(preq);
+	free(last_id);
+        last_id = NULL; 
+        return;
+	}
+      
+      }
+
+
+
+    req_deletearray(preq);
+      
+    
+    }
