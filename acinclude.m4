@@ -4,6 +4,7 @@ m4_include([buildutils/acx_pthread.m4])
 m4_include([buildutils/ax_prog_dot.m4])
 m4_include([buildutils/ac_c_bigendian_cross.m4])
 m4_include([buildutils/t_add_rpath.m4])
+m4_include([buildutils/tac_tcltk.m4])
 
 
 dnl
@@ -174,5 +175,61 @@ AC_CHECK_MEMBER(struct stat64.st_mode,
 [#include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>])
+])
+
+
+dnl
+dnl remove annoying "lib not installed" warning
+dnl
+AC_DEFUN([TAC_PROG_LIBTOOL],[
+  AC_REQUIRE([AC_PROG_LIBTOOL])
+  # patch libtool to remove that annoying lib install warning
+  test -f libtool.old || (mv libtool libtool.old && cp libtool.old libtool)
+  sed -e '/.*has not been installed in.*/d' <libtool >libtool.new
+  (test -s libtool.new || rm libtool.new) 2>/dev/null
+  test -f libtool.new && mv libtool.new libtool # not 2>/dev/null !!
+  test -f libtool     || mv libtool.old libtool
+  test -f libtool.old && rm -f libtool.old
+])
+
+
+dnl
+dnl Test the 2nd arg to pam_get_user to be char or const char
+dnl
+AC_DEFUN([TAC_PAM_GET_USER_2ND_ARG],
+[AC_MSG_CHECKING([for pam_get_user() calling type])
+tac_pam_get_user_2nd_arg=none
+ for t in "char" "const char" ; do
+    AC_TRY_COMPILE([ 
+#ifdef HAVE_SECURITY_PAM_APPL_H 
+#include <security/pam_appl.h>
+#endif
+  
+#ifdef HAVE_SECURITY_PAM_MODULES_H
+#include <security/pam_modules.h>
+#else
+#ifdef HAVE_PAM_PAM_MODULES_H
+#include <pam/pam_modules.h>
+#endif
+#endif
+  
+extern int
+pam_get_user(
+        pam_handle_t *pamh,             /* PAM handle */
+        $t **user,                    /* User Name */
+        const char *prompt              /* Prompt */
+);
+
+               ],[
+                  $t* username;
+                  pam_get_user((pam_handle_t*) 1,&username,0);
+               ],[
+                  tac_pam_get_user_2nd_arg="$t"
+                  break
+               ])
+            done
+AC_MSG_RESULT([$tac_pam_get_user_2nd_arg])
+AC_DEFINE_UNQUOTED(pam_get_user_2nd_arg_t, $tac_pam_get_user_2nd_arg,
+                        [type to use for 2nd arg of pam_get_user])
 ])
 

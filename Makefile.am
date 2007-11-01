@@ -5,9 +5,9 @@ SUBDIRS = src doc
 EXTRA_DIST = CHANGELOG INSTALL.GNU README.configure README.mpiexec \
              README.torque Release_Notes torque.setup torque.spec.in \
              DEVELOPMENT PBS_License.txt torque.spec \
-	     buildutils/tcl.m4 buildutils/self-extract-head-sh.in \
+	     buildutils/self-extract-head-sh.in \
 	     buildutils/pbs_mkdirs.in buildutils/pbs_mach_type \
-	     buildutils/config.mk buildutils/ac_create_generic_config.m4 \
+	     buildutils/config.mk \
 	     buildutils/modulefiles.in buildutils/modulefiles.vers.in \
 	     contrib/README.pestat contrib/README.pbstop \
 	     contrib/README.qpeek contrib/pestat-1.0/pestat.c \

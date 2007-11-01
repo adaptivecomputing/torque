@@ -138,19 +138,43 @@ user_choosed_cflags_set=${CFLAGS+set}
 
 dnl  look for the C-Compiler
 AC_PROG_CC
+AC_PROG_GCC_TRADITIONAL
 
 dnl
 dnl  ######################################################################
 dnl  Check for programs
 dnl
 
-AC_PROG_GCC_TRADITIONAL
 AC_CHECK_PROGS(AR,ar,exit)
 
-dnl  Libtool
-dnl AC_DISABLE_SHARED
-AC_PROG_LIBTOOL
+dnl wrapped libtool macro to remove annoying warning message
+TAC_PROG_LIBTOOL
 
+AC_PROG_LN_S
+
+
+dnl  needed for scheduler.basl
+AM_PROG_LEX
+AC_PROG_YACC
+
+
+dnl  Check for troff and its family. Prefer groff because we know
+dnl  its fonts whereas various troffs name their fonts differently.
+dnl  (e.g. CO vs C)
+AC_CHECK_PROGS(TBL, gtbl tbl, exit)
+AC_CHECK_PROGS(PIC, gpic pic, exit)
+AC_CHECK_PROGS(ROFF, groff troff, exit)
+
+
+dnl
+dnl  ######################################################################
+dnl  Check how to compile
+dnl
+
+dnl Torque's own largefile support
+TAC_SYS_LARGEFILE
+
+dnl if using gcc, we can be very strict
 gcc_warning_flags="-W -Wall -Wno-unused-parameter -Wno-long-long -pedantic -Werror"
 AC_ARG_ENABLE(gcc_warnings,
     [  --disable-gcc-warnings   If using gcc, use strict warnings])
@@ -159,45 +183,17 @@ if test "x$GCC" = "xyes" ;then
   if test "${enable_gcc_warnings}" == "no" ; then
     AC_MSG_RESULT([no])
   else
-    AC_MSG_RESULT([yes])
-    CFLAGS="$CFLAGS $gcc_warning_flags"
+    if test "x$include_drmaa" = "xyes" ;then
+      AC_MSG_RESULT([no])
+    else
+      AC_MSG_RESULT([yes])
+      CFLAGS="$CFLAGS $gcc_warning_flags"
+    fi
   fi
 fi
 
-# patch libtool to remove that annoying lib install warning
-test -f libtool.old || (mv libtool libtool.old && cp libtool.old libtool)
-sed -e '/.*has not been installed in.*/d' <libtool >libtool.new
-(test -s libtool.new || rm libtool.new) 2>/dev/null
-test -f libtool.new && mv libtool.new libtool # not 2>/dev/null !!
-test -f libtool     || mv libtool.old libtool
-test -f libtool.old && rm -f libtool.old
-
 dnl
-dnl  ######################################################################
-dnl  Check for headers
-dnl
-
-AC_HEADER_DIRENT
-AC_HEADER_STDC
-AC_HEADER_SYS_WAIT
-
-
-AC_CHECK_HEADERS([arpa/inet.h fcntl.h float.h limits.h malloc.h netdb.h \
-		  netinet/in.h stddef.h sys/file.h sys/param.h sys/tty.h \
-		  sys/socket.h sys/time.h sys/ioctl.h sys/mount.h \
-                  sys/vfs.h sys/statfs.h sys/statvfs.h syslog.h \
-                  termios.h err.h sys/poll.h pam/pam_modules.h security/pam_appl.h])
-
-# On Solaris, pam_modules.h requires pam_appl.h
-AC_CHECK_HEADERS([security/pam_modules.h], [], [],
-[#if HAVE_SECURITY_PAM_APPL_H
-# include <security/pam_appl.h>
-# endif
-])
-
-
-dnl
-dnl get socklen_t or equivalent.  If hpux and gcc, force the XOPEN interface.
+dnl If hpux and gcc, force the XOPEN interface.
 AC_MSG_CHECKING([whether to force XOPEN networking stack])
 AC_ARG_ENABLE(xopen_networking,
     [  --disable-xopen-networking      With HPUX and GCC, don't force usage of XOPEN and libxnet])
@@ -217,67 +213,43 @@ esac
 else
   AC_MSG_RESULT([disabled])
 fi
-AC_CHECK_TYPE([socklen_t],
-  [AC_DEFINE_UNQUOTED([torque_socklen_t],[socklen_t],[type to use in place of socklen_t])],
-  [TAC_SOCKLEN_EQUIV([torque_socklen_t])])
+
+
+dnl
+dnl  ######################################################################
+dnl  Check for headers
+dnl
+
+AC_HEADER_DIRENT
+AC_HEADER_STDC
+AC_HEADER_SYS_WAIT
+
+AC_CHECK_HEADERS([arpa/inet.h fcntl.h float.h limits.h malloc.h netdb.h \
+		  netinet/in.h stddef.h sys/file.h sys/param.h sys/tty.h \
+		  sys/socket.h sys/time.h sys/ioctl.h sys/mount.h \
+                  sys/vfs.h sys/statfs.h sys/statvfs.h syslog.h \
+                  readline/readline.h \
+                  termios.h err.h sys/poll.h pam/pam_modules.h security/pam_appl.h])
+
+# On Solaris, pam_modules.h requires pam_appl.h
+AC_CHECK_HEADERS([security/pam_modules.h], [], [],
+[#if HAVE_SECURITY_PAM_APPL_H
+# include <security/pam_appl.h>
+# endif
+])
 
 
 
-dnl Torque's own largefile support
-TAC_SYS_LARGEFILE
 
 
-AC_PROG_LN_S
-
-
-dnl  needed for scheduler.basl
-AM_PROG_LEX
-AC_PROG_YACC
-
-
-dnl  Check for troff and its family. Prefer groff because we know
-dnl  its fonts whereas various troffs name their fonts differently.
-dnl  (e.g. CO vs C)
-AC_CHECK_PROGS(TBL, gtbl tbl, exit)
-AC_CHECK_PROGS(PIC, gpic pic, exit)
-AC_CHECK_PROGS(ROFF, groff troff, exit)
-
-
-if test foo = bar ;then
-dnl  Now for some gore...
-dnl  Massage the CFLAGS on a per-machine basis
-dnl  (But only, if the user did not manually choose some.)
-if test -z "$user_choosed_cflags_set"; then
-  dnl
-  dnl  Following values of CFLAGS are known to work well.
-  dnl
-  if   test "$GCC" = "yes"; then
-#    CFLAGS="-g -O2"
-#    do not optimize during SPBS-1.0.1 beta (11/22/03)
-    CFLAGS="-g"
-  elif test "$CC" = "xlc"; then
-    CFLAGS="-O3 -qstrict -qnoansialias -qlibansi -qinfo -qro -qmaxmem=20000"
-  else
-    case "$build" in
-      *-*-irix*) CFLAGS='-O -Wl,-woff,84' ;;
-      *-*-hpux*) CFLAGS='-Ae' ;;
-      *-*-osf*)  CFLAGS='-std1' ;;
-      *-*-solaris2.7) if test -n "`isainfo -kv | grep 64-bit`" ; then
-                        CFLAGS=-xarch=v9
-                      else
-                        CFLAGS=-O
-                      fi ;;
-      *)         CFLAGS="-O" ;; dnl The only POSIX-approved flag
-    esac
-  fi
-fi
-fi
 
 
 dnl
 dnl  ######################################################################
 dnl  System specific settings
 dnl
+
+
 AC_ARG_ENABLE(nodemask,
     [  --enable-nodemask       enable nodemask-based scheduling on the Origin 2000])
 if test "${enable_nodemask}" = "yes" ; then
@@ -502,16 +474,6 @@ case "$build" in
 esac
 
 
-dnl  Readline
-AC_ARG_WITH(readline,
-    [  --without-readline      do not include readline support
-                          (default: included if found)],
-    [HAVE_READLINE="${withval}"], [HAVE_READLINE="default"])
-case "$HAVE_READLINE" in
-	yes|no|default) ;;
-	*) AC_MSG_ERROR([--with-readline only takes "yes" or "no" as arguments]) ;;
-esac
-
 
 dnl
 dnl  ######################################################################
@@ -586,6 +548,8 @@ dnl
 dnl  ######################################################################
 dnl  Global settings
 dnl
+AC_MSG_NOTICE([Checking global settings...])
+
 AC_ARG_ENABLE(rpp,
 [
   --disable-rpp           use RPP/UDP for resource queries from PBS server
@@ -907,40 +871,6 @@ AC_MSG_RESULT([$pammoddir])
 AC_SUBST(pammoddir)
 AM_CONDITIONAL(INCLUDE_PAM, [test "x$pammoddir" != "xdisabled"])
       
-AC_MSG_CHECKING([for pam_get_user() calling type])
-tac_pam_get_user_2nd_arg=none
- for t in "char" "const char" ; do
-    AC_TRY_COMPILE([
-#ifdef HAVE_SECURITY_PAM_APPL_H
-#include <security/pam_appl.h>
-#endif
-
-#ifdef HAVE_SECURITY_PAM_MODULES_H
-#include <security/pam_modules.h>
-#else
-#ifdef HAVE_PAM_PAM_MODULES_H
-#include <pam/pam_modules.h>
-#endif
-#endif
-
-extern int
-pam_get_user(
-        pam_handle_t *pamh,             /* PAM handle */
-        $t **user,                    /* User Name */
-        const char *prompt              /* Prompt */
-);
-
-               ],[
-                  $t* username;
-                  pam_get_user((pam_handle_t*) 1,&username,0);
-               ],[
-                  tac_pam_get_user_2nd_arg="$t"
-                  break
-               ])
-            done
-AC_MSG_RESULT([$tac_pam_get_user_2nd_arg])
-AC_DEFINE_UNQUOTED(pam_get_user_2nd_arg_t, $tac_pam_get_user_2nd_arg,
-                        [type to use for 2nd arg of pam_get_user])
 
 
 
@@ -974,259 +904,25 @@ fi
 AC_DEFINE_UNQUOTED(XAUTH_PATH, "${xauth_path}", [Define to the path of xauth])
 
 
-
-dnl
-dnl  ######################################################################
-dnl  Tcl/Tk settings
-dnl
-
-TCL=0
-TCLX=0
-TK=0
-TKX=0
-
-if test "x${with_tcl}" != "xno" ; then
-	if test "x${with_tcl}" = "xyes" ; then
-		with_tcl=""
-		user_requested_tcl=yes
-	fi
-	# find and load tclConfig.sh
-	TEA_PATH_TCLCONFIG
-        if test "x$TCL_BIN_DIR" = "xnone" ; then
-          TCL=0
-        else
-	  TEA_LOAD_TCLCONFIG
-	  TEA_PUBLIC_TCL_HEADERS
-          if test "x$TCL_INCLUDES" = "xnone" ;then
-            TCL=0
-          else
-	    TCL=1
-          fi
-        fi
-	if test "x$user_requested_tcl" = "xyes" -a $TCL = 0 ;then
-          AC_MSG_ERROR([Tcl was requested but not found])
-	fi
-fi
-
-if test "${TCL}" = "1" -a "x${with_tclx}" != "xno" ; then
-	if test "x${with_tclx}" = "xyes" ; then
-		with_tclx=""
-		user_requested_tclx=yes
-	fi
-	# find and load tclxConfig.sh which only exists for older versions
-	TEA_PATH_CONFIG([tclx])
-        if test "x$tclx_BIN_DIR" != "xnone" ; then
-	  TEA_LOAD_CONFIG([tclx])
-
-          orig_CFLAGS="$CFLAGS"
-          CFLAGS="$TCL_INCLUDES"
-          AC_CHECK_HEADER([tclExtend.h], [TCLX=1], [TCLX=0])
-          CFLAGS="$orig_CFLAGS"
-        else
-          TCLX=0
-        fi
-
-	if test "x$user_requested_tclx" = "xyes" -a $TCLX = 0 ;then
-          AC_MSG_ERROR([TclX was requested but not found])
-	fi
-fi
-
-if test "${TCL}" = "1" -a "x${with_tk}" != "xno" ; then
-	if test "x${with_tk}" = "xyes" ; then
-		with_tk=""
-		user_requested_tk=yes
-	fi
-	# find and load tkConfig.sh
-	TEA_PATH_TKCONFIG
-        if test "x$TK_BIN_DIR" = "xnone" ; then
-          TK=0
-        else
-	  TEA_LOAD_TKCONFIG
-	  TEA_PUBLIC_TK_HEADERS
-          if test "x$TK_INCLUDES" = "xnone" ; then
-            TK=0
-          else
-	    TK=1
-          fi
-        fi
-	if test "x$user_requested_tk" = "xyes" -a $TK = 0 ;then
-          AC_MSG_ERROR([Tk was requested but not found])
-	fi
-fi
-
-if test "${TK}" = "1" -a "${TCLX}" = "1" -a "x${with_tkx}" != "xno" ; then
-	if test "x${with_tkx}" = "xyes" ; then
-		with_tkx=""
-		user_requested_tkx=yes
-	fi
-	# find and load tkxConfig.sh
-	TEA_PATH_CONFIG([tkx])
-        if test "x$tkx_BIN_DIR" = "xnone" ; then
-          TKX=0
-        else
-	  TEA_LOAD_CONFIG([tkx])
-	  TKX=1
-        fi
-	if test "x$user_requested_tkx" = "xyes" -a $TK = 0 ;then
-          AC_MSG_ERROR([TkX was requested but not found])
-	fi
-fi
+dnl  Readline
+AC_ARG_WITH(readline,
+    [  --without-readline      do not include readline support
+                          (default: included if found)],
+    [HAVE_READLINE="${withval}"], [HAVE_READLINE="default"])
+case "$HAVE_READLINE" in
+	yes|no) ;;
+        default)
+          case $PBS_MACH in
+            aix5|darwin) HAVE_READLINE="no";;
+            *) HAVE_READLINE="yes";;
+          esac
+           ;;
+	*) AC_MSG_ERROR([--with-readline only takes "yes" or "no" as arguments]) ;;
+esac
 
 
 
-dnl  Now assemble appropriate compiler flags for includes and linking.
-MY_TCL_LIBS=""
-MY_TCL_INCS=""
-
-if test "${TCL}" = "1"; then
-	MY_TCL_LIBS="${MY_TCL_LIBS} ${TCL_LIB_SPEC} ${TCL_LIBS}"
-	MY_TCL_INCS="${MY_TCL_INCS} ${TCL_INCLUDES}"
-else
-	AC_MSG_NOTICE([Tcl support disabled])
-fi
-
-if test "${TCLX}" = "1"; then
-	MY_TCL_LIBS="${TCLX_LIB_SPEC} ${TCLX_LIBS} ${MY_TCL_LIBS}"
-fi
-
-if test "${TK}" = "1"; then
-	MY_TCLTK_LIBS="${TK_LIB_SPEC} ${TK_XLIBSW} ${MY_TCL_LIBS}"
-	MY_TCLTK_INCS="${MY_TCL_INCS} ${TK_INCLUDES} ${TK_XINCLUDES}"
-else
-	AC_MSG_NOTICE([Tk support disabled])
-fi
-
-if test "${TKX}" = "1"; then
-	MY_TCLTK_LIBS="${TKX_LIB_SPEC} ${TKX_LIBS} ${MY_TCLTK_LIBS}"
-fi
-
-if test "${TCL}" = "1"; then
-  # try to hack in a run-time search path if needed
-  T_ADD_RPATH([MY_TCL_LIBS])
-  
-  orig_LIBS="$LIBS"
-  orig_CFLAGS="$CFLAGS"
-  LIBS="$LIBS $MY_TCL_LIBS"
-  CFLAGS="$CFLAGS $MY_TCL_INCS"
-  AC_CHECK_FUNC(Tcl_Init, ,[
-	if test "x$user_requested_tcl" = "xyes" ;then
-          AC_MSG_ERROR([Your Tcl install is broken.  Rerun configure with --without-tcl])
-        else
-          AC_MSG_NOTICE([Your Tcl install is broken.  Disabling Tcl support.])
-          TCL=0; TCLX=0; TK=0; TKX=0;
-	fi])
-  LIBS="$orig_LIBS"
-  CFLAGS="$orig_CFLAGS"
-fi
-
-if test "${TK}" = "1"; then
-  # try to hack in a run-time search path if needed
-  T_ADD_RPATH([MY_TCLTK_LIBS])
-
-  orig_LIBS="$LIBS"
-  orig_CFLAGS="$CFLAGS"
-  LIBS="$LIBS $MY_TCLTK_LIBS"
-  CFLAGS="$CFLAGS $MY_TCLTK_INCS"
-  AC_CHECK_FUNC(Tk_Init, ,[
-	if test "x$user_requested_tk" = "xyes" ;then
-          AC_MSG_ERROR([Your Tk install is broken.  Rerun configure with --without-tk])
-        else
-          AC_MSG_NOTICE([Your Tk install is broken.  Disabling Tk support.])
-           TK=0; TKX=0;
-	fi])
-  LIBS="$orig_LIBS"
-  CFLAGS="$orig_CFLAGS"
-fi
-
-dnl  It is possible that the user has asked for a gui but no Tk
-dnl  libraries were found. In this case we must disable the gui.
-AC_MSG_CHECKING([whether to include the GUI-clients])
-AC_ARG_ENABLE(gui,
-    [  --disable-gui           do not include the GUI-clients],
-    include_gui=$enableval)
-if test "x${include_clients}" != "xyes" -a "x${include_gui}" = "xyes"; then
-	AC_MSG_ERROR([the GUI can not be build independent of the clients])
-fi
-if test "x${include_clients}" != "xyes" -a "x${include_gui}" = "x"; then
-	include_gui=no 
-fi
-if test "x${include_gui}" = "xyes" -a "${TK}" != "1"; then
-	AC_MSG_ERROR([cannot build GUI without Tk library])
-fi
-if test "x${include_gui}" = "x" -a "${TK}" = "1"; then
-	include_gui=yes
-fi
-if test "x${include_gui}" = "x"; then
-	include_gui=no
-fi
-AC_MSG_RESULT($include_gui)
-AM_CONDITIONAL(INCLUDE_GUI, [test "x$include_gui" = "xyes"])
-
-
-AC_DEFINE_UNQUOTED(TCL, ${TCL}, [Define if PBS should use Tcl in its tools])
-AC_DEFINE_UNQUOTED(TCLX, ${TCLX}, [Define if PBS should use TclX in its tools])
-AC_DEFINE_UNQUOTED(TK, ${TK}, [Define if PBS should use Tk in its tools])
-AC_DEFINE_UNQUOTED(TKX, ${TKX}, [Define if PBS should use Tkx in its tools])
-
-AC_SUBST(MY_TCL_LIBS)
-AC_SUBST(MY_TCL_INCS)
-AC_SUBST(MY_TCLTK_LIBS)
-AC_SUBST(MY_TCLTK_INCS)
-AM_CONDITIONAL(USING_TCL, [test "$TCL" = "1"])
-AM_CONDITIONAL(USING_TK, [test "$TK" = "1"])
-
-dnl  Now look around for tclsh and wish
-if test "${TCL}" = "1"; then
-	TEA_PROG_TCLSH
-	dnl automatically subst TCLSH_PROG
-fi
-
-if test "${TK}" = "1"; then
-	TEA_PROG_WISH
-	dnl automatically subst WISH_PROG
-fi
-
-
-AC_ARG_WITH(tclatrsep,
-    [  --with-tclatrsep=CHAR   set the Tcl attribute separator character
-                        this will default to "." if unspecified],
-    [tcl_atrsep="${withval}"], [tcl_atrsep="."])
-if test "$TCL" = "1" ; then
-AC_MSG_CHECKING([checking for Tcl attribute seperator])
-AC_MSG_RESULT([$tcl_atrsep])
-fi
-AC_DEFINE_UNQUOTED(TCL_ATRSEP, "${tcl_atrsep}",
-	[the seperator for Tcl attribute parsing])
-
-
-AC_ARG_ENABLE(tcl-qstat,
-   [  --enable-tcl-qstat      setting this builds qstat with Tcl interpreter
-                          features. This is enabled if Tcl is enabled.])
-AC_MSG_CHECKING([whether to enable tcl-qstat])
-EXTRA_QSTAT_LIBS=""
-if test "x${enable_tcl_qstat}" = "x" -o "x${enable_tcl_qstat}" != "xno"; then
-    if test "$TCL" = "1" ; then
-	EXTRA_QSTAT_LIBS='$(EXTRA_QSTAT_LIBS)'
-        AC_DEFINE(TCL_QSTAT, 1,
-		[Define if PBS should build qstat with Tcl])
-        enable_tcl_qstat=yes
-    else
-        if test "${enable_tcl_qstat}" = "yes" ;then
-           AC_MSG_ERROR([Cannot enable tcl-qstat without also using Tcl])
-        else
-           enable_tcl_qstat=no
-        fi
-    fi
-fi
-AC_MSG_RESULT($enable_tcl_qstat)
-AC_SUBST(EXTRA_QSTAT_LIBS)
-AM_CONDITIONAL(USE_TCLQSTAT, [test "x$EXTRA_QSTAT_LIBS" != "x"])
-
-if test "$SCHD_TYPE" = "tcl" -a "$TCL" = "0" ;then
-  AC_MSG_ERROR([Tcl scheduler cannot be built without Tcl support])
-fi
-
-
+dnl modulefiles
 AC_MSG_CHECKING([whether to install modulefiles])
 
 AC_ARG_WITH(modulefiles,
@@ -1261,12 +957,6 @@ AC_CHECK_FUNC(ruserok, , AC_CHECK_LIB(socket, ruserok))
 
 
 dnl  Readline
-if test "$HAVE_READLINE" = "default" ; then
-  case $PBS_MACH in
-    aix5|darwin) HAVE_READLINE="no";;
-    *) HAVE_READLINE="yes";;
-  esac
-fi
 if test "$HAVE_READLINE" = "yes" ; then
 AC_CHECK_LIB(ncurses, initscr, READLINE_LIBS="-lncurses")
 AC_CHECK_LIB(readline, rl_callback_handler_install,
@@ -1275,14 +965,13 @@ AC_CHECK_LIB(readline, rl_callback_handler_install,
 fi
 AC_SUBST(READLINE_LIBS)
 
-	     
-
-dnl  Readline
-if test "$HAVE_READLINE" = "yes" ; then
-AC_CHECK_HEADER(readline/readline.h, :, [HAVE_READLINE="no"])
+if test "$ac_cv_header_readline_readline_h" = "no" ; then
+	HAVE_READLINE="no"
 fi
 if test "$HAVE_READLINE" = "yes" ; then
 	AC_DEFINE(HAVE_READLINE, 1, [include readline support])
+else
+	AC_MSG_WARN([readline support is disabled])
 fi
 
 
@@ -1318,6 +1007,11 @@ AC_CHECK_SIZEOF(unsigned long, 30)
 AC_CHECK_SIZEOF(signed char, 31)
 AC_C_CHAR_UNSIGNED
 
+AC_CHECK_TYPE([socklen_t],
+  [AC_DEFINE_UNQUOTED([torque_socklen_t],[socklen_t],[type to use in place of socklen_t])],
+  [TAC_SOCKLEN_EQUIV([torque_socklen_t])])
+
+TAC_PAM_GET_USER_2ND_ARG
 
 dnl
 dnl  ######################################################################
@@ -1358,11 +1052,14 @@ AC_CHECK_FUNC(ntohl, [ :],
   AC_MSG_RESULT($torque_cv_ntohl_needs_arpa_inet_h)
 )
 
+TAC_TCLTK
 
 dnl
+dnl  ######################################################################
 dnl Checks needed to build DRMAA
 dnl
 if test "$include_drmaa" = "yes" ;then
+AC_MSG_NOTICE([Configuring DRMAA ...])
 AC_PATH_PROG(GPERF, "gperf")
 AX_PROG_DOT
 AC_PATH_PROG(DOXYGEN, "doxygen", "none")
