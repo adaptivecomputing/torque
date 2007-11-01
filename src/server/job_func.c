@@ -1192,8 +1192,8 @@ void job_purge(
     }
     
   /* if part of job array then remove from array's job list */ 
-  if (pjob->ji_wattr[(int)JOB_ATR_job_array_size].at_val.at_long > 1 
-      && pjob->ji_isparent == FALSE)
+  if (pjob->ji_wattr[(int)JOB_ATR_job_array_size].at_flags & ATR_VFLAG_SET &&
+      pjob->ji_wattr[(int)JOB_ATR_job_array_size].at_val.at_long > 1 && pjob->ji_isparent == FALSE)
     {
     
     delete_link(&pjob->ji_arrayjobs);
@@ -1211,7 +1211,8 @@ void job_purge(
     }
 
 
-  if (pjob->ji_wattr[(int)JOB_ATR_job_array_size].at_val.at_long == 1)
+  if (!(pjob->ji_wattr[(int)JOB_ATR_job_array_size].at_flags & ATR_VFLAG_SET) || 
+      pjob->ji_wattr[(int)JOB_ATR_job_array_size].at_val.at_long == 1)
     {
     strcpy(namebuf,path_jobs);	/* delete script file */
     strcat(namebuf,pjob->ji_qs.ji_fileprefix);
