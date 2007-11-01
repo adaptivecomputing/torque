@@ -43,6 +43,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature
   b - Catch newlines in log messages, split messages text (Eygene Ryabinkin)
   e - pbs_mom remote reconfig pbs_mom now disabled by default
       use $remote_reconfig to enable it
+  b - fix pam configure (Adrian Knoth)
 
 2.1.9
   f - new queue attribute disallowed_types, currently recognized types:

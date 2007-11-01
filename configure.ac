@@ -932,7 +932,7 @@ pam_get_user(
 
                ],[
                   $t* username;
-                  pam_get_user(0,&username,0);
+                  pam_get_user((pam_handle_t*) 1,&username,0);
                ],[
                   tac_pam_get_user_2nd_arg="$t"
                   break
