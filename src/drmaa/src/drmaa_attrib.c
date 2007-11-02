@@ -1,5 +1,5 @@
 /* ANSI-C code produced by gperf version 3.0.1 */
-/* Command-line: /usr/bin/gperf --language=ANSI-C --struct-type --readonly-tables --includes --pic --hash-function-name=drmaa_attrib_hash --lookup-function-name=drmaa_attrib_lookup ../../.././../trunk/src/drmaa/src/drmaa_attrib.gperf  */
+/* Command-line: gperf --language=ANSI-C --struct-type --readonly-tables --includes --pic --hash-function-name=drmaa_attrib_hash --lookup-function-name=drmaa_attrib_lookup drmaa_attrib.gperf  */
 /* Computed positions: -k'11,16' */
 
 #if !((' ' == 32) && ('!' == 33) && ('"' == 34) && ('#' == 35) \
@@ -29,7 +29,7 @@
 #error "gperf generated tables don't work with this execution character set. Please report a bug to <bug-gnu-gperf@gnu.org>."
 #endif
 
-#line 1 "../../.././../trunk/src/drmaa/src/drmaa_attrib.gperf"
+#line 1 "drmaa_attrib.gperf"
 
 /* $Id: drmaa_attrib.gperf,v 1.4 2006/06/05 23:27:17 ciesnik Exp $ */
 /*
@@ -64,7 +64,7 @@ static char rcsid[]
 #	endif
 	= "$Id: drmaa_attrib.gperf,v 1.4 2006/06/05 23:27:17 ciesnik Exp $";
 #endif
-#line 36 "../../.././../trunk/src/drmaa/src/drmaa_attrib.gperf"
+#line 36 "drmaa_attrib.gperf"
 struct drmaa_attrib { const char *name; int code; };
 #include <string.h>
 
@@ -194,56 +194,56 @@ drmaa_attrib_lookup (register const char *str, register unsigned int len)
   static const struct drmaa_attrib wordlist[] =
     {
       {-1}, {-1}, {-1}, {-1}, {-1}, {-1}, {-1}, {-1},
-#line 47 "../../.././../trunk/src/drmaa/src/drmaa_attrib.gperf"
+#line 47 "drmaa_attrib.gperf"
       {(int)(long)&((struct stringpool_t *)0)->stringpool_str8,                    ATTR_JOB_WORKING_DIR},
       {-1}, {-1},
-#line 41 "../../.././../trunk/src/drmaa/src/drmaa_attrib.gperf"
+#line 41 "drmaa_attrib.gperf"
       {(int)(long)&((struct stringpool_t *)0)->stringpool_str11,                 ATTR_ENV},
-#line 40 "../../.././../trunk/src/drmaa/src/drmaa_attrib.gperf"
+#line 40 "drmaa_attrib.gperf"
       {(int)(long)&((struct stringpool_t *)0)->stringpool_str12,                ATTR_ARGV},
-#line 48 "../../.././../trunk/src/drmaa/src/drmaa_attrib.gperf"
+#line 48 "drmaa_attrib.gperf"
       {(int)(long)&((struct stringpool_t *)0)->stringpool_str13,               ATTR_EMAIL},
-#line 51 "../../.././../trunk/src/drmaa/src/drmaa_attrib.gperf"
+#line 51 "drmaa_attrib.gperf"
       {(int)(long)&((struct stringpool_t *)0)->stringpool_str14,              ATTR_JOB_SUBMIT_STATE},
       {-1},
-#line 55 "../../.././../trunk/src/drmaa/src/drmaa_attrib.gperf"
+#line 55 "drmaa_attrib.gperf"
       {(int)(long)&((struct stringpool_t *)0)->stringpool_str16,            ATTR_SOFT_WCT_LIMIT},
-#line 43 "../../.././../trunk/src/drmaa/src/drmaa_attrib.gperf"
+#line 43 "drmaa_attrib.gperf"
       {(int)(long)&((struct stringpool_t *)0)->stringpool_str17,           ATTR_OUTPUT_PATH},
-#line 57 "../../.././../trunk/src/drmaa/src/drmaa_attrib.gperf"
+#line 57 "drmaa_attrib.gperf"
       {(int)(long)&((struct stringpool_t *)0)->stringpool_str18,          ATTR_JOB_CATEGORY},
-#line 38 "../../.././../trunk/src/drmaa/src/drmaa_attrib.gperf"
+#line 38 "drmaa_attrib.gperf"
       {(int)(long)&((struct stringpool_t *)0)->stringpool_str19,              ATTR_JOB_NAME},
-#line 46 "../../.././../trunk/src/drmaa/src/drmaa_attrib.gperf"
+#line 46 "drmaa_attrib.gperf"
       {(int)(long)&((struct stringpool_t *)0)->stringpool_str20,        ATTR_TRANSFER_FILES},
-#line 53 "../../.././../trunk/src/drmaa/src/drmaa_attrib.gperf"
+#line 53 "drmaa_attrib.gperf"
       {(int)(long)&((struct stringpool_t *)0)->stringpool_str21,       ATTR_SOFT_CPU_TIME_LIMIT},
-#line 49 "../../.././../trunk/src/drmaa/src/drmaa_attrib.gperf"
+#line 49 "drmaa_attrib.gperf"
       {(int)(long)&((struct stringpool_t *)0)->stringpool_str22,           ATTR_BLOCK_EMAIL},
       {-1},
-#line 56 "../../.././../trunk/src/drmaa/src/drmaa_attrib.gperf"
+#line 56 "drmaa_attrib.gperf"
       {(int)(long)&((struct stringpool_t *)0)->stringpool_str24,         ATTR_DEADLINE_TIME},
-#line 39 "../../.././../trunk/src/drmaa/src/drmaa_attrib.gperf"
+#line 39 "drmaa_attrib.gperf"
       {(int)(long)&((struct stringpool_t *)0)->stringpool_str25,        ATTR_JOB_PATH},
-#line 42 "../../.././../trunk/src/drmaa/src/drmaa_attrib.gperf"
+#line 42 "drmaa_attrib.gperf"
       {(int)(long)&((struct stringpool_t *)0)->stringpool_str26,            ATTR_INPUT_PATH},
       {-1}, {-1},
-#line 54 "../../.././../trunk/src/drmaa/src/drmaa_attrib.gperf"
+#line 54 "drmaa_attrib.gperf"
       {(int)(long)&((struct stringpool_t *)0)->stringpool_str29,            ATTR_HARD_WCT_LIMIT},
       {-1},
-#line 52 "../../.././../trunk/src/drmaa/src/drmaa_attrib.gperf"
+#line 52 "drmaa_attrib.gperf"
       {(int)(long)&((struct stringpool_t *)0)->stringpool_str31,       ATTR_HARD_CPU_TIME_LIMIT},
       {-1}, {-1},
-#line 45 "../../.././../trunk/src/drmaa/src/drmaa_attrib.gperf"
+#line 45 "drmaa_attrib.gperf"
       {(int)(long)&((struct stringpool_t *)0)->stringpool_str34,            ATTR_JOIN_FILES},
       {-1},
-#line 50 "../../.././../trunk/src/drmaa/src/drmaa_attrib.gperf"
+#line 50 "drmaa_attrib.gperf"
       {(int)(long)&((struct stringpool_t *)0)->stringpool_str36,            ATTR_START_TIME},
       {-1}, {-1}, {-1}, {-1},
-#line 44 "../../.././../trunk/src/drmaa/src/drmaa_attrib.gperf"
+#line 44 "drmaa_attrib.gperf"
       {(int)(long)&((struct stringpool_t *)0)->stringpool_str41,            ATTR_ERROR_PATH},
       {-1}, {-1}, {-1}, {-1},
-#line 58 "../../.././../trunk/src/drmaa/src/drmaa_attrib.gperf"
+#line 58 "drmaa_attrib.gperf"
       {(int)(long)&((struct stringpool_t *)0)->stringpool_str46,  ATTR_NATIVE}
     };
 
