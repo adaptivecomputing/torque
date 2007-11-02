@@ -109,6 +109,10 @@
 #endif	/* _CRAY */
 #include	<sys/time.h>
 #include	<sys/resource.h>
+#include 	<sys/wait.h>
+#include	<tclExtend.h>
+#include	<grp.h>
+
 
 #include	"libpbs.h"
 #include	"portability.h"
@@ -118,8 +122,9 @@
 #include	"resmon.h"
 #include	"sched_cmds.h"
 #include	"net_connect.h"
+#include	"rpp.h"
+#include	"rm.h"
 
-static char ident[] = "@(#) $RCSfile$ $Revision$";
 
 extern	int	pbs_errno;
 extern	int	connector;
@@ -150,6 +155,10 @@ sigset_t	oldsigs;
 
 static char	*logfile = NULL;
 static char	 path_log[_POSIX_PATH_MAX];
+
+extern void add_cmds(Tcl_Interp *);
+extern int get_4byte(int,unsigned int *);
+
 
 #ifndef	OPEN_MAX
 #ifdef	_POSIX_OPEN_MAX
@@ -319,9 +328,9 @@ start_tcl()
 		if (code != TCL_OK) {
 			char	*trace;
 
-			trace = Tcl_GetVar(interp, "errorInfo", 0);
+			trace = (char *)Tcl_GetVar(interp, "errorInfo", 0);
 			if (trace == NULL)
-				trace = Tcl_GetStringResult(interp);
+				trace = (char *)Tcl_GetStringResult(interp);
 
 			fprintf(stderr, "%s: TCL error @ line %d: %s\n",
 				initfil, interp->errorLine, trace);
@@ -429,7 +438,7 @@ read_config(file)
 
 
 #if !defined(DEBUG) && !defined(NO_SECURITY_CHECK)
-	if (chk_file_sec(file, 0, 0, S_IWGRP|S_IWOTH, 1))
+	if (chk_file_sec(file, 0, 0, S_IWGRP|S_IWOTH, 1, 0))
 		return (-1);
 #endif
 
@@ -520,7 +529,7 @@ badconn(msg)
 
 		uu.aa = addr;
 		sprintf(buf, "%u", uu.bb[0]);
-		for(i=1; i<sizeof(addr); i++) {
+		for(i=1; i<(int)sizeof(addr); i++) {
 			sprintf(hold, ".%u", uu.bb[i]);
 			strcat(buf, hold);
 		}
@@ -535,14 +544,14 @@ badconn(msg)
 	return;
 }
 
-int
+unsigned int
 server_command()
 {
 	static	char	id[] = "server_command";
 	int		new_socket;
 	int		i;
 	torque_socklen_t	slen;
-	int		cmd;
+	unsigned int		cmd;
 	pbs_net_t	addr;
 
 	slen = sizeof(saddr);
@@ -605,7 +614,7 @@ static void lock_out(fds, op)
 	}
 }
 
-main(argc, argv)
+int main(argc, argv)
     int		argc;
     char	*argv[];
 {
@@ -624,7 +633,7 @@ main(argc, argv)
 	char		*dbfile = "sched_out";
 	int		alarm_time = 180;
 	struct	sigaction	act;
-	caddr_t		curr_brk, next_brk;
+	caddr_t		curr_brk=0, next_brk;
 	extern	char	*optarg;
 	extern	int	optind, opterr;
 	extern	int	rpp_fd;
@@ -723,8 +732,8 @@ main(argc, argv)
 
 	(void)sprintf(path_priv, "%s/sched_priv", homedir);
 #if !defined(DEBUG) && !defined(NO_SECURITY_CHECK)
-	c  = chk_file_sec(path_priv, 1, 0, S_IWGRP|S_IWOTH, 1);
-	c |= chk_file_sec(PBS_ENVIRON, 0, 0, S_IWGRP|S_IWOTH, 0);
+	c  = chk_file_sec(path_priv, 1, 0, S_IWGRP|S_IWOTH, 1, 0);
+	c |= chk_file_sec(PBS_ENVIRON, 0, 0, S_IWGRP|S_IWOTH, 0, 0);
 	if (c != 0) exit(1);
 #endif  /* not DEBUG and not NO_SECURITY_CHECK */
 	if (chdir(path_priv) == -1) {
@@ -779,25 +788,25 @@ main(argc, argv)
 	if (initfil) {
 		if (*initfil != '/') {
 			(void)sprintf(log_buffer, "%s/%s", path_priv, initfil);
-			c |= chk_file_sec(log_buffer, 0, 0, S_IWGRP|S_IWOTH, 1);
+			c |= chk_file_sec(log_buffer, 0, 0, S_IWGRP|S_IWOTH, 1, 0);
 		} else {
-			c |= chk_file_sec(initfil, 0, 0, S_IWGRP|S_IWOTH, 1);
+			c |= chk_file_sec(initfil, 0, 0, S_IWGRP|S_IWOTH, 1, 0);
 		}
 	}
 	if (bodyfil) {
 		if (*bodyfil != '/') {
 			(void)sprintf(log_buffer, "%s/%s", path_priv, bodyfil);
-			c |= chk_file_sec(log_buffer, 0, 0, S_IWGRP|S_IWOTH, 1);
+			c |= chk_file_sec(log_buffer, 0, 0, S_IWGRP|S_IWOTH, 1, 0);
 		} else {
-			c |= chk_file_sec(bodyfil, 0, 0, S_IWGRP|S_IWOTH, 1);
+			c |= chk_file_sec(bodyfil, 0, 0, S_IWGRP|S_IWOTH, 1, 0);
 		}
 	}
 	if (termfil) {
 		if (*termfil != '/') {
 			(void)sprintf(log_buffer, "%s/%s", path_priv, termfil);
-			c |= chk_file_sec(log_buffer, 0, 0, S_IWGRP|S_IWOTH, 1);
+			c |= chk_file_sec(log_buffer, 0, 0, S_IWGRP|S_IWOTH, 1, 0);
 		} else {
-			c |= chk_file_sec(termfil, 0, 0, S_IWGRP|S_IWOTH, 1);
+			c |= chk_file_sec(termfil, 0, 0, S_IWGRP|S_IWOTH, 1, 0);
 		}
 	}
 	if (c) exit(1);
@@ -939,7 +948,7 @@ main(argc, argv)
 
 	FD_ZERO(&fdset);
 	for (go=1; go;) {
-		int	cmd;
+		unsigned int	cmd;
 
 		if (rpp_fd != -1)
 			FD_SET(rpp_fd, &fdset);
@@ -958,7 +967,7 @@ main(argc, argv)
 			continue;
 
 		cmd = server_command();
-		if (cmd == SCH_ERROR || cmd == SCH_SCHEDULE_NULL)
+		if (cmd == (unsigned)SCH_ERROR || cmd == (unsigned)SCH_SCHEDULE_NULL)
 			continue;
 
 		if (sigprocmask(SIG_BLOCK, &allsigs, &oldsigs) == -1)
@@ -1009,9 +1018,9 @@ main(argc, argv)
  				    break;
  				}
 
-				trace = Tcl_GetVar(interp, "errorInfo", 0);
+				trace = (char *)Tcl_GetVar(interp, "errorInfo", 0);
 				if (trace == NULL)
-					trace = Tcl_GetStringResult(interp);
+					trace = (char *)Tcl_GetStringResult(interp);
 
 				fprintf(stderr, "%s: TCL interpreter return code %d (%s) @ line %d: %s\n",
  					bodyfil, code, codename,
@@ -1048,7 +1057,7 @@ main(argc, argv)
 		if (verbose) {
 			next_brk = (caddr_t)sbrk(0);
 			if (next_brk > curr_brk) {
-				sprintf(log_buffer, "brk point %ld", next_brk);
+				sprintf(log_buffer, "brk point %p", next_brk);
 				log_record(PBSEVENT_SYSTEM,
 					PBS_EVENTCLASS_SERVER,
 					id, log_buffer);
@@ -1064,9 +1073,9 @@ main(argc, argv)
 		if (code != TCL_OK) {
 			char	*trace;
 
-			trace = Tcl_GetVar(interp, "errorInfo", 0);
+			trace = (char *)Tcl_GetVar(interp, "errorInfo", 0);
 			if (trace == NULL)
-				trace = Tcl_GetStringResult(interp);
+				trace = (char *)Tcl_GetStringResult(interp);
 
 			fprintf(stderr, "%s: TCL error @ line %d: %s\n",
 				termfil, interp->errorLine, trace);
