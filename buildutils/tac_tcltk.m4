@@ -3,8 +3,6 @@ dnl  ######################################################################
 dnl  Tcl/Tk settings
 dnl
 AC_DEFUN([TAC_TCLTK],[
-AC_REQUIRE([TEA_PATH_TCLCONFIG])
-AC_REQUIRE([TEA_LOAD_TCLCONFIG])
 AC_MSG_NOTICE([Starting Tcl/Tk configuration])
 
 TCL=0
