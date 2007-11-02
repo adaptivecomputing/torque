@@ -335,7 +335,7 @@ int init_config()
     perror("Error Allocating Memory");
     return 0;
   }
-  memset( conf.non_prime_sort, (int) NULL, (num_sorts + 1 ) * 
+  memset( conf.non_prime_sort, 0, (num_sorts + 1 ) * 
   		sizeof( struct sort_info) );
   
   if( is_prime_time() == PRIME )

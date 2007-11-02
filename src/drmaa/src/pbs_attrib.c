@@ -1,5 +1,5 @@
 /* ANSI-C code produced by gperf version 3.0.1 */
-/* Command-line: gperf --language=ANSI-C --struct-type --readonly-tables --includes --pic --hash-function-name=pbs_attrib_hash --lookup-function-name=pbs_attrib_lookup pbs_attrib.gperf  */
+/* Command-line: /usr/bin/gperf --language=ANSI-C --struct-type --readonly-tables --includes --pic --hash-function-name=pbs_attrib_hash --lookup-function-name=pbs_attrib_lookup ../../.././../trunk/src/drmaa/src/pbs_attrib.gperf  */
 /* Computed positions: -k'1,3' */
 
 #if !((' ' == 32) && ('!' == 33) && ('"' == 34) && ('#' == 35) \
@@ -29,7 +29,7 @@
 #error "gperf generated tables don't work with this execution character set. Please report a bug to <bug-gnu-gperf@gnu.org>."
 #endif
 
-#line 1 "pbs_attrib.gperf"
+#line 1 "../../.././../trunk/src/drmaa/src/pbs_attrib.gperf"
 
 /* $Id: pbs_attrib.gperf,v 1.4 2006/06/05 23:27:18 ciesnik Exp $ */
 /*
@@ -64,7 +64,7 @@ static char rcsid[]
 #	endif
 	= "$Id: pbs_attrib.gperf,v 1.4 2006/06/05 23:27:18 ciesnik Exp $";
 #endif
-#line 36 "pbs_attrib.gperf"
+#line 36 "../../.././../trunk/src/drmaa/src/pbs_attrib.gperf"
 struct pbs_attrib{ const char *name; int code; };
 #include <string.h>
 
@@ -227,110 +227,110 @@ pbs_attrib_lookup (register const char *str, register unsigned int len)
   static const struct pbs_attrib wordlist[] =
     {
       {-1}, {-1}, {-1}, {-1}, {-1}, {-1},
-#line 72 "pbs_attrib.gperf"
+#line 72 "../../.././../trunk/src/drmaa/src/pbs_attrib.gperf"
       {(int)(long)&((struct stringpool_t *)0)->stringpool_str6,              ATTR_EGROUP},
       {-1}, {-1},
-#line 79 "pbs_attrib.gperf"
+#line 79 "../../.././../trunk/src/drmaa/src/pbs_attrib.gperf"
       {(int)(long)&((struct stringpool_t *)0)->stringpool_str9,           ATTR_EXECUTION_HOST},
-#line 71 "pbs_attrib.gperf"
+#line 71 "../../.././../trunk/src/drmaa/src/pbs_attrib.gperf"
       {(int)(long)&((struct stringpool_t *)0)->stringpool_str10,               ATTR_EUSER},
-#line 76 "pbs_attrib.gperf"
+#line 76 "../../.././../trunk/src/drmaa/src/pbs_attrib.gperf"
       {(int)(long)&((struct stringpool_t *)0)->stringpool_str11,              ATTR_SERVER},
       {-1},
-#line 69 "pbs_attrib.gperf"
+#line 69 "../../.././../trunk/src/drmaa/src/pbs_attrib.gperf"
       {(int)(long)&((struct stringpool_t *)0)->stringpool_str13,            ATTR_JOB_SUBMIT_STATE},
-#line 63 "pbs_attrib.gperf"
+#line 63 "../../.././../trunk/src/drmaa/src/pbs_attrib.gperf"
       {(int)(long)&((struct stringpool_t *)0)->stringpool_str14,           ATTR_JOB_STATE},
-#line 65 "pbs_attrib.gperf"
+#line 65 "../../.././../trunk/src/drmaa/src/pbs_attrib.gperf"
       {(int)(long)&((struct stringpool_t *)0)->stringpool_str15,               ATTR_ETIME},
-#line 81 "pbs_attrib.gperf"
+#line 81 "../../.././../trunk/src/drmaa/src/pbs_attrib.gperf"
       {(int)(long)&((struct stringpool_t *)0)->stringpool_str16,         ATTR_MAX_RUNNING},
-#line 46 "pbs_attrib.gperf"
+#line 46 "../../.././../trunk/src/drmaa/src/pbs_attrib.gperf"
       {(int)(long)&((struct stringpool_t *)0)->stringpool_str17,             ATTR_STAGEIN},
-#line 47 "pbs_attrib.gperf"
+#line 47 "../../.././../trunk/src/drmaa/src/pbs_attrib.gperf"
       {(int)(long)&((struct stringpool_t *)0)->stringpool_str18,            ATTR_STAGEOUT},
-#line 67 "pbs_attrib.gperf"
+#line 67 "../../.././../trunk/src/drmaa/src/pbs_attrib.gperf"
       {(int)(long)&((struct stringpool_t *)0)->stringpool_str19,      ATTR_RESOURCES_USED},
-#line 85 "pbs_attrib.gperf"
+#line 85 "../../.././../trunk/src/drmaa/src/pbs_attrib.gperf"
       {(int)(long)&((struct stringpool_t *)0)->stringpool_str20,          ATTR_SESSION_ID},
-#line 68 "pbs_attrib.gperf"
+#line 68 "../../.././../trunk/src/drmaa/src/pbs_attrib.gperf"
       {(int)(long)&((struct stringpool_t *)0)->stringpool_str21,         ATTR_EXIT_STATUS},
       {-1},
-#line 39 "pbs_attrib.gperf"
+#line 39 "../../.././../trunk/src/drmaa/src/pbs_attrib.gperf"
       {(int)(long)&((struct stringpool_t *)0)->stringpool_str23,            ATTR_JOB_NAME},
-#line 70 "pbs_attrib.gperf"
+#line 70 "../../.././../trunk/src/drmaa/src/pbs_attrib.gperf"
       {(int)(long)&((struct stringpool_t *)0)->stringpool_str24,           ATTR_JOB_OWNER},
-#line 77 "pbs_attrib.gperf"
+#line 77 "../../.././../trunk/src/drmaa/src/pbs_attrib.gperf"
       {(int)(long)&((struct stringpool_t *)0)->stringpool_str25,               ATTR_QUEUE},
-#line 86 "pbs_attrib.gperf"
+#line 86 "../../.././../trunk/src/drmaa/src/pbs_attrib.gperf"
       {(int)(long)&((struct stringpool_t *)0)->stringpool_str26,              ATTR_ALT_ID},
       {-1},
-#line 40 "pbs_attrib.gperf"
+#line 40 "../../.././../trunk/src/drmaa/src/pbs_attrib.gperf"
       {(int)(long)&((struct stringpool_t *)0)->stringpool_str28,       ATTR_ENV},
-#line 56 "pbs_attrib.gperf"
+#line 56 "../../.././../trunk/src/drmaa/src/pbs_attrib.gperf"
       {(int)(long)&((struct stringpool_t *)0)->stringpool_str29,           ATTR_RERUNABLE},
-#line 78 "pbs_attrib.gperf"
+#line 78 "../../.././../trunk/src/drmaa/src/pbs_attrib.gperf"
       {(int)(long)&((struct stringpool_t *)0)->stringpool_str30,          ATTR_QUEUE_RANK},
-#line 60 "pbs_attrib.gperf"
+#line 60 "../../.././../trunk/src/drmaa/src/pbs_attrib.gperf"
       {(int)(long)&((struct stringpool_t *)0)->stringpool_str31,              ATTR_DEPENDENCIES},
       {-1},
-#line 54 "pbs_attrib.gperf"
+#line 54 "../../.././../trunk/src/drmaa/src/pbs_attrib.gperf"
       {(int)(long)&((struct stringpool_t *)0)->stringpool_str33,            ATTR_PRIORITY},
-#line 43 "pbs_attrib.gperf"
+#line 43 "../../.././../trunk/src/drmaa/src/pbs_attrib.gperf"
       {(int)(long)&((struct stringpool_t *)0)->stringpool_str34,           ATTR_JOIN_FILES},
-#line 66 "pbs_attrib.gperf"
+#line 66 "../../.././../trunk/src/drmaa/src/pbs_attrib.gperf"
       {(int)(long)&((struct stringpool_t *)0)->stringpool_str35,               ATTR_QTIME},
-#line 61 "pbs_attrib.gperf"
+#line 61 "../../.././../trunk/src/drmaa/src/pbs_attrib.gperf"
       {(int)(long)&((struct stringpool_t *)0)->stringpool_str36,         ATTR_INTERACTIVE},
       {-1},
-#line 53 "pbs_attrib.gperf"
+#line 53 "../../.././../trunk/src/drmaa/src/pbs_attrib.gperf"
       {(int)(long)&((struct stringpool_t *)0)->stringpool_str38,       ATTR_RESOURCES},
-#line 73 "pbs_attrib.gperf"
+#line 73 "../../.././../trunk/src/drmaa/src/pbs_attrib.gperf"
       {(int)(long)&((struct stringpool_t *)0)->stringpool_str39,           ATTR_HOP_COUNT},
-#line 80 "pbs_attrib.gperf"
+#line 80 "../../.././../trunk/src/drmaa/src/pbs_attrib.gperf"
       {(int)(long)&((struct stringpool_t *)0)->stringpool_str40,          ATTR_TOTAL_JOBS},
-#line 55 "pbs_attrib.gperf"
+#line 55 "../../.././../trunk/src/drmaa/src/pbs_attrib.gperf"
       {(int)(long)&((struct stringpool_t *)0)->stringpool_str41,         ATTR_DESTINATION_QUEUE},
-#line 82 "pbs_attrib.gperf"
+#line 82 "../../.././../trunk/src/drmaa/src/pbs_attrib.gperf"
       {(int)(long)&((struct stringpool_t *)0)->stringpool_str42,             ATTR_COMMENT},
-#line 84 "pbs_attrib.gperf"
+#line 84 "../../.././../trunk/src/drmaa/src/pbs_attrib.gperf"
       {(int)(long)&((struct stringpool_t *)0)->stringpool_str43,            ATTR_HASHNAME},
-#line 44 "pbs_attrib.gperf"
+#line 44 "../../.././../trunk/src/drmaa/src/pbs_attrib.gperf"
       {(int)(long)&((struct stringpool_t *)0)->stringpool_str44,           ATTR_EMAIL},
-#line 75 "pbs_attrib.gperf"
+#line 75 "../../.././../trunk/src/drmaa/src/pbs_attrib.gperf"
       {(int)(long)&((struct stringpool_t *)0)->stringpool_str45,          ATTR_SCHEDULER_HINT},
-#line 45 "pbs_attrib.gperf"
+#line 45 "../../.././../trunk/src/drmaa/src/pbs_attrib.gperf"
       {(int)(long)&((struct stringpool_t *)0)->stringpool_str46,         ATTR_MAIL_POINTS},
-#line 58 "pbs_attrib.gperf"
+#line 58 "../../.././../trunk/src/drmaa/src/pbs_attrib.gperf"
       {(int)(long)&((struct stringpool_t *)0)->stringpool_str47,        ATTR_REMOTE_USER},
-#line 74 "pbs_attrib.gperf"
+#line 74 "../../.././../trunk/src/drmaa/src/pbs_attrib.gperf"
       {(int)(long)&((struct stringpool_t *)0)->stringpool_str48,            ATTR_SECURITY},
-#line 57 "pbs_attrib.gperf"
+#line 57 "../../.././../trunk/src/drmaa/src/pbs_attrib.gperf"
       {(int)(long)&((struct stringpool_t *)0)->stringpool_str49,           ATTR_USER_LIST},
-#line 64 "pbs_attrib.gperf"
+#line 64 "../../.././../trunk/src/drmaa/src/pbs_attrib.gperf"
       {(int)(long)&((struct stringpool_t *)0)->stringpool_str50,               ATTR_CTIME},
-#line 83 "pbs_attrib.gperf"
+#line 83 "../../.././../trunk/src/drmaa/src/pbs_attrib.gperf"
       {(int)(long)&((struct stringpool_t *)0)->stringpool_str51,              ATTR_JOB_COOKIE},
       {-1}, {-1}, {-1},
-#line 42 "pbs_attrib.gperf"
+#line 42 "../../.././../trunk/src/drmaa/src/pbs_attrib.gperf"
       {(int)(long)&((struct stringpool_t *)0)->stringpool_str55,          ATTR_ERROR_PATH},
-#line 41 "pbs_attrib.gperf"
+#line 41 "../../.././../trunk/src/drmaa/src/pbs_attrib.gperf"
       {(int)(long)&((struct stringpool_t *)0)->stringpool_str56,         ATTR_OUTPUT_PATH},
       {-1}, {-1},
-#line 49 "pbs_attrib.gperf"
+#line 49 "../../.././../trunk/src/drmaa/src/pbs_attrib.gperf"
       {(int)(long)&((struct stringpool_t *)0)->stringpool_str59,      ATTR_SOFT_CPU_TIME_LIMIT},
-#line 51 "pbs_attrib.gperf"
+#line 51 "../../.././../trunk/src/drmaa/src/pbs_attrib.gperf"
       {(int)(long)&((struct stringpool_t *)0)->stringpool_str60,          ATTR_GROUP_LIST},
-#line 50 "pbs_attrib.gperf"
+#line 50 "../../.././../trunk/src/drmaa/src/pbs_attrib.gperf"
       {(int)(long)&((struct stringpool_t *)0)->stringpool_str61,          ATTR_CHECKPOINT},
       {-1}, {-1}, {-1},
-#line 59 "pbs_attrib.gperf"
+#line 59 "../../.././../trunk/src/drmaa/src/pbs_attrib.gperf"
       {(int)(long)&((struct stringpool_t *)0)->stringpool_str65,     ATTR_SHELL},
       {-1}, {-1}, {-1}, {-1},
-#line 48 "pbs_attrib.gperf"
+#line 48 "../../.././../trunk/src/drmaa/src/pbs_attrib.gperf"
       {(int)(long)&((struct stringpool_t *)0)->stringpool_str70,          ATTR_KEEP_FILES},
       {-1}, {-1}, {-1}, {-1},
-#line 52 "pbs_attrib.gperf"
+#line 52 "../../.././../trunk/src/drmaa/src/pbs_attrib.gperf"
       {(int)(long)&((struct stringpool_t *)0)->stringpool_str75,          ATTR_HOLD_TYPES}
     };
 
