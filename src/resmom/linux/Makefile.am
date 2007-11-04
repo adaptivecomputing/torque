@@ -7,7 +7,7 @@ endif
 
 DIST_SUBDIRS = cpuset
 
-SUBDIRS = $(cpuset)
+SUBDIRS = $(csetsubdir)
 LDADD = $(csetlib)
 
 AM_CPPFLAGS += -DPBS_MOM -DDEMUX=\"$(DEMUX_PATH)\" 
