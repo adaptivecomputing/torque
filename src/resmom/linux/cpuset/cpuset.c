@@ -4,6 +4,7 @@
 #include <cpuset.h>
 #include <sys/stat.h>
 #include <dirent.h>
+#include <stdio.h>
 
 #include "libpbs.h"
 #include "attribute.h"
@@ -36,7 +37,7 @@ void initialize_root_cpuset()
 
     if (cpuset_query(torque_set, "/torque") == -1)
     {
-        sprintf (log_buffer, "Torque cpuset /dev/cpuset%s does not exist, creating it now.\n", torque_set);
+        sprintf (log_buffer, "Torque cpuset %s does not exist, creating it now.\n",dir_path);
         log_err(-1,id,log_buffer);
 
         cpu_map_size = cpuset_cpus_nbits();
