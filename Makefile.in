@@ -875,8 +875,8 @@ packages:
            proot=$(PKGROOT)/$$d; \
            pname=$(PKGNAME); \
            phost=$(PBS_MACH)-@host_cpu@; \
-           tarball=$(PKGROOT)/torque-$$pname-$$d-$$phost.tar.gz; \
-           pkgfile=./torque-$$pname-$$d-$$phost.sh; \
+           tarball=$(PKGROOT)/$(PACKAGE_NAME)-$$pname-$$d-$$phost.tar.gz; \
+           pkgfile=./$(PACKAGE_NAME)-$$pname-$$d-$$phost.sh; \
            echo "Building $$pkgfile ..."; \
            $(MAKE) DESTDIR=$$proot install_$$d >/dev/null || exit 1; \
 	   case $$d in \
