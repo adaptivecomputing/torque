@@ -875,8 +875,6 @@ AM_CONDITIONAL(INCLUDE_PAM, [test "x$pammoddir" != "xdisabled"])
 
 
 
-
-
 dnl find default xauth run-time path
 AC_ARG_WITH(xauth,
         [  --with-xauth=PATH       Specify path to xauth program ],
@@ -1012,6 +1010,9 @@ AC_CHECK_TYPE([socklen_t],
   [TAC_SOCKLEN_EQUIV([torque_socklen_t])])
 
 TAC_PAM_GET_USER_2ND_ARG
+if test "$tac_pam_get_user_2nd_arg" = "none" && test "$pammoddir" != "disabled" ;then
+  AC_MSG_ERROR([Unable to compile PAM bits, missing pam-devel?])
+fi
 
 dnl
 dnl  ######################################################################
