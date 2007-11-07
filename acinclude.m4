@@ -182,7 +182,6 @@ dnl
 dnl remove annoying "lib not installed" warning
 dnl
 AC_DEFUN([TAC_PROG_LIBTOOL],[
-  AC_REQUIRE([AC_PROG_LIBTOOL])
   # patch libtool to remove that annoying lib install warning
   test -f libtool.old || (mv libtool libtool.old && cp libtool.old libtool)
   sed -e '/.*has not been installed in.*/d' <libtool >libtool.new
