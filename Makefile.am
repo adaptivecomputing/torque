@@ -32,56 +32,12 @@ dist-hook:
 	chmod u+w $(distdir)/README.torque $(distdir)/configure $(distdir)/torque.spec
 	sed -e 's/TORQUE .* README .*/TORQUE $(VERSION) README (released '"`date '+%b, %d %Y'`"')/' < $(srcdir)/README.torque > $(distdir)/README.torque
 	sed -e 's/VERSION=.*/VERSION=$(VERSION)/' < $(srcdir)/configure > $(distdir)/configure
-	spec_name=torque; \
-	spec_version=`echo $(VERSION) | sed 's/-snap.*//'`; \
-	spec_snap=""; \
-	if test "$$spec_version" != "$(VERSION)" ;then \
-  	  spec_snap="%define snap `echo $(VERSION) | sed 's/.*-snap.//'`"; \
-	fi; \
-	sed -e "s/@spec_""name@/$$spec_name/" -e "s/@spec_""version@/$$spec_version/" \
-	    -e "s/@spec_""snap@/$$spec_snap/" < $(srcdir)/torque.spec.in > $(distdir)/torque.spec
 
 srpm: dist
 	rpmbuild -ts $(distdir).tar.gz
 
-if USING_TCL
-tclrpmflag=--with tcl
-else
-tclrpmflag=--without tcl
-endif
-if INCLUDE_GUI
-guirpmflag=--with gui
-else
-guirpmflag=--without gui
-endif
-if USING_SYSLOG
-syslogrpmflag=--with syslog
-else
-syslogrpmflag=--without syslog
-endif
-if USING_RPP
-rpprpmflag=--with rpp
-else
-rpprpmflag=--without rpp
-endif
-if INCLUDE_MOM_RCP
-scprpmflag=
-else
-scprpmflag=--with scp
-endif
-
-RPMCC=@CC@
-RPMCFLAGS=@CFLAGS@
-RPMLDFLAGS=@LDFLAGS@
-
 rpm: dist
-	RPMCC="$(RPMCC)" RPMCFLAGS="$(RPMCFLAGS)" RPMLDFLAGS="$(RPMLDFLAGS)" rpmbuild $(RPMOPTS) -tb $(distdir).tar.gz \
-	  $(tclrpmflag) $(guirpmflag) $(syslogrpmflag) $(rpprpmflag) $(scprpmflag) \
-	  --with server_name=$(PBS_DEFAULT_SERVER) \
-	  --with homedir=$(PBS_SERVER_HOME) \
-	  --with libdir=$(libdir) \
-	  --with includedir=$(includedir) \
-	  --with prefix=$(prefix)
+	rpmbuild $(RPMOPTS) -tb $(distdir).tar.gz
 
 #
 # Used by the 'packages' target below

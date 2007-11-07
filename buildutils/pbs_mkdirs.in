@@ -307,6 +307,14 @@ mk_default_file()
 	chk_tree_wrap -n $PBS_DEFAULT_FILE || return 1
 }
 
+mk_common()
+{
+	mk_default_file || return 1
+	mk_aux_dir || return 1
+	install_dir $PBS_SERVER_HOME/spool 1777 || return 1
+	check_env || return 1
+}
+
 mk_aux_dir()
 {
 	install_dir $PBS_SERVER_HOME/aux 755 || return 1
@@ -354,8 +362,10 @@ while true; do
 	    mom*)     mk_mom_dirs || exit 1; break ;;
 	    aux*)     mk_aux_dir || exit 1; break ;;
 	    default*) mk_default_file || exit 1; break ;;
+	    common*)  mk_common || exit 1; break ;;
 	    check*)   chktree=yes; do_check_tree || exit 1; break ;;
 	    all*)     mk_dirs || exit 1; break ;;
+	    *)        echo "unknown option" 1>&2; exit 1; break ;;
 	esac
 done
 

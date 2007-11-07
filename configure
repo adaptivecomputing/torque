@@ -466,7 +466,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS build build_cpu build_vendor build_os host host_cpu host_vendor host_os MAKE INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot AMTAR am__tar am__untar MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT program_prefix program_suffix PBS_MACH INCLUDE_SERVER_TRUE INCLUDE_SERVER_FALSE INCLUDE_MOM_TRUE INCLUDE_MOM_FALSE INCLUDE_CLIENTS_TRUE INCLUDE_CLIENTS_FALSE INCLUDE_DRMAA_TRUE INCLUDE_DRMAA_FALSE CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE CPP EGREP AR LN_S ECHO ac_ct_AR RANLIB ac_ct_RANLIB CXX CXXFLAGS ac_ct_CXX CXXDEPMODE am__fastdepCXX_TRUE am__fastdepCXX_FALSE CXXCPP F77 FFLAGS ac_ct_F77 LIBTOOL LEX LEXLIB LEX_OUTPUT_ROOT YACC TBL PIC ROFF PBSPOE PBSPOEO BUILD_L26_CPUSETS_TRUE BUILD_L26_CPUSETS_FALSE BUILDCPA_TRUE BUILDCPA_FALSE MOMLIBS SCHD_TYPE_SUBDIR SCHD_TYPE SCHD_BASL_TRUE SCHD_BASL_FALSE SCHD_LIBS SCHD_CODE USING_RPP_TRUE USING_RPP_FALSE USING_SYSLOG_TRUE USING_SYSLOG_FALSE PBS_SERVER_HOME PBS_DEFAULT_FILE PBS_DEFAULT_SERVER PBS_ENVIRON RCP_PATH RCP_ARGS RSH_PATH INCLUDE_MOM_RCP_TRUE INCLUDE_MOM_RCP_FALSE SENDMAIL_CMD pammoddir INCLUDE_PAM_TRUE INCLUDE_PAM_FALSE xauth_path INSTALL_MODULEFILES_TRUE INSTALL_MODULEFILES_FALSE MODULEFILES_DIR READLINE_LIBS CYGPATH TCL_VERSION TCL_BIN_DIR TCL_SRC_DIR TCL_LIB_FILE TCL_LIB_FLAG TCL_LIB_SPEC TCL_STUB_LIB_FILE TCL_STUB_LIB_FLAG TCL_STUB_LIB_SPEC TCL_LIBS TCL_DEFS TCL_EXTRA_CFLAGS TCL_LD_FLAGS TCL_SHLIB_LD_LIBS TCL_INCLUDES tclx_VERSION tclx_SRC_DIR tclx_LIB_FILE tclx_LIB_SPEC tclx_STUB_LIB_FILE tclx_STUB_LIB_SPEC tclx_STUB_LIB_PATH TK_VERSION TK_BIN_DIR TK_SRC_DIR TK_LIB_FILE TK_LIB_FLAG TK_LIB_SPEC TK_STUB_LIB_FILE TK_STUB_LIB_FLAG TK_STUB_LIB_SPEC TK_LIBS TK_XINCLUDES TK_INCLUDES tkx_VERSION tkx_SRC_DIR tkx_LIB_FILE tkx_LIB_SPEC tkx_STUB_LIB_FILE tkx_STUB_LIB_SPEC tkx_STUB_LIB_PATH INCLUDE_GUI_TRUE INCLUDE_GUI_FALSE MY_TCL_LIBS MY_TCL_INCS MY_TCLTK_LIBS MY_TCLTK_INCS USING_TCL_TRUE USING_TCL_FALSE USING_TK_TRUE USING_TK_FALSE TCLSH_PROG WISH_PROG EXTRA_QSTAT_LIBS USE_TCLQSTAT_TRUE USE_TCLQSTAT_FALSE GPERF HAVE_DOT DOXYGEN acx_pthread_config PTHREAD_LIBS PTHREAD_CFLAGS DRMAA_DOCS_TRUE DRMAA_DOCS_FALSE GENERIC_CONFIG spec_name spec_version spec_snap LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS build build_cpu build_vendor build_os host host_cpu host_vendor host_os MAKE INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot AMTAR am__tar am__untar MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT program_prefix program_suffix PBS_MACH INCLUDE_SERVER_TRUE INCLUDE_SERVER_FALSE build_server INCLUDE_MOM_TRUE INCLUDE_MOM_FALSE build_mom INCLUDE_CLIENTS_TRUE INCLUDE_CLIENTS_FALSE build_clients INCLUDE_DRMAA_TRUE INCLUDE_DRMAA_FALSE build_drmaa CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE CPP EGREP AR LN_S ECHO ac_ct_AR RANLIB ac_ct_RANLIB CXX CXXFLAGS ac_ct_CXX CXXDEPMODE am__fastdepCXX_TRUE am__fastdepCXX_FALSE CXXCPP F77 FFLAGS ac_ct_F77 LIBTOOL LEX LEXLIB LEX_OUTPUT_ROOT YACC TBL PIC ROFF PBSPOE PBSPOEO BUILD_L26_CPUSETS_TRUE BUILD_L26_CPUSETS_FALSE BUILDCPA_TRUE BUILDCPA_FALSE MOMLIBS SCHD_TYPE_SUBDIR SCHD_TYPE SCHD_BASL_TRUE SCHD_BASL_FALSE SCHD_LIBS SCHD_CODE USING_RPP_TRUE USING_RPP_FALSE USING_SYSLOG_TRUE USING_SYSLOG_FALSE PBS_SERVER_HOME PBS_DEFAULT_FILE PBS_DEFAULT_SERVER PBS_ENVIRON RCP_PATH RCP_ARGS RSH_PATH build_pbs_rcp INCLUDE_MOM_RCP_TRUE INCLUDE_MOM_RCP_FALSE SENDMAIL_CMD pammoddir INCLUDE_PAM_TRUE INCLUDE_PAM_FALSE xauth_path INSTALL_MODULEFILES_TRUE INSTALL_MODULEFILES_FALSE MODULEFILES_DIR READLINE_LIBS CYGPATH TCL_VERSION TCL_BIN_DIR TCL_SRC_DIR TCL_LIB_FILE TCL_LIB_FLAG TCL_LIB_SPEC TCL_STUB_LIB_FILE TCL_STUB_LIB_FLAG TCL_STUB_LIB_SPEC TCL_LIBS TCL_DEFS TCL_EXTRA_CFLAGS TCL_LD_FLAGS TCL_SHLIB_LD_LIBS TCL_INCLUDES tclx_VERSION tclx_SRC_DIR tclx_LIB_FILE tclx_LIB_SPEC tclx_STUB_LIB_FILE tclx_STUB_LIB_SPEC tclx_STUB_LIB_PATH TK_VERSION TK_BIN_DIR TK_SRC_DIR TK_LIB_FILE TK_LIB_FLAG TK_LIB_SPEC TK_STUB_LIB_FILE TK_STUB_LIB_FLAG TK_STUB_LIB_SPEC TK_LIBS TK_XINCLUDES TK_INCLUDES tkx_VERSION tkx_SRC_DIR tkx_LIB_FILE tkx_LIB_SPEC tkx_STUB_LIB_FILE tkx_STUB_LIB_SPEC tkx_STUB_LIB_PATH build_gui INCLUDE_GUI_TRUE INCLUDE_GUI_FALSE MY_TCL_LIBS MY_TCL_INCS MY_TCLTK_LIBS MY_TCLTK_INCS USING_TCL_TRUE USING_TCL_FALSE USING_TK_TRUE USING_TK_FALSE use_tcl use_tk TCLSH_PROG WISH_PROG EXTRA_QSTAT_LIBS USE_TCLQSTAT_TRUE USE_TCLQSTAT_FALSE GPERF HAVE_DOT DOXYGEN acx_pthread_config PTHREAD_LIBS PTHREAD_CFLAGS DRMAA_DOCS_TRUE DRMAA_DOCS_FALSE build_drmaa_docs drmaadocdir GENERIC_CONFIG spec_name spec_version spec_snap ac_configure_args rpmlibdir rpmmandir rpmbindir rpmsbindir rpmincludedir rpmdrmaadocdir LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -2297,15 +2297,15 @@ echo $ECHO_N "checking whether to include server and scheduler... $ECHO_C" >&6
 # Check whether --enable-server or --disable-server was given.
 if test "${enable_server+set}" = set; then
   enableval="$enable_server"
-  include_server=$enableval
+  build_server=$enableval
 else
-  include_server=$partdefault
+  build_server=$partdefault
 fi;
-echo "$as_me:$LINENO: result: $include_server" >&5
-echo "${ECHO_T}$include_server" >&6
+echo "$as_me:$LINENO: result: $build_server" >&5
+echo "${ECHO_T}$build_server" >&6
 
 
-if test "x$include_server" = "xyes"; then
+if test "x$build_server" = "xyes"; then
   INCLUDE_SERVER_TRUE=
   INCLUDE_SERVER_FALSE='#'
 else
@@ -2315,20 +2315,21 @@ fi
 
 
 
+
 echo "$as_me:$LINENO: checking whether to include the mom daemon" >&5
 echo $ECHO_N "checking whether to include the mom daemon... $ECHO_C" >&6
 # Check whether --enable-mom or --disable-mom was given.
 if test "${enable_mom+set}" = set; then
   enableval="$enable_mom"
-  include_mom=$enableval
+  build_mom=$enableval
 else
-  include_mom=$partdefault
+  build_mom=$partdefault
 fi;
-echo "$as_me:$LINENO: result: $include_mom" >&5
-echo "${ECHO_T}$include_mom" >&6
+echo "$as_me:$LINENO: result: $build_mom" >&5
+echo "${ECHO_T}$build_mom" >&6
 
 
-if test "x$include_mom" = "xyes"; then
+if test "x$build_mom" = "xyes"; then
   INCLUDE_MOM_TRUE=
   INCLUDE_MOM_FALSE='#'
 else
@@ -2338,20 +2339,21 @@ fi
 
 
 
+
 echo "$as_me:$LINENO: checking whether to include the clients" >&5
 echo $ECHO_N "checking whether to include the clients... $ECHO_C" >&6
 # Check whether --enable-clients or --disable-clients was given.
 if test "${enable_clients+set}" = set; then
   enableval="$enable_clients"
-  include_clients=$enableval
+  build_clients=$enableval
 else
-  include_clients=yes
+  build_clients=yes
 fi;
-echo "$as_me:$LINENO: result: $include_clients" >&5
-echo "${ECHO_T}$include_clients" >&6
+echo "$as_me:$LINENO: result: $build_clients" >&5
+echo "${ECHO_T}$build_clients" >&6
 
 
-if test "x$include_clients" = "xyes"; then
+if test "x$build_clients" = "xyes"; then
   INCLUDE_CLIENTS_TRUE=
   INCLUDE_CLIENTS_FALSE='#'
 else
@@ -2360,26 +2362,28 @@ else
 fi
 
 
+
 echo "$as_me:$LINENO: checking whether to build DRMAA lib" >&5
 echo $ECHO_N "checking whether to build DRMAA lib... $ECHO_C" >&6
 # Check whether --enable-drmaa or --disable-drmaa was given.
 if test "${enable_drmaa+set}" = set; then
   enableval="$enable_drmaa"
-  include_drmaa=$enableval
+  build_drmaa=$enableval
 else
-  include_drmaa=no
+  build_drmaa=no
 fi;
-echo "$as_me:$LINENO: result: $include_drmaa" >&5
-echo "${ECHO_T}$include_drmaa" >&6
+echo "$as_me:$LINENO: result: $build_drmaa" >&5
+echo "${ECHO_T}$build_drmaa" >&6
 
 
-if test "x$include_drmaa" = "xyes"; then
+if test "x$build_drmaa" = "xyes"; then
   INCLUDE_DRMAA_TRUE=
   INCLUDE_DRMAA_FALSE='#'
 else
   INCLUDE_DRMAA_TRUE='#'
   INCLUDE_DRMAA_FALSE=
 fi
+
 
 
 
@@ -4375,7 +4379,7 @@ ia64-*-hpux*)
   ;;
 *-*-irix6*)
   # Find out which ABI we are using.
-  echo '#line 4378 "configure"' > conftest.$ac_ext
+  echo '#line 4382 "configure"' > conftest.$ac_ext
   if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   (eval $ac_compile) 2>&5
   ac_status=$?
@@ -5712,7 +5716,7 @@ fi
 
 
 # Provide some information about the compiler.
-echo "$as_me:5715:" \
+echo "$as_me:5719:" \
      "checking for Fortran 77 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -6746,11 +6750,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:6749: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:6753: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:6753: \$? = $ac_status" >&5
+   echo "$as_me:6757: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings
@@ -6979,11 +6983,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:6982: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:6986: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:6986: \$? = $ac_status" >&5
+   echo "$as_me:6990: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings
@@ -7039,11 +7043,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:7042: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:7046: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:7046: \$? = $ac_status" >&5
+   echo "$as_me:7050: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -8373,7 +8377,7 @@ linux*)
   libsuff=
   case "$host_cpu" in
   x86_64*|s390x*|powerpc64*)
-    echo '#line 8376 "configure"' > conftest.$ac_ext
+    echo '#line 8380 "configure"' > conftest.$ac_ext
     if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   (eval $ac_compile) 2>&5
   ac_status=$?
@@ -9244,7 +9248,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 9247 "configure"
+#line 9251 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -9342,7 +9346,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 9345 "configure"
+#line 9349 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -11521,11 +11525,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:11524: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:11528: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:11528: \$? = $ac_status" >&5
+   echo "$as_me:11532: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings
@@ -11581,11 +11585,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:11584: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:11588: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:11588: \$? = $ac_status" >&5
+   echo "$as_me:11592: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -12092,7 +12096,7 @@ linux*)
   libsuff=
   case "$host_cpu" in
   x86_64*|s390x*|powerpc64*)
-    echo '#line 12095 "configure"' > conftest.$ac_ext
+    echo '#line 12099 "configure"' > conftest.$ac_ext
     if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   (eval $ac_compile) 2>&5
   ac_status=$?
@@ -12963,7 +12967,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 12966 "configure"
+#line 12970 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -13061,7 +13065,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 13064 "configure"
+#line 13068 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -13888,11 +13892,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:13891: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:13895: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:13895: \$? = $ac_status" >&5
+   echo "$as_me:13899: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings
@@ -13948,11 +13952,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:13951: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:13955: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:13955: \$? = $ac_status" >&5
+   echo "$as_me:13959: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -15262,7 +15266,7 @@ linux*)
   libsuff=
   case "$host_cpu" in
   x86_64*|s390x*|powerpc64*)
-    echo '#line 15265 "configure"' > conftest.$ac_ext
+    echo '#line 15269 "configure"' > conftest.$ac_ext
     if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   (eval $ac_compile) 2>&5
   ac_status=$?
@@ -16003,11 +16007,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:16006: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:16010: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:16010: \$? = $ac_status" >&5
+   echo "$as_me:16014: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings
@@ -16236,11 +16240,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:16239: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:16243: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:16243: \$? = $ac_status" >&5
+   echo "$as_me:16247: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings
@@ -16296,11 +16300,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:16299: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:16303: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:16303: \$? = $ac_status" >&5
+   echo "$as_me:16307: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -17630,7 +17634,7 @@ linux*)
   libsuff=
   case "$host_cpu" in
   x86_64*|s390x*|powerpc64*)
-    echo '#line 17633 "configure"' > conftest.$ac_ext
+    echo '#line 17637 "configure"' > conftest.$ac_ext
     if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   (eval $ac_compile) 2>&5
   ac_status=$?
@@ -18501,7 +18505,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 18504 "configure"
+#line 18508 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -18599,7 +18603,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 18602 "configure"
+#line 18606 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -20537,7 +20541,7 @@ echo $ECHO_N "checking whether to use strict gcc warnings... $ECHO_C" >&6
     echo "$as_me:$LINENO: result: no" >&5
 echo "${ECHO_T}no" >&6
   else
-    if test "x$include_drmaa" = "xyes" ;then
+    if test "x$build_drmaa" = "xyes" ;then
       echo "$as_me:$LINENO: result: no" >&5
 echo "${ECHO_T}no" >&6
     else
@@ -22698,7 +22702,7 @@ esac
 else
   SCHD_TYPE=cc
 fi;
-if test "x$include_server" != "xyes" ;then
+if test "x$build_server" != "xyes" ;then
    SCHD_TYPE=none
 fi
 
@@ -23360,8 +23364,9 @@ fi
 fi
 
 # figure out what was requested and turn that into a full path if necessary
+build_pbs_rcp=no
 case "$RCP_PATH" in
-  mom_rcp|pbs_rcp) RCP_PATH="${sbindir}/pbs_rcp"; MOM_RCP=yes ;;
+  mom_rcp|pbs_rcp) RCP_PATH="${sbindir}/pbs_rcp"; build_pbs_rcp=yes ;;
   /*) ;;
   *) # Extract the first word of ""$RCP_PATH"", so it can be a program name with args.
 set dummy "$RCP_PATH"; ac_word=$2
@@ -23427,7 +23432,8 @@ echo "$as_me: remote file copy program... $RCP_PATH $RCP_ARGS" >&6;}
 
 
 
-if test "x$MOM_RCP" = "xyes"; then
+
+if test "x$build_pbs_rcp" = "xyes"; then
   INCLUDE_MOM_RCP_TRUE=
   INCLUDE_MOM_RCP_FALSE='#'
 else
@@ -31933,32 +31939,33 @@ echo $ECHO_N "checking whether to include the GUI-clients... $ECHO_C" >&6
 # Check whether --enable-gui or --disable-gui was given.
 if test "${enable_gui+set}" = set; then
   enableval="$enable_gui"
-  include_gui=$enableval
+  build_gui=$enableval
 fi;
-if test "x${include_clients}" != "xyes" -a "x${include_gui}" = "xyes"; then
+if test "x${build_clients}" != "xyes" -a "x${build_gui}" = "xyes"; then
 	{ { echo "$as_me:$LINENO: error: the GUI can not be build independent of the clients" >&5
 echo "$as_me: error: the GUI can not be build independent of the clients" >&2;}
    { (exit 1); exit 1; }; }
 fi
-if test "x${include_clients}" != "xyes" -a "x${include_gui}" = "x"; then
-	include_gui=no
+if test "x${build_clients}" != "xyes" -a "x${build_gui}" = "x"; then
+	build_gui=no
 fi
-if test "x${include_gui}" = "xyes" -a "${TK}" != "1"; then
+if test "x${build_gui}" = "xyes" -a "${TK}" != "1"; then
 	{ { echo "$as_me:$LINENO: error: cannot build GUI without Tk library" >&5
 echo "$as_me: error: cannot build GUI without Tk library" >&2;}
    { (exit 1); exit 1; }; }
 fi
-if test "x${include_gui}" = "x" -a "${TK}" = "1"; then
-	include_gui=yes
+if test "x${build_gui}" = "x" -a "${TK}" = "1"; then
+	build_gui=yes
 fi
-if test "x${include_gui}" = "x"; then
-	include_gui=no
+if test "x${build_gui}" = "x"; then
+	build_gui=no
 fi
-echo "$as_me:$LINENO: result: $include_gui" >&5
-echo "${ECHO_T}$include_gui" >&6
+echo "$as_me:$LINENO: result: $build_gui" >&5
+echo "${ECHO_T}$build_gui" >&6
 
 
-if test "x$include_gui" = "xyes"; then
+
+if test "x$build_gui" = "xyes"; then
   INCLUDE_GUI_TRUE=
   INCLUDE_GUI_FALSE='#'
 else
@@ -32012,6 +32019,10 @@ else
   USING_TK_TRUE='#'
   USING_TK_FALSE=
 fi
+
+use_tcl=$TCL
+use_tk=$TK
+
 
 
 if test "${TCL}" = "1"; then
@@ -32176,7 +32187,7 @@ echo "$as_me: Finished Tcl/Tk configuration" >&6;}
 
 
 
-if test "$include_drmaa" = "yes" ;then
+if test "$build_drmaa" = "yes" ;then
 { echo "$as_me:$LINENO: Configuring DRMAA ..." >&5
 echo "$as_me: Configuring DRMAA ..." >&6;}
 # Extract the first word of ""gperf"", so it can be a program name with args.
@@ -33882,8 +33893,10 @@ fi
 rm -f conftest.err conftest.$ac_objext \
       conftest$ac_exeext conftest.$ac_ext
 
+ build_drmaa_docs=yes
 else
   DOXYGEN=none
+ build_drmaa_docs=no
 fi
 
 
@@ -33894,6 +33907,10 @@ else
   DRMAA_DOCS_TRUE='#'
   DRMAA_DOCS_FALSE=
 fi
+
+
+drmaadocdir=$datadir/doc/$PACKAGE-drmaa
+
 
 
 
@@ -34041,6 +34058,19 @@ spec_snap=""
 if test "$spec_version" != "$PACKAGE_VERSION" ;then
   spec_snap="%define snap `echo $PACKAGE_VERSION | sed 's/.*-snap.//'`"
 fi
+
+
+
+
+rpmlibdir=`eval eval echo $libdir`
+rpmmandir=`eval eval echo $mandir`
+rpmbindir=`eval eval echo $bindir`
+rpmsbindir=`eval eval echo $sbindir`
+rpmincludedir=`eval eval echo $includedir`
+rpmdrmaadocdir=`eval eval echo $drmaadocdir`
+
+
+
 
 
 
@@ -34977,12 +35007,16 @@ s,@program_suffix@,$program_suffix,;t t
 s,@PBS_MACH@,$PBS_MACH,;t t
 s,@INCLUDE_SERVER_TRUE@,$INCLUDE_SERVER_TRUE,;t t
 s,@INCLUDE_SERVER_FALSE@,$INCLUDE_SERVER_FALSE,;t t
+s,@build_server@,$build_server,;t t
 s,@INCLUDE_MOM_TRUE@,$INCLUDE_MOM_TRUE,;t t
 s,@INCLUDE_MOM_FALSE@,$INCLUDE_MOM_FALSE,;t t
+s,@build_mom@,$build_mom,;t t
 s,@INCLUDE_CLIENTS_TRUE@,$INCLUDE_CLIENTS_TRUE,;t t
 s,@INCLUDE_CLIENTS_FALSE@,$INCLUDE_CLIENTS_FALSE,;t t
+s,@build_clients@,$build_clients,;t t
 s,@INCLUDE_DRMAA_TRUE@,$INCLUDE_DRMAA_TRUE,;t t
 s,@INCLUDE_DRMAA_FALSE@,$INCLUDE_DRMAA_FALSE,;t t
+s,@build_drmaa@,$build_drmaa,;t t
 s,@CC@,$CC,;t t
 s,@CFLAGS@,$CFLAGS,;t t
 s,@LDFLAGS@,$LDFLAGS,;t t
@@ -35049,6 +35083,7 @@ s,@PBS_ENVIRON@,$PBS_ENVIRON,;t t
 s,@RCP_PATH@,$RCP_PATH,;t t
 s,@RCP_ARGS@,$RCP_ARGS,;t t
 s,@RSH_PATH@,$RSH_PATH,;t t
+s,@build_pbs_rcp@,$build_pbs_rcp,;t t
 s,@INCLUDE_MOM_RCP_TRUE@,$INCLUDE_MOM_RCP_TRUE,;t t
 s,@INCLUDE_MOM_RCP_FALSE@,$INCLUDE_MOM_RCP_FALSE,;t t
 s,@SENDMAIL_CMD@,$SENDMAIL_CMD,;t t
@@ -35102,6 +35137,7 @@ s,@tkx_LIB_SPEC@,$tkx_LIB_SPEC,;t t
 s,@tkx_STUB_LIB_FILE@,$tkx_STUB_LIB_FILE,;t t
 s,@tkx_STUB_LIB_SPEC@,$tkx_STUB_LIB_SPEC,;t t
 s,@tkx_STUB_LIB_PATH@,$tkx_STUB_LIB_PATH,;t t
+s,@build_gui@,$build_gui,;t t
 s,@INCLUDE_GUI_TRUE@,$INCLUDE_GUI_TRUE,;t t
 s,@INCLUDE_GUI_FALSE@,$INCLUDE_GUI_FALSE,;t t
 s,@MY_TCL_LIBS@,$MY_TCL_LIBS,;t t
@@ -35112,6 +35148,8 @@ s,@USING_TCL_TRUE@,$USING_TCL_TRUE,;t t
 s,@USING_TCL_FALSE@,$USING_TCL_FALSE,;t t
 s,@USING_TK_TRUE@,$USING_TK_TRUE,;t t
 s,@USING_TK_FALSE@,$USING_TK_FALSE,;t t
+s,@use_tcl@,$use_tcl,;t t
+s,@use_tk@,$use_tk,;t t
 s,@TCLSH_PROG@,$TCLSH_PROG,;t t
 s,@WISH_PROG@,$WISH_PROG,;t t
 s,@EXTRA_QSTAT_LIBS@,$EXTRA_QSTAT_LIBS,;t t
@@ -35125,10 +35163,19 @@ s,@PTHREAD_LIBS@,$PTHREAD_LIBS,;t t
 s,@PTHREAD_CFLAGS@,$PTHREAD_CFLAGS,;t t
 s,@DRMAA_DOCS_TRUE@,$DRMAA_DOCS_TRUE,;t t
 s,@DRMAA_DOCS_FALSE@,$DRMAA_DOCS_FALSE,;t t
+s,@build_drmaa_docs@,$build_drmaa_docs,;t t
+s,@drmaadocdir@,$drmaadocdir,;t t
 s,@GENERIC_CONFIG@,$GENERIC_CONFIG,;t t
 s,@spec_name@,$spec_name,;t t
 s,@spec_version@,$spec_version,;t t
 s,@spec_snap@,$spec_snap,;t t
+s,@ac_configure_args@,$ac_configure_args,;t t
+s,@rpmlibdir@,$rpmlibdir,;t t
+s,@rpmmandir@,$rpmmandir,;t t
+s,@rpmbindir@,$rpmbindir,;t t
+s,@rpmsbindir@,$rpmsbindir,;t t
+s,@rpmincludedir@,$rpmincludedir,;t t
+s,@rpmdrmaadocdir@,$rpmdrmaadocdir,;t t
 s,@LIBOBJS@,$LIBOBJS,;t t
 s,@LTLIBOBJS@,$LTLIBOBJS,;t t
 CEOF

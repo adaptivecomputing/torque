@@ -168,24 +168,25 @@ dnl  libraries were found. In this case we must disable the gui.
 AC_MSG_CHECKING([whether to include the GUI-clients])
 AC_ARG_ENABLE(gui,
     [  --disable-gui           do not include the GUI-clients],
-    include_gui=$enableval)
-if test "x${include_clients}" != "xyes" -a "x${include_gui}" = "xyes"; then
+    build_gui=$enableval)
+if test "x${build_clients}" != "xyes" -a "x${build_gui}" = "xyes"; then
 	AC_MSG_ERROR([the GUI can not be build independent of the clients])
 fi
-if test "x${include_clients}" != "xyes" -a "x${include_gui}" = "x"; then
-	include_gui=no 
+if test "x${build_clients}" != "xyes" -a "x${build_gui}" = "x"; then
+	build_gui=no 
 fi
-if test "x${include_gui}" = "xyes" -a "${TK}" != "1"; then
+if test "x${build_gui}" = "xyes" -a "${TK}" != "1"; then
 	AC_MSG_ERROR([cannot build GUI without Tk library])
 fi
-if test "x${include_gui}" = "x" -a "${TK}" = "1"; then
-	include_gui=yes
+if test "x${build_gui}" = "x" -a "${TK}" = "1"; then
+	build_gui=yes
 fi
-if test "x${include_gui}" = "x"; then
-	include_gui=no
+if test "x${build_gui}" = "x"; then
+	build_gui=no
 fi
-AC_MSG_RESULT($include_gui)
-AM_CONDITIONAL(INCLUDE_GUI, [test "x$include_gui" = "xyes"])
+AC_MSG_RESULT($build_gui)
+AC_SUBST(build_gui)
+AM_CONDITIONAL(INCLUDE_GUI, [test "x$build_gui" = "xyes"])
 
 
 AC_DEFINE_UNQUOTED(TCL, ${TCL}, [Define if PBS should use Tcl in its tools])
@@ -199,6 +200,10 @@ AC_SUBST(MY_TCLTK_LIBS)
 AC_SUBST(MY_TCLTK_INCS)
 AM_CONDITIONAL(USING_TCL, [test "$TCL" = "1"])
 AM_CONDITIONAL(USING_TK, [test "$TK" = "1"])
+use_tcl=$TCL
+use_tk=$TK
+AC_SUBST(use_tcl)
+AC_SUBST(use_tk)
 
 dnl  Now look around for tclsh and wish
 if test "${TCL}" = "1"; then

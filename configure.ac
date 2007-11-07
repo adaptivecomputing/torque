@@ -98,32 +98,36 @@ fi
 AC_MSG_CHECKING([whether to include server and scheduler])
 AC_ARG_ENABLE(server,
     [  --disable-server        do not include server and scheduler],
-    include_server=$enableval, include_server=$partdefault)
-AC_MSG_RESULT($include_server)
-AM_CONDITIONAL(INCLUDE_SERVER, [test "x$include_server" = "xyes"])
+    build_server=$enableval, build_server=$partdefault)
+AC_MSG_RESULT($build_server)
+AM_CONDITIONAL(INCLUDE_SERVER, [test "x$build_server" = "xyes"])
+AC_SUBST(build_server)
 
 
 AC_MSG_CHECKING([whether to include the mom daemon])
 AC_ARG_ENABLE(mom,
     [  --disable-mom           do not include the mom daemon],
-    include_mom=$enableval, include_mom=$partdefault)
-AC_MSG_RESULT($include_mom)
-AM_CONDITIONAL(INCLUDE_MOM, [test "x$include_mom" = "xyes"])
+    build_mom=$enableval, build_mom=$partdefault)
+AC_MSG_RESULT($build_mom)
+AM_CONDITIONAL(INCLUDE_MOM, [test "x$build_mom" = "xyes"])
+AC_SUBST(build_mom)
 
 
 AC_MSG_CHECKING([whether to include the clients])
 AC_ARG_ENABLE(clients,
     [  --disable-clients       do not include the clients],
-    include_clients=$enableval, include_clients=yes)
-AC_MSG_RESULT($include_clients)
-AM_CONDITIONAL(INCLUDE_CLIENTS, [test "x$include_clients" = "xyes"])
+    build_clients=$enableval, build_clients=yes)
+AC_MSG_RESULT($build_clients)
+AM_CONDITIONAL(INCLUDE_CLIENTS, [test "x$build_clients" = "xyes"])
+AC_SUBST(build_clients)
 
 AC_MSG_CHECKING([whether to build DRMAA lib])
 AC_ARG_ENABLE(drmaa,
     [  --disable-drmaa       do not build the DRMAA 1.0 library (default is off)],
-    include_drmaa=$enableval, include_drmaa=no)
-AC_MSG_RESULT($include_drmaa)
-AM_CONDITIONAL(INCLUDE_DRMAA, [test "x$include_drmaa" = "xyes"])
+    build_drmaa=$enableval, build_drmaa=no)
+AC_MSG_RESULT($build_drmaa)
+AM_CONDITIONAL(INCLUDE_DRMAA, [test "x$build_drmaa" = "xyes"])
+AC_SUBST(build_drmaa)
 
 
 dnl
@@ -183,7 +187,7 @@ if test "x$GCC" = "xyes" ;then
   if test "${enable_gcc_warnings}" == "no" ; then
     AC_MSG_RESULT([no])
   else
-    if test "x$include_drmaa" = "xyes" ;then
+    if test "x$build_drmaa" = "xyes" ;then
       AC_MSG_RESULT([no])
     else
       AC_MSG_RESULT([yes])
@@ -492,7 +496,7 @@ AC_ARG_WITH(sched,
   basl|BASL)    SCHD_TYPE=basl ;;
   *)            SCHD_TYPE=none ;;
 esac],[SCHD_TYPE=cc])
-if test "x$include_server" != "xyes" ;then
+if test "x$build_server" != "xyes" ;then
    SCHD_TYPE=none
 fi
 AC_DEFINE_UNQUOTED(SCHD_TYPE, "${SCHD_TYPE}",
@@ -807,8 +811,9 @@ if test "x$RCP_PATH" = "x" ;then
 fi
 
 # figure out what was requested and turn that into a full path if necessary
+build_pbs_rcp=no
 case "$RCP_PATH" in
-  mom_rcp|pbs_rcp) RCP_PATH="${sbindir}/pbs_rcp"; MOM_RCP=yes ;;
+  mom_rcp|pbs_rcp) RCP_PATH="${sbindir}/pbs_rcp"; build_pbs_rcp=yes ;;
   /*) ;;
   *) AC_PATH_PROG(RCP_PATH, "$RCP_PATH", error)
     if test "x$RCP_PATH" = "xerror" ;then
@@ -829,7 +834,8 @@ AC_MSG_NOTICE([remote file copy program... $RCP_PATH $RCP_ARGS])
 AC_SUBST(RCP_PATH)
 AC_SUBST(RCP_ARGS)
 AC_SUBST(RSH_PATH)
-AM_CONDITIONAL(INCLUDE_MOM_RCP, [test "x$MOM_RCP" = "xyes"])
+AC_SUBST(build_pbs_rcp)
+AM_CONDITIONAL(INCLUDE_MOM_RCP, [test "x$build_pbs_rcp" = "xyes"])
 
 
 
@@ -1059,7 +1065,7 @@ dnl
 dnl  ######################################################################
 dnl Checks needed to build DRMAA
 dnl
-if test "$include_drmaa" = "yes" ;then
+if test "$build_drmaa" = "yes" ;then
 AC_MSG_NOTICE([Configuring DRMAA ...])
 AC_PATH_PROG(GPERF, "gperf")
 AX_PROG_DOT
@@ -1107,10 +1113,16 @@ AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <stdarg.h>]],
   AC_MSG_RESULT([no])
 ])
 
+ build_drmaa_docs=yes
 else  
   DOXYGEN=none
+ build_drmaa_docs=no
 fi
 AM_CONDITIONAL(DRMAA_DOCS, [test "$DOXYGEN" != "none"])
+AC_SUBST(build_drmaa_docs)
+drmaadocdir=$datadir/doc/$PACKAGE-drmaa
+AC_SUBST(drmaadocdir)
+
 
 dnl
 dnl  ######################################################################
@@ -1129,6 +1141,19 @@ fi
 AC_SUBST(spec_name)
 AC_SUBST(spec_version)
 AC_SUBST(spec_snap)
+AC_SUBST(ac_configure_args)
+rpmlibdir=`eval eval echo $libdir`
+rpmmandir=`eval eval echo $mandir`
+rpmbindir=`eval eval echo $bindir`
+rpmsbindir=`eval eval echo $sbindir`
+rpmincludedir=`eval eval echo $includedir`
+rpmdrmaadocdir=`eval eval echo $drmaadocdir`
+AC_SUBST(rpmlibdir)
+AC_SUBST(rpmmandir)
+AC_SUBST(rpmbindir)
+AC_SUBST(rpmsbindir)
+AC_SUBST(rpmincludedir)
+AC_SUBST(rpmdrmaadocdir)
 
 dnl  Head and bottom for the config-file
 AH_TOP([#ifndef _PBS_CONFIG_H_

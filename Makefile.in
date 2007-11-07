@@ -249,6 +249,7 @@ USING_TK_TRUE = @USING_TK_TRUE@
 VERSION = @VERSION@
 WISH_PROG = @WISH_PROG@
 YACC = @YACC@
+ac_configure_args = @ac_configure_args@
 ac_ct_AR = @ac_ct_AR@
 ac_ct_CC = @ac_ct_CC@
 ac_ct_CXX = @ac_ct_CXX@
@@ -268,10 +269,18 @@ am__untar = @am__untar@
 bindir = @bindir@
 build = @build@
 build_alias = @build_alias@
+build_clients = @build_clients@
 build_cpu = @build_cpu@
+build_drmaa = @build_drmaa@
+build_drmaa_docs = @build_drmaa_docs@
+build_gui = @build_gui@
+build_mom = @build_mom@
 build_os = @build_os@
+build_pbs_rcp = @build_pbs_rcp@
+build_server = @build_server@
 build_vendor = @build_vendor@
 datadir = @datadir@
+drmaadocdir = @drmaadocdir@
 exec_prefix = @exec_prefix@
 host = @host@
 host_alias = @host_alias@
@@ -292,6 +301,12 @@ prefix = @prefix@
 program_prefix = @program_prefix@
 program_suffix = @program_suffix@
 program_transform_name = @program_transform_name@
+rpmbindir = @rpmbindir@
+rpmdrmaadocdir = @rpmdrmaadocdir@
+rpmincludedir = @rpmincludedir@
+rpmlibdir = @rpmlibdir@
+rpmmandir = @rpmmandir@
+rpmsbindir = @rpmsbindir@
 sbindir = @sbindir@
 sharedstatedir = @sharedstatedir@
 spec_name = @spec_name@
@@ -313,6 +328,8 @@ tkx_STUB_LIB_FILE = @tkx_STUB_LIB_FILE@
 tkx_STUB_LIB_PATH = @tkx_STUB_LIB_PATH@
 tkx_STUB_LIB_SPEC = @tkx_STUB_LIB_SPEC@
 tkx_VERSION = @tkx_VERSION@
+use_tcl = @use_tcl@
+use_tk = @use_tk@
 xauth_path = @xauth_path@
 AUTOMAKE_OPTIONS = foreign
 PBS_MKDIRS = $(SHELL) $(top_builddir)/buildutils/pbs_mkdirs
@@ -343,19 +360,6 @@ EXTRA_DIST = CHANGELOG INSTALL.GNU README.configure README.mpiexec \
 bin_SCRIPTS = pbs-config
 DISTCLEANFILES = pbs-config
 DISTCHECK_CONFIGURE_FLAGS = --with-server-home=$$dc_install_base/spool
-@USING_TCL_FALSE@tclrpmflag = --without tcl
-@USING_TCL_TRUE@tclrpmflag = --with tcl
-@INCLUDE_GUI_FALSE@guirpmflag = --without gui
-@INCLUDE_GUI_TRUE@guirpmflag = --with gui
-@USING_SYSLOG_FALSE@syslogrpmflag = --without syslog
-@USING_SYSLOG_TRUE@syslogrpmflag = --with syslog
-@USING_RPP_FALSE@rpprpmflag = --without rpp
-@USING_RPP_TRUE@rpprpmflag = --with rpp
-@INCLUDE_MOM_RCP_FALSE@scprpmflag = --with scp
-@INCLUDE_MOM_RCP_TRUE@scprpmflag = 
-RPMCC = @CC@
-RPMCFLAGS = @CFLAGS@
-RPMLDFLAGS = @LDFLAGS@
 
 #
 # Used by the 'packages' target below
@@ -834,26 +838,12 @@ dist-hook:
 	chmod u+w $(distdir)/README.torque $(distdir)/configure $(distdir)/torque.spec
 	sed -e 's/TORQUE .* README .*/TORQUE $(VERSION) README (released '"`date '+%b, %d %Y'`"')/' < $(srcdir)/README.torque > $(distdir)/README.torque
 	sed -e 's/VERSION=.*/VERSION=$(VERSION)/' < $(srcdir)/configure > $(distdir)/configure
-	spec_name=torque; \
-	spec_version=`echo $(VERSION) | sed 's/-snap.*//'`; \
-	spec_snap=""; \
-	if test "$$spec_version" != "$(VERSION)" ;then \
-  	  spec_snap="%define snap `echo $(VERSION) | sed 's/.*-snap.//'`"; \
-	fi; \
-	sed -e "s/@spec_""name@/$$spec_name/" -e "s/@spec_""version@/$$spec_version/" \
-	    -e "s/@spec_""snap@/$$spec_snap/" < $(srcdir)/torque.spec.in > $(distdir)/torque.spec
 
 srpm: dist
 	rpmbuild -ts $(distdir).tar.gz
 
 rpm: dist
-	RPMCC="$(RPMCC)" RPMCFLAGS="$(RPMCFLAGS)" RPMLDFLAGS="$(RPMLDFLAGS)" rpmbuild $(RPMOPTS) -tb $(distdir).tar.gz \
-	  $(tclrpmflag) $(guirpmflag) $(syslogrpmflag) $(rpprpmflag) $(scprpmflag) \
-	  --with server_name=$(PBS_DEFAULT_SERVER) \
-	  --with homedir=$(PBS_SERVER_HOME) \
-	  --with libdir=$(libdir) \
-	  --with includedir=$(includedir) \
-	  --with prefix=$(prefix)
+	rpmbuild $(RPMOPTS) -tb $(distdir).tar.gz
 
 install_server install_mom install_clients install_gui install_lib install_pam install_drmaa:
 	(cd src && $(MAKE) $@)

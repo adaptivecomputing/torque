@@ -21,8 +21,7 @@
 
 SUBDIRS = src test
 
-docdir=$(datadir)/doc
-pkgdocdir=$(docdir)/@PACKAGE@-drmaa-0.1.1
+pkgdocdir=@drmaadocdir@
 
 if DRMAA_DOCS
 pdf_doc = drmaa.pdf
