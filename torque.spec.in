@@ -133,7 +133,7 @@ fi
 %config(noreplace) %{torquehomedir}/pbs_environment
 %{torquehomedir}/spool
 %{torquehomedir}/aux
-%{_libdir}/libtorque.so.*
+%{_libdir}/libtorque*.so.*
 %if "%modulefiles_dir" != "no"
 %modulefiles_dir/%{name}
 %endif
@@ -334,8 +334,8 @@ necessary for developing programs which will use %{name}.
 
 %files devel
 %defattr(-, root, root)
-%{_libdir}/libtorque.a
-%{_libdir}/libtorque.so
+%{_libdir}/libtorque*.a
+%{_libdir}/libtorque*.so
 %{_includedir}/pbs_error.h
 %{_includedir}/pbs_ifl.h
 %{_includedir}/rm.h
