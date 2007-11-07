@@ -25,6 +25,7 @@
 %define build_drmaa @build_drmaa@
 %define build_drmaa_docs @build_drmaa_docs@
 %define pammoddir @pammoddir@
+%define modulefiles_dir @MODULEFILES_DIR@
 
 %define configure_args ''@ac_configure_args@
 
@@ -133,6 +134,9 @@ fi
 %{torquehomedir}/spool
 %{torquehomedir}/aux
 %{_libdir}/libtorque.so.*
+%if "%modulefiles_dir" != "no"
+%modulefiles_dir/%{name}
+%endif
 
 
 %package docs
