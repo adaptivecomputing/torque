@@ -281,6 +281,9 @@
 /* whether checkpointing is supported */
 #undef MOM_CHECKPOINT
 
+/* force creation of nodefile */
+#undef MOM_FORCENODEFILE
+
 #ifndef NEED_BLOCKING_CONNECTIONS
 #define write(a,b,c) write_nonblocking_socket(a,b,c)
 #define read(a,b,c) read_nonblocking_socket(a,b,c)

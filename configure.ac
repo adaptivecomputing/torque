@@ -691,6 +691,16 @@ test "$TMP_DIR" = yes && TMP_DIR="/tmp"
 AC_DEFINE_UNQUOTED(TMP_DIR, "${TMP_DIR}",
 		   [The pathname of the Cray temporary directory for mom])
 
+AC_ARG_ENABLE(force-nodefile,
+[
+  --enable-force-nodefile forces creation of nodefile regardless of job
+                          submission parameters. Not on by default.],
+[case "${enableval}" in
+  yes) MOM_FORCENODEFILE=1 ;;
+  no)  MOM_FORCENODEFILE=0 ;;
+  *)   AC_MSG_ERROR(--enable-force-nodefile cannot take a value) ;;
+esac],[MOM_FORCENODEFILE=0])dnl
+AC_DEFINE_UNQUOTED(MOM_FORCENODEFILE, ${MOM_FORCENODEFILE}, [force creation of nodefile])
 
 AC_ARG_WITH(server_home,
     [  --with-server-home=DIR  set the server home/spool directory for PBS use
