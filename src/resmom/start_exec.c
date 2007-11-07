@@ -1405,9 +1405,12 @@ int TMomFinalizeJob1(
 
   presc = find_resc_entry(pattr,prd);
 
-  if (presc != NULL) 
+#ifdef MOM_FORCENODEFILE
     pjob->ji_flags |= MOM_HAS_NODEFILE;
-
+#else /* MOM_FORCENODEFILE */
+  if (presc != NULL)
+    pjob->ji_flags |= MOM_HAS_NODEFILE;
+#endif /* MOM_FORCENODEFILE */
   /*
    * get the password entry for the user under which the job is to be run
    * we do this now to save a few things in the job structure
