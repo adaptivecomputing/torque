@@ -12,6 +12,137 @@
 #include "job.h"
 #include "log.h"
 
+/* Look through all of the cpusets in the root cpuset and determine cpus and memory that are available. */
+int find_free_cpuset_space(
+    struct bitmask *available_cpus,
+    struct bitmask *available_mems,
+    char *parent_path) 
+{
+
+  static char	id[] = "find_free_cpuset_space";
+  struct cpuset *child_cpuset;
+  struct bitmask *child_cpus;
+  struct bitmask *child_mems;
+  struct bitmask *result_cpus;
+  struct bitmask *result_mems;
+  DIR *cpu_root;
+  struct dirent *dir_entry;
+  struct stat stat_buf;
+  char path[MAXPATHLEN + 1];
+  char dir_path[MAXPATHLEN + 1];
+  char cpuset_name[MAXPATHLEN + 1];
+
+    child_cpuset = cpuset_alloc();
+    if (child_cpuset == NULL)
+    {
+        sprintf (log_buffer, "cpuset_alloc() failed.\n");
+        log_err(-1,id,log_buffer);
+        return -1;
+    }
+
+    child_cpus = bitmask_alloc(cpuset_cpus_nbits());
+    if (child_cpus == NULL)
+    {
+        sprintf (log_buffer, "bitmask_alloc() failed.\n");
+        log_err(-1,id,log_buffer);
+        return -1;
+    }
+
+    child_mems = bitmask_alloc(cpuset_mems_nbits());
+    if (child_mems == NULL)
+    {
+        sprintf (log_buffer, "bitmask_alloc() failed.\n");
+        log_err(-1,id,log_buffer);
+        return -1;
+    }
+
+    result_cpus = bitmask_alloc(cpuset_cpus_nbits());
+    if (result_cpus == NULL)
+    {
+        sprintf (log_buffer, "bitmask_alloc() failed.\n");
+        log_err(-1,id,log_buffer);
+        return -1;
+    }
+
+    result_mems = bitmask_alloc(cpuset_mems_nbits());
+    if (result_mems == NULL)
+    {
+        sprintf (log_buffer, "bitmask_alloc() failed.\n");
+        log_err(-1,id,log_buffer);
+        return -1;
+    }
+
+    /* Find all cpusets directly under the cpuset root directory. */
+    sprintf (dir_path, "/dev/cpuset%s", parent_path);
+    cpu_root = opendir(dir_path);
+    if (cpu_root == NULL)
+    {
+        sprintf(log_buffer, "opendir(%s) failed.\n", dir_path);
+        log_err(-1,id,log_buffer);
+    }
+
+    while ((dir_entry = readdir(cpu_root)) != NULL)
+    {
+	/* Skip parent and current directory. */
+	if (!strcmp(dir_entry->d_name, ".")||!strcmp(dir_entry->d_name, "..")) continue;
+
+	/* Prepend directory name to file name for lstat. */
+	strcpy(path, dir_path);
+	if (path[strlen(path)-1]!='/') strcat(path, "/");
+	strcat(path, dir_entry->d_name);
+
+	/* Skip file on error. */
+	if (!(lstat(path, &stat_buf)>=0)) continue;
+
+	/* If a directory is found try to get cpuset info about it. */
+	if (stat_buf.st_mode&S_IFDIR)
+	{
+            sprintf (cpuset_name, "%s/%s", parent_path, dir_entry->d_name);
+            if (cpuset_query(child_cpuset, cpuset_name) != 0)
+            {
+                sprintf (log_buffer, "cpuset_query(%s) failed.\n", cpuset_name);
+                log_err(-1,id,log_buffer);
+                return -1;
+            }
+
+            /* Determine all cpus and mems in the cpuset. */
+            cpuset_getcpus(child_cpuset, child_cpus);
+            cpuset_getmems(child_cpuset, child_mems);
+
+            /* Mask child_cpus bits off of available_cpus. */
+            if (bitmask_subset(child_cpus, available_cpus))
+            {
+                bitmask_andnot(result_cpus, available_cpus, child_cpus);
+                bitmask_copy(available_cpus, result_cpus);
+            }
+            else
+            {
+                sprintf (log_buffer, "cpuset %s not a subset of parent cpuset '%s'.\n", cpuset_name, dir_path);
+                log_err(-1,id,log_buffer);
+                return -1;
+            }
+
+            /* Mask child_mems bits off of available_mems. */
+            if (bitmask_subset(child_mems, available_mems))
+            {
+                bitmask_andnot(result_mems, available_mems, child_mems);
+                bitmask_copy(available_mems, result_mems);
+            }
+            else
+            {
+                sprintf (log_buffer, "memset %s not a subset of parent memset '%s'.\n", cpuset_name, dir_path);
+                log_err(-1,id,log_buffer);
+                return -1;
+            }
+	}
+    }
+
+    closedir(cpu_root);
+    bitmask_free(child_cpus);
+    bitmask_free(child_mems);
+    cpuset_free(child_cpuset);
+    return 0;
+}
 /*
  * Create the root cpuset for Torque if it doesn't already exist.
  * clear out any job cpusets for jobs that no longer exist.
@@ -376,136 +507,5 @@ int create_job_set (
     return 0;
 }
 
-/* Look through all of the cpusets in the root cpuset and determine cpus and memory that are available. */
-int find_free_cpuset_space(
-    struct bitmask *available_cpus,
-    struct bitmask *available_mems,
-    char *parent_path)
-{
-
-  static char	id[] = "find_free_cpuset_space";
-  struct cpuset *child_cpuset;
-  struct bitmask *child_cpus;
-  struct bitmask *child_mems;
-  struct bitmask *result_cpus;
-  struct bitmask *result_mems;
-  DIR *cpu_root;
-  struct dirent *dir_entry;
-  struct stat stat_buf;
-  char path[MAXPATHLEN + 1];
-  char dir_path[MAXPATHLEN + 1];
-  char cpuset_name[MAXPATHLEN + 1];
-
-    child_cpuset = cpuset_alloc();
-    if (child_cpuset == NULL)
-    {
-        sprintf (log_buffer, "cpuset_alloc() failed.\n");
-        log_err(-1,id,log_buffer);
-        return -1;
-    }
-
-    child_cpus = bitmask_alloc(cpuset_cpus_nbits());
-    if (child_cpus == NULL)
-    {
-        sprintf (log_buffer, "bitmask_alloc() failed.\n");
-        log_err(-1,id,log_buffer);
-        return -1;
-    }
-
-    child_mems = bitmask_alloc(cpuset_mems_nbits());
-    if (child_mems == NULL)
-    {
-        sprintf (log_buffer, "bitmask_alloc() failed.\n");
-        log_err(-1,id,log_buffer);
-        return -1;
-    }
-
-    result_cpus = bitmask_alloc(cpuset_cpus_nbits());
-    if (result_cpus == NULL)
-    {
-        sprintf (log_buffer, "bitmask_alloc() failed.\n");
-        log_err(-1,id,log_buffer);
-        return -1;
-    }
-
-    result_mems = bitmask_alloc(cpuset_mems_nbits());
-    if (result_mems == NULL)
-    {
-        sprintf (log_buffer, "bitmask_alloc() failed.\n");
-        log_err(-1,id,log_buffer);
-        return -1;
-    }
-
-    /* Find all cpusets directly under the cpuset root directory. */
-    sprintf (dir_path, "/dev/cpuset%s", parent_path);
-    cpu_root = opendir(dir_path);
-    if (cpu_root == NULL)
-    {
-        sprintf(log_buffer, "opendir(%s) failed.\n", dir_path);
-        log_err(-1,id,log_buffer);
-    }
-
-    while ((dir_entry = readdir(cpu_root)) != NULL)
-    {
-	/* Skip parent and current directory. */
-	if (!strcmp(dir_entry->d_name, ".")||!strcmp(dir_entry->d_name, "..")) continue;
-
-	/* Prepend directory name to file name for lstat. */
-	strcpy(path, dir_path);
-	if (path[strlen(path)-1]!='/') strcat(path, "/");
-	strcat(path, dir_entry->d_name);
-
-	/* Skip file on error. */
-	if (!(lstat(path, &stat_buf)>=0)) continue;
-
-	/* If a directory is found try to get cpuset info about it. */
-	if (stat_buf.st_mode&S_IFDIR)
-	{
-            sprintf (cpuset_name, "%s/%s", parent_path, dir_entry->d_name);
-            if (cpuset_query(child_cpuset, cpuset_name) != 0)
-            {
-                sprintf (log_buffer, "cpuset_query(%s) failed.\n", cpuset_name);
-                log_err(-1,id,log_buffer);
-                return -1;
-            }
-
-            /* Determine all cpus and mems in the cpuset. */
-            cpuset_getcpus(child_cpuset, child_cpus);
-            cpuset_getmems(child_cpuset, child_mems);
-
-            /* Mask child_cpus bits off of available_cpus. */
-            if (bitmask_subset(child_cpus, available_cpus))
-            {
-                bitmask_andnot(result_cpus, available_cpus, child_cpus);
-                bitmask_copy(available_cpus, result_cpus);
-            }
-            else
-            {
-                sprintf (log_buffer, "cpuset %s not a subset of parent cpuset '%s'.\n", cpuset_name, dir_path);
-                log_err(-1,id,log_buffer);
-                return -1;
-            }
-
-            /* Mask child_mems bits off of available_mems. */
-            if (bitmask_subset(child_mems, available_mems))
-            {
-                bitmask_andnot(result_mems, available_mems, child_mems);
-                bitmask_copy(available_mems, result_mems);
-            }
-            else
-            {
-                sprintf (log_buffer, "memset %s not a subset of parent memset '%s'.\n", cpuset_name, dir_path);
-                log_err(-1,id,log_buffer);
-                return -1;
-            }
-	}
-    }
-
-    closedir(cpu_root);
-    bitmask_free(child_cpus);
-    bitmask_free(child_mems);
-    cpuset_free(child_cpuset);
-    return 0;
-}
 
 
