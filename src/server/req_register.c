@@ -387,7 +387,7 @@ void req_register(
 
               break;
               }
-            }
+            }    /* END if ((pdep = find_depend(type,pattr))) */
 
           rc = PBSE_IVALREQ;
 
@@ -593,7 +593,6 @@ static void post_doq(
         pjob->ji_modified = 1;
 
         set_depend_hold(pjob,pattr);
-
         }
       }
     }
@@ -601,7 +600,7 @@ static void post_doq(
   release_req(pwt);
 
   return;
-  }
+  }  /* END post_doq() */
 
 
 
@@ -1070,8 +1069,10 @@ static void release_cheapest(
 
 
 
-/*
+/**
  * set_depend_hold - set a hold on the job required by the type of dependency
+ *
+ * NOTE:  determine where dependency hold is cleared and comment
  */
 
 static void set_depend_hold(
@@ -1124,10 +1125,10 @@ static void set_depend_hold(
           substate = JOB_SUBSTATE_DEPNHOLD;
 
         break;
+      }  /* END switch (pdp->dp_type) */
 
-      }
     pdp = (struct depend *)GET_NEXT(pdp->dp_link);
-    }
+    }  /* END while ((pdp != NULL) && (loop != 0)) */
 
   if (substate == -1)
     {
@@ -1137,6 +1138,8 @@ static void set_depend_hold(
         (pjob->ji_qs.ji_substate == JOB_SUBSTATE_DEPNHOLD))
       {
       pjob->ji_wattr[(int)JOB_ATR_hold].at_val.at_long &= ~HOLD_s;
+
+      /* newstate is job's 'natural state - ie, what it would be if dependency did not exist */
 
       svr_evaljobstate(pjob,&newstate,&newsubst,0);
 
@@ -1305,14 +1308,17 @@ static int register_sync(
 /*
  * register_dep - Some job wants to run before/after the local job, so set up
  *	a dependency on the local job.
+ *
+ * @see req_register() - parent
+ *
  */
 
 static int register_dep(
 
-  attribute	     *pattr,
+  attribute	       *pattr,
   struct batch_request *preq,
-  int		      type,
-  int		     *made)	/* RETURN */
+  int		        type,
+  int		       *made)	/* RETURN */
 
   {
   struct depend     *pdep;
@@ -1358,9 +1364,11 @@ static int register_dep(
 
 
 
-/*
+/**
  * unregister_dep - remove a registered dependency
  *	Results from a qalter call to remove existing dependencies
+ *
+ * @see register_dep()
  */
 
 static int unregister_dep(
@@ -2044,35 +2052,52 @@ static int build_depend(
     {
     case JOB_DEPEND_TYPE_SYNCWITH:
 
-		if ( have[JOB_DEPEND_TYPE_SYNCWITH]     ||
-		     have[JOB_DEPEND_TYPE_SYNCCT]     ||
-		     have[JOB_DEPEND_TYPE_AFTERSTART] ||
-		     have[JOB_DEPEND_TYPE_AFTEROK]    ||
-		     have[JOB_DEPEND_TYPE_AFTERNOTOK] ||
-		     have[JOB_DEPEND_TYPE_AFTERANY]   ||
-		     have[JOB_DEPEND_TYPE_ON] )
-			return (PBSE_BADATVAL);
-		break;
-	    case JOB_DEPEND_TYPE_SYNCCT:
-		if ( have[JOB_DEPEND_TYPE_SYNCWITH]     ||
-		     have[JOB_DEPEND_TYPE_SYNCCT] )
-			return (PBSE_BADATVAL);
-		break;
-	    case JOB_DEPEND_TYPE_AFTERSTART:
-	    case JOB_DEPEND_TYPE_AFTEROK:
-	    case JOB_DEPEND_TYPE_AFTERNOTOK:
-	    case JOB_DEPEND_TYPE_AFTERANY:
-	    case JOB_DEPEND_TYPE_ON:
-		if ( have[JOB_DEPEND_TYPE_SYNCWITH] )
-			return (PBSE_BADATVAL);
-		break;
-	}
+      if (have[JOB_DEPEND_TYPE_SYNCWITH]   ||
+          have[JOB_DEPEND_TYPE_SYNCCT]     ||
+          have[JOB_DEPEND_TYPE_AFTERSTART] ||
+          have[JOB_DEPEND_TYPE_AFTEROK]    ||
+          have[JOB_DEPEND_TYPE_AFTERNOTOK] ||
+          have[JOB_DEPEND_TYPE_AFTERANY]   ||
+          have[JOB_DEPEND_TYPE_ON])
+        {
+        return(PBSE_BADATVAL);
+        }
 
-	if ((pd = have[type]) == (struct depend *)0) {
-		pd = make_depend(type, pattr);
-		if (pd == (struct depend *)0)
-			return (PBSE_SYSTEM);
-	}
+      break;
+
+    case JOB_DEPEND_TYPE_SYNCCT:
+
+      if (have[JOB_DEPEND_TYPE_SYNCWITH]     ||
+          have[JOB_DEPEND_TYPE_SYNCCT])
+        {
+        return(PBSE_BADATVAL);
+        }
+
+      break;
+
+    case JOB_DEPEND_TYPE_AFTERSTART:
+    case JOB_DEPEND_TYPE_AFTEROK:
+    case JOB_DEPEND_TYPE_AFTERNOTOK:
+    case JOB_DEPEND_TYPE_AFTERANY:
+    case JOB_DEPEND_TYPE_ON:
+
+      if (have[JOB_DEPEND_TYPE_SYNCWITH])
+        {
+        return(PBSE_BADATVAL);
+        }
+
+      break;
+    }
+
+  if ((pd = have[type]) == NULL) 
+    {
+    pd = make_depend(type,pattr);
+
+    if (pd == NULL)
+      {
+      return(PBSE_SYSTEM);
+      }
+    }
 
   /* now process the value string */
 

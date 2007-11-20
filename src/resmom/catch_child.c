@@ -355,8 +355,8 @@ void scan_for_exiting()
   task         *task_find	A_((job	*,tm_task_id));
   int im_compose A_((int,char *,char *,int,tm_event_t,tm_task_id));
 
-  static int ForceObit = -1;
-  static int ObitsAllowed = 2;
+  static int ForceObit    = -1;   /* boolean - if TRUE, ObitsAllowed will be enforced */
+  static int ObitsAllowed = 1;
 
 #ifdef  PENABLE_DYNAMIC_CPUSETS
   char           cQueueName[8];
@@ -396,7 +396,7 @@ void scan_for_exiting()
       }
     else
       {
-      ForceObit = 0;
+      ForceObit = 1;
       }
     }
 
@@ -831,6 +831,7 @@ void scan_for_exiting()
 
     pjob->ji_qs.ji_substate = JOB_SUBSTATE_PREOBIT;
 
+#ifdef TREMOVEME
     if (ForceObit == 0)
       {
       if (found_one++ >= ObitsAllowed) 
@@ -840,6 +841,7 @@ void scan_for_exiting()
         break;
         }
       }
+#endif /* TREMOVEME */
 
     /* send the pre-obit job stat request */
 
@@ -854,14 +856,11 @@ void scan_for_exiting()
 
     DIS_tcp_wflush(sock3);
 
-    if (ForceObit == 1)
+    if (found_one++ >= ObitsAllowed)
       {
-      if (found_one++ >= ObitsAllowed)
-        {
-        /* do not exceed max obits per iteration limit */
+      /* do not exceed max obits per iteration limit */
 
-        break; 
-        }
+      break; 
       }
     }  /* END for (pjob) */
 
