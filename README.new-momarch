@@ -1,0 +1,25 @@
+TORQUE is already highly portable and should build server and clients on any
+remotely POSIXish system (including cygwin).
+
+Unfortunately, pbs_mom needs intimate details of the OS for process management
+that go beyond POSIX specs.  These arch-specific changes are in a subdirectory
+in src/resmom/.
+
+Note that creating a new momarch is discouraged.  A few #ifdef's or run-time
+detection is more flexible and easier to maintain long-term.
+
+Here is the recipe for creating a new "momarch":
+
+1. Copy the most similar arch in src/resmom/ to a new directory and modify
+   the source files as required for the new arch.  
+2. Add this directory to DIST_SUBDIRS in src/resmom/Makefile.am.  
+3. Modify buildutils/pbs_mach_type to report your new momarch.
+4. Add the new src/resmom/<momarch>/Makefile.am to AC_OUTPUT() in configure.ac
+5. Create a new pbs_resources_<momarch> manpage in doc/man7/
+6. Add the new manpage to doc/Makefile.am
+7. Other changes to configure.ac may be required, ie, adding to $MOMLIBS
+8. Run 'autoreconf -vfi' to generate new autobuild files
+9. In a seperate objdir, run configure and 'make distcheck'.
+10. If all goes well, modify CHANGELOG and check in the changes (don't
+   forget to add the new momarch directory).
+
