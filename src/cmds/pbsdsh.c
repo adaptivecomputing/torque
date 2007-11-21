@@ -303,7 +303,7 @@ void getstdout()
 
   rfsd=permrfsd;
 
-  if (maxfd < FD_SETSIZE)
+  if (maxfd < (int)FD_SETSIZE)
     FD_SET(stdoutfd,&rfsd);
 
   FD_SET(*tm_conn,&permrfsd);

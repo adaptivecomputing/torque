@@ -112,6 +112,8 @@
 #include	<nlist.h>
 #include	<fstab.h>
 #include	<kvm.h>
+#include	<signal.h>
+#include	<unistd.h>
 #include	<sys/types.h>
 #include	<sys/time.h>
 #include	<sys/param.h>
@@ -127,6 +129,7 @@
 #include	<ufs/ufs/quota.h>
 #include	<vm/vm_map.h>
 
+
 #include	"portability.h"
 #include	"pbs_error.h"
 #include	"log.h"
@@ -136,6 +139,7 @@
 #include	"resource.h"
 #include	"job.h"
 #include	"mom_mach.h"
+#include	"mom_func.h"
 #include	"resmon.h"
 #include	"../rm_dep.h"
 
@@ -181,10 +185,10 @@ struct	config	dependent_config[] = {
 };
 
 struct nlist nl[] = {
-	{ "_anoninfo" },	/* 0 */
-	{ "_cnt" },		/* 1 */
-	{ "_averunnable" },	/* 2 */
-	{ "" }
+	{ "_anoninfo",0,0,0,0 },	/* 0 */
+	{ "_cnt",0,0,0,0 },		/* 1 */
+	{ "_averunnable",0,0,0,0 },	/* 2 */
+	{ "",0,0,0,0 }
 };
 
 #define	KSYM_ANON		0
@@ -372,8 +376,8 @@ static unsigned long cput_sum(pjob)
 		nps++;
 
 		cputime += pp->ki_runtime / 1000000;
-		DBPRT(("%s: ses %d pid %d cputime %d\n", id,
-				sess_tbl[i], pp->ki_pid,  pp->ki_runtime / 1000000))
+		DBPRT(("%s: ses %d pid %d cputime %lu\n", id,
+				sess_tbl[i], pp->ki_pid,  (long unsigned)pp->ki_runtime / 1000000))
 	}
 
 	if (nps == 0)
@@ -406,7 +410,7 @@ static unsigned long mem_sum(pjob)
 
 		memsize += pp->ki_size;
 		DBPRT(("%s: ses %d pid=%d totmem=%lu\n", id,
-		       sess_tbl[i], pp->ki_pid, pp->ki_size))
+		       sess_tbl[i], pp->ki_pid, (long unsigned)pp->ki_size))
 	}
 
 	return (memsize);
@@ -430,9 +434,9 @@ static unsigned long resi_sum(pjob)
 			continue;
 
 		memsize += pp->ki_rssize * PAGE_SIZE;
-		DBPRT(("%s: pid=%d ses=%d mem=%d totmem=%d\n", id,
+		DBPRT(("%s: pid=%d ses=%d mem=%lu totmem=%lu\n", id,
 			pp->ki_pid, sess_tbl[i],
-			pp->ki_rssize * PAGE_SIZE, memsize))
+			(long unsigned)pp->ki_rssize * PAGE_SIZE, memsize))
 	}
 
 	return (memsize);
@@ -698,17 +702,9 @@ int qs_cmp(
   const void *b)
 
   {
-  return((int)((struct kinfo_proc *)a)->ki_paddr - (int)((struct kinfo_proc *)b)->ki_paddr);
+  return((int)(((struct kinfo_proc *)a)->ki_paddr - ((struct kinfo_proc *)b)->ki_paddr));
   }
 
-int bs_cmp(
-
-  const void *key,
-  const void *member)
-
-  {
-  return((int)((struct session *)key)->s_leader - (int)((struct kinfo_proc *)member)->ki_paddr);
-  }
 
 
 /*
@@ -723,10 +719,6 @@ mom_get_sample()
 {
 	char			*id = "mom_get_sample";
 	int			i;
-	struct	session		ss;
-	struct	kinfo_proc	*kp;
-	struct	kinfo_proc	*leader;
-	pid_t			sid;
 
 	DBPRT(("%s: entered\n", id))
 	if (sess_tbl)
@@ -826,7 +818,7 @@ int mom_over_limit(pjob)
 			num = (unsigned long)(wallfactor * (double)(time_now - pjob->ji_qs.ji_stime));
 			if (num > value) {
 				sprintf(log_buffer,
-					"walltime %d exceeded limit %d",
+					"walltime %lu exceeded limit %lu",
 					num, value);
 				if (ignwalltime == 0)
 					return (TRUE);
@@ -849,7 +841,6 @@ int mom_over_limit(pjob)
 int mom_set_use(pjob)
     job		*pjob;
 {
-	char		*id = "mom_set_use";
 	resource	*pres;
 	attribute	*at;
 	resource_def	*rd;
@@ -1034,9 +1025,6 @@ int
 getprocs()
 {
 	static	unsigned	int	lastproc = 0;
-	char		*id = "getprocs";
-	caddr_t		*kernel_proc;
-	int		i, len;
 
 
 	if (lastproc == reqnum)	/* don't need new proc table */
@@ -1054,7 +1042,6 @@ cput_job(jobid)
 pid_t	jobid;
 {
 	char			*id = "cput_job";
-	double			ses_time;
 	int			i;
 	unsigned long		cputime;
 
@@ -1072,7 +1059,7 @@ pid_t	jobid;
 
 		cputime += pp->ki_runtime / 1000000;
 
-		DBPRT(("%s: ses %d pid %d cputime %d\n", id,
+		DBPRT(("%s: ses %d pid %d cputime %lu\n", id,
 				jobid, pp->ki_pid, cputime))
 
 	}
@@ -1086,8 +1073,8 @@ cput_proc(pid)
 pid_t	pid;
 {
 	char			*id = "cput_proc";
-	struct	pstats		ps;
-	uint			i, cputime;
+	uint			cputime;
+	int			i;
 
 	for (i=0; i<nproc; i++) {
 		struct kinfo_proc	*pp = &proc_tbl[i];
@@ -1144,7 +1131,6 @@ char	*
 mem_job(jobid)
 pid_t	jobid;
 {
-	char			*id = "mem_job";
 	int			i;
 	int			memsize, addmem;
 	int			found = 0;
@@ -1177,7 +1163,6 @@ char	*
 mem_proc(pid)
 pid_t	pid;
 {
-	char			*id = "mem_proc";
 	int			i, memsize;
 
 	if (getprocs() == 0) {
@@ -1237,7 +1222,6 @@ static char	*
 resi_job(jobid)
 pid_t	jobid;
 {
-	char			*id = "resi_job";
 	int			i, found;
 	int			resisize;
 
@@ -1269,7 +1253,6 @@ static char	*
 resi_proc(pid)
 pid_t	pid;
 {
-	char			*id = "resi_proc";
 	int			i;
 	int			resisize;
 
@@ -1567,8 +1550,6 @@ size_fs(param)
 char	*param;
 {
 	char		*id = "size_fs";
-	FILE		*mf;
-	struct	mntent	*mp;
 	struct	statfs	fsbuf;
 
 	if (param[0] != '/') {
@@ -1609,7 +1590,7 @@ char	*param;
 		return NULL;
 	}
 
-	sprintf(ret_string, "%ukb", sbuf.st_size >> 10); /* in KB */
+	sprintf(ret_string, "%lukb", (long unsigned)sbuf.st_size >> 10); /* in KB */
 	return ret_string;
 }
 
@@ -1664,9 +1645,9 @@ void setmax(
     {
     if (LOGLEVEL >= 2)
       {
-      sprintf(log_buffer,"setmax: dev %s access %d replaces max %ld\n",
+      sprintf(log_buffer,"setmax: dev %s access %ld replaces max %ld\n",
         dev,
-        sb.st_atime,
+        (long)sb.st_atime,
         (long)maxtm);
 
       log_record(PBSEVENT_SYSTEM,0,id,log_buffer);
@@ -1730,7 +1711,6 @@ walltime(attrib)
 struct	rm_attribute	*attrib;
 {
 	char			*id = "walltime";
-	struct	pstats		ps;
 	pid_t			value;
 	int			i, job, found = 0;
 	time_t			now, start;
@@ -1801,23 +1781,16 @@ get_la(rv)
 	double	*rv;
 {
 	char	*id = "get_la";
-	long	la[3];
 
 	if (kd == NULL) {
 		log_err(-1, id, nokernel);
 		return (rm_errno = RM_ERR_SYSTEM);
 	}
-	if (nl[KSYM_LOAD].n_type == 0) {
-		log_err(-1, id, "loadaverage count not found");
-		return (rm_errno = RM_ERR_SYSTEM);
-	}
-	if (kvm_read(kd, nl[KSYM_LOAD].n_value, la,
-			sizeof(la)) != sizeof(la)) {
-		log_err(errno, id, "kvm_read");
+	if (kvm_getloadavg(kd, rv, 1) != 1) {
+		log_err(errno, id, "kvm_getloadavg");
 		return (rm_errno = RM_ERR_SYSTEM);
 	}
 
-	*rv = (double)la[0]/(double)FSCALE;
 	return 0;
 }
 
@@ -1827,7 +1800,7 @@ u_long	secs;
 {
 	time_t	now = time((time_t *)NULL);
 
-	if (secs > now)		/* time is in the future */
+	if ((time_t)secs > now)		/* time is in the future */
 		return (secs - now);
 	else
 		return 0;
@@ -1979,13 +1952,13 @@ struct	rm_attribute	*attrib;
 	/* all sizes in KB */
 	switch (type) {
 	case harddata:
-		sprintf(ret_string, "%ukb", dbtob(qi.dqb_bhardlimit) >> 10);
+		sprintf(ret_string, "%llukb", (long long unsigned)dbtob(qi.dqb_bhardlimit) >> 10);
 		break;
 	case softdata:
-		sprintf(ret_string, "%ukb", dbtob(qi.dqb_bsoftlimit) >> 10);
+		sprintf(ret_string, "%llukb", (long long unsigned)dbtob(qi.dqb_bsoftlimit) >> 10);
 		break;
 	case currdata:
-		sprintf(ret_string, "%ukb", dbtob(qi.dqb_curblocks) >> 10);
+		sprintf(ret_string, "%llukb", (long long unsigned)dbtob(qi.dqb_curblocks) >> 10);
 		break;
 	case hardfile:
 		sprintf(ret_string, "%u", qi.dqb_ihardlimit);
@@ -1997,10 +1970,10 @@ struct	rm_attribute	*attrib;
 		sprintf(ret_string, "%u", qi.dqb_curinodes);
 		break;
 	case timedata:
-		sprintf(ret_string, "%u", gracetime(qi.dqb_btime));
+		sprintf(ret_string, "%lu", gracetime(qi.dqb_btime));
 		break;
 	case timefile:
-		sprintf(ret_string, "%u", gracetime(qi.dqb_itime));
+		sprintf(ret_string, "%lu", gracetime(qi.dqb_itime));
 		break;
 	}
 

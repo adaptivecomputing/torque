@@ -85,6 +85,7 @@
 #include <signal.h>
 #include <string.h>
 #include <unistd.h>
+#include <stdio.h>
 #include <pwd.h>
 #include "portability.h"
 #include "libpbs.h"
@@ -97,7 +98,6 @@
 #include "mom_mach.h"
 #include "mom_func.h"
 
-static char ident[] = "@(#) $RCSfile$ $Revision: 524 $";
 
 /* Global Variables */
 

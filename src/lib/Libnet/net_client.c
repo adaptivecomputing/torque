@@ -80,6 +80,7 @@
 
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <rpc/rpc.h>
 #include <netinet/in.h>
 #include <stdio.h>
 #include <errno.h>

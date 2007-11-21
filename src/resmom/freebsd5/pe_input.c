@@ -81,7 +81,6 @@
 #include <fcntl.h>
 #include <sys/param.h>
 
-static char ident[] = "@(#) $RCSfile$ $Revision: 5 $";
 
 /*
  * pe_input() - open architecture dependent input file for prologue

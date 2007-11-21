@@ -369,7 +369,7 @@ int wait_request(
 
       /* NOTE:  selset may be modified by failed select() */
 
-      for (i = 0;i < FD_SETSIZE;i++)
+      for (i = 0;i < (int)FD_SETSIZE;i++)
         {
         if (FD_ISSET(i,&readset) == 0)
           continue;
