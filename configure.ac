@@ -313,7 +313,7 @@ AC_SUBST(PBSPOEO)
 
 AC_ARG_ENABLE(cpuset,[  --disable-cpuset        enable Linux 2.6 kernel cpusets])
 build_l26_cpuset=no
-if test "x$enable_cpuset" != "xno" ;then
+if test "x$enable_cpuset" = "xyes" ;then
   AC_CHECK_LIB(cpuset, cpuset_cpus_weight, 
     [AC_CHECK_LIB(bitmask, bitmask_alloc,
       [build_l26_cpuset=yes
