@@ -3,6 +3,10 @@ c - crash     b - bug fix    e - enhancement    f - new feature
 2.3.0
   e - redesign how torque.spec is built
 
+2.2.1
+  b - fix a bug where dependent jobs get put on hold when the previous job has
+      completed but its state is still available for life of keep_completed
+
 2.2.0
   e - improve RPP logging for corruption issues
   f - dynamic resources
