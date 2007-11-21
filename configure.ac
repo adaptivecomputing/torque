@@ -180,19 +180,19 @@ dnl Torque's own largefile support
 TAC_SYS_LARGEFILE
 
 dnl if using gcc, we can be very strict
-gcc_warning_flags="-W -Wall -Wno-unused-parameter -Wno-long-long -pedantic -Werror"
 AC_ARG_ENABLE(gcc_warnings,
-    [  --disable-gcc-warnings   If using gcc, use strict warnings])
+[  --disable-gcc-warnings  Disable gcc strictness and warnings.  If using
+                          gcc, default is to error on any warning])
 if test "x$GCC" = "xyes" ;then
   AC_MSG_CHECKING([whether to use strict gcc warnings])
   if test "${enable_gcc_warnings}" == "no" ; then
     AC_MSG_RESULT([no])
   else
     if test "x$build_drmaa" = "xyes" ;then
-      AC_MSG_RESULT([no])
+      AC_MSG_RESULT([no... because DRMAA is being built])
     else
       AC_MSG_RESULT([yes])
-      CFLAGS="$CFLAGS $gcc_warning_flags"
+      AX_CFLAGS_GCC_OPTION([-W -Wall -Wno-unused-parameter -Wno-long-long -pedantic -Werror])
     fi
   fi
 fi
