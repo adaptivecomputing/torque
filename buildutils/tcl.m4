@@ -44,7 +44,7 @@ AC_DEFUN([TEA_PATH_TCLCONFIG], [
     if test x"${no_tcl}" = x ; then
 	# we reset no_tcl in case something fails here
 	no_tcl=true
-	AC_ARG_WITH(tcl, [  --with-tcl              directory containing tcl configuration (tclConfig.sh)], with_tclconfig=${withval})
+	AC_ARG_WITH(tcl, AC_HELP_STRING([--with-tcl],[directory containing tcl configuration (tclConfig.sh)]), with_tclconfig=${withval})
 	AC_MSG_CHECKING([for Tcl configuration])
 	AC_CACHE_VAL(ac_cv_c_tclconfig,[
 
@@ -141,7 +141,7 @@ AC_DEFUN([TEA_PATH_TKCONFIG], [
     if test x"${no_tk}" = x ; then
 	# we reset no_tk in case something fails here
 	no_tk=true
-	AC_ARG_WITH(tk, [  --with-tk               directory containing tk configuration (tkConfig.sh)], with_tkconfig=${withval})
+	AC_ARG_WITH(tk, AC_HELP_STRING([--with-tk],[directory containing tk configuration (tkConfig.sh)]), with_tkconfig=${withval})
 	AC_MSG_CHECKING([for Tk configuration])
 	AC_CACHE_VAL(ac_cv_c_tkconfig,[
 
@@ -2898,7 +2898,7 @@ AC_DEFUN([TEA_PRIVATE_TCL_HEADERS], [
 AC_DEFUN([TEA_PUBLIC_TCL_HEADERS], [
     AC_MSG_CHECKING([for Tcl public headers])
 
-    AC_ARG_WITH(tclinclude, [  --with-tclinclude       directory containing the public Tcl header files], with_tclinclude=${withval})
+    AC_ARG_WITH(tclinclude, AC_HELP_STRING([--with-tclinclude],[directory containing the public Tcl header files]), with_tclinclude=${withval})
 
     AC_CACHE_VAL(ac_cv_c_tclh, [
 	# Use the value from --with-tclinclude, if it was given
@@ -3027,7 +3027,7 @@ AC_DEFUN([TEA_PRIVATE_TK_HEADERS], [
 AC_DEFUN([TEA_PUBLIC_TK_HEADERS], [
     AC_MSG_CHECKING([for Tk public headers])
 
-    AC_ARG_WITH(tkinclude, [  --with-tkinclude      directory containing the public Tk header files.], with_tkinclude=${withval})
+    AC_ARG_WITH(tkinclude, AC_HELP_STRING([--with-tkinclude],[directory containing the public Tk header files.]), with_tkinclude=${withval})
 
     AC_CACHE_VAL(ac_cv_c_tkh, [
 	# Use the value from --with-tkinclude, if it was given
@@ -3222,7 +3222,7 @@ AC_DEFUN([TEA_PATH_CONFIG], [
     if test x"${no_$1}" = x ; then
 	# we reset no_$1 in case something fails here
 	no_$1=true
-	AC_ARG_WITH($1, [  --with-$1              directory containing $1 configuration ($1Config.sh)], with_$1config=${withval})
+	AC_ARG_WITH($1, AC_HELP_STRING([--with-$1],[directory containing $1 configuration ($1Config.sh)]), with_$1config=${withval})
 	AC_MSG_CHECKING([for $1 configuration])
 	AC_CACHE_VAL(ac_cv_c_$1config,[
 

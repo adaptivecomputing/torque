@@ -123,7 +123,7 @@ AC_SUBST(build_clients)
 
 AC_MSG_CHECKING([whether to build DRMAA lib])
 AC_ARG_ENABLE(drmaa,
-    [  --disable-drmaa       do not build the DRMAA 1.0 library (default is off)],
+    [  --disable-drmaa         do not build the DRMAA 1.0 library (default is off)],
     build_drmaa=$enableval, build_drmaa=no)
 AC_MSG_RESULT($build_drmaa)
 AM_CONDITIONAL(INCLUDE_DRMAA, [test "x$build_drmaa" = "xyes"])
@@ -180,8 +180,8 @@ dnl Torque's own largefile support
 TAC_SYS_LARGEFILE
 
 dnl if using gcc, we can be very strict
-AC_ARG_ENABLE(gcc_warnings,
-[  --disable-gcc-warnings  Disable gcc strictness and warnings.  If using
+AC_ARG_ENABLE(gcc_warnings, [
+  --disable-gcc-warnings  Disable gcc strictness and warnings.  If using
                           gcc, default is to error on any warning])
 if test "x$GCC" = "xyes" ;then
   AC_MSG_CHECKING([whether to use strict gcc warnings])
@@ -200,8 +200,9 @@ fi
 dnl
 dnl If hpux and gcc, force the XOPEN interface.
 AC_MSG_CHECKING([whether to force XOPEN networking stack])
-AC_ARG_ENABLE(xopen_networking,
-    [  --disable-xopen-networking      With HPUX and GCC, don't force usage of XOPEN and libxnet])
+AC_ARG_ENABLE(xopen_networking, [
+  --disable-xopen-networking      
+                          With HPUX and GCC, don't force usage of XOPEN and libxnet])
 if test "${enable_xopen_networking}" != "no" ; then
 case $GCC,$PBS_MACH in
   yes,hpux*) AC_MSG_RESULT([yes])
@@ -255,8 +256,7 @@ dnl  System specific settings
 dnl
 
 
-AC_ARG_ENABLE(nodemask,
-    [  --enable-nodemask       enable nodemask-based scheduling on the Origin 2000])
+AC_ARG_ENABLE(nodemask, [  --enable-nodemask       enable nodemask-based scheduling on the Origin 2000])
 if test "${enable_nodemask}" = "yes" ; then
   case "${PBS_MACH}" in
     irix6*) AC_DEFINE(NODEMASK, 1, [use nodemask-based scheduling on O2k]) ;;
@@ -484,8 +484,8 @@ dnl
 dnl  ######################################################################
 dnl  Scheduler settings
 dnl
-AC_ARG_WITH(sched,
-    [  --with-sched=TYPE       sets the scheduler type. If TYPE is
+AC_ARG_WITH(sched, [
+  --with-sched=TYPE       sets the scheduler type. If TYPE is
                           "c" the scheduler will be written in C
                           "tcl" the server will use a Tcl based scheduler
                           "basl" will use the rule based scheduler
@@ -517,8 +517,8 @@ if test "$SCHD_TYPE" = basl ;then
 fi
 AC_SUBST(SCHD_LIBS)
 
-AC_ARG_WITH(sched_code,
-    [  --with-sched-code=PATH  sets the name of the scheduler to use.
+AC_ARG_WITH(sched_code, [
+  --with-sched-code=PATH  sets the name of the scheduler to use.
                           This only applies to BASL schedulers and those
                           written in the C language. For C schedulers
                           this should be a directory name and for BASL
@@ -572,8 +572,7 @@ AM_CONDITIONAL(USING_RPP, [test "$RPP" = "1"])
 
 
 
-AC_ARG_ENABLE(filesync,
-[
+AC_ARG_ENABLE(filesync, [
   --enable-filesync       open files with sync on each write operation.  Don't
                           bother enabling this, all it does is slow down TORQUE.
                           This is disabled by default.],
@@ -586,8 +585,8 @@ AC_DEFINE_UNQUOTED(TDISABLEFILESYNC, ${TDISABLEFILESYNC}, [Define to prevent syn
 
 
 
-AC_ARG_ENABLE(plock_daemons,
-    [  --enable-plock-daemons[[=ARG]]
+AC_ARG_ENABLE(plock_daemons, [
+  --enable-plock-daemons[[=ARG]]
                           enable daemons to lock themselves into memory:
                           logical-or of 1 for pbs_server, 2 for pbs_scheduler,
                           4 for pbs_mom (no argument means 7 for all three)],
@@ -600,8 +599,7 @@ AC_DEFINE_UNQUOTED(PLOCK_DAEMONS, ${PLOCK_DAEMONS},
 	[Select which daemons plock themselves, a bit pattern])
 
 
-AC_ARG_ENABLE(syslog,
-[
+AC_ARG_ENABLE(syslog, [
   --enable-syslog         enable (default) the use of syslog for error reporting],
 [case "${enableval}" in
   yes) SYSLOG=1 ;;
@@ -624,8 +622,7 @@ esac],[SHELL_INVOKE=1])
 AC_DEFINE_UNQUOTED(SHELL_INVOKE, ${SHELL_INVOKE},
 	[set whether job scripts use a pipe])
 
-AC_ARG_WITH(maildomain,
-[
+AC_ARG_WITH(maildomain, [
   --with-maildomain=MAILDOMAIN
                           override the default domain for outgoing mail messages,
                           i.e. "user@maildomain".  The default maildomain is the
@@ -634,8 +631,7 @@ AC_ARG_WITH(maildomain,
 AC_MSG_WARN([--with-maildomain is depricated.  Set mail_domain in qmgr.])
 AC_DEFINE_UNQUOTED(TMAILDOMAIN, "${MAILDOMAIN}", [override the default domain for outgoing mail messages])])
 
-AC_ARG_ENABLE(spool,
-[
+AC_ARG_ENABLE(spool, [
   --disable-spool         if disabled, TORQUE will create output and error files
                           directly in $HOME/.pbs_spool if it exists or in $HOME
                           otherwise.  By default, TORQUE will spool files in
@@ -648,8 +644,7 @@ AC_ARG_ENABLE(spool,
 esac],[NO_SPOOL_OUTPUT=0])dnl
 AC_DEFINE_UNQUOTED(NO_SPOOL_OUTPUT, ${NO_SPOOL_OUTPUT}, [directly use homedirs instead of $TORQUEHOME/spool])
 
-AC_ARG_ENABLE(shell-use-argv,
-[
+AC_ARG_ENABLE(shell-use-argv, [
   --enable-shell-use-argv enable this to put the job script name on the
                           command line that invokes the shell.  Not on by
                           default.  Ignores --enable-shell-pipe setting.],
@@ -661,10 +656,10 @@ esac],[SHELL_USE_ARGV=0])dnl
 AC_DEFINE_UNQUOTED(SHELL_USE_ARGV, ${SHELL_USE_ARGV}, [job script name passed as the shell's arg])
 
 
-AC_ARG_ENABLE(privports,
-[
-  --disable-privports     disable the use of privileged ports for authentication.  Some versions of OSX have
-                          a buggy bind() and cannot bind to privileged ports.],
+AC_ARG_ENABLE(privports, [
+  --disable-privports     disable the use of privileged ports for authentication.  
+                          Some versions of OSX have a buggy bind() and cannot
+                          bind to privileged ports.],
 [case "${enableval}" in
   yes)  ;;
   no)  NOPRIVPORTS=1; AC_DEFINE(NOPRIVPORTS, 1, [Define to disable privileged ports]) ;;
@@ -672,8 +667,7 @@ AC_ARG_ENABLE(privports,
 esac])dnl
 
 
-AC_ARG_ENABLE(mom-checkspool,
-[
+AC_ARG_ENABLE(mom-checkspool, [
   --disable-mom-checkspool
                           Don't check free space on spool directory and set an error],
 [case "${enableval}" in
@@ -684,16 +678,15 @@ esac],[MOMCHECKLOCALSPOOL=1])dnl
 AC_DEFINE_UNQUOTED(MOMCHECKLOCALSPOOL, ${MOMCHECKLOCALSPOOL}, [Define to error if spool is full on MOM])
 
 
-AC_ARG_WITH(tmpdir,
-    [  --with-tmpdir=DIR       set the tmp directory that pbs_mom will use
+AC_ARG_WITH(tmpdir, [
+  --with-tmpdir=DIR       set the tmp directory that pbs_mom will use
                           defaults to "/tmp". This is a Cray-specific feature.],
     [TMP_DIR="${withval}"], [TMP_DIR="/tmp"])
 test "$TMP_DIR" = yes && TMP_DIR="/tmp"
 AC_DEFINE_UNQUOTED(TMP_DIR, "${TMP_DIR}",
 		   [The pathname of the Cray temporary directory for mom])
 
-AC_ARG_ENABLE(force-nodefile,
-[
+AC_ARG_ENABLE(force-nodefile, [
   --enable-force-nodefile forces creation of nodefile regardless of job
                           submission parameters. Not on by default.],
 [case "${enableval}" in
@@ -703,16 +696,16 @@ AC_ARG_ENABLE(force-nodefile,
 esac],[MOM_FORCENODEFILE=0])dnl
 AC_DEFINE_UNQUOTED(MOM_FORCENODEFILE, ${MOM_FORCENODEFILE}, [force creation of nodefile])
 
-AC_ARG_WITH(server_home,
-    [  --with-server-home=DIR  set the server home/spool directory for PBS use
+AC_ARG_WITH(server_home, [
+  --with-server-home=DIR  set the server home/spool directory for PBS use
                           defaults to /var/spool/torque],
     [PBS_SERVER_HOME="${withval}"], [PBS_SERVER_HOME="/var/spool/torque"])
 AC_SUBST(PBS_SERVER_HOME)
 
     dnl [PBS_SERVER_HOME="${withval}"], [PBS_SERVER_HOME="$localstatedir/spool/torque"])
 
-AC_ARG_WITH(server_name_file, 
-    [  --with-server-name-file=FILE
+AC_ARG_WITH(server_name_file, [
+  --with-server-name-file=FILE
                           set the file that will contain the name of
                           the default server for clients to use. If this
                           is not an absolute pathname, it will be evaluated
@@ -729,8 +722,8 @@ esac
 AC_SUBST(PBS_DEFAULT_FILE)
 
 
-AC_ARG_WITH(default_server,
-    [  --with-default-server=HOSTNAME
+AC_ARG_WITH(default_server, [
+  --with-default-server=HOSTNAME
                           set the name of the computer that clients will
                           access when no machine name is specified as part
                           of the queue name. It defaults to the hostname
@@ -741,8 +734,8 @@ AC_DEFINE_UNQUOTED(PBS_DEFAULT_SERVER, "${PBS_DEFAULT_SERVER}",
 AC_SUBST(PBS_DEFAULT_SERVER)
 
 
-AC_ARG_WITH(environ,
-    [  --with-environ=PATH     set the path containing the environment variables
+AC_ARG_WITH(environ, [
+  --with-environ=PATH     set the path containing the environment variables
                           for the daemons.  For SP2 and AIX systems,
                           suggested setting is to /etc/environment. Defaults
                           to the file "pbs_environment" in the server-home.
@@ -758,8 +751,8 @@ esac
 AC_SUBST(PBS_ENVIRON)
 
 
-AC_ARG_WITH(qstatrc-file,
-    [  --with-qstatrc-file=FILE
+AC_ARG_WITH(qstatrc-file, [
+  --with-qstatrc-file=FILE
                           set the name of the file that qstat will use
                           if there is no ".qstatrc" file in the directory
                           where it is being invoked.

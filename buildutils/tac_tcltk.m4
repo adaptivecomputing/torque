@@ -218,8 +218,8 @@ fi
 
 
 AC_ARG_WITH(tclatrsep,
-    [  --with-tclatrsep=CHAR   set the Tcl attribute separator character
-                        this will default to "." if unspecified],
+    AC_HELP_STRING([--with-tclatrsep=CHAR],[set the Tcl attribute separator character
+                        this will default to "." if unspecified]),
     [tcl_atrsep="${withval}"], [tcl_atrsep="."])
 if test "$TCL" = "1" ; then
 AC_MSG_CHECKING([checking for Tcl attribute seperator])
