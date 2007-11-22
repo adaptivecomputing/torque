@@ -37,12 +37,12 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 DIST_COMMON = $(am__configure_deps) $(srcdir)/Makefile.am \
-	$(srcdir)/Makefile.in $(srcdir)/torque.spec.in \
-	$(top_srcdir)/buildutils/config.mk \
+	$(srcdir)/Makefile.in $(top_srcdir)/buildutils/config.mk \
 	$(top_srcdir)/buildutils/modulefiles.in \
 	$(top_srcdir)/buildutils/modulefiles.vers.in \
 	$(top_srcdir)/buildutils/pbs_mkdirs.in \
 	$(top_srcdir)/buildutils/self-extract-head-sh.in \
+	$(top_srcdir)/buildutils/torque.spec.in \
 	$(top_srcdir)/configure INSTALL buildutils/compile \
 	buildutils/config.guess buildutils/config.sub \
 	buildutils/depcomp buildutils/install-sh buildutils/ltmain.sh \
@@ -65,9 +65,9 @@ am__CONFIG_DISTCLEAN_FILES = config.status config.cache config.log \
  configure.lineno configure.status.lineno
 mkinstalldirs = $(SHELL) $(top_srcdir)/buildutils/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/include/pbs_config.h
-CONFIG_CLEAN_FILES = buildutils/pbs_mkdirs \
+CONFIG_CLEAN_FILES = torque.spec buildutils/pbs_mkdirs \
 	buildutils/self-extract-head-sh buildutils/modulefiles \
-	buildutils/modulefiles.vers torque.spec
+	buildutils/modulefiles.vers
 am__installdirs = "$(DESTDIR)$(bindir)"
 binSCRIPT_INSTALL = $(INSTALL_SCRIPT)
 SCRIPTS = $(bin_SCRIPTS)
@@ -342,7 +342,7 @@ XPBSMON_DIR = $(libdir)/xpbsmon
 SUBMIT_FILTER_PATH = $(libexecdir)/qsub_filter
 SUBDIRS = src doc
 EXTRA_DIST = CHANGELOG INSTALL.GNU README.configure README.mpiexec \
-             README.torque Release_Notes torque.setup torque.spec.in \
+             README.torque Release_Notes torque.setup buildutils/torque.spec.in \
              DEVELOPMENT PBS_License.txt torque.spec \
 	     buildutils/self-extract-head-sh.in \
 	     buildutils/pbs_mkdirs.in buildutils/pbs_mach_type \
@@ -418,6 +418,8 @@ $(top_srcdir)/configure: @MAINTAINER_MODE_TRUE@ $(am__configure_deps)
 	cd $(srcdir) && $(AUTOCONF)
 $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 	cd $(srcdir) && $(ACLOCAL) $(ACLOCAL_AMFLAGS)
+torque.spec: $(top_builddir)/config.status $(top_srcdir)/buildutils/torque.spec.in
+	cd $(top_builddir) && $(SHELL) ./config.status $@
 buildutils/pbs_mkdirs: $(top_builddir)/config.status $(top_srcdir)/buildutils/pbs_mkdirs.in
 	cd $(top_builddir) && $(SHELL) ./config.status $@
 buildutils/self-extract-head-sh: $(top_builddir)/config.status $(top_srcdir)/buildutils/self-extract-head-sh.in
@@ -425,8 +427,6 @@ buildutils/self-extract-head-sh: $(top_builddir)/config.status $(top_srcdir)/bui
 buildutils/modulefiles: $(top_builddir)/config.status $(top_srcdir)/buildutils/modulefiles.in
 	cd $(top_builddir) && $(SHELL) ./config.status $@
 buildutils/modulefiles.vers: $(top_builddir)/config.status $(top_srcdir)/buildutils/modulefiles.vers.in
-	cd $(top_builddir) && $(SHELL) ./config.status $@
-torque.spec: $(top_builddir)/config.status $(srcdir)/torque.spec.in
 	cd $(top_builddir) && $(SHELL) ./config.status $@
 install-binSCRIPTS: $(bin_SCRIPTS)
 	@$(NORMAL_INSTALL)
@@ -581,7 +581,7 @@ distclean-tags:
 distdir: $(DISTFILES)
 	$(am__remove_distdir)
 	mkdir $(distdir)
-	$(mkdir_p) $(distdir)/. $(distdir)/buildutils $(distdir)/contrib $(distdir)/contrib/init.d $(distdir)/contrib/pestat-1.0 $(distdir)/src/drmaa
+	$(mkdir_p) $(distdir)/buildutils $(distdir)/contrib $(distdir)/contrib/init.d $(distdir)/contrib/pestat-1.0 $(distdir)/src/drmaa
 	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
 	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's|.|.|g'`; \
 	list='$(DISTFILES)'; for file in $$list; do \

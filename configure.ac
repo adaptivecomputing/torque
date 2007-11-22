@@ -1193,12 +1193,12 @@ AC_DEFINE_UNQUOTED([PBS_INSTALL_DIR],"${prefix}",[Define to the install director
 AC_DEFINE_UNQUOTED([PBS_CONFIG_ARGS],"${ac_configure_args}",[Define to the install directory])
 AC_DEFINE_UNQUOTED([PBS_CFLAGS],"${CFLAGS}",[Define to the install directory])
 
+AC_CONFIG_FILES([torque.spec:buildutils/torque.spec.in])
 AC_OUTPUT(buildutils/pbs_mkdirs
 	  buildutils/self-extract-head-sh
 	  buildutils/modulefiles
 	  buildutils/modulefiles.vers
 	  Makefile
-	  torque.spec
 	  doc/Makefile
 	  doc/man1/Makefile
 	  doc/man3/Makefile
