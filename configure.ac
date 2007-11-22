@@ -193,6 +193,7 @@ if test "x$GCC" = "xyes" ;then
     else
       AC_MSG_RESULT([yes])
       AX_CFLAGS_GCC_OPTION([-W -Wall -Wno-unused-parameter -Wno-long-long -pedantic -Werror])
+      gccwarnings=yes
     fi
   fi
 fi
@@ -1260,3 +1261,22 @@ AC_OUTPUT(buildutils/pbs_mkdirs
 	  src/drmaa/Doxyfile
 	  src/pam/Makefile)
 
+echo
+echo "Building components: server=$build_server mom=$build_mom clients=$build_clients 
+                     gui=$build_gui drmaa=$build_drmaa pam=`test "x$pammoddir" = "xdisabled" && echo no || echo yes`"
+echo "PBS Machine type: $PBS_MACH"
+echo "Remote copy: $RCP_PATH $RCP_ARGS"
+echo "PBS home: $PBS_SERVER_HOME"
+echo "Default server: $PBS_DEFAULT_SERVER"
+echo "Tcl: `test "$TCL" = "1" && echo $MY_TCL_INCS $MY_TCL_LIBS || echo disabled`"
+echo "Tk: `test "$TK" = "1" && echo $MY_TCLTK_INCS $MY_TCLTK_LIBS || echo disabled`"
+echo
+
+if test "x$gccwarnings" = "xyes" ;then
+   AC_MSG_WARN([This compilation has strict compiler options enabled that cause
+the build to fail if any compiler warnings are emitted.  If this build fails
+because of a harmless warning, please report the problem to $PACKAGE_BUGREPORT
+and run configure again with --disable-gcc-warnings.])
+   echo
+fi
+echo "Ready for '${MAKE-make}'."
