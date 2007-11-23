@@ -2,6 +2,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature
 
 2.3.0
   e - redesign how torque.spec is built
+  e - Added -a to qrun to allow asynchronous job start
 
 2.2.1
   b - fix a bug where dependent jobs get put on hold when the previous job has
