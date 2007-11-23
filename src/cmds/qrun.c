@@ -121,10 +121,11 @@ int main(
   char server[MAXSERVERNAME];	  /* Server name */
   char *location = NULL;          /* Where to run the job */
     
-  static char opts[] = "H:";     /* See man getopt */
-  static char *usage = "Usage: qrun [-H host] job_id ...\n";
+  static char opts[] = "aH:";     /* See man getopt */
+  static char *usage = "Usage: qrun [-a] [-H host] job_id ...\n";
   int s;
   int errflg = 0;
+  int runAsync = FALSE;
     
   /* Command line options */
 
@@ -132,6 +133,12 @@ int main(
     {
     switch(s) 
       {
+      case 'a':	/* Async job start */
+
+        runAsync = TRUE;
+
+        break;
+        
       case 'H':
 
 	if (strlen(optarg) == 0) 
@@ -173,7 +180,7 @@ int main(
       continue;
       }
 
-    execute(job,server,location);
+    execute(job,server,location,runAsync);
     }  /* END for (;optind) */
 
   exit(exitstatus);
@@ -205,7 +212,8 @@ static void execute(
 
   char *job,      /* I */
   char *server,   /* I */
-  char *location) /* I */
+  char *location, /* I */
+  int  async)     /* I */
 
   {
   int ct;         /* Connection to the server */
@@ -217,7 +225,14 @@ cnt:
  
   if ((ct = cnt2server(server)) > 0) 
     {
-    err = pbs_runjob(ct,job,location,NULL);  /* see lib/Libifl/pbsD_runjob.c */
+    if (async == TRUE)
+    {
+      err = pbs_asyrunjob(ct,job,location,NULL);  /* see lib/Libifl/pbsD_runjob.c */
+    }
+    else
+    {
+      err = pbs_runjob(ct,job,location,NULL);  /* see lib/Libifl/pbsD_runjob.c */
+    }
 
     if (err && (pbs_errno == PBSE_UNKNODE))
       {
