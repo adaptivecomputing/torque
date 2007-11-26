@@ -595,6 +595,11 @@ static int return_file(
 
   filename = std_file_name(pjob,which,&amt); /* amt is place holder */
 
+  if (strcmp(filename,"/dev/null") == 0)
+    {
+    return(0);
+    }
+
   fds = open(filename,O_RDONLY,0);
 
   if (fds < 0)
