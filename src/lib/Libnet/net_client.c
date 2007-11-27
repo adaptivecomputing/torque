@@ -147,6 +147,8 @@ static int await_connect(
 
 
 
+#define TORQUE_MAXCONNECTTIMEOUT  5
+
 /*
  * client_to_svr - connect to a server
  *
@@ -162,7 +164,7 @@ static int await_connect(
  * hosts with the same port.  Let the caller keep the addresses around
  * rather than look it up each time.
  *
- * NOTE:  will wait up to 5 seconds (not configurable) for transient network failures
+ * NOTE:  will wait up to TORQUE_MAXCONNECTTIMEOUT seconds for transient network failures
  */
 
 /* NOTE:  create new connection on reserved port to validate root/trusted authority */
@@ -171,7 +173,7 @@ int client_to_svr(
 
   pbs_net_t     hostaddr,	/* I - internet addr of host */
   unsigned int  port,		/* I - port to which to connect */
-  int           local_port,	/* I - BOOLEAN:  not 0 if use local reserved port */
+  int           local_port,	/* I - BOOLEAN:  not 0 to use local reserved port */
   char         *EMsg)           /* O (optional,minsize=1024) */
 
   {
@@ -371,9 +373,9 @@ retry:  /* retry goto added (rentec) */
     case ETIMEDOUT:
     case EINPROGRESS:   
 
-      if (await_connect(5,sock) == 0)
+      if (await_connect(TORQUE_MAXCONNECTTIMEOUT,sock) == 0)
         {
-        /* socket not ready for writing after 5 second timeout */
+        /* socket not ready for writing after TORQUE_MAXCONNECTTIMEOUT second timeout */
         /* no network failures detected */
 
         break;

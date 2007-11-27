@@ -104,6 +104,7 @@
 #include <errno.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <time.h>
 #include <stdio.h>
 #include "libpbs.h"
 #include "log.h"
@@ -147,6 +148,9 @@ int svr_connect(
   int handle;
   int sock;
 
+  time_t STime;
+  time_t ETime;
+
   if (LOGLEVEL >= 4)
     {
     sprintf(log_buffer,"attempting connect to %s %s port %d",
@@ -167,6 +171,8 @@ int svr_connect(
     {
     return(PBS_LOCAL_CONNECTION); /* special value for local */
     }
+
+  time(&STime);
 
   /* obtain the connection to the other server */
 
@@ -190,18 +196,31 @@ int svr_connect(
     return(PBS_NET_RC_RETRY);
     }
 
+  /* establish UDP socket connection to specified host */
+
   sock = client_to_svr(hostaddr,port,1,EMsg);
+
+  time(&ETime);
+
+  if (LOGLEVEL >= 2)
+    {
+    if (ETime > STime)
+      {
+
+      }
+    }
 
   if (sock < 0) 
     {
     if (LOGLEVEL >= 4)
       {
-      sprintf(log_buffer,"cannot connect to %s port %d - cannot establish connection (%s)",
+      sprintf(log_buffer,"cannot connect to %s port %d - cannot establish connection (%s) - time=%ld seconds",
         (hostaddr == pbs_server_addr) ? "server" : "host",
         port,
-        EMsg);
+        EMsg,
+        (long)(ETime - STime));
 
-     log_event(
+      log_event(
         PBSEVENT_ADMIN,
         PBS_EVENTCLASS_SERVER,
         id,
@@ -213,11 +232,25 @@ int svr_connect(
     pbs_errno = errno;
 
     return(sock);  /* PBS_NET_RC_RETRY or PBS_NET_RC_FATAL */
+    }  /* END if (sock < 0) */
+
+  if ((LOGLEVEL >= 2) && (ETime > STime))
+    {
+    sprintf(log_buffer,"successful connect to %s port %d - time=%ld seconds",
+      (hostaddr == pbs_server_addr) ? "server" : "host",
+      port,
+      (long)(ETime - STime));
+
+    log_event(
+      PBSEVENT_ADMIN,
+      PBS_EVENTCLASS_SERVER,
+      id,
+      log_buffer);
     }
 
   /* add the connection to the server connection table and select list */
 
-  if (func) 
+  if (func != NULL) 
     {
     if (cntype == ToServerASN)
       {

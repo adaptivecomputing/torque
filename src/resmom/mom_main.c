@@ -2603,6 +2603,8 @@ static unsigned long setcheckpointscript(
 
 
 
+
+
 static unsigned long setlogfilemaxsize(
 
   char *value)  /* I */

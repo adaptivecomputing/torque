@@ -234,9 +234,9 @@ void chkpt_partial(
 
   assert(pjob != NULL);
 
-  strcpy(namebuf, path_checkpoint);
-  strcat(namebuf, pjob->ji_qs.ji_fileprefix);
-  strcat(namebuf, JOB_CKPT_SUFFIX);
+  strcpy(namebuf,path_checkpoint);
+  strcat(namebuf,pjob->ji_qs.ji_fileprefix);
+  strcat(namebuf,JOB_CKPT_SUFFIX);
 
   i = strlen(namebuf);
 
@@ -328,6 +328,7 @@ fail:
   }  /* END chkpt_partial() */
 
 #endif	/* MOM_CHECKPOINT */
+
 
 
 

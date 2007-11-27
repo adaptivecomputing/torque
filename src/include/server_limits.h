@@ -98,6 +98,8 @@
 #define PBS_SEQNUMTOP 99999999	/* top number for job sequence number, reset */
 				/* to zero when reached, see req_quejob.c    */
 
+#define TORQUE_LISTENQUEUE     10  /* used for X11 and stdout/stderr forwarding */
+
 #define PBS_NET_RETRY_TIME     30 /* retry time between re-sending requests  */
 #define PBS_NET_RETRY_LIMIT 14400 /* max retry time */
 #define PBS_SCHEDULE_CYCLE    600 /* re-schedule even if no change, 10 min   */

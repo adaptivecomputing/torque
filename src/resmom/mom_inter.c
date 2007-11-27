@@ -509,38 +509,59 @@ int x11_create_display(
 
   socks = calloc(sizeof (struct pfwdsock),NUM_SOCKS);
 
-        homeenv=malloc(strlen("HOME=") + strlen(homedir) + 2);
-        sprintf(homeenv,"HOME=%s",homedir);
-        putenv(homeenv);
+  homeenv=malloc(strlen("HOME=") + strlen(homedir) + 2);
+  sprintf(homeenv,"HOME=%s",homedir);
+  putenv(homeenv);
 
-        for (n=0;n<NUM_SOCKS;n++)
-           (socks+n)->active=0;
+  for (n = 0;n < NUM_SOCKS;n++)
+    (socks + n)->active = 0;
 
-        x11proto[0] = x11data[0] = '\0';
+  x11proto[0] = x11data[0] = '\0';
 
-        errno=0;
-        if ((n=sscanf(x11authstr,"%511[^:]:%511[^:]:%u",x11proto,x11data,&x11screen)) != 3)
-          {
-          fprintf(stderr,"sscanf(%s)=%d failed: %s\n",x11authstr,n,strerror(errno));
-          free(socks);
-          return -1;
-          }
+  errno = 0;
+  
+  if ((n = sscanf(x11authstr,"%511[^:]:%511[^:]:%u",
+         x11proto,
+         x11data,
+         &x11screen)) != 3)
+    {
+    fprintf(stderr,"sscanf(%s)=%d failed: %s\n",
+      x11authstr,
+      n,
+      strerror(errno));
 
+    free(socks);
 
-        for (display_number = X11OFFSET; display_number < MAX_DISPLAYS; display_number++) {
-                port = 6000 + display_number;
-                memset(&hints, 0, sizeof(hints));
-                hints.ai_family = IPv4or6;
-                hints.ai_flags = x11_use_localhost ? 0: AI_PASSIVE;
-                hints.ai_socktype = SOCK_STREAM;
-                snprintf(strport, sizeof strport, "%d", port);
-                if ((gaierr = getaddrinfo(NULL, strport, &hints, &aitop)) != 0) {
-                        fprintf(stderr,"getaddrinfo: %.100s\n", gai_strerror(gaierr));
-                        free(socks);
-                        return -1;
-                }
-                /* create a socket and bind it to display_number foreach address */
-                for (ai = aitop; ai; ai = ai->ai_next) {
+    return(-1);
+    }
+
+  for (display_number = X11OFFSET;display_number < MAX_DISPLAYS;display_number++) 
+    {
+    port = 6000 + display_number;
+
+    memset(&hints,0,sizeof(hints));
+
+    hints.ai_family = IPv4or6;
+    hints.ai_flags = x11_use_localhost ? 0: AI_PASSIVE;
+    hints.ai_socktype = SOCK_STREAM;
+
+    snprintf(strport,sizeof(strport),"%d", 
+      port);
+
+    if ((gaierr = getaddrinfo(NULL,strport,&hints,&aitop)) != 0) 
+      {
+      fprintf(stderr,"getaddrinfo: %.100s\n", 
+        gai_strerror(gaierr));
+
+      free(socks);
+
+      return(-1);
+      }
+
+    /* create a socket and bind it to display_number foreach address */
+
+    for (ai = aitop;ai != NULL;ai = ai->ai_next) 
+      {
                         if (ai->ai_family != AF_INET && ai->ai_family != AF_INET6)
                                 continue;
                         sock = socket(ai->ai_family, SOCK_STREAM, 0);
@@ -592,45 +613,81 @@ int x11_create_display(
                         }
 #endif
                 }
-                freeaddrinfo(aitop);
-                if (num_socks > 0)
-                        break;
-        }                                                                                   
-        if (display_number >= MAX_DISPLAYS) {
-                fprintf(stderr,"Failed to allocate internet-domain X11 display socket.\n");
-                free(socks);
-                return -1;
-        }
-        /* Start listening for connections on the socket. */
-        for (n = 0; n < num_socks; n++) {
-                DBPRT(("listening on fd %d\n",(socks+n)->sock));
-                if (listen((socks+n)->sock, 5) < 0) {
-                        fprintf(stderr,"listen: %.100s\n", strerror(errno));
-                        close((socks+n)->sock);
-                        free(socks);
-                        return -1;
-                }
-                (socks+n)->listening=1;
-        }
 
-        /* setup local xauth */
-        sprintf(display, "localhost:%u.%u",
-          display_number, x11screen);
-        snprintf(auth_display, sizeof auth_display, "unix:%u.%u",
-          display_number, x11screen);
+    freeaddrinfo(aitop);
 
-        snprintf(cmd, sizeof cmd, "%s %s -",xauth_path,DEBUGMODE?"-v":"-q");
-        f = popen(cmd, "w");
-        if (f) {
-          fprintf(f, "remove %s\n", auth_display);
-          fprintf(f, "add %s %s %s\n",auth_display,x11proto,x11data);
-          pclose(f);
-        } else {
-          fprintf(stderr, "Could not run %s\n",
-            cmd);
-          free(socks);
-          return(-1);
-        }
+    if (num_socks > 0)
+      break;
+    }  /* END for (display) */
+                                                                                   
+  if (display_number >= MAX_DISPLAYS) 
+    {
+    fprintf(stderr,"Failed to allocate internet-domain X11 display socket.\n");
+
+    free(socks);
+
+    return(-1);
+    }
+
+  /* Start listening for connections on the socket. */
+
+  for (n = 0;n < num_socks;n++) 
+    {
+    DBPRT(("listening on fd %d\n",
+      (socks + n)->sock));
+  
+    if (listen((socks + n)->sock,TORQUE_LISTENQUEUE) < 0) 
+      {
+      fprintf(stderr,"listen: %.100s\n", 
+        strerror(errno));
+
+      close((socks + n)->sock);
+
+      free(socks);
+
+      return(-1);
+      }
+
+    (socks+n)->listening = 1;
+    }
+
+  /* setup local xauth */
+
+  sprintf(display,"localhost:%u.%u",
+    display_number, 
+    x11screen);
+
+  snprintf(auth_display,sizeof(auth_display),"unix:%u.%u",
+    display_number, 
+    x11screen);
+
+  snprintf(cmd,sizeof(cmd),"%s %s -",
+    xauth_path,
+    DEBUGMODE ? "-v" : "-q");
+
+  f = popen(cmd,"w");
+
+  if (f) 
+    {
+    fprintf(f,"remove %s\n", 
+      auth_display);
+
+    fprintf(f,"add %s %s %s\n",
+      auth_display,
+      x11proto,
+      x11data);
+
+    pclose(f);
+    } 
+  else 
+    {
+    fprintf(stderr,"could not run %s\n",
+      cmd);
+
+    free(socks);
+
+    return(-1);
+    }
 
   if ((childpid = fork()) > 0)
     {

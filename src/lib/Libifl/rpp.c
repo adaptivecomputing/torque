@@ -946,7 +946,7 @@ static struct stream *rpp_check_pkt(
     return(NULL);
     }
 
-  if ((addrp->sin_family==0) || (addrp->sin_family >= AF_MAX))
+  if ((addrp->sin_family == 0) || (addrp->sin_family >= AF_MAX))
     {
     /*
      * Some systems have a buggy recvfrom() that doesn't set
@@ -1576,12 +1576,15 @@ static int rpp_recv_pkt(
 
         dqueue(spp);
 
+        /* SUCCESS */
+
         return(streamid);
         }
       else if (sp->stream_id == -1) 
         {
         DBPRT((DBTO,"%s: ACK for closed stream %d\n",
-          id, streamid))
+          id, 
+          streamid))
 
         return(-2);
         }
@@ -1728,7 +1731,9 @@ static int rpp_recv_pkt(
         else 
           {
           DBPRT((DBTO, "%s: DUPLICATE seq %d MAX seen %d\n",
-            id,sequence,rpp->sequence))
+            id,
+            sequence,
+            rpp->sequence))
           }
 
         return(-2);
@@ -1741,7 +1746,11 @@ static int rpp_recv_pkt(
       case RPP_EOD:
 
         DBPRT((DBTO,"%s: DATA stream %d sequence %d crc %08lX len %d\n",
-          id,streamid,sequence,pktcrc,len))
+          id,
+          streamid,
+          sequence,
+          pktcrc,
+          len))
 
         if ((sp = rpp_check_pkt(streamid,&addr)) == NULL)
           goto err_out;
@@ -1802,16 +1811,26 @@ static int rpp_recv_pkt(
 
         if ((rpp == NULL) || (rpp->sequence > sequence)) 
           {
-			DBPRT((DBTO, "%s: GOOD seq %d\n", id, sequence))
-			data = realloc(data, len);
-			assert(data != NULL);
-			pkt = (struct recv_packet *)
-				malloc(sizeof(struct recv_packet));
-			assert(pkt != NULL);
-			pkt->type = type;
-			pkt->sequence = sequence;
-			pkt->len = len-RPP_PKT_HEAD;
-			pkt->data = (u_char *)data;
+          DBPRT((DBTO,"%s: GOOD seq %d\n", 
+            id, 
+            sequence))
+
+          data = realloc(data,len);
+
+          assert(data != NULL);
+
+          pkt = (struct recv_packet *)malloc(sizeof(struct recv_packet));
+
+          assert(pkt != NULL);
+
+          pkt->type = type;
+
+          pkt->sequence = sequence;
+
+          pkt->len = len-RPP_PKT_HEAD;
+
+          pkt->data = (u_char *)data;
+
 			if (rprev == NULL) {
 				pkt->next = sp->recv_head;
 				sp->recv_head = pkt;
@@ -1974,6 +1993,8 @@ static int rpp_recv_pkt(
 
 err_out:
 
+  /* no data to read */
+
   free(data);
 
   return(-2);
@@ -1984,7 +2005,7 @@ err_out:
 
 
 /*
-**	Do recv calls until there is one that shows data.
+** Do recv calls until there is one that shows data.
 */
 
 static int rpp_recv_all(void)
@@ -1993,6 +2014,8 @@ static int rpp_recv_all(void)
   int	i, ret;
   int	rc = -3;
 
+  DBPRT((DBTO,"entered rpp_recv_all\n"))
+
   for (i = 0;i < rpp_fd_num;i++) 
     {
     ret = rpp_recv_pkt(rpp_fd_array[i]);
@@ -2000,7 +2023,11 @@ static int rpp_recv_all(void)
     rc = MAX(ret,rc);
 
     if (ret == -1)
+      {
+      /* failure detected */
+
       break;
+      }
     }  /* END for (i) */
 
   return(rc);
@@ -2041,7 +2068,7 @@ static void rpp_stale(
       {
       if (pp->next == pp)
         {
-        DBPRT((DBTO, "RPP PACKET is corrupt - fixing linked list\n",
+        DBPRT((DBTO,"RPP PACKET is corrupt - fixing linked list\n",
           pp->sequence,
           pp->sent_out,
           sp->retry))
@@ -2052,7 +2079,7 @@ static void rpp_stale(
         {
         /* stream is corrupt - destroy it */
  
-        DBPRT((DBTO, "RPP PACKET is corrupt - seq %d sent %d of %d - destroying stream\n",
+        DBPRT((DBTO,"RPP PACKET is corrupt - seq %d sent %d of %d - destroying stream\n",
           pp->sequence,
           pp->sent_out,
           sp->retry))
@@ -2066,7 +2093,7 @@ static void rpp_stale(
 
   if (pp != NULL) 
     {
-    DBPRT((DBTO, "STALE PACKET seq %d sent %d of %d\n",
+    DBPRT((DBTO,"STALE PACKET seq %d sent %d of %d\n",
       pp->sequence, 
       pp->sent_out, 
       sp->retry))
@@ -3697,7 +3724,8 @@ int rpp_io(void)
   int			i;
 
   DBPRT((DBTO, "%s: entered streams %d\n", 
-    id, stream_num))
+    id, 
+    stream_num))
 
   /*
   ** Read socket to get any packets
