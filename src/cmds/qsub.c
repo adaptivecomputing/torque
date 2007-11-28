@@ -150,6 +150,7 @@ char PBS_RootDir[256];
 char xauth_path[256];
 char default_ckpt[256];
 
+int validate_path = 1;
 int interactivechild = 0;
 int x11child = 0;
 
@@ -2621,7 +2622,7 @@ int process_opts(
             snprintf(PBS_InitDir,sizeof(PBS_InitDir),"%s/%s",
               mypwd,
               optarg);
-            }
+            }  /* END if (optarg[0] != '/') */
           else
             {
             if (strlen(optarg) >= sizeof(PBS_InitDir))
@@ -2634,17 +2635,22 @@ int process_opts(
 
             strncpy(PBS_InitDir,optarg,sizeof(PBS_InitDir));
             } /* end optarg[1] != '/' */
-          
-          if (chdir(PBS_InitDir) == -1)
-            {
-            fprintf(stderr,"qsub: cannot chdir to '%s' errno: %d (%s)\n",
-              optarg,
-              errno,
-              strerror(errno));
+        
+          if (validate_path != 0)
+            { 
+            /* validate local existence of '-d' working directory */
+    
+            if (chdir(PBS_InitDir) == -1)
+              {
+              fprintf(stderr,"qsub: cannot chdir to '%s' errno: %d (%s)\n",
+                optarg,
+                errno,
+                strerror(errno));
 
-            errflg++;
+              errflg++;
+              }
             }
-          }
+          }    /* END if (optarg != NULL) */
         else
           {
           fprintf(stderr,"qsub: illegal -d value\n");
@@ -3735,6 +3741,8 @@ int main(
   strncpy(xauth_path,DefaultXauthPath,255);
   strncpy(default_ckpt,CHECKPOINT_UNSPECIFIED,sizeof(default_ckpt));
 
+  validate_path = 1;  /* boolean - by default verify '-d' working dir locally */
+
   server_host[0] = '\0';
   qsub_host[0] = '\0';
   owner_uid[0] = '\0';
@@ -3770,7 +3778,8 @@ int main(
 
     if ((param_val = get_param("QSUBSENDUID",config_buf)) != NULL)
       {
-      sprintf(owner_uid,"%d",getuid());
+      sprintf(owner_uid,"%d",
+        getuid());
       }
 
     if ((param_val = get_param("XAUTHPATH",config_buf)) != NULL)
@@ -3799,7 +3808,13 @@ int main(
       {
       strncpy(default_ckpt,param_val,sizeof(default_ckpt));
       }
-    }
+
+    if ((param_val = get_param("VALIDATEPATH",config_buf)) != NULL)
+      {
+      if (!strcasecmp(param_val,"false"))
+        validate_path = 0;
+      }
+    }    /* END if (load_config(config_buf,sizeof(config_buf)) == 0) */
 
   /* check to see if PBS_Filter exists.  If not then fall back to the old hard-coded file */
 
