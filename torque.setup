@@ -30,18 +30,12 @@ fi
 
 pbs_server -t create
 
-echo set server operators += $USER | qmgr -a  2> /dev/null
+echo set server operators += $USER | qmgr
 
 if [ "$?" -ne "0" ] ; then
-  USER=$1@`hostname -f`
-  echo set server operators += $USER | qmgr -a
-
-  if [ "$?" -ne "0" ] ; then
-    echo "ERROR: cannot set TORQUE admins"
-    qterm
-    exit 1;
-  fi
-
+  echo "ERROR: cannot set TORQUE admins"
+  qterm
+  exit 1;
 fi
 
 echo set server managers += $USER | qmgr
