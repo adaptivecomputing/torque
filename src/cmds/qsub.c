@@ -3710,23 +3710,6 @@ int main(
       }
     }
 
-  errflg = process_opts(argc,argv,0); /* get cmd-line options */
-
-  if (errflg || ((optind + 1) < argc)) 
-    {
-    static char usage[] =
-"usage: qsub [-a date_time] [-A account_string] [-b secs]\n\
-[-c { c[=<INTERVAL>] | s | n }] [-C directive_prefix] [-d path] [-D path]\n\
-[-e path] [-h] [-I] [-j oe] [-k {oe}] [-l resource_list] [-m n|{abe}]\n\
-[-M user_list] [-N jobname] [-o path] [-p priority] [-q queue] [-r y|n]\n\
-[-S path] [-t number_to_submit] [-u user_list] [-X] [-W otherattributes=value...]\n\
-[-v variable_list] [-V ] [-z] [script]\n";
-
-    fprintf(stderr,usage);
-
-    exit(2);
-    }
-
   /* check TORQUE config settings */
   
   strncpy(PBS_Filter,SUBMIT_FILTER_PATH,255);
@@ -3815,6 +3798,25 @@ int main(
         validate_path = 0;
       }
     }    /* END if (load_config(config_buf,sizeof(config_buf)) == 0) */
+
+  /* NOTE:  load config before processing opts since config may modify how opts are handled */
+
+  errflg = process_opts(argc,argv,0); /* get cmd-line options */
+
+  if (errflg || ((optind + 1) < argc))
+    {
+    static char usage[] =
+"usage: qsub [-a date_time] [-A account_string] [-b secs]\n\
+[-c { c[=<INTERVAL>] | s | n }] [-C directive_prefix] [-d path] [-D path]\n\
+[-e path] [-h] [-I] [-j oe] [-k {oe}] [-l resource_list] [-m n|{abe}]\n\
+[-M user_list] [-N jobname] [-o path] [-p priority] [-q queue] [-r y|n]\n\
+[-S path] [-t number_to_submit] [-u user_list] [-X] [-W otherattributes=value...]\n\
+[-v variable_list] [-V ] [-z] [script]\n";
+
+    fprintf(stderr,usage);
+
+    exit(2);
+    }
 
   /* check to see if PBS_Filter exists.  If not then fall back to the old hard-coded file */
 
