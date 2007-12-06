@@ -178,6 +178,9 @@ int set_hostacl(
   }
 
 
+
+
+
 /*
  * acl_check - check a name:
  *		user or [user@]full_host_name
@@ -193,7 +196,7 @@ int set_hostacl(
 int acl_check(
 
   attribute *pattr,
-  char      *name,
+  char      *name,  /* I (optional) */
   int	     type)
 
   {
@@ -212,17 +215,25 @@ int acl_check(
   switch (type) 
     {
     case ACL_Host:
+
       match_func = hacl_match;
       break;
+
     case ACL_User:
+
       match_func = user_match;
       break;
+
     case ACL_Gid:
+
       match_func = gid_match;
       break;
+
     case ACL_Group:
     default:
+
       match_func = (int (*)())strcmp;
+
       break;
     }
 	    
@@ -234,16 +245,16 @@ int acl_check(
 
     return(1);
 #else
-    if (type == ACL_Host) 
+    if (type != ACL_Host) 
       {
-      /* if there is no list set, allow only from my host */
+      /* FAILURE - deny */
 
-      return(!hacl_match(name,server_host));
-      } 
-    else
-      {
       return(0);
       }
+
+    /* if there is no list set, allow only from my host */
+
+    return(!hacl_match(name,server_host));
 #endif
     }
 
@@ -253,30 +264,36 @@ int acl_check(
 
     if ((*pstr == '+') || (*pstr == '-')) 
       {
-      if (*(pstr+1) == '\0')	/* "+" or "-" sets default */
+      if (*(pstr + 1) == '\0')	/* "+" or "-" sets default */
         {
         if (*pstr == '+')
-          default_rtn = 1;
+          default_rtn = 1;  /* allow by default */
         else
-          default_rtn = 0;
+          default_rtn = 0;  /* deny by default */
         }
 
       pstr++;		/* skip over +/- if present */
       }
 
-    if (!match_func(name,pstr))
+    if ((name != NULL) && !match_func(name,pstr))
       {
+      /* acl matches */
+
       if (*pas->as_string[i] == '-')
         {
-        return(0);	/* deny */
+        /* deny */
+
+        return(0);
         }
 
-      return(1);	/* allow */
+      /* allow */
+
+      return(1);
       }
     }    /* END for (i) */
 
   return(default_rtn);
-  }
+  }  /* END acl_check() */
 	
 
 
@@ -288,15 +305,17 @@ int acl_check(
  *	between the new and old list.
  */
 
-static int chk_dup_acl(old, new)
-	struct array_strings *old;
-	struct array_strings *new;
-{
-	int i;
-	int j;
+static int chk_dup_acl(
 
-	for (i=0; i<new->as_usedptr; ++i) {
+  struct array_strings *old,
+  struct array_strings *new)
 
+  {
+  int i;
+  int j;
+
+  for (i = 0;i < new->as_usedptr;++i) 
+    {
 		/* first check against self */
 
 		for (j=0; j<new->as_usedptr; ++j) {
@@ -635,6 +654,9 @@ static int gid_match(const char *group1, const char *group2)
    return (! (gid1 == gid2));
 }
 
+
+
+
     
 /*
  * host acl order match - match two strings from the tail end first
@@ -649,16 +671,25 @@ static int gid_match(const char *group1, const char *group2)
  * Returns 0 if strings match,  1 if not   - to match strcmp()
  */
 
-static int hacl_match(can, master)
-	const char *can;
-	const char *master;
-{
-	const char *pc;
-	const char *pm;
+static int hacl_match(
 
-	pc = can + strlen(can) - 1;
-	pm = master + strlen(master) - 1;
-	while ((pc > can) && (pm > master)) {
+  const char *can,
+  const char *master)
+
+  {
+  const char *pc;
+  const char *pm;
+
+  if (can == NULL)
+    {
+    return(0);
+    }
+
+  pc = can + strlen(can) - 1;
+  pm = master + strlen(master) - 1;
+
+  while ((pc > can) && (pm > master))
+    {
 		if (tolower(*pc) != tolower(*pm))
 			return (1);
 		pc--;
@@ -675,6 +706,10 @@ static int hacl_match(can, master)
 	}
 	return (1);
 }
+
+
+
+
 
 /* 
  * host reverse order compare - compare two host entrys from the tail end first

@@ -264,16 +264,24 @@ void req_quejob(
     } 
   else 
     {
+    static char *MasterServerName = NULL;
+
     /* assign it a job id */
 
     created_here = JOB_SVFLG_HERE;
 
-
     sprintf(jidbuf,"%d.",
-    server.sv_qs.sv_jobidnumber);
+      server.sv_qs.sv_jobidnumber);
 
+    if (MasterServerName == NULL)
+      {
+      MasterServerName = pbs_server();
+      }
 
-    strcat(jidbuf,server_name);
+    if (MasterServerName != NULL)
+      strcat(jidbuf,MasterServerName);
+    else
+      strcat(jidbuf,server_name);
 
     jid = jidbuf;
 		
