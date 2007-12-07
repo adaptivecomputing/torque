@@ -280,13 +280,17 @@ int set_jobexid(
   attribute	*pattr;
   char	       **pmem;
   struct group	*gpent;
-  char		*puser;
-  struct passwd	*pwent;
+  char		*puser = NULL;
+  struct passwd	*pwent = NULL;
   char		*pgrpn;
   char		 gname[PBS_MAXGRPN + 1];
 #ifdef _CRAY
   struct udb    *pudb;
 #endif
+
+  char           tmpLine[1024 + 1];
+
+  int            CheckID;  /* boolean */
 
   if (EMsg != NULL)
     EMsg[0] = '\0';
@@ -295,15 +299,17 @@ int set_jobexid(
   /* if not set, fall back to the job's actual User_List, may be same */
 
   if (server.sv_attr[(int)SRV_ATR_DisableServerIdCheck].at_val.at_long)
-    {
-    char tmpLine[1024];
+    CheckID = 0;
+  else
+    CheckID = 1;
 
+  if (CheckID == 0)
+    {
     /* NOTE: use owner, not userlist - should this be changed? */
     /* Yes, changed 10/17/2007 */
 
     if (pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str != NULL)
       {
-
       /* start of change to use userlist instead of owner 10/17/2007 */
       
       if ((attrry + (int)JOB_ATR_userlst)->at_flags & ATR_VFLAG_SET)
@@ -319,118 +325,120 @@ int set_jobexid(
         return(PBSE_BADUSER);
         }
       
-      sprintf (tmpLine, "%s", puser);
+      sprintf(tmpLine,"%s",
+        puser);
       
       /* end of change to use userlist instead of owner 10/17/2007 */
+      }
+    else
+      {
+      strcpy(tmpLine,"???");
+      }
+    }  /* END if (CheckID == 0) */
+  else 
+    {
+    if ((attrry + (int)JOB_ATR_userlst)->at_flags & ATR_VFLAG_SET)
+      pattr = attrry + (int)JOB_ATR_userlst;
+    else
+      pattr = &pjob->ji_wattr[(int)JOB_ATR_userlst];
 
-      pattr = attrry + (int)JOB_ATR_euser;
+    if ((puser = geteusernam(pjob,pattr)) == NULL)
+      {
+      if (EMsg != NULL)
+        snprintf(EMsg,1024,"cannot locate user name in job");
 
-      job_attr_def[(int)JOB_ATR_euser].at_free(pattr);
-
-      job_attr_def[(int)JOB_ATR_euser].at_decode(pattr,NULL,NULL,tmpLine);
+      return(PBSE_BADUSER);
       }
 
-    /* SUCCESS */
+    pwent = getpwnam(puser);
 
-    return(0);
-    }  /* END if (server.sv_attr[...].at_val.at_long) */
+    if (pwent == NULL)
+      { 
+      log_err(errno,"set_jobexid","getpwnam failed");
 
-  if ((attrry + (int)JOB_ATR_userlst)->at_flags & ATR_VFLAG_SET)
-    pattr = attrry + (int)JOB_ATR_userlst;
-  else
-    pattr = &pjob->ji_wattr[(int)JOB_ATR_userlst];
+      if (EMsg != NULL)
+        snprintf(EMsg,1024,"user does not exist in server password file");
 
-  if ((puser = geteusernam(pjob,pattr)) == NULL)
-    {
-    if (EMsg != NULL)
-      snprintf(EMsg,1024,"cannot locate user name in job");
+      return(PBSE_BADUSER);
+      }
 
-    return(PBSE_BADUSER);
-    }
-
-  pwent = getpwnam(puser);
-
-  if (pwent == NULL)
-    { 
-    log_err(errno,"set_jobexid","getpwnam failed");
-
-    if (EMsg != NULL)
-      snprintf(EMsg,1024,"user does not exist in server password file");
-
-    return(PBSE_BADUSER);
-    }
-
-  if (pwent->pw_uid == 0) 
-    {
-    if (server.sv_attr[(int)SRV_ATR_AclRoot].at_flags & ATR_VFLAG_SET) 
+    if (pwent->pw_uid == 0) 
       {
-      if (acl_check(
-            &server.sv_attr[(int)SRV_ATR_AclRoot],
-            pjob->ji_wattr[(int)JOB_ATR_job_owner].at_val.at_str,
-            ACL_User) == 0)
+      if (server.sv_attr[(int)SRV_ATR_AclRoot].at_flags & ATR_VFLAG_SET) 
+        {
+        if (acl_check(
+              &server.sv_attr[(int)SRV_ATR_AclRoot],
+              pjob->ji_wattr[(int)JOB_ATR_job_owner].at_val.at_str,
+              ACL_User) == 0)
+          {
+          if (EMsg != NULL)
+            snprintf(EMsg,1024,"root user %s fails ACL check",
+              puser);
+
+          return(PBSE_BADUSER); /* root not allowed */
+          } 
+        }
+      else 
         {
         if (EMsg != NULL)
-          snprintf(EMsg,1024,"root user %s fails ACL check",
+          snprintf(EMsg,1024,"root user %s not allowed", 
             puser);
 
         return(PBSE_BADUSER); /* root not allowed */
-        } 
-      }
-    else 
+        }
+      }    /* END if (pwent->pw_uid == 0) */
+
+    if (site_check_user_map(pjob,puser,EMsg) == -1)
       {
-      if (EMsg != NULL)
-        snprintf(EMsg,1024,"root user %s not allowed", 
-          puser);
-
-      return(PBSE_BADUSER); /* root not allowed */
+      return(PBSE_BADUSER);
       }
-    }    /* END if (pwent->pw_uid == 0) */
-
-  if (site_check_user_map(pjob,puser,EMsg) == -1)
-    {
-    return(PBSE_BADUSER);
-    }
+  
+    strncpy(tmpLine,puser,sizeof(tmpLine));
+    }  /* END else (CheckID == 0) */
 
   pattr = attrry + (int)JOB_ATR_euser;
 
   job_attr_def[(int)JOB_ATR_euser].at_free(pattr);
 
-  job_attr_def[(int)JOB_ATR_euser].at_decode(pattr,NULL,NULL,puser);
+  job_attr_def[(int)JOB_ATR_euser].at_decode(pattr,NULL,NULL,tmpLine);
 	
 #ifdef _CRAY
 
   /* on cray check UDB (user data base) for permission to batch it */
 
-  pudb = getudbuid(pwent->pw_uid);
-
-  endudb();
-
-  if (pudb == UDB_NULL) 
+  if ((pwent != NULL) && (puser != NULL))
     {
-    if (EMsg != NULL)
-      snprintf(EMsg,1024,"user %s not located in user data base",
-        puser);
+    pudb = getudbuid(pwent->pw_uid);
 
-    return(PBSE_BADUSER);
-    }
+    endudb();
 
-  if (pudb->ue_permbits & (PERMBITS_NOBATCH|PERMBITS_RESTRICTED))
-    {
-    return(PBSE_QACESS);
-    }
+    if (pudb == UDB_NULL) 
+      {
+      if (EMsg != NULL)
+        snprintf(EMsg,1024,"user %s not located in user data base",
+          puser);
 
-  /* if account (qsub -A) not specified, set default from UDB */
+      return(PBSE_BADUSER);
+      }
 
-  pattr = attrry + (int)JOB_ATR_account;
+    if (pudb->ue_permbits & (PERMBITS_NOBATCH|PERMBITS_RESTRICTED))
+      {
+      return(PBSE_QACESS);
+      }
 
-  if ((pattr->at_flags & ATR_VFLAG_SET) == 0) 
-    {
-    job_attr_def[(int)JOB_ATR_account].at_decode(
-      pattr,
-      NULL,
-      NULL,
-      (char *)acid2nam(pudb->ue_acids[0]));
-    }
+    /* if account (qsub -A) not specified, set default from UDB */
+
+    pattr = attrry + (int)JOB_ATR_account;
+
+    if ((pattr->at_flags & ATR_VFLAG_SET) == 0) 
+      {
+      job_attr_def[(int)JOB_ATR_account].at_decode(
+        pattr,
+        NULL,
+        NULL,
+        (char *)acid2nam(pudb->ue_acids[0]));
+      }
+    }    /* END if ((pwent != NULL) && (puser != NULL)) */
 
 #endif /* _CRAY */
 
@@ -448,7 +456,18 @@ int set_jobexid(
   else
     pattr = &pjob->ji_wattr[(int)JOB_ATR_grouplst];
 
-  if ((pgrpn = getegroup(pjob,pattr))) 
+  pgrpn = getegroup(pjob,pattr);
+
+  if (CheckID == 0)
+    {
+    if (pgrpn == NULL)
+      {
+      strcpy(gname,"???");
+
+      pgrpn = gname;
+      }
+    }
+  else if (pgrpn != NULL)
     {	
     /* user specified a group, group must exist and either */
     /* must be user's primary group or the user must be in it */
@@ -480,6 +499,8 @@ int set_jobexid(
 
       if (*pmem == NULL)
         {
+        /* requested group not allowed */
+
         if (EMsg != NULL)
           snprintf(EMsg,1024,"user %s not member of group %s in server password file",
             puser,

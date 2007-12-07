@@ -275,7 +275,7 @@ void req_quejob(
 
     if (MasterServerName == NULL)
       {
-      MasterServerName = pbs_server();
+      MasterServerName = pbs_default();
       }
 
     if (MasterServerName != NULL)
