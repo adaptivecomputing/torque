@@ -109,8 +109,11 @@ int array_save(job_array *pa)
   strcat(namebuf, pa->ai_qs.fileprefix);
   strcat(namebuf, ARRAY_FILE_SUFFIX);
   
-  
+#if defined(O_SYNC)
   openflags =  O_WRONLY | O_SYNC | O_CREAT;
+#else
+  openflags =  O_WRONLY | O_CREAT;
+#endif
   fds = open(namebuf, openflags, 0600);
   
   if (fds < 0)

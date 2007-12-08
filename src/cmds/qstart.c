@@ -131,7 +131,11 @@ int main (
   if (argc == 1) 
     {
     fprintf(stderr, "Usage: qstart [queue][@server] ...\n");
-
+    exit(1);
+    }
+  else if (argc > 1 && argv[1][0] == '-') 
+    {
+    fprintf(stderr, "Usage: qstart [queue][@server] ...\n");
     exit(1);
     }
     

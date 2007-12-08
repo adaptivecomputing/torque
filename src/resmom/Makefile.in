@@ -360,7 +360,7 @@ SUBMIT_FILTER_PATH = $(libexecdir)/qsub_filter
 @BUILDCPA_TRUE@cpasubdir = cpa
 @BUILDCPA_TRUE@momcpalib = cpa/libmomcpa.a
 SUBDIRS = @PBS_MACH@ $(cpasubdir)
-DIST_SUBDIRS = aix4 aix5 darwin digitalunix freebsd freebsd5 fujitsu hpux10 hpux11 \
+DIST_SUBDIRS = aix4 aix5 darwin digitalunix freebsd freebsd5 freebsd6 fujitsu hpux10 hpux11 \
 	irix5 irix6 irix6array linux netbsd solaris5 solaris7 sunos4 unicos8 unicosmk2 cpa
 
 PBS_LIBS = ../lib/Libattr/libattr.a \

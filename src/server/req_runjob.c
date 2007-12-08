@@ -975,7 +975,7 @@ static void post_sendmom(
 
       /* NOTE: if r == 10, connection to mom timed out.  Mark node down */
 
-      stream_eof(0,jobp->ji_qs.ji_un.ji_exect.ji_momaddr,0);
+      stream_eof(-1,jobp->ji_qs.ji_un.ji_exect.ji_momaddr,0);
 
       /* send failed, requeue the job */
 

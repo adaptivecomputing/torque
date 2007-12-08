@@ -126,7 +126,13 @@ char **argv;
     char *queue;	/* Queue name part of destination */
     char *server;	/* Server name part of destination */
     
-    if ( argc == 1 ) {
+    if ( argc == 1 )
+    {
+        fprintf(stderr, "Usage: qstop [queue][@server] ...\n");
+        exit(1);
+    }
+    else if ( argc > 1 && argv[1][0] == '-' )
+    {
         fprintf(stderr, "Usage: qstop [queue][@server] ...\n");
         exit(1);
     }

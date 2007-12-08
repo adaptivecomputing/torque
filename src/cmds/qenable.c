@@ -129,7 +129,14 @@ int main(
     char *queue;	/* Queue name part of destination */
     char *server;	/* Server name part of destination */
     
-    if ( argc == 1 ) {
+    if ( argc == 1 )
+    {
+        fprintf(stderr, "Usage: qenable [queue][@server] ...\n");
+        exit(1);
+    }
+    else if ( argc > 1 && argv[1][0] == '-' )
+    {
+		/* make it look like some kind of help is available */
         fprintf(stderr, "Usage: qenable [queue][@server] ...\n");
         exit(1);
     }

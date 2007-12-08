@@ -109,6 +109,8 @@ static uid_t pbs_current_uid;               /* only one uid per requestor */
 extern time_t pbs_tcp_timeout;              /* source? */
 
 static unsigned int dflt_port = 0;
+
+static char server_list[PBS_MAXSERVERNAME*3 + 1];
 static char dflt_server[PBS_MAXSERVERNAME + 1];
 static char fb_server[PBS_MAXSERVERNAME + 1];
 
@@ -120,21 +122,96 @@ static const char *pbs_destn_file = PBS_DEFAULT_FILE;
 char *pbs_server = NULL;
 
 
+/**
+ * Gets the number of items in a string list.
+ * @param str  The string list.
+ * @return The number of items in the list.
+ */
+int csv_length( char *str )
+{
+	int		length = 0;
+	char	*cp;
 
-/* NOTE:  PBS_DEFAULT format:    <SERVER>[,<FBSERVER>] */
-/*        pbs_destn_file format: <SERVER>[,<FBSERVER>] */
+	if (!str || *str == 0)
+		return(0);
 
-char *pbs_default()
+	length++;
+	cp = str;
+	while ((cp = strchr(cp, ',')))
+	{
+		cp++;
+		length++;
+	}
+	return(length);
+}
 
-  {
+/**
+ * Gets the nth item from a comma seperated list of names.
+ * @param str  The string list.
+ * @param n The item number requested (0 is the first item).
+ * @return Null if str is null or empty,
+ *     otherwise, a pointer to a local buffer containing the nth item.
+ */
+char *csv_nth( char *str, int n )
+{
+	int		i;
+	char	*cp;
+	char	*tp;
+static	char	buffer[128];
+
+	if (!str || *str == 0)
+		return(0);
+
+	cp = str;
+	for (i = 0; i < n; i++)
+	{
+		if (!(cp = strchr(cp, ',')))
+		{
+			return(0);
+		}
+		cp++;
+	}
+	memset(buffer, 0, sizeof(buffer));
+	if ((tp = strchr(cp, ',')))
+	{
+		strncpy(buffer, cp, tp-cp);
+	}
+	else
+	{
+		strcpy(buffer, cp);
+	}
+	return(buffer);
+}
+
+
+
+
+/**
+ * Attempts to get a list of server names.  Trys first
+ * to obtain the list from an envrionment variable PBS_DEFAULT.
+ * If this is not set, it then trys to read the first line
+ * from the file <b>server_name</b> in the <b>/var/spool/torque</b>
+ * directory.
+ * <p>
+ * NOTE:  PBS_DEFAULT format:    <SERVER>[,<FBSERVER>]
+ *        pbs_destn_file format: <SERVER>[,<FBSERVER>]
+ * <p>
+ * @return A pointer to the server list.
+ * The side effect is
+ * that the global variable <b>server_list</b> is set.  The one-shot
+ * flag <b>got_dflt</b> is used to limit re-reading of the list.
+ * @see pbs_default()
+ * @see pbs_fbserver()
+ */
+char *pbs_get_server_list()
+{
   FILE *fd;
   char *pn;
   char *server;
 
-  char *ptr;
-
   if (got_dflt != TRUE) 
     {
+    memset(server_list, 0, sizeof(server_list));
     server = getenv("PBS_DEFAULT");
 
     if ((server == NULL) || (*server == '\0')) 
@@ -143,107 +220,80 @@ char *pbs_default()
 
       if (fd == NULL) 
         {
-        return(NULL);
+        return(server_list);
         }
 
-      if (fgets(dflt_server,PBS_MAXSERVERNAME,fd) == NULL)
+      if (fgets(server_list,PBS_MAXSERVERNAME,fd) == NULL)
         {
         fclose(fd);
 
-        return(NULL);
+        return(server_list);
         }
 
-      if ((pn = strchr(dflt_server,(int)'\n')))
+      if ((pn = strchr(server_list,(int)'\n')))
         *pn = '\0';
 
       fclose(fd);
       } 
     else 
       {
-      strncpy(dflt_server,server,PBS_MAXSERVERNAME);
+      strncpy(server_list,server,PBS_MAXSERVERNAME);
       }
-
     got_dflt = TRUE;
     }  /* END if (got_dflt != TRUE) */
+    return(server_list);
+}
 
-  ptr = strchr(dflt_server,',');
-
-  if (ptr != NULL)
-    *ptr = '\0';
-
-  strcpy(server_name,dflt_server);
-
-  return(dflt_server);
-  }  /* END pbs_default() */
-
-
-
-
-
-char *pbs_fbserver()
-
+/**
+ * The routine is called to get the name of the primary
+ * server.  It can possibly trigger reading of the server name
+ * list from the envrionment or the disk.
+ * As a side effect, it set file local strings <b>dflt_server</b>
+ * and <b>server_name</b>.  I am not sure if this is needed but
+ * it seems in the spirit of the original routine.
+ * @return A pointer to the default server name.
+ * @see pbs_fbserver()
+ */
+char *pbs_default()
   {
-  FILE *fd;
-  char *pn;
-  char *server;
+	char *cp;
 
-  char  tmpLine[PBS_MAXSERVERNAME << 2];
+    pbs_get_server_list();
+	server_name[0] = 0;
+	cp = csv_nth(server_list, 0);	/* get the first item from list */
+	if (cp)
+      {
+      strcpy(dflt_server,cp);
+      strcpy(server_name,cp);
+      }
+    return(server_name);
+  }
 
-  if (got_dflt != TRUE)
+
+/**
+ * The routine is called to get the name of the fall-back
+ * server.  It can possibly trigger reading of the server name
+ * list from the envrionment or the disk.
+ * As a side effect, it set file local strings <b>fb_server</b>
+ * and <b>server_name</b>.  I am not sure if this is needed but
+ * it seems in the spirit of the original routine.
+ * @return A pointer to the fall-back server name.
+ * @see pbs_default()
+ */
+char *pbs_fbserver()
+  {
+	char *cp;
+
+    pbs_get_server_list();
+    server_name[0] = 0;
+	cp = csv_nth(server_list, 1);	/* get the second item from list */
+	if (cp)
     {
-    server = getenv("PBS_DEFAULT");
-
-    if ((server == NULL) || (*server == '\0'))
-      {
-      fd = fopen(pbs_destn_file,"r");
-
-      if (fd == NULL)
-        {
-        return(NULL);
-        }
-
-      if (fgets(tmpLine,sizeof(tmpLine),fd) == NULL)
-        {
-        fclose(fd);
-
-        return(NULL);
-        }
-
-      if ((pn = strchr(tmpLine,'\n')) != NULL)
-        *pn = '\0';
-
-      if ((pn = strchr(tmpLine,',')) != NULL)
-        {
-        strncpy(fb_server,pn + 1,PBS_MAXSERVERNAME);
-        }
-      else
-        {
-        fb_server[0] = '\0';
-        }
-
-      fclose(fd);
-      }  /* END if ((server == NULL) || (*server == '\0')) */
-    else
-      {
-      strncpy(tmpLine,server,sizeof(tmpLine));
-
-      if ((pn = strchr(tmpLine,',')) != NULL)
-        {
-        strncpy(fb_server,pn + 1,PBS_MAXSERVERNAME);
-        }
-      else
-        {
-        fb_server[0] = '\0';
-        }
-      }  /* END else ((server == NULL) || (*server == '\0')) */
-
-    got_dflt = TRUE;
-    }  /* END if (got_dflt != TRUE) */
-
-  return(fb_server);
-  }  /* END pbs_fbserver() */
-
-
+      strcpy(fb_server,cp);
+      strcpy(server_name,cp);
+    }
+    return(server_name);
+  }
 
 
 

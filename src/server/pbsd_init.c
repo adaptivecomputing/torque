@@ -283,11 +283,6 @@ int pbsd_init(
 
   setgroups(1,(gid_t *)&i);	/* secure suppl. groups */
 
-  i = sysconf(_SC_OPEN_MAX);
-
-  while (--i < 2)
-    close(i); /* close any file desc left open by parent */
-
 #ifndef DEBUG
 #ifdef _CRAY
   limit(C_JOB,      0,L_CPROC, 0);

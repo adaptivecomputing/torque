@@ -125,30 +125,24 @@ int cnt2server_conf(
 
 
 
-int cnt2server( 
-
-  char *SpecServer)  /* I (optional) */
-
+int cnt2server( char *SpecServer )  /* I (optional) */
   {
   int connect;
   time_t firsttime = 0, thistime = 0;
 
   char Server[1024];
 
+
   if (cnt2server_retry > 0)
     {
     firsttime = time(NULL);
     }
 
-  if (SpecServer != NULL)
+  memset(Server, 0, sizeof(Server));
+  if (SpecServer && SpecServer[0])
     {
-    strncpy(Server,SpecServer,sizeof(Server));
-
+    strncpy(Server, SpecServer, sizeof(Server));
     Server[sizeof(Server) - 1] = '\0';
-    }
-  else
-    {
-    Server[0] = '\0';
     }
   
 start:

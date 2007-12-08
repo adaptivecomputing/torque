@@ -28,6 +28,7 @@ EXTRA_DIST = man1/qalter.1B man1/qdel.1B man1/qhold.1B man1/qmove.1B \
 	     man7/pbs_resources_aix4.7B man7/pbs_resources_digitalunix.7B \
 	     man7/pbs_resources_aix5.7B man7/pbs_resources_darwin.7B \
 	     man7/pbs_resources_freebsd.7B man7/pbs_resources_freebsd5.7B \
+	     man7/pbs_resources_freebsd6.7B \
 	     man7/pbs_resources_fujitsu.7B \
 	     man7/pbs_resources_hpux10.7B man7/pbs_resources_irix5.7B \
 	     man7/pbs_resources_hpux11.7B \

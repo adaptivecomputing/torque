@@ -2964,6 +2964,11 @@ int read_config(
 
   int                    rc;
 
+  int n, list_len;
+  char *server_list_ptr;
+  char *tp;
+
+
   if (LOGLEVEL >= 3)
     {
     sprintf(log_buffer,"updating configuration using file '%s'",
@@ -3198,28 +3203,17 @@ int read_config(
 
   if (pbs_servername[0][0] == '\0')
     {
-    FILE *server_file;
+    /* No server names in torque/mom_priv/config.  Get names from torque/server_name. */
 
-    /* no $pbsserver parameters in config, use server_name as last-resort */
-
-    if (
-#if !defined(DEBUG) && !defined(NO_SECURITY_CHECK)
-        !chk_file_sec(path_server_name, 0, 0, S_IWGRP|S_IWOTH, 1,NULL) &&
-#endif
-        (server_file = fopen(path_server_name,"r")) != NULL)
+    server_list_ptr = pbs_get_server_list();
+    list_len = csv_length(server_list_ptr);
+    for (n=0; n<list_len; n++)
       {
-      char tmpLine[PBS_MAXSERVERNAME + 1];
-      char *pn;
-      
-      if (fgets(tmpLine,sizeof(tmpLine),server_file) != NULL)
+        tp = csv_nth(server_list_ptr, n);
+        if (tp)
         {
-        if ((pn = strchr(tmpLine,'\n')))
-          *pn = '\0';
-
-        setpbsserver(tmpLine);
+          setpbsserver(tp);
         }
-      
-      fclose(server_file);
       }
     }
 

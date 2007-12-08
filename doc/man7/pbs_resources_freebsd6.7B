@@ -76,10 +76,10 @@
 .\" without reference to its choice of law rules.
 .if \n(Pb .ig Iq
 .\" for man page
-.TH pbs_Resources_freebsd5 7B "" Local PBS
+.TH pbs_Resources_freebsd6 7B "" Local PBS
 .so ../ers/ers.macros
 .SH NAME
-pbs_resources_freebsd5 - pbs resources on FreeBSD 5.x
+pbs_resources_freebsd6 - pbs resources on FreeBSD 6.x
 .SH DESCRIPTION
 This page summarizes the resources supported by PBS for AMD/Intel/Cyrix
 workstations running FreeBSD.

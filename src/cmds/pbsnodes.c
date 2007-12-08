@@ -410,7 +410,7 @@ int main(
   {
   struct batch_status *bstatus = NULL;
   int	 con;
-  char	*def_server;
+  char	*specified_server = NULL;
   int	 errflg = 0;
   char	*errmsg;
   int	 i;
@@ -426,11 +426,6 @@ int main(
   enum NStateEnum ListType = tnsNONE;
 
   /* get default server, may be changed by -s option */
-
-  def_server = pbs_default();
-
-  if (def_server == NULL)
-    def_server = "";
 
   while ((i = getopt(argc,argv,"acdlopqrs:x-:N:n")) != EOF)
     {
@@ -486,7 +481,7 @@ int main(
 
       case 's':
    
-        def_server = optarg;
+        specified_server = optarg;
 
         break;
 
@@ -596,7 +591,7 @@ int main(
     exit(1);
     }
 
-  con = cnt2server(def_server);
+  con = cnt2server(specified_server);
 
   if (con <= 0) 
     {
@@ -604,7 +599,7 @@ int main(
       {
       fprintf(stderr, "%s: cannot connect to server %s, error=%d\n",
         argv[0],           
-        def_server, 
+        (specified_server) ? specified_server : pbs_default(), 
         pbs_errno);
       }
 

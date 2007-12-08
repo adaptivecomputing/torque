@@ -1308,11 +1308,12 @@ done:
 
 /* EOF on a stream received (either stream or addr must be specified) */
 /* mark node down and remove associated streams */
+/* NOTE: pass in stream = -1 if you wish the stream to be optional */
 
 void stream_eof(
 
   int	 stream,  /* I (optional) */
-  u_long addr,    /* I (optional) */
+  u_long addr,  /* I (optional) */
   int	 ret)     /* I (ignored) */
 
   {
@@ -1354,11 +1355,11 @@ void stream_eof(
 
   /* remove stream from list of valid connections */
 
-  if (stream >= 0)
+  if (np->nd_stream >= 0)
     {
-    np->nd_stream = -1;
+    tdelete((u_long)np->nd_stream,&streams);
 
-    tdelete((u_long)stream,&streams);
+    np->nd_stream = -1;
     }
 
   return;
@@ -1450,13 +1451,13 @@ void ping_nodes(
 
       if (np->nd_stream == -1) 
         {
-	sprintf(log_buffer,"rpp_open to %s",
-	  np->nd_name);
+        sprintf(log_buffer,"rpp_open to %s",
+          np->nd_name);
 
-	log_err(errno,id,log_buffer);
+        log_err(errno,id,log_buffer);
 
-	continue;
-	}
+        continue;
+        }
 
       tinsert((u_long)np->nd_stream,np,&streams);
       }  /* END if (np->nd_stream < 0) */

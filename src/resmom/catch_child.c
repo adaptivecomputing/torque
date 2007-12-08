@@ -915,25 +915,6 @@ int post_epilogue(
   else
     port = default_server_port;
 
-  /* allocate memory */
-
-  preq = alloc_br(PBS_BATCH_JobObit);
-
-  if (preq == NULL)
-    {
-    /* FAILURE */
-
-    sprintf(log_buffer,"cannot allocate memory for obit message");
-
-    LOG_EVENT(
-      PBSEVENT_DEBUG,
-      PBS_EVENTCLASS_REQUEST,
-      id,
-      log_buffer);
-
-    return(1);
-    }
-
   sock = client_to_svr(pjob->ji_qs.ji_un.ji_momt.ji_svraddr,port,1,NULL);
 
   if (sock < 0)
@@ -1063,6 +1044,9 @@ int post_epilogue(
     }
 
   DIS_tcp_wflush(sock);  /* does flush close sock? */
+
+  free_br(preq);
+
 
   /* SUCCESS */
 

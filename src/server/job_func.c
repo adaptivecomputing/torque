@@ -880,7 +880,7 @@ job *job_clone(
     {
     if(poldjob->ji_wattr[i].at_flags & ATR_VFLAG_SET)
       {
-      if (i == JOB_ATR_errpath || i == JOB_ATR_outpath)
+      if (i == JOB_ATR_errpath || i == JOB_ATR_outpath || i == JOB_ATR_jobname)
         {
 	/* modify the errpath adn outpath */
 	slen = strlen(poldjob->ji_wattr[i].at_val.at_str);

@@ -124,6 +124,9 @@
 #include "batch_request.h"
 #include "pbs_proto.h"
 
+
+#define TSERVER_HA_CHECK_TIME  1  /* 1 second sleep time between checks on the lock file for high availability */
+
 /* external functions called */
 
 extern int  pbsd_init A_((int));
@@ -150,9 +153,11 @@ static int    get_port A_((char *,unsigned int *,pbs_net_t *));
 static time_t next_task A_(());
 static int    start_hot_jobs();
 static void   lock_out A_((int,int));
+static int   try_lock_out A_((int,int));
 
 /* Global Data Items */
 
+int             high_availability_mode = FALSE;
 char	       *acct_file = NULL;
 char	       *log_file  = NULL;
 char	       *path_home = PBS_SERVER_HOME;
@@ -230,9 +235,12 @@ void DIS_rpp_reset()
 
 
 
-/*
-** Read a RPP message from a stream.  Only one kind of message
-** is expected -- Inter Server requests from MOM's.
+/**
+ * Read a RPP message from a stream.  
+ *
+ * NOTE: Only one kind of message is expected -- Inter Server requests from MOM's.
+ *
+ * @param stream (I)
 */
 
 void do_rpp(
@@ -393,7 +401,7 @@ int PBSShowUsage(
   char *EMsg)  /* I (optional) */
 
   {
-  const char *Msg = "[ -A <ACCTFILE> ] [ -a <ATTR> ] [ -d <HOMEDIR> ] [ -D ] [ -L <LOGFILE> ] [ -M <MOMPORT> ]\n  [ -p <SERVERPORT> ] [ -R <RMPORT> ] [ -S <SCHEDULERPORT> ] [ -t <TYPE> ]\n  [ --version|--help ]\n";
+  const char *Msg = "[ -A <ACCTFILE> ] [ -a <ATTR> ] [ -d <HOMEDIR> ] [ -D ] [ -L <LOGFILE> ] [ -M <MOMPORT> ]\n  [ -p <SERVERPORT> ] [ -R <RMPORT> ] [ -S <SCHEDULERPORT> ] [ -t <TYPE> ]\n  [ --version|--help|--ha ]\n";
 
   fprintf(stderr,"usage:  %s %s\n",
     ProgName,
@@ -618,6 +626,12 @@ int main(
           PBSShowUsage(NULL);
     
           exit(1);
+          }
+
+        if (!strcasecmp(optarg,"ha"))	/* High Availability */
+          {
+          high_availability_mode = TRUE;
+          break;
           }
 
         PBSShowUsage("invalid command line arg");
@@ -874,6 +888,11 @@ int main(
     return(1);
     }
 
+  i = sysconf(_SC_OPEN_MAX);
+  while (--i > 2)
+    close(i); /* close any file desc left open by parent */
+
+
   /* make sure no other server is running with this home directory */
 
   sprintf(lockfile,"%s/%s/server.lock",
@@ -894,7 +913,30 @@ int main(
     exit(2);
     }
 
-  lock_out(lockfds,F_WRLCK);
+
+  if (high_availability_mode)
+    {
+    /* This will allow multiple instance of the pbs_server to be
+     * running.  This must be done before setting up the client
+     * sockets interface, reading the config file, and contacting
+     * the compute nodes.
+     */
+
+    if (TDoBackground == 1)
+      {
+      if (fork() > 0)
+        {
+        /* parent goes away */
+        exit(0);
+        }
+      }
+    while (try_lock_out(lockfds,F_WRLCK))
+      sleep(TSERVER_HA_CHECK_TIME);	/* Relinquish */
+    }
+  else
+    {
+    lock_out(lockfds,F_WRLCK);
+    }
 	
   server.sv_started = time(&time_now);	/* time server started */
 
@@ -1501,11 +1543,11 @@ static int start_hot_jobs(void)
 
 
 
-/*
- * lock_out - lock out other daemons from this directory.
+/**
+ * Try to lock
+ * @return Zero on success, one on failure
  */
-
-static void lock_out(
+static int try_lock_out(
 
   int fds,
   int op)		/* F_WRLCK  or  F_UNLCK */
@@ -1518,7 +1560,20 @@ static void lock_out(
   flock.l_start  = 0;
   flock.l_len    = 0;
 
-  if (fcntl(fds,F_SETLK,&flock) < 0) 
+  return(fcntl(fds,F_SETLK,&flock) != 0);
+  }
+
+
+/*
+ * lock_out - lock out other daemons from this directory.
+ */
+static void lock_out(
+
+  int fds,
+  int op)		/* F_WRLCK  or  F_UNLCK */
+
+  {
+  if (try_lock_out(fds,op)) 
     {
     strcpy(log_buffer,"pbs_server: another server running\n");
 
@@ -1528,8 +1583,6 @@ static void lock_out(
 
     exit(1);
     }
-
-  return;
   }
 
 /* END pbsd_main.c */

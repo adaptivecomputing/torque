@@ -451,7 +451,10 @@ extern int pbs_connect A_((char *server));
 extern int pbs_query_max_connections();
 extern char *pbs_default A_((void));
 extern char *pbs_fbserver A_((void));
-
+extern int csv_length A_(( char *str ));
+extern char *csv_nth A_(( char *str, int n ));
+extern char *pbs_get_server_list A_((void));
+ 
 extern int pbs_deljob A_((int connect,char *job_id,char *extend));
 extern int pbs_disconnect A_((int connect));
 extern char *pbs_geterrmsg A_((int connect));

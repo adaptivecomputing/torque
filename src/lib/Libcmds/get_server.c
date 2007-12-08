@@ -185,9 +185,15 @@ int TShowAbout()
   }  /* END TShowAbout() */
 
 
-
+/**
+ * Take a job ID string and parse it into
+ * job ID and server name parts.
+ *
+ * @param job_id_in Input string of the form <job number>[.<parent server name>][@<host server url>]
+ * @param job_id_out Output string containing only the job ID part of the input specification.
+ * @param server_out Output string containing nothing or a host url if specified.
+ */
 int get_server(
-
   char *job_id_in,    /* read only */
   char *job_id_out,   /* write only */
   char *server_out)   /* write only */
@@ -290,7 +296,6 @@ int get_server(
       strcat(job_id_out, c);
       }
     }    /* END else */
-
   return(0);
   }  /* END get_server() */
 

@@ -6,7 +6,7 @@ momcpalib=cpa/libmomcpa.a
 endif
 
 SUBDIRS = @PBS_MACH@ $(cpasubdir)
-DIST_SUBDIRS = aix4 aix5 darwin digitalunix freebsd freebsd5 fujitsu hpux10 hpux11 \
+DIST_SUBDIRS = aix4 aix5 darwin digitalunix freebsd freebsd5 freebsd6 fujitsu hpux10 hpux11 \
 	irix5 irix6 irix6array linux netbsd solaris5 solaris7 sunos4 unicos8 unicosmk2 cpa
 
 AM_CPPFLAGS += -I$(top_srcdir)/src/resmom/@PBS_MACH@ -DPBS_MOM \
