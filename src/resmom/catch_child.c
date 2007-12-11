@@ -382,6 +382,9 @@ void scan_for_exiting()
 
   if (ForceObit == -1)
     {
+    /* NOTE:  Allow sites to locally specify obit groupings larger than 1. */
+    /*        Remove after 6/1/2008 if no further obit issues are encountered */
+
     char *ptr;
 
     if ((ptr = getenv("TORQUEFORCESEND")) != NULL)

@@ -235,7 +235,7 @@ static char *getegroup(
       }
     }
 
-  if (!hit) 	/* nothing sepecified, return null */
+  if (!hit)  	/* nothing specified, return null */
     {
     return(NULL);
     }
@@ -456,18 +456,62 @@ int set_jobexid(
   else
     pattr = &pjob->ji_wattr[(int)JOB_ATR_grouplst];
 
+  /* extract user-specified egroup if it exists */
+
   pgrpn = getegroup(pjob,pattr);
 
-  if (CheckID == 0)
+  if (pgrpn == NULL)
     {
-    if (pgrpn == NULL)
+    if ((pwent != NULL) || ((pwent = getpwnam(puser)) != NULL))
+      {
+      /* egroup not specified - use user login group */
+
+      gpent = getgrgid(pwent->pw_gid);
+
+      if (gpent != NULL)
+        {
+        pgrpn = gpent->gr_name;           /* use group name */
+        }
+     else
+        {
+        sprintf(gname,"%ld",
+          (long)pwent->pw_gid);
+
+        pgrpn = gname;            /* turn gid into string */
+        }
+      }
+    else if (CheckID == 0)
       {
       strcpy(gname,"???");
 
       pgrpn = gname;
       }
+    else
+      {
+      log_err(errno,"set_jobexid","getpwnam failed");
+
+      if (EMsg != NULL)
+        snprintf(EMsg,1024,"user does not exist in server password file");
+
+      return(PBSE_BADUSER);
+      }
+
+    /*
+     * setting the DEFAULT flag is a "kludgy" way to keep MOM from
+     * having to do an unneeded look up of the group file.
+     * We needed to have JOB_ATR_egroup set for the server but
+     * MOM only wants it if it is not the login group, so there!
+     */
+
+    addflags = ATR_VFLAG_DEFLT;
+    }  /* END if ((pgrpn = getegroup(pjob,pattr))) */
+  else if (CheckID == 0)
+    {
+    /* egroup specified - do not validate group within server */
+
+    /* NO-OP */
     }
-  else if (pgrpn != NULL)
+  else
     {	
     /* user specified a group, group must exist and either */
     /* must be user's primary group or the user must be in it */
@@ -476,6 +520,13 @@ int set_jobexid(
 
     if (gpent == NULL)
       {
+      if (CheckID == 0)
+        {
+        strcpy(gname,"???");
+
+        pgrpn = gname;
+        }
+      else
       if (EMsg != NULL)
         snprintf(EMsg,1024,"cannot locate group %s in server group file",
           pgrpn);
@@ -510,33 +561,6 @@ int set_jobexid(
         } 
       }
     }    /* END if ((pgrpn = getegroup(pjob,pattr))) */
-  else 
-    {
-    /* use user login group */
-
-    gpent = getgrgid(pwent->pw_gid);
-
-    if (gpent != NULL) 
-      {
-      pgrpn = gpent->gr_name;		/* use group name */
-      } 
-    else 
-      {
-      sprintf(gname,"%ld", 
-        (long)pwent->pw_gid);
-
-      pgrpn = gname;		/* turn gid into string */
-      }
-
-    /*
-     * setting the DEFAULT flag is a "kludgy" way to keep MOM from
-     * having to do an unneeded look up of the group file.
-     * We needed to have JOB_ATR_egroup set for the server but
-     * MOM only wants it if it is not the login group, so there!
-     */
-
-    addflags = ATR_VFLAG_DEFLT;
-    }  /* END else ((pgrpn = getegroup(pjob,pattr))) */
 
   /* set new group */
 

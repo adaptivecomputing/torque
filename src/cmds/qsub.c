@@ -1441,7 +1441,9 @@ final:
  *	will be connected to this socket.
  */
 
-char *interactive_port(int *sock)
+char *interactive_port(
+
+  int *sock)
 
   {
   torque_socklen_t namelen;
@@ -1498,7 +1500,9 @@ char *interactive_port(int *sock)
     }
     
   return(portstring);
-  }
+  }  /* END interactive_port() */
+
+
 
 
 
@@ -1932,7 +1936,7 @@ void catchchild(
   /*NOTREACHED*/
 
   return;
-  }
+  }  /* END catchchild() */
 
 
 
@@ -1946,6 +1950,7 @@ void no_suspend(
 
   fflush(stdout);
   }
+
 
 
 
@@ -1991,6 +1996,7 @@ void bailout()
 
 
 
+
 void toolong(
 
   int sig)
@@ -2004,6 +2010,7 @@ void toolong(
 
   exit(0);
   }
+
 
 
 
@@ -2060,6 +2067,9 @@ void catchint(
   }  /* END catchint() */
 
 
+
+
+
 void x11handler(
 
   int inter_sock)
@@ -2096,6 +2106,9 @@ void x11handler(
 
   exit(EXIT_FAILURE);
   }
+
+
+
 
 
 /*

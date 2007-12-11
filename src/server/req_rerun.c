@@ -196,9 +196,10 @@ void req_rerunjob(
     return;
     }
 
-  /* the job must be running */
+  /* the job must be running or completed */
 
-  if (pjob->ji_qs.ji_state != JOB_STATE_RUNNING) 
+  if ((pjob->ji_qs.ji_state < JOB_STATE_EXITING) &&
+      (pjob->ji_qs.ji_state != JOB_STATE_RUNNING))
     {
     /* FAILURE */
 
@@ -221,17 +222,33 @@ void req_rerunjob(
     return;
     }
 
-  /* ask MOM to kill off the job */
+  if (pjob->ji_qs.ji_state == JOB_STATE_RUNNING)
+    {
+    /* ask MOM to kill off the job if it is running */
 
-  rc = issue_signal(pjob,"SIGKILL",post_rerun,0);
+    rc = issue_signal(pjob,"SIGKILL",post_rerun,0);
+    }
+  else
+    {
+    pjob->ji_qs.ji_state = JOB_STATE_QUEUED;
+    pjob->ji_qs.ji_substate = JOB_SUBSTATE_QUEUED;
+
+    rc = -1;
+    }
 
   switch (rc) 
     {
+    case -1:
+    
+      /* completed job was requeued - NO-OP */
+
+      break;
+
     case 0:
 
       /* requeue request successful */
 
-      pjob->ji_qs.ji_substate  = JOB_SUBSTATE_RERUN;
+      pjob->ji_qs.ji_substate = JOB_SUBSTATE_RERUN;
 
       break;
 
@@ -329,4 +346,5 @@ void req_rerunjob(
   }  /* END req_rerunjob() */
 
 
+/* END req_rerun.c */
 

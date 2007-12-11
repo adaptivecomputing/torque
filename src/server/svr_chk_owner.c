@@ -411,25 +411,48 @@ job *chk_job_request(
 
   if (pjob->ji_qs.ji_state >= JOB_STATE_EXITING) 
     {
-    char tmpLine[1024];
+    /* job has completed */
 
-    sprintf(log_buffer,"%s %s", 
-      msg_badstate,
-      PJobState[pjob->ji_qs.ji_state]);
+    switch (preq->rq_type)
+      {
+      case PBS_BATCH_Rerun:
 
-    log_event(
-      PBSEVENT_DEBUG, 
-      PBS_EVENTCLASS_JOB,
-      pjob->ji_qs.ji_jobid, 
-      log_buffer);
+        /* allow re-run to be executed for completed jobs */
 
-    sprintf(tmpLine,"invalid state for job - %s",
-      PJobState[pjob->ji_qs.ji_state]);
+        /* NO-OP */
 
-    req_reject(PBSE_BADSTATE,0,preq,NULL,tmpLine);
+        break;
 
-    return(NULL);
-    }
+      default:
+
+        {
+        char tmpLine[1024];
+ 
+        sprintf(log_buffer,"%s %s", 
+          msg_badstate,
+          PJobState[pjob->ji_qs.ji_state]);
+
+        log_event(
+          PBSEVENT_DEBUG, 
+          PBS_EVENTCLASS_JOB,
+          pjob->ji_qs.ji_jobid, 
+          log_buffer);
+
+        sprintf(tmpLine,"invalid state for job - %s",
+          PJobState[pjob->ji_qs.ji_state]);
+
+        req_reject(PBSE_BADSTATE,0,preq,NULL,tmpLine);
+
+        return(NULL);
+        }
+
+        /*NOTREACHED*/
+
+        break;
+      }  /* END switch (preq->rq_type) */
+    }    /* END if (pjob->ji_qs.ji_state >= JOB_STATE_EXITING) */
+
+  /* SUCCESS - request is valid */
 
   return(pjob);
   }  /* END chk_job_request() */
