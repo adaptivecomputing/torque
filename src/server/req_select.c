@@ -190,17 +190,16 @@ static int  comp_state (state, selstate)
 }
 
 static attribute_def state_sel = {
-	ATTR_state,
-	decode_str,
-	encode_str,
-	set_str,
-	comp_state,
-	free_str,
-	NULL_FUNC,
-	READ_ONLY,
-	ATR_TYPE_STR,
-	PARENT_TYPE_JOB
-};
+  ATTR_state,
+  decode_str,
+  encode_str,
+  set_str,
+  comp_state,
+  free_str,
+  NULL_FUNC,
+  READ_ONLY,
+  ATR_TYPE_STR,
+  PARENT_TYPE_JOB };
 
 
 /*
@@ -723,6 +722,11 @@ static int build_selentry(
 			return (0);
 }
 
+
+
+
+
+
 /*
  * build_selist - build the list of select_list structures based on
  *	the svrattrl structures in the request.
@@ -731,13 +735,15 @@ static int build_selentry(
  *	three of the parameter list.
  */
 
-static int build_selist(plist, perm, pselist, pque, bad)
-	svrattrl	    *plist;
-	int		     perm;
-	struct select_list **pselist;	/* RETURN - select list */
-	pbs_queue	   **pque;	/* RETURN - queue ptr if limit to que */
-	int		    *bad;	/* RETURN - index of bad attr */
-{
+static int build_selist(
+
+  svrattrl	    *plist,
+  int		     perm,
+  struct select_list **pselist,	/* RETURN - select list */
+  pbs_queue	   **pque,	/* RETURN - queue ptr if limit to que */
+  int		    *bad)	/* RETURN - index of bad attr */
+
+  {
 	struct select_list *entry;
 	int		    i;
 	char		   *pc;
@@ -797,5 +803,10 @@ static int build_selist(plist, perm, pselist, pque, bad)
 		}
 		plist = (svrattrl *)GET_NEXT(plist->al_link);
 	}
-	return (0);
-}
+
+  return(0);
+  }  /* END build_selist() */
+
+/* END req_select.c */
+
+

@@ -172,6 +172,7 @@ int isjobid(
 
 
 
+
 int istrue(
 
   char *string)  /* I */
@@ -189,6 +190,7 @@ int istrue(
 
   return(FALSE);
   }  /* END istrue() */
+
 
 
 

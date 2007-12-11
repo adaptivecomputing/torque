@@ -233,6 +233,8 @@ void req_rerunjob(
     pjob->ji_qs.ji_state = JOB_STATE_QUEUED;
     pjob->ji_qs.ji_substate = JOB_SUBSTATE_QUEUED;
 
+    set_statechar(pjob);
+
     rc = -1;
     }
 

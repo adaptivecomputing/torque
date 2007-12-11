@@ -1751,6 +1751,8 @@ void set_resc_deflt(
 
 
 
+
+
 /*
  * set_statechar - set the job state attribute to the letter that correspondes
  *	to its current state.
@@ -1781,7 +1783,9 @@ void set_statechar(
       pjob->ji_wattr[JOB_ATR_state].at_val.at_char = 'U'; /* Unknown */
       }
     }
-  }
+
+  return;
+  }  /* END set_statechar() */
 
 
 
