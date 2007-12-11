@@ -284,7 +284,7 @@ void proc_get_btime()
 
 /* FORMAT: <PID> <COMM> <STATE> <PPID> <PGRP> <SESSION> [<TTY_NR>] [<TPGID>] <FLAGS> [<MINFLT>] [<CMINFLT>] [<MAJFLT>] [<CMAJFLT>] <UTIME> <STIME> <CUTIME> <CSTIME> [<PRIORITY>] [<NICE>] [<0>] [<ITREALVALUE>] <STARTTIME> <VSIZE> <RSS> [<RLIM>] [<STARTCODE>] ... */
 
-static char stat_str[] = "%d (%[^)]) %c %d %d %d %*d %*d %u %*u \
+static char stat_str[] = " %c %d %d %d %*d %*d %u %*u \
 %*u %*u %*u %lu %lu %lu %lu %*ld %*ld %*u %*ld %lu %llu %lld %*lu %*lu \
 %*lu %*lu %*lu %*lu %*lu %*lu %*lu %*lu %*lu %*lu %*lu";
 
@@ -312,6 +312,8 @@ proc_stat_t *get_proc_stat(
   {
   static proc_stat_t	ps;
   static char		path[1024];
+  static char		readbuf[4096];
+  static char          *lastbracket;
   FILE                 *fd;
   unsigned long         jstarttime;  /* number of jiffies since OS start time when process started */
   struct stat		sb;
@@ -350,11 +352,28 @@ proc_stat_t *get_proc_stat(
 
   /* use 'man 5 proc' for /proc/pid/stat format */
 
-  /* see stat_str[] value for mapping 'stat' format */
+  if (!fgets(readbuf, sizeof(readbuf), fd)) {
+        fclose(fd);
+        return(NULL);
+  }
 
-  if (fscanf(fd,stat_str, 
-        &ps.pid,       /* PID */
-        path,          /* exe */
+  lastbracket = strrchr(readbuf, ')');
+  if (lastbracket == NULL) {
+      fclose(fd);
+      return(NULL);
+  }
+  *lastbracket = '\0'; /* We basically split the string here, overwriting the ')'. */
+  lastbracket++;
+  if (sscanf(readbuf, "%d (%[^\n]", &ps.pid, path) != 2) {
+    /* FAILURE */
+
+    fclose(fd);
+
+    return(NULL);
+    }
+
+  /* see stat_str[] value for mapping 'stat' format */
+  if (sscanf(lastbracket,stat_str, 
         &ps.state,     /* state (one of RSDZTW) */
         &ps.ppid,      /* ppid */
         &ps.pgrp,      /* pgrp */
@@ -366,7 +385,7 @@ proc_stat_t *get_proc_stat(
         &ps.cstime,    /* cstime - jiffies that this process’s waited-for children have been scheduled in kernel mode */
         &jstarttime,   /* starttime */
         &ps.vsize,     /* vsize */
-        &ps.rss) != 14)   /* rss */
+        &ps.rss) != 12)   /* rss */
     {
     /* FAILURE */
 
