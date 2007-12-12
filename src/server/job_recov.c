@@ -147,12 +147,11 @@ static const unsigned int quicksize = sizeof(struct jobfix);
  *			 - a full write for a new job
  *
  *	For a quick update, the data written is less than a disk block
- *	size and no size change occurs; so it is rewritten in place
- *	with O_SYNC.
+ *	size and no size change occurs; so it is rewritten in place.
  *
  *	For a full update (usually following modify job request), to
  *	insure no data is ever lost due to system crash:
- *	1. write (with O_SYNC) new image to a new file using a temp name
+ *	1. write new image to a new file using a temp name
  *	2. unlink the old (image) file
  *	3. link the correct name to the new file
  *	4. unlink the temp name

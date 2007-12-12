@@ -154,99 +154,49 @@ void initialize_root_cpuset()
     struct dirent	*pdirent;
     char           path[MAXPATHLEN + 1];
     struct stat    statbuf;
-    char *dir_path = "/dev/cpuset/torque";
-    char cpuset_name[MAXPATHLEN+1];
-    struct cpuset *root_set;
-    struct cpuset *torque_set;
-    int cpu_map_size;
-    int mem_map_size;
-    struct bitmask *available_cpus;
-    struct bitmask *available_mems;
+    char *root_path = "/dev/cpuset";
+    char cpuset_buf[1024];
+    FILE *fd;
 
-    /* Create the top level torque cpuset if it doesn't already exist. */
-    torque_set = cpuset_alloc();
+    /* make sure cpusets are available */
+    strcpy(path,root_path);
+    strcat(path,"/cpus");
+    if (lstat(path, &statbuf) != 0) return 1;
 
-    if (cpuset_query(torque_set, "/torque") == -1)
+    strcpy(path,root_path);
+    strcat(path,"/torque");
+    if (lstat(path, &statbuf) != 0)
     {
-        sprintf (log_buffer, "Torque cpuset %s does not exist, creating it now.\n",dir_path);
+        sprintf (log_buffer,
+          "Torque cpuset %s does not exist, creating it now.\n",path);
         log_err(-1,id,log_buffer);
 
-        cpu_map_size = cpuset_cpus_nbits();
-        if (cpu_map_size < 1)
-        {
-            sprintf (log_buffer, "cpuset_cpus_nbits() failed.\n");
-            log_err(-1,id,log_buffer);
-        }
-    
-        available_cpus = bitmask_alloc(cpu_map_size);
-        if (available_cpus == NULL)
-        {
-            sprintf (log_buffer, "bitmask_alloc() failed.\n");
-            log_err(-1,id,log_buffer);
-        }
-    
-        mem_map_size = cpuset_mems_nbits();
-        if (mem_map_size < 1)
-        {
-            sprintf (log_buffer, "cpuset_mems_nbits() failed.\n");
-            log_err(-1,id,log_buffer);
-        }
-    
-        available_mems = bitmask_alloc(mem_map_size);
-        if (available_mems == NULL)
-        {
-            sprintf (log_buffer, "bitmask_alloc() failed.\n");
-            log_err(-1,id,log_buffer);
-        }
+        mkdir(path, 0755);
 
-        root_set = cpuset_alloc();
+        /* add all cpus to torqueset */
+        strcpy(path,root_path);
+        strcat(path,"/cpus");
+        fd=fopen(path,"r");
+        fread(cpuset_buf, sizeof(char), 1023, fd);
+        fclose(fd);
+        strcpy(path,root_path);
+        strcat(path,"/torque/cpus");
+        fd=fopen(path,"w");
+        fwrite(cpuset_buf, sizeof(char), strlen(cpuset_buf), fd);
+        fclose(fd);
 
-        if (cpuset_query(root_set, "/") == 0)
-        {
-            /* Determine all cpus and mems in the root cpuset. */
-            cpuset_getcpus(root_set, available_cpus);
+        /* add all mems to torqueset */
+        strcpy(path,root_path);
+        strcat(path,"/mems");
+        fd=fopen(path,"r");
+        fread(cpuset_buf, sizeof(char), 1023, fd);
+        fclose(fd);
+        strcpy(path,root_path);
+        strcat(path,"/torque/mems");
+        fd=fopen(path,"w");
+        fwrite(cpuset_buf, sizeof(char), strlen(cpuset_buf), fd);
+        fclose(fd);
 
-            if (bitmask_isallclear(available_cpus))
-            {
-                sprintf (log_buffer, "Root cpuset has no cpus.\n");
-                log_err(-1,id,log_buffer);
-            }
-    
-            cpuset_getmems(root_set, available_mems);
-            if (bitmask_isallclear(available_mems))
-            {
-                sprintf (log_buffer, "Root cpuset has no mems.\n");
-                log_err(-1,id,log_buffer);
-            }
-        }
-
-        /* Find all cpus and mems available in the root cpuset. */
-        if (find_free_cpuset_space(available_cpus, available_mems, "/") == 0)
-        {
-            /* Create the torque root cpuset with the available cpu and mems bitmaps. */
-            if (cpuset_setcpus(torque_set, available_cpus) != 0)
-            {
-                sprintf (log_buffer, "cpuset_setcpus() failed.\n");
-                log_err(-1,id,log_buffer);
-            }
-    
-            if (cpuset_setmems(torque_set, available_mems) != 0)
-            {
-                sprintf (log_buffer, "cpuset_setmems() failed.\n");
-                log_err(-1,id,log_buffer);
-            }
-    
-            if (cpuset_create("/torque", torque_set) != 0)
-            {
-                sprintf (log_buffer, "cpuset_create() failed.\n");
-                log_err(-1,id,log_buffer);
-            }
-        }
-
-        bitmask_free(available_cpus);
-        bitmask_free(available_mems);
-        cpuset_free(torque_set);
-        cpuset_free(root_set);
 
     /* The cpuset already exists, delete any cpusets for jobs that no longer exist. */
     } else {

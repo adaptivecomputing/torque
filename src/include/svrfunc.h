@@ -159,12 +159,12 @@ struct stat_cntl {		/* used in req_stat_job */
 
 extern int stat_to_mom A_((job *, struct stat_cntl *));
 
+#endif	/* STAT_CNTL */
+
 /*
  * the following defines are due to the fact that O_SYNC was not
  * POSIX standard (TDISABLEFILESYNC managed w/configure --disable-filesync) 
  */
-
-#endif	/* STAT_CNTL */
 
 #if TDISABLEFILESYNC
 #define O_Sync 0

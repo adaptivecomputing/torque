@@ -122,6 +122,7 @@
 #include        "batch_request.h"
 #include        "resmon.h"
 #include        "mcom.h"
+#include	"svrfunc.h"
 
 
 /* Global Data Items */
@@ -185,18 +186,6 @@ extern int TMakeTmpDir (job *,char *);
 
 /* END external functions */
 
-
-/*
- * the following funny business is due to the fact that O_SYNC
- * is not currently POSIX
- */
-#ifdef O_SYNC
-#define O_Sync O_SYNC
-#elif _FSYNC
-#define O_Sync _FSYNC
-#else
-#define O_Sync 0
-#endif
 
 
 /*

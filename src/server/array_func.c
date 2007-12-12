@@ -30,10 +30,12 @@
 #include "job.h"
 #include "log.h"
 #include "pbs_error.h"
+#include "svrfunc.h"
 
 #include "work_task.h"
 
 #include "array.h"
+
 
 
 
@@ -102,19 +104,13 @@ int array_save(job_array *pa)
 
   { 
   int fds;
-  int openflags;
   char namebuf[MAXPATHLEN];
   
   strcpy(namebuf, path_arrays);
   strcat(namebuf, pa->ai_qs.fileprefix);
   strcat(namebuf, ARRAY_FILE_SUFFIX);
   
-#if defined(O_SYNC)
-  openflags =  O_WRONLY | O_SYNC | O_CREAT;
-#else
-  openflags =  O_WRONLY | O_CREAT;
-#endif
-  fds = open(namebuf, openflags, 0600);
+  fds = open(namebuf, O_Sync, 0600);
   
   if (fds < 0)
     {
