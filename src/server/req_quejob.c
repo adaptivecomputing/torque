@@ -271,15 +271,17 @@ void req_quejob(
     sprintf(jidbuf,"%d.",
       server.sv_qs.sv_jobidnumber);
  
-    memset(host_server, 0, sizeof(host_server));
-    if (get_fullhostname(pbs_default(), host_server, PBS_MAXSERVERNAME, NULL) == 0)
+    memset(host_server,0,sizeof(host_server));
+
+    if (get_fullhostname(pbs_default(),host_server,PBS_MAXSERVERNAME,NULL) == 0)
       {
-      strcat(jidbuf, host_server);
+      strcat(jidbuf,host_server);
       }
     else
       {
       strcat(jidbuf,server_name);
       }
+
     jid = jidbuf;
 		
     /* having updated sv_jobidnumber, must save server struct */
