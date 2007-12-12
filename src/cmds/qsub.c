@@ -133,6 +133,9 @@
 
 /* DefaultFilterPath is used to fall back on in order to maintain backwards compatibility. 
    the new preferred path for the submit filter is ${libexecdir}/qsub_filter */
+
+/* NOTE:  submitfilter specified using SUBMITFILTER in $TORQUEHOME/torque.cfg */
+
 static char *DefaultFilterPath = "/usr/local/sbin/torque_submitfilter";
 
 static char *DefaultXauthPath = XAUTH_PATH;
@@ -2370,6 +2373,9 @@ void interactive()
 
 
 
+/* NOTE:  return 0 on success */
+/* NOTE:  only run submitfilter if pass < 10 */
+
 int process_opts(
 
   int    argc,  /* I */
@@ -2394,6 +2400,10 @@ int process_opts(
   char tmp_name2[] = "/tmp/qsub.XXXXXX";
 
   char cline[4096];
+
+  char  flag;  /* submitfilter flag character */
+  char *vptr;  /* submitfilter flag value */
+
   char tmpResources[4096]="";
   char *cP;
 
@@ -3366,8 +3376,12 @@ int process_opts(
 
 /* ORNL WRAPPER */
 
-  if (Interact_opt == 1) 
+  if ((pass < 10) && (Interact_opt == 1) )
     {
+    int original_optind = optind;
+
+    int rc = 0;
+
     /* Evaluate resources for interactive submission here. */
 
     if ((tmpfd = mkstemp(tmp_name)) < 1)
@@ -3445,10 +3459,33 @@ int process_opts(
       strcat(cline," >");
       strcat(cline,tmp_name2);
 
-      if (system(cline) == -1)
+      rc = system(cline);
+
+      if (rc == -1)
         {
         fprintf(stderr,"qsub: error writing filter o/p, %s\n",
           tmp_name2);
+
+        exit(1);
+        }
+
+      if (WEXITSTATUS(rc) == (unsigned char)SUBMIT_FILTER_ADMIN_REJECT_CODE)
+        {
+        fprintf(stderr,"qsub: Your job has been administratively rejected by the queueing system.\n");
+        fprintf(stderr,"qsub: There may be a more detailed explanation prior to this notice.\n");
+
+        unlink(tmp_name2);
+        unlink(tmp_name);
+
+        exit(1);
+        }
+
+      if (WEXITSTATUS(rc))
+        {
+        fprintf(stderr,"qsub: submit filter returned an error code, aborting job submission.\n");
+
+        unlink(tmp_name2);
+        unlink(tmp_name);
 
         exit(1);
         }
@@ -3480,12 +3517,87 @@ int process_opts(
           }
         }
 
-      if (set_resources(&attrib,cline + 8,(pass == 0))) 
+      /* NOTE:  allow for job attributes other than '-l' */
+
+      /* FORMAT:  '#PBS -<FLAG> <VAL>' */
+
+      if (strncasecmp(cline,"#pbs -",strlen("#pbs -")))
         {
-        fprintf(stderr,"qsub: illegal -l value\n");
-          errflg++;
+        /* invalid line specified */
+
+        continue;
         }
-      }
+
+      /* NOTE:  a better design would be to process the submitfilter outside of process_opts(),
+                add valid args to ArgC/ArgV, and call process_opts() once. (NYI) */
+
+      /* NOTE:  can we utilize 'process_opts' to process submit filter lines? (NYI) */
+
+      flag = cline[strlen("#pbs -")];
+
+      vptr = cline + strlen("#pbs -x ");
+
+      switch (flag)
+        {
+        case 'l':
+
+          if (set_resources(&attrib,vptr,(pass == 0)))
+            {
+            fprintf(stderr,"qsub: illegal -l value\n");
+              errflg++;
+            }
+
+          break;
+
+        default:
+
+          {
+          char FlagString[3];
+
+          char *tmpArgV[4];
+
+          int   aindex;
+
+          FlagString[0] = '-';
+          FlagString[1] = flag;
+          FlagString[2] = '\0';
+
+#ifdef linux
+          aindex = 1;  /* prime getopt's starting point */
+          tmpArgV[0] = "";
+#else
+          aindex = 1;  /* prime getopt's starting point */
+          tmpArgV[0] = "";
+#endif
+
+          tmpArgV[aindex] = FlagString;
+          tmpArgV[aindex + 1] = vptr;
+          tmpArgV[aindex + 2] = NULL;
+
+          tmpArgV[3] = NULL;
+
+          fprintf(stderr,"PLINE: '%s' '%s'  '%s'\n",
+            tmpArgV[0],
+            tmpArgV[1],
+            cline);
+
+          /* set pass to 10 to allow submit filter to override user-specified values and
+             to prevent recursive calling of submit filter processing */
+
+          if (process_opts(aindex + 2,tmpArgV,10) != 0)
+            {
+            fprintf(stderr,"submitfilter line '%s' ignored\n",
+              cline);
+            }
+          }
+
+          break;
+        }  /* END switch (cptr[0]) */
+      }    /* END while (fgets(cline,sizeof(cline),fP) != NULL) */
+
+    /* restore optind */
+
+    optind = original_optind;
 
     fclose(fP);
     }    /* END if (Interact_opt == 1) */
@@ -3727,7 +3839,7 @@ int main(
   
   strncpy(PBS_Filter,SUBMIT_FILTER_PATH,255);
 
-  /* check to see if PBS_Filter exists.  If not then fall back to the old hard coded file */
+  /* check to see if PBS_Filter exists.  If not then fall back to the default hard-coded file */
 
   if (stat(PBS_Filter,&statbuf) == -1)
     {
@@ -3744,8 +3856,10 @@ int main(
   owner_uid[0] = '\0';
 
   if (getenv("PBSDEBUG") != NULL)
+    {
     fprintf(stderr,"xauth_path=%s\n",
       xauth_path);
+    }
 
   if (load_config(config_buf,sizeof(config_buf)) == 0)
     {
@@ -3911,7 +4025,9 @@ int main(
 
     if (stat(script,&statbuf) < 0) 
       {
-      perror("qsub: script file:");
+      fprintf(stderr,"qsub: script file '%s' cannot be loaded - %s\n",
+        script,
+        strerror(errno));
 
       exit(1);
       }
