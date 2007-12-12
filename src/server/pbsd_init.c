@@ -512,6 +512,29 @@ int pbsd_init(
 
   server.sv_attr[(int)SRV_ATR_PollJobs].at_val.at_long = PBS_POLLJOBS;
 
+  /* Added the server names from /var/spool/torque/server_name to the trusted hosts list. */
+  {
+  int n, list_len;
+  char *server_list_ptr;
+  char *tp;
+  char buffer[PBS_MAXSERVERNAME+1];
+
+    server_list_ptr = pbs_get_server_list();
+    list_len = csv_length(server_list_ptr);
+    for (n=0; n<list_len; n++)
+      {
+      tp = csv_nth(server_list_ptr, n);
+      if (tp)
+      {
+      strcpy(buffer, "+");
+      strcat(buffer, tp);
+      if ((tp = strchr(buffer, ':')))  /* Don't include any port specification */
+        *tp = 0;
+      decode_arst( &server.sv_attr[(int)SRV_ATR_acl_hosts], NULL, NULL, buffer);
+      }
+    }
+  }
+
   /* 4. force logging of all types */
 
   server.sv_attr[(int)SRV_ATR_log_events].at_val.at_long = PBSEVENT_MASK;

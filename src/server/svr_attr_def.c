@@ -240,7 +240,7 @@ attribute_def svr_attr_def[] = {
     },
 
 /* SRV_ATR_acl_hosts */
-    {	ATTR_aclhost,		/* "acl_host_list" */
+    {	ATTR_aclhost,		/* "acl_hosts" */
 	decode_arst,
 	encode_arst,
 	set_hostacl,
