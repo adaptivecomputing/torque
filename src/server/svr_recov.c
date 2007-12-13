@@ -474,7 +474,7 @@ void recov_acl(
   char	        *name)	/* parent object name = file name */
 
   {
-  static char *this_function_name = "save_acl";
+  static char *this_function_name = "recov_acl";
   char *buf;
   int   fds;
   char  filename1[MAXPATHLEN];
