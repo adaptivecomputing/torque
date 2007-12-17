@@ -4,6 +4,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature
   e - redesign how torque.spec is built
   e - added -a to qrun to allow asynchronous job start
   e - allow qrerun on completed jobs
+  e - allow qdel to delete all jobs
 
 2.2.1
   b - fix a bug where dependent jobs get put on hold when the previous job has
