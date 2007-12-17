@@ -81,10 +81,7 @@
 .SH NAME
 qdel - delete pbs batch job
 .SH SYNOPSIS
-qdel
-[\-W delay]
-[\p]
-job_identifier ...
+qdel [\-m message] [\-p] [\-W delay] job_identifier ...
 .SH DESCRIPTION
 The 
 .B qdel 
@@ -123,6 +120,11 @@ This option is an extension to POSIX 1003.2d.
 .Ig
 .IP "\-p" 15
 Forcibly purge the job from the server.  This should only be used if a running job will not exit because its allocated nodes are unreachable.  The admin should make every attempt at resolving the problem on the nodes.  If a job's mother superior recovers after purging the job, any epilogue scripts may still run.  This option is only available to a batch operator or the batch administrator.
+.NL
+.IP "\-m message" 15
+Specify a comment to be included in the email.  The argument
+.Ar message
+specifies the comment to send.  This option is only available to a batch operator or the batch administrator.
 .LP
 .SH OPERANDS
 The qdel command accepts one or more
@@ -130,6 +132,10 @@ The qdel command accepts one or more
 operands of the form:
 .br
 .Ty "\ \ \ \ sequence_number[.server_name][@server]"
+.br
+\ \ \ \ \ \ or
+.br
+.Ty "\ \ \ \ 'all'"
 .br
 .if !\n(Pb .ig Ig
 See the description under "Job Identifier" in section \*(Ji in this ERS.
