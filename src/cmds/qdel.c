@@ -369,6 +369,14 @@ redo:
         {
         printf("Deletion Error: %d\n", pbs_errno);
         prt_job_err("qdel",connect,jobid);
+        /*
+         * if we don't have permission for this job, we probably don't have
+         * permission for any other jobs
+        */
+        if (pbs_errno == PBSE_PERM)
+          {
+          break;
+          }
         }
       }  
 
