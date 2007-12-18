@@ -119,7 +119,7 @@
  * ----------------------------------------------------------------------------
  */
 
-static int decode_arst_direct(
+int decode_arst_direct(
 
   struct attribute *patr,  /* I (modified) */
   char             *val)   /* I */

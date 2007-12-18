@@ -336,6 +336,7 @@ extern int  decode_size   A_((attribute *patr,char *name, char *rn, char *val));
 extern int  decode_str   A_((attribute *patr,char *name, char *rn, char *val));
 extern int  decode_time  A_((attribute *patr,char *name, char *rn, char *val));
 extern int  decode_arst  A_((attribute *patr,char *name, char *rn, char *val));
+extern int  decode_arst_direct  A_((attribute *patr, char *val));
 extern int  decode_resc  A_((attribute *patr,char *name, char *rn, char *val));
 extern int  decode_depend A_((attribute *patr,char *name, char *rn, char *val));
 extern int  decode_hold A_((attribute *patr,char *name, char *rn, char *val));

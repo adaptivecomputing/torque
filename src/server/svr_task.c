@@ -78,7 +78,12 @@
 */
 
 /*
- * svr_task.c - contains functions to deal with the server's task list
+ * @file svr_task.c
+ *
+ * Contains functions to deal with the server's task list
+ *
+ * A task list is a set of pending functions usually associated with
+ * processing a reply message.
  *
  * Functions included are:
  */

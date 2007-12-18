@@ -1444,9 +1444,7 @@ final:
  *	will be connected to this socket.
  */
 
-char *interactive_port(
-
-  int *sock)
+char *interactive_port(int *sock)
 
   {
   torque_socklen_t namelen;
@@ -3888,8 +3886,7 @@ int main(
 
     if ((param_val = get_param("QSUBSENDUID",config_buf)) != NULL)
       {
-      sprintf(owner_uid,"%d",
-        getuid());
+      sprintf(owner_uid,"%d",getuid());
       }
 
     if ((param_val = get_param("XAUTHPATH",config_buf)) != NULL)
