@@ -413,7 +413,22 @@ void send_qsub_delmsg(
  *	to the job owner.
  */
 
-/* NOTE:  this routine is called under the following conditions:  ??? */
+/* NOTE:  this routine is called under the following conditions:
+ * 1) by req_deletejob whenever deleting a job that is not running,
+ *    not transitting, not exiting and does not have a checkpoint
+ *    file on the mom.
+ * 2) by req_deletearray whenever deleting a job that is not running,
+ *    not transitting, not in prerun, not exiting and does not have a
+ *    checkpoint file on the mom.
+ * 3) by close_quejob when the server fails to enqueue the job.
+ * 4) by array_delete_wt for prerun jobs that hang around too long and 
+ *    do not have a checkpoint file on the mom.
+ * 5) by pbsd_init when recovering jobs.
+ * 6) by svr_movejob when done routing jobs around.
+ * 7) by queue_route when trying toroute any "ready" jobs in a specific queue.
+ * 8) by req_shutdown when trying to shutdown.
+ * 9) by req_register when the request oparation is JOB_DEPEND_OP_DELETE.
+ */
 
 int job_abt(
 
