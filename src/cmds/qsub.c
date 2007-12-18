@@ -3574,10 +3574,12 @@ int process_opts(
 
           tmpArgV[3] = NULL;
 
+/*
           fprintf(stderr,"PLINE: '%s' '%s'  '%s'\n",
             tmpArgV[0],
             tmpArgV[1],
             cline);
+*/
 
           /* set pass to 10 to allow submit filter to override user-specified values and
              to prevent recursive calling of submit filter processing */
