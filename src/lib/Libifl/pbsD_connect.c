@@ -102,6 +102,12 @@
 #include "dis.h"
 #include "net_connect.h"
 
+
+
+#define CNTRETRYDELAY 5
+
+
+
 /* NOTE:  globals, must not impose per connection constraints */
 
 static uid_t pbs_current_uid;               /* only one uid per requestor */
@@ -521,7 +527,7 @@ static int PBSD_authenticate(
 
 /* NOTE:  0 is not a valid return value */
 
-int pbs_connect(
+int pbs_original_connect(
 
   char *server)  /* I (FORMAT:  NULL | '\0' | HOSTNAME | HOSTNAME:PORT )*/
 
@@ -779,6 +785,71 @@ int pbs_disconnect(
   }  /* END pbs_disconnect() */
 
 
+
+/**
+ * This is a new version of this function that allows
+ * connecting to a list of servers.  It is backwards
+ * compatible with the previous version in that it
+ * will accept a single server name.
+ *
+ * @param server_name_ptr A pointer to a server name or server name list.
+ * @returns A file descriptor number.
+ */
+int pbs_connect( char *server_name_ptr )  /* I (optional) */
+  {
+  int connect = -1;
+  int i, list_len;
+  char server_name_list[PBS_MAXSERVERNAME*3+1];
+  char current_name[PBS_MAXSERVERNAME+1];
+  char *tp;
+
+  memset(server_name_list, 0, sizeof(server_name_list));
+
+  /* If a server name is passed in, use it, otherwise use the list from server_name file. */
+
+  if (server_name_ptr && server_name_ptr[0])
+    strncpy(server_name_list, server_name_ptr, sizeof(server_name_list)-1);
+  else
+    strncpy(server_name_list, pbs_get_server_list(), sizeof(server_name_list)-1);
+  list_len = csv_length(server_name_list);
+
+  for (i=0; i<list_len; i++)  /* Try all server names in the list. */
+    {
+    tp = csv_nth(server_name_list, i);
+    if (tp && tp[0])
+      {
+      memset(current_name, 0, sizeof(current_name));
+      strncpy(current_name, tp, sizeof(current_name)-1);
+      if ((connect = pbs_original_connect(current_name)) > 0)
+        return(connect);  /* Success, we have a connection, return it. */
+      }
+    }
+  return(connect);
+  }
+
+
+/**
+ * This routine is not used but was implemented to
+ * support qsub.
+ *
+ * @param server_name_ptr A pointer to a server name or server name list.
+ * @param retry_seconds The period of time for which retrys should be attempted.
+ * @returns A file descriptor number.
+ */
+int pbs_connect_with_retry( char *server_name_ptr, int retry_seconds )
+  {
+  int n_times_to_try = retry_seconds / CNTRETRYDELAY;
+  int connect = -1;
+  int n;
+
+  for (n = 0; n < n_times_to_try; n++)  /* This is the retry loop */
+    {
+    if ((connect = pbs_connect( server_name_ptr )) > 0)
+      return(connect);  /* Success, we have a connection, return it. */
+    sleep(CNTRETRYDELAY);
+    }
+  return(connect);
+  }
 
 
 int pbs_query_max_connections()
