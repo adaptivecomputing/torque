@@ -968,61 +968,95 @@ struct work_task *ptask)
   job *pjobclone;
   struct work_task *new_task;
   int i;
-  int startindex;
+  int num_cloned;
   int newstate;
   int newsub;
   int rc;
   char namebuf[MAXPATHLEN];
   job_array *pa;
+  
+  array_request_node *rn;
+  int start;
+  int end;
+  int loop;
+  
   pjob = (job*)(ptask->wt_parm1);
   
   pa = get_array(pjob->ji_qs.ji_jobid);
-  
-  startindex = pa->ai_qs.num_cloned;
-  
+  rn = (array_request_node*)GET_NEXT(pa->request_tokens);
+   
   strcpy(namebuf, path_jobs);
   strcat(namebuf, pjob->ji_qs.ji_fileprefix);
   strcat(namebuf, ".AR");
   
   
   /* do the clones in batches of 256 */
-  
-  
-  for (i = startindex; 
-       i < startindex + 256 
-       && i < pjob->ji_wattr[(int)JOB_ATR_job_array_size].at_val.at_long;
-       i++)
-    {
-    pjobclone = job_clone(pjob, i);
-    if (pjobclone == NULL)
-      {
-      log_err(-1, id, "unable to clone job in job_clone_wt");
-      continue;
-      }
+ 
 
-    svr_evaljobstate(pjobclone,&newstate,&newsub,1);
-    svr_setjobstate(pjobclone,newstate,newsub);
-    pjobclone->ji_wattr[(int)JOB_ATR_qrank].at_val.at_long = ++queue_rank;
-    pjobclone->ji_wattr[(int)JOB_ATR_qrank].at_flags |= ATR_VFLAG_SET;
+  num_cloned = 0;
+  loop = TRUE;
+  
+  while (loop)
+    {
+    start = rn->start;
+    end = rn->end;
     
-    
-    if ((rc = svr_enquejob(pjobclone))) 
+    if (end - start > 256)
       {
-      job_purge(pjobclone);
+      end = start + 255;
       }
       
-    if (job_save(pjobclone,SAVEJOB_FULL) != 0) 
+    for (i = start; i <= end; i++)
       {
-      job_purge(pjobclone);
+      pjobclone = job_clone(pjob, i);
+      if (pjobclone == NULL)
+        {
+        log_err(-1, id, "unable to clone job in job_clone_wt");
+        continue;
+        }
+
+      svr_evaljobstate(pjobclone,&newstate,&newsub,1);
+      svr_setjobstate(pjobclone,newstate,newsub);
+      pjobclone->ji_wattr[(int)JOB_ATR_qrank].at_val.at_long = ++queue_rank;
+      pjobclone->ji_wattr[(int)JOB_ATR_qrank].at_flags |= ATR_VFLAG_SET;
+    
+    
+      if ((rc = svr_enquejob(pjobclone))) 
+        {
+        job_purge(pjobclone);
+        }
+      
+      if (job_save(pjobclone,SAVEJOB_FULL) != 0) 
+        {
+        job_purge(pjobclone);
+        }
+      
+      pa->ai_qs.num_cloned++;
+      
+      rn->start++;
+
+      
+      array_save(pa);
+      num_cloned++;
+      
       }
       
-    pa->ai_qs.num_cloned++;
-    array_save(pa);
+    if (rn->start > rn->end)
+      {
+      delete_link(&rn->request_tokens_link);
+      free(rn);
+      rn = (array_request_node*)GET_NEXT(pa->request_tokens);
+      array_save(pa);
+      }
+      
+    if (num_cloned == 256 || rn == NULL)
+      {
+      loop = FALSE;
+      }
+    
     }
   
-  
 
-  
   
   if (i < pjob->ji_wattr[(int)JOB_ATR_job_array_size].at_val.at_long)
     {
@@ -1209,8 +1243,8 @@ void job_purge(
     }
     
   /* if part of job array then remove from array's job list */ 
-  if (pjob->ji_wattr[(int)JOB_ATR_job_array_size].at_flags & ATR_VFLAG_SET &&
-      pjob->ji_wattr[(int)JOB_ATR_job_array_size].at_val.at_long > 1 && pjob->ji_isparent == FALSE)
+  if (pjob->ji_wattr[(int)JOB_ATR_job_array_request].at_flags & ATR_VFLAG_SET &&
+      pjob->ji_isparent == FALSE)
     {
     
     delete_link(&pjob->ji_arrayjobs);
@@ -1228,8 +1262,7 @@ void job_purge(
     }
 
 
-  if (!(pjob->ji_wattr[(int)JOB_ATR_job_array_size].at_flags & ATR_VFLAG_SET) || 
-      pjob->ji_wattr[(int)JOB_ATR_job_array_size].at_val.at_long == 1)
+  if (!(pjob->ji_wattr[(int)JOB_ATR_job_array_request].at_flags & ATR_VFLAG_SET))
     {
     strcpy(namebuf,path_jobs);	/* delete script file */
     strcat(namebuf,pjob->ji_qs.ji_fileprefix);

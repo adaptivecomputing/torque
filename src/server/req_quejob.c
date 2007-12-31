@@ -1555,16 +1555,19 @@ void req_rdytocommit(
   
 #ifndef PBS_MOM
 
-  if (pj->ji_wattr[(int)JOB_ATR_job_array_size].at_val.at_long > 1)
+
+  if (pj->ji_wattr[(int)JOB_ATR_job_array_request].at_flags & ATR_VFLAG_SET)
     {
     pj->ji_isparent = TRUE;
-        
+          
     strcpy(namebuf,path_jobs);
     strcat(namebuf,pj->ji_qs.ji_fileprefix);
     strcat(namebuf, JOB_FILE_SUFFIX);
     unlink(namebuf);
         
     }
+
+
 #endif
 
   if (job_save(pj,SAVEJOB_NEW) == -1) 
@@ -1782,18 +1785,17 @@ void req_commit(
 
   /* job array, setup cloning work task and reply with placeholder job id
      *** job array under development */
-  if (pj->ji_wattr[(int)JOB_ATR_job_array_size].at_val.at_long > 1)
-    {
-    	
+  if (pj->ji_wattr[(int)JOB_ATR_job_array_request].at_flags & ATR_VFLAG_SET)
+    {	
     if (setup_array_struct(pj))
       {
-      req_reject(PBSE_SYSTEM,0,preq,NULL,NULL);
+      req_reject(PBSE_BAD_ARRAY_REQ,0,preq,NULL,NULL);
       return;
       }	
     
     reply_jobid(preq,pj->ji_qs.ji_jobid,BATCH_REPLY_CHOICE_Commit);
     return;
-    }  /* end if (pj->ji_wattr[(int)JOB_ATR_job_array_size].at_val.at_long > 1) */
+    }  /* end if (pj->ji_wattr[(int)JOB_ATR_job_array_request].at_flags & ATR_VFLAG_SET) */
 
   svr_evaljobstate(pj,&newstate,&newsub,1);
 

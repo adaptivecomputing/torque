@@ -120,7 +120,7 @@
 #define ATTR_p "Priority"
 #define ATTR_q "destination"
 #define ATTR_r "Rerunable"
-#define ATTR_t "job_array_size"
+#define ATTR_t "job_array_request"
 #define ATTR_array_id "job_array_id"
 #define ATTR_u "User_List"
 #define ATTR_v "Variable_List"
@@ -167,6 +167,7 @@
 #define ATTR_tokens      "tokens"
 #define ATTR_netcounter "net_counter"
 #define ATTR_umask	"umask"
+#define ATTR_array_size "job_array_size"
 
 /* additional queue attributes names */
 

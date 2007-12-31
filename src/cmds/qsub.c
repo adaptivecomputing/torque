@@ -3094,17 +3094,7 @@ int process_opts(
         if_cmd_line(t_opt)
           {
           t_opt = passet;
-          i = atoi(optarg);
-
-          if (i <= 0 || i > PBS_MAXJOBARRAY)
-            {
-            fprintf(stderr, "qsub: illegal -t value (must be 1 through %d)\n", 
-              PBS_MAXJOBARRAY);
-
-            errflg++;
-
-            break;
-            }
+          /* validate before sending request to server? */
           set_attr(&attrib,ATTR_t,optarg);
           }
 
@@ -3264,14 +3254,6 @@ int process_opts(
               {
               t_opt = passet;
 
-              if (atoi(valuewd) <= 0)
-                {
-                fprintf(stderr, "qsub: illegal -t value\n");
-
-                errflg++;
-
-                break;
-                }
               set_attr(&attrib,ATTR_t,valuewd);
               }
             } 

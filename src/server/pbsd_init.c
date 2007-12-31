@@ -117,6 +117,7 @@
 #include "net_connect.h"
 #include "pbs_proto.h"
 #include "batch_request.h"
+#include "array.h"
 
 
 /*#ifndef SIGKILL*/
@@ -206,7 +207,6 @@ extern void   set_old_nodes A_((job *));
 extern void   acct_close A_((void));
 extern struct work_task *apply_job_delete_nanny A_((struct job *,int));
 extern int     net_move A_((job *,struct batch_request *));
-extern int delete_array_struct(job_array *pa);
 extern void  job_clone_wt A_((struct work_task *));
 
 /* Private functions in this file */
@@ -727,6 +727,8 @@ int pbsd_init(
        
        if ((type != RECOV_CREATE) && (type != RECOV_COLD))
          {
+	 printf("recovering %s\n", pdirent->d_name);
+	 
 	 /* skip files without the proper suffix */
 	 baselen = strlen(pdirent->d_name) - array_suf_len;
 
@@ -736,25 +738,13 @@ int pbsd_init(
            continue;
 	 
 	 
-	 pa = (job_array*)malloc(sizeof(job_array));
-	 CLEAR_LINK(pa->all_arrays);
-	 CLEAR_HEAD(pa->array_alljobs);
-	 pa->jobs_recovered = 0;
-	 
-	 fd = open(pdirent->d_name, O_RDONLY,0);
-	 	 	 
-	 if (read(fd, &(pa->ai_qs), sizeof(pa->ai_qs)) != sizeof(pa->ai_qs))
+	 pa = recover_array_struct(pdirent->d_name);
+	 if (pa == NULL)
 	   {
-	   sprintf(log_buffer,"unable to read %s", pdirent->d_name);
-
-           log_err(errno,"pbsd_init",log_buffer);
-
-           return(-1);
+	   /* TODO GB */
 	   }
-	   
-	 close(fd);
-	 
-	 append_link(&svr_jobarrays, &pa->all_arrays, (void*)pa);
+	
+	 pa->jobs_recovered = 0;
 	 
 	 }
        else
@@ -825,7 +815,7 @@ int pbsd_init(
 	  if ((pjob = job_recov(pdirent->d_name)) != NULL) 
             {
 	    append_link(&svr_alljobs,&pjob->ji_alljobs,pjob);
-	    pjob ->ji_isparent = TRUE;
+	    pjob->ji_isparent = TRUE;
 	    }
 	  else
 	    {
@@ -866,7 +856,7 @@ int pbsd_init(
 
           if ((type != RECOV_COLD) &&
               (type != RECOV_CREATE) &&
-	       pjob->ji_wattr[(int)JOB_ATR_job_array_size].at_val.at_long == 1 &&
+	      (!(pjob->ji_wattr[(int)JOB_ATR_job_array_request].at_flags & ATR_VFLAG_SET)) &&
               (pjob->ji_qs.ji_svrflags & JOB_SVFLG_SCRIPT))
             {
             strcpy(basen,pdirent->d_name);
@@ -978,7 +968,7 @@ int pbsd_init(
 	   we probably should delete that last job and start the cloning process off at 
 	   num_cloned */
         wt = set_task(WORK_Timed,time_now+1,job_clone_wt,(void*)pjob);
-        wt->wt_aux = pa->ai_qs.num_cloned;
+        
         }
       
       }

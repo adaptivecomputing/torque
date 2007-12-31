@@ -168,6 +168,7 @@
 #define PBSE_NORERUNABLE     15078	/* rerunable jobs not allowed in queue */
 #define PBSE_NONONRERUNABLE  15079	/* nonrerunable jobs not allowed in queue */
 #define PBSE_UNKARRAYID 15080		/* unknown array id */
+#define PBSE_BAD_ARRAY_REQ   15081      /* bad array request */
 /*
 ** 	Resource monitor specific
 */
