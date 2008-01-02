@@ -232,6 +232,30 @@ void req_deletejob(
     return;
     }
 
+  if (preq->rq_extend != NULL)
+    {
+    if (strncmp(preq->rq_extend,deldelaystr,strlen(deldelaystr)) &&
+        strncmp(preq->rq_extend,delpurgestr,strlen(delpurgestr)))
+      {
+      /* have text message in request extension, add it */
+
+      Msg = preq->rq_extend;
+      
+      /*
+       * Message capability is only for operators and managers.
+       * Check if request is authorized
+      */
+  
+      if ((preq->rq_perm & (ATR_DFLAG_OPRD|ATR_DFLAG_OPWR|
+                        ATR_DFLAG_MGRD|ATR_DFLAG_MGWR)) == 0)
+        {
+        req_reject(PBSE_PERM,0,preq,NULL,
+          "must have operator or manager privilege to use -m parameter");
+        return;
+        }
+      }
+    }
+
   if (pjob->ji_qs.ji_state == JOB_STATE_TRANSIT) 
     {
     /*
@@ -361,16 +385,6 @@ jump:
     preq->rq_user,
     preq->rq_host);
 
-  if (preq->rq_extend != NULL)
-    {
-    if (strncmp(preq->rq_extend,deldelaystr,strlen(deldelaystr)) &&
-        strncmp(preq->rq_extend,delpurgestr,strlen(delpurgestr)))
-      {
-      /* have text message in request extension, add it */
-
-      Msg = preq->rq_extend;
-      }
-    }
 
   /* NOTE:  should annotate accounting record with extend message (NYI) */
 
@@ -404,6 +418,15 @@ jump:
        has not been previously attempted */
 
     svr_mailowner(pjob,MAIL_DEL,MAIL_FORCE,log_buffer);
+    /*
+     * If we sent mail and already sent the extra message
+     * then reset message so we don't trigger a redundant email
+     * in job_abt()
+    */
+    if (Msg != NULL) 
+      {
+      Msg = NULL;
+      }
     }
 	
   if (pjob->ji_qs.ji_state == JOB_STATE_RUNNING) 
