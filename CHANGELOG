@@ -6,6 +6,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature
   e - allow qrerun on completed jobs
   e - allow qdel to delete all jobs
   e - make qdel -m functionality match the documentation
+  b - prevent runaway hellos being sent to server when mom's node is removed
+      from the server's node list
 
 2.2.1
   b - fix a bug where dependent jobs get put on hold when the previous job has
