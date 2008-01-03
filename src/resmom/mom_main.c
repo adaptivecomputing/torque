@@ -153,6 +153,9 @@
 #define CHECK_POLL_TIME     45
 #define DEFAULT_SERVER_STAT_UPDATES 45
 
+#define MAX_RETRY_TIME_IN_SECS  3600
+#define STARTING_RETRY_INTERVAL_IN_SECS  2
+
 #define PMAX_PORT           32000
 
 /* Global Data Items */
@@ -251,6 +254,7 @@ int             MOMPrologFailureCount;
 int             MOMRecvHelloCount[PBS_MAXSERVER];
 int             MOMRecvClusterAddrsCount[PBS_MAXSERVER];
 int             MOMSendHelloCount[PBS_MAXSERVER];
+int             MOMSendHelloTryCount[PBS_MAXSERVER];
 time_t          MOMSendHelloTime[PBS_MAXSERVER];
 char            MOMSendStatFailure[PBS_MAXSERVER][MMAX_LINE];
 
@@ -3636,6 +3640,19 @@ static void process_hup()
   return;
   }  /* END process_hup() */
 
+long 
+power (register int x, register int n)
+{
+    register long p;
+
+    for (p = 1; n > 0; --n)
+    {
+        p = p * x;
+    }
+    return (p);
+}
+
+/* End power() */
 
 
 
@@ -5374,6 +5391,8 @@ void do_rpp(
           time(&MOMLastRecvFromServerTime[sindex]);
 
           strcpy(MOMLastRecvFromServerCmd[sindex],PBSServerCmds[tmpI]);
+          
+          MOMSendHelloTryCount[sindex] = 0;
           }
         }
       }  /* END BLOCK */
@@ -6373,6 +6392,7 @@ int main(
   task		*ptask;
   char		*ptr;                   /* local tmp variable */
   int		tryport;
+  long  retry_interval;
   int		rppfd;			/* fd for rm and im comm */
   int		privfd = 0;		/* fd for sending job info */
   double	myla;
@@ -7383,6 +7403,38 @@ int main(
 
         /* we're either just starting up, or the server has gone away.
          * Either way, let's be sure to say hello */
+         
+        /* If the server has gone away and we are trying to reestablish
+         * communication with it, we need to slow down the rate of retries
+         * so we do not flood the server with Hello requests. We may have
+         * been removed from the servers list of nodes */
+
+        if (MOMSendHelloTryCount[sindex] > 0)
+          {
+          if (MOMSendHelloTryCount[sindex] < 20)
+            {
+            retry_interval = power(STARTING_RETRY_INTERVAL_IN_SECS,
+              MOMSendHelloTryCount[sindex]);
+            if (retry_interval > MAX_RETRY_TIME_IN_SECS)
+              {
+              retry_interval = MAX_RETRY_TIME_IN_SECS;
+              }
+            }
+            else
+            {
+              retry_interval = MAX_RETRY_TIME_IN_SECS;
+            }
+            
+          if (MOMSendHelloTime[sindex] + retry_interval > time_now)
+            {
+            break;
+            }
+            
+          sprintf(log_buffer,"Retrying hello to server %s",
+            pbs_servername[sindex]);
+
+          log_record(PBSEVENT_SYSTEM,0,id,log_buffer);
+          }
 
         if (init_server_stream(sindex) != DIS_SUCCESS)
           {
@@ -7415,6 +7467,7 @@ int main(
           }
 
         MOMSendHelloCount[sindex]++;
+        MOMSendHelloTryCount[sindex]++;
 
         sprintf(log_buffer,"hello sent to server %s", 
           pbs_servername[sindex]);
