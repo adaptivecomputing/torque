@@ -143,7 +143,7 @@ int pbs_runjob(
 
   /* NOTE:  set_task sets WORK_Deferred_Child : request remains until child terminates */
 
-  if ((jobid == NULL) || (*jobid == '\0'))
+  if ((c < 0) || (jobid == NULL) || (*jobid == '\0'))
     {
     pbs_errno = PBSE_IVALREQ;
 

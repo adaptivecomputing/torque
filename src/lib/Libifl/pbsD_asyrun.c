@@ -101,7 +101,7 @@ int pbs_asyrunjob(
   unsigned int        resch = 0;
   int	              sock;
 
-  if ((jobid == NULL) || (*jobid == '\0'))
+  if ((c < 0) || (jobid == NULL) || (*jobid == '\0'))
     {
     pbs_errno = PBSE_IVALREQ;
 

@@ -664,7 +664,8 @@ int pbs_original_connect(
 
     if (getenv("PBSDEBUG"))
       {
-      fprintf(stderr,"ERROR:  cannot connect to server, errno=%d (%s)\n",
+      fprintf(stderr,"ERROR:  cannot connect to server \"%s\", errno=%d (%s)\n",
+        server,
         errno,
         strerror(errno));
       }
@@ -693,7 +694,8 @@ int pbs_original_connect(
 
     if (getenv("PBSDEBUG"))
       {
-      fprintf(stderr,"ERROR:  cannot authenticate connection, errno=%d (%s)\n",
+      fprintf(stderr,"ERROR:  cannot authenticate connection to server \"%s\", errno=%d (%s)\n",
+        server,
         errno,
         strerror(errno));
       }
@@ -808,9 +810,24 @@ int pbs_connect( char *server_name_ptr )  /* I (optional) */
   /* If a server name is passed in, use it, otherwise use the list from server_name file. */
 
   if (server_name_ptr && server_name_ptr[0])
+    {
     strncpy(server_name_list, server_name_ptr, sizeof(server_name_list)-1);
+    if (getenv("PBSDEBUG"))
+      {
+      fprintf(stderr,"pbs_connect called with explicit server name \"%s\"\n",
+        server_name_list);
+      }
+    }
   else
+    {
     strncpy(server_name_list, pbs_get_server_list(), sizeof(server_name_list)-1);
+    if (getenv("PBSDEBUG"))
+      {
+      fprintf(stderr,"pbs_connect using default server name list \"%s\"\n",
+        server_name_list);
+      }
+    }
+
   list_len = csv_length(server_name_list);
 
   for (i=0; i<list_len; i++)  /* Try all server names in the list. */
@@ -820,8 +837,20 @@ int pbs_connect( char *server_name_ptr )  /* I (optional) */
       {
       memset(current_name, 0, sizeof(current_name));
       strncpy(current_name, tp, sizeof(current_name)-1);
-      if ((connect = pbs_original_connect(current_name)) > 0)
+      if (getenv("PBSDEBUG"))
+        {
+        fprintf(stderr,"pbs_connect attempting connection to server \"%s\"\n",
+          current_name);
+        }
+      if ((connect = pbs_original_connect(current_name)) >= 0)
+        {
+        if (getenv("PBSDEBUG"))
+          {
+          fprintf(stderr,"pbs_connect: Successful connection to server \"%s\", fd = %d\n",
+            current_name, connect);
+          }
         return(connect);  /* Success, we have a connection, return it. */
+        }
       }
     }
   return(connect);
@@ -844,7 +873,7 @@ int pbs_connect_with_retry( char *server_name_ptr, int retry_seconds )
 
   for (n = 0; n < n_times_to_try; n++)  /* This is the retry loop */
     {
-    if ((connect = pbs_connect( server_name_ptr )) > 0)
+    if ((connect = pbs_connect( server_name_ptr )) >= 0)
       return(connect);  /* Success, we have a connection, return it. */
     sleep(CNTRETRYDELAY);
     }

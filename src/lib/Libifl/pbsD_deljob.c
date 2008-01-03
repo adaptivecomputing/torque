@@ -144,7 +144,7 @@ int pbs_deljob(
 
   struct attropl *aoplp = NULL;
 	
-  if ((jobid == NULL) || (*jobid == '\0'))
+  if ((c < 0) || (jobid == NULL) || (*jobid == '\0'))
     {
     pbs_errno = PBSE_IVALREQ;
 
