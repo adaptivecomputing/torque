@@ -1156,6 +1156,8 @@ const char *TJobAttr[] = {
   "hopcount",
   "qrank",
   "queuetype",
+  "start_time",
+  "start_count",
   NULL };
 
 

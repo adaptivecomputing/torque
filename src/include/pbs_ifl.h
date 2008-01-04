@@ -168,6 +168,8 @@
 #define ATTR_netcounter "net_counter"
 #define ATTR_umask	"umask"
 #define ATTR_array_size "job_array_size"
+#define ATTR_start_time  "start_time"
+#define ATTR_start_count "start_count"
 
 /* additional queue attributes names */
 

@@ -264,6 +264,8 @@ enum job_atr {
   JOB_ATR_job_array_id,
   JOB_ATR_job_array_request,
   JOB_ATR_umask,
+  JOB_ATR_start_time,  /* time when job was first started */
+  JOB_ATR_start_count, /* number of times the job has been started */
 #include "site_job_attr_enum.h"
 
   JOB_ATR_UNKN,		/* the special "unknown" type		  */
