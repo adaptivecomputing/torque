@@ -90,6 +90,7 @@
 #include <stdio.h>
 #include <netdb.h>
 #include <errno.h>
+#include <time.h>
 #include "libpbs.h"
 #include "server_limits.h"
 #include "list_link.h"
@@ -775,11 +776,23 @@ static int svr_strtjob2(
 
   int old_state;
   int old_subst;
+  attribute *pattr;
 
   char tmpLine[1024];
 
   old_state = pjob->ji_qs.ji_state;
   old_subst = pjob->ji_qs.ji_substate;
+
+  pattr = &pjob->ji_wattr[(int)JOB_ATR_start_time];
+  if ((pattr->at_flags & ATR_VFLAG_SET) == 0) 
+    {
+    pattr->at_val.at_long = time(NULL);
+    pattr->at_flags |= ATR_VFLAG_SET;
+    }
+
+  pattr = &pjob->ji_wattr[(int)JOB_ATR_start_count];
+  pattr->at_val.at_long++;
+  pattr->at_flags |= ATR_VFLAG_SET;
 
   /* send the job to MOM */
 
