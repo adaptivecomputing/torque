@@ -260,7 +260,7 @@ int svr_connect(
       {
       /* connect attempt to XXX? */
 
-      add_conn(sock,ToServerDIS,hostaddr,port,func);
+      add_conn(sock,ToServerDIS,hostaddr,port,PBS_SOCK_INET,func);
       }
     }
 

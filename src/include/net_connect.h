@@ -92,6 +92,9 @@ typedef unsigned long pbs_net_t;        /* for holding host addresses */
 #define PBS_NET_CONN_FROM_PRIVIL   2
 #define PBS_NET_CONN_NOTIMEOUT     4
 
+#define PBS_SOCK_UNIX 	   1
+#define PBS_SOCK_INET 	   2
+
 /*
 **	Protocol numbers and versions for PBS communications.
 */
@@ -127,6 +130,34 @@ typedef unsigned long pbs_net_t;        /* for holding host addresses */
 #define PBS_NET_RC_FATAL -1
 #define PBS_NET_RC_RETRY -2
 
+
+/* defines for unix sockets and creds */
+#define TSOCK_PATH "/tmp/.torque-unix"
+
+#ifndef SCM_CREDS
+#define SCM_CREDS SCM_CREDENTIALS
+#endif
+
+#ifndef linux
+#  ifndef __NetBSD__
+#    define SPC_PEER_UID(c)   ((c)->cr_uid)
+#    define SPC_PEER_GID(c)   ((c)->cr_groups[0])
+#  else
+#    define SPC_PEER_UID(c)   ((c)->sc_uid)
+#    define SPC_PEER_GID(c)   ((c)->sc_gid)
+#  endif
+#else
+#  define SPC_PEER_UID(c)   ((c)->uid)
+#  define SPC_PEER_GID(c)   ((c)->gid)
+#endif
+
+#ifdef __NetBSD__
+typedef struct sockcred ucreds;
+#else
+typedef struct ucred ucreds;
+#endif
+
+
 enum conn_type {
   Primary = 0,
   Secondary,
@@ -139,7 +170,7 @@ enum conn_type {
 
 /* functions available in libnet.a */
 
-void add_conn A_((int,enum conn_type,pbs_net_t,unsigned int,void (*func) A_((int))));
+void add_conn A_((int,enum conn_type,pbs_net_t,unsigned int,unsigned int,void (*func) A_((int))));
 int  find_conn A_((pbs_net_t));
 int  client_to_svr A_((pbs_net_t,unsigned int,int,char *));
 void close_conn A_((int));
@@ -160,6 +191,7 @@ struct connection {
   int		cn_handle;	/* handle for API, see svr_connect() */
   unsigned int	cn_port;	/* internet port number of client */
   unsigned short cn_authen;	/* authentication flags */
+  unsigned short cn_socktype;	/* authentication flags */
   enum conn_type cn_active;     /* idle or type if active */
   time_t	cn_lasttime;    /* time last active */
   void		(*cn_func) A_((int)); /* read function when data rdy */

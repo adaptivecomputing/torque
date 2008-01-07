@@ -680,7 +680,7 @@ static int hacl_match(
   const char *pc;
   const char *pm;
 
-  if (can == NULL)
+  if ((can == NULL) || (!strcmp(can,"LOCAL")))
     {
     return(0);
     }

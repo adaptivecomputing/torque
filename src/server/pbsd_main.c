@@ -1109,8 +1109,8 @@ int main(
       "creating rpp and private interfaces");
     }
 
-  add_conn(rppfd,Primary,(pbs_net_t)0,0,rpp_request);
-  add_conn(privfd,Primary,(pbs_net_t)0,0,rpp_request);
+  add_conn(rppfd,Primary,(pbs_net_t)0,0,PBS_SOCK_INET,rpp_request);
+  add_conn(privfd,Primary,(pbs_net_t)0,0,PBS_SOCK_INET,rpp_request);
 
   /* record the fact that we are up and running */
 

@@ -822,6 +822,7 @@ void scan_for_exiting()
       ToServerDIS,
       pjob->ji_qs.ji_un.ji_momt.ji_svraddr,
       port, 
+      PBS_SOCK_INET, 
       preobit_reply);
 
     if (LOGLEVEL >= 2)
@@ -966,6 +967,7 @@ int post_epilogue(
     ToServerDIS,
     pjob->ji_qs.ji_un.ji_momt.ji_svraddr,
     port, 
+    PBS_SOCK_INET,
     obit_reply);
 
 #ifdef PENABLE_DYNAMIC_CPUSETS

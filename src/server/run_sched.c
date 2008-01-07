@@ -185,6 +185,7 @@ static int contact_sched(
     FromClientDIS, 
     pbs_scheduler_addr, 
     pbs_scheduler_port, 
+    PBS_SOCK_INET,
     process_request);
 
   svr_conn[sock].cn_authen = PBS_NET_CONN_FROM_PRIVIL;

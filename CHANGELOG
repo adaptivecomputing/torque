@@ -8,6 +8,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature
   e - make qdel -m functionality match the documentation
   b - prevent runaway hellos being sent to server when mom's node is removed
       from the server's node list
+  e - local client connections use a unix domain socket, bypassing inet and pbs_iff
 
 2.2.1
   b - fix a bug where dependent jobs get put on hold when the previous job has

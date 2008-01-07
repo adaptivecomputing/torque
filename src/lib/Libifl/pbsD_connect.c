@@ -97,7 +97,11 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/socket.h>
+#include <sys/un.h>
 #include <netinet/in.h>
+#if !defined(linux) && !defined(__NetBSD__)
+#include <sys/ucred.h>
+#endif
 #include "libpbs.h"
 #include "dis.h"
 #include "net_connect.h"
@@ -518,6 +522,37 @@ static int PBSD_authenticate(
 
 
 
+ssize_t    send_unix_creds(int sd)
+  {
+  struct iovec    vec;
+  struct msghdr   msg;
+  struct cmsghdr  *cmsg;
+  char dummy='m';
+  char buf[CMSG_SPACE(sizeof(struct ucred))];
+  struct ucred *uptr;
+
+
+  memset (&msg, 0, sizeof(msg));
+  vec.iov_base = &dummy;
+  vec.iov_len = 1;
+  msg.msg_iov = &vec;
+  msg.msg_iovlen = 1;
+  msg.msg_control = buf;
+  msg.msg_controllen = sizeof(buf);
+  cmsg = CMSG_FIRSTHDR(&msg);
+  cmsg->cmsg_level = SOL_SOCKET;
+  cmsg->cmsg_type = SCM_CREDENTIALS;
+  cmsg->cmsg_len = CMSG_LEN(sizeof(struct ucred));
+  uptr = (struct ucred *)CMSG_DATA(cmsg);
+  uptr->uid = getuid();
+  uptr->gid = getgid();
+  uptr->pid = getpid();
+  msg.msg_controllen = cmsg->cmsg_len;
+
+  return (sendmsg(sd, &msg, 0) != -1);
+
+}
+
 
 /* returns socket descriptor or negative value (-1) on failure */
 
@@ -533,10 +568,13 @@ int pbs_original_connect(
 
   {
   struct sockaddr_in server_addr;
+  struct sockaddr_un unserver_addr;
   struct hostent *hp;
   int out;
   int i;
   struct passwd *pw;
+  char hnamebuf[256];
+  int use_unixsock=0;
 
   char  *ptr;
 
@@ -605,73 +643,155 @@ int pbs_original_connect(
 
   strcpy(pbs_current_user,pw->pw_name);
 
+  pbs_server = server;    /* set for error messages from commands */
+
+
+  /* determine if we want to use unix domain socket */
+
+  if (!strcmp(server,"localhost"))
+    use_unixsock=1;
+  else if ((gethostname(hnamebuf,sizeof(hnamebuf)-1)==0) && !strcmp(hnamebuf,server))
+    use_unixsock=1;
+
+  /* NOTE: if any part of using unix domain sockets fails,
+   * we just cleanup and try again with inet sockets */
+
   /* get socket	*/
 
-  connection[out].ch_socket = socket(AF_INET,SOCK_STREAM,0);
-
-  if (connection[out].ch_socket < 0) 
+  if (use_unixsock)
     {
-    if (getenv("PBSDEBUG"))
+    connection[out].ch_socket = socket(AF_UNIX,SOCK_STREAM,0);
+
+    if (connection[out].ch_socket < 0) 
       {
-      fprintf(stderr,"ERROR:  cannot create socket:  errno=%d (%s)\n",
-        errno,
-        strerror(errno));
+      if (getenv("PBSDEBUG"))
+        {
+        fprintf(stderr,"ERROR:  cannot create socket:  errno=%d (%s)\n",
+          errno,
+          strerror(errno));
+        }
+  
+      connection[out].ch_inuse = 0;
+      pbs_errno = PBSE_PROTOCOL;
+  
+      use_unixsock=0;
       }
-
-    connection[out].ch_inuse = 0;
-    pbs_errno = PBSE_PROTOCOL;
-
-    return(-1);
     }
 
   /* and connect... */
 
-  pbs_server = server;    /* set for error messages from commands */
-	
-  server_addr.sin_family = AF_INET;
-  hp = NULL;
-  hp = gethostbyname(server);
-
-  if (hp == NULL) 
+  if (use_unixsock)
     {
-    close(connection[out].ch_socket);
-    connection[out].ch_inuse = 0;
-    pbs_errno = PBSE_BADHOST;
+    unserver_addr.sun_family = AF_UNIX;
+    strcpy(unserver_addr.sun_path,TSOCK_PATH);
 
-    if (getenv("PBSDEBUG"))
+    if (connect(
+          connection[out].ch_socket,
+          (struct sockaddr *)&unserver_addr,
+          (strlen(unserver_addr.sun_path) + sizeof(unserver_addr.sun_family))) < 0)
       {
-      fprintf(stderr,"ERROR:  cannot get servername (%s) errno=%d (%s)\n",
-        (server != NULL) ? server : "NULL",
-        errno,
-        strerror(errno));
-      }
+      close(connection[out].ch_socket);
 
-    return(-1);
+      connection[out].ch_inuse = 0;
+      pbs_errno = errno;
+
+      if (getenv("PBSDEBUG"))
+        {
+        fprintf(stderr,"ERROR:  cannot connect to server, errno=%d (%s)\n",
+          errno,
+          strerror(errno));
+        }
+
+      use_unixsock=0;  /* will try again with inet socket */
+      }
     }
 
-  memcpy((char *)&server_addr.sin_addr,hp->h_addr_list[0],hp->h_length);
-  server_addr.sin_port = htons(server_port);
-	
-  if (connect(
-        connection[out].ch_socket,
-        (struct sockaddr *)&server_addr,
-        sizeof(server_addr)) < 0) 
+  if (use_unixsock)
     {
-    close(connection[out].ch_socket);
-
-    connection[out].ch_inuse = 0;
-    pbs_errno = errno;
-
-    if (getenv("PBSDEBUG"))
+    if(!send_unix_creds(connection[out].ch_socket))
       {
-      fprintf(stderr,"ERROR:  cannot connect to server \"%s\", errno=%d (%s)\n",
-        server,
-        errno,
-        strerror(errno));
+      if (getenv("PBSDEBUG"))
+        {
+        fprintf(stderr,"ERROR:  cannot send unix creds to pbs_server:  errno=%d (%s)\n",
+          errno,
+          strerror(errno));
+        }
+      close(connection[out].ch_socket);
+
+      connection[out].ch_inuse = 0;
+      pbs_errno = PBSE_PROTOCOL;
+
+      use_unixsock=0;  /* will try again with inet socket */
+      }
+    }
+
+  if (!use_unixsock)
+    {
+
+    /* at this point, either using unix sockets failed, or we determined not to
+     * try */
+
+    connection[out].ch_socket = socket(AF_INET,SOCK_STREAM,0);
+
+    if (connection[out].ch_socket < 0) 
+      {
+      if (getenv("PBSDEBUG"))
+        {
+        fprintf(stderr,"ERROR:  cannot connect to server \"%s\", errno=%d (%s)\n",
+          server,
+          errno,
+          strerror(errno));
+        }
+
+      connection[out].ch_inuse = 0;
+      pbs_errno = PBSE_PROTOCOL;
+
+      return(-1);
       }
 
-    return(-1);
-    }
+    server_addr.sin_family = AF_INET;
+    hp = NULL;
+    hp = gethostbyname(server);
+
+    if (hp == NULL) 
+      {
+      close(connection[out].ch_socket);
+      connection[out].ch_inuse = 0;
+      pbs_errno = PBSE_BADHOST;
+
+      if (getenv("PBSDEBUG"))
+        {
+        fprintf(stderr,"ERROR:  cannot get servername (%s) errno=%d (%s)\n",
+          (server != NULL) ? server : "NULL",
+          errno,
+          strerror(errno));
+        }
+
+      return(-1);
+      }
+
+    memcpy((char *)&server_addr.sin_addr,hp->h_addr_list[0],hp->h_length);
+    server_addr.sin_port = htons(server_port);
+	
+    if (connect(
+          connection[out].ch_socket,
+          (struct sockaddr *)&server_addr,
+          sizeof(server_addr)) < 0) 
+      {
+      close(connection[out].ch_socket);
+
+      connection[out].ch_inuse = 0;
+      pbs_errno = errno;
+
+      if (getenv("PBSDEBUG"))
+        {
+        fprintf(stderr,"ERROR:  cannot connect to server, errno=%d (%s)\n",
+          errno,
+          strerror(errno));
+        }
+  
+      return(-1);
+      }
 
 /* FIXME: is this necessary?  Contributed by one user that fixes a problem, 
    but doesn't fix the same problem for another user! */
@@ -684,24 +804,25 @@ int pbs_original_connect(
 
   /* Have pbs_iff authenticate connection */
 
-  if (PBSD_authenticate(connection[out].ch_socket) != 0) 
-    {
-    close(connection[out].ch_socket);
-
-    connection[out].ch_inuse = 0;
-
-    pbs_errno = PBSE_PERM;
-
-    if (getenv("PBSDEBUG"))
+    if (PBSD_authenticate(connection[out].ch_socket) != 0) 
       {
-      fprintf(stderr,"ERROR:  cannot authenticate connection to server \"%s\", errno=%d (%s)\n",
-        server,
-        errno,
-        strerror(errno));
+      close(connection[out].ch_socket);
+  
+      connection[out].ch_inuse = 0;
+  
+      pbs_errno = PBSE_PERM;
+  
+      if (getenv("PBSDEBUG"))
+        {
+        fprintf(stderr,"ERROR:  cannot authenticate connection to server \"%s\", errno=%d (%s)\n",
+          server,
+          errno,
+          strerror(errno));
+        }
+  
+      return(-1);
       }
-
-    return(-1);
-    }
+    } /* END if !use_unixsock */
 
   /* setup DIS support routines for following pbs_* calls */
 
