@@ -99,7 +99,7 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <netinet/in.h>
-#if !defined(linux) && !defined(__NetBSD__)
+#if HAVE_SYS_UCRED_H
 #include <sys/ucred.h>
 #endif
 #include "libpbs.h"
@@ -522,6 +522,7 @@ static int PBSD_authenticate(
 
 
 
+#ifdef ENABLE_UNIX_SOCKETS
 ssize_t    send_unix_creds(int sd)
   {
   struct iovec    vec;
@@ -552,6 +553,7 @@ ssize_t    send_unix_creds(int sd)
   return (sendmsg(sd, &msg, 0) != -1);
 
 }
+#endif /* END ENABLE_UNIX_SOCKETS */
 
 
 /* returns socket descriptor or negative value (-1) on failure */
@@ -568,13 +570,15 @@ int pbs_original_connect(
 
   {
   struct sockaddr_in server_addr;
-  struct sockaddr_un unserver_addr;
   struct hostent *hp;
   int out;
   int i;
   struct passwd *pw;
-  char hnamebuf[256];
   int use_unixsock=0;
+#ifdef ENABLE_UNIX_SOCKETS
+  struct sockaddr_un unserver_addr;
+  char hnamebuf[256];
+#endif
 
   char  *ptr;
 
@@ -646,6 +650,7 @@ int pbs_original_connect(
   pbs_server = server;    /* set for error messages from commands */
 
 
+#ifdef ENABLE_UNIX_SOCKETS
   /* determine if we want to use unix domain socket */
 
   if (!strcmp(server,"localhost"))
@@ -724,6 +729,7 @@ int pbs_original_connect(
       use_unixsock=0;  /* will try again with inet socket */
       }
     }
+#endif /* END ENABLE_UNIX_SOCKETS */
 
   if (!use_unixsock)
     {

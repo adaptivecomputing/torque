@@ -234,7 +234,7 @@ AC_HEADER_SYS_WAIT
 AC_CHECK_HEADERS([arpa/inet.h fcntl.h float.h limits.h malloc.h netdb.h \
 		  netinet/in.h stddef.h sys/file.h sys/param.h sys/tty.h \
 		  sys/socket.h sys/time.h sys/ioctl.h sys/mount.h \
-                  sys/vfs.h sys/statfs.h sys/statvfs.h syslog.h \
+                  sys/vfs.h sys/statfs.h sys/statvfs.h sys/ucred.h sys/un.h syslog.h \
                   readline/readline.h \
                   termios.h err.h sys/poll.h pam/pam_modules.h security/pam_appl.h])
 
@@ -696,6 +696,41 @@ AC_ARG_ENABLE(force-nodefile, [
   *)   AC_MSG_ERROR(--enable-force-nodefile cannot take a value) ;;
 esac],[MOM_FORCENODEFILE=0])dnl
 AC_DEFINE_UNQUOTED(MOM_FORCENODEFILE, ${MOM_FORCENODEFILE}, [force creation of nodefile])
+
+
+
+AC_MSG_CHECKING([for CMSG_SPACE])
+torque_cv_have_cmsg="no"
+  AC_TRY_COMPILE([
+  #ifdef HAVE_SYS_UCRED_H
+  #include <sys/ucred.h>
+  #endif
+  #ifdef HAVE_SYS_SOCKET_H
+  #include <sys/socket.h>
+  #endif
+  #ifdef HAVE_SYS_UN_H
+  #include <sys/un.h>
+  #endif
+  #include <stdlib.h>
+  ],[exit(CMSG_SPACE(sizeof(struct ucred)));],
+    [torque_cv_have_cmsg="yes"
+     AC_DEFINE_UNQUOTED([HAVE_CMASG],1,[Define if ntohl() is declared in arpa/inet.h])])
+AC_MSG_RESULT([$torque_cv_have_cmsg])
+
+AC_MSG_CHECKING([if enabling Unix Domain socket supprt])
+ENABLE_UNIX_SOCKETS=$torque_cv_have_cmsg
+AC_ARG_ENABLE(unixsockets, [
+  --enable-unixsockets    enable the use of Unix Domain sockets for authentication.],
+[case "${enableval}" in
+  yes) ENABLE_UNIX_SOCKETS=yes ;;
+  no) ENABLE_UNIX_SOCKETS=no;;
+  *)   AC_MSG_ERROR(--enable-unixsockets cannot take a value) ;;
+esac])dnl
+if test "x$ENABLE_UNIX_SOCKETS" = "xyes" ;then
+   AC_DEFINE(ENABLE_UNIX_SOCKETS, 1, [Define to enable unix domain sockets])
+fi
+AC_MSG_RESULT([$ENABLE_UNIX_SOCKETS])
+
 
 AC_ARG_WITH(server_home, [
   --with-server-home=DIR  set the server home/spool directory for PBS use
@@ -1269,6 +1304,7 @@ echo "PBS Machine type: $PBS_MACH"
 echo "Remote copy: $RCP_PATH $RCP_ARGS"
 echo "PBS home: $PBS_SERVER_HOME"
 echo "Default server: $PBS_DEFAULT_SERVER"
+echo "Unix Domain sockets: $ENABLE_UNIX_SOCKETS"
 echo "Tcl: `test "$TCL" = "1" && echo $MY_TCL_INCS $MY_TCL_LIBS || echo disabled`"
 echo "Tk: `test "$TK" = "1" && echo $MY_TCLTK_INCS $MY_TCLTK_LIBS || echo disabled`"
 echo

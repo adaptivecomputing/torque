@@ -188,6 +188,7 @@ void req_deletearray(struct batch_request *preq);
 /* END request processing prototypes */
 
 
+#ifdef ENABLE_UNIX_SOCKETS
 #ifndef PBS_MOM
 ucreds *get_creds(int sd,char *username,char *hostname) {
   int             nb/*, sync*/;
@@ -253,6 +254,7 @@ ucreds *get_creds(int sd,char *username,char *hostname) {
   return credentials;
 }
 #endif
+#endif /* END ENABLE_UNIX_SOCKETS */
                        
 
 /*
@@ -289,11 +291,13 @@ void process_request(
 
   if (svr_conn[sfds].cn_active == FromClientDIS) 
     {
+#ifdef ENABLE_UNIX_SOCKETS
     if ((svr_conn[sfds].cn_socktype & PBS_SOCK_UNIX) &&
         (svr_conn[sfds].cn_authen != PBS_NET_CONN_AUTHENTICATED))
       {
       get_creds(sfds,conn_credent[sfds].username,conn_credent[sfds].hostname);
       }
+#endif /* END ENABLE_UNIX_SOCKETS */
     rc = dis_request_read(sfds,request);
     } 
   else 

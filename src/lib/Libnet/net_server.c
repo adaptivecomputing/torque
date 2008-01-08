@@ -135,7 +135,6 @@ static int	num_connections = 0;
 static fd_set	readset;
 static void	(*read_func[2]) A_((int));
 static enum     conn_type settype[2];		/* temp kludge */
-static int unixsocket;
 
 pbs_net_t pbs_server_addr;
 
@@ -234,8 +233,11 @@ int init_network(
   static int	 initialized = 0;
   int 		 sock;
   struct sockaddr_in socname;
-  struct sockaddr_un unsocname;
   enum conn_type   type;
+#ifdef ENABLE_UNIX_SOCKETS
+  struct sockaddr_un unsocname;
+  int unixsocket;
+#endif
 
   if (initialized == 0) 
     {
@@ -303,6 +305,7 @@ int init_network(
     }
 
 
+#ifdef ENABLE_UNIX_SOCKETS
   /* setup unix domain socket */
 
   unixsocket=socket(AF_UNIX,SOCK_STREAM,0);
@@ -327,6 +330,7 @@ int init_network(
 
     return(-1);
     }
+#endif /* END ENABLE_UNIX_SOCKETS */
 
 
   /* allocate a minute's worth of counter structs */

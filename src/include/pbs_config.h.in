@@ -21,6 +21,9 @@
 /* Define to enable Cray's CPA support */
 #undef ENABLE_CPA
 
+/* Define to enable unix domain sockets */
+#undef ENABLE_UNIX_SOCKETS
+
 /* are FD_SET and friends defined in sys/select.h */
 #undef FD_SET_IN_SYS_SELECT_H
 
@@ -238,6 +241,9 @@
 
 /* Define to 1 if you have the <sys/types.h> header file. */
 #undef HAVE_SYS_TYPES_H
+
+/* Define to 1 if you have the <sys/ucred.h> header file. */
+#undef HAVE_SYS_UCRED_H
 
 /* Define to 1 if you have the <sys/vfs.h> header file. */
 #undef HAVE_SYS_VFS_H
