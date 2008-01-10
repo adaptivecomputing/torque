@@ -190,7 +190,7 @@ void req_deletearray(struct batch_request *preq);
 
 #ifdef ENABLE_UNIX_SOCKETS
 #ifndef PBS_MOM
-ucreds *get_creds(int sd,char *username,char *hostname) {
+int get_creds(int sd,char *username,char *hostname) {
   int             nb/*, sync*/;
   char            ctrl[CMSG_SPACE(sizeof(struct ucred))];
   size_t          size;
@@ -251,7 +251,9 @@ ucreds *get_creds(int sd,char *username,char *hostname) {
 
   strcpy(hostname,server_name);
 
-  return credentials;
+  free(credentials);
+
+  return 0;
 }
 #endif
 #endif /* END ENABLE_UNIX_SOCKETS */
