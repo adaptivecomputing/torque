@@ -4,6 +4,9 @@ if BUILDCPA
 cpasubdir=cpa
 momcpalib=cpa/libmomcpa.a
 endif
+if BUILD_L26_CPUSETS
+csetlib=@PBS_MACH@/cpuset/libmomcpuset.a
+endif
 
 SUBDIRS = @PBS_MACH@ $(cpasubdir)
 DIST_SUBDIRS = aix4 aix5 darwin digitalunix freebsd freebsd5 freebsd6 fujitsu hpux10 hpux11 \
@@ -22,7 +25,7 @@ PBS_LIBS = ../lib/Libattr/libattr.a \
 EXTRA_DIST = rm_dep.h
 sbin_PROGRAMS = pbs_mom pbs_demux
 
-LDADD = @PBS_MACH@/libmommach.a $(MOMLIBS) $(PBS_LIBS) $(momcpalib)
+LDADD = @PBS_MACH@/libmommach.a $(MOMLIBS) $(PBS_LIBS) $(momcpalib) $(csetlib)
 
 pbs_mom_SOURCES = catch_child.c mom_comm.c mom_inter.c mom_main.c \
 		   mom_server.c prolog.c requests.c start_exec.c \

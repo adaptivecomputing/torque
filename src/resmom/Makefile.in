@@ -68,8 +68,11 @@ am__DEPENDENCIES_1 =
 am__DEPENDENCIES_2 = ../lib/Libattr/libattr.a ../lib/Libsite/libsite.a \
 	../lib/Libpbs/libtorque.la
 @BUILDCPA_TRUE@am__DEPENDENCIES_3 = cpa/libmomcpa.a
+@BUILD_L26_CPUSETS_TRUE@am__DEPENDENCIES_4 =  \
+@BUILD_L26_CPUSETS_TRUE@	@PBS_MACH@/cpuset/libmomcpuset.a
 pbs_demux_DEPENDENCIES = @PBS_MACH@/libmommach.a $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_2) $(am__DEPENDENCIES_3)
+	$(am__DEPENDENCIES_2) $(am__DEPENDENCIES_3) \
+	$(am__DEPENDENCIES_4)
 am_pbs_mom_OBJECTS = catch_child.$(OBJEXT) mom_comm.$(OBJEXT) \
 	mom_inter.$(OBJEXT) mom_main.$(OBJEXT) mom_server.$(OBJEXT) \
 	prolog.$(OBJEXT) requests.$(OBJEXT) start_exec.$(OBJEXT) \
@@ -81,7 +84,8 @@ am_pbs_mom_OBJECTS = catch_child.$(OBJEXT) mom_comm.$(OBJEXT) \
 pbs_mom_OBJECTS = $(am_pbs_mom_OBJECTS)
 pbs_mom_LDADD = $(LDADD)
 pbs_mom_DEPENDENCIES = @PBS_MACH@/libmommach.a $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_2) $(am__DEPENDENCIES_3)
+	$(am__DEPENDENCIES_2) $(am__DEPENDENCIES_3) \
+	$(am__DEPENDENCIES_4)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src/include
 depcomp = $(SHELL) $(top_srcdir)/buildutils/depcomp
 am__depfiles_maybe = depfiles
@@ -359,6 +363,7 @@ XPBSMON_DIR = $(libdir)/xpbsmon
 SUBMIT_FILTER_PATH = $(libexecdir)/qsub_filter
 @BUILDCPA_TRUE@cpasubdir = cpa
 @BUILDCPA_TRUE@momcpalib = cpa/libmomcpa.a
+@BUILD_L26_CPUSETS_TRUE@csetlib = @PBS_MACH@/cpuset/libmomcpuset.a
 SUBDIRS = @PBS_MACH@ $(cpasubdir)
 DIST_SUBDIRS = aix4 aix5 darwin digitalunix freebsd freebsd5 freebsd6 fujitsu hpux10 hpux11 \
 	irix5 irix6 irix6array linux netbsd solaris5 solaris7 sunos4 unicos8 unicosmk2 cpa
@@ -368,7 +373,7 @@ PBS_LIBS = ../lib/Libattr/libattr.a \
 	   ../lib/Libpbs/libtorque.la
 
 EXTRA_DIST = rm_dep.h
-LDADD = @PBS_MACH@/libmommach.a $(MOMLIBS) $(PBS_LIBS) $(momcpalib)
+LDADD = @PBS_MACH@/libmommach.a $(MOMLIBS) $(PBS_LIBS) $(momcpalib) $(csetlib)
 pbs_mom_SOURCES = catch_child.c mom_comm.c mom_inter.c mom_main.c \
 		   mom_server.c prolog.c requests.c start_exec.c \
                    tmsock_recov.c \

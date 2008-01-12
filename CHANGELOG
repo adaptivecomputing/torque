@@ -9,6 +9,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature
   b - prevent runaway hellos being sent to server when mom's node is removed
       from the server's node list
   e - local client connections use a unix domain socket, bypassing inet and pbs_iff
+  f - Linux 2.6 cpuset support  (in development)
 
 2.2.1
   b - fix a bug where dependent jobs get put on hold when the previous job has
@@ -23,7 +24,6 @@ c - crash     b - bug fix    e - enhancement    f - new feature
   f - dynamic resources
   e - use mlockall() in pbs_mom if _POSIX_MEMLOCK
   f - consumable resource "tokens" support (Harte-Hanks)
-  f - Linux 2.6 cpuset support
   e - build process sets default submit filter path to ${libexecdir}/qsub_filter
       we fall back to /usr/local/sbin/torque_submitfilter to maintain 
       compatibility

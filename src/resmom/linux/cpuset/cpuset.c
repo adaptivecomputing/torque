@@ -1,10 +1,11 @@
 #include <pbs_config.h>
 
-#include <bitmask.h>
-#include <cpuset.h>
 #include <sys/stat.h>
 #include <dirent.h>
 #include <stdio.h>
+#include <sys/types.h>
+#include <signal.h>
+#include <unistd.h>
 
 #include "libpbs.h"
 #include "attribute.h"
@@ -12,137 +13,88 @@
 #include "job.h"
 #include "log.h"
 
-/* Look through all of the cpusets in the root cpuset and determine cpus and memory that are available. */
-int find_free_cpuset_space(
-    struct bitmask *available_cpus,
-    struct bitmask *available_mems,
-    char *parent_path) 
-{
+#define TCPUSET_PATH "/dev/cpuset/torque"
 
-  static char	id[] = "find_free_cpuset_space";
-  struct cpuset *child_cpuset;
-  struct bitmask *child_cpus;
-  struct bitmask *child_mems;
-  struct bitmask *result_cpus;
-  struct bitmask *result_mems;
-  DIR *cpu_root;
-  struct dirent *dir_entry;
-  struct stat stat_buf;
-  char path[MAXPATHLEN + 1];
-  char dir_path[MAXPATHLEN + 1];
-  char cpuset_name[MAXPATHLEN + 1];
+/* FIXME: TODO:  TCPUSET_PATH, enabling cpuset support, and correct error
+ * checking need a run-time config */
 
-    child_cpuset = cpuset_alloc();
-    if (child_cpuset == NULL)
+
+
+extern char    mom_host[];
+extern char    mom_short_name[];
+
+int cpuset_delete (char *cpusetname)
+  {
+  char path[1024 + 1];
+  char childpath[1024 + 1];
+  pid_t killpids;
+  FILE *fd;
+  DIR *dir;
+  struct dirent	*pdirent;
+  static char	id[] = "cpuset_delete";
+  struct stat    statbuf;
+
+  /* accept a full path or jobid */
+  if (cpusetname[0]=='/')
+    strcpy(path,cpusetname);
+  else
+    sprintf(path,"%s/%s",TCPUSET_PATH,cpusetname);
+
+
+  if ((dir = opendir(path)) == NULL)
     {
-        sprintf (log_buffer, "cpuset_alloc() failed.\n");
-        log_err(-1,id,log_buffer);
-        return -1;
+    /* cpuset does not exist... noone cares! */
+    return(0);
     }
 
-    child_cpus = bitmask_alloc(cpuset_cpus_nbits());
-    if (child_cpus == NULL)
+  while ((pdirent = readdir(dir)) != NULL)
     {
-        sprintf (log_buffer, "bitmask_alloc() failed.\n");
-        log_err(-1,id,log_buffer);
-        return -1;
+    /* Skip parent and current directory. */
+    if (!strcmp(pdirent->d_name, ".")||!strcmp(pdirent->d_name, "..")) continue;
+      
+    /* Prepend directory name to file name for lstat. */
+      
+    strcpy(childpath,path);
+    strcat(childpath, "/");
+    strcat(childpath, pdirent->d_name);
+      
+    /* Skip file on error. */
+    if (!(lstat(childpath, &statbuf)>=0)) continue;
+
+    /* If a directory is found try to get cpuset info about it. */
+    if (statbuf.st_mode&S_IFDIR)
+      {
+      if (!cpuset_delete(childpath))
+        {
+        sprintf (log_buffer, "Unused cpuset '%s' deleted.", childpath);
+        log_err(0,id,log_buffer);
+        }
+      else
+        {
+      	sprintf (log_buffer, "Could not delete unused cpuset %s.", childpath);
+          log_err(-1,id,log_buffer);
+        }
+      }
+    else if (!strcmp(pdirent->d_name,"tasks"))
+      {
+      /* FIXME: need a more careful mechanism here... including a possibly useless sleep */
+      if ((fd=fopen(childpath,"r"))!=NULL)
+        while(fscanf(fd,"%d",&killpids) == 1)
+          kill(killpids,SIGKILL);
+
+        sleep(1);
+      }
+/* FIXME: only need when testing with a fake /dev/cpuset */
+if (!(statbuf.st_mode&S_IFDIR))
+  unlink(childpath);
+
     }
 
-    child_mems = bitmask_alloc(cpuset_mems_nbits());
-    if (child_mems == NULL)
-    {
-        sprintf (log_buffer, "bitmask_alloc() failed.\n");
-        log_err(-1,id,log_buffer);
-        return -1;
-    }
+  return(rmdir(path)==0);
 
-    result_cpus = bitmask_alloc(cpuset_cpus_nbits());
-    if (result_cpus == NULL)
-    {
-        sprintf (log_buffer, "bitmask_alloc() failed.\n");
-        log_err(-1,id,log_buffer);
-        return -1;
-    }
-
-    result_mems = bitmask_alloc(cpuset_mems_nbits());
-    if (result_mems == NULL)
-    {
-        sprintf (log_buffer, "bitmask_alloc() failed.\n");
-        log_err(-1,id,log_buffer);
-        return -1;
-    }
-
-    /* Find all cpusets directly under the cpuset root directory. */
-    sprintf (dir_path, "/dev/cpuset%s", parent_path);
-    cpu_root = opendir(dir_path);
-    if (cpu_root == NULL)
-    {
-        sprintf(log_buffer, "opendir(%s) failed.\n", dir_path);
-        log_err(-1,id,log_buffer);
-    }
-
-    while ((dir_entry = readdir(cpu_root)) != NULL)
-    {
-	/* Skip parent and current directory. */
-	if (!strcmp(dir_entry->d_name, ".")||!strcmp(dir_entry->d_name, "..")) continue;
-
-	/* Prepend directory name to file name for lstat. */
-	strcpy(path, dir_path);
-	if (path[strlen(path)-1]!='/') strcat(path, "/");
-	strcat(path, dir_entry->d_name);
-
-	/* Skip file on error. */
-	if (!(lstat(path, &stat_buf)>=0)) continue;
-
-	/* If a directory is found try to get cpuset info about it. */
-	if (stat_buf.st_mode&S_IFDIR)
-	{
-            sprintf (cpuset_name, "%s/%s", parent_path, dir_entry->d_name);
-            if (cpuset_query(child_cpuset, cpuset_name) != 0)
-            {
-                sprintf (log_buffer, "cpuset_query(%s) failed.\n", cpuset_name);
-                log_err(-1,id,log_buffer);
-                return -1;
-            }
-
-            /* Determine all cpus and mems in the cpuset. */
-            cpuset_getcpus(child_cpuset, child_cpus);
-            cpuset_getmems(child_cpuset, child_mems);
-
-            /* Mask child_cpus bits off of available_cpus. */
-            if (bitmask_subset(child_cpus, available_cpus))
-            {
-                bitmask_andnot(result_cpus, available_cpus, child_cpus);
-                bitmask_copy(available_cpus, result_cpus);
-            }
-            else
-            {
-                sprintf (log_buffer, "cpuset %s not a subset of parent cpuset '%s'.\n", cpuset_name, dir_path);
-                log_err(-1,id,log_buffer);
-                return -1;
-            }
-
-            /* Mask child_mems bits off of available_mems. */
-            if (bitmask_subset(child_mems, available_mems))
-            {
-                bitmask_andnot(result_mems, available_mems, child_mems);
-                bitmask_copy(available_mems, result_mems);
-            }
-            else
-            {
-                sprintf (log_buffer, "memset %s not a subset of parent memset '%s'.\n", cpuset_name, dir_path);
-                log_err(-1,id,log_buffer);
-                return -1;
-            }
-	}
-    }
-
-    closedir(cpu_root);
-    bitmask_free(child_cpus);
-    bitmask_free(child_mems);
-    cpuset_free(child_cpuset);
-    return 0;
 }
+
+
 /*
  * Create the root cpuset for Torque if it doesn't already exist.
  * clear out any job cpusets for jobs that no longer exist.
@@ -154,106 +106,73 @@ void initialize_root_cpuset()
     struct dirent	*pdirent;
     char           path[MAXPATHLEN + 1];
     struct stat    statbuf;
-    char *dir_path = "/dev/cpuset/torque";
-    char cpuset_name[MAXPATHLEN+1];
-    struct cpuset *root_set;
-    struct cpuset *torque_set;
-    int cpu_map_size;
-    int mem_map_size;
-    struct bitmask *available_cpus;
-    struct bitmask *available_mems;
+    char *root_path = "/dev/cpuset";
+    char cpuset_buf[1024];
+    FILE *fd;
 
-    /* Create the top level torque cpuset if it doesn't already exist. */
-    torque_set = cpuset_alloc();
+        sprintf (log_buffer,
+          "Init Torque cpuset %s.",TCPUSET_PATH);
+        log_err(-1,id,log_buffer);
+    /* make sure cpusets are available */
+    strcpy(path,root_path);
+    strcat(path,"/cpus");
+    if (lstat(path, &statbuf) != 0) return;
 
-    if (cpuset_query(torque_set, "/torque") == -1)
+    strcpy(path,root_path);
+    strcat(path,"/torque");
+    if (lstat(path, &statbuf) != 0)
     {
-        sprintf (log_buffer, "Torque cpuset %s does not exist, creating it now.\n",dir_path);
+        sprintf (log_buffer,
+          "Torque cpuset %s does not exist, creating it now.\n",path);
         log_err(-1,id,log_buffer);
 
-        cpu_map_size = cpuset_cpus_nbits();
-        if (cpu_map_size < 1)
-        {
-            sprintf (log_buffer, "cpuset_cpus_nbits() failed.\n");
-            log_err(-1,id,log_buffer);
-        }
-    
-        available_cpus = bitmask_alloc(cpu_map_size);
-        if (available_cpus == NULL)
-        {
-            sprintf (log_buffer, "bitmask_alloc() failed.\n");
-            log_err(-1,id,log_buffer);
-        }
-    
-        mem_map_size = cpuset_mems_nbits();
-        if (mem_map_size < 1)
-        {
-            sprintf (log_buffer, "cpuset_mems_nbits() failed.\n");
-            log_err(-1,id,log_buffer);
-        }
-    
-        available_mems = bitmask_alloc(mem_map_size);
-        if (available_mems == NULL)
-        {
-            sprintf (log_buffer, "bitmask_alloc() failed.\n");
-            log_err(-1,id,log_buffer);
-        }
+        mkdir(path, 0755);
 
-        root_set = cpuset_alloc();
+        /* add all cpus to torqueset */
+        strcpy(path,root_path);
+        strcat(path,"/cpus");
+        fd=fopen(path,"r");
+if (fd) {  /* FIXME: need proper error checking and response */
+        fread(cpuset_buf, sizeof(char), 1023, fd);
+        fclose(fd);
+        strcpy(path,TCPUSET_PATH);
+        strcat(path,"/cpus");
+        fd=fopen(path,"w");
+if (fd) {
+sprintf (log_buffer, "adding %s to %s",cpuset_buf,path);
+log_err(-1,id,log_buffer);
+        fwrite(cpuset_buf, sizeof(char), strlen(cpuset_buf), fd);
+        fclose(fd);
+}
+	memset(cpuset_buf,'\0',sizeof(cpuset_buf));
+}
 
-        if (cpuset_query(root_set, "/") == 0)
-        {
-            /* Determine all cpus and mems in the root cpuset. */
-            cpuset_getcpus(root_set, available_cpus);
+        /* add all mems to torqueset */
+        strcpy(path,root_path);
+        strcat(path,"/mems");
+        fd=fopen(path,"r");
+if (fd) {
+        fread(cpuset_buf, sizeof(char), 1023, fd);
+        fclose(fd);
+        strcpy(path,TCPUSET_PATH);
+        strcat(path,"/mems");
+        fd=fopen(path,"w");
+if (fd) {
+sprintf (log_buffer, "adding %s to %s",cpuset_buf,path);
+log_err(-1,id,log_buffer);
+        fwrite(cpuset_buf, sizeof(char), strlen(cpuset_buf), fd);
+        fclose(fd);
+}
+	memset(cpuset_buf,'\0',sizeof(cpuset_buf));
+}
 
-            if (bitmask_isallclear(available_cpus))
-            {
-                sprintf (log_buffer, "Root cpuset has no cpus.\n");
-                log_err(-1,id,log_buffer);
-            }
-    
-            cpuset_getmems(root_set, available_mems);
-            if (bitmask_isallclear(available_mems))
-            {
-                sprintf (log_buffer, "Root cpuset has no mems.\n");
-                log_err(-1,id,log_buffer);
-            }
-        }
-
-        /* Find all cpus and mems available in the root cpuset. */
-        if (find_free_cpuset_space(available_cpus, available_mems, "/") == 0)
-        {
-            /* Create the torque root cpuset with the available cpu and mems bitmaps. */
-            if (cpuset_setcpus(torque_set, available_cpus) != 0)
-            {
-                sprintf (log_buffer, "cpuset_setcpus() failed.\n");
-                log_err(-1,id,log_buffer);
-            }
-    
-            if (cpuset_setmems(torque_set, available_mems) != 0)
-            {
-                sprintf (log_buffer, "cpuset_setmems() failed.\n");
-                log_err(-1,id,log_buffer);
-            }
-    
-            if (cpuset_create("/torque", torque_set) != 0)
-            {
-                sprintf (log_buffer, "cpuset_create() failed.\n");
-                log_err(-1,id,log_buffer);
-            }
-        }
-
-        bitmask_free(available_cpus);
-        bitmask_free(available_mems);
-        cpuset_free(torque_set);
-        cpuset_free(root_set);
 
     /* The cpuset already exists, delete any cpusets for jobs that no longer exist. */
     } else {
         /* Find all the job cpusets. */
-        if ((dir = opendir(dir_path)) == NULL)
+        if ((dir = opendir(TCPUSET_PATH)) == NULL)
         {
-            sprintf(log_buffer, "opendir(%s) failed.\n", dir_path);
+            sprintf(log_buffer, "opendir(%s) failed.\n", TCPUSET_PATH);
             log_err(-1,id,log_buffer);
         }
         while ((pdirent = readdir(dir)) != NULL)
@@ -262,7 +181,7 @@ void initialize_root_cpuset()
       	    if (!strcmp(pdirent->d_name, ".")||!strcmp(pdirent->d_name, "..")) continue;
       
       	    /* Prepend directory name to file name for lstat. */
-      	    strcpy(path, dir_path);
+      	    strcpy(path, TCPUSET_PATH);
       
       	    if (path[strlen(path)-1]!='/') strcat(path, "/");
       	    strcat(path, pdirent->d_name);
@@ -276,8 +195,7 @@ void initialize_root_cpuset()
                     /* If the job isn't found, delete its cpuset. */
 		    if (find_job(pdirent->d_name) == NULL)
                     {
-                          sprintf (cpuset_name, "torque/%s", pdirent->d_name);
-      	                  if (cpuset_delete(cpuset_name) != 0)
+      	                  if (!cpuset_delete(pdirent->d_name))
                             {
                                     sprintf (log_buffer, "Unused cpuset '%s' deleted.", path);
                                     log_err(0,id,log_buffer);
@@ -294,218 +212,177 @@ void initialize_root_cpuset()
     }
 }
 
-int create_job_set (
-    char *job_id,
-    char *cpuset_name,
-    int num_cpus,
-    int num_mems)
+int create_jobset (
+    job *pjob)
 {
-  static char	id[] = "create_job_set";
-  struct cpuset *root_set;
-  struct cpuset *new_cpuset;
+  static char	id[] = "create_jobset";
+  char path[1024+1];
+  char rootpath[1024+1];
+  char tmppath[1024+1];
+  char cpusbuf[1024+1];
+  char tasksbuf[1024+1];
+  int ix;
+  FILE *fd;
+  vnodent       *np;
+  int j;
+  mode_t savemask;
 
-  struct bitmask *available_cpus;
-  struct bitmask *available_mems;
-  int index;
-  int count;
-  int cpu_map_size;
-  int mem_map_size;
-  int max_cpus;
-  int max_mems;
+  savemask=(umask(0022));
 
-    /* Check if the cpuset for the job already exists. */
-    new_cpuset = cpuset_alloc();
-    if (new_cpuset == NULL)
+  sprintf(path,"%s/%s",TCPUSET_PATH,pjob->ji_qs.ji_jobid);
+
+  if (access(path,F_OK)==0)
     {
-        sprintf (log_buffer, "Cpuset_alloc() failed.\n");
-        log_err(-1,id,log_buffer);
-        return -1;
-    }
-    if (cpuset_query(new_cpuset, cpuset_name) == 0) 
-    {
-	sprintf (log_buffer, "Cpuset for job %s already exists, deleting it now.\n", job_id);
-        log_err(0,id,log_buffer);
-
-	if (cpuset_delete(cpuset_name) != 0)
-        {
-	    sprintf (log_buffer, "Could not delete cpuset for job %s.\n", job_id);
-            log_err(-1,id,log_buffer);
-            return -1;
-        }
+    if (!cpuset_delete(path))
+      {
+      sprintf (log_buffer, "Could not delete cpuset for job %s.\n", pjob->ji_qs.ji_jobid);
+      log_err(-1,id,log_buffer);
+      umask(savemask);
+      return(0);
+      }
     }
 
-    /* Get information about the root cpuset. */
-    root_set = cpuset_alloc();
-    if (root_set == NULL)
-    {
-        sprintf (log_buffer, "cpuset_alloc() failed.\n");
-        log_err(-1,id,log_buffer);
-        return -1;
-    }
+if (access(TCPUSET_PATH,F_OK)==0) {
 
-    if (cpuset_query(root_set, "/torque") != 0)
-    {
-        sprintf (log_buffer, "cpuset_query() of root cpuset failed.\n");
-        log_err(-1,id,log_buffer);
-        return -1;
-    }
+  /* create the jobset */
+  mkdir(path,0755);
 
-    cpu_map_size = cpuset_cpus_nbits();
-    if (cpu_map_size < 1)
-    {
-        sprintf (log_buffer, "cpuset_cpus_nbits() failed.\n");
-        log_err(-1,id,log_buffer);
-        return -1;
-    }
-
-    available_cpus = bitmask_alloc(cpu_map_size);
-    if (available_cpus == NULL)
-    {
-        sprintf (log_buffer, "bitmask_alloc() failed.\n");
-        log_err(-1,id,log_buffer);
-        return -1;
-    }
-
-    mem_map_size = cpuset_mems_nbits();
-    if (mem_map_size < 1)
-    {
-        sprintf (log_buffer, "cpuset_mems_nbits() failed.\n");
-        log_err(-1,id,log_buffer);
-        return -1;
-    }
-
-    available_mems = bitmask_alloc(mem_map_size);
-    if (available_mems == NULL)
-    {
-        sprintf (log_buffer, "bitmask_alloc() failed.\n");
-        log_err(-1,id,log_buffer);
-        return -1;
-    }
-
-    /* Sanity check */
-    if (num_cpus < 1)
-    {
-        sprintf (log_buffer, "Job %s requested %d cpus, it needs to request at least one.\n",
-            job_id, num_cpus);
-        log_err(-1,id,log_buffer);
-        return -1;
-    }
-
-    /* If more cpus are being requested than exist on the machine exit. */
-    max_cpus = cpuset_cpus_weight(root_set);
-    if (num_cpus > max_cpus)
-    {
-        sprintf (log_buffer, "Job %s requests %d cpus, there are only %d on this machine.\n",
-            job_id, num_cpus, max_cpus);
-        log_err(-1,id,log_buffer);
-        return -1;
-    }
-
-    /* If more mems are being requested than exist on the machine exit. */
-    max_mems = cpuset_mems_weight(root_set);
-    if (num_mems > max_mems)
-    {
-        sprintf (log_buffer, "Job %s requests %d mems, there are only %d on this machine.\n",
-            job_id, num_mems, max_mems);
-        log_err(-1,id,log_buffer);
-        return -1;
-    }
-
-    /* Determine all cpus and mems in the root cpuset. */
-    cpuset_getcpus(root_set, available_cpus);
-    if (bitmask_isallclear(available_cpus))
-    {
-        sprintf (log_buffer, "Root cpuset has no cpus.\n");
-        log_err(-1,id,log_buffer);
-        return -1;
-    }
-
-    cpuset_getmems(root_set, available_mems);
-    if (bitmask_isallclear(available_mems))
-    {
-        sprintf (log_buffer, "Root cpuset has no mems.\n");
-        log_err(-1,id,log_buffer);
-        return -1;
-    }
-    cpuset_free(root_set);
-
-    /* Find what cpus and mems are available. */
-    if (find_free_cpuset_space(available_cpus, available_mems, "/torque") != 0)
-    {
-        return -1;
-    }
-
-    /* Walk through the bitmap and find the number of needed cpus in the bitmap. */
-    for (index = bitmask_first(available_cpus), count = 0;
-        index < cpu_map_size && count < num_cpus;
-        index = bitmask_next(available_cpus, index+1), count++)
-    {
-/* PME!! Only output on high log level. */
-        sprintf(log_buffer, "CPU bit set: %d, count: %d\n", index, count);
-        log_err(0,id,log_buffer);
-    }
-
-    /* If we are not past the end of the bitmap there are extra, unneeded cpus, clear their bits. */
-    if (index != cpu_map_size)
-    {
-        bitmask_clearrange(available_cpus, index, cpu_map_size-1);
-    }
-    else if (count != num_cpus)
-    {
-        sprintf (log_buffer, "Job %s requested %d cpus, found %d.\n", job_id, num_cpus, count);
-        log_err(-1,id,log_buffer);
-        return -1;
-    }
-
-    /* Walk through the bitmap and find the number of needed mems in the bitmap. */
-    for (index = bitmask_first(available_mems), count = 0;
-        index < mem_map_size && count < num_mems;
-        index = bitmask_next(available_mems, index+1), count++)
-    {
-/* PME!! Only output on high log level. */
-        sprintf(log_buffer, "Mem bit set: %d, count: %d\n", index, count);
-        log_err(0,id,log_buffer);
-    }
-
-    /* If we are not past the end of the bitmap there are extra, unneeded mems, clear their bits. */
-    if (index != mem_map_size)
-    {
-        bitmask_clearrange(available_mems, index, mem_map_size-1);
-    }
-    else if (count != num_mems)
-    {
-        sprintf (log_buffer, "Job %s requested %d mems, found %d.\n", job_id, num_mems, count);
-        log_err(-1,id,log_buffer);
-        return -1;
-    }
-
-    /* Create the cpuset with the job's name and the available cpu and mems bitmaps. */
-    if (cpuset_setcpus(new_cpuset, available_cpus) != 0)
-    {
-        sprintf (log_buffer, "cpuset_setcpus() failed.\n");
-        log_err(-1,id,log_buffer);
-        return -1;
-    }
-
-    if (cpuset_setmems(new_cpuset, available_mems) != 0)
-    {
-        sprintf (log_buffer, "cpuset_setmems() failed.\n");
-        log_err(-1,id,log_buffer);
-        return -1;
-    }
-
-    if (cpuset_create(cpuset_name, new_cpuset) != 0)
-    {
-        sprintf (log_buffer, "cpuset_create() failed.\n");
-        log_err(-1,id,log_buffer);
-        return -1;
-    }
-
-    bitmask_free(available_cpus);
-    bitmask_free(available_mems);
-    cpuset_free(new_cpuset);
-    return 0;
+  /* add all mems to jobset */
+  strcpy(rootpath,TCPUSET_PATH);
+  strcat(rootpath,"/mems");
+  fd=fopen(rootpath,"r");
+if (fd) {
+  fread(cpusbuf, sizeof(char), 1023, fd);
+  fclose(fd);
+  strcpy(tmppath,path);
+  strcat(tmppath,"/mems");
+  fd=fopen(tmppath,"w");
+  fwrite(cpusbuf, sizeof(char), strlen(cpusbuf), fd);
+  fclose(fd);
+  memset(cpusbuf,'\0',sizeof(cpusbuf));
+}
 }
 
 
+  /* find the CPU ids that are on me to build up the list of CPUs we need to
+   * add to the jobset */
+  np = pjob->ji_vnods;
+  cpusbuf[0]='\0';
+  ix = 0;
+  for (j = 0;j < pjob->ji_numvnod;++j,np++)
+    {
+    if (pjob->ji_nodeid == np->vn_host->hn_node)
+      {
+      if (cpusbuf[0]!='\0')
+        strcat(cpusbuf,",");
 
+      sprintf(tmppath,"%d",np->vn_index);
+      strcat(cpusbuf,tmppath);
+
+      sprintf(tmppath,"%s/%s/%d",TCPUSET_PATH,pjob->ji_qs.ji_jobid,np->vn_node);
+      mkdir(tmppath,0755);
+      chmod(tmppath,00755);
+      sprintf(tasksbuf,"%d",np->vn_index);
+      strcat(tmppath,"/cpus");
+sprintf (log_buffer, "TASKSET: %s cpus %s\n", tmppath,tasksbuf );
+log_err(-1,id,log_buffer);
+      fd=fopen(tmppath,"w");
+if (fd) {
+      fwrite(tasksbuf, sizeof(char), strlen(tasksbuf), fd);
+      fclose(fd);
+}
+      memset(tasksbuf,'\0',sizeof(tasksbuf));
+
+
+        /* add all mems to torqueset */
+        sprintf(tmppath,"%s/%s/%s",TCPUSET_PATH,pjob->ji_qs.ji_jobid,"/mems");
+        fd=fopen(tmppath,"r");
+if (fd) {
+        fread(tasksbuf, sizeof(char), 1023, fd);
+        fclose(fd);
+}
+        sprintf(tmppath,"%s/%s/%d/%s",TCPUSET_PATH,pjob->ji_qs.ji_jobid,np->vn_node,"/mems");
+        fd=fopen(tmppath,"w");
+if (fd) {
+sprintf (log_buffer, "adding %s to %s",tasksbuf,tmppath);
+log_err(-1,id,log_buffer);
+        fwrite(tasksbuf, sizeof(char), strlen(tasksbuf), fd);
+        fclose(fd);
+}
+        memset(tasksbuf,'\0',sizeof(tasksbuf));
+
+
+      }
+    }
+
+
+  /* add the CPUs to the jobset */
+  strcpy(tmppath,path);
+  strcat(tmppath,"/cpus");
+sprintf (log_buffer, "CPUSET: %s job %s path %s\n", cpusbuf, pjob->ji_qs.ji_jobid,tmppath);
+log_err(-1,id,log_buffer);
+  fd=fopen(tmppath,"w");
+if (fd) {
+  fwrite(cpusbuf, sizeof(char), strlen(cpusbuf), fd);
+  fclose(fd);
+}
+	memset(cpusbuf,'\0',sizeof(cpusbuf));
+ 
+  umask(savemask);
+
+  return 0;
+}
+
+
+int move_to_jobset(pid_t pid,job *pjob)
+  {
+  char pidbuf[1024];
+  char taskspath[1024];
+  FILE *fd;
+  mode_t savemask;
+
+  savemask=(umask(0022));
+
+  sprintf(pidbuf,"%d",pid);
+  sprintf(taskspath,"%s/%s/tasks",TCPUSET_PATH,pjob->ji_qs.ji_jobid);
+sprintf (log_buffer, "CPUSET MOVE: %s  %s\n", taskspath, pidbuf);
+log_err(-1,"move_to_jobset",log_buffer);
+  
+  fd=fopen(taskspath,"w");
+if (fd) {
+  fwrite(pidbuf,sizeof(char),strlen(pidbuf),fd);
+  fclose(fd);
+}
+  memset(pidbuf,'\0',sizeof(pidbuf));
+
+  umask(savemask);
+
+  return 0;
+  }
+
+int move_to_taskset(pid_t pid,job *pjob,char * vnodeid)
+  {
+
+  char pidbuf[1024];
+  char taskspath[1024];
+  FILE *fd;
+  mode_t savemask;
+
+  savemask=(umask(0022));
+
+  sprintf(pidbuf,"%d",pid);
+  sprintf(taskspath,"%s/%s/%s/tasks",TCPUSET_PATH,pjob->ji_qs.ji_jobid,vnodeid);
+sprintf (log_buffer, "TASKSET MOVE: %s  %s\n", taskspath, pidbuf);
+log_err(-1,"move_to_taskset",log_buffer);
+  
+  fd=fopen(taskspath,"w");
+if (fd) {
+  fwrite(pidbuf,sizeof(char),strlen(pidbuf),fd);
+  fclose(fd);
+}
+  memset(pidbuf,'\0',sizeof(pidbuf));
+
+  umask(savemask);
+
+  return 0;
+  }

@@ -97,15 +97,6 @@
 #include <memory.h>
 #endif	/* _MEMORY_H */
 
-#if defined(PENABLE_LINUX26_CPUSETS)
-#ifndef _BITMASK_H
-#include <bitmask.h>
-#endif	/* _BITMASK_H */
-#ifndef _CPUSET_H
-#include <cpuset.h>
-#endif	/* _CPUSET_H */
-#endif
-
 #include "pbs_ifl.h"
 #include "list_link.h"
 #include "pbs_error.h"

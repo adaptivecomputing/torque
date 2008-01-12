@@ -113,16 +113,11 @@
 #ifdef ENABLE_CPA
 #include "pbs_cpa.h"
 #endif
+#ifdef PENABLE_LINUX26_CPUSETS
+#include "pbs_cpuset.h"
+#endif
 
-#ifndef CPUSETISREADY
-#ifdef PENABLE_DYNAMIC_CPUSETS
-  #undef PENABLE_DYNAMIC_CPUSETS
-#endif /* PENABLE_DYNAMIC_CPUSETS */
-#endif /* !CPUSETISREADY */
 
-#if defined(PENABLE_DYNAMIC_CPUSETS)
-#include <cpuset.h>
-#endif /* PENABLE_DYNAMIC_CPUSETS */
 
 /* External Functions */
 
@@ -359,11 +354,6 @@ void scan_for_exiting()
   static int ForceObit    = -1;   /* boolean - if TRUE, ObitsAllowed will be enforced */
   static int ObitsAllowed = 1;
 
-#ifdef  PENABLE_DYNAMIC_CPUSETS
-  char           cQueueName[8];
-  char           cPermFile[1024];
-  struct passwd *pwdp;
-#endif  /* PENABLE_DYNAMIC_CPUSETS */
 
   /*
   ** Look through the jobs.  Each one has it's tasks examined
@@ -970,30 +960,6 @@ int post_epilogue(
     PBS_SOCK_INET,
     obit_reply);
 
-#ifdef PENABLE_DYNAMIC_CPUSETS
-
-  /* FIXME: this is the wrong place for this code.
-   * it should be called from job_purge() */
-
-  pwdp = getpwuid(pjob->ji_qs.ji_un.ji_momt.ji_exuid);
-  strncpy(cQueueName,pwdp->pw_name,3);
-  strncat(cQueueName,pjob->ji_qs.ji_jobid,5);
-
-  /* FIXME: use the path_jobs variable */
-  strcpy(cPermFile,PBS_SERVER_HOME);
-  strcat(cPermFile,"/mom_priv/jobs/");
-  strcat(cPermFile,cQueueName);
-  strcat(cPermFile,".CS");
-
-  cpusetDestroy(cQueueName);
-  unlink(cPermFile);
-
-  memset(cQueueName,0,sizeof(cQueueName));
-  memset(cPermFile,0,sizeof(cPermFile));
-
-  /* NOTE:  must clear cpusets even if child not captured, ie, mom is down when job completes */
-
-#endif /* PENABLE_DYNAMIC_CPUSETS */
 
   /* send the job obiturary notice to the server */
 

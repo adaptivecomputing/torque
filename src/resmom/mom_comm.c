@@ -123,6 +123,9 @@
 #include        "resmon.h"
 #include        "mcom.h"
 #include	"svrfunc.h"
+#ifdef PENABLE_LINUX26_CPUSETS
+#include "pbs_cpuset.h"
+#endif
 
 
 /* Global Data Items */
@@ -2108,6 +2111,21 @@ void im_request(
           goto done;
           }
         }
+
+#ifdef PENABLE_LINUX26_CPUSETS
+
+      sprintf(log_buffer,"about to create cpuset for job %s.\n",
+        pjob->ji_qs.ji_jobid);
+
+      log_err(-1,id,log_buffer);
+    if (create_jobset(pjob) != 0)
+      {   
+      sprintf(log_buffer,"Could not create cpuset for job %s.\n",
+        pjob->ji_qs.ji_jobid);
+
+      log_err(-1,id,log_buffer);
+      }   
+#endif  /* (PENABLE_LINUX26_CPUSETS) */
 
       /* run local prolog */
 

@@ -143,12 +143,6 @@
 int conn_qsub(char *,long,char *);
 void job_purge(job *);
 
-#ifndef CPUSETISREADY
-#ifdef PENABLE_DYNAMIC_CPUSETS
-  #undef PENABLE_DYNAMIC_CPUSETS
-#endif /* PENABLE_DYNAMIC_CPUSETS */
-#endif /* !CPUSETISREADY */
-
 /* External functions */
 
 #ifdef PBS_MOM
@@ -1143,9 +1137,6 @@ void job_purge(
 #ifdef PBS_MOM
   int           rc;
   extern void MOMCheckRestart A_((void));
-#ifdef PENABLE_LINUX26_CPUSETS 
-  char                 cpuset_name[MAXPATHLEN + 1];
-#endif
 #endif
 
 
@@ -1197,10 +1188,7 @@ void job_purge(
 
   /* Delete the cpuset for the job. */
 
-  sprintf(cpuset_name,"torque/%s", 
-    pjob->ji_qs.ji_jobid);
-
-  cpuset_delete(cpuset_name);
+  cpuset_delete(pjob->ji_qs.ji_jobid);
   }
 
 #endif /* PENABLE_LINUX26_CPUSETS */

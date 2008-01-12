@@ -312,16 +312,11 @@ AC_DEFINE_UNQUOTED(IBM_SP2, ${IBM_SP2}, [defined if this is an SP2])
 AC_SUBST(PBSPOE)    
 AC_SUBST(PBSPOEO)
 
-AC_ARG_ENABLE(cpuset,[  --disable-cpuset        enable Linux 2.6 kernel cpusets])
+AC_ARG_ENABLE(cpuset,[  --enable-cpuset        enable Linux 2.6 kernel cpusets])
 build_l26_cpuset=no
 if test "x$enable_cpuset" = "xyes" ;then
-  AC_CHECK_LIB(cpuset, cpuset_cpus_weight, 
-    [AC_CHECK_LIB(bitmask, bitmask_alloc,
-      [build_l26_cpuset=yes
-       MOMLIBS="$MOMLIBS -lcpuset -lbitmask"
+      build_l26_cpuset=yes
        AC_DEFINE(PENABLE_LINUX26_CPUSETS, 1, [Define to enable Linux 2.6 cpusets])
-      ])
-    ])
 fi
 AM_CONDITIONAL([BUILD_L26_CPUSETS], test "$build_l26_cpuset" = yes)
 
@@ -713,8 +708,7 @@ torque_cv_have_cmsg="no"
   #endif
   #include <stdlib.h>
   ],[exit(CMSG_SPACE(sizeof(struct ucred)));],
-    [torque_cv_have_cmsg="yes"
-     AC_DEFINE_UNQUOTED([HAVE_CMASG],1,[Define if ntohl() is declared in arpa/inet.h])])
+    [torque_cv_have_cmsg="yes"])
 AC_MSG_RESULT([$torque_cv_have_cmsg])
 
 AC_MSG_CHECKING([if enabling Unix Domain socket supprt])

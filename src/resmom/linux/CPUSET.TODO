@@ -1,4 +1,0 @@
-In initialize_root_cpuset, need to make the torque root cpuset "/dev/cpuset/torque" cpu_exclusive and mem_exclusive.
-In create_job_set, need to make the job cpuset cpu_exclusive and mem_exclusive (make configurable?)
-In TMomFinalizeChild, need to determine how many mems to allocate to the cpuset. 
-	Need to allocate complete node boards (cpus and mems) to the job cpusets.
