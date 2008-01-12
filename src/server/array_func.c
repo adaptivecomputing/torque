@@ -54,7 +54,7 @@ extern char *pbs_o_host;
 static int is_num(char *);
 static int array_request_token_count(char *);
 static int array_request_parse_token(char *, int *, int *);
-static int parse_array_request(char *request, tlist_head request_tokens, job_array *pa);
+static int parse_array_request(char *request, job_array *pa);
 
 
 
@@ -410,8 +410,9 @@ int setup_array_struct(job *pjob)
     return 1;
     }
     
-  bad_token_count = parse_array_request(pjob->ji_wattr[(int)JOB_ATR_job_array_request].at_val.at_str,
-                                        pa->request_tokens, pa);
+  bad_token_count =
+     parse_array_request(pjob->ji_wattr[(int)JOB_ATR_job_array_request].at_val.at_str, pa);
+
   if (bad_token_count > 0)
     {
     delete_array_struct(pa);
@@ -544,7 +545,7 @@ static int array_request_parse_token(char *str, int *start, int *end)
 }
 
 
-static int parse_array_request(char *request, tlist_head request_tokens, job_array *pa)
+static int parse_array_request(char *request, job_array *pa)
 {
    char *temp_str;
    int num_tokens;
@@ -555,7 +556,9 @@ static int parse_array_request(char *request, tlist_head request_tokens, job_arr
    int start;
    int end;
    int num_bad_tokens;
+   int searching;
    array_request_node *rn;
+   array_request_node *rn2;
 
    temp_str = strdup(request);
    num_tokens = array_request_token_count(request);
@@ -591,9 +594,35 @@ static int parse_array_request(char *request, tlist_head request_tokens, job_arr
        rn->start = start;
        rn->end = end;
        CLEAR_LINK(rn->request_tokens_link);
-       append_link(&pa->request_tokens, &rn->request_tokens_link, (void*)rn);
+       
+       rn2 = GET_NEXT(pa->request_tokens);
+       searching = TRUE;
+         
+       while (searching)
+         {
+	   
+         if (rn2 == NULL)
+           {
+           append_link(&pa->request_tokens, &rn->request_tokens_link, (void*)rn);
+           searching = FALSE;
+           }
+         else if (rn->start < rn2->start)
+           {
+           insert_link(&rn2->request_tokens_link, &rn->request_tokens_link, (void*)rn,
+                       LINK_INSET_BEFORE);
+           searching = FALSE;
+           }
+         else
+           {
+           rn2 = GET_NEXT(rn2->request_tokens_link);
+           }
+	   
+         }
+
+         
        }
      }   
 
   return num_bad_tokens;
 }
+

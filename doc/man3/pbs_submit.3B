@@ -168,8 +168,8 @@ Defines the priority of the job.
 Defines the rerunable flag.
 .IP #define\ ATTR_S\ "Shell_Path_List"
 Defines the path to the shell which will interpret the job script.
-.IP #define\ ATTR_t\ "job_array_size"
-Defines the number of jobs in the array.
+.IP #define\ ATTR_t\ "job_array_request"
+Requests specific array IDs. Makes this submission a job array submit.
 .IP #define\ ATTR_u\ "User_List"
 Defines the list of user names under which the job may execute.
 .IP #define\ ATTR_v\ "Variable_List"
