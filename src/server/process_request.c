@@ -480,6 +480,7 @@ if (svr_conn[sfds].cn_socktype & PBS_SOCK_UNIX)
 
     if (svr_conn[sfds].cn_socktype & PBS_SOCK_UNIX)
       {
+      conn_credent[sfds].timestamp = time_now;
       svr_conn[sfds].cn_authen = PBS_NET_CONN_AUTHENTICATED;
       }
 
