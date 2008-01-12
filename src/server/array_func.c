@@ -618,7 +618,18 @@ static int parse_array_request(char *request, job_array *pa)
            }
 	   
          }
-
+        
+       rn2 = GET_PRIOR(rn->request_tokens_link);
+       if (rn2 != NULL && rn2->end >= rn->start)
+         {
+         num_bad_tokens++;
+         }
+       
+       rn2 = GET_NEXT(rn->request_tokens_link);
+       if (rn2 != NULL && rn2->start <= rn->end)
+         {
+         num_bad_tokens++;
+         }
          
        }
      }   
