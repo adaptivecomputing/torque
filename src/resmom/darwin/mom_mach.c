@@ -228,7 +228,6 @@ int		gpagesize;
 void dep_initialize()
 
   {
-  char  *id = "dep_initialize";
   int    mib[2];
   size_t len;
 
@@ -540,7 +539,7 @@ static unsigned long resi_sum(
 
     memsize += ctob(t_info.resident_size);	
 
-    DBPRT(("%s: pid=%d ses=%d mem=%d totmem=%d\n", 
+    DBPRT(("%s: pid=%d ses=%d mem=%d totmem=%lu\n", 
      id,pp->kp_proc.p_pid,sess_tbl[i],t_info.resident_size,memsize))
     }  /* END for (i) */
 
@@ -959,8 +958,6 @@ int mom_get_sample()
   int           i;
 
   struct        kinfo_proc      *kp;
-  struct        kinfo_proc      *leader;
-  pid_t         sid;
 
   DBPRT(("%s: entered\n",
     id))
@@ -1156,7 +1153,6 @@ int mom_over_limit(
 int mom_set_use(pjob)
     job		*pjob;
 {
-	char		*id = "mom_set_use";
 	resource	*pres;
 	attribute	*at;
 	resource_def	*rd;
@@ -1414,9 +1410,6 @@ int
 getprocs()
 {
 	static	unsigned	int	lastproc = 0;
-	char		*id = "getprocs";
-	caddr_t		*kernel_proc;
-	int		i, len;
 
 
 	if (lastproc == reqnum)	/* don't need new proc table */
@@ -1437,13 +1430,10 @@ cput_job(jobid)
 pid_t	jobid;
 {
 	char			*id = "cput_job";
-	double			ses_time;
 	int			i;
 	unsigned long		cputime;
  	time_value_t   total_time;
  	time_value_t   system_time;
- 	time_value_t   utime;
- 	time_value_t   stime;
  	task_basic_info_data_t     mach_task_stats;
  	task_thread_times_info_data_t   mach_time_info;
    int ret;
@@ -1509,13 +1499,10 @@ char *cput_proc(
 
   {
   char		*id = "cput_proc";
-  struct	pstats		ps;
   uint		cputime;
   int           i;
   time_value_t   total_time;
   time_value_t   system_time;
-  time_value_t   utime;
-  time_value_t   stime;
   task_basic_info_data_t     mach_task_stats;
   task_thread_times_info_data_t   mach_time_info;
   int ret;
@@ -1675,7 +1662,6 @@ char *mem_proc(
   pid_t pid)
 
   {
-  char *id = "mem_proc";
   int   i;
   int   memsize;
 
@@ -1761,7 +1747,6 @@ static char *resi_job(
   pid_t jobid)
 
   {
-  char	*id = "resi_job";
   int	i, found;
   int	resisize;
 
@@ -1816,7 +1801,6 @@ static char *resi_proc(
   pid_t pid)
 
   {
-  char	*id = "resi_proc";
   int	i;
   int	resisize;
 
@@ -2145,10 +2129,10 @@ static char *totmem(
 #else
   int               mem = 0;
 #endif
-  int               mib[2];
   size_t            len;
 
 #ifdef VM_SWAPUSAGE
+  int               mib[2];
   struct xsw_usage  swap;
 #endif /* VM_SWAPUSAGE */
 
@@ -2243,9 +2227,9 @@ static char *availmem(
   struct vm_statistics stat;
   mach_msg_type_number_t count = HOST_VM_INFO_COUNT;
   uint64_t         mem = 0;
+#ifdef VM_SWAPUSAGE
   int              mib[2];
   size_t           len;
-#ifdef VM_SWAPUSAGE
   struct xsw_usage swap;
 #endif /* VM_SWAPUSAGE */
   extern int errno;
@@ -2480,8 +2464,6 @@ char *size_fs(
   {
   char *id = "size_fs";
 
-  FILE	*mf;
-  struct mntent	*mp;
   struct statfs	fsbuf;
 
   if (param[0] != '/') 
@@ -2642,7 +2624,6 @@ walltime(attrib)
 struct	rm_attribute	*attrib;
 {
 	char			*id = "walltime";
-	struct	pstats		ps;
 	pid_t			value;
 	int			i, job, found = 0;
 	time_t			now, start;
@@ -3021,7 +3002,6 @@ int get_time_info_by_pid(
   {
   task_t			task;
   mach_msg_type_number_t	t_info_count = TASK_THREAD_TIMES_INFO_COUNT;
-  mach_port_t			object_name;
   kern_return_t			errno;
 
   if (task_for_pid(mach_task_self(),pid,&task) != KERN_SUCCESS)

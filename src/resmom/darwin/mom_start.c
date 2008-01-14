@@ -98,8 +98,6 @@
 #include "mom_mach.h"
 #include "mom_func.h"
 
-static char ident[] = "@(#) $RCSfile$ $Revision$";
-
 /* Global Variables */
 
 extern int	 exiting_tasks;

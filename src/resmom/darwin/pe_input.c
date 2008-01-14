@@ -81,8 +81,6 @@
 #include <fcntl.h>
 #include <sys/param.h>
 
-static char ident[] = "@(#) $RCSfile$ $Revision$";
-
 /*
  * pe_input() - open architecture dependent input file for prologue
  *	and epilogue scripts.  See ../prolog.c
