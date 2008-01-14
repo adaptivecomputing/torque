@@ -237,7 +237,7 @@ int get_creds(int sd,char *username,char *hostname) {
   } while (nb == -1 && (errno == EINTR || errno == EAGAIN));
   if (nb == -1) return 0;
 
-  if (msg.msg_controllen < sizeof(struct cmsghdr)) return 0;
+  if ((unsigned)msg.msg_controllen < sizeof(struct cmsghdr)) return 0;
   cmptr = CMSG_FIRSTHDR(&msg);
 #ifndef __NetBSD__
   size = sizeof(ucreds);
@@ -245,7 +245,7 @@ int get_creds(int sd,char *username,char *hostname) {
   if (cmptr->cmsg_len < SOCKCREDSIZE(0)) return 0;
   size = SOCKCREDSIZE(((cred *)CMSG_DATA(cmptr))->sc_ngroups);
 #endif
-  if (cmptr->cmsg_len != CMSG_LEN(size)) return 0;
+  if ((unsigned)cmptr->cmsg_len != CMSG_LEN(size)) return 0;
   if (cmptr->cmsg_level != SOL_SOCKET) return 0;
   if (cmptr->cmsg_type != SCM_CREDS) return 0;
 
