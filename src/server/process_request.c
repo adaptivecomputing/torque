@@ -84,10 +84,18 @@
 #include <stdlib.h>
 #include <sys/types.h>
 #include <sys/time.h>
+#include <sys/socket.h>
 #include <netinet/in.h>
 #include <memory.h>
 #include <time.h>
 #include <pwd.h>
+#if HAVE_SYS_UCRED_H
+#include <sys/ucred.h>
+#endif
+#if HAVE_SYS_UIO_H
+#include <sys/uio.h>
+#endif
+
 #include "libpbs.h"
 #include "pbs_error.h"
 #include "server_limits.h"

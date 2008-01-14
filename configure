@@ -21359,11 +21359,12 @@ fi
 
 
 
+
 for ac_header in arpa/inet.h fcntl.h float.h limits.h malloc.h netdb.h \
 		  netinet/in.h stddef.h sys/file.h sys/param.h sys/tty.h \
 		  sys/socket.h sys/time.h sys/ioctl.h sys/mount.h \
-                  sys/vfs.h sys/statfs.h sys/statvfs.h sys/ucred.h sys/un.h syslog.h \
-                  readline/readline.h \
+                  sys/vfs.h sys/statfs.h sys/statvfs.h sys/ucred.h sys/un.h sys/uio.h \
+                  syslog.h readline/readline.h \
                   termios.h err.h sys/poll.h pam/pam_modules.h security/pam_appl.h
 do
 as_ac_Header=`echo "ac_cv_header_$ac_header" | $as_tr_sh`

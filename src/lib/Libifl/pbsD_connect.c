@@ -102,6 +102,10 @@
 #if HAVE_SYS_UCRED_H
 #include <sys/ucred.h>
 #endif
+#if HAVE_SYS_UIO_H
+#include <sys/uio.h>
+#endif
+
 #include "libpbs.h"
 #include "dis.h"
 #include "net_connect.h"
@@ -542,12 +546,14 @@ ssize_t    send_unix_creds(int sd)
   msg.msg_controllen = sizeof(buf);
   cmsg = CMSG_FIRSTHDR(&msg);
   cmsg->cmsg_level = SOL_SOCKET;
-  cmsg->cmsg_type = SCM_CREDENTIALS;
+  cmsg->cmsg_type = SCM_CREDS;
   cmsg->cmsg_len = CMSG_LEN(sizeof(struct ucred));
   uptr = (struct ucred *)CMSG_DATA(cmsg);
-  uptr->uid = getuid();
-  uptr->gid = getgid();
+  SPC_PEER_UID(uptr) = getuid();
+  SPC_PEER_GID(uptr) = getgid();
+#ifdef linux
   uptr->pid = getpid();
+#endif
   msg.msg_controllen = cmsg->cmsg_len;
 
   return (sendmsg(sd, &msg, 0) != -1);
