@@ -121,7 +121,7 @@ int array_save(job_array *pa)
   strcat(namebuf, pa->ai_qs.fileprefix);
   strcat(namebuf, ARRAY_FILE_SUFFIX);
       
-  fds = open(namebuf, O_SYNC|O_TRUNC|O_WRONLY|O_CREAT, 0600);
+  fds = open(namebuf, O_Sync|O_TRUNC|O_WRONLY|O_CREAT, 0600);
   
   if (fds < 0)
     {
