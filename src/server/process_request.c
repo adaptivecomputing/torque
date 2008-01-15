@@ -89,6 +89,7 @@
 #include <memory.h>
 #include <time.h>
 #include <pwd.h>
+#include <sys/param.h>
 #if HAVE_SYS_UCRED_H
 #include <sys/ucred.h>
 #endif
