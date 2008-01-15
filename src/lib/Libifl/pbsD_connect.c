@@ -99,6 +99,7 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <netinet/in.h>
+#include <sys/param.h>
 #if HAVE_SYS_UCRED_H
 #include <sys/ucred.h>
 #endif
