@@ -2435,7 +2435,13 @@ int nextjobnum_chk(
   else if (pattr->at_val.at_long >= 0)
     {
     server.sv_qs.sv_jobidnumber = pattr->at_val.at_long;
+#if 0
+    /* This will cause next_job_number to be undisplayable in qmgr print server.
+     * See encode_l where it returns if the attribute is not set.
+     * Why would this ever be the desired behavior?
+     */
     pattr->at_flags &= ~ATR_VFLAG_SET;
+#endif
     svr_save(&server,SVR_SAVE_FULL);
     return(PBSE_NONE);
     }
@@ -2456,13 +2462,17 @@ int set_nextjobnum(
      current value of server.sv_qs.sv_jobidnumber before we INCR/DECR the value of 
      attr->at_val.at_long.  In fact, it probably should be moved to Libattr/ */
 
+  /* The special handling of INCR is to allow setting of a job number range.
+   * If the job numbers are already in the range, it does not alter the number.
+   * Otherwise, if the number is in the default range, it sets it to the new range.
+   */
 
   switch (op) 
     {
     case SET:   attr->at_val.at_long = new->at_val.at_long;
                 break;
 
-    case INCR:  attr->at_val.at_long = server.sv_qs.sv_jobidnumber += new->at_val.at_long;
+    case INCR:  attr->at_val.at_long = MAX(server.sv_qs.sv_jobidnumber, new->at_val.at_long);
                 break;
 
     case DECR:  attr->at_val.at_long = server.sv_qs.sv_jobidnumber -= new->at_val.at_long;

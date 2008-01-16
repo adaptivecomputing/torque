@@ -289,6 +289,11 @@ void req_quejob(
     if (++server.sv_qs.sv_jobidnumber > PBS_SEQNUMTOP)
       server.sv_qs.sv_jobidnumber = 0;	/* wrap it */
 
+    /* Make the current job number visible in qmgr print server commnad. */
+    server.sv_attr[(int)SRV_ATR_NextJobNum].at_val.at_long = server.sv_qs.sv_jobidnumber;
+    server.sv_attr[(int)SRV_ATR_NextJobNum].at_flags = ATR_VFLAG_SET;
+
+
     if (svr_save(&server,SVR_SAVE_QUICK)) 
       {
       /* FAILURE */
