@@ -529,7 +529,7 @@ static int array_request_parse_token(char *str, int *start, int *end)
     }
 
   if (start_l < 0 || start_l >= INT_MAX || end_l < 0 || end_l >= INT_MAX 
-      || start_l > PBS_MAXJOBARRAY)
+      || start_l > PBS_MAXJOBARRAY || end_l > PBS_MAXJOBARRAY)
     {
     *start = -1;
     *end = -1;
