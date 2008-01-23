@@ -6867,7 +6867,9 @@ int main(
 
   if (lockfds < 0) 
     {
-    strcpy(log_buffer,"pbs_mom: Unable to open lock file\n");
+    sprintf(log_buffer,"pbs_mom: unable to open lock file - errno=%d '%s'\n",
+      errno,
+      strerror(errno));
     
     fprintf(stderr,log_buffer);
 

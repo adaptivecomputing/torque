@@ -352,16 +352,22 @@ proc_stat_t *get_proc_stat(
 
   /* use 'man 5 proc' for /proc/pid/stat format */
 
-  if (!fgets(readbuf, sizeof(readbuf), fd)) {
-        fclose(fd);
-        return(NULL);
-  }
+  if (!fgets(readbuf,sizeof(readbuf),fd)) 
+    {
+    fclose(fd);
 
-  lastbracket = strrchr(readbuf, ')');
-  if (lastbracket == NULL) {
-      fclose(fd);
-      return(NULL);
-  }
+    return(NULL);
+    }
+
+  lastbracket = strrchr(readbuf,')');
+
+  if (lastbracket == NULL) 
+    {
+    fclose(fd);
+
+    return(NULL);
+    }
+
   *lastbracket = '\0'; /* We basically split the string here, overwriting the ')'. */
   lastbracket++;
   if (sscanf(readbuf, "%d (%[^\n]", &ps.pid, path) != 2) {
