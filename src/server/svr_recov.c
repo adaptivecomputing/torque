@@ -136,7 +136,7 @@ int svr_recov(
   char *svrfile)  /* I */
 
   {
-  static char *this_function_name = "svr_recov";
+  static char *id = "svr_recov";
   int i;
   int sdb;
 
@@ -146,7 +146,19 @@ int svr_recov(
 
   if (sdb < 0) 
     {
-    log_err(errno, this_function_name, msg_svdbopen);
+    if (errno == ENOENT)
+      {
+      char tmpLine[MMAX_LINE];
+
+      snprintf(tmpLine,sizeof(tmpLine),"cannot locate server database '%s' - use 'pbs_server -t create' to create new database if database has not been initialized.",
+        svrfile);
+
+      log_err(errno,id,tmpLine);
+      }
+    else
+      {
+      log_err(errno,id,msg_svdbopen);
+      }
 
     return(-1);
     }
@@ -158,9 +170,9 @@ int svr_recov(
   if (i != sizeof(struct server_qs)) 
     {
     if (i < 0) 
-      log_err(errno, this_function_name, "read of serverdb failed");
+      log_err(errno,id,"read of serverdb failed");
     else
-      log_err(errno, this_function_name, "short read of serverdb");
+      log_err(errno,id,"short read of serverdb");
 
     close(sdb);
 
@@ -177,7 +189,7 @@ int svr_recov(
 	(int)SRV_ATR_LAST,
         0) != 0 ) 
     {
-    log_err(errno, this_function_name, "error on recovering server attr");
+    log_err(errno,id,"error on recovering server attr");
 
     close(sdb);
 

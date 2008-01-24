@@ -940,7 +940,7 @@ void req_stat_node(
 
   if ((pbsndmast == NULL) || (svr_totnodes <= 0)) 
     {
-    req_reject(PBSE_NONODES,0,preq,NULL,"node list is empty");
+    req_reject(PBSE_NONODES,0,preq,NULL,"node list is empty - check 'server_priv/nodes' file");
 
     return;
     }
@@ -951,7 +951,7 @@ void req_stat_node(
     {
     type = 1;
     }
-  else if ((*name == ':') && (*(name+1) != '\0'))
+  else if ((*name == ':') && (*(name + 1) != '\0'))
     {
     if (!strcmp(name+1,"ALL"))
       {
