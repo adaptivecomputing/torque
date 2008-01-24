@@ -148,7 +148,7 @@ int svr_recov(
     {
     if (errno == ENOENT)
       {
-      char tmpLine[MMAX_LINE];
+      char tmpLine[LOG_BUF_SIZE];
 
       snprintf(tmpLine,sizeof(tmpLine),"cannot locate server database '%s' - use 'pbs_server -t create' to create new database if database has not been initialized.",
         svrfile);
