@@ -280,6 +280,8 @@ mk_mom_dirs()
 	install_dir $PBS_SERVER_HOME/mom_priv/jobs 751 || return 1
 	install_dir $PBS_SERVER_HOME/mom_logs 755 || return 1
 
+	mk_default_file || return 1
+
 	test -f $PBS_ENVIRON || check_env || return 1
 
 	chk_tree_wrap -d -n $PBS_SERVER_HOME/checkpoint \
