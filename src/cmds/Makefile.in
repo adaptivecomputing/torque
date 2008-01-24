@@ -15,7 +15,7 @@
 @SET_MAKE@
 
 
-SOURCES = $(momctl_SOURCES) $(pbsdsh_SOURCES) $(pbsnodes_SOURCES) $(pbspd_SOURCES) $(pbspoe_SOURCES) $(qalter_SOURCES) $(qdel_SOURCES) $(qdisable_SOURCES) $(qenable_SOURCES) $(qhold_SOURCES) $(qmgr_SOURCES) $(qmove_SOURCES) $(qmsg_SOURCES) $(qorder_SOURCES) $(qrerun_SOURCES) $(qrls_SOURCES) $(qrun_SOURCES) $(qselect_SOURCES) $(qsig_SOURCES) $(qstart_SOURCES) $(qstat_SOURCES) $(qstop_SOURCES) $(qsub_SOURCES) $(qterm_SOURCES)
+SOURCES = $(pbsdsh_SOURCES) $(pbsnodes_SOURCES) $(pbspd_SOURCES) $(pbspoe_SOURCES) $(qalter_SOURCES) $(qdel_SOURCES) $(qdisable_SOURCES) $(qenable_SOURCES) $(qhold_SOURCES) $(qmgr_SOURCES) $(qmove_SOURCES) $(qmsg_SOURCES) $(qorder_SOURCES) $(qrerun_SOURCES) $(qrls_SOURCES) $(qrun_SOURCES) $(qselect_SOURCES) $(qsig_SOURCES) $(qstart_SOURCES) $(qstat_SOURCES) $(qstop_SOURCES) $(qsub_SOURCES) $(qterm_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -41,7 +41,6 @@ build_triplet = @build@
 host_triplet = @host@
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in \
 	$(top_srcdir)/buildutils/config.mk
-sbin_PROGRAMS = momctl$(EXEEXT)
 bin_PROGRAMS = qalter$(EXEEXT) qdel$(EXEEXT) qhold$(EXEEXT) \
 	qmove$(EXEEXT) qorder$(EXEEXT) qmsg$(EXEEXT) qrerun$(EXEEXT) \
 	qrls$(EXEEXT) qselect$(EXEEXT) qsig$(EXEEXT) qstat$(EXEEXT) \
@@ -66,19 +65,13 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 mkinstalldirs = $(SHELL) $(top_srcdir)/buildutils/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/include/pbs_config.h
 CONFIG_CLEAN_FILES =
-am__installdirs = "$(DESTDIR)$(bindir)" "$(DESTDIR)$(sbindir)" \
-	"$(DESTDIR)$(bindir)"
+am__installdirs = "$(DESTDIR)$(bindir)" "$(DESTDIR)$(bindir)"
 binPROGRAMS_INSTALL = $(INSTALL_PROGRAM)
-sbinPROGRAMS_INSTALL = $(INSTALL_PROGRAM)
-PROGRAMS = $(bin_PROGRAMS) $(sbin_PROGRAMS)
-am_momctl_OBJECTS = momctl.$(OBJEXT)
-momctl_OBJECTS = $(am_momctl_OBJECTS)
-momctl_LDADD = $(LDADD)
-am__DEPENDENCIES_1 = ../lib/Libpbs/libtorque.la
-momctl_DEPENDENCIES = $(am__DEPENDENCIES_1)
+PROGRAMS = $(bin_PROGRAMS)
 am_pbsdsh_OBJECTS = pbsdsh.$(OBJEXT)
 pbsdsh_OBJECTS = $(am_pbsdsh_OBJECTS)
 pbsdsh_LDADD = $(LDADD)
+am__DEPENDENCIES_1 = ../lib/Libpbs/libtorque.la
 pbsdsh_DEPENDENCIES = $(am__DEPENDENCIES_1)
 am_pbsnodes_OBJECTS = pbsnodes.$(OBJEXT) MXML.$(OBJEXT)
 pbsnodes_OBJECTS = $(am_pbsnodes_OBJECTS)
@@ -181,22 +174,22 @@ LTCOMPILE = $(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) \
 CCLD = $(CC)
 LINK = $(LIBTOOL) --mode=link --tag=CC $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(AM_LDFLAGS) $(LDFLAGS) -o $@
-SOURCES = $(momctl_SOURCES) $(pbsdsh_SOURCES) $(pbsnodes_SOURCES) \
-	$(pbspd_SOURCES) $(pbspoe_SOURCES) $(qalter_SOURCES) \
-	$(qdel_SOURCES) $(qdisable_SOURCES) $(qenable_SOURCES) \
-	$(qhold_SOURCES) $(qmgr_SOURCES) $(qmove_SOURCES) \
-	$(qmsg_SOURCES) $(qorder_SOURCES) $(qrerun_SOURCES) \
-	$(qrls_SOURCES) $(qrun_SOURCES) $(qselect_SOURCES) \
-	$(qsig_SOURCES) $(qstart_SOURCES) $(qstat_SOURCES) \
-	$(qstop_SOURCES) $(qsub_SOURCES) $(qterm_SOURCES)
-DIST_SOURCES = $(momctl_SOURCES) $(pbsdsh_SOURCES) $(pbsnodes_SOURCES) \
-	$(pbspd_SOURCES) $(pbspoe_SOURCES) $(qalter_SOURCES) \
-	$(qdel_SOURCES) $(qdisable_SOURCES) $(qenable_SOURCES) \
-	$(qhold_SOURCES) $(qmgr_SOURCES) $(qmove_SOURCES) \
-	$(qmsg_SOURCES) $(qorder_SOURCES) $(qrerun_SOURCES) \
-	$(qrls_SOURCES) $(qrun_SOURCES) $(qselect_SOURCES) \
-	$(qsig_SOURCES) $(qstart_SOURCES) $(qstat_SOURCES) \
-	$(qstop_SOURCES) $(qsub_SOURCES) $(qterm_SOURCES)
+SOURCES = $(pbsdsh_SOURCES) $(pbsnodes_SOURCES) $(pbspd_SOURCES) \
+	$(pbspoe_SOURCES) $(qalter_SOURCES) $(qdel_SOURCES) \
+	$(qdisable_SOURCES) $(qenable_SOURCES) $(qhold_SOURCES) \
+	$(qmgr_SOURCES) $(qmove_SOURCES) $(qmsg_SOURCES) \
+	$(qorder_SOURCES) $(qrerun_SOURCES) $(qrls_SOURCES) \
+	$(qrun_SOURCES) $(qselect_SOURCES) $(qsig_SOURCES) \
+	$(qstart_SOURCES) $(qstat_SOURCES) $(qstop_SOURCES) \
+	$(qsub_SOURCES) $(qterm_SOURCES)
+DIST_SOURCES = $(pbsdsh_SOURCES) $(pbsnodes_SOURCES) $(pbspd_SOURCES) \
+	$(pbspoe_SOURCES) $(qalter_SOURCES) $(qdel_SOURCES) \
+	$(qdisable_SOURCES) $(qenable_SOURCES) $(qhold_SOURCES) \
+	$(qmgr_SOURCES) $(qmove_SOURCES) $(qmsg_SOURCES) \
+	$(qorder_SOURCES) $(qrerun_SOURCES) $(qrls_SOURCES) \
+	$(qrun_SOURCES) $(qselect_SOURCES) $(qsig_SOURCES) \
+	$(qstart_SOURCES) $(qstat_SOURCES) $(qstop_SOURCES) \
+	$(qsub_SOURCES) $(qterm_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -483,7 +476,6 @@ qstat_SOURCES = qstat.c MXML.c
 qstop_SOURCES = qstop.c
 qsub_SOURCES = qsub.c
 qterm_SOURCES = qterm.c
-momctl_SOURCES = momctl.c
 all: all-am
 
 .SUFFIXES:
@@ -545,37 +537,6 @@ clean-binPROGRAMS:
 	  echo " rm -f $$p $$f"; \
 	  rm -f $$p $$f ; \
 	done
-install-sbinPROGRAMS: $(sbin_PROGRAMS)
-	@$(NORMAL_INSTALL)
-	test -z "$(sbindir)" || $(mkdir_p) "$(DESTDIR)$(sbindir)"
-	@list='$(sbin_PROGRAMS)'; for p in $$list; do \
-	  p1=`echo $$p|sed 's/$(EXEEXT)$$//'`; \
-	  if test -f $$p \
-	     || test -f $$p1 \
-	  ; then \
-	    f=`echo "$$p1" | sed 's,^.*/,,;$(transform);s/$$/$(EXEEXT)/'`; \
-	   echo " $(INSTALL_PROGRAM_ENV) $(LIBTOOL) --mode=install $(sbinPROGRAMS_INSTALL) '$$p' '$(DESTDIR)$(sbindir)/$$f'"; \
-	   $(INSTALL_PROGRAM_ENV) $(LIBTOOL) --mode=install $(sbinPROGRAMS_INSTALL) "$$p" "$(DESTDIR)$(sbindir)/$$f" || exit 1; \
-	  else :; fi; \
-	done
-
-uninstall-sbinPROGRAMS:
-	@$(NORMAL_UNINSTALL)
-	@list='$(sbin_PROGRAMS)'; for p in $$list; do \
-	  f=`echo "$$p" | sed 's,^.*/,,;s/$(EXEEXT)$$//;$(transform);s/$$/$(EXEEXT)/'`; \
-	  echo " rm -f '$(DESTDIR)$(sbindir)/$$f'"; \
-	  rm -f "$(DESTDIR)$(sbindir)/$$f"; \
-	done
-
-clean-sbinPROGRAMS:
-	@list='$(sbin_PROGRAMS)'; for p in $$list; do \
-	  f=`echo $$p|sed 's/$(EXEEXT)$$//'`; \
-	  echo " rm -f $$p $$f"; \
-	  rm -f $$p $$f ; \
-	done
-momctl$(EXEEXT): $(momctl_OBJECTS) $(momctl_DEPENDENCIES) 
-	@rm -f momctl$(EXEEXT)
-	$(LINK) $(momctl_LDFLAGS) $(momctl_OBJECTS) $(momctl_LDADD) $(LIBS)
 pbsdsh$(EXEEXT): $(pbsdsh_OBJECTS) $(pbsdsh_DEPENDENCIES) 
 	@rm -f pbsdsh$(EXEEXT)
 	$(LINK) $(pbsdsh_LDFLAGS) $(pbsdsh_OBJECTS) $(pbsdsh_LDADD) $(LIBS)
@@ -672,7 +633,6 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MXML.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/momctl.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pbsdsh.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pbsnodes.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pbspd.Po@am__quote@
@@ -865,7 +825,7 @@ check-am: all-am
 check: check-am
 all-am: Makefile $(PROGRAMS) $(SCRIPTS)
 installdirs:
-	for dir in "$(DESTDIR)$(bindir)" "$(DESTDIR)$(sbindir)" "$(DESTDIR)$(bindir)"; do \
+	for dir in "$(DESTDIR)$(bindir)" "$(DESTDIR)$(bindir)"; do \
 	  test -z "$$dir" || $(mkdir_p) "$$dir"; \
 	done
 install: install-am
@@ -894,8 +854,7 @@ maintainer-clean-generic:
 	@echo "it deletes files that may require special tools to rebuild."
 clean: clean-am
 
-clean-am: clean-binPROGRAMS clean-generic clean-libtool \
-	clean-sbinPROGRAMS mostlyclean-am
+clean-am: clean-binPROGRAMS clean-generic clean-libtool mostlyclean-am
 
 distclean: distclean-am
 	-rm -rf ./$(DEPDIR)
@@ -915,8 +874,7 @@ info-am:
 
 install-data-am:
 
-install-exec-am: install-binPROGRAMS install-binSCRIPTS \
-	install-sbinPROGRAMS
+install-exec-am: install-binPROGRAMS install-binSCRIPTS
 	@$(NORMAL_INSTALL)
 	$(MAKE) $(AM_MAKEFLAGS) install-exec-hook
 
@@ -945,24 +903,22 @@ ps: ps-am
 ps-am:
 
 uninstall-am: uninstall-binPROGRAMS uninstall-binSCRIPTS \
-	uninstall-info-am uninstall-sbinPROGRAMS
+	uninstall-info-am
 	@$(NORMAL_INSTALL)
 	$(MAKE) $(AM_MAKEFLAGS) uninstall-hook
 
 .PHONY: CTAGS GTAGS all all-am check check-am clean clean-binPROGRAMS \
-	clean-generic clean-libtool clean-sbinPROGRAMS ctags distclean \
-	distclean-compile distclean-generic distclean-libtool \
-	distclean-tags distdir dvi dvi-am html html-am info info-am \
-	install install-am install-binPROGRAMS install-binSCRIPTS \
-	install-data install-data-am install-exec install-exec-am \
-	install-exec-hook install-info install-info-am install-man \
-	install-sbinPROGRAMS install-strip installcheck \
-	installcheck-am installdirs maintainer-clean \
+	clean-generic clean-libtool ctags distclean distclean-compile \
+	distclean-generic distclean-libtool distclean-tags distdir dvi \
+	dvi-am html html-am info info-am install install-am \
+	install-binPROGRAMS install-binSCRIPTS install-data \
+	install-data-am install-exec install-exec-am install-exec-hook \
+	install-info install-info-am install-man install-strip \
+	installcheck installcheck-am installdirs maintainer-clean \
 	maintainer-clean-generic mostlyclean mostlyclean-compile \
 	mostlyclean-generic mostlyclean-libtool pdf pdf-am ps ps-am \
 	tags uninstall uninstall-am uninstall-binPROGRAMS \
-	uninstall-binSCRIPTS uninstall-hook uninstall-info-am \
-	uninstall-sbinPROGRAMS
+	uninstall-binSCRIPTS uninstall-hook uninstall-info-am
 
 
 install-exec-hook:

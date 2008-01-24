@@ -1,7 +1,7 @@
 include $(top_srcdir)/buildutils/config.mk
 
 DIST_SUBDIRS =   cmds  iff      lib      resmom          scheduler.cc   server \
- gui scheduler.basl   include  mom_rcp    scheduler.tcl  tools pam drmaa
+ gui scheduler.basl   include  mom_rcp    scheduler.tcl  tools pam drmaa momctl
 
 
 if INCLUDE_SERVER
@@ -9,7 +9,7 @@ SERVER_DIRS = server @SCHD_TYPE_SUBDIR@
 endif
 
 if INCLUDE_MOM
-RESMOM_DIR = resmom
+RESMOM_DIR = resmom momctl
 if INCLUDE_MOM_RCP
 MOMRCP_DIR = mom_rcp
 endif
@@ -17,7 +17,7 @@ MOM_DIRS = $(RESMOM_DIR) $(MOMRCP_DIR)
 endif
 
 if INCLUDE_CLIENTS
-CLIENTS_DIRS = iff cmds tools
+CLIENTS_DIRS = iff cmds tools momctl
 endif
 
 if INCLUDE_GUI

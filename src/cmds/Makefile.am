@@ -3,7 +3,6 @@ include $(top_srcdir)/buildutils/config.mk
 PBS_LIBS = ../lib/Libpbs/libtorque.la
 
 bin_SCRIPTS = nqs2pbs
-sbin_PROGRAMS = momctl
 bin_PROGRAMS = qalter qdel qhold qmove qorder qmsg qrerun qrls qselect qsig \
 	       qstat qsub pbsdsh qdisable qenable qrun qstart qstop qterm \
 	       pbsnodes qmgr @PBSPOE@
@@ -48,7 +47,6 @@ qstat_SOURCES = qstat.c MXML.c
 qstop_SOURCES = qstop.c
 qsub_SOURCES = qsub.c
 qterm_SOURCES = qterm.c
-momctl_SOURCES = momctl.c
 
 install-exec-hook:
 	$(PBS_MKDIRS) aux || :
