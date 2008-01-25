@@ -1998,34 +1998,24 @@ void encode_used(
 
   ptask = (task *)GET_NEXT(pjob->ji_tasks);
 
-  if ((ptask != NULL) && (ptask->ti_qs.ti_sid < 0))
+  if (ptask != NULL)
     {
-    /* pass session info through obit as attribute to allow detection of various failures 
-       by pbs_server */
+    /* pass session info through obit as
+     * attribute to allow detection of various
+     * failures by pbs_server
+     */
 
-    at = &pjob->ji_wattr[JOB_ATR_session_id];
-    ad = &job_attr_def[JOB_ATR_session_id];
+    val.at_val.at_long = ptask->ti_qs.ti_sid;
+    val.at_flags |= ATR_VFLAG_SET;
+    val.at_type = ATR_TYPE_LONG;
 
-    rs = (resource *)GET_NEXT(at->at_val.at_list);
-
-    if (rs != NULL)
-      {
-      rd = rs->rs_defin;
-
-      val.at_val.at_long = ptask->ti_qs.ti_sid;
-      val.at_flags |= ATR_VFLAG_SET;
-      val.at_type = ATR_TYPE_LONG;
-
-      rd->rs_encode(
-        &val,
-        phead,
-        ATTR_session,
-        NULL,
-        ATR_ENCODE_CLIENT);
-      }
-    }    /* END if ((ptask != NULL) && (ptask->ti_qs.ti_sid < 0)) */
-
-  return;
+    encode_l(
+      &val,
+      phead,
+      "session_id", 
+      "session_id", 
+      0);
+    }    /* END if (ptask != NULL) */
   }  /* END encode_used() */
 
 
