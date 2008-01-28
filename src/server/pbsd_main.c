@@ -1048,7 +1048,7 @@ int main(
     }  /* END if (TDoBackground == 1) */
   else
     {
-    if ((plogenv != NULL) && isdigit(pc[0]))
+    if ((plogenv != NULL) && isdigit(plogenv[0]))
       LOGLEVEL = (int)strtol(plogenv,NULL,0);
 
     sid = getpid();
