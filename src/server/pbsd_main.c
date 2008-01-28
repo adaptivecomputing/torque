@@ -206,6 +206,7 @@ tlist_head	task_list_event;
 
 time_t		time_now = 0;
 
+char           *plogenv = NULL;
 int             LOGLEVEL = 0;
 int             DEBUGMODE = 0;
 int             TDoBackground = 1;  /* background daemon */
@@ -966,11 +967,11 @@ int main(
   /* initialize the server objects and perform specified recovery */
   /* will be left in the server's private directory		*/
 
-  if ((pc = getenv("PBSLOGLEVEL")) != NULL)
+  if ((plogenv = getenv("PBSLOGLEVEL")) != NULL)
     {
-    LOGLEVEL = (int)strtol(pc,NULL,10);
+    LOGLEVEL = (int)strtol(plogenv,NULL,10);
     }
-
+    
   if ((pc = getenv("PBSDEBUG")) != NULL)
     {
     DEBUGMODE = 1;
@@ -1047,8 +1048,8 @@ int main(
     }  /* END if (TDoBackground == 1) */
   else
     {
-    if ((pc != NULL) && isdigit(pc[0]))
-      LOGLEVEL = (int)strtol(pc,NULL,0);
+    if ((plogenv != NULL) && isdigit(pc[0]))
+      LOGLEVEL = (int)strtol(plogenv,NULL,0);
 
     sid = getpid();
   
@@ -1233,14 +1234,11 @@ int main(
       log_err(-1,msg_daemonname,"wait_request failed");
       }
 
-    /* update dynamic loglevel specification */
+    /* qmgr can dynamically set the loglevel specification
+     * we use the new value if PBSLOGLEVEL was not specified
+     */
 
-    /* FIXME: This overrides PBSLOGLEVEL and PBSDEBUG */
-
-    /* if (!getenv("PBSLOGLEVEL") && !getenv("PBSDEBUG"))
-     * (and SRV_ATR_LogLevel's at_action can set LOGLEVEL */
-
-    if (!getenv("PBSLOGLEVEL"))
+   if (plogenv == NULL )
       LOGLEVEL = server.sv_attr[(int)SRV_ATR_LogLevel].at_val.at_long;
 
     /* any running jobs need a status update? */ 

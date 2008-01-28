@@ -196,6 +196,9 @@ extern tlist_head task_list_timed;
 extern tlist_head task_list_event;
 extern time_t	 time_now;
 
+extern int LOGLEVEL;
+extern char *plogenv;
+
 extern struct server server;
 
 /* External Functions Called */
@@ -216,6 +219,7 @@ static char *build_path A_((char *,char *,char *));
 static void  catch_child A_((int));
 static void  catch_abort A_((int));
 static void  change_logs A_((int));
+static void  change_log_level A_((int));
 static int   chk_save_file A_((char *));
 static void  need_y_response A_((int));
 static int   pbsd_init_job A_((job *,int));
@@ -435,6 +439,8 @@ int pbsd_init(
 
     return(2);
     }
+
+  act.sa_handler = change_log_level;
 
   if (sigaction(SIGUSR1,&act,&oact) != 0) 
     {
@@ -1565,6 +1571,63 @@ static void change_logs(
 
   return;
   }
+
+/*
+ * change_log_level - signal handler for SIGUSR! and SIGUSR2
+ * Increases log level if SIGUSR1 is received.
+ * Decreases log level if SIGUSR2 is received.
+ * Variable plogenv tells us whether or not PBSLOGLEVEL was specified
+ * If it was not then we will update the server log level attribute
+ * which allows qmgr to see the current log level value
+ */
+
+static void change_log_level(
+
+  int sig)
+
+  {
+  if (sig == SIGUSR1)
+    {
+    /* increase log level */
+  
+    if (plogenv == NULL )
+      LOGLEVEL = server.sv_attr[(int)SRV_ATR_LogLevel].at_val.at_long;
+    
+    LOGLEVEL = MIN(LOGLEVEL + 1,7);
+    
+    if (plogenv == NULL )
+      {
+      server.sv_attr[(int)SRV_ATR_LogLevel].at_val.at_long = LOGLEVEL;
+      server.sv_attr[(int)SRV_ATR_LogLevel].at_flags = ATR_VFLAG_SET;
+      }
+    }
+  else if (sig == SIGUSR2)
+    {
+    /* increase log level */
+    if (plogenv == NULL )
+      LOGLEVEL = server.sv_attr[(int)SRV_ATR_LogLevel].at_val.at_long;
+    
+    LOGLEVEL = MAX(LOGLEVEL - 1,0);
+    
+    if (plogenv == NULL )
+      {
+      server.sv_attr[(int)SRV_ATR_LogLevel].at_val.at_long = LOGLEVEL;
+      server.sv_attr[(int)SRV_ATR_LogLevel].at_flags = ATR_VFLAG_SET;
+      }
+    }
+
+  sprintf(log_buffer,"received signal %d: adjusting loglevel to %d",
+    sig,
+    LOGLEVEL);
+
+  log_record(
+    PBSEVENT_SYSTEM | PBSEVENT_FORCE,
+    PBS_EVENTCLASS_SERVER,
+    msg_daemonname,
+    log_buffer);
+
+  return;
+  }  /* END change_log_level() */
 
 
 
