@@ -312,7 +312,7 @@ AC_DEFINE_UNQUOTED(IBM_SP2, ${IBM_SP2}, [defined if this is an SP2])
 AC_SUBST(PBSPOE)    
 AC_SUBST(PBSPOEO)
 
-AC_ARG_ENABLE(cpuset,[  --enable-cpuset        enable Linux 2.6 kernel cpusets])
+AC_ARG_ENABLE(cpuset,[  --enable-cpuset         enable Linux 2.6 kernel cpusets (in development)])
 build_l26_cpuset=no
 if test "x$enable_cpuset" = "xyes" ;then
       build_l26_cpuset=yes
