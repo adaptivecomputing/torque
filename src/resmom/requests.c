@@ -1913,27 +1913,17 @@ void req_signaljob(
 
 
 
-
-/* encode used resource info for sending to pbs_server in job obit */
-
 void encode_used(
 
   job        *pjob,   /* I */
   tlist_head *phead)  /* O */
 
   {
-  unsigned long  lnum;
-  int            i;
-  attribute     *at;
-  attribute_def *ad;
-  resource      *rs;
-
-  attribute      val;
-  int            rc;
-
-  task *ptask;
-
-  resource_def *rd = NULL;
+  unsigned long		lnum;
+  int			i;
+  attribute		*at;
+  attribute_def		*ad;
+  resource		*rs;
 
   at = &pjob->ji_wattr[JOB_ATR_resc_used];
   ad = &job_attr_def[JOB_ATR_resc_used];
@@ -1947,7 +1937,9 @@ void encode_used(
        rs != NULL;
        rs = (resource *)GET_NEXT(rs->rs_link)) 
     {
-    rd = rs->rs_defin;
+    resource_def *rd = rs->rs_defin;
+    attribute     val;
+    int           rc;
 
     if ((rd->rs_flags & resc_access_perm) == 0)
       continue;
@@ -1996,28 +1988,8 @@ void encode_used(
       break;
     }  /* END for (rs) */
 
-  ptask = (task *)GET_NEXT(pjob->ji_tasks);
-
-  if (ptask != NULL)
-    {
-    /* pass session info through obit as
-     * attribute to allow detection of various
-     * failures by pbs_server
-     */
-
-    val.at_val.at_long = ptask->ti_qs.ti_sid;
-    val.at_flags |= ATR_VFLAG_SET;
-    val.at_type = ATR_TYPE_LONG;
-
-    encode_l(
-      &val,
-      phead,
-      "session_id", 
-      "session_id", 
-      0);
-    }    /* END if (ptask != NULL) */
+  return;
   }  /* END encode_used() */
-
 
 
 
