@@ -377,9 +377,13 @@ void tfree(
 
 
 
-/*
-**	Start a standard inter-server message.
-*/
+/**
+ * Create an inter-server message to send to pbs_server (i.e., 'send status update')
+ *
+ * @see state_to_server() - parent - create state IS_UPDATE message
+ * @see is_update_stat() - parent - create full IS_UPDATE message
+ * @see is_request() - peer - process hello/cluster_addrs requests from pbs_server
+ */
 
 int is_compose(
 
@@ -425,10 +429,15 @@ done:
 
 
 
-/*
-** Input is coming from another server over a DIS rpp stream.
-** Read the stream to get a Inter-Server request.
-*/
+/**
+ * Request is coming from another server (i.e., pbs_server) over a DIS rpp 
+ * stream (process 'hello' and 'cluster_addrs' request).
+ *
+ * @see is_compose() - peer - generate message to send to pbs_server.
+ * @see process_request() - peer - handle jobstart, jobcancel, etc messages.
+ *
+ * Read the stream to get a Inter-Server request.
+ */
 
 void is_request(
 
@@ -719,6 +728,7 @@ err:
 
   return;
   }  /* END is_request() */
+
 
 
 
@@ -1111,9 +1121,11 @@ void check_state(
 
 
 
-/*
+/**
  * state_to_server() - if ReportMomState is set, send state message to
  *	the server.
+ *
+ * @see is_compose() - child
  */
 
 void state_to_server(
@@ -1139,14 +1151,16 @@ void state_to_server(
   if (is_compose(SStream[ServerIndex],IS_UPDATE) != DIS_SUCCESS) 
     {
     rpp_close(SStream[ServerIndex]);
-    SStream[ServerIndex]=-1;
+    SStream[ServerIndex] = -1;
+
     return;		
     } 
 
   if (diswui(SStream[ServerIndex],internal_state) != DIS_SUCCESS) 
     {
     rpp_close(SStream[ServerIndex]);
-    SStream[ServerIndex]=-1;
+    SStream[ServerIndex] = -1;
+
     return;
     }
 

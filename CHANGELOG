@@ -11,8 +11,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature
   e - local client connections use a unix domain socket, bypassing inet and pbs_iff
   f - Linux 2.6 cpuset support  (in development)
   e - new job array submission syntax
-  b - fixed so SIGUSR1 / SIGUSR2 actually change the log level. Matches the
-      documentation now.
+  b - fixed so SIGUSR1 / SIGUSR2 to correctly change the log level
 
 2.2.1
   b - fix a bug where dependent jobs get put on hold when the previous job has
