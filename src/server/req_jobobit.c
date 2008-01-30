@@ -1780,8 +1780,11 @@ void req_jobobit(
 
   while (patlist != NULL) 
     {
-    need = strlen(patlist->al_resc) + strlen(patlist->al_value) + 3;
-
+    need = strlen(patlist->al_name) + strlen(patlist->al_value) + 3;
+    if (patlist->al_resc) {
+      need += strlen(patlist->al_resc) + 3;
+    }
+    
     if (need < amt) 
       {
       strcat(acctbuf,"\n");

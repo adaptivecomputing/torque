@@ -1992,6 +1992,50 @@ void encode_used(
   }  /* END encode_used() */
 
 
+void encode_flagged_attrs(
+
+  job        *pjob,   /* I */
+  tlist_head *phead)  /* O */
+
+  {
+  int index;
+  attribute		*at;
+  attribute_def		*ad;
+
+  for (index = 0;(int)index < JOB_ATR_LAST;++index)
+    {
+    at  = &pjob->ji_wattr[index];
+    ad  = &job_attr_def[index];
+
+    if (at->at_flags & ATR_VFLAG_SEND)
+      {
+      /* turn off "need to send" flag */
+
+      at->at_flags &= ~ATR_VFLAG_SEND;
+
+      if (LOGLEVEL >= 4)
+        {
+        sprintf(log_buffer,"encoding \"send flagged\" attr: %s",
+          ad->at_name);
+
+        LOG_EVENT(
+          PBSEVENT_DEBUG,
+          PBS_EVENTCLASS_JOB,
+          pjob->ji_qs.ji_jobid,
+          log_buffer);
+        }
+
+      ad->at_encode(
+        at,
+        phead,
+        ad->at_name,
+        NULL,
+        ATR_ENCODE_CLIENT);
+      }
+    }
+  }
+
+
 
 
 /*
@@ -2007,11 +2051,8 @@ void req_stat_job(
   int			all;
   char			*name;
   job			*pjob;
-  int			index;
   struct batch_reply	*preply = &preq->rq_reply;
   struct brp_status	*pstat;
-  attribute		*at;
-  attribute_def		*ad;
 
   /*
    * first, validate the name of the requested object, either
@@ -2072,43 +2113,9 @@ void req_stat_job(
 
     append_link(&preply->brp_un.brp_status,&pstat->brp_stlink,pstat);
 
-    /* add attributes to the status reply */
+    encode_used(pjob,&pstat->brp_attr);  /* adds resources_used attr */
 
-    for (index = 0;(int)index < JOB_ATR_LAST;++index) 
-      {
-      at  = &pjob->ji_wattr[index];
-      ad  = &job_attr_def[index];
-
-      if (at->at_flags & ATR_VFLAG_SEND) 
-        {
-        /* turn off "need to send" flag */
- 
-        at->at_flags &= ~ATR_VFLAG_SEND;
-
-        if (LOGLEVEL >= 4)
-          {
-          sprintf(log_buffer,"sending \"send flagged\" attr: %s",
-            ad->at_name);
-
-          LOG_EVENT(
-            PBSEVENT_DEBUG, 
-            PBS_EVENTCLASS_JOB,
-            pjob->ji_qs.ji_jobid, 
-            log_buffer);
-          }
-
-        ad->at_encode(
-          at, 
-          &pstat->brp_attr,
-          ad->at_name, 
-          NULL,
-          ATR_ENCODE_CLIENT);
-        }
-      }
-
-    /* now do resources used */
-
-    encode_used(pjob,&pstat->brp_attr);
+    encode_flagged_attrs(pjob,&pstat->brp_attr);  /* adds other flagged attrs */
     }
 
   reply_send(preq);

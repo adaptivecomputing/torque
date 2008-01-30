@@ -151,6 +151,7 @@ static void obit_reply A_((int));
 extern int tm_reply A_((int,int,tm_event_t));
 extern u_long addclient A_((char *));
 extern void encode_used A_((job *,tlist_head *));
+extern void encode_flagged_attrs A_((job *,tlist_head *));
 extern void job_nodes A_((job *));
 extern int task_recov A_((job *));
 
@@ -990,6 +991,8 @@ int post_epilogue(
   resc_access_perm = ATR_DFLAG_RDACC;
 
   encode_used(pjob,&preq->rq_ind.rq_jobobit.rq_attr);
+
+  encode_flagged_attrs(pjob,&preq->rq_ind.rq_jobobit.rq_attr);
 
   DIS_tcp_setup(sock);
 
