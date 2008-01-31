@@ -906,6 +906,8 @@ job *job_clone(
 	    &pnewjob->ji_wattr[i],
 	    &tempattr,
 	    SET);
+
+        job_attr_def[i].at_free(&tempattr);
 	free(tmpstr);
 	}
       else
