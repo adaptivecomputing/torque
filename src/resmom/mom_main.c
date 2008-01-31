@@ -160,6 +160,7 @@
 
 /* Global Data Items */
 
+char           *program_name;
 int             MOMIsLocked = 0;
 int             MOMIsPLocked = 0;
 int             ServerStatUpdateInterval = DEFAULT_SERVER_STAT_UPDATES;
@@ -5746,80 +5747,6 @@ int kill_job(
 
 
 /*
- * finish_loop - the finish of MOM's main loop
- *	Actually the heart of the loop
- */
-
-static void finish_loop(
-
-  time_t waittime)  /* I (in seconds) */
-
-  {
-  static char id[] = "finish_loop";
-
-  time_t tmpTime;
-  time_t time_now;
-  
-  /* check for any extra rpp messages */
-
-  rpp_request(42);
-
-  if (termin_child != 0)
-    scan_for_terminated();
-
-  /* if -p, must poll tasks inside jobs to look for completion */
-
-  if (recover == 2)
-    scan_non_child_tasks();
-
-  if (exiting_tasks)
-    scan_for_exiting();	
-
-  TMOMScanForStarting();
-
-  /* unblock signals */
-
-  if (sigprocmask(SIG_UNBLOCK,&allsigs,NULL) == -1)
-    log_err(errno,id,"sigprocmask(UNBLOCK)");
-
-  time_now = time((time_t *)0);
-
-  tmpTime = MIN(waittime,time_now - (LastServerUpdateTime + ServerStatUpdateInterval));
-
-  tmpTime = MIN(tmpTime,time_now - (polltime + CheckPollTime));
-
-  tmpTime = MAX(1,tmpTime);
-
-  if (LastServerUpdateTime == 0)
-    tmpTime = 1;
-
-  /* wait for a request to process */
-
-  if (wait_request(tmpTime,NULL) != 0)
-    {
-    if (errno == EBADF)
-      {
-      init_network(pbs_mom_port,process_request);
-
-      init_network(pbs_rm_port,tcp_request);
-      }
-
-    log_err(-1,msg_daemonname,"wait_request failed");
-    }
-
-  /* block signals while we do things */
-
-  if (sigprocmask(SIG_BLOCK,&allsigs,NULL) == -1)
-    log_err(errno,id,"sigprocmask(BLOCK)");
-
-  return;
-  }  /* END finish_loop() */
-
-
-
-
-
-/*
  * mom_lock - lock out other MOMs from this directory.
  */
 
@@ -6348,10 +6275,32 @@ void MOMCheckRestart(void)
 
 
 
-int MOMInitialize(void)
+/*
+ * initialize_globals
+ */
+
+void initialize_globals(void)
 
   {
   int sindex;
+  char		*ptr;                   /* local tmp variable */
+
+  strcpy(pbs_current_user,"pbs_mom");
+  msg_daemonname = pbs_current_user;
+
+  time(&MOMStartTime);
+
+  CLEAR_HEAD(svr_newjobs);
+  CLEAR_HEAD(svr_alljobs);
+  CLEAR_HEAD(mom_polljobs);
+  CLEAR_HEAD(svr_requests);
+  CLEAR_HEAD(mom_varattrs);
+
+
+  if (getenv("PBSMOMHOME") != NULL)
+    {
+    path_home = getenv("PBSMOMHOME");
+    }
 
   MOMConfigVersion[0] = '\0';
 
@@ -6363,77 +6312,11 @@ int MOMInitialize(void)
  
     ReportMomState[sindex] = 1;
     }  /* END for (sindex) */
- 
-  /* SUCCESS */
-
-  return(0);
-  }  /* END MOMInitialize() */
-
-
-
-
-/*
- * main - the main program of MOM
- */
-
-int main(
-
-  int   argc,    /* I */
-  char *argv[])  /* I */
-
-  {
-  static	char id[] = "mom_main";
-
-  int	 	errflg, c, hostc=1;
-  FILE		*dummyfile;
-  task		*ptask;
-  char		*ptr;                   /* local tmp variable */
-  int		tryport;
-  long  retry_interval;
-  int		rppfd;			/* fd for rm and im comm */
-  int		privfd = 0;		/* fd for sending job info */
-  double	myla;
-  struct sigaction act;
-  job		*pjob;
-  extern time_t	wait_time;
-  extern char	*optarg;
-  extern int	optind;
-
-  int           sindex;  /* server index */
-  int           TotalClusterAddrsCount;
-
-#if MOM_CHECKPOINT == 1
-  resource	*prscput;
-#endif /* MOM_CHECKPOINT */
-
-  strcpy(pbs_current_user,"pbs_mom");
-  msg_daemonname = pbs_current_user;
-
-  time(&MOMStartTime);
-
-  if (getenv("PBSMOMHOME") != NULL)
-    {
-    path_home = getenv("PBSMOMHOME");
-    }
-
-  /* must be started with real and effective uid of 0 */
-
-  if ((getuid() != 0) || (geteuid() != 0)) 
-    {
-    /* FAILURE */
-
-    fprintf(stderr, "%s: must be run as root\n", 
-      argv[0]);
-
-    return(1);
-    }
-
-  MOMInitialize();
 
   pbsgroup = getgid();
   loopcnt = time(NULL);
 
-  MOMExePath = MOMFindMyExe(argv[0]);
+  MOMExePath = MOMFindMyExe(program_name);
   MOMExeTime = MOMGetFileMtime(MOMExePath);
 
   strcpy(xauth_path,XAUTH_PATH);
@@ -6498,6 +6381,127 @@ int main(
       "tcp", 
       PBS_MANAGER_SERVICE_PORT);
     }
+  }  /* END initialize_globals() */
+
+
+
+/*
+ * stop_me = signal handler for SIGTERM
+ */
+
+static void stop_me(
+
+  int sig)  /* I */
+
+  {
+  const char *dowhat;
+
+  /* just exit, leaving jobs running */
+
+  mom_run_state = MOM_RUN_STATE_EXIT;
+
+  dowhat = "leaving jobs running, just exiting";
+
+  sprintf(log_buffer,"caught signal %d: %s", 
+    sig, 
+    dowhat);
+
+  log_record(
+    PBSEVENT_SYSTEM | PBSEVENT_FORCE, 
+    PBS_EVENTCLASS_SERVER,
+    msg_daemonname, 
+    log_buffer);
+
+  return;
+  }  /* END void stop_me() */
+
+
+
+
+/*
+ * PBSAdjustLogLevel
+ */
+
+static void PBSAdjustLogLevel(
+
+  int sig)  /* I */
+
+  {
+  if (sig == SIGUSR1)
+    {
+    /* increase log level */
+  
+    LOGLEVEL = MIN(LOGLEVEL + 1,10);
+    }
+  else if (sig == SIGUSR2)
+    {
+    /* increase log level */
+
+    LOGLEVEL = MAX(LOGLEVEL - 1,0);
+    }
+
+  sprintf(log_buffer,"received signal %d: adjusting loglevel to %d",
+    sig,
+    LOGLEVEL);
+
+  log_record(
+    PBSEVENT_SYSTEM | PBSEVENT_FORCE,
+    PBS_EVENTCLASS_SERVER,
+    msg_daemonname,
+    log_buffer);
+
+  return;
+  }  /* END PBSAdjustLogLevel() */
+
+
+
+
+
+/*
+ * mk_dirs - make the directory names used by MOM 
+ */
+
+static char *mk_dirs(
+
+  char *base)  /* I */
+
+  {
+  char *pn;
+  int   ltop = strlen(path_home);
+
+  pn = malloc(ltop + strlen(base) + 2);
+
+  if (pn == NULL)
+    {
+    /* cannot allocate memory */
+
+    exit(2);
+    }
+
+  strcpy(pn,path_home);
+
+  if (*(path_home + ltop - 1) != '/')
+    strcat(pn,"/");
+
+  strcat(pn,base);
+
+  return(pn);
+  }  /* END mk_dirs() */
+
+
+
+/*
+ * parse_command_line
+ */
+
+void parse_command_line( int argc, char *argv[])
+{
+  extern char	*optarg;
+  extern int	optind;
+  int           errflg;
+  int           c;
+  char		*ptr;                   /* local tmp variable */
+
 
   errflg = 0;
 
@@ -6698,6 +6702,27 @@ int main(
     {
     usage(argv[0]);		/* exits */
     }
+}
+
+
+
+/*
+ * setup_program_environment
+ */
+
+int setup_program_environment()
+{
+  static char   id[] = "setup_program_environment";
+  int	 	c;
+  int       hostc=1;
+  FILE		*dummyfile;
+  int		tryport;
+  int		rppfd;			/* fd for rm and im comm */
+  int		privfd = 0;		/* fd for sending job info */
+  struct sigaction act;
+  char		*ptr;                   /* local tmp variable */
+
+
 
   /* The following is code to reduce security risks                */
   /* start out with standard umask, system resource limit infinite */
@@ -6929,7 +6954,7 @@ int main(
     {
     if (fork() > 0)
       {
-      return(0);	/* parent goes away */
+      exit(0);	/* parent goes away */
       }
 
     if (setsid() == -1) 
@@ -7140,11 +7165,6 @@ int main(
 
   /* initialize variables */
 
-  CLEAR_HEAD(svr_newjobs);
-  CLEAR_HEAD(svr_alljobs);
-  CLEAR_HEAD(mom_polljobs);
-  CLEAR_HEAD(svr_requests);
-  CLEAR_HEAD(mom_varattrs);
 
   if ((hostname_specified != 0) || (hostc == 0)) 
     {
@@ -7223,7 +7243,7 @@ int main(
   if (read_config(NULL)) 
     {
     fprintf(stderr,"%s: cannot load config file '%s'\n",
-      argv[0], 
+      program_name, 
       config_file);
 
     exit(1);
@@ -7318,11 +7338,282 @@ int main(
 
     sleep(tmpL % (rand() + 1));
     }  /* END if (ptr != NULL) */
+  return(0);
+ }
+
+
+
+/*
+ * TMOMJobGetStartInfo
+ */
+/* if pjob is NULL, return empty slot, otherwise return slot containing job */
+
+int TMOMJobGetStartInfo(
+
+  job         *pjob, /* I */
+  pjobexec_t **TJEP) /* O */
+
+  {
+  int index;
+
+  for (index = 0;index < TMAX_JE;index++)
+    {
+    if (TMOMStartInfo[index].pjob == pjob)
+      {
+      *TJEP = &TMOMStartInfo[index];
+
+      return(SUCCESS);
+      }
+    }    /* END for (index) */
+
+  return(FAILURE);
+  }  /* END TMOMJobGetStartInfo() */
+
+
+
+/*
+ * TMOMScanForStarting
+ */
+
+int TMOMScanForStarting(void)
+
+  {
+  job *pjob;
+  job *nextjob;
+
+  int  Count;
+  int  RC;
+  int  SC;
+
+#ifdef MSIC
+  list_link *tmpL;
+#endif
+
+  const char *id = "TMOMScanForStarting";
+
+#ifdef MSIC
+  /* NOTE:  solaris system is choking on GET_NEXT - isolate */
+
+  tmpL = GET_NEXT(svr_alljobs);
+
+  tmpL = svr_alljobs.ll_next->ll_struct;
+
+  pjob = (job *)tmpL;
+#endif /* MSIC */
+   
+  pjob = (job *)GET_NEXT(svr_alljobs);
+                                                                                
+  while (pjob != NULL)
+    {
+    nextjob = (job *)GET_NEXT(pjob->ji_alljobs);
+
+    if (pjob->ji_qs.ji_substate == JOB_SUBSTATE_STARTING)
+      {
+      pjobexec_t *TJE;
+
+      if (LOGLEVEL >= 2)
+        {
+        snprintf(log_buffer,1024,"checking job start in %s - examining pipe from child",
+          id);
+
+        log_record(
+          PBSEVENT_JOB | PBSEVENT_FORCE,
+          PBS_EVENTCLASS_JOB,
+          pjob->ji_qs.ji_jobid,
+          log_buffer);
+        }
  
-  /*
-   * Now at last, we are ready to do some work, the following
-   * section constitutes the "main" loop of MOM
-   */
+      if (TMOMJobGetStartInfo(pjob,&TJE) == FAILURE)
+        {
+        sprintf(log_buffer,"job %s start data lost, server will retry",
+          pjob->ji_qs.ji_jobid);
+                                                                                
+        log_record(
+          PBSEVENT_ERROR,
+          PBS_EVENTCLASS_JOB,
+          pjob->ji_qs.ji_jobid,
+          log_buffer);
+
+        exec_bail(pjob,JOB_EXEC_RETRY);
+
+        pjob = nextjob;
+
+        continue;
+        }
+
+      /* check if job is ready */
+
+      if (TMomCheckJobChild(TJE,1,&Count,&RC) == FAILURE)
+        {
+        long STime;
+
+        if (LOGLEVEL >= 3)
+          {
+          sprintf(log_buffer,"job %s child not started, will check later",
+            pjob->ji_qs.ji_jobid);
+                                                                                
+          log_record(
+            PBSEVENT_ERROR,
+            PBS_EVENTCLASS_JOB,
+            pjob->ji_qs.ji_jobid,
+            log_buffer);
+          }
+
+        /* if job has been in prerun > TJobStartTimeout, purge job */
+
+        STime = pjob->ji_wattr[(int)JOB_ATR_mtime].at_val.at_long;
+
+        if ((STime > 0) && ((time_now - STime) > TJobStartTimeout))
+          {
+          sprintf(log_buffer,"job %s child not started after %ld seconds, server will retry",
+            pjob->ji_qs.ji_jobid,
+            TJobStartTimeout);
+                                                                                
+          log_record(
+            PBSEVENT_ERROR,
+            PBS_EVENTCLASS_JOB,
+            pjob->ji_qs.ji_jobid,
+            log_buffer);
+
+          memset(TJE,0,sizeof(pjobexec_t));
+
+          exec_bail(pjob,JOB_EXEC_RETRY);
+          } 
+        }
+      else 
+        {
+        /* NOTE:  TMomFinalizeJob3() populates SC */
+                                                                                
+        if (TMomFinalizeJob3(TJE,Count,RC,&SC) == FAILURE)
+          {
+          /* no need to log this, TMomFinalizeJob3() already did */
+
+          memset(TJE,0,sizeof(pjobexec_t));
+                                                                                
+          exec_bail(pjob,SC);
+          }
+        else
+          {
+          /* job successfully started */
+
+          memset(TJE,0,sizeof(pjobexec_t));
+
+          if (LOGLEVEL >= 3)
+            {
+            sprintf(log_buffer,"job %s reported successful start",
+              pjob->ji_qs.ji_jobid);
+
+            LOG_EVENT(
+              PBSEVENT_JOB,
+              PBS_EVENTCLASS_JOB,
+              pjob->ji_qs.ji_jobid,
+              log_buffer);
+            }
+          }
+        }    /* END else (TMomCheckJobChild() == FAILURE) */
+      }      /* END if (pjob->ji_qs.ji_substate == JOB_SUBSTATE_STARTING) */
+
+    pjob = nextjob;
+    }        /* END while (pjob != NULL) */
+
+  return(SUCCESS);
+  }  /* END TMOMScanForStarting() */
+
+
+
+
+
+/*
+ * finish_loop - the finish of MOM's main loop
+ *	Actually the heart of the loop
+ */
+
+static void finish_loop(
+
+  time_t waittime)  /* I (in seconds) */
+
+  {
+  static char id[] = "finish_loop";
+
+  time_t tmpTime;
+  time_t time_now;
+  
+  /* check for any extra rpp messages */
+
+  rpp_request(42);
+
+  if (termin_child != 0)
+    scan_for_terminated();
+
+  /* if -p, must poll tasks inside jobs to look for completion */
+
+  if (recover == 2)
+    scan_non_child_tasks();
+
+  if (exiting_tasks)
+    scan_for_exiting();	
+
+  TMOMScanForStarting();
+
+  /* unblock signals */
+
+  if (sigprocmask(SIG_UNBLOCK,&allsigs,NULL) == -1)
+    log_err(errno,id,"sigprocmask(UNBLOCK)");
+
+  time_now = time((time_t *)0);
+  tmpTime = MIN(waittime,time_now - (LastServerUpdateTime + ServerStatUpdateInterval));
+  tmpTime = MIN(tmpTime,time_now - (polltime + CheckPollTime));
+  tmpTime = MAX(1,tmpTime);
+
+  if (LastServerUpdateTime == 0)
+    tmpTime = 1;
+
+  /* wait for a request to process */
+
+  if (wait_request(tmpTime,NULL) != 0)
+    {
+    if (errno == EBADF)
+      {
+      init_network(pbs_mom_port,process_request);
+
+      init_network(pbs_rm_port,tcp_request);
+      }
+
+    log_err(-1,msg_daemonname,"wait_request failed");
+    }
+
+  /* block signals while we do things */
+
+  if (sigprocmask(SIG_BLOCK,&allsigs,NULL) == -1)
+    log_err(errno,id,"sigprocmask(BLOCK)");
+
+  return;
+  }  /* END finish_loop() */
+
+
+
+
+
+
+/*
+ * main_loop
+ */
+
+void main_loop()
+{
+  static char   id[] = "main_loop";
+  extern time_t	wait_time;
+  double        myla;
+  int           sindex;  /* server index */
+  job		   *pjob;
+  task         *ptask;
+  int           TotalClusterAddrsCount;
+  long          retry_interval;
+  int           c;
+#if MOM_CHECKPOINT == 1
+  resource	*prscput;
+#endif /* MOM_CHECKPOINT */
+
 
   mom_run_state = MOM_RUN_STATE_RUNNING;
 
@@ -7747,12 +8038,16 @@ int main(
         }
       }    /* END for (pjob) */
     }      /* END for (;mom_run_state == MOM_RUN_STATE_RUNNING;) */
- 
-  /* have exited main loop */
+}
 
-  if (mom_run_state == MOM_RUN_STATE_KILLALL) 
-    {
-    /* kill any running jobs */
+
+/*
+ * kill_all_running_jobs
+ */
+
+void kill_all_running_jobs()
+{
+  job		*pjob;
 
     pjob = (job *)GET_NEXT(svr_alljobs);
 
@@ -7779,335 +8074,96 @@ int main(
 
     if (exiting_tasks)
       scan_for_exiting();
-    }  /* END if (mom_run_state == MOM_RUN_STATE_KILLALL) */
+}
+
+
+
+/*
+ * restart_mom
+ */
+
+void restart_mom( int argc, char *argv[] )
+{
+  static	char id[] = "restart_mom";
+  char *envstr;
+
+  envstr = malloc(
+        (strlen("PATH") + strlen(orig_path) + 2) * sizeof(char));
+
+  strcpy(envstr,"PATH=");
+  strcat(envstr,orig_path);
+  putenv(envstr);
+  DBPRT(("Re-execing myself now...\n"));
+  execvp(MOMExePath,argv);
+  sprintf(log_buffer,"Execing myself failed: %s (%d)",strerror(errno),errno);
+  log_err(errno,id,log_buffer);
+}
+
+
+
+/*
+ * main - the main program of MOM
+ */
+
+int main(
+
+  int   argc,    /* I */
+  char *argv[])  /* I */
+
+  {
+  int       rc;
+
+  program_name = argv[0];
+
+  /* must be started with real and effective uid of 0 */
+
+  if ((getuid() != 0) || (geteuid() != 0)) 
+    {
+    /* FAILURE */
+
+    fprintf(stderr, "%s: must be run as root\n", 
+      argv[0]);
+
+    return(1);
+    }
+
+  initialize_globals();
+  parse_command_line( argc, argv );  /* Calls exit on command line error */
+  if ((rc = setup_program_environment()) != 0)
+    return(rc);
+
+  main_loop();
+
+  if (mom_run_state == MOM_RUN_STATE_KILLALL) 
+    {
+    kill_all_running_jobs();
+    }
 
   /* shutdown mom */
 
   mom_close_poll();
-
   rpp_shutdown();
-
   net_close(-1);		/* close all network connections */
- 
+
   if (mom_run_state == MOM_RUN_STATE_RESTART)
     {
     sprintf(log_buffer,"Will be restarting: %s",MOMExePath);
-
-    log_record(
-      PBSEVENT_SYSTEM | PBSEVENT_FORCE, 
-      PBS_EVENTCLASS_SERVER,
-      msg_daemonname, 
-      log_buffer);
+    log_record(PBSEVENT_SYSTEM | PBSEVENT_FORCE, PBS_EVENTCLASS_SERVER,
+      msg_daemonname, log_buffer);
     }
-
-    
-  log_record(
-    PBSEVENT_SYSTEM | PBSEVENT_FORCE, 
-    PBS_EVENTCLASS_SERVER,
-    msg_daemonname, 
-    "Is down");
+  log_record(PBSEVENT_SYSTEM | PBSEVENT_FORCE, PBS_EVENTCLASS_SERVER,
+    msg_daemonname, "Is down");
 
   log_close(1);
-
+ 
   if (mom_run_state == MOM_RUN_STATE_RESTART)
     {
-    char *envstr;
-
-    envstr = malloc(
-        (strlen("PATH") + strlen(orig_path) + 2) * sizeof(char));
-
-    strcpy(envstr,"PATH=");
-
-    strcat(envstr,orig_path);
-
-    putenv(envstr);
-
-    DBPRT(("Re-execing myself now...\n"));
-
-    execvp(MOMExePath,argv);
-
-    sprintf(log_buffer,"Execing myself failed: %s (%d)",strerror(errno),errno);
-
-    log_err(errno,id,log_buffer);
+    restart_mom( argc, argv );
     }
 
   return(0);
   }  /* END main() */
 
-
-
-
-/*
- * mk_dirs - make the directory names used by MOM 
- */
-
-static char *mk_dirs(
-
-  char *base)  /* I */
-
-  {
-  char *pn;
-  int   ltop = strlen(path_home);
-
-  pn = malloc(ltop + strlen(base) + 2);
-
-  if (pn == NULL)
-    {
-    /* cannot allocate memory */
-
-    exit(2);
-    }
-
-  strcpy(pn,path_home);
-
-  if (*(path_home + ltop - 1) != '/')
-    strcat(pn,"/");
-
-  strcat(pn,base);
-
-  return(pn);
-  }  /* END mk_dirs() */
-
-
-
-
-/*
- * stop_me = signal handler for SIGTERM
- */
-
-static void stop_me(
-
-  int sig)  /* I */
-
-  {
-  const char *dowhat;
-
-  /* just exit, leaving jobs running */
-
-  mom_run_state = MOM_RUN_STATE_EXIT;
-
-  dowhat = "leaving jobs running, just exiting";
-
-  sprintf(log_buffer,"caught signal %d: %s", 
-    sig, 
-    dowhat);
-
-  log_record(
-    PBSEVENT_SYSTEM | PBSEVENT_FORCE, 
-    PBS_EVENTCLASS_SERVER,
-    msg_daemonname, 
-    log_buffer);
-
-  return;
-  }  /* END void stop_me() */
-
-
-
-
-static void PBSAdjustLogLevel(
-
-  int sig)  /* I */
-
-  {
-  if (sig == SIGUSR1)
-    {
-    /* increase log level */
-  
-    LOGLEVEL = MIN(LOGLEVEL + 1,10);
-    }
-  else if (sig == SIGUSR2)
-    {
-    /* increase log level */
-
-    LOGLEVEL = MAX(LOGLEVEL - 1,0);
-    }
-
-  sprintf(log_buffer,"received signal %d: adjusting loglevel to %d",
-    sig,
-    LOGLEVEL);
-
-  log_record(
-    PBSEVENT_SYSTEM | PBSEVENT_FORCE,
-    PBS_EVENTCLASS_SERVER,
-    msg_daemonname,
-    log_buffer);
-
-  return;
-  }  /* END PBSAdjustLogLevel() */
-
-
-
-
-/* if pjob is NULL, return empty slot, otherwise return slot containing job */
-
-int TMOMJobGetStartInfo(
-
-  job         *pjob, /* I */
-  pjobexec_t **TJEP) /* O */
-
-  {
-  int index;
-
-  for (index = 0;index < TMAX_JE;index++)
-    {
-    if (TMOMStartInfo[index].pjob == pjob)
-      {
-      *TJEP = &TMOMStartInfo[index];
-
-      return(SUCCESS);
-      }
-    }    /* END for (index) */
-
-  return(FAILURE);
-  }  /* END TMOMJobGetStartInfo() */
-
-
-
-
-
-int TMOMScanForStarting(void)
-
-  {
-  job *pjob;
-  job *nextjob;
-
-  int  Count;
-  int  RC;
-  int  SC;
-
-#ifdef MSIC
-  list_link *tmpL;
-#endif
-
-  const char *id = "TMOMScanForStarting";
-
-#ifdef MSIC
-  /* NOTE:  solaris system is choking on GET_NEXT - isolate */
-
-  tmpL = GET_NEXT(svr_alljobs);
-
-  tmpL = svr_alljobs.ll_next->ll_struct;
-
-  pjob = (job *)tmpL;
-#endif /* MSIC */
-   
-  pjob = (job *)GET_NEXT(svr_alljobs);
-                                                                                
-  while (pjob != NULL)
-    {
-    nextjob = (job *)GET_NEXT(pjob->ji_alljobs);
-
-    if (pjob->ji_qs.ji_substate == JOB_SUBSTATE_STARTING)
-      {
-      pjobexec_t *TJE;
-
-      if (LOGLEVEL >= 2)
-        {
-        snprintf(log_buffer,1024,"checking job start in %s - examining pipe from child",
-          id);
-
-        log_record(
-          PBSEVENT_JOB | PBSEVENT_FORCE,
-          PBS_EVENTCLASS_JOB,
-          pjob->ji_qs.ji_jobid,
-          log_buffer);
-        }
- 
-      if (TMOMJobGetStartInfo(pjob,&TJE) == FAILURE)
-        {
-        sprintf(log_buffer,"job %s start data lost, server will retry",
-          pjob->ji_qs.ji_jobid);
-                                                                                
-        log_record(
-          PBSEVENT_ERROR,
-          PBS_EVENTCLASS_JOB,
-          pjob->ji_qs.ji_jobid,
-          log_buffer);
-
-        exec_bail(pjob,JOB_EXEC_RETRY);
-
-        pjob = nextjob;
-
-        continue;
-        }
-
-      /* check if job is ready */
-
-      if (TMomCheckJobChild(TJE,1,&Count,&RC) == FAILURE)
-        {
-        long STime;
-
-        if (LOGLEVEL >= 3)
-          {
-          sprintf(log_buffer,"job %s child not started, will check later",
-            pjob->ji_qs.ji_jobid);
-                                                                                
-          log_record(
-            PBSEVENT_ERROR,
-            PBS_EVENTCLASS_JOB,
-            pjob->ji_qs.ji_jobid,
-            log_buffer);
-          }
-
-        /* if job has been in prerun > TJobStartTimeout, purge job */
-
-        STime = pjob->ji_wattr[(int)JOB_ATR_mtime].at_val.at_long;
-
-        if ((STime > 0) && ((time_now - STime) > TJobStartTimeout))
-          {
-          sprintf(log_buffer,"job %s child not started after %ld seconds, server will retry",
-            pjob->ji_qs.ji_jobid,
-            TJobStartTimeout);
-                                                                                
-          log_record(
-            PBSEVENT_ERROR,
-            PBS_EVENTCLASS_JOB,
-            pjob->ji_qs.ji_jobid,
-            log_buffer);
-
-          memset(TJE,0,sizeof(pjobexec_t));
-
-          exec_bail(pjob,JOB_EXEC_RETRY);
-          } 
-        }
-      else 
-        {
-        /* NOTE:  TMomFinalizeJob3() populates SC */
-                                                                                
-        if (TMomFinalizeJob3(TJE,Count,RC,&SC) == FAILURE)
-          {
-          /* no need to log this, TMomFinalizeJob3() already did */
-
-          memset(TJE,0,sizeof(pjobexec_t));
-                                                                                
-          exec_bail(pjob,SC);
-          }
-        else
-          {
-          /* job successfully started */
-
-          memset(TJE,0,sizeof(pjobexec_t));
-
-          if (LOGLEVEL >= 3)
-            {
-            sprintf(log_buffer,"job %s reported successful start",
-              pjob->ji_qs.ji_jobid);
-
-            LOG_EVENT(
-              PBSEVENT_JOB,
-              PBS_EVENTCLASS_JOB,
-              pjob->ji_qs.ji_jobid,
-              log_buffer);
-            }
-          }
-        }    /* END else (TMomCheckJobChild() == FAILURE) */
-      }      /* END if (pjob->ji_qs.ji_substate == JOB_SUBSTATE_STARTING) */
-
-    pjob = nextjob;
-    }        /* END while (pjob != NULL) */
-
-  return(SUCCESS);
-  }  /* END TMOMScanForStarting() */
-
 /* END mom_main.c */
+
 
