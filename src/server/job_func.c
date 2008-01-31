@@ -1056,7 +1056,7 @@ struct work_task *ptask)
   
 
   
-  if (i < pjob->ji_wattr[(int)JOB_ATR_job_array_size].at_val.at_long)
+  if (rn != NULL)
     {
     new_task = set_task(WORK_Timed,time_now + 1,job_clone_wt,ptask->wt_parm1);
     }
