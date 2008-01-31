@@ -96,6 +96,13 @@
 #include <sys/time.h>
 
 
+#ifdef __APPLE__
+/* this is a hack for the missing bindresvport declaration on OS X 
+   the function works fine but its use will generate a compiler warning 
+   if -Wall is used with gcc */
+int bindresvport(int sd, struct sockaddr_in *sin);
+#endif
+
 /*
 ** wait for connect to complete.  We use non-blocking sockets,
 ** so have to wait for completion this way.
