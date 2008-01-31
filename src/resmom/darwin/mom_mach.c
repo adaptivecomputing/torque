@@ -131,6 +131,7 @@
 #include	<net/if.h>
 #include	<ifaddrs.h>
 
+#include	<mach/mach_init.h>
 #include	<mach/vm_map.h>
 #include	<mach/mach_host.h>
 #include	<mach/mach_port.h>
