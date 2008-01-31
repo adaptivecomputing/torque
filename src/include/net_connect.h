@@ -132,7 +132,9 @@ typedef unsigned long pbs_net_t;        /* for holding host addresses */
 
 
 /* defines for unix sockets and creds */
+#ifndef TSOCK_PATH
 #define TSOCK_PATH "/tmp/.torque-unix"
+#endif
 
 #ifndef SCM_CREDS
 #define SCM_CREDS SCM_CREDENTIALS

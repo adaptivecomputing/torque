@@ -315,15 +315,26 @@ int init_network(
     }
 
   unsocname.sun_family=AF_UNIX;
-  strcpy(unsocname.sun_path,TSOCK_PATH);
-  unlink(unsocname.sun_path);
-  if (bind(unixsocket,(struct sockaddr *)&unsocname,strlen(unsocname.sun_path) + sizeof(unsocname.sun_family)) < 0) 
+  strncpy(unsocname.sun_path,TSOCK_PATH,107);  /* sun_path is defined to be 108 bytes */
+
+  unlink(TSOCK_PATH);  /* don't care if this fails */
+
+  if (bind(unixsocket,
+            (struct sockaddr *)&unsocname,
+            strlen(unsocname.sun_path) + sizeof(unsocname.sun_family)) < 0) 
     {
     close(unixsocket);
 
     return(-1);
     }
-  chmod(TSOCK_PATH,00777);
+
+  if (chmod(TSOCK_PATH,S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH|S_IWOTH) != 0)
+    {
+    close(unixsocket);
+
+    return(-1);
+    }
+
   add_conn(unixsocket,type,(pbs_net_t)0,0,PBS_SOCK_UNIX,accept_conn);
   if (listen(unixsocket,512) < 0) 
     {

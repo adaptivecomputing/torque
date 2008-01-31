@@ -1317,6 +1317,10 @@ int main(
 
   net_close(-1);		/* close all network connections */
 
+#ifdef ENABLE_UNIX_SOCKETS
+  unlink(TSOCK_PATH);
+#endif /* END ENABLE_UNIX_SOCKETS */
+
   log_event(
     PBSEVENT_SYSTEM|PBSEVENT_FORCE,
     PBS_EVENTCLASS_SERVER,
