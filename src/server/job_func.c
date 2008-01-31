@@ -939,6 +939,8 @@ job *job_clone(
     &tempattr, 
     INCR);  
 
+  job_attr_def[(int)JOB_ATR_variables].at_free(&tempattr);
+
   /* we need to link the cloned job into the array task list */
   pa = get_array(poldjob->ji_qs.ji_jobid);
   
