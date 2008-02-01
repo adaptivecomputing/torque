@@ -13,6 +13,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature
   e - new job array submission syntax
   b - fixed so SIGUSR1 / SIGUSR2 to correctly change the log level
   f - health check script can now be run at job start and end
+  b - fix qdel of entire job arrays for non operator/managers
 
 2.2.1
   b - fix a bug where dependent jobs get put on hold when the previous job has
