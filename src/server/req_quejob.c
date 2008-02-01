@@ -128,6 +128,7 @@ extern int setup_array_struct(job *pjob);
 #ifdef PBS_MOM
 #include <pwd.h>
 #include "mom_func.h"
+#include "pbs_nodes.h"
 #endif	/* PBS_MOM */
 
 /* External Functions Called: */
@@ -137,6 +138,10 @@ extern void start_exec A_((job *));
 extern int  svr_authorize_jobreq A_((struct batch_request *,job *));
 extern int  svr_chkque A_((job *,pbs_queue *,char *,int,char *));
 extern int  job_route A_((job *));
+#ifdef PBS_MOM
+extern void check_state(int);
+extern void is_update_stat(int);
+#endif
 
 /* Global Data Items: */
 
@@ -146,6 +151,9 @@ extern struct server server;
 extern char  server_name[];
 extern int   queue_rank;
 extern tlist_head	svr_jobarrays; 
+#else
+extern int PBSNodeCheckProlog;
+extern int internal_state;
 #endif	/* !PBS_MOM */
 
 extern const char *PJobSubState[];
@@ -305,6 +313,20 @@ void req_quejob(
     }
 
 #else /* PBS_MOM */
+
+  if (PBSNodeCheckProlog)
+    {
+    check_state(1);
+
+    is_update_stat(0);
+
+    if (internal_state & INUSE_DOWN)
+      {
+      req_reject(PBSE_MOMREJECT,0,preq,NULL,NULL);
+
+      return;
+      }
+    }
 
   if (preq->rq_fromsvr) 
     {		

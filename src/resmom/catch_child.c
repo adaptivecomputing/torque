@@ -141,6 +141,8 @@ extern int              LOGLEVEL;
 
 extern char            *PJobSubState[];
 extern char             mom_host[];
+extern int              PBSNodeCheckProlog;
+extern int              PBSNodeCheckEpilog;
 
 
 /* external prototypes */
@@ -154,6 +156,8 @@ extern void encode_used A_((job *,tlist_head *));
 extern void encode_flagged_attrs A_((job *,tlist_head *));
 extern void job_nodes A_((job *));
 extern int task_recov A_((job *));
+extern void is_update_stat(int);
+extern void check_state(int);
 
 
 
@@ -1522,6 +1526,13 @@ static void obit_reply(
   shutdown(sock,2);
 
   close_conn(sock);
+
+  if (PBSNodeCheckEpilog)
+    {
+    check_state(1);
+
+    is_update_stat(0);
+    }
 
   return;
   }  /* END obit_reply() */

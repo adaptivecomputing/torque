@@ -377,9 +377,20 @@ for more information.)
 specifies the fully qualified pathname of the health check script to run (see
 HEALTH CHECK for more information).
 .IP node_check_interval
-specifies the number of MOM intervals between subsequent executions of the
-specified health check.  This value default to 1 indicating the check is run every
-mom interval. (see HEALTH CHECK for more information)
+specifies when to run the MOM health check.  The check can be either periodic,
+event-driver, or both.  The value starts with an integer specifying the number
+of MOM intervals between subsequent executions of the specified health check.
+After the integer is an optional comma-separated list of event names.
+Currently supported are "jobstart" and "jobend".  This value defaults to 1 with
+no events indicating the check is run every mom interval. (see HEALTH CHECK for
+more information)
+.IP
+.Ty "$node_check_interval 0"  Disabled.
+.br
+.Ty "$node_check_interval 0,jobstart"  Only runs at job starts
+.br
+.Ty "$node_check_interval 10,jobstart,jobend"
+.IP
 .IP prologalarm
 Specifies maximum duration (in seconds) which the mom will wait for the job prolog
 or job job epilog to complete.  This parameter default to 300 seconds (5 minutes)
@@ -480,6 +491,10 @@ If the script detects a failure, it should return the keyword 'ERROR' to stdout
 followed by an error message.  The message (up to 256 characters) immediately
 following the ERROR string will be assigned to the node attribute 'message' of
 the associated node. 
+.LP
+If the script detects a failure when run from "jobstart", then the job will be
+rejected.  This should probably only be used with advanced schedulers like Moab
+so that the job can be routed to another node.
 .LP
 TORQUE currently ignores ERROR messages by default, but advanced schedulers
 like moab can be configured to react appropriately.

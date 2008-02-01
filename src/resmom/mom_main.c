@@ -455,6 +455,8 @@ static	char		config_file[_POSIX_PATH_MAX] = "config";
 char                    PBSNodeMsgBuf[1024];
 char                    PBSNodeCheckPath[1024];
 int                     PBSNodeCheckInterval;
+int                     PBSNodeCheckProlog=0;
+int                     PBSNodeCheckEpilog=0;
 static char            *MOMExePath = NULL;
 static time_t           MOMExeTime = 0;
 
@@ -2514,6 +2516,12 @@ static unsigned long setnodecheckinterval(
     value);
 
   PBSNodeCheckInterval = (int)strtol(value,NULL,10);
+
+  if (strstr(value,"jobstart"))
+    PBSNodeCheckProlog = 1;
+
+  if (strstr(value,"jobend"))
+    PBSNodeCheckEpilog = 1;
 
   strcat(newstr,value);
 
@@ -7809,7 +7817,8 @@ void main_loop()
 
     if (time_now >= (LastServerUpdateTime + ServerStatUpdateInterval))
       {
-      check_state((LastServerUpdateTime == 0));
+      if (PBSNodeCheckInterval > 0)
+        check_state((LastServerUpdateTime == 0));
 
       is_update_stat(0);
 
