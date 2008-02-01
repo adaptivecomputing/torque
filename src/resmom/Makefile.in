@@ -76,11 +76,11 @@ pbs_demux_DEPENDENCIES = @PBS_MACH@/libmommach.a $(am__DEPENDENCIES_1) \
 am_pbs_mom_OBJECTS = catch_child.$(OBJEXT) mom_comm.$(OBJEXT) \
 	mom_inter.$(OBJEXT) mom_main.$(OBJEXT) mom_server.$(OBJEXT) \
 	prolog.$(OBJEXT) requests.$(OBJEXT) start_exec.$(OBJEXT) \
-	tmsock_recov.$(OBJEXT) req_quejob.$(OBJEXT) \
+	tmsock_recov.$(OBJEXT) req_quejob.$(OBJEXT) job_func.$(OBJEXT) \
 	attr_recov.$(OBJEXT) dis_read.$(OBJEXT) job_attr_def.$(OBJEXT) \
-	job_func.$(OBJEXT) job_recov.$(OBJEXT) \
-	process_request.$(OBJEXT) reply_send.$(OBJEXT) \
-	resc_def_all.$(OBJEXT) job_qs_upgrade.$(OBJEXT)
+	job_recov.$(OBJEXT) process_request.$(OBJEXT) \
+	reply_send.$(OBJEXT) resc_def_all.$(OBJEXT) \
+	job_qs_upgrade.$(OBJEXT)
 pbs_mom_OBJECTS = $(am_pbs_mom_OBJECTS)
 pbs_mom_LDADD = $(LDADD)
 pbs_mom_DEPENDENCIES = @PBS_MACH@/libmommach.a $(am__DEPENDENCIES_1) \
@@ -376,9 +376,9 @@ EXTRA_DIST = rm_dep.h
 LDADD = @PBS_MACH@/libmommach.a $(MOMLIBS) $(PBS_LIBS) $(momcpalib) $(csetlib)
 pbs_mom_SOURCES = catch_child.c mom_comm.c mom_inter.c mom_main.c \
 		   mom_server.c prolog.c requests.c start_exec.c \
-                   tmsock_recov.c req_quejob.c \
+                   tmsock_recov.c req_quejob.c job_func.c \
 		   ../server/attr_recov.c ../server/dis_read.c \
-		   ../server/job_attr_def.c ../server/job_func.c \
+		   ../server/job_attr_def.c \
 		   ../server/job_recov.c  \
 		   ../server/process_request.c ../server/reply_send.c \
 		   ../server/resc_def_all.c \
@@ -542,20 +542,6 @@ job_attr_def.obj: ../server/job_attr_def.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='../server/job_attr_def.c' object='job_attr_def.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o job_attr_def.obj `if test -f '../server/job_attr_def.c'; then $(CYGPATH_W) '../server/job_attr_def.c'; else $(CYGPATH_W) '$(srcdir)/../server/job_attr_def.c'; fi`
-
-job_func.o: ../server/job_func.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT job_func.o -MD -MP -MF "$(DEPDIR)/job_func.Tpo" -c -o job_func.o `test -f '../server/job_func.c' || echo '$(srcdir)/'`../server/job_func.c; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/job_func.Tpo" "$(DEPDIR)/job_func.Po"; else rm -f "$(DEPDIR)/job_func.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='../server/job_func.c' object='job_func.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o job_func.o `test -f '../server/job_func.c' || echo '$(srcdir)/'`../server/job_func.c
-
-job_func.obj: ../server/job_func.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT job_func.obj -MD -MP -MF "$(DEPDIR)/job_func.Tpo" -c -o job_func.obj `if test -f '../server/job_func.c'; then $(CYGPATH_W) '../server/job_func.c'; else $(CYGPATH_W) '$(srcdir)/../server/job_func.c'; fi`; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/job_func.Tpo" "$(DEPDIR)/job_func.Po"; else rm -f "$(DEPDIR)/job_func.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='../server/job_func.c' object='job_func.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o job_func.obj `if test -f '../server/job_func.c'; then $(CYGPATH_W) '../server/job_func.c'; else $(CYGPATH_W) '$(srcdir)/../server/job_func.c'; fi`
 
 job_recov.o: ../server/job_recov.c
 @am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT job_recov.o -MD -MP -MF "$(DEPDIR)/job_recov.Tpo" -c -o job_recov.o `test -f '../server/job_recov.c' || echo '$(srcdir)/'`../server/job_recov.c; \
