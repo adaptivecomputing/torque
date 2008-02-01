@@ -119,17 +119,10 @@
 #include "log.h"
 #include "svrfunc.h"
 
-#ifndef PBS_MOM
 #include "work_task.h"
 extern void  job_clone_wt A_((struct work_task *));
 extern int setup_array_struct(job *pjob);
-#endif
 
-#ifdef PBS_MOM
-#include <pwd.h>
-#include "mom_func.h"
-#include "pbs_nodes.h"
-#endif	/* PBS_MOM */
 
 /* External Functions Called: */
 
@@ -138,23 +131,14 @@ extern void start_exec A_((job *));
 extern int  svr_authorize_jobreq A_((struct batch_request *,job *));
 extern int  svr_chkque A_((job *,pbs_queue *,char *,int,char *));
 extern int  job_route A_((job *));
-#ifdef PBS_MOM
-extern void check_state(int);
-extern void is_update_stat(int);
-#endif
 
 /* Global Data Items: */
 
-#ifndef PBS_MOM
 extern char *path_spool;
 extern struct server server;
 extern char  server_name[];
 extern int   queue_rank;
 extern tlist_head	svr_jobarrays; 
-#else
-extern int PBSNodeCheckProlog;
-extern int internal_state;
-#endif	/* !PBS_MOM */
 
 extern const char *PJobSubState[];
 
@@ -196,9 +180,7 @@ static char *user_account_default A_((char *));
 static int user_account_read_user A_((char *));
 #endif /* PNOT */
 
-#ifndef PBS_MOM
 static char *pbs_o_que = "PBS_O_QUEUE=";
-#endif
 
 
 
@@ -227,7 +209,6 @@ void req_quejob(
   int		 rc;
   int		 sock = preq->rq_conn;
 
-#ifndef PBS_MOM
   int		 i;
   char		 buf[256];
   int		 fds;
@@ -237,13 +218,11 @@ void req_quejob(
   char		*qname;
   attribute	 tempattr;
   char           EMsg[1024];
-#endif /* server */
 
   /* set basic (user) level access permission */
 
   resc_access_perm = ATR_DFLAG_USWR|ATR_DFLAG_Creat;
 
-#ifndef PBS_MOM		/* server */
 
   /*
    * if the job id is supplied, the request had better be 
@@ -312,43 +291,6 @@ void req_quejob(
       }
     }
 
-#else /* PBS_MOM */
-
-  if (PBSNodeCheckProlog)
-    {
-    check_state(1);
-
-    is_update_stat(0);
-
-    if (internal_state & INUSE_DOWN)
-      {
-      req_reject(PBSE_MOMREJECT,0,preq,NULL,NULL);
-
-      return;
-      }
-    }
-
-  if (preq->rq_fromsvr) 
-    {		
-    /* from another server - accept the extra attributes */
-
-    resc_access_perm |= ATR_DFLAG_MGWR|ATR_DFLAG_SvWR|ATR_DFLAG_MOM;
-
-    jid = preq->rq_ind.rq_queuejob.rq_jid;
-    } 
-  else 
-    {
-    /* request must be from server */
-
-    log_err(errno,id,"request not from server");
-
-    req_reject(PBSE_IVALREQ,0,preq,NULL,"request not received from server");
-
-    return;
-    }
-
-#endif /* PBS_MOM */
-
   /* does job already exist, check both old and new jobs */
 
   if ((pj = find_job(jid)) == NULL) 
@@ -363,8 +305,6 @@ void req_quejob(
       pj = (job *)GET_NEXT(pj->ji_alljobs);
       }
     }
-
-#ifndef PBS_MOM	/* server */
 
   if (pj != NULL) 
     {
@@ -479,111 +419,6 @@ void req_quejob(
     return;
     }
 
-#else /* PBS_MOM */
-
-  /*
-   * New job ...
-   *
-   * for MOM - rather than make up a hashname, we use the name sent
-   * to us by the server as an attribute.
-   */
-
-  psatl = (svrattrl *)GET_NEXT(preq->rq_ind.rq_queuejob.rq_attr);
-
-  while (psatl != NULL) 
-    {
-    if (!strcmp(psatl->al_name,ATTR_hashname)) 
-      {
-      strcpy(basename,psatl->al_value);
-
-      break;
-      }
-
-    psatl = (svrattrl *)GET_NEXT(psatl->al_link);
-    }
-
-  if (pj != NULL) 
-    {
-    /* newly queued job already exists */
-
-    if (pj->ji_qs.ji_substate == JOB_SUBSTATE_RUNNING) 
-      {
-      /* FAILURE - job exists and is running */
-
-      log_err(errno,id,"cannot queue new job, job exists and is running");
-
-      req_reject(PBSE_JOBEXIST,0,preq,NULL,"job is running");
-
-      return;
-      }
-
-    /* if checkpointed, then keep old and skip rest of process */
-
-    if (pj->ji_qs.ji_svrflags & JOB_SVFLG_CHKPT) 
-      {
-      pj->ji_qs.ji_substate = JOB_SUBSTATE_TRANSIN;
-
-      if (reply_jobid(preq,pj->ji_qs.ji_jobid,BATCH_REPLY_CHOICE_Queue) == 0) 
-        {
-        delete_link(&pj->ji_alljobs);
-
-        append_link(&svr_newjobs,&pj->ji_alljobs,pj);
-
-        pj->ji_qs.ji_un_type = JOB_UNION_TYPE_NEW;
-        pj->ji_qs.ji_un.ji_newt.ji_fromsock = sock;
-        pj->ji_qs.ji_un.ji_newt.ji_fromaddr = get_connectaddr(sock);
-        pj->ji_qs.ji_un.ji_newt.ji_scriptsz = 0;
-        } 
-      else 
-        {
-        close_conn(sock);
-        }
-
-      return;
-      }  /* END if (pj->ji_qs.ji_svrflags & JOB_SVFLG_CHKPT) */
-
-    /* unlink job from svr_alljobs since it will be placed on newjobs */
-
-    delete_link(&pj->ji_alljobs);
-    }  /* END if (pj != NULL) */ 
-  else 
-    {
-    /* if not already here, allocate job struct */
-
-    if ((pj = job_alloc()) == NULL) 
-      {
-      /* FAILURE */
-
-      req_reject(PBSE_SYSTEM,0,preq,NULL,"cannot allocate new job structure");
-
-      return;
-      }
-
-    strcpy(namebuf,path_jobs);      /* job directory path */
-    strcat(namebuf,basename);
-    strcat(namebuf,JOB_TASKDIR_SUFFIX);
-
-    if ((mkdir(namebuf,0700) == -1) && (errno != EEXIST))
-      {
-      /* FAILURE */
-
-      char tmpLine[1024];
-
-      sprintf(tmpLine,"cannot create directory '%s'",
-        namebuf);
-
-      log_err(errno,tmpLine,msg_init_abt);
-
-      job_purge(pj);
-
-      req_reject(PBSE_SYSTEM,0,preq,NULL,tmpLine);
-
-      return;
-      }
-    }    /* END else (pj != NULL) */
-
-#endif  /* PBS_MOM */
-
   strcpy(pj->ji_qs.ji_jobid,jid);
   strcpy(pj->ji_qs.ji_fileprefix,basename);
 
@@ -607,17 +442,7 @@ void req_quejob(
 
       /* didn`t recognize the name */
 
-#ifndef PBS_MOM
       index = JOB_ATR_UNKN;	/* keep as "unknown" for now */
-#else	/* is PBS_MOM */
-      /* FAILURE */
-
-      job_purge(pj);   /* CRI - 12/20/2004 */
-
-      reply_badattr(PBSE_NOATTR,1,psatl,preq);
-
-      return;
-#endif	/* PBS_MOM */
       }
 
     pdef = &job_attr_def[index];
@@ -642,8 +467,6 @@ void req_quejob(
       psatl->al_name, 
       psatl->al_resc, 
       psatl->al_value);
-
-#ifndef PBS_MOM
 
     if (rc != 0) 
       {
@@ -680,55 +503,8 @@ void req_quejob(
         }
       }    /* END if (rc != 0) */
 
-#else	/* PBS_MOM */
-
-    if (rc != 0) 
-      {
-      /* FAILURE */
-
-      /* all errors are fatal for MOM */
-
-      job_purge(pj);
-
-      reply_badattr(rc,1,psatl,preq);
-
-      return;
-      }
-
-    if (psatl->al_op == DFLT) 
-      {
-      if (psatl->al_resc) 
-        {
-        resource     *presc;
-        resource_def *prdef;
-
-        prdef = find_resc_def(svr_resc_def,psatl->al_resc,svr_resc_size);
-
-        if (prdef == NULL) 
-          {
-          job_purge(pj);
-
-          reply_badattr(rc,1,psatl,preq);
-
-          return;
-          }
-
-        presc = find_resc_entry(&pj->ji_wattr[index],prdef);
-
-        if (presc != NULL)
-          presc->rs_value.at_flags |= ATR_VFLAG_DEFLT;
-        } 
-      else 
-        {
-        pj->ji_wattr[index].at_flags |= ATR_VFLAG_DEFLT;
-        }
-      }    /* END if (psatl->al_op == DFLT) */
-#endif     /* PBS_MOM */
-
     psatl = (svrattrl *)GET_NEXT(psatl->al_link);
     }      /* END while (psatl != NULL) */
-
-#ifndef PBS_MOM
 
   /* perform any at_action routine declared for the attributes */
 
@@ -987,8 +763,6 @@ void req_quejob(
   pj->ji_wattr[(int)JOB_ATR_substate].at_val.at_long = JOB_SUBSTATE_TRANSIN;
   pj->ji_wattr[(int)JOB_ATR_substate].at_flags |= ATR_VFLAG_SET;
 
-#endif  /* !PBS_MOM */
-
   /* set remaining job structure elements */
 
   pj->ji_qs.ji_state =    JOB_STATE_TRANSIT;
@@ -1049,16 +823,12 @@ void req_jobcredential(
     return;
     }
 
-#ifndef PBS_MOM
-
   if (svr_authorize_jobreq(preq,pj) == -1) 
     {
     req_reject(PBSE_PERM,0,preq,NULL,"job request not authorized");
 
     return;
     }
-
-#endif	/* PBS_MOM */
 
   reply_ack(preq);
 
@@ -1084,12 +854,7 @@ void req_jobscript(
   int	 fds;
   char	 namebuf[MAXPATHLEN];
   job	*pj;
-#ifdef PBS_MOM
-  int	 filemode = 0700;
-  extern char mom_host[];
-#else	/* server */
   int	 filemode = 0600;
-#endif
 
 #ifdef __TNW
   int    DoRetry = 1;
@@ -1129,22 +894,10 @@ void req_jobscript(
 
     log_err(errno,id,log_buffer);
 
-#ifdef PBS_MOM
-
-    /* NOTE:  state is out of sync between pbs_server and pbs_mom */
-    /*        pbs_server believes job is idle, pbs_mom does not */
-    /*        MOM should check local job state, and if not idle, purge the job */
-    /*        w/job_purge(pj) */
-
-    req_reject(PBSE_IVALREQ,0,preq,mom_host,log_buffer);
-#else
     req_reject(PBSE_IVALREQ,0,preq,NULL,log_buffer);
-#endif /* PBS_MOM */
 
     return;
     }
-
-#ifndef PBS_MOM
 
   if (svr_authorize_jobreq(preq,pj) == -1) 
     {
@@ -1156,21 +909,6 @@ void req_jobscript(
 
     return;
     }
-
-#else
-
-  /* mom - if job has been checkpointed, discard script,already have it */
-
-  if (pj->ji_qs.ji_svrflags & JOB_SVFLG_CHKPT) 
-    {
-    /* SUCCESS - do nothing, ignore script */
-
-    reply_ack(preq);
-
-    return;
-    }
-
-#endif	/* PBS_MOM */
 
   strcpy(namebuf,path_jobs);  
   strcat(namebuf,pj->ji_qs.ji_fileprefix);
@@ -1226,11 +964,7 @@ retry:
 
     log_err(errno,id,msg_script_open);
 
-#ifdef PBS_MOM
-    req_reject(PBSE_INTERNAL,0,preq,mom_host,tmpLine);
-#else
     req_reject(PBSE_INTERNAL,0,preq,NULL,tmpLine);
-#endif /* PBS_MOM */
 
     return;
     }
@@ -1244,11 +978,7 @@ retry:
 
     log_err(errno,id,msg_script_write);
 
-#ifdef PBS_MOM
-    req_reject(PBSE_INTERNAL,0,preq,mom_host,"cannot write job command file");
-#else
     req_reject(PBSE_INTERNAL,0,preq,NULL,"cannot write job command file");
-#endif /* PBS_MOM */
 
     close(fds);
 
@@ -1274,7 +1004,6 @@ retry:
 
 
 
-#ifndef PBS_MOM	
 /* the following is for the server only, MOM has her own version below */
 
 /*
@@ -1399,103 +1128,6 @@ void req_mvjobfile(  /* NOTE:  routine for server only - mom code follows this r
   return;
   }  /* END req_mvjobfile() */
 
-#else /* PBS_MOM */
-
-/*
- * req_mvjobfile - move the specifled job standard files 
- *	This is MOM's version.  The files are owned by the user and placed
- *	in either the spool area or the user's home directory depending
- *	on the compile option, see std_file_name().
- */
-
-/* routine for MOM only - server routine listed above */
-
-void req_mvjobfile( 
-
-  struct batch_request *preq)  /* I */
-
-  {
-  int	         fds;
-  enum job_file  jft;
-  int	         oflag;
-  job	        *pj;
-  struct passwd *pwd;
-
-  jft = (enum job_file)preq->rq_ind.rq_jobfile.rq_type;
-
-  if (preq->rq_ind.rq_jobfile.rq_sequence == 0)
-    oflag = O_CREAT | O_WRONLY | O_TRUNC;
-  else
-    oflag = O_CREAT | O_WRONLY | O_APPEND;
-
-  pj = locate_new_job(preq->rq_conn,NULL);
-
-  if (pj == NULL)
-    pj = find_job(preq->rq_ind.rq_jobfile.rq_jobid);
-
-  if (pj == NULL) 
-    {
-    snprintf(log_buffer,1024,"cannot find job %s for move of %s file",
-      preq->rq_ind.rq_jobfile.rq_jobid,
-      TJobFileType[jft]);
-
-    log_err(-1,"req_mvjobfile",log_buffer);
-
-    req_reject(PBSE_UNKJOBID,0,preq,NULL,NULL);
-
-    return;
-    }
-
-  if ((pj->ji_grpcache == NULL) && (check_pwd(pj) == NULL))
-    {
-    req_reject(PBSE_UNKJOBID,0,preq,NULL,NULL);
-
-    return;
-    }
-    
-  if (((pwd = getpwnam(pj->ji_wattr[(int)JOB_ATR_euser].at_val.at_str)) == NULL) || 
-      ((fds = open_std_file(pj,jft,oflag,pwd->pw_gid)) < 0)) 
-    {
-    /* FAILURE */
-
-    req_reject(PBSE_MOMREJECT,0,preq,NULL,"password lookup failed");
-
-    return;
-    }
-
-  if (write(
-       fds,
-       preq->rq_ind.rq_jobfile.rq_data, 
-       preq->rq_ind.rq_jobfile.rq_size) != preq->rq_ind.rq_jobfile.rq_size)
-    {
-    req_reject(PBSE_SYSTEM,0,preq,NULL,"cannot create file");
-    }
-  else
-    {
-    reply_ack(preq);	
-    }
-
-  close(fds);
-
-  if (LOGLEVEL >= 6)
-    {
-    sprintf(log_buffer,"successfully moved %s file for job '%s'",
-      TJobFileType[jft],
-      preq->rq_ind.rq_jobfile.rq_jobid);
-
-    log_record(
-      PBSEVENT_JOB,
-      PBS_EVENTCLASS_JOB,
-      (pj != NULL) ? pj->ji_qs.ji_jobid : "NULL",
-      log_buffer);
-    }
-
-  return;
-  }  /* END req_mvjobfile() */
-
-
-#endif /* PBS_MOM */
-
 
 
 
@@ -1520,9 +1152,7 @@ void req_rdytocommit(
   char OrigSChar;
   long OrigFlags;
   
-#ifndef PBS_MOM
   char namebuf[MAXPATHLEN+1];
-#endif
 
   pj = locate_new_job(sock,preq->rq_ind.rq_rdytocommit);
 
@@ -1557,8 +1187,6 @@ void req_rdytocommit(
     return;
     }
 
-#ifndef PBS_MOM
-
   if (svr_authorize_jobreq(preq,pj) == -1) 
     {
     req_reject(PBSE_PERM,0,preq,NULL,"cannot authorize jobreq");
@@ -1567,8 +1195,6 @@ void req_rdytocommit(
 
     return;
     }
-
-#endif /* !PBS_MOM */
 
   OrigState  = pj->ji_qs.ji_state;
   OrigSState = pj->ji_qs.ji_substate;
@@ -1580,9 +1206,6 @@ void req_rdytocommit(
   pj->ji_wattr[(int)JOB_ATR_state].at_val.at_char = 'T';
   pj->ji_wattr[(int)JOB_ATR_state].at_flags |= ATR_VFLAG_SET;
   
-#ifndef PBS_MOM
-
-
   if (pj->ji_wattr[(int)JOB_ATR_job_array_request].at_flags & ATR_VFLAG_SET)
     {
     pj->ji_isparent = TRUE;
@@ -1593,9 +1216,6 @@ void req_rdytocommit(
     unlink(namebuf);
         
     }
-
-
-#endif
 
   if (job_save(pj,SAVEJOB_NEW) == -1) 
     {
@@ -1671,12 +1291,10 @@ void req_commit(
   {
   job	  *pj;
 
-#ifndef PBS_MOM	/* SERVER only */
   int	   newstate;
   int	   newsub;
   pbs_queue *pque;
   int	   rc;
-#endif /* SERVER only */
 
   pj = locate_new_job(preq->rq_conn,preq->rq_ind.rq_commit);
 
@@ -1704,91 +1322,6 @@ void req_commit(
 
     return;
     }
-
-#ifdef PBS_MOM	/* MOM only */
-
-  /* move job from new job list to "all" job list, set to running state */
-
-  delete_link(&pj->ji_alljobs);
-  append_link(&svr_alljobs,&pj->ji_alljobs,pj);
-
-  /*
-  ** Set JOB_SVFLG_HERE to indicate that this is Mother Superior.
-  */
-
-  pj->ji_qs.ji_svrflags |= JOB_SVFLG_HERE;
-
-  pj->ji_qs.ji_state = JOB_STATE_RUNNING;
-  pj->ji_qs.ji_substate = JOB_SUBSTATE_PRERUN;
-  pj->ji_qs.ji_un_type = JOB_UNION_TYPE_MOM;
-  pj->ji_qs.ji_un.ji_momt.ji_svraddr = get_connectaddr(preq->rq_conn);
-  pj->ji_qs.ji_un.ji_momt.ji_exitstat = 0;
-
-  /* For MOM - start up the job (blocks) */
-
-  if (LOGLEVEL >= 6)
-    {
-    log_record(
-      PBSEVENT_JOB,
-      PBS_EVENTCLASS_JOB,
-      (pj != NULL) ? pj->ji_qs.ji_jobid : "NULL",
-      "starting job execution");
-    }
-
-  start_exec(pj);
-
-  if (LOGLEVEL >= 6)
-    {
-    log_record(
-      PBSEVENT_JOB,
-      PBS_EVENTCLASS_JOB,
-      (pj != NULL) ? pj->ji_qs.ji_jobid : "NULL",
-      "job execution started");
-    }
-	
-  /* if start request fails, reply with failure string */
-
-  if (pj->ji_qs.ji_substate == JOB_SUBSTATE_EXITING)
-    {
-    char tmpLine[1024];
-
-    if ((pj->ji_hosts != NULL) && 
-        (pj->ji_nodekill >= 0) && 
-        (pj->ji_hosts[pj->ji_nodekill].hn_host != NULL))
-      {
-      sprintf(tmpLine,"start failed on node %s",
-        pj->ji_hosts[pj->ji_nodekill].hn_host);
-      }
-    else
-      {
-      sprintf(tmpLine,"start failed on unknown node");
-      }
-
-    if (LOGLEVEL >= 6)
-      {
-      log_record(
-        PBSEVENT_JOB,
-        PBS_EVENTCLASS_JOB,
-        (pj != NULL) ? pj->ji_qs.ji_jobid : "NULL",
-        tmpLine);
-      }
-
-    reply_text(preq,0,tmpLine);
-    }
-  else
-    {	
-    reply_jobid(preq,pj->ji_qs.ji_jobid,BATCH_REPLY_CHOICE_Commit);
-    }
-
-  job_save(pj,SAVEJOB_FULL);
-
-  /* NOTE: we used to flag JOB_ATR_errpath, JOB_ATR_outpath,
-   * JOB_ATR_session_id, and JOB_ATR_altid as modified at this point to make sure
-   * pbs_server got these attr values.  This worked fine before TORQUE modified
-   * job launched into an async process.  At 2.0.0p6, a new attribute "SEND" flag
-   * was added to handle this process. */
-
-#else	/* PBS_SERVER */
 
   if (svr_authorize_jobreq(preq,pj) == -1) 
     {
@@ -1926,7 +1459,6 @@ void req_commit(
 
     issue_track(pj);
     }
-#endif		/* PBS_SERVER */
 
   return;
   }  /* END req_commit() */
