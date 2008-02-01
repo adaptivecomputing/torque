@@ -47,7 +47,7 @@ void req_deletearray(struct batch_request *preq)
   struct work_task *pwtnew;
 
   int num_skipped;
-
+  char  owner[PBS_MAXUSER + 1];
   
   pa = get_array(preq->rq_ind.rq_delete.rq_objname);
   num_skipped = 0;
@@ -61,7 +61,8 @@ void req_deletearray(struct batch_request *preq)
     }
   
   /* check authorization */
-  if (svr_authorize_req(preq, pa->ai_qs.owner,pa->ai_qs.submit_host) == -1)
+  get_jobowner(pa->ai_qs.owner,owner);
+  if (svr_authorize_req(preq, owner, pa->ai_qs.submit_host) == -1)
     {
     sprintf(log_buffer,msg_permlog, 
       preq->rq_type,
@@ -77,6 +78,7 @@ void req_deletearray(struct batch_request *preq)
       log_buffer);
 
     req_reject(PBSE_PERM,0,preq,NULL,"operation not permitted");
+    return;
     }
   
    
