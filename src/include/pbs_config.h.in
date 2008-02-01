@@ -99,6 +99,9 @@
 /* Define to 1 if you have the <limits.h> header file. */
 #undef HAVE_LIMITS_H
 
+/* Define if lseek64() is available */
+#undef HAVE_LSEEK64
+
 /* Define to 1 if you have the <malloc.h> header file. */
 #undef HAVE_MALLOC_H
 
@@ -119,6 +122,9 @@
 
 /* Define to 1 if you have the `on_exit' function. */
 #undef HAVE_ON_EXIT
+
+/* Define if open64() is available */
+#undef HAVE_OPEN64
 
 /* Define to 1 if you have the <pam/pam_modules.h> header file. */
 #undef HAVE_PAM_PAM_MODULES_H

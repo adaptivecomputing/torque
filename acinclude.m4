@@ -163,6 +163,12 @@ AC_CHECK_FUNC(stat64,
     AC_DEFINE(HAVE_STAT64,1,[Define if stat64() is available]),
      [CFLAGS="$orig_CFLAGS"])])
 
+AC_CHECK_FUNC(open64,
+  AC_DEFINE(HAVE_OPEN64,1,[Define if open64() is available]))
+
+AC_CHECK_FUNC(lseek64,
+  AC_DEFINE(HAVE_LSEEK64,1,[Define if lseek64() is available]))
+
 AC_CHECK_MEMBER(struct stat64.st_mode,
   AC_DEFINE(HAVE_STRUCT_STAT64,1,[Define if struct stat64 is available]),
   CFLAGS="$CFLAGS -D_LARGEFILE64_SOURCE"
