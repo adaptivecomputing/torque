@@ -22,11 +22,13 @@
 #include "server_limits.h"
 #include "job.h"
 
+/* Glen, get rid of these defines and use hardcoded numbers in the legacy
+ * structs... that helps them to be frozen in time.  They can't ever change. */
+
 /* the following would have to be fixed if we ever change the three constants it depends on */
 #define PBS_MAXSVRJOBID_2_1_X	(PBS_MAXSEQNUM + PBS_MAXSERVERNAME + PBS_MAXPORTNUM  + 2 ) /* server job id size  */
 
 #define PBS_JOBBASE_2_2_X 11
-
 
 int upgrade_2_1_X (job *pj, int fds);
 int upgrade_2_2_X (job *pj, int fds);
