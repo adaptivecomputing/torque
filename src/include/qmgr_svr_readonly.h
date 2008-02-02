@@ -97,4 +97,4 @@ ATTR_count,
 ATTR_status,
 ATTR_total,
 ATTR_netcounter,
-
+ATTR_pbsversion,

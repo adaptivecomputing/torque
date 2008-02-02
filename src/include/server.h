@@ -150,8 +150,8 @@ enum srv_atr {
 	SVR_ATR_tokens,
 	SRV_ATR_NetCounter,
 	SRV_ATR_ExtraResc,
-#include "site_svr_attr_enum.h"
 	SRV_ATR_ServerName,
+#include "site_svr_attr_enum.h"
 	/* This must be last */
 	SRV_ATR_LAST
 };

@@ -870,11 +870,6 @@ attribute_def svr_attr_def[] = {
         PARENT_TYPE_SERVER
     },
 
-
-
-/* site supplied server attribute definitions if any, see site_svr_attr_*.h  */
-#include "site_svr_attr_def.h"
-
 /* SRV_ATR_ServerName */
     {   ATTR_servername,     /* "server_name" */
         decode_str,
@@ -887,5 +882,10 @@ attribute_def svr_attr_def[] = {
         ATR_TYPE_STR,
         PARENT_TYPE_SERVER
     }
+
+
+/* site supplied server attribute definitions if any, see site_svr_attr_*.h  */
+#include "site_svr_attr_def.h"
+
 
 };
