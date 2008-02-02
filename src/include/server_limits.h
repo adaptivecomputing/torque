@@ -89,8 +89,9 @@
 #ifndef SERVER_LIMITS_H
 #define SERVER_LIMITS_H
 
-#define PBS_JOBBASE  11		/* basename size for job file, 11 = 14 - 3  */
-				/* where 14 is min file name, 3 for suffix  */
+/* removing outdated 14 char filename limit */
+#define PBS_JOBBASE  	61	/* basename size for job file, 61 = 64 - 3  */
+
 #define PBS_NUMJOBSTATE 6
 
 #define PBS_MAX_HOPCOUNT 10	/* limit on number of routing hops per job */

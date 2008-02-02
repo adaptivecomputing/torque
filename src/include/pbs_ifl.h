@@ -370,8 +370,16 @@
 #define PBS_TERM_BUF_SZ		80	/* Interactive term buffer size */
 #define PBS_TERM_CCA		6	/* Interactive term cntl char array */
 
-#define PBS_QS_VERSION		0x00020200 /* magic number used to determine version of pbs job quick save struct */
-
+#define PBS_QS_VERSION		0x00020300 /* magic number used to determine version of pbs job quick save struct */
+                                           /* the magic number is split into 4 8-bit chunks.  the first 8 bits are 
+                                              unused.  the second b bits represent the major version number
+                                              third 8 bits are the minor version, and the final 8 bits are the 
+                                              bug fix version.  we write the torque version that the job qs struct 
+                                              was last changed in this constant writing them as if they are two 
+                                              digit decimal numbers. all that really matters is that we assign a 
+                                              unique value for each change in the ji_qs struct and that it can't 
+                                              be confused with data at the start of a ji_qs struct from before 
+                                              torque version 2.2.0 */ 
 /* someday the PBS_*_PORT definition will go away and only the	*/
 /* PBS_*_SERVICE_NAME form will be used, maybe			*/
 

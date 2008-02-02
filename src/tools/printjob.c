@@ -101,6 +101,7 @@ void prt_job_struct(
     pjob->ji_qs.ji_jobid);
 
   printf("---------------------------------------------------\n");
+  printf("ji_qs version:\t%#010x\n", pjob->ji_qs.qs_version);
   printf("state:\t\t0x%x\n", 
     pjob->ji_qs.ji_state);
 
@@ -386,6 +387,17 @@ int main(
       fprintf(stderr,"Short read of %d bytes, file %s\n",
         amt, 
         argv[f]);
+      }
+
+    if (xjob.ji_qs.qs_version != PBS_QS_VERSION)
+      {
+      printf("%s contains an old version of the ji_qs structure.\n"
+             "  expecting version %#010x, read %#010x\n"
+             "  Skipping prt_job_struct()\n"
+             "  pbs_server may be able to upgrade job automatically\n", 
+             argv[f], PBS_QS_VERSION, xjob.ji_qs.qs_version);
+      close(fp);
+      continue;
       }
 
     /* print out job structure */
