@@ -714,7 +714,7 @@ job *job_clone(
   
   CLEAR_LINK(pnewjob->ji_arrayjobs);
   append_link(&pa->array_alljobs, &pnewjob->ji_arrayjobs, (void*)pnewjob);
-  pnewjob->ji_arrayjoblist = pa;
+  pnewjob->ji_arraystruct = pa;
  
 
   return pnewjob;
@@ -917,9 +917,9 @@ void job_purge(
     delete_link(&pjob->ji_arrayjobs);
     /* if the only thing in the array alljobs list is the head, then we can 
        clean that up too */
-    if ( GET_NEXT(pjob->ji_arrayjoblist->array_alljobs) == pjob->ji_arrayjoblist->array_alljobs.ll_struct)
+    if ( GET_NEXT(pjob->ji_arraystruct->array_alljobs) == pjob->ji_arraystruct->array_alljobs.ll_struct)
       {
-      delete_array_struct(pjob->ji_arrayjoblist);
+      delete_array_struct(pjob->ji_arraystruct);
       }
     }
     

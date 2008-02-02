@@ -765,7 +765,7 @@ int send_job(
   strcpy(script_name,path_jobs);
   if (jobp->ji_wattr[(int)JOB_ATR_job_array_request].at_flags & ATR_VFLAG_SET)
     {
-    strcat(script_name, jobp->ji_arrayjoblist->ai_qs.fileprefix);
+    strcat(script_name, jobp->ji_arraystruct->ai_qs.fileprefix);
     }
   else
     {

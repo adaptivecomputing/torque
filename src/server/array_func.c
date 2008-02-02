@@ -396,7 +396,6 @@ int setup_array_struct(job *pjob)
     {
     job_purge(pjob);
 
-    /* req_reject(PBSE_SYSTEM,0,preq,NULL,NULL); */
 
     if (LOGLEVEL >= 6)
       {
@@ -413,18 +412,18 @@ int setup_array_struct(job *pjob)
   bad_token_count =
      parse_array_request(pjob->ji_wattr[(int)JOB_ATR_job_array_request].at_val.at_str, pa);
 
+  array_save(pa);
+
   if (bad_token_count > 0)
     {
+    job_purge(pjob);
     delete_array_struct(pa);
     return 2;
     }			
-					
-  array_save(pa);
     
   wt = set_task(WORK_Timed,time_now+1,job_clone_wt,(void*)pjob);
   /* svr_setjobstate(pj,JOB_STATE_HELD,JOB_SUBSTATE_HELD);*/
     
-  /* reply_jobid(preq,pj->ji_qs.ji_jobid,BATCH_REPLY_CHOICE_Commit);*/
   return 0;
   	
   }
@@ -529,7 +528,7 @@ static int array_request_parse_token(char *str, int *start, int *end)
     }
 
   if (start_l < 0 || start_l >= INT_MAX || end_l < 0 || end_l >= INT_MAX 
-      || start_l > PBS_MAXJOBARRAY || end_l > PBS_MAXJOBARRAY)
+      || start_l > PBS_MAXJOBARRAY || end_l > PBS_MAXJOBARRAY || end_l < start_l)
     {
     *start = -1;
     *end = -1;

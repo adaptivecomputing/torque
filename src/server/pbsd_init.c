@@ -731,7 +731,6 @@ int pbsd_init(
        
        if ((type != RECOV_CREATE) && (type != RECOV_COLD))
          {
-	 printf("recovering %s\n", pdirent->d_name);
 	 
 	 /* skip files without the proper suffix */
 	 baselen = strlen(pdirent->d_name) - array_suf_len;

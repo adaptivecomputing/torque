@@ -548,7 +548,7 @@ job *job_recov(
           {
 	   CLEAR_LINK(pj->ji_arrayjobs);
 	   append_link(&pa->array_alljobs, &pj->ji_arrayjobs, (void*)pj);
-	   pj->ji_arrayjoblist = pa;
+	   pj->ji_arraystruct = pa;
 	   pa->jobs_recovered++;
 	  }
 	}
