@@ -16,6 +16,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature
   e - tm tasks are now stored in a single .TK file rather than eat lots of inodes
   f - new "extra_resc" server attribute
   b - "pbs_version" attr is now correctly read-only
+  e - increase max size of .JB and .SC file names
 
 2.2.1
   b - fix a bug where dependent jobs get put on hold when the previous job has
