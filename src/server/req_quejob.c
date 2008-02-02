@@ -278,7 +278,7 @@ void req_quejob(
 
     /* Make the current job number visible in qmgr print server commnad. */
     server.sv_attr[(int)SRV_ATR_NextJobNum].at_val.at_long = server.sv_qs.sv_jobidnumber;
-    server.sv_attr[(int)SRV_ATR_NextJobNum].at_flags = ATR_VFLAG_SET;
+    server.sv_attr[(int)SRV_ATR_NextJobNum].at_flags |= ATR_VFLAG_SET|ATR_VFLAG_MODIFY;
 
 
     if (svr_save(&server,SVR_SAVE_QUICK)) 

@@ -196,7 +196,6 @@ char	       *path_spool;
 char	       *path_undeliv;
 char	       *path_aux;
 char	       *path_server_name;
-char	       *path_resources;
 char           *path_home = PBS_SERVER_HOME;
 char           *mom_home;
 extern char    *msg_daemonname;          /* for logs     */
@@ -6814,7 +6813,6 @@ int setup_program_environment()
   path_epiloguserp = mk_dirs("mom_priv/epilogue.user.parallel");
   path_prologuserp = mk_dirs("mom_priv/prologue.user.parallel");
   path_epilogpdel  = mk_dirs("mom_priv/epilogue.precancel");
-  path_resources   = mk_dirs(PBS_RESOURCES);
 
 #ifndef DEFAULT_MOMLOGDIR
   if (path_log == NULL)
@@ -6826,7 +6824,7 @@ int setup_program_environment()
   path_aux         = mk_dirs("aux/");
   path_server_name = mk_dirs("server_name");
 
-  init_resc_defs(path_resources);
+  init_resc_defs();
 
 #if MOM_CHECKPOINT == 1
 

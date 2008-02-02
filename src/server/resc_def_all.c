@@ -86,13 +86,17 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include <stdio.h>
-#include "pbs_ifl.h" 
+#include <stdio.h>
 #include <string.h>
+#include "pbs_ifl.h" 
 #include "list_link.h" 
 #include "attribute.h" 
 #include "resource.h" 
 #include "pbs_error.h"
-#include <stdio.h>
+#include "server_limits.h"
+#include "server.h"
+
+extern struct server server;
 
 /*
  * The entries for each attribute are (see attribute.h):
@@ -713,54 +717,54 @@ resource_def svr_resc_def_const[] = {
     /* DO NOT ADD DEFINITIONS AFTER "unknown", ONLY BEFORE */
 };
 
-int svr_resc_size = sizeof(svr_resc_def_const) / sizeof(resource_def);
+int svr_resc_size = 0;
 
 
-int init_resc_defs(
-
-  char *path)
+int init_resc_defs(void)
 
   {
-  FILE *fp;
-  char buff[65];
   resource_def *tmpresc = NULL;
   int rindex = 0, dindex = 0, unkindex = 0;
+#ifndef PBS_MOM
+  struct array_strings *resc_arst = NULL;
+  char                 *extra_resc;
+  int			resc_num=0;
+#endif
 
-  fp = fopen(path,"r");
+  svr_resc_size = sizeof(svr_resc_def_const) / sizeof(resource_def);
 
-  if (fp != NULL)
+#ifndef PBS_MOM
+  /* build up a temporary list of string resources */
+  if (server.sv_attr[(int)SRV_ATR_ExtraResc].at_flags & ATR_VFLAG_SET)
     {
-    tmpresc = calloc(MAX_RESOURCES,sizeof(resource_def));
+    resc_arst = server.sv_attr[(int)SRV_ATR_ExtraResc].at_val.at_arst;
+
+    tmpresc = calloc(resc_arst->as_usedptr + 1,sizeof(resource_def));
 
     if (tmpresc == NULL)
       {
-      fclose(fp);
-
       return(-1);
       }
 
-    while (fscanf(fp,"%64s",buff) == 1)
+    for (resc_num = 0;resc_num < resc_arst->as_usedptr;resc_num++)
       {
-      if (strlen(buff) <= 1)
-        continue;
+      extra_resc = resc_arst->as_string[resc_num];
 
-      (tmpresc+dindex)->rs_name=strdup(buff);
-      (tmpresc+dindex)->rs_decode=decode_str;
-      (tmpresc+dindex)->rs_encode=encode_str;
-      (tmpresc+dindex)->rs_set=set_str;
-      (tmpresc+dindex)->rs_comp=comp_str;
-      (tmpresc+dindex)->rs_free=free_str;
-      (tmpresc+dindex)->rs_action=NULL_FUNC;
-      (tmpresc+dindex)->rs_flags=READ_WRITE;
-      (tmpresc+dindex)->rs_type=ATR_TYPE_STR;
+      (tmpresc+resc_num)->rs_name=strdup(extra_resc);
+      (tmpresc+resc_num)->rs_decode=decode_str;
+      (tmpresc+resc_num)->rs_encode=encode_str;
+      (tmpresc+resc_num)->rs_set=set_str;
+      (tmpresc+resc_num)->rs_comp=comp_str;
+      (tmpresc+resc_num)->rs_free=free_str;
+      (tmpresc+resc_num)->rs_action=NULL_FUNC;
+      (tmpresc+resc_num)->rs_flags=READ_WRITE;
+      (tmpresc+resc_num)->rs_type=ATR_TYPE_STR;
 
       dindex++;
 
-      if (dindex >= MAX_RESOURCES)
-        break;
       }
-
     }
+#endif
 
   svr_resc_def=calloc(svr_resc_size+dindex,sizeof(resource_def));
 
@@ -772,23 +776,18 @@ int init_resc_defs(
   unkindex=rindex;
 
   /* copy our dynamic resources */
-  if (fp)
+  if (tmpresc)
     {
-    if (tmpresc)
+    for (dindex=0; (tmpresc+dindex)->rs_decode; dindex++)
       {
-      for (dindex=0; (tmpresc+dindex)->rs_decode; dindex++)
+      if (find_resc_def(svr_resc_def,(tmpresc+dindex)->rs_name,rindex) == NULL)
         {
-        if (find_resc_def(svr_resc_def,(tmpresc+dindex)->rs_name,rindex) == NULL)
-          {
-          memcpy(svr_resc_def+rindex,tmpresc+dindex,sizeof(resource_def));
-          rindex++;
-          }
+        memcpy(svr_resc_def+rindex,tmpresc+dindex,sizeof(resource_def));
+        rindex++;
         }
+      }
 
-     free(tmpresc);
-     }
-
-    fclose(fp);
+    free(tmpresc);
     }
   
   /* copy the last "unknown" resource */

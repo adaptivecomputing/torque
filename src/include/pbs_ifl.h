@@ -262,6 +262,7 @@
 #define ATTR_logfilemaxsize "log_file_max_size"
 #define ATTR_logfilerolldepth "log_file_roll_depth"
 #define ATTR_nextjobnum "next_job_number"
+#define ATTR_extraresc "extra_resc"
 
 /* additional node "attributes" names */
 

@@ -209,6 +209,13 @@ removed in the future.  Format: boolean; default value: false.
 .if !\n(Pb .ig Ig
 [internal type: boolean]
 .Ig
+.Al extra_resc
+Add additional string-type job resources.  They have no effect within TORQUE
+and are only advisible to the scheduler.  They can not be used for
+resources_default/min/max.  Format: list; default value: none.
+.if !\n(Pb .ig Ig
+[internal type: list]
+.Ig
 .Al job_nanny
 Enables the experimental "job deletion nanny" feature.  All job cancels will
 create a repeating task that will resend KILL signals if the initial job cancel

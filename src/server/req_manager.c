@@ -123,6 +123,7 @@
 #include "svrfunc.h"
 #include "job.h"
 #include "pbs_nodes.h"
+#include "work_task.h"
 
 
 #define PERM_MANAGER (ATR_DFLAG_MGWR | ATR_DFLAG_MGRD)
@@ -2307,6 +2308,32 @@ int servername_chk(
   }  /* END server_name_chk() */
 
 
+/*
+ * extra_resc_chk() called when extra_resc server attribute is changed
+ *     It's purpose is to re-init the resource definitions by calling
+ *     init_resc_defs().  Unfortunately, it gets call before the
+ *     change is actually committed; so we setup a work task to call
+ *     it async asap.
+ */
+void on_extra_resc(
+
+  struct work_task *ptask) 
+  {
+  init_resc_defs();
+  }
+int extra_resc_chk(
+
+  attribute *pattr,   /* I */
+  void      *pobject, /* I */
+  int	     actmode) /* I */
+
+  {
+  /* Is there anything to validate?  Maybe check for all alphanum? */
+  /* the new resource is at pattr->at_val.at_str */
+  set_task(WORK_Immed,0,on_extra_resc,NULL);
+
+  return PBSE_NONE;
+}
 
 /*
  * disallowed_types_chk -
@@ -2434,15 +2461,15 @@ int nextjobnum_chk(
     }
   else if (pattr->at_val.at_long >= 0)
     {
-    server.sv_qs.sv_jobidnumber = pattr->at_val.at_long;
 #if 0
+    server.sv_qs.sv_jobidnumber = pattr->at_val.at_long;
     /* This will cause next_job_number to be undisplayable in qmgr print server.
      * See encode_l where it returns if the attribute is not set.
      * Why would this ever be the desired behavior?
      */
     pattr->at_flags &= ~ATR_VFLAG_SET;
-#endif
     svr_save(&server,SVR_SAVE_FULL);
+#endif
     return(PBSE_NONE);
     }
   else
@@ -2472,14 +2499,19 @@ int set_nextjobnum(
     case SET:   attr->at_val.at_long = new->at_val.at_long;
                 break;
 
-    case INCR:  attr->at_val.at_long = MAX(server.sv_qs.sv_jobidnumber, new->at_val.at_long);
+    /*case INCR:  attr->at_val.at_long = MAX(server.sv_qs.sv_jobidnumber, new->at_val.at_long);*/
+    case INCR:  attr->at_val.at_long += new->at_val.at_long;
                 break;
 
-    case DECR:  attr->at_val.at_long = server.sv_qs.sv_jobidnumber -= new->at_val.at_long;
+    case DECR:  attr->at_val.at_long -= new->at_val.at_long;
                 break;
     default: return(PBSE_SYSTEM);
     }
   attr->at_flags |= ATR_VFLAG_SET | ATR_VFLAG_MODIFY;
+
+  server.sv_qs.sv_jobidnumber = attr->at_val.at_long;
+  svr_save(&server,SVR_SAVE_QUICK);
+
   return 0;
   }
 /* END req_manager.c */

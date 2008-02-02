@@ -14,6 +14,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature
   b - fixed so SIGUSR1 / SIGUSR2 to correctly change the log level
   f - health check script can now be run at job start and end
   e - tm tasks are now stored in a single .TK file rather than eat lots of inodes
+  f - new "extra_resc" server attribute
 
 2.2.1
   b - fix a bug where dependent jobs get put on hold when the previous job has

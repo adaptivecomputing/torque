@@ -149,6 +149,7 @@ enum srv_atr {
 	SRV_ATR_NextJobNum,
 	SVR_ATR_tokens,
 	SRV_ATR_NetCounter,
+	SRV_ATR_ExtraResc,
 #include "site_svr_attr_enum.h"
 	SRV_ATR_ServerName,
 	/* This must be last */

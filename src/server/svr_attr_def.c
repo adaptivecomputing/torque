@@ -91,6 +91,7 @@
 
 extern int manager_oper_chk A_((attribute *pattr, void *pobject, int actmode));
 extern int servername_chk A_((attribute *pattr, void *pobject, int actmode));
+extern int extra_resc_chk A_((attribute *pattr, void *pobject, int actmode));
 extern int schiter_chk A_((attribute *pattr, void *pobject, int actmode));
 
 extern int nextjobnum_chk A_((attribute *pattr, void *pobject, int actmode));
@@ -856,7 +857,20 @@ attribute_def svr_attr_def[] = {
 	PARENT_TYPE_SERVER
     },
 
-	
+/* SRV_ATR_ExtraResc */
+    {   ATTR_extraresc,		/* "extra_resc" */
+        decode_arst,
+        encode_arst,
+        set_arst,
+        comp_arst,
+        free_arst,
+        extra_resc_chk,
+        NO_USER_SET,
+        ATR_TYPE_ARST,
+        PARENT_TYPE_SERVER
+    },
+
+
 
 /* site supplied server attribute definitions if any, see site_svr_attr_*.h  */
 #include "site_svr_attr_def.h"

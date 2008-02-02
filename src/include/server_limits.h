@@ -123,7 +123,6 @@
 #define PBS_ACTFILES		"accounting"
 #define PBS_SERVERDB		"serverdb"
 #define PBS_SVRACL		"acl_svr"
-#define PBS_RESOURCES           "resourcedef"
 #define PBS_TRACKING		"tracking"
 #define NODE_DESCRIP		"nodes"
 #define NODE_STATUS		"node_status"
