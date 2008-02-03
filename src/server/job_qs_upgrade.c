@@ -22,13 +22,6 @@
 #include "server_limits.h"
 #include "job.h"
 
-/* Glen, get rid of these defines and use hardcoded numbers in the legacy
- * structs... that helps them to be frozen in time.  They can't ever change. */
-
-/* the following would have to be fixed if we ever change the three constants it depends on */
-#define PBS_MAXSVRJOBID_2_1_X	(PBS_MAXSEQNUM + PBS_MAXSERVERNAME + PBS_MAXPORTNUM  + 2 ) /* server job id size  */
-
-#define PBS_JOBBASE_2_2_X 11
 
 int upgrade_2_1_X (job *pj, int fds);
 int upgrade_2_2_X (job *pj, int fds);
@@ -42,10 +35,10 @@ typedef struct {
     int	    ji_ordering;	/* special scheduling ordering */
     int	    ji_priority;	/* internal priority */
     time_t  ji_stime;		/* time job started execution */
-    char    ji_jobid[PBS_MAXSVRJOBID_2_1_X + 1];   /* job identifier */
-    char    ji_fileprefix[PBS_JOBBASE_2_2_X + 1];  /* job file prefix */
-    char    ji_queue[PBS_MAXQUEUENAME + 1];  /* name of current queue */
-    char    ji_destin[PBS_MAXROUTEDEST + 1]; /* dest from qmove/route */
+    char    ji_jobid[80];   /* job identifier */
+    char    ji_fileprefix[12];  /* job file prefix */
+    char    ji_queue[16];  /* name of current queue */
+    char    ji_destin[87]; /* dest from qmove/route */
     int	    ji_un_type;		/* type of ji_un union */
     union {	/* depends on type of queue currently in */
 	struct {	/* if in execution queue .. */
@@ -79,10 +72,10 @@ typedef struct {
     int     ji_ordering;        /* special scheduling ordering */
     int     ji_priority;        /* internal priority */
     time_t  ji_stime;           /* time job started execution */
-    char    ji_jobid[PBS_MAXSVRJOBID + 1];   /* job identifier */
-    char    ji_fileprefix[PBS_JOBBASE_2_2_X + 1];  /* job file prefix */
-    char    ji_queue[PBS_MAXQUEUENAME + 1];  /* name of current queue */
-    char    ji_destin[PBS_MAXROUTEDEST + 1]; /* dest from qmove/route */
+    char    ji_jobid[86];   /* job identifier */
+    char    ji_fileprefix[12];  /* job file prefix */
+    char    ji_queue[16];  /* name of current queue */
+    char    ji_destin[87]; /* dest from qmove/route */
     int     ji_un_type;         /* type of ji_un union */
     union {     /* depends on type of queue currently in */
         struct {        /* if in execution queue .. */
@@ -108,9 +101,8 @@ typedef struct {
 } ji_qs_2_2_X;
 
 
-/* this function will upgrade a ji_qs struct from the last version to the 
-   newest version.  this function needs to know the change in structure, 
-   and therefore we should only support upgrades from the previous version 
+/* this function will upgrade a ji_qs struct to the
+   newest version.   
    
    this version upgrades from 2.1.x and 2.2.x to 2.3.0
    */
