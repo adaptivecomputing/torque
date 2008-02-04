@@ -147,7 +147,7 @@ enum srv_atr {
 	SRV_ATR_LogFileMaxSize,
 	SRV_ATR_LogFileRollDepth,
 	SRV_ATR_NextJobNum,
-	SVR_ATR_tokens,
+	SRV_ATR_tokens,
 	SRV_ATR_NetCounter,
 	SRV_ATR_ExtraResc,
 	SRV_ATR_ServerName,

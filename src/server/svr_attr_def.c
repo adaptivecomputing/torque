@@ -831,7 +831,7 @@ attribute_def svr_attr_def[] = {
 	ATR_TYPE_LONG,
 	PARENT_TYPE_SERVER
     },
-/* SVR_ATR_tokens */
+/* SRV_ATR_tokens */
     { ATTR_tokens,
 	decode_arst,
 	encode_arst,
