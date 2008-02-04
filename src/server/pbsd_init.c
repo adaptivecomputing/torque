@@ -1525,7 +1525,7 @@ static void catch_child(
 
     ptask = (struct work_task *)GET_NEXT(task_list_event);
 
-    while (ptask) 
+    while (ptask != NULL) 
       {
       if ((ptask->wt_type == WORK_Deferred_Child) &&
           (ptask->wt_event == pid)) 
@@ -1538,7 +1538,7 @@ static void catch_child(
 
       ptask = (struct work_task *)GET_NEXT(ptask->wt_linkall);
       }
-    }
+    }    /* END while (1) */
 
   return;
   }  /* END catch_child() */

@@ -6497,18 +6497,24 @@ static char *mk_dirs(
 
 
 
+
+
+
 /*
  * parse_command_line
  */
 
-void parse_command_line( int argc, char *argv[])
-{
+void parse_command_line( 
+
+  int   argc,    /* I */
+  char *argv[])  /* I */
+
+  {
   extern char	*optarg;
   extern int	optind;
   int           errflg;
   int           c;
   char		*ptr;                   /* local tmp variable */
-
 
   errflg = 0;
 
@@ -6533,6 +6539,15 @@ void parse_command_line( int argc, char *argv[])
           printf("builduser:   %s\n",PBS_BUILD_USER);
           printf("installdir:  %s\n",PBS_INSTALL_DIR);
           printf("serverhome:  %s\n",PBS_SERVER_HOME);
+          printf("version:     %s\n",PACKAGE_VERSION);
+
+          exit(0);
+          }
+      
+        if (!strcmp(optarg,"version"))
+          {
+          printf("version:     %s\n",
+            PACKAGE_VERSION);
 
           exit(0);
           }
@@ -8108,6 +8123,9 @@ void restart_mom( int argc, char *argv[] )
 
 
 
+
+
+
 /*
  * main - the main program of MOM
  */
@@ -8135,9 +8153,13 @@ int main(
     }
 
   initialize_globals();
-  parse_command_line( argc, argv );  /* Calls exit on command line error */
+
+  parse_command_line(argc,argv);  /* Calls exit on command line error */
+
   if ((rc = setup_program_environment()) != 0)
+    {
     return(rc);
+    }
 
   main_loop();
 
@@ -8154,18 +8176,23 @@ int main(
 
   if (mom_run_state == MOM_RUN_STATE_RESTART)
     {
-    sprintf(log_buffer,"Will be restarting: %s",MOMExePath);
+    sprintf(log_buffer,"Will be restarting: %s",
+      MOMExePath);
+
     log_record(PBSEVENT_SYSTEM | PBSEVENT_FORCE, PBS_EVENTCLASS_SERVER,
-      msg_daemonname, log_buffer);
+      msg_daemonname, 
+      log_buffer);
     }
+
   log_record(PBSEVENT_SYSTEM | PBSEVENT_FORCE, PBS_EVENTCLASS_SERVER,
-    msg_daemonname, "Is down");
+    msg_daemonname, 
+    "Is down");
 
   log_close(1);
  
   if (mom_run_state == MOM_RUN_STATE_RESTART)
     {
-    restart_mom( argc, argv );
+    restart_mom(argc,argv);
     }
 
   return(0);

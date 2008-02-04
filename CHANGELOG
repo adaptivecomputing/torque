@@ -11,7 +11,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature
   e - local client connections use a unix domain socket, bypassing inet and pbs_iff
   f - Linux 2.6 cpuset support  (in development)
   e - new job array submission syntax
-  b - fixed so SIGUSR1 / SIGUSR2 to correctly change the log level
+  b - fixed SIGUSR1 / SIGUSR2 to correctly change the log level
   f - health check script can now be run at job start and end
   e - tm tasks are now stored in a single .TK file rather than eat lots of inodes
   f - new "extra_resc" server attribute
