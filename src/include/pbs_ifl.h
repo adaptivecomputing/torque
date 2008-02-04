@@ -263,6 +263,7 @@
 #define ATTR_logfilerolldepth "log_file_roll_depth"
 #define ATTR_nextjobnum "next_job_number"
 #define ATTR_extraresc "extra_resc"
+#define ATTR_schedversion "sched_version"
 
 /* additional node "attributes" names */
 

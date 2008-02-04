@@ -455,6 +455,13 @@ default value: infinite usage.
 .if !\n(Pb .ig Ig
 [internal type: resource]
 .Ig
+.Al sched_version
+A string specifying the scheduler version.  Schedulers should check this string
+when starting and not become active if the wrong string is found.  This is
+ignored by pbs_server.
+.if !\n(Pb .ig Ig
+[internal type: string]
+.Ig
 .Al scheduler_iteration
 The time, in seconds, between iterations of attempts by the batch server
 to schedule jobs.  On each iteration, the server examines the available
