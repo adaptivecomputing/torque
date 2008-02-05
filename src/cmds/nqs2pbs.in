@@ -87,7 +87,7 @@ else
 	OUT=$1.new
 fi
 echo Converting NQS script \"$1\" into \"$OUT\"
-nawk  '
+@AWK@  '
 #
 # Rule 0 - Initialize a few variables
 #

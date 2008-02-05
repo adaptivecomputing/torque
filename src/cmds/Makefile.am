@@ -2,12 +2,12 @@ include $(top_srcdir)/buildutils/config.mk
 
 PBS_LIBS = ../lib/Libpbs/libtorque.la
 
-bin_SCRIPTS = nqs2pbs
+dist_bin_SCRIPTS = nqs2pbs
 bin_PROGRAMS = qalter qdel qhold qmove qorder qmsg qrerun qrls qselect qsig \
 	       qstat qsub pbsdsh qdisable qenable qrun qstart qstop qterm \
 	       pbsnodes qmgr @PBSPOE@
 EXTRA_PROGRAMS = pbspd pbspoe
-EXTRA_DIST = nqs2pbs sample.qstatrc
+EXTRA_DIST = nqs2pbs.in sample.qstatrc
 
 LDADD = $(PBS_LIBS)
 
@@ -47,6 +47,15 @@ qstat_SOURCES = qstat.c MXML.c
 qstop_SOURCES = qstop.c
 qsub_SOURCES = qsub.c
 qterm_SOURCES = qterm.c
+
+CLEANFILES = $(dist_bin_SCRIPTS)
+
+do_subst = sed -e 's,[@]AWK[@],$(AWK),g'
+
+nqs2pbs: nqs2pbs.in Makefile
+	$(do_subst) < $(srcdir)/nqs2pbs.in > nqs2pbs
+	chmod +x nqs2pbs
+
 
 install-exec-hook:
 	$(PBS_MKDIRS) aux || :

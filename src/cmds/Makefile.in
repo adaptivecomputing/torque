@@ -39,8 +39,8 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in \
-	$(top_srcdir)/buildutils/config.mk
+DIST_COMMON = $(dist_bin_SCRIPTS) $(srcdir)/Makefile.am \
+	$(srcdir)/Makefile.in $(top_srcdir)/buildutils/config.mk
 bin_PROGRAMS = qalter$(EXEEXT) qdel$(EXEEXT) qhold$(EXEEXT) \
 	qmove$(EXEEXT) qorder$(EXEEXT) qmsg$(EXEEXT) qrerun$(EXEEXT) \
 	qrls$(EXEEXT) qselect$(EXEEXT) qsig$(EXEEXT) qstat$(EXEEXT) \
@@ -161,8 +161,8 @@ am_qterm_OBJECTS = qterm.$(OBJEXT)
 qterm_OBJECTS = $(am_qterm_OBJECTS)
 qterm_LDADD = $(LDADD)
 qterm_DEPENDENCIES = $(am__DEPENDENCIES_1)
-binSCRIPT_INSTALL = $(INSTALL_SCRIPT)
-SCRIPTS = $(bin_SCRIPTS)
+dist_binSCRIPT_INSTALL = $(INSTALL_SCRIPT)
+SCRIPTS = $(dist_bin_SCRIPTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src/include
 depcomp = $(SHELL) $(top_srcdir)/buildutils/depcomp
 am__depfiles_maybe = depfiles
@@ -441,8 +441,8 @@ XPBS_DIR = $(libdir)/xpbs
 XPBSMON_DIR = $(libdir)/xpbsmon
 SUBMIT_FILTER_PATH = $(libexecdir)/qsub_filter
 PBS_LIBS = ../lib/Libpbs/libtorque.la
-bin_SCRIPTS = nqs2pbs
-EXTRA_DIST = nqs2pbs sample.qstatrc
+dist_bin_SCRIPTS = nqs2pbs
+EXTRA_DIST = nqs2pbs.in sample.qstatrc
 LDADD = $(PBS_LIBS)
 @USE_TCLQSTAT_TRUE@TCLQSTATLIBS = $(MY_TCL_LIBS)
 @USE_TCLQSTAT_TRUE@TCLQSTATCFLAGS = $(MY_TCL_INCS)
@@ -476,6 +476,8 @@ qstat_SOURCES = qstat.c MXML.c
 qstop_SOURCES = qstop.c
 qsub_SOURCES = qsub.c
 qterm_SOURCES = qterm.c
+CLEANFILES = $(dist_bin_SCRIPTS)
+do_subst = sed -e 's,[@]AWK[@],$(AWK),g'
 all: all-am
 
 .SUFFIXES:
@@ -606,21 +608,21 @@ qsub$(EXEEXT): $(qsub_OBJECTS) $(qsub_DEPENDENCIES)
 qterm$(EXEEXT): $(qterm_OBJECTS) $(qterm_DEPENDENCIES) 
 	@rm -f qterm$(EXEEXT)
 	$(LINK) $(qterm_LDFLAGS) $(qterm_OBJECTS) $(qterm_LDADD) $(LIBS)
-install-binSCRIPTS: $(bin_SCRIPTS)
+install-dist_binSCRIPTS: $(dist_bin_SCRIPTS)
 	@$(NORMAL_INSTALL)
 	test -z "$(bindir)" || $(mkdir_p) "$(DESTDIR)$(bindir)"
-	@list='$(bin_SCRIPTS)'; for p in $$list; do \
+	@list='$(dist_bin_SCRIPTS)'; for p in $$list; do \
 	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
 	  if test -f $$d$$p; then \
 	    f=`echo "$$p" | sed 's|^.*/||;$(transform)'`; \
-	    echo " $(binSCRIPT_INSTALL) '$$d$$p' '$(DESTDIR)$(bindir)/$$f'"; \
-	    $(binSCRIPT_INSTALL) "$$d$$p" "$(DESTDIR)$(bindir)/$$f"; \
+	    echo " $(dist_binSCRIPT_INSTALL) '$$d$$p' '$(DESTDIR)$(bindir)/$$f'"; \
+	    $(dist_binSCRIPT_INSTALL) "$$d$$p" "$(DESTDIR)$(bindir)/$$f"; \
 	  else :; fi; \
 	done
 
-uninstall-binSCRIPTS:
+uninstall-dist_binSCRIPTS:
 	@$(NORMAL_UNINSTALL)
-	@list='$(bin_SCRIPTS)'; for p in $$list; do \
+	@list='$(dist_bin_SCRIPTS)'; for p in $$list; do \
 	  f=`echo "$$p" | sed 's|^.*/||;$(transform)'`; \
 	  echo " rm -f '$(DESTDIR)$(bindir)/$$f'"; \
 	  rm -f "$(DESTDIR)$(bindir)/$$f"; \
@@ -845,6 +847,7 @@ install-strip:
 mostlyclean-generic:
 
 clean-generic:
+	-test -z "$(CLEANFILES)" || rm -f $(CLEANFILES)
 
 distclean-generic:
 	-test -z "$(CONFIG_CLEAN_FILES)" || rm -f $(CONFIG_CLEAN_FILES)
@@ -874,7 +877,7 @@ info-am:
 
 install-data-am:
 
-install-exec-am: install-binPROGRAMS install-binSCRIPTS
+install-exec-am: install-binPROGRAMS install-dist_binSCRIPTS
 	@$(NORMAL_INSTALL)
 	$(MAKE) $(AM_MAKEFLAGS) install-exec-hook
 
@@ -902,7 +905,7 @@ ps: ps-am
 
 ps-am:
 
-uninstall-am: uninstall-binPROGRAMS uninstall-binSCRIPTS \
+uninstall-am: uninstall-binPROGRAMS uninstall-dist_binSCRIPTS \
 	uninstall-info-am
 	@$(NORMAL_INSTALL)
 	$(MAKE) $(AM_MAKEFLAGS) uninstall-hook
@@ -911,15 +914,20 @@ uninstall-am: uninstall-binPROGRAMS uninstall-binSCRIPTS \
 	clean-generic clean-libtool ctags distclean distclean-compile \
 	distclean-generic distclean-libtool distclean-tags distdir dvi \
 	dvi-am html html-am info info-am install install-am \
-	install-binPROGRAMS install-binSCRIPTS install-data \
-	install-data-am install-exec install-exec-am install-exec-hook \
-	install-info install-info-am install-man install-strip \
-	installcheck installcheck-am installdirs maintainer-clean \
-	maintainer-clean-generic mostlyclean mostlyclean-compile \
-	mostlyclean-generic mostlyclean-libtool pdf pdf-am ps ps-am \
-	tags uninstall uninstall-am uninstall-binPROGRAMS \
-	uninstall-binSCRIPTS uninstall-hook uninstall-info-am
+	install-binPROGRAMS install-data install-data-am \
+	install-dist_binSCRIPTS install-exec install-exec-am \
+	install-exec-hook install-info install-info-am install-man \
+	install-strip installcheck installcheck-am installdirs \
+	maintainer-clean maintainer-clean-generic mostlyclean \
+	mostlyclean-compile mostlyclean-generic mostlyclean-libtool \
+	pdf pdf-am ps ps-am tags uninstall uninstall-am \
+	uninstall-binPROGRAMS uninstall-dist_binSCRIPTS uninstall-hook \
+	uninstall-info-am
 
+
+nqs2pbs: nqs2pbs.in Makefile
+	$(do_subst) < $(srcdir)/nqs2pbs.in > nqs2pbs
+	chmod +x nqs2pbs
 
 install-exec-hook:
 	$(PBS_MKDIRS) aux || :
