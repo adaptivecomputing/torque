@@ -14,7 +14,7 @@
 
 @SET_MAKE@
 
-SOURCES = $(chk_tree_SOURCES) $(hostn_SOURCES) $(pbs_tclsh_SOURCES) $(pbs_wish_SOURCES) $(printjob_SOURCES) $(printtracking_SOURCES) $(tracejob_SOURCES)
+SOURCES = $(chk_tree_SOURCES) $(hostn_SOURCES) $(pbs_tclsh_SOURCES) $(pbs_wish_SOURCES) $(printjob_SOURCES) $(printserverdb_SOURCES) $(printtracking_SOURCES) $(tracejob_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -41,8 +41,8 @@ host_triplet = @host@
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in \
 	$(top_srcdir)/buildutils/config.mk
 bin_PROGRAMS = chk_tree$(EXEEXT) hostn$(EXEEXT) printjob$(EXEEXT) \
-	printtracking$(EXEEXT) tracejob$(EXEEXT) $(am__EXEEXT_1) \
-	$(am__EXEEXT_2)
+	printtracking$(EXEEXT) printserverdb$(EXEEXT) \
+	tracejob$(EXEEXT) $(am__EXEEXT_1) $(am__EXEEXT_2)
 subdir = src/tools
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/acinclude.m4 \
@@ -88,6 +88,10 @@ am_printjob_OBJECTS = printjob.$(OBJEXT)
 printjob_OBJECTS = $(am_printjob_OBJECTS)
 printjob_LDADD = $(LDADD)
 printjob_DEPENDENCIES = $(am__DEPENDENCIES_1)
+am_printserverdb_OBJECTS = printserverdb-printserverdb.$(OBJEXT)
+printserverdb_OBJECTS = $(am_printserverdb_OBJECTS)
+printserverdb_LDADD = $(LDADD)
+printserverdb_DEPENDENCIES = $(am__DEPENDENCIES_1)
 am_printtracking_OBJECTS = printtracking.$(OBJEXT)
 printtracking_OBJECTS = $(am_printtracking_OBJECTS)
 printtracking_LDADD = $(LDADD)
@@ -109,10 +113,12 @@ LINK = $(LIBTOOL) --mode=link --tag=CC $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(AM_LDFLAGS) $(LDFLAGS) -o $@
 SOURCES = $(chk_tree_SOURCES) $(hostn_SOURCES) $(pbs_tclsh_SOURCES) \
 	$(pbs_wish_SOURCES) $(printjob_SOURCES) \
-	$(printtracking_SOURCES) $(tracejob_SOURCES)
+	$(printserverdb_SOURCES) $(printtracking_SOURCES) \
+	$(tracejob_SOURCES)
 DIST_SOURCES = $(chk_tree_SOURCES) $(hostn_SOURCES) \
 	$(pbs_tclsh_SOURCES) $(pbs_wish_SOURCES) $(printjob_SOURCES) \
-	$(printtracking_SOURCES) $(tracejob_SOURCES)
+	$(printserverdb_SOURCES) $(printtracking_SOURCES) \
+	$(tracejob_SOURCES)
 RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
 	html-recursive info-recursive install-data-recursive \
 	install-exec-recursive install-info-recursive \
@@ -378,10 +384,12 @@ PBS_LIBS = ../lib/Libpbs/libtorque.la
 @INCLUDE_GUI_TRUE@@USING_TK_TRUE@PROGRAMS_TK = pbs_wish
 LDADD = $(PBS_LIBS)
 tracejob_CFLAGS = -DPBS_SERVER_HOME=\"$(PBS_SERVER_HOME)\"
+printserverdb_CFLAGS = -DPBS_SERVER_HOME=\"$(PBS_SERVER_HOME)\"
 chk_tree_SOURCES = chk_tree.c
 hostn_SOURCES = hostn.c
 printjob_SOURCES = printjob.c
 printtracking_SOURCES = printtracking.c
+printserverdb_SOURCES = printserverdb.c
 tracejob_SOURCES = tracejob.c
 pbs_tclsh_LDADD = $(PBS_LIBS) $(MY_TCL_LIBS)
 pbs_tclsh_CFLAGS = $(MY_TCL_INCS)
@@ -469,6 +477,9 @@ pbs_wish$(EXEEXT): $(pbs_wish_OBJECTS) $(pbs_wish_DEPENDENCIES)
 printjob$(EXEEXT): $(printjob_OBJECTS) $(printjob_DEPENDENCIES) 
 	@rm -f printjob$(EXEEXT)
 	$(LINK) $(printjob_LDFLAGS) $(printjob_OBJECTS) $(printjob_LDADD) $(LIBS)
+printserverdb$(EXEEXT): $(printserverdb_OBJECTS) $(printserverdb_DEPENDENCIES) 
+	@rm -f printserverdb$(EXEEXT)
+	$(LINK) $(printserverdb_LDFLAGS) $(printserverdb_OBJECTS) $(printserverdb_LDADD) $(LIBS)
 printtracking$(EXEEXT): $(printtracking_OBJECTS) $(printtracking_DEPENDENCIES) 
 	@rm -f printtracking$(EXEEXT)
 	$(LINK) $(printtracking_LDFLAGS) $(printtracking_OBJECTS) $(printtracking_LDADD) $(LIBS)
@@ -491,6 +502,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pbs_wish-pbs_tclWrap.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pbs_wish-site_tclWrap.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/printjob.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/printserverdb-printserverdb.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/printtracking.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tracejob-tracejob.Po@am__quote@
 
@@ -598,6 +610,20 @@ pbs_wish-site_tclWrap.obj: ../scheduler.tcl/site_tclWrap.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='../scheduler.tcl/site_tclWrap.c' object='pbs_wish-site_tclWrap.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(pbs_wish_CFLAGS) $(CFLAGS) -c -o pbs_wish-site_tclWrap.obj `if test -f '../scheduler.tcl/site_tclWrap.c'; then $(CYGPATH_W) '../scheduler.tcl/site_tclWrap.c'; else $(CYGPATH_W) '$(srcdir)/../scheduler.tcl/site_tclWrap.c'; fi`
+
+printserverdb-printserverdb.o: printserverdb.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(printserverdb_CFLAGS) $(CFLAGS) -MT printserverdb-printserverdb.o -MD -MP -MF "$(DEPDIR)/printserverdb-printserverdb.Tpo" -c -o printserverdb-printserverdb.o `test -f 'printserverdb.c' || echo '$(srcdir)/'`printserverdb.c; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/printserverdb-printserverdb.Tpo" "$(DEPDIR)/printserverdb-printserverdb.Po"; else rm -f "$(DEPDIR)/printserverdb-printserverdb.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='printserverdb.c' object='printserverdb-printserverdb.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(printserverdb_CFLAGS) $(CFLAGS) -c -o printserverdb-printserverdb.o `test -f 'printserverdb.c' || echo '$(srcdir)/'`printserverdb.c
+
+printserverdb-printserverdb.obj: printserverdb.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(printserverdb_CFLAGS) $(CFLAGS) -MT printserverdb-printserverdb.obj -MD -MP -MF "$(DEPDIR)/printserverdb-printserverdb.Tpo" -c -o printserverdb-printserverdb.obj `if test -f 'printserverdb.c'; then $(CYGPATH_W) 'printserverdb.c'; else $(CYGPATH_W) '$(srcdir)/printserverdb.c'; fi`; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/printserverdb-printserverdb.Tpo" "$(DEPDIR)/printserverdb-printserverdb.Po"; else rm -f "$(DEPDIR)/printserverdb-printserverdb.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='printserverdb.c' object='printserverdb-printserverdb.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(printserverdb_CFLAGS) $(CFLAGS) -c -o printserverdb-printserverdb.obj `if test -f 'printserverdb.c'; then $(CYGPATH_W) 'printserverdb.c'; else $(CYGPATH_W) '$(srcdir)/printserverdb.c'; fi`
 
 tracejob-tracejob.o: tracejob.c
 @am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tracejob_CFLAGS) $(CFLAGS) -MT tracejob-tracejob.o -MD -MP -MF "$(DEPDIR)/tracejob-tracejob.Tpo" -c -o tracejob-tracejob.o `test -f 'tracejob.c' || echo '$(srcdir)/'`tracejob.c; \

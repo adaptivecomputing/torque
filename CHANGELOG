@@ -18,6 +18,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature
   b - "pbs_version" attr is now correctly read-only
   e - increase max size of .JB and .SC file names
   e - new "sched_version" server attribute
+  f - new printserverdb tool
 
 2.2.1
   b - fix a bug where dependent jobs get put on hold when the previous job has

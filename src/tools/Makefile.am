@@ -24,16 +24,18 @@ PROGRAMS_TK = pbs_wish
 endif
 endif
 
-bin_PROGRAMS = chk_tree hostn printjob printtracking tracejob $(PROGRAMS_TCL) $(PROGRAMS_TK)
+bin_PROGRAMS = chk_tree hostn printjob printtracking printserverdb tracejob $(PROGRAMS_TCL) $(PROGRAMS_TK)
 
 LDADD = $(PBS_LIBS)
 
 tracejob_CFLAGS = -DPBS_SERVER_HOME=\"$(PBS_SERVER_HOME)\"
+printserverdb_CFLAGS = -DPBS_SERVER_HOME=\"$(PBS_SERVER_HOME)\"
 
 chk_tree_SOURCES = chk_tree.c
 hostn_SOURCES = hostn.c
 printjob_SOURCES = printjob.c
 printtracking_SOURCES = printtracking.c
+printserverdb_SOURCES = printserverdb.c
 tracejob_SOURCES = tracejob.c
 
 pbs_tclsh_LDADD = $(PBS_LIBS) $(MY_TCL_LIBS)
