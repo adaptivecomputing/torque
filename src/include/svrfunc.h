@@ -163,7 +163,7 @@ extern int stat_to_mom A_((job *, struct stat_cntl *));
 
 /*
  * the following defines are due to the fact that O_SYNC was not
- * POSIX standard (TDISABLEFILESYNC managed w/configure --disable-filesync) 
+ * POSIX standard (TDISABLEFILESYNC managed w/configure --enable-filesync) 
  */
 
 #if TDISABLEFILESYNC
