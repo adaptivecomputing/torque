@@ -120,7 +120,7 @@
 
 attribute_def node_attr_def[] = {
 
-/* NODE_ATR_state */
+/* ND_ATR_state */
     {	ATTR_NODE_state,	/* "state" */
 	decode_state,
 	encode_state,
@@ -133,7 +133,7 @@ attribute_def node_attr_def[] = {
 	PARENT_TYPE_NODE,
     },
 	
-/* NODE_ATR_np */
+/* ND_ATR_np */
     {	ATTR_NODE_np,		/* "np" */
 	decode_l,
 	encode_l,
@@ -145,7 +145,7 @@ attribute_def node_attr_def[] = {
 	ATR_TYPE_LONG,
 	PARENT_TYPE_NODE,
     },
-/* NODE_ATR_properties */
+/* ND_ATR_properties */
     {	ATTR_NODE_properties,	/* "properties" */
 	decode_arst,
 	encode_arst,
@@ -158,7 +158,7 @@ attribute_def node_attr_def[] = {
 	PARENT_TYPE_NODE,
     },
 
-/* NODE_ATR_ntype */
+/* ND_ATR_ntype */
     {	ATTR_NODE_ntype,	/* "ntype" */
 	decode_ntype,
 	encode_ntype,
@@ -171,7 +171,7 @@ attribute_def node_attr_def[] = {
 	PARENT_TYPE_NODE,
     },
 
-/* NODE_ATR_jobs */
+/* ND_ATR_jobs */
     {   ATTR_NODE_jobs,         /* "jobs" */
 	decode_null,
 	encode_jobs,
@@ -184,7 +184,7 @@ attribute_def node_attr_def[] = {
 	PARENT_TYPE_NODE,
     },
 
-/* NODE_ATR_status */
+/* ND_ATR_status */
     {  ATTR_NODE_status,
         decode_arst,
         encode_arst,
@@ -197,7 +197,7 @@ attribute_def node_attr_def[] = {
         PARENT_TYPE_NODE,
     },
 
-/* NODE_ATR_note */
+/* ND_ATR_note */
     {	ATTR_NODE_note,	/* "note" */
 	decode_str,
 	encode_str,

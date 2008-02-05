@@ -213,12 +213,12 @@ int tlist(tree *,char *,int);
 
 enum nodeattr {
   ND_ATR_state,
-  NODE_ATR_np,
+  ND_ATR_np,
   ND_ATR_properties,
   ND_ATR_ntype,
   ND_ATR_jobs,
-  NODE_ATR_status,
-  NODE_ATR_note,
+  ND_ATR_status,
+  ND_ATR_note,
   ND_ATR_LAST }; /* WARNING: Must be the highest valued enum */
 
 

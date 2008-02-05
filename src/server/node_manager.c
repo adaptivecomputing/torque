@@ -1187,13 +1187,13 @@ int is_stat_get(
         struct attribute nattr;
 
         /* first we decode ret_info into nattr... */
-        if ((node_attr_def + NODE_ATR_np)->at_decode(&nattr,ATTR_NODE_np,NULL,ret_info+6) == 0)
+        if ((node_attr_def + ND_ATR_np)->at_decode(&nattr,ATTR_NODE_np,NULL,ret_info+6) == 0)
           {
           /* ... and if MOM's ncpus is higher than our np... */
           if (nattr.at_val.at_long > np->nd_nsn)
             {
             /* ... then we do the defined magic to create new subnodes */
-            (node_attr_def + NODE_ATR_np)->at_action(&nattr,(void *)np,ATR_ACTION_ALTER);
+            (node_attr_def + ND_ATR_np)->at_action(&nattr,(void *)np,ATR_ACTION_ALTER);
 
             update_nodes_file();
             }
