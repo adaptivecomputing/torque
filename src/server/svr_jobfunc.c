@@ -812,6 +812,8 @@ static void chk_svr_resc_limit(
     nodectresc   = find_resc_def(svr_resc_def,"nodect",svr_resc_size);
     mppwidthresc = find_resc_def(svr_resc_def,"mppwidth",svr_resc_size);
 
+    SvrNodeCt = 0;
+
     if (nodectresc != NULL)
       {
       svrc = (resource *)GET_NEXT(
