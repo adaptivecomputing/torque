@@ -880,7 +880,7 @@ attribute_def svr_attr_def[] = {
         comp_str,
         free_str,
         servername_chk,
-        NO_USER_SET,
+        MGR_ONLY_SET,
         ATR_TYPE_STR,
         PARENT_TYPE_SERVER
     },
