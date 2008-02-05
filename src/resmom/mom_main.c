@@ -6048,14 +6048,19 @@ void usage(
   fprintf(stderr,"  -d <PATH> \\\\ HOME DIR\n");
   fprintf(stderr,"  -C <PATH> \\\\ CHECKPOINT DIR\n");
   fprintf(stderr,"  -D        \\\\ DEBUG - do not background\n");
+  fprintf(stderr,"  -h        \\\\ HOSTNAME\n");
+  fprintf(stderr,"  -l        \\\\ MOM_LOG DIR PATH\n");
   fprintf(stderr,"  -L <PATH> \\\\ LOGFILE\n");
   fprintf(stderr,"  -M <INT>  \\\\ MOM PORT\n");
   fprintf(stderr,"  -p        \\\\ recover jobs\n");
   fprintf(stderr,"  -r        \\\\ recover jobs (2)\n");
   fprintf(stderr,"  -R <INT>  \\\\ RM PORT\n");
+  fprintf(stderr,"  -s        \\\\ LOGFILE SUFFIX\n");
   fprintf(stderr,"  -S <INT>  \\\\ SERVER PORT\n");
-  fprintf(stderr,"  -x        \\\\ DO NOT USE PRIVILEGED PORTS\n");
   fprintf(stderr,"  -v        \\\\ VERSION\n");
+  fprintf(stderr,"  -x        \\\\ DO NOT USE PRIVILEGED PORTS\n");
+  fprintf(stderr,"  --about   \\\\ PRINT BUILD INFORMATION\n");
+  fprintf(stderr,"  --version \\\\ VERSION\n");
 
   exit(1);
   }  /* END usage() */
@@ -6543,13 +6548,16 @@ void parse_command_line(
 
           exit(0);
           }
-      
-        if (!strcmp(optarg,"version"))
+        else if (!strcmp(optarg,"version"))
           {
-          printf("version:     %s\n",
+          printf("version: %s\n",
             PACKAGE_VERSION);
 
           exit(0);
+          }
+        else
+          {
+          errflg = 1;
           }
 
         break;
@@ -6701,7 +6709,9 @@ void parse_command_line(
       case 'v':
 
         fprintf(stderr,"version: %s\n",
-          "N/A");
+          PACKAGE_VERSION);
+
+        exit(0);
 
         break;
 
@@ -6745,6 +6755,16 @@ int setup_program_environment()
   char		*ptr;                   /* local tmp variable */
 
 
+  /* must be started with real and effective uid of 0 */
+
+  if ((getuid() != 0) || (geteuid() != 0)) 
+    {
+    /* FAILURE */
+
+    fprintf(stderr, "must be run as root\n");
+
+    return(1);
+    }
 
   /* The following is code to reduce security risks                */
   /* start out with standard umask, system resource limit infinite */
@@ -8139,18 +8159,6 @@ int main(
   int       rc;
 
   program_name = argv[0];
-
-  /* must be started with real and effective uid of 0 */
-
-  if ((getuid() != 0) || (geteuid() != 0)) 
-    {
-    /* FAILURE */
-
-    fprintf(stderr, "%s: must be run as root\n", 
-      argv[0]);
-
-    return(1);
-    }
 
   initialize_globals();
 
