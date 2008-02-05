@@ -6042,27 +6042,28 @@ void usage(
   fprintf(stderr,"Usage: %s\n",
     prog);
 
-  fprintf(stderr,"  -a <INT>  \\\\ ALARM TIME\n");
-  fprintf(stderr,"  -c <PATH> \\\\ CONFIG FILE\n");
-  fprintf(stderr,"  -C <PATH> \\\\ CHECKPOINT DIR\n");
-  fprintf(stderr,"  -d <PATH> \\\\ HOME DIR\n");
-  fprintf(stderr,"  -C <PATH> \\\\ CHECKPOINT DIR\n");
+  fprintf(stderr,"  -a <INT>  \\\\ Alarm Time\n");
+  fprintf(stderr,"  -c <PATH> \\\\ Config File\n");
+  fprintf(stderr,"  -C <PATH> \\\\ Checkpoint Dir\n");
+  fprintf(stderr,"  -d <PATH> \\\\ Home Dir\n");
+  fprintf(stderr,"  -C <PATH> \\\\ Checkpoint Dir\n");
   fprintf(stderr,"  -D        \\\\ DEBUG - do not background\n");
-  fprintf(stderr,"  -h        \\\\ HOSTNAME\n");
-  fprintf(stderr,"  -l        \\\\ MOM_LOG DIR PATH\n");
-  fprintf(stderr,"  -L <PATH> \\\\ LOGFILE\n");
-  fprintf(stderr,"  -M <INT>  \\\\ MOM PORT\n");
-  fprintf(stderr,"  -p        \\\\ recover jobs\n");
-  fprintf(stderr,"  -r        \\\\ recover jobs (2)\n");
-  fprintf(stderr,"  -R <INT>  \\\\ RM PORT\n");
-  fprintf(stderr,"  -s        \\\\ LOGFILE SUFFIX\n");
-  fprintf(stderr,"  -S <INT>  \\\\ SERVER PORT\n");
-  fprintf(stderr,"  -v        \\\\ VERSION\n");
-  fprintf(stderr,"  -x        \\\\ DO NOT USE PRIVILEGED PORTS\n");
-  fprintf(stderr,"  --about   \\\\ PRINT BUILD INFORMATION\n");
-  fprintf(stderr,"  --version \\\\ VERSION\n");
+  fprintf(stderr,"  -h        \\\\ Print Usage\n");
+  fprintf(stderr,"  -H <HOST> \\\\ Hostname\n");
+  fprintf(stderr,"  -l        \\\\ MOM Log Dir Path\n");
+  fprintf(stderr,"  -L <PATH> \\\\ Logfile\n");
+  fprintf(stderr,"  -M <INT>  \\\\ MOM Port\n");
+  fprintf(stderr,"  -p        \\\\ Recover Jobs\n");
+  fprintf(stderr,"  -r        \\\\ Recover Jobs (2)\n");
+  fprintf(stderr,"  -R <INT>  \\\\ RM Port\n");
+  fprintf(stderr,"  -s        \\\\ Logfile Suffix\n");
+  fprintf(stderr,"  -S <INT>  \\\\ Server Port\n");
+  fprintf(stderr,"  -v        \\\\ Version\n");
+  fprintf(stderr,"  -x        \\\\ Do Not Use Privileged Ports\n");
+  fprintf(stderr,"  --about   \\\\ Print Build Information\n");
+  fprintf(stderr,"  --help    \\\\ Print Usage\n");
+  fprintf(stderr,"  --version \\\\ Version\n");
 
-  exit(1);
   }  /* END usage() */
 
 
@@ -6523,7 +6524,7 @@ void parse_command_line(
 
   errflg = 0;
 
-  while ((c = getopt(argc,argv,"a:c:C:d:Dh:l:L:M:prR:s:S:vx-:")) != -1) 
+  while ((c = getopt(argc,argv,"a:c:C:d:DhH:l:L:M:prR:s:S:vx-:")) != -1) 
     {
     switch (c) 
       {
@@ -6552,6 +6553,12 @@ void parse_command_line(
           {
           printf("version: %s\n",
             PACKAGE_VERSION);
+
+          exit(0);
+          }
+        else if (!strcmp(optarg,"help"))
+          {
+          usage(argv[0]);
 
           exit(0);
           }
@@ -6584,7 +6591,15 @@ void parse_command_line(
 
         break;
 
-      case 'h':	/* multihomed host */
+      case 'h':
+
+        usage(argv[0]);		/* exits */
+
+        exit (0);
+
+        break;
+
+      case 'H':	/* multihomed host */
 
         hostname_specified = 1;
 
@@ -6733,6 +6748,8 @@ void parse_command_line(
   if ((errflg > 0) || (optind != argc))
     {
     usage(argv[0]);		/* exits */
+
+    exit(1);
     }
 }
 

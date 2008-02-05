@@ -401,11 +401,26 @@ int PBSShowUsage(
   char *EMsg)  /* I (optional) */
 
   {
-  const char *Msg = "[ -A <ACCTFILE> ] [ -a <ATTR> ] [ -d <HOMEDIR> ] [ -D ] [ -L <LOGFILE> ] [ -M <MOMPORT> ]\n  [ -p <SERVERPORT> ] [ -R <RMPORT> ] [ -S <SCHEDULERPORT> ] [ -t <TYPE> ]\n  [ --version|--help|--ha ]\n";
+  fprintf(stderr,"Usage: %s\n",
+    ProgName);
 
-  fprintf(stderr,"usage:  %s %s\n",
-    ProgName,
-    Msg);
+  fprintf(stderr,"  -A <INT>  \\\\ Alarm Time\n");
+  fprintf(stderr,"  -a <BOOL> \\\\ Scheduling\n");
+  fprintf(stderr,"  -d <PATH> \\\\ Homedir\n");
+  fprintf(stderr,"  -D        \\\\ Debugmode\n");
+  fprintf(stderr,"  -f        \\\\ Force Overwrite Serverdb\n");
+  fprintf(stderr,"  -h        \\\\ Print Usage\n");
+  fprintf(stderr,"  -H <HOST> \\\\ Daemon Hostname\n");
+  fprintf(stderr,"  -L <PATH> \\\\ Logfile\n");
+  fprintf(stderr,"  -M <PORT> \\\\ MOM Port\n");
+  fprintf(stderr,"  -p <PORT> \\\\ Server Port\n");
+  fprintf(stderr,"  -R <PORT> \\\\ RM Port\n");
+  fprintf(stderr,"  -S <PORT> \\\\ Scheduler Port\n");
+  fprintf(stderr,"  -t <TYPE> \\\\ Startup Type (hot, warm, cold, create)\n");
+  fprintf(stderr,"  -v        \\\\ Version\n");
+  fprintf(stderr,"  --ha      \\\\ High Availability MODE\n");
+  fprintf(stderr,"  --help    \\\\ Print Usage\n");
+  fprintf(stderr,"  --version \\\\ Version\n");
 
   if (EMsg != NULL)
     {
@@ -584,7 +599,7 @@ int main(
 
   /* parse the parameters from the command line */
 
-  while ((c = getopt(argc,argv,"A:a:d:Dfh:p:t:L:M:R:S:-:")) != -1) 
+  while ((c = getopt(argc,argv,"A:a:d:DfhH:L:M:p:R:S:t:v-:")) != -1) 
     {
     switch (c) 
       {
@@ -617,6 +632,7 @@ int main(
 	  printf("builduser:   %s\n",PBS_BUILD_USER);
 	  printf("installdir:  %s\n",PBS_INSTALL_DIR);
 	  printf("serverhome:  %s\n",PBS_SERVER_HOME);
+	  printf("version:     %s\n",PACKAGE_VERSION);
 
           exit(0);
           }
@@ -625,7 +641,7 @@ int main(
           {
           PBSShowUsage(NULL);
     
-          exit(1);
+          exit(0);
           }
 
         if (!strcasecmp(optarg,"ha"))	/* High Availability */
@@ -677,6 +693,14 @@ int main(
         break;
 
       case 'h':
+
+        PBSShowUsage(NULL);
+  
+        exit(0);
+
+        break;
+
+      case 'H':
 
         /* overwrite locally detected hostname with specified hostname */
         /*  (used for multi-homed hosts) */
@@ -858,11 +882,18 @@ int main(
 
         break;
 
+      case 'v':
+
+          fprintf(stderr,"version: %s\n",
+            PACKAGE_VERSION);
+
+          exit(0);
+
+          break;
+
       default:
 
-        fprintf(stderr,"%s: unknown option: %c\n",
-          argv[0],
-          c);
+        PBSShowUsage("invalid command line arg");
 
         exit(1);
 
