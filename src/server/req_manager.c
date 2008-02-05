@@ -2328,12 +2328,29 @@ int extra_resc_chk(
   int	     actmode) /* I */
 
   {
+  struct work_task *ptask;
+
   /* Is there anything to validate?  Maybe check for all alphanum? */
   /* the new resource is at pattr->at_val.at_str */
+  ptask=set_task(WORK_Immed,0,on_extra_resc,NULL);
+
+  return (ptask != NULL);
+}
+
+/*
+ * free_extraresc() makes sure that the init_resc_defs() is called after
+ * the list has changed by 'unset'.
+ */
+void free_extraresc(
+
+  struct attribute *attr)
+
+  {
   set_task(WORK_Immed,0,on_extra_resc,NULL);
 
-  return PBSE_NONE;
+  free_arst(attr);
 }
+
 
 /*
  * disallowed_types_chk -

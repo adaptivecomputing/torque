@@ -91,7 +91,6 @@
 
 extern int manager_oper_chk A_((attribute *pattr, void *pobject, int actmode));
 extern int servername_chk A_((attribute *pattr, void *pobject, int actmode));
-extern int extra_resc_chk A_((attribute *pattr, void *pobject, int actmode));
 extern int schiter_chk A_((attribute *pattr, void *pobject, int actmode));
 
 extern int nextjobnum_chk A_((attribute *pattr, void *pobject, int actmode));
@@ -112,6 +111,9 @@ extern int set_null A_((attribute *patr, attribute *new, enum batch_op op));
 
 extern int token_chk A_((attribute *pattr, void *pobject, int actmode));
 extern int set_tokens A_((struct attribute *attr, struct attribute *new, enum batch_op op));
+
+extern int extra_resc_chk A_((attribute *pattr, void *pobject, int actmode));
+extern void free_extraresc A_((attribute *attr));
 
 /* DIAGTODO: write diag_attr_def.c */
 
@@ -863,7 +865,7 @@ attribute_def svr_attr_def[] = {
         encode_arst,
         set_arst,
         comp_arst,
-        free_arst,
+        free_extraresc,
         extra_resc_chk,
         NO_USER_SET,
         ATR_TYPE_ARST,
