@@ -1495,7 +1495,10 @@ int TMomFinalizeJob1(
         PBS_EVENTCLASS_JOB,
         pjob->ji_qs.ji_jobid,
         log_buffer);
-      /* FIXME: do we need to return failure at this point? */
+      
+      *SC = JOB_EXEC_RETRY;
+
+      return(FAILURE);
       }
 
     if ((i = mom_restart_job(pjob,buf)) > 0) 
