@@ -3717,14 +3717,7 @@ int start_process(
         {
         strcpy(nodeidbuf,vtable.v_envp[j]+strlen("PBS_VNODENUM="));
 
-        /* FIXME: temp debugging info */
-        sprintf(log_buffer,"about to move to taskset for job %s/%s.\n",
-          pjob->ji_qs.ji_jobid,nodeidbuf);
-
-        log_err(-1,id,log_buffer);
-
         /* Move this mom process into the cpuset so the job will start in it. */
-        /* FIXME: move me into cpuset */
         move_to_taskset(getpid(),pjob,nodeidbuf);
         }
       }
