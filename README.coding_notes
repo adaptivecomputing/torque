@@ -1,0 +1,9 @@
+Coding Rules for TORQUE:
+
+I) torque_socklen_t must be used instead of socklen_t to ensure portability
+II) O_Sync must be used instead of arch-specific O_SYNC or _FSYNC.  
+  A. It is defined in svrfunc.h
+  B. It is defined to 0 unless --enable-filesync is used.
+III) Creating new momarches is described in README.new-momarch.
+IV) Creating new attributes is described in README.new-attrs.
+
