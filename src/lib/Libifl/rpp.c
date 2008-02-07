@@ -2068,7 +2068,7 @@ static void rpp_stale(
       {
       if (pp->next == pp)
         {
-        DBPRT((DBTO,"RPP PACKET is corrupt - fixing linked list\n",
+        DBPRT((DBTO, "RPP PACKET is corrupt - seq %d sent %d of %d - fixing linked list\n",
           pp->sequence,
           pp->sent_out,
           sp->retry))
