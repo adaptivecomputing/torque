@@ -1264,14 +1264,12 @@ AC_OUTPUT(buildutils/pbs_mkdirs
 	  src/resmom/irix6/Makefile
 	  src/resmom/irix6array/Makefile
 	  src/resmom/linux/Makefile
-	  src/resmom/linux/cpuset/Makefile
 	  src/resmom/netbsd/Makefile
 	  src/resmom/solaris5/Makefile
 	  src/resmom/solaris7/Makefile
 	  src/resmom/sunos4/Makefile
 	  src/resmom/unicos8/Makefile
 	  src/resmom/unicosmk2/Makefile
-	  src/resmom/cpa/Makefile
 	  src/scheduler.basl/Makefile
 	  src/scheduler.cc/Makefile
 	  src/scheduler.cc/samples/Makefile
