@@ -230,7 +230,7 @@ typedef struct attribute_def attribute_def;
 #define ATR_DFLAG_OPWR   0x08	/* Operator client can write  attribute */
 #define ATR_DFLAG_MGRD   0x10	/* Manager client can read  attribute */
 #define ATR_DFLAG_MGWR   0x20	/* Manager client can write attribute */
-#define ATR_DFLAG_OTHRD	 0x40	/* Reserved */
+#define ATR_DFLAG_PRIVR	 0x40	/* Private (only owner, oper, manager can read) */
 #define ATR_DFLAG_Creat	 0x80	/* Can be set on create only */
 #define ATR_DFLAG_SvRD	 0x100	/* job attribute is sent to server on move */
 #define ATR_DFLAG_SvWR	 0x200	/* job attribute is settable by server/Sch */

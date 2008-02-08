@@ -236,12 +236,15 @@ int status_attrib(
 
       if ((padef + index)->at_flags & priv) 
         {
-        (padef + index)->at_encode(
-          pattr + index, 
-          phead,
-          (padef + index)->at_name,
-          NULL, 
-          ATR_ENCODE_CLIENT);
+        if (!(((padef + index)->at_flags & ATR_DFLAG_PRIVR) && (IsOwner == 0)))
+          {
+          (padef + index)->at_encode(
+            pattr + index, 
+            phead,
+            (padef + index)->at_name,
+            NULL, 
+            ATR_ENCODE_CLIENT);
+          }
         }
 
       pal = (svrattrl *)GET_NEXT(pal->al_link);
@@ -256,26 +259,16 @@ int status_attrib(
       if (((padef + index)->at_flags & priv) &&
          !((padef + index)->at_flags & ATR_DFLAG_NOSTAT)) 
         {
-        if (IsOwner == 0)
+        if (!(((padef + index)->at_flags & ATR_DFLAG_PRIVR) && (IsOwner == 0)))
           {
-          if (!strcmp(
-                (padef + index)->at_name,
-                job_attr_def[(int)JOB_ATR_variables].at_name))
-            {
-            /* FIXME: this is an old hack that needs to be fixed in job_attr_def.c */
 
-            /* do not display privileged attributes */
-
-            continue;
-            }
+          (padef + index)->at_encode(
+            pattr + index, 
+            phead,
+            (padef + index)->at_name,
+            NULL, 
+            ATR_ENCODE_CLIENT);
           }
-
-        (padef + index)->at_encode(
-          pattr + index, 
-          phead,
-          (padef + index)->at_name,
-          NULL, 
-          ATR_ENCODE_CLIENT);
         }
       }    /* END for (index) */
     }      /* END else () */
