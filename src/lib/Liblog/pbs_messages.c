@@ -332,6 +332,7 @@ char *msg_norerunable   = "Queue does not allow rerunable jobs";
 char *msg_nononrerunable = "Queue does not allow nonrerunable jobs";
 char *msg_unkarrayid    = "Unknown Array ID";
 char *msg_bad_array_req = "Bad Job Array Request";
+char *msg_timeout 	= "Time out";
 /*
  * The following table connects error numbers with text
  * to be returned to the client.  Each is guaranteed to be pure text.
@@ -425,6 +426,7 @@ struct pbs_err_to_txt pbs_err_to_txt[] = {
 	{ PBSE_NONONRERUNABLE, &msg_nononrerunable },
 	{ PBSE_UNKARRAYID, &msg_unkarrayid },
 	{ PBSE_BAD_ARRAY_REQ, &msg_bad_array_req },
+	{ PBSE_TIMEOUT, &msg_timeout },
         { PBSE_NONE, &msg_none },
 	{ 0, (char **)0 }		/* MUST be the last entry */
 };
