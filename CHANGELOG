@@ -64,6 +64,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature
   f - add --with-modulefiles=[DIR] support
   b - be more careful about broken tclx installs
 
+2.1.11
+  b - nqs2pbs is now a generated script
 
 2.1.10
   b - fix buffer overflow in rm_request,
