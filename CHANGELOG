@@ -67,6 +67,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature
 2.1.11
   b - nqs2pbs is now a generated script
   b - correct handling of priv job attr
+  b - change font selectors in manpages to bold
 
 2.1.10
   b - fix buffer overflow in rm_request,
