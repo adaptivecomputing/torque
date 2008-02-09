@@ -85,8 +85,8 @@ pbs_mom [\^-C\ chkdirectory\^] [\^-c\ config\^] [\^-d\ directory] [\^-h\ hostnam
 .SH DESCRIPTION
 The
 .B pbs_mom
-command starts the operation of a batch \f3M\f1achine \f3O\f1riented
-\f3M\f1ini\-server, MOM, on the local host.
+command starts the operation of a batch \fBM\fPachine \fBO\fPriented
+\fBM\fPini\-server, MOM, on the local host.
 Typically, this command will be in a local boot file such as
 .I /etc/rc.local .
 To insure that the pbs_mom
@@ -216,7 +216,7 @@ the number of tape drives of different types and could be specified by
 .IP "Shell Commands"
 If the first character of the value is an exclamation mark (!),
 the entire rest of the line is saved to be executed through the services of
-the \f3system\fP(3) standard library routine.
+the \fBsystem\fP(3) standard library routine.
 .IP
 The shell escape provides a means for the resource monitor to yield
 arbitrary information to the scheduler.  Parameter substitution is

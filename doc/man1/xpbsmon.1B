@@ -83,24 +83,24 @@ xpbsmon \- GUI for displaying, monitoring the nodes/execution hosts under PBS
 .SH SYNOPSIS
 xpbsmon
 .SH DESCRIPTION
-The \f3xpbsmon\fP command provides a way to graphically display the various
-nodes that run jobs. A node or execution host can be running a \f3pbs_mom\fP
+The \fBxpbsmon\fP command provides a way to graphically display the various
+nodes that run jobs. A node or execution host can be running a \fBpbs_mom\fP
 daemon, or not running the daemon. For the latter case, it could just
 be a nodename that appears in a nodes file that is managed by a main
-\f3pbs_server \fP running on another host. This utility also provides the
+\fBpbs_server \fP running on another host. This utility also provides the
 ability to monitor values of certain system resources by posting queries
-to the \f3pbs_mom\fP of a node.  With this utility, you can see what
+to the \fBpbs_mom\fP of a node.  With this utility, you can see what
 job is running on what node, who owns the job, how many nodes assigned to
 a job, status of each node (color-coded and the colors are user-modifiable),
 how many nodes are available, free, down, reserved, offline, of unknown
 status,  in use running multiple jobs or executing only 1 job.
 Please see the sections below for a tour and tutorials of xpbsmon. Also, within
-every dialog box, a \f3Help\fP button can be found for assistance.
+every dialog box, a \fBHelp\fP button can be found for assistance.
 .SH GETTING STARTED
 Running  xpbsmon will initialize the X resource database from various sources
 in the following order:
 .IP "1."
-The \f3RESOURCE_MANAGER\fP property on the root window (updated via xrdb) with
+The \fBRESOURCE_MANAGER\fP property on the root window (updated via xrdb) with
 settings usually defined in the .Xdefaults file
 .IP "2."
 Preference settings defined by the system administrator in the global xpbsmonrc
@@ -114,7 +114,7 @@ send to the nodes' pbs_mom, and various view states. See PREFERENCES section
 below for a list of resources that can be set.
 .SH RUNNING XPBSMON
 .LP
-\f3xpbsmon\fP can be run either as a regular user or superuser.  If you
+\fBxpbsmon\fP can be run either as a regular user or superuser.  If you
 run it with less privilege, you may not be able to see all the information for
 a node. If it is executed as a regular user, you should still be able to see
 what jobs are running on what nodes, possibly state and properties as these
@@ -125,7 +125,7 @@ host where xpbsmon was running must also have been given explicit access
 permission by the mom (unless the GUI is running on the same host where mom is
 running). This is done done by updating the $clienthost and/or the $restricted parameter on the mom's configuration file.
 
-To run \f3xpbsmon\fP, type:
+To run \fBxpbsmon\fP, type:
 .RS
 .sp
 .Ty "\ \ \ setenv DISPLAY <display_host>:0"
@@ -134,9 +134,9 @@ To run \f3xpbsmon\fP, type:
 .sp
 .RE
 If you are running the GUI and only interested in jobs data, then be sure to
-set all the nodes' type to NOMOM in the \f3Pref\fP  dialog box.
+set all the nodes' type to NOMOM in the \fBPref\fP  dialog box.
 .SH THE XPBSMON DISPLAY
-This section describes the main parts of the \f3xpbsmon\fP display. The main
+This section describes the main parts of the \fBxpbsmon\fP display. The main
 window is composed of 3 distinct areas (subwindows) arranged vertically (one
 on top of another)  in  the following order:
 .RS
@@ -148,7 +148,7 @@ on top of another)  in  the following order:
 .br
 .RE
 .LP
-\f3Menu\fP. The Menu area is composed of a row of command buttons that 
+\fBMenu\fP. The Menu area is composed of a row of command buttons that 
 signal some action with a click of the left mouse button. The buttons 
 are:
 .RS
@@ -169,7 +169,7 @@ contains some help information.
 .IP "About" 15
 tells who the author is and who to send comments, bugs, suggestions to.
 .IP "Close" 15
-for exiting \f3xpbsmon\fP plus saving the current setup information
+for exiting \fBxpbsmon\fP plus saving the current setup information
 (if anything had changed) in the user's $HOME/.xpbsmonrc file. Information
 saved include the the specified list of sites, servers on each site, nodes
 known to each server, and system resource queries to send to node's pbs_mom.
@@ -183,12 +183,12 @@ boxes, still colored depending on the status, and some information on it is
 displayed.
 .RE
 .LP
-\f3Site Information\fP. 
+\fBSite Information\fP. 
 Only one site at a time can be displayed. This area (shown as one huge box
 referred to as the site box) can be further sub-divided into 3 areas: the site
 name label at the top, server boxes in the middle, and the color status bar at
 the bottom.  The site name label shows the name of the site as specified in the
-\f3Pref..\fP window.  At the middle of the site box shows a row of big boxes
+\fBPref..\fP window.  At the middle of the site box shows a row of big boxes
 housing smaller boxes.
 .sp
 The big box is an abstraction of a server host (called a server box),
@@ -207,7 +207,7 @@ The smaller boxes represent the nodes/execution hosts where jobs are run
 sub-box (a smaller square) that is is colored according to the status of the
 node that it represents, and if the view type is FULL, it will will display
 some node information according to the system resource queries specified on
-the \f3Pref..\fP window.  Clicking on the sub-box will show a much bigger box
+the \fBPref..\fP window.  Clicking on the sub-box will show a much bigger box
 (called the MIRROR view) with bigger fonts containing nodes information. Another
 view is called ICON and this shows a tiny box with a colored area. The
 node boxes are arranged in a grid, where a new row is created if either the
@@ -228,17 +228,17 @@ modified by setting the X resources: *nodeColorNOINFO, *nodeColorFREE,
 *nodeColorOFFL.
 .sp
 .LP
-\f3Info\fP. The Info Area shows the progress of some of the background
-actions performed by \f3xpbsmon\fP. Look into this box for errors.
+\fBInfo\fP. The Info Area shows the progress of some of the background
+actions performed by \fBxpbsmon\fP. Look into this box for errors.
 .SH WIDGETS USED IN XPBSMON
-Some of the widgets used in \f3xpbsmon\fP and how they are manipulated are
+Some of the widgets used in \fBxpbsmon\fP and how they are manipulated are
 described in the following:
 .sp
 .IP "1." 3
-\f3listbox\fP - the ones found in this GUI are only single-selectable
+\fBlistbox\fP - the ones found in this GUI are only single-selectable
 (one  entry  can be highlighted/selected at a time via a mouse click).
 .IP "2." 3
-\f3scrollbar\fP - usually appears either vertically or
+\fBscrollbar\fP - usually appears either vertically or
 horizontally and contains 5 distinct areas that are mouse
 clicked to achieve different effects:
 .RS
@@ -275,7 +275,7 @@ the action will auto-repeat.
 .RE
 .sp
 .IP "3." 3
-\f3entry\fP - brought into focus with a click of the left
+\fBentry\fP - brought into focus with a click of the left
 mouse button.  To manipulate this widget, simply type in
 the text value. Use of arrow keys, mouse selection of
 text for deletion or overwrite, copying and pasting with
@@ -284,22 +284,22 @@ This widget is usually accompanied by a scrollbar for
 horizontally scanning a long text entry string.
 .sp
 .IP "4." 3
-\f3box\fP -  made up of 1 or more listboxes displayed adjacent
+\fBbox\fP -  made up of 1 or more listboxes displayed adjacent
 to each other giving the effect of a "matrix". Each row
 from the listboxes makes up an element of the box. In order
 to add items to the box, you need to manipulate the accompanying
-entry widgets, one for each listbox, and then clicking the \f3add\fP
+entry widgets, one for each listbox, and then clicking the \fBadd\fP
 button. Removing items from the box is done by selecting an
-element, and then clicking \f3delete\fP.
+element, and then clicking \fBdelete\fP.
 .sp
 .IP "5." 3
-\f3spinbox\fP - a combination of an entry widget and a
+\fBspinbox\fP - a combination of an entry widget and a
 horizontal scrollbar.  The entry widget will only accept
 values that fall within a defined list of valid values, and
 incrementing through the valid values is done by clicking on
 the up/down arrows.
 .IP "6." 3
-\f3button\fP - a rectangular region appearing either raised or
+\fBbutton\fP - a rectangular region appearing either raised or
 pressed that invokes an action when clicked with the left
 mouse button.  When the button appears pressed, then hitting
 the <RETURN> key will automatically select the button.
@@ -312,20 +312,20 @@ bower is the host that runs the server; jobs are submitted to host bower where
 it enqueues it for future execution. Also, a pbs_mom daemon is running on
 each of the execution hosts. If the server bower also maintains a nodes list
 containing information like state, properties for the 4 nodes, then this will
-also be reported. Then to setup \f3xpbsmon\fP, do the following:
+also be reported. Then to setup \fBxpbsmon\fP, do the following:
 .sp
 .RS
 .IP 1.
-Click the \f3Pref..\fP button on the Menu section.
+Click the \fBPref..\fP button on the Menu section.
 .IP 2.
 On the Sites Preference dialog, enter any arbitrary site name, for example
-"Local". Then click the \f3add\fP button.
+"Local". Then click the \fBadd\fP button.
 .IP 3.
 On the Server_Host entry box, enter "bower", and on the DisplayLabel entry
 box, put an arbitrary label (as it would appear on the header of the server
-box) like "Bower", and then click \f3add\fP.
+box) like "Bower", and then click \fBadd\fP.
 .IP 4.
-Click the \f3nodes..\fP button that is accompanying the Servers box.
+Click the \fBnodes..\fP button that is accompanying the Servers box.
 This would bring up the Server Preference dialog.
 .IP 5.
 Now add the entries "bower1", "bower2", "bower3", "bower4" specifying type MOM
@@ -335,7 +335,7 @@ If you need to monitor certain system resource parameters for each of
 the nodes, you need to specify query expressions containing resource
 queries to be sent to the individual PBS moms. For example, if you
 want to obtain memory usage, then select a node from the Nodes list,
-click on the \f3query..\fP button that accompanies the Nodes list, and
+click on the \fBquery..\fP button that accompanies the Nodes list, and
 this would bring up the Query Table dialog. Specify the following input:
 .sp
 .RS
@@ -363,7 +363,7 @@ Display_Type:  TEXT
 .IP
 .sp
 NOTE: For a list of queries that can be sent to a pbs_mom, please
-click on the \f3Help\fP button on the Query table window.
+click on the \fBHelp\fP button on the Query table window.
 .RE
 .IP "CASE 2: Jobs Exclusive Environment"
 Supposing you have a "space non-sharing" environment where the server
@@ -372,21 +372,21 @@ outstanding per node). Let's call this server b1. Simply update Preferences
 information as follows:
 .RS
 .IP 1.
-Click the \f3Pref..\fP button on the Menu section.
+Click the \fBPref..\fP button on the Menu section.
 .IP 2.
 On the Sites Preference dialog, enter a site name, for example
-"B System". Then click the \f3add\fP button.
+"B System". Then click the \fBadd\fP button.
 .IP 3.
 On the Server_Host entry box, enter "b1", DisplayLabel entry box type "B1" (or
 whatever label that you would like to appear on the header of the server box),
-and then click \f3add\fP.
+and then click \fBadd\fP.
 .sp
 .RE
 .IP "CASE 3: Hybrid Time Sharing/Space Sharing Environment"
 A cluster of heterogeneous machines, time-sharing or jobs exclusive,  could
-easily be represented in \f3xpbsmon\fP by combining steps in CASE 1 and CASE 2.
+easily be represented in \fBxpbsmon\fP by combining steps in CASE 1 and CASE 2.
 .SH LEAVING XPBSMON
-Click on the \f3Close\fP button located in the Menu bar to leave \f3xpbsmon\fP.
+Click on the \fBClose\fP button located in the Menu bar to leave \fBxpbsmon\fP.
 If anything had changed, it will bring up a  dialog box  asking  for a
 confirmation in regards to saving preferences information about list of sites,
 their view types, list of servers on each site, the list of nodes known to each
@@ -396,7 +396,7 @@ information  is saved in ~/.xpbsmonrc file.
 The resources that can be set in the X resources file, ~/.xpbsmonrc, are
 described in the following:
 .sp
-\f3Node Box Properties\fP
+\fBNode Box Properties\fP
 .sp
 Resource names beginning with "*small" or "*node" apply to the properties of the
 node boxes. A node box is made of an outer frame where the node label sits on
@@ -491,7 +491,7 @@ tells how much bigger you want the scale item on the canvas to appear
 while the node box is displayed on a separate window
 (1 means to keep size as is)
 .LP
-\f3Server Box Properties\fP
+\fBServer Box Properties\fP
 .sp
 Resource names beginning with "*medium" apply to the properties
 of the server boxes. A server box is made of an outer frame where the server
@@ -537,7 +537,7 @@ maximum width and height (in pixels) of a server box.
 .IP *serverBoxMaxNumNodeBoxesPerRow
 maximum # of node boxes to appear in a row within a canvas.
 .LP
-\f3Miscellaneous Properties\fP
+\fBMiscellaneous Properties\fP
 .sp
 Resource names beginning with "*big" apply to the properties of a site box,
 as well as to widgets found outside of the server box and node box. This
@@ -625,7 +625,7 @@ information about a site where <site1-display-type> can be either {FULL,ICON},
 { {<expr>} {expr-label} <output-format>}
 .sp
 where <output-format> could be {TEXT, SCALE}. It's
-probably better to use the \f3Pref\fP dialog boxes in order to specify a value
+probably better to use the \fBPref\fP dialog boxes in order to specify a value
 for this.
 .sp
 Example:
@@ -634,7 +634,7 @@ Example:
 .br
 *sitesInfo:     {Mars;ICON;newton;Newton;newton3;NOMOM;} {Langley;FULL;db;DB;db.OpenPBS.org;MOM;{{ ( availmem / totmem ) * 100} {Memory Usage:} SCALE} {{ ( loadave / ncpus ) * 100} {Cpu Usage:} SCALE} {ncpus {Number of Cpus:} TEXT} {physmem {Physical Memory:} TEXT} {idletime {Idle Time (s):} TEXT} {loadave {Load Avg:} TEXT}} {Mars;ICON;newton;Newton;newton4;NOMOM;} {Mars;ICON;newton;Newton;newton1;NOMOM;} {Mars;ICON;newton;Newton;newton2;NOMOM;} {Mars;ICON;b0101;DB;aspasia.OpenPBS.org;MOM;{{ ( availmem / totmem ) * 100} {Memory Usage:} SCALE} {{ ( loadave / ncpus ) * 100} {Cpu Usage:} SCALE} {ncpus {Number of Cpus:} TEXT} {physmem {Physical Memory:} TEXT} {idletime {Idle Time (s):} TEXT} {loadave {Load Avg:} TEXT}} {Mars;ICON;newton;Newton;newton7;NOMOM;}
 .SH EXIT STATUS
-Upon successful processing, the \f3xpbsmon\fP exit status will be a value of zero.
+Upon successful processing, the \fBxpbsmon\fP exit status will be a value of zero.
 .LP
 If the xpbsmon command fails, the
 command exits with a value greater than zero.

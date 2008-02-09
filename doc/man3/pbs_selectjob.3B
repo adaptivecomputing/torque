@@ -92,7 +92,7 @@ char **pbs_selectjob(\^int\ connect, struct\ attropl\ *attrib, char\ *extend\^)
 .ft 1
 .SH DESCRIPTION
 Issue a batch request to select jobs which meet certain criteria.
-\f3pbs_selectjob\f1() returns a array of job identifiers which met the criteria.
+\fBpbs_selectjob\fP() returns a array of job identifiers which met the criteria.
 .LP
 Initially all batch jobs are selected for which the user is authorized to
 query status.
@@ -104,7 +104,7 @@ A
 batch request is generated and sent to the server over the connection
 specified by
 .Ar connect 
-which is the return value of \f3pbs_connect\f1().
+which is the return value of \fBpbs_connect\fP().
 .LP
 The argument,
 .Ar attrib ,
@@ -243,12 +243,12 @@ Each character pointer in the array points to a character string which is a
 in the form:
 .Ty sequence_number.server@server
 .LP
-The array is allocated by pbs_selectjob via \f3malloc\f1().
+The array is allocated by pbs_selectjob via \fBmalloc\fP().
 When the array is no longer needed, the user is responsible for freeing it
-by a call to \f3free\f1().
+by a call to \fBfree\fP().
 .if !\n(Pb .ig Ig
 The space for the array and the job identifier strings is malloc-ed by
-\f3pbs_selectjob\f1() as one allocation.
+\fBpbs_selectjob\fP() as one allocation.
 The array of pointers starts at the address
 returned by malloc(), so free() will work.
 .Ig

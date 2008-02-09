@@ -104,7 +104,7 @@ int pbs_rescrelease\^(\^int connect, resource_t resource_id\^)
 .br
 Issue a request to the batch server to reserve specified resources.
 .Ar connect
-is the connection returned by \f3pbs_connect\fP().
+is the connection returned by \fBpbs_connect\fP().
 .Ar resourcelist 
 is an array of one or more strings specifying the resources to be queried.
 .Ar arraysize
@@ -124,7 +124,7 @@ for this handle will be released and the full reservation will be attempted
 again.
 If the caller wishes to release the resources allocated to a partial
 reservation, the caller should pass the resource handle to 
-\f2pbs_rescrelease\fP().
+\fBpbs_rescrelease\fP().
 .IP
 At the present time the only resources which may be specified are "nodes". 
 It should be specified as 
@@ -140,12 +140,12 @@ for nodes, see
 .Ig
 .B pbs_rescrelease
 .br
-The \f2pbs_rescrelease\fP()
+The \fBpbs_rescrelease\fP()
 call releases or frees resources reserved with the resource handle of
 .Ar resource_id
-returned from a prior \f2pbs_rescreserve\fP() call.
+returned from a prior \fBpbs_rescreserve\fP() call.
 .Ar connect
-is the connection returned by \f3pbs_connect\fP().
+is the connection returned by \fBpbs_connect\fP().
 .LP
 Both functions require that the issuing user have operator or administrator
 privilege.

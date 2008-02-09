@@ -99,7 +99,7 @@ A
 batch request is generated and sent to the server over the connection
 specified by
 .Ar connect 
-which is the return value of \f3pbs_connect\f1().
+which is the return value of \fBpbs_connect\fP().
 The job will be submitted to the queue specified by
 .Ar destination .
 .LP
@@ -238,8 +238,8 @@ The return value is a character string which is the
 assigned to the job by the server.
 The space for the 
 .Ar job_identifier
-string is allocated by \f3pbs_submit\f1()
-and should be released via a call to \f3free\f1()
+string is allocated by \fBpbs_submit\fP()
+and should be released via a call to \fBfree\fP()
 by the user when no longer needed.
 .SH "SEE ALSO"
 qsub(1B) and pbs_connect(3B)

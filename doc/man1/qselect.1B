@@ -167,11 +167,11 @@ argument by the optional
 .Ar op
 operator.  The
 .Ar date_time
-argument is in the form of the date_time operand of the \f3touch\fP(1)
+argument is in the form of the date_time operand of the \fBtouch\fP(1)
 command:
 .Ty "[[CC]YY]MMDDhhmm[.SS]"
 .br
-\f1where the MM is the two digits for the month, DD is the day of the
+where the MM is the two digits for the month, DD is the day of the
 month, hh is the hour, mm is the minute, and the optional SS is the
 seconds.  CC is the century and YY the year.
 .IP 
@@ -300,10 +300,10 @@ in any combination.  If letters are duplicated, they are treated as if they
 occurred once.
 The letters represent the hold types:
 .nf
-  \f5n\fP \- none
-  \f5u\fP \- user
-  \f5o\fP \- other
-  \f5s\fP \- system
+  \fBn\fP \- none
+  \fBu\fP \- user
+  \fBo\fP \- other
+  \fBs\fP \- system
 .fi
 .RE
 .IP "-l resource_list" 10
@@ -320,7 +320,7 @@ The
 .Ar resource_list
 is in the following format:
 .br
-\f5resource_name\f6op\f5value[,resource_name\f6op\f5val,...]\f1
+resource_name\fBop\fPvalue[,resource_name\fBop\fPval,...]
 .br
 The relation operator
 .Ar op
@@ -476,17 +476,17 @@ assigned to it.
 The characters in the
 .Ar states
 argument have the following interpretation:
-.IP \f5E\fP 5
+.IP \fBE\fP 5
 the Exiting state.
-.IP \f5H\fP 5
+.IP \fBH\fP 5
 the Held state.
-.IP \f5Q\fP 5
+.IP \fBQ\fP 5
 the Queued state.
-.IP \f5R\fP 5
+.IP \fBR\fP 5
 the Running state.
-.IP \f5T\fP 5
+.IP \fBT\fP 5
 the Transiting state.
-.IP \f5W\fP 5
+.IP \fBW\fP 5
 the Waiting state.
 .LP
 Jobs will be selected which are in any of the specified states.

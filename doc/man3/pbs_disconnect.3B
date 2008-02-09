@@ -94,7 +94,7 @@ int pbs_disconnect(int connect)
 The virtual stream connection specified by
 .Ar connect ,
 which was established with a server
-by a call to \f3pbs_connect\f1(),
+by a call to \fBpbs_connect\fP(),
 is closed.
 .SH SEE ALSO
 pbs_connect(3B)

@@ -99,7 +99,7 @@ A
 batch request is generated and sent to the server over the connection
 specified by
 .Ar connect 
-which is the return value of \f3pbs_connect\f1().
+which is the return value of \fBpbs_connect\fP().
 .LP
 The argument, 
 .Ar job_id ,

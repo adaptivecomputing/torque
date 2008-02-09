@@ -228,21 +228,21 @@ is the path
 name on that host in the syntax recognized by POSIX 1003.1.
 The argument will be interpreted as follows:
 .RS
-.IP \f5path_name\f1
+.IP \fBpath_name\fP
 Where path_name is not an absolute path name, then the qalter command will
 expand the path name relative to the current working directory of the command.
 The command will supply the name of the host upon which it is executing for the
 .Ar hostname
 component.
-.IP \f5hostname:path_name\f1
+.IP \fBhostname:path_name\fP
 Where path_name is not an absolute path name, then the qalter command will
 not expand the path name.  The execution server will expand it relative to
 the home directory of the user on the system specified by hostname.
-.IP \f5path_name\f1
+.IP \fBpath_name\fP
 Where path_name specifies an absolute path name, then qalter will supply
 the name of the host on which it is executing for the
 .Ar hostname .
-.IP \f5hostname:path_name\f1
+.IP \fBhostname:path_name\fP
 Where path_name specifies an absolute path name, the path will be used as
 specified.
 .RE
@@ -312,8 +312,8 @@ Defines which if either of standard output or standard error of the job
 will be retained on the execution host.
 If set for a stream, this option overrides the path name for that stream.
 .IP
-The argument is either the single letter "\f5e\fP", "\f5o\fP", or "\f5n\fP",
-or one or more of the letters "\f5e\fP" and "\f5o\fP"
+The argument is either the single letter "\fBe\fP", "\fBo\fP", or "\fBn\fP",
+or one or more of the letters "\fBe\fP" and "\fBo\fP"
 combined in either order.
 .RS
 .IP n 5
@@ -328,8 +328,8 @@ The standard error stream is to retained on the execution host.
 The  stream will be placed in the home directory of the user under whose
 user id the job executed.  The file name will be the default file name
 given by:
-\f5job_name.\f6e\f5sequence\f1
-where \f5job_name\fP is the name specified for the job, and \f5sequence\fP is
+job_name.\fBe\fPsequence
+where \fBjob_name\fP is the name specified for the job, and \fBsequence\fP is
 the sequence number component of the job identifier.
 .if !\n(Pb .ig Ig
 The attribute is set to include KEEP_ERROR, "e".
@@ -338,8 +338,8 @@ The attribute is set to include KEEP_ERROR, "e".
 The standard output stream is to be retained on the execution host.
 The  stream will be placed in the home directory of the user under whose
 user id the job executed.  The file name will be the default file name
-given by: \f5job_name.\f6o\f5sequence\f1
-where \f5job_name\fP is the name specified for the job, and \f5sequence\fP is
+given by: job_name.\fBo\fPsequence
+where \fBjob_name\fP is the name specified for the job, and \fBsequence\fP is
 the sequence number component of the job identifier.
 .if !\n(Pb .ig Ig
 The 
@@ -405,22 +405,22 @@ argument is a string which consists of
 .if !\n(Pb .ig Ig
 one or more repetitions of 
 .Ig
-the single character "\f5n\fP",
+the single character "\fBn\fP",
 or one or more 
 .if !\n(Pb .ig Ig
 repetitions
 .Ig
-of the characters "\f5a\fP", "\f5b\fP", and
-"\f5e\fP".
+of the characters "\fBa\fP", "\fBb\fP", and
+"\fBe\fP".
 .IP
-If the character "\f5n\fP" is specified, no mail will be sent.
+If the character "\fBn\fP" is specified, no mail will be sent.
 .if !\n(Pb .ig Ig
 The
 .At Mail_Points
 attribute is set to NONE, "n".
 .Ig
 .IP
-For the letters "\f5a\fP", "\f5b\fP", and "\f5e\fP":
+For the letters "\fBa\fP", "\fBb\fP", and "\fBe\fP":
 .RS
 .IP a 5
 mail is sent when the job is aborted by the batch system.
@@ -486,21 +486,21 @@ is the path
 name on that host in the syntax recognized by POSIX.
 The argument will be interpreted as follows:
 .RS
-.IP \f5path_name\f1
+.IP \fBpath_name\fP
 Where path_name is not an absolute path name, then the qalter command will
 expand the path name relative to the current working directory of the command.
 The command will supply the name of the host upon which it is executing for the
 .Ar hostname
 component.
-.IP \f5hostname:path_name\f1
+.IP \fBhostname:path_name\fP
 Where path_name is not an absolute path name, then the qalter command will
 not expand the path name.  The execution server will expand it relative to
 the home directory of the user on the system specified by hostname.
-.IP \f5path_name\f1
+.IP \fBpath_name\fP
 Where path_name specifies an absolute path name, then the qalter will supply
 the name of the host on which it is executing for the
 .Ar hostname .
-.IP \f5hostname:path_name\f1
+.IP \fBhostname:path_name\fP
 Where path_name specifies an absolute path name, the path will be used as
 specified.
 .RE
@@ -536,13 +536,13 @@ Also see
 in the glossary.
 .Ig
 .IP
-If the argument is "\f5y\fP", the job is marked rerunable.
+If the argument is "\fBy\fP", the job is marked rerunable.
 .if !\n(Pb .ig Ig
 The
 .At Rerunable
 attribute is set to 'y'.
 .Ig
-If the argument is "\f5n\fP", the job is marked as not rerunable.
+If the argument is "\fBn\fP", the job is marked as not rerunable.
 .if !\n(Pb .ig Ig
 The
 .At Rerunable
@@ -646,50 +646,50 @@ If
 is null (the preceding colon need not be specified), the
 dependency of the corresponding type is cleared (unset).
 .RS 12
-.IP "\f5synccount:\f2count\f1" 4
+.IP "\fBsynccount:count\fP" 4
 This job is the first in a set of jobs to be executed at the same time.
 .I Count
 is the number of additional jobs in the set.
-.IP "\f5syncwith:\f2jobid\f1"
+.IP "\fBsyncwith:jobid\fP"
 This job is an additional member of a set of jobs to be executed at the
 same time.  
 .I Jobid
 is the job identifier of the first job in the set.
-.IP "\f5after:\f2jobid[:jobid...]\f1"
+.IP "\fBafter:jobid[:jobid...]\fP"
 This job may be scheduled for execution at any point after jobs
 .I jobid
 have started execution.
-.IP "\f5afterok:\f2jobid[:jobid...]\f1"
+.IP "\fBafterok:jobid[:jobid...]\fP"
 This job may be scheduled for execution only after jobs
 .I jobid
 have terminated with no errors.
-.IP "\f5afternotok:\f2jobid[:jobid...]\f1"
+.IP "\fBafternotok:jobid[:jobid...]\fP"
 This job may be scheduled for execution only after jobs
 .I jobid
 have terminated with errors.
-.IP "\f5afterany:\f2jobid[:jobid...]\f1"
+.IP "\fBafterany:jobid[:jobid...]\fP"
 This job may be scheduled for execution after jobs
 .I jobid
 have terminated, with or without errors.
-.IP "\f5on:\f2count\f1"
-This job may be scheduled for execution after \f2count\f1 dependencies on
+.IP "\fBon:count\fP"
+This job may be scheduled for execution after \fBcount\fP dependencies on
 other jobs have been satisfied.  This form is used in conjunction
-with one of the \f5before\f1 forms, see below.
-.IP \f5before:\f2jobid[:jobid...]\f1
-When this job has begun execution, then jobs \f2jobid...\f1 may begin.
-.IP \f5beforeok:\f2jobid[:jobid...]\f1
+with one of the \fBbefore\fP forms, see below.
+.IP \fBbefore:jobid[:jobid...]\fP
+When this job has begun execution, then jobs \fBjobid...\fP may begin.
+.IP \fBbeforeok:jobid[:jobid...]\fP
 If this job terminates execution without errors, then jobs
-\f2jobid...\f1 may begin.
-.IP \f5beforenotok:\f2jobid[:jobid...]\f1
+\fBjobid...\fP may begin.
+.IP \fBbeforenotok:jobid[:jobid...]\fP
 If this job terminates execution with errors, then jobs
-\f2jobid...\f1 may begin.
-.IP \f5beforeany:\f2jobid[:jobid...]\f1
-When this job terminates execution, jobs \f2jobid...\f1 may begin.
+\fBjobid...\fP may begin.
+.IP \fBbeforeany:jobid[:jobid...]\fP
+When this job terminates execution, jobs \fBjobid...\fP may begin.
 .IP
-If any of the \f5before\f1 forms are used, the job referenced by \f2jobid\f1
-must have been submitted with a dependency type of \f5on\f1.
+If any of the \fBbefore\fP forms are used, the job referenced by \fBjobid\fP
+must have been submitted with a dependency type of \fBon\fP.
 .IP
-The job specified in any of the \f5before\f1 forms must have the same
+The job specified in any of the \fBbefore\fP forms must have the same
 owner as the job being altered..  Otherwise, the dependency will not take
 effect.
 .LP
@@ -718,12 +718,12 @@ The
 argument is of the form:
 .Ty "\ \ group[@host][,group[@host],...]"
 .br
-\f1Only one group name may be given per specified host.
+Only one group name may be given per specified host.
 Only one of the
 .Ty group
-\f1specifications may be supplied without the corresponding
+specifications may be supplied without the corresponding
 .Ty host
-\f1specification.  That group name will used for execution on any host not
+specification.  That group name will used for execution on any host not
 named in the argument list.
 .if !\n(Pb .ig Ig
 .SM

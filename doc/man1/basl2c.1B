@@ -284,23 +284,23 @@ Job, CNode, Set Server, Set Que, Set Job, Set CNode, Range Int, Range Float,
 Range Dayofweek, Range DateTime, Range Size.
 .sp
 .SH "DATA TYPE"
-.IP \f3Void\f1 8
+.IP \fBVoid\fP 8
 used for functions that don't return a value.
-.IP \f3Int\f1 8
+.IP \fBInt\fP 8
 signed, whole numbers given in base 10.
 .br
 .RS
 .IP "Sample constants:"
 5, +1, -3, SUCCESS (=1), FAIL (=0), TRUE (=1), FALSE (=0)
 .RE
-.IP \f3Float\f1 8
+.IP \fBFloat\fP 8
 real numbers which are represented as doubles in the translated C code.
 .br
 Sample constants: 4.3, +1.2, -2.6
-.IP \f3Dayofweek\f1 8
+.IP \fBDayofweek\fP 8
 constant values: SUN, MON, TUE, WED, THU, FRI, SAT, internally represented as
 integer valued constants with SUN=0, MON=1, and so on.
-.IP \f3DateTime\f1 8
+.IP \fBDateTime\fP 8
 specify in one of 3 formats:
 .sp
 .RS
@@ -316,12 +316,12 @@ not given (format [1]); the "now" date is substituted if the date portion is
 not given (format [2]).  Also, the full year portion must be given (i.e.  1997
 instead of 97) in dates to avoid ambiguity.
 .RE
-.IP \f3String\f1 8
+.IP \fBString\fP 8
 A string is enclosed in quotes (") and it can contain anything except another
 quote, a newline, and left and right parentheses.
 .br
 Sample constants: "a sample string", NULLSTR 
-.IP \f3Size\f1 8
+.IP \fBSize\fP 8
 format: <integer><suffix> where suffix is a multiplier of the form: 
 <multiplier><unit>:
 .sp
@@ -344,28 +344,28 @@ the "lower" of the two will be the resultant suffix. For example,
 .fi
 .br
 Sample constants: -1b, 2w, 1kb, 2mw, +3gb, 4tw, 6Pb
-.IP "\f3Range Int\f1" 8
+.IP "\fBRange Int\fP" 8
 .RS
 .IP "format: (low Int value, high Int value)" 8
 where low Int value <= high Int value.
 Sample constant: (1,3)
 .RE
 .br
-.IP "\f3Range Float\f1" 8
+.IP "\fBRange Float\fP" 8
 .RS
 .IP "format: (low Float value, high Float value)" 8
 where low value <= high value.
 Sample constant: (2.3, 4.6)
 .RE
 .br
-.IP "\f3Range Dayofweek\f1" 8
+.IP "\fBRange Dayofweek\fP" 8
 .RS
 .IP "format: (earlier day, later day)" 8
 where earlier day <=  later day.
 Sample constant: (WED, FRI)
 .RE
 .br
-.IP "\f3Range DateTime\f1" 8
+.IP "\fBRange DateTime\fP" 8
 .RS
 .IP "format: (earlier date/time, later date/time)" 8
 where earlier date/time <= later date/time.
@@ -381,14 +381,14 @@ the "later" time will be adjusted by one day so that it will look like:
 ((4|4|1997), (4|10|1997)), ((12:01:00), (12:30:00)), ((4|4|1997@12:01:00),
 (4|10|1997@12:30:00))
 .RE
-.IP "\f3Range Size\f1" 8
+.IP "\fBRange Size\fP" 8
 .RS
 .IP "format: (low size, high size)" 8
 where low size <= high size.
 Sample constants: (23gb, 50gb)
 .RE
 .br
-.IP \f3Server\f1 8
+.IP \fBServer\fP 8
 Maps directly to the PBS server object. A
 .B Server
 manages one or more
@@ -396,12 +396,12 @@ manages one or more
 objects.
 .br
 Sample constant: NOSERVER
-.IP \f3CNode\f1 8
+.IP \fBCNode\fP 8
 for computational node consisting of a single OS image, a shared memory, and
 a set of cpus. CNode runs 1 PBS MOM.
 .br
 Sample constant: NOCNODE
-.IP \f3Que\f1 8
+.IP \fBQue\fP 8
 Maps directly to the PBS queue object. A
 .B Que
 object spools one or more
@@ -409,25 +409,25 @@ object spools one or more
 objects.
 .br
 Sample constant: NOQUE
-.IP \f3Job\f1 8
+.IP \fBJob\fP 8
 Maps directly to the PBS job object. A
 .B Job
 object carries some attributes and resource requirements.
 .br
 Sample constant: NOJOB
-.IP "\f3Set Server\f1" 8
+.IP "\fBSet Server\fP" 8
 list of Server objects.
 .br
 Sample constant: EMPTYSETSERVER
-.IP "\f3Set CNode\f1" 8
+.IP "\fBSet CNode\fP" 8
 list of CNode objects.
 .br
 Sample constant: EMPTYSETCNODE
-.IP "\f3Set Que\f1" 8
+.IP "\fBSet Que\fP" 8
 list of Que objects.
 .br
 Sample constant: EMPTYSETQUE
-.IP "\f3Set Job\f1" 8
+.IP "\fBSet Job\fP" 8
 list of Job objects.
 .br
 Sample constant: EMPTYSETJOB
@@ -1359,7 +1359,7 @@ known also as assist/helper functions.
 .RS
 .IP "(1) Server-related functions"
 .RS
-.IP "\f3Set Server AllServersGet(void)\f1"
+.IP "\fBSet Server AllServersGet(void)\fP"
 Returns the list of servers specified in the configuration file for which
 the scheduler writer wants the system to periodically check for status,
 queues and jobs info.  See
@@ -1371,7 +1371,7 @@ CAUTION: This function must be called from inside
 so that at every scheduling iteration, the most up to date
 .B "Set Server"
 structure is returned.
-.IP "\f3Server AllServersLocalHostGet(void)\f1" 3
+.IP "\fBServer AllServersLocalHostGet(void)\fP" 3
 Returns the Server object that represents the local host.
 unset value: NOSERVER.  This is a simple function to call for non-cluster
 environments where only one server host exists.
@@ -1382,11 +1382,11 @@ CAUTION: This function must be called from inside
 iteration, the most up to date
 .B "Server"
 structure is returned.
-.IP "\f3String ServerInetAddrGet(Server s)\f1"
+.IP "\fBString ServerInetAddrGet(Server s)\fP"
 Returns name for Server s. unset value: NULLSTR
-.IP "\f3String ServerDefQueGet(Server s)\f1"
+.IP "\fBString ServerDefQueGet(Server s)\fP"
 Returns the default_queue attribute of Server s. unset value: NULLSTR
-.IP "\f3Int ServerStateGet(Server s)\f1"
+.IP "\fBInt ServerStateGet(Server s)\fP"
 Returns server_state attribute of Server s.
 .br
 .RS
@@ -1394,18 +1394,18 @@ Returns server_state attribute of Server s.
 SERVER_ACTIVE, SERVER_IDLE, SERVER_SCHED, SERVER_TERM,
 SERVER_TERMDELAY, -1 (unset value)
 .RE
-.IP "\f3Int ServerMaxRunJobsGet(Server s)\f1"
+.IP "\fBInt ServerMaxRunJobsGet(Server s)\fP"
 Returns max_running attribute of Server s. unset value:  0
-.IP "\f3Int ServerMaxRunJobsPerUserGet(Server s)\f1"
+.IP "\fBInt ServerMaxRunJobsPerUserGet(Server s)\fP"
 Returns max_user_run attribute of Server s. unset value:  0
-.IP "\f3Int ServerMaxRunJobsPerGroupGet(Server s)\f1"
+.IP "\fBInt ServerMaxRunJobsPerGroupGet(Server s)\fP"
 Returns max_group_run attribute of Server s. unset value:  0
-.IP "\f3Set Que ServerQueuesGet(Server s)\f1"
+.IP "\fBSet Que ServerQueuesGet(Server s)\fP"
 Returns list of queues managed by Server s.
-.IP "\f3Set Job ServerJobsGet(Server s)\f1"
+.IP "\fBSet Job ServerJobsGet(Server s)\fP"
 Returns list of jobs managed by Server s. For obtaining a subset of this
-list, see \f3QueJobsGet()\f1.
-.IP "\f3Int ServerIntResAvailGet(Server s, String name)\f1"
+list, see \fBQueJobsGet()\fP.
+.IP "\fBInt ServerIntResAvailGet(Server s, String name)\fP"
 Returns the value to resource specified in
 .B name
 that is available to jobs run by this server (Server
@@ -1426,7 +1426,7 @@ Example:
    // the server
    cpuAvail = ServerIntResAvailGet(server, "ncpus");
 .fi
-.IP "\f3Size ServerSizeResAvailGet(Server s, String name)\f1"
+.IP "\fBSize ServerSizeResAvailGet(Server s, String name)\fP"
 Returns the value to resource specified in
 .B name
 that is available to jobs run by this server (Server
@@ -1447,7 +1447,7 @@ Example:
    // the server
    memAvail = ServerSizeResAvailGet(server, "mem");
 .fi
-.IP "\f3String ServerStringResAvailGet(Server s, String name)\f1"
+.IP "\fBString ServerStringResAvailGet(Server s, String name)\fP"
 Returns the value to resource specified in
 .B name
 that is available to jobs run by this server (Server
@@ -1467,7 +1467,7 @@ Example:
    // the server
    type = ServerStringResAvailGet(server, "arch");
 .fi
-.IP "\f3Int ServerIntResAssignGet(Server s, String name)\f1"
+.IP "\fBInt ServerIntResAssignGet(Server s, String name)\fP"
 Returns the value to resource specified in
 .B name
 that is allocated to running jobs (Server
@@ -1488,7 +1488,7 @@ Example:
    // the server
    cpuAssn = ServerIntResAssignGet(server, "ncpus");
 .fi
-.IP "\f3Size ServerSizeResAssignGet(Server s, String name)\f1"
+.IP "\fBSize ServerSizeResAssignGet(Server s, String name)\fP"
 Returns the value to resource specified in
 .B name
 that is allocated to running jobs (Server
@@ -1509,7 +1509,7 @@ Example:
    // in the server
    sdsAssn = ServerSizeResAssignGet(server, "sds");
 .fi
-.IP "\f3String ServerStringResAssignGet(Server s, String name)\f1"
+.IP "\fBString ServerStringResAssignGet(Server s, String name)\fP"
 Returns the value to resource specified in
 .B name
 that is allocated to running jobs (Server
@@ -1520,12 +1520,12 @@ are: nodes, arch, neednodes. For a description of these resource names, see
 pbs_resources_irix5(7B), pbs_resources_sp2(7B),
 pbs_resources_sunos4(7B), pbs_resources_unicos8(7B), pbs_server_attributes(7B),
 pbs_resources_irix6(7B), pbs_resources_linux(7B).
-.IP "\f3Set CNode ServerNodesGet(Server s)\f1"
+.IP "\fBSet CNode ServerNodesGet(Server s)\fP"
 Returns the set of nodes managed by server s. unset value: EMPTYSETCNODE.
 .br
 NOTE: You can usually call the following functions for the nodes returned
 by this call: CNodeStateGet(), CNodePropertiesGet(), and CNodeTypeGet().
-.IP "\f3Int ServerNodesQuery(Server s, String spec)\f1"
+.IP "\fBInt ServerNodesQuery(Server s, String spec)\fP"
 Issues a request to the specified server to query the availability of resources
 specified in
 .B spec.
@@ -1541,7 +1541,7 @@ NOTE: This is a wrapper to the pbs_rescquery(3B) server function.
 .IP "Return value:"
 SUCCESS, FAIL
 .RE
-.IP "\f3Int ServerNodesNumAvailGet(Server s)\f1"
+.IP "\fBInt ServerNodesNumAvailGet(Server s)\fP"
 Returns the number of nodes available for those managed by the
 specified server, or as reflected by the most recent query specified
 by ServerNodesQuery(). If the return value is zero, then this means that
@@ -1549,19 +1549,19 @@ some number of nodes currently needed to satisfy the specification of
 ServerNodesQuery() are currently unavailable. The request maybe
 satisfied at some later time.  If the result is negative, no combination
 of known nodes can satisfy the specification.
-.IP "\f3Int ServerNodesNumAllocGet(Server s)\f1"
+.IP "\fBInt ServerNodesNumAllocGet(Server s)\fP"
 Returns the number of nodes allocated for those managed by the
 specified server, or as reflected by the most recent query specified
 by ServerNodesQuery().
-.IP "\f3Int ServerNodesNumRsvdGet(Server s)\f1"
+.IP "\fBInt ServerNodesNumRsvdGet(Server s)\fP"
 Returns the number of nodes reserved for those managed by the
 specified server, or as reflected by the most recent query specified
 by ServerNodesQuery().
-.IP "\f3Int ServerNodesNumDownGet(Server s)\f1"
+.IP "\fBInt ServerNodesNumDownGet(Server s)\fP"
 Returns the number of nodes down for those managed by the
 specified server, or as reflected by the most recent query specified
 by ServerNodesQuery().
-.IP "\f3Int ServerNodesReserve(Server s,String spec,Int resId)\f1"
+.IP "\fBInt ServerNodesReserve(Server s,String spec,Int resId)\fP"
 Issues a request to the specified server to reserve the resources
 specified in
 .B spec.
@@ -1584,7 +1584,7 @@ NOTE: This is a wrapper to the pbs_rescreserve(3B) server function.
 .IP "Return value:"
 a reference number to a successful or partially-successful reservation, or FAIL
 .RE
-.IP "\f3Int ServerNodesRelease(Server s, Int resId)\f1"
+.IP "\fBInt ServerNodesRelease(Server s, Int resId)\fP"
 This releases or frees resources reserved with the reference number specified
 in
 .B resId.
@@ -1598,28 +1598,28 @@ SUCCESS, or FAIL
 .RE
 .IP "(2) Que-related functions:"
 .RS
-.IP "\f3String QueNameGet( Que que )\f1"
+.IP "\fBString QueNameGet( Que que )\fP"
 Returns name of Que que. unset value: NULLSTR
-.IP "\f3Int QueTypeGet( Que que )\f1"
+.IP "\fBInt QueTypeGet( Que que )\fP"
 Returns queue_type attribute of Que que.
 .br
 Return value: QTYPE_E (Execution), QTYPE_R (Routing), -1 (unset value)
-.IP "\f3Int QueNumJobsGet( Que que )\f1"
+.IP "\fBInt QueNumJobsGet( Que que )\fP"
 Returns number of jobs residing in Que que. unset value:  0
-.IP "\f3Int QueMaxRunJobsGet( Que que )\f1"
+.IP "\fBInt QueMaxRunJobsGet( Que que )\fP"
 Returns max_running attribute of Que que. unset value:  0
-.IP "\f3Int QueMaxRunJobsPerUserGet( Que que )\f1"
+.IP "\fBInt QueMaxRunJobsPerUserGet( Que que )\fP"
 Returns max_user_run attribute of Que que. unset value:  0
-.IP "\f3Int QueMaxRunJobsPerGroupGet( Que que )\f1"
+.IP "\fBInt QueMaxRunJobsPerGroupGet( Que que )\fP"
 Returns max_group_run attribute of Que que. unset value:  0
-.IP "\f3Int QuePriorityGet( Que que )\f1"
+.IP "\fBInt QuePriorityGet( Que que )\fP"
 Returns Priority attribute of Que que. unset value: 0
-.IP "\f3Int QueStateGet( Que que )\f1"
+.IP "\fBInt QueStateGet( Que que )\fP"
 Returns started attribute of Que que - the job execution selection state of the
 que: SCHED_DISABLED, SCHED_ENABLED. unset value: SCHED_DISABLED
-.IP "\f3Set Job QueJobsGet( Que que )\f1"
+.IP "\fBSet Job QueJobsGet( Que que )\fP"
 Returns the list of jobs currently residing in que.
-.IP "\f3Int QueIntResAvailGet(Que q, String name)\f1"
+.IP "\fBInt QueIntResAvailGet(Que q, String name)\fP"
 Returns the value to resource specified in
 .B name
 that is available to jobs running from this q (Que
@@ -1631,7 +1631,7 @@ pncpus, nodect, srfs_assist, mta,..., mth. For a description of these
 resource names, see pbs_resources_irix5(7B), pbs_resources_sp2(7B),
 pbs_resources_sunos4(7B), pbs_resources_unicos8(7B), pbs_server_attributes(7B),
 pbs_resources_irix6(7B), pbs_resources_linux(7B).
-.IP "\f3Size QueSizeResAvailGet(Que q, String name)\f1"
+.IP "\fBSize QueSizeResAvailGet(Que q, String name)\fP"
 Returns the value to resource specified in
 .B name
 that is available to jobs running from this q (Que
@@ -1643,7 +1643,7 @@ srfs_fast, sds, psds. For a description of these
 resource names, see pbs_resources_irix5(7B), pbs_resources_sp2(7B),
 pbs_resources_sunos4(7B), pbs_resources_unicos8(7B), pbs_server_attributes(7B),
 pbs_resources_irix6(7B), pbs_resources_linux(7B).
-.IP "\f3String QueStringResAvailGet(Que q, String name)\f1"
+.IP "\fBString QueStringResAvailGet(Que q, String name)\fP"
 Returns the value to resource specified in
 .B name
 that is available to jobs running from this q (Que
@@ -1654,7 +1654,7 @@ are: nodes, arch, neednodes. For a description of these resource names, see
 pbs_resources_irix5(7B), pbs_resources_sp2(7B),
 pbs_resources_sunos4(7B), pbs_resources_unicos8(7B), pbs_server_attributes(7B),
 pbs_resources_irix6(7B), pbs_resources_linux(7B).
-.IP "\f3Int QueIntResAssignGet(Que q, String name)\f1"
+.IP "\fBInt QueIntResAssignGet(Que q, String name)\fP"
 Returns the value to resource specified in
 .B name
 that is allocated to jobs running from this queue (Que
@@ -1666,7 +1666,7 @@ pncpus, nodect, srfs_assist, mta,..., mth. For a description of these
 resource names, see pbs_resources_irix5(7B), pbs_resources_sp2(7B),
 pbs_resources_sunos4(7B), pbs_resources_unicos8(7B), pbs_server_attributes(7B),
 pbs_resources_irix6(7B), pbs_resources_linux(7B).
-.IP "\f3Size QueSizeResAssignGet(Que q, String name)\f1"
+.IP "\fBSize QueSizeResAssignGet(Que q, String name)\fP"
 Returns the value to resource specified in
 .B name
 that is allocated to jobs running from this q (Que
@@ -1678,7 +1678,7 @@ srfs_fast, sds, psds. For a description of these
 resource names, see pbs_resources_irix5(7B), pbs_resources_sp2(7B),
 pbs_resources_sunos4(7B), pbs_resources_unicos8(7B), pbs_server_attributes(7B),
 pbs_resources_irix6(7B), pbs_resources_linux(7B).
-.IP "\f3String QueStringResAssignGet(Que q, String name)\f1"
+.IP "\fBString QueStringResAssignGet(Que q, String name)\fP"
 Returns the value to resource specified in
 .B name
 that is allocated to jobs running from this q (Que
@@ -1692,17 +1692,17 @@ pbs_resources_irix6(7B), pbs_resources_linux(7B).
 .RE
 .IP "(3) Job-related functions"
 .RS
-.IP "\f3String JobIdGet( Job job )\f1"
+.IP "\fBString JobIdGet( Job job )\fP"
 Returns job identifier of Job job. unset value: NULLSTR
-.IP "\f3String JobNameGet( Job job )\f1"
+.IP "\fBString JobNameGet( Job job )\fP"
 Returns Job_Name attribute of Job job. unset value: NULLSTR
-.IP "\f3String JobOwnerNameGet( Job job )\f1"
+.IP "\fBString JobOwnerNameGet( Job job )\fP"
 Returns Job_Owner attribute of Job job. unset value: NULLSTR
-.IP "\f3String JobEffectiveUserNameGet( Job job)\f1"
+.IP "\fBString JobEffectiveUserNameGet( Job job)\fP"
 Returns euser attribute of Job job.
-.IP "\f3String JobEffectiveGroupNameGet(Job job)\f1"
+.IP "\fBString JobEffectiveGroupNameGet(Job job)\fP"
 Returns egroup attribute of Job job. unset value: NULLSTR
-.IP "\f3Int JobStateGet ( Job job )\f1"
+.IP "\fBInt JobStateGet ( Job job )\fP"
 Returns job_state attribute of Job job.
 .br
 .RS
@@ -1710,25 +1710,25 @@ Returns job_state attribute of Job job.
 TRANSIT, QUEUED, HELD, WAITING, RUNNING, EXITING, -1 (unset
 value)
 .RE
-.IP "\f3Int JobPriorityGet( Job job )\f1"
+.IP "\fBInt JobPriorityGet( Job job )\fP"
 Returns Priority attribute of Job job. unset value: 0
-.IP "\f3Int JobRerunFlagGet( Job job )\f1"
+.IP "\fBInt JobRerunFlagGet( Job job )\fP"
 Returns Rerunable attribute of Job job.
 .br
 Return value: FALSE, TRUE, -1 (unset value)
-.IP "\f3Int JobInteractiveFlagGet( Job job )\f1"
+.IP "\fBInt JobInteractiveFlagGet( Job job )\fP"
 Returns interactive attribute of Job job.
 .br
 Return value: FALSE, TRUE. unset value: FALSE
-.IP "\f3DateTime JobDateTimeCreatedGet(Job job)\f1"
+.IP "\fBDateTime JobDateTimeCreatedGet(Job job)\fP"
 Returns the ctime attribute of Job job.  unset value: (0|0|0@-1:-1:-1)
-.IP "\f3String JobEmailAddrGet( Job job )\f1"
+.IP "\fBString JobEmailAddrGet( Job job )\fP"
 Returns the Mail_Users attribute of Job job. unset value: NULLSTR
-.IP "\f3String JobStageinFilesGet( Job job )\f1"
+.IP "\fBString JobStageinFilesGet( Job job )\fP"
 Returns the stagein attribute of Job job.  unset value: NULLSTR
-.IP "\f3String JobStageoutFilesGet( Job job )\f1"
+.IP "\fBString JobStageoutFilesGet( Job job )\fP"
 Returns stageout attribute of Job job.  unset value: NULLSTR
-.IP "\f3Int JobIntResReqGet(Job job, String name)\f1"
+.IP "\fBInt JobIntResReqGet(Job job, String name)\fP"
 Returns the value to resource specified in
 .B name
 as required by the job (Job
@@ -1748,7 +1748,7 @@ Example:
    // returns the cput requirement of the job
    cputReq = JobIntResReqGet(job, "cput");
 .fi
-.IP "\f3Size JobSizeResReqGet(Job job, String name)\f1"
+.IP "\fBSize JobSizeResReqGet(Job job, String name)\fP"
 Returns the value to resource specified in
 .B name
 as required by the job (Job
@@ -1768,7 +1768,7 @@ Example:
    // returns the memory requirement of the job
    memReq = JobSizeResReqGet(job, "mem");
 .fi
-.IP "\f3String JobStringResReqGet(Job job, String name)\f1"
+.IP "\fBString JobStringResReqGet(Job job, String name)\fP"
 Returns the value to resource specified in
 .B name
 as required by the job (Job
@@ -1788,7 +1788,7 @@ Example:
    // the job
    nodes = JobStringResReqGet(job, "nodes");
 .fi
-.IP "\f3Int JobIntResUseGet(Job job, String name)\f1"
+.IP "\fBInt JobIntResUseGet(Job job, String name)\fP"
 Returns the value to resource specified in
 .B name
 used by the job (Job
@@ -1809,7 +1809,7 @@ Example:
    // the job
    walltUse = JobIntResUseGet(job, "walltime");
 .fi
-.IP "\f3Size JobSizeResUseGet(Job job, String name)\f1"
+.IP "\fBSize JobSizeResUseGet(Job job, String name)\fP"
 Returns the value to resource specified in
 .B name
 used by the job (Job
@@ -1830,7 +1830,7 @@ Example:
    // the job
    srfsUse = JobSizeResUseGet(job, "srfs_fast");
 .fi
-.IP "\f3String JobStringResUseGet(Job job, String name)\f1"
+.IP "\fBString JobStringResUseGet(Job job, String name)\fP"
 Returns the value to resource specified in
 .B name
 used by the job (Job
@@ -1844,7 +1844,7 @@ pbs_resources_irix6(7B), pbs_resources_linux(7B).
 .RE
 .IP "(4) CNode-related functions"
 .RS
-.IP "\f3Set CNode AllNodesGet(void)\f1"
+.IP "\fBSet CNode AllNodesGet(void)\fP"
 Returns list of nodes that are managed by the server running on the local host.
 This could also include those nodes that were specified in the scheduler
 configuration file for which the scheduler writer wants the system to
@@ -1858,7 +1858,7 @@ so that at every scheduling iteration, the most up to date
 .B "Set CNode"
 structure is returned. Do not call this from an assignment statement intended
 to initialize a global variable, as the statement will only be called once.  
-.IP "\f3CNode AllNodesLocalHostGet(void)\f1"
+.IP "\fBCNode AllNodesLocalHostGet(void)\fP"
 Returns the CNode object that represents the local host. This
 is a simple function to call for non-clustered systems where only 1 CNode
 exists. unset value: NOCNODE
@@ -1870,14 +1870,14 @@ iteration, the most up to date
 .B "CNode"
 structure is returned. Do not call this from an assignment statement intended
 to initialize a global variable, as the statement will only be called once.  
-.IP "\f3String CNodeNameGet(CNode node)\f1"
+.IP "\fBString CNodeNameGet(CNode node)\fP"
 Returns the unique (official) name of the node (i.e. ResMom hostname in a 1
 mom/node model). This returns the same string that was specified in the
 configuration file. unset value: NULLSTR
-.IP "\f3String CNodeOsGet(CNode node)\f1"
+.IP "\fBString CNodeOsGet(CNode node)\fP"
 Returns the os architecture of the node (i.e. "irix5", "sp2"). unset value:
 NULLSTR
-.IP "\f3Int CNodeStateGet( CNode node )\f1"
+.IP "\fBInt CNodeStateGet( CNode node )\fP"
 Returns the node's state.
 .br
 .RS
@@ -1885,24 +1885,24 @@ Returns the node's state.
 CNODE_OFFLINE, CNODE_DOWN, CNODE_FREE, CNODE_RESERVE, CNODE_INUSE_EXCLUSIVE,
 CNODE_INUSE_SHARED, CNODE_UNKNOWN
 .RE
-.IP "\f3Int CNodeTypeGet( CNode node )\f1"
+.IP "\fBInt CNodeTypeGet( CNode node )\fP"
 Returns the node's type.
 .br
 .RS
 .IP "Return value:"
 CNODE_TIMESHARED, CNODE_CLUSTER, CNODE_UNKNOWN
 .RE
-.IP "\f3String CNodePropertiesGet(CNode node)\f1"
+.IP "\fBString CNodePropertiesGet(CNode node)\fP"
 Returns the comma-separated list of other names the node is known by (
 properties, other network name).  For example, "babbage.OpenPBS.org" maybe the
 node name, but it could also be known via "babbage1, babbage2".
 unset value: NULLSTR
-.IP "\f3String CNodeVendorGet(CNode node)\f1"
+.IP "\fBString CNodeVendorGet(CNode node)\fP"
 Returns the name of the vendor for the hardware of the machine (i.e. "sgi",
 "ibm"). unset value: NULLSTR
-.IP "\f3Int CNodeNumCpusGet(CNode node)\f1"
+.IP "\fBInt CNodeNumCpusGet(CNode node)\fP"
 Returns the number of processors attached to the node.  unset value: -1
-.IP "\f3Size  CNodeMemTotalGet( CNode node, String type )\f1"
+.IP "\fBSize  CNodeMemTotalGet( CNode node, String type )\fP"
 Returns total memory of
 .B type
 for the node.
@@ -1918,7 +1918,7 @@ Example:
    // get total virtual memory
    CNodeMemTotalGet(node, "virtual")
 .fi
-.IP "\f3Size  CNodeMemAvailGet( CNode node, String type )\f1"
+.IP "\fBSize  CNodeMemAvailGet( CNode node, String type )\fP"
 Returns available memory of
 .B type
 for the node.
@@ -1935,24 +1935,24 @@ So sample calls will be:
   // get available virtual memory
   CNodeMemAvailGet(node, "virtual")
 .fi
-.IP "\f3Int CNodeIdletimeGet( CNode node )\f1"
+.IP "\fBInt CNodeIdletimeGet( CNode node )\fP"
 Returns number of seconds in which no keystroke or mouse movement has taken
 place on any terminal connected to the node.  unset value: -1
-.IP "\f3Float CNodeLoadAveGet( CNode  node )\f1"
+.IP "\fBFloat CNodeLoadAveGet( CNode  node )\fP"
 Returns node's load average for all cpus. unset value: -1.0
-.IP "\f3Int CNodeCpuPercentIdleGet( CNode  node )\f1"
+.IP "\fBInt CNodeCpuPercentIdleGet( CNode  node )\fP"
 Returns the percent of idle time that all the processors of the node have
 experienced.
-.IP "\f3Int CNodeCpuPercentSysGet( CNode  node )\f1"
+.IP "\fBInt CNodeCpuPercentSysGet( CNode  node )\fP"
 Returns the percent of time that all the processors of the node have
 spent running kernel code.
-.IP "\f3Int CNodeCpuPercentUserGet( CNode  node )\f1"
+.IP "\fBInt CNodeCpuPercentUserGet( CNode  node )\fP"
 Returns the percent of time that all the processors of the node have
 spent running user code.
-.IP "\f3Int CNodeCpuPercentGuestGet( CNode  node )\f1"
+.IP "\fBInt CNodeCpuPercentGuestGet( CNode  node )\fP"
 Returns the percent of time that all the processors of the node have
 spent running a guest operating system.
-.IP "\f3Int CNodeNetworkBwGet( CNode node, String type )\f1"
+.IP "\fBInt CNodeNetworkBwGet( CNode node, String type )\fP"
 Returns the bandwidth of the node's network of
 .B type
 in bytes/second.
@@ -1966,7 +1966,7 @@ Some sample calls are:
   CNodeNetworkBwGet( node, "hippi" );
   CNodeNetworkBwGet( node, "fddi" );
 .fi
-.IP "\f3Size CNodeDiskSpaceTotalGet(CNode node, String name)\f1"
+.IP "\fBSize CNodeDiskSpaceTotalGet(CNode node, String name)\fP"
 Returns the node's total space on disk identified by
 .B name
 where
@@ -1979,7 +1979,7 @@ Example:
 .nf
   CNodeDiskSpaceTotalGet( node, "/scratch2" );
 .fi
-.IP "\f3Size CNodeDiskSpaceAvailGet(CNode node, String name)\f1"
+.IP "\fBSize CNodeDiskSpaceAvailGet(CNode node, String name)\fP"
 Returns the node's available space on disk identified by
 .B name
 where
@@ -1992,7 +1992,7 @@ Example:
 .nf
   CNodeDiskSpaceAvailGet( node, "/scratch1" );
 .fi
-.IP "\f3Size CNodeDiskSpaceReservedGet(CNode node, String name)\f1"
+.IP "\fBSize CNodeDiskSpaceReservedGet(CNode node, String name)\fP"
 Returns the node's reserved space on disk (user quota?) identified by
 .B name
 where
@@ -2006,7 +2006,7 @@ Example:
 .nf
   CNodeDiskSpaceReservedGet( node, "/scratch1" );
 .fi
-.IP "\f3Int CNodeDiskInBwGet( CNode node, String name )\f1"
+.IP "\fBInt CNodeDiskInBwGet( CNode node, String name )\fP"
 Returns the write bandwidth (bytes/sec) of the node's disk identified by
 .B "name".
 unset value: -1
@@ -2016,7 +2016,7 @@ Example:
 .nf
   CNodeDiskInBwGet( node, "/fast" );
 .fi
-.IP "\f3Int CNodeDiskOutBwGet( CNode node, String name )\f1"
+.IP "\fBInt CNodeDiskOutBwGet( CNode node, String name )\fP"
 Returns read bandwidth (bytes/sec) of the node's disk identified by
 .B "name".
 unset value: -1
@@ -2026,7 +2026,7 @@ Example:
 .nf
   CNodeDiskOutBwGet( node, "/big" );
 .fi
-.IP "\f3Size CNodeSwapSpaceTotalGet( CNode node, String name )\f1"
+.IP "\fBSize CNodeSwapSpaceTotalGet( CNode node, String name )\fP"
 Returns the node's total space on swap identified by
 .B name
 where
@@ -2040,7 +2040,7 @@ Example:
 .nf
   CNodeSwapSpaceTotalGet( node, "primary" );
 .fi
-.IP "\f3Size CNodeSwapSpaceAvailGet( CNode node, String name )\f1"
+.IP "\fBSize CNodeSwapSpaceAvailGet( CNode node, String name )\fP"
 Returns node's available space on swap identified by
 .B name
 where
@@ -2053,7 +2053,7 @@ Example:
 .nf
   CNodeSwapSpaceAvailGet( node, "secondary" );
 .fi
-.IP "\f3Int CNodeSwapInBwGet( CNode node, String name )\f1"
+.IP "\fBInt CNodeSwapInBwGet( CNode node, String name )\fP"
 Returns swapin rate of the  node's swap device identified by
 .B name.
 .br
@@ -2062,7 +2062,7 @@ Example:
 .nf
   CNodeSwapInBwGet(node, "secondary");
 .fi
-.IP "\f3Int CNodeSwapOutBwGet( CNode node, String name )\f1"
+.IP "\fBInt CNodeSwapOutBwGet( CNode node, String name )\fP"
 Returns the swapout rate of the  node's swap device identified by
 .B name.
 unset value: -1
@@ -2072,7 +2072,7 @@ Example:
 .nf
   CNodeSwapOutBwGet(node, "primary");
 .fi
-.IP "\f3Size CNodeTapeSpaceTotalGet( CNode node, String name )\f1"
+.IP "\fBSize CNodeTapeSpaceTotalGet( CNode node, String name )\fP"
 Returns the node's total space on tape identified by
 .B name
 where
@@ -2086,7 +2086,7 @@ Example:
 .nf
   CNodeTapeSpaceTotalGet(node, "4mm");
 .fi
-.IP "\f3Size CNodeTapeSpaceAvailGet( CNode node, String name )\f1"
+.IP "\fBSize CNodeTapeSpaceAvailGet( CNode node, String name )\fP"
 Returns the node's available space on tape identified by
 .B name
 where
@@ -2099,7 +2099,7 @@ Example:
 .nf
   CNodeTapeSpaceAvailGet(node, "8mm");
 .fi
-.IP "\f3Int CNodeTapeInBwGet( CNode node, String name )\f1"
+.IP "\fBInt CNodeTapeInBwGet( CNode node, String name )\fP"
 Returns the write bandwidth (bytes/sec) of the node's tape identified by
 .B "name".
 unset value: -1
@@ -2109,7 +2109,7 @@ Example:
 .nf
   CNodeTapeInBwGet( node, "4mm" );
 .fi
-.IP "\f3Int CNodeTapeOutBwGet( CNode node, String name )\f1"
+.IP "\fBInt CNodeTapeOutBwGet( CNode node, String name )\fP"
 Returns the read bandwidth (bytes/sec) of the node's tape identified by
 .B "name".
 unset value: -1
@@ -2119,7 +2119,7 @@ Example:
 .nf
 CNodeTapeOutBwGet( node, "8mm" );
 .fi
-.IP "\f3Size CNodeSrfsSpaceTotalGet( CNode node, String name )\f1"
+.IP "\fBSize CNodeSrfsSpaceTotalGet( CNode node, String name )\fP"
 Returns the node's total space on srfs device identified by
 .B name
 where
@@ -2133,7 +2133,7 @@ Example:
 .nf
   CNodeSrfsSpaceTotalGet(node, "/fast");
 .fi
-.IP "\f3Size CNodeSrfsSpaceAvailGet( CNode node, String name )\f1"
+.IP "\fBSize CNodeSrfsSpaceAvailGet( CNode node, String name )\fP"
 Returns the node's available space on srfs device identified by
 .B name
 where
@@ -2147,7 +2147,7 @@ Example:
 .nf
   CNodeSrfsSpaceAvailGet( node, "/big" );
 .fi
-.IP "\f3Size CNodeSrfsSpaceReservedGet(CNode node, String name)\f1"
+.IP "\fBSize CNodeSrfsSpaceReservedGet(CNode node, String name)\fP"
 Returns the node's total amount of reserved space on srfs device identified
 by
 .B name
@@ -2162,7 +2162,7 @@ Example:
 .nf
   CNodeSrfsSpaceReservedGet( node, "/fast" );
 .fi
-.IP "\f3Int CNodeSrfsInBwGet( CNode node, String name )\f1"
+.IP "\fBInt CNodeSrfsInBwGet( CNode node, String name )\fP"
 Returns the write bandwidth (bytes/sec) of the node's srfs device identified by
 .B "name".
 unset value: -1
@@ -2171,7 +2171,7 @@ Example:
 .nf
   CNodeSrfsInBwGet( node, "/fast" );
 .fi
-.IP "\f3Int CNodeSrfsOutBwGet( CNode node, String name )\f1"
+.IP "\fBInt CNodeSrfsOutBwGet( CNode node, String name )\fP"
 Returns the read bandwidth (bytes/sec) of the node's srfs device identified by
 .B "name".
 unset value: -1
@@ -2183,13 +2183,13 @@ CNodeSrfsOutBwGet( node, "/big" );
 .RE
 .IP "(5) Miscellaneous Functions"
 .RS
-.IP "\f3DateTime datetimeGet()\f1"
+.IP "\fBDateTime datetimeGet()\fP"
 gets the current date/time.
-.IP "\f3Int datetimeToSecs(DateTime dt)\f1"
+.IP "\fBInt datetimeToSecs(DateTime dt)\fP"
 returns the # of seconds since epoch (beginning of UNIX time - 00:00:00,
 January 1, 1970) for the given date/time
 .B dt.
-.IP "\f3Int JobAction( Job job, Int action, String param )\f1"
+.IP "\fBInt JobAction( Job job, Int action, String param )\fP"
 Performs
 .B action
 on
@@ -2357,10 +2357,10 @@ Example:
   // resource_names that can be specified.
   JobAction(j, MODIFYRES, "cput=3600");
 .fi
-.IP "\f3QueJobFind(Que que,Fun Int func,Int cpr,Int value);\f1"
-.IP "\f3QueJobFind(Que que,Fun String func,Int cpr,String value);\f1"
-.IP "\f3QueJobFind(Que que,Fun DateTime func,Int cpr,DateTime value);\f1"
-.IP "\f3QueJobFind(Que que,Fun Size func,Int cpr,Size value);\f1"
+.IP "\fBQueJobFind(Que que,Fun Int func,Int cpr,Int value);\fP"
+.IP "\fBQueJobFind(Que que,Fun String func,Int cpr,String value);\fP"
+.IP "\fBQueJobFind(Que que,Fun DateTime func,Int cpr,DateTime value);\fP"
+.IP "\fBQueJobFind(Que que,Fun Size func,Int cpr,Size value);\fP"
 .sp
 where
 .B cpr
@@ -2464,10 +2464,10 @@ sched_main()
                                             300mb);
 }
 .fi
-.IP "\f3Job QueJobFind( Que que, Fun Int func,      Int cpr)\f1"
-.IP "\f3Job QueJobFind( Que que, Fun String func,   Int cpr)\f1"
-.IP "\f3Job QueJobFind( Que que, Fun DateTime func, Int cpr)\f1"
-.IP "\f3Job QueJobFind( Que que, Fun Size func,     Int cpr)\f1"
+.IP "\fBJob QueJobFind( Que que, Fun Int func,      Int cpr)\fP"
+.IP "\fBJob QueJobFind( Que que, Fun String func,   Int cpr)\fP"
+.IP "\fBJob QueJobFind( Que que, Fun DateTime func, Int cpr)\fP"
+.IP "\fBJob QueJobFind( Que que, Fun Size func,     Int cpr)\fP"
 .sp
 where
 .B cpr
@@ -2504,10 +2504,10 @@ Example:
     job = QueJobFind(que, JobCpuTimeReqGet, OP_MIN);
   }
 .fi
-.IP "\f3Que QueFilter(Que que,Fun Int func,Int cpr,Int value)\f1"
-.IP "\f3Que QueFilter(Que que,Fun String func,Int cpr,String value)\f1"
-.IP "\f3Que QueFilter(Que que,Fun DateTime func,Int cpr,Date value)\f1"
-.IP "\f3Que QueFilter(Que que,Fun Size func,Int cpr,Size value)\f1"
+.IP "\fBQue QueFilter(Que que,Fun Int func,Int cpr,Int value)\fP"
+.IP "\fBQue QueFilter(Que que,Fun String func,Int cpr,String value)\fP"
+.IP "\fBQue QueFilter(Que que,Fun DateTime func,Int cpr,Date value)\fP"
+.IP "\fBQue QueFilter(Que que,Fun Size func,Int cpr,Size value)\fP"
 .sp
 where
 .B cpr
@@ -2566,11 +2566,11 @@ Example:
     // whatsoever.
   }
 .fi
-.IP "\f3Int Sort(Set Job s, Fun Int      key, Int order)\f1"
-.IP "\f3Int Sort(Set Job s, Fun String   key, Int order)\f1"
-.IP "\f3Int Sort(Set Job s, Fun Float    key, Int order)\f1"
-.IP "\f3Int Sort(Set Job s, Fun DateTime key, Int order)\f1"
-.IP "\f3Int Sort(Set Job s, Fun Size     key, Int order)\f1"
+.IP "\fBInt Sort(Set Job s, Fun Int      key, Int order)\fP"
+.IP "\fBInt Sort(Set Job s, Fun String   key, Int order)\fP"
+.IP "\fBInt Sort(Set Job s, Fun Float    key, Int order)\fP"
+.IP "\fBInt Sort(Set Job s, Fun DateTime key, Int order)\fP"
+.IP "\fBInt Sort(Set Job s, Fun Size     key, Int order)\fP"
 .sp
 where
 .B s
@@ -2622,11 +2622,11 @@ Examples:
         Sort(jobs, JobMemReqGet, order);
   }
 .fi
-.IP "\f3Int Sort(Set Que s, Fun Int      key, Int order)\f1"
-.IP "\f3Int Sort(Set Que s, Fun String   key, Int order)\f1"
-.IP "\f3Int Sort(Set Que s, Fun Float    key, Int order)\f1"
-.IP "\f3Int Sort(Set Que s, Fun DateTime key, Int order)\f1"
-.IP "\f3Int Sort(Set Que s, Fun Size     key, Int order)\f1"
+.IP "\fBInt Sort(Set Que s, Fun Int      key, Int order)\fP"
+.IP "\fBInt Sort(Set Que s, Fun String   key, Int order)\fP"
+.IP "\fBInt Sort(Set Que s, Fun Float    key, Int order)\fP"
+.IP "\fBInt Sort(Set Que s, Fun DateTime key, Int order)\fP"
+.IP "\fBInt Sort(Set Que s, Fun Size     key, Int order)\fP"
 .sp
 where
 .B s
@@ -2675,11 +2675,11 @@ Examples:
         Sort(ques, QueMemAvailGet, order);
   }
 .fi
-.IP "\f3Int Sort(Set Server s, Fun Int      key, Int order)\f1"
-.IP "\f3Int Sort(Set Server s, Fun String   key, Int order)\f1"
-.IP "\f3Int Sort(Set Server s, Fun Float    key, Int order)\f1"
-.IP "\f3Int Sort(Set Server s, Fun DateTime key, Int order)\f1"
-.IP "\f3Int Sort(Set Server s, Fun Size     key, Int order)\f1"
+.IP "\fBInt Sort(Set Server s, Fun Int      key, Int order)\fP"
+.IP "\fBInt Sort(Set Server s, Fun String   key, Int order)\fP"
+.IP "\fBInt Sort(Set Server s, Fun Float    key, Int order)\fP"
+.IP "\fBInt Sort(Set Server s, Fun DateTime key, Int order)\fP"
+.IP "\fBInt Sort(Set Server s, Fun Size     key, Int order)\fP"
 .sp
 where
 .B s
@@ -2728,11 +2728,11 @@ Examples:
         Sort(sserver, ServerMemAvailGet, order);
   }
 .fi
-.IP "\f3Int Sort(Set CNode s, Fun Int      key, Int order)\f1"
-.IP "\f3Int Sort(Set CNode s, Fun String   key, Int order)\f1"
-.IP "\f3Int Sort(Set CNode s, Fun Float    key, Int order)\f1"
-.IP "\f3Int Sort(Set CNode s, Fun DateTime key, Int order)\f1"
-.IP "\f3Int Sort(Set CNode s, Fun Size     key, Int order)\f1"
+.IP "\fBInt Sort(Set CNode s, Fun Int      key, Int order)\fP"
+.IP "\fBInt Sort(Set CNode s, Fun String   key, Int order)\fP"
+.IP "\fBInt Sort(Set CNode s, Fun Float    key, Int order)\fP"
+.IP "\fBInt Sort(Set CNode s, Fun DateTime key, Int order)\fP"
+.IP "\fBInt Sort(Set CNode s, Fun Size     key, Int order)\fP"
 .sp
 where
 .B s

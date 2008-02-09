@@ -83,9 +83,9 @@ xpbs \- GUI front end to PBS commands
 .SH SYNOPSIS
 xpbs [-admin]
 .SH DESCRIPTION
-The \f3xpbs\fP command provides a user-friendly point-and-click interface to
+The \fBxpbs\fP command provides a user-friendly point-and-click interface to
 PBS commands. Please see the sections below for a tour and tutorials. Also, 
-within every dialog box, a \f3Help\fP button can be found for assistance.
+within every dialog box, a \fBHelp\fP button can be found for assistance.
 .SH OPTIONS
 .IP "-admin" 8
 A mode where additional buttons are made available for terminating PBS servers,
@@ -93,10 +93,10 @@ starting/stopping/disabling/enabling queues, and running/rerunning jobs.
 .in 0
 .LP
 .SH GETTING STARTED
-Running \f3xpbs\fP will initialize the X resource database from various sources
+Running \fBxpbs\fP will initialize the X resource database from various sources
 in the following order:
 .IP "1."
-The \f3RESOURCE_MANAGER\fP property on the root window (updated via xrdb) with
+The \fBRESOURCE_MANAGER\fP property on the root window (updated via xrdb) with
 settings usually defined in the .Xdefaults file
 .IP "2."
 Preference settings defined by the system administrator in the global xpbsrc
@@ -108,7 +108,7 @@ of PBS hosts to query, criteria for listing queues and jobs, and various view
 states. See PREFERENCES section below for a list of resources that can be set.
 .SH RUNNING XPBS
 .LP
-To run \f3xpbs\fP as a regular, non-privileged user, type:
+To run \fBxpbs\fP as a regular, non-privileged user, type:
 .RS
 .sp
 .Ty "\ \ \ setenv DISPLAY <display_host>:0"
@@ -116,7 +116,7 @@ To run \f3xpbs\fP as a regular, non-privileged user, type:
 .Ty "\ \ \ xpbs"
 .sp
 .RE
-To run \f3xpbs\fP with the additional purpose of terminating PBS servers,
+To run \fBxpbs\fP with the additional purpose of terminating PBS servers,
 stopping and starting queues, or running/rerunning jobs, then run:
 .RS
 .sp
@@ -131,9 +131,9 @@ locally, and adding the name of the local machine to the .rhosts file at
 remote host, should be sufficient. 
 .sp
 Also, be sure that the PBS client commands are in the default PATH because
-\f3xpbs\fP will call these commands.  
+\fBxpbs\fP will call these commands.  
 .SH THE XPBS DISPLAY
-This section describes the main parts of the \f3xpbs\fP display. The main 
+This section describes the main parts of the \fBxpbs\fP display. The main 
 window is composed of 5 distinct areas (subwindows) arranged 
 vertically (one on top of another) in the following order:
 .RS
@@ -149,7 +149,7 @@ vertically (one on top of another) in the following order:
 .br
 .RE
 .LP
-\f3Menu\fP. The Menu area is composed of a row of command buttons that 
+\fBMenu\fP. The Menu area is composed of a row of command buttons that 
 signal some action with a click of the left mouse button. The buttons 
 are:
 .RS
@@ -170,7 +170,7 @@ contains some help information.
 .IP "About" 23
 tells of the author and who to send comments, bugs, suggestions to.
 .IP "Close" 23
-for exiting \f3xpbs\fP plus saving the current setup information
+for exiting \fBxpbs\fP plus saving the current setup information
 (if anything had changed) in the user's $HOME/.xpbsrc file. Information saved include
 the selected host(s), queue(s), job(s), the different jobs
 listing criteria, the view states (i.e.
@@ -178,7 +178,7 @@ minimized/maximized) of the Hosts, Queues, Jobs, and INFO  regions, and
 anything in the Preferences section.
 .RE
 .LP
-\f3Hosts\fP. The Hosts area is composed of a leading horizontal HOSTS bar,
+\fBHosts\fP. The Hosts area is composed of a leading horizontal HOSTS bar,
 a listbox, and a set of command buttons. The HOSTS bar contains a
 minimize/maximize button, identified by a dot or a rectangular image,
 for displaying or iconizing the Hosts region. The listbox
@@ -212,7 +212,7 @@ button in the Menu region, and manipulate the server Hosts entry
 widget from the preferences dialog box.
 .sp
 .LP
-\f3Queues\fP. The Queues area is composed of a leading horizontal QUEUES
+\fBQueues\fP. The Queues area is composed of a leading horizontal QUEUES
 bar, a listbox, and a set of command buttons. The QUEUES bar lists the
 hosts that are consulted when listing queues; the bar also contains a
 minimize/maximize button for displaying or iconizing the Queues
@@ -239,7 +239,7 @@ for enabling the selected queue(s). (-admin only)
 .RE
 .sp
 .LP
-\f3Jobs\fP. The Jobs area is composed of a leading horizontal JOBS bar,
+\fBJobs\fP. The Jobs area is composed of a leading horizontal JOBS bar,
 a listbox, and a set of command buttons. The JOBS bar lists the
 queues that are consulted when listing jobs; the bar also contains a
 minimize/maximize button for displaying or iconizing
@@ -264,7 +264,7 @@ appropriate command buttons to bring up a selection box. The
 criteria command buttons are accompanied by a
 .Ar "Select Jobs"
 button, which when clicked, will update the contents of the Jobs
-listbox based on the new selection criteria. Please see \f3qselect(1B)\fP
+listbox based on the new selection criteria. Please see \fBqselect(1B)\fP
 for more details on how the jobs are filtered.
 .sp
 Finally, to the right of the listbox, the Jobs region is accompanied
@@ -300,17 +300,17 @@ for requeueing selected job(s) that are running.
 .RE
 .sp
 .LP
-\f3Info\fP. The Info Area shows the progress of the commands' executed
-by \f3xpbs\fP. Look into this box for errors. The INFO bar also contains a
+\fBInfo\fP. The Info Area shows the progress of the commands' executed
+by \fBxpbs\fP. Look into this box for errors. The INFO bar also contains a
 minimize/maximize button for displaying or iconizing the Info
 region.
 .RE
 .SH WIDGETS USED IN XPBS
-Some of the widgets used in \f3xpbs\fP and how they are manipulated are
+Some of the widgets used in \fBxpbs\fP and how they are manipulated are
 described in the following:
 .sp
 .IP "1." 3
-\f3listbox\fP - can be multi-selectable (a number of entries can be
+\fBlistbox\fP - can be multi-selectable (a number of entries can be
 selected/highlighted using a mouse click) or single-selectable (one entry
 can be highlighted at a time). For a multi-selectable listbox,
 the following operations are allowed:
@@ -338,7 +338,7 @@ that uses the selected entry as a parameter.
 .sp
 .RE
 .IP "2." 3
-\f3scrollbar\fP - usually appears either vertically or
+\fBscrollbar\fP - usually appears either vertically or
 horizontally and contains 5 distinct areas that are mouse
 clicked to achieve different effects:
 .RS
@@ -375,7 +375,7 @@ the action will auto-repeat.
 .RE
 .sp
 .IP "3." 3
-\f3entry\fP - brought into focus with a click of the left
+\fBentry\fP - brought into focus with a click of the left
 mouse button.  To manipulate this widget, simply type in
 the text value. Use of arrow keys, mouse selection of
 text for deletion or overwrite, copying and pasting with
@@ -384,7 +384,7 @@ This widget is usually accompanied by a scrollbar for
 horizontally scanning a long text entry string.
 .sp
 .IP "4." 3
-\f3matrix of entry boxes\fP - usually shown as several
+\fBmatrix of entry boxes\fP - usually shown as several
 rows of entry widgets where a number of entries (called
 fields) can be found per row. The matrix is accompanied by
 up/down arrow buttons for paging through the rows of data,
@@ -394,18 +394,18 @@ be done using the <Tab>, <Cntrl-f>, or <Cntrl-b> (move
 backwards) keys.
 .sp
 .IP "5." 3
-\f3spinbox\fP - a combination of an entry widget and a
+\fBspinbox\fP - a combination of an entry widget and a
 horizontal scrollbar.  The entry widget will only accept
 values that fall within a defined list of valid values, and
 incrementing through the valid values is done by clicking on
 the up/down arrows.
 .IP "6." 3
-\f3button\fP - a rectangular region appearing either raised or
+\fBbutton\fP - a rectangular region appearing either raised or
 pressed that invokes an action when clicked with the left
 mouse button.  When the button appears pressed, then hitting
 the <RETURN> key will automatically select the button.
 .IP "7." 3
-\f3text\fP - an editor like widget. This widget is brought
+\fBtext\fP - an editor like widget. This widget is brought
 into focus with a click of the left mouse button. To manipulate
 this widget, simply type in the text. Use of arrow keys,
 backspace/delete key, mouse selection of text for deletion or
@@ -455,7 +455,7 @@ executable lines of the job in the file text box.
 To submit a job, perform the following steps:
 .RS
 .IP "1." 3
-Select a host from the HOSTS listbox in the main \f3xpbs\fP
+Select a host from the HOSTS listbox in the main \fBxpbs\fP
 display.
 .IP "2." 3
 Click on the
@@ -487,8 +487,8 @@ xterm window to your display host containing the session.
 NOTE: The script FILE entry box is accompanied by a
 .Ar save
 button that you click to save the current widget values to
-the specified file in a form that can later be read by \f3xpbs\fP
-or by the \f3qsub\fP command.
+the specified file in a form that can later be read by \fBxpbs\fP
+or by the \fBqsub\fP command.
 .RE
 .SH MODIFYING ATTRIBUTES OF JOBS
 Modifying a PBS job requires only to manipulate the widgets found
@@ -497,7 +497,7 @@ steps:
 .RS
 .IP "1." 3
 Select one or more jobs from the JOBS listbox in the main
-\f3xpbs\fP display.
+\fBxpbs\fP display.
 .IP "2." 3
 Click on the
 .Ar modify
@@ -518,7 +518,7 @@ steps:
 .RS
 .IP "1." 3
 Select one or more jobs from the JOBS listbox in the main
-\f3xpbs\fP display.
+\fBxpbs\fP display.
 .IP "2." 3
 Click on the
 .Ar delete
@@ -559,9 +559,9 @@ files will be periodically checked.
 Specify the location of job output files (whether locally or
 remotely) by clicking on one of the radio buttons located at
 the upper right of the dialog box. Returned locally means the
-output files will be returned back to the host where \f3xpbs\fP 
+output files will be returned back to the host where \fBxpbs\fP 
 was run. If the output files are returned to some remote host, then
-\f3xpbs\fP will execute an
+\fBxpbs\fP will execute an
 .br
 .Ty "\ \ \ RSH <remote_host> test -f <output_files>"
 .br
@@ -569,7 +569,7 @@ to test the existence of the files. RSH is whatever you set the remote shell
 command to in the corresponding entry box.
 .sp
 NOTE: Be sure the files are accessible from the host where
-\f3xpbs\fP was run (i.e. .rhosts appropriately set).
+\fBxpbs\fP was run (i.e. .rhosts appropriately set).
 .IP "6."
 Click
 .Ar "start/reset tracking"
@@ -601,7 +601,7 @@ Click
 .Ar "stop tracking"
 if you want to cancel tracking.
 .SH LEAVING XPBS
-Click on the Close button located in the Menu bar to leave \f3xpbs\fP.
+Click on the Close button located in the Menu bar to leave \fBxpbs\fP.
 If anything had changed, it will bring up a dialog box asking for a confirmation
 in regards to saving state information like the view states (minimize/maximize) of
 the HOSTS, QUEUES, JOBS, and INFO subwindows, and various criteria for
@@ -609,7 +609,7 @@ listing queues and jobs. The information is saved in ~/.xpbsrc file.
 .SH PREFERENCES
 The resources that can be set in the X resources file, ~/.xpbsrc, are:
 .IP *serverHosts
-list of server hosts (space separated) to query by \f3xpbs\fP.
+list of server hosts (space separated) to query by \fBxpbs\fP.
 .IP *timeoutSecs
 specify the number of seconds before timing out waiting for a connection to
 a PBS host.
@@ -657,62 +657,62 @@ list of jobs (space separated) to automatically select/highlight
 in the JOBS listbox.
 .IP *selectOwners
 list of owners checked when limiting the
-jobs appearing on the Jobs listbox in the main \f3xpbs\fP window. 
+jobs appearing on the Jobs listbox in the main \fBxpbs\fP window. 
 Specify value as "Owners: <list_of_owners>".
-See -u option in \f3qselect(1B)\fP for format of <list_of_owners>.
+See -u option in \fBqselect(1B)\fP for format of <list_of_owners>.
 .IP *selectStates
 list of job states to look for (do not space separate) when
 limiting the jobs appearing on the Jobs listbox in the main
-\f3xpbs\fP window.
+\fBxpbs\fP window.
 Specify value as "Job_States: <states_string>".
-See -s option in \f3qselect(1B)\fP for format of <states_string>.
+See -s option in \fBqselect(1B)\fP for format of <states_string>.
 .IP *selectRes
 list of resource amounts (space separated) to consult when
 limiting the jobs appearing on the Jobs listbox in the main
-\f3xpbs\fP window.
+\fBxpbs\fP window.
 Specify value as "Resources: <res_string>".
-See -l option in \f3qselect(1B)\fP for format of <res_string>.
+See -l option in \fBqselect(1B)\fP for format of <res_string>.
 .IP *selectExecTime
 the Execution Time attribute to consult when limiting the
 list of jobs appearing on the Jobs listbox in the main 
-\f3xpbs\fP window.
+\fBxpbs\fP window.
 Specify value as "Queue_Time: <exec_time>".
-See -a option in \f3qselect(1B)\fP for format of <exec_time>.
+See -a option in \fBqselect(1B)\fP for format of <exec_time>.
 .IP *selectAcctName
 the name of the account that will be checked when limiting the
-jobs appearing on the Jobs listbox in the main \f3xpbs\fP 
+jobs appearing on the Jobs listbox in the main \fBxpbs\fP 
 window.
 Specify value as "Account_Name: <account_name>".
-See -A option in \f3qselect(1B)\fP for format of <account_name>.
+See -A option in \fBqselect(1B)\fP for format of <account_name>.
 .IP *selectCheckpoint
 the checkpoint attribute relationship (including the logical 
 operator) to consult when limiting the list of jobs
-appearing on the Jobs listbox in the main \f3xpbs\fP window. 
+appearing on the Jobs listbox in the main \fBxpbs\fP window. 
 Specify value as "Checkpoint: <checkpoint_arg>".
-See -c option in \f3qselect(1B)\fP for format of <checkpoint_arg>.
+See -c option in \fBqselect(1B)\fP for format of <checkpoint_arg>.
 .IP *selectHold
 the hold types string to look for in a job when limiting the
-jobs appearing on the Jobs listbox in the main \f3xpbs\fP 
+jobs appearing on the Jobs listbox in the main \fBxpbs\fP 
 window.
 Specify value as "Hold_Types: <hold_string>".
-See -h option in \f3qselect(1B)\fP for format of <hold_string>.
+See -h option in \fBqselect(1B)\fP for format of <hold_string>.
 .IP *selectPriority
 the priority relationship (including the logical operator) to
 consult when limiting the list of jobs appearing on the Jobs
-listbox in the main \f3xpbs\fP window.
+listbox in the main \fBxpbs\fP window.
 Specify value as "Priority: <priority_value>".
-See -p option in \f3qselect(1B)\fP for format of <priority_value>.
+See -p option in \fBqselect(1B)\fP for format of <priority_value>.
 .IP *selectRerun
 the rerunnable attribute to consult when limiting the list of
-jobs appearing on the Jobs listbox in the main \f3xpbs\fP 
+jobs appearing on the Jobs listbox in the main \fBxpbs\fP 
 window.
 Specify value as "Rerunnable: <rerun_val>".
-See -r option in \f3qselect(1B)\fP for format of <rerun_val>.
+See -r option in \fBqselect(1B)\fP for format of <rerun_val>.
 .IP *selectJobName
 name of the job that will be checked when limiting the jobs
-appearing on the Jobs listbox in the main \f3xpbs\fP window.
+appearing on the Jobs listbox in the main \fBxpbs\fP window.
 Specify value as "Job_Name: <jobname>".
-See -N option in \f3qselect(1B)\fP for format of <jobname>.
+See -N option in \fBqselect(1B)\fP for format of <jobname>.
 .IP *iconizeHostsView
 a boolean value (true or false) indicating whether or not to
 iconize the HOSTS region.
@@ -738,9 +738,9 @@ architecture known to xpbs. The format is as follows:
 { <arch-typeN> resname1 resname2 ... resnameN }
 .LP
 .SH XPBS AND PBS COMMANDS
-\f3xpbs\fP calls PBS commands as follows:
-.IP "\f3Command Button\fP" 22
-\f3PBS Command\fP
+\fBxpbs\fP calls PBS commands as follows:
+.IP "\fBCommand Button\fP" 22
+\fBPBS Command\fP
 .IP "detail (Hosts)" 22
 qstat -B -f <selected server_host(s)>
 .IP "terminate" 22
@@ -779,7 +779,7 @@ qmove <selected job(s)>
 qorder <selected job(s)>
 .LP
 .SH EXIT STATUS
-Upon successful processing, the \f3xpbs\fP exit status will be a value of zero.
+Upon successful processing, the \fBxpbs\fP exit status will be a value of zero.
 .LP
 If the xpbs command fails, the
 command exits with a value greater than zero.

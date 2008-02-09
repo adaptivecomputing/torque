@@ -141,9 +141,9 @@ batch request to the server which owns the job.
 Defines the types of hold to be released from the jobs.
 The
 .Ar hold_list
-option argument is a string consisting of one or more of the letters "\f5u\fP",
-"\f5o\fP", an "\f5s\fP" in any combination, or one or more of the letters
-"\f5n\fP.
+option argument is a string consisting of one or more of the letters "\fBu\fP",
+"\fBo\fP", an "\fBs\fP" in any combination, or one or more of the letters
+"\fBn\fP.
 The hold type associated with each letter is:
 .RS
 .IP "u \- " 4

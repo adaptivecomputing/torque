@@ -104,7 +104,7 @@ They will transmit their batch requests over the connection established
 by this function.
 Multiple requests may be issued over the connection before it is closed.
 .LP
-The connection should be closed by a call to \f3pbs_disconnect\f1()
+The connection should be closed by a call to \fBpbs_disconnect\fP()
 when all requests have been sent to the server.
 .LP
 The parameter,

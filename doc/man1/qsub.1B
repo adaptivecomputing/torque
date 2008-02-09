@@ -113,9 +113,9 @@ attribute of the job.
 These variables will be available to the job.
 The value for the following variables will be taken from the environment
 of the qsub
-command: \f3HOME\fP, \f3LANG\fP, \f3LOGNAME\fP, \f3PATH\fP, \f3MAIL\fP,
-\f3SHELL\fP,
-and \f3TZ\fP.  These values will be assigned to a new name which is the
+command: \fBHOME\fP, \fBLANG\fP, \fBLOGNAME\fP, \fBPATH\fP, \fBMAIL\fP,
+\fBSHELL\fP,
+and \fBTZ\fP.  These values will be assigned to a new name which is the
 current name prefixed with the string "PBS_O_".
 For example, the job will have access to an environment variable named
 .B PBS_O_HOME
@@ -128,38 +128,38 @@ to the batch job.
 .if !\n(Pb .ig Ig
 (The values of the following environment variables are established by qsub.)
 .Ig
-.IP \f3PBS_O_HOST\fP
+.IP \fBPBS_O_HOST\fP
 the name of the host upon which the qsub command is running.
-.IP \f3PBS_SERVER\fP
+.IP \fBPBS_SERVER\fP
 the hostname of the pbs_server which qsub submits the job to.
-.IP \f3PBS_O_QUEUE\fP
+.IP \fBPBS_O_QUEUE\fP
 the name of the original queue to which the job was submitted.
 .if !\n(Pb .ig Ig
 (It is established by the server which creates the job, not qsub.)
 .Ig
-.IP \f3PBS_O_WORKDIR\fP
+.IP \fBPBS_O_WORKDIR\fP
 the absolute path of the current working directory of the qsub command.
 .if !\n(Pb .ig Ig
 .LP
 The following are established by the server executing the job,
 not the qsub command.
 .Ig
-.IP \f3PBS_ARRAYID\fP
+.IP \fBPBS_ARRAYID\fP
 each member of a job array is assigned a unique identifier (see -t)
-.IP \f3PBS_ENVIRONMENT\fP
+.IP \fBPBS_ENVIRONMENT\fP
 set to 
 .Ty PBS_BATCH
 to indicate the job is a batch job, or to
 .Ty PBS_INTERACTIVE
 to indicate the job is a PBS interactive job, see -I option.
-.IP \f3PBS_JOBID\fP
+.IP \fBPBS_JOBID\fP
 the job identifier assigned to the job by the batch system.
-.IP \f3PBS_JOBNAME\fP
+.IP \fBPBS_JOBNAME\fP
 the job name supplied by the user.
-.IP \f3PBS_NODEFILE\fP
+.IP \fBPBS_NODEFILE\fP
 the name of the file contain the list of nodes assigned to the job
 (for parallel and cluster systems).
-.IP \f3PBS_QUEUE\fP
+.IP \fBPBS_QUEUE\fP
 the name of the queue from which the job is executed.
 .SH OPTIONS
 .IP "-a date_time" 8
@@ -171,7 +171,7 @@ The
 argument is in the form: 
 .Ty "[[[[CC]YY]MM]DD]hhmm[.SS]"
 .LP
-\f1Where CC is the first two digits of the year (the century),
+Where CC is the first two digits of the year (the century),
 YY is the second two digits of the year, MM is the two digits for the month,
 DD is the day of the month, hh is the hour, mm is the minute,
 and the optional SS is the seconds.
@@ -325,22 +325,22 @@ is the path
 name on that host in the syntax recognized by POSIX.
 The argument will be interpreted as follows:
 .RS
-.IP \f5path_name\f1
+.IP \fBpath_name\fP
 Where path_name is not an absolute path name, then the qsub command will
 expand the path name relative to the current working directory of the command.
 The command will supply the name of the host upon which it is executing for the
 .Ar hostname
 component.
-.IP \f5hostname:path_name\f1
+.IP \fBhostname:path_name\fP
 Where path_name is not an absolute path name, then the qsub command will not
 expand the path name relative to the current working directory of the command.
 On delivery of the standard error, the path name will be expanded relative
-to the user's home directory on the \f5hostname\fP system.
-.IP \f5path_name\f1
+to the user's home directory on the \fBhostname\fP system.
+.IP \fBpath_name\fP
 Where path_name specifies an absolute path name, then the qsub will supply
 the name of the host on which it is executing for the
 .Ar hostname .
-.IP \f5hostname:path_name\f1
+.IP \fBhostname:path_name\fP
 Where path_name specifies an absolute path name, the path will be used as
 specified.
 .RE
@@ -350,11 +350,11 @@ If the
 option is not specified, the default file name for the standard error stream
 will be used.  The default name has the following form:
 .br
-\ \ \ \ \f5job_name.\f6e\f5sequence_number\f1
+\ \ \ \ \fBjob_name.esequence_number\fP
 .br
-where \f5job_name\fP is the name of the job, see
+where \fBjob_name\fP is the name of the job, see
 .Ar -N 
-option, and \f5sequence_number\f1 is the job number assigned when the
+option, and \fBsequence_number\fP is the job number assigned when the
 job is submitted.
 .if !\n(Pb .ig Ig
 This option sets the job attribute
@@ -441,8 +441,8 @@ The standard error stream is to retained on the execution host.
 The  stream will be placed in the home directory of the user under whose
 user id the job executed.  The file name will be the default file name
 given by:
-\f5job_name.\f6e\f5sequence\f1
-where \f5job_name\fP is the name specified for the job, and \f5sequence\fP is
+\fBjob_name.esequence\fP
+where \fBjob_name\fP is the name specified for the job, and \fBsequence\fP is
 the sequence number component of the job identifier.
 .if !\n(Pb .ig Ig
 The attribute is set to KEEP_ERROR.
@@ -451,8 +451,8 @@ The attribute is set to KEEP_ERROR.
 The standard output stream is to retained on the execution host.
 The  stream will be placed in the home directory of the user under whose
 user id the job executed.  The file name will be the default file name
-given by: \f5job_name.\f6o\f5sequence\f1
-where \f5job_name\fP is the name specified for the job, and \f5sequence\fP is
+given by: \fBjob_name.osequence\fP
+where \fBjob_name\fP is the name specified for the job, and \fBsequence\fP is
 the sequence number component of the job identifier.
 .if !\n(Pb .ig Ig
 The attribute is set to KEEP_OUTPUT.
@@ -495,21 +495,21 @@ checking.  The checking is performed by the execution server.
 Defines the set of conditions under which the execution server will
 send a mail message about the job.  The
 .Ar mail_options
-argument is a string which consists of either the single character "\f5n\f1",
-or one or more of the characters "\f5a\fP", "\f5b\fP", and "\f5e\fP".
+argument is a string which consists of either the single character "\fBn\fP",
+or one or more of the characters "\fBa\fP", "\fBb\fP", and "\fBe\fP".
 .if !\n(Pb .ig Ig
-Repeated letters are accepted, but \f5n\f1 cannot be mixed with the other
+Repeated letters are accepted, but \fBn\fP cannot be mixed with the other
 characters.
 .Ig
 .IP
-If the character "\f5n\fP" is specified, no mail will be sent.
+If the character "\fBn\fP" is specified, no mail will be sent.
 .if !\n(Pb .ig Ig
 The
 .At Mail_Points
 attribute is set to NONE, "n".
 .Ig
 .IP
-For the letters "\f5a\fP", "\f5b\fP", and "\f5e\fP":
+For the letters "\fBa\fP", "\fBb\fP", and "\fBe\fP":
 .RS
 .IP a 3
 mail is sent when the job is aborted by the batch system.
@@ -604,22 +604,22 @@ is the path
 name on that host in the syntax recognized by POSIX.
 The argument will be interpreted as follows:
 .RS
-.IP \f5path_name\f1
+.IP \fBpath_name\fP
 Where path_name is not an absolute path name, then the qsub command will
 expand the path name relative to the current working directory of the command.
 The command will supply the name of the host upon which it is executing for the
 .Ar hostname
 component.
-.IP \f5hostname:path_name\f1
+.IP \fBhostname:path_name\fP
 Where path_name is not an absolute path name, then the qsub command will not
 expand the path name relative to the current working directory of the command.
 On delivery of the standard output, the path name will be expanded relative
-to the user's home directory on the \f5hostname\fP system.
-.IP \f5path_name\f1
+to the user's home directory on the \fBhostname\fP system.
+.IP \fBpath_name\fP
 Where path_name specifies an absolute path name, then the qsub will supply
 the name of the host on which it is executing for the
 .Ar hostname .
-.IP \f5hostname:path_name\f1
+.IP \fBhostname:path_name\fP
 Where path_name specifies an absolute path name, the path will be used as
 specified.
 .RE
@@ -629,11 +629,11 @@ If the
 option is not specified, the default file name for the standard output stream
 will be used.  The default name has the following form:
 .br
-\ \ \ \ \f5job_name.\f6o\f5sequence_number\f1
+\ \ \ \ \fBjob_name.osequence_number\fP
 .br
-where \f5job_name\fP is the name of the job, see
+where \fBjob_name\fP is the name of the job, see
 .Ar -N 
-option, and \f5sequence_number\f1 is the job number assigned when the
+option, and \fBsequence_number\fP is the job number assigned when the
 job is submitted.
 .if !\n(Pb .ig Ig
 This option sets the job attribute
@@ -713,13 +713,13 @@ Also see
 in the glossary.  Interactive jobs are forced to not rerunable.
 .Ig
 .IP
-If the argument is "\f5y\fP", the job is rerunable.
+If the argument is "\fBy\fP", the job is rerunable.
 .if !\n(Pb .ig Ig
 The
 .At Rerunable
 attribute is set to the character  'y'.
 .Ig
-If the argument is "\f5n\fP", the job is not rerunable.
+If the argument is "\fBn\fP", the job is not rerunable.
 The default value is 'y', rerunable.
 .IP "\-S path_list" 8
 Declares the shell that interprets the job script.
@@ -767,12 +767,12 @@ argument is of the form:
 .br
 .Ty "\ \ \ \ user[@host][,user[@host],...]"
 .br
-\f1Only one user name may be given per specified host.
+Only one user name may be given per specified host.
 Only one of the
 .Ty user
-\f1specifications may be supplied without the corresponding
+specifications may be supplied without the corresponding
 .Ty host
-\f1specification.  That user name will used for execution on any host not
+specification.  That user name will used for execution on any host not
 named in the argument list.
 .if !\n(Pb .ig Ig
 The
@@ -857,53 +857,53 @@ If
 is null (the preceding colon need not be specified), the
 dependency of the corresponding type is cleared (unset).
 .RS 12
-.IP "\f5synccount:\f2count\f1" 4
+.IP "\fBsynccount:count\fP" 4
 This job is the first in a set of jobs to be executed at the same time.
 .I Count
 is the number of additional jobs in the set.
-.IP "\f5syncwith:\f2jobid\f1" 4
+.IP "\fBsyncwith:jobid\fP" 4
 This job is an additional member of a set of jobs to be executed at the
 same time.
 In the above and following dependency types,
 .I jobid
 is the job identifier of the first job in the set.
-.IP "\f5after:\f2jobid[:jobid...]\f1" 4
+.IP "\fBafter:jobid[:jobid...]\fP" 4
 This job may be scheduled for execution at any point after jobs
 .I jobid
 have started execution.
-.IP "\f5afterok:\f2jobid[:jobid...]\f1" 4
+.IP "\fBafterok:jobid[:jobid...]\fP" 4
 This job may be scheduled for execution only after jobs
 .I jobid
 have terminated with no errors.
 See the csh warning under "Extended Description".
-.IP "\f5afternotok:\f2jobid[:jobid...]\f1" 4
+.IP "\fBafternotok:jobid[:jobid...]\fP" 4
 This job may be scheduled for execution only after jobs
 .I jobid
 have terminated with errors.
 See the csh warning under "Extended Description".
-.IP "\f5afterany:\f2jobid[:jobid...]\f1" 4
+.IP "\fBafterany:jobid[:jobid...]\fP" 4
 This job may be scheduled for execution after jobs
 .I jobid
 have terminated, with or without errors.
-.IP "\f5on:\f2count\f1" 4
-This job may be scheduled for execution after \f2count\f1 dependencies on
+.IP "\fBon:count\fP" 4
+This job may be scheduled for execution after \fBcount\fP dependencies on
 other jobs have been satisfied.  This form is used in conjunction
-with one of the \f5before\f1 forms, see below.
-.IP \f5before:\f2jobid[:jobid...]\f1 4
-When this job has begun execution, then jobs \f2jobid...\f1 may begin.
-.IP \f5beforeok:\f2jobid[:jobid...]\f1 4
+with one of the \fBbefore\fP forms, see below.
+.IP \fBbefore:jobid[:jobid...]\fP 4
+When this job has begun execution, then jobs \fBjobid...\fP may begin.
+.IP \fBbeforeok:jobid[:jobid...]\fP 4
 If this job terminates execution without errors, then jobs
-\f2jobid...\f1 may begin.
+\fBjobid...\fP may begin.
 See the csh warning under "Extended Description".
-.IP \f5beforenotok:\f2jobid[:jobid...]\f1 4
+.IP \fBbeforenotok:jobid[:jobid...]\fP 4
 If this job terminates execution with errors, then jobs
-\f2jobid...\f1 may begin.
+\fBjobid...\fP may begin.
 See the csh warning under "Extended Description".
-.IP \f5beforeany:\f2jobid[:jobid...]\f1 4
-When this job terminates execution, jobs \f2jobid...\f1 may begin.
+.IP \fBbeforeany:jobid[:jobid...]\fP 4
+When this job terminates execution, jobs \fBjobid...\fP may begin.
 .IP
-If any of the \f5before\f1 forms are used, the jobs referenced by \f2jobid\f1
-must have been submitted with a dependency type of \f5on\f1.
+If any of the \fBbefore\fP forms are used, the jobs referenced by \fBjobid\fP
+must have been submitted with a dependency type of \fBon\fP.
 .if !\n(Pb .ig Ig
 .IP
 The
@@ -913,7 +913,7 @@ attribute is set to the value of the
 option argument.
 .Ig
 .IP
-If any of the \f5before\f1 forms are used, the jobs referenced by \f2jobid\f1
+If any of the \fBbefore\fP forms are used, the jobs referenced by \fBjobid\fP
 must have the same owner as the job being submitted.  Otherwise, the dependency
 is ignored.
 .LP
@@ -938,12 +938,12 @@ argument is of the form:
 .br
 .Ty "group[@host][,group[@host],...]"
 .br
-\f1Only one group name may be given per specified host.
+Only one group name may be given per specified host.
 Only one of the
 .Ty group
-\f1specifications may be supplied without the corresponding
+specifications may be supplied without the corresponding
 .Ty host
-\f1specification.  That group name will used for execution on any host not
+specification.  That group name will used for execution on any host not
 named in the argument list.
 .if !\n(Pb .ig Ig
 The

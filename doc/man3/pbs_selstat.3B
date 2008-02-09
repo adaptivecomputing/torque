@@ -95,11 +95,11 @@ void pbs_statfree(\^struct batch_status *psj\^)
 .ft 1
 .SH DESCRIPTION
 Issue a batch request to examine the status of jobs which meet certain criteria.
-\f3pbs_selstat\f1() returns a list of batch_status structures for those jobs
+\fBpbs_selstat\fP() returns a list of batch_status structures for those jobs
 which met the selection criteria.
 .LP
-This function is a combination of \f3pbs_selectjobs\f1() and
-\f3pbs_statjob\f1().
+This function is a combination of \fBpbs_selectjobs\fP() and
+\fBpbs_statjob\fP().
 It is an extension to the POSIX Batch standard.
 .LP
 Initially all batch jobs are selected for which the user is authorized to
@@ -112,7 +112,7 @@ A
 batch request is generated and sent to the server over the connection
 specified by
 .Ar connect 
-which is the return value of \f3pbs_connect\f1().
+which is the return value of \fBpbs_connect\fP().
 .LP
 The parameter,
 .Ar sel_list ,
@@ -277,7 +277,7 @@ pbs_ifl.h as:
 .ft 1
 .LP
 It is up the user to free the list of batch_status structures when no longer
-needed, by calling \f3pbs_statfree\f1().
+needed, by calling \fBpbs_statfree\fP().
 .LP
 The parameter,
 .Ar extend ,

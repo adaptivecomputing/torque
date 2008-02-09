@@ -117,9 +117,9 @@ Declares which signal is sent to the job.
 .LP
 The
 .Ar signal
-argument is either a signal name, e.g.  \f3SIGKILL\f1,
-the signal name without the \f3SIG\f1 prefix, e.g. \f3KILL\f1,
-or a unsigned signal number, e.g. \f39\f1.
+argument is either a signal name, e.g.  \fBSIGKILL\fP,
+the signal name without the \fBSIG\fP prefix, e.g. \fBKILL\fP,
+or a unsigned signal number, e.g. \fB9\fP.
 The signal name
 .B SIGNULL
 is allowed; the server will send the signal 0 to the job which will

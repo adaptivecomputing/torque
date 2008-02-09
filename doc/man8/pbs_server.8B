@@ -108,9 +108,9 @@ to the system console.
 Specifies if scheduling is active or not.  This sets the server attribute
 .At scheduling .
 If the option argument
-is "true" ("True", "t", "T", or "1"), the server is \f3active\fP and the PBS
+is "true" ("True", "t", "T", or "1"), the server is \fBactive\fP and the PBS
 job scheduler will be called.
-If the argument is "false" ("False", "f", "F", or "0), the server is \f3idle\fP,
+If the argument is "false" ("False", "f", "F", or "0), the server is \fBidle\fP,
 and the scheduler will not be called and no jobs will be run.
 If this option is not specified, the server will retain the prior value of the 
 .At scheduling

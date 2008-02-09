@@ -225,7 +225,7 @@ The attributes of objects are described in section 2 of the ERS.
 If the attribute is one which consist of a set of resources, then the
 attribute is specified in the form:
 .br
-\ \ \f5attribute_name\f3.\f5resource_name\f1
+\ \ \fBattribute_name.resource_name\fP
 .br
 .IP OP
 operation to be performed with the attribute and its value:

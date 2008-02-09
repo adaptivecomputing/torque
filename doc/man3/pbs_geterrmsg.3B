@@ -109,7 +109,7 @@ will return a pointer to the null terminated text string.
 pbs_connect(3B)
 .SH DIAGNOSTICS
 If an error text message was returned by a server in reply to the previous
-call to a batch interface library function, \f3pbs_geterrmsg\f1()
+call to a batch interface library function, \fBpbs_geterrmsg\fP()
 will return a pointer to it.
 Otherwise, pbs_geterrmsg() returns the null pointer.
 \" turn off any extra indent left by the Sh macro
