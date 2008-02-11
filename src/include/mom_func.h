@@ -138,7 +138,7 @@ extern pid_t fork_me A_((int sock));
 extern int   get_la A_((double *));
 extern void  init_abort_jobs A_((int));
 extern int   init_groups A_((char *, int, int, int *));
-extern int   kill_job A_((job *, int sig));
+extern int   kill_job A_((job *, int sig, char *killer_id_name, char *why_killed_reason));
 extern void  mom_deljob A_((job *));
 extern void  mom_freenodes A_((job *));
 extern void  scan_for_exiting();

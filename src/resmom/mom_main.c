@@ -5670,6 +5670,21 @@ void tcp_request(
   }  /* END tcp_request() */
 
 
+char *find_signal_name( int sig )
+  {
+  struct sig_tbl *psigt;
+  extern struct sig_tbl sig_tbl[];
+
+  for (psigt = sig_tbl; psigt->sig_name != NULL; psigt++)
+    {
+    if (psigt->sig_val == sig)
+      {
+      return(psigt->sig_name);
+      }
+    }
+  return("unknown signal");
+  }
+
 
 
 
@@ -5681,22 +5696,33 @@ void tcp_request(
 int kill_job(
 
   job *pjob,  /* I */
-  int  sig)   /* I */
+  int  sig,   /* I */
+  char *killer_id_name, /* I - process name of calling routine */
+  char *why_killed_reason) /* I - reason for killing */
 
   {
   task	*ptask;
   int	ct = 0;
 
-  const char *id = "kill_job";
+  char *id = "kill_job";
+
+  sprintf(log_buffer,"%s: sending signal %d, \"%s\" to job %s, reason: %s",
+    killer_id_name,
+    sig, find_signal_name(sig),
+    pjob->ji_qs.ji_jobid,
+    why_killed_reason);
 
   if (LOGLEVEL >= 2)
     {
+
     log_record(
-      PBSEVENT_JOB, 
+      PBSEVENT_JOB,
       PBS_EVENTCLASS_JOB,
-      pjob->ji_qs.ji_jobid, 
-      (char *)id);
+      id, 
+      log_buffer);
     }
+
+  DBPRT(("%s\n",log_buffer));
 
   /* NOTE:  should change be made to only execute precancel epilog if job is active? (NYI) */
 
@@ -7670,6 +7696,7 @@ void main_loop()
   int           c;
 #if MOM_CHECKPOINT == 1
   resource	*prscput;
+  extern int start_checkpoint();
 #endif /* MOM_CHECKPOINT */
 
 
@@ -8053,14 +8080,14 @@ void main_loop()
 
       if (c & JOB_SVFLG_OVERLMT2) 
         {
-        kill_job(pjob,SIGKILL);
+        kill_job(pjob,SIGKILL,id,"job is over-limit-2");
 
         continue;
         }
 
       if (c & JOB_SVFLG_OVERLMT1) 
         {
-        kill_job(pjob,SIGTERM);
+        kill_job(pjob,SIGTERM,id,"job is over-limit-1");
 
         pjob->ji_qs.ji_svrflags |= JOB_SVFLG_OVERLMT2;
 
@@ -8091,7 +8118,7 @@ void main_loop()
           free(kill_msg);
           }
 
-        kill_job(pjob,SIGTERM);
+        kill_job(pjob,SIGTERM,id,"job is over-limit-0");
 
         pjob->ji_qs.ji_svrflags |= JOB_SVFLG_OVERLMT1;
         }
@@ -8114,7 +8141,7 @@ void kill_all_running_jobs()
       {
       if (pjob->ji_qs.ji_substate == JOB_SUBSTATE_RUNNING) 
         {
-        kill_job(pjob,SIGKILL);
+        kill_job(pjob,SIGKILL,"kill_all_running_jobs","mom is terminating with kill jobs flag");
 
         pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITING;
 

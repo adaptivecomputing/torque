@@ -2385,37 +2385,15 @@ void im_request(
       if (check_ms(stream,pjob))
         goto fini;
 
-      LOG_EVENT(
-        PBSEVENT_DEBUG2, 
-        PBS_EVENTCLASS_JOB,
-        pjob->ji_qs.ji_jobid, 
-        "kill_job received");
-
       /*
       ** Send the jobs a signal but we have to wait to
       ** do a reply to mother superior until the procs
       ** die and are reaped.
       */
 
-      if (LOGLEVEL >= 3)
-        {
-        sprintf(log_buffer,"%s: KILL_JOB %s node %s",
-          id,
-          jobid,
-          netaddr(addr));
-
-        log_record(
-          PBSEVENT_JOB,
-          PBS_EVENTCLASS_JOB,
-          jobid,
-          log_buffer);
-
-        DBPRT(("%s\n",log_buffer));
-        }
-
       reply = 0;
 
-      kill_job(pjob,SIGKILL);
+      kill_job(pjob,SIGKILL,id,"kill_job message received");
 
       pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITING;
       pjob->ji_obit = event;

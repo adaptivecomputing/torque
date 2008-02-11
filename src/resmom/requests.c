@@ -1763,6 +1763,7 @@ void req_signaljob(
   struct batch_request *preq) /* I */
 
   {
+  char           id[]= "req_signaljob";
   job            *pjob;
   int             sig;
   char           *sname;
@@ -1865,12 +1866,12 @@ void req_signaljob(
     {
     /* if job is suspended, resume, and then kill - allow job to clean up on sigterm */
 
-    kill_job(pjob,SIGCONT);
+    kill_job(pjob,SIGCONT,id,"job is suspended, resume and kill");
 
     sleep(1);
     }
 
-  if ((kill_job(pjob,sig) == 0) && (sig == 0)) 
+  if ((kill_job(pjob,sig,id,"job was suspended, now killing") == 0) && (sig == 0)) 
     {
     /* SIGNUL and no procs found, force job to exiting */
     /* force issue of (another) job obit */
@@ -3404,11 +3405,9 @@ int mom_checkpoint_job(
   int  abort) /* I */
 
   {
-  static char	id[] = "mom_checkpoint_job";
   int		hasold = 0;
   int		sesid = -1;
   int		ckerr;
-  int		i;
   struct stat	statbuf;
   char		path[MAXPATHLEN + 1];
   char		oldp[MAXPATHLEN + 1];
@@ -3705,7 +3704,7 @@ int start_checkpoint(
     /* parent, record pid in job for when child terminates */
 
     pjob->ji_momsubt = pid;
-    pjob->ji_mompost = post_chkpt;
+    pjob->ji_mompost = (int (*)())post_chkpt;
 
     if (preq)
       free_br(preq);

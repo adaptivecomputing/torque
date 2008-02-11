@@ -314,15 +314,9 @@ void chkpt_partial(
   return;
 
 fail:
-
-  sprintf(log_buffer,"%s failed to restart",
-    pjob->ji_qs.ji_jobid);
-
-  log_err(errno,id,log_buffer);
-
   pjob->ji_flags &= ~MOM_CHKPT_POST;
 
-  kill_job(pjob,SIGKILL);
+  kill_job(pjob,SIGKILL,id,"failed to restart");
 
   return;
   }  /* END chkpt_partial() */
@@ -598,16 +592,7 @@ void scan_for_exiting()
 
       if (stream == -1) 
         {
-        if (LOGLEVEL >= 3)
-          {
-          LOG_EVENT(
-            PBSEVENT_JOB,
-            PBS_EVENTCLASS_JOB,
-            pjob->ji_qs.ji_jobid,
-            "connection to server lost - killing job - no obit sent");
-          }
-
-        kill_job(pjob,SIGKILL);
+        kill_job(pjob,SIGKILL,id,"connection to server lost - no obit sent");
 
         job_purge(pjob);
 
@@ -730,19 +715,9 @@ void scan_for_exiting()
     ** At this point, we know we are Mother Superior for this
     ** job which is EXITING.  Time for it to die.
     */
-
-    if (LOGLEVEL >= 2)
-      {
-      log_record(
-        PBSEVENT_DEBUG,
-        PBS_EVENTCLASS_JOB,
-        pjob->ji_qs.ji_jobid,
-        "local task termination detected.  killing job");
-      }
-
     pjob->ji_qs.ji_svrflags &= ~JOB_SVFLG_Suspend;
 
-    kill_job(pjob,SIGKILL);
+    kill_job(pjob,SIGKILL,id,"local task termination detected");
 
 #ifdef ENABLE_CPA
     if (CPADestroyPartition(pjob) != 0)
@@ -1741,19 +1716,7 @@ void init_abort_jobs(
 
       if (recover != 0)
         { 
-        if (LOGLEVEL >= 2)
-          {
-          sprintf(log_buffer,"recover is non-zero, killing job %s",
-            pj->ji_qs.ji_jobid);
-
-          log_record(
-            PBSEVENT_DEBUG,
-            PBS_EVENTCLASS_JOB,
-            id,
-            log_buffer);
-          }
-
-        kill_job(pj,SIGKILL);
+        kill_job(pj,SIGKILL,id,"recover is non-zero");
         }
 
       /*
