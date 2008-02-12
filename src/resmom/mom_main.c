@@ -7707,7 +7707,9 @@ void examine_all_polled_jobs()
 void examine_all_running_jobs()
   {
   job         *pjob;
+#ifdef _CRAY
   int         c;
+#endif
   task         *ptask;
 #if MOM_CHECKPOINT == 1
   resource	*prscput;
