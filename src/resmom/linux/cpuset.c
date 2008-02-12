@@ -67,7 +67,7 @@ int cpuset_delete (char *cpusetname)
       if (!cpuset_delete(childpath))
         {
         sprintf (log_buffer, "Unused cpuset '%s' deleted.", childpath);
-        log_err(0,id,log_buffer);
+        log_err(-1,id,log_buffer);
         }
       else
         {
@@ -198,7 +198,7 @@ log_err(-1,id,log_buffer);
       	                  if (!cpuset_delete(pdirent->d_name))
                             {
                                     sprintf (log_buffer, "Unused cpuset '%s' deleted.", path);
-                                    log_err(0,id,log_buffer);
+                                    log_err(-1,id,log_buffer);
                             }
                             else
                             {

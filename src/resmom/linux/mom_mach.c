@@ -1225,7 +1225,7 @@ int mom_set_limits(
               reslim.rlim_cur,
               pjob->ji_qs.ji_jobid);
 
-            log_err(0,id,log_buffer);
+            log_err(-1,id,log_buffer);
 
             log_buffer[0] = '\0';
             }

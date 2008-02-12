@@ -5293,7 +5293,7 @@ int open_std_file(
       sprintf(log_buffer,"successfully created/opened stdout/stderr file '%s'",
         path);
 
-      log_err(0,"open_std_file",log_buffer);
+      log_err(-1,"open_std_file",log_buffer);
       }
     }
 
@@ -5501,7 +5501,7 @@ int init_groups(
 
   if (LOGLEVEL >= 4)
     {
-    log_err(0,id,"pre-sigprocmask");
+    log_err(-1,id,"pre-sigprocmask");
     }
 
   /* Block signals while we do this or else the signal handler might
@@ -5529,7 +5529,7 @@ int init_groups(
 
   if (LOGLEVEL >= 4)
     {
-    log_err(0,id,"post-initgroups");
+    log_err(-1,id,"post-initgroups");
     }
 
   /* restore state */
@@ -5681,7 +5681,7 @@ static int search_env_and_open(
         }
 
 #if 0       /* debugging */
-     log_err(0,"search_env_and_open attempting open",vtable.v_envp[i]);
+     log_err(-1,"search_env_and_open attempting open",vtable.v_envp[i]);
 #endif
 
       if ((fd = open_demux(ipaddr,port)) < 0) 
