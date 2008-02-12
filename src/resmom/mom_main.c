@@ -209,7 +209,7 @@ tlist_head	svr_alljobs;	/* all jobs under MOM's control */
 tlist_head	mom_varattrs;	/* variable attributes */
 int		termin_child = 0;  /* boolean - one or more children need to be terminated this iteration */
 time_t		time_now = 0;
-time_t		polltime = 0;
+time_t		last_poll_time = 0;
 extern tlist_head svr_requests;
 extern struct var_table vtable;	/* see start_exec.c */
 #if MOM_CHECKPOINT == 1
@@ -7605,142 +7605,271 @@ int TMOMScanForStarting(void)
 
 
 
-
-
 /*
- * finish_loop - the finish of MOM's main loop
- *	Actually the heart of the loop
+ * examine_all_polled_jobs
+ *
+ * check on over limit condition for polled jobs
  */
 
-static void finish_loop(
-
-  time_t waittime)  /* I (in seconds) */
-
+void examine_all_polled_jobs()
   {
-  static char id[] = "finish_loop";
+  static char id[] = "examine_all_polled_jobs";
+  job         *pjob;
+  int         c;
 
-  time_t tmpTime;
-  time_t time_now;
-  
-  /* check for any extra rpp messages */
 
-  rpp_request(42);
-
-  if (termin_child != 0)
-    scan_for_terminated();
-
-  /* if -p, must poll tasks inside jobs to look for completion */
-
-  if (recover == 2)
-    scan_non_child_tasks();
-
-  if (exiting_tasks)
-    scan_for_exiting();	
-
-  TMOMScanForStarting();
-
-  /* unblock signals */
-
-  if (sigprocmask(SIG_UNBLOCK,&allsigs,NULL) == -1)
-    log_err(errno,id,"sigprocmask(UNBLOCK)");
-
-  time_now = time((time_t *)0);
-  tmpTime = MIN(waittime,time_now - (LastServerUpdateTime + ServerStatUpdateInterval));
-  tmpTime = MIN(tmpTime,time_now - (polltime + CheckPollTime));
-  tmpTime = MAX(1,tmpTime);
-
-  if (LastServerUpdateTime == 0)
-    tmpTime = 1;
-
-  /* wait for a request to process */
-
-  if (wait_request(tmpTime,NULL) != 0)
+  for (pjob = (job *)GET_NEXT(mom_polljobs);pjob;
+       pjob = (job *)GET_NEXT(pjob->ji_jobque)) 
     {
-    if (errno == EBADF)
-      {
-      init_network(pbs_mom_port,process_request);
+    if (pjob->ji_qs.ji_substate != JOB_SUBSTATE_RUNNING)
+      continue;
 
-      init_network(pbs_rm_port,tcp_request);
+    /*
+    ** Send message to get info from other MOM's
+    ** if I am Mother Superior for the job and
+    ** it is not being killed.
+    */
+
+    if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HERE) &&
+        (pjob->ji_nodekill == TM_ERROR_NODE)) 
+      {
+      /*
+      ** If can't send poll to everybody, the
+      ** time has come to die.
+      */
+
+      if (send_sisters(pjob,IM_POLL_JOB) != pjob->ji_numnodes - 1)
+        {
+        sprintf(log_buffer,"cannot contact all sisters");
+
+        log_record(PBSEVENT_JOB | PBSEVENT_FORCE,
+          PBS_EVENTCLASS_JOB,
+          pjob->ji_qs.ji_jobid,
+          log_buffer);
+        }
       }
 
-    log_err(-1,msg_daemonname,"wait_request failed");
-    }
+    c = pjob->ji_qs.ji_svrflags;
 
-  /* block signals while we do things */
+    if (c & JOB_SVFLG_OVERLMT2) 
+      {
+      kill_job(pjob,SIGKILL,id,"job is over-limit-2");
 
-  if (sigprocmask(SIG_BLOCK,&allsigs,NULL) == -1)
-    log_err(errno,id,"sigprocmask(BLOCK)");
+      continue;
+      }
 
-  return;
-  }  /* END finish_loop() */
+    if (c & JOB_SVFLG_OVERLMT1) 
+      {
+      kill_job(pjob,SIGTERM,id,"job is over-limit-1");
 
+      pjob->ji_qs.ji_svrflags |= JOB_SVFLG_OVERLMT2;
 
+      continue;
+      }
 
+    log_buffer[0] = '\0';
+
+    if (job_over_limit(pjob) != 0) 
+      {
+      log_record(
+        PBSEVENT_JOB | PBSEVENT_FORCE,
+        PBS_EVENTCLASS_JOB,
+        pjob->ji_qs.ji_jobid,
+        log_buffer);
+
+      if (c & JOB_SVFLG_HERE) 
+        {
+        char *kill_msg;
+
+        kill_msg = malloc(80 + strlen(log_buffer));
+
+        sprintf(kill_msg,"=>> PBS: job killed: %s\n",
+          log_buffer);
+
+        message_job(pjob,StdErr,kill_msg);
+
+        free(kill_msg);
+        }
+
+      kill_job(pjob,SIGTERM,id,"job is over-limit-0");
+
+      pjob->ji_qs.ji_svrflags |= JOB_SVFLG_OVERLMT1;
+      }
+    }    /* END for (pjob) */
+  }
 
 
 
 /*
- * main_loop
+ * examine_all_running_jobs
  */
 
-void main_loop()
-{
-  static char   id[] = "main_loop";
-  extern time_t	wait_time;
-  double        myla;
-  int           sindex;  /* server index */
-  job		   *pjob;
+void examine_all_running_jobs()
+  {
+  job         *pjob;
+  int         c;
   task         *ptask;
-  int           TotalClusterAddrsCount;
-  long          retry_interval;
-  int           c;
 #if MOM_CHECKPOINT == 1
   resource	*prscput;
   extern int start_checkpoint();
 #endif /* MOM_CHECKPOINT */
 
+    for (pjob = (job *)GET_NEXT(svr_alljobs);
+         pjob != NULL;
+         pjob = (job *)GET_NEXT(pjob->ji_alljobs)) 
+      {
+      if (pjob->ji_qs.ji_substate != JOB_SUBSTATE_RUNNING)
+        continue;
 
-  mom_run_state = MOM_RUN_STATE_RUNNING;
+      if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HERE) == 0)
+        continue;
 
-  for (;mom_run_state == MOM_RUN_STATE_RUNNING;finish_loop(wait_time)) 
+      /* update information for my tasks */
+
+      mom_set_use(pjob);
+
+      rpp_io();  /* FIXME: this call seems oddly placed... is this needed? */
+
+      /* has all job processes vanished undetected ?       */
+      /* double check by sig0 to session pid for each task */
+
+      if (pjob->ji_flags & MOM_NO_PROC) 
+        {
+        pjob->ji_flags &= ~MOM_NO_PROC;
+
+        for (ptask = (task *)GET_NEXT(pjob->ji_tasks);
+             ptask != NULL;
+             ptask = (task *)GET_NEXT(ptask->ti_jobtask))
+          {
+#ifdef _CRAY
+          if (pjob->ji_globid == NULL)
+            break;
+
+          c = atoi(pjob->ji_globid);
+
+          if ((kill((pid_t)c,0) == -1) && (errno == ESRCH)) 
+#else	/* not cray */
+          if ((kill(ptask->ti_qs.ti_sid,0) == -1) && (errno == ESRCH)) 
+#endif	/* not cray */
+            {
+
+            if (LOGLEVEL >= 3)
+              {
+              LOG_EVENT(
+                PBSEVENT_JOB, 
+                PBS_EVENTCLASS_JOB, 
+                pjob->ji_qs.ji_jobid, 
+                "no active process found");
+              }
+
+            ptask->ti_qs.ti_exitstat = 0;
+            ptask->ti_qs.ti_status = TI_STATE_EXITED;
+            pjob->ji_qs.ji_un.ji_momt.ji_exitstat = 0;
+
+            if (LOGLEVEL >= 6)
+              {
+              log_record(
+                PBSEVENT_ERROR,
+                PBS_EVENTCLASS_JOB,
+                pjob->ji_qs.ji_jobid,
+                "saving task (main loop)");
+              }
+
+            task_save(ptask);
+
+            exiting_tasks = 1;
+            }  /* END if ((kill == -1) && ...) */
+
+          }    /* END while (ptask != NULL) */
+        }      /* END if (pjob->ji_flags & MOM_NO_PROC) */
+
+#if MOM_CHECKPOINT == 1
+
+      /* see if need to checkpoint any job */
+
+      if (pjob->ji_chkpttime == 0)
+        continue;
+
+      prscput = find_resc_entry(
+        &pjob->ji_wattr[(int)JOB_ATR_resc_used],
+        rdcput);
+
+      /* FIXME: check prscput == NULL? */
+
+      if (pjob->ji_chkptnext>prscput->rs_value.at_val.at_long)
+        continue;
+
+      pjob->ji_chkptnext = 
+        prscput->rs_value.at_val.at_long +
+        pjob->ji_chkpttime;
+
+      if ((c = start_checkpoint(pjob,0,0)) == PBSE_NONE)
+        continue;
+
+      if (c == PBSE_NOSUP)
+        continue;
+
+      /* getting here means something bad happened */
+
+      sprintf(log_buffer,"Checkpoint failed, error %d",
+        c);
+
+      message_job(pjob,StdErr,log_buffer);
+
+      log_record(
+        PBSEVENT_JOB, 
+        PBS_EVENTCLASS_JOB,
+        pjob->ji_qs.ji_jobid, 
+        log_buffer);
+#endif	/* MOM_CHECKPOINT */
+      }  /* END for (pjob) */
+  }
+
+
+
+/*
+ * kill_all_running_jobs
+ */
+
+void kill_all_running_jobs()
+{
+  job		*pjob;
+
+  for (pjob = (job *)GET_NEXT(svr_alljobs);
+       pjob != NULL;
+       pjob = (job *)GET_NEXT(pjob->ji_alljobs))
     {
-    if (call_hup)
+    if (pjob->ji_qs.ji_substate == JOB_SUBSTATE_RUNNING) 
       {
-      process_hup();
+      kill_job(pjob,SIGKILL,"kill_all_running_jobs","mom is terminating with kill jobs flag");
+
+      pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITING;
+
+      job_save(pjob,SAVEJOB_QUICK);
       }
-
-    end_proc();
-
-    time_now = time(NULL);
-
-#if IBM_SP2==2
-    query_adp();
-#endif	/*IBM_SP2 */
-
-    /* check if loadave means we should be "busy" */
-
-    if (max_load_val > 0.0) 
+    else
       {
-      get_la(&myla);
-
-      /* check if need to update busy state */
-
-      check_busy(myla);
+      term_job(pjob);
       }
+    }
 
-    /* should we check the log file ?*/
+    if (termin_child != 0)
+      scan_for_terminated();
 
-    if (time_now - last_log_check >= PBS_LOG_CHECK_RATE)
-       {
-       check_log();
-       }
+    if (exiting_tasks)
+      scan_for_exiting();
+}
 
-    /* are we connected to any server? */
 
-    /* loop through all entries in ServerName[] array (NYI) */
 
-    TotalClusterAddrsCount = 0;
+int check_server_connections()
+  {
+  static char id[] = "check_server_connections";
+  long          retry_interval;
+  int           sindex;  /* server index */
+  int           TotalClusterAddrsCount;
 
+  TotalClusterAddrsCount = 0;
     for (sindex = 0;sindex < PBS_MAXSERVER;sindex++)
       {
       if (pbs_servername[sindex][0] == '\0')
@@ -7872,295 +8001,165 @@ void main_loop()
 
       TotalClusterAddrsCount += MOMRecvClusterAddrsCount[sindex];
       }    /* END for (sindex) */
+    return(TotalClusterAddrsCount);
+  }
 
-    /* Don't do any other processing until we've re-established
-     * contact with server */
+/*
+ * main_loop
+ */
 
-    if (TotalClusterAddrsCount < 1)
+void main_loop()
+{
+  static char   id[] = "main_loop";
+  extern time_t	wait_time;
+  double        myla;
+  job		   *pjob;
+  time_t tmpTime;
+  time_t time_now;
+  int           sindex;  /* server index */
+
+  mom_run_state = MOM_RUN_STATE_RUNNING;  /* mom_run_state is altered by stop_me() or MOMCheckRestart() */
+  while (mom_run_state == MOM_RUN_STATE_RUNNING)
+    {
+    if (call_hup)
+      {
+      process_hup();  /* Do a restart of resmom */
+      }
+
+    end_proc();  /* Call machine dependent code periodically */
+
+    time_now = time(NULL);
+
+#if IBM_SP2==2
+    query_adp();  /* Machine dependent code for aix, should be moved to aix::end_proc ??? */
+#endif	/*IBM_SP2 */
+
+    /* check if loadave means we should be "busy" */
+
+    if (max_load_val > 0.0) 
+      {
+      get_la(&myla);  /* Machine dependent load average computation (for linux read contents of /proc/loadavg) */
+
+      /* check if need to update busy state */
+
+      check_busy(myla);
+      }
+
+    /* should we check the log file ?*/
+
+    if (time_now >= (last_log_check + PBS_LOG_CHECK_RATE))
+       {
+       check_log();  /* Possibly do a log_roll */
+       }
+
+    if (check_server_connections() == 0)  /* Are we connected to any server? */
       {
       /* Don't do any other processing until we've re-established
        * contact with at least one server */
 
-      /* sleep to prevent too many messages sent to server under certain failure conditions */
-
-      sleep(1);
-
-      continue;
+      sleep(1);  /* sleep to prevent too many messages sent to server under certain failure conditions */
       }
-
-    /*
-     *  Update the server on the status of this mom.
-     */
-
-    if (time_now >= (LastServerUpdateTime + ServerStatUpdateInterval))
+    else
       {
-      if (PBSNodeCheckInterval > 0)
-        check_state((LastServerUpdateTime == 0));
-
-      is_update_stat(0);
-
-      LastServerUpdateTime = time_now;
-      }
-
-    /* if needed, update server with my state change */
-    /* can be changed in check_busy(), query_adp(), and is_update_stat() */
-
-    for (sindex = 0;sindex < PBS_MAXSERVER;sindex++)
-      {
-      if (ReportMomState[sindex] != 0)
-        state_to_server(sindex,0);
-      }
-
-    if (time_now < (polltime + CheckPollTime))
-      {
-      continue;
-      }
-
-    polltime = time_now;
-
-    /* are there any jobs? */
-
-    if ((pjob = (job *)GET_NEXT(svr_alljobs)) == NULL)
-      {
-      MOMCheckRestart();
-
-      continue;
-      }
-
-    /* there are jobs so update status */
-
-    if (mom_get_sample() != PBSE_NONE)
-      continue;
-
-    for (;pjob != NULL;pjob = (job *)GET_NEXT(pjob->ji_alljobs)) 
-      {
-      if (pjob->ji_qs.ji_substate != JOB_SUBSTATE_RUNNING)
-        continue;
-
-      if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HERE) == 0)
-        continue;
-
-      /* update information for my tasks */
-
-      mom_set_use(pjob);
-
-      rpp_io();  /* FIXME: this call seems oddly placed... is this needed? */
-
-      /* has all job processes vanished undetected ?       */
-      /* double check by sig0 to session pid for each task */
-
-      if (pjob->ji_flags & MOM_NO_PROC) 
+      if (time_now >= (LastServerUpdateTime + ServerStatUpdateInterval))
         {
-        pjob->ji_flags &= ~MOM_NO_PROC;
+        /* Update the server on the status of this mom. */
 
-        ptask = (task *)GET_NEXT(pjob->ji_tasks);
+        if (PBSNodeCheckInterval > 0)
+          check_state((LastServerUpdateTime == 0));
 
-        while (ptask != NULL) 
+        is_update_stat(0);
+
+        LastServerUpdateTime = time_now;
+        }
+
+      /* if needed, update server with my state change */
+      /* can be changed in check_busy(), query_adp(), and is_update_stat() */
+
+      for (sindex = 0;sindex < PBS_MAXSERVER;sindex++)
+        {
+        if (ReportMomState[sindex] != 0)
+          state_to_server(sindex,0);
+        }
+
+      if (time_now >= (last_poll_time + CheckPollTime))
+        {
+        last_poll_time = time_now;
+
+        if (GET_NEXT(svr_alljobs))
           {
-#ifdef _CRAY
-          if (pjob->ji_globid == NULL)
-            break;
+          /* There are jobs, update process status from the OS */
 
-          c = atoi(pjob->ji_globid);
-
-          if ((kill((pid_t)c,0) == -1) && (errno == ESRCH)) 
-#else	/* not cray */
-          if ((kill(ptask->ti_qs.ti_sid,0) == -1) && (errno == ESRCH)) 
-#endif	/* not cray */
+          if (mom_get_sample() == PBSE_NONE)
             {
+            /* no errors in getting process status information */
 
-            if (LOGLEVEL >= 3)
-              {
-              LOG_EVENT(
-                PBSEVENT_JOB, 
-                PBS_EVENTCLASS_JOB, 
-                pjob->ji_qs.ji_jobid, 
-                "no active process found");
-              }
+            examine_all_running_jobs();
 
-            ptask->ti_qs.ti_exitstat = 0;
-
-            ptask->ti_qs.ti_status = TI_STATE_EXITED;
-
-            pjob->ji_qs.ji_un.ji_momt.ji_exitstat = 0;
-
-            if (LOGLEVEL >= 6)
-              {
-              log_record(
-                PBSEVENT_ERROR,
-                PBS_EVENTCLASS_JOB,
-                pjob->ji_qs.ji_jobid,
-                "saving task (main loop)");
-              }
-
-            task_save(ptask);
-
-            exiting_tasks = 1;
-            }  /* END if ((kill == -1) && ...) */
-
-          ptask = (task *)GET_NEXT(ptask->ti_jobtask);
-          }    /* END while (ptask != NULL) */
-        }      /* END if (pjob->ji_flags & MOM_NO_PROC) */
-
-#if MOM_CHECKPOINT == 1
-
-      /* see if need to checkpoint any job */
-
-      if (pjob->ji_chkpttime == 0)
-        continue;
-
-      prscput = find_resc_entry(
-        &pjob->ji_wattr[(int)JOB_ATR_resc_used],
-        rdcput);
-
-      /* FIXME: check prscput == NULL? */
-
-      if (pjob->ji_chkptnext>prscput->rs_value.at_val.at_long)
-        continue;
-
-      pjob->ji_chkptnext = 
-        prscput->rs_value.at_val.at_long +
-        pjob->ji_chkpttime;
-
-      if ((c = start_checkpoint(pjob,0,0)) == PBSE_NONE)
-        continue;
-
-      if (c == PBSE_NOSUP)
-        continue;
-
-      /* getting here means something bad happened */
-
-      sprintf(log_buffer,"Checkpoint failed, error %d",
-        c);
-
-      message_job(pjob,StdErr,log_buffer);
-
-      log_record(
-        PBSEVENT_JOB, 
-        PBS_EVENTCLASS_JOB,
-        pjob->ji_qs.ji_jobid, 
-        log_buffer);
-#endif	/* MOM_CHECKPOINT */
-      }  /* END for (pjob) */
-
-    /* check on over limit condition for polled jobs */
-
-    for (pjob = (job *)GET_NEXT(mom_polljobs);pjob;
-         pjob = (job *)GET_NEXT(pjob->ji_jobque)) 
-      {
-      if (pjob->ji_qs.ji_substate != JOB_SUBSTATE_RUNNING)
-        continue;
-
-      /*
-      ** Send message to get info from other MOM's
-      ** if I am Mother Superior for the job and
-      ** it is not being killed.
-      */
-
-      if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HERE) &&
-          (pjob->ji_nodekill == TM_ERROR_NODE)) 
-        {
-        /*
-        ** If can't send poll to everybody, the
-        ** time has come to die.
-        */
-
-        if (send_sisters(pjob,IM_POLL_JOB) != pjob->ji_numnodes - 1)
-          {
-          sprintf(log_buffer,"cannot contact all sisters");
-
-          log_record(PBSEVENT_JOB | PBSEVENT_FORCE,
-            PBS_EVENTCLASS_JOB,
-            pjob->ji_qs.ji_jobid,
-            log_buffer);
+            examine_all_polled_jobs();
+            }
           }
         }
-
-      c = pjob->ji_qs.ji_svrflags;
-
-      if (c & JOB_SVFLG_OVERLMT2) 
-        {
-        kill_job(pjob,SIGKILL,id,"job is over-limit-2");
-
-        continue;
-        }
-
-      if (c & JOB_SVFLG_OVERLMT1) 
-        {
-        kill_job(pjob,SIGTERM,id,"job is over-limit-1");
-
-        pjob->ji_qs.ji_svrflags |= JOB_SVFLG_OVERLMT2;
-
-        continue;
-        }
-
-      log_buffer[0] = '\0';
-
-      if (job_over_limit(pjob) != 0) 
-        {
-        log_record(
-          PBSEVENT_JOB | PBSEVENT_FORCE,
-          PBS_EVENTCLASS_JOB,
-          pjob->ji_qs.ji_jobid,
-          log_buffer);
-
-        if (c & JOB_SVFLG_HERE) 
-          {
-          char *kill_msg;
-
-          kill_msg = malloc(80 + strlen(log_buffer));
-
-          sprintf(kill_msg,"=>> PBS: job killed: %s\n",
-            log_buffer);
-
-          message_job(pjob,StdErr,kill_msg);
-
-          free(kill_msg);
-          }
-
-        kill_job(pjob,SIGTERM,id,"job is over-limit-0");
-
-        pjob->ji_qs.ji_svrflags |= JOB_SVFLG_OVERLMT1;
-        }
-      }    /* END for (pjob) */
-    }      /* END for (;mom_run_state == MOM_RUN_STATE_RUNNING;) */
-}
+      }
 
 
-/*
- * kill_all_running_jobs
- */
+    /* check for any extra rpp messages */
 
-void kill_all_running_jobs()
-{
-  job		*pjob;
-
-    pjob = (job *)GET_NEXT(svr_alljobs);
-
-    while (pjob != NULL) 
-      {
-      if (pjob->ji_qs.ji_substate == JOB_SUBSTATE_RUNNING) 
-        {
-        kill_job(pjob,SIGKILL,"kill_all_running_jobs","mom is terminating with kill jobs flag");
-
-        pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITING;
-
-        job_save(pjob,SAVEJOB_QUICK);
-        }
-      else
-        {
-        term_job(pjob);
-        }
-
-      pjob = (job *)GET_NEXT(pjob->ji_alljobs);
-      }  /* END while (pjob != NULL) */
+    rpp_request(42);
 
     if (termin_child != 0)
       scan_for_terminated();
 
+    /* if -p, must poll tasks inside jobs to look for completion */
+
+    if (recover == 2)
+      scan_non_child_tasks();
+
     if (exiting_tasks)
-      scan_for_exiting();
-}
+      scan_for_exiting();	
+
+    TMOMScanForStarting();
+
+    /* unblock signals */
+
+    if (sigprocmask(SIG_UNBLOCK,&allsigs,NULL) == -1)
+      log_err(errno,id,"sigprocmask(UNBLOCK)");
+
+    time_now = time((time_t *)0);
+    tmpTime = MIN(wait_time,time_now - (LastServerUpdateTime + ServerStatUpdateInterval));
+    tmpTime = MIN(tmpTime,time_now - (last_poll_time + CheckPollTime));
+    tmpTime = MAX(1,tmpTime);
+
+    if (LastServerUpdateTime == 0)
+      tmpTime = 1;
+
+    /* wait_request does a select and then calls the connection's cn_func for sockets with data */
+
+    if (wait_request(tmpTime,NULL) != 0)
+      {
+      if (errno == EBADF)
+        {
+        init_network(pbs_mom_port,process_request);
+
+        init_network(pbs_rm_port,tcp_request);
+        }
+
+      log_err(-1,msg_daemonname,"wait_request failed");
+      }
+
+    /* block signals while we do things */
+
+    if (sigprocmask(SIG_BLOCK,&allsigs,NULL) == -1)
+      log_err(errno,id,"sigprocmask(BLOCK)");
+
+
+    if ((pjob = (job *)GET_NEXT(svr_alljobs)) == NULL)
+      {
+      MOMCheckRestart();  /* There are no jobs, see if the server needs to be restarted. */
+      }
+
+    }      /* END for (;mom_run_state == MOM_RUN_STATE_RUNNING;) */
+  }
 
 
 
