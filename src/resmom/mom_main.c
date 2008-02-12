@@ -317,6 +317,7 @@ static unsigned long setidealload(char *);
 static unsigned long setignwalltime(char *);
 static unsigned long setlogevent(char *);
 static unsigned long setloglevel(char *);
+static unsigned long setumask(char *);
 static unsigned long setmaxload(char *);
 static unsigned long setenablemomrestart(char *);
 static unsigned long prologalarm(char *);
@@ -389,6 +390,7 @@ static struct specials {
     { "nospool_dir_list",    setnospooldirlist },
     { "mom_host",            setmomhost },
     { "remote_reconfig",     setrreconfig},
+    { "umask",               setumask},
     { NULL,                  NULL } };
 
 
@@ -420,6 +422,7 @@ int                     LOGLEVEL = 0;  /* valid values (0 - 10) */
 int                     DEBUGMODE = 0;
 int                     DOBACKGROUND = 1;
 char                    CHECKPOINT_SCRIPT[1024];
+char                    DEFAULT_UMASK[1024];
 long                    TJobStartBlockTime = 5; /* seconds to wait for job to launch before backgrounding */
 long                    TJobStartTimeout = 300; /* seconds to wait for job to launch before purging */
 
@@ -1762,6 +1765,7 @@ static u_long setxauthpath(
 
 
 
+
 static u_long setrcpcmd(
 
   char *Value)  /* I */
@@ -2177,6 +2181,28 @@ static unsigned long setloglevel(
 
 
 
+
+static unsigned long setumask(
+
+  char *value)  /* I */
+
+  {
+  int i;
+
+  log_record(
+    PBSEVENT_SYSTEM,
+    PBS_EVENTCLASS_SERVER,
+    "setumask",
+    value);
+
+  strncpy(DEFAULT_UMASK,value,sizeof(DEFAULT_UMASK));
+
+  return(1);
+  }  /* END setloglevel() */
+
+
+
+
 static unsigned long jobstartblocktime(
 
   char *value)  /* I */
@@ -2202,6 +2228,10 @@ static unsigned long jobstartblocktime(
   return(1);
   }  /* END jobstartblocktime() */
 
+
+
+
+
 static unsigned long setstatusupdatetime(
 
   char *value)  /* I */
@@ -2226,6 +2256,10 @@ static unsigned long setstatusupdatetime(
 
   return(1);
   }  /* END setstatusupdatetime() */
+
+
+
+
 
 static unsigned long setcheckpolltime(
 
@@ -4797,9 +4831,11 @@ int rm_request(
 
             if (verbositylevel >= 1)
               {
+              /* @see CheckPollTime? */
+
               sprintf(tmpLine,"Server Update Interval: %d seconds\n",
                 ServerStatUpdateInterval);
-  
+ 
               MUStrNCat(&BPtr,&BSpace,tmpLine);
               }
 

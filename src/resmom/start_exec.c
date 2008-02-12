@@ -158,6 +158,7 @@ extern	unsigned int	pbs_rm_port;
 extern	u_long		localaddr;
 extern  char            *nodefile_suffix;
 extern  char            *submithost_suffix;
+extern  char             DEFAULT_UMASK[];
 
 extern int LOGLEVEL;
 extern long TJobStartBlockTime;
@@ -2105,22 +2106,24 @@ int TMomFinalizeChild(
 
   bld_env_variables(&vtable,"PBS_VNODENUM",buf);
 
-
-
 #ifdef PENABLE_LINUX26_CPUSETS
 
-      sprintf(log_buffer,"about to create cpuset for job %s.\n", 
-        pjob->ji_qs.ji_jobid);
+  sprintf(log_buffer,"about to create cpuset for job %s.\n", 
+    pjob->ji_qs.ji_jobid);
 
-      log_err(-1,id,log_buffer);
-    if (create_jobset(pjob) != 0)
-      {
-      sprintf(log_buffer,"Could not create cpuset for job %s.\n", 
-        pjob->ji_qs.ji_jobid);
+  log_err(-1,id,log_buffer);
 
-      log_err(-1,id,log_buffer);
-      starter_return(TJE->upfds,TJE->downfds,JOB_EXEC_RETRY,&sjr);
-      }
+  if (create_jobset(pjob) != 0)
+    {
+    /* FAILURE */
+
+    sprintf(log_buffer,"Could not create cpuset for job %s.\n", 
+      pjob->ji_qs.ji_jobid);
+
+    log_err(-1,id,log_buffer);
+
+    starter_return(TJE->upfds,TJE->downfds,JOB_EXEC_RETRY,&sjr);
+    }
 #endif /* END PENABLE_LINUX26_CPUSETS */
 
 #ifdef ENABLE_CPA
@@ -2155,8 +2158,28 @@ int TMomFinalizeChild(
 
   if (LOGLEVEL >= 10)
     log_err(-1,id,"system vars set");
-	
-  umask(077);
+
+  if (DEFAULT_UMASK[0] != '\0')
+    {	
+    if (!strcasecmp(DEFAULT_UMASK,"userdefault"))
+      {
+      /* apply user default */
+
+      /* do we inherit umask when we do setuid()? */
+
+      /* NYI */
+      }
+    else
+      {
+      int UMaskVal;
+
+      UMaskVal = (int)strtol(DEFAULT_UMASK,NULL,0);
+      }
+    }
+  else
+    {
+    umask(077);
+    }
 
   if (TJE->is_interactive == TRUE) 
     {
@@ -2664,8 +2687,9 @@ int TMomFinalizeChild(
      SIGKILLs herself with interactive jobs -garrick */
 
 #ifdef PENABLE_LINUX26_CPUSETS
-      /* Move this mom process into the cpuset so the job will start in it. */
-      move_to_jobset(getpid(),pjob);
+  /* Move this mom process into the cpuset so the job will start in it. */
+
+  move_to_jobset(getpid(),pjob);
 #endif  /* (PENABLE_LINUX26_CPUSETS) */
 
   if (site_job_setup(pjob) != 0) 
@@ -3721,7 +3745,18 @@ int start_process(
         {
         strcpy(nodeidbuf,vtable.v_envp[j]+strlen("PBS_VNODENUM="));
 
+<<<<<<< .mine
+        /* FIXME: temp debugging info */
+
+        sprintf(log_buffer,"about to move to taskset for job %s/%s.\n",
+          pjob->ji_qs.ji_jobid,nodeidbuf);
+
+        log_err(-1,id,log_buffer);
+
+=======
+>>>>>>> .r1852
         /* Move this mom process into the cpuset so the job will start in it. */
+
         move_to_taskset(getpid(),pjob,nodeidbuf);
         }
       }

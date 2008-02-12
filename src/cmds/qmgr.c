@@ -367,9 +367,9 @@ int main(
 
 int attributes(
 
-  char *attrs,
+  char            *attrs,
   struct attropl **attrlist,
-  int doper)
+  int              doper)
 
   {
   char *c;            /* Pointer into the attrs text */
@@ -715,8 +715,9 @@ struct server *make_connection(
     }
   else
     {
-    if( ! zopt ) fprintf(stderr,"qmgr: cannot connect to server %s\n", 
-      name);
+    if (!zopt) 
+      fprintf(stderr,"qmgr: cannot connect to server %s\n", 
+        name);
     }
 
   return(svr);
