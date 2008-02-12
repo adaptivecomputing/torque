@@ -82,9 +82,9 @@
 #include <string.h>
 #include <ctype.h>
 #include <sys/types.h>
-#include <pbs_ifl.h>
-#include <log.h>
-#include <rm.h>
+#include "pbs_ifl.h"
+#include "log.h"
+#include "rm.h"
 #include "node_info.h"
 #include "misc.h"
 #include "globals.h"

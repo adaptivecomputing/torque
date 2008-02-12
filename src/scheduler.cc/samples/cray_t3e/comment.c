@@ -82,9 +82,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <pbs_error.h>
-#include <pbs_ifl.h>
-#include <log.h>
+#include "pbs_error.h"
+#include "pbs_ifl.h"
+#include "log.h"
 
 #include "toolkit.h"
 #include "gblxvars.h"

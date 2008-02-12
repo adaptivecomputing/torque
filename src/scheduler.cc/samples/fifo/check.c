@@ -79,8 +79,8 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <pbs_ifl.h>
-#include <log.h>
+#include "pbs_ifl.h"
+#include "log.h"
 #include <string.h>
 #include "check.h"
 #include "config.h"

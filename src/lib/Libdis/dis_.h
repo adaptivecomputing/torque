@@ -79,8 +79,8 @@
 #include <limits.h>
 #include <stddef.h>
 
-#include <dis.h>
-#include <dis_init.h>
+#include "dis.h"
+#include "dis_init.h"
 
 #define DIS_BUFSIZ (CHAR_BIT * sizeof(ULONG_MAX))
 

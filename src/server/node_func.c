@@ -167,7 +167,7 @@ extern attribute_def  node_attr_def[];   /* node attributes defs */
  */
 
 
-#include <work_task.h>
+#include "work_task.h"
 
 extern void ping_nodes(struct work_task *);
 

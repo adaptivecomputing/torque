@@ -103,7 +103,7 @@
 #include <unistd.h>
 #include <errno.h>
 
-#include <pbs_ifl.h>
+#include "pbs_ifl.h"
 
 
 #define POE_PATH           "/usr/lpp/ppe.poe/bin/poe"

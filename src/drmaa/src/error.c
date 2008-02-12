@@ -32,7 +32,7 @@
 #include <errno.h>
 
 #include <pthread.h>
-#include <pbs_error.h>
+#include "pbs_error.h"
 
 #include <drmaa.h>
 #include <error.h>

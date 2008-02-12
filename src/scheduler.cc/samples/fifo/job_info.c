@@ -81,7 +81,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
-#include <pbs_ifl.h>
+#include "pbs_ifl.h"
 #include "queue_info.h"
 #include "job_info.h"
 #include "constant.h"

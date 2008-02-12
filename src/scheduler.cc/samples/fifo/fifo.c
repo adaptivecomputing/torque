@@ -80,11 +80,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
-#include <pbs_error.h>
-#include <pbs_ifl.h>
-#include <sched_cmds.h>
+#include "pbs_error.h"
+#include "pbs_ifl.h"
+#include "sched_cmds.h"
 #include <time.h>
-#include <log.h>
+#include "log.h"
 #include <string.h>
 #include "queue_info.h"
 #include "server_info.h"

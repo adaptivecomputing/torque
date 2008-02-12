@@ -35,7 +35,7 @@
 #include <time.h>
 
 #include <pthread.h>
-#include <pbs_ifl.h>
+#include "pbs_ifl.h"
 
 #include <drmaa.h>
 #include <error.h>

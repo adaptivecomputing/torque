@@ -81,7 +81,7 @@
 #define DATA_TYPES_H
 
 #include <time.h>
-#include <pbs_ifl.h>
+#include "pbs_ifl.h"
 #include "constant.h"
 #include "config.h"
 

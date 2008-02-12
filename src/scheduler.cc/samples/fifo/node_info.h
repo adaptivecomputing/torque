@@ -81,7 +81,7 @@
 #define NODE_INFO_H
 
 #include "data_types.h"
-#include <pbs_ifl.h>
+#include "pbs_ifl.h"
 
 /*
  *      query_nodes - query all the nodes associated with a server

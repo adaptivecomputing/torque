@@ -82,8 +82,8 @@
 #include <time.h>
 #include <string.h>
 #include <ctype.h>
-#include <pbs_ifl.h>
-#include <log.h>
+#include "pbs_ifl.h"
+#include "log.h"
 #include "constant.h"
 #include "globals.h"
 #include "prime.h"

@@ -80,8 +80,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <pbs_ifl.h>
-#include <pbs_error.h>
+#include "pbs_ifl.h"
+#include "pbs_error.h"
 #include "server_info.h"
 #include "constant.h"
 #include "queue_info.h"

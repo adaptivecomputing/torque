@@ -80,7 +80,7 @@
 
 #include <math.h>
 
-#include <dis.h>
+#include "dis.h"
 #include "dis_.h"
 
 void disi10l_();

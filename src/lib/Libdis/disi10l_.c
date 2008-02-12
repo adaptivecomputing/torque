@@ -83,7 +83,7 @@
 #include <stddef.h>
 #include <stdlib.h>
 
-#include <dis.h>
+#include "dis.h"
 
 unsigned dis_lmx10 = 0;
 dis_long_double_t *dis_lp10 = NULL;

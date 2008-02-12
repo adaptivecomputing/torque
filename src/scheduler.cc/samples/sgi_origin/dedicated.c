@@ -113,9 +113,9 @@
 #include <time.h>
 #include <errno.h>
 
-#include <pbs_error.h>
-#include <pbs_ifl.h>
-#include <log.h>
+#include "pbs_error.h"
+#include "pbs_ifl.h"
+#include "log.h"
 
 #ifdef	DBPRT
 #undef	DBPRT

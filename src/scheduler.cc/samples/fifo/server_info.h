@@ -80,7 +80,7 @@
 #ifndef SERVER_INFO_H
 #define SERVER_INFO_H
 
-#include <pbs_ifl.h>
+#include "pbs_ifl.h"
 #include "state_count.h"
 #include "data_types.h"
 

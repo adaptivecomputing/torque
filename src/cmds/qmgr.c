@@ -143,8 +143,8 @@
 #endif /* END HAVE_READLINE */
 
 /* PBS include files */
-#include <cmds.h>
-#include <qmgr.h>
+#include "cmds.h"
+#include "qmgr.h"
 
 
 
