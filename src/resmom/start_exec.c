@@ -3745,7 +3745,6 @@ int start_process(
         {
         strcpy(nodeidbuf,vtable.v_envp[j]+strlen("PBS_VNODENUM="));
 
-<<<<<<< .mine
         /* FIXME: temp debugging info */
 
         sprintf(log_buffer,"about to move to taskset for job %s/%s.\n",
@@ -3753,8 +3752,6 @@ int start_process(
 
         log_err(-1,id,log_buffer);
 
-=======
->>>>>>> .r1852
         /* Move this mom process into the cpuset so the job will start in it. */
 
         move_to_taskset(getpid(),pjob,nodeidbuf);
