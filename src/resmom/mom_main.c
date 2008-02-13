@@ -2187,8 +2187,6 @@ static unsigned long setumask(
   char *value)  /* I */
 
   {
-  int i;
-
   log_record(
     PBSEVENT_SYSTEM,
     PBS_EVENTCLASS_SERVER,
