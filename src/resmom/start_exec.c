@@ -1902,7 +1902,40 @@ int TMomFinalizeJob2(
   }  /* END TMomFinalizeJob2() */
 
 
+int determine_umask(
+)
+  {
+  static char           *id = "determine_umask";
+  int UMaskVal = 0077;
+  mode_t oldmask = 0;
+  
+  if (DEFAULT_UMASK[0] != '\0')
+    {	
 
+   if (!strcasecmp(DEFAULT_UMASK,"userdefault"))
+      {
+      /* apply user default */
+
+      /* do we inherit umask when we do setuid() */
+      /* yes, but we return its value anyway so caller does not */
+      /* have to worry about it */
+
+      oldmask = umask(0000);
+      umask(oldmask);
+      UMaskVal = oldmask;
+      }
+    else
+      {
+      UMaskVal = (int)strtol(DEFAULT_UMASK,NULL,0);
+      }
+    }
+    if (LOGLEVEL >= 7)
+      {
+      sprintf(log_buffer,"returned umask value = %o", UMaskVal);
+      log_err(-1,id,log_buffer);
+      }
+    return UMaskVal;
+  }
 
 
 /* child portion of job launch executed as user - called by TMomFinalize2() */
@@ -2159,27 +2192,7 @@ int TMomFinalizeChild(
   if (LOGLEVEL >= 10)
     log_err(-1,id,"system vars set");
 
-  if (DEFAULT_UMASK[0] != '\0')
-    {	
-    if (!strcasecmp(DEFAULT_UMASK,"userdefault"))
-      {
-      /* apply user default */
-
-      /* do we inherit umask when we do setuid()? */
-
-      /* NYI */
-      }
-    else
-      {
-      int UMaskVal;
-
-      UMaskVal = (int)strtol(DEFAULT_UMASK,NULL,0);
-      }
-    }
-  else
-    {
-    umask(077);
-    }
+  umask(determine_umask());
 
   if (TJE->is_interactive == TRUE) 
     {
