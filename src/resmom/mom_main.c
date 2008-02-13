@@ -2196,7 +2196,7 @@ static unsigned long setumask(
   strncpy(DEFAULT_UMASK,value,sizeof(DEFAULT_UMASK));
 
   return(1);
-  }  /* END setloglevel() */
+  }  /* END setumask() */
 
 
 
