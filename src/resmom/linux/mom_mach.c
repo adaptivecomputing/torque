@@ -173,7 +173,8 @@ extern	struct	pbs_err_to_txt	pbs_err_to_txt[];
 extern	time_t			time_now;
 
 extern  int     LOGLEVEL;
-extern  char    CHECKPOINT_SCRIPT[1024];
+extern  char    checkpoint_script_name[1024];
+extern  char    restart_script_name[1024];
 extern  char    PBSNodeMsgBuf[1024];
 
 #define TBL_INC 200            /* initial proc table */
@@ -2226,7 +2227,7 @@ int mom_close_poll()
 int mom_does_chkpnt()
 
   {
-  if (CHECKPOINT_SCRIPT[0] != '\0')
+  if (checkpoint_script_name[0] != '\0')
     {
     return(1);
     }
@@ -2247,18 +2248,26 @@ int mach_checkpoint(
   int	 abort)  /* I */
 
   {
+  char	*id = "mach_checkpoint";
+  int   pid;
+  char  sid[20];
+  char  *arg[20];
+  char  buf[1024];
+  char  **ap;
+
+#define SET_ARG(x) (((x) == NULL) || (*(x) == 0))?"-":(x)
+
   /* if a checkpoint script is defined launch it */
 
-  if (CHECKPOINT_SCRIPT[0] != '\0')
+  if (checkpoint_script_name[0] == '\0')
     {
-    int   pid;
-    char  sid[20],s_abort[20];
-    char *arg[6];
-
+    log_err(-1,id,"No checkpoint script defined");
+    }
+  else
+    {
     /* launch the script and return success */
 
     pid = fork();
-
     if (pid > 0)
       {
       /* parent: pid = child's pid */
@@ -2267,23 +2276,29 @@ int mach_checkpoint(
 
       return(0);
       }
-
-    if (pid == 0)
+    else if (pid == 0)
       {
       /* child: execv the script */
 
       sprintf(sid,"%ld",
         ptask->ti_job->ji_wattr[(int)JOB_ATR_session_id].at_val.at_long);
 
-      sprintf(s_abort,"%d",
-        abort);
-
-      arg[0] = CHECKPOINT_SCRIPT;
+      arg[0] = checkpoint_script_name;
       arg[1] = sid;
-      arg[2] = ptask->ti_job->ji_qs.ji_jobid;
-      arg[3] = ptask->ti_job->ji_wattr[(int)JOB_ATR_euser].at_val.at_str;
-      arg[4] = s_abort;
-      arg[5] = NULL;
+      arg[2] = SET_ARG(ptask->ti_job->ji_qs.ji_jobid);
+      arg[3] = SET_ARG(ptask->ti_job->ji_wattr[(int)JOB_ATR_euser].at_val.at_str);
+      arg[4] = SET_ARG(ptask->ti_job->ji_wattr[(int)JOB_ATR_chkptdir].at_val.at_str);
+      arg[5] = SET_ARG(ptask->ti_job->ji_wattr[(int)JOB_ATR_chkptname].at_val.at_str);
+      arg[6] = (abort) ? "15" /*abort*/ : "0" /*run/continue*/;
+      arg[7] = NULL;
+
+      strcpy(buf, "checkpoint args:");
+      for (ap = arg; *ap; ap++)
+        {
+        strcat(buf, " ");
+        strcat(buf, *ap);
+        }
+      log_err(-1,id,buf);
 
       execv(arg[0],arg);
 
@@ -2314,7 +2329,56 @@ long mach_restart(
   char *file)
 
   {
-  /* NOTE: Currently, we expect the application to handle this itself */
+  char	*id = "mach_restart";
+  int   pid;
+  char  sid[20];
+  char  *arg[20];
+
+
+  /* if a restart script is defined launch it */
+
+  if (restart_script_name[0] == '\0')
+    {
+    log_record(PBSEVENT_DEBUG,0,id,"No restart script defined");
+    }
+  else
+    {
+    /* launch the script and return success */
+
+    pid = fork();
+
+    if (pid > 0)
+      {
+      /* parent: pid = child's pid */
+
+      /* NO-OP, but may need to waitpid() the child (NYI) */
+
+      return(0);
+      }
+
+    if (pid == 0)
+      {
+      /* child: execv the script */
+
+      sprintf(sid,"%ld",
+        ptask->ti_job->ji_wattr[(int)JOB_ATR_session_id].at_val.at_long);
+
+      arg[0] = restart_script_name;
+      arg[1] = sid;
+      arg[2] = ptask->ti_job->ji_qs.ji_jobid;
+      arg[3] = ptask->ti_job->ji_wattr[(int)JOB_ATR_euser].at_val.at_str;
+      arg[4] = NULL;
+
+      execv(arg[0],arg);
+
+      /* NOTE: The right way to do this is to put the job into some sort
+       *       of waiting state before returning, and the monitor the
+       *       the child to see what it's exit status is.  We are delaying
+       *       the full implementation for now.  NYI
+       */
+      }  /* END if (pid == 0) */
+    }
+
 
   return(-1);
   }

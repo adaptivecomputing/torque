@@ -1175,7 +1175,7 @@ static job *chk_job_torun(
     /* job has been checkpointed or files already staged in */
     /* in this case, exec_host must be already set          */
 
-    if (prun->rq_destin != 0) 
+    if (prun->rq_destin && *prun->rq_destin) /* If a destination has been specified */
       {
       /* specified destination must match exec_host */
 

@@ -651,6 +651,15 @@ void req_quejob(
       return;
       }
 
+    /* If queue has checkpoint directory name specified, propagate it to the job. */
+
+    if (!(pj->ji_wattr[(int)JOB_ATR_chkptdir].at_flags & ATR_VFLAG_SET) &&
+         (pque->qu_attr[(int)QE_ATR_ChkptDir].at_flags & ATR_VFLAG_SET))
+      {
+      pj->ji_wattr[(int)JOB_ATR_chkptdir].at_val = pque->qu_attr[(int)QE_ATR_ChkptDir].at_val;
+      pj->ji_wattr[(int)JOB_ATR_chkptdir].at_flags |= ATR_VFLAG_SET;
+      }
+
 #ifdef PNOT
     /*************************************************************
      * Argonne National Laboratory Account/Project enforcement patch

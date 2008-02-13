@@ -795,6 +795,32 @@ attribute_def job_attr_def[] = {
 	PARENT_TYPE_JOB
     },
 
+/* JOB_ATR_chkptdir */
+    {	ATTR_chkptdir,		/* "checkpoint_dir" */
+	decode_str,
+	encode_str,
+	set_str,
+	comp_str,
+	free_str,
+	NULL_FUNC,
+	READ_WRITE | ATR_DFLAG_MOM,
+	ATR_TYPE_STR,
+	PARENT_TYPE_JOB
+    },
+
+/* JOB_ATR_chkptname */
+    {	ATTR_chkptname,		/* "checkpoint_name" */
+	decode_str,
+	encode_str,
+	set_str,
+	comp_str,
+	free_str,
+	NULL_FUNC,
+	READ_WRITE | ATR_DFLAG_MOM | ATR_DFLAG_ALTRUN,
+	ATR_TYPE_STR,
+	PARENT_TYPE_JOB
+    },
+
 /* Site defined attributes if any, see site_job_attr_*.h  */
 #include "site_job_attr_def.h"
 

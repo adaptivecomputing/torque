@@ -170,6 +170,8 @@
 #define ATTR_array_size "job_array_size"
 #define ATTR_start_time  "start_time"
 #define ATTR_start_count "start_count"
+#define ATTR_chkptdir	 "checkpoint_dir"    /* user specified directory for checkpoint files */
+#define ATTR_chkptname	 "checkpoint_name"   /* user specified name of checkpoint file */
 
 /* additional queue attributes names */
 

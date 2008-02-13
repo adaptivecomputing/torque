@@ -329,7 +329,9 @@ static unsigned long setpbsserver(char *);
 static unsigned long setnodecheckscript(char *);
 static unsigned long setnodecheckinterval(char *);
 static unsigned long settimeout(char *);
-static unsigned long setcheckpointscript(char *);
+static unsigned long set_checkpoint_script(char *);
+static unsigned long set_restart_script(char *);
+static unsigned long set_checkpoint_run_exe_name(char *);
 static unsigned long setdownonerror(char *);
 static unsigned long setstatusupdatetime(char *);
 static unsigned long setcheckpolltime(char *);
@@ -376,7 +378,9 @@ static struct specials {
     { "node_check_script",   setnodecheckscript },
     { "node_check_interval", setnodecheckinterval },
     { "timeout",             settimeout },
-    { "checkpoint_script",   setcheckpointscript },
+    { "checkpoint_script",   set_checkpoint_script },
+    { "restart_script",      set_restart_script },
+    { "checkpoint_run_exe",  set_checkpoint_run_exe_name },
     { "down_on_error",       setdownonerror },
     { "status_update_time",  setstatusupdatetime },
     { "check_poll_time",     setcheckpolltime },
@@ -421,10 +425,14 @@ struct config common_config[] = {
 int                     LOGLEVEL = 0;  /* valid values (0 - 10) */
 int                     DEBUGMODE = 0;
 int                     DOBACKGROUND = 1;
-char                    CHECKPOINT_SCRIPT[1024];
 char                    DEFAULT_UMASK[1024];
 long                    TJobStartBlockTime = 5; /* seconds to wait for job to launch before backgrounding */
 long                    TJobStartTimeout = 300; /* seconds to wait for job to launch before purging */
+
+/* BLCR variables */
+char                    checkpoint_script_name[1024];
+char                    restart_script_name[1024];
+char                    checkpoint_run_exe_name[1024];
 
 
 char                   *ret_string;
@@ -2620,7 +2628,7 @@ static unsigned long setmaxload(
 
 
 
-static unsigned long setcheckpointscript(
+static unsigned long set_checkpoint_script(
 
   char *value)  /* I */
 
@@ -2640,10 +2648,68 @@ static unsigned long setcheckpointscript(
     return(0);  /* error */
     }
 
-  strncpy(CHECKPOINT_SCRIPT,value,sizeof(CHECKPOINT_SCRIPT));
+  strncpy(checkpoint_script_name, value, sizeof(checkpoint_script_name));
 
   return(1);
-  }  /* END setcheckpointscript() */
+  }  /* END set_checkpoint_script() */
+
+
+
+
+
+static unsigned long set_restart_script(
+
+  char *value)  /* I */
+
+  {
+  struct stat sbuf;
+
+  log_record(
+    PBSEVENT_SYSTEM,
+    PBS_EVENTCLASS_SERVER,
+    "restart_script",
+    value);
+
+  if ((stat(value, &sbuf) == -1) || !(sbuf.st_mode & S_IXUSR))
+    {
+    /* file does not exist or is not executable */
+
+    return(0);  /* error */
+    }
+
+  strncpy(restart_script_name, value, sizeof(restart_script_name));
+
+  return(1);
+  }  /* END set_restart_script() */
+
+
+
+
+
+static unsigned long set_checkpoint_run_exe_name(
+
+  char *value)  /* I */
+
+  {
+  struct stat sbuf;
+
+  log_record(
+    PBSEVENT_SYSTEM,
+    PBS_EVENTCLASS_SERVER,
+    "checkpoint_run_exe",
+    value);
+
+  if ((stat(value, &sbuf) == -1) || !(sbuf.st_mode & S_IXUSR))
+    {
+    /* file does not exist or is not executable */
+
+    return(0);  /* error */
+    }
+
+  strncpy(checkpoint_run_exe_name, value, sizeof(checkpoint_run_exe_name));
+
+  return(1);
+  }  /* END set_checkpoint_run_exe() */
 
 
 
@@ -7754,22 +7820,24 @@ void examine_all_running_jobs()
          pjob != NULL;
          pjob = (job *)GET_NEXT(pjob->ji_alljobs)) 
       {
+#if 0
       if (pjob->ji_qs.ji_substate != JOB_SUBSTATE_RUNNING)
         continue;
 
       if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HERE) == 0)
         continue;
+#endif
 
       /* update information for my tasks */
 
       mom_set_use(pjob);
 
-      rpp_io();  /* FIXME: this call seems oddly placed... is this needed? */
-
       /* has all job processes vanished undetected ?       */
       /* double check by sig0 to session pid for each task */
 
+#if 0
       if (pjob->ji_flags & MOM_NO_PROC) 
+#endif
         {
         pjob->ji_flags &= ~MOM_NO_PROC;
 
@@ -7823,40 +7891,35 @@ void examine_all_running_jobs()
 
       /* see if need to checkpoint any job */
 
-      if (pjob->ji_chkpttime == 0)
-        continue;
+      if (pjob->ji_chkpttime != 0)  /* ji_chkpttime gets set in start_exec */
+        {
+        int c;
 
-      prscput = find_resc_entry(
-        &pjob->ji_wattr[(int)JOB_ATR_resc_used],
-        rdcput);
+        prscput = find_resc_entry(
+          &pjob->ji_wattr[(int)JOB_ATR_resc_used],
+          rdcput);  /* resource definition cput set in startup */
 
-      /* FIXME: check prscput == NULL? */
+        if (prscput &&
+           (pjob->ji_chkptnext > prscput->rs_value.at_val.at_long))
+          {
+          pjob->ji_chkptnext = 
+            prscput->rs_value.at_val.at_long +
+            pjob->ji_chkpttime;
 
-      if (pjob->ji_chkptnext>prscput->rs_value.at_val.at_long)
-        continue;
+          if ((c = start_checkpoint(pjob,0,0)) != PBSE_NONE)
+            {
+            sprintf(log_buffer,"Checkpoint failed, error %d", c);
 
-      pjob->ji_chkptnext = 
-        prscput->rs_value.at_val.at_long +
-        pjob->ji_chkpttime;
+            message_job(pjob,StdErr,log_buffer);
 
-      if ((c = start_checkpoint(pjob,0,0)) == PBSE_NONE)
-        continue;
-
-      if (c == PBSE_NOSUP)
-        continue;
-
-      /* getting here means something bad happened */
-
-      sprintf(log_buffer,"Checkpoint failed, error %d",
-        c);
-
-      message_job(pjob,StdErr,log_buffer);
-
-      log_record(
-        PBSEVENT_JOB, 
-        PBS_EVENTCLASS_JOB,
-        pjob->ji_qs.ji_jobid, 
-        log_buffer);
+            log_record(
+              PBSEVENT_JOB, 
+              PBS_EVENTCLASS_JOB,
+              pjob->ji_qs.ji_jobid, 
+              log_buffer);
+            }
+          }
+        }
 #endif	/* MOM_CHECKPOINT */
       }  /* END for (pjob) */
   }
@@ -8057,6 +8120,8 @@ void main_loop()
   mom_run_state = MOM_RUN_STATE_RUNNING;  /* mom_run_state is altered by stop_me() or MOMCheckRestart() */
   while (mom_run_state == MOM_RUN_STATE_RUNNING)
     {
+    rpp_io();
+
     if (call_hup)
       {
       process_hup();  /* Do a restart of resmom */
@@ -8138,13 +8203,8 @@ void main_loop()
         }
       }
 
-
-    /* check for any extra rpp messages */
-
-    rpp_request(42);
-
-    if (termin_child != 0)
-      scan_for_terminated();
+    if (termin_child != 0)  /* termin_child is a flag set by the catch_child signal handler */
+      scan_for_terminated();  /* machine dependent (calls mom_get_sample()???) */
 
     /* if -p, must poll tasks inside jobs to look for completion */
 
@@ -8155,6 +8215,11 @@ void main_loop()
       scan_for_exiting();	
 
     TMOMScanForStarting();
+
+
+
+
+    rpp_request(42);  /* cycle the rpp messaging system */
 
     /* unblock signals */
 

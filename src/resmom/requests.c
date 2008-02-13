@@ -91,6 +91,7 @@
 #include <unistd.h>
 #include <assert.h>
 #include <dirent.h>
+#include <time.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
 #include "dis.h"
@@ -3686,11 +3687,33 @@ int start_checkpoint(
   int       rc;
   int       sock = -1;
   attribute tmph;
+  char      name_buffer[1024];
 
   if (mom_does_chkpnt() == 0) 	/* no checkpoint, reject request */
     {
     return(PBSE_NOSUP);
     }
+
+    /* Build the name of the checkpoint file before forking to the child */
+
+    sprintf(name_buffer, "ckpt.%s.%d",
+      pjob->ji_qs.ji_jobid,
+      (int)time(0) );
+    decode_str(&pjob->ji_wattr[(int)JOB_ATR_chkptname],NULL,NULL,name_buffer);
+    pjob->ji_wattr[(int)JOB_ATR_chkptname].at_flags =
+      ATR_VFLAG_SET | ATR_VFLAG_MODIFY | ATR_VFLAG_SEND;
+
+
+    if (!(pjob->ji_wattr[(int)JOB_ATR_chkptdir].at_flags & ATR_VFLAG_SET))
+    {
+    /* No dir specified, use the default job checkpoint directory /var/spool/torque/checkpoint/42.host.domain.CK */
+
+    strcpy(name_buffer,path_checkpoint);
+    strcat(name_buffer,pjob->ji_qs.ji_fileprefix);
+    strcat(name_buffer,JOB_CKPT_SUFFIX);
+    decode_str(&pjob->ji_wattr[(int)JOB_ATR_chkptdir],NULL,NULL,name_buffer);
+    }
+
 
   /* now set up as child of MOM */
 
