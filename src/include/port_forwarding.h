@@ -16,6 +16,10 @@
 #  endif
 #endif /* X_UNIX_PATH */
 
+#ifndef NI_MAXSERV
+# define NI_MAXSERV 32
+#endif /* !NI_MAXSERV */
+
 
 struct pfwdsock {
   int sock;
