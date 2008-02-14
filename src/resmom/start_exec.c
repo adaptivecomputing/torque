@@ -1579,6 +1579,7 @@ int TMomFinalizeJob1(
     if (pjob->ji_wattr[(int)JOB_ATR_chkptname].at_flags & ATR_VFLAG_SET)
       {
         blcr_restart_job(pjob,buf);
+        pjob->ji_qs.ji_substate = JOB_SUBSTATE_RUNNING;
       }
     else if ((i = mom_restart_job(pjob,buf)) > 0) /* Iterate over files in checkpoint dir, restarting all files found. */
       {

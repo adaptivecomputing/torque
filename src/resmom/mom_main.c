@@ -7820,13 +7820,11 @@ void examine_all_running_jobs()
          pjob != NULL;
          pjob = (job *)GET_NEXT(pjob->ji_alljobs)) 
       {
-#if 0
       if (pjob->ji_qs.ji_substate != JOB_SUBSTATE_RUNNING)
         continue;
 
       if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HERE) == 0)
         continue;
-#endif
 
       /* update information for my tasks */
 
@@ -7835,9 +7833,7 @@ void examine_all_running_jobs()
       /* has all job processes vanished undetected ?       */
       /* double check by sig0 to session pid for each task */
 
-#if 0
       if (pjob->ji_flags & MOM_NO_PROC) 
-#endif
         {
         pjob->ji_flags &= ~MOM_NO_PROC;
 
