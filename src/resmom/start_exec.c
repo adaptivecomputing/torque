@@ -1569,17 +1569,23 @@ int TMomFinalizeJob1(
       return(FAILURE);
       }
 
-  /* 
-    IF JOB HAS CHECKPOINT DIRECTORY 
-      LOAD BLCR CHECKPOINT DIR
-      CALL BLCR RESTART
-      return SUCCESS
-  */
+    /* For right now, we assume BLCR checkpoint if job has name of checkpoint
+     * file.  This file name would have been set at the point where the
+     * checkpoint was taken, in the machine dependent checkpoint code.
+     *
+     * Note: There is a little discrepancy in that the checkpoint work is
+     * done at the machine dependent level and the restart is here at a
+     * global level.  We hope to correct this soon.
+     *
+     * The idea is that BLCR itself is architecture independent and so
+     * it is okay to invoke it from the main level.
+     */
 
     if (pjob->ji_wattr[(int)JOB_ATR_chkptname].at_flags & ATR_VFLAG_SET)
       {
         blcr_restart_job(pjob,buf);
         pjob->ji_qs.ji_substate = JOB_SUBSTATE_RUNNING;
+        rc = SUCCESS; /* Probably not always true :) */
       }
     else if ((i = mom_restart_job(pjob,buf)) > 0) /* Iterate over files in checkpoint dir, restarting all files found. */
       {
