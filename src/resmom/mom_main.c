@@ -394,7 +394,7 @@ static struct specials {
     { "nospool_dir_list",    setnospooldirlist },
     { "mom_host",            setmomhost },
     { "remote_reconfig",     setrreconfig},
-    { "umask",               setumask},
+    { "job_umask",           setumask},
     { NULL,                  NULL } };
 
 
