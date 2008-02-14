@@ -362,10 +362,14 @@ struct	config	dependent_config[] = {
 	{ NULL,		{nullproc} },
 };
 
+/*
+ * This routine is called on each cycle of the main loop.
+ */
+
 void
-end_proc()
+dep_main_loop_cycle()
 {
-	char	*id = "end_proc";
+	char	*id = "dep_main_loop_cycle";
 	long	now, delta;
 	struct	tbs	info;
 	struct	pw	pw;
@@ -487,7 +491,6 @@ end_proc()
 	DBPRT(("%s: sios %d srate %.2f swap_rate %.2f\n",
 			id, newsios - oldsios, srate, swap_rate))
 	oldsios = newsios;
-	return;
 }
 
 void
@@ -517,9 +520,7 @@ dep_initialize()
 #if	SRFS
 	var_init();
 #endif
-	end_proc();
-
-	return;
+	dep_main_loop_cycle();
 }
 
 void

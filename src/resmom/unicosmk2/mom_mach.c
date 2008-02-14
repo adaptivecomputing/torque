@@ -202,10 +202,14 @@ struct	config	dependent_config[] = {
 	{ NULL, 	{nullproc} },
 };
 
+/*
+ * This routine is called on each cycle of the main loop.
+ */
+
 void
-end_proc()
+dep_main_loop_cycle()
 {
-	return;
+  /* No periodic functions. */
 }
 
 void
@@ -232,9 +236,8 @@ dep_initialize()
 	DBPRT(("System serial number = %ld\n", tinfo.mc_serial))
 	DBPRT(("UNICOS release level = %ld\n", tinfo.mc_rls))
 
-	end_proc();
+	dep_main_loop_cycle();
 
-	return;
 }
 
 void

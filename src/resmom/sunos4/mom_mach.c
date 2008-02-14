@@ -241,10 +241,15 @@ dep_cleanup()
 	kd = NULL;
 }
 
+
+/*
+ * This routine is called on each cycle of the main loop.
+ */
+
 void
-end_proc()
+dep_main_loop_cycle()
 {
-	return;
+  /* No periodic functions. */
 }
 
 extern	struct	pbs_err_to_txt	pbs_err_to_txt[];

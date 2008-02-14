@@ -621,13 +621,12 @@ void dep_cleanup()
 
 
 /*
-**	Don't need any periodic procsessing.
-*/
+ *	This routine is called on each cycle of the main loop.
+ */
 
-void end_proc()
-
+void dep_main_loop_cycle()
   {
-  return;
+  /* No periodic functions. */
   }
 
 

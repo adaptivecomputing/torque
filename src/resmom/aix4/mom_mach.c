@@ -394,10 +394,16 @@ dep_cleanup()
 	}
 }
 
+/*
+ * This routine is called on each cycle of the main loop.
+ */
+
 void
-end_proc()
+dep_main_loop_cycle()
 {
-	return;
+#if IBM_SP2==2
+    query_adp();
+#endif  /*IBM_SP2 */
 }
 
 /*

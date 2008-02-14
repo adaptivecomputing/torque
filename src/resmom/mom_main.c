@@ -8123,13 +8123,9 @@ void main_loop()
       process_hup();  /* Do a restart of resmom */
       }
 
-    end_proc();  /* Call machine dependent code periodically */
+    dep_main_loop_cycle();  /* Call machine dependent code periodically */
 
     time_now = time(NULL);
-
-#if IBM_SP2==2
-    query_adp();  /* Machine dependent code for aix, should be moved to aix::end_proc ??? */
-#endif	/*IBM_SP2 */
 
     /* check if loadave means we should be "busy" */
 

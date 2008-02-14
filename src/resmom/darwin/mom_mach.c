@@ -265,11 +265,13 @@ void dep_cleanup()
 
 
 
+/*
+ * This routine is called on each cycle of the main loop.
+ */
 
-void end_proc()
-
+void dep_main_loop_cycle()
   {
-  return;
+    /* No periodic functions. */
   }
 
 extern	struct	pbs_err_to_txt	pbs_err_to_txt[];

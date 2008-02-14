@@ -226,12 +226,13 @@ struct nlist nl[] = {
 #define KSYM_LOAD		2
 
 /*
-**	Don't need any periodic procsessing.
-*/
+ * This routine is called on each cycle of the main loop.
+ */
+
 void
-end_proc()
+dep_main_loop_cycle()
 {
-	return;
+  /* Don't need any periodic processing. */
 }
 
 void
@@ -267,9 +268,7 @@ dep_initialize()
 
 	if (nlist(kernel, nl) == -1) {
 		log_err(errno, id, kernel);
-		return;
 	}
-	return;
 }
 
 void

@@ -208,12 +208,13 @@ struct	config	dependent_config[] = {
 };
 	
 /*
-**	Don't need any periodic processing.
-*/
+ * This routine is called on each cycle of the main loop.
+ */
+
 void
-end_proc()
+dep_main_loop_cycle()
 {
-	return;
+  /* Don't need any periodic processing. */
 }
 
 void

@@ -167,14 +167,14 @@ extern int   run_pelog A_((int, char *,job *,int));
 extern int   is_joined A_((job *));
 extern void  check_busy A_((double));
 extern void  state_to_server A_((int,int));
-extern void end_proc(void);
-extern int message_job(job *,enum job_file,char *);
-extern void term_job(job *);
+extern void  dep_main_loop_cycle(void);
+extern int   message_job(job *,enum job_file,char *);
+extern void  term_job(job *);
 extern struct passwd *check_pwd(job *);
-extern int send_sisters(job *,int);
-extern int task_save(task *) ;
+extern int   send_sisters(job *,int);
+extern int   task_save(task *) ;
 extern void DIS_rpp_reset A_((void));
-extern void checkret A_((char **,int));
+extern void  checkret A_((char **,int));
 extern char *get_job_envvar A_((job *,char *));
 
 

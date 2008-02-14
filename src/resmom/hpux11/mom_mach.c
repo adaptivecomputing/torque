@@ -210,13 +210,15 @@ struct	config	dependent_config[] = {
 	{ NULL,		{nullproc} },
 };
 	
+
 /*
-**	Don't need any periodic processing.
-*/
+ * This routine is called on each cycle of the main loop.
+ */
+
 void
-end_proc()
+dep_main_loop_cycle()
 {
-	return;
+  /* No periodic functions. */
 }
 
 void
