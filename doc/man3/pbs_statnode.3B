@@ -149,8 +149,8 @@ When an
 list is specified, the
 .Ty name
 member is a pointer to a attribute name.
-The only supported attribute names relating to nodes are
-"state" and "properties".
+The supported attribute names relating to nodes are
+"state", "properties", "np", "ntype", "jobs", "status", and "note".
 The
 .Ty resource
 member is not used and must be a pointer to a null string.
