@@ -123,7 +123,7 @@ int save_tmsock(job *);
 int recov_tmsock(int,job *);
 #endif
 
-extern int job_qs_upgrade(job *,int,int);
+extern int job_qs_upgrade(job *,int *,int);
 #ifndef PBS_MOM
 extern void get_parent_id(char *job_id, char *parent_id);
 extern job_array *get_array(char *id);
@@ -448,7 +448,7 @@ job *job_recov(
          namebuf);
     log_err(-1,"job_recov",log_buffer);
     
-    if (job_qs_upgrade(pj,fds,pj->ji_qs.qs_version) != 0)
+    if (job_qs_upgrade(pj,&fds,pj->ji_qs.qs_version) != 0)
       {
       sprintf(log_buffer, "unable to upgrade %s\n",namebuf);
       
@@ -539,9 +539,6 @@ job *job_recov(
           /* couldn't find array struct, it must not have been recovered, 
              treat job as indepentent job?  perhaps we should delete the job
 	     XXX_JOB_ARRAY: should I unset this?*/
-          pj->ji_wattr[(int)JOB_ATR_job_array_size].at_val.at_long = 1;
-	  pj->ji_wattr[(int)JOB_ATR_job_array_size].at_flags |= ATR_VFLAG_SET;
-	  
 	  pj->ji_wattr[(int)JOB_ATR_job_array_request].at_flags &= ~ATR_VFLAG_SET;
           }
         else

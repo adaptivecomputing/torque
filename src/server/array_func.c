@@ -226,8 +226,8 @@ job_array *recover_array_struct(char *path)
    fd = open(path, O_RDONLY,0);
    
    /* read the file into the struct previously allocated. 
-    * TODO - check version of struct before trying to read the whole thing
     */
+
    if (read(fd, &(pa->ai_qs), sizeof(pa->ai_qs)) != sizeof(pa->ai_qs))
      {
      sprintf(log_buffer,"unable to read %s", path);
@@ -237,6 +237,11 @@ job_array *recover_array_struct(char *path)
      free(pa);
      close(fd);
      return NULL;
+     }
+
+   if (pa->ai_qs.struct_version != ARRAY_QS_STRUCT_VERSION)
+     {
+     /* TODO */
      }
      
    /* check to see if there is any additional info saved in the array file */
@@ -379,7 +384,7 @@ int setup_array_struct(job *pjob)
     
   pa->ai_qs.struct_version = ARRAY_QS_STRUCT_VERSION;
   
-  pa->ai_qs.array_size = pjob->ji_wattr[(int)JOB_ATR_job_array_size].at_val.at_long;
+  /*pa->ai_qs.array_size  = pjob->ji_wattr[(int)JOB_ATR_job_array_size].at_val.at_long;*/
   
   strcpy(pa->ai_qs.parent_id, pjob->ji_qs.ji_jobid);
   strcpy(pa->ai_qs.fileprefix, pjob->ji_qs.ji_fileprefix);
@@ -560,6 +565,8 @@ static int parse_array_request(char *request, job_array *pa)
    array_request_node *rn;
    array_request_node *rn2;
 
+   pa->ai_qs.array_size = 0;
+
    temp_str = strdup(request);
    num_tokens = array_request_token_count(request);
    num_bad_tokens = 0;
@@ -631,7 +638,7 @@ static int parse_array_request(char *request, job_array *pa)
          {
          num_bad_tokens++;
          }
-         
+       pa->ai_qs.array_size += end - start + 1;  
        }
      }   
 

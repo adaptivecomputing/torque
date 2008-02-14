@@ -260,7 +260,6 @@ enum job_atr {
   JOB_ATR_exitstat,	/* exit status of job			  */
   JOB_ATR_forwardx11,
   JOB_ATR_submit_args,
-  JOB_ATR_job_array_size,
   JOB_ATR_job_array_id,
   JOB_ATR_job_array_request,
   JOB_ATR_umask,
