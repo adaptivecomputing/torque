@@ -1375,7 +1375,6 @@ int TMomFinalizeJob1(
   torque_socklen_t	 slen;
 
   int                    i;
-  int                    rc; /* return code */
 
   attribute		*pattr;
   attribute		*pattri;
@@ -1386,6 +1385,7 @@ int TMomFinalizeJob1(
 #if MOM_CHECKPOINT == 1
   char	   		buf[MAXPATHLEN + 2];
   struct stat		sb;
+  int                   rc; /* return code */
 #endif /* MOM_CHECKPOINT */
 
 
