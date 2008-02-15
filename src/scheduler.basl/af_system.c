@@ -154,8 +154,6 @@ extern char *msg_daemonname;
 
 /* External Functions */
 
-extern int
-chk_file_sec A_((char *, int, int, int, int));
 
 /* Structures and Unions */
 /* External Functions */
@@ -445,8 +443,8 @@ static void cdToPrivDir(void)
         (void)sprintf(path_priv, "%s/sched_priv", homedir); 
 
 #if !defined(DEBUG) && !defined(NO_SECURITY_CHECK)
-	c  = chk_file_sec(path_priv, 1, 0, S_IWGRP|S_IWOTH, 1);
-        c |= chk_file_sec(PBS_ENVIRON, 0, 0, S_IWGRP|S_IWOTH, 0);
+	c  = chk_file_sec(path_priv, 1, 0, S_IWGRP|S_IWOTH, 1, NULL);
+        c |= chk_file_sec(PBS_ENVIRON, 0, 0, S_IWGRP|S_IWOTH, 0, NULL);
 	if (c != 0)
 	    exit(1);
 #endif /* not DEBUG and not NO_SECURITY_CHECK */

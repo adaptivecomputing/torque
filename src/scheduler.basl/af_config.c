@@ -116,8 +116,6 @@ static pbs_net_t *okClients  = NULL;     /* accept connections from */
 extern char *msg_daemonname;
 
 /* External Functions */
-extern int
-chk_file_sec A_((char *, int, int, int, int));
 
 /* Structures and Unions */
 /* External Functions */
@@ -306,7 +304,7 @@ char *file;
         };
 
 #if !defined(DEBUG) && !defined(NO_SECURITY_CHECK)
-        if (chk_file_sec(file, 0, 0, S_IWGRP|S_IWOTH, 1))
+        if (chk_file_sec(file, 0, 0, S_IWGRP|S_IWOTH, 1, NULL))
                 return (-1);
 #endif
 
