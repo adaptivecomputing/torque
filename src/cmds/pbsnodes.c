@@ -114,7 +114,6 @@
 #include        "mcom.h"
 #include        "cmds.h"
   
-#define	DOWN	0
 #define	LIST	1
 #define	CLEAR	2
 #define	OFFLINE	3
@@ -127,6 +126,7 @@
 enum note_flags {unused, set, list};
 
 int quiet = 0;
+char *progname;
 
 
 /* globals */
@@ -183,44 +183,6 @@ static int set_note(
   }
 
 
-/*
- * cmp_node_name - compare two node names, allow the second to match the
- *	first if the same up to a dot ('.') in the second; i.e.
- *	"foo" == "foo.bar"
- *
- *	return 0 if match, 1 if not
- */
-
-static int cmp_node_name(
-
-  char *n1, 
-  char *n2)
-
-  {
-  while ((*n1 != '\0') && (*n2 != '\0')) 
-    {
-    if (*n1 != *n2)
-      break;
-
-    n1++;
-    n2++;
-    }
-
-  if (*n1 == *n2) 
-    {
-    return(0);
-    }
-
-  if ((*n1 == '.') && (*n2 == '\0'))
-    {
-    return(0);
-    }
-
-  return(1);
-  }  /* END cmp_node_name() */
-
-
-
 
 static void prt_node_attr(
 
@@ -266,31 +228,6 @@ static char *get_nstate(
 
   return("");
   }
-
-
-
-
-
-/*
- * is_down - returns indication if node is marked down or not
- *
- *	returns 1 if node is down and 0 if not down
- */
-
-static int is_down(
-
-  struct batch_status *pbs)  /* I */
-
-  {
-  if (strstr(get_nstate(pbs),ND_down) != NULL)
-    {
-    return(1);
-    }
-
-  return(0);
-  }
-
-
 
 
 
@@ -374,6 +311,82 @@ static int marknode(
   }  /* END marknode() */
 
 
+struct batch_status *statnode(int con,char *nodearg)
+  {
+  struct batch_status *bstatus;
+  char	         *errmsg;
+
+  bstatus = pbs_statnode(con,nodearg,NULL,NULL);
+
+  if (bstatus == NULL) 
+    {
+    if (pbs_errno) 
+      {
+      if (!quiet) 
+        {
+        if ((errmsg = pbs_geterrmsg(con)) != NULL)
+          {
+          fprintf(stderr,"%s: %s\n",
+            progname,
+            errmsg);
+          }
+        else
+          {
+          fprintf(stderr,"%s: Error %d\n",
+            progname,
+            pbs_errno);
+          }
+        }
+
+      exit(1);
+      }
+
+    if (!quiet)
+      fprintf(stderr,"%s: No nodes found\n", 
+        progname);
+
+    exit(2);
+    }
+
+  return bstatus;
+  }    /* END statnode() */
+
+
+void addxmlnode(
+  mxml_t *DE,
+  struct batch_status *pbstat)
+  {
+  mxml_t *NE;
+  mxml_t *AE;
+  struct attrl *pat;
+
+  NE = NULL;
+
+  MXMLCreateE(&NE,"Node");
+
+  MXMLAddE(DE,NE);
+
+  /* add nodeid */
+
+  AE = NULL;
+  MXMLCreateE(&AE,"name");
+  MXMLSetVal(AE,pbstat->name,mdfString);
+  MXMLAddE(NE,AE);
+
+  for (pat = pbstat->attribs;pat;pat = pat->next)
+    {
+    AE = NULL;
+
+    if (pat->value == NULL)
+      continue;
+
+    MXMLCreateE(&AE,pat->name);
+
+    MXMLSetVal(AE,pat->value,mdfString);
+
+    MXMLAddE(NE,AE);
+    }
+} /* END addxmlnode() */
 
 
 enum NStateEnum {
@@ -401,6 +414,99 @@ const char *NState[] = {
   NULL };
 
 
+int filterbystate(
+  struct batch_status * pbstat,
+  enum NStateEnum ListType,
+  char *S)
+  {
+  int Display;
+
+  Display = 0;
+
+  switch (ListType)
+    {
+    case tnsNONE:  /* display down, offline, and unknown nodes */
+    default:
+
+      if (strstr(S,ND_down) || strstr(S,ND_offline) || strstr(S,ND_state_unknown)) 
+        {
+        Display = 1;
+        }
+
+      break;
+
+    case tnsActive:   /* one or more jobs running on node */
+
+      if (strstr(S,ND_busy) || strstr(S,ND_job_exclusive) || strstr(S,ND_job_sharing))
+        {
+        Display = 1;
+        }
+
+      break;
+
+    case tnsAll:      /* list all nodes */
+
+      Display = 1;
+
+      break;
+
+    case tnsBusy:     /* node cannot accept additional workload */
+
+      if (strstr(S,ND_busy))
+        {
+        Display = 1;
+        }
+
+      break;
+
+    case tnsDown:     /* node is down or unknown */
+
+      if (strstr(S,ND_down) || strstr(S,ND_state_unknown))
+        {
+        Display = 1;
+        }
+
+      break;
+
+    case tnsFree:     /* node is idle/free */
+
+      if (strstr(S,ND_free))
+        {
+        Display = 1;
+        }
+
+      break;
+
+    case tnsOffline:  /* node is offline */
+
+      if (strstr(S,ND_offline))
+        {
+        Display = 1;
+        }
+
+      break;
+
+    case tnsUnknown:  /* node is unknown - no contact recieved */
+
+      if (strstr(S,ND_state_unknown))
+        {
+        Display = 1;
+        }
+
+      break;
+
+    case tnsUp:       /* node is healthy */
+
+      if (!strstr(S,ND_down) && !strstr(S,ND_offline) && !strstr(S,ND_state_unknown))
+        {
+        Display = 1;
+        }
+
+      break;
+    }  /* END switch (ListType) */
+
+  return Display;
+}
 
 int main(
 
@@ -412,7 +518,6 @@ int main(
   int	 con;
   char	*specified_server = NULL;
   int	 errflg = 0;
-  char	*errmsg;
   int	 i;
   extern char	*optarg;
   extern int	 optind;
@@ -421,11 +526,14 @@ int main(
   int	flag = ALLI;
   char	*note = NULL;
   enum  note_flags note_flag = unused;
-  char  NodeArg[256000];
+  char **nodeargs=NULL;
+          int lindex;
 
   enum NStateEnum ListType = tnsNONE;
 
   /* get default server, may be changed by -s option */
+
+  progname=strdup(argv[0]);
 
   while ((i = getopt(argc,argv,"acdlopqrs:x-:N:n")) != EOF)
     {
@@ -582,10 +690,10 @@ int main(
     if (!quiet)
       {
       fprintf(stderr,"usage:\t%s [-{c|d|l|o|p|r}] [-s server] [-n] [-N \"note\"] [-q] node ...\n",
-        argv[0]);
+        progname);
 
       fprintf(stderr,"\t%s [-{a|x}] [-s server] [-q] [node]\n",
-        argv[0]);
+        progname);
       }
 
     exit(1);
@@ -598,7 +706,7 @@ int main(
     if (!quiet)
       {
       fprintf(stderr, "%s: cannot connect to server %s, error=%d\n",
-        argv[0],           
+        progname,           
         (specified_server) ? specified_server : pbs_default(), 
         pbs_errno);
       }
@@ -606,11 +714,9 @@ int main(
     exit(1);
     }
 
-  /* if flag is ALLI, DOWN or LIST, get status of all nodes */
+  /* if flag is ALLI, LIST, get status of all nodes */
 
-  NodeArg[0] = '\0';
-
-  if ((flag == ALLI) || (flag == DOWN) || (flag == LIST) || (flag == DIAG)) 
+  if ((flag == ALLI) || (flag == LIST) || (flag == DIAG)) 
     {
     if ((flag == ALLI) || (flag == LIST) || (flag == DIAG))
       {
@@ -620,7 +726,6 @@ int main(
 
         if (argv[optind] != NULL)
           {
-          int lindex;
 
           for (lindex = 1;lindex < tnsLAST;lindex++)
             {
@@ -636,46 +741,21 @@ int main(
           } 
         }
 
-      /* allow node specification */
+      /* allow node specification (if none, then create an empty list) */
 
       if (argv[optind] != NULL)
         {
-        strcpy(NodeArg,argv[optind]);
+        nodeargs=argv + optind;
         }
-      }
-
-    bstatus = pbs_statnode(con,NodeArg,NULL,NULL);
-
-    if (bstatus == NULL) 
-      {
-      if (pbs_errno) 
+      else
         {
-        if (!quiet) 
-          {
-          if ((errmsg = pbs_geterrmsg(con)) != NULL)
-            {
-            fprintf(stderr,"%s: %s\n",
-              argv[0],
-              errmsg);
-            }
-          else
-            {
-            fprintf(stderr,"%s: Error %d\n",
-              argv[0],
-              pbs_errno);
-            }
-          }
-
-        exit(1);
+        nodeargs=malloc(2*sizeof(char **));
+        nodeargs[0]=strdup("");
+        nodeargs[1]='\0';
         }
- 
-      if (!quiet)
-        fprintf(stderr,"%s: No nodes found\n", 
-          argv[0]);
-
-      exit(0);
       }
-    }    /* END if ((flag == ALLI) || (flag == DOWN) || (flag == LIST) || (flag == DIAG)) */
+    }
+
 
   if ((note_flag == set) && (note != NULL))
     {
@@ -691,50 +771,6 @@ int main(
     case DIAG:
 
       /* NYI */
-
-      break;
-
-    case DOWN:
-
-      /*
-       * loop through the list of nodes returned above:
-       *   if node is up and is in argv list, mark it down;
-       *   if node is down and not in argv list, mark it up;
-       * for all changed nodes, send in request to server
-       */
-
-      for (pbstat = bstatus;pbstat != NULL;pbstat = pbstat->next) 
-        {
-        for (pa = argv + optind;*pa;pa++) 
-          {
-          if (cmp_node_name(*pa,pbstat->name) == 0) 
-            {
-            if (is_down(pbstat) == 0) 
-              {
-              marknode(
-                con, 
-                pbstat->name,
-                ND_down, 
-                INCR, 
-                NULL, 
-                INCR);
-
-              break;
-              }
-            }
-          }
-
-        if (*pa == NULL) 
-          {
-          /* node not in list, if down now, set up */
-
-          if (is_down(pbstat) == 1)
-            {
-            marknode(con,pbstat->name, 
-              ND_down,DECR,NULL,DECR);
-            }
-          }
-        }
 
       break;
 
@@ -783,48 +819,27 @@ int main(
 
       if (DisplayXML == TRUE)
         {
-        struct attrl *pat;
 
         char *tmpBuf=NULL, *tail=NULL;
         int  bufsize;
 
         mxml_t *DE;
-        mxml_t *NE;
-        mxml_t *AE;
 
         DE = NULL;
 
         MXMLCreateE(&DE,"Data");
 
-        for (pbstat = bstatus;pbstat;pbstat = pbstat->next)
+        for (lindex=0;nodeargs[lindex]!='\0';lindex++) 
           {
-          NE = NULL;
+          bstatus=statnode(con,nodeargs[lindex]);
 
-          MXMLCreateE(&NE,"Node");
-
-          MXMLAddE(DE,NE);
-
-          /* add nodeid */
-
-          AE = NULL;
-          MXMLCreateE(&AE,"name");
-          MXMLSetVal(AE,pbstat->name,mdfString);
-          MXMLAddE(NE,AE);
-
-          for (pat = pbstat->attribs;pat;pat = pat->next)
+          for (pbstat = bstatus;pbstat;pbstat = pbstat->next)
             {
-            AE = NULL;
+            addxmlnode(DE,pbstat);
+            }    /* END for (pbstat) */
 
-            if (pat->value == NULL)
-              continue;
-
-            MXMLCreateE(&AE,pat->name);
-
-            MXMLSetVal(AE,pat->value,mdfString);
-
-            MXMLAddE(NE,AE);
-            }
-          }    /* END for (pbstat) */
+          pbs_statfree(pbstat);
+          }
 
         MXMLToXString(DE,&tmpBuf,&bufsize,INT_MAX,&tail,TRUE);
 
@@ -835,136 +850,61 @@ int main(
         }
       else
         {
-        for (pbstat = bstatus;pbstat;pbstat = pbstat->next) 
+        for (lindex=0;nodeargs[lindex]!='\0';lindex++) 
           {
-          printf("%s\n", 
-            pbstat->name);
+          bstatus=statnode(con,nodeargs[lindex]);
 
-          prt_node_attr(pbstat,0);
+          for (pbstat = bstatus;pbstat;pbstat = pbstat->next) 
+            {
+            printf("%s\n", 
+              pbstat->name);
 
-          putchar('\n');
-          }  /* END for (bpstat) */
+            prt_node_attr(pbstat,0);
+
+            putchar('\n');
+            }  /* END for (bpstat) */
+
+          pbs_statfree(pbstat);
+          }
         }
 
       break;
 
     case LIST:
 
-      {
-      char *S;
-
-      int   Display;
-
       /* list any node that is DOWN, OFFLINE, or UNKNOWN */
 
-      for (pbstat = bstatus;pbstat != NULL;pbstat = pbstat->next) 
+      for (lindex=0;nodeargs[lindex]!='\0';lindex++) 
         {
-        S = get_nstate(pbstat);
+        bstatus=statnode(con,nodeargs[lindex]);
 
-        Display = 0;
-
-        switch (ListType)
+        for (pbstat = bstatus;pbstat != NULL;pbstat = pbstat->next) 
           {
-          case tnsNONE:  /* display down, offline, and unknown nodes */
-          default:
+          char *S;
 
-            if (strstr(S,ND_down) || strstr(S,ND_offline) || strstr(S,ND_state_unknown)) 
-              {
-              Display = 1;
-              }
+          S = get_nstate(pbstat);
 
-            break;
-
-          case tnsActive:   /* one or more jobs running on node */
-
-            if (strstr(S,ND_busy) || strstr(S,ND_job_exclusive) || strstr(S,ND_job_sharing))
-              {
-              Display = 1;
-              }
-
-            break;
-
-          case tnsAll:      /* list all nodes */
-
-            Display = 1;
-
-            break;
-
-          case tnsBusy:     /* node cannot accept additional workload */
-
-            if (strstr(S,ND_busy))
-              {
-              Display = 1;
-              }
-
-            break;
-
-          case tnsDown:     /* node is down or unknown */
-
-            if (strstr(S,ND_down) || strstr(S,ND_state_unknown))
-              {
-              Display = 1;
-              }
-
-            break;
-
-          case tnsFree:     /* node is idle/free */
-
-            if (strstr(S,ND_free))
-              {
-              Display = 1;
-              }
-
-            break;
-
-          case tnsOffline:  /* node is offline */
-
-            if (strstr(S,ND_offline))
-              {
-              Display = 1;
-              }
-
-            break;
-
-          case tnsUnknown:  /* node is unknown - no contact recieved */
-
-            if (strstr(S,ND_state_unknown))
-              {
-              Display = 1;
-              }
-   
-            break;
-
-          case tnsUp:       /* node is healthy */
-
-            if (!strstr(S,ND_down) && !strstr(S,ND_offline) && !strstr(S,ND_state_unknown))
-              {
-              Display = 1;
-              }
-
-            break;
-          }  /* END switch (ListType) */
-
-        if (Display == 1)
-          {
-          char *n;
-
-          if ((note_flag == list) && (n = get_note(pbstat)))
+          if (filterbystate(pbstat,ListType,S))
             {
-            printf("%-20.20s %-26.26s %s\n",
-              pbstat->name,
-              S,
-              n);
-            }
-          else
-            {
-            printf("%-20.20s %s\n",
-              pbstat->name,
-              S);
+            char *n;
+
+            if ((note_flag == list) && (n = get_note(pbstat)))
+              {
+              printf("%-20.20s %-26.26s %s\n",
+                pbstat->name,
+                S,
+                n);
+              }
+            else
+              {
+              printf("%-20.20s %s\n",
+                pbstat->name,
+                S);
+              }
             }
           }
+        pbs_statfree(pbstat);
         }
-      }    /* END BLOCK (case LIST) */
 
       break;
     }  /* END switch (flag) */
