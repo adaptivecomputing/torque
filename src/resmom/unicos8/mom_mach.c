@@ -1557,7 +1557,7 @@ int mom_open_poll()
 #if	SRFS
 #define SETDEV(name, var) \
 	if ((dir = var_value(name)) != NULL) { \
-		i |= chk_file_sec(dir, 1, 1, S_IWGRP|S_IWOTH, 1); \
+		i |= chk_file_sec(dir, 1, 1, S_IWGRP|S_IWOTH, 1, NULL); \
 		if (quotactl(dir, SRFS_INFO, (caddr_t)&srfsinfo) == -1) \
 			log_err(errno, id, dir); \
 		else { \
@@ -1584,7 +1584,7 @@ int mom_open_poll()
 }
 #else
 #if !defined(DEBUG) && !defined(NO_SECURITY_CHECK)
-	if (chk_file_sec(TMP_DIR, 1, 1, S_IWGRP|S_IWOTH, 1)) return (PBSE_PERM);
+	if (chk_file_sec(TMP_DIR, 1, 1, S_IWGRP|S_IWOTH, 1, NULL)) return (PBSE_PERM);
 #endif	/* NO_SECURITY_CHECK */
 #endif	/* SRFS */
 	return (PBSE_NONE);
