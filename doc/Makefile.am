@@ -3,6 +3,9 @@ include $(top_srcdir)/buildutils/config.mk
 noinst_PROGRAMS = soelim
 soelim_SOURCES = soelim.c
 
+# ensures soelim is built early so that parallel makes work
+BUILT_SOURCES = soelim
+
 SUBDIRS = man1 man3 man7 man8
 
 EXTRA_DIST = man1/qalter.1.in man1/qdel.1.in man1/qhold.1.in man1/qmove.1.in \
