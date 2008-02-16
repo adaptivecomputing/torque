@@ -1076,6 +1076,8 @@ void check_state(
 
   if (PBSNodeCheckPath[0] != '\0')
     {
+    int IsError = 0;
+
     if (ICount == 0)
       {
       if (MUReadPipe(
@@ -1083,7 +1085,17 @@ void check_state(
            tmpPBSNodeMsgBuf,
            sizeof(tmpPBSNodeMsgBuf)) == 0)
         {
-        if (strncmp(tmpPBSNodeMsgBuf,"ERROR",strlen("ERROR")))
+        if (!strncasecmp(tmpPBSNodeMsgBuf,"ERROR",strlen("ERROR")))
+          {
+          IsError = 1;
+          }
+        else if (!strncasecmp(tmpPBSNodeMsgBuf,"EVENT:",strlen("EVENT:")))
+          {
+          /* pass event directly to scheduler for processing */
+
+          /* NO-OP */
+          }
+        else
           {
           /* ignore non-error messages */
 
@@ -1106,7 +1118,8 @@ void check_state(
       /* NOTE:  not certain this is the correct behavior, scheduler should probably make this decision as 
                 proper action may be context sensitive */
 
-      internal_state |= INUSE_DOWN;
+      if (IsError == 1)
+        internal_state |= INUSE_DOWN;
       }
     }      /* END if (PBSNodeCheckPath[0] != '\0') */
 

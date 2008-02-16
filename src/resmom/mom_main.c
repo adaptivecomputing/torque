@@ -318,6 +318,7 @@ static unsigned long setignwalltime(char *);
 static unsigned long setlogevent(char *);
 static unsigned long setloglevel(char *);
 static unsigned long setumask(char *);
+static unsigned long setpreexec(char *);
 static unsigned long setmaxload(char *);
 static unsigned long setenablemomrestart(char *);
 static unsigned long prologalarm(char *);
@@ -395,6 +396,7 @@ static struct specials {
     { "mom_host",            setmomhost },
     { "remote_reconfig",     setrreconfig},
     { "job_umask",           setumask},
+    { "preexec",             setpreexec},
     { NULL,                  NULL } };
 
 
@@ -426,6 +428,7 @@ int                     LOGLEVEL = 0;  /* valid values (0 - 10) */
 int                     DEBUGMODE = 0;
 int                     DOBACKGROUND = 1;
 char                    DEFAULT_UMASK[1024];
+char                    PRE_EXEC[1024];
 long                    TJobStartBlockTime = 5; /* seconds to wait for job to launch before backgrounding */
 long                    TJobStartTimeout = 300; /* seconds to wait for job to launch before purging */
 
@@ -465,8 +468,8 @@ static	char		config_file[_POSIX_PATH_MAX] = "config";
 char                    PBSNodeMsgBuf[1024];
 char                    PBSNodeCheckPath[1024];
 int                     PBSNodeCheckInterval;
-int                     PBSNodeCheckProlog=0;
-int                     PBSNodeCheckEpilog=0;
+int                     PBSNodeCheckProlog = 0;
+int                     PBSNodeCheckEpilog = 0;
 static char            *MOMExePath = NULL;
 static time_t           MOMExeTime = 0;
 
@@ -2209,6 +2212,25 @@ static unsigned long setumask(
 
 
 
+static unsigned long setpreexec(
+
+  char *value)  /* I */
+
+  {
+  log_record(
+    PBSEVENT_SYSTEM,
+    PBS_EVENTCLASS_SERVER,
+    "setpreexec",
+    value);
+
+  strncpy(PRE_EXEC,value,sizeof(PRE_EXEC));
+
+  return(1);
+  }  /* END setpreexec() */
+
+
+
+
 static unsigned long jobstartblocktime(
 
   char *value)  /* I */
@@ -2502,6 +2524,9 @@ static unsigned long setautomaxload(
 
   return(1);
   }  /* END setautomaxload() */
+
+
+
 
 
 static unsigned long setnodecheckscript(
@@ -4887,6 +4912,18 @@ int rm_request(
               MUStrNCat(&BPtr,&BSpace,"NOTE:  syslog not enabled (use 'configure --enable-syslog' to enable)\n");
 #endif /* SYSLOG */
               }  
+
+            if (verbositylevel >= 3)
+              {
+              if (PBSNodeCheckPath[0] != '\0')
+                {
+                sprintf(tmpLine,"Node Health Check Script: %s (%d second update interval)\n",
+                  PBSNodeCheckPath,
+                  PBSNodeCheckInterval);
+                }
+              }
+
+            MUStrNCat(&BPtr,&BSpace,tmpLine);
  
             sprintf(tmpLine,"MOM active:             %ld seconds\n",
               (long)Now - MOMStartTime);

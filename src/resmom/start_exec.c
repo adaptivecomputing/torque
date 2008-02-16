@@ -159,6 +159,7 @@ extern	u_long		localaddr;
 extern  char            *nodefile_suffix;
 extern  char            *submithost_suffix;
 extern  char             DEFAULT_UMASK[];
+extern  char             PRE_EXEC[];
 
 extern int LOGLEVEL;
 extern long TJobStartBlockTime;
@@ -197,7 +198,7 @@ enum TVarElseEnum {
   tveTmpDir,
   tveLAST };
 
-static	char *variables_else[] = {	/* variables to add, value computed */
+static char *variables_else[] = {	/* variables to add, value computed */
   "HOME",
   "LOGNAME",
   "PBS_JOBNAME",
@@ -1998,8 +1999,11 @@ int TMomFinalizeJob2(
   }  /* END TMomFinalizeJob2() */
 
 
-int determine_umask(
-)
+
+
+
+int determine_umask()
+
   {
   static char           *id = "determine_umask";
   int UMaskVal = 0077;
@@ -2007,8 +2011,7 @@ int determine_umask(
   
   if (DEFAULT_UMASK[0] != '\0')
     {	
-
-   if (!strcasecmp(DEFAULT_UMASK,"userdefault"))
+    if (!strcasecmp(DEFAULT_UMASK,"userdefault"))
       {
       /* apply user default */
 
@@ -2025,13 +2028,20 @@ int determine_umask(
       UMaskVal = (int)strtol(DEFAULT_UMASK,NULL,0);
       }
     }
-    if (LOGLEVEL >= 7)
-      {
-      sprintf(log_buffer,"returned umask value = %o", UMaskVal);
-      log_err(-1,id,log_buffer);
-      }
-    return UMaskVal;
-  }
+
+  if (LOGLEVEL >= 7)
+    {
+    sprintf(log_buffer,"returned umask value = %o", 
+      UMaskVal);
+
+    log_err(-1,id,log_buffer);
+    }
+
+  return(UMaskVal);
+  }  /* END determine_umask() */
+
+
+
 
 
 /* child portion of job launch executed as user - called by TMomFinalize2() */
@@ -2045,7 +2055,10 @@ int TMomFinalizeChild(
   {
   static char           *id = "TMomFinalizeChild";
 
-  char                  *arg[4];
+  int                    aindex;
+
+  char                  *arg[32];
+
   char                   buf[MAXPATHLEN + 2];
   pid_t                  cpid;
   int                    i, j, vnodenum;
@@ -3045,27 +3058,42 @@ int TMomFinalizeChild(
     else
       shellname = shell;
 
-    arg[0] = malloc(strlen(shellname) + 2);
+    aindex = 0;
 
-    strcpy(arg[0],"-");
+    arg[aindex] = malloc(strlen(shellname) + 2);
 
-    strcat(arg[0],shellname);
+    strcpy(arg[aindex],"-");
 
-    arg[1] = NULL;
+    strcat(arg[aindex],shellname);
+
+    arg[aindex + 1] = NULL;
+
+    aindex++;
+
+    if (PRE_EXEC[0] != '\0')
+      {
+      arg[aindex] = strdup(PRE_EXEC);
+
+      arg[aindex + 1] = NULL;
+
+      aindex++;
+      }  /* END if (PRE_EXEC[0] != '\0') */
 
 #if SHELL_USE_ARGV == 1
     if (TJE->is_interactive == FALSE) 
       {
-      arg[1] = malloc(
+      arg[aindex] = malloc(
         strlen(path_jobs) +
         strlen(pjob->ji_qs.ji_fileprefix) +
         strlen(JOB_SCRIPT_SUFFIX) + 1);
 
-      strcpy(arg[1],path_jobs);
-      strcat(arg[1],pjob->ji_qs.ji_fileprefix);
-      strcat(arg[1],JOB_SCRIPT_SUFFIX);
+      strcpy(arg[aindex],path_jobs);
+      strcat(arg[aindex],pjob->ji_qs.ji_fileprefix);
+      strcat(arg[aindex],JOB_SCRIPT_SUFFIX);
 
-      arg[2] = NULL;
+      arg[aindex + 1] = NULL;
+
+      aindex++;
       } 
 #endif /* SHELL_USE_ARGV */
 
@@ -3085,17 +3113,21 @@ int TMomFinalizeChild(
     if (mom_does_chkpnt())
       {
       /* Launch job executable with cr_run command so that cr_checkpoint command will work. */
-      arg[3] = arg[2];
-      arg[2] = arg[1];
+
       arg[1] = malloc(strlen(shell)+1);
-      strcpy(arg[1], shell);
-      execve(checkpoint_run_exe_name, arg, vtable.v_envp);
+
+      strcpy(arg[1],shell);
+
+      arg[2] = arg[1];
+      arg[3] = arg[2];
+
+      execve(checkpoint_run_exe_name,arg,vtable.v_envp);
       }
     else
       {
-      execve(shell, arg, vtable.v_envp);
+      execve(shell,arg,vtable.v_envp);
       }
-    }
+    }    /* END if ((pjob->ji_numnodes == 1) || ...) */
   else if (cpid == 0)
     {	
     /* child does demux */
@@ -3123,11 +3155,24 @@ int TMomFinalizeChild(
     else
       shellname = shell;
 
-    arg[0] = malloc(strlen(shellname) + 1);
+    aindex = 0;
 
-    strcpy(arg[0],shellname);
+    arg[aindex] = malloc(strlen(shellname) + 1);
 
-    arg[1] = NULL;
+    strcpy(arg[aindex],shellname);
+
+    arg[aindex + 1] = NULL;
+
+    aindex++;
+
+    if (PRE_EXEC[0] != '\0')
+      {
+      arg[aindex] = strdup(PRE_EXEC);
+
+      arg[aindex + 1] = NULL;
+
+      aindex++;
+      }  /* END if (PRE_EXEC[0] != '\0') */
 
     execve(demux,arg,vtable.v_envp);
 
@@ -3418,11 +3463,13 @@ int TMomFinalizeJob3(
 
 
 
-/*
-** Start a process for a spawn request.  This will be different from
-** a job's initial shell task in that the environment will be specified
-** and no interactive code need be included.
-*/
+/**
+ * Start a process for a spawn request.  This will be different from
+ * a job's initial shell task in that the environment will be specified
+ * and no interactive code need be included.
+ *
+ * NOTE:  Called for sisters after mother superior receives IM_SPAWN_TASK request 
+ */
 
 int start_process(
 
