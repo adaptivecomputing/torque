@@ -21,10 +21,14 @@
 #include "attribute.h"
 #include "server_limits.h"
 #include "job.h"
+#include "array.h"
+
+extern char *path_jobs;
+extern char *path_arrays;
 
 
-int upgrade_2_1_X (job *pj, int fds);
-int upgrade_2_2_X (job *pj, int fds);
+int upgrade_2_1_X (job *pj, int *fds);
+int upgrade_2_2_X (job *pj, int *fds);
 
 
 typedef struct {
@@ -107,17 +111,22 @@ typedef struct {
    this version upgrades from 2.1.x and 2.2.x to 2.3.0
    */
 
-int job_qs_upgrade (job *pj, int fds, int version)
+int job_qs_upgrade (
+
+  job *pj,     /* I */
+  int *fds,    /* I */
+  int version) /* I */
+
   {
 
 
   /* reset the file descriptor */
-  if (lseek(fds, 0, SEEK_SET) != 0)
+  if (lseek(*fds, 0, SEEK_SET) != 0)
     {
     sprintf(log_buffer, "unable to reset fds\n");
     log_err(-1,"job_qs_upgrade",log_buffer);
 
-    return -1;
+    return (-1);
     }
 
   if (version == 0x00020200) 
@@ -128,15 +137,35 @@ int job_qs_upgrade (job *pj, int fds, int version)
     {
     return upgrade_2_1_X(pj, fds);
     }
+    
+    
   }
 
-int upgrade_2_2_X (job *pj, int fds)
+int upgrade_2_2_X (
+
+  job *pj,   /* I */
+  int *fds)  /* I */
+
 {
   ji_qs_2_2_X qs_old;
-  
-  if (read(fds, (char*)&qs_old, sizeof(qs_old)) != sizeof(qs_old))
+  char basename[PBS_JOBBASE + 1];
+/*
+  char namebuf1[MAXPATHLEN];
+  char namebuf2[MAXPATHLEN];
+*/
+
+#ifndef PBS_MOM
+  char range[PBS_MAXJOBARRAYLEN*2+2];
+  char parent_id[PBS_MAXSVRJOBID + 1];
+  attribute tempattr;
+  job_array *pa;
+#endif
+
+  basename[PBS_JOBBASE] = '\0';
+ 
+  if (read(*fds, (char*)&qs_old, sizeof(qs_old)) != sizeof(qs_old))
     {
-    return -1;
+    return (-1);
     }
 
   pj->ji_qs.qs_version  = PBS_QS_VERSION;
@@ -149,25 +178,66 @@ int upgrade_2_2_X (job *pj, int fds)
   pj->ji_qs.ji_stime    = qs_old.ji_stime;
   
   strcpy(pj->ji_qs.ji_jobid, qs_old.ji_jobid);
+/*  removed renaming files for recovered jobs...
+  strncpy(pj->ji_qs.ji_fileprefix, pj->ji_qs.ji_jobid, PBS_JOBBASE);  
+*/
   strcpy(pj->ji_qs.ji_fileprefix, qs_old.ji_fileprefix);
   strcpy(pj->ji_qs.ji_queue, qs_old.ji_queue);
   strcpy(pj->ji_qs.ji_destin, qs_old.ji_destin);
+
+
   
   pj->ji_qs.ji_un_type  = qs_old.ji_un_type;
 
   memcpy(&pj->ji_qs.ji_un, &qs_old.ji_un, sizeof(qs_old.ji_un));
-     
-  return 0;
+
+
+#ifndef PBS_MOM
+  array_get_parent_id(pj->ji_qs.ji_jobid, parent_id);
+  if (is_array(parent_id))
+    {
+  
+    pa = get_array(parent_id);
+
+    if (pa == NULL)
+      {
+      return(1);
+      }
+
+    sprintf(range,"0-%d",pa->ai_qs.array_size-1);
+ 
+    clear_attr(&tempattr,&job_attr_def[JOB_ATR_job_array_request]);
+    job_attr_def[JOB_ATR_job_array_request].at_decode(
+       &tempattr,
+       NULL,
+       NULL,
+       range);
+    job_attr_def[JOB_ATR_job_array_request].at_set(
+       &(pj->ji_wattr[JOB_ATR_job_array_request]),
+       &tempattr,
+       SET);
+    }
+#endif
+
+  /* removed code to rename files using new larger PBS_JOBBASE, 
+     TODO GB - if we decide to keep this code out clean up anything else 
+     relaited to renaming files */
+  
+  return (0);
 } 
 
-int upgrade_2_1_X (job *pj, int fds)
-{
+int upgrade_2_1_X (
+
+  job *pj,  /* I */
+  int *fds) /* I */
+
+  {
   ji_qs_2_1_X qs_old;
 
 
-  if (read(fds, (char*)&qs_old, sizeof(qs_old)) != sizeof(qs_old))
+  if (read(*fds, (char*)&qs_old, sizeof(qs_old)) != sizeof(qs_old))
     {
-    return -1;
+    return (-1);
     }
 
   pj->ji_qs.qs_version  = PBS_QS_VERSION;
@@ -188,6 +258,6 @@ int upgrade_2_1_X (job *pj, int fds)
 
   memcpy(&pj->ji_qs.ji_un, &qs_old.ji_un, sizeof(qs_old.ji_un));
 
-  return 0;
-}
+  return (0);
+  }
 

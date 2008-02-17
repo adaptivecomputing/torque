@@ -5,7 +5,7 @@
   is_array() determine if jobnum is actually an array identifyer
   get_array() return array struct for given "parent id"
   array_save() save array struct to disk
-  get_parent_id() return id of parent job if job belongs to a job array
+  array_get_parent_id() return id of parent job if job belongs to a job array
   recover_array_struct() recover the array struct for a job array at restart
   delete_array_struct() free memory used by struct and delete sved struct on disk
  */
@@ -39,6 +39,7 @@
 
 
 extern void  job_clone_wt A_((struct work_task *));
+extern int array_upgrade(job_array *pa, int *fds, int version, int *old_version);
 
 /* global data items used */
 
@@ -166,7 +167,7 @@ int array_save(job_array *pa)
  * and that this will only be called on jobs that actually have or had
  *  a parent job 
  */  
-void get_parent_id(char *job_id, char *parent_id)
+void array_get_parent_id(char *job_id, char *parent_id)
   {
   char *c;
   char *pid;
@@ -206,10 +207,11 @@ job_array *recover_array_struct(char *path)
    job_array *pa;
    array_request_node *rn;
    int fd;
+   int old_version;
    int num_tokens;
    int i;
    
-   
+   old_version = ARRAY_QS_STRUCT_VERSION;
    /* allocate the storage for the struct */
    pa = (job_array*)malloc(sizeof(job_array));
    
@@ -225,10 +227,15 @@ job_array *recover_array_struct(char *path)
 	 
    fd = open(path, O_RDONLY,0);
    
+
+
    /* read the file into the struct previously allocated. 
     */
 
-   if (read(fd, &(pa->ai_qs), sizeof(pa->ai_qs)) != sizeof(pa->ai_qs))
+   if ((read(fd, &(pa->ai_qs), sizeof(pa->ai_qs)) != sizeof(pa->ai_qs) && 
+        pa->ai_qs.struct_version == ARRAY_QS_STRUCT_VERSION) || 
+       (pa->ai_qs.struct_version != ARRAY_QS_STRUCT_VERSION && 
+        array_upgrade(pa, &fd, pa->ai_qs.struct_version, &old_version) != 0))
      {
      sprintf(log_buffer,"unable to read %s", path);
 
@@ -239,17 +246,11 @@ job_array *recover_array_struct(char *path)
      return NULL;
      }
 
-   if (pa->ai_qs.struct_version != ARRAY_QS_STRUCT_VERSION)
-     {
-     /* TODO */
-     }
-     
-   /* check to see if there is any additional info saved in the array file */
-   
+   /* check to see if there is any additional info saved in the array file */   
    /* check if there are any array request tokens that haven't been fully
    processed */
    
-   if (pa->ai_qs.struct_version > 1 )
+   if (old_version > 1)
      {
      if (read(fd, &num_tokens, sizeof(int)) != sizeof(int))
        {
@@ -265,7 +266,7 @@ job_array *recover_array_struct(char *path)
          {
 	 rn = (array_request_node*)malloc(sizeof(array_request_node));
 	 
-	 if (read(fd, &num_tokens, sizeof(int)) != sizeof(int))
+	 if (read(fd, rn, sizeof(array_request_node)) != sizeof(array_request_node))
            {
            
 	   sprintf(log_buffer, "error reading array_request_node from %s", path);
@@ -287,17 +288,23 @@ job_array *recover_array_struct(char *path)
            }
 	   
 	   CLEAR_LINK(rn->request_tokens_link);
-	   append_link(&pa->request_tokens, &rn->request_tokens_link, (void*)rn);
+	   append_link(&pa->request_tokens,&rn->request_tokens_link,(void*)rn);
 	 
 	 }
        
          
      
      }
+  
    
    
      
    close(fd);
+
+   if (old_version != ARRAY_QS_STRUCT_VERSION)
+     {
+     array_save(pa);
+     }
 	 
    /* link the struct into the servers list of job arrays */ 
    append_link(&svr_jobarrays, &pa->all_arrays, (void*)pa);

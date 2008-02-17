@@ -512,14 +512,12 @@ void job_free(
 
 /*
  * job_clone - create a clone of a job for use with job arrays
- *   pj is the job to clone, and taskid is the job array id of the 
- *   newly cloned job
  */
 
 job *job_clone(
 
-  job *poldjob,
-  int  taskid)
+  job *poldjob, /* I */  /* job to clone */
+  int  taskid)  /* I */
   
   {
 
@@ -598,12 +596,7 @@ job *job_clone(
    */
 
   /*
-   * make up new job file name, it is based on the jobid, however the
-   * minimun acceptable file name limit is only 14 character in POSIX, 
-   * so we may have to "hash" the name slightly (if we are running on 
-   * an ancient system). This code was lifted from req_quejob.  If we 
-   * use the same job file, than all off this can be removed, since the 
-   * job file name is copied over with the quick save info.
+   * make up new job file name, it is based on the new jobid 
    */
 
   strncpy(basename, pnewjob->ji_qs.ji_jobid, PBS_JOBBASE);
@@ -659,7 +652,7 @@ job *job_clone(
       {
       if (i == JOB_ATR_errpath || i == JOB_ATR_outpath || i == JOB_ATR_jobname)
         {
-	/* modify the errpath adn outpath */
+	/* modify the errpath and outpath */
 	slen = strlen(poldjob->ji_wattr[i].at_val.at_str);
 	tmpstr = (char*)malloc(sizeof(char) * (slen + PBS_MAXJOBARRAYLEN + 1));
 	sprintf(tmpstr, "%s-%d", poldjob->ji_wattr[i].at_val.at_str, taskid);

@@ -125,7 +125,7 @@ int recov_tmsock(int,job *);
 
 extern int job_qs_upgrade(job *,int *,int);
 #ifndef PBS_MOM
-extern void get_parent_id(char *job_id, char *parent_id);
+extern void array_get_parent_id(char *job_id, char *parent_id);
 extern job_array *get_array(char *id);
 #endif
 /* global data items */
@@ -424,7 +424,8 @@ job *job_recov(
 
   /* read in job quick save sub-structure */
 
-  if (read(fds,(char *)&pj->ji_qs,quicksize) != (ssize_t)quicksize) 
+  if (read(fds,(char *)&pj->ji_qs,quicksize) != (ssize_t)quicksize &&
+      pj->ji_qs.qs_version == PBS_QS_VERSION ) 
     {
     sprintf(log_buffer,"Unable to read %s",
       namebuf);
@@ -467,7 +468,7 @@ job *job_recov(
   /* Does file name match the internal name? */
   /* This detects ghost files */
 
-  pn = strrchr(namebuf, (int)'/') + 1;
+  pn = strrchr(namebuf,(int)'/') + 1;
 
   if (strncmp(pn,pj->ji_qs.ji_fileprefix,strlen(pj->ji_qs.ji_fileprefix)) != 0) 
     {
@@ -522,11 +523,11 @@ job *job_recov(
 
   if (pj->ji_wattr[(int)JOB_ATR_job_array_request].at_flags & ATR_VFLAG_SET)
     {
-    /* job is part of an array.  We need to put a link back to the server job array struct
-       for this array. We also have to link this job into the linked list of jobs belonging 
-       to the array. */
+    /* job is part of an array.  We need to put a link back to the server 
+       job array struct for this array. We also have to link this job into 
+       the linked list of jobs belonging to the array. */
        
-      get_parent_id(pj->ji_qs.ji_jobid, parent_id);
+      array_get_parent_id(pj->ji_qs.ji_jobid, parent_id);
       pa = get_array(parent_id);
       if (strcmp(parent_id, pj->ji_qs.ji_jobid) == 0)
         {
