@@ -3138,14 +3138,11 @@ int TMomFinalizeChild(
       {
       /* Launch job executable with cr_run command so that cr_checkpoint command will work. */
 
-      arg[1] = malloc(strlen(shell)+1);
-
-      strcpy(arg[1],shell);
-
+      arg[3] = arg[2];  /* shuffle up the existing args */
       arg[2] = arg[1];
-      arg[3] = arg[2];
-
-      execve(checkpoint_run_exe_name,arg,vtable.v_envp);
+      arg[1] = malloc(strlen(shell)+1);  /* replace first arg with shell name */
+      strcpy(arg[1], shell);
+      execve(checkpoint_run_exe_name, arg, vtable.v_envp);
       }
     else
       {
