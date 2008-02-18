@@ -398,7 +398,7 @@ struct passwd *check_pwd(
 
 /* BLCR version of restart */
 
-void blcr_restart_job(
+int blcr_restart_job(
   job  *pjob,  /* I */
   char *file)  /* I */
   {
@@ -410,6 +410,7 @@ void blcr_restart_job(
   task *ptask;
   char  buf[1024];
   char  **ap;
+  int child_status;
 
 #define SET_ARG(x) (((x) == NULL) || (*(x) == 0))?"-":(x)
 
@@ -429,7 +430,12 @@ void blcr_restart_job(
       /* launch the script and return success */
 
       pid = fork();
-      if (pid == 0)
+      if (pid < 0)
+        {
+        /* fork failed */
+        return(FAILURE);
+        }
+      else if (pid == 0)
         {
         /* child: execv the script */
 
@@ -454,9 +460,28 @@ void blcr_restart_job(
  
         execv(arg[0],arg);
 
+        return(SUCCESS);  /* Not Reached -- just make the compiler happy */
         }  /* END if (pid == 0) */
+      else if (pid > 0)
+        {
+        /* parent */
+        waitpid(pid,&child_status,0);
+        if (child_status == 0)
+          {
+          sprintf(log_buffer,"Restarted 1 task" );
+
+          LOG_EVENT(
+            PBSEVENT_JOB,
+            PBS_EVENTCLASS_JOB,
+            pjob->ji_qs.ji_jobid,
+            log_buffer);
+
+          return(SUCCESS);
+          }
+        }
       }
     }
+    return(FAILURE);
   }
 
 
@@ -550,6 +575,15 @@ int mom_restart_job(
     }
 
   closedir(dir);
+
+  sprintf(log_buffer,"Restarted %d tasks",
+     tcount);
+
+  LOG_EVENT(
+    PBSEVENT_JOB,
+    PBS_EVENTCLASS_JOB,
+    pjob->ji_qs.ji_jobid,
+    log_buffer);
 
   return(tcount);
 
@@ -1584,21 +1618,11 @@ int TMomFinalizeJob1(
 
     if (pjob->ji_wattr[(int)JOB_ATR_chkptname].at_flags & ATR_VFLAG_SET)
       {
-        blcr_restart_job(pjob,buf);
+        rc = blcr_restart_job(pjob,buf);
         pjob->ji_qs.ji_substate = JOB_SUBSTATE_RUNNING;
-        rc = SUCCESS; /* Probably not always true :) */
       }
     else if ((i = mom_restart_job(pjob,buf)) > 0) /* Iterate over files in checkpoint dir, restarting all files found. */
       {
-      sprintf(log_buffer,"Restarted %d tasks",
-        i);
-
-      LOG_EVENT(
-        PBSEVENT_JOB,
-        PBS_EVENTCLASS_JOB,
-        pjob->ji_qs.ji_jobid,
-        log_buffer);
-
       /* reset mtime so walltime will not include held time */
       /* update to time now minus the time already used	  */
       /* unless it is suspended, see request.c/req_signal() */
