@@ -178,7 +178,10 @@ int svr_recov(
 
     return(-1);
     }
-	
+
+  /* Save the sv_jobidnumber field in case it is set by the attributes. */
+  i = server.sv_qs.sv_jobidnumber;
+ 	
   /* read in server attributes */
 
   if (recov_attr(
@@ -195,6 +198,12 @@ int svr_recov(
 
     return(-1);
     }
+
+  /* Restore the current job number and make it visible in qmgr print server commnad. */
+  server.sv_qs.sv_jobidnumber = i;
+  server.sv_attr[(int)SRV_ATR_NextJobNumber].at_val.at_long = i;
+  server.sv_attr[(int)SRV_ATR_NextJobNumber].at_flags |= ATR_VFLAG_SET|ATR_VFLAG_MODIFY;
+
 
   close(sdb);
 	

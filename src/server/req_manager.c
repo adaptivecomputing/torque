@@ -2464,8 +2464,10 @@ int schiter_chk(
   }  /* END schiter_chk() */
 
 /* nextjobnum_action - makes sure value is sane (>=0)
-   actually updates server.sv_qs.sv_jobidnumber
-   unsets attribute so it is "hidden" in qmgr */
+   Note that there must be special code in svr_recov
+   to prevent the attribute value from clobbering
+   the internal counter server.sv_qs.sv_jobidnumber.
+ */
 int nextjobnum_chk(
 
   attribute *pattr,
@@ -2478,15 +2480,6 @@ int nextjobnum_chk(
     }
   else if (pattr->at_val.at_long >= 0)
     {
-#if 0
-    server.sv_qs.sv_jobidnumber = pattr->at_val.at_long;
-    /* This will cause next_job_number to be undisplayable in qmgr print server.
-     * See encode_l where it returns if the attribute is not set.
-     * Why would this ever be the desired behavior?
-     */
-    pattr->at_flags &= ~ATR_VFLAG_SET;
-    svr_save(&server,SVR_SAVE_FULL);
-#endif
     return(PBSE_NONE);
     }
   else
