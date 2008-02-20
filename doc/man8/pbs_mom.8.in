@@ -421,7 +421,7 @@ exists and is owned by the job owner, it will not be deleted after the job.  If
 the directory already exists and is NOT owned by the job owner, the job start
 will be rejected.
 .IP status_update_time
-specifies (in seconds) how often MOM updates its status information to
+Specifies (in seconds) how often MOM updates its status information to
 pbs_server.  This value should correlate with the server's scheduling interval.
 High values increase the load of pbs_server and the network.  Low values cause
 pbs_server to report stale information.  Default is 45 seconds.
@@ -450,6 +450,12 @@ the format $VAR=$VAL, i.e.,
 .br
 .Ty viraltest=abdd3
 .LP
+.IP xauthpath
+Specifies the path to the xauth binary to enable X11 fowarding.
+.IP ignwalltime
+If set to true, then pbs_mom will ignore walltime limit enforcement.
+.IP mom_host
+Sets the local hostname as used by pbs_mom.
 .SH RESOURCES
 Resource Monitor queries can be made with momctl's -q option to retrieve and
 set pbs_mom options.  Any configured static resource may be retrieved with a
