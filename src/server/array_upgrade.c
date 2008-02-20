@@ -51,10 +51,7 @@ int array_upgrade_v1(job_array *pa, int *fds, int version, int *old_version)
   {
   struct array_info_v1 old_array_info;
   array_request_node *rn;
-/* 
-  char namebuf1[MAXPATHLEN];
-  char namebuf2[MAXPATHLEN];
-*/
+
   if (read(*fds,(char*)&old_array_info,
       sizeof(old_array_info)) != sizeof(old_array_info))
     {
@@ -66,9 +63,7 @@ int array_upgrade_v1(job_array *pa, int *fds, int version, int *old_version)
   pa->ai_qs.num_cloned = old_array_info.num_cloned;
   strcpy(pa->ai_qs.owner,old_array_info.owner);
   strcpy(pa->ai_qs.parent_id,old_array_info.parent_id);
-/* no longer renaming files for recovered jobs/arrays 
-  strncpy(pa->ai_qs.fileprefix, old_array_info.parent_id, PBS_JOBBASE);
-*/
+
   strncpy(pa->ai_qs.fileprefix,old_array_info.fileprefix, PBS_JOBBASE);
   strcpy(pa->ai_qs.submit_host,old_array_info.submit_host);
  
@@ -84,41 +79,7 @@ int array_upgrade_v1(job_array *pa, int *fds, int version, int *old_version)
     append_link(&pa->request_tokens,&rn->request_tokens_link,(void*)rn);
     }
 
-#if 0
-  /* no longer renaming files on upgrade,  
-     TODO: GB remove code if we decide to not do rename files */
-  if(strcmp(pa->ai_qs.fileprefix, old_array_info.fileprefix) != 0)
-    {
-    namebuf1[MAXPATHLEN - 1] = '\0';
-    namebuf2[MAXPATHLEN - 1] = '\0';
 
-    strncpy(namebuf1, path_arrays, MAXPATHLEN-1);
-    strncat(namebuf1, old_array_info.fileprefix, 
-            MAXPATHLEN - strlen(namebuf1) - 1);
-    strncat(namebuf1, ARRAY_FILE_SUFFIX, 
-            MAXPATHLEN - strlen(namebuf1) - 1);
-
-    strncpy(namebuf2, path_arrays, MAXPATHLEN-1);
-    strncat(namebuf2, pa->ai_qs.fileprefix, 
-            MAXPATHLEN - strlen(namebuf2) - 1);
-    strncat(namebuf2, ARRAY_FILE_SUFFIX, 
-            MAXPATHLEN - strlen(namebuf2) - 1);
-
-    if ((strcmp(&namebuf1[strlen(namebuf1) - strlen(ARRAY_FILE_SUFFIX)],
-        ARRAY_FILE_SUFFIX) != 0) ||
-        (strcmp(&namebuf2[strlen(namebuf2) - strlen(ARRAY_FILE_SUFFIX)],
-        ARRAY_FILE_SUFFIX) != 0))
-      {
-      /*
-         maybe we should exit with some kind of internal error? */
-      return 1;
-      }
-
-
-    rename(namebuf1, namebuf2);
-
-    }
-#endif
   return 0;
 
   }

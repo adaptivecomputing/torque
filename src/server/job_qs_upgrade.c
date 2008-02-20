@@ -27,8 +27,8 @@ extern char *path_jobs;
 extern char *path_arrays;
 
 
-int upgrade_2_1_X (job *pj, int *fds);
-int upgrade_2_2_X (job *pj, int *fds);
+int upgrade_2_1_X (job *pj, int fds);
+int upgrade_2_2_X (job *pj, int fds);
 
 
 typedef struct {
@@ -114,14 +114,14 @@ typedef struct {
 int job_qs_upgrade (
 
   job *pj,     /* I */
-  int *fds,    /* I */
+  int fds,    /* I */
   int version) /* I */
 
   {
 
 
   /* reset the file descriptor */
-  if (lseek(*fds, 0, SEEK_SET) != 0)
+  if (lseek(fds, 0, SEEK_SET) != 0)
     {
     sprintf(log_buffer, "unable to reset fds\n");
     log_err(-1,"job_qs_upgrade",log_buffer);
@@ -144,15 +144,12 @@ int job_qs_upgrade (
 int upgrade_2_2_X (
 
   job *pj,   /* I */
-  int *fds)  /* I */
+  int  fds)  /* I */
 
 {
   ji_qs_2_2_X qs_old;
   char basename[PBS_JOBBASE + 1];
-/*
-  char namebuf1[MAXPATHLEN];
-  char namebuf2[MAXPATHLEN];
-*/
+
 
 #ifndef PBS_MOM
   char range[PBS_MAXJOBARRAYLEN*2+2];
@@ -163,7 +160,7 @@ int upgrade_2_2_X (
 
   basename[PBS_JOBBASE] = '\0';
  
-  if (read(*fds, (char*)&qs_old, sizeof(qs_old)) != sizeof(qs_old))
+  if (read(fds, (char*)&qs_old, sizeof(qs_old)) != sizeof(qs_old))
     {
     return (-1);
     }
@@ -178,9 +175,6 @@ int upgrade_2_2_X (
   pj->ji_qs.ji_stime    = qs_old.ji_stime;
   
   strcpy(pj->ji_qs.ji_jobid, qs_old.ji_jobid);
-/*  removed renaming files for recovered jobs...
-  strncpy(pj->ji_qs.ji_fileprefix, pj->ji_qs.ji_jobid, PBS_JOBBASE);  
-*/
   strcpy(pj->ji_qs.ji_fileprefix, qs_old.ji_fileprefix);
   strcpy(pj->ji_qs.ji_queue, qs_old.ji_queue);
   strcpy(pj->ji_qs.ji_destin, qs_old.ji_destin);
@@ -219,9 +213,6 @@ int upgrade_2_2_X (
     }
 #endif
 
-  /* removed code to rename files using new larger PBS_JOBBASE, 
-     TODO GB - if we decide to keep this code out clean up anything else 
-     relaited to renaming files */
   
   return (0);
 } 
@@ -229,13 +220,13 @@ int upgrade_2_2_X (
 int upgrade_2_1_X (
 
   job *pj,  /* I */
-  int *fds) /* I */
+  int  fds) /* I */
 
   {
   ji_qs_2_1_X qs_old;
 
 
-  if (read(*fds, (char*)&qs_old, sizeof(qs_old)) != sizeof(qs_old))
+  if (read(fds, (char*)&qs_old, sizeof(qs_old)) != sizeof(qs_old))
     {
     return (-1);
     }
