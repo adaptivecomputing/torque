@@ -158,7 +158,7 @@ extern void job_nodes A_((job *));
 extern int task_recov A_((job *));
 extern void is_update_stat(int);
 extern void check_state(int);
-
+extern int mom_open_socket_to_jobs_server A_(( job *, char *, int *));
 
 
 /* END external prototypes */

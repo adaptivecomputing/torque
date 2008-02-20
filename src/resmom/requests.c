@@ -175,7 +175,7 @@ extern char PBSNodeMsgBuf[1024];
 extern int  LOGLEVEL;
 
 extern int im_compose A_((int,char *,char *,int,tm_event_t,tm_task_id));
-
+extern int mom_open_socket_to_jobs_server A_(( job *, char *, int *));
 
 /* prototypes */
 
