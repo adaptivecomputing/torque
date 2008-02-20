@@ -331,20 +331,14 @@ void scan_for_exiting()
 
   {
   char         *id = "scan_for_exiting";
-
-  static char noconnect[] =
-    "no contact with server at hostaddr %x, port %d, jobid %s errno %d";
-
   int		found_one = 0;
   job		*nxjob;
   job		*pjob;
   task		*ptask;
   obitent	*pobit;
   int		sock;
-  int		sock3;
-  char		*svrport;
+  int		port;
   char		*cookie;
-  unsigned int	port;
   u_long	gettime		A_((resource *));
   u_long	getsize		A_((resource *));
   task         *task_find	A_((job	*,tm_task_id));
@@ -736,29 +730,10 @@ void scan_for_exiting()
      * +  Send the Job Obit Request (notice).
      */
 
-    svrport = strchr(pjob->ji_wattr[(int)JOB_ATR_at_server].at_val.at_str,(int)':');
-
-    if (svrport)
-      port = atoi(svrport + 1); 
-    else
-      port = default_server_port;
-
-    sock = client_to_svr(pjob->ji_qs.ji_un.ji_momt.ji_svraddr,port,1,NULL);
+    sock = mom_open_socket_to_jobs_server(pjob,id,&port);
 
     if (sock < 0) 
       {
-      sprintf(log_buffer,noconnect,
-        pjob->ji_qs.ji_un.ji_momt.ji_svraddr,
-        port,
-        pjob->ji_qs.ji_jobid, 
-        errno);
-
-      LOG_EVENT(
-        PBSEVENT_DEBUG,
-        PBS_EVENTCLASS_REQUEST,
-        "scan_for_exiting", 
-        log_buffer);
-
       if ((errno == EINPROGRESS) || (errno == ETIMEDOUT) || (errno == EINTR))
         {
         sprintf(log_buffer,"connect to server unsuccessful after 5 seconds - will retry");
@@ -772,23 +747,10 @@ void scan_for_exiting()
       return;
       }  /* END if (sock < 0) */
 
-    if (sock < 3) 
-      {
-      /* needs to be 3 or above for epilogue */
-
-      sock3 = fcntl(sock,F_DUPFD,3);
- 
-      close(sock);
-      } 
-    else
-      {
-      sock3 = sock;
-      }
-			
-    pjob->ji_momhandle = sock3;
+    pjob->ji_momhandle = sock;
 
     add_conn(
-      sock3, 
+      sock, 
       ToServerDIS,
       pjob->ji_qs.ji_un.ji_momt.ji_svraddr,
       port, 
@@ -820,16 +782,16 @@ void scan_for_exiting()
 
     /* send the pre-obit job stat request */
 
-    DIS_tcp_setup(sock3);
+    DIS_tcp_setup(sock);
 
-    if (encode_DIS_ReqHdr(sock3,PBS_BATCH_StatusJob,pbs_current_user) ||
-        encode_DIS_Status(sock3,pjob->ji_qs.ji_jobid,NULL) ||
-        encode_DIS_ReqExtend(sock3,NULL))
+    if (encode_DIS_ReqHdr(sock,PBS_BATCH_StatusJob,pbs_current_user) ||
+        encode_DIS_Status(sock,pjob->ji_qs.ji_jobid,NULL) ||
+        encode_DIS_ReqExtend(sock,NULL))
       { 
       return;
       }
 
-    DIS_tcp_wflush(sock3);
+    DIS_tcp_wflush(sock);
 
     if (found_one++ >= ObitsAllowed)
       {
@@ -865,11 +827,8 @@ int post_epilogue(
   char id[] = "post_epilogue";
 
   int sock;
-  char *svrport;
   int port;
   struct batch_request *preq;
-  static char noconnect[] =
-    "cannot send obit to server at hostaddr=%x:%d, jobid=%s errno=%d";
 
   if (LOGLEVEL >= 2)
     {
@@ -882,14 +841,7 @@ int post_epilogue(
 
   /* open new connection */
 
-  svrport = strchr(pjob->ji_wattr[(int)JOB_ATR_at_server].at_val.at_str,(int)':');
-
-  if (svrport)
-    port = atoi(svrport + 1);
-  else
-    port = default_server_port;
-
-  sock = client_to_svr(pjob->ji_qs.ji_un.ji_momt.ji_svraddr,port,1,NULL);
+  sock = mom_open_socket_to_jobs_server(pjob,id,&port);
 
   if (sock < 0)
     {
@@ -903,7 +855,7 @@ int post_epilogue(
 
       for (retrycount = 0;retrycount < 2;retrycount++)
         {
-        sock = client_to_svr(pjob->ji_qs.ji_un.ji_momt.ji_svraddr,port,1,NULL);
+        sock = mom_open_socket_to_jobs_server(pjob,id,&port);
 
         if (sock >= 0) 
           break;
@@ -912,18 +864,6 @@ int post_epilogue(
 
     if (sock < 0)
       {
-      sprintf(log_buffer,noconnect,
-        pjob->ji_qs.ji_un.ji_momt.ji_svraddr,
-        port,
-        pjob->ji_qs.ji_jobid,
-        errno);
-
-      LOG_EVENT(
-        PBSEVENT_DEBUG,
-        PBS_EVENTCLASS_REQUEST,
-        id,
-        log_buffer);
-
       /* We are trying to send obit, but failed - where is this retried? */
 
       return(1);

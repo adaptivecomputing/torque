@@ -5807,6 +5807,83 @@ void tcp_request(
   }  /* END tcp_request() */
 
 
+/*
+ * The job needs to originate a message to the server.
+ * So we are opening a communication socket to the
+ * server associated with the job.
+ *
+ * Most messages from the mom to the server are replies
+ * to a message originated from the server and use
+ * the socket stream established by the server.
+ * So this routine is rarely called.  It is mostly
+ * used for job obits.
+ *
+ * The server address is saved two ways, as an
+ * string attribute in the job and also as a long.
+ * The long value must somehow get set by the
+ * server as it does not appear to be set anywhere here.
+ * The string address is an IP address or host name with an
+ * optional port number, i.e. format "xx.xx.xx.xx[:xxx]".
+ * All we do here is extract the port number from the
+ * string if it is present.
+ *
+ * What are the implications of the job server address
+ * being hard-coded for a job with regards to high
+ * availability?  If the original server fails, will
+ * the job be able to send the obit's to the alternate
+ * server?
+ *
+ * Note, right now we have to return the port to make
+ * this fit with the existing code which does a add_conn.
+ * However, this seems to bust HA as well and probably
+ * needs to be rethought.
+ */
+
+int mom_open_socket_to_jobs_server( job * pjob, char *caller_id, int *actual_port )
+  {
+  char *svrport;
+  char error_buffer[1024];
+  int sock;
+  int sock3;
+  int port;
+
+  /* See if the server address string has a ':' implying a port number. */
+
+  svrport = strchr(pjob->ji_wattr[(int)JOB_ATR_at_server].at_val.at_str,(int)':');
+  if (svrport)
+    port = atoi(svrport + 1);  /* Yes, use the specified server port number. */
+  else
+    port = default_server_port;  /* No, use the global default server port. */
+  if (actual_port)
+    *actual_port = port;
+
+  sock = client_to_svr(
+    pjob->ji_qs.ji_un.ji_momt.ji_svraddr, /* MAGIC: This is set nowhere explicitly! */
+    port,
+    1,  /* use local socket */
+    error_buffer);
+
+  if (sock < 0)
+    {
+    /* error_buffer is filled in by the library with a message describing the failure */
+
+    log_err(errno,caller_id,error_buffer);
+    }
+
+  /* The epilogue code needs the socket number at 3 or above. */
+  if (sock < 3)
+    {
+    sock3 = fcntl(sock,F_DUPFD,3);
+    close(sock);
+    sock = sock3;
+    }
+
+  return(sock);
+  }
+
+
+
+
 char *find_signal_name( int sig )
   {
   struct sig_tbl *psigt;
