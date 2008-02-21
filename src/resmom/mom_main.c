@@ -5833,13 +5833,9 @@ void tcp_request(
  * the job be able to send the obit's to the alternate
  * server?
  *
- * Note, right now we have to return the port to make
- * this fit with the existing code which does a add_conn.
- * However, this seems to bust HA as well and probably
- * needs to be rethought.
  */
 
-int mom_open_socket_to_jobs_server( job * pjob, char *caller_id, int *actual_port )
+int mom_open_socket_to_jobs_server( job * pjob, char *caller_id, void (*message_handler) A_((int)) )
   {
   char *svrport;
   char error_buffer[1024];
@@ -5854,8 +5850,6 @@ int mom_open_socket_to_jobs_server( job * pjob, char *caller_id, int *actual_por
     port = atoi(svrport + 1);  /* Yes, use the specified server port number. */
   else
     port = default_server_port;  /* No, use the global default server port. */
-  if (actual_port)
-    *actual_port = port;
 
   sock = client_to_svr(
     pjob->ji_qs.ji_un.ji_momt.ji_svraddr, /* MAGIC: This is set nowhere explicitly! */
@@ -5869,13 +5863,37 @@ int mom_open_socket_to_jobs_server( job * pjob, char *caller_id, int *actual_por
 
     log_err(errno,caller_id,error_buffer);
     }
-
-  /* The epilogue code needs the socket number at 3 or above. */
-  if (sock < 3)
+  else
     {
-    sock3 = fcntl(sock,F_DUPFD,3);
-    close(sock);
-    sock = sock3;
+    /* The epilogue code needs the socket number at 3 or above. */
+
+    if (sock < 3)
+      {
+      sock3 = fcntl(sock,F_DUPFD,3);
+      close(sock);
+      sock = sock3;
+      }
+
+    /*
+     * ji_momhandle is used to match reply messages to their job.
+     * Why not use the job number to find the job when we recieve a reply message?
+     */
+
+    pjob->ji_momhandle = sock;
+
+
+    /* Associate a message handler with the connection */
+
+    if (message_handler)
+      {
+      add_conn(
+        sock, 
+        ToServerDIS,
+        pjob->ji_qs.ji_un.ji_momt.ji_svraddr,
+        port, 
+        PBS_SOCK_INET, 
+        message_handler);
+      }
     }
 
   return(sock);

@@ -175,7 +175,7 @@ extern char PBSNodeMsgBuf[1024];
 extern int  LOGLEVEL;
 
 extern int im_compose A_((int,char *,char *,int,tm_event_t,tm_task_id));
-extern int mom_open_socket_to_jobs_server A_(( job *, char *, int *));
+extern int mom_open_socket_to_jobs_server A_(( job *, char *, void (*) A_((int))));
 
 /* prototypes */
 
@@ -2418,8 +2418,10 @@ void req_rerunjob(
     return;
     }
 
-  /* Child process ...  for each standard file generate and */
-  /* send a Job Files request(s).				  */
+  /* Child process ...  for each standard file generate and send a Job Files request(s).
+   * No message handler function is needed because return_file blocks and waits for reply.
+   * This is acceptable because we are a child process, not pbs_mom.
+   */
 
   sock = mom_open_socket_to_jobs_server(pjob,id,NULL);
 

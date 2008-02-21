@@ -158,7 +158,7 @@ extern void job_nodes A_((job *));
 extern int task_recov A_((job *));
 extern void is_update_stat(int);
 extern void check_state(int);
-extern int mom_open_socket_to_jobs_server A_(( job *, char *, int *));
+extern int mom_open_socket_to_jobs_server A_(( job *, char *, void (*) A_((int))));
 
 
 /* END external prototypes */
@@ -337,7 +337,6 @@ void scan_for_exiting()
   task		*ptask;
   obitent	*pobit;
   int		sock;
-  int		port;
   char		*cookie;
   u_long	gettime		A_((resource *));
   u_long	getsize		A_((resource *));
@@ -730,7 +729,7 @@ void scan_for_exiting()
      * +  Send the Job Obit Request (notice).
      */
 
-    sock = mom_open_socket_to_jobs_server(pjob,id,&port);
+    sock = mom_open_socket_to_jobs_server(pjob,id,preobit_reply);
 
     if (sock < 0) 
       {
@@ -746,16 +745,6 @@ void scan_for_exiting()
 
       return;
       }  /* END if (sock < 0) */
-
-    pjob->ji_momhandle = sock;
-
-    add_conn(
-      sock, 
-      ToServerDIS,
-      pjob->ji_qs.ji_un.ji_momt.ji_svraddr,
-      port, 
-      PBS_SOCK_INET, 
-      preobit_reply);
 
     if (LOGLEVEL >= 2)
       {
@@ -827,7 +816,6 @@ int post_epilogue(
   char id[] = "post_epilogue";
 
   int sock;
-  int port;
   struct batch_request *preq;
 
   if (LOGLEVEL >= 2)
@@ -841,7 +829,7 @@ int post_epilogue(
 
   /* open new connection */
 
-  sock = mom_open_socket_to_jobs_server(pjob,id,&port);
+  sock = mom_open_socket_to_jobs_server(pjob,id,obit_reply);
 
   if (sock < 0)
     {
@@ -855,7 +843,7 @@ int post_epilogue(
 
       for (retrycount = 0;retrycount < 2;retrycount++)
         {
-        sock = mom_open_socket_to_jobs_server(pjob,id,&port);
+        sock = mom_open_socket_to_jobs_server(pjob,id,obit_reply);
 
         if (sock >= 0) 
           break;
@@ -864,22 +852,15 @@ int post_epilogue(
 
     if (sock < 0)
       {
-      /* We are trying to send obit, but failed - where is this retried? */
+      /* We are trying to send obit, but failed - where is this retried?
+       * Answer: I think that the main_loop should examine jobs and try
+       * every so often to send the obit.  This would work for recovered
+       * jobs also.
+       */
 
       return(1);
       }
     }
-
-  pjob->ji_momhandle = sock;
-
-  add_conn(
-    sock, 
-    ToServerDIS,
-    pjob->ji_qs.ji_un.ji_momt.ji_svraddr,
-    port, 
-    PBS_SOCK_INET,
-    obit_reply);
-
 
   /* send the job obiturary notice to the server */
 
@@ -943,7 +924,9 @@ int post_epilogue(
 
   /* SUCCESS */
 
-  /* Who closes sock and unsets pjob->ji_momhandle? */
+  /* Who closes sock and unsets pjob->ji_momhandle?
+   * Answer: This gets done in the message reply handler, obit_reply.
+   */
 
   log_record(
     PBSEVENT_DEBUG, 
@@ -958,7 +941,17 @@ int post_epilogue(
 
 
 
-/* Garrick, what does this routine do, and in what context?  What is the correct response if an EOF is detected? */
+/*
+ * preobit_reply
+ *
+ * This function is a message handler that is hooked to a server connection.
+ * The connection is established in scan_for_exiting where all jobs
+ * are examined.  A socket connection to the server is opened, an obit
+ * message is sent to the server, and then at some later time, the server
+ * sends back a reply and we end up here.
+ *
+ * What is the correct response if an EOF is detected?
+ */
 
 static void preobit_reply(
 
@@ -1276,12 +1269,17 @@ static void preobit_reply(
 
 
 
-/* is sock associated with a peer MOM or with pbs_server? */
-
 /*
- * obit_reply - read and process the reply from the server acknowledging
- *	the job obiturary notice.
+ * obit_reply
+ *
+ * This function is a message handler that is hooked to a server connection.
+ * The connection is established in post_epilogue.
+ * A socket connection to the server is opened, a job obiturary notice
+ * message is sent to the server, and then at some later time, the server
+ * sends back a reply and we end up here.
+ *
  */
+
 
 static void obit_reply(
 

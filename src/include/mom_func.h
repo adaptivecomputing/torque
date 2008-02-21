@@ -176,7 +176,7 @@ extern int   task_save(task *) ;
 extern void DIS_rpp_reset A_((void));
 extern void  checkret A_((char **,int));
 extern char *get_job_envvar A_((job *,char *));
-
+extern int   mom_open_socket_to_jobs_server A_((job* pjob, char *id, void (*message_hander) A_((int))));
 
 /* defined in mach-dependant mom_mach.c */
 extern int kill_task A_((struct task *,int,int));
