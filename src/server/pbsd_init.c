@@ -741,7 +741,7 @@ int pbsd_init(
            continue;
 	 
 	 
-	 pa = recover_array_struct(pdirent->d_name);
+	 pa = array_recov(pdirent->d_name);
 	 if (pa == NULL)
 	   {
 	   /* TODO GB */
@@ -978,7 +978,7 @@ int pbsd_init(
     else if (GET_NEXT(pa->array_alljobs) == pa->array_alljobs.ll_struct)
       {
       job_array *temp = (job_array*)GET_NEXT(pa->all_arrays);
-      delete_array_struct(pa);
+      array_delete(pa);
       pa = temp;
       }
     

@@ -15,7 +15,7 @@ extern char *path_arrays;
 
 /* old versions of the struct.  These should have hard coded array sizes
    rather than using #defines that can change between version */
-int array_upgrade_v1(job_array *pa, int *fds, int version, int *old_version);
+int array_upgrade_v1(job_array *pa, int fds, int version, int *old_version);
 
 struct array_info_v1 {
   int  struct_version;
@@ -28,11 +28,11 @@ struct array_info_v1 {
 };
 
 
-int array_upgrade(job_array *pa, int *fds, int version, int *old_version)
+int array_upgrade(job_array *pa, int fds, int version, int *old_version)
   {
 
   /* reset the file descriptor */
-  if (lseek(*fds, 0, SEEK_SET) != 0)
+  if (lseek(fds, 0, SEEK_SET) != 0)
     {
     sprintf(log_buffer, "unable to reset fds\n");
     log_err(-1,"array_upgrade",log_buffer);
@@ -54,12 +54,12 @@ int array_upgrade(job_array *pa, int *fds, int version, int *old_version)
 /* upgrader functions - upgrade from a specific version to the current version
    each time the array structure is updated these functions need to be updated */  
 
-int array_upgrade_v1(job_array *pa, int *fds, int version, int *old_version)
+int array_upgrade_v1(job_array *pa, int fds, int version, int *old_version)
   {
   struct array_info_v1 old_array_info;
   array_request_node *rn;
 
-  if (read(*fds,(char*)&old_array_info,
+  if (read(fds,(char*)&old_array_info,
       sizeof(old_array_info)) != sizeof(old_array_info))
     {
     return -1;

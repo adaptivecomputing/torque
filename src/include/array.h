@@ -59,8 +59,8 @@ int is_array(char *id);
 job_array *get_array(char *id);
 int array_save(job_array *pa);
 void array_get_parent_id(char *job_id, char *parent_id);
-job_array *recover_array_struct(char *path);
-int delete_array_struct(job_array *pa);
+job_array *array_recov(char *path);
+int array_delete(job_array *pa);
 int array_save(job_array *);
 
 
