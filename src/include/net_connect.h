@@ -185,7 +185,6 @@ int  init_network A_((unsigned int,void (*readfunc)()));
 void net_close A_((int));
 int  wait_request(time_t waittime,long *);
 void net_add_close_func A_((int,void(*)()));
-void net_set_type A_((enum conn_type,enum conn_type));
 
 
 struct connection {

@@ -1047,9 +1047,6 @@ int main(
 
     exit(3);
     }
-#if 0
-  net_set_type(Secondary,FromClientDIS);	/* "there" */
-#endif
 
   if (TDoBackground == 1)
     {

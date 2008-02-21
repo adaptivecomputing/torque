@@ -7240,8 +7240,6 @@ int setup_program_environment()
     return(3);
     }
 
-  net_set_type(Secondary,TaskManagerDIS);
-
   /* go into the background and become own session/process group */
 
 #ifndef DEBUG

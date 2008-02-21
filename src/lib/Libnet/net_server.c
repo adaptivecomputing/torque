@@ -134,7 +134,6 @@ static int	max_connection = PBS_NET_MAX_CONNECTIONS;
 static int	num_connections = 0;
 static fd_set	readset;
 static void	(*read_func[2]) A_((int));
-static enum     conn_type settype[2];		/* temp kludge */
 
 pbs_net_t pbs_server_addr;
 
@@ -256,8 +255,6 @@ int init_network(
     {
     return(-1);	/* too many main connections */
     }
-
-  net_set_type(type,FromClientDIS);
 
   /* save the routine which should do the reading on connections	*/
   /* accepted from the parent socket				*/
@@ -828,23 +825,6 @@ int get_connecthost(
 
 
 
-
-
-/*
- * net_set_type() - a temp kludge for supporting two protocols during
- *	the conversion from ASN.1 to PBS DIS
- */
-
-void net_set_type(
-
-  enum conn_type which,
-  enum conn_type type)
-
-  {
-  settype[(int)which] = type;
-
-  return;
-  }  /* END net_set_type() */
 
 
 /* END net_server.c */
