@@ -12,16 +12,19 @@
 
 extern char *path_arrays;
 
+
+/* old versions of the struct.  These should have hard coded array sizes
+   rather than using #defines that can change between version */
 int array_upgrade_v1(job_array *pa, int *fds, int version, int *old_version);
 
 struct array_info_v1 {
   int  struct_version;
   int  array_size;
   int  num_cloned;
-  char owner[16 + 64 + 2]; 
-  char parent_id[8 + 64 +5 + 6 + 2 + 1];
-  char fileprefix[11 + 1];
-  char submit_host[64 +1];
+  char owner[82]; 
+  char parent_id[86];
+  char fileprefix[12];
+  char submit_host[65];
 };
 
 
@@ -37,6 +40,7 @@ int array_upgrade(job_array *pa, int *fds, int version, int *old_version)
     return -1;
     }
 
+  /* call the appropriate upgrader function */
   if (version == 1)
     {
     return array_upgrade_v1(pa, fds, version, old_version);
@@ -46,6 +50,9 @@ int array_upgrade(job_array *pa, int *fds, int version, int *old_version)
     return 1;
     }  
   }
+  
+/* upgrader functions - upgrade from a specific version to the current version
+   each time the array structure is updated these functions need to be updated */  
 
 int array_upgrade_v1(job_array *pa, int *fds, int version, int *old_version)
   {

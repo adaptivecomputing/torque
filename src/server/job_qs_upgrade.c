@@ -140,13 +140,18 @@ int job_qs_upgrade (
     
     
   }
+  
+  
+/* upgrader functions - these upgrde from a specific version of the job ji_qs struct
+   to the _current_ version of the struct.  If the current version changes, these 
+   need to be updated to reflect those changes */  
 
 int upgrade_2_2_X (
 
   job *pj,   /* I */
   int  fds)  /* I */
 
-{
+  {
   ji_qs_2_2_X qs_old;
   char basename[PBS_JOBBASE + 1];
 
@@ -215,7 +220,7 @@ int upgrade_2_2_X (
 
   
   return (0);
-} 
+  } 
 
 int upgrade_2_1_X (
 
