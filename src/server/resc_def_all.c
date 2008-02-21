@@ -88,6 +88,7 @@
 #include <stdio.h>
 #include <stdio.h>
 #include <string.h>
+#include <sys/types.h>
 #include "pbs_ifl.h" 
 #include "list_link.h" 
 #include "attribute.h" 
