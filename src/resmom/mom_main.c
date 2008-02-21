@@ -394,9 +394,9 @@ static struct specials {
     { "nodefile_suffix",     setnodefilesuffix },
     { "nospool_dir_list",    setnospooldirlist },
     { "mom_host",            setmomhost },
-    { "remote_reconfig",     setrreconfig},
-    { "job_umask",           setumask},
-    { "preexec",             setpreexec},
+    { "remote_reconfig",     setrreconfig },
+    { "job_umask",           setumask },
+    { "preexec",             setpreexec },
     { NULL,                  NULL } };
 
 
