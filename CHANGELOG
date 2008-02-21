@@ -22,6 +22,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature
   e - pbs_server/pbs_mom hostname arg is now -H, -h is help
   e - added $umask to pbs_mom config, used for generated output files.
   e - minor pbsnodes overhaul
+  b - fixed memory leak in pbs_server
 
 2.2.1
   b - fix a bug where dependent jobs get put on hold when the previous job has
