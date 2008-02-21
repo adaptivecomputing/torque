@@ -252,16 +252,9 @@ int svr_connect(
 
   if (func != NULL) 
     {
-    if (cntype == ToServerASN)
-      {
-      abort();	/* ASN kludge */	
-      }
-    else
-      {
-      /* connect attempt to XXX? */
+    /* connect attempt to XXX? */
 
-      add_conn(sock,ToServerDIS,hostaddr,port,PBS_SOCK_INET,func);
-      }
+    add_conn(sock,ToServerDIS,hostaddr,port,PBS_SOCK_INET,func);
     }
 
   svr_conn[sock].cn_authen = PBS_NET_CONN_AUTHENTICATED;

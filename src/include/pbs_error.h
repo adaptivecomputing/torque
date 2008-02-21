@@ -118,7 +118,7 @@
 #define PBSE_QUENBIG	15028		/* Queue name too long */
 #define PBSE_NOSUP	15029		/* Feature/function not supported */
 #define PBSE_QUENOEN	15030		/* Cannot enable queue,needs add def */
-#define PBSE_PROTOCOL	15031		/* Protocol (ASN.1) error */
+#define PBSE_PROTOCOL	15031		/* Protocol error */
 #define PBSE_BADATLST	15032		/* Bad attribute list structure */
 #define PBSE_NOCONNECTS	15033		/* No free connections */
 #define PBSE_NOSERVER	15034		/* No server to connect to */
