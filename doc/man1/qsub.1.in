@@ -1015,6 +1015,13 @@ Data staging examples:
 If TORQUE has been compiled with wordexp support, then variables can
 be used in the specified paths.  Currently only $PBS_JOBID, $HOME, and
 $TMPDIR are supported for stagein.
+.RE
+.IP
+.Ty umask=XXX
+.br
+Sets umask used to create stdout and stderr spool files in pbs_mom 
+spool directory
+.br
 .IP "-X" 8
 Enables X11 forwarding.  The DISPLAY environment variable must be set.
 .IP "-z" 8
