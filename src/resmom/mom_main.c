@@ -8365,7 +8365,7 @@ void main_loop()
       MOMCheckRestart();  /* There are no jobs, see if the server needs to be restarted. */
       }
 
-    }      /* END for (;mom_run_state == MOM_RUN_STATE_RUNNING;) */
+    }      /* END while (mom_run_state == MOM_RUN_STATE_RUNNING) */
   }
 
 
