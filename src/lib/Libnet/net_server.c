@@ -264,6 +264,8 @@ int init_network(
 
   read_func[initialized++] = readfunc;
 
+if (port != 0)
+{
   sock = socket(AF_INET,SOCK_STREAM,0);
 
   if (sock < 0) 
@@ -303,9 +305,10 @@ int init_network(
 
     return(-1);
     }
-
+} /* if port != 0 */
 
 #ifdef ENABLE_UNIX_SOCKETS
+if (port == 0) {
   /* setup unix domain socket */
 
   unixsocket=socket(AF_UNIX,SOCK_STREAM,0);
@@ -341,9 +344,11 @@ int init_network(
 
     return(-1);
     }
+} /* if port == 0 */
 #endif /* END ENABLE_UNIX_SOCKETS */
 
 
+if (port != 0) {
   /* allocate a minute's worth of counter structs */
 
   for (i = 0;i < 60;i++)
@@ -351,6 +356,7 @@ int init_network(
     nc_list[i].time = 0;
     nc_list[i].counter = 0;
     }
+}
 
   return (0);
   }  /* END init_network() */
@@ -532,6 +538,9 @@ static void accept_conn(
 
   torque_socklen_t fromsize;
 	
+  from.sin_addr.s_addr=0;
+  from.sin_port=0;
+
   /* update lasttime of main socket */
 
   svr_conn[sd].cn_lasttime = time((time_t *)0);
@@ -777,7 +786,13 @@ int get_connecthost(
   size--;
   addr.s_addr = htonl(svr_conn[sock].cn_addr);
 
-  if ((server_name != NULL) && (addr.s_addr == serveraddr.s_addr))
+  if ((server_name != NULL) && (svr_conn[sock].cn_socktype & PBS_SOCK_UNIX))
+    {
+    /* lookup request is for local server */
+
+    strcpy(namebuf,server_name);
+    }
+  else if ((server_name != NULL) && (addr.s_addr == serveraddr.s_addr))
     {
     /* lookup request is for local server */
 
