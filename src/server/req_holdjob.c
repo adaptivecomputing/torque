@@ -164,9 +164,9 @@ void req_holdjob(
   int		 newstate;
   int		 newsub;
   long		 old_hold;
-  job		*pjob;
-  char		*pset;
-  int		 rc;
+  job    *pjob;
+  char    *pset;
+  int     rc;
 
   pjob = chk_job_request(preq->rq_ind.rq_hold.rq_orig.rq_objname,preq);
 
@@ -177,44 +177,48 @@ void req_holdjob(
 
   /* cannot do anything until we decode the holds to be set */
 
-	if ( (rc=get_hold(&preq->rq_ind.rq_hold.rq_orig.rq_attr, &pset)) != 0) {
-		req_reject(rc,0,preq,NULL,NULL);
-		return;
-	}
-			
-	/* if other than HOLD_u is being set, must have privil */
+  if ( (rc=get_hold(&preq->rq_ind.rq_hold.rq_orig.rq_attr, &pset)) != 0)
+    {
+    req_reject(rc,0,preq,NULL,NULL);
+    return;
+    }
+      
+  /* if other than HOLD_u is being set, must have privil */
 
-	if ((rc = chk_hold_priv(temphold.at_val.at_long, preq->rq_perm)) != 0) {
-			req_reject(rc,0,preq,NULL,NULL);
-			return;
-	}
+  if ((rc = chk_hold_priv(temphold.at_val.at_long, preq->rq_perm)) != 0)
+    {
+      req_reject(rc,0,preq,NULL,NULL);
+      return;
+    }
 
-	hold_val = &pjob->ji_wattr[(int)JOB_ATR_hold].at_val.at_long;
-	old_hold = *hold_val;
-	*hold_val |= temphold.at_val.at_long;
-	pjob->ji_wattr[(int)JOB_ATR_hold].at_flags |= ATR_VFLAG_SET;
-	(void)sprintf(log_buffer, msg_jobholdset, pset, preq->rq_user,
-		      preq->rq_host);
+  hold_val = &pjob->ji_wattr[(int)JOB_ATR_hold].at_val.at_long;
+  old_hold = *hold_val;
+  *hold_val |= temphold.at_val.at_long;
+  pjob->ji_wattr[(int)JOB_ATR_hold].at_flags |= ATR_VFLAG_SET;
+  (void)sprintf(log_buffer, msg_jobholdset, pset, preq->rq_user,
+          preq->rq_host);
 
-	if ( (pjob->ji_qs.ji_state == JOB_STATE_RUNNING) &&
-	     (pjob->ji_wattr[(int)JOB_ATR_chkpnt].at_val.at_str) &&
-	     (*pjob->ji_wattr[(int)JOB_ATR_chkpnt].at_val.at_str != 'n') ) {
-	     
-		/* have MOM attempt checkpointing */
+  if (pjob->ji_qs.ji_state == JOB_STATE_RUNNING)
+    {
+       
+    /* have MOM attempt checkpointing */
 
-		if ((rc = relay_to_mom(pjob->ji_qs.ji_un.ji_exect.ji_momaddr,
-				       preq, post_hold)) != 0) {
-			*hold_val = old_hold;	/* reset to the old value */
-			req_reject(rc, 0, preq,NULL,NULL);
-		} else {
-			pjob->ji_qs.ji_substate = JOB_SUBSTATE_RERUN;
-			pjob->ji_qs.ji_svrflags |=
-					JOB_SVFLG_HASRUN | JOB_SVFLG_CHKPT;
-			job_save(pjob, SAVEJOB_QUICK);
-			LOG_EVENT(PBSEVENT_JOB, PBS_EVENTCLASS_JOB,
-				  pjob->ji_qs.ji_jobid, log_buffer);
-		}
-	} 
+    if ((rc = relay_to_mom(pjob->ji_qs.ji_un.ji_exect.ji_momaddr,
+               preq, post_hold)) != 0)
+      {
+      *hold_val = old_hold;  /* reset to the old value */
+      req_reject(rc, 0, preq,NULL,NULL);
+      } 
+    else
+      {
+      pjob->ji_qs.ji_substate = JOB_SUBSTATE_RERUN;
+      pjob->ji_qs.ji_svrflags |=
+          JOB_SVFLG_HASRUN | JOB_SVFLG_CHKPT;
+      job_save(pjob, SAVEJOB_QUICK);
+      LOG_EVENT(PBSEVENT_JOB, PBS_EVENTCLASS_JOB,
+          pjob->ji_qs.ji_jobid, log_buffer);
+      }
+    } 
   else 
     {
     /* everything went well, may need to update the job state */
@@ -229,7 +233,7 @@ void req_holdjob(
       {
       /* indicate attributes changed     */
 
-      pjob->ji_modified = 1;	 
+      pjob->ji_modified = 1;   
 
       svr_evaljobstate(pjob,&newstate,&newsub,0);
 
@@ -238,8 +242,6 @@ void req_holdjob(
 
     reply_ack(preq);
     }
-
-  return;
   }  /* END req_holdjob() */
 
 
@@ -248,7 +250,7 @@ void req_holdjob(
 /*
  * req_releasejob - service the Release Job Request 
  *
- *	This request clears one or more holds on a job.
+ *  This request clears one or more holds on a job.
  *	As a result, the job might change state.
  */
 
