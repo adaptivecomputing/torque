@@ -321,7 +321,7 @@ if (port == 0) {
 
   if (bind(unixsocket,
             (struct sockaddr *)&unsocname,
-            strlen(unsocname.sun_path) + sizeof(unsocname.sun_family)) < 0) 
+            sizeof(unsocname)) < 0) 
     {
     close(unixsocket);
 
