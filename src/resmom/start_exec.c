@@ -3142,7 +3142,8 @@ int TMomFinalizeChild(
       arg[2] = arg[1];
       arg[1] = malloc(strlen(shell)+1);  /* replace first arg with shell name */
       strcpy(arg[1], shell);
-      execve(checkpoint_run_exe_name, arg, vtable.v_envp);
+
+      execve(checkpoint_run_exe_name,arg,vtable.v_envp);
       }
     else
       {

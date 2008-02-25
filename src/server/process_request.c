@@ -392,15 +392,18 @@ void process_request(
     return;
     }
 
-  sprintf(
-    log_buffer,
-    msg_request,
-    reqtype_to_txt(request->rq_type),
-    request->rq_user,
-    request->rq_host,
-    sfds);
+  if (LOGLEVEL >= 1)
+    {
+    sprintf(
+      log_buffer,
+      msg_request,
+      reqtype_to_txt(request->rq_type),
+      request->rq_user,
+      request->rq_host,
+      sfds);
 
-  LOG_EVENT(PBSEVENT_DEBUG2,PBS_EVENTCLASS_REQUEST,"",log_buffer);
+    LOG_EVENT(PBSEVENT_DEBUG2,PBS_EVENTCLASS_REQUEST,"",log_buffer);
+    }
 
   /* is the request from a host acceptable to the server */
 
