@@ -410,7 +410,6 @@ int blcr_restart_job(
   task *ptask;
   char  buf[1024];
   char  **ap;
-  int child_status;
 
 #define SET_ARG(x) (((x) == NULL) || (*(x) == 0))?"-":(x)
 
@@ -465,6 +464,9 @@ int blcr_restart_job(
       else if (pid > 0)
         {
         /* parent */
+#if 0
+        int child_status;
+
         waitpid(pid,&child_status,0);
         if (child_status == 0)
           {
@@ -478,6 +480,9 @@ int blcr_restart_job(
 
           return(SUCCESS);
           }
+#else
+        return(SUCCESS);
+#endif
         }
       }
     }

@@ -958,7 +958,7 @@ void req_holdjob(
     } 
   else 
     {
-    if ((rc = start_checkpoint(pjob,1,preq)) != 0)
+    if ((rc = start_checkpoint(pjob,1,preq)) != PBSE_NONE)
       req_reject(rc,0,preq,mom_host,"cannot checkpoint job");    /* unable to start chkpt */
     }
 
@@ -3672,7 +3672,6 @@ int start_checkpoint(
   svrattrl *pal;
   pid_t     pid;
   int       rc;
-  int       sock = -1;
   attribute tmph;
   char      name_buffer[1024];
 
@@ -3683,15 +3682,15 @@ int start_checkpoint(
 
     /* Build the name of the checkpoint file before forking to the child */
 
-    sprintf(name_buffer, "ckpt.%s.%d",
-      pjob->ji_qs.ji_jobid,
-      (int)time(0) );
-    decode_str(&pjob->ji_wattr[(int)JOB_ATR_chkptname],NULL,NULL,name_buffer);
-    pjob->ji_wattr[(int)JOB_ATR_chkptname].at_flags =
-      ATR_VFLAG_SET | ATR_VFLAG_MODIFY | ATR_VFLAG_SEND;
+  sprintf(name_buffer, "ckpt.%s.%d",
+    pjob->ji_qs.ji_jobid,
+    (int)time(0) );
+  decode_str(&pjob->ji_wattr[(int)JOB_ATR_chkptname],NULL,NULL,name_buffer);
+  pjob->ji_wattr[(int)JOB_ATR_chkptname].at_flags =
+    ATR_VFLAG_SET | ATR_VFLAG_MODIFY | ATR_VFLAG_SEND;
 
 
-    if (!(pjob->ji_wattr[(int)JOB_ATR_chkptdir].at_flags & ATR_VFLAG_SET))
+  if (!(pjob->ji_wattr[(int)JOB_ATR_chkptdir].at_flags & ATR_VFLAG_SET))
     {
     /* No dir specified, use the default job checkpoint directory /var/spool/torque/checkpoint/42.host.domain.CK */
 
@@ -3704,10 +3703,7 @@ int start_checkpoint(
 
   /* now set up as child of MOM */
 
-  if (preq != NULL)
-    sock = preq->rq_conn;
-
-  pid = fork_me(sock);
+  pid = fork_me((preq == NULL) ? -1 : preq->rq_conn);
 
   if (pid > 0) 
     {
@@ -3726,15 +3722,9 @@ int start_checkpoint(
     } 
   else if (pid < 0) 
     {
-    char tmpLine[1024];
-
     /* error on fork */
 
-    sprintf(tmpLine,"cannot fork child process for checkpoint, errno=%d",
-      errno);
-
-    log_err(-1,id,tmpLine);
-
+    log_err(errno,id,"cannot fork child process for checkpoint");
     return(PBSE_SYSTEM);	
     } 
   else 
@@ -3774,7 +3764,7 @@ int start_checkpoint(
     exit(rc);	/* zero exit tells main chkpnt ok */
     }
 
-  return(0);		/* parent return */
+  return(PBSE_NONE);		/* parent return */
   }  /* END start_checkpoint() */
 
 #endif	/* MOM_CHECKPOINT */

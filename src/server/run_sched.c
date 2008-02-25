@@ -170,12 +170,14 @@ static int contact_sched(
 
     bad_node_warning(pbs_scheduler_addr);
 
+#if 0
     sprintf(tmpLine,"%s - port %d %s",
       msg_sched_nocall,
       pbs_scheduler_port,
       EMsg);
     
     log_err(errno,id,tmpLine);
+#endif
 
     return(-1);
     }
