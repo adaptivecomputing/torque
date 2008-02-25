@@ -130,6 +130,7 @@
 #include	<ufs/ufs/quota.h>
 #include	<net/if.h>
 #include	<ifaddrs.h>
+#include	<signal.h>
 
 #include	<mach/mach_init.h>
 #include	<mach/vm_map.h>

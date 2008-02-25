@@ -199,6 +199,7 @@ void scan_for_terminated()
 	/* must be done before we reap the zombies, else we lose the info */
 
 	termin_child = 0;
+        ptask = NULL;
 
 	if (mom_get_sample() == PBSE_NONE) {
 		pjob = (job *)GET_NEXT(svr_alljobs);
