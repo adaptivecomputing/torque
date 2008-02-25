@@ -311,7 +311,7 @@ void req_modifyjob(
 
   /* if a resource limit changed for a running job, send to MOM */
 
-/*  if (sendmom) */
+  if (sendmom)
     {
     if ((rc = relay_to_mom(
            pjob->ji_qs.ji_un.ji_exect.ji_momaddr,
