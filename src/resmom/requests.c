@@ -3495,6 +3495,8 @@ int mom_checkpoint_job(
 
   /* Checkpoint successful */
 
+  pjob->ji_qs.ji_svrflags |= JOB_SVFLG_CHKPT;
+
   job_save(pjob,SAVEJOB_FULL);  /* to save resources_used so far */
 
   sprintf(log_buffer,"checkpointed to %s", 
@@ -3668,9 +3670,9 @@ int start_checkpoint(
   struct batch_request *preq)	/* may be null */
 
   {
-  static char id[] = "start_checkpoint";
+/*  static char id[] = "start_checkpoint"; */
   svrattrl *pal;
-  pid_t     pid;
+/*  pid_t     pid; */
   int       rc;
   attribute tmph;
   char      name_buffer[1024];
@@ -3700,7 +3702,7 @@ int start_checkpoint(
     decode_str(&pjob->ji_wattr[(int)JOB_ATR_chkptdir],NULL,NULL,name_buffer);
     }
 
-
+#if 0
   /* now set up as child of MOM */
 
   pid = fork_me((preq == NULL) ? -1 : preq->rq_conn);
@@ -3727,7 +3729,8 @@ int start_checkpoint(
     log_err(errno,id,"cannot fork child process for checkpoint");
     return(PBSE_SYSTEM);	
     } 
-  else 
+  else
+#endif
     {
     /* child - does the checkpoint */
 
@@ -3760,8 +3763,11 @@ int start_checkpoint(
 
     if ((rc == 0) && (hok == 0))
       rc = site_mom_postchk(pjob,(int)tmph.at_val.at_long);
-
+#if 0
     exit(rc);	/* zero exit tells main chkpnt ok */
+#else
+  return(PBSE_NONE);		/* parent return */
+#endif
     }
 
   return(PBSE_NONE);		/* parent return */

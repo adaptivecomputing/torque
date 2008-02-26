@@ -422,6 +422,12 @@ static void process_hold_reply(
     {
     /* record that MOM has a checkpoint file */
 
+    /* Stupid PBS_CHKPT_MIGRATE is defined as zero therefore this code will never fire.
+     * And if these flags are not set, start_exec will not try to run the job from
+     * the checkpoint image file.
+     */
+
+    pjob->ji_qs.ji_svrflags |= JOB_SVFLG_CHKPT;
     if (preq->rq_reply.brp_auxcode)  /* chkpt can be moved */
       {
       pjob->ji_qs.ji_svrflags &= ~JOB_SVFLG_CHKPT;

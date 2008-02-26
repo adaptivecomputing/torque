@@ -307,6 +307,14 @@ void req_quejob(
         pj->ji_qs.ji_un.ji_newt.ji_fromsock = sock;
         pj->ji_qs.ji_un.ji_newt.ji_fromaddr = get_connectaddr(sock);
         pj->ji_qs.ji_un.ji_newt.ji_scriptsz = 0;
+
+        /* Per Eric R., req_mvjobfile was giving error in open_std_file, showed up as fishy error message */
+        if (pj->ji_grpcache != NULL)
+          {
+          free(pj->ji_grpcache);
+          pj->ji_grpcache = NULL;
+          }
+
         } 
       else 
         {

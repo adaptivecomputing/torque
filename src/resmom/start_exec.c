@@ -396,6 +396,45 @@ struct passwd *check_pwd(
   }  /* END check_pwd() */
 
 
+
+
+/*
+ * replace a given file descriptor with the new file path
+ *
+ * This routine exits on error!  Only used by the BLCR restart code, and
+ * there's really no good way to recover from an error in restart.
+ */
+static int fdreopen(const char *path, const char mode, int fd)
+{
+  int newfd, dupfd;
+ 
+  close(fd);
+ 
+  newfd = open("/dev/null", O_RDONLY);
+  if (newfd < 0)
+  {
+    perror("open");
+    goto abort;
+  }
+ 
+  dupfd = dup2(newfd, fd);
+  if (newfd < 0)
+  {
+    perror("dup2");
+    goto abort;
+  }
+
+  close(newfd);
+
+/* out: */
+  return dupfd;
+
+abort:
+  exit(-1);
+}
+
+
+
 /* BLCR version of restart */
 
 int blcr_restart_job(
@@ -456,7 +495,29 @@ int blcr_restart_job(
           strcat(buf, *ap);
           }
         log_err(-1,id,buf);
+
+        log_close(0);
+
+        if (lockfds >= 0)
+          {
+          close(lockfds);
+          lockfds = -1;
+          }
+
+        net_close(-1);
  
+        fdreopen("/dev/null", O_RDONLY, 0);
+        fdreopen("/dev/null", O_WRONLY, 1);
+        fdreopen("/dev/null", O_WRONLY, 2);
+
+        /* set us up with a new session */
+        pid = setsid();
+        if (pid < 0)
+          {
+          perror("setsid");
+          exit(-1);
+          }
+
         execv(arg[0],arg);
 
         return(SUCCESS);  /* Not Reached -- just make the compiler happy */
@@ -464,7 +525,12 @@ int blcr_restart_job(
       else if (pid > 0)
         {
         /* parent */
+
+        /* Apparently torque doesn't do anything with the session ID that we pass back here... */
+        ptask->ti_qs.ti_sid = pid;
+
 #if 0
+        /* This does not work, we block and the pbs_server times out. */
         int child_status;
 
         waitpid(pid,&child_status,0);
