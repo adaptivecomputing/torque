@@ -526,11 +526,12 @@ int blcr_restart_job(
         {
         /* parent */
 
-        /* Apparently torque doesn't do anything with the session ID that we pass back here... */
-        ptask->ti_qs.ti_sid = pid;
+        ptask->ti_qs.ti_sid = pid;  /* Apparently torque doesn't do anything with the session ID that we pass back here... */
+        ptask->ti_qs.ti_status = TI_STATE_RUNNING;
+        task_save(ptask);
 
 #if 0
-        /* This does not work, we block and the pbs_server times out. */
+        /* This does not work, waitpid blocks and the pbs_server times out. */
         int child_status;
 
         waitpid(pid,&child_status,0);
