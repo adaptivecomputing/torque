@@ -2150,7 +2150,7 @@ int determine_umask(
 
     if (LOGLEVEL >= 7)
       {
-      sprintf(log_buffer,"Using $job_umask value of %o", 
+      sprintf(log_buffer,"Using $job_output_file_umask value of %o", 
             UMaskVal);
 
       log_err(-1,id,log_buffer);
