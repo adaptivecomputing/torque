@@ -656,8 +656,10 @@ void req_quejob(
     if (!(pj->ji_wattr[(int)JOB_ATR_chkptdir].at_flags & ATR_VFLAG_SET) &&
          (pque->qu_attr[(int)QE_ATR_ChkptDir].at_flags & ATR_VFLAG_SET))
       {
-      pj->ji_wattr[(int)JOB_ATR_chkptdir].at_val = pque->qu_attr[(int)QE_ATR_ChkptDir].at_val;
-      pj->ji_wattr[(int)JOB_ATR_chkptdir].at_flags |= ATR_VFLAG_SET;
+      job_attr_def[(int)JOB_ATR_chkptdir].at_set(
+        &pj->ji_wattr[(int)JOB_ATR_chkptdir],
+        &pque->qu_attr[(int)QE_ATR_ChkptDir],
+        SET);
       }
 
 #ifdef PNOT
