@@ -1491,7 +1491,7 @@ void init_abort_jobs(
 #if	MOM_CHECKPOINT == 1
   char           path[MAXPATHLEN + 1];
   char           oldp[MAXPATHLEN + 1];
-  struct stat    statbuf;
+/*  struct stat    statbuf; */
   extern char   *path_checkpoint;
 #endif
 
@@ -1587,6 +1587,13 @@ void init_abort_jobs(
     strcpy(oldp,path);
     strcat(oldp,".old");
 
+#if 0
+    /*
+     * This is if 0'ed.
+     * If the directory exists it is fine.
+     * Checkpoint names have a time suffix and can occupy
+     * the same directory space.
+     */
     if (stat(oldp,&statbuf) == 0) 
       {
       remtree(path);
@@ -1594,6 +1601,7 @@ void init_abort_jobs(
       if (rename(oldp,path) == -1)
         remtree(oldp);
       }
+#endif
 #endif  /* END MOM_CHECKPOINT == 1 */
 
     /*

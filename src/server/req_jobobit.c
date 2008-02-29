@@ -1633,10 +1633,12 @@ void req_jobobit(
   int		  newsubst;
   char		 *pc;
   job		 *pjob;
+  char        jobid[PBS_MAXSVRJOBID+1];
   struct work_task *ptask;
   svrattrl	 *patlist;
   unsigned int    dummy;
 
+  strcpy(jobid, preq->rq_ind.rq_jobobit.rq_jid);  /* This will be needed later for logging after preq is freed. */
   pjob = find_job(preq->rq_ind.rq_jobobit.rq_jid);
 
   if ((pjob == NULL) ||
@@ -1668,7 +1670,7 @@ void req_jobobit(
     log_event(
       PBSEVENT_ERROR|PBSEVENT_JOB,
       PBS_EVENTCLASS_JOB,
-      preq->rq_ind.rq_jobobit.rq_jid,
+      jobid,
       log_buffer);
 
     return;
@@ -1689,14 +1691,14 @@ void req_jobobit(
       /* NOTE:  was logged w/msg_obitnojob */
 
       sprintf(log_buffer,"obit received for job %s from host %s with bad state (state: %s)",
-        preq->rq_ind.rq_jobobit.rq_jid,
+        jobid,
         preq->rq_host, 
         PJobState[pjob->ji_qs.ji_state]);
 
       log_event(
         PBSEVENT_ERROR|PBSEVENT_JOB,
         PBS_EVENTCLASS_JOB,
-        preq->rq_ind.rq_jobobit.rq_jid,
+        jobid,
         log_buffer);
 
       bad = PBSE_BADSTATE;
@@ -1751,7 +1753,7 @@ void req_jobobit(
     log_event(
       PBSEVENT_ERROR|PBSEVENT_JOB,
       PBS_EVENTCLASS_JOB,
-      preq->rq_ind.rq_jobobit.rq_jid,
+      jobid,
       "obit received - updating final job usage info");
     }
 
@@ -1956,7 +1958,7 @@ void req_jobobit(
     log_event(
       PBSEVENT_ERROR|PBSEVENT_JOB,
       PBS_EVENTCLASS_JOB,
-      preq->rq_ind.rq_jobobit.rq_jid,
+      jobid,
       log_buffer);
     }
 
@@ -2019,7 +2021,7 @@ void req_jobobit(
         log_event(
           PBSEVENT_ERROR|PBSEVENT_JOB,
           PBS_EVENTCLASS_JOB,
-          preq->rq_ind.rq_jobobit.rq_jid,
+          jobid,
           "on_job_exit task assigned to job");
         }
       }
@@ -2068,7 +2070,7 @@ void req_jobobit(
         log_event(
           PBSEVENT_ERROR|PBSEVENT_JOB,
           PBS_EVENTCLASS_JOB,
-          preq->rq_ind.rq_jobobit.rq_jid,
+          jobid,
           "on_job_rerun task assigned to job");
         }
       }
@@ -2084,7 +2086,7 @@ void req_jobobit(
     log_event(
       PBSEVENT_ERROR|PBSEVENT_JOB,
       PBS_EVENTCLASS_JOB,
-      preq->rq_ind.rq_jobobit.rq_jid,
+      jobid,
       "req_jobobit completed");
     }
 

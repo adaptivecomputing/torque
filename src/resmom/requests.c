@@ -3393,12 +3393,12 @@ int mom_checkpoint_job(
   int  abort) /* I */
 
   {
-  int		hasold = 0;
+/*  int		hasold = 0; */
   int		sesid = -1;
   int		ckerr;
-  struct stat	statbuf;
+/*  struct stat	statbuf; */
   char		path[MAXPATHLEN + 1];
-  char		oldp[MAXPATHLEN + 1];
+/*  char		oldp[MAXPATHLEN + 1]; */
   char		file[MAXPATHLEN + 1]; 
   char         *name;
   int		filelen;
@@ -3411,6 +3411,8 @@ int mom_checkpoint_job(
   strcat(path,pjob->ji_qs.ji_fileprefix);
   strcat(path,JOB_CKPT_SUFFIX);
 
+#if 0
+  /* Don't mess with existing checkpoints. */
   if (stat(path,&statbuf) == 0) 
     {
     strcpy(oldp,path);   /* file already exists, rename it */
@@ -3424,9 +3426,9 @@ int mom_checkpoint_job(
 
     hasold = 1;
     }
+#endif
 
-  if (mkdir(path,0755) == -1)
-    goto fail;
+  mkdir(path,0755);
 
   filelen = strlen(path);
 
@@ -3508,8 +3510,10 @@ int mom_checkpoint_job(
     pjob->ji_qs.ji_jobid, 
     log_buffer);
 
+#if 0
   if (hasold) 
     remtree(oldp);
+#endif
 
   return(PBSE_NONE);
 
@@ -3542,7 +3546,7 @@ fail:
     }
 
   /* Clean up files */
-
+#if 0
   remtree(path);
 
   if (hasold) 
@@ -3550,6 +3554,7 @@ fail:
     if (rename(oldp,path) == -1)
       pjob->ji_qs.ji_svrflags &= ~JOB_SVFLG_CHKPT;
     }
+#endif
 
   if (ckerr == EAGAIN)
     {
