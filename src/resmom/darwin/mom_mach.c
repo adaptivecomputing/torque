@@ -78,7 +78,7 @@
 */
 
 /*
-**	System dependent code to gather information for a Sun machine.
+**	System dependent code to gather information for an OS X/Darwin machine.
 **
 **	Resources known by this code:
 **		cput		cpu time for a pid or session
@@ -163,15 +163,24 @@
 /*
 ** external functions and data
 */
-extern	struct	config		*search A_((struct config *, char *));
-extern	struct	rm_attribute	*momgetattr A_((char *));
-extern	int			rm_errno;
-extern	unsigned	int	reqnum;
+extern	struct  config *search A_((struct config *, char *));
+extern	struct  rm_attribute *momgetattr A_((char *));
+extern	int     rm_errno;
+extern	unsigned int  reqnum;
 extern	double	cputfactor;
-extern	double	wallfactor;
+extern	double  wallfactor;
 extern  int     LOGLEVEL;
 extern  long    system_ncpus;
 extern  int     ignwalltime;
+extern	char   *ret_string;
+extern	char    extra_parm[];
+extern	char    no_parm[];
+extern  char   *msg_momsetlim;
+
+extern char *loadave	A_((struct rm_attribute *attrib));
+extern char *nullproc	A_((struct rm_attribute *attrib));
+
+extern int errno;
 
 /*
 ** local functions
@@ -185,11 +194,10 @@ static char *ncpus	A_((struct rm_attribute *attrib));
 static char *totmem	A_((struct rm_attribute *attrib));
 static char *availmem	A_((struct rm_attribute *attrib));
 static char *netload	A_((struct rm_attribute *attrib));
-extern char *loadave	A_((struct rm_attribute *attrib));
-extern char *nullproc	A_((struct rm_attribute *attrib));
-
-int	get_tinfo_by_pid  A_((struct task_basic_info *t_info, unsigned int pid));
-int	get_time_info_by_pid  A_((struct task_thread_times_info *t_info, unsigned int pid));
+static int   get_tinfo_by_pid  A_((struct task_basic_info *t_info, 
+                                   unsigned int pid));
+static int   get_time_info_by_pid  A_((struct task_thread_times_info *t_info, 
+                                       unsigned int pid));
 
 
 struct	config	dependent_config[] = {
@@ -219,13 +227,10 @@ time_t			wait_time = 10;
 struct	kinfo_proc	*proc_tbl = NULL;
 pid_t			*sess_tbl = NULL;
 int			nproc = 0;
-extern	char		*ret_string;
-extern	char		extra_parm[];
-extern	char		no_parm[];
 char			nokernel[] = "kernel not available";
 char			noproc[] = "process %d does not exist";
 static  int		nncpus = 0;
-int		gpagesize;
+static  int		gpagesize;
 
 void dep_initialize()
 
@@ -299,9 +304,7 @@ extern	time_t			time_now;
  *	to receive the decoded value.  It returns a PBS error code, and the
  *	decoded value in the unsigned long integer.
  *
- *	For SunOS,
  *
- *		sizeof(word) = sizeof(int)
  */
 
 static int getsize(pres, ret)
@@ -593,37 +596,36 @@ static int overmem_proc(
 
 
 
-extern char *msg_momsetlim;
 
 /*
  * Internal error routine
  */
-int error(string, value)
-    char	*string;
-    int		value;
-{
-	int		i = 0;
-	char		*message;
+int error(
+  char *string, 
+  int value)
+  {
+  int		i = 0;
+  char		*message;
 
-	assert(string != NULL);
-	assert(*string != '\0');
-	assert(value > PBSE_);			/* minimum PBS error number */
-	assert(value <= PBSE_NOSYNCMSTR);	/* maximum PBS error number */
-	assert(pbs_err_to_txt[i].err_no != 0);
+  assert(string != NULL);
+  assert(*string != '\0');
+  assert(value > PBSE_);		/* minimum PBS error number */
+  assert(value <= PBSE_NOSYNCMSTR);	/* maximum PBS error number */
+  assert(pbs_err_to_txt[i].err_no != 0);
 
-	do {
-		if (pbs_err_to_txt[i].err_no == value)
-			break;
-	} while (pbs_err_to_txt[++i].err_no != 0);
+  do {
+    if (pbs_err_to_txt[i].err_no == value)
+    break;
+  } while (pbs_err_to_txt[++i].err_no != 0);
 
-	assert(pbs_err_to_txt[i].err_txt != NULL);
-	message = *pbs_err_to_txt[i].err_txt;
-	assert(message != NULL);
-	assert(*message != '\0');
-	(void)fprintf(stderr, msg_momsetlim, string, message);
-	(void)fflush(stderr);
+  assert(pbs_err_to_txt[i].err_txt != NULL);
+  message = *pbs_err_to_txt[i].err_txt;
+  assert(message != NULL);
+  assert(*message != '\0');
+  (void)fprintf(stderr, msg_momsetlim, string, message);
+  (void)fflush(stderr);
 
-	return (value);
+  return (value);
 }
 
 /*
@@ -1427,71 +1429,70 @@ getprocs()
 }
 
 
+char	*cput_job(
+  pid_t jobid)
+  {
+  char			*id = "cput_job";
+  int			i;
+  unsigned long		cputime;
+  time_value_t   total_time;
+  time_value_t   system_time;
+  task_basic_info_data_t     mach_task_stats;
+  task_thread_times_info_data_t   mach_time_info;
+  int ret;
 
-
-char	*
-cput_job(jobid)
-pid_t	jobid;
-{
-	char			*id = "cput_job";
-	int			i;
-	unsigned long		cputime;
- 	time_value_t   total_time;
- 	time_value_t   system_time;
- 	task_basic_info_data_t     mach_task_stats;
- 	task_thread_times_info_data_t   mach_time_info;
-   int ret;
-
-	if (getprocs() == 0) {
-		rm_errno = RM_ERR_SYSTEM;
-		return NULL;
-	}
+  if (getprocs() == 0) 
+    {
+    rm_errno = RM_ERR_SYSTEM;
+    return NULL;
+    }
 	
-	cputime = 0;
+  cputime = 0;
 	
-	for (i=0; i<nproc; i++)
-	  {
-     struct kinfo_proc	*pp = &proc_tbl[i];
+  for (i=0; i<nproc; i++)
+    {
+    struct kinfo_proc	*pp = &proc_tbl[i];
 	
-     if (jobid != sess_tbl[i])
-       continue;
+    if (jobid != sess_tbl[i])
+      continue;
 
-     cputime += tvk(pp->kp_proc.p_rtime);
+    cputime += tvk(pp->kp_proc.p_rtime);
 
-     if (pp->kp_proc.p_ru == NULL) 
-       {
-       ret = get_tinfo_by_pid(&mach_task_stats, pp->kp_proc.p_pid);
-       if (ret != 0)
-         {
-         continue;
-         }
+    if (pp->kp_proc.p_ru == NULL) 
+      {
+      ret = get_tinfo_by_pid(&mach_task_stats, pp->kp_proc.p_pid);
+      if (ret != 0)
+        {
+        continue;
+        }
          
              
-       total_time =  mach_task_stats.user_time;
-       system_time = mach_task_stats.system_time;
-       time_value_add(&total_time,&system_time)
+      total_time =  mach_task_stats.user_time;
+      system_time = mach_task_stats.system_time;
+      time_value_add(&total_time,&system_time)
 
-       ret = get_time_info_by_pid(&mach_time_info, pp->kp_proc.p_pid);
-       if (ret == 0)
-         {
-         time_value_add(&total_time, &(mach_time_info.user_time));
-         time_value_add(&total_time, &(mach_time_info.system_time));
-         }
+      ret = get_time_info_by_pid(&mach_time_info, pp->kp_proc.p_pid);
+      if (ret == 0)
+        {
+        time_value_add(&total_time, &(mach_time_info.user_time));
+        time_value_add(&total_time, &(mach_time_info.system_time));
+        }
       
-       cputime += total_time.seconds;
-		 }
-     else 
-		 {
-       cputime += pp->kp_proc.p_ru->ru_utime.tv_sec + pp->kp_proc.p_ru->ru_stime.tv_sec;      
-		 }
-	  DBPRT(("%s: ses %d pid %d cputime %lu\n", id,
-				jobid, pp->kp_proc.p_pid, cputime))
+      cputime += total_time.seconds;
+      }
+    else 
+      {
+      cputime += pp->kp_proc.p_ru->ru_utime.tv_sec + 
+                 pp->kp_proc.p_ru->ru_stime.tv_sec;      
+      }
+    DBPRT(("%s: ses %d pid %d cputime %lu\n", id,
+           jobid, pp->kp_proc.p_pid, cputime))
 
-	}
+    }
 
-	sprintf(ret_string, "%.2f", (double)cputime * cputfactor);
-  
+  sprintf(ret_string, "%.2f", (double)cputime * cputfactor);  
   return(ret_string);
+
   }
 
 
@@ -2140,7 +2141,6 @@ static char *totmem(
   struct xsw_usage  swap;
 #endif /* VM_SWAPUSAGE */
 
-  extern int        errno;
 
   if (attrib != NULL)
     {
@@ -2163,9 +2163,7 @@ static char *totmem(
     {
     sprintf(log_buffer,"sysctl failed with errno %d", 
       errno);
-
     log_err(-1,id,log_buffer);
-
     return(NULL);
     }
 #else /* HW_MEMSIZE */
@@ -2173,9 +2171,7 @@ static char *totmem(
     {
     sprintf(log_buffer,"sysctl failed with errno %d", 
       errno);
-
     log_err(-1,id,log_buffer);
-
     return(NULL);
     }
 #endif /* HW_MEMSIZE */
@@ -2230,13 +2226,12 @@ static char *availmem(
   char *id = "availmem";
   struct vm_statistics stat;
   mach_msg_type_number_t count = HOST_VM_INFO_COUNT;
-  uint64_t         mem = 0;
+  uint64_t mem = 0;
 #ifdef VM_SWAPUSAGE
-  int              mib[2];
-  size_t           len;
+  int      mib[2];
+  size_t   len;
   struct xsw_usage swap;
 #endif /* VM_SWAPUSAGE */
-  extern int errno;
 
   if (attrib != NULL)
     {
@@ -2259,9 +2254,7 @@ static char *availmem(
     {
     sprintf(log_buffer,"sysctl failed with errno %d",
       errno);
-
     log_err(-1,id,"log_buffer");
-
     return(NULL);
     }
 	
@@ -2272,30 +2265,23 @@ static char *availmem(
   /* (not implemented) */
 #endif /* VM_SWAPUSAGE */
 
-  if (host_statistics(mach_host_self(),HOST_VM_INFO,(host_info_t)&stat,&count) != KERN_SUCCESS)
+  if (host_statistics(mach_host_self(),HOST_VM_INFO,(host_info_t)&stat,
+                      &count) != KERN_SUCCESS)
     {
     log_err(-1,id,"host_statistics failed");
-
     rm_errno = RM_ERR_SYSTEM;
-
     return(NULL);
     }
-
-  /* assume 4k blocks - NOTE: this should be looked up */
 
   mem += (uint64_t)stat.free_count * gpagesize;
 
   if (LOGLEVEL >= 6)
     {
-    sprintf(log_buffer,"%s: free mem=%lu\n", 
-      id, 
-      (unsigned long)mem);
- 
+    sprintf(log_buffer,"%s: free mem=%lu\n", id, (unsigned long)mem);
     log_record(PBSEVENT_SYSTEM,0,id,log_buffer);
     }
 
-  sprintf(ret_string,"%lukb", 
-    (unsigned long)(mem / 1024)); /* KB */
+  sprintf(ret_string,"%lukb", (unsigned long)(mem / 1024)); /* KB */
 
   return(ret_string);
   }  /* END availmem() */
@@ -2304,9 +2290,10 @@ static char *availmem(
 
 
 /*
- *  netload.  right now this just sums the number of bytes sent/recieved on an interface
- *  this appears to be what netload in linux/res_mom.c does, but I think it would make
- *  more sense to report bytes per second instead.
+ *  netload.  right now this just sums the number of bytes sent/recieved on an 
+ *  interface this appears to be what netload in linux/res_mom.c does, but  
+ *  maybe we should be doing something different, I'm not really sure what 
+ *  netload is supposed to be
  */
 
 static char *netload(
@@ -2703,216 +2690,240 @@ struct	rm_attribute	*attrib;
 	return NULL;
 }
 
-int
-get_la(rv)
-	double	*rv;
-{
-	char	*id = "get_la";
-	int	mib[2];
-	struct loadavg la;
-	size_t	len = sizeof(la);
+int get_la(
+  double *rv)
+  {
+  char *id = "get_la";
+  int mib[2];
+  struct loadavg la;
+  size_t len = sizeof(la);
 
 
-	mib[0] = CTL_VM;
-	mib[1] = VM_LOADAVG;
+  mib[0] = CTL_VM;
+  mib[1] = VM_LOADAVG;
 
-	if (sysctl(mib, 2, &la, &len, NULL, 0) < 0) {
-		log_err(errno, id, "sysctl(VM_LOADAVG)");
-		return (rm_errno = RM_ERR_SYSTEM);
-	}
+  if (sysctl(mib, 2, &la, &len, NULL, 0) < 0)
+    {
+    log_err(errno, id, "sysctl(VM_LOADAVG)");
+    return (rm_errno = RM_ERR_SYSTEM);
+    }
 
-	*rv = (double)la.ldavg[0]/la.fscale;
-	return 0;
+  *rv = (double)la.ldavg[0]/la.fscale;
+  return (0);
 }
 
 
-u_long
-gracetime(secs)
-u_long	secs;
-{
-	time_t	now = time((time_t *)NULL);
+u_long gracetime(
+  u_long secs)
+  {
+  time_t now = time((time_t *)NULL);
 
-	if (secs > (u_long)now)		/* time is in the future */
-		return (secs - now);
-	else
-		return 0;
-}
+  if (secs > (u_long)now) /* time is in the future */
+    return (secs - now);
+  else
+    return (0);
+  }
 
-static char	*
-quota(attrib)
-struct	rm_attribute	*attrib;
-{
-	char	*id = "quota";
-	int			type;
-	dev_t			dirdev;
-	uid_t			uid;
-	struct	stat		sb;
-	struct	fstab		*fs;
-	struct	dqblk		qi;
-	struct	passwd		*pw;
-	static	char		*type_array[] = {
-		"harddata",
-		"softdata",
-		"currdata",
-		"hardfile",
-		"softfile",
-		"currfile",
-		"timedata",
-		"timefile",
-	};
-	enum	type_name {
-		harddata,
-		softdata,
-		currdata,
-		hardfile,
-		softfile,
-		currfile,
-		timedata,
-		timefile,
-		type_end
-	};
+static char *quota(
+  struct rm_attribute *attrib)
+  {
+  char	*id = "quota";
+  int type;
+  dev_t dirdev;
+  uid_t uid;
+  struct stat    sb;
+  struct fstab  *fs;
+  struct dqblk   qi;
+  struct passwd *pw;
 
-	if (attrib == NULL) {
-		log_err(-1, id, no_parm);
-		rm_errno = RM_ERR_NOPARAM;
-		return NULL;
-	}
-	if (strcmp(attrib->a_qualifier, "type")) {
-		sprintf(log_buffer, "unknown qualifier %s",
-			attrib->a_qualifier);
-		log_err(-1, id, log_buffer);
-		rm_errno = RM_ERR_BADPARAM;
-		return NULL;
-	}		
+  static char *type_array[] = {
+    "harddata",
+    "softdata",
+    "currdata",
+    "hardfile",
+    "softfile",
+    "currfile",
+    "timedata",
+    "timefile",
+  };
 
-	for (type=0; type<type_end; type++) {
-		if (strcmp(attrib->a_value, type_array[type]) == 0)
-			break;
-	}
-	if (type == type_end) {		/* check to see if command is legal */
-		sprintf(log_buffer, "bad param: %s=%s",
-			attrib->a_qualifier, attrib->a_value);
-		log_err(-1, id, log_buffer);
-		rm_errno = RM_ERR_BADPARAM;
-		return NULL;
-	}
+  enum	type_name {
+    harddata,
+    softdata,
+    currdata,
+    hardfile,
+    softfile,
+    currfile,
+    timedata,
+    timefile,
+    type_end
+  };
 
-	if ((attrib = momgetattr(NULL)) == NULL) {
-		log_err(-1, id, no_parm);
-		rm_errno = RM_ERR_NOPARAM;
-		return NULL;
-	}
-	if (strcmp(attrib->a_qualifier, "dir") != 0) {
-		sprintf(log_buffer, "bad param: %s=%s",
-			attrib->a_qualifier, attrib->a_value);
-		log_err(-1, id, log_buffer);
-		rm_errno = RM_ERR_BADPARAM;
-		return NULL;
-	}
-	if (attrib->a_value[0] != '/') {	/* must be absolute path */
-		sprintf(log_buffer,
-			"not an absolute path: %s", attrib->a_value);
-		log_err(-1, id, log_buffer);
-		rm_errno = RM_ERR_BADPARAM;
-		return NULL;
-	}
-	if (stat(attrib->a_value, &sb) == -1) {
-		sprintf(log_buffer, "stat: %s", attrib->a_value);
-		log_err(errno, id, log_buffer);
-		rm_errno = RM_ERR_EXIST;
-		return NULL;
-	}
-	dirdev = sb.st_dev;
-	DBPRT(("dir has devnum %d\n", dirdev))
+  if (attrib == NULL) 
+    {
+    log_err(-1, id, no_parm);
+    rm_errno = RM_ERR_NOPARAM;
+    return NULL;
+    }
 
-	if (setfsent() == 0) {
-		log_err(errno, id, "setfsent");
-		rm_errno = RM_ERR_SYSTEM;
-                return NULL;
-        }
-	while ((fs = getfsent()) != NULL) {
-		if (strcmp(fs->fs_type, FSTAB_XX) == 0 ||
-		    strcmp(fs->fs_type, FSTAB_SW) == 0)
-			continue;
-		if (stat(fs->fs_file, &sb) == -1) {
-			sprintf(log_buffer, "stat: %s", fs->fs_file);
-			log_err(errno, id, log_buffer);
-			continue;
-		}
-		DBPRT(("%s\t%s\t%d\n", fs->fs_spec, fs->fs_file, sb.st_dev))
-		if (sb.st_dev == dirdev)
-			break;
-	}
-	endfsent();
-	if (fs == NULL)	{
-		sprintf(log_buffer,
-			"filesystem %s not found", attrib->a_value);
-		log_err(-1, id, log_buffer);
-		rm_errno = RM_ERR_EXIST;
-		return NULL;
-	}
+  if (strcmp(attrib->a_qualifier, "type"))
+    {
+    sprintf(log_buffer, "unknown qualifier %s",
+            attrib->a_qualifier);
+    log_err(-1, id, log_buffer);
+            rm_errno = RM_ERR_BADPARAM;
+    return (NULL);
+    }		
 
-	if ((attrib = momgetattr(NULL)) == NULL) {
-		log_err(-1, id, no_parm);
-		rm_errno = RM_ERR_NOPARAM;
-		return NULL;
-	}
-	if (strcmp(attrib->a_qualifier, "user") != 0) {
-		sprintf(log_buffer, "bad param: %s=%s",
-			attrib->a_qualifier, attrib->a_value);
-		log_err(-1, id, log_buffer);
-		rm_errno = RM_ERR_BADPARAM;
-		return NULL;
-	}
-	if ((uid = (uid_t)atoi(attrib->a_value)) == 0) {
-		if ((pw = getpwnam(attrib->a_value)) == NULL) {
-			sprintf(log_buffer,
-				"user not found: %s", attrib->a_value);
-			log_err(-1, id, log_buffer);
-			rm_errno = RM_ERR_EXIST;
-			return NULL;
-		}
-		uid = pw->pw_uid;
-	}
+  for (type=0; type<type_end; type++)
+    {
+    if (strcmp(attrib->a_value, type_array[type]) == 0)
+      break;
+    }
+  if (type == type_end)
+    {		/* check to see if command is legal */
+    sprintf(log_buffer, "bad param: %s=%s",
+            attrib->a_qualifier, attrib->a_value);
+    log_err(-1, id, log_buffer);
+            rm_errno = RM_ERR_BADPARAM;
+            return (NULL);
+    }
 
-	if (quotactl(fs->fs_file, Q_GETQUOTA, uid, (char *)&qi) == -1) {
-		log_err(errno, id, "quotactl");
-		rm_errno = RM_ERR_SYSTEM;
-		return NULL;
-	}
+  if ((attrib = momgetattr(NULL)) == NULL)
+    {
+    log_err(-1, id, no_parm);
+    rm_errno = RM_ERR_NOPARAM;
+    return (NULL);
+    }
 
-	/* all sizes in KB */
-	switch (type) {
-	case harddata:
-		sprintf(ret_string, "%ukb", dbtob(qi.dqb_bhardlimit, 1) >> 10);
-		break;
-	case softdata:
-		sprintf(ret_string, "%ukb", dbtob(qi.dqb_bsoftlimit, 1) >> 10);
-		break;
-	case currdata:
-		sprintf(ret_string, "%ukb", dbtob(qi.dqb_curbytes, 1) >> 10);
-		break;
-	case hardfile:
-		sprintf(ret_string, "%u", qi.dqb_ihardlimit);
-		break;
-	case softfile:
-		sprintf(ret_string, "%u", qi.dqb_isoftlimit);
-		break;
-	case currfile:
-		sprintf(ret_string, "%u", qi.dqb_curinodes);
-		break;
-	case timedata:
-		sprintf(ret_string, "%lu", gracetime(qi.dqb_btime));
-		break;
-	case timefile:
-		sprintf(ret_string, "%lu", gracetime(qi.dqb_itime));
-		break;
-	}
+  if (strcmp(attrib->a_qualifier, "dir") != 0) 
+    {
+    sprintf(log_buffer, "bad param: %s=%s",
+            attrib->a_qualifier, attrib->a_value);
+    log_err(-1, id, log_buffer);
+    rm_errno = RM_ERR_BADPARAM;
+    return NULL;
+    }
 
-	return ret_string;
-}
+  if (attrib->a_value[0] != '/')
+    { /* must be absolute path */
+    sprintf(log_buffer,
+            "not an absolute path: %s", attrib->a_value);
+    log_err(-1, id, log_buffer);
+    rm_errno = RM_ERR_BADPARAM;
+    return (NULL);
+    }
 
+  if (stat(attrib->a_value, &sb) == -1)
+    {
+    sprintf(log_buffer, "stat: %s", attrib->a_value);
+    log_err(errno, id, log_buffer);
+    rm_errno = RM_ERR_EXIST;
+    return (NULL);
+    }
 
+  dirdev = sb.st_dev;
+  DBPRT(("dir has devnum %d\n", dirdev))
+
+  if (setfsent() == 0)
+    {
+    log_err(errno, id, "setfsent");
+    rm_errno = RM_ERR_SYSTEM;
+    return NULL;
+    }
+
+  while ((fs = getfsent()) != NULL) 
+    {
+    if (strcmp(fs->fs_type, FSTAB_XX) == 0 ||
+	strcmp(fs->fs_type, FSTAB_SW) == 0)
+      continue;
+    if (stat(fs->fs_file, &sb) == -1)
+      {
+      sprintf(log_buffer, "stat: %s", fs->fs_file);
+      log_err(errno, id, log_buffer);
+      continue;
+      }
+    DBPRT(("%s\t%s\t%d\n", fs->fs_spec, fs->fs_file, sb.st_dev))
+    if (sb.st_dev == dirdev)
+      break;
+    }
+
+  endfsent();
+
+  if (fs == NULL)
+    {
+    sprintf(log_buffer, "filesystem %s not found", attrib->a_value);
+    log_err(-1, id, log_buffer);
+    rm_errno = RM_ERR_EXIST;
+    return (NULL);
+    }
+
+  if ((attrib = momgetattr(NULL)) == NULL) 
+    {
+    log_err(-1, id, no_parm);
+    rm_errno = RM_ERR_NOPARAM;
+    return (NULL);
+    }
+
+  if (strcmp(attrib->a_qualifier, "user") != 0) 
+    {
+    sprintf(log_buffer, "bad param: %s=%s", attrib->a_qualifier, 
+            attrib->a_value);
+    log_err(-1, id, log_buffer);
+    rm_errno = RM_ERR_BADPARAM;
+    return NULL;
+    }
+
+  if ((uid = (uid_t)atoi(attrib->a_value)) == 0)
+    {
+    if ((pw = getpwnam(attrib->a_value)) == NULL)
+      {
+      sprintf(log_buffer, "user not found: %s", attrib->a_value);
+      log_err(-1, id, log_buffer);
+      rm_errno = RM_ERR_EXIST;
+      return (NULL);
+      }
+    uid = pw->pw_uid;
+    }
+
+  if (quotactl(fs->fs_file, Q_GETQUOTA, uid, (char *)&qi) == -1) 
+    {
+    log_err(errno, id, "quotactl");
+    rm_errno = RM_ERR_SYSTEM;
+    return (NULL);
+    }
+
+  /* all sizes in KB */
+  switch (type) 
+    {
+    case harddata:
+      sprintf(ret_string, "%ukb", dbtob(qi.dqb_bhardlimit, 1) >> 10);
+      break;
+    case softdata:
+      sprintf(ret_string, "%ukb", dbtob(qi.dqb_bsoftlimit, 1) >> 10);
+      break;
+    case currdata:
+      sprintf(ret_string, "%ukb", dbtob(qi.dqb_curbytes, 1) >> 10);
+      break;
+    case hardfile:
+      sprintf(ret_string, "%u", qi.dqb_ihardlimit);
+      break;
+    case softfile:
+      sprintf(ret_string, "%u", qi.dqb_isoftlimit);
+      break;
+    case currfile:
+      sprintf(ret_string, "%u", qi.dqb_curinodes);
+      break;
+    case timedata:
+      sprintf(ret_string, "%lu", gracetime(qi.dqb_btime));
+      break;
+    case timefile:
+      sprintf(ret_string, "%lu", gracetime(qi.dqb_itime));
+      break;
+    }
+
+  return ret_string;
+  } 
 
 
 void scan_non_child_tasks(void)
@@ -2924,30 +2935,30 @@ void scan_non_child_tasks(void)
   }  /* END scan_non_child_tasks() */
 
 
-
-
-
 /* This is basically a wrapper for the MACH t_info and vm_region calls */
-
-int get_tinfo_by_pid( 
+static int get_tinfo_by_pid( 
 
   struct task_basic_info *t_info, 
   unsigned int            pid)
   
   {
-  task_t				task;
-  mach_msg_type_number_t		t_info_count = TASK_BASIC_INFO_COUNT;
-  mach_msg_type_number_t		vm_info_count = VM_REGION_BASIC_INFO_COUNT_64;
-  struct vm_region_basic_info_64 	vm_info;
-  vm_size_t			size;
-  mach_port_t			object_name;
-  vm_address_t			address = GLOBAL_SHARED_TEXT_SEGMENT;
-  kern_return_t			errno;
+  task_t task;
+
+  mach_msg_type_number_t t_info_count = TASK_BASIC_INFO_COUNT;
+  mach_msg_type_number_t vm_info_count = VM_REGION_BASIC_INFO_COUNT_64;
+
+  struct vm_region_basic_info_64 vm_info;
+
+  vm_size_t     size;
+  mach_port_t   object_name;
+  vm_address_t	address = GLOBAL_SHARED_TEXT_SEGMENT;
+  kern_return_t	errno;
+
+
 
   if (task_for_pid(mach_task_self(),pid,&task) != KERN_SUCCESS)
     {
     DBPRT(("get_tinfo_by_pid:  pid is not a valid process id.\n"));
-
     return(-1);
     }
 
@@ -2959,7 +2970,6 @@ int get_tinfo_by_pid(
     {
     DBPRT(("get_tinfo_by_pid: error(%d) in task_info\n", 
       errno));
-
     return(errno);
     }
 
@@ -2974,7 +2984,6 @@ int get_tinfo_by_pid(
     {
     DBPRT(("get_tinfo_by_pid: error(%d) in vm_region_64\n", 
       errno));
-
     return(errno);
     }
     
@@ -2998,20 +3007,19 @@ int get_tinfo_by_pid(
 
 
 /* get the system time and user time for live threads for a task by pid */
-int get_time_info_by_pid( 
+static int get_time_info_by_pid( 
 
   struct task_thread_times_info *t_info, 
   unsigned int            pid)
   
   {
-  task_t			task;
-  mach_msg_type_number_t	t_info_count = TASK_THREAD_TIMES_INFO_COUNT;
-  kern_return_t			errno;
+  task_t task;
+  mach_msg_type_number_t t_info_count = TASK_THREAD_TIMES_INFO_COUNT;
+  kern_return_t errno;
 
   if (task_for_pid(mach_task_self(),pid,&task) != KERN_SUCCESS)
     {
     DBPRT(("get_time_info_by_pid:  pid is not a valid process id.\n"));
-
     return(-1);
     }
 
@@ -3023,7 +3031,6 @@ int get_time_info_by_pid(
     {
     DBPRT(("get_time_info_by_pid: error(%d) in task_info\n", 
       errno));
-
     return(errno);
     }
 
