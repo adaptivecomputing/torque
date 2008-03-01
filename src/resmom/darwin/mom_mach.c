@@ -204,7 +204,7 @@ static int   get_tinfo_by_pid  A_((struct task_basic_info *t_info,
                                    unsigned int pid));
 static int   get_time_info_by_pid  A_((struct task_thread_times_info *t_info, 
                                        unsigned int pid));
-static kinfo_proc *GetBSDProcessList A_((int *procCount));
+static kinfo_proc *get_bsd_process_list A_((int *procCount));
 
 struct	config	dependent_config[] = {
   { "resi",	{resi} },
@@ -766,30 +766,34 @@ int mom_set_limits(pjob, set_mode)
  *	polling is done using the mom_over_limit machine-dependent function.
  */
 
-int mom_do_poll(pjob)
-    job			*pjob;
-{
-	char		*id = "mom_do_poll";
-	char		*pname;
-	resource	*pres;
+int mom_do_poll(
+  
+  job *pjob)
+  {
+  char		*id = "mom_do_poll";
+  char		*pname;
+  resource	*pres;
 
-	DBPRT(("%s: entered\n", id))
-	assert(pjob != NULL);
-	assert(pjob->ji_wattr[(int)JOB_ATR_resource].at_type == ATR_TYPE_RESC);
-	pres = (resource *)
-	    GET_NEXT(pjob->ji_wattr[(int)JOB_ATR_resource].at_val.at_list);
+  DBPRT(("%s: entered\n", id))
+  assert(pjob != NULL);
+  assert(pjob->ji_wattr[(int)JOB_ATR_resource].at_type == ATR_TYPE_RESC);
+  pres = (resource *)
+  GET_NEXT(pjob->ji_wattr[(int)JOB_ATR_resource].at_val.at_list);
 
-	while (pres != NULL) {
-		assert(pres->rs_defin != NULL);
-		pname = pres->rs_defin->rs_name;
-		assert(pname != NULL);
-		assert(*pname != '\0');
+  while (pres != NULL)
+    {
+    assert(pres->rs_defin != NULL);
+    pname = pres->rs_defin->rs_name;
+    assert(pname != NULL);
+    assert(*pname != '\0');
 
-		if (strcmp(pname, "walltime") == 0 ||
-		    strcmp(pname, "cput") == 0 ||
-		    strcmp(pname, "pvmem") == 0 ||
-		    strcmp(pname, "vmem") == 0)
-			return (TRUE);
+    if (strcmp(pname, "walltime") == 0 ||
+        strcmp(pname, "cput") == 0 ||
+        strcmp(pname, "pvmem") == 0 ||
+        strcmp(pname, "vmem") == 0)
+      {
+      return (TRUE);
+      }
 
     pres = (resource *)GET_NEXT(pres->rs_link);
     }
@@ -820,7 +824,6 @@ int mom_open_poll()
 
 
 
-
 int qs_cmp(
 
   const void *a,
@@ -834,7 +837,7 @@ int qs_cmp(
 /* get a list of BSD style processes from the kernel
    these will be returned as an array of kinfo_proc structures  */
 
-static kinfo_proc *GetBSDProcessList(
+static kinfo_proc *get_bsd_process_list(
 
   int        *procCount)  /*O*/
 
@@ -937,11 +940,8 @@ static kinfo_proc *GetBSDProcessList(
      and vice versa */
   assert( (err == 0) == (result != NULL) );
 
-  /* fprintf(logfile, "end buffer %d\n", result); */
-
   return(result);
   }
-
 
 
 
@@ -966,20 +966,20 @@ int mom_get_sample()
   if (sess_tbl != NULL)
     free(sess_tbl);
 
-  proc_tbl = GetBSDProcessList(&nproc);
+  proc_tbl = get_bsd_process_list(&nproc);
 
   /* proc_tbl now contains array of pairs of struct proc followed by
    * corresponding struct eproc's.
    *
    * The entire process table resides in proc_tbl.
-   * nproc = number of processes, unless GetBSDProcessList returns NULL, 
+   * nproc = number of processes, unless get_bsd_process_list returns NULL, 
    * in which it will contain an error code.
    */
 
   if (proc_tbl == NULL)
     {
     
-    sprintf(log_buffer,"GetBSDProcessList returned NULL (err = %d)", nproc);
+    sprintf(log_buffer,"get_bsd_process_list returned NULL (err = %d)", nproc);
 
     log_err(errno,id,log_buffer);
 
