@@ -2935,7 +2935,11 @@ static int get_tinfo_by_pid(
   task_t task;
 
   mach_msg_type_number_t t_info_count = TASK_BASIC_INFO_COUNT;
+#ifdef VM_REGION_BASIC_INFO_64
   mach_msg_type_number_t vm_info_count = VM_REGION_BASIC_INFO_COUNT_64;
+#else
+  mach_msg_type_number_t vm_info_count = VM_REGION_BASIC_INFO_COUNT;
+#endif
 
   struct vm_region_basic_info_64 vm_info;
 
@@ -2963,6 +2967,7 @@ static int get_tinfo_by_pid(
     return(errno);
     }
 
+#ifdef VM_REGION_BASIC_INFO_COUNT_64;
   if ((errno = vm_region_64(
           task,
           &address,
@@ -2976,6 +2981,21 @@ static int get_tinfo_by_pid(
       errno));
     return(errno);
     }
+#else
+  if ((errno = vm_region(
+          task,
+          &address,
+          &size,
+          VM_REGION_BASIC_INFO,
+          (vm_region_info_t)&vm_info,
+          &vm_info_count,
+          &object_name)) != KERN_SUCCESS)
+    {
+    DBPRT(("get_tinfo_by_pid: error(%d) in vm_region\n",
+      errno));
+    return(errno);
+    }
+#endif
     
 
   /*
