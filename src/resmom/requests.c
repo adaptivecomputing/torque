@@ -2179,7 +2179,7 @@ static int del_files(
     {
     /* ignore failure */
 
-    chdir(HDir);
+    if (chdir(HDir) == -1) {}
     }
 
   for (pair = (struct rqfpair *)GET_NEXT(preq->rq_ind.rq_cpyfile.rq_pair);
@@ -2211,7 +2211,7 @@ static int del_files(
         {
         /* ignore failure of chdir */
 
-        chdir(HDir);
+        if (chdir(HDir) == -1) {}
         }
 
 #ifdef HAVE_WORDEXP

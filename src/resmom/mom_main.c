@@ -4980,13 +4980,11 @@ int rm_request(
 
             if (verbositylevel >= 1)
               {
-              sprintf(tmpLine,"Communication Model:    %s\n",
 #if RPP
-                "RPP"
+              sprintf(tmpLine,"Communication Model:    %s\n", "RPP");
 #else  /* RPP */
-                "TCP"
+              sprintf(tmpLine,"Communication Model:    %s\n", "TCP");
 #endif /* RPP */
-                );
 
               MUStrNCat(&BPtr,&BSpace,tmpLine);
 

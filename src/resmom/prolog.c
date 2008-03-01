@@ -511,7 +511,7 @@ int run_pelog(
       {
       close(0);
 
-      dup(fd_input);
+      if (dup(fd_input) == -1) {}
 
       close(fd_input);
       }
@@ -542,7 +542,7 @@ int run_pelog(
         {
         close(1);
 
-        dup(fds1);
+        if (dup(fds1) == -1) {}
 
         close(fds1);
         }
@@ -551,7 +551,7 @@ int run_pelog(
         {
         close(2);
 
-        dup(fds2);
+        if (dup(fds2) == -1) {}
 
         close(fds2);
         }
@@ -569,7 +569,7 @@ int run_pelog(
           strerror(errno),
           which == PE_PROLOGUSER ? "prologue" : "epilogue");
 
-        write(2,log_buffer,strlen(log_buffer));
+        if (write(2,log_buffer,strlen(log_buffer)) == -1) {}
 
         fsync(2);
         }
@@ -817,7 +817,7 @@ int run_pelog(
       pelog,
       strerror(errno));
 
-    write(2,log_buffer,strlen(log_buffer));
+    if (write(2,log_buffer,strlen(log_buffer)) == -1) {}
 
     fsync(2);
 

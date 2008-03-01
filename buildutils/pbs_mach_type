@@ -144,10 +144,13 @@ case "$OS" in
 
   netbsd*) mach=netbsd ;;
 
-  freebsd*) case "$REL" in
-          [567]*) mach=freebsd5 ;;
-	  *)     mach=freebsd ;;
-	esac ;;
+  freebsd*)
+       if [ `echo "$REL" | cut -f 1 -d .` -lt 5 ]; then
+               mach=freebsd
+       else
+               mach=freebsd5
+       fi
+       ;;
 
   darwin*) mach=darwin ;;
 

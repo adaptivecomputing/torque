@@ -256,17 +256,23 @@ void proc_get_btime()
 
   while (!feof(fp))  
     {
-    fscanf(fp,"%s", 
-      label);
+    if (fscanf(fp,"%s", label) != 1)
+      {
+      fclose(fp);
+      return;
+      }
 
     if (strcmp(label,"btime"))  
       {
-      fscanf(fp,"%*[^\n]%*c");
+      if (fscanf(fp,"%*[^\n]%*c") != 0)
+        {
+        fclose(fp);
+        return;
+        }
       }  
     else  
       {
-      fscanf(fp,"%u", 
-        &linux_time);
+      if (fscanf(fp,"%u", &linux_time) != 1) {}
 
       fclose(fp);
 
@@ -452,30 +458,42 @@ proc_mem_t *get_proc_mem()
     { 
     /* old format */
 
-    fscanf(fp,"%*[^\n]%*c");      /* remove text header */;
+    if (fscanf(fp,"%*[^\n]%*c") != 0)      /* remove text header */
+      {
+      return(NULL);
+      }
 
     /* umu vmem patch */
 
-    fscanf(fp,"%*s %llu %llu %llu %*u %llu %llu",
+    if (fscanf(fp,"%*s %llu %llu %llu %*u %llu %llu",
        &mm.mem_total,
        &mm.mem_used,
        &mm.mem_free,
        &bfsz,
-       &casz);
+       &casz) != 5)
+      {
+      return(NULL);
+      }
 
     mm.mem_free += casz + bfsz;
 
 /*
-    fscanf(fp,"%*s %lu %lu %lu %*[^\n]%*c",
+    if (fscanf(fp,"%*s %lu %lu %lu %*[^\n]%*c",
       &mm.mem_total,
       &mm.mem_used,
-      &mm.mem_free);
+      &mm.mem_free) != 3)
+      {
+      return(NULL);
+      }
 */
 
-    fscanf(fp,"%*s %llu %llu %llu %*[^\n]%*c",
+    if (fscanf(fp,"%*s %llu %llu %llu %*[^\n]%*c",
       &mm.swap_total,
       &mm.swap_used,
-      &mm.swap_free);
+      &mm.swap_free) != 3)
+      {
+      return(NULL);
+      }
     } 
   else 
     {
@@ -485,43 +503,61 @@ proc_mem_t *get_proc_mem()
 
       if (!strncmp(str,"MemTotal:",sizeof(str))) 
         {
-        fscanf(fp,"%llu",
-          &mm.mem_total);
+        if (fscanf(fp,"%llu",
+          &mm.mem_total) != 1)
+          {
+          return(NULL);
+          }
 
         mm.mem_total *= 1024; /* the unit is kB */
         } 
       else if (!strncmp(str,"MemFree:",sizeof(str))) 
         {
-        fscanf(fp,"%llu",
-          &mm.mem_free);
+        if (fscanf(fp,"%llu",
+          &mm.mem_free) != 1)
+          {
+          return(NULL);
+          }
 
         mm.mem_free *= 1024;
         } 
       else if (!strncmp(str,"Buffers:",sizeof(str))) 
         {
-        fscanf(fp,"%llu",
-          &bfsz);
+        if (fscanf(fp,"%llu",
+          &bfsz) != 1)
+          {
+          return(NULL);
+          }
  
         mm.mem_free += bfsz * 1024;
         } 
       else if (!strncmp(str,"Cached:",sizeof(str))) 
         {
-        fscanf(fp,"%llu",
-          &casz);
+        if (fscanf(fp,"%llu",
+          &casz) != 1)
+          {
+          return(NULL);
+          }
  
         mm.mem_free += casz * 1024;
         } 
       else if (!strncmp(str,"SwapTotal:",sizeof(str))) 
         {
-        fscanf(fp,"%llu",
-          &mm.swap_total);
+        if (fscanf(fp,"%llu",
+          &mm.swap_total) != 1)
+          {
+          return(NULL);
+          }
 
         mm.swap_total *= 1024;
         } 
       else if (!strncmp(str,"SwapFree:",sizeof(str))) 
         {
-        fscanf(fp,"%llu",
-          &mm.swap_free);
+        if (fscanf(fp,"%llu",
+          &mm.swap_free) != 1)
+          {
+          return(NULL);
+          }
 
         mm.swap_free *= 1024;
         }
@@ -1087,7 +1123,7 @@ int mom_set_limits(
   {
   char		*id = "mom_set_limits";
 
-  char		*pname;
+  char		*pname = NULL;
   int		retval;
   unsigned long	value;	/* place in which to build resource value */
   resource	*pres;
@@ -3294,8 +3330,12 @@ static char *ncpus(
 
   while (!feof(fp))  
     {
-    fscanf(fp,"%s %*[^\n]%*c", 
-      label);
+    if (fscanf(fp,"%s %*[^\n]%*c", 
+      label) != 1)
+      {
+      fclose(fp);
+      return(NULL);
+      }
 
     if (strcmp("processor",label) == 0)
       procs++;
@@ -3357,7 +3397,10 @@ static char *physmem(
 
   while (!feof(fp))
     {
-    fgets(BPtr,BSpace,fp);
+    if (fgets(BPtr,BSpace,fp) == NULL)
+      {
+      break;
+      }
 
     BSpace -= strlen(BPtr);
     BPtr   += strlen(BPtr);

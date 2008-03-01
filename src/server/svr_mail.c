@@ -329,6 +329,12 @@ void svr_mailowner(
   fprintf(outmail,"Job Name:   %s\n",
     pjob->ji_wattr[(int)JOB_ATR_jobname].at_val.at_str);
 
+  if (pjob->ji_wattr[(int)JOB_ATR_exec_host].at_flags & ATR_VFLAG_SET)
+    {
+    fprintf(outmail,"Exec host:  %s\n",
+      pjob->ji_wattr[(int)JOB_ATR_exec_host].at_val.at_str);
+    }
+
   if (stdmessage != NULL)
     {
     fprintf(outmail,"%s\n", 

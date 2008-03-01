@@ -196,8 +196,14 @@ void send_qsub_delmsg(
     return;
     }
 
-  write(qsub_sock,"PBS: ",5);
-  write(qsub_sock,text,strlen(text));
+  if (write(qsub_sock,"PBS: ",5) == -1)
+    {
+    return;
+    }
+  if (write(qsub_sock,text,strlen(text)) == -1)
+    {
+    return;
+    }
 
   close(qsub_sock);
 

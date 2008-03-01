@@ -129,7 +129,12 @@ int array_save(job_array *pa)
     return -1;
     }
     
- write(fds,  &(pa->ai_qs), sizeof(struct array_info));
+  if (write(fds,  &(pa->ai_qs), sizeof(struct array_info)) == -1)
+    {
+    unlink(namebuf);
+    close(fds);
+    return -1;
+    }
   
   /* count number of request tokens left */
   num_tokens = 0;
@@ -142,7 +147,12 @@ int array_save(job_array *pa)
     }
      
      
-  write(fds, &num_tokens, sizeof(num_tokens));
+  if (write(fds, &num_tokens, sizeof(num_tokens)) == -1)
+    {
+    unlink(namebuf);
+    close(fds);
+    return -1;
+    }
      
   if (num_tokens > 0)
     {
@@ -151,7 +161,12 @@ int array_save(job_array *pa)
   
     while (rn != NULL) 
       {
-      write(fds, rn, sizeof(array_request_node));
+      if (write(fds, rn, sizeof(array_request_node)) == -1)
+        {
+        unlink(namebuf);
+        close(fds);
+        return -1;
+        }
       rn = (array_request_node*)GET_NEXT(rn->request_tokens_link);
       }
           
