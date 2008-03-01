@@ -2967,7 +2967,7 @@ static int get_tinfo_by_pid(
           task,
           &address,
           &size,
-          VM_REGION_BASIC_INFO,
+          VM_REGION_BASIC_INFO_64,
           (vm_region_info_t)&vm_info,
           &vm_info_count, 
           &object_name)) != KERN_SUCCESS)
