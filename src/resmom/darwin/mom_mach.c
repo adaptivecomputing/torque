@@ -502,7 +502,11 @@ static unsigned long mem_sum(
     if (get_tinfo_by_pid(&t_info,pid) != 0)
       continue;
 
-    memsize += ctob(t_info.virtual_size);	
+    /* mach does says virtual_size is number of pages, 
+       but after noticing very wrong values, I took a look at the 
+       apple header files and they say it is the size in bytes... 
+    memsize += ctob(t_info.virtual_size); */
+    memsize += t_info.virtual_size; 
 
     DBPRT(("%s: ses %d pid=%d totmem=%lu\n", 
       id, sess_tbl[i], pp->kp_proc.p_pid, memsize))
@@ -541,8 +545,10 @@ static unsigned long resi_sum(
 
     if (get_tinfo_by_pid(&t_info,pid) != 0)
       continue;
-
-    memsize += ctob(t_info.resident_size);	
+    
+    /* see note in mem_sum
+    memsize += ctob(t_info.resident_size); */
+    memsize += t_info.resident_size;
 
     DBPRT(("%s: pid=%d ses=%d mem=%d totmem=%lu\n", 
      id,pp->kp_proc.p_pid,sess_tbl[i],t_info.resident_size,memsize))
@@ -582,10 +588,11 @@ static int overmem_proc(
     if (get_tinfo_by_pid(&t_info,pid) != 0)
       continue;
 
-    if (ctob(t_info.virtual_size) > limit)
+    if (t_info.virtual_size > limit)
       {
-      return(TRUE);	
+      return(TRUE);
       }
+
     }  /* END for (i) */
 
   return(FALSE);
@@ -1632,7 +1639,7 @@ char *mem_job(
   if (found) 
     {
     sprintf(ret_string,"%ukb", 
-      ctob(memsize) >> 10); /* KB */
+      memsize >> 10); /* KB */
 
     return(ret_string);
     }
@@ -1679,7 +1686,7 @@ char *mem_proc(
     memsize = t_info.virtual_size;
 
     sprintf(ret_string,"%ukb", 
-      ctob(memsize) >> 10); /* KB */
+      memsize >> 10); /* KB */
 
     return(ret_string);
     }
@@ -1771,7 +1778,7 @@ static char *resi_job(
   if (found) 
     {
     sprintf(ret_string,"%ukb", 
-      ctob(resisize) >> 10); /* KB */
+      resisize >> 10); /* KB */
 
     return(ret_string);
     }
@@ -1816,7 +1823,7 @@ static char *resi_proc(
     resisize = t_info.resident_size;
 
     sprintf(ret_string,"%ukb",
-      ctob(resisize) >> 10); /* KB */
+      resisize >> 10); /* KB */
 
     return(ret_string);
     }
