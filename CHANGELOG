@@ -24,13 +24,20 @@ c - crash     b - bug fix    e - enhancement    f - new feature
   e - minor pbsnodes overhaul
   b - fixed memory leak in pbs_server
 
+2.2.2
+  b - correctly parse /proc/pid/stat that contains parens (Meier)
+  b - prevent runaway hellos being sent to server when mom's node is removed
+      from the server's node list
+  b - fix qdel of entire job arrays for non operator/managers
+  b - fix problem where job array .AR files are not saved to disk
+  b - fixed problem with tracking job memory usage on OS X
+
 2.2.1
   b - fix a bug where dependent jobs get put on hold when the previous job has
       completed but its state is still available for life of keep_completed
   b - fixed a bug where pbs_server never delete files from the "jobs" directory
   b - fixed a bug where compute nodes were being put in an indefinite "down" state
   e - added job_array_size attribute to pbs_submit documentation 
-  b - correctly parse /proc/pid/stat that contains parens (Meier)
   b - fix qdel of entire job arrays for non operator/managers
 
 2.2.0
