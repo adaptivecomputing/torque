@@ -1600,7 +1600,7 @@ static void change_log_level(
     }
   else if (sig == SIGUSR2)
     {
-    /* increase log level */
+    /* decrease log level */
     if (plogenv == NULL )
       LOGLEVEL = server.sv_attr[(int)SRV_ATR_LogLevel].at_val.at_long;
     
