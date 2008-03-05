@@ -211,7 +211,8 @@ void req_modifyjob(
 
   /* if job is running, special checks must be made */
 
-  if (pjob->ji_qs.ji_state == JOB_STATE_RUNNING) 
+  if (pjob->ji_qs.ji_state == JOB_STATE_RUNNING ||
+      pjob->ji_qs.ji_state == JOB_STATE_HELD) 
     {
     while (plist != NULL) 
       {
@@ -257,6 +258,10 @@ void req_modifyjob(
           return;
           }
 
+        sendmom = 1;
+        }
+      else if (i == (int)JOB_ATR_chkptname) 
+        {
         sendmom = 1;
         }
 
