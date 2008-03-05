@@ -143,8 +143,6 @@ extern	tlist_head	svr_alljobs;	/* all jobs under MOM's control */
 extern	int		termin_child;
 extern	time_t		time_now;
 extern	tree           *okclients;	/* accept connections from */
-extern	int		SStream[];
-extern  int             SIndex;         /* master server index */
 extern  int             port_care;
 extern  char           *path_prologp;
 extern  char           *path_prologuserp;
@@ -184,6 +182,7 @@ extern int tlist(tree *,char *,int);
 extern void DIS_tcp_funcs();
 extern int TTmpDirName (job *,char *);
 extern int TMakeTmpDir (job *,char *);
+extern void mom_server_close_stream(int stream);
 
 
 
@@ -1337,7 +1336,6 @@ void im_eof(
   job                  *pjob;
   hnodent              *np;
   struct sockaddr_in   *addr;
-  int                   sindex;
 
   addr = rpp_getaddr(stream);
 
@@ -1353,17 +1351,7 @@ void im_eof(
 
   rpp_close(stream);
 
-  for (sindex = 0;sindex < PBS_MAXSERVER;sindex++)
-    {
-    if (stream == SStream[sindex]) 
-      {
-      /* stream to close is server stream */
-
-      SStream[sindex] = -1;
-
-      return;
-      }
-    }    /* END for (sindex) */
+  mom_server_close_stream(stream);
 
   /*
   ** Search though all the jobs looking for this stream.

@@ -156,7 +156,7 @@ extern void encode_used A_((job *,tlist_head *));
 extern void encode_flagged_attrs A_((job *,tlist_head *));
 extern void job_nodes A_((job *));
 extern int task_recov A_((job *));
-extern void is_update_stat(int);
+extern void mom_server_all_update_stat(void);
 extern void check_state(int);
 extern int mom_open_socket_to_jobs_server A_(( job *, char *, void (*) A_((int))));
 
@@ -1444,7 +1444,7 @@ static void obit_reply(
     {
     check_state(1);
 
-    is_update_stat(0);
+    mom_server_all_update_stat();
     }
 
   return;

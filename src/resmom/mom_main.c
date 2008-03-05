@@ -176,8 +176,6 @@ time_t		loopcnt;		/* used for MD5 calc */
 float		max_load_val = -1.0;
 int		hostname_specified = 0;
 char		mom_host[PBS_MAXHOSTNAME + 1];
-char		pbs_servername[PBS_MAXSERVER][PBS_MAXSERVERNAME + 1];
-u_long		MOMServerAddrs[PBS_MAXSERVER];
 char            TMOMRejectConn[1024];   /* most recent rejected connection */
 char		mom_short_name[PBS_MAXHOSTNAME + 1];
 int		num_var_env;
@@ -229,10 +227,6 @@ char           *AllocParCmd = NULL;  /* (alloc) */
 
 /* externs */
 
-extern int      SStream[];   /* connection to pbs_server... */
-extern int      SIndex;
-extern char     ReportMomState[];
-
 extern unsigned int pe_alarm_time;
 extern time_t   pbs_tcp_timeout;
 
@@ -266,10 +260,14 @@ pjobexec_t      TMOMStartInfo[TMAX_JE];
 /* prototypes */
 
 extern void     add_resc_def(char *,char *);
-extern int      mom_server_check_connections(void);
-extern void     mom_server_diag(char **BPtr, int *BSpace);
+extern void     mom_server_all_diag(char **BPtr, int *BSpace);
 extern void     mom_server_update_receive_time(int stream, const char *command_name);
-extern void     mom_server_init(void);
+extern void     mom_server_all_init(void);
+extern void     mom_server_all_update_stat(void);
+extern int      mom_server_all_check_connection(void);
+extern int      mom_server_all_send_state(void);
+extern int      mom_server_add(char *name);
+extern int      mom_server_count;
 
 #define PMOMTCPTIMEOUT 60  /* duration in seconds mom TCP requests will block */
 
@@ -580,7 +578,6 @@ int         TMOMScanForStarting(void);
 /* Local private functions */
 
 static char *mk_dirs A_((char *));
-void is_update_stat(int);
 void check_log A_((void));
 
 int MUSNPrintF(
@@ -1607,118 +1604,16 @@ u_long setpbsserver(
   
   {
   static char	  id[] = "setpbsserver";
-  int index;
-  struct hostent *host;
-  struct in_addr  saddr;
-  u_long	  ipaddr;
-  char            tmpname[PBS_MAXSERVERNAME + 1]; 
-  char           *portstr;
 
   if ((value == NULL) || (*value == '\0'))
     {
-    /* FAILURE - nothing specified */
-
-    return(1);
+    return(1);    /* FAILURE - nothing specified */
     }
 
   log_record(PBSEVENT_SYSTEM,PBS_EVENTCLASS_SERVER,id,value);
 
-  strncpy(tmpname,value,PBS_MAXSERVERNAME);
 
-  if ((portstr = strchr(tmpname,':')) != NULL)
-    {
-    *portstr = '\0';
-    }
-
-  if ((host = gethostbyname(tmpname)) == NULL) 
-    {
-    sprintf(log_buffer,"server host %s not found", 
-      tmpname);
-
-    log_record(PBSEVENT_SYSTEM,PBS_EVENTCLASS_SERVER,id,log_buffer);
-
-    log_err(-1,id,log_buffer);
-
-    ipaddr = 0;
-
-    /* don't return because we still want to add the hostname to
-     * pbs_servername[] and attempt a gethostbyname() later */
-    }
-  else
-    {
-    memcpy(&saddr,host->h_addr,host->h_length);
-
-    ipaddr = ntohl(saddr.s_addr);
-    }
-
-  for (index = 0;index < PBS_MAXSERVER;index++)
-    {
-    if (!strcmp(pbs_servername[index],value))
-      {
-      /* IGNORE DUPLICATE SERVERNAME REQUEST */
-
-      sprintf(log_buffer,"server host %s already added", 
-        value);
-
-      log_record(PBSEVENT_SYSTEM,PBS_EVENTCLASS_SERVER,id,log_buffer);
-
-      if (MOMServerAddrs[index])
-        {
-        /* SUCCESS */
-        
-        return(1);
-        }
-
-      break;
-      }
-
-    if (ipaddr && (MOMServerAddrs[index] == ipaddr))
-      {
-      /* IGNORE DUPLICATE IPADDR REQUEST */
-
-       sprintf(log_buffer,"server ip %ld.%ld.%ld.%ld already added", 
-         (ipaddr & 0xff000000) >> 24,
-         (ipaddr & 0x00ff0000) >> 16,
-         (ipaddr & 0x0000ff00) >> 8,
-         (ipaddr & 0x000000ff));
-
-      log_record(PBSEVENT_SYSTEM,PBS_EVENTCLASS_SERVER,id,log_buffer);
-
-      /* SUCCESS */
-
-      return(1);
-      }
-
-    if (pbs_servername[index][0] == '\0')
-      break;
-    }  /* END for (index) */
-
-  if (index >= PBS_MAXSERVER)
-    {
-    /* buffer is full */
-
-    sprintf(log_buffer,"server table overflow (max=%d) - server host %s not added", 
-      PBS_MAXSERVER,
-      tmpname);
-
-    log_err(-1,id,log_buffer);
-
-    return(0); /* FAILURE */
-    }
-
-  strncpy(pbs_servername[index],value,PBS_MAXSERVERNAME);
-
-  sprintf(log_buffer,"server %s added", pbs_servername[index]);
-  log_record(PBSEVENT_SYSTEM,PBS_EVENTCLASS_SERVER,id,log_buffer);
-
-  MOMServerAddrs[index] = ipaddr;
-
-  if (ipaddr != 0)
-    tinsert(ipaddr,&okclients);
-
-  /* SUCCESS */
-
-  return(1);
+  return(mom_server_add(value));
   }  /* END setpbsserver() */
 
 
@@ -3329,7 +3224,7 @@ int read_config(
     fclose(conf);
     }  /* END if (IgnConfig == 0) */
 
-  if (pbs_servername[0][0] == '\0')
+  if (mom_server_count == 0)
     {
     /* No server names in torque/mom_priv/config.  Get names from torque/server_name. */
 
@@ -4256,7 +4151,7 @@ int rm_request(
 
             MUStrNCat(&BPtr,&BSpace,tmpLine);
 
-            mom_server_diag(&BPtr,&BSpace);
+            mom_server_all_diag(&BPtr,&BSpace);
 
             sprintf(tmpLine,"HomeDirectory:          %s\n",
               (mom_home != NULL) ? mom_home : "N/A");
@@ -5190,100 +5085,6 @@ void tcp_request(
   }  /* END tcp_request() */
 
 
-/*
- * The job needs to originate a message to the server.
- * So we are opening a communication socket to the
- * server associated with the job.
- *
- * Most messages from the mom to the server are replies
- * to a message originated from the server and use
- * the socket stream established by the server.
- * So this routine is rarely called.  It is mostly
- * used for job obits.
- *
- * The server address is saved two ways, as an
- * string attribute in the job and also as a long.
- * The long value must somehow get set by the
- * server as it does not appear to be set anywhere here.
- * The string address is an IP address or host name with an
- * optional port number, i.e. format "xx.xx.xx.xx[:xxx]".
- * All we do here is extract the port number from the
- * string if it is present.
- *
- * What are the implications of the job server address
- * being hard-coded for a job with regards to high
- * availability?  If the original server fails, will
- * the job be able to send the obit's to the alternate
- * server?
- *
- */
-
-int mom_open_socket_to_jobs_server( job * pjob, char *caller_id, void (*message_handler) A_((int)) )
-  {
-  char *svrport;
-  char error_buffer[1024];
-  int sock;
-  int sock3;
-  int port;
-
-  /* See if the server address string has a ':' implying a port number. */
-
-  svrport = strchr(pjob->ji_wattr[(int)JOB_ATR_at_server].at_val.at_str,(int)':');
-  if (svrport)
-    port = atoi(svrport + 1);  /* Yes, use the specified server port number. */
-  else
-    port = default_server_port;  /* No, use the global default server port. */
-
-  sock = client_to_svr(
-    pjob->ji_qs.ji_un.ji_momt.ji_svraddr, /* MAGIC: This is set nowhere explicitly! */
-    port,
-    1,  /* use local socket */
-    error_buffer);
-
-  if (sock < 0)
-    {
-    /* error_buffer is filled in by the library with a message describing the failure */
-
-    log_err(errno,caller_id,error_buffer);
-    }
-  else
-    {
-    /* The epilogue code needs the socket number at 3 or above. */
-
-    if (sock < 3)
-      {
-      sock3 = fcntl(sock,F_DUPFD,3);
-      close(sock);
-      sock = sock3;
-      }
-
-    /*
-     * ji_momhandle is used to match reply messages to their job.
-     * Why not use the job number to find the job when we recieve a reply message?
-     */
-
-    pjob->ji_momhandle = sock;
-
-
-    /* Associate a message handler with the connection */
-
-    if (message_handler)
-      {
-      add_conn(
-        sock, 
-        ToServerDIS,
-        pjob->ji_qs.ji_un.ji_momt.ji_svraddr,
-        port, 
-        PBS_SOCK_INET, 
-        message_handler);
-      }
-    }
-
-  return(sock);
-  }
-
-
-
 
 char *find_signal_name( int sig )
   {
@@ -5957,7 +5758,7 @@ void initialize_globals(void)
 
   MOMConfigVersion[0] = '\0';
 
-  mom_server_init();
+  mom_server_all_init();
 
   pbsgroup = getgid();
   loopcnt = time(NULL);
@@ -7474,7 +7275,6 @@ void main_loop()
   job		   *pjob;
   time_t tmpTime;
   time_t time_now;
-  int           sindex;  /* server index */
 
   mom_run_state = MOM_RUN_STATE_RUNNING;  /* mom_run_state is altered by stop_me() or MOMCheckRestart() */
   while (mom_run_state == MOM_RUN_STATE_RUNNING)
@@ -7508,7 +7308,8 @@ void main_loop()
        check_log();  /* Possibly do a log_roll */
        }
 
-    if (mom_server_check_connections() == 0)  /* Are we connected to any server? */
+#if 0
+    if (mom_server_all_check_connection() == 0)  /* Are we connected to any server? */
       {
       /* Don't do any other processing until we've re-established
        * contact with at least one server */
@@ -7516,6 +7317,9 @@ void main_loop()
       sleep(1);  /* sleep to prevent too many messages sent to server under certain failure conditions */
       }
     else
+#else
+    mom_server_all_check_connection();
+#endif
       {
       if (time_now >= (LastServerUpdateTime + ServerStatUpdateInterval))
         {
@@ -7524,7 +7328,7 @@ void main_loop()
         if (PBSNodeCheckInterval > 0)
           check_state((LastServerUpdateTime == 0));
 
-        is_update_stat(0);
+        mom_server_all_update_stat();
 
         LastServerUpdateTime = time_now;
         }
@@ -7532,11 +7336,7 @@ void main_loop()
       /* if needed, update server with my state change */
       /* can be changed in check_busy(), query_adp(), and is_update_stat() */
 
-      for (sindex = 0;sindex < PBS_MAXSERVER;sindex++)
-        {
-        if (ReportMomState[sindex] != 0)
-          state_to_server(sindex,0);
-        }
+      mom_server_all_send_state();
 
       if (time_now >= (last_poll_time + CheckPollTime))
         {

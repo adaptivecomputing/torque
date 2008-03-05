@@ -129,7 +129,7 @@ extern int  svr_authorize_jobreq A_((struct batch_request *,job *));
 extern int  svr_chkque A_((job *,pbs_queue *,char *,int,char *));
 extern int  job_route A_((job *));
 extern void check_state(int);
-extern void is_update_stat(int);
+extern void mom_server_all_update_stat();
 
 /* Global Data Items: */
 
@@ -211,7 +211,7 @@ void req_quejob(
     {
     check_state(1);
 
-    is_update_stat(0);
+    mom_server_all_update_stat();
 
     if (internal_state & INUSE_DOWN)
       {
