@@ -105,7 +105,6 @@
 
 /* Private Functions Local to this file */
 
-static int get_hold A_((tlist_head *, char **));
 static void process_hold_reply A_((struct work_task *));
 
 /* Global Data Items: */
@@ -118,10 +117,9 @@ extern char	*msg_postmomnojob;
 extern time_t	 time_now;
 
 int chk_hold_priv A_((long val, int perm));
+int get_hold A_((tlist_head *, char **, attribute *));
 
-/* Private Data */
 
-static attribute temphold;
 
 /*
  * chk_hold_priv - check that client has privilege to set/clear hold
@@ -167,7 +165,8 @@ void req_holdjob(
   job    *pjob;
   char    *pset;
   int     rc;
-
+  attribute temphold;
+ 
   pjob = chk_job_request(preq->rq_ind.rq_hold.rq_orig.rq_objname,preq);
 
   if (pjob == NULL)
@@ -177,7 +176,8 @@ void req_holdjob(
 
   /* cannot do anything until we decode the holds to be set */
 
-  if ( (rc=get_hold(&preq->rq_ind.rq_hold.rq_orig.rq_attr, &pset)) != 0)
+  if ( (rc=get_hold(&preq->rq_ind.rq_hold.rq_orig.rq_attr, &pset, 
+                    &temphold)) != 0)
     {
     req_reject(rc,0,preq,NULL,NULL);
     return;
@@ -265,6 +265,7 @@ void req_releasejob(
   job		*pjob;
   char		*pset;
   int		 rc;
+  attribute      temphold;
 
   pjob = chk_job_request(preq->rq_ind.rq_release.rq_objname,preq);
 
@@ -275,7 +276,7 @@ void req_releasejob(
 
   /* cannot do anything until we decode the holds to be set */
 
-	if ( (rc=get_hold(&preq->rq_ind.rq_hold.rq_orig.rq_attr, &pset)) != 0) {
+	if ( (rc=get_hold(&preq->rq_ind.rq_hold.rq_orig.rq_attr, &pset, &temphold)) != 0) {
 		req_reject(rc, 0, preq,NULL,NULL);
 		return;
 	}
@@ -332,10 +333,12 @@ void req_releasejob(
  *	Decode the hold attribute into temphold.
  */
 
-static int get_hold(
+int get_hold(
 
   tlist_head *phead,
-  char      **pset)  /* O - ptr to hold value */
+  char      **pset,     /* O - ptr to hold value */
+  attribute *temphold   /* O - ptr to attribute to decode value into  */
+  )
 
   {
   int		 have_one = 0;
@@ -369,10 +372,10 @@ static int get_hold(
 
   /* decode into temporary attribute structure */
 
-  clear_attr(&temphold,&job_attr_def[(int)JOB_ATR_hold]);
+  clear_attr(temphold,&job_attr_def[(int)JOB_ATR_hold]);
 
   return(job_attr_def[(int)JOB_ATR_hold].at_decode(
-    &temphold,
+    temphold,
     holdattr->al_name,
     (char *)0,
     holdattr->al_value) );
