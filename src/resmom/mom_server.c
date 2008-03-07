@@ -907,16 +907,12 @@ stat_record stats[] = {
  */
 void generate_server_status(char *buffer, int buffer_size)
   {
-  static char id[] = "generate_server_status";
-
   int    i;
   char *BPtr = buffer;
   int   BSpace = buffer_size;
 
   for (i = 0;stats[i].name != NULL;i++) 
     {
-    if (LOGLEVEL >= 7)
-      log_record(PBSEVENT_SYSTEM,0,id,"setting alarm in is_update_stat");
     alarm(alarm_time);
 
     if (stats[i].func)
@@ -924,8 +920,6 @@ void generate_server_status(char *buffer, int buffer_size)
       (stats[i].func)(stats[i].name,&BPtr,&BSpace);
       }
 
-    if (LOGLEVEL >= 8)
-      log_record(PBSEVENT_SYSTEM,0,id,"clearing alarm in is_update_stat");
     alarm(0);
     }
   }
@@ -945,9 +939,31 @@ mom_server_update_stat(mom_server *pms,char *status_strings)
   static char *id = "mom_server_update_stat";
   char *cp;
 
-  if ((pms->SStream == -1) ||
-      (pms->MOMRecvClusterAddrsCount == 0))
+  if (pms->pbs_servername[0] == 0)
+    {
+    /* No server is defined for this slot */
     return;
+    }
+
+  if (pms->SStream == -1)
+    {
+    sprintf(log_buffer,"server \"%s\" has no active stream",
+      pms->pbs_servername);
+    log_record(PBSEVENT_SYSTEM,0,id,log_buffer);
+    return;
+    }
+
+  if (pms->MOMRecvClusterAddrsCount == 0)
+    {
+    sprintf(log_buffer,"No contact with server \"%s\" at address (%ld.%ld.%ld.%ld)\n",
+      pms->pbs_servername,  
+      (pms->MOMServerAddrs & 0xff000000) >> 24,
+      (pms->MOMServerAddrs & 0x00ff0000) >> 16,
+      (pms->MOMServerAddrs & 0x0000ff00) >> 8,
+      (pms->MOMServerAddrs & 0x000000ff));
+    log_record(PBSEVENT_SYSTEM,0,id,log_buffer);
+    return;
+    }
 
   time(&pms->MOMLastSendToServerTime);
   
