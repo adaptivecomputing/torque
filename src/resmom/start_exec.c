@@ -488,12 +488,14 @@ int blcr_restart_job(
         arg[5] = SET_ARG(ptask->ti_job->ji_wattr[(int)JOB_ATR_chkptname].at_val.at_str);
         arg[6] = NULL;
  
-       strcpy(buf, "restart args:");
-        for (ap = arg; *ap; ap++)
+        strcpy(buf,"restart args:");
+
+        for (ap = arg;*ap;ap++)
           {
-          strcat(buf, " ");
-          strcat(buf, *ap);
+          strcat(buf," ");
+          strcat(buf,*ap);
           }
+
         log_err(-1,id,buf);
 
         log_close(0);
@@ -506,12 +508,14 @@ int blcr_restart_job(
 
         net_close(-1);
  
-        fdreopen("/dev/null", O_RDONLY, 0);
-        fdreopen("/dev/null", O_WRONLY, 1);
-        fdreopen("/dev/null", O_WRONLY, 2);
+        fdreopen("/dev/null",O_RDONLY,0);
+        fdreopen("/dev/null",O_WRONLY,1);
+        fdreopen("/dev/null",O_WRONLY,2);
 
         /* set us up with a new session */
+
         pid = setsid();
+
         if (pid < 0)
           {
           perror("setsid");
@@ -3187,6 +3191,8 @@ int TMomFinalizeChild(
 
     arg[aindex] = malloc(strlen(shellname) + 2);
 
+    /* specifying '-' indicates this is a 'login' shell */
+
     strcpy(arg[aindex],"-");
 
     strcat(arg[aindex],shellname);
@@ -3239,10 +3245,11 @@ int TMomFinalizeChild(
       {
       /* Launch job executable with cr_run command so that cr_checkpoint command will work. */
 
-      arg[3] = arg[2];  /* shuffle up the existing args */
+      arg[3] = arg[2];                     /* shuffle up the existing args */
       arg[2] = arg[1];
-      arg[1] = malloc(strlen(shell)+1);  /* replace first arg with shell name */
-      strcpy(arg[1], shell);
+      arg[1] = malloc(strlen(shell) + 1);  /* replace first arg with shell name */
+
+      strcpy(arg[1],shell);
 
       execve(checkpoint_run_exe_name,arg,vtable.v_envp);
       }

@@ -311,10 +311,16 @@ static int marknode(
   }  /* END marknode() */
 
 
-struct batch_status *statnode(int con,char *nodearg)
+
+
+struct batch_status *statnode(
+
+  int   con,
+  char *nodearg)
+
   {
   struct batch_status *bstatus;
-  char	         *errmsg;
+  char	              *errmsg;
 
   bstatus = pbs_statnode(con,nodearg,NULL,NULL);
 
@@ -352,9 +358,13 @@ struct batch_status *statnode(int con,char *nodearg)
   }    /* END statnode() */
 
 
+
+
 void addxmlnode(
-  mxml_t *DE,
+
+  mxml_t              *DE,
   struct batch_status *pbstat)
+
   {
   mxml_t *NE;
   mxml_t *AE;
@@ -386,7 +396,9 @@ void addxmlnode(
 
     MXMLAddE(NE,AE);
     }
-} /* END addxmlnode() */
+
+  return;
+  } /* END addxmlnode() */
 
 
 enum NStateEnum {
@@ -415,9 +427,11 @@ const char *NState[] = {
 
 
 int filterbystate(
-  struct batch_status * pbstat,
-  enum NStateEnum ListType,
-  char *S)
+
+  struct batch_status *pbstat,
+  enum NStateEnum      ListType,
+  char                *S)
+
   {
   int Display;
 
@@ -505,8 +519,10 @@ int filterbystate(
       break;
     }  /* END switch (ListType) */
 
-  return Display;
-}
+  return(Display);
+  }
+
+
 
 int main(
 
@@ -526,18 +542,18 @@ int main(
   int	flag = ALLI;
   char	*note = NULL;
   enum  note_flags note_flag = unused;
-  char **nodeargs=NULL;
+  char **nodeargs = NULL;
           int lindex;
 
   enum NStateEnum ListType = tnsNONE;
 
   /* get default server, may be changed by -s option */
 
-  progname=strdup(argv[0]);
+  progname = strdup(argv[0]);
 
   while ((i = getopt(argc,argv,"acdlopqrs:x-:N:n")) != EOF)
     {
-    switch(i) 
+    switch (i) 
       {
       case 'a':
 
@@ -745,13 +761,13 @@ int main(
 
       if (argv[optind] != NULL)
         {
-        nodeargs=argv + optind;
+        nodeargs = argv + optind;
         }
       else
         {
-        nodeargs=malloc(2*sizeof(char **));
-        nodeargs[0]=strdup("");
-        nodeargs[1]='\0';
+        nodeargs = malloc(2*sizeof(char **));
+        nodeargs[0] = strdup("");
+        nodeargs[1] = '\0';
         }
       }
     }
@@ -760,6 +776,7 @@ int main(
   if ((note_flag == set) && (note != NULL))
     {
     /* set the note attrib string on specified nodes */
+
     for (pa = argv + optind;*pa;pa++) 
       {
       set_note(con,*pa,note);
@@ -850,7 +867,7 @@ int main(
         }
       else
         {
-        for (lindex=0;nodeargs[lindex]!='\0';lindex++) 
+        for (lindex = 0;nodeargs[lindex] != '\0';lindex++) 
           {
           bstatus=statnode(con,nodeargs[lindex]);
 
@@ -874,7 +891,7 @@ int main(
 
       /* list any node that is DOWN, OFFLINE, or UNKNOWN */
 
-      for (lindex=0;nodeargs[lindex]!='\0';lindex++) 
+      for (lindex = 0;nodeargs[lindex] != '\0';lindex++) 
         {
         bstatus=statnode(con,nodeargs[lindex]);
 
