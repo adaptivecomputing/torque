@@ -218,7 +218,7 @@ attribute_def job_attr_def[] = {
 	ATR_TYPE_STR,
 	PARENT_TYPE_JOB
     },
-/* JOB_ATR_ctime */
+/* JOB_ATR_ctime */    /* create time, set when the job is queued */
     {	ATTR_ctime,		/* "ctime" */
 	decode_l,
 	encode_l,

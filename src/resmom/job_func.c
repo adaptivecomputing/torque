@@ -671,6 +671,8 @@ void job_purge(
   remtree(namebuf);
 
 #if MOM_CHECKPOINT == 1
+#if 0
+  /* Leave the checkpoint files around per request by Cray */
   {
   extern char *path_checkpoint;
 
@@ -679,6 +681,7 @@ void job_purge(
   strcat(namebuf,JOB_CKPT_SUFFIX);
   remtree(namebuf);
   }
+#endif
 #endif	/* MOM_CHECKPOINT */
 
   strcpy(namebuf,path_jobs);	/* delete job file */
