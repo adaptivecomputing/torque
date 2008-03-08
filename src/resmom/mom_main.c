@@ -317,7 +317,7 @@ static unsigned long restricted(char *);
 static unsigned long jobstartblocktime(char *);
 static unsigned long usecp(char *);
 static unsigned long wallmult(char *);
-extern unsigned long setpbsserver(char *);
+static unsigned long setpbsserver(char *);
 static unsigned long setnodecheckscript(char *);
 static unsigned long setnodecheckinterval(char *);
 static unsigned long settimeout(char *);
@@ -1598,7 +1598,7 @@ static u_long setpbsclient(
 
 /* FIXME: we need to handle a non-default port number */
 
-u_long setpbsserver(
+static u_long setpbsserver(
 
   char *value)  /* I */
   
