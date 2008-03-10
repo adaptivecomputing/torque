@@ -562,7 +562,6 @@ extern void scan_for_terminated();
 extern int TMomCheckJobChild(pjobexec_t *,int,int *,int *);
 extern int TMomFinalizeJob3(pjobexec_t *,int,int,int *);
 extern void exec_bail(job *,int);
-extern int is_compose(int,int);
 extern void check_state(int);
 extern void tinsert(const u_long,tree **);
 extern void DIS_tcp_funcs();
