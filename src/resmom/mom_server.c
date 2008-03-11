@@ -112,6 +112,82 @@
  * are basically a socket and event handler pair.  Connections are also used
  * in communication with a scheduler and with sister moms.
  *
+ * Here are the senarios pertaining to this module.
+ *
+ * HELLO sent by pbs_server first
+ * ------------------------------
+ *
+ *   pbs_server             pbs_mom
+ *      |                      |
+ *      +--- HELLO ----------->|
+ *      |                      |
+ *      |<----------- HELLO ---+
+ *      |                      |
+ *      +--- CLUSTER_ADDRS --->|
+ *      |                      |
+ *
+ *
+ * HELLO sent by pbs_mom first
+ * ---------------------------
+ *
+ *   pbs_server             pbs_mom
+ *      |                      |
+ *      |<----------- HELLO ---+
+ *      |                      |
+ *      +--- CLUSTER_ADDRS --->|
+ *      |                      |
+ *
+ *
+ * HELLO sent by both
+ * ------------------
+ * Both HELLO's are launched at the same time.
+ * This is my best guess at how this works.
+ * In mom_server_valid_message_source it tries to match the
+ * stream number on which the message arrived with a server.
+ * If the stream is found, the message is valid.  Otherwise,
+ * an attempt is made to match the IP address from the message
+ * source with the IP address of some existing server stream.
+ * If a match is found, a message is logged about a duplicate
+ * stream, the previous stream associated with the server is
+ * closed and the new stream replaces it.
+ *
+ *   pbs_server             pbs_mom
+ *      |                      |
+ *      +--- HELLO ----------->|
+ *      |                      |
+ *      |<----------- HELLO ---+
+ *      |                      |
+ *      +--- CLUSTER_ADDRS --->|
+ *      |                      |
+ *
+ *
+ * STATUS sent by pbs_mom
+ * ----------------------
+ * The pbs_mom has timer and when it fires, a IS_STATUS message
+ * is sent to all servers.  There is no response from the server.
+ *
+ *   pbs_server             pbs_mom
+ *      |                      |
+ *      |<---------- STATUS ---+
+ *      |                      |
+ *
+ *
+ * UPDATE sent by pbs_mom
+ * ----------------------
+ * Each server has a flag, ReportMomState, that is set whenever
+ * the state changes.  Every time the main loop cycles, all servers
+ * are checked and if the flag is set, an IS_UPDATE message is
+ * sent to the server. There is no response from the server.
+ * The state is also sent periodically in the STATUS message
+ * and so when this message is sent, the ReportMomState flag is
+ * cleared.
+ *
+ *   pbs_server             pbs_mom
+ *      |                      |
+ *      |<---------- UPDATE ---+
+ *      |                      |
+ *
+ *
  *----------------------------------------------------------------------------
  */
 
