@@ -404,15 +404,15 @@ static char *reqvarattr(struct rm_attribute *);
 
 
 struct config common_config[] = {
-  { "arch",      {arch} },
-  { "opsys",     {opsys} },
-  { "uname",     {requname} },
-  { "validuser", {validuser} },
-  { "message",   {reqmsg} },
-  { "gres",      {reqgres} },
-  { "state",     {reqstate} },
-  { "jobs",      {getjoblist} },
-  { "varattr",   {reqvarattr} },
+  { "arch",      {arch} },             /* machine architecture  */
+  { "opsys",     {opsys} },            /* operating system      */
+  { "uname",     {requname} },         /* user name     ???     */
+  { "validuser", {validuser} },        /* valid user    ???     */
+  { "message",   {reqmsg} },           /* message       ???     */
+  { "gres",      {reqgres} },          /* ???                   */
+  { "state",     {reqstate} },         /* state of pbs_mom      */
+  { "jobs",      {getjoblist} },       /* job list this pbs_mom */
+  { "varattr",   {reqvarattr} },       /* ???                   */
   { NULL,        {NULL} } };
 
 int                     LOGLEVEL = 0;  /* valid values (0 - 10) */
