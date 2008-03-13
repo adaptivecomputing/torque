@@ -81,9 +81,7 @@
 #include <assert.h>
 #include <ctype.h>
 #include <memory.h>
-#ifndef NDEBUG
 #include <stdio.h>
-#endif
 #include <stdlib.h>
 #include <string.h>
 #include "pbs_ifl.h"

@@ -4883,7 +4883,9 @@ int do_tcp(
   int fd)
 
   {
+#ifndef NDEBUG
   static char id[] = "do_tcp";
+#endif
 
   int ret, proto, version;
   int tm_request A_((int stream, int version));

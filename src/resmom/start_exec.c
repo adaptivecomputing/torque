@@ -3320,16 +3320,18 @@ int TMomFinalizeChild(
 
   if (strlen(shell) == 0)
     {
+#ifndef NDEBUG
     extern char mom_host[];
-
+#endif
     DBPRT(("user \"%s\" may not have a shell defined on node \"%s\"\n",
       pwdp->pw_name,
       mom_host));
     }
   else if (strstr(shell,"/bin/false") != NULL)
     {
+#ifndef NDEBUG
     extern char mom_host[];
-
+#endif
     DBPRT(("user \"%s\" has shell \"/bin/false\" on node \"%s\"\n",
       pwdp->pw_name,
       mom_host));

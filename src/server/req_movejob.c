@@ -121,7 +121,9 @@ void req_movejob(
   struct batch_request *req)
 
   {
+#ifndef NDEBUG
   char	*id = "req_movejob";
+#endif
   job	*jobp;
 
   jobp = chk_job_request(req->rq_ind.rq_move.rq_jid,req);
@@ -220,7 +222,9 @@ void req_orderjob(
   struct batch_request *req)  /* I */
 
   {
+#ifndef NDEBUG
   char	*id = "req_orderjob";
+#endif
   job	*pjob;
   job	*pjob1;
   job	*pjob2;

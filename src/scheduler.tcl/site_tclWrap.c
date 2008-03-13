@@ -91,8 +91,9 @@ void
 site_cmds(interp)
     Tcl_Interp	*interp;
 {
+#ifndef NDEBUG
 	char	*id = "site_cmds";
-
+#endif
 	DBPRT(("%s: entered\n", id))
 	return;
 }

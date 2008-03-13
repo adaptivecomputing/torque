@@ -581,8 +581,9 @@ int x11_create_display(
 #ifdef IPV6_V6ONLY      
                         if (ai->ai_family == AF_INET6) {
                                 int on = 1;
-                                if (setsockopt(sock, IPPROTO_IPV6, IPV6_V6ONLY, &on, sizeof(on)) < 0)
+                                if (setsockopt(sock, IPPROTO_IPV6, IPV6_V6ONLY, &on, sizeof(on)) < 0) {
                                         DBPRT(("setsockopt IPV6_V6ONLY: %.100s\n", strerror(errno)));
+                                }
                         }
 #endif                  
                         if (bind(sock, ai->ai_addr, ai->ai_addrlen) < 0) {

@@ -81,10 +81,8 @@
 
 #include "portability.h"
 #include "list_link.h"
-#ifndef NDEBUG
 #include <stdio.h>
 #include <stdlib.h>
-#endif
 
 
 /*

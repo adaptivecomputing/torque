@@ -1132,7 +1132,9 @@ static int process_host_name_part(
 int update_nodes_file()
 
   {
+#ifndef NDEBUG
   static char	id[] = "update_nodes_file";
+#endif
   struct pbsnode  *np;
   int	i, j;
   FILE	*nin;

@@ -1479,8 +1479,9 @@ int sigalltasks_sisters(
   int  signum)
 
   {
+#ifndef NDEBUG
   char      id[] = "sigalltasks_sisters";
-
+#endif
   char     *cookie;
   eventent *ep;
   int i;

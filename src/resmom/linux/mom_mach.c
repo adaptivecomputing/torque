@@ -2429,7 +2429,9 @@ char *cput_job(
   pid_t jobid)
 
   {
+#ifndef NDEBUG
   char         *id = "cput_job";
+#endif
   int           found = 0;
   int           i;
 
@@ -2586,7 +2588,9 @@ char *mem_job(
   pid_t sid)  /* I */
 
   {
+#ifndef NDEBUG
   static char         id[] = "mem_job";
+#endif
   unsigned long long  memsize;
   int                 i;
 

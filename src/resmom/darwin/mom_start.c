@@ -188,7 +188,9 @@ char *set_shell(pjob, pwdp)
 
 void scan_for_terminated()
 {
+#ifndef NDEBUG
 	static	char	id[] = "scan_for_terminated";
+#endif
 	int		exiteval;
 	pid_t		pid;
 	job		*pjob;

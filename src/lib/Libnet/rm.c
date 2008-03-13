@@ -998,7 +998,9 @@ int flushreq()
 int activereq(void)
 
   {
+#ifndef NDEBUG
   static char	id[] = "activereq";
+#endif 
 
 #if RPP
   struct out *op;
