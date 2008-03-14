@@ -48,8 +48,8 @@ libtorque_la_SOURCES = ../Libdis/dis.c ../Libdis/discui_.c ../Libdis/discul_.c \
 		    ../Libifl/nonblock.c ../Libifl/PBS_attr.c \
 		    ../Libifl/pbsD_alterjo.c ../Libifl/pbsD_asyrun.c \
 		    ../Libifl/PBS_data.c ../Libifl/pbsD_connect.c \
-		    ../Libifl/pbsD_deljob.c ../Libifl/pbsD_holdjob.c \
-		    ../Libifl/pbsD_locjob.c \
+		    ../Libifl/pbsD_deljob.c ../Libifl/pbsD_holdjob.c  \
+		    ../Libifl/pbsD_chkptjob.c  ../Libifl/pbsD_locjob.c \
 		    ../Libifl/PBSD_manage2.c ../Libifl/pbsD_manager.c \
 		    ../Libifl/pbsD_movejob.c ../Libifl/PBSD_manager_caps.c \
 		    ../Libifl/PBSD_msg2.c ../Libifl/pbsD_msgjob.c \

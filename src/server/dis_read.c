@@ -233,6 +233,7 @@ int dis_request_read(
 
     case PBS_BATCH_DeleteJob:
     case PBS_BATCH_HoldJob:
+    case PBS_BATCH_ChkptJob:
     case PBS_BATCH_ModifyJob:
 
       rc = decode_DIS_Manage(sfds, request);

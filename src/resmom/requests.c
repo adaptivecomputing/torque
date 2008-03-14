@@ -942,8 +942,6 @@ void req_holdjob(
   struct batch_request *preq)
 
   {
-#if MOM_CHECKPOINT == 1
-
   int  rc;
   job *pjob;
 
@@ -964,13 +962,40 @@ void req_holdjob(
 
   /* note, normally the reply to the server is in start_checkpoint() */
 
-#else	/* MOM_CHECKPOINT */
+  }
 
-  req_reject(PBSE_NOSUP,0,preq,mom_host,"checkpointing not supported");
 
-#endif	/* MOM_CHECKPOINT */
 
-  return;
+
+/*
+ * req_chkptjob - checkpoint and continue job
+ */
+
+void req_chkptjob(
+
+  struct batch_request *preq)
+
+  {
+  int  rc;
+  job *pjob;
+
+  /* If checkpoint supported, do it and terminate the job */
+  /* otherwise, return PBSE_NOSUP				*/
+
+  pjob = find_job(preq->rq_ind.rq_manager.rq_objname);
+
+  if (pjob == NULL) 
+    {
+    rc = PBSE_UNKJOBID;
+    } 
+  else 
+    {
+    if ((rc = start_checkpoint(pjob,0,preq)) != PBSE_NONE)
+      req_reject(rc,0,preq,mom_host,"cannot checkpoint job");    /* unable to start chkpt */
+    }
+
+  /* note, normally the reply to the server is in start_checkpoint() */
+
   }
 
 

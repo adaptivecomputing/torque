@@ -213,48 +213,73 @@ struct batch_reply {
 /* The Batch Request ID numbers (sync w/PBatchReqType[]) */
 
 enum PBatchReqTypeEnum { 
-  PBS_BATCH_Connect  	= 0,
-  PBS_BATCH_QueueJob	= 1,
-  PBS_BATCH_JobCred	= 2,
-  PBS_BATCH_jobscript	= 3,
-  PBS_BATCH_RdytoCommit	= 4,
-  PBS_BATCH_Commit	= 5,
-  PBS_BATCH_DeleteJob	= 6,
-  PBS_BATCH_HoldJob	= 7,
-  PBS_BATCH_LocateJob	= 8,
-  PBS_BATCH_Manager	= 9,
-  PBS_BATCH_MessJob	= 10,
-  PBS_BATCH_ModifyJob	= 11,
-  PBS_BATCH_MoveJob	= 12,
-  PBS_BATCH_ReleaseJob	= 13,
-  PBS_BATCH_Rerun	= 14,
-  PBS_BATCH_RunJob	= 15,
-  PBS_BATCH_SelectJobs	= 16,
-  PBS_BATCH_Shutdown	= 17,
-  PBS_BATCH_SignalJob	= 18,
-  PBS_BATCH_StatusJob	= 19,
-  PBS_BATCH_StatusQue	= 20,
-  PBS_BATCH_StatusSvr	= 21,
-  PBS_BATCH_TrackJob	= 22,
-  PBS_BATCH_AsyrunJob	= 23,
-  PBS_BATCH_Rescq	= 24,
-  PBS_BATCH_ReserveResc	= 25,
-  PBS_BATCH_ReleaseResc	= 26,
-  PBS_BATCH_StageIn	= 48,
-  PBS_BATCH_AuthenUser	= 49,
-  PBS_BATCH_OrderJob	= 50,
-  PBS_BATCH_SelStat	= 51,
-  PBS_BATCH_RegistDep	= 52,
-  PBS_BATCH_CopyFiles	= 54,
-  PBS_BATCH_DelFiles	= 55,
-  PBS_BATCH_JobObit	= 56,
-  PBS_BATCH_MvJobFile	= 57,
-  PBS_BATCH_StatusNode	= 58,
-  PBS_BATCH_Disconnect	= 59 };
+  PBS_BATCH_Connect     = 0,
+  PBS_BATCH_QueueJob    = 1,
+  PBS_BATCH_JobCred     = 2,
+  PBS_BATCH_jobscript   = 3,
+  PBS_BATCH_RdytoCommit = 4,
+  PBS_BATCH_Commit      = 5,
+  PBS_BATCH_DeleteJob   = 6,
+  PBS_BATCH_HoldJob     = 7,
+  PBS_BATCH_LocateJob   = 8,
+  PBS_BATCH_Manager     = 9,
+  PBS_BATCH_MessJob     = 10,
+  PBS_BATCH_ModifyJob   = 11,
+  PBS_BATCH_MoveJob     = 12,
+  PBS_BATCH_ReleaseJob  = 13,
+  PBS_BATCH_Rerun       = 14,
+  PBS_BATCH_RunJob      = 15,
+  PBS_BATCH_SelectJobs  = 16,
+  PBS_BATCH_Shutdown    = 17,
+  PBS_BATCH_SignalJob   = 18,
+  PBS_BATCH_StatusJob   = 19,
+  PBS_BATCH_StatusQue   = 20,
+  PBS_BATCH_StatusSvr   = 21,
+  PBS_BATCH_TrackJob    = 22,
+  PBS_BATCH_AsyrunJob   = 23,
+  PBS_BATCH_Rescq       = 24,
+  PBS_BATCH_ReserveResc = 25,
+  PBS_BATCH_ReleaseResc = 26,
+  PBS_BATCH_ChkptJob    = 27,
+                       /* 28 */
+                       /* 29 */
+                       /* 30 */
+                       /* 31 */
+                       /* 32 */
+                       /* 33 */
+                       /* 34 */
+                       /* 35 */
+                       /* 36 */
+                       /* 37 */
+                       /* 38 */
+                       /* 39 */
+                       /* 40 */
+                       /* 41 */
+                       /* 42 */
+                       /* 43 */
+                       /* 44 */
+                       /* 45 */
+                       /* 46 */
+                       /* 47 */
+  PBS_BATCH_StageIn     = 48,
+  PBS_BATCH_AuthenUser  = 49,
+  PBS_BATCH_OrderJob    = 50,
+  PBS_BATCH_SelStat     = 51,
+  PBS_BATCH_RegistDep   = 52,
+                       /* 53 */
+  PBS_BATCH_CopyFiles   = 54,
+  PBS_BATCH_DelFiles    = 55,
+  PBS_BATCH_JobObit     = 56,
+  PBS_BATCH_MvJobFile   = 57,
+  PBS_BATCH_StatusNode  = 58,
+  PBS_BATCH_Disconnect  = 59 };
+  /* Watch Out! Code in dis_request_read uses PBS_BATCH_Disconnect as the last valid number */
+  /* Not that if you add anything here, also change the array PBatchReqType in lib/Liblog/pbs_messages.c */
+
 /* DIAGTODO: define PBS_BATCH_StatusDiag */
-#define PBS_BATCH_FileOpt_Default	0
-#define PBS_BATCH_FileOpt_OFlg		1
-#define PBS_BATCH_FileOpt_EFlg		2
+#define PBS_BATCH_FileOpt_Default  0
+#define PBS_BATCH_FileOpt_OFlg     1
+#define PBS_BATCH_FileOpt_EFlg     2
 
 #define PBS_credentialtype_none 0
 const char *reqtype_to_txt(int);

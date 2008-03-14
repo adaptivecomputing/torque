@@ -105,6 +105,7 @@
 
 /* Private Functions Local to this file */
 
+static void process_chkpt_reply A_((struct work_task *));
 static void process_hold_reply A_((struct work_task *));
 
 /* Global Data Items: */
@@ -239,6 +240,59 @@ void req_holdjob(
 
       svr_setjobstate(pjob,newstate,newsub);
       }
+
+    reply_ack(preq);
+    }
+  }  /* END req_holdjob() */
+
+
+
+
+/*
+ * req_chkptjob - service the Checkpoint Job Request
+ *
+ */
+
+void req_chkptjob(
+
+  struct batch_request *preq)
+
+  {
+  job    *pjob;
+  int     rc;
+ 
+  if ((pjob = chk_job_request(preq->rq_ind.rq_manager.rq_objname,preq)) == NULL)
+    {
+    return;
+    }
+
+  if (pjob->ji_qs.ji_state == JOB_STATE_RUNNING)
+    {
+       
+    /* have MOM attempt checkpointing */
+
+    if ((rc = relay_to_mom(pjob->ji_qs.ji_un.ji_exect.ji_momaddr,
+               preq, process_chkpt_reply)) != 0)
+      {
+      req_reject(rc, 0, preq,NULL,NULL);
+      } 
+    else
+      {
+      pjob->ji_qs.ji_svrflags |= JOB_SVFLG_CHKPT;
+      job_save(pjob, SAVEJOB_QUICK);
+      LOG_EVENT(PBSEVENT_JOB, PBS_EVENTCLASS_JOB,
+          pjob->ji_qs.ji_jobid, log_buffer);
+      }
+    } 
+  else 
+    {
+    /* everything went well, may need to update the job state */
+
+    LOG_EVENT(
+      PBSEVENT_JOB, 
+      PBS_EVENTCLASS_JOB,
+      pjob->ji_qs.ji_jobid, 
+      log_buffer);
 
     reply_ack(preq);
     }
@@ -440,6 +494,40 @@ static void process_hold_reply(
     pjob->ji_modified = 1;    /* indicate attributes changed     */
     svr_evaljobstate(pjob,&newstate,&newsub,0);
     svr_setjobstate(pjob,newstate,newsub); /* saves job */
+
+    account_record(PBS_ACCT_CHKPNT, pjob, (char *)0);  /* note in accounting file */
+    reply_ack(preq);
+    }
+  }
+
+/*
+ * process_chkpt_reply
+ *	called when a chkpt request was sent to MOM and the answer
+ *	is received.  Completes the chkpt request for running jobs.
+ */
+
+static void process_chkpt_reply(
+
+  struct work_task *pwt)
+  {
+  job		     *pjob;
+  struct batch_request *preq;
+
+  svr_disconnect(pwt->wt_event);	/* close connection to MOM */
+
+  preq = pwt->wt_parm1;
+  preq->rq_conn = preq->rq_orgconn;  /* restore client socket */
+
+  if ((pjob = find_job(preq->rq_ind.rq_manager.rq_objname)) == (job *)0)
+    {
+    LOG_EVENT(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB,
+        preq->rq_ind.rq_manager.rq_objname,
+        msg_postmomnojob);
+    req_reject(PBSE_UNKJOBID, 0, preq,NULL,msg_postmomnojob);
+    }
+  else
+    {
+    /* record that MOM has a checkpoint file */
 
     account_record(PBS_ACCT_CHKPNT, pjob, (char *)0);  /* note in accounting file */
     reply_ack(preq);

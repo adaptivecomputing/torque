@@ -200,6 +200,7 @@ static const char *PBatchReqType[] = {
   "ResourceQuery",
   "ReserveResource",
   "ReleaseResource", /* 26 */
+  "ChkptJob",
   "NONE",
   "NONE",
   "NONE",
@@ -220,8 +221,7 @@ static const char *PBatchReqType[] = {
   "NONE",
   "NONE",
   "NONE",
-  "NONE",
-  "Stagein",   /* 48 */
+  "StageIn",   /* 48 */
   "AuthenticateUser",
   "OrderJob",
   "SelStat",

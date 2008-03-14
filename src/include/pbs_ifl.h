@@ -473,6 +473,7 @@ extern int pbs_deljob A_((int connect,char *job_id,char *extend));
 extern int pbs_disconnect A_((int connect));
 extern char *pbs_geterrmsg A_((int connect));
 extern int pbs_holdjob A_((int connect,char *job_id,char *hold_type,char *extend));
+extern int pbs_chkptjob A_((int connect,char *job_id,char *extend));
 extern char *pbs_locjob A_((int connect,char *job_id,char *extend));
 
 extern int 
