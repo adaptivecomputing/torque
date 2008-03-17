@@ -1,0 +1,53 @@
+.\" Copyright (c) 2008 Cluster Resources
+.\" All rights reserved.
+.if \n(Pb .ig Iq
+.TH qchkpt 1B "" Local PBS
+.so ../ers/ers.macros
+.Iq
+.SH NAME
+qchkpt - checkpoint pbs batch jobs
+.SH SYNOPSIS
+qchkpt
+job_identifier ...
+.SH DESCRIPTION
+The 
+.B qchkpt 
+command requests that the PBS Mom generate a checkpoint file
+for a running job.
+.LP
+.SM
+This is an extension to POSIX.2d.
+.NL
+.Ig
+.LP
+The qchkpt command sends a
+.I "Chkpt Job"
+batch request to the server as described in the general section.
+.SH OPTIONS
+None
+.LP
+.SH OPERANDS
+The qchkpt command accepts one or more
+.Ar job_identifier
+operands of the form:
+.DS
+.Ty sequence_number[.server_name][@server]
+.DE
+.if !\n(Pb .ig Ig
+See the description under "Job Identifier" in section \*(Ji in this ERS.
+.Ig
+.LP
+.SH STANDARD ERROR
+The qchkpt command will write a diagnostic message to standard error for each
+error occurrence.
+.SH EXIT STATUS
+Upon successful processing of all the operands presented to the
+qchkpt command, the exit status will be a value of zero.
+.LP
+If the qchkpt command fails to process any operand, the
+command exits with a value greater than zero.
+.SH SEE ALSO
+qhold(1B), qrls(1B), qalter(1B), qsub(1B), pbs_alterjob(3B), pbs_holdjob(3B),
+pbs_rlsjob(3B), pbs_job_attributes(7B), pbs_resources_unicos8(7B)
+\" turn off any extra indent left by the Sh macro
+.RE

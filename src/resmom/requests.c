@@ -942,6 +942,7 @@ void req_holdjob(
   struct batch_request *preq)
 
   {
+#if MOM_CHECKPOINT == 1
   int  rc;
   job *pjob;
 
@@ -961,6 +962,9 @@ void req_holdjob(
     }
 
   /* note, normally the reply to the server is in start_checkpoint() */
+#else
+  req_reject(PBSE_NOSUP,0,preq,mom_host,"checkpoint feature not enabled, configure with --enable-blcr");    /* unable to start chkpt */
+#endif
 
   }
 
@@ -976,6 +980,7 @@ void req_chkptjob(
   struct batch_request *preq)
 
   {
+#if MOM_CHECKPOINT == 1
   int  rc;
   job *pjob;
 
@@ -995,7 +1000,9 @@ void req_chkptjob(
     }
 
   /* note, normally the reply to the server is in start_checkpoint() */
-
+#else
+  req_reject(PBSE_NOSUP,0,preq,mom_host,"checkpoint feature not enabled, configure with --enable-blcr");    /* unable to start chkpt */
+#endif
   }
 
 
