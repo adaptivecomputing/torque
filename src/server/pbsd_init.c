@@ -118,6 +118,7 @@
 #include "pbs_proto.h"
 #include "batch_request.h"
 #include "array.h"
+#include "csv.h"
 
 
 /*#ifndef SIGKILL*/

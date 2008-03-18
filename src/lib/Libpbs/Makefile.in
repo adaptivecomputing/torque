@@ -61,13 +61,13 @@ am__installdirs = "$(DESTDIR)$(libdir)"
 libLTLIBRARIES_INSTALL = $(INSTALL)
 LTLIBRARIES = $(lib_LTLIBRARIES)
 libtorque_la_LIBADD =
-am_libtorque_la_OBJECTS = dis.lo discui_.lo discul_.lo disi10d_.lo \
-	disi10l_.lo disiui_.lo disp10d_.lo disp10l_.lo disrcs.lo \
-	disrd.lo disrf.lo disrfcs.lo disrfst.lo disrl_.lo disrl.lo \
-	disrsc.lo disrsi_.lo disrsi.lo disrsl_.lo disrsl.lo disrss.lo \
-	disrst.lo disruc.lo disrui.lo disrul.lo disrus.lo diswcs.lo \
-	diswf.lo diswl_.lo diswsi.lo diswsl.lo diswui_.lo diswui.lo \
-	diswul.lo dec_attrl.lo dec_attropl.lo dec_Authen.lo \
+am_libtorque_la_OBJECTS = csv.lo dis.lo discui_.lo discul_.lo \
+	disi10d_.lo disi10l_.lo disiui_.lo disp10d_.lo disp10l_.lo \
+	disrcs.lo disrd.lo disrf.lo disrfcs.lo disrfst.lo disrl_.lo \
+	disrl.lo disrsc.lo disrsi_.lo disrsi.lo disrsl_.lo disrsl.lo \
+	disrss.lo disrst.lo disruc.lo disrui.lo disrul.lo disrus.lo \
+	diswcs.lo diswf.lo diswl_.lo diswsi.lo diswsl.lo diswui_.lo \
+	diswui.lo diswul.lo dec_attrl.lo dec_attropl.lo dec_Authen.lo \
 	dec_CpyFil.lo dec_JobCred.lo dec_JobFile.lo dec_JobId.lo \
 	dec_JobObit.lo dec_Manage.lo dec_MoveJob.lo dec_MsgJob.lo \
 	dec_QueueJob.lo dec_Reg.lo dec_ReqExt.lo dec_ReqHdr.lo \
@@ -345,7 +345,8 @@ SUBMIT_FILTER_PATH = $(libexecdir)/qsub_filter
 EXTRA_DIST = ../Libdis/dis_.h
 lib_LTLIBRARIES = libtorque.la
 libtorque_la_LDFLAGS = -version-info 2:0:0
-libtorque_la_SOURCES = ../Libdis/dis.c ../Libdis/discui_.c ../Libdis/discul_.c \
+libtorque_la_SOURCES = ../Libcsv/csv.c ../Libdis/dis.c \
+            ../Libdis/discui_.c ../Libdis/discul_.c \
 		    ../Libdis/disi10d_.c ../Libdis/disi10l_.c \
 		    ../Libdis/disiui_.c ../Libdis/disp10d_.c \
 		    ../Libdis/disp10l_.c ../Libdis/disrcs.c \
@@ -500,6 +501,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/chk_file_sec.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ck_job_name.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cnt2server.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/csv.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cvtdate.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dec_Authen.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dec_CpyFil.Plo@am__quote@
@@ -657,6 +659,13 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(LTCOMPILE) -c -o $@ $<
+
+csv.lo: ../Libcsv/csv.c
+@am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT csv.lo -MD -MP -MF $(DEPDIR)/csv.Tpo -c -o csv.lo `test -f '../Libcsv/csv.c' || echo '$(srcdir)/'`../Libcsv/csv.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/csv.Tpo $(DEPDIR)/csv.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='../Libcsv/csv.c' object='csv.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o csv.lo `test -f '../Libcsv/csv.c' || echo '$(srcdir)/'`../Libcsv/csv.c
 
 dis.lo: ../Libdis/dis.c
 @am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT dis.lo -MD -MP -MF $(DEPDIR)/dis.Tpo -c -o dis.lo `test -f '../Libdis/dis.c' || echo '$(srcdir)/'`../Libdis/dis.c

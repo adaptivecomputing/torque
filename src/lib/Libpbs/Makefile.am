@@ -8,7 +8,8 @@ lib_LTLIBRARIES = libtorque.la
 
 libtorque_la_LDFLAGS = -version-info 2:0:0
 
-libtorque_la_SOURCES = ../Libdis/dis.c ../Libdis/discui_.c ../Libdis/discul_.c \
+libtorque_la_SOURCES = ../Libcsv/csv.c ../Libdis/dis.c \
+            ../Libdis/discui_.c ../Libdis/discul_.c \
 		    ../Libdis/disi10d_.c ../Libdis/disi10l_.c \
 		    ../Libdis/disiui_.c ../Libdis/disp10d_.c \
 		    ../Libdis/disp10l_.c ../Libdis/disrcs.c \
