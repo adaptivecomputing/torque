@@ -212,7 +212,11 @@ attribute_def job_attr_def[] = {
 #ifdef PBS_MOM	
 	NULL_FUNC,
 #else	/* PBS_MOM - server side */
+#if 0
 	ck_checkpoint,
+#else
+    0,
+#endif
 #endif	/* PBS_MOM */
 	READ_WRITE | ATR_DFLAG_MOM | ATR_DFLAG_ALTRUN,
 	ATR_TYPE_STR,

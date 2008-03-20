@@ -1155,7 +1155,7 @@ const char *TJobAttr[] = {
   "in_queue",
   "at_server",
   "account",        /* the bulk of the attributes are in   */
-  "checkpoint",         /* alphabetic order for no good reason */
+  "chkpnt",         /* alphabetic order for no good reason */
   "ctime",
   "depend",
   "errpath",
