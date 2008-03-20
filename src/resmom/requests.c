@@ -777,11 +777,7 @@ static int told_to_cp(
       oldpath,
       nh);
 
-    log_record(
-      PBSEVENT_SYSTEM,
-      PBS_EVENTCLASS_SERVER,
-      (char *)id,
-      log_buffer);
+    log_err(-1,id,log_buffer);
     }
 
   return(0);
