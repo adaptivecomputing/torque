@@ -1142,8 +1142,6 @@ void req_messagejob(
     {
     req_reject(ret,0,preq,mom_host,"cannot add message to job output/error buffer");
     }
-
-  return;
   }  /* END req_messagejob() */
 
 
@@ -1157,7 +1155,7 @@ const char *TJobAttr[] = {
   "in_queue",
   "at_server",
   "account",        /* the bulk of the attributes are in   */
-  "chkpnt",         /* alphabetic order for no good reason */
+  "checkpoint",         /* alphabetic order for no good reason */
   "ctime",
   "depend",
   "errpath",
@@ -3496,7 +3494,7 @@ int mom_checkpoint_job(
         } 
       else 
         {
-        sprintf(log_buffer,"chkpnt failed: errno=%d sid=%d",
+        sprintf(log_buffer,"checkpoint failed: errno=%d sid=%d",
           errno, 
           sesid);
 
@@ -3556,7 +3554,7 @@ fail:
 
   ckerr = errno;
 
-  sprintf(log_buffer,"chkpnt failed:errno=%d sid=%d", 
+  sprintf(log_buffer,"checkpoint failed:errno=%d sid=%d", 
     errno, 
     sesid);
 
@@ -3715,7 +3713,7 @@ int start_checkpoint(
   attribute tmph;
   char      name_buffer[1024];
 
-  if (mom_does_chkpnt() == 0) 	/* no checkpoint, reject request */
+  if (mom_does_checkpoint() == 0) 	/* no checkpoint, reject request */
     {
     return(PBSE_NOSUP);
     }
@@ -3802,7 +3800,7 @@ int start_checkpoint(
     if ((rc == 0) && (hok == 0))
       rc = site_mom_postchk(pjob,(int)tmph.at_val.at_long);
 #if 0
-    exit(rc);	/* zero exit tells main chkpnt ok */
+    exit(rc);	/* zero exit tells main checkpoint ok */
 #else
   return(PBSE_NONE);		/* parent return */
 #endif

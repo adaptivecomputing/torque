@@ -3241,7 +3241,7 @@ int TMomFinalizeChild(
       sigaction(SIGINT,&act,(struct sigaction *)0);
       }
 
-    if (mom_does_chkpnt())
+    if (mom_does_checkpoint())
       {
       /* Launch job executable with cr_run command so that cr_checkpoint command will work. */
 

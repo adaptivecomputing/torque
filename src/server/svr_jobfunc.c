@@ -96,7 +96,7 @@
  * Private functions
  *	chk_svr_resc_limit() - check job requirements againt queue/server limits
  *	default_std()	   - make the default name for standard out/error
- *	eval_chkpnt()	   - insure job checkpoint .ge. queues min. time
+ *	eval_checkpoint()	   - insure job checkpoint .ge. queues min. time
  *	set_deflt_resc()   - set unspecified resource_limit to default values
  *	job_wait_over()	   - event handler for job_set_wait()
  */
@@ -131,7 +131,7 @@
 /* Private Functions */
 
 static void default_std A_((job *, int key, char * to));
-static void eval_chkpnt A_((attribute *j, attribute *q));
+static void eval_checkpoint A_((attribute *j, attribute *q));
 
 /* Global Data Items: */
 
@@ -401,7 +401,7 @@ int svr_enquejob(
 
     /* check the job checkpoint against the queue's min */
 
-    eval_chkpnt(
+    eval_checkpoint(
       &pjob->ji_wattr[(int)JOB_ATR_checkpoint],
       &pque->qu_attr[(int)QE_ATR_checkpoint_min]);
 		
@@ -1795,12 +1795,12 @@ void set_statechar(
 
 
 /*
- * eval_chkpnt - if the job's checkpoint attribute is "c=nnnn" and 
+ * eval_checkpoint - if the job's checkpoint attribute is "c=nnnn" and 
  * 	nnnn is less than the queue' minimum checkpoint time, reset
  *	to the queue min time. 
  */
 
-static void eval_chkpnt(
+static void eval_checkpoint(
 
   attribute *jobckp,	/* job's checkpoint attribute */
   attribute *queckp)	/* queue's checkpoint attribute */
@@ -1837,7 +1837,7 @@ static void eval_chkpnt(
     }
 
   return;
-  }  /* END eval_chkpnt() */
+  }  /* END eval_checkpoint() */
 
 
 

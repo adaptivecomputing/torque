@@ -1956,11 +1956,11 @@ int mom_close_poll()
 }
 
 /*
- * mom_does_chkpnt - return 1 if mom supports checkpoint
+ * mom_does_checkpoint - return 1 if mom supports checkpoint
  *			    0 if not
  */
 
-int mom_does_chkpnt()
+int mom_does_checkpoint()
 {
 	return (1);
 }
@@ -1981,7 +1981,7 @@ int mach_checkpoint(ptask, path, abort)
 
 	if (abort)
 		flags = CHKPNT_KILL;
-	cprtn = chkpnt( C_SESS, ptask->ti_qs.ti_sid, path, flags );
+	cprtn = checkpoint( C_SESS, ptask->ti_qs.ti_sid, path, flags );
 	return cprtn;
 }
 

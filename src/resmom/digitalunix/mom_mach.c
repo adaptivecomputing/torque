@@ -965,11 +965,11 @@ int mom_close_poll()
 }
 
 /*
- * mom_does_chkpnt - return 1 if mom supports checkpoint
+ * mom_does_checkpoint - return 1 if mom supports checkpoint
  *			    0 if not
  */
 
-int mom_does_chkpnt()
+int mom_does_checkpoint()
 {
 	return (0);
 }

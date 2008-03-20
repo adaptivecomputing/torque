@@ -112,7 +112,7 @@ struct startjob_rtn {
 	
 extern int mom_set_limits A_((job *pjob, int));	/* Set job's limits */
 extern int mom_do_poll A_((job *pjob));		/* Should limits be polled? */
-extern int mom_does_chkpnt();                   /* see if mom does chkpnt */
+extern int mom_does_checkpoint();                   /* see if mom does checkpoint */
 extern int mom_open_poll A_(());		/* Initialize poll ability */
 extern int mom_get_sample A_(());		/* Sample kernel poll data */
 extern int mom_over_limit A_((job *pjob));	/* Is polled job over limit? */
