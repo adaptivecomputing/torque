@@ -777,7 +777,7 @@ static int told_to_cp(
       oldpath,
       nh);
 
-    log_err(-1,id,log_buffer);
+    log_err(-1,(char *)id,log_buffer);
     }
 
   return(0);
