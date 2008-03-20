@@ -471,7 +471,7 @@ jump:
     return; 
     }  /* END if (pjob->ji_qs.ji_state == JOB_STATE_RUNNING) */ 
 
-  if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_CHKPT) != 0) 
+  if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_CHECKPOINT_FILE) != 0) 
     {
     /* job has restart file at mom, do end job processing */
 
@@ -504,7 +504,7 @@ jump:
      */
 
     job_abt(&pjob,Msg);
-    }  /* END else if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_CHKPT) != 0) */
+    }  /* END else if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_CHECKPOINT_FILE) != 0) */
 
   reply_ack(preq);
 

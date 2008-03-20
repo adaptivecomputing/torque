@@ -901,7 +901,7 @@ int send_job(
 
         if ((move_job_file(con,jobp,StdOut) != 0) ||
             (move_job_file(con,jobp,StdErr) != 0) ||
-            (move_job_file(con,jobp,Chkpt) != 0))
+            (move_job_file(con,jobp,Checkpoint) != 0))
           continue;
         }
 
@@ -1194,8 +1194,8 @@ static int move_job_file(conn, pjob, which)
 		(void)strcat(path, JOB_STDOUT_SUFFIX);
 	else if (which == StdErr)
 		(void)strcat(path, JOB_STDERR_SUFFIX);
-	else if (which == Chkpt)
-		(void)strcat(path, JOB_CKPT_SUFFIX);
+	else if (which == Checkpoint)
+		(void)strcat(path, JOB_CHECKPOINT_SUFFIX);
 
 	if (access(path, F_OK) < 0) {
 		if (errno == ENOENT)

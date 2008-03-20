@@ -105,7 +105,7 @@
 
 /* Private Functions Local to this file */
 
-static void process_chkpt_reply A_((struct work_task *));
+static void process_checkpoint_reply A_((struct work_task *));
 static void process_hold_reply A_((struct work_task *));
 
 /* Global Data Items: */
@@ -214,7 +214,7 @@ void req_holdjob(
       {
       pjob->ji_qs.ji_substate = JOB_SUBSTATE_RERUN;
       pjob->ji_qs.ji_svrflags |=
-          JOB_SVFLG_HASRUN | JOB_SVFLG_CHKPT;
+          JOB_SVFLG_HASRUN | JOB_SVFLG_CHECKPOINT_FILE;
       job_save(pjob, SAVEJOB_QUICK);
       LOG_EVENT(PBSEVENT_JOB, PBS_EVENTCLASS_JOB,
           pjob->ji_qs.ji_jobid, log_buffer);
@@ -249,11 +249,11 @@ void req_holdjob(
 
 
 /*
- * req_chkptjob - service the Checkpoint Job Request
+ * req_checkpointjob - service the Checkpoint Job Request
  *
  */
 
-void req_chkptjob(
+void req_checkpointjob(
 
   struct batch_request *preq)
 
@@ -272,13 +272,13 @@ void req_chkptjob(
     /* have MOM attempt checkpointing */
 
     if ((rc = relay_to_mom(pjob->ji_qs.ji_un.ji_exect.ji_momaddr,
-               preq, process_chkpt_reply)) != 0)
+               preq, process_checkpoint_reply)) != 0)
       {
       req_reject(rc, 0, preq,NULL,NULL);
       } 
     else
       {
-      pjob->ji_qs.ji_svrflags |= JOB_SVFLG_CHKPT;
+      pjob->ji_qs.ji_svrflags |= JOB_SVFLG_CHECKPOINT_FILE;
       job_save(pjob, SAVEJOB_QUICK);
       LOG_EVENT(PBSEVENT_JOB, PBS_EVENTCLASS_JOB,
           pjob->ji_qs.ji_jobid, log_buffer);
@@ -479,16 +479,16 @@ static void process_hold_reply(
     {
     /* record that MOM has a checkpoint file */
 
-    /* Stupid PBS_CHKPT_MIGRATE is defined as zero therefore this code will never fire.
+    /* PBS_CHECKPOINT_MIGRATEABLE is defined as zero therefore this code will never fire.
      * And if these flags are not set, start_exec will not try to run the job from
      * the checkpoint image file.
      */
 
-    pjob->ji_qs.ji_svrflags |= JOB_SVFLG_CHKPT;
-    if (preq->rq_reply.brp_auxcode)  /* chkpt can be moved */
+    pjob->ji_qs.ji_svrflags |= JOB_SVFLG_CHECKPOINT_FILE;
+    if (preq->rq_reply.brp_auxcode)  /* checkpoint can be moved */
       {
-      pjob->ji_qs.ji_svrflags &= ~JOB_SVFLG_CHKPT;
-      pjob->ji_qs.ji_svrflags |=  JOB_SVFLG_HASRUN | JOB_SVFLG_ChkptMig;
+      pjob->ji_qs.ji_svrflags &= ~JOB_SVFLG_CHECKPOINT_FILE;
+      pjob->ji_qs.ji_svrflags |=  JOB_SVFLG_HASRUN | JOB_SVFLG_CHECKPOINT_MIGRATEABLE;
       }
 
     pjob->ji_modified = 1;    /* indicate attributes changed     */
@@ -501,12 +501,12 @@ static void process_hold_reply(
   }
 
 /*
- * process_chkpt_reply
- *	called when a chkpt request was sent to MOM and the answer
- *	is received.  Completes the chkpt request for running jobs.
+ * process_checkpoint_reply
+ *	called when a checkpoint request was sent to MOM and the answer
+ *	is received.  Completes the checkpoint request for running jobs.
  */
 
-static void process_chkpt_reply(
+static void process_checkpoint_reply(
 
   struct work_task *pwt)
   {

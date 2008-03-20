@@ -958,12 +958,12 @@ void req_holdjob(
   else 
     {
     if ((rc = start_checkpoint(pjob,1,preq)) != PBSE_NONE)
-      req_reject(rc,0,preq,mom_host,"cannot checkpoint job");    /* unable to start chkpt */
+      req_reject(rc,0,preq,mom_host,"cannot checkpoint job");    /* unable to start checkpoint */
     }
 
   /* note, normally the reply to the server is in start_checkpoint() */
 #else
-  req_reject(PBSE_NOSUP,0,preq,mom_host,"checkpoint feature not enabled, configure with --enable-blcr");    /* unable to start chkpt */
+  req_reject(PBSE_NOSUP,0,preq,mom_host,"checkpoint feature not enabled, configure with --enable-blcr");    /* unable to start checkpoint */
 #endif
 
   }
@@ -972,10 +972,10 @@ void req_holdjob(
 
 
 /*
- * req_chkptjob - checkpoint and continue job
+ * req_checkpointjob - checkpoint and continue job
  */
 
-void req_chkptjob(
+void req_checkpointjob(
 
   struct batch_request *preq)
 
@@ -996,12 +996,12 @@ void req_chkptjob(
   else 
     {
     if ((rc = start_checkpoint(pjob,0,preq)) != PBSE_NONE)
-      req_reject(rc,0,preq,mom_host,"cannot checkpoint job");    /* unable to start chkpt */
+      req_reject(rc,0,preq,mom_host,"cannot checkpoint job");    /* unable to start checkpoint */
     }
 
   /* note, normally the reply to the server is in start_checkpoint() */
 #else
-  req_reject(PBSE_NOSUP,0,preq,mom_host,"checkpoint feature not enabled, configure with --enable-blcr");    /* unable to start chkpt */
+  req_reject(PBSE_NOSUP,0,preq,mom_host,"checkpoint feature not enabled, configure with --enable-blcr");    /* unable to start checkpoint */
 #endif
   }
 
@@ -2469,7 +2469,7 @@ void req_rerunjob(
 
   if (((rc = return_file(pjob,StdOut,sock)) != 0) ||
       ((rc = return_file(pjob,StdErr,sock)) != 0) ||
-      ((rc = return_file(pjob,Chkpt,sock)) != 0)) 
+      ((rc = return_file(pjob,Checkpoint,sock)) != 0)) 
     {
     /* FAILURE - cannot report file to server */
 
@@ -3442,7 +3442,7 @@ int mom_checkpoint_job(
 
   strcpy(path,path_checkpoint);
   strcat(path,pjob->ji_qs.ji_fileprefix);
-  strcat(path,JOB_CKPT_SUFFIX);
+  strcat(path,JOB_CHECKPOINT_SUFFIX);
 
 #if 0
   /* Don't mess with existing checkpoints. */
@@ -3530,7 +3530,7 @@ int mom_checkpoint_job(
 
   /* Checkpoint successful */
 
-  pjob->ji_qs.ji_svrflags |= JOB_SVFLG_CHKPT;
+  pjob->ji_qs.ji_svrflags |= JOB_SVFLG_CHECKPOINT_FILE;
 
   job_save(pjob,SAVEJOB_FULL);  /* to save resources_used so far */
 
@@ -3585,7 +3585,7 @@ fail:
   if (hasold) 
     {
     if (rename(oldp,path) == -1)
-      pjob->ji_qs.ji_svrflags &= ~JOB_SVFLG_CHKPT;
+      pjob->ji_qs.ji_svrflags &= ~JOB_SVFLG_CHECKPOINT_FILE;
     }
 #endif
 
@@ -3602,13 +3602,13 @@ fail:
 
 
 /* 
- * post_chkpt - post processor for start_checkpoint()
+ * post_checkpoint - post processor for start_checkpoint()
  *
  *	Called from scan_for_terminated() when found in ji_mompost;
  *	This sets the "has checkpoint image" bit in the job.
  */
 
-void post_chkpt(
+void post_checkpoint(
 
   job *pjob,
   int  ev)
@@ -3620,15 +3620,15 @@ void post_chkpt(
   extern char	*path_checkpoint;
   tm_task_id	tid;
   task		*ptask;
-  int		abort = pjob->ji_flags & MOM_CHKPT_ACTIVE;
+  int		abort = pjob->ji_flags & MOM_CHECKPOINT_ACTIVE;
 
   exiting_tasks = 1;	/* make sure we call scan_for_exiting() */
 
-  pjob->ji_flags &= ~MOM_CHKPT_ACTIVE;
+  pjob->ji_flags &= ~MOM_CHECKPOINT_ACTIVE;
 
   if (ev == 0) 
     {
-    pjob->ji_qs.ji_svrflags |= JOB_SVFLG_CHKPT;
+    pjob->ji_qs.ji_svrflags |= JOB_SVFLG_CHECKPOINT_FILE;
 
     return;
     }
@@ -3649,16 +3649,16 @@ void post_chkpt(
   ** the usual processing.
   */
 
-  pjob->ji_flags |= MOM_CHKPT_POST;
+  pjob->ji_flags |= MOM_CHECKPOINT_POST;
 
   /*
-  ** Set the TI_FLAGS_CHKPT flag for each task that
+  ** Set the TI_FLAGS_CHECKPOINT flag for each task that
   ** was checkpointed and aborted.
   */
 
   strcpy(path,path_checkpoint);
   strcat(path,pjob->ji_qs.ji_fileprefix);
-  strcat(path,JOB_CKPT_SUFFIX);
+  strcat(path,JOB_CHECKPOINT_SUFFIX);
 
   dir = opendir(path);
 
@@ -3682,7 +3682,7 @@ void post_chkpt(
     if (ptask == NULL)
       continue;
 
-    ptask->ti_flags |= TI_FLAGS_CHKPT;
+    ptask->ti_flags |= TI_FLAGS_CHECKPOINT;
     }
 
   closedir(dir);
@@ -3725,19 +3725,19 @@ int start_checkpoint(
   sprintf(name_buffer, "ckpt.%s.%d",
     pjob->ji_qs.ji_jobid,
     (int)time(0) );
-  decode_str(&pjob->ji_wattr[(int)JOB_ATR_chkptname],NULL,NULL,name_buffer);
-  pjob->ji_wattr[(int)JOB_ATR_chkptname].at_flags =
+  decode_str(&pjob->ji_wattr[(int)JOB_ATR_checkpoint_name],NULL,NULL,name_buffer);
+  pjob->ji_wattr[(int)JOB_ATR_checkpoint_name].at_flags =
     ATR_VFLAG_SET | ATR_VFLAG_MODIFY | ATR_VFLAG_SEND;
 
 
-  if (!(pjob->ji_wattr[(int)JOB_ATR_chkptdir].at_flags & ATR_VFLAG_SET))
+  if (!(pjob->ji_wattr[(int)JOB_ATR_checkpoint_dir].at_flags & ATR_VFLAG_SET))
     {
     /* No dir specified, use the default job checkpoint directory /var/spool/torque/checkpoint/42.host.domain.CK */
 
     strcpy(name_buffer,path_checkpoint);
     strcat(name_buffer,pjob->ji_qs.ji_fileprefix);
-    strcat(name_buffer,JOB_CKPT_SUFFIX);
-    decode_str(&pjob->ji_wattr[(int)JOB_ATR_chkptdir],NULL,NULL,name_buffer);
+    strcat(name_buffer,JOB_CHECKPOINT_SUFFIX);
+    decode_str(&pjob->ji_wattr[(int)JOB_ATR_checkpoint_dir],NULL,NULL,name_buffer);
     }
 
 #if 0
@@ -3750,7 +3750,7 @@ int start_checkpoint(
     /* parent, record pid in job for when child terminates */
 
     pjob->ji_momsubt = pid;
-    pjob->ji_mompost = (int (*)())post_chkpt;
+    pjob->ji_mompost = (int (*)())post_checkpoint;
 
     if (preq)
       free_br(preq);
@@ -3758,7 +3758,7 @@ int start_checkpoint(
     /* If we are going to have tasks dieing, set a flag. */
 
     if (abort)
-      pjob->ji_flags |= MOM_CHKPT_ACTIVE;
+      pjob->ji_flags |= MOM_CHECKPOINT_ACTIVE;
     } 
   else if (pid < 0) 
     {
@@ -3796,7 +3796,7 @@ int start_checkpoint(
       {
       /* rc may be 0, req_reject is used to pass auxcode */
 
-      req_reject(rc,PBS_CHKPT_MIGRATE,preq,NULL,NULL);
+      req_reject(rc,PBS_CHECKPOINT_MIGRATE,preq,NULL,NULL);
       }
 
     if ((rc == 0) && (hok == 0))

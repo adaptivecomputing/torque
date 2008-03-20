@@ -216,7 +216,7 @@ enum job_atr {
   JOB_ATR_at_server,    /* (5) */
 
   JOB_ATR_account,	/* the bulk of the attributes are in   */
-  JOB_ATR_chkpnt,	/* alphabetic order for no good reason */
+  JOB_ATR_checkpoint,	/* alphabetic order for no good reason */
   JOB_ATR_ctime,
   JOB_ATR_depend,
   JOB_ATR_errpath,
@@ -265,8 +265,8 @@ enum job_atr {
   JOB_ATR_umask,
   JOB_ATR_start_time,  /* time when job was first started */
   JOB_ATR_start_count, /* number of times the job has been started */
-  JOB_ATR_chkptdir,    /* directory where job checkpoint file is stored */
-  JOB_ATR_chkptname,   /* name of checkpoint file */
+  JOB_ATR_checkpoint_dir,    /* directory where job checkpoint file is stored */
+  JOB_ATR_checkpoint_name,   /* name of checkpoint file */
 #include "site_job_attr_enum.h"
 
   JOB_ATR_UNKN,		/* the special "unknown" type		  */
@@ -328,8 +328,8 @@ typedef struct	noderes {
 
 /* Flags for ji_flags (mom only) */
 
-#define	MOM_CHKPT_ACTIVE	1	/* checkpoint in progress */
-#define	MOM_CHKPT_POST		2	/* post checkpoint call returned */
+#define	MOM_CHECKPOINT_ACTIVE	1	/* checkpoint in progress */
+#define	MOM_CHECKPOINT_POST		2	/* post checkpoint call returned */
 #define MOM_HAS_NODEFILE	4	/* Mom wrote job PBS_NODEFILE */
 #define MOM_NO_PROC		8	/* no procs found for job */
 #define MOM_HAS_TMPDIR		16	/* Mom made a tmpdir */
@@ -405,8 +405,8 @@ struct job {
 	int		ji_momhandle;	/* open connection handle to MOM */
 #ifdef	PBS_MOM				/* MOM ONLY */
 	struct grpcache *ji_grpcache;	/* cache of user's groups */
-	time_t		ji_chkpttime;	/* periodic checkpoint time */
-	time_t		ji_chkptnext;	/* next checkpoint time */
+	time_t		ji_checkpoint_time;	/* periodic checkpoint time */
+	time_t		ji_checkpoint_next;	/* next checkpoint time */
 	time_t		ji_sampletim;	/* last usage sample time, irix only */
 	pid_t		ji_momsubt;	/* pid of mom subtask   */
 	int	      (*ji_mompost)();	/* ptr to post processing func  */
@@ -564,8 +564,8 @@ typedef struct	infoent {
   list_link	ie_next;	/* link to next one */
   } infoent;
 
-#define	TI_FLAGS_INIT		1		/* task has called tm_init */
-#define	TI_FLAGS_CHKPT		2		/* task has checkpointed */
+#define	TI_FLAGS_INIT           1		/* task has called tm_init */
+#define	TI_FLAGS_CHECKPOINT     2		/* task has checkpointed */
 
 #define TI_STATE_EMBRYO  0
 #define TI_STATE_RUNNING 1              /* includes suspended jobs */
@@ -618,11 +618,11 @@ task *task_find A_((
 #define JOB_SVFLG_HASWAIT  0x02 /* job has timed task entry for wait time */
 #define JOB_SVFLG_HASRUN   0x04	/* job has been run before (being rerun */
 #define JOB_SVFLG_HOTSTART 0x08	/* job was running, if hot init, restart */
-#define JOB_SVFLG_CHKPT	   0x10 /* job has checkpoint file for restart */
+#define JOB_SVFLG_CHECKPOINT_FILE	   0x10 /* job has checkpoint file for restart */
 #define JOB_SVFLG_SCRIPT   0x20	/* job has a Script file */
 #define JOB_SVFLG_OVERLMT1 0x40 /* job over limit first time, MOM only */
 #define JOB_SVFLG_OVERLMT2 0x80 /* job over limit second time, MOM only */
-#define JOB_SVFLG_ChkptMig 0x100 /* job has migratable checkpoint */
+#define JOB_SVFLG_CHECKPOINT_MIGRATEABLE 0x100 /* job has migratable checkpoint */
 #define JOB_SVFLG_Suspend  0x200 /* job suspended (signal suspend) */
 #define JOB_SVFLG_StagedIn 0x400 /* job has files that have been staged in */
 #define JOB_SVFLG_HasNodes 0x1000 /* job has nodes allocated to it */
@@ -645,15 +645,15 @@ task *task_find A_((
 #define MAIL_NORMAL 0
 #define MAIL_FORCE  1
 
-#define JOB_FILE_COPY       ".JC"	/* tmp copy while updating */
-#define JOB_FILE_SUFFIX     ".JB"	/* job control file */
-#define JOB_SCRIPT_SUFFIX   ".SC"	/* job script file  */
-#define JOB_STDOUT_SUFFIX   ".OU"	/* job standard out */
-#define JOB_STDERR_SUFFIX   ".ER"	/* job standard error */
-#define JOB_CKPT_SUFFIX     ".CK"	/* job checkpoint file */
-#define JOB_TASKDIR_SUFFIX  ".TK"	/* job task directory */
-#define JOB_BAD_SUFFIX	    ".BD"	/* save bad job file */
-#define JOB_FILE_TMP_SUFFIX ".TA"	/* temporary job array parent file suffix */
+#define JOB_FILE_COPY           ".JC"    /* tmp copy while updating */
+#define JOB_FILE_SUFFIX         ".JB"    /* job control file */
+#define JOB_SCRIPT_SUFFIX       ".SC"    /* job script file  */
+#define JOB_STDOUT_SUFFIX       ".OU"    /* job standard out */
+#define JOB_STDERR_SUFFIX       ".ER"    /* job standard error */
+#define JOB_CHECKPOINT_SUFFIX   ".CK"    /* job checkpoint file */
+#define JOB_TASKDIR_SUFFIX      ".TK"    /* job task directory */
+#define JOB_BAD_SUFFIX          ".BD"    /* save bad job file */
+#define JOB_FILE_TMP_SUFFIX     ".TA"    /* temporary job array parent file suffix */
 /*
  * Job states are defined by POSIX as:
  */
@@ -739,8 +739,8 @@ task *task_find A_((
 #define JOB_EXEC_FAIL2	  -2	/* job exec failed, after files, no retry  */
 #define JOB_EXEC_RETRY	  -3	/* job execution failed, do retry    */
 #define JOB_EXEC_INITABT  -4	/* job aborted on MOM initialization */
-#define JOB_EXEC_INITRST  -5	/* job aborted on MOM init, chkpt, no migrate */
-#define JOB_EXEC_INITRMG  -6	/* job aborted on MOM init, chkpt, ok migrate */
+#define JOB_EXEC_INITRST  -5	/* job aborted on MOM init, checkpoint, no migrate */
+#define JOB_EXEC_INITRMG  -6	/* job aborted on MOM init, checkpoint, ok migrate */
 #define JOB_EXEC_BADRESRT -7	/* job restart failed */
 #define JOB_EXEC_CMDFAIL  -8	/* exec() of user command failed */
 

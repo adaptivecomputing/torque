@@ -169,8 +169,8 @@
 #define ATTR_umask	"umask"
 #define ATTR_start_time  "start_time"
 #define ATTR_start_count "start_count"
-#define ATTR_chkptdir	 "checkpoint_dir"    /* user specified directory for checkpoint files */
-#define ATTR_chkptname	 "checkpoint_name"   /* user specified name of checkpoint file */
+#define ATTR_checkpoint_dir	 "checkpoint_dir"    /* user specified directory for checkpoint files */
+#define ATTR_checkpoint_name	 "checkpoint_name"   /* user specified name of checkpoint file */
 
 /* additional queue attributes names */
 
@@ -181,7 +181,7 @@
 #define ATTR_acluren	 "acl_user_enable"
 #define ATTR_acluser	 "acl_users"
 #define ATTR_altrouter	 "alt_router"
-#define ATTR_chkptmin	 "checkpoint_min"
+#define ATTR_checkpoint_min	 "checkpoint_min"
 #define ATTR_enable	 "enabled"
 #define ATTR_fromroute	 "from_route_only"
 #define ATTR_hostlist    "hostlist"         /* TORQUE only */
@@ -471,7 +471,7 @@ extern int pbs_deljob A_((int connect,char *job_id,char *extend));
 extern int pbs_disconnect A_((int connect));
 extern char *pbs_geterrmsg A_((int connect));
 extern int pbs_holdjob A_((int connect,char *job_id,char *hold_type,char *extend));
-extern int pbs_chkptjob A_((int connect,char *job_id,char *extend));
+extern int pbs_checkpointjob A_((int connect,char *job_id,char *extend));
 extern char *pbs_locjob A_((int connect,char *job_id,char *extend));
 
 extern int 

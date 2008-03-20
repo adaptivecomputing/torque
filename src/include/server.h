@@ -152,6 +152,7 @@ enum srv_atr {
 	SRV_ATR_ExtraResc,
 	SRV_ATR_ServerName,
 	SRV_ATR_SchedVersion,
+	SRV_ATR_checkpoint_dir,
 #include "site_svr_attr_enum.h"
 	/* This must be last */
 	SRV_ATR_LAST

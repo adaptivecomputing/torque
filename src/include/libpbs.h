@@ -124,7 +124,7 @@ enum job_file {
   StdIn,
   StdOut,
   StdErr,
-  Chkpt };
+  Checkpoint };
 
 #define MH(type) (type *)malloc(sizeof(type))
 #define M(var,type) if( (var = MH(type)) == (type *)NULL ) \
@@ -240,7 +240,7 @@ enum PBatchReqTypeEnum {
   PBS_BATCH_Rescq       = 24,
   PBS_BATCH_ReserveResc = 25,
   PBS_BATCH_ReleaseResc = 26,
-  PBS_BATCH_ChkptJob    = 27,
+  PBS_BATCH_CheckpointJob    = 27,
                        /* 28 */
                        /* 29 */
                        /* 30 */

@@ -448,11 +448,11 @@ int issue_Drequest(
 
       break;
 
-    case PBS_BATCH_ChkptJob:
+    case PBS_BATCH_CheckpointJob:
 
       rc = PBSD_mgr_put(
         conn, 
-        PBS_BATCH_ChkptJob,
+        PBS_BATCH_CheckpointJob,
         MGR_CMD_SET,
         MGR_OBJ_JOB,
         request->rq_ind.rq_hold.rq_orig.rq_objname,

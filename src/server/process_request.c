@@ -172,7 +172,7 @@ void req_rdytocommit(struct batch_request *preq);
 void req_commit(struct batch_request *preq);
 void req_deletejob(struct batch_request *preq);
 void req_holdjob(struct batch_request *preq);
-void req_chkptjob(struct batch_request *preq);
+void req_checkpointjob(struct batch_request *preq);
 void req_messagejob(struct batch_request *preq);
 void req_modifyjob(struct batch_request *preq);
 #ifndef PBS_MOM
@@ -711,9 +711,9 @@ void dispatch_request(
 
       break;
 
-    case PBS_BATCH_ChkptJob: 
+    case PBS_BATCH_CheckpointJob: 
 
-      req_chkptjob(request);
+      req_checkpointjob(request);
 
       break;
 
@@ -1101,7 +1101,7 @@ void free_br(
 
       break;
 
-    case PBS_BATCH_ChkptJob:
+    case PBS_BATCH_CheckpointJob:
 
       freebr_manage(&preq->rq_ind.rq_manager);
 

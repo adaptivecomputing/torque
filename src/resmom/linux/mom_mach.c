@@ -2322,8 +2322,8 @@ int mach_checkpoint(
       arg[1] = sid;
       arg[2] = SET_ARG(ptask->ti_job->ji_qs.ji_jobid);
       arg[3] = SET_ARG(ptask->ti_job->ji_wattr[(int)JOB_ATR_euser].at_val.at_str);
-      arg[4] = SET_ARG(ptask->ti_job->ji_wattr[(int)JOB_ATR_chkptdir].at_val.at_str);
-      arg[5] = SET_ARG(ptask->ti_job->ji_wattr[(int)JOB_ATR_chkptname].at_val.at_str);
+      arg[4] = SET_ARG(ptask->ti_job->ji_wattr[(int)JOB_ATR_checkpoint_dir].at_val.at_str);
+      arg[5] = SET_ARG(ptask->ti_job->ji_wattr[(int)JOB_ATR_checkpoint_name].at_val.at_str);
       arg[6] = (abort) ? "15" /*abort*/ : "0" /*run/continue*/;
       arg[7] = NULL;
 

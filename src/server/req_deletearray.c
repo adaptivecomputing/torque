@@ -158,7 +158,7 @@ void req_deletearray(struct batch_request *preq)
       }  /* END if (pjob->ji_qs.ji_state == JOB_STATE_RUNNING) */
       
       
-    if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_CHKPT) != 0) 
+    if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_CHECKPOINT_FILE) != 0) 
       {
       /* job has restart file at mom, do end job processing */
 
@@ -284,7 +284,7 @@ void req_deletearray(struct batch_request *preq)
 	  {
 	  num_prerun++;
 	  /* mom still hasn't gotten job?? delete anyway */
-	  if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_CHKPT) != 0) 
+	  if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_CHECKPOINT_FILE) != 0) 
             {
 	    /* job has restart file at mom, do end job processing */
 

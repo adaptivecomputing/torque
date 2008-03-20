@@ -194,7 +194,7 @@ schd_pack_queues(Job *jobs, QueueList *qlist, char *reason)
 	    /* if all queues are full AND
 	     * this job is NOT high-priority, AND
 	     * its NOT a waiting job, AND
-	     * its either (ok to checkpoint, is chkptd, or is suspended,
+	     * its either (ok to checkpoint, is checkpointed, or is suspended,
 	     * or is over its queue/user runlimit) then comment the job
 	     * and skip it
 	     */
@@ -365,7 +365,7 @@ Queue *make_room_for_job(Job *priority_job, QueueList *qlist, char *reason)
 {
     Job    *jobptr;
     char   *id = "make_room_for_job";
-    int     best_job_cnt, ncpus_avail, jobs_to_chkpt, ret;
+    int     best_job_cnt, ncpus_avail, jobs_to_checkpoint, ret;
     Queue  *queue, *best_queue;
     QueueList *qptr;
 
@@ -454,9 +454,9 @@ Queue *make_room_for_job(Job *priority_job, QueueList *qlist, char *reason)
          */
 	
 	ncpus_avail = queue->ncpus_max - queue->ncpus_assn;
-	jobs_to_chkpt = 0;
+	jobs_to_checkpoint = 0;
 	DBPRT(("CHK: %s avail=%d job2ckp=%d\n", queue->qname, ncpus_avail,
-	    jobs_to_chkpt));
+	    jobs_to_checkpoint));
 
     	for (jobptr = queue->jobs; jobptr != NULL; jobptr = jobptr->next) {
 
@@ -502,7 +502,7 @@ Queue *make_room_for_job(Job *priority_job, QueueList *qlist, char *reason)
 		        ((priority_job->sort_order == jobptr->sort_order) &&
 		        (strcmp(priority_job->owner, jobptr->owner)))) {
 
-		        jobs_to_chkpt++;
+		        jobs_to_checkpoint++;
 		        ncpus_avail += jobptr->ncpus;
 
 		    }
@@ -513,16 +513,16 @@ Queue *make_room_for_job(Job *priority_job, QueueList *qlist, char *reason)
 		break;
 	}
 
-	if (jobs_to_chkpt == 0 || ncpus_avail < priority_job->ncpus)
+	if (jobs_to_checkpoint == 0 || ncpus_avail < priority_job->ncpus)
 	    continue;
 
-	if (jobs_to_chkpt < best_job_cnt) {
-	    best_job_cnt = jobs_to_chkpt;
+	if (jobs_to_checkpoint < best_job_cnt) {
+	    best_job_cnt = jobs_to_checkpoint;
 	    best_queue = queue;
 	}
     }
 
-    if (jobs_to_chkpt == 0 || best_queue == NULL) {
+    if (jobs_to_checkpoint == 0 || best_queue == NULL) {
 
         /* Hummm, looking only at low-priority jobs didn't turn up anything.
 	 * So check how important this job is. If it's not High Priority
@@ -603,12 +603,12 @@ Queue *make_room_for_job(Job *priority_job, QueueList *qlist, char *reason)
              */
     	
 	    ncpus_avail = queue->ncpus_max - queue->ncpus_assn;
-	    jobs_to_chkpt = 0;
+	    jobs_to_checkpoint = 0;
     
     	    for (jobptr = queue->jobs; jobptr != NULL; jobptr = jobptr->next) {
     
 	        DBPRT(("CHK: %s avail=%d job2ckp=%d\n", queue->qname,
-		    ncpus_avail, jobs_to_chkpt));
+		    ncpus_avail, jobs_to_checkpoint));
 	        if (jobptr->state != 'R')
 		    break;
     
@@ -618,7 +618,7 @@ Queue *make_room_for_job(Job *priority_job, QueueList *qlist, char *reason)
 		    if ((priority_job->flags & JFLAGS_PRIORITY) ||
 		        (priority_job->flags & JFLAGS_WAITING)) {
 
-		    	jobs_to_chkpt++;
+		    	jobs_to_checkpoint++;
 		    	ncpus_avail += jobptr->ncpus;
  		    	DBPRT(("CHK:   job %s %d ncpus\n", jobptr->jobid,
 			    jobptr->ncpus));
@@ -627,7 +627,7 @@ Queue *make_room_for_job(Job *priority_job, QueueList *qlist, char *reason)
 		        if  ((priority_job->sort_order < jobptr->sort_order) ||
 		    	    ((priority_job->sort_order == jobptr->sort_order) &&
 		    	     (strcmp(priority_job->owner, jobptr->owner)))) {
-		    	    jobs_to_chkpt++;
+		    	    jobs_to_checkpoint++;
 		    	    ncpus_avail += jobptr->ncpus;
  		    	    DBPRT(("CHK:   job %s %d ncpus\n", jobptr->jobid,
 			        jobptr->ncpus));
@@ -639,16 +639,16 @@ Queue *make_room_for_job(Job *priority_job, QueueList *qlist, char *reason)
 		    break;
 	    }
 
-	    if (jobs_to_chkpt == 0 || ncpus_avail < priority_job->ncpus)
+	    if (jobs_to_checkpoint == 0 || ncpus_avail < priority_job->ncpus)
 	        continue;
     
-	    if (jobs_to_chkpt < best_job_cnt) {
-	        best_job_cnt = jobs_to_chkpt;
+	    if (jobs_to_checkpoint < best_job_cnt) {
+	        best_job_cnt = jobs_to_checkpoint;
 	        best_queue = queue;
 	    }
         }
     
-        if (jobs_to_chkpt == 0 || best_queue == NULL) {
+        if (jobs_to_checkpoint == 0 || best_queue == NULL) {
             sprintf(log_buffer,"Found NO jobs to checkpoint for %s",
 		priority_job->jobid);
             log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER,id,log_buffer);
@@ -749,7 +749,7 @@ Queue *make_room_for_job(Job *priority_job, QueueList *qlist, char *reason)
 		         */
 		        jobptr->flags &= ~JFLAGS_CHKPT_OK;
 		        jobptr->flags |=  JFLAGS_CHKPTD;
-		        DBPRT(("CHK:   chkpt error, retrying...\n"));
+		        DBPRT(("CHK:   checkpoint error, retrying...\n"));
 		        return(make_room_for_job(priority_job, qlist, reason));
 	            }
 	            ncpus_avail += jobptr->ncpus;
@@ -761,7 +761,7 @@ Queue *make_room_for_job(Job *priority_job, QueueList *qlist, char *reason)
 	                if (!schd_checkpoint_job(jobptr)) {
 		            jobptr->flags &= ~JFLAGS_CHKPT_OK;
 		            jobptr->flags |=  JFLAGS_CHKPTD;
-		            DBPRT(("CHK:   chkpt error, retrying...\n"));
+		            DBPRT(("CHK:   checkpoint error, retrying...\n"));
 		            return(make_room_for_job(priority_job, qlist, reason));
 	                }
 	                ncpus_avail += jobptr->ncpus;

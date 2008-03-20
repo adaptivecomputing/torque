@@ -103,8 +103,8 @@
 
 /* Private Fuctions Local to this File */
 
-static int shutdown_chkpt A_((job *));
-static void post_chkpt A_((struct work_task *));
+static int shutdown_checkpoint A_((job *));
+static void post_checkpoint A_((struct work_task *));
 static void rerun_or_kill A_((job *, char *text));
 
 /* Private Data Items */
@@ -220,13 +220,13 @@ void svr_shutdown(
       {
       pjob->ji_qs.ji_svrflags |= JOB_SVFLG_HOTSTART|JOB_SVFLG_HASRUN;
 
-      pattr = &pjob->ji_wattr[(int)JOB_ATR_chkpnt];
+      pattr = &pjob->ji_wattr[(int)JOB_ATR_checkpoint];
 
       if ((pattr->at_val.at_str) && (*pattr->at_val.at_str != 'n')) 
         {
         /* do checkpoint of job */
 
-        if (shutdown_chkpt(pjob) == 0)
+        if (shutdown_checkpoint(pjob) == 0)
           continue;
         }
 
@@ -308,10 +308,10 @@ void req_shutdown(
 
 
 /*
- * shutdown_chkpt - perform checkpoint of job by issuing a hold request to mom
+ * shutdown_checkpoint - perform checkpoint of job by issuing a hold request to mom
  */
 
-static int shutdown_chkpt(
+static int shutdown_checkpoint(
 
   job *pjob)
 
@@ -346,7 +346,7 @@ static int shutdown_chkpt(
     return(PBSE_SYSTEM);
     }
 
-  if (relay_to_mom(pjob->ji_qs.ji_un.ji_exect.ji_momaddr,phold,post_chkpt) != 0) 
+  if (relay_to_mom(pjob->ji_qs.ji_un.ji_exect.ji_momaddr,phold,post_checkpoint) != 0) 
     {
     /* FAILURE */
 
@@ -355,7 +355,7 @@ static int shutdown_chkpt(
 
   pjob->ji_qs.ji_substate = JOB_SUBSTATE_RERUN;
 
-  pjob->ji_qs.ji_svrflags |= JOB_SVFLG_HASRUN | JOB_SVFLG_CHKPT;
+  pjob->ji_qs.ji_svrflags |= JOB_SVFLG_HASRUN | JOB_SVFLG_CHECKPOINT_FILE;
 
   if (LOGLEVEL >= 1)
     {
@@ -369,20 +369,20 @@ static int shutdown_chkpt(
   job_save(pjob,SAVEJOB_QUICK);
 
   return(0);
-  }  /* END shutdown_chkpt() */
+  }  /* END shutdown_checkpoint() */
 
 
 
 
 /*
- * post-chkpt - clean up after shutdown_chkpt
+ * post-checkpoint - clean up after shutdown_checkpoint
  *	This is called on the reply from MOM to a Hold request made in
- *	shutdown_chkpt().  If the request succeeded, then record in job.
+ *	shutdown_checkpoint().  If the request succeeded, then record in job.
  *	If the request failed, then we fall back to rerunning or aborting
  *	the job.
  */
 
-static void post_chkpt(
+static void post_checkpoint(
 
   struct work_task *ptask)
 
@@ -390,30 +390,34 @@ static void post_chkpt(
   job                  *pjob;
   struct batch_request *preq;
 
-	preq = (struct batch_request *)ptask->wt_parm1;
-	pjob = find_job(preq->rq_ind.rq_hold.rq_orig.rq_objname);
-	if (preq->rq_reply.brp_code == 0) {
-		/* checkpointed ok */
-		if (preq->rq_reply.brp_auxcode)	/* chkpt can be moved */
-		    pjob->ji_qs.ji_svrflags =
-				(pjob->ji_qs.ji_svrflags & ~JOB_SVFLG_CHKPT) |
-				JOB_SVFLG_HASRUN | JOB_SVFLG_ChkptMig;
+  preq = (struct batch_request *)ptask->wt_parm1;
+  pjob = find_job(preq->rq_ind.rq_hold.rq_orig.rq_objname);
+  if (preq->rq_reply.brp_code == 0)
+    {
+    /* checkpointed ok */
+    if (preq->rq_reply.brp_auxcode)	/* checkpoint can be moved */
+      {
+      pjob->ji_qs.ji_svrflags =
+        (pjob->ji_qs.ji_svrflags & ~JOB_SVFLG_CHECKPOINT_FILE) |
+          JOB_SVFLG_HASRUN | JOB_SVFLG_CHECKPOINT_MIGRATEABLE;
 	
-	} else {
-		/* need to try rerun if possible or just abort the job */
+	  }
+    }
+  else
+    {
+    /* need to try rerun if possible or just abort the job */
 
-		if (pjob) {
-		    pjob->ji_qs.ji_svrflags &= ~JOB_SVFLG_CHKPT;
-		    pjob->ji_qs.ji_substate = JOB_SUBSTATE_RUNNING;
-		    if (pjob->ji_qs.ji_state == JOB_STATE_RUNNING)
-			rerun_or_kill(pjob, msg_on_shutdown);
-		}
-	}
+    if (pjob)
+      {
+      pjob->ji_qs.ji_svrflags &= ~JOB_SVFLG_CHECKPOINT_FILE;
+      pjob->ji_qs.ji_substate = JOB_SUBSTATE_RUNNING;
+      if (pjob->ji_qs.ji_state == JOB_STATE_RUNNING)
+        rerun_or_kill(pjob, msg_on_shutdown);
+      }
+    }
 
 	release_req(ptask);
-
-  return;
-  }  /* END post_chkpt() */
+  }  /* END post_checkpoint() */
 
 
 

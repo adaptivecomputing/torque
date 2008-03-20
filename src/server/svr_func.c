@@ -98,6 +98,7 @@
 #include "pbs_error.h"
 #include "svrfunc.h"
 #include "sched_cmds.h"
+#include "csv.h"
 
 extern int    scheduler_sock;
 extern int    svr_do_schedule;
@@ -302,10 +303,14 @@ void set_resc_assigned(
 
 
 /*
- * ck_chkpnt - check validity of job checkpoint attribute value
+ * ck_checkpoint - check validity of job checkpoint attribute value
+ *
+ * This routine is not directly called.
+ * Rather it is referenced by an at_action field.
+ * This is invoked inside of a loop over attributes in req_quejob.
  */
 
-int ck_chkpnt(
+int ck_checkpoint(
 
   attribute *pattr,
   void      *pobject,	/* not used */
@@ -313,6 +318,10 @@ int ck_chkpnt(
 
   {
   char *val;
+  int field_count;
+  int i;
+  int len;
+  char *str;
 
   val = pattr->at_val.at_str;
 
@@ -323,31 +332,39 @@ int ck_chkpnt(
     return(0);
     }
 
-  if ((*val == 'n') || (*val == 's') || (*val == 'u')) 
+  field_count = csv_length(val);
+  for (i=0; i<field_count; i++)
     {
-    if (*(val + 1) != '\0')
+    str = csv_nth(val,i);
+    if (str)
       {
-      return(PBSE_BADATVAL);
-      }
-    }
-  else if (*val++ == 'c') 
-    {
-    if (*val != '\0') 
-      {
-      if (*val++ != '=')
+      if ((len = strlen(str)) > 0)
         {
-        return(PBSE_BADATVAL);
-        }
-
-      if (atoi(val) <= 0)
-        {
-        return(PBSE_BADATVAL);
+        if (len == 1 && !((str[0] == 'n') || (str[0] == 's') || (str[0] == 'u')))
+          {
+          return(PBSE_BADATVAL);
+          }
+        else if (!strncmp(str,"c=",2))
+          {
+          if (atoi(&str[2]) <= 0)
+            {
+            return(PBSE_BADATVAL);
+            }
+          continue;
+          }
+        else if (!strcmp(str,"none"))            {}
+        else if (!strcmp(str,"periodic"))        {}
+        else if (!strcmp(str,"shutdown"))        {}
+        else if (!strcmp(str,"oncommand"))       {}
+        else if (!strncmp(str,"interval=",9))    {}
+        else if (!strncmp(str,"depth=",6))       {}
+        else if (!strncmp(str,"dir=",4))         {}
+        else
+          {
+          return(PBSE_BADATVAL);
+          }
         }
       }
-    } 
-  else
-    {
-    return(PBSE_BADATVAL);
     }
 
   /* SUCCESS */

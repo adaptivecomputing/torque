@@ -484,8 +484,8 @@ int blcr_restart_job(
         arg[1] = sid;
         arg[2] = SET_ARG(ptask->ti_job->ji_qs.ji_jobid);
         arg[3] = SET_ARG(ptask->ti_job->ji_wattr[(int)JOB_ATR_euser].at_val.at_str);
-        arg[4] = SET_ARG(ptask->ti_job->ji_wattr[(int)JOB_ATR_chkptdir].at_val.at_str);
-        arg[5] = SET_ARG(ptask->ti_job->ji_wattr[(int)JOB_ATR_chkptname].at_val.at_str);
+        arg[4] = SET_ARG(ptask->ti_job->ji_wattr[(int)JOB_ATR_checkpoint_dir].at_val.at_str);
+        arg[5] = SET_ARG(ptask->ti_job->ji_wattr[(int)JOB_ATR_checkpoint_name].at_val.at_str);
         arg[6] = NULL;
  
         strcpy(buf,"restart args:");
@@ -1628,7 +1628,7 @@ int TMomFinalizeJob1(
 
   /* Is the job to be periodically checkpointed */
 
-  pattr = &pjob->ji_wattr[(int)JOB_ATR_chkpnt];
+  pattr = &pjob->ji_wattr[(int)JOB_ATR_checkpoint];
 
   if ((pattr->at_flags & ATR_VFLAG_SET) &&
       (*pattr->at_val.at_str == 'c') &&
@@ -1636,27 +1636,27 @@ int TMomFinalizeJob1(
     {
     /* has checkpoint time (in minutes), convert to milliseconds */
 
-    pjob->ji_chkpttime = atoi(pattr->at_val.at_str + 2) * 60;
-    pjob->ji_chkptnext = pjob->ji_chkpttime;
+    pjob->ji_checkpoint_time = atoi(pattr->at_val.at_str + 2) * 60;
+    pjob->ji_checkpoint_next = pjob->ji_checkpoint_time;
     }
 
   /* If job has been checkpointed, restart from the checkpoint image */
 
-  if (pjob->ji_wattr[(int)JOB_ATR_chkptdir].at_flags & ATR_VFLAG_SET)
+  if (pjob->ji_wattr[(int)JOB_ATR_checkpoint_dir].at_flags & ATR_VFLAG_SET)
     {
     /* The job has a checkpoint directory specified, use it. */
-    strcpy(buf,pjob->ji_wattr[(int)JOB_ATR_chkptdir].at_val.at_str);
+    strcpy(buf,pjob->ji_wattr[(int)JOB_ATR_checkpoint_dir].at_val.at_str);
     }
   else
     {
     /* Otherwise, use the default job checkpoint directory /var/spool/torque/checkpoint/42.host.domain.CK */
     strcpy(buf,path_checkpoint);
     strcat(buf,pjob->ji_qs.ji_fileprefix);
-    strcat(buf,JOB_CKPT_SUFFIX);
+    strcat(buf,JOB_CHECKPOINT_SUFFIX);
     }
 
-  if (((pjob->ji_qs.ji_svrflags & JOB_SVFLG_CHKPT) || 
-       (pjob->ji_qs.ji_svrflags & JOB_SVFLG_ChkptMig)) &&
+  if (((pjob->ji_qs.ji_svrflags & JOB_SVFLG_CHECKPOINT_FILE) || 
+         (pjob->ji_qs.ji_svrflags & JOB_SVFLG_CHECKPOINT_MIGRATEABLE)) &&
        (stat(buf,&sb) == 0)) /* stat(buf) tests if the checkpoint directory exists */
     {
     /* Checkpointed - restart from checkpoint file */
@@ -1697,7 +1697,7 @@ int TMomFinalizeJob1(
      * it is okay to invoke it from the main level.
      */
 
-    if (pjob->ji_wattr[(int)JOB_ATR_chkptname].at_flags & ATR_VFLAG_SET)
+    if (pjob->ji_wattr[(int)JOB_ATR_checkpoint_name].at_flags & ATR_VFLAG_SET)
       {
         rc = blcr_restart_job(pjob,buf);
         pjob->ji_qs.ji_substate = JOB_SUBSTATE_RUNNING;
@@ -1782,7 +1782,7 @@ int TMomFinalizeJob1(
     *SC = 0;
 
     return(FAILURE);
-    }  /* END (((pjob->ji_qs.ji_svrflags & JOB_SVFLG_CHKPT) || ...) */
+    }  /* END (((pjob->ji_qs.ji_svrflags & JOB_SVFLG_CHECKPOINT_FILE) || ...) */
 
 #endif	/* MOM_CHECKPOINT */
 
@@ -5226,11 +5226,11 @@ char *std_file_name(
 
       break;
 
-    case Chkpt:
+    case Checkpoint:
     default:
 
       key = '\001';	/* should never be found */
-      suffix = JOB_CKPT_SUFFIX;
+      suffix = JOB_CHECKPOINT_SUFFIX;
 
       break;
     }  /* END switch (which) */

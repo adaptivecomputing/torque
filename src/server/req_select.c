@@ -129,11 +129,11 @@ static void sel_step3 A_((struct stat_cntl *));
 
 
 /*
- * order_chkpnt - provide order value for various checkpoint attribute values
+ * order_checkpoint - provide order value for various checkpoint attribute values
  *	n > s > c=minutes > c 
  */
 
-static int order_chkpnt(attr)
+static int order_checkpoint(attr)
 	attribute *attr;
 {
 	if ( ((attr->at_flags & ATR_VFLAG_SET) == 0) || 
@@ -153,18 +153,18 @@ static int order_chkpnt(attr)
 }
 
 /*
- * comp_chkpnt - compare two checkpoint attribtues for selection 
+ * comp_checkpoint - compare two checkpoint attribtues for selection 
  */
 
-int  comp_chkpnt(attr, with)
+int  comp_checkpoint(attr, with)
 	attribute *attr;
 	attribute *with;
 {
 	int a;
 	int w;
 
-	a = order_chkpnt(attr);
-	w = order_chkpnt(with);
+	a = order_checkpoint(attr);
+	w = order_checkpoint(with);
 
 	if (a == w)
 		return 0;

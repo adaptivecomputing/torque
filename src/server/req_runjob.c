@@ -515,7 +515,7 @@ int svr_startjob(
 
   if ((f != 0) && 
      ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HOTSTART) ||
-      (pjob->ji_qs.ji_svrflags & JOB_SVFLG_CHKPT)) && 
+      (pjob->ji_qs.ji_svrflags & JOB_SVFLG_CHECKPOINT_FILE)) && 
      ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HasNodes) == 0)) 
     {
     rc = assign_hosts(    /* inside svr_startjob() */
@@ -961,7 +961,7 @@ static void post_sendmom(
 
       /* accounting log for start or restart */
 
-      if (jobp->ji_qs.ji_svrflags & JOB_SVFLG_CHKPT)
+      if (jobp->ji_qs.ji_svrflags & JOB_SVFLG_CHECKPOINT_FILE)
         account_record(PBS_ACCT_RESTRT,jobp,NULL);
       else
         account_jobstr(jobp);
@@ -1170,7 +1170,7 @@ static job *chk_job_torun(
 
   /* where to execute the job */
 
-  if (pjob->ji_qs.ji_svrflags & (JOB_SVFLG_CHKPT|JOB_SVFLG_StagedIn)) 
+  if (pjob->ji_qs.ji_svrflags & (JOB_SVFLG_CHECKPOINT_FILE|JOB_SVFLG_StagedIn)) 
     {
     /* job has been checkpointed or files already staged in */
     /* in this case, exec_host must be already set          */
@@ -1185,7 +1185,7 @@ static job *chk_job_torun(
         {
         /* FAILURE */
 
-        if (pjob->ji_qs.ji_svrflags & (JOB_SVFLG_CHKPT))
+        if (pjob->ji_qs.ji_svrflags & (JOB_SVFLG_CHECKPOINT_FILE))
           req_reject(PBSE_EXECTHERE,0,preq,NULL,"allocated nodes must match checkpoint location");
         else
           req_reject(PBSE_EXECTHERE,0,preq,NULL,"allocated nodes must match input file stagein location");
@@ -1210,7 +1210,7 @@ static job *chk_job_torun(
         return(NULL);
         }
       }
-    }    /* END if (pjob->ji_qs.ji_svrflags & (JOB_SVFLG_CHKPT|JOB_SVFLG_StagedIn)) */ 
+    }    /* END if (pjob->ji_qs.ji_svrflags & (JOB_SVFLG_CHECKPOINT_FILE|JOB_SVFLG_StagedIn)) */ 
   else 
     {
     /* job has not run before or need not run there again */

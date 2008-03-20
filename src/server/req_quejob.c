@@ -147,7 +147,7 @@ const char *TJobFileType[] = {
   "stdin",
   "stdout",
   "stderr",
-  "ckpt",
+  "checkpoint",
   NULL };
 
 extern int	 resc_access_perm;
@@ -653,12 +653,12 @@ void req_quejob(
 
     /* If queue has checkpoint directory name specified, propagate it to the job. */
 
-    if (!(pj->ji_wattr[(int)JOB_ATR_chkptdir].at_flags & ATR_VFLAG_SET) &&
-         (pque->qu_attr[(int)QE_ATR_ChkptDir].at_flags & ATR_VFLAG_SET))
+    if (!(pj->ji_wattr[(int)JOB_ATR_checkpoint_dir].at_flags & ATR_VFLAG_SET) &&
+         (pque->qu_attr[(int)QE_ATR_checkpoint_dir].at_flags & ATR_VFLAG_SET))
       {
-      job_attr_def[(int)JOB_ATR_chkptdir].at_set(
-        &pj->ji_wattr[(int)JOB_ATR_chkptdir],
-        &pque->qu_attr[(int)QE_ATR_ChkptDir],
+      job_attr_def[(int)JOB_ATR_checkpoint_dir].at_set(
+        &pj->ji_wattr[(int)JOB_ATR_checkpoint_dir],
+        &pque->qu_attr[(int)QE_ATR_checkpoint_dir],
         SET);
       }
 
@@ -973,7 +973,7 @@ void req_jobscript(
   /* job has a script file */
 
   pj->ji_qs.ji_svrflags = 
-    (pj->ji_qs.ji_svrflags & ~JOB_SVFLG_CHKPT)|JOB_SVFLG_SCRIPT; 
+    (pj->ji_qs.ji_svrflags & ~JOB_SVFLG_CHECKPOINT_FILE) | JOB_SVFLG_SCRIPT; 
 
   /* SUCCESS */
 
@@ -1039,9 +1039,9 @@ void req_mvjobfile(  /* NOTE:  routine for server only - mom code follows this r
 
       break;
 
-    case Chkpt:
+    case Checkpoint:
 
-      strcat(namebuf,JOB_CKPT_SUFFIX);
+      strcat(namebuf,JOB_CHECKPOINT_SUFFIX);
 
       break;
 

@@ -138,8 +138,8 @@ enum queueattr {
 
   /* The following attributes apply only to execution queues */
 
-  QE_ATR_ChkptDir,
-  QE_ATR_ChkptMim,
+  QE_ATR_checkpoint_dir,
+  QE_ATR_checkpoint_min,
   QE_ATR_RendezvousRetry,
   QE_ATR_ReservedExpedite,
   QE_ATR_ReservedSync,
@@ -166,6 +166,8 @@ enum queueattr {
 
 extern attribute_def que_attr_def[];
 
+#define QE_ATR_ChkptDir  QE_ATR_checkpoint_dir
+#define QE_ATR_ChkptMim  QE_ATR_checkpoint_min
 	
 /* at last we come to the queue definition itself	*/
  

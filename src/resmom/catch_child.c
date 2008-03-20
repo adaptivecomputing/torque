@@ -214,16 +214,16 @@ hnodent	*get_node(
 
 #if	MOM_CHECKPOINT == 1
 /*
-**	Restart each task which has exited and has TI_FLAGS_CHKPT turned on.
-**	If all tasks have been restarted, turn off MOM_CHKPT_POST.
+**	Restart each task which has exited and has TI_FLAGS_CHECKPOINT turned on.
+**	If all tasks have been restarted, turn off MOM_CHECKPOINT_POST.
 */
 
-void chkpt_partial(
+void checkpoint_partial(
 
   job *pjob)
 
   {
-  static char	id[] = "chkpt_partial";
+  static char	id[] = "checkpoint_partial";
   int		i;
   char		namebuf[MAXPATHLEN];
   char		*filnam;
@@ -236,7 +236,7 @@ void chkpt_partial(
 
   strcpy(namebuf,path_checkpoint);
   strcat(namebuf,pjob->ji_qs.ji_fileprefix);
-  strcat(namebuf,JOB_CKPT_SUFFIX);
+  strcat(namebuf,JOB_CHECKPOINT_SUFFIX);
 
   i = strlen(namebuf);
 
@@ -251,7 +251,7 @@ void chkpt_partial(
     ** actually checkpoint.
     */
 
-    if ((ptask->ti_flags & TI_FLAGS_CHKPT) == 0)
+    if ((ptask->ti_flags & TI_FLAGS_CHECKPOINT) == 0)
       continue;
 
     texit++;
@@ -273,7 +273,7 @@ void chkpt_partial(
       goto fail;
 
     ptask->ti_qs.ti_status = TI_STATE_RUNNING;
-    ptask->ti_flags &= ~TI_FLAGS_CHKPT;
+    ptask->ti_flags &= ~TI_FLAGS_CHECKPOINT;
 
     task_save(ptask);
     }
@@ -285,15 +285,15 @@ void chkpt_partial(
 
     /*
     ** All tasks should now be running.
-    ** Turn off MOM_CHKPT_POST flag so job is back to where
+    ** Turn off MOM_CHECKPOINT_POST flag so job is back to where
     ** it was before the bad checkpoint attempt.
     */
 
-    pjob->ji_flags &= ~MOM_CHKPT_POST;
+    pjob->ji_flags &= ~MOM_CHECKPOINT_POST;
 
     /*
     ** Get rid of incomplete checkpoint directory and
-    ** move old chkpt dir back to regular if it exists.
+    ** move old checkpoint dir back to regular if it exists.
     */
 
     *filnam = '\0';
@@ -307,19 +307,19 @@ void chkpt_partial(
     if (stat(oldname,&statbuf) == 0) 
       {
       if (rename(oldname,namebuf) == -1)
-        pjob->ji_qs.ji_svrflags &= ~JOB_SVFLG_CHKPT;
+        pjob->ji_qs.ji_svrflags &= ~JOB_SVFLG_CHECKPOINT_FILE;
       }
     }
 
   return;
 
 fail:
-  pjob->ji_flags &= ~MOM_CHKPT_POST;
+  pjob->ji_flags &= ~MOM_CHECKPOINT_POST;
 
   kill_job(pjob,SIGKILL,id,"failed to restart");
 
   return;
-  }  /* END chkpt_partial() */
+  }  /* END checkpoint_partial() */
 
 #endif	/* MOM_CHECKPOINT */
 
@@ -398,19 +398,19 @@ void scan_for_exiting()
     ** until we know that the whole thing worked.
     */
 
-    if (pjob->ji_flags & MOM_CHKPT_ACTIVE) 
+    if (pjob->ji_flags & MOM_CHECKPOINT_ACTIVE) 
       {
       continue;
       }
 
     /*
     ** If the job has had an error doing a checkpoint with
-    ** abort, the MOM_CHKPT_POST flag will be on.
+    ** abort, the MOM_CHECKPOINT_POST flag will be on.
     */
 
-    if (pjob->ji_flags & MOM_CHKPT_POST) 
+    if (pjob->ji_flags & MOM_CHECKPOINT_POST) 
       {
-      chkpt_partial(pjob);
+      checkpoint_partial(pjob);
 
       continue;
       }
@@ -1170,7 +1170,7 @@ static void preobit_reply(
 
       unlink(std_file_name(pjob,StdOut,&x));
       unlink(std_file_name(pjob,StdErr,&x));
-      unlink(std_file_name(pjob,Chkpt,&x));
+      unlink(std_file_name(pjob,Checkpoint,&x));
       }
 
     mom_deljob(pjob);
@@ -1363,7 +1363,7 @@ static void obit_reply(
 
             unlink(std_file_name(pjob,StdOut,&x));
             unlink(std_file_name(pjob,StdErr,&x));
-            unlink(std_file_name(pjob,Chkpt,&x));
+            unlink(std_file_name(pjob,Checkpoint,&x));
             }
 
           mom_deljob(pjob);
@@ -1583,7 +1583,7 @@ void init_abort_jobs(
 
     strcpy(path,path_checkpoint);
     strcat(path,pj->ji_qs.ji_fileprefix);
-    strcat(path,JOB_CKPT_SUFFIX);
+    strcat(path,JOB_CHECKPOINT_SUFFIX);
     strcpy(oldp,path);
     strcat(oldp,".old");
 
@@ -1707,13 +1707,13 @@ void init_abort_jobs(
         }
 
       /* set exit status to:
-       *   JOB_EXEC_INITABT - init abort and no chkpt
-       *   JOB_EXEC_INITRST - init and chkpt, no mig
-       *   JOB_EXEC_INITRMG - init and chkpt, migrate
+       *   JOB_EXEC_INITABT - init abort and no checkpoint
+       *   JOB_EXEC_INITRST - init and checkpoint, no mig
+       *   JOB_EXEC_INITRMG - init and checkpoint, migrate
        * to indicate recovery abort
        */
 
-      if (pj->ji_qs.ji_svrflags & (JOB_SVFLG_CHKPT|JOB_SVFLG_ChkptMig)) 
+      if (pj->ji_qs.ji_svrflags & (JOB_SVFLG_CHECKPOINT_FILE|JOB_SVFLG_CHECKPOINT_MIGRATEABLE)) 
         {
 #if PBS_CHKPT_MIGRATE
       

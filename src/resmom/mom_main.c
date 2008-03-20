@@ -405,15 +405,15 @@ static char *reqvarattr(struct rm_attribute *);
 
 
 struct config common_config[] = {
-  { "arch",      {arch} },             /* machine architecture  */
-  { "opsys",     {opsys} },            /* operating system      */
-  { "uname",     {requname} },         /* user name     ???     */
-  { "validuser", {validuser} },        /* valid user    ???     */
-  { "message",   {reqmsg} },           /* message       ???     */
-  { "gres",      {reqgres} },          /* ???                   */
-  { "state",     {reqstate} },         /* state of pbs_mom      */
-  { "jobs",      {getjoblist} },       /* job list this pbs_mom */
-  { "varattr",   {reqvarattr} },       /* ???                   */
+  { "arch",      {arch} },             /* machine architecture           */
+  { "opsys",     {opsys} },            /* operating system               */
+  { "uname",     {requname} },         /* user name     ???              */
+  { "validuser", {validuser} },        /* valid user    ???              */
+  { "message",   {reqmsg} },           /* message       ???              */
+  { "gres",      {reqgres} },          /* generic resource (licenses...) */
+  { "state",     {reqstate} },         /* state of pbs_mom               */
+  { "jobs",      {getjoblist} },       /* job list this pbs_mom          */
+  { "varattr",   {reqvarattr} },       /* ???                            */
   { NULL,        {NULL} } };
 
 int                     LOGLEVEL = 0;  /* valid values (0 - 10) */
@@ -6319,7 +6319,7 @@ int setup_program_environment()
   if (path_checkpoint == NULL)	/* if not -C option */
     path_checkpoint = mk_dirs("checkpoint/");
 
-  /* locate cput resource definition, needed for checking chkpt time */
+  /* locate cput resource definition, needed for checking checkpoint time */
 
   rdcput = find_resc_def(svr_resc_def,"cput",svr_resc_size);
 
@@ -7195,7 +7195,7 @@ void examine_all_running_jobs()
 
       /* see if need to checkpoint any job */
 
-      if (pjob->ji_chkpttime != 0)  /* ji_chkpttime gets set in start_exec */
+      if (pjob->ji_checkpoint_time != 0)  /* ji_checkpoint_time gets set in start_exec */
         {
         int rc;
 
@@ -7204,11 +7204,11 @@ void examine_all_running_jobs()
           rdcput);  /* resource definition cput set in startup */
 
         if (prscput &&
-           (pjob->ji_chkptnext > prscput->rs_value.at_val.at_long))
+           (pjob->ji_checkpoint_next > prscput->rs_value.at_val.at_long))
           {
-          pjob->ji_chkptnext = 
+          pjob->ji_checkpoint_next = 
             prscput->rs_value.at_val.at_long +
-            pjob->ji_chkpttime;
+            pjob->ji_checkpoint_time;
 
           if ((rc = start_checkpoint(pjob,0,0)) != PBSE_NONE)
             {

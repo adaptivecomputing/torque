@@ -420,8 +420,8 @@ attribute_def que_attr_def[] = {
    /* for execution queues only */
 
 
-/* QE_ATR_ChkptDir */
-    {   ATTR_chkptdir,   /* "checkpoint_dir" */
+/* QE_ATR_checkpoint_dir */
+    {   ATTR_checkpoint_dir,   /* "checkpoint_dir" */
     decode_str,
     encode_str,
     set_str,
@@ -432,8 +432,8 @@ attribute_def que_attr_def[] = {
     ATR_TYPE_STR,
     PARENT_TYPE_QUE_EXC
     },
-/* QE_ATR_ChkptMin */
-    {	ATTR_chkptmin,		/* "checkpoint_min" */
+/* QE_ATR_checkpoint_min */
+    {	ATTR_checkpoint_min,		/* "checkpoint_min" */
 	decode_l,
 	encode_l,
 	set_l,

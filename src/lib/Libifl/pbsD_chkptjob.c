@@ -11,7 +11,7 @@
 #include <stdio.h>
 #include "libpbs.h"
 
-int pbs_chkptjob(c, jobid, extend)
+int pbs_checkpointjob(c, jobid, extend)
 int c;
 char *jobid;
 char *extend;
@@ -19,7 +19,7 @@ char *extend;
 	if ((jobid == (char *)0) || (*jobid == '\0'))
 		return (pbs_errno = PBSE_IVALREQ);
 
-	return PBSD_manager(c, PBS_BATCH_ChkptJob,
+	return PBSD_manager(c, PBS_BATCH_CheckpointJob,
 			   MGR_CMD_SET,
 			   MGR_OBJ_JOB,
 			   jobid,

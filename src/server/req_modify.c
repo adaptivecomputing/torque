@@ -260,7 +260,7 @@ void req_modifyjob(
 
         sendmom = 1;
         }
-      else if (i == (int)JOB_ATR_chkptname) 
+      else if (i == (int)JOB_ATR_checkpoint_name) 
         {
         sendmom = 1;
         }

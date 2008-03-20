@@ -92,9 +92,9 @@
 
 extern int job_set_wait A_((attribute *,void *,int));
 extern int action_resc A_((attribute *,void *,int));
-extern int ck_chkpnt A_((attribute *,void *,int));
+extern int ck_checkpoint A_((attribute *,void *,int));
 extern int depend_on_que A_((attribute *,void *,int));
-extern int comp_chkpnt A_((attribute *,attribute *));
+extern int comp_checkpoint A_((attribute *,attribute *));
 
 #define ATR_DFLAG_SSET  (ATR_DFLAG_SvWR | ATR_DFLAG_SvRD)
 
@@ -198,7 +198,7 @@ attribute_def job_attr_def[] = {
 	ATR_TYPE_STR,
 	PARENT_TYPE_JOB
     },
-/* JOB_ATR_chkpnt */
+/* JOB_ATR_checkpoint */
     {	ATTR_c,			/* "Checkpoint" */
 	decode_str,
 	encode_str,
@@ -206,13 +206,13 @@ attribute_def job_attr_def[] = {
 #ifdef PBS_MOM	
 	comp_str,
 #else	/* PBS_MOM - server side */
-	comp_chkpnt,
+	comp_checkpoint,
 #endif	/* PBS_MOM */
 	free_str,
 #ifdef PBS_MOM	
 	NULL_FUNC,
 #else	/* PBS_MOM - server side */
-	ck_chkpnt,
+	ck_checkpoint,
 #endif	/* PBS_MOM */
 	READ_WRITE | ATR_DFLAG_MOM | ATR_DFLAG_ALTRUN,
 	ATR_TYPE_STR,
@@ -782,8 +782,8 @@ attribute_def job_attr_def[] = {
 	PARENT_TYPE_JOB
     },
 
-/* JOB_ATR_chkptdir */
-    {	ATTR_chkptdir,		/* "checkpoint_dir" */
+/* JOB_ATR_checkpoint_dir */
+    {	ATTR_checkpoint_dir,		/* "checkpoint_dir" */
 	decode_str,
 	encode_str,
 	set_str,
@@ -795,8 +795,8 @@ attribute_def job_attr_def[] = {
 	PARENT_TYPE_JOB
     },
 
-/* JOB_ATR_chkptname */
-    {	ATTR_chkptname,		/* "checkpoint_name" */
+/* JOB_ATR_checkpoint_name */
+    {	ATTR_checkpoint_name,		/* "checkpoint_name" */
 	decode_str,
 	encode_str,
 	set_str,

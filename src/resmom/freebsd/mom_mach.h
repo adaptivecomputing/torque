@@ -89,7 +89,7 @@
 
 #define SET_LIMIT_SET   1
 #define SET_LIMIT_ALTER 0
-#define PBS_CHKPT_MIGRATE 0
+#define PBS_CHECKPOINT_MIGRATE 0
 
 /* struct startjob_rtn = used to pass error/session/other info 	*/
 /* 			child back to parent			*/

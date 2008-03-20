@@ -402,8 +402,8 @@ int svr_enquejob(
     /* check the job checkpoint against the queue's min */
 
     eval_chkpnt(
-      &pjob->ji_wattr[(int)JOB_ATR_chkpnt],
-      &pque->qu_attr[(int)QE_ATR_ChkptMim]);
+      &pjob->ji_wattr[(int)JOB_ATR_checkpoint],
+      &pque->qu_attr[(int)QE_ATR_checkpoint_min]);
 		
     /* do anything needed doing regarding job dependencies */
 

@@ -904,6 +904,19 @@ attribute_def svr_attr_def[] = {
         PARENT_TYPE_SERVER
     },
 
+/* SVR_ATR_checkpoint_dir */
+    {   ATTR_checkpoint_dir,   /* "checkpoint_dir" */
+    decode_str,
+    encode_str,
+    set_str,
+    comp_str,
+    free_str,
+    NULL_FUNC,
+    NO_USER_SET,
+    ATR_TYPE_STR,
+    PARENT_TYPE_QUE_EXC
+    },
+
 
 /* site supplied server attribute definitions if any, see site_svr_attr_*.h  */
 #include "site_svr_attr_def.h"

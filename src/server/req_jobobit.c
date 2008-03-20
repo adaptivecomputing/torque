@@ -147,7 +147,7 @@ static struct batch_request *setup_cpyfiles A_((struct batch_request *,job *,cha
 
 /*
  * setup_from - setup the "from" name for a standard job file:
- *	output, error, or chkpt
+ *	output, error, or checkpoint
  */
 
 static char *setup_from(
@@ -1903,7 +1903,7 @@ void req_jobobit(
         /* MOM could not restart job, setup for rerun */
 
         alreadymailed = setrerun(pjob);
-        pjob->ji_qs.ji_svrflags &= ~JOB_SVFLG_CHKPT;
+        pjob->ji_qs.ji_svrflags &= ~JOB_SVFLG_CHECKPOINT_FILE;
     
         break;
 
@@ -1918,12 +1918,12 @@ void req_jobobit(
             PBSEVENT_JOB_USAGE|PBSEVENT_JOB_USAGE,
             PBS_EVENTCLASS_JOB,
             pjob->ji_qs.ji_jobid,
-            "received JOB_EXEC_INITRST, setting job CHKPT flag");
+            "received JOB_EXEC_INITRST, setting job CHECKPOINT_FLAG flag");
           }
 
         rel_resc(pjob);
 
-        pjob->ji_qs.ji_svrflags |= JOB_SVFLG_HASRUN|JOB_SVFLG_CHKPT;
+        pjob->ji_qs.ji_svrflags |= JOB_SVFLG_HASRUN | JOB_SVFLG_CHECKPOINT_FILE;
 
         svr_evaljobstate(pjob,&newstate,&newsubst,1);
 
@@ -1944,7 +1944,7 @@ void req_jobobit(
 
         alreadymailed = setrerun(pjob);
 
-        pjob->ji_qs.ji_svrflags |= JOB_SVFLG_HASRUN|JOB_SVFLG_ChkptMig;
+        pjob->ji_qs.ji_svrflags |= JOB_SVFLG_HASRUN | JOB_SVFLG_CHECKPOINT_MIGRATEABLE;
 
         break;
       }  /* END switch (exitstatus) */
@@ -2032,11 +2032,11 @@ void req_jobobit(
     {
     /* Rerunning job, if not checkpointed, clear "resources_used and requeue job */
 
-    if ((pjob->ji_qs.ji_svrflags & (JOB_SVFLG_CHKPT|JOB_SVFLG_ChkptMig)) == 0) 
+    if ((pjob->ji_qs.ji_svrflags & (JOB_SVFLG_CHECKPOINT_FILE | JOB_SVFLG_CHECKPOINT_MIGRATEABLE)) == 0) 
       {
       job_attr_def[(int)JOB_ATR_resc_used].at_free(&pjob->ji_wattr[(int)JOB_ATR_resc_used]);
       } 
-    else if (pjob->ji_qs.ji_svrflags & JOB_SVFLG_CHKPT) 
+    else if (pjob->ji_qs.ji_svrflags & JOB_SVFLG_CHECKPOINT_FILE) 
       {
       /* non-migratable checkpoint (cray), leave there */
       /* and just requeue the job		       */

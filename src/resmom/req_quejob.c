@@ -293,7 +293,7 @@ void req_quejob(
 
     /* if checkpointed, then keep old and skip rest of process */
 
-    if (pj->ji_qs.ji_svrflags & JOB_SVFLG_CHKPT) 
+    if (pj->ji_qs.ji_svrflags & JOB_SVFLG_CHECKPOINT_FILE) 
       {
       pj->ji_qs.ji_substate = JOB_SUBSTATE_TRANSIN;
 
@@ -322,7 +322,7 @@ void req_quejob(
         }
 
       return;
-      }  /* END if (pj->ji_qs.ji_svrflags & JOB_SVFLG_CHKPT) */
+      }  /* END if (pj->ji_qs.ji_svrflags & JOB_SVFLG_CHECKPOINT_FILE) */
 
     /* unlink job from svr_alljobs since it will be placed on newjobs */
 
@@ -568,7 +568,7 @@ void req_jobscript(
 
   /* mom - if job has been checkpointed, discard script,already have it */
 
-  if (pj->ji_qs.ji_svrflags & JOB_SVFLG_CHKPT) 
+  if (pj->ji_qs.ji_svrflags & JOB_SVFLG_CHECKPOINT_FILE) 
     {
     /* SUCCESS - do nothing, ignore script */
 
@@ -635,7 +635,7 @@ void req_jobscript(
   /* job has a script file */
 
   pj->ji_qs.ji_svrflags = 
-    (pj->ji_qs.ji_svrflags & ~JOB_SVFLG_CHKPT)|JOB_SVFLG_SCRIPT; 
+    (pj->ji_qs.ji_svrflags & ~JOB_SVFLG_CHECKPOINT_FILE)|JOB_SVFLG_SCRIPT; 
 
   /* SUCCESS */
 
