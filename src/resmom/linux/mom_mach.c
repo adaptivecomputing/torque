@@ -3330,12 +3330,7 @@ static char *ncpus(
 
   while (!feof(fp))  
     {
-    if (fscanf(fp,"%s %*[^\n]%*c", 
-      label) != 1)
-      {
-      fclose(fp);
-      return(NULL);
-      }
+    fscanf(fp,"%s %*[^\n]%*c", label);
 
     if (strcmp("processor",label) == 0)
       procs++;
