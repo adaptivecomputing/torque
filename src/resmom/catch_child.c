@@ -110,6 +110,7 @@
 #include "pbs_error.h"
 #include "pbs_proto.h"
 #include "rpp.h"
+#include "resmon.h"
 #ifdef ENABLE_CPA
 #include "pbs_cpa.h"
 #endif
@@ -342,6 +343,8 @@ void scan_for_exiting()
   u_long	getsize		A_((resource *));
   task         *task_find	A_((job	*,tm_task_id));
   int im_compose A_((int,char *,char *,int,tm_event_t,tm_task_id));
+  pbs_net_t   down_svraddrs[PBS_MAXSERVER] = {0,0,0,0};
+  int    svr_index;
 
   static int ForceObit    = -1;   /* boolean - if TRUE, ObitsAllowed will be enforced */
   static int ObitsAllowed = 1;
@@ -389,6 +392,22 @@ void scan_for_exiting()
   for (pjob = (job *)GET_NEXT(svr_alljobs);pjob != NULL;pjob = nxjob) 
     {
     nxjob = (job *)GET_NEXT(pjob->ji_alljobs);
+
+    /* 
+     * Bypass job if it is for a server that we know is down
+     */
+    
+    for (svr_index=0; svr_index < PBS_MAXSERVER; svr_index++)
+      {
+      if (down_svraddrs[svr_index] == 0)
+        {
+        break;
+        }
+      if (down_svraddrs[svr_index] == pjob->ji_qs.ji_un.ji_momt.ji_svraddr)
+        {
+        continue;
+        }
+      }
 
 #if MOM_CHECKPOINT == 1
 
@@ -739,11 +758,22 @@ void scan_for_exiting()
         }
 
       /*
-       * return (break out of loop), leave exiting_tasks set
+       * continue through the jobs loop since we can have jobs for multiple
+       * servers.  Keep track that this server is down so we don't try to
+       * process any more jobs for it. We will leave it's exiting_tasks set
        * so Mom will retry Obit when server is available
        */
 
-      return;
+      for (svr_index=0; svr_index < PBS_MAXSERVER; svr_index++)
+        {
+        if (down_svraddrs[svr_index] == 0)
+          {
+          down_svraddrs[svr_index] = pjob->ji_qs.ji_un.ji_momt.ji_svraddr;
+          break;
+          }
+        }
+      
+      continue;
       }  /* END if (sock < 0) */
 
     if (LOGLEVEL >= 2)
@@ -790,7 +820,7 @@ void scan_for_exiting()
       }
     }  /* END for (pjob) */
 
-  if (pjob == NULL) 
+  if ((pjob == NULL) && (down_svraddrs[0] == 0))
     {
     /* search finished */
 
