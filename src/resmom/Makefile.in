@@ -64,20 +64,21 @@ pbs_demux_DEPENDENCIES = @PBS_MACH@/libmommach.a $(am__DEPENDENCIES_1) \
 	$(PBS_LIBS)
 am__pbs_mom_SOURCES_DIST = catch_child.c mom_comm.c mom_inter.c \
 	mom_main.c mom_server.c prolog.c requests.c start_exec.c \
-	tmsock_recov.c req_quejob.c job_func.c ../server/attr_recov.c \
-	../server/dis_read.c ../server/job_attr_def.c \
-	../server/job_recov.c ../server/process_request.c \
-	../server/reply_send.c ../server/resc_def_all.c \
-	../server/job_qs_upgrade.c cray_cpa.c
+	checkpoint.c tmsock_recov.c req_quejob.c job_func.c \
+	../server/attr_recov.c ../server/dis_read.c \
+	../server/job_attr_def.c ../server/job_recov.c \
+	../server/process_request.c ../server/reply_send.c \
+	../server/resc_def_all.c ../server/job_qs_upgrade.c cray_cpa.c
 @BUILDCPA_TRUE@am__objects_1 = cray_cpa.$(OBJEXT)
 am_pbs_mom_OBJECTS = catch_child.$(OBJEXT) mom_comm.$(OBJEXT) \
 	mom_inter.$(OBJEXT) mom_main.$(OBJEXT) mom_server.$(OBJEXT) \
 	prolog.$(OBJEXT) requests.$(OBJEXT) start_exec.$(OBJEXT) \
-	tmsock_recov.$(OBJEXT) req_quejob.$(OBJEXT) job_func.$(OBJEXT) \
-	attr_recov.$(OBJEXT) dis_read.$(OBJEXT) job_attr_def.$(OBJEXT) \
-	job_recov.$(OBJEXT) process_request.$(OBJEXT) \
-	reply_send.$(OBJEXT) resc_def_all.$(OBJEXT) \
-	job_qs_upgrade.$(OBJEXT) $(am__objects_1)
+	checkpoint.$(OBJEXT) tmsock_recov.$(OBJEXT) \
+	req_quejob.$(OBJEXT) job_func.$(OBJEXT) attr_recov.$(OBJEXT) \
+	dis_read.$(OBJEXT) job_attr_def.$(OBJEXT) job_recov.$(OBJEXT) \
+	process_request.$(OBJEXT) reply_send.$(OBJEXT) \
+	resc_def_all.$(OBJEXT) job_qs_upgrade.$(OBJEXT) \
+	$(am__objects_1)
 pbs_mom_OBJECTS = $(am_pbs_mom_OBJECTS)
 pbs_mom_LDADD = $(LDADD)
 pbs_mom_DEPENDENCIES = @PBS_MACH@/libmommach.a $(am__DEPENDENCIES_1) \
@@ -347,8 +348,8 @@ PBS_LIBS = ../lib/Libattr/libattr.a \
 EXTRA_DIST = rm_dep.h
 LDADD = @PBS_MACH@/libmommach.a $(MOMLIBS) $(PBS_LIBS)
 pbs_mom_SOURCES = catch_child.c mom_comm.c mom_inter.c mom_main.c \
-	mom_server.c prolog.c requests.c start_exec.c tmsock_recov.c \
-	req_quejob.c job_func.c ../server/attr_recov.c \
+	mom_server.c prolog.c requests.c start_exec.c checkpoint.c \
+	tmsock_recov.c req_quejob.c job_func.c ../server/attr_recov.c \
 	../server/dis_read.c ../server/job_attr_def.c \
 	../server/job_recov.c ../server/process_request.c \
 	../server/reply_send.c ../server/resc_def_all.c \
@@ -430,6 +431,7 @@ distclean-compile:
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/attr_recov.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/catch_child.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/checkpoint.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cray_cpa.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dis_read.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/job_attr_def.Po@am__quote@

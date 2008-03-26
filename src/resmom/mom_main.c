@@ -210,10 +210,6 @@ time_t		time_now = 0;
 time_t		last_poll_time = 0;
 extern tlist_head svr_requests;
 extern struct var_table vtable;	/* see start_exec.c */
-#if MOM_CHECKPOINT == 1
-char	       *path_checkpoint = NULL;
-static resource_def *rdcput;
-#endif	/* MOM_CHECKPOINT */
 double		wallfactor = 1.00;
 long		log_file_max_size = 0;
 long		log_file_roll_depth = 1;
@@ -269,6 +265,10 @@ extern int      mom_server_all_check_connection(void);
 extern int      mom_server_all_send_state(void);
 extern int      mom_server_add(char *name);
 extern int      mom_server_count;
+extern int      mom_checkpoint_init(void);
+extern void     mom_checkpoint_check_periodic_timer(job *pjob);
+extern void     mom_checkpoint_set_directory_path(char *str);
+
 
 #define PMOMTCPTIMEOUT 60  /* duration in seconds mom TCP requests will block */
 
@@ -322,9 +322,9 @@ static unsigned long setpbsserver(char *);
 static unsigned long setnodecheckscript(char *);
 static unsigned long setnodecheckinterval(char *);
 static unsigned long settimeout(char *);
-static unsigned long set_checkpoint_script(char *);
-static unsigned long set_restart_script(char *);
-static unsigned long set_checkpoint_run_exe_name(char *);
+extern unsigned long mom_checkpoint_set_checkpoint_script(char *);
+extern unsigned long mom_checkpoint_set_restart_script(char *);
+extern unsigned long mom_checkpoint_set_checkpoint_run_exe_name(char *);
 static unsigned long setdownonerror(char *);
 static unsigned long setstatusupdatetime(char *);
 static unsigned long setcheckpolltime(char *);
@@ -371,9 +371,9 @@ static struct specials {
     { "node_check_script",   setnodecheckscript },
     { "node_check_interval", setnodecheckinterval },
     { "timeout",             settimeout },
-    { "checkpoint_script",   set_checkpoint_script },
-    { "restart_script",      set_restart_script },
-    { "checkpoint_run_exe",  set_checkpoint_run_exe_name },
+    { "checkpoint_script",   mom_checkpoint_set_checkpoint_script },
+    { "restart_script",      mom_checkpoint_set_restart_script },
+    { "checkpoint_run_exe",  mom_checkpoint_set_checkpoint_run_exe_name },
     { "down_on_error",       setdownonerror },
     { "status_update_time",  setstatusupdatetime },
     { "check_poll_time",     setcheckpolltime },
@@ -423,11 +423,6 @@ char                    DEFAULT_UMASK[1024];
 char                    PRE_EXEC[1024];
 long                    TJobStartBlockTime = 5; /* seconds to wait for job to launch before backgrounding */
 long                    TJobStartTimeout = 300; /* seconds to wait for job to launch before purging */
-
-/* BLCR variables */
-char                    checkpoint_script_name[1024];
-char                    restart_script_name[1024];
-char                    checkpoint_run_exe_name[1024];
 
 
 char                   *ret_string;
@@ -577,7 +572,6 @@ int         TMOMScanForStarting(void);
 
 /* Local private functions */
 
-static char *mk_dirs A_((char *));
 void check_log A_((void));
 
 int MUSNPrintF(
@@ -2536,93 +2530,6 @@ static unsigned long setmaxload(
 
   return(1);
   }  /* END max_load() */
-
-
-
-
-
-static unsigned long set_checkpoint_script(
-
-  char *value)  /* I */
-
-  {
-  struct stat sbuf;
-
-  log_record(
-    PBSEVENT_SYSTEM,
-    PBS_EVENTCLASS_SERVER,
-    "checkpoint_script",
-    value);
-
-  if ((stat(value,&sbuf) == -1) || !(sbuf.st_mode & S_IXUSR))
-    {
-    /* file does not exist or is not executable */
-
-    return(0);  /* error */
-    }
-
-  strncpy(checkpoint_script_name, value, sizeof(checkpoint_script_name));
-
-  return(1);
-  }  /* END set_checkpoint_script() */
-
-
-
-
-
-static unsigned long set_restart_script(
-
-  char *value)  /* I */
-
-  {
-  struct stat sbuf;
-
-  log_record(
-    PBSEVENT_SYSTEM,
-    PBS_EVENTCLASS_SERVER,
-    "restart_script",
-    value);
-
-  if ((stat(value, &sbuf) == -1) || !(sbuf.st_mode & S_IXUSR))
-    {
-    /* file does not exist or is not executable */
-
-    return(0);  /* error */
-    }
-
-  strncpy(restart_script_name, value, sizeof(restart_script_name));
-
-  return(1);
-  }  /* END set_restart_script() */
-
-
-
-
-
-static unsigned long set_checkpoint_run_exe_name(
-
-  char *value)  /* I */
-
-  {
-  struct stat sbuf;
-
-  log_record(
-    PBSEVENT_SYSTEM,
-    PBS_EVENTCLASS_SERVER,
-    "checkpoint_run_exe",
-    value);
-
-  if ((stat(value, &sbuf) == -1) || !(sbuf.st_mode & S_IXUSR))
-    {
-    /* file does not exist or is not executable */
-
-    return(0);  /* error */
-    }
-
-  strncpy(checkpoint_run_exe_name, value, sizeof(checkpoint_run_exe_name));
-
-  return(1);
-  }  /* END set_checkpoint_run_exe() */
 
 
 
@@ -5910,7 +5817,7 @@ static void PBSAdjustLogLevel(
  * mk_dirs - make the directory names used by MOM 
  */
 
-static char *mk_dirs(
+char *mk_dirs(
 
   char *base)  /* I */
 
@@ -6044,27 +5951,7 @@ void parse_command_line(
         break;
 
       case 'C':
-
-#if MOM_CHECKPOINT == 1
-
-        if (*(optarg + strlen(optarg)) == '/')
-          {
-          path_checkpoint = optarg;
-          }
-        else
-          {
-          path_checkpoint = malloc(strlen(optarg) + 2);
-
-          strcpy(path_checkpoint,optarg);
-
-          strcat(path_checkpoint,"/");
-          }
-#else
-
-        fprintf(stderr,"Not compiled with CHECKPOINT\n");
-
-#endif  /* MOM_CHECKPOINT */
-
+        mom_checkpoint_set_directory_path(optarg);
         break;
 
       case 'd': /* directory */
@@ -6314,21 +6201,7 @@ int setup_program_environment()
 
   init_resc_defs();
 
-#if MOM_CHECKPOINT == 1
-
-  if (path_checkpoint == NULL)	/* if not -C option */
-    path_checkpoint = mk_dirs("checkpoint/");
-
-  /* locate cput resource definition, needed for checking checkpoint time */
-
-  rdcput = find_resc_def(svr_resc_def,"cput",svr_resc_size);
-
-#if !defined(DEBUG) && !defined(NO_SECURITY_CHECK)
-
-  c = chk_file_sec(path_checkpoint,1,0,S_IWGRP|S_IWOTH,1,NULL);
-
-#endif  /* not DEBUG and not NO_SECURITY_CHECK */
-#endif	/* MOM_CHECKPOINT */
+  c |= mom_checkpoint_init();
 
   /* change working directory to mom_priv */
 
@@ -7119,10 +6992,6 @@ void examine_all_running_jobs()
   int         c;
 #endif
   task         *ptask;
-#if MOM_CHECKPOINT == 1
-  resource	*prscput;
-  extern int start_checkpoint();
-#endif /* MOM_CHECKPOINT */
 
     for (pjob = (job *)GET_NEXT(svr_alljobs);
          pjob != NULL;
@@ -7191,40 +7060,8 @@ void examine_all_running_jobs()
           }    /* END while (ptask != NULL) */
         }      /* END if (pjob->ji_flags & MOM_NO_PROC) */
 
-#if MOM_CHECKPOINT == 1
 
-      /* see if need to checkpoint any job */
-
-      if (pjob->ji_checkpoint_time != 0)  /* ji_checkpoint_time gets set in start_exec */
-        {
-        int rc;
-
-        prscput = find_resc_entry(
-          &pjob->ji_wattr[(int)JOB_ATR_resc_used],
-          rdcput);  /* resource definition cput set in startup */
-
-        if (prscput &&
-           (pjob->ji_checkpoint_next > prscput->rs_value.at_val.at_long))
-          {
-          pjob->ji_checkpoint_next = 
-            prscput->rs_value.at_val.at_long +
-            pjob->ji_checkpoint_time;
-
-          if ((rc = start_checkpoint(pjob,0,0)) != PBSE_NONE)
-            {
-            sprintf(log_buffer,"Checkpoint failed, error %d", rc);
-
-            message_job(pjob,StdErr,log_buffer);
-
-            log_record(
-              PBSEVENT_JOB, 
-              PBS_EVENTCLASS_JOB,
-              pjob->ji_qs.ji_jobid, 
-              log_buffer);
-            }
-          }
-        }
-#endif	/* MOM_CHECKPOINT */
+      mom_checkpoint_check_periodic_timer(pjob);
       }  /* END for (pjob) */
   }
 

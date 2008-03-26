@@ -143,7 +143,6 @@ extern int		exiting_tasks;
 extern tlist_head	svr_alljobs;
 extern char		mom_host[];
 extern char            *msg_err_unlink;
-extern char            *path_checkpoint;
 extern char            *path_spool;
 extern char            *path_undeliv;
 extern attribute_def	job_attr_def[];
@@ -938,9 +937,10 @@ void req_holdjob(
   struct batch_request *preq)
 
   {
-#if MOM_CHECKPOINT == 1
   int  rc;
   job *pjob;
+  svrattrl *pal;
+  attribute tmph;
 
   /* If checkpoint supported, do it and terminate the job */
   /* otherwise, return PBSE_NOSUP				*/
@@ -953,15 +953,21 @@ void req_holdjob(
     } 
   else 
     {
+    /* propagate servers hold state to job */
+
+    clear_attr(&tmph,&job_attr_def[(int)JOB_ATR_hold]);
+    if ((pal = (svrattrl *)GET_NEXT(preq->rq_ind.rq_hold.rq_orig.rq_attr)) != NULL) 
+      {
+      job_attr_def[(int)JOB_ATR_hold].at_decode(
+        &tmph,
+        pal->al_name,
+        NULL,
+        pal->al_value);
+      }
+
     if ((rc = start_checkpoint(pjob,1,preq)) != PBSE_NONE)
       req_reject(rc,0,preq,mom_host,"cannot checkpoint job");    /* unable to start checkpoint */
     }
-
-  /* note, normally the reply to the server is in start_checkpoint() */
-#else
-  req_reject(PBSE_NOSUP,0,preq,mom_host,"checkpoint feature not enabled, configure with --enable-blcr");    /* unable to start checkpoint */
-#endif
-
   }
 
 
@@ -976,7 +982,6 @@ void req_checkpointjob(
   struct batch_request *preq)
 
   {
-#if MOM_CHECKPOINT == 1
   int  rc;
   job *pjob;
 
@@ -996,9 +1001,6 @@ void req_checkpointjob(
     }
 
   /* note, normally the reply to the server is in start_checkpoint() */
-#else
-  req_reject(PBSE_NOSUP,0,preq,mom_host,"checkpoint feature not enabled, configure with --enable-blcr");    /* unable to start checkpoint */
-#endif
   }
 
 
@@ -3000,13 +3002,12 @@ void req_cpyfile(
           }
 #endif	/* NO_SPOOL_OUTPUT */
         }  /* END if (pair->fp_flag == STDJOBFILE) */
-#if MOM_CHECKPOINT == 1
       else if (pair->fp_flag == JOBCKPFILE) 
         {
+        extern char     *path_checkpoint;
         strcpy(localname,path_checkpoint);
         strcat(localname,pair->fp_local);  /* from location */
         }
-#endif	/* MOM_CHECKPOINT */
       else
         {
         /* user-supplied stage-out file */
@@ -3405,407 +3406,6 @@ void req_delfile(
 
 
 
-
-
-#if MOM_CHECKPOINT == 1
-/*
- * Checkpoint the job.
- *
- *	If abort is TRUE, kill it too.  Return a PBS error code.
- */
-
-int mom_checkpoint_job(
-
-  job *pjob,  /* I */
-  int  abort) /* I */
-
-  {
-/*  int		hasold = 0; */
-  int		sesid = -1;
-  int		ckerr;
-/*  struct stat	statbuf; */
-  char		path[MAXPATHLEN + 1];
-/*  char		oldp[MAXPATHLEN + 1]; */
-  char		file[MAXPATHLEN + 1]; 
-  char         *name;
-  int		filelen;
-  task         *ptask;
-  extern char   task_fmt[];
-
-  assert(pjob != NULL);
-
-  strcpy(path,path_checkpoint);
-  strcat(path,pjob->ji_qs.ji_fileprefix);
-  strcat(path,JOB_CHECKPOINT_SUFFIX);
-
-#if 0
-  /* Don't mess with existing checkpoints. */
-  if (stat(path,&statbuf) == 0) 
-    {
-    strcpy(oldp,path);   /* file already exists, rename it */
-
-    strcat(oldp,".old");
-
-    if (rename(path,oldp) < 0)
-      {
-      return(errno);
-      }
-
-    hasold = 1;
-    }
-#endif
-
-  mkdir(path,0755);
-
-  filelen = strlen(path);
-
-  strcpy(file,path);
-
-  name = &file[filelen];
-
-#ifdef _CRAY
-
-  /*
-   * if job is suspended and if <abort> is set, resume job first,
-   * this is so job will be "Q"ueued and then back into "R"unning
-   * when restarted.
-   */
-
-  if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_Suspend) && abort) 
-    {
-    for (ptask = (task *)GET_NEXT(pjob->ji_tasks); 
-         ptask != NULL; 
-         ptask = (task *)GET_NEXT(ptask->ti_jobtask)) 
-      {
-      sesid = ptask->ti_qs.ti_sid;
-
-      if (ptask->ti_qs.ti_status != TI_STATE_RUNNING)
-        continue;
-
-      /* What to do if some resume work and others don't? */
-
-      if ((ckerr = resume(C_JOB,sesid)) == 0) 
-        {
-        post_resume(pjob, ckerr);
-        } 
-      else 
-        {
-        sprintf(log_buffer,"checkpoint failed: errno=%d sid=%d",
-          errno, 
-          sesid);
-
-        LOG_EVENT(
-          PBSEVENT_JOB, 
-          PBS_EVENTCLASS_JOB,
-          pjob->ji_qs.ji_jobid, 
-          log_buffer);
-
-        return(errno);
-        }
-      }
-    }
-#endif	/* _CRAY */
-
-  for (ptask = (task *)GET_NEXT(pjob->ji_tasks);
-       ptask != NULL;
-       ptask = (task *)GET_NEXT(ptask->ti_jobtask)) 
-    {
-    sesid = ptask->ti_qs.ti_sid;
-
-    if (ptask->ti_qs.ti_status != TI_STATE_RUNNING)
-      continue;
-
-    sprintf(name,task_fmt, 
-      ptask->ti_qs.ti_task);
-
-    if (mach_checkpoint(ptask,file,abort) == -1)
-      goto fail;
-    }
-
-  /* Checkpoint successful */
-
-  pjob->ji_qs.ji_svrflags |= JOB_SVFLG_CHECKPOINT_FILE;
-
-  job_save(pjob,SAVEJOB_FULL);  /* to save resources_used so far */
-
-  sprintf(log_buffer,"checkpointed to %s", 
-    path);
-
-  log_record(
-    PBSEVENT_JOB, 
-    PBS_EVENTCLASS_JOB,
-    pjob->ji_qs.ji_jobid, 
-    log_buffer);
-
-#if 0
-  if (hasold) 
-    remtree(oldp);
-#endif
-
-  return(PBSE_NONE);
-
-fail:
-
-  /* A checkpoint has failed.  Log and return error. */
-
-  ckerr = errno;
-
-  sprintf(log_buffer,"checkpoint failed:errno=%d sid=%d", 
-    errno, 
-    sesid);
-
-  LOG_EVENT(
-    PBSEVENT_JOB, 
-    PBS_EVENTCLASS_JOB,
-    pjob->ji_qs.ji_jobid,
-    log_buffer);
-
-  /*
-  ** See if any checkpoints worked and abort is set.
-  ** If so, we need to restart these tasks so the whole job is
-  ** still running.  This has to wait until we reap the
-  ** aborted task(s).
-  */
-
-  if (abort)
-    {
-    return(PBSE_CKPSHORT);
-    }
-
-  /* Clean up files */
-#if 0
-  remtree(path);
-
-  if (hasold) 
-    {
-    if (rename(oldp,path) == -1)
-      pjob->ji_qs.ji_svrflags &= ~JOB_SVFLG_CHECKPOINT_FILE;
-    }
-#endif
-
-  if (ckerr == EAGAIN)
-    {
-    return(PBSE_CKPBSY);
-    }
-
-  return(ckerr);
-  }
-
-
-
-
-
-/* 
- * post_checkpoint - post processor for start_checkpoint()
- *
- *	Called from scan_for_terminated() when found in ji_mompost;
- *	This sets the "has checkpoint image" bit in the job.
- */
-
-void post_checkpoint(
-
-  job *pjob,
-  int  ev)
-
-  {
-  char           path[MAXPATHLEN + 1];
-  DIR		*dir;
-  struct dirent	*pdir;
-  extern char	*path_checkpoint;
-  tm_task_id	tid;
-  task		*ptask;
-  int		abort = pjob->ji_flags & MOM_CHECKPOINT_ACTIVE;
-
-  exiting_tasks = 1;	/* make sure we call scan_for_exiting() */
-
-  pjob->ji_flags &= ~MOM_CHECKPOINT_ACTIVE;
-
-  if (ev == 0) 
-    {
-    pjob->ji_qs.ji_svrflags |= JOB_SVFLG_CHECKPOINT_FILE;
-
-    return;
-    }
-
-  /*
-  ** If we get here, an error happened.  Only try to recover
-  ** if we had abort set.
-  */
-
-  if (abort == 0)
-    {
-    return;
-    }
-
-  /*
-  ** Set a flag for scan_for_exiting() to be able to
-  ** deal with a failed checkpoint rather than doing
-  ** the usual processing.
-  */
-
-  pjob->ji_flags |= MOM_CHECKPOINT_POST;
-
-  /*
-  ** Set the TI_FLAGS_CHECKPOINT flag for each task that
-  ** was checkpointed and aborted.
-  */
-
-  strcpy(path,path_checkpoint);
-  strcat(path,pjob->ji_qs.ji_fileprefix);
-  strcat(path,JOB_CHECKPOINT_SUFFIX);
-
-  dir = opendir(path);
-
-  if (dir == NULL)
-    {
-    return;
-    }
-
-  while ((pdir = readdir(dir)) != NULL) 
-    {
-    if (pdir->d_name[0] == '.')
-      continue;
-
-    tid = atoi(pdir->d_name);
-
-    if (tid == 0)
-      continue;
-
-    ptask = task_find(pjob,tid);
-
-    if (ptask == NULL)
-      continue;
-
-    ptask->ti_flags |= TI_FLAGS_CHECKPOINT;
-    }
-
-  closedir(dir);
-
-  return;
-  }
-
-
-
-
-
-
-/*
- * start_checkpoint - start a checkpoint going
- *
- *	checkpoint done from a child because it takes a while 
- */
-
-int start_checkpoint(
-
-  job *pjob,
-  int  abort,
-  struct batch_request *preq)	/* may be null */
-
-  {
-/*  static char id[] = "start_checkpoint"; */
-  svrattrl *pal;
-/*  pid_t     pid; */
-  int       rc;
-  attribute tmph;
-  char      name_buffer[1024];
-
-  if (mom_does_checkpoint() == 0) 	/* no checkpoint, reject request */
-    {
-    return(PBSE_NOSUP);
-    }
-
-    /* Build the name of the checkpoint file before forking to the child */
-
-  sprintf(name_buffer, "ckpt.%s.%d",
-    pjob->ji_qs.ji_jobid,
-    (int)time(0) );
-  decode_str(&pjob->ji_wattr[(int)JOB_ATR_checkpoint_name],NULL,NULL,name_buffer);
-  pjob->ji_wattr[(int)JOB_ATR_checkpoint_name].at_flags =
-    ATR_VFLAG_SET | ATR_VFLAG_MODIFY | ATR_VFLAG_SEND;
-
-
-  if (!(pjob->ji_wattr[(int)JOB_ATR_checkpoint_dir].at_flags & ATR_VFLAG_SET))
-    {
-    /* No dir specified, use the default job checkpoint directory /var/spool/torque/checkpoint/42.host.domain.CK */
-
-    strcpy(name_buffer,path_checkpoint);
-    strcat(name_buffer,pjob->ji_qs.ji_fileprefix);
-    strcat(name_buffer,JOB_CHECKPOINT_SUFFIX);
-    decode_str(&pjob->ji_wattr[(int)JOB_ATR_checkpoint_dir],NULL,NULL,name_buffer);
-    }
-
-#if 0
-  /* now set up as child of MOM */
-
-  pid = fork_me((preq == NULL) ? -1 : preq->rq_conn);
-
-  if (pid > 0) 
-    {
-    /* parent, record pid in job for when child terminates */
-
-    pjob->ji_momsubt = pid;
-    pjob->ji_mompost = (int (*)())post_checkpoint;
-
-    if (preq)
-      free_br(preq);
-
-    /* If we are going to have tasks dieing, set a flag. */
-
-    if (abort)
-      pjob->ji_flags |= MOM_CHECKPOINT_ACTIVE;
-    } 
-  else if (pid < 0) 
-    {
-    /* error on fork */
-
-    log_err(errno,id,"cannot fork child process for checkpoint");
-    return(PBSE_SYSTEM);	
-    } 
-  else
-#endif
-    {
-    /* child - does the checkpoint */
-
-    int hok = 1;
-
-    clear_attr(&tmph,&job_attr_def[(int)JOB_ATR_hold]);
-
-    if (preq != NULL) 
-      {
-      pal = (svrattrl *)GET_NEXT(preq->rq_ind.rq_hold.rq_orig.rq_attr);
-
-      if (pal != NULL) 
-        {
-        hok = job_attr_def[(int)JOB_ATR_hold].at_decode(
-          &tmph,
-          pal->al_name,
-          NULL,
-          pal->al_value);
-        }
-      }
-
-    rc = mom_checkpoint_job(pjob,abort);
-
-    if (preq != NULL) 
-      {
-      /* rc may be 0, req_reject is used to pass auxcode */
-
-      req_reject(rc,PBS_CHECKPOINT_MIGRATE,preq,NULL,NULL);
-      }
-
-    if ((rc == 0) && (hok == 0))
-      rc = site_mom_postchk(pjob,(int)tmph.at_val.at_long);
-#if 0
-    exit(rc);	/* zero exit tells main checkpoint ok */
-#else
-  return(PBSE_NONE);		/* parent return */
-#endif
-    }
-
-  return(PBSE_NONE);		/* parent return */
-  }  /* END start_checkpoint() */
-
-#endif	/* MOM_CHECKPOINT */
 
 
 /* END requests.c */

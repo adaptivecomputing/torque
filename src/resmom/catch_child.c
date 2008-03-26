@@ -160,6 +160,8 @@ extern int task_recov A_((job *));
 extern void mom_server_all_update_stat(void);
 extern void check_state(int);
 extern int mom_open_socket_to_jobs_server A_(( job *, char *, void (*) A_((int))));
+extern void checkpoint_partial(job *pjob);
+extern void mom_checkpoint_recover(job *pjob);
 
 
 /* END external prototypes */
@@ -208,121 +210,6 @@ hnodent	*get_node(
 
   return(NULL);
   }  /* END get_node() */
-
-
-
-
-
-#if	MOM_CHECKPOINT == 1
-/*
-**	Restart each task which has exited and has TI_FLAGS_CHECKPOINT turned on.
-**	If all tasks have been restarted, turn off MOM_CHECKPOINT_POST.
-*/
-
-void checkpoint_partial(
-
-  job *pjob)
-
-  {
-  static char	id[] = "checkpoint_partial";
-  int		i;
-  char		namebuf[MAXPATHLEN];
-  char		*filnam;
-  task		*ptask;
-  int		texit = 0;
-  extern	char	task_fmt[];
-  extern	char	*path_checkpoint;
-
-  assert(pjob != NULL);
-
-  strcpy(namebuf,path_checkpoint);
-  strcat(namebuf,pjob->ji_qs.ji_fileprefix);
-  strcat(namebuf,JOB_CHECKPOINT_SUFFIX);
-
-  i = strlen(namebuf);
-
-  filnam = &namebuf[i];
-
-  for (ptask = (task *)GET_NEXT(pjob->ji_tasks);
-       ptask != NULL;
-       ptask = (task *)GET_NEXT(ptask->ti_jobtask)) 
-    {
-    /*
-    ** See if the task was marked as one of those that did
-    ** actually checkpoint.
-    */
-
-    if ((ptask->ti_flags & TI_FLAGS_CHECKPOINT) == 0)
-      continue;
-
-    texit++;
-
-    /*
-    ** Now see if it was reaped.  We don't want to
-    ** fool with it until we see it die.
-    */
-
-    if (ptask->ti_qs.ti_status != TI_STATE_EXITED)
-      continue;
-
-    texit--;
-
-    sprintf(filnam,task_fmt, 
-      ptask->ti_qs.ti_task);
-
-    if (mach_restart(ptask,namebuf) == -1)
-      goto fail;
-
-    ptask->ti_qs.ti_status = TI_STATE_RUNNING;
-    ptask->ti_flags &= ~TI_FLAGS_CHECKPOINT;
-
-    task_save(ptask);
-    }
-
-  if (texit == 0) 
-    {
-    char        oldname[MAXPATHLEN];
-    struct stat	statbuf;
-
-    /*
-    ** All tasks should now be running.
-    ** Turn off MOM_CHECKPOINT_POST flag so job is back to where
-    ** it was before the bad checkpoint attempt.
-    */
-
-    pjob->ji_flags &= ~MOM_CHECKPOINT_POST;
-
-    /*
-    ** Get rid of incomplete checkpoint directory and
-    ** move old checkpoint dir back to regular if it exists.
-    */
-
-    *filnam = '\0';
-
-    remtree(namebuf);
-
-    strcpy(oldname,namebuf);
-
-    strcat(oldname,".old");
-
-    if (stat(oldname,&statbuf) == 0) 
-      {
-      if (rename(oldname,namebuf) == -1)
-        pjob->ji_qs.ji_svrflags &= ~JOB_SVFLG_CHECKPOINT_FILE;
-      }
-    }
-
-  return;
-
-fail:
-  pjob->ji_flags &= ~MOM_CHECKPOINT_POST;
-
-  kill_job(pjob,SIGKILL,id,"failed to restart");
-
-  return;
-  }  /* END checkpoint_partial() */
-
-#endif	/* MOM_CHECKPOINT */
 
 
 
@@ -409,8 +296,6 @@ void scan_for_exiting()
         }
       }
 
-#if MOM_CHECKPOINT == 1
-
     /*
     ** If a checkpoint with aborts is active,
     ** skip it.  We don't want to report any obits
@@ -434,7 +319,6 @@ void scan_for_exiting()
       continue;
       }
  
-#endif	/* MOM_CHECKPOINT */
 
     if (!(pjob->ji_wattr[(int)JOB_ATR_Cookie].at_flags & ATR_VFLAG_SET))
       continue;
@@ -1518,12 +1402,6 @@ void init_abort_jobs(
   char		*job_suffix = JOB_FILE_SUFFIX;
   int            job_suf_len = strlen(job_suffix);
   char		*psuffix;
-#if	MOM_CHECKPOINT == 1
-  char           path[MAXPATHLEN + 1];
-  char           oldp[MAXPATHLEN + 1];
-/*  struct stat    statbuf; */
-  extern char   *path_checkpoint;
-#endif
 
   if (LOGLEVEL >= 6)
     {
@@ -1604,35 +1482,8 @@ void init_abort_jobs(
         log_buffer);
       }
 
-#if MOM_CHECKPOINT == 1
-    /*
-    ** Check to see if a checkpoint.old dir exists.
-    ** If so, remove the regular checkpoint dir
-    ** and rename the old to the regular name.
-    */
 
-    strcpy(path,path_checkpoint);
-    strcat(path,pj->ji_qs.ji_fileprefix);
-    strcat(path,JOB_CHECKPOINT_SUFFIX);
-    strcpy(oldp,path);
-    strcat(oldp,".old");
-
-#if 0
-    /*
-     * This is if 0'ed.
-     * If the directory exists it is fine.
-     * Checkpoint names have a time suffix and can occupy
-     * the same directory space.
-     */
-    if (stat(oldp,&statbuf) == 0) 
-      {
-      remtree(path);
-
-      if (rename(oldp,path) == -1)
-        remtree(oldp);
-      }
-#endif
-#endif  /* END MOM_CHECKPOINT == 1 */
+    mom_checkpoint_recover(pj);
 
     /*
      * make sure we trust connections from sisters in case we get an

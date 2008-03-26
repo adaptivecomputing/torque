@@ -144,7 +144,6 @@ extern	char	      **environ;
 extern	int		exiting_tasks;
 extern	int		lockfds;
 extern	tlist_head	mom_polljobs;
-extern	char		*path_checkpoint;
 extern	char		*path_jobs;
 extern	char		*path_prolog;
 extern  char            *path_prologuser;
@@ -169,8 +168,8 @@ int              mom_reader_go;		/* see catchinter() & mom_writer() */
 struct var_table vtable;		/* for building up job's environ */
 
 extern char             tmpdir_basename[];  /* for TMPDIR */
-extern char             checkpoint_run_exe_name[];
 
+extern int              mom_checkpoint_init_job(job *pjob,int *SC);
 
 /* Local Variables */ 
 
@@ -233,6 +232,10 @@ extern int TMOMJobGetStartInfo(job *,pjobexec_t **);
 extern int mom_reader(int,int);
 extern int mom_writer(int,int);
 extern int x11_create_display(int, char *,char *phost,int pport,char *homedir,char *x11authstr);
+extern int blcr_restart_job(job  *pjob, char *file);
+extern int mom_restart_job(job  *pjob, char *path);
+extern int  mom_checkpoint_job_is_checkpointable(job *pjob);
+extern void mom_checkpoint_execute_job(job *pjob,char *shell,char *arg[],struct var_table *vtable);
 
 
 /* END prototypes */
@@ -394,283 +397,6 @@ struct passwd *check_pwd(
 
   return(pwdp);
   }  /* END check_pwd() */
-
-
-
-
-/*
- * replace a given file descriptor with the new file path
- *
- * This routine exits on error!  Only used by the BLCR restart code, and
- * there's really no good way to recover from an error in restart.
- */
-static int fdreopen(const char *path, const char mode, int fd)
-{
-  int newfd, dupfd;
- 
-  close(fd);
- 
-  newfd = open("/dev/null", O_RDONLY);
-  if (newfd < 0)
-  {
-    perror("open");
-    goto abort;
-  }
- 
-  dupfd = dup2(newfd, fd);
-  if (newfd < 0)
-  {
-    perror("dup2");
-    goto abort;
-  }
-
-  close(newfd);
-
-/* out: */
-  return dupfd;
-
-abort:
-  exit(-1);
-}
-
-
-
-/* BLCR version of restart */
-
-int blcr_restart_job(
-  job  *pjob,  /* I */
-  char *file)  /* I */
-  {
-  char	*id = "blcr_restart_job";
-  int   pid;
-  char  sid[20];
-  char  *arg[20];
-  extern  char    restart_script_name[1024];
-  task *ptask;
-  char  buf[1024];
-  char  **ap;
-
-#define SET_ARG(x) (((x) == NULL) || (*(x) == 0))?"-":(x)
-
-  /* if a restart script is defined launch it */
-
-  if (restart_script_name[0] == '\0')
-    {
-    log_err(-1,id,"No restart script defined");
-    }
-  else
-    {
-    /* BLCR is not for parallel jobs, there can only be one task in the job. */
-    ptask = (task *) GET_NEXT(pjob->ji_tasks);
-    if (ptask != NULL)
-      {
- 
-      /* launch the script and return success */
-
-      pid = fork();
-      if (pid < 0)
-        {
-        /* fork failed */
-        return(FAILURE);
-        }
-      else if (pid == 0)
-        {
-        /* child: execv the script */
-
-        sprintf(sid,"%ld",
-          ptask->ti_job->ji_wattr[(int)JOB_ATR_session_id].at_val.at_long);
-
-        arg[0] = restart_script_name;
-        arg[1] = sid;
-        arg[2] = SET_ARG(ptask->ti_job->ji_qs.ji_jobid);
-        arg[3] = SET_ARG(ptask->ti_job->ji_wattr[(int)JOB_ATR_euser].at_val.at_str);
-        arg[4] = SET_ARG(ptask->ti_job->ji_wattr[(int)JOB_ATR_checkpoint_dir].at_val.at_str);
-        arg[5] = SET_ARG(ptask->ti_job->ji_wattr[(int)JOB_ATR_checkpoint_name].at_val.at_str);
-        arg[6] = NULL;
- 
-        strcpy(buf,"restart args:");
-
-        for (ap = arg;*ap;ap++)
-          {
-          strcat(buf," ");
-          strcat(buf,*ap);
-          }
-
-        log_err(-1,id,buf);
-
-        log_close(0);
-
-        if (lockfds >= 0)
-          {
-          close(lockfds);
-          lockfds = -1;
-          }
-
-        net_close(-1);
- 
-        fdreopen("/dev/null",O_RDONLY,0);
-        fdreopen("/dev/null",O_WRONLY,1);
-        fdreopen("/dev/null",O_WRONLY,2);
-
-        /* set us up with a new session */
-
-        pid = setsid();
-
-        if (pid < 0)
-          {
-          perror("setsid");
-          exit(-1);
-          }
-
-        execv(arg[0],arg);
-
-        return(SUCCESS);  /* Not Reached -- just make the compiler happy */
-        }  /* END if (pid == 0) */
-      else if (pid > 0)
-        {
-        /* parent */
-
-        ptask->ti_qs.ti_sid = pid;  /* Apparently torque doesn't do anything with the session ID that we pass back here... */
-        ptask->ti_qs.ti_status = TI_STATE_RUNNING;
-        task_save(ptask);
-
-#if 0
-        /* This does not work, waitpid blocks and the pbs_server times out. */
-        int child_status;
-
-        waitpid(pid,&child_status,0);
-        if (child_status == 0)
-          {
-          sprintf(log_buffer,"Restarted 1 task" );
-
-          LOG_EVENT(
-            PBSEVENT_JOB,
-            PBS_EVENTCLASS_JOB,
-            pjob->ji_qs.ji_jobid,
-            log_buffer);
-
-          return(SUCCESS);
-          }
-#else
-        return(SUCCESS);
-#endif
-        }
-      }
-    }
-    return(FAILURE);
-  }
-
-
-
-
-/* start each task based on task checkpoint records located job-specific checkpoint directory */
-
-int mom_restart_job(
-
-  job  *pjob,  /* I */
-  char *path)  /* I */
-
-  {
-  static char	id[] = "mom_restart_job";
-  int		i;
-  char		namebuf[MAXPATHLEN];
-  char		*filnam;
-  DIR		*dir;
-  struct	dirent	*pdir;
-  tm_task_id	taskid;
-  task         *ptask;
-  int		tcount = 0;
-  long		mach_restart A_((task *, char *path));
-
-  if ((dir = opendir(path)) == NULL) 
-    {
-    sprintf(log_buffer,"opendir %s", 
-      path);
- 
-    log_err(errno,id,log_buffer);
-
-    return(-1);
-    }
-
-  strcpy(namebuf,path);
-  strcat(namebuf,"/");
-
-  i = strlen(namebuf);
-
-  filnam = &namebuf[i];
-
-  while ((pdir = readdir(dir)) != NULL) 
-    {
-    if (strlen(pdir->d_name) <= 2)
-      continue;
-
-    if ((taskid = (tm_task_id)atoi(pdir->d_name)) == 0) 
-      {
-      sprintf(log_buffer, "%s: garbled filename %s",
-        pjob->ji_qs.ji_jobid, 
-        pdir->d_name);
-
-      goto fail;
-      }
-
-    if ((ptask = task_find(pjob,taskid)) == NULL) 
-      {
-      sprintf(log_buffer, "%s: task %d not found",
-        pjob->ji_qs.ji_jobid, 
-        (int)taskid);
-
-      goto fail;
-      }
-
-    strcpy(filnam,pdir->d_name);
-
-    if (mach_restart(ptask,namebuf) == -1) 
-      {
-      sprintf(log_buffer, "%s: task %d failed from file %s",
-        pjob->ji_qs.ji_jobid, 
-        (int)taskid, 
-        namebuf);
-
-      goto fail;
-      }
-
-    ptask->ti_qs.ti_status = TI_STATE_RUNNING;
-
-    if (LOGLEVEL >= 6)
-      {
-      log_record(
-        PBSEVENT_ERROR,
-        PBS_EVENTCLASS_JOB,
-        pjob->ji_qs.ji_jobid,
-        "task set to running (mom_restart_job)");
-      }
- 
-    task_save(ptask);
-
-    tcount++;
-    }
-
-  closedir(dir);
-
-  sprintf(log_buffer,"Restarted %d tasks",
-     tcount);
-
-  LOG_EVENT(
-    PBSEVENT_JOB,
-    PBS_EVENTCLASS_JOB,
-    pjob->ji_qs.ji_jobid,
-    log_buffer);
-
-  return(tcount);
-
-fail:
-
-  log_err(errno,id,log_buffer);
-
-  closedir(dir);
-
-  return(-1);
-  }  /* END mom_restart_job() */
 
 
 
@@ -1498,13 +1224,6 @@ int TMomFinalizeJob1(
   resource_def		*prd;
   struct sockaddr_in     saddr;
 
-#if MOM_CHECKPOINT == 1
-  char	   		buf[MAXPATHLEN + 2];
-  struct stat		sb;
-  int                   rc; /* return code */
-#endif /* MOM_CHECKPOINT */
-
-
   *SC = 0;
 
   if (TJE == NULL)
@@ -1624,167 +1343,8 @@ int TMomFinalizeJob1(
 
 #endif	/* IBM SP */
 
-#if MOM_CHECKPOINT == 1
-
-  /* Is the job to be periodically checkpointed */
-
-  pattr = &pjob->ji_wattr[(int)JOB_ATR_checkpoint];
-
-  if ((pattr->at_flags & ATR_VFLAG_SET) &&
-      (*pattr->at_val.at_str == 'c') &&
-      (*(pattr->at_val.at_str + 1) == '=')) 
-    {
-    /* has checkpoint time (in minutes), convert to milliseconds */
-
-    pjob->ji_checkpoint_time = atoi(pattr->at_val.at_str + 2) * 60;
-    pjob->ji_checkpoint_next = pjob->ji_checkpoint_time;
-    }
-
-  /* If job has been checkpointed, restart from the checkpoint image */
-
-  if (pjob->ji_wattr[(int)JOB_ATR_checkpoint_dir].at_flags & ATR_VFLAG_SET)
-    {
-    /* The job has a checkpoint directory specified, use it. */
-    strcpy(buf,pjob->ji_wattr[(int)JOB_ATR_checkpoint_dir].at_val.at_str);
-    }
-  else
-    {
-    /* Otherwise, use the default job checkpoint directory /var/spool/torque/checkpoint/42.host.domain.CK */
-    strcpy(buf,path_checkpoint);
-    strcat(buf,pjob->ji_qs.ji_fileprefix);
-    strcat(buf,JOB_CHECKPOINT_SUFFIX);
-    }
-
-  if (((pjob->ji_qs.ji_svrflags & JOB_SVFLG_CHECKPOINT_FILE) || 
-         (pjob->ji_qs.ji_svrflags & JOB_SVFLG_CHECKPOINT_MIGRATEABLE)) &&
-       (stat(buf,&sb) == 0)) /* stat(buf) tests if the checkpoint directory exists */
-    {
-    /* Checkpointed - restart from checkpoint file */
-
-    /* perform any site required setup before restart */
-
-    if ((i = site_mom_prerst(pjob)) != 0) 
-      {
-      pjob->ji_qs.ji_un.ji_momt.ji_exitstat = i;
-
-      pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITING;
-
-      exiting_tasks = 1;
-
-      sprintf(log_buffer,"Pre-restart failed %d",
-        errno);
-
-      LOG_EVENT(
-        PBSEVENT_JOB,
-        PBS_EVENTCLASS_JOB,
-        pjob->ji_qs.ji_jobid,
-        log_buffer);
-      
-      *SC = JOB_EXEC_RETRY;
-
-      return(FAILURE);
-      }
-
-    /* For right now, we assume BLCR checkpoint if job has name of checkpoint
-     * file.  This file name would have been set at the point where the
-     * checkpoint was taken, in the machine dependent checkpoint code.
-     *
-     * Note: There is a little discrepancy in that the checkpoint work is
-     * done at the machine dependent level and the restart is here at a
-     * global level.  We hope to correct this soon.
-     *
-     * The idea is that BLCR itself is architecture independent and so
-     * it is okay to invoke it from the main level.
-     */
-
-    if (pjob->ji_wattr[(int)JOB_ATR_checkpoint_name].at_flags & ATR_VFLAG_SET)
-      {
-        rc = blcr_restart_job(pjob,buf);
-        pjob->ji_qs.ji_substate = JOB_SUBSTATE_RUNNING;
-      }
-    else if ((i = mom_restart_job(pjob,buf)) > 0) /* Iterate over files in checkpoint dir, restarting all files found. */
-      {
-      /* reset mtime so walltime will not include held time */
-      /* update to time now minus the time already used	  */
-      /* unless it is suspended, see request.c/req_signal() */
-
-      time_now = time(0);
-
-      if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_Suspend) == 0) 
-        {
-        pjob->ji_qs.ji_stime = 
-          time_now - (sb.st_mtime - pjob->ji_qs.ji_stime);
-
-        pjob->ji_qs.ji_substate = JOB_SUBSTATE_RUNNING;
-
-        if (mom_get_sample() != PBSE_NONE)
-          mom_set_use(pjob);
-        } 
-      else 
-        {
-        pjob->ji_qs.ji_substate = JOB_SUBSTATE_SUSPEND;
-        }
-      }
-
-    if (rc == FAILURE) 
-      {
-      /* FAILURE */
-	
-      /* retry for any kind of changable thing */
-
-      if ((errno == EAGAIN) ||
-
-#ifdef	ERFLOCK
-          (errno == ERFLOCK) ||
-#endif
-#ifdef	EQUSR
-          (errno == EQUSR) ||
-#endif
-#ifdef	EQGRP
-          (errno == EQGRP) ||
-#endif
-#ifdef	EQACT
-          (errno == EQACT) ||
-#endif
-#ifdef	ENOSDS
-          (errno == ENOSDS) ||
-#endif
-          (errno == ENOMEM) ||
-          (errno == ENOLCK) ||
-          (errno == ENOSPC) ||
-          (errno == ENFILE) ||
-          (errno == EDEADLK) ||
-          (errno == EBUSY))
-        {
-        pjob->ji_qs.ji_un.ji_momt.ji_exitstat = JOB_EXEC_RETRY;
-        }
-      else 
-        {
-        pjob->ji_qs.ji_un.ji_momt.ji_exitstat = JOB_EXEC_BADRESRT;
-        }
-
-      pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITING;
-
-      exiting_tasks = 1;
-
-      sprintf(log_buffer,"Restart failed, error %d",
-        errno);
-
-      LOG_EVENT(
-        PBSEVENT_JOB,
-        PBS_EVENTCLASS_JOB,
-        pjob->ji_qs.ji_jobid,
-        log_buffer);
-      }  /* END else (mom_restart_job() == SUCCESS) */
-
-    /* NOTE:  successful checkpoint handling routes through here */
-
-    *SC = 0;
-
-    return(FAILURE);
-    }  /* END (((pjob->ji_qs.ji_svrflags & JOB_SVFLG_CHECKPOINT_FILE) || ...) */
-
-#endif	/* MOM_CHECKPOINT */
+  if (mom_checkpoint_init_job(pjob,SC) == SUCCESS)
+    return(SUCCESS);
 
   /*
    * if certain resource limits require that the job usage be
@@ -2212,6 +1772,7 @@ int TMomFinalizeChild(
   struct passwd         *pwdp;
 
   char                   EMsg[1024];
+
 
   pjob  = (job *)TJE->pjob;
   ptask = (task *)TJE->ptask;
@@ -3241,17 +2802,9 @@ int TMomFinalizeChild(
       sigaction(SIGINT,&act,(struct sigaction *)0);
       }
 
-    if (mom_does_checkpoint())
+    if (mom_checkpoint_job_is_checkpointable(pjob))
       {
-      /* Launch job executable with cr_run command so that cr_checkpoint command will work. */
-
-      arg[3] = arg[2];                     /* shuffle up the existing args */
-      arg[2] = arg[1];
-      arg[1] = malloc(strlen(shell) + 1);  /* replace first arg with shell name */
-
-      strcpy(arg[1],shell);
-
-      execve(checkpoint_run_exe_name,arg,vtable.v_envp);
+      mom_checkpoint_execute_job(pjob,shell,arg,&vtable);
       }
     else
       {

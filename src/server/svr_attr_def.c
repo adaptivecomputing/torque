@@ -826,7 +826,7 @@ attribute_def svr_attr_def[] = {
         PARENT_TYPE_SERVER
     },
 
-/* SVR_ATR_NextJobNumber */
+/* SRV_ATR_NextJobNumber */
     {	ATTR_nextjobnum,
 	decode_l,
 	encode_l,
@@ -904,7 +904,7 @@ attribute_def svr_attr_def[] = {
         PARENT_TYPE_SERVER
     },
 
-/* SVR_ATR_checkpoint_dir */
+/* SRV_ATR_checkpoint_dir */
     {   ATTR_checkpoint_dir,   /* "checkpoint_dir" */
     decode_str,
     encode_str,

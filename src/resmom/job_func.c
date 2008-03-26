@@ -144,7 +144,8 @@ int conn_qsub(char *,long,char *);
 void job_purge(job *);
 
 /* External functions */
-
+extern void mom_checkpoint_delete_files(job *pjob);
+ 
 #if IBM_SP2==2		/* IBM SP PSSP 3.1 */
 void unload_sp_switch A_((job *pjob));
 #endif			/* IBM SP */
@@ -670,19 +671,7 @@ void job_purge(
   strcat(namebuf,JOB_TASKDIR_SUFFIX);
   remtree(namebuf);
 
-#if MOM_CHECKPOINT == 1
-#if 0
-  /* Leave the checkpoint files around per request by Cray */
-  {
-  extern char *path_checkpoint;
-
-  strcpy(namebuf,path_checkpoint);	/* delete any checkpoint file */
-  strcat(namebuf,pjob->ji_qs.ji_fileprefix);
-  strcat(namebuf,JOB_CKPT_SUFFIX);
-  remtree(namebuf);
-  }
-#endif
-#endif	/* MOM_CHECKPOINT */
+  mom_checkpoint_delete_files(pjob);
 
   strcpy(namebuf,path_jobs);	/* delete job file */
   strcat(namebuf,pjob->ji_qs.ji_fileprefix);

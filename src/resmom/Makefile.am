@@ -21,7 +21,7 @@ LDADD = @PBS_MACH@/libmommach.a $(MOMLIBS) $(PBS_LIBS)
 
 pbs_mom_SOURCES = catch_child.c mom_comm.c mom_inter.c mom_main.c \
 		   mom_server.c prolog.c requests.c start_exec.c \
-                   tmsock_recov.c req_quejob.c job_func.c \
+           checkpoint.c tmsock_recov.c req_quejob.c job_func.c \
 		   ../server/attr_recov.c ../server/dis_read.c \
 		   ../server/job_attr_def.c \
 		   ../server/job_recov.c  \
