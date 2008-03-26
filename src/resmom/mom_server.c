@@ -261,6 +261,7 @@ char            MOMSendStatFailure[MMAX_LINE];
 
 mom_server     mom_servers[PBS_MAXSERVER];
 int            mom_server_count = 0;
+pbs_net_t      down_svraddrs[PBS_MAXSERVER];
 
 
 extern unsigned int default_server_port;
@@ -2447,6 +2448,90 @@ int mom_open_socket_to_jobs_server( job * pjob, char *caller_id, void (*message_
   return(sock);
   }
 
+/**
+ * clear_down_mom_servers
+ *
+ * Clears the mom_server down address list.
+ * Called from the catch_child code.
+ * @see scan_for_exiting
+ */
+void
+clear_down_mom_servers()
+  {
+  int sindex;
+
+  for (sindex = 0;sindex < PBS_MAXSERVER;sindex++)
+    {
+    down_svraddrs[sindex] = 0;
+    }
+
+  return;
+  }
+
+/**
+ * is_mom_server_down
+ *
+ * Checks to see if the server address is in the down list.
+ * Called from the catch_child code.
+ * @see scan_for_exiting
+ */
+int
+is_mom_server_down(pbs_net_t server_address)
+  {
+  int sindex;
+
+  for (sindex = 0; sindex < PBS_MAXSERVER || down_svraddrs[sindex] == 0; sindex++)
+    {
+    if (down_svraddrs[sindex] == server_address)
+      {
+      return (1);
+      }
+    }
+
+  return (0);
+  }
+
+/**
+ * no_mom_servers_down
+ *
+ * Checks to see if the server address down list is empty.
+ * Called from the catch_child code.
+ * @see scan_for_exiting
+ */
+int
+no_mom_servers_down()
+  {
+  if (down_svraddrs[0] == 0)
+    {
+    return (1);
+    }
+
+  return (0);
+  }
+
+/**
+ * set_mom_server_down
+ *
+ * Add this server address to the down list.
+ * Called from the catch_child code.
+ * @see scan_for_exiting
+ */
+void
+set_mom_server_down(pbs_net_t server_address)
+  {
+  int sindex;
+
+  for (sindex = 0; sindex < PBS_MAXSERVER; sindex++)
+    {
+    if (down_svraddrs[sindex] == 0)
+      {
+      down_svraddrs[sindex] = server_address;
+      break;
+      }
+    }
+      
+  return;
+  }
 
 
 

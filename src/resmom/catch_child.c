@@ -110,7 +110,6 @@
 #include "pbs_error.h"
 #include "pbs_proto.h"
 #include "rpp.h"
-#include "resmon.h"
 #ifdef ENABLE_CPA
 #include "pbs_cpa.h"
 #endif
@@ -162,6 +161,10 @@ extern void check_state(int);
 extern int mom_open_socket_to_jobs_server A_(( job *, char *, void (*) A_((int))));
 extern void checkpoint_partial(job *pjob);
 extern void mom_checkpoint_recover(job *pjob);
+extern void clear_down_mom_servers();
+extern int is_mom_server_down(pbs_net_t);
+extern void set_mom_server_down(pbs_net_t);
+extern int no_mom_servers_down();
 
 
 /* END external prototypes */
@@ -230,8 +233,6 @@ void scan_for_exiting()
   u_long	getsize		A_((resource *));
   task         *task_find	A_((job	*,tm_task_id));
   int im_compose A_((int,char *,char *,int,tm_event_t,tm_task_id));
-  pbs_net_t   down_svraddrs[PBS_MAXSERVER] = {0,0,0,0};
-  int    svr_index;
 
   static int ForceObit    = -1;   /* boolean - if TRUE, ObitsAllowed will be enforced */
   static int ObitsAllowed = 1;
@@ -275,6 +276,8 @@ void scan_for_exiting()
       ForceObit = 1;
       }
     }
+    
+  clear_down_mom_servers();
 
   for (pjob = (job *)GET_NEXT(svr_alljobs);pjob != NULL;pjob = nxjob) 
     {
@@ -284,17 +287,11 @@ void scan_for_exiting()
      * Bypass job if it is for a server that we know is down
      */
     
-    for (svr_index=0; svr_index < PBS_MAXSERVER; svr_index++)
+    if (is_mom_server_down(pjob->ji_qs.ji_un.ji_momt.ji_svraddr))
       {
-      if (down_svraddrs[svr_index] == 0)
-        {
-        break;
-        }
-      if (down_svraddrs[svr_index] == pjob->ji_qs.ji_un.ji_momt.ji_svraddr)
-        {
-        continue;
-        }
+      continue;
       }
+
 
     /*
     ** If a checkpoint with aborts is active,
@@ -648,15 +645,8 @@ void scan_for_exiting()
        * so Mom will retry Obit when server is available
        */
 
-      for (svr_index=0; svr_index < PBS_MAXSERVER; svr_index++)
-        {
-        if (down_svraddrs[svr_index] == 0)
-          {
-          down_svraddrs[svr_index] = pjob->ji_qs.ji_un.ji_momt.ji_svraddr;
-          break;
-          }
-        }
-      
+      set_mom_server_down(pjob->ji_qs.ji_un.ji_momt.ji_svraddr);
+
       continue;
       }  /* END if (sock < 0) */
 
@@ -704,7 +694,7 @@ void scan_for_exiting()
       }
     }  /* END for (pjob) */
 
-  if ((pjob == NULL) && (down_svraddrs[0] == 0))
+  if ((pjob == NULL) && (no_mom_servers_down()))
     {
     /* search finished */
 
