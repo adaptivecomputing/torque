@@ -106,7 +106,7 @@ extern int mom_over_limit A_((job *pjob));	/* Is polled job over limit? */
 extern int mom_set_use A_((job *pjob));		/* Set resource_used list */
 extern int mom_kill A_((int sid, int sig));	/* Kill a session */
 extern int mach_close_poll A_(());		/* Terminate poll ability */
-extern int mach_checkpoint A_((struct task *, char *path, int abt));
+extern int mach_checkpoint A_((struct task *, char *path, int abt, int admin));
 						/* do the checkpoint */
 extern long mach_restart A_((struct task *,char *path));	/* Restart checkpointed task */
 extern int mom_close_poll A_(());           /* Terminate poll ability */

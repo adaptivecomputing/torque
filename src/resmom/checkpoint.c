@@ -357,7 +357,8 @@ static resource_def *rdcput;
 int mom_checkpoint_job(
 
   job *pjob,  /* I */
-  int  abort) /* I */
+  int  abort, /* I */
+  int  admin) /* I */
 
   {
 /*  int		hasold = 0; */
@@ -458,7 +459,7 @@ int mom_checkpoint_job(
     sprintf(name,task_fmt, 
       ptask->ti_qs.ti_task);
 
-    if (mach_checkpoint(ptask,file,abort) == -1)
+    if (mach_checkpoint(ptask,file,abort,admin) == -1)
       goto fail;
     }
 
@@ -715,7 +716,8 @@ int start_checkpoint(
     {
     /* child - does the checkpoint */
 
-    if ((rc = mom_checkpoint_job(pjob,abort)) == 0)
+    if ((rc = mom_checkpoint_job(pjob,abort,
+         (preq) ? preq->rq_perm & (ATR_DFLAG_OPRD|ATR_DFLAG_OPWR|ATR_DFLAG_MGRD|ATR_DFLAG_MGWR) : TRUE)) == 0)
       {
       /* Normally, this is an empty routine and does nothing. */
 

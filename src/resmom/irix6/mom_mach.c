@@ -1276,10 +1276,11 @@ int mom_does_checkpoint()
  *	If abort is true, kill it too.
  */
 
-int mach_checkpoint(ptask, file, abort)
+int mach_checkpoint(ptask, file, abort, admin)
     task	*ptask;
     char	*file;
     int		abort;
+    int		admin;
 {
 #if MOM_CHECKPOINT == 1
 	/* ckpt_setup(0, 0);  Does nothing so why have it */

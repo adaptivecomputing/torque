@@ -1163,10 +1163,11 @@ int mom_does_checkpoint()
  *	If abort is TRUE, kill it too.
  */
 
-int mach_checkpoint(ptask, path, abort)
+int mach_checkpoint(ptask, path, abort, admin)
     task	*ptask;
     char	*path;
     int		abort;
+    int		admin;
 {
 	int	cprtn;
 	long	flags = 0;

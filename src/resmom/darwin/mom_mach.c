@@ -1386,7 +1386,8 @@ int mach_checkpoint(
 
   task *ptask,  /*I*/
   char *file,   /*I*/
-  int abort)    /*I*/
+  int abort,    /*I*/
+  int admin)    /*I*/
 
 {
        	return (-1);
