@@ -2772,6 +2772,7 @@ int TMomFinalizeChild(
       }  /* END if (PRE_EXEC[0] != '\0') */
 
 #if SHELL_USE_ARGV == 1
+    /* Put the script's arguments on the command line (see configure option --enable-shell-use-argv). */
     if (TJE->is_interactive == FALSE) 
       {
       arg[aindex] = malloc(

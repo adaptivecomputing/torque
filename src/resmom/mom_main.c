@@ -2099,6 +2099,7 @@ static unsigned long setpreexec(
   char *value)  /* I */
 
   {
+  static char *id = "setpreexec";
   log_record(
     PBSEVENT_SYSTEM,
     PBS_EVENTCLASS_SERVER,
@@ -2106,6 +2107,10 @@ static unsigned long setpreexec(
     value);
 
   strncpy(PRE_EXEC,value,sizeof(PRE_EXEC));
+
+#if SHELL_USE_ARGV == 0
+  log_err(0,id,"pbs_mom not configured with enable-shell-user-argv option");
+#endif
 
   return(1);
   }  /* END setpreexec() */
