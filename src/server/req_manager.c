@@ -2509,8 +2509,9 @@ int set_nextjobnum(
     case SET:   attr->at_val.at_long = new->at_val.at_long;
                 break;
 
-    /*case INCR:  attr->at_val.at_long = MAX(server.sv_qs.sv_jobidnumber, new->at_val.at_long);*/
-    case INCR:  attr->at_val.at_long += new->at_val.at_long;
+    /* Code in Moab depends on this, do not change until the Moab code is fixed. */
+    case INCR:  attr->at_val.at_long = MAX(server.sv_qs.sv_jobidnumber, new->at_val.at_long);
+    /*case INCR:  attr->at_val.at_long += new->at_val.at_long;*/
                 break;
 
     case DECR:  attr->at_val.at_long -= new->at_val.at_long;
