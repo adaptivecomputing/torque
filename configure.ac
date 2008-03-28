@@ -1242,6 +1242,7 @@ AC_OUTPUT(buildutils/pbs_mkdirs
 	  src/lib/Makefile
 	  src/lib/Libattr/Makefile
 	  src/lib/Libcmds/Makefile
+	  src/lib/Libcsv/Makefile
 	  src/lib/Libdis/Makefile
 	  src/lib/Libifl/Makefile
 	  src/lib/Liblog/Makefile

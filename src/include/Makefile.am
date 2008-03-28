@@ -3,7 +3,7 @@ include $(top_srcdir)/buildutils/config.mk
 include_HEADERS = pbs_error.h pbs_ifl.h tm.h tm_.h rpp.h rm.h
 
 noinst_HEADERS = acct.h array.h attribute.h batch_request.h cmds.h \
-		 credential.h \
+		 credential.h csv.h \
 		 dis.h dis_init.h job.h libpbs.h list_link.h log.h Long_.h \
 		 Long.h mcom.h md5.h mom_func.h net_connect.h pbs_assert.h \
 		 pbs_nodes.h pbs_proto.h portability.h qmgr.h \
