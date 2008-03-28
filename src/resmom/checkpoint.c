@@ -32,7 +32,7 @@
 #include "net_connect.h"
 #include "resource.h"
 #include "csv.h"
-
+#include "svrfunc.h"
 
 extern int   exiting_tasks;
 extern int LOGLEVEL;
@@ -715,9 +715,13 @@ int start_checkpoint(
 #endif
     {
     /* child - does the checkpoint */
+    int   admin = 1;
+ /* There is no way to tell if admin, server always sends name as PBS_Server
+  * and the permissions are not sent in the message and are set to all priv
+  * by the mom.
+  */
 
-    if ((rc = mom_checkpoint_job(pjob,abort,
-         (preq) ? preq->rq_perm & (ATR_DFLAG_OPRD|ATR_DFLAG_OPWR|ATR_DFLAG_MGRD|ATR_DFLAG_MGWR) : TRUE)) == 0)
+    if ((rc = mom_checkpoint_job(pjob,abort,admin)) == 0)
       {
       /* Normally, this is an empty routine and does nothing. */
 
