@@ -945,9 +945,7 @@ void req_holdjob(
   /* If checkpoint supported, do it and terminate the job */
   /* otherwise, return PBSE_NOSUP				*/
 
-  pjob = find_job(preq->rq_ind.rq_hold.rq_orig.rq_objname);
-
-  if (pjob == NULL) 
+  if ((pjob = find_job(preq->rq_ind.rq_hold.rq_orig.rq_objname)) == NULL)
     {
     rc = PBSE_UNKJOBID;
     } 

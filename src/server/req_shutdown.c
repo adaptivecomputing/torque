@@ -100,6 +100,7 @@
 #include "queue.h"
 #include "pbs_error.h"
 #include "svrfunc.h"
+#include "csv.h"
 
 /* Private Fuctions Local to this File */
 
@@ -222,7 +223,10 @@ void svr_shutdown(
 
       pattr = &pjob->ji_wattr[(int)JOB_ATR_checkpoint];
 
-      if ((pattr->at_val.at_str) && (*pattr->at_val.at_str != 'n')) 
+      if ((pattr->at_flags & ATR_VFLAG_SET) &&
+           ((csv_find_string(pattr->at_val.at_str, "s") != NULL) ||
+            (csv_find_string(pattr->at_val.at_str, "c") != NULL) ||
+            (csv_find_string(pattr->at_val.at_str, "shutdown") != NULL)))
         {
         /* do checkpoint of job */
 

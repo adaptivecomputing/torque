@@ -3918,8 +3918,8 @@ int main(
     {
     static char usage[] =
 "usage: qsub [-a date_time] [-A account_string] [-b secs]\n\
-[-c { c[=<INTERVAL>] | s | n | none | periodic | shutdown | oncommand |\n\
-      name=<STR> | dir=<STR> | interval=<INTERVAL>}]\n\
+[-c [ { n | none } | { c[=<minutes>] | s | periodic | shutdown | oncommand |\n\
+      depth=<int> | dir=<path> | interval=<minutes>}... ]\n\
 [-C directive_prefix] [-d path] [-D path]\n\
 [-e path] [-h] [-I] [-j oe] [-k {oe}] [-l resource_list] [-m n|{abe}]\n\
 [-M user_list] [-N jobname] [-o path] [-p priority] [-q queue] [-r y|n]\n\

@@ -59,7 +59,17 @@ extern char *mk_dirs A_((char *));
 int
 mom_checkpoint_job_is_checkpointable(job *pjob)
   {
-  return(mom_does_checkpoint());
+  attribute    *pattr;
+
+  pattr = &pjob->ji_wattr[(int)JOB_ATR_checkpoint];
+
+  return(mom_does_checkpoint() &&
+    (pattr->at_flags & ATR_VFLAG_SET) &&
+     ((csv_find_string(pattr->at_val.at_str, "c") != NULL) ||
+      (csv_find_string(pattr->at_val.at_str, "s") != NULL) ||
+      (csv_find_string(pattr->at_val.at_str, "oncommand") != NULL) ||
+      (csv_find_string(pattr->at_val.at_str, "shutdown") != NULL) ||
+      (csv_find_string(pattr->at_val.at_str, "periodic") != NULL)));
   }
 
 
@@ -311,7 +321,7 @@ static resource_def *rdcput;
 
   /* see if need to checkpoint any job */
 
-  if (pjob->ji_checkpoint_time != 0)  /* ji_checkpoint_time gets set in start_exec */
+  if (pjob->ji_checkpoint_time != 0)  /* ji_checkpoint_time gets set below */
     {
     if (rdcput == NULL)
       {
@@ -1145,13 +1155,24 @@ mom_checkpoint_init_job(job *pjob,int *SC)
   pattr = &pjob->ji_wattr[(int)JOB_ATR_checkpoint];
 
   if ((pattr->at_flags & ATR_VFLAG_SET) &&
-      ((vp = csv_find_value(pattr->at_val.at_str, "c")) ||
-       (vp = csv_find_value(pattr->at_val.at_str, "interval"))))
+      (csv_find_string(pattr->at_val.at_str, "c") ||
+       csv_find_string(pattr->at_val.at_str, "periodic")))
     {
-    /* has checkpoint time (in minutes), convert to milliseconds */
+    if ((vp = csv_find_value(pattr->at_val.at_str, "c")) ||
+        (vp = csv_find_value(pattr->at_val.at_str, "interval")))
+      {
+      /* has checkpoint time (in minutes), convert to milliseconds */
 
-    pjob->ji_checkpoint_time = atoi(vp) * 60;
-    pjob->ji_checkpoint_next = pjob->ji_checkpoint_time;
+      pjob->ji_checkpoint_time = atoi(vp) * 60;
+      pjob->ji_checkpoint_next = pjob->ji_checkpoint_time;
+      }
+    else
+      {
+      /* pick a default number of minutes */
+
+      pjob->ji_checkpoint_time = 10 * 60;
+      pjob->ji_checkpoint_next = pjob->ji_checkpoint_time;
+      }
     }
 
   /* If job has been checkpointed, restart from the checkpoint image */

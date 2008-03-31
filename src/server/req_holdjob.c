@@ -102,6 +102,7 @@
 #include "log.h"
 #include "acct.h"
 #include "svrfunc.h"
+#include "csv.h"
 
 /* Private Functions Local to this file */
 
@@ -167,6 +168,7 @@ void req_holdjob(
   char    *pset;
   int     rc;
   attribute temphold;
+  attribute *pattr;
  
   pjob = chk_job_request(preq->rq_ind.rq_hold.rq_orig.rq_objname,preq);
 
@@ -199,7 +201,12 @@ void req_holdjob(
   sprintf(log_buffer, msg_jobholdset, pset, preq->rq_user,
           preq->rq_host);
 
-  if (pjob->ji_qs.ji_state == JOB_STATE_RUNNING)
+  pattr = &pjob->ji_wattr[(int)JOB_ATR_checkpoint];
+  if ((pjob->ji_qs.ji_state == JOB_STATE_RUNNING) &&
+      ((pattr->at_flags & ATR_VFLAG_SET) &&
+       ((csv_find_string(pattr->at_val.at_str, "s") != NULL) ||
+        (csv_find_string(pattr->at_val.at_str, "c") != NULL) ||
+        (csv_find_string(pattr->at_val.at_str, "oncommand") != NULL))))
     {
        
     /* have MOM attempt checkpointing */
@@ -260,15 +267,20 @@ void req_checkpointjob(
   {
   job    *pjob;
   int     rc;
+  attribute *pattr;
  
   if ((pjob = chk_job_request(preq->rq_ind.rq_manager.rq_objname,preq)) == NULL)
     {
     return;
     }
 
-  if (pjob->ji_qs.ji_state == JOB_STATE_RUNNING)
+  pattr = &pjob->ji_wattr[(int)JOB_ATR_checkpoint];
+  if ((pjob->ji_qs.ji_state == JOB_STATE_RUNNING) &&
+      ((pattr->at_flags & ATR_VFLAG_SET) &&
+       ((csv_find_string(pattr->at_val.at_str, "s") != NULL) ||
+        (csv_find_string(pattr->at_val.at_str, "c") != NULL) ||
+        (csv_find_string(pattr->at_val.at_str, "oncommand") != NULL))))
     {
-       
     /* have MOM attempt checkpointing */
 
     if ((rc = relay_to_mom(pjob->ji_qs.ji_un.ji_exect.ji_momaddr,
