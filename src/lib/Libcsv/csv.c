@@ -8,6 +8,7 @@
  */
 
 #include <string.h>
+#include <ctype.h>
 
 /**
  * Gets the number of items in a string list.
@@ -32,6 +33,8 @@ int csv_length( char *csv_str )
 	return(length);
 }
 
+
+
 /**
  * Gets the nth item from a comma seperated list of names.
  * @param csv_str  The string list.
@@ -39,12 +42,14 @@ int csv_length( char *csv_str )
  * @return Null if csv_str is null or empty,
  *     otherwise, a pointer to a local buffer containing the nth item.
  */
+#define NBUFFERS        32
 char *csv_nth( char *csv_str, int n )
 {
 	int		i;
 	char	*cp;
 	char	*tp;
-static	char	buffer[128];
+static	char	buffer[NBUFFERS][128];
+static  int     buffer_index;
 
 	if (!csv_str || *csv_str == 0)
 		return(0);
@@ -58,16 +63,21 @@ static	char	buffer[128];
 		}
 		cp++;
 	}
-	memset(buffer, 0, sizeof(buffer));
+
+    buffer_index++;
+    if (buffer_index >= NBUFFERS)
+      buffer_index = 0;
+	memset(buffer[buffer_index], 0, sizeof(buffer[buffer_index]));
+
 	if ((tp = strchr(cp, ',')))
 	{
-		strncpy(buffer, cp, tp-cp);
+		strncpy(buffer[buffer_index], cp, tp-cp);
 	}
 	else
 	{
-		strcpy(buffer, cp);
+		strcpy(buffer[buffer_index], cp);
 	}
-	return(buffer);
+	return(buffer[buffer_index]);
 }
 
 
@@ -94,8 +104,14 @@ csv_find_string( char *csv_str, char *search_str )
 		cp = csv_nth( csv_str, i );
 		if (cp)
 		{
-			if (!strncmp(cp,search_str,search_length))
+			while (isspace(*cp))
+				cp++;
+			if ((int)strlen(cp) >= search_length &&
+				!isalpha(cp[search_length]) &&
+				!strncmp(cp,search_str,search_length))
+			{
 				return(cp);
+			}
 		}
 	}
 	return(NULL);

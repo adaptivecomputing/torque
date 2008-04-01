@@ -67,7 +67,7 @@ mom_checkpoint_job_is_checkpointable(job *pjob)
     (pattr->at_flags & ATR_VFLAG_SET) &&
      ((csv_find_string(pattr->at_val.at_str, "c") != NULL) ||
       (csv_find_string(pattr->at_val.at_str, "s") != NULL) ||
-      (csv_find_string(pattr->at_val.at_str, "oncommand") != NULL) ||
+      (csv_find_string(pattr->at_val.at_str, "enabled") != NULL) ||
       (csv_find_string(pattr->at_val.at_str, "shutdown") != NULL) ||
       (csv_find_string(pattr->at_val.at_str, "periodic") != NULL)));
   }
@@ -367,8 +367,7 @@ static resource_def *rdcput;
 int mom_checkpoint_job(
 
   job *pjob,  /* I */
-  int  abort, /* I */
-  int  admin) /* I */
+  int  abort) /* I */
 
   {
 /*  int		hasold = 0; */
@@ -469,7 +468,7 @@ int mom_checkpoint_job(
     sprintf(name,task_fmt, 
       ptask->ti_qs.ti_task);
 
-    if (mach_checkpoint(ptask,file,abort,admin) == -1)
+    if (mach_checkpoint(ptask,file,abort) == -1)
       goto fail;
     }
 
@@ -725,13 +724,8 @@ int start_checkpoint(
 #endif
     {
     /* child - does the checkpoint */
-    int   admin = 1;
- /* There is no way to tell if admin, server always sends name as PBS_Server
-  * and the permissions are not sent in the message and are set to all priv
-  * by the mom.
-  */
 
-    if ((rc = mom_checkpoint_job(pjob,abort,admin)) == 0)
+    if ((rc = mom_checkpoint_job(pjob,abort)) == 0)
       {
       /* Normally, this is an empty routine and does nothing. */
 

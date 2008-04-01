@@ -108,6 +108,7 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <grp.h>
+#include <csv.h>
 
 #ifdef sun
 #include <sys/stream.h>
@@ -160,6 +161,8 @@ int x11child = 0;
 int do_dir(char *);
 int process_opts(int,char **,int);
 
+
+char *checkpoint_strings = "n,c,s,u,none,shutdown,periodic,enabled,interval,depth,dir";
 
 
 /* adapted from openssh */
@@ -2410,6 +2413,8 @@ int process_opts(
   struct stat sfilter;
 
   int tmpfd;
+  int nitems;
+  char search_string[256];
 
 #if !defined(PBS_NO_POSIX_VIOLATION)
 #define GETOPT_ARGS "a:A:b:c:C:d:D:e:hIj:k:l:m:M:N:o:p:q:r:S:t:u:v:VW:Xz-:"
@@ -2585,6 +2590,28 @@ int process_opts(
                 errflg++;
 
               break;
+              }
+            }
+#else
+          nitems = csv_length(optarg);
+          for (i=0; i<nitems; i++)
+            {
+            if ((ptr = csv_nth(optarg,i)) != NULL)
+              {
+              strcpy(search_string,ptr);
+              ptr = strchr(search_string,'=');
+              if (ptr)
+                *ptr = 0;
+              else
+                ptr = &search_string[strlen(search_string)];
+              while (ptr > search_string && *(ptr-1) == ' ')
+                *--ptr = 0;
+              if (csv_find_string(checkpoint_strings,search_string) == NULL)
+                {
+                fprintf(stderr,"qsub: illegal -c value \"%s\"\n", ptr);
+                errflg++;
+                goto err;
+                }
               }
             }
 #endif
@@ -3918,7 +3945,7 @@ int main(
     {
     static char usage[] =
 "usage: qsub [-a date_time] [-A account_string] [-b secs]\n\
-[-c [ { n | none } | { c[=<minutes>] | s | periodic | shutdown | oncommand |\n\
+[-c [ { n | none } | { c[=<minutes>] | s | periodic | shutdown | enabled |\n\
       depth=<int> | dir=<path> | interval=<minutes>}... ]\n\
 [-C directive_prefix] [-d path] [-D path]\n\
 [-e path] [-h] [-I] [-j oe] [-k {oe}] [-l resource_list] [-m n|{abe}]\n\

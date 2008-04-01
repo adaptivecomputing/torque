@@ -355,7 +355,7 @@ int ck_checkpoint(
         else if (!strcmp(str,"none"))            {}
         else if (!strcmp(str,"periodic"))        {}
         else if (!strcmp(str,"shutdown"))        {}
-        else if (!strcmp(str,"oncommand"))       {}
+        else if (!strcmp(str,"enabled"))       {}
         else if (!strncmp(str,"interval=",9))    {}
         else if (!strncmp(str,"depth=",6))       {}
         else if (!strncmp(str,"dir=",4))         {}

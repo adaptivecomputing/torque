@@ -2281,8 +2281,7 @@ int mach_checkpoint(
 
   task	*ptask,  /* I */
   char	*file,  /* I */
-  int	 abort,  /* I */
-  int    admin)  /* I */
+  int	 abort)  /* I */
 
   {
   char	*id = "mach_checkpoint";
@@ -2327,9 +2326,8 @@ int mach_checkpoint(
       arg[4] = SET_ARG(ptask->ti_job->ji_wattr[(int)JOB_ATR_checkpoint_dir].at_val.at_str);
       arg[5] = SET_ARG(ptask->ti_job->ji_wattr[(int)JOB_ATR_checkpoint_name].at_val.at_str);
       arg[6] = (abort) ? "15" /*abort*/ : "0" /*run/continue*/;
-      arg[7] = (admin) ? "admin" : "user";
-      arg[8] = SET_ARG(csv_find_value(ptask->ti_job->ji_wattr[(int)JOB_ATR_checkpoint].at_val.at_str,"depth"));
-      arg[9] = NULL;
+      arg[7] = SET_ARG(csv_find_value(ptask->ti_job->ji_wattr[(int)JOB_ATR_checkpoint].at_val.at_str,"depth"));
+      arg[8] = NULL;
 
       strcpy(buf, "checkpoint args:");
       for (ap = arg; *ap; ap++)

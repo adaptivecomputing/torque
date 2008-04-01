@@ -886,11 +886,10 @@ int mom_does_checkpoint()
  *	If abort is true, kill it too.  Return -1 on error.
  */
 
-int mach_checkpoint(ptask, file, abort, admin)
+int mach_checkpoint(ptask, file, abort)
     task	*ptask;
     char	*file;
     int		abort;
-    int		admin;
 {
        	return (-1);
 }

@@ -206,7 +206,7 @@ void req_holdjob(
       ((pattr->at_flags & ATR_VFLAG_SET) &&
        ((csv_find_string(pattr->at_val.at_str, "s") != NULL) ||
         (csv_find_string(pattr->at_val.at_str, "c") != NULL) ||
-        (csv_find_string(pattr->at_val.at_str, "oncommand") != NULL))))
+        (csv_find_string(pattr->at_val.at_str, "enabled") != NULL))))
     {
        
     /* have MOM attempt checkpointing */
@@ -279,7 +279,7 @@ void req_checkpointjob(
       ((pattr->at_flags & ATR_VFLAG_SET) &&
        ((csv_find_string(pattr->at_val.at_str, "s") != NULL) ||
         (csv_find_string(pattr->at_val.at_str, "c") != NULL) ||
-        (csv_find_string(pattr->at_val.at_str, "oncommand") != NULL))))
+        (csv_find_string(pattr->at_val.at_str, "enabled") != NULL))))
     {
     /* have MOM attempt checkpointing */
 
