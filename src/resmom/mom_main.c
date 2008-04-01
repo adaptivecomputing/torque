@@ -322,6 +322,7 @@ static unsigned long setpbsserver(char *);
 static unsigned long setnodecheckscript(char *);
 static unsigned long setnodecheckinterval(char *);
 static unsigned long settimeout(char *);
+extern unsigned long mom_checkpoint_set_checkpoint_interval(char *);
 extern unsigned long mom_checkpoint_set_checkpoint_script(char *);
 extern unsigned long mom_checkpoint_set_restart_script(char *);
 extern unsigned long mom_checkpoint_set_checkpoint_run_exe_name(char *);
@@ -371,6 +372,7 @@ static struct specials {
     { "node_check_script",   setnodecheckscript },
     { "node_check_interval", setnodecheckinterval },
     { "timeout",             settimeout },
+    { "checkpoint_interval", mom_checkpoint_set_checkpoint_interval },
     { "checkpoint_script",   mom_checkpoint_set_checkpoint_script },
     { "restart_script",      mom_checkpoint_set_restart_script },
     { "checkpoint_run_exe",  mom_checkpoint_set_checkpoint_run_exe_name },

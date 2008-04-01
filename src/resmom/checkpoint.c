@@ -41,9 +41,10 @@ extern     int             lockfds;
 char	       path_checkpoint[1024];
 
 /* BLCR variables */
-char                    checkpoint_script_name[1024];
-char                    restart_script_name[1024];
-char                    checkpoint_run_exe_name[1024];
+char       checkpoint_script_name[1024];
+char       restart_script_name[1024];
+char       checkpoint_run_exe_name[1024];
+int        default_checkpoint_interval = 10; /* minutes */
 
 extern char *mk_dirs A_((char *));
 
@@ -138,6 +139,25 @@ mom_checkpoint_set_directory_path(char *str)
       *cp++ = 0;
     }
   }
+
+
+unsigned long
+mom_checkpoint_set_checkpoint_interval(char *value)  /* I */
+
+  {
+  log_record(
+    PBSEVENT_SYSTEM,
+    PBS_EVENTCLASS_SERVER,
+    "checkpoint_interval",
+    value);
+
+  default_checkpoint_interval = atoi(value);
+
+  return(1);
+  }  /* END set_checkpoint_script() */
+
+
+
 
 
 unsigned long
@@ -1164,7 +1184,7 @@ mom_checkpoint_init_job(job *pjob,int *SC)
       {
       /* pick a default number of minutes */
 
-      pjob->ji_checkpoint_time = 10 * 60;
+      pjob->ji_checkpoint_time = default_checkpoint_interval * 60;
       pjob->ji_checkpoint_next = pjob->ji_checkpoint_time;
       }
     }
