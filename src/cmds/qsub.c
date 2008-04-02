@@ -3945,7 +3945,7 @@ int main(
     {
     static char usage[] =
 "usage: qsub [-a date_time] [-A account_string] [-b secs]\n\
-[-c [ { n | none } | { c[=<minutes>] | s | periodic | shutdown | enabled |\n\
+[-c [ none | { enabled | periodic | shutdown |\n\
       depth=<int> | dir=<path> | interval=<minutes>}... ]\n\
 [-C directive_prefix] [-d path] [-D path]\n\
 [-e path] [-h] [-I] [-j oe] [-k {oe}] [-l resource_list] [-m n|{abe}]\n\
