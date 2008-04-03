@@ -116,6 +116,7 @@
 #include "pbs_error.h"
 #include "log.h"
 #include "svrfunc.h"
+#include "csv.h"
 
 #include "work_task.h"
 extern void  job_clone_wt A_((struct work_task *));
@@ -653,13 +654,42 @@ void req_quejob(
 
     /* If queue has checkpoint directory name specified, propagate it to the job. */
 
-    if (!(pj->ji_wattr[(int)JOB_ATR_checkpoint_dir].at_flags & ATR_VFLAG_SET) &&
-         (pque->qu_attr[(int)QE_ATR_checkpoint_dir].at_flags & ATR_VFLAG_SET))
+    if (!(pj->ji_wattr[(int)JOB_ATR_checkpoint_dir].at_flags & ATR_VFLAG_SET))
       {
-      job_attr_def[(int)JOB_ATR_checkpoint_dir].at_set(
-        &pj->ji_wattr[(int)JOB_ATR_checkpoint_dir],
-        &pque->qu_attr[(int)QE_ATR_checkpoint_dir],
-        SET);
+      attribute *pattr;
+      char *vp;
+
+      pattr = &pj->ji_wattr[(int)JOB_ATR_checkpoint];
+
+      if ((pattr->at_flags & ATR_VFLAG_SET) &&
+        (vp = csv_find_value(pattr->at_val.at_str, "dir")))
+        {
+        clear_attr(
+          &pj->ji_wattr[(int)JOB_ATR_checkpoint_dir],
+          &job_attr_def[(int)JOB_ATR_checkpoint_dir]);
+
+        job_attr_def[(int)JOB_ATR_checkpoint_dir].at_decode(
+          &pj->ji_wattr[(int)JOB_ATR_checkpoint_dir],
+          NULL, 
+          NULL, 
+          vp);
+        }
+      else if ((pque->qu_attr[(int)QE_ATR_checkpoint_dir].at_flags & ATR_VFLAG_SET) &&
+               (pque->qu_attr[(int)QE_ATR_checkpoint_dir].at_val.at_str))
+        {
+        job_attr_def[(int)JOB_ATR_checkpoint_dir].at_set(
+          &pj->ji_wattr[(int)JOB_ATR_checkpoint_dir],
+          &pque->qu_attr[(int)QE_ATR_checkpoint_dir],
+          SET);
+        }
+      else if ((server.sv_attr[(int)SRV_ATR_checkpoint_dir].at_flags & ATR_VFLAG_SET) &&
+               (server.sv_attr[(int)SRV_ATR_checkpoint_dir].at_val.at_str))
+        {
+        job_attr_def[(int)JOB_ATR_checkpoint_dir].at_set(
+          &pj->ji_wattr[(int)JOB_ATR_checkpoint_dir],
+          &server.sv_attr[(int)SRV_ATR_checkpoint_dir],
+          SET);
+        }
       }
 
 #ifdef PNOT
