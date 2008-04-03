@@ -8,6 +8,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature
   b - fix so we continue to process exiting jobs for other servers
 
 2.3.0
+  b - fixed a bug where TORQUE would ignore the "pbs_asyrunjob" API extension string when starting jobs in asynchronous mode
   e - redesign how torque.spec is built
   e - added -a to qrun to allow asynchronous job start
   e - allow qrerun on completed jobs
