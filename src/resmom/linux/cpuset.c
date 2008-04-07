@@ -264,8 +264,7 @@ if (fd) {
 }
 
 
-  /* find the CPU ids that are on me to build up the list of CPUs we need to
-   * add to the jobset */
+  /* Make the string defining the CPUs to add into the jobset */
   np = pjob->ji_vnods;
   cpusbuf[0]='\0';
   ix = 0;
@@ -279,6 +278,29 @@ if (fd) {
       sprintf(tmppath,"%d",np->vn_index);
       strcat(cpusbuf,tmppath);
 
+      }
+    }
+
+  /* add the CPUs to the jobset */
+  strcpy(tmppath,path);
+  strcat(tmppath,"/cpus");
+sprintf (log_buffer, "CPUSET: %s job %s path %s\n", cpusbuf, pjob->ji_qs.ji_jobid,tmppath);
+log_err(-1,id,log_buffer);
+  fd=fopen(tmppath,"w");
+if (fd) {
+  fwrite(cpusbuf, sizeof(char), strlen(cpusbuf), fd);
+  fclose(fd);
+}
+	memset(cpusbuf,'\0',sizeof(cpusbuf));
+ 
+  /* Create the vnodesets */
+  np = pjob->ji_vnods;
+  cpusbuf[0]='\0';
+  ix = 0;
+  for (j = 0;j < pjob->ji_numvnod;++j,np++)
+    {
+    if (pjob->ji_nodeid == np->vn_host->hn_node)
+      {
       sprintf(tmppath,"%s/%s/%d",TCPUSET_PATH,pjob->ji_qs.ji_jobid,np->vn_node);
       mkdir(tmppath,0755);
       chmod(tmppath,00755);
@@ -316,18 +338,6 @@ log_err(-1,id,log_buffer);
     }
 
 
-  /* add the CPUs to the jobset */
-  strcpy(tmppath,path);
-  strcat(tmppath,"/cpus");
-sprintf (log_buffer, "CPUSET: %s job %s path %s\n", cpusbuf, pjob->ji_qs.ji_jobid,tmppath);
-log_err(-1,id,log_buffer);
-  fd=fopen(tmppath,"w");
-if (fd) {
-  fwrite(cpusbuf, sizeof(char), strlen(cpusbuf), fd);
-  fclose(fd);
-}
-	memset(cpusbuf,'\0',sizeof(cpusbuf));
- 
   umask(savemask);
 
   return 0;
