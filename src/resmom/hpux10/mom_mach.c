@@ -871,13 +871,12 @@ int mom_close_poll()
 }
 
 /*
- * mom_does_checkpoint - return 1 if mom supports checkpoint
- *			    0 if not
+ * mom_does_checkpoint
  */
 
 int mom_does_checkpoint()
 {
-	return (0);
+	return(CST_NONE);
 }
 
 /*
@@ -891,7 +890,7 @@ int mach_checkpoint(ptask, file, abort)
     char	*file;
     int		abort;
 {
-       	return (-1);
+   	return (-1);
 }
 
 /*

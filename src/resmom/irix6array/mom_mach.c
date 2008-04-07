@@ -1311,16 +1311,15 @@ int mom_close_poll()
 }
 
 /*
- * mom_does_checkpoint - return 1 if mom supports checkpoint
- *			    0 if not
+ * mom_does_checkpoint
  */
 
 int mom_does_checkpoint()
 {
 #if MOM_CHECKPOINT == 1
-	return (1);
+	return (CST_MACH_DEP);
 #else /* MOM_CHECKPOINT */
-	return (0);
+	return (CST_NONE);
 #endif	/* MOM_CHECKPOINT */
 }
 

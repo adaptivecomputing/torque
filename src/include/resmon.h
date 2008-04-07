@@ -112,6 +112,11 @@ struct	config {
 
 #define TMAX_NSDCOUNT   32
 
+/* Checkpoint system type, return values from the mach_dep function mom_does_checkpoint. */
+#define CST_NONE        0  /* There is no checkpointing in this environment/system. */
+#define CST_MACH_DEP    1  /* Use the checkpointing system defined in the mom_mach code. */
+#define CST_BLCR        2  /* Use the BLCR checkpointing system. */
+
 
 /*
 ** Macros for fast min/max.

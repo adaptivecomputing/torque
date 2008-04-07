@@ -163,13 +163,13 @@ extern  char             PRE_EXEC[];
 extern int LOGLEVEL;
 extern long TJobStartBlockTime;
 
+extern char path_checkpoint[];
 
 int              mom_reader_go;		/* see catchinter() & mom_writer() */
 struct var_table vtable;		/* for building up job's environ */
 
 extern char             tmpdir_basename[];  /* for TMPDIR */
 
-extern int              mom_checkpoint_init_job(job *pjob,int *SC);
 
 /* Local Variables */ 
 
@@ -233,9 +233,11 @@ extern int mom_reader(int,int);
 extern int mom_writer(int,int);
 extern int x11_create_display(int, char *,char *phost,int pport,char *homedir,char *x11authstr);
 extern int blcr_restart_job(job  *pjob, char *file);
-extern int mom_restart_job(job  *pjob, char *path);
 extern int  mom_checkpoint_job_is_checkpointable(job *pjob);
+extern int  mom_checkpoint_job_has_checkpoint(job *pjob);
 extern void mom_checkpoint_execute_job(job *pjob,char *shell,char *arg[],struct var_table *vtable);
+extern void mom_checkpoint_init_job_periodic_timer(job *pjob);
+extern int  mom_checkpoint_start_restart(job *pjob);
 
 
 /* END prototypes */
@@ -1212,17 +1214,21 @@ int TMomFinalizeJob1(
   int        *SC)    /* O */
 
   {
-  static char 	        *id = "TMomFinalizeJob1";
+  static char 	     *id = "TMomFinalizeJob1";
 
-  torque_socklen_t	 slen;
+  torque_socklen_t	  slen;
 
-  int                    i;
+  int                 i;
+  int                 rc;
 
-  attribute		*pattr;
-  attribute		*pattri;
-  resource		*presc;
-  resource_def		*prd;
-  struct sockaddr_in     saddr;
+  attribute          *pattr;
+  attribute          *pattri;
+  resource           *presc;
+  resource_def		 *prd;
+  struct sockaddr_in  saddr;
+  char                buf[MAXPATHLEN + 2];
+  time_t              time_now;
+  struct stat         sb;
 
   *SC = 0;
 
@@ -1343,8 +1349,101 @@ int TMomFinalizeJob1(
 
 #endif	/* IBM SP */
 
-  if (mom_checkpoint_init_job(pjob,SC) == SUCCESS)
-    return(SUCCESS);
+  if (mom_checkpoint_job_has_checkpoint(pjob))
+    {
+    rc = mom_checkpoint_start_restart(pjob);
+    if (rc == PBSE_NONE)
+      {
+      /* SUCCESS */
+
+      log_err(-1,id,"Restart succeeded");
+
+      /* reset mtime so walltime will not include held time */
+      /* update to time now minus the time already used    */
+      /* unless it is suspended, see request.c/req_signal() */
+
+      strcpy(buf,path_checkpoint);
+      strcat(buf,pjob->ji_qs.ji_fileprefix);
+      strcat(buf,JOB_CHECKPOINT_SUFFIX);
+      stat(buf,&sb);
+
+      time_now = time(0);
+
+      if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_Suspend) == 0) 
+        {
+        pjob->ji_qs.ji_stime = time_now - (sb.st_mtime - pjob->ji_qs.ji_stime);
+        pjob->ji_qs.ji_substate = JOB_SUBSTATE_RUNNING;
+
+        if (mom_get_sample() != PBSE_NONE)
+          mom_set_use(pjob);
+        } 
+      else 
+        {
+        pjob->ji_qs.ji_substate = JOB_SUBSTATE_SUSPEND;
+        }
+
+      *SC = 0;
+      return(FAILURE);
+      }
+    else 
+      {
+      /* FAILURE */
+        
+      log_err(-1,id,"Restart failed");
+
+      /* retry for any kind of changable thing */
+
+      if ((errno == EAGAIN) ||
+
+#ifdef  ERFLOCK
+          (errno == ERFLOCK) ||
+#endif
+#ifdef  EQUSR
+          (errno == EQUSR) ||
+#endif
+#ifdef  EQGRP
+          (errno == EQGRP) ||
+#endif
+#ifdef  EQACT
+          (errno == EQACT) ||
+#endif
+#ifdef  ENOSDS
+          (errno == ENOSDS) ||
+#endif
+          (errno == ENOMEM) ||
+          (errno == ENOLCK) ||
+          (errno == ENOSPC) ||
+          (errno == ENFILE) ||
+          (errno == EDEADLK) ||
+          (errno == EBUSY))
+        {
+        pjob->ji_qs.ji_un.ji_momt.ji_exitstat = JOB_EXEC_RETRY;
+        *SC = JOB_EXEC_RETRY;
+        }
+      else 
+        {
+        pjob->ji_qs.ji_un.ji_momt.ji_exitstat = JOB_EXEC_BADRESRT;
+        *SC = JOB_EXEC_FAIL1;
+        }
+
+      pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITING;
+      exiting_tasks = 1;
+
+      sprintf(log_buffer,"Restart failed, error %d", errno);
+
+      LOG_EVENT(
+        PBSEVENT_JOB,
+        PBS_EVENTCLASS_JOB,
+        pjob->ji_qs.ji_jobid,
+        log_buffer);
+
+      return(FAILURE);
+      }
+    }
+
+  /* Starting new job */
+
+  mom_checkpoint_init_job_periodic_timer(pjob);
 
   /*
    * if certain resource limits require that the job usage be
