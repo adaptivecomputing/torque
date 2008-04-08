@@ -713,11 +713,24 @@ int is_compose(mom_server *pms,int command)
 
 extern struct config *config_array;
 
+/**
+ * gen_size
+ *
+ * For the size attribute to be returned, it must be
+ * defined in the pbs_mom config file.  The syntax
+ * is unique in that you must ask for the size of
+ * either a file or a file system.
+ *
+ * For example:
+ * size[fs=/]
+ * size[file=/home/user/test.txt]
+ */
 void
 gen_size(char *name,char **BPtr, int *BSpace)
   {
   struct config  *ap;
   struct rm_attribute *attr;
+  char *value;
 
   ap = rm_search(config_array,name);
   if (ap)
@@ -725,11 +738,15 @@ gen_size(char *name,char **BPtr, int *BSpace)
     attr = momgetattr(ap->c_u.c_value);
     if (attr)
       {
-      MUSNPrintF(BPtr,BSpace,"%s=%s",
-        name,
-        attr);
-      (*BPtr)++; /* Need to start the next string after the null */
-      (*BSpace)--;
+      value = dependent(name,attr);
+      if (value && *value)
+        {
+        MUSNPrintF(BPtr,BSpace,"%s=%s",
+          name,
+          value);
+        (*BPtr)++; /* Need to start the next string after the null */
+        (*BSpace)--;
+        }
       }
     }
   }

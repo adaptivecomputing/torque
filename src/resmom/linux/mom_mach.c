@@ -3211,9 +3211,11 @@ static char *ncpus(
 
   while (!feof(fp))  
     {
-    fscanf(fp,"%s %*[^\n]%*c", label);
-
-    if (strcmp("processor",label) == 0)
+    if (fscanf(fp,"%s %*[^\n]%*c", label) == 0)
+      {
+      getc(fp);  /* must do something to get to eof */
+      }
+    else if (strcmp("processor",label) == 0)
       procs++;
     }
 
