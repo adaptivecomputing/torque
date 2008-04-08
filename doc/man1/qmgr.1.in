@@ -247,15 +247,15 @@ The following are examples of qmgr directives:
 .sp
 .ft 5
 .nf
-create queue fast priority=10,queue_type=e,enabled = true,max_running=0
-set queue fast max_running +=2
-create queue little
-set queue little resources_max.mem=8mw,resources_max.cput=10
-unset queue fast max_running
-set node state = "down,offline"
-active server s1,s2,s3
-list queue @server1
-set queue max_running = 10	- uses active queues
+.Ty "create queue fast priority=10,queue_type=e,enabled = true,max_running=0"
+.Ty "set queue fast max_running +=2"
+.Ty "create queue little"
+.Ty "set queue little resources_max.mem=8mw,resources_max.cput=10"
+.Ty "unset queue fast max_running"
+.Ty "set node state = down,offline"
+.Ty "active server s1,s2,s3"
+.Ty "list queue @server1"
+.Ty "set queue max_running = 10	- uses active queues"
 .fi
 .ft 1
 .LP

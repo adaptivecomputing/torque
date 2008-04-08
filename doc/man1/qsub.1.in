@@ -822,9 +822,7 @@ of the -W to specify attributes which are extensions to POSIX 1003.2d.
 .Ig
 The general syntax of the -W is in the form:
 .br
-.ft 5
-\ \ \ \ \-W\ attr_name=attr_value[,attr_name=attr_value...]
-.ft 1
+.Ty "\ \ \ \ -W attr_name=attr_value[,attr_name=attr_value...]"
 .br
 Note if white space occurs anywhere within the option argument string or the
 equal sign, "=", occurs within an 
@@ -1100,13 +1098,13 @@ the command line options.
 For example:
 .RS
 .Cs
-:
-#PBS -N Job_name
-#PBS -l walltime=10:30,mem=320kb
-#PBS -m be
-#
-step1 arg1 arg2
-step2 arg3 arg4
+.Ty ":"
+.Ty "#PBS -N Job_name"
+.Ty "#PBS -l walltime=10:30,mem=320kb"
+.Ty "#PBS -m be"
+.Ty "#"
+.Ty "step1 arg1 arg2"
+.Ty "step2 arg3 arg4"
 .Ce
 .RE
 .LP
