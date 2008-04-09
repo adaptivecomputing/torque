@@ -201,7 +201,7 @@ static const char *PBatchReqType[] = {
   "ReserveResource",
   "ReleaseResource", /* 26 */
   "CheckpointJob",
-  "NONE",
+  "AsyncModifyJob",
   "NONE",
   "NONE",
   "NONE",

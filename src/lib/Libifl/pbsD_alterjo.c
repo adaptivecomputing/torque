@@ -90,12 +90,13 @@
 
 /* returns pbs_errno */
 
-int pbs_alterjob(
+int pbs_alterjob_asyncflag(
 
   int           c,       /* I */
   char         *jobid,   /* I */
   struct attrl *attrib,  /* I */
-  char         *extend)  /* I */
+  char         *extend,  /* I */
+  int           asyncFlag)  /* I */
 
   {
   struct attropl *ap = (struct attropl *)NULL;
@@ -140,10 +141,10 @@ int pbs_alterjob(
     ap->next = (struct attropl *)NULL;
     attrib = attrib->next;
     }  /* END while (attrib != NULL) */
-		
+
   i = PBSD_manager(
         c,
-        PBS_BATCH_ModifyJob,
+        asyncFlag ? PBS_BATCH_AsyModifyJob : PBS_BATCH_ModifyJob,
         MGR_CMD_SET,
         MGR_OBJ_JOB,
         jobid,
@@ -162,6 +163,28 @@ int pbs_alterjob(
     }
 	
   return(i);
+  }  /* END pbs_alterjob_asyncflag() */
+  
+int pbs_alterjob_async(
+
+  int           c,       /* I */
+  char         *jobid,   /* I */
+  struct attrl *attrib,  /* I */
+  char         *extend)  /* I */
+
+  {
+  return(pbs_alterjob_asyncflag(c,jobid,attrib,NULL,TRUE));
+  }  /* END pbs_alterjob_async() */
+  
+int pbs_alterjob(
+
+  int           c,       /* I */
+  char         *jobid,   /* I */
+  struct attrl *attrib,  /* I */
+  char         *extend)  /* I */
+
+  {
+  return(pbs_alterjob_asyncflag(c,jobid,attrib,NULL,FALSE));
   }  /* END pbs_alterjob() */
 
 /* END pbsD_alterjo.c */

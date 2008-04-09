@@ -1,6 +1,7 @@
 c - crash     b - bug fix    e - enhancement    f - new feature
 
 2.4.0
+  e - added -q to qalter to allow quicker response to modify requests
 
 2.3.1
   b - fixed memory leak in free_br for PBS_BATCH_MvJobFile case

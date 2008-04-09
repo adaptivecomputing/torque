@@ -275,10 +275,25 @@ int reply_send(
     {
     /* Otherwise, the reply is to be sent to a remote client */
 
-    rc = dis_reply_write(sfds,&request->rq_reply);
+#ifndef PBS_MOM
+    if (request->rq_noreply != TRUE)
+      {
+#endif
+
+      rc = dis_reply_write(sfds,&request->rq_reply);
+#ifndef PBS_MOM
+      }
+#endif
     }
 
-  free_br(request);
+#ifndef PBS_MOM
+  if ((request->rq_type != PBS_BATCH_AsyModifyJob) || (request->rq_noreply == TRUE))
+    {
+#endif
+    free_br(request);
+#ifndef PBS_MOM
+    }
+#endif
 
   return(rc);
   }  /* END reply_send() */

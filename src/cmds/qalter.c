@@ -106,6 +106,7 @@ int main(
   char *pc;
   int i;
   int u_cnt, o_cnt, s_cnt, n_cnt;
+  int asynch = FALSE;
   struct attrl *attrib = NULL;
   char *keyword;
   char *pdepend;
@@ -120,7 +121,7 @@ int main(
   char rmt_server[MAXSERVERNAME];
   char path_out[MAXPATHLEN + 1];
 
-#define GETOPT_ARGS "a:A:c:e:h:j:k:l:m:M:N:o:p:r:S:u:v:W:x:"
+#define GETOPT_ARGS "a:A:c:e:h:j:k:l:m:M:N:o:p:qr:S:u:v:W:x:"
                  
   while ((c = getopt(argc,argv,GETOPT_ARGS)) != EOF)
     {
@@ -464,6 +465,14 @@ int main(
 
         break;
 
+      case 'q':
+
+        /* quick - asynchronous */
+
+        asynch = TRUE;
+        
+        break;
+
       case 'r':
 
         /* rerun */
@@ -629,7 +638,7 @@ int main(
     static char usage[]="usage: qalter \
 [-a date_time] [-A account_string] [-c interval] [-e path] \n\
 [-h hold_list] [-j y|n] [-k keep] [-l resource_list] [-m mail_options] \n\
-[-M user_list] [-N jobname] [-o path] [-p priority] [-r y|n] [-S path] \n\
+[-M user_list] [-N jobname] [-o path] [-p priority] [-q] [-r y|n] [-S path] \n\
 [-u user_list] [-v variable_list] [-W dependency_list] [-x exec_host] \n\
 job_identifier...\n";
 
@@ -671,7 +680,14 @@ cnt:
       continue;
       }
 
-    stat = pbs_alterjob(connect,job_id_out,attrib,NULL);
+    if (asynch)
+      {
+      stat = pbs_alterjob_async(connect,job_id_out,attrib,NULL);
+      }
+      else
+      {
+      stat = pbs_alterjob(connect,job_id_out,attrib,NULL);
+      }
 
     if ((stat != 0) && (pbs_errno != PBSE_UNKJOBID)) 
       {

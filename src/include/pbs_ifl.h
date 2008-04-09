@@ -460,6 +460,7 @@ extern char *pbs_server;	/* server attempted to connect | connected to */
 
 extern char *avail A_((int connect,char *resc));
 extern int pbs_asyrunjob A_((int c,char *jobid,char *location,char *extend));
+extern int pbs_alterjob_async A_((int connect,char *job_id,struct attrl *attrib,char *extend));
 extern int pbs_alterjob A_((int connect,char *job_id,struct attrl *attrib,char *extend));
 extern int pbs_connect A_((char *server));
 extern int pbs_query_max_connections();

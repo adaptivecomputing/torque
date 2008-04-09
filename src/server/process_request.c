@@ -739,6 +739,7 @@ void dispatch_request(
 
       break;
 
+    case PBS_BATCH_AsyModifyJob:
     case PBS_BATCH_ModifyJob:
 
       req_modifyjob(request);
@@ -976,7 +977,8 @@ struct batch_request *alloc_br(
   req->rq_orgconn = -1;		/* indicate not connected */
   req->rq_time = time_now;
   req->rq_reply.brp_choice = BATCH_REPLY_CHOICE_NULL;
-
+  req->rq_noreply = FALSE;  /* indicate reply is needed */
+  
   append_link(&svr_requests, &req->rq_link, req);
 
   return(req);
@@ -1115,6 +1117,7 @@ void free_br(
       break;
 
     case PBS_BATCH_ModifyJob:
+    case PBS_BATCH_AsyModifyJob:
 
       freebr_manage(&preq->rq_ind.rq_modify);
 

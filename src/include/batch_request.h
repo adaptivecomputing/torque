@@ -287,7 +287,7 @@ struct batch_request {
   char	rq_host[PBS_MAXHOSTNAME+1]; /* name of host sending request */
   int   rq_XXXX;
   void *rq_extra;	/* optional ptr to extra info		*/
-  int   rq_XXXY;
+  int   rq_noreply; /* Set true if no reply is required */
   char *rq_extend;	/* request "extension" data		*/
 
   struct batch_reply  rq_reply;	  /* the reply area for this request */

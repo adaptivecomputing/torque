@@ -187,7 +187,7 @@ void req_modifyjob(
     return;
     }
 
-  /* cannot be in exiting or transit, exiting has already be checked */
+  /* cannot be in exiting or transit, exiting has already been checked */
 
   if (pjob->ji_qs.ji_state == JOB_STATE_TRANSIT) 
     {
@@ -196,6 +196,16 @@ void req_modifyjob(
     req_reject(PBSE_BADSTATE,0,preq,NULL,NULL);
 
     return;
+    }
+
+  /* If async modify, reply now; otherwise reply is handled later */
+
+  if (preq->rq_type == PBS_BATCH_AsyModifyJob)
+    {
+        
+    reply_ack(preq);
+
+    preq->rq_noreply = TRUE; /* set for no more replies */
     }
 
   plist = (svrattrl *)GET_NEXT(preq->rq_ind.rq_modify.rq_attr);
