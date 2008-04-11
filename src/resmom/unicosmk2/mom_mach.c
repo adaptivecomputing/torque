@@ -1016,7 +1016,7 @@ int mom_over_limit(pjob)
 		pname = pres->rs_defin->rs_name;
 		assert(pname != NULL);
 		assert(*pname != '\0');
-		if (strcmp(pname, "walltime") == 0) {
+		if (ignwalltime == 0 && strcmp(pname, "walltime") == 0) {
 			if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HERE) == 0)
 				continue;
 			retval = gettime(pres, &value);
@@ -1027,8 +1027,7 @@ int mom_over_limit(pjob)
 				sprintf(log_buffer,
 					"walltime %d exceeded limit %d",
 					num, value);
-				if (ignwalltime == 0)
-					return (TRUE);
+				return (TRUE);
 			}
 		}
 	}

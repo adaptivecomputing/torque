@@ -1128,7 +1128,7 @@ int mom_over_limit(
         return(TRUE);
         }
       } 
-    else if (!strcmp(pname,"walltime")) 
+    else if (ignwalltime == 0 && !strcmp(pname,"walltime")) 
       {
       if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HERE) == 0)
         continue;
@@ -1146,8 +1146,7 @@ int mom_over_limit(
         sprintf(log_buffer,"walltime %lu exceeded limit %lu",
           num,value);
 
-	if (ignwalltime == 0)
-          return(TRUE);
+        return(TRUE);
         }
       }
     }

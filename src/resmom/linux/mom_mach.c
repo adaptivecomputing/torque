@@ -1817,7 +1817,7 @@ int mom_over_limit(
         return(TRUE);
         }
       } 
-    else if (strcmp(pname,"walltime") == 0) 
+    else if (ignwalltime == 0 && strcmp(pname,"walltime") == 0) 
       {
 
       /* no need to check walltime on sisters, MS will get it */
@@ -1838,10 +1838,7 @@ int mom_over_limit(
           num, 
           value);
 
-        if (ignwalltime == 0)
-          {
-          return(TRUE);
-          }
+        return(TRUE);
         }
       }
     }  /* END for (pres) */
