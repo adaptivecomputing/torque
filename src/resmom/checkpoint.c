@@ -834,7 +834,7 @@ int start_checkpoint(
 #if 0
   pid_t     pid;
 #endif
-  int       rc;
+  int       rc = PBSE_NONE;
   char      name_buffer[1024];
 
   switch (checkpoint_system_type)
