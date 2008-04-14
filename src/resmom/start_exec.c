@@ -1231,6 +1231,7 @@ int TMomFinalizeJob1(
   struct stat         sb;
 
   *SC = 0;
+  time_now = time(0);
 
   if (TJE == NULL)
     {
@@ -1367,7 +1368,6 @@ int TMomFinalizeJob1(
       strcat(buf,JOB_CHECKPOINT_SUFFIX);
       stat(buf,&sb);
 
-      time_now = time(0);
 
       if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_Suspend) == 0) 
         {
