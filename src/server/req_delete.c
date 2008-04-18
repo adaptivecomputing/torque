@@ -197,7 +197,42 @@ void remove_stagein(
 /*
  * req_deletejob - service the Delete Job Request
  *
- *	This request deletes a job.
+ *	This request deletes a job. The request is
+ * initiated from an external program, most commonly
+ * qdel.  Shown below is the normal messaging.
+ * There are many exceptions to the normal case
+ * such as missing job descriptions and failure
+ * of messages to propagate.  There are also
+ * exceptions related to the state of the job.
+ *
+ * The code at this point does not seem particularly
+ * robust.  For example, some stages of the processing
+ * check for existense of the job structure while
+ * others do not.
+ *
+ * The fragileness of the code seems to be reflected
+ * in practice as there are many reports in the
+ * user's groups of trouble in deleting jobs.
+ * There also seems to have been several attempts
+ * to patch over the problems.  The purge option
+ * seems to have been an afterthought as does the
+ * job deletion nanny code.
+ *
+ * The problems in this code stem from a lack of a
+ * state processing model for job deletion.
+ *
+ *    qdel-command     pbs_server       pbs_mom
+ *    -------------    -------------    -------------
+ *          |                |                |
+ *          +-- DeleteJob -->|                |
+ *          |                |                |
+ *          |                +-- DeleteJob -->|
+ *          |                |                |
+ *          |                |<-- Ack --------+
+ *          |                |                |
+ *          |<-- Ack --------+                |
+ *          |                |                |
+ *          |                |                |
  */
 
 void req_deletejob(
@@ -214,6 +249,10 @@ void req_deletejob(
 
   char             *Msg = NULL;
 
+  /* The way this is implemented, if the user enters the command "qdel -p <jobid>",
+   * they can then delete jobs other than their own since the authorization
+   * checks are made below in chk_job_request. This should be fixed.
+   */
   if (forced_jobpurge(preq) != 0)
     {
     return;

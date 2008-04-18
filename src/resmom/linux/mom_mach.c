@@ -2039,8 +2039,11 @@ int kill_task(
 
   if (LOGLEVEL >= 5)
     {
-    sprintf(log_buffer,"sending signal %d to task",
-      sig);
+    sprintf(log_buffer,"%s: sending signal %d to task %d, session %d",
+      id, 
+      sig,
+      ptask->ti_qs.ti_task,
+      sesid);
 
     log_record(
       PBSEVENT_JOB,
