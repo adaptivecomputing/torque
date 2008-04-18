@@ -150,8 +150,6 @@ extern int    svr_totnodes;
 /* Local Private Functions */
 
 static int    get_port A_((char *,unsigned int *,pbs_net_t *));
-static time_t next_task A_(());
-static int    start_hot_jobs();
 static void   lock_out A_((int,int));
 static int   try_lock_out A_((int,int));
 
@@ -202,6 +200,7 @@ tlist_head	svr_jobarrays;         /* list of all job arrays           */
 tlist_head	task_list_immed;
 tlist_head	task_list_timed;
 tlist_head	task_list_event;
+pid_t			 sid;
 
 time_t		time_now = 0;
 
@@ -432,44 +431,22 @@ int PBSShowUsage(
   }  /* END PBSShowUsage() */
 
 
-
-
-
-/*
- * main - the initialization and main loop of pbs_daemon
+/**
+ * parse_command_line
+ *
+ * parse the parameters from the command line
  */
-
-int main(
-
-  int   argc,    /* I */
-  char *argv[])  /* I */
-
-  {
-  int	 c;
-  FILE  *dummyfile;
-  int	 i;
-  int	 lockfds;
-  int	 rppfd;			/* fd to receive is HELLO's */
-  int	 privfd;		/* fd to send is messages */
-  uint	 tryport;
-  char	 lockfile[MAXPATHLEN + 1];
+void parse_command_line(int argc, char *argv[])
+{
+  extern int   optind;
+  extern char *optarg;
   char	*pc = NULL;
-  char  *ptr;
-  job	*pjob;
-  pbs_queue *pque;
-  char	*servicename = NULL;
-  pbs_net_t def_pbs_server_addr;
-  pid_t	 sid;
-  long  *state;
-  time_t waittime;
-  time_t last_jobstat_time;
-  int    when;
-
-  void ping_nodes A_((struct work_task *));
-  void check_nodes A_((struct work_task *));
-  void check_log A_((struct work_task *));
+  int	 c;
+  int	 i;
 
   char   EMsg[1024];
+  char	*servicename = NULL;
+  pbs_net_t def_pbs_server_addr;
 
   static struct {
     char *it_name;
@@ -481,123 +458,7 @@ int main(
    { "create",	RECOV_CREATE },
    { "",	RECOV_Invalid } };
 
-  extern int   optind;
-  extern char *optarg;
-  extern char *msg_svrdown;	/* log message   */
-  extern char *msg_startup1;	/* log message   */
-  extern char *msg_startup2;	/* log message   */
 
-  ProgName = argv[0];
-
-  strcpy(pbs_current_user,"PBS_Server");
-
-  msg_daemonname = strdup(pbs_current_user);
-
-  /* set standard umask */
-
-  umask(022);
-
-  time_now = time((time_t *)0);
-
-  last_jobstat_time = time_now;
-
-  /* find out who we are (hostname) */
-
-  server_host[0] = '\0';
-
-  EMsg[0] = '\0';
-
-  if (((server_host[0] == '\0') && (gethostname(server_host,PBS_MAXHOSTNAME) == -1)) ||
-       (get_fullhostname(server_host,server_host,PBS_MAXHOSTNAME,EMsg) == -1)) 
-    {
-    /* FAILURE - shutdown */
-
-    if (EMsg[0] != '\0')
-      {
-      char tmpLine[1024];
-
-      snprintf(tmpLine,sizeof(tmpLine),"unable to determine local server hostname - %s",
-        EMsg);
-
-      log_err(-1,"pbsd_main",tmpLine);
-      }
-    else
-      {
-      log_err(-1,"pbsd_main","unable to determine local server hostname");
-      }
-
-    exit(1);
-    }
-
-  /* initialize service port numbers for self, Scheduler, and MOM */
-
-  ptr = getenv("PBS_BATCH_SERVICE_PORT");
-
-  if (ptr != NULL)
-    {
-    pbs_server_port_dis = (int)strtol(ptr,NULL,10);
-    }
-
-  if (pbs_server_port_dis <= 0)
-    {
-    pbs_server_port_dis = get_svrport(
-      PBS_BATCH_SERVICE_NAME,
-      "tcp", 
-      PBS_BATCH_SERVICE_PORT_DIS);
-    }
-
-  ptr = getenv("PBS_SCHEDULER_SERVICE_PORT");
-
-  if (ptr != NULL)
-    {
-    pbs_scheduler_port = (int)strtol(ptr,NULL,10);
-    }
-
-  if (pbs_scheduler_port <= 0)
-    { 
-    pbs_scheduler_port = get_svrport(
-      PBS_SCHEDULER_SERVICE_NAME,
-      "tcp",
-      PBS_SCHEDULER_SERVICE_PORT);
-    }
-
-  ptr = getenv("PBS_MOM_SERVICE_PORT");
-
-  if (ptr != NULL)
-    {
-    pbs_mom_port = (int)strtol(ptr,NULL,10);
-    }
-
-  if (pbs_mom_port <= 0)
-    { 
-    pbs_mom_port = get_svrport(
-      PBS_MOM_SERVICE_NAME,
-      "tcp",
-      PBS_MOM_SERVICE_PORT);
-    }
-
-  ptr = getenv("PBS_MANAGER_SERVICE_PORT");
-
-  if (ptr != NULL)
-    {
-    pbs_rm_port = (int)strtol(ptr,NULL,10);
-    }
-
-  if (pbs_rm_port <= 0)
-    {
-    pbs_rm_port = get_svrport(
-      PBS_MANAGER_SERVICE_NAME,
-      "tcp",
-      PBS_MANAGER_SERVICE_PORT);
-    }
-
-  strcpy(server_name,server_host);	/* by default server = host */
-
-  pbs_server_addr    = get_hostaddr(server_host);
-  pbs_mom_addr 	     = pbs_server_addr;   /* assume on same host */
-  pbs_scheduler_addr = pbs_server_addr;   /* assume on same host */
-
-  /* parse the parameters from the command line */
 
   while ((c = getopt(argc,argv,"A:a:d:DfhH:L:M:p:R:S:t:v-:")) != -1) 
     {
@@ -908,6 +769,467 @@ int main(
 
     exit(1);
     }
+  }
+
+
+
+/*
+ * next_task - look for the next work task to perform:
+ *	1. If svr_delay_entry is set, then a delayed task is ready so
+ *	   find and process it.
+ *	2. All items on the immediate list, then
+ *	3. All items on the timed task list which have expired times
+ *
+ *	Returns: amount of time till next task
+ */
+
+static time_t next_task()
+
+  {
+  time_t	     delay;
+  struct work_task  *nxt;
+  struct work_task  *ptask;
+  time_t	     tilwhen = server.sv_attr[(int)SRV_ATR_schedule_iteration].at_val.at_long;
+
+  time_now = time((time_t *)0);
+
+  if (svr_delay_entry) 
+    {
+    ptask = (struct work_task *)GET_NEXT(task_list_event);
+
+    while (ptask != NULL) 
+      {
+      nxt = (struct work_task *)GET_NEXT(ptask->wt_linkall);
+
+      if (ptask->wt_type == WORK_Deferred_Cmp)
+        dispatch_task(ptask);
+
+      ptask = nxt;
+      }
+
+    svr_delay_entry = 0;
+    }
+
+  while ((ptask = (struct work_task *)GET_NEXT(task_list_immed)) != NULL)
+    dispatch_task(ptask);
+
+  while ((ptask = (struct work_task *)GET_NEXT(task_list_timed)) != NULL) 
+    {
+    if ((delay = ptask->wt_event - time_now) > 0) 
+      {
+      if (tilwhen > delay) 
+        tilwhen = delay;
+ 
+      break;
+      } 
+    else 
+      {
+      dispatch_task(ptask);	/* will delete link */
+      }
+    }
+
+  /* should the scheduler be run?  If so, adjust the delay time  */
+
+  if ((delay = server.sv_next_schedule - time_now) <= 0)
+    svr_do_schedule = SCH_SCHEDULE_TIME;
+  else if (delay < tilwhen)
+    tilwhen = delay;
+
+  return(tilwhen);
+  }  /* END next_task() */
+
+
+
+/*
+ * start_hot_jobs - place any job which is state QUEUED and has the
+ *	HOT start flag set into execution.
+ * 
+ *	Returns the number of jobs to be hot started.
+ */
+
+static int start_hot_jobs(void)
+
+  {
+  int  ct = 0;
+  job *pjob;
+
+  for (pjob = (job *)GET_NEXT(svr_alljobs);
+       pjob != NULL;
+       pjob = (job *)GET_NEXT(pjob->ji_alljobs))
+    {
+    if ((pjob->ji_qs.ji_substate == JOB_SUBSTATE_QUEUED) &&
+        (pjob->ji_qs.ji_svrflags & JOB_SVFLG_HOTSTART)) 
+      {
+      log_event(
+        PBSEVENT_SYSTEM, 
+        PBS_EVENTCLASS_JOB,
+        pjob->ji_qs.ji_jobid, 
+        "attempting to hot start job");
+
+      svr_startjob(pjob,NULL,NULL,NULL);
+
+      ct++;
+      }
+    }
+
+  return(ct);
+  }  /* END start_hot_jobs() */
+
+
+
+
+
+
+
+void main_loop()
+  {
+  int	 c;
+  long  *state;
+  time_t waittime;
+  pbs_queue *pque;
+  job	*pjob;
+  time_t last_jobstat_time;
+  int    when;
+
+  void ping_nodes A_((struct work_task *));
+  void check_nodes A_((struct work_task *));
+  void check_log A_((struct work_task *));
+
+  extern char *msg_startup2;	/* log message   */
+
+  last_jobstat_time = time_now;
+  server.sv_started = time(&time_now);	/* time server started */
+
+
+  /* record the fact that we are up and running */
+
+  sprintf(log_buffer,msg_startup2,sid,LOGLEVEL);
+
+  log_event(
+    PBSEVENT_SYSTEM | PBSEVENT_FORCE, 
+    PBS_EVENTCLASS_SERVER,
+    msg_daemonname, 
+    log_buffer);
+
+  /* do not check nodes immediately as they will initially be marked 
+     down unless they have already reported in */
+
+  when = server.sv_attr[(int)SRV_ATR_check_rate].at_val.at_long + time_now;
+
+  if (svr_totnodes > 1024)
+    {
+    /* for large systems, give newly reported nodes more time before 
+       being marked down while pbs_moms are intialy reporting in */
+
+    set_task(WORK_Timed,when + svr_totnodes / 12,check_nodes,NULL);
+    }
+  else
+    {
+    set_task(WORK_Timed,when,check_nodes,NULL);
+    }
+
+  /* Just check the nodes with check_nodes above and don't ping anymore. */
+
+  set_task(WORK_Timed,time_now + 5,ping_nodes,NULL); 
+
+  set_task(WORK_Timed,time_now + 5,check_log,NULL);
+
+
+  /*
+   * Now at last, we are ready to do some batch work.  The
+   * following section constitutes the "main" loop of the server
+   */
+
+  state = &server.sv_attr[(int)SRV_ATR_State].at_val.at_long;
+
+  DIS_tcp_settimeout(server.sv_attr[(int)SRV_ATR_tcp_timeout].at_val.at_long);
+
+  if (server_init_type == RECOV_HOT)
+    *state = SV_STATE_HOT;
+  else
+    *state = SV_STATE_RUN;
+
+  DBPRT(("pbs_server is up\n"));
+
+  while (*state != SV_STATE_DOWN) 
+    {
+    /* first process any task whose time delay has expired */
+
+    if (server.sv_attr[(int)SRV_ATR_PollJobs].at_val.at_long)
+      waittime = MIN(next_task(),JobStatRate - (time_now - last_jobstat_time));
+    else
+      waittime = next_task();
+
+    waittime = MAX(0,waittime);
+
+    if (*state == SV_STATE_RUN) 
+      {	
+      /* In normal Run state */
+
+      /* if time or event says to run scheduler, do it */
+
+      if ((svr_do_schedule != SCH_SCHEDULE_NULL) && 
+           server.sv_attr[(int)SRV_ATR_scheduling].at_val.at_long) 
+        {
+        server.sv_next_schedule = 
+          time_now + 
+          server.sv_attr[(int)SRV_ATR_schedule_iteration].at_val.at_long;
+
+        schedule_jobs();
+        }
+      } 
+    else if (*state == SV_STATE_HOT) 
+      {
+      /* Are there HOT jobs to rerun */
+      /* only try every _CYCLE seconds */
+
+      if (time_now > server.sv_hotcycle + SVR_HOT_CYCLE) 
+        {
+        server.sv_hotcycle = time_now + SVR_HOT_CYCLE;
+
+        c = start_hot_jobs();
+        }
+
+      /* If more than _LIMIT seconds since start, stop */
+
+      if ((c == 0) || (time_now > server.sv_started + SVR_HOT_LIMIT)) 
+        {
+        server_init_type = RECOV_WARM;
+
+        *state = SV_STATE_RUN;
+        }
+      }
+
+    /* any jobs to route today */
+
+    for (pque = (pbs_queue *)GET_NEXT(svr_queues);
+         pque != NULL;
+         pque = (pbs_queue *)GET_NEXT(pque->qu_link))
+      {
+      if (pque->qu_qs.qu_type == QTYPE_RoutePush)
+        queue_route(pque);
+      }
+
+    /* touch the rpp streams that need to send */
+
+    rpp_request(42);
+
+    /* wait for a request and process it */
+
+    if (wait_request(waittime,state) != 0) 
+      {
+      log_err(-1,msg_daemonname,"wait_request failed");
+      }
+
+    /* qmgr can dynamically set the loglevel specification
+     * we use the new value if PBSLOGLEVEL was not specified
+     */
+
+   if (plogenv == NULL) /* If no specification of loglevel from env */
+      LOGLEVEL = server.sv_attr[(int)SRV_ATR_LogLevel].at_val.at_long;
+
+    /* any running jobs need a status update? */ 
+
+    if (server.sv_attr[(int)SRV_ATR_PollJobs].at_val.at_long && 
+       (last_jobstat_time + JobStatRate <= time_now))
+      {
+      struct work_task *ptask;
+
+      for (pjob = (job *)GET_NEXT(svr_alljobs);
+           pjob != NULL;
+           pjob = (job *)GET_NEXT(pjob->ji_alljobs)) 
+        {
+        if (pjob->ji_qs.ji_substate == JOB_SUBSTATE_RUNNING)
+          {
+          /* spread these out over the next JobStatRate seconds */
+
+          when = pjob->ji_wattr[(int)JOB_ATR_qrank].at_val.at_long % 
+                 JobStatRate;
+    
+          ptask = set_task(WORK_Timed,when + time_now,poll_job_task,pjob);
+
+          if (ptask != NULL)
+            {
+            append_link(&pjob->ji_svrtask,&ptask->wt_linkobj,ptask);
+            }
+          }
+        }
+
+      last_jobstat_time = time_now;
+      }  /* END if (should poll jobs now) */
+
+    if (*state == SV_STATE_SHUTSIG) 
+      svr_shutdown(SHUT_SIG);	/* caught sig */
+
+    /*
+     * if in process of shuting down and all running jobs
+     * and all children are done, change state to DOWN
+     */
+
+    if ((*state > SV_STATE_RUN) &&
+        (server.sv_jobstates[JOB_STATE_RUNNING] == 0) &&
+        (server.sv_jobstates[JOB_STATE_EXITING] == 0) &&
+        (GET_NEXT(task_list_event) == NULL))
+      {
+      *state = SV_STATE_DOWN;
+      }
+    }    /* END while (*state != SV_STATE_DOWN) */
+
+  svr_save(&server,SVR_SAVE_FULL);	/* final recording of server */
+
+  track_save(NULL);                     /* save tracking data */
+
+  /* save any jobs that need saving */
+
+  for (pjob = (job *)GET_NEXT(svr_alljobs);
+       pjob != NULL;
+       pjob = (job *)GET_NEXT(pjob->ji_alljobs)) 
+    {
+    if (pjob->ji_modified)
+      job_save(pjob,SAVEJOB_FULL);
+    }
+
+  if (svr_chngNodesfile) 
+    {
+    /*nodes created/deleted, or props changed and*/
+    /*update in req_manager failed; try again    */
+
+    update_nodes_file();
+    }
+  }
+
+
+/**
+ * initialize_globals
+ *
+ * Set the intial state of global variables.
+ */
+
+void initialize_globals()
+  {
+  strcpy(pbs_current_user,"PBS_Server");
+
+  msg_daemonname = strdup(pbs_current_user);
+  }
+
+
+
+/**
+ * set_globals_from_environment
+ *
+ * Set the intial state of global variables based on
+ * the program environment variables.
+ */
+
+void set_globals_from_environment()
+  {
+  char  *ptr;
+
+  /* initialize service port numbers for self, Scheduler, and MOM */
+
+  if ((ptr = getenv("PBS_BATCH_SERVICE_PORT")) != NULL)
+    {
+    pbs_server_port_dis = (int)strtol(ptr,NULL,10);
+    }
+
+  if ((ptr = getenv("PBS_SCHEDULER_SERVICE_PORT")) != NULL)
+    {
+    pbs_scheduler_port = (int)strtol(ptr,NULL,10);
+    }
+
+  if ((ptr = getenv("PBS_MOM_SERVICE_PORT")) != NULL)
+    {
+    pbs_mom_port = (int)strtol(ptr,NULL,10);
+    }
+
+  if ((ptr = getenv("PBS_MANAGER_SERVICE_PORT")) != NULL)
+    {
+    pbs_rm_port = (int)strtol(ptr,NULL,10);
+    }
+
+  if ((plogenv = getenv("PBSLOGLEVEL")) != NULL)
+    { /* Note the plogenv is global and is tested in main_loop */
+    LOGLEVEL = (int)strtol(plogenv,NULL,10);
+    }
+    
+  if ((ptr = getenv("PBSDEBUG")) != NULL)
+    {
+    DEBUGMODE = 1;
+    TDoBackground = 0;
+    }
+
+  }
+
+
+/*
+ * main - the initialization and main loop of pbs_daemon
+ */
+
+int main(
+
+  int   argc,    /* I */
+  char *argv[])  /* I */
+
+  {
+  FILE  *dummyfile;
+  int	 i;
+  int	 lockfds;
+  int	 rppfd;			/* fd to receive is HELLO's */
+  int	 privfd;		/* fd to send is messages */
+  uint	 tryport;
+  char	 lockfile[MAXPATHLEN + 1];
+  char   EMsg[1024];
+  char tmpLine[1024];
+
+  extern char *msg_svrdown;	/* log message   */
+  extern char *msg_startup1;	/* log message   */
+
+  ProgName = argv[0];
+
+  initialize_globals();
+  time_now = time((time_t *)0);
+  set_globals_from_environment();
+
+  /* set standard umask */
+
+  umask(022);
+
+  /* find out the name of this machine (hostname) */
+
+  EMsg[0] = '\0';
+  if ((gethostname(server_host,PBS_MAXHOSTNAME) == -1) ||
+       (get_fullhostname(server_host,server_host,PBS_MAXHOSTNAME,EMsg) == -1)) 
+    {
+    snprintf(tmpLine,sizeof(tmpLine),"unable to determine local server hostname %c %s",
+      EMsg[0] ? '-' : ' ',
+      EMsg);
+
+    log_err(-1,"pbsd_main",tmpLine);
+
+    exit(1);    /* FAILURE - shutdown */
+    }
+  strcpy(server_name,server_host);	/* by default server = host */
+
+  pbs_server_addr    = get_hostaddr(server_host);
+  pbs_mom_addr 	     = pbs_server_addr;   /* assume on same host */
+  pbs_scheduler_addr = pbs_server_addr;   /* assume on same host */
+
+ /* The following port numbers might have been initialized in set_globals_from_environment() above. */
+
+  if (pbs_server_port_dis <= 0)
+      pbs_server_port_dis = get_svrport(PBS_BATCH_SERVICE_NAME,"tcp",PBS_BATCH_SERVICE_PORT_DIS);
+
+  if (pbs_scheduler_port <= 0)
+      pbs_scheduler_port = get_svrport(PBS_SCHEDULER_SERVICE_NAME,"tcp",PBS_SCHEDULER_SERVICE_PORT);
+
+  if (pbs_mom_port <= 0)
+      pbs_mom_port = get_svrport(PBS_MOM_SERVICE_NAME,"tcp",PBS_MOM_SERVICE_PORT);
+
+  if (pbs_rm_port <= 0)
+      pbs_rm_port = get_svrport(PBS_MANAGER_SERVICE_NAME,"tcp",PBS_MANAGER_SERVICE_PORT);
+
+
+  parse_command_line(argc,argv);
 
   /* if we are not running with real and effective uid of 0, forget it */
 
@@ -969,7 +1291,6 @@ int main(
     lock_out(lockfds,F_WRLCK);
     }
 	
-  server.sv_started = time(&time_now);	/* time server started */
 
   /*
    * Open the log file so we can start recording events 
@@ -996,18 +1317,6 @@ int main(
 
   /* initialize the server objects and perform specified recovery */
   /* will be left in the server's private directory		*/
-
-  if ((plogenv = getenv("PBSLOGLEVEL")) != NULL)
-    {
-    LOGLEVEL = (int)strtol(plogenv,NULL,10);
-    }
-    
-  if ((pc = getenv("PBSDEBUG")) != NULL)
-    {
-    DEBUGMODE = 1;
-    TDoBackground = 0;
-    }
-
   /* NOTE:  env cleared in pbsd_init() */
 
   if (pbsd_init(server_init_type) != 0) 
@@ -1085,9 +1394,6 @@ int main(
     }  /* END if (TDoBackground == 1) */
   else
     {
-    if ((plogenv != NULL) && isdigit(plogenv[0]))
-      LOGLEVEL = (int)strtol(plogenv,NULL,0);
-
     sid = getpid();
   
     setvbuf(stdout,NULL,_IOLBF,0);
@@ -1150,202 +1456,9 @@ int main(
   add_conn(rppfd,Primary,(pbs_net_t)0,0,PBS_SOCK_INET,rpp_request);
   add_conn(privfd,Primary,(pbs_net_t)0,0,PBS_SOCK_INET,rpp_request);
 
-  /* record the fact that we are up and running */
-
-  sprintf(log_buffer,msg_startup2,sid,LOGLEVEL);
-
-  log_event(
-    PBSEVENT_SYSTEM | PBSEVENT_FORCE, 
-    PBS_EVENTCLASS_SERVER,
-    msg_daemonname, 
-    log_buffer);
-
-  /* do not check nodes immediately as they will initially be marked 
-     down unless they have already reported in */
-
-  when = server.sv_attr[(int)SRV_ATR_check_rate].at_val.at_long + time_now;
-
-  if (svr_totnodes > 1024)
-    {
-    /* for large systems, give newly reported nodes more time before 
-       being marked down while pbs_moms are intialy reporting in */
-
-    set_task(WORK_Timed,when + svr_totnodes / 12,check_nodes,NULL);
-    }
-  else
-    {
-    set_task(WORK_Timed,when,check_nodes,NULL);
-    }
-
-  /* Just check the nodes with check_nodes above and don't ping anymore. */
-
-  set_task(WORK_Timed,time_now + 5,ping_nodes,NULL); 
-
-  set_task(WORK_Timed,time_now + 5,check_log,NULL);
-
-  /*
-   * Now at last, we are ready to do some batch work.  The
-   * following section constitutes the "main" loop of the server
-   */
-
-  state = &server.sv_attr[(int)SRV_ATR_State].at_val.at_long;
-
-  DIS_tcp_settimeout(server.sv_attr[(int)SRV_ATR_tcp_timeout].at_val.at_long);
-
-  if (server_init_type == RECOV_HOT)
-    *state = SV_STATE_HOT;
-  else
-    *state = SV_STATE_RUN;
-
-  DBPRT(("pbs_server is up\n"));
-
-  while (*state != SV_STATE_DOWN) 
-    {
-    /* first process any task whose time delay has expired */
-
-    if (server.sv_attr[(int)SRV_ATR_PollJobs].at_val.at_long)
-      waittime = MIN(next_task(),JobStatRate - (time_now - last_jobstat_time));
-    else
-      waittime = next_task();
-
-    waittime = MAX(0,waittime);
-
-    if (*state == SV_STATE_RUN) 
-      {	
-      /* In normal Run state */
-
-      /* if time or event says to run scheduler, do it */
-
-      if ((svr_do_schedule != SCH_SCHEDULE_NULL) && 
-           server.sv_attr[(int)SRV_ATR_scheduling].at_val.at_long) 
-        {
-        server.sv_next_schedule = 
-          time_now + 
-          server.sv_attr[(int)SRV_ATR_schedule_iteration].at_val.at_long;
-
-        schedule_jobs();
-        }
-      } 
-    else if (*state == SV_STATE_HOT) 
-      {
-      /* Are there HOT jobs to rerun */
-      /* only try every _CYCLE seconds */
-
-      if (time_now > server.sv_hotcycle + SVR_HOT_CYCLE) 
-        {
-        server.sv_hotcycle = time_now + SVR_HOT_CYCLE;
-
-        c = start_hot_jobs();
-        }
-
-      /* If more than _LIMIT seconds since start, stop */
-
-      if ((c == 0) || (time_now > server.sv_started + SVR_HOT_LIMIT)) 
-        {
-        server_init_type = RECOV_WARM;
-
-        *state = SV_STATE_RUN;
-        }
-      }
-
-    /* any jobs to route today */
-
-    pque = (pbs_queue *)GET_NEXT(svr_queues);
-
-    while (pque != NULL) 
-      {
-      if (pque->qu_qs.qu_type == QTYPE_RoutePush)
-        queue_route(pque);
-
-      pque = (pbs_queue *)GET_NEXT(pque->qu_link);
-      }
-
-    /* touch the rpp streams that need to send */
-
-    rpp_request(42);
-
-    /* wait for a request and process it */
-
-    if (wait_request(waittime,state) != 0) 
-      {
-      log_err(-1,msg_daemonname,"wait_request failed");
-      }
-
-    /* qmgr can dynamically set the loglevel specification
-     * we use the new value if PBSLOGLEVEL was not specified
-     */
-
-   if (plogenv == NULL )
-      LOGLEVEL = server.sv_attr[(int)SRV_ATR_LogLevel].at_val.at_long;
-
-    /* any running jobs need a status update? */ 
-
-    if (server.sv_attr[(int)SRV_ATR_PollJobs].at_val.at_long && 
-       (last_jobstat_time + JobStatRate <= time_now))
-      {
-      struct work_task *ptask;
-
-      for (pjob = (job *)GET_NEXT(svr_alljobs);
-           pjob != NULL;
-           pjob = (job *)GET_NEXT(pjob->ji_alljobs)) 
-        {
-        if (pjob->ji_qs.ji_substate == JOB_SUBSTATE_RUNNING)
-          {
-          /* spread these out over the next JobStatRate seconds */
-
-          when = pjob->ji_wattr[(int)JOB_ATR_qrank].at_val.at_long % 
-                 JobStatRate;
-    
-          ptask = set_task(WORK_Timed,when + time_now,poll_job_task,pjob);
-
-          if (ptask != NULL)
-            {
-            append_link(&pjob->ji_svrtask,&ptask->wt_linkobj,ptask);
-            }
-          }
-        }
-
-      last_jobstat_time = time_now;
-      }  /* END if (should poll jobs now) */
-
-    if (*state == SV_STATE_SHUTSIG) 
-      svr_shutdown(SHUT_SIG);	/* caught sig */
-
-    /*
-     * if in process of shuting down and all running jobs
-     * and all children are done, change state to DOWN
-     */
-
-    if ((*state > SV_STATE_RUN) &&
-        (server.sv_jobstates[JOB_STATE_RUNNING] == 0) &&
-        (server.sv_jobstates[JOB_STATE_EXITING] == 0) &&
-        (GET_NEXT(task_list_event) == NULL))
-      {
-      *state = SV_STATE_DOWN;
-      }
-    }    /* END while (*state != SV_STATE_DOWN) */
-
-  svr_save(&server,SVR_SAVE_FULL);	/* final recording of server */
-
-  track_save(NULL);                     /* save tracking data */
-
-  /* save any jobs that need saving */
-
-  for (pjob = (job *)GET_NEXT(svr_alljobs);
-       pjob != NULL;
-       pjob = (job *)GET_NEXT(pjob->ji_alljobs)) 
-    {
-    if (pjob->ji_modified)
-      job_save(pjob,SAVEJOB_FULL);
-    }
-
-  if (svr_chngNodesfile) 
-    {
-    /*nodes created/deleted, or props changed and*/
-    /*update in req_manager failed; try again    */
-
-    update_nodes_file();
-    }
+  /*==========*/
+  main_loop();
+  /*==========*/
 
   RPPConfigure(1,0);  /* help rpp_shutdown go a bit faster */
   rpp_shutdown();
@@ -1467,116 +1580,6 @@ static int get_port(
 
   return(0);
   }  /* END get_port() */
-
-
-
-
-
-/*
- * next_task - look for the next work task to perform:
- *	1. If svr_delay_entry is set, then a delayed task is ready so
- *	   find and process it.
- *	2. All items on the immediate list, then
- *	3. All items on the timed task list which have expired times
- *
- *	Returns: amount of time till next task
- */
-
-static time_t next_task()
-
-  {
-  time_t	     delay;
-  struct work_task  *nxt;
-  struct work_task  *ptask;
-  time_t	     tilwhen = server.sv_attr[(int)SRV_ATR_schedule_iteration].at_val.at_long;
-
-  time_now = time((time_t *)0);
-
-  if (svr_delay_entry) 
-    {
-    ptask = (struct work_task *)GET_NEXT(task_list_event);
-
-    while (ptask != NULL) 
-      {
-      nxt = (struct work_task *)GET_NEXT(ptask->wt_linkall);
-
-      if (ptask->wt_type == WORK_Deferred_Cmp)
-        dispatch_task(ptask);
-
-      ptask = nxt;
-      }
-
-    svr_delay_entry = 0;
-    }
-
-  while ((ptask = (struct work_task *)GET_NEXT(task_list_immed)) != NULL)
-    dispatch_task(ptask);
-
-  while ((ptask = (struct work_task *)GET_NEXT(task_list_timed)) != NULL) 
-    {
-    if ((delay = ptask->wt_event - time_now) > 0) 
-      {
-      if (tilwhen > delay) 
-        tilwhen = delay;
- 
-      break;
-      } 
-    else 
-      {
-      dispatch_task(ptask);	/* will delete link */
-      }
-    }
-
-  /* should the scheduler be run?  If so, adjust the delay time  */
-
-  if ((delay = server.sv_next_schedule - time_now) <= 0)
-    svr_do_schedule = SCH_SCHEDULE_TIME;
-  else if (delay < tilwhen)
-    tilwhen = delay;
-
-  return(tilwhen);
-  }  /* END next_task() */
-
-
-
-
-
-/*
- * start_hot_jobs - place any job which is state QUEUED and has the
- *	HOT start flag set into execution.
- * 
- *	Returns the number of jobs to be hot started.
- */
-
-static int start_hot_jobs(void)
-
-  {
-  int  ct = 0;
-  job *pjob;
-
-  pjob = (job *)GET_NEXT(svr_alljobs);
-
-  while (pjob != NULL) 
-    {
-    if ((pjob->ji_qs.ji_substate == JOB_SUBSTATE_QUEUED) &&
-        (pjob->ji_qs.ji_svrflags & JOB_SVFLG_HOTSTART)) 
-      {
-      log_event(
-        PBSEVENT_SYSTEM, 
-        PBS_EVENTCLASS_JOB,
-        pjob->ji_qs.ji_jobid, 
-        "attempting to hot start job");
-
-      svr_startjob(pjob,NULL,NULL,NULL);
-
-      ct++;
-      }
-
-    pjob = (job *)GET_NEXT(pjob->ji_alljobs);
-    }  /* END while (pjob != NULL) */
-
-  return(ct);
-  }  /* END start_hot_jobs() */
 
 
 

@@ -251,7 +251,7 @@ void req_deletejob(
 
   /* The way this is implemented, if the user enters the command "qdel -p <jobid>",
    * they can then delete jobs other than their own since the authorization
-   * checks are made below in chk_job_request. This should be fixed.
+   * checks are made below in chk_job_request. This should probably be fixed.
    */
   if (forced_jobpurge(preq) != 0)
     {

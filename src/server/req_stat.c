@@ -702,7 +702,13 @@ void stat_mom_job(
 
 
 
-
+/**
+ * poll_job_task
+ *
+ * The invocation of this routine is triggered from
+ * the pbs_server main_loop code.  The check of
+ * SRV_ATR_PollJobs appears to be redundant.
+ */
 void poll_job_task( 
 
   struct work_task *ptask) 
