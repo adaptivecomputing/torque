@@ -983,6 +983,7 @@ void main_loop()
       /* Are there HOT jobs to rerun */
       /* only try every _CYCLE seconds */
 
+      c = 0;
       if (time_now > server.sv_hotcycle + SVR_HOT_CYCLE) 
         {
         server.sv_hotcycle = time_now + SVR_HOT_CYCLE;
