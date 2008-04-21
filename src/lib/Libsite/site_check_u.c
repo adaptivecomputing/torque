@@ -257,12 +257,17 @@ int site_check_user_map(
 
   rc = ruserok(orighost,0,owner,luser);
 
-  if (EMsg != NULL)
+  if (rc != 0 && EMsg != NULL)
+    {
+    /* Test rc so as to not fill this message in the case of success, since other
+     * callers might not fill this message in the case of their errors and
+     * very misleading error message will go into the logs.
+     */
     snprintf(EMsg,1024,"ruserok failed validating %s/%s from %s",
       owner,
       luser,
       orighost);
-
+    }
 #ifdef sun
   /* broken Sun ruserok() sets process so it appears to be owned */
   /* by the luser, change it back for cosmetic reasons           */
