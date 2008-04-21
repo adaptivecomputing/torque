@@ -1952,6 +1952,7 @@ static u_long usecp(
   {
   char        *pnxt;
   static int   cphosts_max = 0;
+  struct cphosts   *newp = NULL;
 
   static char *id = "usecp";
 
@@ -1970,15 +1971,26 @@ static u_long usecp(
   if (cphosts_max == 0) 
     {
     pcphosts = malloc(2 * sizeof(struct cphosts));
+    if (pcphosts == NULL) {
+      sprintf(log_buffer,"%s: out of memory while allocating pcphosts",
+        id);
+      log_err(-1,id,log_buffer);
+    }
 
     cphosts_max = 2;
     } 
   else if (cphosts_max == cphosts_num) 
     {
-    pcphosts = realloc(
-      pcphosts,
+    newp = realloc(pcphosts,
       (cphosts_max + 2) * sizeof(struct cphosts));
 
+    if (newp == NULL) {
+      sprintf(log_buffer,"%s: out of memory while reallocating pcphosts",
+        id);
+      log_err(-1,id,log_buffer);
+    }
+
+   pcphosts = newp;
    cphosts_max += 2;
    }
 
@@ -1999,17 +2011,46 @@ static u_long usecp(
   *pnxt++ = '\0';
 
   (pcphosts + cphosts_num)->cph_hosts = strdup(value);
+  if ((pcphosts + cphosts_num)->cph_hosts == NULL)
+    {
+    sprintf(log_buffer,"%s: out of memory in strdup(cph_hosts)", id);
+    log_err(-1,id,log_buffer);
+    return(0);
+    }
 
   value = pnxt;	/* now ptr to path */
 
-  while (!isspace(*pnxt))
+  while (!isspace(*pnxt)) {
+    if (*pnxt == '\0') {
+      sprintf(log_buffer,"invalid '%s' specification %s: "
+        "missing destination path", id, value);
+      log_err(-1,id,log_buffer);
+      free(pcphosts[cphosts_num].cph_hosts);
+      return(0);
+    }
     pnxt++;
+  }
 
   *pnxt++ = '\0';
 
   (pcphosts + cphosts_num)->cph_from = strdup(value);
+  if ((pcphosts + cphosts_num)->cph_from == NULL)
+    {
+    sprintf(log_buffer,"%s: out of memory in strdup(cph_from)", id);
+    log_err(-1,id,log_buffer);
+    free(pcphosts[cphosts_num].cph_hosts);
+    return(0);
+    }
 
   (pcphosts + cphosts_num)->cph_to   = strdup(skipwhite(pnxt));
+  if ((pcphosts + cphosts_num)->cph_to == NULL)
+    {
+    sprintf(log_buffer,"%s: out of memory in strdup(cph_to)", id);
+    log_err(-1,id,log_buffer);
+    free(pcphosts[cphosts_num].cph_hosts);
+    free(pcphosts[cphosts_num].cph_from);
+    return(0);
+    }
 	
   cphosts_num++;
 	
