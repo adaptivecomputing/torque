@@ -744,28 +744,81 @@ static int told_to_cp(
   const char *id = "told_to_cp";
 
   static char newp[MAXPATHLEN + 1];
+  char linkpath[MAXPATHLEN + 1];
+  int max_links;
   extern struct cphosts *pcphosts;
 
-  for (nh = 0;nh < cphosts_num;nh++) 
-    {
-    if (wchost_match(host,(pcphosts + nh)->cph_hosts)) 
+  for (max_links = 16; max_links > 0; max_links--) {
+    for (nh = 0;nh < cphosts_num;nh++) 
       {
-      i = strlen((pcphosts + nh)->cph_from);
-
-      if (strncmp((pcphosts + nh)->cph_from,oldpath,i) == 0) 
+      if (wchost_match(host,pcphosts[nh].cph_hosts)) 
         {
-        strcpy(newp,(pcphosts + nh)->cph_to);
+        i = strlen(pcphosts[nh].cph_from);
 
-        strcat(newp,oldpath + i);
-       
-        *newpath = newp;
-
-        /* success */
-
-        return(1);
+        if (strncmp(pcphosts[nh].cph_from,oldpath,i) == 0) 
+        {
+          int nchars, link_size;
+          nchars = snprintf(newp, sizeof(newp), "%s%s",
+            pcphosts[nh].cph_to, oldpath + i);
+          if (nchars >= (int)sizeof(newp))
+            {
+            snprintf(log_buffer,sizeof(log_buffer),
+              "too long string when transforming path '%s' to '%s%s'\n",
+              oldpath, pcphosts[nh].cph_to, oldpath + i);
+            log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER,
+              (char *)id, log_buffer);
+            return(0);
+            }
+          link_size = readlink((const char *)newp,
+            linkpath, sizeof(linkpath) - 1);
+          if (link_size == -1)
+            {
+            /*
+             * Catching only too many symbolic links, bad buffer
+             * location and insufficient kernel memory cases.
+             */
+            if (errno == ELOOP || errno == EFAULT || errno == ENOMEM)
+              {
+              snprintf(log_buffer,sizeof(log_buffer),
+                "translation of symbolic link '%s' failed: %s\n",
+                newp, strerror(errno));
+              log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER,
+                (char *)id, log_buffer);
+              return(0);
+              }
+            /*
+             * We're done.  All other errors (if any)  will be
+             * reported in the respective routines.
+             *
+             * At least ENOENT and EINVAL are good error codes:
+             * they correspond to non-existent object or to
+             * object that is not a symbolic link.
+             */
+            else
+              {
+              *newpath = newp;
+              /* success */
+              return(1);
+              }
+            }
+          else
+            {
+            linkpath[link_size] = '\0';
+              {
+              snprintf(log_buffer,sizeof(log_buffer),
+                "translated symbolic link '%s:%s' to '%s:%s'; "
+                "restarting $usecp search\n",
+                host, newp, host, linkpath);
+              log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER,
+                (char *)id, log_buffer);
+              }
+            oldpath = linkpath;
+            }
+            break;
+          }
         }
-      }
-    }    /* END for (nh) */
+      }    /* END for (nh) */
+    }
 
    /* failure */
 
