@@ -4,6 +4,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature
   e - added -q to qalter to allow quicker response to modify requests
 
 2.3.1
+  b - fixed a bug where torque would fail to start up if there was no LF in nodes file
   b - fixed memory leak in free_br for PBS_BATCH_MvJobFile case
   e - torque can now compile on Linux and OS X with NDEBUG defined
   b - fix so we continue to process exiting jobs for other servers

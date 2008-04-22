@@ -1629,6 +1629,10 @@ int setup_nodes(void)
 
   svr_totnodes = 0;
 
+  /* clear out line so we don't have residual data if there is no LF */
+  
+  memset (line,'\0',sizeof(line));
+  
   for (linenum = 1;fgets(line,sizeof(line),nin);linenum++) 
     {
     if (line[0] == '#')	/* comment */
