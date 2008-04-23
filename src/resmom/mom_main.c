@@ -221,6 +221,8 @@ char           *TNoSpoolDirList[TMAX_NSDCOUNT];
 
 char           *AllocParCmd = NULL;  /* (alloc) */
 
+int      src_login_batch = TRUE;
+int      src_login_interactive = TRUE;
 
 /* externs */
 
@@ -341,6 +343,8 @@ static unsigned long setnodefilesuffix(char *);
 static unsigned long setnospooldirlist(char *);
 static unsigned long setmomhost(char *);
 static unsigned long setrreconfig(char *);
+static unsigned long setsourceloginbatch(char *);
+static unsigned long setsourcelogininteractive(char *);
 
 
 static struct specials {
@@ -391,6 +395,8 @@ static struct specials {
     { "remote_reconfig",     setrreconfig },
     { "job_output_file_umask",           setumask },
     { "preexec",             setpreexec },
+    { "source_login_batch",  setsourceloginbatch },
+    { "source_login_interactive",  setsourcelogininteractive },
     { NULL,                  NULL } };
 
 
@@ -2159,6 +2165,112 @@ static unsigned long setpreexec(
   }  /* END setpreexec() */
 
 
+static unsigned long setsourceloginbatch(
+
+  char *value)  /* I */
+
+  {
+
+  log_record(
+    PBSEVENT_SYSTEM,
+    PBS_EVENTCLASS_SERVER,
+    "setsourceloginbatch",
+    value);
+
+  if (value[0] != '\0')
+    {
+    /* accept various forms of "true", "yes", and "1" */
+    switch (value[0])
+      {
+      case 't':
+      case 'T':
+      case 'y': 
+      case 'Y':
+      case '1':
+
+        src_login_batch = TRUE;
+
+        break;
+      
+      case 'f':
+      case 'F':
+      case 'n':
+      case 'N':
+      case '0':
+        
+        src_login_batch = FALSE;
+
+        break;
+      
+      default:
+        sprintf (log_buffer, "Unknown value of %s", value);
+
+        log_record(
+          PBSEVENT_SYSTEM,
+          PBS_EVENTCLASS_SERVER,
+          "setsourceloginbatch",
+          log_buffer);
+        break;
+
+      } 
+    }
+
+  return(1);
+  }  /* END setsourceloginbatch() */
+
+
+static unsigned long setsourcelogininteractive(
+
+  char *value)  /* I */
+
+  {
+
+  log_record(
+    PBSEVENT_SYSTEM,
+    PBS_EVENTCLASS_SERVER,
+    "setsourcelogininteractive",
+    value);
+
+  if (value[0] != '\0')
+    {
+    /* accept various forms of "true", "yes", and "1" */
+    switch (value[0])
+      {
+      case 't':
+      case 'T':
+      case 'y': 
+      case 'Y':
+      case '1':
+
+        src_login_interactive = TRUE;
+
+        break;
+      
+      case 'f':
+      case 'F':
+      case 'n':
+      case 'N':
+      case '0':
+        
+        src_login_interactive = FALSE;
+
+        break;
+      
+      default:
+        sprintf (log_buffer, "Unknown value of %s", value);
+
+        log_record(
+          PBSEVENT_SYSTEM,
+          PBS_EVENTCLASS_SERVER,
+          "setsourcelogininteractive",
+          log_buffer);
+        break;
+
+      } 
+    }
+
+  return(1);
+  }  /* END setsourcelogininteractive() */
 
 
 static unsigned long jobstartblocktime(

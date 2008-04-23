@@ -8,6 +8,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature
   b - fixed memory leak in free_br for PBS_BATCH_MvJobFile case
   e - torque can now compile on Linux and OS X with NDEBUG defined
   b - fix so we continue to process exiting jobs for other servers
+  e - added source_login_batch and source_login_interactive to mom config.  This
+      allows us to bypass the sourcing of /etc/profile, etc. type files.
 
 2.3.0
   b - fixed a bug where TORQUE would ignore the "pbs_asyrunjob" API extension string when starting jobs in asynchronous mode

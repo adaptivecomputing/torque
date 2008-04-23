@@ -170,6 +170,8 @@ struct var_table vtable;		/* for building up job's environ */
 
 extern char             tmpdir_basename[];  /* for TMPDIR */
 
+extern int      src_login_batch;
+extern int      src_login_interactive;
 
 /* Local Variables */ 
 
@@ -2849,7 +2851,27 @@ int TMomFinalizeChild(
 
     aindex = 0;
 
-    arg[aindex] = malloc(strlen(shellname) + 2);
+    /* determine whether or not we bypass the sourcing of login shells */
+    
+    if (((TJE->is_interactive == TRUE) && (src_login_interactive == FALSE)) ||
+        ((TJE->is_interactive != TRUE) && (src_login_batch == FALSE)))
+      {
+      arg[aindex] = malloc(strlen(shellname) + 1);  
+          
+      strcpy(arg[aindex],shellname);
+      
+      if (LOGLEVEL >= 7)
+        {
+        sprintf(log_buffer,"bypass sourcing of login files for job %s",
+          pjob->ji_qs.ji_jobid);
+
+        log_err(-1,id,log_buffer);
+        }
+      
+      }
+    else
+      {
+      arg[aindex] = malloc(strlen(shellname) + 2);
 
     /* specifying '-' indicates this is a 'login' shell */
 
