@@ -2873,11 +2873,12 @@ int TMomFinalizeChild(
       {
       arg[aindex] = malloc(strlen(shellname) + 2);
 
-    /* specifying '-' indicates this is a 'login' shell */
+      /* specifying '-' indicates this is a 'login' shell */
 
-    strcpy(arg[aindex],"-");
+      strcpy(arg[aindex],"-");
 
-    strcat(arg[aindex],shellname);
+      strcat(arg[aindex],shellname);
+      }
 
     arg[aindex + 1] = NULL;
 
