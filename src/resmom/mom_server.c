@@ -496,6 +496,39 @@ mom_server_add(char *value)
     return(0); /* FAILURE */
     }
 
+  /* Leaving this out breaks things but seems bad because if gethostbyname fails,
+   * there is no retry except for the old way reinserting the name over and over again.
+   * And what happens if the server connect via a different interface than the
+   * one that gethostbyname returns?  It really seems better to not deal with
+   * the IP address here but rather do what needs to be done when a connection
+   * is established.  Anyway, this should fix things for now.
+   */
+  {
+  struct hostent *host;
+  struct in_addr  saddr;
+  u_long          ipaddr;
+
+  /* FIXME: must be able to retry failed lookups later */
+
+  if ((host = gethostbyname(pms->pbs_servername)) == NULL) 
+    {
+    sprintf(log_buffer,"host %s not found", 
+      pms->pbs_servername);
+
+    log_err(-1,id,log_buffer);
+
+    }
+  else
+    {
+    memcpy(&saddr,host->h_addr,host->h_length);
+
+    ipaddr = ntohl(saddr.s_addr);
+
+    if (ipaddr != 0)
+      tinsert(ipaddr,&okclients);
+    }
+  }
+
   return(1);      /* SUCCESS */
   }
 
