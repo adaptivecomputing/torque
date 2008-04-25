@@ -4329,9 +4329,9 @@ void start_exec(
 
     MD5Init(&c);
 
-    MD5Update(&c,(caddr_t)&loopcnt,sizeof(loopcnt));
+    MD5Update(&c,(unsigned char *)&loopcnt,sizeof(loopcnt));
 
-    MD5Update(&c,(caddr_t)pjob,sizeof(job));
+    MD5Update(&c,(unsigned char *)pjob,sizeof(job));
 
     MD5Final(&c);
 

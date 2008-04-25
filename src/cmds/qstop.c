@@ -108,7 +108,7 @@
 
 
 int exitstatus = 0; /* Exit Status */
-static void execute ();
+static void execute (char *, char *);
 
 
 int main ( argc, argv )

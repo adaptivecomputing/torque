@@ -113,7 +113,7 @@
 
 int exitstatus = 0; /* Exit Status */
 
-static void execute();
+static void execute(int, char *);
 
 int main(
 

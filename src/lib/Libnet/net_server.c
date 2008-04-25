@@ -115,7 +115,7 @@ extern int LOGLEVEL;
 
 extern void process_request A_((int));
 
-extern time_t time();
+extern time_t time(time_t *);
 
 /* Global Data (I wish I could make it private to the library, sigh, but
  * C don't support that scope of control.)

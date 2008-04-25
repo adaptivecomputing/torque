@@ -102,7 +102,7 @@ int main(argc, argv)
 	int argc;
 	char *argv[];
 {
-	int   dofile();
+	int   dofile(FILE *);
 	int   dirct = 0;
 	FILE *filein;
 	int   i;

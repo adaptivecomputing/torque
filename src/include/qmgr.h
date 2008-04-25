@@ -166,30 +166,30 @@ struct objname
 
 
 /* prototypes */
-struct objname *commalist2objname();
-struct server *find_server();
+struct objname *commalist2objname(char *, int);
+struct server *find_server(char *);
 struct server *make_connection();
 struct server *new_server();
 struct objname *new_objname();
-struct objname *strings2objname( );
+struct objname *strings2objname(char **, int, int);
 struct objname *default_server_name();
-struct objname *temp_objname();
-int parse_request( );
-void clean_up_and_exit();
-void freeattrl();
-void freeattropl();
-void pstderr_big();
-void free_objname_list();
-void free_server();
-void free_objname();
+struct objname *temp_objname(char *, char *, struct server *);
+int parse_request(char *, char [][MAX_REQ_WORD_LEN]);
+void clean_up_and_exit(int);
+void freeattrl(struct attrl *);
+void freeattropl(struct attropl *);
+void pstderr_big(char *, char*, char *);
+void free_objname_list(struct objname *);
+void free_server(struct server *);
+void free_objname(struct objname *);
 void close_non_ref_servers();
-int connect_servers();
-int set_active();
-int get_request();
-int parse();
-int execute();
-int is_attr();
-int is_valid_object();
+int connect_servers(struct objname *, int);
+int set_active(int, struct objname *);
+int get_request(char *);
+int parse(char *, int *, int *, char **, struct attropl **);
+int execute(int, int, int, char *, struct attropl *);
+int is_attr(int, char *, int);
+int is_valid_object(struct objname *, int);
 void disconnect_from_server();
 
 

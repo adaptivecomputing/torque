@@ -981,7 +981,13 @@ int main(
 
           lock_out(lockfds, F_WRLCK);
 
-          freopen(dbfile, "a", stdout);
+          if (freopen(dbfile, "a", stdout) == NULL)
+            {
+            perror("opening lockfile");
+
+            exit(1);
+            }
+
 
           setvbuf(stdout, NULL, _IOLBF, 0);
 
@@ -995,7 +1001,12 @@ int main(
           pid = getpid();
           }
 
-        freopen("/dev/null", "r", stdin);
+        if (freopen("/dev/null", "r", stdin) == NULL)
+            {
+            perror("opening /dev/null");
+
+            exit(1);
+            }
 
         /* write scheduler's pid into lockfile */
 

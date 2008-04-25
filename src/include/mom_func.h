@@ -149,7 +149,7 @@ extern void  set_globid A_((job *, struct startjob_rtn *));
 extern int   set_mach_vars A_((job *, struct var_table *));
 extern char *set_shell A_((job *, struct passwd *));
 extern void  start_exec A_((job *));
-extern int   open_master();
+extern int   open_master(char **);
 extern int   open_slave();
 extern char *rcvttype A_((int));
 extern int   rcvwinsize A_((int));
