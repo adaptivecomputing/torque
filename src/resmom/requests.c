@@ -748,7 +748,8 @@ static int told_to_cp(
   int max_links;
   extern struct cphosts *pcphosts;
 
-  for (max_links = 16; max_links > 0; max_links--) {
+  for (max_links = 16;max_links > 0;max_links--) 
+    {
     for (nh = 0;nh < cphosts_num;nh++) 
       {
       if (wchost_match(host,pcphosts[nh].cph_hosts)) 
@@ -817,8 +818,24 @@ static int told_to_cp(
             break;
           }
         }
+
+      if (LOGLEVEL >= 5)
+        {
+        sprintf(log_buffer,"host '%s' and path '%s' does not match usecp[%d]  (host '%s' path '%s')\n",
+          host,
+          oldpath,
+          nh,
+          (pcphosts + nh)->cph_hosts,
+          (pcphosts + nh)->cph_from);
+
+        log_record(
+          PBSEVENT_SYSTEM,
+          PBS_EVENTCLASS_SERVER,
+          (char *)id,
+          log_buffer);
+        }
       }    /* END for (nh) */
-    }
+    }      /* END for (max_links) */
 
    /* failure */
 

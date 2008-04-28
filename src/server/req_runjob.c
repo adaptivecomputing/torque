@@ -505,7 +505,7 @@ int svr_startjob(
     }
 
   /* if exec_host already set and either (hot start or checkpoint) */
-  /* then use the host(s) listed in exec_host			*/
+  /* then use the host(s) listed in exec_host                      */
 
   /* NOTE:  qrun hostlist assigned in req_runjob() */
 
