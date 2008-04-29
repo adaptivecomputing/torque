@@ -661,6 +661,92 @@ int MUStrNCat(
 
 
 
+char *MUStrTok(
+
+  char  *Line,  /* I (optional) */
+  char  *DList, /* I */
+  char **Ptr)   /* O point to termination character of returned token */
+
+  {
+  static char *Head = NULL;
+
+  int dindex;
+
+  mbool_t ignchar;
+
+  /* NOTE:  no handling if Line is NULL and Ptr is uninitialized */
+
+  if (Ptr == NULL)
+    {
+    /* tokPtr not specified */
+
+    return(NULL);
+    }
+
+  if (Line != NULL)
+    {
+    *Ptr = Line;
+
+    if (Line[0] == '\0')
+      {
+      /* line is empty */
+
+      if (Ptr != NULL)
+        *Ptr = NULL;
+
+      return(NULL);
+      }
+    }
+  else if (*Ptr == NULL)
+    {
+    return(NULL);
+    }
+
+  ignchar = FALSE;
+
+  Head = NULL;
+
+  while (**Ptr != '\0')
+    {
+    for (dindex = 0;DList[dindex] != '\0';dindex++)
+      {
+      if (**Ptr == DList[dindex])
+        {
+        **Ptr = '\0';
+
+        (*Ptr)++;
+
+        if (Head != NULL)
+          {
+          return(Head);
+          }
+        else
+          {
+          ignchar = TRUE;
+
+          break;
+          }
+        }
+      }    /* END for (dindex) */
+
+    if ((ignchar != TRUE) && (**Ptr != '\0'))
+      {
+      if (Head == NULL)
+        Head = *Ptr;
+
+      (*Ptr)++;
+      }
+
+    ignchar = FALSE;
+    }  /* END while (**Ptr != '\0') */
+
+  return(Head);
+  }  /* END MUStrTok() */
+
+
+
+
+
 char *nullproc(
 
   struct rm_attribute *attrib)
@@ -5155,7 +5241,10 @@ void tcp_request(
 
 
 
-char *find_signal_name( int sig )
+char *find_signal_name( 
+
+  int sig)
+
   {
   struct sig_tbl *psigt;
   extern struct sig_tbl sig_tbl[];
@@ -5176,12 +5265,14 @@ char *find_signal_name( int sig )
 /*
  *  Kill a job.
  *	Call with the job pointer and a signal number.
+ *
+ * @see XXX() - parent
  */
 
 int kill_job(
 
-  job *pjob,  /* I */
-  int  sig,   /* I */
+  job  *pjob,  /* I */
+  int   sig,   /* I */
   char *killer_id_name, /* I - process name of calling routine */
   char *why_killed_reason) /* I - reason for killing */
 
@@ -7232,8 +7323,9 @@ void examine_all_running_jobs()
  */
 
 void kill_all_running_jobs()
-{
-  job		*pjob;
+
+  {
+  job *pjob;
 
   for (pjob = (job *)GET_NEXT(svr_alljobs);
        pjob != NULL;
@@ -7258,7 +7350,9 @@ void kill_all_running_jobs()
 
     if (exiting_tasks)
       scan_for_exiting();
-}
+
+  return;
+  }
 
 
 

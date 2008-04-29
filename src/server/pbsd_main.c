@@ -1162,6 +1162,9 @@ void set_globals_from_environment()
   }
 
 
+
+
+
 /*
  * main - the initialization and main loop of pbs_daemon
  */
@@ -1198,8 +1201,9 @@ int main(
   /* find out the name of this machine (hostname) */
 
   EMsg[0] = '\0';
+
   if ((gethostname(server_host,PBS_MAXHOSTNAME) == -1) ||
-       (get_fullhostname(server_host,server_host,PBS_MAXHOSTNAME,EMsg) == -1)) 
+      (get_fullhostname(server_host,server_host,PBS_MAXHOSTNAME,EMsg) == -1)) 
     {
     snprintf(tmpLine,sizeof(tmpLine),"unable to determine local server hostname %c %s",
       EMsg[0] ? '-' : ' ',
@@ -1209,6 +1213,7 @@ int main(
 
     exit(1);    /* FAILURE - shutdown */
     }
+
   strcpy(server_name,server_host);	/* by default server = host */
 
   pbs_server_addr    = get_hostaddr(server_host);
@@ -1243,9 +1248,9 @@ int main(
     }
 
   i = sysconf(_SC_OPEN_MAX);
+
   while (--i > 2)
     close(i); /* close any file desc left open by parent */
-
 
   /* make sure no other server is running with this home directory */
 
@@ -1329,10 +1334,11 @@ int main(
 
   /* initialize the network interface */
 
-  sprintf(log_buffer,"Using ports Server:%d  Scheduler:%d  MOM:%d",
+  sprintf(log_buffer,"Using ports Server:%d  Scheduler:%d  MOM:%d (server: '%s')",
     pbs_server_port_dis, 
     pbs_scheduler_port, 
-    pbs_mom_port);
+    pbs_mom_port,
+    server_host);
 
   log_event(
     PBSEVENT_SYSTEM|PBSEVENT_ADMIN, 

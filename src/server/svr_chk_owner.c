@@ -186,8 +186,11 @@ int svr_authorize_jobreq(
   get_jobowner(pjob->ji_wattr[(int)JOB_ATR_job_owner].at_val.at_str,owner);
   
   return svr_authorize_req(preq, owner, get_variable(pjob,pbs_o_host));
-  
   }  /* END svr_authorize_jobreq() */
+
+
+
+
 
 
 int svr_authorize_req(
@@ -220,6 +223,9 @@ int svr_authorize_req(
 
   return(-1);
   }
+
+
+
 
 
 /*

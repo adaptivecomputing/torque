@@ -1075,8 +1075,8 @@ void req_checkpointjob(
 
 
 /*
- *	Write text into a job's output file,
- *	Return a PBS error code.
+ *  Write text into a job's output file,
+ *  Return a PBS error code.
  */
 
 int message_job(

@@ -2124,7 +2124,7 @@ int kill_task(
            req.tv_sec = 0;
            req.tv_nsec = 250000000;  /* .25 seconds */
  
-           /* give the process some time to quit gracefully first (up to 5 seconds) */
+           /* give the process some time to quit gracefully first (up to .25*20=5 seconds) */
  
            if (pg == 0)
              kill(ps->pid,SIGTERM);
@@ -2190,13 +2190,15 @@ int kill_task(
               { 
               /* kill process hard */
 
+              /* why is this not killing with SIGKILL? */
+
               if (pg == 0)
                 kill(ps->pid,sig);
               else
                 killpg(ps->pid,sig);
               }
-            }
-          }    /* END if (i >= 20) */
+            }    /* END if ((ps = get_proc_stat(ps->pid)) != NULL) */
+          }      /* END if (i >= 20) */
 
         ++ct;
         }  /* END else ((ps->state == 'Z') || (ps->pid == 0)) */

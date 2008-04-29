@@ -336,7 +336,7 @@ int run_pelog(
     {
     if (errno == ENOENT)
       {
-      /* prolog script does not exist */
+      /* epilog/prolog script does not exist */
 
       if (LOGLEVEL >= 5)
         {

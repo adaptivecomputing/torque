@@ -5233,8 +5233,9 @@ int open_std_file(
 
   if (fds == -1)
     {
-    sprintf(log_buffer,"cannot open/create stdout/stderr file '%s'",
-      path);
+    sprintf(log_buffer,"cannot open/create stdout/stderr file '%s' - mode=%d",
+      path,
+      mode);
 
     log_err(errno,"open_std_file",log_buffer);
 

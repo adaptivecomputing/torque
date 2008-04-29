@@ -477,6 +477,8 @@ int save_acl(
   }
 
 
+
+
 /**
  * Reload an Access Control List from its file.
  *
@@ -576,7 +578,7 @@ void recov_acl(
     sprintf(log_buffer,"set of acl %s failed",
       pdef->at_name);
 
-    log_err(errno, this_function_name, log_buffer);
+    log_err(errno,this_function_name,log_buffer);
     }
 
   pdef->at_free(&tempat);
