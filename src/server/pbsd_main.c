@@ -274,19 +274,22 @@ void do_rpp(
     {
     /* FAILURE */
 
+    /* This error case may be associated with IP communication
+     * problems such as may happen with multi-homed servers.
+     */
+
     if (LOGLEVEL >= 1)
       {
       struct pbsnode *node;
 
       extern tree *streams;        /* tree of stream numbers */
 
-      /* NOTE:  report IP associated w/stream - NYI */
-
       node = tfind((u_long)stream,&streams);
 
-      sprintf(log_buffer,"corrupt rpp request received on stream %d (node: %s) - invalid protocol - rc=%d (%s)",
+      sprintf(log_buffer,"corrupt rpp request received on stream %d (node: \"%s\", %s) - invalid protocol - rc=%d (%s)",
         stream,
         (node != NULL) ? node->nd_name : "NULL",
+        netaddr(rpp_getaddr(stream)),
         ret,
         dis_emsg[ret]);
 
