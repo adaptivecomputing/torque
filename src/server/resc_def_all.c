@@ -463,7 +463,7 @@ resource_def svr_resc_def_const[] = {
 	comp_l,
 	free_null,
 	NULL_FUNC,
-	READ_WRITE | ATR_DFLAG_MOM,
+	READ_WRITE | ATR_DFLAG_MOM | ATR_DFLAG_RMOMIG,
 	ATR_TYPE_LONG
     },
     {	"mppe",				/* number of mpp nodes */
