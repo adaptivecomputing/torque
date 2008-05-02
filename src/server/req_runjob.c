@@ -1113,6 +1113,8 @@ static job *chk_job_torun(
 
   char              EMsg[1024];
   char              FailHost[1024];
+  char              exec_host[1024];
+  char              *ptr;
 
   prun = &preq->rq_ind.rq_run;
 
@@ -1179,9 +1181,10 @@ static job *chk_job_torun(
       {
       /* specified destination must match exec_host */
 
-      if (strcmp(
-           prun->rq_destin,
-           pjob->ji_wattr[(int)JOB_ATR_exec_host].at_val.at_str) != 0) 
+      strcpy(exec_host,pjob->ji_wattr[(int)JOB_ATR_exec_host].at_val.at_str);
+      if ((ptr = strchr(exec_host,'/')))
+        *ptr = 0; /* For some reason, node name has "/0" on the end (i.e. "node0001/0"). */
+      if (strcmp(prun->rq_destin,exec_host) != 0) 
         {
         /* FAILURE */
 
