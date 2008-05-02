@@ -1661,17 +1661,28 @@ mom_server_valid_message_source(int stream)
   u_long	ipaddr;
   mom_server *pms;
 
-
+  /* Check for the normal case, where some server has an open,
+   * establish stream connection to the place where this
+   * message came from.
+   */
   if ((pms = mom_server_find_by_stream(stream)))
     return(pms);
 
-  /* We don't have an existing connection, but is this a valid server? */
+  addr = rpp_getaddr(stream);  /* Get pointer to sockaddr_in for message source address */
+  ipaddr = ntohl(addr->sin_addr.s_addr);  /* Extract IP address of source of the message. */
 
-  addr = rpp_getaddr(stream);
-  ipaddr = ntohl(addr->sin_addr.s_addr);
+  /* So the stream number did not match any server but maybe
+   * the server has another stream connection open to the IP address.
+   */
 
   if ((pms = mom_server_find_by_ip(ipaddr)))
     {
+    /* This case can happen when both the pbs_mom and the pbs_server initiate
+     * a communication session with the HELLO protocol on startup.
+     * We then have a stream open from both sides.  In this case, the pbs_mom
+     * defers and closes the existing stream, replacing it with the new one
+     * from the server.
+     */
     if (pms->SStream != -1)
       {
       sprintf(log_buffer,"duplicate connection from %s - closing original connection",
@@ -1696,6 +1707,50 @@ mom_server_valid_message_source(int stream)
     }
   else
     {
+    /* There is no existing stream connection to the server. */
+
+    /* Maybe the right thing to do now is to iterate over all defined
+     * servers. If there are servers defined with no open stream
+     * and a gethostbyname result matches the message source IP address,
+     * then accept the stream and put the stream number into the
+     * server struct.  Then in the future, the normal case above
+     * will match.  This approach doesn't have the mom's madly
+     * attempting to clobber the network with gethostbyname if
+     * the DNS server is dead.  We only do gethostbyname if we
+     * get a message from the pbs_server.
+     */
+#if 1
+    {
+    int sindex;
+
+    for (sindex = 0;sindex < PBS_MAXSERVER;sindex++)
+      {
+      pms = &mom_servers[sindex];
+      if (pms->pbs_servername[0] &&
+          pms->SStream != -1)
+        {
+        struct hostent *host;
+        struct in_addr  saddr;
+        u_long          server_ip;
+
+        if ((host = gethostbyname(pms->pbs_servername)) != NULL) 
+          {
+          memcpy(&saddr,host->h_addr,host->h_length);
+
+          server_ip = ntohl(saddr.s_addr);
+
+          if (ipaddr == server_ip)
+            {
+            tinsert(ipaddr,&okclients);
+            pms->SStream = stream;
+            return(pms);
+            }
+          }
+        }
+      }
+    }
+#endif
+
     sprintf(log_buffer,"bad connect from %s - unauthorized server",
       netaddr(addr));
 

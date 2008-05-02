@@ -7249,18 +7249,19 @@ void examine_all_running_jobs()
          pjob = (job *)GET_NEXT(pjob->ji_alljobs)) 
       {
       if (pjob->ji_qs.ji_substate != JOB_SUBSTATE_RUNNING)
-        continue;
+        continue; /* This job is not running, skip it. */
 
       if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HERE) == 0)
-        continue;
+        continue; /* We are not the Mother Superior for this job, skip it. */
 
       /* update information for my tasks */
 
-      mom_set_use(pjob);
+      mom_set_use(pjob); /* Machine dependent function to compute and set attributes like cput, vmem, etc. */
 
-      /* has all job processes vanished undetected ?       */
+      /* Have all job processes vanished undetected ?       */
       /* double check by sig0 to session pid for each task */
-
+      /* But why not use the proc_array? */
+      
       if (pjob->ji_flags & MOM_NO_PROC) 
         {
         pjob->ji_flags &= ~MOM_NO_PROC;
