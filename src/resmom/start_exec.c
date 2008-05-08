@@ -1818,6 +1818,10 @@ int determine_umask(
       UMaskVal = (int)strtol(DEFAULT_UMASK,NULL,0);
       }
 
+    /* make sure that we have access to the file when we move the spooled file */
+    
+    UMaskVal = UMaskVal & 0377;
+    
     if (LOGLEVEL >= 7)
       {
       sprintf(log_buffer,"Using $job_output_file_umask value of %o", 
