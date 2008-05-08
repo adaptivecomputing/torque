@@ -324,11 +324,11 @@ void scan_for_terminated()
   task	*ptask = NULL;
   int	statloc;
 
+#ifdef CACHEOBITFAILURES
   static job *TJCache[TMAX_TJCACHESIZE];
 
   int tjcindex;
 
-#ifdef CACHEOBITFAILURES
   int TJCIndex = 0;
 #endif
 
@@ -362,6 +362,17 @@ void scan_for_terminated()
 
     /* attempt to send obit again */
 
+    pjob = TJCache[TJCIndex];
+
+    if (LOGLEVEL >= 7)
+      {
+      LOG_EVENT(
+        PBSEVENT_DEBUG,
+        PBS_EVENTCLASS_JOB,
+        pjob->ji_qs.ji_jobid,
+          "Retrying send of OBIT");
+      }
+
     if (pjob->ji_mompost(pjob,exiteval) != 0)
       {
       /* attempt failed again */
@@ -373,6 +384,15 @@ void scan_for_terminated()
 
     /* success */
 
+    if (LOGLEVEL >= 7)
+      {
+      LOG_EVENT(
+        PBSEVENT_DEBUG,
+        PBS_EVENTCLASS_JOB,
+        pjob->ji_qs.ji_jobid,
+          "OBIT resent successfully");
+       }
+
     pjob->ji_mompost = NULL;
 
     /* clear mom sub-task */
@@ -380,6 +400,7 @@ void scan_for_terminated()
     pjob->ji_momsubt = 0;
 
     job_save(pjob,SAVEJOB_QUICK);
+    TJCache[TJCIndex] = ((job *)1);
     }  /* END for (TJIndex) */
 #endif /* CACHEOBITFAILURES */
 
@@ -462,13 +483,23 @@ void scan_for_terminated()
 
           pjob->ji_mompost = NULL;
           }
+#ifdef CACHEOBITFAILURES
         else
           {
           for (tjcindex = 0;tjcindex < TMAX_TJCACHESIZE;tjcindex++)
             {
             if ((TJCache[tjcindex] == NULL) || (TJCache[tjcindex] == (job *)1))
               {
+              if (LOGLEVEL >= 7)
+                {
+                LOG_EVENT(
+                  PBSEVENT_DEBUG,
+                  PBS_EVENTCLASS_JOB,
+                  pjob->ji_qs.ji_jobid,
+                    "Caching OBIT for resend");
+                }
               TJCache[tjcindex] = pjob;
+              termin_child = 1;
 
               break;
               }
@@ -476,6 +507,7 @@ void scan_for_terminated()
 
           continue;
           }
+#endif /* CACHEOBITFAILURES */
         }
 
       /* clear mom sub-task */
