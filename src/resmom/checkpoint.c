@@ -1410,8 +1410,14 @@ mom_checkpoint_job_has_checkpoint(job *pjob)
 int
 mom_checkpoint_start_restart(job *pjob)
   {
+  static char   *id = "mom_checkpoint_start_restart";
   int            rc = PBSE_NONE;
-  struct startjob_rtn    sjr = {0,0};
+  char          *PPtr;
+  char          *CPtr;
+  extern char   *AllocParCmd;
+  task          *ptask;
+  char           tmpLine[1024];
+
 
   /* At this point we believe that there is a checkpoint image, try to restart it. */
 
@@ -1429,7 +1435,32 @@ mom_checkpoint_start_restart(job *pjob)
       break;
 
     case CST_BLCR:
-      set_job(pjob,&sjr);
+      /* Allocate a partition for Cray XT4 */
+
+      if (((PPtr = get_job_envvar(pjob,"BATCH_PARTITION_ID")) != NULL) &&
+         ((CPtr = get_job_envvar(pjob,"BATCH_ALLOC_COOKIE")) != NULL) &&
+          !strcmp(CPtr,"0") &&
+          (ptask = (task *)GET_NEXT(pjob->ji_tasks)) != NULL)
+        {
+        if (AllocParCmd == NULL)
+          AllocParCmd = strdup("/opt/moab/default/tools/partition.create.xt4.pl");
+
+        snprintf(tmpLine,sizeof(tmpLine),"%s --confirm -p %s -j %s -a %ld",
+          AllocParCmd,
+          PPtr,
+          pjob->ji_qs.ji_jobid,
+          (long)ptask->ti_qs.ti_sid);
+        log_err(-1,id,tmpLine);
+
+        rc = system(tmpLine); 
+
+        if (WEXITSTATUS(rc) != 0)
+          {
+          snprintf(log_buffer,1024,"cannot create alloc partition");
+          log_err(-1,id,log_buffer);
+          }
+        }
+
 
       /* perform any site required setup before restart, normally empty and does nothing */
 
