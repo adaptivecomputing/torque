@@ -1411,6 +1411,7 @@ int
 mom_checkpoint_start_restart(job *pjob)
   {
   int            rc = PBSE_NONE;
+  struct startjob_rtn    sjr = {0,0};
 
   /* At this point we believe that there is a checkpoint image, try to restart it. */
 
@@ -1428,6 +1429,10 @@ mom_checkpoint_start_restart(job *pjob)
       break;
 
     case CST_BLCR:
+      if (set_job(pjob,&sjr) < 0) /* Cray needs this call here. */
+        return(PBSE_NOSUP);
+       
+
       /* perform any site required setup before restart, normally empty and does nothing */
 
       if ((rc = site_mom_prerst(pjob)) != PBSE_NONE) 
