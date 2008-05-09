@@ -1429,9 +1429,7 @@ mom_checkpoint_start_restart(job *pjob)
       break;
 
     case CST_BLCR:
-      if (set_job(pjob,&sjr) < 0) /* Cray needs this call here. */
-        return(PBSE_NOSUP);
-       
+      set_job(pjob,&sjr);
 
       /* perform any site required setup before restart, normally empty and does nothing */
 
