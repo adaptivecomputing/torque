@@ -2,14 +2,36 @@ c - crash     b - bug fix    e - enhancement    f - new feature
 
 2.4.0
   e - added -q to qalter to allow quicker response to modify requests
+  f - added basic qhold support for job arrays
 
 2.3.1
-  b - fixed a bug where torque would fail to start up if there was no LF in nodes file
+  b - fixed a bug where torque would fail to start if there was no LF in nodes file
+  b - fixed a bug where TORQUE would ignore the "pbs_asyrunjob" API extension
+      string when starting jobs in asynchronous mode
   b - fixed memory leak in free_br for PBS_BATCH_MvJobFile case
   e - torque can now compile on Linux and OS X with NDEBUG defined
+  f - when using qsub it is now possible to specify both -k and -o/-e
+      (before -o/-e did not behave as expected if -k was also used)
+  e - changed pbs_server to have "-l" option. Specifies a host/port that event
+      messages will be sent to. Event messages are the same as what the
+      scheduler currently receives.
+  e - added --enable-autorun to allow qsub jobs to automatically try to run
+      if there are any nodes available.
+  e - added --enable-quickcommit to allow qsub to combine the ready to commit
+      and commit phases into 1 network transmission.
+  e - added --enable-nochildsignal to allow pbs_server to use inline checking
+      for SIGCHLD instead of using the signal handler.
+  e - change qsub so '-v var=' will look in environment for value. If value
+      is not found set it to "".
+  b - fix qdel of entire job arrays for non operator/managers
   b - fix so we continue to process exiting jobs for other servers
   e - added source_login_batch and source_login_interactive to mom config.  This
       allows us to bypass the sourcing of /etc/profile, etc. type files.
+  b - fixed pbs_server segmentation fault when job_array submissions are rejected
+      before ji_arraystruct was initialized
+  e - add some casts to fix some compiler warnings with gcc-4.1 on i386 when
+      -D_FILE_OFFSET_BITS=64 is set
+
 
 2.3.0
   b - fixed a bug where TORQUE would ignore the "pbs_asyrunjob" API extension string when starting jobs in asynchronous mode
