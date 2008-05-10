@@ -193,6 +193,8 @@ void req_jobobit(struct batch_request *preq);
 void req_stagein(struct batch_request *preq);
 
 void req_deletearray(struct batch_request *preq);
+void req_holdarray(struct batch_request *preq);
+
 #endif
 
 /* END request processing prototypes */
@@ -706,9 +708,18 @@ void dispatch_request(
       break; 
 
     case PBS_BATCH_HoldJob: 
-
+#ifdef PBS_MOM
       req_holdjob(request);
-
+#else
+      if (is_array(request->rq_ind.rq_hold.rq_orig.rq_objname))
+        {
+        req_holdarray(request);
+        }
+      else
+        {
+        req_holdjob(request);
+        }
+#endif
       break;
 
     case PBS_BATCH_CheckpointJob: 

@@ -440,6 +440,7 @@ job *job_alloc()
   CLEAR_HEAD(pj->ji_svrtask);
   CLEAR_HEAD(pj->ji_rejectdest);
   CLEAR_LINK(pj->ji_arrayjobs);
+  pj->ji_arraystruct = NULL;
   pj->ji_isparent = FALSE;
 
   pj->ji_momhandle = -1;		/* mark mom connection invalid */
@@ -907,7 +908,7 @@ void job_purge(
     }
     
   /* if part of job array then remove from array's job list */ 
-  if (pjob->ji_wattr[(int)JOB_ATR_job_array_request].at_flags & ATR_VFLAG_SET &&
+  if (pjob->ji_arraystruct != NULL &&
       pjob->ji_isparent == FALSE)
     {
     
