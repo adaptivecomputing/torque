@@ -31,6 +31,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature
       before ji_arraystruct was initialized
   e - add some casts to fix some compiler warnings with gcc-4.1 on i386 when
       -D_FILE_OFFSET_BITS=64 is set
+  e - added --enable-maxnotdefault to allow not using resources_max as defaults.
 
 
 2.3.0

@@ -1788,12 +1788,14 @@ void set_resc_deflt(
 
   /* apply queue max limits first since they take precedence */
 
+#ifndef RESOURCEMAXNOTDEFAULT
   set_deflt_resc(ja,&pque->qu_attr[(int)QA_ATR_ResourceMax]);
 
   /* server max limits will only be applied to attributes which have
      not yet been set */
 
   set_deflt_resc(ja,&server.sv_attr[(int)SRV_ATR_ResourceMax]);
+#endif
 
   for (i = 0;i < JOB_ATR_LAST;++i)
     {

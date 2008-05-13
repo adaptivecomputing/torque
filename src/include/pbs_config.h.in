@@ -293,6 +293,9 @@
 /* the machine specific resc_def_* file name */
 #undef MACH_RESC_DEFS
 
+/* turns on the compilation of RESOURCEMAXNOTDEFAULT code */
+#undef RESOURCEMAXNOTDEFAULT
+
 /* Define to error if spool is full on MOM */
 #undef MOMCHECKLOCALSPOOL
 
