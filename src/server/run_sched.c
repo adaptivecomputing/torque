@@ -100,15 +100,20 @@ extern struct connection svr_conn[];
 extern int	 svr_do_schedule;
 extern char     *msg_sched_called;
 extern char     *msg_sched_nocall;
+extern char     *msg_listnr_called;
+extern char     *msg_listnr_nocall;
+extern struct listener_connection listener_conns[];
 
 int scheduler_sock = -1;
 int scheduler_jobct = 0;
+int listener_command = 0;
 
 
 /* Functions private to this file */
 
 static int  put_4byte A_((int sock, unsigned int val));
 static void scheduler_close A_((int));
+static void listener_close A_((int));
 
 
 extern void bad_node_warning(pbs_net_t);
@@ -246,6 +251,8 @@ int schedule_jobs()
   else
     cmd = svr_do_schedule;
 
+  listener_command = cmd;
+
   svr_do_schedule = SCH_SCHEDULE_NULL;
 
   if (scheduler_sock == -1) 
@@ -264,6 +271,117 @@ int schedule_jobs()
 
   return(1);	
   }  /* END schedule_jobs() */
+
+
+/*
+ * contact_listener - open connection to the listener and send it a command
+ */
+
+static int contact_listener(
+
+  int l_idx)  /* I */
+
+  {
+  int sock;
+
+  char  tmpLine[1024];
+  char  EMsg[1024];
+
+  char *id = "contact_listener";
+
+  /* connect to the Listener */
+
+
+  sock = client_to_svr(listener_conns[l_idx].address,
+        listener_conns[l_idx].port,1,EMsg);
+
+  if (sock < 0) 
+    {
+    /* FAILURE */
+
+    bad_node_warning(listener_conns[l_idx].address);
+
+    sprintf(tmpLine,"%s %d - port %d %s",
+      msg_listnr_nocall,
+      l_idx,
+      listener_conns[l_idx].port,
+      EMsg);
+    
+    log_err(errno,id,tmpLine);
+
+    return(-1);
+    }
+
+  add_conn(
+    sock, 
+    FromClientDIS, 
+    listener_conns[l_idx].address, 
+    listener_conns[l_idx].port, 
+    PBS_SOCK_INET,
+    process_request);
+
+  svr_conn[sock].cn_authen = PBS_NET_CONN_FROM_PRIVIL;
+
+  net_add_close_func(sock,listener_close);
+
+  /* send command to Listener */
+
+  if (put_4byte(sock,listener_command) < 0) 
+    {
+    sprintf(tmpLine,"%s %d - port %d",
+      msg_listnr_nocall,
+      l_idx+1,
+      listener_conns[l_idx].port);
+
+    log_err(errno,id,tmpLine);
+
+    close_conn(sock);
+
+    return(-1);
+    }
+
+  sprintf(log_buffer,msg_listnr_called,l_idx+1,
+    (listener_command != SCH_ERROR) ? PSchedCmdType[listener_command] : "ERROR");
+
+  log_event(
+    PBSEVENT_SCHED, 
+    PBS_EVENTCLASS_SERVER,
+    server_name,
+    log_buffer);
+
+  return (sock);
+  }  /* END contact_listener() */
+
+
+/*
+ * notify_listeners - Send event message to any added listeners
+ *
+ */
+
+void notify_listeners()
+
+  {
+  int	 i;
+  int  ret_sock;
+  
+  for (i = 0;i < MAXLISTENERS; i++)
+    {
+      /* do we have a listener in this slot?
+       * if so then try to send data
+       */
+       
+    if ((listener_conns[i].address != 0) && (listener_conns[i].sock == -1))
+      {
+      ret_sock = contact_listener(i);
+      if (ret_sock != -1)
+        {
+        listener_conns[i].sock = ret_sock;
+        }
+      }
+    }
+
+  return;	
+  }  /* END notify_listeners() */
 
 
 
@@ -297,8 +415,34 @@ static void scheduler_close(
     }
 
   return;
-  }
+  }  /* END scheduler_close() */
 
+
+/*
+ * listener_close - connection to listener has closed, clear listeners
+ */
+
+static void listener_close(
+
+  int sock)
+
+  {
+  int	 i;
+  
+  for (i = 0;i < MAXLISTENERS; i++)
+    {
+      /* Find matching listener for this socket
+       * then clear out the socket
+       */
+       
+    if (listener_conns[i].sock == sock)
+      {
+        listener_conns[i].sock = -1;
+      }
+    }
+
+  return;
+  }  /* END listener_close() */
 
 
 

@@ -205,3 +205,11 @@ struct netcounter {
 };
 
 int *netcounter_get();
+#define MAXLISTENERS		3
+
+typedef struct listener_connection {
+  pbs_net_t address;	/* internet address of listener */
+  unsigned int port;	/* internet port number of listener */
+  int sock;           /* socket for this connection */
+  } listener_connection;
+
