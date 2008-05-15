@@ -303,7 +303,9 @@ int pbsd_init(
   struct work_task *wt;
   job_array *pa;
 
+#if !defined(DEBUG) && !defined(NO_SECURITY_CHECK)
   char   EMsg[1024];
+#endif	/* not DEBUG and not NO_SECURITY_CHECK */
 
   extern int TForceUpdate;
 
