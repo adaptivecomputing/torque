@@ -276,13 +276,16 @@ int reply_send(
     /* Otherwise, the reply is to be sent to a remote client */
 
 #ifndef PBS_MOM
+#ifdef AUTORUN_JOBS
     if (request->rq_noreply != TRUE)
       {
 #endif
-
+#endif
       rc = dis_reply_write(sfds,&request->rq_reply);
 #ifndef PBS_MOM
+#ifdef AUTORUN_JOBS
       }
+#endif
 #endif
     }
 

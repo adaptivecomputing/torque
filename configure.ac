@@ -72,6 +72,22 @@ AC_DEFINE_UNQUOTED(MACH_RESC_DEFS, "resc_def_${PBS_MACH}.c",
 		   [the machine specific resc_def_* file name])
 
 
+
+dnl
+dnl  ######################################################################
+dnl  Autorun mode?
+dnl
+AC_MSG_CHECKING([whether to turn on the AUTORUN_JOBS flag])
+AC_ARG_ENABLE(autorun,
+    [  --enable-autorun          turn on the AUTORUN_JOBS flag],
+    enable_autorun=$enableval, enable_autorun=no)
+AC_MSG_RESULT($enable_autorun)
+if test "x$enable_autorun" = "xyes" ; then
+	AC_DEFINE(AUTORUN_JOBS, 1, [turns on the compilation of AUTORUN_JOBS code])
+fi
+
+
+
 dnl
 dnl  ######################################################################
 dnl  Resource max not default mode?
@@ -85,6 +101,33 @@ if test "x$enable_maxnotdefault" = "xyes" ; then
 	AC_DEFINE(RESOURCEMAXNOTDEFAULT, 1, [turns on the compilation of RESOURCEMAXNOTDEFAULT code])
 fi
 
+
+dnl
+dnl  ######################################################################
+dnl  Quick commit mode?
+dnl
+AC_MSG_CHECKING([whether to turn on the QUICKCOMMIT flag])
+AC_ARG_ENABLE(quickcommit,
+    [  --enable-quickcommit          turn on the QUICKCOMMIT flag],
+    enable_quickcommit=$enableval, enable_quickcommit=no)
+AC_MSG_RESULT($enable_quickcommit)
+if test "x$enable_quickcommit" = "xyes" ; then
+	AC_DEFINE(QUICKCOMMIT, 1, [turns on the compilation of QUICKCOMMIT code])
+fi
+
+
+dnl
+dnl  ######################################################################
+dnl  No SIG_CHLD mode?
+dnl
+AC_MSG_CHECKING([whether to turn on the NO_SIGCHLD flag])
+AC_ARG_ENABLE(nochildsignal,
+    [  --enable-nochildsignal          turn on the NO_SIGCHLD flag],
+    enable_nochildsignal=$enableval, enable_nochildsignal=no)
+AC_MSG_RESULT($enable_nochildsignal)
+if test "x$enable_nochildsignal" = "xyes" ; then
+	AC_DEFINE(NO_SIGCHLD, 1, [turns on the compilation of NO_SIGCHLD code])
+fi
 
 
 dnl

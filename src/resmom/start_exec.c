@@ -4831,8 +4831,10 @@ char *std_file_name(
   char  key;
   int   len;
   char *pd;
+  char *pt;
   char *suffix;
   char *jobpath = NULL;
+  char endpath[MAXPATHLEN + 1];
 
 #if NO_SPOOL_OUTPUT == 0
   int   havehomespool = 0;
@@ -4915,7 +4917,11 @@ char *std_file_name(
       break;
     }  /* END switch (which) */
 
-  /* Is file to be kept?, if so use default name in Home directory */
+  /* Is file to be kept?, if so, place the stderr/stdout files in the
+   * path specified by the user. The path must be local to the execution node,
+   * if a hostname is supplied, it will be stripped off. The only suppported
+   * environment variable is $HOME--any other will cause files to be placed in
+   * the home directory (the default location). */
 
   if ((pjob->ji_wattr[(int)JOB_ATR_keep].at_flags & ATR_VFLAG_SET) &&
       (strchr(pjob->ji_wattr[(int)JOB_ATR_keep].at_val.at_str,key))) 
@@ -4931,6 +4937,39 @@ char *std_file_name(
       pd = pjob->ji_wattr[(int)JOB_ATR_jobname].at_val.at_str;
 
       strcat(path,"/");
+      }
+
+    /* don't do for checkpoint file names, only StdErr and StdOut */
+    
+    if (suffix != JOB_CHECKPOINT_SUFFIX)
+      {  
+      pt = strstr(jobpath,"$HOME");
+
+      if (pt != NULL)
+        {
+        strcpy(endpath,pt + 5);
+        strcpy(pt,pjob->ji_grpcache->gc_homedir);
+        strcat(jobpath,endpath);
+        }
+      
+      if ((strstr(jobpath,pd) == NULL) && (strchr(jobpath,'$') == NULL))
+        {
+        if (jobpath[strlen(jobpath) - 1] != '/')
+          {
+          strcat(jobpath,"/");
+          }
+          
+        pt = strchr(jobpath,':');
+
+        if (pt == NULL) 
+          {
+          strcpy(path,jobpath);
+          }
+        else
+          {
+          strcpy(path,pt + 1);
+          }
+        }
       }
 
     strcat(path,pd);	            /* start with the job name */

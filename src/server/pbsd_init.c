@@ -424,7 +424,11 @@ int pbsd_init(
     sigaction(SIGSYS,  &act, NULL);
     }
 
+#ifdef NO_SIGCHLD
+  act.sa_handler = SIG_DFL;
+#else
   act.sa_handler = catch_child;
+#endif
 
   if (sigaction(SIGCHLD,&act,&oact) != 0) 
     {
@@ -1512,12 +1516,21 @@ static void catch_child(
   struct work_task *ptask;
   pid_t		  pid;
   int		  statloc;
-	
+  int     found;
+  
   while (1) 
     {
     if (((pid = waitpid(-1,&statloc,WNOHANG)) == -1) &&
         (errno != EINTR)) 
       {
+      if ((LOGLEVEL >= 7) && (errno != ECHILD))
+        {
+#ifdef NO_SIGCHLD
+        log_err(errno,"catch_child","waitpid failed");
+#else
+        DBPRT(("catch_child waitpid failed %d\n", errno));
+#endif
+        }
       return;
       } 
 
@@ -1525,6 +1538,24 @@ static void catch_child(
       {
       return;
       }
+
+    if (LOGLEVEL >= 7)
+      {
+#ifdef NO_SIGCHLD
+      sprintf(log_buffer,"caught SIGCHLD for pid %d",
+        pid);
+        
+      log_record(
+        PBSEVENT_SYSTEM | PBSEVENT_FORCE,
+        PBS_EVENTCLASS_SERVER,
+        msg_daemonname,
+        log_buffer);
+#else
+      DBPRT(("catch_child caught pid %d\n", pid));
+#endif
+      }
+     
+    found = FALSE;
 
     ptask = (struct work_task *)GET_NEXT(task_list_event);
 
@@ -1537,9 +1568,39 @@ static void catch_child(
         ptask->wt_aux = (int)statloc;	/* exit status */
 
         svr_delay_entry++;	/* see next_task() */
+        found = TRUE;
+
+        if (LOGLEVEL >= 7)
+          {
+#ifdef NO_SIGCHLD
+          sprintf(log_buffer,"work task found for pid %d",
+            pid);
+
+          log_record(
+            PBSEVENT_SYSTEM | PBSEVENT_FORCE,
+            PBS_EVENTCLASS_SERVER,
+            msg_daemonname,
+            log_buffer);
+#else
+          DBPRT(("catch_child found work task found for pid %d\n", pid));
+#endif
+          }
+
         }
 
       ptask = (struct work_task *)GET_NEXT(ptask->wt_linkall);
+      }
+      
+    if ((found == FALSE) && (LOGLEVEL >= 7))
+      {
+#ifdef NO_SIGCHLD
+      sprintf(log_buffer,"no work task found for pid %d",
+        pid);
+
+      log_err(-1,"catch_child",log_buffer);
+#else
+      DBPRT(("catch_child no work task found for pid %d\n", pid));
+#endif
       }
     }    /* END while (1) */
 
@@ -1547,7 +1608,23 @@ static void catch_child(
   }  /* END catch_child() */
 
 
+/*
+ * check_children() - Check for child proccess that have exited
+ *
+ */
 
+#ifdef NO_SIGCHLD
+void check_children(
+
+  )
+
+  {
+
+  catch_child(0);
+  
+  return;
+  } /* END check_children() */
+#endif
 
 /*
  * changs_logs - signal handler for SIGHUP

@@ -1030,6 +1030,9 @@ Optional Features:
   --enable-FEATURE[=ARG]  include FEATURE [ARG=yes]
   --enable-maintainer-mode  enable make rules and dependencies not useful
 			  (and sometimes confusing) to the casual installer
+  --enable-autorun        turn on the AUTORUN_JOBS flag
+  --enable-quickcommit    turn on the QUICKCOMMIT flag
+  --enable-nochildsignal  turn on the NO_SIGCHLD flag
   --enable-maxnotdefault  turn on the RESOURCEMAXNOTDEFAULT flag
   --enable-debug          turn on the DEBUG flag
   --disable-server        do not include server and scheduler
@@ -2290,6 +2293,47 @@ _ACEOF
 
 
 
+
+echo "$as_me:$LINENO: checking whether to turn on the AUTORUN_JOBS flag" >&5
+echo $ECHO_N "checking whether to turn on the AUTORUN_JOBS flag... $ECHO_C" >&6
+# Check whether --enable-autorun or --disable-autorun was given.
+if test "${enable_autorun+set}" = set; then
+  enableval="$enable_autorun"
+  enable_autorun=$enableval
+else
+  enable_autorun=no
+fi;
+echo "$as_me:$LINENO: result: $enable_autorun" >&5
+echo "${ECHO_T}$enable_autorun" >&6
+if test "x$enable_autorun" = "xyes" ; then
+
+cat >>confdefs.h <<\_ACEOF
+#define AUTORUN_JOBS 1
+_ACEOF
+
+fi
+
+
+echo "$as_me:$LINENO: checking whether to turn on the QUICKCOMMIT flag" >&5
+echo $ECHO_N "checking whether to turn on the QUICKCOMMIT flag... $ECHO_C" >&6
+# Check whether --enable-quickcommit or --disable-quickcommit was given.
+if test "${enable_quickcommit+set}" = set; then
+  enableval="$enable_quickcommit"
+  enable_quickcommit=$enableval
+else
+  enable_quickcommit=no
+fi;
+echo "$as_me:$LINENO: result: $enable_quickcommit" >&5
+echo "${ECHO_T}$enable_quickcommit" >&6
+if test "x$enable_quickcommit" = "xyes" ; then
+
+cat >>confdefs.h <<\_ACEOF
+#define QUICKCOMMIT 1
+_ACEOF
+
+fi
+
+
 echo "$as_me:$LINENO: checking whether to turn on the RESOURCEMAXNOTDEFAULT flag" >&5
 echo $ECHO_N "checking whether to turn on the RESOURCEMAXNOTDEFAULT flag... $ECHO_C" >&6
 # Check whether --enable-maxnotdefault or --disable-maxnotdefault was given.
@@ -2309,6 +2353,25 @@ _ACEOF
 
 fi
 
+
+echo "$as_me:$LINENO: checking whether to turn on the NO_SIGCHLD flag" >&5
+echo $ECHO_N "checking whether to turn on the NO_SIGCHLD flag... $ECHO_C" >&6
+# Check whether --enable-nochildsignal or --disable-nochildsignal was given.
+if test "${enable_nochildsignal+set}" = set; then
+  enableval="$enable_nochildsignal"
+  enable_nochildsignal=$enableval
+else
+  enable_nochildsignal=no
+fi;
+echo "$as_me:$LINENO: result: $enable_nochildsignal" >&5
+echo "${ECHO_T}$enable_nochildsignal" >&6
+if test "x$enable_nochildsignal" = "xyes" ; then
+
+cat >>confdefs.h <<\_ACEOF
+#define NO_SIGCHLD 1
+_ACEOF
+
+fi
 
 
 echo "$as_me:$LINENO: checking whether to turn on the DEBUG flag" >&5

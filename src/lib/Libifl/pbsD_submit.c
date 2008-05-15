@@ -141,10 +141,14 @@ char *pbs_submit(
   /* OK, the script got across, apparently, so we are */
   /* ready to commit 				    */
 	
+#ifndef PBS_MOM
+#ifndef QUICKCOMMIT
   if (PBSD_rdytocmt(c,return_jobid) != 0) 
     {
     return(NULL);
     }
+#endif
+#endif
 	
   if (PBSD_commit(c,return_jobid) != 0) 
     {
