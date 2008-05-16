@@ -6,6 +6,7 @@
 #include <sys/types.h>
 #include <signal.h>
 #include <unistd.h>
+#include <sys/param.h>
 
 #include "libpbs.h"
 #include "attribute.h"
