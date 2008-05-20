@@ -1070,7 +1070,10 @@ void checkpoint_partial(
 
 /* BLCR version of restart */
 
-int blcr_restart_job(job  *pjob)
+int blcr_restart_job(
+ 
+  job *pjob)
+
   {
   char	*id = "blcr_restart_job";
   int   pid;
@@ -1081,29 +1084,34 @@ int blcr_restart_job(job  *pjob)
   char  buf[1024];
   char  **ap;
 
-
   /* if a restart script is defined launch it */
 
   if (restart_script_name[0] == '\0')
     {
     log_err(PBSE_RMEXIST,id,"No restart script defined");
+
     return(PBSE_RMEXIST);
     }
 
   /* BLCR is not for parallel jobs, there can only be one task in the job. */
+
   ptask = (task *) GET_NEXT(pjob->ji_tasks);
+
   if (ptask == NULL)
     {
     log_err(PBSE_RMNOPARAM,id,"Job has no tasks");
+
     return(PBSE_RMNOPARAM);
     }
  
   /* launch the script and return success */
 
   pid = fork();
+
   if (pid < 0)
     {
     /* fork failed */
+
     return(PBSE_RMSYSTEM);
     }
   else if (pid > 0)
@@ -1157,7 +1165,7 @@ int blcr_restart_job(job  *pjob)
 
     /* set us up with a new session */
 
-    pid = setsid();
+    pid = set_job(pjob,NULL);
 
     if (pid < 0)
       {
@@ -1167,8 +1175,9 @@ int blcr_restart_job(job  *pjob)
 
     execv(arg[0],arg);
     }  /* END if (pid == 0) */
+
   return(PBSE_NONE);
-  }
+  }  /* END blcr_restart_job() */
 
 
 

@@ -133,7 +133,7 @@ extern char     *AllocParCmd;
 int set_job(
 
   job                 *pjob,  /* I (not used) */
-  struct startjob_rtn *sjr)   /* I (modified) */
+  struct startjob_rtn *sjr)   /* I (modified,optional) */
 
   {
   char id[] = "set_job";
@@ -143,11 +143,16 @@ int set_job(
 
   int   rc;
 
+  long  sid;
+
 #ifdef __XTTEST
   char  tmpLine[1024];
 #endif /* __ XTTEST */
 
-  sjr->sj_session = setsid();
+  sid = setsid();
+
+  if (sjr != NULL)
+    sjr->sj_session = sid;
 
 #ifdef __XTTEST
   PPtr = get_job_envvar(pjob,"BATCH_PARTITION_ID");
@@ -183,7 +188,7 @@ int set_job(
       AllocParCmd,
       PPtr,
       pjob->ji_qs.ji_jobid,
-      (long)sjr->sj_session);
+      sid);
 
     log_err(
       -1,
@@ -196,18 +201,21 @@ int set_job(
       {
       snprintf(log_buffer,1024,"cannot create alloc partition");
 
-      sjr->sj_session = -3;
+      sid = -3;
+
+      if (sjr != NULL)
+        sjr->sj_session = sid;
 
       log_err(
         -1,
         id,
         log_buffer);
 
-      return(sjr->sj_session);
+      return(sid);
       }
     }    /* END if (((PPtr = get_job_envvar(pjob,"BATCH_PARTITION_ID")) != NULL) && ...) */
 
-  return(sjr->sj_session);
+  return(sid);
   }  /* END set_job() */
 
 
