@@ -156,13 +156,16 @@ static void post_modify_req(
   return;
   }  /* END post_modify_req() */
 
-	
+
+
 
 
 /*
  * req_modifyjob - service the Modify Job Request
  *
- *	This request modifes a job's attributes.
+ * This request modifes a job's attributes.
+ *
+ * @see relay_to_mom() - child - routes change down to pbs_mom
  */
 
 void req_modifyjob(
@@ -221,6 +224,8 @@ void req_modifyjob(
 
   /* if job is running, special checks must be made */
 
+  /* Why is HELD state considered running? */
+
   if (pjob->ji_qs.ji_state == JOB_STATE_RUNNING ||
       pjob->ji_qs.ji_state == JOB_STATE_HELD) 
     {
@@ -239,6 +244,8 @@ void req_modifyjob(
 
         return;
         }
+
+      /* NOTE:  only explicitly specified job attributes are routed down to MOM */
 
       if (i == (int)JOB_ATR_resource) 
         {
@@ -270,7 +277,7 @@ void req_modifyjob(
 
         sendmom = 1;
         }
-      else if (i == (int)JOB_ATR_checkpoint_name) 
+      else if ((i == (int)JOB_ATR_checkpoint_name) || (i == (int)JOB_ATR_variables))
         {
         sendmom = 1;
         }

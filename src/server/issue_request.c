@@ -126,11 +126,13 @@ int issue_to_svr A_((char *,struct batch_request *,void (*f)(struct work_task *)
 /*
  * relay_to_mom - relay a (typically existing) batch_request to MOM 
  *
- *	Make connection to MOM and issue the request.  Called with
- *	network address rather than name to save look-ups.
+ * Make connection to MOM and issue the request.  Called with
+ * network address rather than name to save look-ups.
  *
- *	Unlike issue_to_svr(), a failed connection is not retried.
- *	The calling routine typically handles this problem.
+ * Unlike issue_to_svr(), a failed connection is not retried.
+ * The calling routine typically handles this problem.
+ *
+ * @see XXX() - routine which processes request on the MOM
  */
 
 int relay_to_mom(
@@ -182,6 +184,7 @@ int relay_to_mom(
 
   return(rc);
   }  /* END relay_to_mom() */
+
 
 
 
@@ -331,7 +334,7 @@ void release_req(
  * issue_request - issue a batch request to another server or to a MOM
  *	or even to ourself!
  *	
- *	If the request is meant for this every server, then
+ *	If the request is meant for this very server, then
  *		Set up work-task of type WORK_Deferred_Local with a dummy
  *		connection handle (PBS_LOCAL_CONNECTION).		
  *
@@ -355,10 +358,10 @@ void release_req(
 
 int issue_Drequest(
 
-  int		      conn,
+  int		        conn,
   struct batch_request *request,
-  void		    (*func) A_((struct work_task *)),
-  struct work_task  **ppwt)
+  void		      (*func) A_((struct work_task *)),
+  struct work_task    **ppwt)
 
   {
   struct attropl   *patrl;
@@ -461,7 +464,6 @@ int issue_Drequest(
 
       break;
 
-
     case PBS_BATCH_MessJob:
 
       rc = PBSD_msg_put(
@@ -509,38 +511,54 @@ int issue_Drequest(
 		
     case PBS_BATCH_RegistDep:
 
-		if ((rc=encode_DIS_ReqHdr(sock,PBS_BATCH_RegistDep, msg_daemonname)))
-			break;
-		if ((rc=encode_DIS_Register(sock, request)))
-			break;
-		if ((rc=encode_DIS_ReqExtend(sock, 0)))
-			break;
-		rc = DIS_tcp_wflush(sock);
-		break;
+      if ((rc = encode_DIS_ReqHdr(sock,PBS_BATCH_RegistDep,msg_daemonname)))
+        break;
 
-	    case PBS_BATCH_SignalJob:
-		rc =  PBSD_sig_put(conn,
-				request->rq_ind.rq_signal.rq_jid,
-				request->rq_ind.rq_signal.rq_signame,
-				(char *)0);
-		break;
+      if ((rc = encode_DIS_Register(sock,request)))
+        break;
 
-	    case PBS_BATCH_StatusJob:
-		rc =  PBSD_status_put(conn,
-				PBS_BATCH_StatusJob,
-				request->rq_ind.rq_status.rq_id,
-				(struct attrl *)0, (char *)0 );
-		break;
+      if ((rc = encode_DIS_ReqExtend(sock,0)))
+        break;
 
-	    case PBS_BATCH_TrackJob:
-		if ((rc=encode_DIS_ReqHdr(sock,PBS_BATCH_TrackJob,msg_daemonname)))
-			break;
-		if ((rc=encode_DIS_TrackJob(sock, request)))
-			break;
-		if ((rc=encode_DIS_ReqExtend(sock, 0)))
-			break;
-		rc = DIS_tcp_wflush(sock);
-		break;
+      rc = DIS_tcp_wflush(sock);
+
+      break;
+
+    case PBS_BATCH_SignalJob:
+
+      rc = PBSD_sig_put(
+             conn,
+             request->rq_ind.rq_signal.rq_jid,
+             request->rq_ind.rq_signal.rq_signame,
+             NULL);
+
+      break;
+
+    case PBS_BATCH_StatusJob:
+
+      rc = PBSD_status_put(
+             conn,
+             PBS_BATCH_StatusJob,
+             request->rq_ind.rq_status.rq_id,
+             NULL,
+             NULL);
+
+      break;
+
+    case PBS_BATCH_TrackJob:
+
+      if ((rc = encode_DIS_ReqHdr(sock,PBS_BATCH_TrackJob,msg_daemonname)))
+        break;
+
+      if ((rc = encode_DIS_TrackJob(sock,request)))
+        break;
+
+      if ((rc = encode_DIS_ReqExtend(sock,0)))
+        break;
+
+      rc = DIS_tcp_wflush(sock);
+
+      break;
 
     case PBS_BATCH_CopyFiles:
 

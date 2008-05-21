@@ -4575,8 +4575,6 @@ int rm_request(
 
                 numvnodes += pjob->ji_numvnod;
 
-                /* report job variables */
-
                 sprintf(tmpLine,"job[%s]  state=%s  sidlist=%s",
                   pjob->ji_qs.ji_jobid,
                   PJobSubState[pjob->ji_qs.ji_substate],
@@ -4586,6 +4584,8 @@ int rm_request(
 
                 if (verbositylevel >= 4)
                   {
+                  /* report job variables */
+
                   VPtr = get_job_envvar(pjob,"BATCH_PARTITION_ID");
 
                   if (VPtr != NULL)
