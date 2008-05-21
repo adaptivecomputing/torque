@@ -240,19 +240,28 @@ hnodent	*get_node(
  * Obit Overview:
  *  - main_loop() 
  *    - scan_for_terminated() 
- *       catches SIGCHLD to identify when tasks terminate and marks job task
- *       structure accordingly.
- *      - waitpid()
- *      - exec ji_mompost (post_epilog)
+ *       uses waitpid() to detect completed children
+ *       First Pass:  catches SIGCHLD of job executable to identify when job 
+ *         tasks terminate, issues kill_task(), and marks job task ti_status 
+ *         as TI_STATE_EXITED which is detected and processed inside of
+ *         scan_for_exiting()
+ *       Second Pass:  catches SIGCHLD for job epilog child and exec's 
+ *         job's ji_mompost (post_epilog)
  *        
  *    - scan_for_exiting() 
  *       called after scan_for_terminated and looks at jobs to identify which 
- *       have exiting tasks.  Sends kill to all sisters, issues kill_job, and 
- *       sends preobit to pbs_server.
+ *       have exiting tasks.  Sends kill to all sisters via send_sisters(), 
+ *       sets job substate to JOB_SUBSTATE_EXITING, issues kill_job, and 
+ *       then sets job substate to JOB_SUBSTATE_PREOBIT.  This routine then 
+ *       creates the preobit message and sends it to pbs_server. 
  *      registers preobit_reply() as socket handler
  *     
  *  - preobit_reply()
- *      registers post_epilog in job ji_mompost attribute
+ *      o validates server response to preobit message
+ *      - fork_me()
+ *        o parent registers post_epilog in job ji_mompost attribute, sets job
+ *          substate to JOB_SUBSTATE_OBIT, and registers post_epilogue handler
+ *        o child runs run_pelog()
  *
  *  - post_epilog()
  *     sends obit to pbs_server and registers obit_reply() as connection handler
@@ -268,10 +277,17 @@ hnodent	*get_node(
  *   - KILL SISTERS
  *   - SEND PREOBIT TO PBS_SERVER
  * - preobit_reply()
+     - FORK AND EXEC EPILOG
  * - scan_for_terminating()
  *   - post_epilog()
  *     - SEND OBIT TO PBS_SERVER
  * - obit_reply()
+ *
+ * STATE TRANSITIONS:
+ *   JOB_SUBSTATE_RUNNING (42)
+ *   JOB_SUBSTATE_EXITING (50) - scan_for_exiting()
+ *   JOB_SUBSTATE_PREOBIT (57) - scan_for_exiting()
+ *   JOB_SUBSTATE_OBIT (58) - preobit_reply()
  */
 
 void scan_for_exiting()
@@ -425,7 +441,7 @@ void scan_for_exiting()
 
         if (NumSisters == 0) 
           {
-          /* no sisters contacted - is this SUCCESS or FAILURE? */
+          /* no sisters contacted - should be a serial job */
 
           if (LOGLEVEL >= 3)
             {
@@ -1241,11 +1257,14 @@ static void preobit_reply(
 
     if (LOGLEVEL >= 2)
       {
+      snprintf(log_buffer,1024,"epilog subtask created with pid %d - substate set to JOB_SUBSTATE_OBIT - registered post_epilogue",
+        cpid);
+
       log_record(
         PBSEVENT_DEBUG,
         PBS_EVENTCLASS_JOB,
         pjob->ji_qs.ji_jobid,
-        "substate set to JOB_SUBSTATE_OBIT - registered post_epilogue");
+        log_buffer);
       }
 
     return;
@@ -1259,12 +1278,14 @@ static void preobit_reply(
       PBSEVENT_DEBUG,
       PBS_EVENTCLASS_JOB,
       pjob->ji_qs.ji_jobid,
-      "fork failed in XXX");
+      "fork failed in preobit_reply");
 
     return;
     }
 
   /* child */
+
+  /* NOTE:  possible race condition if child completes before parent? */
 
   /* check epilog script */
 

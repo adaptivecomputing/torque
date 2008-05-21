@@ -327,6 +327,7 @@ void scan_for_terminated()
 
   {
   static char id[] = "scan_for_terminated";
+
   int	 exiteval = 0;
   pid_t	 pid;
   job	*pjob;
@@ -340,6 +341,15 @@ void scan_for_terminated()
 
   int TJCIndex = 0;
 #endif
+
+  if (LOGLEVEL >= 7)
+    {
+    log_record(
+      PBSEVENT_JOB,
+      PBS_EVENTCLASS_JOB,
+      id,
+      "entered");
+    }
 
   /* update the latest intelligence about the running jobs;         */
   /* must be done before we reap the zombies, else we lose the info */
@@ -379,7 +389,7 @@ void scan_for_terminated()
         PBSEVENT_DEBUG,
         PBS_EVENTCLASS_JOB,
         pjob->ji_qs.ji_jobid,
-          "Retrying send of OBIT");
+        "Retrying send of OBIT");
       }
 
     if (pjob->ji_mompost(pjob,exiteval) != 0)
@@ -399,7 +409,7 @@ void scan_for_terminated()
         PBSEVENT_DEBUG,
         PBS_EVENTCLASS_JOB,
         pjob->ji_qs.ji_jobid,
-          "OBIT resent successfully");
+        "OBIT resent successfully");
        }
 
     pjob->ji_mompost = NULL;
@@ -428,6 +438,19 @@ void scan_for_terminated()
       ** function for MOM
       */
 
+      if (LOGLEVEL >= 7)
+        {
+        snprintf(log_buffer,1024,"checking job w/subtask pid=%d (child pid=%d)",
+          pjob->ji_momsubt,
+          pid);
+
+        LOG_EVENT(
+          PBSEVENT_DEBUG,
+          PBS_EVENTCLASS_JOB,
+          pjob->ji_qs.ji_jobid,
+          log_buffer);
+        }      
+  
       if (pid == pjob->ji_momsubt)
         break;
 
@@ -467,7 +490,7 @@ void scan_for_terminated()
         }
 
       continue;
-      }
+      }  /* END if (pjob == NULL) */
 
     if (WIFEXITED(statloc))
       exiteval = WEXITSTATUS(statloc);
@@ -480,7 +503,8 @@ void scan_for_terminated()
       {
       /* PID matches job mom subtask */
 
-      /* NOTE:  ji_mompost normally set in routine preobit_reply() */
+      /* NOTE:  both ji_momsubt and ji_mompost normally set in routine 
+                preobit_reply() after epilog child is successfully forked */
 
       if (pjob->ji_mompost != NULL) 
         {
