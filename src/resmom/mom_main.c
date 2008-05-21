@@ -4584,26 +4584,29 @@ int rm_request(
 
                 MUStrNCat(&BPtr,&BSpace,tmpLine);
 
-                VPtr = get_job_envvar(pjob,"BATCH_PARTITION_ID");
-
-                if (VPtr != NULL)
+                if (verbositylevel >= 4)
                   {
-                  sprintf(tmpLine,"  BATCH_PARTITION_ID=%s",
-                    VPtr);
+                  VPtr = get_job_envvar(pjob,"BATCH_PARTITION_ID");
 
-                  MUStrNCat(&BPtr,&BSpace,tmpLine);
-                  }
+                  if (VPtr != NULL)
+                    {
+                    sprintf(tmpLine,"  BATCH_PARTITION_ID=%s",
+                      VPtr);
+
+                    MUStrNCat(&BPtr,&BSpace,tmpLine);
+                    }
                 
-                VPtr = get_job_envvar(pjob,"BATCH_ALLOC_COOKIE");
+                  VPtr = get_job_envvar(pjob,"BATCH_ALLOC_COOKIE");
 
-                if (VPtr != NULL)
-                  {
-                  sprintf(tmpLine,"  BATCH_ALLOC_COOKIE=%s",
-                    VPtr);
+                  if (VPtr != NULL)
+                    {
+                    sprintf(tmpLine,"  BATCH_ALLOC_COOKIE=%s",
+                      VPtr);
 
-                  MUStrNCat(&BPtr,&BSpace,tmpLine);
-                  }
- 
+                    MUStrNCat(&BPtr,&BSpace,tmpLine);
+                    }
+                  }    /* END if (verbositylevel >= 4) */
+
                 MUStrNCat(&BPtr,&BSpace,"\n");
                 }  /* END for (pjob) */
 
@@ -4611,7 +4614,7 @@ int rm_request(
                 numvnodes);
 
               MUStrNCat(&BPtr,&BSpace,tmpLine);
-              }
+              }  /* END else ((pjob = (job *)GET_NEXT(svr_alljobs)) == NULL) */
 
             if ((pjob = (job *)GET_NEXT(svr_newjobs)) != NULL)
               {
