@@ -596,7 +596,8 @@ void job_purge(
           "recursive remove of job transient tmpdir %s failed",
           namebuf);
     
-        log_err(errno, "recursive (r)rmdir",log_buffer);
+        log_err(errno,"recursive (r)rmdir",
+          log_buffer);
         }
          
       pjob->ji_flags &= ~MOM_HAS_TMPDIR;
@@ -637,7 +638,8 @@ void job_purge(
     {
     sprintf(log_buffer,"removing job");
 
-    log_record(PBSEVENT_DEBUG,
+    log_record(
+      PBSEVENT_DEBUG,
       PBS_EVENTCLASS_JOB,
       pjob->ji_qs.ji_jobid,
       log_buffer);
@@ -656,7 +658,8 @@ void job_purge(
     {
     sprintf(log_buffer,"removed job script");
 
-    log_record(PBSEVENT_DEBUG,
+    log_record(
+      PBSEVENT_DEBUG,
       PBS_EVENTCLASS_JOB,
       pjob->ji_qs.ji_jobid,
       log_buffer);
@@ -686,7 +689,8 @@ void job_purge(
     {
     sprintf(log_buffer,"removed job file");
 
-    log_record(PBSEVENT_DEBUG,
+    log_record(
+      PBSEVENT_DEBUG,
       PBS_EVENTCLASS_JOB,
       pjob->ji_qs.ji_jobid,
       log_buffer);

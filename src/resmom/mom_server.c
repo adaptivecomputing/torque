@@ -2391,6 +2391,7 @@ void state_to_server(
   if (diswui(pms->SStream,internal_state) != DIS_SUCCESS) 
     {
     mom_server_stream_error(pms,id,"writing internal state");
+
     return;
     }
 
@@ -2413,11 +2414,16 @@ void state_to_server(
         log_buffer);
       }
     }
+
+  return;
   }  /* END state_to_server() */
 
 
-void
-mom_server_all_send_state()
+
+
+
+void mom_server_all_send_state()
+
   {
   int sindex;
   mom_server *pms;
@@ -2425,10 +2431,17 @@ mom_server_all_send_state()
   for (sindex = 0;sindex < PBS_MAXSERVER;sindex++)
     {
     pms = &mom_servers[sindex];
+
     if (pms->ReportMomState != 0)
       state_to_server(sindex,0);
     }
+
+  return;
   }
+
+
+
+
 
 /*
  * The job needs to originate a message to the server.
@@ -2456,10 +2469,18 @@ mom_server_all_send_state()
  * the job be able to send the obit's to the alternate
  * server?
  *
+ * @see add_conn() - child
  */
 
-int mom_open_socket_to_jobs_server( job * pjob, char *caller_id, void (*message_handler) A_((int)) )
+int mom_open_socket_to_jobs_server( 
+
+  job  *pjob, 
+  char *caller_id, 
+  void (*message_handler) A_((int)))
+
   {
+  char id[] = "mom_open_socket_to_jobs_server";
+
   char *svrport;
   char error_buffer[1024];
   int sock;
@@ -2471,6 +2492,7 @@ int mom_open_socket_to_jobs_server( job * pjob, char *caller_id, void (*message_
   /* See if the server address string has a ':' implying a port number. */
 
   svrport = strchr(pjob->ji_wattr[(int)JOB_ATR_at_server].at_val.at_str,(int)':');
+
   if (svrport)
     port = atoi(svrport + 1);  /* Yes, use the specified server port number. */
   else
@@ -2480,7 +2502,7 @@ int mom_open_socket_to_jobs_server( job * pjob, char *caller_id, void (*message_
     pjob->ji_qs.ji_un.ji_momt.ji_svraddr, /* This is set in req_queuejob. */
     port,
     1,  /* use local socket */
-    error_buffer);
+    error_buffer);  /* O */
 
   if (sock < 0)
     {
@@ -2501,18 +2523,21 @@ int mom_open_socket_to_jobs_server( job * pjob, char *caller_id, void (*message_
       u_short             ipport;
 
       pms = &mom_servers[sindex];
+
       if (pms->SStream != -1)
         {
         addr = rpp_getaddr(pms->SStream);
         ipaddr = ntohl(addr->sin_addr.s_addr);
         ipport = ntohs(addr->sin_port);
+
         if (ipaddr != pjob->ji_qs.ji_un.ji_momt.ji_svraddr)
           {
           sock = client_to_svr(
             ipaddr,
             ipport,
             1,  /* use local socket */
-            error_buffer);
+            error_buffer);  /* O */
+
           if (sock >= 0)
             break;
           }
@@ -2522,7 +2547,7 @@ int mom_open_socket_to_jobs_server( job * pjob, char *caller_id, void (*message_
 
   /* The epilogue code needs the socket number at 3 or above. */
 
-  if (sock >= 0 && sock < 3)
+  if ((sock >= 0) && (sock < 3))
     {
     sock3 = fcntl(sock,F_DUPFD,3);
     close(sock);
@@ -2531,15 +2556,14 @@ int mom_open_socket_to_jobs_server( job * pjob, char *caller_id, void (*message_
 
   /*
    * ji_momhandle is used to match reply messages to their job.
-   * Why not use the job number to find the job when we recieve a reply message?
+   * Why not use the job number to find the job when we receive a reply message?
    */
 
   pjob->ji_momhandle = sock;
 
-
   /* Associate a message handler with the connection */
 
-  if (sock >= 0 && message_handler)
+  if ((sock >= 0) && (message_handler != NULL))
     {
     add_conn(
       sock, 
@@ -2550,8 +2574,27 @@ int mom_open_socket_to_jobs_server( job * pjob, char *caller_id, void (*message_
       message_handler);
     }
 
+  if (LOGLEVEL >= 4)
+    {
+    sprintf(log_buffer,"registered handler %x for job %s to socket %d from within %s",
+      (unsigned int)message_handler,
+      pjob->ji_qs.ji_jobid,
+      sock,
+      caller_id);
+
+    log_record(
+      PBSEVENT_ERROR,
+      PBS_EVENTCLASS_JOB,
+      id,
+      log_buffer);
+    }
+
   return(sock);
-  }
+  }  /* END mom_open_socket_to_jobs_server() */
+
+
+
+
 
 /**
  * clear_down_mom_servers
@@ -2560,8 +2603,9 @@ int mom_open_socket_to_jobs_server( job * pjob, char *caller_id, void (*message_
  * Called from the catch_child code.
  * @see scan_for_exiting
  */
-void
-clear_down_mom_servers()
+
+void clear_down_mom_servers()
+
   {
   int sindex;
 
@@ -2573,6 +2617,11 @@ clear_down_mom_servers()
   return;
   }
 
+
+
+
+
+
 /**
  * is_mom_server_down
  *
@@ -2580,8 +2629,11 @@ clear_down_mom_servers()
  * Called from the catch_child code.
  * @see scan_for_exiting
  */
-int
-is_mom_server_down(pbs_net_t server_address)
+
+int is_mom_server_down(
+
+  pbs_net_t server_address)
+
   {
   int sindex;
 
@@ -2589,12 +2641,16 @@ is_mom_server_down(pbs_net_t server_address)
     {
     if (down_svraddrs[sindex] == server_address)
       {
-      return (1);
+      return(1);
       }
     }
 
-  return (0);
+  return(0);
   }
+
+
+
+
 
 /**
  * no_mom_servers_down

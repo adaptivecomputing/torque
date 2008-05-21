@@ -212,6 +212,8 @@ int *netcounter_get()
   return netrates;
   }
     
+
+
     
 
 /*
@@ -253,6 +255,8 @@ int init_network(
     }
   else 
     {
+    /* FAILURE */
+
     return(-1);	/* too many main connections */
     }
 
@@ -261,101 +265,109 @@ int init_network(
 
   read_func[initialized++] = readfunc;
 
-if (port != 0)
-{
-  sock = socket(AF_INET,SOCK_STREAM,0);
-
-  if (sock < 0) 
+  if (port != 0)
     {
+    sock = socket(AF_INET,SOCK_STREAM,0);
 
-    return(-1);
-    }
+    if (sock < 0) 
+      {
+      /* FAILURE */
 
-  if (FD_SETSIZE < PBS_NET_MAX_CONNECTIONS)
-    max_connection = FD_SETSIZE;
+      return(-1);
+      }
 
-  i = 1;
+    if (FD_SETSIZE < PBS_NET_MAX_CONNECTIONS)
+      max_connection = FD_SETSIZE;
 
-  setsockopt(sock,SOL_SOCKET,SO_REUSEADDR,(char *)&i,sizeof(i));
+    i = 1;
 
-  /* name that socket "in three notes" */
+    setsockopt(sock,SOL_SOCKET,SO_REUSEADDR,(char *)&i,sizeof(i));
 
-  socname.sin_port= htons((unsigned short)port);
-  socname.sin_addr.s_addr = INADDR_ANY;
-  socname.sin_family = AF_INET;
+    /* name that socket "in three notes" */
 
-  if (bind(sock,(struct sockaddr *)&socname,sizeof(socname)) < 0) 
-    {
-    close(sock);
+    socname.sin_port= htons((unsigned short)port);
+    socname.sin_addr.s_addr = INADDR_ANY;
+    socname.sin_family = AF_INET;
 
-    return(-1);
-    }
+    if (bind(sock,(struct sockaddr *)&socname,sizeof(socname)) < 0) 
+      {
+      /* FAILURE */
+
+      close(sock);
+
+      return(-1);
+      }
 	
-  /* record socket in connection structure and select set */
+    /* record socket in connection structure and select set */
 
-  add_conn(sock,type,(pbs_net_t)0,0,PBS_SOCK_INET,accept_conn);
+    add_conn(sock,type,(pbs_net_t)0,0,PBS_SOCK_INET,accept_conn);
 	
-  /* start listening for connections */
+    /* start listening for connections */
 
-  if (listen(sock,512) < 0) 
-    {
+    if (listen(sock,512) < 0) 
+      {
+      /* FAILURE */
 
-    return(-1);
-    }
-} /* if port != 0 */
+      return(-1);
+      }
+    } /* END if (port != 0) */
 
 #ifdef ENABLE_UNIX_SOCKETS
-if (port == 0) {
-  /* setup unix domain socket */
-
-  unixsocket=socket(AF_UNIX,SOCK_STREAM,0);
-  if (unixsocket < 0) 
+  if (port == 0) 
     {
-    return(-1);
+    /* setup unix domain socket */
+
+    unixsocket = socket(AF_UNIX,SOCK_STREAM,0);
+
+    if (unixsocket < 0) 
+      {
+      return(-1);
+      }
+
+    unsocname.sun_family=AF_UNIX;
+    strncpy(unsocname.sun_path,TSOCK_PATH,107);  /* sun_path is defined to be 108 bytes */
+
+    unlink(TSOCK_PATH);  /* don't care if this fails */
+
+    if (bind(unixsocket,
+          (struct sockaddr *)&unsocname,
+          sizeof(unsocname)) < 0) 
+      {
+      close(unixsocket);
+
+      return(-1);
+      }
+
+    if (chmod(TSOCK_PATH,S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH|S_IWOTH) != 0)
+      {
+      close(unixsocket);
+
+      return(-1);
+      }
+
+    add_conn(unixsocket,type,(pbs_net_t)0,0,PBS_SOCK_UNIX,accept_conn);
+
+    if (listen(unixsocket,512) < 0) 
+      {
+      /* FAILURE */
+
+      return(-1);
+      }
+    }   /* END if (port == 0) */
+#endif  /* END ENABLE_UNIX_SOCKETS */
+
+  if (port != 0) 
+    {
+    /* allocate a minute's worth of counter structs */
+
+    for (i = 0;i < 60;i++)
+      {
+      nc_list[i].time = 0;
+      nc_list[i].counter = 0;
+      }
     }
 
-  unsocname.sun_family=AF_UNIX;
-  strncpy(unsocname.sun_path,TSOCK_PATH,107);  /* sun_path is defined to be 108 bytes */
-
-  unlink(TSOCK_PATH);  /* don't care if this fails */
-
-  if (bind(unixsocket,
-            (struct sockaddr *)&unsocname,
-            sizeof(unsocname)) < 0) 
-    {
-    close(unixsocket);
-
-    return(-1);
-    }
-
-  if (chmod(TSOCK_PATH,S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH|S_IWOTH) != 0)
-    {
-    close(unixsocket);
-
-    return(-1);
-    }
-
-  add_conn(unixsocket,type,(pbs_net_t)0,0,PBS_SOCK_UNIX,accept_conn);
-  if (listen(unixsocket,512) < 0) 
-    {
-
-    return(-1);
-    }
-} /* if port == 0 */
-#endif /* END ENABLE_UNIX_SOCKETS */
-
-
-if (port != 0) {
-  /* allocate a minute's worth of counter structs */
-
-  for (i = 0;i < 60;i++)
-    {
-    nc_list[i].time = 0;
-    nc_list[i].counter = 0;
-    }
-}
-
-  return (0);
+  return(0);
   }  /* END init_network() */
 
 
@@ -412,7 +424,6 @@ int wait_request(
       int i;
       struct stat fbuf;
      
-
       /* check all file descriptors to verify they are valid */
 
       /* NOTE:  selset may be modified by failed select() */
@@ -447,6 +458,7 @@ int wait_request(
       if (svr_conn[i].cn_active != Idle) 
         {
         netcounter_incr();
+
         svr_conn[i].cn_func(i);
 
         /* NOTE:  breakout if state changed (probably received shutdown request) */
@@ -535,13 +547,12 @@ static void accept_conn(
 
   torque_socklen_t fromsize;
 	
-  from.sin_addr.s_addr=0;
-  from.sin_port=0;
+  from.sin_addr.s_addr = 0;
+  from.sin_port = 0;
 
   /* update lasttime of main socket */
 
   svr_conn[sd].cn_lasttime = time((time_t *)0);
-
 
   if (svr_conn[sd].cn_socktype == PBS_SOCK_INET)
     {
@@ -586,6 +597,8 @@ static void accept_conn(
 /*
  * add_conn - add a connection to the svr_conn array.
  *	The params addr and port are in host order.
+ *
+ * NOTE:  This routine cannot fail.
  */
 
 void add_conn(

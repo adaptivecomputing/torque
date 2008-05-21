@@ -183,7 +183,7 @@ void readit(
 
    prm->r_where = invalid;
 
-   FD_CLR(sock, &readset);
+   FD_CLR(sock,&readset);
    }
 
   return;
@@ -233,6 +233,13 @@ int main(
   maxfd = sysconf(_SC_OPEN_MAX);
 
   routem = (struct routem *)malloc(maxfd * sizeof(struct routem));
+
+  if (routem == NULL)
+    {
+    perror("cannot alloc memory");
+
+    exit(5);
+    }
 
   for (i = 0;i < maxfd;++i) 
     {
@@ -290,7 +297,7 @@ int main(
       if (getppid() != parent) 
         {
 #ifdef DEBUG
-        fprintf(stderr,"%s: Parent has gone, and so do I\n",
+        fprintf(stderr,"%s: Parent has gone, and so will I\n",
           argv[0]);
 #endif	/* DEBUG */
 

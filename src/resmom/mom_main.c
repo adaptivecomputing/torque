@@ -7319,6 +7319,9 @@ void examine_all_running_jobs()
 
 
 
+
+
+
 /*
  * kill_all_running_jobs
  */
@@ -7346,14 +7349,17 @@ void kill_all_running_jobs()
       }
     }
 
-    if (termin_child != 0)
-      scan_for_terminated();
+  if (termin_child != 0)
+    scan_for_terminated();
 
-    if (exiting_tasks)
-      scan_for_exiting();
+  if (exiting_tasks)
+    scan_for_exiting();
 
   return;
-  }
+  }  /* END kill_all_running_jobs() */
+
+
+
 
 
 
@@ -7362,7 +7368,8 @@ void kill_all_running_jobs()
  */
 
 void main_loop()
-{
+
+  {
   static char   id[] = "main_loop";
   extern time_t	wait_time;
   double        myla;
@@ -7465,9 +7472,6 @@ void main_loop()
 
     TMOMScanForStarting();
 
-
-
-
     rpp_request(42);  /* cycle the rpp messaging system */
 
     /* unblock signals */
@@ -7507,9 +7511,12 @@ void main_loop()
       {
       MOMCheckRestart();  /* There are no jobs, see if the server needs to be restarted. */
       }
-
     }      /* END while (mom_run_state == MOM_RUN_STATE_RUNNING) */
-  }
+
+  return;
+  }        /* END main_loop() */
+
+
 
 
 
@@ -7517,9 +7524,14 @@ void main_loop()
  * restart_mom
  */
 
-void restart_mom( int argc, char *argv[] )
-{
-  static	char id[] = "restart_mom";
+void restart_mom( 
+
+  int   argc, 
+  char *argv[])
+
+  {
+  static char id[] = "restart_mom";
+
   char *envstr;
 
   envstr = malloc(
@@ -7529,11 +7541,17 @@ void restart_mom( int argc, char *argv[] )
   strcat(envstr,orig_path);
   putenv(envstr);
   DBPRT(("Re-execing myself now...\n"));
-  execvp(MOMExePath,argv);
-  sprintf(log_buffer,"Execing myself failed: %s (%d)",strerror(errno),errno);
-  log_err(errno,id,log_buffer);
-}
 
+  execvp(MOMExePath,argv);
+
+  sprintf(log_buffer,"Execing myself failed: %s (%d)",
+    strerror(errno),
+    errno);
+
+  log_err(errno,id,log_buffer);
+
+  return;
+  }  /* END restart_mom() */
 
 
 

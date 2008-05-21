@@ -670,12 +670,13 @@ err:
 
 
 
-/*
-**  Send a message (command = com) to all the other MOMs in
-**  the job -> pjob.
-**
-**  NOTE:  returns number of sister mom's successfully contacted 
-*/
+
+/**
+ *  Send a message (command = com) to all the other MOMs in
+ *  the job -> pjob.
+ *
+ * @return 0 on FAILURE or number of sister mom's successfully contacted on SUCCESS
+ */
 
 int send_sisters(
 
@@ -716,11 +717,14 @@ int send_sisters(
 
   if (com == IM_ABORT_JOB)
     {
+    snprintf(log_buffer,1024,"sending ABORT to sisters for job %s",
+      pjob->ji_qs.ji_jobid);
+
     LOG_EVENT(
       PBSEVENT_JOB,
       PBS_EVENTCLASS_REQUEST,
       id,
-      "sending ABORT to sisters");
+      log_buffer);
     }
 
   /* walk thru node list, contact each mom */

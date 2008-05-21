@@ -218,10 +218,67 @@ hnodent	*get_node(
 
 
 
+/**
+ * For all jobs in MOM
+ *   ignore job if job's pbs_server is down
+ *   for all tasks in job
+ *     ignore task if task state is not exiting
+ *     if task is master, send kill to all sisters
+ *     process TM client obits
+ *   if I am sister, do sister stuff and continue
+ *   kill_job
+ *   contact server and register preobit_reply()
+ *   set job substate to JOB_SUBSTATE_PREOBIT
+ *
+ * @see main_loop() - parent
+ * @see scan_for_terminated()
+ * @see post_epilog()
+ * @see preobit_reply() - registered to handle response to preobit
+ * @see send_sisters() - child
+ * @see kill_job() - child
+ *
+ * Obit Overview:
+ *  - main_loop() 
+ *    - scan_for_terminated() 
+ *       catches SIGCHLD to identify when tasks terminate and marks job task
+ *       structure accordingly.
+ *      - waitpid()
+ *      - exec ji_mompost (post_epilog)
+ *        
+ *    - scan_for_exiting() 
+ *       called after scan_for_terminated and looks at jobs to identify which 
+ *       have exiting tasks.  Sends kill to all sisters, issues kill_job, and 
+ *       sends preobit to pbs_server.
+ *      registers preobit_reply() as socket handler
+ *     
+ *  - preobit_reply()
+ *      registers post_epilog in job ji_mompost attribute
+ *
+ *  - post_epilog()
+ *     sends obit to pbs_server and registers obit_reply() as connection handler
+ *      
+ *  - obit_reply()
+ *     sets job substate to EXITED
+ *     END OF JOB LIFECYCLE
+ *
+ *  when job completes and process id goes away scan_for_terminated() 
+ *
+ * OVERALL FLOW:  
+ * - scan_for_exiting()
+ *   - KILL SISTERS
+ *   - SEND PREOBIT TO PBS_SERVER
+ * - preobit_reply()
+ * - scan_for_terminating()
+ *   - post_epilog()
+ *     - SEND OBIT TO PBS_SERVER
+ * - obit_reply()
+ */
+
 void scan_for_exiting()
 
   {
   char         *id = "scan_for_exiting";
+
   int		found_one = 0;
   job		*nxjob;
   job		*pjob;
@@ -237,6 +294,7 @@ void scan_for_exiting()
   static int ForceObit    = -1;   /* boolean - if TRUE, ObitsAllowed will be enforced */
   static int ObitsAllowed = 1;
 
+  int           NumSisters;
 
   /*
   ** Look through the jobs.  Each one has it's tasks examined
@@ -275,7 +333,7 @@ void scan_for_exiting()
       {
       ForceObit = 1;
       }
-    }
+    }    /* END if (ForceObit == -1) */
     
   clear_down_mom_servers();
 
@@ -289,9 +347,20 @@ void scan_for_exiting()
     
     if (is_mom_server_down(pjob->ji_qs.ji_un.ji_momt.ji_svraddr))
       {
+      if (LOGLEVEL >= 3)
+        {
+        snprintf(log_buffer,1024,"not checking job %s - server is down",
+          pjob->ji_qs.ji_jobid);
+
+        log_record(
+          PBSEVENT_DEBUG,
+          PBS_EVENTCLASS_SERVER,
+          id,
+          log_buffer);
+        }
+
       continue;
       }
-
 
     /*
     ** If a checkpoint with aborts is active,
@@ -318,7 +387,9 @@ void scan_for_exiting()
  
 
     if (!(pjob->ji_wattr[(int)JOB_ATR_Cookie].at_flags & ATR_VFLAG_SET))
+      {
       continue;
+      }
 
     cookie = pjob->ji_wattr[(int)JOB_ATR_Cookie].at_val.at_str;
 
@@ -350,21 +421,37 @@ void scan_for_exiting()
           pjob->ji_qs.ji_jobid, 
           "job was terminated");
 
-        if (LOGLEVEL >= 3)
+        NumSisters = send_sisters(pjob,IM_KILL_JOB);
+
+        if (NumSisters == 0) 
           {
+          /* no sisters contacted - is this SUCCESS or FAILURE? */
+
+          if (LOGLEVEL >= 3)
+            {
+            LOG_EVENT(
+              PBSEVENT_JOB,
+              PBS_EVENTCLASS_JOB,
+              pjob->ji_qs.ji_jobid,
+              "no sisters contacted - setting job substate to EXITING");
+            }
+
+          pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITING;
+
+          job_save(pjob,SAVEJOB_QUICK);
+          }
+        else if (LOGLEVEL >= 3)
+          {
+          snprintf(log_buffer,1024,"master task has exited - sent kill job request to %d sisters",
+            NumSisters);
+
           LOG_EVENT(
             PBSEVENT_JOB,
             PBS_EVENTCLASS_JOB,
             pjob->ji_qs.ji_jobid,
-            "master task has exited - sending kill job request to all sisters");
+            log_buffer);
           }
-
-        if (send_sisters(pjob,IM_KILL_JOB) == 0) 
-          {
-          pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITING;
-          job_save(pjob,SAVEJOB_QUICK);
-          }
-        }    /* END for (ptask) */
+        }    /* END if (ptask->ti_qs.ti_parenttask == TM_NULL_TASK) */
 
       /*
       ** process any TM client obits waiting.
@@ -408,7 +495,8 @@ void scan_for_exiting()
 
           im_compose(
             pnode->hn_stream,
-            pjob->ji_qs.ji_jobid,cookie,
+            pjob->ji_qs.ji_jobid,
+            cookie,
             IM_ALL_OKAY,
             pobit->oe_info.fe_event,
             pobit->oe_info.fe_taskid);
@@ -448,8 +536,8 @@ void scan_for_exiting()
       {
       if (LOGLEVEL >= 3)
         {
-        snprintf(log_buffer,1024,"job is in non-exiting substate %d, no obit sent at this time",
-          pjob->ji_qs.ji_substate);
+        snprintf(log_buffer,1024,"job is in non-exiting substate %s, no obit sent at this time",
+          PJobSubState[pjob->ji_qs.ji_substate]);
 
         LOG_EVENT(
           PBSEVENT_JOB,
@@ -485,6 +573,15 @@ void scan_for_exiting()
 
       if (stream == -1) 
         {
+        if (LOGLEVEL >= 3)
+          {
+          LOG_EVENT(
+            PBSEVENT_JOB,
+            PBS_EVENTCLASS_JOB,
+            pjob->ji_qs.ji_jobid,
+            "connection to server lost - no obit sent - job will be purged");
+          }
+
         kill_job(pjob,SIGKILL,id,"connection to server lost - no obit sent");
 
         job_purge(pjob);
@@ -608,6 +705,7 @@ void scan_for_exiting()
     ** At this point, we know we are Mother Superior for this
     ** job which is EXITING.  Time for it to die.
     */
+
     pjob->ji_qs.ji_svrflags &= ~JOB_SVFLG_Suspend;
 
     kill_job(pjob,SIGKILL,id,"local task termination detected");
@@ -681,6 +779,14 @@ void scan_for_exiting()
         encode_DIS_Status(sock,pjob->ji_qs.ji_jobid,NULL) ||
         encode_DIS_ReqExtend(sock,NULL))
       { 
+      /* FAILURE */
+
+      log_record(
+        PBSEVENT_DEBUG,
+        PBS_EVENTCLASS_JOB,
+        pjob->ji_qs.ji_jobid,
+        "failed creating preobit message");
+
       return;
       }
 
@@ -708,8 +814,15 @@ void scan_for_exiting()
 
 
 
-/* called from scan_for_terminated() */
-/* sends obit to server */
+/** 
+ * Send obit to server.
+ *
+ * @see scan_for_terminated() - calls post_epilog() via ji_mompost job attribute
+ * @see mom_open_socket_to_jobs_server() - child
+ * @see obit_reply() - registered handler for obit connection
+ *
+ * @see scan_for_exiting() for Obit overview
+ */
 
 int post_epilogue(
 
@@ -724,14 +837,17 @@ int post_epilogue(
 
   if (LOGLEVEL >= 2)
     {
+    sprintf(log_buffer,"preparing obit message for job %s",
+      pjob->ji_qs.ji_jobid);
+
     LOG_EVENT(
       PBSEVENT_DEBUG,
       PBS_EVENTCLASS_REQUEST,
       id,
-      "preparing obit message");
+      log_buffer);
     }
 
-  /* open new connection */
+  /* open new connection - register obit_reply as handler */
 
   sock = mom_open_socket_to_jobs_server(pjob,id,obit_reply);
 
@@ -825,7 +941,6 @@ int post_epilogue(
 
   free_br(preq);
 
-
   /* SUCCESS */
 
   /* Who closes sock and unsets pjob->ji_momhandle?
@@ -845,11 +960,15 @@ int post_epilogue(
 
 
 
-/*
+/**
  * preobit_reply
  *
+ * @see scan_for_exiting() - registers this routine as handler
+ * @see mom_deljob() - child
+ * @see run_pelog() - child
+ *
  * This function is a message handler that is hooked to a server connection.
- * The connection is established in scan_for_exiting where all jobs
+ * The connection is established in scan_for_exiting() where all jobs
  * are examined.  A socket connection to the server is opened, an obit
  * message is sent to the server, and then at some later time, the server
  * sends back a reply and we end up here.
@@ -1114,9 +1233,20 @@ static void preobit_reply(
     {
     /* parent = mark that it is being sent */
 
+    /* NOTE:  pjob->ji_mompost will be executed in scan_for_terminated() */
+
     pjob->ji_qs.ji_substate = JOB_SUBSTATE_OBIT;
     pjob->ji_momsubt = cpid;
     pjob->ji_mompost = post_epilogue;
+
+    if (LOGLEVEL >= 2)
+      {
+      log_record(
+        PBSEVENT_DEBUG,
+        PBS_EVENTCLASS_JOB,
+        pjob->ji_qs.ji_jobid,
+        "substate set to JOB_SUBSTATE_OBIT - registered post_epilogue");
+      }
 
     return;
     } 
@@ -1124,6 +1254,12 @@ static void preobit_reply(
   if (cpid < 0)
     {
     /* FAILURE */
+
+    log_record(
+      PBSEVENT_DEBUG,
+      PBS_EVENTCLASS_JOB,
+      pjob->ji_qs.ji_jobid,
+      "fork failed in XXX");
 
     return;
     }
@@ -1173,15 +1309,20 @@ static void preobit_reply(
 
 
 
+
 /*
  * obit_reply
  *
  * This function is a message handler that is hooked to a server connection.
- * The connection is established in post_epilogue.
+ * The connection is established in post_epilogue().
+ *
  * A socket connection to the server is opened, a job obiturary notice
  * message is sent to the server, and then at some later time, the server
  * sends back a reply and we end up here.
  *
+ * On success, this routine sets the job's substate to EXITED
+ *
+ * @see post_epilogue() - registers obit_reply via add_conn()
  */
 
 
@@ -1240,6 +1381,15 @@ static void obit_reply(
           pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITED;
 
           job_save(pjob,SAVEJOB_QUICK);
+
+          if (LOGLEVEL >= 4)
+            {
+            LOG_EVENT(
+              PBSEVENT_ERROR,
+              PBS_EVENTCLASS_JOB,
+              pjob->ji_qs.ji_jobid,
+              "job obit acknowledge received - substate set to JOB_SUBSTATE_EXITED");
+            }
 
           break;
 

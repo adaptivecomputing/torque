@@ -310,12 +310,13 @@ char *set_shell(
 
 
 
-/* 
+/** 
  * scan_for_terminated - scan the list of running jobs for one whose
  *	session id matches that of a terminated child pid.  Mark that
  *	job as Exiting.
  *
- * NOTE: called by finish_loop() by main pbs_mom thread
+ * @see finish_loop() - parent
+ * @see scan_for_exiting() - peer - called later to harvest jobs with exiting tasks
  *
  */
 
@@ -414,6 +415,8 @@ void scan_for_terminated()
 
   /* Now figure out which task(s) have terminated (are zombies) */
 
+  /* NOTE:  does a job's tasks include its epilog? */
+
   while ((pid = waitpid(-1,&statloc,WNOHANG)) > 0) 
     {
     pjob = (job *)GET_NEXT(svr_alljobs);
@@ -477,14 +480,19 @@ void scan_for_terminated()
       {
       /* PID matches job mom subtask */
 
-      log_record(
-        PBSEVENT_JOB,
-        PBS_EVENTCLASS_JOB,
-        id,
-        "checking job post-processing routine");
+      /* NOTE:  ji_mompost normally set in routine preobit_reply() */
 
       if (pjob->ji_mompost != NULL) 
         {
+        snprintf(log_buffer,1024,"launching job post-processing routine %x",
+          (unsigned int)pjob->ji_mompost);
+
+        log_record(
+          PBSEVENT_JOB,
+          PBS_EVENTCLASS_JOB,
+          pjob->ji_qs.ji_jobid,
+          log_buffer);
+
         if (pjob->ji_mompost(pjob,exiteval) == 0)
           {
           /* success */
@@ -504,8 +512,9 @@ void scan_for_terminated()
                   PBSEVENT_DEBUG,
                   PBS_EVENTCLASS_JOB,
                   pjob->ji_qs.ji_jobid,
-                    "Caching OBIT for resend");
+                  "Caching OBIT for resend");
                 }
+
               TJCache[tjcindex] = pjob;
               termin_child = 1;
 
@@ -516,6 +525,14 @@ void scan_for_terminated()
           continue;
           }
 #endif /* CACHEOBITFAILURES */
+        }  /* END if (pjob->ji_mompost != NULL) */
+      else
+        {
+        log_record(
+          PBSEVENT_JOB,
+          PBS_EVENTCLASS_JOB,
+          pjob->ji_qs.ji_jobid,
+          "job has no postprocessing routine registered");
         }
 
       /* clear mom sub-task */
