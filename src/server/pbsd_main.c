@@ -1210,6 +1210,7 @@ void initialize_globals()
  */
 
 void set_globals_from_environment()
+
   {
   char  *ptr;
 
@@ -1246,7 +1247,8 @@ void set_globals_from_environment()
     TDoBackground = 0;
     }
 
-  }
+  return;
+  }  /* END set_globals_from_environment() */
 
 
 
@@ -1321,7 +1323,6 @@ int main(
   if (pbs_rm_port <= 0)
       pbs_rm_port = get_svrport(PBS_MANAGER_SERVICE_NAME,"tcp",PBS_MANAGER_SERVICE_PORT);
 
-
   parse_command_line(argc,argv);
 
   /* if we are not running with real and effective uid of 0, forget it */
@@ -1336,8 +1337,10 @@ int main(
 
   i = sysconf(_SC_OPEN_MAX);
 
+  /* NOTE:  close all file descriptors higher than 2 (stderr) */
+
   while (--i > 2)
-    close(i); /* close any file desc left open by parent */
+    close(i); 
 
   /* make sure no other server is running with this home directory */
 
@@ -1359,7 +1362,6 @@ int main(
     exit(2);
     }
 
-
   if (high_availability_mode)
     {
     /* This will allow multiple instance of the pbs_server to be
@@ -1370,20 +1372,32 @@ int main(
 
     if (TDoBackground == 1)
       {
+      int rc;
+
+      rc = fork();
+
+      if (rc == -1)
+        {
+        /* FAILURE */
+
+        exit(1);
+        }
+
       if (fork() > 0)
         {
         /* parent goes away */
+
         exit(0);
         }
       }
+
     while (try_lock_out(lockfds,F_WRLCK))
       sleep(TSERVER_HA_CHECK_TIME);	/* Relinquish */
-    }
+    }  /* END if (high_availability_mode) */
   else
     {
     lock_out(lockfds,F_WRLCK);
     }
-	
 
   /*
    * Open the log file so we can start recording events 
@@ -1456,6 +1470,8 @@ int main(
     /* go into the background and become own session/process group */
 
     lock_out(lockfds,F_UNLCK);
+
+    /* NOTE:  fork() man page indicates that file locks are not inherited across fork() calls */
 	
     if (fork() > 0)
       {
@@ -1470,6 +1486,26 @@ int main(
 
       exit(2);
       }
+
+#ifdef OS_LOSES_FD_OVER_FORK
+    /* NOTE:  file descriptors may be lost across forks in SLES 10 SP1 */
+
+    close(lockfds);
+
+    if ((lockfds = open(lockfile,O_CREAT|O_TRUNC|O_WRONLY,0600)) < 0)
+      {
+      sprintf(log_buffer, "%s: unable to open lock file '%s'",
+        msg_daemonname,
+        lockfile);
+
+      fprintf(stderr,"%s\n",
+        log_buffer);
+
+      log_err(errno,msg_daemonname,log_buffer);
+
+      exit(2);
+      }
+#endif /* OS_LOSES_FD_OVER_FORK */
 
     lock_out(lockfds,F_WRLCK);
 
@@ -1681,8 +1717,10 @@ static int get_port(
 
 /**
  * Try to lock
+ *
  * @return Zero on success, one on failure
  */
+
 static int try_lock_out(
 
   int fds,
@@ -1696,17 +1734,30 @@ static int try_lock_out(
   flock.l_start  = 0;
   flock.l_len    = 0;
 
+  if (LOGLEVEL >= 7)
+    {
+    sprintf(log_buffer,"locking file fd=%d, op=%d\n",
+      fds,
+      op);
+
+    log_err(errno,msg_daemonname,log_buffer);
+    }
+
   return(fcntl(fds,F_SETLK,&flock) != 0);
-  }
+  }  /* END try_lock_out() */
+
+
+
 
 
 /*
  * lock_out - lock out other daemons from this directory.
  */
+
 static void lock_out(
 
-  int fds,
-  int op)		/* F_WRLCK  or  F_UNLCK */
+  int fds,  /* I */
+  int op)   /* I - F_WRLCK or F_UNLCK */
 
   {
   if (try_lock_out(fds,op)) 
@@ -1717,9 +1768,13 @@ static void lock_out(
 
     fprintf(stderr,log_buffer);
 
+    close(fds);
+
     exit(1);
     }
-  }
+
+  return;
+  }  /* END lock_out() */
 
 /* END pbsd_main.c */
 

@@ -4544,6 +4544,8 @@ int rm_request(
               task  *ptask;
               char   SIDList[1024];
 
+              char  *VPtr;  /* job env variable value pointer */
+
               char *SPtr;
               int   SSpace;
 
@@ -4573,12 +4575,36 @@ int rm_request(
 
                 numvnodes += pjob->ji_numvnod;
 
-                sprintf(tmpLine,"job[%s]  state=%s  sidlist=%s\n",
+                /* report job variables */
+
+                sprintf(tmpLine,"job[%s]  state=%s  sidlist=%s",
                   pjob->ji_qs.ji_jobid,
                   PJobSubState[pjob->ji_qs.ji_substate],
                   SIDList);
 
                 MUStrNCat(&BPtr,&BSpace,tmpLine);
+
+                VPtr = get_job_envvar(pjob,"BATCH_PARTITION_ID");
+
+                if (VPtr != NULL)
+                  {
+                  sprintf(tmpLine,"  BATCH_PARTITION_ID=%s",
+                    VPtr);
+
+                  MUStrNCat(&BPtr,&BSpace,tmpLine);
+                  }
+                
+                VPtr = get_job_envvar(pjob,"BATCH_ALLOC_COOKIE");
+
+                if (VPtr != NULL)
+                  {
+                  sprintf(tmpLine,"  BATCH_ALLOC_COOKIE=%s",
+                    VPtr);
+
+                  MUStrNCat(&BPtr,&BSpace,tmpLine);
+                  }
+ 
+                MUStrNCat(&BPtr,&BSpace,"\n");
                 }  /* END for (pjob) */
 
               sprintf(tmpLine,"Assigned CPU Count:     %d\n",
@@ -4587,7 +4613,6 @@ int rm_request(
               MUStrNCat(&BPtr,&BSpace,tmpLine);
               }
 
-#ifdef DIAGNEWJOBS
             if ((pjob = (job *)GET_NEXT(svr_newjobs)) != NULL)
               {
               while (pjob != NULL)
@@ -4600,7 +4625,6 @@ int rm_request(
                 pjob = (job *)GET_NEXT(pjob->ji_alljobs);
                 }
               }
-#endif
                 
             if ((pva = (struct varattr *)GET_NEXT(mom_varattrs)) != NULL)
               {

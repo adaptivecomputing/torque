@@ -891,7 +891,11 @@ void effective_node_delete(
 
 
 
-/* NOTE:  pul can return NULL even on SUCCESS of routine */
+/**
+ *  NOTE:  pul can return NULL even on SUCCESS of routine 
+ *
+ *  NOTE:  this routine sets log_buffer[] which is used externally
+ */
 
 static int process_host_name_part(
 
@@ -950,6 +954,21 @@ static int process_host_name_part(
     phostname = NULL;
 
     return(PBSE_UNKNODE);
+    }
+
+  if (LOGLEVEL >= 6)
+    {
+    char tmpLine[1024];
+
+    snprintf(tmpLine,sizeof(tmpLine),"successfully loaded host structure for '%s'->'%s'",
+      phostname,
+      hp->h_name);
+
+    log_event(
+      PBSEVENT_ADMIN,
+      PBS_EVENTCLASS_SERVER,
+      "process_host_name_part",
+      tmpLine);
     }
 
   memcpy((char *)&addr,hp->h_addr,hp->h_length);
@@ -1387,6 +1406,8 @@ int create_pbs_node(
 
   if (pul == NULL)
     {
+    free(pname);
+
     snprintf(log_buffer,1024,"no valid IP addresses found for '%s' - check name service",
       objname);
 
