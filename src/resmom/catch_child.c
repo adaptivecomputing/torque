@@ -1247,9 +1247,22 @@ static void preobit_reply(
 
   cpid = fork_me(-1);
 
+  if (cpid < 0)
+    {
+    /* FAILURE */
+
+    log_record(
+      PBSEVENT_DEBUG,
+      PBS_EVENTCLASS_JOB,
+      pjob->ji_qs.ji_jobid,
+      "fork failed in preobit_reply");
+
+    return;
+    }
+
   if (cpid > 0) 
     {
-    /* parent = mark that it is being sent */
+    /* parent - mark that job epilog subtask has been launched */
 
     /* NOTE:  pjob->ji_mompost will be executed in scan_for_terminated() */
 
@@ -1272,22 +1285,7 @@ static void preobit_reply(
     return;
     } 
 
-  if (cpid < 0)
-    {
-    /* FAILURE */
-
-    log_record(
-      PBSEVENT_DEBUG,
-      PBS_EVENTCLASS_JOB,
-      pjob->ji_qs.ji_jobid,
-      "fork failed in preobit_reply");
-
-    return;
-    }
-
   /* child */
-
-  /* NOTE:  possible race condition if child completes before parent? */
 
   /* check epilog script */
 

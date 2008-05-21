@@ -342,10 +342,12 @@ int run_pelog(
         {
         static char tmpBuf[1024];
 
-        sprintf(log_buffer,"%s script '%s' does not exist (cwd: %s)",
+        sprintf(log_buffer,"%s script '%s' for job %s does not exist (cwd: %s,pid: %d)",
           PPEType[which],
           (pelog != NULL) ? pelog : "NULL",
-          getcwd(tmpBuf,sizeof(tmpBuf)));
+          (pjob != NULL) ? pjob->ji_qs.ji_jobid : "NULL",
+          getcwd(tmpBuf,sizeof(tmpBuf)),
+          getpid());
 
         log_record(PBSEVENT_SYSTEM,0,id,log_buffer);
         }
