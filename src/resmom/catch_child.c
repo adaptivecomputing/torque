@@ -1242,7 +1242,7 @@ static void preobit_reply(
       PBSEVENT_DEBUG,
       PBS_EVENTCLASS_JOB,
       pjob->ji_qs.ji_jobid,
-      "performing job clean-up");
+      "performing job clean-up in preobit_reply()");
     }
 
   cpid = fork_me(-1);

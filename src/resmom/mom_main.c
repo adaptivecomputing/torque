@@ -5266,6 +5266,9 @@ char *find_signal_name(
  *  Kill a job.
  *	Call with the job pointer and a signal number.
  *
+ * NOTE:  sneds a signal to a job, does not purge job record
+ *
+ * @see kill_task() - child
  * @see XXX() - parent
  */
 
