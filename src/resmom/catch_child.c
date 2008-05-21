@@ -273,12 +273,14 @@ hnodent	*get_node(
  *  when job completes and process id goes away scan_for_terminated() 
  *
  * OVERALL FLOW:  
+ * - scan_for_terminating() - PHASE I
+ *   - KILL TASK
  * - scan_for_exiting()
  *   - KILL SISTERS
  *   - SEND PREOBIT TO PBS_SERVER
  * - preobit_reply()
      - FORK AND EXEC EPILOG
- * - scan_for_terminating()
+ * - scan_for_terminating() - PHASE II
  *   - post_epilog()
  *     - SEND OBIT TO PBS_SERVER
  * - obit_reply()
