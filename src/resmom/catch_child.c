@@ -174,7 +174,7 @@ extern int no_mom_servers_down();
 
 
 /*
- * catch_child() - the signal handler for  SIGCHLD.
+ * catch_child() - the signal handler for SIGCHLD.
  *
  * To keep the signal handler simple for
  *	SIGCHLD  - just indicate there was one.

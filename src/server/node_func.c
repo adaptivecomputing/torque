@@ -738,7 +738,7 @@ static void initialize_pbsnode(
 
   struct pbsnode *pnode,
   char           *pname, /* node name */
-  u_long         *pul,	 /* host byte order array */
+  u_long         *pul,	 /* I - required - host byte order array */
 			 /* ipaddrs for this node */
   int             ntype) /* time-shared or cluster */
 
@@ -891,6 +891,7 @@ void effective_node_delete(
 
 
 
+/* NOTE:  pul can return NULL even on SUCCESS of routine */
 
 static int process_host_name_part(
 
@@ -1351,16 +1352,18 @@ static struct pbssubn *create_subnode(
 
 
 
-/*
+/**
  * create_pbs_node - create pbs node structure, i.e. add a node
+ *
+ * @see initialize_pbsnode() - child
  */
 
 int create_pbs_node(
 
-  char     *objname,
+  char     *objname,  /* I */
   svrattrl *plist,
-  int       perms,
-  int      *bad)
+  int       perms,    /* I */
+  int      *bad)      /* O */
 
   {
   struct pbsnode  *pnode = NULL;
@@ -1371,11 +1374,25 @@ int create_pbs_node(
   int              rc;
   int              iht;
 
-  if ((rc = process_host_name_part(objname,&pul,&pname,&ntype)) != 0) 
+  if ((rc = process_host_name_part(
+              objname,        /* I */
+              &pul,           /* O */
+              &pname,         /* O */
+              &ntype)) != 0)  /* O */
     {
     log_err(-1,"process_host_name_part",log_buffer);
 
     return(rc);
+    }
+
+  if (pul == NULL)
+    {
+    snprintf(log_buffer,1024,"no valid IP addresses found for '%s' - check name service",
+      objname);
+
+    log_err(-1,"process_host_name_part",log_buffer);
+
+    return(PBSE_SYSTEM);
     }
 
   if (find_nodebyname(pname)) 
@@ -1386,7 +1403,7 @@ int create_pbs_node(
     return(PBSE_NODEEXIST);
     }
 
-  for (iht=0; iht<svr_totnodes; iht++) 
+  for (iht = 0;iht < svr_totnodes;iht++) 
     {
     if (pbsndmast[iht]->nd_state & INUSE_DELETED) 
       { 
@@ -1429,7 +1446,7 @@ int create_pbs_node(
       return(PBSE_SYSTEM);
       }
 
-    /*add in the new entry etc*/
+    /* add in the new entry etc */
 
     pbsndmast = tmpndlist;
     pbsndmast[svr_totnodes++] = pnode;
@@ -1489,7 +1506,8 @@ int create_pbs_node(
   recompute_ntype_cnts();
 
   return(PBSE_NONE);	    /*create completely successful*/
-  }
+  }  /* END create_pbs_node() */
+
 
 
 
@@ -1563,15 +1581,15 @@ static char *parse_node_token(
 
 
 /*
-**	Read the file, "nodes", containing the list of properties for each node.
-**	The list of nodes is formed with pbsndmast (also pbsndlist) as the head.
-**	Return -1 on error, 0 otherwise.
-**
-**	Read the node state file, "node_state", for any "offline"
-**	conditions which should be set in the nodes. 
-**
-**	If routine returns -1, then "log_buffer" contains a message to
-**	be logged.
+ * Read the file, "nodes", containing the list of properties for each node.
+ * The list of nodes is formed with pbsndmast (also pbsndlist) as the head.
+ * Return -1 on error, 0 otherwise.
+ *
+ * Read the node state file, "node_state", for any "offline"
+ * conditions which should be set in the nodes. 
+ *
+ * If routine returns -1, then "log_buffer" contains a message to
+ * be logged.
 */
 
 int setup_nodes(void)

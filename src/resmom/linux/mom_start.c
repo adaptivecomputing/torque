@@ -389,7 +389,7 @@ void scan_for_terminated()
         PBSEVENT_DEBUG,
         PBS_EVENTCLASS_JOB,
         pjob->ji_qs.ji_jobid,
-        "Retrying send of OBIT");
+        "retrying send of OBIT");
       }
 
     if (pjob->ji_mompost(pjob,exiteval) != 0)
