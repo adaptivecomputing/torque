@@ -1371,8 +1371,24 @@ void req_modifyjob(
           sprintf(tmpLine,"%ld",
             newattr[i].at_val.at_long);
           }         
+        else if (newattr[i].at_type == ATR_TYPE_CHAR)
+          {
+          sprintf(tmpLine,"%c",
+            newattr[i].at_val.at_char);
+          }
+        else if (newattr[i].at_type == ATR_TYPE_RESC)
+          {
+          sprintf(tmpLine,"%s",
+            "RESC");
+          }
+        else if (newattr[i].at_type == ATR_TYPE_ARST)
+          {
+          sprintf(tmpLine,"%s",
+            "ARST");
+          }
 
-        sprintf(log_buffer,"modifying attribute %s of job (value: '%s')",
+        sprintf(log_buffer,"modifying %d type attribute %s of job (value: '%s')",
+          newattr[i].at_type,
           TJobAttr[i],
           tmpLine);
 
