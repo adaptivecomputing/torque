@@ -332,7 +332,9 @@ void scan_for_terminated()
   pid_t	 pid;
   job	*pjob;
   task	*ptask = NULL;
-  int	statloc;
+  int	 statloc;
+
+  int    tcount;
 
 #ifdef CACHEOBITFAILURES
   static job *TJCache[TMAX_TJCACHESIZE];
@@ -452,7 +454,21 @@ void scan_for_terminated()
         }      
   
       if (pid == pjob->ji_momsubt)
+        {
+        if (LOGLEVEL >= 7)
+          {
+          snprintf(log_buffer,1024,"found match with job subtask for pid=%d",
+            pid);
+
+          LOG_EVENT(
+            PBSEVENT_DEBUG,
+            PBS_EVENTCLASS_JOB,
+            pjob->ji_qs.ji_jobid,
+            log_buffer);
+          }
+
         break;
+        }
 
       /* look for task */
 
@@ -460,16 +476,39 @@ void scan_for_terminated()
 
       /* locate task with associated process id */
 
+      tcount = 0;
+
       while (ptask != NULL) 
         {
         if (ptask->ti_qs.ti_sid == pid)
+          {
+          if (LOGLEVEL >= 7)
+            {
+            snprintf(log_buffer,1024,"found match with job task %d for pid=%d",
+              tcount,
+              pid);
+
+            LOG_EVENT(
+              PBSEVENT_DEBUG,
+              PBS_EVENTCLASS_JOB,
+              pjob->ji_qs.ji_jobid,
+              log_buffer);
+            }
+
           break;
+          }
 
         ptask = (task *)GET_NEXT(ptask->ti_jobtask);
+
+        tcount++;
         }  /* END while (ptask) */
 
       if (ptask != NULL)
+        {
+        /* pid match located - break out of job loop */
+
         break;
+        }
 
       pjob = (job *)GET_NEXT(pjob->ji_alljobs);
       }  /* END while (pjob != NULL) */
@@ -572,10 +611,10 @@ void scan_for_terminated()
 
     if (LOGLEVEL >= 2)
       {
-      sprintf(log_buffer,"for job %s, task %d, pid=%d, exitcode=%d",
+      sprintf(log_buffer,"pid %d harvested for job %s, task %d, exitcode=%d",
+        pid,
         pjob->ji_qs.ji_jobid,
         ptask->ti_qs.ti_task,
-        pid,
         exiteval);
 
       log_record(

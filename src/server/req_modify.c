@@ -224,10 +224,13 @@ void req_modifyjob(
 
   /* if job is running, special checks must be made */
 
-  /* Why is HELD state considered running? */
+  /* NOTE:  must determine if job exists down at MOM - this will occur if
+            job is running, job is held, or job was held and just barely 
+            released (ie qhold/qrls) */
 
-  if (pjob->ji_qs.ji_state == JOB_STATE_RUNNING ||
-      pjob->ji_qs.ji_state == JOB_STATE_HELD) 
+  if ((pjob->ji_qs.ji_state == JOB_STATE_RUNNING) ||
+      (pjob->ji_qs.ji_state == JOB_STATE_HELD) ||
+     ((pjob->ji_qs.ji_state == JOB_STATE_QUEUED) && (pjob->ji_qs.ji_destin[0] != '\0')))
     {
     while (plist != NULL) 
       {
