@@ -838,8 +838,9 @@ int start_checkpoint(
   char      name_buffer[1024];
 
   switch (checkpoint_system_type)
-  {
+    {
   case CST_MACH_DEP:
+
     break;
 
   case CST_BLCR:
@@ -918,7 +919,9 @@ int start_checkpoint(
       break;
 
     case CST_BLCR:
+
       rc = blcr_checkpoint_job(pjob,abort);
+
       break;
     }
 
@@ -1416,23 +1419,21 @@ mom_checkpoint_job_has_checkpoint(job *pjob)
  * @param pjob Pointer to job structure
  * @see TMomFinalizeJob1
  */
-int
-mom_checkpoint_start_restart(job *pjob)
-  {
-  static char   *id = "mom_checkpoint_start_restart";
-  int            rc = PBSE_NONE;
-  char          *PPtr;
-  char          *CPtr;
-  extern char   *AllocParCmd;
-  task          *ptask;
-  char           tmpLine[1024];
+int mom_checkpoint_start_restart(
 
+  job *pjob)
+
+  {
+  /* static char *id = "mom_checkpoint_start_restart"; */
+
+  int            rc = PBSE_NONE;
 
   /* At this point we believe that there is a checkpoint image, try to restart it. */
 
   switch (checkpoint_system_type)
     {
     case CST_MACH_DEP:
+
       /* perform any site required setup before restart, normally empty and does nothing */
 
       if ((rc = site_mom_prerst(pjob)) != PBSE_NONE) 
@@ -1441,35 +1442,12 @@ mom_checkpoint_start_restart(job *pjob)
         }
 
       rc = mom_restart_job(pjob); /* Iterate over files in checkpoint dir, restarting all files found. */
+
       break;
 
     case CST_BLCR:
-      /* Allocate a partition for Cray XT4 */
 
-      if (((PPtr = get_job_envvar(pjob,"BATCH_PARTITION_ID")) != NULL) &&
-         ((CPtr = get_job_envvar(pjob,"BATCH_ALLOC_COOKIE")) != NULL) &&
-          !strcmp(CPtr,"0") &&
-          (ptask = (task *)GET_NEXT(pjob->ji_tasks)) != NULL)
-        {
-        if (AllocParCmd == NULL)
-          AllocParCmd = strdup("/opt/moab/default/tools/partition.create.xt4.pl");
-
-        snprintf(tmpLine,sizeof(tmpLine),"%s --confirm -p %s -j %s -a %ld",
-          AllocParCmd,
-          PPtr,
-          pjob->ji_qs.ji_jobid,
-          (long)ptask->ti_qs.ti_sid);
-        log_err(-1,id,tmpLine);
-
-        rc = system(tmpLine); 
-
-        if (WEXITSTATUS(rc) != 0)
-          {
-          snprintf(log_buffer,1024,"cannot create alloc partition");
-          log_err(-1,id,log_buffer);
-          }
-        }
-
+      /* NOTE:  partition creation handled in blcr_restart_job() */
 
       /* perform any site required setup before restart, normally empty and does nothing */
 
@@ -1479,14 +1457,22 @@ mom_checkpoint_start_restart(job *pjob)
         }
 
       rc = blcr_restart_job(pjob);
+
       break;
 
     case CST_NONE:
     default:
+
       return(PBSE_NOSUP);
+
+      /*NOTREACHED*/
+
+      break;
     }
+
   return(rc);
-  }
+  }  /* END mom_checkpoint_start_restart() */
+
 
 
 /* EOF */
