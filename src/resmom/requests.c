@@ -1353,69 +1353,93 @@ void req_modifyjob(
 
   for (i = 0;i < JOB_ATR_LAST;i++) 
     {
-    if (newattr[i].at_flags & ATR_VFLAG_MODIFY) 
+    if (!newattr[i].at_flags & ATR_VFLAG_MODIFY) 
+      continue;
+
+    if (LOGLEVEL >= 5)
       {
-      if (LOGLEVEL >= 5)
+      char tmpLine[1024];
+
+      strcpy(tmpLine,"???");
+
+      if (newattr[i].at_type == ATR_TYPE_STR)
         {
-        char tmpLine[1024];
+        if (newattr[i].at_val.at_str != NULL)
+          strncpy(tmpLine,newattr[i].at_val.at_str,sizeof(tmpLine));
+        }
+      else if (newattr[i].at_type == ATR_TYPE_LONG)
+        {
+        sprintf(tmpLine,"%ld",
+          newattr[i].at_val.at_long);
+        }         
+      else if (newattr[i].at_type == ATR_TYPE_CHAR)
+        {
+        sprintf(tmpLine,"%c",
+          newattr[i].at_val.at_char);
+        }
+      else if (newattr[i].at_type == ATR_TYPE_RESC)
+        {
+        sprintf(tmpLine,"%s",
+          "RESC");
+        }
+      else if (newattr[i].at_type == ATR_TYPE_ARST)
+        {
+        if (i == JOB_ATR_variables)
+          {
+          char *tmpPtr;
 
-        strcpy(tmpLine,"???");
+          tmpLine[0] = '\0';
 
-        if (newattr[i].at_type == ATR_TYPE_STR)
-          {
-          if (newattr[i].at_val.at_str != NULL)
-            strncpy(tmpLine,newattr[i].at_val.at_str,sizeof(tmpLine));
+          tmpPtr = arst_string(
+           "",
+           &newattr[i]);
+
+          if (tmpPtr != NULL)
+            strncpy(tmpLine,tmpPtr,sizeof(tmpLine));
           }
-        else if (newattr[i].at_type == ATR_TYPE_LONG)
-          {
-          sprintf(tmpLine,"%ld",
-            newattr[i].at_val.at_long);
-          }         
-        else if (newattr[i].at_type == ATR_TYPE_CHAR)
-          {
-          sprintf(tmpLine,"%c",
-            newattr[i].at_val.at_char);
-          }
-        else if (newattr[i].at_type == ATR_TYPE_RESC)
-          {
-          sprintf(tmpLine,"%s",
-            "RESC");
-          }
-        else if (newattr[i].at_type == ATR_TYPE_ARST)
+        else
           {
           sprintf(tmpLine,"%s",
             "ARST");
           }
-
-        sprintf(log_buffer,"modifying %d type attribute %s of job (value: '%s')",
-          newattr[i].at_type,
-          TJobAttr[i],
-          tmpLine);
-
-        log_record(
-          PBSEVENT_JOB,
-          PBS_EVENTCLASS_JOB,
-          (pjob != NULL) ? pjob->ji_qs.ji_jobid : "N/A",
-          log_buffer);
         }
 
-      if (job_attr_def[i].at_action != NULL)  
-        job_attr_def[i].at_action(&newattr[i],pjob,ATR_ACTION_ALTER);
+      sprintf(log_buffer,"modifying type %d attribute %s of job (value: '%s')",
+        newattr[i].at_type,
+        TJobAttr[i],
+        tmpLine);
 
-      job_attr_def[i].at_free(pattr + i);
+      log_record(
+        PBSEVENT_JOB,
+        PBS_EVENTCLASS_JOB,
+        (pjob != NULL) ? pjob->ji_qs.ji_jobid : "N/A",
+        log_buffer);
+      }  /* END if (LOGLEVEL >= 5) */
 
-      if ((newattr[i].at_type == ATR_TYPE_LIST) ||
-          (newattr[i].at_type == ATR_TYPE_RESC)) 
-        {
-        list_move(&newattr[i].at_val.at_list,&(pattr+i)->at_val.at_list);
-        } 
-      else 
-        {
-        *(pattr + i) = newattr[i];
-        }
+    if (job_attr_def[i].at_action != NULL)  
+      job_attr_def[i].at_action(&newattr[i],pjob,ATR_ACTION_ALTER);
 
-      (pattr + i)->at_flags = newattr[i].at_flags;
+    job_attr_def[i].at_free(pattr + i);
+
+    if ((newattr[i].at_type == ATR_TYPE_LIST) ||
+        (newattr[i].at_type == ATR_TYPE_RESC)) 
+      {
+      list_move(&newattr[i].at_val.at_list,&(pattr + i)->at_val.at_list);
+      } 
+#ifdef TNOT
+    else if (newattr[i].at_type == ATR_TYPE_ARST)
+      {
+      set_arst(&(pattr + i)->at_val,newattr[i],SET);
+ 
+      /* set_arst(patr,&temp,INCR) */
       }
+#endif /* TNOT */
+    else 
+      {
+      *(pattr + i) = newattr[i];
+      }
+
+    (pattr + i)->at_flags = newattr[i].at_flags;
     }    /* END for (i) */
 
   /* note, the newattr[] attributes are on the stack, they go away auto */
@@ -1451,6 +1475,7 @@ void req_modifyjob(
 
   return;
   }  /* END req_modifyjob() */
+
 
 
 

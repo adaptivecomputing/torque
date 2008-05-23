@@ -736,26 +736,43 @@ void free_arst(
  *	Search each entry in the value of an arst attribute for a sub-string
  *	that begins with the passed string 
  * 
- * Return: pointer to string if so, null if not
+ * Return: pointer to string if so, NULL if not
  */
 
-char *arst_string(str, pattr)
-	char	   *str;
-	attribute  *pattr;
-{
-	int    i;
-	size_t len;
-	struct array_strings *parst;
+char *arst_string(
 
-	if ((pattr->at_type != ATR_TYPE_ARST) || !(pattr->at_flags & ATR_VFLAG_SET))
-		return ((char *)0);
+  char      *str,
+  attribute *pattr)
 
-	len = strlen(str);
-	parst = pattr->at_val.at_arst;
-	for (i = 0; i < parst->as_usedptr; i++) {
-		if (strncmp(str, parst->as_string[i], len) == 0)
-			return (parst->as_string[i]);
-	}
-	return ((char *)0);
-}
+  {
+  int    i;
+  size_t len;
+  struct array_strings *parst;
+
+  if ((str == NULL) || (pattr == NULL))
+    {
+    return(NULL);
+    }
+
+  if ((pattr->at_type != ATR_TYPE_ARST) || !(pattr->at_flags & ATR_VFLAG_SET))
+    {
+    /* bad type or value not set */
+
+    return(NULL);
+    }
+
+  len = strlen(str);
+
+  parst = pattr->at_val.at_arst;
+
+  for (i = 0;i < parst->as_usedptr;i++) 
+    {
+    if (!strncmp(str,parst->as_string[i],len))
+      {
+      return(parst->as_string[i]);
+      }
+    }  /* END for (i) */
+
+  return(NULL);
+  }  /* END arst_string() */
 	
