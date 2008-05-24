@@ -170,6 +170,8 @@ int decode_arst_direct(
     return(PBSE_SYSTEM);
     }
 
+  strcpy(pbuf, val);
+
   bksize = (ns - 1) * sizeof (char *) + sizeof (struct array_strings);
 
   if ((stp = (struct array_strings *)malloc(bksize)) == NULL)
@@ -192,7 +194,7 @@ int decode_arst_direct(
 
   j  = 0;
 
-  pstr = parse_comma_string(val);
+  pstr = parse_comma_string(pbuf);
 
   while ((pstr != NULL) && (j < ns)) 
     {
