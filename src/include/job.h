@@ -205,7 +205,8 @@ struct grpcache {
  * define the size of the array.
  */
 
-/* sync w/XXX */
+/* sync w/ src/server/job_attr_def.c */
+/* sync w/ src/resmom/request.c TJobAttr constants */
 
 enum job_atr {
   JOB_ATR_jobname,	/* this set appears first as they show */
@@ -262,7 +263,7 @@ enum job_atr {
   JOB_ATR_submit_args,
   JOB_ATR_job_array_id,
   JOB_ATR_job_array_request,
-  JOB_ATR_umask,
+  JOB_ATR_umask,        /* 50 */
   JOB_ATR_start_time,  /* time when job was first started */
   JOB_ATR_start_count, /* number of times the job has been started */
   JOB_ATR_checkpoint_dir,    /* directory where job checkpoint file is stored */

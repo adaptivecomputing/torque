@@ -111,6 +111,9 @@ extern int comp_checkpoint A_((attribute *,attribute *));
  *	value type,
  *	parent object type
  */
+ 
+/* sync w/ src/include/job.h */
+/* sync w/ src/resmom/request.c TJobAttr constants */
 
 attribute_def job_attr_def[] = {
 

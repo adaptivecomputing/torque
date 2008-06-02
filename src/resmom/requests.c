@@ -1219,7 +1219,7 @@ const char *TJobAttr[] = {
   "resc_used",
   "state",
   "in_queue",
-  "at_server",
+  "at_server",      /* 5 */
   "account",        /* the bulk of the attributes are in   */
   "chkpnt",         /* alphabetic order for no good reason */
   "ctime",
@@ -1234,7 +1234,7 @@ const char *TJobAttr[] = {
   "keep",
   "mailpnts",
   "mailuser",
-  "mtime",
+  "mtime",          /* 20 */
   "outpath",
   "priority",
   "qtime",
@@ -1246,15 +1246,29 @@ const char *TJobAttr[] = {
   "stageout",
   "substate",
   "userlst",
-  "variables",
+  "variables",      /* 32 */
   "euser",          /* execution user name for MOM            */
   "egroup",         /* execution group name for MOM           */
   "hashname",       /* job name hashed into 14 characters     */
   "hopcount",
   "qrank",
   "queuetype",
+  "schedhint",      /* 39 */
+  "security",
+  "comment",
+  "cookie",
+  "altid",
+  "etime",
+  "exitstat",
+  "forwardx11",
+  "submitargs",
+  "jobarrayid",
+  "jobarrayreq",
+  "umask",          /* 50 */
   "start_time",
   "start_count",
+  "chkptdir",
+  "chkptname",
   NULL };
 
 
@@ -1406,7 +1420,7 @@ void req_modifyjob(
 
       sprintf(log_buffer,"modifying type %d attribute %s of job (value: '%s')",
         newattr[i].at_type,
-        TJobAttr[i],
+        (i <= JOB_ATR_checkpoint_name) ? TJobAttr[i] : "Unkn",
         tmpLine);
 
       log_record(

@@ -32,6 +32,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature
   e - add some casts to fix some compiler warnings with gcc-4.1 on i386 when
       -D_FILE_OFFSET_BITS=64 is set
   e - added --enable-maxnotdefault to allow not using resources_max as defaults.
+  b - added new values to TJobAttr so we don't have mismatch with job.h values. Added
+      some comments also.
 
 
 2.3.0
