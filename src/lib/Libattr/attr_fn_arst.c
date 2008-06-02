@@ -132,6 +132,7 @@ int decode_arst_direct(
   char			*pc;
   char			*pstr;
   size_t		 ssize;
+  char      *tmpval;
   struct array_strings	*stp;
 
   /*
@@ -143,7 +144,14 @@ int decode_arst_direct(
   ns = 1;
   ssize = strlen(val) + 1;
 
-  for (pc = val; *pc; pc++) 
+  if ((tmpval = malloc((unsigned)ssize)) == NULL)
+    {
+    return(PBSE_SYSTEM);
+    }
+
+  strcpy(tmpval, val);
+  
+  for (pc = tmpval; *pc; pc++) 
     {
     if (*pc == '\\') 
       {
@@ -170,8 +178,6 @@ int decode_arst_direct(
     return(PBSE_SYSTEM);
     }
 
-  strcpy(pbuf, val);
-
   bksize = (ns - 1) * sizeof (char *) + sizeof (struct array_strings);
 
   if ((stp = (struct array_strings *)malloc(bksize)) == NULL)
@@ -194,7 +200,7 @@ int decode_arst_direct(
 
   j  = 0;
 
-  pstr = parse_comma_string(pbuf);
+  pstr = parse_comma_string(tmpval);
 
   while ((pstr != NULL) && (j < ns)) 
     {
@@ -221,6 +227,7 @@ int decode_arst_direct(
   patr->at_flags |= ATR_VFLAG_SET | ATR_VFLAG_MODIFY;
   patr->at_val.at_arst = stp;
 
+  free(tmpval);
   return(0);
   }  /* END decode_arst_direct() */
 
