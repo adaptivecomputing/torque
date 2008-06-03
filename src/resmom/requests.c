@@ -1367,7 +1367,7 @@ void req_modifyjob(
 
   for (i = 0;i < JOB_ATR_LAST;i++) 
     {
-    if (!newattr[i].at_flags & ATR_VFLAG_MODIFY) 
+    if (!(newattr[i].at_flags & ATR_VFLAG_MODIFY) )
       continue;
 
     if (LOGLEVEL >= 5)
