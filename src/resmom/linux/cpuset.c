@@ -164,7 +164,10 @@ void initialize_root_cpuset()
     return;
     }
 
-  if (lstat(TTORQUECPUSET_PATH,&statbuf) != 0)
+  sprintf(path,"%s",
+    TTORQUECPUSET_PATH);
+
+  if (lstat(path,&statbuf) != 0)
     {
     sprintf(log_buffer,"TORQUE cpuset %s does not exist, creating it now.\n",
       path);
@@ -198,7 +201,10 @@ void initialize_root_cpuset()
 
       /* FIXME: need proper error checking and response */
 
-      fread(cpuset_buf,sizeof(char),sizeof(cpuset_buf),fp);
+      fread(cpuset_buf, sizeof ( char ), sizeof(cpuset_buf), fp);
+
+      /* Replace trailing newline with NULL */
+      *( index( cpuset_buf, '\n' ) )='\0';
 
       fclose(fp);
 
@@ -234,14 +240,18 @@ void initialize_root_cpuset()
 
       ptr = strtok(tmpBuf,",");
 
+      /* Commented out as currently results in an infinite loop */
+#if 0
       while (ptr != NULL)
         {
         ptr = strtok(ptr,"-");
 
         while (ptr != NULL)
           {
+		  /* What was meant to be here ? - csamuel@vpac.org */
           }
         }
+#endif
       /* NOTE:  load 'boot' set */
 
       sprintf(path,"%s/boot/cpus",
@@ -260,6 +270,9 @@ void initialize_root_cpuset()
         /* FIXME: need proper error checking and response */
 
         fread(bootbuf,sizeof(char),sizeof(bootbuf),fp);
+
+        /* Replace trailing newline with NULL */
+        *( index( bootbuf, '\n' ) )='\0';
 
         fclose(fp);
 
