@@ -240,7 +240,7 @@ Minimum value: 4 seconds  (PBS_JOBSTAT_MIN in server_limits.h)
 .Ig
 .Al keep_completed
 Number of seconds to retain completed jobs in the C state.  This is overriden
-by the execution queue attribute of the same name.   EXPERIMENTAL
+by the execution queue attribute of the same name.
 Format: integer; default value: 0.
 .if !\n(Pb .ig Ig
 [internal type: integer]
@@ -331,10 +331,9 @@ Format: integer; default value: none.
 [internal type: integer]
 .Ig
 .Al mom_job_sync
-Enables the experimental "job sync on MOM" feature.   When MOMs send a status
+Enables the "job sync on MOM" feature.   When MOMs send a status
 update, and it includes a list of jobs, server will issue job deletes for any
-jobs that don't actually exist.  This is an EXPERIMENTAL feature and may be
-removed in the future.  Format: boolean; default value: false.
+jobs that don't actually exist.  Format: boolean; default value: true.
 .if !\n(Pb .ig Ig
 [internal type: boolean]
 .Ig
