@@ -123,7 +123,8 @@ or a unsigned signal number, e.g. \fB9\fP.
 The signal name
 .B SIGNULL
 is allowed; the server will send the signal 0 to the job which will
-have no effect.
+have no effect on the job, but will cause an obituary to be sent if the job is
+no longer executing.
 Not all signal names will be recognized by qsig. If it doesn't recognize the
 signal name, try issuing the signal number instead.
 .LP
