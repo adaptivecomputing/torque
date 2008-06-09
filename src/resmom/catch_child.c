@@ -1269,6 +1269,7 @@ static void preobit_reply(
     pjob->ji_qs.ji_substate = JOB_SUBSTATE_OBIT;
     pjob->ji_momsubt = cpid;
     pjob->ji_mompost = post_epilogue;
+    pjob->ji_momhandle = -1;
 
     if (LOGLEVEL >= 2)
       {
