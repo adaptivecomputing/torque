@@ -35,6 +35,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature
   b - added new values to TJobAttr so we don't have mismatch with job.h values. Added
       some comments also.
   b - reset ji_momhandle so we cannot have more than one pjob for obit_reply to find.
+  e - change qdel to accept 'ALL' as well as 'all'
 
 2.3.0
   b - fixed a bug where TORQUE would ignore the "pbs_asyrunjob" API extension string when starting jobs in asynchronous mode

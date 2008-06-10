@@ -214,7 +214,7 @@ int main(
 
   if ((errflg != 0) || (optind >= argc)) 
     {
-    static char usage[] = "usage: qdel [{ -p | -W delay | -m message}] [<JOBID>[<JOBID>]| 'all']...\n";
+    static char usage[] = "usage: qdel [{ -p | -W delay | -m message}] [<JOBID>[<JOBID>]|'all'|'ALL']...\n";
 
     fprintf(stderr,usage);
 
@@ -232,7 +232,7 @@ int main(
     /* check to see if user specified 'all' to delete all jobs */
     
     strcpy(job_id, argv[optind]);
-    if (strcmp("all", job_id) == 0)
+    if ((strcmp("all", job_id) == 0) || (strcmp("ALL", job_id) == 0))
       {
       qdel_all(extend);
       continue;
