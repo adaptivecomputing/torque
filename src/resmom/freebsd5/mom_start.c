@@ -86,6 +86,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <unistd.h>
+#include <stdio.h>
 #include <pwd.h>
 #include "portability.h"
 #include "libpbs.h"
@@ -108,6 +109,8 @@ extern int	 exiting_tasks;
 extern char	 mom_host[];
 extern tlist_head svr_alljobs;
 extern int	 termin_child;
+
+extern int       LOGLEVEL;
 
 /* Private variables */
 
@@ -190,35 +193,124 @@ char *set_shell(pjob, pwdp)
  *	task as Exiting.
  */
 
+#define TMAX_TJCACHESIZE 128
+
 void scan_for_terminated()
 {
 	static	char	id[] = "scan_for_terminated";
-	int		exiteval;
+	int		exiteval = 0;
 	pid_t		pid;
 	job		*pjob;
 	task		*ptask = 0;
 	int		statloc;
 
-	/* update the latest intelligence about the running jobs;         */
+
+#ifdef CACHEOBITFAILURES
+  static job *TJCache[TMAX_TJCACHESIZE];
+
+  int tjcindex;
+
+  int TJCIndex = 0;
+#endif
+
+  if (LOGLEVEL >= 7)
+    {
+    log_record(
+      PBSEVENT_JOB,
+      PBS_EVENTCLASS_JOB,
+      id,
+      "entered");
+    }
+    
+ 	/* update the latest intelligence about the running jobs;         */
 	/* must be done before we reap the zombies, else we lose the info */
 
 	termin_child = 0;
 
 	if (mom_get_sample() == PBSE_NONE) {
-		pjob = (job *)GET_NEXT(svr_alljobs);
+		pjob = (job *)GET_PRIOR(svr_alljobs);
 		while (pjob) {
 			mom_set_use(pjob);
-			pjob = (job *)GET_NEXT(pjob->ji_alljobs);
+			pjob = (job *)GET_PRIOR(pjob->ji_alljobs);
 		}
 	}
+
+#ifdef CACHEOBITFAILURES
+  /* process cached obit failures */
+
+  for (TJCIndex = 0;TJCIndex < TMAX_TJCACHESIZE;TJCIndex++)
+    {
+    if (TJCache[TJCIndex] == NULL)
+      break;
+
+    if (TJCache[TJCIndex] == (job *)1)
+      continue;
+
+    /* attempt to send obit again */
+
+    pjob = TJCache[TJCIndex];
+    
+    if (LOGLEVEL >= 7)
+      {
+      LOG_EVENT(
+        PBSEVENT_DEBUG,
+        PBS_EVENTCLASS_JOB,
+        pjob->ji_qs.ji_jobid,
+          "Retrying send of OBIT");
+      }
+    
+    if (pjob->ji_mompost(pjob,exiteval) != 0)
+      {
+      /* attempt failed again */
+
+      termin_child = 1;
+
+      continue;
+      }
+
+    /* success */
+    if (LOGLEVEL >= 7)
+      {
+      LOG_EVENT(
+        PBSEVENT_DEBUG,
+        PBS_EVENTCLASS_JOB,
+        pjob->ji_qs.ji_jobid,
+          "OBIT resent successfully");
+       }
+
+    pjob->ji_mompost = NULL;
+
+    /* clear mom sub-task */
+
+    pjob->ji_momsubt = 0;
+
+    job_save(pjob,SAVEJOB_QUICK);
+    TJCache[TJCIndex] = ((job *)1);
+
+    }  /* END for (TJIndex) */
+#endif /* CACHEOBITFAILURES */
 
 	/* Now figure out which task(s) have terminated (are zombies) */
 
 	while ((pid = waitpid(-1, &statloc, WNOHANG)) > 0) {
 
-		pjob = (job *)GET_NEXT(svr_alljobs);
+		pjob = (job *)GET_PRIOR(svr_alljobs);
 		while (pjob) {
-	    		/*
+
+      if (LOGLEVEL >= 7)
+        {
+        snprintf(log_buffer,1024,"checking job w/subtask pid=%d (child pid=%d)",
+          pjob->ji_momsubt,
+          pid);
+
+        LOG_EVENT(
+          PBSEVENT_DEBUG,
+          PBS_EVENTCLASS_JOB,
+          pjob->ji_qs.ji_jobid,
+          log_buffer);
+        }
+
+   		/*
 			** see if process was a child doing a special
 			** function for MOM
 			*/
@@ -235,7 +327,7 @@ void scan_for_terminated()
 			}
 			if (ptask != NULL)
 				break;
-			pjob = (job *)GET_NEXT(pjob->ji_alljobs);
+      pjob = (job *)GET_PRIOR(pjob->ji_alljobs);
 		}
 		if (WIFEXITED(statloc))
 			exiteval = WEXITSTATUS(statloc);
@@ -244,35 +336,121 @@ void scan_for_terminated()
 		else 
 			exiteval = 1;
 
-		if (pjob == NULL) {
-			DBPRT(("%s: pid %d not tracked, exit %d\n",
-				id, pid, exiteval))
+		if (pjob == NULL)
+		  {
+      if (LOGLEVEL >= 1)
+        {
+        sprintf(log_buffer,"pid %d not tracked, exitcode=%d",
+          pid,
+          exiteval);
+
+        log_record(
+          PBSEVENT_JOB,
+          PBS_EVENTCLASS_JOB,
+          id,
+          log_buffer);
+        }
 			continue;
 		}
 
-		if (pid == pjob->ji_momsubt) {
-			if (pjob->ji_mompost) {
-				pjob->ji_mompost(pjob, exiteval);
-				pjob->ji_mompost = 0;
-			}
+		if (pid == pjob->ji_momsubt)
+		  {
+      /* PID matches job mom subtask */
+
+      log_record(
+        PBSEVENT_JOB,
+        PBS_EVENTCLASS_JOB,
+        pjob->ji_qs.ji_jobid,
+        "checking job post-processing routine");
+        
+			if (pjob->ji_mompost)
+			  {
+        if (pjob->ji_mompost(pjob,exiteval) == 0)
+          {
+          /* success */
+
+          pjob->ji_mompost = 0;
+          }
+#ifdef CACHEOBITFAILURES
+        else
+          {
+          for (tjcindex = 0;tjcindex < TMAX_TJCACHESIZE;tjcindex++)
+            {
+            if ((TJCache[tjcindex] == NULL) || (TJCache[tjcindex] == (job *)1))
+              {
+              if (LOGLEVEL >= 7)
+                {
+                LOG_EVENT(
+                  PBSEVENT_DEBUG,
+                  PBS_EVENTCLASS_JOB,
+                  pjob->ji_qs.ji_jobid,
+                    "Caching OBIT for resend");
+                }
+              TJCache[tjcindex] = pjob;
+              termin_child = 1;
+
+              break;
+              }
+            }    /* END for (tjcindex) */
+
+          continue;
+          }
+#endif /* CACHEOBITFAILURES */
+			  }
+	    else
+			  {
+        if (LOGLEVEL >= 7)
+          {
+          LOG_EVENT(
+            PBSEVENT_DEBUG,
+            PBS_EVENTCLASS_JOB,
+            pjob->ji_qs.ji_jobid,
+              "No post processing routine for job");
+          }
+			  }
+
+      /* clear mom sub-task */
+
 			pjob->ji_momsubt = 0;
 			(void)job_save(pjob, SAVEJOB_QUICK);
 			continue;
-		}
-		DBPRT(("%s: task %d pid %d exit value %d\n", id,
-				ptask->ti_qs.ti_task, pid, exiteval))
+		}  /* END if (pid == pjob->ji_momsubt) */
+		
+    if (LOGLEVEL >= 2)
+      {
+      sprintf(log_buffer,"for job %s, task %d, pid=%d, exitcode=%d",
+        pjob->ji_qs.ji_jobid,
+        ptask->ti_qs.ti_task,
+        pid,
+        exiteval);
+
+      log_record(
+        PBSEVENT_JOB,
+        PBS_EVENTCLASS_JOB,
+        id,
+        log_buffer);
+      }
+
 		kill_task(ptask, SIGKILL,0);
 		ptask->ti_qs.ti_exitstat = exiteval;
 		ptask->ti_qs.ti_status = TI_STATE_EXITED;
 		pjob->ji_qs.ji_un.ji_momt.ji_exitstat = exiteval;
 		task_save(ptask);
-		sprintf(log_buffer, "task %d terminated", ptask->ti_qs.ti_task);
+
+    sprintf(log_buffer,"%s: job %s task %d terminated, sid=%d",
+      id,
+      pjob->ji_qs.ji_jobid,
+      ptask->ti_qs.ti_task,
+      ptask->ti_qs.ti_sid);
+
 		LOG_EVENT(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB,
 			pjob->ji_qs.ji_jobid, log_buffer);
 
 		exiting_tasks = 1;
-	}
-}
+    }  /* END while ((pid = waitpid(-1,&statloc,WNOHANG)) > 0) */
+
+  return;
+}  /* END scan_for_terminated() */
 
 /*
  * creat the master pty, this particular
