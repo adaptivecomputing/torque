@@ -660,7 +660,7 @@ static void stat_update(
            directory is cleared, set its state to queued so job_abt doesn't
            think it is still running */
         svr_setjobstate(pjob,JOB_STATE_QUEUED,JOB_SUBSTATE_ABORT);
-        job_abt(&pjob, NULL);
+        job_abt(&pjob, "Job does not exist on node");
 
         /* TODO, if the job is rerunnable we should set its state back to queued */
  
