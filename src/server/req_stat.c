@@ -647,6 +647,26 @@ static void stat_update(
       pstatus = (struct brp_status *)GET_NEXT(pstatus->brp_stlink);
       }  /* END while (pstatus != NULL) */
     }    /* END if (preply->brp_choice == BATCH_REPLY_CHOICE_Status) */
+  else
+    {
+    if(preply->brp_code == PBSE_UNKJOBID)
+      {
+      /* we sent a stat request, but mom says it doesn't know anything about
+         the job */
+      if ((pjob = find_job(preq->rq_ind.rq_status.rq_id)))
+        {
+        /* job really isn't running any more - mom doesn't know anything about it
+           this can happen if a diskless node reboots and the mom_priv/jobs 
+           directory is cleared, set its state to queued so job_abt doesn't
+           think it is still running */
+        svr_setjobstate(pjob,JOB_STATE_QUEUED,JOB_SUBSTATE_ABORT);
+        job_abt(&pjob, NULL);
+
+        /* TODO, if the job is rerunnable we should set its state back to queued */
+ 
+        }
+      }
+    }
 
   release_req(pwt);
 

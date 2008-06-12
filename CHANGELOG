@@ -39,6 +39,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature
   b - changed order of searching so we find most recent jobs first. Prevents
       finding old leftover job when pids rollover. Also some CACHEOBITFAILURES
       updates.
+  b - handle case where mom replies with an unknown job error to a stat request
+      from the server
 
 2.3.0
   b - fixed a bug where TORQUE would ignore the "pbs_asyrunjob" API extension string when starting jobs in asynchronous mode

@@ -38,6 +38,7 @@ void req_holdarray (struct batch_request *preq)
   attribute *pattr;
   char owner[PBS_MAXUSER + 1];
   job_array *pa;
+  /* batch_request *preq_tmp; */
   
   pa = get_array(preq->rq_ind.rq_hold.rq_orig.rq_objname);
   if (pa == NULL)
@@ -100,6 +101,7 @@ void req_holdarray (struct batch_request *preq)
         (csv_find_string(pattr->at_val.at_str, "enabled") != NULL))))
       {
       /* TODO */
+      /* preq_tmp = alloc_br(preq->rq_type); */
       
       } 
     else if (old_hold != *hold_val) 
