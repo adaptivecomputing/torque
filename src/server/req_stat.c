@@ -129,6 +129,7 @@ int status_attrib A_((svrattrl *,attribute_def *,attribute *,int,int,tlist_head 
 extern int   svr_connect A_((pbs_net_t,unsigned int,void (*)(int), enum conn_type));
 extern int status_nodeattrib(svrattrl *,attribute_def *,struct pbsnode *,int,int,tlist_head *,int*);
 extern int hasprop(struct pbsnode *,struct prop *);
+extern void rel_resc(job*);
 
 /* Private Data Definitions */
 
@@ -660,6 +661,7 @@ static void stat_update(
            directory is cleared, set its state to queued so job_abt doesn't
            think it is still running */
         svr_setjobstate(pjob,JOB_STATE_QUEUED,JOB_SUBSTATE_ABORT);
+        rel_resc(pjob);
         job_abt(&pjob, "Job does not exist on node");
 
         /* TODO, if the job is rerunnable we should set its state back to queued */
