@@ -341,5 +341,27 @@ void free_str(
   }  /* END free_str() */
 
 
+
+/*
+ * replace_attr_string - replace string attribute value
+ */
+
+void replace_attr_string(
+
+  struct attribute *attr,
+  char *newval)
+
+  {
+  free_str(attr);
+
+  attr->at_val.at_str = newval;
+  attr->at_flags |= ATR_VFLAG_SET;
+
+  return;
+  }  /* END replace_job_attr_string() */
+
+
+/* END attr_fn_str.c */
+
 /* END attr_fn_str.c */
 

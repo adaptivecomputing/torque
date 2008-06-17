@@ -1668,6 +1668,41 @@ char *prefix_std_file(
   }
 
 
+/*
+ * add_std_filename - add the default file name for the job's
+ *	standard output or error: 
+ *		job_name.[e|o]job_sequence_number
+ */
+
+char *add_std_filename(
+
+  job *pjob,
+  char * path,
+  int  key)
+
+  {
+  int	 len;
+  char	*name = (char *)0;
+
+  len = strlen(path) +
+        strlen(pjob->ji_wattr[(int)JOB_ATR_jobname].at_val.at_str) + 
+        PBS_MAXSEQNUM + 
+        5;
+
+  name = malloc(len);
+    
+  if (name) 
+    {
+    strcpy(name,path);
+    strcat(name,"/");	/* the final /		*/
+
+					/* now add the rest	*/
+    default_std(pjob,key,name + strlen(name));
+    }
+
+  return(name);
+  }
+
 
 
 /*

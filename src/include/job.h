@@ -764,6 +764,7 @@ extern job  *job_recov A_((char *));
 extern int   job_save A_((job *,int));
 extern int   modify_job_attr A_((job *,svrattrl *,int,int *));
 extern char *prefix_std_file A_((job *,int));
+extern char *add_std_filename A_((job *, char *, int));
 extern int   set_jobexid A_((job *,attribute *,char *));
 extern int   site_check_user_map A_((job *,char *,char *));
 extern void  svr_dequejob A_((job *));
