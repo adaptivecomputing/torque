@@ -1394,6 +1394,10 @@ static void obit_reply(
     if ((pjob->ji_qs.ji_substate == JOB_SUBSTATE_OBIT) &&
         (pjob->ji_momhandle == sock)) 
       {
+      /* Clear out destination so we know job is not on mom any more */
+       
+      pjob->ji_qs.ji_destin[0] = '\0';
+
       switch (preq->rq_reply.brp_code) 
         {
         case PBSE_NONE:
@@ -1402,10 +1406,6 @@ static void obit_reply(
 
           pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITED;
           
-          /* Clear out destination so we know job is not on mom any more */
-          
-          pjob->ji_qs.ji_destin[0] = '\0';
-
           job_save(pjob,SAVEJOB_QUICK);
 
           if (LOGLEVEL >= 4)
