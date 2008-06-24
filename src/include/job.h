@@ -456,6 +456,10 @@ struct job {
 	    char    ji_fileprefix[PBS_JOBBASE + 1];  /* job file prefix */
 	    char    ji_queue[PBS_MAXQUEUENAME + 1];  /* name of current queue */
 	    char    ji_destin[PBS_MAXROUTEDEST + 1]; /* dest from qmove/route */
+                  /*
+                   * ji_destin gets set when we assign hosts and gets
+                   * cleared on failure to run job on mom or at obit_reply
+                   */
 	    int	    ji_un_type;		/* type of ji_un union */
 	    union {	/* depends on type of queue currently in */
 		struct {	/* if in execution queue .. */

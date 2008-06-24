@@ -229,9 +229,7 @@ void req_modifyjob(
             released (ie qhold/qrls) */
 
   if ((pjob->ji_qs.ji_state == JOB_STATE_RUNNING) ||
-#ifdef ENABLE_BLCR
-      (pjob->ji_qs.ji_state == JOB_STATE_HELD) ||
-#endif
+     ((pjob->ji_qs.ji_state == JOB_STATE_HELD) && (pjob->ji_qs.ji_destin[0] != '\0')) ||
      ((pjob->ji_qs.ji_state == JOB_STATE_QUEUED) && (pjob->ji_qs.ji_destin[0] != '\0')))
     {
     while (plist != NULL) 
