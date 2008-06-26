@@ -152,8 +152,8 @@ int main(int argc, char **argv) /* qmsg */
 cnt:
         connect = cnt2server(server_out);
         if ( connect <= 0 ) {
-            fprintf(stderr, "qmsg: cannot connect to server %s (errno=%d)\n",
-                    pbs_server, pbs_errno);
+            fprintf(stderr, "qmsg: cannot connect to server %s (errno=%d) %s\n",
+                    pbs_server, pbs_errno, pbs_strerror(pbs_errno));
             any_failed = pbs_errno;
             continue;
         }

@@ -98,6 +98,7 @@
 #include	<arpa/inet.h>
 
 #include	"pbs_ifl.h"
+#include	"pbs_error.h"
 #include	"net_connect.h"
 #include	"resmon.h"
 #include	"log.h"
@@ -455,8 +456,8 @@ static int simplecom(
     {
     pbs_errno = errno;
 
-    DBPRT(("simplecom: flush error %d\n", 
-      pbs_errno))
+    DBPRT(("simplecom: flush error %d (%s)\n", 
+      pbs_errno, pbs_strerror(pbs_errno)))
 
     close_dis(stream);
 
@@ -638,8 +639,8 @@ int configrm(
     {
     pbs_errno = errno;
 
-    DBPRT(("configrm: flush error %d\n", 
-      pbs_errno))
+    DBPRT(("configrm: flush error %d (%s)\n", 
+      pbs_errno, pbs_strerror(pbs_errno)))
 
     return(-1);
     }
@@ -826,8 +827,8 @@ char *getreq(
       {
       pbs_errno = errno;
 
-      DBPRT(("getreq: flush error %d\n", 
-        pbs_errno))
+      DBPRT(("getreq: flush error %d (%s)\n", 
+        pbs_errno, pbs_strerror(pbs_errno)))
 
       delrm(stream);
 
@@ -927,8 +928,8 @@ int flushreq()
         {
         pbs_errno = errno;
 
-        DBPRT(("flushreq: flush error %d\n", 
-          pbs_errno))
+        DBPRT(("flushreq: flush error %d (%s)\n", 
+          pbs_errno, pbs_strerror(pbs_errno)))
 
         close_dis(op->stream);
 
@@ -1058,7 +1059,7 @@ int activereq(void)
 			num = select(FD_SETSIZE, &fdset, NULL, NULL, &tv);
 			if (num == -1) {
 				pbs_errno = errno;
-				DBPRT(("%s: select %d\n", id, pbs_errno))
+				DBPRT(("%s: select %d %s\n", id, pbs_errno, pbs_strerror(pbs_errno)))
 				return -1;
 			}
 			if (num == 0) {
@@ -1084,7 +1085,7 @@ int activereq(void)
 	num = select(FD_SETSIZE, &fdset, NULL, NULL, &tv);
 	if (num == -1) {
 		pbs_errno = errno;
-		DBPRT(("%s: select %d\n", id, pbs_errno))
+		DBPRT(("%s: select %d %s\n", id, pbs_errno, pbs_strerror(pbs_errno)))
 		return -1;
 	}
 	else if (num == 0)

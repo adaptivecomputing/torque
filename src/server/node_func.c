@@ -984,10 +984,11 @@ static int process_host_name_part(
           sizeof(struct in_addr),
           hp->h_addrtype)) == NULL) 
       {
-      sprintf(log_buffer,"cannot perform reverse name lookup for '%s' h_errno=%d errno=%d (check name server)",
+      sprintf(log_buffer,"cannot perform reverse name lookup for '%s' h_errno=%d errno=%d (%s) (check name server)",
         objname,
         h_errno, 
-        errno);
+        errno,
+        pbs_strerror(errno));
 
       free(phostname);
       phostname = NULL;
@@ -1062,10 +1063,11 @@ static int process_host_name_part(
 
       if ((hp = gethostbyname(hptr)) == NULL) 
         {
-        sprintf(log_buffer,"bad cname %s, h_errno=%d errno=%d",
+        sprintf(log_buffer,"bad cname %s, h_errno=%d errno=%d (%s)",
           hptr,
           h_errno,
-          errno);
+          errno,
+          pbs_strerror(errno));
 
         if (hname != NULL)
           {

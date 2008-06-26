@@ -242,15 +242,17 @@ static char *x11_get_proto(
 
   if (f == NULL)
     {
-    fprintf(stderr,"execution of '%s' failed, errno=%d\n",
+    fprintf(stderr,"execution of '%s' failed, errno=%d (%s)\n",
       line,
-      errno);
+      errno,
+      pbs_strerror(errno));
     }
   else if (fgets(line,sizeof(line),f) == 0)
     {
-    fprintf(stderr,"cannot read data from '%s', errno=%d\n",
+    fprintf(stderr,"cannot read data from '%s', errno=%d (%s)\n",
       line,
-      errno);
+      errno,
+      pbs_strerror(errno));
     }
   else if (sscanf(line,"%*s %511s %511s",
              proto,
@@ -1285,6 +1287,16 @@ state2:         /* goto label : Variable name */
         break;
 
       case '=':
+        /* if we just have the '=' and no value after it then we look in
+         the environment same as if the '=' was not there */
+        if ((c[1] == ',') || (c[1] == '\0'))
+          {
+          *c = '\0';
+          c++;
+          goto state3;
+
+          /*NOTREACHED*/
+          }
 
         goto state4;
 
@@ -1312,7 +1324,7 @@ state3:         /* No value - get it from qsub environment */
 
     if (env == NULL) 
       {
-      return(FALSE);
+      env = "";
       }
 
     if (strlen(job_env) + 2 + strlen(s) + 2*strlen(env) >= len)
@@ -1977,9 +1989,10 @@ void bailout()
 
   if (c <= 0) 
     {
-    fprintf(stderr,"qsub: cannot connect to server %s (errno=%d)\n",
+    fprintf(stderr,"qsub: cannot connect to server %s (errno=%d) %s\n",
       pbs_server, 
-      pbs_errno);
+      pbs_errno,
+      pbs_strerror(pbs_errno));
 
     if (getenv("PBSDEBUG") != NULL)
       {
@@ -4140,9 +4153,10 @@ int main(
 
   if (connect <= 0) 
     {
-    fprintf(stderr, "qsub: cannot connect to server %s (errno=%d)\n",
+    fprintf(stderr, "qsub: cannot connect to server %s (errno=%d) %s\n",
       pbs_server, 
-      pbs_errno);
+      pbs_errno,
+      pbs_strerror(pbs_errno));
 
     if (getenv("PBSDEBUG") != NULL)
       {
@@ -4203,8 +4217,9 @@ int main(
       }
     else
       {
-      fprintf(stderr,"qsub: Error (%d) submitting job\n", 
-        pbs_errno);
+      fprintf(stderr,"qsub: Error (%d - %s) submitting job\n", 
+        pbs_errno,
+        pbs_strerror(pbs_errno));
       }
 
     unlink(script_tmp);

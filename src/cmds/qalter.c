@@ -671,9 +671,10 @@ cnt:
 
     if (connect <= 0) 
       {
-      fprintf(stderr, "qalter: cannot connect to server %s (errno=%d)\n",
+      fprintf(stderr, "qalter: cannot connect to server %s (errno=%d) %s\n",
         pbs_server, 
-        pbs_errno);
+        pbs_errno,
+        pbs_strerror(pbs_errno));
 
       any_failed = pbs_errno;
 

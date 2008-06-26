@@ -205,9 +205,10 @@ cnt:
 
     if (connect <= 0) 
       {
-      fprintf(stderr,"qrerun: cannot connect to server %s (errno=%d)\n",
+      fprintf(stderr,"qrerun: cannot connect to server %s (errno=%d) %s\n",
         pbs_server, 
-        pbs_errno);
+        pbs_errno,
+        pbs_strerror(pbs_errno));
 
       any_failed = pbs_errno;
 

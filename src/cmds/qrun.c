@@ -270,9 +270,10 @@ cnt:
     } 
   else 
     {
-    fprintf(stderr, "qrun: could not connect to server %s (%d)\n", 
+    fprintf(stderr, "qrun: could not connect to server %s (%d) %s\n", 
       server, 
-      pbs_errno);
+      pbs_errno,
+      pbs_strerror(pbs_errno));
 
     exitstatus = 2;
     }

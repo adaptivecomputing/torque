@@ -261,8 +261,8 @@ static void execute(
         } 
       else 
         {
-        fprintf(stderr,"qterm: Error (%d) terminating server ", 
-          pbs_errno);
+        fprintf(stderr,"qterm: Error (%d - %s) terminating server ", 
+          pbs_errno, pbs_strerror(pbs_errno));
         }
 
       fprintf(stderr,"%s\n", 
@@ -277,9 +277,10 @@ static void execute(
     {
     /* FAILURE */
 
-    fprintf(stderr,"qterm: could not connect to server '%s' (%d)\n", 
+    fprintf(stderr,"qterm: could not connect to server '%s' (%d) %s\n", 
       server, 
-      pbs_errno);
+      pbs_errno,
+      pbs_strerror(pbs_errno));
 
     exitstatus = 2;
     }

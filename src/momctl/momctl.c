@@ -455,10 +455,12 @@ int do_mom(char *HPtr,int MOMPort,int CmdIndex)
 
       if (addreq(sd,tmpLine) != 0)
         {
-        fprintf(stderr,"ERROR:    cannot request job clear on %s (errno=%d:%d)\n",
+        fprintf(stderr,"ERROR:    cannot request job clear on %s (errno=%d-%s: %d-%s)\n",
           HPtr,
           errno,
-          pbs_errno);
+          pbs_strerror(errno),
+          pbs_errno,
+          pbs_strerror(pbs_errno));
 
         closerm(sd);
 
@@ -467,10 +469,12 @@ int do_mom(char *HPtr,int MOMPort,int CmdIndex)
 
       if ((Value = (char *)getreq(sd)) == NULL)
         {
-        fprintf(stderr,"ERROR:    job clear failed on %s (errno: %d:%d)\n",
+        fprintf(stderr,"ERROR:    job clear failed on %s (errno=%d-%s: %d-%s)\n",
           HPtr,
           errno,
-          pbs_errno);
+          pbs_strerror(errno),
+          pbs_errno,
+          pbs_strerror(pbs_errno));
 
         closerm(sd);
 
@@ -494,10 +498,12 @@ int do_mom(char *HPtr,int MOMPort,int CmdIndex)
 
       if (rc != 0)
         {
-        fprintf(stderr,"ERROR:    cannot shutdown mom daemon on %s (errno=%d:%d)\n",
+        fprintf(stderr,"ERROR:    cannot shutdown mom daemon on %s (errno=%d-%s: %d-%s)\n",
           HPtr,
           errno,
-          pbs_errno);
+          pbs_strerror(errno),
+          pbs_errno,
+          pbs_strerror(pbs_errno));
 
         closerm(sd);
 
@@ -519,10 +525,12 @@ int do_mom(char *HPtr,int MOMPort,int CmdIndex)
 
       if (rc != 0)
         {
-        fprintf(stderr,"ERROR:    cannot reconfigure mom on %s (errno=%d:%d)\n",
+        fprintf(stderr,"ERROR:    cannot reconfigure mom on %s (errno=%d-%s: %d-%s)\n",
           HPtr,
           errno,
-          pbs_errno);
+          pbs_strerror(errno),
+          pbs_errno,
+          pbs_strerror(pbs_errno));
 
         closerm(sd);
 
@@ -549,11 +557,13 @@ int do_mom(char *HPtr,int MOMPort,int CmdIndex)
         {
         if (addreq(sd,Query[rindex]) != 0)
           {
-          fprintf(stderr,"ERROR:    cannot add query for '%s' on %s (errno=%d:%d)\n",
+          fprintf(stderr,"ERROR:    cannot add query for '%s' on %s (errno=%d-%s: %d-%s)\n",
             Query[rindex],
             HPtr,
             errno,
-            pbs_errno);
+          pbs_strerror(errno),
+          pbs_errno,
+          pbs_strerror(pbs_errno));
           }
         }
 
@@ -566,12 +576,14 @@ int do_mom(char *HPtr,int MOMPort,int CmdIndex)
 
         if ((Value = (char *)getreq(sd)) == NULL)
           {
-          fprintf(stderr,"ERROR:    query[%d] '%s' failed on %s (errno: %d:%d)\n",
+          fprintf(stderr,"ERROR:    query[%d] '%s' failed on %s (errno=%d-%s: %d-%s)\n",
             rindex,
             Query[rindex],
             HPtr,
             errno,
-            pbs_errno);
+            pbs_strerror(errno),
+            pbs_errno,
+            pbs_strerror(pbs_errno));
           }
         else
           {

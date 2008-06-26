@@ -253,9 +253,10 @@ cnt:
 
     if (connect <= 0) 
       {
-      fprintf(stderr,"qdel: cannot connect to server %s (errno=%d)\n",
+      fprintf(stderr,"qdel: cannot connect to server %s (errno=%d) %s\n",
         pbs_server, 
-        pbs_errno);
+        pbs_errno,
+        pbs_strerror(pbs_errno));
 
       any_failed = pbs_errno;
 
@@ -316,8 +317,9 @@ void qdel_all(
 
   if (connect <= 0) 
     {
-    fprintf(stderr,"qdel: cannot connect to default server (errno=%d)\n",
-      pbs_errno);
+    fprintf(stderr,"qdel: cannot connect to default server (errno=%d) %s\n",
+      pbs_errno,
+      pbs_strerror(pbs_errno));
       
     return;
     }
@@ -367,7 +369,7 @@ redo:
         (pbs_errno != PBSE_UNKJOBID) &&
         (pbs_errno != PBSE_BADSTATE)) 
         {
-        printf("Deletion Error: %d\n", pbs_errno);
+        printf("Deletion Error: %d (%s)\n", pbs_errno, pbs_strerror(pbs_errno));
         prt_job_err("qdel",connect,jobid);
         /*
          * if we don't have permission for this job, we probably don't have

@@ -179,7 +179,9 @@ char *server;
             if ( errmsg != NULL ) {
                 fprintf(stderr, "qstop: %s ", errmsg);
             } else {
-                fprintf(stderr, "qstop: Error (%d) disabling queue ", pbs_errno);
+                fprintf(stderr, "qstop: Error (%d - %s) disabling queue ",
+                  pbs_errno,
+                  pbs_strerror(pbs_errno));
             }
             if ( notNULL(queue) )
                 fprintf(stderr, "%s", queue);
@@ -190,7 +192,10 @@ char *server;
         }
         pbs_disconnect(ct);
     } else {
-        fprintf(stderr, "qstop: could not connect to server %s (%d)\n", server, pbs_errno);
+        fprintf(stderr, "qstop: could not connect to server %s (%d) %s\n",
+          server,
+          pbs_errno,
+          pbs_strerror(pbs_errno));
         exitstatus = 2;
     }
 }

@@ -106,6 +106,7 @@
 #include "server.h"
 #include "svrfunc.h"
 #include "log.h"
+#include "pbs_error.h"
 
 
 /* Global Data Items: */
@@ -301,8 +302,9 @@ int svr_save(
 
     if (save_struct((char *)&ps->sv_qs,sizeof(struct server_qs)) != 0) 
       {
-      snprintf(log_buffer,1024,"cannot save data into server db, errno=%d",
-        errno);
+      snprintf(log_buffer,1024,"cannot save data into server db, errno=%d (%s)",
+        errno,
+        pbs_strerror(errno));
 
       log_err(errno, this_function_name, log_buffer);
 
@@ -332,8 +334,9 @@ int svr_save(
 
     if (link(path_svrdb_new,path_svrdb) == -1)
       {
-      snprintf(log_buffer,1024,"cannot move new database to default database location, errno=%d",
-        errno);
+      snprintf(log_buffer,1024,"cannot move new database to default database location, errno=%d (%s)",
+        errno,
+        pbs_strerror(errno));
 
       log_err(errno, this_function_name, log_buffer);
       }

@@ -1805,10 +1805,11 @@ static void resume_suspend(
 
     if (LOGLEVEL >= 1)
       {
-      sprintf(log_buffer,"cannot send signal %s to tasks of job in %s (errno=%d) - attempt aborted",
+      sprintf(log_buffer,"cannot send signal %s to tasks of job in %s (errno=%d %s) - attempt aborted",
         (susp == 1) ? "SIGSTOP" : "SIGCONT",
         id,
-        savederr);
+        savederr,
+        pbs_strerror(savederr));
       
       log_record(
         PBSEVENT_ERROR,
@@ -2485,10 +2486,11 @@ static int del_files(
       {
       if (errno != ENOENT) 
         {
-        sprintf(log_buffer,"Unable to delete file %s for user %s, error = %d",
+        sprintf(log_buffer,"Unable to delete file %s for user %s, error = %d %s",
           path, 
           preq->rq_ind.rq_cpyfile.rq_user, 
-          errno);
+          errno,
+          pbs_strerror(errno));
 
         LOG_EVENT(
           PBSEVENT_JOB, 
@@ -2716,8 +2718,8 @@ static int sys_copy(
 
       if ((fd = open(rcperr,O_RDWR|O_CREAT|O_EXCL,0644)) < 0) 
         {
-        sprintf(log_buffer,"can't open %s, error = %d",
-          rcperr,errno);
+        sprintf(log_buffer,"can't open %s, error = %d %s",
+          rcperr,errno, pbs_strerror(errno));
 
         log_err(errno,id,log_buffer);
 
@@ -2737,12 +2739,13 @@ static int sys_copy(
 
       /* reached only if execl() fails */
 
-      sprintf(log_buffer,"exec of command '%s %s %s %s' failed, errno=%d",
+      sprintf(log_buffer,"exec of command '%s %s %s %s' failed, errno=%d %s",
         ag0, 
         ag1, 
         ag2, 
         ag3, 
-        errno);
+        errno,
+        pbs_strerror(errno));
 
       log_err(errno,id,log_buffer);
 

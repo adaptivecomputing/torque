@@ -1528,7 +1528,7 @@ static void catch_child(
 #ifdef NO_SIGCHLD
         log_err(errno,"catch_child","waitpid failed");
 #else
-        DBPRT(("catch_child waitpid failed %d\n", errno));
+        DBPRT(("catch_child waitpid failed %d (%s)\n", errno, pbs_strerror(errno)));
 #endif
         }
       return;

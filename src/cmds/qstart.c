@@ -181,7 +181,9 @@ char *server;
             if ( errmsg != NULL ) {
                 fprintf(stderr, "qstart: %s ", errmsg);
             } else {
-                fprintf(stderr, "qstart: Error (%d) starting queue ", pbs_errno);
+                fprintf(stderr, "qstart: Error (%d - %s) starting queue ",
+                  pbs_errno,
+                  pbs_strerror(pbs_errno));
             }
             if ( notNULL(queue) )
                 fprintf(stderr, "%s", queue);
@@ -192,7 +194,10 @@ char *server;
         }
         pbs_disconnect(ct);
     } else {
-        fprintf(stderr, "qstart: could not connect to server %s (%d)\n", server, pbs_errno);
+        fprintf(stderr, "qstart: could not connect to server %s (%d) %s\n",
+          server,
+          pbs_errno,
+          pbs_strerror(pbs_errno));
         exitstatus = 2;
     }
 }

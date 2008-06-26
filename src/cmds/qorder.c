@@ -213,9 +213,10 @@ int main(
 
   if (connect <= 0) 
     {
-    fprintf(stderr, "qorder: cannot connect to server %s (errno=%d)\n",
+    fprintf(stderr, "qorder: cannot connect to server %s (errno=%d) %s\n",
       pbs_server,  
-      pbs_errno);
+      pbs_errno,
+      pbs_strerror(pbs_errno));
 
     exit(1);
     }

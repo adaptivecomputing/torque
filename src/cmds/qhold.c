@@ -174,8 +174,8 @@ int main(int argc, char **argv) /* qhold */
 cnt:
         connect = cnt2server(server_out);
         if ( connect <= 0 ) {
-            fprintf(stderr, "qhold: cannot connect to server %s (errno=%d)\n", 
-                    pbs_server, pbs_errno);
+            fprintf(stderr, "qhold: cannot connect to server %s (errno=%d) %s\n", 
+                    pbs_server, pbs_errno, pbs_strerror(pbs_errno));
             any_failed = pbs_errno;
             continue;
         }

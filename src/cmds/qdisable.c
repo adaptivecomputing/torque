@@ -181,7 +181,9 @@ char *server;
             if ( errmsg != NULL ) {
                 fprintf(stderr, "qdisable: %s ", errmsg);
             } else {
-                fprintf(stderr, "qdisable: Error (%d) disabling queue ", pbs_errno);
+                fprintf(stderr, "qdisable: Error (%d - %s) disabling queue ",
+                  pbs_errno,
+                  pbs_strerror(pbs_errno));
             }
             if ( notNULL(queue) )
                 fprintf(stderr, "%s", queue);
@@ -192,7 +194,11 @@ char *server;
         }
         pbs_disconnect(ct);
     } else {
-        fprintf(stderr, "qdisable: could not connect to server %s (%d)\n", server, pbs_errno);
+        fprintf(stderr, "qdisable: could not connect to server %s (%d) %s\n",
+          server,
+          pbs_errno,
+          pbs_strerror(pbs_errno));
+          
         exitstatus = 2;
     }
 }

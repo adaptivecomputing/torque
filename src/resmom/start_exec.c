@@ -1431,7 +1431,8 @@ int TMomFinalizeJob1(
       pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITING;
       exiting_tasks = 1;
 
-      sprintf(log_buffer,"Restart failed, error %d", errno);
+      sprintf(log_buffer,"Restart failed, error %d (%s)",
+        errno, pbs_strerror(errno));
 
       LOG_EVENT(
         PBSEVENT_JOB,
@@ -1528,7 +1529,8 @@ int TMomFinalizeJob1(
     if (pipe(TJE->pipe_script) == -1)
       {
       sprintf(log_buffer,
-        "Failed to create shell name pipe");
+        "Failed to create shell name pipe, errno = %d (%s)",
+           errno, strerror(errno));
 
       LOG_EVENT(
         PBSEVENT_JOB,

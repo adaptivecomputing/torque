@@ -4319,9 +4319,10 @@ int rm_request(
 
             if (statvfs(path_spool,&VFSStat) < 0)
               {
-              MUSNPrintF(&BPtr,&BSpace,"ALERT:  cannot stat stdout/stderr spool directory '%s' (errno=%d)\n",
+              MUSNPrintF(&BPtr,&BSpace,"ALERT:  cannot stat stdout/stderr spool directory '%s' (errno=%d) %s\n",
                 path_spool,
-                errno);
+                errno,
+                strerror(errno));
               }
             else
               {
@@ -6554,9 +6555,10 @@ int setup_program_environment()
     {
     c = errno;
 
-    sprintf(log_buffer,"server port = %u, errno = %d",
+    sprintf(log_buffer,"server port = %u, errno = %d (%s)",
       pbs_mom_port, 
-      c);
+      c,
+      strerror(c));
 
     if (c == EADDRINUSE)
       strcat(log_buffer,", already in use");
@@ -6574,9 +6576,10 @@ int setup_program_environment()
     {
     c = errno;
 
-    sprintf(log_buffer,"resource (tcp) port = %u, errno = %d",
+    sprintf(log_buffer,"resource (tcp) port = %u, errno = %d (%s)",
       pbs_rm_port, 
-      c);
+      c,
+      strerror(c));
 
     if (c == EADDRINUSE)
       strcat(log_buffer,", already in use");

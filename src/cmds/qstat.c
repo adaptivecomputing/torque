@@ -386,8 +386,14 @@ static char *findattrl(
   return(NULL);
   }
 
+#ifndef PBS_MINNAMELEN
+#define PBS_MINNAMELEN  16 /* min size for printf job jobs, queues, and servers */
+#endif /* PBS_MINNAMELEN */
 
-#define NAMEL   16  /* printf of jobs, queues, and servers */
+#ifndef PBS_NAMELEN
+#define PBS_NAMELEN   16  /* printf of jobs, queues, and servers */
+#endif  /* PBS_NAMELEN */
+
 #define OWNERL  15  /* printf of jobs */
 #define TIMEUL  8   /* printf of jobs */
 #define STATEL  1   /* printf of jobs */
@@ -588,6 +594,8 @@ static void altdsp_statjob(
   char *jstate;
   char *eltimecpu;
   char *eltimewal;
+  char tmpLine[MAX_LINE_LEN];
+
   int   usecput;
   static char  pfs[SIZEL];
   static char  rqmem[SIZEL];
@@ -616,19 +624,19 @@ static void altdsp_statjob(
       }
     else if (tasksize == 5)
       {
-      printf("\n                                                                     Req'd  Req'd   Elap\n");
+      printf("\n                                                                           Req'd  Req'd   Elap\n");
 
-      printf("Job ID               Username Queue    Jobname    SessID NDS   Tasks Memory Time  S Time\n");
+      printf("Job ID               Username Queue    Jobname          SessID NDS   Tasks Memory Time  S Time\n");
 
-      printf("-------------------- -------- -------- ---------- ------ ----- ----- ------ ----- - -----\n");
+      printf("-------------------- -------- -------- ---------------- ------ ----- ----- ------ ----- - -----\n");
       }
     else 
       {
-      printf("\n                                                                   Req'd  Req'd   Elap\n");
+      printf("\n                                                                         Req'd  Req'd   Elap\n");
 
-      printf("Job ID               Username Queue    Jobname    SessID NDS   TSK Memory Time  S Time\n");
+      printf("Job ID               Username Queue    Jobname          SessID NDS   TSK Memory Time  S Time\n");
 
-      printf("-------------------- -------- -------- ---------- ------ ----- --- ------ ----- - -----\n");
+      printf("-------------------- -------- -------- ---------------- ------ ----- --- ------ ----- - -----\n");
       }
     }
 
@@ -751,7 +759,10 @@ static void altdsp_statjob(
       pat = pat->next;
       }
 
-    printf("%-20.20s %-8.8s %-8.8s ", 
+    snprintf(tmpLine,sizeof(tmpLine),"%%-20.%ds %%-8.8s %%-8.8s ",
+      PBS_NAMELEN);
+
+    printf(tmpLine, 
       pstat->name, 
       usern, 
       queuen);
@@ -773,7 +784,10 @@ static void altdsp_statjob(
       } 
     else 
       {
-      printf("%-10.10s %6.6s %5.5s %*.*s %6.6s %5.5s %1.1s %5.5s",
+      snprintf(tmpLine,sizeof(tmpLine),"%%-%d.%ds %%6.6s %%5.5s %%*.*s %%6.6s %%5.5s %%1.1s %%5.5s",
+        PBS_NAMELEN, PBS_NAMELEN);
+
+      printf(tmpLine,
         jobn, 
         sess, 
         nodect, 
@@ -1016,6 +1030,7 @@ static void add_atropl(
 
 
 
+/* dispay when a normal "qstat" is executed */
 
 void display_statjob(
 
@@ -1052,7 +1067,7 @@ void display_statjob(
     {
     sprintf(format,"%%-%ds %%-%ds %%-%ds %%%ds %%%ds %%-%ds\n", 
       PBS_MAXSEQNUM + PBS_MAXJOBARRAYLEN + 11, 
-      NAMEL, 
+      PBS_MINNAMELEN, 
       OWNERL, 
       TIMEUL, 
       STATEL, 
@@ -1201,9 +1216,11 @@ void display_statjob(
             {
             l = strlen(a->value);
 
-            if (l > NAMEL) 
+            /* truncate AName */
+
+            if (l > PBS_NAMELEN) 
               {
-              l = l - NAMEL + 3;
+              l = l - PBS_NAMELEN + 3;
 
               c = a->value + l;
 
@@ -1371,7 +1388,7 @@ void display_statque(
 
 
   sprintf(format,"%%-%ds %%%ds %%%ds %%%ds %%%ds %%%ds %%%ds %%%ds %%%ds %%%ds %%%ds %%-%ds\n", 
-    NAMEL, 
+    PBS_MINNAMELEN, 
     NUML, 
     NUML, 
     NUML, 
@@ -1432,9 +1449,9 @@ void display_statque(
         {
         l = strlen(p->name);
 
-        if (l > NAMEL) 
+        if (l > PBS_NAMELEN) 
           {
-          c = a->name + NAMEL;
+          c = a->name + PBS_NAMELEN;
 
           *c = '\0';
           }
@@ -1559,7 +1576,7 @@ void display_statserver(
   NUML = MAXNUML;
 
   sprintf(format,"%%-%ds %%%ds %%%ds %%%ds %%%ds %%%ds %%%ds %%%ds %%%ds %%-%ds\n", 
-    NAMEL, 
+    PBS_MINNAMELEN, 
     NUML, 
     NUML, 
     NUML, 
@@ -1604,8 +1621,8 @@ void display_statserver(
         } else {
             if ( p->name != NULL ) {
                 l = strlen(p->name);
-                if ( l > NAMEL ) {
-                    c = p->name + NAMEL;
+                if ( l > PBS_NAMELEN ) {
+                    c = p->name + PBS_NAMELEN;
                     *c = '\0';
                 }
                 name = p->name;
@@ -2399,9 +2416,10 @@ job_no_args:
 
         if (connect <= 0) 
           {
-          fprintf(stderr,"qstat: cannot connect to server %s (errno=%d)\n",
+          fprintf(stderr,"qstat: cannot connect to server %s (errno=%d) %s\n",
             pbs_server, 
-            pbs_errno);
+            pbs_errno,
+            pbs_strerror(pbs_errno));
 
           ret = tcl_stat(error,NULL,f_opt);
 
@@ -2480,7 +2498,8 @@ job_no_args:
 que_no_args:
             connect = cnt2server(server_out);
             if ( connect <= 0 ) {
-                fprintf(stderr,"qstat: cannot connect to server %s (errno=%d)\n", pbs_server, pbs_errno);
+                fprintf(stderr,"qstat: cannot connect to server %s (errno=%d) %s\n",
+                  pbs_server, pbs_errno, pbs_strerror(pbs_errno));
 		ret = tcl_stat(error, NULL, f_opt);
                 any_failed = connect;
                 break;
@@ -2492,7 +2511,8 @@ que_no_args:
                     if ( errmsg != NULL ) {
                         fprintf(stderr, "qstat: %s ", errmsg);
                     } else
-                        fprintf(stderr, "qstat: Error (%d) getting status of queue ", pbs_errno);
+                        fprintf(stderr, "qstat: Error (%d - %s) getting status of queue ",
+                          pbs_errno, pbs_strerror(pbs_errno));
                     fprintf(stderr, "%s\n", queue_name_out);
 		    ret = tcl_stat(error, NULL, f_opt);
                     any_failed = pbs_errno;
@@ -2514,8 +2534,8 @@ que_no_args:
 svr_no_args:
             connect = cnt2server(server_out);
             if ( connect <= 0 ) {
-                fprintf(stderr,"qstat: cannot connect to server %s (errno=%d)\n",
-                        pbs_server, pbs_errno);
+                fprintf(stderr,"qstat: cannot connect to server %s (errno=%d) %s\n",
+                        pbs_server, pbs_errno, pbs_strerror(pbs_errno));
 		ret = tcl_stat(error, NULL, f_opt);
                 any_failed = connect;
                 break;
@@ -2527,7 +2547,8 @@ svr_no_args:
                     if ( errmsg != NULL ) {
                         fprintf(stderr, "qstat: %s ", errmsg);
                     } else
-                        fprintf(stderr, "qstat: Error (%d) getting status of server ", pbs_errno);
+                        fprintf(stderr, "qstat: Error (%d - %s) getting status of server ",
+                          pbs_errno, pbs_strerror(pbs_errno));
                     fprintf(stderr, "%s\n", server_out);
 		    ret = tcl_stat(error, NULL, f_opt);
                     any_failed = pbs_errno;

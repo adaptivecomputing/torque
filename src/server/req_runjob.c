@@ -579,9 +579,10 @@ int svr_startjob(
 
     if ((hp = gethostbyname(nodestr)) == NULL)
       {
-      sprintf(log_buffer,"could not contact %s (gethostbyname failed, errno: %d)",
+      sprintf(log_buffer,"could not contact %s (gethostbyname failed, errno: %d (%s))",
         nodestr,
-        errno);
+        errno,
+        pbs_strerror(errno));
 
       if (FailHost != NULL)
         strncpy(FailHost,nodestr,1024);
@@ -623,9 +624,10 @@ int svr_startjob(
 
     if ((sock = socket(AF_INET,SOCK_STREAM,0)) == -1)
       {
-      sprintf(log_buffer,"could not contact %s (cannot create socket, errno: %d)",
+      sprintf(log_buffer,"could not contact %s (cannot create socket, errno: %d (%s))",
         nodestr,
-        errno);
+        errno,
+        pbs_strerror(errno));
 
       if (FailHost != NULL)
         strncpy(FailHost,nodestr,1024);
@@ -674,9 +676,10 @@ int svr_startjob(
 
     if (connect(sock,(struct sockaddr *)&saddr,sizeof(saddr)) < 0)
       {
-      sprintf(log_buffer,"could not contact %s (connect failed, errno: %d)",
+      sprintf(log_buffer,"could not contact %s (connect failed, errno: %d (%s))",
         nodestr,
-        errno);
+        errno,
+        pbs_strerror(errno));
 
       if (FailHost != NULL)
         strncpy(FailHost,nodestr,1024);

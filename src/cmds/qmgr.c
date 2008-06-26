@@ -715,9 +715,9 @@ struct server *make_connection(
     }
   else
     {
-    if (!zopt) 
-      fprintf(stderr,"qmgr: cannot connect to server %s\n", 
-        name);
+    if( ! zopt )
+      fprintf(stderr,"qmgr: cannot connect to server %s (errno=%d) %s\n", 
+        name, pbs_errno, pbs_strerror(pbs_errno));
     }
 
   return(svr);
@@ -1494,7 +1494,9 @@ int execute(
 	  exit(1);
 	} 
 	else 
-	  if( ! zopt ) fprintf(stderr,"qmgr: Error (%d) returned from server\n", pbs_errno);
+	  if( ! zopt ) fprintf(stderr,"qmgr: Error (%d - %s) returned from server\n",
+	    pbs_errno,
+	    pbs_strerror(pbs_errno));
 
 	if ( aopt ) 
 	  return perr;

@@ -1182,8 +1182,8 @@ static struct hostent *rpp_get_cname(
         sizeof(struct in_addr),
         addr->sin_family)) == NULL) 
     {
-    DBPRT((DBTO,"%s: addr not found, h_errno=%d errno=%d\n",
-      id, h_errno, errno))
+    DBPRT((DBTO,"%s: addr not found, h_errno=%d errno=%d (%s)\n",
+      id, h_errno, errno, strerror(errno)))
 
     return(NULL);
     }
@@ -1195,8 +1195,8 @@ static struct hostent *rpp_get_cname(
 
   if ((hp = gethostbyname(hname)) == NULL) 
     {
-    DBPRT((DBTO,"%s: canonical name %s not found, h_errno=%d errno=%d\n",
-      id, hname, h_errno, errno))
+    DBPRT((DBTO,"%s: canonical name %s not found, h_errno=%d errno=%d (%s)\n",
+      id, hname, h_errno, errno, strerror(errno)))
     }
 
   free(hname);
@@ -1296,9 +1296,9 @@ static int rpp_send_ack(
         (struct sockaddr *)&sp->addr,
         sizeof(struct sockaddr_in)) == -1) 
     {
-    DBPRT((DBTO,"%s: ACK error %d\n", 
+    DBPRT((DBTO,"%s: ACK error %d (%s)\n", 
       id, 
-      errno))
+      errno, strerror(errno)))
 
     if ((errno != EWOULDBLOCK) && (errno != ENOBUFS))
       {

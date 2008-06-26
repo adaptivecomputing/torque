@@ -479,8 +479,8 @@ int main(
 
     connect = cnt2server(server_out);
     if ( connect <= 0 ) {
-        fprintf(stderr, "qselect: cannot connect to server %s (errno=%d)\n",
-                pbs_server, pbs_errno);
+        fprintf(stderr, "qselect: cannot connect to server %s (errno=%d) %s\n",
+                pbs_server, pbs_errno, pbs_strerror(pbs_errno));
         exit(pbs_errno);
     }
     selectjob_list = pbs_selectjob(connect, select_list, exec_only ? EXECQUEONLY : NULL);
@@ -490,7 +490,9 @@ int main(
             if ( errmsg != NULL ) {
                 fprintf(stderr, "qselect: %s\n", errmsg);
             } else {
-                fprintf(stderr, "qselect: Error (%d) selecting jobs\n", pbs_errno);
+                fprintf(stderr, "qselect: Error (%d - %s) selecting jobs\n",
+                  pbs_errno,
+                  pbs_strerror(pbs_errno));
             }
             exit(pbs_errno);
 	}
