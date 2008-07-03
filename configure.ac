@@ -79,7 +79,7 @@ dnl  Autorun mode?
 dnl
 AC_MSG_CHECKING([whether to turn on the AUTORUN_JOBS flag])
 AC_ARG_ENABLE(autorun,
-    [  --enable-autorun          turn on the AUTORUN_JOBS flag],
+    [  --enable-autorun        turn on the AUTORUN_JOBS flag],
     enable_autorun=$enableval, enable_autorun=no)
 AC_MSG_RESULT($enable_autorun)
 if test "x$enable_autorun" = "xyes" ; then
@@ -94,7 +94,7 @@ dnl  Resource max not default mode?
 dnl
 AC_MSG_CHECKING([whether to turn on the RESOURCEMAXNOTDEFAULT flag])
 AC_ARG_ENABLE(maxnotdefault,
-    [  --enable-maxnotdefault          turn on the RESOURCEMAXNOTDEFAULT flag],
+    [  --enable-maxnotdefault  turn on the RESOURCEMAXNOTDEFAULT flag],
     enable_maxnotdefault=$enableval, enable_maxnotdefault=no)
 AC_MSG_RESULT($enable_maxnotdefault)
 if test "x$enable_maxnotdefault" = "xyes" ; then
@@ -108,7 +108,7 @@ dnl  Quick commit mode?
 dnl
 AC_MSG_CHECKING([whether to turn on the QUICKCOMMIT flag])
 AC_ARG_ENABLE(quickcommit,
-    [  --enable-quickcommit          turn on the QUICKCOMMIT flag],
+    [  --enable-quickcommit    turn on the QUICKCOMMIT flag],
     enable_quickcommit=$enableval, enable_quickcommit=no)
 AC_MSG_RESULT($enable_quickcommit)
 if test "x$enable_quickcommit" = "xyes" ; then
@@ -122,7 +122,7 @@ dnl  No SIG_CHLD mode?
 dnl
 AC_MSG_CHECKING([whether to turn on the NO_SIGCHLD flag])
 AC_ARG_ENABLE(nochildsignal,
-    [  --enable-nochildsignal          turn on the NO_SIGCHLD flag],
+    [  --enable-nochildsignal  turn on the NO_SIGCHLD flag],
     enable_nochildsignal=$enableval, enable_nochildsignal=no)
 AC_MSG_RESULT($enable_nochildsignal)
 if test "x$enable_nochildsignal" = "xyes" ; then
@@ -709,6 +709,17 @@ esac],[SHELL_USE_ARGV=0])dnl
 AC_DEFINE_UNQUOTED(SHELL_USE_ARGV, ${SHELL_USE_ARGV}, [job script name passed as the shell's arg])
 
 
+AC_ARG_ENABLE(posixmemlock, [
+  --disable-posixmemlock  disable the moms use of mlockall.  
+                          Some versions of OSs seem to have buggy POSIX MEMLOCK.],
+[case "${enableval}" in
+  yes)  ;;
+  no)  NOPOSIXMEMLOCK=1; AC_DEFINE(NOPOSIXMEMLOCK, 1, [Define to disable mlockall]) ;;
+  *)   AC_MSG_ERROR(--enable-posixmemlock cannot take a value) ;;
+esac])dnl
+
+
+
 AC_ARG_ENABLE(privports, [
   --disable-privports     disable the use of privileged ports for authentication.  
                           Some versions of OSX have a buggy bind() and cannot
@@ -726,7 +737,7 @@ AC_ARG_ENABLE(mom-checkspool, [
 [case "${enableval}" in
   yes) MOMCHECKLOCALSPOOL=1 ;;
   no)  MOMCHECKLOCALSPOOL=0;;
-  *)   AC_MSG_ERROR(--enable-privports cannot take a value) ;;
+  *)   AC_MSG_ERROR(--enable-mom-checkspool cannot take a value) ;;
 esac],[MOMCHECKLOCALSPOOL=1])dnl
 AC_DEFINE_UNQUOTED(MOMCHECKLOCALSPOOL, ${MOMCHECKLOCALSPOOL}, [Define to error if spool is full on MOM])
 

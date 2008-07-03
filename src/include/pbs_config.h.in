@@ -316,6 +316,9 @@
 /* use nodemask-based scheduling on O2k */
 #undef NODEMASK
 
+/* Define to disable posix memlock */
+#undef NOPOSIXMEMLOCK
+
 /* Define to disable privileged ports */
 #undef NOPRIVPORTS
 

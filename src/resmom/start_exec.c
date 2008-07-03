@@ -133,6 +133,10 @@
 #include "pbs_cpuset.h"
 #endif
 
+#ifdef NOPOSIXMEMLOCK
+#undef _POSIX_MEMLOCK 
+#endif /* NOPOSIXMEMLOCK */
+
 #define EXTRA_VARIABLE_SPACE 2000
 #define EXTRA_ENV_PTRS	       32
 

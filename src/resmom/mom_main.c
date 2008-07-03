@@ -147,6 +147,9 @@
 
 #include        "mcom.h"
 
+#ifdef NOPOSIXMEMLOCK
+#undef _POSIX_MEMLOCK 
+#endif /* NOPOSIXMEMLOCK */
 
 #ifdef _POSIX_MEMLOCK 
 #include <sys/mman.h>
