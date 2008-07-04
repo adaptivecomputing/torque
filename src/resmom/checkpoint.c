@@ -149,7 +149,11 @@ mom_checkpoint_execute_job(job *pjob,char *shell,char *arg[],struct var_table *v
   arg[4] = arg[3];
   arg[3] = arg[2];
   arg[2] = arg[1];
-  arg[1] = malloc(strlen(shell) + 1);  /* replace first arg with shell name */
+ /* replace first arg with shell name 
+    note, this func is called from a child process that exits after the 
+    executable is launched, so we don't have to worry about freeing 
+    this malloc later */
+  arg[1] = malloc(strlen(shell) + 1); 
   strcpy(arg[1],shell);
   arg[0] = checkpoint_run_exe_name;
 

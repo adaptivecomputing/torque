@@ -482,6 +482,7 @@ static void process_hold_reply(
   else if (preq->rq_reply.brp_code != 0)
     {
     pjob->ji_qs.ji_substate = JOB_SUBSTATE_RUNNING;  /* reset it */
+    pjob->ji_modified = 1;    /* indicate attributes changed */
     svr_evaljobstate(pjob,&newstate,&newsub,0);
     svr_setjobstate(pjob,newstate,newsub); /* saves job */
     sprintf(log_buffer, msg_mombadhold, preq->rq_reply.brp_code);
