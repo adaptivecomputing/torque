@@ -8,6 +8,9 @@ c - crash     b - bug fix    e - enhancement    f - new feature
 2.3.2
   e - added --disable-posixmemlock to force mom not to use POSIX MEMLOCK.
   b - fix potential buffer overrun in qsub
+  b - if user qholds a running job with BLCR checkpoint/restart and the
+      checkpoint fails then the job no longer goes to the HOLD state after
+      it completes
 
 2.3.1
   b - fixed a bug where torque would fail to start if there was no LF in nodes 
@@ -268,7 +271,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature
   f - qstat's -1 option can now be used with -f for easier parsing (USC)
   b - fix broken TM on OSX (USC)
   f - add "version" and "configversion" RM requests (USC)
-  b - in pbs-config --libs, don't print rpath if libdir is in the sys dlsearch path (USC)
+  b - in pbs-config --libs, don't print rpath if libdir is in the sys dlsearch 
+      path (USC)
   e - don't reject job submits if nodes are temporarily down (USC)
   e - if MOM can't resolve $pbsserver at startup, try again later (USC)
       - $pbsclient still suffers this problem
