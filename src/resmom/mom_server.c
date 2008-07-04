@@ -2637,7 +2637,7 @@ int is_mom_server_down(
   {
   int sindex;
 
-  for (sindex = 0; sindex < PBS_MAXSERVER || down_svraddrs[sindex] == 0; sindex++)
+  for (sindex = 0; sindex < PBS_MAXSERVER && down_svraddrs[sindex] != 0; sindex++)
     {
     if (down_svraddrs[sindex] == server_address)
       {

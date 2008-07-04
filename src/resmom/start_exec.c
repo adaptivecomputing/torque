@@ -4947,7 +4947,7 @@ char *std_file_name(
 
     /* don't do for checkpoint file names, only StdErr and StdOut */
     
-    if (suffix != JOB_CHECKPOINT_SUFFIX)
+    if (strcmp(suffix,JOB_CHECKPOINT_SUFFIX) != 0)
       {  
       pt = strstr(jobpath,"$HOME");
 

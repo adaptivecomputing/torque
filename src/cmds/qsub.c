@@ -3853,7 +3853,7 @@ int main(
       {
       strcat(submit_args_str,argv[argi]);
 
-      if (argi != optind - 1)
+      if (argi != argc - 1)
         {
         strcat(submit_args_str," ");
         }

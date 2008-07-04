@@ -7,9 +7,11 @@ c - crash     b - bug fix    e - enhancement    f - new feature
 
 2.3.2
   e - added --disable-posixmemlock to force mom not to use POSIX MEMLOCK.
+  b - fix potential buffer overrun in qsub
 
 2.3.1
-  b - fixed a bug where torque would fail to start if there was no LF in nodes file
+  b - fixed a bug where torque would fail to start if there was no LF in nodes 
+      file
   b - fixed a bug where TORQUE would ignore the "pbs_asyrunjob" API extension
       string when starting jobs in asynchronous mode
   b - fixed memory leak in free_br for PBS_BATCH_MvJobFile case
@@ -31,14 +33,14 @@ c - crash     b - bug fix    e - enhancement    f - new feature
   b - fix so we continue to process exiting jobs for other servers
   e - added source_login_batch and source_login_interactive to mom config.  This
       allows us to bypass the sourcing of /etc/profile, etc. type files.
-  b - fixed pbs_server segmentation fault when job_array submissions are rejected
-      before ji_arraystruct was initialized
+  b - fixed pbs_server segmentation fault when job_array submissions are 
+      rejected before ji_arraystruct was initialized
   e - add some casts to fix some compiler warnings with gcc-4.1 on i386 when
       -D_FILE_OFFSET_BITS=64 is set
   e - added --enable-maxnotdefault to allow not using resources_max as defaults.
-  b - added new values to TJobAttr so we don't have mismatch with job.h values. Added
-      some comments also.
-  b - reset ji_momhandle so we cannot have more than one pjob for obit_reply to find.
+  b - added new values to TJobAttr so we don't have mismatch with job.h values.
+  b - reset ji_momhandle so we cannot have more than one pjob for obit_reply to
+      find.
   e - change qdel to accept 'ALL' as well as 'all'
   b - changed order of searching so we find most recent jobs first. Prevents
       finding old leftover job when pids rollover. Also some CACHEOBITFAILURES
@@ -50,7 +52,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature
   e - added string output for errnos, etc.
 
 2.3.0
-  b - fixed a bug where TORQUE would ignore the "pbs_asyrunjob" API extension string when starting jobs in asynchronous mode
+  b - fixed a bug where TORQUE would ignore the "pbs_asyrunjob" API extension 
+      string when starting jobs in asynchronous mode
   e - redesign how torque.spec is built
   e - added -a to qrun to allow asynchronous job start
   e - allow qrerun on completed jobs
@@ -58,12 +61,14 @@ c - crash     b - bug fix    e - enhancement    f - new feature
   e - make qdel -m functionality match the documentation
   b - prevent runaway hellos being sent to server when mom's node is removed
       from the server's node list
-  e - local client connections use a unix domain socket, bypassing inet and pbs_iff
+  e - local client connections use a unix domain socket, bypassing inet and 
+      pbs_iff
   f - Linux 2.6 cpuset support  (in development)
   e - new job array submission syntax
   b - fixed SIGUSR1 / SIGUSR2 to correctly change the log level
   f - health check script can now be run at job start and end
-  e - tm tasks are now stored in a single .TK file rather than eat lots of inodes
+  e - tm tasks are now stored in a single .TK file rather than eat lots of 
+      inodes
   f - new "extra_resc" server attribute
   b - "pbs_version" attr is now correctly read-only
   e - increase max size of .JB and .SC file names
@@ -86,7 +91,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature
   b - fix a bug where dependent jobs get put on hold when the previous job has
       completed but its state is still available for life of keep_completed
   b - fixed a bug where pbs_server never delete files from the "jobs" directory
-  b - fixed a bug where compute nodes were being put in an indefinite "down" state
+  b - fixed a bug where compute nodes were being put in an indefinite "down" 
+      state
   e - added job_array_size attribute to pbs_submit documentation 
 
 2.2.0
