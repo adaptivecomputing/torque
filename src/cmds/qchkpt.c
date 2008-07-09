@@ -14,12 +14,20 @@
 int main(int argc, char **argv) /* qchkpt */
   {
   int any_failed=0;
+  static char *usage = "Usage: qchkpt job_id ...\n";
 
   char job_id[PBS_MAXCLTJOBID];       /* from the command line */
 
   char job_id_out[PBS_MAXCLTJOBID];
   char server_out[MAXSERVERNAME];
   char rmt_server[MAXSERVERNAME];
+
+  if (argc == 1)
+    {
+    fprintf(stderr, usage);
+    return 1;
+    }
+
 
   for ( optind = 1; optind < argc; optind++)
     {
@@ -64,5 +72,7 @@ cnt:
       }
     pbs_disconnect(connect);
     }
-  exit(any_failed);
+
+  return any_failed;
+
   }
