@@ -634,6 +634,7 @@ void req_quejob(
 
       pj->ji_wattr[(int)JOB_ATR_outpath].at_flags |= ATR_VFLAG_SET;
       }
+#if 0
       else  /* change to show expected output path and filename */
       {
       replace_attr_string(&pj->ji_wattr[(int)JOB_ATR_outpath],
@@ -641,6 +642,7 @@ void req_quejob(
         pj->ji_wattr[(int)JOB_ATR_outpath].at_val.at_str,
         (int)'o')));
       }
+#endif
 
     if (!(pj->ji_wattr[(int)JOB_ATR_errpath].at_flags & ATR_VFLAG_SET)) 
       {
@@ -649,6 +651,7 @@ void req_quejob(
 
       pj->ji_wattr[(int)JOB_ATR_errpath].at_flags |=ATR_VFLAG_SET;
       }
+#if 0
       else  /* change to show expected error path and filename */
       {
       replace_attr_string(&pj->ji_wattr[(int)JOB_ATR_errpath],
@@ -656,6 +659,7 @@ void req_quejob(
         pj->ji_wattr[(int)JOB_ATR_errpath].at_val.at_str,
         (int)'e')));
       }
+#endif
 
     if ((pj->ji_wattr[(int)JOB_ATR_outpath].at_val.at_str == NULL) ||
         (pj->ji_wattr[(int)JOB_ATR_errpath].at_val.at_str == NULL)) 
