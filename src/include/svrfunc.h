@@ -106,12 +106,12 @@ extern void  node_unreserve A_((resource_t handle));
 extern int   node_reserve A_((char *speclist, resource_t tag));
 extern int   init_resc_defs A_((void));
 
-#ifdef JOB_H
+#ifdef PBS_JOB_H
 extern int   set_nodes A_((job *,char *,char **,char *,char *));
 extern int   is_ts_node A_((char *));
 extern char *find_ts_node A_((void));
 extern void  free_nodes A_((job *));
-#endif	/* JOB_H */
+#endif	/* PBS_JOB_H */
 
 #ifdef ATTRIBUTE_H
 extern int   check_que_enable A_((attribute *,void *,int));

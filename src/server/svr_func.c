@@ -92,7 +92,7 @@
 #include "list_link.h"
 #include "attribute.h"
 #include "resource.h"
-#include "job.h"
+#include "pbs_job.h"
 #include "queue.h"
 #include "server.h"
 #include "pbs_error.h"

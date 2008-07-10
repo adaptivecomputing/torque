@@ -92,7 +92,7 @@
 #include "pbs_error.h"
 #include "server_limits.h"
 #include "server.h"
-#include "job.h"
+#include "pbs_job.h"
 
 /*
  * This file contains the functions for manipulating the server

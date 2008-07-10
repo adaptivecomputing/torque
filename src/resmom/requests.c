@@ -102,7 +102,7 @@
 #include "credential.h"
 #include "attribute.h"
 #include "resource.h"
-#include "job.h"
+#include "pbs_job.h"
 #include "batch_request.h"
 #include "mom_mach.h"
 #include "mom_func.h"

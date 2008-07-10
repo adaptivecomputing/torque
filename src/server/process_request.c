@@ -103,7 +103,7 @@
 #include "pbs_nodes.h"
 #include "list_link.h"
 #include "attribute.h"
-#include "job.h"
+#include "pbs_job.h"
 #include "server.h"
 #include "credential.h"
 #include "batch_request.h"

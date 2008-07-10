@@ -108,7 +108,7 @@
 #include "log.h"
 #include "list_link.h"
 #include "attribute.h"
-#include "job.h"
+#include "pbs_job.h"
 #include "port_forwarding.h"
 
 static char cc_array[PBS_TERM_CCA];

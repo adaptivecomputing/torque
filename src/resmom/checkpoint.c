@@ -63,7 +63,7 @@
 #include "dis.h"
 #include "libpbs.h"
 #include "pbs_error.h"
-#include "job.h"
+#include "pbs_job.h"
 #include "batch_request.h"
 #include "attribute.h"
 #include "resmon.h"

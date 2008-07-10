@@ -86,7 +86,7 @@
 #include "attribute.h"
 #include "server_limits.h"
 #include "server.h"
-#include "job.h"
+#include "pbs_job.h"
 #include "credential.h"
 #include "batch_request.h"
 #include "pbs_error.h"

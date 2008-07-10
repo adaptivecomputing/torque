@@ -108,7 +108,7 @@
 #include "server_limits.h"
 #include "server.h"
 #include "queue.h"
-#include "job.h"
+#include "pbs_job.h"
 #include "work_task.h"
 #include "tracking.h"
 #include "svrfunc.h"

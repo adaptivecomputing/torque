@@ -91,7 +91,7 @@
 #include "server_limits.h"
 #include "credential.h"
 #include "batch_request.h"
-#include "job.h"
+#include "pbs_job.h"
 #include "queue.h"
 #include "server.h"
 #include "work_task.h"

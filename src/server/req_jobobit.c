@@ -94,7 +94,7 @@
 #include "attribute.h"
 #include "resource.h"
 #include "server.h"
-#include "job.h"
+#include "pbs_job.h"
 #include "credential.h"
 #include "batch_request.h"
 #include "work_task.h"

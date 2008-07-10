@@ -97,7 +97,7 @@
 #include "credential.h"
 #include "batch_request.h"
 #include "queue.h"
-#include "job.h"
+#include "pbs_job.h"
 #include "pbs_error.h"
 #include "log.h"
 #include "svrfunc.h"

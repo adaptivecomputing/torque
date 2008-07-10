@@ -114,7 +114,7 @@
 #include "attribute.h"
 #include "resource.h"
 #include "resmon.h"
-#include "job.h"
+#include "pbs_job.h"
 #include "log.h"
 #include "rpp.h"
 #include "mom_mach.h"

@@ -121,7 +121,7 @@
 #include "pbs_error.h"
 #include "log.h"
 #include "svrfunc.h"
-#include "job.h"
+#include "pbs_job.h"
 #include "pbs_nodes.h"
 #include "work_task.h"
 

@@ -101,7 +101,7 @@
 #include "work_task.h"
 #include "log.h"
 #include "queue.h"
-#include "job.h"
+#include "pbs_job.h"
 #include "pbs_nodes.h"
 #include "credential.h"
 #include "batch_request.h"

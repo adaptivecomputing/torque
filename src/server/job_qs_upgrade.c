@@ -20,7 +20,7 @@
 #include "list_link.h"
 #include "attribute.h"
 #include "server_limits.h"
-#include "job.h"
+#include "pbs_job.h"
 #include "array.h"
 
 extern char *path_jobs;

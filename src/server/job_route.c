@@ -102,7 +102,7 @@
 #include "server.h"
 #include "log.h"
 #include "queue.h"
-#include "job.h"
+#include "pbs_job.h"
 #include "credential.h"
 #include "batch_request.h"
 #if __STDC__ != 1

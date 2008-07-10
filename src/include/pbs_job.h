@@ -87,8 +87,8 @@
  *	"server_limits.h"
  */
 
-#ifndef JOB_H
-#define JOB_H 1
+#ifndef PBS_JOB_H
+#define PBS_JOB_H 1
 
 /* anything including job.h also needs array.h so lets just include it this way*/
 #include "array.h"
@@ -799,5 +799,5 @@ extern int   issue_signal A_((job *,char *,void(*)(struct work_task *),void *));
 extern void   on_job_exit A_((struct work_task *));
 #endif	/* WORK_TASK_H */
 
-#endif	/* JOB_H */
+#endif	/* PBS_JOB_H */
 

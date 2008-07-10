@@ -89,7 +89,7 @@
 #include "server_limits.h"
 #include "server.h"
 #include "queue.h"
-#include "job.h"
+#include "pbs_job.h"
 #include "log.h"
 #include "batch_request.h"
 #include "pbs_nodes.h"

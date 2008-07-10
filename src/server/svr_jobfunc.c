@@ -118,7 +118,7 @@
 #include "resource.h"
 #include "server.h"
 #include "queue.h"
-#include "job.h"
+#include "pbs_job.h"
 #include "work_task.h"
 #include "pbs_error.h"
 #include "log.h"

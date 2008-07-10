@@ -93,7 +93,7 @@
 #include "list_link.h"
 #include "server_limits.h"
 #include "attribute.h"
-#include "job.h"
+#include "pbs_job.h"
 #ifndef UNSUPPORTED_MACH
 #include "mom_mach.h"
 #include "mom_func.h"

@@ -230,7 +230,7 @@
 #include "pbs_nodes.h"
 #include "resmon.h"
 #include "server_limits.h"
-#include "job.h"
+#include "pbs_job.h"
 
 #include        "mcom.h"
 

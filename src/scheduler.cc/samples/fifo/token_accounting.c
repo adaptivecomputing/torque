@@ -21,7 +21,7 @@
 #include "list_link.h"
 #include "attribute.h"
 #include "server_limits.h"
-#include "job.h"
+#include "pbs_job.h"
 #include "log.h"
 #include "queue.h"
 #include "token_acct.h"

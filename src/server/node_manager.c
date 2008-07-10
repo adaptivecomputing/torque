@@ -107,7 +107,7 @@
 #include "batch_request.h"
 #include "work_task.h"
 #include "svrfunc.h"
-#include "job.h"
+#include "pbs_job.h"
 #include "log.h"
 #include "pbs_nodes.h" 
 #include "rpp.h"

@@ -4,7 +4,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#include "job.h"
+#include "pbs_job.h"
 
 extern void initialize_root_cpuset();
 extern int create_jobset (job *);

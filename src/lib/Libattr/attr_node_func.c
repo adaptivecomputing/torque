@@ -91,7 +91,7 @@
 #include "attribute.h"
 #include "server_limits.h"
 #include "net_connect.h"
-#include "job.h"
+#include "pbs_job.h"
 #include "pbs_nodes.h"
 #include "pbs_error.h"
 #include "log.h"

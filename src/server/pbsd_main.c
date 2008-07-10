@@ -108,7 +108,7 @@
 #include "log.h"
 #include "server_limits.h"
 #include "attribute.h"
-#include "job.h"
+#include "pbs_job.h"
 #include "queue.h"
 #include "server.h"
 #include "pbs_nodes.h"

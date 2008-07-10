@@ -18,7 +18,7 @@
 #include "server_limits.h"
 #include "list_link.h"
 #include "attribute.h"
-#include "job.h"
+#include "pbs_job.h"
 #include "log.h"
 #include "svrfunc.h"
 

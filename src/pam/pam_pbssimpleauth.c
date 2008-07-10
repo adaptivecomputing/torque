@@ -21,7 +21,7 @@
 #include "pbs_ifl.h"
 #include "attribute.h"
 #include "server_limits.h"
-#include "job.h"
+#include "pbs_job.h"
 
 #define MODNAME "pam_pbssimpleauth"
 

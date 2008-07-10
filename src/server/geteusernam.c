@@ -90,7 +90,7 @@
 #include "server_limits.h"
 #include "list_link.h"
 #include "attribute.h"
-#include "job.h"
+#include "pbs_job.h"
 #include "server.h"
 #include "pbs_error.h"
 #include "svrfunc.h"

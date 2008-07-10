@@ -110,7 +110,7 @@
 #include "server.h"
 #include "credential.h"
 #include "batch_request.h"
-#include "job.h"
+#include "pbs_job.h"
 #include "queue.h"
 #include "net_connect.h"
 #include "pbs_error.h"

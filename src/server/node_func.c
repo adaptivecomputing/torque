@@ -115,7 +115,7 @@
 #include "batch_request.h"
 #include "server_limits.h"
 #include "server.h"
-#include "job.h"
+#include "pbs_job.h"
 #include "pbs_nodes.h"
 #include "pbs_error.h"
 #include "log.h"

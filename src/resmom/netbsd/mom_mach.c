@@ -133,7 +133,7 @@
 #include	"server_limits.h"
 #include	"attribute.h"
 #include	"resource.h"
-#include	"job.h"
+#include	"pbs_job.h"
 #include	"mom_mach.h"
 #include	"resmon.h"
 #include	"../rm_dep.h"

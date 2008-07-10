@@ -11,7 +11,7 @@
 #include "libpbs.h"
 #include "attribute.h"
 #include "server_limits.h"
-#include "job.h"
+#include "pbs_job.h"
 #include "log.h"
 
 #define TTORQUECPUSET_PATH "/dev/cpuset/torque"

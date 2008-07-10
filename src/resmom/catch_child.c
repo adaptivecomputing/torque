@@ -99,7 +99,7 @@
 #include "server_limits.h"
 #include "attribute.h"
 #include "resource.h"
-#include "job.h"
+#include "pbs_job.h"
 #include "log.h"
 #include "credential.h"
 #include "batch_request.h"

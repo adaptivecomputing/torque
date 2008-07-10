@@ -1,7 +1,7 @@
 #ifndef PBS_CPA_H
 #define PBS_CPA_H 1
 
-#include "job.h"
+#include "pbs_job.h"
 
 int CPACreatePartition(job *pjob,struct var_table *vtab);
 

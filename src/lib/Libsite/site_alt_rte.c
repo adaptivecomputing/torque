@@ -85,7 +85,7 @@
 #include "attribute.h"
 #include "server_limits.h"
 #include "queue.h"
-#include "job.h"
+#include "pbs_job.h"
 
 int site_alt_router(jobp, qp, retry_time)
 	job		*jobp;

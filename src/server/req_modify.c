@@ -99,7 +99,7 @@
 #include "queue.h"
 #include "credential.h"
 #include "batch_request.h"
-#include "job.h"
+#include "pbs_job.h"
 #include "work_task.h"
 #include "pbs_error.h"
 #include "log.h"
