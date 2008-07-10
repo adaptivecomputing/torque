@@ -781,6 +781,14 @@ int main(
 		exit(1);
 	}
 
+  /* The following is code to reduce security risks                */
+  /* move this to a place where nss_ldap doesn't hold a socket yet */
+
+  c = sysconf(_SC_OPEN_MAX);
+  while (--c > 2)
+    (void)close(c); /* close any file desc left open by parent */
+
+
 #ifndef DEBUG
         if ((geteuid() != 0) || (getuid() != 0)) {
                 fprintf(stderr, "%s: Must be run by root\n", argv[0]);
@@ -816,9 +824,6 @@ int main(
 		exit(1);
 	c = getgid();
 	(void)setgroups(1, (gid_t *)&c);	/* secure suppl. groups */
-	c = sysconf(_SC_OPEN_MAX);
-	while (--c > 2)
-		(void)close(c);	/* close any file desc left open by parent */
 
 #ifndef DEBUG
 #ifdef _CRAY

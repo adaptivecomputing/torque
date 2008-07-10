@@ -1325,6 +1325,13 @@ int main(
 
   parse_command_line(argc,argv);
 
+  /* do the following before getuid() and geteuid() can trigger 
+     nss_ldap into opening a socket to the LDAP server */
+  i = sysconf(_SC_OPEN_MAX);
+  while (--i > 2)
+    close(i);  /* close any file desc left open by parent */
+
+
   /* if we are not running with real and effective uid of 0, forget it */
 
   if ((getuid() != 0) || (geteuid() != 0)) 
@@ -1335,12 +1342,6 @@ int main(
     return(1);
     }
 
-  i = sysconf(_SC_OPEN_MAX);
-
-  /* NOTE:  close all file descriptors higher than 2 (stderr) */
-
-  while (--i > 2)
-    close(i); 
 
   /* make sure no other server is running with this home directory */
 
