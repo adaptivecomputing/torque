@@ -5,6 +5,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature
   f - added basic qhold support for job arrays
   b - clear out ji_destin in obit_reply
   e - renamed job.h to pbs_job.h
+  b - fix logic error in checkpoint interval test
 
 2.3.2
   e - added --disable-posixmemlock to force mom not to use POSIX MEMLOCK.
@@ -12,7 +13,6 @@ c - crash     b - bug fix    e - enhancement    f - new feature
   b - if user qholds a running job with BLCR checkpoint/restart and the
       checkpoint fails then the job no longer goes to the HOLD state after
       it completes
-  b - fix logic error in checkpoint interval test
 
 2.3.1
   b - fixed a bug where torque would fail to start if there was no LF in nodes 
