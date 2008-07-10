@@ -6379,6 +6379,11 @@ int setup_program_environment()
   struct sigaction act;
   char		*ptr;                   /* local tmp variable */
 
+  c = sysconf(_SC_OPEN_MAX);
+  /* close any inherited extra files, leaving stdin, stdout, stderr open */
+  while (--c > 2)
+    close(c); /* close any file desc left open by parent */
+
 
   /* must be started with real and effective uid of 0 */
 
@@ -6419,12 +6424,6 @@ int setup_program_environment()
 
   setgroups(1,(gid_t *)&c);	/* secure suppl. groups */
 
-  c = sysconf(_SC_OPEN_MAX);
-
-  /* Close any inherited extra files, leaving stdin-err open */
-
-  while (--c > 2)
-    close(c);	/* close any file desc left open by parent */
 
 #ifndef DEBUG
 #ifdef _CRAY
