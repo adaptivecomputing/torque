@@ -1632,7 +1632,7 @@ static int send_depend_req(
  * separated by commas and terminated by a null.
  *
  * The "decoded" or internal form is a list of depend (and depend_child)
- * structures, which are defined in job.h.
+ * structures, which are defined in pbs_job.h.
  * ----------------------------------------------------------------------------
  */
 

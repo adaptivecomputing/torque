@@ -83,7 +83,7 @@
 
 /*
  * Place holder for site supplied additions to the job's enumerated
- * list of attributes,  see job.h.
+ * list of attributes,  see pbs_job.h.
  *
  * List should be of the form:
  *	JOB_SITE_ATR_name,

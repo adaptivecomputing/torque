@@ -398,7 +398,7 @@ job is executing.
 The exit status of the job.  This is only set on receipt of a job obituary
 notice from MOM, and probably only useful if the "keep_completed" server
 attribute is set.  Note that negative values are generated internally by PBS to
-indicate system errors and are listed as the JOB_EXEC_* defines in job.h.
+indicate system errors and are listed as the JOB_EXEC_* defines in pbs_job.h.
 Positive values are returned from the user script and cannot be interpreted by
 PBS.
 .if !\n(Pb .ig Ig
@@ -528,7 +528,7 @@ Format: integer.
 .if !\n(Pb .ig Ig
 [internal type: long integer]
 .br
-The values are defined in the header file job.h.   See the ERS section
+The values are defined in the header file pbs_job.h.   See the ERS section
 on file staging for why it is available to the scheduler.
 .Ig
 .if \n(Pb .ig Ig

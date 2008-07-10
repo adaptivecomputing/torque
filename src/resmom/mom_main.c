@@ -472,7 +472,7 @@ static char            *MOMExePath = NULL;
 static time_t           MOMExeTime = 0;
 
 
-/* sync w/#define JOB_SUBSTATE_XXX (in include/job.h)*/
+/* sync w/#define JOB_SUBSTATE_XXX (in include/pbs_job.h)*/
 
 const char *PJobSubState[] = {
   "TRANSIN",                /* Transit in, wait for commit */
