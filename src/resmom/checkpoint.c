@@ -436,7 +436,7 @@ static resource_def *rdcput;
         rdcput);  /* resource definition cput set in startup */
 
       if (prscput &&
-         (pjob->ji_checkpoint_next > prscput->rs_value.at_val.at_long))
+         (prscput->rs_value.at_val.at_long >= pjob->ji_checkpoint_next))
         {
         pjob->ji_checkpoint_next = 
           prscput->rs_value.at_val.at_long +
@@ -1332,7 +1332,7 @@ mom_checkpoint_init_job_periodic_timer(job *pjob)
     if ((vp = csv_find_value(pattr->at_val.at_str, "c")) ||
         (vp = csv_find_value(pattr->at_val.at_str, "interval")))
       {
-      /* has checkpoint time (in minutes), convert to milliseconds */
+      /* has checkpoint time (in minutes), convert to seconds */
 
       pjob->ji_checkpoint_time = atoi(vp) * 60;
       pjob->ji_checkpoint_next = pjob->ji_checkpoint_time;
