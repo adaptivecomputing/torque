@@ -13,6 +13,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature
   b - if user qholds a running job with BLCR checkpoint/restart and the
       checkpoint fails then the job no longer goes to the HOLD state after
       it completes
+  b - keep pbs_mom, pbs_server, pbs_sched from closing sockets opened by
+      nss_ldap (SGI)
 
 2.3.1
   b - fixed a bug where torque would fail to start if there was no LF in nodes 
