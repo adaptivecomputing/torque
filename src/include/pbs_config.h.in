@@ -3,6 +3,9 @@
 #ifndef _PBS_CONFIG_H_
 #define _PBS_CONFIG_H_
 
+/* turns on the compilation to include x attributes in accounting logs */
+#undef ATTR_X_ACCT
+
 /* turns on the compilation of AUTORUN_JOBS code */
 #undef AUTORUN_JOBS
 

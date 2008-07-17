@@ -294,6 +294,19 @@ static char *acct_job(
       }
     }  /* END while (pal != NULL) */
 
+#ifdef ATTR_X_ACCT
+
+  /* x attributes */
+  
+  if (pjob->ji_wattr[(int)JOB_SITE_ATR_x].at_flags & ATR_VFLAG_SET)
+    {
+    sprintf(ptr,"x=%s ",
+      pjob->ji_wattr[(int)JOB_SITE_ATR_x].at_val.at_str);
+
+    ptr += strlen(ptr);
+    }
+#endif
+
   /* SUCCESS */
 
   return(ptr);

@@ -417,6 +417,20 @@ case "$BLCR" in
 esac
 
 dnl
+dnl enable logging of x attributes for accounting
+dnl
+AC_MSG_CHECKING([whether to add x attributes to accounting])
+AC_ARG_ENABLE(acct-x,
+    [  --enable-acct-x         enable adding x attributes to accounting log],
+    ACCTX=$enableval,ACCTX=no)
+AC_MSG_RESULT($ACCTX)
+case "$ACCTX" in
+  yes) AC_DEFINE([ATTR_X_ACCT], 1, [Define to add x attributes to accounting log]) ;;
+  no) : ;;
+  *) AC_MSG_ERROR([--enable-acct-x should be yes or no]) ;;
+esac
+
+dnl
 dnl enable Cray's CPA support
 dnl
 AC_MSG_CHECKING([whether to build Cray's CPA support])
