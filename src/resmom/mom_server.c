@@ -2574,21 +2574,6 @@ int mom_open_socket_to_jobs_server(
       message_handler);
     }
 
-  if (LOGLEVEL >= 4)
-    {
-    sprintf(log_buffer,"registered handler %x for job %s to socket %d from within %s",
-      (unsigned int)message_handler,
-      pjob->ji_qs.ji_jobid,
-      sock,
-      caller_id);
-
-    log_record(
-      PBSEVENT_ERROR,
-      PBS_EVENTCLASS_JOB,
-      id,
-      log_buffer);
-    }
-
   return(sock);
   }  /* END mom_open_socket_to_jobs_server() */
 
