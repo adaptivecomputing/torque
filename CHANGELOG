@@ -15,6 +15,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature
       it completes
   b - keep pbs_mom, pbs_server, pbs_sched from closing sockets opened by
       nss_ldap (SGI)
+  e - added PBS_VERSION environment variable
 
 2.3.1
   b - fixed a bug where torque would fail to start if there was no LF in nodes 
