@@ -547,15 +547,6 @@ void scan_for_terminated()
 
       if (pjob->ji_mompost != NULL) 
         {
-        snprintf(log_buffer,1024,"launching job post-processing routine %x",
-          (unsigned int)pjob->ji_mompost);
-
-        log_record(
-          PBSEVENT_JOB,
-          PBS_EVENTCLASS_JOB,
-          pjob->ji_qs.ji_jobid,
-          log_buffer);
-
         if (pjob->ji_mompost(pjob,exiteval) == 0)
           {
           /* success */
