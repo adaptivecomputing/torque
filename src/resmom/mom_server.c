@@ -2479,8 +2479,6 @@ int mom_open_socket_to_jobs_server(
   void (*message_handler) A_((int)))
 
   {
-  char id[] = "mom_open_socket_to_jobs_server";
-
   char *svrport;
   char error_buffer[1024];
   int sock;
