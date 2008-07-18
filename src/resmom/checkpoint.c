@@ -416,30 +416,30 @@ mom_checkpoint_recover(job *pjob)
 void
 mom_checkpoint_check_periodic_timer(job *pjob)
   {
-  resource	*prscput;
+  resource	*prwall;
   extern int start_checkpoint();
   int rc;
-static resource_def *rdcput;
+static resource_def *rdwall;
 
   /* see if need to checkpoint any job */
 
   if (pjob->ji_checkpoint_time != 0)  /* ji_checkpoint_time gets set below */
     {
-    if (rdcput == NULL)
+    if (rdwall == NULL)
       {
-      rdcput = find_resc_def(svr_resc_def,"cput",svr_resc_size);
+      rdwall = find_resc_def(svr_resc_def,"walltime",svr_resc_size);
       }
-    if (rdcput != NULL)
+    if (rdwall != NULL)
       {
-      prscput = find_resc_entry(
+      prwall = find_resc_entry(
         &pjob->ji_wattr[(int)JOB_ATR_resc_used],
-        rdcput);  /* resource definition cput set in startup */
+        rdwall);  /* resource definition cput set in startup */
 
-      if (prscput &&
-         (prscput->rs_value.at_val.at_long >= pjob->ji_checkpoint_next))
+      if (prwall &&
+         (prwall->rs_value.at_val.at_long >= pjob->ji_checkpoint_next))
         {
         pjob->ji_checkpoint_next = 
-          prscput->rs_value.at_val.at_long +
+          prwall->rs_value.at_val.at_long +
           pjob->ji_checkpoint_time;
   
         if ((rc = start_checkpoint(pjob,0,0)) != PBSE_NONE)
