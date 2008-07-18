@@ -88,6 +88,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 #include "libpbs.h"
 #include "server_limits.h"
 #include "list_link.h"
@@ -323,7 +324,49 @@ static int is_joined(
   }
 
 
+static struct batch_request *return_stdfile(
+  struct batch_request *preq,
+  job                  *pjob,
+  enum job_atr          ati)
 
+  {
+
+  if (pjob->ji_wattr[(int)JOB_ATR_interactive].at_flags &&
+      pjob->ji_wattr[(int)JOB_ATR_interactive].at_val.at_long)
+    {
+    return NULL;
+    }
+
+  if ((pjob->ji_wattr[(int)JOB_ATR_checkpoint_name].at_flags & ATR_VFLAG_SET) == 0)
+    {
+    return NULL;
+    }
+   
+
+  /* if this file is joined to another then it doesn't have to get copied back */
+  if (is_joined(pjob,ati))
+    {
+    return preq;
+    }
+
+  if (preq == NULL)
+    {
+    preq = alloc_br(PBS_BATCH_ReturnFiles);
+    }
+
+  strcpy(preq->rq_ind.rq_returnfiles.rq_jobid, pjob->ji_qs.ji_jobid);
+  
+  if (ati == JOB_ATR_errpath)
+    {
+    preq->rq_ind.rq_returnfiles.rq_return_stderr = TRUE;
+    }
+  else if (ati == JOB_ATR_outpath)
+    {
+    preq->rq_ind.rq_returnfiles.rq_return_stdout = TRUE;
+    }
+
+  return preq;
+  }
 
 
 /*
@@ -388,8 +431,6 @@ static struct batch_request *cpy_stdfile(
 
   if (is_joined(pjob,ati))
     {
-    /* SUCCESS */
-
     return(preq);
     }
 
@@ -398,7 +439,6 @@ static struct batch_request *cpy_stdfile(
    * the keep list, MOM has already placed the file in the user's HOME
    * directory.  It doesn't need to be copied.
    */
-
   jkpattr = &pjob->ji_wattr[(int)JOB_ATR_keep];
 
   if ((jkpattr->at_flags & ATR_VFLAG_SET) &&
@@ -662,7 +702,6 @@ void rel_resc(
 
 
 
-
 /*
  * on_job_exit - continue post-execution processing of a job that terminated.
  *
@@ -697,6 +736,9 @@ void on_job_exit(
   int    IsFaked = 0;
   int	 KeepSeconds = 0;
   pbs_queue *pque;
+  char namebuf[MAXPATHLEN + 1];
+  char *namebuf2;
+  int spool_file_exists;
 
   extern void remove_job_delete_nanny(struct job *);
 
@@ -784,11 +826,178 @@ void on_job_exit(
       svr_setjobstate(
         pjob, 
         JOB_STATE_EXITING,
-        JOB_SUBSTATE_STAGEOUT);
+        JOB_SUBSTATE_RETURNSTD);
 
       ptask->wt_type = WORK_Immed;
 
       /* NO BREAK, fall into stage out processing */
+
+    case JOB_SUBSTATE_RETURNSTD:
+      /* this is a new substate to TORQUE 2.4.0.  The purpose is to provide a
+       * stage of the job exiting process that allows us to transfer stderr and
+       * stdout files from the mom's spool directory back to the server spool
+       * directory.  This will only be done if the job has been checkpointed, 
+       * and keep_completed is a positive value. This is so that a completed 
+       * job can be restarted from a checkpoint file.
+       */
+
+      if (ptask->wt_type != WORK_Deferred_Reply)
+        {
+        /* this is the very first call, have mom return the files */
+
+        /* if job has been checkpointed and KeepSeconds > 0, copy the stderr 
+         * and stdout files back so that we can restart a completed 
+         * checkpointed job return_stdfile will only setup this request if 
+         * the job has a checkpoint file and the file is not joined to another
+         *  file */ 
+	  
+
+        KeepSeconds = 0;
+
+        if ((pque = pjob->ji_qhdr) && (pque->qu_attr != NULL))
+          {
+          KeepSeconds = attr_ifelse_long(
+            &pque->qu_attr[(int)QE_ATR_KeepCompleted],
+            &server.sv_attr[(int)SRV_ATR_KeepCompleted],
+            0);
+          }
+
+        if (KeepSeconds > 0)
+	  {
+	  
+	  /* first check to see if the stderr/stdout spool files exist locally
+	     if it does, assume that there is a pbs_mom sharing this spool directory
+	     and we don't do the copy, but we hack our way out of it */
+	  
+	  strcpy(namebuf, path_spool);
+	  strcat(namebuf, pjob->ji_qs.ji_fileprefix);
+	  strcat(namebuf, JOB_STDOUT_SUFFIX);
+	  
+	  /* allocate space for the string name plus ".SAV" */
+	  namebuf2 = malloc((strlen(namebuf) + 4) * sizeof(char));
+	  
+	  
+	  spool_file_exists = access(namebuf, F_OK);
+	  
+	  if (spool_file_exists != 0) 
+	    {
+	    preq = return_stdfile(preq, pjob, JOB_ATR_outpath);
+	    }
+	  else
+	    {
+	    strcpy(namebuf2, namebuf);
+	    strcat(namebuf2, ".SAV");
+	    link(namebuf, namebuf2);
+	    }
+	  
+   	  
+	  namebuf[strlen(namebuf) - strlen(JOB_STDOUT_SUFFIX)] = '\0';
+	  strcat(namebuf, JOB_STDERR_SUFFIX);
+	  
+	  	  
+	  if (spool_file_exists != 0) 
+	    {
+	    preq = return_stdfile(preq, pjob, JOB_ATR_errpath);
+	    }
+	  else
+	    {
+	    strcpy(namebuf2, namebuf);
+	    strcat(namebuf2, ".SAV");
+	    link(namebuf, namebuf2);
+	    }
+	  
+	  free(namebuf2);       
+          
+          }
+	  
+	  
+        if (preq != NULL)
+          {
+          preq->rq_extra = (void *)pjob;
+          if (issue_Drequest(handle, preq, on_job_exit,0) == 0)
+            {
+            /* success, we'll come back after mom replies */
+            return;
+            }
+
+          /* set up as if mom returned error, if we fall through to
+           * here then we want to hit the error processing below 
+           * because something bad happened */
+
+          IsFaked = 1;
+
+          preq->rq_reply.brp_code   = PBSE_MOMREJECT;
+          preq->rq_reply.brp_choice = BATCH_REPLY_CHOICE_NULL;
+          preq->rq_reply.brp_un.brp_txt.brp_txtlen = 0;
+
+
+          }
+        else
+          {
+          /* we don't need to return files to the server spool, 
+             move on to see if we need to delete files */
+
+          svr_setjobstate(
+            pjob,
+            JOB_STATE_EXITING,
+            JOB_SUBSTATE_STAGEOUT);
+
+          if (LOGLEVEL >= 6)
+            {
+            log_event(
+              PBSEVENT_JOB,
+              PBS_EVENTCLASS_JOB,
+              pjob->ji_qs.ji_jobid,
+              "no spool files to return");
+            }
+
+          ptask = set_task(WORK_Immed,0,on_job_exit,pjob);
+
+          if (ptask != NULL)
+            {
+            append_link(&pjob->ji_svrtask,&ptask->wt_linkobj,ptask);
+            }
+
+          return;
+          }
+ 
+        }
+
+      /* here we have a reply (maybe faked) from MOM about the request */
+      if (preq->rq_reply.brp_code != 0)
+        {
+        if (LOGLEVEL >= 3)
+          {
+          snprintf(log_buffer,LOG_BUF_SIZE,"request to return spool files failed on node '%s' for job %s%s",
+            pjob->ji_wattr[(int)JOB_ATR_exec_host].at_val.at_str,
+            pjob->ji_qs.ji_jobid,
+            (IsFaked == 1) ? "*" : "");
+
+          log_event(
+            PBSEVENT_ERROR|PBSEVENT_ADMIN|PBSEVENT_JOB,
+            PBS_EVENTCLASS_JOB,
+            pjob->ji_qs.ji_jobid,
+            log_buffer);
+          }
+        } /* end if (preq->rq_reply.brp_code != 0) */
+    
+
+      /*
+       * files (generally) moved ok, move on to the next phase by
+       * "faking" the immediate work task and falling through to 
+       * the next case.
+       */
+
+      free_br(preq);
+
+      preq = NULL;
+
+      svr_setjobstate(pjob,JOB_STATE_EXITING,JOB_SUBSTATE_STAGEOUT);
+
+      ptask->wt_type = WORK_Immed;
+
+
+    /* NO BREAK -- FALL INTO NEXT CASE */
 
     case JOB_SUBSTATE_STAGEOUT:
 
@@ -832,18 +1041,9 @@ void on_job_exit(
 
           if (issue_Drequest(handle,preq,on_job_exit,0) == 0) 
             {
-            /* FAILURE */
 
-            if (LOGLEVEL >= 1)
-              {
-              log_event(
-                PBSEVENT_JOB,
-                PBS_EVENTCLASS_JOB,
-                pjob->ji_qs.ji_jobid,
-                "copy request failed");
-              }
-
-            /* come back when mom replies */
+            /* request sucessfully sent, we'll come back to this function 
+               when mom replies */
 
             return;
             } 
@@ -860,7 +1060,7 @@ void on_job_exit(
           } 
         else 
           {	
-          /* no files to copy, any to delete? */
+          /* no files to copy, go to next step */
 
           svr_setjobstate(
             pjob, 
@@ -873,7 +1073,7 @@ void on_job_exit(
               PBSEVENT_JOB,
               PBS_EVENTCLASS_JOB,
               pjob->ji_qs.ji_jobid,
-              "no files to copy - deleting job");
+              "no files to copy");
             }
 
           ptask = set_task(WORK_Immed,0,on_job_exit,pjob);
@@ -949,6 +1149,51 @@ void on_job_exit(
        * files (generally) copied ok, move on to the next phase by
        * "faking" the immediate work task.
        */
+       
+      
+      /* check to see if we have saved the spool files, that means 
+         the mom and server are sharing this spool directory. 
+	 pbs_server should take ownership of these files and rename them
+	 see  JOB_SUBSTATE_RETURNSTD above*/
+	 
+      strcpy(namebuf, path_spool);
+      strcat(namebuf, pjob->ji_qs.ji_fileprefix);
+      strcat(namebuf, JOB_STDOUT_SUFFIX);
+	  
+      /* allocate space for the string name plus ".SAV" */
+      namebuf2 = malloc((strlen(namebuf) + 4) * sizeof(char));
+
+      strcpy(namebuf2, namebuf);
+      strcat(namebuf2, ".SAV");	  
+	  
+      spool_file_exists = access(namebuf2, F_OK);
+	  
+      if (spool_file_exists == 0) 
+        {
+        link(namebuf2, namebuf);
+	unlink(namebuf2);
+	chown(namebuf, 0, 0);
+        }
+	  
+   	  
+
+      namebuf[strlen(namebuf) - strlen(JOB_STDOUT_SUFFIX)] = '\0';
+      strcat(namebuf, JOB_STDERR_SUFFIX);
+      strcpy(namebuf2, namebuf);
+      strcat(namebuf2, ".SAV");
+	
+      spool_file_exists = access(namebuf2, F_OK);	  
+	  	  
+      if (spool_file_exists == 0) 
+        {
+ 
+        link(namebuf2, namebuf);
+	unlink(namebuf2);
+	chown(namebuf, 0, 0);
+        }
+	  
+      free(namebuf2);        
+       
 
       free_br(preq);
 
@@ -959,6 +1204,7 @@ void on_job_exit(
       ptask->wt_type = WORK_Immed;
 
       /* NO BREAK - FALL INTO THE NEXT CASE */
+
 
     case JOB_SUBSTATE_STAGEDEL:
 
@@ -993,25 +1239,15 @@ void on_job_exit(
 
           if (issue_Drequest(handle,preq,on_job_exit,0) == 0) 
             {
-            /* FAILURE */
-
-            if (LOGLEVEL >= 2)
-              {
-              log_event(
-                PBSEVENT_JOB,
-                PBS_EVENTCLASS_JOB,
-                pjob->ji_qs.ji_jobid,
-                "cannot issue file delete request for staged files");
-              }
-
-            /* come back when mom replies */
+            /* request issued,  we'll come back when mom replies */
 
             return;
             } 
 
           IsFaked = 1;
 
-          /* set up as if mom returned error */
+          /* set up as if mom returned error since the issue_Drequest 
+             failed */
 
           preq->rq_reply.brp_code = PBSE_MOMREJECT;
           preq->rq_reply.brp_choice = BATCH_REPLY_CHOICE_NULL;

@@ -227,7 +227,7 @@ static const char *PBatchReqType[] = {
   "OrderJob",
   "SelStat",
   "RegisterDependency",
-  "NONE",
+  "ReturnFiles",
   "CopyFiles",
   "DeleteFiles",
   "JobObituary",

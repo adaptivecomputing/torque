@@ -466,6 +466,9 @@ static void process_hold_reply(
   struct batch_request *preq;
   int		 newstate;
   int		 newsub;
+  attribute temphold;
+  char *pset;
+  int rc;
 
   svr_disconnect(pwt->wt_event);	/* close connection to MOM */
 
@@ -481,6 +484,14 @@ static void process_hold_reply(
     }
   else if (preq->rq_reply.brp_code != 0)
     {
+    
+    rc=get_hold(&preq->rq_ind.rq_hold.rq_orig.rq_attr, &pset, &temphold);
+    if (rc == 0)
+      {
+      rc = job_attr_def[(int)JOB_ATR_hold].at_set(&pjob->ji_wattr[(int)JOB_ATR_hold],
+      &temphold, DECR);
+      }
+    
     pjob->ji_qs.ji_substate = JOB_SUBSTATE_RUNNING;  /* reset it */
     pjob->ji_modified = 1;    /* indicate attributes changed */
     svr_evaljobstate(pjob,&newstate,&newsub,0);

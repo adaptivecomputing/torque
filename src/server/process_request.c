@@ -895,6 +895,12 @@ void dispatch_request(
 
 #else /* MOM only functions */
 
+    case PBS_BATCH_ReturnFiles:
+
+      req_returnfiles(request);
+
+      break;
+
     case PBS_BATCH_CopyFiles:
 
       req_cpyfile(request);

@@ -266,7 +266,7 @@ enum PBatchReqTypeEnum {
   PBS_BATCH_OrderJob    = 50,
   PBS_BATCH_SelStat     = 51,
   PBS_BATCH_RegistDep   = 52,
-                       /* 53 */
+  PBS_BATCH_ReturnFiles = 53, 
   PBS_BATCH_CopyFiles   = 54,
   PBS_BATCH_DelFiles    = 55,
   PBS_BATCH_JobObit     = 56,

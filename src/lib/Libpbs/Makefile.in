@@ -75,16 +75,17 @@ am_libtorque_la_OBJECTS = csv.lo dis.lo discui_.lo discul_.lo \
 	dec_CpyFil.lo dec_JobCred.lo dec_JobFile.lo dec_JobId.lo \
 	dec_JobObit.lo dec_Manage.lo dec_MoveJob.lo dec_MsgJob.lo \
 	dec_QueueJob.lo dec_Reg.lo dec_ReqExt.lo dec_ReqHdr.lo \
-	dec_Resc.lo dec_rpyc.lo dec_rpys.lo dec_RunJob.lo dec_Shut.lo \
-	dec_Sig.lo dec_Status.lo dec_svrattrl.lo dec_Track.lo \
-	enc_attrl.lo enc_attropl.lo enc_CpyFil.lo enc_JobCred.lo \
-	enc_JobFile.lo enc_JobId.lo enc_JobObit.lo enc_Manage.lo \
-	enc_MoveJob.lo enc_MsgJob.lo enc_QueueJob.lo enc_Reg.lo \
-	enc_reply.lo enc_ReqExt.lo enc_ReqHdr.lo enc_RunJob.lo \
-	enc_Shut.lo enc_Sig.lo enc_Status.lo enc_svrattrl.lo \
-	enc_Track.lo get_svrport.lo nonblock.lo PBS_attr.lo \
-	pbsD_alterjo.lo pbsD_asyrun.lo PBS_data.lo pbsD_connect.lo \
-	pbsD_deljob.lo pbsD_holdjob.lo pbsD_chkptjob.lo pbsD_locjob.lo \
+	dec_Resc.lo dec_ReturnFile.lo dec_rpyc.lo dec_rpys.lo \
+	dec_RunJob.lo dec_Shut.lo dec_Sig.lo dec_Status.lo \
+	dec_svrattrl.lo dec_Track.lo enc_attrl.lo enc_attropl.lo \
+	enc_CpyFil.lo enc_JobCred.lo enc_JobFile.lo enc_JobId.lo \
+	enc_JobObit.lo enc_Manage.lo enc_MoveJob.lo enc_MsgJob.lo \
+	enc_QueueJob.lo enc_Reg.lo enc_reply.lo enc_ReturnFile.lo \
+	enc_ReqExt.lo enc_ReqHdr.lo enc_RunJob.lo enc_Shut.lo \
+	enc_Sig.lo enc_Status.lo enc_svrattrl.lo enc_Track.lo \
+	get_svrport.lo nonblock.lo PBS_attr.lo pbsD_alterjo.lo \
+	pbsD_asyrun.lo PBS_data.lo pbsD_connect.lo pbsD_deljob.lo \
+	pbsD_holdjob.lo pbsD_chkptjob.lo pbsD_locjob.lo \
 	PBSD_manage2.lo pbsD_manager.lo pbsD_movejob.lo \
 	PBSD_manager_caps.lo PBSD_msg2.lo pbsD_msgjob.lo \
 	pbsD_orderjo.lo PBSD_rdrpy.lo pbsD_rerunjo.lo pbsD_resc.lo \
@@ -393,6 +394,7 @@ libtorque_la_SOURCES = ../Libcsv/csv.c ../Libdis/dis.c \
 		    ../Libifl/dec_MsgJob.c ../Libifl/dec_QueueJob.c \
 		    ../Libifl/dec_Reg.c ../Libifl/dec_ReqExt.c \
 		    ../Libifl/dec_ReqHdr.c ../Libifl/dec_Resc.c \
+		    ../Libifl/dec_ReturnFile.c \
 		    ../Libifl/dec_rpyc.c ../Libifl/dec_rpys.c \
 		    ../Libifl/dec_RunJob.c ../Libifl/dec_Shut.c \
 		    ../Libifl/dec_Sig.c ../Libifl/dec_Status.c \
@@ -403,7 +405,8 @@ libtorque_la_SOURCES = ../Libcsv/csv.c ../Libdis/dis.c \
 		    ../Libifl/enc_JobObit.c ../Libifl/enc_Manage.c \
 		    ../Libifl/enc_MoveJob.c ../Libifl/enc_MsgJob.c \
 		    ../Libifl/enc_QueueJob.c ../Libifl/enc_Reg.c \
-		    ../Libifl/enc_reply.c ../Libifl/enc_ReqExt.c \
+		    ../Libifl/enc_reply.c ../Libifl/enc_ReturnFile.c \
+		    ../Libifl/enc_ReqExt.c \
 		    ../Libifl/enc_ReqHdr.c ../Libifl/enc_RunJob.c \
 		    ../Libifl/enc_Shut.c ../Libifl/enc_Sig.c \
 		    ../Libifl/enc_Status.c ../Libifl/enc_svrattrl.c \
@@ -542,6 +545,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dec_ReqExt.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dec_ReqHdr.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dec_Resc.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dec_ReturnFile.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dec_RunJob.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dec_Shut.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dec_Sig.Plo@am__quote@
@@ -598,6 +602,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/enc_Reg.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/enc_ReqExt.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/enc_ReqHdr.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/enc_ReturnFile.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/enc_RunJob.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/enc_Shut.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/enc_Sig.Plo@am__quote@
@@ -1042,6 +1047,13 @@ dec_Resc.lo: ../Libifl/dec_Resc.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o dec_Resc.lo `test -f '../Libifl/dec_Resc.c' || echo '$(srcdir)/'`../Libifl/dec_Resc.c
 
+dec_ReturnFile.lo: ../Libifl/dec_ReturnFile.c
+@am__fastdepCC_TRUE@	if $(LIBTOOL) --tag=CC --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT dec_ReturnFile.lo -MD -MP -MF "$(DEPDIR)/dec_ReturnFile.Tpo" -c -o dec_ReturnFile.lo `test -f '../Libifl/dec_ReturnFile.c' || echo '$(srcdir)/'`../Libifl/dec_ReturnFile.c; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/dec_ReturnFile.Tpo" "$(DEPDIR)/dec_ReturnFile.Plo"; else rm -f "$(DEPDIR)/dec_ReturnFile.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='../Libifl/dec_ReturnFile.c' object='dec_ReturnFile.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o dec_ReturnFile.lo `test -f '../Libifl/dec_ReturnFile.c' || echo '$(srcdir)/'`../Libifl/dec_ReturnFile.c
+
 dec_rpyc.lo: ../Libifl/dec_rpyc.c
 @am__fastdepCC_TRUE@	if $(LIBTOOL) --tag=CC --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT dec_rpyc.lo -MD -MP -MF "$(DEPDIR)/dec_rpyc.Tpo" -c -o dec_rpyc.lo `test -f '../Libifl/dec_rpyc.c' || echo '$(srcdir)/'`../Libifl/dec_rpyc.c; \
 @am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/dec_rpyc.Tpo" "$(DEPDIR)/dec_rpyc.Plo"; else rm -f "$(DEPDIR)/dec_rpyc.Tpo"; exit 1; fi
@@ -1188,6 +1200,13 @@ enc_reply.lo: ../Libifl/enc_reply.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='../Libifl/enc_reply.c' object='enc_reply.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o enc_reply.lo `test -f '../Libifl/enc_reply.c' || echo '$(srcdir)/'`../Libifl/enc_reply.c
+
+enc_ReturnFile.lo: ../Libifl/enc_ReturnFile.c
+@am__fastdepCC_TRUE@	if $(LIBTOOL) --tag=CC --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT enc_ReturnFile.lo -MD -MP -MF "$(DEPDIR)/enc_ReturnFile.Tpo" -c -o enc_ReturnFile.lo `test -f '../Libifl/enc_ReturnFile.c' || echo '$(srcdir)/'`../Libifl/enc_ReturnFile.c; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/enc_ReturnFile.Tpo" "$(DEPDIR)/enc_ReturnFile.Plo"; else rm -f "$(DEPDIR)/enc_ReturnFile.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='../Libifl/enc_ReturnFile.c' object='enc_ReturnFile.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o enc_ReturnFile.lo `test -f '../Libifl/enc_ReturnFile.c' || echo '$(srcdir)/'`../Libifl/enc_ReturnFile.c
 
 enc_ReqExt.lo: ../Libifl/enc_ReqExt.c
 @am__fastdepCC_TRUE@	if $(LIBTOOL) --tag=CC --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT enc_ReqExt.lo -MD -MP -MF "$(DEPDIR)/enc_ReqExt.Tpo" -c -o enc_ReqExt.lo `test -f '../Libifl/enc_ReqExt.c' || echo '$(srcdir)/'`../Libifl/enc_ReqExt.c; \

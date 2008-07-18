@@ -1209,7 +1209,6 @@ static void preobit_reply(
       int x;	/* dummy */
 
       /* do this if not interactive */
-
       unlink(std_file_name(pjob,StdOut,&x));
       unlink(std_file_name(pjob,StdErr,&x));
       unlink(std_file_name(pjob,Checkpoint,&x));

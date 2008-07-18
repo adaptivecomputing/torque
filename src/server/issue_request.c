@@ -560,6 +560,20 @@ int issue_Drequest(
 
       break;
 
+    case PBS_BATCH_ReturnFiles:
+      if ((rc = encode_DIS_ReqHdr(sock, PBS_BATCH_ReturnFiles,msg_daemonname)))
+        break;
+
+      if ((rc = encode_DIS_ReturnFiles(sock,request)))
+        break;
+
+      if ((rc = encode_DIS_ReqExtend(sock,0)))
+        break;
+
+      rc = DIS_tcp_wflush(sock);
+
+      break;
+
     case PBS_BATCH_CopyFiles:
 
       if ((rc = encode_DIS_ReqHdr(sock,PBS_BATCH_CopyFiles,msg_daemonname)))

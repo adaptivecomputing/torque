@@ -246,6 +246,13 @@ const char *PJobSubState[] = {
   "RERUN1",                 /* job is rerun, stageout phase */
   "RERUN2",                 /* job is rerun, delete files stage */
   "RERUN3",                 /* job is rerun, mom delete job */
+  "SUBSTATE64",
+  "SUBSTATE65",
+  "SUBSTATE66",
+  "SUBSTATE67",
+  "SUBSTATE68",
+  "SUBSTATE69",
+  "RETURNSTD",	            /* returning stderr/stdout files to server spool */
   NULL };
 
 

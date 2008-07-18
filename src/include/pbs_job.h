@@ -719,6 +719,10 @@ task *task_find A_((
 #define JOB_SUBSTATE_RERUN2	62	/* job is rerun, delete files stage */
 #define JOB_SUBSTATE_RERUN3	63	/* job is rerun, mom delete job */
 
+#define JOB_SUBSTATE_RETURNSTD	70      /* job has checkpoint file, return
+                                           stdout/stderr files to server spool
+                                           dir so that job can be restarted */
+
 /* decriminator for ji_un union type */
 
 #define JOB_UNION_TYPE_NEW   0

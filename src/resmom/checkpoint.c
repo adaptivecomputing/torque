@@ -624,7 +624,7 @@ int mom_checkpoint_job(
       if (ptask->ti_qs.ti_status != TI_STATE_RUNNING)
         continue;
 
-      /* What to do if some resume work and others don't? */
+      /* XXX: What to do if some resume work and others don't? */
 
       if ((ckerr = resume(C_JOB,sesid)) == 0) 
         {
@@ -898,7 +898,7 @@ int start_checkpoint(
      * will be a crash.
      */
 
-    pjob->ji_mompost = (int (*)())post_checkpoint; /* BAD routine can move on restart */
+    pjob->ji_mompost = (int (*)())post_checkpoint; /* XXX BAD routine can move on restart */
 
     if (preq)
       free_br(preq); /* child will send reply */

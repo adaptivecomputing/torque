@@ -299,9 +299,6 @@
 /* the machine specific resc_def_* file name */
 #undef MACH_RESC_DEFS
 
-/* turns on the compilation of RESOURCEMAXNOTDEFAULT code */
-#undef RESOURCEMAXNOTDEFAULT
-
 /* Define to error if spool is full on MOM */
 #undef MOMCHECKLOCALSPOOL
 
@@ -319,7 +316,7 @@
 /* use nodemask-based scheduling on O2k */
 #undef NODEMASK
 
-/* Define to disable posix memlock */
+/* Define to disable mlockall */
 #undef NOPOSIXMEMLOCK
 
 /* Define to disable privileged ports */
@@ -403,6 +400,9 @@
 
 /* turns on the compilation of QUICKCOMMIT code */
 #undef QUICKCOMMIT
+
+/* turns on the compilation of RESOURCEMAXNOTDEFAULT code */
+#undef RESOURCEMAXNOTDEFAULT
 
 /* Define to enable RPP resource queries */
 #undef RPP

@@ -582,7 +582,8 @@ static int return_file(
 
   job	        *pjob,
   enum job_file  which,
-  int	         sock)
+  int	         sock,
+  int	         remove_file)
 
   {
   int		      amt;
@@ -652,7 +653,7 @@ static int return_file(
 
   close(fds);
 
-  if (rc == 0) 
+  if (remove_file == TRUE && rc == 0) 
     unlink(filename);
 
   return(rc);
@@ -1061,6 +1062,7 @@ void req_checkpointjob(
   if (pjob == NULL) 
     {
     rc = PBSE_UNKJOBID;
+    req_reject(rc,0,preq,mom_host, "job does not exist on mom");
     } 
   else 
     {
@@ -2588,9 +2590,9 @@ void req_rerunjob(
     exit(0);
     }
 
-  if (((rc = return_file(pjob,StdOut,sock)) != 0) ||
-      ((rc = return_file(pjob,StdErr,sock)) != 0) ||
-      ((rc = return_file(pjob,Checkpoint,sock)) != 0)) 
+  if (((rc = return_file(pjob,StdOut,sock,TRUE)) != 0) ||
+      ((rc = return_file(pjob,StdErr,sock,TRUE)) != 0) ||
+      ((rc = return_file(pjob,Checkpoint,sock,TRUE)) != 0)) 
     {
     /* FAILURE - cannot report file to server */
 
@@ -2618,7 +2620,46 @@ void req_rerunjob(
 
 
 
+void req_returnfiles(
+  struct batch_request *preq)
+  {
+  int rc;
+  struct job *pjob;
+  int sock;
+  static char *id = "req_returnfiles";
 
+  pjob = find_job(preq->rq_ind.rq_returnfiles.rq_jobid);
+
+  if (pjob != NULL)
+    {
+    sock = mom_open_socket_to_jobs_server(pjob,id,NULL);
+
+    if (sock < 0)
+      {
+      /* XXX TODO */
+      }
+
+    if (preq->rq_ind.rq_returnfiles.rq_return_stdout)
+      {
+      rc = return_file(pjob,StdOut,sock,FALSE);
+
+      }
+  
+    if (preq->rq_ind.rq_returnfiles.rq_return_stderr)
+      {
+      rc = return_file(pjob,StdErr,sock,FALSE);
+      }
+
+    reply_ack(preq);
+
+    close(sock);
+    }
+  else
+    {
+    req_reject(PBSE_UNKJOBID,0,preq,mom_host,"cannot locate job");
+    }
+  return;
+  }
 
 
 /*

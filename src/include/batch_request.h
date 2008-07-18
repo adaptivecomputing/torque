@@ -261,6 +261,12 @@ struct rqfpair {
 	char		*fp_rmt;	/* used in Copy only     */
 };
 
+struct rq_returnfiles {
+	char rq_jobid[PBS_MAXSVRJOBID + 1];
+        int  rq_return_stdout;
+        int  rq_return_stderr;
+};
+
 /* Job Obituary (MOM -> Server Only) */
 
 struct rq_jobobit {
@@ -318,6 +324,7 @@ struct batch_request {
 		struct rq_status        rq_status;
 		struct rq_track		rq_track;
 		struct rq_cpyfile	rq_cpyfile;
+		struct rq_returnfiles	rq_returnfiles;
 		struct rq_jobobit	rq_jobobit;
 	} rq_ind;
 }; 
@@ -356,6 +363,7 @@ extern void  req_trackjob A_((struct batch_request *req));
 #else
 extern void  req_cpyfile A_((struct batch_request *req));
 extern void  req_delfile A_((struct batch_request *req));
+extern void req_returnfiles A_((struct batch_request *req));
 #endif
 
 #ifdef SERVER_LIMITS_H
@@ -374,6 +382,7 @@ extern int decode_DIS_MoveJob A_((int socket, struct batch_request *));
 extern int decode_DIS_MessageJob A_((int socket, struct batch_request *));
 extern int decode_DIS_QueueJob A_((int socket, struct batch_request *));
 extern int decode_DIS_Register A_((int socket, struct batch_request *));
+extern int decode_DIS_ReturnFiles A_((int socket, struct batch_request *));
 extern int decode_DIS_ReqExtend A_((int socket, struct batch_request *));
 extern int decode_DIS_ReqHdr A_((int socket, struct batch_request *, int *tp, int *pv));
 extern int decode_DIS_Rescl A_((int socket, struct batch_request *));
@@ -389,6 +398,7 @@ extern int decode_DIS_svrattrl A_((int socket, tlist_head *));
 extern int encode_DIS_CopyFiles A_((int socket, struct batch_request *));
 extern int encode_DIS_JobObit A_((int socket, struct batch_request *));
 extern int encode_DIS_Register A_((int socket, struct batch_request *));
+extern int encode_DIS_ReturnFiles A_((int socket, struct batch_request *));
 extern int encode_DIS_TrackJob A_((int socket, struct batch_request *));
 extern int encode_DIS_reply A_((int socket, struct batch_reply *));
 extern int encode_DIS_svrattrl A_((int socket, svrattrl *));

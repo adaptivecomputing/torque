@@ -349,6 +349,11 @@ int dis_request_read(
 	
     /* pbs_mom services */
 	
+    case PBS_BATCH_ReturnFiles:
+      rc = decode_DIS_ReturnFiles(sfds,request);
+     
+      break;
+
     case PBS_BATCH_CopyFiles:
     case PBS_BATCH_DelFiles:
 
