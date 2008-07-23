@@ -476,7 +476,7 @@ mom_server_add(char *value)
       value);
     log_record(PBSEVENT_SYSTEM,PBS_EVENTCLASS_SERVER,id,log_buffer);
     }
-  else if ((pms = mom_server_find_empty_slot()))
+  else if ((pms = mom_server_find_empty_slot()) != NULL)
     {
     /* Fill in the new server instance */
 

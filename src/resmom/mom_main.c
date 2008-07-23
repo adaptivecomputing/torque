@@ -6379,12 +6379,6 @@ int setup_program_environment()
   struct sigaction act;
   char		*ptr;                   /* local tmp variable */
 
-  c = sysconf(_SC_OPEN_MAX);
-  /* close any inherited extra files, leaving stdin, stdout, stderr open */
-  while (--c > 2)
-    close(c); /* close any file desc left open by parent */
-
-
   /* must be started with real and effective uid of 0 */
 
   if ((getuid() != 0) || (geteuid() != 0)) 
@@ -7603,6 +7597,13 @@ int main(
 
   {
   int       rc;
+  int       tmpFD;
+
+  tmpFD = sysconf(_SC_OPEN_MAX);
+
+  /* close any inherited extra files, leaving stdin, stdout, and stderr open */
+  while (--tmpFD > 2)
+    close(tmpFD);
 
   program_name = argv[0];
 

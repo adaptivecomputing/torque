@@ -1287,7 +1287,15 @@ int main(
 
   umask(022);
 
-  /* find out the name of this machine (hostname) */
+  /* close files for security purposes */
+  /* do the following before getuid() and geteuid() can trigger 
+     nss_ldap into opening a socket to the LDAP server */
+
+  i = sysconf(_SC_OPEN_MAX);
+  while (--i > 2)
+    close(i);  /* close any file desc left open by parent */
+
+   /* find out the name of this machine (hostname) */
 
   EMsg[0] = '\0';
 
@@ -1324,13 +1332,6 @@ int main(
       pbs_rm_port = get_svrport(PBS_MANAGER_SERVICE_NAME,"tcp",PBS_MANAGER_SERVICE_PORT);
 
   parse_command_line(argc,argv);
-
-  /* do the following before getuid() and geteuid() can trigger 
-     nss_ldap into opening a socket to the LDAP server */
-  i = sysconf(_SC_OPEN_MAX);
-  while (--i > 2)
-    close(i);  /* close any file desc left open by parent */
-
 
   /* if we are not running with real and effective uid of 0, forget it */
 

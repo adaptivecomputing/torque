@@ -485,10 +485,14 @@ void log_record(
           objname,
           (text == start ? "" : "[continued]"),
           (int)nchars, start);
-      if ((rc == EPIPE) && (tryagain==2))
+
+      if ((rc < 0) &&
+          (errno == EPIPE) &&
+          (tryagain == 2))
         {
-        /* someone stole my file descripto and made it a socket; reopen log */
-        /* leave the file descriptor to the theif; do not close it */
+        /* the log file descriptor has been changed--it now points to a socket!
+         * reopen log and leave the previous file descriptor alone--do not close it */
+
         log_opened = 0;
         log_open(NULL, log_directory);
         tryagain--;

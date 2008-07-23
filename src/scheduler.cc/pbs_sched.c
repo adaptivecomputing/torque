@@ -712,6 +712,13 @@ int main(
 	glob_argv = argv;
 	alarm_time = 180;
 
+  /* The following is code to reduce security risks                */
+  /* move this to a place where nss_ldap doesn't hold a socket yet */
+
+  c = sysconf(_SC_OPEN_MAX);
+  while (--c > 2)
+    (void)close(c); /* close any file desc left open by parent */
+
 	port = get_svrport(PBS_SCHEDULER_SERVICE_NAME, "tcp", 
 			   PBS_SCHEDULER_SERVICE_PORT);
 	pbs_rm_port = get_svrport(PBS_MANAGER_SERVICE_NAME, "tcp",
@@ -780,14 +787,6 @@ int main(
 		fprintf(stderr, "usage: %s %s\n", argv[0], usage);
 		exit(1);
 	}
-
-  /* The following is code to reduce security risks                */
-  /* move this to a place where nss_ldap doesn't hold a socket yet */
-
-  c = sysconf(_SC_OPEN_MAX);
-  while (--c > 2)
-    (void)close(c); /* close any file desc left open by parent */
-
 
 #ifndef DEBUG
         if ((geteuid() != 0) || (getuid() != 0)) {
