@@ -80,6 +80,8 @@ extern int exiting_tasks;
 extern int LOGLEVEL;
 extern     int             lockfds;
 
+extern int task_recov(job *pjob);
+
 int        checkpoint_system_type = CST_NONE;
 char	   path_checkpoint[1024];
 
@@ -1089,7 +1091,10 @@ int blcr_restart_job(
   extern  char    restart_script_name[1024];
   task *ptask;
   char  buf[1024];
+  char  namebuf[MAXPATHLEN];
   char  **ap;
+
+
 
   /* if a restart script is defined launch it */
 
@@ -1106,9 +1111,21 @@ int blcr_restart_job(
 
   if (ptask == NULL)
     {
-    log_err(PBSE_RMNOPARAM,id,"Job has no tasks");
 
-    return(PBSE_RMNOPARAM);
+  
+    /* turns out if we are restarting a complete job then ptask will be 
+       null and we need to create a task We'll just create one task*/
+    if ((ptask = pbs_task_create(pjob,TM_NULL_TASK)) == NULL)
+      {
+      log_err(PBSE_RMNOPARAM,id,"Job has no tasks");
+      return(PBSE_RMNOPARAM);
+      }
+    strcpy(ptask->ti_qs.ti_parentjobid,pjob->ji_qs.ji_jobid);
+    ptask->ti_qs.ti_parentnode = 0;
+    ptask->ti_qs.ti_parenttask = 0;
+    ptask->ti_qs.ti_task = 0;
+
+    
     }
  
   /* launch the script and return success */
@@ -1135,6 +1152,20 @@ int blcr_restart_job(
     {
     /* child: execv the script */
 
+    if (pjob->ji_wattr[(int)JOB_ATR_checkpoint_dir].at_flags & ATR_VFLAG_SET)
+      {
+      /* The job has a checkpoint directory specified, use it. */
+      strcpy(namebuf,pjob->ji_wattr[(int)JOB_ATR_checkpoint_dir].at_val.at_str);
+      }
+    else
+      {
+      strcpy(namebuf,path_checkpoint);
+      strcat(namebuf,pjob->ji_qs.ji_fileprefix);
+      strcat(namebuf,JOB_CHECKPOINT_SUFFIX);
+      }
+
+
+
     sprintf(sid,"%ld",
       pjob->ji_wattr[(int)JOB_ATR_session_id].at_val.at_long);
 
@@ -1142,7 +1173,7 @@ int blcr_restart_job(
     arg[1] = sid;
     arg[2] = SET_ARG(pjob->ji_qs.ji_jobid);
     arg[3] = SET_ARG(pjob->ji_wattr[(int)JOB_ATR_euser].at_val.at_str);
-    arg[4] = SET_ARG(pjob->ji_wattr[(int)JOB_ATR_checkpoint_dir].at_val.at_str);
+    arg[4] = SET_ARG(namebuf);
     arg[5] = SET_ARG(pjob->ji_wattr[(int)JOB_ATR_checkpoint_name].at_val.at_str);
     arg[6] = NULL;
  

@@ -893,6 +893,9 @@ int send_job(
           continue;
         }
 
+/* XXX may need to change the logic below, if we are sending the job to 
+   a mom on the same host and the mom and server are not sharing the same 
+   spool directory, then we still need to move the file */
       if ((move_type == MOVE_TYPE_Exec) &&
           (jobp->ji_qs.ji_svrflags & JOB_SVFLG_HASRUN) &&
           (hostaddr != pbs_server_addr)) 
@@ -904,6 +907,7 @@ int send_job(
             (move_job_file(con,jobp,Checkpoint) != 0))
           continue;
         }
+
 
       /* ignore signals */
 
@@ -935,8 +939,9 @@ int send_job(
      * safely purge the job
      */
 
-    if (move_type != MOVE_TYPE_Exec)	/* not if sending to MOM */
-      job_purge(jobp);
+    if (move_type != MOVE_TYPE_Exec) /* not if sending to MOM */
+      job_purge(jobp); 
+      
 
     if ((rc = PBSD_commit(con,job_id)) != 0)
       {

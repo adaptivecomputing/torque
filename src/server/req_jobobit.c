@@ -865,9 +865,6 @@ void on_job_exit(
         if (KeepSeconds > 0)
 	  {
 	  
-	  /* first check to see if the stderr/stdout spool files exist locally
-	     if it does, assume that there is a pbs_mom sharing this spool directory
-	     and we don't do the copy, but we hack our way out of it */
 	  
 	  strcpy(namebuf, path_spool);
 	  strcat(namebuf, pjob->ji_qs.ji_fileprefix);
@@ -876,14 +873,11 @@ void on_job_exit(
 	  /* allocate space for the string name plus ".SAV" */
 	  namebuf2 = malloc((strlen(namebuf) + 4) * sizeof(char));
 	  
-	  
-	  spool_file_exists = access(namebuf, F_OK);
-	  
-	  if (spool_file_exists != 0) 
+	  if (pjob->ji_qs.ji_un.ji_exect.ji_momaddr != pbs_server_addr) 
 	    {
 	    preq = return_stdfile(preq, pjob, JOB_ATR_outpath);
 	    }
-	  else
+	  else if (access(namebuf, F_OK) == 0)
 	    {
 	    strcpy(namebuf2, namebuf);
 	    strcat(namebuf2, ".SAV");
@@ -895,11 +889,11 @@ void on_job_exit(
 	  strcat(namebuf, JOB_STDERR_SUFFIX);
 	  
 	  	  
-	  if (spool_file_exists != 0) 
+	  if (pjob->ji_qs.ji_un.ji_exect.ji_momaddr != pbs_server_addr) 
 	    {
 	    preq = return_stdfile(preq, pjob, JOB_ATR_errpath);
 	    }
-	  else
+	  else if (access(namebuf, F_OK) == 0)
 	    {
 	    strcpy(namebuf2, namebuf);
 	    strcat(namebuf2, ".SAV");
@@ -1172,7 +1166,6 @@ void on_job_exit(
         {
         link(namebuf2, namebuf);
 	unlink(namebuf2);
-	chown(namebuf, 0, 0);
         }
 	  
    	  
@@ -1189,7 +1182,6 @@ void on_job_exit(
  
         link(namebuf2, namebuf);
 	unlink(namebuf2);
-	chown(namebuf, 0, 0);
         }
 	  
       free(namebuf2);        
