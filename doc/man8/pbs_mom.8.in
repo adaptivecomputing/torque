@@ -537,7 +537,7 @@ certain children processes, such as the prologue and epilogue.
 results in pbs_mom exiting without terminating any running jobs.
 This is the action for the following signals as well: SIGXCPU, SIGXFSZ,
 SIGCPULIM, and SIGSHUTDN.
-.IP SIGUSR1, SIGUSR2
+.IP "SIGUSR1, SIGUSR2"
 causes mom to increase and decrease logging levels, respectively.
 .IP "SIGPIPE, SIGINFO"
  are ignored.
