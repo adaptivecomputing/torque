@@ -4,6 +4,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature
   e - added -q to qalter to allow quicker response to modify requests
   f - added basic qhold support for job arrays
   b - clear out ji_destin in obit_reply
+  f - add qchkpt command
   e - renamed job.h to pbs_job.h
   b - fix logic error in checkpoint interval test
 
