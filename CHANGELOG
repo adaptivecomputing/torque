@@ -11,9 +11,6 @@ c - crash     b - bug fix    e - enhancement    f - new feature
 2.3.2
   e - added --disable-posixmemlock to force mom not to use POSIX MEMLOCK.
   b - fix potential buffer overrun in qsub
-  b - if user qholds a running job with BLCR checkpoint/restart and the
-      checkpoint fails then the job no longer goes to the HOLD state after
-      it completes
   b - keep pbs_mom, pbs_server, pbs_sched from closing sockets opened by
       nss_ldap (SGI)
   e - added PBS_VERSION environment variable
