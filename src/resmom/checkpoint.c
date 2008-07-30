@@ -58,8 +58,12 @@
 #include <assert.h>
 #include <dirent.h>
 #include <time.h>
+#include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
+
+
+
 #include "dis.h"
 #include "libpbs.h"
 #include "pbs_error.h"
@@ -81,6 +85,7 @@ extern int LOGLEVEL;
 extern     int             lockfds;
 
 extern int task_recov(job *pjob);
+extern char *path_spool;
 
 int        checkpoint_system_type = CST_NONE;
 char	   path_checkpoint[1024];
@@ -92,6 +97,8 @@ char       checkpoint_run_exe_name[1024];
 int        default_checkpoint_interval = 10; /* minutes */
 
 extern char *mk_dirs A_((char *));
+
+int create_missing_files(job *pjob);
 
 /* The following is used for building command line args 
  * and makes sure that at least something is generated
@@ -1156,6 +1163,11 @@ int blcr_restart_job(
     {
     /* child: execv the script */
 
+    /* if there are missing .OU or .ER files create them, they were probably
+       empty and server didn't send them */
+    /* TODO: check return value? */
+    create_missing_files(pjob);
+
     if (pjob->ji_wattr[(int)JOB_ATR_checkpoint_dir].at_flags & ATR_VFLAG_SET)
       {
       /* The job has a checkpoint directory specified, use it. */
@@ -1514,5 +1526,110 @@ int mom_checkpoint_start_restart(
 
 
 
-/* EOF */
+/* this file creates missing stderr/stdout files before restarting 
+   the checkpointed job. This was designed for BLCR checkpointing.
+   empty .OU or .ER files are not retained by the server, so if we
+   are restarting a checkpointed job then they will not get sent back 
+   out to use.  the blcr restart command will expect these files to exist, 
+   even if empty.  If any expected files are missing we create them here */
+
+/* TODO: this needs to be modified to work with user .pbs_spool directories */
+int create_missing_files(job *pjob)
+  {
+  int should_have_stderr;
+  int should_have_stdout;
+  attribute *pattr;
+  char *pstr;
+  char *namebuf;
+  int bufsize;
+  int files_created = 0;
+  int fd;
+
+  
+  should_have_stderr = TRUE;
+  should_have_stdout = TRUE;
+  pattr = &pjob->ji_wattr[(int)JOB_ATR_join];
+  
+  if (pattr->at_flags & ATR_VFLAG_SET)
+    {
+    pstr = pattr->at_val.at_str;
+    if ((pstr != NULL) && (*pstr != '\0') && (*pstr != 'n')) 
+      {
+      /* if not the first letter, and in list - is joined */
+
+      if ((*pstr != 'e') && (strchr(pstr + 1,(int)'e')))
+        {
+        should_have_stderr = FALSE;	/* being joined */
+        }
+      else if ((*pstr != 'o') && (strchr(pstr + 1, (int)'o')))
+        {
+	should_have_stdout = FALSE;
+	}
+      }
+    }
+      
+  
+      
+  if (should_have_stdout)
+    {
+    bufsize = strlen(pjob->ji_qs.ji_fileprefix) + strlen(path_spool) + strlen(JOB_STDOUT_SUFFIX)+ 1;
+    namebuf = malloc(bufsize * sizeof(char));
+    if (namebuf == NULL)
+      {
+      return -1;
+      }
+    strcpy(namebuf, path_spool);
+    strcat(namebuf, pjob->ji_qs.ji_fileprefix);
+    strcat(namebuf, JOB_STDOUT_SUFFIX);
+    if (access(namebuf, F_OK) != 0)
+      {
+      if ((fd = creat(namebuf, S_IRUSR|S_IWUSR)) > 0)
+        {
+        /* TODO check return value of fchown */
+        fchown(fd,  pjob->ji_qs.ji_un.ji_momt.ji_exuid,pjob->ji_qs.ji_un.ji_momt.ji_exgid );
+        close(fd);
+        ++files_created;	
+        }
+      else
+        {
+        /* couldn't create the file, why could this happen, TODO: what should we do? */
+        }
+      
+      }
+    free(namebuf);
+    }
+    
+  if (should_have_stderr)
+    {
+    bufsize = strlen(pjob->ji_qs.ji_fileprefix) + strlen(path_spool) + strlen(JOB_STDOUT_SUFFIX)+ 1;
+    namebuf = malloc(bufsize * sizeof(char));
+    if (namebuf == NULL)
+      {
+      return -1;
+      }
+    strcpy(namebuf, path_spool);
+    strcat(namebuf, pjob->ji_qs.ji_fileprefix);
+    strcat(namebuf, JOB_STDERR_SUFFIX);
+    if (access(namebuf, F_OK) != 0)
+      {
+      if ((fd = creat(namebuf, S_IRUSR|S_IWUSR)) > 0)
+        {
+        /* TODO check return value of fchown */
+        fchown(fd,  pjob->ji_qs.ji_un.ji_momt.ji_exuid,pjob->ji_qs.ji_un.ji_momt.ji_exgid );
+        close(fd);	
+        ++files_created;
+        }
+      else
+        {
+        /* couldn't create the file, why could this happen, TODO: what should we do? */
+        }
+      
+      }
+    free(namebuf);
+    
+    }
+    
+  return files_created;    
+  }
+
 
