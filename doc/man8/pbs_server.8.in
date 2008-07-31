@@ -205,9 +205,9 @@ The current server log and accounting log are closed and reopened.  This
 allows for the prior log to be renamed and a new log started from the time
 of the signal.
 .IP SIGINT
-Causes an orderly shutdown of pbs_server, identical to "qterm".
+Causes an orderly shutdown of pbs_server.
 .IP SIGTERM
-Causes an orderly shutdown of pbs_server, identical to "qterm".
+Causes an orderly shutdown of pbs_server.
 .IP SIGSHUTDN
 On systems (Unicos) where SIGSHUTDN is defined, it also causes an orderly
 shutdown of the server.
