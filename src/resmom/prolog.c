@@ -323,6 +323,7 @@ int run_pelog(
   struct stat	 sbuf;
   char		 sid[20];
   int		 waitst;
+  int      isjoined;
   char		 buf[MAXPATHLEN + 2];
 
   resource      *r;
@@ -528,12 +529,38 @@ int run_pelog(
     else if (pe_io_type == PE_IO_TYPE_STD) 
       {
       /* open job standard out/error */
+      
+      /*
+       * We need to know if files are joined or not.
+       * If they are then open the correct file and duplicate it to the other
+      */
 
-      fds1 = open_std_file(pjob,StdOut,O_WRONLY|O_APPEND,
-        pjob->ji_qs.ji_un.ji_momt.ji_exgid);
+      isjoined = is_joined(pjob);
+      
+      switch (isjoined)
+        {
+        case -1:
+          fds2 = open_std_file(pjob,StdErr,O_WRONLY|O_APPEND,
+            pjob->ji_qs.ji_un.ji_momt.ji_exgid);
 
-      fds2 = open_std_file(pjob,StdErr,O_WRONLY|O_APPEND,
-        pjob->ji_qs.ji_un.ji_momt.ji_exgid);
+          fds1 = dup(fds2);
+          break;
+          
+        case 1:
+          fds1 = open_std_file(pjob,StdOut,O_WRONLY|O_APPEND,
+            pjob->ji_qs.ji_un.ji_momt.ji_exgid);
+
+          fds2 = dup(fds1);
+          break;
+          
+        default:
+          fds1 = open_std_file(pjob,StdOut,O_WRONLY|O_APPEND,
+            pjob->ji_qs.ji_un.ji_momt.ji_exgid);
+
+          fds2 = open_std_file(pjob,StdErr,O_WRONLY|O_APPEND,
+            pjob->ji_qs.ji_un.ji_momt.ji_exgid);
+          break;
+        }
       }
 
     if (pe_io_type != PE_IO_TYPE_ASIS) 

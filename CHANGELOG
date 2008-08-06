@@ -8,6 +8,9 @@ c - crash     b - bug fix    e - enhancement    f - new feature
   e - renamed job.h to pbs_job.h
   b - fix logic error in checkpoint interval test
 
+2.3.3
+  b - changed so run_pelog opens correct stdout/stderr when join is used
+
 2.3.2
   e - added --disable-posixmemlock to force mom not to use POSIX MEMLOCK.
   b - fix potential buffer overrun in qsub
