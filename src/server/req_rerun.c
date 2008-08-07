@@ -154,12 +154,14 @@ static void post_rerun(
 
 
 
-/*
+/**
  * req_rerunjob - service the Rerun Job Request
  *
- *	This request Reruns a job by:
- *		sending to MOM a signal job request with SIGKILL
- *		marking the job as being rerun by setting the substate.
+ * This request Reruns a job by:
+ *	sending to MOM a signal job request with SIGKILL
+ *	marking the job as being rerun by setting the substate.
+ *
+ * NOTE:  can be used to requeue active jobs or completed jobs.
  */
 
 void req_rerunjob(
@@ -173,6 +175,10 @@ void req_rerunjob(
 
   int  rc;
 
+  int  MgrRequired = TRUE;
+
+  /* check if requestor is admin, job owner, etc */
+
   if ((pjob = chk_job_request(preq->rq_ind.rq_rerun,preq)) == 0)
     {
     /* FAILURE */
@@ -182,28 +188,38 @@ void req_rerunjob(
     return;
     }
 
-  if (preq->rq_extend && !strncasecmp(preq->rq_extend,RERUNFORCE,strlen(RERUNFORCE)))
-    Force = 1;
-  else
-    Force = 0;
+  /* the job must be running or completed */
 
-  if ((preq->rq_perm & (ATR_DFLAG_MGWR|ATR_DFLAG_OPWR)) == 0) 
+  if (pjob->ji_qs.ji_state >= JOB_STATE_EXITING)
+    {
+    if (pjob->ji_wattr[(int)JOB_ATR_checkpoint_name].at_flags & ATR_VFLAG_SET)
+      {
+      /* allow end-users to rerun checkpointed jobs */
+
+      MgrRequired = FALSE;
+      }
+    }
+  else if (pjob->ji_qs.ji_state == JOB_STATE_RUNNING)
+    {
+    /* job is running */
+
+    /* NO-OP */
+    }
+  else
+    {
+    /* FAILURE - job is in bad state */
+
+    req_reject(PBSE_BADSTATE,0,preq,NULL,NULL);
+
+    return;
+    }
+ 
+  if ((MgrRequired == TRUE) &&
+     ((preq->rq_perm & (ATR_DFLAG_MGWR|ATR_DFLAG_OPWR)) == 0))
     {
     /* FAILURE */
 
     req_reject(PBSE_PERM,0,preq,NULL,NULL);
-
-    return;
-    }
-
-  /* the job must be running or completed */
-
-  if ((pjob->ji_qs.ji_state < JOB_STATE_EXITING) &&
-      (pjob->ji_qs.ji_state != JOB_STATE_RUNNING))
-    {
-    /* FAILURE */
-
-    req_reject(PBSE_BADSTATE,0,preq,NULL,NULL);
 
     return;
     }
@@ -237,6 +253,11 @@ void req_rerunjob(
 
     rc = -1;
     }
+
+  if (preq->rq_extend && !strncasecmp(preq->rq_extend,RERUNFORCE,strlen(RERUNFORCE)))
+    Force = 1;
+  else
+    Force = 0;
 
   switch (rc) 
     {
