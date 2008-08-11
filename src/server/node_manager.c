@@ -434,6 +434,10 @@ void update_node_state(
   char *id = "update_node_state";
 
   struct pbssubn *sp;
+#ifdef ALT_CLSTR_ADDR
+  int ret;
+  int send_addrs = FALSE;
+#endif
 
   /*
    * LOGLEVEL >= 4 logs all state changes
@@ -456,6 +460,22 @@ void update_node_state(
     }
 
   log_buffer[0] = '\0';
+  
+#ifdef ALT_CLSTR_ADDR
+  /*
+   *  If coming out of DOWN or UNKNOWN states
+   *  then we want to send IS_CLUSTER_ADDRS message
+   */
+
+  if ((np->nd_state & INUSE_DOWN) ||
+      (np->nd_state & INUSE_UNKNOWN))
+    {
+    if (!(newstate & INUSE_DOWN))
+      {
+      send_addrs = TRUE;
+      }
+    }
+#endif
 
   if (newstate & INUSE_DOWN)
     {
@@ -707,6 +727,56 @@ void update_node_state(
       log_buffer);
     }
 
+#ifdef ALT_CLSTR_ADDR
+  if (send_addrs)
+    {
+    /* send the cluster addrs */
+
+    ret = is_compose(np->nd_stream,IS_CLUSTER_ADDRS);
+
+    if (ret == DIS_SUCCESS)
+      {
+      ret = add_cluster_addrs(np->nd_stream);
+      }
+      
+    if (ret == DIS_SUCCESS)
+      {
+      ret = rpp_flush(np->nd_stream);
+      }
+      
+    if ((ret == DIS_SUCCESS) && (LOGLEVEL >= 3))
+      {
+      sprintf(log_buffer,"sent cluster-addrs to node %s\n",
+        np->nd_name);
+
+      log_record(PBSEVENT_SYSTEM,PBS_EVENTCLASS_SERVER,id,log_buffer);
+      }
+
+    if (ret != DIS_SUCCESS)
+      {
+      /* a DIS write error has occurred */
+
+      if (LOGLEVEL >= 1)
+        {
+        DBPRT(("%s: error processing node %s\n",
+          id,
+          np->nd_name))
+        }
+
+      sprintf(log_buffer,"%s %d to %s",
+        dis_emsg[ret],
+        errno,
+        np->nd_name);
+
+      log_err(-1,id,log_buffer);
+
+      rpp_close(np->nd_stream);
+
+      update_node_state(np,INUSE_DOWN);
+      }
+    } /* END send_addrs */
+#endif
+  
   return;
   }  /* END update_node_state() */
 
@@ -1876,7 +1946,7 @@ found:
 
         log_event(PBSEVENT_ADMIN,PBS_EVENTCLASS_SERVER,id,log_buffer);
         }
-
+#ifndef ALT_CLSTR_ADDR
       ret = is_compose(stream,IS_CLUSTER_ADDRS);
 
       if (ret != DIS_SUCCESS)
@@ -1903,7 +1973,7 @@ found:
       /* rpp_eom(stream); */
 
       /* CLUSTER_ADDRS successful */
-
+#endif
       node->nd_state &= ~(INUSE_NEEDS_HELLO_PING);
 
       break;
