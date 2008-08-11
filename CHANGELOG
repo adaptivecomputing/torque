@@ -10,6 +10,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature
 
 2.3.3
   b - changed so run_pelog opens correct stdout/stderr when join is used
+  b - corrected pbs_server man page for SIGUSR1 and SIGUSR2
 
 2.3.2
   e - added --disable-posixmemlock to force mom not to use POSIX MEMLOCK.

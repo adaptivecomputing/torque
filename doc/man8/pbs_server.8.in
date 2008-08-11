@@ -206,13 +206,15 @@ allows for the prior log to be renamed and a new log started from the time
 of the signal.
 .IP SIGINT
 Causes an orderly shutdown of pbs_server.
+.IP "SIGUSR1, SIGUSR2"
+Causes server to increase and decrease logging levels, respectively.
 .IP SIGTERM
 Causes an orderly shutdown of pbs_server.
 .IP SIGSHUTDN
 On systems (Unicos) where SIGSHUTDN is defined, it also causes an orderly
 shutdown of the server.
-.IP "SIGPIPE, SIGUSR1, SIGUSR2"
-These signals are ignored.
+.IP "SIGPIPE"
+This signal is ignored.
 .LP
 All other signals have their default behavior installed.
 .SH EXIT STATUS
