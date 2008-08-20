@@ -8,7 +8,7 @@
 # Source the library functions
 . /etc/rc.d/init.d/functions
 
-PBS_DAEMON=/usr/sbin/pbs_sched
+PBS_DAEMON=/usr/local/sbin/pbs_sched
 export PBS_DAEMON
 
 if [ -f /etc/sysconfig/pbs_sched ];then

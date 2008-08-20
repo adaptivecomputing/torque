@@ -9,8 +9,8 @@ ulimit -n 32768
 # Source the library functions
 . /etc/rc.d/init.d/functions
 
-PBS_DAEMON=/usr/sbin/pbs_mom
-PBS_HOME=/usr/spool/PBS
+PBS_DAEMON=/usr/local/sbin/pbs_mom
+PBS_HOME=/var/spool/torque
 export PBS_DAEMON PBS_HOME
 
 if [ -f /etc/sysconfig/pbs_mom ];then
