@@ -28,6 +28,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature
       nss_ldap (SGI)
   e - added PBS_VERSION environment variable
   e - added --enable-acct-x to allow adding of x attributes to accounting log
+  b - fix net_server.h build error
 
 2.3.1
   b - fixed a bug where torque would fail to start if there was no LF in nodes 
