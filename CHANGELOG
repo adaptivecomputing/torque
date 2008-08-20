@@ -8,9 +8,17 @@ c - crash     b - bug fix    e - enhancement    f - new feature
   e - renamed job.h to pbs_job.h
   b - fix logic error in checkpoint interval test
 
+2.3.4
+  b - fixed a bug where if attempt to send job to a pbs_mom failed due to timeout, the job would
+      indefinitely remain the in 'R' state
+
 2.3.3
+  b - fixed bug where pbs_mom would sometimes not connect properly with pbs_server after network failures
   b - changed so run_pelog opens correct stdout/stderr when join is used
   b - corrected pbs_server man page for SIGUSR1 and SIGUSR2
+  f - added new pbs_track command which may be used to launch an external process and a pbs_mom will then
+      track the resource usage of that process and attach it to a specified job (experimental) (special thanks
+      to David Singleton and David Houlder from APAC)
   e - added alternate method for sending cluster addresses to mom (ALT_CLSTR_ADDR)
 
 2.3.2

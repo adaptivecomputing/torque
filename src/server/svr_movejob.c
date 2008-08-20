@@ -563,6 +563,7 @@ int send_job(
   char		*destin = jobp->ji_qs.ji_destin;
   int		 encode_type;
   int		 i;
+  int    NumRetries;
   char		*id = "send_job";
   char		 job_id[PBS_MAXSVRJOBID + 1];
   attribute	*pattr;
@@ -780,13 +781,13 @@ int send_job(
   pbs_errno = 0;
   con = -1;
 
-  for (i = 0;i < RETRY;i++) 
+  for (NumRetries = 0;NumRetries < RETRY;NumRetries++) 
     {
     int rc;
 
     /* connect to receiving server with retries */
 
-    if (i > 0) 
+    if (NumRetries > 0) 
       {	
       /* recycle after an error */
 
@@ -805,7 +806,7 @@ int send_job(
         exit(1);	/* fatal error, don't retry */
         }
 
-      sleep(1 << i);
+      sleep(1 << NumRetries);
       }
 
     /* NOTE:  on node hangs, svr_connect is successful */
@@ -975,7 +976,9 @@ int send_job(
 
         log_err(errno2,id,log_buffer);
 
-        /* do we need a break here? */
+        /* don't retry on timeout--break out and report error! */
+
+        break;
         }
       else
         {
@@ -997,7 +1000,7 @@ int send_job(
     /* SUCCESS */
 
     exit(0);
-    }  /* END for (i) */
+    }  /* END for (NumRetries) */
 
   if (con >= 0)
     svr_disconnect(con);
