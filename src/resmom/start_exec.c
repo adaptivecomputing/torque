@@ -3749,7 +3749,10 @@ int start_process(
 
         /* Move this mom process into the cpuset so the job will start in it. */
 
-        move_to_taskset(getpid(),pjob,nodeidbuf);
+	/* Changed to move_to_jobset for OpenMPI jobs - CS - 20080526 */
+
+        /* move_to_taskset(getpid(),pjob,nodeidbuf); */
+        move_to_jobset(getpid(),pjob);
         }
       }
     }
