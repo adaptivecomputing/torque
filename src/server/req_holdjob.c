@@ -496,10 +496,18 @@ static void process_hold_reply(
     pjob->ji_modified = 1;    /* indicate attributes changed */
     svr_evaljobstate(pjob,&newstate,&newsub,0);
     svr_setjobstate(pjob,newstate,newsub); /* saves job */
-    sprintf(log_buffer, msg_mombadhold, preq->rq_reply.brp_code);
-    LOG_EVENT(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB,
-      pjob->ji_qs.ji_jobid, log_buffer);
-    req_reject(preq->rq_reply.brp_code, 0, preq,NULL,log_buffer);
+
+	  if (preq->rq_reply.brp_code != PBSE_NOSUP)
+  	  {
+      sprintf(log_buffer, msg_mombadhold, preq->rq_reply.brp_code);
+      LOG_EVENT(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB,
+        pjob->ji_qs.ji_jobid, log_buffer);
+      req_reject(preq->rq_reply.brp_code, 0, preq,NULL,log_buffer);
+      }
+      else
+      {
+      reply_ack(preq);
+      }
     }
   else
     {
