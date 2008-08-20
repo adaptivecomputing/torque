@@ -116,9 +116,6 @@ int main(
 
   int  DoBackground = 0;
 
-#define MAX_SIGNAL_TYPE_LEN 32
-  static char sig_string[MAX_SIGNAL_TYPE_LEN+1] = "SIGTERM";
-
   tmpJobID[0] = '\0';
 
   /* USAGE: pbs_track [-j <JOBID>] a.out arg1 arg2 ... argN */

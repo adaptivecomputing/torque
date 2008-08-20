@@ -563,7 +563,7 @@ int task_recov(
        * "+1" due to the post-increment when we generate the
        * task ids.
        */
-      pjob->maxAdoptedTaskId = MAX(pjob->maxAdoptedTaskId,task_save.ti_task+1);
+      pjob->maxAdoptedTaskId = MAX(pjob->maxAdoptedTaskId,(int)(task_save.ti_task+1));
        
       tid = task_save.ti_task;
       } 

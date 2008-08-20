@@ -416,6 +416,7 @@ struct job {
 	int		ji_numvnod;	/* number of virtual nodes */
 	tm_node_id	ji_nodeid;	/* my node id */
 	tm_task_id	ji_taskid;	/* generate task id's for job */
+  char ji_altid[PBS_MAXSVRJOBID + 1];
 	tm_event_t	ji_obit;	/* event for end-of-job */
 	hnodent	       *ji_hosts;	/* ptr to job host management stuff */
 	vnodent	       *ji_vnods;	/* ptr to job vnode management stuff */
@@ -490,6 +491,9 @@ struct job {
 	 */
 
   attribute ji_wattr[JOB_ATR_LAST]; /* decoded attributes  */
+
+  int  maxAdoptedTaskId;  /* DJH 27 Feb 2002. Keep track of the task ids
+                             the local mom allocates to adopted tasks; */ 
   };
 
 typedef struct job job;
@@ -573,7 +577,7 @@ typedef struct	infoent {
 #define	TI_FLAGS_CHECKPOINT     2		/* task has checkpointed */
 
 #define TI_STATE_EMBRYO  0
-#define TI_STATE_RUNNING 1              /* includes suspended jobs */
+#define TI_STATE_RUNNING 1    /* includes suspended jobs */
 #define TI_STATE_EXITED	 2		/* ti_exitstat valid */
 #define TI_STATE_DEAD    3
 
