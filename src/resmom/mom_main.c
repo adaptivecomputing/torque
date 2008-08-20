@@ -7001,15 +7001,20 @@ int setup_program_environment()
 
     sleep(tmpL % (rand() + 1));
     }  /* END if (ptr != NULL) */
-  return(0);
- }
+
+ return(0);
+ }  /* END setup_program_environment() */
+
+
+
 
 
 
 /*
  * TMOMJobGetStartInfo
+ * 
+ * NOTE: if pjob is NULL, return empty slot, otherwise return slot containing job.
  */
-/* if pjob is NULL, return empty slot, otherwise return slot containing job */
 
 int TMOMJobGetStartInfo(
 
@@ -7414,12 +7419,15 @@ void kill_all_running_jobs()
 
 /**
  * main_loop
+ *
+ * @see main() - parent
  */
 
 void main_loop()
 
   {
   static char   id[] = "main_loop";
+
   extern time_t	wait_time;
   double        myla;
   job          *pjob;
@@ -7592,7 +7600,7 @@ void restart_mom(
 
   execvp(MOMExePath,argv);
 
-  sprintf(log_buffer,"Execing myself failed: %s (%d)",
+  sprintf(log_buffer,"execing myself failed: %s (%d)",
     strerror(errno),
     errno);
 
@@ -7607,6 +7615,8 @@ void restart_mom(
 
 /*
  * main - the main program of MOM
+ *
+ * @see main_loop() - child
  */
 
 int main(
@@ -7621,6 +7631,7 @@ int main(
   tmpFD = sysconf(_SC_OPEN_MAX);
 
   /* close any inherited extra files, leaving stdin, stdout, and stderr open */
+
   while (--tmpFD > 2)
     close(tmpFD);
 
