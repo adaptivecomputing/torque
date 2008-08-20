@@ -18,7 +18,7 @@
 $tool="cat";
 $numlines="";
 $suffix="OU";
-$spool="/var/spool/pbs/spool";
+$spool="/var/spool/torque/spool";
 $host="oscbw";
 
 while ( $ARGV[0] =~ /^-.*/ )
