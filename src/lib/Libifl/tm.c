@@ -99,6 +99,7 @@
 #include	"dis_init.h"
 #include	"tm.h"
 #include	"net_connect.h"
+#include	"pbs_ifl.h"
 
 
 /*
@@ -1395,3 +1396,139 @@ err:
 	local_conn = -1;
 	return TM_ENOTCONNECTED;
 }
+
+
+
+/*
+ * tm_adopt() --
+ *
+ *     When PBS is used in conjuction with an alternative (MPI) task
+ *     spawning/management system (AMS) (like Quadrics RMS or SGI array
+ *     services), only the script task on the mother superior node will
+ *     be parented by (or even known to) a PBS MOM.  Unless the AMS is
+ *     PBS-(tm-)aware, all other tasks will be parented (and to varying
+ *     extents managed) by the AMS.  This means that PBS cannot track
+ *     task resource usage (unless the AMS provides such info) nor
+ *     manage (suspend, resume, signal, clean up, ...) the task (unless
+ *     the AMS provides such functionality).  For example pvmrun and
+ *     some mpiruns simply use rsh to start remote processes - no AMS
+ *     tracking or management facilities are available.
+ *
+ *     This function allows any task (session) to be adopted into a PBS
+ *     job. It is used by:
+ *         -  "adopter" (which is in turn used by our pvmrun)
+ *         -  our rmsloader wrapper (a home-brew replacement for RMS'
+ *            rmsloader that does some work and then exec()s the real
+ *            rmsloader) to tell PBS to adopt its session id (which
+ *            (hopefully) is also the session id for all its child
+ *            processes).
+ *         -  anumpirun on SGI Altix systems
+ *
+ *     Call this instead of tm_init() to ask the local pbs_mom to
+ *     adopt a session (i.e. create a new task corresponding to the
+ *     session id). Note that this may subvert all of the cookie stuff
+ *     in PBS as the AMS task starter may not have any PBS cookie info
+ *     (eg rmsloader)
+ *
+ * Arguments:
+ *     char *id      AMS altid (eg RMS resource id) or PBS_JOBID
+ *                   (depending on adoptCmd) of the job that will adopt
+ *                   sid. This is how pbs_mom works out which job will
+ *                   adopt the sid.
+ *     int adoptCmd  either TM_ADOPT_JOBID or TM_ADOPT_ALTID if task
+ *                   id is AMS altid
+ *     pid_t pid     process id of process to be adopted (always self?)
+ *
+ * Assumption:
+ *     If TM_ADOPT_ALTID is used to identify tasks to be adopted, PBS
+ *     must be configured to work with one and only one alternative task
+ *     spawning/management system that uses it own task identifiers.
+ *
+ * Result:
+ *     Returns TM_SUCCESS if the session was successfully adopted by
+ *     the mom. Returns TM_ENOTFOUND if the mom couldn't find a job
+ *     with the given RMS resource id. Returns TM_ESYSTEM or
+ *     TM_ENOTCONNECTED if there was some sort of comms error talking
+ *     to the mom
+ *
+ * Side effects:
+ *     Sets the tm_* globals to fake values if tm_init() has never
+ *     been called. This mainly just prevents segfaults etc when
+ *     these values are written to local_conn - the mom ignores most
+ *     of them for this special adopt case
+ *
+ */
+
+int tm_adopt(char *id, int adoptCmd, pid_t pid)
+{
+    int status, ret;
+    pid_t sid;
+    char *env;
+
+    sid = getsid(pid);
+
+    /* Must be the only call to call to tm and
+       must only be called once */
+    if (init_done) return TM_BADINIT;
+    init_done = 1;
+    
+    /* Fabricate the tm state as best we can - not really needed */
+    
+    if ((tm_jobid = getenv("PBS_JOBID")) == NULL)
+        tm_jobid = "ADOPT JOB";
+    tm_jobid_len =strlen(tm_jobid);
+    
+    if ((tm_jobcookie = getenv("PBS_JOBCOOKIE")) == NULL)
+        tm_jobcookie ="ADOPT COOKIE";
+    tm_jobcookie_len=strlen(tm_jobcookie);
+       
+    /* We dont have the (right) node id or task id */
+    tm_jobndid = 0;
+    tm_jobtid =0;
+    
+    /* Fallback is system default MOM port if not known */
+    if ( (env=getenv("PBS_MOMPORT")) == NULL || (tm_momport=atoi(env)) == 0)
+        tm_momport = PBS_MANAGER_SERVICE_PORT;
+    
+    
+    /* DJH 27 Feb 2002. two kinds of adoption now */
+    if (adoptCmd != TM_ADOPT_ALTID && adoptCmd != TM_ADOPT_JOBID)
+        return TM_EUNKNOWNCMD;
+
+    if (startcom(adoptCmd, TM_NULL_EVENT) != DIS_SUCCESS)
+        return TM_ESYSTEM;
+
+    /* send session id */
+    if (diswsi(local_conn, sid) != DIS_SUCCESS)
+        return TM_ENOTCONNECTED;
+
+    /* send job or alternative id */
+    if (diswcs(local_conn, id, strlen(id)) != DIS_SUCCESS)
+        return TM_ENOTCONNECTED;
+
+    DIS_tcp_wflush(local_conn);
+
+    /* The mom should now attempt to adopt the task and will send back a
+       status flag to indicate whether it was successful or not. */
+
+    status= disrsi(local_conn, &ret);
+    if (ret != DIS_SUCCESS)
+        return TM_ENOTCONNECTED;
+
+    /* Don't allow any more tm_* calls in this process. As well as
+       closing an unused socket it also prevents any problems related to
+       the fact that all adopted processes have a fake task id which
+       might break the tm mechanism */
+    tm_finalize();
+
+    /* Since we're not using events, tm_finalize won't actually
+       close the socket, so do it here. */
+    if (local_conn>-1) {
+        close(local_conn);
+        local_conn = -1;
+    }
+    
+    return (status==TM_OKAY?
+        TM_SUCCESS:
+        TM_ENOTFOUND);
+} 

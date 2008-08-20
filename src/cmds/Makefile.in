@@ -45,7 +45,7 @@ bin_PROGRAMS = qalter$(EXEEXT) qdel$(EXEEXT) qhold$(EXEEXT) \
 	qsub$(EXEEXT) pbsdsh$(EXEEXT) qdisable$(EXEEXT) \
 	qenable$(EXEEXT) qrun$(EXEEXT) qstart$(EXEEXT) qstop$(EXEEXT) \
 	qterm$(EXEEXT) pbsnodes$(EXEEXT) qmgr$(EXEEXT) qchkpt$(EXEEXT) \
-	@PBSPOE@ $(am__empty)
+	pbs_track$(EXEEXT) @PBSPOE@ $(am__empty)
 EXTRA_PROGRAMS = pbspd$(EXEEXT) pbspoe$(EXEEXT)
 subdir = src/cmds
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -112,6 +112,10 @@ am_qmgr_OBJECTS = qmgr.$(OBJEXT)
 qmgr_OBJECTS = $(am_qmgr_OBJECTS)
 am__DEPENDENCIES_2 =
 qmgr_DEPENDENCIES = $(am__DEPENDENCIES_1) $(am__DEPENDENCIES_2)
+am_pbs_track_OBJECTS = pbs_track.$(OBJEXT)
+pbs_track_OBJECTS = $(am_pbs_track_OBJECTS)
+pbs_track_DEPENDENCIES = $(am__DEPENDENCIES_1)
+pbs_track_LDADD = $(LDADD)
 am_qmove_OBJECTS = qmove.$(OBJEXT)
 qmove_OBJECTS = $(am_qmove_OBJECTS)
 qmove_LDADD = $(LDADD)
@@ -184,7 +188,8 @@ SOURCES = $(pbsdsh_SOURCES) $(pbsnodes_SOURCES) $(pbspd_SOURCES) \
 	$(qmsg_SOURCES) $(qorder_SOURCES) $(qrerun_SOURCES) \
 	$(qrls_SOURCES) $(qrun_SOURCES) $(qselect_SOURCES) \
 	$(qsig_SOURCES) $(qstart_SOURCES) $(qstat_SOURCES) \
-	$(qstop_SOURCES) $(qsub_SOURCES) $(qterm_SOURCES)
+	$(qstop_SOURCES) $(qsub_SOURCES) $(qterm_SOURCES) \
+	$(pbs_track_SOURCES)
 DIST_SOURCES = $(pbsdsh_SOURCES) $(pbsnodes_SOURCES) $(pbspd_SOURCES) \
 	$(pbspoe_SOURCES) $(qalter_SOURCES) $(qchkpt_SOURCES) \
 	$(qdel_SOURCES) $(qdisable_SOURCES) $(qenable_SOURCES) \
@@ -192,7 +197,8 @@ DIST_SOURCES = $(pbsdsh_SOURCES) $(pbsnodes_SOURCES) $(pbspd_SOURCES) \
 	$(qmsg_SOURCES) $(qorder_SOURCES) $(qrerun_SOURCES) \
 	$(qrls_SOURCES) $(qrun_SOURCES) $(qselect_SOURCES) \
 	$(qsig_SOURCES) $(qstart_SOURCES) $(qstat_SOURCES) \
-	$(qstop_SOURCES) $(qsub_SOURCES) $(qterm_SOURCES)
+	$(qstop_SOURCES) $(qsub_SOURCES) $(qterm_SOURCES) \
+	$(pbs_track_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -480,6 +486,7 @@ qstop_SOURCES = qstop.c
 qsub_SOURCES = qsub.c
 qterm_SOURCES = qterm.c
 qchkpt_SOURCES = qchkpt.c
+pbs_track_SOURCES = pbs_track.c
 CLEANFILES = $(dist_bin_SCRIPTS)
 do_subst = sed -e 's,[@]AWK[@],$(AWK),g'
 all: all-am
@@ -600,6 +607,9 @@ qselect$(EXEEXT): $(qselect_OBJECTS) $(qselect_DEPENDENCIES)
 qsig$(EXEEXT): $(qsig_OBJECTS) $(qsig_DEPENDENCIES) 
 	@rm -f qsig$(EXEEXT)
 	$(LINK) $(qsig_LDFLAGS) $(qsig_OBJECTS) $(qsig_LDADD) $(LIBS)
+pbs_track$(EXEEXT): $(pbs_track_OBJECTS) $(pbs_track_DEPENDENCIES) 
+	@rm -f pbs_track$(EXEEXT)
+	$(LINK) $(pbs_track_LDFLAGS) $(pbs_track_OBJECTS) $(pbs_track_LDADD) $(LIBS)
 qstart$(EXEEXT): $(qstart_OBJECTS) $(qstart_DEPENDENCIES) 
 	@rm -f qstart$(EXEEXT)
 	$(LINK) $(qstart_LDFLAGS) $(qstart_OBJECTS) $(qstart_LDADD) $(LIBS)
@@ -661,6 +671,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/qrun.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/qselect.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/qsig.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pbs_track.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/qstart.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/qstat-MXML.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/qstat-qstat.Po@am__quote@

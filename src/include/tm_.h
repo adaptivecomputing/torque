@@ -146,3 +146,29 @@ typedef unsigned int	tm_task_id;
 #define TM_MULTIPLE_CONNS	1
 #define TM_SPAWN_EXEC_ERROR	1
 
+/*
+ * DJH 27 Feb 2002. Task ids for adopted tasks start at this number
+ * (local to each mom). The filenames for saved task info are the task
+ * id sprintf()ed into a 10 digit number, so pick something less than
+ * 9999999999.
+ */
+#define TM_ADOPTED_TASKID_BASE 900000000
+#define IS_ADOPTED_TASK(taskid) ((taskid) >= TM_ADOPTED_TASKID_BASE)
+
+/*
+ * DJH 16 Nov 2001. tm_adopt request. Used instead of tm_init when a
+ * non-PBS process wants PBS to adopt it as the nucleus of a job task
+ *
+ * DJH 4 March 2002. Now have two styles of task adoption.
+ *   TM_ADOPT_ALTID  identifies task using an identfier provided
+ *                   by the alternative task spawning system
+ *                   Assumes PBS is configured to work with one
+ *                   and only one alternative task spawning/
+ *                   management system
+ * . TM_ADOPT_JOBID  identifies task directly by PBS jobid
+ */
+
+#define TM_ADOPT_ALTID    113    /* tm_adopt request with alternative
+                   management system task id */
+#define TM_ADOPT_JOBID    114     /* tm_adopt with jobid */ 
+

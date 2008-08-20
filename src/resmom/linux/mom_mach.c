@@ -785,9 +785,9 @@ static int injob(
 /*
  * Internal session cpu time decoding routine.
  *
- *	Accepts a job pointer.  Returns the sum of all cpu time
- *	consumed for all tasks executed by the job, in seconds,
- *	adjusted by cputfactor.
+ * Accepts a job pointer.  Returns the sum of all cpu time
+ * consumed for all tasks executed by the job, in seconds,
+ * adjusted by cputfactor.
  */
 
 static unsigned long cput_sum(
@@ -1635,6 +1635,27 @@ int mom_open_poll()
 /*
  * Declare start of polling loop.
  *
+ * This function caches information about all of processes 
+ * on the compute node (pbs_mom calls this function). Each process
+ * in /proc/ is queried by looking at the 'stat' file. Statistics like
+ * CPU usage time, memory consumption, etc. are gathered in the proc_array
+ * list. This list is then used throughout the pbs_mom to get information
+ * about tasks it is monitoring.
+ *
+ * This function is called from the main MOM loop once every "check_poll_interval"
+ * seconds. 
+ *
+ * @see get_proc_stat()
+ * @see mom_set_use() - Aggregates data collected here
+ *
+ * NOTE:  populates global 'proc_array[]' variable.
+ * NOTE:  reallocs proc_array[] as needed to accomodate processes.
+ *
+ * @see mom_open_poll() - allocs proc_array table.
+ * @see mom_close_poll() - frees procs_array.
+ * @see setup_program_environment() - parent - called at pbs_mom start
+ * @see main_loop() - parent - called once per iteration
+ * @see mom_set_use() - populate job structure with usage data for local use or to send to mother superior
  */
 
 int mom_get_sample()
@@ -1859,9 +1880,16 @@ int mom_over_limit(
 /*
  * Update the job attribute for resources used.
  *
- * The first time this is called for a job, set up resource entries for
- * each resource that can be reported for this machine.  Fill in the
- * correct values.  Return an error code.
+ * The first time this function is called for a job,
+ * it sets up resource entries for
+ * each resource that can be reported for this machine.
+ *
+ * Subsequent calls update the resource usage information based on
+ * stats gathered by the mom_get_sample() function. This function
+ * is often called by "im_request()" as a result of POLL_JOB query
+ * from the mother superior.
+ *
+ * @return An error code if something goes wrong.
  */
 
 int mom_set_use(
@@ -2015,6 +2043,7 @@ int kill_task(
   char          *id = "kill_task";
 
   int            ct = 0;
+  int            NumProcessesFound = 0; /* number of processes found with session ID */
   struct dirent	*dent;
   proc_stat_t	*ps;
   int            sesid;
@@ -2085,6 +2114,8 @@ int kill_task(
 
     if (sesid == ps->session) 
       {
+      NumProcessesFound++;
+
       if ((ps->state == 'Z') || (ps->pid == 0))
         {
         /*
@@ -2112,7 +2143,7 @@ int kill_task(
         if (ps->pid == mompid)
           {
           /*
-	   * there is a race condition with newly started jobs that
+	         * there is a race condition with newly started jobs that
            * can be killed before they've established their own
            * session id.  This means the child tasks still have MOM's
            * session id.  We check this to make sure MOM doesn't kill
@@ -2243,6 +2274,53 @@ int kill_task(
         }  /* END else ((ps->state == 'Z') || (ps->pid == 0)) */
       }    /* END if (sesid == ps->session) */
     }      /* END while ((dent = readdir(pdir)) != NULL) */
+
+  if (IS_ADOPTED_TASK(ptask->ti_qs.ti_task) && (NumProcessesFound == 0))
+    {
+    /* no process was found, but for an adopted task this is OK (we don't find
+     * out about the adopted task's termination via waitpid()--so we can safely
+     * say that we have "killed" the task, even though the task was killed/died
+     * some other way */
+
+    ct++;
+
+    /* do code to mark task as finished (borrowed from Linux scan_for_terminating())... */
+
+    ptask->ti_qs.ti_exitstat = 0;  /* assume successful completion */
+    ptask->ti_qs.ti_status   = TI_STATE_EXITED;
+
+    task_save(ptask);
+
+    sprintf(log_buffer,"%s: job %s adopted task %d was marked as terminated because task's PID was no longer found, sid=%d",
+      id,
+      ptask->ti_job->ji_qs.ji_jobid,
+      ptask->ti_qs.ti_task,
+      ptask->ti_qs.ti_sid);
+
+    LOG_EVENT(
+      PBSEVENT_DEBUG,
+      PBS_EVENTCLASS_JOB,
+      ptask->ti_job->ji_qs.ji_jobid,
+      log_buffer);
+    }
+
+  if ((NumProcessesFound == 0) && (ct <= 0))
+    {
+    if (LOGLEVEL >= 5)
+      {
+      sprintf(log_buffer,"%s: could not send signal %d to task %d (session %d)--no process was found with this session ID!",
+        id, 
+        sig,
+        ptask->ti_qs.ti_task,
+        sesid);
+
+      log_record(
+        PBSEVENT_JOB,
+        PBS_EVENTCLASS_JOB,
+        ptask->ti_job->ji_qs.ji_jobid,
+        log_buffer);
+      }
+    }
 
   /* SUCCESS */
 

@@ -436,9 +436,9 @@ void scan_for_terminated()
     while (pjob != NULL) 
       {
       /*
-      ** see if process was a child doing a special
-      ** function for MOM
-      */
+       * see if process was a child doing a special
+       * function for MOM
+       */
 
       if (LOGLEVEL >= 7)
         {

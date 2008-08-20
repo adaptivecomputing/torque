@@ -204,6 +204,7 @@ int task_save(
   job	*pjob = ptask->ti_job;
   int	fds;
   int	i;
+  int TaskID = 0;
   char	namebuf[MAXPATHLEN];
   int	openflags;
 
@@ -238,10 +239,19 @@ int task_save(
     return(-1);
     }
 
+  TaskID = ptask->ti_qs.ti_task;
+
+  /* adjust task ID if it is adopted... */
+
+  if (IS_ADOPTED_TASK(ptask->ti_qs.ti_task))
+    {
+    TaskID = ptask->ti_qs.ti_task % TM_ADOPTED_TASKID_BASE;
+    }
+
 #ifdef HAVE_LSEEK64
-  if (lseek64(fds,(off_t)(ptask->ti_qs.ti_task*sizeof(ptask->ti_qs)),SEEK_SET) < 0) 
+  if (lseek64(fds,(off_t)(TaskID*sizeof(ptask->ti_qs)),SEEK_SET) < 0) 
 #else
-  if (lseek(fds,(off_t)(ptask->ti_qs.ti_task*sizeof(ptask->ti_qs)),SEEK_SET) < 0) 
+  if (lseek(fds,(off_t)(TaskID*sizeof(ptask->ti_qs)),SEEK_SET) < 0) 
 #endif
     {
     log_err(errno,id,"lseek");
@@ -267,9 +277,9 @@ int task_save(
       /* retry the write */
 
 #ifdef HAVE_LSEEK64
-      if (lseek64(fds,(off_t)(ptask->ti_qs.ti_task*sizeof(ptask->ti_qs)),SEEK_SET) < 0) 
+      if (lseek64(fds,(off_t)(TaskID*sizeof(ptask->ti_qs)),SEEK_SET) < 0) 
 #else
-      if (lseek(fds,(off_t)(ptask->ti_qs.ti_task*sizeof(ptask->ti_qs)),SEEK_SET) < 0) 
+      if (lseek(fds,(off_t)(TaskID*sizeof(ptask->ti_qs)),SEEK_SET) < 0) 
 #endif
         {
         log_err(errno,id,"lseek");
@@ -340,24 +350,36 @@ eventent *event_alloc(
   }  /* END event_alloc() */
 
 
-
+/* Forward declaration */
+static int adoptSession(pid_t sid, char *id, int command, char *cookie); 
 
 /*
-**	Create a new task if the current number is less then
-**	the tasks per node limit.
-*/
+ *	Create a new task if the current number is less then
+ *	the tasks per node limit.
+ */
 
 task *pbs_task_create(
 
-  job	     *pjob,
+  job	       *pjob,
   tm_task_id  taskid)
 
   {
+  static char  id[] = "pbs_task_create";
   task		*ptask;
   attribute	*at;
   resource_def	*rd;
   resource	*pres;
   u_long	 tasks;
+
+  /* DJH 27 feb 2002. Check that we aren't about to run into the */
+  /* task IDs that we use to label adopted tasks. */
+
+  if ((taskid == TM_NULL_TASK) && (pjob->ji_taskid >= TM_ADOPTED_TASKID_BASE)) {
+      sprintf(log_buffer, "Ran into reserved task IDs on job %s",
+          pjob->ji_qs.ji_jobid);
+      log_err(-1,id,log_buffer);
+      return NULL;
+  } 
 
   for (ptask = (task *)GET_NEXT(pjob->ji_tasks),tasks = 0;
     ptask != NULL;
@@ -507,6 +529,7 @@ int task_recov(
   task		*pt;
   char		namebuf[MAXPATHLEN];
   struct	taskfix	task_save;
+  tm_task_id tid;
 
   strcpy(namebuf,path_jobs);      /* job directory path */
   strcat(namebuf,pjob->ji_qs.ji_fileprefix);
@@ -531,7 +554,21 @@ int task_recov(
 
   while (read(fds,(char *)&task_save,sizeof(task_save)) == sizeof(task_save))
     {
-    if ((pt = pbs_task_create(pjob,TM_NULL_TASK)) == NULL)  
+    tid = TM_NULL_TASK;
+    
+    if (IS_ADOPTED_TASK(task_save.ti_task))
+      {
+      /* 
+       * Set the high water mark for adopted task ids. Its
+       * "+1" due to the post-increment when we generate the
+       * task ids.
+       */
+      pjob->maxAdoptedTaskId = MAX(pjob->maxAdoptedTaskId,task_save.ti_task+1);
+       
+      tid = task_save.ti_task;
+      } 
+
+    if ((pt = pbs_task_create(pjob,tid)) == NULL)  
       {
       log_err(errno,id,"cannot create task");
 
@@ -3234,13 +3271,13 @@ void im_request(
     case IM_GET_TID:
 
       /*
-      ** I must be mom superior getting a request from a
-      ** sub-mom to get a TID.
-      **
-      ** auxiliary info (
-      **	none;
-      ** )
-      */
+       * I must be mom superior getting a request from a
+       * sub-mom to get a TID.
+       *
+       * auxiliary info (
+       *	none;
+       * )
+       */
 
       if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HERE) == 0) 
         {
@@ -3252,6 +3289,13 @@ void im_request(
       DBPRT(("%s: GET_TID %s\n", 
         id, 
         jobid))
+
+      /* DJH 27 Feb 2002 */
+      if (IS_ADOPTED_TASK(pjob->ji_taskid))
+        {
+        log_err(-1,id,"Ran into reserved task ids");
+        goto err;
+        }
 
       ret = im_compose(stream,jobid,cookie,IM_ALL_OKAY,event,fromtask);
 
@@ -4343,6 +4387,51 @@ int tm_request(
     id, jobid,
     cookie, fromtask, command, event))
 
+  /*
+   * <DJH 12 Nov 2001> Allow a non-PBS process to be adopted
+   *  by PBS for resource accounting and possibly management
+   *  purposes. Note that this circumvents much of the protocol,
+   *  cookie checks etc. See adoptSession() for more info
+   *  DJH 26 Feb 2002. Distinguish between jobid and altid
+   *  adoptions - see adoptSession()
+   */
+  if ((command == TM_ADOPT_ALTID) || (command == TM_ADOPT_JOBID))
+    {
+    pid_t sid;
+    char *id=NULL;
+    int adoptStatus;
+   
+    reply = TRUE;
+     
+    /* Read the session id and alt/job id from tm_adopt() */
+    sid = disrsi(fd,&ret);
+
+    if (ret != DIS_SUCCESS) goto err;
+     
+    id = disrst(fd,&ret);
+
+    if (ret != DIS_SUCCESS)
+      {
+      if (id)
+        free(id);
+
+      goto err;
+      }
+
+    /* Got all the info. Try to adopt the session */
+    adoptStatus = adoptSession(sid,id,command,cookie);
+    if (id)
+      free(id);
+     
+    /* Let the tm_adopt() call know if it was adopted or
+       not. This is synchronous - doesn't use the event stuff.*/
+    DIS_tcp_funcs();    /* do I really need this? */
+    ret = diswsi(fd, adoptStatus);
+    if (ret != DIS_SUCCESS) goto err;
+     
+    goto done;
+    } 
+
   /* verify the jobid is known and the cookie matches */
 
   if ((pjob = find_job(jobid)) == NULL) 
@@ -4385,7 +4474,7 @@ int tm_request(
 
   /* verify this taskid is my baby */
 
-  ptask = task_find(pjob, fromtask);
+  ptask = task_find(pjob,fromtask);
 
   if (ptask == NULL) 
     {	
@@ -4408,6 +4497,14 @@ int tm_request(
       goto done;
 
     prev_error = 1;
+
+    /*
+     *  ANUPBS - DBS 21/10/02
+     *  This line added to avoid segfault.  Code path can fall thru
+     *  here and deref ptask! Problem uncovered by adopt?  Problem
+     *  noticed in code with multiple pbs_dsh and prun (adopt)
+     */
+    goto done; 
     }
   else if ((ptask->ti_fd != -1) && (ptask->ti_fd != fd)) 
     {
@@ -5428,6 +5525,147 @@ err:
 
   return(-1);
   }  /* END tm_request() */
+
+
+
+/*
+ * adoptSession --
+ *   
+ *    Find a job that corresponds to a given alternative task management
+ *      id or job id and create a new task in it to monitor the usage of a
+ *      given session id.
+ *
+ * Result:
+ *    Returns TM_OK if the session id was adopted, and TM_ERROR if
+ *    it wasn't. The job identified by jobid or altid (eg rmsResourceId)
+ *      gets a new task, and that task has its session id set to monitor
+ *    sid. Various special values are set in the task to ensure that
+ *    PBS only monitors the new task, and doesn't attempt to control it.
+ *
+ * Side effects:
+ *    Saves the new task with task_save().
+ *    Forces a mom_get_sample()
+ *
+ * <DJH 12 Nov 2001>
+ */
+
+static int adoptSession(pid_t sid, char *id, int command, char *cookie)
+{
+    job *pjob;
+    task *ptask;
+
+    /* extern  int next_sample_time; */
+    /* extern  time_t time_resc_updated; */
+
+    /* Find the job that has this job/alt id */
+    for (pjob = (job *)GET_NEXT(svr_alljobs);
+         pjob != NULL;
+         pjob = (job *)GET_NEXT(pjob->ji_alljobs)) {
+
+        if (command == TM_ADOPT_JOBID) {
+            if (strcmp(id, pjob->ji_qs.ji_jobid)==0)
+                break;
+        } else {
+            if (strcmp(id, pjob->ji_altid)==0)
+                break;
+        }
+    }
+    
+    if (pjob == NULL) {
+        /* Didn't find a job with this resource id. Complain. */
+        (void)sprintf(log_buffer,
+                  "Adoption rejected: no job with id %1.30s",
+                  id);
+        log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB,
+               "adoptSession()", log_buffer);
+        return TM_ERROR;
+    }
+
+    /*
+     *  Check cookie if we can (why bother!) Should check for
+     *  correct cookie first, it might be available!
+     */
+    if (strcmp(cookie,"ADOPT COOKIE")) {
+        char *oreo;
+        attribute *at = &pjob->ji_wattr[(int)JOB_ATR_Cookie];
+        if ( !(at->at_flags & ATR_VFLAG_SET)) {
+            sprintf(log_buffer, "Adoption rejected: job %s has no cookie",
+                pjob->ji_qs.ji_jobid);
+            DBPRT(("%s\n", log_buffer));
+            log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB,
+                   pjob->ji_qs.ji_jobid, log_buffer);
+            return TM_ERROR;
+        }
+        oreo = at->at_val.at_str;
+        if (strcmp(oreo, cookie) != 0) {
+            sprintf(log_buffer, "Adoption rejected: job %s cookie %s message %s",
+                pjob->ji_qs.ji_jobid, oreo, cookie);
+            DBPRT(("%s\n", log_buffer));
+            log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB,
+                   pjob->ji_qs.ji_jobid, log_buffer);
+            return TM_ERROR;
+        }
+    }
+    else {
+        /*
+        sprintf(log_buffer, "job %s cookie %s message %s",
+            jobid, oreo, cookie);
+        DBPRT(("%s\n", log_buffer));
+        log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB,
+               pjob->ji_qs.ji_jobid, log_buffer);
+        */
+        DBPRT(("Trusting ADOPT cookie for job %s\n", pjob->ji_qs.ji_jobid));
+    }
+       
+    /* JMB--set task ID in such a way that makes it obvious this is an adopted task */
+
+    if (pjob->maxAdoptedTaskId == TM_NULL_TASK)
+      {
+      pjob->maxAdoptedTaskId = TM_ADOPTED_TASKID_BASE;
+      }
+
+    /*
+     * DJH 27 Feb 2002.
+     * Now create a task to monitor that sid. Use a task id that isn't
+     * going to collide with the ones given to non-adopted tasks.
+     */
+
+    ptask = pbs_task_create(pjob,(pjob->ji_taskid - 1) + TM_ADOPTED_TASKID_BASE);
+    pjob->ji_taskid++;
+
+    /* ti_parenttask not used but avoiding using TM_NULL_TASK
+       as it means 'top level shell' to scan_for_exiting() */
+    ptask->ti_qs.ti_parenttask = TM_NULL_TASK+1;
+
+    ptask->ti_qs.ti_sid = sid;
+    ptask->ti_qs.ti_status = TI_STATE_RUNNING;   
+
+    (void)task_save(ptask);
+
+    /* Mark the job as running if we need to. This is copied from start_process() */
+    if (pjob->ji_qs.ji_substate != JOB_SUBSTATE_RUNNING) {
+        pjob->ji_qs.ji_state = JOB_STATE_RUNNING;
+        pjob->ji_qs.ji_substate = JOB_SUBSTATE_RUNNING;
+        job_save(pjob, SAVEJOB_QUICK);
+    }
+
+    if (mom_get_sample() == PBSE_NONE) {
+        /* time_resc_updated = time_now; */
+        (void)mom_set_use(pjob);
+    }
+
+    /* next_sample_time = 45; */
+
+    (void)sprintf(log_buffer, "Task adopted. id=%1.30s, sid = %d", id, sid);
+    DBPRT(("%s\n", log_buffer));
+    log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB,
+           pjob->ji_qs.ji_jobid, log_buffer);
+
+    return TM_OKAY;
+} 
+
+
+
 
 /* END mom_comm.c */
 

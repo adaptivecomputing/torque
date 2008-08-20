@@ -117,14 +117,14 @@ extern int LOGLEVEL;
 
 void svr_mailowner(
 
-  job	*pjob,       /* I */
+  job	  *pjob,       /* I */
   int 	 mailpoint,  /* note, single character  */
-  int	 force,	     /* if set to MAIL_FORCE, force mail delivery */
+  int	   force,	     /* if set to MAIL_FORCE, force mail delivery */
   char	*text)	     /* (optional) additional message text */
 
   {
   char	*cmdbuf;
-  int	 i;
+  int	   i;
   char	*mailfrom;
   char	 mailto[1024];
   FILE	*outmail;
