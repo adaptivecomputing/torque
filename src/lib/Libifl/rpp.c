@@ -2417,9 +2417,9 @@ int rpp_bind(
 
 
 
-/*
-**	Allocate a communication stream - return -1 on FAILURE 
-*/
+/**
+ * Allocate a communication stream - return -1 on FAILURE 
+ */
 
 int rpp_open(
 
@@ -2452,9 +2452,7 @@ int rpp_open(
     return(-1);
     }
 
-  /*
-  ** First, we look up the IP address for this name.
-  */
+  /* First, we look up the IP address for this name. */
 
   if ((hp = gethostbyname(name)) == NULL) 
     {
