@@ -132,20 +132,6 @@ fi
 
 dnl
 dnl  ######################################################################
-dnl  Debug mode?
-dnl
-AC_MSG_CHECKING([whether to turn on the DEBUG flag])
-AC_ARG_ENABLE(debug,
-    [  --enable-debug          turn on the DEBUG flag],
-    enable_debug=$enableval, enable_debug=no)
-AC_MSG_RESULT($enable_debug)
-if test "x$enable_debug" = "xyes" ; then
-	AC_DEFINE(DEBUG, 1, [turns on the compilation of DEBUG code])
-fi
-
-
-dnl
-dnl  ######################################################################
 dnl  Let the user choose, what parts of PBS he wants to compile and install
 dnl
 partdefault=yes
@@ -190,13 +176,13 @@ AC_SUBST(build_drmaa)
 dnl
 dnl  ######################################################################
 dnl  Check for the C compiler (some tests rely on it)
+dnl  this needs to be before AC_ARG_ENABLE(debug)
 dnl
 
 dnl  did the user provide CC and CFLAGS variables?  store for later
-user_choosed_cc_set=${CC+set}
-user_choosed_cflags_set=${CFLAGS+set}
-
-
+dnl  user_choosed_cc_set=${CC+set}
+dnl  user_choosed_cflags_set=${CFLAGS+set}
+dnl  SPECIFIED_CFLAGS=$CFLAGS
 dnl  look for the C-Compiler
 AC_PROG_CC
 AC_PROG_GCC_TRADITIONAL
@@ -232,6 +218,51 @@ dnl
 dnl  ######################################################################
 dnl  Check how to compile
 dnl
+
+
+dnl
+dnl  ######################################################################
+dnl  compile in debug code?
+dnl
+AC_MSG_CHECKING([whether to turn on the compilation of DEBUG code])
+AC_ARG_ENABLE(debug,
+    [  --enable-debug          turn on the compilation of DEBUG code],
+    enable_debug=$enableval, enable_debug=no)
+AC_MSG_RESULT($enable_debug)
+if test "x$enable_debug" = "xyes" ; then
+	AC_DEFINE(DEBUG, 1, [turns on the compilation of DEBUG code])
+fi
+
+
+dnl
+dnl  ######################################################################
+dnl  compile with debugging symbols
+dnl  this needs to be after AC_PROG_CC and before AX_CFLAGS_GCC_OPTION
+dnl  and TAC_SYS_LARGEFILE
+dnl
+AC_MSG_CHECKING([whether to compile with debugging symbols])
+AC_ARG_WITH([debug],
+  AC_HELP_STRING([--with-debug], [compile with debugging symbols]),
+  DEBUG_SYMBOLS=$withval, DEBUG_SYMBOLS="no")
+AC_MSG_RESULT([DEBUG_SYMBOLS=$DEBUG_SYMBOLS])
+dnl  remove -O* and add -g
+if test "$DEBUG_SYMBOLS" = 'yes'; then
+  AC_MSG_RESULT([before tweak CFLAGS=$CFLAGS])
+  CFLAGS=`echo $CFLAGS | sed 's/ \?-O[[^ ]]*//g'`
+  AC_MSG_RESULT([mid tweak CFLAGS=$CFLAGS])
+  case $CFLAGS in
+    *-g*)
+      ;;
+    *)
+      if test "$CFLAGS" = ''; then
+        CFLAGS="-g"
+      else
+        CFLAGS="-g $CFLAGS"
+      fi
+      ;;
+  esac
+  AC_MSG_RESULT([after tweak CFLAGS=$CFLAGS])
+fi
 
 dnl Torque's own largefile support
 TAC_SYS_LARGEFILE
