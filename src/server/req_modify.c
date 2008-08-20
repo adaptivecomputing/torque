@@ -116,6 +116,8 @@ extern int   comp_resc_lt;
 extern int   LOGLEVEL;
 
 
+extern const char *PJobSubState[];
+extern char *PJobState[];
 
 
 
@@ -129,6 +131,7 @@ static void post_modify_req(
 
   {
   struct batch_request *preq;
+  job		*pjob;
 
   svr_disconnect(pwt->wt_event);  /* close connection to MOM */
 
@@ -136,7 +139,7 @@ static void post_modify_req(
 
   preq->rq_conn = preq->rq_orgconn;  /* restore socket to client */
 
-  if (preq->rq_reply.brp_code) 
+  if ((preq->rq_reply.brp_code) && (preq->rq_reply.brp_code != PBSE_UNKJOBID))
     {
     sprintf(log_buffer,msg_mombadmodify,preq->rq_reply.brp_code);
 
@@ -150,6 +153,31 @@ static void post_modify_req(
     } 
   else
     {
+    if (preq->rq_reply.brp_code == PBSE_UNKJOBID)
+      {
+      if ((pjob = find_job(preq->rq_ind.rq_modify.rq_objname)) == NULL) 
+        {
+        req_reject(preq->rq_reply.brp_code,0,preq,NULL,NULL);
+        return;
+        }
+      else
+        {
+        if (LOGLEVEL >= 0)
+          {
+          sprintf(log_buffer,"post_modify_req: PBSE_UNKJOBID for job %s in state %s-%s, dest = %s",
+            (pjob->ji_qs.ji_jobid != NULL) ? pjob->ji_qs.ji_jobid : "",
+            PJobState[pjob->ji_qs.ji_state],
+            PJobSubState[pjob->ji_qs.ji_substate],
+            pjob->ji_qs.ji_destin);
+
+          LOG_EVENT(
+            PBSEVENT_JOB, 
+            PBS_EVENTCLASS_JOB, 
+            pjob->ji_qs.ji_jobid,
+            log_buffer);
+          }
+        }
+      }
     reply_ack(preq);
     }
 
