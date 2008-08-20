@@ -18,29 +18,17 @@
 * Software to other sites and locations.  Use and redistribution of
 * OpenPBS v2.3 in source and binary forms, with or without modification,
 * are permitted provided that all of the following conditions are met.
-* After December 31, 2001, only conditions 3-6 must be met:
 * 
-* 1. Commercial and/or non-commercial use of the Software is permitted
-*    provided a current software registration is on file at www.OpenPBS.org.
-*    If use of this software contributes to a publication, product, or
-*    service, proper attribution must be given; see www.OpenPBS.org/credit.html
+* 1. Any Redistribution of source code must retain the above copyright notice
+*    and the acknowledgment contained in paragraph 4, this list of conditions
+*    and the disclaimer contained in paragraph 5.
 * 
-* 2. Redistribution in any form is only permitted for non-commercial,
-*    non-profit purposes.  There can be no charge for the Software or any
-*    software incorporating the Software.  Further, there can be no
-*    expectation of revenue generated as a consequence of redistributing
-*    the Software.
-* 
-* 3. Any Redistribution of source code must retain the above copyright notice
-*    and the acknowledgment contained in paragraph 6, this list of conditions
-*    and the disclaimer contained in paragraph 7.
-* 
-* 4. Any Redistribution in binary form must reproduce the above copyright
-*    notice and the acknowledgment contained in paragraph 6, this list of
-*    conditions and the disclaimer contained in paragraph 7 in the
+* 2. Any Redistribution in binary form must reproduce the above copyright
+*    notice and the acknowledgment contained in paragraph 4, this list of
+*    conditions and the disclaimer contained in paragraph 5 in the
 *    documentation and/or other materials provided with the distribution.
 * 
-* 5. Redistributions in any form must be accompanied by information on how to
+* 3. Redistributions in any form must be accompanied by information on how to
 *    obtain complete source code for the OpenPBS software and any
 *    modifications and/or additions to the OpenPBS software.  The source code
 *    must either be included in the distribution or be available for no more
@@ -48,7 +36,7 @@
 *    and additions to the Software must be freely redistributable by any party
 *    (including Licensor) without restriction.
 * 
-* 6. All advertising materials mentioning features or use of the Software must
+* 4. All advertising materials mentioning features or use of the Software must
 *    display the following acknowledgment:
 * 
 *     "This product includes software developed by NASA Ames Research Center,
@@ -57,7 +45,7 @@
 *     Visit www.OpenPBS.org for OpenPBS software support,
 *     products, and information."
 * 
-* 7. DISCLAIMER OF WARRANTY
+* 5. DISCLAIMER OF WARRANTY
 * 
 * THIS SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND. ANY EXPRESS
 * OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
@@ -179,9 +167,9 @@ extern int      src_login_interactive;
 
 /* Local Variables */ 
 
-static int	 script_in;	/* script file, will be stdin	  */
-static pid_t	 writerpid;	/* writer side of interactive job */
-static pid_t	 shellpid;	/* shell part of interactive job  */
+static int      script_in;	/* script file, will be stdin	  */
+static pid_t    writerpid;	/* writer side of interactive job */
+static pid_t    shellpid;	/* shell part of interactive job  */
 
 
 /* sync w/variables_else[] */
@@ -410,6 +398,12 @@ struct passwd *check_pwd(
 
 
 
+
+
+/**
+ * @see send_sisters() - child - send ABORT request to sisters
+ * @see start_exec() - parent
+ */
 
 void exec_bail(
 
@@ -4132,14 +4126,16 @@ void nodes_free(
 
 
 
-/*
-**	Generate array hosts & vnodes for a job from the exec_host attribute.
-**	Call nodes_free() just in case we have seen this job before.
-**	Parse exec_host first to count the number of nodes and allocate
-**	an array of nodeent's.  Then, parse it again to get the hostname
-**	of each node and init the other fields of each nodeent element.
-**	The final element will have the ne_node field set to TM_ERROR_NODE.
-*/
+/**
+ * Generate array hosts & vnodes for a job from the exec_host attribute.
+ * Call nodes_free() just in case we have seen this job before.
+ * Parse exec_host first to count the number of nodes and allocate
+ * an array of nodeent's.  Then, parse it again to get the hostname
+ * of each node and init the other fields of each nodeent element.
+ * The final element will have the ne_node field set to TM_ERROR_NODE.
+ *
+ * @see start_exec() - parent
+ */
 
 void job_nodes(
 
@@ -4290,21 +4286,26 @@ void job_nodes(
   }  /* END job_nodes() */
 
 
-/* start_exec()
-   TMomFinalizeJob1() 
-   TMomFinalizeJob2() 
-   TMomFinalizeJob3() */
-
-/* start_process() called for sisters after receiving IM_SPAWN_TASK request */
 
 
 
-
-/*
- * start_exec() - start execution of a job
- *  job newly allocated, and added to svr_alljobs *
- *  pjob->ji_qs.ji_state = JOB_STATE_RUNNING
- *  pjob->ji_qs.ji_substate = JOB_SUBSTATE_PRERUN *
+/**
+ * Start execution of a job.
+ *
+ * @see req_commit() - parent - handle 'commit' request from pbs_server
+ * 
+ * @see TMomFinalizeJob1() - child
+ * @see TMomFinalizeJob2() - child
+ * @see TMomFinalizeJob3() - child
+ *
+ * @see start_process() - peer - called for sisters after receiving IM_SPAWN_TASK request 
+ *
+ * NOTE: prior to calling start_exec, job is newly allocated, and added to 
+ *       svr_alljobs w/pjob->ji_qs.ji_state = JOB_STATE_RUNNING and 
+ *       pjob->ji_qs.ji_substate = JOB_SUBSTATE_PRERUN.
+ *
+ * NOTE: For parallel jobs, this routine will open connections to each sister 
+ *       mom and will send a join_job request along each connection.
  */
 
 void start_exec(
@@ -4312,27 +4313,30 @@ void start_exec(
   job *pjob) /* I (modified) */
 
   {
-  static char	*id = "start_exec";
+  static char  *id = "start_exec";
 
-  eventent	*ep;
+  eventent     *ep;
   int		i, nodenum;
   int		ports[2], socks[2];
   struct	sockaddr_in saddr;
-  hnodent	*np;
-  attribute	*pattr;
+  hnodent      *np;
+  attribute    *pattr;
   tlist_head	phead;
-  svrattrl	*psatl;
+  svrattrl     *psatl;
   int		stream;
   char		tmpdir[MAXPATHLEN];
 
   torque_socklen_t slen;
 
-  void im_compose A_((int stream,
-    char	*jobid,
-    char	*cookie,
+  void im_compose A_((
+    int         stream,
+    char       *jobid,
+    char       *cookie,
     int		command,
-    tm_event_t	event,
-    tm_task_id	taskid));
+    tm_event_t  event,
+    tm_task_id  taskid));
+
+  /* Step 1.0 Generate Cookie */
 
   if (!(pjob->ji_wattr[(int)JOB_ATR_Cookie].at_flags & ATR_VFLAG_SET)) 
     {
@@ -4367,15 +4371,21 @@ void start_exec(
       tt))
     }  /* END if () */
 
+  /* Step 2.0 Initialize Job */
+
+  /* update nodes info w/in job based on exec_hosts attribute */
+
   job_nodes(pjob);
 
-  /* start_exec only run on mother superior */
+  /* start_exec only executed on mother superior */
 
   pjob->ji_nodeid = 0;	/* I'm MS */
 
   nodenum = pjob->ji_numnodes;
 
-  /* We do this early because we need the uid/gid for TMakeTmpDir */
+  /* Step 3.0 Validate/Initialize Environment */
+
+  /* check creds early because we need the uid/gid for TMakeTmpDir() */
 
   if (!check_pwd(pjob)) 
     {
@@ -4408,6 +4418,10 @@ void start_exec(
 
   if (nodenum > 1) 
     {
+    /* Step 4.0A Send Join Request to Sisters */
+
+    /* parallel job */
+
     pjob->ji_resources = (noderes *)calloc(nodenum - 1,sizeof(noderes));
 
     assert(pjob->ji_resources != NULL);
@@ -4428,9 +4442,7 @@ void start_exec(
 
     attrl_fixlink(&phead);
 
-    /*
-    **  Open streams to the sisterhood.
-    */
+    /* Open streams to the sisterhood. */
 
     for (i = 1;i < nodenum;i++) 
       {
@@ -4460,9 +4472,7 @@ void start_exec(
         }
       }    /* END for (i) */
 
-    /*
-    **	Open two sockets for use by demux program later.
-    */
+    /* Open two sockets for use by demux program later. */
 
     for (i = 0;i < 2;i++)
       socks[i] = -1;
@@ -4515,9 +4525,7 @@ void start_exec(
     pjob->ji_stdout = socks[0];
     pjob->ji_stderr = socks[1];
 
-    /*
-    **	Send out a JOIN_JOB message to all the MOM's in the sisterhood.
-    */
+    /* Send out a JOIN_JOB message to all the MOM's in the sisterhood. */
 
     /* NOTE:  does not check success of join request */
 
@@ -4549,7 +4557,7 @@ void start_exec(
 
       encode_DIS_svrattrl(stream,psatl);
 
-      /* rpp_flush() will succeed even if MOM is down */
+      /* NOTE:  rpp_flush() will succeed even if MOM is down */
 
       if (rpp_flush(stream) != 0)
         {
@@ -4564,6 +4572,10 @@ void start_exec(
     }  /* END if (nodenum > 1) */ 
   else 
     {
+    /* Step 4.0B Launch Serial Task Locally */
+
+    /* serial job */
+
     int SC;
     int RC;
   

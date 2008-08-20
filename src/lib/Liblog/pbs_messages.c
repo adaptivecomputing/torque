@@ -243,7 +243,6 @@ static const char *PBatchReqType[] = {
  * They may also be logged.
  */
 
-
 char *msg_unkjobid	= "Unknown Job Id";
 char *msg_noattr	= "Undefined attribute ";
 char *msg_attrro	= "Cannot set attribute, read only or insufficient permission ";

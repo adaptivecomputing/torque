@@ -4913,9 +4913,9 @@ bad:
 
 
 /*
-** Read a RPP message from a stream, figure out if it is a
-** Resource Monitor request or an InterMom message.
-*/
+ * Read a RPP message from a stream, figure out if it is a
+ * Resource Monitor request or an InterMom message.
+ */
 
 void do_rpp(
 
@@ -4925,9 +4925,9 @@ void do_rpp(
   static char		id[] = "do_rpp";
 
   int			ret, proto, version;
-  void	im_request	A_((int,int));
-  void	is_request	A_((int,int,int *));
-  void	im_eof		A_((int,int));
+  void im_request	A_((int,int));
+  void is_request	A_((int,int,int *));
+  void im_eof		A_((int,int));
 
   DIS_rpp_reset();
   proto = disrsi(stream,&ret);
@@ -4937,6 +4937,11 @@ void do_rpp(
     DBPRT(("%s: cannot get protocol %s\n",
       id,
       dis_emsg[ret]))
+
+    sprintf(log_buffer,"cannot get protocol %s",
+      dis_emsg[ret]);
+
+    log_err(errno,id,log_buffer);
 
     im_eof(stream,ret);
 
@@ -4950,6 +4955,11 @@ void do_rpp(
     DBPRT(("%s: no protocol version number %s\n",
       id, 
       dis_emsg[ret]))
+
+    sprintf(log_buffer,"no protocol version number %s",
+      dis_emsg[ret]);
+
+    log_err(errno,id,log_buffer);
 
     im_eof(stream,ret);
 
@@ -7166,7 +7176,9 @@ int TMOMScanForStarting(void)
 
 
 
-/*
+
+
+/**
  * examine_all_polled_jobs
  *
  * check on over limit condition for polled jobs

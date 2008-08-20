@@ -672,8 +672,13 @@ err:
 
 
 /**
- *  Send a message (command = com) to all the other MOMs in
- *  the job -> pjob.
+ * Send a message (command = com) to all the other MOMs in the job -> pjob.
+ *
+ * @see scan_for_exiting() - parent - report to sisters upon job completion
+ * @see examine_all_polled_jobs() - parent - poll job status info
+ * @see exec_bail() - parent - abort parallel job
+ *
+ * @see start_exec() - peer - opens connections to sisters at parallel job start
  *
  * @return 0 on FAILURE or number of sister mom's successfully contacted on SUCCESS
  */
@@ -867,11 +872,12 @@ if (reply) { \
 
 
 
-/*
-** Check to see which node a stream is coming from.  Return a NULL
-** if it is not assigned to this job.  Return a nodeent pointer if
-** it is.
-*/
+
+/**
+ * Check to see which node a stream is coming from.  Return a NULL
+ * if it is not assigned to this job.  Return a nodeent pointer if
+ * it is.
+ */
 
 hnodent	*find_node(
 
@@ -882,11 +888,12 @@ hnodent	*find_node(
   {
   static char id[] = "find_node";
 
-  int			i;
-  vnodent		*vp;
-  hnodent		*hp;
-  struct  sockaddr_in   *stream_addr;
-  struct  sockaddr_in   *node_addr;
+  int                 i;
+
+  vnodent            *vp;
+  hnodent            *hp;
+  struct sockaddr_in *stream_addr;
+  struct sockaddr_in *node_addr;
 
   for (vp = pjob->ji_vnods,i = 0;i < pjob->ji_numvnod;vp++,i++) 
     {
@@ -986,10 +993,12 @@ hnodent	*find_node(
 
 
 
-/*
-** An error has been encountered starting a job.
-** Format a message to all the sisterhood to get rid of their copy
-** of the job.  There should be no processes running at this point.
+
+/**
+ * An error has been encountered starting a job.
+ *
+ * Format a message to all the sisterhood to get rid of their copy
+ * of the job.  There should be no processes running at this point.
 */
 
 void job_start_error(
@@ -1069,7 +1078,7 @@ void job_start_error(
   /*        Perhaps, pbs_mom could register job and perform 'exec_bail' after 
             next job status query from pbs_server? */
 
-  /* NOTE:  exec_bail will issue 'send_sisters(pjob,IM_ABORT_JOB);' */
+  /* NOTE:  exec_bail() will issue 'send_sisters(pjob,IM_ABORT_JOB);' */
 
   exec_bail(pjob,JOB_EXEC_RETRY);
 
@@ -1102,10 +1111,14 @@ void arrayfree(
 
 
 
-/*
-**	Deal with events hooked to a node where a stream has gone
-**	south or we are going away.
-*/
+
+/**
+ * Deal with events hooked to a node where a stream has gone
+ * south or we are going away.
+ *
+ * @see term_job() - parent - terminate job
+ * @see im_eof() - parent - inter-MOM end of file detected
+ */
 
 void node_bailout(
 
@@ -1128,12 +1141,19 @@ void node_bailout(
       case IM_JOIN_JOB:
 
         /*
-        ** I'm MS and a node has failed to respond to the
-        ** call.  Maybe in the future the user can specify
-        ** the job can start with a range of nodes so
-        ** one (or more) missing can be tolerated.  Not
-        ** for now.
-        */
+         * I'm MS and a node has failed to respond to the
+         * call.  Maybe in the future the user can specify
+         * the job can start with a range of nodes so
+         * one (or more) missing can be tolerated.  Not
+         * for now.
+         */
+
+        sprintf(log_buffer, "%s join_job failed from node %s %d - recovery attempted)",
+          pjob->ji_qs.ji_jobid,
+          np->hn_host,
+          np->hn_node);
+
+        log_err(-1,id,log_buffer);
 
         DBPRT(("%s: JOIN_JOB %s\n", 
           id, 
@@ -1296,6 +1316,9 @@ void node_bailout(
 
 
 
+/** terminate job - terminate all node events of all types contained by nodes
+   in job nodelist */
+
 void term_job(
 
   job *pjob) /* I */
@@ -1315,7 +1338,7 @@ void term_job(
       }
 
     node_bailout(pjob,np);
-    }
+    }  /* END for (num) */
 
   return;
   }  /* END term_job() */
@@ -1325,9 +1348,12 @@ void term_job(
 
 
 /*
-**	Handle a stream that needs to be closed.
-**	May be either from another Mom, or the server.
-*/
+ * Handle a stream that needs to be closed.
+ * May be either from another MOM, or the server.
+ * 
+ * @see im_request() - parent
+ * @see do_rpp() - parent
+ */
 
 void im_eof(
 
@@ -1336,6 +1362,7 @@ void im_eof(
 
   {
   static char           id[] = "im_eof";
+
   int                   num;
   job                  *pjob;
   hnodent              *np;
@@ -1388,6 +1415,8 @@ void im_eof(
     return;
     }
 
+  /* matching job located - connection has failed - close all connections to MOM */
+
   node_bailout(pjob,np);
 
   /*
@@ -1397,7 +1426,7 @@ void im_eof(
 
   if (num == 0) 
     {
-    sprintf(log_buffer, "job %s lost connection to MS on %s",
+    sprintf(log_buffer,"job %s lost connection to MS on %s",
       pjob->ji_qs.ji_jobid, 
       np->hn_host);
 
@@ -1414,6 +1443,8 @@ void im_eof(
      * pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITING;
      */
     }
+
+  return;
   }    /* END im_eof() */
 
 
@@ -1421,12 +1452,12 @@ void im_eof(
 
 
 /*
-** Check to be sure this is a connection from Mother Superior on
-** a good port.
-** Check to make sure I am not Mother Superior (talking to myself).
-** Set the stream in ji_nodes[0] if needed.
-** Return TRUE on error, FALSE if okay.
-*/
+ * Check to be sure this is a connection from Mother Superior on
+ * a good port.
+ * Check to make sure I am not Mother Superior (talking to myself).
+ * Set the stream in ji_nodes[0] if needed.
+ * Return TRUE on error, FALSE if okay.
+ */
 
 int check_ms(
 
@@ -1675,20 +1706,22 @@ char *resc_string(
 
 
 
-/*
-**	Input is coming from another MOM over a DIS rpp stream.
-**	Read the stream to get a Inter-MOM request.
-**
-**	request (
-**		jobid			string
-**		cookie			string
-**		command			int
-**		event			int
-**		task			int
-**	)
-**
-**	Format the reply and write it back.
-*/
+/**
+ * Input is coming from another MOM over a DIS rpp stream.
+ * Read the stream to get a Inter-MOM request.
+ *
+ * request (
+ *	jobid			string
+ *	cookie			string
+ *	command			int
+ *	event			int
+ *	task			int
+ *  )
+ *
+ * Format the reply and write it back.
+ *
+ * @see im_eof() - child - called if failure occurs
+ */
 
 void im_request(
 
@@ -1852,12 +1885,32 @@ void im_request(
       nodeid = disrsi(stream,&ret);
 
       if (ret != DIS_SUCCESS)
+        {
+        sprintf(log_buffer,"%s: join_job request to node %d for job %s failed - %s (nodeid)",
+          id,
+          nodeid,
+          jobid,
+          dis_emsg[ret]);
+
+        log_err(-1,id,log_buffer);
+
         goto err;
+        }
 
       nodenum = disrsi(stream,&ret);
 
       if (ret != DIS_SUCCESS)
+        {
+        sprintf(log_buffer,"%s: join_job request to node %d for job %s failed - %s (nodenum)",
+          id,
+          nodeid,
+          jobid,
+          dis_emsg[ret]);
+
+        log_err(-1,id,log_buffer);
+
         goto err;
+        }
 
       if (LOGLEVEL >= 3)
         {
@@ -1939,23 +1992,51 @@ void im_request(
       pjob->ji_stdout = disrsi(stream,&ret);
   
       if (ret != DIS_SUCCESS)
-        goto err;
+        {
+        sprintf(log_buffer,"%s: join_job request to node %d for job %s failed - %s (stdout)",
+          id,
+          nodeid,
+          jobid,
+          dis_emsg[ret]);
+
+        log_err(-1,id,log_buffer);
   
+        goto err;
+        }
+ 
       pjob->ji_stderr = disrsi(stream,&ret);
   
       if (ret != DIS_SUCCESS)
+        {
+        sprintf(log_buffer,"%s: join_job request to node %d for job %s failed - %s (stderr)",
+          id,
+          nodeid,
+          jobid,
+          dis_emsg[ret]);
+
+        log_err(-1,id,log_buffer);
+
         goto err;
-  
+        }
+ 
       pjob->ji_numnodes = nodenum;	 /* XXX */
   
       CLEAR_HEAD(lhead);
   
       if (decode_DIS_svrattrl(stream,&lhead) != DIS_SUCCESS)
+        {
+        sprintf(log_buffer,"%s: join_job request to node %d for job %s failed - %s (decode)",
+          id,
+          nodeid,
+          jobid,
+          dis_emsg[ret]);
+
+        log_err(-1,id,log_buffer);
+ 
         goto err;
+        }
   
-      /*
-      ** Get the hashname from the attribute.
-      */
+      /* Get the hashname from the attribute. */
   
       psatl = (svrattrl *)GET_NEXT(lhead);
   
@@ -2211,7 +2292,7 @@ void im_request(
 
       /*NOTREACHED*/
 
-      break;
+      break;  /* END IM_JOIN_JOB */
   
     case IM_ALL_OKAY:
     case IM_ERROR:
@@ -2225,7 +2306,7 @@ void im_request(
       reply = 1;
 
       break;
-    }  /* END switch(command) */
+    }  /* END switch (command) */
 
   np = NULL;
 
@@ -3027,7 +3108,7 @@ void im_request(
       if (ret != DIS_SUCCESS)
         break;
 
-      ret = diswst(stream, info);
+      ret = diswst(stream,info);
 
       free(info);
 
@@ -3530,50 +3611,70 @@ void im_request(
 
         case IM_OBIT_TASK:
 
-			/*
-			** Sender is MOM with a death report.
-			**
-			** auxiliary info (
-			**	exit value	int;
-			** )
-			*/
-			exitval = disrsi(stream, &ret);
-			if (ret != DIS_SUCCESS)
-				goto err;
-			DBPRT(("%s: OBIT_TASK %s OKAY %d exit val %d\n",
-				id, jobid, event_task, exitval))
-			ptask = task_check(pjob, event_task);
-			if (ptask == NULL)
-				break;
+          /*
+          ** Sender is MOM with a death report.
+          **
+          ** auxiliary info (
+          **	exit value	int;
+          ** )
+          */
 
-          tm_reply(ptask->ti_fd, TM_OKAY, event);
-          diswsi(ptask->ti_fd, exitval);
+          exitval = disrsi(stream,&ret);
+
+          if (ret != DIS_SUCCESS)
+            goto err;
+
+          DBPRT(("%s: OBIT_TASK %s OKAY %d exit val %d\n",
+            id, 
+            jobid, 
+            event_task, 
+            exitval))
+
+          ptask = task_check(pjob,event_task);
+
+          if (ptask == NULL)
+            break;
+
+          tm_reply(ptask->ti_fd,TM_OKAY,event);
+          diswsi(ptask->ti_fd,exitval);
+
           DIS_tcp_wflush(ptask->ti_fd);
 
           break;
 
         case IM_GET_INFO:
 
-			/*
-			** Sender is MOM with a named info to report.
-			**
-			** auxiliary info (
-			**	info		counted string;
-			** )
-			*/
-			info = disrcs(stream, &len, &ret);
-			if (ret != DIS_SUCCESS)
-				goto err;
-			DBPRT(("%s: GET_INFO %s OKAY %d\n",
-				id, jobid, event_task))
-			ptask = task_check(pjob, event_task);
-			if (ptask == NULL) {
-				free(info);
-				break;
-			}
+          /*
+          ** Sender is MOM with a named info to report.
+          **
+          ** auxiliary info (
+          **	info		counted string;
+          ** )
+          */
 
-          tm_reply(ptask->ti_fd, TM_OKAY, event);
-          diswcs(ptask->ti_fd, info, len);
+          info = disrcs(stream,&len,&ret);
+
+          if (ret != DIS_SUCCESS)
+            goto err;
+
+          DBPRT(("%s: GET_INFO %s OKAY %d\n",
+            id, 
+            jobid, 
+            event_task))
+
+          ptask = task_check(pjob,event_task);
+
+          if (ptask == NULL) 
+            {
+            free(info);
+          
+            break;
+            }
+
+          tm_reply(ptask->ti_fd,TM_OKAY,event);
+
+          diswcs(ptask->ti_fd,info,len);
+
           DIS_tcp_wflush(ptask->ti_fd);
 
           break;
@@ -3588,7 +3689,7 @@ void im_request(
           ** )
           */
 
-          info = disrst(stream, &ret);
+          info = disrst(stream,&ret);
 
           if (ret != DIS_SUCCESS)
             goto err;
@@ -3986,7 +4087,9 @@ void im_request(
             goto fini;
 
           DBPRT(("%s: GET_TID %s returned ERROR %d\n",
-            id, jobid, errcode))
+            id, 
+            jobid, 
+            errcode))
 
           arrayfree(argv);
           arrayfree(envp);
@@ -3996,9 +4099,9 @@ void im_request(
           if (ptask == NULL)
             break;
 
-          tm_reply(ptask->ti_fd, TM_ERROR, efwd.fe_event);
+          tm_reply(ptask->ti_fd,TM_ERROR,efwd.fe_event);
         
-          diswsi(ptask->ti_fd, errcode);
+          diswsi(ptask->ti_fd,errcode);
  
           DIS_tcp_wflush(ptask->ti_fd);
 
@@ -4063,9 +4166,9 @@ err:
   ** host has gone down.
   */
 
-  sprintf(log_buffer,"job %s: command %d",
-    jobid ? jobid : "unknown", 
-    command);
+  sprintf(log_buffer,"error sending command %d to job %s",
+    command,
+    jobid ? jobid : "unknown"); 
 
   log_err(-1,id,log_buffer);
 
