@@ -393,18 +393,17 @@ typedef struct {
 
 
 struct job {
-
 	/* Note: these members, up to ji_qs, are not saved to disk
            (except for ji_stdout, ji_stderr) */
 
-	list_link       ji_alljobs;	/* links to all jobs in server */
-	list_link       ji_jobque;	/* SVR: links to jobs in same queue */
+	list_link       ji_alljobs;	/* link to next job in server job list */
+	list_link       ji_jobque;	/* SVR: link to next job in queue list */
 					/* MOM: links to polled jobs */
 	time_t		ji_momstat;	/* SVR: time of last status from MOM */
 					/* MOM: time job suspend (Cray)	*/
 	int		ji_modified;	/* struct changed, needs to be saved */
 	int		ji_momhandle;	/* open connection handle to MOM */
-#ifdef	PBS_MOM				/* MOM ONLY */
+#ifdef PBS_MOM				/* MOM ONLY */
 	struct grpcache *ji_grpcache;	/* cache of user's groups */
 	time_t		ji_checkpoint_time;	/* periodic checkpoint time */
 	time_t		ji_checkpoint_next;	/* next checkpoint time */
@@ -421,7 +420,7 @@ struct job {
 	hnodent	       *ji_hosts;	/* ptr to job host management stuff */
 	vnodent	       *ji_vnods;	/* ptr to job vnode management stuff */
 	noderes	       *ji_resources;	/* ptr to array of node resources */
-	tlist_head       ji_tasks;	/* list of task structs */
+	tlist_head      ji_tasks;	/* list of task structs */
 	tm_node_id	ji_nodekill;	/* set to nodeid requesting job die */
 	int		ji_flags;	/* mom only flags */
 	char	       *ji_globid;	/* global job id */
@@ -429,14 +428,14 @@ struct job {
 	int		ji_stderr;	/* port for stderr */
 #else					/* END MOM ONLY */
 	tlist_head	ji_svrtask;	/* links to svr work_task list */
-	struct pbs_queue  *ji_qhdr;	/* current queue header */
+	struct pbs_queue *ji_qhdr;	/* current queue header */
 	int		ji_lastdest;	/* last destin tried by route */
 	int		ji_retryok;	/* ok to retry, some reject was temp */
 	tlist_head	ji_rejectdest;	/* list of rejected destinations */
 	list_link	ji_arrayjobs;	/* links to all jobs in same array */
-	job_array	*ji_arraystruct;/* pointer to job_array for this array */
+	job_array      *ji_arraystruct; /* pointer to job_array for this array */
         int		ji_isparent;    /* set to TRUE if this is a "parent job"*/
-#endif					/* END SERVER ONLY */
+#endif/* PBS_MOM */			/* END SERVER ONLY */
 
 	/*
 	 * fixed size internal data - maintained via "quick save" 

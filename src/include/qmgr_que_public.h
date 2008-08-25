@@ -78,14 +78,15 @@
 */
 
 /*
- *	This is a list of public queue attributes
+ *  This is a list of public queue attributes
  *
- *	FORMAT: 
+ *  FORMAT: 
  *		attr1,
  * 		attr2,	<--- important the last has a comma after it
  * 
- * 	This file will be used for the initialization of an array
+ *  This file will be used for the initialization of an array
  *
+ *  @see que_public_attrs[] in cmds/qmgr.c
  */
 
 ATTR_aclgren,

@@ -109,13 +109,13 @@
 /* Global Data Items: */
 
 extern struct server   server;
-extern tlist_head       svr_alljobs;
-extern tlist_head       svr_queues;
+extern tlist_head      svr_alljobs;
+extern tlist_head      svr_queues;
 extern char            server_name[];
 extern attribute_def   svr_attr_def[];
 extern attribute_def   que_attr_def[];
 extern attribute_def   job_attr_def[];
-extern attribute_def  node_attr_def[];   /* node attributes defs */
+extern attribute_def   node_attr_def[];   /* node attributes defs */
 extern int	       pbs_mom_port;
 extern time_t	       time_now;
 extern char	      *msg_init_norerun;
@@ -143,7 +143,14 @@ static int  status_node A_((struct pbsnode *,struct batch_request *,tlist_head *
 static void req_stat_job_step2 A_((struct stat_cntl *));
 static void stat_update A_((struct work_task *));
 
-/*
+#ifndef TMAX_JOB   
+#define TMAX_JOB 999999999
+#endif /* TMAX_JOB */
+
+
+
+
+/**
  * req_stat_job - service the Status Job Request 
  *
  *	This request processes the request for status of a single job or
@@ -189,6 +196,18 @@ void req_stat_job(
 
   name = preq->rq_ind.rq_status.rq_id;
 
+  if (preq->rq_extend != NULL)
+    {
+    /* evaluate pbs_job_stat() 'extension' field */
+
+    if (!strncasecmp(preq->rq_extend,"truncated",strlen("truncated")))
+      {
+      /* truncate response by 'max_report' */
+
+      type = tjstTruncatedServer;
+      }
+    }    /* END if (preq->rq_extend != NULL) */
+
   if (isdigit((int)*name)) 
     {
     /* status a single job */
@@ -200,41 +219,24 @@ void req_stat_job(
       rc = PBSE_UNKJOBID;
       }
     } 
-  else if (isalpha((int)*name) && !strcasecmp("truncated",name)) 
+  else if (isalpha(name[0]))
     {
-    /* status jobs in a queue */
-
-    int tlen = strlen("truncated:");
-
-    if (!strncasecmp(name,"truncated:",tlen))
-      {
-      /* format: truncated:queue */
-
-      name += tlen;
-
-      type = tjstTruncatedQueue;
-      }
-    else
-      { 
+    if (type == tjstNONE)
       type = tjstQueue;
-      }
- 
+    else
+      type = tjstTruncatedQueue;
+
     if ((pque = find_queuebyname(name)) == NULL)
       {
       rc = PBSE_UNKQUE;
       }
-    } 
-  else if (!strcasecmp(name,"truncated"))
-    {
-    /* status all jobs at server */
-
-    type = tjstTruncatedServer;
     }
   else if ((*name == '\0') || (*name == '@')) 
     {
     /* status all jobs at server */
 
-    type = tjstServer;  
+    if (type == tjstNONE)
+      type = tjstServer;  
     } 
   else
     {
@@ -284,15 +286,25 @@ void req_stat_job(
 
 /*
  * req_stat_job_step2 - continue with statusing of jobs
- *	This is re-entered after sending status requests to MOM.
  *
- *	Note, the funny initization/advance of pjob in the "while" loop
- *	comes from the fact we want to look at the "next" job on re-entry.
+ *  This is re-entered after sending status requests to MOM.
+ *
+ *  NOTE:  because server job array and queue job arrays are basic linked 
+ *         lists, this routine will report jobs in jobid order.
+ *
+ *         if truncated listed are desired, should handle this by walking
+ *         all queues and reporting max_report jobs/queue
+ *
+ *  Note, the funny initialization/advance of pjob in the "while" loop
+ *  comes from the fact we want to look at the "next" job on re-entry.
+ *
+ * @see req_stat_job() - parent
+ * @see status_job() - child - build job record
  */
 
 static void req_stat_job_step2(
 
-  struct stat_cntl *cntl)  /* I/O */
+  struct stat_cntl *cntl)  /* I/O (freed on return) */
 
   {
   svrattrl	       *pal;
@@ -321,6 +333,9 @@ static void req_stat_job_step2(
 
   if (!server.sv_attr[(int)SRV_ATR_PollJobs].at_val.at_long)
     {
+    /* polljobs not set - indicates we may need to obtain fresh data from
+       MOM */
+
     if (cntl->sc_jobid[0] == '\0')
       pjob = NULL;
     else
@@ -347,7 +362,7 @@ static void req_stat_job_step2(
 
           pjob = (job *)GET_NEXT(svr_alljobs);
           }
-        } 
+        }    /* END if (pjob == NULL) */ 
       else 
         {			
         /* get next job */
@@ -424,6 +439,76 @@ static void req_stat_job_step2(
 
   free(cntl);
 
+  if ((type == tjstTruncatedServer) || (type == tjstTruncatedQueue))
+    {
+    long qjcounter;
+    long qmaxreport;
+
+    /* loop through all queues */
+
+    for (pque = (pbs_queue *)GET_NEXT(svr_queues);
+         pque != NULL;
+         pque = (pbs_queue *)GET_NEXT(pque->qu_link))
+      {
+      qjcounter = 0;
+
+      if ((exec_only == 1) &&
+          (pque->qu_qs.qu_type != QTYPE_Execution))
+        {
+        /* ignore routing queues */
+
+        continue;
+        }
+
+      if (((pque->qu_attr[QA_ATR_MaxReport].at_flags & ATR_VFLAG_SET) != 0) &&
+           (pque->qu_attr[QA_ATR_MaxReport].at_val.at_long >= 0))
+        {
+        qmaxreport = pque->qu_attr[QA_ATR_MaxReport].at_val.at_long;
+        }
+      else
+        {
+        qmaxreport = TMAX_JOB;
+        }
+
+      /* loop through jobs in queue */
+
+      for (pjob = (job *)GET_NEXT(pque->qu_jobs);
+           pjob != NULL;
+           pjob = (job *)GET_NEXT(pjob->ji_alljobs))
+        {
+        if (qjcounter >= qmaxreport)
+          {
+          /* max_report reached for queue */
+
+          break;
+          }
+
+        pal = (svrattrl *)GET_NEXT(preq->rq_ind.rq_status.rq_attr);
+
+        rc = status_job(
+          pjob,
+          preq,
+          pal,
+          &preply->brp_un.brp_status,
+          &bad);
+
+        if ((rc != 0) && (rc != PBSE_PERM))
+          {
+          req_reject(rc,bad,preq,NULL,NULL);
+
+          return;
+          }
+
+        if (pjob->ji_qs.ji_state == JOB_STATE_QUEUED)
+          qjcounter++; 
+        }    /* END for (pjob) */
+      }      /* END for (pque) */
+
+    reply_send(preq);
+
+    return;
+    }        /* END if ((type == tjstTruncatedServer) || ...) */
+
   while (pjob != NULL) 
     {
     /* go ahead and build the status reply for this job */
@@ -438,7 +523,12 @@ static void req_stat_job_step2(
 
     pal = (svrattrl *)GET_NEXT(preq->rq_ind.rq_status.rq_attr);
 
-    rc = status_job(pjob,preq,pal,&preply->brp_un.brp_status,&bad);
+    rc = status_job(
+      pjob,
+      preq,
+      pal,
+      &preply->brp_un.brp_status,
+      &bad);
 
     if ((rc != 0) && (rc != PBSE_PERM)) 
       {

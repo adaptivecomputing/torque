@@ -20,17 +20,6 @@
 * are permitted provided that all of the following conditions are met.
 * After December 31, 2001, only conditions 3-6 must be met:
 * 
-* 1. Commercial and/or non-commercial use of the Software is permitted
-*    provided a current software registration is on file at www.OpenPBS.org.
-*    If use of this software contributes to a publication, product, or
-*    service, proper attribution must be given; see www.OpenPBS.org/credit.html
-* 
-* 2. Redistribution in any form is only permitted for non-commercial,
-*    non-profit purposes.  There can be no charge for the Software or any
-*    software incorporating the Software.  Further, there can be no
-*    expectation of revenue generated as a consequence of redistributing
-*    the Software.
-* 
 * 3. Any Redistribution of source code must retain the above copyright notice
 *    and the acknowledgment contained in paragraph 6, this list of conditions
 *    and the disclaimer contained in paragraph 7.
@@ -169,6 +158,7 @@ int isjobid(
 
   return(result);
   }  /* END isjobid() */
+
 
 
 
@@ -347,6 +337,7 @@ void prt_attr(
 
   return;
   }  /* END prt_attr() */
+
 
 
 
@@ -1889,6 +1880,9 @@ void tcl_run(
 
 
 
+
+
+
 /* connects to server side routine pbs_statjob() in lib/Libifl/pbs_statjob.c */
 /*  routes to req_stat_job() in server/req_stat.c (PBS_BATCH_StatusJob) */
 
@@ -1899,8 +1893,8 @@ int main(
 
   {
   int c;
-  int errflg=0;
-  int any_failed=0;
+  int errflg = 0;
+  int any_failed = 0;
   extern char *optarg;
   char *conflict = "qstat: conflicting options.\n";
 #if (TCL_QSTAT == 0)
@@ -1921,6 +1915,8 @@ int main(
     
   char *queue_name_out;
   char *server_name_out;
+
+  char *ExtendOpt = NULL;
 
   char operand[PBS_MAXCLTJOBID + 1];
   int alt_opt;
@@ -1947,7 +1943,7 @@ int main(
 #endif /* !FALSE */
 
 #if !defined(PBS_NO_POSIX_VIOLATION)
-#define GETOPT_ARGS "aefin1qrsu:xGMQRBW:-:"
+#define GETOPT_ARGS "aeE:fin1qrsu:xGMQRBW:-:"
 #else
 #define GETOPT_ARGS "fQBW:"
 #endif /* PBS_NO_POSIX_VIOLATION */
@@ -1993,6 +1989,13 @@ int main(
       case 'e':
 
         exec_only = 1;
+
+        break;
+
+      case 'E':
+
+        if (optarg != NULL)
+          ExtendOpt = strdup(optarg);
 
         break;
 
@@ -2388,27 +2391,32 @@ qstat -B [-f [-1]] [-W site_specific] [ server_name... ]\n";
                 &queue_name_out,
                 &server_name_out)) 
             {
-            fprintf(stderr, "qstat: illegally formed destination: %s\n", destination);
+            fprintf(stderr, "qstat: illegally formed destination: %s\n", 
+              destination);
 
-            ret = tcl_stat(error, NULL, f_opt);
+            ret = tcl_stat(error,NULL,f_opt);
+
             any_failed = 1;
+
             break;
+            } 
+
+          if (notNULL(server_name_out)) 
+            {
+            strcpy(server_out,server_name_out);
             } 
           else 
             {
-                    if ( notNULL(server_name_out) ) {
-                        strcpy(server_out, server_name_out);
-                    } else {
-			server_out[0] = '\0';
-		    }
-                    (void)strcpy(job_id_out, queue_name_out);
-
-            if (*queue_name_out != '\0') 
-              {
-              add_atropl(&p_atropl,ATTR_q,NULL,queue_name_out,EQ);
-              }
+            server_out[0] = '\0';
             }
-          }
+
+          strcpy(job_id_out, queue_name_out);
+
+          if (*queue_name_out != '\0') 
+            {
+            add_atropl(&p_atropl,ATTR_q,NULL,queue_name_out,EQ);
+            }
+          }    /* END else */
 
 job_no_args:
 
@@ -2443,43 +2451,72 @@ job_no_args:
 
         if ((stat_single_job == 1) || (p_atropl == 0)) 
           {
-          p_status = pbs_statjob(connect,job_id_out,NULL, exec_only ? EXECQUEONLY : NULL);
+          p_status = pbs_statjob(
+            connect,
+            job_id_out,
+            NULL,
+            exec_only ? EXECQUEONLY : ExtendOpt);
           } 
         else 
           {
           p_status = pbs_selstat(connect,p_atropl,exec_only ? EXECQUEONLY : NULL);
           }
 
-            if ( p_status == NULL ) {
-	        if ( (pbs_errno == PBSE_UNKJOBID) && !located ) {
-		    located = TRUE;
-	            if ( locate_job(job_id_out, server_out, rmt_server) ) {
-	        	pbs_disconnect(connect);
-			strcpy(server_out, rmt_server);
-			goto job_no_args;
-	            }
-		    ret = tcl_stat("job", NULL, f_opt);
-	            prt_job_err("qstat", connect, job_id_out);
-	            any_failed = pbs_errno;
-        	} else {
-		    ret = tcl_stat("job", NULL, f_opt);
-		    if ( pbs_errno != PBSE_NONE ) {
-	                prt_job_err("qstat", connect, job_id_out);
-                        any_failed = pbs_errno;
-		    }
-                }
-            } else {
-		if (alt_opt != 0) {
-			altdsp_statjob(p_status, p_server, alt_opt);
-		} else if (f_opt == 0 || tcl_stat("job", p_status, f_opt))
-                	display_statjob(p_status, p_header, f_opt);
-                p_header = FALSE;
-                pbs_statfree(p_status);
-            }
-            pbs_disconnect(connect);
-            break;
+        if (p_status == NULL) 
+          {
+          if ((pbs_errno == PBSE_UNKJOBID) && !located) 
+            {
+            located = TRUE;
+          
+            if (locate_job(job_id_out,server_out,rmt_server)) 
+              {
+              pbs_disconnect(connect);
 
-        case QUEUES:        /* get status of batch queues */
+              strcpy(server_out,rmt_server);
+
+              goto job_no_args;
+              }
+
+            ret = tcl_stat("job",NULL,f_opt);
+
+            prt_job_err("qstat",connect,job_id_out);
+
+            any_failed = pbs_errno;
+            } 
+          else 
+            {
+            ret = tcl_stat("job",NULL,f_opt);
+
+            if (pbs_errno != PBSE_NONE) 
+              {
+              prt_job_err("qstat",connect,job_id_out);
+
+              any_failed = pbs_errno;
+              }
+            }
+          } 
+        else 
+          {
+          if (alt_opt != 0) 
+            {
+            altdsp_statjob(p_status,p_server,alt_opt);
+            } 
+          else if ((f_opt == 0) || tcl_stat("job",p_status,f_opt))
+            {
+            display_statjob(p_status,p_header,f_opt);
+            }
+
+          p_header = FALSE;
+
+          pbs_statfree(p_status);
+          }
+
+        pbs_disconnect(connect);
+
+        break;
+
+      case QUEUES:        /* get status of batch queues */
+
             strcpy(destination, operand);
             if ( parse_destination_id(destination,
                                       &queue_name_out,

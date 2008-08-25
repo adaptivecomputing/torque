@@ -120,6 +120,15 @@ char* array_disallowed_types[] = {
 
 /* NOTE:  que_attr_def[] should be ordered with QA_ATR_* enum */
 
+/**
+ * NOTE:  to add new queue attribute:
+ * 1) add ATTR_* #define in qmgr_que_public.h
+ * 2) if attribute is to be publicly viewable/modifiable, add to XXX array 
+ *    in qmgr_que_public.h
+ * 3) add QA_ATR_* to enum queueattr in src/include/queue.h
+ * ...
+ */
+
  /* for all queues */
 
 attribute_def que_attr_def[] = {

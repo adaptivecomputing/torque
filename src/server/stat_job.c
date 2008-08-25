@@ -113,8 +113,16 @@ extern attribute_def job_attr_def[];
 extern int	     resc_access_perm; /* see encode_resc() in attr_fn_resc.c */
 extern struct server server;
 
-/*
+
+
+
+
+
+/**
  * status_job - Build the status reply for a single job.
+ *
+ * @see req_stat_job_step2() - parent
+ * @see status_attrib() - child
  */
 
 int status_job(

@@ -128,66 +128,112 @@ static void sel_step2 A_((struct stat_cntl *));
 static void sel_step3 A_((struct stat_cntl *));
 
 
-/*
+
+
+
+/**
  * order_checkpoint - provide order value for various checkpoint attribute values
  *	n > s > c=minutes > c 
  */
 
-static int order_checkpoint(attr)
-	attribute *attr;
-{
-	if ( ((attr->at_flags & ATR_VFLAG_SET) == 0) || 
-	     (attr->at_val.at_str == 0) )
-		return 0;
+static int order_checkpoint(
 
-	switch (*attr->at_val.at_str) {
-	    case 'n':	return 5;
-	    case 's':	return 4;
-	    case 'c':	if (*(attr->at_val.at_str+1) != '\0')
-				return 3;
-			else
-				return 2;
-	    case 'u':	return 1;
-	    default:	return 0;
-	}
-}
+  attribute *attr)
 
-/*
+  {
+  if (((attr->at_flags & ATR_VFLAG_SET) == 0) || 
+       (attr->at_val.at_str == 0))
+    {
+    return(0);
+    }
+ 
+  switch (*attr->at_val.at_str) 
+    {
+    case 'n':	
+      return(5);
+    case 's':
+      return(4);
+    case 'c':	
+      if (*(attr->at_val.at_str + 1) != '\0') 
+        return(3);
+      else
+        return(2);
+    case 'u':	
+      return(1);
+    default:	
+      return(0);
+    }
+
+  return(0);
+  }  /* END order_checkpoint() */
+
+
+
+
+
+/**
  * comp_checkpoint - compare two checkpoint attribtues for selection 
  */
 
-int  comp_checkpoint(attr, with)
-	attribute *attr;
-	attribute *with;
-{
-	int a;
-	int w;
+int comp_checkpoint(
 
-	a = order_checkpoint(attr);
-	w = order_checkpoint(with);
+  attribute *attr,
+  attribute *with)
 
-	if (a == w)
-		return 0;
-	else if (a > w)
-		return 1;
-	else
-		return -1;
-}
-static int  comp_state (state, selstate)
-	attribute *state;
-	attribute *selstate;
-{
-	char *ps;
+  {
+  int a;
+  int w;
 
-	if ( !state || !selstate || !selstate->at_val.at_str)
-		return (-1);
+  a = order_checkpoint(attr);
+  w = order_checkpoint(with);
 
-	for (ps = selstate->at_val.at_str; *ps; ++ps) {
-		if (*ps == state->at_val.at_char)
-			return (0);
-	}
-	return (1);
-}
+  if (a == w)
+    {
+    return(0);
+    }
+  else if (a > w)
+    {
+    return(1);
+    }
+  else
+    {
+    return(-1);
+    }
+  }
+
+
+
+
+
+
+static int comp_state(
+
+  attribute *state,
+  attribute *selstate)
+
+  {
+  char *ps;
+
+  if (!state || !selstate || !selstate->at_val.at_str)
+    {
+    return(-1);
+    }
+
+  for (ps = selstate->at_val.at_str;*ps != '\0';++ps) 
+    {
+    if (*ps == state->at_val.at_char)
+      {
+      return(0);
+      }
+    }    /* END for (ps) */
+
+  return(1);
+  }
+
+
+
+
+
 
 static attribute_def state_sel = {
   ATTR_state,
@@ -202,11 +248,11 @@ static attribute_def state_sel = {
   PARENT_TYPE_JOB };
 
 
-/*
+/**
  * req_selectjobs - service both the Select Job Request and the (special
  *	for the scheduler) Select-status Job Request
  *
- *	This request select jobs based on a supplied criteria and returns
+ *	This request selects jobs based on a supplied criteria and returns
  *	Select   - a list of the job identifiers which meet the criteria
  *	Sel_stat - a list of the status of the jobs that meet the criteria 
  *
@@ -216,11 +262,15 @@ static attribute_def state_sel = {
  *	(just like for regular status requests).  Therefore, two passes are
  *	made through the jobs:
  *		1. Determine if any job that qualifies is running and has
- *		   stale data from MOM.   If so get new from MOM.
+ *		   stale data from MOM.   If so get update from MOM.
  *		2. Build the status reply for any job that qualifies.
  *	
- *	And just like regular status requests, if poll_job is enabled,
- *	we skip over sending update requests to MOM.
+ * And just like regular status requests, if poll_job is enabled,
+ * we skip over sending update requests to MOM.
+ *
+ * @see dispatch_request() - parent
+ * @see build_selist() - child
+ * @see req_statjob() - peer - process qstat request
  */
 
 void req_selectjobs(
@@ -241,6 +291,8 @@ void req_selectjobs(
 
   if (rc != 0) 
     {
+    /* FAILURE */
+
     reply_badattr(rc,bad,plist,preq);
 
     free_sellist(selistp);
@@ -250,6 +302,8 @@ void req_selectjobs(
 
   if ((cntl = (struct stat_cntl *)malloc(sizeof(struct stat_cntl))) == NULL) 
     {
+    /* FAILURE */
+
     free_sellist(selistp);
 
     req_reject(PBSE_SYSTEM,0,preq,NULL,NULL);
@@ -278,7 +332,8 @@ void req_selectjobs(
     }
   else 
     {
-    cntl->sc_post   = sel_step2;
+    cntl->sc_post = sel_step2;
+
     sel_step2(cntl);
     }
 
@@ -289,15 +344,19 @@ void req_selectjobs(
 
 
 
+/**
+ * @see rq_selectjobs() - parent
+ */
+
 static void sel_step2(
 
   struct stat_cntl *cntl)
 
   {
-  job *pjob;
-  int  rc;
-  int		      exec_only = 0;
-  pbs_queue           *pque = NULL;
+  job       *pjob;
+  int        rc;
+  int        exec_only = 0;
+  pbs_queue *pque = NULL;
 
   /* do first pass of finding jobs that match the selection criteria */
 
@@ -307,8 +366,10 @@ static void sel_step2(
     pjob = find_job(cntl->sc_jobid);
 
   if (cntl->sc_origrq->rq_extend != NULL)
+    {
     if (!strncmp(cntl->sc_origrq->rq_extend,EXECQUEONLY,strlen(EXECQUEONLY)))
       exec_only = 1;
+    }
 
   while (1) 
     {
@@ -339,10 +400,10 @@ static void sel_step2(
 
     if (exec_only)
       {
-      pque=find_queuebyname(pjob->ji_qs.ji_queue);
+      pque = find_queuebyname(pjob->ji_qs.ji_queue);
 
       if (pque->qu_qs.qu_type != QTYPE_Execution)
-         continue;
+        continue;
       }
 
     if (server.sv_attr[(int)SRV_ATR_query_others].at_val.at_long ||
@@ -383,6 +444,7 @@ static void sel_step2(
 
   return;
   }  /* END sel_step2() */
+
 
 
 

@@ -1318,9 +1318,12 @@ int svr_chkque(
         (pque->qu_attr[QA_ATR_MaxUserJobs].at_val.at_long >= 0))
       {
       /* count number of jobs user has in queue */
+
       user_jobs = 0;
+
       pj = (job *)GET_NEXT(pque->qu_jobs);
-      while (pj)
+
+      while (pj != NULL)
         {
         if ((pj->ji_qs.ji_state <= JOB_STATE_RUNNING) &&
             (!strcmp(pj->ji_wattr[JOB_ATR_job_owner].at_val.at_str,
@@ -1984,7 +1987,7 @@ static void correct_ct(
     server.sv_jobstates[i] = 0;
     }
 
-  if (pqj) 
+  if (pqj != NULL) 
     {
     pc = log_buffer + strlen(log_buffer);
 
@@ -2005,7 +2008,8 @@ static void correct_ct(
   log_event(PBSEVENT_ERROR,PBS_EVENTCLASS_SERVER,msg_daemonname,
     log_buffer);
 
-  for (pque = (pbs_queue *)GET_NEXT(svr_queues);pque; 
+  for (pque = (pbs_queue *)GET_NEXT(svr_queues);
+       pque != NULL; 
        pque = (pbs_queue *)GET_NEXT(pque->qu_link)) 
     {
     pque->qu_numjobs = 0;
@@ -2015,7 +2019,8 @@ static void correct_ct(
       pque->qu_njstate[i] = 0;
     }
 
-  for (pjob = (job *)GET_NEXT(svr_alljobs);pjob != NULL;
+  for (pjob = (job *)GET_NEXT(svr_alljobs);
+       pjob != NULL;
        pjob = (job *)GET_NEXT(pjob->ji_alljobs))  
     {
     server.sv_qs.sv_numjobs++;

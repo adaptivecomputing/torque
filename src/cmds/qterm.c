@@ -122,7 +122,7 @@ int main(
 
   {
   /*
-   *  This routine sends a Server Shutdown request to the batch server.  If the
+   * This routine sends a Server Shutdown request to the batch server.  If the
    * batch request is accepted, and the type is IMMEDIATE, then no more jobs
    * are accepted and all jobs are checkpointed or killed.  If the type is
    * DELAY, then only privileged users can submit jobs, and jobs will be

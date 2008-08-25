@@ -18,18 +18,6 @@
 * Software to other sites and locations.  Use and redistribution of
 * OpenPBS v2.3 in source and binary forms, with or without modification,
 * are permitted provided that all of the following conditions are met.
-* After December 31, 2001, only conditions 3-6 must be met:
-* 
-* 1. Commercial and/or non-commercial use of the Software is permitted
-*    provided a current software registration is on file at www.OpenPBS.org.
-*    If use of this software contributes to a publication, product, or
-*    service, proper attribution must be given; see www.OpenPBS.org/credit.html
-* 
-* 2. Redistribution in any form is only permitted for non-commercial,
-*    non-profit purposes.  There can be no charge for the Software or any
-*    software incorporating the Software.  Further, there can be no
-*    expectation of revenue generated as a consequence of redistributing
-*    the Software.
 * 
 * 3. Any Redistribution of source code must retain the above copyright notice
 *    and the acknowledgment contained in paragraph 6, this list of conditions
@@ -78,10 +66,6 @@
 */
 
 /*
- * @(#) $Id$
- */
-
-/*
  * queue.h - struture definations for queue objects
  *
  * Include Files Requried:
@@ -103,11 +87,13 @@
 #define QTYPE_RoutePush 2
 #define QTYPE_RoutePull 3
 
-/*
+/**
  * Attributes, including the various resource-lists are maintained in an
  * array in a "decoded or parsed" form for quick access to the value.
  *
  * The following enum defines the index into the array.
+ *
+ * @see src/server/queue_attr_def.c
  */
 
 enum queueattr {
@@ -172,26 +158,27 @@ extern attribute_def que_attr_def[];
 /* at last we come to the queue definition itself	*/
  
 struct pbs_queue {
-	list_link	qu_link;		/* forward/backward links */
-	tlist_head	qu_jobs;		/* jobs in this queue */
+  list_link  qu_link;		/* forward/backward links */
+  tlist_head qu_jobs;		/* jobs in this queue */
 
-	struct queuefix {
-		int	qu_modified;		/* != 0 => update disk file */
-		int	qu_type;		/* queue type: exec, route */
-		time_t	qu_ctime;		/* time queue created */
-		time_t	qu_mtime;		/* time queue last modified */
-		char	qu_name[PBS_MAXQUEUENAME]; /* queue name */
-	} qu_qs;
+  struct queuefix {
+    int    qu_modified;		/* != 0 => update disk file */
+    int    qu_type;		/* queue type: exec, route */
+    time_t qu_ctime;		/* time queue created */
+    time_t qu_mtime;		/* time queue last modified */
+    char   qu_name[PBS_MAXQUEUENAME]; /* queue name */
+    } qu_qs;
 
-	int	qu_numjobs;			/* current numb jobs in queue */
-	int	qu_numcompleted;		/* current numb completed jobs in queue */
-	int	qu_njstate[PBS_NUMJOBSTATE];	/* # of jobs per state */
-	char	qu_jobstbuf[100];
+  int  qu_numjobs;		/* current numb jobs in queue */
+  int  qu_numcompleted;		/* current numb completed jobs in queue */
+  int  qu_njstate[PBS_NUMJOBSTATE];	/* # of jobs per state */
+  char qu_jobstbuf[100];
 
-	/* the queue attributes */
+  /* the queue attributes */
 
-	attribute	qu_attr[QA_ATR_LAST];
-};
+  attribute qu_attr[QA_ATR_LAST];
+  };
+
 typedef struct pbs_queue pbs_queue;
 
 extern pbs_queue *find_queuebyname A_((char *));
