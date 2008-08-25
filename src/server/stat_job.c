@@ -195,16 +195,20 @@ int status_job(
 
 
 
-/*
+/**
  * status_attrib - add each requested or all attributes to the status reply 
  *
- *	Returns: 0 on success
- *		-1 on error (bad attribute), "bad" set to ordinal of attribute
+ *   Returns: 0 on success
+ *           -1 on error (bad attribute), "bad" set to ordinal of attribute
+ *
+ * @see status_job() - parent
+ * @see find_attr() - child
+ * @see *->at_encode() - child
  */
 
 int status_attrib(
 
-  svrattrl	*pal,  /* I */
+  svrattrl	*pal,      /* I */
   attribute_def *padef,
   attribute	*pattr,
   int		 limit,
@@ -226,6 +230,34 @@ int status_attrib(
   if (pal != NULL) 
     {		
     /* client specified certain attributes */
+
+    if (pal->al_valln != 0)
+      {
+      /* HACK - report pal via high-throughput attr list */
+
+      for (;pal != NULL;pal = (svrattrl *)GET_NEXT(pal->al_link))
+        {
+        index = pal->al_valln;
+
+        if (((padef + index)->at_flags & priv) &&
+           !((padef + index)->at_flags & ATR_DFLAG_NOSTAT))
+          {
+          if (!(((padef + index)->at_flags & ATR_DFLAG_PRIVR) && (IsOwner == 0)))
+            {
+            (padef + index)->at_encode(
+              pattr + index,
+              phead,
+              (padef + index)->at_name,
+              NULL,
+              ATR_ENCODE_CLIENT);
+            }
+          }
+        }    /* END for (pal) */
+
+      /* SUCCESS */
+
+      return(0);
+      }
 
     while (pal != NULL) 
       {
@@ -257,29 +289,30 @@ int status_attrib(
 
       pal = (svrattrl *)GET_NEXT(pal->al_link);
       }
-    } 
-  else 
+
+    /* SUCCESS */
+
+    return(0);
+    }    /* END if (pal != NULL) */
+
+  /* attrlist not specified, return all readable attributes */
+
+  for (index = 0;index < limit;index++) 
     {
-    /* attrlist not specified, return all readable attributes */
-
-    for (index = 0;index < limit;index++) 
+    if (((padef + index)->at_flags & priv) &&
+       !((padef + index)->at_flags & ATR_DFLAG_NOSTAT)) 
       {
-      if (((padef + index)->at_flags & priv) &&
-         !((padef + index)->at_flags & ATR_DFLAG_NOSTAT)) 
+      if (!(((padef + index)->at_flags & ATR_DFLAG_PRIVR) && (IsOwner == 0)))
         {
-        if (!(((padef + index)->at_flags & ATR_DFLAG_PRIVR) && (IsOwner == 0)))
-          {
-
-          (padef + index)->at_encode(
-            pattr + index, 
-            phead,
-            (padef + index)->at_name,
-            NULL, 
-            ATR_ENCODE_CLIENT);
-          }
+        (padef + index)->at_encode(
+          pattr + index, 
+          phead,
+          (padef + index)->at_name,
+          NULL, 
+          ATR_ENCODE_CLIENT);
         }
-      }    /* END for (index) */
-    }      /* END else () */
+      }
+    }    /* END for (index) */
 
   /* SUCCESS */
 

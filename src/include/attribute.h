@@ -122,29 +122,29 @@
 #define ATRPART  3
 
 /*
- * The following structure, svrattrl is used to hold the external form of
- * attributes.
- *
+ * The svrattrl structure is used to hold the external form of attributes.
  */
 
 struct svrattrl {
-	list_link	al_link;
-	struct attropl	al_atopl;    /* name,resource,value, see pbs_ifl.h   */
-	int		al_tsize;    /* size of this structure (variable)    */
-	int		al_nameln;   /* len of name string (including null)  */
-	int		al_rescln;   /* len of resource name string (+ null) */
-	int		al_valln;    /* len of value, may contain many nulls */
-	unsigned int	al_flags:ATRFLAG;   /* copy of attribute value flags */
-	/*
-	 * data follows directly after
-	 */
-};
+  list_link      al_link;
+  struct attropl al_atopl;    /* name,resource,value, see pbs_ifl.h   */
+  int            al_tsize;    /* size of this structure (variable)    */
+  int            al_nameln;   /* len of name string (including null)  */
+  int            al_rescln;   /* len of resource name string (+ null) */
+  int            al_valln;    /* len of value, may contain many nulls */
+  unsigned int   al_flags:ATRFLAG;   /* copy of attribute value flags */
+
+  /* data follows directly after */
+  };
+
 typedef struct svrattrl svrattrl;
 
 #define al_name  al_atopl.name
 #define al_resc  al_atopl.resource
 #define al_value al_atopl.value
 #define al_op	 al_atopl.op
+
+
 
 /*
  * The value of an attribute is contained in the following structure.

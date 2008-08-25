@@ -187,8 +187,8 @@ void insert_link(
 void append_link(
 
   tlist_head *head, /* ptr to head of list */
-  list_link *new,  /* ptr to new entry */
-  void      *pobj) /* ptr to object to link in */
+  list_link  *new,  /* ptr to new entry */
+  void       *pobj) /* ptr to object to link in */
 
   {
 #ifndef NDEBUG
@@ -224,7 +224,7 @@ void append_link(
    * entry appear to be the head, so we never let that happen
    */
 
-  if (pobj)
+  if (pobj != NULL)
     {
     new->ll_struct = pobj;
     }

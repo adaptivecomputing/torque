@@ -237,36 +237,61 @@ int decode_rcost(
 /*ARGSUSED*/
 
 
-int encode_rcost(attr, phead, atname, rsname, mode)
-	attribute	*attr;	  /* ptr to attribute */
-	tlist_head	*phead;	  /* head of attrlist list */
-	char		*atname;  /* attribute name */
-	char		*rsname;  /* resource name or null */
-	int		mode;	  /* encode mode, unused here */
-{
-	svrattrl *pal;
-	struct resource_cost *pcost;
+int encode_rcost(
 
-	if ( !attr )
-		return (-1);
-	if ( !(attr->at_flags & ATR_VFLAG_SET))
-		return (0);
+  attribute	*attr,	  /* ptr to attribute */
+  tlist_head	*phead,	  /* head of attrlist list */
+  char		*atname,  /* attribute name */
+  char		*rsname,  /* resource name or null */
+  int		mode)	  /* encode mode, unused here */
 
-	pcost = (struct resource_cost *)GET_NEXT(attr->at_val.at_list);
-	while (pcost) {
-		rsname = pcost->rc_def->rs_name;
-		if ((pal = attrlist_create(atname,rsname,23)) == (svrattrl *)0)
-			return (-1);
+  {
+  svrattrl *pal;
+  struct resource_cost *pcost;
 
-		(void)sprintf(pal->al_value, "%ld", pcost->rc_cost);
-		pal->al_flags = attr->at_flags;
-		append_link(phead, &pal->al_link, pal);
+  if (!attr)
+    {
+    /* FAILURE */
 
-		pcost = (struct resource_cost *)GET_NEXT(pcost->rc_link);
-	}
+    return(-1);
+    }
+
+  if (!(attr->at_flags & ATR_VFLAG_SET))
+    {
+    /* NO-OP */
+
+    return(0);
+    }
+
+  pcost = (struct resource_cost *)GET_NEXT(attr->at_val.at_list);
+
+  while (pcost != NULL) 
+    {
+    rsname = pcost->rc_def->rs_name;
+
+    if ((pal = attrlist_create(atname,rsname,23)) == NULL)
+      {
+      /* FAILURE */
+
+      return(-1);
+      }
+
+    sprintf(pal->al_value,"%ld", 
+      pcost->rc_cost);
+
+    pal->al_flags = attr->at_flags;
+
+    append_link(phead,&pal->al_link,pal);
+
+    pcost = (struct resource_cost *)GET_NEXT(pcost->rc_link);
+    }
 	
-	return (1);
-}
+  return(1);
+  }
+
+
+
+
 
 /*
  * set_rcost - set attribute A to attribute B,

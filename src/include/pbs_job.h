@@ -205,8 +205,12 @@ struct grpcache {
  * define the size of the array.
  */
 
-/* sync w/ src/server/job_attr_def.c */
-/* sync w/ src/resmom/request.c TJobAttr constants */
+/**
+ * sync w/ src/server/job_attr_def.c 
+ * sync w/ src/resmom/request.c TJobAttr constants 
+ *
+ * @see struct job 
+ */
 
 enum job_atr {
   JOB_ATR_jobname,	/* this set appears first as they show */
@@ -230,7 +234,7 @@ enum job_atr {
   JOB_ATR_keep,
   JOB_ATR_mailpnts,
   JOB_ATR_mailuser,
-  JOB_ATR_mtime,         /* (20) */
+  JOB_ATR_mtime,         /* what triggers modification of mtime? (20) */
   JOB_ATR_outpath,
   JOB_ATR_priority,
   JOB_ATR_qtime,
@@ -336,24 +340,6 @@ typedef struct	noderes {
 #define MOM_HAS_TMPDIR		16	/* Mom made a tmpdir */
 #endif	/* MOM */
 
-/*
- * THE JOB 
- *
- * This structure is used by the server to maintain internal
- * quick access to the state and status of each job.
- * There is one instance of this structure per job known by the server.
- *
- * This information must be PRESERVED and is done so by updating the
- * job file in the jobs subdirectory which corresponds to this job.
- *
- * ji_state is the state of the job.  It is kept up front to provide for a
- * "quick" update of the job state with minimum rewritting of the job file.
- * Which is why the sub-struct ji_qs exists, that is the part which is
- * written on the "quick" save.
- *
- * The unparsed string set forms of the attributes (including resources)
- * are maintained in the struct attrlist as discussed above.
- */
 
 typedef struct {
   void     *pjob;
@@ -391,6 +377,27 @@ typedef struct {
   
 
 
+/**
+ * THE JOB
+ *
+ * This structure is used by the server to maintain internal
+ * quick access to the state and status of each job.
+ * There is one instance of this structure per job known by the server.
+ *
+ * This information must be PRESERVED and is done so by updating the
+ * job file in the jobs subdirectory which corresponds to this job.
+ *
+ * ji_state is the state of the job.  It is kept up front to provide for a
+ * "quick" update of the job state with minimum rewritting of the job file.
+ * Which is why the sub-struct ji_qs exists, that is the part which is
+ * written on the "quick" save.
+ *
+ * The unparsed string set forms of the attributes (including resources)
+ * are maintained in the struct attrlist as discussed above.
+ * 
+ * @see job_alloc() - creates new job
+ * @see job_free() - free job structure
+ */
 
 struct job {
 	/* Note: these members, up to ji_qs, are not saved to disk

@@ -415,7 +415,9 @@ int conn_qsub(
  * job_alloc - allocate space for a job structure and initialize working
  *	attribute to "unset"
  *
- *	Returns: pointer to structure or null is space not available.
+ * Returns: pointer to structure or null is space not available.
+ *
+ * @see job_init_wattr() - child
  */
 
 job *job_alloc()
@@ -873,14 +875,12 @@ void job_clone_wt(
       
       job_save(pjob,SAVEJOB_FULL);
      
-      
       pjob = (job*)GET_NEXT(pjob->ji_arrayjobs);
-        
       }
     }
 
   return;
-  } /* END job_clone_tw */
+  }  /* END job_clone_wt */
   
 
 

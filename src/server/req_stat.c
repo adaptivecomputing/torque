@@ -322,6 +322,10 @@ static void req_stat_job_step2(
 
   int                   IsTruncated = 0;
 
+  long                  DTime;  /* delta time - only report full attribute list if J->MTime > DTime */
+
+  static svrattrl *dpal = NULL;
+
   preq   = cntl->sc_origrq;
   type   = (enum TJobStatTypeEnum)cntl->sc_type;
   preply = &preq->rq_reply;
@@ -330,6 +334,39 @@ static void req_stat_job_step2(
 
   /* NOTE:  If IsTruncated is true, should walk all queues and walk jobs in each queue
             until max_reported is reached (NYI) */
+
+  if (dpal == NULL)
+    {
+    /* build 'delta' attribute list */
+
+    svrattrl *tpal;
+
+    tlist_head dalist;
+
+    int aindex;
+
+    int atrlist[] = { 
+      JOB_ATR_jobname,
+      JOB_ATR_resc_used,
+      JOB_ATR_LAST };
+
+    CLEAR_LINK(dalist);
+
+    for (aindex = 0;atrlist[aindex] != JOB_ATR_LAST;aindex++)
+      {
+      if ((tpal = attrlist_create("","",23)) == NULL)
+        {
+        return;
+        }
+
+      tpal->al_valln = atrlist[aindex];
+
+      if (dpal == NULL)
+        dpal = tpal;
+
+      append_link(&dalist,&tpal->al_link,tpal);
+      }
+    }  /* END if (dpal == NULL) */
 
   if (!server.sv_attr[(int)SRV_ATR_PollJobs].at_val.at_long)
     {
@@ -431,10 +468,25 @@ static void req_stat_job_step2(
   else
     pjob = (job *)GET_NEXT(svr_alljobs);
 
+  DTime = 0;
+
   if (preq->rq_extend != NULL)
     {
-    if (!strncmp(preq->rq_extend,EXECQUEONLY,strlen(EXECQUEONLY)))
+    char *ptr;
+
+    /* FORMAT:  { EXECQONLY | DELTA:<EPOCHTIME> } */
+
+    if (strstr(preq->rq_extend,EXECQUEONLY))
       exec_only = 1;
+
+    ptr = strstr(preq->rq_extend,"DELTA:");
+
+    if (ptr != NULL)
+      {
+      ptr += strlen("delta:");
+
+      DTime = strtol(ptr,NULL,10);
+      }
     }
 
   free(cntl);
@@ -488,7 +540,7 @@ static void req_stat_job_step2(
         rc = status_job(
           pjob,
           preq,
-          pal,
+          (pjob->ji_wattr[(int)JOB_ATR_mtime].at_val.at_long >= DTime) ? pal : dpal,
           &preply->brp_un.brp_status,
           &bad);
 
@@ -948,9 +1000,9 @@ void req_stat_que(
 
 static int status_que(
 
-  pbs_queue *pque,	/* ptr to que to status */
+  pbs_queue            *pque,     /* ptr to que to status */
   struct batch_request *preq,
-  tlist_head *pstathd)	/* head of list to append status to */
+  tlist_head           *pstathd)  /* head of list to append status to */
 
   {
   struct brp_status *pstat;

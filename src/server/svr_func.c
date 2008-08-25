@@ -119,6 +119,10 @@ static char *svr_state_names[] = {
 	"Terminating"		/* SV_STATE_SHUTSIG */
 };
 
+
+
+
+
 /*
  * encode_svrstate - encode the current server state from the internal
  *	integer to a state name string.
@@ -126,11 +130,11 @@ static char *svr_state_names[] = {
 
 int encode_svrstate(
 
-  attribute       *pattr,    /* ptr to attribute */
-  tlist_head       *phead,   /* head of attrlist list */
+  attribute       *pattr,   /* ptr to attribute */
+  tlist_head      *phead,   /* head of attrlist list */
   char            *atname,  /* attribute name */
   char            *rsname,  /* null */
-  int             mode)     /* encode mode */
+  int              mode)    /* encode mode */
 
   {
   svrattrl *pal;
