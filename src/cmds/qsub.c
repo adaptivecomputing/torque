@@ -3342,8 +3342,37 @@ int process_opts(
             } 
           else if (!strcmp(keyword,ATTR_umask))
             {
+            int len;
+            len = strlen(valuewd);
+            if (valuewd[0] == '0')
+              --len;
+
+            if (len > 3)
+              {
+              fprintf(stderr, "Invalid umask value, too many digits: %s\n", 
+                      valuewd); 
+              errflg++;
+             
+              break;
+              } 
+
             Umask_opt = passet;
-            set_attr(&attrib,ATTR_umask,valuewd);
+            if (valuewd[0] == '0')
+              {
+              /* value is octal, convert to decimal */
+              long mask;
+              char buf[4];
+
+              mask = strtol(valuewd, NULL, 8);
+              snprintf(buf, 4, "%ld", mask); 
+
+              /* value is octal, convert to decimal */
+              set_attr(&attrib,ATTR_umask,buf); 
+              }
+            else
+              {
+              set_attr(&attrib,ATTR_umask,valuewd);
+              }
             }
           else 
             {

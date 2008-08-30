@@ -7,6 +7,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature
   f - add qchkpt command
   e - renamed job.h to pbs_job.h
   b - fix logic error in checkpoint interval test
+  b - qsub now interprets umask values (-W umaks=) as octal if they start with 0
 
 2.3.4
   b - fixed a bug where if attempt to send job to a pbs_mom failed due to timeout, the job would

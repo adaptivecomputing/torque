@@ -1018,7 +1018,8 @@ $TMPDIR are supported for stagein.
 .Ty umask=XXX
 .br
 Sets umask used to create stdout and stderr spool files in pbs_mom 
-spool directory
+spool directory. Values starting with 0 are treated as octal values, 
+otherwise the value is treated as a decimal umask value.
 .br
 .IP "-X" 8
 Enables X11 forwarding.  The DISPLAY environment variable must be set.
