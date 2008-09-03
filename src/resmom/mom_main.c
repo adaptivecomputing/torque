@@ -5457,10 +5457,10 @@ char *find_signal_name(
  *  Kill a job.
  * Call with the job pointer and a signal number.
  *
- * NOTE:  sneds a signal to a job, does not purge job record
+ * NOTE:  sends a signal to a job, does not purge job record
  *
  * @see kill_task() - child
- * @see XXX() - parent
+ * @see scan_for_exiting() - parent
  */
 
 int kill_job(

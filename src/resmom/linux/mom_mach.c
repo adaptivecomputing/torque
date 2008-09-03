@@ -20,17 +20,6 @@
 * are permitted provided that all of the following conditions are met.
 * After December 31, 2001, only conditions 3-6 must be met:
 *
-* 1. Commercial and/or non-commercial use of the Software is permitted
-*    provided a current software registration is on file at www.OpenPBS.org.
-*    If use of this software contributes to a publication, product, or
-*    service, proper attribution must be given; see www.OpenPBS.org/credit.html
-*
-* 2. Redistribution in any form is only permitted for non-commercial,
-*    non-profit purposes.  There can be no charge for the Software or any
-*    software incorporating the Software.  Further, there can be no
-*    expectation of revenue generated as a consequence of redistributing
-*    the Software.
-*
 * 3. Any Redistribution of source code must retain the above copyright notice
 *    and the acknowledgment contained in paragraph 6, this list of conditions
 *    and the disclaimer contained in paragraph 7.
@@ -185,27 +174,31 @@ static int            max_proc = 0;
 /*
 ** external functions and data
 */
-
-extern struct config  *search A_((struct config *, char *));
-
-extern struct rm_attribute *momgetattr A_((char *));
+extern struct	config		*search A_((struct config *,char *));
+extern struct	rm_attribute	*momgetattr A_((char *));
 extern int                      rm_errno;
-extern double cputfactor;
-extern double wallfactor;
-extern long system_ncpus;
-extern  int     ignwalltime;
+extern double	cputfactor;
+extern double	wallfactor;
+extern long     system_ncpus;
+extern int      ignwalltime;
 
 /*
 ** local functions and data
 */
-static char *resi  A_((struct rm_attribute *));
-static char *totmem  A_((struct rm_attribute *));
+static char *resi     A_((struct rm_attribute *));
+static char *totmem   A_((struct rm_attribute *));
 static char *availmem A_((struct rm_attribute *));
-static char *physmem A_((struct rm_attribute *));
-static char *ncpus  A_((struct rm_attribute *));
+static char *physmem  A_((struct rm_attribute *));
+static char *ncpus    A_((struct rm_attribute *));
 static char *walltime A_((struct rm_attribute *));
-static char *quota  A_((struct rm_attribute *));
-static char     *netload        A_((struct rm_attribute *));
+static char *quota    A_((struct rm_attribute *));
+static char *netload  A_((struct rm_attribute *));
+
+#ifndef mbool_t
+#define mbool_t char
+#endif /* mbool_t */
+
+mbool_t ProcIsChild(char *,char *,char *);
 
 extern char *loadave A_((struct rm_attribute *));
 extern char *nullproc A_((struct rm_attribute *));
@@ -387,7 +380,7 @@ proc_stat_t *get_proc_stat(
 
   lastbracket++;
 
-  if (sscanf(readbuf, "%d (%[^\n]", &ps.pid, path) != 2)
+  if (sscanf(readbuf,"%d (%[^\n]",&ps.pid,path) != 2) 
     {
     /* FAILURE */
 
@@ -397,19 +390,20 @@ proc_stat_t *get_proc_stat(
     }
 
   /* see stat_str[] value for mapping 'stat' format */
-  if (sscanf(lastbracket, stat_str,
-             &ps.state,     /* state (one of RSDZTW) */
-             &ps.ppid,      /* ppid */
-             &ps.pgrp,      /* pgrp */
-             &ps.session,   /* session id */
-             &ps.flags,     /* flags - kernel flags of the process, see the PF_* in <linux/sched.h> */
-             &ps.utime,     /* utime - jiffies that this process has been scheduled in user mode */
-             &ps.stime,     /* stime - jiffies that this process has been scheduled in kernel mode */
-             &ps.cutime,    /* cutime - jiffies that this process’s waited-for children have been scheduled in user mode */
-             &ps.cstime,    /* cstime - jiffies that this process’s waited-for children have been scheduled in kernel mode */
-             &jstarttime,   /* starttime */
-             &ps.vsize,     /* vsize */
-             &ps.rss) != 12)   /* rss */
+
+  if (sscanf(lastbracket,stat_str, 
+        &ps.state,     /* state (one of RSDZTW) */
+        &ps.ppid,      /* ppid */
+        &ps.pgrp,      /* pgrp */
+        &ps.session,   /* session id */
+        &ps.flags,     /* flags - kernel flags of the process, see the PF_* in <linux/sched.h> */
+        &ps.utime,     /* utime - jiffies that this process has been scheduled in user mode */
+        &ps.stime,     /* stime - jiffies that this process has been scheduled in kernel mode */
+        &ps.cutime,    /* cutime - jiffies that this process’s waited-for children have been scheduled in user mode */
+        &ps.cstime,    /* cstime - jiffies that this process’s waited-for children have been scheduled in kernel mode */
+        &jstarttime,   /* starttime */
+        &ps.vsize,     /* vsize */
+        &ps.rss) != 12)   /* rss */
     {
     /* FAILURE */
 
@@ -447,8 +441,8 @@ proc_stat_t *get_proc_stat(
 
 
 
-proc_mem_t *
-get_proc_mem(void)
+
+proc_mem_t *get_proc_mem(void)
 
   {
   static proc_mem_t   mm;
@@ -456,21 +450,21 @@ get_proc_mem(void)
   char                str[32];
   unsigned long long  bfsz, casz;
 
-  if ((fp = fopen("/proc/meminfo", "r")) == NULL)
+  if ((fp = fopen("/proc/meminfo","r")) == NULL)
     {
     return(NULL);
     }
 
-  if (fscanf(fp, "%30s", str) != 1)
+  if (fscanf(fp,"%30s",str) != 1)
     {
     return(NULL);
     }
 
-  if (!strncmp(str, "total:", sizeof(str)))
+  if (!strncmp(str,"total:",sizeof(str)))
     {
     /* old format */
 
-    if (fscanf(fp, "%*[^\n]%*c") != 0)     /* remove text header */
+    if (fscanf(fp,"%*[^\n]%*c") != 0)     /* remove text header */
       {
       return(NULL);
       }
@@ -626,8 +620,7 @@ get_proc_mem(void)
 
 
 
-void
-dep_initialize(void)
+void dep_initialize(void)
 
   {
   char *id = "dep_initialize";
@@ -975,6 +968,7 @@ static unsigned long long mem_sum(
 
   return(segadd);
   }  /* END mem_sum() */
+
 
 
 
@@ -1669,7 +1663,7 @@ mom_open_poll(void)
  * This function is called from the main MOM loop once every "check_poll_interval"
  * seconds.
  *
- * @see get_proc_stat()
+ * @see get_proc_stat() - child
  * @see mom_set_use() - Aggregates data collected here
  *
  * NOTE:  populates global 'proc_array[]' variable.
@@ -2050,14 +2044,18 @@ int mom_set_use(
 
 
 
-/*
+
+/**
  * Kill a task session.
  * Call with the task pointer and a signal number.
- *      return number of tasks signalled (0 = failure)
+ *
+ * @return number of tasks signalled (0 = failure) 
+ *
+ * @see kill_job() - parent
+ *
+ * NOTE:  should support killpg() or killpidtree() - (NYI)
+ *        may be required for suspend/resume 
  */
-
-/* NOTE:  should support killpg() or killpidtree() (NYI)
-          may be required for suspend resume */
 
 int kill_task(
 
@@ -2072,7 +2070,7 @@ int kill_task(
   int            NumProcessesFound = 0; /* number of processes found with session ID */
 
   struct dirent *dent;
-  proc_stat_t *ps;
+  proc_stat_t   *ps;
   int            sesid;
   pid_t          mompid;
 
@@ -2082,10 +2080,10 @@ int kill_task(
   if (LOGLEVEL >= 5)
     {
     sprintf(log_buffer, "%s: sending signal %d to task %d, session %d",
-            id,
-            sig,
-            ptask->ti_qs.ti_task,
-            sesid);
+      id,
+      sig,
+      ptask->ti_qs.ti_task,
+      sesid);
 
     log_record(
       PBSEVENT_JOB,
@@ -2099,7 +2097,7 @@ int kill_task(
     if (LOGLEVEL >= 3)
       {
       sprintf(log_buffer, "cannot send signal %d to task (no session id)",
-              sig);
+        sig);
 
       log_record(
         PBSEVENT_ERROR,
@@ -2133,13 +2131,14 @@ int kill_task(
         sprintf(log_buffer, "%s: get_proc_stat",
                 dent->d_name);
 
-        log_err(errno, id, log_buffer);
+        log_err(errno,id,log_buffer);
         }
 
       continue;
       }
 
-    if (sesid == ps->session)
+    if ((sesid == ps->session) ||
+        (ProcIsChild(procfs,dent->d_name,ptask->ti_job->ji_qs.ji_jobid) == FALSE))
       {
       NumProcessesFound++;
 
@@ -2303,6 +2302,9 @@ int kill_task(
       }    /* END if (sesid == ps->session) */
     }      /* END while ((dent = readdir(pdir)) != NULL) */
 
+  /* NOTE:  to fix bad state situations resulting from a hard crash, the logic
+            below should be triggered any time no processes are found (NYI) */ 
+            
   if (IS_ADOPTED_TASK(ptask->ti_qs.ti_task) && (NumProcessesFound == 0))
     {
     /* no process was found, but for an adopted task this is OK (we don't find
@@ -2812,7 +2814,7 @@ static char *resi_proc(
   pid_t pid)
 
   {
-  char  *id = "resi_proc";
+  char        *id = "resi_proc";
   proc_stat_t *ps;
 
   if ((ps = get_proc_stat(pid)) == NULL)
@@ -4336,8 +4338,8 @@ static char *netload(
       /*
       if (strncmp(interfaceName[interface],"eth",3) == 0)
         {
-          rc = sscanf(interfaceName[interface],"eth%d",
-            &ethNum);
+        rc = sscanf(interfaceName[interface],"eth%d",
+          &ethNum);
         }
       */
 
@@ -4357,6 +4359,20 @@ static char *netload(
 
   return(ret_string);
   }  /* END netload() */
+
+
+
+
+
+mbool_t ProcIsChild(
+
+  char *Dir,    /* I */
+  char *PID,    /* I */
+  char *JobID)  /* I */
+
+  {
+  return(FALSE);
+  }  /* END ProcIsChild() */
 
 /* END mom_mach.c */
 

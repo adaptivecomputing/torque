@@ -1650,6 +1650,9 @@ int MUSleep(
 
 
 
+
+
+
 /* send a signal to all tasks on sisters */
 
 int sigalltasks_sisters(
@@ -1945,14 +1948,14 @@ void req_signaljob(
   struct batch_request *preq) /* I */
 
   {
-  char           id[] = "req_signaljob";
+  char            id[] = "req_signaljob";
   job            *pjob;
   int             sig;
   char           *sname;
 
   struct sig_tbl *psigt;
 
-  extern struct sig_tbl sig_tbl[];
+  extern struct   sig_tbl sig_tbl[];
 
   pjob = find_job(preq->rq_ind.rq_signal.rq_jid);
 

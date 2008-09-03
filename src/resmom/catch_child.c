@@ -248,6 +248,15 @@ hnodent *get_node(
  *         scan_for_exiting()
  *       Second Pass:  catches SIGCHLD for job epilog child and exec's
  *         job's ji_mompost (post_epilog)
+<<<<<<< .mine
+ *        
+ *    - scan_for_exiting() 
+ *       called after scan_for_terminated and looks at jobs to identify which 
+ *       have exiting tasks.  Sends kill to all sisters via send_sisters(), 
+ *       sets job substate to JOB_SUBSTATE_EXITING, issues kill_job(), and 
+ *       then sets job substate to JOB_SUBSTATE_PREOBIT.  This routine then 
+ *       creates the preobit message and sends it to pbs_server. 
+=======
  *
  *    - scan_for_exiting()
  *       called after scan_for_terminated and looks at jobs to identify which
@@ -255,6 +264,7 @@ hnodent *get_node(
  *       sets job substate to JOB_SUBSTATE_EXITING, issues kill_job, and
  *       then sets job substate to JOB_SUBSTATE_PREOBIT.  This routine then
  *       creates the preobit message and sends it to pbs_server.
+>>>>>>> .r2371
  *      registers preobit_reply() as socket handler
  *
  *  - preobit_reply()
