@@ -13,9 +13,9 @@
 /*
  * decode_tokens - validate the token request
  *
- *	Returns: 0 if ok
- *		>0 error number if error
- *		*patr elements set
+ * Returns: 0 if ok
+ *  >0 error number if error
+ *  *patr elements set
  */
 
 int decode_tokens(
@@ -24,27 +24,33 @@ int decode_tokens(
   char *name,             /* attribute name */
   char *rescn,            /* resource name, unused here */
   char *val               /* attribute value */
-  )
+)
 
   {
   int ret = 0;
   char * colon;
   float count;
 
-  if(val != NULL){
+  if (val != NULL)
+    {
     ret = PBSE_BADATVAL; /* Assume bad until proven otherwise */
     colon = strstr(val, ":");
-    if(colon != NULL){
+
+    if (colon != NULL)
+      {
       count = atof(++colon);
-      if(count > 0.0 && count < 1000.0){
-	ret = 0;
+
+      if (count > 0.0 && count < 1000.0)
+        {
+        ret = 0;
+        }
       }
     }
-  }
 
-  if(ret == 0){
+  if (ret == 0)
+    {
     ret = decode_str(patr, name, rescn, val);
-  }
+    }
 
   return ret;
-}
+  }

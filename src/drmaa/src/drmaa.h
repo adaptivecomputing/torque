@@ -61,8 +61,11 @@
 /* @{ */
 
 typedef struct drmaa_job_template_s  drmaa_job_template_t;
+
 typedef struct drmaa_attr_names_s    drmaa_attr_names_t;
+
 typedef struct drmaa_attr_values_s   drmaa_attr_values_t;
+
 typedef struct drmaa_job_ids_s       drmaa_job_ids_t;
 
 #define DRMAA_ATTR_BUFFER         1024
@@ -150,398 +153,400 @@ typedef struct drmaa_job_ids_s       drmaa_job_ids_t;
 #define DRMAA_ERRNO_NO_MORE_ELEMENTS                     25
 
 #if defined(__cplusplus)
-extern "C" {
+extern "C"
+  {
 #endif
 
 
-/**
- * The drmaa_init() function SHALL initialize DRMAA library and create
- * a new DRMAA session, using the contact parameter, if provided, to
- * determine to which DRMS to connect.  This function MUST be called
- * before any other DRMAA function, except for drmaa_get_DRM_system(),
- * drmaa_get_DRMAA_implementation(), drmaa_get_contact(), and
- * drmaa_strerror().  If @a contact is @c NULL, the default DRM system
- * SHALL be used, provided there is only one DRMAA implementation
- * in the provided binary module.  When there is more than one DRMAA
- * implementation in the binary module, drmaa_init() SHALL return
- * the DRMAA_ERRNO_NO_DEFAULT_CONTACT_STRING_SELECTED error code.
- * The drmaa_init() function SHOULD be called by only one of the threads.
- * The main thread is RECOMMENDED.  A call by another thread SHALL return
- * the DRMAA_ERRNO_ALREADY_ACTIVE_SESSION error code.
- */
-int drmaa_init(
-	const char *contact,
-	char *error_diagnosis, size_t error_diag_len
-	);
+  /**
+   * The drmaa_init() function SHALL initialize DRMAA library and create
+   * a new DRMAA session, using the contact parameter, if provided, to
+   * determine to which DRMS to connect.  This function MUST be called
+   * before any other DRMAA function, except for drmaa_get_DRM_system(),
+   * drmaa_get_DRMAA_implementation(), drmaa_get_contact(), and
+   * drmaa_strerror().  If @a contact is @c NULL, the default DRM system
+   * SHALL be used, provided there is only one DRMAA implementation
+   * in the provided binary module.  When there is more than one DRMAA
+   * implementation in the binary module, drmaa_init() SHALL return
+   * the DRMAA_ERRNO_NO_DEFAULT_CONTACT_STRING_SELECTED error code.
+   * The drmaa_init() function SHOULD be called by only one of the threads.
+   * The main thread is RECOMMENDED.  A call by another thread SHALL return
+   * the DRMAA_ERRNO_ALREADY_ACTIVE_SESSION error code.
+   */
+  int drmaa_init(
+    const char *contact,
+    char *error_diagnosis, size_t error_diag_len
+  );
 
-/**
- * The drmaa_exit() function SHALL disengage from DRMAA library and
- * allow the DRMAA library to perform any necessary internal cleanup.
- * This routine SHALL end the current DRMAA session but SHALL NOT
- * affect any jobs (e.g, queued and running jobs SHALL remain queued and
- * running).  drmaa_exit() SHOULD be called by only one of the threads.
- * The first call to call drmaa_exit() by a thread will operate normally.
- * All other calls from the same and other threads SHALL fail, returning
- * a DRMAA_ERRNO_NO_ACTIVE_SESSION error code.
- */
-int drmaa_exit( char *error_diagnosis, size_t error_diag_len );
-
-
-
-/**
- * The function drmaa_allocate_job_template() SHALL allocate a new job
- * template, returned in @a jt.  This template is used to describe the
- * job to be submitted.  This description is accomplished by setting the
- * desired scalar and vector attributes to their appropriate values. This
- * template is then used in the job submission process.
- * @addtogroup drmaa_jobt
- */
-int drmaa_allocate_job_template(
-	drmaa_job_template_t **jt,
-	char *error_diagnosis,
-	size_t error_diag_len
-	);
-
-/**
- * The function drmaa_delete_job_template() SHALL free the job template
- * pointed to by @a jt.
- * @addtogroup drmaa_jobt
- */
-int drmaa_delete_job_template(
-	drmaa_job_template_t *jt,
-	char *error_diagnosis, size_t error_diag_len
-	);
-
-/**
- * The function drmaa_set_attribute() SHALL set the value of the scalar
- * attribute, @a name, in the job template, @a jt, to the value, @a value.
- * @addtogroup drmaa_jobt
- */
-int drmaa_set_attribute(
-	drmaa_job_template_t *jt,
-	const char *name, const char *value,
-	char *error_diagnosis, size_t error_diag_len
-	);
-
-/**
- * The function drmaa_get_attribute() SHALL fill the @a value buffer with
- * up to @a value_len characters of the scalar attribute, @a name's, value
- * in the given job template.
- */
-int drmaa_get_attribute(
-	drmaa_job_template_t *jt,
-	const char *name, char *value, size_t value_len,
-	char *error_diagnosis, size_t error_diag_len
-	);
-
-/**
- * The function drmaa_set_vector_attribute() SHALL set the vector attribute,
- * @a name, in the job template, @a jt, to the value(s), @a value.  The DRMAA
- * implementation MUST accept value values that are arrays of one or more
- * strings terminated by a @c NULL entry.
- */
-int drmaa_set_vector_attribute(
-	drmaa_job_template_t *jt,
-	const char *name, const char *value[],
-	char *error_diagnosis, size_t error_diag_len
-	);
-
-/**
- * The function drmaa_get_vector_attribute() SHALL store in @a values an
- * opaque values string vector containing the values of the vector attribute,
- * @a name's, value in the given job template.
- */
-int drmaa_get_vector_attribute(
-	drmaa_job_template_t *jt,
-	const char *name, drmaa_attr_values_t **values,
-	char *error_diagnosis, size_t error_diag_len
-	);
+  /**
+   * The drmaa_exit() function SHALL disengage from DRMAA library and
+   * allow the DRMAA library to perform any necessary internal cleanup.
+   * This routine SHALL end the current DRMAA session but SHALL NOT
+   * affect any jobs (e.g, queued and running jobs SHALL remain queued and
+   * running).  drmaa_exit() SHOULD be called by only one of the threads.
+   * The first call to call drmaa_exit() by a thread will operate normally.
+   * All other calls from the same and other threads SHALL fail, returning
+   * a DRMAA_ERRNO_NO_ACTIVE_SESSION error code.
+   */
+  int drmaa_exit(char *error_diagnosis, size_t error_diag_len);
 
 
 
-/**
- * The function drmaa_get_attribute_names() SHALL return the set of supported
- * scalar attribute names in an opaque names string vector stored in
- * @a values.  This vector SHALL include all required scalar attributes, all
- * supported optional scalar attributes, all DRM-specific scalar attributes,
- * and no unsupported optional attributes.
- */
-int drmaa_get_attribute_names(
-	drmaa_attr_names_t **values,
-	char *error_diagnosis, size_t error_diag_len
-	);
+  /**
+   * The function drmaa_allocate_job_template() SHALL allocate a new job
+   * template, returned in @a jt.  This template is used to describe the
+   * job to be submitted.  This description is accomplished by setting the
+   * desired scalar and vector attributes to their appropriate values. This
+   * template is then used in the job submission process.
+   * @addtogroup drmaa_jobt
+   */
+  int drmaa_allocate_job_template(
+    drmaa_job_template_t **jt,
+    char *error_diagnosis,
+    size_t error_diag_len
+  );
 
-/**
- * The function drmaa_get_vector_attribute_names() SHALL return the set
- * of supported vector attribute names in an opaque names string vector
- * stored in @a values.  This vector SHALL include all required vector
- * attributes, all supported optional vector attributes, all DRM-specific
- * vector attributes, and no unsupported optional attributes.
- */
-int drmaa_get_vector_attribute_names(
-	drmaa_attr_names_t **values,
-	char *error_diagnosis, size_t error_diag_len
-	);
+  /**
+   * The function drmaa_delete_job_template() SHALL free the job template
+   * pointed to by @a jt.
+   * @addtogroup drmaa_jobt
+   */
+  int drmaa_delete_job_template(
+    drmaa_job_template_t *jt,
+    char *error_diagnosis, size_t error_diag_len
+  );
 
-/**
- * @defgroup drmaa_viter  Vector iteration functions.
- * @ingroup drmaa
- *
- * The drmaa_get_next_<i>X</i>() functions SHALL store up to @a value_len
- * bytes of the next attribute name / attribute value / job identifier
- * from the @a values opaque string vector in the @a value buffer.
- * The opaque string vector's internal iterator SHALL then be moved forward
- * to the next entry.  If there are no more values those functions return
- * @ref DRMAA_ERRNO_INVALID_ARGUMENT (but this is outside DRMAA specification).
- *
- * The drmaa_get_num_<i>X</i>() functions SHALL store the number of elements
- * in the space provided by @a size.
- *
- * The drmaa_release_<i>X</i>() functions free the memory used by the
- * @a values opaque string vector.  All memory used by strings contained
- * therein is also freed.
- */
-/* @addtogroup drmaa_viter @{ */
-int drmaa_get_next_attr_name( drmaa_attr_names_t* values,
-	char *value, size_t value_len	);
-int drmaa_get_next_attr_value( drmaa_attr_values_t* values,
-	char *value, size_t value_len );
-int drmaa_get_next_job_id( drmaa_job_ids_t* values,
-	char *value, size_t value_len );
-int drmaa_get_num_attr_names( drmaa_attr_names_t* values, size_t *size );
-int drmaa_get_num_attr_values(drmaa_attr_values_t* values, size_t *size );
-int drmaa_get_num_job_ids( drmaa_job_ids_t* values, size_t *size );
-void drmaa_release_attr_names( drmaa_attr_names_t* values );
-void drmaa_release_attr_values( drmaa_attr_values_t* values );
-void drmaa_release_job_ids( drmaa_job_ids_t* values );
-/* @} */
+  /**
+   * The function drmaa_set_attribute() SHALL set the value of the scalar
+   * attribute, @a name, in the job template, @a jt, to the value, @a value.
+   * @addtogroup drmaa_jobt
+   */
+  int drmaa_set_attribute(
+    drmaa_job_template_t *jt,
+    const char *name, const char *value,
+    char *error_diagnosis, size_t error_diag_len
+  );
 
-/**
- * The drmaa_run_job() function submits a single job with the attributes
- * defined in the job template, @a jt.  Upon success, up to @a job_id_len
- * characters of the submitted job's job identifier are stored in the buffer,
- * @a job_id.
- */
-int drmaa_run_job(
-	char *job_id, size_t job_id_len, const drmaa_job_template_t *jt,
-	char *error_diagnosis, size_t error_diag_len
-	);
+  /**
+   * The function drmaa_get_attribute() SHALL fill the @a value buffer with
+   * up to @a value_len characters of the scalar attribute, @a name's, value
+   * in the given job template.
+   */
+  int drmaa_get_attribute(
+    drmaa_job_template_t *jt,
+    const char *name, char *value, size_t value_len,
+    char *error_diagnosis, size_t error_diag_len
+  );
 
-/**
- * The drmaa_run_bulk_jobs() function submits a set of parametric jobs which
- * can be run concurrently.  The attributes defined in the job template,
- * @a jt are used for every parametric job in the set.  Each job in the
- * set is identical except for it's index.  The first parametric job has an
- * index equal to @a start.  The next job has an index equal to @a start +
- * @a incr, and so on.  The last job has an index equal to <code>start + n *
- * incr</code>, where @c n is equal to <code>(end - start) / incr</code>.
- * Note that the value of the last job's index may not be equal to end if
- * the difference between @a start and @a end is not evenly divisble by
- * @a incr.  The smallest valid value for @a start is 1.  The largest valid
- * value for @a end is 2147483647 (@f$2^{31}-1@f$).  The @a start value
- * must be less than or equal to the @a end value, and only positive index
- * numbers are allowed.  The index number can be determined by the job in
- * an implementation specific fashion.  On success, an opaque job id string
- * vector containing job identifiers for all submitted jobs SHALL be returned
- * into @a job_ids.  The job identifiers in the opaque job id string vector
- * can be extracted using the drmaa_get_next_job_id() function. The caller
- * is responsible for releasing the opaque job id string vector returned
- * into @a job_ids using the drmaa_release_job_ids() function.
- */
-int drmaa_run_bulk_jobs(
-	drmaa_job_ids_t **jobids,
-	const drmaa_job_template_t *jt,
-	int start, int end, int incr,
-	char *error_diagnosis,
-	size_t error_diag_len
-	);
+  /**
+   * The function drmaa_set_vector_attribute() SHALL set the vector attribute,
+   * @a name, in the job template, @a jt, to the value(s), @a value.  The DRMAA
+   * implementation MUST accept value values that are arrays of one or more
+   * strings terminated by a @c NULL entry.
+   */
+  int drmaa_set_vector_attribute(
+    drmaa_job_template_t *jt,
+    const char *name, const char *value[],
+    char *error_diagnosis, size_t error_diag_len
+  );
 
-/**
- * The drmaa_control() function SHALL enact the action indicated
- * by @a action on the job specified by the job identifier, @a jobid.
- * The action parameter's value may be one of the following:
- *   - DRMAA_CONTROL_SUSPEND
- *   - DRMAA_CONTROL_RESUME
- *   - DRMAA_CONTROL_HOLD
- *   - DRMAA_CONTROL_RELEASE
- *   - DRMAA_CONTROL_TERMINATE
- * The drmaa_control() function SHALL return after the DRM system has
- * acknowledged the command, not necessarily after the desired action has
- * been performed.  If @a jobid is DRMAA_JOB_IDS_SESSION_ALL, this function
- * SHALL perform the specified action on all jobs submitted during this
- * session as of this function is called.
- */
-int drmaa_control(
-	const char *job_id, int action,
-	char *error_diagnosis, size_t error_diag_len
-	);
+  /**
+   * The function drmaa_get_vector_attribute() SHALL store in @a values an
+   * opaque values string vector containing the values of the vector attribute,
+   * @a name's, value in the given job template.
+   */
+  int drmaa_get_vector_attribute(
+    drmaa_job_template_t *jt,
+    const char *name, drmaa_attr_values_t **values,
+    char *error_diagnosis, size_t error_diag_len
+  );
 
-/**
- * The drmaa_job_ps() function SHALL store in @a remote_ps the program
- * status of the job identified by @a job_id. The possible values of
- * a program's staus are:
- *   - DRMAA_PS_UNDETERMINED
- *   - DRMAA_PS_QUEUED_ACTIVE
- *   - DRMAA_PS_SYSTEM_ON_HOLD
- *   - DRMAA_PS_USER_ON_HOLD
- *   - DRMAA_PS_USER_SYSTEM_ON_HOLD
- *   - DRMAA_PS_RUNNING
- *   - DRMAA_PS_SYSTEM_SUSPENDED
- *   - DRMAA_PS_USER_SUSPENDED
- *   - DRMAA_PS_DONE
- *   - DRMAA_PS_FAILED
- *
- * Terminated jobs have a status of DRMAA_PS_FAILED.
- */
-int drmaa_job_ps(
-	const char *job_id, int *remote_ps,
-	char *error_diagnosis, size_t error_diag_len
-	);
 
-/**
- * The drmaa_synchronize() function SHALL cause the calling thread to
- * block until all jobs specified by @a job_ids have finished execution.
- * If @a job_ids contains DRMAA_JOB_IDS_SESSION_ALL, then this function
- * SHALL wait for all jobs submitted during this DRMAA session as of the
- * point in time when drmaa_synchronize() is called.  To avoid thread race
- * conditions in multithreaded applications, the DRMAA implementation user
- * should explicitly synchronize this call with any other job submission
- * calls or control calls that may change the number of remote jobs.
- *
- * The @a timeout parameter value indicates how many seconds to remain
- * blocked in this call waiting for results to become available, before
- * returning with a DRMAA_ERRNO_EXIT_TIMEOUT error code.  The value,
- * DRMAA_TIMEOUT_WAIT_FOREVER, MAY be specified to wait indefinitely for
- * a result.  The value, DRMAA_TIMEOUT_NO_WAIT, MAY be specified to return
- * immediately with a DRMAA_ERRNO_EXIT_TIMEOUT error code if no result is
- * available.  If the call exits before the timeout has elapsed, all the
- * jobs have been waited on or there was an interrupt.  The caller should
- * check system time before and after this call in order to be sure of how
- * much time has passed.  The @a dispose parameter specifies how to treat
- * the reaping of the remote job's internal data record, which includes a
- * record of the job's consumption of system resources during its execution
- * and other statistical information.  If the @a dispose parameter's value
- * is 1, the DRMAA implementation SHALL dispose of the job's data record at
- * the end of the drmaa_synchroniize() call.  If the @a dispose parameter's
- * value is 0, the data record SHALL be left for future access via the
- * drmaa_wait() method.
- */
-int drmaa_synchronize(
-	const char *job_ids[], signed long timeout, int dispose,
-	char *error_diagnosis, size_t error_diag_len
-	);
 
-/**
- * The drmaa_wait() function SHALL wait for a job identified by @a job_id
- * to finish execution or fail. If the special string, JOB_IDS_SESSION_ANY,
- * is provided as the job_id, this function will wait for any job from the
- * session to finish execution or fail.  In this case, any job for which exit
- * status information is available will satisfy the requirement, including
- * jobs which preivously finished but have never been the subject of a
- * drmaa_wait() call.  This routine is modeled on the @c wait3 POSIX routine.
- *
- * The @a timeout parameter value indicates how many seconds
- * to remain blocked in this call waiting for a result, before
- * returning with a DRMAA_ERRNO_EXIT_TIMEOUT error code.  The value,
- * DRMAA_TIMEOUT_WAIT_FOREVER, MAY be specified to wait indefinitely for
- * a result.  The value, DRMAA_TIMEOUT_NO_WAIT, MAY be specified to return
- * immediately with a DRMAA_ERRNO_EXIT_TIMEOUT error code if no result is
- * available.  If the call exits before the timeout has elapsed, the job
- * has been successfully waited on or there was an interrupt.  The caller
- * should check system time before and after this call in order to be sure
- * of how much time has passed.
- *
- * Upon success, drmaa_wait() fills @a job_id_out with up to @a
- * job_id_out_len characters of the waited job's id, stat with the
- * a code that includes information about the conditions under which
- * the job terminated, and @a rusage with an array of \<name\>=\<value\>
- * strings that describe the amount of resources consumed by the job
- * and are implementation defined.  The @a stat parameter is further
- * described below.  The @a rusage parameter's values may be accessed via
- * drmaa_get_next_attr_value().
- *
- * The drmaa_wait() function reaps job data records on a successful
- * call, so any subsequent calls to drmaa_wait() will fail, returning
- * a DRMAA_ERRNO_INVALID_JOB error code, meaning that the job's data
- * record has already been reaped.  This error code is the same as
- * if the job were unknown.  If drmaa_wait() exists due to a timeout,
- * DRMAA_ERRNO_EXIT_TIMEOUT is returned and no rusage information is reaped.
- * (The only case where drmaa_wait() can be successfully called on a single
- * job more than once is when the previous call(s) to drmaa_wait() returned
- * DRMAA_ERRNO_EXIT_TIMEOUT.)
- *
- * The stat parameter, set by a successful call to drmaa_wait(), is used
- * to retrieve further input about the exit condition of the waited
- * job, identified by job_id_out, through the following functions:
- * drmaa_wifexited(), drmaa_wexitstatus(), drmaa_wifsignaled(),
- * drmaa_wtermsig(),drmaa_wcoredump() and drmaa_wifaborted().
- */
-int drmaa_wait(
-	const char *job_id,
-	char *job_id_out, size_t job_id_out_len, int *stat,
-	signed long timeout, drmaa_attr_values_t **rusage,
-	char *error_diagnosis, size_t error_diag_len
-	);
+  /**
+   * The function drmaa_get_attribute_names() SHALL return the set of supported
+   * scalar attribute names in an opaque names string vector stored in
+   * @a values.  This vector SHALL include all required scalar attributes, all
+   * supported optional scalar attributes, all DRM-specific scalar attributes,
+   * and no unsupported optional attributes.
+   */
+  int drmaa_get_attribute_names(
+    drmaa_attr_names_t **values,
+    char *error_diagnosis, size_t error_diag_len
+  );
 
-int drmaa_wifexited( int *exited, int stat,
-	char *error_diagnosis, size_t error_diag_len );
-int drmaa_wexitstatus( int *exit_status, int stat,
-	char *error_diagnosis, size_t error_diag_len );
-int drmaa_wifsignaled( int *signaled, int stat,
-	char *error_diagnosis, size_t error_diag_len );
-int drmaa_wtermsig( char *signal, size_t signal_len, int stat,
-	char *error_diagnosis, size_t error_diag_len );
-int drmaa_wcoredump( int *core_dumped, int stat,
-	char *error_diagnosis, size_t error_diag_len );
-int drmaa_wifaborted( int *aborted, int stat,
-	char *error_diagnosis, size_t error_diag_len );
+  /**
+   * The function drmaa_get_vector_attribute_names() SHALL return the set
+   * of supported vector attribute names in an opaque names string vector
+   * stored in @a values.  This vector SHALL include all required vector
+   * attributes, all supported optional vector attributes, all DRM-specific
+   * vector attributes, and no unsupported optional attributes.
+   */
+  int drmaa_get_vector_attribute_names(
+    drmaa_attr_names_t **values,
+    char *error_diagnosis, size_t error_diag_len
+  );
 
-/**
- * The drmaa_strerror() function SHALL return the error string describing
- * the DRMAA error number @a drmaa_errno.
- */
-const char *drmaa_strerror( int drmaa_errno );
+  /**
+   * @defgroup drmaa_viter  Vector iteration functions.
+   * @ingroup drmaa
+   *
+   * The drmaa_get_next_<i>X</i>() functions SHALL store up to @a value_len
+   * bytes of the next attribute name / attribute value / job identifier
+   * from the @a values opaque string vector in the @a value buffer.
+   * The opaque string vector's internal iterator SHALL then be moved forward
+   * to the next entry.  If there are no more values those functions return
+   * @ref DRMAA_ERRNO_INVALID_ARGUMENT (but this is outside DRMAA specification).
+   *
+   * The drmaa_get_num_<i>X</i>() functions SHALL store the number of elements
+   * in the space provided by @a size.
+   *
+   * The drmaa_release_<i>X</i>() functions free the memory used by the
+   * @a values opaque string vector.  All memory used by strings contained
+   * therein is also freed.
+   */
+  /* @addtogroup drmaa_viter @{ */
+  int drmaa_get_next_attr_name(drmaa_attr_names_t* values,
+                               char *value, size_t value_len);
+  int drmaa_get_next_attr_value(drmaa_attr_values_t* values,
+                                char *value, size_t value_len);
+  int drmaa_get_next_job_id(drmaa_job_ids_t* values,
+                            char *value, size_t value_len);
+  int drmaa_get_num_attr_names(drmaa_attr_names_t* values, size_t *size);
+  int drmaa_get_num_attr_values(drmaa_attr_values_t* values, size_t *size);
+  int drmaa_get_num_job_ids(drmaa_job_ids_t* values, size_t *size);
+  void drmaa_release_attr_names(drmaa_attr_names_t* values);
+  void drmaa_release_attr_values(drmaa_attr_values_t* values);
+  void drmaa_release_job_ids(drmaa_job_ids_t* values);
+  /* @} */
 
-/**
- * The drmaa_get_contact() function, if called before drmaa_init(), SHALL
- * return a string containing a comma-delimited list of default DRMAA
- * implementation contacts strings, one per DRM implementation provided.
- * If called after drmaa_init(), drmaa_get_contacts() SHALL return the
- * contact string for the DRM system for which the library has been
- * initialized.
- */
-int drmaa_get_contact( char *contact, size_t contact_len,
-	char *error_diagnosis, size_t error_diag_len );
+  /**
+   * The drmaa_run_job() function submits a single job with the attributes
+   * defined in the job template, @a jt.  Upon success, up to @a job_id_len
+   * characters of the submitted job's job identifier are stored in the buffer,
+   * @a job_id.
+   */
+  int drmaa_run_job(
+    char *job_id, size_t job_id_len, const drmaa_job_template_t *jt,
+    char *error_diagnosis, size_t error_diag_len
+  );
 
-/**
- * The drmaa_version() function SHALL set major and minor to the major and
- * minor versions of the DRMAA C binding specification implemented by the
- * DRMAA implementation.
- */
-int drmaa_version( unsigned int *major, unsigned int *minor,
-	char *error_diagnosis, size_t error_diag_len );
+  /**
+   * The drmaa_run_bulk_jobs() function submits a set of parametric jobs which
+   * can be run concurrently.  The attributes defined in the job template,
+   * @a jt are used for every parametric job in the set.  Each job in the
+   * set is identical except for it's index.  The first parametric job has an
+   * index equal to @a start.  The next job has an index equal to @a start +
+   * @a incr, and so on.  The last job has an index equal to <code>start + n *
+   * incr</code>, where @c n is equal to <code>(end - start) / incr</code>.
+   * Note that the value of the last job's index may not be equal to end if
+   * the difference between @a start and @a end is not evenly divisble by
+   * @a incr.  The smallest valid value for @a start is 1.  The largest valid
+   * value for @a end is 2147483647 (@f$2^{31}-1@f$).  The @a start value
+   * must be less than or equal to the @a end value, and only positive index
+   * numbers are allowed.  The index number can be determined by the job in
+   * an implementation specific fashion.  On success, an opaque job id string
+   * vector containing job identifiers for all submitted jobs SHALL be returned
+   * into @a job_ids.  The job identifiers in the opaque job id string vector
+   * can be extracted using the drmaa_get_next_job_id() function. The caller
+   * is responsible for releasing the opaque job id string vector returned
+   * into @a job_ids using the drmaa_release_job_ids() function.
+   */
+  int drmaa_run_bulk_jobs(
+    drmaa_job_ids_t **jobids,
+    const drmaa_job_template_t *jt,
+    int start, int end, int incr,
+    char *error_diagnosis,
+    size_t error_diag_len
+  );
 
-/**
- * The drmaa_get_DRM_system() function, if called before drmaa_init(),
- * SHALL return a string containing a comma-delimited list of DRM system
- * identifiers, one per DRM system implementation provided.  If called after
- * drmaa_init(), drmaa_get_DRM_system() SHALL return the selected DRM system.
- */
-int drmaa_get_DRM_system( char *drm_system, size_t drm_system_len,
-	char *error_diagnosis, size_t error_diag_len );
+  /**
+   * The drmaa_control() function SHALL enact the action indicated
+   * by @a action on the job specified by the job identifier, @a jobid.
+   * The action parameter's value may be one of the following:
+   *   - DRMAA_CONTROL_SUSPEND
+   *   - DRMAA_CONTROL_RESUME
+   *   - DRMAA_CONTROL_HOLD
+   *   - DRMAA_CONTROL_RELEASE
+   *   - DRMAA_CONTROL_TERMINATE
+   * The drmaa_control() function SHALL return after the DRM system has
+   * acknowledged the command, not necessarily after the desired action has
+   * been performed.  If @a jobid is DRMAA_JOB_IDS_SESSION_ALL, this function
+   * SHALL perform the specified action on all jobs submitted during this
+   * session as of this function is called.
+   */
+  int drmaa_control(
+    const char *job_id, int action,
+    char *error_diagnosis, size_t error_diag_len
+  );
 
-/**
- * The drmaa_get_DRMAA_implementation() function, if called before
- * drmaa_init(), SHALL return a string containing a comma-delimited list of
- * DRMAA implementations, one per DRMAA implementation provided.  If called
- * after drmaa_init(), drmaa_get_DRMAA_implementation() SHALL return the
- * selected DRMAA implementation.
- */
-int drmaa_get_DRMAA_implementation( char *drmaa_impl, size_t drmaa_impl_len,
-	char *error_diagnosis, size_t error_diag_len );
+  /**
+   * The drmaa_job_ps() function SHALL store in @a remote_ps the program
+   * status of the job identified by @a job_id. The possible values of
+   * a program's staus are:
+   *   - DRMAA_PS_UNDETERMINED
+   *   - DRMAA_PS_QUEUED_ACTIVE
+   *   - DRMAA_PS_SYSTEM_ON_HOLD
+   *   - DRMAA_PS_USER_ON_HOLD
+   *   - DRMAA_PS_USER_SYSTEM_ON_HOLD
+   *   - DRMAA_PS_RUNNING
+   *   - DRMAA_PS_SYSTEM_SUSPENDED
+   *   - DRMAA_PS_USER_SUSPENDED
+   *   - DRMAA_PS_DONE
+   *   - DRMAA_PS_FAILED
+   *
+   * Terminated jobs have a status of DRMAA_PS_FAILED.
+   */
+  int drmaa_job_ps(
+    const char *job_id, int *remote_ps,
+    char *error_diagnosis, size_t error_diag_len
+  );
+
+  /**
+   * The drmaa_synchronize() function SHALL cause the calling thread to
+   * block until all jobs specified by @a job_ids have finished execution.
+   * If @a job_ids contains DRMAA_JOB_IDS_SESSION_ALL, then this function
+   * SHALL wait for all jobs submitted during this DRMAA session as of the
+   * point in time when drmaa_synchronize() is called.  To avoid thread race
+   * conditions in multithreaded applications, the DRMAA implementation user
+   * should explicitly synchronize this call with any other job submission
+   * calls or control calls that may change the number of remote jobs.
+   *
+   * The @a timeout parameter value indicates how many seconds to remain
+   * blocked in this call waiting for results to become available, before
+   * returning with a DRMAA_ERRNO_EXIT_TIMEOUT error code.  The value,
+   * DRMAA_TIMEOUT_WAIT_FOREVER, MAY be specified to wait indefinitely for
+   * a result.  The value, DRMAA_TIMEOUT_NO_WAIT, MAY be specified to return
+   * immediately with a DRMAA_ERRNO_EXIT_TIMEOUT error code if no result is
+   * available.  If the call exits before the timeout has elapsed, all the
+   * jobs have been waited on or there was an interrupt.  The caller should
+   * check system time before and after this call in order to be sure of how
+   * much time has passed.  The @a dispose parameter specifies how to treat
+   * the reaping of the remote job's internal data record, which includes a
+   * record of the job's consumption of system resources during its execution
+   * and other statistical information.  If the @a dispose parameter's value
+   * is 1, the DRMAA implementation SHALL dispose of the job's data record at
+   * the end of the drmaa_synchroniize() call.  If the @a dispose parameter's
+   * value is 0, the data record SHALL be left for future access via the
+   * drmaa_wait() method.
+   */
+  int drmaa_synchronize(
+    const char *job_ids[], signed long timeout, int dispose,
+    char *error_diagnosis, size_t error_diag_len
+  );
+
+  /**
+   * The drmaa_wait() function SHALL wait for a job identified by @a job_id
+   * to finish execution or fail. If the special string, JOB_IDS_SESSION_ANY,
+   * is provided as the job_id, this function will wait for any job from the
+   * session to finish execution or fail.  In this case, any job for which exit
+   * status information is available will satisfy the requirement, including
+   * jobs which preivously finished but have never been the subject of a
+   * drmaa_wait() call.  This routine is modeled on the @c wait3 POSIX routine.
+   *
+   * The @a timeout parameter value indicates how many seconds
+   * to remain blocked in this call waiting for a result, before
+   * returning with a DRMAA_ERRNO_EXIT_TIMEOUT error code.  The value,
+   * DRMAA_TIMEOUT_WAIT_FOREVER, MAY be specified to wait indefinitely for
+   * a result.  The value, DRMAA_TIMEOUT_NO_WAIT, MAY be specified to return
+   * immediately with a DRMAA_ERRNO_EXIT_TIMEOUT error code if no result is
+   * available.  If the call exits before the timeout has elapsed, the job
+   * has been successfully waited on or there was an interrupt.  The caller
+   * should check system time before and after this call in order to be sure
+   * of how much time has passed.
+   *
+   * Upon success, drmaa_wait() fills @a job_id_out with up to @a
+   * job_id_out_len characters of the waited job's id, stat with the
+   * a code that includes information about the conditions under which
+   * the job terminated, and @a rusage with an array of \<name\>=\<value\>
+   * strings that describe the amount of resources consumed by the job
+   * and are implementation defined.  The @a stat parameter is further
+   * described below.  The @a rusage parameter's values may be accessed via
+   * drmaa_get_next_attr_value().
+   *
+   * The drmaa_wait() function reaps job data records on a successful
+   * call, so any subsequent calls to drmaa_wait() will fail, returning
+   * a DRMAA_ERRNO_INVALID_JOB error code, meaning that the job's data
+   * record has already been reaped.  This error code is the same as
+   * if the job were unknown.  If drmaa_wait() exists due to a timeout,
+   * DRMAA_ERRNO_EXIT_TIMEOUT is returned and no rusage information is reaped.
+   * (The only case where drmaa_wait() can be successfully called on a single
+   * job more than once is when the previous call(s) to drmaa_wait() returned
+   * DRMAA_ERRNO_EXIT_TIMEOUT.)
+   *
+   * The stat parameter, set by a successful call to drmaa_wait(), is used
+   * to retrieve further input about the exit condition of the waited
+   * job, identified by job_id_out, through the following functions:
+   * drmaa_wifexited(), drmaa_wexitstatus(), drmaa_wifsignaled(),
+   * drmaa_wtermsig(),drmaa_wcoredump() and drmaa_wifaborted().
+   */
+  int drmaa_wait(
+    const char *job_id,
+    char *job_id_out, size_t job_id_out_len, int *stat,
+    signed long timeout, drmaa_attr_values_t **rusage,
+    char *error_diagnosis, size_t error_diag_len
+  );
+
+  int drmaa_wifexited(int *exited, int stat,
+                      char *error_diagnosis, size_t error_diag_len);
+  int drmaa_wexitstatus(int *exit_status, int stat,
+                        char *error_diagnosis, size_t error_diag_len);
+  int drmaa_wifsignaled(int *signaled, int stat,
+                        char *error_diagnosis, size_t error_diag_len);
+  int drmaa_wtermsig(char *signal, size_t signal_len, int stat,
+                     char *error_diagnosis, size_t error_diag_len);
+  int drmaa_wcoredump(int *core_dumped, int stat,
+                      char *error_diagnosis, size_t error_diag_len);
+  int drmaa_wifaborted(int *aborted, int stat,
+                       char *error_diagnosis, size_t error_diag_len);
+
+  /**
+   * The drmaa_strerror() function SHALL return the error string describing
+   * the DRMAA error number @a drmaa_errno.
+   */
+  const char *drmaa_strerror(int drmaa_errno);
+
+  /**
+   * The drmaa_get_contact() function, if called before drmaa_init(), SHALL
+   * return a string containing a comma-delimited list of default DRMAA
+   * implementation contacts strings, one per DRM implementation provided.
+   * If called after drmaa_init(), drmaa_get_contacts() SHALL return the
+   * contact string for the DRM system for which the library has been
+   * initialized.
+   */
+  int drmaa_get_contact(char *contact, size_t contact_len,
+                        char *error_diagnosis, size_t error_diag_len);
+
+  /**
+   * The drmaa_version() function SHALL set major and minor to the major and
+   * minor versions of the DRMAA C binding specification implemented by the
+   * DRMAA implementation.
+   */
+  int drmaa_version(unsigned int *major, unsigned int *minor,
+                    char *error_diagnosis, size_t error_diag_len);
+
+  /**
+   * The drmaa_get_DRM_system() function, if called before drmaa_init(),
+   * SHALL return a string containing a comma-delimited list of DRM system
+   * identifiers, one per DRM system implementation provided.  If called after
+   * drmaa_init(), drmaa_get_DRM_system() SHALL return the selected DRM system.
+   */
+  int drmaa_get_DRM_system(char *drm_system, size_t drm_system_len,
+                           char *error_diagnosis, size_t error_diag_len);
+
+  /**
+   * The drmaa_get_DRMAA_implementation() function, if called before
+   * drmaa_init(), SHALL return a string containing a comma-delimited list of
+   * DRMAA implementations, one per DRMAA implementation provided.  If called
+   * after drmaa_init(), drmaa_get_DRMAA_implementation() SHALL return the
+   * selected DRMAA implementation.
+   */
+  int drmaa_get_DRMAA_implementation(char *drmaa_impl, size_t drmaa_impl_len,
+                                     char *error_diagnosis, size_t error_diag_len);
 
 #if defined(__cplusplus)
-} /* extern "C" */
+  } /* extern "C" */
+
 #endif
 
 /* @} */
@@ -556,7 +561,7 @@ int drmaa_get_DRMAA_implementation( char *drmaa_impl, size_t drmaa_impl_len,
  * at configure time.  By default they are written to standard error stream.
  * @param file   File to write to.
  */
-void drmaa_set_logging_output( FILE *file );
+void drmaa_set_logging_output(FILE *file);
 
 #endif /* __DRMAA_H */
 

@@ -21,21 +21,22 @@
 #endif /* !NI_MAXSERV */
 
 
-struct pfwdsock {
+struct pfwdsock
+  {
   int sock;
   int listening;
-  int remotesock;                                                                             
-  int bufavail;                                                                               
+  int remotesock;
+  int bufavail;
   int bufwritten;
   int active;
   int peer;
   char buff[BUF_SIZE];
-};
+  };
 
-void port_forwarder(struct pfwdsock *,int(*connfunc)(char *phost,int pport,char *),char*,int,char *);
+void port_forwarder(struct pfwdsock *, int(*connfunc)(char *phost, int pport, char *), char*, int, char *);
 void set_nodelay(int);
 int connect_local_xsocket(u_int);
-int x11_connect_display(char *,int,char *);
+int x11_connect_display(char *, int, char *);
 
 
 #endif /* END PORT_FORWARDING_H */

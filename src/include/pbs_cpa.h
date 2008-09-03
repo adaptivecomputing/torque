@@ -3,7 +3,7 @@
 
 #include "pbs_job.h"
 
-int CPACreatePartition(job *pjob,struct var_table *vtab);
+int CPACreatePartition(job *pjob, struct var_table *vtab);
 
 int CPADestroyPartition(job *pjob);
 

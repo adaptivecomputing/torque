@@ -35,15 +35,18 @@ int cpuset_delete(
   pid_t  killpids;
   FILE  *fd;
   DIR   *dir;
-  struct dirent	*pdirent;
+
+  struct dirent *pdirent;
   static char id[] = "cpuset_delete";
+
   struct stat statbuf;
 
   /* accept a full path or jobid */
-  if (cpusetname[0]=='/')
-    strcpy(path,cpusetname);
+
+  if (cpusetname[0] == '/')
+    strcpy(path, cpusetname);
   else
-    sprintf(path,"%s/%s",TTORQUECPUSET_PATH,cpusetname);
+    sprintf(path, "%s/%s", TTORQUECPUSET_PATH, cpusetname);
 
   if ((dir = opendir(path)) == NULL)
     {
@@ -56,18 +59,20 @@ int cpuset_delete(
     {
     /* Skip parent and current directory. */
 
-    if (!strcmp(pdirent->d_name,".") || !strcmp(pdirent->d_name, "..")) 
+    if (!strcmp(pdirent->d_name, ".") || !strcmp(pdirent->d_name, ".."))
       continue;
-      
+
     /* Prepend directory name to file name for lstat. */
-      
-    strcpy(childpath,path);
+
+    strcpy(childpath, path);
+
     strcat(childpath, "/");
+
     strcat(childpath, pdirent->d_name);
-      
+
     /* Skip file on error. */
 
-    if (!(lstat(childpath,&statbuf) >= 0)) 
+    if (!(lstat(childpath, &statbuf) >= 0))
       continue;
 
     /* If a directory is found try to get cpuset info about it. */
@@ -76,27 +81,27 @@ int cpuset_delete(
       {
       if (cpuset_delete(childpath) == 0)
         {
-        sprintf(log_buffer,"Unused cpuset '%s' deleted.", 
-          childpath);
+        sprintf(log_buffer, "Unused cpuset '%s' deleted.",
+                childpath);
 
-        log_err(-1,id,log_buffer);
+        log_err(-1, id, log_buffer);
         }
       else
         {
-      	sprintf (log_buffer, "Could not delete unused cpuset %s.", 
-          childpath);
+        sprintf(log_buffer, "Could not delete unused cpuset %s.",
+                childpath);
 
-        log_err(-1,id,log_buffer);
+        log_err(-1, id, log_buffer);
         }
       }
-    else if (!strcmp(pdirent->d_name,"tasks"))
+    else if (!strcmp(pdirent->d_name, "tasks"))
       {
       /* FIXME: need a more careful mechanism here... including a possibly useless sleep */
 
-      if ((fd = fopen(childpath,"r"))!=NULL)
+      if ((fd = fopen(childpath, "r")) != NULL)
         {
-        while(fscanf(fd,"%d",&killpids) == 1)
-          kill(killpids,SIGKILL);
+        while (fscanf(fd, "%d", &killpids) == 1)
+          kill(killpids, SIGKILL);
         }
 
       sleep(1);
@@ -129,62 +134,66 @@ int cpuset_delete(
  * clear out any job cpusets for jobs that no longer exist.
  */
 
-void initialize_root_cpuset()
+void
+initialize_root_cpuset(void)
 
   {
   static char    id[] = "initialize_root_cpuset";
 
-  DIR		*dir;
-  struct dirent	*pdirent;
+  DIR  *dir;
+
+  struct dirent *pdirent;
   char           path[MAXPATHLEN + 1];
+
   struct stat    statbuf;
 
   char cpuset_buf[1024];
   FILE *fp;
 
-  sprintf(log_buffer,"Init TORQUE cpuset %s.",
-    TTORQUECPUSET_PATH);
+  sprintf(log_buffer, "Init TORQUE cpuset %s.",
+          TTORQUECPUSET_PATH);
 
-  log_err(-1,id,log_buffer);
+  log_err(-1, id, log_buffer);
 
   /* make sure cpusets are available */
 
-  sprintf(path,"%s/cpus",
-    TROOTCPUSET_PATH);
+  sprintf(path, "%s/cpus",
+          TROOTCPUSET_PATH);
 
-  if (lstat(path,&statbuf) != 0) 
+  if (lstat(path, &statbuf) != 0)
     {
-    sprintf(log_buffer,"cannot locate %s - cpusets not configured/enabled on host\n",
-      path);
+    sprintf(log_buffer, "cannot locate %s - cpusets not configured/enabled on host\n",
+            path);
 
-    log_err(-1,id,log_buffer);
+    log_err(-1, id, log_buffer);
 
     /* FAILURE */
 
     return;
     }
 
-  sprintf(path,"%s",
-    TTORQUECPUSET_PATH);
+  sprintf(path, "%s",
 
-  if (lstat(path,&statbuf) != 0)
+          TTORQUECPUSET_PATH);
+
+  if (lstat(path, &statbuf) != 0)
     {
-    sprintf(log_buffer,"TORQUE cpuset %s does not exist, creating it now.\n",
-      path);
+    sprintf(log_buffer, "TORQUE cpuset %s does not exist, creating it now.\n",
+            path);
 
-    log_err(-1,id,log_buffer);
+    log_err(-1, id, log_buffer);
 
-    mkdir(path,0755);
+    mkdir(path, 0755);
 
     /* load all cpus in root set */
 
-    sprintf(path,"%s/cpus",
-      TROOTCPUSET_PATH);
+    sprintf(path, "%s/cpus",
+            TROOTCPUSET_PATH);
 
-    fp = fopen(path,"r");
+    fp = fopen(path, "r");
 
-    if (fp != NULL) 
-      {  
+    if (fp != NULL)
+      {
       char *cptr;
       char *dptr;
 
@@ -201,63 +210,64 @@ void initialize_root_cpuset()
 
       /* FIXME: need proper error checking and response */
 
-      fread(cpuset_buf, sizeof ( char ), sizeof(cpuset_buf), fp);
+      fread(cpuset_buf, sizeof(char), sizeof(cpuset_buf), fp);
 
       /* Replace trailing newline with NULL */
-      *( index( cpuset_buf, '\n' ) )='\0';
+      *(index(cpuset_buf, '\n')) = '\0';
 
       fclose(fp);
 
-      sprintf(log_buffer,"root cpuset %s loaded with value '%s'\n",
-        path,
-        cpuset_buf);
+      sprintf(log_buffer, "root cpuset %s loaded with value '%s'\n",
+              path,
+              cpuset_buf);
 
-      log_err(-1,id,log_buffer);
+      log_err(-1, id, log_buffer);
 
       /* convert string to lookup table */
 
-      strncpy(tmpBuf,cpuset_buf,sizeof(tmpBuf));
+      strncpy(tmpBuf, cpuset_buf, sizeof(tmpBuf));
 
       /* extract last cpu index value */
 
-      cptr = strchr(cpuset_buf,',');
-      dptr = strchr(cpuset_buf,'-');
+      cptr = strchr(cpuset_buf, ',');
+      dptr = strchr(cpuset_buf, '-');
 
-      ptr = MAX(cptr,dptr);
+      ptr = MAX(cptr, dptr);
 
       if (ptr == NULL)
         ptr = cpuset_buf;
       else
         ptr++;
 
-      maxindex = strtol(ptr,NULL,10);
+      maxindex = strtol(ptr, NULL, 10);
 
-      VPToCPUMap = (int *)calloc(1,sizeof(int) * maxindex);
+      VPToCPUMap = (int *)calloc(1, sizeof(int) * maxindex);
 
-      strncpy(tmpBuf,cpuset_buf,sizeof(tmpBuf));
+      strncpy(tmpBuf, cpuset_buf, sizeof(tmpBuf));
 
       mindex = 0;
 
-      ptr = strtok(tmpBuf,",");
+      ptr = strtok(tmpBuf, ",");
 
       /* Commented out as currently results in an infinite loop */
 #if 0
       while (ptr != NULL)
         {
-        ptr = strtok(ptr,"-");
+        ptr = strtok(ptr, "-");
 
         while (ptr != NULL)
           {
-		  /* What was meant to be here ? - csamuel@vpac.org */
+          /* What was meant to be here ? - csamuel@vpac.org */
           }
         }
+
 #endif
       /* NOTE:  load 'boot' set */
 
-      sprintf(path,"%s/boot/cpus",
-        TROOTCPUSET_PATH);
+      sprintf(path, "%s/boot/cpus",
+              TROOTCPUSET_PATH);
 
-      fp = fopen(path,"r");
+      fp = fopen(path, "r");
 
       if (fp != NULL)
         {
@@ -269,10 +279,10 @@ void initialize_root_cpuset()
 
         /* FIXME: need proper error checking and response */
 
-        fread(bootbuf,sizeof(char),sizeof(bootbuf),fp);
+        fread(bootbuf, sizeof(char), sizeof(bootbuf), fp);
 
         /* Replace trailing newline with NULL */
-        *( index( bootbuf, '\n' ) )='\0';
+        *(index(bootbuf, '\n')) = '\0';
 
         fclose(fp);
 
@@ -283,70 +293,70 @@ void initialize_root_cpuset()
 
       /* create new TORQUE set */
 
-      sprintf(path,"%s/cpus",
-        TTORQUECPUSET_PATH);
+      sprintf(path, "%s/cpus",
+              TTORQUECPUSET_PATH);
 
-      fp = fopen(path,"w");
+      fp = fopen(path, "w");
 
-      if (fp != NULL) 
+      if (fp != NULL)
         {
         /* write all root cpus into TORQUE cpuset */
 
-        sprintf(log_buffer,"adding cpus %s to %s",
-          cpuset_buf,
-          path);
+        sprintf(log_buffer, "adding cpus %s to %s",
+                cpuset_buf,
+                path);
 
-        log_err(-1,id,log_buffer);
+        log_err(-1, id, log_buffer);
 
-        fwrite(cpuset_buf,sizeof(char),strlen(cpuset_buf),fp);
+        fwrite(cpuset_buf, sizeof(char), strlen(cpuset_buf), fp);
 
         fclose(fp);
         }
 
-      memset(cpuset_buf,'\0',sizeof(cpuset_buf));
+      memset(cpuset_buf, '\0', sizeof(cpuset_buf));
       }  /* END if (fp != NULL) */
 
     /* add all mems to torqueset */
 
-    sprintf(path,"%s/mems",
-      TROOTCPUSET_PATH);
+    sprintf(path, "%s/mems",
+            TROOTCPUSET_PATH);
 
-    fp = fopen(path,"r");
+    fp = fopen(path, "r");
 
-    if (fp != NULL) 
+    if (fp != NULL)
       {
       /* what is format of data? */
 
       /* read all mems from root cpuset */
 
-      fread(cpuset_buf,sizeof(char),1023,fp);
+      fread(cpuset_buf, sizeof(char), 1023, fp);
 
       fclose(fp);
 
-      sprintf(path,"%s/mems",
-        TTORQUECPUSET_PATH);
+      sprintf(path, "%s/mems",
+              TTORQUECPUSET_PATH);
 
-      fp = fopen(path,"w");
+      fp = fopen(path, "w");
 
-      if (fp != NULL) 
+      if (fp != NULL)
         {
         /* write all root mems into TORQUE cpuset */
 
-        sprintf(log_buffer,"adding mems %s to %s",
-          cpuset_buf,
-          path);
+        sprintf(log_buffer, "adding mems %s to %s",
+                cpuset_buf,
+                path);
 
-        log_err(-1,id,log_buffer);
+        log_err(-1, id, log_buffer);
 
-        fwrite(cpuset_buf,sizeof(char),strlen(cpuset_buf),fp);
+        fwrite(cpuset_buf, sizeof(char), strlen(cpuset_buf), fp);
 
         fclose(fp);
         }
 
-      memset(cpuset_buf,'\0',sizeof(cpuset_buf));
+      memset(cpuset_buf, '\0', sizeof(cpuset_buf));
       }  /* END if (fp != NULL) */
-    }    /* END if (lstat(path,&statbuf) != 0) */ 
-  else 
+    }    /* END if (lstat(path,&statbuf) != 0) */
+  else
     {
     /* The cpuset already exists, delete any cpusets for jobs that no longer exist. */
 
@@ -354,46 +364,48 @@ void initialize_root_cpuset()
 
     if ((dir = opendir(TTORQUECPUSET_PATH)) == NULL)
       {
-      sprintf(log_buffer,"opendir(%s) failed.\n", 
-        TTORQUECPUSET_PATH);
+      sprintf(log_buffer, "opendir(%s) failed.\n",
+              TTORQUECPUSET_PATH);
 
-      log_err(-1,id,log_buffer);
+      log_err(-1, id, log_buffer);
       }
 
     while ((pdirent = readdir(dir)) != NULL)
       {
-	    /* Skip parent and current directory. */
-	    if (!strcmp(pdirent->d_name, ".")||!strcmp(pdirent->d_name, "..")) continue;
+      /* Skip parent and current directory. */
+      if (!strcmp(pdirent->d_name, ".") || !strcmp(pdirent->d_name, "..")) continue;
 
-	    /* Prepend directory name to file name for lstat. */
-	    strcpy(path, TTORQUECPUSET_PATH);
+      /* Prepend directory name to file name for lstat. */
+      strcpy(path, TTORQUECPUSET_PATH);
 
-	    if (path[strlen(path)-1]!='/') strcat(path, "/");
-	    strcat(path, pdirent->d_name);
+      if (path[strlen(path)-1] != '/') strcat(path, "/");
 
-	    /* Skip file on error. */
-	    if (!(lstat(path, &statbuf) >= 0)) continue;
+      strcat(path, pdirent->d_name);
 
-	    /* If a directory is found try to get cpuset info about it. */
-	    if (statbuf.st_mode&S_IFDIR)
-      	{
-                    /* If the job isn't found, delete its cpuset. */
-		    if (find_job(pdirent->d_name) == NULL)
+      /* Skip file on error. */
+      if (!(lstat(path, &statbuf) >= 0)) continue;
+
+      /* If a directory is found try to get cpuset info about it. */
+      if (statbuf.st_mode&S_IFDIR)
+        {
+        /* If the job isn't found, delete its cpuset. */
+        if (find_job(pdirent->d_name) == NULL)
           {
           if (cpuset_delete(pdirent->d_name) == 0)
             {
-            sprintf (log_buffer, "Unused cpuset '%s' deleted.", path);
-            log_err(-1,id,log_buffer);
+            sprintf(log_buffer, "Unused cpuset '%s' deleted.", path);
+            log_err(-1, id, log_buffer);
             }
-            else
+          else
             {
-            sprintf (log_buffer, "Could not delete unused cpuset %s.", path);
-            log_err(-1,id,log_buffer);
+            sprintf(log_buffer, "Could not delete unused cpuset %s.", path);
+            log_err(-1, id, log_buffer);
             }
           }
-    	  }
+        }
       }
-      closedir(dir);
+
+    closedir(dir);
     }
 
   return;
@@ -401,12 +413,12 @@ void initialize_root_cpuset()
 
 
 
-int create_jobset (
+int create_jobset(
 
-    job *pjob)  /* I */
+  job *pjob)  /* I */
 
   {
-  static char	id[] = "create_jobset";
+  static char id[] = "create_jobset";
   char path[1024+1];
   char rootpath[1024+1];
   char tmppath[1024+1];
@@ -418,119 +430,138 @@ int create_jobset (
   int j;
   mode_t savemask;
 
-  savemask=(umask(0022));
+  savemask = (umask(0022));
 
-  sprintf(path,"%s/%s",TTORQUECPUSET_PATH,pjob->ji_qs.ji_jobid);
+  sprintf(path, "%s/%s", TTORQUECPUSET_PATH, pjob->ji_qs.ji_jobid);
 
-  if (access(path,F_OK)==0)
+  if (access(path, F_OK) == 0)
     {
     if (cpuset_delete(path) != 0)
       {
-      sprintf (log_buffer, "Could not delete cpuset for job %s.\n", pjob->ji_qs.ji_jobid);
-      log_err(-1,id,log_buffer);
+      sprintf(log_buffer, "Could not delete cpuset for job %s.\n", pjob->ji_qs.ji_jobid);
+      log_err(-1, id, log_buffer);
       umask(savemask);
       return(0);
       }
     }
 
-  if (access(TTORQUECPUSET_PATH,F_OK) == 0)
+  if (access(TTORQUECPUSET_PATH, F_OK) == 0)
     {
 
-      /* create the jobset */
-    mkdir(path,0755);
+    /* create the jobset */
+    mkdir(path, 0755);
 
     /* add all mems to jobset */
-    strcpy(rootpath,TTORQUECPUSET_PATH);
-    strcat(rootpath,"/mems");
-    fd=fopen(rootpath,"r");
+    strcpy(rootpath, TTORQUECPUSET_PATH);
+    strcat(rootpath, "/mems");
+    fd = fopen(rootpath, "r");
+
     if (fd)
       {
       fread(cpusbuf, sizeof(char), 1023, fd);
       fclose(fd);
-      strcpy(tmppath,path);
-      strcat(tmppath,"/mems");
-      fd=fopen(tmppath,"w");
+      strcpy(tmppath, path);
+      strcat(tmppath, "/mems");
+      fd = fopen(tmppath, "w");
       fwrite(cpusbuf, sizeof(char), strlen(cpusbuf), fd);
       fclose(fd);
-      memset(cpusbuf,'\0',sizeof(cpusbuf));
+      memset(cpusbuf, '\0', sizeof(cpusbuf));
       }
     }
 
 
   /* Make the string defining the CPUs to add into the jobset */
   np = pjob->ji_vnods;
-  cpusbuf[0]='\0';
+
+  cpusbuf[0] = '\0';
+
   ix = 0;
-  for (j = 0;j < pjob->ji_numvnod;++j,np++)
+
+  for (j = 0;j < pjob->ji_numvnod;++j, np++)
     {
     if (pjob->ji_nodeid == np->vn_host->hn_node)
       {
-      if (cpusbuf[0]!='\0')
-        strcat(cpusbuf,",");
+      if (cpusbuf[0] != '\0')
+        strcat(cpusbuf, ",");
 
-      sprintf(tmppath,"%d",np->vn_index);
-      strcat(cpusbuf,tmppath);
+      sprintf(tmppath, "%d", np->vn_index);
+
+      strcat(cpusbuf, tmppath);
 
       }
     }
 
   /* add the CPUs to the jobset */
-  strcpy(tmppath,path);
-  strcat(tmppath,"/cpus");
-  sprintf (log_buffer, "CPUSET: %s job %s path %s\n", cpusbuf,
-      pjob->ji_qs.ji_jobid,tmppath);
-  log_err(-1,id,log_buffer);
-  fd=fopen(tmppath,"w");
+  strcpy(tmppath, path);
+
+  strcat(tmppath, "/cpus");
+
+  sprintf(log_buffer, "CPUSET: %s job %s path %s\n", cpusbuf,
+          pjob->ji_qs.ji_jobid, tmppath);
+
+  log_err(-1, id, log_buffer);
+
+  fd = fopen(tmppath, "w");
+
   if (fd)
     {
     fwrite(cpusbuf, sizeof(char), strlen(cpusbuf), fd);
     fclose(fd);
     }
-	memset(cpusbuf,'\0',sizeof(cpusbuf));
- 
+
+  memset(cpusbuf, '\0', sizeof(cpusbuf));
+
   /* Create the vnodesets */
   np = pjob->ji_vnods;
-  cpusbuf[0]='\0';
+  cpusbuf[0] = '\0';
   ix = 0;
-  for (j = 0;j < pjob->ji_numvnod;++j,np++)
+
+  for (j = 0;j < pjob->ji_numvnod;++j, np++)
     {
     if (pjob->ji_nodeid == np->vn_host->hn_node)
       {
-      sprintf(tmppath,"%s/%s/%d",TTORQUECPUSET_PATH,pjob->ji_qs.ji_jobid,np->vn_node);
-      mkdir(tmppath,0755);
-      chmod(tmppath,00755);
-      sprintf(tasksbuf,"%d",np->vn_index);
-      strcat(tmppath,"/cpus");
-      sprintf (log_buffer, "TASKSET: %s cpus %s\n", tmppath,tasksbuf );
-      log_err(-1,id,log_buffer);
-      fd=fopen(tmppath,"w");
+      sprintf(tmppath, "%s/%s/%d", TTORQUECPUSET_PATH, pjob->ji_qs.ji_jobid, np->vn_node);
+      mkdir(tmppath, 0755);
+      chmod(tmppath, 00755);
+      sprintf(tasksbuf, "%d", np->vn_index);
+      strcat(tmppath, "/cpus");
+      sprintf(log_buffer, "TASKSET: %s cpus %s\n", tmppath, tasksbuf);
+      log_err(-1, id, log_buffer);
+      fd = fopen(tmppath, "w");
+
       if (fd)
         {
         fwrite(tasksbuf, sizeof(char), strlen(tasksbuf), fd);
         fclose(fd);
         }
-      memset(tasksbuf,'\0',sizeof(tasksbuf));
+
+      memset(tasksbuf, '\0', sizeof(tasksbuf));
 
 
-        /* add all mems to torqueset */
-      sprintf(tmppath,"%s/%s/%s",TTORQUECPUSET_PATH,pjob->ji_qs.ji_jobid,"/mems");
-      fd=fopen(tmppath,"r");
+      /* add all mems to torqueset */
+      sprintf(tmppath, "%s/%s/%s", TTORQUECPUSET_PATH, pjob->ji_qs.ji_jobid, "/mems");
+      fd = fopen(tmppath, "r");
+
       if (fd)
         {
         fread(tasksbuf, sizeof(char), 1023, fd);
         fclose(fd);
         }
-      sprintf(tmppath,"%s/%s/%d/%s",TTORQUECPUSET_PATH,
-          pjob->ji_qs.ji_jobid,np->vn_node,"/mems");
-      fd=fopen(tmppath,"w");
+
+      sprintf(tmppath, "%s/%s/%d/%s", TTORQUECPUSET_PATH,
+
+              pjob->ji_qs.ji_jobid, np->vn_node, "/mems");
+      fd = fopen(tmppath, "w");
+
       if (fd)
         {
-        sprintf (log_buffer, "adding %s to %s",tasksbuf,tmppath);
-        log_err(-1,id,log_buffer);
+        sprintf(log_buffer, "adding %s to %s", tasksbuf, tmppath);
+        log_err(-1, id, log_buffer);
         fwrite(tasksbuf, sizeof(char), strlen(tasksbuf), fd);
         fclose(fd);
         }
-      memset(tasksbuf,'\0',sizeof(tasksbuf));
+
+      memset(tasksbuf, '\0', sizeof(tasksbuf));
 
       }
     }
@@ -545,27 +576,29 @@ int move_to_jobset(
 
   pid_t pid,  /* I */
   job *pjob)  /* I */
-  
+
   {
   char pidbuf[1024];
   char taskspath[1024];
   FILE *fd;
   mode_t savemask;
 
-  savemask=(umask(0022));
+  savemask = (umask(0022));
 
-  sprintf(pidbuf,"%d",pid);
-  sprintf(taskspath,"%s/%s/tasks",TTORQUECPUSET_PATH,pjob->ji_qs.ji_jobid);
-  sprintf (log_buffer, "CPUSET MOVE: %s  %s\n", taskspath, pidbuf);
-  log_err(-1,"move_to_jobset",log_buffer);
-  
-  fd=fopen(taskspath,"w");
+  sprintf(pidbuf, "%d", pid);
+  sprintf(taskspath, "%s/%s/tasks", TTORQUECPUSET_PATH, pjob->ji_qs.ji_jobid);
+  sprintf(log_buffer, "CPUSET MOVE: %s  %s\n", taskspath, pidbuf);
+  log_err(-1, "move_to_jobset", log_buffer);
+
+  fd = fopen(taskspath, "w");
+
   if (fd)
     {
-    fwrite(pidbuf,sizeof(char),strlen(pidbuf),fd);
+    fwrite(pidbuf, sizeof(char), strlen(pidbuf), fd);
     fclose(fd);
     }
-  memset(pidbuf,'\0',sizeof(pidbuf));
+
+  memset(pidbuf, '\0', sizeof(pidbuf));
 
   umask(savemask);
 
@@ -575,7 +608,7 @@ int move_to_jobset(
 
 int move_to_taskset(
 
-  pid_t pid,job *pjob,  /* I */
+  pid_t pid, job *pjob, /* I */
   char * vnodeid)  /* I */
 
   {
@@ -585,20 +618,22 @@ int move_to_taskset(
   FILE *fd;
   mode_t savemask;
 
-  savemask=(umask(0022));
+  savemask = (umask(0022));
 
-  sprintf(pidbuf,"%d",pid);
-  sprintf(taskspath,"%s/%s/%s/tasks",TTORQUECPUSET_PATH,pjob->ji_qs.ji_jobid,vnodeid);
-  sprintf (log_buffer, "TASKSET MOVE: %s  %s\n", taskspath, pidbuf);
-  log_err(-1,"move_to_taskset",log_buffer);
-  
-  fd=fopen(taskspath,"w");
+  sprintf(pidbuf, "%d", pid);
+  sprintf(taskspath, "%s/%s/%s/tasks", TTORQUECPUSET_PATH, pjob->ji_qs.ji_jobid, vnodeid);
+  sprintf(log_buffer, "TASKSET MOVE: %s  %s\n", taskspath, pidbuf);
+  log_err(-1, "move_to_taskset", log_buffer);
+
+  fd = fopen(taskspath, "w");
+
   if (fd)
     {
-    fwrite(pidbuf,sizeof(char),strlen(pidbuf),fd);
+    fwrite(pidbuf, sizeof(char), strlen(pidbuf), fd);
     fclose(fd);
     }
-  memset(pidbuf,'\0',sizeof(pidbuf));
+
+  memset(pidbuf, '\0', sizeof(pidbuf));
 
   umask(savemask);
 

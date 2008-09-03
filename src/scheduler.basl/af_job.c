@@ -1,45 +1,45 @@
 /*
 *         OpenPBS (Portable Batch System) v2.3 Software License
-* 
+*
 * Copyright (c) 1999-2000 Veridian Information Solutions, Inc.
 * All rights reserved.
-* 
+*
 * ---------------------------------------------------------------------------
 * For a license to use or redistribute the OpenPBS software under conditions
 * other than those described below, or to purchase support for this software,
 * please contact Veridian Systems, PBS Products Department ("Licensor") at:
-* 
+*
 *    www.OpenPBS.org  +1 650 967-4675                  sales@OpenPBS.org
 *                        877 902-4PBS (US toll-free)
 * ---------------------------------------------------------------------------
-* 
+*
 * This license covers use of the OpenPBS v2.3 software (the "Software") at
 * your site or location, and, for certain users, redistribution of the
 * Software to other sites and locations.  Use and redistribution of
 * OpenPBS v2.3 in source and binary forms, with or without modification,
 * are permitted provided that all of the following conditions are met.
 * After December 31, 2001, only conditions 3-6 must be met:
-* 
+*
 * 1. Commercial and/or non-commercial use of the Software is permitted
 *    provided a current software registration is on file at www.OpenPBS.org.
 *    If use of this software contributes to a publication, product, or
 *    service, proper attribution must be given; see www.OpenPBS.org/credit.html
-* 
+*
 * 2. Redistribution in any form is only permitted for non-commercial,
 *    non-profit purposes.  There can be no charge for the Software or any
 *    software incorporating the Software.  Further, there can be no
 *    expectation of revenue generated as a consequence of redistributing
 *    the Software.
-* 
+*
 * 3. Any Redistribution of source code must retain the above copyright notice
 *    and the acknowledgment contained in paragraph 6, this list of conditions
 *    and the disclaimer contained in paragraph 7.
-* 
+*
 * 4. Any Redistribution in binary form must reproduce the above copyright
 *    notice and the acknowledgment contained in paragraph 6, this list of
 *    conditions and the disclaimer contained in paragraph 7 in the
 *    documentation and/or other materials provided with the distribution.
-* 
+*
 * 5. Redistributions in any form must be accompanied by information on how to
 *    obtain complete source code for the OpenPBS software and any
 *    modifications and/or additions to the OpenPBS software.  The source code
@@ -47,23 +47,23 @@
 *    than the cost of distribution plus a nominal fee, and all modifications
 *    and additions to the Software must be freely redistributable by any party
 *    (including Licensor) without restriction.
-* 
+*
 * 6. All advertising materials mentioning features or use of the Software must
 *    display the following acknowledgment:
-* 
+*
 *     "This product includes software developed by NASA Ames Research Center,
-*     Lawrence Livermore National Laboratory, and Veridian Information 
+*     Lawrence Livermore National Laboratory, and Veridian Information
 *     Solutions, Inc.
 *     Visit www.OpenPBS.org for OpenPBS software support,
 *     products, and information."
-* 
+*
 * 7. DISCLAIMER OF WARRANTY
-* 
+*
 * THIS SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND. ANY EXPRESS
 * OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
 * OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT
 * ARE EXPRESSLY DISCLAIMED.
-* 
+*
 * IN NO EVENT SHALL VERIDIAN CORPORATION, ITS AFFILIATED COMPANIES, OR THE
 * U.S. GOVERNMENT OR ANY OF ITS AGENCIES BE LIABLE FOR ANY DIRECT OR INDIRECT,
 * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
@@ -72,7 +72,7 @@
 * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
 * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-* 
+*
 * This license will be governed by the laws of the Commonwealth of Virginia,
 * without reference to its choice of law rules.
 */
@@ -97,18 +97,21 @@
 /* File Scope Variables */
 static char ident[] = "@(#) $RCSfile$ $Revision$";
 
-struct JobSortArgs {
-	struct SetJobElement **array;
-        union {
-                int      (*ifunc)();
-		double   (*ffunc)();
-                char    *(*sfunc)();
-                DateTime (*dfunc)();
-                Size     (*szfunc)();
-        } key;
-        enum { INTKEY, FLOATKEY, STRINGKEY, DATETIMEKEY, SIZEKEY } keytype;
-        int  order;     /* ASC or DESC */
-};
+struct JobSortArgs
+  {
+
+  struct SetJobElement **array;
+  union
+    {
+    int (*ifunc)();
+    double(*ffunc)();
+    char    *(*sfunc)();
+    DateTime(*dfunc)();
+    Size(*szfunc)();
+    } key;
+  enum { INTKEY, FLOATKEY, STRINGKEY, DATETIMEKEY, SIZEKEY } keytype;
+  int  order;     /* ASC or DESC */
+  };
 
 /* External Variables */
 /* External Functions */
@@ -117,1185 +120,1345 @@ struct JobSortArgs {
 /* External Functions */
 /* Functions */
 
-char *JobIdGet (job)
-Job 	*job;
-{
-	if( job == NOJOB || JobStateGet(job) == DELETED )
-		return(NULLSTR);
+char *JobIdGet(job)
+Job  *job;
+  {
+  if (job == NOJOB || JobStateGet(job) == DELETED)
+    return(NULLSTR);
 
-	return job->jobId;
-}
+  return job->jobId;
+  }
 
-char *JobNameGet (job)
-Job 	*job;
-{
-	if( job == NOJOB || JobStateGet(job) == DELETED )
-		return(NULLSTR);
+char *JobNameGet(job)
+Job  *job;
+  {
+  if (job == NOJOB || JobStateGet(job) == DELETED)
+    return(NULLSTR);
 
-	return job->jobName;	
-}
+  return job->jobName;
+  }
 
-char *JobOwnerNameGet (job)
-Job 	*job;
-{
-	if( job == NOJOB || JobStateGet(job) == DELETED )
-		return(NULLSTR);
+char *JobOwnerNameGet(job)
+Job  *job;
+  {
+  if (job == NOJOB || JobStateGet(job) == DELETED)
+    return(NULLSTR);
 
-    	return job->ownerName;
-}
+  return job->ownerName;
+  }
 
-char *JobEffectiveUserNameGet (job)
-Job 	*job;
-{
-	if( job == NOJOB || JobStateGet(job) == DELETED )
-		return(NULLSTR);
+char *JobEffectiveUserNameGet(job)
+Job  *job;
+  {
+  if (job == NOJOB || JobStateGet(job) == DELETED)
+    return(NULLSTR);
 
-	return job->effectiveUserName;
-}
+  return job->effectiveUserName;
+  }
 
 
-char *JobEffectiveGroupNameGet (job)
-Job 	*job;
-{
-	if( job == NOJOB || JobStateGet(job) == DELETED )
-		return(NULLSTR);
+char *JobEffectiveGroupNameGet(job)
+Job  *job;
+  {
+  if (job == NOJOB || JobStateGet(job) == DELETED)
+    return(NULLSTR);
 
-    	return job->effectiveGroupName;
-}
+  return job->effectiveGroupName;
+  }
 
-int JobStateGet (job)
-Job 	*job;
-{
-	if( job == NOJOB )
-		return(-1);	/* unknown state */
+int JobStateGet(job)
+Job  *job;
+  {
+  if (job == NOJOB)
+    return(-1); /* unknown state */
 
-    	return job->state;
-}
+  return job->state;
+  }
 
-int JobPriorityGet (job)
-Job 	*job;
-{
-	if( job == NOJOB || JobStateGet(job) == DELETED )
-		return(-1);
-  
-	return job->priority;
-}
+int JobPriorityGet(job)
+Job  *job;
+  {
+  if (job == NOJOB || JobStateGet(job) == DELETED)
+    return(-1);
 
-int JobRerunFlagGet (job)
-Job 	*job;
-{
-	if( job == NOJOB || JobStateGet(job) == DELETED )
-		return(-1);
- 
-    	return job->rerunFlag;
-}
+  return job->priority;
+  }
 
-int JobInteractiveFlagGet (job)
-Job 	*job;
-{
-	if( job == NOJOB || JobStateGet(job) == DELETED )
-		return(-1);
+int JobRerunFlagGet(job)
+Job  *job;
+  {
+  if (job == NOJOB || JobStateGet(job) == DELETED)
+    return(-1);
 
-    	return job->interactiveFlag;
-}
+  return job->rerunFlag;
+  }
 
-DateTime  JobDateTimeCreatedGet (job)
-Job 	*job;
-{
-	if( job == NOJOB || JobStateGet(job) == DELETED )
-		return(strToDateTime("(0|0|0)"));
- 
-    	return job->dateTimeCreated;
-}
+int JobInteractiveFlagGet(job)
+Job  *job;
+  {
+  if (job == NOJOB || JobStateGet(job) == DELETED)
+    return(-1);
 
-char *JobEmailAddrGet (job)
-Job 	*job;
-{
-	if( job == NOJOB || JobStateGet(job) == DELETED )
-		return(NULLSTR);
+  return job->interactiveFlag;
+  }
 
-    	return job->emailAddr;
-}
+DateTime  JobDateTimeCreatedGet(job)
+Job  *job;
+  {
+  if (job == NOJOB || JobStateGet(job) == DELETED)
+    return(strToDateTime("(0|0|0)"));
 
-void *JobServerGet (job)
-Job 	*job;
-{
-	if( job == NOJOB || JobStateGet(job) == DELETED )
-		return(NULL);
+  return job->dateTimeCreated;
+  }
 
-	return job->server;
-}
+char *JobEmailAddrGet(job)
+Job  *job;
+  {
+  if (job == NOJOB || JobStateGet(job) == DELETED)
+    return(NULLSTR);
 
-void *JobQueueGet (job)
-Job 	*job;
-{
-	if( job == NOJOB || JobStateGet(job) == DELETED )
-		return(NULL);
+  return job->emailAddr;
+  }
 
-	return job->queue;
-}
+void *JobServerGet(job)
+Job  *job;
+  {
+  if (job == NOJOB || JobStateGet(job) == DELETED)
+    return(NULL);
 
-int JobRefCntGet (job)
-Job 	*job;
-{
-	if( job == NOJOB || JobStateGet(job) == DELETED )
-		return(-1);
+  return job->server;
+  }
 
-	return job->refCnt;
-}
+void *JobQueueGet(job)
+Job  *job;
+  {
+  if (job == NOJOB || JobStateGet(job) == DELETED)
+    return(NULL);
 
-char *JobStageinFilesGet (job)
-Job 	*job;
-{
-	if( job == NOJOB || JobStateGet(job) == DELETED )
-		return(NULLSTR);
+  return job->queue;
+  }
 
-	return job->stageinFiles;
-}
+int JobRefCntGet(job)
+Job  *job;
+  {
+  if (job == NOJOB || JobStateGet(job) == DELETED)
+    return(-1);
 
-char *JobStageoutFilesGet (job)
-Job 	*job;
-{
-	if( job == NOJOB || JobStateGet(job) == DELETED )
-		return(NULLSTR);
+  return job->refCnt;
+  }
 
-	return job->stageoutFiles;
-}
+char *JobStageinFilesGet(job)
+Job  *job;
+  {
+  if (job == NOJOB || JobStateGet(job) == DELETED)
+    return(NULLSTR);
+
+  return job->stageinFiles;
+  }
+
+char *JobStageoutFilesGet(job)
+Job  *job;
+  {
+  if (job == NOJOB || JobStateGet(job) == DELETED)
+    return(NULLSTR);
+
+  return job->stageoutFiles;
+  }
 
 int JobIntResReqGet(job, name)
-Job	*job;
+Job *job;
 char    *name;
-{
-        if( job == NOJOB || JobStateGet(job) == DELETED )
-                return(-1);
+  {
+  if (job == NOJOB || JobStateGet(job) == DELETED)
+    return(-1);
 
-        return(IntResValueGet(job->intResReq, name));
-}
+  return(IntResValueGet(job->intResReq, name));
+  }
 
 Size JobSizeResReqGet(job, name)
-Job	*job;
+Job *job;
 char    *name;
-{
-        if( job == NOJOB || JobStateGet(job) == DELETED )
-                return(strToSize("-1b"));
+  {
+  if (job == NOJOB || JobStateGet(job) == DELETED)
+    return(strToSize("-1b"));
 
-        return(SizeResValueGet(job->sizeResReq, name));
-}
+  return(SizeResValueGet(job->sizeResReq, name));
+  }
 
 char *JobStringResReqGet(job, name)
-Job	*job;
+Job *job;
 char    *name;
-{
-        if( job == NOJOB || JobStateGet(job) == DELETED )
-                return(NULLSTR);
+  {
+  if (job == NOJOB || JobStateGet(job) == DELETED)
+    return(NULLSTR);
 
-        return(StringResValueGet(job->stringResReq, name));
-}
+  return(StringResValueGet(job->stringResReq, name));
+  }
 
 int JobIntResUseGet(job, name)
-Job	*job;
+Job *job;
 char    *name;
-{
-        if( job == NOJOB || JobStateGet(job) == DELETED )
-                return(-1);
+  {
+  if (job == NOJOB || JobStateGet(job) == DELETED)
+    return(-1);
 
-        return(IntResValueGet(job->intResUse, name));
-}
+  return(IntResValueGet(job->intResUse, name));
+  }
 
 Size JobSizeResUseGet(job, name)
-Job	*job;
+Job *job;
 char    *name;
-{
-        if( job == NOJOB || JobStateGet(job) == DELETED )
-                return(strToSize("-1b"));
+  {
+  if (job == NOJOB || JobStateGet(job) == DELETED)
+    return(strToSize("-1b"));
 
-        return(SizeResValueGet(job->sizeResUse, name));
-}
+  return(SizeResValueGet(job->sizeResUse, name));
+  }
 
 char *JobStringResUseGet(job, name)
-Job	*job;
+Job *job;
 char    *name;
-{
-        if( job == NOJOB || JobStateGet(job) == DELETED )
-                return(NULLSTR);
+  {
+  if (job == NOJOB || JobStateGet(job) == DELETED)
+    return(NULLSTR);
 
-        return(StringResValueGet(job->stringResUse, name));
-}
+  return(StringResValueGet(job->stringResUse, name));
+  }
 
 void JobIdPut(job, jobId)
 Job    *job;
 char   *jobId;
-{
-       assert( job != NOJOB );
+  {
+  assert(job != NOJOB);
 
-       dynamic_strcpy(&job->jobId, jobId);
-       varstrModPptr(job->jobId, job);
-}
+  dynamic_strcpy(&job->jobId, jobId);
+  varstrModPptr(job->jobId, job);
+  }
 
 void JobNamePut(job, jobName)
 Job    *job;
 char   *jobName;
-{
-       assert( job != NOJOB );
+  {
+  assert(job != NOJOB);
 
-       dynamic_strcpy(&job->jobName, jobName);
-       varstrModPptr(job->jobName, job);
-}
+  dynamic_strcpy(&job->jobName, jobName);
+  varstrModPptr(job->jobName, job);
+  }
 
 void JobOwnerNamePut(job, ownerName)
 Job    *job;
 char   *ownerName;
-{
-       assert( job != NOJOB );
+  {
+  assert(job != NOJOB);
 
-       dynamic_strcpy(&job->ownerName, ownerName);
-       varstrModPptr(job->ownerName, job);
-}
+  dynamic_strcpy(&job->ownerName, ownerName);
+  varstrModPptr(job->ownerName, job);
+  }
 
 void JobEffectiveUserNamePut(job, euser)
 Job    *job;
 char   *euser;
-{
-       assert( job != NOJOB );
+  {
+  assert(job != NOJOB);
 
-       dynamic_strcpy(&job->effectiveUserName, euser);
-       varstrModPptr(job->effectiveUserName, job);
-}
+  dynamic_strcpy(&job->effectiveUserName, euser);
+  varstrModPptr(job->effectiveUserName, job);
+  }
 
 void JobEffectiveGroupNamePut(job, groupName)
 Job    *job;
 char   *groupName;
-{
-       assert( job != NOJOB );
+  {
+  assert(job != NOJOB);
 
-       dynamic_strcpy(&job->effectiveGroupName, groupName);
-       varstrModPptr(job->effectiveGroupName, job);
-}
+  dynamic_strcpy(&job->effectiveGroupName, groupName);
+  varstrModPptr(job->effectiveGroupName, job);
+  }
 
 void JobStatePut(job, state)
 Job    *job;
 int    state;
-{
-       assert( job != NOJOB );
+  {
+  assert(job != NOJOB);
 
-       job->state = state;
-}
+  job->state = state;
+  }
 
 void JobPriorityPut(job, priority)
 Job    *job;
 int    priority;
-{
-       assert( job != NOJOB );
+  {
+  assert(job != NOJOB);
 
-       job->priority = priority;
-}
+  job->priority = priority;
+  }
 
 void JobRerunFlagPut(job, rerunFlag)
 Job    *job;
 int    rerunFlag;
-{
-       assert( job != NOJOB );
+  {
+  assert(job != NOJOB);
 
-       job->rerunFlag = rerunFlag; 
-}
+  job->rerunFlag = rerunFlag;
+  }
 
 void JobInteractiveFlagPut(job, interactiveFlag)
 Job    *job;
 int    interactiveFlag;
-{
-       assert( job != NOJOB );
+  {
+  assert(job != NOJOB);
 
-       job->interactiveFlag = interactiveFlag; 
-}
+  job->interactiveFlag = interactiveFlag;
+  }
 
 void JobDateTimeCreatedPut(job, cdate)
 Job    *job;
 DateTime  cdate;
-{
-       assert( job != NOJOB );
+  {
+  assert(job != NOJOB);
 
-       job->dateTimeCreated.d.m = cdate.d.m;
-       job->dateTimeCreated.d.d = cdate.d.d; 
-       job->dateTimeCreated.d.y = cdate.d.y;
+  job->dateTimeCreated.d.m = cdate.d.m;
+  job->dateTimeCreated.d.d = cdate.d.d;
+  job->dateTimeCreated.d.y = cdate.d.y;
 
-       job->dateTimeCreated.t.h = cdate.t.h;
-       job->dateTimeCreated.t.m = cdate.t.m; 
-       job->dateTimeCreated.t.s = cdate.t.s;
-}
+  job->dateTimeCreated.t.h = cdate.t.h;
+  job->dateTimeCreated.t.m = cdate.t.m;
+  job->dateTimeCreated.t.s = cdate.t.s;
+  }
 
 void JobEmailAddrPut(job, emailAddr)
 Job    *job;
 char   *emailAddr;
-{
-       assert( job != NOJOB );
+  {
+  assert(job != NOJOB);
 
-       dynamic_strcpy(&job->emailAddr, emailAddr);
-       varstrModPptr(job->emailAddr, job);
-}
+  dynamic_strcpy(&job->emailAddr, emailAddr);
+  varstrModPptr(job->emailAddr, job);
+  }
 
 void JobServerPut(job, server)
-Job	*job;
-void	*server;
-{
-	assert( job != NOJOB );
+Job *job;
+void *server;
+  {
+  assert(job != NOJOB);
 
-	job->server = server;	
-} 
+  job->server = server;
+  }
 
 void JobQueuePut(job, queue)
-Job	*job;
-void	*queue;
-{
-	assert( job != NOJOB );
+Job *job;
+void *queue;
+  {
+  assert(job != NOJOB);
 
-	job->queue = queue;	
-}
+  job->queue = queue;
+  }
 
 void JobRefCntPut(job, refCnt)
-Job	*job;
-int	refCnt;
-{
-	assert( job != NOJOB );
+Job *job;
+int refCnt;
+  {
+  assert(job != NOJOB);
 
-	job->refCnt = refCnt;	
-}
+  job->refCnt = refCnt;
+  }
 
 void JobStageinFilesPut(job, stagein)
-Job	*job;
-char	*stagein;
-{
-	assert( job != NOJOB );
+Job *job;
+char *stagein;
+  {
+  assert(job != NOJOB);
 
-       	dynamic_strcpy(&job->stageinFiles, stagein);
-       	varstrModPptr(job->stageinFiles, job);
-}
+  dynamic_strcpy(&job->stageinFiles, stagein);
+  varstrModPptr(job->stageinFiles, job);
+  }
 
 void JobStageoutFilesPut(job, stageout)
-Job	*job;
-char	*stageout;
-{
-	assert( job != NOJOB );
+Job *job;
+char *stageout;
+  {
+  assert(job != NOJOB);
 
-       	dynamic_strcpy(&job->stageoutFiles, stageout);
-       	varstrModPptr(job->stageoutFiles, job);
-}
+  dynamic_strcpy(&job->stageoutFiles, stageout);
+  varstrModPptr(job->stageoutFiles, job);
+  }
 
 void JobIntResReqPut(job, name, value)
-Job	*job;
+Job *job;
 char    *name;
 int     value;
-{
-       struct   IntRes *m;
+  {
 
-       assert( job != NOJOB && name != NULLSTR );
+  struct   IntRes *m;
 
-       m = IntResValuePut(job->intResReq, name, value, job);
+  assert(job != NOJOB && name != NULLSTR);
 
-       if( m != NULL )
-                job->intResReq = m;
-}
+  m = IntResValuePut(job->intResReq, name, value, job);
+
+  if (m != NULL)
+    job->intResReq = m;
+  }
 
 void JobSizeResReqPut(job, name, value)
-Job	*job;
+Job *job;
 char    *name;
 Size    value;
-{
-       struct   SizeRes *m;
+  {
 
-       assert( job != NOJOB && name != NULLSTR );
+  struct   SizeRes *m;
 
-       m = SizeResValuePut(job->sizeResReq, name, value, job);
+  assert(job != NOJOB && name != NULLSTR);
 
-       if( m != NULL )
-                job->sizeResReq = m;
-}
+  m = SizeResValuePut(job->sizeResReq, name, value, job);
+
+  if (m != NULL)
+    job->sizeResReq = m;
+  }
 
 void JobStringResReqPut(job, name, value)
-Job	*job;
+Job *job;
 char    *name;
 char    *value;
-{
-       struct   StringRes *m;
+  {
 
-       assert( job != NOJOB && name != NULLSTR );
+  struct   StringRes *m;
 
-       m = StringResValuePut(job->stringResReq, name, value, job);
+  assert(job != NOJOB && name != NULLSTR);
 
-       if( m != NULL )
-                job->stringResReq = m;
-}
+  m = StringResValuePut(job->stringResReq, name, value, job);
+
+  if (m != NULL)
+    job->stringResReq = m;
+  }
 
 void JobIntResUsePut(job, name, value)
-Job	*job;
+Job *job;
 char    *name;
 int     value;
-{
-       struct   IntRes *m;
+  {
 
-       assert( job != NOJOB && name != NULLSTR );
+  struct   IntRes *m;
 
-       m = IntResValuePut(job->intResUse, name, value, job);
+  assert(job != NOJOB && name != NULLSTR);
 
-       if( m != NULL )
-                job->intResUse = m;
-}
+  m = IntResValuePut(job->intResUse, name, value, job);
+
+  if (m != NULL)
+    job->intResUse = m;
+  }
 
 void JobSizeResUsePut(job, name, value)
-Job	*job;
+Job *job;
 char    *name;
 Size    value;
-{
-       struct   SizeRes *m;
+  {
 
-       assert( job != NOJOB && name != NULLSTR );
+  struct   SizeRes *m;
 
-       m = SizeResValuePut(job->sizeResUse, name, value, job);
+  assert(job != NOJOB && name != NULLSTR);
 
-       if( m != NULL )
-                job->sizeResUse = m;
-}
+  m = SizeResValuePut(job->sizeResUse, name, value, job);
+
+  if (m != NULL)
+    job->sizeResUse = m;
+  }
 
 void JobStringResUsePut(job, name, value)
-Job	*job;
+Job *job;
 char    *name;
 char    *value;
-{
-       struct   StringRes *m;
+  {
 
-       assert( job != NOJOB && name != NULLSTR );
+  struct   StringRes *m;
 
-       m = StringResValuePut(job->stringResUse, name, value, job);
+  assert(job != NOJOB && name != NULLSTR);
 
-       if( m != NULL )
-                job->stringResUse = m;
-}
+  m = StringResValuePut(job->stringResUse, name, value, job);
 
-void  JobInit( job )
+  if (m != NULL)
+    job->stringResUse = m;
+  }
+
+void  JobInit(job)
 Job   *job;
-{
+  {
 
-      assert( job != NOJOB );
+  assert(job != NOJOB);
 
-      job->jobId = NULLSTR;
-      job->jobName = NULLSTR;
-      job->ownerName = NULLSTR;
-      job->effectiveUserName = NULLSTR;
-      job->effectiveGroupName = NULLSTR;
-      JobStatePut(job, -1);
-      JobPriorityPut(job, 0);
-      JobRerunFlagPut(job, -1);
-      JobInteractiveFlagPut(job, FALSE);
-      JobDateTimeCreatedPut(job, strToDateTime("(0|0|0@-1:-1:-1)"));
-      job->emailAddr = NULLSTR;
-      JobServerPut(job, NULL);
-      JobRefCntPut(job, 0);
-      job->stageinFiles = NULLSTR;
-      job->stageoutFiles = NULLSTR;
-      job->intResReq = NULL;
-      job->sizeResReq = NULL;
-      job->stringResReq = NULL;
+  job->jobId = NULLSTR;
+  job->jobName = NULLSTR;
+  job->ownerName = NULLSTR;
+  job->effectiveUserName = NULLSTR;
+  job->effectiveGroupName = NULLSTR;
+  JobStatePut(job, -1);
+  JobPriorityPut(job, 0);
+  JobRerunFlagPut(job, -1);
+  JobInteractiveFlagPut(job, FALSE);
+  JobDateTimeCreatedPut(job, strToDateTime("(0|0|0@-1:-1:-1)"));
+  job->emailAddr = NULLSTR;
+  JobServerPut(job, NULL);
+  JobRefCntPut(job, 0);
+  job->stageinFiles = NULLSTR;
+  job->stageoutFiles = NULLSTR;
+  job->intResReq = NULL;
+  job->sizeResReq = NULL;
+  job->stringResReq = NULL;
 
-      job->intResUse = NULL;
-      job->sizeResUse = NULL;
-      job->stringResUse = NULL;
-}
+  job->intResUse = NULL;
+  job->sizeResUse = NULL;
+  job->stringResUse = NULL;
+  }
 
-void JobPrint( job )
+void JobPrint(job)
 Job   *job;
-{
+  {
 
-      int  state, flag;	
-	
-      if( job == NOJOB || JobStateGet(job) == DELETED )
-		return;		/* ignore */
+  int  state, flag;
 
-      (void)printf("\t\tJob Id: %s\n",
-	   JobIdGet(job) ? JobIdGet(job):"null");
-      (void)printf("\t\t\tJob Name = %s\n",
-	   JobNameGet(job) ? JobNameGet(job):"null");
-      (void)printf("\t\t\tJob Owner = %s\n", 
-	   JobOwnerNameGet(job) ? JobOwnerNameGet(job):"null");
-      (void)printf("\t\t\tEffective User = %s\n", 
-	   JobEffectiveUserNameGet(job) ? JobEffectiveUserNameGet(job):"null");
-      (void)printf("\t\t\tEffective Group = %s\n", 
-	   JobEffectiveGroupNameGet(job)?JobEffectiveGroupNameGet(job):"null");
-      state = JobStateGet(job);
-      (void)printf("\t\t\tState = %d ", state);
-      switch(state) {
-      case TRANSIT:
-		(void)printf("(TRANSIT)");
-		break;
-      case QUEUED:
-		(void)printf("(QUEUED)");
-		break;
-      case HELD:
-		(void)printf("(HELD)");
-		break;
-      case WAITING:
-		(void)printf("(WAITING)");
-		break;
-      case RUNNING:
-		(void)printf("(RUNNING)");
-		break;
-      case EXITING:
-		(void)printf("(EXITING)");
-		break;
-      case DELETED:
-		(void)printf("(DELETED)");
-		break;
-      default:
-		(void)printf("%d", state);
-      }
-      (void)printf("\n");
-      (void)printf("\t\t\tPriority = %d\n", JobPriorityGet(job));
-      flag = JobRerunFlagGet(job);
-      (void)printf("\t\t\tRerun Flag =  %d ", flag);
-      switch(flag) {
-        case FALSE:
-      		(void)printf("(False)");
-		break;
-        case TRUE:
-      		(void)printf("(True)");
-		break;
-        default:
-		(void)printf("%d", flag);
-      }
-      (void)printf("\n");
+  if (job == NOJOB || JobStateGet(job) == DELETED)
+    return;  /* ignore */
 
-      flag = JobInteractiveFlagGet(job);
-      (void)printf("\t\t\tInteractive Flag = %d ", flag);
-      switch(flag) {
-        case FALSE:
-      		(void)printf("(False)");
-		break;
-        case TRUE:
-      		(void)printf("(True)");
-		break;
-        default:
-		(void)printf("%d", flag);
-      }
-      (void)printf("\n");	
+  (void)printf("\t\tJob Id: %s\n",
+               JobIdGet(job) ? JobIdGet(job) : "null");
 
-      (void)printf("\t\t\tDate/Time Created = ");
-      datetimePrint(JobDateTimeCreatedGet(job));
-      printf("\n");
+  (void)printf("\t\t\tJob Name = %s\n",
+               JobNameGet(job) ? JobNameGet(job) : "null");
 
-      (void)printf("\t\t\tEmail Address to Notify = %s\n", 
-		 JobEmailAddrGet(job) ? JobEmailAddrGet(job):"null" );
-      (void)printf("\t\t\tStagein Files = %s\n",
-		 JobStageinFilesGet(job) ? JobStageinFilesGet(job):"null" );
-      (void)printf("\t\t\tStageout Files = %s\n",
-		 JobStageoutFilesGet(job) ? JobStageoutFilesGet(job):"null" );
+  (void)printf("\t\t\tJob Owner = %s\n",
+               JobOwnerNameGet(job) ? JobOwnerNameGet(job) : "null");
 
-      IntResListPrint(job->intResReq, "\t\t\tResources_required" );
-      SizeResListPrint(job->sizeResReq, "\t\t\tResources_required" );
-      StringResListPrint(job->stringResReq, "\t\t\tResources_required" );
+  (void)printf("\t\t\tEffective User = %s\n",
+               JobEffectiveUserNameGet(job) ? JobEffectiveUserNameGet(job) : "null");
 
-      IntResListPrint(job->intResUse, "\t\t\tResources_used" );
-      SizeResListPrint(job->sizeResUse, "\t\t\tResources_used" );
-      StringResListPrint(job->stringResUse, "\t\t\tResources_used" );
-	
-      (void)printf("\t\t\t# of Queues Referencing this job = %d\n", 
-					JobRefCntGet(job));
+  (void)printf("\t\t\tEffective Group = %s\n",
+               JobEffectiveGroupNameGet(job) ? JobEffectiveGroupNameGet(job) : "null");
 
-}
+  state = JobStateGet(job);
+
+  (void)printf("\t\t\tState = %d ", state);
+
+  switch (state)
+    {
+
+    case TRANSIT:
+      (void)printf("(TRANSIT)");
+      break;
+
+    case QUEUED:
+      (void)printf("(QUEUED)");
+      break;
+
+    case HELD:
+      (void)printf("(HELD)");
+      break;
+
+    case WAITING:
+      (void)printf("(WAITING)");
+      break;
+
+    case RUNNING:
+      (void)printf("(RUNNING)");
+      break;
+
+    case EXITING:
+      (void)printf("(EXITING)");
+      break;
+
+    case DELETED:
+      (void)printf("(DELETED)");
+      break;
+
+    default:
+      (void)printf("%d", state);
+    }
+
+  (void)printf("\n");
+  (void)printf("\t\t\tPriority = %d\n", JobPriorityGet(job));
+  flag = JobRerunFlagGet(job);
+  (void)printf("\t\t\tRerun Flag =  %d ", flag);
+
+  switch (flag)
+    {
+
+    case FALSE:
+      (void)printf("(False)");
+      break;
+
+    case TRUE:
+      (void)printf("(True)");
+      break;
+
+    default:
+      (void)printf("%d", flag);
+    }
+
+  (void)printf("\n");
+
+  flag = JobInteractiveFlagGet(job);
+  (void)printf("\t\t\tInteractive Flag = %d ", flag);
+
+  switch (flag)
+    {
+
+    case FALSE:
+      (void)printf("(False)");
+      break;
+
+    case TRUE:
+      (void)printf("(True)");
+      break;
+
+    default:
+      (void)printf("%d", flag);
+    }
+
+  (void)printf("\n");
+
+  (void)printf("\t\t\tDate/Time Created = ");
+  datetimePrint(JobDateTimeCreatedGet(job));
+  printf("\n");
+
+  (void)printf("\t\t\tEmail Address to Notify = %s\n",
+               JobEmailAddrGet(job) ? JobEmailAddrGet(job) : "null");
+  (void)printf("\t\t\tStagein Files = %s\n",
+               JobStageinFilesGet(job) ? JobStageinFilesGet(job) : "null");
+  (void)printf("\t\t\tStageout Files = %s\n",
+               JobStageoutFilesGet(job) ? JobStageoutFilesGet(job) : "null");
+
+  IntResListPrint(job->intResReq, "\t\t\tResources_required");
+  SizeResListPrint(job->sizeResReq, "\t\t\tResources_required");
+  StringResListPrint(job->stringResReq, "\t\t\tResources_required");
+
+  IntResListPrint(job->intResUse, "\t\t\tResources_used");
+  SizeResListPrint(job->sizeResUse, "\t\t\tResources_used");
+  StringResListPrint(job->stringResUse, "\t\t\tResources_used");
+
+  (void)printf("\t\t\t# of Queues Referencing this job = %d\n",
+               JobRefCntGet(job));
+
+  }
 
 /* Frees up malloc-ed elements of a Job */
 void JobFree(job)
 Job *job;
-{
+  {
 
-    assert( job != NOJOB );
+  assert(job != NOJOB);
 
-    /* deallocate all dynamic strings */
-    varstrFreeByPptr(job);
-    /* deallocate all storages related to Job */
-    mallocTableFreeByPptr(job);
-    /* force job to have consistent values for dynamic stuff in case of */
-    /* of reuse */
-    job->jobId = NULLSTR;
-    job->jobName = NULLSTR;
-    job->ownerName = NULLSTR;
-    job->effectiveUserName = NULLSTR;
-    job->effectiveGroupName = NULLSTR;
-    job->emailAddr = NULLSTR; 
-    JobServerPut(job, NULL);
-    job->stageinFiles = NULLSTR;
-    job->stageoutFiles = NULLSTR;
-}
+  /* deallocate all dynamic strings */
+  varstrFreeByPptr(job);
+  /* deallocate all storages related to Job */
+  mallocTableFreeByPptr(job);
+  /* force job to have consistent values for dynamic stuff in case of */
+  /* of reuse */
+  job->jobId = NULLSTR;
+  job->jobName = NULLSTR;
+  job->ownerName = NULLSTR;
+  job->effectiveUserName = NULLSTR;
+  job->effectiveGroupName = NULLSTR;
+  job->emailAddr = NULLSTR;
+  JobServerPut(job, NULL);
+  job->stageinFiles = NULLSTR;
+  job->stageoutFiles = NULLSTR;
+  }
 
 /* Set of Jobs abstraction */
 void SetJobInit(sjob)
 SetJob *sjob;
-{
-        struct SetJobElement *jobptr;
+  {
 
-        jobptr = (struct SetJobElement *)malloc(sizeof(struct SetJobElement));
-        mallocTableAdd( jobptr, sjob, 0 );
+  struct SetJobElement *jobptr;
+
+  jobptr = (struct SetJobElement *)malloc(sizeof(struct SetJobElement));
+  mallocTableAdd(jobptr, sjob, 0);
 
 #ifdef DEBUG
-	printf("Added NULL job %x to SetJob %x\n", jobptr, sjob); 
+  printf("Added NULL job %x to SetJob %x\n", jobptr, sjob);
 #endif
 
-	jobptr->job = NOJOB;	/* end of list record */
-	jobptr->first = jobptr;
-	jobptr->nextptr = EMPTYSETJOB;
-	sjob->head = jobptr;
-	sjob->tail = jobptr;
-}
+  jobptr->job = NOJOB; /* end of list record */
+  jobptr->first = jobptr;
+  jobptr->nextptr = EMPTYSETJOB;
+  sjob->head = jobptr;
+  sjob->tail = jobptr;
+  }
 
-void SetJobAdd( sjob, job )
+void SetJobAdd(sjob, job)
 SetJob *sjob;
 Job   *job;
-{
+  {
 
 
-    struct SetJobElement *jobptr;
+  struct SetJobElement *jobptr;
 
-    assert( job != NOJOB && sjob->head != EMPTYSETJOB && sjob->tail != EMPTYSETJOB );
+  assert(job != NOJOB && sjob->head != EMPTYSETJOB && sjob->tail != EMPTYSETJOB);
 
-    jobptr = (struct SetJobElement *)malloc(sizeof(struct SetJobElement));
-    assert(jobptr != EMPTYSETJOB);
-    mallocTableAdd( jobptr, sjob, 0 );
-    jobptr->job = job;
+  jobptr = (struct SetJobElement *)malloc(sizeof(struct SetJobElement));
+  assert(jobptr != EMPTYSETJOB);
+  mallocTableAdd(jobptr, sjob, 0);
+  jobptr->job = job;
 
 #ifdef DEBUG
-    printf("Added job %x to SetJob %x\n", jobptr, sjob);
-    JobPrint(jobptr->job);
+  printf("Added job %x to SetJob %x\n", jobptr, sjob);
+  JobPrint(jobptr->job);
 #endif
 
-    JobRefCntPut(job, JobRefCntGet(job)+1);
+  JobRefCntPut(job, JobRefCntGet(job) + 1);
 
-    if( sjob->head->job == NOJOB && sjob->tail->job == NOJOB ) { /* first */
-	  sjob->head->first = jobptr;
-    	  jobptr->first = jobptr;
+  if (sjob->head->job == NOJOB && sjob->tail->job == NOJOB)    /* first */
+    {
+    sjob->head->first = jobptr;
+    jobptr->first = jobptr;
 
-	  jobptr->nextptr = sjob->head;
-	  
-          sjob->head = jobptr;
-          sjob->tail = jobptr;
-    } else {
-	  jobptr->first = sjob->head;
-	  jobptr->nextptr = sjob->tail->nextptr; 
+    jobptr->nextptr = sjob->head;
 
-          sjob->tail->nextptr = jobptr;
-          sjob->tail = jobptr;
+    sjob->head = jobptr;
+    sjob->tail = jobptr;
+    }
+  else
+    {
+    jobptr->first = sjob->head;
+    jobptr->nextptr = sjob->tail->nextptr;
+
+    sjob->tail->nextptr = jobptr;
+    sjob->tail = jobptr;
     }
 
-}
-void nextJobPtr(sjeptr)
-struct SetJobElement **sjeptr;
-{
-	*sjeptr = (*sjeptr)->nextptr;
+  }
 
-        while((*sjeptr)->job != NULL && JobStateGet((*sjeptr)->job) == DELETED)
-                *sjeptr = (*sjeptr)->nextptr;
-}
-void firstJobPtr(sjeptr, first)
-struct SetJobElement **sjeptr;
-struct SetJobElement *first;
-{
-	*sjeptr = first;
+void
+nextJobPtr(struct SetJobElement **sjeptr)
+  {
+  *sjeptr = (*sjeptr)->nextptr;
 
-        while((*sjeptr)->job != NULL && JobStateGet((*sjeptr)->job) == DELETED)
-                *sjeptr = (*sjeptr)->nextptr;
-}
+  while ((*sjeptr)->job != NULL && JobStateGet((*sjeptr)->job) == DELETED)
+    *sjeptr = (*sjeptr)->nextptr;
+  }
 
-static void SetJobUpdateFirst( sjob, first )
-SetJob			*sjob;
-struct SetJobElement 	*first;
-{
-    	struct SetJobElement *j;
+void
+firstJobPtr(struct SetJobElement **sjeptr, struct SetJobElement *first)
+  {
+  *sjeptr = first;
 
-	for(j=sjob->head; j; j=j->nextptr) {
-		j->first = first;
-	}
-}
+  while ((*sjeptr)->job != NULL && JobStateGet((*sjeptr)->job) == DELETED)
+    *sjeptr = (*sjeptr)->nextptr;
+  }
 
-void SetJobRemove( sjob, job )
-SetJob 	*sjob;
-Job 	*job;
-{
+static void SetJobUpdateFirst(sjob, first)
+SetJob   *sjob;
 
-    struct SetJobElement *j, *prev, *tmp;
+struct SetJobElement  *first;
+  {
 
-    assert( sjob->head != EMPTYSETJOB && sjob->tail != EMPTYSETJOB );
+  struct SetJobElement *j;
 
-    prev = EMPTYSETJOB;
-    tmp  = EMPTYSETJOB;
-    for( j = sjob->head; j->job; j=tmp ) {
-      tmp=j->nextptr;
-      if( j->job == job ) {
-                if( prev != EMPTYSETJOB ) {
-                        prev->nextptr = j->nextptr;
-                        if( sjob->tail == j ) {  /* lost our tail */
-                                sjob->tail = prev;  /* reconnect tail */
-                        }
-                } else { /* lost our head */
-                        sjob->head = j->nextptr; /* reconnect head */
-                        if( sjob->tail == j ) {  /* lost our tail */
-                                sjob->tail = j->nextptr; /* reconnect tail */
-                        }
-			SetJobUpdateFirst( sjob, sjob->head );
-                }
+  for (j = sjob->head; j; j = j->nextptr)
+    {
+    j->first = first;
+    }
+  }
 
-                JobRefCntPut(j->job, JobRefCntGet(j->job)-1);
-                if(JobRefCntGet(j->job) == 0) {
+void SetJobRemove(sjob, job)
+SetJob  *sjob;
+Job  *job;
+  {
 
-			/* free up all dynamic strings and cNodeReqs of job */
-                        JobFree(j->job);
-			/* free up the job structure itself */
-			mallocTableFree(j->job);
-                }
-		/* free up the special JobElement structure */
-                mallocTableFree( j );
-		return;		/* only free one at a time */
+  struct SetJobElement *j, *prev, *tmp;
+
+  assert(sjob->head != EMPTYSETJOB && sjob->tail != EMPTYSETJOB);
+
+  prev = EMPTYSETJOB;
+  tmp  = EMPTYSETJOB;
+
+  for (j = sjob->head; j->job; j = tmp)
+    {
+    tmp = j->nextptr;
+
+    if (j->job == job)
+      {
+      if (prev != EMPTYSETJOB)
+        {
+        prev->nextptr = j->nextptr;
+
+        if (sjob->tail == j)     /* lost our tail */
+          {
+          sjob->tail = prev;  /* reconnect tail */
+          }
         }
-        prev = j;
+      else   /* lost our head */
+        {
+        sjob->head = j->nextptr; /* reconnect head */
+
+        if (sjob->tail == j)     /* lost our tail */
+          {
+          sjob->tail = j->nextptr; /* reconnect tail */
+          }
+
+        SetJobUpdateFirst(sjob, sjob->head);
+        }
+
+      JobRefCntPut(j->job, JobRefCntGet(j->job) - 1);
+
+      if (JobRefCntGet(j->job) == 0)
+        {
+
+        /* free up all dynamic strings and cNodeReqs of job */
+        JobFree(j->job);
+        /* free up the job structure itself */
+        mallocTableFree(j->job);
+        }
+
+      /* free up the special JobElement structure */
+      mallocTableFree(j);
+
+      return;  /* only free one at a time */
+      }
+
+    prev = j;
     }
-}
+  }
 
-/* Free up an entire set of jobs */ 
-void SetJobFree ( sjob )
+/* Free up an entire set of jobs */
+void SetJobFree(sjob)
 SetJob *sjob;
-{
+  {
 
-    struct SetJobElement *j, *tmp;
+  struct SetJobElement *j, *tmp;
 
 
-    tmp = EMPTYSETJOB;
-    for( j = sjob->head; j->job; j=tmp ) {
-      tmp = j->nextptr;
+  tmp = EMPTYSETJOB;
 
-      JobRefCntPut(j->job, JobRefCntGet(j->job)-1);
-      if(JobRefCntGet(j->job) == 0) {
-	 /* free all dynamic strings, cNode req attached to job */
-	 JobFree(j->job);
-      	 /* Free up the job structure itself */
-         mallocTableFree(j->job);
+  for (j = sjob->head; j->job; j = tmp)
+    {
+    tmp = j->nextptr;
+
+    JobRefCntPut(j->job, JobRefCntGet(j->job) - 1);
+
+    if (JobRefCntGet(j->job) == 0)
+      {
+      /* free all dynamic strings, cNode req attached to job */
+      JobFree(j->job);
+      /* Free up the job structure itself */
+      mallocTableFree(j->job);
       }
     }
 
-    /* Finally, free up the special JobElement structures */
-    mallocTableFreeByPptr( sjob );
-}
+  /* Finally, free up the special JobElement structures */
+  mallocTableFreeByPptr(sjob);
+  }
 
-static int JobPartition(A, p, r)
-struct JobSortArgs 	*A;
-int             	p;
-int             	r;
-{
+static int
+JobPartition(struct JobSortArgs *A, int p, int r)
+  {
 
-	Job	 	      *jtemptr;
-        int      	      i, j;
-	int			k;
+  Job         *jtemptr;
+  int             i, j;
+  int   k;
 
-        assert( A->keytype == INTKEY || A->keytype == STRINGKEY || \
-                A->keytype == DATETIMEKEY || A->keytype == SIZEKEY || \
-		A->keytype == FLOATKEY );
+  assert(A->keytype == INTKEY || A->keytype == STRINGKEY || \
+         A->keytype == DATETIMEKEY || A->keytype == SIZEKEY || \
+         A->keytype == FLOATKEY);
 
-        i = p - 1;
-        j = r + 1;
+  i = p - 1;
+  j = r + 1;
 
-        while( TRUE ) {
+  while (TRUE)
+    {
 
-          switch(A->keytype) {
-            case INTKEY:
-		do {
-                        j--;
-                } while( (A->order == ASC  && A->key.ifunc(A->array[j]->job) > \
-                       			   A->key.ifunc(A->array[p]->job)) ||  \
-			 (A->order == DESC && A->key.ifunc(A->array[j]->job) < \
-					   A->key.ifunc(A->array[p]->job)) );
+    switch (A->keytype)
+      {
 
-		do {
-                        i++;
-			if( i >= dynamicArraySize(A->array) ) {
-				printf("i: %d is out of bounds!\n", i);
-			}
-		} while( (A->order == ASC  && A->key.ifunc(A->array[i]->job) < \
-                         		   A->key.ifunc(A->array[p]->job)) ||  \
-			 (A->order == DESC && A->key.ifunc(A->array[i]->job) > \
-					   A->key.ifunc(A->array[p]->job)) );
-                break;
-	    case FLOATKEY:
-                do {
-                        j--;
-                } while( (A->order == ASC  && A->key.ffunc(A->array[j]) > \
-                                           A->key.ffunc(A->array[p])) ||  \
-                         (A->order == DESC && A->key.ffunc(A->array[j]) < \
-                                           A->key.ffunc(A->array[p])) );
+      case INTKEY:
 
-                do {
-                        i++;
-                } while( (A->order == ASC  && A->key.ffunc(A->array[i]) < \
-                                           A->key.ffunc(A->array[p])) ||  \
-                         (A->order == DESC && A->key.ffunc(A->array[i]) > \
-                                           A->key.ffunc(A->array[p])) );
-                break;
-            case STRINGKEY:
-		do {
-                        j--;
-		} while((A->order == ASC && \
-				STRCMP( A->key.sfunc(A->array[j]->job),
-                                      >, A->key.sfunc(A->array[p]->job) )) || \
-                       (A->order == DESC && \
-				STRCMP( A->key.sfunc(A->array[j]->job),
-			 	      <, A->key.sfunc(A->array[p]->job) )));
-
-		do {
-                        i++;
-		} while((A->order == ASC && \
-				STRCMP( A->key.sfunc(A->array[i]->job),
-                                      <, A->key.sfunc(A->array[p]->job) )) || \
-		    	(A->order == DESC && \
-				STRCMP( A->key.sfunc(A->array[i]->job),
-				      >, A->key.sfunc(A->array[p]->job) )) );
-                break;
-            case DATETIMEKEY:
-		do {
-                        j--;
-		} while( (A->order == ASC && \
-				DATETIMECMP( A->key.dfunc(A->array[j]->job),
-                                 >, A->key.dfunc(A->array[p]->job) )) || \
-			 (A->order == DESC && \
-			        DATETIMECMP( A->key.dfunc(A->array[j]->job),
-				<, A->key.dfunc(A->array[p]->job) )) );
-
-		do {
-                        i++;
-		} while( (A->order == ASC && \
-				DATETIMECMP( A->key.dfunc(A->array[i]->job),
-                                 <, A->key.dfunc(A->array[p]->job) )) || \
-			 (A->order == DESC && \
-				DATETIMECMP( A->key.dfunc(A->array[i]->job),
-				 >, A->key.dfunc(A->array[p]->job) )) );
-                break;
-            case SIZEKEY:
-		do {
-                        j--;
-		} while( (A->order == ASC && \
-				SIZECMP( A->key.szfunc(A->array[j]->job),
-                                >, A->key.szfunc(A->array[p]->job) )) || \
-			 (A->order == DESC && \
-				SIZECMP( A->key.szfunc(A->array[j]->job),
-				<, A->key.szfunc(A->array[p]->job) )) );
-
-		do {
-                        i++;
-		} while( (A->order == ASC && \
-				SIZECMP( A->key.szfunc(A->array[i]->job),
-                                <, A->key.szfunc(A->array[p]->job) )) || \
-			 (A->order == DESC && \
-				SIZECMP( A->key.szfunc(A->array[i]->job),
-				>, A->key.szfunc(A->array[p]->job) )) );
-                break;
+        do
+          {
+          j--;
           }
+        while ((A->order == ASC  && A->key.ifunc(A->array[j]->job) > \
+                A->key.ifunc(A->array[p]->job)) ||  \
+               (A->order == DESC && A->key.ifunc(A->array[j]->job) < \
+                A->key.ifunc(A->array[p]->job)));
 
-	  if( i < j ) {
-		jtemptr = A->array[j]->job;
-		A->array[j]->job = A->array[i]->job;
-		A->array[i]->job = jtemptr;
+        do
+          {
+          i++;
 
-          } else {
-		return(j);
-	  }
+          if (i >= dynamicArraySize(A->array))
+            {
+            printf("i: %d is out of bounds!\n", i);
+            }
+          }
+        while ((A->order == ASC  && A->key.ifunc(A->array[i]->job) < \
+                A->key.ifunc(A->array[p]->job)) ||  \
+               (A->order == DESC && A->key.ifunc(A->array[i]->job) > \
+                A->key.ifunc(A->array[p]->job)));
 
-        } /* while */
-}
+        break;
 
-static void JobQuickSort(A, p, r)
-struct JobSortArgs	*A;
-int                	p;
-int             	r;
-{
-	int     q;
+      case FLOATKEY:
+        do
+          {
+          j--;
+          }
+        while ((A->order == ASC  && A->key.ffunc(A->array[j]) > \
+                A->key.ffunc(A->array[p])) ||  \
+               (A->order == DESC && A->key.ffunc(A->array[j]) < \
+                A->key.ffunc(A->array[p])));
 
-        if( p < r ) {
+        do
+          {
+          i++;
+          }
+        while ((A->order == ASC  && A->key.ffunc(A->array[i]) < \
+                A->key.ffunc(A->array[p])) ||  \
+               (A->order == DESC && A->key.ffunc(A->array[i]) > \
+                A->key.ffunc(A->array[p])));
 
-                q = JobPartition(A, p, r);
-                JobQuickSort(A, p, q);
-                JobQuickSort(A, q+1, r);
+        break;
+
+      case STRINGKEY:
+        do
+          {
+          j--;
+          }
+        while ((A->order == ASC && \
+                STRCMP(A->key.sfunc(A->array[j]->job),
+                       > , A->key.sfunc(A->array[p]->job))) || \
+               (A->order == DESC && \
+                STRCMP(A->key.sfunc(A->array[j]->job),
+                       < , A->key.sfunc(A->array[p]->job))));
+
+        do
+          {
+          i++;
+          }
+        while ((A->order == ASC && \
+                STRCMP(A->key.sfunc(A->array[i]->job),
+                       < , A->key.sfunc(A->array[p]->job))) || \
+               (A->order == DESC && \
+                STRCMP(A->key.sfunc(A->array[i]->job),
+                       > , A->key.sfunc(A->array[p]->job))));
+
+        break;
+
+      case DATETIMEKEY:
+        do
+          {
+          j--;
+          }
+        while ((A->order == ASC && \
+                DATETIMECMP(A->key.dfunc(A->array[j]->job),
+                            > , A->key.dfunc(A->array[p]->job))) || \
+               (A->order == DESC && \
+                DATETIMECMP(A->key.dfunc(A->array[j]->job),
+                            < , A->key.dfunc(A->array[p]->job))));
+
+        do
+          {
+          i++;
+          }
+        while ((A->order == ASC && \
+                DATETIMECMP(A->key.dfunc(A->array[i]->job),
+                            < , A->key.dfunc(A->array[p]->job))) || \
+               (A->order == DESC && \
+                DATETIMECMP(A->key.dfunc(A->array[i]->job),
+                            > , A->key.dfunc(A->array[p]->job))));
+
+        break;
+
+      case SIZEKEY:
+        do
+          {
+          j--;
+          }
+        while ((A->order == ASC && \
+                SIZECMP(A->key.szfunc(A->array[j]->job),
+                        > , A->key.szfunc(A->array[p]->job))) || \
+               (A->order == DESC && \
+                SIZECMP(A->key.szfunc(A->array[j]->job),
+                        < , A->key.szfunc(A->array[p]->job))));
+
+        do
+          {
+          i++;
+          }
+        while ((A->order == ASC && \
+                SIZECMP(A->key.szfunc(A->array[i]->job),
+                        < , A->key.szfunc(A->array[p]->job))) || \
+               (A->order == DESC && \
+                SIZECMP(A->key.szfunc(A->array[i]->job),
+                        > , A->key.szfunc(A->array[p]->job))));
+
+        break;
+      }
+
+    if (i < j)
+      {
+      jtemptr = A->array[j]->job;
+      A->array[j]->job = A->array[i]->job;
+      A->array[i]->job = jtemptr;
+
+      }
+    else
+      {
+      return(j);
+      }
+
+    } /* while */
+  }
+
+static void
+JobQuickSort(struct JobSortArgs *A, int p, int r)
+  {
+  int     q;
+
+  if (p < r)
+    {
+
+    q = JobPartition(A, p, r);
+    JobQuickSort(A, p, q);
+    JobQuickSort(A, q + 1, r);
+    }
+  }
+
+int
+SetJobSortInt(struct SetJobElement *sje, int (*key)(void), int order)
+  {
+
+  struct SetJobElement **sje_ptrs = NULL;
+  int    beforecnt, aftercnt;
+
+  struct JobSortArgs A;
+  Job    *job;
+
+  if (order != ASC && order != DESC)
+    {
+    fprintf(stderr,
+            "SetJobSortInt: order != ASC and order !=DESC\n");
+    return(FAIL);
+    }
+
+  beforecnt = 0;
+
+  for (sje = sje->first; (job = sje->job); sje = sje->nextptr)
+    {
+    sje_ptrs = (struct SetJobElement **)extendDynamicArray(sje_ptrs,
+               beforecnt + 1, sizeof(struct SetJobElement *));
+
+    aftercnt = dynamicArraySize(sje_ptrs);
+
+    if (beforecnt == aftercnt)
+      {
+      fprintf(stderr,
+              "SetJobSortInt: Unable to realloc sje_ptrs");
+
+      if (aftercnt > 0)
+        {
+        freeDynamicArray(sje_ptrs);
         }
-}
 
-int SetJobSortInt(sje, key, order)
-struct SetJobElement *sje;
-int		     (*key)();
-int		     order;
-{
-	
-	struct SetJobElement **sje_ptrs = NULL;
-	int    beforecnt, aftercnt;
-	struct JobSortArgs A;
-	Job    *job;
+      return(FAIL);
+      }
 
-	if( order != ASC && order != DESC ) {
-                fprintf(stderr,
-			  "SetJobSortInt: order != ASC and order !=DESC\n");
-		return(FAIL);
-	}
+    sje_ptrs[beforecnt] = sje;
 
-	beforecnt = 0;
-	for(sje=sje->first; (job=sje->job); sje=sje->nextptr ) {
-	  	sje_ptrs = (struct SetJobElement **)extendDynamicArray(sje_ptrs,
-				   beforecnt+1, sizeof(struct SetJobElement *));
+    beforecnt++;
+    }
 
-       		aftercnt = dynamicArraySize(sje_ptrs);
+  A.array = sje_ptrs;
 
-        	if (beforecnt == aftercnt) {
-                	fprintf(stderr,
-				"SetJobSortInt: Unable to realloc sje_ptrs");
-			if( aftercnt > 0 ) {
-				freeDynamicArray(sje_ptrs);
-			}
-                	return(FAIL);
-        	}
-		sje_ptrs[beforecnt] = sje;
-		beforecnt++;
-	}
+  A.key.ifunc = key;
+  A.keytype = INTKEY;
+  A.order   = order;
 
-	A.array = sje_ptrs;
-	A.key.ifunc = key;
-	A.keytype = INTKEY;
-	A.order   = order;
+  JobQuickSort(&A, 0, beforecnt - 1);
+  freeDynamicArray(sje_ptrs);
+  return(SUCCESS);
+  }
 
-	JobQuickSort(&A, 0, beforecnt-1);
-	freeDynamicArray(sje_ptrs);
-	return(SUCCESS);
-}
+int
+SetJobSortStr(struct SetJobElement *sje, char *(*key)(void), int order)
+  {
 
-int SetJobSortStr(sje, key, order)
-struct SetJobElement *sje;
-char		     *(*key)();
-int		     order;
-{
-	
-	struct SetJobElement **sje_ptrs = NULL;
-	int    beforecnt, aftercnt;
-	struct JobSortArgs A;
-	Job    *job;
+  struct SetJobElement **sje_ptrs = NULL;
+  int    beforecnt, aftercnt;
 
-	if( order != ASC && order != DESC ) {
-                fprintf(stderr,
-			  "SetJobSortStr: order != ASC and order !=DESC\n");
-		return(FAIL);
-	}
+  struct JobSortArgs A;
+  Job    *job;
 
-	beforecnt = 0;
-	for(sje=sje->first; (job=sje->job); sje=sje->nextptr ) {
-	  	sje_ptrs = (struct SetJobElement **)extendDynamicArray(sje_ptrs,
-				   beforecnt+1, sizeof(struct SetJobElement *));
+  if (order != ASC && order != DESC)
+    {
+    fprintf(stderr,
+            "SetJobSortStr: order != ASC and order !=DESC\n");
+    return(FAIL);
+    }
 
-       		aftercnt = dynamicArraySize(sje_ptrs);
+  beforecnt = 0;
 
-        	if (beforecnt == aftercnt) {
-                	fprintf(stderr, "Unable to realloc sje_ptrs");
-			if( aftercnt > 0 ) {
-				freeDynamicArray(sje_ptrs);
-			}
-                	return(FAIL);
-        	}
-		sje_ptrs[beforecnt] = sje;
-		beforecnt++;
-	}
+  for (sje = sje->first; (job = sje->job); sje = sje->nextptr)
+    {
+    sje_ptrs = (struct SetJobElement **)extendDynamicArray(sje_ptrs,
+               beforecnt + 1, sizeof(struct SetJobElement *));
 
-	A.array = sje_ptrs;
-	A.key.sfunc = key;
-	A.keytype = STRINGKEY;
-	A.order   = order;
+    aftercnt = dynamicArraySize(sje_ptrs);
 
-	JobQuickSort(&A, 0, beforecnt-1);
-	freeDynamicArray(sje_ptrs);
-	return(SUCCESS);
-}
+    if (beforecnt == aftercnt)
+      {
+      fprintf(stderr, "Unable to realloc sje_ptrs");
+
+      if (aftercnt > 0)
+        {
+        freeDynamicArray(sje_ptrs);
+        }
+
+      return(FAIL);
+      }
+
+    sje_ptrs[beforecnt] = sje;
+
+    beforecnt++;
+    }
+
+  A.array = sje_ptrs;
+
+  A.key.sfunc = key;
+  A.keytype = STRINGKEY;
+  A.order   = order;
+
+  JobQuickSort(&A, 0, beforecnt - 1);
+  freeDynamicArray(sje_ptrs);
+  return(SUCCESS);
+  }
 
 int SetJobSortDateTime(sje, key, order)
+
 struct SetJobElement *sje;
-DateTime	     (*key)();
-int		     order;
-{
-	
-	struct SetJobElement **sje_ptrs = NULL;
-	int    beforecnt, aftercnt;
-	struct JobSortArgs A;
-	Job    *job;
+DateTime(*key)();
+int       order;
+  {
 
-	if( order != ASC && order != DESC ) {
-                fprintf(stderr,
-			"SetJobSortDateTime: order != ASC and order !=DESC\n");
-		return(FAIL);
-	}
-	beforecnt = 0;
-	for(sje=sje->first; (job=sje->job); sje=sje->nextptr ) {
-	  	sje_ptrs = (struct SetJobElement **)extendDynamicArray(sje_ptrs,
-				   beforecnt+1, sizeof(struct SetJobElement *));
+  struct SetJobElement **sje_ptrs = NULL;
+  int    beforecnt, aftercnt;
 
-       		aftercnt = dynamicArraySize(sje_ptrs);
+  struct JobSortArgs A;
+  Job    *job;
 
-        	if (beforecnt == aftercnt) {
-                	fprintf(stderr, "Unable to realloc sje_ptrs");
-			if( aftercnt > 0 ) {
-				freeDynamicArray(sje_ptrs);
-			}
-                	return(FAIL);
-        	}
-		sje_ptrs[beforecnt] = sje;
-		beforecnt++;
-	}
+  if (order != ASC && order != DESC)
+    {
+    fprintf(stderr,
+            "SetJobSortDateTime: order != ASC and order !=DESC\n");
+    return(FAIL);
+    }
 
-	A.array = sje_ptrs;
-	A.key.dfunc = key;
-	A.keytype = DATETIMEKEY;
-	A.order   = order;
+  beforecnt = 0;
 
-	JobQuickSort(&A, 0, beforecnt-1);
-	freeDynamicArray(sje_ptrs);
-	return(SUCCESS);
-}
+  for (sje = sje->first; (job = sje->job); sje = sje->nextptr)
+    {
+    sje_ptrs = (struct SetJobElement **)extendDynamicArray(sje_ptrs,
+               beforecnt + 1, sizeof(struct SetJobElement *));
+
+    aftercnt = dynamicArraySize(sje_ptrs);
+
+    if (beforecnt == aftercnt)
+      {
+      fprintf(stderr, "Unable to realloc sje_ptrs");
+
+      if (aftercnt > 0)
+        {
+        freeDynamicArray(sje_ptrs);
+        }
+
+      return(FAIL);
+      }
+
+    sje_ptrs[beforecnt] = sje;
+
+    beforecnt++;
+    }
+
+  A.array = sje_ptrs;
+
+  A.key.dfunc = key;
+  A.keytype = DATETIMEKEY;
+  A.order   = order;
+
+  JobQuickSort(&A, 0, beforecnt - 1);
+  freeDynamicArray(sje_ptrs);
+  return(SUCCESS);
+  }
 
 int SetJobSortSize(sje, key, order)
+
 struct SetJobElement *sje;
-Size		     (*key)();
-int		     order;
-{
-	
-	struct SetJobElement **sje_ptrs = NULL;
-	int    beforecnt, aftercnt;
-	struct JobSortArgs A;
-	Job    *job;
+Size(*key)();
+int       order;
+  {
 
-	if( order != ASC && order != DESC ) {
-                fprintf(stderr,
-			"SetJobSortSize: order != ASC and order !=DESC\n");
-		return(FAIL);
-	}
-	beforecnt = 0;
-	for(sje=sje->first; (job=sje->job); sje=sje->nextptr ) {
-	  	sje_ptrs = (struct SetJobElement **)extendDynamicArray(sje_ptrs,
-				   beforecnt+1, sizeof(struct SetJobElement *));
+  struct SetJobElement **sje_ptrs = NULL;
+  int    beforecnt, aftercnt;
 
-       		aftercnt = dynamicArraySize(sje_ptrs);
+  struct JobSortArgs A;
+  Job    *job;
 
-        	if (beforecnt == aftercnt) {
-                	fprintf(stderr, "Unable to realloc sje_ptrs");
-			if( aftercnt > 0 ) {
-				freeDynamicArray(sje_ptrs);
-			}
-                	return(FAIL);
-        	}
-		sje_ptrs[beforecnt] = sje;
-		beforecnt++;
-	}
+  if (order != ASC && order != DESC)
+    {
+    fprintf(stderr,
+            "SetJobSortSize: order != ASC and order !=DESC\n");
+    return(FAIL);
+    }
 
-	A.array = sje_ptrs;
-	A.key.szfunc = key;
-	A.keytype = SIZEKEY;
-	A.order   = order;
+  beforecnt = 0;
 
-	JobQuickSort(&A, 0, beforecnt-1);
-	freeDynamicArray(sje_ptrs);
-	return(SUCCESS);
-}
+  for (sje = sje->first; (job = sje->job); sje = sje->nextptr)
+    {
+    sje_ptrs = (struct SetJobElement **)extendDynamicArray(sje_ptrs,
+               beforecnt + 1, sizeof(struct SetJobElement *));
 
-int SetJobSortFloat(sje, key, order)
-struct SetJobElement *sje;
-double		     (*key)();
-int		     order;
-{
-	
-	struct SetJobElement **sje_ptrs = NULL;
-	int    beforecnt, aftercnt;
-	struct JobSortArgs A;
-	Job    *job;
+    aftercnt = dynamicArraySize(sje_ptrs);
 
-	if( order != ASC && order != DESC ) {
-                fprintf(stderr,
-			"SetJobSortSize: order != ASC and order !=DESC\n");
-		return(FAIL);
-	}
-	beforecnt = 0;
-	for(sje=sje->first; (job=sje->job); sje=sje->nextptr ) {
-	  	sje_ptrs = (struct SetJobElement **)extendDynamicArray(sje_ptrs,
-				   beforecnt+1, sizeof(struct SetJobElement *));
+    if (beforecnt == aftercnt)
+      {
+      fprintf(stderr, "Unable to realloc sje_ptrs");
 
-       		aftercnt = dynamicArraySize(sje_ptrs);
+      if (aftercnt > 0)
+        {
+        freeDynamicArray(sje_ptrs);
+        }
 
-        	if (beforecnt == aftercnt) {
-                	fprintf(stderr, "Unable to realloc sje_ptrs");
-			if( aftercnt > 0 ) {
-				freeDynamicArray(sje_ptrs);
-			}
-                	return(FAIL);
-        	}
-		sje_ptrs[beforecnt] = sje;
-		beforecnt++;
-	}
+      return(FAIL);
+      }
 
-	A.array = sje_ptrs;
-	A.key.ffunc = key;
-	A.keytype = FLOATKEY;
-	A.order   = order;
+    sje_ptrs[beforecnt] = sje;
 
-	JobQuickSort(&A, 0, beforecnt-1);
-	freeDynamicArray(sje_ptrs);
-	return(SUCCESS);
-}
+    beforecnt++;
+    }
 
-void SetJobPrint(sje)
-struct SetJobElement *sje;
-{
+  A.array = sje_ptrs;
 
-	Job	*job;
-	int	i;
+  A.key.szfunc = key;
+  A.keytype = SIZEKEY;
+  A.order   = order;
 
-	i = 1;
-	for(firstJobPtr(&sje, sje->first); (job=sje->job); nextJobPtr(&sje) ) {
-	   printf("\n\t\tJob %3d: ===========================================\n", i);
-	   JobPrint( job );
-	   i++;
-	}
-}
+  JobQuickSort(&A, 0, beforecnt - 1);
+  freeDynamicArray(sje_ptrs);
+  return(SUCCESS);
+  }
+
+int
+SetJobSortFloat(struct SetJobElement *sje, double(*key)(void), int order)
+  {
+
+  struct SetJobElement **sje_ptrs = NULL;
+  int    beforecnt, aftercnt;
+
+  struct JobSortArgs A;
+  Job    *job;
+
+  if (order != ASC && order != DESC)
+    {
+    fprintf(stderr,
+            "SetJobSortSize: order != ASC and order !=DESC\n");
+    return(FAIL);
+    }
+
+  beforecnt = 0;
+
+  for (sje = sje->first; (job = sje->job); sje = sje->nextptr)
+    {
+    sje_ptrs = (struct SetJobElement **)extendDynamicArray(sje_ptrs,
+               beforecnt + 1, sizeof(struct SetJobElement *));
+
+    aftercnt = dynamicArraySize(sje_ptrs);
+
+    if (beforecnt == aftercnt)
+      {
+      fprintf(stderr, "Unable to realloc sje_ptrs");
+
+      if (aftercnt > 0)
+        {
+        freeDynamicArray(sje_ptrs);
+        }
+
+      return(FAIL);
+      }
+
+    sje_ptrs[beforecnt] = sje;
+
+    beforecnt++;
+    }
+
+  A.array = sje_ptrs;
+
+  A.key.ffunc = key;
+  A.keytype = FLOATKEY;
+  A.order   = order;
+
+  JobQuickSort(&A, 0, beforecnt - 1);
+  freeDynamicArray(sje_ptrs);
+  return(SUCCESS);
+  }
+
+void
+SetJobPrint(struct SetJobElement *sje)
+  {
+
+  Job *job;
+  int i;
+
+  i = 1;
+
+  for (firstJobPtr(&sje, sje->first); (job = sje->job); nextJobPtr(&sje))
+    {
+    printf("\n\t\tJob %3d: ===========================================\n", i);
+    JobPrint(job);
+    i++;
+    }
+  }
 
 /* is job in 'sjob'? 1 = true, 0 = false */
 int inSetJob(job, sje)
-Job	*job;
+Job *job;
+
 struct SetJobElement *sje;
-{
-    Job *j;
+  {
+  Job *j;
 
-/*  every element of sje has a ptr to first */
-    if( sje == EMPTYSETJOB )
-	return(0);
+  /*  every element of sje has a ptr to first */
 
-    for(firstJobPtr(&sje, sje->first); (j=sje->job); nextJobPtr(&sje) ) {
-	if( job == j )
-		return(1);
-    }
+  if (sje == EMPTYSETJOB)
     return(0);
-}
 
-int strToJobState(val)
-char    *val;
-{
-        if( val == NULLSTR ) {
-                return(-1);
-        }
+  for (firstJobPtr(&sje, sje->first); (j = sje->job); nextJobPtr(&sje))
+    {
+    if (job == j)
+      return(1);
+    }
 
-        if( STRCMP(val, ==, "Q") )
-                return( QUEUED );
-        else if( STRCMP(val, ==, "R") )
-                return( RUNNING );
-        else if( STRCMP(val, ==, "T") )
-                return( TRANSIT );
-        else if( STRCMP(val, ==, "H") )
-                return( HELD );
-        else if( STRCMP(val, ==, "E") )
-                return( EXITING );
-        else if( STRCMP(val, ==, "W") )
-                return( WAITING );
-        else if( STRCMP(val, ==, "D") )
-                return( DELETED );
-        else
-                return( -1 );
-}
+  return(0);
+  }
+
+int
+strToJobState(char *val)
+  {
+  if (val == NULLSTR)
+    {
+    return(-1);
+    }
+
+  if (STRCMP(val, == , "Q"))
+    return(QUEUED);
+  else if (STRCMP(val, == , "R"))
+    return(RUNNING);
+  else if (STRCMP(val, == , "T"))
+    return(TRANSIT);
+  else if (STRCMP(val, == , "H"))
+    return(HELD);
+  else if (STRCMP(val, == , "E"))
+    return(EXITING);
+  else if (STRCMP(val, == , "W"))
+    return(WAITING);
+  else if (STRCMP(val, == , "D"))
+    return(DELETED);
+  else
+    return(-1);
+  }

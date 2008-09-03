@@ -1,45 +1,45 @@
 /*
 *         OpenPBS (Portable Batch System) v2.3 Software License
-* 
+*
 * Copyright (c) 1999-2000 Veridian Information Solutions, Inc.
 * All rights reserved.
-* 
+*
 * ---------------------------------------------------------------------------
 * For a license to use or redistribute the OpenPBS software under conditions
 * other than those described below, or to purchase support for this software,
 * please contact Veridian Systems, PBS Products Department ("Licensor") at:
-* 
+*
 *    www.OpenPBS.org  +1 650 967-4675                  sales@OpenPBS.org
 *                        877 902-4PBS (US toll-free)
 * ---------------------------------------------------------------------------
-* 
+*
 * This license covers use of the OpenPBS v2.3 software (the "Software") at
 * your site or location, and, for certain users, redistribution of the
 * Software to other sites and locations.  Use and redistribution of
 * OpenPBS v2.3 in source and binary forms, with or without modification,
 * are permitted provided that all of the following conditions are met.
 * After December 31, 2001, only conditions 3-6 must be met:
-* 
+*
 * 1. Commercial and/or non-commercial use of the Software is permitted
 *    provided a current software registration is on file at www.OpenPBS.org.
 *    If use of this software contributes to a publication, product, or
 *    service, proper attribution must be given; see www.OpenPBS.org/credit.html
-* 
+*
 * 2. Redistribution in any form is only permitted for non-commercial,
 *    non-profit purposes.  There can be no charge for the Software or any
 *    software incorporating the Software.  Further, there can be no
 *    expectation of revenue generated as a consequence of redistributing
 *    the Software.
-* 
+*
 * 3. Any Redistribution of source code must retain the above copyright notice
 *    and the acknowledgment contained in paragraph 6, this list of conditions
 *    and the disclaimer contained in paragraph 7.
-* 
+*
 * 4. Any Redistribution in binary form must reproduce the above copyright
 *    notice and the acknowledgment contained in paragraph 6, this list of
 *    conditions and the disclaimer contained in paragraph 7 in the
 *    documentation and/or other materials provided with the distribution.
-* 
+*
 * 5. Redistributions in any form must be accompanied by information on how to
 *    obtain complete source code for the OpenPBS software and any
 *    modifications and/or additions to the OpenPBS software.  The source code
@@ -47,23 +47,23 @@
 *    than the cost of distribution plus a nominal fee, and all modifications
 *    and additions to the Software must be freely redistributable by any party
 *    (including Licensor) without restriction.
-* 
+*
 * 6. All advertising materials mentioning features or use of the Software must
 *    display the following acknowledgment:
-* 
+*
 *     "This product includes software developed by NASA Ames Research Center,
-*     Lawrence Livermore National Laboratory, and Veridian Information 
+*     Lawrence Livermore National Laboratory, and Veridian Information
 *     Solutions, Inc.
 *     Visit www.OpenPBS.org for OpenPBS software support,
 *     products, and information."
-* 
+*
 * 7. DISCLAIMER OF WARRANTY
-* 
+*
 * THIS SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND. ANY EXPRESS
 * OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
 * OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT
 * ARE EXPRESSLY DISCLAIMED.
-* 
+*
 * IN NO EVENT SHALL VERIDIAN CORPORATION, ITS AFFILIATED COMPANIES, OR THE
 * U.S. GOVERNMENT OR ANY OF ITS AGENCIES BE LIABLE FOR ANY DIRECT OR INDIRECT,
 * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
@@ -72,7 +72,7 @@
 * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
 * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-* 
+*
 * This license will be governed by the laws of the Commonwealth of Virginia,
 * without reference to its choice of law rules.
 */
@@ -101,177 +101,206 @@
 #include "pbs_error.h"
 
 /* Macros */
-#define MAXDARRAY	11	/* maximum # of dynamic arrays. Must be a */
-				/* prime # since this is used as a hash mod */
-				/* value */	
-				/* TODO: this is not a fixed number. It */
-				/* must be calculated. */
-				/* So far, slots for varstr, AllNodes, */
-				/* AllResmoms, Servers, Ques, as well as */
-				/* 5 more for each AllNodes, 1 for each */
-				/* server, as well as Res too! */
+#define MAXDARRAY 11 /* maximum # of dynamic arrays. Must be a */
+/* prime # since this is used as a hash mod */
+/* value */
+/* TODO: this is not a fixed number. It */
+/* must be calculated. */
+/* So far, slots for varstr, AllNodes, */
+/* AllResmoms, Servers, Ques, as well as */
+/* 5 more for each AllNodes, 1 for each */
+/* server, as well as Res too! */
 /* File Scope Variables */
 static char ident[] = "@(#) $RCSfile$ $Revision$";
 
-struct dynamic_array {
-	void	*ptr;		/* pointer to the dynamic array */
-	int	numElems;	/* number of elements in the array */ 
-};
+struct dynamic_array
+  {
+  void *ptr;  /* pointer to the dynamic array */
+  int numElems; /* number of elements in the array */
+  };
+
 static struct dynamic_array d_array[MAXDARRAY];
-static char *dayofweekVal[] = {
-/* 0 */	"SUN",
-/* 1 */	"MON",
-/* 2 */	"TUE",
-/* 3 */	"WED",
-/* 4 */	"THU",
-/* 5 */	"FRI",
-/* 6 */	"SAT",
-};
+static char *dayofweekVal[] =
+  {
+  /* 0 */ "SUN",
+  /* 1 */ "MON",
+  /* 2 */ "TUE",
+  /* 3 */ "WED",
+  /* 4 */ "THU",
+  /* 5 */ "FRI",
+  /* 6 */ "SAT",
+  };
 #define NUMDAYOFWEEK 7
 
-static char *actVal[] = {
-/* 0 */	"SYNCRUN",
-/* 1 */	"ASYNCRUN",
-/* 2 */	"DELETE",
-/* 3 */	"RERUN",
-/* 4 */	"HOLD",
-/* 5 */	"RELEASE",
-/* 6 */	"SIGNAL",
-/* 7 */	"MODIFYATTR",
-/* 8 */	"MODIFYRES",
-};
+static char *actVal[] =
+  {
+  /* 0 */ "SYNCRUN",
+  /* 1 */ "ASYNCRUN",
+  /* 2 */ "DELETE",
+  /* 3 */ "RERUN",
+  /* 4 */ "HOLD",
+  /* 5 */ "RELEASE",
+  /* 6 */ "SIGNAL",
+  /* 7 */ "MODIFYATTR",
+  /* 8 */ "MODIFYRES",
+  };
 #define NUMACTS 9
 
-static char *cprVal[] = {
-/* 0 */	"OP_EQ",
-/* 1 */	"OP_NEQ",
-/* 2 */	"OP_GT",
-/* 3 */	"OP_GE",
-/* 4 */	"OP_LT",
-/* 5 */	"OP_LE",
-/* 6 */	"OP_MAX",
-/* 7 */	"OP_MIN",
+static char *cprVal[] =
+  {
+  /* 0 */ "OP_EQ",
+  /* 1 */ "OP_NEQ",
+  /* 2 */ "OP_GT",
+  /* 3 */ "OP_GE",
+  /* 4 */ "OP_LT",
+  /* 5 */ "OP_LE",
+  /* 6 */ "OP_MAX",
+  /* 7 */ "OP_MIN",
 
-/* ************************************************************************* */
-/* Structures for the varstr						     */
-/* ************************************************************************* */
-};
+  /* ************************************************************************* */
+  /* Structures for the varstr           */
+  /* ************************************************************************* */
+  };
 #define NUMCPRS 8
-struct varstr_type {
-        void    *ptr;           /* ptr to malloc-ed storage of variable str */
-        int     scope;          /* variable's scope */
-        void    *pptr;          /* variable's parent ptr - useful for */
-                                /* collectively freeing up malloc-ed storage */
-                                /* linked to some main structure */
-        struct  varstr_type *link;
-};
+
+struct varstr_type
+  {
+  void    *ptr;           /* ptr to malloc-ed storage of variable str */
+  int     scope;          /* variable's scope */
+  void    *pptr;          /* variable's parent ptr - useful for */
+  /* collectively freeing up malloc-ed storage */
+  /* linked to some main structure */
+
+  struct  varstr_type *link;
+  };
+
 #define A ( (sqrt(5) - 1)/2 )
 #define VARSTRLEN 500
+
 static struct varstr_type *varstr[VARSTRLEN];
 
-struct varstrIndex_type {
-        struct varstr_type      *mptr;
-        struct varstrIndex_type *link;
-};
+struct varstrIndex_type
+  {
+
+  struct varstr_type      *mptr;
+
+  struct varstrIndex_type *link;
+  };
 
 #define VARSTR_INDEX_LEN 480
+
 static struct varstrIndex_type *varstrIndex[VARSTR_INDEX_LEN];
 
-struct varstrSubIndex_type {
-        struct varstrIndex_type         *ptr;
-        struct varstrSubIndex_type      *link;
-};
+struct varstrSubIndex_type
+  {
+
+  struct varstrIndex_type         *ptr;
+
+  struct varstrSubIndex_type      *link;
+  };
 
 #define VARSTR_SUBINDEX_LEN 19
+
 static struct varstrSubIndex_type *varstrSubIndex[VARSTR_SUBINDEX_LEN];
 
 /* ************************************************************************* */
-/* Structures for the mallocTable					     */
+/* Structures for the mallocTable          */
 /* ************************************************************************* */
 
-struct malloc_type {
-	int     scope;		/* variable's scope */
-	void 	*pptr;		/* variable's parent ptr - useful for */
-				/* collectively freeing up malloc-ed storage */
-				/* linked to some main structure */
-	void    *ptr;		/* ptr to malloc-ed storage of variable str */
-	struct malloc_type *link;
+struct malloc_type
+  {
+  int     scope;  /* variable's scope */
+  void  *pptr;  /* variable's parent ptr - useful for */
+  /* collectively freeing up malloc-ed storage */
+  /* linked to some main structure */
+  void    *ptr;  /* ptr to malloc-ed storage of variable str */
 
-};
+  struct malloc_type *link;
+
+  };
 
 #define MALLOCLEN 500
+
 static struct malloc_type *mallocTable[MALLOCLEN];
 
-struct mallocIndex_type {
-	struct malloc_type	*mptr;
-        struct mallocIndex_type *link;
-};
+struct mallocIndex_type
+  {
+
+  struct malloc_type *mptr;
+
+  struct mallocIndex_type *link;
+  };
 
 #define MALLOC_INDEX_LEN 480
+
 static struct mallocIndex_type *mallocIndexTable[MALLOC_INDEX_LEN];
 
-struct mallocSubIndex_type {
-	struct mallocIndex_type		*ptr;
-        struct mallocSubIndex_type	*link;
-};
+struct mallocSubIndex_type
+  {
+
+  struct mallocIndex_type  *ptr;
+
+  struct mallocSubIndex_type *link;
+  };
 
 #define MALLOC_SUBINDEX_LEN 19
+
 static struct mallocSubIndex_type *mallocSubIndexTable[MALLOC_SUBINDEX_LEN];
 
 
 /* ************************************************************************* */
-/* Various Hash Functions						     */
+/* Various Hash Functions           */
 /* ************************************************************************* */
-static int varstrHash( k )
-unsigned long k;
-{
-	double	val;
+static int
+varstrHash(unsigned long k)
+  {
+  double val;
 
-	val = k*A;
-        return( floor( VARSTRLEN*(val - floor(val)) ) );
-}
+  val = k * A;
+  return(floor(VARSTRLEN*(val - floor(val))));
+  }
 
-static int varstrIndexHash( k )
-unsigned long k;
-{
-        double  val;
+static int
+varstrIndexHash(unsigned long k)
+  {
+  double  val;
 
-        val = k*A;
-        return( floor( VARSTR_INDEX_LEN*(val - floor(val)) ) );
-}
+  val = k * A;
+  return(floor(VARSTR_INDEX_LEN*(val - floor(val))));
+  }
 
-static int varstrSubIndexHash( k )
-unsigned long k;
-{
+static int
+varstrSubIndexHash(unsigned long k)
+  {
 
-        return( k % VARSTR_SUBINDEX_LEN );
-}
+  return(k % VARSTR_SUBINDEX_LEN);
+  }
 
-static int mallocTableHash( k )
-unsigned long k;
-{
-	double	val;
+static int
+mallocTableHash(unsigned long k)
+  {
+  double val;
 
-	val = k*A;
-        return( floor( MALLOCLEN*(val - floor(val)) ) );
-}
+  val = k * A;
+  return(floor(MALLOCLEN*(val - floor(val))));
+  }
 
 
-static int mallocIndexTableHash( k )
-unsigned long k;
-{
-        double  val;
+static int
+mallocIndexTableHash(unsigned long k)
+  {
+  double  val;
 
-        val = k*A;
-        return( floor( MALLOC_INDEX_LEN*(val - floor(val)) ) );
-}
+  val = k * A;
+  return(floor(MALLOC_INDEX_LEN*(val - floor(val))));
+  }
 
-static int mallocSubIndexTableHash( k )
-unsigned long k;
-{
+static int
+mallocSubIndexTableHash(unsigned long k)
+  {
 
-	return( k % MALLOC_SUBINDEX_LEN );
-}
+  return(k % MALLOC_SUBINDEX_LEN);
+  }
 
 
 /* Global variables */
@@ -283,1094 +312,1374 @@ unsigned long k;
 /* Functions */
 
 /* varstrSubIndex is hashed by scope */
-static void varstrSubIndexAdd(ptr)
-struct varstrIndex_type *ptr;
-{
+static void
+varstrSubIndexAdd(struct varstrIndex_type *ptr)
+  {
 
-        struct varstrSubIndex_type *elem;
-        int                        index;
+  struct varstrSubIndex_type *elem;
+  int                        index;
 
-        index = varstrSubIndexHash(ptr->mptr->scope);
+  index = varstrSubIndexHash(ptr->mptr->scope);
 
-        elem = (struct varstrSubIndex_type *) \
-                         malloc( (size_t)sizeof( struct varstrSubIndex_type ) );
+  elem = (struct varstrSubIndex_type *) \
+         malloc((size_t)sizeof(struct varstrSubIndex_type));
 
-        elem->ptr = ptr;
-        elem->link = varstrSubIndex[index];
+  elem->ptr = ptr;
+  elem->link = varstrSubIndex[index];
 
-        varstrSubIndex[index] = elem;
-}
+  varstrSubIndex[index] = elem;
+  }
 
-static void varstrSubIndexFree(ptr)
-struct varstrIndex_type *ptr;
-{
+static void
+varstrSubIndexFree(struct varstrIndex_type *ptr)
+  {
 
-        int                             index;
-        struct varstrSubIndex_type      *v, *v_before;
+  int                             index;
 
-        index = varstrSubIndexHash(ptr->mptr->scope);
+  struct varstrSubIndex_type      *v, *v_before;
 
-        v_before = NULL;
-        for(v=varstrSubIndex[index]; v; v=v->link) {
-                if( v->ptr == ptr ) {
-                        if( v_before == NULL ) {
-                                varstrSubIndex[index] = v->link;
-                        } else {
-                                v_before->link = v->link;
-                        }
-                        free(v);
-                        return;
-                }
-                v_before = v;
+  index = varstrSubIndexHash(ptr->mptr->scope);
+
+  v_before = NULL;
+
+  for (v = varstrSubIndex[index]; v; v = v->link)
+    {
+    if (v->ptr == ptr)
+      {
+      if (v_before == NULL)
+        {
+        varstrSubIndex[index] = v->link;
         }
-}
+      else
+        {
+        v_before->link = v->link;
+        }
+
+      free(v);
+
+      return;
+      }
+
+    v_before = v;
+    }
+  }
 
 /* varstrIndex is hashed by pptr */
-static void varstrIndexAdd(mptr)
-struct varstr_type *mptr;
-{
+static void
+varstrIndexAdd(struct varstr_type *mptr)
+  {
 
-        struct varstrIndex_type *elem;
-        int                     index;
+  struct varstrIndex_type *elem;
+  int                     index;
 
-        index = varstrIndexHash(mptr->pptr);
+  index = varstrIndexHash(mptr->pptr);
 
-        elem = (struct varstrIndex_type *) \
-                         malloc( (size_t)sizeof( struct varstrIndex_type ) );
+  elem = (struct varstrIndex_type *) \
+         malloc((size_t)sizeof(struct varstrIndex_type));
 
-        elem->mptr = mptr;
-        elem->link = varstrIndex[index];
+  elem->mptr = mptr;
+  elem->link = varstrIndex[index];
 
-        varstrIndex[index] = elem;
+  varstrIndex[index] = elem;
 
-        varstrSubIndexAdd(elem);
-}
+  varstrSubIndexAdd(elem);
+  }
 
-static void varstrIndexFree(mptr)
-struct varstr_type *mptr;
-{
+static void
+varstrIndexFree(struct varstr_type *mptr)
+  {
 
-        int                     index;
-        struct varstrIndex_type *v, *v_before;
+  int                     index;
 
-        index = varstrIndexHash(mptr->pptr);
+  struct varstrIndex_type *v, *v_before;
 
-        v_before = NULL;
-        for(v=varstrIndex[index]; v; v=v->link) {
-                if( v->mptr == mptr ) {
-                        if( v_before == NULL ) {
-                                varstrIndex[index] = v->link;
-                        } else {
-                                v_before->link = v->link;
-                        }
-                        varstrSubIndexFree(v);
-                        free(v);
-                        return;
-                }
-                v_before = v;
+  index = varstrIndexHash(mptr->pptr);
+
+  v_before = NULL;
+
+  for (v = varstrIndex[index]; v; v = v->link)
+    {
+    if (v->mptr == mptr)
+      {
+      if (v_before == NULL)
+        {
+        varstrIndex[index] = v->link;
         }
-}
-
-static void varstrIndexFreeNoIndex(mptr)
-struct varstr_type *mptr;
-{
-
-        int                     index;
-        struct varstrIndex_type *v;
-
-        index = varstrIndexHash(mptr->pptr);
-
-        for(v=varstrIndex[index]; v; v=v->link) {
-                if( v->mptr == mptr ) {
-                        varstrSubIndexFree(v);
-                        return;
-                }
+      else
+        {
+        v_before->link = v->link;
         }
-}
 
-static void varstrIndexFreeNoSubIndex(mptr)
-struct varstr_type *mptr;
-{
+      varstrSubIndexFree(v);
 
-        int                     index;
-        struct varstrIndex_type *v, *v_before;
+      free(v);
+      return;
+      }
 
-        index = varstrIndexHash(mptr->pptr);
+    v_before = v;
+    }
+  }
 
-        v_before = NULL;
-        for(v=varstrIndex[index]; v; v=v->link) {
-                if( v->mptr == mptr ) {
-                        if( v_before == NULL ) {
-                                varstrIndex[index] = v->link;
-                        } else {
-                                v_before->link = v->link;
-                        }
-                        free(v);
-                        return;
-                }
-                v_before = v;
+static void
+varstrIndexFreeNoIndex(struct varstr_type *mptr)
+  {
+
+  int                     index;
+
+  struct varstrIndex_type *v;
+
+  index = varstrIndexHash(mptr->pptr);
+
+  for (v = varstrIndex[index]; v; v = v->link)
+    {
+    if (v->mptr == mptr)
+      {
+      varstrSubIndexFree(v);
+      return;
+      }
+    }
+  }
+
+static void
+varstrIndexFreeNoSubIndex(struct varstr_type *mptr)
+  {
+
+  int                     index;
+
+  struct varstrIndex_type *v, *v_before;
+
+  index = varstrIndexHash(mptr->pptr);
+
+  v_before = NULL;
+
+  for (v = varstrIndex[index]; v; v = v->link)
+    {
+    if (v->mptr == mptr)
+      {
+      if (v_before == NULL)
+        {
+        varstrIndex[index] = v->link;
         }
-}
+      else
+        {
+        v_before->link = v->link;
+        }
+
+      free(v);
+
+      return;
+      }
+
+    v_before = v;
+    }
+  }
 
 /* Adds a unique variable (ptr, scope) */
-void varstrAdd(ptr, scope, pptr)
-void *ptr;
-int  scope;
-void *pptr;
-{
-        struct varstr_type *v_elem;
-        int                index;
+void
+varstrAdd(void *ptr, int scope, void *pptr)
+  {
 
-        index = varstrHash(ptr);
+  struct varstr_type *v_elem;
+  int                index;
 
-        v_elem = (struct varstr_type *) \
-                                malloc( (size_t)sizeof( struct varstr_type ));
+  index = varstrHash(ptr);
 
-        v_elem->ptr = ptr;
-        v_elem->pptr = pptr;
-        v_elem->scope = scope;
+  v_elem = (struct varstr_type *) \
+           malloc((size_t)sizeof(struct varstr_type));
 
-        v_elem->link = varstr[index];
-        varstr[index] = v_elem;
+  v_elem->ptr = ptr;
+  v_elem->pptr = pptr;
+  v_elem->scope = scope;
 
-	varstrIndexAdd(v_elem);
+  v_elem->link = varstr[index];
+  varstr[index] = v_elem;
 
-}
+  varstrIndexAdd(v_elem);
 
-void varstrRemove(ptr)
-void    *ptr;
-{
+  }
 
-        int                index;
-        struct varstr_type *v, *v_before;
+void
+varstrRemove(void *ptr)
+  {
 
-        index = varstrHash(ptr);
+  int                index;
 
-        v_before = NULL;
-        for(v=varstr[index]; v; v=v->link) {
-                if( v->ptr == ptr ) {
-                        if( v_before == NULL ) {
-                                varstr[index] = v->link;
-                        } else {
-                                v_before->link = v->link;
-                        }
-                        varstrIndexFree(v);
-                        free(v);
-                        return;
-                }
-                v_before = v;
+  struct varstr_type *v, *v_before;
+
+  index = varstrHash(ptr);
+
+  v_before = NULL;
+
+  for (v = varstr[index]; v; v = v->link)
+    {
+    if (v->ptr == ptr)
+      {
+      if (v_before == NULL)
+        {
+        varstr[index] = v->link;
         }
-}
+      else
+        {
+        v_before->link = v->link;
+        }
+
+      varstrIndexFree(v);
+
+      free(v);
+      return;
+      }
+
+    v_before = v;
+    }
+  }
 
 
 /* Modifies the variable (ptr, scope) to have a 'newscope'. */
-void varstrModScope(ptr, newscope)
-void *ptr;
-int  newscope;
-{
-        int                     index, index2;
-        struct varstr_type      *v;
-        struct varstrIndex_type *v2;
-        struct varstrIndex_type *index_entry;
+void
+varstrModScope(void *ptr, int newscope)
+  {
+  int                     index, index2;
 
-        index = varstrHash(ptr);
+  struct varstr_type      *v;
 
-        index_entry = NULL;
-        for(v=varstr[index]; v; v=v->link) {
+  struct varstrIndex_type *v2;
 
-                if( v->ptr == ptr ) {
-                        /* hash lookup against index2 */
-                        index2 = varstrIndexHash(v->pptr);
-                        for(v2=varstrIndex[index2]; v2; v2=v2->link) {
-                                if( v2->mptr == v ) {
-                                        /* hash lookup against scope */
-                                        varstrSubIndexFree(v2);
-                                        index_entry = v2;
-                                        break;
-                                }
-                        }
-                        v->scope = newscope;
-                        if( index_entry != NULL ) {
-                                varstrSubIndexAdd(index_entry);
-                        }
-                        return;
-                }
+  struct varstrIndex_type *index_entry;
+
+  index = varstrHash(ptr);
+
+  index_entry = NULL;
+
+  for (v = varstr[index]; v; v = v->link)
+    {
+
+    if (v->ptr == ptr)
+      {
+      /* hash lookup against index2 */
+      index2 = varstrIndexHash(v->pptr);
+
+      for (v2 = varstrIndex[index2]; v2; v2 = v2->link)
+        {
+        if (v2->mptr == v)
+          {
+          /* hash lookup against scope */
+          varstrSubIndexFree(v2);
+          index_entry = v2;
+          break;
+          }
         }
-}
+
+      v->scope = newscope;
+
+      if (index_entry != NULL)
+        {
+        varstrSubIndexAdd(index_entry);
+        }
+
+      return;
+      }
+    }
+  }
 
 /* Modifies the variable (ptr, pptr) to have a 'newpptr'. */
-void varstrModPptr(ptr, newpptr)
-void *ptr;
-void *newpptr;
-{
-        int                     index;
-        struct varstr_type      *v;
+void
+varstrModPptr(void *ptr, void *newpptr)
+  {
+  int                     index;
 
-        index = varstrHash(ptr);
+  struct varstr_type      *v;
 
-        for(v=varstr[index]; v; v=v->link) {
+  index = varstrHash(ptr);
 
-                if( v->ptr == ptr ) {
-                        varstrIndexFree(v);
-                        v->pptr = newpptr;
-                        varstrIndexAdd(v);
-                        return;
-                }
-        }
-}
+  for (v = varstr[index]; v; v = v->link)
+    {
+
+    if (v->ptr == ptr)
+      {
+      varstrIndexFree(v);
+      v->pptr = newpptr;
+      varstrIndexAdd(v);
+      return;
+      }
+    }
+  }
 
 /* Returns 1 if 'ptr' is an already malloc-ed variable string ; 0
    otherwise. */
-int inVarstr(ptr)
-void *ptr;
-{
+int
+inVarstr(void *ptr)
+  {
 
-        int                index;
-        struct varstr_type *v;
+  int                index;
 
-        index = varstrHash(ptr);
+  struct varstr_type *v;
 
-        for(v=varstr[index]; v; v=v->link) {
-                if( v->ptr == ptr ) {
-                        return(1);
-                }
-        }
+  index = varstrHash(ptr);
 
-        return(0);
-}
+  for (v = varstr[index]; v; v = v->link)
+    {
+    if (v->ptr == ptr)
+      {
+      return(1);
+      }
+    }
+
+  return(0);
+  }
 
 void varstrInit(void)
-{
-        int	i;
+  {
+  int i;
 
-        for(i=0; i < VARSTRLEN; i++) {
-		varstr[i] = (struct varstr_type *)NULL;
-	}
-        for(i=0; i < VARSTR_INDEX_LEN; i++) {
-                varstrIndex[i] = (struct varstrIndex_type *)NULL;
-        }
-        for(i=0; i < VARSTR_SUBINDEX_LEN; i++) {
-                varstrSubIndex[i] = (struct varstrSubIndex_type *)NULL;
-        }
+  for (i = 0; i < VARSTRLEN; i++)
+    {
+    varstr[i] = (struct varstr_type *)NULL;
+    }
 
-}
+  for (i = 0; i < VARSTR_INDEX_LEN; i++)
+    {
+    varstrIndex[i] = (struct varstrIndex_type *)NULL;
+    }
+
+  for (i = 0; i < VARSTR_SUBINDEX_LEN; i++)
+    {
+    varstrSubIndex[i] = (struct varstrSubIndex_type *)NULL;
+    }
+
+  }
 
 void varstrPrint(void)
-{
-        int				i;
-        struct varstr_type		*v;
-        struct varstrIndex_type		*v2;
-        struct varstrSubIndex_type	*v3;
+  {
+  int    i;
+
+  struct varstr_type  *v;
+
+  struct varstrIndex_type  *v2;
+
+  struct varstrSubIndex_type *v3;
 
 
-        for(i=0; i < VARSTRLEN; i++) {
-            printf( "varstr[%d]: ======================================\n", i);
-            for(v=varstr[i]; v; v=v->link) {
-                printf("%d:%x: (%x=%s, %d, %x)\n", i, v, v->ptr,
-                                     v->ptr ? v->ptr:"null", v->scope, v->pptr);
-            }
+  for (i = 0; i < VARSTRLEN; i++)
+    {
+    printf("varstr[%d]: ======================================\n", i);
+
+    for (v = varstr[i]; v; v = v->link)
+      {
+      printf("%d:%x: (%x=%s, %d, %x)\n", i, v, v->ptr,
+             v->ptr ? v->ptr : "null", v->scope, v->pptr);
+      }
+    }
+
+  for (i = 0; i < VARSTR_INDEX_LEN; i++)
+    {
+    printf("varstrIndex[%d]: ==================================\n", i);
+
+    for (v2 = varstrIndex[i]; v2; v2 = v2->link)
+      {
+      printf("%d:%x: (mptr: %x, hashkey-pptr: %x)\n", i, v2,
+             v2->mptr, v2->mptr->pptr);
+      }
+    }
+
+  for (i = 0; i < VARSTR_SUBINDEX_LEN; i++)
+    {
+    printf("varstrSubIndex[%d]: ===============================\n", i);
+
+    for (v3 = varstrSubIndex[i]; v3; v3 = v3->link)
+      {
+      printf("%d:%x: (%x, hashkey-scope: %d)\n", i, v3, v3->ptr,
+             v3->ptr->mptr->scope);
+      }
+    }
+
+  }
+
+void
+varstrFree(void *ptr)
+  {
+
+  int                index;
+
+  struct varstr_type *v, *v_before;
+
+  index = varstrHash(ptr);
+
+  v_before = NULL;
+
+  for (v = varstr[index]; v; v = v->link)
+    {
+    if (v->ptr == ptr)
+      {
+      free(ptr);
+
+      if (v_before == NULL)
+        {
+        varstr[index] = v->link;
+        }
+      else
+        {
+        v_before->link = v->link;
         }
 
-        for(i=0; i < VARSTR_INDEX_LEN; i++) {
-            printf( "varstrIndex[%d]: ==================================\n", i);
-            for(v2=varstrIndex[i]; v2; v2=v2->link) {
-                printf("%d:%x: (mptr: %x, hashkey-pptr: %x)\n", i, v2,
-                                                    v2->mptr, v2->mptr->pptr);
-            }
+      varstrIndexFree(v);
+
+      free(v);
+      return;
+      }
+
+    v_before = v;
+    }
+  }
+
+static void
+varstrFreeNoIndex(void *ptr)
+  {
+
+  int                index;
+
+  struct varstr_type *v, *v_before;
+
+  index = varstrHash(ptr);
+
+  v_before = NULL;
+
+  for (v = varstr[index]; v; v = v->link)
+    {
+    if (v->ptr == ptr)
+      {
+      free(ptr);
+
+      if (v_before == NULL)
+        {
+        varstr[index] = v->link;
+        }
+      else
+        {
+        v_before->link = v->link;
         }
 
-        for(i=0; i < VARSTR_SUBINDEX_LEN; i++) {
-            printf( "varstrSubIndex[%d]: ===============================\n", i);
-            for(v3=varstrSubIndex[i]; v3; v3=v3->link) {
-                printf("%d:%x: (%x, hashkey-scope: %d)\n", i, v3, v3->ptr,
-                                                    v3->ptr->mptr->scope);
-            }
+      varstrIndexFreeNoIndex(v);
+
+      free(v);
+      return;
+      }
+
+    v_before = v;
+    }
+  }
+
+static void
+varstrFreeNoSubIndex(void *ptr)
+  {
+
+  int                index;
+
+  struct varstr_type *v, *v_before;
+
+  index = varstrHash(ptr);
+
+  v_before = NULL;
+
+  for (v = varstr[index]; v; v = v->link)
+    {
+    if (v->ptr == ptr)
+      {
+      free(ptr);
+
+      if (v_before == NULL)
+        {
+        varstr[index] = v->link;
+        }
+      else
+        {
+        v_before->link = v->link;
         }
 
-}
+      varstrIndexFreeNoSubIndex(v);
 
-void varstrFree(ptr)
-void    *ptr;
-{
+      free(v);
+      return;
+      }
 
-        int                index;
-        struct varstr_type *v, *v_before;
-
-        index = varstrHash(ptr);
-
-        v_before = NULL;
-        for(v=varstr[index]; v; v=v->link) {
-                if( v->ptr == ptr ) {
-                        free(ptr);
-                        if( v_before == NULL ) {
-                                varstr[index] = v->link;
-                        } else {
-                                v_before->link = v->link;
-                        }
-                        varstrIndexFree(v);
-                        free(v);
-                        return;
-                }
-                v_before = v;
-        }
-}
-
-static void varstrFreeNoIndex(ptr)
-void    *ptr;
-{
-
-        int                index;
-        struct varstr_type *v, *v_before;
-
-        index = varstrHash(ptr);
-
-        v_before = NULL;
-        for(v=varstr[index]; v; v=v->link) {
-                if( v->ptr == ptr ) {
-                        free(ptr);
-                        if( v_before == NULL ) {
-                                varstr[index] = v->link;
-                        } else {
-                                v_before->link = v->link;
-                        }
-                        varstrIndexFreeNoIndex(v);
-                        free(v);
-                        return;
-                }
-                v_before = v;
-        }
-}
-
-static void varstrFreeNoSubIndex(ptr)
-void    *ptr;
-{
-
-        int                index;
-        struct varstr_type *v, *v_before;
-
-        index = varstrHash(ptr);
-
-        v_before = NULL;
-        for(v=varstr[index]; v; v=v->link) {
-                if( v->ptr == ptr ) {
-                        free(ptr);
-                        if( v_before == NULL ) {
-                                varstr[index] = v->link;
-                        } else {
-                                v_before->link = v->link;
-                        }
-                        varstrIndexFreeNoSubIndex(v);
-                        free(v);
-                        return;
-                }
-                v_before = v;
-        }
-}
+    v_before = v;
+    }
+  }
 
 /* Like varstrFree but this can be given 2 ptrs at the same time to free up */
 /* This is an optomization attempt */
-static void varstr2Free(ptr, ptr2)
-void    *ptr;
-void    *ptr2;
-{
-        varstrFree(ptr);
-        varstrFree(ptr2);
-}
+static void
+varstr2Free(void *ptr, void *ptr2)
+  {
+  varstrFree(ptr);
+  varstrFree(ptr2);
+  }
 
-void varstrFreeByScope(scope)
-int     scope;
-{
+void
+varstrFreeByScope(int scope)
+  {
 
-        int                             index;
-        struct varstrSubIndex_type      *v, *v_before, *linkptr;
+  int                             index;
 
-        index = varstrSubIndexHash(scope);
+  struct varstrSubIndex_type      *v, *v_before, *linkptr;
 
-        v_before = NULL;
-        v = varstrSubIndex[index];
-        while( v ) {
-                linkptr = v->link;
-                if( v->ptr->mptr->scope == scope ) {
+  index = varstrSubIndexHash(scope);
 
-                        varstrFreeNoSubIndex(v->ptr->mptr->ptr);
-                        if( v_before == NULL ) {
-                                varstrSubIndex[index] = linkptr;
-                        } else {
-                                v_before->link = linkptr;
-                        }
-                        free(v);
-                } else {
-                        v_before = v;
-                }
-                v = linkptr;
+  v_before = NULL;
+  v = varstrSubIndex[index];
+
+  while (v)
+    {
+    linkptr = v->link;
+
+    if (v->ptr->mptr->scope == scope)
+      {
+
+      varstrFreeNoSubIndex(v->ptr->mptr->ptr);
+
+      if (v_before == NULL)
+        {
+        varstrSubIndex[index] = linkptr;
         }
-}
-
-void varstrFreeByPptr(pptr)
-void    *pptr;
-{
-
-        int                     index;
-        struct varstrIndex_type *v, *v_before, *linkptr;
-
-        index = varstrIndexHash(pptr);
-
-        v_before = NULL;
-        v = varstrIndex[index];
-        while( v ) {
-                linkptr = v->link;
-                if( v->mptr->pptr == pptr ) {
-                        varstrFreeNoIndex(v->mptr->ptr);
-                        if( v_before == NULL ) {
-                                varstrIndex[index] = linkptr;
-                        } else {
-                                v_before->link = linkptr;
-                        }
-                        free(v);
-                } else {
-                        v_before = v;
-                }
-                v = linkptr;
+      else
+        {
+        v_before->link = linkptr;
         }
-}
+
+      free(v);
+      }
+    else
+      {
+      v_before = v;
+      }
+
+    v = linkptr;
+    }
+  }
+
+void
+varstrFreeByPptr(void *pptr)
+  {
+
+  int                     index;
+
+  struct varstrIndex_type *v, *v_before, *linkptr;
+
+  index = varstrIndexHash(pptr);
+
+  v_before = NULL;
+  v = varstrIndex[index];
+
+  while (v)
+    {
+    linkptr = v->link;
+
+    if (v->mptr->pptr == pptr)
+      {
+      varstrFreeNoIndex(v->mptr->ptr);
+
+      if (v_before == NULL)
+        {
+        varstrIndex[index] = linkptr;
+        }
+      else
+        {
+        v_before->link = linkptr;
+        }
+
+      free(v);
+      }
+    else
+      {
+      v_before = v;
+      }
+
+    v = linkptr;
+    }
+  }
 
 /* dynamic_strcpy: almost like strdup except it can shrink or grow existing */
-/*		   strings. For creating new strings, be sure str1_ptr is */
-/*		   initially set to NULL! */
+/*     strings. For creating new strings, be sure str1_ptr is */
+/*     initially set to NULL! */
 /* NOTE: This will update varstr to that lists pointers to all malloc-ed */
-void dynamic_strcpy(str1_ptr, str2)
-char       **str1_ptr;
-const char *str2;
-{
+void
+dynamic_strcpy(char **str1_ptr, const char *str2)
+  {
 
 
-       char *str1_before;
+  char *str1_before;
 
-       if( str2 == NULLSTR ) {
-	  varstrFree(*str1_ptr);	/* free up existing storage */
-	  *str1_ptr = NULLSTR;
-	  return;
-       }	
+  if (str2 == NULLSTR)
+    {
+    varstrFree(*str1_ptr); /* free up existing storage */
+    *str1_ptr = NULLSTR;
+    return;
+    }
 
-       str1_before = *str1_ptr;
-       if( *str1_ptr == NULLSTR )
-         	*str1_ptr = (char *) malloc((size_t) strlen(str2)+1);
-       else	
-         	*str1_ptr = (char *) realloc((char *)*str1_ptr, (size_t) strlen(str2)+1);
+  str1_before = *str1_ptr;
 
-       assert( *str1_ptr != NULLSTR );
+  if (*str1_ptr == NULLSTR)
+    *str1_ptr = (char *) malloc((size_t) strlen(str2) + 1);
+  else
+    *str1_ptr = (char *) realloc((char *) * str1_ptr, (size_t) strlen(str2) + 1);
 
-        if( str1_before != *str1_ptr ) {
+  assert(*str1_ptr != NULLSTR);
 
-		varstrRemove(str1_before);
+  if (str1_before != *str1_ptr)
+    {
 
-		varstrAdd(*str1_ptr, 0, (void *)NULL); 
-						/* global scope by default */
-	}
+    varstrRemove(str1_before);
 
-       (void)strcpy(*str1_ptr, str2);
-}
+    varstrAdd(*str1_ptr, 0, (void *)NULL);
+    /* global scope by default */
+    }
+
+  (void)strcpy(*str1_ptr, str2);
+  }
 
 /* dynamic_strcat: almost like strcat except '*str1_ptr' is a malloc-ed
    string that will be adjusted according to the size of str2 */
 /* 'str1_ptr'  cannot be NULL */
-void dynamic_strcat(str1_ptr, str2)
-char       **str1_ptr;
-const char *str2;
-{
-       char *str1_before;
-       int  str1_len;
+void
+dynamic_strcat(char **str1_ptr, const char *str2)
+  {
+  char *str1_before;
+  int  str1_len;
 
-	if( str2 == NULLSTR ) {
-	  return;	/* just return, nothing to append to */
-	}	
+  if (str2 == NULLSTR)
+    {
+    return; /* just return, nothing to append to */
+    }
 
-	if( *str1_ptr != NULLSTR )
-		str1_len = strlen(*str1_ptr);
-	else
-		str1_len = 0;
+  if (*str1_ptr != NULLSTR)
+    str1_len = strlen(*str1_ptr);
+  else
+    str1_len = 0;
 
-        str1_before = *str1_ptr;
-	if( *str1_ptr == NULLSTR )
-       		*str1_ptr = (char *) malloc((size_t) str1_len+strlen(str2)+1);
-	else
-       		*str1_ptr = (char *) realloc(*str1_ptr, (size_t) str1_len+strlen(str2)+1);
-	assert( *str1_ptr != NULLSTR );
-        if( str1_before == NULLSTR ) {
-                **str1_ptr = '\0';
-        }
+  str1_before = *str1_ptr;
 
-	if( str1_before != *str1_ptr ) {
+  if (*str1_ptr == NULLSTR)
+    *str1_ptr = (char *) malloc((size_t) str1_len + strlen(str2) + 1);
+  else
+    *str1_ptr = (char *) realloc(*str1_ptr, (size_t) str1_len + strlen(str2) + 1);
 
-		varstrRemove(str1_before);
+  assert(*str1_ptr != NULLSTR);
 
-		varstrAdd(*str1_ptr, 0, (void *)NULL);  
-						/* global scope by default */
-	}
-	(void)strcat(*str1_ptr, str2);
-}
+  if (str1_before == NULLSTR)
+    {
+    **str1_ptr = '\0';
+    }
+
+  if (str1_before != *str1_ptr)
+    {
+
+    varstrRemove(str1_before);
+
+    varstrAdd(*str1_ptr, 0, (void *)NULL);
+    /* global scope by default */
+    }
+
+  (void)strcat(*str1_ptr, str2);
+  }
 
 /* strToInt: given a valid string integer (containing only digit chars),
    returns the integer value.
    NOTE: if conversion is unsucessful, a value of -1 will always be returned.
 */
-int strToInt(str)
-char *str;
-{
-    long int newval;
-    char *endp;
-	
-    if( str == NULLSTR ) {
-	return(-1);
-    }		
+int
+strToInt(char *str)
+  {
+  long int newval;
+  char *endp;
 
-    newval = strtol(str, &endp, 10);
-	
-    if( str == endp || *endp != '\0')
-      return(-1);
-    
-    return((int)newval);
-}
-
-/* strToFloat: given a string containing  a float, return the float value. 
-		A value of 0.0 is returned if conversion failed.
-*/ 
-double strToFloat(str)
-char  *str;
-{
-    double f;
-    char   *endp;
-
-    if( str == NULLSTR ) {
-	return(0.0);
-    };
-
-    f = strtod(str, &endp);
-
-    if( str == endp || *endp != '\0' ) {
-      return(0.0);
+  if (str == NULLSTR)
+    {
+    return(-1);
     }
 
-    return(f);
-}
+  newval = strtol(str, &endp, 10);
+
+  if (str == endp || *endp != '\0')
+    return(-1);
+
+  return((int)newval);
+  }
+
+/* strToFloat: given a string containing  a float, return the float value.
+  A value of 0.0 is returned if conversion failed.
+*/
+double
+strToFloat(char *str)
+  {
+  double f;
+  char   *endp;
+
+  if (str == NULLSTR)
+    {
+    return(0.0);
+    };
+
+  f = strtod(str, &endp);
+
+  if (str == endp || *endp != '\0')
+    {
+    return(0.0);
+    }
+
+  return(f);
+  }
 
 /* Returns the Dayofweek (int) given a string. This returns -1 if
-	   if conversion was unsuccessful.
+    if conversion was unsuccessful.
 */
-int strToDayofweek(str)
-char	  *str;
-{
-	  if( str == NULLSTR ) {
-		return(-1);
-	  }
+int
+strToDayofweek(char *str)
+  {
+  if (str == NULLSTR)
+    {
+    return(-1);
+    }
 
-	  if( strncmp(str,"SUN", 3) == 0)
-		return(SUN);
-	  else if( strncmp(str, "MON", 3) == 0)
-		return(MON);
-	  else if( strncmp(str, "TUE", 3) == 0)
-		return(TUE);
-	  else if( strncmp(str, "WED", 3) == 0)
-		return(WED);
-	  else if( strncmp(str, "THU", 3) == 0)
-		return(THU);
-	  else if( strncmp(str, "FRI", 3) == 0)
-		return(FRI);
-	  else if( strncmp(str, "SAT", 3) == 0)
-		return(SAT);
-	  else 
-		return(-1);
+  if (strncmp(str, "SUN", 3) == 0)
+    return(SUN);
+  else if (strncmp(str, "MON", 3) == 0)
+    return(MON);
+  else if (strncmp(str, "TUE", 3) == 0)
+    return(TUE);
+  else if (strncmp(str, "WED", 3) == 0)
+    return(WED);
+  else if (strncmp(str, "THU", 3) == 0)
+    return(THU);
+  else if (strncmp(str, "FRI", 3) == 0)
+    return(FRI);
+  else if (strncmp(str, "SAT", 3) == 0)
+    return(SAT);
+  else
+    return(-1);
 
-}
+  }
 
 
 /* Gets the Date portion of the string with the form "(m|d|y@h:m:s)" or
    "(m|d|y)". If conversion failed, {0, 0, 0} will be returned. */
 Date strToDate(str)
-char	*str;
-{
-	char *s1 = NULLSTR;	/* a new string */
-	char *monstr;
-	char *daystr;
-	char *yearstr;
-	int  mon;
-	int  day;
-	int  year;
-	char *tmp;
-	Date date = {0, 0, 0};
+char *str;
+  {
+  char *s1 = NULLSTR; /* a new string */
+  char *monstr;
+  char *daystr;
+  char *yearstr;
+  int  mon;
+  int  day;
+  int  year;
+  char *tmp;
+  Date date = {0, 0, 0};
 
-	if( str == NULLSTR ) {
-		return(date);
-	}
+  if (str == NULLSTR)
+    {
+    return(date);
+    }
 
-/*	make copies of the string */
-	dynamic_strcpy(&s1, str);
+  /* make copies of the string */
+  dynamic_strcpy(&s1, str);
 
-	monstr = strchr(s1, '(');
-	if( monstr == NULLSTR ) {
-		varstrFree(s1);
-		return(date);
-	}
-	monstr++;
+  monstr = strchr(s1, '(');
 
-	daystr = strchr(monstr,'|');
-	if( daystr == NULLSTR ) {
-		varstrFree(s1);
-		return(date);
-	}
-	*daystr = '\0';
-	daystr++;
+  if (monstr == NULLSTR)
+    {
+    varstrFree(s1);
+    return(date);
+    }
 
-	yearstr = strchr(daystr,'|');
-	if( yearstr == NULLSTR ) {
-		varstrFree(s1);
-		return(date);
-	}
-	*yearstr = '\0';
-	yearstr++;
+  monstr++;
 
-	tmp = strchr(yearstr,'@');
-        if( tmp == NULLSTR ) {
-        
-        	tmp = strchr(yearstr,')');
-        
-		if( tmp == NULLSTR ) {
-                	varstrFree(s1);
-                	return(date);
-		}
-        }
-        *tmp = '\0';
+  daystr = strchr(monstr, '|');
 
-	mon  = strToInt(monstr);
-	day  = strToInt(daystr);
-	year = strToInt(yearstr);
-	if( mon == -1 || day == -1 || year == -1 ) {
-		varstrFree(s1);
-		return(date);
-	}
+  if (daystr == NULLSTR)
+    {
+    varstrFree(s1);
+    return(date);
+    }
 
-	date.m  = mon;
-	date.d  = day;
-	date.y  = year;
+  *daystr = '\0';
 
-	varstrFree(s1);
+  daystr++;
 
-	return(date);
-}
+  yearstr = strchr(daystr, '|');
 
-/* Gets the Time portion of the string with the form "(m|d|y@h:m:s)" or 
+  if (yearstr == NULLSTR)
+    {
+    varstrFree(s1);
+    return(date);
+    }
+
+  *yearstr = '\0';
+
+  yearstr++;
+
+  tmp = strchr(yearstr, '@');
+
+  if (tmp == NULLSTR)
+    {
+
+    tmp = strchr(yearstr, ')');
+
+    if (tmp == NULLSTR)
+      {
+      varstrFree(s1);
+      return(date);
+      }
+    }
+
+  *tmp = '\0';
+
+  mon  = strToInt(monstr);
+  day  = strToInt(daystr);
+  year = strToInt(yearstr);
+
+  if (mon == -1 || day == -1 || year == -1)
+    {
+    varstrFree(s1);
+    return(date);
+    }
+
+  date.m  = mon;
+
+  date.d  = day;
+  date.y  = year;
+
+  varstrFree(s1);
+
+  return(date);
+  }
+
+/* Gets the Time portion of the string with the form "(m|d|y@h:m:s)" or
    "(h:m:s)"If conversion failed, {-1, -1, -1} will be returned. */
 Time strToTime(str)
-char	*str;
-{
-	char *s1 = NULLSTR;	/* a new string */
-	char *hhstr;
-	char *mmstr;
-	char *ssstr;
-	int  hh;
-	int  mm;
-	int  ss;
-	char *tmp;
-	Time time = {-1, -1, -1};
+char *str;
+  {
+  char *s1 = NULLSTR; /* a new string */
+  char *hhstr;
+  char *mmstr;
+  char *ssstr;
+  int  hh;
+  int  mm;
+  int  ss;
+  char *tmp;
+  Time time = { -1, -1, -1};
 
-	if( str == NULLSTR ) {
-		return(time);
-	}
+  if (str == NULLSTR)
+    {
+    return(time);
+    }
 
-/*	make copies of the string */
-	dynamic_strcpy(&s1, str);
+  /* make copies of the string */
+  dynamic_strcpy(&s1, str);
 
-	hhstr = strchr(s1, '@');
-	if( hhstr == NULLSTR ) {
-		hhstr = strchr(s1, '(');
-		if( hhstr == NULLSTR ) {
-			varstrFree(s1);
-			return(time);
-		}
-	}
-	hhstr++;
+  hhstr = strchr(s1, '@');
 
-	mmstr = strchr(hhstr,':');
-	if( mmstr == NULLSTR ) {
-		varstrFree(s1);
-		return(time);
-	}
-	*mmstr = '\0';
-	mmstr++;
+  if (hhstr == NULLSTR)
+    {
+    hhstr = strchr(s1, '(');
 
-	ssstr = strchr(mmstr,':');
-	if( ssstr == NULLSTR ) {
-		varstrFree(s1);
-		return(time);
-	}
-	*ssstr = '\0';
-	ssstr++;
-	
-        tmp = strchr(ssstr,')');
-        if( tmp == NULLSTR ) {
-               	varstrFree(s1);
-               	return(time);
-        }
-        *tmp = '\0';
+    if (hhstr == NULLSTR)
+      {
+      varstrFree(s1);
+      return(time);
+      }
+    }
 
-	hh = strToInt(hhstr);
-	mm = strToInt(mmstr); 
-	ss = strToInt(ssstr);
-	if( hh == -1 || mm == -1 || ss == -1 )  {
-		varstrFree(s1);
-		return(time);
-	}
+  hhstr++;
 
-	time.h  = hh;
-	time.m  = mm;
-	time.s  = ss;
+  mmstr = strchr(hhstr, ':');
 
-	varstrFree(s1);
+  if (mmstr == NULLSTR)
+    {
+    varstrFree(s1);
+    return(time);
+    }
 
-	return(time);
-}
+  *mmstr = '\0';
+
+  mmstr++;
+
+  ssstr = strchr(mmstr, ':');
+
+  if (ssstr == NULLSTR)
+    {
+    varstrFree(s1);
+    return(time);
+    }
+
+  *ssstr = '\0';
+
+  ssstr++;
+
+  tmp = strchr(ssstr, ')');
+
+  if (tmp == NULLSTR)
+    {
+    varstrFree(s1);
+    return(time);
+    }
+
+  *tmp = '\0';
+
+  hh = strToInt(hhstr);
+  mm = strToInt(mmstr);
+  ss = strToInt(ssstr);
+
+  if (hh == -1 || mm == -1 || ss == -1)
+    {
+    varstrFree(s1);
+    return(time);
+    }
+
+  time.h  = hh;
+
+  time.m  = mm;
+  time.s  = ss;
+
+  varstrFree(s1);
+
+  return(time);
+  }
 
 
 /* Gets the DateTime portion of the string with the form "(h:m:s,m|d|y)",
    "(m|d|y), or "(h:m:s)". If conversion failed, {-1, -1, -1, 0, 0, 0} will be
    returned. */
 DateTime strToDateTime(str)
-char	*str;
-{
-	Time t;
-	Date d;
-	DateTime dt;
+char *str;
+  {
+  Time t;
+  Date d;
+  DateTime dt;
 
-	t = strToTime(str);
-	d = strToDate(str);
+  t = strToTime(str);
+  d = strToDate(str);
 
-	dt.t = t;
-	dt.d = d;
+  dt.t = t;
+  dt.d = d;
 
-	return(dt);
-}
+  return(dt);
+  }
 
 /* strToSize: given a SIZE string of the form,
-	"<numeric>[<suffix>]"
+ "<numeric>[<suffix>]"
    where  <suffix> is [k|K|m|M|g|G|t|T|p|P] [b|w].
    RETURN: the corresponding Size struct.
    NOTE: If an error has occurred during conversion such as BADVAL or
-	 BADSUFFIX, the Size structure returned will be {-1, 0, BYTES}.
+  BADSUFFIX, the Size structure returned will be {-1, 0, BYTES}.
 */
 Size strToSize(str)
 char *str;
-{
+  {
 
-    int   havebw = 0;
-    char  *pc;
-    Size  sizeval;
-    Size  defsizeval = {-1, 0, BYTES};
+  int   havebw = 0;
+  char  *pc;
+  Size  sizeval;
+  Size  defsizeval = { -1, 0, BYTES};
 
-    if( str == NULLSTR ) {
-	return(defsizeval);
+  if (str == NULLSTR)
+    {
+    return(defsizeval);
     }
 
-    sizeval.units = BYTES;
-    sizeval.shift = 0;
-    sizeval.num   = strtol(str, &pc, 10);
-    if (pc == str)          /* no numeric part */
-	return (defsizeval);
+  sizeval.units = BYTES;
 
-    switch (*pc) {
-	case '\0':  break;
-	case 'k':
-	case 'K':   sizeval.shift = 10;
-                    break;
-	case 'm':
-	case 'M':   sizeval.shift = 20;
-                    break;
-	case 'g':
-	case 'G':   sizeval.shift = 30;
-                    break;
-	case 't':
-	case 'T':   sizeval.shift = 40;
-                    break;
-	case 'p':
-	case 'P':   sizeval.shift = 50;
-                    break;
-	case 'b':
-	case 'B':   havebw = 1;
-                    break;
-	case 'w':
-	case 'W':   havebw = 1;
-                    sizeval.units = WORDS;
-                    break;
-	default:    return (defsizeval);  /* invalid string */
-     }
-     if (*pc != '\0')
-	pc++;
-     if (*pc != '\0') {
-	if (havebw)
-		return (defsizeval);  /* invalid string */
-        switch (*pc) {
-		case 'b':
-		case 'B':   break;
-		case 'w':
-		case 'W':   sizeval.units = WORDS;
-			    break;
-		default:    return (defsizeval);
-        }
+  sizeval.shift = 0;
+  sizeval.num   = strtol(str, &pc, 10);
+
+  if (pc == str)          /* no numeric part */
+    return (defsizeval);
+
+  switch (*pc)
+    {
+
+    case '\0':
+      break;
+
+    case 'k':
+
+    case 'K':
+      sizeval.shift = 10;
+      break;
+
+    case 'm':
+
+    case 'M':
+      sizeval.shift = 20;
+      break;
+
+    case 'g':
+
+    case 'G':
+      sizeval.shift = 30;
+      break;
+
+    case 't':
+
+    case 'T':
+      sizeval.shift = 40;
+      break;
+
+    case 'p':
+
+    case 'P':
+      sizeval.shift = 50;
+      break;
+
+    case 'b':
+
+    case 'B':
+      havebw = 1;
+      break;
+
+    case 'w':
+
+    case 'W':
+      havebw = 1;
+      sizeval.units = WORDS;
+      break;
+
+    default:
+      return (defsizeval);  /* invalid string */
+    }
+
+  if (*pc != '\0')
+    pc++;
+
+  if (*pc != '\0')
+    {
+    if (havebw)
+      return (defsizeval);  /* invalid string */
+
+    switch (*pc)
+      {
+
+      case 'b':
+
+      case 'B':
+        break;
+
+      case 'w':
+
+      case 'W':
+        sizeval.units = WORDS;
+        break;
+
+      default:
+        return (defsizeval);
       }
-      return (sizeval);
-}
+    }
+
+  return (sizeval);
+  }
 
 /* sizeToStr: given a SIZE structure, convert appropriately into a string. */
 void sizeToStr(sizeval, cvnbuf)
-Size	sizeval;
+Size sizeval;
 char    *cvnbuf;
-{
-        (void)sprintf(cvnbuf, "%ld", sizeval.num);
-        switch (sizeval.shift) {
-                case  0:        break;
-                case 10:        strcat(cvnbuf, "k");
-                                break;
-                case 20:        strcat(cvnbuf, "m");
-                                break;
-                case 30:        strcat(cvnbuf, "g");
-                                break;
-                case 40:        strcat(cvnbuf, "t");
-                                break;
-                case 50:        strcat(cvnbuf, "p");
-        }
-        if (sizeval.units & WORDS)
-                strcat(cvnbuf, "w");
-        else
-                strcat(cvnbuf, "b");
-}
+  {
+  (void)sprintf(cvnbuf, "%ld", sizeval.num);
+
+  switch (sizeval.shift)
+    {
+
+    case  0:
+      break;
+
+    case 10:
+      strcat(cvnbuf, "k");
+      break;
+
+    case 20:
+      strcat(cvnbuf, "m");
+      break;
+
+    case 30:
+      strcat(cvnbuf, "g");
+      break;
+
+    case 40:
+      strcat(cvnbuf, "t");
+      break;
+
+    case 50:
+      strcat(cvnbuf, "p");
+    }
+
+  if (sizeval.units & WORDS)
+    strcat(cvnbuf, "w");
+  else
+    strcat(cvnbuf, "b");
+  }
 
 /* strtimeToSecs: given a time string (hh:mm:ss[.ms]), return the equivalent #
-                of secs. 
+                of secs.
    NOTE:    ms precision can potentially be lost.
-	    If conversion failed, then this will return a -1.
+     If conversion failed, then this will return a -1.
 */
 
-int  strtimeToSecs(times)
-char *times;
-{
-        int hh, mm, ss, ms;
-        char *hhstr, *mmstr, *ssstr, *msstr;
-	char *timestr = NULLSTR;
-	int  secs;	
+int
+strtimeToSecs(char *times)
+  {
+  int hh, mm, ss, ms;
+  char *hhstr, *mmstr, *ssstr, *msstr;
+  char *timestr = NULLSTR;
+  int  secs;
 
-	dynamic_strcpy(&timestr, times);
+  dynamic_strcpy(&timestr, times);
 
-        hhstr = strtok(timestr, ":");
-        if( hhstr == NULLSTR ) {
-            hh = 0;
-        } else {
-	    hh = strToInt(hhstr);
-	    if( hh == -1 ) {
-		varstrFree(timestr);
-		return(-1);
-	    }	
-		
-	}
+  hhstr = strtok(timestr, ":");
 
-        mmstr = strtok(NULL, ":");
-        if( mmstr == NULLSTR ) {
-            mm = 0;
-        } else {
-	    mm = strToInt(mmstr);
-	    if( mm == -1 ) {
-		varstrFree(timestr);
-		return(-1);
-	    }	
-	}
+  if (hhstr == NULLSTR)
+    {
+    hh = 0;
+    }
+  else
+    {
+    hh = strToInt(hhstr);
 
-        ssstr = strtok(NULL, ".");
-        if( ssstr == NULLSTR ) {
-            ss = 0;
-        } else {
-	    ss = strToInt(ssstr);
-	    if( ss == -1 ) {
-		varstrFree(timestr);
-		return(-1);
-	    }
-	}
+    if (hh == -1)
+      {
+      varstrFree(timestr);
+      return(-1);
+      }
 
-        msstr = strtok(NULL, ".");
-        if( msstr == NULLSTR ) {
-            ms = 0;
-        } else {
-	    ms = strToInt(msstr);
-	    if( ms == -1 ) {
-		varstrFree(timestr);
-		return(-1);
-	    }
-	}
+    }
 
-/* 1 s = 10^3 ms */
-        secs = hh * 3600 + mm * 60 + ss + (ms/1000);
+  mmstr = strtok(NULL, ":");
 
-	varstrFree(timestr);
+  if (mmstr == NULLSTR)
+    {
+    mm = 0;
+    }
+  else
+    {
+    mm = strToInt(mmstr);
 
-        return(secs);
-}
+    if (mm == -1)
+      {
+      varstrFree(timestr);
+      return(-1);
+      }
+    }
+
+  ssstr = strtok(NULL, ".");
+
+  if (ssstr == NULLSTR)
+    {
+    ss = 0;
+    }
+  else
+    {
+    ss = strToInt(ssstr);
+
+    if (ss == -1)
+      {
+      varstrFree(timestr);
+      return(-1);
+      }
+    }
+
+  msstr = strtok(NULL, ".");
+
+  if (msstr == NULLSTR)
+    {
+    ms = 0;
+    }
+  else
+    {
+    ms = strToInt(msstr);
+
+    if (ms == -1)
+      {
+      varstrFree(timestr);
+      return(-1);
+      }
+    }
+
+  /* 1 s = 10^3 ms */
+  secs = hh * 3600 + mm * 60 + ss + (ms / 1000);
+
+  varstrFree(timestr);
+
+  return(secs);
+  }
 
 /* datecmp: compares 2 dates and returns an:
-		 int < 0  if d1 is less than d2,
-		 int = 0  if d1 is equal to d2,
-		 int > 0  if d1 is greater than d2.			*/
-	    
+   int < 0  if d1 is less than d2,
+   int = 0  if d1 is equal to d2,
+   int > 0  if d1 is greater than d2.   */
+
 int datecmp(d1, d2)
 Date d1;
 Date d2;
-{
-	struct	tm	tdate1;
-	struct  tm	tdate2;
-	time_t		td1;  
-	time_t		td2; 
+  {
 
-	tdate1.tm_mon = d1.m - 1;
-	tdate1.tm_mday = d1.d;
-	tdate1.tm_year = d1.y - 1900;
-	tdate1.tm_hour = 0;
-	tdate1.tm_min = 59;
-	tdate1.tm_sec = 60;
-	tdate1.tm_isdst = -1;
+  struct tm tdate1;
 
-	tdate2.tm_mon = d2.m - 1;
-	tdate2.tm_mday = d2.d;
-	tdate2.tm_year = d2.y - 1900;
-	tdate2.tm_hour = 0;
-	tdate2.tm_min = 59;
-	tdate2.tm_sec = 60;
-	tdate2.tm_isdst = -1;
+  struct  tm tdate2;
+  time_t  td1;
+  time_t  td2;
 
-	td1 = mktime(&tdate1);
-	td2 = mktime(&tdate2);
+  tdate1.tm_mon = d1.m - 1;
+  tdate1.tm_mday = d1.d;
+  tdate1.tm_year = d1.y - 1900;
+  tdate1.tm_hour = 0;
+  tdate1.tm_min = 59;
+  tdate1.tm_sec = 60;
+  tdate1.tm_isdst = -1;
 
-	return((int)(td1 - td2));
-}
+  tdate2.tm_mon = d2.m - 1;
+  tdate2.tm_mday = d2.d;
+  tdate2.tm_year = d2.y - 1900;
+  tdate2.tm_hour = 0;
+  tdate2.tm_min = 59;
+  tdate2.tm_sec = 60;
+  tdate2.tm_isdst = -1;
+
+  td1 = mktime(&tdate1);
+  td2 = mktime(&tdate2);
+
+  return((int)(td1 - td2));
+  }
 
 /* timecmp: compares 2 times and returns an:
-		 int < 0  if t1 is less than t2,
-		 int = 0  if t1 is equal to t2,
-		 int > 0  if t1 is greater than t2.			*/
+   int < 0  if t1 is less than t2,
+   int = 0  if t1 is equal to t2,
+   int > 0  if t1 is greater than t2.   */
 int timecmp(t1, t2)
 Time t1;
 Time t2;
-{
-	char	timestr[10];
-	int	secs1 = 0;
-	int	secs2 = 0;
+  {
+  char timestr[10];
+  int secs1 = 0;
+  int secs2 = 0;
 
-	(void)sprintf(timestr, "%d:%d:%d", t1.h, t1.m, t1.s);
-	secs1 = strtimeToSecs(timestr);
+  (void)sprintf(timestr, "%d:%d:%d", t1.h, t1.m, t1.s);
+  secs1 = strtimeToSecs(timestr);
 
-	(void)sprintf(timestr, "%d:%d:%d", t2.h, t2.m, t2.s);
-	secs2 = strtimeToSecs(timestr);
+  (void)sprintf(timestr, "%d:%d:%d", t2.h, t2.m, t2.s);
+  secs2 = strtimeToSecs(timestr);
 
-	if( secs1 > secs2 )
-		return(1);
-	if(secs1 < secs2 )
-		return(-1);
-	return(0);
-	
-}
+  if (secs1 > secs2)
+    return(1);
+
+  if (secs1 < secs2)
+    return(-1);
+
+  return(0);
+
+  }
 
 
 /* get the current date/time. */
 DateTime datetimeGet(void)
-{
-	time_t	  now;
-	struct tm *t;	
-	DateTime  nowdt;
+  {
+  time_t   now;
 
-	now = time((time_t *)NULL);
-	t = localtime(&now);
+  struct tm *t;
+  DateTime  nowdt;
 
-	nowdt.t.h = t->tm_hour;
-	nowdt.t.m = t->tm_min;
-	nowdt.t.s = t->tm_sec;
+  now = time((time_t *)NULL);
+  t = localtime(&now);
 
-	nowdt.d.m = t->tm_mon + 1;
-	nowdt.d.d = t->tm_mday;
-	nowdt.d.y = t->tm_year + 1900;
+  nowdt.t.h = t->tm_hour;
+  nowdt.t.m = t->tm_min;
+  nowdt.t.s = t->tm_sec;
 
-	return(nowdt);
-}
+  nowdt.d.m = t->tm_mon + 1;
+  nowdt.d.d = t->tm_mday;
+  nowdt.d.y = t->tm_year + 1900;
+
+  return(nowdt);
+  }
 
 /* get the current date/time. */
 DateTime datetimeGetAndAdd(secs)
 time_t  secs;
-{
-	time_t	  now;
-	struct tm *t;	
-	DateTime  nowdt;
+  {
+  time_t   now;
 
-	now = time((time_t *)NULL);
-	now+=secs;
-	t = localtime(&now);
+  struct tm *t;
+  DateTime  nowdt;
 
-	nowdt.t.h = t->tm_hour;
-	nowdt.t.m = t->tm_min;
-	nowdt.t.s = t->tm_sec;
+  now = time((time_t *)NULL);
+  now += secs;
+  t = localtime(&now);
 
-	nowdt.d.m = t->tm_mon + 1;
-	nowdt.d.d = t->tm_mday;
-	nowdt.d.y = t->tm_year + 1900;
+  nowdt.t.h = t->tm_hour;
+  nowdt.t.m = t->tm_min;
+  nowdt.t.s = t->tm_sec;
 
-	return(nowdt);
-}
+  nowdt.d.m = t->tm_mon + 1;
+  nowdt.d.d = t->tm_mday;
+  nowdt.d.y = t->tm_year + 1900;
 
-/* datetimeToSecs: converts a DateTime structure into the # of seconds 
-		   epoch (00:00:00 January 1, 1970) */
+  return(nowdt);
+  }
+
+/* datetimeToSecs: converts a DateTime structure into the # of seconds
+     epoch (00:00:00 January 1, 1970) */
 int datetimeToSecs(dt)
 DateTime dt;
-{
-	DateTime	now;	
-	struct tm	tdate;
+  {
+  DateTime now;
 
-	now = datetimeGet();
+  struct tm tdate;
 
-	if( datecmp(dt.d, strToDate("(0|0|0)")) != 0 ) {
-		tdate.tm_mon  = dt.d.m - 1;
-		tdate.tm_mday = dt.d.d;
-		tdate.tm_year = dt.d.y - 1900;
-	} else {
-		tdate.tm_mon  = now.d.m - 1;
-		tdate.tm_mday = now.d.d;
-		tdate.tm_year = now.d.y - 1900;
-	}
+  now = datetimeGet();
 
-	if( timecmp(dt.t, strToTime("(-1:-1:-1)")) != 0 ) {
-		tdate.tm_hour = dt.t.h;
-		tdate.tm_min  = dt.t.m;
-		tdate.tm_sec  = dt.t.s;
-	} else {
-		tdate.tm_hour = now.t.h;	/* no time portion */
-		tdate.tm_min  = now.t.m;
-		tdate.tm_sec  = now.t.s;
-	}
+  if (datecmp(dt.d, strToDate("(0|0|0)")) != 0)
+    {
+    tdate.tm_mon  = dt.d.m - 1;
+    tdate.tm_mday = dt.d.d;
+    tdate.tm_year = dt.d.y - 1900;
+    }
+  else
+    {
+    tdate.tm_mon  = now.d.m - 1;
+    tdate.tm_mday = now.d.d;
+    tdate.tm_year = now.d.y - 1900;
+    }
 
-	tdate.tm_isdst = -1;
+  if (timecmp(dt.t, strToTime("(-1:-1:-1)")) != 0)
+    {
+    tdate.tm_hour = dt.t.h;
+    tdate.tm_min  = dt.t.m;
+    tdate.tm_sec  = dt.t.s;
+    }
+  else
+    {
+    tdate.tm_hour = now.t.h; /* no time portion */
+    tdate.tm_min  = now.t.m;
+    tdate.tm_sec  = now.t.s;
+    }
 
-	return(mktime(&tdate));
-}
+  tdate.tm_isdst = -1;
+
+  return(mktime(&tdate));
+  }
 
 /* datetimecmp: compares 2 dateTimes and returns an:
-		 int < 0  if dt1 is less than dt2,
-		 int = 0  if dt1 is equal to dt2,
-		 int > 0  if dt1 is greater than dt2.			*/
-	    
+   int < 0  if dt1 is less than dt2,
+   int = 0  if dt1 is equal to dt2,
+   int > 0  if dt1 is greater than dt2.   */
+
 int datetimecmp(dt1, dt2)
 DateTime dt1;
 DateTime dt2;
-{
-	int dt1s;	
-	int dt2s;	
+  {
+  int dt1s;
+  int dt2s;
 
-	dt1s = datetimeToSecs(dt1);
-	dt2s = datetimeToSecs(dt2);
+  dt1s = datetimeToSecs(dt1);
+  dt2s = datetimeToSecs(dt2);
 
-	return(dt1s - dt2s);
-}
+  return(dt1s - dt2s);
+  }
 
 /*
  * normalizeSize - normalize two size values, adjust so the shift
@@ -1378,50 +1687,65 @@ DateTime dt2;
    */
 
 int normalizeSize(a, b, ta, tb)
-Size	*a;
-Size	*b;
-Size	*ta;
-Size	*tb;
-{
-        int adj;
-        unsigned long temp;
-        /*
-         * we do the work in copies of the original attributes
-         * to preserve the original (in case of error)
-         */
-        *ta = *a;
-        *tb = *b;
-        /* if either unit is in bytes, then both must be */
+Size *a;
+Size *b;
+Size *ta;
+Size *tb;
+  {
+  int adj;
+  unsigned long temp;
+  /*
+   * we do the work in copies of the original attributes
+   * to preserve the original (in case of error)
+   */
+  *ta = *a;
+  *tb = *b;
+  /* if either unit is in bytes, then both must be */
 
-        if ((ta->units == WORDS) &&
-            (tb->units != WORDS)) {
-                ta->num *= sizeof(int);
-                ta->units = BYTES;
-        } else if ((ta->units != WORDS) &&
-                   (tb->units == WORDS)) {
-                tb->num *= sizeof(int);
-                tb->units = BYTES;
-        }
-	adj = ta->shift - tb->shift;
+  if ((ta->units == WORDS) &&
+      (tb->units != WORDS))
+    {
+    ta->num *= sizeof(int);
+    ta->units = BYTES;
+    }
+  else if ((ta->units != WORDS) &&
+           (tb->units == WORDS))
+    {
+    tb->num *= sizeof(int);
+    tb->units = BYTES;
+    }
 
-        if (adj > 0) {
-                temp = ta->num;
-                if ((adj > sizeof (int) * 8) ||
-                    (((temp << adj) >> adj) != ta->num))
-                        return (-1);    /* would overflow */
-                ta->shift = tb->shift;
-                ta->num   = ta->num << adj;
-        } else if (adj < 0) {
-                adj = -adj;
-                temp = tb->num;
-                if ((adj > sizeof (int) * 8) ||
-                    (((temp << adj) >> adj) != tb->num))
-                        return (-1);    /* would overflow */
-                tb->shift = ta->shift;
-                tb->num   = tb->num << adj;
-        }
-	return(0);
-}
+  adj = ta->shift - tb->shift;
+
+  if (adj > 0)
+    {
+    temp = ta->num;
+
+    if ((adj > sizeof(int) * 8) ||
+        (((temp << adj) >> adj) != ta->num))
+      return (-1);    /* would overflow */
+
+    ta->shift = tb->shift;
+
+    ta->num   = ta->num << adj;
+    }
+  else if (adj < 0)
+    {
+    adj = -adj;
+    temp = tb->num;
+
+    if ((adj > sizeof(int) * 8) ||
+        (((temp << adj) >> adj) != tb->num))
+      return (-1);    /* would overflow */
+
+    tb->shift = ta->shift;
+
+    tb->num   = tb->num << adj;
+    }
+
+  return(0);
+  }
+
 /*
  * comp_size - compare two size structures.
  *
@@ -1431,659 +1755,771 @@ Size	*tb;
  */
 
 int sizecmp(a, w)
-Size	a;
-Size	w;
-{
-        Size	tmpa;
-        Size	tmpw;
+Size a;
+Size w;
+  {
+  Size tmpa;
+  Size tmpw;
 
-       if (normalizeSize(&a, &w, &tmpa, &tmpw) != 0) { /* different suffix */
-                if (tmpa.shift > tmpw.shift)
-                        return (1);
-                else if (tmpa.shift < tmpw.shift)
-                        return (-1);
-                else
-                        return (0);
-	} else if (tmpa.num > tmpw.num) /* now have same suffixes */	
-                return (1);
-        else if (tmpa.num < tmpw.num)
-                return (-1);
-        else
-                return (0);
-}
+  if (normalizeSize(&a, &w, &tmpa, &tmpw) != 0)   /* different suffix */
+    {
+    if (tmpa.shift > tmpw.shift)
+      return (1);
+    else if (tmpa.shift < tmpw.shift)
+      return (-1);
+    else
+      return (0);
+    }
+  else if (tmpa.num > tmpw.num) /* now have same suffixes */
+    return (1);
+  else if (tmpa.num < tmpw.num)
+    return (-1);
+  else
+    return (0);
+  }
 
-static long int hashptr(ptr)
-void *ptr;
-{
-	return( (long int)ptr % MAXDARRAY);
+static long int
+hashptr(void *ptr)
+  {
+  return((long int)ptr % MAXDARRAY);
 
-}
+  }
 
 /* getHashValue: returns the actual hash value that contains 'ptr'. A value
-		 of -1 means ptr could not be found. */
-static int getHashValue(ptr)
-void *ptr;
-{
-	int hashvalue1, hashvalue;
-	hashvalue1 = hashptr(ptr);
-	hashvalue =  hashvalue1;
+   of -1 means ptr could not be found. */
+static int
+getHashValue(void *ptr)
+  {
+  int hashvalue1, hashvalue;
+  hashvalue1 = hashptr(ptr);
+  hashvalue =  hashvalue1;
 
-	while(d_array[hashvalue].ptr != ptr) { /* collision resolution */	
-		hashvalue = (hashvalue + 1) % MAXDARRAY;
-		assert(hashvalue != hashvalue1); /* should find something */ 
-	}
-	return(hashvalue);
-}
+  while (d_array[hashvalue].ptr != ptr)  /* collision resolution */
+    {
+    hashvalue = (hashvalue + 1) % MAXDARRAY;
+    assert(hashvalue != hashvalue1); /* should find something */
+    }
+
+  return(hashvalue);
+  }
 
 /* getHashValueToStore: returns the hash value where 'ptr' could be stored. A
-		value of -1 means the hash table is full. */
-static int getHashValueToStore(ptr)
-void *ptr;	
-{
-	int hashvalue1, hashvalue;
-	hashvalue1 = hashptr(ptr);
-	hashvalue =  hashvalue1;
+  value of -1 means the hash table is full. */
+static int
+getHashValueToStore(void *ptr)
+  {
+  int hashvalue1, hashvalue;
+  hashvalue1 = hashptr(ptr);
+  hashvalue =  hashvalue1;
 
-	while(d_array[hashvalue].ptr != NULL) { /* collision resolution */	
-		hashvalue = (hashvalue + 1) % MAXDARRAY;
-		assert(hashvalue != hashvalue1);
-	}
-	return(hashvalue);
-}
+  while (d_array[hashvalue].ptr != NULL)  /* collision resolution */
+    {
+    hashvalue = (hashvalue + 1) % MAXDARRAY;
+    assert(hashvalue != hashvalue1);
+    }
+
+  return(hashvalue);
+  }
 
 /* dynamicArraySize: returns the num elements in the dynamic 'array', or 0
-		     if 'array' is NULL, or -1 if 'array' could not be
-		     identified. */ 
-int dynamicArraySize(array)
-void	*array;
-{
-	int hashvalue;
+       if 'array' is NULL, or -1 if 'array' could not be
+       identified. */
+int
+dynamicArraySize(void *array)
+  {
+  int hashvalue;
 
-	if( array == NULL )
-		return(0);
+  if (array == NULL)
+    return(0);
 
-	hashvalue = getHashValue(array);
+  hashvalue = getHashValue(array);
 
-	return(d_array[hashvalue].numElems);
-}
+  return(d_array[hashvalue].numElems);
+  }
 
 /* initDynamicArray: initializes a dynamic array of size numElems*elementSize
-   RETURNS: 	     pointer to malloc-ed storage which could  be NULL if
-		     malloc-ing failed.
-   NOTE:	     Can't have a 0 for numElems		     */
+   RETURNS:       pointer to malloc-ed storage which could  be NULL if
+       malloc-ing failed.
+   NOTE:      Can't have a 0 for numElems       */
 
-void *initDynamicArray(numElems, elementSize) 
-size_t	numElems;
-size_t	elementSize;
-{
-	void *newspace;
-	int  hashvalue;
+void *initDynamicArray(numElems, elementSize)
+size_t numElems;
+size_t elementSize;
+  {
+  void *newspace;
+  int  hashvalue;
 
-	if( (int) numElems <= 0 )
-		return(NULL);
+  if ((int) numElems <= 0)
+    return(NULL);
 
-	newspace = calloc(numElems, elementSize);
-	if( newspace != NULL ) {
-		hashvalue = getHashValueToStore(newspace);
+  newspace = calloc(numElems, elementSize);
 
-		d_array[hashvalue].ptr = newspace;
-		d_array[hashvalue].numElems = numElems;
-	}
-	assert( newspace != NULL );
-	fflush(stdout);
-	return(newspace);
-}
+  if (newspace != NULL)
+    {
+    hashvalue = getHashValueToStore(newspace);
+
+    d_array[hashvalue].ptr = newspace;
+    d_array[hashvalue].numElems = numElems;
+    }
+
+  assert(newspace != NULL);
+
+  fflush(stdout);
+  return(newspace);
+  }
 
 /* extendDynamicArray: expands the dynamic 'array' so that minNumElements can
-			at least fit. If array is NULL, then it is 
-			automatically initialized.
+   at least fit. If array is NULL, then it is
+   automatically initialized.
    Calling extendDynamicArray(NULL, minNumElems, elementSize) is the same
-	as   initDynamicArray(minNumElemns, elementSize)
+ as   initDynamicArray(minNumElemns, elementSize)
    NOTE: minNumElems must not be zero !*/
 void *extendDynamicArray(array, minNumElems, elementSize)
-void   *array;		/* a dynamic array */
+void   *array;  /* a dynamic array */
 size_t minNumElems;     /* minimum # of elements in the array */
-size_t elementSize;	/* size of an element of an array */
-{
-    void *newspace;
+size_t elementSize; /* size of an element of an array */
+  {
+  void *newspace;
 
-    int  curNumElems;
-    int  hashvalue;
+  int  curNumElems;
+  int  hashvalue;
 
-    assert( (int) minNumElems > 0 );
+  assert((int) minNumElems > 0);
 
-    if( array == NULL ) {
-	return(initDynamicArray(minNumElems, elementSize));
+  if (array == NULL)
+    {
+    return(initDynamicArray(minNumElems, elementSize));
     }
 
-    curNumElems = dynamicArraySize(array);
+  curNumElems = dynamicArraySize(array);
 
-    if( minNumElems > curNumElems ) {  /* not enough space in the array */
+  if (minNumElems > curNumElems)     /* not enough space in the array */
+    {
 
-	  if( array == NULL )
-          	newspace = malloc(minNumElems*elementSize);
-	  else 
-          	newspace = realloc(array, minNumElems*elementSize);
+    if (array == NULL)
+      newspace = malloc(minNumElems * elementSize);
+    else
+      newspace = realloc(array, minNumElems * elementSize);
 
-	  if( newspace != NULL ) {
-	      hashvalue = getHashValue(array);
+    if (newspace != NULL)
+      {
+      hashvalue = getHashValue(array);
 
-	      if( array != newspace ) {	/* reuse same slot */
-			d_array[hashvalue].ptr = NULL;
-			hashvalue = getHashValueToStore(newspace);
-			d_array[hashvalue].ptr = newspace;
-	      }	
-	      d_array[hashvalue].numElems = minNumElems;
-	      return(newspace);
-          }
+      if (array != newspace)    /* reuse same slot */
+        {
+        d_array[hashvalue].ptr = NULL;
+        hashvalue = getHashValueToStore(newspace);
+        d_array[hashvalue].ptr = newspace;
+        }
+
+      d_array[hashvalue].numElems = minNumElems;
+
+      return(newspace);
+      }
     }
-    return(array);
-}
 
-void freeDynamicArray(array)
-void *array;		/* array to free up storage */
-{
-     int hashvalue;
+  return(array);
+  }
 
-     if( array == NULL )
-	return;
+void
+freeDynamicArray(
+  void *array  /* array to free up storage */
+)
+  {
+  int hashvalue;
 
-     hashvalue = getHashValue(array);
+  if (array == NULL)
+    return;
 
-     d_array[hashvalue].ptr = NULL;
-     free(array);
-}
+  hashvalue = getHashValue(array);
+
+  d_array[hashvalue].ptr = NULL;
+
+  free(array);
+  }
 
 void printDynamicArrayTable(void)
-{
-	int i;
+  {
+  int i;
 
-	printf("Printing Dynamic Array Table===============================\n");
-	for(i=0; i < MAXDARRAY; i++)
-		(void)printf("(%x, %d)\n", d_array[i].ptr,
-				d_array[i].numElems);
-}
+  printf("Printing Dynamic Array Table===============================\n");
+
+  for (i = 0; i < MAXDARRAY; i++)
+    (void)printf("(%x, %d)\n", d_array[i].ptr,
+                 d_array[i].numElems);
+  }
 
 void datePrint(d)
-Date	d;
-{
-	printf("%02d/%02d/%02d", d.m, d.d, d.y);
-}
+Date d;
+  {
+  printf("%02d/%02d/%02d", d.m, d.d, d.y);
+  }
 
 void timePrint(t)
-Time	t;
-{
-	printf("%02d:%02d:%02d", t.h, t.m, t.s);
-}
+Time t;
+  {
+  printf("%02d:%02d:%02d", t.h, t.m, t.s);
+  }
 
 void datetimePrint(dt)
 DateTime dt;
-{
-	if( datecmp(dt.d, strToDate("(0|0|0)")) != 0 ) {
-		printf("(");
-		datePrint(dt.d);
-		if( timecmp(dt.t, strToTime("(-1:-1:-1)")) != 0 ) {
-			printf("@");
-			timePrint(dt.t);
-		}	
-		printf(")");
-	} else if( timecmp(dt.t, strToTime("(-1:-1:-1)")) != 0 ) {
-		printf("(");
-		timePrint(dt.t);
-		printf(")");
-	}
+  {
+  if (datecmp(dt.d, strToDate("(0|0|0)")) != 0)
+    {
+    printf("(");
+    datePrint(dt.d);
 
-}
+    if (timecmp(dt.t, strToTime("(-1:-1:-1)")) != 0)
+      {
+      printf("@");
+      timePrint(dt.t);
+      }
+
+    printf(")");
+    }
+  else if (timecmp(dt.t, strToTime("(-1:-1:-1)")) != 0)
+    {
+    printf("(");
+    timePrint(dt.t);
+    printf(")");
+    }
+
+  }
 
 void sizePrint(s, readable)
-Size	s;
-int	readable;	/* if 1, then print size val in human readable form */
-{
-	char sizestr[45];  /* should be able to support up to 128-bits sizes */
+Size s;
+int readable; /* if 1, then print size val in human readable form */
+  {
+  char sizestr[45];  /* should be able to support up to 128-bits sizes */
 
-	if( readable ) {
-		sizeToStr(s, (char *)sizestr);
-		printf("%s", sizestr ? sizestr:"null");
-	} else {
-		printf("NUM: %ld SHIFT: %d UNIT: %d", s.num, s.shift, 
-								s.units); 
-	}	
-}
+  if (readable)
+    {
+    sizeToStr(s, (char *)sizestr);
+    printf("%s", sizestr ? sizestr : "null");
+    }
+  else
+    {
+    printf("NUM: %ld SHIFT: %d UNIT: %d", s.num, s.shift,
+           s.units);
+    }
+  }
 
 void intRangePrint(r)
 IntRange r;
-{
-	printf("(%d, %d)", r.lo, r.hi);
-}
+  {
+  printf("(%d, %d)", r.lo, r.hi);
+  }
 
 void floatRangePrint(r)
 FloatRange r;
-{
-	printf("(%7.2f, %7.2f)", r.lo, r.hi);
-}
+  {
+  printf("(%7.2f, %7.2f)", r.lo, r.hi);
+  }
 
 void dayofweekPrint(dow)
-Dayofweek	dow;
-{
-	if( dow < NUMDAYOFWEEK )
-		printf("%s", dayofweekVal[dow]);
-	else
-		printf("%d", dow);
-}
+Dayofweek dow;
+  {
+  if (dow < NUMDAYOFWEEK)
+    printf("%s", dayofweekVal[dow]);
+  else
+    printf("%d", dow);
+  }
 
 void actPrint(act)
-Action	act;
-{
-	if( act < NUMACTS )
-		printf("%s", actVal[act]);
-	else
-		printf("%d", act);
-}
+Action act;
+  {
+  if (act < NUMACTS)
+    printf("%s", actVal[act]);
+  else
+    printf("%d", act);
+  }
 
 void cprPrint(cpr)
-Comp	cpr;
-{
-	if( cpr < NUMCPRS )
-		printf("%s", cprVal[cpr]);
-	else
-		printf("%d", cpr);
-}
+Comp cpr;
+  {
+  if (cpr < NUMCPRS)
+    printf("%s", cprVal[cpr]);
+  else
+    printf("%d", cpr);
+  }
 
 void dayofweekRangePrint(r)
 DayofweekRange r;
-{
-        char *loday = NULLSTR;
-	char *hiday = NULLSTR;	
+  {
+  char *loday = NULLSTR;
+  char *hiday = NULLSTR;
 
-	if( r.lo < NUMDAYOFWEEK )
-		loday = dayofweekVal[r.lo];
-	
-	if( r.hi < NUMDAYOFWEEK )
-		hiday = dayofweekVal[r.hi];
+  if (r.lo < NUMDAYOFWEEK)
+    loday = dayofweekVal[r.lo];
 
-	if( loday != NULLSTR && hiday != NULLSTR )
-		printf("(%s, %s)", loday, hiday);
-	else if( loday == NULLSTR && hiday != NULLSTR )
-		printf("(%d, %s)", r.lo, hiday);
-	else if( loday != NULLSTR && hiday == NULLSTR )
-		printf("(%s, %d)", loday, r.hi);
-	else
-		printf("(%d, %d)", r.lo, r.hi);
-}
+  if (r.hi < NUMDAYOFWEEK)
+    hiday = dayofweekVal[r.hi];
+
+  if (loday != NULLSTR && hiday != NULLSTR)
+    printf("(%s, %s)", loday, hiday);
+  else if (loday == NULLSTR && hiday != NULLSTR)
+    printf("(%d, %s)", r.lo, hiday);
+  else if (loday != NULLSTR && hiday == NULLSTR)
+    printf("(%s, %d)", loday, r.hi);
+  else
+    printf("(%d, %d)", r.lo, r.hi);
+  }
 
 void dateRangePrint(d)
 DateRange d;
-{
-	printf("(");
-	datePrint(d.lo);
-	printf(", ");
-	datePrint(d.hi);
-	printf(")");
-}
+  {
+  printf("(");
+  datePrint(d.lo);
+  printf(", ");
+  datePrint(d.hi);
+  printf(")");
+  }
 
 void timeRangePrint(t)
 TimeRange t;
-{
-	printf("(");
-	timePrint(t.lo);
-	printf(", ");
-	timePrint(t.hi);
-	printf(")");
-}
+  {
+  printf("(");
+  timePrint(t.lo);
+  printf(", ");
+  timePrint(t.hi);
+  printf(")");
+  }
 
 void datetimeRangePrint(dt)
 DateTimeRange dt;
-{
-	printf("(");
-	datetimePrint(dt.lo);
-	printf(", ");
-	datetimePrint(dt.hi);
-	printf(")");
-}
+  {
+  printf("(");
+  datetimePrint(dt.lo);
+  printf(", ");
+  datetimePrint(dt.hi);
+  printf(")");
+  }
 
 void sizeRangePrint(s, readable)
 SizeRange s;
-int	  readable;
-{
-	printf("(");
-	sizePrint(s.lo, readable);
-	printf(", ");
-	sizePrint(s.hi, readable);
-	printf(")");
-}
+int   readable;
+  {
+  printf("(");
+  sizePrint(s.lo, readable);
+  printf(", ");
+  sizePrint(s.hi, readable);
+  printf(")");
+  }
 
 /* Given a string of the form "(int, int)", return a corresponding Range
    structure. If conversion fails, return {0, 0}. */
 IntRange strToIntRange(str)
-char	*str;
-{
-	char 	 *s1 = NULLSTR;
-	char     *lo, *hi, *tmp;
-	IntRange range = {0, 0};
+char *str;
+  {
+  char   *s1 = NULLSTR;
+  char     *lo, *hi, *tmp;
+  IntRange range = {0, 0};
 
-	if( str == NULLSTR ) {
-		return(range);
-	}
+  if (str == NULLSTR)
+    {
+    return(range);
+    }
 
-	dynamic_strcpy(&s1, str);
+  dynamic_strcpy(&s1, str);
 
-	lo = strchr(s1, '(');
-	if( lo == NULLSTR ) {
-		varstrFree(s1);
-		return(range);
-	}
-	lo++;
+  lo = strchr(s1, '(');
 
-	hi = strchr(lo,',');
-	if( hi == NULLSTR ) {
-		varstrFree(s1);
-		return(range);
-	}
-	*hi = '\0';
-	hi++;
+  if (lo == NULLSTR)
+    {
+    varstrFree(s1);
+    return(range);
+    }
 
-	tmp = strchr(hi,')');
-	if( tmp == NULLSTR ) {
-		varstrFree(s1);
-		return(range);
-	}
-	*tmp = '\0';
-	
-	range.lo = strToInt(lo);
-	range.hi = strToInt(hi);
+  lo++;
 
-	varstrFree(s1);
-	return(range);	
-}
+  hi = strchr(lo, ',');
+
+  if (hi == NULLSTR)
+    {
+    varstrFree(s1);
+    return(range);
+    }
+
+  *hi = '\0';
+
+  hi++;
+
+  tmp = strchr(hi, ')');
+
+  if (tmp == NULLSTR)
+    {
+    varstrFree(s1);
+    return(range);
+    }
+
+  *tmp = '\0';
+
+  range.lo = strToInt(lo);
+  range.hi = strToInt(hi);
+
+  varstrFree(s1);
+  return(range);
+  }
 
 /* Given a string of the form "(float, float)", return a corresponding Range
    structure. If conversion fails, return {0.0, 0.0}. */
 FloatRange strToFloatRange(str)
-char	*str;
-{
-	char 	   *s1 = NULLSTR;
-	char	   *lo, *hi, *tmp;
-	FloatRange range = {0.0, 0.0};
+char *str;
+  {
+  char     *s1 = NULLSTR;
+  char    *lo, *hi, *tmp;
+  FloatRange range = {0.0, 0.0};
 
-	if( str == NULLSTR ) {
-		return(range);
-	}
+  if (str == NULLSTR)
+    {
+    return(range);
+    }
 
-	dynamic_strcpy(&s1, str);
+  dynamic_strcpy(&s1, str);
 
-	lo = strchr(s1, '(');
-	if( lo == NULLSTR ) {
-		varstrFree(s1);
-		return(range);
-	}
-	lo++;
+  lo = strchr(s1, '(');
 
-	hi = strchr(lo,',');
-	if( hi == NULLSTR ) {
-		varstrFree(s1);
-		return(range);
-	}
-	*hi = '\0';
-	hi++;
+  if (lo == NULLSTR)
+    {
+    varstrFree(s1);
+    return(range);
+    }
 
-	tmp = strchr(hi,')');
-	if( tmp == NULLSTR ) {
-		varstrFree(s1);
-		return(range);
-	}
-	*tmp = '\0';
-	
-	range.lo = strToFloat(lo);
-	range.hi = strToFloat(hi);
+  lo++;
 
-	varstrFree(s1);
-	return(range);	
-}
+  hi = strchr(lo, ',');
+
+  if (hi == NULLSTR)
+    {
+    varstrFree(s1);
+    return(range);
+    }
+
+  *hi = '\0';
+
+  hi++;
+
+  tmp = strchr(hi, ')');
+
+  if (tmp == NULLSTR)
+    {
+    varstrFree(s1);
+    return(range);
+    }
+
+  *tmp = '\0';
+
+  range.lo = strToFloat(lo);
+  range.hi = strToFloat(hi);
+
+  varstrFree(s1);
+  return(range);
+  }
 
 /* Given a string of the form "(dow, dow)", return a corresponding Range
    structure. If conversion fails, return {SUN, SUN}. */
 DayofweekRange strToDayofweekRange(str)
-char	*str;
-{
-	char 	   	*s1 = NULLSTR;
-	char		*lo, *hi, *tmp;
-	DayofweekRange  range = {SUN, SUN};
+char *str;
+  {
+  char      *s1 = NULLSTR;
+  char  *lo, *hi, *tmp;
+  DayofweekRange  range = {SUN, SUN};
 
-	if( str == NULLSTR ) {
-		return(range);
-	}
+  if (str == NULLSTR)
+    {
+    return(range);
+    }
 
-	dynamic_strcpy(&s1, str);
+  dynamic_strcpy(&s1, str);
 
-	lo = strchr(s1, '(');
-	if( lo == NULLSTR ) {
-		varstrFree(s1);
-		return(range);
-	}
-	lo++;
-	/* skip leading empty spaces */
-	while( *lo == ' ' )
-		lo++;
+  lo = strchr(s1, '(');
 
-	hi = strchr(lo,',');
-	if( hi == NULLSTR ) {
-		varstrFree(s1);
-		return(range);
-	}
-	*hi = '\0';
-	hi++;
-	/* skip leading empty spaces */
-	while( *hi == ' ' )
-		hi++;
+  if (lo == NULLSTR)
+    {
+    varstrFree(s1);
+    return(range);
+    }
 
-	tmp = strchr(hi,')');
-	if( tmp == NULLSTR ) {
-		varstrFree(s1);
-		return(range);
-	}
-	*tmp = '\0';
-	range.lo = strToDayofweek(lo);
-	range.hi = strToDayofweek(hi);
+  lo++;
 
-	varstrFree(s1);
-	return(range);	
-}
+  /* skip leading empty spaces */
+
+  while (*lo == ' ')
+    lo++;
+
+  hi = strchr(lo, ',');
+
+  if (hi == NULLSTR)
+    {
+    varstrFree(s1);
+    return(range);
+    }
+
+  *hi = '\0';
+
+  hi++;
+  /* skip leading empty spaces */
+
+  while (*hi == ' ')
+    hi++;
+
+  tmp = strchr(hi, ')');
+
+  if (tmp == NULLSTR)
+    {
+    varstrFree(s1);
+    return(range);
+    }
+
+  *tmp = '\0';
+
+  range.lo = strToDayofweek(lo);
+  range.hi = strToDayofweek(hi);
+
+  varstrFree(s1);
+  return(range);
+  }
 
 /* Given a string of the form "(date, date)", return a corresponding Range
    structure. If conversion fails, return {{1, 1, 1970}, {1, 1, 1970}}. */
 DateRange strToDateRange(str)
-char	*str;
-{
-	char 	   *s1 = NULLSTR;
-	char	   *lo, *hi, *tmp;
-	DateRange  range = {{1,1,1970}, {1,1,1970}};
+char *str;
+  {
+  char     *s1 = NULLSTR;
+  char    *lo, *hi, *tmp;
+  DateRange  range = {{1, 1, 1970}, {1, 1, 1970}};
 
-	if( str == NULLSTR ) {
-		return(range);
-	}
+  if (str == NULLSTR)
+    {
+    return(range);
+    }
 
-	dynamic_strcpy(&s1, str);
+  dynamic_strcpy(&s1, str);
 
-	lo = strchr(s1, '(');
-	if( lo == NULLSTR ) {
-		varstrFree(s1);
-		return(range);
-	}
-	lo++;
+  lo = strchr(s1, '(');
 
-	hi = strchr(lo,',');
-	if( hi == NULLSTR ) {
-		varstrFree(s1);
-		return(range);
-	}
-	*hi = '\0';
-	hi++;
+  if (lo == NULLSTR)
+    {
+    varstrFree(s1);
+    return(range);
+    }
 
-	/* locates last occurrence */
-	tmp = strrchr(hi,')');
-	if( tmp == NULLSTR ) {
-		varstrFree(s1);
-		return(range);
-	}
-	*tmp = '\0';
-	
-	range.lo = strToDate(lo);
-	range.hi = strToDate(hi);
+  lo++;
 
-	varstrFree(s1);
-	return(range);	
-}
+  hi = strchr(lo, ',');
+
+  if (hi == NULLSTR)
+    {
+    varstrFree(s1);
+    return(range);
+    }
+
+  *hi = '\0';
+
+  hi++;
+
+  /* locates last occurrence */
+  tmp = strrchr(hi, ')');
+
+  if (tmp == NULLSTR)
+    {
+    varstrFree(s1);
+    return(range);
+    }
+
+  *tmp = '\0';
+
+  range.lo = strToDate(lo);
+  range.hi = strToDate(hi);
+
+  varstrFree(s1);
+  return(range);
+  }
 
 /* Given a string of the form "(time, time)", return a corresponding Range
    structure. If conversion fails, return {{0, 0, 0}, {0, 0, 0}}. */
 TimeRange strToTimeRange(str)
-char	*str;
-{
-	char 	   *s1 = NULLSTR;
-	char	   *lo, *hi, *tmp;
-	TimeRange  range = {{0,0,0}, {0,0,0}};
+char *str;
+  {
+  char     *s1 = NULLSTR;
+  char    *lo, *hi, *tmp;
+  TimeRange  range = {{0, 0, 0}, {0, 0, 0}};
 
-	if( str == NULLSTR ) {
-		return(range);
-	}
+  if (str == NULLSTR)
+    {
+    return(range);
+    }
 
-	dynamic_strcpy(&s1, str);
+  dynamic_strcpy(&s1, str);
 
-	lo = strchr(s1, '(');
-	if( lo == NULLSTR ) {
-		varstrFree(s1);
-		return(range);
-	}
-	lo++;
+  lo = strchr(s1, '(');
 
-	hi = strchr(lo,',');
-	if( hi == NULLSTR ) {
-		varstrFree(s1);
-		return(range);
-	}
-	*hi = '\0';
-	hi++;
+  if (lo == NULLSTR)
+    {
+    varstrFree(s1);
+    return(range);
+    }
 
-	/* locates last occurrence */
-	tmp = strrchr(hi,')');
-	if( tmp == NULLSTR ) {
-		varstrFree(s1);
-		return(range);
-	}
-	*tmp = '\0';
-	
-	range.lo = strToTime(lo);
-	range.hi = strToTime(hi);
+  lo++;
 
-	varstrFree(s1);
-	return(range);	
-}
+  hi = strchr(lo, ',');
+
+  if (hi == NULLSTR)
+    {
+    varstrFree(s1);
+    return(range);
+    }
+
+  *hi = '\0';
+
+  hi++;
+
+  /* locates last occurrence */
+  tmp = strrchr(hi, ')');
+
+  if (tmp == NULLSTR)
+    {
+    varstrFree(s1);
+    return(range);
+    }
+
+  *tmp = '\0';
+
+  range.lo = strToTime(lo);
+  range.hi = strToTime(hi);
+
+  varstrFree(s1);
+  return(range);
+  }
 
 /* Given a string of the form "(datetime, datetime)", return a
    corresponding DateTimeRange structure. If conversion fails, return
    {{-1, -1, -1, 0, 0, 0}, {-1, -1, -1, 0, 0, 0}}. */
 DateTimeRange strToDateTimeRange(str)
-char	*str;
-{
-	char 	      *s1 = NULLSTR;
-	char	      *lo, *hi, *tmp;
-	DateTimeRange range = {{-1,-1,-1,0,0,0}, {-1,-1,-1,0,0,0}};
+char *str;
+  {
+  char        *s1 = NULLSTR;
+  char       *lo, *hi, *tmp;
+  DateTimeRange range = {{ -1, -1, -1, 0, 0, 0}, { -1, -1, -1, 0, 0, 0}};
 
-	if( str == NULLSTR ) {
-		return(range);
-	}
+  if (str == NULLSTR)
+    {
+    return(range);
+    }
 
-	dynamic_strcpy(&s1, str);
+  dynamic_strcpy(&s1, str);
 
-	lo = strchr(s1, '(');
-	if( lo == NULLSTR ) {
-		varstrFree(s1);
-		return(range);
-	}
-	lo++;
+  lo = strchr(s1, '(');
 
-	hi = strchr(lo,',');
-	if( hi == NULLSTR ) {
-		varstrFree(s1);
-		return(range);
-	}
-	*hi = '\0';
-	hi++;
+  if (lo == NULLSTR)
+    {
+    varstrFree(s1);
+    return(range);
+    }
 
-	/* locates last occurrence */
-	tmp = strrchr(hi,')');
-	if( tmp == NULLSTR ) {
-		varstrFree(s1);
-		return(range);
-	}
-	*tmp = '\0';
-	
-	range.lo = strToDateTime(lo);
-	range.hi = strToDateTime(hi);
+  lo++;
 
-	varstrFree(s1);
-	return(range);	
-}
+  hi = strchr(lo, ',');
+
+  if (hi == NULLSTR)
+    {
+    varstrFree(s1);
+    return(range);
+    }
+
+  *hi = '\0';
+
+  hi++;
+
+  /* locates last occurrence */
+  tmp = strrchr(hi, ')');
+
+  if (tmp == NULLSTR)
+    {
+    varstrFree(s1);
+    return(range);
+    }
+
+  *tmp = '\0';
+
+  range.lo = strToDateTime(lo);
+  range.hi = strToDateTime(hi);
+
+  varstrFree(s1);
+  return(range);
+  }
 
 /* Given a string of the form "(size, size)", return a corresponding Range
    structure. If conversion fails, return { {-1, 0, BYTES},{-1, 0, BYTES} }. */
 SizeRange strToSizeRange(str)
-char	*str;
-{
-	char 	   *s1 = NULLSTR;
-	char	   *lo, *hi, *tmp;
-	SizeRange  range = {{-1,0,BYTES}, {-1,0,BYTES}};
+char *str;
+  {
+  char     *s1 = NULLSTR;
+  char    *lo, *hi, *tmp;
+  SizeRange  range = {{ -1, 0, BYTES}, { -1, 0, BYTES}};
 
-	if( str == NULLSTR ) {
-		return(range);
-	}
+  if (str == NULLSTR)
+    {
+    return(range);
+    }
 
-	dynamic_strcpy(&s1, str);
+  dynamic_strcpy(&s1, str);
 
-	lo = strchr(s1, '(');
-	if( lo == NULLSTR ) {
-		varstrFree(s1);
-		return(range);
-	}
-	lo++;
+  lo = strchr(s1, '(');
 
-	hi = strchr(lo,',');
-	if( hi == NULLSTR ) {
-		varstrFree(s1);
-		return(range);
-	}
-	*hi = '\0';
-	hi++;
+  if (lo == NULLSTR)
+    {
+    varstrFree(s1);
+    return(range);
+    }
 
-	tmp = strchr(hi,')');
-	if( tmp == NULLSTR ) {
-		varstrFree(s1);
-		return(range);
-	}
-	*tmp = '\0';
-	
-	range.lo = strToSize(lo);
-	range.hi = strToSize(hi);
+  lo++;
 
-	varstrFree(s1);
-	return(range);	
-}
+  hi = strchr(lo, ',');
+
+  if (hi == NULLSTR)
+    {
+    varstrFree(s1);
+    return(range);
+    }
+
+  *hi = '\0';
+
+  hi++;
+
+  tmp = strchr(hi, ')');
+
+  if (tmp == NULLSTR)
+    {
+    varstrFree(s1);
+    return(range);
+    }
+
+  *tmp = '\0';
+
+  range.lo = strToSize(lo);
+  range.hi = strToSize(hi);
+
+  varstrFree(s1);
+  return(range);
+  }
 
 /*
  * sizeRangecmp: - compares 2 size ranges and returns 0 if they're the same;
-	1 otherwise.
+ 1 otherwise.
  */
 
 int sizeRangecmp(r1, r2)
-SizeRange	r1;
-SizeRange	r2;
-{
+SizeRange r1;
+SizeRange r2;
+  {
 
-	if( (sizecmp(r1.lo, r2.lo) == 0) && \
-	    (sizecmp(r1.hi, r2.hi) == 0) )
-		return(0);
-	return(1);
-}
+  if ((sizecmp(r1.lo, r2.lo) == 0) && \
+      (sizecmp(r1.hi, r2.hi) == 0))
+    return(0);
+
+  return(1);
+  }
 
 /*
  * sizeStrcmp: - converts the 2 string arguments into sizes, and then compares t
@@ -2095,1109 +2531,1317 @@ hem
  *               -1 if 1st < 2nd
  */
 
-int sizeStrcmp(a, w)
-char    *a;
-char    *w;
-{
+int
+sizeStrcmp(char *a, char *w)
+  {
 
-        Size    tmpa;
-        Size    tmpw;
+  Size    tmpa;
+  Size    tmpw;
 
-        tmpa = strToSize(a);
-	tmpw = strToSize(w);
+  tmpa = strToSize(a);
+  tmpw = strToSize(w);
 
-        return(sizecmp(tmpa, tmpw));
-}
+  return(sizecmp(tmpa, tmpw));
+  }
 
 /* sizeRangeStrcmp: compares 2 SizeRange strings and returns 0 if they are
    equal; non-zero otherwise. */
-int sizeRangeStrcmp(str1, str2)
-char *str1;
-char *str2;
-{
-	SizeRange sr1, sr2;
+int
+sizeRangeStrcmp(char *str1, char *str2)
+  {
+  SizeRange sr1, sr2;
 
-	sr1 = strToSizeRange(str1);
-	sr2 = strToSizeRange(str2);
+  sr1 = strToSizeRange(str1);
+  sr2 = strToSizeRange(str2);
 
-	return(sizeRangecmp(sr1, sr2));
-}
+  return(sizeRangecmp(sr1, sr2));
+  }
 
 IntRange toIntRange(i1, i2)
-int	i1;
-int	i2;
-{
-	IntRange i;
+int i1;
+int i2;
+  {
+  IntRange i;
 
-	i.lo = i1;
-	i.hi = i2;
+  i.lo = i1;
+  i.hi = i2;
 
-	return(i);
-}
+  return(i);
+  }
 
 FloatRange toFloatRange(f1, f2)
-double	f1;
-double	f2;
-{
-	FloatRange f;
+double f1;
+double f2;
+  {
+  FloatRange f;
 
-	f.lo = f1;
-	f.hi = f2;
+  f.lo = f1;
+  f.hi = f2;
 
-	return(f);
-}
+  return(f);
+  }
 
 DayofweekRange toDayofweekRange(dow1, dow2)
 Dayofweek dow1;
 Dayofweek dow2;
-{
-	DayofweekRange dow;
+  {
+  DayofweekRange dow;
 
-	dow.lo = dow1;
-	dow.hi = dow2;
+  dow.lo = dow1;
+  dow.hi = dow2;
 
-	return(dow);
-}
+  return(dow);
+  }
 
 DateRange toDateRange(d1, d2)
-Date	d1;
-Date	d2;
-{
-	DateRange dr;
+Date d1;
+Date d2;
+  {
+  DateRange dr;
 
-	dr.lo = d1;
-	dr.hi = d2;
+  dr.lo = d1;
+  dr.hi = d2;
 
-	return(dr);
-}
+  return(dr);
+  }
 
 TimeRange toTimeRange(t1, t2)
-Time	t1;
-Time	t2;
-{
-	TimeRange tr;
+Time t1;
+Time t2;
+  {
+  TimeRange tr;
 
-	tr.lo = t1;
-	tr.hi = t2;
+  tr.lo = t1;
+  tr.hi = t2;
 
-	return(tr);
-}
+  return(tr);
+  }
 
 DateTimeRange toDateTimeRange(dt1, dt2)
 DateTime dt1;
 DateTime dt2;
-{
-	DateTimeRange dr;
+  {
+  DateTimeRange dr;
 
-	dr.lo = dt1;
-	dr.hi = dt2;
+  dr.lo = dt1;
+  dr.hi = dt2;
 
-	return(dr);
-}
+  return(dr);
+  }
 
 SizeRange toSizeRange(sz1, sz2)
-Size	sz1;
-Size	sz2;
-{
-	SizeRange rsz;
+Size sz1;
+Size sz2;
+  {
+  SizeRange rsz;
 
-	rsz.lo = sz1;
-	rsz.hi = sz2;
+  rsz.lo = sz1;
+  rsz.hi = sz2;
 
-	return(rsz);
-}
+  return(rsz);
+  }
 
-/* adds 2 Sizes values together. For values of different suffixes, 
+/* adds 2 Sizes values together. For values of different suffixes,
    normalization will take place; the unit in the final result is
    the unit of the smaller of the two. */
 /* NOTE: If adding the two values would result in an overflow during
          the normalization step, then -1b is returned. To avoid overflow,
-         it is best that the operands are of the same suffix*/ 
+         it is best that the operands are of the same suffix*/
 Size sizeAdd(a, w)
-Size	a;
-Size	w;
-{
-        Size	tmpa;
-        Size	tmpw;
-	Size	ret = {-1, 0, BYTES};
+Size a;
+Size w;
+  {
+  Size tmpa;
+  Size tmpw;
+  Size ret = { -1, 0, BYTES};
 
-       if (normalizeSize(&a, &w, &tmpa, &tmpw) != 0) { /* oveflow */
-		return(ret);
-	}
+  if (normalizeSize(&a, &w, &tmpa, &tmpw) != 0)   /* oveflow */
+    {
+    return(ret);
+    }
 
-	/* now have same suffixes, normalized! */
-	ret.shift = tmpa.shift;
-	ret.units = tmpa.units;	
-	ret.num   = tmpa.num + tmpw.num;
-	return(ret);
-}
+  /* now have same suffixes, normalized! */
+  ret.shift = tmpa.shift;
 
-/* subtracts 2 Sizes values together. For values of different suffixes, 
+  ret.units = tmpa.units;
+
+  ret.num   = tmpa.num + tmpw.num;
+
+  return(ret);
+  }
+
+/* subtracts 2 Sizes values together. For values of different suffixes,
    normalization will take place; the suffix in the final result is
    the suffix of the smaller of the two. */
 /* NOTE: If subtracting the two values would result in an overflow during
          the normalization step, then -1b is returned. To avoid overflow,
-         it is best that the operands are of the same suffix*/ 
+         it is best that the operands are of the same suffix*/
 Size sizeSub(a, w)
-Size	a;
-Size	w;
-{
-        Size	tmpa;
-        Size	tmpw;
-	Size	ret = {-1, 0, BYTES};
+Size a;
+Size w;
+  {
+  Size tmpa;
+  Size tmpw;
+  Size ret = { -1, 0, BYTES};
 
-       if (normalizeSize(&a, &w, &tmpa, &tmpw) != 0) { /* oveflow */
-		return(ret);
-	}
+  if (normalizeSize(&a, &w, &tmpa, &tmpw) != 0)   /* oveflow */
+    {
+    return(ret);
+    }
 
-	/* now have same suffixes, normalized! */
-	ret.shift = tmpa.shift;
-	ret.units = tmpa.units;	
-	ret.num   = tmpa.num - tmpw.num;
-	return(ret);
-}
+  /* now have same suffixes, normalized! */
+  ret.shift = tmpa.shift;
 
-/* multiplies 2 Sizes values together. For values of different suffixes, 
+  ret.units = tmpa.units;
+
+  ret.num   = tmpa.num - tmpw.num;
+
+  return(ret);
+  }
+
+/* multiplies 2 Sizes values together. For values of different suffixes,
    normalization will take place; the suffix in the final result is
    the suffix of the smaller of the two. */
 /* NOTE: If multiplying the two values would result in an overflow during
          the normalization step, then -1b is returned. To avoid overflow,
-         it is best that the operands are of the same suffix*/ 
+         it is best that the operands are of the same suffix*/
 Size sizeMul(a, w)
-Size	a;
-Size	w;
-{
-        Size	tmpa;
-        Size	tmpw;
-	Size	ret = {-1, 0, BYTES};
+Size a;
+Size w;
+  {
+  Size tmpa;
+  Size tmpw;
+  Size ret = { -1, 0, BYTES};
 
-       if (normalizeSize(&a, &w, &tmpa, &tmpw) != 0) { /* oveflow */
-		return(ret);
-	}
+  if (normalizeSize(&a, &w, &tmpa, &tmpw) != 0)   /* oveflow */
+    {
+    return(ret);
+    }
 
-	/* now have same suffixes, normalized! */
-	ret.shift = tmpa.shift;
-	ret.units = tmpa.units;	
-	ret.num   = tmpa.num * tmpw.num;
-	return(ret);
-}
+  /* now have same suffixes, normalized! */
+  ret.shift = tmpa.shift;
 
-/* divides 2 Sizes values together. For values of different suffixes, 
+  ret.units = tmpa.units;
+
+  ret.num   = tmpa.num * tmpw.num;
+
+  return(ret);
+  }
+
+/* divides 2 Sizes values together. For values of different suffixes,
    normalization will take place; the suffix in the final result is
    the suffix of the smaller of the two. */
 /* NOTE: If dividing the two values would result in an overflow during
          the normalization step, then -1b is returned. To avoid overflow,
-         it is best that the operands are of the same suffix*/ 
+         it is best that the operands are of the same suffix*/
 Size sizeDiv(a, w)
-Size	a;
-Size	w;
-{
-        Size	tmpa;
-        Size	tmpw;
-	Size	ret = {-1, 0, BYTES};
+Size a;
+Size w;
+  {
+  Size tmpa;
+  Size tmpw;
+  Size ret = { -1, 0, BYTES};
 
-       if (normalizeSize(&a, &w, &tmpa, &tmpw) != 0) { /* oveflow */
-		return(ret);
-	}
+  if (normalizeSize(&a, &w, &tmpa, &tmpw) != 0)   /* oveflow */
+    {
+    return(ret);
+    }
 
-	/* now have same suffixes, normalized! */
-	ret.shift = tmpa.shift;
-	ret.units = tmpa.units;	
-	ret.num   = tmpa.num / tmpw.num;
-	return(ret);
-}
+  /* now have same suffixes, normalized! */
+  ret.shift = tmpa.shift;
+
+  ret.units = tmpa.units;
+
+  ret.num   = tmpa.num / tmpw.num;
+
+  return(ret);
+  }
 
 /* -sz */
 Size sizeUminus(sz)
-Size	sz;
-{
-	Size ret;
+Size sz;
+  {
+  Size ret;
 
-	ret.shift = sz.shift;		
-	ret.units = sz.units;
-	ret.num   = -sz.num;
-	return(ret);
-}
+  ret.shift = sz.shift;
+  ret.units = sz.units;
+  ret.num   = -sz.num;
+  return(ret);
+  }
 
 /* concatentate 2 malloc-ed strings into one string that is returned. */
 /* NOTE: The returned string is a pointer to a malloced area that be */
 /*       reused by this routine over and over again. So be sure that  */
 /*       when assigning values from this routine, be sure to duplicate */
-/*	 the value in other malloc-ed area. */
-char *strCat(str1, str2)
-char	*str1;
-char	*str2;
-{
-	char *catstr = NULLSTR;
-/*	a string whose value is str1. */
-	dynamic_strcpy(&catstr, str1);
-/*      Append to cat string the value of str2. */
-	dynamic_strcat(&catstr, str2);
-	varstrModScope(catstr, -1);  /* temporary variable strings */
-				     /* have scope -1 */
-	return(catstr);
-}
+/*  the value in other malloc-ed area. */
+char *
+strCat(char *str1, char *str2)
+  {
+  char *catstr = NULLSTR;
+  /* a string whose value is str1. */
+  dynamic_strcpy(&catstr, str1);
+  /*      Append to cat string the value of str2. */
+  dynamic_strcat(&catstr, str2);
+  varstrModScope(catstr, -1);  /* temporary variable strings */
+  /* have scope -1 */
+  return(catstr);
+  }
 
 /* Malloc table */
-void mallocSubIndexTableAdd(ptr)
-struct mallocIndex_type *ptr;
-{
+void
+mallocSubIndexTableAdd(struct mallocIndex_type *ptr)
+  {
 
-        struct mallocSubIndex_type *elem;
-        int                	   index;
+  struct mallocSubIndex_type *elem;
+  int                    index;
 
-        index = mallocSubIndexTableHash(ptr->mptr->scope);
+  index = mallocSubIndexTableHash(ptr->mptr->scope);
 
-        elem = (struct mallocSubIndex_type *) \
-                         malloc( (size_t)sizeof( struct mallocSubIndex_type ) );
+  elem = (struct mallocSubIndex_type *) \
+         malloc((size_t)sizeof(struct mallocSubIndex_type));
 
-        elem->ptr = ptr;
-        elem->link = mallocSubIndexTable[index];
+  elem->ptr = ptr;
+  elem->link = mallocSubIndexTable[index];
 
-        mallocSubIndexTable[index] = elem;
-}
+  mallocSubIndexTable[index] = elem;
+  }
 
-void mallocSubIndexTableFree(ptr)
-struct mallocIndex_type *ptr;
-{
+void
+mallocSubIndexTableFree(struct mallocIndex_type *ptr)
+  {
 
-        int                		index;
-        struct mallocSubIndex_type	*v, *v_before;
+  int                  index;
 
-        index = mallocSubIndexTableHash(ptr->mptr->scope);
+  struct mallocSubIndex_type *v, *v_before;
 
-        v_before = NULL;
-        for(v=mallocSubIndexTable[index]; v; v=v->link) {
-                if( v->ptr == ptr ) {
-                        if( v_before == NULL ) {
-                                mallocSubIndexTable[index] = v->link;
-                        } else {
-                                v_before->link = v->link;
-                        }
-                        free(v);
-                        return;
-                }
-                v_before = v;
+  index = mallocSubIndexTableHash(ptr->mptr->scope);
+
+  v_before = NULL;
+
+  for (v = mallocSubIndexTable[index]; v; v = v->link)
+    {
+    if (v->ptr == ptr)
+      {
+      if (v_before == NULL)
+        {
+        mallocSubIndexTable[index] = v->link;
         }
-}
-
-void mallocIndexTableAdd(mptr)
-struct malloc_type *mptr;
-{
-
-        struct mallocIndex_type *elem;
-        int                	index;
-
-        index = mallocIndexTableHash(mptr->pptr);
-
-        elem = (struct mallocIndex_type *) \
-                         malloc( (size_t)sizeof( struct mallocIndex_type ) );
-
-        elem->mptr = mptr;
-        elem->link = mallocIndexTable[index];
-
-        mallocIndexTable[index] = elem;
-
-	mallocSubIndexTableAdd(elem);
-}
-
-void mallocIndexTableFree(mptr)
-struct malloc_type *mptr;
-{
-
-        int                	index;
-        struct mallocIndex_type	*v, *v_before;
-
-        index = mallocIndexTableHash(mptr->pptr);
-
-        v_before = NULL;
-        for(v=mallocIndexTable[index]; v; v=v->link) {
-                if( v->mptr == mptr ) {
-                        if( v_before == NULL ) {
-                                mallocIndexTable[index] = v->link;
-                        } else {
-                                v_before->link = v->link;
-                        }
-			mallocSubIndexTableFree(v);
-                        free(v);
-                        return;
-                }
-                v_before = v;
+      else
+        {
+        v_before->link = v->link;
         }
-}
 
-void mallocIndexTableFreeNoIndex(mptr)
-struct malloc_type *mptr;
-{
+      free(v);
 
-        int                	index;
-        struct mallocIndex_type	*v;
+      return;
+      }
 
-        index = mallocIndexTableHash(mptr->pptr);
+    v_before = v;
+    }
+  }
 
-        for(v=mallocIndexTable[index]; v; v=v->link) {
-                if( v->mptr == mptr ) {
-			mallocSubIndexTableFree(v);
-                        return;
-                }
+void
+mallocIndexTableAdd(struct malloc_type *mptr)
+  {
+
+  struct mallocIndex_type *elem;
+  int                 index;
+
+  index = mallocIndexTableHash(mptr->pptr);
+
+  elem = (struct mallocIndex_type *) \
+         malloc((size_t)sizeof(struct mallocIndex_type));
+
+  elem->mptr = mptr;
+  elem->link = mallocIndexTable[index];
+
+  mallocIndexTable[index] = elem;
+
+  mallocSubIndexTableAdd(elem);
+  }
+
+void
+mallocIndexTableFree(struct malloc_type *mptr)
+  {
+
+  int                 index;
+
+  struct mallocIndex_type *v, *v_before;
+
+  index = mallocIndexTableHash(mptr->pptr);
+
+  v_before = NULL;
+
+  for (v = mallocIndexTable[index]; v; v = v->link)
+    {
+    if (v->mptr == mptr)
+      {
+      if (v_before == NULL)
+        {
+        mallocIndexTable[index] = v->link;
         }
-}
-
-void mallocIndexTableFreeNoSubIndex(mptr)
-struct malloc_type *mptr;
-{
-
-        int                	index;
-        struct mallocIndex_type	*v, *v_before;
-
-        index = mallocIndexTableHash(mptr->pptr);
-
-        v_before = NULL;
-        for(v=mallocIndexTable[index]; v; v=v->link) {
-                if( v->mptr == mptr ) {
-                        if( v_before == NULL ) {
-                                mallocIndexTable[index] = v->link;
-                        } else {
-                                v_before->link = v->link;
-                        }
-                        free(v);
-                        return;
-                }
-                v_before = v;
+      else
+        {
+        v_before->link = v->link;
         }
-}
 
-void mallocTableAdd(ptr, pptr, scope)
-void *ptr;
-void *pptr;
-int  scope;
-{
-        struct malloc_type *v_elem;
-        int                index;
+      mallocSubIndexTableFree(v);
 
-        index = mallocTableHash(ptr);
+      free(v);
+      return;
+      }
 
-        v_elem = (struct malloc_type *) \
-                                malloc( (size_t)sizeof( struct malloc_type ));
+    v_before = v;
+    }
+  }
 
-        v_elem->ptr = ptr;
-        v_elem->pptr = pptr;
-        v_elem->scope = scope;
+void
+mallocIndexTableFreeNoIndex(struct malloc_type *mptr)
+  {
 
-        v_elem->link = mallocTable[index];
-        mallocTable[index] = v_elem;
+  int                 index;
 
-	mallocIndexTableAdd(v_elem);
-}
+  struct mallocIndex_type *v;
+
+  index = mallocIndexTableHash(mptr->pptr);
+
+  for (v = mallocIndexTable[index]; v; v = v->link)
+    {
+    if (v->mptr == mptr)
+      {
+      mallocSubIndexTableFree(v);
+      return;
+      }
+    }
+  }
+
+void
+mallocIndexTableFreeNoSubIndex(struct malloc_type *mptr)
+  {
+
+  int                 index;
+
+  struct mallocIndex_type *v, *v_before;
+
+  index = mallocIndexTableHash(mptr->pptr);
+
+  v_before = NULL;
+
+  for (v = mallocIndexTable[index]; v; v = v->link)
+    {
+    if (v->mptr == mptr)
+      {
+      if (v_before == NULL)
+        {
+        mallocIndexTable[index] = v->link;
+        }
+      else
+        {
+        v_before->link = v->link;
+        }
+
+      free(v);
+
+      return;
+      }
+
+    v_before = v;
+    }
+  }
+
+void
+mallocTableAdd(void *ptr, void *pptr, int scope)
+  {
+
+  struct malloc_type *v_elem;
+  int                index;
+
+  index = mallocTableHash(ptr);
+
+  v_elem = (struct malloc_type *) \
+           malloc((size_t)sizeof(struct malloc_type));
+
+  v_elem->ptr = ptr;
+  v_elem->pptr = pptr;
+  v_elem->scope = scope;
+
+  v_elem->link = mallocTable[index];
+  mallocTable[index] = v_elem;
+
+  mallocIndexTableAdd(v_elem);
+  }
 
 void mallocTablePrint(void)
-{
+  {
 
-        int                i;
-        struct malloc_type *v;
-        struct mallocIndex_type *v2;
-        struct mallocSubIndex_type *v3;
+  int                i;
 
-        for(i=0; i < MALLOCLEN; i++) {
-            printf( "mallocTable[%d]: ======================================\n", i);
-            for(v=mallocTable[i]; v; v=v->link) {
-                printf("%d:%x: (%x, %x, %d, %x)\n", i, v, v->ptr, v->pptr,
-				  v->scope, v->link);
-            }
-        }
-        for(i=0; i < MALLOC_INDEX_LEN; i++) {
-            printf( "mallocIndexTable[%d]: ======================================\n", i);
-            for(v2=mallocIndexTable[i]; v2; v2=v2->link) {
-                printf("%d:%x: (mptr: %x, hashkey-pptr: %x)\n", i, v2,
-                                                    v2->mptr, v2->mptr->pptr);
-            }
-        }
+  struct malloc_type *v;
 
-        for(i=0; i < MALLOC_SUBINDEX_LEN; i++) {
-            printf( "mallocSubIndexTable[%d]: ======================================\n", i);
-            for(v3=mallocSubIndexTable[i]; v3; v3=v3->link) {
-                printf("%d:%x: (%x, hashkey-scope: %d)\n", i, v3, v3->ptr,
-                                                    v3->ptr->mptr->scope);
-            }
-        }
-}
+  struct mallocIndex_type *v2;
+
+  struct mallocSubIndex_type *v3;
+
+  for (i = 0; i < MALLOCLEN; i++)
+    {
+    printf("mallocTable[%d]: ======================================\n", i);
+
+    for (v = mallocTable[i]; v; v = v->link)
+      {
+      printf("%d:%x: (%x, %x, %d, %x)\n", i, v, v->ptr, v->pptr,
+             v->scope, v->link);
+      }
+    }
+
+  for (i = 0; i < MALLOC_INDEX_LEN; i++)
+    {
+    printf("mallocIndexTable[%d]: ======================================\n", i);
+
+    for (v2 = mallocIndexTable[i]; v2; v2 = v2->link)
+      {
+      printf("%d:%x: (mptr: %x, hashkey-pptr: %x)\n", i, v2,
+             v2->mptr, v2->mptr->pptr);
+      }
+    }
+
+  for (i = 0; i < MALLOC_SUBINDEX_LEN; i++)
+    {
+    printf("mallocSubIndexTable[%d]: ======================================\n", i);
+
+    for (v3 = mallocSubIndexTable[i]; v3; v3 = v3->link)
+      {
+      printf("%d:%x: (%x, hashkey-scope: %d)\n", i, v3, v3->ptr,
+             v3->ptr->mptr->scope);
+      }
+    }
+  }
 
 void mallocTableInit(void)
-{
-        int     i;
+  {
+  int     i;
 
-        for(i=0; i < MALLOCLEN; i++) {
-                mallocTable[i] = (struct malloc_type *)NULL;
-        }
-        for(i=0; i < MALLOC_INDEX_LEN; i++) {
-            	mallocIndexTable[i] = (struct mallocIndex_type *)NULL;
-        }
-        for(i=0; i < MALLOC_SUBINDEX_LEN; i++) {
-            	mallocSubIndexTable[i] = (struct mallocSubIndex_type *)NULL;
-        }
-}
+  for (i = 0; i < MALLOCLEN; i++)
+    {
+    mallocTable[i] = (struct malloc_type *)NULL;
+    }
+
+  for (i = 0; i < MALLOC_INDEX_LEN; i++)
+    {
+    mallocIndexTable[i] = (struct mallocIndex_type *)NULL;
+    }
+
+  for (i = 0; i < MALLOC_SUBINDEX_LEN; i++)
+    {
+    mallocSubIndexTable[i] = (struct mallocSubIndex_type *)NULL;
+    }
+  }
 
 
 /* Returns 1 if 'ptr' is a entry in the malloc table ; 0
    otherwise. */
-int inMallocTable(ptr)
-void *ptr;
-{
+int
+inMallocTable(void *ptr)
+  {
 
-        int                index;
-        struct malloc_type *v;
+  int                index;
 
-        index = mallocTableHash(ptr);
+  struct malloc_type *v;
 
-        for(v=mallocTable[index]; v; v=v->link) {
-                if( v->ptr == ptr ) {
-                        return(1);
-                }
-        }
+  index = mallocTableHash(ptr);
 
-        return(0);
-}
+  for (v = mallocTable[index]; v; v = v->link)
+    {
+    if (v->ptr == ptr)
+      {
+      return(1);
+      }
+    }
+
+  return(0);
+  }
 
 /* NOTE: This will automatically reject  NULL values or malloc-ed storage */
-/*	 it doesn't know about */
-void mallocTableFree(ptr)
-void	*ptr;
-{
+/*  it doesn't know about */
+void
+mallocTableFree(void *ptr)
+  {
 
-        int                index;
-        struct malloc_type *v, *v_before;
+  int                index;
 
-        index = mallocTableHash(ptr);
+  struct malloc_type *v, *v_before;
 
-        v_before = NULL;
-        for(v=mallocTable[index]; v; v=v->link) {
-                if( v->ptr == ptr ) {
-                        free(ptr);
-                        if( v_before == NULL ) {
-                                mallocTable[index] = v->link;
-                        } else {
-                                v_before->link = v->link;
-                        }
-			mallocIndexTableFree(v);
-                        free(v);
-                        return;
-                }
-                v_before = v;
+  index = mallocTableHash(ptr);
+
+  v_before = NULL;
+
+  for (v = mallocTable[index]; v; v = v->link)
+    {
+    if (v->ptr == ptr)
+      {
+      free(ptr);
+
+      if (v_before == NULL)
+        {
+        mallocTable[index] = v->link;
         }
-}
-
-/* mallocTableFreeNoIndex: this is the same as mallocTableFree except 	*/
-/*                         freeing the corresponding entry in the 	*/
-/*                         mallocTableIndex will not be done. 		*/
-void mallocTableFreeNoIndex(ptr)
-void	*ptr;
-{
-
-        int                index;
-        struct malloc_type *v, *v_before;
-
-        index = mallocTableHash(ptr);
-
-        v_before = NULL;
-        for(v=mallocTable[index]; v; v=v->link) {
-                if( v->ptr == ptr ) {
-                        free(ptr);
-                        if( v_before == NULL ) {
-                                mallocTable[index] = v->link;
-                        } else {
-                                v_before->link = v->link;
-                        }
-			mallocIndexTableFreeNoIndex(v);
-                        free(v);
-                        return;
-                }
-                v_before = v;
+      else
+        {
+        v_before->link = v->link;
         }
-}
 
-void mallocTableFreeNoSubIndex(ptr)
-void	*ptr;
-{
+      mallocIndexTableFree(v);
 
-        int                index;
-        struct malloc_type *v, *v_before;
+      free(v);
+      return;
+      }
 
-        index = mallocTableHash(ptr);
+    v_before = v;
+    }
+  }
 
-        v_before = NULL;
-        for(v=mallocTable[index]; v; v=v->link) {
-                if( v->ptr == ptr ) {
-                        free(ptr);
-                        if( v_before == NULL ) {
-                                mallocTable[index] = v->link;
-                        } else {
-                                v_before->link = v->link;
-                        }
-			mallocIndexTableFreeNoSubIndex(v);
-                        free(v);
-                        return;
-                }
-                v_before = v;
+/* mallocTableFreeNoIndex: this is the same as mallocTableFree except  */
+/*                         freeing the corresponding entry in the  */
+/*                         mallocTableIndex will not be done.   */
+void
+mallocTableFreeNoIndex(void *ptr)
+  {
+
+  int                index;
+
+  struct malloc_type *v, *v_before;
+
+  index = mallocTableHash(ptr);
+
+  v_before = NULL;
+
+  for (v = mallocTable[index]; v; v = v->link)
+    {
+    if (v->ptr == ptr)
+      {
+      free(ptr);
+
+      if (v_before == NULL)
+        {
+        mallocTable[index] = v->link;
         }
-}
+      else
+        {
+        v_before->link = v->link;
+        }
+
+      mallocIndexTableFreeNoIndex(v);
+
+      free(v);
+      return;
+      }
+
+    v_before = v;
+    }
+  }
+
+void
+mallocTableFreeNoSubIndex(void *ptr)
+  {
+
+  int                index;
+
+  struct malloc_type *v, *v_before;
+
+  index = mallocTableHash(ptr);
+
+  v_before = NULL;
+
+  for (v = mallocTable[index]; v; v = v->link)
+    {
+    if (v->ptr == ptr)
+      {
+      free(ptr);
+
+      if (v_before == NULL)
+        {
+        mallocTable[index] = v->link;
+        }
+      else
+        {
+        v_before->link = v->link;
+        }
+
+      mallocIndexTableFreeNoSubIndex(v);
+
+      free(v);
+      return;
+      }
+
+    v_before = v;
+    }
+  }
 
 /* This is like mallocTableFreeNoSubIndex except the last ptr is not freed */
-void mallocTableFreeNoSubIndex2(ptr)
-void	*ptr;
-{
+void
+mallocTableFreeNoSubIndex2(void *ptr)
+  {
 
-        int                index;
-        struct malloc_type *v, *v_before;
+  int                index;
 
-        index = mallocTableHash(ptr);
+  struct malloc_type *v, *v_before;
 
-        v_before = NULL;
-        for(v=mallocTable[index]; v; v=v->link) {
-                if( v->ptr == ptr ) {
-                        if( v_before == NULL ) {
-                                mallocTable[index] = v->link;
-                        } else {
-                                v_before->link = v->link;
-                        }
-			mallocIndexTableFreeNoSubIndex(v);
-                        free(v);
-                        return;
-                }
-                v_before = v;
+  index = mallocTableHash(ptr);
+
+  v_before = NULL;
+
+  for (v = mallocTable[index]; v; v = v->link)
+    {
+    if (v->ptr == ptr)
+      {
+      if (v_before == NULL)
+        {
+        mallocTable[index] = v->link;
         }
-}
-
-void mallocTableFreeByPptr(pptr)
-void	*pptr;
-{
-
-	int			index;
-        struct mallocIndex_type *v, *v_before, *linkptr;
-
-	index = mallocIndexTableHash(pptr);
-
-	v_before = NULL;	
-	v = mallocIndexTable[index];
-	while( v ) {
-		linkptr = v->link;
-		if( v->mptr->pptr == pptr ) {
-			mallocTableFreeNoIndex(v->mptr->ptr);
-			if( v_before == NULL ) {
-				mallocIndexTable[index] = linkptr;
-			} else {
-				v_before->link = linkptr;
-			}
-			free(v);
-		} else {
-			v_before = v;
-		}
-		v = linkptr;
-        }
-}
-
-void mallocTableFreeByScope(scope, freefunc)
-int	scope;
-void    (*freefunc)();
-{
-
-	int				index;
-        struct mallocSubIndex_type	*v, *v_before, *linkptr;
-	void   				**objptrs = NULL;
-	int				beforecnt, aftercnt, numptrs, i;
-
-	index = mallocSubIndexTableHash(scope);
-
-	v_before = NULL;	
-	v = mallocSubIndexTable[index];
-	while( v ) {
-		linkptr = v->link;
-		if( v->ptr->mptr->scope == scope ) {
-			beforecnt = dynamicArraySize(objptrs);
-			objptrs = (void *)extendDynamicArray(objptrs,
-					beforecnt+1, sizeof(void *));
-			aftercnt = dynamicArraySize(objptrs);
-			if( aftercnt > beforecnt ) {
-				objptrs[beforecnt] = v->ptr->mptr->ptr;
-			}
-
-			mallocTableFreeNoSubIndex2(v->ptr->mptr->ptr);
-			if( v_before == NULL ) {
-				mallocSubIndexTable[index] = linkptr;
-			} else {
-				v_before->link = linkptr;
-			}
-			free(v);
-		} else {
-			v_before = v;
-		}
-		v = linkptr;
+      else
+        {
+        v_before->link = v->link;
         }
 
-	numptrs = dynamicArraySize(objptrs);
-        for (i=0; i<numptrs; i++) {
-		freefunc(objptrs[i]);
-	}
-	freeDynamicArray(objptrs);
-}
+      mallocIndexTableFreeNoSubIndex(v);
 
-void mallocTableModScope(ptr, newscope)
-void *ptr;
-int  newscope;
-{
-        int                	index, index2;
-        struct malloc_type 	*v;
-        struct mallocIndex_type *v2;
-        struct mallocIndex_type *index_entry;
+      free(v);
+      return;
+      }
 
-        index = mallocTableHash(ptr);
+    v_before = v;
+    }
+  }
 
-	index_entry = NULL;
-        for(v=mallocTable[index]; v; v=v->link) {
+void
+mallocTableFreeByPptr(void *pptr)
+  {
 
-                if( v->ptr == ptr ) {
-			/* hash lookup against index2 */
-			index2 = mallocIndexTableHash(v->pptr);
-        		for(v2=mallocIndexTable[index2]; v2; v2=v2->link) {
-				if( v2->mptr == v ) {
-					/* hash lookup against scope */
-					mallocSubIndexTableFree(v2);
-					index_entry = v2;
-					break;
-				}
-			}
-                        v->scope = newscope;
-			if( index_entry != NULL ) {
-				mallocSubIndexTableAdd(index_entry);
-			}
-                        return;
-                }
+  int   index;
+
+  struct mallocIndex_type *v, *v_before, *linkptr;
+
+  index = mallocIndexTableHash(pptr);
+
+  v_before = NULL;
+  v = mallocIndexTable[index];
+
+  while (v)
+    {
+    linkptr = v->link;
+
+    if (v->mptr->pptr == pptr)
+      {
+      mallocTableFreeNoIndex(v->mptr->ptr);
+
+      if (v_before == NULL)
+        {
+        mallocIndexTable[index] = linkptr;
         }
-}
+      else
+        {
+        v_before->link = linkptr;
+        }
+
+      free(v);
+      }
+    else
+      {
+      v_before = v;
+      }
+
+    v = linkptr;
+    }
+  }
+
+void
+mallocTableFreeByScope(int scope, void (*freefunc)(void))
+  {
+
+  int    index;
+
+  struct mallocSubIndex_type *v, *v_before, *linkptr;
+  void       **objptrs = NULL;
+  int    beforecnt, aftercnt, numptrs, i;
+
+  index = mallocSubIndexTableHash(scope);
+
+  v_before = NULL;
+  v = mallocSubIndexTable[index];
+
+  while (v)
+    {
+    linkptr = v->link;
+
+    if (v->ptr->mptr->scope == scope)
+      {
+      beforecnt = dynamicArraySize(objptrs);
+      objptrs = (void *)extendDynamicArray(objptrs,
+                                           beforecnt + 1, sizeof(void *));
+      aftercnt = dynamicArraySize(objptrs);
+
+      if (aftercnt > beforecnt)
+        {
+        objptrs[beforecnt] = v->ptr->mptr->ptr;
+        }
+
+      mallocTableFreeNoSubIndex2(v->ptr->mptr->ptr);
+
+      if (v_before == NULL)
+        {
+        mallocSubIndexTable[index] = linkptr;
+        }
+      else
+        {
+        v_before->link = linkptr;
+        }
+
+      free(v);
+      }
+    else
+      {
+      v_before = v;
+      }
+
+    v = linkptr;
+    }
+
+  numptrs = dynamicArraySize(objptrs);
+
+  for (i = 0; i < numptrs; i++)
+    {
+    freefunc(objptrs[i]);
+    }
+
+  freeDynamicArray(objptrs);
+  }
+
+void
+mallocTableModScope(void *ptr, int newscope)
+  {
+  int                 index, index2;
+
+  struct malloc_type  *v;
+
+  struct mallocIndex_type *v2;
+
+  struct mallocIndex_type *index_entry;
+
+  index = mallocTableHash(ptr);
+
+  index_entry = NULL;
+
+  for (v = mallocTable[index]; v; v = v->link)
+    {
+
+    if (v->ptr == ptr)
+      {
+      /* hash lookup against index2 */
+      index2 = mallocIndexTableHash(v->pptr);
+
+      for (v2 = mallocIndexTable[index2]; v2; v2 = v2->link)
+        {
+        if (v2->mptr == v)
+          {
+          /* hash lookup against scope */
+          mallocSubIndexTableFree(v2);
+          index_entry = v2;
+          break;
+          }
+        }
+
+      v->scope = newscope;
+
+      if (index_entry != NULL)
+        {
+        mallocSubIndexTableAdd(index_entry);
+        }
+
+      return;
+      }
+    }
+  }
 
 /* safe modification of scope means only non-global variables (scope != 0)
    will be allowed to be modified */
-void mallocTableSafeModScope(ptr, newscope)
-void *ptr;
-int  newscope;
-{
-        int                	index, index2;
-        struct malloc_type 	*v;
-        struct mallocIndex_type *v2;
-        struct mallocIndex_type *index_entry;
+void
+mallocTableSafeModScope(void *ptr, int newscope)
+  {
+  int                 index, index2;
 
-        index = mallocTableHash(ptr);
+  struct malloc_type  *v;
 
-	index_entry = NULL;
-        for(v=mallocTable[index]; v; v=v->link) {
+  struct mallocIndex_type *v2;
 
-                if( v->ptr == ptr && v->scope != 0 ) {
-			/* hash lookup against index2 */
-			index2 = mallocIndexTableHash(v->pptr);
-        		for(v2=mallocIndexTable[index2]; v2; v2=v2->link) {
-				if( v2->mptr == v ) {
-					/* hash lookup against scope */
-					mallocSubIndexTableFree(v2);
-					index_entry = v2;
-					break;
-				}
-			}
-                        v->scope = newscope;
-			if( index_entry != NULL ) {
-				mallocSubIndexTableAdd(index_entry);
-			}
-                        return;
-                }
+  struct mallocIndex_type *index_entry;
+
+  index = mallocTableHash(ptr);
+
+  index_entry = NULL;
+
+  for (v = mallocTable[index]; v; v = v->link)
+    {
+
+    if (v->ptr == ptr && v->scope != 0)
+      {
+      /* hash lookup against index2 */
+      index2 = mallocIndexTableHash(v->pptr);
+
+      for (v2 = mallocIndexTable[index2]; v2; v2 = v2->link)
+        {
+        if (v2->mptr == v)
+          {
+          /* hash lookup against scope */
+          mallocSubIndexTableFree(v2);
+          index_entry = v2;
+          break;
+          }
         }
-}
+
+      v->scope = newscope;
+
+      if (index_entry != NULL)
+        {
+        mallocSubIndexTableAdd(index_entry);
+        }
+
+      return;
+      }
+    }
+  }
 
 /*
  * intInRange - returns 1 if i is in range, 0 otherwise.
  *
 */
 int inIntRange(i, range)
-int		i;
-IntRange	range;
-{
-	return( i >= range.lo && i <= range.hi );
-}
+int  i;
+IntRange range;
+  {
+  return(i >= range.lo && i <= range.hi);
+  }
 
 int inFloatRange(f, range)
-double		f;
-FloatRange	range;
-{
-	return( f >= range.lo && f <= range.hi );
-}
+double  f;
+FloatRange range;
+  {
+  return(f >= range.lo && f <= range.hi);
+  }
 
 /*
  * dayofweekInRange - returns 1 if dow is in range, 0 otherwise.
  *
 */
 int inDayofweekRange(dow, range)
-Dayofweek	dow;
-DayofweekRange	range;
-{
-	return( dow >= range.lo && dow <= range.hi );
-}
+Dayofweek dow;
+DayofweekRange range;
+  {
+  return(dow >= range.lo && dow <= range.hi);
+  }
 
 /*
  * dateInRange - returns 1 if d is in range, 0 otherwise.
  *
 */
 int inDateRange(d, range)
-Date		d;
-DateRange	range;
-{
-	return( datecmp(d, range.lo) >= 0 && datecmp(d, range.hi) <= 0 );
-}
+Date  d;
+DateRange range;
+  {
+  return(datecmp(d, range.lo) >= 0 && datecmp(d, range.hi) <= 0);
+  }
 
 /*
  * timeInRange - returns 1 if t is in range, 0 otherwise.
  *
 */
 int inTimeRange(t, range)
-Time		t;
-TimeRange	range;
-{
-	return( timecmp(t, range.lo) >= 0 && timecmp(t, range.hi) <= 0 );
-}
+Time  t;
+TimeRange range;
+  {
+  return(timecmp(t, range.lo) >= 0 && timecmp(t, range.hi) <= 0);
+  }
 
 int inDateTimeRange(dt, range)
-DateTime	dt;
-DateTimeRange	range;
-{
-	DateTime    now;
-	struct   tm now_tm;
-	time_t      now_t;
-	struct   tm *t;
+DateTime dt;
+DateTimeRange range;
+  {
+  DateTime    now;
 
-	/* if datetimes contain only time portions (i.e. hh:mm:ss) and
-	   low > hi, then adjust the hi by 1 day */
+  struct   tm now_tm;
+  time_t      now_t;
 
-	if( datecmp(range.lo.d, strToDate("(0|0|0)")) == 0 && \
-	    datecmp(range.hi.d, strToDate("(0|0|0)")) == 0 && \
-	    datetimecmp(range.lo, range.hi) > 0 ) {
+  struct   tm *t;
 
-		now = datetimeGet();
+  /* if datetimes contain only time portions (i.e. hh:mm:ss) and
+     low > hi, then adjust the hi by 1 day */
 
-		range.lo.d.m = now.d.m;
-		range.lo.d.d = now.d.d; 
-		range.lo.d.y = now.d.y;
+  if (datecmp(range.lo.d, strToDate("(0|0|0)")) == 0 && \
+      datecmp(range.hi.d, strToDate("(0|0|0)")) == 0 && \
+      datetimecmp(range.lo, range.hi) > 0)
+    {
 
-		now_tm.tm_mon  = now.d.m - 1;
-		now_tm.tm_mday = now.d.d;
-		now_tm.tm_year = now.d.y - 1900;
-		now_tm.tm_hour = now.t.h;
-		now_tm.tm_min  = now.t.m;
-		now_tm.tm_sec  = now.t.s;
-		now_tm.tm_isdst  = -1;
-		now_t = mktime(&now_tm);
-		now_t += (time_t)86400;	/* add 1 day */
-		t = localtime(&now_t);
+    now = datetimeGet();
 
-		range.hi.d.m = t->tm_mon + 1;
-		range.hi.d.d = t->tm_mday;
-		range.hi.d.y = t->tm_year + 1900;
-	}
+    range.lo.d.m = now.d.m;
+    range.lo.d.d = now.d.d;
+    range.lo.d.y = now.d.y;
 
-	return( datetimecmp(dt, range.lo) >= 0 && \
-				datetimecmp(dt, range.hi) <= 0 );
-}
+    now_tm.tm_mon  = now.d.m - 1;
+    now_tm.tm_mday = now.d.d;
+    now_tm.tm_year = now.d.y - 1900;
+    now_tm.tm_hour = now.t.h;
+    now_tm.tm_min  = now.t.m;
+    now_tm.tm_sec  = now.t.s;
+    now_tm.tm_isdst  = -1;
+    now_t = mktime(&now_tm);
+    now_t += (time_t)86400; /* add 1 day */
+    t = localtime(&now_t);
+
+    range.hi.d.m = t->tm_mon + 1;
+    range.hi.d.d = t->tm_mday;
+    range.hi.d.y = t->tm_year + 1900;
+    }
+
+  return(datetimecmp(dt, range.lo) >= 0 && \
+
+         datetimecmp(dt, range.hi) <= 0);
+  }
 
 /*
  * sizeInRange - returns 1 if sz is in range, 0 otherwise.
  *
 */
 int inSizeRange(sz, range)
-Size		sz;
-SizeRange	range;
-{
-	return( sizecmp(sz, range.lo) >= 0 && sizecmp(sz, range.hi) <= 0 );
-}
+Size  sz;
+SizeRange range;
+  {
+  return(sizecmp(sz, range.lo) >= 0 && sizecmp(sz, range.hi) <= 0);
+  }
 
 
 /* The following are functions related to IntRes and SizeRes */
+
 struct IntRes *IntResCreate(void)
-{
-	struct IntRes *iptr;
+  {
 
-	iptr = (struct IntRes *) malloc(sizeof(struct IntRes));
+  struct IntRes *iptr;
 
-	assert( iptr != NULL );
+  iptr = (struct IntRes *) malloc(sizeof(struct IntRes));
 
-	iptr->name  = NULLSTR; 
-	iptr->value = -1;
+  assert(iptr != NULL);
 
-	return(iptr);
-}
+  iptr->name  = NULLSTR;
+  iptr->value = -1;
 
-int IntResValueGet(head, name)
-struct IntRes 	*head;
-char		*name;
-{
-	struct IntRes *iptr;
+  return(iptr);
+  }
 
-        for( iptr=head; iptr; iptr=iptr->nextptr ) {
-                if( strcmp(iptr->name, name) == 0 ) { /* found a match */
-                        return(iptr->value);
-                }
-        }
-        return(-1);
-}
+int
+IntResValueGet(struct IntRes *head, char *name)
+  {
 
-void IntResListPrint(head, descr)
-struct IntRes 	*head;
-char		*descr;
-{
-	struct IntRes *iptr;
+  struct IntRes *iptr;
 
-        for( iptr=head; iptr; iptr=iptr->nextptr ) {
-		printf("%s.%s = %d\n", descr, iptr->name,
-							iptr->value); 
-		
-        }
-}
+  for (iptr = head; iptr; iptr = iptr->nextptr)
+    {
+    if (strcmp(iptr->name, name) == 0)    /* found a match */
+      {
+      return(iptr->value);
+      }
+    }
 
-struct IntRes *IntResValuePut(head, name, value, pptr)
-struct IntRes	*head;
-char		*name;
-int		value;
-void		*pptr;
-{
-	struct IntRes *iptr;
+  return(-1);
+  }
 
-        for( iptr=head; iptr; iptr=iptr->nextptr ) {
-                if( strcmp(iptr->name, name) == 0 ) { /* found a match */
-			iptr->value = value;
-			return(NULL);
-                }
-        }
-        iptr = IntResCreate();
-        mallocTableAdd(iptr, pptr, 0);
+void
+IntResListPrint(struct IntRes *head, char *descr)
+  {
+
+  struct IntRes *iptr;
+
+  for (iptr = head; iptr; iptr = iptr->nextptr)
+    {
+    printf("%s.%s = %d\n", descr, iptr->name,
+           iptr->value);
+
+    }
+  }
+
+struct IntRes *
+      IntResValuePut(struct IntRes *head, char *name, int value, void *pptr)
+  {
+
+  struct IntRes *iptr;
+
+  for (iptr = head; iptr; iptr = iptr->nextptr)
+    {
+    if (strcmp(iptr->name, name) == 0)    /* found a match */
+      {
+      iptr->value = value;
+      return(NULL);
+      }
+    }
+
+  iptr = IntResCreate();
+
+  mallocTableAdd(iptr, pptr, 0);
 #ifdef DEBUG
-        printf("Added IntRes ptr %x to mallocTable\n", iptr);
+  printf("Added IntRes ptr %x to mallocTable\n", iptr);
 #endif
 
-        dynamic_strcpy(&iptr->name, name);
-	varstrModPptr(iptr->name, pptr);
-        iptr->value = value;
-        iptr->nextptr = head;
-        return(iptr);
+  dynamic_strcpy(&iptr->name, name);
+  varstrModPptr(iptr->name, pptr);
+  iptr->value = value;
+  iptr->nextptr = head;
+  return(iptr);
 
-}
+  }
 
-void IntResListFree(head)
-struct IntRes *head;
-{
-        struct IntRes *iptr, *tptr;
+void
+IntResListFree(struct IntRes *head)
+  {
 
-        tptr = NULL;
-        for( iptr=head; iptr; iptr=tptr ) {
-                tptr = iptr->nextptr;
-		varstrFree(iptr->name);
-                mallocTableFree(iptr);
-        }
-}
+  struct IntRes *iptr, *tptr;
+
+  tptr = NULL;
+
+  for (iptr = head; iptr; iptr = tptr)
+    {
+    tptr = iptr->nextptr;
+    varstrFree(iptr->name);
+    mallocTableFree(iptr);
+    }
+  }
 
 static struct SizeRes *SizeResCreate(void)
-{
-	struct SizeRes *iptr;
+  {
 
-	iptr = (struct SizeRes *) malloc(sizeof(struct SizeRes));
+  struct SizeRes *iptr;
 
-	assert( iptr != NULL );
+  iptr = (struct SizeRes *) malloc(sizeof(struct SizeRes));
 
-	iptr->name  = NULLSTR;
-	iptr->value = strToSize("-1b");
+  assert(iptr != NULL);
 
-	return(iptr);
-}
+  iptr->name  = NULLSTR;
+  iptr->value = strToSize("-1b");
+
+  return(iptr);
+  }
 
 Size SizeResValueGet(head, name)
-struct SizeRes 	*head;
-char		*name;
-{
-	struct SizeRes *iptr;
 
-        for( iptr=head; iptr; iptr=iptr->nextptr ) {
-                if( strcmp(iptr->name, name) == 0 ) { /* found a match */
-                        return(iptr->value);
-                }
-        }
-        return(strToSize("-1b"));
-}
+struct SizeRes  *head;
+char  *name;
+  {
 
-void SizeResListPrint(head, descr)
-struct SizeRes 	*head;
-char		*descr;
-{
-	struct SizeRes *iptr;
+  struct SizeRes *iptr;
 
-        for( iptr=head; iptr; iptr=iptr->nextptr ) {
-		printf("%s.%s = ", descr, iptr->name);
-		sizePrint( iptr->value, 1); 
-		printf("\n");
-		
-        }
-}
+  for (iptr = head; iptr; iptr = iptr->nextptr)
+    {
+    if (strcmp(iptr->name, name) == 0)    /* found a match */
+      {
+      return(iptr->value);
+      }
+    }
+
+  return(strToSize("-1b"));
+  }
+
+void
+SizeResListPrint(struct SizeRes *head, char *descr)
+  {
+
+  struct SizeRes *iptr;
+
+  for (iptr = head; iptr; iptr = iptr->nextptr)
+    {
+    printf("%s.%s = ", descr, iptr->name);
+    sizePrint(iptr->value, 1);
+    printf("\n");
+
+    }
+  }
 
 struct SizeRes *SizeResValuePut(head, name, value, pptr)
-struct SizeRes	*head;
-char		*name;
-Size		value;
-void		*pptr;
-{
-	struct SizeRes *iptr;
 
-        for( iptr=head; iptr; iptr=iptr->nextptr ) {
-                if( strcmp(iptr->name, name) == 0 ) { /* found a match */
-			iptr->value = value;
-			return(NULL);
-                }
-        }
-        iptr = SizeResCreate();
-        mallocTableAdd(iptr, pptr, 0);
+      struct SizeRes *head;
+char  *name;
+Size  value;
+void  *pptr;
+  {
+
+  struct SizeRes *iptr;
+
+  for (iptr = head; iptr; iptr = iptr->nextptr)
+    {
+    if (strcmp(iptr->name, name) == 0)    /* found a match */
+      {
+      iptr->value = value;
+      return(NULL);
+      }
+    }
+
+  iptr = SizeResCreate();
+
+  mallocTableAdd(iptr, pptr, 0);
 #ifdef DEBUG
-        printf("Added SizeRes ptr %x to mallocTable\n", iptr);
+  printf("Added SizeRes ptr %x to mallocTable\n", iptr);
 #endif
 
-	dynamic_strcpy(&iptr->name, name);
-	varstrModPptr(iptr->name, pptr);
-        iptr->value = value;
-        iptr->nextptr = head;
-        return(iptr);
-}
+  dynamic_strcpy(&iptr->name, name);
+  varstrModPptr(iptr->name, pptr);
+  iptr->value = value;
+  iptr->nextptr = head;
+  return(iptr);
+  }
 
-void SizeResListFree(head)
-struct SizeRes *head;
-{
-	struct SizeRes *iptr, *tptr;
+void
+SizeResListFree(struct SizeRes *head)
+  {
 
-	tptr = NULL;
-        for( iptr=head; iptr; iptr=tptr ) {
-		tptr = iptr->nextptr;
-		varstrFree(iptr->name);
-		mallocTableFree(iptr);
-        }
-}
+  struct SizeRes *iptr, *tptr;
+
+  tptr = NULL;
+
+  for (iptr = head; iptr; iptr = tptr)
+    {
+    tptr = iptr->nextptr;
+    varstrFree(iptr->name);
+    mallocTableFree(iptr);
+    }
+  }
 
 static struct StringRes *StringResCreate(void)
-{
-	struct StringRes *iptr;
+  {
 
-	iptr = (struct StringRes *) malloc(sizeof(struct StringRes));
+  struct StringRes *iptr;
 
-	assert( iptr != NULL );
+  iptr = (struct StringRes *) malloc(sizeof(struct StringRes));
 
-	iptr->name  = NULLSTR;
-	iptr->value = NULLSTR;
+  assert(iptr != NULL);
 
-	return(iptr);
-}
+  iptr->name  = NULLSTR;
+  iptr->value = NULLSTR;
 
-char *StringResValueGet(head, name)
-struct StringRes 	*head;
-char			*name;
-{
-	struct StringRes *iptr;
+  return(iptr);
+  }
 
-        for( iptr=head; iptr; iptr=iptr->nextptr ) {
-                if( strcmp(iptr->name, name) == 0 ) { /* found a match */
-                        return(iptr->value);
-                }
-        }
-        return(NULLSTR);
-}
+char *
+StringResValueGet(struct StringRes *head, char *name)
+  {
 
-void StringResListPrint(head, descr)
-struct StringRes 	*head;
-char			*descr;
-{
-	struct StringRes *iptr;
+  struct StringRes *iptr;
 
-        for( iptr=head; iptr; iptr=iptr->nextptr ) {
-		printf("%s.%s = %s\n", descr, iptr->name, iptr->value);
-        }
-}
+  for (iptr = head; iptr; iptr = iptr->nextptr)
+    {
+    if (strcmp(iptr->name, name) == 0)    /* found a match */
+      {
+      return(iptr->value);
+      }
+    }
 
-struct StringRes *StringResValuePut(head, name, value, pptr)
-struct StringRes	*head;
-char			*name;
-char			*value;
-void			*pptr;
-{
-	struct StringRes *iptr;
+  return(NULLSTR);
+  }
 
-        for( iptr=head; iptr; iptr=iptr->nextptr ) {
-                if( strcmp(iptr->name, name) == 0 ) { /* found a match */
-			dynamic_strcpy(&iptr->value, value);
-			return(NULL);
-                }
-        }
-        iptr = StringResCreate();
-        mallocTableAdd(iptr, pptr, 0);
+void
+StringResListPrint(struct StringRes *head, char *descr)
+  {
+
+  struct StringRes *iptr;
+
+  for (iptr = head; iptr; iptr = iptr->nextptr)
+    {
+    printf("%s.%s = %s\n", descr, iptr->name, iptr->value);
+    }
+  }
+
+struct StringRes *
+      StringResValuePut(struct StringRes *head, char *name, char *value, void *pptr)
+  {
+
+  struct StringRes *iptr;
+
+  for (iptr = head; iptr; iptr = iptr->nextptr)
+    {
+    if (strcmp(iptr->name, name) == 0)    /* found a match */
+      {
+      dynamic_strcpy(&iptr->value, value);
+      return(NULL);
+      }
+    }
+
+  iptr = StringResCreate();
+
+  mallocTableAdd(iptr, pptr, 0);
 #ifdef DEBUG
-        printf("Added StringRes ptr %x to mallocTable\n", iptr);
+  printf("Added StringRes ptr %x to mallocTable\n", iptr);
 #endif
 
-	dynamic_strcpy(&iptr->name, name);
-	varstrModPptr(iptr->name, pptr);
-	dynamic_strcpy(&iptr->value, value);
-	varstrModPptr(iptr->value, pptr);
+  dynamic_strcpy(&iptr->name, name);
+  varstrModPptr(iptr->name, pptr);
+  dynamic_strcpy(&iptr->value, value);
+  varstrModPptr(iptr->value, pptr);
 
-        iptr->nextptr = head;
-        return(iptr);
-}
+  iptr->nextptr = head;
+  return(iptr);
+  }
 
-void StringResListFree(head)
-struct StringRes *head;
-{
-	struct StringRes *iptr, *tptr;
+void
+StringResListFree(struct StringRes *head)
+  {
 
-	tptr = NULL;
-        for( iptr=head; iptr; iptr=tptr ) {
-		tptr = iptr->nextptr;
-		varstr2Free(iptr->name, iptr->value);
-		mallocTableFree(iptr);
-        }
-}
+  struct StringRes *iptr, *tptr;
+
+  tptr = NULL;
+
+  for (iptr = head; iptr; iptr = tptr)
+    {
+    tptr = iptr->nextptr;
+    varstr2Free(iptr->name, iptr->value);
+    mallocTableFree(iptr);
+    }
+  }
 
 DateTime strsecsToDateTime(val)
 char    *val;
-{
+  {
 
-        DateTime                cdtime = {-1, -1, -1, 0, 0 ,0};
-        time_t                  secs;
-        struct tm               *timeptr;
+  DateTime                cdtime = { -1, -1, -1, 0, 0 , 0};
+  time_t                  secs;
 
-    	if( val == NULLSTR ) {
-		return(cdtime);
-    	}
+  struct tm               *timeptr;
 
-        secs = (time_t) atol(val);
-        timeptr = localtime( &secs );
+  if (val == NULLSTR)
+    {
+    return(cdtime);
+    }
 
-        cdtime.t.h = timeptr->tm_hour;
-        cdtime.t.m = timeptr->tm_min;
-        cdtime.t.s = timeptr->tm_sec;
+  secs = (time_t) atol(val);
 
-        cdtime.d.m = timeptr->tm_mon + 1;
-        cdtime.d.d = timeptr->tm_mday;
-        cdtime.d.y = timeptr->tm_year + 1900;
+  timeptr = localtime(&secs);
 
-        return(cdtime);
-}
+  cdtime.t.h = timeptr->tm_hour;
+  cdtime.t.m = timeptr->tm_min;
+  cdtime.t.s = timeptr->tm_sec;
 
-int strToBool(val)
-char    *val;
-{
-    	if( val == NULLSTR ) {
-		return(-1);
-    	}
+  cdtime.d.m = timeptr->tm_mon + 1;
+  cdtime.d.d = timeptr->tm_mday;
+  cdtime.d.y = timeptr->tm_year + 1900;
 
-        if( STRCMP( val, ==, "True" ) )
-                return( TRUE );
-        else if( STRCMP( val, ==, "False") )
-                return( FALSE );
-        else
-                return( -1 );
-}
+  return(cdtime);
+  }
+
+int
+strToBool(char *val)
+  {
+  if (val == NULLSTR)
+    {
+    return(-1);
+    }
+
+  if (STRCMP(val, == , "True"))
+    return(TRUE);
+  else if (STRCMP(val, == , "False"))
+    return(FALSE);
+  else
+    return(-1);
+  }

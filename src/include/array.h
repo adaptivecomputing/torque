@@ -19,27 +19,32 @@
 
 #define ARRAY_FILE_SUFFIX ".AR"
 
-typedef struct {
+typedef struct
+  {
   list_link request_tokens_link;
-  
+
   int start;
   int end;
-} array_request_node;
+  } array_request_node;
 
 
 
 #define ARRAY_QS_STRUCT_VERSION 2
 
 /* pbs_server will keep a list of these structs, with one struct per job array*/
-struct job_array {
+
+struct job_array
+  {
   list_link all_arrays;
   tlist_head array_alljobs;
   tlist_head request_tokens;
-     
+
   int jobs_recovered;
 
-/* this info is saved in the array file */
-  struct array_info {
+  /* this info is saved in the array file */
+
+  struct array_info
+    {
     int  struct_version;
     int  array_size;
     int  num_cloned;
@@ -47,10 +52,10 @@ struct job_array {
     char owner[PBS_MAXUSER + PBS_MAXSERVERNAME + 2];
     char parent_id[PBS_MAXSVRJOBID + 1];
     char fileprefix[PBS_JOBBASE + 1];
-    char submit_host[PBS_MAXSERVERNAME +1];    
-  } ai_qs; 
-};
-  
+    char submit_host[PBS_MAXSERVERNAME +1];
+    } ai_qs;
+  };
+
 typedef struct job_array job_array;
 
 int  is_array(char *id);

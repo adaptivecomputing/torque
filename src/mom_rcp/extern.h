@@ -1,6 +1,6 @@
 /*-
  * Copyright (c) 1992, 1993
- *	The Regents of the University of California.  All rights reserved.
+ * The Regents of the University of California.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -12,8 +12,8 @@
  *    documentation and/or other materials provided with the distribution.
  * 3. All advertising materials mentioning features or use of this software
  *    must display the following acknowledgement:
- *	This product includes software developed by the University of
- *	California, Berkeley and its contributors.
+ * This product includes software developed by the University of
+ * California, Berkeley and its contributors.
  * 4. Neither the name of the University nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
@@ -32,7 +32,7 @@
  *
  */
 
-#ifndef	__P
+#ifndef __P
 #if __STDC__
 #define __P(x) x
 #else
@@ -40,19 +40,20 @@
 #endif
 #endif /* __P */
 
-typedef struct {
-	int cnt;
-	char *buf;
-} BUF;
+typedef struct
+  {
+  int cnt;
+  char *buf;
+  } BUF;
 
 extern int iamremote;
 
-BUF	*allocbuf __P((BUF *, int, int));
-char	*colon __P((char *));
-void	 lostconn __P((int));
-void	 nospace __P((void));
-int	 okname __P((char *));
-void	 run_err __P((const char *, ...));
-int	 susystem __P((char *, int));
-void	 verifydir __P((char *));
+BUF *allocbuf __P((BUF *, int, int));
+char *colon __P((char *));
+void  lostconn __P((int));
+void  nospace __P((void));
+int  okname __P((char *));
+void  run_err __P((const char *, ...));
+int  susystem __P((char *, int));
+void  verifydir __P((char *));
 char    *strerror __P((int));

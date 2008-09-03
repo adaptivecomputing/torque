@@ -1,45 +1,45 @@
 /*
 *         OpenPBS (Portable Batch System) v2.3 Software License
-* 
+*
 * Copyright (c) 1999-2000 Veridian Information Solutions, Inc.
 * All rights reserved.
-* 
+*
 * ---------------------------------------------------------------------------
 * For a license to use or redistribute the OpenPBS software under conditions
 * other than those described below, or to purchase support for this software,
 * please contact Veridian Systems, PBS Products Department ("Licensor") at:
-* 
+*
 *    www.OpenPBS.org  +1 650 967-4675                  sales@OpenPBS.org
 *                        877 902-4PBS (US toll-free)
 * ---------------------------------------------------------------------------
-* 
+*
 * This license covers use of the OpenPBS v2.3 software (the "Software") at
 * your site or location, and, for certain users, redistribution of the
 * Software to other sites and locations.  Use and redistribution of
 * OpenPBS v2.3 in source and binary forms, with or without modification,
 * are permitted provided that all of the following conditions are met.
 * After December 31, 2001, only conditions 3-6 must be met:
-* 
+*
 * 1. Commercial and/or non-commercial use of the Software is permitted
 *    provided a current software registration is on file at www.OpenPBS.org.
 *    If use of this software contributes to a publication, product, or
 *    service, proper attribution must be given; see www.OpenPBS.org/credit.html
-* 
+*
 * 2. Redistribution in any form is only permitted for non-commercial,
 *    non-profit purposes.  There can be no charge for the Software or any
 *    software incorporating the Software.  Further, there can be no
 *    expectation of revenue generated as a consequence of redistributing
 *    the Software.
-* 
+*
 * 3. Any Redistribution of source code must retain the above copyright notice
 *    and the acknowledgment contained in paragraph 6, this list of conditions
 *    and the disclaimer contained in paragraph 7.
-* 
+*
 * 4. Any Redistribution in binary form must reproduce the above copyright
 *    notice and the acknowledgment contained in paragraph 6, this list of
 *    conditions and the disclaimer contained in paragraph 7 in the
 *    documentation and/or other materials provided with the distribution.
-* 
+*
 * 5. Redistributions in any form must be accompanied by information on how to
 *    obtain complete source code for the OpenPBS software and any
 *    modifications and/or additions to the OpenPBS software.  The source code
@@ -47,23 +47,23 @@
 *    than the cost of distribution plus a nominal fee, and all modifications
 *    and additions to the Software must be freely redistributable by any party
 *    (including Licensor) without restriction.
-* 
+*
 * 6. All advertising materials mentioning features or use of the Software must
 *    display the following acknowledgment:
-* 
+*
 *     "This product includes software developed by NASA Ames Research Center,
-*     Lawrence Livermore National Laboratory, and Veridian Information 
+*     Lawrence Livermore National Laboratory, and Veridian Information
 *     Solutions, Inc.
 *     Visit www.OpenPBS.org for OpenPBS software support,
 *     products, and information."
-* 
+*
 * 7. DISCLAIMER OF WARRANTY
-* 
+*
 * THIS SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND. ANY EXPRESS
 * OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
 * OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT
 * ARE EXPRESSLY DISCLAIMED.
-* 
+*
 * IN NO EVENT SHALL VERIDIAN CORPORATION, ITS AFFILIATED COMPANIES, OR THE
 * U.S. GOVERNMENT OR ANY OF ITS AGENCIES BE LIABLE FOR ANY DIRECT OR INDIRECT,
 * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
@@ -72,7 +72,7 @@
 * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
 * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-* 
+*
 * This license will be governed by the laws of the Commonwealth of Virginia,
 * without reference to its choice of law rules.
 */
@@ -118,41 +118,43 @@ int main(
    */
 
   char job[PBS_MAXCLTJOBID];      /* Job Id */
-  char server[MAXSERVERNAME];	  /* Server name */
+  char server[MAXSERVERNAME];   /* Server name */
   char *location = NULL;          /* Where to run the job */
-    
+
   static char opts[] = "aH:";     /* See man getopt */
   static char *usage = "Usage: qrun [-a] [-H host] job_id ...\n";
   int s;
   int errflg = 0;
   int runAsync = FALSE;
-    
+
   /* Command line options */
 
-  while ((s = getopt(argc,argv,opts)) != EOF)
+  while ((s = getopt(argc, argv, opts)) != EOF)
     {
-    switch(s) 
+    switch (s)
       {
-      case 'a':	/* Async job start */
+
+      case 'a': /* Async job start */
 
         runAsync = TRUE;
 
         break;
-        
+
       case 'H':
 
-	if (strlen(optarg) == 0) 
+        if (strlen(optarg) == 0)
           {
-	  fprintf(stderr, "qrun: illegal -H value\n");
-	    errflg++;
-	    break;
-	  }
+          fprintf(stderr, "qrun: illegal -H value\n");
+          errflg++;
+          break;
+          }
 
         location = optarg;
 
         break;
 
       case '?':
+
       default:
 
         errflg++;
@@ -161,26 +163,26 @@ int main(
       }  /* END switch(s) */
     }    /* END while (getopt() != -1) */
 
-  if (errflg || (optind >= argc)) 
+  if (errflg || (optind >= argc))
     {
-    fprintf(stderr,usage);
+    fprintf(stderr, usage);
 
     exit(1);
     }
-    
-  for (;optind < argc;optind++) 
+
+  for (;optind < argc;optind++)
     {
-    if (get_server(argv[optind],job,server)) 
+    if (get_server(argv[optind], job, server))
       {
-      fprintf(stderr,"qrun: illegally formed job identifier: %s\n", 
-        argv[optind]);
+      fprintf(stderr, "qrun: illegally formed job identifier: %s\n",
+              argv[optind]);
 
       exitstatus = 1;
 
       continue;
       }
 
-    execute(job,server,location,runAsync);
+    execute(job, server, location, runAsync);
     }  /* END for (;optind) */
 
   exit(exitstatus);
@@ -221,64 +223,64 @@ static void execute(
   int located = FALSE;
   char rmt_server[MAXSERVERNAME];
 
-cnt:   
- 
-  if ((ct = cnt2server(server)) > 0) 
+cnt:
+
+  if ((ct = cnt2server(server)) > 0)
     {
     if (async == TRUE)
-    {
-      err = pbs_asyrunjob(ct,job,location,NULL);  /* see lib/Libifl/pbsD_runjob.c */
-    }
+      {
+      err = pbs_asyrunjob(ct, job, location, NULL);  /* see lib/Libifl/pbsD_runjob.c */
+      }
     else
-    {
-      err = pbs_runjob(ct,job,location,NULL);  /* see lib/Libifl/pbsD_runjob.c */
-    }
+      {
+      err = pbs_runjob(ct, job, location, NULL);  /* see lib/Libifl/pbsD_runjob.c */
+      }
 
     if (err && (pbs_errno == PBSE_UNKNODE))
       {
-      fprintf(stderr,"qrun: Unknown node in hostlist '%.16s...' for job %s\n",
-        location,
-        job);
+      fprintf(stderr, "qrun: Unknown node in hostlist '%.16s...' for job %s\n",
+              location,
+              job);
 
       exitstatus = 2;
       }
-    else if (err && (pbs_errno != PBSE_UNKJOBID)) 
+    else if (err && (pbs_errno != PBSE_UNKJOBID))
       {
-      prt_job_err("qrun",ct,job);
+      prt_job_err("qrun", ct, job);
 
       exitstatus = 2;
-      } 
-    else if (err && (pbs_errno == PBSE_UNKJOBID) && !located) 
+      }
+    else if (err && (pbs_errno == PBSE_UNKJOBID) && !located)
       {
       located = TRUE;
 
-      if (locate_job(job,server,rmt_server)) 
+      if (locate_job(job, server, rmt_server))
         {
         pbs_disconnect(ct);
 
-        strcpy(server,rmt_server);
+        strcpy(server, rmt_server);
 
         goto cnt;
         }
 
-      prt_job_err("qrun",ct,job);
+      prt_job_err("qrun", ct, job);
 
       exitstatus = 2;
       }
 
     pbs_disconnect(ct);
-    } 
-  else 
+    }
+  else
     {
-    fprintf(stderr, "qrun: could not connect to server %s (%d) %s\n", 
-      server, 
-      pbs_errno,
-      pbs_strerror(pbs_errno));
+    fprintf(stderr, "qrun: could not connect to server %s (%d) %s\n",
+            server,
+            pbs_errno,
+            pbs_strerror(pbs_errno));
 
     exitstatus = 2;
     }
 
-  return;  
+  return;
   }  /* END execute() */
 
 /* END qrun.c */

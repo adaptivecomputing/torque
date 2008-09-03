@@ -59,40 +59,46 @@
 PAM_EXTERN
 int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc,
                         const char **argv)
-{
+  {
   int retval = PAM_SERVICE_ERR;
   pam_get_user_2nd_arg_t *username;
+
   struct passwd *user_pwd;
   char *ubuf = NULL;
+
   struct dirent *jdent;
-  DIR *jobdir=NULL;
+  DIR *jobdir = NULL;
   int fp;
+
   struct job xjob;
   ssize_t amt;
   char jobpath[PATH_MAX+1];
   char jobdirpath[PATH_MAX+1];
-  int debug=0;
+  int debug = 0;
 
-  openlog(MODNAME,LOG_PID,LOG_USER);
-  strcpy(jobdirpath,PBS_SERVER_HOME "/mom_priv/jobs");
+  openlog(MODNAME, LOG_PID, LOG_USER);
+  strcpy(jobdirpath, PBS_SERVER_HOME "/mom_priv/jobs");
 
   /* step through arguments */
+
   for (; argc-- > 0; ++argv)
     {
-    if (!strcmp(*argv,"debug"))
+    if (!strcmp(*argv, "debug"))
       debug = 1;
-    else if (!strcmp(*argv,"jobdir"))
-      strncpy(jobdirpath,*argv,PATH_MAX);
+    else if (!strcmp(*argv, "jobdir"))
+      strncpy(jobdirpath, *argv, PATH_MAX);
     else
-      syslog(LOG_ERR,"unknown option: %s",*argv);
+      syslog(LOG_ERR, "unknown option: %s", *argv);
     }
 
-  if (debug) syslog(LOG_INFO,"opening %s",jobdirpath);
+  if (debug) syslog(LOG_INFO, "opening %s", jobdirpath);
 
   if ((jobdir = opendir(jobdirpath)) == NULL)
     {
-    if (debug) syslog(LOG_INFO,"failed to open jobs dir: %s",strerror(errno));
+    if (debug) syslog(LOG_INFO, "failed to open jobs dir: %s", strerror(errno));
+
     closelog();
+
     return PAM_IGNORE;
     }
 
@@ -105,11 +111,12 @@ int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc,
     closelog();
     return PAM_INCOMPLETE;
     }
+
 #endif
 
   if ((retval != PAM_SUCCESS) || !username)
     {
-    syslog(LOG_ERR,"failed to retrieve username");
+    syslog(LOG_ERR, "failed to retrieve username");
     closelog();
     return PAM_SERVICE_ERR;
     }
@@ -118,7 +125,7 @@ int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc,
 
   /* no early returns from this point on because we need to free ubuf */
 
-  if (debug) syslog(LOG_INFO,"username %s, %s",username,user_pwd ? "known" : "unknown");
+  if (debug) syslog(LOG_INFO, "username %s, %s", username, user_pwd ? "known" : "unknown");
 
   if (!user_pwd)
     {
@@ -126,7 +133,8 @@ int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc,
     }
   else if (user_pwd->pw_uid == 0)
     {
-    if (debug) syslog(LOG_INFO,"allowing uid 0");
+    if (debug) syslog(LOG_INFO, "allowing uid 0");
+
     retval = PAM_SUCCESS;
     }
   else
@@ -135,24 +143,27 @@ int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc,
 
     while ((jdent = readdir(jobdir)) != NULL)
       {
-      if (strstr(jdent->d_name,".JB") == NULL)
+      if (strstr(jdent->d_name, ".JB") == NULL)
         continue;
 
-      snprintf(jobpath,PATH_MAX-1,"%s/%s",jobdirpath,jdent->d_name);
-      if (debug) syslog(LOG_INFO,"opening %s",jobpath);
+      snprintf(jobpath, PATH_MAX - 1, "%s/%s", jobdirpath, jdent->d_name);
+
+      if (debug) syslog(LOG_INFO, "opening %s", jobpath);
 
       fp = open(jobpath, O_RDONLY, 0);
+
       if (fp < 0)
         {
-        syslog(LOG_ERR,"error opening job file");               
+        syslog(LOG_ERR, "error opening job file");
         continue;
         }
 
       amt = read(fp, &xjob.ji_qs, sizeof(xjob.ji_qs));
+
       if (amt != sizeof(xjob.ji_qs))
         {
         close(fp);
-        syslog(LOG_ERR,"short read of job file");               
+        syslog(LOG_ERR, "short read of job file");
         continue;
         }
 
@@ -160,11 +171,11 @@ int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc,
         {
         /* odd, this really should be JOB_UNION_TYPE_MOM */
         close(fp);
-        syslog(LOG_ERR,"job file corrupt");               
+        syslog(LOG_ERR, "job file corrupt");
         continue;
         }
 
-      if (debug) syslog(LOG_INFO,"state=%d, substate=%d",xjob.ji_qs.ji_state,xjob.ji_qs.ji_substate);
+      if (debug) syslog(LOG_INFO, "state=%d, substate=%d", xjob.ji_qs.ji_state, xjob.ji_qs.ji_substate);
 
       if ((xjob.ji_qs.ji_un.ji_momt.ji_exuid == user_pwd->pw_uid) &&
           ((xjob.ji_qs.ji_substate == JOB_SUBSTATE_PRERUN) ||
@@ -173,41 +184,44 @@ int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc,
         {
         /* success! */
         close(fp);
-        if (debug) syslog(LOG_INFO,"allowed by %s",jdent->d_name);
+
+        if (debug) syslog(LOG_INFO, "allowed by %s", jdent->d_name);
+
         retval = PAM_SUCCESS;
+
         break;
         }
 
       close(fp);
       } /* END while (readdir(jobdir)) */
 
-      if (jobdir)
-        closedir(jobdir);
+    if (jobdir)
+      closedir(jobdir);
     }
 
   if (ubuf)
     free(ubuf);
-    
-  if (debug) syslog(LOG_INFO,"returning %s",retval==PAM_SUCCESS ? "success" : "failed");
+
+  if (debug) syslog(LOG_INFO, "returning %s", retval == PAM_SUCCESS ? "success" : "failed");
 
   closelog();
 
   return retval;
-}
+  }
 
 PAM_EXTERN
 int pam_sm_setcred(pam_handle_t *pamh, int flags, int argc,
                    const char **argv)
-{
+  {
   return PAM_SUCCESS;
-}
+  }
 
 PAM_EXTERN
 int pam_sm_acct_mgmt(pam_handle_t *pamh, int flags, int argc,
                      const char **argv)
-{
+  {
   return pam_sm_authenticate(pamh, flags, argc, argv);
-}
+  }
 
 
 
@@ -215,15 +229,17 @@ int pam_sm_acct_mgmt(pam_handle_t *pamh, int flags, int argc,
 
 /* static module data */
 /* this only exists for the unlikely event that this built *with* libpam */
-struct pam_module _pam_pbssimpleauth_modstruct = {
-     MODNAME,
-     pam_sm_authenticate,
-     pam_sm_setcred,
-     pam_sm_acct_mgmt,
-     NULL,
-     NULL,
-     NULL,
-};
+
+struct pam_module _pam_pbssimpleauth_modstruct =
+  {
+  MODNAME,
+  pam_sm_authenticate,
+  pam_sm_setcred,
+  pam_sm_acct_mgmt,
+  NULL,
+  NULL,
+  NULL,
+  };
 
 #endif
 

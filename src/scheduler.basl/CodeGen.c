@@ -1,45 +1,45 @@
 /*
 *         OpenPBS (Portable Batch System) v2.3 Software License
-* 
+*
 * Copyright (c) 1999-2000 Veridian Information Solutions, Inc.
 * All rights reserved.
-* 
+*
 * ---------------------------------------------------------------------------
 * For a license to use or redistribute the OpenPBS software under conditions
 * other than those described below, or to purchase support for this software,
 * please contact Veridian Systems, PBS Products Department ("Licensor") at:
-* 
+*
 *    www.OpenPBS.org  +1 650 967-4675                  sales@OpenPBS.org
 *                        877 902-4PBS (US toll-free)
 * ---------------------------------------------------------------------------
-* 
+*
 * This license covers use of the OpenPBS v2.3 software (the "Software") at
 * your site or location, and, for certain users, redistribution of the
 * Software to other sites and locations.  Use and redistribution of
 * OpenPBS v2.3 in source and binary forms, with or without modification,
 * are permitted provided that all of the following conditions are met.
 * After December 31, 2001, only conditions 3-6 must be met:
-* 
+*
 * 1. Commercial and/or non-commercial use of the Software is permitted
 *    provided a current software registration is on file at www.OpenPBS.org.
 *    If use of this software contributes to a publication, product, or
 *    service, proper attribution must be given; see www.OpenPBS.org/credit.html
-* 
+*
 * 2. Redistribution in any form is only permitted for non-commercial,
 *    non-profit purposes.  There can be no charge for the Software or any
 *    software incorporating the Software.  Further, there can be no
 *    expectation of revenue generated as a consequence of redistributing
 *    the Software.
-* 
+*
 * 3. Any Redistribution of source code must retain the above copyright notice
 *    and the acknowledgment contained in paragraph 6, this list of conditions
 *    and the disclaimer contained in paragraph 7.
-* 
+*
 * 4. Any Redistribution in binary form must reproduce the above copyright
 *    notice and the acknowledgment contained in paragraph 6, this list of
 *    conditions and the disclaimer contained in paragraph 7 in the
 *    documentation and/or other materials provided with the distribution.
-* 
+*
 * 5. Redistributions in any form must be accompanied by information on how to
 *    obtain complete source code for the OpenPBS software and any
 *    modifications and/or additions to the OpenPBS software.  The source code
@@ -47,23 +47,23 @@
 *    than the cost of distribution plus a nominal fee, and all modifications
 *    and additions to the Software must be freely redistributable by any party
 *    (including Licensor) without restriction.
-* 
+*
 * 6. All advertising materials mentioning features or use of the Software must
 *    display the following acknowledgment:
-* 
+*
 *     "This product includes software developed by NASA Ames Research Center,
-*     Lawrence Livermore National Laboratory, and Veridian Information 
+*     Lawrence Livermore National Laboratory, and Veridian Information
 *     Solutions, Inc.
 *     Visit www.OpenPBS.org for OpenPBS software support,
 *     products, and information."
-* 
+*
 * 7. DISCLAIMER OF WARRANTY
-* 
+*
 * THIS SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND. ANY EXPRESS
 * OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
 * OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT
 * ARE EXPRESSLY DISCLAIMED.
-* 
+*
 * IN NO EVENT SHALL VERIDIAN CORPORATION, ITS AFFILIATED COMPANIES, OR THE
 * U.S. GOVERNMENT OR ANY OF ITS AGENCIES BE LIABLE FOR ANY DIRECT OR INDIRECT,
 * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
@@ -72,7 +72,7 @@
 * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
 * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-* 
+*
 * This license will be governed by the laws of the Commonwealth of Virginia,
 * without reference to its choice of law rules.
 */
@@ -103,21 +103,21 @@ int CodeGenFpImedCodeFd;
 
 /* File Scope Variables */
 static char * CodeGenErrors[] =
-{
-        "0 no such error msg",
-        "1 problem writing",
-        "2 the nodeptr to be put in a new stack is NULL",
-        "3 string to conditionally print is NULL",
-        "4 CodeGenFpImedCode is NULL",
-	"5 malloc of a new stack failed",
-	"6 top of stack is NULL",
-	"7 the node before lexeme in spec line is NULL",
-	"8 the node of lexeme in spec line is NULL",
-	"9 the last node of CodeGenBuff is NULL",
-	"10 matching node by lexeme and line resulted in NULL",
-	"11 Did not find a QueJobFind/QueFilter/Sort in CodeGenBuff",
-        ""
-};
+  {
+  "0 no such error msg",
+  "1 problem writing",
+  "2 the nodeptr to be put in a new stack is NULL",
+  "3 string to conditionally print is NULL",
+  "4 CodeGenFpImedCode is NULL",
+  "5 malloc of a new stack failed",
+  "6 top of stack is NULL",
+  "7 the node before lexeme in spec line is NULL",
+  "8 the node of lexeme in spec line is NULL",
+  "9 the last node of CodeGenBuff is NULL",
+  "10 matching node by lexeme and line resulted in NULL",
+  "11 Did not find a QueJobFind/QueFilter/Sort in CodeGenBuff",
+  ""
+  };
 
 static int CodeGenMaxErrors = 13;
 
@@ -132,1371 +132,1718 @@ static St CodeGenStack = NULL;
  * These functions support the Node class for the linked list
  */
 St CodeGenStackNew(np)
-Np	np;
-{
-	St nx;	
+Np np;
+  {
+  St nx;
 
-	CodeGenCondPrint("CodeGenStackNew");
-	if( np == NULL )
-		CodeGenErr(2);
+  CodeGenCondPrint("CodeGenStackNew");
 
-        nx = (St) malloc(sizeof(struct Stack));
-        if (nx == NULL)
-                CodeGenErr(5);
-	nx->np = np;
-        nx->rptr = NULL;
-        return(nx);
-}
+  if (np == NULL)
+    CodeGenErr(2);
+
+  nx = (St) malloc(sizeof(struct Stack));
+
+  if (nx == NULL)
+    CodeGenErr(5);
+
+  nx->np = np;
+
+  nx->rptr = NULL;
+
+  return(nx);
+  }
 
 
 /* assume that node pushed is part of another list */
 void CodeGenStackPush(np)
-Np	np;
-{
-	St	stp;
+Np np;
+  {
+  St stp;
 
-	CodeGenCondPrint("CodeGenStackPush");
+  CodeGenCondPrint("CodeGenStackPush");
 
-	stp = CodeGenStackNew(np);
+  stp = CodeGenStackNew(np);
 
-	if (stp == NULL)
-		CodeGenErr(6);
+  if (stp == NULL)
+    CodeGenErr(6);
 
-	stp->rptr = CodeGenStack;
-	CodeGenStack = stp;
-}
+  stp->rptr = CodeGenStack;
 
-/* returns the node that is at the top of the stack. This 
-   will also remove that node from the stack without 
+  CodeGenStack = stp;
+  }
+
+/* returns the node that is at the top of the stack. This
+   will also remove that node from the stack without
    calling since the node is part of another list that
    contains the free() routine */
 Np CodeGenStackPop(void)
-{
-	Np	np;
-	St	stp;
-	CodeGenCondPrint("CodeGenStackPop");
+  {
+  Np np;
+  St stp;
+  CodeGenCondPrint("CodeGenStackPop");
 
-	if( CodeGenStack == NULL )
-		CodeGenErr(6);
-/*		return;	nothing to pop - silent failure */
+  if (CodeGenStack == NULL)
+    CodeGenErr(6);
 
-	stp = CodeGenStack;	
-	np  = CodeGenStack->np;
-	CodeGenStack = CodeGenStack->rptr;
-	free(stp);
-	return(np);
-}
+  /*  return; nothing to pop - silent failure */
+
+  stp = CodeGenStack;
+
+  np  = CodeGenStack->np;
+
+  CodeGenStack = CodeGenStack->rptr;
+
+  free(stp);
+
+  return(np);
+  }
 
 void CodeGenStackClear(void)
-{
-	St	stp, stp2;
+  {
+  St stp, stp2;
 
-	CodeGenCondPrint("CodeGenStackClear");
-	for(stp=CodeGenStack; stp; stp=stp2) {
-		stp2 = stp->rptr;
-		free(stp);
-	}
-	CodeGenStack = NULL;
-}
+  CodeGenCondPrint("CodeGenStackClear");
+
+  for (stp = CodeGenStack; stp; stp = stp2)
+    {
+    stp2 = stp->rptr;
+    free(stp);
+    }
+
+  CodeGenStack = NULL;
+  }
 
 void CodeGenStackPrint(void)
-{
-	St	stp;
+  {
+  St stp;
 
-	CodeGenCondPrint("CodeGenStackPrint");
+  CodeGenCondPrint("CodeGenStackPrint");
 
-	for(stp=CodeGenStack; stp; stp=stp->rptr) {
-		fprintf(CodeGenFpOut, "Lexeme=%s Line=%d, TYPE=%d\n", 
-		  NodeGetLexeme(stp->np), NodeGetLineDef(stp->np),
-		  NodeGetType(stp->np));
-	}
-}
+  for (stp = CodeGenStack; stp; stp = stp->rptr)
+    {
+    fprintf(CodeGenFpOut, "Lexeme=%s Line=%d, TYPE=%d\n",
+            NodeGetLexeme(stp->np), NodeGetLineDef(stp->np),
+            NodeGetType(stp->np));
+    }
+  }
 
 void CodeGenInit(void)
-{
-	CodeGenCondPrint("CodeGenInit");
+  {
+  CodeGenCondPrint("CodeGenInit");
 
-/*	CodeGenDF = 1; */
-}
+  /* CodeGenDF = 1; */
+  }
 
- 
-void CodeGenPutDF(df)
-int	df;
-{
-	CodeGenCondPrint("CodeGenPutDF");
 
-	CodeGenDF = df;
-}
- 
-void CodeGenCondPrint(str)
-char	*str;
-{
-	if (CodeGenFpOut == NULL)
-		printf("CodeGenFpOut is NULL -- die\n");
+void
+CodeGenPutDF(int df)
+  {
+  CodeGenCondPrint("CodeGenPutDF");
 
-	if (str == NULL)
-		CodeGenErr(3);
+  CodeGenDF = df;
+  }
 
-	if (CodeGenDF ==1)
-	{
-		fprintf(CodeGenFpOut, "%s\t", CodeGenName);
-		fprintf(CodeGenFpOut, "%s\n", str);
-	}
-}
+void
+CodeGenCondPrint(char *str)
+  {
+  if (CodeGenFpOut == NULL)
+    printf("CodeGenFpOut is NULL -- die\n");
+
+  if (str == NULL)
+    CodeGenErr(3);
+
+  if (CodeGenDF == 1)
+    {
+    fprintf(CodeGenFpOut, "%s\t", CodeGenName);
+    fprintf(CodeGenFpOut, "%s\n", str);
+    }
+  }
 
 void CodeGenPrint(void)
-{
-	CodeGenCondPrint("CodeGenPrint\n");
-	fprintf(CodeGenFpOut, "CodeGenfpImedCode: %x\n", CodeGenFpImedCode);
-	fprintf(CodeGenFpOut, "CodeGenBuff: %s\n", CodeGenBuff);
+  {
+  CodeGenCondPrint("CodeGenPrint\n");
+  fprintf(CodeGenFpOut, "CodeGenfpImedCode: %x\n", CodeGenFpImedCode);
+  fprintf(CodeGenFpOut, "CodeGenBuff: %s\n", CodeGenBuff);
 
-}
+  }
 
-void CodeGenErr(e)
-int	e;
-{
-	if (CodeGenFpOut == NULL)
-		printf("CodeGenFpOut is NULL -- die\n");
+void
+CodeGenErr(int e)
+  {
+  if (CodeGenFpOut == NULL)
+    printf("CodeGenFpOut is NULL -- die\n");
 
-	if( CodeGenDF == 1 ) {
-		CodeGenBuffPrint();
-		CodeGenStackPrint();
-	}
+  if (CodeGenDF == 1)
+    {
+    CodeGenBuffPrint();
+    CodeGenStackPrint();
+    }
 
-	fprintf(CodeGenFpOut, "CodeGenErr\n");
-	if (e >= CodeGenMaxErrors)
-		e = 0;
+  fprintf(CodeGenFpOut, "CodeGenErr\n");
 
-	fprintf(CodeGenFpOut, "rs: %s\n", CodeGenErrors[e]);
-	exit(1);
-}
+  if (e >= CodeGenMaxErrors)
+    e = 0;
+
+  fprintf(CodeGenFpOut, "rs: %s\n", CodeGenErrors[e]);
+
+  exit(1);
+  }
 
 
-/* 
+/*
 void CodeGenPrintToken2(sym)
-struct	MYTOK	sym;
-{
-	CodeGenCondPrint("CodeGenPrintToken2");
+struct MYTOK sym;
+  {
+ CodeGenCondPrint("CodeGenPrintToken2");
 
-	fprintf(CodeGenFpOut, "lexem=%s, lin=%d, len=%d, typ=%d, varFlag=%d\n", sym.lexeme, sym.line, sym.len, sym.type, sym.varFlag);
-}
+ fprintf(CodeGenFpOut, "lexem=%s, lin=%d, len=%d, typ=%d, varFlag=%d\n", sym.lexeme, sym.line, sym.len, sym.type, sym.varFlag);
+  }
 */
 
 
 void CodeGenBuffClear(void)
-{
-	CodeGenCondPrint("CodeGenBuffClear");
+  {
+  CodeGenCondPrint("CodeGenBuffClear");
 
-	CodeGenBuff = ListDelete(CodeGenBuff);
-}
+  CodeGenBuff = ListDelete(CodeGenBuff);
+  }
 
 
 
 void CodeGenBuffPrint(void)
-{
-	CodeGenCondPrint("CodeGenBuffPrint");
+  {
+  CodeGenCondPrint("CodeGenBuffPrint");
 
-	ListPrint(CodeGenBuff);
-}
+  ListPrint(CodeGenBuff);
+  }
 
 void CodeGenBuffEmit(void)
-{
-	Np   bufptr;
-	char *lexeme;
-	int  indent;
-	int  i;
+  {
+  Np   bufptr;
+  char *lexeme;
+  int  indent;
+  int  i;
 
-	CodeGenCondPrint("CodeGenBuffEmit");
-	if (CodeGenFpImedCode == NULL)
-		CodeGenErr(4);
+  CodeGenCondPrint("CodeGenBuffEmit");
 
-	for(bufptr=CodeGenBuff; bufptr; bufptr=bufptr->rptr) {
-		lexeme = NodeGetLexeme(bufptr);
+  if (CodeGenFpImedCode == NULL)
+    CodeGenErr(4);
 
-/*		\n must always be saved by itself in order to obtain */
-/*		the proper indentation */
-		if( strcmp(lexeme, "\n") == 0 || strcmp(lexeme, "}") == 0) {
-	
-			indent = NodeGetLevel(bufptr)*2;
+  for (bufptr = CodeGenBuff; bufptr; bufptr = bufptr->rptr)
+    {
+    lexeme = NodeGetLexeme(bufptr);
 
-			fprintf(CodeGenFpImedCode, "\n");
+    /*  \n must always be saved by itself in order to obtain */
+    /*  the proper indentation */
 
-			i = 0;
-			/* indent the next line accordingly */
-			while( i < indent ) {
-				fprintf(CodeGenFpImedCode, " ");
-				i++;
-			}
-			if( strcmp(lexeme, "}") == 0 )
-				fprintf(CodeGenFpImedCode, "}");
-		} else
-			fprintf(CodeGenFpImedCode, "%s", NodeGetLexeme(bufptr));
-	}
+    if (strcmp(lexeme, "\n") == 0 || strcmp(lexeme, "}") == 0)
+      {
 
-	CodeGenBuffClear();
-}
+      indent = NodeGetLevel(bufptr) * 2;
+
+      fprintf(CodeGenFpImedCode, "\n");
+
+      i = 0;
+      /* indent the next line accordingly */
+
+      while (i < indent)
+        {
+        fprintf(CodeGenFpImedCode, " ");
+        i++;
+        }
+
+      if (strcmp(lexeme, "}") == 0)
+        fprintf(CodeGenFpImedCode, "}");
+      }
+    else
+      fprintf(CodeGenFpImedCode, "%s", NodeGetLexeme(bufptr));
+    }
+
+  CodeGenBuffClear();
+  }
 
 void CodeGenBuffSwitchEmit(void)
-{
-	Np   bufptr;
-	char *lexeme;
-	int  indent;
-	int  i;
+  {
+  Np   bufptr;
+  char *lexeme;
+  int  indent;
+  int  i;
 
-	CodeGenCondPrint("CodeGenBuffSwitchEmit");
-	if (CodeGenFpImedCode == NULL)
-		CodeGenErr(4);
+  CodeGenCondPrint("CodeGenBuffSwitchEmit");
 
-	for(bufptr=CodeGenBuff; bufptr; bufptr=bufptr->rptr) {
-		lexeme = NodeGetLexeme(bufptr);
+  if (CodeGenFpImedCode == NULL)
+    CodeGenErr(4);
 
-/*		\n must always be saved by itself in order to obtain */
-/*		the proper indentation */
-		if( strcmp(lexeme, "\n") == 0 || strcmp(lexeme, "}") == 0) {
-	
-			indent = (NodeGetLevel(bufptr)-1)*2;
-			fprintf(CodeGenFpImedCode, "\n");
+  for (bufptr = CodeGenBuff; bufptr; bufptr = bufptr->rptr)
+    {
+    lexeme = NodeGetLexeme(bufptr);
 
-			i = 0;
-			/* indent the next line accordingly */
-			while( i < indent ) {
-				fprintf(CodeGenFpImedCode, " ");
-				i++;
-			}
-			if( strcmp(lexeme, "}") == 0 )
-				fprintf(CodeGenFpImedCode, "}");
-		} else
-			fprintf(CodeGenFpImedCode, "%s", NodeGetLexeme(bufptr));
-	}
+    /*  \n must always be saved by itself in order to obtain */
+    /*  the proper indentation */
 
-	CodeGenBuffClear();
-}
+    if (strcmp(lexeme, "\n") == 0 || strcmp(lexeme, "}") == 0)
+      {
+
+      indent = (NodeGetLevel(bufptr) - 1) * 2;
+      fprintf(CodeGenFpImedCode, "\n");
+
+      i = 0;
+      /* indent the next line accordingly */
+
+      while (i < indent)
+        {
+        fprintf(CodeGenFpImedCode, " ");
+        i++;
+        }
+
+      if (strcmp(lexeme, "}") == 0)
+        fprintf(CodeGenFpImedCode, "}");
+      }
+    else
+      fprintf(CodeGenFpImedCode, "%s", NodeGetLexeme(bufptr));
+    }
+
+  CodeGenBuffClear();
+  }
 
 /* Gets the last instance (i.e. lineDef) of "lexeme" on the */
 /* the buffer table. */
-int CodeGenLastDef( lexeme )
-char   *lexeme;
-{
-	int max = 0;
-	Np  np  = NULL;
-	char *matchstr = "()";
+int
+CodeGenLastDef(char *lexeme)
+  {
+  int max = 0;
+  Np  np  = NULL;
+  char *matchstr = "()";
 
-	if( strpbrk(lexeme, "()") == NULL ) {
-		matchstr = NULL;
-	}
-	for(np=CodeGenBuff; np; np=np->rptr) {
+  if (strpbrk(lexeme, "()") == NULL)
+    {
+    matchstr = NULL;
+    }
 
-		if( matchstr == NULL ) {
-			if( strcmp(np->lexeme, lexeme) == 0 && np->lineDef > max ) {
-				max = np->lineDef;
-			}
-		} else { /* string contains a '(', ')' which are treated */
-			 /* as identical strings no matter what the */
-			 /* trailing and leading chars are */
-			if( strpbrk(np->lexeme, matchstr) != NULL && np->lineDef > max ) {
-				max = np->lineDef;
-			}
-		}
-	}
+  for (np = CodeGenBuff; np; np = np->rptr)
+    {
 
-	return(max);
-}
+    if (matchstr == NULL)
+      {
+      if (strcmp(np->lexeme, lexeme) == 0 && np->lineDef > max)
+        {
+        max = np->lineDef;
+        }
+      }
+    else   /* string contains a '(', ')' which are treated */
+      {
+      /* as identical strings no matter what the */
+      /* trailing and leading chars are */
+
+      if (strpbrk(np->lexeme, matchstr) != NULL && np->lineDef > max)
+        {
+        max = np->lineDef;
+        }
+      }
+    }
+
+  return(max);
+  }
 
 /* Gets the node ptr to the node containing "lexeme" with "lineDef". */
-Np CodeGenBuffGetNp( lexeme, lineDef )
+Np CodeGenBuffGetNp(lexeme, lineDef)
 char    *lexeme;
-int	lineDef;
-{
-	Np  np  = NULL;
+int lineDef;
+  {
+  Np  np  = NULL;
 
-	for(np=CodeGenBuff; np; np=np->rptr) {
+  for (np = CodeGenBuff; np; np = np->rptr)
+    {
 
-		if( strcmp(np->lexeme, lexeme) == 0 && np->lineDef == lineDef ) {
-			break;
-		}
-	}
+    if (strcmp(np->lexeme, lexeme) == 0 && np->lineDef == lineDef)
+      {
+      break;
+      }
+    }
 
-	return(np);
-}
+  return(np);
+  }
 
 /* Looks for any symbol matching 'leftsym' and try to pair it with any */
 /* symbol matching (contains) 'rightsym'. */
-static void matchPairs(leftsym, rightsym)
-char	*leftsym;
-char	*rightsym;
-{
-	Np	np;
-	Np	np2;
+static void
+matchPairs(char *leftsym, char *rightsym)
+  {
+  Np np;
+  Np np2;
 
-	CodeGenCondPrint("matchPairs");
-	CodeGenStackClear();
-	for(np=CodeGenBuff; np; np=np->rptr) {
+  CodeGenCondPrint("matchPairs");
+  CodeGenStackClear();
 
-		if( strpbrk(np->lexeme, leftsym) != NULL ) {
-			CodeGenStackPush(np);
-		} else if( strpbrk( np->lexeme, rightsym) != NULL ) {
-			/* pop off only UNKNOWN types so as to not */
-			/* conflict with stack elements serving for the */
-			/* purpose of QueJobFind, and QueFilter args */
-			/* processing */
-			np2 = CodeGenStackPop();
-			np->lineDef = np2->lineDef;
-		}
-	}
-} 
+  for (np = CodeGenBuff; np; np = np->rptr)
+    {
+
+    if (strpbrk(np->lexeme, leftsym) != NULL)
+      {
+      CodeGenStackPush(np);
+      }
+    else if (strpbrk(np->lexeme, rightsym) != NULL)
+      {
+      /* pop off only UNKNOWN types so as to not */
+      /* conflict with stack elements serving for the */
+      /* purpose of QueJobFind, and QueFilter args */
+      /* processing */
+      np2 = CodeGenStackPop();
+      np->lineDef = np2->lineDef;
+      }
+    }
+  }
 
 /* saves str at the top of the buffer list */
-void CodeGenBuffSaveFirst(str)
-char 	*str;
-{
-	Np  np;
+void
+CodeGenBuffSaveFirst(char *str)
+  {
+  Np  np;
 
-	CodeGenCondPrint("CodeGenBuffSaveFirst");
+  CodeGenCondPrint("CodeGenBuffSaveFirst");
 
-	np = NodeNew( str, OTHER, CodeGenLastDef(str)+1, ParserLevelGet(), NO );
+  np = NodeNew(str, OTHER, CodeGenLastDef(str) + 1, ParserLevelGet(), NO);
 
-	/* Place np ahead of CodeGenBuff */
-	CodeGenBuff = ListInsertFront(CodeGenBuff, np);
-	if( strpbrk(str, "()") != NULL )
-		matchPairs("(", ")");
-}
+  /* Place np ahead of CodeGenBuff */
+  CodeGenBuff = ListInsertFront(CodeGenBuff, np);
+
+  if (strpbrk(str, "()") != NULL)
+    matchPairs("(", ")");
+  }
 
 /* appends at the end of the buffer */
-void CodeGenBuffSave(str)
-char	*str;
-{
-	Np   np, lastptr;
+void
+CodeGenBuffSave(char *str)
+  {
+  Np   np, lastptr;
 
-	CodeGenCondPrint("CodeGenBuffSaveLast");
+  CodeGenCondPrint("CodeGenBuffSaveLast");
 
-	if( CodeGenBuff == NULL ) {	/* nothing inserted yet */
-		CodeGenBuffSaveFirst(str);
-	} else {	
-		np = NodeNew( str, OTHER, CodeGenLastDef(str)+1, ParserLevelGet(), NO );
-		lastptr = ListGetLast(CodeGenBuff);
-		/* Place lastptr ahead of np (clever) */  
-        	ListInsertFront(np, lastptr);
+  if (CodeGenBuff == NULL)    /* nothing inserted yet */
+    {
+    CodeGenBuffSaveFirst(str);
+    }
+  else
+    {
+    np = NodeNew(str, OTHER, CodeGenLastDef(str) + 1, ParserLevelGet(), NO);
+    lastptr = ListGetLast(CodeGenBuff);
+    /* Place lastptr ahead of np (clever) */
+    ListInsertFront(np, lastptr);
 
-		if( strpbrk(str, "()") != NULL )
-			matchPairs("(", ")");
-	}
-}
+    if (strpbrk(str, "()") != NULL)
+      matchPairs("(", ")");
+    }
+  }
 
 /* Saves 'str' before the node containing the 'lexeme' that was inserted for */
 /* inst-th time */
-void CodeGenBuffSaveBefore(str, lexeme, inst)
-char *str;
-char *lexeme;
-int  inst;	/* the nth time the lexeme was inserted */
-{
-	Np  np, np2;
+void
+CodeGenBuffSaveBefore(
+  char *str,
+  char *lexeme,
+  int inst /* the nth time the lexeme was inserted */
+)
+  {
+  Np  np, np2;
 
-	CodeGenCondPrint("CodeGenBuffSaveBefore");
+  CodeGenCondPrint("CodeGenBuffSaveBefore");
 
-	if( (np2=ListFindNodeBeforeLexemeInLine( CodeGenBuff, lexeme, inst )) \
-								     == NULL )
-		CodeGenErr(7);
+  if ((np2 = ListFindNodeBeforeLexemeInLine(CodeGenBuff, lexeme, inst)) \
+      == NULL)
+    CodeGenErr(7);
 
-	np = NodeNew( str, OTHER, CodeGenLastDef(str)+1, ParserLevelGet(), NO );
+  np = NodeNew(str, OTHER, CodeGenLastDef(str) + 1, ParserLevelGet(), NO);
 
-	if( strcmp(NodeGetLexeme(np2), lexeme) == 0 && NodeGetLineDef(np2) \
-								     == inst ) {
-        	ListInsertFront(np2, np);
-		CodeGenBuff = np;
-	} else {
-		np->rptr = np2->rptr;
-        	ListInsertFront(np, np2);
-	}
-	if( strpbrk(str, "()") != NULL )
-		matchPairs("(", ")");
-}
+  if (strcmp(NodeGetLexeme(np2), lexeme) == 0 && NodeGetLineDef(np2) \
+      == inst)
+    {
+    ListInsertFront(np2, np);
+    CodeGenBuff = np;
+    }
+  else
+    {
+    np->rptr = np2->rptr;
+    ListInsertFront(np, np2);
+    }
+
+  if (strpbrk(str, "()") != NULL)
+    matchPairs("(", ")");
+  }
 
 /* Saves 'str' after the node containing the 'lexeme' that was inserted for */
 /* inst-th time */
-void CodeGenBuffSaveAfter(str, lexeme, inst)
-char *str;
-char *lexeme;
-int  inst;	/* the nth time the lexeme was inserted */
-{
-	Np np, np2;
+void
+CodeGenBuffSaveAfter(
+  char *str,
+  char *lexeme,
+  int inst /* the nth time the lexeme was inserted */
+)
+  {
+  Np np, np2;
 
-	CodeGenCondPrint("CodeGenBuffSaveAfter");
+  CodeGenCondPrint("CodeGenBuffSaveAfter");
 
-	if( (np2=ListFindNodeByLexemeInLine( CodeGenBuff, lexeme, inst )) == NULL )
-		CodeGenErr(8);
+  if ((np2 = ListFindNodeByLexemeInLine(CodeGenBuff, lexeme, inst)) == NULL)
+    CodeGenErr(8);
 
-	np = NodeNew( str, OTHER, CodeGenLastDef(str)+1, ParserLevelGet(), NO );
+  np = NodeNew(str, OTHER, CodeGenLastDef(str) + 1, ParserLevelGet(), NO);
 
-	np->rptr = np2->rptr;
-        ListInsertFront(np, np2);
+  np->rptr = np2->rptr;
 
-	if( strpbrk(str, "()") != NULL )
-		matchPairs("(", ")");
-}
+  ListInsertFront(np, np2);
 
-/* Deletes the node containing 'lexeme' inserted for the inst-th time */ 
-void CodeGenBuffDelete(lexeme, inst)
-char	*lexeme;
-int	inst;
-{
-	Np np;
-	if( (np=ListFindNodeBeforeLexemeInLine( CodeGenBuff, lexeme,
-							inst )) != NULL ) {
+  if (strpbrk(str, "()") != NULL)
+    matchPairs("(", ")");
+  }
 
-		if( strcmp( NodeGetLexeme(np), lexeme )  == 0 && \
-		    			NodeGetLineDef( np ) == inst ) {
-			CodeGenBuff = ListDeleteNode(np, np);
-		} else {
-			np->rptr = ListDeleteNode(np->rptr, np->rptr);
-		}
-	}
-		
-}
+/* Deletes the node containing 'lexeme' inserted for the inst-th time */
+void
+CodeGenBuffDelete(char *lexeme, int inst)
+  {
+  Np np;
+
+  if ((np = ListFindNodeBeforeLexemeInLine(CodeGenBuff, lexeme,
+            inst)) != NULL)
+    {
+
+    if (strcmp(NodeGetLexeme(np), lexeme)  == 0 && \
+        NodeGetLineDef(np) == inst)
+      {
+      CodeGenBuff = ListDeleteNode(np, np);
+      }
+    else
+      {
+      np->rptr = ListDeleteNode(np->rptr, np->rptr);
+      }
+    }
+
+  }
 
 /* saves str at the top of the buffer list */
-void CodeGenBuffSaveFunFirst(str)
-char 	*str;
-{
-	Np  np;
+void
+CodeGenBuffSaveFunFirst(char *str)
+  {
+  Np  np;
 
-	CodeGenCondPrint("CodeGenBuffSaveFunFirst");
+  CodeGenCondPrint("CodeGenBuffSaveFunFirst");
 
-	np = NodeNew( str, OTHER, CodeGenLastDef(str)+1, ParserLevelGet(), YES);
+  np = NodeNew(str, OTHER, CodeGenLastDef(str) + 1, ParserLevelGet(), YES);
 
-	/* Place np ahead of CodeGenBuff */
-	CodeGenBuff = ListInsertFront(CodeGenBuff, np);
-	if( strpbrk(str, "()") != NULL )
-		matchPairs("(", ")");
-}
+  /* Place np ahead of CodeGenBuff */
+  CodeGenBuff = ListInsertFront(CodeGenBuff, np);
+
+  if (strpbrk(str, "()") != NULL)
+    matchPairs("(", ")");
+  }
 
 /* appends at the end of the buffer */
-void CodeGenBuffSaveFun(str)
-char	*str;
-{
-	Np   np, lastptr;
+void
+CodeGenBuffSaveFun(char *str)
+  {
+  Np   np, lastptr;
 
-	CodeGenCondPrint("CodeGenBuffSaveFun");
+  CodeGenCondPrint("CodeGenBuffSaveFun");
 
-	if( CodeGenBuff == NULL ) {	/* nothing inserted yet */
-		CodeGenBuffSaveFunFirst(str);
-	} else {	
-		np = NodeNew( str, OTHER, CodeGenLastDef(str)+1, ParserLevelGet(), YES );
-		lastptr = ListGetLast(CodeGenBuff);
-		/* Place lastptr ahead of np (clever) */  
-        	ListInsertFront(np, lastptr);
+  if (CodeGenBuff == NULL)    /* nothing inserted yet */
+    {
+    CodeGenBuffSaveFunFirst(str);
+    }
+  else
+    {
+    np = NodeNew(str, OTHER, CodeGenLastDef(str) + 1, ParserLevelGet(), YES);
+    lastptr = ListGetLast(CodeGenBuff);
+    /* Place lastptr ahead of np (clever) */
+    ListInsertFront(np, lastptr);
 
-		if( strpbrk(str, "()") != NULL )
-			matchPairs("(", ")");
-	}
-}
+    if (strpbrk(str, "()") != NULL)
+      matchPairs("(", ")");
+    }
+  }
 
 /* Saves 'str' before the node containing the 'lexeme' that was inserted for */
 /* inst-th time */
-void CodeGenBuffSaveFunBefore(str, lexeme, inst)
-char *str;
-char *lexeme;
-int  inst;	/* the nth time the lexeme was inserted */
-{
-	Np  np, np2;
+void
+CodeGenBuffSaveFunBefore(
+  char *str,
+  char *lexeme,
+  int inst /* the nth time the lexeme was inserted */
+)
+  {
+  Np  np, np2;
 
-	CodeGenCondPrint("CodeGenBuffSaveFunBefore");
+  CodeGenCondPrint("CodeGenBuffSaveFunBefore");
 
-	if( (np2=ListFindNodeBeforeLexemeInLine( CodeGenBuff, lexeme, inst )) == NULL )
-		CodeGenErr(7);
+  if ((np2 = ListFindNodeBeforeLexemeInLine(CodeGenBuff, lexeme, inst)) == NULL)
+    CodeGenErr(7);
 
-	np = NodeNew( str, OTHER, CodeGenLastDef(str)+1, ParserLevelGet(), YES );
+  np = NodeNew(str, OTHER, CodeGenLastDef(str) + 1, ParserLevelGet(), YES);
 
-	if( strcmp(NodeGetLexeme(np2), lexeme) == 0 && NodeGetLineDef(np2) == inst ) {
-        	ListInsertFront(np2, np);
-		CodeGenBuff = np;
-	} else {
-		np->rptr = np2->rptr;
-        	ListInsertFront(np, np2);
-	}
-	if( strpbrk(str, "()") != NULL )
-		matchPairs("(", ")");
-}
+  if (strcmp(NodeGetLexeme(np2), lexeme) == 0 && NodeGetLineDef(np2) == inst)
+    {
+    ListInsertFront(np2, np);
+    CodeGenBuff = np;
+    }
+  else
+    {
+    np->rptr = np2->rptr;
+    ListInsertFront(np, np2);
+    }
+
+  if (strpbrk(str, "()") != NULL)
+    matchPairs("(", ")");
+  }
 
 /* Saves 'str' after the node containing the 'lexeme' that was inserted for */
 /* inst-th time */
-void CodeGenBuffSaveFunAfter(str, lexeme, inst)
-char *str;
-char *lexeme;
-int  inst;	/* the nth time the lexeme was inserted */
-{
-	Np np, np2;
+void
+CodeGenBuffSaveFunAfter(
+  char *str,
+  char *lexeme,
+  int inst /* the nth time the lexeme was inserted */
+)
+  {
+  Np np, np2;
 
-	CodeGenCondPrint("CodeGenBuffSaveFunAfter");
+  CodeGenCondPrint("CodeGenBuffSaveFunAfter");
 
-	if( (np2=ListFindNodeByLexemeInLine( CodeGenBuff, lexeme, inst )) == NULL )
-		CodeGenErr(8);
+  if ((np2 = ListFindNodeByLexemeInLine(CodeGenBuff, lexeme, inst)) == NULL)
+    CodeGenErr(8);
 
-	np = NodeNew( str, OTHER, CodeGenLastDef(str)+1, ParserLevelGet(), YES );
+  np = NodeNew(str, OTHER, CodeGenLastDef(str) + 1, ParserLevelGet(), YES);
 
-	np->rptr = np2->rptr;
-        ListInsertFront(np, np2);
+  np->rptr = np2->rptr;
 
-	if( strpbrk(str, "()") != NULL )
-		matchPairs("(", ")");
-}
+  ListInsertFront(np, np2);
+
+  if (strpbrk(str, "()") != NULL)
+    matchPairs("(", ")");
+  }
 
 void CodeGenStatPrint(void)
-{
-	CodeGenCondPrint("CodeGenStatPrint");
+  {
+  CodeGenCondPrint("CodeGenStatPrint");
 
-	CodeGenBuffSave("printf");
-}
-
-
-/*algorithm under development 12/19 */
-void CodeGenStatPrintTail(expr)
-struct	MYTOK	expr;
-{
-	int exprType;
-	int lastlb, lastrb;
-	CodeGenCondPrint("CodeGenStatPrintTail");
-
-
-	exprType = expr.type;
-
-	switch(exprType)
-	{
-		case INTTYPE:
-		{
-			lastlb = CodeGenLastDef("(");
-			CodeGenBuffSaveBefore("printf", "(", lastlb);
-			CodeGenBuffSaveAfter("\"%d\", ", "(", lastlb);
-			break;
-		}
-		case FLOATTYPE:
-		{
-			lastlb = CodeGenLastDef("(");
-			CodeGenBuffSaveBefore("printf", "(", lastlb);
-			CodeGenBuffSaveAfter("\"%f\", ", "(", lastlb);
-			break;
-		}
-		case STRINGTYPE:
-		{
-			lastlb = CodeGenLastDef("(");
-			lastrb = CodeGenLastDef(")");
-			CodeGenBuffSaveBefore("printf", "(", lastlb);
-			CodeGenBuffSaveAfter("?", "(", lastlb);
-			CodeGenBuffSaveAfter((char *)expr.lexeme, "(", lastlb);
-			CodeGenBuffSaveAfter("\"%s\", ", "(", lastlb);
-			CodeGenBuffSaveBefore(":\"null\"", ")", lastrb);
-			break;
-		}
-		
-		case DAYOFWEEKTYPE:
-		{
-			CodeGenBuffSaveFirst("dayofweekPrint");
-			break;
-		}
-		case DATETIMETYPE:
-		{	
-			CodeGenBuffSaveFirst("datetimePrint");
-			break;
-		}
-		case SIZETYPE:
-		{
-			CodeGenBuffSaveFirst("sizePrint");
-			CodeGenBuffSaveBefore(", 1", ")", 1);
-			break;
-		}
-		case QUETYPE:
-		{
-			CodeGenBuffSaveFirst("QuePrint");
-			break;
-		}
-		case JOBTYPE:
-		{
-			CodeGenBuffSaveFirst("JobPrint");
-			break;
-		}
-		case CNODETYPE:
-		{
-			CodeGenBuffSaveFirst("CNodePrint");
-			break;
-		}	
-		case SERVERTYPE:
-		{
-			CodeGenBuffSaveFirst("ServerPrint");
-			break;
-		}
-		case INTRANGETYPE:
-		{
-			CodeGenBuffSaveFirst("intRangePrint");
-			break;
-		}
-		case FLOATRANGETYPE:
-		{	
-			CodeGenBuffSaveFirst("floatRangePrint");
-			break;
-		}
-		case DAYOFWEEKRANGETYPE:
-		{
-			CodeGenBuffSaveFirst("dayofweekRangePrint");
-			break;
-		}
-		case DATETIMERANGETYPE:
-		{
-			CodeGenBuffSaveFirst("datetimeRangePrint");
-			break;
-		}
-		case SIZERANGETYPE:
-		{
-			CodeGenBuffSaveFirst("sizeRangePrint");
-			CodeGenBuffSaveBefore(", 1", ")", 1);
-			break;
-		}
-	}
-
-	/*If simple var, buff should have "%f", varname
-	complex var, buff should have Time (as in printTime() ).
-	If simple constant, buff should have constString, i.e. 33
-	*/
-}
-
+  CodeGenBuffSave("printf");
+  }
 
 
 /*algorithm under development 12/19 */
-void CodeGenDefSimple(expr)
-   struct	MYTOK	expr;
-{
-	char *stp;
-	int exprType;
-	CodeGenCondPrint("CodeGenDefSimple");
+void
+CodeGenStatPrintTail(struct MYTOK expr)
+  {
+  int exprType;
+  int lastlb, lastrb;
+  CodeGenCondPrint("CodeGenStatPrintTail");
 
-	/*OK simple type:int, float, dayofweek, date, time, string
-	 */
-	
-	exprType = expr.type;
 
-			switch(exprType)
-			{
-				case INTTYPE:
-				{
-					stp = "int";
-					break;
-				}
-				case FLOATTYPE:
-				{
-					stp = "float";
-					break;
-				}
-		
-				/*more stuff later*/
-		
-				case DAYOFWEEKTYPE:
-				case DATETIMETYPE:
-				case STRINGTYPE:
-				default:
-				{
-				}
-			}
+  exprType = expr.type;
 
-			CodeGenBuffSave(stp);
-			CodeGenBuffSave(" ");
-			CodeGenBuffSave(expr.lexeme);
+  switch (exprType)
+    {
 
-}
+    case INTTYPE:
+      {
+      lastlb = CodeGenLastDef("(");
+      CodeGenBuffSaveBefore("printf", "(", lastlb);
+      CodeGenBuffSaveAfter("\"%d\", ", "(", lastlb);
+      break;
+      }
+
+    case FLOATTYPE:
+      {
+      lastlb = CodeGenLastDef("(");
+      CodeGenBuffSaveBefore("printf", "(", lastlb);
+      CodeGenBuffSaveAfter("\"%f\", ", "(", lastlb);
+      break;
+      }
+
+    case STRINGTYPE:
+      {
+      lastlb = CodeGenLastDef("(");
+      lastrb = CodeGenLastDef(")");
+      CodeGenBuffSaveBefore("printf", "(", lastlb);
+      CodeGenBuffSaveAfter("?", "(", lastlb);
+      CodeGenBuffSaveAfter((char *)expr.lexeme, "(", lastlb);
+      CodeGenBuffSaveAfter("\"%s\", ", "(", lastlb);
+      CodeGenBuffSaveBefore(":\"null\"", ")", lastrb);
+      break;
+      }
+
+    case DAYOFWEEKTYPE:
+      {
+      CodeGenBuffSaveFirst("dayofweekPrint");
+      break;
+      }
+
+    case DATETIMETYPE:
+      {
+      CodeGenBuffSaveFirst("datetimePrint");
+      break;
+      }
+
+    case SIZETYPE:
+      {
+      CodeGenBuffSaveFirst("sizePrint");
+      CodeGenBuffSaveBefore(", 1", ")", 1);
+      break;
+      }
+
+    case QUETYPE:
+      {
+      CodeGenBuffSaveFirst("QuePrint");
+      break;
+      }
+
+    case JOBTYPE:
+      {
+      CodeGenBuffSaveFirst("JobPrint");
+      break;
+      }
+
+    case CNODETYPE:
+      {
+      CodeGenBuffSaveFirst("CNodePrint");
+      break;
+      }
+
+    case SERVERTYPE:
+      {
+      CodeGenBuffSaveFirst("ServerPrint");
+      break;
+      }
+
+    case INTRANGETYPE:
+      {
+      CodeGenBuffSaveFirst("intRangePrint");
+      break;
+      }
+
+    case FLOATRANGETYPE:
+      {
+      CodeGenBuffSaveFirst("floatRangePrint");
+      break;
+      }
+
+    case DAYOFWEEKRANGETYPE:
+      {
+      CodeGenBuffSaveFirst("dayofweekRangePrint");
+      break;
+      }
+
+    case DATETIMERANGETYPE:
+      {
+      CodeGenBuffSaveFirst("datetimeRangePrint");
+      break;
+      }
+
+    case SIZERANGETYPE:
+      {
+      CodeGenBuffSaveFirst("sizeRangePrint");
+      CodeGenBuffSaveBefore(", 1", ")", 1);
+      break;
+      }
+    }
+
+  /*If simple var, buff should have "%f", varname
+  complex var, buff should have Time (as in printTime() ).
+  If simple constant, buff should have constString, i.e. 33
+  */
+  }
+
+
+
+/*algorithm under development 12/19 */
+void
+CodeGenDefSimple(struct MYTOK expr)
+  {
+  char *stp;
+  int exprType;
+  CodeGenCondPrint("CodeGenDefSimple");
+
+  /*OK simple type:int, float, dayofweek, date, time, string
+   */
+
+  exprType = expr.type;
+
+  switch (exprType)
+    {
+
+    case INTTYPE:
+      {
+      stp = "int";
+      break;
+      }
+
+    case FLOATTYPE:
+      {
+      stp = "float";
+      break;
+      }
+
+    /*more stuff later*/
+
+    case DAYOFWEEKTYPE:
+
+    case DATETIMETYPE:
+
+    case STRINGTYPE:
+
+    default:
+      {
+      }
+    }
+
+  CodeGenBuffSave(stp);
+
+  CodeGenBuffSave(" ");
+  CodeGenBuffSave(expr.lexeme);
+
+  }
 
 Np CodeGenBuffGetLast(void)
-{
-	return(ListGetLast(CodeGenBuff));
-}
+  {
+  return(ListGetLast(CodeGenBuff));
+  }
 
 /* This must be called as soon as one of the valid operators
    (+,-,*,/ for size and + for string) is encountered. */
-void CodeGenBuffSaveSpecOper(operstr)
-char	*operstr;
-{
-	Np   np, np2;
-	char *lexBef;
-	int  lineBef;
+void
+CodeGenBuffSaveSpecOper(char *operstr)
+  {
+  Np   np, np2;
+  char *lexBef;
+  int  lineBef;
 
-	CodeGenCondPrint("CodeGenBuffSaveSpecOper");
+  CodeGenCondPrint("CodeGenBuffSaveSpecOper");
 
-	np = CodeGenBuffGetLast();
-	if( np == NULL )
-		CodeGenErr(9);
+  np = CodeGenBuffGetLast();
 
-	lexBef = NodeGetLexeme(np);
-	lineBef = NodeGetLineDef(np);
-	if( CodeGenDF )
-		printf("Found node before + to be: (%s, %d)\n", lexBef, lineBef);
+  if (np == NULL)
+    CodeGenErr(9);
 
-	if( strcmp(lexBef, "++") == 0 ) {
-		np = ListFindNodeBeforeLexemeInLine(CodeGenBuff, "++", 
-								lineBef);
-		if( np == NULL )
-			CodeGenErr(7);
-		if( CodeGenDF )
-			printf("Found node before ++ to be: (%s, %d)\n", 
-				  NodeGetLexeme(np), NodeGetLineDef(np));
-	} else if( strcmp(lexBef, "--") == 0 ) {
-		np = ListFindNodeBeforeLexemeInLine(CodeGenBuff, "--",
-								lineBef);
-		if( np == NULL )
-			CodeGenErr(7);
+  lexBef = NodeGetLexeme(np);
 
-		if( CodeGenDF )
-			printf("Found node before -- to be: (%s, %d)\n", 
-				NodeGetLexeme(np), NodeGetLineDef(np));
-	} else if( strpbrk(lexBef, ")") != NULL ) {
-		np = ListMatchNodeBeforeLexemeInLine(CodeGenBuff, "(",
-								lineBef);
-		np2 = ListMatchNodeByLexemeInLine(CodeGenBuff, "(",
-								lineBef);
+  lineBef = NodeGetLineDef(np);
 
-		if( np == NULL || np2 == NULL )
-			CodeGenErr(10);
+  if (CodeGenDF)
+    printf("Found node before + to be: (%s, %d)\n", lexBef, lineBef);
 
-		if( np != np2 && NodeGetFunFlag(np) == NO )	
-			np = np->rptr;
-		if( CodeGenDF )
-			printf("Found node before ) to be: (%s, %d)\n", 
-				NodeGetLexeme(np), NodeGetLineDef(np));
-	}
+  if (strcmp(lexBef, "++") == 0)
+    {
+    np = ListFindNodeBeforeLexemeInLine(CodeGenBuff, "++",
+                                        lineBef);
 
-	CodeGenBuffSave(", ");
-	CodeGenBuffSaveBefore( operstr, NodeGetLexeme(np), 
-						       NodeGetLineDef(np) );
-}
+    if (np == NULL)
+      CodeGenErr(7);
+
+    if (CodeGenDF)
+      printf("Found node before ++ to be: (%s, %d)\n",
+             NodeGetLexeme(np), NodeGetLineDef(np));
+    }
+  else if (strcmp(lexBef, "--") == 0)
+    {
+    np = ListFindNodeBeforeLexemeInLine(CodeGenBuff, "--",
+                                        lineBef);
+
+    if (np == NULL)
+      CodeGenErr(7);
+
+    if (CodeGenDF)
+      printf("Found node before -- to be: (%s, %d)\n",
+             NodeGetLexeme(np), NodeGetLineDef(np));
+    }
+  else if (strpbrk(lexBef, ")") != NULL)
+    {
+    np = ListMatchNodeBeforeLexemeInLine(CodeGenBuff, "(",
+                                         lineBef);
+    np2 = ListMatchNodeByLexemeInLine(CodeGenBuff, "(",
+                                      lineBef);
+
+    if (np == NULL || np2 == NULL)
+      CodeGenErr(10);
+
+    if (np != np2 && NodeGetFunFlag(np) == NO)
+      np = np->rptr;
+
+    if (CodeGenDF)
+      printf("Found node before ) to be: (%s, %d)\n",
+             NodeGetLexeme(np), NodeGetLineDef(np));
+    }
+
+  CodeGenBuffSave(", ");
+
+  CodeGenBuffSaveBefore(operstr, NodeGetLexeme(np),
+                        NodeGetLineDef(np));
+  }
 
 void CodeGenBuffSaveStrAssign(void)
-{
+  {
 
-	int  line;
-	Np   np;	
+  int  line;
+  Np   np;
 
-	CodeGenCondPrint("CodeGenBuffSaveStrAssign");
+  CodeGenCondPrint("CodeGenBuffSaveStrAssign");
 
-        line = CodeGenLastDef(" = ");
-	np = ListFindNodeBeforeLexemeInLine(CodeGenBuff, " = ", line);
-	CodeGenBuffSaveBefore("dynamic_strcpy( &", NodeGetLexeme(np),
-						     NodeGetLineDef(np));
+  line = CodeGenLastDef(" = ");
+  np = ListFindNodeBeforeLexemeInLine(CodeGenBuff, " = ", line);
+  CodeGenBuffSaveBefore("dynamic_strcpy( &", NodeGetLexeme(np),
+                        NodeGetLineDef(np));
 
-	CodeGenBuffSaveBefore(", ", " = ", line);
-	CodeGenBuffDelete(" = ", line);
-	CodeGenBuffSave(" )");
-}
+  CodeGenBuffSaveBefore(", ", " = ", line);
+  CodeGenBuffDelete(" = ", line);
+  CodeGenBuffSave(" )");
+  }
 
-void CodeGenBuffSaveForeach(var, svar)
-struct MYTOK var;
-struct MYTOK svar;
-{
-	CodeGenBuffClear();
+void
+CodeGenBuffSaveForeach(struct MYTOK var, struct MYTOK svar)
+  {
+  CodeGenBuffClear();
 
-	CodeGenBuffSave("if(");
-	CodeGenBuffSave(svar.lexeme);
-	CodeGenBuffSave(")");
-	CodeGenBuffSave("\n");
+  CodeGenBuffSave("if(");
+  CodeGenBuffSave(svar.lexeme);
+  CodeGenBuffSave(")");
+  CodeGenBuffSave("\n");
 
-	CodeGenBuffSave("for(");
-	if( var.type == JOBTYPE ) {
-		CodeGenBuffSave("firstJobPtr(");
-		CodeGenBuffSave("&");
-		CodeGenBuffSave(svar.lexeme);
-		CodeGenBuffSave(", ");
-		CodeGenBuffSave(svar.lexeme);
-		CodeGenBuffSave("->first");
-		CodeGenBuffSave(")");
-		CodeGenBuffSave("; ");
-		CodeGenBuffSave("(");
-		CodeGenBuffSave(var.lexeme);
-		CodeGenBuffSave("=");
-		CodeGenBuffSave(svar.lexeme);
-		CodeGenBuffSave("->job); ");
-		CodeGenBuffSave("nextJobPtr(");
-		CodeGenBuffSave("&");
-		CodeGenBuffSave(svar.lexeme);
-		CodeGenBuffSave(")");
-		CodeGenBuffSave(")");
-	} else {
-		CodeGenBuffSave(var.lexeme);
-		CodeGenBuffSave("=");
-		CodeGenBuffSave(svar.lexeme);
-		CodeGenBuffSave("->head; ");
-		CodeGenBuffSave(var.lexeme);
-		CodeGenBuffSave("; ");
-		CodeGenBuffSave(var.lexeme);
-		CodeGenBuffSave("=");
-		CodeGenBuffSave(var.lexeme);
-		CodeGenBuffSave("->nextptr)");
-	}
-	CodeGenBuffEmit();
-}
+  CodeGenBuffSave("for(");
 
-/* Assume at this point that we have a fresh */
-/* CodeGenBuff containing only caseVal or the */
-/* initial "switch" string(s) */
-void CodeGenBuffSaveSwitch(switchVar)
-struct	MYTOK	switchVar;
-{
-	Np np;
-	int switchLine;
+  if (var.type == JOBTYPE)
+    {
+    CodeGenBuffSave("firstJobPtr(");
+    CodeGenBuffSave("&");
+    CodeGenBuffSave(svar.lexeme);
+    CodeGenBuffSave(", ");
+    CodeGenBuffSave(svar.lexeme);
+    CodeGenBuffSave("->first");
+    CodeGenBuffSave(")");
+    CodeGenBuffSave("; ");
+    CodeGenBuffSave("(");
+    CodeGenBuffSave(var.lexeme);
+    CodeGenBuffSave("=");
+    CodeGenBuffSave(svar.lexeme);
+    CodeGenBuffSave("->job); ");
+    CodeGenBuffSave("nextJobPtr(");
+    CodeGenBuffSave("&");
+    CodeGenBuffSave(svar.lexeme);
+    CodeGenBuffSave(")");
+    CodeGenBuffSave(")");
+    }
+  else
+    {
+    CodeGenBuffSave(var.lexeme);
+    CodeGenBuffSave("=");
+    CodeGenBuffSave(svar.lexeme);
+    CodeGenBuffSave("->head; ");
+    CodeGenBuffSave(var.lexeme);
+    CodeGenBuffSave("; ");
+    CodeGenBuffSave(var.lexeme);
+    CodeGenBuffSave("=");
+    CodeGenBuffSave(var.lexeme);
+    CodeGenBuffSave("->nextptr)");
+    }
 
-	switchLine = CodeGenLastDef("switch");
-	np=ListFindNodeByLexemeInLine( CodeGenBuff, "switch", 
-				switchLine );
-
-	switch(switchVar.type)
-	{
-	  case INTTYPE:
-	  case FLOATTYPE:
-	  case DAYOFWEEKTYPE:
-	  case SERVERTYPE:
-	  case QUETYPE:
-	  case JOBTYPE:
-	  case CNODETYPE:
-		if( np == NULL ) {
-			CodeGenBuffSaveFirst(" == ");
-			CodeGenBuffSaveFirst(switchVar.lexeme);
-			CodeGenBuffSaveFirst("else if(");
-			CodeGenBuffSave(")");
-		} else {
-			CodeGenBuffSaveFirst(" == ");
-			CodeGenBuffSaveFirst(switchVar.lexeme);
-			CodeGenBuffSaveFirst("if(");
-			CodeGenBuffSave(")");
-		}
-		break;
-	  case DATETIMETYPE:
-		if( np == NULL ) {
-			CodeGenBuffSaveFirst(", ");
-			CodeGenBuffSaveFirst(switchVar.lexeme);
-			CodeGenBuffSaveFirst("datetimecmp(");
-			CodeGenBuffSaveFirst("else if(");
-			CodeGenBuffSave(")");
-			CodeGenBuffSave(" == 0)");
-		} else {
-			CodeGenBuffSaveFirst(", ");
-			CodeGenBuffSaveFirst(switchVar.lexeme);
-			CodeGenBuffSaveFirst("datetimecmp(");
-			CodeGenBuffSaveFirst("if(");
-			CodeGenBuffSave(")");
-			CodeGenBuffSave(" == 0)");
-		}
-		break;
-	  case SIZETYPE:
-		if( np == NULL ) {
-			CodeGenBuffSaveFirst(", ");
-			CodeGenBuffSaveFirst(switchVar.lexeme);
-			CodeGenBuffSaveFirst("sizecmp(");
-			CodeGenBuffSaveFirst("else if(");
-			CodeGenBuffSave(")");
-			CodeGenBuffSave(" == 0)");
-		} else {
-			CodeGenBuffSaveFirst(", ");
-			CodeGenBuffSaveFirst(switchVar.lexeme);
-			CodeGenBuffSaveFirst("sizecmp(");
-			CodeGenBuffSaveFirst("if(");
-			CodeGenBuffSave(")");
-			CodeGenBuffSave(" == 0)");
-		}
-		break;
-	  case STRINGTYPE:
-		if( np == NULL ) {
-			CodeGenBuffSaveFirst(", ");
-			CodeGenBuffSaveFirst(switchVar.lexeme);
-			CodeGenBuffSaveFirst("strcmp(");
-			CodeGenBuffSaveFirst("else if(");
-			CodeGenBuffSave(")");
-			CodeGenBuffSave(" == 0)");
-		} else {
-			CodeGenBuffSaveFirst(", ");
-			CodeGenBuffSaveFirst(switchVar.lexeme);
-			CodeGenBuffSaveFirst("strcmp(");
-			CodeGenBuffSaveFirst("if(");
-			CodeGenBuffSave(")");
-			CodeGenBuffSave(" == 0)");
-		}
-		break;
-	}
-
-	if( np != NULL )
-		CodeGenBuffDelete("switch", switchLine);
-	CodeGenBuffEmit();
-}
+  CodeGenBuffEmit();
+  }
 
 /* Assume at this point that we have a fresh */
 /* CodeGenBuff containing only caseVal or the */
 /* initial "switch" string(s) */
-void CodeGenBuffSaveSwitchIn(switchVar, caseVal)
-struct	MYTOK	switchVar;
-struct	MYTOK	caseVal;
-{
-	Np np;
-	int switchLine;
+void
+CodeGenBuffSaveSwitch(struct MYTOK switchVar)
+  {
+  Np np;
+  int switchLine;
 
-	switchLine = CodeGenLastDef("switch");
-	np=ListFindNodeByLexemeInLine( CodeGenBuff, "switch", 
-				switchLine );
+  switchLine = CodeGenLastDef("switch");
+  np = ListFindNodeByLexemeInLine(CodeGenBuff, "switch",
+                                  switchLine);
 
-	switch(caseVal.type)
-	{
-	  case INTRANGETYPE:
-		if( np == NULL ) {
-			CodeGenBuffSaveFirst(", ");
-			CodeGenBuffSaveFirst(switchVar.lexeme);
-			CodeGenBuffSaveFirst("inIntRange(");
-			CodeGenBuffSaveFirst("else if(");
-			CodeGenBuffSave(")");
-			CodeGenBuffSave(")");
-		} else {
-			CodeGenBuffSaveFirst(", ");
-			CodeGenBuffSaveFirst(switchVar.lexeme);
-			CodeGenBuffSaveFirst("inIntRange(");
-			CodeGenBuffSaveFirst("if(");
-			CodeGenBuffSave(")");
-			CodeGenBuffSave(")");
-		}
-		break;
-	  case FLOATRANGETYPE:
-		if( np == NULL ) {
-			CodeGenBuffSaveFirst(", ");
-			CodeGenBuffSaveFirst(switchVar.lexeme);
-			CodeGenBuffSaveFirst("inFloatRange(");
-			CodeGenBuffSaveFirst("else if(");
-			CodeGenBuffSave(")");
-			CodeGenBuffSave(")");
-		} else {
-			CodeGenBuffSaveFirst(", ");
-			CodeGenBuffSaveFirst(switchVar.lexeme);
-			CodeGenBuffSaveFirst("inFloatRange(");
-			CodeGenBuffSaveFirst("if(");
-			CodeGenBuffSave(")");
-			CodeGenBuffSave(")");
-		}
-		break;
-	  case DAYOFWEEKRANGETYPE:
-		if( np == NULL ) {
-			CodeGenBuffSaveFirst(", ");
-			CodeGenBuffSaveFirst(switchVar.lexeme);
-			CodeGenBuffSaveFirst("inDayofweekRange(");
-			CodeGenBuffSaveFirst("else if(");
-			CodeGenBuffSave(")");
-			CodeGenBuffSave(")");
-		} else {
-			CodeGenBuffSaveFirst(", ");
-			CodeGenBuffSaveFirst(switchVar.lexeme);
-			CodeGenBuffSaveFirst("inDayofweekRange(");
-			CodeGenBuffSaveFirst("if(");
-			CodeGenBuffSave(")");
-			CodeGenBuffSave(")");
-		}
-		break;
-	  case DATETIMERANGETYPE:
-		if( np == NULL ) {
-			CodeGenBuffSaveFirst(", ");
-			CodeGenBuffSaveFirst(switchVar.lexeme);
-			CodeGenBuffSaveFirst("inDateTimeRange(");
-			CodeGenBuffSaveFirst("else if(");
-			CodeGenBuffSave(")");
-			CodeGenBuffSave(")");
-		} else {
-			CodeGenBuffSaveFirst(", ");
-			CodeGenBuffSaveFirst(switchVar.lexeme);
-			CodeGenBuffSaveFirst("inDateTimeRange(");
-			CodeGenBuffSaveFirst("if(");
-			CodeGenBuffSave(")");
-			CodeGenBuffSave(")");
-		}
-		break;
-	  case SIZERANGETYPE:
-		if( np == NULL ) {
-			CodeGenBuffSaveFirst(", ");
-			CodeGenBuffSaveFirst(switchVar.lexeme);
-			CodeGenBuffSaveFirst("inSizeRange(");
-			CodeGenBuffSaveFirst("else if(");
-			CodeGenBuffSave(")");
-			CodeGenBuffSave(")");
-		} else {
-			CodeGenBuffSaveFirst(", ");
-			CodeGenBuffSaveFirst(switchVar.lexeme);
-			CodeGenBuffSaveFirst("inSizeRange(");
-			CodeGenBuffSaveFirst("if(");
-			CodeGenBuffSave(")");
-			CodeGenBuffSave(")");
-		}
-		break;
-	  case SERVERSETTYPE:
-		if( np == NULL ) {
-			CodeGenBuffSaveFirst(", ");
-			CodeGenBuffSaveFirst(switchVar.lexeme);
-			CodeGenBuffSaveFirst("inSetServer(");
-			CodeGenBuffSaveFirst("else if(");
-			CodeGenBuffSave(")");
-			CodeGenBuffSave(")");
-		} else {
-			CodeGenBuffSaveFirst(", ");
-			CodeGenBuffSaveFirst(switchVar.lexeme);
-			CodeGenBuffSaveFirst("inSetServer(");
-			CodeGenBuffSaveFirst("if(");
-			CodeGenBuffSave(")");
-			CodeGenBuffSave(")");
-		}
-		break;
-	  case QUESETTYPE:
-		if( np == NULL ) {
-			CodeGenBuffSaveFirst(", ");
-			CodeGenBuffSaveFirst(switchVar.lexeme);
-			CodeGenBuffSaveFirst("inSetQue(");
-			CodeGenBuffSaveFirst("else if(");
-			CodeGenBuffSave(")");
-			CodeGenBuffSave(")");
-		} else {
-			CodeGenBuffSaveFirst(", ");
-			CodeGenBuffSaveFirst(switchVar.lexeme);
-			CodeGenBuffSaveFirst("inSetQue(");
-			CodeGenBuffSaveFirst("if(");
-			CodeGenBuffSave(")");
-			CodeGenBuffSave(")");
-		}
-		break;
-	  case JOBSETTYPE:
-		if( np == NULL ) {
-			CodeGenBuffSaveFirst(", ");
-			CodeGenBuffSaveFirst(switchVar.lexeme);
-			CodeGenBuffSaveFirst("inSetJob(");
-			CodeGenBuffSaveFirst("else if(");
-			CodeGenBuffSave(")");
-			CodeGenBuffSave(")");
-		} else {
-			CodeGenBuffSaveFirst(", ");
-			CodeGenBuffSaveFirst(switchVar.lexeme);
-			CodeGenBuffSaveFirst("inSetJob(");
-			CodeGenBuffSaveFirst("if(");
-			CodeGenBuffSave(")");
-			CodeGenBuffSave(")");
-		}
-		break;
-	  case CNODESETTYPE:
-		if( np == NULL ) {
-			CodeGenBuffSaveFirst(", ");
-			CodeGenBuffSaveFirst(switchVar.lexeme);
-			CodeGenBuffSaveFirst("inSetCNode(");
-			CodeGenBuffSaveFirst("else if(");
-			CodeGenBuffSave(")");
-			CodeGenBuffSave(")");
-		} else {
-			CodeGenBuffSaveFirst(", ");
-			CodeGenBuffSaveFirst(switchVar.lexeme);
-			CodeGenBuffSaveFirst("inSetCNode(");
-			CodeGenBuffSaveFirst("if(");
-			CodeGenBuffSave(")");
-			CodeGenBuffSave(")");
-		}
+  switch (switchVar.type)
+    {
 
-	}
-	if( np != NULL )
-		CodeGenBuffDelete("switch", switchLine);
-	CodeGenBuffEmit();
-}
+    case INTTYPE:
+
+    case FLOATTYPE:
+
+    case DAYOFWEEKTYPE:
+
+    case SERVERTYPE:
+
+    case QUETYPE:
+
+    case JOBTYPE:
+
+    case CNODETYPE:
+
+      if (np == NULL)
+        {
+        CodeGenBuffSaveFirst(" == ");
+        CodeGenBuffSaveFirst(switchVar.lexeme);
+        CodeGenBuffSaveFirst("else if(");
+        CodeGenBuffSave(")");
+        }
+      else
+        {
+        CodeGenBuffSaveFirst(" == ");
+        CodeGenBuffSaveFirst(switchVar.lexeme);
+        CodeGenBuffSaveFirst("if(");
+        CodeGenBuffSave(")");
+        }
+
+      break;
+
+    case DATETIMETYPE:
+
+      if (np == NULL)
+        {
+        CodeGenBuffSaveFirst(", ");
+        CodeGenBuffSaveFirst(switchVar.lexeme);
+        CodeGenBuffSaveFirst("datetimecmp(");
+        CodeGenBuffSaveFirst("else if(");
+        CodeGenBuffSave(")");
+        CodeGenBuffSave(" == 0)");
+        }
+      else
+        {
+        CodeGenBuffSaveFirst(", ");
+        CodeGenBuffSaveFirst(switchVar.lexeme);
+        CodeGenBuffSaveFirst("datetimecmp(");
+        CodeGenBuffSaveFirst("if(");
+        CodeGenBuffSave(")");
+        CodeGenBuffSave(" == 0)");
+        }
+
+      break;
+
+    case SIZETYPE:
+
+      if (np == NULL)
+        {
+        CodeGenBuffSaveFirst(", ");
+        CodeGenBuffSaveFirst(switchVar.lexeme);
+        CodeGenBuffSaveFirst("sizecmp(");
+        CodeGenBuffSaveFirst("else if(");
+        CodeGenBuffSave(")");
+        CodeGenBuffSave(" == 0)");
+        }
+      else
+        {
+        CodeGenBuffSaveFirst(", ");
+        CodeGenBuffSaveFirst(switchVar.lexeme);
+        CodeGenBuffSaveFirst("sizecmp(");
+        CodeGenBuffSaveFirst("if(");
+        CodeGenBuffSave(")");
+        CodeGenBuffSave(" == 0)");
+        }
+
+      break;
+
+    case STRINGTYPE:
+
+      if (np == NULL)
+        {
+        CodeGenBuffSaveFirst(", ");
+        CodeGenBuffSaveFirst(switchVar.lexeme);
+        CodeGenBuffSaveFirst("strcmp(");
+        CodeGenBuffSaveFirst("else if(");
+        CodeGenBuffSave(")");
+        CodeGenBuffSave(" == 0)");
+        }
+      else
+        {
+        CodeGenBuffSaveFirst(", ");
+        CodeGenBuffSaveFirst(switchVar.lexeme);
+        CodeGenBuffSaveFirst("strcmp(");
+        CodeGenBuffSaveFirst("if(");
+        CodeGenBuffSave(")");
+        CodeGenBuffSave(" == 0)");
+        }
+
+      break;
+    }
+
+  if (np != NULL)
+    CodeGenBuffDelete("switch", switchLine);
+
+  CodeGenBuffEmit();
+  }
+
+/* Assume at this point that we have a fresh */
+/* CodeGenBuff containing only caseVal or the */
+/* initial "switch" string(s) */
+void
+CodeGenBuffSaveSwitchIn(struct MYTOK switchVar, struct MYTOK caseVal)
+  {
+  Np np;
+  int switchLine;
+
+  switchLine = CodeGenLastDef("switch");
+  np = ListFindNodeByLexemeInLine(CodeGenBuff, "switch",
+                                  switchLine);
+
+  switch (caseVal.type)
+    {
+
+    case INTRANGETYPE:
+
+      if (np == NULL)
+        {
+        CodeGenBuffSaveFirst(", ");
+        CodeGenBuffSaveFirst(switchVar.lexeme);
+        CodeGenBuffSaveFirst("inIntRange(");
+        CodeGenBuffSaveFirst("else if(");
+        CodeGenBuffSave(")");
+        CodeGenBuffSave(")");
+        }
+      else
+        {
+        CodeGenBuffSaveFirst(", ");
+        CodeGenBuffSaveFirst(switchVar.lexeme);
+        CodeGenBuffSaveFirst("inIntRange(");
+        CodeGenBuffSaveFirst("if(");
+        CodeGenBuffSave(")");
+        CodeGenBuffSave(")");
+        }
+
+      break;
+
+    case FLOATRANGETYPE:
+
+      if (np == NULL)
+        {
+        CodeGenBuffSaveFirst(", ");
+        CodeGenBuffSaveFirst(switchVar.lexeme);
+        CodeGenBuffSaveFirst("inFloatRange(");
+        CodeGenBuffSaveFirst("else if(");
+        CodeGenBuffSave(")");
+        CodeGenBuffSave(")");
+        }
+      else
+        {
+        CodeGenBuffSaveFirst(", ");
+        CodeGenBuffSaveFirst(switchVar.lexeme);
+        CodeGenBuffSaveFirst("inFloatRange(");
+        CodeGenBuffSaveFirst("if(");
+        CodeGenBuffSave(")");
+        CodeGenBuffSave(")");
+        }
+
+      break;
+
+    case DAYOFWEEKRANGETYPE:
+
+      if (np == NULL)
+        {
+        CodeGenBuffSaveFirst(", ");
+        CodeGenBuffSaveFirst(switchVar.lexeme);
+        CodeGenBuffSaveFirst("inDayofweekRange(");
+        CodeGenBuffSaveFirst("else if(");
+        CodeGenBuffSave(")");
+        CodeGenBuffSave(")");
+        }
+      else
+        {
+        CodeGenBuffSaveFirst(", ");
+        CodeGenBuffSaveFirst(switchVar.lexeme);
+        CodeGenBuffSaveFirst("inDayofweekRange(");
+        CodeGenBuffSaveFirst("if(");
+        CodeGenBuffSave(")");
+        CodeGenBuffSave(")");
+        }
+
+      break;
+
+    case DATETIMERANGETYPE:
+
+      if (np == NULL)
+        {
+        CodeGenBuffSaveFirst(", ");
+        CodeGenBuffSaveFirst(switchVar.lexeme);
+        CodeGenBuffSaveFirst("inDateTimeRange(");
+        CodeGenBuffSaveFirst("else if(");
+        CodeGenBuffSave(")");
+        CodeGenBuffSave(")");
+        }
+      else
+        {
+        CodeGenBuffSaveFirst(", ");
+        CodeGenBuffSaveFirst(switchVar.lexeme);
+        CodeGenBuffSaveFirst("inDateTimeRange(");
+        CodeGenBuffSaveFirst("if(");
+        CodeGenBuffSave(")");
+        CodeGenBuffSave(")");
+        }
+
+      break;
+
+    case SIZERANGETYPE:
+
+      if (np == NULL)
+        {
+        CodeGenBuffSaveFirst(", ");
+        CodeGenBuffSaveFirst(switchVar.lexeme);
+        CodeGenBuffSaveFirst("inSizeRange(");
+        CodeGenBuffSaveFirst("else if(");
+        CodeGenBuffSave(")");
+        CodeGenBuffSave(")");
+        }
+      else
+        {
+        CodeGenBuffSaveFirst(", ");
+        CodeGenBuffSaveFirst(switchVar.lexeme);
+        CodeGenBuffSaveFirst("inSizeRange(");
+        CodeGenBuffSaveFirst("if(");
+        CodeGenBuffSave(")");
+        CodeGenBuffSave(")");
+        }
+
+      break;
+
+    case SERVERSETTYPE:
+
+      if (np == NULL)
+        {
+        CodeGenBuffSaveFirst(", ");
+        CodeGenBuffSaveFirst(switchVar.lexeme);
+        CodeGenBuffSaveFirst("inSetServer(");
+        CodeGenBuffSaveFirst("else if(");
+        CodeGenBuffSave(")");
+        CodeGenBuffSave(")");
+        }
+      else
+        {
+        CodeGenBuffSaveFirst(", ");
+        CodeGenBuffSaveFirst(switchVar.lexeme);
+        CodeGenBuffSaveFirst("inSetServer(");
+        CodeGenBuffSaveFirst("if(");
+        CodeGenBuffSave(")");
+        CodeGenBuffSave(")");
+        }
+
+      break;
+
+    case QUESETTYPE:
+
+      if (np == NULL)
+        {
+        CodeGenBuffSaveFirst(", ");
+        CodeGenBuffSaveFirst(switchVar.lexeme);
+        CodeGenBuffSaveFirst("inSetQue(");
+        CodeGenBuffSaveFirst("else if(");
+        CodeGenBuffSave(")");
+        CodeGenBuffSave(")");
+        }
+      else
+        {
+        CodeGenBuffSaveFirst(", ");
+        CodeGenBuffSaveFirst(switchVar.lexeme);
+        CodeGenBuffSaveFirst("inSetQue(");
+        CodeGenBuffSaveFirst("if(");
+        CodeGenBuffSave(")");
+        CodeGenBuffSave(")");
+        }
+
+      break;
+
+    case JOBSETTYPE:
+
+      if (np == NULL)
+        {
+        CodeGenBuffSaveFirst(", ");
+        CodeGenBuffSaveFirst(switchVar.lexeme);
+        CodeGenBuffSaveFirst("inSetJob(");
+        CodeGenBuffSaveFirst("else if(");
+        CodeGenBuffSave(")");
+        CodeGenBuffSave(")");
+        }
+      else
+        {
+        CodeGenBuffSaveFirst(", ");
+        CodeGenBuffSaveFirst(switchVar.lexeme);
+        CodeGenBuffSaveFirst("inSetJob(");
+        CodeGenBuffSaveFirst("if(");
+        CodeGenBuffSave(")");
+        CodeGenBuffSave(")");
+        }
+
+      break;
+
+    case CNODESETTYPE:
+
+      if (np == NULL)
+        {
+        CodeGenBuffSaveFirst(", ");
+        CodeGenBuffSaveFirst(switchVar.lexeme);
+        CodeGenBuffSaveFirst("inSetCNode(");
+        CodeGenBuffSaveFirst("else if(");
+        CodeGenBuffSave(")");
+        CodeGenBuffSave(")");
+        }
+      else
+        {
+        CodeGenBuffSaveFirst(", ");
+        CodeGenBuffSaveFirst(switchVar.lexeme);
+        CodeGenBuffSaveFirst("inSetCNode(");
+        CodeGenBuffSaveFirst("if(");
+        CodeGenBuffSave(")");
+        CodeGenBuffSave(")");
+        }
+
+    }
+
+  if (np != NULL)
+    CodeGenBuffDelete("switch", switchLine);
+
+  CodeGenBuffEmit();
+  }
 
 /* NOTE: This routine assumes that in the symbol table, arg2 and arg4 will */
 /* appear in consecutive order. */
 /* Enforcing the rule:
-	QueJobFind(que, arg2(), cprstr, arg4) where cpr={OP_EQ, OP_NEQ, OP_GE, OP_GT, OP_LE, OP_LT},
-	QueJobFind(que, arg2(), cprstr)       where cpr={OP_MAX, OP_MIN}  */
+ QueJobFind(que, arg2(), cprstr, arg4) where cpr={OP_EQ, OP_NEQ, OP_GE, OP_GT, OP_LE, OP_LT},
+ QueJobFind(que, arg2(), cprstr)       where cpr={OP_MAX, OP_MIN}  */
 void CodeGenBuffSaveQueJobFind(void)
-{
-	Np arg = NULL;
-	Np arg2 = NULL;
-	Np arg4 = NULL;
-	Np np;
+  {
+  Np arg = NULL;
+  Np arg2 = NULL;
+  Np arg4 = NULL;
+  Np np;
 
-	
-	if( (arg2 = SymTabFindNodeByLexemeInLevel("", -2)) == NULL ) {
-		SemanticErr(19);	/* QueJobFind must have at least 1 arg */
-	}
-	/* with arg4 */ 
-	if( (arg4 = SymTabGetSucc(arg2)) != NULL && NodeGetLevel(arg4) == -2 ) {
 
-		if( NodeGetType(arg2) != NodeGetType(arg4) )
-			SemanticErr(20);
+  if ((arg2 = SymTabFindNodeByLexemeInLevel("", -2)) == NULL)
+    {
+    SemanticErr(19); /* QueJobFind must have at least 1 arg */
+    }
 
-		if( (arg = SymTabGetSucc(arg4)) != NULL && NodeGetLevel(arg) == -2 ) {
-			SemanticErr(21);
-		}
+  /* with arg4 */
+  if ((arg4 = SymTabGetSucc(arg2)) != NULL && NodeGetLevel(arg4) == -2)
+    {
 
-		if( CodeGenLastDef("OP_MAX") != 0 || CodeGenLastDef("OP_MIN") != 0 )
-			SemanticErr(23);
-			
-	} else { /* no arg4 */
-		if( CodeGenLastDef("OP_MAX") == 0 && CodeGenLastDef("OP_MIN") == 0 )
-			SemanticErr(22);
-	}
+    if (NodeGetType(arg2) != NodeGetType(arg4))
+      SemanticErr(20);
 
-	/* let's generate the corresponding code */
-	switch(NodeGetType(arg2)) {
-	  case INTTYPE:
-			if( (np=CodeGenBuffGetNp("QueJobFind", 1)) == NULL)
-				CodeGenErr(11);
-			strcpy(np->lexeme, "QueJobFindInt");
-			break;
-	  case SIZETYPE:
-			if( (np=CodeGenBuffGetNp("QueJobFind", 1)) == NULL)
-				CodeGenErr(11);
-			strcpy(np->lexeme, "QueJobFindSize");
-			break;
-	  case DATETIMETYPE:
-			if( (np=CodeGenBuffGetNp("QueJobFind", 1)) == NULL)
-				CodeGenErr(11);
-			strcpy(np->lexeme, "QueJobFindDateTime");
-			break;
-	  case STRINGTYPE:
-			if( (np=CodeGenBuffGetNp("QueJobFind", 1)) == NULL)
-				CodeGenErr(11);
-			strcpy(np->lexeme, "QueJobFindStr");
-			break;
-	  default:	SemanticErr(24);
-	};
+    if ((arg = SymTabGetSucc(arg4)) != NULL && NodeGetLevel(arg) == -2)
+      {
+      SemanticErr(21);
+      }
 
-	SymTabDeleteLevel(-2);
-}
+    if (CodeGenLastDef("OP_MAX") != 0 || CodeGenLastDef("OP_MIN") != 0)
+      SemanticErr(23);
+
+    }
+  else   /* no arg4 */
+    {
+    if (CodeGenLastDef("OP_MAX") == 0 && CodeGenLastDef("OP_MIN") == 0)
+      SemanticErr(22);
+    }
+
+  /* let's generate the corresponding code */
+  switch (NodeGetType(arg2))
+    {
+
+    case INTTYPE:
+
+      if ((np = CodeGenBuffGetNp("QueJobFind", 1)) == NULL)
+        CodeGenErr(11);
+
+      strcpy(np->lexeme, "QueJobFindInt");
+
+      break;
+
+    case SIZETYPE:
+      if ((np = CodeGenBuffGetNp("QueJobFind", 1)) == NULL)
+        CodeGenErr(11);
+
+      strcpy(np->lexeme, "QueJobFindSize");
+
+      break;
+
+    case DATETIMETYPE:
+      if ((np = CodeGenBuffGetNp("QueJobFind", 1)) == NULL)
+        CodeGenErr(11);
+
+      strcpy(np->lexeme, "QueJobFindDateTime");
+
+      break;
+
+    case STRINGTYPE:
+      if ((np = CodeGenBuffGetNp("QueJobFind", 1)) == NULL)
+        CodeGenErr(11);
+
+      strcpy(np->lexeme, "QueJobFindStr");
+
+      break;
+
+    default:
+      SemanticErr(24);
+    };
+
+  SymTabDeleteLevel(-2);
+  }
 
 /* NOTE: This routine assumes that in the symbol table, arg2 and arg4 will */
 /* appear in consecutive order. */
 /* Enforcing the rule:
-	QueFilter(que, arg2(), cprstr, arg4) where cpr={OP_EQ, OP_NEQ, OP_GE, OP_GT, OP_LE, OP_LT},
-	where arg3 arg5 are of the same type. */
+ QueFilter(que, arg2(), cprstr, arg4) where cpr={OP_EQ, OP_NEQ, OP_GE, OP_GT, OP_LE, OP_LT},
+ where arg3 arg5 are of the same type. */
 void CodeGenBuffSaveQueFilter(void)
-{
-	Np arg2 = NULL;
-	Np arg4 = NULL;
-	Np np;
-	
-	if( (arg2 = SymTabFindNodeByLexemeInLevel("", -2)) == NULL ) {
-		SemanticErr(19);	/* QueFilter must have a func arg */
-	}
+  {
+  Np arg2 = NULL;
+  Np arg4 = NULL;
+  Np np;
 
-	if( (arg4 = SymTabGetSucc(arg2)) == NULL || NodeGetLevel(arg4) != -2 ) {
-		SemanticErr(26);	/* arg5 is missing */
-	}
+  if ((arg2 = SymTabFindNodeByLexemeInLevel("", -2)) == NULL)
+    {
+    SemanticErr(19); /* QueFilter must have a func arg */
+    }
 
-	if( NodeGetType(arg2) != NodeGetType(arg4) )
-		SemanticErr(25);
+  if ((arg4 = SymTabGetSucc(arg2)) == NULL || NodeGetLevel(arg4) != -2)
+    {
+    SemanticErr(26); /* arg5 is missing */
+    }
 
-	if( CodeGenLastDef("OP_MAX") != 0 || CodeGenLastDef("OP_MIN") != 0 )
-		SemanticErr(23);
+  if (NodeGetType(arg2) != NodeGetType(arg4))
+    SemanticErr(25);
 
-	/* let's generate the corresponding code */
-	switch(NodeGetType(arg2)) {
-	  case INTTYPE:
-			if( (np=CodeGenBuffGetNp("QueFilter", 1)) == NULL )
-				CodeGenErr(11);
-			strcpy(np->lexeme, "QueFilterInt");
-			break;
-	  case SIZETYPE:
-			if( (np=CodeGenBuffGetNp("QueFilter", 1)) == NULL )
-				CodeGenErr(11);
-			strcpy(np->lexeme, "QueFilterSize");
-			break;
-	  case DATETIMETYPE:
-			if( (np=CodeGenBuffGetNp("QueFilter", 1)) == NULL )
-				CodeGenErr(11);
-			strcpy(np->lexeme, "QueFilterDateTime");
-			break;
-	  case STRINGTYPE:
-			if( (np=CodeGenBuffGetNp("QueFilter", 1)) == NULL )
-				CodeGenErr(11);
-			strcpy(np->lexeme, "QueFilterStr");
-			break;
-	  default:	SemanticErr(24);
-	};
+  if (CodeGenLastDef("OP_MAX") != 0 || CodeGenLastDef("OP_MIN") != 0)
+    SemanticErr(23);
 
-	SymTabDeleteLevel(-2);
-}
+  /* let's generate the corresponding code */
+  switch (NodeGetType(arg2))
+    {
+
+    case INTTYPE:
+
+      if ((np = CodeGenBuffGetNp("QueFilter", 1)) == NULL)
+        CodeGenErr(11);
+
+      strcpy(np->lexeme, "QueFilterInt");
+
+      break;
+
+    case SIZETYPE:
+      if ((np = CodeGenBuffGetNp("QueFilter", 1)) == NULL)
+        CodeGenErr(11);
+
+      strcpy(np->lexeme, "QueFilterSize");
+
+      break;
+
+    case DATETIMETYPE:
+      if ((np = CodeGenBuffGetNp("QueFilter", 1)) == NULL)
+        CodeGenErr(11);
+
+      strcpy(np->lexeme, "QueFilterDateTime");
+
+      break;
+
+    case STRINGTYPE:
+      if ((np = CodeGenBuffGetNp("QueFilter", 1)) == NULL)
+        CodeGenErr(11);
+
+      strcpy(np->lexeme, "QueFilterStr");
+
+      break;
+
+    default:
+      SemanticErr(24);
+    };
+
+  SymTabDeleteLevel(-2);
+  }
 
 /* NOTE: This routine assumes that in the symbol table, arg1 and arg2 will */
 /* appear in consecutive order, as follows.
 
-		----------------
-		| arg2(param)  |	
-		----------------
-		| arg2's param |
-		---------------
-		| arg1	       |
-		---------------	
+  ----------------
+  | arg2(param)  |
+  ----------------
+  | arg2's param |
+  ---------------
+  | arg1        |
+  ---------------
 
 */
 /* Enforcing the rule:
-	Sort(arg1, arg2(), order) where
-	arg1's type = {SetJob, SetQue, SetServer, SetCNode},
-	arg2's return type  can be {Int, Float, String, DateTime, Size}, and
-	arg2's only argument is of type that depends on the following mapping:
+ Sort(arg1, arg2(), order) where
+ arg1's type = {SetJob, SetQue, SetServer, SetCNode},
+ arg2's return type  can be {Int, Float, String, DateTime, Size}, and
+ arg2's only argument is of type that depends on the following mapping:
 
-		arg1		arg2's argument type
-		----		--------------------
-		SetJob		Job
-		SetQue		Que
-		SetServer	Server
-		SetCNode	CNode
-	and order={ASC,DESC},
+  arg1  arg2's argument type
+  ----  --------------------
+  SetJob  Job
+  SetQue  Que
+  SetServer Server
+  SetCNode CNode
+ and order={ASC,DESC},
 */
 void CodeGenBuffSaveSort(void)
-{
-	Np arg1 = NULL;
-	Np arg2 = NULL;
-	Np arg2p = NULL;
-	Np np;
-	
-	if( (arg2 = SymTabFindNodeByLexemeInLevel("", -2)) == NULL ) {
-		SemanticErr(32);	/* Sort must have a 2nd arg */
-	}
+  {
+  Np arg1 = NULL;
+  Np arg2 = NULL;
+  Np arg2p = NULL;
+  Np np;
 
-	if((arg2p = SymTabGetSucc(arg2)) == NULL || NodeGetLevel(arg2p) != -2) {
-		SemanticErr(32);	/* Sort must have a 2nd arg's param */
-	}
+  if ((arg2 = SymTabFindNodeByLexemeInLevel("", -2)) == NULL)
+    {
+    SemanticErr(32); /* Sort must have a 2nd arg */
+    }
 
-	if((arg1 = SymTabGetSucc(arg2p)) == NULL || NodeGetLevel(arg1) != -2 ) {
-		SemanticErr(31);	/* arg1 is missing */
-	}
+  if ((arg2p = SymTabGetSucc(arg2)) == NULL || NodeGetLevel(arg2p) != -2)
+    {
+    SemanticErr(32); /* Sort must have a 2nd arg's param */
+    }
 
-        if( NodeGetFunFlag(arg1) != NO ) {
-		SemanticErr(35);
-	}
-        if( NodeGetFunFlag(arg2) == NO ) {
-		SemanticErr(35);
-	}
+  if ((arg1 = SymTabGetSucc(arg2p)) == NULL || NodeGetLevel(arg1) != -2)
+    {
+    SemanticErr(31); /* arg1 is missing */
+    }
 
-	/* let's generate the corresponding code */
-	switch(NodeGetType(arg1)) {
-	  case JOBSETTYPE:
-                if( NodeGetType(arg2p) != JOBTYPE ) {
-			SemanticErr(36);
-		}
-		switch(NodeGetType(arg2)) {
-	  	  case INTTYPE:
-			if( (np=CodeGenBuffGetNp("Sort", 1)) == NULL )
-				CodeGenErr(11);
-			strcpy(np->lexeme, "SetJobSortInt");
-			break;
-	  	  case SIZETYPE:
-			if( (np=CodeGenBuffGetNp("Sort", 1)) == NULL )
-				CodeGenErr(11);
-			strcpy(np->lexeme, "SetJobSortSize");
-			break;
-	  	  case DATETIMETYPE:
-			if( (np=CodeGenBuffGetNp("Sort", 1)) == NULL )
-				CodeGenErr(11);
-			strcpy(np->lexeme, "SetJobSortDateTime");
-			break;
-	  	  case STRINGTYPE:
-			if( (np=CodeGenBuffGetNp("Sort", 1)) == NULL )
-				CodeGenErr(11);
-			strcpy(np->lexeme, "SetJobSortStr");
-			break;
-		  case FLOATTYPE:
-			if( (np=CodeGenBuffGetNp("Sort", 1)) == NULL )
-				CodeGenErr(11);
-			strcpy(np->lexeme, "SetJobSortFloat");
-			break;
-	  	  default:	SemanticErr(34);
-		}
-		break;
-	  case QUESETTYPE:
-                if( NodeGetType(arg2p) != QUETYPE ) {
-			SemanticErr(36);
-		}
-		switch(NodeGetType(arg2)) {
-	  	  case INTTYPE:
-			if( (np=CodeGenBuffGetNp("Sort", 1)) == NULL )
-				CodeGenErr(11);
-			strcpy(np->lexeme, "SetQueSortInt");
-			break;
-	  	  case SIZETYPE:
-			if( (np=CodeGenBuffGetNp("Sort", 1)) == NULL )
-				CodeGenErr(11);
-			strcpy(np->lexeme, "SetQueSortSize");
-			break;
-	  	  case DATETIMETYPE:
-			if( (np=CodeGenBuffGetNp("Sort", 1)) == NULL )
-				CodeGenErr(11);
-			strcpy(np->lexeme, "SetQueSortDateTime");
-			break;
-	  	  case STRINGTYPE:
-			if( (np=CodeGenBuffGetNp("Sort", 1)) == NULL )
-				CodeGenErr(11);
-			strcpy(np->lexeme, "SetQueSortStr");
-			break;
-	  	  case FLOATTYPE:
-			if( (np=CodeGenBuffGetNp("Sort", 1)) == NULL )
-				CodeGenErr(11);
-			strcpy(np->lexeme, "SetQueSortFloat");
-			break;
-	  	  default:	SemanticErr(34);
-		}
-		break;
-	  case SERVERSETTYPE:
-                if( NodeGetType(arg2p) != SERVERTYPE ) {
-			SemanticErr(36);
-		}
-		switch(NodeGetType(arg2)) {
-	  	  case INTTYPE:
-			if( (np=CodeGenBuffGetNp("Sort", 1)) == NULL )
-				CodeGenErr(11);
-			strcpy(np->lexeme, "SetServerSortInt");
-			break;
-	  	  case SIZETYPE:
-			if( (np=CodeGenBuffGetNp("Sort", 1)) == NULL )
-				CodeGenErr(11);
-			strcpy(np->lexeme, "SetServerSortSize");
-			break;
-	  	  case DATETIMETYPE:
-			if( (np=CodeGenBuffGetNp("Sort", 1)) == NULL )
-				CodeGenErr(11);
-			strcpy(np->lexeme, "SetServerSortDateTime");
-			break;
-	  	  case STRINGTYPE:
-			if( (np=CodeGenBuffGetNp("Sort", 1)) == NULL )
-				CodeGenErr(11);
-			strcpy(np->lexeme, "SetServerSortStr");
-			break;
-	  	  case FLOATTYPE:
-			if( (np=CodeGenBuffGetNp("Sort", 1)) == NULL )
-				CodeGenErr(11);
-			strcpy(np->lexeme, "SetServerSortFloat");
-			break;
-	  	  default:	SemanticErr(34);
-		}
-		break;
-	  case CNODESETTYPE:
-                if( NodeGetType(arg2p) != CNODETYPE ) {
-			SemanticErr(36);
-		}
-		switch(NodeGetType(arg2)) {
-	  	  case INTTYPE:
-			if( (np=CodeGenBuffGetNp("Sort", 1)) == NULL )
-				CodeGenErr(11);
-			strcpy(np->lexeme, "SetCNodeSortInt");
-			break;
-	  	  case SIZETYPE:
-			if( (np=CodeGenBuffGetNp("Sort", 1)) == NULL )
-				CodeGenErr(11);
-			strcpy(np->lexeme, "SetCNodeSortSize");
-			break;
-	  	  case DATETIMETYPE:
-			if( (np=CodeGenBuffGetNp("Sort", 1)) == NULL )
-				CodeGenErr(11);
-			strcpy(np->lexeme, "SetCNodeSortDateTime");
-			break;
-	  	  case STRINGTYPE:
-			if( (np=CodeGenBuffGetNp("Sort", 1)) == NULL )
-				CodeGenErr(11);
-			strcpy(np->lexeme, "SetCNodeSortStr");
-			break;
-	  	  case FLOATTYPE:
-			if( (np=CodeGenBuffGetNp("Sort", 1)) == NULL )
-				CodeGenErr(11);
-			strcpy(np->lexeme, "SetCNodeSortFloat");
-			break;
-	  	  default:	SemanticErr(34);
-		}
-		break;
-	  default:	SemanticErr(33);
-	}
-	SymTabDeleteLevel(-2);
-}
+  if (NodeGetFunFlag(arg1) != NO)
+    {
+    SemanticErr(35);
+    }
+
+  if (NodeGetFunFlag(arg2) == NO)
+    {
+    SemanticErr(35);
+    }
+
+  /* let's generate the corresponding code */
+  switch (NodeGetType(arg1))
+    {
+
+    case JOBSETTYPE:
+
+      if (NodeGetType(arg2p) != JOBTYPE)
+        {
+        SemanticErr(36);
+        }
+
+      switch (NodeGetType(arg2))
+        {
+
+        case INTTYPE:
+
+          if ((np = CodeGenBuffGetNp("Sort", 1)) == NULL)
+            CodeGenErr(11);
+
+          strcpy(np->lexeme, "SetJobSortInt");
+
+          break;
+
+        case SIZETYPE:
+          if ((np = CodeGenBuffGetNp("Sort", 1)) == NULL)
+            CodeGenErr(11);
+
+          strcpy(np->lexeme, "SetJobSortSize");
+
+          break;
+
+        case DATETIMETYPE:
+          if ((np = CodeGenBuffGetNp("Sort", 1)) == NULL)
+            CodeGenErr(11);
+
+          strcpy(np->lexeme, "SetJobSortDateTime");
+
+          break;
+
+        case STRINGTYPE:
+          if ((np = CodeGenBuffGetNp("Sort", 1)) == NULL)
+            CodeGenErr(11);
+
+          strcpy(np->lexeme, "SetJobSortStr");
+
+          break;
+
+        case FLOATTYPE:
+          if ((np = CodeGenBuffGetNp("Sort", 1)) == NULL)
+            CodeGenErr(11);
+
+          strcpy(np->lexeme, "SetJobSortFloat");
+
+          break;
+
+        default:
+          SemanticErr(34);
+        }
+
+      break;
+
+    case QUESETTYPE:
+
+      if (NodeGetType(arg2p) != QUETYPE)
+        {
+        SemanticErr(36);
+        }
+
+      switch (NodeGetType(arg2))
+        {
+
+        case INTTYPE:
+
+          if ((np = CodeGenBuffGetNp("Sort", 1)) == NULL)
+            CodeGenErr(11);
+
+          strcpy(np->lexeme, "SetQueSortInt");
+
+          break;
+
+        case SIZETYPE:
+          if ((np = CodeGenBuffGetNp("Sort", 1)) == NULL)
+            CodeGenErr(11);
+
+          strcpy(np->lexeme, "SetQueSortSize");
+
+          break;
+
+        case DATETIMETYPE:
+          if ((np = CodeGenBuffGetNp("Sort", 1)) == NULL)
+            CodeGenErr(11);
+
+          strcpy(np->lexeme, "SetQueSortDateTime");
+
+          break;
+
+        case STRINGTYPE:
+          if ((np = CodeGenBuffGetNp("Sort", 1)) == NULL)
+            CodeGenErr(11);
+
+          strcpy(np->lexeme, "SetQueSortStr");
+
+          break;
+
+        case FLOATTYPE:
+          if ((np = CodeGenBuffGetNp("Sort", 1)) == NULL)
+            CodeGenErr(11);
+
+          strcpy(np->lexeme, "SetQueSortFloat");
+
+          break;
+
+        default:
+          SemanticErr(34);
+        }
+
+      break;
+
+    case SERVERSETTYPE:
+
+      if (NodeGetType(arg2p) != SERVERTYPE)
+        {
+        SemanticErr(36);
+        }
+
+      switch (NodeGetType(arg2))
+        {
+
+        case INTTYPE:
+
+          if ((np = CodeGenBuffGetNp("Sort", 1)) == NULL)
+            CodeGenErr(11);
+
+          strcpy(np->lexeme, "SetServerSortInt");
+
+          break;
+
+        case SIZETYPE:
+          if ((np = CodeGenBuffGetNp("Sort", 1)) == NULL)
+            CodeGenErr(11);
+
+          strcpy(np->lexeme, "SetServerSortSize");
+
+          break;
+
+        case DATETIMETYPE:
+          if ((np = CodeGenBuffGetNp("Sort", 1)) == NULL)
+            CodeGenErr(11);
+
+          strcpy(np->lexeme, "SetServerSortDateTime");
+
+          break;
+
+        case STRINGTYPE:
+          if ((np = CodeGenBuffGetNp("Sort", 1)) == NULL)
+            CodeGenErr(11);
+
+          strcpy(np->lexeme, "SetServerSortStr");
+
+          break;
+
+        case FLOATTYPE:
+          if ((np = CodeGenBuffGetNp("Sort", 1)) == NULL)
+            CodeGenErr(11);
+
+          strcpy(np->lexeme, "SetServerSortFloat");
+
+          break;
+
+        default:
+          SemanticErr(34);
+        }
+
+      break;
+
+    case CNODESETTYPE:
+
+      if (NodeGetType(arg2p) != CNODETYPE)
+        {
+        SemanticErr(36);
+        }
+
+      switch (NodeGetType(arg2))
+        {
+
+        case INTTYPE:
+
+          if ((np = CodeGenBuffGetNp("Sort", 1)) == NULL)
+            CodeGenErr(11);
+
+          strcpy(np->lexeme, "SetCNodeSortInt");
+
+          break;
+
+        case SIZETYPE:
+          if ((np = CodeGenBuffGetNp("Sort", 1)) == NULL)
+            CodeGenErr(11);
+
+          strcpy(np->lexeme, "SetCNodeSortSize");
+
+          break;
+
+        case DATETIMETYPE:
+          if ((np = CodeGenBuffGetNp("Sort", 1)) == NULL)
+            CodeGenErr(11);
+
+          strcpy(np->lexeme, "SetCNodeSortDateTime");
+
+          break;
+
+        case STRINGTYPE:
+          if ((np = CodeGenBuffGetNp("Sort", 1)) == NULL)
+            CodeGenErr(11);
+
+          strcpy(np->lexeme, "SetCNodeSortStr");
+
+          break;
+
+        case FLOATTYPE:
+          if ((np = CodeGenBuffGetNp("Sort", 1)) == NULL)
+            CodeGenErr(11);
+
+          strcpy(np->lexeme, "SetCNodeSortFloat");
+
+          break;
+
+        default:
+          SemanticErr(34);
+        }
+
+      break;
+
+    default:
+      SemanticErr(33);
+    }
+
+  SymTabDeleteLevel(-2);
+  }

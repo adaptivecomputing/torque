@@ -1,45 +1,45 @@
 /*
 *         OpenPBS (Portable Batch System) v2.3 Software License
-* 
+*
 * Copyright (c) 1999-2000 Veridian Information Solutions, Inc.
 * All rights reserved.
-* 
+*
 * ---------------------------------------------------------------------------
 * For a license to use or redistribute the OpenPBS software under conditions
 * other than those described below, or to purchase support for this software,
 * please contact Veridian Systems, PBS Products Department ("Licensor") at:
-* 
+*
 *    www.OpenPBS.org  +1 650 967-4675                  sales@OpenPBS.org
 *                        877 902-4PBS (US toll-free)
 * ---------------------------------------------------------------------------
-* 
+*
 * This license covers use of the OpenPBS v2.3 software (the "Software") at
 * your site or location, and, for certain users, redistribution of the
 * Software to other sites and locations.  Use and redistribution of
 * OpenPBS v2.3 in source and binary forms, with or without modification,
 * are permitted provided that all of the following conditions are met.
 * After December 31, 2001, only conditions 3-6 must be met:
-* 
+*
 * 1. Commercial and/or non-commercial use of the Software is permitted
 *    provided a current software registration is on file at www.OpenPBS.org.
 *    If use of this software contributes to a publication, product, or
 *    service, proper attribution must be given; see www.OpenPBS.org/credit.html
-* 
+*
 * 2. Redistribution in any form is only permitted for non-commercial,
 *    non-profit purposes.  There can be no charge for the Software or any
 *    software incorporating the Software.  Further, there can be no
 *    expectation of revenue generated as a consequence of redistributing
 *    the Software.
-* 
+*
 * 3. Any Redistribution of source code must retain the above copyright notice
 *    and the acknowledgment contained in paragraph 6, this list of conditions
 *    and the disclaimer contained in paragraph 7.
-* 
+*
 * 4. Any Redistribution in binary form must reproduce the above copyright
 *    notice and the acknowledgment contained in paragraph 6, this list of
 *    conditions and the disclaimer contained in paragraph 7 in the
 *    documentation and/or other materials provided with the distribution.
-* 
+*
 * 5. Redistributions in any form must be accompanied by information on how to
 *    obtain complete source code for the OpenPBS software and any
 *    modifications and/or additions to the OpenPBS software.  The source code
@@ -47,23 +47,23 @@
 *    than the cost of distribution plus a nominal fee, and all modifications
 *    and additions to the Software must be freely redistributable by any party
 *    (including Licensor) without restriction.
-* 
+*
 * 6. All advertising materials mentioning features or use of the Software must
 *    display the following acknowledgment:
-* 
+*
 *     "This product includes software developed by NASA Ames Research Center,
-*     Lawrence Livermore National Laboratory, and Veridian Information 
+*     Lawrence Livermore National Laboratory, and Veridian Information
 *     Solutions, Inc.
 *     Visit www.OpenPBS.org for OpenPBS software support,
 *     products, and information."
-* 
+*
 * 7. DISCLAIMER OF WARRANTY
-* 
+*
 * THIS SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND. ANY EXPRESS
 * OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
 * OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT
 * ARE EXPRESSLY DISCLAIMED.
-* 
+*
 * IN NO EVENT SHALL VERIDIAN CORPORATION, ITS AFFILIATED COMPANIES, OR THE
 * U.S. GOVERNMENT OR ANY OF ITS AGENCIES BE LIABLE FOR ANY DIRECT OR INDIRECT,
 * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
@@ -72,7 +72,7 @@
 * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
 * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-* 
+*
 * This license will be governed by the laws of the Commonwealth of Virginia,
 * without reference to its choice of law rules.
 */
@@ -105,10 +105,10 @@
 
 /* Global Variables */
 
-extern int	 exiting_tasks;
-extern char	 mom_host[];
+extern int  exiting_tasks;
+extern char  mom_host[];
 extern tlist_head svr_alljobs;
-extern int	 termin_child;
+extern int  termin_child;
 
 extern int       LOGLEVEL;
 
@@ -119,15 +119,15 @@ extern char     *AllocParCmd;
 
 /*
  * set_job - set up a new job session
- * 	Set session id and whatever else is required on this machine
- *	to create a new job.
+ *  Set session id and whatever else is required on this machine
+ * to create a new job.
  *
  * NOTE:  This routine is run as root after fork for both parallel and serial jobs
  * NOTE:  This routine is called by TMOMFinalizeChild()
  *
  *      Return: session/job id or if error:
- *		-1 - if setsid() fails
- *		-2 - if other, message in log_buffer
+ *  -1 - if setsid() fails
+ *  -2 - if other, message in log_buffer
  */
 
 int set_job(
@@ -155,51 +155,52 @@ int set_job(
     sjr->sj_session = sid;
 
 #ifdef __XTTEST
-  PPtr = get_job_envvar(pjob,"BATCH_PARTITION_ID");
-  CPtr = get_job_envvar(pjob,"BATCH_ALLOC_COOKIE");
+  PPtr = get_job_envvar(pjob, "BATCH_PARTITION_ID");
 
-  sprintf(tmpLine,"echo \"P:'%s' C:'%s'\" >> /tmp/dog",
-    (PPtr != NULL) ? PPtr : "NULL",
-    (CPtr != NULL) ? CPtr : "NULL");
+  CPtr = get_job_envvar(pjob, "BATCH_ALLOC_COOKIE");
+
+  sprintf(tmpLine, "echo \"P:'%s' C:'%s'\" >> /tmp/dog",
+          (PPtr != NULL) ? PPtr : "NULL",
+          (CPtr != NULL) ? CPtr : "NULL");
 
   rc = system(tmpLine);
 
   if (WEXITSTATUS(rc) != 0)
     {
-    snprintf(log_buffer,1024,"cannot create alloc partition");
+    snprintf(log_buffer, 1024, "cannot create alloc partition");
 
     return(-2);
     }
 
 #endif /* __ XTTEST */
- 
+
   /* NOTE:  only activate partition create script for XT4+ environments */
 
-  if (((PPtr = get_job_envvar(pjob,"BATCH_PARTITION_ID")) != NULL) &&
-      ((CPtr = get_job_envvar(pjob,"BATCH_ALLOC_COOKIE")) != NULL) &&
-       !strcmp(CPtr,"0"))
+  if (((PPtr = get_job_envvar(pjob, "BATCH_PARTITION_ID")) != NULL) &&
+      ((CPtr = get_job_envvar(pjob, "BATCH_ALLOC_COOKIE")) != NULL) &&
+      !strcmp(CPtr, "0"))
     {
     char  tmpLine[1024];
-    
+
     if (AllocParCmd == NULL)
       AllocParCmd = strdup("/opt/moab/default/tools/partition.create.xt4.pl");
 
-    snprintf(tmpLine,sizeof(tmpLine),"%s --confirm -p %s -j %s -a %ld",
-      AllocParCmd,
-      PPtr,
-      pjob->ji_qs.ji_jobid,
-      sid);
+    snprintf(tmpLine, sizeof(tmpLine), "%s --confirm -p %s -j %s -a %ld",
+             AllocParCmd,
+             PPtr,
+             pjob->ji_qs.ji_jobid,
+             sid);
 
     log_err(
       -1,
       id,
       tmpLine);
 
-    rc = system(tmpLine); 
+    rc = system(tmpLine);
 
     if (WEXITSTATUS(rc) != 0)
       {
-      snprintf(log_buffer,1024,"cannot create alloc partition");
+      snprintf(log_buffer, 1024, "cannot create alloc partition");
 
       sid = -3;
 
@@ -223,7 +224,7 @@ int set_job(
 
 
 /*
-**	set_globid - set the global id for a machine type.
+** set_globid - set the global id for a machine type.
 */
 
 void set_globid(
@@ -249,7 +250,7 @@ void set_globid(
 
 int set_mach_vars(
 
-  job              *pjob,    /* pointer to the job	*/
+  job              *pjob,    /* pointer to the job */
   struct var_table *vtab)    /* pointer to variable table */
 
   {
@@ -269,6 +270,7 @@ char *set_shell(
   char *cp;
   int   i;
   char *shell;
+
   struct array_strings *vstrs;
 
   /*
@@ -278,26 +280,26 @@ char *set_shell(
   shell = pwdp->pw_shell;
 
   if ((pjob->ji_wattr[(int)JOB_ATR_shell].at_flags & ATR_VFLAG_SET) &&
-      (vstrs = pjob->ji_wattr[(int)JOB_ATR_shell].at_val.at_arst)) 
+      (vstrs = pjob->ji_wattr[(int)JOB_ATR_shell].at_val.at_arst))
     {
-    for (i = 0; i < vstrs->as_usedptr; ++i) 
+    for (i = 0; i < vstrs->as_usedptr; ++i)
       {
       cp = strchr(vstrs->as_string[i], '@');
 
-      if (cp != NULL) 
+      if (cp != NULL)
         {
-        if (!strncmp(mom_host, cp+1, strlen(cp+1))) 
+        if (!strncmp(mom_host, cp + 1, strlen(cp + 1)))
           {
-          *cp = '\0';	/* host name matches */
+          *cp = '\0'; /* host name matches */
 
           shell = vstrs->as_string[i];
 
           break;
           }
-        } 
-      else 
+        }
+      else
         {
-        shell = vstrs->as_string[i];	/* wildcard */
+        shell = vstrs->as_string[i]; /* wildcard */
         }
       }
     }
@@ -310,10 +312,10 @@ char *set_shell(
 
 
 
-/** 
+/**
  * scan_for_terminated - scan the list of running jobs for one whose
- *	session id matches that of a terminated child pid.  Mark that
- *	job as Exiting.
+ * session id matches that of a terminated child pid.  Mark that
+ * job as Exiting.
  *
  * @see finish_loop() - parent
  * @see scan_for_exiting() - peer - called later to harvest jobs with exiting tasks
@@ -323,16 +325,17 @@ char *set_shell(
 #define TMAX_TJCACHESIZE 128
 
 
-void scan_for_terminated()
+void
+scan_for_terminated(void)
 
   {
   static char id[] = "scan_for_terminated";
 
-  int	 exiteval = 0;
-  pid_t	 pid;
-  job	*pjob;
-  task	*ptask = NULL;
-  int	 statloc;
+  int  exiteval = 0;
+  pid_t  pid;
+  job *pjob;
+  task *ptask = NULL;
+  int  statloc;
 
   int    tcount;
 
@@ -358,11 +361,11 @@ void scan_for_terminated()
 
   termin_child = 0;
 
-  if (mom_get_sample() == PBSE_NONE) 
+  if (mom_get_sample() == PBSE_NONE)
     {
     pjob = (job *)GET_PRIOR(svr_alljobs);
 
-    while (pjob != NULL) 
+    while (pjob != NULL)
       {
       mom_set_use(pjob);
 
@@ -394,7 +397,7 @@ void scan_for_terminated()
         "retrying send of OBIT");
       }
 
-    if (pjob->ji_mompost(pjob,exiteval) != 0)
+    if (pjob->ji_mompost(pjob, exiteval) != 0)
       {
       /* attempt failed again */
 
@@ -412,7 +415,7 @@ void scan_for_terminated()
         PBS_EVENTCLASS_JOB,
         pjob->ji_qs.ji_jobid,
         "OBIT resent successfully");
-       }
+      }
 
     pjob->ji_mompost = NULL;
 
@@ -420,20 +423,21 @@ void scan_for_terminated()
 
     pjob->ji_momsubt = 0;
 
-    job_save(pjob,SAVEJOB_QUICK);
+    job_save(pjob, SAVEJOB_QUICK);
     TJCache[TJCIndex] = ((job *)1);
     }  /* END for (TJIndex) */
+
 #endif /* CACHEOBITFAILURES */
 
   /* Now figure out which task(s) have terminated (are zombies) */
 
   /* NOTE:  does a job's tasks include its epilog? */
 
-  while ((pid = waitpid(-1,&statloc,WNOHANG)) > 0) 
+  while ((pid = waitpid(-1, &statloc, WNOHANG)) > 0)
     {
     pjob = (job *)GET_PRIOR(svr_alljobs);
 
-    while (pjob != NULL) 
+    while (pjob != NULL)
       {
       /*
        * see if process was a child doing a special
@@ -442,23 +446,23 @@ void scan_for_terminated()
 
       if (LOGLEVEL >= 7)
         {
-        snprintf(log_buffer,1024,"checking job w/subtask pid=%d (child pid=%d)",
-          pjob->ji_momsubt,
-          pid);
+        snprintf(log_buffer, 1024, "checking job w/subtask pid=%d (child pid=%d)",
+                 pjob->ji_momsubt,
+                 pid);
 
         LOG_EVENT(
           PBSEVENT_DEBUG,
           PBS_EVENTCLASS_JOB,
           pjob->ji_qs.ji_jobid,
           log_buffer);
-        }      
-  
+        }
+
       if (pid == pjob->ji_momsubt)
         {
         if (LOGLEVEL >= 7)
           {
-          snprintf(log_buffer,1024,"found match with job subtask for pid=%d",
-            pid);
+          snprintf(log_buffer, 1024, "found match with job subtask for pid=%d",
+                   pid);
 
           LOG_EVENT(
             PBSEVENT_DEBUG,
@@ -478,15 +482,15 @@ void scan_for_terminated()
 
       tcount = 0;
 
-      while (ptask != NULL) 
+      while (ptask != NULL)
         {
         if (ptask->ti_qs.ti_sid == pid)
           {
           if (LOGLEVEL >= 7)
             {
-            snprintf(log_buffer,1024,"found match with job task %d for pid=%d",
-              tcount,
-              pid);
+            snprintf(log_buffer, 1024, "found match with job task %d for pid=%d",
+                     tcount,
+                     pid);
 
             LOG_EVENT(
               PBSEVENT_DEBUG,
@@ -513,13 +517,13 @@ void scan_for_terminated()
       pjob = (job *)GET_PRIOR(pjob->ji_alljobs);
       }  /* END while (pjob != NULL) */
 
-    if (pjob == NULL) 
+    if (pjob == NULL)
       {
       if (LOGLEVEL >= 1)
         {
-        sprintf(log_buffer,"pid %d not tracked, exitcode=%d",
-          pid,
-          statloc);
+        sprintf(log_buffer, "pid %d not tracked, exitcode=%d",
+                pid,
+                statloc);
 
         log_record(
           PBSEVENT_JOB,
@@ -535,24 +539,25 @@ void scan_for_terminated()
       exiteval = WEXITSTATUS(statloc);
     else if (WIFSIGNALED(statloc))
       exiteval = WTERMSIG(statloc) + 0x100;
-    else 
+    else
       exiteval = 1;
 
-    if (pid == pjob->ji_momsubt) 
+    if (pid == pjob->ji_momsubt)
       {
       /* PID matches job mom subtask */
 
-      /* NOTE:  both ji_momsubt and ji_mompost normally set in routine 
+      /* NOTE:  both ji_momsubt and ji_mompost normally set in routine
                 preobit_reply() after epilog child is successfully forked */
 
-      if (pjob->ji_mompost != NULL) 
+      if (pjob->ji_mompost != NULL)
         {
-        if (pjob->ji_mompost(pjob,exiteval) == 0)
+        if (pjob->ji_mompost(pjob, exiteval) == 0)
           {
           /* success */
 
           pjob->ji_mompost = NULL;
           }
+
 #ifdef CACHEOBITFAILURES
         else
           {
@@ -570,6 +575,7 @@ void scan_for_terminated()
                 }
 
               TJCache[tjcindex] = pjob;
+
               termin_child = 1;
 
               break;
@@ -578,6 +584,7 @@ void scan_for_terminated()
 
           continue;
           }
+
 #endif /* CACHEOBITFAILURES */
         }  /* END if (pjob->ji_mompost != NULL) */
       else
@@ -593,7 +600,7 @@ void scan_for_terminated()
 
       pjob->ji_momsubt = 0;
 
-      job_save(pjob,SAVEJOB_QUICK);
+      job_save(pjob, SAVEJOB_QUICK);
 
       continue;
       }  /* END if (pid == pjob->ji_momsubt) */
@@ -602,11 +609,11 @@ void scan_for_terminated()
 
     if (LOGLEVEL >= 2)
       {
-      sprintf(log_buffer,"pid %d harvested for job %s, task %d, exitcode=%d",
-        pid,
-        pjob->ji_qs.ji_jobid,
-        ptask->ti_qs.ti_task,
-        exiteval);
+      sprintf(log_buffer, "pid %d harvested for job %s, task %d, exitcode=%d",
+              pid,
+              pjob->ji_qs.ji_jobid,
+              ptask->ti_qs.ti_task,
+              exiteval);
 
       log_record(
         PBSEVENT_JOB,
@@ -617,18 +624,19 @@ void scan_for_terminated()
 
     /* where is job purged?  How do we keep job from progressing in state until the obit is sent? */
 
-    kill_task(ptask,SIGKILL,0);
+    kill_task(ptask, SIGKILL, 0);
 
     ptask->ti_qs.ti_exitstat = exiteval;
+
     ptask->ti_qs.ti_status   = TI_STATE_EXITED;
 
     task_save(ptask);
 
-    sprintf(log_buffer,"%s: job %s task %d terminated, sid=%d",
-      id,
-      pjob->ji_qs.ji_jobid,
-      ptask->ti_qs.ti_task,
-      ptask->ti_qs.ti_sid);
+    sprintf(log_buffer, "%s: job %s task %d terminated, sid=%d",
+            id,
+            pjob->ji_qs.ji_jobid,
+            ptask->ti_qs.ti_task,
+            ptask->ti_qs.ti_sid);
 
     LOG_EVENT(
       PBSEVENT_DEBUG,
@@ -658,24 +666,24 @@ void scan_for_terminated()
 
 int open_master(
 
-  char **rtn_name)	/* RETURN name of slave pts */
+  char **rtn_name) /* RETURN name of slave pts */
 
   {
   int master;
   int slave;
   static char slave_name[PTY_SIZE];
 
-  int status = openpty(&master,&slave,slave_name,0,0);
+  int status = openpty(&master, &slave, slave_name, 0, 0);
 
   if (status < 0)
     {
-    log_err(errno,"open_master", 
-      "failed in openpty()");
+    log_err(errno, "open_master",
+            "failed in openpty()");
 
     return(-1);
     }
 
-  close(slave); 
+  close(slave);
 
   /* open_master has no way to return this, must return slave_name instead */
 
@@ -691,41 +699,41 @@ int open_master(
   char **rtn_name)      /* RETURN name of slave pts */
 
   {
-  char 	       *pc1;
-  char 	       *pc2;
-  int		ptc;	/* master file descriptor */
-  static char	ptcchar1[] = "pqrs";
-  static char	ptcchar2[] = "0123456789abcdef";
-  static char	pty_name[PTY_SIZE + 1];	/* "/dev/[pt]tyXY" */
+  char         *pc1;
+  char         *pc2;
+  int  ptc; /* master file descriptor */
+  static char ptcchar1[] = "pqrs";
+  static char ptcchar2[] = "0123456789abcdef";
+  static char pty_name[PTY_SIZE + 1]; /* "/dev/[pt]tyXY" */
 
-  strncpy(pty_name,"/dev/ptyXY",PTY_SIZE);
+  strncpy(pty_name, "/dev/ptyXY", PTY_SIZE);
 
-  for (pc1 = ptcchar1;*pc1 != '\0';++pc1) 
+  for (pc1 = ptcchar1;*pc1 != '\0';++pc1)
     {
     pty_name[8] = *pc1;
 
-    for (pc2 = ptcchar2;*pc2 != '\0';++pc2) 
+    for (pc2 = ptcchar2;*pc2 != '\0';++pc2)
       {
       pty_name[9] = *pc2;
 
-      if ((ptc = open(pty_name,O_RDWR|O_NOCTTY,0)) >= 0) 
+      if ((ptc = open(pty_name, O_RDWR | O_NOCTTY, 0)) >= 0)
         {
         /* got a master, fix name to matching slave */
 
-        pty_name[5] = 't';	
+        pty_name[5] = 't';
 
         *rtn_name = pty_name;
 
         return(ptc);
-        } 
+        }
       else if (errno == ENOENT)
         {
-        return(-1);	/* tried all entries, give up */
+        return(-1); /* tried all entries, give up */
         }
       }
     }
 
-  return(-1);	/* tried all entries, give up */
+  return(-1); /* tried all entries, give up */
   }  /* END open_master() */
 
 #endif /* USEOLDTTY */
@@ -736,41 +744,45 @@ int open_master(
  * struct sig_tbl = map of signal names to numbers,
  * see req_signal() in ../requests.c
  */
-struct sig_tbl sig_tbl[] = {
-	{ "NULL", 0 },
-	{ "HUP", SIGHUP },
-	{ "INT", SIGINT },
-	{ "QUIT", SIGQUIT },
-	{ "ILL",  SIGILL },
-	{ "TRAP", SIGTRAP },
-	{ "IOT", SIGIOT },
-	{ "ABRT",SIGABRT },
-	{ "FPE", SIGFPE },
-	{ "KILL", SIGKILL },
-	{ "BUS", SIGBUS },
-	{ "SEGV", SIGSEGV },
-	{ "PIPE", SIGPIPE },
-	{ "ALRM", SIGALRM },
-	{ "TERM", SIGTERM },
-	{ "URG", SIGURG },
-	{ "STOP", SIGSTOP },
-	/* { "suspend", SIGSTOP }, - NOTE: changed for MPI jobs - NORWAY */
-        { "suspend", SIGTSTP },
-	{ "TSTP", SIGTSTP },
-	{ "CONT", SIGCONT },
-	{ "resume", SIGCONT },
-	{ "CHLD", SIGCHLD },
-	{ "CLD",  SIGCHLD },
-	{ "TTIN", SIGTTIN },
-	{ "TTOU", SIGTTOU },
-	{ "IO", SIGIO },
-	{ "POLL", SIGPOLL },
-	{ "XCPU", SIGXCPU },
-	{ "XFSZ", SIGXFSZ },
-	{ "VTALRM", SIGVTALRM },
-	{ "PROF", SIGPROF },
-	{ "WINCH", SIGWINCH },
-	{ "USR1", SIGUSR1 },
-	{ "USR2", SIGUSR2 },
-	{ (char *)0, -1 }
-};
+
+struct sig_tbl sig_tbl[] =
+  {
+    { "NULL", 0
+    },
+
+  { "HUP", SIGHUP },
+  { "INT", SIGINT },
+  { "QUIT", SIGQUIT },
+  { "ILL",  SIGILL },
+  { "TRAP", SIGTRAP },
+  { "IOT", SIGIOT },
+  { "ABRT", SIGABRT },
+  { "FPE", SIGFPE },
+  { "KILL", SIGKILL },
+  { "BUS", SIGBUS },
+  { "SEGV", SIGSEGV },
+  { "PIPE", SIGPIPE },
+  { "ALRM", SIGALRM },
+  { "TERM", SIGTERM },
+  { "URG", SIGURG },
+  { "STOP", SIGSTOP },
+  /* { "suspend", SIGSTOP }, - NOTE: changed for MPI jobs - NORWAY */
+  { "suspend", SIGTSTP },
+  { "TSTP", SIGTSTP },
+  { "CONT", SIGCONT },
+  { "resume", SIGCONT },
+  { "CHLD", SIGCHLD },
+  { "CLD",  SIGCHLD },
+  { "TTIN", SIGTTIN },
+  { "TTOU", SIGTTOU },
+  { "IO", SIGIO },
+  { "POLL", SIGPOLL },
+  { "XCPU", SIGXCPU },
+  { "XFSZ", SIGXFSZ },
+  { "VTALRM", SIGVTALRM },
+  { "PROF", SIGPROF },
+  { "WINCH", SIGWINCH },
+  { "USR1", SIGUSR1 },
+  { "USR2", SIGUSR2 },
+  {(char *)0, -1 }
+  };

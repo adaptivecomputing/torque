@@ -1,45 +1,45 @@
 /*
 *         OpenPBS (Portable Batch System) v2.3 Software License
-* 
+*
 * Copyright (c) 1999-2000 Veridian Information Solutions, Inc.
 * All rights reserved.
-* 
+*
 * ---------------------------------------------------------------------------
 * For a license to use or redistribute the OpenPBS software under conditions
 * other than those described below, or to purchase support for this software,
 * please contact Veridian Systems, PBS Products Department ("Licensor") at:
-* 
+*
 *    www.OpenPBS.org  +1 650 967-4675                  sales@OpenPBS.org
 *                        877 902-4PBS (US toll-free)
 * ---------------------------------------------------------------------------
-* 
+*
 * This license covers use of the OpenPBS v2.3 software (the "Software") at
 * your site or location, and, for certain users, redistribution of the
 * Software to other sites and locations.  Use and redistribution of
 * OpenPBS v2.3 in source and binary forms, with or without modification,
 * are permitted provided that all of the following conditions are met.
 * After December 31, 2001, only conditions 3-6 must be met:
-* 
+*
 * 1. Commercial and/or non-commercial use of the Software is permitted
 *    provided a current software registration is on file at www.OpenPBS.org.
 *    If use of this software contributes to a publication, product, or
 *    service, proper attribution must be given; see www.OpenPBS.org/credit.html
-* 
+*
 * 2. Redistribution in any form is only permitted for non-commercial,
 *    non-profit purposes.  There can be no charge for the Software or any
 *    software incorporating the Software.  Further, there can be no
 *    expectation of revenue generated as a consequence of redistributing
 *    the Software.
-* 
+*
 * 3. Any Redistribution of source code must retain the above copyright notice
 *    and the acknowledgment contained in paragraph 6, this list of conditions
 *    and the disclaimer contained in paragraph 7.
-* 
+*
 * 4. Any Redistribution in binary form must reproduce the above copyright
 *    notice and the acknowledgment contained in paragraph 6, this list of
 *    conditions and the disclaimer contained in paragraph 7 in the
 *    documentation and/or other materials provided with the distribution.
-* 
+*
 * 5. Redistributions in any form must be accompanied by information on how to
 *    obtain complete source code for the OpenPBS software and any
 *    modifications and/or additions to the OpenPBS software.  The source code
@@ -47,23 +47,23 @@
 *    than the cost of distribution plus a nominal fee, and all modifications
 *    and additions to the Software must be freely redistributable by any party
 *    (including Licensor) without restriction.
-* 
+*
 * 6. All advertising materials mentioning features or use of the Software must
 *    display the following acknowledgment:
-* 
+*
 *     "This product includes software developed by NASA Ames Research Center,
-*     Lawrence Livermore National Laboratory, and Veridian Information 
+*     Lawrence Livermore National Laboratory, and Veridian Information
 *     Solutions, Inc.
 *     Visit www.OpenPBS.org for OpenPBS software support,
 *     products, and information."
-* 
+*
 * 7. DISCLAIMER OF WARRANTY
-* 
+*
 * THIS SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND. ANY EXPRESS
 * OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
 * OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT
 * ARE EXPRESSLY DISCLAIMED.
-* 
+*
 * IN NO EVENT SHALL VERIDIAN CORPORATION, ITS AFFILIATED COMPANIES, OR THE
 * U.S. GOVERNMENT OR ANY OF ITS AGENCIES BE LIABLE FOR ANY DIRECT OR INDIRECT,
 * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
@@ -72,7 +72,7 @@
 * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
 * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-* 
+*
 * This license will be governed by the laws of the Commonwealth of Virginia,
 * without reference to its choice of law rules.
 */
@@ -92,17 +92,17 @@
 
 /*
  * This file contains functions for manipulating attributes of type
- *	time:	[[hh:]mm:]ss[.sss]
+ * time: [[hh:]mm:]ss[.sss]
  *
  * Each set has functions for:
- *	Decoding the value string to the machine representation.
- *	Encoding the internal attribute to external form
- *	Setting the value by =, + or - operators.
- *	Comparing a (decoded) value with the attribute value.
+ * Decoding the value string to the machine representation.
+ * Encoding the internal attribute to external form
+ * Setting the value by =, + or - operators.
+ * Comparing a (decoded) value with the attribute value.
  *
  * Some or all of the functions for an attribute type may be shared with
  * other attribute types.
- * 
+ *
  * The prototypes are declared in "attribute.h"
  *
  * --------------------------------------------------
@@ -115,9 +115,9 @@
 /*
  * decode_time - decode time into into attribute structure of type ATR_TYPE_LONG
  *
- *	Returns: 0 if ok
- *		>0 error number if error
- *		*patr elements set
+ * Returns: 0 if ok
+ *  >0 error number if error
+ *  *patr elements set
  */
 
 #define PBS_MAX_TIME (LONG_MAX - 1)
@@ -138,9 +138,9 @@ int decode_time(
   char *workval;
   char *workvalsv;
 
-  if ((val == NULL) || (strlen(val) == 0)) 
+  if ((val == NULL) || (strlen(val) == 0))
     {
-    patr->at_flags = (patr->at_flags & ~ATR_VFLAG_SET)|ATR_VFLAG_MODIFY;
+    patr->at_flags = (patr->at_flags & ~ATR_VFLAG_SET) | ATR_VFLAG_MODIFY;
 
     patr->at_val.at_long = 0;
 
@@ -152,6 +152,7 @@ int decode_time(
   /* FORMAT:  HH:MM:SS[.MS] */
 
   workval = strdup(val);
+
   workvalsv = workval;
 
   for (i = 0;i < 3;++i)
@@ -159,24 +160,33 @@ int decode_time(
 
   msec[i] = '\0';
 
-  for (pc = workval;*pc;++pc) 
+  for (pc = workval;*pc;++pc)
     {
-    if (*pc == ':') 
+    if (*pc == ':')
       {
-			if (++ncolon > 2)
-				goto badval;
-			*pc = '\0';
-			rv = (rv * 60) + atoi(workval);
-			workval = pc + 1;
+      if (++ncolon > 2)
+        goto badval;
 
-		} else if (*pc == '.') {
-			*pc++ = '\0';
-			for (i = 0; (i < 3) && *pc; ++i)
-				msec[i] = *pc++;
-			break;
-		} else if ( !isdigit((int)*pc) ) { 
-			goto badval;	/* bad value */
-		}
+      *pc = '\0';
+
+      rv = (rv * 60) + atoi(workval);
+
+      workval = pc + 1;
+
+      }
+    else if (*pc == '.')
+      {
+      *pc++ = '\0';
+
+      for (i = 0; (i < 3) && *pc; ++i)
+        msec[i] = *pc++;
+
+      break;
+      }
+    else if (!isdigit((int)*pc))
+      {
+      goto badval; /* bad value */
+      }
     }
 
   rv = (rv * 60) + atoi(workval);
@@ -188,6 +198,7 @@ int decode_time(
     rv++;
 
   patr->at_val.at_long = rv;
+
   patr->at_flags |= ATR_VFLAG_SET | ATR_VFLAG_MODIFY;
 
   free(workvalsv);
@@ -196,7 +207,7 @@ int decode_time(
 
   return(0);
 
-badval:	
+badval:
   free(workvalsv);
 
   return(PBSE_BADATVAL);
@@ -208,11 +219,11 @@ badval:
 
 /*
  * encode_time - encode attribute of type long into attr_extern
- *	with value in form of [[hh:]mm:]ss
+ * with value in form of [[hh:]mm:]ss
  *
- *	Returns: >0 if ok
- *		 =0 if no value, no attrlist link added
- *		 <0 if error
+ * Returns: >0 if ok
+ *   =0 if no value, no attrlist link added
+ *   <0 if error
  */
 /*ARGSUSED*/
 
@@ -230,13 +241,13 @@ int encode_time(
 
   {
   size_t  ct;
-  char	  cvnbuf[CVNBUFSZ];
-  int 	  hr;
-  int	  min;
-  long	  n;
+  char   cvnbuf[CVNBUFSZ];
+  int    hr;
+  int   min;
+  long   n;
   svrattrl *pal;
-  int	  sec;
-  char	 *pv;
+  int   sec;
+  char  *pv;
 
   if (attr == NULL)
     {
@@ -251,6 +262,7 @@ int encode_time(
     }
 
   n   = attr->at_val.at_long;
+
   hr  = n / 3600;
   n   = n % 3600;
   min = n / 60;
@@ -259,8 +271,8 @@ int encode_time(
 
   pv = cvnbuf;
 
-  sprintf(pv,"%02d:%02d:%02d", 
-    hr, min, sec);
+  sprintf(pv, "%02d:%02d:%02d",
+          hr, min, sec);
 
   pv += strlen(pv);
 
@@ -268,7 +280,7 @@ int encode_time(
 
   if (phead != NULL)
     {
-    pal = attrlist_create(atname,rsname,ct);
+    pal = attrlist_create(atname, rsname, ct);
 
     if (pal == NULL)
       {
@@ -277,19 +289,19 @@ int encode_time(
       return(-1);
       }
 
-    memcpy(pal->al_value,cvnbuf,ct);
+    memcpy(pal->al_value, cvnbuf, ct);
 
     pal->al_flags = attr->at_flags;
 
-    append_link(phead,&pal->al_link,pal);
+    append_link(phead, &pal->al_link, pal);
     }
   else
     {
-    strcpy(atname,cvnbuf);
+    strcpy(atname, cvnbuf);
     }
 
   /* SUCCESS */
-	
+
   return(1);
   }
 

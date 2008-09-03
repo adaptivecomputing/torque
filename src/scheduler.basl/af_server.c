@@ -1,45 +1,45 @@
 /*
 *         OpenPBS (Portable Batch System) v2.3 Software License
-* 
+*
 * Copyright (c) 1999-2000 Veridian Information Solutions, Inc.
 * All rights reserved.
-* 
+*
 * ---------------------------------------------------------------------------
 * For a license to use or redistribute the OpenPBS software under conditions
 * other than those described below, or to purchase support for this software,
 * please contact Veridian Systems, PBS Products Department ("Licensor") at:
-* 
+*
 *    www.OpenPBS.org  +1 650 967-4675                  sales@OpenPBS.org
 *                        877 902-4PBS (US toll-free)
 * ---------------------------------------------------------------------------
-* 
+*
 * This license covers use of the OpenPBS v2.3 software (the "Software") at
 * your site or location, and, for certain users, redistribution of the
 * Software to other sites and locations.  Use and redistribution of
 * OpenPBS v2.3 in source and binary forms, with or without modification,
 * are permitted provided that all of the following conditions are met.
 * After December 31, 2001, only conditions 3-6 must be met:
-* 
+*
 * 1. Commercial and/or non-commercial use of the Software is permitted
 *    provided a current software registration is on file at www.OpenPBS.org.
 *    If use of this software contributes to a publication, product, or
 *    service, proper attribution must be given; see www.OpenPBS.org/credit.html
-* 
+*
 * 2. Redistribution in any form is only permitted for non-commercial,
 *    non-profit purposes.  There can be no charge for the Software or any
 *    software incorporating the Software.  Further, there can be no
 *    expectation of revenue generated as a consequence of redistributing
 *    the Software.
-* 
+*
 * 3. Any Redistribution of source code must retain the above copyright notice
 *    and the acknowledgment contained in paragraph 6, this list of conditions
 *    and the disclaimer contained in paragraph 7.
-* 
+*
 * 4. Any Redistribution in binary form must reproduce the above copyright
 *    notice and the acknowledgment contained in paragraph 6, this list of
 *    conditions and the disclaimer contained in paragraph 7 in the
 *    documentation and/or other materials provided with the distribution.
-* 
+*
 * 5. Redistributions in any form must be accompanied by information on how to
 *    obtain complete source code for the OpenPBS software and any
 *    modifications and/or additions to the OpenPBS software.  The source code
@@ -47,23 +47,23 @@
 *    than the cost of distribution plus a nominal fee, and all modifications
 *    and additions to the Software must be freely redistributable by any party
 *    (including Licensor) without restriction.
-* 
+*
 * 6. All advertising materials mentioning features or use of the Software must
 *    display the following acknowledgment:
-* 
+*
 *     "This product includes software developed by NASA Ames Research Center,
-*     Lawrence Livermore National Laboratory, and Veridian Information 
+*     Lawrence Livermore National Laboratory, and Veridian Information
 *     Solutions, Inc.
 *     Visit www.OpenPBS.org for OpenPBS software support,
 *     products, and information."
-* 
+*
 * 7. DISCLAIMER OF WARRANTY
-* 
+*
 * THIS SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND. ANY EXPRESS
 * OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
 * OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT
 * ARE EXPRESSLY DISCLAIMED.
-* 
+*
 * IN NO EVENT SHALL VERIDIAN CORPORATION, ITS AFFILIATED COMPANIES, OR THE
 * U.S. GOVERNMENT OR ANY OF ITS AGENCIES BE LIABLE FOR ANY DIRECT OR INDIRECT,
 * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
@@ -72,7 +72,7 @@
 * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
 * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-* 
+*
 * This license will be governed by the laws of the Commonwealth of Virginia,
 * without reference to its choice of law rules.
 */
@@ -111,19 +111,21 @@
 /* File Scope Variables */
 static char ident[] = "@(#) $RCSfile$ $Revision$";
 
-struct ServerSortArgs {
-        Server  **array;
-        SetServer *set;
-        union {
-                int      (*ifunc)();
-		double   (*ffunc)();
-                char    *(*sfunc)();
-                DateTime (*dfunc)();
-                Size     (*szfunc)();
-        } key;
-        enum { INTKEY, FLOATKEY, STRINGKEY, DATETIMEKEY, SIZEKEY } keytype;
-        int  order;     /* ASC or DESC */
-};
+struct ServerSortArgs
+  {
+  Server  **array;
+  SetServer *set;
+  union
+    {
+    int (*ifunc)();
+    double(*ffunc)();
+    char    *(*sfunc)();
+    DateTime(*dfunc)();
+    Size(*szfunc)();
+    } key;
+  enum { INTKEY, FLOATKEY, STRINGKEY, DATETIMEKEY, SIZEKEY } keytype;
+  int  order;     /* ASC or DESC */
+  };
 
 static SetServer AllServers;
 
@@ -133,55 +135,67 @@ static SetServer AllServers;
 /* External Functions */
 /* Functions */
 
-static char *pbserror()
-{
-    if (pbs_errno <= PBSE_) {
-        return("Unknown PBS Error\n");
-    } else {
-        switch (pbs_errno) {
+static char *
+pbserror(void)
+  {
+  if (pbs_errno <= PBSE_)
+    {
+    return("Unknown PBS Error\n");
+    }
+  else
+    {
+    switch (pbs_errno)
+      {
 
-          case PBSE_BADHOST:
-                return("Unknown Host.");
+      case PBSE_BADHOST:
+        return("Unknown Host.");
 
-          case PBSE_NOCONNECTS:
-                return("Too many open connections.");
+      case PBSE_NOCONNECTS:
+        return("Too many open connections.");
 
-          case PBSE_NOSERVER:
-                return("No default server name.");
+      case PBSE_NOSERVER:
+        return("No default server name.");
 
-          case PBSE_SYSTEM:
-                return("System call failure.");
+      case PBSE_SYSTEM:
+        return("System call failure.");
 
-          case PBSE_PERM:
-                return("No Permission.");
+      case PBSE_PERM:
+        return("No Permission.");
 
-          case PBSE_PROTOCOL:
-                return("Communication failure.");
+      case PBSE_PROTOCOL:
+        return("Communication failure.");
 
-         default:
-                return(EMPTYSTR);
-        }
+      default:
+        return(EMPTYSTR);
+      }
 
     }
-}
-static int socket_to_conn(sock)
-int sock;                   /* opened socket */
-{
-        int     i;
+  }
 
-        for (i=0; i<NCONNECTS; i++) {
-                if (connection[i].ch_inuse == 0) {
+static int
+socket_to_conn(
+  int sock                   /* opened socket */
+)
+  {
+  int     i;
 
-                        connection[i].ch_inuse = 1;
-                        connection[i].ch_errno = 0;
-                        connection[i].ch_socket= sock;
-                        connection[i].ch_errtxt = NULL;
-                        return (i);
-                }
-        }
-        pbs_errno = PBSE_NOCONNECTS;
-        return (-1);
-}
+  for (i = 0; i < NCONNECTS; i++)
+    {
+    if (connection[i].ch_inuse == 0)
+      {
+
+      connection[i].ch_inuse = 1;
+      connection[i].ch_errno = 0;
+      connection[i].ch_socket = sock;
+      connection[i].ch_errtxt = NULL;
+      return (i);
+      }
+    }
+
+  pbs_errno = PBSE_NOCONNECTS;
+
+  return (-1);
+  }
 
 /*
  * get_4byte() - read and return a 4 byte integer from the network
@@ -193,27 +207,33 @@ int sock;                   /* opened socket */
  *                      -1 if error.
  */
 
-static int get_4byte(sock, val)
-        int              sock;  /* socket to read from */
-        unsigned long   *val;   /* Return: interger from socket */
-{
+static int
+get_4byte(
+  int sock,  /* socket to read from */
+  unsigned long *val   /* Return: interger from socket */
+)
+  {
 
-        int amt;
-        union {
-                long unl;
-                char unc[sizeof (unsigned long)];
-        } un;
+  int amt;
+  union
+    {
+    long unl;
+    char unc[sizeof(unsigned long)];
+    } un;
 
-        un.unl = 0;
-        amt = read(sock, (char *)(un.unc+sizeof(unsigned long)-4), 4);
-        if (amt == 4) {
-                *val = ntohl(un.unl);
-                return (1);
-        } else if (amt == 0)
-                return (0);
-        else
-                return (-1);
-}
+  un.unl = 0;
+  amt = read(sock, (char *)(un.unc + sizeof(unsigned long) - 4), 4);
+
+  if (amt == 4)
+    {
+    *val = ntohl(un.unl);
+    return (1);
+    }
+  else if (amt == 0)
+    return (0);
+  else
+    return (-1);
+  }
 
 
 static void updateServerJobInfo(job, name, res, val)
@@ -221,2273 +241,2691 @@ Job     *job;
 char    *name;
 char    *res;
 char    *val;
-{
-        int     i = 0;
-        char    *scopy;
-        char    *scopy_saved;
-        char    *r;
-        int     hasRes;
-        int     foundMatch;
+  {
+  int     i = 0;
+  char    *scopy;
+  char    *scopy_saved;
+  char    *r;
+  int     hasRes;
+  int     foundMatch;
 
-        while(jattrinfo_map[i].name != NULLSTR) {
+  while (jattrinfo_map[i].name != NULLSTR)
+    {
 
-          if( STRCMP(name, ==, jattrinfo_map[i].name) ) {
-		scopy = NULLSTR;
-                dynamic_strcpy(&scopy, jattrinfo_map[i].res);
-                scopy_saved = scopy;
+    if (STRCMP(name, == , jattrinfo_map[i].name))
+      {
+      scopy = NULLSTR;
+      dynamic_strcpy(&scopy, jattrinfo_map[i].res);
+      scopy_saved = scopy;
 
-                if( scopy == NULLSTR || \
-                  (r = strtok(scopy, ",")) == NULLSTR ) {
-                        foundMatch = TRUE;
-                        hasRes = FALSE;
-                } else {
+      if (scopy == NULLSTR || \
+          (r = strtok(scopy, ",")) == NULLSTR)
+        {
+        foundMatch = TRUE;
+        hasRes = FALSE;
+        }
+      else
+        {
 
-                        foundMatch = FALSE;
-                        hasRes = TRUE;
-                        while( r != NULLSTR )  {
-                                if( STRCMP( res, ==, r ) ) {
-                                        foundMatch = TRUE;
-                                        break;
-                                }
-                                r= strtok(NULLSTR, ",");
-                        } /* while */
-                }
-                varstrFree(scopy_saved);
+        foundMatch = FALSE;
+        hasRes = TRUE;
 
-                if( !foundMatch ) {
-                      i++;
-                        continue;
-                }
-                switch(jattrinfo_map[i].type) {
-                    case SERV_INT:
-                      if( strchr(val, ':') == NULL ) {
+        while (r != NULLSTR)
+          {
+          if (STRCMP(res, == , r))
+            {
+            foundMatch = TRUE;
+            break;
+            }
 
-			if( hasRes )
-                              jattrinfo_map[i].putfunc(job, res, strToInt(val));
-			else
-                              jattrinfo_map[i].putfunc(job, strToInt(val));
+          r = strtok(NULLSTR, ",");
+          } /* while */
+        }
 
-                      } else {
+      varstrFree(scopy_saved);
 
-			if( hasRes )
-                              jattrinfo_map[i].putfunc(job, res,
-                                                         strtimeToSecs(val));
-			else
-                              jattrinfo_map[i].putfunc(job, strtimeToSecs(val));
-                      }
-                      return;
-                    case SERV_FLT:
-                      if( hasRes )
-                         jattrinfo_map[i].putfunc(job, res, strToFloat(val));
-                      else
-                         jattrinfo_map[i].putfunc(job, strToFloat(val));
-                      return;
-                    case SERV_SIZE:
-                      if( hasRes )
-                         jattrinfo_map[i].putfunc(job, res, strToSize(val));
-                      else
-                         jattrinfo_map[i].putfunc(job, strToSize(val));
-                      return;
-                    case SERV_DTIME:
-                      if( hasRes )
-                         jattrinfo_map[i].putfunc(job, res,
-                                                        strsecsToDateTime(val));
-                      else {
-                         jattrinfo_map[i].putfunc(job,
-                                                        strsecsToDateTime(val));
-                      }
-                      return;
-                    case SERV_JSTATE:
-                      if( hasRes )
-                         jattrinfo_map[i].putfunc(job, res,
-                                                        strToJobState(val));
-                      else
-                         jattrinfo_map[i].putfunc(job,
-                                                        strToJobState(val));
-                      return;
-                    case SERV_BOOL:
-                      if( hasRes )
-                         jattrinfo_map[i].putfunc(job, res, strToBool(val));
-                      else
-                         jattrinfo_map[i].putfunc(job, strToBool(val));
-                      return;
-                    default:
-                      if( hasRes )
-                         jattrinfo_map[i].putfunc(job, res, val);
-                      else
-                         jattrinfo_map[i].putfunc(job, val);
-                      return;
-                  } /* switch */
-                } /* if */
+      if (!foundMatch)
+        {
+        i++;
+        continue;
+        }
 
-                i++;
-        } /* while */
-}
+      switch (jattrinfo_map[i].type)
+        {
+
+        case SERV_INT:
+
+          if (strchr(val, ':') == NULL)
+            {
+
+            if (hasRes)
+              jattrinfo_map[i].putfunc(job, res, strToInt(val));
+            else
+              jattrinfo_map[i].putfunc(job, strToInt(val));
+
+            }
+          else
+            {
+
+            if (hasRes)
+              jattrinfo_map[i].putfunc(job, res,
+                                       strtimeToSecs(val));
+            else
+              jattrinfo_map[i].putfunc(job, strtimeToSecs(val));
+            }
+
+          return;
+
+        case SERV_FLT:
+
+          if (hasRes)
+            jattrinfo_map[i].putfunc(job, res, strToFloat(val));
+          else
+            jattrinfo_map[i].putfunc(job, strToFloat(val));
+
+          return;
+
+        case SERV_SIZE:
+          if (hasRes)
+            jattrinfo_map[i].putfunc(job, res, strToSize(val));
+          else
+            jattrinfo_map[i].putfunc(job, strToSize(val));
+
+          return;
+
+        case SERV_DTIME:
+          if (hasRes)
+            jattrinfo_map[i].putfunc(job, res,
+                                     strsecsToDateTime(val));
+          else
+            {
+            jattrinfo_map[i].putfunc(job,
+                                     strsecsToDateTime(val));
+            }
+
+          return;
+
+        case SERV_JSTATE:
+
+          if (hasRes)
+            jattrinfo_map[i].putfunc(job, res,
+                                     strToJobState(val));
+          else
+            jattrinfo_map[i].putfunc(job,
+                                     strToJobState(val));
+
+          return;
+
+        case SERV_BOOL:
+          if (hasRes)
+            jattrinfo_map[i].putfunc(job, res, strToBool(val));
+          else
+            jattrinfo_map[i].putfunc(job, strToBool(val));
+
+          return;
+
+        default:
+          if (hasRes)
+            jattrinfo_map[i].putfunc(job, res, val);
+          else
+            jattrinfo_map[i].putfunc(job, val);
+
+          return;
+        } /* switch */
+      } /* if */
+
+    i++;
+    } /* while */
+  }
 
 /* External Functions */
 
-int inAccumTable( resName )
-char	*resName;
-{
-	int	i = 0;
+int
+inAccumTable(char *resName)
+  {
+  int i = 0;
 
-	while( accumTable[i] != NULLSTR ) {
-		if( STRCMP( accumTable[i], ==, resName ) ) 
-			return(TRUE);
-		i++;
-	}
-	return(FALSE);
-}
+  while (accumTable[i] != NULLSTR)
+    {
+    if (STRCMP(accumTable[i], == , resName))
+      return(TRUE);
 
-static void accumRes( job )
-Job	*job;
-{
-	struct IntRes 	*ires;
-	struct SizeRes 	*sres;
-	int		ival;
-	Size		sval;
+    i++;
+    }
 
-	assert( job != NOJOB && JobStateGet(job) != DELETED );
+  return(FALSE);
+  }
 
-	for(ires=job->intResReq; ires; ires=ires->nextptr) {
+static void accumRes(job)
+Job *job;
+  {
 
-		if( inAccumTable(ires->name) ) {
-			ival = ServerIntResAssignGet(job->server, ires->name);
-			if( ival == -1 )
-				ival = ires->value;
-			else
-				ival += ires->value;
-			ServerIntResAssignPut(job->server, ires->name, ival);
+  struct IntRes  *ires;
 
-			ival = QueIntResAssignGet(job->queue, ires->name);
-			if( ival == -1 )
-				ival = ires->value;
-			else
-				ival += ires->value;
-			QueIntResAssignPut(job->queue, ires->name, ival);
-		}
-	}
+  struct SizeRes  *sres;
+  int  ival;
+  Size  sval;
 
-	for(sres=job->sizeResReq; sres; sres=sres->nextptr) {
+  assert(job != NOJOB && JobStateGet(job) != DELETED);
 
-		if( inAccumTable(sres->name) ) {
-			sval = ServerSizeResAssignGet(job->server, sres->name);
-			if( SIZECMP( sval, ==, strToSize("-1b") ) )
-				sval = sres->value;
-			else
-				sval = sizeAdd(sval, sres->value);
-			ServerSizeResAssignPut(job->server, sres->name, sval);
+  for (ires = job->intResReq; ires; ires = ires->nextptr)
+    {
 
-			sval = QueSizeResAssignGet(job->queue, sres->name);
-			if( SIZECMP( sval, ==, strToSize("-1b") ) )
-				sval = sres->value;
-			else
-				sval = sizeAdd(sval, sres->value);
-			QueSizeResAssignPut(job->queue, sres->name, sval);
-		}
-	}
-}
+    if (inAccumTable(ires->name))
+      {
+      ival = ServerIntResAssignGet(job->server, ires->name);
+
+      if (ival == -1)
+        ival = ires->value;
+      else
+        ival += ires->value;
+
+      ServerIntResAssignPut(job->server, ires->name, ival);
+
+      ival = QueIntResAssignGet(job->queue, ires->name);
+
+      if (ival == -1)
+        ival = ires->value;
+      else
+        ival += ires->value;
+
+      QueIntResAssignPut(job->queue, ires->name, ival);
+      }
+    }
+
+  for (sres = job->sizeResReq; sres; sres = sres->nextptr)
+    {
+
+    if (inAccumTable(sres->name))
+      {
+      sval = ServerSizeResAssignGet(job->server, sres->name);
+
+      if (SIZECMP(sval, == , strToSize("-1b")))
+        sval = sres->value;
+      else
+        sval = sizeAdd(sval, sres->value);
+
+      ServerSizeResAssignPut(job->server, sres->name, sval);
+
+      sval = QueSizeResAssignGet(job->queue, sres->name);
+
+      if (SIZECMP(sval, == , strToSize("-1b")))
+        sval = sres->value;
+      else
+        sval = sizeAdd(sval, sres->value);
+
+      QueSizeResAssignPut(job->queue, sres->name, sval);
+      }
+    }
+  }
 
 /* Returns NULL if server has a bad value */
-char *ServerInetAddrGet (server)
+char *ServerInetAddrGet(server)
 Server *server;
-{
-      if( server == NOSERVER )
-	return(NULLSTR);
-	
-       return server->inetAddr;
-}
+  {
+  if (server == NOSERVER)
+    return(NULLSTR);
 
-char *ServerDefQueGet (server)
+  return server->inetAddr;
+  }
+
+char *ServerDefQueGet(server)
 Server *server;
-{
-       if( server == NOSERVER )
-	return(NULLSTR);
-	
-       return server->defQue;
-}
+  {
+  if (server == NOSERVER)
+    return(NULLSTR);
 
-int ServerSocketGet (server)
+  return server->defQue;
+  }
+
+int ServerSocketGet(server)
 Server *server;
-{
-       assert( server != NOSERVER );
+  {
+  assert(server != NOSERVER);
 
-       return server->socket;
-}
+  return server->socket;
+  }
 
-int ServerPortNumberOneWayGet (server)
-Server	*server;
-{
-       assert( server != NOSERVER );
-
-       return server->portNumberOneWay;
-}
-
-int ServerPortNumberTwoWayGet (server)
-Server	*server;
-{
-       assert( server != NOSERVER );
-
-       return server->portNumberTwoWay;
-}
-
-int ServerFdTwoWayGet (server)
+int ServerPortNumberOneWayGet(server)
 Server *server;
-{
-       assert( server != NOSERVER );
+  {
+  assert(server != NOSERVER);
 
-       return server->fdTwoWay;
-}
+  return server->portNumberOneWay;
+  }
 
-int ServerFdOneWayGet (server)
+int ServerPortNumberTwoWayGet(server)
 Server *server;
-{
-       assert( server != NOSERVER );
+  {
+  assert(server != NOSERVER);
 
-       return server->fdOneWay;
-}
+  return server->portNumberTwoWay;
+  }
 
-int ServerStateGet (server)
+int ServerFdTwoWayGet(server)
 Server *server;
-{
-        if( server == NOSERVER )
-		return(-1);	/* unknown state */
+  {
+  assert(server != NOSERVER);
 
-	return server->state;
-}
+  return server->fdTwoWay;
+  }
 
-int ServerMaxRunJobsGet (server)
+int ServerFdOneWayGet(server)
 Server *server;
-{
-        if( server == NOSERVER )
-		return(0);
+  {
+  assert(server != NOSERVER);
 
-	return server->maxRunJobs;
-}
+  return server->fdOneWay;
+  }
 
-int ServerMaxRunJobsPerUserGet (server)
+int ServerStateGet(server)
 Server *server;
-{
-        if( server == NOSERVER )
-		return(0);
+  {
+  if (server == NOSERVER)
+    return(-1); /* unknown state */
 
-	return server->maxRunJobsPerUser;
-}
+  return server->state;
+  }
 
-int ServerMaxRunJobsPerGroupGet (server)
+int ServerMaxRunJobsGet(server)
 Server *server;
-{
-        if( server == NOSERVER )
-		return(0);
+  {
+  if (server == NOSERVER)
+    return(0);
 
-	return server->maxRunJobsPerGroup;
-}
+  return server->maxRunJobs;
+  }
+
+int ServerMaxRunJobsPerUserGet(server)
+Server *server;
+  {
+  if (server == NOSERVER)
+    return(0);
+
+  return server->maxRunJobsPerUser;
+  }
+
+int ServerMaxRunJobsPerGroupGet(server)
+Server *server;
+  {
+  if (server == NOSERVER)
+    return(0);
+
+  return server->maxRunJobsPerGroup;
+  }
 
 SetQue *ServerQueuesGet(server)
 Server *server;
-{
-	if( server == NOSERVER )
-		return(EMPTYSETQUE);
+  {
+  if (server == NOSERVER)
+    return(EMPTYSETQUE);
 
-	return(&server->queues);
-}
+  return(&server->queues);
+  }
 
 SetCNode *ServerNodesGet(server)
 Server *server;
-{
-	if( server == NOSERVER )
-		return(EMPTYSETCNODE);
+  {
+  if (server == NOSERVER)
+    return(EMPTYSETCNODE);
 
-	return(&server->nodes);
-}
+  return(&server->nodes);
+  }
 
 SetCNode *AllNodesGet()
-{
-	Server	*server;
+  {
+  Server *server;
 
-	server = AllServersLocalHostGet();
+  server = AllServersLocalHostGet();
 
-	if( server == NOSERVER )
-		return(EMPTYSETCNODE);
+  if (server == NOSERVER)
+    return(EMPTYSETCNODE);
 
-	return(ServerNodesGet(server));
-}
+  return(ServerNodesGet(server));
+  }
 
 CNode *AllNodesLocalHostGet()
-{
-	SetCNode *nodes;
-	CNode	 *n;
-	char	 *serverName;
-	char	 *nodeName;
+  {
+  SetCNode *nodes;
+  CNode  *n;
+  char  *serverName;
+  char  *nodeName;
 
-	serverName = ServerInetAddrGet(AllServersLocalHostGet());
+  serverName = ServerInetAddrGet(AllServersLocalHostGet());
 
-	nodes = AllNodesGet();
+  nodes = AllNodesGet();
 
-	if( nodes ) {
-	  for(n=nodes->head; n; n=n->nextptr) {
-		nodeName = ResMomInetAddrGet(CNodeResMomGet(n));
+  if (nodes)
+    {
+    for (n = nodes->head; n; n = n->nextptr)
+      {
+      nodeName = ResMomInetAddrGet(CNodeResMomGet(n));
 
-                if( STRCMP(serverName, ==, nodeName) ) {
-			return(n);
-		}
-	  }
-	}
-	return(NOCNODE);
-}
+      if (STRCMP(serverName, == , nodeName))
+        {
+        return(n);
+        }
+      }
+    }
+
+  return(NOCNODE);
+  }
 
 struct SetJobElement *ServerJobsGet(server)
-Server *server;
-{
-	if( server == NOSERVER )
-		return(EMPTYSETJOB);
+      Server *server;
+  {
+  if (server == NOSERVER)
+    return(EMPTYSETJOB);
 
-	return(server->jobs.head);
-}
+  return(server->jobs.head);
+  }
 
 int ServerIntResAvailGet(server, name)
-Server	*server;
-char	*name;
-{
-	if( server == NOSERVER )
-		return(-1);
+Server *server;
+char *name;
+  {
+  if (server == NOSERVER)
+    return(-1);
 
-	return(IntResValueGet(server->intResAvail, name));
-}
+  return(IntResValueGet(server->intResAvail, name));
+  }
 
 int ServerIntResAssignGet(server, name)
-Server	*server;
-char	*name;
-{
-	if( server == NOSERVER )
-		return(-1);
+Server *server;
+char *name;
+  {
+  if (server == NOSERVER)
+    return(-1);
 
-	return(IntResValueGet(server->intResAssign, name));
-}
+  return(IntResValueGet(server->intResAssign, name));
+  }
 
 Size ServerSizeResAvailGet(server, name)
-Server	*server;
-char	*name;
-{
-	if( server == NOSERVER )
-		return(strToSize("-1b"));
+Server *server;
+char *name;
+  {
+  if (server == NOSERVER)
+    return(strToSize("-1b"));
 
-	return(SizeResValueGet(server->sizeResAvail, name));
-}
+  return(SizeResValueGet(server->sizeResAvail, name));
+  }
 
 Size ServerSizeResAssignGet(server, name)
-Server	*server;
-char	*name;
-{
-	if( server == NOSERVER )
-		return(strToSize("-1b"));
+Server *server;
+char *name;
+  {
+  if (server == NOSERVER)
+    return(strToSize("-1b"));
 
-	return(SizeResValueGet(server->sizeResAssign, name));
-}
+  return(SizeResValueGet(server->sizeResAssign, name));
+  }
 
 char *ServerStringResAvailGet(server, name)
-Server	*server;
-char	*name;
-{
-	if( server == NOSERVER )
-		return(NULLSTR);
+Server *server;
+char *name;
+  {
+  if (server == NOSERVER)
+    return(NULLSTR);
 
-	return(StringResValueGet(server->stringResAvail, name));
-}
+  return(StringResValueGet(server->stringResAvail, name));
+  }
 
 char *ServerStringResAssignGet(server, name)
-Server	*server;
-char	*name;
-{
-	if( server == NOSERVER )
-		return(NULLSTR);
+Server *server;
+char *name;
+  {
+  if (server == NOSERVER)
+    return(NULLSTR);
 
-	return(StringResValueGet(server->stringResAssign, name));
-}
+  return(StringResValueGet(server->stringResAssign, name));
+  }
 
 /* Put functions */
-void ServerInetAddrPut (server, server_name)
+void ServerInetAddrPut(server, server_name)
 Server *server;
 char   *server_name;
-{
-       assert( server != NOSERVER );
+  {
+  assert(server != NOSERVER);
 
-	/* keep this as a global string with pptr set to: 0 */
-       dynamic_strcpy(&server->inetAddr, server_name);
-}
+  /* keep this as a global string with pptr set to: 0 */
+  dynamic_strcpy(&server->inetAddr, server_name);
+  }
 
-void ServerDefQuePut (server, queue_name)
+void ServerDefQuePut(server, queue_name)
 Server *server;
 char   *queue_name;
-{
-       assert( server != NOSERVER );
+  {
+  assert(server != NOSERVER);
 
-       dynamic_strcpy(&server->defQue, queue_name);
-       varstrModPptr(server->defQue, server);
-}
+  dynamic_strcpy(&server->defQue, queue_name);
+  varstrModPptr(server->defQue, server);
+  }
 
 
-void ServerPortNumberOneWayPut (server, port)
+void ServerPortNumberOneWayPut(server, port)
 Server *server;
-int    port;	
-{
-       assert( server != NOSERVER );
+int    port;
+  {
+  assert(server != NOSERVER);
 
-       server->portNumberOneWay = port;
-}
-	
-void ServerPortNumberTwoWayPut (server, port)
+  server->portNumberOneWay = port;
+  }
+
+void ServerPortNumberTwoWayPut(server, port)
 Server *server;
-int    port;	
-{
-       assert( server != NOSERVER );
+int    port;
+  {
+  assert(server != NOSERVER);
 
-       server->portNumberTwoWay = port;
-}
+  server->portNumberTwoWay = port;
+  }
 
-void ServerSocketPut (server, fd)
-Server *server;
-int    fd;	
-{
-       assert( server != NOSERVER );
-
-       server->socket = fd;
-}
-
-void ServerFdTwoWayPut (server, fd)
-Server *server;
-int    fd; 
-{
-       assert( server != NOSERVER );
-
-       server->fdTwoWay = fd;
-}
-
-void ServerFdOneWayPut (server, fd)
+void ServerSocketPut(server, fd)
 Server *server;
 int    fd;
-{
-       assert( server != NOSERVER );
+  {
+  assert(server != NOSERVER);
 
-       server->fdOneWay = fd;
-}
+  server->socket = fd;
+  }
 
-void ServerStatePut (server, state)
+void ServerFdTwoWayPut(server, fd)
+Server *server;
+int    fd;
+  {
+  assert(server != NOSERVER);
+
+  server->fdTwoWay = fd;
+  }
+
+void ServerFdOneWayPut(server, fd)
+Server *server;
+int    fd;
+  {
+  assert(server != NOSERVER);
+
+  server->fdOneWay = fd;
+  }
+
+void ServerStatePut(server, state)
 Server *server;
 int    state;
-{
-        assert( server != NOSERVER );
+  {
+  assert(server != NOSERVER);
 
-	server->state = state;
-}
+  server->state = state;
+  }
 
-void ServerMaxRunJobsPut (server, maxRunJobs)
+void ServerMaxRunJobsPut(server, maxRunJobs)
 Server *server;
 int    maxRunJobs;
-{
-        assert( server != NOSERVER );
+  {
+  assert(server != NOSERVER);
 
-	server->maxRunJobs = maxRunJobs;
-}
+  server->maxRunJobs = maxRunJobs;
+  }
 
-void ServerMaxRunJobsPerUserPut (server, maxRunJobsPerUser)
+void ServerMaxRunJobsPerUserPut(server, maxRunJobsPerUser)
 Server *server;
 int    maxRunJobsPerUser;
-{
-        assert( server != NOSERVER );
+  {
+  assert(server != NOSERVER);
 
-	server->maxRunJobsPerUser = maxRunJobsPerUser;
-}
+  server->maxRunJobsPerUser = maxRunJobsPerUser;
+  }
 
-void ServerMaxRunJobsPerGroupPut (server, maxRunJobsPerGroup)
+void ServerMaxRunJobsPerGroupPut(server, maxRunJobsPerGroup)
 Server *server;
 int    maxRunJobsPerGroup;
-{
-        assert( server != NOSERVER );
+  {
+  assert(server != NOSERVER);
 
-	server->maxRunJobsPerGroup = maxRunJobsPerGroup;
-}
+  server->maxRunJobsPerGroup = maxRunJobsPerGroup;
+  }
 
 void ServerIntResAvailPut(server, name, value)
-Server	*server;
-char	*name;
-int	value;
-{
-       struct   IntRes * m;
+Server *server;
+char *name;
+int value;
+  {
 
-       assert( server != NOSERVER && name != NULLSTR );
+  struct   IntRes * m;
 
-       m = IntResValuePut(server->intResAvail, name, value, server);
+  assert(server != NOSERVER && name != NULLSTR);
 
-       if( m != NULL )
-                server->intResAvail = m;
-}
+  m = IntResValuePut(server->intResAvail, name, value, server);
+
+  if (m != NULL)
+    server->intResAvail = m;
+  }
 
 void ServerIntResAssignPut(server, name, value)
-Server	*server;
-char	*name;
-int	value;
-{
-       struct   IntRes *m;
+Server *server;
+char *name;
+int value;
+  {
 
-       assert( server != NOSERVER && name != NULLSTR );
+  struct   IntRes *m;
 
-       m = IntResValuePut(server->intResAssign, name, value, server);
+  assert(server != NOSERVER && name != NULLSTR);
 
-       if( m != NULL )
-                server->intResAssign = m;
-}
+  m = IntResValuePut(server->intResAssign, name, value, server);
+
+  if (m != NULL)
+    server->intResAssign = m;
+  }
 
 void ServerSizeResAvailPut(server, name, value)
-Server	*server;
-char	*name;
-Size	value;
-{
-       struct   SizeRes *m;
+Server *server;
+char *name;
+Size value;
+  {
 
-       assert( server != NOSERVER && name != NULLSTR );
+  struct   SizeRes *m;
 
-       m = SizeResValuePut(server->sizeResAvail, name, value, server);
+  assert(server != NOSERVER && name != NULLSTR);
 
-       if( m != NULL )
-                server->sizeResAvail = m;
-}
+  m = SizeResValuePut(server->sizeResAvail, name, value, server);
+
+  if (m != NULL)
+    server->sizeResAvail = m;
+  }
 
 void ServerSizeResAssignPut(server, name, value)
-Server	*server;
-char	*name;
-Size	value;
-{
-       struct   SizeRes *m;
+Server *server;
+char *name;
+Size value;
+  {
 
-       assert( server != NOSERVER && name != NULLSTR );
+  struct   SizeRes *m;
 
-       m = SizeResValuePut(server->sizeResAssign, name, value, server);
+  assert(server != NOSERVER && name != NULLSTR);
 
-       if( m != NULL )
-                server->sizeResAssign = m;
-}
+  m = SizeResValuePut(server->sizeResAssign, name, value, server);
+
+  if (m != NULL)
+    server->sizeResAssign = m;
+  }
 
 void ServerStringResAvailPut(server, name, value)
-Server	*server;
-char	*name;
+Server *server;
+char *name;
 char    *value;
-{
-       struct   StringRes *m;
+  {
 
-       assert( server != NOSERVER && name != NULLSTR );
+  struct   StringRes *m;
 
-       m = StringResValuePut(server->stringResAvail, name, value, server);
+  assert(server != NOSERVER && name != NULLSTR);
 
-       if( m != NULL )
-                server->stringResAvail = m;
-}
+  m = StringResValuePut(server->stringResAvail, name, value, server);
+
+  if (m != NULL)
+    server->stringResAvail = m;
+  }
 
 void ServerStringResAssignPut(server, name, value)
-Server	*server;
-char	*name;
+Server *server;
+char *name;
 char    *value;
-{
-       struct   StringRes *m;
+  {
 
-       assert( server != NOSERVER && name != NULLSTR );
+  struct   StringRes *m;
 
-       m = StringResValuePut(server->stringResAssign, name, value, server);
+  assert(server != NOSERVER && name != NULLSTR);
 
-       if( m != NULL )
-                server->stringResAssign = m;
-}
+  m = StringResValuePut(server->stringResAssign, name, value, server);
 
-void ServerPrint ( server )
+  if (m != NULL)
+    server->stringResAssign = m;
+  }
+
+void ServerPrint(server)
 Server *server;
-{
-	int state;
+  {
+  int state;
 
-	if( server == NOSERVER )
-		return;
+  if (server == NOSERVER)
+    return;
 
-	(void)printf("Server Name = %s\n", 
-	    ServerInetAddrGet(server) ? ServerInetAddrGet(server):"null");
-	(void)printf("\tPort Number (scheduler <- server) = %d\n",
-					ServerPortNumberOneWayGet( server ));
-	(void)printf("\tPort Number (scheduler <-> server) = %d\n",
-					ServerPortNumberTwoWayGet( server ));
-	(void)printf("\tSocket = %d\n", ServerSocketGet( server ));
-	(void)printf("\tConnect Fd = %d\n", ServerFdTwoWayGet( server ));
-	(void)printf("\tAccept  Fd = %d\n", ServerFdOneWayGet( server ));
-        state = ServerStateGet(server);
-	(void)printf("\tState = %d ", state);
-	switch( state ) {
-	  case SERVER_ACTIVE:
-				(void)printf("(ACTIVE)");
-				break;
-	  case SERVER_IDLE:
-				(void)printf("(IDLE)");
-				break;
-	  case SERVER_SCHED:
-				(void)printf("(SCHEDULING)");
-				break;
-	  case SERVER_TERM:
-				(void)printf("(TERMINATING)");
-				break;
-	  case SERVER_TERMDELAY:
-				(void)printf("(TERMINATING, DELAYED)");
-				break;
-	}
-	(void)printf("\n");
-	printf("\tMax Running Jobs = %d\n", ServerMaxRunJobsGet(server)); 
-	printf("\tMax Running Jobs Per User = %d\n",
-				ServerMaxRunJobsPerUserGet(server)); 
-	printf("\tMax Running Jobs Per Group = %d\n",
-				ServerMaxRunJobsPerGroupGet(server)); 
-	(void)printf("\tDefault Queue = %s\n", 
-	    ServerDefQueGet(server) ? ServerDefQueGet(server):"null");
-	IntResListPrint(server->intResAvail, "\tResources_available" );
-	SizeResListPrint(server->sizeResAvail, "\tResources_available" );
-	StringResListPrint(server->stringResAvail, "\tResources_available" );
-	IntResListPrint(server->intResAssign, "\tResources_assigned" );
-	SizeResListPrint(server->sizeResAssign, "\tResources_assigned" );
-	StringResListPrint(server->stringResAssign, "\tResources_assigned" );
-	SetQuePrint( ServerQueuesGet(server) );
-	printf("\tNodes managed:\n");
-	SetCNodePrint( ServerNodesGet(server) );
-}
+  (void)printf("Server Name = %s\n",
+               ServerInetAddrGet(server) ? ServerInetAddrGet(server) : "null");
 
-static void ServerInit2( server )
+  (void)printf("\tPort Number (scheduler <- server) = %d\n",
+               ServerPortNumberOneWayGet(server));
+
+  (void)printf("\tPort Number (scheduler <-> server) = %d\n",
+               ServerPortNumberTwoWayGet(server));
+
+  (void)printf("\tSocket = %d\n", ServerSocketGet(server));
+
+  (void)printf("\tConnect Fd = %d\n", ServerFdTwoWayGet(server));
+
+  (void)printf("\tAccept  Fd = %d\n", ServerFdOneWayGet(server));
+
+  state = ServerStateGet(server);
+
+  (void)printf("\tState = %d ", state);
+
+  switch (state)
+    {
+
+    case SERVER_ACTIVE:
+      (void)printf("(ACTIVE)");
+      break;
+
+    case SERVER_IDLE:
+      (void)printf("(IDLE)");
+      break;
+
+    case SERVER_SCHED:
+      (void)printf("(SCHEDULING)");
+      break;
+
+    case SERVER_TERM:
+      (void)printf("(TERMINATING)");
+      break;
+
+    case SERVER_TERMDELAY:
+      (void)printf("(TERMINATING, DELAYED)");
+      break;
+    }
+
+  (void)printf("\n");
+  printf("\tMax Running Jobs = %d\n", ServerMaxRunJobsGet(server));
+  printf("\tMax Running Jobs Per User = %d\n",
+         ServerMaxRunJobsPerUserGet(server));
+  printf("\tMax Running Jobs Per Group = %d\n",
+         ServerMaxRunJobsPerGroupGet(server));
+  (void)printf("\tDefault Queue = %s\n",
+               ServerDefQueGet(server) ? ServerDefQueGet(server) : "null");
+  IntResListPrint(server->intResAvail, "\tResources_available");
+  SizeResListPrint(server->sizeResAvail, "\tResources_available");
+  StringResListPrint(server->stringResAvail, "\tResources_available");
+  IntResListPrint(server->intResAssign, "\tResources_assigned");
+  SizeResListPrint(server->sizeResAssign, "\tResources_assigned");
+  StringResListPrint(server->stringResAssign, "\tResources_assigned");
+  SetQuePrint(ServerQueuesGet(server));
+  printf("\tNodes managed:\n");
+  SetCNodePrint(ServerNodesGet(server));
+  }
+
+static void ServerInit2(server)
 Server *server;
-{
-       assert( server != NOSERVER );
+  {
+  assert(server != NOSERVER);
 
-/*     DO NOT do ServerDefQuePut(server, NULLSTR) as the server->defQue */
-/*     may contain junk or valid malloc address and it could be deallocated */
-/*     by mistake */
-       server->defQue = NULLSTR;	
-       ServerStatePut( server, -1 ); 
-       ServerMaxRunJobsPut( server, 0 ); 
-       ServerMaxRunJobsPerUserPut( server, 0 ); 
-       ServerMaxRunJobsPerGroupPut( server, 0 ); 
-       server->intResAvail = NULL;	
-       server->intResAssign = NULL;	
-       server->sizeResAvail = NULL;	
-       server->sizeResAssign = NULL;	
-       server->stringResAvail = NULL;	
-       server->stringResAssign = NULL;	
-       SetQueInit( &server->queues );
-       SetJobInit( &server->jobs );
-}
-void ServerInit( server )
+  /*     DO NOT do ServerDefQuePut(server, NULLSTR) as the server->defQue */
+  /*     may contain junk or valid malloc address and it could be deallocated */
+  /*     by mistake */
+  server->defQue = NULLSTR;
+  ServerStatePut(server, -1);
+  ServerMaxRunJobsPut(server, 0);
+  ServerMaxRunJobsPerUserPut(server, 0);
+  ServerMaxRunJobsPerGroupPut(server, 0);
+  server->intResAvail = NULL;
+  server->intResAssign = NULL;
+  server->sizeResAvail = NULL;
+  server->sizeResAssign = NULL;
+  server->stringResAvail = NULL;
+  server->stringResAssign = NULL;
+  SetQueInit(&server->queues);
+  SetJobInit(&server->jobs);
+  }
+
+void ServerInit(server)
 Server *server;
-{
+  {
 
-       assert( server != NOSERVER );
-       /* initialize various things */
-       server->inetAddr = NULLSTR;
-       ServerPortNumberOneWayPut( server, 0 ); 
-       ServerPortNumberTwoWayPut( server, 0 ); 
-       ServerSocketPut( server, -1 ); 
-       ServerFdTwoWayPut( server, -1 );
-       ServerFdOneWayPut( server, -1 ); 
-       server->nextptr = NOSERVER;
-       ServerInit2( server );
-       SetCNodeInit( &server->nodes );
-}
+  assert(server != NOSERVER);
+  /* initialize various things */
+  server->inetAddr = NULLSTR;
+  ServerPortNumberOneWayPut(server, 0);
+  ServerPortNumberTwoWayPut(server, 0);
+  ServerSocketPut(server, -1);
+  ServerFdTwoWayPut(server, -1);
+  ServerFdOneWayPut(server, -1);
+  server->nextptr = NOSERVER;
+  ServerInit2(server);
+  SetCNodeInit(&server->nodes);
+  }
+
 /* ServerOpenInit: creates a local socket to listen to for server
-               scheduling commands. 
+               scheduling commands.
    RETURNS: 0 if successful; non-zero otherwise */
-int ServerOpenInit( server )
+int ServerOpenInit(server)
 Server *server;
-{
-       char     *id         = "ServerOpenInit";
-       static   struct   sockaddr_in saddr;
-       struct   hostent     *hp;
-       int	            sock;		
-       int                  t = 1;
-       char                 *hname;             
+  {
+  char     *id         = "ServerOpenInit";
 
-        hname = ServerInetAddrGet(server);
+  static   struct   sockaddr_in saddr;
 
-        assert( hname != NULLSTR );
+  struct   hostent     *hp;
+  int             sock;
+  int                  t = 1;
+  char                 *hname;
 
-        if ((hp=gethostbyname(hname)) == NULL) {
-                char    *prob = "gethostbyname";
+  hname = ServerInetAddrGet(server);
 
-                log_err(errno, id, prob);
-                perror(prob);
-                return(1);
-        }
+  assert(hname != NULLSTR);
 
-        if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-                char    *prob = "socket";
+  if ((hp = gethostbyname(hname)) == NULL)
+    {
+    char    *prob = "gethostbyname";
 
-                log_err(errno, id, prob);
-                perror(prob);
-                return(1);
-        }
+    log_err(errno, id, prob);
+    perror(prob);
+    return(1);
+    }
 
-        if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR,
-                        (char *)&t, sizeof(t)) == -1) {
-                char    *prob = "setsockopt";
+  if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0)
+    {
+    char    *prob = "socket";
 
-                log_err(errno, id, prob);
-                perror(prob);
-		ServerCloseFinal(server);
-                return(1);
-        }
+    log_err(errno, id, prob);
+    perror(prob);
+    return(1);
+    }
+
+  if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR,
+                 (char *)&t, sizeof(t)) == -1)
+    {
+    char    *prob = "setsockopt";
+
+    log_err(errno, id, prob);
+    perror(prob);
+    ServerCloseFinal(server);
+    return(1);
+    }
 
 
-        saddr.sin_family = AF_INET;
-        saddr.sin_port = htons((unsigned short) ServerPortNumberOneWayGet( server ));
-        (void)memcpy (&saddr.sin_addr, hp->h_addr, hp->h_length);
-        if (bind (sock, (struct sockaddr *)&saddr, sizeof(saddr)) < 0) {
-                char    *prob = "bind";
+  saddr.sin_family = AF_INET;
 
-                log_err(errno, id, prob);
-                perror(prob);
-		ServerCloseFinal(server);
-                return(1);
-        }
+  saddr.sin_port = htons((unsigned short) ServerPortNumberOneWayGet(server));
+  (void)memcpy(&saddr.sin_addr, hp->h_addr, hp->h_length);
 
-        if (listen (sock, 5) < 0) {
-                char    *prob = "listen";
+  if (bind(sock, (struct sockaddr *)&saddr, sizeof(saddr)) < 0)
+    {
+    char    *prob = "bind";
 
-                log_err(errno, id, prob);
-                perror(prob);
-		ServerCloseFinal(server);
-                return(1);
-        }
-        ServerSocketPut( server, sock );
-	return(0);
-}
+    log_err(errno, id, prob);
+    perror(prob);
+    ServerCloseFinal(server);
+    return(1);
+    }
+
+  if (listen(sock, 5) < 0)
+    {
+    char    *prob = "listen";
+
+    log_err(errno, id, prob);
+    perror(prob);
+    ServerCloseFinal(server);
+    return(1);
+    }
+
+  ServerSocketPut(server, sock);
+
+  return(0);
+  }
 
 /* ServerOpen: Opens a connection to a server.
-   Returns: 0 if succesful; non-zero otherwise 
+   Returns: 0 if succesful; non-zero otherwise
    NOTE: If a local socket is associated with the server, then both fdTwoWay
          and fdOneWay will be obtained. Otherwise, only an fdTwoWay will be
-         extracted. */ 
-int ServerOpen( server )
+         extracted. */
+int ServerOpen(server)
 Server *server;
-{
-       static  char    id[] = "ServerOpen"; 	
-       struct sockaddr_in      saddr;
-       int                     new_socket, sock, connect, port;
-       torque_socklen_t		slen;
-       char		       server_name[PBS_MAXHOSTNAME];	
-       char		       *sname;
+  {
+  static  char    id[] = "ServerOpen";
 
-       assert( server != NOSERVER );
+  struct sockaddr_in      saddr;
+  int                     new_socket, sock, connect, port;
+  torque_socklen_t  slen;
+  char         server_name[PBS_MAXHOSTNAME];
+  char         *sname;
 
-       slen = sizeof(saddr);
-       sock = ServerSocketGet( server );
+  assert(server != NOSERVER);
 
-       if( sock > 0 ) {
+  slen = sizeof(saddr);
+  sock = ServerSocketGet(server);
 
-#ifdef DEBUG
-         printf("%s: Sitting on accept call\n", id);
-	 printf("accept(%d, ...): ", sock);
-#endif
-         new_socket = accept(sock, (struct sockaddr *)&saddr, &slen);
-#ifdef DEBUG
-	 printf("%d\n", new_socket);
-#endif
-         if (new_socket < 0) {
-            char    *prob = "accept";
-
-	    log_err(errno, id, prob);
-	    perror(prob);
-	    return(1);
-         }
-
-	 if( validateClient((struct sockaddr *)&saddr) != 0 ) {
-                (void)close(new_socket);
-                return(1);
-         }
-
-         ServerFdOneWayPut( server, new_socket );
-         if ((connect = socket_to_conn(new_socket)) < 0) {
-             log_err(errno, id, "socket_to_conn");
-             return(1);
-         }
-         ServerFdTwoWayPut( server, connect );
-       } else {
-         sname = ServerInetAddrGet( server );
-         port = ServerPortNumberTwoWayGet( server );
-
-         if( sname != NULLSTR && port != 0 )
-           (void)sprintf(server_name, "%s:%d", sname, port);
-         else if( sname != NULLSTR && port == 0 )
-           (void)strcpy(server_name, sname);
-         else if( sname == NULLSTR )
-           (void)strcpy(server_name, EMPTYSTR);
+  if (sock > 0)
+    {
 
 #ifdef DEBUG
-	 printf("%s: pbs_connect(%s)\n", id, server_name);
+    printf("%s: Sitting on accept call\n", id);
+    printf("accept(%d, ...): ", sock);
 #endif
-         if( (connect=pbs_connect( server_name )) < 0 ) {
-	     if (pbs_errno != PBSE_NONE) {
-		(void)sprintf(log_buffer, "%d: %s", pbs_errno, pbserror());
-                log_err(-1, id, log_buffer);
-                return(1);
-             }
-         }
-         ServerFdTwoWayPut( server, connect );
-       }
-       return(0);
-}
+    new_socket = accept(sock, (struct sockaddr *) & saddr, &slen);
+#ifdef DEBUG
+    printf("%d\n", new_socket);
+#endif
 
-int ServerRead( server )
+    if (new_socket < 0)
+      {
+      char    *prob = "accept";
+
+      log_err(errno, id, prob);
+      perror(prob);
+      return(1);
+      }
+
+    if (validateClient((struct sockaddr *)&saddr) != 0)
+      {
+      (void)close(new_socket);
+      return(1);
+      }
+
+    ServerFdOneWayPut(server, new_socket);
+
+    if ((connect = socket_to_conn(new_socket)) < 0)
+      {
+      log_err(errno, id, "socket_to_conn");
+      return(1);
+      }
+
+    ServerFdTwoWayPut(server, connect);
+    }
+  else
+    {
+    sname = ServerInetAddrGet(server);
+    port = ServerPortNumberTwoWayGet(server);
+
+    if (sname != NULLSTR && port != 0)
+      (void)sprintf(server_name, "%s:%d", sname, port);
+    else if (sname != NULLSTR && port == 0)
+      (void)strcpy(server_name, sname);
+    else if (sname == NULLSTR)
+      (void)strcpy(server_name, EMPTYSTR);
+
+#ifdef DEBUG
+    printf("%s: pbs_connect(%s)\n", id, server_name);
+
+#endif
+    if ((connect = pbs_connect(server_name)) < 0)
+      {
+      if (pbs_errno != PBSE_NONE)
+        {
+        (void)sprintf(log_buffer, "%d: %s", pbs_errno, pbserror());
+        log_err(-1, id, log_buffer);
+        return(1);
+        }
+      }
+
+    ServerFdTwoWayPut(server, connect);
+    }
+
+  return(0);
+  }
+
+int ServerRead(server)
 Server *server;
-{
-       static char id[] =  "ServerRead";	
-       unsigned long int   bytes;
+  {
+  static char id[] =  "ServerRead";
+  unsigned long int   bytes;
 
-	if(get_4byte(ServerFdOneWayGet(server), &bytes) != 1) {
-		log_err(errno, id, "get4byte");
-		return(SCH_ERROR);
-	}
-	return(bytes);
-}
+  if (get_4byte(ServerFdOneWayGet(server), &bytes) != 1)
+    {
+    log_err(errno, id, "get4byte");
+    return(SCH_ERROR);
+    }
+
+  return(bytes);
+  }
 
 /* ServerWriteRead: Anthing returned by this function must be freed!since */
-/*              the result is malloc-ed. */ 
-void *ServerWriteRead( server, msg, param )
+/*              the result is malloc-ed. */
+void *ServerWriteRead(server, msg, param)
 Server *server;
 int    msg;
 void   *param;
-{
-      static  char    id[] = "ServerWriteRead"; 	
+  {
+  static  char    id[] = "ServerWriteRead";
 
-       switch( msg ) {
-         case STATNODE:
-#ifdef DEBUG
-	      printf("%s: pbs_statnode(%d,..)\n", id,
-						ServerFdTwoWayGet(server));
-#endif
-	      return(pbs_statnode(ServerFdTwoWayGet(server), NULL, param, NULL));
-         case STATSERV:
-#ifdef DEBUG
-	      printf("%s: pbs_statserver(%d,..)\n", id,
-						ServerFdTwoWayGet(server));
-#endif
-	      return(pbs_statserver(ServerFdTwoWayGet(server), param, NULL));
-         case STATQUE:
+  switch (msg)
+    {
 
+    case STATNODE:
 #ifdef DEBUG
-	      printf("%s: pbs_statque(%d,..)\n", id, ServerFdTwoWayGet(server));
+      printf("%s: pbs_statnode(%d,..)\n", id,
+             ServerFdTwoWayGet(server));
 #endif
-	      return(pbs_statque(ServerFdTwoWayGet(server), NULL, param, NULL));
-	 case STATJOB:
+      return(pbs_statnode(ServerFdTwoWayGet(server), NULL, param, NULL));
+
+    case STATSERV:
+#ifdef DEBUG
+      printf("%s: pbs_statserver(%d,..)\n", id,
+             ServerFdTwoWayGet(server));
+#endif
+      return(pbs_statserver(ServerFdTwoWayGet(server), param, NULL));
+
+    case STATQUE:
 
 #ifdef DEBUG
-	      printf("pbs_statjob(%d,..)\n", ServerFdTwoWayGet(server));	
+      printf("%s: pbs_statque(%d,..)\n", id, ServerFdTwoWayGet(server));
 #endif
-	      return(pbs_statjob(ServerFdTwoWayGet(server), NULL, param, NULL));
-         default:
-              log_err(-1, id, "Unknown command sent!");
-	      return(NULL);	
-      }
-}
+      return(pbs_statque(ServerFdTwoWayGet(server), NULL, param, NULL));
 
-static int server_disconnect(connect)
-	int connect;
-{
+    case STATJOB:
 
-	/* send close-connection message */
+#ifdef DEBUG
+      printf("pbs_statjob(%d,..)\n", ServerFdTwoWayGet(server));
+#endif
+      return(pbs_statjob(ServerFdTwoWayGet(server), NULL, param, NULL));
 
-	close( connection[connect].ch_socket );
+    default:
+      log_err(-1, id, "Unknown command sent!");
+      return(NULL);
+    }
+  }
 
-	if( connection[connect].ch_errtxt != (char *)NULL ) 
-		free( connection[connect].ch_errtxt );
-	connection[connect].ch_errno = 0;
-	connection[connect].ch_inuse = 0;
-	return 0;
-}
+static int
+server_disconnect(int connect)
+  {
+
+  /* send close-connection message */
+
+  close(connection[connect].ch_socket);
+
+  if (connection[connect].ch_errtxt != (char *)NULL)
+    free(connection[connect].ch_errtxt);
+
+  connection[connect].ch_errno = 0;
+
+  connection[connect].ch_inuse = 0;
+
+  return 0;
+  }
 
 /* ServerClose: Returns 0 if a close of the fdTwoWay portion of the server
                 was successful; non-zero otherwise. */
-int ServerClose( server )
+int ServerClose(server)
 Server *server;
-{
-        static  char    id[] = "ServerClose"; 	
-        int ret = -1;
-	int connect;
+  {
+  static  char    id[] = "ServerClose";
+  int ret = -1;
+  int connect;
 
-        connect = ServerFdTwoWayGet( server );
+  connect = ServerFdTwoWayGet(server);
 
-        if( connect < 0 ) {
-          log_err(-1, id, "Server not connected!");
-        } else {
-          ret = server_disconnect(connect);
+  if (connect < 0)
+    {
+    log_err(-1, id, "Server not connected!");
+    }
+  else
+    {
+    ret = server_disconnect(connect);
 
 #ifdef DEBUG
-	  (void)printf("%s: server_disconnect(%d)\n", id, connect);
+    (void)printf("%s: server_disconnect(%d)\n", id, connect);
 #endif
-          if ( ret != 0 ) {
-            (void)sprintf(log_buffer, "%d: %s\n", pbs_errno, pbserror());
-            log_err(-1, id, log_buffer);
-          } 
-        }
 
-        ServerFdTwoWayPut(server, -1);
-        return (ret);
-}
+    if (ret != 0)
+      {
+      (void)sprintf(log_buffer, "%d: %s\n", pbs_errno, pbserror());
+      log_err(-1, id, log_buffer);
+      }
+    }
 
-void ServerCloseFinal( server )
+  ServerFdTwoWayPut(server, -1);
+
+  return (ret);
+  }
+
+void ServerCloseFinal(server)
 Server *server;
-{
-	static char id[] = "ServerCloseFinal";
-	int sock;
+  {
+  static char id[] = "ServerCloseFinal";
+  int sock;
 
-	sock = ServerSocketGet( server );
+  sock = ServerSocketGet(server);
 
-	if (shutdown(sock, 2))
-             log_err(errno, id, "shutdown");
-        if (close(sock))
-             log_err(errno, id, "close");
-}
+  if (shutdown(sock, 2))
+    log_err(errno, id, "shutdown");
+
+  if (close(sock))
+    log_err(errno, id, "close");
+  }
 
 /* Nodes stuff */
 CNode *ServerNodesAdd(server, name, port, queryMom)
-Server	*server;
+Server *server;
 char    *name;
 int     port;
 int     queryMom;
-{
-        CNode *newNode, *cptr;
-        struct hostent  *host;
-        char     *str1 = NULLSTR;
-        char     *str2 = NULLSTR;
+  {
+  CNode *newNode, *cptr;
 
-        static  char    id[] = "ServerNodesAdd";
+  struct hostent  *host;
+  char     *str1 = NULLSTR;
+  char     *str2 = NULLSTR;
 
-        if ((host = gethostbyname(name)) == NULL) {
-                (void)sprintf(log_buffer, "momhost %s not found", name);
-                log_err(-1, id, log_buffer);
-                return NULL;
-        }
-        dynamic_strcpy(&str1, host->h_name);
+  static  char    id[] = "ServerNodesAdd";
 
-        for(cptr=server->nodes.head; cptr; cptr=cptr->nextptr) {
+  if ((host = gethostbyname(name)) == NULL)
+    {
+    (void)sprintf(log_buffer, "momhost %s not found", name);
+    log_err(-1, id, log_buffer);
+    return NULL;
+    }
 
-            if((host=gethostbyname(ResMomInetAddrGet(&cptr->mom))) != NULL) {
-                dynamic_strcpy(&str2, host->h_name);
+  dynamic_strcpy(&str1, host->h_name);
 
-                if( STRCMP(str1, ==, str2) \
-                        && ResMomPortNumberGet(&cptr->mom) == port ) {
+  for (cptr = server->nodes.head; cptr; cptr = cptr->nextptr)
+    {
 
-                      (void)sprintf(log_buffer,
-                                   "ignoring duplicate momhost(%s, %d)\n",
-                                                                 name, port);
-                      log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, id,
-                                                               log_buffer);
-                      varstrFree(str1);
-                      varstrFree(str2);
-                      return(cptr);
-                }
-            }
-        }
+    if ((host = gethostbyname(ResMomInetAddrGet(&cptr->mom))) != NULL)
+      {
+      dynamic_strcpy(&str2, host->h_name);
 
-        newNode = (CNode *)malloc(sizeof(CNode));
-        CNodeInit(newNode);
+      if (STRCMP(str1, == , str2) \
+          && ResMomPortNumberGet(&cptr->mom) == port)
+        {
 
-        CNodeQueryMomPut( newNode, queryMom);
-
-        ResMomInetAddrPut( &newNode->mom, name );
-        ResMomPortNumberPut( &newNode->mom, port );
-
-        SetCNodeAdd(&server->nodes, newNode);
-        (void)sprintf(log_buffer, "added momhost(%s, %d) to server %s's list",
-			name, port, ServerInetAddrGet(server));
-        log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, id, log_buffer);
+        (void)sprintf(log_buffer,
+                      "ignoring duplicate momhost(%s, %d)\n",
+                      name, port);
+        log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, id,
+                   log_buffer);
         varstrFree(str1);
         varstrFree(str2);
-        return(newNode);
-}
+        return(cptr);
+        }
+      }
+    }
+
+  newNode = (CNode *)malloc(sizeof(CNode));
+
+  CNodeInit(newNode);
+
+  CNodeQueryMomPut(newNode, queryMom);
+
+  ResMomInetAddrPut(&newNode->mom, name);
+  ResMomPortNumberPut(&newNode->mom, port);
+
+  SetCNodeAdd(&server->nodes, newNode);
+  (void)sprintf(log_buffer, "added momhost(%s, %d) to server %s's list",
+                name, port, ServerInetAddrGet(server));
+  log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, id, log_buffer);
+  varstrFree(str1);
+  varstrFree(str2);
+  return(newNode);
+  }
 
 CNode   *ServerNodesHeadGet(server)
-Server	*server;
-{
-        return(server->nodes.head);
-}
+Server *server;
+  {
+  return(server->nodes.head);
+  }
 
 CNode   *ServerNodesTailGet(server)
-Server	*server;
-{
-        return(server->nodes.tail);
-}
+Server *server;
+  {
+  return(server->nodes.tail);
+  }
 
 int ServerNodesNumAvailGet(server)
-Server	*server;
-{
-        return(server->nodes.numAvail);
-}
+Server *server;
+  {
+  return(server->nodes.numAvail);
+  }
 
 int ServerNodesNumAllocGet(server)
-Server	*server;
-{
-        return(server->nodes.numAlloc);
-}
+Server *server;
+  {
+  return(server->nodes.numAlloc);
+  }
 
 int ServerNodesNumRsvdGet(server)
-Server	*server;
-{
-        return(server->nodes.numRsvd);
-}
+Server *server;
+  {
+  return(server->nodes.numRsvd);
+  }
 
 int ServerNodesNumDownGet(server)
-Server	*server;
-{
-        return(server->nodes.numDown);
-}
+Server *server;
+  {
+  return(server->nodes.numDown);
+  }
 
 void    ServerNodesNumAvailPut(server, numAvail)
-Server	*server;
+Server *server;
 int     numAvail;
-{
-        server->nodes.numAvail = numAvail;
-}
+  {
+  server->nodes.numAvail = numAvail;
+  }
 
 void    ServerNodesNumAllocPut(server, numAlloc)
-Server	*server;
+Server *server;
 int     numAlloc;
-{
-        server->nodes.numAlloc = numAlloc;
-}
+  {
+  server->nodes.numAlloc = numAlloc;
+  }
 
 void    ServerNodesNumRsvdPut(server, numRsvd)
-Server	*server;
+Server *server;
 int     numRsvd;
-{
-        server->nodes.numRsvd = numRsvd;
-}
+  {
+  server->nodes.numRsvd = numRsvd;
+  }
 
 void    ServerNodesNumDownPut(server, numDown)
-Server	*server;
-int     numDown;
-{
-        server->nodes.numDown = numDown;
-}
-
-int ServerNodesQuery( server, spec )
-Server	*server;
-char	*spec;
-{
-	static	char		id[] = "ServerNodesQuery";
-	int avail, alloc, rsvd, down;
-
-	if( pbs_rescquery(ServerFdTwoWayGet(server), &spec, 1, &avail,
-						&alloc, &rsvd, &down) != 0 ) {
-
-		if (pbs_errno != PBSE_NONE) {
-			log_err(pbs_errno, id, "ServerNodesQuery");
-		}
-		return(FAIL);
-    	}
-
-	ServerNodesNumAvailPut( server, avail );
-	ServerNodesNumAllocPut( server, alloc );
-	ServerNodesNumRsvdPut( server, rsvd );
-	ServerNodesNumDownPut( server, down );
-
-	return(SUCCESS);
-}
-
-int ServerNodesReserve( server, spec, resId )
-Server	*server;
-char	*spec;
-int	resId;
-{
-	static	char		id[] = "ServerNodesReserve";
-	resource_t rid;
-
-	rid = resId;
-
-	if( pbs_rescreserve(ServerFdTwoWayGet(server), &spec, 1, &rid) != 0 ) {
-
-		if (pbs_errno != PBSE_NONE) {
-			log_err(pbs_errno, id, "ServerNodesReserve");
-		}
-		return(FAIL);
-    	}
-	return(rid);
-}
-
-int ServerNodesRelease( server, resId )
-Server	*server;
-int	resId;
-{
-	static	char		id[] = "ServerNodesRelease";
-	resource_t rid;
-
-	rid = resId;
-
-	if( pbs_rescrelease(ServerFdTwoWayGet(server), rid) != 0 ) {
-
-		if (pbs_errno != PBSE_NONE) {
-			log_err(pbs_errno, id, "ServerNodesRelease");
-		}
-		return(FAIL);
-    	}
-	return(SUCCESS);
-}
-
-/* returns 0 if successful; non-zero otherwise */
-static int getNodesInfo( server )
-Server	*server;
-{
-	static	char		id[] = "getNodesInfo";
-        CNode                 	*node;
-        struct batch_status  	*nodes, *n;
-        struct attrl         	*na;
-	char			*value;
-
-        nodes = (struct batch_status *)ServerWriteRead(server, STATNODE,
-                                                (struct attrl *)&node_alist);
-
-	if( nodes == NULL ) {
-	        if (pbs_errno != PBSE_NONE) {
-                	log_err(pbs_errno, id, "ServerWriteRead");
-		}
-		return(1);
-	}
-        for(n=nodes; n; n=n->next) {
-
-	  node = ServerNodesAdd(server, n->name, 0, 0);
-	  if( node == NULL ) {
-		continue;
-	  }
-
-	  if( node != NULL ) {
-
-          	for(na=n->attribs; na; na=na->next) {
-
-               	     if( STRCMP( na->name, ==, ATTR_NODE_state ) ) {
-
-			value = strtok( na->value, "," );
-			
-			if( STRCMP(value, ==, ND_free) )
-				CNodeStatePut(node, CNODE_FREE);
-			else if( STRCMP(value, ==, ND_offline) )
-				CNodeStatePut(node, CNODE_OFFLINE);
-			else if( STRCMP(value, ==, ND_down) )
-				CNodeStatePut(node, CNODE_DOWN);
-			else if( STRCMP(value, ==, ND_reserve) )
-				CNodeStatePut(node, CNODE_RESERVE);
-			else if( STRCMP(value, ==, ND_job_exclusive) )
-				CNodeStatePut(node, CNODE_INUSE_EXCLUSIVE);
-			else if( STRCMP(value, ==, ND_job_sharing) )
-				CNodeStatePut(node, CNODE_INUSE_SHARED);
-			else
-				CNodeStatePut(node, CNODE_UNKNOWN);
-
-               	     } else if( STRCMP( na->name, ==, ATTR_NODE_properties ) ) {
-			CNodePropertiesPut( node, na->value );
-               	     } else if( STRCMP( na->name, ==, ATTR_NODE_ntype ) ) {
-			if( STRCMP(na->value, ==, ND_timeshared) )
-				CNodeTypePut(node, CNODE_TIMESHARED);
-			else if( STRCMP(na->value, ==, ND_cluster) )
-				CNodeTypePut(node, CNODE_CLUSTER);
-			else
-				CNodeTypePut(node, CNODE_UNKNOWN);
-               	     }
-
-          	} /* for */
-	  }
-        } /* for */
-        pbs_statfree( nodes );
-
-	ServerNodesQuery(server, "nodes");
-
-	return(0);
-}
-
-static int getServerInfo( server )
-Server	*server;
-{
-	static	char		id[] = "getServerInfo";
-	struct	batch_status	*serv, *s;
-        struct attrl        	*sa;
-
-        serv = (struct batch_status *)ServerWriteRead(server, STATSERV,
-                                                                &serv_alist);
-
-	if( serv == NULL ) {
-                log_err(pbs_errno, id, "ServerWriteRead");
-		return(1);
-	}
-        for(s=serv; s; s=s->next) {
-          for(sa=s->attribs; sa; sa=sa->next) {
-            if( STRCMP( sa->name, ==, ATTR_status ) ) {
-
-              	if( STRCMP(sa->value, ==, "Active") )
-                	ServerStatePut(server, SERVER_ACTIVE);
-              	else if( STRCMP(sa->value, ==, "Idle") )
-                	ServerStatePut(server, SERVER_IDLE);
-              	else if( STRCMP(sa->value, ==, "Scheduling") )
-                	ServerStatePut(server, SERVER_SCHED);
-              	else if( STRCMP(sa->value, ==, "Terminating") )
-                	ServerStatePut(server, SERVER_TERM);
-              	else if( STRCMP(sa->value, ==, "Terminating, Delayed") )
-                	ServerStatePut(server, SERVER_TERMDELAY);
-              	else
-                	ServerStatePut(server, -1);
-
-            } else if( STRCMP( sa->name, ==, ATTR_dfltque ) ) {
-			ServerDefQuePut(server, sa->value);
-            } else if( STRCMP( sa->name, ==, ATTR_maxrun ) ) {
-			ServerMaxRunJobsPut(server, strToInt(sa->value));
-            } else if( STRCMP( sa->name, ==,  ATTR_maxuserrun ) ) {
-			ServerMaxRunJobsPerUserPut(server, strToInt(sa->value));
-            } else if( STRCMP( sa->name, ==,   ATTR_maxgrprun ) ) {
-		       ServerMaxRunJobsPerGroupPut(server, strToInt(sa->value));
-	    } else if( STRCMP( sa->name, ==, ATTR_rescavail ) ) {
-
-		if( STRCMP( sa->resource, ==, "nodes" ) || \
-		    STRCMP( sa->resource, ==, "arch" ) ||  \
-		    STRCMP( sa->resource, ==, "neednodes" ) ) {
-		      ServerStringResAvailPut(server, sa->resource, sa->value);
-		} else if( STRCMP( sa->resource, ==, "file" ) || \
-			   STRCMP( sa->resource, ==, "mem"  ) || \
-			   STRCMP( sa->resource, ==, "pmem" ) || \
-			   STRCMP( sa->resource, ==, "workingset" ) || \
-			   STRCMP( sa->resource, ==, "pf"         ) || \
-			   STRCMP( sa->resource, ==, "ppf"        ) || \
-			   STRCMP( sa->resource, ==, "srfs_tmp"   ) || \
-			   STRCMP( sa->resource, ==, "srfs_wrk"   ) || \
-			   STRCMP( sa->resource, ==, "srfs_big"   ) || \
-			   STRCMP( sa->resource, ==, "srfs_fast"  ) || \
-			   STRCMP( sa->resource, ==, "sds"        ) || \
-			   STRCMP( sa->resource, ==, "psds" ) ) {
-
-		    ServerSizeResAvailPut(server, sa->resource,
-						      strToSize(sa->value));
-		} else { /* must be of int type or time type */
-			
-		   if( strchr(sa->value, ':') == NULL ) {
-			ServerIntResAvailPut(server, sa->resource,
-					     	      strToInt(sa->value));
-		   } else {
-		    	ServerIntResAvailPut(server, sa->resource,
-					     	      strtimeToSecs(sa->value));
-		  }
-		}
-		
-	    } else if( STRCMP( sa->name, ==, ATTR_rescassn ) ) {
-
-		if( STRCMP( sa->resource, ==, "nodes" ) || \
-		    STRCMP( sa->resource, ==, "arch" ) ||  \
-		    STRCMP( sa->resource, ==, "neednodes" ) ) {
-		      ServerStringResAssignPut(server, sa->resource, sa->value);
-		} else if( STRCMP( sa->resource, ==, "file" ) || \
-			   STRCMP( sa->resource, ==, "mem"  ) || \
-			   STRCMP( sa->resource, ==, "pmem" ) || \
-			   STRCMP( sa->resource, ==, "workingset" ) || \
-			   STRCMP( sa->resource, ==, "pf"         ) || \
-			   STRCMP( sa->resource, ==, "ppf"        ) || \
-			   STRCMP( sa->resource, ==, "srfs_tmp"   ) || \
-			   STRCMP( sa->resource, ==, "srfs_wrk"   ) || \
-			   STRCMP( sa->resource, ==, "srfs_big"   ) || \
-			   STRCMP( sa->resource, ==, "srfs_fast"  ) || \
-			   STRCMP( sa->resource, ==, "sds"        ) || \
-			   STRCMP( sa->resource, ==, "psds" ) ) {
-
-		    ServerSizeResAssignPut(server, sa->resource,
-						      strToSize(sa->value));
-		} else { /* must be of int type or time type */
-			
-		   if( strchr(sa->value, ':') == NULL ) {
-			ServerIntResAssignPut(server, sa->resource,
-					     	      strToInt(sa->value));
-		   } else {
-		    	ServerIntResAssignPut(server, sa->resource,
-					     	      strtimeToSecs(sa->value));
-		  }
-		}
-		
-	    }
-          }
-        }
-        pbs_statfree( serv );
-	return(0);
-}
-
-/* returns 0 if successful; non-zero otherwise */
-static int getQuesInfo( server )
-Server	*server;
-{
-	static	char		id[] = "getQuesInfo";
-	struct	batch_status	*ques, *q;
-        struct attrl        	*qa;
-	Que			*que;
-
-        ques = (struct batch_status *)ServerWriteRead(server, STATQUE,
-                                                                &que_alist);
-
-	if( ques == NULL ) {
-	        if (pbs_errno != PBSE_NONE) {
-                	log_err(pbs_errno, id, "ServerWriteRead");
-		}
-		return(1);
-	}
-
-        for(q=ques; q; q=q->next) {
-
-	  que = (Que *)malloc( sizeof(Que) );
-          QueInit(que);
-	  /* Update to malloc table occurs inside the following function */
-	  SetQueAdd(&server->queues, que);
-	
-          QueNamePut(que, q->name);
-          for(qa=q->attribs; qa; qa=qa->next) {
-
-            if( STRCMP( qa->name, ==, ATTR_qtype ) ) {
-
-                if( STRCMP( qa->value, ==, "Execution" ) )
-                  QueTypePut(que, QTYPE_E);
-                else if( STRCMP( qa->value, ==, "Route" ) )
-                  QueTypePut(que, QTYPE_R);
-                else
-                  QueTypePut(que, QTYPE_U);
-
-            } else if ( STRCMP( qa->name, ==, ATTR_p ) ) {
-                QuePriorityPut(que, strToInt(qa->value));
-            } else if ( STRCMP( qa->name, ==, ATTR_maxrun ) ) {
-                QueMaxRunJobsPut(que, strToInt(qa->value));
-            } else if ( STRCMP( qa->name, ==, ATTR_maxuserrun ) ) {
-                QueMaxRunJobsPerUserPut(que, strToInt(qa->value));
-            } else if ( STRCMP( qa->name, ==, ATTR_maxgrprun ) ) {
-                QueMaxRunJobsPerGroupPut(que, strToInt(qa->value));
-            } else if( STRCMP( qa->name, ==, ATTR_start) ) {
-
-                if( STRCMP( qa->value, ==, "False" ) )
-                  QueStatePut( que, SCHED_DISABLED );
-                else if( STRCMP( qa->value, ==, "True") )
-                  QueStatePut( que, SCHED_ENABLED );
-	    } else if( STRCMP( qa->name, ==, ATTR_rescavail ) ) {
-
-		if( STRCMP( qa->resource, ==, "nodes" ) || \
-		    STRCMP( qa->resource, ==, "arch" ) ||  \
-		    STRCMP( qa->resource, ==, "neednodes" ) ) {
-		    QueStringResAvailPut(que, qa->resource, qa->value);
-		} else if( STRCMP( qa->resource, ==, "file" ) || \
-			   STRCMP( qa->resource, ==, "mem"  ) || \
-			   STRCMP( qa->resource, ==, "pmem" ) || \
-			   STRCMP( qa->resource, ==, "workingset" ) || \
-			   STRCMP( qa->resource, ==, "pf"         ) || \
-			   STRCMP( qa->resource, ==, "ppf"        ) || \
-			   STRCMP( qa->resource, ==, "srfs_tmp"   ) || \
-			   STRCMP( qa->resource, ==, "srfs_wrk"   ) || \
-			   STRCMP( qa->resource, ==, "srfs_big"   ) || \
-			   STRCMP( qa->resource, ==, "srfs_fast"  ) || \
-			   STRCMP( qa->resource, ==, "sds"        ) || \
-			   STRCMP( qa->resource, ==, "psds" ) ) {
-
-		    QueSizeResAvailPut(que, qa->resource, strToSize(qa->value));
-		} else { /* must be of int type or time type */
-			
-		   if( strchr(qa->value, ':') == NULL ) {
-			QueIntResAvailPut(que, qa->resource,
-					     	      strToInt(qa->value));
-		   } else {
-		    	QueIntResAvailPut(que, qa->resource,
-					     	      strtimeToSecs(qa->value));
-		   }
-		}
-		
-	    } else if( STRCMP( qa->name, ==, ATTR_rescassn ) ) {
-
-		if( STRCMP( qa->resource, ==, "nodes" ) || \
-		    STRCMP( qa->resource, ==, "arch" ) ||  \
-		    STRCMP( qa->resource, ==, "neednodes" ) ) {
-		    QueStringResAssignPut(que, qa->resource, qa->value);
-		} else if( STRCMP( qa->resource, ==, "file" ) || \
-			   STRCMP( qa->resource, ==, "mem"  ) || \
-			   STRCMP( qa->resource, ==, "pmem" ) || \
-			   STRCMP( qa->resource, ==, "workingset" ) || \
-			   STRCMP( qa->resource, ==, "pf"         ) || \
-			   STRCMP( qa->resource, ==, "ppf"        ) || \
-			   STRCMP( qa->resource, ==, "srfs_tmp"   ) || \
-			   STRCMP( qa->resource, ==, "srfs_wrk"   ) || \
-			   STRCMP( qa->resource, ==, "srfs_big"   ) || \
-			   STRCMP( qa->resource, ==, "srfs_fast"  ) || \
-			   STRCMP( qa->resource, ==, "sds"        ) || \
-			   STRCMP( qa->resource, ==, "psds" ) ) {
-
-		    QueSizeResAssignPut(que, qa->resource,
-						      strToSize(qa->value));
-		} else { /* must be of int type or time type */
-			
-		   if( strchr(qa->value, ':') == NULL ) {
-			QueIntResAssignPut(que, qa->resource,
-					     	      strToInt(qa->value));
-		   } else {
-		    	QueIntResAssignPut(que, qa->resource,
-					     	      strtimeToSecs(qa->value));
-		  }
-		}
-	    }
-
-          }
-        }
-	pbs_statfree( ques );
-	return(0);
-
-}
-
-/* returns 0 if successful; non-zero otherwise */
-static int getJobsInfo( server )
-Server	*server;
-{
-	static	char		id[] = "getJobsInfo";
-        Job                  	*job;
-        struct batch_status  	*jobs, *j;
-        struct attrl         	*ja;
-
-        jobs = (struct batch_status *)ServerWriteRead(server, STATJOB,
-                                                (struct attrl *)&job_alist);
-
-	if( jobs == NULL ) {
-	        if (pbs_errno != PBSE_NONE) {
-                	log_err(pbs_errno, id, "ServerWriteRead");
-		}
-		return(1);
-	}
-        for(j=jobs; j; j=j->next) {
-          job = (Job *)malloc(sizeof(Job));
-	  mallocTableAdd(job, NULL, 0);
-          JobInit( job );
-
-          JobIdPut( job, j->name );
-          JobServerPut( job, (Server *)server);
-          for(ja=j->attribs; ja; ja=ja->next) {
-
-               if( STRCMP( ja->name, ==, ATTR_queue ) ) {
-		       JobQueuePut( job, SetQueFindQueByName(&server->queues,
-								  ja->value) );
-                       QueJobInsert( JobQueueGet( job ), job );
-                       SetJobAdd( &server->jobs, job );
-               } else {
-                       updateServerJobInfo(job, ja->name, ja->resource,
-                                                                   ja->value);
-               }
-
-          } /* for */
-#ifdef DEBUG
-	  printf("Added job %x to mallocTable: \n", job);
-	  JobPrint( job );
-#endif
-        } /* for */
-        pbs_statfree( jobs );
-
-	return(0);
-}
-
-static void ServerFree2( s )
-Server	*s;
-{
-	if( s == NOSERVER )
-		return;
-
-	/* free up all temporary strings associated with Server */
-	varstrFreeByPptr(s);
-	/* free up malloc-ed areas associated with Server */
-
-	mallocTableFreeByPptr(s);
-
-	/* free up all dynamic strings, and job structures associated */
-	/* with the server's queues */
-	SetQueFree(&s->queues);
-	SetJobFree(&s->jobs); 
-}
-
-void ServerStateRead( server )
 Server *server;
-{
-	int ret = 0;
+int     numDown;
+  {
+  server->nodes.numDown = numDown;
+  }
+
+int ServerNodesQuery(server, spec)
+Server *server;
+char *spec;
+  {
+  static char  id[] = "ServerNodesQuery";
+  int avail, alloc, rsvd, down;
+
+  if (pbs_rescquery(ServerFdTwoWayGet(server), &spec, 1, &avail,
+                    &alloc, &rsvd, &down) != 0)
+    {
+
+    if (pbs_errno != PBSE_NONE)
+      {
+      log_err(pbs_errno, id, "ServerNodesQuery");
+      }
+
+    return(FAIL);
+    }
+
+  ServerNodesNumAvailPut(server, avail);
+
+  ServerNodesNumAllocPut(server, alloc);
+  ServerNodesNumRsvdPut(server, rsvd);
+  ServerNodesNumDownPut(server, down);
+
+  return(SUCCESS);
+  }
+
+int ServerNodesReserve(server, spec, resId)
+Server *server;
+char *spec;
+int resId;
+  {
+  static char  id[] = "ServerNodesReserve";
+  resource_t rid;
+
+  rid = resId;
+
+  if (pbs_rescreserve(ServerFdTwoWayGet(server), &spec, 1, &rid) != 0)
+    {
+
+    if (pbs_errno != PBSE_NONE)
+      {
+      log_err(pbs_errno, id, "ServerNodesReserve");
+      }
+
+    return(FAIL);
+    }
+
+  return(rid);
+  }
+
+int ServerNodesRelease(server, resId)
+Server *server;
+int resId;
+  {
+  static char  id[] = "ServerNodesRelease";
+  resource_t rid;
+
+  rid = resId;
+
+  if (pbs_rescrelease(ServerFdTwoWayGet(server), rid) != 0)
+    {
+
+    if (pbs_errno != PBSE_NONE)
+      {
+      log_err(pbs_errno, id, "ServerNodesRelease");
+      }
+
+    return(FAIL);
+    }
+
+  return(SUCCESS);
+  }
+
+/* returns 0 if successful; non-zero otherwise */
+static int getNodesInfo(server)
+Server *server;
+  {
+  static char  id[] = "getNodesInfo";
+  CNode                  *node;
+
+  struct batch_status   *nodes, *n;
+
+  struct attrl          *na;
+  char   *value;
+
+  nodes = (struct batch_status *)ServerWriteRead(server, STATNODE,
+          (struct attrl *) & node_alist);
+
+  if (nodes == NULL)
+    {
+    if (pbs_errno != PBSE_NONE)
+      {
+      log_err(pbs_errno, id, "ServerWriteRead");
+      }
+
+    return(1);
+    }
+
+  for (n = nodes; n; n = n->next)
+    {
+
+    node = ServerNodesAdd(server, n->name, 0, 0);
+
+    if (node == NULL)
+      {
+      continue;
+      }
+
+    if (node != NULL)
+      {
+
+      for (na = n->attribs; na; na = na->next)
+        {
+
+        if (STRCMP(na->name, == , ATTR_NODE_state))
+          {
+
+          value = strtok(na->value, ",");
+
+          if (STRCMP(value, == , ND_free))
+            CNodeStatePut(node, CNODE_FREE);
+          else if (STRCMP(value, == , ND_offline))
+            CNodeStatePut(node, CNODE_OFFLINE);
+          else if (STRCMP(value, == , ND_down))
+            CNodeStatePut(node, CNODE_DOWN);
+          else if (STRCMP(value, == , ND_reserve))
+            CNodeStatePut(node, CNODE_RESERVE);
+          else if (STRCMP(value, == , ND_job_exclusive))
+            CNodeStatePut(node, CNODE_INUSE_EXCLUSIVE);
+          else if (STRCMP(value, == , ND_job_sharing))
+            CNodeStatePut(node, CNODE_INUSE_SHARED);
+          else
+            CNodeStatePut(node, CNODE_UNKNOWN);
+
+          }
+        else if (STRCMP(na->name, == , ATTR_NODE_properties))
+          {
+          CNodePropertiesPut(node, na->value);
+          }
+        else if (STRCMP(na->name, == , ATTR_NODE_ntype))
+          {
+          if (STRCMP(na->value, == , ND_timeshared))
+            CNodeTypePut(node, CNODE_TIMESHARED);
+          else if (STRCMP(na->value, == , ND_cluster))
+            CNodeTypePut(node, CNODE_CLUSTER);
+          else
+            CNodeTypePut(node, CNODE_UNKNOWN);
+          }
+
+        } /* for */
+      }
+    } /* for */
+
+  pbs_statfree(nodes);
+
+  ServerNodesQuery(server, "nodes");
+
+  return(0);
+  }
+
+static int getServerInfo(server)
+Server *server;
+  {
+  static char  id[] = "getServerInfo";
+
+  struct batch_status *serv, *s;
+
+  struct attrl         *sa;
+
+  serv = (struct batch_status *)ServerWriteRead(server, STATSERV,
+         &serv_alist);
+
+  if (serv == NULL)
+    {
+    log_err(pbs_errno, id, "ServerWriteRead");
+    return(1);
+    }
+
+  for (s = serv; s; s = s->next)
+    {
+    for (sa = s->attribs; sa; sa = sa->next)
+      {
+      if (STRCMP(sa->name, == , ATTR_status))
+        {
+
+        if (STRCMP(sa->value, == , "Active"))
+          ServerStatePut(server, SERVER_ACTIVE);
+        else if (STRCMP(sa->value, == , "Idle"))
+          ServerStatePut(server, SERVER_IDLE);
+        else if (STRCMP(sa->value, == , "Scheduling"))
+          ServerStatePut(server, SERVER_SCHED);
+        else if (STRCMP(sa->value, == , "Terminating"))
+          ServerStatePut(server, SERVER_TERM);
+        else if (STRCMP(sa->value, == , "Terminating, Delayed"))
+          ServerStatePut(server, SERVER_TERMDELAY);
+        else
+          ServerStatePut(server, -1);
+
+        }
+      else if (STRCMP(sa->name, == , ATTR_dfltque))
+        {
+        ServerDefQuePut(server, sa->value);
+        }
+      else if (STRCMP(sa->name, == , ATTR_maxrun))
+        {
+        ServerMaxRunJobsPut(server, strToInt(sa->value));
+        }
+      else if (STRCMP(sa->name, == ,  ATTR_maxuserrun))
+        {
+        ServerMaxRunJobsPerUserPut(server, strToInt(sa->value));
+        }
+      else if (STRCMP(sa->name, == ,   ATTR_maxgrprun))
+        {
+        ServerMaxRunJobsPerGroupPut(server, strToInt(sa->value));
+        }
+      else if (STRCMP(sa->name, == , ATTR_rescavail))
+        {
+
+        if (STRCMP(sa->resource, == , "nodes") || \
+            STRCMP(sa->resource, == , "arch") ||  \
+            STRCMP(sa->resource, == , "neednodes"))
+          {
+          ServerStringResAvailPut(server, sa->resource, sa->value);
+          }
+        else if (STRCMP(sa->resource, == , "file") || \
+                 STRCMP(sa->resource, == , "mem") || \
+                 STRCMP(sa->resource, == , "pmem") || \
+                 STRCMP(sa->resource, == , "workingset") || \
+                 STRCMP(sa->resource, == , "pf") || \
+                 STRCMP(sa->resource, == , "ppf") || \
+                 STRCMP(sa->resource, == , "srfs_tmp") || \
+                 STRCMP(sa->resource, == , "srfs_wrk") || \
+                 STRCMP(sa->resource, == , "srfs_big") || \
+                 STRCMP(sa->resource, == , "srfs_fast") || \
+                 STRCMP(sa->resource, == , "sds") || \
+                 STRCMP(sa->resource, == , "psds"))
+          {
+
+          ServerSizeResAvailPut(server, sa->resource,
+                                strToSize(sa->value));
+          }
+        else   /* must be of int type or time type */
+          {
+
+          if (strchr(sa->value, ':') == NULL)
+            {
+            ServerIntResAvailPut(server, sa->resource,
+                                 strToInt(sa->value));
+            }
+          else
+            {
+            ServerIntResAvailPut(server, sa->resource,
+                                 strtimeToSecs(sa->value));
+            }
+          }
+
+        }
+      else if (STRCMP(sa->name, == , ATTR_rescassn))
+        {
+
+        if (STRCMP(sa->resource, == , "nodes") || \
+            STRCMP(sa->resource, == , "arch") ||  \
+            STRCMP(sa->resource, == , "neednodes"))
+          {
+          ServerStringResAssignPut(server, sa->resource, sa->value);
+          }
+        else if (STRCMP(sa->resource, == , "file") || \
+                 STRCMP(sa->resource, == , "mem") || \
+                 STRCMP(sa->resource, == , "pmem") || \
+                 STRCMP(sa->resource, == , "workingset") || \
+                 STRCMP(sa->resource, == , "pf") || \
+                 STRCMP(sa->resource, == , "ppf") || \
+                 STRCMP(sa->resource, == , "srfs_tmp") || \
+                 STRCMP(sa->resource, == , "srfs_wrk") || \
+                 STRCMP(sa->resource, == , "srfs_big") || \
+                 STRCMP(sa->resource, == , "srfs_fast") || \
+                 STRCMP(sa->resource, == , "sds") || \
+                 STRCMP(sa->resource, == , "psds"))
+          {
+
+          ServerSizeResAssignPut(server, sa->resource,
+                                 strToSize(sa->value));
+          }
+        else   /* must be of int type or time type */
+          {
+
+          if (strchr(sa->value, ':') == NULL)
+            {
+            ServerIntResAssignPut(server, sa->resource,
+                                  strToInt(sa->value));
+            }
+          else
+            {
+            ServerIntResAssignPut(server, sa->resource,
+                                  strtimeToSecs(sa->value));
+            }
+          }
+
+        }
+      }
+    }
+
+  pbs_statfree(serv);
+
+  return(0);
+  }
+
+/* returns 0 if successful; non-zero otherwise */
+static int getQuesInfo(server)
+Server *server;
+  {
+  static char  id[] = "getQuesInfo";
+
+  struct batch_status *ques, *q;
+
+  struct attrl         *qa;
+  Que   *que;
+
+  ques = (struct batch_status *)ServerWriteRead(server, STATQUE,
+         &que_alist);
+
+  if (ques == NULL)
+    {
+    if (pbs_errno != PBSE_NONE)
+      {
+      log_err(pbs_errno, id, "ServerWriteRead");
+      }
+
+    return(1);
+    }
+
+  for (q = ques; q; q = q->next)
+    {
+
+    que = (Que *)malloc(sizeof(Que));
+    QueInit(que);
+    /* Update to malloc table occurs inside the following function */
+    SetQueAdd(&server->queues, que);
+
+    QueNamePut(que, q->name);
+
+    for (qa = q->attribs; qa; qa = qa->next)
+      {
+
+      if (STRCMP(qa->name, == , ATTR_qtype))
+        {
+
+        if (STRCMP(qa->value, == , "Execution"))
+          QueTypePut(que, QTYPE_E);
+        else if (STRCMP(qa->value, == , "Route"))
+          QueTypePut(que, QTYPE_R);
+        else
+          QueTypePut(que, QTYPE_U);
+
+        }
+      else if (STRCMP(qa->name, == , ATTR_p))
+        {
+        QuePriorityPut(que, strToInt(qa->value));
+        }
+      else if (STRCMP(qa->name, == , ATTR_maxrun))
+        {
+        QueMaxRunJobsPut(que, strToInt(qa->value));
+        }
+      else if (STRCMP(qa->name, == , ATTR_maxuserrun))
+        {
+        QueMaxRunJobsPerUserPut(que, strToInt(qa->value));
+        }
+      else if (STRCMP(qa->name, == , ATTR_maxgrprun))
+        {
+        QueMaxRunJobsPerGroupPut(que, strToInt(qa->value));
+        }
+      else if (STRCMP(qa->name, == , ATTR_start))
+        {
+
+        if (STRCMP(qa->value, == , "False"))
+          QueStatePut(que, SCHED_DISABLED);
+        else if (STRCMP(qa->value, == , "True"))
+          QueStatePut(que, SCHED_ENABLED);
+        }
+      else if (STRCMP(qa->name, == , ATTR_rescavail))
+        {
+
+        if (STRCMP(qa->resource, == , "nodes") || \
+            STRCMP(qa->resource, == , "arch") ||  \
+            STRCMP(qa->resource, == , "neednodes"))
+          {
+          QueStringResAvailPut(que, qa->resource, qa->value);
+          }
+        else if (STRCMP(qa->resource, == , "file") || \
+                 STRCMP(qa->resource, == , "mem") || \
+                 STRCMP(qa->resource, == , "pmem") || \
+                 STRCMP(qa->resource, == , "workingset") || \
+                 STRCMP(qa->resource, == , "pf") || \
+                 STRCMP(qa->resource, == , "ppf") || \
+                 STRCMP(qa->resource, == , "srfs_tmp") || \
+                 STRCMP(qa->resource, == , "srfs_wrk") || \
+                 STRCMP(qa->resource, == , "srfs_big") || \
+                 STRCMP(qa->resource, == , "srfs_fast") || \
+                 STRCMP(qa->resource, == , "sds") || \
+                 STRCMP(qa->resource, == , "psds"))
+          {
+
+          QueSizeResAvailPut(que, qa->resource, strToSize(qa->value));
+          }
+        else   /* must be of int type or time type */
+          {
+
+          if (strchr(qa->value, ':') == NULL)
+            {
+            QueIntResAvailPut(que, qa->resource,
+                              strToInt(qa->value));
+            }
+          else
+            {
+            QueIntResAvailPut(que, qa->resource,
+                              strtimeToSecs(qa->value));
+            }
+          }
+
+        }
+      else if (STRCMP(qa->name, == , ATTR_rescassn))
+        {
+
+        if (STRCMP(qa->resource, == , "nodes") || \
+            STRCMP(qa->resource, == , "arch") ||  \
+            STRCMP(qa->resource, == , "neednodes"))
+          {
+          QueStringResAssignPut(que, qa->resource, qa->value);
+          }
+        else if (STRCMP(qa->resource, == , "file") || \
+                 STRCMP(qa->resource, == , "mem") || \
+                 STRCMP(qa->resource, == , "pmem") || \
+                 STRCMP(qa->resource, == , "workingset") || \
+                 STRCMP(qa->resource, == , "pf") || \
+                 STRCMP(qa->resource, == , "ppf") || \
+                 STRCMP(qa->resource, == , "srfs_tmp") || \
+                 STRCMP(qa->resource, == , "srfs_wrk") || \
+                 STRCMP(qa->resource, == , "srfs_big") || \
+                 STRCMP(qa->resource, == , "srfs_fast") || \
+                 STRCMP(qa->resource, == , "sds") || \
+                 STRCMP(qa->resource, == , "psds"))
+          {
+
+          QueSizeResAssignPut(que, qa->resource,
+                              strToSize(qa->value));
+          }
+        else   /* must be of int type or time type */
+          {
+
+          if (strchr(qa->value, ':') == NULL)
+            {
+            QueIntResAssignPut(que, qa->resource,
+                               strToInt(qa->value));
+            }
+          else
+            {
+            QueIntResAssignPut(que, qa->resource,
+                               strtimeToSecs(qa->value));
+            }
+          }
+        }
+
+      }
+    }
+
+  pbs_statfree(ques);
+
+  return(0);
+
+  }
+
+/* returns 0 if successful; non-zero otherwise */
+static int getJobsInfo(server)
+Server *server;
+  {
+  static char  id[] = "getJobsInfo";
+  Job                   *job;
+
+  struct batch_status   *jobs, *j;
+
+  struct attrl          *ja;
+
+  jobs = (struct batch_status *)ServerWriteRead(server, STATJOB,
+         (struct attrl *) & job_alist);
+
+  if (jobs == NULL)
+    {
+    if (pbs_errno != PBSE_NONE)
+      {
+      log_err(pbs_errno, id, "ServerWriteRead");
+      }
+
+    return(1);
+    }
+
+  for (j = jobs; j; j = j->next)
+    {
+    job = (Job *)malloc(sizeof(Job));
+    mallocTableAdd(job, NULL, 0);
+    JobInit(job);
+
+    JobIdPut(job, j->name);
+    JobServerPut(job, (Server *)server);
+
+    for (ja = j->attribs; ja; ja = ja->next)
+      {
+
+      if (STRCMP(ja->name, == , ATTR_queue))
+        {
+        JobQueuePut(job, SetQueFindQueByName(&server->queues,
+                                             ja->value));
+        QueJobInsert(JobQueueGet(job), job);
+        SetJobAdd(&server->jobs, job);
+        }
+      else
+        {
+        updateServerJobInfo(job, ja->name, ja->resource,
+                            ja->value);
+        }
+
+      } /* for */
 
 #ifdef DEBUG
-  	printf("BEGIN of ServerStateRead(%s)###############################\n",
-						     ServerInetAddrGet(server));
-  	printDynamicArrayTable();
-	okClientPrint();
-	ResPrint();
-  	mallocTablePrint();
-  	varstrPrint();
-	ServerPrint(server);
-#endif
+    printf("Added job %x to mallocTable: \n", job);
 
-/*	Deallocates all queues that it manages*/
-/*      which in turn deallocates all jobs */
-	ServerFree2( server );
-	ServerInit2( server );
+    JobPrint(job);
+
+#endif
+    } /* for */
+
+  pbs_statfree(jobs);
+
+  return(0);
+  }
+
+static void ServerFree2(s)
+Server *s;
+  {
+  if (s == NOSERVER)
+    return;
+
+  /* free up all temporary strings associated with Server */
+  varstrFreeByPptr(s);
+
+  /* free up malloc-ed areas associated with Server */
+
+  mallocTableFreeByPptr(s);
+
+  /* free up all dynamic strings, and job structures associated */
+  /* with the server's queues */
+  SetQueFree(&s->queues);
+
+  SetJobFree(&s->jobs);
+  }
+
+void ServerStateRead(server)
+Server *server;
+  {
+  int ret = 0;
 
 #ifdef DEBUG
-  	printf("AFTER FREE in ServerStateRead(%s)############################",
-						ServerInetAddrGet(server));
-  	printDynamicArrayTable();
-	okClientPrint();
-	ResPrint();
-  	mallocTablePrint();
-  	varstrPrint();
-	ServerPrint(server);
+  printf("BEGIN of ServerStateRead(%s)###############################\n",
+         ServerInetAddrGet(server));
+  printDynamicArrayTable();
+  okClientPrint();
+  ResPrint();
+  mallocTablePrint();
+  varstrPrint();
+  ServerPrint(server);
 #endif
 
-	if( ServerFdTwoWayGet( server ) == -1 ) { /* don't open if already */
-		ret = ServerOpen( server );	  /* open */
-	}
-	if( ret == 0 ) {
-		getNodesInfo( server );
-		getServerInfo( server );
-		getQuesInfo( server );
-		getJobsInfo( server );
-	}
-}
+  /* Deallocates all queues that it manages*/
+  /*      which in turn deallocates all jobs */
+  ServerFree2(server);
+  ServerInit2(server);
+
+#ifdef DEBUG
+  printf("AFTER FREE in ServerStateRead(%s)############################",
+         ServerInetAddrGet(server));
+  printDynamicArrayTable();
+  okClientPrint();
+  ResPrint();
+  mallocTablePrint();
+  varstrPrint();
+  ServerPrint(server);
+#endif
+
+  if (ServerFdTwoWayGet(server) == -1)      /* don't open if already */
+    {
+    ret = ServerOpen(server);     /* open */
+    }
+
+  if (ret == 0)
+    {
+    getNodesInfo(server);
+    getServerInfo(server);
+    getQuesInfo(server);
+    getJobsInfo(server);
+    }
+  }
+
 /* JobAction: returns SUCCESS (1) if operation was completed successfully. Otherwise,
       it returns FAIL. */
-int JobAction( job, action, params )
+int JobAction(job, action, params)
 Job  *job;
 Action  action;
 void *params;
-{
-     static char  id[] = "JobAction";
-     int          connect;
-     char         *job_id;
-     int	  ret;
-     char	  act[15];
-     char	  *bufstr;	
-     char	  *tempstr = NULLSTR;
-     struct attrl attrib = {NULL, "", "", "", DFLT};
+  {
+  static char  id[] = "JobAction";
+  int          connect;
+  char         *job_id;
+  int   ret;
+  char   act[15];
+  char   *bufstr;
+  char   *tempstr = NULLSTR;
 
-     if( job == NOJOB || JobStateGet(job) == DELETED )
-	return(FAIL);
+  struct attrl attrib =
+    {
+    NULL, "", "", "", DFLT
+    };
 
-     job_id = JobIdGet( (Job *)job );
-     connect = ServerFdTwoWayGet((Server *)JobServerGet( (Job *)job ));
-	
-     switch(action) {
-	case SYNCRUN:
+  if (job == NOJOB || JobStateGet(job) == DELETED)
+    return(FAIL);
+
+  job_id = JobIdGet((Job *)job);
+
+  connect = ServerFdTwoWayGet((Server *)JobServerGet((Job *)job));
+
+  switch (action)
+    {
+
+    case SYNCRUN:
 #ifdef DEBUG
-		printf("%s: pbs_runjob(%d, %s, %s, NULL)\n", id, connect,
-						job_id, params);
+      printf("%s: pbs_runjob(%d, %s, %s, NULL)\n", id, connect,
+             job_id, params);
 #endif
-		ret = pbs_runjob(connect, job_id, (char *)params, NULL);
-                if( ret == 0 ) {
-                       updateServerJobInfo(job, ATTR_state, NULLSTR, "R");
-		       accumRes( job ); 	
-                }
+      ret = pbs_runjob(connect, job_id, (char *)params, NULL);
 
-		(void)strcpy(act, "SYNCRUN");
-		break;
-	case ASYNCRUN:
+      if (ret == 0)
+        {
+        updateServerJobInfo(job, ATTR_state, NULLSTR, "R");
+        accumRes(job);
+        }
+
+      (void)strcpy(act, "SYNCRUN");
+      break;
+
+    case ASYNCRUN:
 #ifdef DEBUG
-		printf("%s: pbs_asyrunjob(%d, %s, %s, NULL)\n", id, connect,
-						job_id, params);
+      printf("%s: pbs_asyrunjob(%d, %s, %s, NULL)\n", id, connect,
+             job_id, params);
 #endif
-		ret = pbs_asyrunjob(connect, job_id, (char *)params, NULL);
-                if( ret == 0 ) {
-                       updateServerJobInfo(job, ATTR_state, NULLSTR, "R");
-		       accumRes( job ); 	
-                }
+      ret = pbs_asyrunjob(connect, job_id, (char *)params, NULL);
 
-		(void)strcpy(act, "ASYNCRUN");
-		break;
-	case DELETE:
+      if (ret == 0)
+        {
+        updateServerJobInfo(job, ATTR_state, NULLSTR, "R");
+        accumRes(job);
+        }
+
+      (void)strcpy(act, "ASYNCRUN");
+      break;
+
+    case DELETE:
 #ifdef DEBUG
-		printf("%s: pbs_deljob(%d, %s, %s, NULL)\n", id, connect,
-						job_id, params);
+      printf("%s: pbs_deljob(%d, %s, %s, NULL)\n", id, connect,
+             job_id, params);
 #endif
-		ret = pbs_deljob(connect, job_id, (char *)params);
-                if( ret == 0 ) {
-                       updateServerJobInfo(job, ATTR_state, NULLSTR, "D");
-                }
-		(void)strcpy(act, "DELETE");
-		break;
-	case RERUN:
+      ret = pbs_deljob(connect, job_id, (char *)params);
+
+      if (ret == 0)
+        {
+        updateServerJobInfo(job, ATTR_state, NULLSTR, "D");
+        }
+
+      (void)strcpy(act, "DELETE");
+      break;
+
+    case RERUN:
 #ifdef DEBUG
-		printf("%s: pbs_rerunjob(%d, %s, NULL)\n", id, connect, job_id);
+      printf("%s: pbs_rerunjob(%d, %s, NULL)\n", id, connect, job_id);
 #endif
-		ret = pbs_rerunjob(connect, job_id, NULL);
-                if( ret == 0 ) {
-                       updateServerJobInfo(job, ATTR_state, NULLSTR, "Q");
-                }
+      ret = pbs_rerunjob(connect, job_id, NULL);
 
-		(void)strcpy(act, "RERUN");
-		break;
-	case HOLD:
+      if (ret == 0)
+        {
+        updateServerJobInfo(job, ATTR_state, NULLSTR, "Q");
+        }
+
+      (void)strcpy(act, "RERUN");
+      break;
+
+    case HOLD:
 #ifdef DEBUG
-		printf("%s: pbs_rerunjob(%d, %s, NULL)\n", id, connect, job_id);
+      printf("%s: pbs_rerunjob(%d, %s, NULL)\n", id, connect, job_id);
 #endif
-		ret = pbs_holdjob(connect, job_id, (char *)params, NULL);
-                if( ret == 0 ) {
-                       updateServerJobInfo(job, ATTR_state, NULLSTR, "H");
-                }
-		(void)strcpy(act, "HOLD");
-		break;
-	case RELEASE:
+      ret = pbs_holdjob(connect, job_id, (char *)params, NULL);
+
+      if (ret == 0)
+        {
+        updateServerJobInfo(job, ATTR_state, NULLSTR, "H");
+        }
+
+      (void)strcpy(act, "HOLD");
+      break;
+
+    case RELEASE:
 #ifdef DEBUG
-		printf("%s: pbs_rlsjob(%d, %s, %s, NULL)\n", id, connect,
-						job_id, params);
+      printf("%s: pbs_rlsjob(%d, %s, %s, NULL)\n", id, connect,
+             job_id, params);
 #endif
-		ret = pbs_rlsjob(connect, job_id, (char *)params, NULL);
-                if( ret == 0 ) {
-                       updateServerJobInfo(job, ATTR_state, NULLSTR, "Q");
-                }
-		(void)strcpy(act, "RELEASE");
-		break;
-	case SIGNAL:
+      ret = pbs_rlsjob(connect, job_id, (char *)params, NULL);
+
+      if (ret == 0)
+        {
+        updateServerJobInfo(job, ATTR_state, NULLSTR, "Q");
+        }
+
+      (void)strcpy(act, "RELEASE");
+      break;
+
+    case SIGNAL:
 #ifdef DEBUG
-		printf("%s: pbs_sigjob(%d, %s, %s, NULL)\n", id, connect,
-						job_id, params);
+      printf("%s: pbs_sigjob(%d, %s, %s, NULL)\n", id, connect,
+             job_id, params);
 #endif
-		ret = pbs_sigjob(connect, job_id, (char *)params, NULL);
-		(void)strcpy(act, "SIGNAL");
-		break;
-	case MODIFYATTR:
-        	dynamic_strcpy(&tempstr, params);
+      ret = pbs_sigjob(connect, job_id, (char *)params, NULL);
+      (void)strcpy(act, "SIGNAL");
+      break;
 
-		if( (bufstr=strtok(tempstr, "=")) != NULLSTR )
-			attrib.name = bufstr;
+    case MODIFYATTR:
+      dynamic_strcpy(&tempstr, params);
 
-		if( (bufstr=strtok(NULL,"=")) != NULLSTR )
-			attrib.value = bufstr;
+      if ((bufstr = strtok(tempstr, "=")) != NULLSTR)
+        attrib.name = bufstr;
 
-#ifdef DEBUG
-		printf("%s: pbs_alterjob(%d, %s, {%s,%s,%s}, NULL)\n", id,
-		   connect, job_id, attrib.name, attrib.resource, attrib.value);
-#endif
-		ret = pbs_alterjob(connect, job_id, &attrib, NULL);
-                if( ret == 0 ) {
-                       updateServerJobInfo(job, attrib.name, NULLSTR,
-                                                               attrib.value);
-                }
-
-		(void)strcpy(act, "MODIFYATTR");
-		varstrFree(tempstr);
-		break;
-	case MODIFYRES:
-
-        	dynamic_strcpy(&tempstr, params);
-		attrib.name  = ATTR_l;
-		if( (bufstr=strtok(tempstr, "=")) != NULLSTR )
-			attrib.resource = bufstr;
-
-		if( (bufstr=strtok(NULL, "=")) != NULLSTR )
-			attrib.value = bufstr; 
+      if ((bufstr = strtok(NULL, "=")) != NULLSTR)
+        attrib.value = bufstr;
 
 #ifdef DEBUG
-		printf("%s: pbs_alterjob(%d, %s, {%s,%s,%s}, NULL)\n", id,
-		   connect, job_id, attrib.name, attrib.resource, attrib.value);
+      printf("%s: pbs_alterjob(%d, %s, {%s,%s,%s}, NULL)\n", id,
+             connect, job_id, attrib.name, attrib.resource, attrib.value);
+
 #endif
-		ret = pbs_alterjob(connect, job_id, &attrib, NULL);
-                if( ret == 0 ) {
-                       updateServerJobInfo(job, attrib.name, attrib.resource,
-                                                               attrib.value);
-                }
+      ret = pbs_alterjob(connect, job_id, &attrib, NULL);
 
-		(void)strcpy(act, "MODIFYRES");
-		varstrFree(tempstr);
-		break;
-	default:
-		(void)sprintf(log_buffer, 
-				"Unknown job action %d received for %s\n",
-								action, job_id);
-		log_err(-1, id, log_buffer);
-		return(FAIL);
-     }
-     if ( ret != 0 ) {	/* returns 0 if successful */
-          (void)sprintf(log_buffer, 
-			       "%s %s returned %d %s\n", act, job_id, pbs_errno,
-								    pbserror());
-          log_err(-1, id, log_buffer);
-	  return(FAIL);
-     }
-     return(SUCCESS);
-}
+      if (ret == 0)
+        {
+        updateServerJobInfo(job, attrib.name, NULLSTR,
+                            attrib.value);
+        }
 
-void ServerFree( s )
-Server	*s;
-{
-	if( s == NOSERVER )
-		return;
+      (void)strcpy(act, "MODIFYATTR");
+      varstrFree(tempstr);
+      break;
 
-	/* free up the global strings of the server */
-	varstrFree(s->inetAddr);
-	/* free up dynamically allocated attributes */
-	ServerFree2(s);
-	SetCNodeFree(&s->nodes);
-}
+    case MODIFYRES:
+
+      dynamic_strcpy(&tempstr, params);
+      attrib.name  = ATTR_l;
+
+      if ((bufstr = strtok(tempstr, "=")) != NULLSTR)
+        attrib.resource = bufstr;
+
+      if ((bufstr = strtok(NULL, "=")) != NULLSTR)
+        attrib.value = bufstr;
+
+#ifdef DEBUG
+      printf("%s: pbs_alterjob(%d, %s, {%s,%s,%s}, NULL)\n", id,
+             connect, job_id, attrib.name, attrib.resource, attrib.value);
+
+#endif
+      ret = pbs_alterjob(connect, job_id, &attrib, NULL);
+
+      if (ret == 0)
+        {
+        updateServerJobInfo(job, attrib.name, attrib.resource,
+                            attrib.value);
+        }
+
+      (void)strcpy(act, "MODIFYRES");
+      varstrFree(tempstr);
+      break;
+
+    default:
+      (void)sprintf(log_buffer,
+                    "Unknown job action %d received for %s\n",
+                    action, job_id);
+      log_err(-1, id, log_buffer);
+      return(FAIL);
+    }
+
+  if (ret != 0)     /* returns 0 if successful */
+    {
+    (void)sprintf(log_buffer,
+                  "%s %s returned %d %s\n", act, job_id, pbs_errno,
+                  pbserror());
+    log_err(-1, id, log_buffer);
+    return(FAIL);
+    }
+
+  return(SUCCESS);
+  }
+
+void ServerFree(s)
+Server *s;
+  {
+  if (s == NOSERVER)
+    return;
+
+  /* free up the global strings of the server */
+  varstrFree(s->inetAddr);
+
+  /* free up dynamically allocated attributes */
+  ServerFree2(s);
+
+  SetCNodeFree(&s->nodes);
+  }
 
 /* Set of Server abstraction */
 void SetServerInit(ss)
 SetServer  *ss;
-{
-        ss->head = NOSERVER;
-	ss->localhost = NOSERVER;
-        ss->tail = NOSERVER;
-}
+  {
+  ss->head = NOSERVER;
+  ss->localhost = NOSERVER;
+  ss->tail = NOSERVER;
+  }
 
 /* adds to the end of the list */
 void SetServerAdd(ss, s)
 SetServer  *ss;
 Server     *s;
-{
-    assert( ss != EMPTYSETSERVER );
+  {
+  assert(ss != EMPTYSETSERVER);
 
-    assert( ss->head == NOSERVER && ss->tail == NOSERVER || \
-            ss->head != NOSERVER && ss->tail != NOSERVER );
+  assert(ss->head == NOSERVER && ss->tail == NOSERVER || \
+         ss->head != NOSERVER && ss->tail != NOSERVER);
 
-    assert(s != NOSERVER);
+  assert(s != NOSERVER);
 
-    mallocTableAdd(s, ss, 0);
+  mallocTableAdd(s, ss, 0);
 
 #ifdef DEBUG
-    printf("Added Server s: %x to Set Server ss: %x\n", s, ss);
-    ServerPrint(s);
+  printf("Added Server s: %x to Set Server ss: %x\n", s, ss);
+  ServerPrint(s);
 #endif
 
-    s->nextptr = NOSERVER;
+  s->nextptr = NOSERVER;
 
-    if( ss->head == NOSERVER && ss->tail == NOSERVER ) {
-          ss->head = s;
-          ss->tail = s;
-    } else {
-          ss->tail->nextptr = s;
-          ss->tail = s;
+  if (ss->head == NOSERVER && ss->tail == NOSERVER)
+    {
+    ss->head = s;
+    ss->tail = s;
+    }
+  else
+    {
+    ss->tail->nextptr = s;
+    ss->tail = s;
     }
 
-}
+  }
 
 void SetServerFree(ss)
 SetServer  *ss;
-{
-        Server     *s, *stmp;
+  {
+  Server     *s, *stmp;
 
-        if( ss == EMPTYSETSERVER )
-                return; /* ignore */
+  if (ss == EMPTYSETSERVER)
+    return; /* ignore */
 
-        for( s = ss->head; s; s=stmp ) {
-                stmp = s->nextptr;
-                /* free up dynamic strings, and dynamic Que structs */
-                ServerFree( s );
-        }
-        /* Free up the dynamic Server structures themselves */
-        mallocTableFreeByPptr(ss);
-        /* Keep things consistent */
-        SetServerInit(ss);
-}
+  for (s = ss->head; s; s = stmp)
+    {
+    stmp = s->nextptr;
+    /* free up dynamic strings, and dynamic Que structs */
+    ServerFree(s);
+    }
+
+  /* Free up the dynamic Server structures themselves */
+  mallocTableFreeByPptr(ss);
+
+  /* Keep things consistent */
+  SetServerInit(ss);
+  }
 
 void SetServerPrint(ss)
 SetServer  *ss;
-{
-        Server     *s;
+  {
+  Server     *s;
 
-        for(s=ss->head; s; s=s->nextptr)
-                ServerPrint( s );
-}
+  for (s = ss->head; s; s = s->nextptr)
+    ServerPrint(s);
+  }
 
 int inSetServer(s, ss)
 Server     *s;
 SetServer  *ss;
-{
-        Server     *c;
+  {
+  Server     *c;
 
-	if( ss == EMPTYSETSERVER )
-		return(0);
+  if (ss == EMPTYSETSERVER)
+    return(0);
 
-        for(c=ss->head; c; c=c->nextptr) {
-                if( c == s )
-                        return(1);
-        }
-        return(0);
-}
+  for (c = ss->head; c; c = c->nextptr)
+    {
+    if (c == s)
+      return(1);
+    }
+
+  return(0);
+  }
 
 
 /* AllServers stuff */
-int AllServersAdd(name, port)
-char    *name;
-int     port;
-{
-        Server *newServer, *cptr;
-        struct hostent  *host;
-        char     *str1 = NULLSTR;
-        char     *str2 = NULLSTR;
+int
+AllServersAdd(char *name, int port)
+  {
+  Server *newServer, *cptr;
 
-        static  char    id[] = "AllServersAdd";
+  struct hostent  *host;
+  char     *str1 = NULLSTR;
+  char     *str2 = NULLSTR;
 
-        if ((host = gethostbyname(name)) == NULL) {
-                (void)sprintf(log_buffer, "serverhost %s not found", name);
-                log_err(-1, id, log_buffer);
-                return -1;
-        }
-        dynamic_strcpy(&str1, host->h_name);
+  static  char    id[] = "AllServersAdd";
 
-        for(cptr=AllServers.head; cptr; cptr=cptr->nextptr) {
+  if ((host = gethostbyname(name)) == NULL)
+    {
+    (void)sprintf(log_buffer, "serverhost %s not found", name);
+    log_err(-1, id, log_buffer);
+    return -1;
+    }
 
-            if((host=gethostbyname(ServerInetAddrGet(cptr))) != NULL) {
-                dynamic_strcpy(&str2, host->h_name);
+  dynamic_strcpy(&str1, host->h_name);
 
-                if( STRCMP(str1, ==, str2) &&
-		    (port == 0 || ServerPortNumberTwoWayGet(cptr) == port) ) {
+  for (cptr = AllServers.head; cptr; cptr = cptr->nextptr)
+    {
 
-                      (void)sprintf(log_buffer,
-                                   "ignoring duplicate serverhost(%s, %d)\n",
-                                                                 name, port);
-                      log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, id,
-                                                               log_buffer);
-                      varstrFree(str1);
-                      varstrFree(str2);
-                      return(0);
-                }
-            }
-        }
+    if ((host = gethostbyname(ServerInetAddrGet(cptr))) != NULL)
+      {
+      dynamic_strcpy(&str2, host->h_name);
 
-        newServer = (Server *)malloc(sizeof(Server));
-        ServerInit(newServer);
-        ServerInetAddrPut( newServer, name );
+      if (STRCMP(str1, == , str2) &&
+          (port == 0 || ServerPortNumberTwoWayGet(cptr) == port))
+        {
 
-	if( port == 0 ) { 
-		port = (int) get_svrport(PBS_BATCH_SERVICE_NAME,
-				    "tcp", PBS_BATCH_SERVICE_PORT);
-	}
-        ServerPortNumberTwoWayPut( newServer, port );
-
-        SetServerAdd(&AllServers, newServer);
-        (void)sprintf(log_buffer, "added serverhost(%s, %d)", name, port);
-        log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, id, log_buffer);
+        (void)sprintf(log_buffer,
+                      "ignoring duplicate serverhost(%s, %d)\n",
+                      name, port);
+        log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, id,
+                   log_buffer);
         varstrFree(str1);
         varstrFree(str2);
         return(0);
-}
+        }
+      }
+    }
+
+  newServer = (Server *)malloc(sizeof(Server));
+
+  ServerInit(newServer);
+  ServerInetAddrPut(newServer, name);
+
+  if (port == 0)
+    {
+    port = (int) get_svrport(PBS_BATCH_SERVICE_NAME,
+                             "tcp", PBS_BATCH_SERVICE_PORT);
+    }
+
+  ServerPortNumberTwoWayPut(newServer, port);
+
+  SetServerAdd(&AllServers, newServer);
+  (void)sprintf(log_buffer, "added serverhost(%s, %d)", name, port);
+  log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, id, log_buffer);
+  varstrFree(str1);
+  varstrFree(str2);
+  return(0);
+  }
 
 void AllServersInit(void)
-{
-        SetServerInit(&AllServers);
-}
+  {
+  SetServerInit(&AllServers);
+  }
 
 SetServer *AllServersGet(void)
-{
-        return(&AllServers);
-}
+  {
+  return(&AllServers);
+  }
 
 Server   *AllServersHeadGet(void)
-{
-        return(AllServers.head);
-}
+  {
+  return(AllServers.head);
+  }
 
 Server   *AllServersLocalHostGet(void)
-{
-        return(AllServers.localhost);
-}
+  {
+  return(AllServers.localhost);
+  }
 
-void 	AllServersLocalHostPut(server)
-Server	*server;
-{
-        AllServers.localhost = server;
-}
+void  AllServersLocalHostPut(server)
+Server *server;
+  {
+  AllServers.localhost = server;
+  }
 
-void 	AllServersFree(void)
-{
-	SetServerFree(&AllServers);
-}
+void  AllServersFree(void)
+  {
+  SetServerFree(&AllServers);
+  }
 
-static int ServerPartition(A, p, r)
-struct ServerSortArgs   *A;
-int                     p;
-int                     r;
-{
+static int
+ServerPartition(struct ServerSortArgs *A, int p, int r)
+  {
 
-        Server                *temptr;
-        Server                *temptr2;
-        int                   i, j;
-        int                   k;
+  Server                *temptr;
+  Server                *temptr2;
+  int                   i, j;
+  int                   k;
 
-        assert( A->keytype == INTKEY || A->keytype == STRINGKEY || \
-                A->keytype == DATETIMEKEY || A->keytype == SIZEKEY || \
-		A->keytype == FLOATKEY );
+  assert(A->keytype == INTKEY || A->keytype == STRINGKEY || \
+         A->keytype == DATETIMEKEY || A->keytype == SIZEKEY || \
+         A->keytype == FLOATKEY);
 
-        i = p - 1;
-        j = r + 1;
+  i = p - 1;
+  j = r + 1;
 
-        while( TRUE ) {
+  while (TRUE)
+    {
 
-          switch(A->keytype) {
-            case INTKEY:
-                do {
-                        j--;
-                } while( (A->order == ASC  && A->key.ifunc(A->array[j]) > \
-                                           A->key.ifunc(A->array[p])) ||  \
-                         (A->order == DESC && A->key.ifunc(A->array[j]) < \
-                                           A->key.ifunc(A->array[p])) );
+    switch (A->keytype)
+      {
 
-                do {
-                        i++;
-                } while( (A->order == ASC  && A->key.ifunc(A->array[i]) < \
-                                           A->key.ifunc(A->array[p])) ||  \
-                         (A->order == DESC && A->key.ifunc(A->array[i]) > \
-                                           A->key.ifunc(A->array[p])) );
-                break;
-            case FLOATKEY:
-                do {
-                        j--;
-                } while( (A->order == ASC  && A->key.ffunc(A->array[j]) > \
-                                           A->key.ffunc(A->array[p])) ||  \
-                         (A->order == DESC && A->key.ffunc(A->array[j]) < \
-                                           A->key.ffunc(A->array[p])) );
+      case INTKEY:
 
-                do {
-                        i++;
-                } while( (A->order == ASC  && A->key.ffunc(A->array[i]) < \
-                                           A->key.ffunc(A->array[p])) ||  \
-                         (A->order == DESC && A->key.ffunc(A->array[i]) > \
-                                           A->key.ffunc(A->array[p])) );
-                break;
-            case STRINGKEY:
-                do {
-                        j--;
-                } while((A->order == ASC && \
-                                STRCMP( A->key.sfunc(A->array[j]),
-                                      >, A->key.sfunc(A->array[p]) )) || \
-                       (A->order == DESC && \
-                                STRCMP( A->key.sfunc(A->array[j]),
-                                      <, A->key.sfunc(A->array[p]) )));
-
-                do {
-                        i++;
-                } while((A->order == ASC && \
-                                STRCMP( A->key.sfunc(A->array[i]),
-                                      <, A->key.sfunc(A->array[p]) )) || \
-                        (A->order == DESC && \
-                                STRCMP( A->key.sfunc(A->array[i]),
-                                      >, A->key.sfunc(A->array[p]) )) );
-                break;
-            case DATETIMEKEY:
-                do {
-                        j--;
-                } while( (A->order == ASC && \
-                                DATETIMECMP( A->key.dfunc(A->array[j]),
-                                 >, A->key.dfunc(A->array[p]) )) || \
-                         (A->order == DESC && \
-                                DATETIMECMP( A->key.dfunc(A->array[j]),
-                                <, A->key.dfunc(A->array[p]) )) );
-
-                do {
-                        i++;
-                } while( (A->order == ASC && \
-                                DATETIMECMP( A->key.dfunc(A->array[i]),
-                                 <, A->key.dfunc(A->array[p]) )) || \
-                         (A->order == DESC && \
-                                DATETIMECMP( A->key.dfunc(A->array[i]),
-                                 >, A->key.dfunc(A->array[p]) )) );
-                break;
-            case SIZEKEY:
-                do {
-                        j--;
-                } while( (A->order == ASC && \
-                                SIZECMP( A->key.szfunc(A->array[j]),
-                                >, A->key.szfunc(A->array[p]) )) || \
-                         (A->order == DESC && \
-                                SIZECMP( A->key.szfunc(A->array[j]),
-                                <, A->key.szfunc(A->array[p]) )) );
-
-                do {
-                        i++;
-                } while( (A->order == ASC && \
-                                SIZECMP( A->key.szfunc(A->array[i]),
-                                <, A->key.szfunc(A->array[p]) )) || \
-                         (A->order == DESC && \
-                                SIZECMP( A->key.szfunc(A->array[i]),
-                                >, A->key.szfunc(A->array[p]) )) );
-                break;
+        do
+          {
+          j--;
           }
+        while ((A->order == ASC  && A->key.ifunc(A->array[j]) > \
+                A->key.ifunc(A->array[p])) ||  \
+               (A->order == DESC && A->key.ifunc(A->array[j]) < \
+                A->key.ifunc(A->array[p])));
 
-          if( i < j ) {
-                /* move the pointers around */
-                if( i+1 == j ) {
-                        temptr2 = A->array[i];
-                } else {
-                        temptr2 = A->array[i]->nextptr;
-                }
-                A->array[i]->nextptr = A->array[j]->nextptr;
-                A->array[j]->nextptr = temptr2;
-
-
-                if( i-1 >= 0 && i-1 < dynamicArraySize(A->array) ) {
-                        A->array[i-1]->nextptr = A->array[j];
-                }
-                if( j-1 != i && j-1 >= 0 && j-1 < dynamicArraySize(A->array) ) {
-                        A->array[j-1]->nextptr = A->array[i];
-                }
-
-                if( A->set->head == A->array[i] ) {
-                        A->set->head = A->array[j];
-                }
-                if( A->set->tail == A->array[j] ) {
-                        A->set->tail = A->array[i];
-                }
-
-                /* update the entries on the array */
-                temptr = A->array[j];
-                A->array[j] = A->array[i];
-                A->array[i] = temptr;
-
-
-          } else {
-                return(j);
+        do
+          {
+          i++;
           }
+        while ((A->order == ASC  && A->key.ifunc(A->array[i]) < \
+                A->key.ifunc(A->array[p])) ||  \
+               (A->order == DESC && A->key.ifunc(A->array[i]) > \
+                A->key.ifunc(A->array[p])));
 
-        } /* while */
-}
+        break;
 
-static void ServerQuickSort(A, p, r)
-struct ServerSortArgs   *A;
-int                     p;
-int                     r;
-{
-        int     q;
+      case FLOATKEY:
+        do
+          {
+          j--;
+          }
+        while ((A->order == ASC  && A->key.ffunc(A->array[j]) > \
+                A->key.ffunc(A->array[p])) ||  \
+               (A->order == DESC && A->key.ffunc(A->array[j]) < \
+                A->key.ffunc(A->array[p])));
 
-        if( p < r ) {
+        do
+          {
+          i++;
+          }
+        while ((A->order == ASC  && A->key.ffunc(A->array[i]) < \
+                A->key.ffunc(A->array[p])) ||  \
+               (A->order == DESC && A->key.ffunc(A->array[i]) > \
+                A->key.ffunc(A->array[p])));
 
-                q = ServerPartition(A, p, r);
-                ServerQuickSort(A, p, q);
-                ServerQuickSort(A, q+1, r);
+        break;
+
+      case STRINGKEY:
+        do
+          {
+          j--;
+          }
+        while ((A->order == ASC && \
+                STRCMP(A->key.sfunc(A->array[j]),
+                       > , A->key.sfunc(A->array[p]))) || \
+               (A->order == DESC && \
+                STRCMP(A->key.sfunc(A->array[j]),
+                       < , A->key.sfunc(A->array[p]))));
+
+        do
+          {
+          i++;
+          }
+        while ((A->order == ASC && \
+                STRCMP(A->key.sfunc(A->array[i]),
+                       < , A->key.sfunc(A->array[p]))) || \
+               (A->order == DESC && \
+                STRCMP(A->key.sfunc(A->array[i]),
+                       > , A->key.sfunc(A->array[p]))));
+
+        break;
+
+      case DATETIMEKEY:
+        do
+          {
+          j--;
+          }
+        while ((A->order == ASC && \
+                DATETIMECMP(A->key.dfunc(A->array[j]),
+                            > , A->key.dfunc(A->array[p]))) || \
+               (A->order == DESC && \
+                DATETIMECMP(A->key.dfunc(A->array[j]),
+                            < , A->key.dfunc(A->array[p]))));
+
+        do
+          {
+          i++;
+          }
+        while ((A->order == ASC && \
+                DATETIMECMP(A->key.dfunc(A->array[i]),
+                            < , A->key.dfunc(A->array[p]))) || \
+               (A->order == DESC && \
+                DATETIMECMP(A->key.dfunc(A->array[i]),
+                            > , A->key.dfunc(A->array[p]))));
+
+        break;
+
+      case SIZEKEY:
+        do
+          {
+          j--;
+          }
+        while ((A->order == ASC && \
+                SIZECMP(A->key.szfunc(A->array[j]),
+                        > , A->key.szfunc(A->array[p]))) || \
+               (A->order == DESC && \
+                SIZECMP(A->key.szfunc(A->array[j]),
+                        < , A->key.szfunc(A->array[p]))));
+
+        do
+          {
+          i++;
+          }
+        while ((A->order == ASC && \
+                SIZECMP(A->key.szfunc(A->array[i]),
+                        < , A->key.szfunc(A->array[p]))) || \
+               (A->order == DESC && \
+                SIZECMP(A->key.szfunc(A->array[i]),
+                        > , A->key.szfunc(A->array[p]))));
+
+        break;
+      }
+
+    if (i < j)
+      {
+      /* move the pointers around */
+      if (i + 1 == j)
+        {
+        temptr2 = A->array[i];
         }
-}
+      else
+        {
+        temptr2 = A->array[i]->nextptr;
+        }
+
+      A->array[i]->nextptr = A->array[j]->nextptr;
+
+      A->array[j]->nextptr = temptr2;
+
+
+      if (i - 1 >= 0 && i - 1 < dynamicArraySize(A->array))
+        {
+        A->array[i-1]->nextptr = A->array[j];
+        }
+
+      if (j - 1 != i && j - 1 >= 0 && j - 1 < dynamicArraySize(A->array))
+        {
+        A->array[j-1]->nextptr = A->array[i];
+        }
+
+      if (A->set->head == A->array[i])
+        {
+        A->set->head = A->array[j];
+        }
+
+      if (A->set->tail == A->array[j])
+        {
+        A->set->tail = A->array[i];
+        }
+
+      /* update the entries on the array */
+      temptr = A->array[j];
+
+      A->array[j] = A->array[i];
+
+      A->array[i] = temptr;
+
+
+      }
+    else
+      {
+      return(j);
+      }
+
+    } /* while */
+  }
+
+static void
+ServerQuickSort(struct ServerSortArgs *A, int p, int r)
+  {
+  int     q;
+
+  if (p < r)
+    {
+
+    q = ServerPartition(A, p, r);
+    ServerQuickSort(A, p, q);
+    ServerQuickSort(A, q + 1, r);
+    }
+  }
 
 int SetServerSortInt(s, key, order)
 SetServer            *s;
-int                  (*key)();
+int (*key)();
 int                  order;
-{
+  {
 
-        Server    **s_ptrs = NULL;
-        int    beforecnt, aftercnt;
-        struct ServerSortArgs A;
-        Server     *q;
+  Server    **s_ptrs = NULL;
+  int    beforecnt, aftercnt;
 
-        if( order != ASC && order != DESC ) {
-                fprintf(stderr,
-                          "SetServerSortInt: order != ASC and order !=DESC\n");
-                return(FAIL);
-        }
+  struct ServerSortArgs A;
+  Server     *q;
 
-        beforecnt = 0;
-        for(q=s->head; q; q=q->nextptr) {
-                s_ptrs = (Server **)extendDynamicArray(s_ptrs,
-                         beforecnt+1, sizeof(Server *));
+  if (order != ASC && order != DESC)
+    {
+    fprintf(stderr,
+            "SetServerSortInt: order != ASC and order !=DESC\n");
+    return(FAIL);
+    }
 
-                aftercnt = dynamicArraySize(s_ptrs);
+  beforecnt = 0;
 
-                if (beforecnt == aftercnt) {
-                        fprintf(stderr,
-                                "SetServerSortInt: Unable to realloc s_ptrs");
-                        if( aftercnt > 0 ) {
-                                freeDynamicArray(s_ptrs);
-                        }
-                        return(FAIL);
-                }
-                s_ptrs[beforecnt] = q;
-                beforecnt++;
-        }
+  for (q = s->head; q; q = q->nextptr)
+    {
+    s_ptrs = (Server **)extendDynamicArray(s_ptrs,
+                                           beforecnt + 1, sizeof(Server *));
 
-        A.array = s_ptrs;
-        A.set = s;
-        A.key.ifunc = key;
-        A.keytype = INTKEY;
-        A.order   = order;
+    aftercnt = dynamicArraySize(s_ptrs);
 
-        ServerQuickSort(&A, 0, beforecnt-1);
+    if (beforecnt == aftercnt)
+      {
+      fprintf(stderr,
+              "SetServerSortInt: Unable to realloc s_ptrs");
 
+      if (aftercnt > 0)
+        {
         freeDynamicArray(s_ptrs);
-        return(SUCCESS);
-}
+        }
+
+      return(FAIL);
+      }
+
+    s_ptrs[beforecnt] = q;
+
+    beforecnt++;
+    }
+
+  A.array = s_ptrs;
+
+  A.set = s;
+  A.key.ifunc = key;
+  A.keytype = INTKEY;
+  A.order   = order;
+
+  ServerQuickSort(&A, 0, beforecnt - 1);
+
+  freeDynamicArray(s_ptrs);
+  return(SUCCESS);
+  }
 
 int SetServerSortStr(s, key, order)
 SetServer            *s;
 char                 *(*key)();
 int                  order;
-{
+  {
 
-        Server    **s_ptrs = NULL;
-        int    beforecnt, aftercnt;
-        struct ServerSortArgs A;
-        Server     *q;
+  Server    **s_ptrs = NULL;
+  int    beforecnt, aftercnt;
 
-        if( order != ASC && order != DESC ) {
-                fprintf(stderr,
-                          "SetServerSortStr: order != ASC and order !=DESC\n");
-                return(FAIL);
-        }
+  struct ServerSortArgs A;
+  Server     *q;
 
-        beforecnt = 0;
-        for(q=s->head; q; q=q->nextptr) {
-                s_ptrs = (Server **)extendDynamicArray(s_ptrs,
-                         beforecnt+1, sizeof(Server *));
+  if (order != ASC && order != DESC)
+    {
+    fprintf(stderr,
+            "SetServerSortStr: order != ASC and order !=DESC\n");
+    return(FAIL);
+    }
 
-                aftercnt = dynamicArraySize(s_ptrs);
+  beforecnt = 0;
 
-                if (beforecnt == aftercnt) {
-                        fprintf(stderr,
-                                "SetServerSortStr: Unable to realloc s_ptrs");
-                        if( aftercnt > 0 ) {
-                                freeDynamicArray(s_ptrs);
-                        }
-                        return(FAIL);
-                }
-                s_ptrs[beforecnt] = q;
-                beforecnt++;
-        }
+  for (q = s->head; q; q = q->nextptr)
+    {
+    s_ptrs = (Server **)extendDynamicArray(s_ptrs,
+                                           beforecnt + 1, sizeof(Server *));
 
-        A.array = s_ptrs;
-        A.set = s;
-        A.key.sfunc = key;
-        A.keytype = STRINGKEY;
-        A.order   = order;
+    aftercnt = dynamicArraySize(s_ptrs);
 
-        ServerQuickSort(&A, 0, beforecnt-1);
+    if (beforecnt == aftercnt)
+      {
+      fprintf(stderr,
+              "SetServerSortStr: Unable to realloc s_ptrs");
 
+      if (aftercnt > 0)
+        {
         freeDynamicArray(s_ptrs);
-        return(SUCCESS);
-}
+        }
+
+      return(FAIL);
+      }
+
+    s_ptrs[beforecnt] = q;
+
+    beforecnt++;
+    }
+
+  A.array = s_ptrs;
+
+  A.set = s;
+  A.key.sfunc = key;
+  A.keytype = STRINGKEY;
+  A.order   = order;
+
+  ServerQuickSort(&A, 0, beforecnt - 1);
+
+  freeDynamicArray(s_ptrs);
+  return(SUCCESS);
+  }
 
 int SetServerSortDateTime(s, key, order)
 SetServer               *s;
-DateTime             (*key)();
+DateTime(*key)();
 int                  order;
-{
+  {
 
-        Server    **s_ptrs = NULL;
-        int    beforecnt, aftercnt;
-        struct ServerSortArgs A;
-        Server     *q;
+  Server    **s_ptrs = NULL;
+  int    beforecnt, aftercnt;
 
-        if( order != ASC && order != DESC ) {
-                fprintf(stderr,
-                      "SetServerSortDateTime: order != ASC and order !=DESC\n");
-                return(FAIL);
-        }
+  struct ServerSortArgs A;
+  Server     *q;
 
-        beforecnt = 0;
-        for(q=s->head; q; q=q->nextptr) {
-                s_ptrs = (Server **)extendDynamicArray(s_ptrs,
-                         beforecnt+1, sizeof(Server *));
+  if (order != ASC && order != DESC)
+    {
+    fprintf(stderr,
+            "SetServerSortDateTime: order != ASC and order !=DESC\n");
+    return(FAIL);
+    }
 
-                aftercnt = dynamicArraySize(s_ptrs);
+  beforecnt = 0;
 
-                if (beforecnt == aftercnt) {
-                        fprintf(stderr,
-                             "SetServerSortDateTime: Unable to realloc s_ptrs");
-                        if( aftercnt > 0 ) {
-                                freeDynamicArray(s_ptrs);
-                        }
-                        return(FAIL);
-                }
-                s_ptrs[beforecnt] = q;
-                beforecnt++;
-        }
+  for (q = s->head; q; q = q->nextptr)
+    {
+    s_ptrs = (Server **)extendDynamicArray(s_ptrs,
+                                           beforecnt + 1, sizeof(Server *));
 
-        A.array = s_ptrs;
-        A.set = s;
-        A.key.dfunc = key;
-        A.keytype = DATETIMEKEY;
-        A.order   = order;
+    aftercnt = dynamicArraySize(s_ptrs);
 
-        ServerQuickSort(&A, 0, beforecnt-1);
+    if (beforecnt == aftercnt)
+      {
+      fprintf(stderr,
+              "SetServerSortDateTime: Unable to realloc s_ptrs");
 
+      if (aftercnt > 0)
+        {
         freeDynamicArray(s_ptrs);
-        return(SUCCESS);
-}
+        }
+
+      return(FAIL);
+      }
+
+    s_ptrs[beforecnt] = q;
+
+    beforecnt++;
+    }
+
+  A.array = s_ptrs;
+
+  A.set = s;
+  A.key.dfunc = key;
+  A.keytype = DATETIMEKEY;
+  A.order   = order;
+
+  ServerQuickSort(&A, 0, beforecnt - 1);
+
+  freeDynamicArray(s_ptrs);
+  return(SUCCESS);
+  }
 
 int SetServerSortSize(s, key, order)
 SetServer               *s;
-Size                 (*key)();
+Size(*key)();
 int                  order;
-{
+  {
 
-        Server    **s_ptrs = NULL;
-        int    beforecnt, aftercnt;
-        struct ServerSortArgs A;
-        Server     *q;
+  Server    **s_ptrs = NULL;
+  int    beforecnt, aftercnt;
 
-        if( order != ASC && order != DESC ) {
-                fprintf(stderr,
-                        "SetServerSortSize: order != ASC and order !=DESC\n");
-                return(FAIL);
-        }
+  struct ServerSortArgs A;
+  Server     *q;
 
-        beforecnt = 0;
-        for(q=s->head; q; q=q->nextptr) {
-                s_ptrs = (Server **)extendDynamicArray(s_ptrs,
-                         beforecnt+1, sizeof(Server *));
+  if (order != ASC && order != DESC)
+    {
+    fprintf(stderr,
+            "SetServerSortSize: order != ASC and order !=DESC\n");
+    return(FAIL);
+    }
 
-                aftercnt = dynamicArraySize(s_ptrs);
+  beforecnt = 0;
 
-                if (beforecnt == aftercnt) {
-                        fprintf(stderr,
-                                "SetServerSortSize: Unable to realloc s_ptrs");
-                        if( aftercnt > 0 ) {
-                                freeDynamicArray(s_ptrs);
-                        }
-                        return(FAIL);
-                }
-                s_ptrs[beforecnt] = q;
-                beforecnt++;
-        }
+  for (q = s->head; q; q = q->nextptr)
+    {
+    s_ptrs = (Server **)extendDynamicArray(s_ptrs,
+                                           beforecnt + 1, sizeof(Server *));
 
-        A.array = s_ptrs;
-        A.set = s;
-        A.key.szfunc = key;
-        A.keytype = SIZEKEY;
-        A.order   = order;
+    aftercnt = dynamicArraySize(s_ptrs);
 
-        ServerQuickSort(&A, 0, beforecnt-1);
+    if (beforecnt == aftercnt)
+      {
+      fprintf(stderr,
+              "SetServerSortSize: Unable to realloc s_ptrs");
 
+      if (aftercnt > 0)
+        {
         freeDynamicArray(s_ptrs);
-        return(SUCCESS);
-}
+        }
+
+      return(FAIL);
+      }
+
+    s_ptrs[beforecnt] = q;
+
+    beforecnt++;
+    }
+
+  A.array = s_ptrs;
+
+  A.set = s;
+  A.key.szfunc = key;
+  A.keytype = SIZEKEY;
+  A.order   = order;
+
+  ServerQuickSort(&A, 0, beforecnt - 1);
+
+  freeDynamicArray(s_ptrs);
+  return(SUCCESS);
+  }
 
 int SetServerSortFloat(s, key, order)
 SetServer            *s;
-double		     (*key)();
+double(*key)();
 int                  order;
-{
+  {
 
-        Server    **s_ptrs = NULL;
-        int    beforecnt, aftercnt;
-        struct ServerSortArgs A;
-        Server     *q;
+  Server    **s_ptrs = NULL;
+  int    beforecnt, aftercnt;
 
-        if( order != ASC && order != DESC ) {
-                fprintf(stderr,
-                        "SetServerSortSize: order != ASC and order !=DESC\n");
-                return(FAIL);
-        }
+  struct ServerSortArgs A;
+  Server     *q;
 
-        beforecnt = 0;
-        for(q=s->head; q; q=q->nextptr) {
-                s_ptrs = (Server **)extendDynamicArray(s_ptrs,
-                         beforecnt+1, sizeof(Server *));
+  if (order != ASC && order != DESC)
+    {
+    fprintf(stderr,
+            "SetServerSortSize: order != ASC and order !=DESC\n");
+    return(FAIL);
+    }
 
-                aftercnt = dynamicArraySize(s_ptrs);
+  beforecnt = 0;
 
-                if (beforecnt == aftercnt) {
-                        fprintf(stderr,
-                                "SetServerSortSize: Unable to realloc s_ptrs");
-                        if( aftercnt > 0 ) {
-                                freeDynamicArray(s_ptrs);
-                        }
-                        return(FAIL);
-                }
-                s_ptrs[beforecnt] = q;
-                beforecnt++;
-        }
+  for (q = s->head; q; q = q->nextptr)
+    {
+    s_ptrs = (Server **)extendDynamicArray(s_ptrs,
+                                           beforecnt + 1, sizeof(Server *));
 
-        A.array = s_ptrs;
-        A.set = s;
-        A.key.ffunc = key;
-        A.keytype = FLOATKEY;
-        A.order   = order;
+    aftercnt = dynamicArraySize(s_ptrs);
 
-        ServerQuickSort(&A, 0, beforecnt-1);
+    if (beforecnt == aftercnt)
+      {
+      fprintf(stderr,
+              "SetServerSortSize: Unable to realloc s_ptrs");
 
+      if (aftercnt > 0)
+        {
         freeDynamicArray(s_ptrs);
-        return(SUCCESS);
-}
+        }
+
+      return(FAIL);
+      }
+
+    s_ptrs[beforecnt] = q;
+
+    beforecnt++;
+    }
+
+  A.array = s_ptrs;
+
+  A.set = s;
+  A.key.ffunc = key;
+  A.keytype = FLOATKEY;
+  A.order   = order;
+
+  ServerQuickSort(&A, 0, beforecnt - 1);
+
+  freeDynamicArray(s_ptrs);
+  return(SUCCESS);
+  }

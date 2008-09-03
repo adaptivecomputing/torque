@@ -1,45 +1,45 @@
 /*
 *         OpenPBS (Portable Batch System) v2.3 Software License
-* 
+*
 * Copyright (c) 1999-2000 Veridian Information Solutions, Inc.
 * All rights reserved.
-* 
+*
 * ---------------------------------------------------------------------------
 * For a license to use or redistribute the OpenPBS software under conditions
 * other than those described below, or to purchase support for this software,
 * please contact Veridian Systems, PBS Products Department ("Licensor") at:
-* 
+*
 *    www.OpenPBS.org  +1 650 967-4675                  sales@OpenPBS.org
 *                        877 902-4PBS (US toll-free)
 * ---------------------------------------------------------------------------
-* 
+*
 * This license covers use of the OpenPBS v2.3 software (the "Software") at
 * your site or location, and, for certain users, redistribution of the
 * Software to other sites and locations.  Use and redistribution of
 * OpenPBS v2.3 in source and binary forms, with or without modification,
 * are permitted provided that all of the following conditions are met.
 * After December 31, 2001, only conditions 3-6 must be met:
-* 
+*
 * 1. Commercial and/or non-commercial use of the Software is permitted
 *    provided a current software registration is on file at www.OpenPBS.org.
 *    If use of this software contributes to a publication, product, or
 *    service, proper attribution must be given; see www.OpenPBS.org/credit.html
-* 
+*
 * 2. Redistribution in any form is only permitted for non-commercial,
 *    non-profit purposes.  There can be no charge for the Software or any
 *    software incorporating the Software.  Further, there can be no
 *    expectation of revenue generated as a consequence of redistributing
 *    the Software.
-* 
+*
 * 3. Any Redistribution of source code must retain the above copyright notice
 *    and the acknowledgment contained in paragraph 6, this list of conditions
 *    and the disclaimer contained in paragraph 7.
-* 
+*
 * 4. Any Redistribution in binary form must reproduce the above copyright
 *    notice and the acknowledgment contained in paragraph 6, this list of
 *    conditions and the disclaimer contained in paragraph 7 in the
 *    documentation and/or other materials provided with the distribution.
-* 
+*
 * 5. Redistributions in any form must be accompanied by information on how to
 *    obtain complete source code for the OpenPBS software and any
 *    modifications and/or additions to the OpenPBS software.  The source code
@@ -47,23 +47,23 @@
 *    than the cost of distribution plus a nominal fee, and all modifications
 *    and additions to the Software must be freely redistributable by any party
 *    (including Licensor) without restriction.
-* 
+*
 * 6. All advertising materials mentioning features or use of the Software must
 *    display the following acknowledgment:
-* 
+*
 *     "This product includes software developed by NASA Ames Research Center,
-*     Lawrence Livermore National Laboratory, and Veridian Information 
+*     Lawrence Livermore National Laboratory, and Veridian Information
 *     Solutions, Inc.
 *     Visit www.OpenPBS.org for OpenPBS software support,
 *     products, and information."
-* 
+*
 * 7. DISCLAIMER OF WARRANTY
-* 
+*
 * THIS SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND. ANY EXPRESS
 * OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
 * OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT
 * ARE EXPRESSLY DISCLAIMED.
-* 
+*
 * IN NO EVENT SHALL VERIDIAN CORPORATION, ITS AFFILIATED COMPANIES, OR THE
 * U.S. GOVERNMENT OR ANY OF ITS AGENCIES BE LIABLE FOR ANY DIRECT OR INDIRECT,
 * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
@@ -72,7 +72,7 @@
 * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
 * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-* 
+*
 * This license will be governed by the laws of the Commonwealth of Virginia,
 * without reference to its choice of law rules.
 */
@@ -92,19 +92,19 @@
 #include "pbs_error.h"
 
 /*
- * This file contains general function for attributes of type 
- *	array of (pointers to) strings
+ * This file contains general function for attributes of type
+ * array of (pointers to) strings
  *
  * Each set has functions for:
- *	Decoding the value string to the machine representation.
- *	Encoding the internal representation of the attribute to external
- *	Setting the value by =, + or - operators.
- *	Comparing a (decoded) value with the attribute value.
- *	Freeing the space malloc-ed to the attribute value.
+ * Decoding the value string to the machine representation.
+ * Encoding the internal representation of the attribute to external
+ * Setting the value by =, + or - operators.
+ * Comparing a (decoded) value with the attribute value.
+ * Freeing the space malloc-ed to the attribute value.
  *
  * Some or all of the functions for an attribute type may be shared with
  * other attribute types.
- * 
+ *
  * The prototypes are declared in "attribute.h"
  *
  * ----------------------------------------------------------------------------
@@ -125,15 +125,16 @@ int decode_arst_direct(
   char             *val)   /* I */
 
   {
-  unsigned long		 bksize;
-  int			 j;
-  int			 ns;
-  char			*pbuf;
-  char			*pc;
-  char			*pstr;
-  size_t		 ssize;
+  unsigned long   bksize;
+  int    j;
+  int    ns;
+  char   *pbuf;
+  char   *pc;
+  char   *pstr;
+  size_t   ssize;
   char      *tmpval;
-  struct array_strings	*stp;
+
+  struct array_strings *stp;
 
   /*
    * determine number of sub strings, each sub string is terminated
@@ -150,15 +151,15 @@ int decode_arst_direct(
     }
 
   strcpy(tmpval, val);
-  
-  for (pc = tmpval; *pc; pc++) 
+
+  for (pc = tmpval; *pc; pc++)
     {
-    if (*pc == '\\') 
+    if (*pc == '\\')
       {
       if (*++pc == '\0')
         break;
-      } 
-    else if ((*pc == ',') || (*pc == '\n')) 
+      }
+    else if ((*pc == ',') || (*pc == '\n'))
       {
       ++ns;
       }
@@ -166,26 +167,26 @@ int decode_arst_direct(
 
   pc--;
 
-  if (((*pc == '\n') || (*pc == ',')) && (*(pc-1) != '\\')) 
+  if (((*pc == '\n') || (*pc == ',')) && (*(pc - 1) != '\\'))
     {
-    ns--;		/* strip any trailing null string */
+    ns--;  /* strip any trailing null string */
     *pc = '\0';
     ssize--;
     }
-			
+
   if ((pbuf = malloc((unsigned)ssize)) == NULL)
     {
     return(PBSE_SYSTEM);
     }
 
-  bksize = (ns - 1) * sizeof (char *) + sizeof (struct array_strings);
+  bksize = (ns - 1) * sizeof(char *) + sizeof(struct array_strings);
 
   if ((stp = (struct array_strings *)malloc(bksize)) == NULL)
     {
     return(PBSE_SYSTEM);
     }
 
-  stp->as_npointers = ns;		
+  stp->as_npointers = ns;
 
   /* number of slots (sub strings) */
   /* for the strings themselves */
@@ -202,11 +203,11 @@ int decode_arst_direct(
 
   pstr = parse_comma_string(tmpval);
 
-  while ((pstr != NULL) && (j < ns)) 
+  while ((pstr != NULL) && (j < ns))
     {
     stp->as_string[j] = pc;
 
-    while (*pstr) 
+    while (*pstr)
       {
       if (*pstr == '\\')
         if (*++pstr == '\0')
@@ -214,20 +215,24 @@ int decode_arst_direct(
 
       *pc++ = *pstr++;
       }
-	
+
     *pc++ = '\0';
+
     j++;
 
     pstr = parse_comma_string(NULL);
     }  /* END while ((pstr != NULL) && (j < ns)) */
 
   stp->as_usedptr = j;
+
   stp->as_next    = pc;
 
   patr->at_flags |= ATR_VFLAG_SET | ATR_VFLAG_MODIFY;
+
   patr->at_val.at_arst = stp;
 
   free(tmpval);
+
   return(0);
   }  /* END decode_arst_direct() */
 
@@ -238,9 +243,9 @@ int decode_arst_direct(
 /*
  * decode_arst - decode a comma string into an attr of type ATR_TYPE_ARST
  *
- *	Returns: 0 if ok,
- *		>0 error number1 if error,
- *		*patr members set
+ * Returns: 0 if ok,
+ *  >0 error number1 if error,
+ *  *patr members set
  */
 
 int decode_arst(
@@ -251,40 +256,40 @@ int decode_arst(
   char             *val)     /* I attribute value */
 
   {
-  int	  rc;
+  int   rc;
   attribute temp;
 
-  if ((val == NULL) || (strlen(val) == 0)) 
+  if ((val == NULL) || (strlen(val) == 0))
     {
     free_arst(patr);
 
-    patr->at_flags &= ~ATR_VFLAG_MODIFY;	/* _SET cleared in free_arst */
+    patr->at_flags &= ~ATR_VFLAG_MODIFY; /* _SET cleared in free_arst */
 
     return(0);
     }
 
-  if ((patr->at_flags & ATR_VFLAG_SET) && (patr->at_val.at_arst)) 
+  if ((patr->at_flags & ATR_VFLAG_SET) && (patr->at_val.at_arst))
     {
     /* already have values, decode new into temp */
     /* then use set(incr) to add new to existing */
 
     temp.at_val.at_arst = NULL;
 
-    if ((rc = decode_arst_direct(&temp,val)) != 0)
+    if ((rc = decode_arst_direct(&temp, val)) != 0)
       {
       return(rc);
       }
 
-    rc = set_arst(patr,&temp,INCR);
+    rc = set_arst(patr, &temp, INCR);
 
     free_arst(&temp);
 
     return(rc);
-    } 
+    }
 
   /* decode directly into real attribute */
 
-  return(decode_arst_direct(patr,val));
+  return(decode_arst_direct(patr, val));
   }  /* END decode_arst() */
 
 
@@ -296,18 +301,18 @@ int decode_arst(
  * encode_arst - encode attr of type ATR_TYPE_ARST into attrlist entry
  *
  * Mode ATR_ENCODE_CLIENT - encode strings into single super string
- *			    separated by ','
+ *       separated by ','
  *
  * Mode ATR_ENCODE_SVR    - treated as above
  *
  * Mode ATR_ENCODE_MOM    - treated as above
  *
  * Mode ATR_ENCODE_SAVE - encode strings into single super string
- *			  separated by '\n'
+ *     separated by '\n'
  *
- *	Returns: >0 if ok, entry created and linked into list
- *		 =0 no value to encode, entry not created
- *		 -1 if error
+ * Returns: >0 if ok, entry created and linked into list
+ *   =0 no value to encode, entry not created
+ *   -1 if error
  */
 
 
@@ -318,20 +323,20 @@ int decode_arst(
 
 int encode_arst(
 
-  attribute   *attr,	/* I: ptr to attribute to encode */
-  tlist_head   *phead,	/* O: ptr to head of attrlist list */
-  char	      *atname,	/* I: attribute name */
-  char	      *rsname,	/* I: resource name or NULL (optional) */
-  int	       mode)	/* I: encode mode */
+  attribute   *attr, /* I: ptr to attribute to encode */
+  tlist_head   *phead, /* O: ptr to head of attrlist list */
+  char       *atname, /* I: attribute name */
+  char       *rsname, /* I: resource name or NULL (optional) */
+  int        mode) /* I: encode mode */
 
   {
-  char	 *end;
-  int	  i;
-  int	  j;
+  char  *end;
+  int   i;
+  int   j;
   svrattrl *pal;
-  char	 *pc;
+  char  *pc;
   char   *pfrom;
-  char	  separator;
+  char   separator;
 
   if (attr == NULL)
     {
@@ -340,41 +345,41 @@ int encode_arst(
     return(-2);
     }
 
-  if (((attr->at_flags & ATR_VFLAG_SET) == 0) || 
-       !attr->at_val.at_arst ||
-       !attr->at_val.at_arst->as_usedptr) 
+  if (((attr->at_flags & ATR_VFLAG_SET) == 0) ||
+      !attr->at_val.at_arst ||
+      !attr->at_val.at_arst->as_usedptr)
     {
     /* SUCCESS - empty list */
 
-    return(0);	/* no values */
+    return(0); /* no values */
     }
 
   i = (int)(attr->at_val.at_arst->as_next - attr->at_val.at_arst->as_buf);
 
-  if (mode == ATR_ENCODE_SAVE) 
+  if (mode == ATR_ENCODE_SAVE)
     {
-    separator = '\n';	/* new-line for encode_acl  */
+    separator = '\n'; /* new-line for encode_acl  */
 
     /* allow one extra byte for final new-line */
 
     j = i + 1;
-    } 
-  else 
+    }
+  else
     {
-    separator = ',';	/* normally a comma is the separator */
+    separator = ','; /* normally a comma is the separator */
 
     j = i;
     }
 
   /* how many back-slashes are required */
 
-  for (pc = attr->at_val.at_arst->as_buf;pc < attr->at_val.at_arst->as_next;++pc) 
+  for (pc = attr->at_val.at_arst->as_buf;pc < attr->at_val.at_arst->as_next;++pc)
     {
     if ((*pc == '"') || (*pc == '\'') || (*pc == ',') || (*pc == '\\') || (*pc == '\n'))
       ++j;
     }
 
-  pal = attrlist_create(atname,rsname,j);
+  pal = attrlist_create(atname, rsname, j);
 
   if (pal == NULL)
     {
@@ -391,34 +396,35 @@ int encode_arst(
 
   end = attr->at_val.at_arst->as_next;
 
-  while (pfrom < end) 
+  while (pfrom < end)
     {
-    if ((*pfrom == '"') || (*pfrom == '\'') || (*pfrom == ',') || (*pfrom == '\\') || (*pfrom == '\n')) 
+    if ((*pfrom == '"') || (*pfrom == '\'') || (*pfrom == ',') || (*pfrom == '\\') || (*pfrom == '\n'))
       {
       *pc++ = '\\';
       *pc   = *pfrom;
-      } 
-    else if (*pfrom == '\0') 
+      }
+    else if (*pfrom == '\0')
       {
       *pc = separator;
-      } 
-    else 
+      }
+    else
       {
       *pc = *pfrom;
       }
 
     pc++;
+
     pfrom++;
     }
 
   /* convert the last null to separator only if going to new-lines */
-	
+
   if (mode == ATR_ENCODE_SAVE)
-    *pc = '\0';	/* insure string terminator */
+    *pc = '\0'; /* insure string terminator */
   else
     *(pc - 1) = '\0';
 
-  append_link(phead,&pal->al_link,pal);
+  append_link(phead, &pal->al_link, pal);
 
   return(1);
   }  /* END encode_arst() */
@@ -427,15 +433,15 @@ int encode_arst(
 
 
 
-/* 
+/*
  * set_arst - set value of attribute of type ATR_TYPE_ARST to another
  *
- *	A=B --> set of strings in A replaced by set of strings in B
- *	A+B --> set of strings in B appended to set of strings in A
- *	A-B --> any string in B found is A is removed from A
+ * A=B --> set of strings in A replaced by set of strings in B
+ * A+B --> set of strings in B appended to set of strings in A
+ * A-B --> any string in B found is A is removed from A
  *
- *	Returns: 0 if ok
- *		>0 if error
+ * Returns: 0 if ok
+ *  >0 if error
  */
 
 int set_arst(
@@ -445,15 +451,18 @@ int set_arst(
   enum batch_op     op)
 
   {
-  int	 i;
-  int	 j;
-  int 	 nsize;
-  int 	 need;
-  long	 offset;
-  char	*pc;
-  long	 used;
+  int  i;
+  int  j;
+  int   nsize;
+  int   need;
+  long  offset;
+  char *pc;
+  long  used;
+
   struct array_strings *newpas;
+
   struct array_strings *pas;
+
   struct array_strings *xpasx;
 
   assert(attr && new && (new->at_flags & ATR_VFLAG_SET));
@@ -466,7 +475,7 @@ int set_arst(
     return(PBSE_INTERNAL);
     }
 
-  if (!pas) 
+  if (!pas)
     {
     /* not array_strings control structure, make one */
 
@@ -477,8 +486,9 @@ int set_arst(
       return(PBSE_INTERNAL);
       }
 
-    need = (int)sizeof(struct array_strings) + (j - 1) * sizeof (char *);
-    pas=(struct array_strings *)malloc((size_t)need);
+    need = (int)sizeof(struct array_strings) + (j - 1) * sizeof(char *);
+
+    pas = (struct array_strings *)malloc((size_t)need);
 
     if (!pas)
       {
@@ -486,6 +496,7 @@ int set_arst(
       }
 
     pas->as_npointers = j;
+
     pas->as_usedptr = 0;
     pas->as_bufsize = 0;
     pas->as_buf     = (char *)0;
@@ -494,14 +505,15 @@ int set_arst(
     }
 
   if ((op == INCR) && !pas->as_buf)
-    op = SET;	/* no current strings, change op to SET */
+    op = SET; /* no current strings, change op to SET */
 
   /*
    * At this point we know we have a array_strings struct initialized
    */
 
-  switch (op) 
+  switch (op)
     {
+
     case SET:
 
       /*
@@ -510,27 +522,28 @@ int set_arst(
        * new (to the null set).
        */
 
-      for (i = 0;i < pas->as_usedptr;i++) 
-        pas->as_string[i] = NULL;	/* clear all pointers */
+      for (i = 0;i < pas->as_usedptr;i++)
+        pas->as_string[i] = NULL; /* clear all pointers */
 
       pas->as_usedptr = 0;
+
       pas->as_next    = pas->as_buf;
 
       if (new->at_val.at_arst == (struct array_strings *)0)
-        break;	/* none to set */
+        break; /* none to set */
 
       nsize = xpasx->as_next - xpasx->as_buf; /* space needed */
 
-      if (nsize > pas->as_bufsize) 
-        {		 
+      if (nsize > pas->as_bufsize)
+        {
         /* new data won't fit */
 
         if (pas->as_buf)
           free(pas->as_buf);
 
-        nsize += nsize / 2;			/* alloc extra space */
+        nsize += nsize / 2;   /* alloc extra space */
 
-        if (!(pas->as_buf = malloc((size_t)nsize))) 
+        if (!(pas->as_buf = malloc((size_t)nsize)))
           {
           pas->as_bufsize = 0;
 
@@ -538,12 +551,12 @@ int set_arst(
           }
 
         pas->as_bufsize = nsize;
-        } 
-      else 
-        {			
+        }
+      else
+        {
         /* str fits, clear buf */
 
-        memset(pas->as_buf,0,pas->as_bufsize);
+        memset(pas->as_buf, 0, pas->as_bufsize);
         }
 
       pas->as_next = pas->as_buf;
@@ -555,12 +568,12 @@ int set_arst(
       nsize = xpasx->as_next - xpasx->as_buf;   /* space needed */
       used = pas->as_next - pas->as_buf;
 
-      if (nsize > (pas->as_bufsize - used)) 
+      if (nsize > (pas->as_bufsize - used))
         {
         need = pas->as_bufsize + 2 * nsize;  /* alloc new buf */
 
         if (pas->as_buf)
-          pc = realloc(pas->as_buf,(size_t)need);
+          pc = realloc(pas->as_buf, (size_t)need);
         else
           pc = malloc((size_t)need);
 
@@ -570,25 +583,26 @@ int set_arst(
           }
 
         offset          = pc - pas->as_buf;
+
         pas->as_buf     = pc;
         pas->as_next    = pc + used;
         pas->as_bufsize = need;
 
-        for (j = 0;j < pas->as_usedptr;j++)	/* adjust points */
+        for (j = 0;j < pas->as_usedptr;j++) /* adjust points */
           pas->as_string[j] += offset;
         }
 
       j = pas->as_usedptr + xpasx->as_usedptr;
 
-      if (j > pas->as_npointers) 
-        {	
+      if (j > pas->as_npointers)
+        {
         /* need more pointers */
 
-        j = 3 * j / 2;		/* allocate extra     */
+        j = 3 * j / 2;  /* allocate extra     */
 
         need = (int)sizeof(struct array_strings) + (j - 1) * sizeof(char *);
-       
-        newpas = (struct array_strings *)realloc((char *)pas,(size_t)need);
+
+        newpas = (struct array_strings *)realloc((char *)pas, (size_t)need);
 
         if (newpas == NULL)
           {
@@ -604,25 +618,25 @@ int set_arst(
 
       /* now append new strings */
 
-      for (i = 0;i < xpasx->as_usedptr;i++) 
+      for (i = 0;i < xpasx->as_usedptr;i++)
         {
-        (void)strcpy(pas->as_next,xpasx->as_string[i]);
+        (void)strcpy(pas->as_next, xpasx->as_string[i]);
 
         pas->as_string[pas->as_usedptr++] = pas->as_next;
         pas->as_next += strlen(pas->as_next) + 1;
         }  /* END for (i) */
 
       break;
-		    
-    case DECR:	
+
+    case DECR:
 
       /* decrement (remove) string from array */
 
-      for (j = 0;j < xpasx->as_usedptr;j++) 
+      for (j = 0;j < xpasx->as_usedptr;j++)
         {
-        for (i = 0;i < pas->as_usedptr;i++) 
+        for (i = 0;i < pas->as_usedptr;i++)
           {
-          if (!strcmp(pas->as_string[i],xpasx->as_string[j])) 
+          if (!strcmp(pas->as_string[i], xpasx->as_string[j]))
             {
             /* compact buffer */
 
@@ -632,7 +646,7 @@ int set_arst(
 
             need = pas->as_next - pc;
 
-            memcpy(pas->as_string[i],pc,(size_t)need);
+            memcpy(pas->as_string[i], pc, (size_t)need);
 
             pas->as_next -= nsize;
 
@@ -642,7 +656,7 @@ int set_arst(
               pas->as_string[i - 1] = pas->as_string[i] - nsize;
 
             pas->as_string[i - 1] = NULL;
- 
+
             pas->as_usedptr--;
 
             break;
@@ -652,7 +666,7 @@ int set_arst(
 
       break;
 
-    default:	
+    default:
 
       return(PBSE_INTERNAL);
 
@@ -671,8 +685,8 @@ int set_arst(
 /*
  * comp_arst - compare two attributes of type ATR_TYPE_ARST
  *
- *	Returns: 0 if the set of strings in the two attributes match
- *		+1 otherwise
+ * Returns: 0 if the set of strings in the two attributes match
+ *  +1 otherwise
  */
 
 int comp_arst(
@@ -681,9 +695,11 @@ int comp_arst(
   struct attribute *with)
 
   {
-  int	i;
-  int	j;
+  int i;
+  int j;
+
   struct array_strings *apa;
+
   struct array_strings *bpb;
 
   if (!attr || !with || !attr->at_val.at_arst || !with->at_val.at_arst)
@@ -698,20 +714,21 @@ int comp_arst(
     }
 
   apa = attr->at_val.at_arst;
+
   bpb = with->at_val.at_arst;
 
-  for (j = 0;j < bpb->as_usedptr;j++) 
+  for (j = 0;j < bpb->as_usedptr;j++)
     {
-    for (i = 0;i < apa->as_usedptr;i++) 
+    for (i = 0;i < apa->as_usedptr;i++)
       {
       if (strcmp(bpb->as_string[j], apa->as_string[i]))
         {
         return(1);
         }
-      } 
+      }
     }
-	
-  return(0);	/* all match */
+
+  return(0); /* all match */
   }
 
 
@@ -722,7 +739,7 @@ void free_arst(
   struct attribute *attr)
 
   {
-  if ((attr->at_flags & ATR_VFLAG_SET) && (attr->at_val.at_arst)) 
+  if ((attr->at_flags & ATR_VFLAG_SET) && (attr->at_val.at_arst))
     {
     if (attr->at_val.at_arst->as_buf)
       (void)free(attr->at_val.at_arst->as_buf);
@@ -731,6 +748,7 @@ void free_arst(
     }
 
   attr->at_val.at_arst = (struct array_strings *)0;
+
   attr->at_flags &= ~ATR_VFLAG_SET;
 
   return;
@@ -742,9 +760,9 @@ void free_arst(
 
 /*
  * arst_string - see if a string occurs as a prefix in an arst attribute entry
- *	Search each entry in the value of an arst attribute for a sub-string
- *	that begins with the passed string 
- * 
+ * Search each entry in the value of an arst attribute for a sub-string
+ * that begins with the passed string
+ *
  * Return: pointer to string if so, NULL if not
  */
 
@@ -756,6 +774,7 @@ char *arst_string(
   {
   int    i;
   size_t len;
+
   struct array_strings *parst;
 
   if ((str == NULL) || (pattr == NULL))
@@ -774,9 +793,9 @@ char *arst_string(
 
   parst = pattr->at_val.at_arst;
 
-  for (i = 0;i < parst->as_usedptr;i++) 
+  for (i = 0;i < parst->as_usedptr;i++)
     {
-    if (!strncmp(str,parst->as_string[i],len))
+    if (!strncmp(str, parst->as_string[i], len))
       {
       return(parst->as_string[i]);
       }
@@ -784,4 +803,4 @@ char *arst_string(
 
   return(NULL);
   }  /* END arst_string() */
-	
+

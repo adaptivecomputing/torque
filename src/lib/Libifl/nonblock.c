@@ -21,19 +21,19 @@ ssize_t write_nonblocking_socket(
 
   {
   ssize_t i;
- 
-  for (;;) 
-    {
-    i = write(fd,buf,count);
 
-    if (i >= 0) 
+  for (;;)
+    {
+    i = write(fd, buf, count);
+
+    if (i >= 0)
       {
       /* successfully wrote 'i' bytes */
 
       return(i);
       }
 
-    if (errno != EAGAIN) 
+    if (errno != EAGAIN)
       {
       /* write failed */
 
@@ -50,11 +50,11 @@ ssize_t write_nonblocking_socket(
 
 
 
- 
+
 ssize_t read_nonblocking_socket(
 
-  int     fd, 
-  void   *buf, 
+  int     fd,
+  void   *buf,
   ssize_t count)
 
   {
@@ -66,34 +66,34 @@ ssize_t read_nonblocking_socket(
 
   /* NOTE:  under some circumstances, a blocking fd will be passed */
 
-  if ((flags = fcntl(fd,F_GETFL)) == -1)
+  if ((flags = fcntl(fd, F_GETFL)) == -1)
     {
     return(-1);
     }
 
 #if defined(FNDELAY) && !defined(__hpux)
-   if (flags & FNDELAY)
+  if (flags & FNDELAY)
 #else
-   if (flags & O_NONBLOCK)
+  if (flags & O_NONBLOCK)
 #endif
-     {
-     /* flag already set */
+    {
+    /* flag already set */
 
-     /* NO-OP */
-     }
-   else
-     {
-     /* set no delay */
+    /* NO-OP */
+    }
+  else
+    {
+    /* set no delay */
 
 #if defined(FNDELAY) && !defined(__hpux)
     flags |= FNDELAY;
 #else
     flags |= O_NONBLOCK;
 #endif
-   
-    /* NOTE:  the pbs scheduling API passes in a blocking socket which 
-              should be a non-blocking socket in pbs_disconnect.  Also, 
-              qsub passes in a blocking socket which must remain 
+
+    /* NOTE:  the pbs scheduling API passes in a blocking socket which
+              should be a non-blocking socket in pbs_disconnect.  Also,
+              qsub passes in a blocking socket which must remain
               non-blocking */
 
     /* the below non-blocking socket flag check should be rolled into
@@ -106,26 +106,27 @@ ssize_t read_nonblocking_socket(
       }
     */
     }    /* END else (flags & BLOCK) */
- 
+
   /* Set a timer to prevent an infinite loop here. */
 
   start = -1;
 
-  for (;;) 
+  for (;;)
     {
-    i = read(fd,buf,count);
+    i = read(fd, buf, count);
 
-    if (i >= 0) 
+    if (i >= 0)
       {
       return(i);
       }
 
-    if (errno != EAGAIN) 
+    if (errno != EAGAIN)
       {
       return(i);
       }
 
     time(&now);
+
     if (start == -1)
       {
       start = now;
@@ -144,18 +145,18 @@ ssize_t read_nonblocking_socket(
 
 
 
- 
+
 /*
  * Call the real read, for things that want to block.
  */
 
 ssize_t read_blocking_socket(
 
-  int      fd, 
-  void    *buf, 
+  int      fd,
+  void    *buf,
   ssize_t  count)
 
   {
-  return(read(fd,buf,count));
+  return(read(fd, buf, count));
   }
 

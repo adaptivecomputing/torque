@@ -1,45 +1,45 @@
 /*
 *         OpenPBS (Portable Batch System) v2.3 Software License
-* 
+*
 * Copyright (c) 1999-2000 Veridian Information Solutions, Inc.
 * All rights reserved.
-* 
+*
 * ---------------------------------------------------------------------------
 * For a license to use or redistribute the OpenPBS software under conditions
 * other than those described below, or to purchase support for this software,
 * please contact Veridian Systems, PBS Products Department ("Licensor") at:
-* 
+*
 *    www.OpenPBS.org  +1 650 967-4675                  sales@OpenPBS.org
 *                        877 902-4PBS (US toll-free)
 * ---------------------------------------------------------------------------
-* 
+*
 * This license covers use of the OpenPBS v2.3 software (the "Software") at
 * your site or location, and, for certain users, redistribution of the
 * Software to other sites and locations.  Use and redistribution of
 * OpenPBS v2.3 in source and binary forms, with or without modification,
 * are permitted provided that all of the following conditions are met.
 * After December 31, 2001, only conditions 3-6 must be met:
-* 
+*
 * 1. Commercial and/or non-commercial use of the Software is permitted
 *    provided a current software registration is on file at www.OpenPBS.org.
 *    If use of this software contributes to a publication, product, or
 *    service, proper attribution must be given; see www.OpenPBS.org/credit.html
-* 
+*
 * 2. Redistribution in any form is only permitted for non-commercial,
 *    non-profit purposes.  There can be no charge for the Software or any
 *    software incorporating the Software.  Further, there can be no
 *    expectation of revenue generated as a consequence of redistributing
 *    the Software.
-* 
+*
 * 3. Any Redistribution of source code must retain the above copyright notice
 *    and the acknowledgment contained in paragraph 6, this list of conditions
 *    and the disclaimer contained in paragraph 7.
-* 
+*
 * 4. Any Redistribution in binary form must reproduce the above copyright
 *    notice and the acknowledgment contained in paragraph 6, this list of
 *    conditions and the disclaimer contained in paragraph 7 in the
 *    documentation and/or other materials provided with the distribution.
-* 
+*
 * 5. Redistributions in any form must be accompanied by information on how to
 *    obtain complete source code for the OpenPBS software and any
 *    modifications and/or additions to the OpenPBS software.  The source code
@@ -47,23 +47,23 @@
 *    than the cost of distribution plus a nominal fee, and all modifications
 *    and additions to the Software must be freely redistributable by any party
 *    (including Licensor) without restriction.
-* 
+*
 * 6. All advertising materials mentioning features or use of the Software must
 *    display the following acknowledgment:
-* 
+*
 *     "This product includes software developed by NASA Ames Research Center,
-*     Lawrence Livermore National Laboratory, and Veridian Information 
+*     Lawrence Livermore National Laboratory, and Veridian Information
 *     Solutions, Inc.
 *     Visit www.OpenPBS.org for OpenPBS software support,
 *     products, and information."
-* 
+*
 * 7. DISCLAIMER OF WARRANTY
-* 
+*
 * THIS SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND. ANY EXPRESS
 * OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
 * OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT
 * ARE EXPRESSLY DISCLAIMED.
-* 
+*
 * IN NO EVENT SHALL VERIDIAN CORPORATION, ITS AFFILIATED COMPANIES, OR THE
 * U.S. GOVERNMENT OR ANY OF ITS AGENCIES BE LIABLE FOR ANY DIRECT OR INDIRECT,
 * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
@@ -72,7 +72,7 @@
 * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
 * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-* 
+*
 * This license will be governed by the laws of the Commonwealth of Virginia,
 * without reference to its choice of law rules.
 */
@@ -91,19 +91,19 @@
 
 /*
  * This file contains functions for manipulating attributes of type
- *	size, which is an integer optionally followed by k,K,m,M,g,
- *	G,t, or T, optionally followed by w,W,b,B.
- *	If 'w' or 'W' is not specified, b for bytes is assumed.
+ * size, which is an integer optionally followed by k,K,m,M,g,
+ * G,t, or T, optionally followed by w,W,b,B.
+ * If 'w' or 'W' is not specified, b for bytes is assumed.
  *
  * The attribute has functions for:
- *	Decoding the value string to the machine representation.
- *	Encoding the internal attribute to external form
- *	Setting the value by =, + or - operators.
- *	Comparing a (decoded) value with the attribute value.
+ * Decoding the value string to the machine representation.
+ * Encoding the internal attribute to external form
+ * Setting the value by =, + or - operators.
+ * Comparing a (decoded) value with the attribute value.
  *
  * Some or all of the functions for an attribute type may be shared with
  * other attribute types.
- * 
+ *
  * The prototypes are declared in "attribute.h"
  *
  * --------------------------------------------------
@@ -113,43 +113,43 @@
  */
 
 
-int to_size A_((char *,struct size_value *));
-void from_size A_((struct size_value *,char *));
+int to_size A_((char *, struct size_value *));
+void from_size A_((struct size_value *, char *));
 int normalize_size A_((struct size_value *a, struct size_value *b,
-	      struct size_value *c, struct size_value *d));
+                       struct size_value *c, struct size_value *d));
 
 /*
  * decode_size - decode size into attribute structure
  *
- *	Returns: 0 if ok
- *		>0 error number if error
- *		*patr elements set
+ * Returns: 0 if ok
+ *  >0 error number if error
+ *  *patr elements set
  */
 
 int decode_size(
 
   struct attribute *patr,
-  char             *name,	/* attribute name */
-  char             *rescn,	/* resource name, unused here */
-  char             *val)	/* attribute value */
+  char             *name, /* attribute name */
+  char             *rescn, /* resource name, unused here */
+  char             *val) /* attribute value */
 
   {
 
   patr->at_val.at_size.atsv_num   = 0;
   patr->at_val.at_size.atsv_shift = 0;
 
-  if ((val != NULL) && (val[0] != '\0')) 
+  if ((val != NULL) && (val[0] != '\0'))
     {
-    if (to_size(val,&patr->at_val.at_size) != 0)
+    if (to_size(val, &patr->at_val.at_size) != 0)
       {
       return(PBSE_BADATVAL);
       }
 
     patr->at_flags |= ATR_VFLAG_SET | ATR_VFLAG_MODIFY;
-    } 
-  else 
+    }
+  else
     {
-    patr->at_flags = (patr->at_flags & ~ATR_VFLAG_SET)|ATR_VFLAG_MODIFY;
+    patr->at_flags = (patr->at_flags & ~ATR_VFLAG_SET) | ATR_VFLAG_MODIFY;
     }
 
   return(0);
@@ -161,9 +161,9 @@ int decode_size(
 /*
  * encode_size - encode attribute of type size into attr_extern
  *
- *	Returns: >0 if ok
- *		 =0 if no value, no attrlist link added
- *		 <0 if error
+ * Returns: >0 if ok
+ *   =0 if no value, no attrlist link added
+ *   <0 if error
  */
 /*ARGSUSED*/
 
@@ -179,7 +179,7 @@ int encode_size(
 
   {
   size_t    ct;
-  char	    cvnbuf[CVNBUFSZ];
+  char     cvnbuf[CVNBUFSZ];
   svrattrl *pal;
 
   if (attr == NULL)
@@ -194,11 +194,11 @@ int encode_size(
     return(0);
     }
 
-  from_size(&attr->at_val.at_size,cvnbuf);
+  from_size(&attr->at_val.at_size, cvnbuf);
 
   ct = strlen(cvnbuf) + 1;
 
-  pal = attrlist_create(atname,rsname,ct);
+  pal = attrlist_create(atname, rsname, ct);
 
   if (pal == NULL)
     {
@@ -207,14 +207,14 @@ int encode_size(
     return(-1);
     }
 
-  memcpy(pal->al_value,cvnbuf,ct);
+  memcpy(pal->al_value, cvnbuf, ct);
 
   pal->al_flags = attr->at_flags;
 
-  append_link(phead,&pal->al_link,pal);
+  append_link(phead, &pal->al_link, pal);
 
   /* SUCCESS */
-	
+
   return(1);
   }
 
@@ -224,55 +224,73 @@ int encode_size(
 
 /*
  * set_size - set attribute A to attribute B,
- *	either A=B, A += B, or A -= B
+ * either A=B, A += B, or A -= B
  *
- *	Returns: 0 if ok
- *		>0 if error
+ * Returns: 0 if ok
+ *  >0 if error
  */
 
-int set_size(attr, new, op)
-	struct attribute *attr;
-	struct attribute *new;
-	enum batch_op op;
-{
-	unsigned long old;
-	struct size_value tmpa;	/* the two temps are used to insure that the */
-	struct size_value tmpn;	/* real attributes are not changed if error  */
+int
+set_size(struct attribute *attr, struct attribute *new, enum batch_op op)
+  {
+  unsigned long old;
 
-	assert ( attr && new && (new->at_flags & ATR_VFLAG_SET) );
+  struct size_value tmpa; /* the two temps are used to insure that the */
 
-	switch (op) {
-	    case SET:	attr->at_val.at_size.atsv_num   = new->at_val.at_size.atsv_num;
-	    		attr->at_val.at_size.atsv_shift = new->at_val.at_size.atsv_shift;
-			attr->at_val.at_size.atsv_units = new->at_val.at_size.atsv_units;
-			break;
+  struct size_value tmpn; /* real attributes are not changed if error  */
 
-	    case INCR:	if (normalize_size(&attr->at_val.at_size, 
-			    &new->at_val.at_size, &tmpa, &tmpn) < 0)
-				return (PBSE_BADATVAL);
-			old  = tmpa.atsv_num;
-			tmpa.atsv_num += tmpn.atsv_num;
-			if (tmpa.atsv_num < old)
-				return (PBSE_BADATVAL);
-			attr->at_val.at_size = tmpa;
-			break;
+  assert(attr && new && (new->at_flags & ATR_VFLAG_SET));
 
-	    case DECR:	if (normalize_size(&attr->at_val.at_size, 
-			    &new->at_val.at_size, &tmpa, &tmpn) < 0)
-				return (PBSE_BADATVAL);
-			old  = tmpa.atsv_num;
-			tmpa.atsv_num -= tmpn.atsv_num;
-			if (tmpa.atsv_num > old)
-				return (PBSE_BADATVAL);
-			attr->at_val.at_size = tmpa;
-			break;
+  switch (op)
+    {
 
-	    default:	return (PBSE_INTERNAL);
-	}
-	attr->at_flags |= ATR_VFLAG_SET | ATR_VFLAG_MODIFY;
+    case SET:
+      attr->at_val.at_size.atsv_num   = new->at_val.at_size.atsv_num;
+      attr->at_val.at_size.atsv_shift = new->at_val.at_size.atsv_shift;
+      attr->at_val.at_size.atsv_units = new->at_val.at_size.atsv_units;
+      break;
 
-	return (0);
-}
+    case INCR:
+
+      if (normalize_size(&attr->at_val.at_size,
+                         &new->at_val.at_size, &tmpa, &tmpn) < 0)
+        return (PBSE_BADATVAL);
+
+      old  = tmpa.atsv_num;
+
+      tmpa.atsv_num += tmpn.atsv_num;
+
+      if (tmpa.atsv_num < old)
+        return (PBSE_BADATVAL);
+
+      attr->at_val.at_size = tmpa;
+
+      break;
+
+    case DECR:
+      if (normalize_size(&attr->at_val.at_size,
+                         &new->at_val.at_size, &tmpa, &tmpn) < 0)
+        return (PBSE_BADATVAL);
+
+      old  = tmpa.atsv_num;
+
+      tmpa.atsv_num -= tmpn.atsv_num;
+
+      if (tmpa.atsv_num > old)
+        return (PBSE_BADATVAL);
+
+      attr->at_val.at_size = tmpa;
+
+      break;
+
+    default:
+      return (PBSE_INTERNAL);
+    }
+
+  attr->at_flags |= ATR_VFLAG_SET | ATR_VFLAG_MODIFY;
+
+  return (0);
+  }
 
 
 
@@ -280,36 +298,39 @@ int set_size(attr, new, op)
 /*
  * comp_size - compare two attributes of type size
  *
- *	Returns: +1 if 1st > 2nd
- *		  0 if 1st == 2nd
- *		 -1 if 1st < 2nd
+ * Returns: +1 if 1st > 2nd
+ *    0 if 1st == 2nd
+ *   -1 if 1st < 2nd
  */
 
-int comp_size(attr, with)
-	struct attribute *attr;
-	struct attribute *with;
-{
-	struct size_value tmpa;
-	struct size_value tmpw;
+int
+comp_size(struct attribute *attr, struct attribute *with)
+  {
 
-	if (normalize_size(&attr->at_val.at_size, &with->at_val.at_size,
-            &tmpa, &tmpw) != 0) {
-		if (tmpa.atsv_shift > 
-		    tmpw.atsv_shift)
-			return (1);
-		else if (tmpa.atsv_shift < 
-		    tmpw.atsv_shift)
-			return (-1);
-		else 
-			return (0);
-	} else if (tmpa.atsv_num > tmpw.atsv_num)
-		return (1);
-	else if (tmpa.atsv_num < tmpw.atsv_num)
-		return (-1);
-	else
-		return (0);
+  struct size_value tmpa;
 
-}
+  struct size_value tmpw;
+
+  if (normalize_size(&attr->at_val.at_size, &with->at_val.at_size,
+                     &tmpa, &tmpw) != 0)
+    {
+    if (tmpa.atsv_shift >
+        tmpw.atsv_shift)
+      return (1);
+    else if (tmpa.atsv_shift <
+             tmpw.atsv_shift)
+      return (-1);
+    else
+      return (0);
+    }
+  else if (tmpa.atsv_num > tmpw.atsv_num)
+    return (1);
+  else if (tmpa.atsv_num < tmpw.atsv_num)
+    return (-1);
+  else
+    return (0);
+
+  }
 
 
 
@@ -321,66 +342,76 @@ int comp_size(attr, with)
 
 /*
  * normalize_size - normalize two size values, adjust so the shift
- *	counts are the same.
+ * counts are the same.
  */
 
-int normalize_size (a, b, ta, tb)
-	struct size_value *a;
-	struct size_value *b;
-	struct size_value *ta;
-	struct size_value *tb;
-{
-	int adj;
-	unsigned long temp;
+int
+normalize_size(struct size_value *a, struct size_value *b, struct size_value *ta, struct size_value *tb)
+  {
+  int adj;
+  unsigned long temp;
 
-	/*
-	 * we do the work in copies of the original attributes
-	 * to preserve the original (in case of error)
-	 */
-	*ta = *a;
-	*tb = *b;
+  /*
+   * we do the work in copies of the original attributes
+   * to preserve the original (in case of error)
+   */
+  *ta = *a;
+  *tb = *b;
 
-	/* if either unit is in bytes, then both must be */
+  /* if either unit is in bytes, then both must be */
 
-	if ((ta->atsv_units == ATR_SV_WORDSZ) &&
-	    (tb->atsv_units != ATR_SV_WORDSZ)) {
-		ta->atsv_num *= sizeof(int);
-		ta->atsv_units = ATR_SV_BYTESZ;
-	} else if ((ta->atsv_units != ATR_SV_WORDSZ) &&
-		   (tb->atsv_units == ATR_SV_WORDSZ)) {
-		tb->atsv_num *= sizeof(int);
-		tb->atsv_units = ATR_SV_BYTESZ;
-	}
-		
-	adj = ta->atsv_shift - tb->atsv_shift;
+  if ((ta->atsv_units == ATR_SV_WORDSZ) &&
+      (tb->atsv_units != ATR_SV_WORDSZ))
+    {
+    ta->atsv_num *= sizeof(int);
+    ta->atsv_units = ATR_SV_BYTESZ;
+    }
+  else if ((ta->atsv_units != ATR_SV_WORDSZ) &&
+           (tb->atsv_units == ATR_SV_WORDSZ))
+    {
+    tb->atsv_num *= sizeof(int);
+    tb->atsv_units = ATR_SV_BYTESZ;
+    }
 
-	if (adj > 0) {
-		temp = ta->atsv_num;
-		if ((adj > (int)sizeof (int) * 8) ||
-		    (((temp << adj) >> adj) != ta->atsv_num))
-			return (-1);	/* would overflow */
-		ta->atsv_shift = tb->atsv_shift;
-		ta->atsv_num   = ta->atsv_num << adj;
-	} else if (adj < 0) {
-		adj = -adj;
-		temp = tb->atsv_num;
-		if ((adj > (int)sizeof (int) * 8) ||
-		    (((temp << adj) >> adj) != tb->atsv_num))
-			return (-1);	/* would overflow */
-		tb->atsv_shift = ta->atsv_shift;
-		tb->atsv_num   = tb->atsv_num << adj;
-	}
-	return (0);
-}
+  adj = ta->atsv_shift - tb->atsv_shift;
+
+  if (adj > 0)
+    {
+    temp = ta->atsv_num;
+
+    if ((adj > (int)sizeof(int) * 8) ||
+        (((temp << adj) >> adj) != ta->atsv_num))
+      return (-1); /* would overflow */
+
+    ta->atsv_shift = tb->atsv_shift;
+
+    ta->atsv_num   = ta->atsv_num << adj;
+    }
+  else if (adj < 0)
+    {
+    adj = -adj;
+    temp = tb->atsv_num;
+
+    if ((adj > (int)sizeof(int) * 8) ||
+        (((temp << adj) >> adj) != tb->atsv_num))
+      return (-1); /* would overflow */
+
+    tb->atsv_shift = ta->atsv_shift;
+
+    tb->atsv_num   = tb->atsv_num << adj;
+    }
+
+  return (0);
+  }
 
 
 
 
 
-/* 
+/*
  * to_size - decode the value string TO a size_value structure
  *
- *	This function decodes a value string into a size_value struct.
+ * This function decodes a value string into a size_value struct.
  */
 
 int to_size(
@@ -393,62 +424,95 @@ int to_size(
   char *pc;
 
   psize->atsv_units = ATR_SV_BYTESZ;
-  psize->atsv_num   = strtol(val,&pc,0);
+  psize->atsv_num   = strtol(val, &pc, 0);
 
-  if (pc == val)		/* no numeric part */
+  if (pc == val)  /* no numeric part */
     {
     return(PBSE_BADATVAL);
     }
 
-  switch (*pc) 
+  switch (*pc)
     {
-    case '\0':	psize->atsv_shift = 0;
-        break;
+
+    case '\0':
+      psize->atsv_shift = 0;
+      break;
+
     case 'k':
-    case 'K':	psize->atsv_shift = 10;
-	break;
+
+    case 'K':
+      psize->atsv_shift = 10;
+      break;
+
     case 'm':
-    case 'M':	psize->atsv_shift = 20;
-	break;
+
+    case 'M':
+      psize->atsv_shift = 20;
+      break;
+
     case 'g':
-    case 'G':	psize->atsv_shift = 30;
-	break;
+
+    case 'G':
+      psize->atsv_shift = 30;
+      break;
+
     case 't':
-    case 'T':	psize->atsv_shift = 40;
-	break;
+
+    case 'T':
+      psize->atsv_shift = 40;
+      break;
+
     case 'p':
-    case 'P':	psize->atsv_shift = 50;
-	break;
+
+    case 'P':
+      psize->atsv_shift = 50;
+      break;
+
     case 'b':
-    case 'B':	havebw = 1;
-	break;
+
+    case 'B':
+      havebw = 1;
+      break;
+
     case 'w':
-    case 'W':	havebw = 1;
-	psize->atsv_units = ATR_SV_WORDSZ;
-	break;
-    default:	return (PBSE_BADATVAL);	 /* invalid string */
-        break;
+
+    case 'W':
+      havebw = 1;
+      psize->atsv_units = ATR_SV_WORDSZ;
+      break;
+
+    default:
+      return (PBSE_BADATVAL);  /* invalid string */
+      break;
     }
 
-  if (*pc != '\0') 
+  if (*pc != '\0')
     pc++;
 
-  if (*pc != '\0') 
+  if (*pc != '\0')
     {
     if (havebw)
       {
       return(PBSE_BADATVAL);  /* invalid string */
       }
 
-    switch (*pc) 
+    switch (*pc)
       {
-		    case 'b':
-		    case 'B':	break;
-		    case 'w':
-		    case 'W':	psize->atsv_units = ATR_SV_WORDSZ;
-				break;
-		    default:	return (PBSE_BADATVAL);
-		}
+
+      case 'b':
+
+      case 'B':
+        break;
+
+      case 'w':
+
+      case 'W':
+        psize->atsv_units = ATR_SV_WORDSZ;
+        break;
+
+      default:
+        return (PBSE_BADATVAL);
+      }
     }
 
   return(0);
@@ -467,29 +531,40 @@ void from_size(
   char              *cvnbuf) /* O (minsize=CVNBUFSZ) */
 
   {
-  sprintf(cvnbuf,"%lu", 
-    psize->atsv_num);
+  sprintf(cvnbuf, "%lu",
+          psize->atsv_num);
 
-  switch (psize->atsv_shift) 
+  switch (psize->atsv_shift)
     {
-    case  0:	/*NO-OP*/
+
+    case  0: /*NO-OP*/
       break;
-    case 10:	strcat(cvnbuf, "k");
+
+    case 10:
+      strcat(cvnbuf, "k");
       break;
-    case 20:	strcat(cvnbuf, "m");
+
+    case 20:
+      strcat(cvnbuf, "m");
       break;
-    case 30:	strcat(cvnbuf, "g");
+
+    case 30:
+      strcat(cvnbuf, "g");
       break;
-    case 40:	strcat(cvnbuf, "t");
+
+    case 40:
+      strcat(cvnbuf, "t");
       break;
-    case 50:	strcat(cvnbuf, "p");
+
+    case 50:
+      strcat(cvnbuf, "p");
       break;
     }
 
   if (psize->atsv_units & ATR_SV_WORDSZ)
-    strcat(cvnbuf,"w");
+    strcat(cvnbuf, "w");
   else
-    strcat(cvnbuf,"b");
+    strcat(cvnbuf, "b");
 
   return;
   }

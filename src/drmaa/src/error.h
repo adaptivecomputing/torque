@@ -28,53 +28,53 @@
 #define __DRMAA__ERROR_H
 
 #ifdef HAVE_CONFIG_H
-#	include <pbs_config.h>
+# include <pbs_config.h>
 #endif
 
 #include <stddef.h>
 
 
-int drmaa_get_errno_error( char *error_diagnosis, size_t error_diag_len );
-int drmaa_get_drmaa_error( char *error_diagnosis, size_t error_diag_len,
-	int error_code );
-int drmaa_get_pbs_error( char *error_diagnosis, size_t error_diag_len );
+int drmaa_get_errno_error(char *error_diagnosis, size_t error_diag_len);
+int drmaa_get_drmaa_error(char *error_diagnosis, size_t error_diag_len,
+                          int error_code);
+int drmaa_get_pbs_error(char *error_diagnosis, size_t error_diag_len);
 
-int drmaa_map_pbs_error( int pbs_errcode );
+int drmaa_map_pbs_error(int pbs_errcode);
 
-void drmaa_log( const char *fmt, ... )
-	__attribute__(( format( printf, 1, 2 ) ));
+void drmaa_log(const char *fmt, ...)
+__attribute__((format(printf, 1, 2)));
 
 
 #if DRMAA_DEBUG
 # define DEBUG( args )  do{ drmaa_log args ; }while(0)
 #else
-#	define DEBUG( args )  /* nothing */
+# define DEBUG( args )  /* nothing */
 #endif
 
 #define STORE_ERRNO_MSG() \
-	do{  drmaa_get_errno_error( errmsg, errlen );  }while(0)
+  do{  drmaa_get_errno_error( errmsg, errlen );  }while(0)
 
 #define RAISE_ERRNO( retcode ) do {   \
-		STORE_ERRNO_MSG();                \
-		return retcode;                   \
-	} while(0)
+    STORE_ERRNO_MSG();                \
+    return retcode;                   \
+    } while(0)
 
 #define SET_DRMAA_ERROR( retcode ) \
-	do{  drmaa_get_drmaa_error( errmsg, errlen, (retcode) );  } while(0)
+  do{  drmaa_get_drmaa_error( errmsg, errlen, (retcode) );  } while(0)
 
 #define RAISE_DRMAA( retcode ) do { \
-		SET_DRMAA_ERROR( retcode );     \
-		return retcode;                 \
-	} while(0)
+    SET_DRMAA_ERROR( retcode );     \
+    return retcode;                 \
+    } while(0)
 
 #define RAISE_NO_MEMORY() \
-	RAISE_DRMAA( DRMAA_ERRNO_NO_MEMORY )
+  RAISE_DRMAA( DRMAA_ERRNO_NO_MEMORY )
 
 #define RAISE_PBS() \
-	do{  return drmaa_get_pbs_error( errmsg, errlen );  } while(0)
+  do{  return drmaa_get_pbs_error( errmsg, errlen );  } while(0)
 
 #define SET_PBS_ERROR( rc_var ) \
-	do{  (rc_var) = drmaa_get_pbs_error( errmsg, errlen );  } while(0)
+  do{  (rc_var) = drmaa_get_pbs_error( errmsg, errlen );  } while(0)
 
 
 #endif /* __DRMAA__ERROR_H */

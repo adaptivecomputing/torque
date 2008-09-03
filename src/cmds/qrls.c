@@ -1,45 +1,45 @@
 /*
 *         OpenPBS (Portable Batch System) v2.3 Software License
-* 
+*
 * Copyright (c) 1999-2000 Veridian Information Solutions, Inc.
 * All rights reserved.
-* 
+*
 * ---------------------------------------------------------------------------
 * For a license to use or redistribute the OpenPBS software under conditions
 * other than those described below, or to purchase support for this software,
 * please contact Veridian Systems, PBS Products Department ("Licensor") at:
-* 
+*
 *    www.OpenPBS.org  +1 650 967-4675                  sales@OpenPBS.org
 *                        877 902-4PBS (US toll-free)
 * ---------------------------------------------------------------------------
-* 
+*
 * This license covers use of the OpenPBS v2.3 software (the "Software") at
 * your site or location, and, for certain users, redistribution of the
 * Software to other sites and locations.  Use and redistribution of
 * OpenPBS v2.3 in source and binary forms, with or without modification,
 * are permitted provided that all of the following conditions are met.
 * After December 31, 2001, only conditions 3-6 must be met:
-* 
+*
 * 1. Commercial and/or non-commercial use of the Software is permitted
 *    provided a current software registration is on file at www.OpenPBS.org.
 *    If use of this software contributes to a publication, product, or
 *    service, proper attribution must be given; see www.OpenPBS.org/credit.html
-* 
+*
 * 2. Redistribution in any form is only permitted for non-commercial,
 *    non-profit purposes.  There can be no charge for the Software or any
 *    software incorporating the Software.  Further, there can be no
 *    expectation of revenue generated as a consequence of redistributing
 *    the Software.
-* 
+*
 * 3. Any Redistribution of source code must retain the above copyright notice
 *    and the acknowledgment contained in paragraph 6, this list of conditions
 *    and the disclaimer contained in paragraph 7.
-* 
+*
 * 4. Any Redistribution in binary form must reproduce the above copyright
 *    notice and the acknowledgment contained in paragraph 6, this list of
 *    conditions and the disclaimer contained in paragraph 7 in the
 *    documentation and/or other materials provided with the distribution.
-* 
+*
 * 5. Redistributions in any form must be accompanied by information on how to
 *    obtain complete source code for the OpenPBS software and any
 *    modifications and/or additions to the OpenPBS software.  The source code
@@ -47,23 +47,23 @@
 *    than the cost of distribution plus a nominal fee, and all modifications
 *    and additions to the Software must be freely redistributable by any party
 *    (including Licensor) without restriction.
-* 
+*
 * 6. All advertising materials mentioning features or use of the Software must
 *    display the following acknowledgment:
-* 
+*
 *     "This product includes software developed by NASA Ames Research Center,
-*     Lawrence Livermore National Laboratory, and Veridian Information 
+*     Lawrence Livermore National Laboratory, and Veridian Information
 *     Solutions, Inc.
 *     Visit www.OpenPBS.org for OpenPBS software support,
 *     products, and information."
-* 
+*
 * 7. DISCLAIMER OF WARRANTY
-* 
+*
 * THIS SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND. ANY EXPRESS
 * OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
 * OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT
 * ARE EXPRESSLY DISCLAIMED.
-* 
+*
 * IN NO EVENT SHALL VERIDIAN CORPORATION, ITS AFFILIATED COMPANIES, OR THE
 * U.S. GOVERNMENT OR ANY OF ITS AGENCIES BE LIABLE FOR ANY DIRECT OR INDIRECT,
 * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
@@ -72,11 +72,11 @@
 * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
 * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-* 
+*
 * This license will be governed by the laws of the Commonwealth of Virginia,
 * without reference to its choice of law rules.
 */
-/* 
+/*
  *
  * qrls - (PBS) release a hold on a batch job
  *
@@ -101,8 +101,8 @@ int main(
 
   {
   int c;
-  int errflg=0;
-  int any_failed=0;
+  int errflg = 0;
+  int any_failed = 0;
   int u_cnt, o_cnt, s_cnt, n_cnt;
   char *pc;
 
@@ -116,21 +116,22 @@ int main(
   char hold_type[MAX_HOLD_TYPE_LEN+1];
 
 #define GETOPT_ARGS "h:"
-                 
+
   hold_type[0] = '\0';
 
-  while ((c = getopt (argc, argv, GETOPT_ARGS )) != EOF)
+  while ((c = getopt(argc, argv, GETOPT_ARGS)) != EOF)
     {
-    switch (c) 
+    switch (c)
       {
+
       case 'h':
 
-        while (isspace((int)*optarg)) 
+        while (isspace((int)*optarg))
           optarg++;
 
-        if (strlen(optarg) == 0) 
+        if (strlen(optarg) == 0)
           {
-          fprintf(stderr,"qrls: illegal -h value\n");
+          fprintf(stderr, "qrls: illegal -h value\n");
 
           errflg++;
 
@@ -141,7 +142,7 @@ int main(
 
         u_cnt = o_cnt = s_cnt = n_cnt = 0;
 
-        while (*pc) 
+        while (*pc)
           {
           if (*pc == 'u')
             u_cnt++;
@@ -151,10 +152,10 @@ int main(
             s_cnt++;
           else if (*pc == 'n')
             n_cnt++;
-          else 
+          else
             {
-            fprintf(stderr,"qrls: illegal -h value\n");
-           
+            fprintf(stderr, "qrls: illegal -h value\n");
+
             errflg++;
 
             break;
@@ -163,16 +164,16 @@ int main(
           pc++;
           }
 
-        if (n_cnt && (u_cnt + o_cnt + s_cnt)) 
+        if (n_cnt && (u_cnt + o_cnt + s_cnt))
           {
-          fprintf(stderr,"qrls: illegal -h value\n");
+          fprintf(stderr, "qrls: illegal -h value\n");
 
           errflg++;
 
           break;
           }
 
-        strcpy(hold_type,optarg);
+        strcpy(hold_type, optarg);
 
         break;
 
@@ -184,27 +185,27 @@ int main(
       }
     }
 
-  if (errflg || optind >= argc) 
+  if (errflg || optind >= argc)
     {
-    static char usage[]="usage: qrls [-h {uos}] job_identifier...\n";
+    static char usage[] = "usage: qrls [-h {uos}] job_identifier...\n";
 
-    fprintf(stderr,usage);
+    fprintf(stderr, usage);
 
     exit(2);
     }
 
-  for (;optind < argc;optind++) 
+  for (;optind < argc;optind++)
     {
     int connect;
     int stat = 0;
     int located = FALSE;
 
-    strcpy(job_id,argv[optind]);
+    strcpy(job_id, argv[optind]);
 
-    if (get_server(job_id,job_id_out,server_out)) 
+    if (get_server(job_id, job_id_out, server_out))
       {
-      fprintf(stderr,"qrls: illegally formed job identifier: %s\n", 
-        job_id);
+      fprintf(stderr, "qrls: illegally formed job identifier: %s\n",
+              job_id);
 
       any_failed = 1;
 
@@ -212,41 +213,42 @@ int main(
       }
 
 cnt:
+
     connect = cnt2server(server_out);
 
-    if (connect <= 0) 
+    if (connect <= 0)
       {
-      fprintf(stderr, "qrls: cannot connect to server %s (errno=%d) %s\n", 
-        pbs_server, 
-        pbs_errno,
-        pbs_strerror(pbs_errno));
+      fprintf(stderr, "qrls: cannot connect to server %s (errno=%d) %s\n",
+              pbs_server,
+              pbs_errno,
+              pbs_strerror(pbs_errno));
 
       any_failed = pbs_errno;
 
       continue;
       }
 
-    stat = pbs_rlsjob(connect,job_id_out,hold_type,NULL);
+    stat = pbs_rlsjob(connect, job_id_out, hold_type, NULL);
 
-    if (stat && (pbs_errno != PBSE_UNKJOBID)) 
+    if (stat && (pbs_errno != PBSE_UNKJOBID))
       {
       prt_job_err("qrls", connect, job_id_out);
       any_failed = pbs_errno;
-      } 
-    else if (stat && (pbs_errno == PBSE_UNKJOBID) && !located) 
+      }
+    else if (stat && (pbs_errno == PBSE_UNKJOBID) && !located)
       {
       located = TRUE;
 
-      if (locate_job(job_id_out,server_out,rmt_server)) 
+      if (locate_job(job_id_out, server_out, rmt_server))
         {
         pbs_disconnect(connect);
 
-        strcpy(server_out,rmt_server);
+        strcpy(server_out, rmt_server);
 
         goto cnt;
         }
 
-      prt_job_err("qrls",connect,job_id_out);
+      prt_job_err("qrls", connect, job_id_out);
 
       any_failed = pbs_errno;
       }

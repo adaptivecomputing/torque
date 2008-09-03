@@ -1,45 +1,45 @@
 /*
 *         OpenPBS (Portable Batch System) v2.3 Software License
-* 
+*
 * Copyright (c) 1999-2000 Veridian Information Solutions, Inc.
 * All rights reserved.
-* 
+*
 * ---------------------------------------------------------------------------
 * For a license to use or redistribute the OpenPBS software under conditions
 * other than those described below, or to purchase support for this software,
 * please contact Veridian Systems, PBS Products Department ("Licensor") at:
-* 
+*
 *    www.OpenPBS.org  +1 650 967-4675                  sales@OpenPBS.org
 *                        877 902-4PBS (US toll-free)
 * ---------------------------------------------------------------------------
-* 
+*
 * This license covers use of the OpenPBS v2.3 software (the "Software") at
 * your site or location, and, for certain users, redistribution of the
 * Software to other sites and locations.  Use and redistribution of
 * OpenPBS v2.3 in source and binary forms, with or without modification,
 * are permitted provided that all of the following conditions are met.
 * After December 31, 2001, only conditions 3-6 must be met:
-* 
+*
 * 1. Commercial and/or non-commercial use of the Software is permitted
 *    provided a current software registration is on file at www.OpenPBS.org.
 *    If use of this software contributes to a publication, product, or
 *    service, proper attribution must be given; see www.OpenPBS.org/credit.html
-* 
+*
 * 2. Redistribution in any form is only permitted for non-commercial,
 *    non-profit purposes.  There can be no charge for the Software or any
 *    software incorporating the Software.  Further, there can be no
 *    expectation of revenue generated as a consequence of redistributing
 *    the Software.
-* 
+*
 * 3. Any Redistribution of source code must retain the above copyright notice
 *    and the acknowledgment contained in paragraph 6, this list of conditions
 *    and the disclaimer contained in paragraph 7.
-* 
+*
 * 4. Any Redistribution in binary form must reproduce the above copyright
 *    notice and the acknowledgment contained in paragraph 6, this list of
 *    conditions and the disclaimer contained in paragraph 7 in the
 *    documentation and/or other materials provided with the distribution.
-* 
+*
 * 5. Redistributions in any form must be accompanied by information on how to
 *    obtain complete source code for the OpenPBS software and any
 *    modifications and/or additions to the OpenPBS software.  The source code
@@ -47,23 +47,23 @@
 *    than the cost of distribution plus a nominal fee, and all modifications
 *    and additions to the Software must be freely redistributable by any party
 *    (including Licensor) without restriction.
-* 
+*
 * 6. All advertising materials mentioning features or use of the Software must
 *    display the following acknowledgment:
-* 
+*
 *     "This product includes software developed by NASA Ames Research Center,
-*     Lawrence Livermore National Laboratory, and Veridian Information 
+*     Lawrence Livermore National Laboratory, and Veridian Information
 *     Solutions, Inc.
 *     Visit www.OpenPBS.org for OpenPBS software support,
 *     products, and information."
-* 
+*
 * 7. DISCLAIMER OF WARRANTY
-* 
+*
 * THIS SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND. ANY EXPRESS
 * OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
 * OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT
 * ARE EXPRESSLY DISCLAIMED.
-* 
+*
 * IN NO EVENT SHALL VERIDIAN CORPORATION, ITS AFFILIATED COMPANIES, OR THE
 * U.S. GOVERNMENT OR ANY OF ITS AGENCIES BE LIABLE FOR ANY DIRECT OR INDIRECT,
 * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
@@ -72,7 +72,7 @@
 * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
 * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-* 
+*
 * This license will be governed by the laws of the Commonwealth of Virginia,
 * without reference to its choice of law rules.
 */
@@ -118,14 +118,14 @@
 
 /*
  * process_request - this function gets, checks, and invokes the proper
- *	function to deal with a batch request received over the network.
+ * function to deal with a batch request received over the network.
  *
- *	All data encoding/decoding dependencies are moved to a lower level
- *	routine.  That routine must convert
- *	the data received into the internal server structures regardless of
- *	the data structures used by the encode/decode routines.  This provides
- *	the "protocol" and "protocol generation tool" freedom to the bulk
- *	of the server.
+ * All data encoding/decoding dependencies are moved to a lower level
+ * routine.  That routine must convert
+ * the data received into the internal server structures regardless of
+ * the data structures used by the encode/decode routines.  This provides
+ * the "protocol" and "protocol generation tool" freedom to the bulk
+ * of the server.
  */
 
 /* global data items */
@@ -133,7 +133,9 @@
 tlist_head svr_requests;
 
 extern struct    connection svr_conn[];
+
 extern struct    credential conn_credent[PBS_NET_MAX_CONNECTIONS];
+
 extern struct server server;
 extern char      server_host[];
 extern tlist_head svr_newjobs;
@@ -151,7 +153,7 @@ extern int LOGLEVEL;
 /* private functions local to this file */
 
 static void close_client A_((int sfds));
-static void freebr_manage A_((struct rq_manage *)); 
+static void freebr_manage A_((struct rq_manage *));
 static void freebr_cpyfile A_((struct rq_cpyfile *));
 static void close_quejob A_((int sfds));
 #ifndef PBS_MOM
@@ -161,6 +163,7 @@ static void free_rescrq A_((struct rq_rescq *));
 /* END private prototypes */
 
 #ifndef PBS_MOM
+
 extern struct pbsnode *PGetNodeFromAddr(pbs_net_t);
 #endif
 
@@ -202,86 +205,107 @@ void req_holdarray(struct batch_request *preq);
 
 #ifdef ENABLE_UNIX_SOCKETS
 #ifndef PBS_MOM
-int get_creds(int sd,char *username,char *hostname) {
+int get_creds(int sd, char *username, char *hostname)
+  {
   int             nb/*, sync*/;
   char            ctrl[CMSG_SPACE(sizeof(struct ucred))];
   size_t          size;
+
   struct iovec    iov[1];
+
   struct msghdr   msg;
+
   struct cmsghdr  *cmptr;
   ucreds *credentials;
+
   struct passwd *cpwd;
   char dummy;
 
-  msg.msg_name=NULL;
-  msg.msg_namelen=0;
-  msg.msg_iov=iov;
-  msg.msg_iovlen=1;
-  msg.msg_control=ctrl;
-  msg.msg_controllen=sizeof(ctrl);
-  msg.msg_flags=0;
+  msg.msg_name = NULL;
+  msg.msg_namelen = 0;
+  msg.msg_iov = iov;
+  msg.msg_iovlen = 1;
+  msg.msg_control = ctrl;
+  msg.msg_controllen = sizeof(ctrl);
+  msg.msg_flags = 0;
 
 #ifdef LOCAL_CREDS
   nb = 1;
+
   if (setsockopt(sd, 0, LOCAL_CREDS, &nb, sizeof(nb)) == -1) return 0;
+
 #else
 #ifdef SO_PASSCRED
   nb = 1;
+
   if (setsockopt(sd, SOL_SOCKET, SO_PASSCRED, &nb, sizeof(nb)) == -1)
     return 0;
+
 #endif
 #endif
 
-  dummy='\0';
+  dummy = '\0';
 
-  do {
-    msg.msg_iov->iov_base = (void *)&dummy;
+  do
+    {
+    msg.msg_iov->iov_base = (void *) & dummy;
     msg.msg_iov->iov_len  = sizeof(dummy);
     nb = recvmsg(sd, &msg, 0);
-  } while (nb == -1 && (errno == EINTR || errno == EAGAIN));
+    }
+  while (nb == -1 && (errno == EINTR || errno == EAGAIN));
+
   if (nb == -1) return 0;
 
   if ((unsigned)msg.msg_controllen < sizeof(struct cmsghdr)) return 0;
+
   cmptr = CMSG_FIRSTHDR(&msg);
+
 #ifndef __NetBSD__
   size = sizeof(ucreds);
+
 #else
   if (cmptr->cmsg_len < SOCKCREDSIZE(0)) return 0;
+
   size = SOCKCREDSIZE(((cred *)CMSG_DATA(cmptr))->sc_ngroups);
+
 #endif
   if ((unsigned)cmptr->cmsg_len != CMSG_LEN(size)) return 0;
+
   if (cmptr->cmsg_level != SOL_SOCKET) return 0;
+
   if (cmptr->cmsg_type != SCM_CREDS) return 0;
 
   if (!(credentials = (ucreds *)malloc(size))) return 0;
+
   *credentials = *(ucreds *)CMSG_DATA(cmptr);
 
-  cpwd=getpwuid(SPC_PEER_UID(credentials));
+  cpwd = getpwuid(SPC_PEER_UID(credentials));
 
   if (cpwd)
-    strcpy(username,cpwd->pw_name);
+    strcpy(username, cpwd->pw_name);
 
-  strcpy(hostname,server_name);
+  strcpy(hostname, server_name);
 
   free(credentials);
 
   return 0;
-}
+  }
+
 #endif
 #endif /* END ENABLE_UNIX_SOCKETS */
-                       
+
 
 /*
  * process_request - process an request from the network:
- *	Call function to read in the request and decode it.
- *	Validate requesting host and user.
- *	Call function to process request based on type.
- *		That function MUST free the request by calling free_br()
+ * Call function to read in the request and decode it.
+ * Validate requesting host and user.
+ * Call function to process request based on type.
+ *  That function MUST free the request by calling free_br()
  */
 
 void process_request(
 
-  int sfds)	/* file descriptor (socket) to get request */
+  int sfds) /* file descriptor (socket) to get request */
 
   {
 #ifdef PBS_MOM
@@ -289,6 +313,7 @@ void process_request(
 #endif
 
   int                   rc;
+
   struct batch_request *request;
 
   time_now = time(NULL);
@@ -303,21 +328,23 @@ void process_request(
 
 #ifndef PBS_MOM
 
-  if (svr_conn[sfds].cn_active == FromClientDIS) 
+  if (svr_conn[sfds].cn_active == FromClientDIS)
     {
 #ifdef ENABLE_UNIX_SOCKETS
+
     if ((svr_conn[sfds].cn_socktype & PBS_SOCK_UNIX) &&
         (svr_conn[sfds].cn_authen != PBS_NET_CONN_AUTHENTICATED))
       {
-      get_creds(sfds,conn_credent[sfds].username,conn_credent[sfds].hostname);
+      get_creds(sfds, conn_credent[sfds].username, conn_credent[sfds].hostname);
       }
+
 #endif /* END ENABLE_UNIX_SOCKETS */
-    rc = dis_request_read(sfds,request);
-    } 
-  else 
+    rc = dis_request_read(sfds, request);
+    }
+  else
     {
     LOG_EVENT(
-      PBSEVENT_SYSTEM, 
+      PBSEVENT_SYSTEM,
       PBS_EVENTCLASS_REQUEST,
       "process_req",
       "request on invalid type of connection");
@@ -329,14 +356,15 @@ void process_request(
     return;
     }
 
-#else	/* PBS_MOM */
-  rc = dis_request_read(sfds,request);
-#endif	/* PBS_MOM */
+#else /* PBS_MOM */
+  rc = dis_request_read(sfds, request);
 
-  if (rc == -1) 
+#endif /* PBS_MOM */
+
+  if (rc == -1)
     {
     /* FAILURE */
-		
+
     /* premature end of file */
 
     close_client(sfds);
@@ -344,9 +372,9 @@ void process_request(
     free_br(request);
 
     return;
-    } 
+    }
 
-  if ((rc == PBSE_SYSTEM) || (rc == PBSE_INTERNAL)) 
+  if ((rc == PBSE_SYSTEM) || (rc == PBSE_INTERNAL))
     {
     /* FAILURE */
 
@@ -359,9 +387,9 @@ void process_request(
     free_br(request);
 
     return;
-    } 
+    }
 
-  if (rc > 0) 
+  if (rc > 0)
     {
     /* FAILURE */
 
@@ -370,27 +398,27 @@ void process_request(
      * request type, in either case, return reject-reply
      */
 
-    req_reject(rc,0,request,NULL,"cannot decode message");
+    req_reject(rc, 0, request, NULL, "cannot decode message");
 
     close_client(sfds);
 
     return;
     }
 
-  if (get_connecthost(sfds,request->rq_host,PBS_MAXHOSTNAME) != 0) 
+  if (get_connecthost(sfds, request->rq_host, PBS_MAXHOSTNAME) != 0)
     {
     char tmpLine[1024];
 
-    sprintf(log_buffer,"%s: %lu",
-      msg_reqbadhost,
-      get_connectaddr(sfds));
+    sprintf(log_buffer, "%s: %lu",
+            msg_reqbadhost,
+            get_connectaddr(sfds));
 
-    LOG_EVENT(PBSEVENT_DEBUG,PBS_EVENTCLASS_REQUEST,"",log_buffer);
+    LOG_EVENT(PBSEVENT_DEBUG, PBS_EVENTCLASS_REQUEST, "", log_buffer);
 
-    snprintf(tmpLine,sizeof(tmpLine),"cannot determine hostname for connection from %lu",
-      get_connectaddr(sfds));
+    snprintf(tmpLine, sizeof(tmpLine), "cannot determine hostname for connection from %lu",
+             get_connectaddr(sfds));
 
-    req_reject(PBSE_BADHOST,0,request,NULL,tmpLine);
+    req_reject(PBSE_BADHOST, 0, request, NULL, tmpLine);
 
     return;
     }
@@ -405,19 +433,19 @@ void process_request(
       request->rq_host,
       sfds);
 
-    LOG_EVENT(PBSEVENT_DEBUG2,PBS_EVENTCLASS_REQUEST,"",log_buffer);
+    LOG_EVENT(PBSEVENT_DEBUG2, PBS_EVENTCLASS_REQUEST, "", log_buffer);
     }
 
   /* is the request from a host acceptable to the server */
 
 #ifndef PBS_MOM
 
-if (svr_conn[sfds].cn_socktype & PBS_SOCK_UNIX)
-  {
-  strcpy(request->rq_host,server_name);
-  }
+  if (svr_conn[sfds].cn_socktype & PBS_SOCK_UNIX)
+    {
+    strcpy(request->rq_host, server_name);
+    }
 
-  if (server.sv_attr[(int)SRV_ATR_acl_host_enable].at_val.at_long) 
+  if (server.sv_attr[(int)SRV_ATR_acl_host_enable].at_val.at_long)
     {
     /* acl enabled, check it; always allow myself and nodes */
 
@@ -426,18 +454,18 @@ if (svr_conn[sfds].cn_socktype & PBS_SOCK_UNIX)
     isanode = PGetNodeFromAddr(get_connectaddr(sfds));
 
     if ((isanode == NULL) &&
-        (strcmp(server_host,request->rq_host) != 0) &&
+        (strcmp(server_host, request->rq_host) != 0) &&
         (acl_check(
-         &server.sv_attr[(int)SRV_ATR_acl_hosts],
-         request->rq_host, 
-         ACL_Host) == 0))
+           &server.sv_attr[(int)SRV_ATR_acl_hosts],
+           request->rq_host,
+           ACL_Host) == 0))
       {
       char tmpLine[1024];
 
-      snprintf(tmpLine,sizeof(tmpLine),"request not authorized from host %s",
-        request->rq_host);
+      snprintf(tmpLine, sizeof(tmpLine), "request not authorized from host %s",
+               request->rq_host);
 
-      req_reject(PBSE_BADHOST,0,request,NULL,tmpLine);
+      req_reject(PBSE_BADHOST, 0, request, NULL, tmpLine);
 
       close_client(sfds);
 
@@ -450,19 +478,19 @@ if (svr_conn[sfds].cn_socktype & PBS_SOCK_UNIX)
    * set the permissions granted to the client
    */
 
-  if (svr_conn[sfds].cn_authen == PBS_NET_CONN_FROM_PRIVIL) 
+  if (svr_conn[sfds].cn_authen == PBS_NET_CONN_FROM_PRIVIL)
     {
     /* request came from another server */
 
     request->rq_fromsvr = 1;
 
-    request->rq_perm = 
+    request->rq_perm =
       ATR_DFLAG_USRD | ATR_DFLAG_USWR |
       ATR_DFLAG_OPRD | ATR_DFLAG_OPWR |
       ATR_DFLAG_MGRD | ATR_DFLAG_MGWR |
       ATR_DFLAG_SvWR;
-    } 
-  else 
+    }
+  else
     {
     /* request not from another server */
 
@@ -481,10 +509,10 @@ if (svr_conn[sfds].cn_socktype & PBS_SOCK_UNIX)
      * The above is only true with inet sockets.  With unix domain sockets, the
      * user creds were read before the first dis_request_read call above.
      * We automatically granted authentication because we can trust the socket
-     * creds.  Authorization is still granted in svr_get_privilege below 
+     * creds.  Authorization is still granted in svr_get_privilege below
      */
-	
-    if (request->rq_type == PBS_BATCH_Connect) 
+
+    if (request->rq_type == PBS_BATCH_Connect)
       {
       req_connect(request);
 
@@ -504,102 +532,109 @@ if (svr_conn[sfds].cn_socktype & PBS_SOCK_UNIX)
     else
       rc = authenticate_user(request, &conn_credent[sfds]);
 
-    if (rc != 0) 
+    if (rc != 0)
       {
-      req_reject(rc,0,request,NULL,NULL);
+      req_reject(rc, 0, request, NULL, NULL);
 
       close_client(sfds);
 
       return;
       }
-       
-    request->rq_perm = svr_get_privilege(request->rq_user,request->rq_host);
+
+    request->rq_perm = svr_get_privilege(request->rq_user, request->rq_host);
     }  /* END else (svr_conn[sfds].cn_authen == PBS_NET_CONN_FROM_PRIVIL) */
 
   /* if server shutting down, disallow new jobs and new running */
 
-  if (server.sv_attr[(int)SRV_ATR_State].at_val.at_long > SV_STATE_RUN) 
+  if (server.sv_attr[(int)SRV_ATR_State].at_val.at_long > SV_STATE_RUN)
     {
-    switch (request->rq_type) 
+    switch (request->rq_type)
       {
+
       case PBS_BATCH_AsyrunJob:
+
       case PBS_BATCH_JobCred:
+
       case PBS_BATCH_MoveJob:
+
       case PBS_BATCH_QueueJob:
+
       case PBS_BATCH_RunJob:
+
       case PBS_BATCH_StageIn:
+
       case PBS_BATCH_jobscript:
 
-        req_reject(PBSE_SVRDOWN,0,request,NULL,NULL);
+        req_reject(PBSE_SVRDOWN, 0, request, NULL, NULL);
 
         return;
- 
+
         /*NOTREACHED*/
 
         break;
       }
     }
 
-#else	/* THIS CODE FOR MOM ONLY */
+#else /* THIS CODE FOR MOM ONLY */
 
-  {
-  extern tree *okclients;
-  
-  extern void mom_server_update_receive_time_by_ip(u_long ipaddr,const char *cmd);
-
-  /* check connecting host against allowed list of ok clients */
-
-  if (LOGLEVEL >= 6)
     {
-    sprintf(log_buffer,"request type %s from host %s received",
-      reqtype_to_txt(request->rq_type),
-      request->rq_host);
+    extern tree *okclients;
 
-    log_record(
-      PBSEVENT_JOB,
-      PBS_EVENTCLASS_JOB,
-      id,
-      log_buffer);
-    }
+    extern void mom_server_update_receive_time_by_ip(u_long ipaddr, const char *cmd);
 
-  if (!tfind(svr_conn[sfds].cn_addr,&okclients)) 
-    {
-    sprintf(log_buffer,"request type %s from host %s rejected (host not authorized)",
-      reqtype_to_txt(request->rq_type),
-      request->rq_host);
+    /* check connecting host against allowed list of ok clients */
 
-    log_record(
-      PBSEVENT_JOB,
-      PBS_EVENTCLASS_JOB,
-      id,
-      log_buffer);
+    if (LOGLEVEL >= 6)
+      {
+      sprintf(log_buffer, "request type %s from host %s received",
+              reqtype_to_txt(request->rq_type),
+              request->rq_host);
 
-    req_reject(PBSE_BADHOST,0,request,NULL,"request not authorized");
+      log_record(
+        PBSEVENT_JOB,
+        PBS_EVENTCLASS_JOB,
+        id,
+        log_buffer);
+      }
 
-    close_client(sfds);
+    if (!tfind(svr_conn[sfds].cn_addr, &okclients))
+      {
+      sprintf(log_buffer, "request type %s from host %s rejected (host not authorized)",
+              reqtype_to_txt(request->rq_type),
+              request->rq_host);
 
-    return;
-    }
+      log_record(
+        PBSEVENT_JOB,
+        PBS_EVENTCLASS_JOB,
+        id,
+        log_buffer);
 
-  if (LOGLEVEL >= 3)
-    {
-    sprintf(log_buffer,"request type %s from host %s allowed",
-      reqtype_to_txt(request->rq_type),
-      request->rq_host);
+      req_reject(PBSE_BADHOST, 0, request, NULL, "request not authorized");
 
-    log_record(
-      PBSEVENT_JOB,
-      PBS_EVENTCLASS_JOB,
-      id,
-      log_buffer);
-    }
+      close_client(sfds);
 
-  mom_server_update_receive_time_by_ip(svr_conn[sfds].cn_addr,reqtype_to_txt(request->rq_type));
-  }    /* END BLOCK */
-		
+      return;
+      }
+
+    if (LOGLEVEL >= 3)
+      {
+      sprintf(log_buffer, "request type %s from host %s allowed",
+              reqtype_to_txt(request->rq_type),
+              request->rq_host);
+
+      log_record(
+        PBSEVENT_JOB,
+        PBS_EVENTCLASS_JOB,
+        id,
+        log_buffer);
+      }
+
+    mom_server_update_receive_time_by_ip(svr_conn[sfds].cn_addr, reqtype_to_txt(request->rq_type));
+    }    /* END BLOCK */
+
   request->rq_fromsvr = 1;
 
-  request->rq_perm = 
+  request->rq_perm =
     ATR_DFLAG_USRD | ATR_DFLAG_USWR |
     ATR_DFLAG_OPRD | ATR_DFLAG_OPWR |
     ATR_DFLAG_MGRD | ATR_DFLAG_MGWR |
@@ -613,7 +648,7 @@ if (svr_conn[sfds].cn_socktype & PBS_SOCK_UNIX)
    * the request struture.
    */
 
-  dispatch_request(sfds,request);
+  dispatch_request(sfds, request);
 
   return;
   }  /* END process_request() */
@@ -624,14 +659,14 @@ if (svr_conn[sfds].cn_socktype & PBS_SOCK_UNIX)
 
 /*
  * dispatch_request - Determine the request type and invoke the corresponding
- *	function.  The function will perform the request action and return the
- *	reply.  The function MUST also reply and free the request by calling
- *	reply_send().
+ * function.  The function will perform the request action and return the
+ * reply.  The function MUST also reply and free the request by calling
+ * reply_send().
  */
 
 void dispatch_request(
 
-  int		        sfds,    /* I */
+  int          sfds,    /* I */
   struct batch_request *request) /* I */
 
   {
@@ -639,9 +674,9 @@ void dispatch_request(
 
   if (LOGLEVEL >= 5)
     {
-    sprintf(log_buffer,"dispatching request %s on sd=%d",
-      reqtype_to_txt(request->rq_type),
-      sfds);
+    sprintf(log_buffer, "dispatching request %s on sd=%d",
+            reqtype_to_txt(request->rq_type),
+            sfds);
 
     log_record(
       PBSEVENT_JOB,
@@ -650,15 +685,16 @@ void dispatch_request(
       log_buffer);
     }
 
-  switch (request->rq_type) 
+  switch (request->rq_type)
     {
+
     case PBS_BATCH_QueueJob:
 
-      net_add_close_func(sfds,close_quejob);
+      net_add_close_func(sfds, close_quejob);
 
       req_quejob(request);
 
-      break; 
+      break;
 
     case PBS_BATCH_JobCred:
 
@@ -682,20 +718,21 @@ void dispatch_request(
 
       req_commit(request);
 
-      net_add_close_func(sfds,(void (*)())0);
+      net_add_close_func(sfds, (void (*)())0);
 
-      break; 
+      break;
 
-    case PBS_BATCH_DeleteJob: 
+    case PBS_BATCH_DeleteJob:
 
 #ifdef PBS_MOM
-      req_deletejob(request); 
+      req_deletejob(request);
 #else
-      /* if this is a server size job delete request, then the request could also be 
-       * for an entire array.  we check to see if the request object name is an array id.  
-       * if so we hand off the the req_deletearray() function.  If not we pass along to the 
-       * normal req_deltejob() function. 
-       */
+      /* if this is a server size job delete request, then the request could also be
+      * for an entire array.  we check to see if the request object name is an array id.
+      * if so we hand off the the req_deletearray() function.  If not we pass along to the
+      * normal req_deltejob() function.
+      */
+
       if (is_array(request->rq_ind.rq_delete.rq_objname))
         {
         req_deletearray(request);
@@ -704,12 +741,14 @@ void dispatch_request(
         {
         req_deletejob(request);
         }
-#endif
-      break; 
 
-    case PBS_BATCH_HoldJob: 
+#endif
+      break;
+
+    case PBS_BATCH_HoldJob:
 #ifdef PBS_MOM
       req_holdjob(request);
+
 #else
       if (is_array(request->rq_ind.rq_hold.rq_orig.rq_objname))
         {
@@ -719,10 +758,11 @@ void dispatch_request(
         {
         req_holdjob(request);
         }
+
 #endif
       break;
 
-    case PBS_BATCH_CheckpointJob: 
+    case PBS_BATCH_CheckpointJob:
 
       req_checkpointjob(request);
 
@@ -730,13 +770,13 @@ void dispatch_request(
 
 #ifndef PBS_MOM
 
-    case PBS_BATCH_LocateJob: 
+    case PBS_BATCH_LocateJob:
 
-      req_locatejob(request); 
+      req_locatejob(request);
 
       break;
 
-    case PBS_BATCH_Manager: 
+    case PBS_BATCH_Manager:
 
       req_manager(request);
 
@@ -744,22 +784,23 @@ void dispatch_request(
 
 #endif  /* END !PBS_MOM */
 
-    case PBS_BATCH_MessJob: 
+    case PBS_BATCH_MessJob:
 
-      req_messagejob(request); 
+      req_messagejob(request);
 
       break;
 
     case PBS_BATCH_AsyModifyJob:
+
     case PBS_BATCH_ModifyJob:
 
       req_modifyjob(request);
 
-      break; 
+      break;
 
     case PBS_BATCH_Rerun:
 
-      req_rerunjob(request); 
+      req_rerunjob(request);
 
       break;
 
@@ -767,13 +808,13 @@ void dispatch_request(
 
     case PBS_BATCH_MoveJob:
 
-      req_movejob(request); 
+      req_movejob(request);
 
       break;
 
     case PBS_BATCH_OrderJob:
 
-      req_orderjob(request); 
+      req_orderjob(request);
 
       break;
 
@@ -802,35 +843,37 @@ void dispatch_request(
       break;
 
     case PBS_BATCH_RunJob:
+
     case PBS_BATCH_AsyrunJob:
 
-      req_runjob(request); 
+      req_runjob(request);
 
       break;
 
     case PBS_BATCH_SelectJobs:
+
     case PBS_BATCH_SelStat:
 
       /* handle special 'truncated' keyword */
 
-      if (!strncasecmp(request->rq_ind.rq_status.rq_id,"truncated",strlen("truncated")))
+      if (!strncasecmp(request->rq_ind.rq_status.rq_id, "truncated", strlen("truncated")))
         req_stat_job(request);
-      else 
-        req_selectjobs(request); 
+      else
+        req_selectjobs(request);
 
       break;
 
 #endif  /* !PBS_MOM */
 
-    case PBS_BATCH_Shutdown: 
+    case PBS_BATCH_Shutdown:
 
-      req_shutdown(request); 
+      req_shutdown(request);
 
       break;
 
     case PBS_BATCH_SignalJob:
 
-      req_signaljob(request); 
+      req_signaljob(request);
 
       break;
 
@@ -846,29 +889,31 @@ void dispatch_request(
 
       break;
 
-#ifndef PBS_MOM		/* server only functions */
+#ifndef PBS_MOM  /* server only functions */
 
-    case PBS_BATCH_StatusQue: 
+    case PBS_BATCH_StatusQue:
 
-      req_stat_que(request); 
-
-      break;
-
-    case PBS_BATCH_StatusNode: 
-
-      req_stat_node(request); 
+      req_stat_que(request);
 
       break;
 
-    case PBS_BATCH_StatusSvr: 
+    case PBS_BATCH_StatusNode:
+
+      req_stat_node(request);
+
+      break;
+
+    case PBS_BATCH_StatusSvr:
 
       req_stat_svr(request);
-  
+
       break;
-/* DIAGTODO: handle PBS_BATCH_StatusDiag and define req_stat_diag() */
+
+      /* DIAGTODO: handle PBS_BATCH_StatusDiag and define req_stat_diag() */
+
     case PBS_BATCH_TrackJob:
 
-      req_track(request); 
+      req_track(request);
 
       break;
 
@@ -922,7 +967,7 @@ void dispatch_request(
 
     default:
 
-      req_reject(PBSE_UNKREQ,0,request,NULL,NULL);
+      req_reject(PBSE_UNKREQ, 0, request, NULL, NULL);
 
       close_client(sfds);
 
@@ -938,7 +983,7 @@ void dispatch_request(
 
 /*
  * close_client - close a connection to a client, also "inactivate"
- *		  any outstanding batch requests on that connection.
+ *    any outstanding batch requests on that connection.
  */
 
 static void close_client(
@@ -946,14 +991,17 @@ static void close_client(
   int sfds)  /* connection socket */
 
   {
+
   struct batch_request *preq;
 
-  close_conn(sfds);	/* close the connection */
+  close_conn(sfds); /* close the connection */
 
-  preq = (struct batch_request *)GET_NEXT(svr_requests);	
+  preq = (struct batch_request *)GET_NEXT(svr_requests);
 
-  while (preq != NULL) 
-    {			/* list of outstanding requests */
+  while (preq != NULL)
+    {
+    /* list of outstanding requests */
+
     if (preq->rq_conn == sfds)
       preq->rq_conn = -1;
 
@@ -975,32 +1023,33 @@ static void close_client(
 
 struct batch_request *alloc_br(
 
-  int type)
+        int type)
 
   {
+
   struct batch_request *req;
 
-  req = (struct batch_request *)malloc(sizeof (struct batch_request));
+  req = (struct batch_request *)malloc(sizeof(struct batch_request));
 
   if (req == NULL)
     {
-    log_err(errno,"alloc_br",msg_err_malloc);
+    log_err(errno, "alloc_br", msg_err_malloc);
 
     return(NULL);
     }
 
-  memset((void *)req,(int)0,sizeof(struct batch_request));
+  memset((void *)req, (int)0, sizeof(struct batch_request));
 
   req->rq_type = type;
 
   CLEAR_LINK(req->rq_link);
 
-  req->rq_conn = -1;		/* indicate not connected */
-  req->rq_orgconn = -1;		/* indicate not connected */
+  req->rq_conn = -1;  /* indicate not connected */
+  req->rq_orgconn = -1;  /* indicate not connected */
   req->rq_time = time_now;
   req->rq_reply.brp_choice = BATCH_REPLY_CHOICE_NULL;
   req->rq_noreply = FALSE;  /* indicate reply is needed */
-  
+
   append_link(&svr_requests, &req->rq_link, req);
 
   return(req);
@@ -1012,7 +1061,7 @@ struct batch_request *alloc_br(
 
 /*
  * close_quejob - locate and deal with the new job that was being recevied
- *		  when the net connection closed.
+ *    when the net connection closed.
  */
 
 static void close_quejob(
@@ -1025,21 +1074,21 @@ static void close_quejob(
 
   pjob = (job *)GET_NEXT(svr_newjobs);
 
-  while (pjob != NULL) 
+  while (pjob != NULL)
     {
     npjob = GET_NEXT(pjob->ji_alljobs);
 
-    if (pjob->ji_qs.ji_un.ji_newt.ji_fromsock == sfds) 
+    if (pjob->ji_qs.ji_un.ji_newt.ji_fromsock == sfds)
       {
-      if (pjob->ji_qs.ji_substate == JOB_SUBSTATE_TRANSICM) 
+      if (pjob->ji_qs.ji_substate == JOB_SUBSTATE_TRANSICM)
         {
 
 #ifndef PBS_MOM
 
-        if (pjob->ji_qs.ji_svrflags & JOB_SVFLG_HERE) 
-          {	
+        if (pjob->ji_qs.ji_svrflags & JOB_SVFLG_HERE)
+          {
           /*
-           * the job was being created here for the first time 
+           * the job was being created here for the first time
            * go ahead and enqueue it as QUEUED; otherwise, hold
            * it here as TRANSICM until we hear from the sending
            * server again to commit.
@@ -1051,13 +1100,13 @@ static void close_quejob(
           pjob->ji_qs.ji_substate = JOB_SUBSTATE_QUEUED;
 
           if (svr_enquejob(pjob))
-            job_abt(&pjob,msg_err_noqueue);
+            job_abt(&pjob, msg_err_noqueue);
           }
 
-#endif	/* PBS_MOM */
+#endif /* PBS_MOM */
 
-        } 
-      else 
+        }
+      else
         {
         /* else delete the job */
 
@@ -1081,7 +1130,7 @@ static void close_quejob(
 
 /*
  * free_br - free space allocated to a batch_request structure
- *	including any sub-structures
+ * including any sub-structures
  */
 
 void free_br(
@@ -1096,8 +1145,9 @@ void free_br(
   if (preq->rq_extend)
     free(preq->rq_extend);
 
-  switch (preq->rq_type) 
+  switch (preq->rq_type)
     {
+
     case PBS_BATCH_QueueJob:
 
       free_attrlist(&preq->rq_ind.rq_queuejob.rq_attr);
@@ -1112,6 +1162,7 @@ void free_br(
       break;
 
     case PBS_BATCH_MvJobFile:
+
     case PBS_BATCH_jobscript:
 
       if (preq->rq_ind.rq_jobfile.rq_data)
@@ -1139,6 +1190,7 @@ void free_br(
       break;
 
     case PBS_BATCH_ModifyJob:
+
     case PBS_BATCH_AsyModifyJob:
 
       freebr_manage(&preq->rq_ind.rq_modify);
@@ -1146,10 +1198,13 @@ void free_br(
       break;
 
     case PBS_BATCH_StatusJob:
+
     case PBS_BATCH_StatusQue:
+
     case PBS_BATCH_StatusNode:
+
     case PBS_BATCH_StatusSvr:
-/* DIAGTODO: handle PBS_BATCH_StatusDiag */
+      /* DIAGTODO: handle PBS_BATCH_StatusDiag */
 
       free_attrlist(&preq->rq_ind.rq_status.rq_attr);
 
@@ -1162,13 +1217,14 @@ void free_br(
       break;
 
     case PBS_BATCH_CopyFiles:
+
     case PBS_BATCH_DelFiles:
 
       freebr_cpyfile(&preq->rq_ind.rq_cpyfile);
 
       break;
 
-#ifndef PBS_MOM	/* Server Only */
+#ifndef PBS_MOM /* Server Only */
 
     case PBS_BATCH_Manager:
 
@@ -1189,6 +1245,7 @@ void free_br(
       break;
 
     case PBS_BATCH_SelectJobs:
+
     case PBS_BATCH_SelStat:
 
       free_attrlist(&preq->rq_ind.rq_select);
@@ -1196,6 +1253,7 @@ void free_br(
       break;
 
     case PBS_BATCH_RunJob:
+
     case PBS_BATCH_AsyrunJob:
 
       if (preq->rq_ind.rq_run.rq_destin)
@@ -1239,6 +1297,7 @@ static void freebr_cpyfile(
   struct rq_cpyfile *pcf)
 
   {
+
   struct rqfpair *ppair;
 
   while ((ppair = (struct rqfpair *)GET_NEXT(pcf->rq_pair)) != NULL)
@@ -1271,7 +1330,7 @@ static void free_rescrq(
 
   i = pq->rq_num;
 
-  while (i--) 
+  while (i--)
     {
     if (*(pq->rq_list + i) != NULL)
       free(*(pq->rq_list + i));
@@ -1282,6 +1341,7 @@ static void free_rescrq(
 
   return;
   }  /* END free_rescrq() */
+
 #endif /* PBS_MOM */
 
 /* END process_requests.c */

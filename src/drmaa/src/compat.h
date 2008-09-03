@@ -28,22 +28,22 @@
 #define __DRMAA__COMPAT_H
 
 #ifdef HAVE_CONFIG_H
-#	include <pbs_config.h>
+# include <pbs_config.h>
 #endif
 
 #include <stddef.h>
 #include <stdarg.h>
 
 #ifndef HAVE_STRLCPY
-size_t strlcpy( char *dest, const char *src, size_t size );
+size_t strlcpy(char *dest, const char *src, size_t size);
 #endif
 
 #ifndef HAVE_ASPRINTF
-int asprintf( char **strp, const char *fmt, ... );
+int asprintf(char **strp, const char *fmt, ...);
 #endif
 
 #ifndef HAVE_VASPRINTF
-int vasprintf( char **strp, const char *fmt, va_list ap );
+int vasprintf(char **strp, const char *fmt, va_list ap);
 #endif
 
 #ifndef HAVE_STDBOOL_H

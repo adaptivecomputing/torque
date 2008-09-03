@@ -1,45 +1,45 @@
 /*
 *         OpenPBS (Portable Batch System) v2.3 Software License
-* 
+*
 * Copyright (c) 1999-2000 Veridian Information Solutions, Inc.
 * All rights reserved.
-* 
+*
 * ---------------------------------------------------------------------------
 * For a license to use or redistribute the OpenPBS software under conditions
 * other than those described below, or to purchase support for this software,
 * please contact Veridian Systems, PBS Products Department ("Licensor") at:
-* 
+*
 *    www.OpenPBS.org  +1 650 967-4675                  sales@OpenPBS.org
 *                        877 902-4PBS (US toll-free)
 * ---------------------------------------------------------------------------
-* 
+*
 * This license covers use of the OpenPBS v2.3 software (the "Software") at
 * your site or location, and, for certain users, redistribution of the
 * Software to other sites and locations.  Use and redistribution of
 * OpenPBS v2.3 in source and binary forms, with or without modification,
 * are permitted provided that all of the following conditions are met.
 * After December 31, 2001, only conditions 3-6 must be met:
-* 
+*
 * 1. Commercial and/or non-commercial use of the Software is permitted
 *    provided a current software registration is on file at www.OpenPBS.org.
 *    If use of this software contributes to a publication, product, or
 *    service, proper attribution must be given; see www.OpenPBS.org/credit.html
-* 
+*
 * 2. Redistribution in any form is only permitted for non-commercial,
 *    non-profit purposes.  There can be no charge for the Software or any
 *    software incorporating the Software.  Further, there can be no
 *    expectation of revenue generated as a consequence of redistributing
 *    the Software.
-* 
+*
 * 3. Any Redistribution of source code must retain the above copyright notice
 *    and the acknowledgment contained in paragraph 6, this list of conditions
 *    and the disclaimer contained in paragraph 7.
-* 
+*
 * 4. Any Redistribution in binary form must reproduce the above copyright
 *    notice and the acknowledgment contained in paragraph 6, this list of
 *    conditions and the disclaimer contained in paragraph 7 in the
 *    documentation and/or other materials provided with the distribution.
-* 
+*
 * 5. Redistributions in any form must be accompanied by information on how to
 *    obtain complete source code for the OpenPBS software and any
 *    modifications and/or additions to the OpenPBS software.  The source code
@@ -47,23 +47,23 @@
 *    than the cost of distribution plus a nominal fee, and all modifications
 *    and additions to the Software must be freely redistributable by any party
 *    (including Licensor) without restriction.
-* 
+*
 * 6. All advertising materials mentioning features or use of the Software must
 *    display the following acknowledgment:
-* 
+*
 *     "This product includes software developed by NASA Ames Research Center,
-*     Lawrence Livermore National Laboratory, and Veridian Information 
+*     Lawrence Livermore National Laboratory, and Veridian Information
 *     Solutions, Inc.
 *     Visit www.OpenPBS.org for OpenPBS software support,
 *     products, and information."
-* 
+*
 * 7. DISCLAIMER OF WARRANTY
-* 
+*
 * THIS SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND. ANY EXPRESS
 * OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
 * OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT
 * ARE EXPRESSLY DISCLAIMED.
-* 
+*
 * IN NO EVENT SHALL VERIDIAN CORPORATION, ITS AFFILIATED COMPANIES, OR THE
 * U.S. GOVERNMENT OR ANY OF ITS AGENCIES BE LIABLE FOR ANY DIRECT OR INDIRECT,
 * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
@@ -72,7 +72,7 @@
 * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
 * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-* 
+*
 * This license will be governed by the laws of the Commonwealth of Virginia,
 * without reference to its choice of law rules.
 */
@@ -80,9 +80,9 @@
  * accounting.c - contains functions to record accounting information
  *
  * Functions included are:
- *	acct_open()
- *	acct_record()
- *	acct_close()
+ * acct_open()
+ * acct_record()
+ * acct_close()
  */
 
 
@@ -106,24 +106,24 @@
 
 /* Local Data */
 
-static FILE	    *acctfile;		/* open stream for log file */
+static FILE     *acctfile;  /* open stream for log file */
 static volatile int  acct_opened = 0;
-static int	     acct_opened_day;
-static int	     acct_auto_switch = 0;
+static int      acct_opened_day;
+static int      acct_auto_switch = 0;
 
 /* Global Data */
 
 extern attribute_def job_attr_def[];
-extern char	    *path_acct;
-extern int	     resc_access_perm;
-extern time_t	     time_now;
+extern char     *path_acct;
+extern int      resc_access_perm;
+extern time_t      time_now;
 
 
 
 
 /*
  * acct_job - build common data for start/end job accounting record
- *	Used by account_jobstr() and account_jobend()
+ * Used by account_jobstr() and account_jobend()
  */
 
 static char *acct_job(
@@ -150,74 +150,74 @@ static char *acct_job(
 
   /* user */
 
-  sprintf(ptr,"user=%s ",
-    pjob->ji_wattr[(int)JOB_ATR_euser].at_val.at_str);
+  sprintf(ptr, "user=%s ",
+          pjob->ji_wattr[(int)JOB_ATR_euser].at_val.at_str);
 
   ptr += strlen(ptr);
 
   /* group */
 
-  sprintf(ptr,"group=%s ",
-    pjob->ji_wattr[(int)JOB_ATR_egroup].at_val.at_str);
+  sprintf(ptr, "group=%s ",
+          pjob->ji_wattr[(int)JOB_ATR_egroup].at_val.at_str);
 
   ptr += strlen(ptr);
 
   /* account */
 
-  if (pjob->ji_wattr[(int)JOB_ATR_account].at_flags & ATR_VFLAG_SET) 
+  if (pjob->ji_wattr[(int)JOB_ATR_account].at_flags & ATR_VFLAG_SET)
     {
-    sprintf(ptr,"account=%s ",
-      pjob->ji_wattr[(int)JOB_ATR_account].at_val.at_str);
+    sprintf(ptr, "account=%s ",
+            pjob->ji_wattr[(int)JOB_ATR_account].at_val.at_str);
 
     ptr += strlen(ptr);
     }
 
   /* job name */
 
-  sprintf(ptr,"jobname=%s ",
-    pjob->ji_wattr[(int)JOB_ATR_jobname].at_val.at_str);
+  sprintf(ptr, "jobname=%s ",
+          pjob->ji_wattr[(int)JOB_ATR_jobname].at_val.at_str);
 
   ptr += strlen(ptr);
 
   /* queue name */
 
-  sprintf(ptr,"queue=%s ",
-    pjob->ji_qhdr->qu_qs.qu_name);
+  sprintf(ptr, "queue=%s ",
+          pjob->ji_qhdr->qu_qs.qu_name);
 
   ptr += strlen(ptr);
 
   /* create time */
 
-  sprintf(ptr,"ctime=%ld ",
-    pjob->ji_wattr[(int)JOB_ATR_ctime].at_val.at_long);
+  sprintf(ptr, "ctime=%ld ",
+          pjob->ji_wattr[(int)JOB_ATR_ctime].at_val.at_long);
 
   ptr += strlen(ptr);
 
   /* queued time */
 
-  sprintf(ptr,"qtime=%ld ",
-    pjob->ji_wattr[(int)JOB_ATR_qtime].at_val.at_long);
+  sprintf(ptr, "qtime=%ld ",
+          pjob->ji_wattr[(int)JOB_ATR_qtime].at_val.at_long);
 
   ptr += strlen(ptr);
 
   /* eligible time, how long ready to run */
 
-  sprintf(ptr,"etime=%ld ", 
-    pjob->ji_wattr[(int)JOB_ATR_etime].at_val.at_long);
+  sprintf(ptr, "etime=%ld ",
+          pjob->ji_wattr[(int)JOB_ATR_etime].at_val.at_long);
 
   ptr += strlen(ptr);
 
   /* execution start time */
 
-  sprintf(ptr,"start=%ld ",
-    (long)pjob->ji_qs.ji_stime);
+  sprintf(ptr, "start=%ld ",
+          (long)pjob->ji_qs.ji_stime);
 
   ptr += strlen(ptr);
 
   /* user */
 
-  sprintf(ptr,"owner=%s ",
-    pjob->ji_wattr[(int)JOB_ATR_job_owner].at_val.at_str);
+  sprintf(ptr, "owner=%s ",
+          pjob->ji_wattr[(int)JOB_ATR_job_owner].at_val.at_str);
 
   ptr += strlen(ptr);
 
@@ -225,8 +225,8 @@ static char *acct_job(
 
   BufSize -= strlen(Buf);
 
-  snprintf(ptr,BufSize,"exec_host=%s ",
-    pjob->ji_wattr[(int)JOB_ATR_exec_host].at_val.at_str);
+  snprintf(ptr, BufSize, "exec_host=%s ",
+           pjob->ji_wattr[(int)JOB_ATR_exec_host].at_val.at_str);
 
   Len = strlen(ptr);
 
@@ -236,10 +236,10 @@ static char *acct_job(
     {
     char tmpLine[1024];
 
-    sprintf(tmpLine,"account record for job %s too long, not fully recorded - increase PBS_ACCT_MAX_RCD",
-      pjob->ji_qs.ji_jobid);
+    sprintf(tmpLine, "account record for job %s too long, not fully recorded - increase PBS_ACCT_MAX_RCD",
+            pjob->ji_qs.ji_jobid);
 
-    log_record(PBSEVENT_SYSTEM,PBS_EVENTCLASS_SERVER,"Act",tmpLine);
+    log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, "Act", tmpLine);
 
     return(ptr);
     }
@@ -257,19 +257,20 @@ static char *acct_job(
     NULL,
     ATR_ENCODE_CLIENT);
 
-  while ((pal = GET_NEXT(attrlist)) != NULL) 
+  while ((pal = GET_NEXT(attrlist)) != NULL)
     {
-    strcat(ptr,pal->al_name);
+    strcat(ptr, pal->al_name);
 
-    if (pal->al_resc != NULL) 
+    if (pal->al_resc != NULL)
       {
-      strcat(ptr,".");
-      strcat(ptr,pal->al_resc);
+      strcat(ptr, ".");
+      strcat(ptr, pal->al_resc);
       }
 
-    strcat(ptr,"=");
-    strcat(ptr,pal->al_value);
-    strcat(ptr," ");
+    strcat(ptr, "=");
+
+    strcat(ptr, pal->al_value);
+    strcat(ptr, " ");
 
     delete_link(&pal->al_link);
 
@@ -285,10 +286,10 @@ static char *acct_job(
       {
       char tmpLine[1024];
 
-      sprintf(tmpLine,"account record for job %s too long, not fully recorded - increase PBS_ACCT_MAX_RCD",
-        pjob->ji_qs.ji_jobid);
+      sprintf(tmpLine, "account record for job %s too long, not fully recorded - increase PBS_ACCT_MAX_RCD",
+              pjob->ji_qs.ji_jobid);
 
-      log_record(PBSEVENT_SYSTEM,PBS_EVENTCLASS_SERVER,"Act",tmpLine);
+      log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, "Act", tmpLine);
 
       return(ptr);
       }
@@ -297,14 +298,15 @@ static char *acct_job(
 #ifdef ATTR_X_ACCT
 
   /* x attributes */
-  
+
   if (pjob->ji_wattr[(int)JOB_SITE_ATR_x].at_flags & ATR_VFLAG_SET)
     {
-    sprintf(ptr,"x=%s ",
-      pjob->ji_wattr[(int)JOB_SITE_ATR_x].at_val.at_str);
+    sprintf(ptr, "x=%s ",
+            pjob->ji_wattr[(int)JOB_SITE_ATR_x].at_val.at_str);
 
     ptr += strlen(ptr);
     }
+
 #endif
 
   /* SUCCESS */
@@ -321,9 +323,9 @@ static char *acct_job(
 /*
  * acct_open() - open the acct file for append.
  *
- *	Opens a (new) acct file. 
- *	If a acct file is already open, and the new file is successfully opened,
- *	the old file is closed.  Otherwise the old file is left open.
+ * Opens a (new) acct file.
+ * If a acct file is already open, and the new file is successfully opened,
+ * the old file is closed.  Otherwise the old file is left open.
  */
 
 int acct_open(
@@ -335,9 +337,10 @@ int acct_open(
   char  logmsg[_POSIX_PATH_MAX + 80];
   FILE *newacct;
   time_t now;
+
   struct tm *ptm;
 
-  if (filename == NULL) 
+  if (filename == NULL)
     {
     /* go with default */
 
@@ -345,51 +348,51 @@ int acct_open(
 
     ptm = localtime(&now);
 
-    sprintf(filen,"%s%04d%02d%02d",
-      path_acct,
-      ptm->tm_year + 1900, 
-      ptm->tm_mon + 1, 
-      ptm->tm_mday);
+    sprintf(filen, "%s%04d%02d%02d",
+            path_acct,
+            ptm->tm_year + 1900,
+            ptm->tm_mon + 1,
+            ptm->tm_mday);
 
     filename = filen;
 
     acct_auto_switch = 1;
 
     acct_opened_day = ptm->tm_yday;
-    } 
-  else if (*filename == '\0') 
+    }
+  else if (*filename == '\0')
     {
     /* a null name is not an error */
 
     return(0);  /* turns off account logging.  */
-    } 
-  else if (*filename != '/') 
+    }
+  else if (*filename != '/')
     {
     /* not absolute */
-
-    return(-1);	
-    }
-
-  if ((newacct = fopen(filename,"a")) == NULL) 
-    {
-    log_err(errno,"acct_open",filename);
 
     return(-1);
     }
 
-  setbuf(newacct,NULL);         /* set no buffering */
+  if ((newacct = fopen(filename, "a")) == NULL)
+    {
+    log_err(errno, "acct_open", filename);
+
+    return(-1);
+    }
+
+  setbuf(newacct, NULL);        /* set no buffering */
 
   if (acct_opened > 0)          /* if acct was open, close it */
     fclose(acctfile);
-		
+
   acctfile = newacct;
 
-  acct_opened = 1;		/* note that file is open */
+  acct_opened = 1;  /* note that file is open */
 
-  sprintf(logmsg,"Account file %s opened", 
-    filename);
+  sprintf(logmsg, "Account file %s opened",
+          filename);
 
-  log_record(PBSEVENT_SYSTEM,PBS_EVENTCLASS_SERVER,"Act",logmsg);
+  log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, "Act", logmsg);
 
   return(0);
   }  /* END acct_open() */
@@ -402,10 +405,11 @@ int acct_open(
  * acct_close - close the current open log file
  */
 
-void acct_close()
+void
+acct_close(void)
 
   {
-  if (acct_opened == 1) 
+  if (acct_opened == 1)
     {
     fclose(acctfile);
 
@@ -425,11 +429,12 @@ void acct_close()
 
 void account_record(
 
-  int   acctype,	/* accounting record type */
+  int   acctype, /* accounting record type */
   job  *pjob,
-  char *text)		/* text to log, may be null */
+  char *text)  /* text to log, may be null */
 
   {
+
   struct tm *ptm;
 
   if (acct_opened == 0)
@@ -443,7 +448,7 @@ void account_record(
 
   /* Do we need to switch files */
 
-  if ((acct_auto_switch != 0) && (acct_opened_day != ptm->tm_yday)) 
+  if ((acct_auto_switch != 0) && (acct_opened_day != ptm->tm_yday))
     {
     acct_close();
 
@@ -453,17 +458,17 @@ void account_record(
   if (text == NULL)
     text = "";
 
-  fprintf(acctfile,"%02d/%02d/%04d %02d:%02d:%02d;%c;%s;%s\n",
-    ptm->tm_mon + 1, 
-    ptm->tm_mday, 
-    ptm->tm_year + 1900,
-    ptm->tm_hour, 
-    ptm->tm_min, 
-    ptm->tm_sec,
-    (char)acctype,
-    pjob->ji_qs.ji_jobid,
-    text);
-  
+  fprintf(acctfile, "%02d/%02d/%04d %02d:%02d:%02d;%c;%s;%s\n",
+          ptm->tm_mon + 1,
+          ptm->tm_mday,
+          ptm->tm_year + 1900,
+          ptm->tm_hour,
+          ptm->tm_min,
+          ptm->tm_sec,
+          (char)acctype,
+          pjob->ji_qs.ji_jobid,
+          text);
+
   return;
   }  /* END account_record() */
 
@@ -485,11 +490,11 @@ void account_jobstr(
 
   /* pack in general information about the job */
 
-  acct_job(pjob,buf,sizeof(buf));
+  acct_job(pjob, buf, sizeof(buf));
 
   buf[PBS_ACCT_MAX_RCD] = '\0';
 
-  account_record(PBS_ACCT_RUN,pjob,buf);
+  account_record(PBS_ACCT_RUN, pjob, buf);
 
   return;
   }  /* END account_jobstr() */
@@ -505,48 +510,48 @@ void account_jobstr(
 
 void account_jobend(
 
-  job	*pjob,
-  char	*used)	/* job usage information, see req_jobobit() */
+  job *pjob,
+  char *used) /* job usage information, see req_jobobit() */
 
   {
-  char	  buf[PBS_ACCT_MAX_RCD + 1];
-  char	 *pb;
-	
+  char   buf[PBS_ACCT_MAX_RCD + 1];
+  char  *pb;
+
   /* pack in general information about the job */
 
-  pb = acct_job(pjob,buf,sizeof(buf));
+  pb = acct_job(pjob, buf, sizeof(buf));
 
   /* session */
 
-  sprintf(pb,"session=%ld ",
-    pjob->ji_wattr[(int)JOB_ATR_session_id].at_val.at_long);
+  sprintf(pb, "session=%ld ",
+          pjob->ji_wattr[(int)JOB_ATR_session_id].at_val.at_long);
 
   pb += strlen(pb);
 
   /* Alternate id if present */
 
-  if (pjob->ji_wattr[(int)JOB_ATR_altid].at_flags & ATR_VFLAG_SET) 
+  if (pjob->ji_wattr[(int)JOB_ATR_altid].at_flags & ATR_VFLAG_SET)
     {
-    sprintf(pb,"alt_id=%s ",
-      pjob->ji_wattr[(int)JOB_ATR_altid].at_val.at_str);
+    sprintf(pb, "alt_id=%s ",
+            pjob->ji_wattr[(int)JOB_ATR_altid].at_val.at_str);
 
     pb += strlen(pb);
     }
 
   /* add the execution end time */
 
-  sprintf(pb,"end=%ld ", 
-    (long)time_now);
+  sprintf(pb, "end=%ld ",
+          (long)time_now);
 
   pb += strlen(pb);
 
   /* finally add on resources used from req_jobobit() */
 
-  strncat(pb,used,PBS_ACCT_MAX_RCD - (pb - buf));
-  
+  strncat(pb, used, PBS_ACCT_MAX_RCD - (pb - buf));
+
   buf[PBS_ACCT_MAX_RCD] = '\0';
-	
-  account_record(PBS_ACCT_END,pjob,buf);
+
+  account_record(PBS_ACCT_END, pjob, buf);
 
   return;
   }  /* END account_jobend() */

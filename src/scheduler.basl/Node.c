@@ -1,45 +1,45 @@
 /*
 *         OpenPBS (Portable Batch System) v2.3 Software License
-* 
+*
 * Copyright (c) 1999-2000 Veridian Information Solutions, Inc.
 * All rights reserved.
-* 
+*
 * ---------------------------------------------------------------------------
 * For a license to use or redistribute the OpenPBS software under conditions
 * other than those described below, or to purchase support for this software,
 * please contact Veridian Systems, PBS Products Department ("Licensor") at:
-* 
+*
 *    www.OpenPBS.org  +1 650 967-4675                  sales@OpenPBS.org
 *                        877 902-4PBS (US toll-free)
 * ---------------------------------------------------------------------------
-* 
+*
 * This license covers use of the OpenPBS v2.3 software (the "Software") at
 * your site or location, and, for certain users, redistribution of the
 * Software to other sites and locations.  Use and redistribution of
 * OpenPBS v2.3 in source and binary forms, with or without modification,
 * are permitted provided that all of the following conditions are met.
 * After December 31, 2001, only conditions 3-6 must be met:
-* 
+*
 * 1. Commercial and/or non-commercial use of the Software is permitted
 *    provided a current software registration is on file at www.OpenPBS.org.
 *    If use of this software contributes to a publication, product, or
 *    service, proper attribution must be given; see www.OpenPBS.org/credit.html
-* 
+*
 * 2. Redistribution in any form is only permitted for non-commercial,
 *    non-profit purposes.  There can be no charge for the Software or any
 *    software incorporating the Software.  Further, there can be no
 *    expectation of revenue generated as a consequence of redistributing
 *    the Software.
-* 
+*
 * 3. Any Redistribution of source code must retain the above copyright notice
 *    and the acknowledgment contained in paragraph 6, this list of conditions
 *    and the disclaimer contained in paragraph 7.
-* 
+*
 * 4. Any Redistribution in binary form must reproduce the above copyright
 *    notice and the acknowledgment contained in paragraph 6, this list of
 *    conditions and the disclaimer contained in paragraph 7 in the
 *    documentation and/or other materials provided with the distribution.
-* 
+*
 * 5. Redistributions in any form must be accompanied by information on how to
 *    obtain complete source code for the OpenPBS software and any
 *    modifications and/or additions to the OpenPBS software.  The source code
@@ -47,23 +47,23 @@
 *    than the cost of distribution plus a nominal fee, and all modifications
 *    and additions to the Software must be freely redistributable by any party
 *    (including Licensor) without restriction.
-* 
+*
 * 6. All advertising materials mentioning features or use of the Software must
 *    display the following acknowledgment:
-* 
+*
 *     "This product includes software developed by NASA Ames Research Center,
-*     Lawrence Livermore National Laboratory, and Veridian Information 
+*     Lawrence Livermore National Laboratory, and Veridian Information
 *     Solutions, Inc.
 *     Visit www.OpenPBS.org for OpenPBS software support,
 *     products, and information."
-* 
+*
 * 7. DISCLAIMER OF WARRANTY
-* 
+*
 * THIS SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND. ANY EXPRESS
 * OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
 * OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT
 * ARE EXPRESSLY DISCLAIMED.
-* 
+*
 * IN NO EVENT SHALL VERIDIAN CORPORATION, ITS AFFILIATED COMPANIES, OR THE
 * U.S. GOVERNMENT OR ANY OF ITS AGENCIES BE LIABLE FOR ANY DIRECT OR INDIRECT,
 * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
@@ -72,7 +72,7 @@
 * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
 * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-* 
+*
 * This license will be governed by the laws of the Commonwealth of Virginia,
 * without reference to its choice of law rules.
 */
@@ -102,16 +102,16 @@ FILE *NodeFpOut;
 static char *NodeName = "Node";
 
 static char * NodeErrors[] =
-{
-        "0 no such error",
-        "1 lexem ptr = NULL",
-        "2 Np = NULL",
-        "3 malloc problem",
-        "4 str ptr = NULL",
-        "5 can not access funDescr for non-fun",
-        "6 error msg delimeter",
-        "7 NodeFpOut is NULL"
-};
+  {
+  "0 no such error",
+  "1 lexem ptr = NULL",
+  "2 Np = NULL",
+  "3 malloc problem",
+  "4 str ptr = NULL",
+  "5 can not access funDescr for non-fun",
+  "6 error msg delimeter",
+  "7 NodeFpOut is NULL"
+  };
 static int NodeMaxErrors = 8;
 
 static int NodeDF = 0;
@@ -120,481 +120,495 @@ static int NodeDF = 0;
  * These functions support the Node class for the linked list
  */
 Np NodeNew(lexem, typ, lin, leve, funFla)
-char 	*lexem;
-int 	typ;
-int 	lin;
-int 	leve;
-int 	funFla;
-{
-	Np nx;
+char  *lexem;
+int  typ;
+int  lin;
+int  leve;
+int  funFla;
+  {
+  Np nx;
 
-	NodeCondPrint("NodeNew");
-	
-	if (lexem == NULL) 
-		NodeErr(1);
+  NodeCondPrint("NodeNew");
 
-	nx = (Np) malloc(sizeof(struct Node));
-	if (nx == NULL) 
-		NodeErr(3);
+  if (lexem == NULL)
+    NodeErr(1);
 
-	strcpy(nx->lexeme, lexem);
-	nx->type = typ;
-	nx->lineDef = lin;
-	nx->level = leve;
-	nx->funFlag = funFla;
+  nx = (Np) malloc(sizeof(struct Node));
 
-	nx->funDescr.paramCnt = 0;
+  if (nx == NULL)
+    NodeErr(3);
 
-	nx->funDescr.paramPtr = NULL;
+  strcpy(nx->lexeme, lexem);
 
-	nx->rptr = NULL;
-	return(nx);
-}
+  nx->type = typ;
 
- 
+  nx->lineDef = lin;
+
+  nx->level = leve;
+
+  nx->funFlag = funFla;
+
+  nx->funDescr.paramCnt = 0;
+
+  nx->funDescr.paramPtr = NULL;
+
+  nx->rptr = NULL;
+
+  return(nx);
+  }
+
+
 void NodeInit(nx, lexem, typ, lin, leve, funFla)
-Np 	nx;
-char 	*lexem;
-int 	typ;
-int 	lin;
-int 	leve;
-int 	funFla;
-{
-	NodeCondPrint("NodeInit");
+Np  nx;
+char  *lexem;
+int  typ;
+int  lin;
+int  leve;
+int  funFla;
+  {
+  NodeCondPrint("NodeInit");
 
-	if (nx == NULL) 
-		NodeErr(2);
+  if (nx == NULL)
+    NodeErr(2);
 
-	if (lexem == NULL) 
-		NodeErr(1);
+  if (lexem == NULL)
+    NodeErr(1);
 
-	strcpy(nx->lexeme, lexem);
-	nx->type = typ;
-	nx->lineDef = lin;
-	nx->level = leve;
-	nx->funFlag = funFla;
+  strcpy(nx->lexeme, lexem);
 
-	nx->funDescr.paramCnt = 0;
+  nx->type = typ;
 
-	nx->funDescr.paramPtr = NULL;
+  nx->lineDef = lin;
 
-	nx->rptr = NULL;
+  nx->level = leve;
 
-}
+  nx->funFlag = funFla;
+
+  nx->funDescr.paramCnt = 0;
+
+  nx->funDescr.paramPtr = NULL;
+
+  nx->rptr = NULL;
+
+  }
 
 
 
 void NodePrint(nx)
-Np 	nx;
-{
-	if(NodeFpOut == NULL)
-		NodeErr(7);
+Np  nx;
+  {
+  if (NodeFpOut == NULL)
+    NodeErr(7);
 
-	fprintf(NodeFpOut, "NodePrint\n");
+  fprintf(NodeFpOut, "NodePrint\n");
 
-	if(nx == NULL) 
-		NodeErr(2);
+  if (nx == NULL)
+    NodeErr(2);
 
-	fprintf(NodeFpOut, "lexeme=%s type=%s, lineDef=%d level=%d funFlag=%d\n", nx->lexeme, SymTypes[nx->type], nx->lineDef, nx->level, nx->funFlag);
+  fprintf(NodeFpOut, "lexeme=%s type=%s, lineDef=%d level=%d funFlag=%d\n", nx->lexeme, SymTypes[nx->type], nx->lineDef, nx->level, nx->funFlag);
 
-	
 
-	/*optional*/
-	/*
-	fprintf(NodeFpOut, "nx=%x, rptr=%x\n", nx, nx->rptr);
-	fprintf(NodeFpOut, "nx->funDescr.paramPtr=%x\n", nx->funDescr.paramPtr);
-	*/
 
-	if(nx->funFlag != NO)
-		NodeFunDescrPrint(nx);
-}
+  /*optional*/
+  /*
+  fprintf(NodeFpOut, "nx=%x, rptr=%x\n", nx, nx->rptr);
+  fprintf(NodeFpOut, "nx->funDescr.paramPtr=%x\n", nx->funDescr.paramPtr);
+  */
+
+  if (nx->funFlag != NO)
+    NodeFunDescrPrint(nx);
+  }
 
 
 void NodePrint2(nx)
-Np	nx;
-{
-	if(NodeFpOut == NULL)
-		NodeErr(7);
+Np nx;
+  {
+  if (NodeFpOut == NULL)
+    NodeErr(7);
 
-	fprintf(NodeFpOut, "NodePrint2\n");
+  fprintf(NodeFpOut, "NodePrint2\n");
 
-	if(nx == NULL) 
-		NodeErr(2);
+  if (nx == NULL)
+    NodeErr(2);
 
-	fprintf(NodeFpOut, "lexeme=%s type=%s, lineDef=%d level=%d funFlag=%d\n", nx->lexeme, SymTypes[nx->type], nx->lineDef, nx->level, nx->funFlag);
-
-	
-	/*optional*/
-	/*
-	fprintf(NodeFpOut, "nx=%x, rptr=%x\n", nx, nx->rptr);
-	fprintf(NodeFpOut, "nx->funDescr.paramPtr=%x\n", nx->funDescr.paramPtr);
-	*/
+  fprintf(NodeFpOut, "lexeme=%s type=%s, lineDef=%d level=%d funFlag=%d\n", nx->lexeme, SymTypes[nx->type], nx->lineDef, nx->level, nx->funFlag);
 
 
+  /*optional*/
+  /*
+  fprintf(NodeFpOut, "nx=%x, rptr=%x\n", nx, nx->rptr);
+  fprintf(NodeFpOut, "nx->funDescr.paramPtr=%x\n", nx->funDescr.paramPtr);
+  */
 
-}
+
+
+  }
 
 
 void NodeFunDescrPrint(nx)
-Np	nx;
-{
-	Np paramPt;
+Np nx;
+  {
+  Np paramPt;
 
 
-	if(NodeFpOut == NULL)
-		NodeErr(7);
+  if (NodeFpOut == NULL)
+    NodeErr(7);
 
-	fprintf(NodeFpOut, "NodeFunDescrPrint\n");
+  fprintf(NodeFpOut, "NodeFunDescrPrint\n");
 
-	if(nx == NULL) 
-		NodeErr(2);
+  if (nx == NULL)
+    NodeErr(2);
 
 
-	fprintf(NodeFpOut, "paramCnt=%d\n", nx->funDescr.paramCnt);
+  fprintf(NodeFpOut, "paramCnt=%d\n", nx->funDescr.paramCnt);
 
-	paramPt = nx->funDescr.paramPtr;
+  paramPt = nx->funDescr.paramPtr;
 
-	while(paramPt != NULL)
-	{
-		NodePrint2(paramPt);
-		paramPt = paramPt->funDescr.paramPtr;
-	}
+  while (paramPt != NULL)
+    {
+    NodePrint2(paramPt);
+    paramPt = paramPt->funDescr.paramPtr;
+    }
 
-	fprintf(NodeFpOut, "\nend of funDescr\n");
+  fprintf(NodeFpOut, "\nend of funDescr\n");
 
-}
+  }
 
 
 Np NodeFunDescrFindByLexeme(nx, lexem)
-Np	nx;
-char	*lexem;
-{
-	Np paramPt;
+Np nx;
+char *lexem;
+  {
+  Np paramPt;
 
-	if(NodeFpOut == NULL)
-		NodeErr(7);
+  if (NodeFpOut == NULL)
+    NodeErr(7);
 
-	if( NodeDF == 1 )
-		fprintf(NodeFpOut, "NodeFunDescrFindByLexeme\n");
+  if (NodeDF == 1)
+    fprintf(NodeFpOut, "NodeFunDescrFindByLexeme\n");
 
-	if(nx == NULL) 
-		NodeErr(2);
+  if (nx == NULL)
+    NodeErr(2);
 
 
-	paramPt = nx->funDescr.paramPtr;
+  paramPt = nx->funDescr.paramPtr;
 
-	while(paramPt != NULL)
-	{
-        	if (strcmp(paramPt->lexeme, lexem) == 0)
-        	{
-                	return(paramPt);
-        	}
-		paramPt = paramPt->funDescr.paramPtr;
-	}
-	return(NULL);
-}
+  while (paramPt != NULL)
+    {
+    if (strcmp(paramPt->lexeme, lexem) == 0)
+      {
+      return(paramPt);
+      }
+
+    paramPt = paramPt->funDescr.paramPtr;
+    }
+
+  return(NULL);
+  }
 
 int NodeCmp(nx, lexem)
-Np 	nx;
-char 	*lexem;
-{
-	NodeCondPrint("NodeCmp");
+Np  nx;
+char  *lexem;
+  {
+  NodeCondPrint("NodeCmp");
 
-	if (nx == NULL) 
-		NodeErr(2);
+  if (nx == NULL)
+    NodeErr(2);
 
-	if (lexem == NULL) 
-		NodeErr(1);
+  if (lexem == NULL)
+    NodeErr(1);
 
-	return(strcmp(nx->lexeme, lexem) == 0);
-}
-
-
-void NodeErr(e)
-int	e;
-{
-
-	if(NodeFpOut == NULL)
-		NodeErr(7);
-
-	fprintf(NodeFpOut, "NodeErr\n");
-
-	if (e >= NodeMaxErrors)
-		e = 0;
-	fprintf(NodeFpOut, "rs: %s\n",  NodeErrors[e]);
-	exit(1);
-}
+  return(strcmp(nx->lexeme, lexem) == 0);
+  }
 
 
+void
+NodeErr(int e)
+  {
 
-void NodeCondPrint(str)
-char	*str;
-{
-	if(NodeFpOut == NULL)
-		NodeErr(7);
+  if (NodeFpOut == NULL)
+    NodeErr(7);
 
-	if (str == NULL)
-		NodeErr(4);
+  fprintf(NodeFpOut, "NodeErr\n");
 
-	if (NodeDF == 1)
-	{
-		fprintf(NodeFpOut, "%s\t", NodeName);
-		fprintf(NodeFpOut, "%s\n", str);
-	}
-}
+  if (e >= NodeMaxErrors)
+    e = 0;
 
-void NodePutDF(df)
-int	df;
-{
-	NodeDF = df;
-}
+  fprintf(NodeFpOut, "rs: %s\n",  NodeErrors[e]);
+
+  exit(1);
+  }
+
+
+
+void
+NodeCondPrint(char *str)
+  {
+  if (NodeFpOut == NULL)
+    NodeErr(7);
+
+  if (str == NULL)
+    NodeErr(4);
+
+  if (NodeDF == 1)
+    {
+    fprintf(NodeFpOut, "%s\t", NodeName);
+    fprintf(NodeFpOut, "%s\n", str);
+    }
+  }
+
+void
+NodePutDF(int df)
+  {
+  NodeDF = df;
+  }
 
 
 char * NodeGetLexeme(nxp)
-Np	nxp;
-{
-	NodeCondPrint("NodeGetLexeme");
+Np nxp;
+  {
+  NodeCondPrint("NodeGetLexeme");
 
-	if (nxp == NULL) 
-		NodeErr(2);
+  if (nxp == NULL)
+    NodeErr(2);
 
-	return(nxp->lexeme);
-}
-	
+  return(nxp->lexeme);
+  }
+
 
 int NodeGetType(nxp)
-Np	nxp;
-{
-	NodeCondPrint("NodeGetType");
+Np nxp;
+  {
+  NodeCondPrint("NodeGetType");
 
-	if (nxp == NULL) 
-		NodeErr(2);
+  if (nxp == NULL)
+    NodeErr(2);
 
-	return(nxp->type);
-}
-	
+  return(nxp->type);
+  }
+
 
 int NodeGetLineDef(nxp)
-Np	nxp;
-{
-	NodeCondPrint("NodeGetLineDef");
+Np nxp;
+  {
+  NodeCondPrint("NodeGetLineDef");
 
-	if (nxp == NULL) 
-		NodeErr(2);
+  if (nxp == NULL)
+    NodeErr(2);
 
-	return(nxp->lineDef);
-}
-	
+  return(nxp->lineDef);
+  }
+
 
 
 int NodeGetLevel(nxp)
-Np	nxp;
-{
-	NodeCondPrint("NodeGetLevel");
+Np nxp;
+  {
+  NodeCondPrint("NodeGetLevel");
 
-	if (nxp == NULL) 
-		NodeErr(2);
+  if (nxp == NULL)
+    NodeErr(2);
 
-	return(nxp->level);
-}
-	
+  return(nxp->level);
+  }
+
 
 int NodeGetFunFlag(nxp)
-Np	nxp;
-{
-	NodeCondPrint("NodeGetFunFlag");
+Np nxp;
+  {
+  NodeCondPrint("NodeGetFunFlag");
 
-	if (nxp == NULL) 
-		NodeErr(2);
+  if (nxp == NULL)
+    NodeErr(2);
 
-	return(nxp->funFlag);
-}
-	
+  return(nxp->funFlag);
+  }
+
 
 int NodeGetParamCnt(nxp)
-Np	nxp;
-{
-	NodeCondPrint("NodeGetParamCnt");
+Np nxp;
+  {
+  NodeCondPrint("NodeGetParamCnt");
 
-	if (nxp == NULL) 
-		NodeErr(2);
+  if (nxp == NULL)
+    NodeErr(2);
 
-	if (nxp->funFlag == NO)
-		NodeErr(5);
+  if (nxp->funFlag == NO)
+    NodeErr(5);
 
-	return(nxp->funDescr.paramCnt);
+  return(nxp->funDescr.paramCnt);
 
-}
-	
+  }
+
 
 Np NodeGetParamPtr(nxp)
-Np	nxp;
-{
-	NodeCondPrint("NodeGetParamPtr");
+Np nxp;
+  {
+  NodeCondPrint("NodeGetParamPtr");
 
-	if (nxp == NULL) 
-		NodeErr(2);
+  if (nxp == NULL)
+    NodeErr(2);
 
-	if (nxp->funFlag == NO)
-		NodeErr(5);
+  if (nxp->funFlag == NO)
+    NodeErr(5);
 
-	return(nxp->funDescr.paramPtr);
+  return(nxp->funDescr.paramPtr);
 
-}
-	
+  }
+
 
 
 Np NodeGetRptr(nxp)
-Np	nxp;
-{
-	NodeCondPrint("NodeGetRptr");
+Np nxp;
+  {
+  NodeCondPrint("NodeGetRptr");
 
-	if (nxp == NULL) 
-		NodeErr(2);
+  if (nxp == NULL)
+    NodeErr(2);
 
-	return(nxp->rptr);
-}
-	
+  return(nxp->rptr);
+  }
+
 
 void NodePutLexeme(nxp, lexem)
-Np 	nxp;
-char 	*lexem;
-{
-	NodeCondPrint("NodePutLexeme");
+Np  nxp;
+char  *lexem;
+  {
+  NodeCondPrint("NodePutLexeme");
 
-	if (nxp == NULL) 
-		NodeErr(2);
+  if (nxp == NULL)
+    NodeErr(2);
 
-	strcpy(nxp->lexeme, lexem);
-}
-	
+  strcpy(nxp->lexeme, lexem);
+  }
+
 void NodePutType(nxp, typ)
-Np 	nxp;
-int 	typ;
-{
-	NodeCondPrint("NodePutType");
+Np  nxp;
+int  typ;
+  {
+  NodeCondPrint("NodePutType");
 
-	if (nxp == NULL) 
-		NodeErr(2);
+  if (nxp == NULL)
+    NodeErr(2);
 
-	nxp->type = typ;
-}
-	
+  nxp->type = typ;
+  }
+
 
 void NodePutLineDef(nxp, lin)
-Np 	nxp;
-int 	lin;
-{
-	NodeCondPrint("NodePutlineDef");
+Np  nxp;
+int  lin;
+  {
+  NodeCondPrint("NodePutlineDef");
 
-	if (nxp == NULL) 
-		NodeErr(2);
+  if (nxp == NULL)
+    NodeErr(2);
 
-	nxp->lineDef = lin;
-}
-	
+  nxp->lineDef = lin;
+  }
+
 
 
 void NodePutLevel(nxp, leve)
-Np 	nxp;
-int 	leve;
-{
-	NodeCondPrint("NodePutLevel");
+Np  nxp;
+int  leve;
+  {
+  NodeCondPrint("NodePutLevel");
 
-	if (nxp == NULL) 
-		NodeErr(2);
+  if (nxp == NULL)
+    NodeErr(2);
 
-	nxp->level = leve;
-}
-	
+  nxp->level = leve;
+  }
+
 
 void NodePutFunFlag(nxp, funFla)
-Np 	nxp;
-int 	funFla;
-{
-	NodeCondPrint("NodePutFunFlag");
+Np  nxp;
+int  funFla;
+  {
+  NodeCondPrint("NodePutFunFlag");
 
-	if (nxp == NULL) 
-		NodeErr(2);
+  if (nxp == NULL)
+    NodeErr(2);
 
-	nxp->funFlag = funFla;
-}
-	
+  nxp->funFlag = funFla;
+  }
+
 
 void NodePutParamCnt(nxp, paramCn)
-Np 	nxp;
-int 	paramCn;
-{
-	NodeCondPrint("NodePutParamCnt");
+Np  nxp;
+int  paramCn;
+  {
+  NodeCondPrint("NodePutParamCnt");
 
-	if (nxp == NULL) 
-		NodeErr(2);
+  if (nxp == NULL)
+    NodeErr(2);
 
-	if (nxp->funFlag == NO)
-		NodeErr(5);
+  if (nxp->funFlag == NO)
+    NodeErr(5);
 
-	nxp->funDescr.paramCnt = paramCn;
+  nxp->funDescr.paramCnt = paramCn;
 
-}
-	
+  }
+
 
 void NodePutParamPtr(nxp, paramPt)
-Np 	nxp;
-Np 	paramPt;
-{
-	NodeCondPrint("NodePutParamPtr");
+Np  nxp;
+Np  paramPt;
+  {
+  NodeCondPrint("NodePutParamPtr");
 
-	if (nxp == NULL) 
-		NodeErr(2);
+  if (nxp == NULL)
+    NodeErr(2);
 
-	if (nxp->funFlag == NO)
-		NodeErr(5);
+  if (nxp->funFlag == NO)
+    NodeErr(5);
 
-	nxp->funDescr.paramPtr = paramPt;
+  nxp->funDescr.paramPtr = paramPt;
 
-}
-	
+  }
+
 
 void NodePutRptr(nxp, rp)
-Np 	nxp;
-Np 	rp;
-{
-	NodeCondPrint("NodePutRptr");
+Np  nxp;
+Np  rp;
+  {
+  NodeCondPrint("NodePutRptr");
 
-	if (nxp == NULL) 
-		NodeErr(2);
+  if (nxp == NULL)
+    NodeErr(2);
 
-	nxp->rptr = rp;
-}
-	
+  nxp->rptr = rp;
+  }
+
 
 void NodeParamCntIncr(nxp)
 Np nxp;
-{
-	NodeCondPrint("NodeParamCntIncr");
+  {
+  NodeCondPrint("NodeParamCntIncr");
 
-	if (nxp == NULL) 
-		NodeErr(2);
+  if (nxp == NULL)
+    NodeErr(2);
 
-	if (nxp->funFlag == NO)
-		NodeErr(5);
+  if (nxp->funFlag == NO)
+    NodeErr(5);
 
-	nxp->funDescr.paramCnt++;
+  nxp->funDescr.paramCnt++;
 
-}
-	
+  }
+
 
 void NodeParamCntDecr(nxp)
 Np nxp;
-{
-	NodeCondPrint("NodeParamCntDecr");
+  {
+  NodeCondPrint("NodeParamCntDecr");
 
-	if (nxp == NULL) 
-		NodeErr(2);
+  if (nxp == NULL)
+    NodeErr(2);
 
-	if (nxp->funFlag == NO)
-		NodeErr(5);
+  if (nxp->funFlag == NO)
+    NodeErr(5);
 
-	nxp->funDescr.paramCnt--;
+  nxp->funDescr.paramCnt--;
 
-}
+  }

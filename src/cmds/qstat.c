@@ -1,34 +1,34 @@
 /*
 *         OpenPBS (Portable Batch System) v2.3 Software License
-* 
+*
 * Copyright (c) 1999-2000 Veridian Information Solutions, Inc.
 * All rights reserved.
-* 
+*
 * ---------------------------------------------------------------------------
 * For a license to use or redistribute the OpenPBS software under conditions
 * other than those described below, or to purchase support for this software,
 * please contact Veridian Systems, PBS Products Department ("Licensor") at:
-* 
+*
 *    www.OpenPBS.org  +1 650 967-4675                  sales@OpenPBS.org
 *                        877 902-4PBS (US toll-free)
 * ---------------------------------------------------------------------------
-* 
+*
 * This license covers use of the OpenPBS v2.3 software (the "Software") at
 * your site or location, and, for certain users, redistribution of the
 * Software to other sites and locations.  Use and redistribution of
 * OpenPBS v2.3 in source and binary forms, with or without modification,
 * are permitted provided that all of the following conditions are met.
 * After December 31, 2001, only conditions 3-6 must be met:
-* 
+*
 * 3. Any Redistribution of source code must retain the above copyright notice
 *    and the acknowledgment contained in paragraph 6, this list of conditions
 *    and the disclaimer contained in paragraph 7.
-* 
+*
 * 4. Any Redistribution in binary form must reproduce the above copyright
 *    notice and the acknowledgment contained in paragraph 6, this list of
 *    conditions and the disclaimer contained in paragraph 7 in the
 *    documentation and/or other materials provided with the distribution.
-* 
+*
 * 5. Redistributions in any form must be accompanied by information on how to
 *    obtain complete source code for the OpenPBS software and any
 *    modifications and/or additions to the OpenPBS software.  The source code
@@ -36,23 +36,23 @@
 *    than the cost of distribution plus a nominal fee, and all modifications
 *    and additions to the Software must be freely redistributable by any party
 *    (including Licensor) without restriction.
-* 
+*
 * 6. All advertising materials mentioning features or use of the Software must
 *    display the following acknowledgment:
-* 
+*
 *     "This product includes software developed by NASA Ames Research Center,
-*     Lawrence Livermore National Laboratory, and Veridian Information 
+*     Lawrence Livermore National Laboratory, and Veridian Information
 *     Solutions, Inc.
 *     Visit www.OpenPBS.org for OpenPBS software support,
 *     products, and information."
-* 
+*
 * 7. DISCLAIMER OF WARRANTY
-* 
+*
 * THIS SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND. ANY EXPRESS
 * OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
 * OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT
 * ARE EXPRESSLY DISCLAIMED.
-* 
+*
 * IN NO EVENT SHALL VERIDIAN CORPORATION, ITS AFFILIATED COMPANIES, OR THE
 * U.S. GOVERNMENT OR ANY OF ITS AGENCIES BE LIABLE FOR ANY DIRECT OR INDIRECT,
 * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
@@ -61,11 +61,11 @@
 * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
 * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-* 
+*
 * This license will be governed by the laws of the Commonwealth of Virginia,
 * without reference to its choice of law rules.
 */
-/* 
+/*
  *
  * qstat - (PBS) show stats of batch jobs, queues, or servers
  *
@@ -85,10 +85,10 @@
 #include <pwd.h>
 #include <limits.h>
 
-#if	TCL_QSTAT
+#if TCL_QSTAT
 #include <sys/stat.h>
 #include <tcl.h>
-#if	TCLX
+#if TCLX
 #include <tclExtend.h>
 #endif
 #endif
@@ -100,19 +100,19 @@ static void states();
 
 #if !defined(PBS_NO_POSIX_VIOLATION)
 /* defines for alternative display formats */
-#define ALT_DISPLAY_a	1	/* -a option - show all jobs */
-#define ALT_DISPLAY_i	2	/* -i option - show not running */
-#define ALT_DISPLAY_r	4	/* -r option - show only running */
-#define ALT_DISPLAY_u	8	/* -u option - list user's jobs */
-#define ALT_DISPLAY_n	0x10	/* -n option - add node list */
-#define ALT_DISPLAY_s	0x20	/* -s option - add scheduler comment */
-#define ALT_DISPLAY_R	0x40	/* -R option - add SRFS info */
- 
-#define ALT_DISPLAY_q	0x80	/* -q option - alt queue display */
+#define ALT_DISPLAY_a 1 /* -a option - show all jobs */
+#define ALT_DISPLAY_i 2 /* -i option - show not running */
+#define ALT_DISPLAY_r 4 /* -r option - show only running */
+#define ALT_DISPLAY_u 8 /* -u option - list user's jobs */
+#define ALT_DISPLAY_n 0x10 /* -n option - add node list */
+#define ALT_DISPLAY_s 0x20 /* -s option - add scheduler comment */
+#define ALT_DISPLAY_R 0x40 /* -R option - add SRFS info */
 
-#define ALT_DISPLAY_Mb	0x100	/* show sizes in MB */
-#define ALT_DISPLAY_Mw	0x200	/* -M option - show sizes in MW */
-#define ALT_DISPLAY_G	0x400	/* -G option - show sizes in GB */
+#define ALT_DISPLAY_q 0x80 /* -q option - alt queue display */
+
+#define ALT_DISPLAY_Mb 0x100 /* show sizes in MB */
+#define ALT_DISPLAY_Mw 0x200 /* -M option - show sizes in MW */
+#define ALT_DISPLAY_G 0x400 /* -G option - show sizes in GB */
 #define ALT_DISPLAY_o   0x800   /* -1 option - add node list on same line */
 #endif /* not PBS_NO_POSIX_VIOLATION */
 
@@ -147,13 +147,13 @@ int isjobid(
   int i;
   int result;
 
-  i = strspn(string," "); /* locate first non-blank */
+  i = strspn(string, " "); /* locate first non-blank */
 
-  if (isdigit(string[i])) 
+  if (isdigit(string[i]))
     result = 1;  /* job_id */
-  else if (isalpha(string[i])) 
+  else if (isalpha(string[i]))
     result = 0; /* not a job_id */
-  else 
+  else
     result = 0;  /* who knows - probably a syntax error */
 
   return(result);
@@ -168,12 +168,12 @@ int istrue(
   char *string)  /* I */
 
   {
-  if (!strcasecmp(string,"TRUE")) 
+  if (!strcasecmp(string, "TRUE"))
     {
     return(TRUE);
     }
 
-  if (!strcmp(string,"1"))
+  if (!strcmp(string, "1"))
     {
     return(TRUE);
     }
@@ -203,54 +203,55 @@ static void states(
 
   c = string;
 
-  while (isspace(*c) && *c != '\0') 
+  while (isspace(*c) && *c != '\0')
     c++;
 
-  while (*c != '\0') 
+  while (*c != '\0')
     {
     s = c;
 
-    while (*c != ':') 
+    while (*c != ':')
       c++;
 
     *c = '\0';
+
     d = NULL;
 
-    if (strcmp(s,"Queued") == 0) 
+    if (strcmp(s, "Queued") == 0)
       d = q;
-    else if (strcmp(s,"Running") == 0) 
+    else if (strcmp(s, "Running") == 0)
       d = r;
-    else if (strcmp(s,"Held")    == 0) 
+    else if (strcmp(s, "Held")    == 0)
       d = h;
-    else if (strcmp(s,"Waiting") == 0) 
+    else if (strcmp(s, "Waiting") == 0)
       d = w;
-    else if (strcmp(s,"Transit") == 0) 
+    else if (strcmp(s, "Transit") == 0)
       d = t;
-    else if (strcmp(s,"Exiting") == 0) 
+    else if (strcmp(s, "Exiting") == 0)
       d = e;
 
     c++;
 
-    if (d != NULL) 
+    if (d != NULL)
       {
       s = c;
 
-      while ((*c != ' ') && (*c != '\0')) 
+      while ((*c != ' ') && (*c != '\0'))
         c++;
 
       l = *c;
 
       *c = '\0';
 
-      if (strlen(s) > (size_t)len) 
+      if (strlen(s) > (size_t)len)
         {
         f = s + len;
         *f = '\0';
         }
 
-      strcpy(d,s);
+      strcpy(d, s);
 
-      if (l != '\0') 
+      if (l != '\0')
         c++;
       }
     }
@@ -278,47 +279,47 @@ void prt_attr(
   int   first = 1;
   int   l;
   int   start;
-	
-  start = strlen(n) + 7;	/* 4 spaces + ' = ' is 7 */
 
-  printf("    %s", 
-    n);
+  start = strlen(n) + 7; /* 4 spaces + ' = ' is 7 */
 
-  if (r != NULL) 
+  printf("    %s",
+         n);
+
+  if (r != NULL)
     {
     start += strlen(r) + 1;
 
-    printf(".%s", 
-      r);
+    printf(".%s",
+           r);
     }
 
   printf(" = ");
 
-  c = strtok(v,comma);
+  c = strtok(v, comma);
 
-  while (c != NULL) 
+  while (c != NULL)
     {
-    if ((l = strlen(c)) + start < linesize) 
+    if ((l = strlen(c)) + start < linesize)
       {
-      printf("%s", 
-        c);
+      printf("%s",
+             c);
 
       start += l;
-      } 
-    else 
+      }
+    else
       {
-      if (!first) 
+      if (!first)
         {
         printf("\n\t");
 
         start = 9;
         }
 
-      while (*c) 
+      while (*c)
         {
         putchar(*c++);
 
-        if (++start > linesize) 
+        if (++start > linesize)
           {
           start = 8;
 
@@ -327,7 +328,7 @@ void prt_attr(
         }
       }
 
-    if ((c = strtok(NULL,comma)) != NULL)
+    if ((c = strtok(NULL, comma)) != NULL)
       {
       first = 0;
 
@@ -343,29 +344,29 @@ void prt_attr(
 
 
 /*
- * locate a attribute (attrl) by name (and resource) and return value 
- *	returns null if not found
+ * locate a attribute (attrl) by name (and resource) and return value
+ * returns null if not found
  */
 
 static char *findattrl(
 
   struct attrl *pattrl,
-  char	       *name,
+  char        *name,
   char         *resc)
 
   {
-  while (pattrl != NULL) 
+  while (pattrl != NULL)
     {
-    if (!strcmp(name,pattrl->name)) 
+    if (!strcmp(name, pattrl->name))
       {
-      if (resc != NULL) 
+      if (resc != NULL)
         {
-        if (!strcmp(resc,pattrl->resource)) 
+        if (!strcmp(resc, pattrl->resource))
           {
           return(pattrl->value);
           }
-        } 
-      else 
+        }
+      else
         {
         return(pattrl->value);
         }
@@ -389,14 +390,14 @@ static char *findattrl(
 #define TIMEUL  8   /* printf of jobs */
 #define STATEL  1   /* printf of jobs */
 #define LOCL    15  /* printf of jobs */
-#define SIZEL	6   /* length of "SIZE" fields in printf */
+#define SIZEL 6   /* length of "SIZE" fields in printf */
 
 
 
 
 /*
  * Format and display string of assigned nodes, (1) strip off domain name
- *	if present and (2) break line at '+' sign.
+ * if present and (2) break line at '+' sign.
  */
 
 static void prt_nodes(
@@ -420,51 +421,51 @@ static void prt_nodes(
 
   stp = nodes;
 
-  while (*nodes != '\0') 
+  while (*nodes != '\0')
     {
-    if ((*stp == '.') || (*stp == '+') || (*stp == '\0')) 
+    if ((*stp == '.') || (*stp == '+') || (*stp == '\0'))
       {
       /* does node fit into line? */
 
-      if (i + stp - nodes < linesize) 
+      if (i + stp - nodes < linesize)
         {
         while (nodes < stp)
           linebuf[i++] = *nodes++;
-        } 
-      else 
+        }
+      else
         {
         /* flush line and start next */
 
         linebuf[i] = '\0';
 
-        printf("   %s\n", 
-          linebuf);
+        printf("   %s\n",
+               linebuf);
 
         i = 0;
 
         while (nodes < stp)
           linebuf[i++] = *nodes++;
         }
-			
+
       /* strip off domain name to keep string short */
 
       while ((*stp != '+') && (*stp != '\0'))
         stp++;
 
       nodes = stp++;
-      } 
-    else 
+      }
+    else
       {
       stp++;
       }
     }
 
-  if (i != 0) 
+  if (i != 0)
     {
     linebuf[i] = '\0';
 
-    printf("   %s\n", 
-      linebuf);
+    printf("   %s\n",
+           linebuf);
     }
 
   return;
@@ -476,9 +477,9 @@ static void prt_nodes(
 
 /*
  * convert size from suffix string (nnnn[ kmgt][ bw]) to string of
- *	k[bw] for neither -M or -G
- *	mw    for	  -M
- *	gb    for	  -G
+ * k[bw] for neither -M or -G
+ * mw    for   -M
+ * gb    for   -G
  */
 
 static char *cnv_size(
@@ -487,10 +488,12 @@ static char *cnv_size(
   int   opt)
 
   {
-  static int sift_factor[3][5] = {
-    { -20, -10, 0, 10, 20 },	/* mb conversion */
-    { -23, -13, -3, 7, 17 },	/* mw conversion */
-    { -30, -20, -10, 0, 10 } };	/* gb conversion */
+  static int sift_factor[3][5] =
+    {
+      { -20, -10, 0, 10, 20 }, /* mb conversion */
+    { -23, -13, -3, 7, 17 }, /* mw conversion */
+    { -30, -20, -10, 0, 10 }
+    }; /* gb conversion */
 
   int in;
   int out;
@@ -500,30 +503,30 @@ static char *cnv_size(
   char *suffix;
   static char outbuf[25];
 
-  if (opt & ALT_DISPLAY_Mb) 
+  if (opt & ALT_DISPLAY_Mb)
     {
     out = 0;
 
     suffix = "mb";
-    } 
-  else if (opt & ALT_DISPLAY_Mw) 
+    }
+  else if (opt & ALT_DISPLAY_Mw)
     {
     out = 1;
 
     suffix = "mw";
-    } 
-  else if (opt & ALT_DISPLAY_G) 
+    }
+  else if (opt & ALT_DISPLAY_G)
     {
     out = 2;
 
     suffix = "gb";
-    } 
-  else 
+    }
+  else
     {
-    return (value);		/* return unmodified */
+    return (value);  /* return unmodified */
     }
 
-  nval = strtol(value,&pc,10);
+  nval = strtol(value, &pc, 10);
 
   if (*pc == 'k')
     in = 1;
@@ -533,24 +536,28 @@ static char *cnv_size(
     in = 3;
   else if (*pc == 't')
     in = 4;
-  else 
+  else
     in = 0;
 
   sft = sift_factor[out][in];
 
-  if ((*pc == 'w') || (*(pc+1) == 'w'))
-    nval = nval << 3;	/* convert to bytes */
-	
-	if (sft < 0) {
-		nval = nval + ((1 << -sft) - 1);  /* round up (ceiling) */
-		nval = nval >> -sft;
-	} else {
-		nval = nval << sft;
-	}
+  if ((*pc == 'w') || (*(pc + 1) == 'w'))
+    nval = nval << 3; /* convert to bytes */
 
-  sprintf(outbuf,"%lu%s", 
-    nval, 
-    suffix);
+  if (sft < 0)
+    {
+    nval = nval + ((1 << -sft) - 1);  /* round up (ceiling) */
+    nval = nval >> -sft;
+    }
+  else
+    {
+    nval = nval << sft;
+    }
+
+  sprintf(outbuf, "%lu%s",
+
+          nval,
+          suffix);
 
   return(outbuf);
   }
@@ -572,6 +579,7 @@ static void altdsp_statjob(
   {
   char *comment;
   char *pc;
+
   struct attrl *pat;
   char *exechost;
   char *usern = NULL;
@@ -594,24 +602,24 @@ static void altdsp_statjob(
   static char  srfsfast[SIZEL];
   static char *blank = " -- ";
 
-  if (prtheader) 
+  if (prtheader)
     {
-    printf("\n%s: ", 
-      prtheader->name);
+    printf("\n%s: ",
+           prtheader->name);
 
-    if ((pc = findattrl(prtheader->attribs,ATTR_comment,NULL)) != NULL)
+    if ((pc = findattrl(prtheader->attribs, ATTR_comment, NULL)) != NULL)
       {
-      printf("%s", 
-        pc);
+      printf("%s",
+             pc);
       }
 
-    if (alt_opt & ALT_DISPLAY_R) 
+    if (alt_opt & ALT_DISPLAY_R)
       {
       printf("\n                                                 Req'd  Req'd   Elap \n");
 
       printf("Job ID               Username Queue    NDS   TSK Memory Time  S Time   BIG  FAST   PFS\n");
 
-      printf("-------------------- -------- -------- ----- --- ------ ----- - ----- ----- ----- -----\n"); 
+      printf("-------------------- -------- -------- ----- --- ------ ----- - ----- ----- ----- -----\n");
       }
     else if (tasksize == 5)
       {
@@ -621,7 +629,7 @@ static void altdsp_statjob(
 
       printf("-------------------- -------- -------- ---------------- ------ ----- ----- ------ ----- - -----\n");
       }
-    else 
+    else
       {
       printf("\n                                                                         Req'd  Req'd   Elap\n");
 
@@ -631,7 +639,7 @@ static void altdsp_statjob(
       }
     }
 
-  while (pstat != NULL) 
+  while (pstat != NULL)
     {
     exechost  = blank;
     sess      = blank;
@@ -643,106 +651,106 @@ static void altdsp_statjob(
     eltimewal = blank;
     jstate    = blank;
     comment   = blank;
-    /*	*pfs      = *blank;  */
-    strcpy(pfs,blank);
-    /*	*rqmem    = *blank;  */
-    strcpy(rqmem,blank);
-    /*	*srfsbig  = *blank;  */
-    strcpy(srfsbig,blank);
-    /*	*srfsfast = *blank;  */
+    /* *pfs      = *blank;  */
+    strcpy(pfs, blank);
+    /* *rqmem    = *blank;  */
+    strcpy(rqmem, blank);
+    /* *srfsbig  = *blank;  */
+    strcpy(srfsbig, blank);
+    /* *srfsfast = *blank;  */
     strcpy(srfsfast, blank);
     usecput = 0;
 
     pat = pstat->attribs;
 
-    while (pat != NULL) 
+    while (pat != NULL)
       {
-      if (!strcmp(pat->name,ATTR_N)) 
+      if (!strcmp(pat->name, ATTR_N))
         {
         jobn = pat->value;
-        } 
-      else if (!strcmp(pat->name,ATTR_owner)) 
+        }
+      else if (!strcmp(pat->name, ATTR_owner))
         {
-        usern = pat->value;	
+        usern = pat->value;
 
-        if ((pc = strchr(usern,(int)'@')) != NULL)
-          *pc = '\0';
-        } 
-      else if (!strcmp(pat->name,ATTR_state)) 
+        if ((pc = strchr(usern, (int)'@')) != NULL)
+          * pc = '\0';
+        }
+      else if (!strcmp(pat->name, ATTR_state))
         {
         jstate = pat->value;
-        } 
-      else if (!strcmp(pat->name,ATTR_queue)) 
+        }
+      else if (!strcmp(pat->name, ATTR_queue))
         {
         queuen = pat->value;
-        } 
-      else if (!strcmp(pat->name,ATTR_session)) 
+        }
+      else if (!strcmp(pat->name, ATTR_session))
         {
         sess = pat->value;
-        } 
-      else if (!strcmp(pat->name,ATTR_l)) 
+        }
+      else if (!strcmp(pat->name, ATTR_l))
         {
-        if (!strcmp(pat->resource,"nodect")) 
+        if (!strcmp(pat->resource, "nodect"))
           {
           nodect = pat->value;
-          } 
-        else if (!strcmp(pat->resource,"ncpus")) 
+          }
+        else if (!strcmp(pat->resource, "ncpus"))
           {
-          if (strcmp(pat->value,"0"))
+          if (strcmp(pat->value, "0"))
             tasks = pat->value;
-          } 
-        else if (!strcmp(pat->resource,"mppe")) 
+          }
+        else if (!strcmp(pat->resource, "mppe"))
           {
-          if (strcmp(pat->value,"0"))
+          if (strcmp(pat->value, "0"))
             tasks = pat->value;
-          } 
-        else if (!strcmp(pat->resource,"size")) 
+          }
+        else if (!strcmp(pat->resource, "size"))
           {
-          if (strcmp(pat->value,"0"))
+          if (strcmp(pat->value, "0"))
             tasks = pat->value;
-          } 
-        else if (!strcmp(pat->resource,"mem")) 
+          }
+        else if (!strcmp(pat->resource, "mem"))
           {
-          strncpy(rqmem,cnv_size(pat->value,alt_opt),SIZEL);
-          } 
-        else if (!strcmp(pat->resource,"walltime")) 
+          strncpy(rqmem, cnv_size(pat->value, alt_opt), SIZEL);
+          }
+        else if (!strcmp(pat->resource, "walltime"))
           {
           rqtimewal = pat->value;
-          } 
-        else if (!strcmp(pat->resource,"cput")) 
+          }
+        else if (!strcmp(pat->resource, "cput"))
           {
           rqtimecpu = pat->value;
           usecput = 1;
-          } 
-        else if (!strcmp(pat->resource,"srfs_big")) 
-          {
-          strncpy(srfsbig,cnv_size(pat->value,alt_opt),SIZEL - 1);
-          } 
-        else if (!strcmp(pat->resource,"srfs_fast")) 
-          {
-          strncpy(srfsfast,cnv_size(pat->value,alt_opt),SIZEL - 1);
-          } 
-        else if (!strcmp(pat->resource,"piofs")) 
-          {
-          strncpy(pfs,cnv_size(pat->value,alt_opt),SIZEL - 1);
           }
-        } 
-      else if (!strcmp(pat->name,ATTR_exechost)) 
+        else if (!strcmp(pat->resource, "srfs_big"))
+          {
+          strncpy(srfsbig, cnv_size(pat->value, alt_opt), SIZEL - 1);
+          }
+        else if (!strcmp(pat->resource, "srfs_fast"))
+          {
+          strncpy(srfsfast, cnv_size(pat->value, alt_opt), SIZEL - 1);
+          }
+        else if (!strcmp(pat->resource, "piofs"))
+          {
+          strncpy(pfs, cnv_size(pat->value, alt_opt), SIZEL - 1);
+          }
+        }
+      else if (!strcmp(pat->name, ATTR_exechost))
         {
         exechost = pat->value;
-        } 
-      else if (!strcmp(pat->name,ATTR_used)) 
+        }
+      else if (!strcmp(pat->name, ATTR_used))
         {
-        if (!strcmp(pat->resource,"walltime")) 
+        if (!strcmp(pat->resource, "walltime"))
           {
           eltimewal = pat->value;
-          } 
-        else if (!strcmp(pat->resource,"cput"))  
+          }
+        else if (!strcmp(pat->resource, "cput"))
           {
           eltimecpu = pat->value;
           }
-        } 
-      else if (!strcmp(pat->name,ATTR_comment)) 
+        }
+      else if (!strcmp(pat->name, ATTR_comment))
         {
         comment = pat->value;
         }
@@ -750,64 +758,65 @@ static void altdsp_statjob(
       pat = pat->next;
       }
 
-    snprintf(tmpLine,sizeof(tmpLine),"%%-20.%ds %%-8.8s %%-8.8s ",
-      PBS_NAMELEN);
+    snprintf(tmpLine, sizeof(tmpLine), "%%-20.%ds %%-8.8s %%-8.8s ",
 
-    printf(tmpLine, 
-      pstat->name, 
-      usern, 
-      queuen);
+             PBS_NAMELEN);
 
-    if (alt_opt & ALT_DISPLAY_R) 
+    printf(tmpLine,
+           pstat->name,
+           usern,
+           queuen);
+
+    if (alt_opt & ALT_DISPLAY_R)
       {
-      printf("%5.5s %*.*s %6.6s %5.5s %1.1s %5.5s %5.5s %5.5s %5.5s", 
-        nodect, 
-        tasksize,
-        tasksize,
-        tasks, 
-        rqmem, 
-        usecput ? rqtimecpu : rqtimewal,
-        jstate, 
-        usecput ? eltimecpu : eltimewal,
-        srfsbig, 
-        srfsfast, 
-        pfs);
-      } 
-    else 
+      printf("%5.5s %*.*s %6.6s %5.5s %1.1s %5.5s %5.5s %5.5s %5.5s",
+             nodect,
+             tasksize,
+             tasksize,
+             tasks,
+             rqmem,
+             usecput ? rqtimecpu : rqtimewal,
+             jstate,
+             usecput ? eltimecpu : eltimewal,
+             srfsbig,
+             srfsfast,
+             pfs);
+      }
+    else
       {
-      snprintf(tmpLine,sizeof(tmpLine),"%%-%d.%ds %%6.6s %%5.5s %%*.*s %%6.6s %%5.5s %%1.1s %%5.5s",
-        PBS_NAMELEN, PBS_NAMELEN);
+      snprintf(tmpLine, sizeof(tmpLine), "%%-%d.%ds %%6.6s %%5.5s %%*.*s %%6.6s %%5.5s %%1.1s %%5.5s",
+               PBS_NAMELEN, PBS_NAMELEN);
 
       printf(tmpLine,
-        jobn, 
-        sess, 
-        nodect, 
-        tasksize,
-        tasksize,
-        tasks, 
-        rqmem,
-        usecput ? rqtimecpu : rqtimewal,
-        jstate, 
-        usecput ? eltimecpu : eltimewal);
+             jobn,
+             sess,
+             nodect,
+             tasksize,
+             tasksize,
+             tasks,
+             rqmem,
+             usecput ? rqtimecpu : rqtimewal,
+             jstate,
+             usecput ? eltimecpu : eltimewal);
       }
 
-    if (linesize < maxlinesize) 
+    if (linesize < maxlinesize)
       printf("\n");
 
-    if (alt_opt & ALT_DISPLAY_n) 
+    if (alt_opt & ALT_DISPLAY_n)
       {
       /* print assigned nodes */
 
       prt_nodes(exechost);
       }
 
-    if (alt_opt & ALT_DISPLAY_s) 
+    if (alt_opt & ALT_DISPLAY_s)
       {
       /* print (scheduler) comment */
-  
+
       if (*comment != '\0')
-        printf("   %s\n", 
-          comment);
+        printf("   %s\n",
+               comment);
       }
 
     pstat = pstat->next;
@@ -821,7 +830,7 @@ static void altdsp_statjob(
 
 /*
  * get_ct - get count of jobs in queue/run state
- *	support function for altdsp_statque()
+ * support function for altdsp_statque()
  */
 
 static void get_ct(
@@ -834,21 +843,21 @@ static void get_ct(
   char *ps;
   int   colon = (int)':';
 
-  ps = strchr(str,colon);	/* Transit - skip */
+  ps = strchr(str, colon); /* Transit - skip */
 
-  ps = strchr(ps + 1,colon);	/* Queued  - add to jque */
-
-  *jque += atoi(ps + 1);
-
-  ps = strchr(ps + 1,colon);	/* Held    - add to jque  */
+  ps = strchr(ps + 1, colon); /* Queued  - add to jque */
 
   *jque += atoi(ps + 1);
 
-  ps = strchr(ps + 1,colon);	/* Waiting - add to jque  */
+  ps = strchr(ps + 1, colon); /* Held    - add to jque  */
 
   *jque += atoi(ps + 1);
 
-  ps = strchr(ps+1,colon);	/* Running - add to jrun  */
+  ps = strchr(ps + 1, colon); /* Waiting - add to jque  */
+
+  *jque += atoi(ps + 1);
+
+  ps = strchr(ps + 1, colon); /* Running - add to jrun  */
 
   *jrun += atoi(ps + 1);
 
@@ -882,72 +891,73 @@ static void altdsp_statque(
   char  qstarted = '\0';
   int   tot_jrun = 0;
   int   tot_jque = 0;
+
   struct attrl *pat;
 
   printf("\nserver: %s\n\n", serv);
   printf("Queue            Memory CPU Time Walltime Node  Run Que Lm  State\n");
   printf("---------------- ------ -------- -------- ----  --- --- --  -----\n");
 
-  while (pstat != NULL) 
+  while (pstat != NULL)
     {
     /* *rmem = '\0'; */
 
-    strncpy(rmem, "--  ", SIZEL-1);
+    strncpy(rmem, "--  ", SIZEL - 1);
 
     cput  = blank;
     wallt = blank;
-    nodect= "-- ";
+    nodect = "-- ";
     jrun  = 0;
     jque  = 0;
     jmax  = blank;
 
     pat = pstat->attribs;
 
-    while (pat != NULL) 
+    while (pat != NULL)
       {
-      if (strcmp(pat->name,ATTR_maxrun) == 0) 
+      if (strcmp(pat->name, ATTR_maxrun) == 0)
         {
         jmax = pat->value;
-        } 
-      else if (strcmp(pat->name,ATTR_enable) == 0) 
+        }
+      else if (strcmp(pat->name, ATTR_enable) == 0)
         {
         if (*pat->value == 'T')
           qenabled = 'E';
         else
           qenabled = 'D';
-        } 
-      else if (strcmp(pat->name,ATTR_start) == 0) 
+        }
+      else if (strcmp(pat->name, ATTR_start) == 0)
         {
         if (*pat->value == 'T')
           qstarted = 'R';
         else
           qstarted = 'S';
-        } 
-     else if (strcmp(pat->name,ATTR_count) == 0) 
+        }
+      else if (strcmp(pat->name, ATTR_count) == 0)
         {
-        get_ct(pat->value,&jque,&jrun);
+        get_ct(pat->value, &jque, &jrun);
 
         tot_jque += jque;
         tot_jrun += jrun;
-        } 
-      else if (strcmp(pat->name,ATTR_rescmax) == 0) 
+        }
+      else if (strcmp(pat->name, ATTR_rescmax) == 0)
         {
-        if (strcmp(pat->resource, "mem") == 0) 
+        if (strcmp(pat->resource, "mem") == 0)
           {
           strncpy(
             rmem,
-            cnv_size(pat->value,opt), 
+            cnv_size(pat->value, opt),
             SIZEL);
-          } 
-        else if (strcmp(pat->resource,"cput") == 0) 
+          }
+        else if (strcmp(pat->resource, "cput") == 0)
           {
           cput = pat->value;
-          } 
-        else if (strcmp(pat->resource,"walltime") == 0)
+          }
+        else if (strcmp(pat->resource, "walltime") == 0)
           {
           wallt = pat->value;
-          } 
-        else if (strcmp(pat->resource,"nodect") == 0) 
+          }
+        else if (strcmp(pat->resource, "nodect") == 0)
           {
           nodect = pat->value;
           }
@@ -957,26 +967,28 @@ static void altdsp_statque(
       }
 
     printf("%-16.16s %6.6s %8.8s %8.8s %5.5s ",
-      pstat->name, 
-      rmem, 
-      cput, 
-      wallt, 
-      nodect);
+
+           pstat->name,
+           rmem,
+           cput,
+           wallt,
+           nodect);
 
     printf("%3d %3d %2.2s   %c %c\n",
-      jrun, 
-      jque, 
-      jmax, 
-      qenabled, 
-      qstarted);
+           jrun,
+           jque,
+           jmax,
+           qenabled,
+           qstarted);
 
     pstat = pstat->next;
     }  /* END while (pstat != NULL) */
 
   printf("                                               ----- -----\n");
-  printf("                                               %5d %5d\n", 
-    tot_jrun, 
-    tot_jque);
+
+  printf("                                               %5d %5d\n",
+         tot_jrun,
+         tot_jque);
 
   return;
   }  /* END altdsp_statque() */
@@ -993,26 +1005,28 @@ static void add_atropl(
   char            *name,
   char            *resc,
   char            *value,
-  enum batch_op	   op)
+  enum batch_op    op)
 
   {
+
   struct attropl *patro;
 
-  patro = (struct attropl *)malloc(sizeof (struct attropl));
+  patro = (struct attropl *)malloc(sizeof(struct attropl));
 
-  if (patro == NULL) 
+  if (patro == NULL)
     {
-    fprintf(stderr,"cannot malloc space\n");
+    fprintf(stderr, "cannot malloc space\n");
 
     exit(1);
     }
 
   patro->next     = *list;
+
   patro->name     = name;
   patro->resource = resc;
   patro->value    = value;
   patro->op       = op;
-  
+
   *list = patro;
 
   return;
@@ -1030,7 +1044,9 @@ void display_statjob(
   int                  full)      /* I (boolean) */
 
   {
+
   struct batch_status *p;
+
   struct attrl *a;
   int l;
   char *c;
@@ -1056,17 +1072,17 @@ void display_statjob(
 
   if (!full)
     {
-    sprintf(format,"%%-%ds %%-%ds %%-%ds %%%ds %%%ds %%-%ds\n", 
-      PBS_MAXSEQNUM + PBS_MAXJOBARRAYLEN + 11, 
-      PBS_MINNAMELEN, 
-      OWNERL, 
-      TIMEUL, 
-      STATEL, 
-      LOCL);
+    sprintf(format, "%%-%ds %%-%ds %%-%ds %%%ds %%%ds %%-%ds\n",
+            PBS_MAXSEQNUM + PBS_MAXJOBARRAYLEN + 11,
+            PBS_MINNAMELEN,
+            OWNERL,
+            TIMEUL,
+            STATEL,
+            LOCL);
 
-    if (prtheader) 
+    if (prtheader)
       {
-      /* display summary header TODO - the sizes of these fields should be determined from 
+      /* display summary header TODO - the sizes of these fields should be determined from
          #defines in pbs_ifl.h */
       printf("Job id                    Name             User            Time Use S Queue\n");
       printf("------------------------- ---------------- --------------- -------- - -----\n");
@@ -1079,7 +1095,7 @@ void display_statjob(
 
     DE = NULL;
 
-    MXMLCreateE(&DE,"Data");
+    MXMLCreateE(&DE, "Data");
     }
 
   for (p = status;p != NULL;p = p->next)
@@ -1091,71 +1107,75 @@ void display_statjob(
     state = NULL;
     location = NULL;
 
-    if (full) 
+    if (full)
       {
       if (DisplayXML == TRUE)
         {
         JE = NULL;
 
-        MXMLCreateE(&JE,"Job");
+        MXMLCreateE(&JE, "Job");
 
-        MXMLSetVal(JE,p->name,mdfString);
+        MXMLSetVal(JE, p->name, mdfString);
 
-        MXMLAddE(DE,JE);
-        }      
+        MXMLAddE(DE, JE);
+        }
       else
-        { 
-        printf("Job Id: %s\n", 
-          p->name);
+        {
+        printf("Job Id: %s\n",
+               p->name);
         }
 
       a = p->attribs;
 
       RE1 = NULL;
-      while (a != NULL) 
+
+      while (a != NULL)
         {
-        if (a->name != NULL) 
+        if (a->name != NULL)
           {
           if (DisplayXML == TRUE)
             {
             /* lookup a->name -> XML attr name */
 
             AE = NULL;
+
             if (a->resource != NULL)
               {
               if (RE1 == NULL)
                 {
-                MXMLCreateE(&RE1,a->name);
-                MXMLAddE(JE,RE1);
+                MXMLCreateE(&RE1, a->name);
+                MXMLAddE(JE, RE1);
                 }
-              MXMLCreateE(&AE,a->resource);
-              MXMLSetVal(AE,a->value,mdfString);
-              MXMLAddE(RE1,AE);
+
+              MXMLCreateE(&AE, a->resource);
+
+              MXMLSetVal(AE, a->value, mdfString);
+              MXMLAddE(RE1, AE);
               }
             else
               {
               RE1 = NULL;
-              MXMLCreateE(&AE,a->name);
-              MXMLSetVal(AE,a->value,mdfString);
-              MXMLAddE(JE,AE);
+              MXMLCreateE(&AE, a->name);
+              MXMLSetVal(AE, a->value, mdfString);
+              MXMLAddE(JE, AE);
               }
             }
           else
             {
-            if (!strcmp(a->name,ATTR_ctime) ||
-                !strcmp(a->name,ATTR_etime) ||
-                !strcmp(a->name,ATTR_mtime) ||
-                !strcmp(a->name,ATTR_qtime) ||
-                !strcmp(a->name,ATTR_start_time) ||
-                !strcmp(a->name,ATTR_a)) 
+            if (!strcmp(a->name, ATTR_ctime) ||
+                !strcmp(a->name, ATTR_etime) ||
+                !strcmp(a->name, ATTR_mtime) ||
+                !strcmp(a->name, ATTR_qtime) ||
+                !strcmp(a->name, ATTR_start_time) ||
+                !strcmp(a->name, ATTR_a))
               {
               epoch = (time_t)atoi(a->value);
 
-              prt_attr(a->name,a->resource,ctime(&epoch));
+              prt_attr(a->name, a->resource, ctime(&epoch));
               }
-            else 
+            else
               {
-              prt_attr(a->name,a->resource,a->value);
+              prt_attr(a->name, a->resource, a->value);
 
               printf("\n");
               }
@@ -1165,27 +1185,27 @@ void display_statjob(
         a = a->next;
         }
       }   /* END if (full) */
-    else 
+    else
       {
       /* display summary data */
 
-      if (p->name != NULL) 
+      if (p->name != NULL)
         {
         c = p->name;
 
-        while ((*c != '.') && (*c != '\0')) 
+        while ((*c != '.') && (*c != '\0'))
           c++;
 
         c++;    /* List the first part of the server name, too. */
 
-        while ((*c != '.') && (*c != '\0')) 
+        while ((*c != '.') && (*c != '\0'))
           c++;
 
         *c = '\0';
 
         l = strlen(p->name);
 
-        if (l > (PBS_MAXSEQNUM + PBS_MAXJOBARRAYLEN + 8)) 
+        if (l > (PBS_MAXSEQNUM + PBS_MAXJOBARRAYLEN + 8))
           {
           /* truncate job name */
 
@@ -1193,58 +1213,59 @@ void display_statjob(
 
           *c = '\0';
           }
-  
+
         jid = p->name;
         }
 
       a = p->attribs;
 
-      while (a != NULL) 
+      while (a != NULL)
         {
-        if (a->name != NULL) 
+        if (a->name != NULL)
           {
-          if (strcmp(a->name,ATTR_name) == 0) 
+          if (strcmp(a->name, ATTR_name) == 0)
             {
             l = strlen(a->value);
 
             /* truncate AName */
 
-            if (l > PBS_NAMELEN) 
+            if (l > PBS_NAMELEN)
               {
               l = l - PBS_NAMELEN + 3;
 
               c = a->value + l;
 
-              while ((*c != '/') && (*c != '\0')) 
+              while ((*c != '/') && (*c != '\0'))
                 c++;
 
-              if (*c == '\0') 
+              if (*c == '\0')
                 c = a->value + l;
 
-              strcpy(long_name,"...");
-              strcat(long_name,c);
+              strcpy(long_name, "...");
+
+              strcat(long_name, c);
 
               c = long_name;
-              } 
+              }
             else
-              {     
+              {
               c = a->value;
               }
 
             name = c;
-            } 
-          else if (!strcmp(a->name,ATTR_owner)) 
+            }
+          else if (!strcmp(a->name, ATTR_owner))
             {
             c = a->value;
 
-            while ((*c != '@') && (*c != '\0')) 
+            while ((*c != '@') && (*c != '\0'))
               c++;
 
             *c = '\0';
 
             l = strlen(a->value);
 
-            if (l > OWNERL) 
+            if (l > OWNERL)
               {
               c = a->value + OWNERL;
 
@@ -1252,14 +1273,14 @@ void display_statjob(
               }
 
             owner = a->value;
-            } 
-          else if (!strcmp(a->name,ATTR_used)) 
+            }
+          else if (!strcmp(a->name, ATTR_used))
             {
-            if (!strcmp(a->resource,"cput")) 
+            if (!strcmp(a->resource, "cput"))
               {
               l = strlen(a->value);
 
-              if (l > TIMEUL) 
+              if (l > TIMEUL)
                 {
                 c = a->value + TIMEUL;
 
@@ -1268,8 +1289,8 @@ void display_statjob(
 
               timeu = a->value;
               }
-            } 
-          else if (!strcmp(a->name,ATTR_state)) 
+            }
+          else if (!strcmp(a->name, ATTR_state))
             {
             l = strlen(a->value);
 
@@ -1281,19 +1302,19 @@ void display_statjob(
               }
 
             state = a->value;
-            } 
-          else if (!strcmp(a->name,ATTR_queue)) 
+            }
+          else if (!strcmp(a->name, ATTR_queue))
             {
             c = a->value;
 
-            while ((*c != '@') && (*c != '\0')) 
+            while ((*c != '@') && (*c != '\0'))
               c++;
 
             *c = '\0';
 
             l = strlen(a->value);
 
-            if (l > LOCL) 
+            if (l > LOCL)
               {
               c = a->value + LOCL;
 
@@ -1307,38 +1328,38 @@ void display_statjob(
         a = a->next;
         }
 
-      if (timeu == NULL) 
+      if (timeu == NULL)
         timeu = "0";
 
       /* display summary data */
 
       printf(format,
-        jid, 
-        name, 
-        owner, 
-        timeu, 
-        state, 
-        location);
+             jid,
+             name,
+             owner,
+             timeu,
+             state,
+             location);
       }  /* END else (full) */
 
     if (DisplayXML != TRUE)
       {
-      if (full) 
+      if (full)
         printf("\n");
       }
     }  /* END for (p = status) */
 
   if (DisplayXML == TRUE)
     {
-    char *tmpBuf=NULL, *tail=NULL;
+    char *tmpBuf = NULL, *tail = NULL;
     int  bufsize;
 
-    MXMLToXString(DE,&tmpBuf,&bufsize,INT_MAX,&tail,TRUE);
+    MXMLToXString(DE, &tmpBuf, &bufsize, INT_MAX, &tail, TRUE);
 
     MXMLDestroyE(&DE);
 
-    fprintf(stdout,"%s\n",
-      tmpBuf);
+    fprintf(stdout, "%s\n",
+            tmpBuf);
     }
 
   return;
@@ -1357,7 +1378,9 @@ void display_statque(
   int                  full)
 
   {
+
   struct batch_status *p;
+
   struct attrl *a = NULL;
   int l;
   char *c;
@@ -1375,72 +1398,72 @@ void display_statque(
   char *type;
   char format[80];
 
-  int  NUML=5;
+  int  NUML = 5;
 
 
-  sprintf(format,"%%-%ds %%%ds %%%ds %%%ds %%%ds %%%ds %%%ds %%%ds %%%ds %%%ds %%%ds %%-%ds\n", 
-    PBS_MINNAMELEN, 
-    NUML, 
-    NUML, 
-    NUML, 
-    NUML, 
-    NUML,
-    NUML, 
-    NUML, 
-    NUML, 
-    NUML, 
-    NUML, 
-    TYPEL);
+  sprintf(format, "%%-%ds %%%ds %%%ds %%%ds %%%ds %%%ds %%%ds %%%ds %%%ds %%%ds %%%ds %%-%ds\n",
+          PBS_MINNAMELEN,
+          NUML,
+          NUML,
+          NUML,
+          NUML,
+          NUML,
+          NUML,
+          NUML,
+          NUML,
+          NUML,
+          NUML,
+          TYPEL);
 
-  if (!full && prtheader) 
+  if (!full && prtheader)
     {
-    printf(format,"Queue","Max","Tot","Ena","Str","Que","Run","Hld","Wat","Trn","Ext","T");
-    printf(format,"----------------","---","---","---","---","---","---","---","---","---","---","-");
+    printf(format, "Queue", "Max", "Tot", "Ena", "Str", "Que", "Run", "Hld", "Wat", "Trn", "Ext", "T");
+    printf(format, "----------------", "---", "---", "---", "---", "---", "---", "---", "---", "---", "---", "-");
     }
 
   p = status;
 
-  while (p != NULL) 
+  while (p != NULL)
     {
     name = NULL;
     max = "0";
     tot = "0";
-    strcpy(ena,"no");
-    strcpy(str,"no");
-    strcpy(que,"0");
-    strcpy(run,"0");
-    strcpy(hld,"0");
-    strcpy(wat,"0");
-    strcpy(trn,"0");
-    strcpy(ext,"0");
+    strcpy(ena, "no");
+    strcpy(str, "no");
+    strcpy(que, "0");
+    strcpy(run, "0");
+    strcpy(hld, "0");
+    strcpy(wat, "0");
+    strcpy(trn, "0");
+    strcpy(ext, "0");
     type = "not defined";
 
-    if (full) 
+    if (full)
       {
-      printf("Queue: %s\n", 
-        p->name);
+      printf("Queue: %s\n",
+             p->name);
 
       a = p->attribs;
 
-      while (a != NULL) 
+      while (a != NULL)
         {
-        if (a->name != NULL) 
+        if (a->name != NULL)
           {
-          prt_attr(a->name,a->resource,a->value);
+          prt_attr(a->name, a->resource, a->value);
 
           printf("\n");
           }
 
         a = a->next;
         }
-      } 
-    else 
+      }
+    else
       {
-      if (p->name != NULL) 
+      if (p->name != NULL)
         {
         l = strlen(p->name);
 
-        if (l > PBS_NAMELEN) 
+        if (l > PBS_NAMELEN)
           {
           c = a->name + PBS_NAMELEN;
 
@@ -1452,15 +1475,15 @@ void display_statque(
 
       a = p->attribs;
 
-      while (a != NULL) 
+      while (a != NULL)
         {
-        if (a->name != NULL) 
+        if (a->name != NULL)
           {
-          if (strcmp(a->name,ATTR_maxrun) == 0) 
+          if (strcmp(a->name, ATTR_maxrun) == 0)
             {
             l = strlen(a->value);
 
-            if (l > NUML) 
+            if (l > NUML)
               {
               c = a->value + NUML;
 
@@ -1468,12 +1491,12 @@ void display_statque(
               }
 
             max = a->value;
-            } 
-          else if (strcmp(a->name,ATTR_total) == 0) 
+            }
+          else if (strcmp(a->name, ATTR_total) == 0)
             {
             l = strlen(a->value);
 
-            if ( l > NUML) 
+            if (l > NUML)
               {
               c = a->value + NUML;
 
@@ -1481,30 +1504,30 @@ void display_statque(
               }
 
             tot = a->value;
-            } 
-          else if (strcmp(a->name,ATTR_enable) == 0) 
+            }
+          else if (strcmp(a->name, ATTR_enable) == 0)
             {
             if (istrue(a->value))
-              strcpy(ena,"yes");
+              strcpy(ena, "yes");
             else
-              strcpy(ena,"no");
-            } 
-          else if (strcmp(a->name,ATTR_start) == 0) 
+              strcpy(ena, "no");
+            }
+          else if (strcmp(a->name, ATTR_start) == 0)
             {
             if (istrue(a->value))
-              strcpy(str,"yes");
+              strcpy(str, "yes");
             else
-              strcpy(str,"no");
-            } 
-          else if (strcmp(a->name,ATTR_count) == 0) 
+              strcpy(str, "no");
+            }
+          else if (strcmp(a->name, ATTR_count) == 0)
             {
-            states(a->value,que,run,hld,wat,trn,ext,NUML);
-            } 
-          else if (strcmp(a->name,ATTR_qtype) == 0) 
+            states(a->value, que, run, hld, wat, trn, ext, NUML);
+            }
+          else if (strcmp(a->name, ATTR_qtype) == 0)
             {
             type = a->value;
 
-            *(type +1) = '\0';
+            *(type + 1) = '\0';
             }
           }
 
@@ -1512,21 +1535,22 @@ void display_statque(
         }
 
       printf(format,
-        name, 
-        max, 
-        tot, 
-        ena, 
-        str, 
-        que, 
-        run, 
-        hld, 
-        wat, 
-        trn, 
-        ext, 
-        type);
+
+             name,
+             max,
+             tot,
+             ena,
+             str,
+             que,
+             run,
+             hld,
+             wat,
+             trn,
+             ext,
+             type);
       }
 
-    if (full) 
+    if (full)
       printf("\n");
 
     p = p->next;
@@ -1546,7 +1570,9 @@ void display_statserver(
   int                  full)
 
   {
+
   struct batch_status *p;
+
   struct attrl *a;
   int l;
   char *c;
@@ -1566,27 +1592,27 @@ void display_statserver(
 
   NUML = MAXNUML;
 
-  sprintf(format,"%%-%ds %%%ds %%%ds %%%ds %%%ds %%%ds %%%ds %%%ds %%%ds %%-%ds\n", 
-    PBS_MINNAMELEN, 
-    NUML, 
-    NUML, 
-    NUML, 
-    NUML, 
-    NUML, 
-    NUML, 
-    NUML, 
-    NUML, 
-    STATUSL);
+  sprintf(format, "%%-%ds %%%ds %%%ds %%%ds %%%ds %%%ds %%%ds %%%ds %%%ds %%-%ds\n",
+          PBS_MINNAMELEN,
+          NUML,
+          NUML,
+          NUML,
+          NUML,
+          NUML,
+          NUML,
+          NUML,
+          NUML,
+          STATUSL);
 
-  if (!full && prtheader) 
+  if (!full && prtheader)
     {
-    printf(format,"Server","Max","Tot","Que","Run","Hld","Wat","Trn","Ext","Status");
-    printf(format,"----------------","---","---","---","---","---","---","---","---","----------");
+    printf(format, "Server", "Max", "Tot", "Que", "Run", "Hld", "Wat", "Trn", "Ext", "Status");
+    printf(format, "----------------", "---", "---", "---", "---", "---", "---", "---", "---", "----------");
     }
 
   p = status;
 
-  while (p != NULL) 
+  while (p != NULL)
     {
     name = NULL;
     max = "0";
@@ -1599,59 +1625,94 @@ void display_statserver(
     strcpy(ext, "0");
     stats = "";
 
-    if (full) {
-            printf("Server: %s\n", p->name);
-            a = p->attribs;
-            while ( a != NULL ) {
-                if ( a->name != NULL ) {
-		    prt_attr(a->name, a->resource, a->value);
-		    printf("\n");
-                }
-                a = a->next;
-            }
-        } else {
-            if ( p->name != NULL ) {
-                l = strlen(p->name);
-                if ( l > PBS_NAMELEN ) {
-                    c = p->name + PBS_NAMELEN;
-                    *c = '\0';
-                }
-                name = p->name;
-            }
-            a = p->attribs;
-            while ( a != NULL ) {
-                if ( a->name != NULL ) {
-                    if ( strcmp(a->name,ATTR_maxrun) == 0 ) {
-                        l = strlen(a->value);
-                        if ( l > NUML ) {
-                            c = a->value + NUML;
-                            *c = '\0';
-                        }
-                        max = a->value;
-                    } else if ( strcmp(a->name,ATTR_total) == 0 ) {
-                        l = strlen(a->value);
-                        if ( l > NUML ) {
-                            c = a->value + NUML;
-                            *c = '\0';
-                        }
-                        tot = a->value;
-                    } else if ( strcmp(a->name,ATTR_count) == 0 ) {
-                        states(a->value,que,run,hld,wat,trn,ext,NUML);
-                    } else if ( strcmp(a->name,ATTR_status) == 0 ) {
-                        l = strlen(a->value);
-                        if ( l > STATUSL ) {
-                            c = a->value + STATUSL;
-                            *c = '\0';
-                        }
-                        stats = a->value;
-                    }
-                }
-                a = a->next;
-            }
-        printf(format, name, max, tot, que, run, hld, wat, trn, ext, stats);
+    if (full)
+      {
+      printf("Server: %s\n", p->name);
+      a = p->attribs;
+
+      while (a != NULL)
+        {
+        if (a->name != NULL)
+          {
+          prt_attr(a->name, a->resource, a->value);
+          printf("\n");
+          }
+
+        a = a->next;
         }
-	if ( full ) printf("\n");
-        p = p->next;
+      }
+    else
+      {
+      if (p->name != NULL)
+        {
+        l = strlen(p->name);
+
+        if (l > PBS_NAMELEN)
+          {
+          c = p->name + PBS_NAMELEN;
+          *c = '\0';
+          }
+
+        name = p->name;
+        }
+
+      a = p->attribs;
+
+      while (a != NULL)
+        {
+        if (a->name != NULL)
+          {
+          if (strcmp(a->name, ATTR_maxrun) == 0)
+            {
+            l = strlen(a->value);
+
+            if (l > NUML)
+              {
+              c = a->value + NUML;
+              *c = '\0';
+              }
+
+            max = a->value;
+            }
+          else if (strcmp(a->name, ATTR_total) == 0)
+            {
+            l = strlen(a->value);
+
+            if (l > NUML)
+              {
+              c = a->value + NUML;
+              *c = '\0';
+              }
+
+            tot = a->value;
+            }
+          else if (strcmp(a->name, ATTR_count) == 0)
+            {
+            states(a->value, que, run, hld, wat, trn, ext, NUML);
+            }
+          else if (strcmp(a->name, ATTR_status) == 0)
+            {
+            l = strlen(a->value);
+
+            if (l > STATUSL)
+              {
+              c = a->value + STATUSL;
+              *c = '\0';
+              }
+
+            stats = a->value;
+            }
+          }
+
+        a = a->next;
+        }
+
+      printf(format, name, max, tot, que, run, hld, wat, trn, ext, stats);
+      }
+
+    if (full) printf("\n");
+
+    p = p->next;
     }
 
   return;
@@ -1661,29 +1722,29 @@ void display_statserver(
 
 
 
-#if	TCL_QSTAT
-#define	ARGNUM	1024
+#if TCL_QSTAT
+#define ARGNUM 1024
 
 char *attrlist(
 
   struct attrl *ap)
 
   {
-  char	nameres[256];
-  char	*argv[ARGNUM];
-  char	*ret;
-  int	i, num = 0;
+  char nameres[256];
+  char *argv[ARGNUM];
+  char *ret;
+  int i, num = 0;
 
-  while (ap) 
+  while (ap)
     {
     char *twol[2];
 
-    if (ap->resource != NULL) 
+    if (ap->resource != NULL)
       {
-      sprintf(nameres,"%s%s%s",
-        ap->name, 
-        TCL_ATRSEP, 
-        ap->resource);
+      sprintf(nameres, "%s%s%s",
+              ap->name,
+              TCL_ATRSEP,
+              ap->resource);
 
       twol[0] = nameres;
       }
@@ -1694,7 +1755,7 @@ char *attrlist(
 
     twol[1] = ap->value;
 
-    argv[num++] = Tcl_Merge(2,(const char **)twol);
+    argv[num++] = Tcl_Merge(2, (const char **)twol);
 
     if (num == ARGNUM)
       break;
@@ -1702,7 +1763,7 @@ char *attrlist(
     ap = ap->next;
     }
 
-  ret = Tcl_Merge(num,(const char **)argv);
+  ret = Tcl_Merge(num, (const char **)argv);
 
   for (i = 0;i < num;i++)
     free(argv[i]);
@@ -1714,65 +1775,79 @@ char *attrlist(
 
 
 
-Tcl_Interp	*interp = NULL;
-char		script[200];
-char		flags[] = "flags";
-char		ops[] = "operands";
-char		error[] = "error";
+Tcl_Interp *interp = NULL;
+char  script[200];
+char  flags[] = "flags";
+char  ops[] = "operands";
+char  error[] = "error";
 
 void
-tcl_init()
-{
-	struct	passwd	*pw;
-	uid_t		uid;
-	struct  stat    sb;
+tcl_init(void)
+  {
 
-	uid = getuid();
-	pw = getpwuid(uid);
-	if (pw == NULL)
-		return;
+  struct passwd *pw;
+  uid_t  uid;
 
-	sprintf(script, "%s/.qstatrc", pw->pw_dir);
-	if (stat(script, &sb) == -1) {
-		strcpy(script, QSTATRC_PATH);
-		if (stat(script, &sb) == -1)
-			return;
-	}
+  struct  stat    sb;
 
-	interp = Tcl_CreateInterp();
-	if (Tcl_Init(interp) == TCL_ERROR) {
-		fprintf(stderr, "Tcl_Init error: %s",
-			interp->result);
-	}
-#if	TCLX
-#if	TCL_MINOR_VERSION < 5  && TCL_MAJOR_VERSION < 8
-	if (TclX_Init(interp) == TCL_ERROR) {
+  uid = getuid();
+  pw = getpwuid(uid);
+
+  if (pw == NULL)
+    return;
+
+  sprintf(script, "%s/.qstatrc", pw->pw_dir);
+
+  if (stat(script, &sb) == -1)
+    {
+    strcpy(script, QSTATRC_PATH);
+
+    if (stat(script, &sb) == -1)
+      return;
+    }
+
+  interp = Tcl_CreateInterp();
+
+  if (Tcl_Init(interp) == TCL_ERROR)
+    {
+    fprintf(stderr, "Tcl_Init error: %s",
+            interp->result);
+    }
+
+#if TCLX
+#if TCL_MINOR_VERSION < 5  && TCL_MAJOR_VERSION < 8
+  if (TclX_Init(interp) == TCL_ERROR)
+    {
 #else
-	if (Tclx_Init(interp) == TCL_ERROR) {
+
+  if (Tclx_Init(interp) == TCL_ERROR)
+    {
 #endif
-		fprintf(stderr, "Tclx_Init error: %s",
-			interp->result);
-	}
-#endif	/* TCLX */
-	return;
-}
+    fprintf(stderr, "Tclx_Init error: %s",
+            interp->result);
+    }
+
+#endif /* TCLX */
+  return;
+  }
 
 void
+
 tcl_addarg(name, arg)
-    char	*name;
-    char	*arg;
-{
-	if (interp == NULL)
-		return;
+char *name;
+char *arg;
+  {
+  if (interp == NULL)
+    return;
 
-	if (arg == NULL || *arg == '\0')
-		return;
+  if (arg == NULL || *arg == '\0')
+    return;
 
-	Tcl_SetVar(interp, name, arg,
-			TCL_GLOBAL_ONLY|
-			TCL_LIST_ELEMENT|
-			TCL_APPEND_VALUE);
-}
+  Tcl_SetVar(interp, name, arg,
+             TCL_GLOBAL_ONLY |
+             TCL_LIST_ELEMENT |
+             TCL_APPEND_VALUE);
+  }
 
 
 
@@ -1785,11 +1860,12 @@ int tcl_stat(
   int                  f_opt)
 
   {
-  struct	batch_status	*bp;
-  char	*twol[2];
-  char	*argv[ARGNUM];
-  int	i, num = 0;
-  char	*result;
+
+  struct batch_status *bp;
+  char *twol[2];
+  char *argv[ARGNUM];
+  int i, num = 0;
+  char *result;
 
   if (interp == NULL)
     {
@@ -1803,7 +1879,7 @@ int tcl_stat(
 
   twol[0] = type;
 
-  for (bp = bs;bp != NULL;bp = bp->next) 
+  for (bp = bs;bp != NULL;bp = bp->next)
     {
     char *threel[3];
 
@@ -1811,28 +1887,29 @@ int tcl_stat(
     threel[1] = attrlist(bp->attribs);
     threel[2] = bp->text;
 
-    argv[num++] = Tcl_Merge(3,(const char **)threel);
+    argv[num++] = Tcl_Merge(3, (const char **)threel);
 
-    free(threel[1]);	/* malloc'ed in attrlist() */
+    free(threel[1]); /* malloc'ed in attrlist() */
 
     if (num == ARGNUM)
       break;
     }
 
-  twol[1] = Tcl_Merge(num,(const char **)argv);
+  twol[1] = Tcl_Merge(num, (const char **)argv);
 
   for (i = 0;i < num;i++)
     free(argv[i]);
 
-  result = Tcl_Merge(2,(const char **)twol);
+  result = Tcl_Merge(2, (const char **)twol);
 
   Tcl_SetVar(
-    interp, 
-    "objects", 
+    interp,
+    "objects",
     result,
-    TCL_GLOBAL_ONLY|TCL_LIST_ELEMENT|TCL_APPEND_VALUE);
+    TCL_GLOBAL_ONLY | TCL_LIST_ELEMENT | TCL_APPEND_VALUE);
 
   free(twol[1]);
+
   free(result);
 
   return(0);
@@ -1851,17 +1928,17 @@ void tcl_run(
     return;
     }
 
-  if (f_opt && Tcl_EvalFile(interp, script) != TCL_OK) 
+  if (f_opt && Tcl_EvalFile(interp, script) != TCL_OK)
     {
     char *trace;
 
-    trace = (char *)Tcl_GetVar(interp,"errorInfo",0);
+    trace = (char *)Tcl_GetVar(interp, "errorInfo", 0);
 
     if (trace == NULL)
       trace = interp->result;
 
     fprintf(stderr, "%s: TCL error @ line %d: %s\n",
-      script,interp->errorLine,trace);
+            script, interp->errorLine, trace);
     }
 
   Tcl_DeleteInterp(interp);
@@ -1874,9 +1951,9 @@ void tcl_run(
 #else
 #define tcl_init()
 #define tcl_addarg(name, arg)
-#define	tcl_stat(type, bs, f_opt) 1
+#define tcl_stat(type, bs, f_opt) 1
 #define tcl_run(f_opt)
-#endif	/* TCL_QSTAT */
+#endif /* TCL_QSTAT */
 
 
 
@@ -1912,7 +1989,7 @@ int main(
   char rmt_server[MAXSERVERNAME];
   char destination[PBS_MAXDEST + 1];
   char *def_server;
-    
+
   char *queue_name_out;
   char *server_name_out;
 
@@ -1924,8 +2001,11 @@ int main(
   int p_header = TRUE;
   int stat_single_job = 0;
   enum { JOBS, QUEUES, SERVERS } mode;
+
   struct batch_status *p_status;
+
   struct batch_status *p_server;
+
   struct attropl *p_atropl = 0;
   char *errmsg;
   int exec_only = 0;
@@ -1947,7 +2027,7 @@ int main(
 #else
 #define GETOPT_ARGS "fQBW:"
 #endif /* PBS_NO_POSIX_VIOLATION */
-                 
+
   mode = JOBS; /* default */
   alt_opt = 0;
   f_opt = 0;
@@ -1963,14 +2043,14 @@ int main(
   if (getenv("PBS_QSTAT_EXECONLY") != NULL)
     exec_only = 1;
 
-  while ((c = getopt(argc,argv,GETOPT_ARGS )) != EOF) 
+  while ((c = getopt(argc, argv, GETOPT_ARGS)) != EOF)
     {
     option[1] = (char)c;
 
-    tcl_addarg(flags,option);
-    tcl_addarg(flags,optarg);
+    tcl_addarg(flags, option);
+    tcl_addarg(flags, optarg);
 
-    switch (c) 
+    switch (c)
       {
 #if !defined(PBS_NO_POSIX_VIOLATION)
 
@@ -2003,7 +2083,7 @@ int main(
 
         alt_opt |= ALT_DISPLAY_i;
 
-        add_atropl(&p_atropl,ATTR_state,NULL,"EHQTW",EQ);
+        add_atropl(&p_atropl, ATTR_state, NULL, "EHQTW", EQ);
 
         break;
 
@@ -2025,7 +2105,7 @@ int main(
 
         alt_opt |= ALT_DISPLAY_r;
 
-        add_atropl(&p_atropl,ATTR_state,NULL,"RS",EQ);
+        add_atropl(&p_atropl, ATTR_state, NULL, "RS", EQ);
 
         break;
 
@@ -2039,7 +2119,7 @@ int main(
 
         alt_opt |= ALT_DISPLAY_u;
 
-        add_atropl(&p_atropl,ATTR_u,NULL,optarg,EQ);
+        add_atropl(&p_atropl, ATTR_u, NULL, optarg, EQ);
 
         break;
 
@@ -2048,7 +2128,7 @@ int main(
         alt_opt |= ALT_DISPLAY_R;
 
         break;
-	
+
       case 'G':
 
         alt_opt |= ALT_DISPLAY_G;
@@ -2067,7 +2147,7 @@ int main(
 
         if (alt_opt != 0)
           {
-          fprintf(stderr,conflict);
+          fprintf(stderr, conflict);
 
           errflg++;
           }
@@ -2084,13 +2164,13 @@ int main(
 
       case 'B':
 
-        B_opt = 1; 
+        B_opt = 1;
 
         mode = SERVERS;
 
-        if (Q_opt || alt_opt) 
+        if (Q_opt || alt_opt)
           {
-          fprintf(stderr,conflict);
+          fprintf(stderr, conflict);
 
           errflg++;
           }
@@ -2103,9 +2183,9 @@ int main(
 
         mode = QUEUES;
 
-        if (B_opt || alt_opt) 
+        if (B_opt || alt_opt)
           {
-          fprintf(stderr,conflict);
+          fprintf(stderr, conflict);
 
           errflg++;
           }
@@ -2116,15 +2196,15 @@ int main(
 
         /* handle '--' options */
 
-        if ((optarg != NULL) && !strcmp(optarg,"version"))
+        if ((optarg != NULL) && !strcmp(optarg, "version"))
           {
-          fprintf(stderr,"version: %s\n",
-            PACKAGE_VERSION);
+          fprintf(stderr, "version: %s\n",
+                  PACKAGE_VERSION);
 
           exit(0);
           }
 
-        if ((optarg != NULL) && !strcmp(optarg,"about"))
+        if ((optarg != NULL) && !strcmp(optarg, "about"))
           {
           TShowAbout();
 
@@ -2142,72 +2222,87 @@ int main(
 #if (TCL_QSTAT == 0)
         pc = optarg;
 
-        while (*pc) 
+        while (*pc)
           {
-          switch (*pc) 
+          switch (*pc)
             {
+
             case 'a':
 
               alt_opt |= ALT_DISPLAY_a;
 
               break;
 
-		    case 'i':
-	    		alt_opt |= ALT_DISPLAY_i;
-	    		add_atropl(&p_atropl, ATTR_state, (char *)0,"EHQTW",EQ);
-			break;
+            case 'i':
+              alt_opt |= ALT_DISPLAY_i;
+              add_atropl(&p_atropl, ATTR_state, (char *)0, "EHQTW", EQ);
+              break;
 
-		    case 'r':
-			alt_opt |= ALT_DISPLAY_r;
-			add_atropl(&p_atropl, ATTR_state, (char *)0, "RS", EQ);
-			break;
+            case 'r':
+              alt_opt |= ALT_DISPLAY_r;
+              add_atropl(&p_atropl, ATTR_state, (char *)0, "RS", EQ);
+              break;
 
-		    case 'u':
-			/* note - u option is assumed to be last in  */
-			/* string and all remaining is the name list */
-	    		alt_opt |= ALT_DISPLAY_u;
-			while (*++pc == ' ');
-	    		add_atropl(&p_atropl, ATTR_u, (char *)0, pc, EQ);
-			pc = pc + strlen(pc) - 1;	/* for the later incr */
-			break;
+            case 'u':
+              /* note - u option is assumed to be last in  */
+              /* string and all remaining is the name list */
+              alt_opt |= ALT_DISPLAY_u;
 
-		    case 'n':
-			alt_opt |= ALT_DISPLAY_n;
-			break;
+              while (*++pc == ' ');
 
-		    case 's':
-			alt_opt |= ALT_DISPLAY_s;
-			break;
+              add_atropl(&p_atropl, ATTR_u, (char *)0, pc, EQ);
 
-		    case 'q':
-			alt_opt |= ALT_DISPLAY_q;
-			mode = QUEUES;
-			break;
+              pc = pc + strlen(pc) - 1; /* for the later incr */
 
-		    case 'R':
-			alt_opt |= ALT_DISPLAY_R;
-			break;
+              break;
 
-		    case 'G':
-	    		alt_opt |= ALT_DISPLAY_G;
-			break;
+            case 'n':
+              alt_opt |= ALT_DISPLAY_n;
 
-		    case 'M':
-	    		alt_opt |= ALT_DISPLAY_Mw;
-			break;
-	
-		    case ' ':
-			break;		/* ignore blanks */
+              break;
 
-		   default:
-			errflg++;
-		}
-		++pc;
-	    }
-#endif	/* (TCL_QSTAT == 0) */
+            case 's':
+              alt_opt |= ALT_DISPLAY_s;
+
+              break;
+
+            case 'q':
+              alt_opt |= ALT_DISPLAY_q;
+
+              mode = QUEUES;
+
+              break;
+
+            case 'R':
+              alt_opt |= ALT_DISPLAY_R;
+
+              break;
+
+            case 'G':
+              alt_opt |= ALT_DISPLAY_G;
+
+              break;
+
+            case 'M':
+              alt_opt |= ALT_DISPLAY_Mw;
+
+              break;
+
+            case ' ':
+              break;  /* ignore blanks */
+
+            default:
+              errflg++;
+            }
+
+          ++pc;
+          }
+
+#endif /* (TCL_QSTAT == 0) */
         break;
 
       case '?':
+
       default:
 
         /* unexpected argument */
@@ -2222,43 +2317,43 @@ int main(
 
   /* certain combinations are not allowed */
 
-  c = alt_opt & (ALT_DISPLAY_a|ALT_DISPLAY_i|ALT_DISPLAY_r|ALT_DISPLAY_q);
+  c = alt_opt & (ALT_DISPLAY_a | ALT_DISPLAY_i | ALT_DISPLAY_r | ALT_DISPLAY_q);
 
-  if ((c != 0) && 
-      (c != ALT_DISPLAY_a) && 
+  if ((c != 0) &&
+      (c != ALT_DISPLAY_a) &&
       (c != ALT_DISPLAY_i) &&
-      (c != ALT_DISPLAY_r) && 
-      (c != ALT_DISPLAY_q))  
+      (c != ALT_DISPLAY_r) &&
+      (c != ALT_DISPLAY_q))
     {
-    fprintf(stderr,conflict);
+    fprintf(stderr, conflict);
 
     errflg++;
     }
 
-  c = alt_opt & (ALT_DISPLAY_Mw|ALT_DISPLAY_G);
+  c = alt_opt & (ALT_DISPLAY_Mw | ALT_DISPLAY_G);
 
-  if (c == (ALT_DISPLAY_Mw | ALT_DISPLAY_G)) 
+  if (c == (ALT_DISPLAY_Mw | ALT_DISPLAY_G))
     {
-    fprintf(stderr,conflict);
+    fprintf(stderr, conflict);
 
     errflg++;
     }
 
-  if ((alt_opt & ALT_DISPLAY_q) && (f_opt == 1)) 
+  if ((alt_opt & ALT_DISPLAY_q) && (f_opt == 1))
     {
-    fprintf(stderr,conflict);
+    fprintf(stderr, conflict);
 
     errflg++;
     }
 
-  if ((alt_opt & ALT_DISPLAY_o) && !((alt_opt & ALT_DISPLAY_n)||(f_opt)))
+  if ((alt_opt & ALT_DISPLAY_o) && !((alt_opt & ALT_DISPLAY_n) || (f_opt)))
     {
-    fprintf(stderr,conflict);
+    fprintf(stderr, conflict);
 
     errflg++;
     }
 
-  if (alt_opt & ALT_DISPLAY_o) 
+  if (alt_opt & ALT_DISPLAY_o)
     {
     linesize = maxlinesize;
     alt_opt &= ~ALT_DISPLAY_o;
@@ -2266,16 +2361,16 @@ int main(
 
 #endif /* PBS_NO_POSIX_VIOLATION */
 
-  if (errflg) 
+  if (errflg)
     {
-    static char usage[]="usage: \n\
-qstat [-f] [-1] [-W site_specific] [ job_identifier... | destination... ]\n\
-qstat [-a|-i|-r|-e] [-u user] [-n [-1]] [-s] [-G|-M] [-R] [job_id... | destination...]\n\
-qstat -Q [-f [-1]] [-W site_specific] [ destination... ]\n\
-qstat -q [-G|-M] [ destination... ]\n\
-qstat -B [-f [-1]] [-W site_specific] [ server_name... ]\n";
+    static char usage[] = "usage: \n\
+                          qstat [-f] [-1] [-W site_specific] [ job_identifier... | destination... ]\n\
+                          qstat [-a|-i|-r|-e] [-u user] [-n [-1]] [-s] [-G|-M] [-R] [job_id... | destination...]\n\
+                          qstat -Q [-f [-1]] [-W site_specific] [ destination... ]\n\
+                          qstat -q [-G|-M] [ destination... ]\n\
+                          qstat -B [-f [-1]] [-W site_specific] [ server_name... ]\n";
 
-    fprintf(stderr,usage);
+    fprintf(stderr, usage);
 
     exit(2);
     }
@@ -2285,17 +2380,18 @@ qstat -B [-f [-1]] [-W site_specific] [ server_name... ]\n";
   if (def_server == NULL)
     def_server = "";
 
-  if (optind >= argc) 
-    { 
+  if (optind >= argc)
+    {
     /* If no arguments, then set defaults */
 
-    switch (mode) 
+    switch (mode)
       {
+
       case JOBS:
 
         server_out[0] = '@';
-        strcpy(&server_out[1],def_server);
-        tcl_addarg(ops,server_out);
+        strcpy(&server_out[1], def_server);
+        tcl_addarg(ops, server_out);
 
         job_id_out[0] = '\0';
         server_out[0] = '\0';
@@ -2309,9 +2405,9 @@ qstat -B [-f [-1]] [-W site_specific] [ server_name... ]\n";
       case QUEUES:
 
         server_out[0] = '@';
-        strcpy(&server_out[1],def_server);
+        strcpy(&server_out[1], def_server);
 
-        tcl_addarg(ops,server_out);
+        tcl_addarg(ops, server_out);
 
         queue_name_out = NULL;
 
@@ -2325,7 +2421,7 @@ qstat -B [-f [-1]] [-W site_specific] [ server_name... ]\n";
 
       case SERVERS:
 
-        tcl_addarg(ops,def_server);
+        tcl_addarg(ops, def_server);
 
         server_out[0] = '\0';
 
@@ -2343,78 +2439,79 @@ qstat -B [-f [-1]] [-W site_specific] [ server_name... ]\n";
       }
     }    /* END if (optind >= argc) */
 
-  for (;optind < argc;optind++) 
+  for (;optind < argc;optind++)
     {
     int connect;
     int ret;
 
     located = FALSE;
 
-    strcpy(operand,argv[optind]);
+    strcpy(operand, argv[optind]);
 
-    tcl_addarg(ops,operand);
+    tcl_addarg(ops, operand);
 
-    switch (mode) 
+    switch (mode)
       {
+
       case JOBS:      /* get status of batch jobs */
 
-        if (isjobid(operand)) 
-          {  
+        if (isjobid(operand))
+          {
           /* must be a job-id */
 
           stat_single_job = 1;
 
-          strcpy(job_id,operand);
+          strcpy(job_id, operand);
 
-          if (get_server(job_id,job_id_out,server_out)) 
+          if (get_server(job_id, job_id_out, server_out))
             {
-            fprintf(stderr,"qstat: illegally formed job identifier: %s\n", 
-              job_id);
+            fprintf(stderr, "qstat: illegally formed job identifier: %s\n",
+                    job_id);
 
-            ret = tcl_stat(error,NULL,f_opt);
+            ret = tcl_stat(error, NULL, f_opt);
 
             any_failed = 1;
 
             break;
             }
-          } 
-        else 
-          {  
+          }
+        else
+          {
           /* must be a destination-id */
 
           stat_single_job = 0;
 
-          strcpy(destination,operand);
+          strcpy(destination, operand);
 
           if (parse_destination_id(
                 destination,
                 &queue_name_out,
-                &server_name_out)) 
+                &server_name_out))
             {
-            fprintf(stderr, "qstat: illegally formed destination: %s\n", 
-              destination);
+            fprintf(stderr, "qstat: illegally formed destination: %s\n",
+                    destination);
 
-            ret = tcl_stat(error,NULL,f_opt);
+            ret = tcl_stat(error, NULL, f_opt);
 
             any_failed = 1;
 
             break;
-            } 
+            }
 
-          if (notNULL(server_name_out)) 
+          if (notNULL(server_name_out))
             {
-            strcpy(server_out,server_name_out);
-            } 
-          else 
+            strcpy(server_out, server_name_out);
+            }
+          else
             {
             server_out[0] = '\0';
             }
 
           strcpy(job_id_out, queue_name_out);
 
-          if (*queue_name_out != '\0') 
+          if (*queue_name_out != '\0')
             {
-            add_atropl(&p_atropl,ATTR_q,NULL,queue_name_out,EQ);
+            add_atropl(&p_atropl, ATTR_q, NULL, queue_name_out, EQ);
             }
           }    /* END else */
 
@@ -2422,88 +2519,88 @@ job_no_args:
 
         connect = cnt2server(server_out);
 
-        if (connect <= 0) 
+        if (connect <= 0)
           {
-          fprintf(stderr,"qstat: cannot connect to server %s (errno=%d) %s\n",
-            pbs_server, 
-            pbs_errno,
-            pbs_strerror(pbs_errno));
+          fprintf(stderr, "qstat: cannot connect to server %s (errno=%d) %s\n",
+                  pbs_server,
+                  pbs_errno,
+                  pbs_strerror(pbs_errno));
 
-          ret = tcl_stat(error,NULL,f_opt);
+          ret = tcl_stat(error, NULL, f_opt);
 
           any_failed = connect;
 
           break;
           }
 
-        if ((alt_opt != 0) && (strcmp(pbs_server,server_old) != 0)) 
+        if ((alt_opt != 0) && (strcmp(pbs_server, server_old) != 0))
           {
           /* changing to a different server */
 
-          p_server = pbs_statserver(connect,NULL,NULL);
+          p_server = pbs_statserver(connect, NULL, NULL);
 
-          strcpy(server_old,pbs_server);
-          } 
-        else 
+          strcpy(server_old, pbs_server);
+          }
+        else
           {
           p_server = 0;
           }
 
-        if ((stat_single_job == 1) || (p_atropl == 0)) 
+        if ((stat_single_job == 1) || (p_atropl == 0))
           {
           p_status = pbs_statjob(
-            connect,
-            job_id_out,
-            NULL,
-            exec_only ? EXECQUEONLY : ExtendOpt);
-          } 
-        else 
+                       connect,
+                       job_id_out,
+                       NULL,
+                       exec_only ? EXECQUEONLY : ExtendOpt);
+          }
+        else
           {
-          p_status = pbs_selstat(connect,p_atropl,exec_only ? EXECQUEONLY : NULL);
+          p_status = pbs_selstat(connect, p_atropl, exec_only ? EXECQUEONLY : NULL);
           }
 
-        if (p_status == NULL) 
+        if (p_status == NULL)
           {
-          if ((pbs_errno == PBSE_UNKJOBID) && !located) 
+          if ((pbs_errno == PBSE_UNKJOBID) && !located)
             {
             located = TRUE;
-          
-            if (locate_job(job_id_out,server_out,rmt_server)) 
+
+            if (locate_job(job_id_out, server_out, rmt_server))
               {
               pbs_disconnect(connect);
 
-              strcpy(server_out,rmt_server);
+              strcpy(server_out, rmt_server);
 
               goto job_no_args;
               }
 
-            ret = tcl_stat("job",NULL,f_opt);
+            ret = tcl_stat("job", NULL, f_opt);
 
-            prt_job_err("qstat",connect,job_id_out);
+            prt_job_err("qstat", connect, job_id_out);
 
             any_failed = pbs_errno;
-            } 
-          else 
+            }
+          else
             {
-            ret = tcl_stat("job",NULL,f_opt);
+            ret = tcl_stat("job", NULL, f_opt);
 
-            if (pbs_errno != PBSE_NONE) 
+            if (pbs_errno != PBSE_NONE)
               {
-              prt_job_err("qstat",connect,job_id_out);
+              prt_job_err("qstat", connect, job_id_out);
 
               any_failed = pbs_errno;
               }
             }
-          } 
-        else 
+          }
+        else
           {
-          if (alt_opt != 0) 
+          if (alt_opt != 0)
             {
-            altdsp_statjob(p_status,p_server,alt_opt);
-            } 
-          else if ((f_opt == 0) || tcl_stat("job",p_status,f_opt))
+            altdsp_statjob(p_status, p_server, alt_opt);
+            }
+          else if ((f_opt == 0) || tcl_stat("job", p_status, f_opt))
             {
-            display_statjob(p_status,p_header,f_opt);
+            display_statjob(p_status, p_header, f_opt);
             }
 
           p_header = FALSE;
@@ -2517,87 +2614,134 @@ job_no_args:
 
       case QUEUES:        /* get status of batch queues */
 
-            strcpy(destination, operand);
-            if ( parse_destination_id(destination,
-                                      &queue_name_out,
-                                      &server_name_out) ) {
-                fprintf(stderr, "qstat: illegal 'destination' value\n");
-		ret = tcl_stat(error, NULL, f_opt);
-                any_failed = 1;
-                break;
-            } else {
-                if ( notNULL(server_name_out) ) {
-                    strcpy(server_out, server_name_out);
-               }
-               else
-		    server_out[0] = '\0';
-            }
-que_no_args:
-            connect = cnt2server(server_out);
-            if ( connect <= 0 ) {
-                fprintf(stderr,"qstat: cannot connect to server %s (errno=%d) %s\n",
-                  pbs_server, pbs_errno, pbs_strerror(pbs_errno));
-		ret = tcl_stat(error, NULL, f_opt);
-                any_failed = connect;
-                break;
-            }
-            p_status = pbs_statque(connect, queue_name_out, NULL, NULL);
-            if ( p_status == NULL ) {
-                if ( pbs_errno ) {
-                    errmsg = pbs_geterrmsg(connect);
-                    if ( errmsg != NULL ) {
-                        fprintf(stderr, "qstat: %s ", errmsg);
-                    } else
-                        fprintf(stderr, "qstat: Error (%d - %s) getting status of queue ",
-                          pbs_errno, pbs_strerror(pbs_errno));
-                    fprintf(stderr, "%s\n", queue_name_out);
-		    ret = tcl_stat(error, NULL, f_opt);
-                    any_failed = pbs_errno;
-                }
-            } else {
-		if (alt_opt & ALT_DISPLAY_q) {
-			altdsp_statque(pbs_server, p_status, alt_opt);
-		} else if (tcl_stat("queue", p_status, f_opt)) {
-                	display_statque(p_status, p_header, f_opt);
-		}
-                p_header = FALSE;
-                pbs_statfree(p_status);
-            }
-            pbs_disconnect(connect);
-            break;
+        strcpy(destination, operand);
 
-        case SERVERS:           /* get status of batch servers */
-            strcpy(server_out, operand);
+        if (parse_destination_id(destination,
+                                 &queue_name_out,
+                                 &server_name_out))
+          {
+          fprintf(stderr, "qstat: illegal 'destination' value\n");
+          ret = tcl_stat(error, NULL, f_opt);
+          any_failed = 1;
+          break;
+          }
+        else
+          {
+          if (notNULL(server_name_out))
+            {
+            strcpy(server_out, server_name_out);
+            }
+          else
+            server_out[0] = '\0';
+          }
+
+que_no_args:
+
+        connect = cnt2server(server_out);
+
+        if (connect <= 0)
+          {
+          fprintf(stderr, "qstat: cannot connect to server %s (errno=%d) %s\n",
+                  pbs_server, pbs_errno, pbs_strerror(pbs_errno));
+          ret = tcl_stat(error, NULL, f_opt);
+          any_failed = connect;
+          break;
+          }
+
+        p_status = pbs_statque(connect, queue_name_out, NULL, NULL);
+
+        if (p_status == NULL)
+          {
+          if (pbs_errno)
+            {
+            errmsg = pbs_geterrmsg(connect);
+
+            if (errmsg != NULL)
+              {
+              fprintf(stderr, "qstat: %s ", errmsg);
+              }
+            else
+              fprintf(stderr, "qstat: Error (%d - %s) getting status of queue ",
+                      pbs_errno, pbs_strerror(pbs_errno));
+
+            fprintf(stderr, "%s\n", queue_name_out);
+
+            ret = tcl_stat(error, NULL, f_opt);
+
+            any_failed = pbs_errno;
+            }
+          }
+        else
+          {
+          if (alt_opt & ALT_DISPLAY_q)
+            {
+            altdsp_statque(pbs_server, p_status, alt_opt);
+            }
+          else if (tcl_stat("queue", p_status, f_opt))
+            {
+            display_statque(p_status, p_header, f_opt);
+            }
+
+          p_header = FALSE;
+
+          pbs_statfree(p_status);
+          }
+
+        pbs_disconnect(connect);
+
+        break;
+
+      case SERVERS:           /* get status of batch servers */
+        strcpy(server_out, operand);
+
 svr_no_args:
-            connect = cnt2server(server_out);
-            if ( connect <= 0 ) {
-                fprintf(stderr,"qstat: cannot connect to server %s (errno=%d) %s\n",
-                        pbs_server, pbs_errno, pbs_strerror(pbs_errno));
-		ret = tcl_stat(error, NULL, f_opt);
-                any_failed = connect;
-                break;
+        connect = cnt2server(server_out);
+
+        if (connect <= 0)
+          {
+          fprintf(stderr, "qstat: cannot connect to server %s (errno=%d) %s\n",
+                  pbs_server, pbs_errno, pbs_strerror(pbs_errno));
+          ret = tcl_stat(error, NULL, f_opt);
+          any_failed = connect;
+          break;
+          }
+
+        p_status = pbs_statserver(connect, NULL, NULL);
+
+        if (p_status == NULL)
+          {
+          if (pbs_errno)
+            {
+            errmsg = pbs_geterrmsg(connect);
+
+            if (errmsg != NULL)
+              {
+              fprintf(stderr, "qstat: %s ", errmsg);
+              }
+            else
+              fprintf(stderr, "qstat: Error (%d - %s) getting status of server ",
+                      pbs_errno, pbs_strerror(pbs_errno));
+
+            fprintf(stderr, "%s\n", server_out);
+
+            ret = tcl_stat(error, NULL, f_opt);
+
+            any_failed = pbs_errno;
             }
-            p_status = pbs_statserver(connect, NULL, NULL);
-            if ( p_status == NULL ) {
-                if ( pbs_errno ) {
-                    errmsg = pbs_geterrmsg(connect);
-                    if ( errmsg != NULL ) {
-                        fprintf(stderr, "qstat: %s ", errmsg);
-                    } else
-                        fprintf(stderr, "qstat: Error (%d - %s) getting status of server ",
-                          pbs_errno, pbs_strerror(pbs_errno));
-                    fprintf(stderr, "%s\n", server_out);
-		    ret = tcl_stat(error, NULL, f_opt);
-                    any_failed = pbs_errno;
-                }
-            } else {
-		if (tcl_stat("server", p_status, f_opt))
-                	display_statserver(p_status, p_header, f_opt);
-                p_header = FALSE;
-                pbs_statfree(p_status);
-            }
-            pbs_disconnect(connect);
-            break;
+          }
+        else
+          {
+          if (tcl_stat("server", p_status, f_opt))
+            display_statserver(p_status, p_header, f_opt);
+
+          p_header = FALSE;
+
+          pbs_statfree(p_status);
+          }
+
+        pbs_disconnect(connect);
+
+        break;
       }    /* END switch (mode) */
     }      /* END for () */
 

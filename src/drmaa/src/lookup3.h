@@ -12,7 +12,7 @@
 #define __LOOKUP3_H
 
 #ifndef HAVE_CONFIG_H
-#	include <pbs_config.h>
+# include <pbs_config.h>
 #endif
 
 #ifdef HAVE_STDINT_H
@@ -23,16 +23,16 @@
 # endif
 #endif
 
-uint32_t hashword( const uint32_t *k, size_t length, uint32_t initval );
-uint32_t hashlittle( const void *key, size_t length, uint32_t initval );
-uint32_t hashbig( const void *key, size_t length, uint32_t initval );
+uint32_t hashword(const uint32_t *k, size_t length, uint32_t initval);
+uint32_t hashlittle(const void *key, size_t length, uint32_t initval);
+uint32_t hashbig(const void *key, size_t length, uint32_t initval);
 
 #if BYTEORDER == 1234 /* little endian */
-#	define hashstr hashlittle
+# define hashstr hashlittle
 #endif
 
 #if BYTEORDER == 4321  /* big endian */
-#	define hashstr hashbig
+# define hashstr hashbig
 #endif
 
 #endif /* __LOOKUP3_H */

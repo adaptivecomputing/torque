@@ -1,45 +1,45 @@
 /*
 *         OpenPBS (Portable Batch System) v2.3 Software License
-* 
+*
 * Copyright (c) 1999-2000 Veridian Information Solutions, Inc.
 * All rights reserved.
-* 
+*
 * ---------------------------------------------------------------------------
 * For a license to use or redistribute the OpenPBS software under conditions
 * other than those described below, or to purchase support for this software,
 * please contact Veridian Systems, PBS Products Department ("Licensor") at:
-* 
+*
 *    www.OpenPBS.org  +1 650 967-4675                  sales@OpenPBS.org
 *                        877 902-4PBS (US toll-free)
 * ---------------------------------------------------------------------------
-* 
+*
 * This license covers use of the OpenPBS v2.3 software (the "Software") at
 * your site or location, and, for certain users, redistribution of the
 * Software to other sites and locations.  Use and redistribution of
 * OpenPBS v2.3 in source and binary forms, with or without modification,
 * are permitted provided that all of the following conditions are met.
 * After December 31, 2001, only conditions 3-6 must be met:
-* 
+*
 * 1. Commercial and/or non-commercial use of the Software is permitted
 *    provided a current software registration is on file at www.OpenPBS.org.
 *    If use of this software contributes to a publication, product, or
 *    service, proper attribution must be given; see www.OpenPBS.org/credit.html
-* 
+*
 * 2. Redistribution in any form is only permitted for non-commercial,
 *    non-profit purposes.  There can be no charge for the Software or any
 *    software incorporating the Software.  Further, there can be no
 *    expectation of revenue generated as a consequence of redistributing
 *    the Software.
-* 
+*
 * 3. Any Redistribution of source code must retain the above copyright notice
 *    and the acknowledgment contained in paragraph 6, this list of conditions
 *    and the disclaimer contained in paragraph 7.
-* 
+*
 * 4. Any Redistribution in binary form must reproduce the above copyright
 *    notice and the acknowledgment contained in paragraph 6, this list of
 *    conditions and the disclaimer contained in paragraph 7 in the
 *    documentation and/or other materials provided with the distribution.
-* 
+*
 * 5. Redistributions in any form must be accompanied by information on how to
 *    obtain complete source code for the OpenPBS software and any
 *    modifications and/or additions to the OpenPBS software.  The source code
@@ -47,23 +47,23 @@
 *    than the cost of distribution plus a nominal fee, and all modifications
 *    and additions to the Software must be freely redistributable by any party
 *    (including Licensor) without restriction.
-* 
+*
 * 6. All advertising materials mentioning features or use of the Software must
 *    display the following acknowledgment:
-* 
+*
 *     "This product includes software developed by NASA Ames Research Center,
-*     Lawrence Livermore National Laboratory, and Veridian Information 
+*     Lawrence Livermore National Laboratory, and Veridian Information
 *     Solutions, Inc.
 *     Visit www.OpenPBS.org for OpenPBS software support,
 *     products, and information."
-* 
+*
 * 7. DISCLAIMER OF WARRANTY
-* 
+*
 * THIS SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND. ANY EXPRESS
 * OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
 * OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT
 * ARE EXPRESSLY DISCLAIMED.
-* 
+*
 * IN NO EVENT SHALL VERIDIAN CORPORATION, ITS AFFILIATED COMPANIES, OR THE
 * U.S. GOVERNMENT OR ANY OF ITS AGENCIES BE LIABLE FOR ANY DIRECT OR INDIRECT,
 * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
@@ -72,7 +72,7 @@
 * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
 * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-* 
+*
 * This license will be governed by the laws of the Commonwealth of Virginia,
 * without reference to its choice of law rules.
 */
@@ -107,22 +107,22 @@
 
 /* External Functions */
 extern int
-openrm  A_((char * host, unsigned int port));
+  openrm  A_((char * host, unsigned int port));
 
 extern int
-closerm  A_((int));
+  closerm  A_((int));
 
 extern int
-addreq          A_((int, char *));
+  addreq          A_((int, char *));
 
 extern char *
-getreq          A_((int));
+  getreq          A_((int));
 
 extern int
-activereq       A_((void));
+  activereq       A_((void));
 
-extern void 
-fullresp       A_((int flag));
+extern void
+  fullresp       A_((int flag));
 
 /* Structures and Unions */
 /* NONE */
@@ -130,209 +130,223 @@ fullresp       A_((int flag));
 /* NONE */
 /* Functions */
 
-char *ResMomInetAddrGet ( mom )
+char *ResMomInetAddrGet(mom)
 ResMom *mom;
-{
-      assert( mom != NULL );
+  {
+  assert(mom != NULL);
 
-      return mom->inetAddr;
-}
+  return mom->inetAddr;
+  }
 
-int ResMomPortNumberGet ( mom )
+int ResMomPortNumberGet(mom)
 ResMom *mom;
-{
-      assert( mom != NULL );
+  {
+  assert(mom != NULL);
 
-      return mom->portNumber;
-}
+  return mom->portNumber;
+  }
 
-int ResMomConnectFdGet ( mom )
+int ResMomConnectFdGet(mom)
 ResMom *mom;
-{
-      assert( mom != NULL );
+  {
+  assert(mom != NULL);
 
-      return mom->connectFd;
-}
+  return mom->connectFd;
+  }
 
-void ResMomInetAddrPut (mom, mom_name)
+void ResMomInetAddrPut(mom, mom_name)
 ResMom *mom;
 char   *mom_name;
-{
-       assert( mom != NULL );
+  {
+  assert(mom != NULL);
 
-       dynamic_strcpy(&mom->inetAddr, mom_name);
-}
+  dynamic_strcpy(&mom->inetAddr, mom_name);
+  }
 
-void ResMomPortNumberPut (mom, port)
+void ResMomPortNumberPut(mom, port)
 ResMom *mom;
 int    port;
-{
-       assert( mom != NULL );
+  {
+  assert(mom != NULL);
 
-       mom->portNumber = port;
-}
+  mom->portNumber = port;
+  }
 
-void ResMomConnectFdPut (mom, fd)
+void ResMomConnectFdPut(mom, fd)
 ResMom *mom;
 int    fd;
-{
-       assert( mom != NULL );
+  {
+  assert(mom != NULL);
 
-       mom->connectFd = fd;
-}
+  mom->connectFd = fd;
+  }
 
 
-/* ResMomOpen: attempts to connect to mom. 
+/* ResMomOpen: attempts to connect to mom.
    RETURNS a value >= 0 if connection was a success; < 0 otherwise */
-int ResMomOpen( mom )
+int ResMomOpen(mom)
 ResMom *mom;
-{
-       int    connect;
+  {
+  int    connect;
 
-       static char id[] = "ResMomOpen";
+  static char id[] = "ResMomOpen";
 
-       assert( ResMomInetAddrGet(mom) != NULLSTR && \
-	       ResMomPortNumberGet(mom) >= 0 );
+  assert(ResMomInetAddrGet(mom) != NULLSTR && \
+         ResMomPortNumberGet(mom) >= 0);
 
-       connect = openrm( ResMomInetAddrGet(mom), ResMomPortNumberGet(mom) );
+  connect = openrm(ResMomInetAddrGet(mom), ResMomPortNumberGet(mom));
 
 #ifdef DEBUG
-	printf("%s: openrm( %s, %d )\n", id, ResMomInetAddrGet(mom),
-						ResMomPortNumberGet(mom));
+  printf("%s: openrm( %s, %d )\n", id, ResMomInetAddrGet(mom),
+         ResMomPortNumberGet(mom));
 #endif
 
-/*     We only want a full response */
-       fullresp(TRUE);
+  /*     We only want a full response */
+  fullresp(TRUE);
 
-       if ( connect < 0 ) {
-	  (void)sprintf(log_buffer, "openrm (%s, %d)", ResMomInetAddrGet(mom), 
-						   ResMomPortNumberGet(mom));
-          log_err(errno, id, log_buffer);
-          perror(log_buffer);
-       }
+  if (connect < 0)
+    {
+    (void)sprintf(log_buffer, "openrm (%s, %d)", ResMomInetAddrGet(mom),
+                  ResMomPortNumberGet(mom));
+    log_err(errno, id, log_buffer);
+    perror(log_buffer);
+    }
 
-       ResMomConnectFdPut(mom, connect);
-       return (connect);
-}
+  ResMomConnectFdPut(mom, connect);
 
-/* ResMomClose: attempts to disconnect from mom. 
+  return (connect);
+  }
+
+/* ResMomClose: attempts to disconnect from mom.
    RETURNS: 0 if closerm() was succesful; non-zero otherwise */
-int ResMomClose( mom )
+int ResMomClose(mom)
 ResMom *mom;
-{
-        static char id[] = "ResMomClose";
-	int  ret = -1;
+  {
+  static char id[] = "ResMomClose";
+  int  ret = -1;
 
-	assert( mom != NULL );
+  assert(mom != NULL);
 
-        if( ResMomConnectFdGet(mom) < 0 ) {
-	  (void)sprintf(log_buffer, "ResMom %s not connected!",
-		   ResMomInetAddrGet(mom) ? ResMomInetAddrGet(mom):"null");
-          log_err(-1, id, log_buffer);
-        } else {
-          ret = closerm(ResMomConnectFdGet(mom));
+  if (ResMomConnectFdGet(mom) < 0)
+    {
+    (void)sprintf(log_buffer, "ResMom %s not connected!",
+                  ResMomInetAddrGet(mom) ? ResMomInetAddrGet(mom) : "null");
+    log_err(-1, id, log_buffer);
+    }
+  else
+    {
+    ret = closerm(ResMomConnectFdGet(mom));
 
 #ifdef DEBUG
-          printf("%s: closerm( %d ): %d\n", id, ResMomConnectFdGet(mom), ret);
+    printf("%s: closerm( %d ): %d\n", id, ResMomConnectFdGet(mom), ret);
 #endif
 
-          if ( ret != 0 ) {
-	  (void)sprintf(log_buffer, "closerm of %s",
-		   ResMomInetAddrGet(mom) ? ResMomInetAddrGet(mom):"null");
-            log_err(errno, id, log_buffer);
-            perror(log_buffer);
-          }
-        }
-        
-	return (ret);
-}
+    if (ret != 0)
+      {
+      (void)sprintf(log_buffer, "closerm of %s",
+                    ResMomInetAddrGet(mom) ? ResMomInetAddrGet(mom) : "null");
+      log_err(errno, id, log_buffer);
+      perror(log_buffer);
+      }
+    }
 
-/* ResMomWrite: send a 'buffer' query to Resmom. 
+  return (ret);
+  }
+
+/* ResMomWrite: send a 'buffer' query to Resmom.
    RETURNS: 1 if succesful; 0 otherwise. */
-int ResMomWrite( mom, buffer )
+int ResMomWrite(mom, buffer)
 ResMom *mom;
 char   *buffer;
-{
-        static char id[] = "ResMomWrite";
-	int ret;
+  {
+  static char id[] = "ResMomWrite";
+  int ret;
 
-	assert( mom != NULL );
+  assert(mom != NULL);
 
-	if (buffer == NULLSTR ) {
-          log_err(-1, id, "Nothing to query\n");
-	  return 0;
-	}
+  if (buffer == NULLSTR)
+    {
+    log_err(-1, id, "Nothing to query\n");
+    return 0;
+    }
 
-        if( ResMomConnectFdGet(mom) < 0 ) {
-	  (void)sprintf(log_buffer, "ResMom %s not connected!",
-		   ResMomInetAddrGet(mom) ? ResMomInetAddrGet(mom):"null");
-          log_err(-1, id, log_buffer);
-	  return 0;
-        }
+  if (ResMomConnectFdGet(mom) < 0)
+    {
+    (void)sprintf(log_buffer, "ResMom %s not connected!",
+                  ResMomInetAddrGet(mom) ? ResMomInetAddrGet(mom) : "null");
+    log_err(-1, id, log_buffer);
+    return 0;
+    }
 
 #ifdef DEBUG
-	printf("%s: addreq(%d, %s)\n", id, ResMomConnectFdGet(mom), buffer); 
+  printf("%s: addreq(%d, %s)\n", id, ResMomConnectFdGet(mom), buffer);
+
 #endif
 
-        ret = addreq(ResMomConnectFdGet(mom), buffer );
-	if ( ret != 0 ) {
-	  (void)sprintf(log_buffer, "failed to add request to ResMom %s",
-		   ResMomInetAddrGet(mom) ? ResMomInetAddrGet(mom):"null");
-          log_err(-1, id, log_buffer);
-	  return 0;
-	}
-	return 1;
-}
+  ret = addreq(ResMomConnectFdGet(mom), buffer);
+
+  if (ret != 0)
+    {
+    (void)sprintf(log_buffer, "failed to add request to ResMom %s",
+                  ResMomInetAddrGet(mom) ? ResMomInetAddrGet(mom) : "null");
+    log_err(-1, id, log_buffer);
+    return 0;
+    }
+
+  return 1;
+  }
 
 /* ResMomRead: queries the ResMom for data. Returns  result as a string. */
 /* This is a malloc-ed return so a call to varstrfree of the return pointer */
 /* should be made */
-char *ResMomRead( mom )
+char *ResMomRead(mom)
 ResMom  *mom;
-{
-        static char id[] = "ResMomRead";
-	void *ptr;	
+  {
+  static char id[] = "ResMomRead";
+  void *ptr;
 
 
-	ptr = getreq(ResMomConnectFdGet(mom));
-	varstrAdd(ptr, 0, mom);
+  ptr = getreq(ResMomConnectFdGet(mom));
+  varstrAdd(ptr, 0, mom);
 
 #ifdef DEBUG
-	printf("%s: getreq(%d): %s\n", id, ResMomConnectFdGet(mom), ptr);
+  printf("%s: getreq(%d): %s\n", id, ResMomConnectFdGet(mom), ptr);
 #endif
-	return((char *)ptr);
-}
+  return((char *)ptr);
+  }
 
 void ResMomPrint(mom)
-ResMom	*mom;
-{
-	assert( mom != NULL );
+ResMom *mom;
+  {
+  assert(mom != NULL);
 
-	(void)printf("\t\t\t\tResMom Host = %s\n",
-		ResMomInetAddrGet( mom ) ? ResMomInetAddrGet( mom ):"null");
-	(void)printf("\t\t\t\t  ResMom Port Number = %d\n",
-		ResMomPortNumberGet( mom ));
-	(void)printf("\t\t\t\t  ResMom Connect Fd = %d\n",
-		ResMomConnectFdGet( mom ));
-}
+  (void)printf("\t\t\t\tResMom Host = %s\n",
+               ResMomInetAddrGet(mom) ? ResMomInetAddrGet(mom) : "null");
+  (void)printf("\t\t\t\t  ResMom Port Number = %d\n",
+               ResMomPortNumberGet(mom));
+  (void)printf("\t\t\t\t  ResMom Connect Fd = %d\n",
+               ResMomConnectFdGet(mom));
+  }
 
 void ResMomInit(mom)
 ResMom *mom;
-{
-	assert( mom != NULL );
+  {
+  assert(mom != NULL);
 
-	mom->inetAddr = NULLSTR;
-	ResMomPortNumberPut( mom, 0 );  
-	ResMomConnectFdPut ( mom, -1 );  
-}
+  mom->inetAddr = NULLSTR;
+  ResMomPortNumberPut(mom, 0);
+  ResMomConnectFdPut(mom, -1);
+  }
 
 void ResMomFree(mom)
 ResMom *mom;
-{
-	if( mom == NULL )
-		return;
+  {
+  if (mom == NULL)
+    return;
 
-	varstrFree(mom->inetAddr);
-	varstrFreeByPptr(mom);
-	mom->inetAddr = NULLSTR;
-}
+  varstrFree(mom->inetAddr);
+
+  varstrFreeByPptr(mom);
+
+  mom->inetAddr = NULLSTR;
+  }

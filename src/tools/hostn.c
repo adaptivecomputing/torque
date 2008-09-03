@@ -1,45 +1,45 @@
 /*
 *         OpenPBS (Portable Batch System) v2.3 Software License
-* 
+*
 * Copyright (c) 1999-2000 Veridian Information Solutions, Inc.
 * All rights reserved.
-* 
+*
 * ---------------------------------------------------------------------------
 * For a license to use or redistribute the OpenPBS software under conditions
 * other than those described below, or to purchase support for this software,
 * please contact Veridian Systems, PBS Products Department ("Licensor") at:
-* 
+*
 *    www.OpenPBS.org  +1 650 967-4675                  sales@OpenPBS.org
 *                        877 902-4PBS (US toll-free)
 * ---------------------------------------------------------------------------
-* 
+*
 * This license covers use of the OpenPBS v2.3 software (the "Software") at
 * your site or location, and, for certain users, redistribution of the
 * Software to other sites and locations.  Use and redistribution of
 * OpenPBS v2.3 in source and binary forms, with or without modification,
 * are permitted provided that all of the following conditions are met.
 * After December 31, 2001, only conditions 3-6 must be met:
-* 
+*
 * 1. Commercial and/or non-commercial use of the Software is permitted
 *    provided a current software registration is on file at www.OpenPBS.org.
 *    If use of this software contributes to a publication, product, or
 *    service, proper attribution must be given; see www.OpenPBS.org/credit.html
-* 
+*
 * 2. Redistribution in any form is only permitted for non-commercial,
 *    non-profit purposes.  There can be no charge for the Software or any
 *    software incorporating the Software.  Further, there can be no
 *    expectation of revenue generated as a consequence of redistributing
 *    the Software.
-* 
+*
 * 3. Any Redistribution of source code must retain the above copyright notice
 *    and the acknowledgment contained in paragraph 6, this list of conditions
 *    and the disclaimer contained in paragraph 7.
-* 
+*
 * 4. Any Redistribution in binary form must reproduce the above copyright
 *    notice and the acknowledgment contained in paragraph 6, this list of
 *    conditions and the disclaimer contained in paragraph 7 in the
 *    documentation and/or other materials provided with the distribution.
-* 
+*
 * 5. Redistributions in any form must be accompanied by information on how to
 *    obtain complete source code for the OpenPBS software and any
 *    modifications and/or additions to the OpenPBS software.  The source code
@@ -47,23 +47,23 @@
 *    than the cost of distribution plus a nominal fee, and all modifications
 *    and additions to the Software must be freely redistributable by any party
 *    (including Licensor) without restriction.
-* 
+*
 * 6. All advertising materials mentioning features or use of the Software must
 *    display the following acknowledgment:
-* 
+*
 *     "This product includes software developed by NASA Ames Research Center,
-*     Lawrence Livermore National Laboratory, and Veridian Information 
+*     Lawrence Livermore National Laboratory, and Veridian Information
 *     Solutions, Inc.
 *     Visit www.OpenPBS.org for OpenPBS software support,
 *     products, and information."
-* 
+*
 * 7. DISCLAIMER OF WARRANTY
-* 
+*
 * THIS SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND. ANY EXPRESS
 * OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
 * OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT
 * ARE EXPRESSLY DISCLAIMED.
-* 
+*
 * IN NO EVENT SHALL VERIDIAN CORPORATION, ITS AFFILIATED COMPANIES, OR THE
 * U.S. GOVERNMENT OR ANY OF ITS AGENCIES BE LIABLE FOR ANY DIRECT OR INDIRECT,
 * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
@@ -72,7 +72,7 @@
 * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
 * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-* 
+*
 * This license will be governed by the laws of the Commonwealth of Virginia,
 * without reference to its choice of law rules.
 */
@@ -94,135 +94,174 @@ extern int h_errno;
 #endif
 
 
-void usage(name)
-	char *name;
-{
-		fprintf(stderr, "Usage: %s [-v] hostname\n", name);
-		fprintf(stderr, "\t -v turns on verbose output\n");
-}
+void
+usage(char *name)
+  {
+  fprintf(stderr, "Usage: %s [-v] hostname\n", name);
+  fprintf(stderr, "\t -v turns on verbose output\n");
+  }
 
-int main(argc, argv, env)
-	int argc;
-	char *argv[];
-	char *env[];
-{
-	int i;
-	struct hostent *host;
-	struct hostent *hosta;
-	struct in_addr *ina;
-	int		naddr;
-	int		vflag = 0;
-	void prt_herrno();
-	extern int optind;
+int
+main(int argc, char *argv[], char *env[])
+  {
+  int i;
 
-	while ((i = getopt(argc, argv, "v")) != EOF) {
-		switch (i) {
-		    case 'v':	vflag = 1;
-				break;
-		    default:
-				usage(argv[0]);
-				return 1;
-		}
-	}
+  struct hostent *host;
 
-	if (optind != argc-1) {
-		usage(argv[0]);
-		return 1;
-	}
+  struct hostent *hosta;
 
-	h_errno = 0;
+  struct in_addr *ina;
+  int  naddr;
+  int  vflag = 0;
+  void prt_herrno();
+  extern int optind;
 
-	i = 0;
-	while (env[i]) {
-		if (!strncmp(env[i], "LOCALDOMAIN", 11)) {
-			printf("%s\n", env[i]);
-			env[i] = "";
-			break;
-		}
-		++i;
-	}
+  while ((i = getopt(argc, argv, "v")) != EOF)
+    {
+    switch (i)
+      {
 
-	host = gethostbyname(argv[optind]);
-	if (host) {
-		printf("primary name:  %s", host->h_name);
-		if (vflag)
-			 printf(" (from gethostbyname())");
-		printf("\n");
-		if (host->h_aliases && *host->h_aliases) {
-			for (i=0; host->h_aliases[i]; ++i)
-				printf("aliases:           %s\n",
-					host->h_aliases[i]);
-		} else if (vflag) {
-			printf("aliases:            -none-\n");
-		}
+      case 'v':
+        vflag = 1;
+        break;
 
-		if (vflag)
-			printf("     address length:  %d bytes\n", host->h_length);
+      default:
+        usage(argv[0]);
+        return 1;
+      }
+    }
 
-		/* need to save address because they will be over writen on */
-		/* next call to gethostby*()				    */
+  if (optind != argc - 1)
+    {
+    usage(argv[0]);
+    return 1;
+    }
 
-		naddr = 0;
-		for (i=0; host->h_addr_list[i]; ++i) {
-			++naddr;
-		}
-		ina = (struct in_addr *)malloc(sizeof (struct in_addr) * naddr);
-		
-		for (i=0; i<naddr; ++i) {
-			(void)memcpy((char *)(ina+i), host->h_addr_list[i],
-						   host->h_length);
-		}
-		for (i=0; i<naddr; ++i) {
-			printf("     address:      %15.15s  ", inet_ntoa(*(ina+i)));
-			if (vflag)
-				printf(" (%u dec)  ", (int)(ina+i)->s_addr);
-		
-			h_errno = 0;
-			hosta = gethostbyaddr((char *)(ina+i), host->h_length,
-							    host->h_addrtype);
-			if (hosta) {
-				printf("name:  %s", host->h_name);
-			} else {
-				printf("name:  -null-");
-				prt_herrno();
-			}
-			printf("\n");
-		}
+  h_errno = 0;
 
-	} else {
-		printf("no name entry found for %s\n", argv[optind]);
-		prt_herrno();
-	}
-	return 0;
-}
+  i = 0;
 
-void prt_herrno()
-{
-	char *txt;
+  while (env[i])
+    {
+    if (!strncmp(env[i], "LOCALDOMAIN", 11))
+      {
+      printf("%s\n", env[i]);
+      env[i] = "";
+      break;
+      }
 
-	switch (h_errno) {
-		case 0:
-			return;
+    ++i;
+    }
 
-		case HOST_NOT_FOUND:
-			txt = "Answer Host Not Found";
-			break;
+  host = gethostbyname(argv[optind]);
 
-		case TRY_AGAIN:
-			txt = "Try Again";
-			break;
+  if (host)
+    {
+    printf("primary name:  %s", host->h_name);
 
-		case NO_RECOVERY:
-			txt = "No Recovery";
-			break;
+    if (vflag)
+      printf(" (from gethostbyname())");
 
-		case NO_DATA:
-			txt = "No Data";
-			break;
+    printf("\n");
 
-		default:	
-			txt = "unknown error";
-			break;
-	}
-	printf(" ** h_errno is %d %s\n", h_errno, txt);
-}
+    if (host->h_aliases && *host->h_aliases)
+      {
+      for (i = 0; host->h_aliases[i]; ++i)
+        printf("aliases:           %s\n",
+               host->h_aliases[i]);
+      }
+    else if (vflag)
+      {
+      printf("aliases:            -none-\n");
+      }
+
+    if (vflag)
+      printf("     address length:  %d bytes\n", host->h_length);
+
+    /* need to save address because they will be over writen on */
+    /* next call to gethostby*()        */
+
+    naddr = 0;
+
+    for (i = 0; host->h_addr_list[i]; ++i)
+      {
+      ++naddr;
+      }
+
+    ina = (struct in_addr *)malloc(sizeof(struct in_addr) * naddr);
+
+    for (i = 0; i < naddr; ++i)
+      {
+      (void)memcpy((char *)(ina + i), host->h_addr_list[i],
+                   host->h_length);
+      }
+
+    for (i = 0; i < naddr; ++i)
+      {
+      printf("     address:      %15.15s  ", inet_ntoa(*(ina + i)));
+
+      if (vflag)
+        printf(" (%u dec)  ", (int)(ina + i)->s_addr);
+
+      h_errno = 0;
+
+      hosta = gethostbyaddr((char *)(ina + i), host->h_length,
+                            host->h_addrtype);
+
+      if (hosta)
+        {
+        printf("name:  %s", host->h_name);
+        }
+      else
+        {
+        printf("name:  -null-");
+        prt_herrno();
+        }
+
+      printf("\n");
+      }
+
+    }
+  else
+    {
+    printf("no name entry found for %s\n", argv[optind]);
+    prt_herrno();
+    }
+
+  return 0;
+  }
+
+void
+prt_herrno(void)
+  {
+  char *txt;
+
+  switch (h_errno)
+    {
+
+    case 0:
+      return;
+
+    case HOST_NOT_FOUND:
+      txt = "Answer Host Not Found";
+      break;
+
+    case TRY_AGAIN:
+      txt = "Try Again";
+      break;
+
+    case NO_RECOVERY:
+      txt = "No Recovery";
+      break;
+
+    case NO_DATA:
+      txt = "No Data";
+      break;
+
+    default:
+      txt = "unknown error";
+      break;
+    }
+
+  printf(" ** h_errno is %d %s\n", h_errno, txt);
+  }

@@ -1,45 +1,45 @@
 /*
 *         OpenPBS (Portable Batch System) v2.3 Software License
-* 
+*
 * Copyright (c) 1999-2000 Veridian Information Solutions, Inc.
 * All rights reserved.
-* 
+*
 * ---------------------------------------------------------------------------
 * For a license to use or redistribute the OpenPBS software under conditions
 * other than those described below, or to purchase support for this software,
 * please contact Veridian Systems, PBS Products Department ("Licensor") at:
-* 
+*
 *    www.OpenPBS.org  +1 650 967-4675                  sales@OpenPBS.org
 *                        877 902-4PBS (US toll-free)
 * ---------------------------------------------------------------------------
-* 
+*
 * This license covers use of the OpenPBS v2.3 software (the "Software") at
 * your site or location, and, for certain users, redistribution of the
 * Software to other sites and locations.  Use and redistribution of
 * OpenPBS v2.3 in source and binary forms, with or without modification,
 * are permitted provided that all of the following conditions are met.
 * After December 31, 2001, only conditions 3-6 must be met:
-* 
+*
 * 1. Commercial and/or non-commercial use of the Software is permitted
 *    provided a current software registration is on file at www.OpenPBS.org.
 *    If use of this software contributes to a publication, product, or
 *    service, proper attribution must be given; see www.OpenPBS.org/credit.html
-* 
+*
 * 2. Redistribution in any form is only permitted for non-commercial,
 *    non-profit purposes.  There can be no charge for the Software or any
 *    software incorporating the Software.  Further, there can be no
 *    expectation of revenue generated as a consequence of redistributing
 *    the Software.
-* 
+*
 * 3. Any Redistribution of source code must retain the above copyright notice
 *    and the acknowledgment contained in paragraph 6, this list of conditions
 *    and the disclaimer contained in paragraph 7.
-* 
+*
 * 4. Any Redistribution in binary form must reproduce the above copyright
 *    notice and the acknowledgment contained in paragraph 6, this list of
 *    conditions and the disclaimer contained in paragraph 7 in the
 *    documentation and/or other materials provided with the distribution.
-* 
+*
 * 5. Redistributions in any form must be accompanied by information on how to
 *    obtain complete source code for the OpenPBS software and any
 *    modifications and/or additions to the OpenPBS software.  The source code
@@ -47,23 +47,23 @@
 *    than the cost of distribution plus a nominal fee, and all modifications
 *    and additions to the Software must be freely redistributable by any party
 *    (including Licensor) without restriction.
-* 
+*
 * 6. All advertising materials mentioning features or use of the Software must
 *    display the following acknowledgment:
-* 
+*
 *     "This product includes software developed by NASA Ames Research Center,
-*     Lawrence Livermore National Laboratory, and Veridian Information 
+*     Lawrence Livermore National Laboratory, and Veridian Information
 *     Solutions, Inc.
 *     Visit www.OpenPBS.org for OpenPBS software support,
 *     products, and information."
-* 
+*
 * 7. DISCLAIMER OF WARRANTY
-* 
+*
 * THIS SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND. ANY EXPRESS
 * OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
 * OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT
 * ARE EXPRESSLY DISCLAIMED.
-* 
+*
 * IN NO EVENT SHALL VERIDIAN CORPORATION, ITS AFFILIATED COMPANIES, OR THE
 * U.S. GOVERNMENT OR ANY OF ITS AGENCIES BE LIABLE FOR ANY DIRECT OR INDIRECT,
 * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
@@ -72,7 +72,7 @@
 * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
 * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-* 
+*
 * This license will be governed by the laws of the Commonwealth of Virginia,
 * without reference to its choice of law rules.
 */
@@ -98,17 +98,17 @@ FILE *SymTabFpOut;
 
 /* File Scope Variables */
 static char * SymTabErrors[] =
-{
-        "0 no such error msg",
-        "1 illegal operation on empty SymTab",
-        "2 nxp = NULL",
-        "3 lexem ptr = NULL",
-        "4 NodeNew error got returned NULL",
-        "5 node not in SymTab",
-        "6 lexem not in SymTab",
-        "7 SymTabFpOut = NULL",
-        ""
-};
+  {
+  "0 no such error msg",
+  "1 illegal operation on empty SymTab",
+  "2 nxp = NULL",
+  "3 lexem ptr = NULL",
+  "4 NodeNew error got returned NULL",
+  "5 node not in SymTab",
+  "6 lexem not in SymTab",
+  "7 SymTabFpOut = NULL",
+  ""
+  };
 
 static int SymTabMaxErrors = 9;
 
@@ -117,315 +117,323 @@ static char *SymTabName = "SymTab";
 static int SymTabDF = 0;
 
 static struct SYMTAB ST;
- 
+
 void SymTabInit(void)
-{
-	SymTabCondPrint("SymTabInit");
+  {
+  SymTabCondPrint("SymTabInit");
 
-/*	SymTabDF = 1; */
+  /* SymTabDF = 1; */
 
-	/*
-	ST.L = NULL:
-	*/
-	SymTabKeyWordsInit();
-}
+  /*
+  ST.L = NULL:
+  */
+  SymTabKeyWordsInit();
+  }
 
- 
-void SymTabPutDF(df)
-int df;
-{
-	SymTabCondPrint("SymTabPutDF");
 
-	SymTabDF = df;
-}
+void
+SymTabPutDF(int df)
+  {
+  SymTabCondPrint("SymTabPutDF");
 
- 
-void SymTabCondPrint(str)
-char *str;
-{
-	if(SymTabFpOut == NULL)
-		SymTabErr(7);
+  SymTabDF = df;
+  }
 
-	if (SymTabDF ==1)
-	{
-		fprintf(SymTabFpOut, "%s\t", SymTabName);
-		fprintf(SymTabFpOut, "%s\n", str);
-	}
-}
+
+void
+SymTabCondPrint(char *str)
+  {
+  if (SymTabFpOut == NULL)
+    SymTabErr(7);
+
+  if (SymTabDF == 1)
+    {
+    fprintf(SymTabFpOut, "%s\t", SymTabName);
+    fprintf(SymTabFpOut, "%s\n", str);
+    }
+  }
 
 int SymTabIsEmpty(void)
-{
-	SymTabCondPrint("SymTabIsEmpty");
+  {
+  SymTabCondPrint("SymTabIsEmpty");
 
-	return(ST.L == NULL);
-}
+  return(ST.L == NULL);
+  }
 
 void SymTabPrint(void)
-{
-	if(SymTabFpOut == NULL)
-		SymTabErr(7);
+  {
+  if (SymTabFpOut == NULL)
+    SymTabErr(7);
 
-	fprintf(SymTabFpOut, "**SymTabPrint\n");
+  fprintf(SymTabFpOut, "**SymTabPrint\n");
 
-	ListPrint(ST.L);
-	fprintf(SymTabFpOut, "**end of SymTabPrint\n");
-}
+  ListPrint(ST.L);
+
+  fprintf(SymTabFpOut, "**end of SymTabPrint\n");
+  }
 
 
 void SymTabInsertFront(nxp)
-STEP	nxp;
-{
-	SymTabCondPrint("SymTabInsertFront");
+STEP nxp;
+  {
+  SymTabCondPrint("SymTabInsertFront");
 
-	/*L can be NULL to insert to empty SymTab*/
-	if (nxp == NULL) SymTabErr(2);
+  /*L can be NULL to insert to empty SymTab*/
 
-	ST.L = ListInsertFront(ST.L, nxp);
-}
+  if (nxp == NULL) SymTabErr(2);
+
+  ST.L = ListInsertFront(ST.L, nxp);
+  }
 
 void SymTabParamLink(funNp, parNp)
-STEP	funNp;
-Np 	parNp;
-{
-	ListCondPrint("SymTabParamLink");
+STEP funNp;
+Np  parNp;
+  {
+  ListCondPrint("SymTabParamLink");
 
-	/*L cannot be NULL */
-	if (funNp == NULL) ListErr(2);
-	if (parNp == NULL) ListErr(2);
+  /*L cannot be NULL */
 
-	/*insert the param immed after FunNp-- insert front*/
-	ListParamLink(funNp, parNp);
-}
+  if (funNp == NULL) ListErr(2);
+
+  if (parNp == NULL) ListErr(2);
+
+  /*insert the param immed after FunNp-- insert front*/
+  ListParamLink(funNp, parNp);
+  }
 
 void SymTabInsertSortedN(nxp)
-STEP	nxp;
-{
-	SymTabCondPrint("SymTabInsertSortedN");
+STEP nxp;
+  {
+  SymTabCondPrint("SymTabInsertSortedN");
 
-	/*L can be NULL to insert to empty SymTab*/
-	if (nxp == NULL) SymTabErr(2);
+  /*L can be NULL to insert to empty SymTab*/
 
-	ST.L = ListInsertSortedN(ST.L, nxp);
-}
+  if (nxp == NULL) SymTabErr(2);
+
+  ST.L = ListInsertSortedN(ST.L, nxp);
+  }
 
 
-void SymTabInsertSortedD(lexem, typ, lineDe, leve, funFla)
-char	*lexem;
-int	typ;
-int 	lineDe;
-int 	leve;
-int 	funFla;
-{
-	SymTabCondPrint("SymTabInsertSortedD");
+void
+SymTabInsertSortedD(char *lexem, int typ, int lineDe, int leve, int funFla)
+  {
+  SymTabCondPrint("SymTabInsertSortedD");
 
-	if (lexem == NULL) 
-		SymTabErr(3);
+  if (lexem == NULL)
+    SymTabErr(3);
 
-	/*L can be NULL to insert to empty SymTab*/
+  /*L can be NULL to insert to empty SymTab*/
 
-	ST.L = ListInsertSortedD(ST.L, lexem, typ, lineDe, leve, funFla);
-}
+  ST.L = ListInsertSortedD(ST.L, lexem, typ, lineDe, leve, funFla);
+  }
 
 int SymTabIsMember(nxp)
-STEP	nxp;
-{
+STEP nxp;
+  {
 
-	SymTabCondPrint("SymTabIsMember");
+  SymTabCondPrint("SymTabIsMember");
 
-	if (nxp == NULL) 
-		SymTabErr(2);
+  if (nxp == NULL)
+    SymTabErr(2);
 
-	return( ListIsMember(ST.L, nxp));
-}
+  return(ListIsMember(ST.L, nxp));
+  }
 
 
 STEP SymTabGetLast(void)
-{
-	SymTabCondPrint("SymTabGetLast");
+  {
+  SymTabCondPrint("SymTabGetLast");
 
-	return( ListGetLast(ST.L));
-}
+  return(ListGetLast(ST.L));
+  }
 
 
 STEP SymTabGetSucc(nxp)
-STEP	nxp; 
-{
-	SymTabCondPrint("SymTabGetSucc");
+STEP nxp;
+  {
+  SymTabCondPrint("SymTabGetSucc");
 
-	if (ST.L == NULL) 
-		SymTabErr(1);
+  if (ST.L == NULL)
+    SymTabErr(1);
 
-	if (nxp == NULL) 
-		SymTabErr(2);
+  if (nxp == NULL)
+    SymTabErr(2);
 
-	return(ListGetSucc(ST.L, nxp));
+  return(ListGetSucc(ST.L, nxp));
 
-}
+  }
 
 
 void SymTabDeleteNode(nxp)
-STEP	nxp;
-{
-	SymTabCondPrint("SymTabDeleteNode");
+STEP nxp;
+  {
+  SymTabCondPrint("SymTabDeleteNode");
 
-	if (ST.L == NULL)
-		SymTabErr(1);
+  if (ST.L == NULL)
+    SymTabErr(1);
 
-	if (nxp == NULL) 
-		SymTabErr(2);
+  if (nxp == NULL)
+    SymTabErr(2);
 
-	ST.L = ListDeleteNode(ST.L, nxp);
+  ST.L = ListDeleteNode(ST.L, nxp);
 
-}
+  }
 
 
 void SymTabDelete(void)
-{
-	SymTabCondPrint("SymTabDelete");
+  {
+  SymTabCondPrint("SymTabDelete");
 
-	ST.L = ListDelete(ST.L);
-}
+  ST.L = ListDelete(ST.L);
+  }
 
 
 STEP SymTabFindFunProtoByLexemeInProg(lexem)
-char	*lexem;
-{
-	SymTabCondPrint("SymTabFindFunProtoByLexemeInProg");
+char *lexem;
+  {
+  SymTabCondPrint("SymTabFindFunProtoByLexemeInProg");
 
-	if (ST.L == NULL)
-		return(NULL);
+  if (ST.L == NULL)
+    return(NULL);
 
-	if (lexem == NULL)
-		SymTabErr(3);
+  if (lexem == NULL)
+    SymTabErr(3);
 
-	return((STEP) ListFindFunProtoByLexemeInProg(ST.L, lexem));
-	/*NULL means not found*/
-}
+  return((STEP) ListFindFunProtoByLexemeInProg(ST.L, lexem));
+
+  /*NULL means not found*/
+  }
 
 
 
 STEP SymTabFindNodeByLexemeInProg(lexem)
-char	*lexem;
-{
-	SymTabCondPrint("SymTabFindNodeByLexemeInProg");
+char *lexem;
+  {
+  SymTabCondPrint("SymTabFindNodeByLexemeInProg");
 
-	if (ST.L == NULL)
-		return(NULL);
+  if (ST.L == NULL)
+    return(NULL);
 
-	if (lexem == NULL)
-		SymTabErr(3);
+  if (lexem == NULL)
+    SymTabErr(3);
 
-	return((STEP) ListFindNodeByLexeme(ST.L, lexem));
-	/*NULL means not found*/
-}
+  return((STEP) ListFindNodeByLexeme(ST.L, lexem));
+
+  /*NULL means not found*/
+  }
 
 
 STEP SymTabFindNodeByLexemeInLevel(lexem, leve)
-char	*lexem;
-int	leve;
-{
-	SymTabCondPrint("SymTabFindNodeByLexemeInLevel");
+char *lexem;
+int leve;
+  {
+  SymTabCondPrint("SymTabFindNodeByLexemeInLevel");
 
-	if (ST.L == NULL)
-		return(NULL);
+  if (ST.L == NULL)
+    return(NULL);
 
-	if (lexem == NULL)
-		SymTabErr(3);
+  if (lexem == NULL)
+    SymTabErr(3);
 
-	return((STEP) ListFindNodeByLexemeInLevel(ST.L, lexem, leve));
-	/*NULL means not found*/
-}
+  return((STEP) ListFindNodeByLexemeInLevel(ST.L, lexem, leve));
+
+  /*NULL means not found*/
+  }
 
 STEP SymTabFindNodeByLexemeAndTypeInLevel(lexem, leve, type, compare_func)
-char	*lexem;
-int	leve;
-int    	type;
-int	(*compare_func)();
-{
-	SymTabCondPrint("SymTabFindNodeByLexemeInLevel");
+char *lexem;
+int leve;
+int     type;
+int (*compare_func)();
+  {
+  SymTabCondPrint("SymTabFindNodeByLexemeInLevel");
 
-	if (ST.L == NULL)
-		return(NULL);
+  if (ST.L == NULL)
+    return(NULL);
 
-	if (lexem == NULL)
-		SymTabErr(3);
+  if (lexem == NULL)
+    SymTabErr(3);
 
-	return((STEP) ListFindNodeByLexemeAndTypeInLevel(ST.L, lexem, leve, type, compare_func));
-	/*NULL means not found*/
-}
+  return((STEP) ListFindNodeByLexemeAndTypeInLevel(ST.L, lexem, leve, type, compare_func));
+
+  /*NULL means not found*/
+  }
 
 STEP SymTabFindAnyNodeInLevelOfType(leve, type)
-int	leve;
-int    	type;
-{
-	SymTabCondPrint("SymTabFindAnyNodeInLevelOfType");
+int leve;
+int     type;
+  {
+  SymTabCondPrint("SymTabFindAnyNodeInLevelOfType");
 
-	if (ST.L == NULL)
-		return(NULL);
+  if (ST.L == NULL)
+    return(NULL);
 
 
-	return((STEP) ListFindAnyNodeInLevelOfType(ST.L, leve, type));
-	/*NULL means not found*/
-}
+  return((STEP) ListFindAnyNodeInLevelOfType(ST.L, leve, type));
 
-void SymTabDeleteLevel(leve)
-int	leve;
-{
-	SymTabCondPrint("SymTabDeleteLevel");
+  /*NULL means not found*/
+  }
 
-	if (ST.L == NULL)
-		return;
+void
+SymTabDeleteLevel(int leve)
+  {
+  SymTabCondPrint("SymTabDeleteLevel");
 
-	ST.L = ListDeleteLevel(ST.L, leve);
-}
+  if (ST.L == NULL)
+    return;
+
+  ST.L = ListDeleteLevel(ST.L, leve);
+  }
 
 /*
  * Dont need to save any keywords.
  */
 void SymTabKeyWordsInit(void)
-{
+  {
 
-	char lexeme[LEXEMSZ];
-	int type;	/* Semantic type.
-				 * If this is function, retType.
-				 */
-	int lineDef;
-	int level;
-	int funFlag;	/*YES NO */
+  char lexeme[LEXEMSZ];
+  int type; /* Semantic type.
+     * If this is function, retType.
+     */
+  int lineDef;
+  int level;
+  int funFlag; /*YES NO */
 
-	Np nxp;
+  Np nxp;
 
-	SymTabCondPrint("SymTabKeyWordsInit");
+  SymTabCondPrint("SymTabKeyWordsInit");
 
-	strcpy(lexeme, "endmarker");
-	type = KEYWORDTYPE;
-	lineDef = 1;
-	level = 0;
-	funFlag = NO;
+  strcpy(lexeme, "endmarker");
+  type = KEYWORDTYPE;
+  lineDef = 1;
+  level = 0;
+  funFlag = NO;
 
 
-	/*"dummymarker" must be first*/
-	nxp = NodeNew(lexeme, type, lineDef, level, funFlag);
-	SymTabInsertFront(nxp);
-}
+  /*"dummymarker" must be first*/
+  nxp = NodeNew(lexeme, type, lineDef, level, funFlag);
+  SymTabInsertFront(nxp);
+  }
 
 STEP SymTabGetOrigin(void)
-{
-	SymTabCondPrint("SymTabGetOrigin");
+  {
+  SymTabCondPrint("SymTabGetOrigin");
 
-	return(ST.L);
-}
+  return(ST.L);
+  }
 
-void SymTabErr(e)
-int	e;
-{
-	if(SymTabFpOut == NULL)
-		SymTabErr(7);
+void
+SymTabErr(int e)
+  {
+  if (SymTabFpOut == NULL)
+    SymTabErr(7);
 
-	fprintf(SymTabFpOut, "SymTabErr\n");
-	if (e >= SymTabMaxErrors)
-		e = 0;
+  fprintf(SymTabFpOut, "SymTabErr\n");
 
-	fprintf(SymTabFpOut, "rs: %s\n", SymTabErrors[e]);
-	exit(1);
-}
+  if (e >= SymTabMaxErrors)
+    e = 0;
+
+  fprintf(SymTabFpOut, "rs: %s\n", SymTabErrors[e]);
+
+  exit(1);
+  }

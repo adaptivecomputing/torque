@@ -28,7 +28,7 @@
 #define __DRMAA__JOBS_H
 
 #ifdef HAVE_CONFIG_H
-#	include <pbs_config.h>
+# include <pbs_config.h>
 #endif
 
 #include <drmaa_impl.h>
@@ -39,47 +39,52 @@
  */
 /** @{ */
 
-typedef enum {
-	DRMAA_JOB_SUSPENDED  =  1<<0,
-	DRMAA_JOB_RESUMED    =  1<<1,
-	DRMAA_JOB_TERMINATED =  1<<2,
-	DRMAA_JOB_DISPOSE    =  1<<3
-} job_flag_t;
+typedef enum
+  {
+  DRMAA_JOB_SUSPENDED  =  1 << 0,
+  DRMAA_JOB_RESUMED    =  1 << 1,
+  DRMAA_JOB_TERMINATED =  1 << 2,
+  DRMAA_JOB_DISPOSE    =  1 << 3
+  } job_flag_t;
 
 /**
  * Job data stored for each submitted job.
  * It is freed when job terminates and it's status is disposed
  * by drmaa_wait() or drmaa_synchronize().
  */
-struct drmaa_job_s {
-	drmaa_job_t *next;  /**< Next job in list or @c NULL. */
-	char       *jobid;  /**< Job identifier from DRM. */
-	/**
-	 * Job submission timestamp increased in DRMAA session
-	 * with each submitted job.
-	 */
-	int time_label;
-	/**
-	 * Whether we know that job terminated and its status
-	 * is waiting to rip.
-	 */
-	bool terminated;
-	/**
-	 * Whether job was suspended within session by drmaa_control().
-	 */
-	bool suspended;
-};
+
+struct drmaa_job_s
+  {
+  drmaa_job_t *next;  /**< Next job in list or @c NULL. */
+  char       *jobid;  /**< Job identifier from DRM. */
+  /**
+   * Job submission timestamp increased in DRMAA session
+   * with each submitted job.
+   */
+  int time_label;
+  /**
+   * Whether we know that job terminated and its status
+   * is waiting to rip.
+   */
+  bool terminated;
+  /**
+   * Whether job was suspended within session by drmaa_control().
+   */
+  bool suspended;
+  };
 
 typedef struct drmaa_job_iter_s drmaa_job_iter_t;
 
 enum { HASHTAB_SIZE = 1024 };
 
 /** Iterates over submitted jobs set. */
-struct drmaa_job_iter_s {
-	drmaa_session_t  *c;
-	unsigned          hash;  /**< Hash value of job identifier. */
-	drmaa_job_t     **iter;
-};
+
+struct drmaa_job_iter_s
+  {
+  drmaa_session_t  *c;
+  unsigned          hash;  /**< Hash value of job identifier. */
+  drmaa_job_t     **iter;
+  };
 
 /**
  * Returns iterator to jobs held in DRMAA session.  Caller thread should have
@@ -87,11 +92,11 @@ struct drmaa_job_iter_s {
  * modified (or lock is released).
  */
 void
-drmaa_get_job_list_iter( drmaa_session_t *session, drmaa_job_iter_t *iter );
+drmaa_get_job_list_iter(drmaa_session_t *session, drmaa_job_iter_t *iter);
 
 /** Returns next job identifier from set or @c NULL if set finished. */
 drmaa_job_t *
-drmaa_get_next_job( drmaa_job_iter_t *iter );
+drmaa_get_next_job(drmaa_job_iter_t *iter);
 
 /**
  * Adds job identifier to session.
@@ -101,9 +106,9 @@ drmaa_get_next_job( drmaa_job_iter_t *iter );
  */
 void
 drmaa_add_job(
-		drmaa_session_t *c,
-		drmaa_job_t *job
-		);
+  drmaa_session_t *c,
+  drmaa_job_t *job
+);
 
 /**
  * Checks if job with given identifier exist in hash table and optionally
@@ -118,14 +123,14 @@ drmaa_add_job(
  */
 bool
 drmaa_find_job(
-		drmaa_session_t  *c,
-		const char       *jobid,
-		drmaa_job_t      *found,
-		unsigned          flags
-		);
+  drmaa_session_t  *c,
+  const char       *jobid,
+  drmaa_job_t      *found,
+  unsigned          flags
+);
 
 void
-drmaa_delete_job_hashtab( drmaa_job_t **tab );
+drmaa_delete_job_hashtab(drmaa_job_t **tab);
 
 /** @} */
 

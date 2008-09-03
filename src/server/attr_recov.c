@@ -1,45 +1,45 @@
 /*
 *         OpenPBS (Portable Batch System) v2.3 Software License
-* 
+*
 * Copyright (c) 1999-2000 Veridian Information Solutions, Inc.
 * All rights reserved.
-* 
+*
 * ---------------------------------------------------------------------------
 * For a license to use or redistribute the OpenPBS software under conditions
 * other than those described below, or to purchase support for this software,
 * please contact Veridian Systems, PBS Products Department ("Licensor") at:
-* 
+*
 *    www.OpenPBS.org  +1 650 967-4675                  sales@OpenPBS.org
 *                        877 902-4PBS (US toll-free)
 * ---------------------------------------------------------------------------
-* 
+*
 * This license covers use of the OpenPBS v2.3 software (the "Software") at
 * your site or location, and, for certain users, redistribution of the
 * Software to other sites and locations.  Use and redistribution of
 * OpenPBS v2.3 in source and binary forms, with or without modification,
 * are permitted provided that all of the following conditions are met.
 * After December 31, 2001, only conditions 3-6 must be met:
-* 
+*
 * 1. Commercial and/or non-commercial use of the Software is permitted
 *    provided a current software registration is on file at www.OpenPBS.org.
 *    If use of this software contributes to a publication, product, or
 *    service, proper attribution must be given; see www.OpenPBS.org/credit.html
-* 
+*
 * 2. Redistribution in any form is only permitted for non-commercial,
 *    non-profit purposes.  There can be no charge for the Software or any
 *    software incorporating the Software.  Further, there can be no
 *    expectation of revenue generated as a consequence of redistributing
 *    the Software.
-* 
+*
 * 3. Any Redistribution of source code must retain the above copyright notice
 *    and the acknowledgment contained in paragraph 6, this list of conditions
 *    and the disclaimer contained in paragraph 7.
-* 
+*
 * 4. Any Redistribution in binary form must reproduce the above copyright
 *    notice and the acknowledgment contained in paragraph 6, this list of
 *    conditions and the disclaimer contained in paragraph 7 in the
 *    documentation and/or other materials provided with the distribution.
-* 
+*
 * 5. Redistributions in any form must be accompanied by information on how to
 *    obtain complete source code for the OpenPBS software and any
 *    modifications and/or additions to the OpenPBS software.  The source code
@@ -47,23 +47,23 @@
 *    than the cost of distribution plus a nominal fee, and all modifications
 *    and additions to the Software must be freely redistributable by any party
 *    (including Licensor) without restriction.
-* 
+*
 * 6. All advertising materials mentioning features or use of the Software must
 *    display the following acknowledgment:
-* 
+*
 *     "This product includes software developed by NASA Ames Research Center,
-*     Lawrence Livermore National Laboratory, and Veridian Information 
+*     Lawrence Livermore National Laboratory, and Veridian Information
 *     Solutions, Inc.
 *     Visit www.OpenPBS.org for OpenPBS software support,
 *     products, and information."
-* 
+*
 * 7. DISCLAIMER OF WARRANTY
-* 
+*
 * THIS SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND. ANY EXPRESS
 * OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
 * OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT
 * ARE EXPRESSLY DISCLAIMED.
-* 
+*
 * IN NO EVENT SHALL VERIDIAN CORPORATION, ITS AFFILIATED COMPANIES, OR THE
 * U.S. GOVERNMENT OR ANY OF ITS AGENCIES BE LIABLE FOR ANY DIRECT OR INDIRECT,
 * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
@@ -72,22 +72,22 @@
 * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
 * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-* 
+*
 * This license will be governed by the laws of the Commonwealth of Virginia,
 * without reference to its choice of law rules.
 */
 /*
  * save_attr.c - This file contains the functions to perform a buffered
- *	save of an object (structure) and an attribute array to a file.
- *	It also has the function to recover (reload) an attribute array.
+ * save of an object (structure) and an attribute array to a file.
+ * It also has the function to recover (reload) an attribute array.
  *
  * Included public functions are:
  *
- *	save_setup	called to initialize the buffer
- *	save_struct	copy a struct into the save i/o buffer
- *	save_flush	flush out the current save operation
- *	save_attr	buffer and write attributes to disk file
- *	recov_attr	read attributes from disk file
+ * save_setup called to initialize the buffer
+ * save_struct copy a struct into the save i/o buffer
+ * save_flush flush out the current save operation
+ * save_attr buffer and write attributes to disk file
+ * recov_attr read attributes from disk file
  */
 
 #include <pbs_config.h>   /* the master config generated by configure */
@@ -114,16 +114,16 @@ extern int resc_access_perm;
 #define PKBUFSIZE 2048
 #define ENDATTRIBUTES -711
 
-char   pk_buffer[PKBUFSIZE];	/* used to do buffered output */
-static int     pkbfds = -2;	/* descriptor to use for saves */
-static size_t  spaceavail;	/* space in pk_buffer available */
-static size_t  spaceused = 0;	/* amount of space used  in pkbuffer */
+char   pk_buffer[PKBUFSIZE]; /* used to do buffered output */
+static int     pkbfds = -2; /* descriptor to use for saves */
+static size_t  spaceavail; /* space in pk_buffer available */
+static size_t  spaceused = 0; /* amount of space used  in pkbuffer */
 
 
 /*
  * save_setup - set up the save i/o buffer.
- *	The "buffer control information" is left updated to reflect
- *	the file descriptor, and the space in the buffer.
+ * The "buffer control information" is left updated to reflect
+ * the file descriptor, and the space in the buffer.
  */
 
 void save_setup(
@@ -131,17 +131,19 @@ void save_setup(
   int fds)  /* file descriptor to use for save */
 
   {
-  if (pkbfds != -2) 
-    {	
+  if (pkbfds != -2)
+    {
     /* somebody forgot to flush the buffer */
 
-    log_err(-1,"save_setup","someone forgot to flush");
+    log_err(-1, "save_setup", "someone forgot to flush");
     }
 
   /* initialize buffer control */
 
   pkbfds = fds;
+
   spaceavail = PKBUFSIZE;
+
   spaceused = 0;
 
   return;
@@ -152,13 +154,13 @@ void save_setup(
 
 /*
  * save_struct - Copy a structure (as a block)  into the save i/o buffer
- *	This is useful to save fixed sized structure without pointers
- *	that point outside of the structure itself.
+ * This is useful to save fixed sized structure without pointers
+ * that point outside of the structure itself.
  *
- *	Write out buffer as required. Leave spaceavail and spaceused updated
+ * Write out buffer as required. Leave spaceavail and spaceused updated
  *
- *	Returns: 0 on success
- *		-1 on error
+ * Returns: 0 on success
+ *  -1 on error
  */
 
 int save_struct(
@@ -187,13 +189,14 @@ int save_struct(
 
       if (copysize != 0)
         {
-        memcpy(pbufin,pobj,copysize);
+        memcpy(pbufin, pobj, copysize);
         }
 
       amt = PKBUFSIZE;
+
       pbufout = pk_buffer;
 
-      while ((i = write(pkbfds,pbufout,amt)) != amt)
+      while ((i = write(pkbfds, pbufout, amt)) != amt)
         {
         if (i == -1)
           {
@@ -210,6 +213,7 @@ int save_struct(
         }
 
       pobj += copysize;
+
       spaceavail = PKBUFSIZE;
       spaceused  = 0;
       }
@@ -217,7 +221,7 @@ int save_struct(
       {
       copysize = (size_t)objsize;
 
-      memcpy(pbufin,pobj,copysize);
+      memcpy(pbufin, pobj, copysize);
 
       spaceavail -= copysize;
       spaceused  += copysize;
@@ -235,14 +239,15 @@ int save_struct(
 
 /*
  * save_flush - flush out the current save operation
- *	Flush buffer if needed, reset spaceavail, spaceused,
- *	clear out file descriptor
+ * Flush buffer if needed, reset spaceavail, spaceused,
+ * clear out file descriptor
  *
- *	Returns: 0 on success
- *		-1 on failure (flush failed)
+ * Returns: 0 on success
+ *  -1 on failure (flush failed)
  */
 
-int save_flush()
+int
+save_flush(void)
 
   {
   int   i;
@@ -254,20 +259,20 @@ int save_flush()
 
   pbuf = pk_buffer;
 
-  if (spaceused > 0) 
+  if (spaceused > 0)
     {
-    while ((i = write(pkbfds,pbuf,spaceused)) != (ssize_t)spaceused) 
+    while ((i = write(pkbfds, pbuf, spaceused)) != (ssize_t)spaceused)
       {
-      if (i == -1) 
+      if (i == -1)
         {
-        if (errno != EINTR)  
+        if (errno != EINTR)
           {
-          log_err(errno,"save_flush","bad write");
+          log_err(errno, "save_flush", "bad write");
 
           return(-1);
           }
-        } 
-      else 
+        }
+      else
         {
         pbuf      += i;
         spaceused -= i;
@@ -275,7 +280,7 @@ int save_flush()
       }
     }
 
-  pkbfds = -2;	/* flushed flag */
+  pkbfds = -2; /* flushed flag */
 
   return(0);
   }  /* END save_flush() */
@@ -287,16 +292,16 @@ int save_flush()
 /*
  * save_attr() - write set of attributes to disk file
  *
- *	Each of the attributes is encoded  into the attrlist form.
- *	They are packed and written using save_struct().
+ * Each of the attributes is encoded  into the attrlist form.
+ * They are packed and written using save_struct().
  *
- *	The final real attribute is followed by a dummy attribute with a 
- *	al_size of ENDATTRIB.  This cannot be mistaken for the size of a
- *	real attribute.
+ * The final real attribute is followed by a dummy attribute with a
+ * al_size of ENDATTRIB.  This cannot be mistaken for the size of a
+ * real attribute.
  *
- *	Note: attributes of type ATR_TYPE_ACL are not saved with the other
- *	attribute of the parent (queue or server).  They are kept in their
- *	own file.
+ * Note: attributes of type ATR_TYPE_ACL are not saved with the other
+ * attribute of the parent (queue or server).  They are kept in their
+ * own file.
  */
 
 int save_attr(
@@ -306,40 +311,40 @@ int save_attr(
   int                   numattr) /* number of attributes in array */
 
   {
-  svrattrl	 dummy;
-  int		 errct = 0;
-  tlist_head 	 lhead;
-  int		 i;
-  svrattrl	*pal;
-  int		 rc;
-	
+  svrattrl  dummy;
+  int   errct = 0;
+  tlist_head   lhead;
+  int   i;
+  svrattrl *pal;
+  int   rc;
+
   /* encode each attribute which has a value (not non-set) */
 
   CLEAR_HEAD(lhead);
 
-  for (i = 0;i < numattr;i++) 
+  for (i = 0;i < numattr;i++)
     {
-    if ((padef + i)->at_type != ATR_TYPE_ACL) 
+    if ((padef + i)->at_type != ATR_TYPE_ACL)
       {
       /* NOTE: access lists are not saved this way */
 
       rc = (padef + i)->at_encode(
-        pattr + i, 
-        &lhead,
-        (padef + i)->at_name,
-        NULL, 
-        ATR_ENCODE_SAVE);
-		
+             pattr + i,
+             &lhead,
+             (padef + i)->at_name,
+             NULL,
+             ATR_ENCODE_SAVE);
+
       if (rc < 0)
         errct++;
 
-      (pattr + i)->at_flags &= ~ATR_VFLAG_MODIFY; 
-	
+      (pattr + i)->at_flags &= ~ATR_VFLAG_MODIFY;
+
       /* now that it has been encoded, block and save it */
-	
-      while ((pal = (svrattrl *)GET_NEXT(lhead)) != NULL)  
+
+      while ((pal = (svrattrl *)GET_NEXT(lhead)) != NULL)
         {
-        if (save_struct((char *)pal,pal->al_tsize) < 0)
+        if (save_struct((char *)pal, pal->al_tsize) < 0)
           errct++;
 
         delete_link(&pal->al_link);
@@ -351,10 +356,11 @@ int save_attr(
 
   /* indicate last of attributes by writing dummy entry */
 
-  memset(&dummy,0,sizeof(dummy));
+  memset(&dummy, 0, sizeof(dummy));
+
   dummy.al_tsize = ENDATTRIBUTES;
 
-  if (save_struct((char *)&dummy,sizeof(dummy)) < 0)
+  if (save_struct((char *)&dummy, sizeof(dummy)) < 0)
     errct++;
 
   if (errct != 0)
@@ -374,9 +380,9 @@ int save_attr(
 /*
  * recov_attr() - read attributes from disk file
  *
- *	Recover (reload) attribute from file written by save_attr().
- *	Since this is not often done (only on server initialization),
- *	Buffering the reads isn't done.  
+ * Recover (reload) attribute from file written by save_attr().
+ * Since this is not often done (only on server initialization),
+ * Buffering the reads isn't done.
  */
 
 int recov_attr(
@@ -407,11 +413,11 @@ int recov_attr(
 
   while (1)
     {
-    i = read(fd,(char *)&tempal,sizeof(tempal));
+    i = read(fd, (char *) & tempal, sizeof(tempal));
 
     if (i != sizeof(tempal))
       {
-      log_err(errno,id,"read1");
+      log_err(errno, id, "read1");
 
       return(-1);
       }
@@ -421,7 +427,7 @@ int recov_attr(
 
     if (tempal.al_tsize <= (int)sizeof(tempal))
       {
-      log_err(-1,id,"attr size too small");
+      log_err(-1, id, "attr size too small");
 
       return(-1);
       }
@@ -430,11 +436,11 @@ int recov_attr(
 
     palsize = tempal.al_tsize;
 
-    pal = (svrattrl *)calloc(1,palsize);
+    pal = (svrattrl *)calloc(1, palsize);
 
     if (pal == NULL)
       {
-      log_err(errno,id,"calloc failed");
+      log_err(errno, id, "calloc failed");
 
       return(-1);
       }
@@ -447,11 +453,11 @@ int recov_attr(
 
     amt = pal->al_tsize - sizeof(svrattrl);
 
-    i = read(fd,(char *)pal + sizeof(svrattrl),amt);
+    i = read(fd, (char *)pal + sizeof(svrattrl), amt);
 
     if (i != amt)
       {
-      log_err(errno,id,"read2");
+      log_err(errno, id, "read2");
 
       free(pal);
 
@@ -474,7 +480,7 @@ int recov_attr(
 
     /* find the attribute definition based on the name */
 
-    index = find_attr(padef,pal->al_name,limit);
+    index = find_attr(padef, pal->al_name, limit);
 
     if (index < 0)
       {
@@ -485,7 +491,7 @@ int recov_attr(
        * 2. if the server was rebuilt and an attribute was
        * deleted, -  the fact is logged and the attribute
        * is discarded (system,queue) or kept (job)
-       * 
+       *
        */
 
       if (unknown > 0)
@@ -494,7 +500,7 @@ int recov_attr(
         }
       else
         {
-        log_err(-1,id,"unknown attribute discarded");
+        log_err(-1, id, "unknown attribute discarded");
 
         free(pal);
 
@@ -505,11 +511,11 @@ int recov_attr(
     (padef + index)->at_decode(
       pattr + index,
       pal->al_name,
-      pal->al_resc, 
+      pal->al_resc,
       pal->al_value);
 
     if ((padef + index)->at_action != (int (*)())0)
-      (padef + index)->at_action(pattr + index,parent,ATR_ACTION_RECOV);
+      (padef + index)->at_action(pattr + index, parent, ATR_ACTION_RECOV);
 
     (pattr + index)->at_flags = pal->al_flags & ~ATR_VFLAG_MODIFY;
 

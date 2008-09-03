@@ -1,45 +1,45 @@
 /*
 *         OpenPBS (Portable Batch System) v2.3 Software License
-* 
+*
 * Copyright (c) 1999-2000 Veridian Information Solutions, Inc.
 * All rights reserved.
-* 
+*
 * ---------------------------------------------------------------------------
 * For a license to use or redistribute the OpenPBS software under conditions
 * other than those described below, or to purchase support for this software,
 * please contact Veridian Systems, PBS Products Department ("Licensor") at:
-* 
+*
 *    www.OpenPBS.org  +1 650 967-4675                  sales@OpenPBS.org
 *                        877 902-4PBS (US toll-free)
 * ---------------------------------------------------------------------------
-* 
+*
 * This license covers use of the OpenPBS v2.3 software (the "Software") at
 * your site or location, and, for certain users, redistribution of the
 * Software to other sites and locations.  Use and redistribution of
 * OpenPBS v2.3 in source and binary forms, with or without modification,
 * are permitted provided that all of the following conditions are met.
 * After December 31, 2001, only conditions 3-6 must be met:
-* 
+*
 * 1. Commercial and/or non-commercial use of the Software is permitted
 *    provided a current software registration is on file at www.OpenPBS.org.
 *    If use of this software contributes to a publication, product, or
 *    service, proper attribution must be given; see www.OpenPBS.org/credit.html
-* 
+*
 * 2. Redistribution in any form is only permitted for non-commercial,
 *    non-profit purposes.  There can be no charge for the Software or any
 *    software incorporating the Software.  Further, there can be no
 *    expectation of revenue generated as a consequence of redistributing
 *    the Software.
-* 
+*
 * 3. Any Redistribution of source code must retain the above copyright notice
 *    and the acknowledgment contained in paragraph 6, this list of conditions
 *    and the disclaimer contained in paragraph 7.
-* 
+*
 * 4. Any Redistribution in binary form must reproduce the above copyright
 *    notice and the acknowledgment contained in paragraph 6, this list of
 *    conditions and the disclaimer contained in paragraph 7 in the
 *    documentation and/or other materials provided with the distribution.
-* 
+*
 * 5. Redistributions in any form must be accompanied by information on how to
 *    obtain complete source code for the OpenPBS software and any
 *    modifications and/or additions to the OpenPBS software.  The source code
@@ -47,23 +47,23 @@
 *    than the cost of distribution plus a nominal fee, and all modifications
 *    and additions to the Software must be freely redistributable by any party
 *    (including Licensor) without restriction.
-* 
+*
 * 6. All advertising materials mentioning features or use of the Software must
 *    display the following acknowledgment:
-* 
+*
 *     "This product includes software developed by NASA Ames Research Center,
-*     Lawrence Livermore National Laboratory, and Veridian Information 
+*     Lawrence Livermore National Laboratory, and Veridian Information
 *     Solutions, Inc.
 *     Visit www.OpenPBS.org for OpenPBS software support,
 *     products, and information."
-* 
+*
 * 7. DISCLAIMER OF WARRANTY
-* 
+*
 * THIS SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND. ANY EXPRESS
 * OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
 * OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT
 * ARE EXPRESSLY DISCLAIMED.
-* 
+*
 * IN NO EVENT SHALL VERIDIAN CORPORATION, ITS AFFILIATED COMPANIES, OR THE
 * U.S. GOVERNMENT OR ANY OF ITS AGENCIES BE LIABLE FOR ANY DIRECT OR INDIRECT,
 * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
@@ -72,7 +72,7 @@
 * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
 * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-* 
+*
 * This license will be governed by the laws of the Commonwealth of Virginia,
 * without reference to its choice of law rules.
 */
@@ -84,120 +84,136 @@
 
 /*
  * parse_equal_string - parse a string of the form:
- *		name1 = value1[, value2 ...][, name2 = value3 [, value4 ...]]
- *	into <name1> <value1[, value2 ...>
- *	     <name2> <value3 [, value4 ...>
+ *  name1 = value1[, value2 ...][, name2 = value3 [, value4 ...]]
+ * into <name1> <value1[, value2 ...>
+ *      <name2> <value3 [, value4 ...>
  *
- *	On the first call,
- *		*name will point to "name1"
- *		*value will point to "value1 ..." upto but not
- *			including the comma before "name2".
- *	On a second call, with start = (char *)0,
- *		*name will point to "name2"
- *		*value will point t0 "value3 ..."
+ * On the first call,
+ *  *name will point to "name1"
+ *  *value will point to "value1 ..." upto but not
+ *   including the comma before "name2".
+ * On a second call, with start = (char *)0,
+ *  *name will point to "name2"
+ *  *value will point t0 "value3 ..."
  * Arguments:
- *	start is the start of the string to parse.  If called again with
- *	start  being a null pointer, it will resume parsing where it stoped
- * 	on the prior call.
+ * start is the start of the string to parse.  If called again with
+ * start  being a null pointer, it will resume parsing where it stoped
+ *  on the prior call.
  *
  * Returns:
- *	integer function return = 1 if  name and value are found,
- *				  0 if nothing (more) is parsed (null input)
- *				 -1 if a syntax error was detected.
- *	*name is set to point to the name string
- *	*value is set to point to the value string
- *	each string is null terminated.
+ * integer function return = 1 if  name and value are found,
+ *      0 if nothing (more) is parsed (null input)
+ *     -1 if a syntax error was detected.
+ * *name is set to point to the name string
+ * *value is set to point to the value string
+ * each string is null terminated.
  */
 
 int parse_equal_string(start, name, value)
-	char  *start;
-	char **name;
-	char **value;
-{
-	static char *pc;	/* where prior call left off */
-	char        *backup;
-	int	     quoting = 0;
+char  *start;
+char **name;
+char **value;
+  {
+  static char *pc; /* where prior call left off */
+  char        *backup;
+  int      quoting = 0;
 
-	if (start != (char *)0)
-		pc = start;
+  if (start != (char *)0)
+    pc = start;
 
-	if (*pc == '\0') {
-		*name = (char *)0;
-		return (0);	/* already at end, return no strings */
-	}
+  if (*pc == '\0')
+    {
+    *name = (char *)0;
+    return (0); /* already at end, return no strings */
+    }
 
-	/* strip leading spaces */
+  /* strip leading spaces */
 
-	while (isspace((int)*pc) && *pc)
-		pc++;
+  while (isspace((int)*pc) && *pc)
+    pc++;
 
-	if (*pc == '\0') {
-		*name = (char *)0;	/* null name */
-		return (0);
-	} else if ((*pc == '=') || (*pc == ','))
-		return (-1);	/* no name, return error */
+  if (*pc == '\0')
+    {
+    *name = (char *)0; /* null name */
+    return (0);
+    }
+  else if ((*pc == '=') || (*pc == ','))
+    return (-1); /* no name, return error */
 
-	*name = pc;
+  *name = pc;
 
-	/* have found start of name, look for end of it */
+  /* have found start of name, look for end of it */
 
-	while ( !isspace((int)*pc) && (*pc != '=') && *pc)
-		pc++;
+  while (!isspace((int)*pc) && (*pc != '=') && *pc)
+    pc++;
 
-	/* now look for =, while stripping blanks between end of name and = */
+  /* now look for =, while stripping blanks between end of name and = */
 
-	while ( isspace((int)*pc) && *pc)
-		*pc++ = '\0';
-	if (*pc != '=')
-		return (-1);	/* should have found a = as first non blank */
-	*pc++ = '\0';
+  while (isspace((int)*pc) && *pc)
+    *pc++ = '\0';
 
-	/* that follows is the value string, skip leading white space */
+  if (*pc != '=')
+    return (-1); /* should have found a = as first non blank */
 
-	while ( isspace((int)*pc) && *pc)
-		pc++;
+  *pc++ = '\0';
 
-	/* is the value string to be quoted ? */
+  /* that follows is the value string, skip leading white space */
 
-	if ((*pc == '"') || (*pc == '\''))
-		quoting = (int)*pc++;
-	*value = pc;
+  while (isspace((int)*pc) && *pc)
+    pc++;
 
-	/*
-	 * now go to first equal sign, or if quoted, the first equal sign
-	 * after the close quote 
-	 */
+  /* is the value string to be quoted ? */
 
-	if (quoting) {
-		while ( (*pc != (char)quoting) && *pc)	/* look for matching */
-			pc++;
-		if (*pc)
-			*pc = ' ';	/* change close quote to space */
-		else 
-			return (-1);
-	}
-	while ((*pc != '=') && *pc)
-		pc++;
+  if ((*pc == '"') || (*pc == '\''))
+    quoting = (int) * pc++;
 
-	if (*pc == '\0') {
-		while (isspace((int)*--pc));
-		if ( *pc == ',' )	/* trailing comma is a no no */
-			return (-1);
-		pc++;
-		return (1);	/* no equal, just end of line, stop here */
-	}
-	
-	/* back up to the first comma found prior to the equal sign */
+  *value = pc;
 
-	while (*--pc != ',')
-		if (pc <= *value)	/* gone back too far, no comma, error */
-			return (-1);
-	backup = pc++;
-	*backup = '\0';			/* null the comma */
+  /*
+   * now go to first equal sign, or if quoted, the first equal sign
+   * after the close quote
+   */
 
-	/* strip off any trailing white space */
+  if (quoting)
+    {
+    while ((*pc != (char)quoting) && *pc)  /* look for matching */
+      pc++;
 
-	while (isspace((int)*--backup))
-		*backup = '\0';
-	return (1);
-}
+    if (*pc)
+      *pc = ' '; /* change close quote to space */
+    else
+      return (-1);
+    }
+
+  while ((*pc != '=') && *pc)
+    pc++;
+
+  if (*pc == '\0')
+    {
+    while (isspace((int)*--pc));
+
+    if (*pc == ',')   /* trailing comma is a no no */
+      return (-1);
+
+    pc++;
+
+    return (1); /* no equal, just end of line, stop here */
+    }
+
+  /* back up to the first comma found prior to the equal sign */
+
+  while (*--pc != ',')
+    if (pc <= *value) /* gone back too far, no comma, error */
+      return (-1);
+
+  backup = pc++;
+
+  *backup = '\0';   /* null the comma */
+
+  /* strip off any trailing white space */
+
+  while (isspace((int)*--backup))
+    *backup = '\0';
+
+  return (1);
+  }

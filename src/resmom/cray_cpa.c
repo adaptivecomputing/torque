@@ -71,8 +71,8 @@ int CPACreatePartition(
   /* first, get the size, uid, jobid, and subnodelist from the job */
 
   pattr = &pjob->ji_wattr[(int)JOB_ATR_resource];
-  prd = find_resc_def(svr_resc_def,"size",svr_resc_size);
-  presc = find_resc_entry(pattr,prd);
+  prd = find_resc_def(svr_resc_def, "size", svr_resc_size);
+  presc = find_resc_entry(pattr, prd);
 
   if (presc != NULL)
     {
@@ -85,18 +85,19 @@ int CPACreatePartition(
     {
     /* FAILURE */
 
-    sprintf(log_buffer,"ERROR:  invalid parameters:  Size: %d  UID: %d  \n",
-      Size,
-      UID);
+    sprintf(log_buffer, "ERROR:  invalid parameters:  Size: %d  UID: %d  \n",
+            Size,
+            UID);
 
-    log_err(-1,id,log_buffer);
+    log_err(-1, id, log_buffer);
 
     return(1);
     }
 
   pattr = &pjob->ji_wattr[(int)JOB_ATR_resource];
-  prd = find_resc_def(svr_resc_def,"subnode_list",svr_resc_size);
-  presc = find_resc_entry(pattr,prd);
+
+  prd = find_resc_def(svr_resc_def, "subnode_list", svr_resc_size);
+  presc = find_resc_entry(pattr, prd);
 
   if (presc != NULL)
     {
@@ -120,24 +121,25 @@ int CPACreatePartition(
     int  index;
 
     rc = nid_list_create(
-      0,
-      MaxListSize,  /* max count */
-      0,
-      MaxNID,       /* max value */
-      &Wanted);     /* O */
+           0,
+           MaxListSize,  /* max count */
+           0,
+           MaxNID,       /* max value */
+           &Wanted);     /* O */
 
     if (rc != 0)
       {
       /* FAILURE */
 
       printf("nid_list_create: rc=%d (%s)\n",
-        rc,
-        cpa_rc2str(rc));
+             rc,
+             cpa_rc2str(rc));
 
       return(1);
       }
 
-    strncpy(tmpBuffer,HostList,sizeof(tmpBuffer));
+    strncpy(tmpBuffer, HostList, sizeof(tmpBuffer));
+
     tmpBuffer[sizeof(tmpBuffer) - 1] = '\0';
 
     for (index = 0;tmpBuffer[index] != '\0';index++)
@@ -146,15 +148,15 @@ int CPACreatePartition(
         tmpBuffer[index] = ',';
       }
 
-    rc = nid_list_destringify(tmpBuffer,Wanted);
+    rc = nid_list_destringify(tmpBuffer, Wanted);
 
     if (rc != 0)
       {
       /* FAILURE */
 
       printf("nid_list_destringify: rc=%d (%s)\n",
-        rc,
-        cpa_rc2str(rc));
+             rc,
+             cpa_rc2str(rc));
 
       nid_list_destroy(Wanted);
 
@@ -166,20 +168,21 @@ int CPACreatePartition(
       char *buf = NULL;
       int   bufsize = 0;
 
-      rc = nid_list_stringify(Wanted,&buf,&bufsize);
+      rc = nid_list_stringify(Wanted, &buf, &bufsize);
 
       if (rc == 0)
         {
-        snprintf(log_buffer,sizeof(log_buffer),"CPANodeList: %s\n",
-          buf);
+        snprintf(log_buffer, sizeof(log_buffer), "CPANodeList: %s\n",
+                 buf);
         }
       else
         {
-        snprintf(log_buffer,sizeof(log_buffer),"CPA nid_list_stringify: rc=%d\n",
-          rc);
+        snprintf(log_buffer, sizeof(log_buffer), "CPA nid_list_stringify: rc=%d\n",
+                 rc);
         }
 
       log_record(
+
         PBSEVENT_JOB,
         PBS_EVENTCLASS_JOB,
         pjob->ji_qs.ji_jobid,
@@ -194,19 +197,20 @@ int CPACreatePartition(
     }
 
   NodeReq = cpa_new_node_req(
-    Size, /* number of procs/nodes required by job */
-    PPN,
-    Flags,
-    Spec,
-    Wanted);  /* I */
+
+              Size, /* number of procs/nodes required by job */
+              PPN,
+              Flags,
+              Spec,
+              Wanted);  /* I */
 
   if (NodeReq == NULL)
     {
     /* FAILURE:  cannot alloc memory for node req */
 
-    sprintf(log_buffer,"cpa_new_node_req: NULL\n");
+    sprintf(log_buffer, "cpa_new_node_req: NULL\n");
 
-    log_err(-1,id,log_buffer);
+    log_err(-1, id, log_buffer);
 
     nid_list_destroy(Wanted);
 
@@ -214,24 +218,25 @@ int CPACreatePartition(
     }
 
   rc = cpa_create_partition(
-    NodeReq,
-    CPA_BATCH,
-    CPA_NOT_SPECIFIED,
-    UID,
-    (AcctID != NULL) ? AcctID : "DEFAULT",
-    (cpa_partition_id_t *)&ParID,   /* O */
-    (cpa_cookie_t *)&AdminCookie,   /* O */
-    (cpa_cookie_t *)&AllocCookie);  /* O */
+
+         NodeReq,
+         CPA_BATCH,
+         CPA_NOT_SPECIFIED,
+         UID,
+         (AcctID != NULL) ? AcctID : "DEFAULT",
+         (cpa_partition_id_t *) & ParID, /* O */
+         (cpa_cookie_t *) & AdminCookie, /* O */
+         (cpa_cookie_t *) & AllocCookie);  /* O */
 
   if (rc != 0)
     {
     /* FAILURE */
 
-    sprintf(log_buffer,"cpa_create_partition: rc=%d (%s)\n",
-      rc,
-      cpa_rc2str(rc));
+    sprintf(log_buffer, "cpa_create_partition: rc=%d (%s)\n",
+            rc,
+            cpa_rc2str(rc));
 
-    log_err(-1,id,log_buffer);
+    log_err(-1, id, log_buffer);
 
     nid_list_destroy(Wanted);
 
@@ -239,10 +244,11 @@ int CPACreatePartition(
     }
 
   rc = cpa_assign_partition(
-    (cpa_partition_id_t)ParID,
-    (cpa_cookie_t)AdminCookie,
-    JobID,
-    1);     /* NOT CURRENTLY USED - should be set to NID of 'master host' */
+
+         (cpa_partition_id_t)ParID,
+         (cpa_cookie_t)AdminCookie,
+         JobID,
+         1);     /* NOT CURRENTLY USED - should be set to NID of 'master host' */
 
   /* free memory, nid list no longer required */
 
@@ -252,27 +258,27 @@ int CPACreatePartition(
     {
     /* FAILURE */
 
-    sprintf(log_buffer,"cpa_assign_partition: rc=%d (%s)\n",
-      rc,
-      cpa_rc2str(rc));
+    sprintf(log_buffer, "cpa_assign_partition: rc=%d (%s)\n",
+            rc,
+            cpa_rc2str(rc));
 
-    log_err(-1,id,log_buffer);
+    log_err(-1, id, log_buffer);
 
     return(1);
-    }         
+    }
 
   /* save the partition and cookies in the job and vtab */
 
-  prd = find_resc_def(svr_resc_def,"cpapartition",svr_resc_size);
+  prd = find_resc_def(svr_resc_def, "cpapartition", svr_resc_size);
 
   if (prd == NULL)
     {
     return(PBSE_SYSTEM);
     }
 
-  if ((presc = find_resc_entry(pattr,prd)) == NULL)
+  if ((presc = find_resc_entry(pattr, prd)) == NULL)
     {
-    if ((presc = add_resource_entry(pattr,prd)) == NULL)
+    if ((presc = add_resource_entry(pattr, prd)) == NULL)
       {
       return(PBSE_SYSTEM);
       }
@@ -282,21 +288,22 @@ int CPACreatePartition(
     prd->rs_free(&presc->rs_value);
     }
 
-  snprintf(longbuf,1023,"%lu",ParID);
-  prd->rs_decode(&presc->rs_value,NULL,NULL,longbuf);
+  snprintf(longbuf, 1023, "%lu", ParID);
+
+  prd->rs_decode(&presc->rs_value, NULL, NULL, longbuf);
   presc->rs_value.at_flags |= ATR_VFLAG_SET;
-  bld_env_variables(vtab,"BATCH_PARTITION_ID",longbuf);
+  bld_env_variables(vtab, "BATCH_PARTITION_ID", longbuf);
 
-  prd = find_resc_def(svr_resc_def,"cpaadmincookie",svr_resc_size);
+  prd = find_resc_def(svr_resc_def, "cpaadmincookie", svr_resc_size);
 
   if (prd == NULL)
     {
     return(PBSE_SYSTEM);
     }
 
-  if ((presc = find_resc_entry(pattr,prd)) == NULL)
+  if ((presc = find_resc_entry(pattr, prd)) == NULL)
     {
-    if ((presc = add_resource_entry(pattr,prd)) == NULL)
+    if ((presc = add_resource_entry(pattr, prd)) == NULL)
       {
       return(PBSE_SYSTEM);
       }
@@ -306,21 +313,22 @@ int CPACreatePartition(
     prd->rs_free(&presc->rs_value);
     }
 
-  snprintf(longbuf,1023,"%llu",AdminCookie);
-  prd->rs_decode(&presc->rs_value,NULL,NULL,longbuf);
+  snprintf(longbuf, 1023, "%llu", AdminCookie);
+
+  prd->rs_decode(&presc->rs_value, NULL, NULL, longbuf);
   presc->rs_value.at_flags |= ATR_VFLAG_SET;
   /* admincookie doesn't go into job env */
 
-  prd = find_resc_def(svr_resc_def,"cpaalloccookie",svr_resc_size);
+  prd = find_resc_def(svr_resc_def, "cpaalloccookie", svr_resc_size);
 
   if (prd == NULL)
     {
     return(PBSE_SYSTEM);
     }
 
-  if ((presc = find_resc_entry(pattr,prd)) == NULL)
+  if ((presc = find_resc_entry(pattr, prd)) == NULL)
     {
-    if ((presc = add_resource_entry(pattr,prd)) == NULL)
+    if ((presc = add_resource_entry(pattr, prd)) == NULL)
       {
       return(PBSE_SYSTEM);
       }
@@ -330,12 +338,13 @@ int CPACreatePartition(
     prd->rs_free(&presc->rs_value);
     }
 
-  snprintf(longbuf,1023,"%llu",AllocCookie);
-  prd->rs_decode(&presc->rs_value,NULL,NULL,longbuf);
-  presc->rs_value.at_flags |= ATR_VFLAG_SET;
-  bld_env_variables(vtab,"BATCH_ALLOC_COOKIE",longbuf);
+  snprintf(longbuf, 1023, "%llu", AllocCookie);
 
-  bld_env_variables(vtab,"BATCH_JOBID",JobID);
+  prd->rs_decode(&presc->rs_value, NULL, NULL, longbuf);
+  presc->rs_value.at_flags |= ATR_VFLAG_SET;
+  bld_env_variables(vtab, "BATCH_ALLOC_COOKIE", longbuf);
+
+  bld_env_variables(vtab, "BATCH_JOBID", JobID);
 
   return(0);
   }  /* END CPACreatePartition() */
@@ -351,9 +360,9 @@ int CPADestroyPartition(
   job *pjob)
 
   {
-  char id[]="CPADestroyPartition";
+  char id[] = "CPADestroyPartition";
 
-  int rc;             
+  int rc;
   int ErrorP;        /* O - non-zero if users of partition encountered error */
   unsigned long ParID;
   unsigned long long AdminCookie;
@@ -364,39 +373,39 @@ int CPADestroyPartition(
 
   pattr = &pjob->ji_wattr[(int)JOB_ATR_resource];
 
-  prd = find_resc_def(svr_resc_def,"cpapartition",svr_resc_size);
+  prd = find_resc_def(svr_resc_def, "cpapartition", svr_resc_size);
 
   if (prd == NULL)
     {
     return(PBSE_SYSTEM);
     }
 
-  if ((presc = find_resc_entry(pattr,prd)) == NULL)
+  if ((presc = find_resc_entry(pattr, prd)) == NULL)
     {
     return(PBSE_SYSTEM);  /* is this a real error? */
     }
 
-  ParID = strTouL(presc->rs_value.at_val.at_str,NULL,10);
+  ParID = strTouL(presc->rs_value.at_val.at_str, NULL, 10);
 
-  prd = find_resc_def(svr_resc_def,"cpaadmincookie",svr_resc_size);
+  prd = find_resc_def(svr_resc_def, "cpaadmincookie", svr_resc_size);
 
   if (prd == NULL)
     {
     return(PBSE_SYSTEM);
     }
 
-  if ((presc = find_resc_entry(pattr,prd)) == NULL)
+  if ((presc = find_resc_entry(pattr, prd)) == NULL)
     {
     return(PBSE_SYSTEM);  /* is this a real error? */
     }
 
-  AdminCookie = strTouL(presc->rs_value.at_val.at_str,NULL,10);
+  AdminCookie = strTouL(presc->rs_value.at_val.at_str, NULL, 10);
 
-  if (LOGLEVEL >= 2)          
-    {              
+  if (LOGLEVEL >= 2)
+    {
     printf("INFO:  destroying partition %lu with cookie %llu\n",
-      ParID,                                                   
-      AdminCookie);
+           ParID,
+           AdminCookie);
 
     log_record(
       PBSEVENT_JOB,
@@ -408,21 +417,21 @@ int CPADestroyPartition(
   /* will fail if yod is present */
 
   rc = cpa_destroy_partition(
-    ParID,
-    AdminCookie, 
-    &ErrorP);      /* O - if set, destroy failed on one or more tasks */
+         ParID,
+         AdminCookie,
+         &ErrorP);      /* O - if set, destroy failed on one or more tasks */
 
   if (rc != 0)
     {
-    sprintf(log_buffer,"cpa_destroy_partition: rc=%d (%s)\n",
-      rc,
-      cpa_rc2str(rc));
+    sprintf(log_buffer, "cpa_destroy_partition: rc=%d (%s)\n",
+            rc,
+            cpa_rc2str(rc));
 
-    log_err(-1,id,log_buffer);
+    log_err(-1, id, log_buffer);
 
     return(1);
     }
-     
+
   return(0);
   }  /* END CPADestroyPartition() */
 
@@ -446,8 +455,8 @@ int CPASetJobEnv(
 
   /* NOTE:  add two bytes to malloc for '=' and '\0' */
 
-  sprintf(tmpNum,"%ld",
-    ParID);
+  sprintf(tmpNum, "%ld",
+          ParID);
 
   if (tmpNum[0] != '\0')
     {
@@ -455,18 +464,20 @@ int CPASetJobEnv(
 
     if (ptr == NULL)
       {
-      return(1);                                               
+      return(1);
       }
 
-    sprintf(ptr,"%s=%s",
-      ParVar,
-      tmpNum);
+    sprintf(ptr, "%s=%s",
+
+            ParVar,
+            tmpNum);
 
     putenv(ptr);
     }
 
-  sprintf(tmpNum,"%ld",
-    AllocCookie);
+  sprintf(tmpNum, "%ld",
+
+          AllocCookie);
 
   if (tmpNum[0] != '\0')
     {
@@ -475,11 +486,12 @@ int CPASetJobEnv(
     if (ptr == NULL)
       {
       return(1);
-      }         
-       
-    sprintf(ptr,"%s=%s",
-      AllVar,           
-      tmpNum);   
+      }
+
+    sprintf(ptr, "%s=%s",
+
+            AllVar,
+            tmpNum);
 
     putenv(ptr);
     }
@@ -489,13 +501,14 @@ int CPASetJobEnv(
     ptr = (char *)malloc(strlen(JobID) + strlen(JobVar) + 2);
 
     if (ptr == NULL)
-      {             
+      {
       return(1);
       }
 
-    sprintf(ptr,"%s=%s",
-      JobVar,
-      JobID);
+    sprintf(ptr, "%s=%s",
+
+            JobVar,
+            JobID);
 
     putenv(ptr);
     }

@@ -11,25 +11,27 @@
 #include "batch_request.h"
 #include "dis.h"
 
-int decode_DIS_ReturnFiles(sock, preq)
-	int   sock;
-	struct batch_request *preq;
-{
-	struct rq_returnfiles *prfs;
-	int   rc;
+int
+decode_DIS_ReturnFiles(int sock, struct batch_request *preq)
+  {
 
-	prfs = &preq->rq_ind.rq_returnfiles;
+  struct rq_returnfiles *prfs;
+  int   rc;
 
-	if ((rc = disrfst(sock, PBS_MAXSVRJOBID, prfs->rq_jobid)) != 0)
-		return rc;
+  prfs = &preq->rq_ind.rq_returnfiles;
 
-        prfs->rq_return_stdout = disrsi(sock,&rc);
-        if (rc != 0)
-          return rc;
+  if ((rc = disrfst(sock, PBS_MAXSVRJOBID, prfs->rq_jobid)) != 0)
+    return rc;
 
-        prfs->rq_return_stderr = disrsi(sock,&rc);
-        if (rc != 0)
-          return rc;
+  prfs->rq_return_stdout = disrsi(sock, &rc);
 
-	return 0;
-}
+  if (rc != 0)
+    return rc;
+
+  prfs->rq_return_stderr = disrsi(sock, &rc);
+
+  if (rc != 0)
+    return rc;
+
+  return 0;
+  }

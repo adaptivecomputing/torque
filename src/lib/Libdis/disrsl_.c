@@ -1,45 +1,45 @@
 /*
 *         OpenPBS (Portable Batch System) v2.3 Software License
-* 
+*
 * Copyright (c) 1999-2000 Veridian Information Solutions, Inc.
 * All rights reserved.
-* 
+*
 * ---------------------------------------------------------------------------
 * For a license to use or redistribute the OpenPBS software under conditions
 * other than those described below, or to purchase support for this software,
 * please contact Veridian Systems, PBS Products Department ("Licensor") at:
-* 
+*
 *    www.OpenPBS.org  +1 650 967-4675                  sales@OpenPBS.org
 *                        877 902-4PBS (US toll-free)
 * ---------------------------------------------------------------------------
-* 
+*
 * This license covers use of the OpenPBS v2.3 software (the "Software") at
 * your site or location, and, for certain users, redistribution of the
 * Software to other sites and locations.  Use and redistribution of
 * OpenPBS v2.3 in source and binary forms, with or without modification,
 * are permitted provided that all of the following conditions are met.
 * After December 31, 2001, only conditions 3-6 must be met:
-* 
+*
 * 1. Commercial and/or non-commercial use of the Software is permitted
 *    provided a current software registration is on file at www.OpenPBS.org.
 *    If use of this software contributes to a publication, product, or
 *    service, proper attribution must be given; see www.OpenPBS.org/credit.html
-* 
+*
 * 2. Redistribution in any form is only permitted for non-commercial,
 *    non-profit purposes.  There can be no charge for the Software or any
 *    software incorporating the Software.  Further, there can be no
 *    expectation of revenue generated as a consequence of redistributing
 *    the Software.
-* 
+*
 * 3. Any Redistribution of source code must retain the above copyright notice
 *    and the acknowledgment contained in paragraph 6, this list of conditions
 *    and the disclaimer contained in paragraph 7.
-* 
+*
 * 4. Any Redistribution in binary form must reproduce the above copyright
 *    notice and the acknowledgment contained in paragraph 6, this list of
 *    conditions and the disclaimer contained in paragraph 7 in the
 *    documentation and/or other materials provided with the distribution.
-* 
+*
 * 5. Redistributions in any form must be accompanied by information on how to
 *    obtain complete source code for the OpenPBS software and any
 *    modifications and/or additions to the OpenPBS software.  The source code
@@ -47,23 +47,23 @@
 *    than the cost of distribution plus a nominal fee, and all modifications
 *    and additions to the Software must be freely redistributable by any party
 *    (including Licensor) without restriction.
-* 
+*
 * 6. All advertising materials mentioning features or use of the Software must
 *    display the following acknowledgment:
-* 
+*
 *     "This product includes software developed by NASA Ames Research Center,
-*     Lawrence Livermore National Laboratory, and Veridian Information 
+*     Lawrence Livermore National Laboratory, and Veridian Information
 *     Solutions, Inc.
 *     Visit www.OpenPBS.org for OpenPBS software support,
 *     products, and information."
-* 
+*
 * 7. DISCLAIMER OF WARRANTY
-* 
+*
 * THIS SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND. ANY EXPRESS
 * OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
 * OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT
 * ARE EXPRESSLY DISCLAIMED.
-* 
+*
 * IN NO EVENT SHALL VERIDIAN CORPORATION, ITS AFFILIATED COMPANIES, OR THE
 * U.S. GOVERNMENT OR ANY OF ITS AGENCIES BE LIABLE FOR ANY DIRECT OR INDIRECT,
 * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
@@ -72,7 +72,7 @@
 * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
 * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-* 
+*
 * This license will be governed by the laws of the Commonwealth of Virginia,
 * without reference to its choice of law rules.
 */
@@ -92,16 +92,16 @@ static unsigned ulmaxdigs = 0;
 
 int disrsl_(
 
-  int		 stream,
-  int		*negate,
+  int   stream,
+  int  *negate,
   unsigned long *value,
-  unsigned long	 count)
+  unsigned long  count)
 
   {
-  int		c;
-  unsigned long	locval;
-  unsigned long	ndigs;
-  char		*cp;
+  int  c;
+  unsigned long locval;
+  unsigned long ndigs;
+  char  *cp;
 
   assert(negate != NULL);
   assert(value != NULL);
@@ -110,9 +110,9 @@ int disrsl_(
   assert(dis_getc != NULL);
   assert(dis_gets != NULL);
 
-  if (ulmaxdigs == 0) 
+  if (ulmaxdigs == 0)
     {
-    cp = discul_(dis_buffer + DIS_BUFSIZ,ULONG_MAX,&ulmaxdigs);
+    cp = discul_(dis_buffer + DIS_BUFSIZ, ULONG_MAX, &ulmaxdigs);
 
     ulmax = (char *)malloc(ulmaxdigs);
 
@@ -121,7 +121,7 @@ int disrsl_(
       return(DIS_NOMALLOC);
       }
 
-    memcpy(ulmax,cp,ulmaxdigs);
+    memcpy(ulmax, cp, ulmaxdigs);
 
     if (dis_umaxd == 0)
       disiui_();
@@ -131,24 +131,26 @@ int disrsl_(
 
   /* FORMAT:  +2+1+0+0+64+2079+22+251175826.teva.westgrid.ubc2+362+21+8Job_Name+02+11run32_.2557+02+ ... */
 
-  switch (c) 
+  switch (c)
     {
+
     case '-':
+
     case '+':
 
       *negate = (c == '-');
 
-      if ((*dis_gets)(stream,dis_buffer,count) != (int)count)
+      if ((*dis_gets)(stream, dis_buffer, count) != (int)count)
         {
         return(DIS_EOD);
         }
 
-      if (count >= ulmaxdigs) 
+      if (count >= ulmaxdigs)
         {
         if (count > ulmaxdigs)
           goto overflow;
 
-        if (memcmp(dis_buffer,ulmax,ulmaxdigs) > 0)
+        if (memcmp(dis_buffer, ulmax, ulmaxdigs) > 0)
           goto overflow;
         }
 
@@ -156,7 +158,7 @@ int disrsl_(
 
       locval = 0;
 
-      do 
+      do
         {
         if ((c = *cp++) < '0' || c > '9')
           {
@@ -164,7 +166,8 @@ int disrsl_(
           }
 
         locval = 10 * locval + c - '0';
-        } while (--count);
+        }
+      while (--count);
 
       *value = locval;
 
@@ -183,20 +186,28 @@ int disrsl_(
       break;
 
     case '1':
+
     case '2':
+
     case '3':
+
     case '4':
+
     case '5':
+
     case '6':
+
     case '7':
+
     case '8':
+
     case '9':
 
       ndigs = c - '0';
 
-      if (count > 1) 
+      if (count > 1)
         {
-        if ((*dis_gets)(stream,dis_buffer + 1,count - 1) != (int)count - 1)
+        if ((*dis_gets)(stream, dis_buffer + 1, count - 1) != (int)count - 1)
           {
           /* FAILURE */
 
@@ -205,23 +216,23 @@ int disrsl_(
 
         cp = dis_buffer;
 
-        if (count >= ulmaxdigs) 
+        if (count >= ulmaxdigs)
           {
           if (count > ulmaxdigs)
             break;
 
           *cp = c;
 
-          if (memcmp(dis_buffer,ulmax,ulmaxdigs) > 0)
+          if (memcmp(dis_buffer, ulmax, ulmaxdigs) > 0)
             break;
           }
 
-        while (--count) 
+        while (--count)
           {
           if (((c = *++cp) < '0') || (c > '9'))
             {
             /* FAILURE */
- 
+
             return(DIS_NONDIGIT);
             }
 
@@ -229,13 +240,13 @@ int disrsl_(
           }
         }
 
-      return(disrsl_(stream,negate,value,ndigs));
+      return(disrsl_(stream, negate, value, ndigs));
 
       /*NOTREACHED*/
 
       break;
 
-    case -1:
+    case - 1:
 
       /* FAILURE */
 

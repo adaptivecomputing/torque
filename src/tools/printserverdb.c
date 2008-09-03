@@ -13,7 +13,7 @@
 #include "server_limits.h"
 #include "server.h"
 
-  int no_attributes = 0;
+int no_attributes = 0;
 
 void prt_server_struct(
 
@@ -21,17 +21,17 @@ void prt_server_struct(
 
   {
   printf("---------------------------------------------------\n");
-  printf("numjobs:\t\t%d\n", 
-    pserver->sv_qs.sv_numjobs);
+  printf("numjobs:\t\t%d\n",
+         pserver->sv_qs.sv_numjobs);
 
-  printf("numque:\t\t%d\n", 
-    pserver->sv_qs.sv_numque);
+  printf("numque:\t\t%d\n",
+         pserver->sv_qs.sv_numque);
 
-  printf("jobidnumber:\t\t%d\n", 
-    pserver->sv_qs.sv_jobidnumber);
+  printf("jobidnumber:\t\t%d\n",
+         pserver->sv_qs.sv_jobidnumber);
 
-  printf("sametm:\t\t%ld\n", 
-    (long)pserver->sv_qs.sv_savetm);
+  printf("sametm:\t\t%ld\n",
+         (long)pserver->sv_qs.sv_savetm);
 
   return;
   }  /* END prt_job_struct() */
@@ -51,11 +51,11 @@ int read_attr(
   svrattrl *pal;
   svrattrl  tempal;
 
-  i = read(fd,(char *)&tempal,sizeof(tempal));
+  i = read(fd, (char *) & tempal, sizeof(tempal));
 
-  if (i != sizeof(tempal)) 
+  if (i != sizeof(tempal))
     {
-    fprintf(stderr,"bad read of attribute\n");
+    fprintf(stderr, "bad read of attribute\n");
 
     /* FAILURE */
 
@@ -71,9 +71,9 @@ int read_attr(
 
   pal = (svrattrl *)malloc(tempal.al_tsize);
 
-  if (pal == NULL) 
+  if (pal == NULL)
     {
-    fprintf(stderr,"malloc failed\n");
+    fprintf(stderr, "malloc failed\n");
 
     exit(1);
     }
@@ -84,9 +84,9 @@ int read_attr(
 
   amt = pal->al_tsize - sizeof(svrattrl);
 
-  i = read(fd,(char *)pal + sizeof(svrattrl),amt);
+  i = read(fd, (char *)pal + sizeof(svrattrl), amt);
 
-  if (i != amt) 
+  if (i != amt)
     {
     fprintf(stderr, "short read of attribute\n");
 
@@ -105,21 +105,21 @@ int read_attr(
   else
     pal->al_value = NULL;
 
-  printf("%s", 
-    pal->al_name);
+  printf("%s",
+         pal->al_name);
 
   if (pal->al_resc != NULL)
     {
-    printf(".%s", 
-      pal->al_resc);
+    printf(".%s",
+           pal->al_resc);
     }
 
   printf(" = ");
 
   if (pal->al_value != NULL)
     {
-    printf("%s", 
-      pal->al_value);
+    printf("%s",
+           pal->al_value);
     }
 
   printf("\n");
@@ -130,50 +130,51 @@ int read_attr(
   }
 
 
-void dumpdb (char *file)
+void dumpdb(char *file)
   {
   int fp;
   int amt;
+
   struct server xserver;
 
-    fp = open(file,O_RDONLY,0);
+  fp = open(file, O_RDONLY, 0);
 
-    if (fp < 0) 
-      {
-      perror("open failed");
+  if (fp < 0)
+    {
+    perror("open failed");
 
-      fprintf(stderr,"unable to open file %s\n", 
-        file);
+    fprintf(stderr, "unable to open file %s\n",
+            file);
 
-      exit(1);
-      }
+    exit(1);
+    }
 
-    amt = read(fp,&xserver.sv_qs,sizeof(xserver.sv_qs));
+  amt = read(fp, &xserver.sv_qs, sizeof(xserver.sv_qs));
 
-    if (amt != sizeof(xserver.sv_qs)) 
-      {
-      fprintf(stderr,"Short read of %d bytes, file %s\n",
-        amt, 
-        file);
-      }
+  if (amt != sizeof(xserver.sv_qs))
+    {
+    fprintf(stderr, "Short read of %d bytes, file %s\n",
+            amt,
+            file);
+    }
 
-    /* print out job structure */
+  /* print out job structure */
 
-    prt_server_struct(&xserver);
+  prt_server_struct(&xserver);
 
-    /* now do attributes, one at a time */
+  /* now do attributes, one at a time */
 
-    if (no_attributes == 0) 
-      {
-      printf("--attributes--\n");
+  if (no_attributes == 0)
+    {
+    printf("--attributes--\n");
 
-      while (read_attr(fp));
-      }
+    while (read_attr(fp));
+    }
 
-    close(fp);
+  close(fp);
 
-    printf("\n");
-    }  /* END dumpdb */
+  printf("\n");
+  }  /* END dumpdb */
 
 
 
@@ -191,30 +192,31 @@ int main(
 
   extern int optind;
 
-  sprintf(defdb,"%s/%s/%s",PBS_SERVER_HOME,PBS_SVR_PRIVATE,PBS_SERVERDB);
+  sprintf(defdb, "%s/%s/%s", PBS_SERVER_HOME, PBS_SVR_PRIVATE, PBS_SERVERDB);
 
-  while ((f = getopt(argc,argv,"a")) != EOF) 
+  while ((f = getopt(argc, argv, "a")) != EOF)
     {
-    switch (f) 
+    switch (f)
       {
+
       case 'a':
 
         no_attributes = 1;
 
         break;
 
-      default: 
-  
+      default:
+
         err = 1;
 
         break;
       }
     }
 
-  if (err) 
+  if (err)
     {
-    fprintf(stderr, "usage: %s [-a] [file]...}\n", 
-      argv[0]);
+    fprintf(stderr, "usage: %s [-a] [file]...}\n",
+            argv[0]);
 
     return(1);
     }
@@ -225,11 +227,12 @@ int main(
     }
   else
     {
-    for (f = optind;f < argc;++f) 
+    for (f = optind;f < argc;++f)
       {
       dumpdb(argv[f]);
       }
     }
+
   return(0);
   }    /* END main() */
 

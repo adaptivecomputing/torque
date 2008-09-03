@@ -1,45 +1,45 @@
 /*
 *         OpenPBS (Portable Batch System) v2.3 Software License
-* 
+*
 * Copyright (c) 1999-2000 Veridian Information Solutions, Inc.
 * All rights reserved.
-* 
+*
 * ---------------------------------------------------------------------------
 * For a license to use or redistribute the OpenPBS software under conditions
 * other than those described below, or to purchase support for this software,
 * please contact Veridian Systems, PBS Products Department ("Licensor") at:
-* 
+*
 *    www.OpenPBS.org  +1 650 967-4675                  sales@OpenPBS.org
 *                        877 902-4PBS (US toll-free)
 * ---------------------------------------------------------------------------
-* 
+*
 * This license covers use of the OpenPBS v2.3 software (the "Software") at
 * your site or location, and, for certain users, redistribution of the
 * Software to other sites and locations.  Use and redistribution of
 * OpenPBS v2.3 in source and binary forms, with or without modification,
 * are permitted provided that all of the following conditions are met.
 * After December 31, 2001, only conditions 3-6 must be met:
-* 
+*
 * 1. Commercial and/or non-commercial use of the Software is permitted
 *    provided a current software registration is on file at www.OpenPBS.org.
 *    If use of this software contributes to a publication, product, or
 *    service, proper attribution must be given; see www.OpenPBS.org/credit.html
-* 
+*
 * 2. Redistribution in any form is only permitted for non-commercial,
 *    non-profit purposes.  There can be no charge for the Software or any
 *    software incorporating the Software.  Further, there can be no
 *    expectation of revenue generated as a consequence of redistributing
 *    the Software.
-* 
+*
 * 3. Any Redistribution of source code must retain the above copyright notice
 *    and the acknowledgment contained in paragraph 6, this list of conditions
 *    and the disclaimer contained in paragraph 7.
-* 
+*
 * 4. Any Redistribution in binary form must reproduce the above copyright
 *    notice and the acknowledgment contained in paragraph 6, this list of
 *    conditions and the disclaimer contained in paragraph 7 in the
 *    documentation and/or other materials provided with the distribution.
-* 
+*
 * 5. Redistributions in any form must be accompanied by information on how to
 *    obtain complete source code for the OpenPBS software and any
 *    modifications and/or additions to the OpenPBS software.  The source code
@@ -47,23 +47,23 @@
 *    than the cost of distribution plus a nominal fee, and all modifications
 *    and additions to the Software must be freely redistributable by any party
 *    (including Licensor) without restriction.
-* 
+*
 * 6. All advertising materials mentioning features or use of the Software must
 *    display the following acknowledgment:
-* 
+*
 *     "This product includes software developed by NASA Ames Research Center,
-*     Lawrence Livermore National Laboratory, and Veridian Information 
+*     Lawrence Livermore National Laboratory, and Veridian Information
 *     Solutions, Inc.
 *     Visit www.OpenPBS.org for OpenPBS software support,
 *     products, and information."
-* 
+*
 * 7. DISCLAIMER OF WARRANTY
-* 
+*
 * THIS SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND. ANY EXPRESS
 * OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
 * OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT
 * ARE EXPRESSLY DISCLAIMED.
-* 
+*
 * IN NO EVENT SHALL VERIDIAN CORPORATION, ITS AFFILIATED COMPANIES, OR THE
 * U.S. GOVERNMENT OR ANY OF ITS AGENCIES BE LIABLE FOR ANY DIRECT OR INDIRECT,
 * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
@@ -72,7 +72,7 @@
 * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
 * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-* 
+*
 * This license will be governed by the laws of the Commonwealth of Virginia,
 * without reference to its choice of law rules.
 */
@@ -113,215 +113,238 @@
 #include "../rm_dep.h"
 
 /*
-**	System dependent code to gather information for the resource
-**	monitor for a Silicon Graphics (SGI) machine.
+** System dependent code to gather information for the resource
+** monitor for a Silicon Graphics (SGI) machine.
 **
-**	Resources known by this code:
-**		cput		cpu time for a pid or session
-**		mem		memory size for a pid or session in KB
-**		resi		resident memory size for a pid or session
-**		sessions	list of sessions in the system
-**		pids		list of pids in a session
-**		nsessions	number of sessions in the system
-**		nusers		number of users in the system
-**		totmem		total memory size in KB
-**		availmem	available memory size in KB
-**		ncpus		number of cpus
-**		physmem		physical memory size in KB
-**		size		size of a file or filesystem in KB
-**		idletime	seconds of idle time
-**		walltime	wall clock time for a pid
-**		loadave		current load average
-**		quota		quota information (sizes in KB)
+** Resources known by this code:
+**  cput  cpu time for a pid or session
+**  mem  memory size for a pid or session in KB
+**  resi  resident memory size for a pid or session
+**  sessions list of sessions in the system
+**  pids  list of pids in a session
+**  nsessions number of sessions in the system
+**  nusers  number of users in the system
+**  totmem  total memory size in KB
+**  availmem available memory size in KB
+**  ncpus  number of cpus
+**  physmem  physical memory size in KB
+**  size  size of a file or filesystem in KB
+**  idletime seconds of idle time
+**  walltime wall clock time for a pid
+**  loadave  current load average
+**  quota  quota information (sizes in KB)
 */
 
 static char ident[] = "@(#) sgi/$RCSfile$ $Revision$";
 
 #ifndef TRUE
-#define FALSE	0
-#define TRUE	1
-#endif	/* TRUE */
+#define FALSE 0
+#define TRUE 1
+#endif /* TRUE */
 
-static	char    procfs[] = "/proc";
-static	char    procfmts[] = "/proc/%s";
-static	char    procfmtd[] = "/proc/%d";
-static	DIR	*pdir = NULL;
+static char    procfs[] = "/proc";
+static char    procfmts[] = "/proc/%s";
+static char    procfmtd[] = "/proc/%d";
+static DIR *pdir = NULL;
 
-static	char	pinfofs[] = "/proc/pinfo";
-static	char	pinfofmts[] = "/proc/pinfo/%s";
-static	DIR	*pinfodir = NULL;
+static char pinfofs[] = "/proc/pinfo";
+static char pinfofmts[] = "/proc/pinfo/%s";
+static DIR *pinfodir = NULL;
 
-static	int	pagesize;
-static	int	kfd = -1;
+static int pagesize;
+static int kfd = -1;
 
-extern	char	*ret_string;
-time_t		wait_time = 10;
-extern	char	extra_parm[];
-extern	char	no_parm[];
+extern char *ret_string;
+time_t  wait_time = 10;
+extern char extra_parm[];
+extern char no_parm[];
 
-extern	struct	pbs_err_to_txt	pbs_err_to_txt[];
-extern	time_t			time_now;
+extern struct pbs_err_to_txt pbs_err_to_txt[];
+extern time_t   time_now;
 
 /*
 ** external functions and data
 */
-extern	struct	config		*search A_((struct config *, char *));
-extern	struct	rm_attribute	*momgetattr A_((char *));
-extern	int			rm_errno;
-extern	double	cputfactor;
-extern	double	wallfactor;
+
+extern struct config  *search A_((struct config *, char *));
+
+extern struct rm_attribute *momgetattr A_((char *));
+extern int   rm_errno;
+extern double cputfactor;
+extern double wallfactor;
 extern  long    system_ncpus;
 extern  int     ignwalltime;
 
 /*
 ** local functions and data
 */
-static char	*resi		A_((struct rm_attribute *attrib));
-static char	*totmem		A_((struct rm_attribute *attrib));
-static char	*availmem	A_((struct rm_attribute *attrib));
-static char	*physmem	A_((struct rm_attribute *attrib));
-static char	*ncpus		A_((struct rm_attribute *attrib));
-static char	*walltime	A_((struct rm_attribute *attrib));
-static char	*quota		A_((struct rm_attribute *attrib));
+static char *resi  A_((struct rm_attribute *attrib));
+static char *totmem  A_((struct rm_attribute *attrib));
+static char *availmem A_((struct rm_attribute *attrib));
+static char *physmem A_((struct rm_attribute *attrib));
+static char *ncpus  A_((struct rm_attribute *attrib));
+static char *walltime A_((struct rm_attribute *attrib));
+static char *quota  A_((struct rm_attribute *attrib));
 
-extern char	*loadave	A_((struct rm_attribute *attrib));
-extern char	*nullproc	A_((struct rm_attribute *attrib));
+extern char *loadave A_((struct rm_attribute *attrib));
+extern char *nullproc A_((struct rm_attribute *attrib));
 
 /*
 ** local resource array
 */
-struct	config	dependent_config[] = {
-	{ "resi",	{resi} },
-	{ "totmem",	{totmem} },
-	{ "availmem",	{availmem} },
-	{ "physmem",	{physmem} },
-	{ "ncpus",	{ncpus} },
-	{ "loadave",	{loadave} },
-	{ "walltime",	{walltime} },
-	{ "quota",	{quota} },
-	{ NULL,		{nullproc} },
-};
-	
-int	kern_addr[] = {
-	-1,			/* KSYM_PHYS */
-	-1,			/* KSYM_LOAD */
-};
 
-#define	KSYM_PHYS	0
-#define	KSYM_LOAD	1
+struct config dependent_config[] =
+  {
+    { "resi", {resi}
+    },
 
-#define MAPNUM		512		/* max number of mem segs */
+  { "totmem", {totmem} },
+  { "availmem", {availmem} },
+  { "physmem", {physmem} },
+  { "ncpus", {ncpus} },
+  { "loadave", {loadave} },
+  { "walltime", {walltime} },
+  { "quota", {quota} },
+  { NULL,  {nullproc} },
+  };
 
-void
-dep_initialize()
-{
-	char	*id = "dep_initialize";
-	static	char	mem[] = "/dev/kmem";
+int kern_addr[] =
+  {
+  -1,   /* KSYM_PHYS */
+  -1,   /* KSYM_LOAD */
+  };
 
-	pagesize = getpagesize();
+#define KSYM_PHYS 0
+#define KSYM_LOAD 1
 
-	if ((pdir = opendir(procfs)) == NULL) {
-		log_err(errno, id, "opendir");
-		return;
-	}
-	if ((pinfodir = opendir(pinfofs)) == NULL) {
-		log_err(errno, id, pinfofs);
-		return;
-	}
-
-	kern_addr[KSYM_PHYS] = SEEKLIMIT & sysmp(MP_KERNADDR, MPKA_PHYSMEM);
-	kern_addr[KSYM_LOAD] = SEEKLIMIT & sysmp(MP_KERNADDR, MPKA_AVENRUN);
-
-	if ((kfd = open(mem, O_RDONLY)) == -1) {
-		log_err(errno, id, mem);
-		return;
-	}
-
-	return;
-}
+#define MAPNUM  512  /* max number of mem segs */
 
 void
-dep_cleanup()
-{
-	char	*id = "dep_cleanup";
+dep_initialize(void)
+  {
+  char *id = "dep_initialize";
+  static char mem[] = "/dev/kmem";
 
-	log_record(PBSEVENT_SYSTEM, 0, id, "dependent cleanup");
-	if (pdir) {
-		closedir(pdir);
-		pdir = NULL;
-	}
-	if (pinfodir) {
-		closedir(pinfodir);
-		pdir = NULL;
-	}
-	if (kfd != -1)
-		close(kfd);
-}
+  pagesize = getpagesize();
+
+  if ((pdir = opendir(procfs)) == NULL)
+    {
+    log_err(errno, id, "opendir");
+    return;
+    }
+
+  if ((pinfodir = opendir(pinfofs)) == NULL)
+    {
+    log_err(errno, id, pinfofs);
+    return;
+    }
+
+  kern_addr[KSYM_PHYS] = SEEKLIMIT & sysmp(MP_KERNADDR, MPKA_PHYSMEM);
+
+  kern_addr[KSYM_LOAD] = SEEKLIMIT & sysmp(MP_KERNADDR, MPKA_AVENRUN);
+
+  if ((kfd = open(mem, O_RDONLY)) == -1)
+    {
+    log_err(errno, id, mem);
+    return;
+    }
+
+  return;
+  }
+
+void
+dep_cleanup(void)
+  {
+  char *id = "dep_cleanup";
+
+  log_record(PBSEVENT_SYSTEM, 0, id, "dependent cleanup");
+
+  if (pdir)
+    {
+    closedir(pdir);
+    pdir = NULL;
+    }
+
+  if (pinfodir)
+    {
+    closedir(pinfodir);
+    pdir = NULL;
+    }
+
+  if (kfd != -1)
+    close(kfd);
+  }
 
 /*
  * This routine is called on each cycle of the main loop.
  */
 
 void
-dep_main_loop_cycle()
-{
+dep_main_loop_cycle(void)
+  {
   /* No periodic functions. */
-}
+  }
 
 /*
  * Internal size decoding routine.
  *
- *	Accepts a resource pointer and a pointer to the unsigned long integer
- *	to receive the decoded value.  It returns a PBS error code, and the
- *	decoded value in the unsigned long integer.
+ * Accepts a resource pointer and a pointer to the unsigned long integer
+ * to receive the decoded value.  It returns a PBS error code, and the
+ * decoded value in the unsigned long integer.
  *
- *		sizeof(word) = sizeof(int)
+ *  sizeof(word) = sizeof(int)
  */
 
-static int getsize(pres, ret)
-    resource		*pres;
-    unsigned long	*ret;
-{
-	unsigned long	value;
+static int
+getsize(resource *pres, unsigned long *ret)
+  {
+  unsigned long value;
 
-	if (pres->rs_value.at_type != ATR_TYPE_SIZE)
-		return (PBSE_ATTRTYPE);
-	value = pres->rs_value.at_val.at_size.atsv_num;
-	if (pres->rs_value.at_val.at_size.atsv_units ==
-	    ATR_SV_WORDSZ) {
-		if (value > ULONG_MAX / sizeof(int))
-			return (PBSE_BADATVAL);
-		value *= sizeof(int);
-	}
-	if (value > ULONG_MAX >>
-	    pres->rs_value.at_val.at_size.atsv_shift)
-	        return (PBSE_BADATVAL);
-	*ret = value << pres->rs_value.at_val.at_size.atsv_shift;
+  if (pres->rs_value.at_type != ATR_TYPE_SIZE)
+    return (PBSE_ATTRTYPE);
 
-	return (PBSE_NONE);
-}
+  value = pres->rs_value.at_val.at_size.atsv_num;
+
+  if (pres->rs_value.at_val.at_size.atsv_units ==
+      ATR_SV_WORDSZ)
+    {
+    if (value > ULONG_MAX / sizeof(int))
+      return (PBSE_BADATVAL);
+
+    value *= sizeof(int);
+    }
+
+  if (value > ULONG_MAX >>
+      pres->rs_value.at_val.at_size.atsv_shift)
+    return (PBSE_BADATVAL);
+
+  *ret = value << pres->rs_value.at_val.at_size.atsv_shift;
+
+  return (PBSE_NONE);
+  }
 
 /*
  * Internal time decoding routine.
  *
- *	Accepts a resource pointer and a pointer to the unsigned long integer
- *	to receive the decoded value.  It returns a PBS error code, and the
- *	decoded value of time in seconds in the unsigned long integer.
+ * Accepts a resource pointer and a pointer to the unsigned long integer
+ * to receive the decoded value.  It returns a PBS error code, and the
+ * decoded value of time in seconds in the unsigned long integer.
  */
 
-static int gettime(pres, ret)
-    resource		*pres;
-    unsigned long	*ret;
-{
+static int
+gettime(resource *pres, unsigned long *ret)
+  {
 
-	if (pres->rs_value.at_type != ATR_TYPE_LONG)
-		return (PBSE_ATTRTYPE);
-	if (pres->rs_value.at_val.at_long < 0)
-	        return (PBSE_BADATVAL);
-	*ret = pres->rs_value.at_val.at_long;
+  if (pres->rs_value.at_type != ATR_TYPE_LONG)
+    return (PBSE_ATTRTYPE);
 
-	return (PBSE_NONE);
-}
+  if (pres->rs_value.at_val.at_long < 0)
+    return (PBSE_BADATVAL);
+
+  *ret = pres->rs_value.at_val.at_long;
+
+  return (PBSE_NONE);
+  }
 
 /*
  * Time decoding macro.  Accepts a timestruc_t pointer.  Returns unsigned long
@@ -331,1872 +354,2256 @@ static int gettime(pres, ret)
 #define tv(val) (ulong)((val).tv_sec + ((val).tv_nsec + 500000000)/1000000000)
 
 /*
-**	Scan a list of tasks and return true if one of them matches
-**	the process (sid or pid) represented by *psp.
+** Scan a list of tasks and return true if one of them matches
+** the process (sid or pid) represented by *psp.
 */
-static
-int
-injob(phead, psp)
-    tlist_head	*phead;
-    prpsinfo_t	*psp;
-{
-	task		*ptask;
-	pid_t		key;
+static int
+injob(tlist_head *phead, prpsinfo_t *psp)
+  {
+  task  *ptask;
+  pid_t  key;
 
-	key = (psp->pr_sid == 0) ? psp->pr_pid : psp->pr_sid;
-	for (ptask = (task *)GET_NEXT(*phead);
-			ptask;
-			ptask = (task *)GET_NEXT(ptask->ti_jobtask)) {
-		if (ptask->ti_qs.ti_sid <= 1)
-			continue;
-		if (ptask->ti_qs.ti_sid == key)
-			return TRUE;
-	}
-	return FALSE;
-}
+  key = (psp->pr_sid == 0) ? psp->pr_pid : psp->pr_sid;
+
+  for (ptask = (task *)GET_NEXT(*phead);
+       ptask;
+       ptask = (task *)GET_NEXT(ptask->ti_jobtask))
+    {
+    if (ptask->ti_qs.ti_sid <= 1)
+      continue;
+
+    if (ptask->ti_qs.ti_sid == key)
+      return TRUE;
+    }
+
+  return FALSE;
+  }
 
 /*
  * Internal session cpu time decoding routine.
  *
- *	Accepts a job pointer.  Returns the sum of all cpu time
- *	consumed for all tasks executed by the job, in seconds,
- *	adjusted by cputfactor.
+ * Accepts a job pointer.  Returns the sum of all cpu time
+ * consumed for all tasks executed by the job, in seconds,
+ * adjusted by cputfactor.
  */
 
-static unsigned long cput_sum(phead)
-    tlist_head	*phead;
-{
-	char			*id = "cput_sum";
-	int			fd;
-	struct dirent		*dent;
-	char			procname[100];
-	ulong			cputime, addtime;
-	prpsinfo_t		pi;
-	int			nps=0;
+static unsigned long
+cput_sum(tlist_head *phead)
+  {
+  char   *id = "cput_sum";
+  int   fd;
 
-	DBPRT(("%s: entered\n", id))
-	cputime = 0.0;
-	rewinddir(pinfodir);
-	for (fd = -1; (dent = readdir(pinfodir)) != NULL; close(fd)) {
-		if (!isdigit(dent->d_name[0]))
-			continue;
+  struct dirent  *dent;
+  char   procname[100];
+  ulong   cputime, addtime;
+  prpsinfo_t  pi;
+  int   nps = 0;
 
-		sprintf(procname, pinfofmts, dent->d_name);
-		if ((fd = open(procname, O_RDONLY)) == -1)
-			continue;
-		if (ioctl(fd, PIOCPSINFO, &pi) == -1) {
-			sprintf(log_buffer,
-				"%s: ioctl(PIOCSTATUS)", procname);
-			log_err(errno, id, log_buffer);
-			continue;
-		}
-		if (!injob(phead, &pi))
-			continue;
-		nps++;
-		addtime = tv(pi.pr_time) + tv(pi.pr_ctime);
-		cputime += addtime;
-		DBPRT(("%s: ses %d pid %d cputime %d\n",
-				id, pi.pr_sid, pi.pr_pid, addtime, cputime))
-	}
+  DBPRT(("%s: entered\n", id))
+  cputime = 0.0;
+  rewinddir(pinfodir);
 
-	if (nps == 0)
-		pjob->ji_flags |= MOM_NO_PROC;
-	else    
-		pjob->ji_flags &= ~MOM_NO_PROC;
+  for (fd = -1; (dent = readdir(pinfodir)) != NULL; close(fd))
+    {
+    if (!isdigit(dent->d_name[0]))
+      continue;
 
-	return ((unsigned long)((double)cputime * cputfactor));
-}
+    sprintf(procname, pinfofmts, dent->d_name);
+
+    if ((fd = open(procname, O_RDONLY)) == -1)
+      continue;
+
+    if (ioctl(fd, PIOCPSINFO, &pi) == -1)
+      {
+      sprintf(log_buffer,
+              "%s: ioctl(PIOCSTATUS)", procname);
+      log_err(errno, id, log_buffer);
+      continue;
+      }
+
+    if (!injob(phead, &pi))
+      continue;
+
+    nps++;
+
+    addtime = tv(pi.pr_time) + tv(pi.pr_ctime);
+
+    cputime += addtime;
+
+    DBPRT(("%s: ses %d pid %d cputime %d\n",
+           id, pi.pr_sid, pi.pr_pid, addtime, cputime))
+    }
+
+  if (nps == 0)
+    pjob->ji_flags |= MOM_NO_PROC;
+  else
+    pjob->ji_flags &= ~MOM_NO_PROC;
+
+  return ((unsigned long)((double)cputime * cputfactor));
+  }
 
 /*
  * Return TRUE if any process in the job is over limit for cputime usage.
  */
-static int overcpu_proc(phead, limit)
-    tlist_head		*phead;
-    unsigned long	limit;
-{
-	char		*id = "overcpu_proc";
-	int		fd;
-	char		procname[100];
-	struct dirent	*dent;
-	prpsinfo_t	pi;
+static int
+overcpu_proc(tlist_head *phead, unsigned long limit)
+  {
+  char  *id = "overcpu_proc";
+  int  fd;
+  char  procname[100];
 
-	rewinddir(pinfodir);
-	for (fd = -1; (dent = readdir(pinfodir)) != NULL; close(fd)) {
-		if (!isdigit(dent->d_name[0]))
-			continue;
+  struct dirent *dent;
+  prpsinfo_t pi;
 
-		sprintf(procname, pinfofmts, dent->d_name);
-		if ((fd = open(procname, O_RDONLY)) == -1)
-			continue;
-		if (ioctl(fd, PIOCPSINFO, &pi) == -1) {
-			sprintf(log_buffer,
-				"%s: ioctl(PIOCPSINFO)", procname);
-			log_err(errno, id, log_buffer);
-			continue;
-		}
+  rewinddir(pinfodir);
 
-		if (!injob(phead, &pi))
-			continue;
-		if ((unsigned long)((double)tv(pi.pr_time) *cputfactor) > limit)
-			return (TRUE);
-        }
+  for (fd = -1; (dent = readdir(pinfodir)) != NULL; close(fd))
+    {
+    if (!isdigit(dent->d_name[0]))
+      continue;
 
-	return (FALSE);
-}
+    sprintf(procname, pinfofmts, dent->d_name);
+
+    if ((fd = open(procname, O_RDONLY)) == -1)
+      continue;
+
+    if (ioctl(fd, PIOCPSINFO, &pi) == -1)
+      {
+      sprintf(log_buffer,
+              "%s: ioctl(PIOCPSINFO)", procname);
+      log_err(errno, id, log_buffer);
+      continue;
+      }
+
+    if (!injob(phead, &pi))
+      continue;
+
+    if ((unsigned long)((double)tv(pi.pr_time) *cputfactor) > limit)
+      return (TRUE);
+    }
+
+  return (FALSE);
+  }
 
 /*
  * Internal session memory usage function.
  *
- *	Returns the total number of bytes of address
- *	space consumed by all current tasks within the list of tasks.
+ * Returns the total number of bytes of address
+ * space consumed by all current tasks within the list of tasks.
  */
-static unsigned long mem_sum(phead)
-    tlist_head	*phead;
-{
-	static	char		id[] = "mem_sum";
-	int			fd;
-	struct dirent		*dent;
-	char			procname[100];
-	int			i;
-	ulong_t			segadd;
-	prpsinfo_t		pi;
+static unsigned long
+mem_sum(tlist_head *phead)
+  {
+  static char  id[] = "mem_sum";
+  int   fd;
 
-	DBPRT(("%s: entered pagesize %d\n", id, pagesize))
+  struct dirent  *dent;
+  char   procname[100];
+  int   i;
+  ulong_t   segadd;
+  prpsinfo_t  pi;
 
-	rewinddir(pdir);
-	segadd = 0;
+  DBPRT(("%s: entered pagesize %d\n", id, pagesize))
 
-	for (fd = -1; (dent = readdir(pdir)) != NULL; close(fd)) {
-		if (!isdigit(dent->d_name[0]))
-			continue;
+  rewinddir(pdir);
+  segadd = 0;
 
-		sprintf(procname, procfmts, dent->d_name);
-		if ((fd = open(procname, O_RDONLY)) == -1)
-			continue;
+  for (fd = -1; (dent = readdir(pdir)) != NULL; close(fd))
+    {
+    if (!isdigit(dent->d_name[0]))
+      continue;
 
-		if (ioctl(fd, PIOCPSINFO, &pi) == -1) {
-			if (errno != ENOENT) {
-				sprintf(log_buffer,
-					"%s: ioctl(PIOCPSINFO)", procname);
-				log_err(errno, id, log_buffer);
-			}
-			continue;
-		}
-		if (!injob(phead, &pi))
-			continue;
+    sprintf(procname, procfmts, dent->d_name);
 
-		DBPRT(("%s: %s(%d:%d) mem %lu\n",
-				id, pi.pr_fname, pi.pr_sid, pi.pr_pid,
-				(ulong)pi.pr_size * (ulong)pagesize))
+    if ((fd = open(procname, O_RDONLY)) == -1)
+      continue;
 
-		segadd += (ulong)pi.pr_size * (ulong)pagesize;
-	}
-	DBPRT(("%s: total mem %lu\n\n", id, segadd))
-	return (segadd);
-}
+    if (ioctl(fd, PIOCPSINFO, &pi) == -1)
+      {
+      if (errno != ENOENT)
+        {
+        sprintf(log_buffer,
+                "%s: ioctl(PIOCPSINFO)", procname);
+        log_err(errno, id, log_buffer);
+        }
+
+      continue;
+      }
+
+    if (!injob(phead, &pi))
+      continue;
+
+    DBPRT(("%s: %s(%d:%d) mem %lu\n",
+           id, pi.pr_fname, pi.pr_sid, pi.pr_pid,
+           (ulong)pi.pr_size * (ulong)pagesize))
+
+    segadd += (ulong)pi.pr_size * (ulong)pagesize;
+    }
+
+  DBPRT(("%s: total mem %lu\n\n", id, segadd))
+
+  return (segadd);
+  }
 
 /*
  * Internal session mem (workingset) size function.
  */
-static unsigned long resi_sum(phead)
-    tlist_head		*phead;
-{
-	static	char		id[]="resi_ses";
-	ulong			resisize, resisub;
-	int			fd;
-	int			num, i;
-	char			procname[100];
-	struct dirent		*dent;
-	ulong_t			lastseg, nbps;
-	prmap_sgi_t		map[MAPNUM];
-	prmap_sgi_t		*mp;
-	prmap_sgi_arg_t		maparg;
-	prpsinfo_t	pi;
+static unsigned long
+resi_sum(tlist_head *phead)
+  {
+  static char  id[] = "resi_ses";
+  ulong   resisize, resisub;
+  int   fd;
+  int   num, i;
+  char   procname[100];
 
-	rewinddir(pdir);
-	resisize = 0;
-	lastseg = 99999;
-	nbps = (pagesize / sizeof(uint_t)) * pagesize;
-				/* sysmacros.h says "4Meg" ...hmmm */
-	for (fd = -1; (dent = readdir(pdir)) != NULL; close(fd)) {
-		if (!isdigit(dent->d_name[0]))
-			continue;
+  struct dirent  *dent;
+  ulong_t   lastseg, nbps;
+  prmap_sgi_t  map[MAPNUM];
+  prmap_sgi_t  *mp;
+  prmap_sgi_arg_t  maparg;
+  prpsinfo_t pi;
 
-		sprintf(procname, procfmts, dent->d_name);
-		if ((fd = open(procname, O_RDONLY)) == -1)
-			continue;
-		if (ioctl(fd, PIOCPSINFO, &pi) == -1) {
-			if (errno != ENOENT) {
-				sprintf(log_buffer,
-					"%s: ioctl(PIOCPSINFO)", procname);
-				log_err(errno, id, log_buffer);
-			}
-			continue;
-		}
+  rewinddir(pdir);
+  resisize = 0;
+  lastseg = 99999;
+  nbps = (pagesize / sizeof(uint_t)) * pagesize;
+  /* sysmacros.h says "4Meg" ...hmmm */
 
-		if (!injob(phead, &pi))
-                        continue;
+  for (fd = -1; (dent = readdir(pdir)) != NULL; close(fd))
+    {
+    if (!isdigit(dent->d_name[0]))
+      continue;
 
-		if ((num = ioctl(fd, PIOCMAP_SGI, &maparg)) == -1) {
-			log_err(errno, id, "ioctl(PIOCMAP_SGI)");
-			continue;
-		}
+    sprintf(procname, procfmts, dent->d_name);
 
-		DBPRT(("%s: %s(%d:%d) rss %lu\n",
-				id, pi.pr_fname, pi.pr_sid, pi.pr_pid,
-				(ulong)pi.pr_size * (ulong)pagesize))
-		resisub = 0;
+    if ((fd = open(procname, O_RDONLY)) == -1)
+      continue;
 
-		for (i=0, mp=map; i<num; i++, mp++) {
-			u_long	cnt = mp->pr_mflags >> MA_REFCNT_SHIFT;
-			u_long	end = (u_long)mp->pr_vaddr + mp->pr_size - 1;
-			u_long	seg1 = (u_long)mp->pr_vaddr / nbps;
-			u_long	seg2 = end / nbps;
-			u_long	numseg = seg2 - seg1;
-
-			if (lastseg != seg2)
-				numseg++;
-			lastseg = seg2;
-			numseg = numseg*pagesize/cnt;
-			numseg += mp->pr_wsize*pagesize/MA_WSIZE_FRAC/cnt;
-			resisub += numseg;
-			DBPRT(("%s: %d\t%luk\t%luk\n", id, i,
-				numseg/1024, resisub/1024))
-		}
-		resisize += resisub;
-		DBPRT(("%s: %s subtotal rss %lu\n", id,
-			pi.pr_fname, resisub))
+    if (ioctl(fd, PIOCPSINFO, &pi) == -1)
+      {
+      if (errno != ENOENT)
+        {
+        sprintf(log_buffer,
+                "%s: ioctl(PIOCPSINFO)", procname);
+        log_err(errno, id, log_buffer);
         }
-	DBPRT(("%s: total rss %lu\n\n", id, resisize))
 
-	return (resisize);
-}
+      continue;
+      }
+
+    if (!injob(phead, &pi))
+      continue;
+
+    if ((num = ioctl(fd, PIOCMAP_SGI, &maparg)) == -1)
+      {
+      log_err(errno, id, "ioctl(PIOCMAP_SGI)");
+      continue;
+      }
+
+    DBPRT(("%s: %s(%d:%d) rss %lu\n",
+
+           id, pi.pr_fname, pi.pr_sid, pi.pr_pid,
+           (ulong)pi.pr_size * (ulong)pagesize))
+    resisub = 0;
+
+    for (i = 0, mp = map; i < num; i++, mp++)
+      {
+      u_long cnt = mp->pr_mflags >> MA_REFCNT_SHIFT;
+      u_long end = (u_long)mp->pr_vaddr + mp->pr_size - 1;
+      u_long seg1 = (u_long)mp->pr_vaddr / nbps;
+      u_long seg2 = end / nbps;
+      u_long numseg = seg2 - seg1;
+
+      if (lastseg != seg2)
+        numseg++;
+
+      lastseg = seg2;
+
+      numseg = numseg * pagesize / cnt;
+
+      numseg += mp->pr_wsize * pagesize / MA_WSIZE_FRAC / cnt;
+
+      resisub += numseg;
+
+      DBPRT(("%s: %d\t%luk\t%luk\n", id, i,
+             numseg / 1024, resisub / 1024))
+      }
+
+    resisize += resisub;
+
+    DBPRT(("%s: %s subtotal rss %lu\n", id,
+           pi.pr_fname, resisub))
+    }
+
+  DBPRT(("%s: total rss %lu\n\n", id, resisize))
+
+  return (resisize);
+  }
 
 /*
  * Return TRUE if any process in the session is over limit for memory usage.
  */
-static int overmem_proc(phead, limit)
-    tlist_head		*phead;
-    unsigned long	limit;
-{
-	char		*id = "overmem_proc";
-	int		fd;
-	char		procname[100];
-	struct dirent	*dent;
-	prpsinfo_t	pi;
+static int
+overmem_proc(tlist_head *phead, unsigned long limit)
+  {
+  char  *id = "overmem_proc";
+  int  fd;
+  char  procname[100];
 
-	rewinddir(pdir);
-	for (fd = -1; (dent = readdir(pdir)) != NULL; close(fd)) {
-		if (!isdigit(dent->d_name[0]))
-			continue;
+  struct dirent *dent;
+  prpsinfo_t pi;
 
-		sprintf(procname, procfmts, dent->d_name);
-		if ((fd = open(procname, O_RDONLY)) == -1)
-			continue;
-		if (ioctl(fd, PIOCPSINFO, &pi) == -1) {
-			if (errno != ENOENT) {
-				sprintf(log_buffer,
-					"%s: ioctl(PIOCPSINFO)", procname);
-				log_err(errno, id, log_buffer);
-			}
-			continue;
-		}
+  rewinddir(pdir);
 
-		if (!injob(phead, &pi))
-			continue;
-                if (pagesize * pi.pr_size > limit)
-			return (TRUE);
+  for (fd = -1; (dent = readdir(pdir)) != NULL; close(fd))
+    {
+    if (!isdigit(dent->d_name[0]))
+      continue;
+
+    sprintf(procname, procfmts, dent->d_name);
+
+    if ((fd = open(procname, O_RDONLY)) == -1)
+      continue;
+
+    if (ioctl(fd, PIOCPSINFO, &pi) == -1)
+      {
+      if (errno != ENOENT)
+        {
+        sprintf(log_buffer,
+                "%s: ioctl(PIOCPSINFO)", procname);
+        log_err(errno, id, log_buffer);
         }
 
-	return (FALSE);
-}
+      continue;
+      }
+
+    if (!injob(phead, &pi))
+      continue;
+
+    if (pagesize * pi.pr_size > limit)
+      return (TRUE);
+    }
+
+  return (FALSE);
+  }
 
 extern char *msg_momsetlim;
 
 /*
  * Internal error routine
  */
-int error(string, value)
-    char	*string;
-    int		value;
-{
-	int		i = 0;
-	char		*message;
+int
+error(char *string, int value)
+  {
+  int  i = 0;
+  char  *message;
 
-	assert(string != NULL);
-	assert(*string != '\0');
-	assert(value > PBSE_);			/* minimum PBS error number */
-	assert(value <= PBSE_NOSYNCMSTR);	/* maximum PBS error number */
-	assert(pbs_err_to_txt[i].err_no != 0);
+  assert(string != NULL);
+  assert(*string != '\0');
+  assert(value > PBSE_);   /* minimum PBS error number */
+  assert(value <= PBSE_NOSYNCMSTR); /* maximum PBS error number */
+  assert(pbs_err_to_txt[i].err_no != 0);
 
-	do {
-		if (pbs_err_to_txt[i].err_no == value)
-			break;
-	} while (pbs_err_to_txt[++i].err_no != 0);
+  do
+    {
+    if (pbs_err_to_txt[i].err_no == value)
+      break;
+    }
+  while (pbs_err_to_txt[++i].err_no != 0);
 
-	assert(pbs_err_to_txt[i].err_txt != NULL);
-	message = *pbs_err_to_txt[i].err_txt;
-	assert(message != NULL);
-	assert(*message != '\0');
-	(void)fprintf(stderr, msg_momsetlim, string, message);
-	(void)fflush(stderr);
+  assert(pbs_err_to_txt[i].err_txt != NULL);
 
-	return (value);
-}
+  message = *pbs_err_to_txt[i].err_txt;
+
+  assert(message != NULL);
+
+  assert(*message != '\0');
+
+  (void)fprintf(stderr, msg_momsetlim, string, message);
+
+  (void)fflush(stderr);
+
+  return (value);
+  }
 
 /*
  * Establish system-enforced limits for the job.
  *
- *	Run through the resource list, checking the values for all items
- *	we recognize.
+ * Run through the resource list, checking the values for all items
+ * we recognize.
  *
- *	If set_mode is SET_LIMIT_SET, then also set hard limits for the
- *	system enforced limits (not-polled).
- *	If anything goes wrong with the process, return a PBS error code
- *	and print a message on standard error.  A zero-length resource list
- *	is not an error.
+ * If set_mode is SET_LIMIT_SET, then also set hard limits for the
+ * system enforced limits (not-polled).
+ * If anything goes wrong with the process, return a PBS error code
+ * and print a message on standard error.  A zero-length resource list
+ * is not an error.
  *
- *	If set_mode is SET_LIMIT_SET the entry conditions are:
- *	    1.	MOM has already forked, and we are called from the child.
- *	    2.	The child is still running as root.
- *	    3.  Standard error is open to the user's file.
+ * If set_mode is SET_LIMIT_SET the entry conditions are:
+ *     1. MOM has already forked, and we are called from the child.
+ *     2. The child is still running as root.
+ *     3.  Standard error is open to the user's file.
  *
- *	If set_mode is SET_LIMIT_ALTER, we are beening called to modify
- *	existing limits.  Cannot alter those set by setrlimit (kernel)
- *	because we are the wrong process.  
+ * If set_mode is SET_LIMIT_ALTER, we are beening called to modify
+ * existing limits.  Cannot alter those set by setrlimit (kernel)
+ * because we are the wrong process.
  */
-int mom_set_limits(pjob, set_mode)
-    job			*pjob;
-    int			 set_mode;	/* SET_LIMIT_SET or SET_LIMIT_ALTER */
-{
-	char		*id = "mom_set_limits";
-	char		*pname;
-	int		retval;
-	unsigned long	value;	/* place in which to build resource value */
-	resource	*pres;
-       	struct rlimit	reslim;
-	unsigned long	mem_limit  = 0;
+int
+mom_set_limits(
+  job *pjob,
+  int set_mode /* SET_LIMIT_SET or SET_LIMIT_ALTER */
+)
+  {
+  char  *id = "mom_set_limits";
+  char  *pname;
+  int  retval;
+  unsigned long value; /* place in which to build resource value */
+  resource *pres;
 
-        log_buffer[0] = '\0';
+  struct rlimit reslim;
+  unsigned long mem_limit  = 0;
 
-	DBPRT(("%s: entered\n", id))
-	assert(pjob != NULL);
-	assert(pjob->ji_wattr[(int)JOB_ATR_resource].at_type == ATR_TYPE_RESC);
-	pres = (resource *)
-	    GET_NEXT(pjob->ji_wattr[(int)JOB_ATR_resource].at_val.at_list);
+  log_buffer[0] = '\0';
 
-/*
- * Cycle through all the resource specifications,
- * setting limits appropriately.
- */
+  DBPRT(("%s: entered\n", id))
+  assert(pjob != NULL);
+  assert(pjob->ji_wattr[(int)JOB_ATR_resource].at_type == ATR_TYPE_RESC);
+  pres = (resource *)
+         GET_NEXT(pjob->ji_wattr[(int)JOB_ATR_resource].at_val.at_list);
 
-	while (pres != NULL) {
-		assert(pres->rs_defin != NULL);
-		pname = pres->rs_defin->rs_name;
-		assert(pname != NULL);
-		assert(*pname != '\0');
+  /*
+   * Cycle through all the resource specifications,
+   * setting limits appropriately.
+   */
 
-		if (strcmp(pname, "cput") == 0) {
-			/* cpu time - check, if less than pcput use it */
-			retval = gettime(pres, &value);
-			if (retval != PBSE_NONE)
-			        return (error(pname, retval));
-		} else if (strcmp(pname, "pcput") == 0) {
-			/* process cpu time - set */
-			retval = gettime(pres, &value);
-			if (retval != PBSE_NONE)
-			        return (error(pname, retval));
-			reslim.rlim_cur = reslim.rlim_max = 
-				(unsigned long)((double)value / cputfactor);
-			if (setrlimit(RLIMIT_CPU, &reslim) < 0)
-	        		return (error("RLIMIT_CPU", PBSE_SYSTEM));
-		} else if (strcmp(pname, "file") == 0) {	/* set */
-			if (set_mode == SET_LIMIT_SET)  {
-			    retval = getsize(pres, &value);
-			    if (retval != PBSE_NONE)
-			        return (error(pname, retval));
-			    if (value > INT_MAX)
-			        return (error(pname, PBSE_BADATVAL));
-			    reslim.rlim_cur = reslim.rlim_max = value;
-			    if (setrlimit(RLIMIT_FSIZE, &reslim) < 0)
-			        return (error(pname, PBSE_SYSTEM));
-			}
-		} else if (strcmp(pname, "vmem") == 0) {	/* check */
-			retval = getsize(pres, &value);
-			if (retval != PBSE_NONE)
-			        return (error(pname, retval));
-			if ((mem_limit == 0) || (value < mem_limit))
-				mem_limit = value;
-		} else if (strcmp(pname, "pvmem") == 0) {	/* set */
-			retval = getsize(pres, &value);
-			if (retval != PBSE_NONE)
-			        return (error(pname, retval));
-			if (value > INT_MAX)
-			        return (error(pname, PBSE_BADATVAL));
-			if ((mem_limit == 0) || (value < mem_limit))
-				mem_limit = value;
-		} else if (strcmp(pname, "mem") == 0) {		/* ignore */
-		} else if (strcmp(pname, "pmem") == 0) {	/* set */
-			if (set_mode == SET_LIMIT_SET)  {
-			    retval = getsize(pres, &value);
-			    if (retval != PBSE_NONE)
-			        return (error(pname, retval));
-			    reslim.rlim_cur = reslim.rlim_max = value;
-			    if (setrlimit(RLIMIT_RSS, &reslim) < 0)
-	        		return (error("RLIMIT_RSS", PBSE_SYSTEM));
-			}
-		} else if (strcmp(pname, "walltime") == 0) {	/* Check */
-			retval = gettime(pres, &value);
-			if (retval != PBSE_NONE)
-			        return (error(pname, retval));
-		} else if (strcmp(pname, "nice") == 0) {	/* set nice */
-			if (set_mode == SET_LIMIT_SET)  {
-			    errno = 0;
-			    if ((nice((int)pres->rs_value.at_val.at_long) == -1)
-				&& (errno != 0))
-				return (error(pname, PBSE_BADATVAL));
-			}
-		} else if ((pres->rs_defin->rs_flags & ATR_DFLAG_RMOMIG) == 0)
-			/* don't recognize and not marked as ignore by mom */
-			return (error(pname, PBSE_UNKRESC));
-		pres = (resource *)GET_NEXT(pres->rs_link);
-	}
-	if (set_mode == SET_LIMIT_SET)  {
-	    /* if either of vmem or pvmem was given, set sys limit to lesser */
-	    if (mem_limit != 0) {
-		reslim.rlim_cur = reslim.rlim_max = mem_limit;
-		if (setrlimit(RLIMIT_DATA, &reslim) < 0)
-	        	return (error("RLIMIT_DATA", PBSE_SYSTEM));
-		if (setrlimit(RLIMIT_STACK, &reslim) < 0)
-	        	return (error("RLIMIT_STACK", PBSE_SYSTEM));
-	    }
-	}
-	return (PBSE_NONE);
-}
+  while (pres != NULL)
+    {
+    assert(pres->rs_defin != NULL);
+    pname = pres->rs_defin->rs_name;
+    assert(pname != NULL);
+    assert(*pname != '\0');
+
+    if (strcmp(pname, "cput") == 0)
+      {
+      /* cpu time - check, if less than pcput use it */
+      retval = gettime(pres, &value);
+
+      if (retval != PBSE_NONE)
+        return (error(pname, retval));
+      }
+    else if (strcmp(pname, "pcput") == 0)
+      {
+      /* process cpu time - set */
+      retval = gettime(pres, &value);
+
+      if (retval != PBSE_NONE)
+        return (error(pname, retval));
+
+      reslim.rlim_cur = reslim.rlim_max =
+                          (unsigned long)((double)value / cputfactor);
+
+      if (setrlimit(RLIMIT_CPU, &reslim) < 0)
+        return (error("RLIMIT_CPU", PBSE_SYSTEM));
+      }
+    else if (strcmp(pname, "file") == 0)   /* set */
+      {
+      if (set_mode == SET_LIMIT_SET)
+        {
+        retval = getsize(pres, &value);
+
+        if (retval != PBSE_NONE)
+          return (error(pname, retval));
+
+        if (value > INT_MAX)
+          return (error(pname, PBSE_BADATVAL));
+
+        reslim.rlim_cur = reslim.rlim_max = value;
+
+        if (setrlimit(RLIMIT_FSIZE, &reslim) < 0)
+          return (error(pname, PBSE_SYSTEM));
+        }
+      }
+    else if (strcmp(pname, "vmem") == 0)   /* check */
+      {
+      retval = getsize(pres, &value);
+
+      if (retval != PBSE_NONE)
+        return (error(pname, retval));
+
+      if ((mem_limit == 0) || (value < mem_limit))
+        mem_limit = value;
+      }
+    else if (strcmp(pname, "pvmem") == 0)   /* set */
+      {
+      retval = getsize(pres, &value);
+
+      if (retval != PBSE_NONE)
+        return (error(pname, retval));
+
+      if (value > INT_MAX)
+        return (error(pname, PBSE_BADATVAL));
+
+      if ((mem_limit == 0) || (value < mem_limit))
+        mem_limit = value;
+      }
+    else if (strcmp(pname, "mem") == 0)    /* ignore */
+      {
+      }
+    else if (strcmp(pname, "pmem") == 0)   /* set */
+      {
+      if (set_mode == SET_LIMIT_SET)
+        {
+        retval = getsize(pres, &value);
+
+        if (retval != PBSE_NONE)
+          return (error(pname, retval));
+
+        reslim.rlim_cur = reslim.rlim_max = value;
+
+        if (setrlimit(RLIMIT_RSS, &reslim) < 0)
+          return (error("RLIMIT_RSS", PBSE_SYSTEM));
+        }
+      }
+    else if (strcmp(pname, "walltime") == 0)   /* Check */
+      {
+      retval = gettime(pres, &value);
+
+      if (retval != PBSE_NONE)
+        return (error(pname, retval));
+      }
+    else if (strcmp(pname, "nice") == 0)   /* set nice */
+      {
+      if (set_mode == SET_LIMIT_SET)
+        {
+        errno = 0;
+
+        if ((nice((int)pres->rs_value.at_val.at_long) == -1)
+            && (errno != 0))
+          return (error(pname, PBSE_BADATVAL));
+        }
+      }
+    else if ((pres->rs_defin->rs_flags & ATR_DFLAG_RMOMIG) == 0)
+      /* don't recognize and not marked as ignore by mom */
+      return (error(pname, PBSE_UNKRESC));
+
+    pres = (resource *)GET_NEXT(pres->rs_link);
+    }
+
+  if (set_mode == SET_LIMIT_SET)
+    {
+    /* if either of vmem or pvmem was given, set sys limit to lesser */
+    if (mem_limit != 0)
+      {
+      reslim.rlim_cur = reslim.rlim_max = mem_limit;
+
+      if (setrlimit(RLIMIT_DATA, &reslim) < 0)
+        return (error("RLIMIT_DATA", PBSE_SYSTEM));
+
+      if (setrlimit(RLIMIT_STACK, &reslim) < 0)
+        return (error("RLIMIT_STACK", PBSE_SYSTEM));
+      }
+    }
+
+  return (PBSE_NONE);
+  }
+
 /*
  * State whether MOM main loop has to poll this job to determine if some
  * limits are being exceeded.
  *
- *	Sets flag TRUE if polling is necessary, FALSE otherwise.  Actual
- *	polling is done using the mom_over_limit machine-dependent function.
+ * Sets flag TRUE if polling is necessary, FALSE otherwise.  Actual
+ * polling is done using the mom_over_limit machine-dependent function.
  */
 
-int mom_do_poll(pjob)
-    job			*pjob;
-{
-	char		*id = "mom_do_poll";
-	char		*pname;
-	resource	*pres;
+int
+mom_do_poll(job *pjob)
+  {
+  char  *id = "mom_do_poll";
+  char  *pname;
+  resource *pres;
 
-	DBPRT(("%s: entered\n", id))
-	assert(pjob != NULL);
-	assert(pjob->ji_wattr[(int)JOB_ATR_resource].at_type == ATR_TYPE_RESC);
-	pres = (resource *)
-	    GET_NEXT(pjob->ji_wattr[(int)JOB_ATR_resource].at_val.at_list);
+  DBPRT(("%s: entered\n", id))
+  assert(pjob != NULL);
+  assert(pjob->ji_wattr[(int)JOB_ATR_resource].at_type == ATR_TYPE_RESC);
+  pres = (resource *)
+         GET_NEXT(pjob->ji_wattr[(int)JOB_ATR_resource].at_val.at_list);
 
-	while (pres != NULL) {
-		assert(pres->rs_defin != NULL);
-		pname = pres->rs_defin->rs_name;
-		assert(pname != NULL);
-		assert(*pname != '\0');
+  while (pres != NULL)
+    {
+    assert(pres->rs_defin != NULL);
+    pname = pres->rs_defin->rs_name;
+    assert(pname != NULL);
+    assert(*pname != '\0');
 
-		if (strcmp(pname, "walltime") == 0 ||
-		    strcmp(pname, "cput") == 0 ||
-		    strcmp(pname, "pcput") == 0 ||
-		    strcmp(pname, "pvmem") == 0 ||
-		    strcmp(pname, "vmem") == 0)
-			return (TRUE);
-		pres = (resource *)GET_NEXT(pres->rs_link);
-	}
+    if (strcmp(pname, "walltime") == 0 ||
+        strcmp(pname, "cput") == 0 ||
+        strcmp(pname, "pcput") == 0 ||
+        strcmp(pname, "pvmem") == 0 ||
+        strcmp(pname, "vmem") == 0)
+      return (TRUE);
 
-	return (FALSE);
-}
+    pres = (resource *)GET_NEXT(pres->rs_link);
+    }
+
+  return (FALSE);
+  }
 
 /*
  * Setup for polling.
  *
- *	Open kernel device and get namelist info.
+ * Open kernel device and get namelist info.
  */
-int mom_open_poll()
-{
-	char		*id = "mom_open_poll";
+int
+mom_open_poll(void)
+  {
+  char  *id = "mom_open_poll";
 
-	DBPRT(("%s: entered\n", id))
-	pagesize = getpagesize();
+  DBPRT(("%s: entered\n", id))
+  pagesize = getpagesize();
 
-	return (PBSE_NONE);
-}
+  return (PBSE_NONE);
+  }
 
 /*
  * Declare start of polling loop.
  *
- *	A no-op on the SGI.
+ * A no-op on the SGI.
  */
 
-int mom_get_sample()
-{
+int
+mom_get_sample(void)
+  {
 
-	return (PBSE_NONE);
-}
+  return (PBSE_NONE);
+  }
 
 /*
  * Measure job resource usage and compare with its limits.
  *
- *	If it has exceeded any well-formed polled limit return TRUE.
- *	Otherwise, return FALSE.
+ * If it has exceeded any well-formed polled limit return TRUE.
+ * Otherwise, return FALSE.
  */
 
-int mom_over_limit(pjob)
-    job			*pjob;
-{
-	char		*id = "mom_over_limit";
-	char		*pname;
-	int		retval;
-	unsigned long	value, num;
-	resource	*pres;
+int
+mom_over_limit(job *pjob)
+  {
+  char  *id = "mom_over_limit";
+  char  *pname;
+  int  retval;
+  unsigned long value, num;
+  resource *pres;
 
-	assert(pjob != NULL);
-	assert(pjob->ji_wattr[(int)JOB_ATR_resource].at_type == ATR_TYPE_RESC);
-	pres = (resource *)
-	    GET_NEXT(pjob->ji_wattr[(int)JOB_ATR_resource].at_val.at_list);
+  assert(pjob != NULL);
+  assert(pjob->ji_wattr[(int)JOB_ATR_resource].at_type == ATR_TYPE_RESC);
+  pres = (resource *)
+         GET_NEXT(pjob->ji_wattr[(int)JOB_ATR_resource].at_val.at_list);
 
-	for ( ; pres != NULL; pres = (resource *)GET_NEXT(pres->rs_link)) {
-		assert(pres->rs_defin != NULL);
-		pname = pres->rs_defin->rs_name;
-		assert(pname != NULL);
-		assert(*pname != '\0');
-		if (strcmp(pname, "cput") == 0) {
-			retval = gettime(pres, &value);
-			if (retval != PBSE_NONE)
-				continue;
-			if ((num = cput_sum(&pjob->ji_tasks)) > value) {
-				sprintf(log_buffer,
-					"cput %lu exceeded limit %lu",
-					num, value);
-				return (TRUE);
-			}
-		} else if (strcmp(pname, "pcput") == 0) {
-			retval = gettime(pres, &value);
-			if (retval != PBSE_NONE)
-				continue;
-			if (overcpu_proc(&pjob->ji_tasks, value)) {
-				sprintf(log_buffer,
-					"pcput exceeded limit %lu",
-					value);
-				return (TRUE);
-			}
-		} else if (strcmp(pname, "vmem") == 0) {
-			retval = getsize(pres, &value);
-			if (retval != PBSE_NONE)
-				continue;
-			if ((num = mem_sum(&pjob->ji_tasks)) > value) {
-				sprintf(log_buffer,
-					"vmem %lu exceeded limit %lu",
-					num, value);
-				return (TRUE);
-			}
-		} else if (strcmp(pname, "pvmem") == 0) {
-			retval = getsize(pres, &value);
-			if (retval != PBSE_NONE)
-				continue;
-			if (overmem_proc(&pjob->ji_tasks, value)) {
-				sprintf(log_buffer,
-					"pvmem exceeded limit %lu",
-					value);
-				return (TRUE);
-			}
-		} else if (ignwalltime == 0 && strcmp(pname, "walltime") == 0) {
-			if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HERE) == 0)
-				continue;
-			retval = gettime(pres, &value);
-			if (retval != PBSE_NONE)
-				continue;
-			num = (unsigned long)((double)value * wallfactor);
-			if (num > value) {
-				sprintf(log_buffer,
-					"walltime %d exceeded limit %d",
-					num, value);
-				return (TRUE);
-			}
-		}
-	}
+  for (; pres != NULL; pres = (resource *)GET_NEXT(pres->rs_link))
+    {
+    assert(pres->rs_defin != NULL);
+    pname = pres->rs_defin->rs_name;
+    assert(pname != NULL);
+    assert(*pname != '\0');
 
-	return (FALSE);
-}
+    if (strcmp(pname, "cput") == 0)
+      {
+      retval = gettime(pres, &value);
+
+      if (retval != PBSE_NONE)
+        continue;
+
+      if ((num = cput_sum(&pjob->ji_tasks)) > value)
+        {
+        sprintf(log_buffer,
+                "cput %lu exceeded limit %lu",
+                num, value);
+        return (TRUE);
+        }
+      }
+    else if (strcmp(pname, "pcput") == 0)
+      {
+      retval = gettime(pres, &value);
+
+      if (retval != PBSE_NONE)
+        continue;
+
+      if (overcpu_proc(&pjob->ji_tasks, value))
+        {
+        sprintf(log_buffer,
+                "pcput exceeded limit %lu",
+                value);
+        return (TRUE);
+        }
+      }
+    else if (strcmp(pname, "vmem") == 0)
+      {
+      retval = getsize(pres, &value);
+
+      if (retval != PBSE_NONE)
+        continue;
+
+      if ((num = mem_sum(&pjob->ji_tasks)) > value)
+        {
+        sprintf(log_buffer,
+                "vmem %lu exceeded limit %lu",
+                num, value);
+        return (TRUE);
+        }
+      }
+    else if (strcmp(pname, "pvmem") == 0)
+      {
+      retval = getsize(pres, &value);
+
+      if (retval != PBSE_NONE)
+        continue;
+
+      if (overmem_proc(&pjob->ji_tasks, value))
+        {
+        sprintf(log_buffer,
+                "pvmem exceeded limit %lu",
+                value);
+        return (TRUE);
+        }
+      }
+    else if (ignwalltime == 0 && strcmp(pname, "walltime") == 0)
+      {
+      if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HERE) == 0)
+        continue;
+
+      retval = gettime(pres, &value);
+
+      if (retval != PBSE_NONE)
+        continue;
+
+      num = (unsigned long)((double)value * wallfactor);
+
+      if (num > value)
+        {
+        sprintf(log_buffer,
+                "walltime %d exceeded limit %d",
+                num, value);
+        return (TRUE);
+        }
+      }
+    }
+
+  return (FALSE);
+  }
 
 /*
  * Update the job attribute for resources used.
  *
- *	The first time this is called for a job, set up resource entries for
- *	each resource that can be reported for this machine.  Fill in the
- *	correct values.  Return an error code.
+ * The first time this is called for a job, set up resource entries for
+ * each resource that can be reported for this machine.  Fill in the
+ * correct values.  Return an error code.
  */
-int mom_set_use(pjob)
-    job			*pjob;
-{
-	char			*id = "mom_set_use";
-	resource		*pres;
-	attribute		*at;
-	resource_def		*rd;
-	unsigned long		*lp, lnum;
+int
+mom_set_use(job *pjob)
+  {
+  char   *id = "mom_set_use";
+  resource  *pres;
+  attribute  *at;
+  resource_def  *rd;
+  unsigned long  *lp, lnum;
 
-	assert(pjob != NULL);
-	at = &pjob->ji_wattr[(int)JOB_ATR_resc_used];
-	assert(at->at_type == ATR_TYPE_RESC);
+  assert(pjob != NULL);
+  at = &pjob->ji_wattr[(int)JOB_ATR_resc_used];
+  assert(at->at_type == ATR_TYPE_RESC);
 
-	at->at_flags |= ATR_VFLAG_MODIFY;
-	if ((at->at_flags & ATR_VFLAG_SET) == 0) {
-		at->at_flags |= ATR_VFLAG_SET;
+  at->at_flags |= ATR_VFLAG_MODIFY;
 
-		rd = find_resc_def(svr_resc_def, "cput", svr_resc_size);
-		assert(rd != NULL);
-		pres = add_resource_entry(at, rd);
-		pres->rs_value.at_flags |= ATR_VFLAG_SET;
-		pres->rs_value.at_type = ATR_TYPE_LONG;
+  if ((at->at_flags & ATR_VFLAG_SET) == 0)
+    {
+    at->at_flags |= ATR_VFLAG_SET;
 
-		rd = find_resc_def(svr_resc_def, "vmem", svr_resc_size);
-		assert(rd != NULL);
-		pres = add_resource_entry(at, rd);
-		pres->rs_value.at_flags |= ATR_VFLAG_SET;
-		pres->rs_value.at_type = ATR_TYPE_SIZE;
-		pres->rs_value.at_val.at_size.atsv_shift = 10; /* in KB */
-		pres->rs_value.at_val.at_size.atsv_units = ATR_SV_BYTESZ;
+    rd = find_resc_def(svr_resc_def, "cput", svr_resc_size);
+    assert(rd != NULL);
+    pres = add_resource_entry(at, rd);
+    pres->rs_value.at_flags |= ATR_VFLAG_SET;
+    pres->rs_value.at_type = ATR_TYPE_LONG;
 
-		rd = find_resc_def(svr_resc_def, "walltime", svr_resc_size);
-		assert(rd != NULL);
-		pres = add_resource_entry(at, rd);
-		pres->rs_value.at_flags |= ATR_VFLAG_SET;
-		pres->rs_value.at_type = ATR_TYPE_LONG;
+    rd = find_resc_def(svr_resc_def, "vmem", svr_resc_size);
+    assert(rd != NULL);
+    pres = add_resource_entry(at, rd);
+    pres->rs_value.at_flags |= ATR_VFLAG_SET;
+    pres->rs_value.at_type = ATR_TYPE_SIZE;
+    pres->rs_value.at_val.at_size.atsv_shift = 10; /* in KB */
+    pres->rs_value.at_val.at_size.atsv_units = ATR_SV_BYTESZ;
 
-		rd = find_resc_def(svr_resc_def, "mem", svr_resc_size);
-		assert(rd != NULL);
-		pres = add_resource_entry(at, rd);
-		pres->rs_value.at_flags |= ATR_VFLAG_SET;
-		pres->rs_value.at_type = ATR_TYPE_SIZE;
-		pres->rs_value.at_val.at_size.atsv_shift = 10; /* in KB */
-		pres->rs_value.at_val.at_size.atsv_units = ATR_SV_BYTESZ;
-	}
+    rd = find_resc_def(svr_resc_def, "walltime", svr_resc_size);
+    assert(rd != NULL);
+    pres = add_resource_entry(at, rd);
+    pres->rs_value.at_flags |= ATR_VFLAG_SET;
+    pres->rs_value.at_type = ATR_TYPE_LONG;
 
-	rd = find_resc_def(svr_resc_def, "cput", svr_resc_size);
-	assert(rd != NULL);
-	pres = find_resc_entry(at, rd);
-	assert(pres != NULL);
-	lp = (unsigned long *)&pres->rs_value.at_val.at_long;
-	lnum = cput_sum(&pjob->ji_tasks);
-	*lp = MAX(*lp, lnum);
+    rd = find_resc_def(svr_resc_def, "mem", svr_resc_size);
+    assert(rd != NULL);
+    pres = add_resource_entry(at, rd);
+    pres->rs_value.at_flags |= ATR_VFLAG_SET;
+    pres->rs_value.at_type = ATR_TYPE_SIZE;
+    pres->rs_value.at_val.at_size.atsv_shift = 10; /* in KB */
+    pres->rs_value.at_val.at_size.atsv_units = ATR_SV_BYTESZ;
+    }
 
-	rd = find_resc_def(svr_resc_def, "vmem", svr_resc_size);
-	assert(rd != NULL);
-	pres = find_resc_entry(at, rd);
-	assert(pres != NULL);
-	lp = &pres->rs_value.at_val.at_size.atsv_num;
-	lnum = (mem_sum(&pjob->ji_tasks) + 1023) >> 10; /* in KB */
-	*lp = MAX(*lp, lnum);
+  rd = find_resc_def(svr_resc_def, "cput", svr_resc_size);
 
-	rd = find_resc_def(svr_resc_def, "walltime", svr_resc_size);
-	assert(rd != NULL);
-	pres = find_resc_entry(at, rd);
-	assert(pres != NULL);
-	pres->rs_value.at_val.at_long = (long)((double)(time_now - pjob->ji_qs.ji_stime) * wallfactor);
+  assert(rd != NULL);
+  pres = find_resc_entry(at, rd);
+  assert(pres != NULL);
+  lp = (unsigned long *) & pres->rs_value.at_val.at_long;
+  lnum = cput_sum(&pjob->ji_tasks);
+  *lp = MAX(*lp, lnum);
 
-	rd = find_resc_def(svr_resc_def, "mem", svr_resc_size);
-	assert(rd != NULL);
-	pres = find_resc_entry(at, rd);
-	assert(pres != NULL);
-	lp = &pres->rs_value.at_val.at_size.atsv_num;
-	lnum = (resi_sum(&pjob->ji_tasks) + 1023) >> 10; /* in KB */
-	*lp = MAX(*lp, lnum);
+  rd = find_resc_def(svr_resc_def, "vmem", svr_resc_size);
+  assert(rd != NULL);
+  pres = find_resc_entry(at, rd);
+  assert(pres != NULL);
+  lp = &pres->rs_value.at_val.at_size.atsv_num;
+  lnum = (mem_sum(&pjob->ji_tasks) + 1023) >> 10; /* in KB */
+  *lp = MAX(*lp, lnum);
 
-	return (PBSE_NONE);
-}
+  rd = find_resc_def(svr_resc_def, "walltime", svr_resc_size);
+  assert(rd != NULL);
+  pres = find_resc_entry(at, rd);
+  assert(pres != NULL);
+  pres->rs_value.at_val.at_long = (long)((double)(time_now - pjob->ji_qs.ji_stime) * wallfactor);
+
+  rd = find_resc_def(svr_resc_def, "mem", svr_resc_size);
+  assert(rd != NULL);
+  pres = find_resc_entry(at, rd);
+  assert(pres != NULL);
+  lp = &pres->rs_value.at_val.at_size.atsv_num;
+  lnum = (resi_sum(&pjob->ji_tasks) + 1023) >> 10; /* in KB */
+  *lp = MAX(*lp, lnum);
+
+  return (PBSE_NONE);
+  }
 
 /*
- *	Kill a task session.
- *	Call with the task pointer and a signal number.
+ * Kill a task session.
+ * Call with the task pointer and a signal number.
  */
-int kill_task(ptask, sig, pg)
-    task	*ptask;
-    int		sig;
-    int         pg;
-{
-	char		*id = "kill_task";
-	int		ct = 0;
-	int		fd;
-	char		procname[100];
-	struct dirent	*dent;
-	prpsinfo_t	pi;
-	int		sesid;
+int
+kill_task(task *ptask, int sig, int pg)
+  {
+  char  *id = "kill_task";
+  int  ct = 0;
+  int  fd;
+  char  procname[100];
 
-	sesid = ptask->ti_qs.ti_sid;
-	if (sesid <= 1)
-		return 0;
+  struct dirent *dent;
+  prpsinfo_t pi;
+  int  sesid;
 
-	rewinddir(pdir);
-	for (fd = -1; (dent = readdir(pdir)) != NULL; close(fd)) {
-		if (!isdigit(dent->d_name[0]))
-			continue;
+  sesid = ptask->ti_qs.ti_sid;
 
-		sprintf(procname, procfmts, dent->d_name);
-		if ((fd = open(procname, O_RDONLY)) == -1)
-			continue;
-		if (ioctl(fd, PIOCPSINFO, &pi) == -1) {
-			if (errno != ENOENT) {
-				sprintf(log_buffer,
-					"%s: ioctl(PIOCPSINFO)", procname);
-				log_err(errno, id, log_buffer);
-			}
-			continue;
-		}
+  if (sesid <= 1)
+    return 0;
 
-		if (sesid == pi.pr_sid) {
-			(void)kill(pi.pr_pid, sig);
-			++ct;
-		}
-	}
-	return ct;
-}
+  rewinddir(pdir);
+
+  for (fd = -1; (dent = readdir(pdir)) != NULL; close(fd))
+    {
+    if (!isdigit(dent->d_name[0]))
+      continue;
+
+    sprintf(procname, procfmts, dent->d_name);
+
+    if ((fd = open(procname, O_RDONLY)) == -1)
+      continue;
+
+    if (ioctl(fd, PIOCPSINFO, &pi) == -1)
+      {
+      if (errno != ENOENT)
+        {
+        sprintf(log_buffer,
+                "%s: ioctl(PIOCPSINFO)", procname);
+        log_err(errno, id, log_buffer);
+        }
+
+      continue;
+      }
+
+    if (sesid == pi.pr_sid)
+      {
+      (void)kill(pi.pr_pid, sig);
+      ++ct;
+      }
+    }
+
+  return ct;
+  }
 
 /*
  * Clean up everything related to polling.
  */
-int mom_close_poll()
-{
-	char	*id = "mom_close_poll";
+int
+mom_close_poll(void)
+  {
+  char *id = "mom_close_poll";
 
-	DBPRT(("%s: entered\n", id))
-	if (pdir) {
-		if (closedir(pdir) != 0) {
-			log_err(errno, id, "closedir");
-			return (PBSE_SYSTEM);
-		}
-	}
+  DBPRT(("%s: entered\n", id))
 
-	return (PBSE_NONE);
-}
+  if (pdir)
+    {
+    if (closedir(pdir) != 0)
+      {
+      log_err(errno, id, "closedir");
+      return (PBSE_SYSTEM);
+      }
+    }
+
+  return (PBSE_NONE);
+  }
 
 /*
  * mom_does_checkpoint
  */
 
-int mom_does_checkpoint()
-{
-    return(CST_NONE);
-}
+int
+mom_does_checkpoint(void)
+  {
+  return(CST_NONE);
+  }
 
 /*
  * Checkpoint the job.
  *
- *	If abort is true, kill it too.
+ * If abort is true, kill it too.
  */
 
-int mach_checkpoint(ptask, file, abort)
-    task	*ptask;
-    char	*file;
-    int		abort;
-{
-    return (-1);
-}
+int
+mach_checkpoint(task *ptask, char *file, int abort)
+  {
+  return (-1);
+  }
 
 /*
  * Restart the job from the checkpoint file.
  *
- *	Return a -1 on error or sid.
+ * Return a -1 on error or sid.
  */
 
-long mach_restart(ptask, file)
-    task	*ptask;
-    char	*file;
-{
-	return (-1);
-}
+long
+mach_restart(task *ptask, char *file)
+  {
+  return (-1);
+  }
 
-#define	dsecs(val) ( (double)(val).tv_sec + ((double)(val).tv_nsec * 1.0e-9) )
+#define dsecs(val) ( (double)(val).tv_sec + ((double)(val).tv_nsec * 1.0e-9) )
 
-char	*
+char *
 cput_job(jobid)
-pid_t	jobid;
-{
-	char			*id = "cput_job";
-	int			found = 0;
-	int			fd;
-	struct dirent		*dent;
-	char			procname[100];
-	double			cputime, addtime;
-	prstatus_t		ps;
+pid_t jobid;
+  {
+  char   *id = "cput_job";
+  int   found = 0;
+  int   fd;
 
-	cputime = 0.0;
-	rewinddir(pdir);
-	for (fd = -1; (dent = readdir(pdir)) != NULL; close(fd)) {
-		if (!isdigit(dent->d_name[0]))
-			continue;
+  struct dirent  *dent;
+  char   procname[100];
+  double   cputime, addtime;
+  prstatus_t  ps;
 
-		sprintf(procname, procfmts, dent->d_name);
-		if ((fd = open(procname, O_RDONLY)) == -1)
-			continue;
-		if (ioctl(fd, PIOCSTATUS, &ps) == -1) {
-			sprintf(log_buffer, "%s: ioctl(PIOCSTATUS)", procname);
-			log_err(errno, id, log_buffer);
-			continue;
-		}
+  cputime = 0.0;
+  rewinddir(pdir);
 
-		if (jobid != ps.pr_sid)
-			continue;
+  for (fd = -1; (dent = readdir(pdir)) != NULL; close(fd))
+    {
+    if (!isdigit(dent->d_name[0]))
+      continue;
 
-		found = 1;
-		addtime = dsecs(ps.pr_utime) +
-			dsecs(ps.pr_stime) +
-			dsecs(ps.pr_cutime) +
-			dsecs(ps.pr_cstime);
+    sprintf(procname, procfmts, dent->d_name);
 
-		cputime += addtime;
-		DBPRT(("%s: total %.2f pid %d %.2f\n", id, cputime,
-				ps.pr_pid, addtime))
+    if ((fd = open(procname, O_RDONLY)) == -1)
+      continue;
 
-	}
-	if (found) {
-		sprintf(ret_string, "%.2f", cputime * cputfactor);
-		return ret_string;
-	}
+    if (ioctl(fd, PIOCSTATUS, &ps) == -1)
+      {
+      sprintf(log_buffer, "%s: ioctl(PIOCSTATUS)", procname);
+      log_err(errno, id, log_buffer);
+      continue;
+      }
 
-	rm_errno = RM_ERR_EXIST;
-	return NULL;
-}
+    if (jobid != ps.pr_sid)
+      continue;
 
-char	*
+    found = 1;
+
+    addtime = dsecs(ps.pr_utime) +
+              dsecs(ps.pr_stime) +
+              dsecs(ps.pr_cutime) +
+              dsecs(ps.pr_cstime);
+
+    cputime += addtime;
+
+    DBPRT(("%s: total %.2f pid %d %.2f\n", id, cputime,
+           ps.pr_pid, addtime))
+
+    }
+
+  if (found)
+    {
+    sprintf(ret_string, "%.2f", cputime * cputfactor);
+    return ret_string;
+    }
+
+  rm_errno = RM_ERR_EXIST;
+
+  return NULL;
+  }
+
+char *
 cput_proc(pid)
-pid_t	pid;
-{
-	char			*id = "cput_pid";
-	char			procname[100];
-	double			cputime;
-	int			fd;
-	prstatus_t		ps;
+pid_t pid;
+  {
+  char   *id = "cput_pid";
+  char   procname[100];
+  double   cputime;
+  int   fd;
+  prstatus_t  ps;
 
-	cputime = 0.0;
-	sprintf(procname, procfmtd, pid);
+  cputime = 0.0;
+  sprintf(procname, procfmtd, pid);
 
-	if ((fd = open(procname, O_RDONLY)) == -1) {
-		rm_errno = RM_ERR_EXIST;
-		return NULL;
-	}
+  if ((fd = open(procname, O_RDONLY)) == -1)
+    {
+    rm_errno = RM_ERR_EXIST;
+    return NULL;
+    }
 
-	if (ioctl(fd, PIOCSTATUS, &ps) == -1) {
-		sprintf(log_buffer, "%s: ioctl(PIOCSTATUS)", procname);
-		log_err(errno, id, log_buffer);
-		close (fd);
-		rm_errno = RM_ERR_SYSTEM;
-		return NULL;
-	}
-	cputime = dsecs(ps.pr_utime) +
-		dsecs(ps.pr_stime) +
-		dsecs(ps.pr_cutime) +
-		dsecs(ps.pr_cstime);
-	close(fd);
+  if (ioctl(fd, PIOCSTATUS, &ps) == -1)
+    {
+    sprintf(log_buffer, "%s: ioctl(PIOCSTATUS)", procname);
+    log_err(errno, id, log_buffer);
+    close(fd);
+    rm_errno = RM_ERR_SYSTEM;
+    return NULL;
+    }
 
-	sprintf(ret_string, "%.2f", cputime * cputfactor);
-	return ret_string;
-}
+  cputime = dsecs(ps.pr_utime) +
+
+            dsecs(ps.pr_stime) +
+            dsecs(ps.pr_cutime) +
+            dsecs(ps.pr_cstime);
+  close(fd);
+
+  sprintf(ret_string, "%.2f", cputime * cputfactor);
+  return ret_string;
+  }
 
 
-char	*
-cput(attrib)
-struct	rm_attribute	*attrib;
-{
-	char			*id = "cput";
-	int			value;
+char *
+cput(struct rm_attribute *attrib)
+  {
+  char   *id = "cput";
+  int   value;
 
-	if (attrib == NULL) {
-		log_err(-1, id, no_parm);
-		rm_errno = RM_ERR_NOPARAM;
-		return NULL;
-	}
-	if ((value = atoi(attrib->a_value)) == 0) {
-		sprintf(log_buffer, "bad param: %s", attrib->a_value);
-		log_err(-1, id, log_buffer);
-		rm_errno = RM_ERR_BADPARAM;
-		return NULL;
-	}
-	if (momgetattr(NULL)) {
-		log_err(-1, id, extra_parm);
-		rm_errno = RM_ERR_BADPARAM;
-		return NULL;
-	}
+  if (attrib == NULL)
+    {
+    log_err(-1, id, no_parm);
+    rm_errno = RM_ERR_NOPARAM;
+    return NULL;
+    }
 
-	if (strcmp(attrib->a_qualifier, "session") == 0)
-		return (cput_job((pid_t)value));
-	else if (strcmp(attrib->a_qualifier, "proc") == 0)
-		return (cput_proc((pid_t)value));
-	else {
-		rm_errno = RM_ERR_BADPARAM;
-		return NULL;
-	}
-}
+  if ((value = atoi(attrib->a_value)) == 0)
+    {
+    sprintf(log_buffer, "bad param: %s", attrib->a_value);
+    log_err(-1, id, log_buffer);
+    rm_errno = RM_ERR_BADPARAM;
+    return NULL;
+    }
 
-char	*
+  if (momgetattr(NULL))
+    {
+    log_err(-1, id, extra_parm);
+    rm_errno = RM_ERR_BADPARAM;
+    return NULL;
+    }
+
+  if (strcmp(attrib->a_qualifier, "session") == 0)
+    return (cput_job((pid_t)value));
+  else if (strcmp(attrib->a_qualifier, "proc") == 0)
+    return (cput_proc((pid_t)value));
+  else
+    {
+    rm_errno = RM_ERR_BADPARAM;
+    return NULL;
+    }
+  }
+
+char *
 mem_job(sid)
-pid_t	sid;
-{
-	ulong	memsize;
-	static	tlist_head	taskhead;
-	static	task		onetask;
-	static	int		first = 1;
+pid_t sid;
+  {
+  ulong memsize;
+  static tlist_head taskhead;
+  static task  onetask;
+  static int  first = 1;
 
-	if (first) {
-		CLEAR_HEAD(taskhead);
-		CLEAR_LINK(onetask.ti_jobtask);
-		append_link(&taskhead, &onetask.ti_jobtask, &onetask);
-		first = 0;
-	}
-	onetask.ti_qs.ti_sid = sid;
-	memsize = mem_sum(&taskhead);
-	if (memsize == 0) {
-		rm_errno = RM_ERR_EXIST;
-		return NULL;
-	}
-	else {
-		sprintf(ret_string, "%lukb", memsize >> 10);	/* in KB */
-		return ret_string;
-	}
-}
+  if (first)
+    {
+    CLEAR_HEAD(taskhead);
+    CLEAR_LINK(onetask.ti_jobtask);
+    append_link(&taskhead, &onetask.ti_jobtask, &onetask);
+    first = 0;
+    }
 
-char	*
+  onetask.ti_qs.ti_sid = sid;
+
+  memsize = mem_sum(&taskhead);
+
+  if (memsize == 0)
+    {
+    rm_errno = RM_ERR_EXIST;
+    return NULL;
+    }
+  else
+    {
+    sprintf(ret_string, "%lukb", memsize >> 10); /* in KB */
+    return ret_string;
+    }
+  }
+
+char *
 mem_proc(pid)
-pid_t	pid;
-{
-	char			*id = "mem_proc";
-	char			procname[100];
-	int			fd;
-	prpsinfo_t		pi;
+pid_t pid;
+  {
+  char   *id = "mem_proc";
+  char   procname[100];
+  int   fd;
+  prpsinfo_t  pi;
 
-	sprintf(procname, procfmtd, pid);
-	if ((fd = open(procname, O_RDONLY)) == -1) {
-		rm_errno = RM_ERR_EXIST;
-		return NULL;
-	}
-	if (ioctl(fd, PIOCPSINFO, &pi) == -1) {
-		sprintf(log_buffer, "%s: ioctl(PIOCPSINFO)", procname);
-		log_err(errno, id, log_buffer);
-		close(fd);
-		rm_errno = RM_ERR_SYSTEM;
-		return NULL;
-	}
-	close(fd);
+  sprintf(procname, procfmtd, pid);
 
-	sprintf(ret_string, "%lukb",
-		((ulong)pi.pr_size * (ulong)pagesize) >> 10);	/* in KB */
-	return ret_string;
-}
+  if ((fd = open(procname, O_RDONLY)) == -1)
+    {
+    rm_errno = RM_ERR_EXIST;
+    return NULL;
+    }
 
-char	*
-mem(attrib)
-struct	rm_attribute	*attrib;
-{
-	char			*id = "mem";
-	int			value;
+  if (ioctl(fd, PIOCPSINFO, &pi) == -1)
+    {
+    sprintf(log_buffer, "%s: ioctl(PIOCPSINFO)", procname);
+    log_err(errno, id, log_buffer);
+    close(fd);
+    rm_errno = RM_ERR_SYSTEM;
+    return NULL;
+    }
 
-	if (attrib == NULL) {
-		log_err(-1, id, no_parm);
-		rm_errno = RM_ERR_NOPARAM;
-		return NULL;
-	}
-	if ((value = atoi(attrib->a_value)) == 0) {
-		sprintf(log_buffer, "bad param: %s", attrib->a_value);
-		log_err(-1, id, log_buffer);
-		rm_errno = RM_ERR_BADPARAM;
-		return NULL;
-	}
-	if (momgetattr(NULL)) {
-		log_err(-1, id, extra_parm);
-		rm_errno = RM_ERR_BADPARAM;
-		return NULL;
-	}
+  close(fd);
 
-	if (strcmp(attrib->a_qualifier, "session") == 0)
-		return (mem_job((pid_t)value));
-	else if (strcmp(attrib->a_qualifier, "proc") == 0)
-		return (mem_proc((pid_t)value));
-	else {
-		rm_errno = RM_ERR_BADPARAM;
-		return NULL;
-	}
-}
+  sprintf(ret_string, "%lukb",
+          ((ulong)pi.pr_size * (ulong)pagesize) >> 10); /* in KB */
+  return ret_string;
+  }
 
-static char	*
+char *
+mem(struct rm_attribute *attrib)
+  {
+  char   *id = "mem";
+  int   value;
+
+  if (attrib == NULL)
+    {
+    log_err(-1, id, no_parm);
+    rm_errno = RM_ERR_NOPARAM;
+    return NULL;
+    }
+
+  if ((value = atoi(attrib->a_value)) == 0)
+    {
+    sprintf(log_buffer, "bad param: %s", attrib->a_value);
+    log_err(-1, id, log_buffer);
+    rm_errno = RM_ERR_BADPARAM;
+    return NULL;
+    }
+
+  if (momgetattr(NULL))
+    {
+    log_err(-1, id, extra_parm);
+    rm_errno = RM_ERR_BADPARAM;
+    return NULL;
+    }
+
+  if (strcmp(attrib->a_qualifier, "session") == 0)
+    return (mem_job((pid_t)value));
+  else if (strcmp(attrib->a_qualifier, "proc") == 0)
+    return (mem_proc((pid_t)value));
+  else
+    {
+    rm_errno = RM_ERR_BADPARAM;
+    return NULL;
+    }
+  }
+
+static char *
 resi_job(jobid)
-pid_t	jobid;
-{
-	char			*id = "resi_job";
-	ulong			resisize;
-	int			fd;
-	int			found = 0;
-	char			procname[100];
-	struct dirent		*dent;
-	prpsinfo_t		pi;
+pid_t jobid;
+  {
+  char   *id = "resi_job";
+  ulong   resisize;
+  int   fd;
+  int   found = 0;
+  char   procname[100];
 
-	resisize = 0;
-	rewinddir(pdir);
-	for (fd = -1; (dent = readdir(pdir)) != NULL; close(fd)) {
-		if (!isdigit(dent->d_name[0]))
-			continue;
+  struct dirent  *dent;
+  prpsinfo_t  pi;
 
-		sprintf(procname, procfmts, dent->d_name);
-		if ((fd = open(procname, O_RDONLY)) == -1)
-			continue;
-		if (ioctl(fd, PIOCPSINFO, &pi) == -1) {
-			sprintf(log_buffer, "%s: ioctl(PIOCPSINFO)", procname);
-			log_err(errno, id, log_buffer);
-			continue;
-		}
+  resisize = 0;
+  rewinddir(pdir);
 
-		if (jobid != pi.pr_sid)
-			continue;
+  for (fd = -1; (dent = readdir(pdir)) != NULL; close(fd))
+    {
+    if (!isdigit(dent->d_name[0]))
+      continue;
 
-		found = 1;
-		resisize += pi.pr_rssize;
-	}
-	if (found) {
-		/* in KB */
-		sprintf(ret_string, "%lukb",(resisize * (ulong)pagesize) >> 10);
-		return ret_string;
-	}
+    sprintf(procname, procfmts, dent->d_name);
 
-	rm_errno = RM_ERR_EXIST;
-	return NULL;
-}
+    if ((fd = open(procname, O_RDONLY)) == -1)
+      continue;
 
-static char	*
+    if (ioctl(fd, PIOCPSINFO, &pi) == -1)
+      {
+      sprintf(log_buffer, "%s: ioctl(PIOCPSINFO)", procname);
+      log_err(errno, id, log_buffer);
+      continue;
+      }
+
+    if (jobid != pi.pr_sid)
+      continue;
+
+    found = 1;
+
+    resisize += pi.pr_rssize;
+    }
+
+  if (found)
+    {
+    /* in KB */
+    sprintf(ret_string, "%lukb", (resisize * (ulong)pagesize) >> 10);
+    return ret_string;
+    }
+
+  rm_errno = RM_ERR_EXIST;
+
+  return NULL;
+  }
+
+static char *
 resi_proc(pid)
-pid_t	pid;
-{
-	char			*id = "resi_proc";
-	char			procname[100];
-	int			fd;
-	prpsinfo_t		pi;
+pid_t pid;
+  {
+  char   *id = "resi_proc";
+  char   procname[100];
+  int   fd;
+  prpsinfo_t  pi;
 
-	sprintf(procname, procfmtd, pid);
-	if ((fd = open(procname, O_RDONLY)) == -1) {
-		rm_errno = RM_ERR_EXIST;
-		return NULL;
-	}
-	if (ioctl(fd, PIOCPSINFO, &pi) == -1) {
-		sprintf(log_buffer, "%s: ioctl(PIOCPSINFO)", procname);
-		log_err(errno, id, log_buffer);
-		close(fd);
-		rm_errno = RM_ERR_SYSTEM;
-		return NULL;
-	}
-	close(fd);
+  sprintf(procname, procfmtd, pid);
 
-	sprintf(ret_string, "%lukb",
-		((ulong)pi.pr_rssize * (ulong)pagesize) >> 1024); /* KB */
-	return ret_string;
-}
+  if ((fd = open(procname, O_RDONLY)) == -1)
+    {
+    rm_errno = RM_ERR_EXIST;
+    return NULL;
+    }
 
-static char	*
-resi(attrib)
-struct	rm_attribute	*attrib;
-{
-	char			*id = "resi";
-	int			value;
+  if (ioctl(fd, PIOCPSINFO, &pi) == -1)
+    {
+    sprintf(log_buffer, "%s: ioctl(PIOCPSINFO)", procname);
+    log_err(errno, id, log_buffer);
+    close(fd);
+    rm_errno = RM_ERR_SYSTEM;
+    return NULL;
+    }
 
-	if (attrib == NULL) {
-		log_err(-1, id, no_parm);
-		rm_errno = RM_ERR_NOPARAM;
-		return NULL;
-	}
-	if ((value = atoi(attrib->a_value)) == 0) {
-		sprintf(log_buffer, "bad param: %s", attrib->a_value);
-		log_err(-1, id, log_buffer);
-		rm_errno = RM_ERR_BADPARAM;
-		return NULL;
-	}
-	if (momgetattr(NULL)) {
-		log_err(-1, id, extra_parm);
-		rm_errno = RM_ERR_BADPARAM;
-		return NULL;
-	}
+  close(fd);
 
-	if (strcmp(attrib->a_qualifier, "session") == 0)
-		return (resi_job((pid_t)value));
-	else if (strcmp(attrib->a_qualifier, "proc") == 0)
-		return (resi_proc((pid_t)value));
-	else {
-		rm_errno = RM_ERR_BADPARAM;
-		return NULL;
-	}
-}
+  sprintf(ret_string, "%lukb",
+          ((ulong)pi.pr_rssize * (ulong)pagesize) >> 1024); /* KB */
+  return ret_string;
+  }
 
-char	*
-sessions(attrib)
-struct	rm_attribute	*attrib;
-{
-	char			*id = "sessions";
-	int			fd, j;
-	struct dirent		*dent;
-	prpsinfo_t		pi;
-	char			procname[100];
-	char			*fmt;
-	int			njids = 0;
-	pid_t			*jids, *hold;
-	static		int	maxjid = 200;
-	register	pid_t	jobid;
+static char *
+resi(struct rm_attribute *attrib)
+  {
+  char   *id = "resi";
+  int   value;
 
-	if (attrib) {
-		log_err(-1, id, extra_parm);
-		rm_errno = RM_ERR_BADPARAM;
-		return NULL;
-	}
-	if ((jids = (pid_t *)calloc(maxjid, sizeof(pid_t))) == NULL) {
-		log_err(errno, id, "no memory");
-		rm_errno = RM_ERR_SYSTEM;
-		return NULL;
-	}
+  if (attrib == NULL)
+    {
+    log_err(-1, id, no_parm);
+    rm_errno = RM_ERR_NOPARAM;
+    return NULL;
+    }
 
-	/*
-	** Search for members of session
-	*/
-	rewinddir(pdir);
-	for (fd = -1; (dent = readdir(pdir)) != NULL; close(fd)) {
-		if (!isdigit(dent->d_name[0]))
-			continue;
+  if ((value = atoi(attrib->a_value)) == 0)
+    {
+    sprintf(log_buffer, "bad param: %s", attrib->a_value);
+    log_err(-1, id, log_buffer);
+    rm_errno = RM_ERR_BADPARAM;
+    return NULL;
+    }
 
-		sprintf(procname, procfmts, dent->d_name);
-		if ((fd = open(procname, O_RDONLY)) == -1)
-			continue;
-		if (ioctl(fd, PIOCPSINFO, &pi) == -1) {
-			sprintf(log_buffer, "%s: ioctl(PIOCPSINFO)", procname);
-			log_err(errno, id, log_buffer);
-			continue;
-		}
+  if (momgetattr(NULL))
+    {
+    log_err(-1, id, extra_parm);
+    rm_errno = RM_ERR_BADPARAM;
+    return NULL;
+    }
 
-		if (pi.pr_uid == 0)
-			continue;
-		if ((jobid = pi.pr_sid) == 0)
-			continue;
-		DBPRT(("%s[%d]: pid %d sid %d\n",
-		       id, njids, pi.pr_pid, jobid))
+  if (strcmp(attrib->a_qualifier, "session") == 0)
+    return (resi_job((pid_t)value));
+  else if (strcmp(attrib->a_qualifier, "proc") == 0)
+    return (resi_proc((pid_t)value));
+  else
+    {
+    rm_errno = RM_ERR_BADPARAM;
+    return NULL;
+    }
+  }
 
-		for (j=0; j<njids; j++) {
-			if (jids[j] == jobid)
-				break;
-		}
-		if (j == njids) {		/* not found */
-			if (njids == maxjid) {	/* need more space */
-				maxjid += 100;
-				hold = (pid_t *)realloc(jids, maxjid);
-				if (hold == NULL) {
-					log_err(errno, id, "realloc");
-					rm_errno = RM_ERR_SYSTEM;
-					free(jids);
-					return NULL;
-				}
-				jids = hold;
-			}
-			jids[njids++] = jobid;	/* add jobid to list */
-		}
-	}
+char *
+sessions(struct rm_attribute *attrib)
+  {
+  char   *id = "sessions";
+  int   fd, j;
 
-	fmt = ret_string;
-	for (j=0; j<njids; j++) {
-		checkret(&fmt, 100);
-                if (j==0)
-		  sprintf(fmt, "%d", (int)jids[j]);
-                else
-		  sprintf(fmt, " %d", (int)jids[j]);
-		fmt += strlen(fmt);
-	}
-	free(jids);
-	return ret_string;
-}
+  struct dirent  *dent;
+  prpsinfo_t  pi;
+  char   procname[100];
+  char   *fmt;
+  int   njids = 0;
+  pid_t   *jids, *hold;
+  static  int maxjid = 200;
+  register pid_t jobid;
 
-char	*
-nsessions(attrib)
-struct	rm_attribute	*attrib;
-{
-	char	*result, *ch;
-	int	num = 1;
+  if (attrib)
+    {
+    log_err(-1, id, extra_parm);
+    rm_errno = RM_ERR_BADPARAM;
+    return NULL;
+    }
 
-	if ((result = sessions(attrib)) == NULL)
-		return result;
+  if ((jids = (pid_t *)calloc(maxjid, sizeof(pid_t))) == NULL)
+    {
+    log_err(errno, id, "no memory");
+    rm_errno = RM_ERR_SYSTEM;
+    return NULL;
+    }
 
-	for (ch=result; *ch; ch++) {
-		if (*ch == ' ')		/* count blanks */
-			num++;
-	}
-	sprintf(ret_string, "%d", num);
-	return ret_string;
-}
+  /*
+  ** Search for members of session
+  */
+  rewinddir(pdir);
 
-char	*
-pids(attrib)
-struct	rm_attribute	*attrib;
-{
-	char		*id = "pids";
-	pid_t		jobid;
-	int		fd;
-	char		procname[100];
-	struct	dirent	*dent;
-	prpsinfo_t	pi;
-	int		i;
-	char		*fmt;
-	int		num_pids;
+  for (fd = -1; (dent = readdir(pdir)) != NULL; close(fd))
+    {
+    if (!isdigit(dent->d_name[0]))
+      continue;
 
-	if (attrib == NULL) {
-		log_err(-1, id, no_parm);
-		rm_errno = RM_ERR_NOPARAM;
-		return NULL;
-	}
-	if ((jobid = (pid_t)atoi(attrib->a_value)) == 0) {
-		sprintf(log_buffer, "bad param: %s", attrib->a_value);
-		log_err(-1, id, log_buffer);
-		rm_errno = RM_ERR_BADPARAM;
-		return NULL;
-	}
-	if (momgetattr(NULL)) {
-		log_err(-1, id, extra_parm);
-		rm_errno = RM_ERR_BADPARAM;
-		return NULL;
-	}
+    sprintf(procname, procfmts, dent->d_name);
 
-	if (strcmp(attrib->a_qualifier, "session") != 0) {
-		rm_errno = RM_ERR_BADPARAM;
-		return NULL;
-	}
+    if ((fd = open(procname, O_RDONLY)) == -1)
+      continue;
 
-	/*
-	** Search for members of session
-	*/
-	rewinddir(pdir);
-	fmt = ret_string;
-	for (fd=-1, num_pids=0; (dent = readdir(pdir)) != NULL; close(fd)) {
-		if (!isdigit(dent->d_name[0]))
-			continue;
+    if (ioctl(fd, PIOCPSINFO, &pi) == -1)
+      {
+      sprintf(log_buffer, "%s: ioctl(PIOCPSINFO)", procname);
+      log_err(errno, id, log_buffer);
+      continue;
+      }
 
-		sprintf(procname, procfmts, dent->d_name);
-		if ((fd = open(procname, O_RDONLY)) == -1)
-			continue;
-		if (ioctl(fd, PIOCPSINFO, &pi) == -1) {
-			sprintf(log_buffer, "%s: ioctl(PIOCPSINFO)", procname);
-			log_err(errno, id, log_buffer);
-			continue;
-		}
+    if (pi.pr_uid == 0)
+      continue;
 
-		DBPRT(("%s[%d]: pid: %s sid %d\n",
-		       id, num_pids, dent->d_name, pi.pr_sid))
-		if (jobid != pi.pr_sid)
-			continue;
+    if ((jobid = pi.pr_sid) == 0)
+      continue;
 
-		sprintf(fmt, "%s ", dent->d_name);
-		fmt += strlen(fmt);
-		num_pids++;
-	}
-	if (num_pids == 0) {
-		rm_errno = RM_ERR_EXIST;
-		return NULL;
-	}
-	return ret_string;
-}
+    DBPRT(("%s[%d]: pid %d sid %d\n",
+           id, njids, pi.pr_pid, jobid))
 
-char	*
-nusers(attrib)
-struct	rm_attribute	*attrib;
-{
-	char			*id = "nusers";
-	int			fd, j;
-	struct dirent		*dent;
-	prpsinfo_t		pi;
-	char			procname[100];
-	int			nuids = 0;
-	uid_t			*uids, *hold;
-	static		int	maxuid = 200;
-	register	uid_t	uid;
+    for (j = 0; j < njids; j++)
+      {
+      if (jids[j] == jobid)
+        break;
+      }
 
-	if (attrib) {
-		log_err(-1, id, extra_parm);
-		rm_errno = RM_ERR_BADPARAM;
-		return NULL;
-	}
-	if ((uids = (uid_t *)calloc(maxuid, sizeof(uid_t))) == NULL) {
-		log_err(errno, id, "no memory");
-		rm_errno = RM_ERR_SYSTEM;
-		return NULL;
-	}
+    if (j == njids)    /* not found */
+      {
+      if (njids == maxjid)   /* need more space */
+        {
+        maxjid += 100;
+        hold = (pid_t *)realloc(jids, maxjid);
 
-	rewinddir(pdir);
-	for (fd = -1; (dent = readdir(pdir)) != NULL; close(fd)) {
-		if (!isdigit(dent->d_name[0]))
-			continue;
+        if (hold == NULL)
+          {
+          log_err(errno, id, "realloc");
+          rm_errno = RM_ERR_SYSTEM;
+          free(jids);
+          return NULL;
+          }
 
-		sprintf(procname, procfmts, dent->d_name);
-		if ((fd = open(procname, O_RDONLY)) == -1)
-			continue;
-		if (ioctl(fd, PIOCPSINFO, &pi) == -1) {
-			sprintf(log_buffer, "%s: ioctl(PIOCPSINFO)", procname);
-			log_err(errno, id, log_buffer);
-			continue;
-		}
-		if ((uid = pi.pr_uid) == 0)
-			continue;
+        jids = hold;
+        }
 
-		DBPRT(("%s[%d]: pid %d uid %d\n",
-		       id, nuids, pi.pr_pid, uid))
+      jids[njids++] = jobid; /* add jobid to list */
+      }
+    }
 
-		for (j=0; j<nuids; j++) {
-			if (uids[j] == uid)
-				break;
-		}
-		if (j == nuids) {		/* not found */
-			if (nuids == maxuid) {	/* need more space */
-				maxuid += 100;
-				hold = (uid_t *)realloc(uids, maxuid);
-				if (hold == NULL) {
-					log_err(errno, id, "realloc");
-					rm_errno = RM_ERR_SYSTEM;
-					free(uids);
-					return NULL;
-				}
-				uids = hold;
-			}
-			uids[nuids++] = uid;	/* add uid to list */
-		}
-	}
+  fmt = ret_string;
 
-	sprintf(ret_string, "%d", nuids);
-	free(uids);
-	return ret_string;
-}
+  for (j = 0; j < njids; j++)
+    {
+    checkret(&fmt, 100);
 
-static char	*
-totmem(attrib)
-struct	rm_attribute	*attrib;
-{
-	char	*id = "totmem";
-	struct	statfs	fsbuf;
+    if (j == 0)
+      sprintf(fmt, "%d", (int)jids[j]);
+    else
+      sprintf(fmt, " %d", (int)jids[j]);
 
-	if (attrib) {
-		log_err(-1, id, extra_parm);
-		rm_errno = RM_ERR_BADPARAM;
-		return NULL;
-	}
+    fmt += strlen(fmt);
+    }
 
-	if (statfs(procfs, &fsbuf, sizeof(struct statfs), 0) == -1) {
-		log_err(errno, id, "statfs");
-		rm_errno = RM_ERR_SYSTEM;
-		return NULL;
-	}
-	DBPRT(("%s: bsize=%d blocks=%d\n", id, fsbuf.f_bsize, fsbuf.f_blocks))
-	sprintf(ret_string, "%lukb", ((ulong)fsbuf.f_bsize *
-					(ulong)fsbuf.f_blocks) >> 10); /* KB */
-	return ret_string;
-}
+  free(jids);
 
-static char	*
-availmem(attrib)
-struct	rm_attribute	*attrib;
-{
-	char	*id = "availmem";
-	struct	statfs	fsbuf;
+  return ret_string;
+  }
 
-	if (attrib) {
-		log_err(-1, id, extra_parm);
-		rm_errno = RM_ERR_BADPARAM;
-		return NULL;
-	}
+char *
+nsessions(struct rm_attribute *attrib)
+  {
+  char *result, *ch;
+  int num = 1;
 
-	if (statfs(procfs, &fsbuf, sizeof(struct statfs), 0) == -1) {
-		log_err(errno, id, "statfs");
-		rm_errno = RM_ERR_SYSTEM;
-		return NULL;
-	}
-	DBPRT(("%s: bsize=%d bfree=%d\n", id, fsbuf.f_bsize, fsbuf.f_bfree))
-	sprintf(ret_string, "%lukb", ((ulong)fsbuf.f_bsize *
-					(ulong)fsbuf.f_bfree) >> 10); /* KB */
-	return ret_string;
-}
+  if ((result = sessions(attrib)) == NULL)
+    return result;
+
+  for (ch = result; *ch; ch++)
+    {
+    if (*ch == ' ')  /* count blanks */
+      num++;
+    }
+
+  sprintf(ret_string, "%d", num);
+
+  return ret_string;
+  }
+
+char *
+pids(struct rm_attribute *attrib)
+  {
+  char  *id = "pids";
+  pid_t  jobid;
+  int  fd;
+  char  procname[100];
+
+  struct dirent *dent;
+  prpsinfo_t pi;
+  int  i;
+  char  *fmt;
+  int  num_pids;
+
+  if (attrib == NULL)
+    {
+    log_err(-1, id, no_parm);
+    rm_errno = RM_ERR_NOPARAM;
+    return NULL;
+    }
+
+  if ((jobid = (pid_t)atoi(attrib->a_value)) == 0)
+    {
+    sprintf(log_buffer, "bad param: %s", attrib->a_value);
+    log_err(-1, id, log_buffer);
+    rm_errno = RM_ERR_BADPARAM;
+    return NULL;
+    }
+
+  if (momgetattr(NULL))
+    {
+    log_err(-1, id, extra_parm);
+    rm_errno = RM_ERR_BADPARAM;
+    return NULL;
+    }
+
+  if (strcmp(attrib->a_qualifier, "session") != 0)
+    {
+    rm_errno = RM_ERR_BADPARAM;
+    return NULL;
+    }
+
+  /*
+  ** Search for members of session
+  */
+  rewinddir(pdir);
+
+  fmt = ret_string;
+
+  for (fd = -1, num_pids = 0; (dent = readdir(pdir)) != NULL; close(fd))
+    {
+    if (!isdigit(dent->d_name[0]))
+      continue;
+
+    sprintf(procname, procfmts, dent->d_name);
+
+    if ((fd = open(procname, O_RDONLY)) == -1)
+      continue;
+
+    if (ioctl(fd, PIOCPSINFO, &pi) == -1)
+      {
+      sprintf(log_buffer, "%s: ioctl(PIOCPSINFO)", procname);
+      log_err(errno, id, log_buffer);
+      continue;
+      }
+
+    DBPRT(("%s[%d]: pid: %s sid %d\n",
+
+           id, num_pids, dent->d_name, pi.pr_sid))
+
+    if (jobid != pi.pr_sid)
+      continue;
+
+    sprintf(fmt, "%s ", dent->d_name);
+
+    fmt += strlen(fmt);
+
+    num_pids++;
+    }
+
+  if (num_pids == 0)
+    {
+    rm_errno = RM_ERR_EXIST;
+    return NULL;
+    }
+
+  return ret_string;
+  }
+
+char *
+nusers(struct rm_attribute *attrib)
+  {
+  char   *id = "nusers";
+  int   fd, j;
+
+  struct dirent  *dent;
+  prpsinfo_t  pi;
+  char   procname[100];
+  int   nuids = 0;
+  uid_t   *uids, *hold;
+  static  int maxuid = 200;
+  register uid_t uid;
+
+  if (attrib)
+    {
+    log_err(-1, id, extra_parm);
+    rm_errno = RM_ERR_BADPARAM;
+    return NULL;
+    }
+
+  if ((uids = (uid_t *)calloc(maxuid, sizeof(uid_t))) == NULL)
+    {
+    log_err(errno, id, "no memory");
+    rm_errno = RM_ERR_SYSTEM;
+    return NULL;
+    }
+
+  rewinddir(pdir);
+
+  for (fd = -1; (dent = readdir(pdir)) != NULL; close(fd))
+    {
+    if (!isdigit(dent->d_name[0]))
+      continue;
+
+    sprintf(procname, procfmts, dent->d_name);
+
+    if ((fd = open(procname, O_RDONLY)) == -1)
+      continue;
+
+    if (ioctl(fd, PIOCPSINFO, &pi) == -1)
+      {
+      sprintf(log_buffer, "%s: ioctl(PIOCPSINFO)", procname);
+      log_err(errno, id, log_buffer);
+      continue;
+      }
+
+    if ((uid = pi.pr_uid) == 0)
+      continue;
+
+    DBPRT(("%s[%d]: pid %d uid %d\n",
+           id, nuids, pi.pr_pid, uid))
+
+    for (j = 0; j < nuids; j++)
+      {
+      if (uids[j] == uid)
+        break;
+      }
+
+    if (j == nuids)    /* not found */
+      {
+      if (nuids == maxuid)   /* need more space */
+        {
+        maxuid += 100;
+        hold = (uid_t *)realloc(uids, maxuid);
+
+        if (hold == NULL)
+          {
+          log_err(errno, id, "realloc");
+          rm_errno = RM_ERR_SYSTEM;
+          free(uids);
+          return NULL;
+          }
+
+        uids = hold;
+        }
+
+      uids[nuids++] = uid; /* add uid to list */
+      }
+    }
+
+  sprintf(ret_string, "%d", nuids);
+
+  free(uids);
+  return ret_string;
+  }
+
+static char *
+totmem(struct rm_attribute *attrib)
+  {
+  char *id = "totmem";
+
+  struct statfs fsbuf;
+
+  if (attrib)
+    {
+    log_err(-1, id, extra_parm);
+    rm_errno = RM_ERR_BADPARAM;
+    return NULL;
+    }
+
+  if (statfs(procfs, &fsbuf, sizeof(struct statfs), 0) == -1)
+    {
+    log_err(errno, id, "statfs");
+    rm_errno = RM_ERR_SYSTEM;
+    return NULL;
+    }
+
+  DBPRT(("%s: bsize=%d blocks=%d\n", id, fsbuf.f_bsize, fsbuf.f_blocks))
+
+  sprintf(ret_string, "%lukb", ((ulong)fsbuf.f_bsize *
+                                (ulong)fsbuf.f_blocks) >> 10); /* KB */
+  return ret_string;
+  }
+
+static char *
+availmem(struct rm_attribute *attrib)
+  {
+  char *id = "availmem";
+
+  struct statfs fsbuf;
+
+  if (attrib)
+    {
+    log_err(-1, id, extra_parm);
+    rm_errno = RM_ERR_BADPARAM;
+    return NULL;
+    }
+
+  if (statfs(procfs, &fsbuf, sizeof(struct statfs), 0) == -1)
+    {
+    log_err(errno, id, "statfs");
+    rm_errno = RM_ERR_SYSTEM;
+    return NULL;
+    }
+
+  DBPRT(("%s: bsize=%d bfree=%d\n", id, fsbuf.f_bsize, fsbuf.f_bfree))
+
+  sprintf(ret_string, "%lukb", ((ulong)fsbuf.f_bsize *
+                                (ulong)fsbuf.f_bfree) >> 10); /* KB */
+  return ret_string;
+  }
 
 
-static char	*
-ncpus(attrib)
-struct	rm_attribute	*attrib;
-{
-	char		*id = "ncpus";
-	unsigned int	pmem;
+static char *
+ncpus(struct rm_attribute *attrib)
+  {
+  char  *id = "ncpus";
+  unsigned int pmem;
 
-	if (attrib) {
-		log_err(-1, id, extra_parm);
-		rm_errno = RM_ERR_BADPARAM;
-		return NULL;
-	}
-	sprintf(ret_string, "%d", sysmp(MP_NAPROCS));
-	system_ncpus=sysmp(MP_NAPROCS);
-	return ret_string;
-}
+  if (attrib)
+    {
+    log_err(-1, id, extra_parm);
+    rm_errno = RM_ERR_BADPARAM;
+    return NULL;
+    }
 
-static char	*
-physmem(attrib)
-struct	rm_attribute	*attrib;
-{
-	char		*id = "physmem";
-	unsigned int	pmem;
+  sprintf(ret_string, "%d", sysmp(MP_NAPROCS));
 
-	if (attrib) {
-		log_err(-1, id, extra_parm);
-		rm_errno = RM_ERR_BADPARAM;
-		return NULL;
-	}
-	if (lseek(kfd, (off_t)kern_addr[KSYM_PHYS], SEEK_SET) == -1) {
-		sprintf(log_buffer, "lseek to 0x%x", kern_addr[KSYM_PHYS]);
-		log_err(errno, id, log_buffer);
-		rm_errno = RM_ERR_SYSTEM;
-		return NULL;
-	}
-	if (read(kfd, (char *)&pmem, sizeof(pmem)) != sizeof(pmem)) {
-		log_err(errno, id, "read");
-		rm_errno = RM_ERR_SYSTEM;
-		return NULL;
-	}
+  system_ncpus = sysmp(MP_NAPROCS);
+  return ret_string;
+  }
 
-	/* return KB */
-	sprintf(ret_string, "%lukb", ((ulong)pmem * (ulong)pagesize) >> 10);
-	return ret_string;
-}
+static char *
+physmem(struct rm_attribute *attrib)
+  {
+  char  *id = "physmem";
+  unsigned int pmem;
 
-char	*
-size_fs(param)
-char	*param;
-{
-	char		*id = "size_fs";
-	FILE		*mf;
-	struct	mntent	*mp;
-	struct	statfs	fsbuf;
+  if (attrib)
+    {
+    log_err(-1, id, extra_parm);
+    rm_errno = RM_ERR_BADPARAM;
+    return NULL;
+    }
 
-	if (param[0] != '/') {
-		sprintf(log_buffer, "%s: not full path filesystem name: %s\n",
-			id, param);
-		log_err(-1, id, log_buffer);
-		rm_errno = RM_ERR_BADPARAM;
-		return NULL;
-	}
-	if (statfs(param, &fsbuf, sizeof(struct statfs), 0) == -1) {
-		log_err(errno, id, "statfs");
-		rm_errno = RM_ERR_BADPARAM;
-		return NULL;
-	}
-	sprintf(ret_string, "%lukb", (ulong)(((double)fsbuf.f_bsize *
-				     (double)fsbuf.f_bfree) / 1024.0)); /* KB */
-	return ret_string;
-}
+  if (lseek(kfd, (off_t)kern_addr[KSYM_PHYS], SEEK_SET) == -1)
+    {
+    sprintf(log_buffer, "lseek to 0x%x", kern_addr[KSYM_PHYS]);
+    log_err(errno, id, log_buffer);
+    rm_errno = RM_ERR_SYSTEM;
+    return NULL;
+    }
 
-char	*
-size_file(param)
-char	*param;
-{
-	char		*id = "size_file";
-	struct	stat	sbuf;
+  if (read(kfd, (char *)&pmem, sizeof(pmem)) != sizeof(pmem))
+    {
+    log_err(errno, id, "read");
+    rm_errno = RM_ERR_SYSTEM;
+    return NULL;
+    }
 
-	if (param[0] != '/') {
-		sprintf(log_buffer, "%s: not full path filesystem name: %s\n",
-			id, param);
-		log_err(-1, id, log_buffer);
-		rm_errno = RM_ERR_BADPARAM;
-		return NULL;
-	}
+  /* return KB */
+  sprintf(ret_string, "%lukb", ((ulong)pmem * (ulong)pagesize) >> 10);
 
-	if (stat(param, &sbuf) == -1) {
-		log_err(errno, id, "stat");
-		rm_errno = RM_ERR_BADPARAM;
-		return NULL;
-	}
+  return ret_string;
+  }
 
-	sprintf(ret_string, "%ukb", sbuf.st_size >> 10);  /* KB */
-	return ret_string;
-}
+char *
+size_fs(char *param)
+  {
+  char  *id = "size_fs";
+  FILE  *mf;
 
-char	*
-size(attrib)
-struct	rm_attribute	*attrib;
-{
-	char	*id = "size";
-	char	*param;
+  struct mntent *mp;
 
-	if (attrib == NULL) {
-		log_err(-1, id, no_parm);
-		rm_errno = RM_ERR_NOPARAM;
-		return NULL;
-	}
-	if (momgetattr(NULL)) {
-		log_err(-1, id, extra_parm);
-		rm_errno = RM_ERR_BADPARAM;
-		return NULL;
-	}
+  struct statfs fsbuf;
 
-	param = attrib->a_value;
-	if (strcmp(attrib->a_qualifier, "file") == 0)
-		return (size_file(param));
-	else if (strcmp(attrib->a_qualifier, "fs") == 0)
-		return (size_fs(param));
-	else {
-		rm_errno = RM_ERR_BADPARAM;
-		return NULL;
-	}
-}
+  if (param[0] != '/')
+    {
+    sprintf(log_buffer, "%s: not full path filesystem name: %s\n",
+            id, param);
+    log_err(-1, id, log_buffer);
+    rm_errno = RM_ERR_BADPARAM;
+    return NULL;
+    }
 
-time_t	maxtm;
+  if (statfs(param, &fsbuf, sizeof(struct statfs), 0) == -1)
+    {
+    log_err(errno, id, "statfs");
+    rm_errno = RM_ERR_BADPARAM;
+    return NULL;
+    }
+
+  sprintf(ret_string, "%lukb", (ulong)(((double)fsbuf.f_bsize *
+
+                                        (double)fsbuf.f_bfree) / 1024.0)); /* KB */
+  return ret_string;
+  }
+
+char *
+size_file(char *param)
+  {
+  char  *id = "size_file";
+
+  struct stat sbuf;
+
+  if (param[0] != '/')
+    {
+    sprintf(log_buffer, "%s: not full path filesystem name: %s\n",
+            id, param);
+    log_err(-1, id, log_buffer);
+    rm_errno = RM_ERR_BADPARAM;
+    return NULL;
+    }
+
+  if (stat(param, &sbuf) == -1)
+    {
+    log_err(errno, id, "stat");
+    rm_errno = RM_ERR_BADPARAM;
+    return NULL;
+    }
+
+  sprintf(ret_string, "%ukb", sbuf.st_size >> 10);  /* KB */
+
+  return ret_string;
+  }
+
+char *
+size(struct rm_attribute *attrib)
+  {
+  char *id = "size";
+  char *param;
+
+  if (attrib == NULL)
+    {
+    log_err(-1, id, no_parm);
+    rm_errno = RM_ERR_NOPARAM;
+    return NULL;
+    }
+
+  if (momgetattr(NULL))
+    {
+    log_err(-1, id, extra_parm);
+    rm_errno = RM_ERR_BADPARAM;
+    return NULL;
+    }
+
+  param = attrib->a_value;
+
+  if (strcmp(attrib->a_qualifier, "file") == 0)
+    return (size_file(param));
+  else if (strcmp(attrib->a_qualifier, "fs") == 0)
+    return (size_fs(param));
+  else
+    {
+    rm_errno = RM_ERR_BADPARAM;
+    return NULL;
+    }
+  }
+
+time_t maxtm;
 
 void
-setmax(dev)
-char	*dev;
-{
-	struct	stat	sb;
+setmax(char *dev)
+  {
 
-	if (stat(dev, &sb) == -1)
-		return;
-	if (maxtm < sb.st_atime)
-		maxtm = sb.st_atime;
+  struct stat sb;
 
-	return;
-}
+  if (stat(dev, &sb) == -1)
+    return;
 
-char	*
-idletime(attrib)
-struct	rm_attribute	*attrib;
-{
-	char	*id = "idletime";
-	DIR	*dp;
-	struct	dirent	*de;
-	char	ttyname[50];
-	time_t	curtm;
+  if (maxtm < sb.st_atime)
+    maxtm = sb.st_atime;
 
-	if (attrib) {
-		log_err(-1, id, extra_parm);
-		rm_errno = RM_ERR_BADPARAM;
-		return NULL;
-	}
+  return;
+  }
 
-	if ((dp=opendir("/dev")) == NULL) {
-		log_err(errno, id, "opendir /dev");
-		rm_errno = RM_ERR_SYSTEM;
-		return NULL;
-	}
+char *
+idletime(struct rm_attribute *attrib)
+  {
+  char *id = "idletime";
+  DIR *dp;
 
-	maxtm = 0;
-	curtm = time(NULL);
+  struct dirent *de;
+  char ttyname[50];
+  time_t curtm;
 
-	setmax("/dev/mouse");
-	while ((de=readdir(dp)) != NULL) {
-		if (maxtm >= curtm)
-			break;
-		if (strncmp(de->d_name, "tty", 3))
-			continue;
-		sprintf(ttyname, "/dev/%s", de->d_name);
-		setmax(ttyname);
-	}
-	closedir(dp);
+  if (attrib)
+    {
+    log_err(-1, id, extra_parm);
+    rm_errno = RM_ERR_BADPARAM;
+    return NULL;
+    }
 
-	sprintf(ret_string, "%d", MAX(0, curtm - maxtm));
-	return ret_string;
-}
+  if ((dp = opendir("/dev")) == NULL)
+    {
+    log_err(errno, id, "opendir /dev");
+    rm_errno = RM_ERR_SYSTEM;
+    return NULL;
+    }
+
+  maxtm = 0;
+
+  curtm = time(NULL);
+
+  setmax("/dev/mouse");
+
+  while ((de = readdir(dp)) != NULL)
+    {
+    if (maxtm >= curtm)
+      break;
+
+    if (strncmp(de->d_name, "tty", 3))
+      continue;
+
+    sprintf(ttyname, "/dev/%s", de->d_name);
+
+    setmax(ttyname);
+    }
+
+  closedir(dp);
+
+  sprintf(ret_string, "%d", MAX(0, curtm - maxtm));
+  return ret_string;
+  }
 
 
 
-static char	*
-walltime(attrib)
-struct	rm_attribute	*attrib;
-{
-	char			*id = "walltime";
-	char			procname[100];
-	int			fd;
-	int			value, job, found = 0;
-	time_t			now, start;
-	prpsinfo_t		pi;
-	struct dirent		*dent;
+static char *
+walltime(struct rm_attribute *attrib)
+  {
+  char   *id = "walltime";
+  char   procname[100];
+  int   fd;
+  int   value, job, found = 0;
+  time_t   now, start;
+  prpsinfo_t  pi;
 
-	if (attrib == NULL) {
-		log_err(-1, id, no_parm);
-		rm_errno = RM_ERR_NOPARAM;
-		return NULL;
-	}
-	if ((value = atoi(attrib->a_value)) == 0) {
-		sprintf(log_buffer, "bad param: %s", attrib->a_value);
-		log_err(-1, id, log_buffer);
-		rm_errno = RM_ERR_BADPARAM;
-		return NULL;
-	}
-	if (momgetattr(NULL)) {
-		log_err(-1, id, extra_parm);
-		rm_errno = RM_ERR_BADPARAM;
-		return NULL;
-	}
+  struct dirent  *dent;
 
-	if (strcmp(attrib->a_qualifier, "proc") == 0)
-		job = 0;
-	else if (strcmp(attrib->a_qualifier, "session") == 0)
-		job = 1;
-	else {
-		rm_errno = RM_ERR_BADPARAM;
-		return NULL;
-	}
+  if (attrib == NULL)
+    {
+    log_err(-1, id, no_parm);
+    rm_errno = RM_ERR_NOPARAM;
+    return NULL;
+    }
 
-	if ((now = time(NULL)) <= 0) {
-		log_err(errno, id, "time");
-		rm_errno = RM_ERR_SYSTEM;
-		return NULL;
-	}
+  if ((value = atoi(attrib->a_value)) == 0)
+    {
+    sprintf(log_buffer, "bad param: %s", attrib->a_value);
+    log_err(-1, id, log_buffer);
+    rm_errno = RM_ERR_BADPARAM;
+    return NULL;
+    }
 
-	start = now;
-	rewinddir(pdir);
-	for (fd = -1; (dent = readdir(pdir)) != NULL; close(fd)) {
-		if (!isdigit(dent->d_name[0]))
-			continue;
+  if (momgetattr(NULL))
+    {
+    log_err(-1, id, extra_parm);
+    rm_errno = RM_ERR_BADPARAM;
+    return NULL;
+    }
 
-		sprintf(procname, procfmts, dent->d_name);
-		if ((fd = open(procname, O_RDONLY)) == -1)
-			continue;
-		if (ioctl(fd, PIOCPSINFO, &pi) == -1) {
-			sprintf(log_buffer, "%s: ioctl(PIOCPSINFO)", procname);
-			log_err(errno, id, log_buffer);
-			continue;
-		}
-		if (job) {
-			if (value != pi.pr_sid)
-				continue;
-		}
-		else {
-			if ((pid_t)value != pi.pr_pid)
-				continue;
-		}
+  if (strcmp(attrib->a_qualifier, "proc") == 0)
+    job = 0;
+  else if (strcmp(attrib->a_qualifier, "session") == 0)
+    job = 1;
+  else
+    {
+    rm_errno = RM_ERR_BADPARAM;
+    return NULL;
+    }
 
-		found = 1;
-		start = MIN(start, pi.pr_start.tv_sec);
-	}
+  if ((now = time(NULL)) <= 0)
+    {
+    log_err(errno, id, "time");
+    rm_errno = RM_ERR_SYSTEM;
+    return NULL;
+    }
 
-	if (found) {
-		sprintf(ret_string, "%ld", (long)((double)(now - start) * wallfactor));
-		return ret_string;
-	}
+  start = now;
 
-	rm_errno = RM_ERR_EXIST;
-	return NULL;
-}
+  rewinddir(pdir);
+
+  for (fd = -1; (dent = readdir(pdir)) != NULL; close(fd))
+    {
+    if (!isdigit(dent->d_name[0]))
+      continue;
+
+    sprintf(procname, procfmts, dent->d_name);
+
+    if ((fd = open(procname, O_RDONLY)) == -1)
+      continue;
+
+    if (ioctl(fd, PIOCPSINFO, &pi) == -1)
+      {
+      sprintf(log_buffer, "%s: ioctl(PIOCPSINFO)", procname);
+      log_err(errno, id, log_buffer);
+      continue;
+      }
+
+    if (job)
+      {
+      if (value != pi.pr_sid)
+        continue;
+      }
+    else
+      {
+      if ((pid_t)value != pi.pr_pid)
+        continue;
+      }
+
+    found = 1;
+
+    start = MIN(start, pi.pr_start.tv_sec);
+    }
+
+  if (found)
+    {
+    sprintf(ret_string, "%ld", (long)((double)(now - start) * wallfactor));
+    return ret_string;
+    }
+
+  rm_errno = RM_ERR_EXIST;
+
+  return NULL;
+  }
 
 int
-get_la(rv)
-	double	*rv;
-{
-	char	*id = "get_la";
-	long	load;
+get_la(double *rv)
+  {
+  char *id = "get_la";
+  long load;
 
-	if (lseek(kfd, (off_t)kern_addr[KSYM_LOAD], SEEK_SET) == -1) {
-		sprintf(log_buffer, "lseek to 0x%x", kern_addr[KSYM_LOAD]);
-		log_err(errno, id, log_buffer);
-		return (rm_errno = RM_ERR_SYSTEM);
-	}
-	if (read(kfd, (char *)&load, sizeof(load)) != sizeof(load)) {
-		log_err(errno, id, "read");
-		return (rm_errno = RM_ERR_SYSTEM);
-	}
+  if (lseek(kfd, (off_t)kern_addr[KSYM_LOAD], SEEK_SET) == -1)
+    {
+    sprintf(log_buffer, "lseek to 0x%x", kern_addr[KSYM_LOAD]);
+    log_err(errno, id, log_buffer);
+    return (rm_errno = RM_ERR_SYSTEM);
+    }
 
-	/*
-	** SGI does not have FSCALE like the SUN so the 1024
-	** divisor was found by experment compairing the result
-	** of this routine to uptime.
-	*/
-	*rv = (double)load/1024.0;
-	return 0;
-}
+  if (read(kfd, (char *)&load, sizeof(load)) != sizeof(load))
+    {
+    log_err(errno, id, "read");
+    return (rm_errno = RM_ERR_SYSTEM);
+    }
+
+  /*
+  ** SGI does not have FSCALE like the SUN so the 1024
+  ** divisor was found by experment compairing the result
+  ** of this routine to uptime.
+  */
+  *rv = (double)load / 1024.0;
+
+  return 0;
+  }
 
 u_long
-gracetime(secs)
-u_long	secs;
-{
-	time_t	now = time((time_t *)NULL);
+gracetime(u_long secs)
+  {
+  time_t now = time((time_t *)NULL);
 
-	if (secs > now)		/* time is in the future */
-		return (secs - now);
-	else
-		return 0;
-}
+  if (secs > now)  /* time is in the future */
+    return (secs - now);
+  else
+    return 0;
+  }
 
-static char	*
-quota(attrib)
-struct	rm_attribute	*attrib;
-{
-	char	*id = "quota";
-	int			type;
-	dev_t			dirdev;
-	uid_t			uid;
-	struct	stat		sb;
-	struct	mntent		*me;
-	struct	dqblk		qi;
-	FILE			*m;
-	struct	passwd		*pw;
-	static	char		*type_array[] = {
-		"harddata",
-		"softdata",
-		"currdata",
-		"hardfile",
-		"softfile",
-		"currfile",
-		"timedata",
-		"timefile",
-	};
-	enum	type_name {
-		harddata,
-		softdata,
-		currdata,
-		hardfile,
-		softfile,
-		currfile,
-		timedata,
-		timefile,
-		type_end
-	};
+static char *
+quota(struct rm_attribute *attrib)
+  {
+  char *id = "quota";
+  int   type;
+  dev_t   dirdev;
+  uid_t   uid;
 
-	if (attrib == NULL) {
-		log_err(-1, id, no_parm);
-		rm_errno = RM_ERR_NOPARAM;
-		return NULL;
-	}
-	if (strcmp(attrib->a_qualifier, "type")) {
-		sprintf(log_buffer, "unknown qualifier %s",
-			attrib->a_qualifier);
-		log_err(-1, id, log_buffer);
-		rm_errno = RM_ERR_BADPARAM;
-		return NULL;
-	}		
+  struct stat  sb;
 
-	for (type=0; type<type_end; type++) {
-		if (strcmp(attrib->a_value, type_array[type]) == 0)
-			break;
-	}
-	if (type == type_end) {		/* check to see if command is legal */
-		sprintf(log_buffer, "bad param: %s=%s",
-			attrib->a_qualifier, attrib->a_value);
-		log_err(-1, id, log_buffer);
-		rm_errno = RM_ERR_BADPARAM;
-		return NULL;
-	}
+  struct mntent  *me;
 
-	if ((attrib = momgetattr(NULL)) == NULL) {
-		log_err(-1, id, no_parm);
-		rm_errno = RM_ERR_NOPARAM;
-		return NULL;
-	}
-	if (strcmp(attrib->a_qualifier, "dir") != 0) {
-		sprintf(log_buffer, "bad param: %s=%s",
-			attrib->a_qualifier, attrib->a_value);
-		log_err(-1, id, log_buffer);
-		rm_errno = RM_ERR_BADPARAM;
-		return NULL;
-	}
-	if (attrib->a_value[0] != '/') {	/* must be absolute path */
-		sprintf(log_buffer,
-			"not an absolute path: %s", attrib->a_value);
-		log_err(-1, id, log_buffer);
-		rm_errno = RM_ERR_BADPARAM;
-		return NULL;
-	}
-	if (stat(attrib->a_value, &sb) == -1) {
-		sprintf(log_buffer, "stat: %s", attrib->a_value);
-		log_err(errno, id, log_buffer);
-		rm_errno = RM_ERR_EXIST;
-		return NULL;
-	}
-	dirdev = sb.st_dev;
-	DBPRT(("dir has devnum %d\n", dirdev))
+  struct dqblk  qi;
+  FILE   *m;
 
-	if ((m = setmntent(MOUNTED, "r")) == NULL) {
-		log_err(errno, id, "setmntent");
-		rm_errno = RM_ERR_SYSTEM;
-                return NULL;
-        }
-	while ((me = getmntent(m)) != NULL) {
-		if (strcmp(me->mnt_type, MNTTYPE_IGNORE) == 0)
-			continue;
-		if (stat(me->mnt_dir, &sb) == -1) {
-			sprintf(log_buffer, "stat: %s", me->mnt_dir);
-			log_err(errno, id, log_buffer);
-			continue;
-		}
-		DBPRT(("%s\t%s\t%d\n", me->mnt_fsname, me->mnt_dir, sb.st_dev))
-		if (sb.st_dev == dirdev)
-			break;
-	}
-	endmntent(m);
-	if (me == NULL)	{
-		sprintf(log_buffer,
-			"filesystem %s not found", attrib->a_value);
-		log_err(-1, id, log_buffer);
-		rm_errno = RM_ERR_EXIST;
-		return NULL;
-	}
-	if (hasmntopt(me, MNTOPT_QUOTA) == NULL) {
-		sprintf(log_buffer,
-			"no quotas on filesystem %s", me->mnt_dir);
-		log_err(-1, id, log_buffer);
-		rm_errno = RM_ERR_EXIST;
-		return NULL;
-	}
+  struct passwd  *pw;
+  static char  *type_array[] =
+    {
+    "harddata",
+    "softdata",
+    "currdata",
+    "hardfile",
+    "softfile",
+    "currfile",
+    "timedata",
+    "timefile",
+    };
+  enum type_name
+    {
+    harddata,
+    softdata,
+    currdata,
+    hardfile,
+    softfile,
+    currfile,
+    timedata,
+    timefile,
+    type_end
+    };
 
-	if ((attrib = momgetattr(NULL)) == NULL) {
-		log_err(-1, id, no_parm);
-		rm_errno = RM_ERR_NOPARAM;
-		return NULL;
-	}
-	if (strcmp(attrib->a_qualifier, "user") != 0) {
-		sprintf(log_buffer, "bad param: %s=%s",
-			attrib->a_qualifier, attrib->a_value);
-		log_err(-1, id, log_buffer);
-		rm_errno = RM_ERR_BADPARAM;
-		return NULL;
-	}
-	if ((uid = (uid_t)atoi(attrib->a_value)) == 0) {
-		if ((pw = getpwnam(attrib->a_value)) == NULL) {
-			sprintf(log_buffer,
-				"user not found: %s", attrib->a_value);
-			log_err(-1, id, log_buffer);
-			rm_errno = RM_ERR_EXIST;
-			return NULL;
-		}
-		uid = pw->pw_uid;
-	}
+  if (attrib == NULL)
+    {
+    log_err(-1, id, no_parm);
+    rm_errno = RM_ERR_NOPARAM;
+    return NULL;
+    }
 
-	if (quotactl(Q_GETQUOTA, me->mnt_fsname, uid, (caddr_t)&qi) == -1) {
-		log_err(errno, id, "quotactl");
-		rm_errno = RM_ERR_SYSTEM;
-		return NULL;
-	}
+  if (strcmp(attrib->a_qualifier, "type"))
+    {
+    sprintf(log_buffer, "unknown qualifier %s",
+            attrib->a_qualifier);
+    log_err(-1, id, log_buffer);
+    rm_errno = RM_ERR_BADPARAM;
+    return NULL;
+    }
 
-	/* all in KB */
-	switch (type) {
-	case harddata:
-		sprintf(ret_string, "%ukb", BBTOB(qi.dqb_bhardlimit) >> 10);
-		break;
-	case softdata:
-		sprintf(ret_string, "%ukb", BBTOB(qi.dqb_bsoftlimit) >> 10);
-		break;
-	case currdata:
-		sprintf(ret_string, "%ukb", BBTOB(qi.dqb_curblocks) >> 10);
-		break;
-	case hardfile:
-		sprintf(ret_string, "%u", qi.dqb_fhardlimit);
-		break;
-	case softfile:
-		sprintf(ret_string, "%u", qi.dqb_fsoftlimit);
-		break;
-	case currfile:
-		sprintf(ret_string, "%u", qi.dqb_curfiles);
-		break;
-	case timedata:
-		sprintf(ret_string, "%u", gracetime((u_long)qi.dqb_btimelimit));
-		break;
-	case timefile:
-		sprintf(ret_string, "%u", gracetime((u_long)qi.dqb_ftimelimit));
-		break;
-	}
+  for (type = 0; type < type_end; type++)
+    {
+    if (strcmp(attrib->a_value, type_array[type]) == 0)
+      break;
+    }
 
-	return ret_string;
-}
+  if (type == type_end)    /* check to see if command is legal */
+    {
+    sprintf(log_buffer, "bad param: %s=%s",
+            attrib->a_qualifier, attrib->a_value);
+    log_err(-1, id, log_buffer);
+    rm_errno = RM_ERR_BADPARAM;
+    return NULL;
+    }
+
+  if ((attrib = momgetattr(NULL)) == NULL)
+    {
+    log_err(-1, id, no_parm);
+    rm_errno = RM_ERR_NOPARAM;
+    return NULL;
+    }
+
+  if (strcmp(attrib->a_qualifier, "dir") != 0)
+    {
+    sprintf(log_buffer, "bad param: %s=%s",
+            attrib->a_qualifier, attrib->a_value);
+    log_err(-1, id, log_buffer);
+    rm_errno = RM_ERR_BADPARAM;
+    return NULL;
+    }
+
+  if (attrib->a_value[0] != '/')   /* must be absolute path */
+    {
+    sprintf(log_buffer,
+            "not an absolute path: %s", attrib->a_value);
+    log_err(-1, id, log_buffer);
+    rm_errno = RM_ERR_BADPARAM;
+    return NULL;
+    }
+
+  if (stat(attrib->a_value, &sb) == -1)
+    {
+    sprintf(log_buffer, "stat: %s", attrib->a_value);
+    log_err(errno, id, log_buffer);
+    rm_errno = RM_ERR_EXIST;
+    return NULL;
+    }
+
+  dirdev = sb.st_dev;
+
+  DBPRT(("dir has devnum %d\n", dirdev))
+
+  if ((m = setmntent(MOUNTED, "r")) == NULL)
+    {
+    log_err(errno, id, "setmntent");
+    rm_errno = RM_ERR_SYSTEM;
+    return NULL;
+    }
+
+  while ((me = getmntent(m)) != NULL)
+    {
+    if (strcmp(me->mnt_type, MNTTYPE_IGNORE) == 0)
+      continue;
+
+    if (stat(me->mnt_dir, &sb) == -1)
+      {
+      sprintf(log_buffer, "stat: %s", me->mnt_dir);
+      log_err(errno, id, log_buffer);
+      continue;
+      }
+
+    DBPRT(("%s\t%s\t%d\n", me->mnt_fsname, me->mnt_dir, sb.st_dev))
+
+    if (sb.st_dev == dirdev)
+      break;
+    }
+
+  endmntent(m);
+
+  if (me == NULL)
+    {
+    sprintf(log_buffer,
+            "filesystem %s not found", attrib->a_value);
+    log_err(-1, id, log_buffer);
+    rm_errno = RM_ERR_EXIST;
+    return NULL;
+    }
+
+  if (hasmntopt(me, MNTOPT_QUOTA) == NULL)
+    {
+    sprintf(log_buffer,
+            "no quotas on filesystem %s", me->mnt_dir);
+    log_err(-1, id, log_buffer);
+    rm_errno = RM_ERR_EXIST;
+    return NULL;
+    }
+
+  if ((attrib = momgetattr(NULL)) == NULL)
+    {
+    log_err(-1, id, no_parm);
+    rm_errno = RM_ERR_NOPARAM;
+    return NULL;
+    }
+
+  if (strcmp(attrib->a_qualifier, "user") != 0)
+    {
+    sprintf(log_buffer, "bad param: %s=%s",
+            attrib->a_qualifier, attrib->a_value);
+    log_err(-1, id, log_buffer);
+    rm_errno = RM_ERR_BADPARAM;
+    return NULL;
+    }
+
+  if ((uid = (uid_t)atoi(attrib->a_value)) == 0)
+    {
+    if ((pw = getpwnam(attrib->a_value)) == NULL)
+      {
+      sprintf(log_buffer,
+              "user not found: %s", attrib->a_value);
+      log_err(-1, id, log_buffer);
+      rm_errno = RM_ERR_EXIST;
+      return NULL;
+      }
+
+    uid = pw->pw_uid;
+    }
+
+  if (quotactl(Q_GETQUOTA, me->mnt_fsname, uid, (caddr_t)&qi) == -1)
+    {
+    log_err(errno, id, "quotactl");
+    rm_errno = RM_ERR_SYSTEM;
+    return NULL;
+    }
+
+  /* all in KB */
+  switch (type)
+    {
+
+    case harddata:
+      sprintf(ret_string, "%ukb", BBTOB(qi.dqb_bhardlimit) >> 10);
+      break;
+
+    case softdata:
+      sprintf(ret_string, "%ukb", BBTOB(qi.dqb_bsoftlimit) >> 10);
+      break;
+
+    case currdata:
+      sprintf(ret_string, "%ukb", BBTOB(qi.dqb_curblocks) >> 10);
+      break;
+
+    case hardfile:
+      sprintf(ret_string, "%u", qi.dqb_fhardlimit);
+      break;
+
+    case softfile:
+      sprintf(ret_string, "%u", qi.dqb_fsoftlimit);
+      break;
+
+    case currfile:
+      sprintf(ret_string, "%u", qi.dqb_curfiles);
+      break;
+
+    case timedata:
+      sprintf(ret_string, "%u", gracetime((u_long)qi.dqb_btimelimit));
+      break;
+
+    case timefile:
+      sprintf(ret_string, "%u", gracetime((u_long)qi.dqb_ftimelimit));
+      break;
+    }
+
+  return ret_string;
+  }
 
 
 

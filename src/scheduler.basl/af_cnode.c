@@ -1,45 +1,45 @@
 /*
 *         OpenPBS (Portable Batch System) v2.3 Software License
-* 
+*
 * Copyright (c) 1999-2000 Veridian Information Solutions, Inc.
 * All rights reserved.
-* 
+*
 * ---------------------------------------------------------------------------
 * For a license to use or redistribute the OpenPBS software under conditions
 * other than those described below, or to purchase support for this software,
 * please contact Veridian Systems, PBS Products Department ("Licensor") at:
-* 
+*
 *    www.OpenPBS.org  +1 650 967-4675                  sales@OpenPBS.org
 *                        877 902-4PBS (US toll-free)
 * ---------------------------------------------------------------------------
-* 
+*
 * This license covers use of the OpenPBS v2.3 software (the "Software") at
 * your site or location, and, for certain users, redistribution of the
 * Software to other sites and locations.  Use and redistribution of
 * OpenPBS v2.3 in source and binary forms, with or without modification,
 * are permitted provided that all of the following conditions are met.
 * After December 31, 2001, only conditions 3-6 must be met:
-* 
+*
 * 1. Commercial and/or non-commercial use of the Software is permitted
 *    provided a current software registration is on file at www.OpenPBS.org.
 *    If use of this software contributes to a publication, product, or
 *    service, proper attribution must be given; see www.OpenPBS.org/credit.html
-* 
+*
 * 2. Redistribution in any form is only permitted for non-commercial,
 *    non-profit purposes.  There can be no charge for the Software or any
 *    software incorporating the Software.  Further, there can be no
 *    expectation of revenue generated as a consequence of redistributing
 *    the Software.
-* 
+*
 * 3. Any Redistribution of source code must retain the above copyright notice
 *    and the acknowledgment contained in paragraph 6, this list of conditions
 *    and the disclaimer contained in paragraph 7.
-* 
+*
 * 4. Any Redistribution in binary form must reproduce the above copyright
 *    notice and the acknowledgment contained in paragraph 6, this list of
 *    conditions and the disclaimer contained in paragraph 7 in the
 *    documentation and/or other materials provided with the distribution.
-* 
+*
 * 5. Redistributions in any form must be accompanied by information on how to
 *    obtain complete source code for the OpenPBS software and any
 *    modifications and/or additions to the OpenPBS software.  The source code
@@ -47,23 +47,23 @@
 *    than the cost of distribution plus a nominal fee, and all modifications
 *    and additions to the Software must be freely redistributable by any party
 *    (including Licensor) without restriction.
-* 
+*
 * 6. All advertising materials mentioning features or use of the Software must
 *    display the following acknowledgment:
-* 
+*
 *     "This product includes software developed by NASA Ames Research Center,
-*     Lawrence Livermore National Laboratory, and Veridian Information 
+*     Lawrence Livermore National Laboratory, and Veridian Information
 *     Solutions, Inc.
 *     Visit www.OpenPBS.org for OpenPBS software support,
 *     products, and information."
-* 
+*
 * 7. DISCLAIMER OF WARRANTY
-* 
+*
 * THIS SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND. ANY EXPRESS
 * OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
 * OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT
 * ARE EXPRESSLY DISCLAIMED.
-* 
+*
 * IN NO EVENT SHALL VERIDIAN CORPORATION, ITS AFFILIATED COMPANIES, OR THE
 * U.S. GOVERNMENT OR ANY OF ITS AGENCIES BE LIABLE FOR ANY DIRECT OR INDIRECT,
 * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
@@ -72,7 +72,7 @@
 * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
 * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-* 
+*
 * This license will be governed by the laws of the Commonwealth of Virginia,
 * without reference to its choice of law rules.
 */
@@ -101,19 +101,21 @@
 /* File Scope Variables */
 static char ident[] = "@(#) $RCSfile$ $Revision$";
 
-struct CNodeSortArgs {
-        CNode    **array;
-        SetCNode *set;
-        union {
-                int      (*ifunc)();
-                double   (*ffunc)();
-                char    *(*sfunc)();
-                DateTime (*dfunc)();
-                Size     (*szfunc)();
-        } key;
-        enum { INTKEY, FLOATKEY, STRINGKEY, DATETIMEKEY, SIZEKEY } keytype;
-        int  order;     /* ASC or DESC */
-};
+struct CNodeSortArgs
+  {
+  CNode    **array;
+  SetCNode *set;
+  union
+    {
+    int (*ifunc)();
+    double(*ffunc)();
+    char    *(*sfunc)();
+    DateTime(*dfunc)();
+    Size(*szfunc)();
+    } key;
+  enum { INTKEY, FLOATKEY, STRINGKEY, DATETIMEKEY, SIZEKEY } keytype;
+  int  order;     /* ASC or DESC */
+  };
 
 /* External Variables */
 /* External Functions */
@@ -125,2345 +127,2730 @@ struct CNodeSortArgs {
 /* Functions */
 
 /* After calling this function, mallocTableAdd must be called */
+
 static struct IODevice *IODeviceCreate(void)
-{
-	Size sz;
-	struct IODevice *iptr;
+  {
+  Size sz;
 
-	iptr = (struct IODevice *) malloc(sizeof(struct IODevice));
+  struct IODevice *iptr;
 
-	assert( iptr != NULL );
+  iptr = (struct IODevice *) malloc(sizeof(struct IODevice));
 
-	sz = strToSize("-1b");
-	iptr->name = NULL;
-	iptr->spaceTotal = sz;      /* update it */	
-	iptr->spaceAvail = sz;
-	iptr->spaceReserved = sz;
-	iptr->inBw = -1;
-	iptr->outBw = -1;
+  assert(iptr != NULL);
 
-	return(iptr);
-}
+  sz = strToSize("-1b");
+  iptr->name = NULL;
+  iptr->spaceTotal = sz;      /* update it */
+  iptr->spaceAvail = sz;
+  iptr->spaceReserved = sz;
+  iptr->inBw = -1;
+  iptr->outBw = -1;
+
+  return(iptr);
+  }
 
 static Size IODeviceSpaceTotalGet(iod_head, name)
-struct IODevice	*iod_head;	/* ptr to the head of the list */
-char		*name;
-{
-	struct	IODevice *iptr;	
 
-	for( iptr=iod_head; iptr; iptr=iptr->nextptr ) {
-		if( strcmp(iptr->name, name) == 0 ) { /* found a match */
-			return(iptr->spaceTotal);
-		}
-	}
-	return(strToSize("-1b"));
-}
+struct IODevice *iod_head; /* ptr to the head of the list */
+char  *name;
+  {
+
+  struct IODevice *iptr;
+
+  for (iptr = iod_head; iptr; iptr = iptr->nextptr)
+    {
+    if (strcmp(iptr->name, name) == 0)    /* found a match */
+      {
+      return(iptr->spaceTotal);
+      }
+    }
+
+  return(strToSize("-1b"));
+  }
 
 static Size IODeviceSpaceAvailGet(iod_head, name)
-struct IODevice	*iod_head;	/* ptr to the head of the list */
-char		*name;
-{
-	struct	IODevice *iptr;	
 
-	for( iptr=iod_head; iptr; iptr=iptr->nextptr ) {
-		if( strcmp(iptr->name, name) == 0 ) { /* found a match */
-			return(iptr->spaceAvail);
-		}
-	}
-	return(strToSize("-1b"));
-}
+struct IODevice *iod_head; /* ptr to the head of the list */
+char  *name;
+  {
+
+  struct IODevice *iptr;
+
+  for (iptr = iod_head; iptr; iptr = iptr->nextptr)
+    {
+    if (strcmp(iptr->name, name) == 0)    /* found a match */
+      {
+      return(iptr->spaceAvail);
+      }
+    }
+
+  return(strToSize("-1b"));
+  }
 
 static Size IODeviceSpaceReservedGet(iod_head, name)
-struct IODevice	*iod_head;	/* ptr to the head of the list */
-char		*name;
-{
-	struct	IODevice *iptr;	
 
-	for( iptr=iod_head; iptr; iptr=iptr->nextptr ) {
-		if( strcmp(iptr->name, name) == 0 ) { /* found a match */
-			return(iptr->spaceReserved);
-		}
-	}
-	return(strToSize("-1b"));
-}
+struct IODevice *iod_head; /* ptr to the head of the list */
+char  *name;
+  {
 
-static int IODeviceInBwGet(iod_head, name)
-struct IODevice	*iod_head;	/* ptr to the head of the list */
-char		*name;
-{
-	struct	IODevice *iptr;	
+  struct IODevice *iptr;
 
-	for( iptr=iod_head; iptr; iptr=iptr->nextptr ) {
-		if( strcmp(iptr->name, name) == 0 ) { /* found a match */
-			return(iptr->inBw);
-		}
-	}
-	return(-1);
-}
+  for (iptr = iod_head; iptr; iptr = iptr->nextptr)
+    {
+    if (strcmp(iptr->name, name) == 0)    /* found a match */
+      {
+      return(iptr->spaceReserved);
+      }
+    }
 
-static int IODeviceOutBwGet(iod_head, name)
-struct IODevice	*iod_head;	/* ptr to the head of the list */
-char		*name;
-{
-	struct	IODevice *iptr;	
+  return(strToSize("-1b"));
+  }
 
-	for( iptr=iod_head; iptr; iptr=iptr->nextptr ) {
-		if( strcmp(iptr->name, name) == 0 ) { /* found a match */
-			return(iptr->outBw);
-		}
-	}
-	return(-1);
-}
+static int
+IODeviceInBwGet(
+  struct IODevice *iod_head, /* ptr to the head of the list */
+  char *name
+)
+  {
 
-static void IODeviceListPrint(iod_head, descr)
-struct IODevice *iod_head;
-char		*descr;
-{
-	struct	IODevice *iptr;	
+  struct IODevice *iptr;
 
-	for( iptr=iod_head; iptr; iptr=iptr->nextptr ) {
-		printf("\t\t\t    %s Device Name = %s:   ", descr, iptr->name);
+  for (iptr = iod_head; iptr; iptr = iptr->nextptr)
+    {
+    if (strcmp(iptr->name, name) == 0)    /* found a match */
+      {
+      return(iptr->inBw);
+      }
+    }
 
-		printf("Space Total = ");
-		sizePrint(iptr->spaceTotal, 1);
-		printf(", ");
+  return(-1);
+  }
 
-		printf("Space Avail = ");
-		sizePrint(iptr->spaceAvail, 1);
-		printf(", ");
+static int
+IODeviceOutBwGet(
+  struct IODevice *iod_head, /* ptr to the head of the list */
+  char *name
+)
+  {
 
-		printf("Space Reserved = ");
-		sizePrint(iptr->spaceReserved, 1);
-		printf(", ");
+  struct IODevice *iptr;
 
-		printf("In Bw = %d", iptr->inBw);
+  for (iptr = iod_head; iptr; iptr = iptr->nextptr)
+    {
+    if (strcmp(iptr->name, name) == 0)    /* found a match */
+      {
+      return(iptr->outBw);
+      }
+    }
 
-		printf(", Out Bw = %d\n", iptr->outBw);
-	}
-}
+  return(-1);
+  }
+
+static void
+IODeviceListPrint(struct IODevice *iod_head, char *descr)
+  {
+
+  struct IODevice *iptr;
+
+  for (iptr = iod_head; iptr; iptr = iptr->nextptr)
+    {
+    printf("\t\t\t    %s Device Name = %s:   ", descr, iptr->name);
+
+    printf("Space Total = ");
+    sizePrint(iptr->spaceTotal, 1);
+    printf(", ");
+
+    printf("Space Avail = ");
+    sizePrint(iptr->spaceAvail, 1);
+    printf(", ");
+
+    printf("Space Reserved = ");
+    sizePrint(iptr->spaceReserved, 1);
+    printf(", ");
+
+    printf("In Bw = %d", iptr->inBw);
+
+    printf(", Out Bw = %d\n", iptr->outBw);
+    }
+  }
 
 /* Returns the new head of list */
-static struct IODevice *IODeviceSpaceTotalPut(iod_head, name, total, pptr)
-struct IODevice	*iod_head;	/* ptr to the head of the list */
-char		*name;
-Size		total;
-void		*pptr;		/* parent ptr of anything that's been */
-				/* malloc-ed */
-{
-	struct	IODevice *iptr;	
 
-	for( iptr=iod_head; iptr; iptr=iptr->nextptr ) {
-		if( strcmp(iptr->name, name) == 0 ) { /* found a match */
-			iptr->spaceTotal = total;
-			return(NULL);
-		}
-	}
-	iptr = IODeviceCreate();
-	mallocTableAdd(iptr, pptr, 0);
+static struct IODevice *IODeviceSpaceTotalPut(iod_head, name, total, pptr)
+
+      struct IODevice *iod_head; /* ptr to the head of the list */
+char  *name;
+Size  total;
+void  *pptr;  /* parent ptr of anything that's been */
+/* malloc-ed */
+  {
+
+  struct IODevice *iptr;
+
+  for (iptr = iod_head; iptr; iptr = iptr->nextptr)
+    {
+    if (strcmp(iptr->name, name) == 0)    /* found a match */
+      {
+      iptr->spaceTotal = total;
+      return(NULL);
+      }
+    }
+
+  iptr = IODeviceCreate();
+
+  mallocTableAdd(iptr, pptr, 0);
 
 #ifdef DEBUG
-	printf("Added IODevice ptr %x to mallocTable\n", iptr);
+  printf("Added IODevice ptr %x to mallocTable\n", iptr);
 #endif
 
-	dynamic_strcpy(&iptr->name, name);
-	varstrModPptr(iptr->name, pptr);
-	iptr->spaceTotal = total;
-	iptr->nextptr = iod_head;
-	return(iptr);
-}
+  dynamic_strcpy(&iptr->name, name);
+  varstrModPptr(iptr->name, pptr);
+  iptr->spaceTotal = total;
+  iptr->nextptr = iod_head;
+  return(iptr);
+  }
 
 static struct IODevice *IODeviceSpaceAvailPut(iod_head, name, avail, pptr)
-struct IODevice	*iod_head;	/* ptr to the head of the list */
-char		*name;
-Size		avail;
-void		*pptr;
-{
-	struct	IODevice *iptr;	
 
-	for( iptr=iod_head; iptr; iptr=iptr->nextptr ) {
-		if( strcmp(iptr->name, name) == 0 ) { /* found a match */
-			iptr->spaceAvail = avail;
-			return(NULL);
-		}
-	}
-	iptr = IODeviceCreate();
-	mallocTableAdd(iptr, pptr, 0);
+      struct IODevice *iod_head; /* ptr to the head of the list */
+char  *name;
+Size  avail;
+void  *pptr;
+  {
+
+  struct IODevice *iptr;
+
+  for (iptr = iod_head; iptr; iptr = iptr->nextptr)
+    {
+    if (strcmp(iptr->name, name) == 0)    /* found a match */
+      {
+      iptr->spaceAvail = avail;
+      return(NULL);
+      }
+    }
+
+  iptr = IODeviceCreate();
+
+  mallocTableAdd(iptr, pptr, 0);
 #ifdef DEBUG
-	printf("Added IODevice ptr %x to mallocTable\n", iptr);
+  printf("Added IODevice ptr %x to mallocTable\n", iptr);
 #endif
 
-	dynamic_strcpy(&iptr->name, name);
-	varstrModPptr(iptr->name, pptr);
+  dynamic_strcpy(&iptr->name, name);
+  varstrModPptr(iptr->name, pptr);
 
-	iptr->spaceAvail = avail;
-	iptr->nextptr = iod_head;
-	return(iptr);
-}
+  iptr->spaceAvail = avail;
+  iptr->nextptr = iod_head;
+  return(iptr);
+  }
 
-static struct IODevice *IODeviceSpaceReservedPut(iod_head, name,reserve,pptr)
-struct IODevice	*iod_head;	/* ptr to the head of the list */
-char		*name;
-Size		reserve;
-void		*pptr;
-{
-	struct	IODevice *iptr;	
+static struct IODevice *IODeviceSpaceReservedPut(iod_head, name, reserve, pptr)
 
-	for( iptr=iod_head; iptr; iptr=iptr->nextptr ) {
-		if( strcmp(iptr->name, name) == 0 ) { /* found a match */
-			iptr->spaceReserved = reserve;
-			return(NULL);
-		}
-	}
-	iptr = IODeviceCreate();
-	mallocTableAdd(iptr, pptr, 0);
+      struct IODevice *iod_head; /* ptr to the head of the list */
+char  *name;
+Size  reserve;
+void  *pptr;
+  {
 
-#ifdef DEBUG
-	printf("Added IODevice ptr %x to mallocTable\n", iptr);
-#endif
+  struct IODevice *iptr;
 
-	dynamic_strcpy(&iptr->name, name);
-	varstrModPptr(iptr->name, pptr);
+  for (iptr = iod_head; iptr; iptr = iptr->nextptr)
+    {
+    if (strcmp(iptr->name, name) == 0)    /* found a match */
+      {
+      iptr->spaceReserved = reserve;
+      return(NULL);
+      }
+    }
 
-	iptr->spaceReserved = reserve;
-	iptr->nextptr = iod_head;
-	return(iptr);
-}
+  iptr = IODeviceCreate();
 
-static struct IODevice *IODeviceInBwPut(iod_head, name, inBw, pptr)
-struct IODevice	*iod_head;	/* ptr to the head of the list */
-char		*name;
-int		inBw;
-void		*pptr;
-{
-	struct	IODevice *iptr;	
-
-	for( iptr=iod_head; iptr; iptr=iptr->nextptr ) {
-		if( strcmp(iptr->name, name) == 0 ) { /* found a match */
-			iptr->inBw = inBw;
-			return(NULL);
-		}
-	}
-	iptr = IODeviceCreate();
-	mallocTableAdd(iptr, pptr, 0);
+  mallocTableAdd(iptr, pptr, 0);
 
 #ifdef DEBUG
-	printf("Added IODevice ptr %x to mallocTable\n", iptr);
+  printf("Added IODevice ptr %x to mallocTable\n", iptr);
 #endif
 
-	dynamic_strcpy(&iptr->name, name);
-	varstrModPptr(iptr->name, pptr);
+  dynamic_strcpy(&iptr->name, name);
+  varstrModPptr(iptr->name, pptr);
 
-	iptr->inBw = inBw;
-	iptr->nextptr = iod_head;
-	return(iptr);
-}
+  iptr->spaceReserved = reserve;
+  iptr->nextptr = iod_head;
+  return(iptr);
+  }
 
-static struct IODevice *IODeviceOutBwPut(iod_head, name, outBw, pptr)
-struct IODevice	*iod_head;	/* ptr to the head of the list */
-char		*name;
-int		outBw;
-void		*pptr;
-{
-	struct	IODevice *iptr;	
+static struct IODevice *
+      IODeviceInBwPut(
+        struct IODevice *iod_head, /* ptr to the head of the list */
+        char *name,
+        int inBw,
+        void *pptr
+      )
+  {
 
-	for( iptr=iod_head; iptr; iptr=iptr->nextptr ) {
-		if( strcmp(iptr->name, name) == 0 ) { /* found a match */
-			iptr->outBw = outBw;
-			return(NULL);
-		}
-	}
-	iptr = IODeviceCreate();
-	mallocTableAdd(iptr, pptr, 0);
+  struct IODevice *iptr;
+
+  for (iptr = iod_head; iptr; iptr = iptr->nextptr)
+    {
+    if (strcmp(iptr->name, name) == 0)    /* found a match */
+      {
+      iptr->inBw = inBw;
+      return(NULL);
+      }
+    }
+
+  iptr = IODeviceCreate();
+
+  mallocTableAdd(iptr, pptr, 0);
+
 #ifdef DEBUG
-	printf("Added IODevice ptr %x to mallocTable\n", iptr);
+  printf("Added IODevice ptr %x to mallocTable\n", iptr);
 #endif
 
-	dynamic_strcpy(&iptr->name, name);
-	varstrModPptr(iptr->name, pptr);
+  dynamic_strcpy(&iptr->name, name);
+  varstrModPptr(iptr->name, pptr);
 
-	iptr->outBw = outBw;
-	iptr->nextptr = iod_head;
-	return(iptr);
-}
+  iptr->inBw = inBw;
+  iptr->nextptr = iod_head;
+  return(iptr);
+  }
+
+static struct IODevice *
+      IODeviceOutBwPut(
+        struct IODevice *iod_head, /* ptr to the head of the list */
+        char *name,
+        int outBw,
+        void *pptr
+      )
+  {
+
+  struct IODevice *iptr;
+
+  for (iptr = iod_head; iptr; iptr = iptr->nextptr)
+    {
+    if (strcmp(iptr->name, name) == 0)    /* found a match */
+      {
+      iptr->outBw = outBw;
+      return(NULL);
+      }
+    }
+
+  iptr = IODeviceCreate();
+
+  mallocTableAdd(iptr, pptr, 0);
+#ifdef DEBUG
+  printf("Added IODevice ptr %x to mallocTable\n", iptr);
+#endif
+
+  dynamic_strcpy(&iptr->name, name);
+  varstrModPptr(iptr->name, pptr);
+
+  iptr->outBw = outBw;
+  iptr->nextptr = iod_head;
+  return(iptr);
+  }
 
 
 /* Network stuff */
+
 static struct Network *NetworkCreate(void)
-{
-	struct Network *iptr;
+  {
 
-	iptr = (struct Network *) malloc(sizeof(struct Network));
+  struct Network *iptr;
 
-	assert( iptr != NULL );
+  iptr = (struct Network *) malloc(sizeof(struct Network));
 
-	iptr->type = NULL;
-	iptr->bw   = -1;
+  assert(iptr != NULL);
 
-	return(iptr);
-}
+  iptr->type = NULL;
+  iptr->bw   = -1;
 
-static int NetworkBwGet(net_head, type)
-struct Network	*net_head;	/* ptr to the head of the list */
-char		*type;
-{
-	struct	Network *iptr;	
+  return(iptr);
+  }
 
-	for( iptr=net_head; iptr; iptr=iptr->nextptr ) {
-		if( strcmp(iptr->type, type) == 0 ) { /* found a match */
-			return(iptr->bw);
-		}
-	}
-	return(-1);
-}
+static int
+NetworkBwGet(
+  struct Network *net_head, /* ptr to the head of the list */
+  char *type
+)
+  {
+
+  struct Network *iptr;
+
+  for (iptr = net_head; iptr; iptr = iptr->nextptr)
+    {
+    if (strcmp(iptr->type, type) == 0)    /* found a match */
+      {
+      return(iptr->bw);
+      }
+    }
+
+  return(-1);
+  }
 
 /* Returns the new head of list */
-static struct Network *NetworkBwPut(net_head, type, bw, pptr)
-struct Network  *net_head;	/* ptr to the head of the list */
-char		*type;
-int		bw;
-void		*pptr;
-{
-	struct	Network *iptr;	
 
-	for( iptr=net_head; iptr; iptr=iptr->nextptr ) {
-		if( strcmp(iptr->type, type) == 0 ) { /* found a match */
-			iptr->bw = bw;
-			return(NULL);
-		}
-	}
-	iptr = NetworkCreate();
-	mallocTableAdd(iptr, pptr, 0);
+static struct Network *
+      NetworkBwPut(
+        struct Network *net_head, /* ptr to the head of the list */
+        char *type,
+        int bw,
+        void *pptr
+      )
+  {
+
+  struct Network *iptr;
+
+  for (iptr = net_head; iptr; iptr = iptr->nextptr)
+    {
+    if (strcmp(iptr->type, type) == 0)    /* found a match */
+      {
+      iptr->bw = bw;
+      return(NULL);
+      }
+    }
+
+  iptr = NetworkCreate();
+
+  mallocTableAdd(iptr, pptr, 0);
 
 #ifdef DEBUG
-	printf("Added Network ptr %x to mallocTable\n", iptr);
+  printf("Added Network ptr %x to mallocTable\n", iptr);
 #endif
 
-	dynamic_strcpy(&iptr->type, type);
-	varstrModPptr(iptr->type, pptr);
+  dynamic_strcpy(&iptr->type, type);
+  varstrModPptr(iptr->type, pptr);
 
-	iptr->bw = bw;
-	iptr->nextptr = net_head;
-	return(iptr);
-}
+  iptr->bw = bw;
+  iptr->nextptr = net_head;
+  return(iptr);
+  }
 
-static void NetworkListPrint(net_head)
-struct Network 	*net_head;
-{
-	struct	Network *iptr;	
+static void
+NetworkListPrint(struct Network *net_head)
+  {
 
-	for( iptr=net_head; iptr; iptr=iptr->nextptr ) {
-		printf("\t\t\t    Network Type = %s: Bw = %d\n", iptr->type,
-						iptr->bw);
-	}
-}
+  struct Network *iptr;
+
+  for (iptr = net_head; iptr; iptr = iptr->nextptr)
+    {
+    printf("\t\t\t    Network Type = %s: Bw = %d\n", iptr->type,
+           iptr->bw);
+    }
+  }
 
 /* Memory stuff */
+
 static struct Memory *MemoryCreate(void)
-{
-	Size   sz;
-	struct Memory *iptr;
+  {
+  Size   sz;
 
-	iptr = (struct Memory *) malloc(sizeof(struct Memory));
+  struct Memory *iptr;
 
-	assert( iptr != NULL );
+  iptr = (struct Memory *) malloc(sizeof(struct Memory));
 
-	iptr->type = NULL;
-	sz = strToSize("-1b");
-	iptr->total   = sz;
-	iptr->avail   = sz;
+  assert(iptr != NULL);
 
-	return(iptr);
-}
+  iptr->type = NULL;
+  sz = strToSize("-1b");
+  iptr->total   = sz;
+  iptr->avail   = sz;
+
+  return(iptr);
+  }
 
 static Size MemoryTotalGet(mem_head, type)
-struct Memory   *mem_head;	/* ptr to the head of the list */
-char		*type;
-{
-	struct	Memory *iptr;	
 
-	for( iptr=mem_head; iptr; iptr=iptr->nextptr ) {
-		if( strcmp(iptr->type, type) == 0 ) { /* found a match */
-			return(iptr->total);
-		}
-	}
-	return(strToSize("-1b"));
-}
+struct Memory   *mem_head; /* ptr to the head of the list */
+char  *type;
+  {
+
+  struct Memory *iptr;
+
+  for (iptr = mem_head; iptr; iptr = iptr->nextptr)
+    {
+    if (strcmp(iptr->type, type) == 0)    /* found a match */
+      {
+      return(iptr->total);
+      }
+    }
+
+  return(strToSize("-1b"));
+  }
 
 /* Returns the new head of list */
-static struct Memory *MemoryTotalPut(mem_head, type, newTot, pptr)
-struct Memory   *mem_head;	/* ptr to the head of the list */
-char		*type;
-Size		newTot;
-void		*pptr;
-{
-	struct	Memory *iptr;	
 
-	for( iptr=mem_head; iptr; iptr=iptr->nextptr ) {
-		if( strcmp(iptr->type, type) == 0 ) { /* found a match */
-			iptr->total = newTot;
-			return(NULL);		/* no new head */
-		}
-	}
-	iptr = MemoryCreate();
-	mallocTableAdd(iptr, pptr, 0);
+static struct Memory *MemoryTotalPut(mem_head, type, newTot, pptr)
+
+      struct Memory   *mem_head; /* ptr to the head of the list */
+char  *type;
+Size  newTot;
+void  *pptr;
+  {
+
+  struct Memory *iptr;
+
+  for (iptr = mem_head; iptr; iptr = iptr->nextptr)
+    {
+    if (strcmp(iptr->type, type) == 0)    /* found a match */
+      {
+      iptr->total = newTot;
+      return(NULL);  /* no new head */
+      }
+    }
+
+  iptr = MemoryCreate();
+
+  mallocTableAdd(iptr, pptr, 0);
 
 #ifdef DEBUG
-	printf("Added Memory ptr %x to mallocTable\n", iptr);
+  printf("Added Memory ptr %x to mallocTable\n", iptr);
 #endif
 
-	dynamic_strcpy(&iptr->type, type);
-	varstrModPptr(iptr->type, pptr);
+  dynamic_strcpy(&iptr->type, type);
+  varstrModPptr(iptr->type, pptr);
 
-	iptr->total = newTot;
-	iptr->nextptr = mem_head;
-	return(iptr);
-}
+  iptr->total = newTot;
+  iptr->nextptr = mem_head;
+  return(iptr);
+  }
 
 static Size MemoryAvailGet(mem_head, type)
-struct Memory   *mem_head;	/* ptr to the head of the list */
-char		*type;
-{
-	struct	Memory *iptr;	
 
-	for( iptr=mem_head; iptr; iptr=iptr->nextptr ) {
-		if( strcmp(iptr->type, type) == 0 ) { /* found a match */
-			return(iptr->avail);
-		}
-	}
-	return(strToSize("-1b"));
-}
+struct Memory   *mem_head; /* ptr to the head of the list */
+char  *type;
+  {
+
+  struct Memory *iptr;
+
+  for (iptr = mem_head; iptr; iptr = iptr->nextptr)
+    {
+    if (strcmp(iptr->type, type) == 0)    /* found a match */
+      {
+      return(iptr->avail);
+      }
+    }
+
+  return(strToSize("-1b"));
+  }
 
 /* Returns the new head of list */
-static struct Memory *MemoryAvailPut(mem_head, type, newAvail, pptr)
-struct Memory   *mem_head;	/* ptr to the head of the list */
-char		*type;
-Size		newAvail;
-void		*pptr;
-{
-	struct	Memory *iptr;	
 
-	for( iptr=mem_head; iptr; iptr=iptr->nextptr ) {
-		if( strcmp(iptr->type, type) == 0 ) { /* found a match */
-			iptr->avail = newAvail;
-			return(NULL);		/* no new head */
-		}
-	}
-	iptr = MemoryCreate();
-	mallocTableAdd(iptr, pptr, 0);
+static struct Memory *MemoryAvailPut(mem_head, type, newAvail, pptr)
+
+      struct Memory   *mem_head; /* ptr to the head of the list */
+char  *type;
+Size  newAvail;
+void  *pptr;
+  {
+
+  struct Memory *iptr;
+
+  for (iptr = mem_head; iptr; iptr = iptr->nextptr)
+    {
+    if (strcmp(iptr->type, type) == 0)    /* found a match */
+      {
+      iptr->avail = newAvail;
+      return(NULL);  /* no new head */
+      }
+    }
+
+  iptr = MemoryCreate();
+
+  mallocTableAdd(iptr, pptr, 0);
 
 #ifdef DEBUG
-	printf("Added Memory ptr %x to mallocTable\n", iptr);
+  printf("Added Memory ptr %x to mallocTable\n", iptr);
 #endif
 
-	dynamic_strcpy(&iptr->type, type);
-	varstrModPptr(iptr->type, pptr);
+  dynamic_strcpy(&iptr->type, type);
+  varstrModPptr(iptr->type, pptr);
 
-	iptr->avail = newAvail;
-	iptr->nextptr = mem_head;
-	return(iptr);
-}
+  iptr->avail = newAvail;
+  iptr->nextptr = mem_head;
+  return(iptr);
+  }
 
-static void MemoryListPrint(mem_head)
-struct Memory *mem_head;
-{
-	struct	Memory *iptr;
+static void
+MemoryListPrint(struct Memory *mem_head)
+  {
 
-	for( iptr=mem_head; iptr; iptr=iptr->nextptr ) {
-		printf("\t\t\t    Memory Type = %s: ", iptr->type);
+  struct Memory *iptr;
 
-		printf("Total = ");
-		sizePrint(iptr->total, 1);
-		printf(", Avail = ");
-		sizePrint(iptr->avail, 1);
-		printf("\n");
-	}
-}
+  for (iptr = mem_head; iptr; iptr = iptr->nextptr)
+    {
+    printf("\t\t\t    Memory Type = %s: ", iptr->type);
 
-ResMom *CNodeResMomGet (node)
+    printf("Total = ");
+    sizePrint(iptr->total, 1);
+    printf(", Avail = ");
+    sizePrint(iptr->avail, 1);
+    printf("\n");
+    }
+  }
+
+ResMom *CNodeResMomGet(node)
 CNode *node;
-{
-      if( node == NOCNODE)
-	return(NULL);
-	
-      return &node->mom;
-}
+  {
+  if (node == NOCNODE)
+    return(NULL);
+
+  return &node->mom;
+  }
 
 /* CNodeNameGet: returns the official name of the node. */
-char *CNodeNameGet (node)
+char *CNodeNameGet(node)
 CNode *node;
-{
-      ResMom	*mom;
-      if( node == NOCNODE)
-	return(NULLSTR);
+  {
+  ResMom *mom;
 
-      mom = CNodeResMomGet(node);	
+  if (node == NOCNODE)
+    return(NULLSTR);
 
-      if( mom == NULL )
-	return(NULLSTR);
+  mom = CNodeResMomGet(node);
 
-      return(mom->inetAddr);
-}
+  if (mom == NULL)
+    return(NULLSTR);
 
-char *CNodePropertiesGet (node)
+  return(mom->inetAddr);
+  }
+
+char *CNodePropertiesGet(node)
 CNode *node;
-{
-      if( node == NOCNODE )
-	return(NULLSTR);
+  {
+  if (node == NOCNODE)
+    return(NULLSTR);
 
-      return node->properties;
-}
+  return node->properties;
+  }
 
 /* CNodeVendorGet: returns the system name of the node. */
-char *CNodeVendorGet (node)
+char *CNodeVendorGet(node)
 CNode *node;
-{
-      if( node == NOCNODE )
-	return(NULLSTR);
+  {
+  if (node == NOCNODE)
+    return(NULLSTR);
 
-      return node->vendor;
-}
+  return node->vendor;
+  }
 
 /* CNodeOsGet:returns the OS version of the node */
-char *CNodeOsGet (node)
+char *CNodeOsGet(node)
 CNode *node;
-{
-      if( node == NOCNODE)
-	return(NULLSTR);
+  {
+  if (node == NOCNODE)
+    return(NULLSTR);
 
-      return node->os;
-}
+  return node->os;
+  }
 
 /* CNodeNumCpusGet: returns the number of processors available */
-int CNodeNumCpusGet (node)
+int CNodeNumCpusGet(node)
 CNode *node;
-{
-      if( node == NOCNODE )
-	return(-1);
+  {
+  if (node == NOCNODE)
+    return(-1);
 
-      return node->numCpus;
-}
+  return node->numCpus;
+  }
 
 /* CNodeMemTotalGet: returns the total memory of type (phys or virtual). */
-Size CNodeMemTotalGet (node, type)
+Size CNodeMemTotalGet(node, type)
 CNode *node;
-char  *type; 
-{
-      if( node == NOCNODE || type == NULLSTR )
-	return(strToSize("-1b"));
+char  *type;
+  {
+  if (node == NOCNODE || type == NULLSTR)
+    return(strToSize("-1b"));
 
-      return(MemoryTotalGet(node->mem, type));	
-}
+  return(MemoryTotalGet(node->mem, type));
+  }
 
 /* CNodeMemAvailGet: returns the available memory of type (phys or virtual). */
-Size CNodeMemAvailGet (node, type)
+Size CNodeMemAvailGet(node, type)
 CNode *node;
 char  *type;
-{
-      if( node == NOCNODE || type == NULLSTR )
-	return(strToSize("-1b"));
+  {
+  if (node == NOCNODE || type == NULLSTR)
+    return(strToSize("-1b"));
 
-      return(MemoryAvailGet(node->mem, type));	
-}
+  return(MemoryAvailGet(node->mem, type));
+  }
 
-int CNodeQueryMomGet (node)
+int CNodeQueryMomGet(node)
 CNode *node;
-{
-      if( node == NOCNODE )
-	return(0);
+  {
+  if (node == NOCNODE)
+    return(0);
 
-      return node->queryMom;
-}
+  return node->queryMom;
+  }
 
-int CNodeMultiplicityGet (node)
+int CNodeMultiplicityGet(node)
 CNode *node;
-{
-      if( node == NOCNODE )
-	return(0);
+  {
+  if (node == NOCNODE)
+    return(0);
 
-      return node->multiplicity;
-}
+  return node->multiplicity;
+  }
 
 /* CNodeStateGet:returns the node state. */
-int CNodeStateGet (node)
+int CNodeStateGet(node)
 CNode *node;
-{
-      if( node == NOCNODE )
-	return(-1);	/* unknown state */
+  {
+  if (node == NOCNODE)
+    return(-1); /* unknown state */
 
-      return node->state;
-}
+  return node->state;
+  }
 
 /* CNodeTypeGet:returns the node type. */
-int CNodeTypeGet (node)
+int CNodeTypeGet(node)
 CNode *node;
-{
-      if( node == NOCNODE )
-	return(-1);	/* unknown state */
+  {
+  if (node == NOCNODE)
+    return(-1); /* unknown state */
 
-      return node->type;
-}
+  return node->type;
+  }
 
-int CNodeIdletimeGet (node)
+int CNodeIdletimeGet(node)
 CNode *node;
-{
-      if( node == NOCNODE )
-	return(-1);
+  {
+  if (node == NOCNODE)
+    return(-1);
 
-      return node->idletime;
-}
+  return node->idletime;
+  }
 
 /* CNodeLoadAveGet: returns the load average of the system */
-double CNodeLoadAveGet (node) 
+double CNodeLoadAveGet(node)
 CNode *node;
-{
-      if( node == NOCNODE )
-	return(-1.0);
+  {
+  if (node == NOCNODE)
+    return(-1.0);
 
-      return node->loadAve;
-}
+  return node->loadAve;
+  }
 
 /* CNodeNetworkBwGet: returns the network bandwith (bytes/secs) of node */
-int CNodeNetworkBwGet (node, type) 
+int CNodeNetworkBwGet(node, type)
 CNode *node;
 char  *type;
-{
-      if( node == NOCNODE || type == NULLSTR )
-	return(0);
+  {
+  if (node == NOCNODE || type == NULLSTR)
+    return(0);
 
-      return(NetworkBwGet(node->network, type));	
-}
+  return(NetworkBwGet(node->network, type));
+  }
 
 /* CNodeDiskSpaceTotalGet: returns the total space on CNode disk */
-Size CNodeDiskSpaceTotalGet (node, name) 
+Size CNodeDiskSpaceTotalGet(node, name)
 CNode *node;
 char  *name;
-{
-      if( node == NOCNODE || name == NULLSTR )
-	return(strToSize("-1b"));
+  {
+  if (node == NOCNODE || name == NULLSTR)
+    return(strToSize("-1b"));
 
-      return(IODeviceSpaceTotalGet(node->disk, name));
-}
+  return(IODeviceSpaceTotalGet(node->disk, name));
+  }
 
 /* CNodeDiskSpaceAvailGet: returns the available space on CNode disk */
-Size CNodeDiskSpaceAvailGet (node, name)
+Size CNodeDiskSpaceAvailGet(node, name)
 CNode *node;
 char  *name;
-{
-      if( node == NOCNODE || name == NULLSTR )
-	return(strToSize("-1b"));
+  {
+  if (node == NOCNODE || name == NULLSTR)
+    return(strToSize("-1b"));
 
-      return(IODeviceSpaceAvailGet(node->disk, name));
-}
+  return(IODeviceSpaceAvailGet(node->disk, name));
+  }
 
 /* CNodeDiskSpaceReservedGet: returns the available space on CNode disk */
-Size CNodeDiskSpaceReservedGet (node, name)
+Size CNodeDiskSpaceReservedGet(node, name)
 CNode *node;
 char  *name;
-{
-      if( node == NOCNODE || name == NULLSTR )
-	return(strToSize("-1b"));
+  {
+  if (node == NOCNODE || name == NULLSTR)
+    return(strToSize("-1b"));
 
-      return(IODeviceSpaceReservedGet(node->disk, name));
-}
+  return(IODeviceSpaceReservedGet(node->disk, name));
+  }
 
 /* CNodeDiskInBwGet: returns the write bandwidth of the CNode disk */
-int CNodeDiskInBwGet (node, name)
+int CNodeDiskInBwGet(node, name)
 CNode *node;
 char  *name;
-{
-      if( node == NOCNODE || name == NULLSTR )
-	return(0);
+  {
+  if (node == NOCNODE || name == NULLSTR)
+    return(0);
 
-      return(IODeviceInBwGet(node->disk, name));
-}
+  return(IODeviceInBwGet(node->disk, name));
+  }
 
 /* CNodeDiskOutBwGet: returns the bandwidth of the largest CNode disk */
-int CNodeDiskOutBwGet (node, name)
+int CNodeDiskOutBwGet(node, name)
 CNode *node;
-char  *name;	
-{
-      if( node == NOCNODE || name == NULLSTR )
-	return(0);
+char  *name;
+  {
+  if (node == NOCNODE || name == NULLSTR)
+    return(0);
 
-      return(IODeviceOutBwGet(node->disk, name));
-}
+  return(IODeviceOutBwGet(node->disk, name));
+  }
 
 /* CNodeSwapSpaceTotalGet: returns the total space in the swap device */
-Size CNodeSwapSpaceTotalGet (node, name) 
+Size CNodeSwapSpaceTotalGet(node, name)
 CNode *node;
 char  *name;
-{
-      if( node == NOCNODE || name == NULLSTR )
-	return(strToSize("-1b"));
+  {
+  if (node == NOCNODE || name == NULLSTR)
+    return(strToSize("-1b"));
 
-      return(IODeviceSpaceTotalGet(node->swap, name));
-}
+  return(IODeviceSpaceTotalGet(node->swap, name));
+  }
 
 /* CNodeSwapSpaceAvailGet: returns the available space on swap device */
-Size CNodeSwapSpaceAvailGet (node, name)
+Size CNodeSwapSpaceAvailGet(node, name)
 CNode *node;
 char  *name;
-{
-      if( node == NOCNODE || name == NULLSTR )
-	return(strToSize("-1b"));
+  {
+  if (node == NOCNODE || name == NULLSTR)
+    return(strToSize("-1b"));
 
-      return(IODeviceSpaceAvailGet(node->swap, name));
-}
+  return(IODeviceSpaceAvailGet(node->swap, name));
+  }
 
-Size CNodeSwapSpaceReservedGet (node, name)
+Size CNodeSwapSpaceReservedGet(node, name)
 CNode *node;
 char  *name;
-{
-      if( node == NOCNODE || name == NULLSTR )
-	return(strToSize("-1b"));
+  {
+  if (node == NOCNODE || name == NULLSTR)
+    return(strToSize("-1b"));
 
-      return(IODeviceSpaceReservedGet(node->swap, name));
-}
+  return(IODeviceSpaceReservedGet(node->swap, name));
+  }
 
 
 /* CNodeSwapInBwGet: returns the swapin rate of the swap device */
-int CNodeSwapInBwGet (node, name)
+int CNodeSwapInBwGet(node, name)
 CNode *node;
 char  *name;
-{
-      if( node == NOCNODE || name == NULLSTR )
-	return(0);
+  {
+  if (node == NOCNODE || name == NULLSTR)
+    return(0);
 
-      return(IODeviceInBwGet(node->swap, name));
-}
+  return(IODeviceInBwGet(node->swap, name));
+  }
 
 /* CNodeSwapOutBwGet: returns the swapout rate of the swap device */
-int CNodeSwapOutBwGet (node, name)
+int CNodeSwapOutBwGet(node, name)
 CNode *node;
 char  *name;
-{
-      if( node == NOCNODE || name == NULLSTR )
-	return(0);
+  {
+  if (node == NOCNODE || name == NULLSTR)
+    return(0);
 
-      return(IODeviceOutBwGet(node->swap, name));
-}
+  return(IODeviceOutBwGet(node->swap, name));
+  }
 
 /* CNodeTapeSpaceTotalGet: returns the total space on tape drive */
-Size CNodeTapeSpaceTotalGet (node, name)
+Size CNodeTapeSpaceTotalGet(node, name)
 CNode *node;
 char  *name;
-{
-      if( node == NOCNODE || name == NULLSTR )
-	return(strToSize("-1b"));
+  {
+  if (node == NOCNODE || name == NULLSTR)
+    return(strToSize("-1b"));
 
-      return(IODeviceSpaceTotalGet(node->tape, name));
-}
+  return(IODeviceSpaceTotalGet(node->tape, name));
+  }
 
 /* CNodeTapeSpaceAvailGet: returns the available space on tape drive */
-Size CNodeTapeSpaceAvailGet (node, name) 
+Size CNodeTapeSpaceAvailGet(node, name)
 CNode *node;
 char  *name;
-{
-      if( node == NOCNODE || name == NULLSTR )
-	return(strToSize("-1b"));
+  {
+  if (node == NOCNODE || name == NULLSTR)
+    return(strToSize("-1b"));
 
 
-      return(IODeviceSpaceAvailGet(node->tape, name));
-}
+  return(IODeviceSpaceAvailGet(node->tape, name));
+  }
 
 /* CNodeTapeSpaceReservedGet: returns the reserved space on tape device */
-Size CNodeTapeSpaceReservedGet (node, name)
+Size CNodeTapeSpaceReservedGet(node, name)
 CNode *node;
 char  *name;
-{
-      if( node == NOCNODE || name == NULLSTR )
-	return(strToSize("-1b"));
+  {
+  if (node == NOCNODE || name == NULLSTR)
+    return(strToSize("-1b"));
 
-      return(IODeviceSpaceReservedGet(node->tape, name));
-}
+  return(IODeviceSpaceReservedGet(node->tape, name));
+  }
 
 /* CNodeTapeInBwGet: returns the write bandwidth of the largest tape drive */
-int CNodeTapeInBwGet (node, name)
+int CNodeTapeInBwGet(node, name)
 CNode *node;
-char  *name; 
-{
-      if( node == NOCNODE || name == NULLSTR )
-	return(0);
+char  *name;
+  {
+  if (node == NOCNODE || name == NULLSTR)
+    return(0);
 
-      return(IODeviceInBwGet(node->tape, name));
-}
+  return(IODeviceInBwGet(node->tape, name));
+  }
 
 /* CNodeTapeOutBwGet: returns the read bandwidth of the largest tape drive */
-int CNodeTapeOutBwGet (node, name)
+int CNodeTapeOutBwGet(node, name)
 CNode *node;
 char  *name;
-{
-      if( node == NOCNODE || name == NULLSTR )
-	return(0);
+  {
+  if (node == NOCNODE || name == NULLSTR)
+    return(0);
 
-      return(IODeviceOutBwGet(node->tape, name));
-}
+  return(IODeviceOutBwGet(node->tape, name));
+  }
 
 /* CNodeSrfsSpaceTotalGet: returns the total bytes on the SRFS device */
-Size CNodeSrfsSpaceTotalGet (node, name)
+Size CNodeSrfsSpaceTotalGet(node, name)
 CNode *node;
 char  *name;
-{
-      if( node == NOCNODE || name == NULLSTR )
-	return(strToSize("-1b"));
+  {
+  if (node == NOCNODE || name == NULLSTR)
+    return(strToSize("-1b"));
 
-      return(IODeviceSpaceTotalGet(node->srfs, name));
-}
+  return(IODeviceSpaceTotalGet(node->srfs, name));
+  }
 
 /* CNodeSrfsSpaceAvailGet: returns the space available on the SRFS device. */
-Size CNodeSrfsSpaceAvailGet (node, name)
+Size CNodeSrfsSpaceAvailGet(node, name)
 CNode *node;
 char  *name;
-{
-      if( node == NOCNODE || name == NULLSTR )
-	return(strToSize("-1b"));
+  {
+  if (node == NOCNODE || name == NULLSTR)
+    return(strToSize("-1b"));
 
-      return(IODeviceSpaceAvailGet(node->srfs, name));
-}
+  return(IODeviceSpaceAvailGet(node->srfs, name));
+  }
 
 /* CNodeSrfsSpaceReservedGet: returns the amount of space reserved on */
-/*			      the SRFS device. */
-Size CNodeSrfsSpaceReservedGet (node, name)
+/*         the SRFS device. */
+Size CNodeSrfsSpaceReservedGet(node, name)
 CNode *node;
 char  *name;
-{
-      if( node == NOCNODE || name == NULLSTR )
-	return(strToSize("-1b"));
+  {
+  if (node == NOCNODE || name == NULLSTR)
+    return(strToSize("-1b"));
 
-      return(IODeviceSpaceReservedGet(node->srfs, name));
-}
+  return(IODeviceSpaceReservedGet(node->srfs, name));
+  }
 
 /* CNodeSrfsInBwGet: returns the write bandwidth of the SRFS device */
-int CNodeSrfsInBwGet (node, name)
+int CNodeSrfsInBwGet(node, name)
 CNode *node;
 char  *name;
-{
-      if( node == NOCNODE || name == NULLSTR )
-	return(0);
+  {
+  if (node == NOCNODE || name == NULLSTR)
+    return(0);
 
-      return(IODeviceInBwGet(node->srfs, name));
-}
+  return(IODeviceInBwGet(node->srfs, name));
+  }
 
 /* CNodeSrfsOutBwGet: returns the read bandwidth of the SRFS device */
-int CNodeSrfsOutBwGet (node, name)
+int CNodeSrfsOutBwGet(node, name)
 CNode *node;
 char  *name;
-{
-      if( node == NOCNODE || name == NULLSTR )
-	return(0);
+  {
+  if (node == NOCNODE || name == NULLSTR)
+    return(0);
 
-      return(IODeviceOutBwGet(node->srfs, name));
-}
+  return(IODeviceOutBwGet(node->srfs, name));
+  }
 
-int CNodeCpuPercentIdleGet (node)
+int CNodeCpuPercentIdleGet(node)
 CNode *node;
-{
-      if( node == NOCNODE )
-	return(-1);
+  {
+  if (node == NOCNODE)
+    return(-1);
 
-      return(node->cpuPercentIdle);
-}
+  return(node->cpuPercentIdle);
+  }
 
-int CNodeCpuPercentSysGet (node)
+int CNodeCpuPercentSysGet(node)
 CNode *node;
-{
-      if( node == NOCNODE )
-	return(-1);
+  {
+  if (node == NOCNODE)
+    return(-1);
 
-      return(node->cpuPercentSys);
-}
+  return(node->cpuPercentSys);
+  }
 
-int CNodeCpuPercentUserGet (node)
+int CNodeCpuPercentUserGet(node)
 CNode *node;
-{
-      if( node == NOCNODE )
-	return(-1);
+  {
+  if (node == NOCNODE)
+    return(-1);
 
-      return(node->cpuPercentUser);
-}
+  return(node->cpuPercentUser);
+  }
 
-int CNodeCpuPercentGuestGet (node)
+int CNodeCpuPercentGuestGet(node)
 CNode *node;
-{
-      if( node == NOCNODE )
-	return(-1);
+  {
+  if (node == NOCNODE)
+    return(-1);
 
-      return(node->cpuPercentGuest);
-}
+  return(node->cpuPercentGuest);
+  }
 
 /* PUT FUNCTIONS */
 void CNodeResMomPut(node, mom)
 CNode  *node;
 ResMom *mom;
-{
-       assert( node != NOCNODE );
+  {
+  assert(node != NOCNODE);
 
-       node->mom = *mom;	
-}
+  node->mom = *mom;
+  }
 
 void CNodePropertiesPut(node, properties)
 CNode  *node;
 char   *properties;
-{
-       assert( node != NOCNODE );
+  {
+  assert(node != NOCNODE);
 
-       dynamic_strcpy(&node->properties, properties);
-       varstrModPptr(node->properties, node);
-}
+  dynamic_strcpy(&node->properties, properties);
+  varstrModPptr(node->properties, node);
+  }
 
 void CNodeVendorPut(node, vendor)
 CNode  *node;
 char   *vendor;
-{
-       assert( node != NOCNODE );
+  {
+  assert(node != NOCNODE);
 
-       dynamic_strcpy(&node->vendor, vendor);
-       varstrModPptr(node->vendor, node);
-}
+  dynamic_strcpy(&node->vendor, vendor);
+  varstrModPptr(node->vendor, node);
+  }
 
 void CNodeOsPut(node, os)
 CNode  *node;
 char   *os;
-{
-       assert( node != NOCNODE );
+  {
+  assert(node != NOCNODE);
 
-       dynamic_strcpy(&node->os, os);
-       varstrModPptr(node->os, node);
-}
+  dynamic_strcpy(&node->os, os);
+  varstrModPptr(node->os, node);
+  }
 
 void CNodeNumCpusPut(node, ncpus)
 CNode  *node;
 int    ncpus;
-{
-       assert( node != NOCNODE );
+  {
+  assert(node != NOCNODE);
 
-       node->numCpus = ncpus;
-}
+  node->numCpus = ncpus;
+  }
 
 void CNodeMemTotalPut(node, type, pmem)
 CNode  *node;
 char   *type;
 Size   pmem;
-{
-       struct	Memory *m;
-       assert( node != NOCNODE && type != NULLSTR );
+  {
 
-       m = MemoryTotalPut(node->mem, type, pmem, node);
+  struct Memory *m;
+  assert(node != NOCNODE && type != NULLSTR);
 
-	if( m != NULL )
-		node->mem = m;
-}
+  m = MemoryTotalPut(node->mem, type, pmem, node);
+
+  if (m != NULL)
+    node->mem = m;
+  }
 
 void CNodeMemAvailPut(node, type, pmem)
 CNode  *node;
 char   *type;
 Size   pmem;
-{
-       struct	Memory *m;
-       assert( node != NOCNODE && type != NULLSTR );
+  {
 
-       m = MemoryAvailPut(node->mem, type, pmem, node);
+  struct Memory *m;
+  assert(node != NOCNODE && type != NULLSTR);
 
-	if( m != NULL )
-		node->mem = m;
-}
+  m = MemoryAvailPut(node->mem, type, pmem, node);
+
+  if (m != NULL)
+    node->mem = m;
+  }
 
 void CNodeQueryMomPut(node, queryMom)
 CNode  *node;
 int    queryMom;
-{
-       assert( node != NOCNODE );
+  {
+  assert(node != NOCNODE);
 
-       node->queryMom = queryMom;
-}
+  node->queryMom = queryMom;
+  }
 
 void CNodeMultiplicityPut(node, nodect)
 CNode  *node;
 int    nodect;
-{
-       assert( node != NOCNODE );
+  {
+  assert(node != NOCNODE);
 
-       node->multiplicity = nodect; 	
-}
+  node->multiplicity = nodect;
+  }
 
 void CNodeStatePut(node, state)
 CNode  *node;
 int    state;
-{
-       assert( node != NOCNODE );
+  {
+  assert(node != NOCNODE);
 
-       node->state = state; 	
-}
+  node->state = state;
+  }
 
 void CNodeTypePut(node, type)
 CNode  *node;
 int    type;
-{
-       assert( node != NOCNODE );
+  {
+  assert(node != NOCNODE);
 
-       node->type = type; 	
-}
+  node->type = type;
+  }
 
 void CNodeIdletimePut(node, idletime)
 CNode  *node;
 int    idletime;
-{
-       assert( node != NOCNODE );
+  {
+  assert(node != NOCNODE);
 
-       node->idletime = idletime; 	
-}
+  node->idletime = idletime;
+  }
 
 /* The function below was not explicitly declared in af_cnode.h because */
 /* of problems with type promotion. */
 void CNodeLoadAvePut(node, loadave)
 CNode  *node;
 double loadave;
-{
-       assert( node != NOCNODE );
+  {
+  assert(node != NOCNODE);
 
-       node->loadAve = loadave;
-}
+  node->loadAve = loadave;
+  }
 
 void CNodeNetworkBwPut(node, type, bw)
 CNode  *node;
 char   *type;
 int    bw;
-{
-	struct Network *network;
-       	assert( node != NOCNODE && type != NULLSTR );
+  {
 
-	network = NetworkBwPut(node->network, type, bw, node);
-	if( network != NULL )
-		node->network = network;
-}
+  struct Network *network;
+  assert(node != NOCNODE && type != NULLSTR);
+
+  network = NetworkBwPut(node->network, type, bw, node);
+
+  if (network != NULL)
+    node->network = network;
+  }
 
 void CNodeDiskSpaceTotalPut(node, name, size)
 CNode  *node;
-char   *name; 	
+char   *name;
 Size   size;
-{
-	struct	IODevice *iod;
-       	assert( node != NOCNODE && name != NULLSTR );
+  {
 
-       	iod = IODeviceSpaceTotalPut(node->disk, name, size, node);
+  struct IODevice *iod;
+  assert(node != NOCNODE && name != NULLSTR);
 
-	if( iod != NULL )
-		node->disk = iod;
-}
+  iod = IODeviceSpaceTotalPut(node->disk, name, size, node);
+
+  if (iod != NULL)
+    node->disk = iod;
+  }
 
 void CNodeDiskSpaceAvailPut(node, name, size)
 CNode  *node;
 char   *name;
 Size   size;
-{
-	struct	IODevice *iod;
-       	assert( node != NOCNODE && name != NULLSTR );
-       
-	iod = IODeviceSpaceAvailPut(node->disk, name, size, node); 
+  {
 
-	if( iod != NULL )
-       		node->disk = iod;
-}
+  struct IODevice *iod;
+  assert(node != NOCNODE && name != NULLSTR);
+
+  iod = IODeviceSpaceAvailPut(node->disk, name, size, node);
+
+  if (iod != NULL)
+    node->disk = iod;
+  }
 
 void CNodeDiskSpaceReservedPut(node, name, size)
 CNode  *node;
 char   *name;
 Size   size;
-{
-	struct	IODevice *iod;
-       	assert( node != NOCNODE && name != NULLSTR );
+  {
 
-       	iod = IODeviceSpaceReservedPut(node->disk, name, size, node); 
+  struct IODevice *iod;
+  assert(node != NOCNODE && name != NULLSTR);
 
-	if( iod != NULL )
-		node->disk = iod;
-}
+  iod = IODeviceSpaceReservedPut(node->disk, name, size, node);
+
+  if (iod != NULL)
+    node->disk = iod;
+  }
 
 void CNodeDiskInBwPut(node, name, bw)
 CNode  *node;
 char   *name;
 int    bw;
-{
-	struct	IODevice *iod;
-       	assert( node != NOCNODE && name != NULLSTR );
+  {
 
-       	iod = IODeviceInBwPut(node->disk, name, bw, node);
+  struct IODevice *iod;
+  assert(node != NOCNODE && name != NULLSTR);
 
-	if( iod != NULL )
-		node->disk = iod;
-}
+  iod = IODeviceInBwPut(node->disk, name, bw, node);
+
+  if (iod != NULL)
+    node->disk = iod;
+  }
 
 void CNodeDiskOutBwPut(node, name, bw)
 CNode  *node;
 char   *name;
 int    bw;
-{
-	struct	IODevice *iod;
-       	assert( node != NOCNODE && name != NULLSTR );
+  {
 
-       	iod = IODeviceOutBwPut(node->disk, name, bw, node);
+  struct IODevice *iod;
+  assert(node != NOCNODE && name != NULLSTR);
 
-	if( iod != NULL )
-		node->disk = iod;
-}
+  iod = IODeviceOutBwPut(node->disk, name, bw, node);
+
+  if (iod != NULL)
+    node->disk = iod;
+  }
 
 void CNodeSwapSpaceTotalPut(node, name, swaptot)
 CNode  *node;
 char   *name;
 Size   swaptot;
-{
-	struct	IODevice *iod;
-       	assert( node != NOCNODE && name != NULLSTR );
+  {
 
-       	iod = IODeviceSpaceTotalPut(node->swap, name, swaptot, node);
+  struct IODevice *iod;
+  assert(node != NOCNODE && name != NULLSTR);
 
-	if( iod != NULL )
-		node->swap = iod;
+  iod = IODeviceSpaceTotalPut(node->swap, name, swaptot, node);
 
-}
+  if (iod != NULL)
+    node->swap = iod;
+
+  }
 
 void CNodeSwapSpaceAvailPut(node, name, swapavail)
 CNode  *node;
 char   *name;
 Size   swapavail;
-{
-	struct	IODevice *iod;
-       	assert( node != NOCNODE && name != NULLSTR );
+  {
 
-       	iod = IODeviceSpaceAvailPut(node->swap, name, swapavail, node);
+  struct IODevice *iod;
+  assert(node != NOCNODE && name != NULLSTR);
 
-	if( iod != NULL )
-		node->swap = iod;
-}
+  iod = IODeviceSpaceAvailPut(node->swap, name, swapavail, node);
+
+  if (iod != NULL)
+    node->swap = iod;
+  }
 
 void CNodeSwapSpaceReservedPut(node, name, swapres)
 CNode  *node;
 char   *name;
 Size   swapres;
-{
-	struct	IODevice *iod;
-       	assert( node != NOCNODE && name != NULLSTR );
+  {
 
-       	iod = IODeviceSpaceReservedPut(node->swap, name, swapres, node);
+  struct IODevice *iod;
+  assert(node != NOCNODE && name != NULLSTR);
 
-	if( iod != NULL )
-		node->swap = iod;
-}
+  iod = IODeviceSpaceReservedPut(node->swap, name, swapres, node);
+
+  if (iod != NULL)
+    node->swap = iod;
+  }
 
 void CNodeSwapInBwPut(node, name, bw)
 CNode  *node;
 char   *name;
 int    bw;
-{
-	struct	IODevice *iod;
-       	assert( node != NOCNODE && name != NULLSTR );
+  {
 
-       	iod = IODeviceInBwPut(node->swap, name, bw, node);
+  struct IODevice *iod;
+  assert(node != NOCNODE && name != NULLSTR);
 
-	if( iod != NULL )
-		node->swap = iod;
-}
+  iod = IODeviceInBwPut(node->swap, name, bw, node);
+
+  if (iod != NULL)
+    node->swap = iod;
+  }
 
 void CNodeSwapOutBwPut(node, name, bw)
 CNode  *node;
 char   *name;
 int    bw;
-{
-	struct	IODevice *iod;
-       	assert( node != NOCNODE && name != NULLSTR );
+  {
 
-       	iod = IODeviceOutBwPut(node->swap, name, bw, node);
+  struct IODevice *iod;
+  assert(node != NOCNODE && name != NULLSTR);
 
-	if( iod != NULL )
-		node->swap = iod;
-}
+  iod = IODeviceOutBwPut(node->swap, name, bw, node);
+
+  if (iod != NULL)
+    node->swap = iod;
+  }
 
 void CNodeTapeSpaceTotalPut(node, name, size)
 CNode  *node;
 char   *name;
 Size   size;
-{
-	struct	IODevice *iod;
-       	assert( node != NOCNODE && name != NULLSTR );
+  {
 
-       	iod = IODeviceSpaceTotalPut(node->tape, name, size, node);
+  struct IODevice *iod;
+  assert(node != NOCNODE && name != NULLSTR);
 
-	if( iod != NULL )
-		node->tape = iod;
-}
+  iod = IODeviceSpaceTotalPut(node->tape, name, size, node);
+
+  if (iod != NULL)
+    node->tape = iod;
+  }
 
 void CNodeTapeSpaceAvailPut(node, name, size)
 CNode  *node;
 char   *name;
 Size   size;
-{
-	struct	IODevice *iod;
-       	assert( node != NOCNODE && name != NULLSTR );
+  {
 
-       	iod = IODeviceSpaceAvailPut(node->tape, name, size, node);
+  struct IODevice *iod;
+  assert(node != NOCNODE && name != NULLSTR);
 
-	if( iod != NULL )
-		node->tape = iod;
-}
+  iod = IODeviceSpaceAvailPut(node->tape, name, size, node);
+
+  if (iod != NULL)
+    node->tape = iod;
+  }
 
 void CNodeTapeSpaceReservedPut(node, name, size)
 CNode  *node;
 char   *name;
 Size   size;
-{
-	struct	IODevice *iod;
-       	assert( node != NOCNODE && name != NULLSTR );
+  {
 
-       	iod = IODeviceSpaceReservedPut(node->tape, name, size, node);
+  struct IODevice *iod;
+  assert(node != NOCNODE && name != NULLSTR);
 
-	if( iod != NULL )
-		node->tape = iod;
-}
+  iod = IODeviceSpaceReservedPut(node->tape, name, size, node);
+
+  if (iod != NULL)
+    node->tape = iod;
+  }
 
 void CNodeTapeInBwPut(node, name, bw)
 CNode  *node;
 char   *name;
 int    bw;
-{
-	struct	IODevice *iod;
-       	assert( node != NOCNODE && name != NULLSTR );
+  {
 
-       	iod = IODeviceInBwPut(node->tape, name, bw, node);
+  struct IODevice *iod;
+  assert(node != NOCNODE && name != NULLSTR);
 
-	if( iod != NULL )
-		node->tape = iod;
-}
+  iod = IODeviceInBwPut(node->tape, name, bw, node);
+
+  if (iod != NULL)
+    node->tape = iod;
+  }
 
 void CNodeTapeOutBwPut(node, name, bw)
 CNode  *node;
 char   *name;
 int    bw;
-{
-	struct	IODevice *iod;
-       	assert( node != NOCNODE && name != NULLSTR );
+  {
 
-       	iod = IODeviceOutBwPut(node->tape, name, bw, node);
+  struct IODevice *iod;
+  assert(node != NOCNODE && name != NULLSTR);
 
-	if( iod != NULL )
-		node->tape = iod;
-}
+  iod = IODeviceOutBwPut(node->tape, name, bw, node);
+
+  if (iod != NULL)
+    node->tape = iod;
+  }
 
 void CNodeSrfsSpaceTotalPut(node, name, size)
 CNode *node;
 char  *name;
 Size  size;
-{
-	struct	IODevice *iod;
-       	assert( node != NOCNODE && name != NULLSTR );
+  {
 
-       	iod = IODeviceSpaceTotalPut(node->srfs, name, size, node);
+  struct IODevice *iod;
+  assert(node != NOCNODE && name != NULLSTR);
 
-	if( iod != NULL )
-		node->srfs = iod;
-}
+  iod = IODeviceSpaceTotalPut(node->srfs, name, size, node);
+
+  if (iod != NULL)
+    node->srfs = iod;
+  }
 
 void CNodeSrfsSpaceAvailPut(node, name, size)
 CNode *node;
 char  *name;
 Size  size;
-{
-	struct	IODevice *iod;
-       	assert( node != NOCNODE && name != NULLSTR );
+  {
 
-       	iod = IODeviceSpaceAvailPut(node->srfs, name, size, node);
+  struct IODevice *iod;
+  assert(node != NOCNODE && name != NULLSTR);
 
-	if( iod != NULL )
-		node->srfs = iod;
-}
+  iod = IODeviceSpaceAvailPut(node->srfs, name, size, node);
+
+  if (iod != NULL)
+    node->srfs = iod;
+  }
 
 void CNodeSrfsSpaceReservedPut(node, name, size)
 CNode *node;
 char  *name;
 Size  size;
-{
-	struct	IODevice *iod;
-       	assert( node != NOCNODE && name != NULLSTR );
+  {
 
-       	iod = IODeviceSpaceReservedPut(node->srfs, name, size, node);
+  struct IODevice *iod;
+  assert(node != NOCNODE && name != NULLSTR);
 
-	if( iod != NULL )
-		node->srfs = iod;
-}
+  iod = IODeviceSpaceReservedPut(node->srfs, name, size, node);
+
+  if (iod != NULL)
+    node->srfs = iod;
+  }
 
 void CNodeSrfsInBwPut(node, name, bw)
 CNode *node;
 char  *name;
 int   bw;
-{
-	struct	IODevice *iod;
-       	assert( node != NOCNODE && name != NULLSTR );
+  {
 
-       	iod = IODeviceInBwPut(node->srfs, name, bw, node);
+  struct IODevice *iod;
+  assert(node != NOCNODE && name != NULLSTR);
 
-	if( iod != NULL )
-		node->srfs = iod;
-}
+  iod = IODeviceInBwPut(node->srfs, name, bw, node);
+
+  if (iod != NULL)
+    node->srfs = iod;
+  }
 
 
 void CNodeSrfsOutBwPut(node, name, bw)
 CNode *node;
 char  *name;
 int   bw;
-{
-	struct	IODevice *iod;
-       	assert( node != NOCNODE && name != NULLSTR );
+  {
 
-       	iod = IODeviceOutBwPut(node->srfs, name, bw, node);
-	if( iod != NULL )
-		node->srfs = iod;
-}
+  struct IODevice *iod;
+  assert(node != NOCNODE && name != NULLSTR);
+
+  iod = IODeviceOutBwPut(node->srfs, name, bw, node);
+
+  if (iod != NULL)
+    node->srfs = iod;
+  }
 
 void CNodeCpuPercentIdlePut(node, percent)
 CNode *node;
 int   percent;
-{
-       	assert( node != NOCNODE );
+  {
+  assert(node != NOCNODE);
 
-	node->cpuPercentIdle = percent;
-}
+  node->cpuPercentIdle = percent;
+  }
 
 void CNodeCpuPercentSysPut(node, percent)
 CNode *node;
 int   percent;
-{
-       	assert( node != NOCNODE );
+  {
+  assert(node != NOCNODE);
 
-	node->cpuPercentSys = percent;
-}
+  node->cpuPercentSys = percent;
+  }
 
 void CNodeCpuPercentUserPut(node, percent)
 CNode *node;
 int   percent;
-{
-       	assert( node != NOCNODE );
+  {
+  assert(node != NOCNODE);
 
-	node->cpuPercentUser = percent;
-}
+  node->cpuPercentUser = percent;
+  }
 
 void CNodeCpuPercentGuestPut(node, percent)
 CNode *node;
 int   percent;
-{
-       	assert( node != NOCNODE );
+  {
+  assert(node != NOCNODE);
 
-	node->cpuPercentGuest = percent;
-}
+  node->cpuPercentGuest = percent;
+  }
+
 /* Memory management */
 /* Frees up malloc-ed elements of a CNode */
 void CNodeFree(node)
 CNode *node;
-{
-    if( node == NOCNODE )
-	return;
-    /* deallocate all dynamic strings */
-    varstrFreeByPptr(node);
-    /* deallocate all lists of IODevices, and Networks */
-    mallocTableFreeByPptr(node);
+  {
+  if (node == NOCNODE)
+    return;
 
-    /* to force all dynamic strings to be initialized to NULL and
-       all device, network lists to be initialized to NULL in case of reuse */
-    
-      ResMomFree(&node->mom);
-      node->properties = NULLSTR;
-      node->vendor = NULLSTR;
-      node->os = NULLSTR;
-      node->network = NULL;
-      node->disk = NULL;
-      node->swap = NULL;
-      node->tape = NULL;
-      node->srfs = NULL;
-}
+  /* deallocate all dynamic strings */
+  varstrFreeByPptr(node);
 
-void  CNodeInit( node )
+  /* deallocate all lists of IODevices, and Networks */
+  mallocTableFreeByPptr(node);
+
+  /* to force all dynamic strings to be initialized to NULL and
+     all device, network lists to be initialized to NULL in case of reuse */
+
+  ResMomFree(&node->mom);
+
+  node->properties = NULLSTR;
+
+  node->vendor = NULLSTR;
+
+  node->os = NULLSTR;
+
+  node->network = NULL;
+
+  node->disk = NULL;
+
+  node->swap = NULL;
+
+  node->tape = NULL;
+
+  node->srfs = NULL;
+  }
+
+void  CNodeInit(node)
 CNode *node;
-{
-      assert( node != NOCNODE );
+  {
+  assert(node != NOCNODE);
 
 
-      ResMomInit(CNodeResMomGet(node));
-      node->properties = NULLSTR;  	
-      node->vendor = NULLSTR;	
-      node->os = NULLSTR;
-      CNodeNumCpusPut(node, -1);
-      CNodeQueryMomPut(node, 0);
-      CNodeMultiplicityPut(node, 1);
-      CNodeStatePut(node, CNODE_DOWN);
-      CNodeTypePut(node, CNODE_UNKNOWN);
-      CNodeIdletimePut(node, -1);
-      CNodeLoadAvePut(node, -1.0);
+  ResMomInit(CNodeResMomGet(node));
+  node->properties = NULLSTR;
+  node->vendor = NULLSTR;
+  node->os = NULLSTR;
+  CNodeNumCpusPut(node, -1);
+  CNodeQueryMomPut(node, 0);
+  CNodeMultiplicityPut(node, 1);
+  CNodeStatePut(node, CNODE_DOWN);
+  CNodeTypePut(node, CNODE_UNKNOWN);
+  CNodeIdletimePut(node, -1);
+  CNodeLoadAvePut(node, -1.0);
 
-      CNodeCpuPercentIdlePut(node, -1);
-      CNodeCpuPercentSysPut(node, -1);
-      CNodeCpuPercentUserPut(node, -1);
-      CNodeCpuPercentGuestPut(node, -1);
+  CNodeCpuPercentIdlePut(node, -1);
+  CNodeCpuPercentSysPut(node, -1);
+  CNodeCpuPercentUserPut(node, -1);
+  CNodeCpuPercentGuestPut(node, -1);
 
-      node->mem = NULL;
-      node->network = NULL;
-      node->disk = NULL;
-      node->swap = NULL;
-      node->tape = NULL;
-      node->srfs = NULL;
+  node->mem = NULL;
+  node->network = NULL;
+  node->disk = NULL;
+  node->swap = NULL;
+  node->tape = NULL;
+  node->srfs = NULL;
 
-      node->nextptr = NULL;
-}
+  node->nextptr = NULL;
+  }
 
-void CNodePrint( node )
+void CNodePrint(node)
 CNode *node;
-{
-      if( node == NOCNODE )
-		return;
+  {
+  if (node == NOCNODE)
+    return;
 
-      assert( node != NOCNODE );	
+  assert(node != NOCNODE);
 
-      (void)printf("\t\t\t  Node Name = %s\n",
-		CNodeNameGet(node) ? CNodeNameGet(node):"null");
+  (void)printf("\t\t\t  Node Name = %s\n",
+               CNodeNameGet(node) ? CNodeNameGet(node) : "null");
 
-      (void)printf("\t\t\t    Properties = %s\n",
-		CNodePropertiesGet(node) ? CNodePropertiesGet(node):"null");
-      (void)printf("\t\t\t    Vendor = %s\n", 
-		CNodeVendorGet(node) ? CNodeVendorGet(node):"null");
-      (void)printf("\t\t\t    OS Version = %s\n", 
-		CNodeOsGet(node) ? CNodeOsGet(node):"null");
+  (void)printf("\t\t\t    Properties = %s\n",
+               CNodePropertiesGet(node) ? CNodePropertiesGet(node) : "null");
 
-      switch(CNodeStateGet(node)) {
-	case CNODE_OFFLINE:
-      		(void)printf("\t\t\t    Node State = OFFLINE\n");
-		break;	
-	case CNODE_DOWN:
-      		(void)printf("\t\t\t    Node State = DOWN\n");
-		break;	
-	case CNODE_FREE:
-      		(void)printf("\t\t\t    Node State = FREE\n");
-		break;	
-	case CNODE_RESERVE:
-      		(void)printf("\t\t\t    Node State = RESERVED\n");
-		break;
-	case CNODE_INUSE_EXCLUSIVE:
-      		(void)printf("\t\t\t    Node State = INUSE-EXCLUSIVE\n");
-		break;
-	case CNODE_INUSE_SHARED:
-      		(void)printf("\t\t\t    Node State = INUSE-SHARED\n");
-		break;
-	case CNODE_UNKNOWN:
-      		(void)printf("\t\t\t    Node State = UNKNOWN\n");
-		break;
-	default:
-      		(void)printf("\t\t\t    Node State = %d\n", CNodeStateGet(node));
-      }	
+  (void)printf("\t\t\t    Vendor = %s\n",
+               CNodeVendorGet(node) ? CNodeVendorGet(node) : "null");
 
-      switch(CNodeTypeGet(node)) {
-	case CNODE_TIMESHARED:
-      		(void)printf("\t\t\t    Node Type = TIMESHARED\n");
-		break;
-	case CNODE_CLUSTER:
-      		(void)printf("\t\t\t    Node Type = CLUSTER\n");
-		break;
-	case CNODE_UNKNOWN:
-      		(void)printf("\t\t\t    Node Type = UNKNOWN\n");
-		break;
-	default:
-      		(void)printf("\t\t\t    Node Type = %d\n", CNodeTypeGet(node));
-      }	
+  (void)printf("\t\t\t    OS Version = %s\n",
+               CNodeOsGet(node) ? CNodeOsGet(node) : "null");
+
+  switch (CNodeStateGet(node))
+    {
+
+    case CNODE_OFFLINE:
+      (void)printf("\t\t\t    Node State = OFFLINE\n");
+      break;
+
+    case CNODE_DOWN:
+      (void)printf("\t\t\t    Node State = DOWN\n");
+      break;
+
+    case CNODE_FREE:
+      (void)printf("\t\t\t    Node State = FREE\n");
+      break;
+
+    case CNODE_RESERVE:
+      (void)printf("\t\t\t    Node State = RESERVED\n");
+      break;
+
+    case CNODE_INUSE_EXCLUSIVE:
+      (void)printf("\t\t\t    Node State = INUSE-EXCLUSIVE\n");
+      break;
+
+    case CNODE_INUSE_SHARED:
+      (void)printf("\t\t\t    Node State = INUSE-SHARED\n");
+      break;
+
+    case CNODE_UNKNOWN:
+      (void)printf("\t\t\t    Node State = UNKNOWN\n");
+      break;
+
+    default:
+      (void)printf("\t\t\t    Node State = %d\n", CNodeStateGet(node));
+    }
+
+  switch (CNodeTypeGet(node))
+    {
+
+    case CNODE_TIMESHARED:
+      (void)printf("\t\t\t    Node Type = TIMESHARED\n");
+      break;
+
+    case CNODE_CLUSTER:
+      (void)printf("\t\t\t    Node Type = CLUSTER\n");
+      break;
+
+    case CNODE_UNKNOWN:
+      (void)printf("\t\t\t    Node Type = UNKNOWN\n");
+      break;
+
+    default:
+      (void)printf("\t\t\t    Node Type = %d\n", CNodeTypeGet(node));
+    }
 
 
-      (void)printf("\t\t\t    IdleTime = %d\n", CNodeIdletimeGet(node));
-      (void)printf("\t\t\t    # of Processors = %d\n", CNodeNumCpusGet(node));
+  (void)printf("\t\t\t    IdleTime = %d\n", CNodeIdletimeGet(node));
+  (void)printf("\t\t\t    # of Processors = %d\n", CNodeNumCpusGet(node));
 
-      (void)printf("\t\t\t    Query MOM ? = %d\n", CNodeQueryMomGet(node));
-      (void)printf("\t\t\t    Multiplicity = %d\n", CNodeMultiplicityGet(node));
-      (void)printf("\t\t\t    Load Avg. = %2.2f\n", CNodeLoadAveGet(node));
-      (void)printf("\t\t\t    All Cpus %%Idle = %d\n",
-                                                 CNodeCpuPercentIdleGet(node));
-      (void)printf("\t\t\t    All Cpus %%Sys = %d\n",
-                                                 CNodeCpuPercentSysGet(node));
-      (void)printf("\t\t\t    All Cpus %%User = %d\n",
-                                                 CNodeCpuPercentUserGet(node));
-      (void)printf("\t\t\t    All Cpus %%Guest = %d\n",
-                                                 CNodeCpuPercentGuestGet(node));
+  (void)printf("\t\t\t    Query MOM ? = %d\n", CNodeQueryMomGet(node));
+  (void)printf("\t\t\t    Multiplicity = %d\n", CNodeMultiplicityGet(node));
+  (void)printf("\t\t\t    Load Avg. = %2.2f\n", CNodeLoadAveGet(node));
+  (void)printf("\t\t\t    All Cpus %%Idle = %d\n",
+               CNodeCpuPercentIdleGet(node));
+  (void)printf("\t\t\t    All Cpus %%Sys = %d\n",
+               CNodeCpuPercentSysGet(node));
+  (void)printf("\t\t\t    All Cpus %%User = %d\n",
+               CNodeCpuPercentUserGet(node));
+  (void)printf("\t\t\t    All Cpus %%Guest = %d\n",
+               CNodeCpuPercentGuestGet(node));
 
-      MemoryListPrint(node->mem);
-      NetworkListPrint(node->network); 	
-      IODeviceListPrint(node->disk, "Disk");
-      IODeviceListPrint(node->swap, "Swap");
-      IODeviceListPrint(node->tape, "Tape");
-      IODeviceListPrint(node->srfs, "Srfs");
+  MemoryListPrint(node->mem);
+  NetworkListPrint(node->network);
+  IODeviceListPrint(node->disk, "Disk");
+  IODeviceListPrint(node->swap, "Swap");
+  IODeviceListPrint(node->tape, "Tape");
+  IODeviceListPrint(node->srfs, "Srfs");
 
-}
+  }
 
 /* getMachType: get the machine type of mom representing the node, filling
    appropriate information in the Os attribute of the corresponding node
    Returns:     0 if successful; non-zero otherwise. */
 static void getMachType(node)
-CNode	*node;
-{
-        static  char  id[] = "getMachType";
-        char    *retval;
-        char    *res;
-        char    *val;
-	ResMom	*mom;
+CNode *node;
+  {
+  static  char  id[] = "getMachType";
+  char    *retval;
+  char    *res;
+  char    *val;
+  ResMom *mom;
 
-	assert( node != NOCNODE );
+  assert(node != NOCNODE);
 
-	mom = CNodeResMomGet( node );
-	assert( mom != NULL );
+  mom = CNodeResMomGet(node);
+  assert(mom != NULL);
 
-        if( ResMomWrite( mom, "arch" ) ) {
-                retval = ResMomRead( mom );
-                res    = retval;
-		val    = NULLSTR;
-		if( res != NULLSTR ) {
-		  val    = strrchr(retval, '=');  /* locates ptr to last = */
-		  if( val != NULLSTR ) {
-			*val = '\0';	/* end the resource portion */
-			val++;		/* point to the value portion */
-		  }
-		}
+  if (ResMomWrite(mom, "arch"))
+    {
+    retval = ResMomRead(mom);
+    res    = retval;
+    val    = NULLSTR;
 
-                if( res != NULLSTR && val != NULLSTR && *val != '?' && \
-							*val != '\0') {
-                        CNodeOsPut( node, val );
-                } else {
-                        (void)sprintf(log_buffer, "%s: unknown mach type!\n",
-                                        ResMomInetAddrGet(mom));
-                        log_err(-1, id, log_buffer);
-			CNodeOsPut( node, NULLSTR );
-                }
+    if (res != NULLSTR)
+      {
+      val    = strrchr(retval, '=');  /* locates ptr to last = */
+
+      if (val != NULLSTR)
+        {
+        *val = '\0'; /* end the resource portion */
+        val++;  /* point to the value portion */
         }
-	varstrFree(retval);
+      }
 
-}
-static int put_default_val( node, attrib, type, putfunc )
-CNode	*node;
-char	*attrib;
-int	type;
-void	(*putfunc)();
-{
+    if (res != NULLSTR && val != NULLSTR && *val != '?' && \
+        *val != '\0')
+      {
+      CNodeOsPut(node, val);
+      }
+    else
+      {
+      (void)sprintf(log_buffer, "%s: unknown mach type!\n",
+                    ResMomInetAddrGet(mom));
+      log_err(-1, id, log_buffer);
+      CNodeOsPut(node, NULLSTR);
+      }
+    }
 
-	static	char id[] = "put_default_val";
-	char	*tag;
-	Size	sizeval;
+  varstrFree(retval);
 
-	tag = parseAttrForTag(attrib);
+  }
 
-	switch(type) {
-               case INT_TYPE:
-			if( tag == NULLSTR ) {	/* non-array attribute */ 
-				putfunc(node, -1);
-			} else {		/* array attribute */
-				putfunc(node, tag, -1);
-			}
-			break;
-               case SIZE_TYPE:
-			sizeval.num = -1;
-			sizeval.shift = 0;
-			sizeval.units = BYTES;
+static int put_default_val(node, attrib, type, putfunc)
+CNode *node;
+char *attrib;
+int type;
+void (*putfunc)();
+  {
 
-			if( tag == NULLSTR ) {	/* non-array attribute */
-                        	putfunc(node, sizeval);
-			} else {		/* array attribute */
-                        	putfunc(node, tag, sizeval);
-			}
-                        break;
-               case FLT_TYPE:
-			if( tag == NULLSTR ) {	/* non-array attribute */
-				putfunc(node, -1.0);
-			} else {		/* array attribute */
-				putfunc(node, tag, -1.0);
-			}
-                        break;
-               case STR_TYPE:
-			if( tag == NULLSTR ) {	/* non-array attribute */
-				putfunc(node, NULLSTR);
-			} else {		/* array attribute */
-				putfunc(node, tag, NULLSTR);
-			}
-                        break;
-               default:
-                        (void)sprintf(log_buffer,
-					"attribute %s unknown type",
-								attrib);
-                        log_err(-1, id, log_buffer);
+  static char id[] = "put_default_val";
+  char *tag;
+  Size sizeval;
 
-	}
-}
- 
+  tag = parseAttrForTag(attrib);
+
+  switch (type)
+    {
+
+    case INT_TYPE:
+
+      if (tag == NULLSTR)    /* non-array attribute */
+        {
+        putfunc(node, -1);
+        }
+      else    /* array attribute */
+        {
+        putfunc(node, tag, -1);
+        }
+
+      break;
+
+    case SIZE_TYPE:
+      sizeval.num = -1;
+      sizeval.shift = 0;
+      sizeval.units = BYTES;
+
+      if (tag == NULLSTR)    /* non-array attribute */
+        {
+        putfunc(node, sizeval);
+        }
+      else    /* array attribute */
+        {
+        putfunc(node, tag, sizeval);
+        }
+
+      break;
+
+    case FLT_TYPE:
+
+      if (tag == NULLSTR)    /* non-array attribute */
+        {
+        putfunc(node, -1.0);
+        }
+      else    /* array attribute */
+        {
+        putfunc(node, tag, -1.0);
+        }
+
+      break;
+
+    case STR_TYPE:
+
+      if (tag == NULLSTR)    /* non-array attribute */
+        {
+        putfunc(node, NULLSTR);
+        }
+      else    /* array attribute */
+        {
+        putfunc(node, tag, NULLSTR);
+        }
+
+      break;
+
+    default:
+      (void)sprintf(log_buffer,
+                    "attribute %s unknown type",
+                    attrib);
+      log_err(-1, id, log_buffer);
+
+    }
+  }
+
 /* send_queries: Send 'node''s MOM of type 'arch' a list of 'typeOfData'
-		resource queries with each query information stored in
-		'buf'.
+  resource queries with each query information stored in
+  'buf'.
    Returns:      # of queries successfully sent */
-static int send_queries( node, arch, typeOfData, buf )
+static int send_queries(node, arch, typeOfData, buf)
 CNode  *node;
 char   *arch;
-int    typeOfData;	
+int    typeOfData;
+
 struct CNodeAttrInfo **buf;
-{
-    ResMom 	*mom;
-    int  	numSends = 0;
-    struct 	Resource **query;	
-			/* actually a dynamic array of resource queries */
-    int	  	type;
-    void  	(*putfunc)();
+  {
+  ResMom  *mom;
+  int   numSends = 0;
 
-    int   	i, cnt; 
-    char  	*attrib;
+  struct  Resource **query;
+  /* actually a dynamic array of resource queries */
+  int    type;
+  void (*putfunc)();
 
-    assert( node != NOCNODE );
-    mom = CNodeResMomGet( node );
-    assert( mom != NULL );
+  int    i, cnt;
+  char   *attrib;
 
-    switch(typeOfData) {
-      case STATIC_RESOURCE:
-	cnt = 0;
-	while((attrib=getStaticAttrAtIndex(cnt, &type, &putfunc)) != NULLSTR) {
-		query=getResPtr(arch, attrib);
-		for( i=0; i < dynamicArraySize(query); i++ ) {
-    	   	   *buf = extendDynamicArray(*buf, (size_t) numSends+1,
-					sizeof(struct CNodeAttrInfo));
-		   (*buf)[numSends].name = NULLSTR;
-		   dynamic_strcpy(&((*buf)[numSends].name), getNodeAttrGivenResPtr(query[i]));
-		   varstrModPptr((*buf)[numSends].name, mom);
-		   (*buf)[numSends].type = type;
-		   (*buf)[numSends].attrPutFunc = putfunc;
-           	   (void)ResMomWrite(mom, 
-				 getHostQueryKeywordGivenResPtr(query[i]));
-		   put_default_val( node, (*buf)[numSends].name,
-					  (*buf)[numSends].type,
-		   			  (*buf)[numSends].attrPutFunc );
-		   numSends++;
-		}
-		freeDynamicArray(query);
-		cnt++;
-	}
-	break;
-      case DYNAMIC_RESOURCE:
-	cnt = 0;
-	while((attrib=getDynamicAttrAtIndex(cnt, &type, &putfunc)) != NULLSTR) {
-		query=getResPtr(arch, attrib);
-		for( i=0; i <dynamicArraySize(query); i++ ) {
-    	   	   *buf = extendDynamicArray(*buf, (size_t)numSends+1,
-					sizeof(struct CNodeAttrInfo));
-		   (*buf)[numSends].name = NULLSTR;
-		   dynamic_strcpy(&((*buf)[numSends].name), getNodeAttrGivenResPtr(query[i]));
-		   varstrModPptr((*buf)[numSends].name, mom);
-		   (*buf)[numSends].type = type;
-		   (*buf)[numSends].attrPutFunc = putfunc;
-           	   (void)ResMomWrite(mom,
-				getHostQueryKeywordGivenResPtr(query[i]));
-		   put_default_val( node, (*buf)[numSends].name,
-					  (*buf)[numSends].type,
-		   			  (*buf)[numSends].attrPutFunc );
-		   numSends++;
-		}
-		freeDynamicArray(query);
-		cnt++;
-	}
+  assert(node != NOCNODE);
+  mom = CNodeResMomGet(node);
+  assert(mom != NULL);
+
+  switch (typeOfData)
+    {
+
+    case STATIC_RESOURCE:
+      cnt = 0;
+
+      while ((attrib = getStaticAttrAtIndex(cnt, &type, &putfunc)) != NULLSTR)
+        {
+        query = getResPtr(arch, attrib);
+
+        for (i = 0; i < dynamicArraySize(query); i++)
+          {
+          *buf = extendDynamicArray(*buf, (size_t) numSends + 1,
+                                    sizeof(struct CNodeAttrInfo));
+          (*buf)[numSends].name = NULLSTR;
+          dynamic_strcpy(&((*buf)[numSends].name), getNodeAttrGivenResPtr(query[i]));
+          varstrModPptr((*buf)[numSends].name, mom);
+          (*buf)[numSends].type = type;
+          (*buf)[numSends].attrPutFunc = putfunc;
+          (void)ResMomWrite(mom,
+                            getHostQueryKeywordGivenResPtr(query[i]));
+          put_default_val(node, (*buf)[numSends].name,
+                          (*buf)[numSends].type,
+                          (*buf)[numSends].attrPutFunc);
+          numSends++;
+          }
+
+        freeDynamicArray(query);
+
+        cnt++;
+        }
+
+      break;
+
+    case DYNAMIC_RESOURCE:
+      cnt = 0;
+
+      while ((attrib = getDynamicAttrAtIndex(cnt, &type, &putfunc)) != NULLSTR)
+        {
+        query = getResPtr(arch, attrib);
+
+        for (i = 0; i < dynamicArraySize(query); i++)
+          {
+          *buf = extendDynamicArray(*buf, (size_t)numSends + 1,
+                                    sizeof(struct CNodeAttrInfo));
+          (*buf)[numSends].name = NULLSTR;
+          dynamic_strcpy(&((*buf)[numSends].name), getNodeAttrGivenResPtr(query[i]));
+          varstrModPptr((*buf)[numSends].name, mom);
+          (*buf)[numSends].type = type;
+          (*buf)[numSends].attrPutFunc = putfunc;
+          (void)ResMomWrite(mom,
+                            getHostQueryKeywordGivenResPtr(query[i]));
+          put_default_val(node, (*buf)[numSends].name,
+                          (*buf)[numSends].type,
+                          (*buf)[numSends].attrPutFunc);
+          numSends++;
+          }
+
+        freeDynamicArray(query);
+
+        cnt++;
+        }
     }
-    /* buf will be freed in recv_responses */
 
-    return(numSends);
-}
+  /* buf will be freed in recv_responses */
+
+  return(numSends);
+  }
 
 /* recv_responses: get all responses from 'node's mom regarding previously
-		   sent resource queries. CNode information for queries are
-		   obtained from 'buf'. Based on responses, fill in the 
-		   values for 'node's members.
+     sent resource queries. CNode information for queries are
+     obtained from 'buf'. Based on responses, fill in the
+     values for 'node's members.
    Returns:        # of responses received. */
 static int recv_responses(node, buf)
 CNode  *node;
+
 struct CNodeAttrInfo buf[];
-{
-    static      char id[] = "recv_responses";
-    int         numRecvs = 0;
-    char        *retval;
-    char        *res;
-    char        *val;
-    int         intval;
-    double      fltval;
-    Size	sizeval;
-    char        *attrib;
-    void        (*putfunc)();
-    int         type;
-    char	*tag;
-    ResMom 	*mom;
+  {
+  static      char id[] = "recv_responses";
+  int         numRecvs = 0;
+  char        *retval;
+  char        *res;
+  char        *val;
+  int         intval;
+  double      fltval;
+  Size sizeval;
+  char        *attrib;
+  void (*putfunc)();
+  int         type;
+  char *tag;
+  ResMom  *mom;
 
-    assert( node != NOCNODE );
+  assert(node != NOCNODE);
 
-    mom = CNodeResMomGet( node );
+  mom = CNodeResMomGet(node);
 
-    ResMomPrint(mom);
-    while( (retval=ResMomRead(mom)) != NULLSTR ) {
-           res    = retval;
-	   val    = NULLSTR;
-	   if( res != NULLSTR ) {
-	     val    = strrchr(retval, '=');  /* locates ptr to last = */
-	     if( val != NULLSTR ) {
-		*val = '\0';		/* end the resource portion */
-		val++;			/* point to the value portion */
-	     }
-	   }
-           attrib   = buf[numRecvs].name;
-           type     = buf[numRecvs].type;
-           putfunc  = buf[numRecvs].attrPutFunc;
-	   tag	    = parseAttrForTag(attrib);
-	   varstrModPptr(tag, mom); 
+  ResMomPrint(mom);
 
-           switch(type) {
-               case INT_TYPE:
-                        if( val == NULLSTR || *val == '?' || *val == '\0' ) {
-                          intval = -1;
-                        } else {
-			  intval = strToInt(val);
-			}
+  while ((retval = ResMomRead(mom)) != NULLSTR)
+    {
+    res    = retval;
+    val    = NULLSTR;
 
-			if( tag == NULLSTR ) {	/* non-array attribute */ 
-				putfunc(node, intval);
-			} else {		/* array attribute */
-				putfunc(node, tag, intval);
-			}
-			break;
-               case SIZE_TYPE:
-                        if( val == NULLSTR || *val == '?' || *val == '\0' ) {
-                          sizeval.num = -1;
-                          sizeval.shift = 0;
-                          sizeval.units = BYTES;
-                        } else {
-                          sizeval = strToSize(val);
-			}
+    if (res != NULLSTR)
+      {
+      val    = strrchr(retval, '=');  /* locates ptr to last = */
 
-			if( tag == NULLSTR ) {	/* non-array attribute */
-                        	putfunc(node, sizeval);
-			} else {		/* array attribute */
-                        	putfunc(node, tag, sizeval);
-			}
-                        break;
-               case FLT_TYPE:
-                        if( val == NULLSTR || *val == '?' || *val == '\0' )
-                          fltval = -1.0;
-                        else
-                          fltval = strToFloat(val);
+      if (val != NULLSTR)
+        {
+        *val = '\0';  /* end the resource portion */
+        val++;   /* point to the value portion */
+        }
+      }
 
-			if( tag == NULLSTR ) {	/* non-array attribute */
-                        	putfunc(node, fltval);
-			} else {		/* array attribute */
-                        	putfunc(node, tag, fltval);
-			}
-                        break;
-               case STR_TYPE:
-			if( tag == NULLSTR ) {	/* non-array attribute */
+    attrib   = buf[numRecvs].name;
 
-                        	if( val == NULLSTR || *val == '?' || \
-				   				*val == '\0' )
-                        		putfunc(node, NULLSTR);
-				else
-                        		putfunc(node, val);
+    type     = buf[numRecvs].type;
+    putfunc  = buf[numRecvs].attrPutFunc;
+    tag     = parseAttrForTag(attrib);
+    varstrModPptr(tag, mom);
 
-			} else {		/* array attribute */
+    switch (type)
+      {
 
-                        	if( val == NULLSTR || *val == '?' || \
-				   				*val == '\0' )
-                        		putfunc(node, tag, NULLSTR);
-				else
-                        		putfunc(node, tag, val);
+      case INT_TYPE:
 
-			}
-                        break;
-               default:
-                        (void)sprintf(log_buffer,
-					"attribute %s unknown type",
-								attrib);
-                        log_err(-1, id, log_buffer);
-           };
+        if (val == NULLSTR || *val == '?' || *val == '\0')
+          {
+          intval = -1;
+          }
+        else
+          {
+          intval = strToInt(val);
+          }
 
-           numRecvs++;
+        if (tag == NULLSTR)    /* non-array attribute */
+          {
+          putfunc(node, intval);
+          }
+        else    /* array attribute */
+          {
+          putfunc(node, tag, intval);
+          }
+
+        break;
+
+      case SIZE_TYPE:
+
+        if (val == NULLSTR || *val == '?' || *val == '\0')
+          {
+          sizeval.num = -1;
+          sizeval.shift = 0;
+          sizeval.units = BYTES;
+          }
+        else
+          {
+          sizeval = strToSize(val);
+          }
+
+        if (tag == NULLSTR)    /* non-array attribute */
+          {
+          putfunc(node, sizeval);
+          }
+        else    /* array attribute */
+          {
+          putfunc(node, tag, sizeval);
+          }
+
+        break;
+
+      case FLT_TYPE:
+
+        if (val == NULLSTR || *val == '?' || *val == '\0')
+          fltval = -1.0;
+        else
+          fltval = strToFloat(val);
+
+        if (tag == NULLSTR)    /* non-array attribute */
+          {
+          putfunc(node, fltval);
+          }
+        else    /* array attribute */
+          {
+          putfunc(node, tag, fltval);
+          }
+
+        break;
+
+      case STR_TYPE:
+
+        if (tag == NULLSTR)    /* non-array attribute */
+          {
+
+          if (val == NULLSTR || *val == '?' || \
+              *val == '\0')
+            putfunc(node, NULLSTR);
+          else
+            putfunc(node, val);
+
+          }
+        else    /* array attribute */
+          {
+
+          if (val == NULLSTR || *val == '?' || \
+              *val == '\0')
+            putfunc(node, tag, NULLSTR);
+          else
+            putfunc(node, tag, val);
+
+          }
+
+        break;
+
+      default:
+        (void)sprintf(log_buffer,
+                      "attribute %s unknown type",
+                      attrib);
+        log_err(-1, id, log_buffer);
+      };
+
+    numRecvs++;
     }
-    /* clean up anything malloc-ed */ 
-    varstrFreeByPptr( mom ); 
-    return(numRecvs);
-}
 
-/* CNodeStateRead: gets node property from its mom. Property can be of 
-		   typeOfData */
-/*		   which currently valid is STATIC_RESOUCE, DYNAMIC_RESOURCE */
+  /* clean up anything malloc-ed */
+  varstrFreeByPptr(mom);
+
+  return(numRecvs);
+  }
+
+/* CNodeStateRead: gets node property from its mom. Property can be of
+     typeOfData */
+/*     which currently valid is STATIC_RESOUCE, DYNAMIC_RESOURCE */
 
 void CNodeStateRead(node, typeOfData)
-CNode	*node;
-int	typeOfData;
-{
-	char	*arch;	
-	int	numSends, numRecvs;
-	struct  CNodeAttrInfo *buf = NULL;
-	int	nodeType;
-    	ResMom 	*mom;
+CNode *node;
+int typeOfData;
+  {
+  char *arch;
+  int numSends, numRecvs;
 
-	mom = CNodeResMomGet( node );
+  struct  CNodeAttrInfo *buf = NULL;
+  int nodeType;
+  ResMom  *mom;
 
-	if( !CNodeQueryMomGet( node ) ) {
-		return;
-	}
+  mom = CNodeResMomGet(node);
 
-    	if( ResMomOpen( mom ) < 0 ) {
-        	CNodeStatePut( node, CNODE_DOWN );
-		return;
-    	}
+  if (!CNodeQueryMomGet(node))
+    {
+    return;
+    }
 
-#ifdef DEBUG
-        printf("BEGIN of CNodeStateRead(%s)################################\n",
-							ResMomInetAddrGet(mom));
-        printDynamicArrayTable();
-	okClientPrint();
-        mallocTablePrint();
-        ResPrint();
-        varstrPrint();
-#endif
-
-	arch = ResMomInetAddrGet( mom );
-
-	numSends = send_queries(node, arch, typeOfData, &buf);
-
-/*  Get responses. Assume we get responses in order */
-    	numRecvs = recv_responses(node, buf);
-
-	nodeType = CNodeTypeGet(node);
+  if (ResMomOpen(mom) < 0)
+    {
+    CNodeStatePut(node, CNODE_DOWN);
+    return;
+    }
 
 #ifdef DEBUG
-	printf("CNodeStateRead(%s) NUMSENDS: %d, NUMRECVS: %d\n", 
-				ResMomInetAddrGet(mom), numSends, numRecvs);	
+  printf("BEGIN of CNodeStateRead(%s)################################\n",
+         ResMomInetAddrGet(mom));
+
+  printDynamicArrayTable();
+
+  okClientPrint();
+
+  mallocTablePrint();
+
+  ResPrint();
+
+  varstrPrint();
+
 #endif
 
-	if( nodeType == CNODE_UNKNOWN ) {
+  arch = ResMomInetAddrGet(mom);
 
-		if( numSends == numRecvs ) { /* ok */
-			CNodeStatePut( node, CNODE_FREE );
-		} else {	/* not ok */
-			CNodeStatePut( node, CNODE_DOWN );
-		}
-	}
-    	(void)ResMomClose( mom );
-	freeDynamicArray( (struct CNodeAttrInfo *) buf);
+  numSends = send_queries(node, arch, typeOfData, &buf);
+
+  /*  Get responses. Assume we get responses in order */
+  numRecvs = recv_responses(node, buf);
+
+  nodeType = CNodeTypeGet(node);
 
 #ifdef DEBUG
-        printf("END of CNodeStateRead(%s)##################################\n",
-							ResMomInetAddrGet(mom));
-        printDynamicArrayTable();
-	okClientPrint();
-        ResPrint();
-        mallocTablePrint();
-        varstrPrint();
+  printf("CNodeStateRead(%s) NUMSENDS: %d, NUMRECVS: %d\n",
+         ResMomInetAddrGet(mom), numSends, numRecvs);
+
 #endif
-}
+
+  if (nodeType == CNODE_UNKNOWN)
+    {
+
+    if (numSends == numRecvs)    /* ok */
+      {
+      CNodeStatePut(node, CNODE_FREE);
+      }
+    else   /* not ok */
+      {
+      CNodeStatePut(node, CNODE_DOWN);
+      }
+    }
+
+  (void)ResMomClose(mom);
+  freeDynamicArray((struct CNodeAttrInfo *) buf);
+
+#ifdef DEBUG
+  printf("END of CNodeStateRead(%s)##################################\n",
+         ResMomInetAddrGet(mom));
+  printDynamicArrayTable();
+  okClientPrint();
+  ResPrint();
+  mallocTablePrint();
+  varstrPrint();
+#endif
+  }
 
 /* Set of CNode abstraction */
 void SetCNodeInit(scn)
 SetCNode  *scn;
-{
-	scn->head = NOCNODE;
-	scn->tail = NOCNODE;
-	scn->numAvail = -1;
-	scn->numAlloc = -1;
-	scn->numRsvd  = -1;
-	scn->numDown  = -1;
-}
+  {
+  scn->head = NOCNODE;
+  scn->tail = NOCNODE;
+  scn->numAvail = -1;
+  scn->numAlloc = -1;
+  scn->numRsvd  = -1;
+  scn->numDown  = -1;
+  }
 
 /* adds to the end of the list */
 void SetCNodeAdd(scn, cn)
 SetCNode  *scn;
 CNode     *cn;
-{
-    assert( scn != EMPTYSETCNODE );
+  {
+  assert(scn != EMPTYSETCNODE);
 
-    assert( scn->head == NOCNODE && scn->tail == NOCNODE || \
-            scn->head != NOCNODE && scn->tail != NOCNODE );
+  assert(scn->head == NOCNODE && scn->tail == NOCNODE || \
+         scn->head != NOCNODE && scn->tail != NOCNODE);
 
-    assert(cn != NOCNODE);
+  assert(cn != NOCNODE);
 
-    mallocTableAdd(cn, scn, 0);
+  mallocTableAdd(cn, scn, 0);
 
 #ifdef DEBUG
-    printf("Added CNode %x to SetCNode %x\n", cn, scn);
-    CNodePrint(cn);
+  printf("Added CNode %x to SetCNode %x\n", cn, scn);
+  CNodePrint(cn);
 #endif
-    cn->nextptr = NOCNODE;
+  cn->nextptr = NOCNODE;
 
-    if( scn->head == NOCNODE && scn->tail == NOCNODE ) {
-          scn->head = cn;
-          scn->tail = cn;
-    } else {
-          scn->tail->nextptr = cn;
-          scn->tail = cn;
+  if (scn->head == NOCNODE && scn->tail == NOCNODE)
+    {
+    scn->head = cn;
+    scn->tail = cn;
+    }
+  else
+    {
+    scn->tail->nextptr = cn;
+    scn->tail = cn;
     }
 
-}
+  }
 
 void SetCNodeFree(scn)
 SetCNode  *scn;
-{
-        CNode     *cn, *cntmp;
+  {
+  CNode     *cn, *cntmp;
 
-        if( scn == EMPTYSETCNODE )
-                return; /* ignore */
+  if (scn == EMPTYSETCNODE)
+    return; /* ignore */
 
-        for( cn = scn->head; cn; cn=cntmp ) {
-                cntmp = cn->nextptr;
-                /* free up dynamic strings, and device, network lists */
-		/* attached to cn */
-                CNodeFree( cn );
-        }
-	/* Free up the all dynamically allocated CNodes themselves */
-	/* CNodes */
-        mallocTableFreeByPptr(scn);
-        /* Assuming of course that scn is non-malloced! */
-	/* Give CNode a reasonable starting point */
-        SetCNodeInit(scn);
-}
+  for (cn = scn->head; cn; cn = cntmp)
+    {
+    cntmp = cn->nextptr;
+    /* free up dynamic strings, and device, network lists */
+    /* attached to cn */
+    CNodeFree(cn);
+    }
+
+  /* Free up the all dynamically allocated CNodes themselves */
+  /* CNodes */
+  mallocTableFreeByPptr(scn);
+
+  /* Assuming of course that scn is non-malloced! */
+  /* Give CNode a reasonable starting point */
+  SetCNodeInit(scn);
+  }
 
 /* finds a CNode in the set of CNodes by matching the "node_name". */
 CNode *SetCNodeFindCNodeByName(scn, node_name)
 SetCNode *scn;
 char   *node_name;
-{
-        CNode	*cn;
+  {
+  CNode *cn;
 
-        if( scn == EMPTYSETCNODE )
-                return(NOCNODE);
+  if (scn == EMPTYSETCNODE)
+    return(NOCNODE);
 
-        for(cn=scn->head; cn; cn=cn->nextptr) {
-                if( STRCMP( CNodeNameGet(cn) , ==, node_name ) )
-                        return(cn);
+  for (cn = scn->head; cn; cn = cn->nextptr)
+    {
+    if (STRCMP(CNodeNameGet(cn) , == , node_name))
+      return(cn);
 
-        }
-        return(NOCNODE);
-}
+    }
+
+  return(NOCNODE);
+  }
 
 void SetCNodePrint(scn)
 SetCNode  *scn;
-{
-        CNode     *cn;
+  {
+  CNode     *cn;
 
-        for(cn=scn->head; cn; cn=cn->nextptr)
-                CNodePrint( cn );
-}
+  for (cn = scn->head; cn; cn = cn->nextptr)
+    CNodePrint(cn);
+  }
 
 int inSetCNode(cn, scn)
 CNode     *cn;
 SetCNode  *scn;
-{
-        CNode     *c;
+  {
+  CNode     *c;
 
-	if( scn == EMPTYSETCNODE )
-		return(0);
+  if (scn == EMPTYSETCNODE)
+    return(0);
 
-        for(c=scn->head; c; c=c->nextptr) {
-                if( c == cn )
-                        return(1);
-        }
-        return(0);
-}
+  for (c = scn->head; c; c = c->nextptr)
+    {
+    if (c == cn)
+      return(1);
+    }
 
-static int CNodePartition(A, p, r)
-struct CNodeSortArgs    *A;
-int                     p;
-int                     r;
-{
+  return(0);
+  }
 
-        CNode                   *temptr;
-        CNode                   *temptr2;
-        int                   i, j;
-        int                     k;
+static int
+CNodePartition(struct CNodeSortArgs *A, int p, int r)
+  {
 
-        assert( A->keytype == INTKEY || A->keytype == STRINGKEY || \
-                A->keytype == DATETIMEKEY || A->keytype == SIZEKEY || \
-		A->keytype == FLOATKEY );
+  CNode                   *temptr;
+  CNode                   *temptr2;
+  int                   i, j;
+  int                     k;
 
-        i = p - 1;
-        j = r + 1;
+  assert(A->keytype == INTKEY || A->keytype == STRINGKEY || \
+         A->keytype == DATETIMEKEY || A->keytype == SIZEKEY || \
+         A->keytype == FLOATKEY);
 
-        while( TRUE ) {
+  i = p - 1;
+  j = r + 1;
 
-          switch(A->keytype) {
-            case INTKEY:
-                do {
-                        j--;
-                } while( (A->order == ASC  && A->key.ifunc(A->array[j]) > \
-                                           A->key.ifunc(A->array[p])) ||  \
-                         (A->order == DESC && A->key.ifunc(A->array[j]) < \
-                                           A->key.ifunc(A->array[p])) );
+  while (TRUE)
+    {
 
-                do {
-                        i++;
-                } while( (A->order == ASC  && A->key.ifunc(A->array[i]) < \
-                                           A->key.ifunc(A->array[p])) ||  \
-                         (A->order == DESC && A->key.ifunc(A->array[i]) > \
-                                           A->key.ifunc(A->array[p])) );
-                break;
-	    case FLOATKEY:
-                do {
-                        j--;
-                } while( (A->order == ASC  && A->key.ffunc(A->array[j]) > \
-                                           A->key.ffunc(A->array[p])) ||  \
-                         (A->order == DESC && A->key.ffunc(A->array[j]) < \
-                                           A->key.ffunc(A->array[p])) );
+    switch (A->keytype)
+      {
 
-                do {
-                        i++;
-                } while( (A->order == ASC  && A->key.ffunc(A->array[i]) < \
-                                           A->key.ffunc(A->array[p])) ||  \
-                         (A->order == DESC && A->key.ffunc(A->array[i]) > \
-                                           A->key.ffunc(A->array[p])) );
-                break;
-            case STRINGKEY:
-                do {
-                        j--;
-                } while((A->order == ASC && \
-                                STRCMP( A->key.sfunc(A->array[j]),
-                                      >, A->key.sfunc(A->array[p]) )) || \
-                       (A->order == DESC && \
-                                STRCMP( A->key.sfunc(A->array[j]),
-                                      <, A->key.sfunc(A->array[p]) )));
+      case INTKEY:
 
-                do {
-                        i++;
-                } while((A->order == ASC && \
-                                STRCMP( A->key.sfunc(A->array[i]),
-                                     <, A->key.sfunc(A->array[p]) )) || \
-                        (A->order == DESC && \
-                                STRCMP( A->key.sfunc(A->array[i]),
-                                      >, A->key.sfunc(A->array[p]) )) );
-                break;
-            case DATETIMEKEY:
-                do {
-                        j--;
-                } while( (A->order == ASC && \
-                                DATETIMECMP( A->key.dfunc(A->array[j]),
-                                 >, A->key.dfunc(A->array[p]) )) || \
-                         (A->order == DESC && \
-                                DATETIMECMP( A->key.dfunc(A->array[j]),
-                                <, A->key.dfunc(A->array[p]) )) );
-
-                do {
-                        i++;
-                } while( (A->order == ASC && \
-                                DATETIMECMP( A->key.dfunc(A->array[i]),
-                                 <, A->key.dfunc(A->array[p]) )) || \
-                         (A->order == DESC && \
-                                DATETIMECMP( A->key.dfunc(A->array[i]),
-                                 >, A->key.dfunc(A->array[p]) )) );
-                break;
-            case SIZEKEY:
-                do {
-                        j--;
-                } while( (A->order == ASC && \
-                                SIZECMP( A->key.szfunc(A->array[j]),
-                                >, A->key.szfunc(A->array[p]) )) || \
-                         (A->order == DESC && \
-                                SIZECMP( A->key.szfunc(A->array[j]),
-                                <, A->key.szfunc(A->array[p]) )) );
-
-                do {
-                        i++;
-                } while( (A->order == ASC && \
-                                SIZECMP( A->key.szfunc(A->array[i]),
-                                <, A->key.szfunc(A->array[p]) )) || \
-                         (A->order == DESC && \
-                                SIZECMP( A->key.szfunc(A->array[i]),
-                                >, A->key.szfunc(A->array[p]) )) );
-                break;
+        do
+          {
+          j--;
           }
+        while ((A->order == ASC  && A->key.ifunc(A->array[j]) > \
+                A->key.ifunc(A->array[p])) ||  \
+               (A->order == DESC && A->key.ifunc(A->array[j]) < \
+                A->key.ifunc(A->array[p])));
 
-
-          if( i < j ) {
-                /* move the pointers around */
-                if( i+1 == j ) {
-                        temptr2 = A->array[i];
-                } else {
-                        temptr2 = A->array[i]->nextptr;
-                }
-                A->array[i]->nextptr = A->array[j]->nextptr;
-                A->array[j]->nextptr = temptr2;
-
-
-                if( i-1 >= 0 && i-1 < dynamicArraySize(A->array) ) {
-                        A->array[i-1]->nextptr = A->array[j];
-                }
-                if( j-1 != i && j-1 >= 0 && j-1 < dynamicArraySize(A->array) ) {
-                        A->array[j-1]->nextptr = A->array[i];
-                }
-
-                if( A->set->head == A->array[i] ) {
-                        A->set->head = A->array[j];
-                }
-                if( A->set->tail == A->array[j] ) {
-                        A->set->tail = A->array[i];
-                }
-
-                /* update the entries on the array */
-                temptr = A->array[j];
-                A->array[j] = A->array[i];
-                A->array[i] = temptr;
-
-
-          } else {
-                return(j);
+        do
+          {
+          i++;
           }
+        while ((A->order == ASC  && A->key.ifunc(A->array[i]) < \
+                A->key.ifunc(A->array[p])) ||  \
+               (A->order == DESC && A->key.ifunc(A->array[i]) > \
+                A->key.ifunc(A->array[p])));
 
-        } /* while */
-}
+        break;
 
-static void CNodeQuickSort(A, p, r)
-struct CNodeSortArgs    *A;
-int                     p;
-int                     r;
-{
-        int     q;
+      case FLOATKEY:
+        do
+          {
+          j--;
+          }
+        while ((A->order == ASC  && A->key.ffunc(A->array[j]) > \
+                A->key.ffunc(A->array[p])) ||  \
+               (A->order == DESC && A->key.ffunc(A->array[j]) < \
+                A->key.ffunc(A->array[p])));
 
-        if( p < r ) {
+        do
+          {
+          i++;
+          }
+        while ((A->order == ASC  && A->key.ffunc(A->array[i]) < \
+                A->key.ffunc(A->array[p])) ||  \
+               (A->order == DESC && A->key.ffunc(A->array[i]) > \
+                A->key.ffunc(A->array[p])));
 
-                q = CNodePartition(A, p, r);
-                CNodeQuickSort(A, p, q);
-                CNodeQuickSort(A, q+1, r);
+        break;
+
+      case STRINGKEY:
+        do
+          {
+          j--;
+          }
+        while ((A->order == ASC && \
+                STRCMP(A->key.sfunc(A->array[j]),
+                       > , A->key.sfunc(A->array[p]))) || \
+               (A->order == DESC && \
+                STRCMP(A->key.sfunc(A->array[j]),
+                       < , A->key.sfunc(A->array[p]))));
+
+        do
+          {
+          i++;
+          }
+        while ((A->order == ASC && \
+                STRCMP(A->key.sfunc(A->array[i]),
+                       < , A->key.sfunc(A->array[p]))) || \
+               (A->order == DESC && \
+                STRCMP(A->key.sfunc(A->array[i]),
+                       > , A->key.sfunc(A->array[p]))));
+
+        break;
+
+      case DATETIMEKEY:
+        do
+          {
+          j--;
+          }
+        while ((A->order == ASC && \
+                DATETIMECMP(A->key.dfunc(A->array[j]),
+                            > , A->key.dfunc(A->array[p]))) || \
+               (A->order == DESC && \
+                DATETIMECMP(A->key.dfunc(A->array[j]),
+                            < , A->key.dfunc(A->array[p]))));
+
+        do
+          {
+          i++;
+          }
+        while ((A->order == ASC && \
+                DATETIMECMP(A->key.dfunc(A->array[i]),
+                            < , A->key.dfunc(A->array[p]))) || \
+               (A->order == DESC && \
+                DATETIMECMP(A->key.dfunc(A->array[i]),
+                            > , A->key.dfunc(A->array[p]))));
+
+        break;
+
+      case SIZEKEY:
+        do
+          {
+          j--;
+          }
+        while ((A->order == ASC && \
+                SIZECMP(A->key.szfunc(A->array[j]),
+                        > , A->key.szfunc(A->array[p]))) || \
+               (A->order == DESC && \
+                SIZECMP(A->key.szfunc(A->array[j]),
+                        < , A->key.szfunc(A->array[p]))));
+
+        do
+          {
+          i++;
+          }
+        while ((A->order == ASC && \
+                SIZECMP(A->key.szfunc(A->array[i]),
+                        < , A->key.szfunc(A->array[p]))) || \
+               (A->order == DESC && \
+                SIZECMP(A->key.szfunc(A->array[i]),
+                        > , A->key.szfunc(A->array[p]))));
+
+        break;
+      }
+
+
+    if (i < j)
+      {
+      /* move the pointers around */
+      if (i + 1 == j)
+        {
+        temptr2 = A->array[i];
         }
-}
+      else
+        {
+        temptr2 = A->array[i]->nextptr;
+        }
+
+      A->array[i]->nextptr = A->array[j]->nextptr;
+
+      A->array[j]->nextptr = temptr2;
+
+
+      if (i - 1 >= 0 && i - 1 < dynamicArraySize(A->array))
+        {
+        A->array[i-1]->nextptr = A->array[j];
+        }
+
+      if (j - 1 != i && j - 1 >= 0 && j - 1 < dynamicArraySize(A->array))
+        {
+        A->array[j-1]->nextptr = A->array[i];
+        }
+
+      if (A->set->head == A->array[i])
+        {
+        A->set->head = A->array[j];
+        }
+
+      if (A->set->tail == A->array[j])
+        {
+        A->set->tail = A->array[i];
+        }
+
+      /* update the entries on the array */
+      temptr = A->array[j];
+
+      A->array[j] = A->array[i];
+
+      A->array[i] = temptr;
+
+
+      }
+    else
+      {
+      return(j);
+      }
+
+    } /* while */
+  }
+
+static void
+CNodeQuickSort(struct CNodeSortArgs *A, int p, int r)
+  {
+  int     q;
+
+  if (p < r)
+    {
+
+    q = CNodePartition(A, p, r);
+    CNodeQuickSort(A, p, q);
+    CNodeQuickSort(A, q + 1, r);
+    }
+  }
 
 int SetCNodeSortInt(s, key, order)
 SetCNode             *s;
-int                  (*key)();
+int (*key)();
 int                  order;
-{
+  {
 
-        CNode  **s_ptrs = NULL;
-        int    beforecnt, aftercnt;
-        struct CNodeSortArgs A;
-        CNode  *q;
+  CNode  **s_ptrs = NULL;
+  int    beforecnt, aftercnt;
 
-        if( order != ASC && order != DESC ) {
-                fprintf(stderr,
-                          "SetCNodeSortInt: order != ASC and order !=DESC\n");
-                return(FAIL);
-        }
+  struct CNodeSortArgs A;
+  CNode  *q;
 
-        beforecnt = 0;
-        for(q=s->head; q; q=q->nextptr) {
-                s_ptrs = (CNode **)extendDynamicArray(s_ptrs,
-                         beforecnt+1, sizeof(CNode *));
+  if (order != ASC && order != DESC)
+    {
+    fprintf(stderr,
+            "SetCNodeSortInt: order != ASC and order !=DESC\n");
+    return(FAIL);
+    }
 
-                aftercnt = dynamicArraySize(s_ptrs);
+  beforecnt = 0;
 
-                if (beforecnt == aftercnt) {
-                        fprintf(stderr,
-                                "SetCNodeSortInt: Unable to realloc s_ptrs");
-                        if( aftercnt > 0 ) {
-                                freeDynamicArray(s_ptrs);
-                        }
-                        return(FAIL);
-                }
-                s_ptrs[beforecnt] = q;
-                beforecnt++;
-        }
+  for (q = s->head; q; q = q->nextptr)
+    {
+    s_ptrs = (CNode **)extendDynamicArray(s_ptrs,
+                                          beforecnt + 1, sizeof(CNode *));
 
-        A.array = s_ptrs;
-        A.set = s;
-        A.key.ifunc = key;
-        A.keytype = INTKEY;
-        A.order   = order;
+    aftercnt = dynamicArraySize(s_ptrs);
 
-        CNodeQuickSort(&A, 0, beforecnt-1);
+    if (beforecnt == aftercnt)
+      {
+      fprintf(stderr,
+              "SetCNodeSortInt: Unable to realloc s_ptrs");
 
+      if (aftercnt > 0)
+        {
         freeDynamicArray(s_ptrs);
-        return(SUCCESS);
-}
+        }
+
+      return(FAIL);
+      }
+
+    s_ptrs[beforecnt] = q;
+
+    beforecnt++;
+    }
+
+  A.array = s_ptrs;
+
+  A.set = s;
+  A.key.ifunc = key;
+  A.keytype = INTKEY;
+  A.order   = order;
+
+  CNodeQuickSort(&A, 0, beforecnt - 1);
+
+  freeDynamicArray(s_ptrs);
+  return(SUCCESS);
+  }
 
 int SetCNodeSortStr(s, key, order)
 SetCNode             *s;
 char                 *(*key)();
 int                  order;
-{
+  {
 
-        CNode  **s_ptrs = NULL;
-        int    beforecnt, aftercnt;
-        struct CNodeSortArgs A;
-        CNode  *q;
+  CNode  **s_ptrs = NULL;
+  int    beforecnt, aftercnt;
 
-        if( order != ASC && order != DESC ) {
-                fprintf(stderr,
-                          "SetCNodeSortStr: order != ASC and order !=DESC\n");
-                return(FAIL);
-        }
+  struct CNodeSortArgs A;
+  CNode  *q;
 
-        beforecnt = 0;
-        for(q=s->head; q; q=q->nextptr) {
-                s_ptrs = (CNode **)extendDynamicArray(s_ptrs,
-                         beforecnt+1, sizeof(CNode *));
+  if (order != ASC && order != DESC)
+    {
+    fprintf(stderr,
+            "SetCNodeSortStr: order != ASC and order !=DESC\n");
+    return(FAIL);
+    }
 
-                aftercnt = dynamicArraySize(s_ptrs);
+  beforecnt = 0;
 
-                if (beforecnt == aftercnt) {
-                        fprintf(stderr,
-                                "SetCNodeSortStr: Unable to realloc s_ptrs");
-                        if( aftercnt > 0 ) {
-                                freeDynamicArray(s_ptrs);
-                        }
-                        return(FAIL);
-                }
-                s_ptrs[beforecnt] = q;
-                beforecnt++;
-        }
+  for (q = s->head; q; q = q->nextptr)
+    {
+    s_ptrs = (CNode **)extendDynamicArray(s_ptrs,
+                                          beforecnt + 1, sizeof(CNode *));
 
-        A.array = s_ptrs;
-        A.set = s;
-        A.key.sfunc = key;
-        A.keytype = STRINGKEY;
-        A.order   = order;
+    aftercnt = dynamicArraySize(s_ptrs);
 
-        CNodeQuickSort(&A, 0, beforecnt-1);
+    if (beforecnt == aftercnt)
+      {
+      fprintf(stderr,
+              "SetCNodeSortStr: Unable to realloc s_ptrs");
 
+      if (aftercnt > 0)
+        {
         freeDynamicArray(s_ptrs);
-        return(SUCCESS);
-}
+        }
+
+      return(FAIL);
+      }
+
+    s_ptrs[beforecnt] = q;
+
+    beforecnt++;
+    }
+
+  A.array = s_ptrs;
+
+  A.set = s;
+  A.key.sfunc = key;
+  A.keytype = STRINGKEY;
+  A.order   = order;
+
+  CNodeQuickSort(&A, 0, beforecnt - 1);
+
+  freeDynamicArray(s_ptrs);
+  return(SUCCESS);
+  }
 
 int SetCNodeSortDateTime(s, key, order)
 SetCNode             *s;
-DateTime             (*key)();
+DateTime(*key)();
 int                  order;
-{
+  {
 
-        CNode  **s_ptrs = NULL;
-        int    beforecnt, aftercnt;
-        struct CNodeSortArgs A;
-        CNode  *q;
+  CNode  **s_ptrs = NULL;
+  int    beforecnt, aftercnt;
 
-        if( order != ASC && order != DESC ) {
-                fprintf(stderr,
-                        "SetCNodeSortDateTime: order != ASC and order !=DESC\n");
-                return(FAIL);
-        }
+  struct CNodeSortArgs A;
+  CNode  *q;
 
-        beforecnt = 0;
-        for(q=s->head; q; q=q->nextptr) {
-                s_ptrs = (CNode **)extendDynamicArray(s_ptrs,
-                         beforecnt+1, sizeof(CNode *));
+  if (order != ASC && order != DESC)
+    {
+    fprintf(stderr,
+            "SetCNodeSortDateTime: order != ASC and order !=DESC\n");
+    return(FAIL);
+    }
 
-                aftercnt = dynamicArraySize(s_ptrs);
+  beforecnt = 0;
 
-                if (beforecnt == aftercnt) {
-                        fprintf(stderr,
-                                "SetCNodeSortDateTime: Unable to realloc s_ptrs");
-                        if( aftercnt > 0 ) {
-                                freeDynamicArray(s_ptrs);
-                        }
-                        return(FAIL);
-                }
-                s_ptrs[beforecnt] = q;
-                beforecnt++;
-        }
+  for (q = s->head; q; q = q->nextptr)
+    {
+    s_ptrs = (CNode **)extendDynamicArray(s_ptrs,
+                                          beforecnt + 1, sizeof(CNode *));
 
-        A.array = s_ptrs;
-        A.set = s;
-        A.key.dfunc = key;
-        A.keytype = DATETIMEKEY;
-        A.order   = order;
+    aftercnt = dynamicArraySize(s_ptrs);
 
-        CNodeQuickSort(&A, 0, beforecnt-1);
+    if (beforecnt == aftercnt)
+      {
+      fprintf(stderr,
+              "SetCNodeSortDateTime: Unable to realloc s_ptrs");
 
+      if (aftercnt > 0)
+        {
         freeDynamicArray(s_ptrs);
-        return(SUCCESS);
-}
+        }
+
+      return(FAIL);
+      }
+
+    s_ptrs[beforecnt] = q;
+
+    beforecnt++;
+    }
+
+  A.array = s_ptrs;
+
+  A.set = s;
+  A.key.dfunc = key;
+  A.keytype = DATETIMEKEY;
+  A.order   = order;
+
+  CNodeQuickSort(&A, 0, beforecnt - 1);
+
+  freeDynamicArray(s_ptrs);
+  return(SUCCESS);
+  }
 
 int SetCNodeSortSize(s, key, order)
 SetCNode             *s;
-Size                 (*key)();
+Size(*key)();
 int                  order;
-{
+  {
 
-        CNode  **s_ptrs = NULL;
-        int    beforecnt, aftercnt;
-        struct CNodeSortArgs A;
-        CNode  *q;
+  CNode  **s_ptrs = NULL;
+  int    beforecnt, aftercnt;
 
-        if( order != ASC && order != DESC ) {
-                fprintf(stderr,
-                          "SetCNodeSortSize: order != ASC and order !=DESC\n");
-                return(FAIL);
-        }
+  struct CNodeSortArgs A;
+  CNode  *q;
 
-        beforecnt = 0;
-        for(q=s->head; q; q=q->nextptr) {
-                s_ptrs = (CNode **)extendDynamicArray(s_ptrs,
-                         beforecnt+1, sizeof(CNode *));
+  if (order != ASC && order != DESC)
+    {
+    fprintf(stderr,
+            "SetCNodeSortSize: order != ASC and order !=DESC\n");
+    return(FAIL);
+    }
 
-                aftercnt = dynamicArraySize(s_ptrs);
+  beforecnt = 0;
 
-                if (beforecnt == aftercnt) {
-                        fprintf(stderr,
-                                "SetCNodeSortSize: Unable to realloc s_ptrs");
-                        if( aftercnt > 0 ) {
-                                freeDynamicArray(s_ptrs);
-                        }
-                        return(FAIL);
-                }
-                s_ptrs[beforecnt] = q;
-                beforecnt++;
-        }
+  for (q = s->head; q; q = q->nextptr)
+    {
+    s_ptrs = (CNode **)extendDynamicArray(s_ptrs,
+                                          beforecnt + 1, sizeof(CNode *));
 
-        A.array = s_ptrs;
-        A.set = s;
-        A.key.szfunc = key;
-        A.keytype = SIZEKEY;
-        A.order   = order;
+    aftercnt = dynamicArraySize(s_ptrs);
 
-        CNodeQuickSort(&A, 0, beforecnt-1);
+    if (beforecnt == aftercnt)
+      {
+      fprintf(stderr,
+              "SetCNodeSortSize: Unable to realloc s_ptrs");
 
+      if (aftercnt > 0)
+        {
         freeDynamicArray(s_ptrs);
-        return(SUCCESS);
-}
+        }
+
+      return(FAIL);
+      }
+
+    s_ptrs[beforecnt] = q;
+
+    beforecnt++;
+    }
+
+  A.array = s_ptrs;
+
+  A.set = s;
+  A.key.szfunc = key;
+  A.keytype = SIZEKEY;
+  A.order   = order;
+
+  CNodeQuickSort(&A, 0, beforecnt - 1);
+
+  freeDynamicArray(s_ptrs);
+  return(SUCCESS);
+  }
 
 int SetCNodeSortFloat(s, key, order)
 SetCNode             *s;
-double               (*key)();
+double(*key)();
 int                  order;
-{
+  {
 
-        CNode  **s_ptrs = NULL;
-        int    beforecnt, aftercnt;
-        struct CNodeSortArgs A;
-        CNode  *q;
+  CNode  **s_ptrs = NULL;
+  int    beforecnt, aftercnt;
 
-        if( order != ASC && order != DESC ) {
-                fprintf(stderr,
-                          "SetCNodeSortSize: order != ASC and order !=DESC\n");
-                return(FAIL);
-        }
+  struct CNodeSortArgs A;
+  CNode  *q;
 
-        beforecnt = 0;
-        for(q=s->head; q; q=q->nextptr) {
-                s_ptrs = (CNode **)extendDynamicArray(s_ptrs,
-                         beforecnt+1, sizeof(CNode *));
+  if (order != ASC && order != DESC)
+    {
+    fprintf(stderr,
+            "SetCNodeSortSize: order != ASC and order !=DESC\n");
+    return(FAIL);
+    }
 
-                aftercnt = dynamicArraySize(s_ptrs);
+  beforecnt = 0;
 
-                if (beforecnt == aftercnt) {
-                        fprintf(stderr,
-                                "SetCNodeSortSize: Unable to realloc s_ptrs");
-                        if( aftercnt > 0 ) {
-                                freeDynamicArray(s_ptrs);
-                        }
-                        return(FAIL);
-                }
-                s_ptrs[beforecnt] = q;
-                beforecnt++;
-        }
+  for (q = s->head; q; q = q->nextptr)
+    {
+    s_ptrs = (CNode **)extendDynamicArray(s_ptrs,
+                                          beforecnt + 1, sizeof(CNode *));
 
-        A.array = s_ptrs;
-        A.set = s;
-        A.key.ffunc = key;
-        A.keytype = FLOATKEY;
-        A.order   = order;
+    aftercnt = dynamicArraySize(s_ptrs);
 
-        CNodeQuickSort(&A, 0, beforecnt-1);
+    if (beforecnt == aftercnt)
+      {
+      fprintf(stderr,
+              "SetCNodeSortSize: Unable to realloc s_ptrs");
 
+      if (aftercnt > 0)
+        {
         freeDynamicArray(s_ptrs);
-        return(SUCCESS);
-}
+        }
+
+      return(FAIL);
+      }
+
+    s_ptrs[beforecnt] = q;
+
+    beforecnt++;
+    }
+
+  A.array = s_ptrs;
+
+  A.set = s;
+  A.key.ffunc = key;
+  A.keytype = FLOATKEY;
+  A.order   = order;
+
+  CNodeQuickSort(&A, 0, beforecnt - 1);
+
+  freeDynamicArray(s_ptrs);
+  return(SUCCESS);
+  }

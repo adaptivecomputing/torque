@@ -66,7 +66,8 @@ MODULE moab
 
 /* enumerations */
 
-enum MDataFormatEnum {
+enum MDataFormatEnum
+  {
   mdfNONE = 0,
   mdfString,
   mdfInt,
@@ -76,27 +77,33 @@ enum MDataFormatEnum {
   mdfIntArray,
   mdfLongArray,
   mdfDoubleArray,
-  mdfOther };
+  mdfOther
+  };
 
-enum MSocketProtocolEnum {
+enum MSocketProtocolEnum
+  {
   mspNONE = 0,
   mspSingleUseTCP,
   mspHalfSocket,
   mspHTTPClient,
   mspHTTP,
-  mspSSSChallenge };
+  mspSSSChallenge
+  };
 
-enum MWireProtocolEnum {
+enum MWireProtocolEnum
+  {
   mwpNONE = 0,
   mwpAVP,
   mwpXML,
   mwpHTML,
-  mwpSSS2 };
+  mwpSSS2
+  };
 
 
 /* sync w/MSSSAction[] */
 
-enum MSSSActionEnum {
+enum MSSSActionEnum
+  {
   msssaNONE,
   msssaCancel,
   msssaCreate,
@@ -107,24 +114,28 @@ enum MSSSActionEnum {
   msssaNotify,
   msssaQuery,
   msssaStart,
-  msssaLAST };
+  msssaLAST
+  };
 
 
 /* sync w/MCSAlgoType[] */
 
-enum MChecksumAlgoEnum {
+enum MChecksumAlgoEnum
+  {
   mcsaNONE = 0,
   mcsaDES,
   mcsaHMAC,
   mcsaHMAC64,
   mcsaMD5,
   mcsaPasswd,
-  mcsaRemote };
+  mcsaRemote
+  };
 
 
 /* sync w/MSSSCName[] */
 
-enum MPeerServiceEnum {
+enum MPeerServiceEnum
+  {
   mpstNONE = 0,
   mpstNM,    /* system monitor     */
   mpstQM,    /* queue manager      */
@@ -134,15 +145,18 @@ enum MPeerServiceEnum {
   mpstAM,    /* allocation manager */
   mpstEM,    /* event manager      */
   mpstSD,    /* service directory  */
-  mpstWWW }; /* web                */
+  mpstWWW
+  }; /* web                */
 
 
 /* sync w/XXX */
 
-enum MSSSVEnum {
+enum MSSSVEnum
+  {
   msssV0_2 = 0,
   msssV2_0,
-  msssV3_0 };
+  msssV3_0
+  };
 
 
 /* const defines */
@@ -166,7 +180,8 @@ enum MSSSVEnum {
 
 /* structures */
 
-typedef struct mxml_s {
+typedef struct mxml_s
+  {
   char *Name;
   char *Val;
 
@@ -187,7 +202,8 @@ typedef struct mxml_s {
 
 /* sync w/MFC[] */
 
-enum MSFC {
+enum MSFC
+  {
   msfENone          = 0,     /* success */
   msfGWarning       = 100,   /* general warning */
   msfEGWireProtocol = 200,   /* general wireprotocol/network failure */
@@ -211,25 +227,28 @@ enum MSFC {
   msfECResUnavail   = 830,   /* client resource unavailable */
   msfECPolicy       = 840,   /* client policy failure */
   msfEGMisc         = 900,   /* general miscellaneous error */
-  msfUnknownError   = 999 }; /* unknown failure */
+  msfUnknownError   = 999
+  }; /* unknown failure */
 
 
 /* sync w/MSockAttr[] */
 
-enum MSocketAttrEnum {
+enum MSocketAttrEnum
+  {
   msockaNONE = 0,
   msockaLocalHost,
   msockaLocalPort,
   msockaRemoteHost,
   msockaRemotePort,
-  msockaLAST };
+  msockaLAST
+  };
 
 
-extern int MXMLCreateE(mxml_t **,char *);
-extern int MXMLAddE(mxml_t *,mxml_t *);
-extern int MXMLSetVal(mxml_t *,void *,enum MDataFormatEnum);
+extern int MXMLCreateE(mxml_t **, char *);
+extern int MXMLAddE(mxml_t *, mxml_t *);
+extern int MXMLSetVal(mxml_t *, void *, enum MDataFormatEnum);
 extern int MXMLDestroyE(mxml_t **);
-extern int MXMLToXString(mxml_t *,char **,int *,int, char **,mbool_t);
+extern int MXMLToXString(mxml_t *, char **, int *, int, char **, mbool_t);
 
 #ifdef __M32COMPAT
 

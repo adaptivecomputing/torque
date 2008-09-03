@@ -20,7 +20,7 @@
  */
 
 #ifdef HAVE_CONFIG_H
-#	include <pbs_config.h>
+# include <pbs_config.h>
 #endif
 
 #include <compat.h>
@@ -30,86 +30,96 @@
 
 #ifndef lint
 static char rcsid[]
-#	ifdef __GNUC__
-		__attribute__ ((unused))
-#	endif
-	= "$Id: compat.c,v 1.1 2006/08/29 10:24:38 ciesnik Exp $";
+# ifdef __GNUC__
+__attribute__((unused))
+# endif
+= "$Id: compat.c,v 1.1 2006/08/29 10:24:38 ciesnik Exp $";
 #endif
 
 
 #ifndef HAVE_STRLCPY
 size_t
-strlcpy( char *dest, const char *src, size_t size )
-{
-	size_t result = 0;
-	if( size == 0 )
-		return 0;
-	while( *src  &&  --size > 0 )
-	 {
-		*dest++ = *src++;
-		result++;
-	 }
-	*dest++ = '\0';
-	return result;
-}
+strlcpy(char *dest, const char *src, size_t size)
+  {
+  size_t result = 0;
+
+  if (size == 0)
+    return 0;
+
+  while (*src  &&  --size > 0)
+    {
+    *dest++ = *src++;
+    result++;
+    }
+
+  *dest++ = '\0';
+
+  return result;
+  }
+
 #endif /* ! HAVE_STRLCPY */
 
 
 #ifndef HAVE_ASPRINTF
 int
-asprintf( char **strp, const char *fmt, ... )
-{
-	va_list args;
-	int result;
-	va_start( args, fmt );
-	result = vasprintf( strp, fmt, args );
-	va_end( args );
-	return result;
-}
+asprintf(char **strp, const char *fmt, ...)
+  {
+  va_list args;
+  int result;
+  va_start(args, fmt);
+  result = vasprintf(strp, fmt, args);
+  va_end(args);
+  return result;
+  }
+
 #endif /* ! HAVE_ASPRINTF */
 
 
 #ifndef HAVE_VASPRINTF
 int
-vasprintf( char **strp, const char *fmt, va_list ap )
-{
-	size_t size;
-	char *buf;
-	buf = (char*)malloc( size = 128 );
-	if( buf == NULL )
-		return -1;
+vasprintf(char **strp, const char *fmt, va_list ap)
+  {
+  size_t size;
+  char *buf;
+  buf = (char*)malloc(size = 128);
 
-	while( 1 )
-	 {
-		int len;
-		char *oldbuf;
+  if (buf == NULL)
+    return -1;
 
-#		if defined(HAVE_VA_COPY) || defined(HAVE___VA_COPY)
-		va_list args;
-		va_copy( args, ap );
-		len = sprintfv( fmt, args );
-#		else /* ! HAVE_VA_COPY */
-		len = sprintfv( fmt, ap );
-#		endif
+  while (1)
+    {
+    int len;
+    char *oldbuf;
 
-		if( len < size )
-		 {
-			buf = realloc( buf, len+1 );
-			*strp = buf;
-			return len;
-		 }
-		if( len == -1 )
-			size *= 2;
-		else size = len + 1;
+#  if defined(HAVE_VA_COPY) || defined(HAVE___VA_COPY)
+    va_list args;
+    va_copy(args, ap);
+    len = sprintfv(fmt, args);
+#  else /* ! HAVE_VA_COPY */
+    len = sprintfv(fmt, ap);
+#  endif
 
-		buf = realloc( oldbuf = buf, size *= 2 );
-		if( buf == NULL )
-		 {
-			free( oldbuf );
-			return -1;
-		 }
-	 }
-}
+    if (len < size)
+      {
+      buf = realloc(buf, len + 1);
+      *strp = buf;
+      return len;
+      }
+
+    if (len == -1)
+      size *= 2;
+    else size = len + 1;
+
+    buf = realloc(oldbuf = buf, size *= 2);
+
+    if (buf == NULL)
+      {
+      free(oldbuf);
+      return -1;
+      }
+    }
+  }
+
 #endif /* ! HAVE_VASPRINTF */
 
 

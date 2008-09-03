@@ -1,45 +1,45 @@
 /*
 *         OpenPBS (Portable Batch System) v2.3 Software License
-* 
+*
 * Copyright (c) 1999-2000 Veridian Information Solutions, Inc.
 * All rights reserved.
-* 
+*
 * ---------------------------------------------------------------------------
 * For a license to use or redistribute the OpenPBS software under conditions
 * other than those described below, or to purchase support for this software,
 * please contact Veridian Systems, PBS Products Department ("Licensor") at:
-* 
+*
 *    www.OpenPBS.org  +1 650 967-4675                  sales@OpenPBS.org
 *                        877 902-4PBS (US toll-free)
 * ---------------------------------------------------------------------------
-* 
+*
 * This license covers use of the OpenPBS v2.3 software (the "Software") at
 * your site or location, and, for certain users, redistribution of the
 * Software to other sites and locations.  Use and redistribution of
 * OpenPBS v2.3 in source and binary forms, with or without modification,
 * are permitted provided that all of the following conditions are met.
 * After December 31, 2001, only conditions 3-6 must be met:
-* 
+*
 * 1. Commercial and/or non-commercial use of the Software is permitted
 *    provided a current software registration is on file at www.OpenPBS.org.
 *    If use of this software contributes to a publication, product, or
 *    service, proper attribution must be given; see www.OpenPBS.org/credit.html
-* 
+*
 * 2. Redistribution in any form is only permitted for non-commercial,
 *    non-profit purposes.  There can be no charge for the Software or any
 *    software incorporating the Software.  Further, there can be no
 *    expectation of revenue generated as a consequence of redistributing
 *    the Software.
-* 
+*
 * 3. Any Redistribution of source code must retain the above copyright notice
 *    and the acknowledgment contained in paragraph 6, this list of conditions
 *    and the disclaimer contained in paragraph 7.
-* 
+*
 * 4. Any Redistribution in binary form must reproduce the above copyright
 *    notice and the acknowledgment contained in paragraph 6, this list of
 *    conditions and the disclaimer contained in paragraph 7 in the
 *    documentation and/or other materials provided with the distribution.
-* 
+*
 * 5. Redistributions in any form must be accompanied by information on how to
 *    obtain complete source code for the OpenPBS software and any
 *    modifications and/or additions to the OpenPBS software.  The source code
@@ -47,23 +47,23 @@
 *    than the cost of distribution plus a nominal fee, and all modifications
 *    and additions to the Software must be freely redistributable by any party
 *    (including Licensor) without restriction.
-* 
+*
 * 6. All advertising materials mentioning features or use of the Software must
 *    display the following acknowledgment:
-* 
+*
 *     "This product includes software developed by NASA Ames Research Center,
-*     Lawrence Livermore National Laboratory, and Veridian Information 
+*     Lawrence Livermore National Laboratory, and Veridian Information
 *     Solutions, Inc.
 *     Visit www.OpenPBS.org for OpenPBS software support,
 *     products, and information."
-* 
+*
 * 7. DISCLAIMER OF WARRANTY
-* 
+*
 * THIS SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND. ANY EXPRESS
 * OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
 * OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT
 * ARE EXPRESSLY DISCLAIMED.
-* 
+*
 * IN NO EVENT SHALL VERIDIAN CORPORATION, ITS AFFILIATED COMPANIES, OR THE
 * U.S. GOVERNMENT OR ANY OF ITS AGENCIES BE LIABLE FOR ANY DIRECT OR INDIRECT,
 * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
@@ -72,7 +72,7 @@
 * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
 * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-* 
+*
 * This license will be governed by the laws of the Commonwealth of Virginia,
 * without reference to its choice of law rules.
 */
@@ -109,15 +109,16 @@ extern time_t time_now;
  */
 static char *svr_idle   = "Idle";
 static char *svr_sched  = "Scheduling";
-static char *svr_state_names[] = {
-	"",			/* SV_STATE_DOWN */
-	"",			/* SV_STATE_INIT */
-	"Hot_Start",		/* SV_STATE_HOT  */
-	"Active",		/* SV_STATE_RUN  */
-	"Terminating_Delay",	/* SV_STATE_SHUTDEL */
-	"Terminating",		/* SV_STATE_SHUTIMM */
-	"Terminating"		/* SV_STATE_SHUTSIG */
-};
+static char *svr_state_names[] =
+  {
+  "",   /* SV_STATE_DOWN */
+  "",   /* SV_STATE_INIT */
+  "Hot_Start",  /* SV_STATE_HOT  */
+  "Active",  /* SV_STATE_RUN  */
+  "Terminating_Delay", /* SV_STATE_SHUTDEL */
+  "Terminating",  /* SV_STATE_SHUTIMM */
+  "Terminating"  /* SV_STATE_SHUTSIG */
+  };
 
 
 
@@ -125,7 +126,7 @@ static char *svr_state_names[] = {
 
 /*
  * encode_svrstate - encode the current server state from the internal
- *	integer to a state name string.
+ * integer to a state name string.
  */
 
 int encode_svrstate(
@@ -147,18 +148,18 @@ int encode_svrstate(
     return(-1);
     }
 
-  if ((mode == ATR_ENCODE_SAVE)			||
-      (pattr->at_val.at_long <= SV_STATE_DOWN)	||
+  if ((mode == ATR_ENCODE_SAVE)   ||
+      (pattr->at_val.at_long <= SV_STATE_DOWN) ||
       (pattr->at_val.at_long > SV_STATE_SHUTSIG))
     {
     /* SUCCESS */
 
-    return(0);		/* don't bother to encode it */
+    return(0);  /* don't bother to encode it */
     }
 
   psname = svr_state_names[pattr->at_val.at_long];
 
-  if (pattr->at_val.at_long == SV_STATE_RUN) 
+  if (pattr->at_val.at_long == SV_STATE_RUN)
     {
     if (server.sv_attr[(int)SRV_ATR_scheduling].at_val.at_long == 0)
       psname = svr_idle;
@@ -166,7 +167,7 @@ int encode_svrstate(
       psname = svr_sched;
     }
 
-  pal = attrlist_create(atname,rsname,strlen(psname) + 1);
+  pal = attrlist_create(atname, rsname, strlen(psname) + 1);
 
   if (pal == NULL)
     {
@@ -175,11 +176,11 @@ int encode_svrstate(
     return(-1);
     }
 
-  strcpy(pal->al_value,psname);
+  strcpy(pal->al_value, psname);
 
   pal->al_flags = pattr->at_flags;
 
-  append_link(phead,&pal->al_link,pal);
+  append_link(phead, &pal->al_link, pal);
 
   /* SUCCESS */
 
@@ -191,7 +192,7 @@ int encode_svrstate(
 
 /*
  * set_resc_assigned - set the resources used by a job in the server and
- *	queue resources_used attribute
+ * queue resources_used attribute
  */
 
 void set_resc_assigned(
@@ -207,7 +208,7 @@ void set_resc_assigned(
   attribute    *sysru;
 
   if ((pjob == NULL) || (pjob->ji_qhdr == NULL))
-    { 
+    {
     /* job is corrupt */
 
     return;
@@ -227,49 +228,50 @@ void set_resc_assigned(
     assert(pjob->ji_qhdr->qu_qs.qu_type == QTYPE_Execution);
     }
 
-  if (op == INCR) 
+  if (op == INCR)
     {
-    if (pjob->ji_qs.ji_svrflags & JOB_SVFLG_RescAssn) 
+    if (pjob->ji_qs.ji_svrflags & JOB_SVFLG_RescAssn)
       {
-      return;		/* already added in */
+      return;  /* already added in */
       }
 
     pjob->ji_qs.ji_svrflags |= JOB_SVFLG_RescAssn;
-    } 
-  else if (op == DECR) 
+    }
+  else if (op == DECR)
     {
     if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_RescAssn) == 0)
       {
-      return;		/* not currently included */
+      return;  /* not currently included */
       }
 
     pjob->ji_qs.ji_svrflags &= ~JOB_SVFLG_RescAssn;
-    } 
-  else 
+    }
+  else
     {
-    return;			/* invalid op */
+    return;   /* invalid op */
     }
 
   sysru = &server.sv_attr[(int)SRV_ATR_resource_assn];
+
   queru = &pjob->ji_qhdr->qu_attr[(int)QE_ATR_ResourceAssn];
   jobrsc = (resource *)GET_NEXT(pjob->ji_wattr[(int)JOB_ATR_resource].at_val.at_list);
 
-  while (jobrsc != NULL) 
+  while (jobrsc != NULL)
     {
     rscdef = jobrsc->rs_defin;
 
     /* if resource usage is to be tracked */
 
-    if ((rscdef->rs_flags & ATR_DFLAG_RASSN) && 
-        (jobrsc->rs_value.at_flags & ATR_VFLAG_SET)) 
+    if ((rscdef->rs_flags & ATR_DFLAG_RASSN) &&
+        (jobrsc->rs_value.at_flags & ATR_VFLAG_SET))
       {
       /* update system attribute of resources assigned */
 
-      pr = find_resc_entry(sysru,rscdef);
+      pr = find_resc_entry(sysru, rscdef);
 
-      if (pr == NULL) 
+      if (pr == NULL)
         {
-        pr = add_resource_entry(sysru,rscdef);
+        pr = add_resource_entry(sysru, rscdef);
 
         if (pr == NULL)
           {
@@ -277,15 +279,15 @@ void set_resc_assigned(
           }
         }
 
-      rscdef->rs_set(&pr->rs_value,&jobrsc->rs_value,op);
+      rscdef->rs_set(&pr->rs_value, &jobrsc->rs_value, op);
 
       /* update queue attribute of resources assigned */
 
-      pr = find_resc_entry(queru,rscdef);
+      pr = find_resc_entry(queru, rscdef);
 
-      if (pr == NULL) 
+      if (pr == NULL)
         {
-        pr = add_resource_entry(queru,rscdef);
+        pr = add_resource_entry(queru, rscdef);
 
         if (pr == NULL)
           {
@@ -293,7 +295,7 @@ void set_resc_assigned(
           }
         }
 
-      rscdef->rs_set(&pr->rs_value,&jobrsc->rs_value,op);
+      rscdef->rs_set(&pr->rs_value, &jobrsc->rs_value, op);
       }
 
     jobrsc = (resource *)GET_NEXT(jobrsc->rs_link);
@@ -317,8 +319,8 @@ void set_resc_assigned(
 int ck_checkpoint(
 
   attribute *pattr,
-  void      *pobject,	/* not used */
-  int        mode)	/* not used */
+  void      *pobject, /* not used */
+  int        mode) /* not used */
 
   {
   char *val;
@@ -337,9 +339,11 @@ int ck_checkpoint(
     }
 
   field_count = csv_length(val);
-  for (i=0; i<field_count; i++)
+
+  for (i = 0; i < field_count; i++)
     {
-    str = csv_nth(val,i);
+    str = csv_nth(val, i);
+
     if (str)
       {
       if ((len = strlen(str)) > 0)
@@ -348,21 +352,22 @@ int ck_checkpoint(
           {
           return(PBSE_BADATVAL);
           }
-        else if (!strncmp(str,"c=",2))
+        else if (!strncmp(str, "c=", 2))
           {
           if (atoi(&str[2]) <= 0)
             {
             return(PBSE_BADATVAL);
             }
+
           continue;
           }
-        else if (!strcmp(str,"none"))            {}
-        else if (!strcmp(str,"periodic"))        {}
-        else if (!strcmp(str,"shutdown"))        {}
-        else if (!strcmp(str,"enabled"))       {}
-        else if (!strncmp(str,"interval=",9))    {}
-        else if (!strncmp(str,"depth=",6))       {}
-        else if (!strncmp(str,"dir=",4))         {}
+        else if (!strcmp(str, "none"))            {}
+        else if (!strcmp(str, "periodic"))        {}
+        else if (!strcmp(str, "shutdown"))        {}
+        else if (!strcmp(str, "enabled"))       {}
+        else if (!strncmp(str, "interval=", 9))    {}
+        else if (!strncmp(str, "depth=", 6))       {}
+        else if (!strncmp(str, "dir=", 4))         {}
         else
           {
           return(PBSE_BADATVAL);
@@ -382,24 +387,21 @@ int ck_checkpoint(
 
 /*
  * decode_null - Null attribute decode routine for Read Only (server
- *	and queue ) attributes.  It just returns 0.
+ * and queue ) attributes.  It just returns 0.
  */
 
-int decode_null(patr, name, rn, val)
-	attribute *patr;
-	char      *name;
-	char      *rn;
-	char      *val;
-{
-	return 0;
-}
+int
+decode_null(attribute *patr, char *name, char *rn, char *val)
+  {
+  return 0;
+  }
 
 
 
 
 
 /*
- * set_null - Null set routine for Read Only attributes. 
+ * set_null - Null set routine for Read Only attributes.
  */
 
 int set_null(
@@ -417,7 +419,7 @@ int set_null(
 
 /*
  * poke_scheduler - action routine for the server's "scheduling" attribute.
- *	Call the scheduler whenever the attribute is set (or reset) to true.
+ * Call the scheduler whenever the attribute is set (or reset) to true.
  */
 
 int poke_scheduler(
@@ -427,7 +429,7 @@ int poke_scheduler(
   int        actmode)
 
   {
-  if (actmode == ATR_ACTION_ALTER) 
+  if (actmode == ATR_ACTION_ALTER)
     {
     if (pattr->at_val.at_long)
       svr_do_schedule = SCH_SCHEDULE_CMD;
