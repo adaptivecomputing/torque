@@ -1174,7 +1174,7 @@ void on_job_exit(
       strcat(namebuf, JOB_STDOUT_SUFFIX);
 
       /* allocate space for the string name plus ".SAV" */
-      namebuf2 = malloc((strlen(namebuf) + 4) * sizeof(char));
+      namebuf2 = malloc((strlen(namebuf) + 5) * sizeof(char));
 
       strcpy(namebuf2, namebuf);
 

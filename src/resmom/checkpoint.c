@@ -578,7 +578,7 @@ int blcr_checkpoint_job(
     }  /* END if (pid == 0) */
 
   return(PBSE_NONE);
-  }  /* END mach_checkpoint() */
+  }  /* END blcr_checkpoint_job() */
 
 
 /*
