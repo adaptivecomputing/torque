@@ -271,7 +271,9 @@ hnodent *get_node(
  *      o validates server response to preobit message
  *      - fork_me()
  *        o parent registers post_epilog in job ji_mompost attribute, sets job
- *          substate to JOB_SUBSTATE_OBIT, and registers post_epilogue handler
+ *          substate to JOB_SUBSTATE_OBIT, and registers post_epilogue handler.
+ *          This handler will be invoked when the waitpid in scan_for_terminated
+ *          catches a SIGCHLD for the job epilog invoked by the child.
  *        o child runs run_pelog()
  *
  *  - post_epilog()

@@ -150,6 +150,7 @@ mom_checkpoint_job_is_checkpointable(job *pjob)
 void
 mom_checkpoint_execute_job(job *pjob, char *shell, char *arg[], struct var_table *vtable)
   {
+  static char          *id = "mom_checkpoint_execute_job";
 
   /* Launch job executable with cr_run command so that cr_checkpoint command will work. */
 
@@ -166,23 +167,22 @@ mom_checkpoint_execute_job(job *pjob, char *shell, char *arg[], struct var_table
   strcpy(arg[1], shell);
   arg[0] = checkpoint_run_exe_name;
 
-#if 1
+  if (LOGLEVEL >= 10)
     {
-    int i;
     char cmd[1024];
-    strcpy(cmd, "\"");
+    int i;
 
-    for (i = 0; i < 10 && arg[i]; i++)
+    strcat(cmd,arg[0]);
+    for (i = 1; arg[i] != NULL; i++)
       {
-      strcat(cmd, arg[i]);
-      strcat(cmd, " ");
+      strcat(cmd," ");
+      strcat(cmd,arg[i]);
       }
+    strcat(cmd,")");
 
-    strcat(cmd, "\"");
-
-    log_err(-1, "mom_checkpoint_execute_job", cmd);
+    sprintf(log_buffer, "execing checkpoint command (%s)\n", cmd);
+    log_err(-1, id, log_buffer);
     }
-#endif
 
   execve(checkpoint_run_exe_name, arg, vtable->v_envp);
   }

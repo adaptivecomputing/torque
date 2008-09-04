@@ -3003,6 +3003,22 @@ int TMomFinalizeChild(
       }
     else
       {
+      if (LOGLEVEL >= 10)
+        {
+        char cmd[1024];
+        int i;
+
+        strcat(cmd,arg[0]);
+        for (i = 1; arg[i] != NULL; i++)
+          {
+          strcat(cmd," ");
+          strcat(cmd,arg[i]);
+          }
+        strcat(cmd,")");
+
+        sprintf(log_buffer, "execing command (%s)\n", cmd);
+        log_err(-1, id, log_buffer);
+        }
       execve(shell, arg, vtable.v_envp);
       }
     }    /* END if ((pjob->ji_numnodes == 1) || ...) */
