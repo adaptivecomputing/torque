@@ -2137,8 +2137,7 @@ int kill_task(
       continue;
       }
 
-    if ((sesid == ps->session) ||
-        (ProcIsChild(procfs,dent->d_name,ptask->ti_job->ji_qs.ji_jobid) == FALSE))
+    if (sesid == ps->session)
       {
       NumProcessesFound++;
 
