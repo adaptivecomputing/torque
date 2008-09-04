@@ -371,13 +371,9 @@ int socket_to_handle(
       continue;
 
     connection[i].ch_stream = 0;
-
     connection[i].ch_inuse  = 1;
-
     connection[i].ch_errno  = 0;
-
     connection[i].ch_socket = sock;
-
     connection[i].ch_errtxt = 0;
 
     /* SUCCESS - save handle for later close */

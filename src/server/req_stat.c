@@ -660,9 +660,9 @@ nextjob:
  * Returns PBSE_SYSTEM if out of memory, PBSE_NORELYMOM if the MOM
  * is down, offline, or deleted.  Otherwise returns result of MOM
  * contact request.
+ *
+ * NOTE: called by qstat if poll_jobs == False
  */
-
-/* NOTE:  called by qstat */
 
 int stat_to_mom(
 
