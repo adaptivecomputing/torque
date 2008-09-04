@@ -3008,7 +3008,7 @@ int TMomFinalizeChild(
         char cmd[1024];
         int i;
 
-        strcat(cmd,arg[0]);
+        strcpy(cmd,arg[0]);
         for (i = 1; arg[i] != NULL; i++)
           {
           strcat(cmd," ");
