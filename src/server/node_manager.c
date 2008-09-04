@@ -864,6 +864,10 @@ job *find_job_by_node(
 
 /*
  * sync_node_jobs() - determine if a MOM has a stale job and possibly delete it
+ *
+ * This function is called every time we get a node stat from the pbs_mom.
+ *
+ * @see is_stat_get()
  */
 
 void sync_node_jobs(
@@ -916,6 +920,7 @@ void sync_node_jobs(
 
           /* double check the job struct because we could be in the middle of moving
              the job around because of data staging, suspend, or rerun */
+
           if (pjob->ji_wattr[(int)JOB_ATR_exec_host].at_val.at_str == NULL)
             {
             pjob = NULL;
@@ -1223,7 +1228,6 @@ int is_stat_get(
 
   while (((ret_info = disrst(stream, &rc)) != NULL) && (rc == DIS_SUCCESS))
     {
-
     /* add the info to the "temp" attribute */
 
     if (decode_arst(&temp, NULL, NULL, ret_info))
@@ -1799,9 +1803,9 @@ const char *PBSServerCmds2[] =
   };
 
 /*
-** Input is coming from another server (MOM) over a DIS rpp stream.
-** Read the stream to get a Inter-Server request.
-*/
+ * Input is coming from the pbs_mom over a DIS rpp stream.
+ * Read the stream to get a Inter-Server request.
+ */
 
 void is_request(
 
@@ -3177,9 +3181,9 @@ int MSNPrintF(
     return(FAILURE);
     }
 
-  va_start(Args, Format);
+  va_start(Args,Format);
 
-  len = vsnprintf(*BPtr, *BSpace, Format, Args);
+  len = vsnprintf(*BPtr,*BSpace,Format,Args);
 
   va_end(Args);
 
@@ -3187,9 +3191,23 @@ int MSNPrintF(
     {
     return(FAILURE);
     }
+  
+  if (len >= *BSpace)
+    {
+    /* truncation occurred due to attempted
+     * overflow! */
 
+    /* do not place BPtr past the end of the buffer:
+     * it is too dangerous (calling function could derference it
+     * to check for empty string, etc.)! */
+
+    *BPtr += (*BSpace) - 1;
+    *BSpace = 0;
+
+    return(FAILURE);
+    }
+  
   *BPtr += len;
-
   *BSpace -= len;
 
   return(SUCCESS);
