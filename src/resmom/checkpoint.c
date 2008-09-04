@@ -180,6 +180,7 @@ mom_checkpoint_execute_job(job *pjob, char *shell, char *arg[], struct var_table
       }
     strcat(cmd,")");
 
+    log_buffer[0] = '\0';
     sprintf(log_buffer, "execing checkpoint command (%s)\n", cmd);
     log_err(-1, id, log_buffer);
     }
