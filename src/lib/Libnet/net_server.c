@@ -481,12 +481,7 @@ int wait_request(
         }
       else
         {
-        FD_CLR(i, &readset);
-
-        close(i);
-
-        num_connections--;  /* added by CRI - should this be here? */
-
+        close_conn(i);
         }
       }
     }    /* END for (i) */
