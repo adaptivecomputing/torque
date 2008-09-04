@@ -128,8 +128,10 @@
 #define NODE_STATUS  "node_status"
 #define NODE_NOTE  "node_note"
 
-
+#ifndef PBS_NET_MAX_CONNECTIONS
 #define PBS_NET_MAX_CONNECTIONS 1024  /* increased from 256 */
+#endif /* PBS_NET_MAX_CONNECTIONS */
+
 #define PBS_LOCAL_CONNECTION PBS_NET_MAX_CONNECTIONS
 
 /*
