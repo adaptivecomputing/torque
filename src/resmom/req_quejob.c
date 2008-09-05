@@ -288,33 +288,6 @@ void req_quejob(
 
     if (pj->ji_qs.ji_svrflags & JOB_SVFLG_CHECKPOINT_FILE)
       {
-      pj->ji_qs.ji_substate = JOB_SUBSTATE_TRANSIN;
-
-      if (reply_jobid(preq,pj->ji_qs.ji_jobid,BATCH_REPLY_CHOICE_Queue) == 0)
-        {
-        delete_link(&pj->ji_alljobs);
-
-        append_link(&svr_newjobs,&pj->ji_alljobs,pj);
-
-        pj->ji_qs.ji_un_type = JOB_UNION_TYPE_NEW;
-        pj->ji_qs.ji_un.ji_newt.ji_fromsock = sock;
-        pj->ji_qs.ji_un.ji_newt.ji_fromaddr = get_connectaddr(sock);
-        pj->ji_qs.ji_un.ji_newt.ji_scriptsz = 0;
-
-        /* Per Eric R., req_mvjobfile was giving error in open_std_file, 
-           showed up as fishy error message */
-
-        if (pj->ji_grpcache != NULL)
-          {
-          free(pj->ji_grpcache);
-          pj->ji_grpcache = NULL;
-          }
-        }
-      else
-        {
-        close_conn(sock);
-        }
-
       IsCheckpoint = 1;
       }  /* END if (pj->ji_qs.ji_svrflags & JOB_SVFLG_CHECKPOINT_FILE) */
     else
@@ -357,6 +330,17 @@ void req_quejob(
 
   while (psatl != NULL)
     {
+    if (IsCheckpoint == 1)
+      {
+      if (strcmp(psatl->al_name,ATTR_checkpoint_name) &&
+          strcmp(psatl->al_name,ATTR_v))
+        {
+        psatl = (svrattrl *)GET_NEXT(psatl->al_link);
+
+        continue;
+        }
+      }
+
     /* identify the attribute by name */
 
     index = find_attr(job_attr_def,psatl->al_name,JOB_ATR_LAST);
@@ -372,17 +356,6 @@ void req_quejob(
       reply_badattr(PBSE_NOATTR,1,psatl,preq);
 
       return;
-      }
-
-    if (IsCheckpoint == 1)
-      {
-      if (strcmp(psatl->al_name,ATTR_checkpoint_name) &&
-          strcmp(psatl->al_name,ATTR_v))
-        {
-        psatl = (svrattrl *)GET_NEXT(psatl->al_link);
-
-        continue;
-        }
       }
 
     pdef = &job_attr_def[index];
@@ -455,6 +428,33 @@ void req_quejob(
 
   if (IsCheckpoint == 1)
     {
+    pj->ji_qs.ji_substate = JOB_SUBSTATE_TRANSIN;
+
+    if (reply_jobid(preq,pj->ji_qs.ji_jobid,BATCH_REPLY_CHOICE_Queue) == 0)
+      {
+      delete_link(&pj->ji_alljobs);
+
+      append_link(&svr_newjobs,&pj->ji_alljobs,pj);
+
+      pj->ji_qs.ji_un_type = JOB_UNION_TYPE_NEW;
+      pj->ji_qs.ji_un.ji_newt.ji_fromsock = sock;
+      pj->ji_qs.ji_un.ji_newt.ji_fromaddr = get_connectaddr(sock);
+      pj->ji_qs.ji_un.ji_newt.ji_scriptsz = 0;
+
+      /* Per Eric R., req_mvjobfile was giving error in open_std_file, 
+         showed up as fishy error message */
+
+      if (pj->ji_grpcache != NULL)
+        {
+        free(pj->ji_grpcache);
+        pj->ji_grpcache = NULL;
+        }
+      }
+    else
+      {
+      close_conn(sock);
+      }
+
     /* SUCCESS */
 
     return;
