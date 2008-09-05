@@ -155,6 +155,7 @@ extern int    LOGLEVEL;
 
 extern  char *msg_daemonname;
 
+extern int attr_decode_merge(struct attribute *,char *,char *,char *);
 
 
 /* Private Functions in this file */
@@ -375,11 +376,22 @@ void req_quejob(
 
     /* decode attribute */
 
-    rc = pdef->at_decode(
-           &pj->ji_wattr[index],
-           psatl->al_name,
-           psatl->al_resc,
-           psatl->al_value);
+    if (!strcmp(psatl->al_name,ATTR_v))
+      {
+      rc = attr_decode_merge(
+             &pj->ji_wattr[index],
+             psatl->al_name,
+             psatl->al_resc,
+             psatl->al_value);
+      }
+    else
+      {
+      rc = pdef->at_decode(
+             &pj->ji_wattr[index],
+             psatl->al_name,
+             psatl->al_resc,
+             psatl->al_value);
+      }
 
     if (rc != 0)
       {

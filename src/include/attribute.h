@@ -20,17 +20,6 @@
 * are permitted provided that all of the following conditions are met.
 * After December 31, 2001, only conditions 3-6 must be met:
 *
-* 1. Commercial and/or non-commercial use of the Software is permitted
-*    provided a current software registration is on file at www.OpenPBS.org.
-*    If use of this software contributes to a publication, product, or
-*    service, proper attribution must be given; see www.OpenPBS.org/credit.html
-*
-* 2. Redistribution in any form is only permitted for non-commercial,
-*    non-profit purposes.  There can be no charge for the Software or any
-*    software incorporating the Software.  Further, there can be no
-*    expectation of revenue generated as a consequence of redistributing
-*    the Software.
-*
 * 3. Any Redistribution of source code must retain the above copyright notice
 *    and the acknowledgment contained in paragraph 6, this list of conditions
 *    and the disclaimer contained in paragraph 7.
@@ -135,7 +124,7 @@ struct svrattrl
   int            al_rescln;   /* len of resource name string (+ null) */
   int            al_valln;    /* len of value, may contain many nulls */
 
-unsigned int   al_flags:
+  unsigned int   al_flags:
   ATRFLAG;   /* copy of attribute value flags */
 
   /* data follows directly after */
@@ -223,13 +212,13 @@ struct attribute_def
   void (*at_free)A_((attribute *pattr));
   int (*at_action)A_((attribute *pattr, void *pobject, int actmode));
 
-unsigned int at_flags:
+  unsigned int at_flags:
   ATRFLAG; /* flags: perms, ...  */
 
-unsigned int at_type:
+  unsigned int at_type:
   ATRTYPE; /* type of attribute  */
 
-unsigned int at_parent:
+  unsigned int at_parent:
   ATRPART; /* type of parent object */
   };
 
@@ -241,12 +230,12 @@ typedef struct attribute_def attribute_def;
 #define ATR_TYPE_CHAR    2 /* single character */
 #define ATR_TYPE_STR     3 /* string, null terminated */
 #define ATR_TYPE_ARST    4 /* Array of strings (char **) */
-#define ATR_TYPE_SIZE  5 /* size (integer + suffix) */
-#define ATR_TYPE_RESC  6 /* list type: resources only */
+#define ATR_TYPE_SIZE    5 /* size (integer + suffix) */
+#define ATR_TYPE_RESC    6 /* list type: resources only */
 #define ATR_TYPE_LIST    7 /* list type:  dependencies, unkn, etc */
-#define ATR_TYPE_ACL  8 /* Access Control Lists */
-#define ATR_TYPE_LL  9 /* Long (64 bit) integer */
-#define ATR_TYPE_SHORT  10 /* short integer    */
+#define ATR_TYPE_ACL     8 /* Access Control Lists */
+#define ATR_TYPE_LL      9 /* Long (64 bit) integer */
+#define ATR_TYPE_SHORT   10 /* short integer    */
 #define ATR_TYPE_JINFOP  13 /* struct jobinfo*  */
 
 /* Defines for  Flag field in attribute_def         */
@@ -259,9 +248,10 @@ typedef struct attribute_def attribute_def;
 #define ATR_DFLAG_MGWR   0x20 /* Manager client can write attribute */
 #define ATR_DFLAG_PRIVR  0x40 /* Private (only owner, oper, manager can read) */
 #define ATR_DFLAG_Creat  0x80 /* Can be set on create only */
-#define ATR_DFLAG_SvRD  0x100 /* job attribute is sent to server on move */
-#define ATR_DFLAG_SvWR  0x200 /* job attribute is settable by server/Sch */
+#define ATR_DFLAG_SvRD   0x100 /* job attribute is sent to server on move */
+#define ATR_DFLAG_SvWR   0x200 /* job attribute is settable by server/Sch */
 #define ATR_DFLAG_MOM    0x400 /* attr/resc sent to MOM "iff" set    */
+
 #define ATR_DFLAG_RDACC  0x515 /* Read access mask  */
 #define ATR_DFLAG_WRACC  0x6AA /* Write access mask */
 #define ATR_DFLAG_ACCESS 0x7ff /* Mask access flags */
@@ -292,13 +282,13 @@ typedef struct attribute_def attribute_def;
 /* Defines for Parent Object type field in the attribute definition */
 /* really only used for telling queue types apart   */
 
-#define PARENT_TYPE_JOB   1
+#define PARENT_TYPE_JOB      1
 #define PARENT_TYPE_QUE_ALL  2
 #define PARENT_TYPE_QUE_EXC  3
 #define PARENT_TYPE_QUE_RTE  4
-#define PARENT_TYPE_QUE_PULL  5
-#define PARENT_TYPE_SERVER  6
-#define PARENT_TYPE_NODE  7
+#define PARENT_TYPE_QUE_PULL 5
+#define PARENT_TYPE_SERVER   6
+#define PARENT_TYPE_NODE     7
 /* DIAGTODO: define PARENT_TYPE_DIAG, but atrpart field isn't wide enough */
 
 /*
@@ -365,6 +355,7 @@ extern int  decode_str   A_((attribute *patr, char *name, char *rn, char *val));
 extern int  decode_time  A_((attribute *patr, char *name, char *rn, char *val));
 extern int  decode_arst  A_((attribute *patr, char *name, char *rn, char *val));
 extern int  decode_arst_direct  A_((attribute *patr, char *val));
+extern int  decode_arst_merge  A_((attribute *,char *,char *,char *));
 extern int  decode_resc  A_((attribute *patr, char *name, char *rn, char *val));
 extern int  decode_depend A_((attribute *patr, char *name, char *rn, char *val));
 extern int  decode_hold A_((attribute *patr, char *name, char *rn, char *val));

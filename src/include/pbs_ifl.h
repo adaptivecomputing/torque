@@ -415,7 +415,7 @@
 #define PBS_SCHEDULER_SERVICE_PORT 15004
 #endif /* PBS_SCHEDULER_SERVICE_PORT */
 
-enum batch_op { SET, UNSET, INCR, DECR, EQ, NE, GE, GT, LE, LT, DFLT };
+enum batch_op { SET, UNSET, INCR, DECR, EQ, NE, GE, GT, LE, LT, DFLT, MERGE };
 
 /*
 ** This structure is identical to attropl so they can be used

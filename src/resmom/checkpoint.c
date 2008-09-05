@@ -918,6 +918,7 @@ int start_checkpoint(
   char      name_buffer[1024];
 
   switch (checkpoint_system_type)
+
     {
     case CST_MACH_DEP:
 
@@ -1506,14 +1507,17 @@ mom_checkpoint_init_job_periodic_timer(job *pjob)
  * @param pjob Pointer to job structure
  * @see TMomFinalizeJob1
  */
-int
-mom_checkpoint_job_has_checkpoint(job *pjob)
+
+int mom_checkpoint_job_has_checkpoint(
+
+  job *pjob)
+
   {
   /* Has the job has been checkpointed? */
 
   switch (checkpoint_system_type)
-    {
 
+    {
     case CST_MACH_DEP:
 
       if (pjob->ji_qs.ji_svrflags & (JOB_SVFLG_CHECKPOINT_FILE | JOB_SVFLG_CHECKPOINT_MIGRATEABLE))
@@ -1568,6 +1572,8 @@ mom_checkpoint_job_has_checkpoint(job *pjob)
 
 
 
+
+
 /**
  * mom_checkpoint_start_restart
  *
@@ -1578,6 +1584,7 @@ mom_checkpoint_job_has_checkpoint(job *pjob)
  * @param pjob Pointer to job structure
  * @see TMomFinalizeJob1
  */
+
 int mom_checkpoint_start_restart(
 
   job *pjob)
@@ -1590,8 +1597,8 @@ int mom_checkpoint_start_restart(
   /* At this point we believe that there is a checkpoint image, try to restart it. */
 
   switch (checkpoint_system_type)
-    {
 
+    {
     case CST_MACH_DEP:
 
       /* perform any site required setup before restart, normally empty and does nothing */

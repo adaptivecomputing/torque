@@ -550,19 +550,12 @@ void process_request(
     {
     switch (request->rq_type)
       {
-
       case PBS_BATCH_AsyrunJob:
-
       case PBS_BATCH_JobCred:
-
       case PBS_BATCH_MoveJob:
-
       case PBS_BATCH_QueueJob:
-
       case PBS_BATCH_RunJob:
-
       case PBS_BATCH_StageIn:
-
       case PBS_BATCH_jobscript:
 
         req_reject(PBSE_SVRDOWN, 0, request, NULL, NULL);
@@ -587,8 +580,8 @@ void process_request(
     if (LOGLEVEL >= 6)
       {
       sprintf(log_buffer, "request type %s from host %s received",
-              reqtype_to_txt(request->rq_type),
-              request->rq_host);
+        reqtype_to_txt(request->rq_type),
+        request->rq_host);
 
       log_record(
         PBSEVENT_JOB,
@@ -1147,7 +1140,6 @@ void free_br(
 
   switch (preq->rq_type)
     {
-
     case PBS_BATCH_QueueJob:
 
       free_attrlist(&preq->rq_ind.rq_queuejob.rq_attr);

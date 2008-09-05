@@ -20,17 +20,6 @@
 * are permitted provided that all of the following conditions are met.
 * After December 31, 2001, only conditions 3-6 must be met:
 *
-* 1. Commercial and/or non-commercial use of the Software is permitted
-*    provided a current software registration is on file at www.OpenPBS.org.
-*    If use of this software contributes to a publication, product, or
-*    service, proper attribution must be given; see www.OpenPBS.org/credit.html
-*
-* 2. Redistribution in any form is only permitted for non-commercial,
-*    non-profit purposes.  There can be no charge for the Software or any
-*    software incorporating the Software.  Further, there can be no
-*    expectation of revenue generated as a consequence of redistributing
-*    the Software.
-*
 * 3. Any Redistribution of source code must retain the above copyright notice
 *    and the acknowledgment contained in paragraph 6, this list of conditions
 *    and the disclaimer contained in paragraph 7.
@@ -119,19 +108,27 @@
  * ----------------------------------------------------------------------------
  */
 
+
+
+/**
+ * Parse string and convert to attribute array.
+ *
+ * @return 0 on SUCCESS, PBSE_* on FAILURE
+ */
+
 int decode_arst_direct(
 
   struct attribute *patr,  /* I (modified) */
   char             *val)   /* I */
 
   {
-  unsigned long   bksize;
-  int    j;
-  int    ns;
-  char   *pbuf;
-  char   *pc;
-  char   *pstr;
-  size_t   ssize;
+  unsigned long bksize;
+  int        j;
+  int        ns;
+  char      *pbuf;
+  char      *pc;
+  char      *pstr;
+  size_t     ssize;
   char      *tmpval;
 
   struct array_strings *stp;
@@ -147,12 +144,14 @@ int decode_arst_direct(
 
   if ((tmpval = malloc((unsigned)ssize)) == NULL)
     {
+    /* FAILURE */
+
     return(PBSE_SYSTEM);
     }
 
-  strcpy(tmpval, val);
+  strcpy(tmpval,val);
 
-  for (pc = tmpval; *pc; pc++)
+  for (pc = tmpval;*pc;pc++)
     {
     if (*pc == '\\')
       {
@@ -176,6 +175,8 @@ int decode_arst_direct(
 
   if ((pbuf = malloc((unsigned)ssize)) == NULL)
     {
+    /* FAILURE */
+
     return(PBSE_SYSTEM);
     }
 
@@ -183,6 +184,8 @@ int decode_arst_direct(
 
   if ((stp = (struct array_strings *)malloc(bksize)) == NULL)
     {
+    /* FAILURE */
+
     return(PBSE_SYSTEM);
     }
 
@@ -232,6 +235,8 @@ int decode_arst_direct(
   patr->at_val.at_arst = stp;
 
   free(tmpval);
+ 
+  /* SUCCESS */
 
   return(0);
   }  /* END decode_arst_direct() */
@@ -242,6 +247,9 @@ int decode_arst_direct(
 
 /*
  * decode_arst - decode a comma string into an attr of type ATR_TYPE_ARST
+ *
+ * @see decode_arst_direct() - child
+ * @see set_arst() - child
  *
  * Returns: 0 if ok,
  *  >0 error number1 if error,
@@ -275,12 +283,16 @@ int decode_arst(
 
     temp.at_val.at_arst = NULL;
 
-    if ((rc = decode_arst_direct(&temp, val)) != 0)
+    /* convert value string into attribute array */
+
+    if ((rc = decode_arst_direct(&temp,val)) != 0)
       {
+      /* FAILURE */
+
       return(rc);
       }
 
-    rc = set_arst(patr, &temp, INCR);
+    rc = set_arst(patr,&temp,INCR);
 
     free_arst(&temp);
 
@@ -289,14 +301,85 @@ int decode_arst(
 
   /* decode directly into real attribute */
 
-  return(decode_arst_direct(patr, val));
+  return(decode_arst_direct(patr,val));
   }  /* END decode_arst() */
 
 
 
 
 
+/*
+ * decode_arst_merge - decode a comma string into an attr of type ATR_TYPE_ARST
+ *
+ * @see decode_arst_direct() - child
+ * @see set_arst() - child
+ *
+ * Returns: 0 if ok,
+ *  >0 error number1 if error,
+ *  *patr members set
+ */
 
+int decode_arst_merge(
+
+  struct attribute *patr,    /* O (modified) */
+  char             *name,    /* I attribute name (notused) */
+  char             *rescn,   /* I resource name (notused) */
+  char             *val)     /* I attribute value */
+
+  {
+  int       rc;
+  attribute new;
+  attribute tmp;
+
+  if ((val == NULL) || (strlen(val) == 0))
+    {
+    free_arst(patr);
+
+    patr->at_flags &= ~ATR_VFLAG_MODIFY; /* _SET cleared in free_arst */
+
+    return(0);
+    }
+
+  if (!(patr->at_flags & ATR_VFLAG_SET) || (patr->at_val.at_arst == NULL))
+    {
+    /* decode directly into real attribute */
+
+    return(decode_arst_direct(patr,val));
+    }
+
+  /* already have values, decode new into temp */
+  /* then use set(incr) to add new to existing */
+
+  new.at_val.at_arst = NULL;
+
+  /* convert value string into attribute array */
+
+  if ((rc = decode_arst_direct(&new,val)) != 0)
+    {
+    /* FAILURE */
+
+    return(rc);
+    }
+
+  /* copy patr to temp, and new to patr */
+
+  tmp.at_val.at_arst = patr->at_val.at_arst;
+  patr->at_val.at_arst = new.at_val.at_arst;
+
+  /* incr original patr value onto new patr */
+
+  rc = set_arst(patr,&tmp,MERGE);
+
+  free_arst(&tmp);
+
+  return(rc);
+  }  /* END decode_arst_merge() */
+
+
+
+
+
+    
 /*
  * encode_arst - encode attr of type ATR_TYPE_ARST into attrlist entry
  *
@@ -323,11 +406,11 @@ int decode_arst(
 
 int encode_arst(
 
-  attribute   *attr, /* I: ptr to attribute to encode */
-  tlist_head   *phead, /* O: ptr to head of attrlist list */
-  char       *atname, /* I: attribute name */
-  char       *rsname, /* I: resource name or NULL (optional) */
-  int        mode) /* I: encode mode */
+  attribute  *attr,   /* I ptr to attribute to encode */
+  tlist_head *phead,  /* O ptr to head of attrlist list */
+  char       *atname, /* I attribute name */
+  char       *rsname, /* I resource name or NULL (optional) */
+  int         mode)   /* I encode mode */
 
   {
   char  *end;
@@ -446,9 +529,9 @@ int encode_arst(
 
 int set_arst(
 
-  struct attribute *attr,
-  struct attribute *new,
-  enum batch_op     op)
+  struct attribute *attr,  /* I/O */
+  struct attribute *new,   /* I */
+  enum batch_op     op)    /* I */
 
   {
   int  i;
@@ -463,23 +546,21 @@ int set_arst(
 
   struct array_strings *pas;
 
-  struct array_strings *xpasx;
-
   assert(attr && new && (new->at_flags & ATR_VFLAG_SET));
 
   pas = attr->at_val.at_arst;
-  xpasx = new->at_val.at_arst;
+  newpas = new->at_val.at_arst;
 
-  if (!xpasx)
+  if (newpas == NULL)
     {
     return(PBSE_INTERNAL);
     }
 
-  if (!pas)
+  if (pas == NULL)
     {
     /* not array_strings control structure, make one */
 
-    j = xpasx->as_npointers;
+    j = newpas->as_npointers;
 
     if (j < 1)
       {
@@ -490,7 +571,7 @@ int set_arst(
 
     pas = (struct array_strings *)malloc((size_t)need);
 
-    if (!pas)
+    if (pas == NULL)
       {
       return(PBSE_SYSTEM);
       }
@@ -499,8 +580,8 @@ int set_arst(
 
     pas->as_usedptr = 0;
     pas->as_bufsize = 0;
-    pas->as_buf     = (char *)0;
-    pas->as_next   = (char *)0;
+    pas->as_buf     = NULL;
+    pas->as_next    = NULL;
     attr->at_val.at_arst = pas;
     }
 
@@ -513,7 +594,6 @@ int set_arst(
 
   switch (op)
     {
-
     case SET:
 
       /*
@@ -532,7 +612,7 @@ int set_arst(
       if (new->at_val.at_arst == (struct array_strings *)0)
         break; /* none to set */
 
-      nsize = xpasx->as_next - xpasx->as_buf; /* space needed */
+      nsize = newpas->as_next - newpas->as_buf; /* space needed */
 
       if (nsize > pas->as_bufsize)
         {
@@ -556,7 +636,7 @@ int set_arst(
         {
         /* str fits, clear buf */
 
-        memset(pas->as_buf, 0, pas->as_bufsize);
+        memset(pas->as_buf,0,pas->as_bufsize);
         }
 
       pas->as_next = pas->as_buf;
@@ -564,8 +644,9 @@ int set_arst(
       /* no break, "SET" falls into "INCR" to add strings */
 
     case INCR:
+    case MERGE:
 
-      nsize = xpasx->as_next - xpasx->as_buf;   /* space needed */
+      nsize = newpas->as_next - newpas->as_buf;   /* space needed */
       used = pas->as_next - pas->as_buf;
 
       if (nsize > (pas->as_bufsize - used))
@@ -590,9 +671,9 @@ int set_arst(
 
         for (j = 0;j < pas->as_usedptr;j++) /* adjust points */
           pas->as_string[j] += offset;
-        }
+        }  /* END if (nsize > (pas->as_bufsize - used)) */
 
-      j = pas->as_usedptr + xpasx->as_usedptr;
+      j = pas->as_usedptr + newpas->as_usedptr;
 
       if (j > pas->as_npointers)
         {
@@ -602,7 +683,7 @@ int set_arst(
 
         need = (int)sizeof(struct array_strings) + (j - 1) * sizeof(char *);
 
-        newpas = (struct array_strings *)realloc((char *)pas, (size_t)need);
+        newpas = (struct array_strings *)realloc((char *)pas,(size_t)need);
 
         if (newpas == NULL)
           {
@@ -614,13 +695,36 @@ int set_arst(
         pas = newpas;
 
         attr->at_val.at_arst = pas;
-        }
+        }  /* END if (j > pas->as_npointers) */
 
       /* now append new strings */
 
-      for (i = 0;i < xpasx->as_usedptr;i++)
+      for (i = 0;i < newpas->as_usedptr;i++)
         {
-        (void)strcpy(pas->as_next, xpasx->as_string[i]);
+        char *tail;
+        int   len;
+        int   MatchFound; /* boolean */
+
+        if ((op == MERGE) && (tail = strchr(newpas->as_string[i],'=')))
+          {
+          len = tail - newpas->as_string[i];
+          MatchFound = 0;
+
+          for (j = 0;j < pas->as_usedptr;j++)
+            {
+            if (!strncmp(pas->as_string[j],newpas->as_string[i],len))
+              {
+              MatchFound = 1;
+
+              break;
+              }
+            }
+
+          if (MatchFound == 1)
+            continue;
+          }
+
+        strcpy(pas->as_next,newpas->as_string[i]);
 
         pas->as_string[pas->as_usedptr++] = pas->as_next;
         pas->as_next += strlen(pas->as_next) + 1;
@@ -632,11 +736,11 @@ int set_arst(
 
       /* decrement (remove) string from array */
 
-      for (j = 0;j < xpasx->as_usedptr;j++)
+      for (j = 0;j < newpas->as_usedptr;j++)
         {
         for (i = 0;i < pas->as_usedptr;i++)
           {
-          if (!strcmp(pas->as_string[i], xpasx->as_string[j]))
+          if (!strcmp(pas->as_string[i], newpas->as_string[j]))
             {
             /* compact buffer */
 
@@ -669,6 +773,8 @@ int set_arst(
     default:
 
       return(PBSE_INTERNAL);
+
+      /*NOTREACHED*/
 
       break;
     }  /* END switch(op) */

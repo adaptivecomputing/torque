@@ -20,17 +20,6 @@
 * are permitted provided that all of the following conditions are met.
 * After December 31, 2001, only conditions 3-6 must be met:
 *
-* 1. Commercial and/or non-commercial use of the Software is permitted
-*    provided a current software registration is on file at www.OpenPBS.org.
-*    If use of this software contributes to a publication, product, or
-*    service, proper attribution must be given; see www.OpenPBS.org/credit.html
-*
-* 2. Redistribution in any form is only permitted for non-commercial,
-*    non-profit purposes.  There can be no charge for the Software or any
-*    software incorporating the Software.  Further, there can be no
-*    expectation of revenue generated as a consequence of redistributing
-*    the Software.
-*
 * 3. Any Redistribution of source code must retain the above copyright notice
 *    and the acknowledgment contained in paragraph 6, this list of conditions
 *    and the disclaimer contained in paragraph 7.
@@ -235,8 +224,8 @@ static void  stop_me A_((int));
 #define KEEP_STATE   0
 
 /* Add the server names from /var/spool/torque/server_name to the trusted hosts list. */
-void
-add_server_names_to_acl_hosts(void)
+
+void add_server_names_to_acl_hosts(void)
 
   {
   int n, list_len, rc;
@@ -272,7 +261,12 @@ add_server_names_to_acl_hosts(void)
       free_arst(&temp);
       }
     }
+
+  return;
   }
+
+
+
 
 
 /*

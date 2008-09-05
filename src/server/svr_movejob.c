@@ -368,7 +368,6 @@ static void post_routejob(
 
   switch (r)
     {
-
     case 0:  /* normal return, job was routed */
 
       if (jobp->ji_qs.ji_svrflags & JOB_SVFLG_StagedIn)
@@ -1183,7 +1182,6 @@ static int should_retry_route(
   {
   switch (err)
     {
-
     case 0:
 
     case EADDRINUSE:
