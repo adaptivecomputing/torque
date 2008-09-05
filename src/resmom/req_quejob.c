@@ -194,6 +194,8 @@ void req_quejob(
   int    rc;
   int    sock = preq->rq_conn;
 
+  int    IsCheckpoint = 0;
+
   /* set basic (user) level access permission */
 
   resc_access_perm = ATR_DFLAG_USWR | ATR_DFLAG_Creat;
@@ -313,12 +315,14 @@ void req_quejob(
         close_conn(sock);
         }
 
-      return;
+      IsCheckpoint = 1;
       }  /* END if (pj->ji_qs.ji_svrflags & JOB_SVFLG_CHECKPOINT_FILE) */
+    else
+      {
+      /* unlink job from svr_alljobs since it will be placed on newjobs */
 
-    /* unlink job from svr_alljobs since it will be placed on newjobs */
-
-    delete_link(&pj->ji_alljobs);
+      delete_link(&pj->ji_alljobs);
+      }
     }  /* END if (pj != NULL) */
   else
     {
@@ -334,15 +338,18 @@ void req_quejob(
       }
     }    /* END else (pj != NULL) */
 
-  strcpy(pj->ji_qs.ji_jobid,jid);
+  if (IsCheckpoint == 0)
+    {
+    strcpy(pj->ji_qs.ji_jobid,jid);
 
-  strcpy(pj->ji_qs.ji_fileprefix,basename);
+    strcpy(pj->ji_qs.ji_fileprefix,basename);
 
-  pj->ji_modified       = 1;
+    pj->ji_modified       = 1;
 
-  pj->ji_qs.ji_svrflags = created_here;
+    pj->ji_qs.ji_svrflags = created_here;
 
-  pj->ji_qs.ji_un_type  = JOB_UNION_TYPE_NEW;
+    pj->ji_qs.ji_un_type  = JOB_UNION_TYPE_NEW;
+    }
 
   /* decode attributes from request into job structure */
 
@@ -365,6 +372,17 @@ void req_quejob(
       reply_badattr(PBSE_NOATTR,1,psatl,preq);
 
       return;
+      }
+
+    if (IsCheckpoint == 1)
+      {
+      if (strcmp(psatl->al_name,ATTR_checkpoint_name) &&
+          strcmp(psatl->al_name,ATTR_v))
+        {
+        psatl = (svrattrl *)GET_NEXT(psatl->al_link);
+
+        continue;
+        }
       }
 
     pdef = &job_attr_def[index];
@@ -434,6 +452,13 @@ void req_quejob(
 
     psatl = (svrattrl *)GET_NEXT(psatl->al_link);
     }      /* END while (psatl != NULL) */
+
+  if (IsCheckpoint == 1)
+    {
+    /* SUCCESS */
+
+    return;
+    }
 
   /* set remaining job structure elements */
 

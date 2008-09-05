@@ -353,8 +353,11 @@ mom_checkpoint_set_checkpoint_run_exe_name(char *value)  /* I */
  * @param pjob Pointer to the job structure
  * @see job_purge
  */
-void
-mom_checkpoint_delete_files(job *pjob)
+
+void mom_checkpoint_delete_files(
+
+  job *pjob)
+
   {
   char namebuf[256];
 
@@ -367,7 +370,12 @@ mom_checkpoint_delete_files(job *pjob)
     strcat(namebuf, JOB_CHECKPOINT_SUFFIX);
     remtree(namebuf);
     }
+
+  return;
   }
+
+
+
 
 
 /**
@@ -384,8 +392,11 @@ mom_checkpoint_delete_files(job *pjob)
  * @param pjob Pointer to job data structure
  * @see init_abort_jobs
  */
-void
-mom_checkpoint_recover(job *pjob)
+
+void mom_checkpoint_recover(
+
+  job *pjob)
+
   {
   char           path[MAXPATHLEN + 1];
   char           oldp[MAXPATHLEN + 1];
@@ -415,7 +426,11 @@ mom_checkpoint_recover(job *pjob)
         remtree(oldp);
       }
     }
+
+  return;
   }
+
+
 
 
 
@@ -495,6 +510,8 @@ void mom_checkpoint_check_periodic_timer(
  * jobs accross multiple nodes and thus a BLCR job will
  * only have one task associated with the job.
  *
+ * @see start_checkpoint() - parent
+ *
  * @returns PBSE_NONE if no error
  */
 
@@ -547,9 +564,9 @@ int blcr_checkpoint_job(
 
     pjob->ji_qs.ji_svrflags |= JOB_SVFLG_CHECKPOINT_FILE;
 
-    job_save(pjob, SAVEJOB_FULL); /* to save resources_used so far */
+    job_save(pjob,SAVEJOB_FULL); /* to save resources_used so far */
 
-    sprintf(log_buffer, "checkpointed to %s / %s",
+    sprintf(log_buffer,"checkpointed to %s / %s",
       pjob->ji_wattr[(int)JOB_ATR_checkpoint_dir].at_val.at_str,
       pjob->ji_wattr[(int)JOB_ATR_checkpoint_name].at_val.at_str);
 
@@ -561,10 +578,8 @@ int blcr_checkpoint_job(
 
     if (abort == 1)
       {
-      /* need way to verify checkpoint successfully completed and only purge 
-         at that time - NYI */
-
-      job_purge(pjob);
+      /* post_checkpoint() will verify checkpoint successfully completed and only purge 
+         at that time */
       }
     }
   else if (pid == 0)
@@ -772,7 +787,7 @@ fail:
     }
 
   return(ckerr);
-  }
+  }  /* END mom_checkpoint_job() */
 
 
 
@@ -781,23 +796,30 @@ fail:
 /*
  * post_checkpoint - post processor for start_checkpoint()
  *
+ * @see scan_for_terminated() - parent
+ *
  * Called from scan_for_terminated() when found in ji_mompost;
+ *
  * This sets the "has checkpoint image" bit in the job.
+ *
+ * job is referenced by parent after calling this routine - do not 'purge' 
+ * job from inside this routine
  */
 
 void post_checkpoint(
 
-  job *pjob,
-  int  ev)
+  job *pjob,  /* I - may be purged */
+  int  ev)    /* I */
 
   {
   char           path[MAXPATHLEN + 1];
-  DIR  *dir;
+  DIR           *dir;
 
   struct dirent *pdir;
-  tm_task_id tid;
-  task  *ptask;
-  int  abort = pjob->ji_flags & MOM_CHECKPOINT_ACTIVE;
+  tm_task_id     tid;
+  task          *ptask;
+
+  int            abort = pjob->ji_flags & MOM_CHECKPOINT_ACTIVE;
 
   exiting_tasks = 1; /* make sure we call scan_for_exiting() */
 
@@ -833,11 +855,11 @@ void post_checkpoint(
   ** was checkpointed and aborted.
   */
 
-  strcpy(path, path_checkpoint);
+  strcpy(path,path_checkpoint);
 
-  strcat(path, pjob->ji_qs.ji_fileprefix);
+  strcat(path,pjob->ji_qs.ji_fileprefix);
 
-  strcat(path, JOB_CHECKPOINT_SUFFIX);
+  strcat(path,JOB_CHECKPOINT_SUFFIX);
 
   dir = opendir(path);
 
@@ -856,27 +878,30 @@ void post_checkpoint(
     if (tid == 0)
       continue;
 
-    ptask = task_find(pjob, tid);
+    ptask = task_find(pjob,tid);
 
     if (ptask == NULL)
       continue;
 
     ptask->ti_flags |= TI_FLAGS_CHECKPOINT;
-    }
+    }  /* END while ((pdir = readdir(dir)) != NULL) */
 
   closedir(dir);
 
   return;
-  }
+  }  /* END post_checkpoint() */
 
 
 
 
 
-/*
+/**
  * start_checkpoint - start a checkpoint going
  *
  * checkpoint done from a child because it takes a while
+ *
+ * @see blcr_checkpoint() - child
+ * @see start_checkpoint() - parent
  */
 
 int start_checkpoint(

@@ -325,8 +325,7 @@ char *set_shell(
 #define TMAX_TJCACHESIZE 128
 
 
-void
-scan_for_terminated(void)
+void scan_for_terminated(void)
 
   {
   static char id[] = "scan_for_terminated";
@@ -397,7 +396,7 @@ scan_for_terminated(void)
         "retrying send of OBIT");
       }
 
-    if (pjob->ji_mompost(pjob, exiteval) != 0)
+    if (pjob->ji_mompost(pjob,exiteval) != 0)
       {
       /* attempt failed again */
 
@@ -447,8 +446,8 @@ scan_for_terminated(void)
       if (LOGLEVEL >= 7)
         {
         snprintf(log_buffer, 1024, "checking job w/subtask pid=%d (child pid=%d)",
-                 pjob->ji_momsubt,
-                 pid);
+          pjob->ji_momsubt,
+          pid);
 
         LOG_EVENT(
           PBSEVENT_DEBUG,
@@ -462,7 +461,7 @@ scan_for_terminated(void)
         if (LOGLEVEL >= 7)
           {
           snprintf(log_buffer, 1024, "found match with job subtask for pid=%d",
-                   pid);
+            pid);
 
           LOG_EVENT(
             PBSEVENT_DEBUG,
@@ -489,8 +488,8 @@ scan_for_terminated(void)
           if (LOGLEVEL >= 7)
             {
             snprintf(log_buffer, 1024, "found match with job task %d for pid=%d",
-                     tcount,
-                     pid);
+              tcount,
+              pid);
 
             LOG_EVENT(
               PBSEVENT_DEBUG,
@@ -522,8 +521,8 @@ scan_for_terminated(void)
       if (LOGLEVEL >= 1)
         {
         sprintf(log_buffer, "pid %d not tracked, exitcode=%d",
-                pid,
-                statloc);
+          pid,
+          statloc);
 
         log_record(
           PBSEVENT_JOB,
