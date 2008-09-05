@@ -226,7 +226,7 @@ void req_holdjob(
         JOB_SVFLG_HASRUN | JOB_SVFLG_CHECKPOINT_FILE;
       job_save(pjob, SAVEJOB_QUICK);
       LOG_EVENT(PBSEVENT_JOB, PBS_EVENTCLASS_JOB,
-                pjob->ji_qs.ji_jobid, log_buffer);
+        pjob->ji_qs.ji_jobid, log_buffer);
       }
     }
   else

@@ -811,7 +811,7 @@ static int svr_strtjob2(
 
   /* send the job to MOM */
 
-  svr_setjobstate(pjob, JOB_STATE_RUNNING, JOB_SUBSTATE_PRERUN);
+  svr_setjobstate(pjob,JOB_STATE_RUNNING,JOB_SUBSTATE_PRERUN);
 
   if (send_job(
         pjob,

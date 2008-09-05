@@ -571,6 +571,7 @@ void job_purge(
   char          namebuf[MAXPATHLEN + 1];
   extern char  *msg_err_purgejob;
   int           rc;
+
   extern void MOMCheckRestart A_((void));
 
   if (pjob->ji_flags & MOM_HAS_TMPDIR)
@@ -578,12 +579,13 @@ void job_purge(
     if (TTmpDirName(pjob, namebuf))
       {
       sprintf(log_buffer, "removing transient job directory %s",
-              namebuf);
+        namebuf);
 
-      log_record(PBSEVENT_DEBUG,
-                 PBS_EVENTCLASS_JOB,
-                 pjob->ji_qs.ji_jobid,
-                 log_buffer);
+      log_record(
+        PBSEVENT_DEBUG,
+        PBS_EVENTCLASS_JOB,
+        pjob->ji_qs.ji_jobid,
+        log_buffer);
 
       if ((setegid(pjob->ji_qs.ji_un.ji_momt.ji_exgid) == -1) ||
           (seteuid(pjob->ji_qs.ji_un.ji_momt.ji_exuid) == -1))
@@ -601,11 +603,11 @@ void job_purge(
       if ((rc != 0) && (LOGLEVEL >= 5))
         {
         sprintf(log_buffer,
-                "recursive remove of job transient tmpdir %s failed",
-                namebuf);
+          "recursive remove of job transient tmpdir %s failed",
+          namebuf);
 
         log_err(errno, "recursive (r)rmdir",
-                log_buffer);
+          log_buffer);
         }
 
       pjob->ji_flags &= ~MOM_HAS_TMPDIR;
@@ -630,9 +632,9 @@ void job_purge(
     {
     char file[MAXPATHLEN + 1];
 
-    sprintf(file, "%s/%s",
-            path_aux,
-            pjob->ji_qs.ji_jobid);
+    sprintf(file,"%s/%s",
+      path_aux,
+      pjob->ji_qs.ji_jobid);
 
     unlink(file);
 
@@ -645,7 +647,7 @@ void job_purge(
 
   if (LOGLEVEL >= 6)
     {
-    sprintf(log_buffer, "removing job");
+    sprintf(log_buffer,"removing job");
 
     log_record(
       PBSEVENT_DEBUG,
@@ -654,10 +656,10 @@ void job_purge(
       log_buffer);
     }
 
-  strcpy(namebuf, path_jobs); /* delete script file */
+  strcpy(namebuf,path_jobs); /* delete script file */
 
-  strcat(namebuf, pjob->ji_qs.ji_fileprefix);
-  strcat(namebuf, JOB_SCRIPT_SUFFIX);
+  strcat(namebuf,pjob->ji_qs.ji_fileprefix);
+  strcat(namebuf,JOB_SCRIPT_SUFFIX);
 
   if (unlink(namebuf) < 0)
     {

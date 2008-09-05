@@ -674,9 +674,9 @@ void dispatch_request(
 
   if (LOGLEVEL >= 5)
     {
-    sprintf(log_buffer, "dispatching request %s on sd=%d",
-            reqtype_to_txt(request->rq_type),
-            sfds);
+    sprintf(log_buffer,"dispatching request %s on sd=%d",
+      reqtype_to_txt(request->rq_type),
+      sfds);
 
     log_record(
       PBSEVENT_JOB,

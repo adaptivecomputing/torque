@@ -541,6 +541,8 @@ static void post_movejob(
  * Start a child to do the work.  Connect to the destination host and port,
  * and go through the protocol to transfer the job.
  *
+ * @see svr_strtjob2() - parent
+ *
  * Returns (parent): 2 on success (child forked),
  *    -1 on failure (pbs_errno set to error number)
  *
@@ -554,23 +556,28 @@ int send_job(
 
   job       *jobp,
   pbs_net_t  hostaddr, /* host address, host byte order */
-  int      port, /* service port, host byte order */
-  int      move_type, /* move, route, or execute */
+  int        port, /* service port, host byte order */
+  int        move_type, /* move, route, or execute */
   void (*post_func) A_((struct work_task *)),     /* after move */
-  void     *data) /* ptr to optional batch_request to be put */
-/* in the work task structure */
+  void      *data)  /* ptr to optional batch_request to be put */
+                    /* in the work task structure */
+
   {
   tlist_head  attrl;
   enum conn_type cntype = ToServerDIS;
-  int   con;
+  int    con;
   char  *destin = jobp->ji_qs.ji_destin;
-  int   encode_type;
-  int   i;
+  int    encode_type;
+  int    i;
   int    NumRetries;
+
   char  *id = "send_job";
+
   char   job_id[PBS_MAXSVRJOBID + 1];
+
   attribute *pattr;
-  pid_t   pid;
+
+  pid_t  pid;
 
   struct attropl *pqjatr;      /* list (single) of attropl for quejob */
   char  *safail = "sigaction failed\n";
@@ -594,7 +601,7 @@ int send_job(
 
   if (sigprocmask(SIG_BLOCK, &child_set, NULL) == -1)
     {
-    log_err(errno, id, spfail);
+    log_err(errno,id,spfail);
 
     pbs_errno = PBSE_SYSTEM;
 
@@ -609,6 +616,9 @@ int send_job(
 
   if (LOGLEVEL >= 6)
     {
+    sprintf(log_buffer,"about to send job - type=%d",
+      move_type);
+ 
     log_event(
       PBSEVENT_JOB,
       PBS_EVENTCLASS_JOB,
@@ -637,6 +647,7 @@ int send_job(
     /* The parent (main server) */
 
     /* create task to monitor job startup */
+
     /* CRI:   need way to report to scheduler job is starting, not started */
 
     ptask = set_task(WORK_Deferred_Child, pid, post_func, jobp);
@@ -733,12 +744,16 @@ int send_job(
 
   if (move_type == MOVE_TYPE_Exec)
     {
+    /* moving job to MOM - ie job start */
+
     resc_access_perm = ATR_DFLAG_MOM;
     encode_type = ATR_ENCODE_MOM;
     cntype = ToServerDIS;
     }
   else
     {
+    /* moving job to alternate server? */
+
     resc_access_perm =
       ATR_DFLAG_USWR |
       ATR_DFLAG_OPWR |
@@ -824,8 +839,8 @@ int send_job(
     if ((con = svr_connect(hostaddr, port, 0, cntype)) == PBS_NET_RC_FATAL)
       {
       sprintf(log_buffer, "send_job failed to %lx port %d",
-              hostaddr,
-              port);
+        hostaddr,
+        port);
 
       log_err(pbs_errno, id, log_buffer);
 
@@ -884,9 +899,8 @@ int send_job(
           }
 
         sprintf(log_buffer, "send of job to %s failed error = %d",
-
-                destin,
-                pbs_errno);
+          destin,
+          pbs_errno);
 
         log_event(
           PBSEVENT_JOB,
@@ -908,18 +922,20 @@ int send_job(
       /* XXX may need to change the logic below, if we are sending the job to
          a mom on the same host and the mom and server are not sharing the same
          spool directory, then we still need to move the file */
+
       if ((move_type == MOVE_TYPE_Exec) &&
           (jobp->ji_qs.ji_svrflags & JOB_SVFLG_HASRUN) &&
           (hostaddr != pbs_server_addr))
         {
         /* send files created on prior run */
 
-        if ((move_job_file(con, jobp, StdOut) != 0) ||
-            (move_job_file(con, jobp, StdErr) != 0) ||
-            (move_job_file(con, jobp, Checkpoint) != 0))
+        if ((move_job_file(con,jobp,StdOut) != 0) ||
+            (move_job_file(con,jobp,StdErr) != 0) ||
+            (move_job_file(con,jobp,Checkpoint) != 0))
+          {
           continue;
+          }
         }
-
 
       /* ignore signals */
 
@@ -953,7 +969,6 @@ int send_job(
 
     if (move_type != MOVE_TYPE_Exec) /* not if sending to MOM */
       job_purge(jobp);
-
 
     if ((rc = PBSD_commit(con, job_id)) != 0)
       {
@@ -1032,7 +1047,7 @@ int send_job(
   if (should_retry_route(pbs_errno) == -1)
     {
     sprintf(log_buffer, "child failed and will not retry job %s",
-            jobp->ji_qs.ji_jobid);
+      jobp->ji_qs.ji_jobid);
 
     log_err(pbs_errno, id, log_buffer);
 
@@ -1045,6 +1060,7 @@ int send_job(
 
   return(0);
   }  /* END send_job() */
+
 
 
 

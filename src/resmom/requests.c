@@ -1054,10 +1054,13 @@ void req_holdjob(
         pal->al_value);
       }
 
-    if ((rc = start_checkpoint(pjob, 1, preq)) != PBSE_NONE)
-      req_reject(rc, 0, preq, mom_host, "cannot checkpoint job");    /* unable to start checkpoint */
+    if ((rc = start_checkpoint(pjob,1,preq)) != PBSE_NONE)
+      req_reject(rc,0,preq,mom_host,"cannot checkpoint job");    /* unable to start checkpoint */
     }
-  }
+
+  return;
+  }  /* END req_holdjob() */
+
 
 
 

@@ -234,6 +234,10 @@ static char *resc_to_string(
 
 /*
  * pelog_err - record error for run_pelog()
+ *
+ * @see run_pelog() - parent
+ *
+ * @return (parameter 'n')
  */
 
 static int pelog_err(
@@ -244,15 +248,15 @@ static int pelog_err(
   char *text)  /* I */
 
   {
-  sprintf(log_buffer, "prolog/epilog failed, file: %s, exit: %d, %s",
-          file,
-          n,
-          text);
+  sprintf(log_buffer,"prolog/epilog failed, file: %s, exit: %d, %s",
+    file,
+    n,
+    text);
 
-  sprintf(PBSNodeMsgBuf, "ERROR: %s",
-          log_buffer);
+  sprintf(PBSNodeMsgBuf,"ERROR: %s",
+    log_buffer);
 
-  log_err(-1, "run_pelog", log_buffer);
+  log_err(-1,"run_pelog",log_buffer);
 
   return(n);
   }  /* END pelog_err() */
@@ -274,7 +278,7 @@ static void pelogalm(
 
   errno = 0;
 
-  kill(child, SIGKILL);
+  kill(child,SIGKILL);
 
   run_exit = -4;
 
@@ -292,7 +296,7 @@ static void pelogalm(
  *  - argv[1] is the jobid
  *  - argv[2] is the user's name
  *  - argv[3] is the user's group name
- *              - argv[4] is the job name
+ *  - argv[4] is the job name
  *  - the input file is an architecture-dependent file
  *  - the output and error are the job's output and error
  * The epilogue also has:
@@ -301,10 +305,22 @@ static void pelogalm(
  *  - argv[7] is the list of resources used
  *  - argv[8] is the queue in which the job resides
  *  - argv[9] is the account under which the job run
- *      The prologue also has:
- *              - argv[5] is the list of resource limits specified
- *              - argv[6] is the queue in which the job resides
- *              - argv[7] is the account under which the job is run
+ * The prologue also has:
+ *  - argv[5] is the list of resource limits specified
+ *  - argv[6] is the queue in which the job resides
+ *  - argv[7] is the account under which the job is run
+ * 
+ * @see TMomFinalizeChild() - parent
+ * @see pelog_err() - child
+ *
+ * @return = 0 - SUCCESS - file does not exist or execution successful
+ * @return < 0 - FAILURE - general internal failure 
+ *   -1 file permission issue
+ *   -2 no pro/epi input file
+ *   -3 child wait interrupted
+ *   -4 prolog/epilog timeout occurred, child cleaned up
+ *   -5 prolog/epilog timeout occurred, cannot kill child
+ * @return > 0 - FAILURE - system failure (rc = errno)
  */
 
 int run_pelog(
@@ -318,17 +334,17 @@ int run_pelog(
   char *id = "run_pelog";
 
   struct sigaction act, oldact;
-  char         *arg[11];
+  char *arg[11];
   int   fds1 = 0;
   int   fds2 = 0;
   int   fd_input;
-  char   resc_list[2048];
-  char   resc_used[2048];
+  char  resc_list[2048];
+  char  resc_used[2048];
 
-  struct stat  sbuf;
+  struct stat sbuf;
   char   sid[20];
-  int   waitst;
-  int      isjoined;
+  int    waitst;
+  int    isjoined;
   char   buf[MAXPATHLEN + 2];
 
   resource      *r;
@@ -349,11 +365,11 @@ int run_pelog(
         static char tmpBuf[1024];
 
         sprintf(log_buffer, "%s script '%s' for job %s does not exist (cwd: %s,pid: %d)",
-                PPEType[which],
-                (pelog != NULL) ? pelog : "NULL",
-                (pjob != NULL) ? pjob->ji_qs.ji_jobid : "NULL",
-                getcwd(tmpBuf, sizeof(tmpBuf)),
-                getpid());
+          PPEType[which],
+          (pelog != NULL) ? pelog : "NULL",
+          (pjob != NULL) ? pjob->ji_qs.ji_jobid : "NULL",
+          getcwd(tmpBuf, sizeof(tmpBuf)),
+          getpid());
 
         log_record(PBSEVENT_SYSTEM, 0, id, log_buffer);
         }
@@ -361,14 +377,14 @@ int run_pelog(
       return(0);
       }
 
-    return(pelog_err(pjob, pelog, errno, "cannot stat"));
+    return(pelog_err(pjob,pelog,errno,"cannot stat"));
     }
 
   if (LOGLEVEL >= 5)
     {
     sprintf(log_buffer, "running %s script '%s'",
-            PPEType[which],
-            (pelog != NULL) ? pelog : "NULL");
+      PPEType[which],
+      (pelog != NULL) ? pelog : "NULL");
 
     log_record(PBSEVENT_SYSTEM, 0, id, log_buffer);
     }
@@ -381,7 +397,7 @@ int run_pelog(
       ((sbuf.st_mode & (S_IRUSR | S_IXUSR)) != (S_IRUSR | S_IXUSR)) ||
       (sbuf.st_mode & (S_IWGRP | S_IWOTH)))
     {
-    return(pelog_err(pjob, pelog, -1, "permission Error"));
+    return(pelog_err(pjob,pelog,-1,"permission Error"));
     }
 
   if ((which == PE_PROLOGUSER) || (which == PE_EPILOGUSER))
@@ -544,8 +560,8 @@ int run_pelog(
 
       switch (isjoined)
         {
-
         case - 1:
+
           fds2 = open_std_file(pjob, StdErr, O_WRONLY | O_APPEND,
                                pjob->ji_qs.ji_un.ji_momt.ji_exgid);
 
@@ -848,13 +864,18 @@ int run_pelog(
         }
       }
 
-    execv(pelog, arg);
+    execv(pelog,arg);
 
-    sprintf(log_buffer, "execv of %s failed: %s\n",
-            pelog,
-            strerror(errno));
+    sprintf(log_buffer,"execv of %s failed: %s\n",
+      pelog,
+      strerror(errno));
 
-    if (write(2, log_buffer, strlen(log_buffer)) == -1) {}
+    if (write(2, log_buffer, strlen(log_buffer)) == -1) 
+      {
+      /* cannot write message to stderr */
+
+      /* NO-OP */
+      }
 
     fsync(2);
 
@@ -862,9 +883,11 @@ int run_pelog(
     }  /* END else () */
 
   switch (run_exit)
-    {
 
+    {
     case 0:
+
+      /* SUCCESS */
 
       /* NO-OP */
 

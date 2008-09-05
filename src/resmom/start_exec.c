@@ -1914,11 +1914,7 @@ int TMomFinalizeChild(
   char                  *idir;
   char                  *termtype;
 
-  struct startjob_rtn    sjr =
-    {
-    0, 0
-    };
-
+  struct startjob_rtn    sjr = { 0, 0 };
 
   job                   *pjob;
   task                  *ptask;

@@ -20,17 +20,6 @@
 * are permitted provided that all of the following conditions are met.
 * After December 31, 2001, only conditions 3-6 must be met:
 *
-* 1. Commercial and/or non-commercial use of the Software is permitted
-*    provided a current software registration is on file at www.OpenPBS.org.
-*    If use of this software contributes to a publication, product, or
-*    service, proper attribution must be given; see www.OpenPBS.org/credit.html
-*
-* 2. Redistribution in any form is only permitted for non-commercial,
-*    non-profit purposes.  There can be no charge for the Software or any
-*    software incorporating the Software.  Further, there can be no
-*    expectation of revenue generated as a consequence of redistributing
-*    the Software.
-*
 * 3. Any Redistribution of source code must retain the above copyright notice
 *    and the acknowledgment contained in paragraph 6, this list of conditions
 *    and the disclaimer contained in paragraph 7.
@@ -193,17 +182,17 @@ void req_quejob(
   struct batch_request *preq) /* ptr to the decoded request   */
 
   {
-  char          *id = "req_quejob";
+  char  *id = "req_quejob";
 
   char   basename[PBS_JOBBASE + 1];
-  int   created_here = 0;
-  int   index;
+  int    created_here = 0;
+  int    index;
   char  *jid;
   attribute_def *pdef;
-  job  *pj;
+  job   *pj;
   svrattrl *psatl;
-  int   rc;
-  int   sock = preq->rq_conn;
+  int    rc;
+  int    sock = preq->rq_conn;
 
   /* set basic (user) level access permission */
 
@@ -217,7 +206,7 @@ void req_quejob(
 
     if (internal_state & INUSE_DOWN)
       {
-      req_reject(PBSE_MOMREJECT, 0, preq, NULL, NULL);
+      req_reject(PBSE_MOMREJECT,0,preq,NULL,NULL);
 
       return;
       }
@@ -268,9 +257,9 @@ void req_quejob(
 
   while (psatl != NULL)
     {
-    if (!strcmp(psatl->al_name, ATTR_hashname))
+    if (!strcmp(psatl->al_name,ATTR_hashname))
       {
-      strcpy(basename, psatl->al_value);
+      strcpy(basename,psatl->al_value);
 
       break;
       }
@@ -286,9 +275,9 @@ void req_quejob(
       {
       /* FAILURE - job exists and is running */
 
-      log_err(errno, id, "cannot queue new job, job exists and is running");
+      log_err(errno,id,"cannot queue new job, job exists and is running");
 
-      req_reject(PBSE_JOBEXIST, 0, preq, NULL, "job is running");
+      req_reject(PBSE_JOBEXIST,0,preq,NULL,"job is running");
 
       return;
       }
@@ -299,25 +288,25 @@ void req_quejob(
       {
       pj->ji_qs.ji_substate = JOB_SUBSTATE_TRANSIN;
 
-      if (reply_jobid(preq, pj->ji_qs.ji_jobid, BATCH_REPLY_CHOICE_Queue) == 0)
+      if (reply_jobid(preq,pj->ji_qs.ji_jobid,BATCH_REPLY_CHOICE_Queue) == 0)
         {
         delete_link(&pj->ji_alljobs);
 
-        append_link(&svr_newjobs, &pj->ji_alljobs, pj);
+        append_link(&svr_newjobs,&pj->ji_alljobs,pj);
 
         pj->ji_qs.ji_un_type = JOB_UNION_TYPE_NEW;
         pj->ji_qs.ji_un.ji_newt.ji_fromsock = sock;
         pj->ji_qs.ji_un.ji_newt.ji_fromaddr = get_connectaddr(sock);
         pj->ji_qs.ji_un.ji_newt.ji_scriptsz = 0;
 
-        /* Per Eric R., req_mvjobfile was giving error in open_std_file, showed up as fishy error message */
+        /* Per Eric R., req_mvjobfile was giving error in open_std_file, 
+           showed up as fishy error message */
 
         if (pj->ji_grpcache != NULL)
           {
           free(pj->ji_grpcache);
           pj->ji_grpcache = NULL;
           }
-
         }
       else
         {
@@ -345,9 +334,9 @@ void req_quejob(
       }
     }    /* END else (pj != NULL) */
 
-  strcpy(pj->ji_qs.ji_jobid, jid);
+  strcpy(pj->ji_qs.ji_jobid,jid);
 
-  strcpy(pj->ji_qs.ji_fileprefix, basename);
+  strcpy(pj->ji_qs.ji_fileprefix,basename);
 
   pj->ji_modified       = 1;
 
@@ -363,7 +352,7 @@ void req_quejob(
     {
     /* identify the attribute by name */
 
-    index = find_attr(job_attr_def, psatl->al_name, JOB_ATR_LAST);
+    index = find_attr(job_attr_def,psatl->al_name,JOB_ATR_LAST);
 
     if (index < 0)
       {
@@ -373,7 +362,7 @@ void req_quejob(
 
       job_purge(pj);   /* CRI - 12/20/2004 */
 
-      reply_badattr(PBSE_NOATTR, 1, psatl, preq);
+      reply_badattr(PBSE_NOATTR,1,psatl,preq);
 
       return;
       }
@@ -388,7 +377,7 @@ void req_quejob(
 
       job_purge(pj);
 
-      reply_badattr(PBSE_ATTRRO, 1, psatl, preq);
+      reply_badattr(PBSE_ATTRRO,1,psatl,preq);
 
       return;
       }
@@ -409,7 +398,7 @@ void req_quejob(
 
       job_purge(pj);
 
-      reply_badattr(rc, 1, psatl, preq);
+      reply_badattr(rc,1,psatl,preq);
 
       return;
       }
@@ -421,18 +410,18 @@ void req_quejob(
         resource     *presc;
         resource_def *prdef;
 
-        prdef = find_resc_def(svr_resc_def, psatl->al_resc, svr_resc_size);
+        prdef = find_resc_def(svr_resc_def,psatl->al_resc,svr_resc_size);
 
         if (prdef == NULL)
           {
           job_purge(pj);
 
-          reply_badattr(rc, 1, psatl, preq);
+          reply_badattr(rc,1,psatl, preq);
 
           return;
           }
 
-        presc = find_resc_entry(&pj->ji_wattr[index], prdef);
+        presc = find_resc_entry(&pj->ji_wattr[index],prdef);
 
         if (presc != NULL)
           presc->rs_value.at_flags |= ATR_VFLAG_DEFLT;

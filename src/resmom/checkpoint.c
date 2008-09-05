@@ -431,8 +431,11 @@ mom_checkpoint_recover(job *pjob)
  * @see examine_all_running_jobs
  * @see main_loop
  */
-void
-mom_checkpoint_check_periodic_timer(job *pjob)
+
+void mom_checkpoint_check_periodic_timer(
+
+  job *pjob)
+
   {
   resource *prwall;
   extern int start_checkpoint();
@@ -476,7 +479,11 @@ mom_checkpoint_check_periodic_timer(job *pjob)
         }
       }
     }
-  }
+
+  return;
+  }  /* END mom_checkpoint_check_periodic_timer() */
+
+
 
 
 
@@ -492,10 +499,13 @@ mom_checkpoint_check_periodic_timer(job *pjob)
  */
 
 int blcr_checkpoint_job(
+
   job *pjob,  /* I */
   int  abort) /* I */
+
   {
   char *id = "mach_checkpoint";
+
   int   pid;
   char  sid[20];
   char  *arg[20];
@@ -514,6 +524,7 @@ int blcr_checkpoint_job(
   if (checkpoint_script_name[0] == '\0')
     {
     log_err(PBSE_RMEXIST, id, "No checkpoint script defined");
+
     return(PBSE_RMEXIST);
     }
 
@@ -524,9 +535,11 @@ int blcr_checkpoint_job(
   if (pid < 0)
     {
     /* fork failed */
+
     return(PBSE_RMSYSTEM);
     }
-  else if (pid > 0)
+
+  if (pid > 0)
     {
     /* parent: pid = child's pid */
 
@@ -537,8 +550,8 @@ int blcr_checkpoint_job(
     job_save(pjob, SAVEJOB_FULL); /* to save resources_used so far */
 
     sprintf(log_buffer, "checkpointed to %s / %s",
-            pjob->ji_wattr[(int)JOB_ATR_checkpoint_dir].at_val.at_str,
-            pjob->ji_wattr[(int)JOB_ATR_checkpoint_name].at_val.at_str);
+      pjob->ji_wattr[(int)JOB_ATR_checkpoint_dir].at_val.at_str,
+      pjob->ji_wattr[(int)JOB_ATR_checkpoint_name].at_val.at_str);
 
     log_record(
       PBSEVENT_JOB,
@@ -546,13 +559,20 @@ int blcr_checkpoint_job(
       pjob->ji_qs.ji_jobid,
       log_buffer);
 
+    if (abort == 1)
+      {
+      /* need way to verify checkpoint successfully completed and only purge 
+         at that time - NYI */
+
+      job_purge(pjob);
+      }
     }
   else if (pid == 0)
     {
     /* child: execv the script */
 
-    sprintf(sid, "%ld",
-            pjob->ji_wattr[(int)JOB_ATR_session_id].at_val.at_long);
+    sprintf(sid,"%ld",
+      pjob->ji_wattr[(int)JOB_ATR_session_id].at_val.at_long);
 
     arg[0] = checkpoint_script_name;
     arg[1] = sid;
@@ -564,12 +584,12 @@ int blcr_checkpoint_job(
     arg[7] = SET_ARG(csv_find_value(pjob->ji_wattr[(int)JOB_ATR_checkpoint].at_val.at_str, "depth"));
     arg[8] = NULL;
 
-    strcpy(buf, "checkpoint args:");
+    strcpy(buf,"checkpoint args:");
 
     for (ap = arg; *ap; ap++)
       {
-      strcat(buf, " ");
-      strcat(buf, *ap);
+      strcat(buf," ");
+      strcat(buf,*ap);
       }
 
     log_err(-1, id, buf);
@@ -579,6 +599,9 @@ int blcr_checkpoint_job(
 
   return(PBSE_NONE);
   }  /* END blcr_checkpoint_job() */
+
+
+
 
 
 /*
@@ -858,9 +881,9 @@ void post_checkpoint(
 
 int start_checkpoint(
 
-  job *pjob,
-  int  abort,
-  struct batch_request *preq) /* may be null */
+  job                  *pjob,
+  int                   abort, /* I - boolean - 0 or 1 */
+  struct batch_request *preq)  /* may be null */
 
   {
 #if 0
@@ -871,19 +894,25 @@ int start_checkpoint(
 
   switch (checkpoint_system_type)
     {
-
     case CST_MACH_DEP:
+
+      /* NO-OP */
 
       break;
 
     case CST_BLCR:
+
       /* Build the name of the checkpoint file before forking to the child because
        * we want this name to persist and this won't work if we are the child.
        * Notice that the ATR_VFLAG_SEND bit causes this to also go to the pbs_server.
        */
 
-      sprintf(name_buffer, "ckpt.%s.%d", pjob->ji_qs.ji_jobid, (int)time(0));
+      sprintf(name_buffer,"ckpt.%s.%d", 
+        pjob->ji_qs.ji_jobid, 
+        (int)time(0));
+
       decode_str(&pjob->ji_wattr[(int)JOB_ATR_checkpoint_name], NULL, NULL, name_buffer);
+
       pjob->ji_wattr[(int)JOB_ATR_checkpoint_name].at_flags =
         ATR_VFLAG_SET | ATR_VFLAG_MODIFY | ATR_VFLAG_SEND;
 
@@ -891,12 +920,14 @@ int start_checkpoint(
 
       if (!(pjob->ji_wattr[(int)JOB_ATR_checkpoint_dir].at_flags & ATR_VFLAG_SET))
         {
-        /* No dir specified, use the default job checkpoint directory /var/spool/torque/checkpoint/42.host.domain.CK */
+        /* No dir specified, use the default job checkpoint directory 
+           ie, /var/spool/torque/checkpoint/42.host.domain.CK */
 
-        strcpy(name_buffer, path_checkpoint);
-        strcat(name_buffer, pjob->ji_qs.ji_fileprefix);
-        strcat(name_buffer, JOB_CHECKPOINT_SUFFIX);
-        decode_str(&pjob->ji_wattr[(int)JOB_ATR_checkpoint_dir], NULL, NULL, name_buffer);
+        strcpy(name_buffer,path_checkpoint);
+        strcat(name_buffer,pjob->ji_qs.ji_fileprefix);
+        strcat(name_buffer,JOB_CHECKPOINT_SUFFIX);
+
+        decode_str(&pjob->ji_wattr[(int)JOB_ATR_checkpoint_dir],NULL,NULL,name_buffer);
         }
 
       break;
@@ -904,7 +935,12 @@ int start_checkpoint(
     case CST_NONE:
 
     default:
+
       return(PBSE_NOSUP);  /* no checkpoint, reject request */
+
+      /*NOTREACHED*/
+
+      break;
     }
 
   /* now set up as child of MOM */
@@ -940,6 +976,7 @@ int start_checkpoint(
     /* error on fork */
 
     log_err(errno, id, "cannot fork child process for checkpoint");
+
     return(PBSE_SYSTEM);
     }
   else
@@ -948,40 +985,43 @@ int start_checkpoint(
     /* child - does the checkpoint */
 
     switch (checkpoint_system_type)
-      {
 
+      {
       case CST_MACH_DEP:
-        rc = mom_checkpoint_job(pjob, abort);
+
+        rc = mom_checkpoint_job(pjob,abort);
+
         break;
 
       case CST_BLCR:
 
-        rc = blcr_checkpoint_job(pjob, abort);
+        rc = blcr_checkpoint_job(pjob,abort);
 
         break;
       }
 
-
     if (rc == PBSE_NONE)
       {
-      rc = site_mom_postchk(pjob, abort); /* Normally, this is an empty routine and does nothing. */
+      rc = site_mom_postchk(pjob,abort); /* Normally, this is an empty routine and does nothing. */
       }
 
     if (preq != NULL)
       {
       /* rc may be 0, req_reject is used to pass auxcode */
 
-      req_reject(rc, PBS_CHECKPOINT_MIGRATE, preq, NULL, NULL); /* BAD reject is used to send OK??? */
+      req_reject(rc,PBS_CHECKPOINT_MIGRATE,preq,NULL,NULL); /* BAD reject is used to send OK??? */
       }
 
 #if 0
     exit(rc); /* zero exit tells main checkpoint ok */
-
 #endif
     }
 
   return(PBSE_NONE);  /* parent return */
   }  /* END start_checkpoint() */
+
+
+
 
 
 /*
