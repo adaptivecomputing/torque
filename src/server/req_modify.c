@@ -310,10 +310,12 @@ void req_modifyjob(
 
         sendmom = 1;
         }
-      else if ((i == (int)JOB_ATR_checkpoint_name) || (i == (int)JOB_ATR_variables))
+/*
+        else if ((i == (int)JOB_ATR_checkpoint_name) || (i == (int)JOB_ATR_variables))
         {
         sendmom = 1;
         }
+*/
 
       plist = (svrattrl *)GET_NEXT(plist->al_link);
       }
