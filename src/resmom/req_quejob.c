@@ -155,7 +155,7 @@ extern int    LOGLEVEL;
 
 extern  char *msg_daemonname;
 
-extern int attr_decode_merge(struct attribute *,char *,char *,char *);
+extern int decode_arst_merge(struct attribute *,char *,char *,char *);
 
 
 /* Private Functions in this file */
@@ -378,7 +378,7 @@ void req_quejob(
 
     if (!strcmp(psatl->al_name,ATTR_v))
       {
-      rc = attr_decode_merge(
+      rc = decode_arst_merge(
              &pj->ji_wattr[index],
              psatl->al_name,
              psatl->al_resc,
