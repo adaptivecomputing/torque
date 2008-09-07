@@ -583,7 +583,7 @@ int set_arst(
     pas->as_buf     = NULL;
     pas->as_next    = NULL;
     attr->at_val.at_arst = pas;
-    }
+    }  /* END if (pas == NULL) */
 
   if ((op == INCR) && !pas->as_buf)
     op = SET; /* no current strings, change op to SET */
@@ -677,22 +677,24 @@ int set_arst(
 
       if (j > pas->as_npointers)
         {
+        struct array_strings *tmpPas;
+
         /* need more pointers */
 
         j = 3 * j / 2;  /* allocate extra     */
 
         need = (int)sizeof(struct array_strings) + (j - 1) * sizeof(char *);
 
-        newpas = (struct array_strings *)realloc((char *)pas,(size_t)need);
+        tmpPas = (struct array_strings *)realloc((char *)pas,(size_t)need);
 
-        if (newpas == NULL)
+        if (tmpPas == NULL)
           {
           return(PBSE_SYSTEM);
           }
 
-        newpas->as_npointers = j;
+        tmpPas->as_npointers = j;
 
-        pas = newpas;
+        pas = tmpPas;
 
         attr->at_val.at_arst = pas;
         }  /* END if (j > pas->as_npointers) */
