@@ -506,9 +506,9 @@ void mom_checkpoint_check_periodic_timer(
  * blcr_checkpoint_job
  *
  * This routine lauches the checkpoint script for a BLCR
- * checkpoint system.  BLCR handles the job of tracking
- * jobs accross multiple nodes and thus a BLCR job will
- * only have one task associated with the job.
+ * checkpoint system. 
+ * currently only supports single process job, so a BLCR job will
+ * only have one task associated with the job. 
  *
  * @see start_checkpoint() - parent
  *
