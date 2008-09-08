@@ -523,11 +523,16 @@ int blcr_checkpoint_job(
   {
   char *id = "mach_checkpoint";
 
+#if 0
   int   pid;
+#endif
   char  sid[20];
   char  *arg[20];
   char  buf[1024];
   char  **ap;
+  int rc;
+  int cmd_len;
+  char *cmd;
 
   assert(pjob != NULL);
   assert(pjob->ji_wattr[(int)JOB_ATR_checkpoint_dir].at_val.at_str != NULL);
@@ -546,7 +551,7 @@ int blcr_checkpoint_job(
     }
 
   /* launch the script and return success */
-
+#if 0
   pid = fork();
 
   if (pid < 0)
@@ -559,7 +564,7 @@ int blcr_checkpoint_job(
   if (pid > 0)
     {
     /* parent: pid = child's pid */
-
+#endif
     /* Checkpoint successful (assumed) */
 
     pjob->ji_qs.ji_svrflags |= JOB_SVFLG_CHECKPOINT_FILE;
@@ -581,9 +586,11 @@ int blcr_checkpoint_job(
       /* post_checkpoint() will verify checkpoint successfully completed and only purge 
          at that time */
       }
+#if 0
     }
   else if (pid == 0)
     {
+#endif
     /* child: execv the script */
 
     sprintf(sid,"%ld",
@@ -601,18 +608,29 @@ int blcr_checkpoint_job(
 
     strcpy(buf,"checkpoint args:");
 
-    for (ap = arg; *ap; ap++)
+    cmd_len = 0;
+    for (ap = arg;*ap;ap++)
       {
-      strcat(buf," ");
-      strcat(buf,*ap);
+      strcat(buf, " ");
+      strcat(buf, *ap);
+      cmd_len += strlen(*ap);
       }
+      
+    cmd_len += 7;
+    cmd = malloc(cmd_len * sizeof(char));
+    sprintf(cmd, "%s %s %s %s %s %s %s %s", arg[0], arg[1], arg[2], arg[3], arg[4], arg[5], arg[6],
+    arg[7]);
+
 
     log_err(-1, id, buf);
 
-    execv(arg[0], arg);
+    rc = system(cmd);
+    free(cmd);
+#if 0
     }  /* END if (pid == 0) */
-
-  return(PBSE_NONE);
+#endif
+printf("XXXXXXXXXX  rc=  %d, %d\n\n", rc, WEXITSTATUS(rc));
+  return(WEXITSTATUS(rc));
   }  /* END blcr_checkpoint_job() */
 
 
@@ -911,9 +929,9 @@ int start_checkpoint(
   struct batch_request *preq)  /* may be null */
 
   {
-#if 0
+
   pid_t     pid;
-#endif
+  char *id = "start_checkpoint";
   int       rc = PBSE_NONE;
   char      name_buffer[1024];
 
@@ -970,7 +988,6 @@ int start_checkpoint(
     }
 
   /* now set up as child of MOM */
-#if 0
   pid = fork_me((preq == NULL) ? -1 : preq->rq_conn);
 
   if (pid > 0)
@@ -982,14 +999,7 @@ int start_checkpoint(
     pjob->ji_flags |= MOM_CHECKPOINT_ACTIVE;
     pjob->ji_momsubt = pid; /* record pid in job for when child terminates */
 
-    /* Save the address of a routine to execute once the checkpoint
-     * operation is complete.
-     *
-     * How can this work for job recover when pbs_mom is restarted
-     * with a new software load?  There is slight chance that
-     * the routine will be in the same place and the result
-     * will be a crash.
-     */
+    /* Set the address of a function to execute in scan_for_terminated */
 
     pjob->ji_mompost = (int (*)())post_checkpoint; /* XXX BAD routine can move on restart */
 
@@ -1006,7 +1016,6 @@ int start_checkpoint(
     return(PBSE_SYSTEM);
     }
   else
-#endif
     {
     /* child - does the checkpoint */
 
@@ -1038,9 +1047,8 @@ int start_checkpoint(
       req_reject(rc,PBS_CHECKPOINT_MIGRATE,preq,NULL,NULL); /* BAD reject is used to send OK??? */
       }
 
-#if 0
+
     exit(rc); /* zero exit tells main checkpoint ok */
-#endif
     }
 
   return(PBSE_NONE);  /* parent return */
@@ -1198,7 +1206,6 @@ int blcr_restart_job(
   char  **ap;
 
 
-
   /* if a restart script is defined launch it */
 
   if (restart_script_name[0] == '\0')
@@ -1234,7 +1241,7 @@ int blcr_restart_job(
     }
 
   /* launch the script and return success */
-
+  
   pid = fork();
 
   if (pid < 0)
@@ -1258,7 +1265,7 @@ int blcr_restart_job(
     return(PBSE_NONE);
     }
   else if (pid == 0)
-    {
+    {   
     /* child: execv the script */
 
     /* if there are missing .OU or .ER files create them, they were probably
