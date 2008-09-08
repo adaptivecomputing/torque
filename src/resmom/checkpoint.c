@@ -629,7 +629,6 @@ int blcr_checkpoint_job(
 #if 0
     }  /* END if (pid == 0) */
 #endif
-printf("XXXXXXXXXX  rc=  %d, %d\n\n", rc, WEXITSTATUS(rc));
   return(WEXITSTATUS(rc));
   }  /* END blcr_checkpoint_job() */
 
