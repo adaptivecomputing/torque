@@ -7,6 +7,9 @@ c - crash     b - bug fix    e - enhancement    f - new feature
   f - add qchkpt command
   e - renamed job.h to pbs_job.h
   b - fix logic error in checkpoint interval test
+  f - add RERUNNABLEBYDEFAULT parameter to torque.cfg. allows admin to 
+      change the default value of the job rerunnable atribute from true 
+      to false
 
 2.3.4
   b - fixed a bug where if attempt to send job to a pbs_mom failed due to 
