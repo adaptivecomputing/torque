@@ -796,6 +796,15 @@ int pbsd_init(
         if (pa == NULL)
           {
           /* TODO GB */
+
+          sprintf(log_buffer,
+                  "could not recover array-struct from file %s--skipping",
+                  pdirent->d_name);
+
+          log_err(errno, "pbsd_init", log_buffer);
+
+          continue;
+
           }
 
         pa->jobs_recovered = 0;
