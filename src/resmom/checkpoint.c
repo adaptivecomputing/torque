@@ -964,7 +964,7 @@ int start_checkpoint(
       if (!(pjob->ji_wattr[(int)JOB_ATR_checkpoint_dir].at_flags & ATR_VFLAG_SET))
         {
         /* No dir specified, use the default job checkpoint directory 
-           ie, /var/spool/torque/checkpoint/42.host.domain.CK */
+           e.g.  /var/spool/torque/checkpoint/42.host.domain.CK */
 
         strcpy(name_buffer,path_checkpoint);
         strcat(name_buffer,pjob->ji_qs.ji_fileprefix);
@@ -1000,7 +1000,7 @@ int start_checkpoint(
 
     /* Set the address of a function to execute in scan_for_terminated */
 
-    pjob->ji_mompost = (int (*)())post_checkpoint; /* XXX BAD routine can move on restart */
+    pjob->ji_mompost = (int (*)())post_checkpoint; 
 
     if (preq)
       free_br(preq); /* child will send reply */

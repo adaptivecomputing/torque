@@ -155,6 +155,7 @@ char xauth_path[256];
 char default_ckpt[256];
 
 int validate_path = 1;
+int rerunnable_by_default = 1;
 int interactivechild = 0;
 int x11child = 0;
 
@@ -3784,8 +3785,12 @@ set_opt_defaults(void)
     set_attr(&attrib, ATTR_p, "0");
 
   if (r_opt == FALSE)
-    set_attr(&attrib, ATTR_r, "TRUE");
-
+    {
+    if (rerunnable_by_default)
+      set_attr(&attrib, ATTR_r, "TRUE");
+    else
+      set_attr(&attrib, ATTR_r, "FALSE");
+    }
   return;
   }  /* END set_opt_defaults() */
 
@@ -4053,6 +4058,11 @@ int main(
       {
       if (!strcasecmp(param_val, "false"))
         validate_path = 0;
+      }
+    if ((param_val = get_param("RERUNNABLEBYDEFAULT", config_buf)) != NULL)
+      {
+      if (!strcasecmp(param_val, "false"))
+        rerunnable_by_default = 0;
       }
     }    /* END if (load_config(config_buf,sizeof(config_buf)) == 0) */
 
