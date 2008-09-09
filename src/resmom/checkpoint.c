@@ -539,8 +539,18 @@ int blcr_checkpoint_job(
 
   /* Make sure that the specified directory exists. */
 
-  mkdir(pjob->ji_wattr[(int)JOB_ATR_checkpoint_dir].at_val.at_str, 0755);
-
+  if (mkdir(pjob->ji_wattr[(int)JOB_ATR_checkpoint_dir].at_val.at_str, 0755)
+      == 0)
+    {
+    /* Change the owner of the checkpint directory to be the user */
+    if (chown(pjob->ji_wattr[(int)JOB_ATR_checkpoint_dir].at_val.at_str,
+          pjob->ji_qs.ji_un.ji_momt.ji_exuid,
+          pjob->ji_qs.ji_un.ji_momt.ji_exgid) == -1)
+      {
+      log_err(errno, id, "cannot change checkpoint directory owner");
+      }
+    }
+  
   /* if a checkpoint script is defined launch it */
 
   if (checkpoint_script_name[0] == '\0')

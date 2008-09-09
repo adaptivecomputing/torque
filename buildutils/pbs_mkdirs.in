@@ -274,7 +274,7 @@ mk_mom_dirs()
 	test -d $PBS_SERVER_HOME/spool || \
 	    install_dir $PBS_SERVER_HOME/spool 1777 || return 1
 
-	install_dir $PBS_SERVER_HOME/checkpoint 700 || return 1
+	install_dir $PBS_SERVER_HOME/checkpoint 770 || return 1
 	install_dir $PBS_SERVER_HOME/undelivered  1777 || return 1
 	install_dir $PBS_SERVER_HOME/mom_priv 751 || return 1
 	install_dir $PBS_SERVER_HOME/mom_priv/jobs 751 || return 1
