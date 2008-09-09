@@ -521,7 +521,7 @@ int blcr_checkpoint_job(
   int  abort) /* I */
 
   {
-  char *id = "mach_checkpoint";
+  char *id = "blcr_checkpoint_job";
 
 #if 0
   int   pid;
