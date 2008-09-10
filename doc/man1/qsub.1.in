@@ -1089,6 +1089,50 @@ The environment variable
 defines the maximum number of seconds qsub will block.  See the -b option
 above.  Despite the name, currently qsub is the only client that supports
 this option.
+.SH TORQUE.CFG
+The torque.cfg file, located in PBS_SERVER_HOME (/var/spool/torque by default)
+controls the behavior of the qsub command. This file contains a list of parameters
+and values separated by whitespace 
+.LP
+.B QSUBSLEEP
+takes an integer operand which specifies time to sleep when running qsub command.
+Used to prevent users from overwhelming the scheduler.
+.LP
+.B SUBMITFILTER
+specifies the path to the submit filter used to pre-process job submission. The 
+default path is $(libexecdir)/qsub_filter, which falls back to
+/usr/local/sbin/torque_submitfilter for backwards compatibility. This torque.cfg 
+parameter overrides this default.
+.LP
+.B SERVERHOST
+.LP
+.B QSUBHOST
+.LP
+.B QSUBSENDUID
+.LP
+.B XAUTHPATH
+.LP
+.B CLIENTRETRY
+.LP
+.B VALIDATEGROUP
+.LP
+.B DEFAULTCKPT
+.LP
+.B VALIDATEPATH
+.LP
+.B RERUNNABLEBYDEFAULT
+this parameter specifies if a job is rerunnable by default. The default is true, setting 
+this to false causes the rerunnable attribute value to be false unless the users specifies 
+otherwise with the -r option 
+.LP
+For example:
+.RS
+.Cs
+.Ty "QSUBSLEEP  2"
+.Ty "RERUNNABLEBYDEFAULT  false"
+.Ce
+.RE
+.LP
 .SH EXTENDED DESCRIPTION
 .LP
 Script Processing:
