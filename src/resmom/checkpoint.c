@@ -1264,9 +1264,6 @@ int blcr_restart_job(
     /* parent */
 
     ptask->ti_qs.ti_sid = pid;  /* Apparently torque doesn't do anything with the session ID that we pass back here... */
-    pjob->ji_wattr[(int)JOB_ATR_session_id].at_val.at_long = pid;
-    pjob->ji_wattr[(int)JOB_ATR_session_id].at_flags =
-      ATR_VFLAG_SET | ATR_VFLAG_MODIFY | ATR_VFLAG_SEND;
 
     ptask->ti_qs.ti_status = TI_STATE_RUNNING;
     task_save(ptask);
