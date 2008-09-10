@@ -853,7 +853,7 @@ AC_ARG_WITH(server_name_file, [
                           the default server for clients to use. If this
                           is not an absolute pathname, it will be evaluated
                           relative to the server home directory that either
-                          defaults to /usr/spool/PBS or is set using
+                          defaults to /usr/spool/torque or is set using
                           the --with-server-home option to configure. If this
                           option is not specified, the default name for
                           this file will be set to "server_name".],
