@@ -86,6 +86,7 @@ extern     int             lockfds;
 
 extern int task_recov(job *pjob);
 extern char *path_spool;
+extern char  *path_jobs;
 
 int        checkpoint_system_type = CST_NONE;
 char    path_checkpoint[1024];
@@ -1212,6 +1213,7 @@ int blcr_restart_job(
   task *ptask;
   char  buf[1024];
   char  namebuf[MAXPATHLEN];
+  char  script_buf[MAXPATHLEN];
   char  **ap;
 
 
@@ -1291,6 +1293,18 @@ int blcr_restart_job(
       strcat(namebuf, JOB_CHECKPOINT_SUFFIX);
       }
 
+    /* Change the owner of the .SC to be the user */
+    strcpy(script_buf, path_jobs);
+    strcat(script_buf, pjob->ji_qs.ji_fileprefix);
+    strcat(script_buf, JOB_SCRIPT_SUFFIX);
+
+    if (chown(script_buf,
+          pjob->ji_qs.ji_un.ji_momt.ji_exuid,
+          pjob->ji_qs.ji_un.ji_momt.ji_exgid) == -1)
+      {
+      sprintf(log_buffer,"cannot change owner for file %s", script_buf);
+      log_err(errno, id, log_buffer);
+      }
 
 
     sprintf(sid, "%ld",
