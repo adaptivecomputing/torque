@@ -53,7 +53,7 @@ chdir $checkpointDir
   or logDie(1, "Unable to cd to checkpoint dir ($checkpointDir): $!\n")
   if $logLevel;
 
-my $cmd = "/usr/local/bin/cr_checkpoint";
+my $cmd = "cr_checkpoint";
 $cmd .= " --signal $signalNum" if $signalNum;
 $cmd .= " --tree $sessionId";
 $cmd .= " --file $checkpointName";

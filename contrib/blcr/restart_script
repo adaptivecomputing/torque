@@ -9,8 +9,8 @@
 use strict;
 use Sys::Syslog;
 
-# Customize the following variables
-my $cr_restart = "/usr/local/bin/cr_restart"; # Must have full path here
+# Customize the PATH to include location of cr_restart and qrerun
+$ENV{PATH} .= "/usr/local/bin:/opt/torque/bin";
 my $logLevel = 3; # 0 = none, 1 = fail, 2 = info, 3 = debug
 
 logPrint(2, "Invoked: $0 " . join(' ', @ARGV) . "\n");
@@ -41,7 +41,7 @@ chdir $checkpointDir
   or logDie(1, "Unable to cd to checkpoint dir ($checkpointDir): $!\n")
   if $logLevel;
 
-my $cmd = $cr_restart;
+my $cmd = "cr_restart";
 $cmd .= " $checkpointName";
 my $output = `$cmd 2>&1`;
 my $rc     = $? >> 8;
