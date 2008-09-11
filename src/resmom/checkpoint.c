@@ -524,16 +524,11 @@ int blcr_checkpoint_job(
   {
   char *id = "blcr_checkpoint_job";
 
-#if 0
   int   pid;
-#endif
   char  sid[20];
   char  *arg[20];
   char  buf[1024];
   char  **ap;
-  int rc;
-  int cmd_len;
-  char *cmd;
 
   assert(pjob != NULL);
   assert(pjob->ji_wattr[(int)JOB_ATR_checkpoint_dir].at_val.at_str != NULL);
@@ -562,7 +557,6 @@ int blcr_checkpoint_job(
     }
 
   /* launch the script and return success */
-#if 0
   pid = fork();
 
   if (pid < 0)
@@ -575,7 +569,6 @@ int blcr_checkpoint_job(
   if (pid > 0)
     {
     /* parent: pid = child's pid */
-#endif
     /* Checkpoint successful (assumed) */
 
     pjob->ji_qs.ji_svrflags |= JOB_SVFLG_CHECKPOINT_FILE;
@@ -597,11 +590,9 @@ int blcr_checkpoint_job(
       /* post_checkpoint() will verify checkpoint successfully completed and only purge 
          at that time */
       }
-#if 0
     }
   else if (pid == 0)
     {
-#endif
     /* child: execv the script */
 
     sprintf(sid,"%ld",
@@ -620,28 +611,18 @@ int blcr_checkpoint_job(
 
     strcpy(buf,"checkpoint args:");
 
-    cmd_len = 0;
-    for (ap = arg;*ap;ap++)
+    for (ap = arg; *ap; ap++)
       {
       strcat(buf, " ");
       strcat(buf, *ap);
-      cmd_len += strlen(*ap);
       }
-      
-    cmd_len += 7;
-    cmd = malloc(cmd_len * sizeof(char));
-    sprintf(cmd, "%s %s %s %s %s %s %s %s %s", arg[0], arg[1], arg[2], arg[3], arg[4], arg[5], arg[6],
-    arg[7], arg[8]);
-
 
     log_err(-1, id, buf);
 
-    rc = system(cmd);
-    free(cmd);
-#if 0
+    execv(arg[0], arg);
     }  /* END if (pid == 0) */
-#endif
-  return(WEXITSTATUS(rc));
+
+  return(PBSE_NONE);
   }  /* END blcr_checkpoint_job() */
 
 
