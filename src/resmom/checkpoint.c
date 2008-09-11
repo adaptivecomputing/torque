@@ -611,11 +611,12 @@ int blcr_checkpoint_job(
     arg[1] = sid;
     arg[2] = SET_ARG(pjob->ji_qs.ji_jobid);
     arg[3] = SET_ARG(pjob->ji_wattr[(int)JOB_ATR_euser].at_val.at_str);
-    arg[4] = SET_ARG(pjob->ji_wattr[(int)JOB_ATR_checkpoint_dir].at_val.at_str);
-    arg[5] = SET_ARG(pjob->ji_wattr[(int)JOB_ATR_checkpoint_name].at_val.at_str);
-    arg[6] = (abort) ? "15" /*abort*/ : "0" /*run/continue*/;
-    arg[7] = SET_ARG(csv_find_value(pjob->ji_wattr[(int)JOB_ATR_checkpoint].at_val.at_str, "depth"));
-    arg[8] = NULL;
+    arg[4] = SET_ARG(pjob->ji_wattr[(int)JOB_ATR_egroup].at_val.at_str);
+    arg[5] = SET_ARG(pjob->ji_wattr[(int)JOB_ATR_checkpoint_dir].at_val.at_str);
+    arg[6] = SET_ARG(pjob->ji_wattr[(int)JOB_ATR_checkpoint_name].at_val.at_str);
+    arg[7] = (abort) ? "15" /*abort*/ : "0" /*run/continue*/;
+    arg[8] = SET_ARG(csv_find_value(pjob->ji_wattr[(int)JOB_ATR_checkpoint].at_val.at_str, "depth"));
+    arg[9] = NULL;
 
     strcpy(buf,"checkpoint args:");
 
@@ -629,8 +630,8 @@ int blcr_checkpoint_job(
       
     cmd_len += 7;
     cmd = malloc(cmd_len * sizeof(char));
-    sprintf(cmd, "%s %s %s %s %s %s %s %s", arg[0], arg[1], arg[2], arg[3], arg[4], arg[5], arg[6],
-    arg[7]);
+    sprintf(cmd, "%s %s %s %s %s %s %s %s %s", arg[0], arg[1], arg[2], arg[3], arg[4], arg[5], arg[6],
+    arg[7], arg[8]);
 
 
     log_err(-1, id, buf);
@@ -1315,9 +1316,10 @@ int blcr_restart_job(
     arg[1] = sid;
     arg[2] = SET_ARG(pjob->ji_qs.ji_jobid);
     arg[3] = SET_ARG(pjob->ji_wattr[(int)JOB_ATR_euser].at_val.at_str);
-    arg[4] = SET_ARG(namebuf);
-    arg[5] = SET_ARG(pjob->ji_wattr[(int)JOB_ATR_checkpoint_name].at_val.at_str);
-    arg[6] = NULL;
+    arg[4] = SET_ARG(pjob->ji_wattr[(int)JOB_ATR_egroup].at_val.at_str);
+    arg[5] = SET_ARG(namebuf);
+    arg[6] = SET_ARG(pjob->ji_wattr[(int)JOB_ATR_checkpoint_name].at_val.at_str);
+    arg[7] = NULL;
 
     strcpy(buf, "restart args:");
 
