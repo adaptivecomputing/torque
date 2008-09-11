@@ -37,6 +37,9 @@ if (@ARGV == 8)
 else { logDie(1, $usage); }
 
 # Drop privileges to the job owner
+# If blcr is compiled with --enable-restore-ids, this script would need to
+# be modified to su the command instead of dropping privileges and running
+# it directly since it will require all supplemental groups to be set.
 my $gid = getgrnam($groupId);
 logDie(1, "Unable to resolve group id ($groupId)\n") unless defined $gid;
 $( = $gid;
