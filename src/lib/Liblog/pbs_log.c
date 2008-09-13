@@ -646,7 +646,6 @@ void log_roll(
       }
 
     sprintf(dest, "%s.%d",
-
             logpath,
             i + 1);
 
