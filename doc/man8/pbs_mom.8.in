@@ -155,15 +155,22 @@ Specifies the impact on jobs which were in execution when the mini-server
 shut down.  On any restart of MOM, the new mini-server will not be the
 parent of any running jobs, MOM has lost control of her offspring (not a new
 situation for a mother).
-With the -p option, Mom will allow the jobs to continue to run and
-monitor them indirectly via polling.
-The -p option is mutually exclusive with the -r option.
+With the -p option, MOM will allow the jobs to continue to run and
+monitor them indirectly via polling. This flag is redundant in that 
+this is the default behavior when starting the server.
+The -p option is mutually exclusive with the -r and -q options.
+.IP "-q" 16
+Specifies the impact on jobs which were in execution when the mini-server
+shut down.  With the -q option,
+MOM will allow the processes belonging to jobs to continue to run, but
+will not attempt to monitor them.
+The -q option is mutually exclusive with the -p and -q options.
 .IP "-r" 16
 Specifies the impact on jobs which were in execution when the mini-server
 shut down.  With the -r option,
 MOM will kill any processes belonging to jobs, mark the jobs as terminated,
 and notify the batch server which owns the job.
-The -r option is mutual exclusive with the -p option.
+The -r option is mutually exclusive with the -p and -q options.
 .IP
 Normally the mini-server is started from the system boot file
 without the 

@@ -294,7 +294,8 @@ enum PMOMStateEnum
 
 static enum PMOMStateEnum mom_run_state;
 
-static int recover = 0;
+static int recover = 2;
+static int recover_set = FALSE;
 
 static int      call_hup = 0;
 static int      nconfig;
@@ -3908,10 +3909,10 @@ static void catch_hup(
 
 
 /*
-** Do a restart of resmom.
-** Read the last seen config file and
-** Clean up and reinit the dependent code.
-*/
+ * Do a restart of resmom.
+ * Read the last seen config file and
+ * Clean up and reinit the dependent code.
+ */
 
 static void
 process_hup(void)
@@ -4169,7 +4170,6 @@ int rm_request(
 
   switch (command)
     {
-
     case RM_CMD_CLOSE:  /* no response to this */
 
       close_io(iochan);
@@ -4328,7 +4328,6 @@ int rm_request(
               }
 
             sprintf(output, "check_poll_time=%d",
-
                     CheckPollTime);
             }
           else if (!strncasecmp(name, "jobstartblocktime", strlen("jobstartblocktime")))
@@ -4354,7 +4353,6 @@ int rm_request(
               }
 
             sprintf(output, "loglevel=%d",
-
                     LOGLEVEL);
             }
           else if (!strncasecmp(name, "down_on_error", strlen("down_on_error")))
@@ -4413,13 +4411,10 @@ int rm_request(
           else if (!strncasecmp(name, "diag", strlen("diag")))
             {
             char tmpLine[1024];
+            char *ptr;
 
             int rc;
-
-
             time_t Now;
-
-            char *ptr;
 
             job *pjob;
 
@@ -5857,7 +5852,8 @@ void usage(
   fprintf(stderr, "  -l        \\\\ MOM Log Dir Path\n");
   fprintf(stderr, "  -L <PATH> \\\\ Logfile\n");
   fprintf(stderr, "  -M <INT>  \\\\ MOM Port\n");
-  fprintf(stderr, "  -p        \\\\ Recover Jobs\n");
+  fprintf(stderr, "  -p        \\\\ Recover Jobs (Default)\n");
+  fprintf(stderr, "  -q        \\\\ Do Not Recover Jobs\n");
   fprintf(stderr, "  -r        \\\\ Recover Jobs (2)\n");
   fprintf(stderr, "  -R <INT>  \\\\ RM Port\n");
   fprintf(stderr, "  -s        \\\\ Logfile Suffix\n");
@@ -6328,7 +6324,7 @@ void parse_command_line(
 
   errflg = 0;
 
-  while ((c = getopt(argc, argv, "a:c:C:d:DhH:l:L:M:prR:s:S:vx-:")) != -1)
+  while ((c = getopt(argc, argv, "a:c:C:d:DhH:l:L:M:pqrR:s:S:vx-:")) != -1)
     {
     switch (c)
       {
@@ -6456,19 +6452,43 @@ void parse_command_line(
 
       case 'p':
 
-        if (recover == 0)
+        if (!recover_set)
+          {
           recover = 2;
+          recover_set = TRUE;
+          }
         else
+          {
           errflg = 1;
+          }
 
         break;
 
       case 'r':
 
-        if (recover == 0)
+        if (!recover_set)
+          {
           recover = 1;
+          recover_set = TRUE;
+          }
         else
+          {
           errflg = 1;
+          }
+
+        break;
+
+      case 'q':
+
+        if (!recover_set)
+          {
+          recover = 0;
+          recover_set = TRUE;
+          }
+        else
+          {
+          errflg = 1;
+          }
 
         break;
 
