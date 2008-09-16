@@ -79,6 +79,7 @@
 #include "resource.h"
 #include "csv.h"
 #include "svrfunc.h"
+#include "pbs_ifl.h"
 
 extern int exiting_tasks;
 extern int LOGLEVEL;
@@ -98,6 +99,7 @@ char       checkpoint_run_exe_name[1024];
 int        default_checkpoint_interval = 10; /* minutes */
 
 extern char *mk_dirs A_((char *));
+extern int mom_open_socket_to_jobs_server A_((job *, char *, void (*) A_((int))));
 
 int create_missing_files(job *pjob);
 
@@ -594,6 +596,12 @@ int blcr_checkpoint_job(
   else if (pid == 0)
     {
     /* child: execv the script */
+    FILE *fs;
+    char *cmd;
+    int rc;
+    char err_buf[4098];
+    char line[1028];
+
 
     sprintf(sid,"%ld",
       pjob->ji_wattr[(int)JOB_ATR_session_id].at_val.at_long);
@@ -609,20 +617,103 @@ int blcr_checkpoint_job(
     arg[8] = SET_ARG(csv_find_value(pjob->ji_wattr[(int)JOB_ATR_checkpoint].at_val.at_str, "depth"));
     arg[9] = NULL;
 
+    /* XXX this should be fixed to make sure there is no chance of a buffer overrun */
     strcpy(buf,"checkpoint args:");
-
+    cmd = buf + strlen("checkpoint args: "); /* this extra space compared to above is intentional... */
     for (ap = arg; *ap; ap++)
       {
       strcat(buf, " ");
       strcat(buf, *ap);
       }
+    
+    strcat(buf, " 2>&1 1>/dev/null");
 
     log_err(-1, id, buf);
 
-    execv(arg[0], arg);
+    /* execv(arg[0], arg); */
+    /* change execv to popen so we can grab the stderr */
+
+    fs = popen(cmd, "r"); /* create a read pipe for the command */
+    rc = 0;
+    if (fs == NULL)
+      {
+      sprintf(buf, "error executing checkpoint script");
+      log_err(errno, id, buf);
+      rc = -1;
+      }
+    else
+      {
+      err_buf[0] = '\0';
+      while (fgets(line, 1024, fs) != NULL && 
+             strlen(err_buf) + strlen(line) + 1 < 4098)
+        {
+        strcat(err_buf, line);
+        }
+
+      rc = pclose(fs);
+      if (rc != -1)
+        {
+        rc = WEXITSTATUS(rc);
+        } 
+
+      if (rc != 0)
+        {
+        sprintf(buf, "checkpoint script returned value %d\n", rc);
+        log_err(-1, id, buf);
+        }
+      }
+
+    if (rc != 0)
+      {
+      /* checkpoint script returned a non-zero value.  We assume the checkpoint
+         failed */ 
+      int conn;
+      int err;
+      struct attrl at;
+       
+      /* open a connection to the server */
+      conn = pbs_connect(pjob->ji_wattr[(int)JOB_ATR_at_server].at_val.at_str);
+      at.resource = NULL;
+      at.value = err_buf;
+      at.name = ATTR_comment;
+      at.next = NULL;
+
+      err = pbs_alterjob(conn, pjob->ji_qs.ji_jobid, &at, NULL);
+
+      if (err != 0)
+        {
+         /* TODO: GB call log_err */
+        if (err == PBSE_UNKJOBID)
+          {
+          /* TODO: GB - can the job exit while waiting for the checkpoint 
+             script to exit?? call log_err */
+          pbs_disconnect(conn);
+          goto done;     
+          }
+        }
+
+      if (abort != 0)
+        {
+        /*we need to tell the server to release the hold (abort is 
+	  non-zero so that means we are trying to hold the job)*/
+       
+
+        /* send release job request, the job will still be running, 
+           so it shouldn't have any holds set so we send "uos" to clear
+           all holds  */
+        pbs_rlsjob(conn, pjob->ji_qs.ji_jobid, "uos", NULL);
+
+        } /* END if (abort != 0) */
+      
+      
+      pbs_disconnect(conn);
+
+      } /* END if (rc != 0) */
+done:
+    exit (rc);
     }  /* END if (pid == 0) */
 
-  return(PBSE_NONE);
+  return (PBSE_NONE);
   }  /* END blcr_checkpoint_job() */
 
 
@@ -1290,7 +1381,6 @@ int blcr_restart_job(
 
 
     sprintf(sid, "%ld",
-
             pjob->ji_wattr[(int)JOB_ATR_session_id].at_val.at_long);
 
     arg[0] = restart_script_name;
