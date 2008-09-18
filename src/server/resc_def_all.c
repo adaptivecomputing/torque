@@ -116,6 +116,7 @@ extern struct server server;
 static int decode_nodes A_((struct attribute *, char *, char *, char *));
 static int set_node_ct A_((resource *, attribute *, int actmode));
 static int set_tokens A_((struct attribute *attr, struct attribute *new, enum batch_op actmode));
+static int set_mppnodect A_((resource *, attribute *, int actmode));
 
 resource_def *svr_resc_def;
 
@@ -581,7 +582,7 @@ resource_def svr_resc_def_const[] =
       set_l,
       comp_l,
       free_null,
-      NULL_FUNC,
+      set_mppnodect,
       READ_WRITE,
       ATR_TYPE_LONG
   },
@@ -601,7 +602,7 @@ resource_def svr_resc_def_const[] =
       set_l,
       comp_l,
       free_null,
-      NULL_FUNC,
+      set_mppnodect,
       READ_WRITE,
       ATR_TYPE_LONG
   },
@@ -654,6 +655,16 @@ resource_def svr_resc_def_const[] =
       NULL_FUNC,
       READ_WRITE,
       ATR_TYPE_STR
+  },
+  { "mppnodect", /* node count estimate for queueing purposes */
+      decode_l, /* derived from mppwidth,mppdepth,mppnppn */
+      encode_l,
+      set_l,
+      comp_l,
+      free_null,
+      NULL_FUNC,
+      NO_USER_SET,
+      ATR_TYPE_LONG
   },
 
   /* support external resource manager extensions */
@@ -1058,4 +1069,72 @@ static int set_tokens(
   return(ret);
   }  /* END set_tokens() */
 
+/*
+ * set_mppnodect
+ *
+ */
 
+static int set_mppnodect(
+
+  resource *res,
+  attribute *attr,
+  int op)
+
+  {
+  int width;
+  int nppn;
+  int nodect;
+  resource_def *pdef;
+  resource *pent = NULL;
+
+  /* Go find the currently known width, nppn attributes */
+
+  width = 0;
+  nppn = 0;
+
+  if (((pdef = find_resc_def(svr_resc_def,"mppwidth",svr_resc_size))) &&
+    ((pent = find_resc_entry(attr,pdef))))
+    {
+    width = pent->rs_value.at_val.at_long;
+    }
+
+  if (((pdef = find_resc_def(svr_resc_def,"mppnppn",svr_resc_size))) &&
+    ((pent = find_resc_entry(attr,pdef))))
+    {
+    nppn = pent->rs_value.at_val.at_long;
+    }
+
+  /* Check for width less than a node */
+
+  if ((width) && (width < nppn))
+    {
+    nppn = width;
+    pent->rs_value.at_val.at_long = nppn;
+    pent->rs_value.at_flags |= ATR_VFLAG_SET;
+    }
+
+  /* Compute an estimate for the number of nodes needed */
+
+  nodect = width;
+  if (nppn>1)
+    {
+    nodect = (nodect + nppn - 1) / nppn;
+    }
+
+  /* Find or create the "mppnodect" attribute entry */
+
+  if (((pdef = find_resc_def(svr_resc_def,"mppnodect",svr_resc_size))) &&
+    (((pent = find_resc_entry(attr,pdef)) == NULL)) &&
+    (((pent = add_resource_entry(attr,pdef)) == 0)))
+    {
+    return (PBSE_SYSTEM);
+    }
+
+  /* Update the value */
+
+  pent->rs_value.at_val.at_long = nodect;
+  pent->rs_value.at_flags |= ATR_VFLAG_SET;
+
+  return (0);
+
+  } /* END set_mppnodect() */
