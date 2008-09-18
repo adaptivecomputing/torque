@@ -17,6 +17,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature
   b - fixed a bug where if attempt to send job to a pbs_mom failed due to 
       timeout, the job would indefinitely remain the in 'R' state
   b - qsub now properly interprets -W umask=0XXX as octal umask
+  e - allow $HOME to be specified for path
 
 2.3.3
   b - fixed bug where pbs_mom would sometimes not connect properly with 

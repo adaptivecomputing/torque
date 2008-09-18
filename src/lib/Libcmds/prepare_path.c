@@ -228,7 +228,7 @@ int prepare_path(
 
   strcat(path_out, ":");
 
-  if ((path_name[0] != '/') && (host_given == NULL))
+  if ((path_name[0] != '/') && (strcmp(path_name,"$HOME") != 0) && (host_given == NULL))
     {
     c = getenv("PWD");  /* PWD carries a name that will cause */
 
