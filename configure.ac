@@ -115,6 +115,19 @@ if test "x$enable_quickcommit" = "xyes" ; then
 	AC_DEFINE(QUICKCOMMIT, 1, [turns on the compilation of QUICKCOMMIT code])
 fi
 
+dnl
+dnl  ######################################################################
+dnl   Disable qsub keep(-k) override?
+dnl
+AC_ARG_ENABLE(qsub-keep-override, [
+  --disable-qsub-keep-override 
+                          do not allow the qsub -k flag to override -o -e.],
+[case "${enableval}" in
+  yes)  ;;
+  no)  QSUB_KEEP_NO_OVERRIDE=1;
+       AC_DEFINE(QSUB_KEEP_NO_OVERRIDE, 1, [turns on the QSUB_KEEP_NO_OVERRIDE flag]) ;;
+  *)   AC_MSG_ERROR(--enable-qsub-keep-override cannot take a value) ;;
+esac])dnl
 
 dnl
 dnl  ######################################################################

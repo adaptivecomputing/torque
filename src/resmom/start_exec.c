@@ -4964,10 +4964,12 @@ char *std_file_name(
   char  key;
   int   len;
   char *pd;
-  char *pt;
   char *suffix;
   char *jobpath = NULL;
+#ifdef QSUB_KEEP_NO_OVERRIDE
+  char *pt;
   char endpath[MAXPATHLEN + 1];
+#endif
 
 #if NO_SPOOL_OUTPUT == 0
   int   havehomespool = 0;
@@ -5075,6 +5077,7 @@ char *std_file_name(
       strcat(path, "/");
       }
 
+#ifdef QSUB_KEEP_NO_OVERRIDE
     /* don't do for checkpoint file names, only StdErr and StdOut */
 
     if (strcmp(suffix, JOB_CHECKPOINT_SUFFIX) != 0)
@@ -5107,6 +5110,7 @@ char *std_file_name(
           }
         }
       }
+#endif
 
     strcat(path, pd);            /* start with the job name */
 

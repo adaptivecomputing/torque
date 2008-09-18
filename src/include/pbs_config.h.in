@@ -398,6 +398,9 @@
 /* Define to the path of the qstat init file */
 #undef QSTATRC_PATH
 
+/* Define to disable Qsub keep(-k) override */
+#undef QSUB_KEEP_NO_OVERRIDE
+
 /* turns on the compilation of QUICKCOMMIT code */
 #undef QUICKCOMMIT
 
