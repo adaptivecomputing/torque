@@ -92,7 +92,9 @@
 #define PBS_CHECKPOINT_MIGRATE 0
 
 
-
+#ifdef ENABLE_CSA
+#include <job.h>
+#endif /* ENABLE_CSA */
 
 
 /* struct startjob_rtn = used to pass error/session/other info  */
@@ -102,6 +104,10 @@ struct startjob_rtn
   {
   int   sj_code; /* error code */
   pid_t sj_session; /* session */
+
+#ifdef ENABLE_CSA
+  jid_t sj_csajobid;
+#endif /* ENABLE_CSA */
   };
 
 extern int mom_set_limits A_((job *, int)); /* Set job's limits */

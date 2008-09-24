@@ -171,6 +171,9 @@
 #define ATTR_start_count "start_count"
 #define ATTR_checkpoint_dir  "checkpoint_dir"    /* user specified directory for checkpoint files */
 #define ATTR_checkpoint_name  "checkpoint_name"   /* user specified name of checkpoint file */
+#ifdef ENABLE_CSA
+#define ATTR_pagg         "pagg_id"
+#endif /* ENABLE_CSA */
 
 /* additional queue attributes names */
 

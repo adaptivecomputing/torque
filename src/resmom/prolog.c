@@ -123,6 +123,12 @@ static int   run_exit;
 extern int pe_input A_((char *));
 extern int TTmpDirName A_((job *, char *));
 extern void encode_used A_((job *, tlist_head *));
+#ifdef ENABLE_CSA
+extern void add_wkm_end(uint64_t, int64_t, char *);
+
+extern char             *path_epiloguser;
+#endif /* ENABLE_CSA */
+
 
 /* END extern prototypes */
 
@@ -374,6 +380,27 @@ int run_pelog(
         log_record(PBSEVENT_SYSTEM, 0, id, log_buffer);
         }
 
+#ifdef ENABLE_CSA
+      if ((which == PE_EPILOGUSER) && (!strcmp(pelog, path_epiloguser)))
+        {
+        /*
+          * Add a workload management end record
+        */
+        if (LOGLEVEL >= 8)
+          {
+          sprintf(log_buffer, "%s calling add_wkm_end from run_pelog() - no user epilog",
+                  pjob->ji_qs.ji_jobid);
+
+          log_err(-1, id, log_buffer);
+          }
+
+        add_wkm_end(pjob->ji_wattr[(int)JOB_ATR_pagg_id].at_val.at_ll,
+
+                    pjob->ji_qs.ji_un.ji_momt.ji_exitstat, pjob->ji_qs.ji_jobid);
+        }
+
+#endif /* ENABLE_CSA */
+
       return(0);
       }
 
@@ -490,6 +517,26 @@ int run_pelog(
       }    /* END while (wait(&waitst) < 0) */
 
     /* epilog/prolog child completed */
+#ifdef ENABLE_CSA
+    if ((which == PE_EPILOGUSER) && (!strcmp(pelog, path_epiloguser)))
+      {
+      /*
+       * Add a workload management end record
+      */
+      if (LOGLEVEL >= 8)
+        {
+        sprintf(log_buffer, "%s calling add_wkm_end from run_pelog() - after user epilog",
+                pjob->ji_qs.ji_jobid);
+
+        log_err(-1, id, log_buffer);
+        }
+
+      add_wkm_end(pjob->ji_wattr[(int)JOB_ATR_pagg_id].at_val.at_ll,
+
+                  pjob->ji_qs.ji_un.ji_momt.ji_exitstat, pjob->ji_qs.ji_jobid);
+      }
+
+#endif /* ENABLE_CSA */
 
     alarm(0);
 

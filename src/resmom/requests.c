@@ -1295,6 +1295,9 @@ const char *TJobAttr[] =
   "start_count",
   "chkptdir",
   "chkptname",
+#ifdef ENABLE_CSA
+  "pagg_id",
+#endif /* ENABLE_CSA */
   NULL
   };
 

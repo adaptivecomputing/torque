@@ -816,6 +816,21 @@ attribute_def job_attr_def[] =
     PARENT_TYPE_JOB
   },
 
+#ifdef ENABLE_CSA
+  /* JOB_ATR_pagg_id */
+  { ATTR_pagg,  /* "pagg_id" */
+    decode_ll,
+    encode_ll,
+    set_ll,
+    comp_ll,
+    free_null,
+    NULL_FUNC,
+    READ_ONLY | ATR_DFLAG_SvWR,
+    ATR_TYPE_LL,
+    PARENT_TYPE_JOB
+  },
+#endif /* ENABLE_CSA */
+
   /* Site defined attributes if any, see site_job_attr_*.h  */
 #include "site_job_attr_def.h"
 

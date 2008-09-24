@@ -27,6 +27,9 @@
 /* Define to enable Cray's CPA support */
 #undef ENABLE_CPA
 
+/* Define to enable Cray's CSA support */
+#undef ENABLE_CSA
+
 /* Define to enable unix domain sockets */
 #undef ENABLE_UNIX_SOCKETS
 

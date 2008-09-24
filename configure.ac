@@ -518,6 +518,24 @@ AM_CONDITIONAL([BUILDCPA], test "$buildcpa" = yes)
 LDFLAGS="$LDFLAGS_cpasave"
 
 
+dnl
+dnl enable Cray's CSA support
+dnl
+AC_MSG_CHECKING([whether to build Cray's CSA support])
+AC_ARG_ENABLE(csa,
+    [  --enable-csa            enable Cray's CSA support],
+    CSA=$enableval,CSA=no)   
+AC_MSG_RESULT($CSA)
+
+case "$CSA" in
+  yes) AC_DEFINE([ENABLE_CSA], 1, [Define to enable Cray's CSA support])
+      MOMLIBS="$MOMLIBS -ljob -lcsa"
+      ;;
+  no) : ;;
+  *) AC_MSG_ERROR([--enable-csa should be yes or no]) ;;
+esac
+
+
 
 dnl
 dnl arch-specific libs
