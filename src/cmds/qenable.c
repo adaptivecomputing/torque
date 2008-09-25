@@ -78,8 +78,7 @@
 */
 /*
  * qenable
- *  The qenable command directs that a destination should no longer accept
- *  batch jobs.
+ *  The qenable command directs that a destination should accept batch jobs.
  *
  * Synopsis:
  *  qenable destination ...
