@@ -347,10 +347,11 @@ int decode_arst_merge(
     return(decode_arst_direct(patr,val));
     }
 
+  memset(&new,0x0,sizeof(attribute));
+  memset(&tmp,0x0,sizeof(attribute));
+
   /* already have values, decode new into temp */
   /* then use set(incr) to add new to existing */
-
-  new.at_val.at_arst = NULL;
 
   /* convert value string into attribute array */
 
@@ -368,6 +369,7 @@ int decode_arst_merge(
 
   /* incr original patr value onto new patr */
 
+  tmp.at_flags |= ATR_VFLAG_SET;
   rc = set_arst(patr,&tmp,MERGE);
 
   free_arst(&tmp);
