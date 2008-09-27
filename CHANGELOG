@@ -1,7 +1,8 @@
 c - crash     b - bug fix    e - enhancement    f - new feature
 
 2.4.0
-  f - added a "-q" option to pbs_mom which does *not* perform the default -p behavior
+  f - added a "-q" option to pbs_mom which does *not* perform the default -p 
+      behavior
   e - made "pbs_mom -p" the default option when starting pbs_mom
   e - added -q to qalter to allow quicker response to modify requests
   f - added basic qhold support for job arrays
@@ -13,8 +14,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature
       change the default value of the job rerunnable atribute from true 
       to false
   e - added preliminary Comprehensive System Accounting (CSA) functionality for 
-      Linux. Configure option --enable-csa will cause workload management records
-      to be written if CSA is installed and wkmg is turned on.
+      Linux. Configure option --enable-csa will cause workload management 
+      records to be written if CSA is installed and wkmg is turned on.
 
 2.3.4
   b - fixed a bug where if attempt to send job to a pbs_mom failed due to 
