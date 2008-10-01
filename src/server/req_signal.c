@@ -118,6 +118,10 @@ extern void   set_old_nodes A_((job *));
  * req_signaljob - service the Signal Job Request
  *
  * This request sends (via MOM) a signal to a running job.
+ * MOM procceses in req_signaljob()
+ * MOM replies with either ack or reject
+ * Server gets response from MOM which invokes post_signal_req()
+ * Which then replies to the requester with either a reject or ack
  */
 
 void req_signaljob(
