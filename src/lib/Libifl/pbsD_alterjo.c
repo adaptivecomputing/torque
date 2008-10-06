@@ -176,7 +176,7 @@ int pbs_alterjob_async(
   char         *extend)  /* I */
 
   {
-  return(pbs_alterjob_asyncflag(c, jobid, attrib, NULL, TRUE));
+  return(pbs_alterjob_asyncflag(c, jobid, attrib, extend, TRUE));
   }  /* END pbs_alterjob_async() */
 
 int pbs_alterjob(
@@ -187,7 +187,7 @@ int pbs_alterjob(
   char         *extend)  /* I */
 
   {
-  return(pbs_alterjob_asyncflag(c, jobid, attrib, NULL, FALSE));
+  return(pbs_alterjob_asyncflag(c, jobid, attrib, extend, FALSE));
   }  /* END pbs_alterjob() */
 
 /* END pbsD_alterjo.c */
