@@ -577,9 +577,10 @@ int blcr_checkpoint_job(
 
     job_save(pjob,SAVEJOB_FULL); /* to save resources_used so far */
 
-    sprintf(log_buffer,"checkpointed to %s / %s",
+    sprintf(log_buffer,"checkpointed to %s / %s at %ld",
       pjob->ji_wattr[(int)JOB_ATR_checkpoint_dir].at_val.at_str,
-      pjob->ji_wattr[(int)JOB_ATR_checkpoint_name].at_val.at_str);
+      pjob->ji_wattr[(int)JOB_ATR_checkpoint_name].at_val.at_str,
+      pjob->ji_wattr[(int)JOB_ATR_checkpoint_time].at_val.at_long);
 
     log_record(
       PBSEVENT_JOB,
@@ -1017,6 +1018,9 @@ int start_checkpoint(
   char *id = "start_checkpoint";
   int       rc = PBSE_NONE;
   char      name_buffer[1024];
+  time_t time_now;
+
+  time_now = time((time_t *)0);
 
   switch (checkpoint_system_type)
 
@@ -1041,6 +1045,11 @@ int start_checkpoint(
       decode_str(&pjob->ji_wattr[(int)JOB_ATR_checkpoint_name], NULL, NULL, name_buffer);
 
       pjob->ji_wattr[(int)JOB_ATR_checkpoint_name].at_flags =
+        ATR_VFLAG_SET | ATR_VFLAG_MODIFY | ATR_VFLAG_SEND;
+
+      /* Set the checkpoint time so can determine if the checkpoint is recent */
+      pjob->ji_wattr[(int)JOB_ATR_checkpoint_time].at_val.at_long = (long)time_now;
+      pjob->ji_wattr[(int)JOB_ATR_checkpoint_time].at_flags =
         ATR_VFLAG_SET | ATR_VFLAG_MODIFY | ATR_VFLAG_SEND;
 
       /* For BLCR, there must be a directory name in the job attributes. */
