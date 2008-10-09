@@ -301,8 +301,7 @@ extern int MUStrNCat(char **BPtr, int *BSpace, char *Src);
 extern int MUSNPrintF(char **BPtr, int *BSpace, char *Format, ...);
 extern void tinsert(const u_long, tree **);
 
-char *TORQUE_JData = NULL;
-
+char TORQUE_JData[MMAX_LINE];
 
 void state_to_server A_((int, int));
 
@@ -978,7 +977,7 @@ void gen_jdata(
   int   *BSpace)
 
   {
-  if (TORQUE_JData != NULL)
+  if (TORQUE_JData[0] != '\0')
     {
     MUSNPrintF(BPtr,BSpace,"%s=%s",
       name,
@@ -987,6 +986,8 @@ void gen_jdata(
     (*BPtr)++; /* Need to start the next string after the null */
     (*BSpace)--;
     }
+
+  /* NOTE:  clear TORQUE_JData at next iteration */
 
   return;
   }
@@ -1300,7 +1301,7 @@ void mom_server_update_stat(
       log_record(PBSEVENT_SYSTEM,0,id,log_buffer);
       }
 
-    if (diswst(pms->SStream, cp) != DIS_SUCCESS)
+    if (diswst(pms->SStream,cp) != DIS_SUCCESS)
       {
       mom_server_stream_error(pms, id, "writing status string");
 
