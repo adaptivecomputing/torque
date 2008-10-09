@@ -162,44 +162,45 @@
 
 /* Global Data Items */
 
-char           *program_name;
-int             MOMIsLocked = 0;
-int             MOMIsPLocked = 0;
-int             ServerStatUpdateInterval = DEFAULT_SERVER_STAT_UPDATES;
-int             CheckPollTime            = CHECK_POLL_TIME;
+char  *program_name;
+int    MOMIsLocked = 0;
+int    MOMIsPLocked = 0;
+int    ServerStatUpdateInterval = DEFAULT_SERVER_STAT_UPDATES;
+int    CheckPollTime            = CHECK_POLL_TIME;
+int    ForceServerUpdate = 0;
 
-int         verbositylevel = 0;
-double  cputfactor = 1.00;
+int    verbositylevel = 0;
+double cputfactor = 1.00;
 unsigned int default_server_port = 0;
-int  exiting_tasks = 0;
+int    exiting_tasks = 0;
 float  ideal_load_val = -1.0;
-int  internal_state = 0;
-int             ignwalltime = 0;        /* by default, enable mom based walltime enforcement */
-int  lockfds = -1;
-time_t  loopcnt;  /* used for MD5 calc */
+int    internal_state = 0;
+int    ignwalltime = 0;        /* by default, enable mom based walltime enforcement */
+int    lockfds = -1;
+time_t loopcnt;  /* used for MD5 calc */
 float  max_load_val = -1.0;
-int  hostname_specified = 0;
-char  mom_host[PBS_MAXHOSTNAME + 1];
-char            TMOMRejectConn[1024];   /* most recent rejected connection */
-char  mom_short_name[PBS_MAXHOSTNAME + 1];
-int  num_var_env;
+int    hostname_specified = 0;
+char   mom_host[PBS_MAXHOSTNAME + 1];
+char   TMOMRejectConn[1024];   /* most recent rejected connection */
+char   mom_short_name[PBS_MAXHOSTNAME + 1];
+int    num_var_env;
 char        *path_epilog;
-char           *path_epilogp;
-char           *path_epiloguser;
-char           *path_epiloguserp;
-char           *path_epilogpdel;
+char        *path_epilogp;
+char        *path_epiloguser;
+char        *path_epiloguserp;
+char        *path_epilogpdel;
 char        *path_jobs;
 char        *path_prolog;
-char           *path_prologp;
-char           *path_prologuser;
-char           *path_prologuserp;
+char        *path_prologp;
+char        *path_prologuser;
+char        *path_prologuserp;
 char        *path_spool;
 char        *path_undeliv;
 char        *path_aux;
 char        *path_server_name;
-char           *path_home = PBS_SERVER_HOME;
-char           *mom_home;
-extern char    *msg_daemonname;          /* for logs     */
+char        *path_home = PBS_SERVER_HOME;
+char        *mom_home;
+extern char *msg_daemonname;          /* for logs     */
 extern int pbs_errno;
 gid_t  pbsgroup;
 unsigned int pbs_mom_port = 0;
@@ -303,7 +304,6 @@ static char    *path_log;
 
 struct config_list
   {
-
   struct config       c;
 
   struct config_list *c_link;
@@ -362,10 +362,8 @@ static struct specials
   {
   char            *name;
   u_long(*handler)();
-  } special[] =
-
-  {
-    { "alloc_par_cmd",       setallocparcmd },
+  } special[] = {
+  { "alloc_par_cmd",       setallocparcmd },
   { "auto_ideal_load",     setautoidealload },
   { "auto_max_load",       setautomaxload },
   { "xauthpath",           setxauthpath },
@@ -407,10 +405,10 @@ static struct specials
   { "nospool_dir_list",    setnospooldirlist },
   { "mom_host",            setmomhost },
   { "remote_reconfig",     setrreconfig },
-  { "job_output_file_umask",           setumask },
+  { "job_output_file_umask", setumask },
   { "preexec",             setpreexec },
   { "source_login_batch",  setsourceloginbatch },
-  { "source_login_interactive",  setsourcelogininteractive },
+  { "source_login_interactive", setsourcelogininteractive },
   { NULL,                  NULL }
   };
 
@@ -429,9 +427,7 @@ static char *reqvarattr(struct rm_attribute *);
 
 struct config common_config[] =
   {
-    { "arch",      {arch}
-    },             /* machine architecture           */
-
+  { "arch",      {arch} },             /* machine architecture           */
   { "opsys",     {opsys} },            /* operating system               */
   { "uname",     {requname} },         /* user name     ???              */
   { "validuser", {validuser} },        /* valid user    ???              */
@@ -630,7 +626,7 @@ int MUSNPrintF(
 
   va_start(Args, Format);
 
-  len = vsnprintf(*BPtr, *BSpace, Format, Args);
+  len = vsnprintf(*BPtr,*BSpace,Format,Args);
 
   va_end(Args);
 
@@ -782,7 +778,7 @@ char *nullproc(
   {
   char *id = "nullproc";
 
-  log_err(-1, id, "should not be called");
+  log_err(-1,id,"should not be called");
 
   return(NULL);
   }  /* END nullproc() */
@@ -7644,8 +7640,7 @@ kill_all_running_jobs(void)
  * @see main() - parent
  */
 
-void
-main_loop(void)
+void main_loop(void)
 
   {
   static char   id[] = "main_loop";
@@ -7702,7 +7697,8 @@ main_loop(void)
 
 #endif
       {
-      if (time_now >= (LastServerUpdateTime + ServerStatUpdateInterval))
+      if ((time_now >= (LastServerUpdateTime + ServerStatUpdateInterval)) || 
+          (ForceServerUpdate == TRUE))
         {
         /* Update the server on the status of this mom. */
 
@@ -7712,6 +7708,8 @@ main_loop(void)
         mom_server_all_update_stat();
 
         LastServerUpdateTime = time_now;
+
+        ForceServerUpdate = FALSE;
         }
 
       /* if needed, update server with my state change */
