@@ -32,7 +32,7 @@
  */
 
 #ifndef lint
-static char copyright[] =
+static char const copyright[] =
   "@(#) Copyright (c) 1983, 1990, 1992, 1993\n\
   The Regents of the University of California.  All rights reserved.\n";
 #endif /* not lint */
@@ -221,14 +221,16 @@ int main(
   if (fflag)     /* Follow "protocol", send data. */
     {
     (void)response();
-    (void)setuid(userid);
-    source(argc, argv);
+		if (setuid(userid) != 0)
+			err(1, "setuid(%ld) failed", (long)userid);
+ 		source(argc, argv);
     exit(errs);
     }
 
   if (tflag)     /* Receive data. */
     {
-    (void)setuid(userid);
+		if (setuid(userid) != 0)
+			err(1, "setuid(%ld) failed", (long)userid);
     sink(argc, argv);
     exit(errs);
     }
@@ -384,7 +386,8 @@ toremote(char *targ, int argc, char *argv[])
 
         (void)free(bp);
 
-        (void)setuid(userid);
+				if (setuid(userid) != 0)
+  				err(1, "setuid(%ld) failed",(long)userid);
         }
 
       source(1, argv + i);
@@ -463,7 +466,8 @@ tolocal(int argc, char *argv[])
       continue;
       }
 
-    (void)seteuid(userid);
+		if (seteuid(userid) != 0)
+			err(1, "seteuid(%ld) failed", (long)userid);
     sink(1, argv + argc - 1);
     (void)seteuid(0);
     (void)close(rem);
@@ -539,7 +543,7 @@ syserr:
       /* Make it compatible with possible future versions expecting microseconds */
 
       sprintf(buf, "T%ld 0 %ld 0\n",
-              stb.st_mtime,
+              (long)stb.st_mtime,
               (long)stb.st_atime);
 
       write(rem, buf, strlen(buf));

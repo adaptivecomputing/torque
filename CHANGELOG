@@ -23,6 +23,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature
   b - qsub now properly interprets -W umask=0XXX as octal umask
   e - allow $HOME to be specified for path
   e - added --disable-qsub-keep-override to allow the qsub -k flag to not override -o -e.
+  e - updated with security patches for setuid, setgid, setgroups
 
 2.3.3
   b - fixed bug where pbs_mom would sometimes not connect properly with 

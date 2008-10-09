@@ -6612,8 +6612,17 @@ setup_program_environment(void)
 
   c = getgid();
 
-  setgroups(1, (gid_t *)&c); /* secure suppl. groups */
+  /* secure suppl. groups */
+  if (setgroups(1,(gid_t *)&c) != 0)
+    {
+    sprintf(log_buffer, "Unable to drop secondary groups. Some MAC framework is active?\n");
+    log_err(errno, id, log_buffer);
+    sprintf(log_buffer, "setgroups(group = %lu) failed: %s\n",
+      (unsigned long)c, strerror(errno));
+    log_err(errno, id, log_buffer);
 
+    return(1);
+    }
 
 #ifndef DEBUG
 #ifdef _CRAY

@@ -449,9 +449,13 @@ static pid_t fork_to_user(
 
   if (SetUID == TRUE)
     {
-    setgroups(ngroup, (gid_t *)groups);
+    if (setgroups(ngroup,(gid_t *)groups) != 0 ||
+        setgid(usergid) != 0)
+      {
+      /* unable to set user groups */
 
-    setgid(usergid);
+      return(-PBSE_BADGRP);
+      }
 
     if (setuid(useruid) == -1)
       {
@@ -2346,6 +2350,8 @@ static int del_files(
   char   id[] = "del_files";
 
   int   AsUser = FALSE;
+  int		UID0 = TRUE;
+  int		EUID0 = TRUE;
 
   struct rqfpair  *pair;
   int   rc = 0;
@@ -2366,7 +2372,15 @@ static int del_files(
   wordexp_t pathexp;
 #endif
 
-  /* NOTE:  may be called as root in TORQUE home dir or as user in user homedir */
+  /*
+   * NOTE:  may be called as root in TORQUE home dir
+   * or as user in user homedir.  Let's determine if we will
+   * be permitted to run setXid()/setgroup calls.
+   */
+  if (getuid() != 0)
+    UID0 = FALSE;
+  if (geteuid() != 0)
+    EUID0 = FALSE;
 
   /*
    * Build up path of file using local name only, then unlink it.
@@ -2401,12 +2415,49 @@ static int del_files(
       }
     else if (AsUser == FALSE)
       {
-      /* NOTE:  if routine called as user, all of the following may silently fail */
+      if (setgroups(ngroup,(gid_t *)groups) != 0 && UID0 == TRUE)
+        {
+        snprintf(log_buffer,sizeof(log_buffer),
+          "%s: setgroups() for UID = %lu failed: %s",
+          id,
+          (unsigned long)useruid,
+          strerror(errno));
 
-      setgroups(ngroup, (gid_t *)groups);
+        add_bad_list(pbadfile,log_buffer,1);
+ 
+        return(-1);
+        }
+      
+      if (setgid(usergid) != 0 && EUID0 == TRUE)
+        {
+        snprintf(log_buffer,sizeof(log_buffer),
+          "%s: setgid(%lu) for UID = %lu failed: %s",
+          id,
+          (unsigned long)usergid,
+          (unsigned long)useruid,
+          strerror(errno));
 
-      setgid(usergid);
-      setuid(useruid);   /* run as the user */
+        add_bad_list(pbadfile,log_buffer,1);
+
+        return(-1);
+	      }
+
+      /* run as the user */
+      if (setuid(useruid) != 0 && EUID0 == TRUE)
+        {
+        snprintf(log_buffer,sizeof(log_buffer),
+          "%s: setuid(%lu) failed: %s",
+          id,
+          (unsigned long)useruid,
+          strerror(errno));
+
+        add_bad_list(pbadfile,log_buffer,1);
+
+        return(-1);
+	      }
+	      
+      EUID0 = FALSE;
+      UID0 = FALSE;
 
       if (HDir != NULL)
         {

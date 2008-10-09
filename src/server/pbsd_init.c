@@ -325,7 +325,17 @@ int pbsd_init(
 
   i = getgid();
 
-  setgroups(1, (gid_t *)&i); /* secure suppl. groups */
+  /* secure suppl. groups */
+  if (setgroups(1,(gid_t *)&i) != 0)
+    {
+    sprintf(log_buffer, "Unable to drop secondary groups. Some MAC framework is active?\n");
+    log_err(errno, id, log_buffer);
+    sprintf(log_buffer, "setgroups(group = %lu) failed: %s\n",
+      (unsigned long)i, strerror(errno));
+    log_err(errno, id, log_buffer);
+
+    return(-1);
+    }
 
 #ifndef DEBUG
 #ifdef _CRAY

@@ -569,13 +569,43 @@ int run_pelog(
 
     if ((which == PE_PROLOGUSER) || (which == PE_EPILOGUSER))
       {
-      setgroups(
-        pjob->ji_grpcache->gc_ngroup,
-        (gid_t *)pjob->ji_grpcache->gc_groups);
+      if (setgroups(pjob->ji_grpcache->gc_ngroup,
+        (gid_t *)pjob->ji_grpcache->gc_groups) != 0)
+        {
+        snprintf(log_buffer,sizeof(log_buffer),
+          "setgroups() for UID = %lu failed: %s\n",
+          (unsigned long)pjob->ji_qs.ji_un.ji_momt.ji_exuid,
+          strerror(errno));
 
-      setgid(pjob->ji_qs.ji_un.ji_momt.ji_exgid);
+        log_err(errno, id, log_buffer);
 
-      setuid(pjob->ji_qs.ji_un.ji_momt.ji_exuid);
+        exit(255);
+        }
+
+      if (setgid(pjob->ji_qs.ji_un.ji_momt.ji_exgid) != 0)
+        {
+        snprintf(log_buffer,sizeof(log_buffer),
+          "setgid(%lu) for UID = %lu failed: %s\n",
+          (unsigned long)pjob->ji_qs.ji_un.ji_momt.ji_exgid,
+          (unsigned long)pjob->ji_qs.ji_un.ji_momt.ji_exuid,
+          strerror(errno));
+
+        log_err(errno, id, log_buffer);
+
+        exit(255);
+        }
+
+      if (setuid(pjob->ji_qs.ji_un.ji_momt.ji_exuid) != 0)
+        {
+        snprintf(log_buffer,sizeof(log_buffer),
+          "setuid(%lu) failed: %s\n",
+          (unsigned long)pjob->ji_qs.ji_un.ji_momt.ji_exuid,
+          strerror(errno));
+
+        log_err(errno, id, log_buffer);
+
+        exit(255);
+        }
       }
 
     if (fd_input != 0)
