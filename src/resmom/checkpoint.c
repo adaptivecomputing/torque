@@ -1040,7 +1040,7 @@ int start_checkpoint(
 
       sprintf(name_buffer,"ckpt.%s.%d", 
         pjob->ji_qs.ji_jobid, 
-        (int)time(0));
+        (int)time_now);
 
       decode_str(&pjob->ji_wattr[(int)JOB_ATR_checkpoint_name], NULL, NULL, name_buffer);
 
