@@ -147,7 +147,14 @@ int job_qs_upgrade(
     return (-1);
     }
 
-  if (version == 0x00020200)
+  if (version >= PBS_QS_VERSION)
+    {
+    sprintf(log_buffer, "job struct appears to be from an unknown "
+            "version of TORQUE and can not be converted");
+    log_err(-1, "job_qs_upgrade", log_buffer);
+    return (-1);
+    }
+  else if (version == 0x00020200)
     {
     return  upgrade_2_2_X(pj, fds);
     }
@@ -160,7 +167,7 @@ int job_qs_upgrade(
   }
 
 
-/* upgrader functions - these upgrde from a specific version of the job ji_qs struct
+/* upgrader functions - these upgrade from a specific version of the job ji_qs struct
    to the _current_ version of the struct.  If the current version changes, these
    need to be updated to reflect those changes */
 

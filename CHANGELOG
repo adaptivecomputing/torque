@@ -25,7 +25,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature
       timeout, the job would indefinitely remain the in 'R' state
   b - qsub now properly interprets -W umask=0XXX as octal umask
   e - allow $HOME to be specified for path
-  e - added --disable-qsub-keep-override to allow the qsub -k flag to not override -o -e.
+  e - added --disable-qsub-keep-override to allow the qsub -k flag to not 
+      override -o -e.
   e - updated with security patches for setuid, setgid, setgroups
 
 2.3.3
@@ -126,6 +127,10 @@ c - crash     b - bug fix    e - enhancement    f - new feature
   b - fix qdel of entire job arrays for non operator/managers
   b - fix problem where job array .AR files are not saved to disk
   b - fixed problem with tracking job memory usage on OS X
+  b - fix memory leak in server and mom with MoveJobFile requests
+      (backported from 2.3.1)
+  b - pbs_server doesn't try to "upgrade" .JB files if they have a newer 
+      version of the job_qs struct
 
 2.2.1
   b - fix a bug where dependent jobs get put on hold when the previous job has
