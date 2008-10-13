@@ -16,6 +16,9 @@ c - crash     b - bug fix    e - enhancement    f - new feature
   e - added preliminary Comprehensive System Accounting (CSA) functionality for 
       Linux. Configure option --enable-csa will cause workload management 
       records to be written if CSA is installed and wkmg is turned on.
+  b - changes to allow post_checkpoint() to run when checkpoint is completed,
+      not when it has just started. Also corrected issue when checkpoint fails
+      while trying to put job on hold.
 
 2.3.4
   b - fixed a bug where if attempt to send job to a pbs_mom failed due to 

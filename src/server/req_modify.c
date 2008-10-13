@@ -241,6 +241,21 @@ void req_modifyjob(
     preq->rq_noreply = TRUE; /* set for no more replies */
     }
 
+   if ((preq->rq_extend != NULL) &&
+       (strcmp(preq->rq_extend,CHECKPOINTED) == 0) &&
+       (pjob->ji_qs.ji_substate == JOB_SUBSTATE_RUNNING))
+     {
+     sprintf(log_buffer,"setting jobsubstate for %s to RERUN\n", pjob->ji_qs.ji_jobid);
+
+     pjob->ji_qs.ji_substate = JOB_SUBSTATE_RERUN;
+     job_save(pjob, SAVEJOB_QUICK);
+     LOG_EVENT(PBSEVENT_JOB, PBS_EVENTCLASS_JOB,
+                pjob->ji_qs.ji_jobid, log_buffer);
+     reply_ack(preq);
+     return;
+
+     }
+
   plist = (svrattrl *)GET_NEXT(preq->rq_ind.rq_modify.rq_attr);
 
   if (plist == NULL)

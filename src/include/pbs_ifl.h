@@ -295,6 +295,7 @@
 #define DELPURGE  "delpurge="   /* see qdel.c */
 #define EXECQUEONLY  "exec_queue_only"   /* see req_stat.c */
 #define RERUNFORCE "force"
+#define CHECKPOINTED "checkpoint_success"
 
 #define USER_HOLD "u"
 #define OTHER_HOLD "o"

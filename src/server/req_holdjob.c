@@ -221,7 +221,6 @@ void req_holdjob(
       }
     else
       {
-      pjob->ji_qs.ji_substate = JOB_SUBSTATE_RERUN;
       pjob->ji_qs.ji_svrflags |=
         JOB_SVFLG_HASRUN | JOB_SVFLG_CHECKPOINT_FILE;
       job_save(pjob, SAVEJOB_QUICK);
