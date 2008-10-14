@@ -540,6 +540,7 @@ int blcr_checkpoint_job(
   int conn;
   int err;
   struct attrl at;
+  time_t epoch;
 
   assert(pjob != NULL);
   assert(pjob->ji_wattr[(int)JOB_ATR_checkpoint_dir].at_val.at_str != NULL);
@@ -709,7 +710,12 @@ int blcr_checkpoint_job(
       /* open a connection to the server */
       conn = pbs_connect(pjob->ji_wattr[(int)JOB_ATR_at_server].at_val.at_str);
       at.resource = NULL;
-      sprintf(err_buf,"Checkpoint Completed");
+      epoch = (time_t)pjob->ji_wattr[(int)JOB_ATR_checkpoint_time].at_val.at_long;
+      sprintf(err_buf,"Job %s was checkpointed and terminated to %s / %s at %s",
+        pjob->ji_qs.ji_jobid,
+        pjob->ji_wattr[(int)JOB_ATR_checkpoint_dir].at_val.at_str,
+        pjob->ji_wattr[(int)JOB_ATR_checkpoint_name].at_val.at_str,
+        ctime(&epoch));
       at.value = err_buf;
       at.name = ATTR_comment;
       at.next = NULL;

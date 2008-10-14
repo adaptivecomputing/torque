@@ -251,9 +251,6 @@ void req_modifyjob(
      job_save(pjob, SAVEJOB_QUICK);
      LOG_EVENT(PBSEVENT_JOB, PBS_EVENTCLASS_JOB,
                 pjob->ji_qs.ji_jobid, log_buffer);
-     reply_ack(preq);
-     return;
-
      }
 
   plist = (svrattrl *)GET_NEXT(preq->rq_ind.rq_modify.rq_attr);
