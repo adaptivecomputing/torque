@@ -577,9 +577,10 @@ int blcr_checkpoint_job(
 
   job_save(pjob,SAVEJOB_FULL); /* to save resources_used so far */
 
-  sprintf(log_buffer,"checkpointing to %s / %s",
+  sprintf(log_buffer,"checkpointed to %s / %s at %ld",
     pjob->ji_wattr[(int)JOB_ATR_checkpoint_dir].at_val.at_str,
-    pjob->ji_wattr[(int)JOB_ATR_checkpoint_name].at_val.at_str);
+    pjob->ji_wattr[(int)JOB_ATR_checkpoint_name].at_val.at_str,
+    pjob->ji_wattr[(int)JOB_ATR_checkpoint_time].at_val.at_long);
 
   log_record(
     PBSEVENT_JOB,
@@ -711,7 +712,7 @@ int blcr_checkpoint_job(
       conn = pbs_connect(pjob->ji_wattr[(int)JOB_ATR_at_server].at_val.at_str);
       at.resource = NULL;
       epoch = (time_t)pjob->ji_wattr[(int)JOB_ATR_checkpoint_time].at_val.at_long;
-      sprintf(err_buf,"Job %s was checkpointed and terminated to %s / %s at %s",
+      sprintf(err_buf,"Job %s was checkpointed and terminated to %s/%s at %s",
         pjob->ji_qs.ji_jobid,
         pjob->ji_wattr[(int)JOB_ATR_checkpoint_dir].at_val.at_str,
         pjob->ji_wattr[(int)JOB_ATR_checkpoint_name].at_val.at_str,
