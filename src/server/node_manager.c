@@ -986,6 +986,124 @@ void sync_node_jobs(
 
 
 
+/*
+ * update_job_data() - update job with values passed through "jobdata"
+ *
+ * This function is called every time we get a "jobdata" status from the pbs_mom.
+ *
+ * @see is_stat_get()
+ */
+
+void update_job_data(
+
+  struct pbsnode *np,            /* I */
+  char           *jobstring_in)  /* I (changed attributes sent by mom) */
+
+  {
+  char      *id = "update_job_data";
+
+  char      *jobdata;
+  char      *jobidstr;
+  char      *attr_name;
+  char      *attr_value;
+  
+
+  struct job *pjob;
+
+  if ((jobstring_in == NULL) || (!isdigit(*jobstring_in)))
+    {
+    /* NO-OP */
+
+    return;
+    }
+
+  if (np->nd_state & INUSE_DELETED)
+    {
+    /* should never happen */
+
+    return;
+    }
+
+  /* FORMAT <JOBID>:<atrtributename=value>,<atrtributename=value>... */
+
+  jobdata = strdup(jobstring_in);
+
+  jobidstr = strtok(jobdata, ":");
+
+  if ((jobidstr != NULL) && isdigit(*jobidstr))
+    {
+    if (strstr(jobidstr, server_name) != NULL)
+      {
+      pjob = find_job_by_node(np, jobidstr);
+      if (pjob == NULL)
+        {
+        pjob = find_job(jobidstr);
+        }
+
+      if (pjob != NULL)
+        {
+        int bad;
+
+        svrattrl tA;
+        
+        /* job exists, so get the attributes and update them */
+
+        attr_name = strtok(NULL, "=");
+        
+        while (attr_name != NULL)
+          {
+          attr_value = strtok(NULL, ",");
+          
+          if (LOGLEVEL >= 9)
+            {
+            sprintf(log_buffer, "Mom sent changed attribute %s value %s for job %s",
+              attr_name,
+              attr_value,
+              pjob->ji_qs.ji_jobid);
+              
+            log_event(
+              PBSEVENT_JOB,
+              PBS_EVENTCLASS_JOB,
+              pjob->ji_qs.ji_jobid,
+              log_buffer);  
+            }
+          
+          memset(&tA, 0, sizeof(tA));
+
+          tA.al_name  = attr_name;
+          tA.al_resc  = "";
+          tA.al_value = attr_value;
+          tA.al_op    = SET;
+
+          modify_job_attr(
+            pjob,
+            &tA,                              /* I: ATTR_sched_hint - svrattrl */
+            ATR_DFLAG_MGWR | ATR_DFLAG_SvWR,
+            &bad);
+
+          attr_name = strtok(NULL, "=");
+          }
+        }
+      else if (pjob == NULL)
+        {
+        /* job is reported by mom but server has no record of job */
+
+        sprintf(log_buffer, "stray job %s reported on %s",
+                jobidstr,
+                np->nd_name);
+
+        log_err(-1, id, log_buffer);
+
+        }
+      }
+    }
+
+  free(jobdata);
+  }  /* END update_job_data() */
+
+
+
+
 
 /*
  * send_cluster_addrs - sends IS_CLUSTER_ADDRS messages to a set of nodes
@@ -1276,6 +1394,13 @@ int is_stat_get(
         {
         msg_error = 1;
         }
+      }
+    else if (server.sv_attr[(int)SRV_ATR_MomJobSync].at_val.at_long &&
+             !strncmp(ret_info, "jobdata=", 8))
+      {
+      /* update job attributes based on what the MOM gives us */
+      
+      update_job_data(np, ret_info + strlen("jobdata="));
       }
     else if (server.sv_attr[(int)SRV_ATR_MomJobSync].at_val.at_long &&
              !strncmp(ret_info, "jobs=", 5))

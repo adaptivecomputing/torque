@@ -986,9 +986,6 @@ void gen_jdata(
     (*BPtr)++; /* Need to start the next string after the null */
     (*BSpace)--;
     }
-
-  /* NOTE:  clear TORQUE_JData at next iteration */
-
   return;
   }
 
@@ -1235,6 +1232,7 @@ void generate_server_status(
     alarm(0);
     }  /* END for (i) */
 
+  TORQUE_JData[0] = '\0';
   return;
   }  /* END generate_server_status */
 

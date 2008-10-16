@@ -11,7 +11,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature
   e - renamed job.h to pbs_job.h
   b - fix logic error in checkpoint interval test
   f - add RERUNNABLEBYDEFAULT parameter to torque.cfg. allows admin to 
-      change the default value of the job rerunnable atribute from true 
+      change the default value of the job rerunnable attribute from true 
       to false
   e - added preliminary Comprehensive System Accounting (CSA) functionality for 
       Linux. Configure option --enable-csa will cause workload management 
@@ -19,6 +19,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature
   b - changes to allow post_checkpoint() to run when checkpoint is completed,
       not when it has just started. Also corrected issue when checkpoint fails
       while trying to put job on hold.
+  b - update server immediately with changed checkpoint name and time attributes
+      after successful checkpoint.
 
 2.3.4
   b - fixed a bug where if attempt to send job to a pbs_mom failed due to 

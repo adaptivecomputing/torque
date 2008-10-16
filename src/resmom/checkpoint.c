@@ -84,6 +84,8 @@
 extern int exiting_tasks;
 extern int LOGLEVEL;
 extern     int             lockfds;
+extern int ForceServerUpdate;
+extern char TORQUE_JData[];
 
 extern int task_recov(job *pjob);
 extern char *path_spool;
@@ -927,6 +929,7 @@ fail:
 
 
 
+
 /*
  * post_checkpoint - post processor for start_checkpoint()
  *
@@ -962,6 +965,21 @@ void post_checkpoint(
   if (ev == 0)
     {
     pjob->ji_qs.ji_svrflags |= JOB_SVFLG_CHECKPOINT_FILE;
+    
+    /*
+     * We need to get checkpoint information to the server in a more timely
+     * manner.  So we put the changed checkpoint attributes into TORQUE_JData 
+     * and set ForceServerUpdate to TRUE.
+     */
+
+    sprintf(TORQUE_JData,"%s:%s=%s,%s=%ld",
+      pjob->ji_qs.ji_jobid,
+      job_attr_def[(int)JOB_ATR_checkpoint_name].at_name,
+      pjob->ji_wattr[(int)JOB_ATR_checkpoint_name].at_val.at_str,
+      job_attr_def[(int)JOB_ATR_checkpoint_time].at_name,
+      pjob->ji_wattr[(int)JOB_ATR_checkpoint_time].at_val.at_long);
+      
+    ForceServerUpdate = TRUE;
 
     return;
     }

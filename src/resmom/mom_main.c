@@ -7711,6 +7711,8 @@ void main_loop(void)
       if ((time_now >= (LastServerUpdateTime + ServerStatUpdateInterval)) || 
           (ForceServerUpdate == TRUE))
         {
+        ForceServerUpdate = FALSE;
+
         /* Update the server on the status of this mom. */
 
         if (PBSNodeCheckInterval > 0)
@@ -7719,8 +7721,6 @@ void main_loop(void)
         mom_server_all_update_stat();
 
         LastServerUpdateTime = time_now;
-
-        ForceServerUpdate = FALSE;
         }
 
       /* if needed, update server with my state change */
