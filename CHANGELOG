@@ -30,6 +30,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature
   e - added --disable-qsub-keep-override to allow the qsub -k flag to not 
       override -o -e.
   e - updated with security patches for setuid, setgid, setgroups
+  b - fixed correct_ct() in svr_jobfunc.c so we don't crash if we hit COMPLETED job
 
 2.3.3
   b - fixed bug where pbs_mom would sometimes not connect properly with 

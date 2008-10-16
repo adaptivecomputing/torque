@@ -2067,7 +2067,15 @@ static void correct_ct(
     (pjob->ji_qhdr)->qu_njstate[pjob->ji_qs.ji_state]++;
 
     if (pjob->ji_qs.ji_state == JOB_STATE_COMPLETE)
-      pque->qu_numcompleted++;
+      {
+      pque = pjob->ji_qhdr;
+      if (pque == NULL)
+        {
+        pque = find_queuebyname(pjob->ji_qs.ji_queue);
+        }
+      if (pque != NULL)
+        pque->qu_numcompleted++;
+      }
 
     }  /* END for (pjob) */
 
