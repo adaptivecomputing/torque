@@ -11,7 +11,7 @@ use strict;
 use Sys::Syslog;
 
 # Customize the PATH to include location of cr_checkpoint and qrls
-$ENV{PATH} .= "/usr/local/bin:/opt/torque/bin";
+$ENV{PATH} .= ":/usr/local/bin:/opt/torque/bin";
 my $logLevel = 3; # 0 = none, 1 = fail, 2 = info, 3 = debug
 
 logPrint(2, "Invoked: $0 " . join(' ', @ARGV) . "\n");
