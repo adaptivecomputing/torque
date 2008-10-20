@@ -1944,7 +1944,7 @@ encode_depend(
         !(pdjb = (struct depend_job *)GET_NEXT(nxdp->dp_jobs)))
       continue; /* no value, skip this one */
 
-    if (nxdp != pdp)
+    if (numdep > 0)
       strcat(pal->al_value, ","); /* comma between */
 
     pn = &dependnames[nxdp->dp_type];
