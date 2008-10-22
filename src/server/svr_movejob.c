@@ -770,7 +770,9 @@ int send_job(
 
   for (i = 0;i < (int)JOB_ATR_LAST;i++)
     {
-    if ((job_attr_def + i)->at_flags & resc_access_perm)
+    if (((job_attr_def + i)->at_flags & resc_access_perm) ||
+      ((strncmp((job_attr_def + i)->at_name,"session_id",10) == 0) &&
+      (jobp->ji_wattr[(int)JOB_ATR_checkpoint_name].at_flags & ATR_VFLAG_SET)))
       {
       (job_attr_def + i)->at_encode(
         pattr + i,
