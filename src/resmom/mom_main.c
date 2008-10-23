@@ -4497,10 +4497,10 @@ int rm_request(
                 sprintf(tmpLine, "Node Health Check Script: %s (%d second update interval)\n",
                         PBSNodeCheckPath,
                         PBSNodeCheckInterval);
+
+                MUStrNCat(&BPtr, &BSpace, tmpLine);
                 }
               }
-
-            MUStrNCat(&BPtr, &BSpace, tmpLine);
 
             sprintf(tmpLine, "MOM active:             %ld seconds\n",
                     (long)Now - MOMStartTime);

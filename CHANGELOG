@@ -32,6 +32,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature
       override -o -e.
   e - updated with security patches for setuid, setgid, setgroups
   b - fixed correct_ct() in svr_jobfunc.c so we don't crash if we hit COMPLETED job
+  b - fixed problem where momctl -d 0 showed ConfigVersion twice
 
 2.3.3
   b - fixed bug where pbs_mom would sometimes not connect properly with 
