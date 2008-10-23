@@ -156,8 +156,8 @@ Defines the types of holds to be placed on the job.
 The
 .Ar hold_list
 argument is a string consisting of one or more of the letters "\fBu\fP",
-"\fBo\fP", or "\fBs\fP"in any combination or
-the character "n".
+"\fBo\fP", or "\fBs\fP" in any combination or
+the character "\fBn\fP".
 The hold type associated with each letter is:
 .RS
 .IP "u \- " 4
