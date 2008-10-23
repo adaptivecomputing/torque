@@ -1472,7 +1472,6 @@ int blcr_restart_job(
 
     net_close(-1);
 
-    fdreopen("/dev/null", O_RDONLY, 0);
     fdreopen("/dev/null", O_WRONLY, 1);
     fdreopen("/dev/null", O_WRONLY, 2);
 
