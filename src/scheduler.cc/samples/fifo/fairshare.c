@@ -266,10 +266,10 @@ int parse_group(char *fname)
 
     if (!skip_line(buf))
       {
-      nametok = strtok(buf, "  ");
-      cgrouptok = strtok(NULL, "  ");
-      grouptok = strtok(NULL, "  ");
-      sharestok = strtok(NULL,  "  ");
+      nametok = strtok(buf, "	 ");
+      cgrouptok = strtok(NULL, "	 ");
+      grouptok = strtok(NULL, " 	");
+      sharestok= strtok(NULL,  " 	");
 
       ginfo = find_alloc_ginfo(grouptok);
 
