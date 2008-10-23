@@ -143,11 +143,11 @@ int parse_config(char *fname)
       if (buf[strlen(buf)-1] == '\n')
         buf[strlen(buf)-1] = '\0';
 
-      config_name = strtok(buf, ": 	");
+      config_name = strtok(buf, ": \t");
 
-      config_value = strtok(NULL, " 	");
+      config_value = strtok(NULL, " \t");
 
-      prime_value = strtok(NULL, " 	");
+      prime_value = strtok(NULL, " \t");
 
       if (config_name != NULL && config_value != NULL)
         {
