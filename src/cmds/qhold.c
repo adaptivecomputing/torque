@@ -100,7 +100,7 @@ int main(int argc, char **argv) /* qhold */
   int c;
   int errflg = 0;
   int any_failed = 0;
-  int u_cnt, o_cnt, s_cnt, n_cnt;
+  int u_cnt, o_cnt, s_cnt;
   char *pc;
 
   char job_id[PBS_MAXCLTJOBID];       /* from the command line */
@@ -133,7 +133,7 @@ int main(int argc, char **argv) /* qhold */
 
         pc = optarg;
 
-        u_cnt = o_cnt = s_cnt = n_cnt = 0;
+        u_cnt = o_cnt = s_cnt = 0;
 
         while (*pc)
           {
@@ -143,8 +143,6 @@ int main(int argc, char **argv) /* qhold */
             o_cnt++;
           else if (*pc == 's')
             s_cnt++;
-          else if (*pc == 'n')
-            n_cnt++;
           else
             {
             fprintf(stderr, "qhold: illegal -h value\n");
@@ -153,13 +151,6 @@ int main(int argc, char **argv) /* qhold */
             }
 
           pc++;
-          }
-
-        if (n_cnt && (u_cnt + o_cnt + s_cnt))
-          {
-          fprintf(stderr, "qhold: illegal -h value\n");
-          errflg++;
-          break;
           }
 
         strcpy(hold_type, optarg);

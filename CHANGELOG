@@ -37,7 +37,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature
       job
   b - fixed problem where momctl -d 0 showed ConfigVersion twice
   e - if a .JB file gets upgraded pbs_server will back up the original
- 
+  b - removed qhold / qrls -h n option since there is no code to support it 
 
 2.3.3
   b - fixed bug where pbs_mom would sometimes not connect properly with 
