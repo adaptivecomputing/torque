@@ -21,7 +21,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature
       while trying to put job on hold.
   b - update server immediately with changed checkpoint name and time attributes
       after successful checkpoint.
-  b - change to correct strtoks that accidentally got changed in astyle formatting
+  b - change to correct strtoks that accidentally got changed in astyle 
+      formatting
 
 2.3.4
   b - fixed a bug where if attempt to send job to a pbs_mom failed due to 
@@ -31,8 +32,10 @@ c - crash     b - bug fix    e - enhancement    f - new feature
   e - added --disable-qsub-keep-override to allow the qsub -k flag to not 
       override -o -e.
   e - updated with security patches for setuid, setgid, setgroups
-  b - fixed correct_ct() in svr_jobfunc.c so we don't crash if we hit COMPLETED job
+  b - fixed correct_ct() in svr_jobfunc.c so we don't crash if we hit COMPLETED
+      job
   b - fixed problem where momctl -d 0 showed ConfigVersion twice
+  e - if a .JB file gets upgraded pbs_server will back up the original
 
 2.3.3
   b - fixed bug where pbs_mom would sometimes not connect properly with 

@@ -136,13 +136,58 @@ int job_qs_upgrade(
   int version) /* I */
 
   {
-
+  char *id = "job_qs_upgrade";
+  char namebuf[MAXPATHLEN];
+  FILE *source; 
+  FILE *backup;
+  int c;
 
   /* reset the file descriptor */
   if (lseek(fds, 0, SEEK_SET) != 0)
     {
     sprintf(log_buffer, "unable to reset fds\n");
-    log_err(-1, "job_qs_upgrade", log_buffer);
+    log_err(-1, id, log_buffer);
+
+    return (-1);
+    }
+
+  sprintf(log_buffer, "backing up job file...");
+  if (strlen(path_jobs) + strlen(pj->ji_qs.ji_fileprefix) + 3 > MAXPATHLEN - 1)
+    {
+    sprintf(log_buffer, "ERROR: path too long for buffer, unable to backup!\n");
+    log_err(-1, id, log_buffer);
+    return (-1);
+    }
+
+  strcpy(namebuf, path_jobs); /* job directory path */
+  strcat(namebuf, pj->ji_qs.ji_fileprefix);
+  strcat(namebuf, ".BK");
+
+  source = fdopen(dup(fds), "r");
+
+  if((backup = fopen(namebuf, "wb")) == NULL)
+    {
+    sprintf(log_buffer, "Cannot open backup file.\n");
+    log_err(errno, id, log_buffer);
+    return -1;
+    }
+
+  while ((c = fgetc(source)) != EOF)
+    {
+    fputc(c, backup);
+    }
+
+  fclose(backup);
+  fclose(source);
+
+  sprintf(log_buffer, "backed up to %s\n", namebuf);
+  log_err(-1, id, log_buffer); 
+
+  /* reset the file descriptor */
+  if (lseek(fds, 0, SEEK_SET) != 0)
+    {
+    sprintf(log_buffer, "unable to reset fds\n");
+    log_err(-1, id, log_buffer);
 
     return (-1);
     }

@@ -567,7 +567,7 @@ job *job_recov(
 
   if (qs_upgrade == TRUE)
     {
-    job_save(pj, 1);
+    job_save(pj, SAVEJOB_FULL);
     }
 
   return(pj);
