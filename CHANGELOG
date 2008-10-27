@@ -25,6 +25,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature
       formatting
 
 2.3.4
+  c - fixed segfault when loading array files of an older/incompatible version
   b - fixed a bug where if attempt to send job to a pbs_mom failed due to 
       timeout, the job would indefinitely remain the in 'R' state
   b - qsub now properly interprets -W umask=0XXX as octal umask
@@ -36,6 +37,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature
       job
   b - fixed problem where momctl -d 0 showed ConfigVersion twice
   e - if a .JB file gets upgraded pbs_server will back up the original
+ 
 
 2.3.3
   b - fixed bug where pbs_mom would sometimes not connect properly with 
