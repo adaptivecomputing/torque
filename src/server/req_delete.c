@@ -132,9 +132,7 @@ static void post_job_delete_nanny A_((struct work_task *));
 
 struct work_task *apply_job_delete_nanny A_((struct job *, int));
 int has_job_delete_nanny A_((struct job *));
-#ifdef ENABLE_BLCR
 void change_restart_comment_if_needed A_((struct job *));
-#endif
 
 /* Private Data Items */
 
@@ -523,9 +521,7 @@ jump:
     {
     /* job has restart file at mom, do end job processing */
 
-#ifdef ENABLE_BLCR
     change_restart_comment_if_needed(pjob);
-#endif
     
     svr_setjobstate(pjob, JOB_STATE_EXITING, JOB_SUBSTATE_EXITING);
 
@@ -565,7 +561,6 @@ jump:
 
 
 
-#ifdef ENABLE_BLCR
 /*
  * change_restart_comment_if_needed - If job has restarted then the comment
  * attribute is used in on_job_exit() to reque/hold job on failure.
@@ -606,8 +601,7 @@ void change_restart_comment_if_needed(
 
   return;
   }
-#endif
-    
+
 
  
 

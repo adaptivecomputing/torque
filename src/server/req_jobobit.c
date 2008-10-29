@@ -1365,7 +1365,6 @@ void on_job_exit(
       if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HERE) == 0)
         issue_track(pjob);
 
-#ifdef ENABLE_BLCR
       /* see if restarted job failed */
 
       if (pjob->ji_wattr[(int)JOB_ATR_Comment].at_flags & ATR_VFLAG_SET)
@@ -1434,7 +1433,6 @@ void on_job_exit(
             }
           }     
         }
-#endif
 
       svr_setjobstate(pjob, JOB_STATE_COMPLETE, JOB_SUBSTATE_COMPLETE);
 
