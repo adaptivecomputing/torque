@@ -23,6 +23,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature
       after successful checkpoint.
   b - change to correct strtoks that accidentally got changed in astyle 
       formatting
+  e - Changes so checkpoint jobs failing after restarted are put on hold or
+      requeued
 
 2.3.4
   c - fixed segfault when loading array files of an older/incompatible version

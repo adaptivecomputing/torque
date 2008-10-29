@@ -3,6 +3,7 @@
 #include <sys/types.h>
 #include <stdio.h>
 #include <signal.h>
+#include <ctype.h>
 #include "libpbs.h"
 #include "server_limits.h"
 #include "list_link.h"
@@ -26,6 +27,9 @@ extern void job_purge(job *pjob);
 extern struct work_task *apply_job_delete_nanny(struct job *, int);
 extern int has_job_delete_nanny(struct job *);
 extern void remove_stagein(job *pjob);
+#ifdef ENABLE_BLCR
+extern void change_restart_comment_if_needed A_((struct job *));
+#endif
 
 extern char *msg_unkarrayid;
 extern char *msg_permlog;
@@ -168,6 +172,10 @@ void req_deletearray(struct batch_request *preq)
       {
       /* job has restart file at mom, do end job processing */
 
+#ifdef ENABLE_BLCR
+      change_restart_comment_if_needed(pjob);
+#endif
+
       svr_setjobstate(pjob, JOB_STATE_EXITING, JOB_SUBSTATE_EXITING);
 
       pjob->ji_momhandle = -1;
@@ -297,6 +305,10 @@ void array_delete_wt(struct work_task *ptask)
         if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_CHECKPOINT_FILE) != 0)
           {
           /* job has restart file at mom, do end job processing */
+
+#ifdef ENABLE_BLCR
+          change_restart_comment_if_needed(pjob);
+#endif
 
           svr_setjobstate(pjob, JOB_STATE_EXITING, JOB_SUBSTATE_EXITING);
 

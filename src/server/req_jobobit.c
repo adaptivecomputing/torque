@@ -1365,6 +1365,77 @@ void on_job_exit(
       if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HERE) == 0)
         issue_track(pjob);
 
+#ifdef ENABLE_BLCR
+      /* see if restarted job failed */
+
+      if (pjob->ji_wattr[(int)JOB_ATR_Comment].at_flags & ATR_VFLAG_SET)
+        {
+        char *pfailtype = NULL;
+        char *pfailure = NULL;
+        long *hold_val = 0;
+        char errMsg[21];
+        
+        strncpy(errMsg, pjob->ji_wattr[(int)JOB_ATR_Comment].at_val.at_str, 20);
+        
+        pfailtype = strtok(errMsg," ");
+        if (pfailtype != NULL)
+          pfailure = strtok(NULL," ");
+        
+        if (pfailure != NULL)
+          {
+          if (memcmp(pfailure,"failure",7) == 0)
+            {
+            if (memcmp(pfailtype,"Temporary",9) == 0)
+              {
+              /* reque job */
+ 
+              svr_setjobstate(pjob, JOB_STATE_QUEUED, JOB_SUBSTATE_QUEUED);
+              if (LOGLEVEL >= 4)
+                {
+                sprintf(log_buffer,
+                  "Requeueing job after checkpoint restart failure: %s",
+                  pjob->ji_wattr[(int)JOB_ATR_Comment].at_val.at_str);
+
+                log_event(
+                  PBSEVENT_JOB,
+                  PBS_EVENTCLASS_JOB,
+                  pjob->ji_qs.ji_jobid,
+                  log_buffer);
+                }
+              return;
+              }
+            /* 
+             * If we are deleting job after a failure then the first character
+             * of the comment should no longer be uppercase
+            */
+            else if (isupper(*pfailtype))
+              {
+              /* put job on hold */
+
+              hold_val = &pjob->ji_wattr[(int)JOB_ATR_hold].at_val.at_long;
+              *hold_val |= HOLD_s;
+              pjob->ji_wattr[(int)JOB_ATR_hold].at_flags |= ATR_VFLAG_SET;
+              pjob->ji_modified = 1;
+              svr_setjobstate(pjob, JOB_STATE_HELD, JOB_SUBSTATE_HELD);
+              if (LOGLEVEL >= 4)
+                {
+                sprintf(log_buffer,
+                  "Placing job on hold after checkpoint restart failure: %s",
+                  pjob->ji_wattr[(int)JOB_ATR_Comment].at_val.at_str);
+
+                log_event(
+                  PBSEVENT_JOB,
+                  PBS_EVENTCLASS_JOB,
+                  pjob->ji_qs.ji_jobid,
+                  log_buffer);
+                }
+              return;
+              }
+            }
+          }     
+        }
+#endif
+
       svr_setjobstate(pjob, JOB_STATE_COMPLETE, JOB_SUBSTATE_COMPLETE);
 
       if ((pque = pjob->ji_qhdr) && (pque != NULL))
