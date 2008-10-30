@@ -246,9 +246,15 @@ void req_rerunjob(
     rc = issue_signal(pjob, "SIGKILL", post_rerun, 0);
     }
   else
-    {
-    pjob->ji_qs.ji_state = JOB_STATE_QUEUED;
-    pjob->ji_qs.ji_substate = JOB_SUBSTATE_QUEUED;
+    { 
+    if (pjob->ji_wattr[(int)JOB_ATR_hold].at_val.at_long == HOLD_n)
+      {
+      svr_setjobstate(pjob, JOB_STATE_QUEUED, JOB_SUBSTATE_QUEUED);
+      }
+    else
+      {
+      svr_setjobstate(pjob, JOB_STATE_HELD, JOB_SUBSTATE_HELD);
+      }
 
     set_statechar(pjob);
 
