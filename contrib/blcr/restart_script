@@ -9,8 +9,11 @@
 use strict;
 use Sys::Syslog;
 
-# Customize the PATH to include location of cr_restart and qrerun
-$ENV{PATH} .= ":/usr/local/bin:/opt/torque/bin";
+# Customize the following variables
+# Customize the PATH to include location of blcr checkpoint commands
+# (e.g. cr_restart), torque client commands (e.g. qalter),
+# and pbs_mom checkpoint/restart scripts (e.g. restart_script,run_on_success)
+$ENV{PATH} .= ":/usr/local/bin:/opt/torque/bin:/var/torque/mom_priv";
 my $logLevel = 3; # 0 = none, 1 = fail, 2 = info, 3 = debug
 
 logPrint(2, "Invoked: $0 " . join(' ', @ARGV) . "\n");
@@ -24,10 +27,15 @@ if (@ARGV == 6)
 }
 else { logDie(1, $usage); }
 
+# Set of cr_restart hooks for flagging the job with various error conditions
+my $runOnSuccessCmd = "qalter -W comment=\"Successfully restarted job from checkpoint\" $jobId";
+my $runOnFailTempCmd = "qalter -W comment=\"Temporary failure restarting job from checkpoint\" $jobId";
+my $runOnFailPermCmd = "qalter -W comment=\"Permanent failure restarting job from checkpoint\" $jobId";
+my $runOnFailArgsCmd = "qalter -W comment=\"Argument failure restarting job from checkpoint\" $jobId";
+my $runOnFailEnvCmd = "qalter -W comment=\"Environment failure restarting job from checkpoint\" $jobId";
+my $runOnFailureCmd = "qalter -W comment=\"General failure restarting job from checkpoint\" $jobId";
+
 # Drop privileges to the job owner
-# If blcr is compiled with --enable-restore-ids, this script would need to
-# be modified to su the command instead of dropping privileges and running
-# it directly since it will require all supplemental groups to be set.
 my $gid = getgrnam($groupId);
 logDie(1, "Unable to resolve group id ($groupId)\n") unless defined $gid;
 $( = $gid;
@@ -45,14 +53,67 @@ chdir $checkpointDir
   if $logLevel;
 
 my $cmd = "cr_restart";
+$cmd .= " --run-on-success='$runOnSuccessCmd'" if $runOnSuccessCmd;
+$cmd .= " --run-on-fail-perm='$runOnFailPermCmd'" if $runOnFailPermCmd;
+$cmd .= " --run-on-fail-temp='$runOnFailTempCmd'" if $runOnFailTempCmd;
+$cmd .= " --run-on-fail-args='$runOnFailArgsCmd'" if $runOnFailArgsCmd;
+$cmd .= " --run-on-fail-env='$runOnFailEnvCmd'" if $runOnFailEnvCmd;
+$cmd .= " --run-on-failure='$runOnFailureCmd'" if $runOnFailureCmd;
 $cmd .= " $checkpointName";
-my $output = `$cmd 2>&1`;
-my $rc     = $? >> 8;
-logDie(1, "Subcommand ($cmd) failed with rc=$rc:\n$output")
-  if $rc && $logLevel >= 1;
-logPrint(3, "Subcommand ($cmd) yielded rc=$rc:\n$output")
-   if $logLevel >= 3;
-exit 0;
+my $restartOutput = `$cmd 2>&1`;
+my $restartRc = $? >> 8;
+if ($restartRc)
+{
+    logPrint(1, "Subcommand ($cmd) failed with rc=$restartRc:\n$restartOutput") if $logLevel >= 1;
+
+    # Check whether this was a cr_restart error
+    # We need to do this before updating the error with qalter
+    my $cmd = "qstat -as $jobId";
+    my $output = `$cmd 2>&1`;
+    my $rc     = $? >> 8;
+    if ($rc)
+    {
+        logPrint(1, "Subcommand ($cmd) failed with rc=$rc:\n$output") if $logLevel >= 1;
+    }
+    else
+    {
+        logPrint(3, "Subcommand ($cmd) yielded rc=$rc:\n$output") if $logLevel >= 3;
+    }
+
+    if ($output =~ m/^(.*failure restarting job.*)$/m)
+    {
+        my $comment = "$1: $restartOutput";
+
+        # Attach restart error message to job
+        # Before attaching message we first replace carriage returns with spaces
+        $comment =~ s/\n/ /g;
+        # Perl automatically enables a set of special security checks,
+        # called taint mode, when it detects its program running with
+        # differing real and effective user or group IDs.
+        # We must therefore untaint the output.
+        if ($comment =~ m/(.*)/) { $comment = $1; }
+        # Build qalter command
+        my $cmd = "qalter -W comment=\"\\\"$comment\\\"\" $jobId";
+        my $output = `$cmd 2>&1`;
+        my $rc     = $? >> 8;
+        if ($rc)
+        {
+            logPrint(1, "Subcommand ($cmd) failed with rc=$rc:\n$output") if $logLevel >= 1;
+        }
+        else
+        {
+            logPrint(3, "Subcommand ($cmd) yielded rc=$rc:\n$output") if $logLevel >= 3;
+        }
+    }
+}
+else
+{
+    logPrint(3, "Subcommand ($cmd) yielded rc=$restartRc:\n$restartOutput") if $logLevel >= 3;
+}
+
+# Exit with exit code of cr_restart command
+exit $restartRc;
+
 
 ################################################################################
 # logPrint($message)
@@ -63,12 +124,13 @@ sub logPrint
     my ($level, $message) = @_;
     my @severity = ('none', 'warning', 'info', 'debug');
 
-    return if $level > $logLevel;
+    return if $logLevel < $level;
 
     openlog('restart_script', '', 'user');
     syslog($severity[$level], $message);
     closelog();
 }
+
 
 ################################################################################
 # logDie($message)
