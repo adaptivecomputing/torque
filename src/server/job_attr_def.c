@@ -829,6 +829,19 @@ attribute_def job_attr_def[] =
     PARENT_TYPE_JOB
   },
 
+  /* JOB_ATR_checkpoint_restart_status */
+  { ATTR_checkpoint_restart_status,  /* "checkpoint_restart_status" */
+    decode_str,
+    encode_str,
+    set_str,
+    comp_str,
+    free_str,
+    NULL_FUNC,
+    READ_WRITE | ATR_DFLAG_MOM | ATR_DFLAG_ALTRUN,
+    ATR_TYPE_STR,
+    PARENT_TYPE_JOB
+  },
+
 #ifdef ENABLE_CSA
   /* JOB_ATR_pagg_id */
   { ATTR_pagg,  /* "pagg_id" */

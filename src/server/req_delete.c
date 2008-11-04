@@ -562,8 +562,8 @@ jump:
 
 
 /*
- * change_restart_comment_if_needed - If job has restarted then the comment
- * attribute is used in on_job_exit() to reque/hold job on failure.
+ * change_restart_comment_if_needed - If job has restarted then the checkpoint
+ * restart status attribute is used in on_job_exit() to reque/hold job on failure.
  * If we are deleting then we change the first charcter to lower case so
  * it does normal processing in on_job_exit().
  */
@@ -573,14 +573,16 @@ void change_restart_comment_if_needed(
   struct job *pjob)
 
   {
-  if (pjob->ji_wattr[(int)JOB_ATR_start_count].at_val.at_long > 1)
+  if ((pjob->ji_wattr[(int)JOB_ATR_start_count].at_val.at_long > 1) &&
+    (pjob->ji_wattr[(int)JOB_ATR_checkpoint_restart_status].at_flags & ATR_VFLAG_SET))
     {
       char *token1 = NULL;
       char *token2 = NULL;
       char commentMsg[25];
       char *ptr;
       
-      strncpy(commentMsg, pjob->ji_wattr[(int)JOB_ATR_Comment].at_val.at_str, 24);
+      strncpy(commentMsg,
+        pjob->ji_wattr[(int)JOB_ATR_checkpoint_restart_status].at_val.at_str, 24);
       
       token1 = strtok(commentMsg," ");
       if (token1 != NULL)
@@ -589,11 +591,12 @@ void change_restart_comment_if_needed(
       if ((token2 != NULL) && 
         ((memcmp(token2,"failure",7) == 0) || (memcmp(token2,"restarted",9) == 0)))
         {
-        ptr = pjob->ji_wattr[(int)JOB_ATR_Comment].at_val.at_str;
+        ptr = pjob->ji_wattr[(int)JOB_ATR_checkpoint_restart_status].at_val.at_str;
         if (isupper(*ptr))
           {
             *ptr = tolower(*ptr);
-            pjob->ji_wattr[(int)JOB_ATR_Comment].at_flags |= ATR_VFLAG_SET;
+            pjob->ji_wattr[(int)JOB_ATR_checkpoint_restart_status].at_flags
+              |= ATR_VFLAG_SET;
             pjob->ji_modified = 1;
           }
         }

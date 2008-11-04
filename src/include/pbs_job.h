@@ -281,6 +281,7 @@ enum job_atr
   JOB_ATR_checkpoint_dir,    /* directory where job checkpoint file is stored */
   JOB_ATR_checkpoint_name,   /* name of checkpoint file */
   JOB_ATR_checkpoint_time,   /* timestamp of start of last checkpoint */
+  JOB_ATR_checkpoint_restart_status,   /* checkpoint restart status */
 #ifdef ENABLE_CSA
   JOB_ATR_pagg_id,
 #endif /* ENABLE_CSA */

@@ -1367,14 +1367,15 @@ void on_job_exit(
 
       /* see if restarted job failed */
 
-      if (pjob->ji_wattr[(int)JOB_ATR_Comment].at_flags & ATR_VFLAG_SET)
+      if (pjob->ji_wattr[(int)JOB_ATR_checkpoint_restart_status].at_flags & ATR_VFLAG_SET)
         {
         char *pfailtype = NULL;
         char *pfailure = NULL;
         long *hold_val = 0;
         char errMsg[21];
         
-        strncpy(errMsg, pjob->ji_wattr[(int)JOB_ATR_Comment].at_val.at_str, 20);
+        strncpy(errMsg,
+          pjob->ji_wattr[(int)JOB_ATR_checkpoint_restart_status].at_val.at_str, 20);
         
         pfailtype = strtok(errMsg," ");
         if (pfailtype != NULL)
@@ -1393,7 +1394,7 @@ void on_job_exit(
                 {
                 sprintf(log_buffer,
                   "Requeueing job after checkpoint restart failure: %s",
-                  pjob->ji_wattr[(int)JOB_ATR_Comment].at_val.at_str);
+                  pjob->ji_wattr[(int)JOB_ATR_checkpoint_restart_status].at_val.at_str);
 
                 log_event(
                   PBSEVENT_JOB,
@@ -1420,7 +1421,7 @@ void on_job_exit(
                 {
                 sprintf(log_buffer,
                   "Placing job on hold after checkpoint restart failure: %s",
-                  pjob->ji_wattr[(int)JOB_ATR_Comment].at_val.at_str);
+                  pjob->ji_wattr[(int)JOB_ATR_checkpoint_restart_status].at_val.at_str);
 
                 log_event(
                   PBSEVENT_JOB,

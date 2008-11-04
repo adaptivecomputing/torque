@@ -172,6 +172,7 @@
 #define ATTR_checkpoint_dir  "checkpoint_dir"    /* user specified directory for checkpoint files */
 #define ATTR_checkpoint_name  "checkpoint_name"   /* user specified name of checkpoint file */
 #define ATTR_checkpoint_time  "checkpoint_time"   /* timestamp of start of last checkpoint */
+#define ATTR_checkpoint_restart_status  "checkpoint_restart_status"   /* checkpoint restart status */
 #ifdef ENABLE_CSA
 #define ATTR_pagg         "pagg_id"
 #endif /* ENABLE_CSA */

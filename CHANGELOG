@@ -25,6 +25,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature
       formatting
   e - Changes so checkpoint jobs failing after restarted are put on hold or
       requeued
+  e - Added checkpoint_restart_status job attribute used for restart status
 
 2.3.4
   c - fixed segfault when loading array files of an older/incompatible version
