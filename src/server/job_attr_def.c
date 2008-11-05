@@ -837,7 +837,7 @@ attribute_def job_attr_def[] =
     comp_str,
     free_str,
     NULL_FUNC,
-    READ_WRITE | ATR_DFLAG_MOM | ATR_DFLAG_ALTRUN,
+    READ_WRITE | ATR_DFLAG_SvWR | ATR_DFLAG_ALTRUN,
     ATR_TYPE_STR,
     PARENT_TYPE_JOB
   },
