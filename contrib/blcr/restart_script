@@ -28,12 +28,12 @@ if (@ARGV == 6)
 else { logDie(1, $usage); }
 
 # Set of cr_restart hooks for flagging the job with various error conditions
-my $runOnSuccessCmd = "qalter -W comment=\"Successfully restarted job from checkpoint\" $jobId";
-my $runOnFailTempCmd = "qalter -W comment=\"Temporary failure restarting job from checkpoint\" $jobId";
-my $runOnFailPermCmd = "qalter -W comment=\"Permanent failure restarting job from checkpoint\" $jobId";
-my $runOnFailArgsCmd = "qalter -W comment=\"Argument failure restarting job from checkpoint\" $jobId";
-my $runOnFailEnvCmd = "qalter -W comment=\"Environment failure restarting job from checkpoint\" $jobId";
-my $runOnFailureCmd = "qalter -W comment=\"General failure restarting job from checkpoint\" $jobId";
+my $runOnSuccessCmd = "qalter -W checkpoint_restart_status=\"Successfully restarted job from checkpoint\" $jobId";
+my $runOnFailTempCmd = "qalter -W checkpoint_restart_status=\"Temporary failure restarting job from checkpoint\" $jobId";
+my $runOnFailPermCmd = "qalter -W checkpoint_restart_status=\"Permanent failure restarting job from checkpoint\" $jobId";
+my $runOnFailArgsCmd = "qalter -W checkpoint_restart_status=\"Argument failure restarting job from checkpoint\" $jobId";
+my $runOnFailEnvCmd = "qalter -W checkpoint_restart_status=\"Environment failure restarting job from checkpoint\" $jobId";
+my $runOnFailureCmd = "qalter -W checkpoint_restart_status=\"General failure restarting job from checkpoint\" $jobId";
 
 # Drop privileges to the job owner
 my $gid = getgrnam($groupId);
