@@ -1202,40 +1202,6 @@ int start_checkpoint(
 
 
 /*
- * replace a given file descriptor with the new file path
- *
- * This routine exits on error!  Only used by the BLCR restart code, and
- * there's really no good way to recover from an error in restart.
- */
-static int fdreopen(const char *path, const char mode, int fd)
-  {
-  int newfd, dupfd;
-
-  close(fd);
-
-  newfd = open("/dev/null", O_RDONLY);
-
-  if (newfd < 0)
-    {
-    perror("open");
-    exit(-1);
-    }
-
-  dupfd = dup2(newfd, fd);
-
-  if (newfd < 0)
-    {
-    perror("dup2");
-    exit(-1);
-    }
-
-  close(newfd);
-
-  return dupfd;
-  }
-
-
-/*
 ** Restart each task which has exited and has TI_FLAGS_CHECKPOINT turned on.
 ** If all tasks have been restarted, turn off MOM_CHECKPOINT_POST.
 */
@@ -1471,9 +1437,6 @@ int blcr_restart_job(
       }
 
     net_close(-1);
-
-    fdreopen("/dev/null", O_WRONLY, 1);
-    fdreopen("/dev/null", O_WRONLY, 2);
 
     /* set us up with a new session */
 
