@@ -164,7 +164,7 @@ Specifies the impact on jobs which were in execution when the mini-server
 shut down.  With the -q option,
 MOM will allow the processes belonging to jobs to continue to run, but
 will not attempt to monitor them.
-The -q option is mutually exclusive with the -p and -q options.
+The -q option is mutually exclusive with the -p and -r options.
 .IP "-r" 16
 Specifies the impact on jobs which were in execution when the mini-server
 shut down.  With the -r option,
