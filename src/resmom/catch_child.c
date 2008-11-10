@@ -1577,7 +1577,7 @@ static void obit_reply(
  * init_abort_jobs - on mom initialization, recover all running jobs.
  *
  * Called on initialization
- *    If the -p option was given (recover = 2), Mom will allow the jobs
+ *    If the -p option was given (default) (recover = 2), Mom will allow the jobs
  *    to continue to run.   She depends on detecting when they terminate
  *    via the slow poll method rather than SIGCHLD.
  *
@@ -1585,8 +1585,8 @@ static void obit_reply(
  *      running system and the session id of the jobs should be valid;
  *    the jobs are killed.
  *
- *    If -r was not given (recover = 0), it is assumed that the whole
- *    system, not just MOM, is comming up, the session ids are not valid;
+ *    If -q was given (recover = 0), it is assumed that the whole
+ *    system, not just MOM, is coming up, the session ids are not valid;
  *    so no attempt is made to kill the job processes.  But the jobs are
  *    terminated and requeued.
  */
