@@ -81,7 +81,8 @@
 .SH NAME
 qsub \- submit pbs job
 .SH SYNOPSIS
-qsub [-a date_time] [-A account_string] [-b secs] [-c interval] [-C directive_prefix]
+qsub [-a date_time] [-A account_string] [-b secs] [-c checkpoint_options]
+[-C directive_prefix]
 [-d path] [-D path] [-e path] [-h] [-I] [-j join] [-k keep] [-l resource_list]
 [-m mail_options] [-M user_list] [-N name] [-o path] 
 [-p priority] [-q destination] [-r c] [-S path_list] [-t num_jobs]
@@ -229,59 +230,77 @@ This is a non-portable TORQUE extension.  Portability-minded users can use the
 .B PBS_CLIENTRETRY
 environmental variable.  A negative value is
 interpreted as infinity.  The default is 0.
-.IP "-c interval"
-Defines the interval at which the job will be checkpointed.  If the job
-executes upon a host which does not support checkpoint, this option will
+.IP "-c checkpoint_options"
+Defines the options that will apply to the job.  If the job
+executes upon a host which does not support checkpoint, these options will
 be ignored.
 .IP
-The
-.Ar interval
-argument is specified as:
+Valid checkpoint options are:
 .RS
-.IP n 3
+.IP none 3
 No checkpointing is to be performed.
 .if !\n(Pb .ig Ig
 The job's
 .At Checkpoint
 attribute is set to the string
-.Ty """n""" .
+.Ty """none""" .
 .Ig
-.IP s 3
-Checkpointing is to be performed only when the server executing the job is
-shutdown.
+.IP enabled 3
+Specify that checkpointing is allowed but must be explicitly invoked by either the 
+.B 
+qhold
+or 
+.B
+qchkpt
+commands.
 .if !\n(Pb .ig Ig
 The job's
 .At Checkpoint
 attribute is set to the string
-.Ty """s""" .
+.Ty """enabled""" .
 .Ig
-.IP c 3
-Checkpointing is to be performed at the default minimum time for the
-server executing the job.
+.IP shutdown 3
+Specify that checkpointing is to be done on a job at pbs_mom shutdown.
 .if !\n(Pb .ig Ig
 The job's
 .At Checkpoint
 attribute is set to the string
-.Ty """c""" .
+.Ty """shutdown""" .
 .Ig
-.IP c=minutes 3
+.IP periodic 3
+Specify that periodic checkpointing is enabled. The default interval is 10 minutes and can be changed by the $checkpoint_interval option in the mom config file or by specifying an interval when the job is submitted
+.if !\n(Pb .ig Ig
+The job's
+.At Checkpoint
+attribute is set to the string
+.Ty """periodic""" .
+.Ig
+.IP interval=minutes 3
 Checkpointing is to be performed at an interval of
 .Ar minutes ,
-which is the integer number of minutes of CPU time used by the job.
+which is the integer number of minutes of wall time used by the job.
 This value must be greater than zero.
 .if !\n(Pb .ig Ig
 The
 .At Checkpoint
 attribute is set to the string specified by
-.Ar """c=minutes""" .
-.IP
-If
-.Ar -c
-is not specified, the
+.Ar """interval=minutes""" .
+.Ig
+.IP depth=number 3
+Specify a number (depth) of checkpoint images to be kept in the checkpoint directory.
+.if !\n(Pb .ig Ig
+The
 .At Checkpoint
-attribute is set to the value
-.Ty """u""" 
-meaning unspecified.  Unless otherwise stated, "u" is treated the same as "s".
+attribute is set to the string specified by
+.Ar """depth=number""" .
+.Ig
+.IP dir=path 3
+Specify a checkpoint directory (default is /var/spool/torque/checkpoint).
+.if !\n(Pb .ig Ig
+The
+.At Checkpoint
+attribute is set to the string specified by
+.Ar """dir=path""" .
 .Ig
 .RE
 .IP "\-C directive_prefix" 8

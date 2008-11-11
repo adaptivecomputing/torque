@@ -123,8 +123,8 @@ request is
 .Sc SHUT_IMMEDIATE .
 .Ig
 .IP
-If checkpoint is supported, running jobs that can be checkpointed are
-checkpointed, terminated, and requeued.
+If checkpoint is supported, running jobs that were submitted with "-c shutdown"
+are checkpointed, terminated, and requeued.
 If checkpoint is not supported or the job cannot be checkpointed, running
 jobs are requeued if the
 .At rerunable
@@ -136,8 +136,8 @@ is still listed as running.
 The server may be forced down by a second \*Qqterm -t immediate\*U
 command.
 .IP delay\ 
-If checkpoint is supported, running jobs that can be checkpointed are
-checkpointed, terminated, and requeued.
+If checkpoint is supported, running jobs that were submitted with "-c shutdown"
+are checkpointed, terminated, and requeued.
 If a job cannot be checkpointed, but can be rerun, the job is terminated
 and requeued.
 Otherwise, running jobs are allowed to continue to run.
