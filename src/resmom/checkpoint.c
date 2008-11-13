@@ -705,41 +705,52 @@ int blcr_checkpoint_job(
     } /* END if (rc != 0) */
   else
     {
+    /* checkpoint script returned a zero value.  We assume the checkpoint
+        suceeded */ 
+      
+    /* open a connection to the server */
+    conn = pbs_connect(pjob->ji_wattr[(int)JOB_ATR_at_server].at_val.at_str);
+    at.resource = NULL;
+    at.name = ATTR_comment;
+    at.next = NULL;
+    at.value = err_buf;
+    epoch = (time_t)pjob->ji_wattr[(int)JOB_ATR_checkpoint_time].at_val.at_long;
+
     if (request_type == PBS_BATCH_HoldJob)
       {
-      /* checkpoint script returned a zero value.  We assume the checkpoint
-          suceeded */ 
-        
-      /* open a connection to the server */
-      conn = pbs_connect(pjob->ji_wattr[(int)JOB_ATR_at_server].at_val.at_str);
-      at.resource = NULL;
-      epoch = (time_t)pjob->ji_wattr[(int)JOB_ATR_checkpoint_time].at_val.at_long;
       sprintf(err_buf,"Job %s was checkpointed and terminated to %s/%s at %s",
         pjob->ji_qs.ji_jobid,
         pjob->ji_wattr[(int)JOB_ATR_checkpoint_dir].at_val.at_str,
         pjob->ji_wattr[(int)JOB_ATR_checkpoint_name].at_val.at_str,
         ctime(&epoch));
-      at.value = err_buf;
-      at.name = ATTR_comment;
-      at.next = NULL;
 
       err = pbs_alterjob(conn, pjob->ji_qs.ji_jobid, &at, CHECKPOINTED);
-
-      if (err != 0)
-        {
-          /* TODO: GB call log_err */
-        if (err == PBSE_UNKJOBID)
-          {
-          /* TODO: GB - can the job exit while waiting for the checkpoint 
-              script to exit?? call log_err */
-          pbs_disconnect(conn);
-          goto done;     
-          }
-        }      
-      
-      pbs_disconnect(conn);
-
       }
+    else
+      {
+      sprintf(err_buf,"Job %s was checkpointed and continued to %s/%s at %s",
+        pjob->ji_qs.ji_jobid,
+        pjob->ji_wattr[(int)JOB_ATR_checkpoint_dir].at_val.at_str,
+        pjob->ji_wattr[(int)JOB_ATR_checkpoint_name].at_val.at_str,
+        ctime(&epoch));
+
+      err = pbs_alterjob(conn, pjob->ji_qs.ji_jobid, &at, NULL);
+      }
+
+    if (err != 0)
+      {
+        /* TODO: GB call log_err */
+      if (err == PBSE_UNKJOBID)
+        {
+        /* TODO: GB - can the job exit while waiting for the checkpoint 
+            script to exit?? call log_err */
+        pbs_disconnect(conn);
+        goto done;     
+        }
+      }      
+      
+    pbs_disconnect(conn);
+
     if (rc == 0)
       {
       /* Normally, this is an empty routine and does nothing. */
