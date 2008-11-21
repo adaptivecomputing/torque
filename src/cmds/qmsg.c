@@ -138,7 +138,7 @@ int main(int argc, char **argv) /* qmsg */
     {
     static char usage[] =
       "usage: qmsg [-O] [-E] msg_string job_identifier...\n";
-    fprintf(stderr, usage);
+    fprintf(stderr,"%s", usage);
     exit(2);
     }
 

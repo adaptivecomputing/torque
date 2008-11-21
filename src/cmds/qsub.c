@@ -4082,7 +4082,7 @@ int main(
       [-S path] [-t number_to_submit] [-u user_list] [-X] [-W otherattributes=value...]\n\
       [-v variable_list] [-V ] [-z] [script]\n";
 
-    fprintf(stderr, usage);
+    fprintf(stderr,"%s", usage);
 
     exit(2);
     }

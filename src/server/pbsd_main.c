@@ -1801,7 +1801,7 @@ static void lock_out(
 
     log_err(errno, msg_daemonname, log_buffer);
 
-    fprintf(stderr, log_buffer);
+    fprintf(stderr, "%s", log_buffer);
 
     close(fds);
 

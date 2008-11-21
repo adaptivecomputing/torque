@@ -161,7 +161,7 @@ int main(
 
   if (errflg)
     {
-    fprintf(stderr,
+      fprintf(stderr, "%s",
             usage);
 
     exit(1);
@@ -191,7 +191,7 @@ int main(
       {
       /* invalid type specified */
 
-      fprintf(stderr,
+	fprintf(stderr, "%s",
               usage);
 
       exit(1);

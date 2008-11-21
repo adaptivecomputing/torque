@@ -1547,7 +1547,7 @@ main(  /* qstat */
                           [-h hold_list] [-l resource_list] [-N name] [-p [op]priority] \n\
                           [-q destination] [-r y|n] [-s states] [-u user_name] [-J] [-T] \n\
                           [-t timeout_secs] server_name..\n";
-    fprintf(stderr, usage);
+    fprintf(stderr, "%s", usage);
     exit(2);
     }
 

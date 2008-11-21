@@ -110,7 +110,7 @@ int main(int argc, char **argv) /* qmove */
   if (argc < 3)
     {
     static char usage[] = "usage: qmove destination job_identifier...\n";
-    fprintf(stderr, usage);
+    fprintf(stderr,"%s", usage);
     exit(2);
     }
 

@@ -164,7 +164,7 @@ int main(
       (tmpJobID[0] == '\0'))
     {
     static char Usage[] = "USAGE: pbs_track [-j <JOBID>] [-b] a.out arg1 arg2 ... argN\n";
-    fprintf(stderr, Usage);
+    fprintf(stderr, "%s", Usage);
     exit(2);
     }
 

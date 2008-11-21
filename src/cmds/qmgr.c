@@ -234,7 +234,7 @@ int main(
 
   if (errflg)
     {
-    if (! zopt) fprintf(stderr, usage);
+    if (! zopt) fprintf(stderr,"%s", usage);
 
     exit(1);
     }
@@ -839,7 +839,7 @@ void blanks(
 
     spaces[i] = '\0';
 
-    if (! zopt) fprintf(stderr, spaces);
+    if (! zopt) fprintf(stderr, "%s", spaces);
     }
   else
     {
@@ -1578,7 +1578,7 @@ int execute(
             sprintf(errnomsg, "qmgr obj=%s svr=%s: %s\n",
                     pname -> obj_name, Svrname(sp),  errmsg);
 
-            if (! zopt) fprintf(stderr, errnomsg);
+            if (! zopt) fprintf(stderr, "%s", errnomsg);
             }
           else
             {
@@ -1901,9 +1901,9 @@ int get_request(
       if (isatty(0) && isatty(1))
         {
         if (lp == line)
-          printf(prompt);
+          printf("%s", prompt);
         else
-          printf(contin);
+          printf("%s", contin);
         }
 
       if (fgets(lp, sizeof(line) - ll, stdin) == NULL)
@@ -2440,11 +2440,11 @@ void pstderr_big(
   if (! zopt)
     {
     fprintf(stderr, "qmgr obj=");
-    fprintf(stderr, objname);
+    fprintf(stderr, "%s", objname);
     fprintf(stderr, " svr=");
-    fprintf(stderr, svrname);
+    fprintf(stderr, "%s", svrname);
     fprintf(stderr, ": ");
-    fprintf(stderr, errmesg);
+    fprintf(stderr, "%s", errmesg);
     fprintf(stderr, "\n");
     }
 

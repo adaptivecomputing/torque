@@ -178,7 +178,7 @@ int main(
     {
     static char usage[] = "usage: qrls [-h {uos}] job_identifier...\n";
 
-    fprintf(stderr, usage);
+    fprintf(stderr,"%s", usage);
 
     exit(2);
     }

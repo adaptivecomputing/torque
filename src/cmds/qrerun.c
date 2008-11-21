@@ -119,7 +119,7 @@ int main(
 
   if (argc < 2)
     {
-    fprintf(stderr, usage);
+    fprintf(stderr,"%s", usage);
 
     exit(2);
     }
@@ -177,7 +177,7 @@ int main(
 
   if ((errflg != 0) || (optind >= argc))
     {
-    fprintf(stderr, usage);
+    fprintf(stderr,"%s", usage);
 
     exit(2);
     }

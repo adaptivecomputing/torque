@@ -6755,7 +6755,7 @@ setup_program_environment(void)
             errno,
             strerror(errno));
 
-    fprintf(stderr, log_buffer);
+    fprintf(stderr, "%s", log_buffer);
 
     return(1);
     }
@@ -6780,7 +6780,7 @@ setup_program_environment(void)
 
     strcat(log_buffer, "\n");
 
-    fprintf(stderr, log_buffer);
+    fprintf(stderr, "%s", log_buffer);
 
     return(3);
     }
@@ -6801,7 +6801,7 @@ setup_program_environment(void)
 
     strcat(log_buffer, "\n");
 
-    fprintf(stderr, log_buffer);
+    fprintf(stderr, "%s", log_buffer);
 
     return(3);
     }

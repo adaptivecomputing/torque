@@ -2148,7 +2148,7 @@ int main(
 
         if (alt_opt != 0)
           {
-          fprintf(stderr, conflict);
+	    fprintf(stderr, "%s", conflict);
 
           errflg++;
           }
@@ -2171,7 +2171,7 @@ int main(
 
         if (Q_opt || alt_opt)
           {
-          fprintf(stderr, conflict);
+	    fprintf(stderr, "%s", conflict);
 
           errflg++;
           }
@@ -2186,7 +2186,7 @@ int main(
 
         if (B_opt || alt_opt)
           {
-          fprintf(stderr, conflict);
+	    fprintf(stderr, "%s", conflict);
 
           errflg++;
           }
@@ -2326,7 +2326,7 @@ int main(
       (c != ALT_DISPLAY_r) &&
       (c != ALT_DISPLAY_q))
     {
-    fprintf(stderr, conflict);
+      fprintf(stderr, "%s", conflict);
 
     errflg++;
     }
@@ -2335,21 +2335,21 @@ int main(
 
   if (c == (ALT_DISPLAY_Mw | ALT_DISPLAY_G))
     {
-    fprintf(stderr, conflict);
+      fprintf(stderr, "%s", conflict);
 
     errflg++;
     }
 
   if ((alt_opt & ALT_DISPLAY_q) && (f_opt == 1))
     {
-    fprintf(stderr, conflict);
+      fprintf(stderr, "%s", conflict);
 
     errflg++;
     }
 
   if ((alt_opt & ALT_DISPLAY_o) && !((alt_opt & ALT_DISPLAY_n) || (f_opt)))
     {
-    fprintf(stderr, conflict);
+      fprintf(stderr, "%s", conflict);
 
     errflg++;
     }
@@ -2371,7 +2371,7 @@ int main(
                           qstat -q [-G|-M] [ destination... ]\n\
                           qstat -B [-f [-1]] [-W site_specific] [ server_name... ]\n";
 
-    fprintf(stderr, usage);
+    fprintf(stderr,"%s", usage);
 
     exit(2);
     }

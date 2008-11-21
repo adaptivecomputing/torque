@@ -567,7 +567,7 @@ int main(
                           [-a [op]date_time] [-A account_string] [-e] [-c [op]interval] \n\
                           [-h hold_list] [-l resource_list] [-N name] [-p [op]priority] \n\
                           [-q destination] [-r y|n] [-s states] [-u user_name]\n";
-    fprintf(stderr, usage);
+    fprintf(stderr,"%s", usage);
     exit(2);
     }
 

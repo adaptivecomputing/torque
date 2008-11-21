@@ -110,7 +110,7 @@ int main(
     {
     static char usage[] = "usage: qorder job_identifier job_identifier\n";
 
-    fprintf(stderr,
+    fprintf(stderr, "%s",
             usage);
 
     exit(2);

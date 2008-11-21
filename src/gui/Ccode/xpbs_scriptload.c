@@ -1061,7 +1061,7 @@ main(    /* scriptload */
   if (errflg || ((optind + 1) > argc))
     {
     static char usage[] = "usage: scriptload [-C directive_prefix] script\n";
-    fprintf(stderr, usage);
+    fprintf(stderr, "%s", usage);
     exit(2);
     }
 

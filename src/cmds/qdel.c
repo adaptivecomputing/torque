@@ -219,7 +219,7 @@ int main(
     {
     static char usage[] = "usage: qdel [{ -p | -W delay | -m message}] [<JOBID>[<JOBID>]|'all'|'ALL']...\n";
 
-    fprintf(stderr, usage);
+    fprintf(stderr, "%s", usage);
 
     fprintf(stderr, "       -m, -p, and -W are mutually exclusive\n");
 

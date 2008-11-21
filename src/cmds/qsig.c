@@ -131,7 +131,7 @@ int main(
   if (errflg || optind >= argc)
     {
     static char usage[] = "usage: qsig [-s signal] job_identifier...\n";
-    fprintf(stderr, usage);
+    fprintf(stderr,"%s", usage);
     exit(2);
     }
 

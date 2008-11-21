@@ -646,7 +646,7 @@ int main(
                           [-u user_list] [-v variable_list] [-W dependency_list] [-x exec_host] \n\
                           job_identifier...\n";
 
-    fprintf(stderr, usage);
+    fprintf(stderr, "%s", usage);
 
     exit(2);
     }
