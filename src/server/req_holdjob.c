@@ -308,9 +308,9 @@ void req_checkpointjob(
       pjob->ji_qs.ji_jobid,
       log_buffer);
 
-    reply_ack(preq);
+    req_reject(PBSE_IVALREQ, 0, preq, NULL, "job is not checkpointable");
     }
-  }  /* END req_holdjob() */
+  }  /* END req_checkpointjob() */
 
 
 

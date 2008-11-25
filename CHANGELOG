@@ -28,6 +28,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature
   e - Added checkpoint_restart_status job attribute used for restart status
   b - Updated manpages for qsub and qterm to reflect changed checkpointing
       options.
+  b - reject a qchkpt request if checkpointing is not enabled for the job
 
 2.3.4
   c - fixed segfault when loading array files of an older/incompatible version
