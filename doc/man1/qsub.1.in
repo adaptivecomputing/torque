@@ -81,12 +81,12 @@
 .SH NAME
 qsub \- submit pbs job
 .SH SYNOPSIS
-qsub [-a date_time] [-A account_string] [-b secs] [-c checkpoint_options]
-[-C directive_prefix]
-[-d path] [-D path] [-e path] [-h] [-I] [-j join] [-k keep] [-l resource_list]
-[-m mail_options] [-M user_list] [-N name] [-o path] 
-[-p priority] [-q destination] [-r c] [-S path_list] [-t num_jobs]
-[-u user_list] [-v variable_list] [-V] [-W additional_attributes] [-X] [-z]
+qsub [\-a date_time] [\-A account_string] [\-b secs] [\-c checkpoint_options]
+[\-C directive_prefix]
+[\-d path] [\-D path] [\-e path] [\-h] [\-I] [\-j join] [\-k keep] [\-l resource_list]
+[\-m mail_options] [\-M user_list] [\-N name] [\-o path] 
+[\-p priority] [\-q destination] [\-r c] [\-S path_list] [\-t num_jobs]
+[\-u user_list] [\-v variable_list] [\-V] [\-W additional_attributes] [\-X] [\-z]
 [script]
 .SH DESCRIPTION
 To create a job is to submit an executable script to a batch server.
@@ -146,13 +146,13 @@ The following are established by the server executing the job,
 not the qsub command.
 .Ig
 .IP \fBPBS_ARRAYID\fP
-each member of a job array is assigned a unique identifier (see -t)
+each member of a job array is assigned a unique identifier (see \-t)
 .IP \fBPBS_ENVIRONMENT\fP
 set to 
 .Ty PBS_BATCH
 to indicate the job is a batch job, or to
 .Ty PBS_INTERACTIVE
-to indicate the job is a PBS interactive job, see -I option.
+to indicate the job is a PBS interactive job, see \-I option.
 .IP \fBPBS_JOBID\fP
 the job identifier assigned to the job by the batch system.
 .IP \fBPBS_JOBNAME\fP
@@ -163,7 +163,7 @@ the name of the file contain the list of nodes assigned to the job
 .IP \fBPBS_QUEUE\fP
 the name of the queue from which the job is executed.
 .SH OPTIONS
-.IP "-a date_time" 8
+.IP "\-a date_time" 8
 Declares the time after which the job is eligible for execution.
 .RS
 .LP
@@ -188,7 +188,7 @@ is not specified, it will default to today if the time
 .Ty hhmm
 is in the future.  Otherwise, the day will be set to tomorrow.
 For example, if you submit a job at 11:15am with a time of 
-.Ty "-a 1110" ,
+.Ty "\-a 1110" ,
 the job will be eligible to run at 11:10am tomorrow.
 .if !\n(Pb .ig Ig
 See the date_time operand for the touch(1) command defined by POSIX.2.
@@ -206,7 +206,7 @@ option is not specified, the
 attribute is unset which represents a time zero or no delay.
 .Ig
 .RE
-.IP "-A account_string" 8
+.IP "\-A account_string" 8
 Defines the account string associated with the job.
 The
 .Ar account_string
@@ -218,7 +218,7 @@ The
 attribute is set to the account string.
 If account_string is unset, it is not passed with the job to the job executor.
 .Ig
-.IP "-b seconds"
+.IP "\-b seconds"
 Defines the maximum number of seconds qsub will block attempting to contact
 pbs_server.  If pbs_server is down, or for a variety of communication failures,
 qsub will continually retry connecting to pbs_server for job submission.  This
@@ -230,7 +230,7 @@ This is a non-portable TORQUE extension.  Portability-minded users can use the
 .B PBS_CLIENTRETRY
 environmental variable.  A negative value is
 interpreted as infinity.  The default is 0.
-.IP "-c checkpoint_options"
+.IP "\-c checkpoint_options"
 Defines the options that will apply to the job.  If the job
 executes upon a host which does not support checkpoint, these options will
 be ignored.
@@ -309,7 +309,7 @@ script file.  See the paragraph on script directives in the
 Extended Description section.
 .IP
 If the
-.Ar -C
+.Ar \-C
 option is presented with a
 .Ar directive_prefix
 argument that is the null string, qsub
@@ -320,7 +320,7 @@ qsub command.
 .Ig
 .IP "\-d path" 8
 Defines the working directory path to be used for the job.  If the
-.Ar -d
+.Ar \-d
 option is not specified, the default working directory is the home directory.
 This option sets the environment variable PBS_O_INITDIR.
 .Ig
@@ -365,27 +365,27 @@ specified.
 .RE
 .IP
 If the
-.Ar -e
+.Ar \-e
 option is not specified, the default file name for the standard error stream
 will be used.  The default name has the following form:
 .br
 \ \ \ \ \fBjob_name.esequence_number\fP
 .br
 where \fBjob_name\fP is the name of the job, see
-.Ar -N 
+.Ar \-N 
 option, and \fBsequence_number\fP is the job number assigned when the
 job is submitted.
 .if !\n(Pb .ig Ig
 This option sets the job attribute
 .At Error_Path .
 .Ig
-.IP "-h" 8
+.IP "\-h" 8
 Specifies that a user hold be applied to the job at submission time.
 .if !\n(Pb .ig Ig
 The
 .At Hold_Types
 attribute will be set to USER, "u".
-If -h is not specified, then
+If \-h is not specified, then
 .At Hold_Types 
 is set to NONE, "n".
 .Ig
@@ -489,7 +489,7 @@ The attribute is set to "KEEP_OUTPUT\ |\ KEEP_ERROR".
 .IP n 3
 Neither stream is retained.
 .RE
-.IP "-l resource_list" 8
+.IP "\-l resource_list" 8
 Defines the resources that are required by the job and establishes a limit
 to the amount of resource that can be consumed.
 If not set for a generally available resource, such as CPU time, the limit
@@ -644,14 +644,14 @@ specified.
 .RE
 .IP
 If the
-.Ar -o
+.Ar \-o
 option is not specified, the default file name for the standard output stream
 will be used.  The default name has the following form:
 .br
 \ \ \ \ \fBjob_name.osequence_number\fP
 .br
 where \fBjob_name\fP is the name of the job, see
-.Ar -N 
+.Ar \-N 
 option, and \fBsequence_number\fP is the job number assigned when the
 job is submitted.
 .if !\n(Pb .ig Ig
@@ -661,14 +661,14 @@ This option sets the job attribute
 .IP "\-p priority" 8
 Defines the priority of the job.  The
 .Ar priority
-argument must be a integer between -1024 and +1023 inclusive.
+argument must be a integer between \-1024 and +1023 inclusive.
 The default is no priority which is equivalent to a priority of zero.
 .if !\n(Pb .ig Ig
 The
 .At Priority
 job attribute is set to this signed integer value.
 .Ig
-.IP "-q destination" 8
+.IP "\-q destination" 8
 Defines the destination of the job.  The 
 .Ar destination
 names a queue, a server, or a queue at a server.
@@ -776,7 +776,7 @@ The
 .Ar array_request
 argument is an integer id or a range of integers. Multiple ids
 or id ranges can be combined in a comma delimted list. Examples :
--t 1-100 or -t 1,10,50-100
+\-t 1-100 or \-t 1,10,50-100
 .IP "\-u user_list" 8
 Defines the user name under which the job is to run on the execution system.
 .IP
@@ -800,7 +800,7 @@ attribute is set to the value of
 .Ar user_list .
 .Ig
 If unset, the user list defaults to the user who is running qsub.
-.IP "-v variable_list"
+.IP "\-v variable_list"
 Expands the list of environment variables that are exported to the job.
 .IP
 In addition to the variables described in the "Description" section above,
@@ -821,7 +821,7 @@ attribute is appended with the variables in
 .Ar user_list 
 and their values.
 .Ig
-.IP "-V" 8
+.IP "\-V" 8
 Declares that all environment variables in the qsub
 command's environment are to be exported to the batch job.
 .if !\n(Pb .ig Ig
@@ -830,18 +830,18 @@ The
 attribute is appended with the variables in the qsub
 command's environment and their values.
 .Ig
-.IP "-W additional_attributes" 8
-The -W option allows for the specification of additional job attributes.
+.IP "\-W additional_attributes" 8
+The \-W option allows for the specification of additional job attributes.
 .if !\n(Pb .ig Ig
 .SM
 POSIX.2 reserves all undefined option letters for future versions of the
 standard.  The single letter 'W' is allowed for extensions.  PBS makes use
-of the -W to specify attributes which are extensions to POSIX 1003.2d.
+of the \-W to specify attributes which are extensions to POSIX 1003.2d.
 .NL
 .Ig
-The general syntax of the -W is in the form:
+The general syntax of the \-W is in the form:
 .br
-.Ty "\ \ \ \ -W attr_name=attr_value[,attr_name=attr_value...]"
+.Ty "\ \ \ \ \-W attr_name=attr_value[,attr_name=attr_value...]"
 .br
 Note if white space occurs anywhere within the option argument string or the
 equal sign, "=", occurs within an 
@@ -849,7 +849,7 @@ equal sign, "=", occurs within an
 string, then the string must be enclosed with either single or double quote
 marks.
 .IP
-PBS currently supports the following attributes within the -W option.
+PBS currently supports the following attributes within the \-W option.
 .IP
 .Ty "depend=dependency_list"
 .br
@@ -941,9 +941,9 @@ the server.  Mail will be sent to the job submitter stating the error.
 .LP
 Dependency examples:
 .br
-.Ty "qsub -W depend=afterok:123.big.iron.com /tmp/script"
+.Ty "qsub \-W depend=afterok:123.big.iron.com /tmp/script"
 .br
-.Ty "qsub -W depend=before:234.hunk1.com:235.hunk1.com /tmp/script"
+.Ty "qsub \-W depend=before:234.hunk1.com:235.hunk1.com /tmp/script"
 .RE
 .IP
 .Ty group_list=g_list
@@ -1025,9 +1025,9 @@ For stageout:  rcp local_file hostname:remote_file
 .br
 Data staging examples:
 .br
-.Ty "-W stagein=/tmp/input.txt@headnode:/home/user/input.txt"
+.Ty "\-W stagein=/tmp/input.txt@headnode:/home/user/input.txt"
 .br
-.Ty "-W stageout=/tmp/output.txt@headnode:/home/user/output.txt"
+.Ty "\-W stageout=/tmp/output.txt@headnode:/home/user/output.txt"
 .br
 If TORQUE has been compiled with wordexp support, then variables can
 be used in the specified paths.  Currently only $PBS_JOBID, $HOME, and
@@ -1040,9 +1040,9 @@ Sets umask used to create stdout and stderr spool files in pbs_mom
 spool directory. Values starting with 0 are treated as octal values, 
 otherwise the value is treated as a decimal umask value.
 .br
-.IP "-X" 8
+.IP "\-X" 8
 Enables X11 forwarding.  The DISPLAY environment variable must be set.
-.IP "-z" 8
+.IP "\-z" 8
 Directs that the qsub
 command is not to write the job identifier assigned to the job to 
 the command's standard output.
@@ -1090,7 +1090,7 @@ command will write a diagnostic message to standard error for
 each error occurrence.
 .SH ENVIRONMENT VARIABLES
 The values of some or all of the variables in the qsub
-command's environment are exported with the job, see the -v and -V options.
+command's environment are exported with the job, see the \-v and \-V options.
 .LP
 The environment variable
 .B PBS_DEFAULT
@@ -1105,7 +1105,7 @@ determines the prefix string which identifies directives in the script.
 .LP
 The environment variable
 .B PBS_CLIENTRETRY
-defines the maximum number of seconds qsub will block.  See the -b option
+defines the maximum number of seconds qsub will block.  See the \-b option
 above.  Despite the name, currently qsub is the only client that supports
 this option.
 .SH TORQUE.CFG
@@ -1163,9 +1163,9 @@ For example:
 .RS
 .Cs
 .Ty ":"
-.Ty "#PBS -N Job_name"
-.Ty "#PBS -l walltime=10:30,mem=320kb"
-.Ty "#PBS -m be"
+.Ty "#PBS \-N Job_name"
+.Ty "#PBS \-l walltime=10:30,mem=320kb"
+.Ty "#PBS \-m be"
 .Ty "#"
 .Ty "step1 arg1 arg2"
 .Ty "step2 arg3 arg4"
@@ -1222,7 +1222,7 @@ User Authorization:
 .LP
 When the user submits a job from a system other than the one on which the
 PBS Server is running, the name under which the job is to be executed is
-selected according to the rules listed under the -u option.
+selected according to the rules listed under the \-u option.
 The user submitting the job must be authorized to run the job under the
 execution user name. 
 This authorization is provided if 
@@ -1258,7 +1258,7 @@ If the
 .Ar \-I 
 option is specified on the command line or in a script directive, or if
 the "interactive" job attribute declared true via the \-W option,
-.Ty "-W interactive=true" ,
+.Ty "\-W interactive=true" ,
 either on the command line or in a script directive, the job is an interactive
 job.  The script will be processed for directives, but will not be included
 with the job.  When the job begins execution, all input to the job is from

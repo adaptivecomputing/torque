@@ -79,11 +79,11 @@
 .TH pbs_resources_sp2 7B "" Local PBS
 .so ../ers/ers.macros
 .SH NAME
-pbs_resources_sp2 - pbs resources on IBM SP-2
+pbs_resources_sp2 \- pbs resources on IBM SP-2
 .SH DESCRIPTION
 This page summarizes the resources supported by PBS for the IBM SP-2.
 These resources are specified by including them in the
-.I -l
+.I \-l
 option argument on the qsub or qalter command or in the PBS job script.
 .SH RESOURCES
 .Iq

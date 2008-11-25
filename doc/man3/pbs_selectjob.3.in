@@ -79,7 +79,7 @@
 .so ../ers/ers.macros
 .Ig
 .SH NAME
-pbs_selectjob - select pbs batch jobs
+pbs_selectjob \- select pbs batch jobs
 .SH SYNOPSIS
 #include <pbs_error.h>
 .br

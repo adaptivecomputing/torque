@@ -79,7 +79,7 @@
 .TH pbs_job_attributes 7B "" Local PBS
 .so ../ers/ers.macros
 .SH NAME
-pbs_job_attributes - pbs job attributes
+pbs_job_attributes \- pbs job attributes
 .SH DESCRIPTION
 .Iq
 .if !\n(Pb .ig Ig

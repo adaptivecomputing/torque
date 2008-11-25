@@ -81,7 +81,7 @@
 .SH NAME
 qrun \- run a pbs batch job
 .SH SYNOPSIS
-qrun [\^-H\ host\^] job_identifier ...
+qrun [\^\-H\ host\^] job_identifier ...
 .SH DESCRIPTION
 The
 .B qrun
@@ -93,7 +93,7 @@ or state.
 In order to execute qrun, the user must have PBS Operation or Manager
 privilege.
 .SH OPTIONS
-.IP "-H host" 15
+.IP "\-H host" 15
 Specifies the host within the cluster on which the job(s) are to be run.
 The
 .Ar host

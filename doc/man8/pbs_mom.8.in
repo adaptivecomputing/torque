@@ -81,7 +81,7 @@
 .SH NAME
 pbs_mom \- start a pbs batch execution mini-server
 .SH SYNOPSIS
-pbs_mom [\^-C\ chkdirectory\^] [\^-c\ config\^] [\^-d\ directory] [\^-h\ hostname] [\^-L\ logfile] [\^-M\ MOMport\^] [\^-R\ RPPport\^] [\^-p\^|\^-r] [\^-x]
+pbs_mom [\^\-C\ chkdirectory\^] [\^\-c\ config\^] [\^\-d\ directory] [\^\-h\ hostname] [\^\-L\ logfile] [\^\-M\ MOMport\^] [\^\-R\ RPPport\^] [\^\-p\^|\^\-r] [\^\-x]
 .SH DESCRIPTION
 The
 .B pbs_mom
@@ -114,90 +114,90 @@ directory below the home directory of the server.
 If the log file cannot be opened, the diagnostic message is written
 to the system console.
 .SH OPTIONS
-.IP "-C chkdirectory" 16
+.IP "\-C chkdirectory" 16
 Specifieds the path of the directory used to hold checkpoint files.
 [Currently this is only valid on Cray systems.]
-The default directory is PBS_HOME/spool/checkpoint, see the -d option.
-The directory specified with the -C option must be owned by root and 
+The default directory is PBS_HOME/spool/checkpoint, see the \-d option.
+The directory specified with the \-C option must be owned by root and 
 accessible (rwx) only by root to protect the security of the checkpoint files.
-.IP "-c config" 16
+.IP "\-c config" 16
 Specify a alternative configuration file, see description below.
 If this is a relative file name it will be relative to PBS_HOME/mom_priv,
-see the -d option.  If the specified file cannot be opened, pbs_mom will abort.
-If the -c option is not supplied, pbs_mom will attempt to open the default
+see the \-d option.  If the specified file cannot be opened, pbs_mom will abort.
+If the \-c option is not supplied, pbs_mom will attempt to open the default
  configuration file "config" in PBS_HOME/mom_priv.  If this file is not
 present, pbs_mom will log the fact and continue.
-.IP "-h hostname" 16
+.IP "\-h hostname" 16
 Set MOM's hostname.  This can be useful on multi-homed networks.
-.IP "-d directory" 16
+.IP "\-d directory" 16
 Specifies the path of the directory which is the home of the servers
 working files, PBS_HOME.
-This option is typically used along with -M when debugging MOM.
+This option is typically used along with \-M when debugging MOM.
 The default directory is given by $PBS_SERVER_HOME
 which is typically
 .Ty /usr/spool/PBS .
-.IP "-L logfile" 16
+.IP "\-L logfile" 16
 Specify an absolute path name for use as the log file.
 If not specified, MOM will
 open a file named for the current date in the PBS_HOME/mom_logs
 directory, see the
-.At -d
+.At \-d
 option.
-.IP "-M port" 16
+.IP "\-M port" 16
 Specifies the port number on which the mini-server (MOM) will
 listen for batch requests.  
-.IP "-R port" 16
+.IP "\-R port" 16
 Specifies the port number on which the mini-server (MOM) will
 listen for resource monitor requests, task manager requests and inter-MOM
 messages.  Both a UDP and a TCP port of this number will be used.
-.IP "-p" 16
+.IP "\-p" 16
 Specifies the impact on jobs which were in execution when the mini-server
 shut down.  On any restart of MOM, the new mini-server will not be the
 parent of any running jobs, MOM has lost control of her offspring (not a new
 situation for a mother).
-With the -p option, MOM will allow the jobs to continue to run and
+With the \-p option, MOM will allow the jobs to continue to run and
 monitor them indirectly via polling. This flag is redundant in that 
 this is the default behavior when starting the server.
-The -p option is mutually exclusive with the -r and -q options.
-.IP "-q" 16
+The \-p option is mutually exclusive with the \-r and \-q options.
+.IP "\-q" 16
 Specifies the impact on jobs which were in execution when the mini-server
-shut down.  With the -q option,
+shut down.  With the \-q option,
 MOM will allow the processes belonging to jobs to continue to run, but
 will not attempt to monitor them.
-The -q option is mutually exclusive with the -p and -r options.
-.IP "-r" 16
+The \-q option is mutually exclusive with the \-p and \-r options.
+.IP "\-r" 16
 Specifies the impact on jobs which were in execution when the mini-server
-shut down.  With the -r option,
+shut down.  With the \-r option,
 MOM will kill any processes belonging to jobs, mark the jobs as terminated,
 and notify the batch server which owns the job.
-The -r option is mutually exclusive with the -p and -q options.
+The \-r option is mutually exclusive with the \-p and \-q options.
 .IP
 Normally the mini-server is started from the system boot file
 without the 
-.At -p
+.At \-p
 or the 
-.At -r
+.At \-r
 option.  The mini-server will make no attempt to signal the
 former session of any job which may have been running when the mini-server
 terminated.  It is assumed that on reboot, all processes have been killed.
 .IP
-If the -r option is used following a reboot,
+If the \-r option is used following a reboot,
 process IDs (pids) may be reused and
 MOM may kill a process that is not a batch session.
-.IP "-a alarm" 16
+.IP "\-a alarm" 16
 Used to specify the alarm timeout in seconds for computing a resource.
 Every time a resource request is processed, an alarm is set for the
 given amount of time.  If the request has not completed before the
 given time, an alarm signal is generated.
 The default is 5 seconds.
-.IP "-x" 16
+.IP "\-x" 16
 Disables the check for privileged port resource monitor connections.  This is
 used mainly for testing since the privileged port is the only
 mechanism used to prevent any ordinary user from connecting.
 .LP
 .SH CONFIGURATION FILE
 The configuration file may be specified on the command line at
-program start with the -c flag.  The use of this file is
+program start with the \-c flag.  The use of this file is
 to provide several types of run time information to pbs_mom:
 static resource names and values, external resources provided 
 by a program to be run on request via a shell escape, and values
@@ -244,7 +244,7 @@ is reported.
 .IP size[fs=<FS>]
 Specifies that the available and configured disk space in the <FS> filesystem
 is to be reported to the pbs_server and scheduler.  NOTE: To request disk space
-on a per job basis, specify the file resource as in 'qsub -l
+on a per job basis, specify the file resource as in 'qsub \-l
 nodes=1,file=1000kb'  For example, the available and configured disk space in
 the /localscratch filesystem will be reported:
 .IP
@@ -347,7 +347,7 @@ that are currently busy will consider itself free after falling below ideal_load
 .IP auto_ideal_load
 if jobs are running, sets idea_load based on a simple expression.  The expressions
 start with the variable 't' (total assigned CPUs) or 'c' (existing CPUs), an
-operator (+ - / *), and followed by a float constant.
+operator (+ \- / *), and followed by a float constant.
 .IP
 .Ty "$auto_ideal_load t-0.2"
 .br
@@ -371,7 +371,7 @@ ideal_load above).
 .IP auto_max_load
 if jobs are running, sets max_load based on a simple expression.  The expressions
 start with the variable 't' (total assigned CPUs) or 'c' (existing CPUs), an
-operator (+ - / *), and followed by a float constant.
+operator (+ \- / *), and followed by a float constant.
 .IP enablemomrestart
 enable automatic restarts of MOM.  If enabled, MOM will check if its binary has
 been updated and restart itself at a safe point when no jobs are running; thus
@@ -407,9 +407,9 @@ the compile-time default found in configure.  This must contain 2 words: the ful
 the command and the switches.  The copy command must be able to recursively copy files to
 the remote host and accept arguments of the form "user@host:files"  For example:
 .IP
-.Ty "$rcpcmd /usr/bin/rcp -rp
+.Ty "$rcpcmd /usr/bin/rcp \-rp
 .br
-.Ty "$rcpcmd /usr/bin/scp -rpB
+.Ty "$rcpcmd /usr/bin/scp \-rpB
 .IP remote_reconfig
 Enables the ability to remotely reconfigure pbs_mom with a new config file.
 Default is disabled.  This parameter accepts various forms of true, yes, and 1.
@@ -435,7 +435,7 @@ High values increase the load of pbs_server and the network.  Low values cause
 pbs_server to report stale information.  Default is 45 seconds.
 .IP varattr
 This is similar to a shell escape above, but includes a TTL.  The command will
-only be run every TTL seconds.  A TTL of -1 will cause the command to be
+only be run every TTL seconds.  A TTL of \-1 will cause the command to be
 executed only once.  A TTL of 0 will cause the command to be run everytime
 varattr is requested.  This parameter may be used multiple times, but all
 output will be grouped into a single "varattr" attribute in the request and
@@ -465,7 +465,7 @@ If set to true, then pbs_mom will ignore walltime limit enforcement.
 .IP mom_host
 Sets the local hostname as used by pbs_mom.
 .SH RESOURCES
-Resource Monitor queries can be made with momctl's -q option to retrieve and
+Resource Monitor queries can be made with momctl's \-q option to retrieve and
 set pbs_mom options.  Any configured static resource may be retrieved with a
 request of the same name.  These are resource requests not otherwise documented
 in the PBS ERS.
@@ -485,7 +485,7 @@ retrieve or set the $enablemomrestart parameter
 retrieve or set the $loglevel parameter
 .IP down_on_error
 retrieve or set the EXPERIMENTAL $down_on_error parameter
-.IP "diag0 - diag4"
+.IP "diag0 \- diag4"
 retrieves various diagnostic information
 .IP rcpcmd
 retrieve or set the $rcpcmd parameter

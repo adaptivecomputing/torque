@@ -74,7 +74,6 @@
 .\" 
 .\" This license will be governed by the laws of the Commonwealth of Virginia,
 .\" without reference to its choice of law rules.
-.Ig
 .\" The following macros defination, Sh and Sx, are used to allow
 .\" PBS man pages to be formatted with either -man macros or 
 .\" be included in the PBS ERS which is formatted with -ms.

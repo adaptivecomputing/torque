@@ -81,7 +81,7 @@
 .SH NAME
 qrerun \- rerun a pbs batch job
 .SH SYNOPSIS
-qrerun [-f]
+qrerun [\-f]
 job_identifier ...
 .SH DESCRIPTION
 The 
@@ -102,9 +102,9 @@ If a job is marked as not rerunable then the rerun request
 will fail for that job.
 If the mini-server running the job is down, or the rejects the request, the
 .I "Rerun Job"
-batch request will return a failure unless -f is used.
+batch request will return a failure unless \-f is used.
 .LP
-Using -f violates IEEE Batch Processing Services Std and should be handled with
+Using \-f violates IEEE Batch Processing Services Std and should be handled with
 great care.  It should only be used under exceptional circumstances.  Best
 practice is to fix the problem mini-server host and letting qrerun run
 normally.  The previous nodes may need manual cleaning.  
@@ -113,7 +113,7 @@ See the
 .At Rerunable
 attribute and the
 .Ig
-.Ar -r 
+.Ar \-r 
 option on the
 .B qsub 
 and

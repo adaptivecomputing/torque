@@ -82,9 +82,9 @@
 qselect \- select pbs batch jobs
 .SH SYNOPSIS
 qselect
-[-a [op]date_time] [-A account_string] [-e] [-c [op]interval]
-[-h hold_list] [-l resource_list] [-N name] [-p [op]priority]
-[-q destination] [-r rerun] [-s states] [-u user_list]
+[\-a [op]date_time] [\-A account_string] [\-e] [\-c [op]interval]
+[\-h hold_list] [\-l resource_list] [\-N name] [\-p [op]priority]
+[\-q destination] [\-r rerun] [\-s states] [\-u user_list]
 .SH DESCRIPTION
 The
 .B qselect
@@ -105,7 +105,7 @@ options.  Each option acts as a filter restricting the number of jobs
 which might be listed.  With no options, the qselect
 command will list all jobs at the server which the user is authorized
 to list (query status of).
-The -u option may be used to limit the selection to jobs owned by this user
+The \-u option may be used to limit the selection to jobs owned by this user
 or other specified users.
 .if !\n(Pb .ig Ig
 Operators and system administrators have the privilege to select all jobs.
@@ -155,7 +155,7 @@ the value represented by the
 attribute of the job is less than the value represented by the
 option argument.
 .RE
-.IP "-a [op]\^date_time " 10
+.IP "\-a [op]\^date_time " 10
 Restricts selection to a specific time, or a range of times.
 .IP
 The qselect
@@ -217,14 +217,14 @@ attribute is less than (before) the
 .Ar date_time
 argument.
 .RE
-.IP "-e" 10
+.IP "\-e" 10
 Restricts selection to jobs in execution queues.
-.IP "-A account_string" 10
+.IP "\-A account_string" 10
 Restricts selection to jobs whose 
 .At Account_Name
 attribute matches the specified
 .Ar account_string .
-.IP "-c [\^op\^]\^interval" 10
+.IP "\-c [\^op\^]\^interval" 10
 Restricts selection to jobs whose 
 .At Checkpoint
 interval attribute matches the specified relationship.
@@ -278,7 +278,7 @@ argument.
 .RE
 .IP
 For an interval value of "u", only ".eq." and ".ne." are valid.
-.IP "-h hold_list" 10
+.IP "\-h hold_list" 10
 Restricts the selection of jobs to those with a specific set of hold types.
 Only those jobs will be selected whose
 .At Hold_Types
@@ -306,7 +306,7 @@ The letters represent the hold types:
   \fBs\fP \- system
 .fi
 .RE
-.IP "-l resource_list" 10
+.IP "\-l resource_list" 10
 Restricts selection of jobs to those with specified resource amounts.
 .RS
 .LP
@@ -359,9 +359,9 @@ the resource value in the
 attribute of the job is less than the value specified in
 .Ar resource_list .
 .RE
-.IP "-N name" 10
+.IP "\-N name" 10
 Restricts selection of jobs to those with a specific name.
-.IP "-p [op]priority" 10
+.IP "\-p [op]priority" 10
 Restricts selection of jobs to those with a priority that matches the
 specified relationship.  If
 .Ar op
@@ -405,7 +405,7 @@ attribute is less than the value of the
 .Ar priority
 argument.
 .RE
-.IP "-q destination" 10
+.IP "\-q destination" 10
 Restricts selection to those jobs residing at the specified destination.
 .RS
 .LP
@@ -420,7 +420,7 @@ may be of one of the following three forms:
 .Ty "\ \ \ \ queue@server"
 .LP
 If the 
-.Ar -q
+.Ar \-q
 option is not specified, jobs will be selected from the default server.
 .if !\n(Pb .ig Ig
 See the ERS section \*(Si for a definition of the default server.
@@ -449,7 +449,7 @@ two characters are supported by PBS:
 .Ty y
 and
 .Ty n .
-.IP "-s states" 10
+.IP "\-s states" 10
 Restricts job selection to those in the specified states.
 .RS
 .LP
@@ -491,7 +491,7 @@ the Waiting state.
 .LP
 Jobs will be selected which are in any of the specified states.
 .RE
-.IP "-u user_list" 10
+.IP "\-u user_list" 10
 Restricts selection to jobs owned by the specified user names.
 .RS 
 .LP

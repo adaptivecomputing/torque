@@ -82,7 +82,7 @@
 qsig \- signal pbs batch job
 .SH SYNOPSIS
 qsig
-[-s\ signal]
+[\-s\ signal]
 job_identifier ...
 .SH DESCRIPTION
 The
@@ -96,13 +96,13 @@ option is not specified,
 .B `SIGTERM' 
 is sent.
 The request to signal a batch job will be rejected if:
-.IP -
+.IP \-
 The user is not authorized to signal the job.
-.IP -
+.IP \-
 The job is not in the 
 .B running
 state.
-.IP -
+.IP \-
 The requested signal is not supported by the system upon which the
 job is executing.
 .LP
@@ -111,7 +111,7 @@ command sends a
 .I "Signal Job"
 batch request to the server which owns the job.
 .SH OPTIONS
-.IP "-s signal" 15
+.IP "\-s signal" 15
 Declares which signal is sent to the job.
 .RS
 .LP

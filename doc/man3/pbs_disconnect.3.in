@@ -79,7 +79,7 @@
 .so ../ers/ers.macros
 .Ig
 .SH NAME
-pbs_disconnect - disconnect from a pbs batch server
+pbs_disconnect \- disconnect from a pbs batch server
 .SH SYNOPSIS
 #include <pbs_error.h>
 .br

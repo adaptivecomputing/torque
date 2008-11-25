@@ -79,7 +79,7 @@
 .so ../ers/ers.macros
 .Iq
 .SH NAME
-qdel - delete pbs batch job
+qdel \- delete pbs batch job
 .SH SYNOPSIS
 qdel [\-m message] [\-p] [\-W delay] job_identifier ...
 .SH DESCRIPTION

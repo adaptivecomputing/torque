@@ -81,11 +81,11 @@
 .SH NAME
 pbsnodes \- pbs node manipulation
 .SH SYNOPSIS
-pbsnodes [\^-{a|x}\^] [-q] [-s server] [node|:property]
+pbsnodes [\^\-{a|x}\^] [\-q] [\-s server] [node|:property]
 .br
-pbsnodes -l [-q] [-s server] [state] [nodename|:property ...]
+pbsnodes \-l [\-q] [\-s server] [state] [nodename|:property ...]
 .br
-pbsnodes [\^-{c|d|o|r}\^] [-q] [-s server] [-n] [-N "note"] [node|:property]
+pbsnodes [\^\-{c|d|o|r}\^] [\-q] [\-s server] [\-n] [\-N "note"] [node|:property]
 
 .SH DESCRIPTION
 The 
@@ -106,17 +106,17 @@ or
 .B \-l
 options, the user must have PBS Manager or Operator privilege.
 .SH OPTIONS
-.IP "-a" 15
+.IP "\-a" 15
 All attributes of a node or all nodes are listed.  This is the default
 if no flag is given.
-.IP "-x" 15
-Same as -a, but the output has an XML-like format.
-.IP "-c" 15
+.IP "\-x" 15
+Same as \-a, but the output has an XML-like format.
+.IP "\-c" 15
 Clear OFFLINE from listed nodes. 
-.IP "-d" 15
+.IP "\-d" 15
 Print MOM diagnosis on the listed nodes.  Not yet implemented.  
 Use momctl instead.
-.IP "-o" 15
+.IP "\-o" 15
 Add the OFFLINE state.  
 This is different from being marked DOWN.
 OFFLINE prevents new jobs from running on the specified nodes.
@@ -124,26 +124,26 @@ This gives the administrator a tool to hold a node out
 of service without changing anything else.
 The OFFLINE state will never be set or cleared automatically
 by pbs_server; it is purely for the manager or operator.
-.IP "-p" 15
+.IP "\-p" 15
 Purge the node record from pbs_server.  Not yet implemented.
-.IP "-r" 15
+.IP "\-r" 15
 Reset the listed nodes by clearing OFFLINE and adding DOWN state.
 pbs_server will ping the node and, if they communicate correctly, free the node.
-.IP "-l" 15
+.IP "\-l" 15
 List node names and their state.  If no state is specified, only nodes in the
 DOWN, OFFLINE, or UNKNOWN states are listed.  Specifying a state string acts as
 an output filter.  Valid state strings are "active", "all", "busy", "down",
 "free", "offline", "unknown", and "up".
-.IP "-N" 15
+.IP "\-N" 15
 Specify a "note" attribute.  This allows an administrator to add an
 arbitrary annotation to the listed nodes.  To clear a note, use
--N "" or -N n.
-.IP "-n" 15
+\-N "" or \-N n.
+.IP "\-n" 15
 Show the "note" attribute for nodes that are DOWN, OFFLINE, or UNKNOWN.
-This option requires -l.
-.IP "-q" 15
+This option requires \-l.
+.IP "\-q" 15
 Supress all error messages.
-.IP "-s" 15
+.IP "\-s" 15
 Specify the PBS server's hostname or IP address.
 .SH SEE ALSO
 pbs_server(8B) and the PBS External Reference Specification

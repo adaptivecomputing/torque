@@ -79,7 +79,7 @@
 .so ../ers/ers.macros
 .Ig
 .SH NAME
-pbs_statnode - obtain status of pbs nodes
+pbs_statnode \- obtain status of pbs nodes
 .SH SYNOPSIS
 #include <pbs_error.h>
 .br

@@ -79,12 +79,12 @@
 .TH pbs_resources_aix4 7B "" Local PBS
 .so ../ers/ers.macros
 .SH NAME
-pbs_resources_aix4 - pbs Resources on IBM AIX 4
+pbs_resources_aix4 \- pbs Resources on IBM AIX 4
 .SH DESCRIPTION
 This page summarizes the resources supported by PBS for IBM systems running
 AIX version 4.
 These resources are specified for jobs by including them in the
-.I -l
+.I \-l
 option argument on the qsub or qalter command or in the PBS job script.
 .SH RESOURCES
 .Iq
@@ -124,13 +124,13 @@ Maximum amount of real time during which the job can be in the running state.
 Units: time.
 .so pbs_resources_all.so
 .LP
-qsub -l cput=1:00:00,walltime=2:00:00,file=50gb,mem=15mb script
+qsub \-l cput=1:00:00,walltime=2:00:00,file=50gb,mem=15mb script
 .br
-qalter -lcput=30:00,pmem=8mb 123.jobid
+qalter \-lcput=30:00,pmem=8mb 123.jobid
 .LP
 or in a qsub script as a directive:
 .LP
-#PBS -l cput=1:00:00,walltime=2:00:00,file=50gb,mem=15mb
+#PBS \-l cput=1:00:00,walltime=2:00:00,file=50gb,mem=15mb
 .LP
 .if !\n(Pb .ig Ig
 .\" for ers only

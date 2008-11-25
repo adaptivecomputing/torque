@@ -231,14 +231,14 @@ The file descriptor of the UDP socket used by the library is returned.
 .B rpp_poll(\|)
 returns the stream identifier of a stream with data to read.  If
 no stream is ready to read,
-a -2 is returned.  A -1 is returned if an error occurs.
+a \-2 is returned.  A \-1 is returned if an error occurs.
 .LP
 .B rpp_io(\|)
 processes any packets which are waiting to be sent or resceived over
 the UDP socket.  This routine should be called if a section of code
 could be executing for more than a few (~10) seconds without calling
 any other rpp function.
-A -1 is returned if an error occurs, 0 otherwise.
+A \-1 is returned if an error occurs, 0 otherwise.
 .LP
 .B rpp_read(\!)
 transfers up to
@@ -250,7 +250,7 @@ into
 If all of a message has been read, the return value will be less than
 .IR len .
 The return value could be zero if all of a message had previously been
-read.  A -1 is returned on error.  A -2 is returned if the peer has
+read.  A \-1 is returned on error.  A \-2 is returned if the peer has
 closed its connection.
 If
 .B rpp_poll(\!)
@@ -268,14 +268,14 @@ numbering
 .IR len
 characters is transfered to the stream.
 The number of characters added to the
-stream are returned or a -1 on error.  In this case, errno will be set.
-A -2 is returned if the peer has closed its connection.
+stream are returned or a \-1 on error.  In this case, errno will be set.
+A \-2 is returned if the peer has closed its connection.
 .LP
 .B rpp_close(\!)
 disconnects the
 .IR stream
 from its peer and frees all resources associated with the stream.
-The return value is -1 on error and 0 otherwise.
+The return value is \-1 on error and 0 otherwise.
 .B rpp_getaddr(\!)
 returns the address which a
 .IR stream
@@ -289,7 +289,7 @@ written to the specified
 .IR stream .
 A zero is returned if the message
 has been successfully committed.
-A -1 is returned on error.
+A \-1 is returned on error.
 .LP
 .B rpp_terminate(\!)
 is used to free all memory associated with all streams and close the

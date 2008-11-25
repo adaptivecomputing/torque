@@ -79,7 +79,7 @@
 .so ../ers/ers.macros
 .Iq
 .SH NAME
-pbs - general information on pbs
+pbs \- general information on pbs
 .SH DESCRIPTION
 PBS stands for
 .I "Portable Batch System."
@@ -141,7 +141,7 @@ Once a job has been submitted, it may be monitored by use of the
 command.  Two forms of output are available with the qstat command.
 The default form is the short display.   Information about a job
 is limited to a single line.   Complete information about the job or
-jobs is available through qstat with the -f option.
+jobs is available through qstat with the \-f option.
 Information will be given about all jobs in the system, all jobs in specified
 queues, or only specified jobs.
 .LP

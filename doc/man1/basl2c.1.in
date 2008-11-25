@@ -86,9 +86,9 @@
 basl2c \- converts a BASL (BAtch Scheduling Language) code into a C scheduler
 code.
 .SH SYNOPSIS
-basl2c [\^-d\^] [\^-l lexerDebugFile\^] [\^-p parserDebugFile\^]
-[\^-y symtabDebugFile\^] [\^-s semanticDebugFile\^] [\^-g codegenDebugFile\^]
-[\^-c cFile\^] baslFile
+basl2c [\^\-d\^] [\^\-l lexerDebugFile\^] [\^\-p parserDebugFile\^]
+[\^\-y symtabDebugFile\^] [\^\-s semanticDebugFile\^] [\^\-g codegenDebugFile\^]
+[\^\-c cFile\^] baslFile
 .SH DESCRIPTION
 .B basl2c
 is the BASL to C compiler that produces an intermediate code that can be
@@ -108,34 +108,34 @@ variable in local.mk before compiling the BASL scheduler to produce the
 .Ar "pbs_sched"
 executable.
 .SH OPTIONS
-.IP "-d" 5
-Prints additional debugging messages to the lexer (see -l option),
-parser (see -p option),
-symbol table (see -y option),
-semantic analyzer (see -s option), and
-code generator (see -g option).
-.IP "-l lexerDebugFile" 5
+.IP "\-d" 5
+Prints additional debugging messages to the lexer (see \-l option),
+parser (see \-p option),
+symbol table (see \-y option),
+semantic analyzer (see \-s option), and
+code generator (see \-g option).
+.IP "\-l lexerDebugFile" 5
 .Ar lexerDebugFile
 is the name of a file to write into the debugging messages
 generated while scanning for tokens.
-.IP "-p parserDebugFile" 5 
+.IP "\-p parserDebugFile" 5 
 .Ar parserDebugFile
 is the name of a file to write into the debugging messages
 generated while putting together tokens in a usable way.
-.IP "-y symtabDebugFile" 5 
+.IP "\-y symtabDebugFile" 5 
 .Ar symtabDebugFile
 is the name of a file to write into the debugging messages
 related to the symbol table.
-.IP "-s semanticDebugFile" 5
+.IP "\-s semanticDebugFile" 5
 .Ar semanticDebugFile
 is the name of a file to write into the debugging messages
 generated while checking to make sure variables and operators are used in a
 consistent way.
-.IP "-g codegenDebugFile" 5
+.IP "\-g codegenDebugFile" 5
 .Ar codegenDebugFile
 is the name of a file to write into the debugging messages
 generated while converting BASL statements to C statements.
-.IP "-c cFile" 5
+.IP "\-c cFile" 5
 .Ar cFile
 is the name of a file where the generated C code is written into.
 .SH MAIN STRUCTURE
@@ -291,12 +291,12 @@ signed, whole numbers given in base 10.
 .br
 .RS
 .IP "Sample constants:"
-5, +1, -3, SUCCESS (=1), FAIL (=0), TRUE (=1), FALSE (=0)
+5, +1, \-3, SUCCESS (=1), FAIL (=0), TRUE (=1), FALSE (=0)
 .RE
 .IP \fBFloat\fP 8
 real numbers which are represented as doubles in the translated C code.
 .br
-Sample constants: 4.3, +1.2, -2.6
+Sample constants: 4.3, +1.2, \-2.6
 .IP \fBDayofweek\fP 8
 constant values: SUN, MON, TUE, WED, THU, FRI, SAT, internally represented as
 integer valued constants with SUN=0, MON=1, and so on.
@@ -343,7 +343,7 @@ the "lower" of the two will be the resultant suffix. For example,
      10mb + 10gb =  10250mb
 .fi
 .br
-Sample constants: -1b, 2w, 1kb, 2mw, +3gb, 4tw, 6Pb
+Sample constants: \-1b, 2w, 1kb, 2mw, +3gb, 4tw, 6Pb
 .IP "\fBRange Int\fP" 8
 .RS
 .IP "format: (low Int value, high Int value)" 8
@@ -502,7 +502,7 @@ Arithmetic expressions
 .ft 3
 .nf
         lexpr + rexpr   (add)
-        lexpr - rexpr   (subtract)
+        lexpr \- rexpr   (subtract)
         lexpr * rexpr   (multiply)
         lexpr / rexpr   (divide)
         lexpr % rexpr   (modulus or remainder)
@@ -526,7 +526,7 @@ For +:
 .fi
 .ft 1
 .sp
-For -, *, /:
+For \-, *, /:
 .sp
 .Ty
 .nf
@@ -560,7 +560,7 @@ Here are some sample arithmetic expressions statements:
         String  str2;
 
         i1 + i2;
-        f1 - i2;
+        f1 \- i2;
         sz1 * sz2 * 2b;
         sz1 / 1024b;
 
@@ -579,17 +579,17 @@ Unary expressions
 .sp
 .ft 3
 .nf
-        +expr     // positive - multiplies by 1 an
+        +expr     // positive \- multiplies by 1 an
                       //        expression that is
                       //        of Int, Float, or
                       //        Size type
 
-        -expr     // negative - multiplies by -1 an
+        \-expr     // negative \- multiplies by \-1 an
                       //        expression that is
                       //        of Int, Float, or
                       //        Size type
 
-        !expr     // not - converts a non-zero expr
+        !expr     // not \- converts a non-zero expr
                       //       value into 0, and a
                       //       zero expr value into 1
                       //       where expr type must be
@@ -603,7 +603,7 @@ Some sample unary expressions:
         Int i;
 
         +3;
-        -(i + 4);
+        \-(i + 4);
         !i;
 .fi
 .IP c)
@@ -675,7 +675,7 @@ These are expressions that are merely shortcut to assignment statements.
 .ft 3
 .nf
         IDENTIFIER++;    // identifier=identifier+1
-        IDENTIFIER--;     // identifier=identifier-1
+        IDENTIFIER\-\-;     // identifier=identifier-1
 .fi
 .sp
 .ft 1
@@ -689,7 +689,7 @@ Example:
          Float f;
 
          i++;
-         f--;
+         f\-\-;
 .fi
 .IP e)
 Function call
@@ -740,7 +740,7 @@ Some valid constant expressions are given in the following:
         (12:01:00);
         (4|4|1997@12:01:00);
         "wonderful";
-        -1b;
+        \-1b;
         SYNCRUN;
         ASYNCRUN;
         DELETE;
@@ -1039,7 +1039,7 @@ Example:
                         print("break on i = 1");
                         break;
                 }
-                i--;
+                i\-\-;
         }
 .fi
 .IP "7. switch statement"
@@ -1332,9 +1332,9 @@ are seen from right to left.
 .nf
     Operator                                     Associativity
     =======================================      =============
-    ! ++ -- + (unary plus) - (unary minus)       right
+    ! ++ \-\- + (unary plus) \- (unary minus)       right
     * / %                                        left
-    + -                                          left
+    + \-                                          left
     LT LE GT GE                                  left
     EQ NEQ                                       left
     AND                                          left
@@ -1392,7 +1392,7 @@ Returns server_state attribute of Server s.
 .RS
 .IP "Return value:"
 SERVER_ACTIVE, SERVER_IDLE, SERVER_SCHED, SERVER_TERM,
-SERVER_TERMDELAY, -1 (unset value)
+SERVER_TERMDELAY, \-1 (unset value)
 .RE
 .IP "\fBInt ServerMaxRunJobsGet(Server s)\fP"
 Returns max_running attribute of Server s. unset value:  0
@@ -1576,7 +1576,7 @@ At the present time the  only  resources  which  may  be
 specified  are  "nodes".   It  should  be  specified  as
 .B nodes=specification
 where specification is what  a  user
-specifies in the -l option argument list for nodes, see qsub (1B).
+specifies in the \-l option argument list for nodes, see qsub (1B).
 .br
 NOTE: This is a wrapper to the pbs_rescreserve(3B) server function.
 .br
@@ -1603,7 +1603,7 @@ Returns name of Que que. unset value: NULLSTR
 .IP "\fBInt QueTypeGet( Que que )\fP"
 Returns queue_type attribute of Que que.
 .br
-Return value: QTYPE_E (Execution), QTYPE_R (Routing), -1 (unset value)
+Return value: QTYPE_E (Execution), QTYPE_R (Routing), \-1 (unset value)
 .IP "\fBInt QueNumJobsGet( Que que )\fP"
 Returns number of jobs residing in Que que. unset value:  0
 .IP "\fBInt QueMaxRunJobsGet( Que que )\fP"
@@ -1615,7 +1615,7 @@ Returns max_group_run attribute of Que que. unset value:  0
 .IP "\fBInt QuePriorityGet( Que que )\fP"
 Returns Priority attribute of Que que. unset value: 0
 .IP "\fBInt QueStateGet( Que que )\fP"
-Returns started attribute of Que que - the job execution selection state of the
+Returns started attribute of Que que \- the job execution selection state of the
 que: SCHED_DISABLED, SCHED_ENABLED. unset value: SCHED_DISABLED
 .IP "\fBSet Job QueJobsGet( Que que )\fP"
 Returns the list of jobs currently residing in que.
@@ -1707,7 +1707,7 @@ Returns job_state attribute of Job job.
 .br
 .RS
 .IP "Return value:"
-TRANSIT, QUEUED, HELD, WAITING, RUNNING, EXITING, -1 (unset
+TRANSIT, QUEUED, HELD, WAITING, RUNNING, EXITING, \-1 (unset
 value)
 .RE
 .IP "\fBInt JobPriorityGet( Job job )\fP"
@@ -1715,7 +1715,7 @@ Returns Priority attribute of Job job. unset value: 0
 .IP "\fBInt JobRerunFlagGet( Job job )\fP"
 Returns Rerunable attribute of Job job.
 .br
-Return value: FALSE, TRUE, -1 (unset value)
+Return value: FALSE, TRUE, \-1 (unset value)
 .IP "\fBInt JobInteractiveFlagGet( Job job )\fP"
 Returns interactive attribute of Job job.
 .br
@@ -1901,14 +1901,14 @@ unset value: NULLSTR
 Returns the name of the vendor for the hardware of the machine (i.e. "sgi",
 "ibm"). unset value: NULLSTR
 .IP "\fBInt CNodeNumCpusGet(CNode node)\fP"
-Returns the number of processors attached to the node.  unset value: -1
+Returns the number of processors attached to the node.  unset value: \-1
 .IP "\fBSize  CNodeMemTotalGet( CNode node, String type )\fP"
 Returns total memory of
 .B type
 for the node.
 .B type
 is an arbitrary string that the scheduler writer defines in the
-scheduler configuration file. unset value: -1b
+scheduler configuration file. unset value: \-1b
 .br
 Example:
 .Ty
@@ -1925,7 +1925,7 @@ for the node.
 .B type
 is an arbitrary string that the scheduler writer defines in the
 scheduler configuration file.
-unset value: -1b
+unset value: \-1b
 .br
 So sample calls will be:
 .Ty
@@ -1937,9 +1937,9 @@ So sample calls will be:
 .fi
 .IP "\fBInt CNodeIdletimeGet( CNode node )\fP"
 Returns number of seconds in which no keystroke or mouse movement has taken
-place on any terminal connected to the node.  unset value: -1
+place on any terminal connected to the node.  unset value: \-1
 .IP "\fBFloat CNodeLoadAveGet( CNode  node )\fP"
-Returns node's load average for all cpus. unset value: -1.0
+Returns node's load average for all cpus. unset value: \-1.0
 .IP "\fBInt CNodeCpuPercentIdleGet( CNode  node )\fP"
 Returns the percent of idle time that all the processors of the node have
 experienced.
@@ -1958,7 +1958,7 @@ Returns the bandwidth of the node's network of
 in bytes/second.
 .B type
 is defined by the scheduler writer in the scheduler configuration file.
-unset value: -1
+unset value: \-1
 .br
 Some sample calls are:
 .Ty
@@ -1972,7 +1972,7 @@ Returns the node's total space on disk identified by
 where
 .B name
 is the device name arbitrarily defined by the scheduler writer in the
-scheduler configuration file.  unset value: -1b
+scheduler configuration file.  unset value: \-1b
 .br
 Example:
 .Ty
@@ -1985,7 +1985,7 @@ Returns the node's available space on disk identified by
 where
 .B name
 is arbitrarily defined by the scheduler writer in the scheduler
-configuration file. unset value: -1b
+configuration file. unset value: \-1b
 .br
 Example:
 .Ty
@@ -1999,7 +1999,7 @@ where
 .B name
 is arbitrarily defined by the scheduler writer in the scheduler
 configuration file.
-unset value: -1b
+unset value: \-1b
 .br
 Example:
 .Ty
@@ -2009,7 +2009,7 @@ Example:
 .IP "\fBInt CNodeDiskInBwGet( CNode node, String name )\fP"
 Returns the write bandwidth (bytes/sec) of the node's disk identified by
 .B "name".
-unset value: -1
+unset value: \-1
 .br
 Example:
 .Ty
@@ -2019,7 +2019,7 @@ Example:
 .IP "\fBInt CNodeDiskOutBwGet( CNode node, String name )\fP"
 Returns read bandwidth (bytes/sec) of the node's disk identified by
 .B "name".
-unset value: -1
+unset value: \-1
 .br
 Example:
 .Ty
@@ -2033,7 +2033,7 @@ where
 .B name
 is arbitrarily defined by the scheduler writer in the scheduler
 configuration file.
-unset value: -1b
+unset value: \-1b
 .br
 Example:
 .Ty
@@ -2046,7 +2046,7 @@ Returns node's available space on swap identified by
 where
 .B name
 is the device name arbitrarily defined by the scheduler writer in the
-scheduler configuration file.  unset value: -1b
+scheduler configuration file.  unset value: \-1b
 .br
 Example:
 .Ty
@@ -2065,7 +2065,7 @@ Example:
 .IP "\fBInt CNodeSwapOutBwGet( CNode node, String name )\fP"
 Returns the swapout rate of the  node's swap device identified by
 .B name.
-unset value: -1
+unset value: \-1
 .br
 Example:
 .Ty
@@ -2079,7 +2079,7 @@ where
 .B name
 is arbitrarily defined by the scheduler writer in the scheduler
 configuration file.
-unset value: -1b
+unset value: \-1b
 .br
 Example:
 .Ty
@@ -2093,7 +2093,7 @@ where
 .B name
 is arbitrarily defined by the scheduler writer in the scheduler
 configuration file.
-unset value: -1b
+unset value: \-1b
 .br
 Example:
 .nf
@@ -2102,7 +2102,7 @@ Example:
 .IP "\fBInt CNodeTapeInBwGet( CNode node, String name )\fP"
 Returns the write bandwidth (bytes/sec) of the node's tape identified by
 .B "name".
-unset value: -1
+unset value: \-1
 .br
 Example:
 .Ty
@@ -2112,7 +2112,7 @@ Example:
 .IP "\fBInt CNodeTapeOutBwGet( CNode node, String name )\fP"
 Returns the read bandwidth (bytes/sec) of the node's tape identified by
 .B "name".
-unset value: -1
+unset value: \-1
 .br
 Example:
 .Ty
@@ -2126,7 +2126,7 @@ where
 .B name
 is arbitrarily defined by the scheduler writer in the scheduler configuration
 file.
-unset value: -1b
+unset value: \-1b
 .br
 Example:
 .Ty
@@ -2140,7 +2140,7 @@ where
 .B name
 is arbitrarily defined by the scheduler writer in some configuration
 file.
-unset value: -1b
+unset value: \-1b
 .br
 Example:
 .Ty
@@ -2155,7 +2155,7 @@ where
 .B name
 is arbitrarily defined by the scheduler writer in
 the scheduler configuration file.
-unset value: -1b
+unset value: \-1b
 .br
 Example:
 .Ty
@@ -2165,7 +2165,7 @@ Example:
 .IP "\fBInt CNodeSrfsInBwGet( CNode node, String name )\fP"
 Returns the write bandwidth (bytes/sec) of the node's srfs device identified by
 .B "name".
-unset value: -1
+unset value: \-1
 .br
 Example:
 .nf
@@ -2174,7 +2174,7 @@ Example:
 .IP "\fBInt CNodeSrfsOutBwGet( CNode node, String name )\fP"
 Returns the read bandwidth (bytes/sec) of the node's srfs device identified by
 .B "name".
-unset value: -1
+unset value: \-1
 .br
 Example:
 .nf
@@ -2186,7 +2186,7 @@ CNodeSrfsOutBwGet( node, "/big" );
 .IP "\fBDateTime datetimeGet()\fP"
 gets the current date/time.
 .IP "\fBInt datetimeToSecs(DateTime dt)\fP"
-returns the # of seconds since epoch (beginning of UNIX time - 00:00:00,
+returns the # of seconds since epoch (beginning of UNIX time \- 00:00:00,
 January 1, 1970) for the given date/time
 .B dt.
 .IP "\fBInt JobAction( Job job, Int action, String param )\fP"
@@ -2232,7 +2232,7 @@ SIGNAL, MODIFYATTR, MODIFYRES where:
   DELETE              deletes the job.
                       Param value:
                         "deldelay=<# of secs>"           
-                        - delay # of seconds
+                        \- delay # of seconds
                           between the sending
                           of SIGTERM and SIGKILL
                           to the job before
@@ -2249,7 +2249,7 @@ SIGNAL, MODIFYATTR, MODIFYRES where:
                        Param value:
                         "u", "o", "s", "uo", "os",
                         "uos"
-                        - type of holds to place
+                        \- type of holds to place
                           on job: u(ser), o(ther),
                           s(ystem). 
 
@@ -2258,7 +2258,7 @@ SIGNAL, MODIFYATTR, MODIFYRES where:
                        Param value:
                         "u", "o", "s", "uo", "os",
                         "uos"
-                        - type of holds to remove
+                        \- type of holds to remove
                           from job: u(ser), o(ther),
                           s(ystem).
                        
@@ -2787,7 +2787,7 @@ at every scheduling iteration.  For example,
 .Ty CNodeLoadAveGet(node)
 will return the value obtained from some <host resource> query (this
 could be the string "loadave") as sent to the node's MOM.
-The "<host resource> -> CNode..Get()" mappings are established
+The "<host resource> \-> CNode..Get()" mappings are established
 internally, but they can be modified or more mappings can be added via the
 scheduler configuration file. The config file is discussed in
 .B pbs_sched_basl(8B).

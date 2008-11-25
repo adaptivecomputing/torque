@@ -79,7 +79,7 @@
 .TH pbs_server_attributes 7B "" Local PBS
 .so ../ers/ers.macros
 .SH NAME
-pbs_server_attributes - pbs server attributes
+pbs_server_attributes \- pbs server attributes
 .SH DESCRIPTION
 .Iq
 .if !\n(Pb .ig Ig
@@ -407,7 +407,7 @@ The setting of this attribute controls if general users, other than the
 job owner, are allowed to query the status of or select the job.
 Format: boolean (see acl_host_enable);
 Requires full manager privilege to set or alter.
-default value: false - users may not query or select jobs owned by other users.
+default value: false \- users may not query or select jobs owned by other users.
 .if !\n(Pb .ig Ig
 [internal type: boolean]
 .Ig
@@ -484,7 +484,7 @@ For more information, see the section
 in the PBS Administrator Guide.
 Format: boolean (see
 acl_host_enable);
-default value: value of -a option when server is invoked, if -a is not
+default value: value of \-a option when server is invoked, if \-a is not
 specified, the value is recovered from the prior server run.  If it has never
 been set, the value is "false".
 .if !\n(Pb .ig Ig

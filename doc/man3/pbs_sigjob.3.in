@@ -79,7 +79,7 @@
 .so ../ers/ers.macros
 .Ig
 .SH NAME
-pbs_sigjob - send a signal to a pbs batch job
+pbs_sigjob \- send a signal to a pbs batch job
 .SH SYNOPSIS
 #include <pbs_error.h>
 .br

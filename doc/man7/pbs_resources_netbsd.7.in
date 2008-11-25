@@ -79,12 +79,12 @@
 .TH pbs_Resources_netbsd 7B "" Local PBS
 .so ../ers/ers.macros
 .SH NAME
-pbs_resources_netbsd - pbs resources on NetBSD
+pbs_resources_netbsd \- pbs resources on NetBSD
 .SH DESCRIPTION
 This page summarizes the resources supported by PBS for
 workstations running NetBSD on various hardware architectures.
 These resources are specified by including them in the
-.I -l
+.I \-l
 option argument on the qsub or qalter command or in the PBS job script.
 .SH RESOURCES
 .Iq
@@ -121,13 +121,13 @@ Maximum amount of real time during which the job can be in the running state.
 Units: time.
 .so pbs_resources_all.so
 .LP
-qsub -l cput=1:00:00,walltime=2:00:00,file=50gb,mem=15mb script
+qsub \-l cput=1:00:00,walltime=2:00:00,file=50gb,mem=15mb script
 .br
-qalter -lcput=30:00,pmem=8mb 123.jobid
+qalter \-lcput=30:00,pmem=8mb 123.jobid
 .LP
 or in a qsub script as a directive:
 .LP
-#PBS -l cput=1:00:00,walltime=2:00:00,file=50gb,mem=15
+#PBS \-l cput=1:00:00,walltime=2:00:00,file=50gb,mem=15
 .LP
 .if !\n(Pb .ig Ig
 .\" for ers only

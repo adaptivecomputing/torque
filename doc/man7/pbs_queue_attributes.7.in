@@ -79,7 +79,7 @@
 .TH pbs_queue_attributes 7B "" Local PBS
 .so ../ers/ers.macros
 .SH NAME
-pbs_queue_attributes - pbs queue attributes
+pbs_queue_attributes \- pbs queue attributes
 .SH DESCRIPTION
 .Iq
 .if !\n(Pb .ig Ig

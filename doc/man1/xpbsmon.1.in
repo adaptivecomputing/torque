@@ -106,7 +106,7 @@ settings usually defined in the .Xdefaults file
 Preference settings defined by the system administrator in the global xpbsmonrc
 file
 .IP "3."
-User's ~/.xpbsmonrc file - this file defines various X resources like fonts,
+User's ~/.xpbsmonrc file \- this file defines various X resources like fonts,
 colors, list of colors to use to represent the various status of the nodes,
 list of PBS sites to query, list of server hosts on each site, list of
 nodes/execution hosts on each server host, list of system resource queries to
@@ -235,10 +235,10 @@ Some of the widgets used in \fBxpbsmon\fP and how they are manipulated are
 described in the following:
 .sp
 .IP "1." 3
-\fBlistbox\fP - the ones found in this GUI are only single-selectable
+\fBlistbox\fP \- the ones found in this GUI are only single-selectable
 (one  entry  can be highlighted/selected at a time via a mouse click).
 .IP "2." 3
-\fBscrollbar\fP - usually appears either vertically or
+\fBscrollbar\fP \- usually appears either vertically or
 horizontally and contains 5 distinct areas that are mouse
 clicked to achieve different effects:
 .RS
@@ -275,7 +275,7 @@ the action will auto-repeat.
 .RE
 .sp
 .IP "3." 3
-\fBentry\fP - brought into focus with a click of the left
+\fBentry\fP \- brought into focus with a click of the left
 mouse button.  To manipulate this widget, simply type in
 the text value. Use of arrow keys, mouse selection of
 text for deletion or overwrite, copying and pasting with
@@ -284,7 +284,7 @@ This widget is usually accompanied by a scrollbar for
 horizontally scanning a long text entry string.
 .sp
 .IP "4." 3
-\fBbox\fP -  made up of 1 or more listboxes displayed adjacent
+\fBbox\fP \-  made up of 1 or more listboxes displayed adjacent
 to each other giving the effect of a "matrix". Each row
 from the listboxes makes up an element of the box. In order
 to add items to the box, you need to manipulate the accompanying
@@ -293,13 +293,13 @@ button. Removing items from the box is done by selecting an
 element, and then clicking \fBdelete\fP.
 .sp
 .IP "5." 3
-\fBspinbox\fP - a combination of an entry widget and a
+\fBspinbox\fP \- a combination of an entry widget and a
 horizontal scrollbar.  The entry widget will only accept
 values that fall within a defined list of valid values, and
 incrementing through the valid values is done by clicking on
 the up/down arrows.
 .IP "6." 3
-\fBbutton\fP - a rectangular region appearing either raised or
+\fBbutton\fP \- a rectangular region appearing either raised or
 pressed that invokes an action when clicked with the left
 mouse button.  When the button appears pressed, then hitting
 the <RETURN> key will automatically select the button.

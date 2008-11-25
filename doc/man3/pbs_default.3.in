@@ -79,7 +79,7 @@
 .so ../ers/ers.macros
 .Ig
 .SH NAME
-pbs_default - return the pbs default server name
+pbs_default \- return the pbs default server name
 .SH SYNOPSIS
 #include <pbs_error.h>
 .br

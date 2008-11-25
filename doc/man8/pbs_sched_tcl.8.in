@@ -81,9 +81,9 @@
 .SH NAME
 pbs_sched_tcl \- pbs Tcl scheduler
 .SH SYNOPSIS
-pbs_sched [\^-a\ alarm\^] [\^-b\ file\^] [\^-d\ home\^] [\^-i\ file\^]
-[\^-L\ logfile\^] [\^-p\ file\^] [\^-S\ port\^] [\^-t\ file\^]
-[\^-v\^] [\^-c\ file\^]
+pbs_sched [\^\-a\ alarm\^] [\^\-b\ file\^] [\^\-d\ home\^] [\^\-i\ file\^]
+[\^\-L\ logfile\^] [\^\-p\ file\^] [\^\-S\ port\^] [\^\-t\ file\^]
+[\^\-v\^] [\^\-c\ file\^]
 .SH DESCRIPTION
 The
 .B pbs_sched
@@ -95,7 +95,7 @@ It then makes decisions as to what jobs to run.
 .LP
 pbs_sched must be executed with root permission.
 .SH OPTIONS
-.IP "-a alarm" 15
+.IP "\-a alarm" 15
 This specifies the time in seconds to wait for a schedule run to finish.
 If a script takes too long to finish, an alarm signal is sent, and
 the scheduler is restarted.  If a core file does not exist in the
@@ -104,52 +104,52 @@ current directory,
 is called and a core file is generated.  The default for
 .I alarm
 is 180 seconds.
-.IP "-b file" 15
+.IP "\-b file" 15
 This specifies the "body" file.  The file given is read into memory
 once at program start or after the program receives a SIGHUP
 and executed each time the scheduler is awakened by the server.
 If this option is not given, the file "sched_tcl" in the directory
 PBS_HOME/sched_priv is read for the body
 code.
-.IP "-d home" 15
+.IP "\-d home" 15
 This specifies the PBS home directory, PBS_HOME.
 The current working directory of the scheduler is PBS_HOME/sched_priv.
 If this option is not given, PBS_HOME defaults to $PBS_SERVER_HOME as defined 
 during the PBS build procedure.
-.IP "-i file" 15
+.IP "\-i file" 15
 This specifies the "initialize" file.  The file given is executed
 once before the main processing loop is entered.  If this option
 is not given, no initialization code is executed.
-.IP "-L logfile" 15
+.IP "\-L logfile" 15
 Specifies an absolute path name of the file to use as the log file.
 If not specified, the scheduler will
 open a file named for the current date in the PBS_HOME/sched_logs
-directory (see the -d option).
-.IP "-p file" 15
+directory (see the \-d option).
+.IP "\-p file" 15
 This specifies the "print" file.  Any output from the Tcl
 code which is written to standard out or standard error will be
 written to this file.
 If this option is not given, the file used will be
 .I PBS_HOME/sched_priv/sched_out.
 See the
-.At -d
+.At \-d
 option.
-.IP "-S port" 15
+.IP "\-S port" 15
 This specifies the port to use.  If this option is not given,
 the default port for the PBS scheduler is used.
-.IP "-t file" 15
+.IP "\-t file" 15
 This specifies the "terminator" file.  If a QUIT command is sent
 from the server, this code is executed before the scheduler exits.
 If this option is not given, no special termination handling is done.
-.IP "-v" 15
+.IP "\-v" 15
 This puts the scheduler into "verbose" mode.
 Any errors will be shown no matter what this may be set to, but
 some "uninteresting" events may be logged by using this flag.
 An example is a message each time the server contacts the scheduler.
-.IP "-c file" 15
+.IP "\-c file" 15
 Specify a configuration file, see description below.
 If this is a relative file name it will be relative to PBS_HOME/sched_priv,
-see the -d option.  If the -c option is not supplied, pbs_sched will not
+see the \-d option.  If the \-c option is not supplied, pbs_sched will not
 attempt to open a configuration file.
 .LP
 The options that specify file names may be absolute or relative.
@@ -192,11 +192,11 @@ Nothing is returned.
 Sends a command to the connected resource monitor to read the configuration
 file given by
 .I filename.
-If this is successful, a "0" is returned, otherwise, "-1" is returned.
+If this is successful, a "0" is returned, otherwise, "\-1" is returned.
 .LP
 .IP "addreq connection request" 6
 A resource request is sent to the connected resource monitor.
-If this is successful, a "0" is returned, otherwise, "-1" is returned.
+If this is successful, a "0" is returned, otherwise, "\-1" is returned.
 .LP
 .IP "getreq connection" 6
 One resource request response from the connected resource monitor is
@@ -289,7 +289,7 @@ at the location given by
 If
 .I location
 is not given, the default location is used.
-If this is successful, a "0" is returned, otherwise, "-1" is returned.
+If this is successful, a "0" is returned, otherwise, "\-1" is returned.
 .LP
 .IP "pbsasyrunjob jobid ?location?" 6
 Run the job given by
@@ -301,22 +301,22 @@ has actually started.
 If
 .I location
 is not given, the default location is used.
-If this is successful, a "0" is returned, otherwise, "-1" is returned.
+If this is successful, a "0" is returned, otherwise, "\-1" is returned.
 .LP
 .IP "pbsrerunjob jobid" 6
 Re-runs the job given by
 .I jobid.
-If this is successful, a "0" is returned, otherwise, "-1" is returned.
+If this is successful, a "0" is returned, otherwise, "\-1" is returned.
 .LP
 .IP "pbsdeljob jobid" 6
 Delete the job given by
 .I jobid.
-If this is successful, a "0" is returned, otherwise, "-1" is returned.
+If this is successful, a "0" is returned, otherwise, "\-1" is returned.
 .LP
 .IP "pbsholdjob jobid" 6
 Place a hold on the job given by
 .I jobid.
-If this is successful, a "0" is returned, otherwise, "-1" is returned.
+If this is successful, a "0" is returned, otherwise, "\-1" is returned.
 .LP
 .IP "pbsmovejob jobid ?location?" 6
 Move the job given by
@@ -326,31 +326,31 @@ to the location given by
 If
 .I location
 is not given, the default location is used.
-If this is successful, a "0" is returned, otherwise, "-1" is returned.
+If this is successful, a "0" is returned, otherwise, "\-1" is returned.
 .LP
 .IP "pbsqenable queue" 6
 Set the "enabled" attribute for the queue given by
 .I queue
 to true.
-If this is successful, a "0" is returned, otherwise, "-1" is returned.
+If this is successful, a "0" is returned, otherwise, "\-1" is returned.
 .LP
 .IP "pbsqdisable queue" 6
 Set the "enabled" attribute for the queue given by
 .I queue
 to false.
-If this is successful, a "0" is returned, otherwise, "-1" is returned.
+If this is successful, a "0" is returned, otherwise, "\-1" is returned.
 .LP
 .IP "pbsqstart queue" 6
 Set the "started" attribute for the queue given by
 .I queue
 to true.
-If this is successful, a "0" is returned, otherwise, "-1" is returned.
+If this is successful, a "0" is returned, otherwise, "\-1" is returned.
 .LP
 .IP "pbsqstop queue" 6
 Set the "started" attribute for the queue given by
 .I queue
 to false.
-If this is successful, a "0" is returned, otherwise, "-1" is returned.
+If this is successful, a "0" is returned, otherwise, "\-1" is returned.
 .LP
 .IP "pbsalterjob jobid attribute_list" 6
 Alter the attributes for a job specified by
@@ -360,7 +360,7 @@ The parameter
 is the list of attributes to be altered.  There can be more than one.
 Each attribute consists of a list of three elements.  The first
 is the name, the second the resource and the third is the new value.
-If the alter is successful, a "0" is returned, otherwise, "-1" is returned.
+If the alter is successful, a "0" is returned, otherwise, "\-1" is returned.
 .LP
 .IP "pbsrescquery resource_list" 6
 Obtain information about the resources specified by
@@ -475,7 +475,7 @@ which talk to the server will work unless
 is called first.  The "body" file is run with a connection to
 the server already established.
 .SH CONFIGURATION FILE
-A configuration file may be specified with the -c option.  
+A configuration file may be specified with the \-c option.  
 This file may be used to specify the hosts (servers) which are allowed to
 connect to pbs_sched.  The hosts are specified in the configuration file
 in a manor identical to that used in pbs_mom.  There is one line per

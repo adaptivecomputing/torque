@@ -79,7 +79,7 @@
 .so ../ers/ers.macros
 .Ig
 .SH NAME
-pbs_geterrmsg - get error message for last pbs batch operation
+pbs_geterrmsg \- get error message for last pbs batch operation
 .SH SYNOPSIS
 #include <pbs_error.h>
 .br
@@ -96,7 +96,7 @@ request.
 .LP
 .if !\n(Pb .ig Ig
 Because different server implementations may have different error conditions,
-the batch request - reply protocol allows for the server to include the
+the batch request \- reply protocol allows for the server to include the
 text of an error message in the reply to a batch request.
 .LP
 .Ig

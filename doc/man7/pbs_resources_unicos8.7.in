@@ -79,12 +79,12 @@
 .TH pbs_resources_unicos 7B "" Local PBS
 .so ../ers/ers.macros
 .SH NAME
-pbs_resources_unicos - pbs resources under Unicos
+pbs_resources_unicos \- pbs resources under Unicos
 .SH DESCRIPTION
 This page summarizes the resources and special features supported by PBS
 for Cray Research computers running Unicos versions 8 and 9.
 These resources are specified by including them in the
-.I -l
+.I \-l
 option argument on the qsub or qalter command or in the PBS job script.
 .LP
 .SH RESOURCES
@@ -165,17 +165,17 @@ Maximum amount of real time during which the job can be in the running state.
 Units: time.
 .so pbs_resources_all.so
 .LP
-qsub -l cput=1:00:00,pcput=20:00,file=50gb,mem=15mb,mta=2 script
+qsub \-l cput=1:00:00,pcput=20:00,file=50gb,mem=15mb,mta=2 script
 .br
-qalter -lcput=30:00,pmem=8mb 123.jobid
+qalter \-lcput=30:00,pmem=8mb 123.jobid
 .br
-qsub -lsrfs_tmp=50mb,srfs_big=2gw script
+qsub \-lsrfs_tmp=50mb,srfs_big=2gw script
 .LP
 or in a qsub script as directives:
 .LP
-#PBS -l cput=1:00:00,pcput=20:00,file=50gb,mem=15mb,mta=2
+#PBS \-l cput=1:00:00,pcput=20:00,file=50gb,mem=15mb,mta=2
 .br
-#PBS -lsrfs_tmp=50mb,srfs_big=2gw
+#PBS \-lsrfs_tmp=50mb,srfs_big=2gw
 .LP
 .if !\n(Pb .ig Ig
 .\" for ers only

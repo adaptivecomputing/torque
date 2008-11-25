@@ -79,7 +79,7 @@
 .so ../ers/ers.macros
 .Ig
 .SH NAME
-pbs_orderjob - reorder pbs batch jobs in a queue
+pbs_orderjob \- reorder pbs batch jobs in a queue
 .SH SYNOPSIS
 #include <pbs_error.h>
 .br

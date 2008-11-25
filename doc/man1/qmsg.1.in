@@ -82,7 +82,7 @@
 qmsg \- send message to pbs batch jobs
 .SH SYNOPSIS
 qmsg
-[-E] [-O] message_string
+[\-E] [\-O] message_string
 job_identifier ...
 .SH DESCRIPTION
 To send a message to a job is to write a message string into one or
@@ -98,15 +98,15 @@ batch request to the batch server that owns the job.
 The qmsg
 command does not directly write the message into the files of the job.
 .SH OPTIONS
-.IP "-E" 15
+.IP "\-E" 15
 Specifies that the message is written to the standard error of each job.
-.IP "-O" 15
+.IP "\-O" 15
 Specifies that the message is written to the standard output of each job.
 .LP
 If neither the
-.Ar -E
+.Ar \-E
 nor the
-.Ar -O
+.Ar \-O
 option is specified, the message will be written to the standard error
 of the job.
 .SH  OPERANDS

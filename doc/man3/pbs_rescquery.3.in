@@ -79,7 +79,7 @@
 .so ../ers/ers.macros
 .Ig
 .SH NAME
-pbs_rescquery, avail, totpool, usepool - query resource availability
+pbs_rescquery, avail, totpool, usepool \- query resource availability
 .SH SYNOPSIS
 #include <pbs_error.h>
 .br
@@ -131,7 +131,7 @@ It may be specified as
 .br
 .Ty \ \ \ \ nodes=\fBspecification\fP
 .br
-where specification is what a user specifies in the -l option arguement list
+where specification is what a user specifies in the \-l option arguement list
 for nodes, see qsub(1B) and the various pbs_resource_* man pages.
 .IP
 Where the node resourcelist is a simple type, such as "nodes", "nodes=",
@@ -229,7 +229,7 @@ by a batch server, the routine will return 0 (zero).
 Otherwise, a non zero error is returned.  The error number is also set
 in pbs_errno.
 .LP
-The functions usepool() and totpool() return -1 on error.
+The functions usepool() and totpool() return \-1 on error.
 \" turn off any extra indent left by the Sh macro
 .RE
 

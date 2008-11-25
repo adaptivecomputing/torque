@@ -79,7 +79,7 @@
 .so ../ers/ers.macros
 .Ig
 .SH NAME
-pbs_selstat - obtain status of selected pbs batch jobs
+pbs_selstat \- obtain status of selected pbs batch jobs
 .SH SYNOPSIS
 #include <pbs_error.h>
 .br

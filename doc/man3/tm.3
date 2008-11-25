@@ -99,7 +99,7 @@ struct tm_roots \(**roots;
 .B
 int tm_nodeinfo(list, nnodes)
 .in 6
-tm_node_id \***list;
+tm_node_id ***list;
 int \(**nnodes;
 .in
 .ft
@@ -299,7 +299,7 @@ The number of nodes allocated to the job.
 .IP tm_ntasks 20
 This will always be 0 for PBS.
 .IP tm_taskpoolid 20
-PBS does not support task pools so this will always be -1.
+PBS does not support task pools so this will always be \-1.
 .IP tm_tasklist 20
 This will be NULL for PBS.
 .LP

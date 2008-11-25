@@ -81,16 +81,16 @@
 .SH NAME
 qstat \- show status of pbs batch jobs
 .SH SYNOPSIS
-qstat [-f [-1]][-W site_specific] [\^job_identifier... | destination...\^]
+qstat [\-f [\-1]][\-W site_specific] [\^job_identifier... | destination...\^]
 .sp
-qstat [-a|-i|-r|-e] [-n [-1]] [-s] [-G|-M] [-R] [-u user_list] [\^job_identifier... |\ 
+qstat [\-a|-i|-r|-e] [\-n [\-1]] [\-s] [\-G|-M] [\-R] [\-u user_list] [\^job_identifier... |\ 
 destination...\^]
 .sp
-qstat -Q [-f [-1]][-W site_specific] [\^destination...\^]
+qstat \-Q [\-f [\-1]][\-W site_specific] [\^destination...\^]
 .sp
-qstat -q [-G|-M] [\^destination...\^]
+qstat \-q [\-G|-M] [\^destination...\^]
 .sp
-qstat -B [-f [-1]][-W site_specific] [\^server_name...\^]
+qstat \-B [\-f [\-1]][\-W site_specific] [\^server_name...\^]
 .SH DESCRIPTION
 The
 .B qstat
@@ -124,49 +124,49 @@ When requesting queue or server status, synopsis format 3 through 5, qstat
 will output information about each
 .Ar destination .
 .if !\n(Pb .ig Ig
-The syntax using the [-a|-i|-r|-e] line or the -q line are extensions to POSIX.
+The syntax using the [\-a|-i|-r|-e] line or the \-q line are extensions to POSIX.
 .Ig
 .SH OPTIONS
-.IP "-f" 10
+.IP "\-f" 10
 Specifies that a full status display be written to standard out.
-.IP "-a" 10
+.IP "\-a" 10
 "All" jobs are displayed in the alternative format, see the Standard Output
 section.
 If the operand is a destination id, all jobs at that destination are displayed.
 If the operand is a job id, information about that job is displayed.
-.IP "-e" 10
+.IP "\-e" 10
 If the operand is a job id or not specified, only jobs in executable queues are
 displayed.  Setting the PBS_QSTAT_EXECONLY environment variable will also enable
 this option.
-.IP "-i" 10
+.IP "\-i" 10
 Job status is displayed in the alternative format.
 For a destination id operand, status for jobs at that destination which are not
 running are displayed.  
 This includes jobs which are queued, held or waiting.
 If an operand is a job id, status for that job is displayed regardless of its
 state.
-.IP "-r" 10
+.IP "\-r" 10
 If an operand is a job id, status for that job is displayed.
 For a destination id operand, status for jobs at that destination which are
 running are displayed,  this includes jobs which are suspended.
-.IP "-n" 10
+.IP "\-n" 10
 In addition to the basic information, nodes allocated to a job are listed.
-.IP "-1" 10
-In combination with -n, the -1 option puts all of the nodes on the same line as
-the job ID.  In combination with -f, attributes are not folded to fit in a
+.IP "\-1" 10
+In combination with \-n, the \-1 option puts all of the nodes on the same line as
+the job ID.  In combination with \-f, attributes are not folded to fit in a
 terminal window.  This is intended to ease the parsing of the qstat output.
-.IP "-s" 10
+.IP "\-s" 10
 In addition to the basic information, any comment provided by the batch
 administrator or scheduler is shown.
-.IP "-G" 10
+.IP "\-G" 10
 Show size information in giga-bytes.
-.IP "-M" 10
+.IP "\-M" 10
 Show size information, disk or memory in mega-words.   A word is considered
 to be 8 bytes.
-.IP "-R" 10
+.IP "\-R" 10
 In addition to other information, disk reservation information is shown.
 Not applicable to all systems.
-.IP "-u" 10
+.IP "\-u" 10
 Job status is displayed in the alternative format.  If an operand is a job id,
 status for that job is displayed.  For a destination id operand, status for
 jobs at that destination which are owned by the user(s) listed in
@@ -180,21 +180,21 @@ is:
 .br
 Host names may be wild carded on the left end, e.g. "*.nasa.gov".
 User_name without a "@host" is equivalent to "user_name@*", that is at any host.
-.IP "-Q" 10
+.IP "\-Q" 10
 Specifies that the request is for queue status and that the operands are
 destination identifiers.
-.IP "-q" 10
+.IP "\-q" 10
 Specifies that the request is for queue status which should be shown in
 the alternative format.
-.IP "-B" 10
+.IP "\-B" 10
 Specifies that the request is for batch server status and that the operands
 are the names of servers.
 .LP
 .SH  OPERANDS
 If neither the
-.Ar -Q
+.Ar \-Q
 nor the
-.Ar -B
+.Ar \-B
 option is given, the operands on the qstat
 command must be either job identifiers or destinations identifiers.
 .LP
@@ -239,7 +239,7 @@ is given, the request is for status of all jobs in the named queue at the
 named server.
 .LP
 If the
-.Ar -Q
+.Ar \-Q
 option is given, the operands are destination identifiers as specified
 above.  If 
 .Ty queue
@@ -255,44 +255,44 @@ If no destination is specified, the status of all queues at the default
 server will be given.
 .LP
 If the
-.Ar -B
+.Ar \-B
 option is given, the operand is the name of a server.
 .SH STANDARD OUTPUT
 Displaying Job Status
 .LP
 If job status is being displayed in the default format and the
-.Ar -f
+.Ar \-f
 option is not specified, the following items are displayed on a single
 line, in the specified order, separated by white space:
 .RS 
-.IP - 3
+.IP \- 3
 the job identifier assigned by PBS.
-.IP -
+.IP \-
 the job name given by the submitter.
-.IP -
+.IP \-
 the job owner
-.IP -
+.IP \-
 the CPU time used
-.IP -
+.IP \-
 the job state:
 .RS 0.5i
-C -     Job is completed after having run/
+C \-     Job is completed after having run/
 .br
-E -	Job is exiting after having run.
+E \-	Job is exiting after having run.
 .br
-H -	Job is held.
+H \-	Job is held.
 .br
-Q -	job is queued, eligible to run or routed.
+Q \-	job is queued, eligible to run or routed.
 .br
-R -	job is running.
+R \-	job is running.
 .br
-T -	job is being moved to new location.
+T \-	job is being moved to new location.
 .br
-W -	job is waiting for its execution time
+W \-	job is waiting for its execution time
 .br
-	(-a option) to be reached.
+	(\-a option) to be reached.
 .br
-S -	(Unicos only) job is suspend.
+S \-	(Unicos only) job is suspend.
 .br
 .if !\n(Pb .ig Ig
 .SM
@@ -301,12 +301,12 @@ It requires the sames letters, but in lower case.
 .NL
 .Ig
 .RE
-.IP -
+.IP \-
 the queue in which the job resides
 .RE
 .LP
 If job status is being displayed and the
-.Ar -f
+.Ar \-f
 option is specified, the output will depend on whether
 .B qstat
 was compiled to use a
@@ -332,59 +332,59 @@ Continuation lines are indented by a tab (8 spaces).
 There is blank line following the last attribute.
 .Ig
 .LP
-If any of the options -a, -i, -r, -u, -n, -s, -G or -M are provided,
+If any of the options \-a, \-i, \-r, \-u, \-n, \-s, \-G or \-M are provided,
 the alternative display format for jobs is used.
 The following items are displayed on a single
 line, in the specified order, separated by white space:
 .RS
-.IP - 3
+.IP \- 3
 the job identifier assigned by PBS.
-.IP -
+.IP \-
 the job owner.
-.IP -
+.IP \-
 The queue in which the job currently resides.
-.IP -
+.IP \-
 The job name given by the submitter.
-.IP -
+.IP \-
 The session id (if the job is running).
-.IP -
+.IP \-
 The number of nodes requested by the job.
-.IP -
+.IP \-
 The number of cpus or tasks requested by the job.
-.IP -
+.IP \-
 The amount of memory requested by the job.
-.IP -
+.IP \-
 Either the cpu time, if specified, or wall time requested by the job, (hh:mm).
-.IP -
+.IP \-
 The job's current state.
-.IP -
+.IP \-
 The amount of cpu time or wall time used by the job (hh:mm).
 .RE
-If the -R option is provided, the line contains:
+If the \-R option is provided, the line contains:
 .RS
-.IP - 3
+.IP \- 3
 the job identifier assigned by PBS.
-.IP -
+.IP \-
 the job owner.
-.IP -
+.IP \-
 The queue in which the job currently resides.
-.IP -
+.IP \-
 The number of nodes requested by the job.
-.IP -
+.IP \-
 The number of cpus or tasks requested by the job.
-.IP -
+.IP \-
 The amount of memory requested by the job.
-.IP -
+.IP \-
 Either the cpu time or wall time requested by the job.
-.IP -
+.IP \-
 The job's current state.
-.IP -
+.IP \-
 The amount of cpu time or wall time used by the job.
-.IP -
+.IP \-
 The amount of SRFS space requested on the big file system.
-.IP -
+.IP \-
 The amount of SRFS space requested on the fast file system.
-.IP -
+.IP \-
 The amount of space requested on the parallel I/O file system.
 .RE
 The last three fields may not contain useful information at all sites
@@ -393,29 +393,29 @@ or on all systems.
 Displaying Queue Status
 .LP
 If queue status is being displayed and the
-.Ar -f
+.Ar \-f
 option was not specified, the following items are displayed on a single
 line, in the specified order, separated by white space:
 .RS 5
-.IP -
+.IP \-
 the queue name
-.IP -
+.IP \-
 the maximum number of jobs that may be run in the queue concurrently
-.IP -
+.IP \-
 the total number of jobs in the queue
-.IP -
+.IP \-
 the enable or disabled status of the queue
-.IP -
+.IP \-
 the started or stopped status of the queue
-.IP -
+.IP \-
 for each job state, the name of the state and the number of jobs in the queue
 in that state.
-.IP -
+.IP \-
 the type of queue, execution or routing.
 .RE
 .LP
 If queue status is being displayed and the
-.Ar -f
+.Ar \-f
 option is specified, the output will depend on whether
 .B qstat
 was compiled to use a
@@ -437,56 +437,56 @@ Followed by one line per queue attribute of the form:
 The queue attributes are listed in the same format as job attributes.
 .Ig
 .LP
-If the -q option is specified, queue information is displayed in the
+If the \-q option is specified, queue information is displayed in the
 alternative format:  The following information is displayed on a single
 line:
 .RS
-.IP - 3
+.IP \- 3
 the queue name
-.IP -
+.IP \-
 the maximum amount of memory a job in the queue may request
-.IP -
+.IP \-
 the maximum amount of cpu time a job in the queue may request
-.IP -
+.IP \-
 the maximum amount of wall time a job in the queue may request
-.IP -
+.IP \-
 the maximum amount of nodes a job in the queue may request
-.IP -
+.IP \-
 the number of jobs in the queue in the running state
-.IP -
+.IP \-
 the number of jobs in the queue in the queued state
-.IP -
+.IP \-
 the maximum number (limit) of jobs that may be run in the queue concurrently
-.IP -
+.IP \-
 the state of the queue given by a pair of letters:
 .br
-- either the letter E if the queue is Enabled or D if Disabled, and
+\- either the letter E if the queue is Enabled or D if Disabled, and
 .br
-- either the letter R if the queue is Running (started) or S if Stopped.
+\- either the letter R if the queue is Running (started) or S if Stopped.
 .RE
 .sp 2 
 Displaying Server Status
 .LP
 If batch server status is being displayed and the
-.Ar -f
+.Ar \-f
 option is not specified, the following items are displayed on a single
 line, in the specified order, separated by white space:
 .RS 5
-.IP -
+.IP \-
 the server name
-.IP -
+.IP \-
 the maximum number of jobs that the server may run concurrently
-.IP -
+.IP \-
 the total number of jobs currently managed by the server
-.IP -
+.IP \-
 the status of the server
-.IP -
+.IP \-
 for each job state, the name of the state and the number of jobs in the
 server in that state
 .RE
 .LP
 If server status is being displayed and the
-.Ar -f
+.Ar \-f
 option is specified, the output will depend on whether
 .B qstat
 was compiled to use a
@@ -517,7 +517,7 @@ If
 is compiled with an option to include a
 .B Tcl
 interpreter, using the
-.Ar -f
+.Ar \-f
 flag to get a full display causes a check to be made for a script file
 to use to output the requested information.  The first location checked
 is $HOME/.qstatrc.  If this does not exist, the next location
@@ -543,13 +543,13 @@ They are broken up individually so that if two flags are given
 together on the command line, they are separated in the list.
 For example, if the user typed
 .LP
-.Ty "qstat -QfWbigdisplay"
+.Ty "qstat \-QfWbigdisplay"
 .LP
 the
 .B flags
 list would contain
 .LP
-.Ty "qstat -Q -f -W bigdisplay"
+.Ty "qstat \-Q \-f \-W bigdisplay"
 .LP
 The
 .B operands

@@ -82,7 +82,7 @@
 qrls \- release hold on pbs batch jobs
 .SH SYNOPSIS
 qrls
-[-h\ hold_list]
+[\-h\ hold_list]
 job_identifier ...
 .SH DESCRIPTION
 The
@@ -109,7 +109,7 @@ An Attempt to release a hold for which the user does not have the
 correct privilege is an error and no holds will be released for that job.
 .LP
 If no
-.Ar -h
+.Ar \-h
 option is specified, the 
 .Av USER 
 hold will be released.

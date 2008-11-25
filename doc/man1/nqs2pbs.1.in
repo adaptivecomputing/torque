@@ -113,15 +113,15 @@ message and an incompleted converted date.  PBS does not support date
 specifications of "today", "tomorrow", or the name of the days of the week
 such as "Monday".  If any of these are encountered in a script, the PBS
 specification will contain only the time portion of the NQS specification,
-i.e. #PBS -a hhmm[.ss].   It is suggested that you specify the execution
+i.e. #PBS \-a hhmm[.ss].   It is suggested that you specify the execution
 time on the qsub command line rather than in the script.
 .LP
 Note that PBS will interpret a time specification without a date in the
 following way:
-.IP - 3
+.IP \- 3
 If the time specified has not yet been reached, the job will become eligible
 to run at that time today.
-.IP -
+.IP \-
 If the specified time has already passed when the job is submitted, the job
 will become eligible to run at that time tomorrow.
 .LP

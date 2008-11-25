@@ -79,7 +79,7 @@
 .so ../ers/ers.macros
 .Ig
 .SH NAME
-pbs_locjob - locate current location of a pbs batch job
+pbs_locjob \- locate current location of a pbs batch job
 .SH SYNOPSIS
 #include <pbs_error.h>
 .br

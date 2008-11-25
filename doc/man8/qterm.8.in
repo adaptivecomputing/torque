@@ -81,7 +81,7 @@
 .SH NAME
 qterm \- terminate processing by a pbs batch server
 .SH SYNOPSIS
-qterm \^-t\ type\^ [server...]
+qterm \^\-t\ type\^ [server...]
 .SH DESCRIPTION
 The
 .B qterm 
@@ -111,7 +111,7 @@ procedure.
 In order to execute qterm, the user must have PBS Operation or Manager
 privilege.
 .SH OPTIONS
-.IP "-t type" 10
+.IP "\-t type" 10
 Specifies the type of shut down.  The types are:
 .RS
 .IP immediate
@@ -133,7 +133,7 @@ attribute is true.  Otherwise, jobs are killed.
 Normally the server will not shutdown until there are no jobs in the running
 state.  If the server is unable to contact the MOM of running job, the job
 is still listed as running.
-The server may be forced down by a second \*Qqterm -t immediate\*U
+The server may be forced down by a second \*Qqterm \-t immediate\*U
 command.
 .IP delay\ 
 If checkpoint is supported, running jobs that were submitted with "-c shutdown"

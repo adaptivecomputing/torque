@@ -113,10 +113,10 @@ and properities available to you.
 Examples:
 .RS
 .IP . 2
-To ask for 12 nodes of any type: -l\ nodes=12
+To ask for 12 nodes of any type: \-l\ nodes=12
 .IP . 2
 To ask for 2 "server" nodes and 14 other nodes (a total of 16):
--l\ nodes=2:server+14
+\-l\ nodes=2:server+14
 .br
 The above consist of two node_specs "2:server" and "14".
 .IP . 2
@@ -124,24 +124,24 @@ To ask for (a) 1 node that is a "server" and has a "hippi" interface, (b) 10
 nodes that are not servers, and (c) 3 nodes that have a large amount of memory
 an have hippi:
 .br
--l\ nodes=server:hippi+10:noserver+3:bigmem:hippi
+\-l\ nodes=server:hippi+10:noserver+3:bigmem:hippi
 .IP . 2
 To ask for three nodes by name:
 .br
--l\ nodes=b2005+b1803+b1813
+\-l\ nodes=b2005+b1803+b1813
 .IP . 2
 To ask for 2 processors on each of four nodes:
 .br
--l\ nodes=4:ppn=2
+\-l\ nodes=4:ppn=2
 .IP . 2
 To ask for 4 processors on one node:
 .br
--l\ nodes=1:ppn=4
+\-l\ nodes=1:ppn=4
 .IP . 2
 To ask for 2 processors on each of two blue nodes and three processors on
 one red node:
 .br
--l\ nodes=2:blue:ppn=2+red:ppn=3
+\-l\ nodes=2:blue:ppn=2+red:ppn=3
 .RE
 .IP host
 Allows a user to specify the desired execution location.
@@ -161,9 +161,9 @@ The allowable values and effect on job placement is site dependent.
 Units: string.
 .LP
 .Sh EXAMPLES
-qsub -l nodes=15,walltime=2:00:00 script
+qsub \-l nodes=15,walltime=2:00:00 script
 .LP
 or in a qsub script as a directive:
 .LP
-#PBS -l nodes=15,walltime=2:00:00
+#PBS \-l nodes=15,walltime=2:00:00
 

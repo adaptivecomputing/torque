@@ -81,17 +81,17 @@
 .SH NAME
 pbsdsh \- distribute task to nodes under pbs
 .SH SYNOPSIS
-pbsdsh [-c copies] [-o] [-s] [-u] [-v] program [args]
+pbsdsh [\-c copies] [\-o] [\-s] [\-u] [\-v] program [args]
 .br
-pbsdsh [-n node] [-o] [-s] [-u] [-v] program [args]
+pbsdsh [\-n node] [\-o] [\-s] [\-u] [\-v] program [args]
 .br
-pbsdsh [-h nodename] [-o] [-v] program [args]
+pbsdsh [\-h nodename] [\-o] [\-v] program [args]
 .SH DESCRIPTION
 Executes (spawns) a normal Unix program on one or more nodes under control of
 the Portable Batch System, PBS.  Pbsdsh uses the Task Manager
 API, see tm_spawn(3), to distribute the program on the allocated nodes.
 .LP
-When run without the -c or the -n option, pbsdsh will spawn the program
+When run without the \-c or the \-n option, pbsdsh will spawn the program
 on all nodes allocated to the PBS job.  The spawns take place concurrently \-
 all execute at (about) the same time.
 .LP
@@ -104,25 +104,25 @@ Users will find the
 environmental variables useful.  They contain the TM task id, the node
 identifier, and the cpu (virtual node) identifier.
 .SH OPTIONS
-.IP "-c copies"
+.IP "\-c copies"
 The program is spawned on the first
 .Ar Copies
-nodes allocated.  This option is mutual exclusive with -n.
-.IP "-n node"
+nodes allocated.  This option is mutual exclusive with \-n.
+.IP "\-n node"
 The program is spawned on one node which is the 
-.Ar node -th
-node allocted.  This option is mutual exclusive with -c.
-.IP "-h hostname"
+.Ar node \-th
+node allocted.  This option is mutual exclusive with \-c.
+.IP "\-h hostname"
 The program is spawned on the node specified.
-.IP -o
+.IP \-o
 Capture stdout of the spawned program.  Normally stdout goes to the job's output.
-.IP -s
+.IP \-s
 If this option is given, the program is run in turn on each 
 node, one after the other.
-.IP -u
+.IP \-u
 The program is run once on each node (unique).  This ignores the number
 of allocated processers on a given node.
-.IP -v
+.IP \-v
 Verbose output about error conditions and task exit status is produced.
 .SH OPERANDS
 The first operand,

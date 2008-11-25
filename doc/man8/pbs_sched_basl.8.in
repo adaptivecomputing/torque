@@ -85,8 +85,8 @@
 .SH NAME
 pbs_sched_basl \- pbs BASL scheduler
 .SH SYNOPSIS
-pbs_sched\ [\^-d home\^] [\^-L logfile\^] [\^-p print_file\^]
-[\^-a alarm\^] [\^-S port\^] [\^-c configfile\^]
+pbs_sched\ [\^\-d home\^] [\^\-L logfile\^] [\^\-p print_file\^]
+[\^\-a alarm\^] [\^\-S port\^] [\^\-c configfile\^]
 .SH DESCRIPTION
 The
 .B pbs_sched
@@ -102,34 +102,34 @@ Typically, this command will be in a local boot file such as
 .LP
 pbs_sched must be executed with root permission.
 .SH OPTIONS
-.IP "-d home"
+.IP "\-d home"
 Specifies the name of the PBS home directory, PBS_HOME.
 If not specified, the value
-of $PBS_SERVER_HOME as defined at compile time is used.  Also see the -L
+of $PBS_SERVER_HOME as defined at compile time is used.  Also see the \-L
 option.
-.IP "-L logfile" 5
+.IP "\-L logfile" 5
 Specifies an absolute path name of the file to use as the log file.
 If not specified, the scheduler will
 open a file named for the current date in the PBS_HOME/sched_logs directory.
-See the -d option.
-.IP "-p print_file" 5
+See the \-d option.
+.IP "\-p print_file" 5
 This specifies the "print" file.  Any output from the scheduler code which is
 written to standard out or standard error will be written to this file.
 If this option is not given, the file used will be
-$PBS_HOME/sched_priv/sched_out. See the -d option.
-.IP "-a alarm" 5
+$PBS_HOME/sched_priv/sched_out. See the \-d option.
+.IP "\-a alarm" 5
 This specifies the time in seconds to wait for a schedule run to finish.  If a
 scheduling iteration takes too long to finish, an alarm signal is sent, and
 the scheduler is restarted.  If a core file does not exist in the current
 directory, abort() is called and a core file is generated.  The default for
 alarm is 180 seconds.
-.IP "-S port" 5
+.IP "\-S port" 5
 Specifies a port on which to talk to the server. This option is not 
 required. It merely overides the default PBS scheduler port.
-.IP "-c configfile" 5
+.IP "\-c configfile" 5
 Specify a configuration file, see description below.  If this is a relative
-file name it will be relative to PBS_HOME/sched_priv, see the -d option.
-If the -c option is not supplied, pbs_sched will not attempt to open a
+file name it will be relative to PBS_HOME/sched_priv, see the \-d option.
+If the \-c option is not supplied, pbs_sched will not attempt to open a
 configuration file. In BASL, this config file is almost always needed because
 it is where the list of servers, nodes, and host resource queries are specified by the administrator.
 .LP
@@ -195,7 +195,7 @@ sched_main()
 For a more complete discussion of the Batch Scheduler Language, see
 .B "basl2c(1B)".
 .SH CONFIGURATION FILE
-A configuration file may be specified with the -c option.
+A configuration file may be specified with the \-c option.
 This file is used to specify the (1) hosts which are allowed to
 connect to pbs_sched, (2) the list of server hosts for which the scheduler
 writer wishes the system to periodically check for status, queues, and jobs
@@ -236,7 +236,7 @@ If
 is 0, then the default PBS server port will be used.
 .sp
 Regardless of what has been specified in the file, the list of servers
-will always include the local server - one running on the same host where
+will always include the local server \- one running on the same host where
 the scheduler is running.
 .sp
 Within the BASL code, access to data of the list of servers is done by calling

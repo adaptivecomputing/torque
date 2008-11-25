@@ -81,13 +81,13 @@
 .SH NAME
 xpbs \- GUI front end to PBS commands
 .SH SYNOPSIS
-xpbs [-admin]
+xpbs [\-admin]
 .SH DESCRIPTION
 The \fBxpbs\fP command provides a user-friendly point-and-click interface to
 PBS commands. Please see the sections below for a tour and tutorials. Also, 
 within every dialog box, a \fBHelp\fP button can be found for assistance.
 .SH OPTIONS
-.IP "-admin" 8
+.IP "\-admin" 8
 A mode where additional buttons are made available for terminating PBS servers,
 starting/stopping/disabling/enabling queues, and running/rerunning jobs.
 .in 0
@@ -102,7 +102,7 @@ settings usually defined in the .Xdefaults file
 Preference settings defined by the system administrator in the global xpbsrc
 file
 .IP "3."
-User's ~/.xpbsrc file - this file defines various X resources like fonts,
+User's ~/.xpbsrc file \- this file defines various X resources like fonts,
 colors, list
 of PBS hosts to query, criteria for listing queues and jobs, and various view
 states. See PREFERENCES section below for a list of resources that can be set.
@@ -120,7 +120,7 @@ To run \fBxpbs\fP with the additional purpose of terminating PBS servers,
 stopping and starting queues, or running/rerunning jobs, then run:
 .RS
 .sp
-.Ty "\ \ \ xpbs -admin"
+.Ty "\ \ \ xpbs \-admin"
 .sp
 .RE
 NOTE: Be sure to appropriately set ~/.rhosts file if you're planning to submit
@@ -197,7 +197,7 @@ for submitting a job to any of the queues managed by the
 selected host(s).
 .IP terminate 11
 for terminating PBS servers on selected host(s). 
-(-admin only)
+(\-admin only)
 .RE
 .LP
 The server hosts can be chosen by specifying in the ~/.xpbsrc file
@@ -229,13 +229,13 @@ for obtaining detailed information about selected
 queue(s).  This functionality can also be achieved
 by double clicking on a Queues listbox entry.
 .IP stop 9
-for stopping the selected queue(s). (-admin only)
+for stopping the selected queue(s). (\-admin only)
 .IP start 9
-for starting the selected queue(s). (-admin only)
+for starting the selected queue(s). (\-admin only)
 .IP disable 9
-for disabling the selected queue(s). (-admin only)
+for disabling the selected queue(s). (\-admin only)
 .IP enable 9
-for enabling the selected queue(s). (-admin only)
+for enabling the selected queue(s). (\-admin only)
 .RE
 .sp
 .LP
@@ -293,10 +293,10 @@ destination queue.
 .IP order 9
 for exchanging order of two selected jobs in a queue.
 .IP run 9
-for running selected job(s). (-admin only)
+for running selected job(s). (\-admin only)
 .IP rerun 9
 for requeueing selected job(s) that are running.
-(-admin only)
+(\-admin only)
 .RE
 .sp
 .LP
@@ -310,7 +310,7 @@ Some of the widgets used in \fBxpbs\fP and how they are manipulated are
 described in the following:
 .sp
 .IP "1." 3
-\fBlistbox\fP - can be multi-selectable (a number of entries can be
+\fBlistbox\fP \- can be multi-selectable (a number of entries can be
 selected/highlighted using a mouse click) or single-selectable (one entry
 can be highlighted at a time). For a multi-selectable listbox,
 the following operations are allowed:
@@ -338,7 +338,7 @@ that uses the selected entry as a parameter.
 .sp
 .RE
 .IP "2." 3
-\fBscrollbar\fP - usually appears either vertically or
+\fBscrollbar\fP \- usually appears either vertically or
 horizontally and contains 5 distinct areas that are mouse
 clicked to achieve different effects:
 .RS
@@ -375,7 +375,7 @@ the action will auto-repeat.
 .RE
 .sp
 .IP "3." 3
-\fBentry\fP - brought into focus with a click of the left
+\fBentry\fP \- brought into focus with a click of the left
 mouse button.  To manipulate this widget, simply type in
 the text value. Use of arrow keys, mouse selection of
 text for deletion or overwrite, copying and pasting with
@@ -384,7 +384,7 @@ This widget is usually accompanied by a scrollbar for
 horizontally scanning a long text entry string.
 .sp
 .IP "4." 3
-\fBmatrix of entry boxes\fP - usually shown as several
+\fBmatrix of entry boxes\fP \- usually shown as several
 rows of entry widgets where a number of entries (called
 fields) can be found per row. The matrix is accompanied by
 up/down arrow buttons for paging through the rows of data,
@@ -394,18 +394,18 @@ be done using the <Tab>, <Cntrl-f>, or <Cntrl-b> (move
 backwards) keys.
 .sp
 .IP "5." 3
-\fBspinbox\fP - a combination of an entry widget and a
+\fBspinbox\fP \- a combination of an entry widget and a
 horizontal scrollbar.  The entry widget will only accept
 values that fall within a defined list of valid values, and
 incrementing through the valid values is done by clicking on
 the up/down arrows.
 .IP "6." 3
-\fBbutton\fP - a rectangular region appearing either raised or
+\fBbutton\fP \- a rectangular region appearing either raised or
 pressed that invokes an action when clicked with the left
 mouse button.  When the button appears pressed, then hitting
 the <RETURN> key will automatically select the button.
 .IP "7." 3
-\fBtext\fP - an editor like widget. This widget is brought
+\fBtext\fP \- an editor like widget. This widget is brought
 into focus with a click of the left mouse button. To manipulate
 this widget, simply type in the text. Use of arrow keys,
 backspace/delete key, mouse selection of text for deletion or
@@ -563,7 +563,7 @@ output files will be returned back to the host where \fBxpbs\fP
 was run. If the output files are returned to some remote host, then
 \fBxpbs\fP will execute an
 .br
-.Ty "\ \ \ RSH <remote_host> test -f <output_files>"
+.Ty "\ \ \ RSH <remote_host> test \-f <output_files>"
 .br
 to test the existence of the files. RSH is whatever you set the remote shell
 command to in the corresponding entry box.
@@ -575,12 +575,12 @@ Click
 .Ar "start/reset tracking"
 button located at the bottom of the dialog box to:
 .RS
-.IP - 2
+.IP \- 2
 cancel any previous tracking
-.IP - 2
+.IP \- 2
 build a new list of jobs to be monitored for returned
 output files based on currently queued jobs.
-.IP - 2
+.IP \- 2
 start periodic tracking.
 .RE
 .IP "7."
@@ -659,60 +659,60 @@ in the JOBS listbox.
 list of owners checked when limiting the
 jobs appearing on the Jobs listbox in the main \fBxpbs\fP window. 
 Specify value as "Owners: <list_of_owners>".
-See -u option in \fBqselect(1B)\fP for format of <list_of_owners>.
+See \-u option in \fBqselect(1B)\fP for format of <list_of_owners>.
 .IP *selectStates
 list of job states to look for (do not space separate) when
 limiting the jobs appearing on the Jobs listbox in the main
 \fBxpbs\fP window.
 Specify value as "Job_States: <states_string>".
-See -s option in \fBqselect(1B)\fP for format of <states_string>.
+See \-s option in \fBqselect(1B)\fP for format of <states_string>.
 .IP *selectRes
 list of resource amounts (space separated) to consult when
 limiting the jobs appearing on the Jobs listbox in the main
 \fBxpbs\fP window.
 Specify value as "Resources: <res_string>".
-See -l option in \fBqselect(1B)\fP for format of <res_string>.
+See \-l option in \fBqselect(1B)\fP for format of <res_string>.
 .IP *selectExecTime
 the Execution Time attribute to consult when limiting the
 list of jobs appearing on the Jobs listbox in the main 
 \fBxpbs\fP window.
 Specify value as "Queue_Time: <exec_time>".
-See -a option in \fBqselect(1B)\fP for format of <exec_time>.
+See \-a option in \fBqselect(1B)\fP for format of <exec_time>.
 .IP *selectAcctName
 the name of the account that will be checked when limiting the
 jobs appearing on the Jobs listbox in the main \fBxpbs\fP 
 window.
 Specify value as "Account_Name: <account_name>".
-See -A option in \fBqselect(1B)\fP for format of <account_name>.
+See \-A option in \fBqselect(1B)\fP for format of <account_name>.
 .IP *selectCheckpoint
 the checkpoint attribute relationship (including the logical 
 operator) to consult when limiting the list of jobs
 appearing on the Jobs listbox in the main \fBxpbs\fP window. 
 Specify value as "Checkpoint: <checkpoint_arg>".
-See -c option in \fBqselect(1B)\fP for format of <checkpoint_arg>.
+See \-c option in \fBqselect(1B)\fP for format of <checkpoint_arg>.
 .IP *selectHold
 the hold types string to look for in a job when limiting the
 jobs appearing on the Jobs listbox in the main \fBxpbs\fP 
 window.
 Specify value as "Hold_Types: <hold_string>".
-See -h option in \fBqselect(1B)\fP for format of <hold_string>.
+See \-h option in \fBqselect(1B)\fP for format of <hold_string>.
 .IP *selectPriority
 the priority relationship (including the logical operator) to
 consult when limiting the list of jobs appearing on the Jobs
 listbox in the main \fBxpbs\fP window.
 Specify value as "Priority: <priority_value>".
-See -p option in \fBqselect(1B)\fP for format of <priority_value>.
+See \-p option in \fBqselect(1B)\fP for format of <priority_value>.
 .IP *selectRerun
 the rerunnable attribute to consult when limiting the list of
 jobs appearing on the Jobs listbox in the main \fBxpbs\fP 
 window.
 Specify value as "Rerunnable: <rerun_val>".
-See -r option in \fBqselect(1B)\fP for format of <rerun_val>.
+See \-r option in \fBqselect(1B)\fP for format of <rerun_val>.
 .IP *selectJobName
 name of the job that will be checked when limiting the jobs
 appearing on the Jobs listbox in the main \fBxpbs\fP window.
 Specify value as "Job_Name: <jobname>".
-See -N option in \fBqselect(1B)\fP for format of <jobname>.
+See \-N option in \fBqselect(1B)\fP for format of <jobname>.
 .IP *iconizeHostsView
 a boolean value (true or false) indicating whether or not to
 iconize the HOSTS region.
@@ -742,11 +742,11 @@ architecture known to xpbs. The format is as follows:
 .IP "\fBCommand Button\fP" 22
 \fBPBS Command\fP
 .IP "detail (Hosts)" 22
-qstat -B -f <selected server_host(s)>
+qstat \-B \-f <selected server_host(s)>
 .IP "terminate" 22
 qterm <selected server_host(s)>
 .IP "detail (Queues)" 22
-qstat -Q -f <selected queue(s)>
+qstat \-Q \-f <selected queue(s)>
 .IP "stop" 22
 qstop <selected queue(s)>
 .IP "start" 22
@@ -756,7 +756,7 @@ qenable <selected queue(s)>
 .IP "disable" 22
 qdisable <selected queue(s)>	
 .IP "detail (Jobs)" 22
-qstat -f <selected job(s)>
+qstat \-f <selected job(s)>
 .IP "modify" 22
 qalter <selected job(s)>
 .IP "delete" 22

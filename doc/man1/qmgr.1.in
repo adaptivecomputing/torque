@@ -81,8 +81,8 @@
 .SH NAME
 qmgr \- pbs batch system manager
 .SH SYNOPSIS
-qmgr [\^-a\^] [\^-c\ command\^] [\^-e\^] [\^-n\^]
-[\^-z\^] [\^server...]
+qmgr [\^\-a\^] [\^\-c\ command\^] [\^\-e\^] [\^\-n\^]
+[\^\-z\^] [\^server...]
 .SH DESCRIPTION
 The
 .B qmgr
@@ -96,20 +96,20 @@ The list or print subcommands of qmgr can be executed by general users.
 Creating or deleting a queue requries PBS Manager privilege.  Setting or
 unsetting server or queue attributes requires PBS Operator or Manager privilege.
 .SH OPTIONS
-.IP "-a" 12
+.IP "\-a" 12
 Abort
 .B qmgr 
 on any syntax errors or any requests rejected by a server.
-.IP "-c command"
+.IP "\-c command"
 Execute a single
 .Ar command
 and exit
 .B qmgr .
-.IP "-e"
+.IP "\-e"
 Echo all commands to standard output.
-.IP "-n"
+.IP "\-n"
 No commands are executed, syntax checking only is performed.
-.IP "-z"
+.IP "\-z"
 No errors are written to standard error.
 .LP
 .SH OPERANDS
@@ -148,20 +148,20 @@ If Standard Output is connected to a terminal, a command prompt will
 be written to standard output when qmgr is ready to read a directive.
 .LP
 If the
-.Ar -e
+.Ar \-e
 option is specified, 
 .B qmgr
 will echo the directives read from standard input to standard output.
 .SH STANDARD ERROR
 If the
-.Ar -z
+.Ar \-z
 option is not specified, the qmgr command will write a diagnostic message
 to standard error for each error occurrence.
 .SH EXTENDED DESCRIPTION
 If
 .B qmgr
 is invoked without the
-.Ar -c
+.Ar \-c
 option and standard output is connected to a terminal, qmgr will write a
 prompt to standard output and read a directive from
 standard input.
@@ -235,7 +235,7 @@ set the value of the attribute.  If the attribute has a existing value, the
 current value is replaced with the new value.
 .IP +=
 increase the current value of the attribute by the amount in the new value.
-.IP -=
+.IP \-=
 decrease the current value of the attribute by the amount in the new value.
 .RE
 .IP value

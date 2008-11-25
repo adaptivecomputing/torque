@@ -81,9 +81,9 @@
 .SH NAME
 pbs_server \- start a pbs batch server
 .SH SYNOPSIS
-pbs_server\ [-a active] [-d\ config_path\^]\ [-p\ port\^] [\^-A\ acctfile\^]
-[\^-L\ logfile\^] [-M\ mom_port\^] [-R\ momRPP_port] [-S\ scheduler_port\^]
-[-h\ hostname\^] [-t\ type\^]
+pbs_server\ [\-a active] [\-d\ config_path\^]\ [\-p\ port\^] [\^\-A\ acctfile\^]
+[\^\-L\ logfile\^] [\-M\ mom_port\^] [\-R\ momRPP_port] [\-S\ scheduler_port\^]
+[\-h\ hostname\^] [\-t\ type\^]
 .SH DESCRIPTION
 The
 .B pbs_server
@@ -104,7 +104,7 @@ directory below the home directory of the server.
 If the log file cannot be opened, the diagnostic message is written
 to the system console.
 .SH OPTIONS
-.IP "-a active" 15
+.IP "\-a active" 15
 Specifies if scheduling is active or not.  This sets the server attribute
 .At scheduling .
 If the option argument
@@ -115,50 +115,50 @@ and the scheduler will not be called and no jobs will be run.
 If this option is not specified, the server will retain the prior value of the 
 .At scheduling
 attribute.
-.IP "-d config_path" 15
+.IP "\-d config_path" 15
 Specifies the path of the directory which is home to the servers
 configuration files, PBS_HOME.  A host may have multiple servers.  Each server
 must have a different configuration directory.
 The default configuration directory is given by the symbol $PBS_SERVER_HOME
 which is typically 
 .Ty /usr/spool/PBS .
-.IP "-p port" 15
+.IP "\-p port" 15
 Specifies the port number on which the server will
 listen for batch requests.
 If multiple servers are running on a
 single host, each must have its own unique port number.
 This option is for use in testing with multiple batch systems on a single host.
-.IP "-A acctfile"
+.IP "\-A acctfile"
 Specifies an absolute path name of the file to use as the accounting file.
 If not specified, the file is named for the current date in the
 PBS_HOME/server_priv/accounting directory.
-.IP "-L logfile"
+.IP "\-L logfile"
 Specifies an absolute path name of the file to use as the log file.
 If not specified, the file is one named for the current date in the
 PBS_HOME/server_logs directory, see the
-.At -d
+.At \-d
 option.
-.IP "-M mom_port"
+.IP "\-M mom_port"
 Specifies the host name and/or port number on which the server should connect
 the job executor, MOM.  The option argument,
 .Ar mom_conn ,
 is one of the forms: host_name, [:]port_number, or host_name:port_number.
 If host_name not specified, the local host is assumed.   If port_number is not
-specified, the default port is assumed.  See the -M option for pbs_mom(8).
-.IP "-R mom_RPPport"
+specified, the default port is assumed.  See the \-M option for pbs_mom(8).
+.IP "\-R mom_RPPport"
 Specifies the port number on which the the server should query the up/down
-status of Mom.    See the -R option for pbs_mom(8).
-.IP "-S scheduler_port" 15
+status of Mom.    See the \-R option for pbs_mom(8).
+.IP "\-S scheduler_port" 15
 Specifies the port number to which the server should connect when
 contacting the Scheduler.  The option argument,
 .Ar scheduler_conn ,
-is of the same syntax as under the -M option.
-.IP "-h hostname"
+is of the same syntax as under the \-M option.
+.IP "\-h hostname"
 Causes the server to start under a different hostname as obtained from
 gethostname(2). Useful for servers with multiple network interfaces to support
 connections from clients over an interface that has a hostname assigned
 that differs from the one that is returned by gethostname(2).
-.IP "-t type"
+.IP "\-t type"
 Specifies the impact on jobs which were in execution, running, when the server
 shut down.  If the running job is not rerunnable or restartable from a
 checkpoint image, the job is aborted.  If the job is rerunnable or restartable,
@@ -182,7 +182,7 @@ which were running prior to the shutdown.
 .IP warm 8
 All rerunnable jobs which were running when the server went down are requeued.
 All other jobs are maintained.  New selections are made for which
-jobs are placed into execution.  Warm is the default if -t is not specified.
+jobs are placed into execution.  Warm is the default if \-t is not specified.
 .IP cold 8
 All jobs are deleted.  Positive confirmation is required before
 this direction is accepted.

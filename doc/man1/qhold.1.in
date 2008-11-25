@@ -79,7 +79,7 @@
 .so ../ers/ers.macros
 .Iq
 .SH NAME
-qhold - hold pbs batch jobs
+qhold \- hold pbs batch jobs
 .SH SYNOPSIS
 qhold
 [\-h hold_list]
