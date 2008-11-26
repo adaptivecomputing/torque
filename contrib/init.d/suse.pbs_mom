@@ -4,13 +4,16 @@
 #
 ### BEGIN INIT INFO
 # Provides:       pbs_mom
-# Required-Start: $local_fs
+# Required-Start: $syslog $remote_fs
 # Should-Start: pbs_server pbs_sched
-# Required-Stop:
-# Should-Stop:
+# Required-Stop: $syslog $remote_fs
+# Should-Stop: $null
 # Default-Start:  2 3 5
 # Default-Stop:
-# Description: Torque is a versatile batch system for SMPs and clusters
+# Short-Description: Torque Node Manager Daemon
+# Description: Torque is a versatile batch system for SMPs and clusters.
+#	This starts the operation of a batch Machine Oriented Mini-server,
+#	MOM, on the local host.
 ### END INIT INFO
 
 PBS_DAEMON=/usr/sbin/pbs_mom
