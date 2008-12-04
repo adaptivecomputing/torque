@@ -1661,7 +1661,8 @@ void check_log(
   if ((server.sv_attr[(int)SRV_ATR_LogFileMaxSize].at_flags
        & ATR_VFLAG_SET) != 0)
     {
-    if (log_size() >= server.sv_attr[(int)SRV_ATR_LogFileMaxSize].at_val.at_long)
+    if ((log_size() >= server.sv_attr[(int)SRV_ATR_LogFileMaxSize].at_val.at_long)
+       && (server.sv_attr[(int)SRV_ATR_LogFileMaxSize].at_val.at_long > 0))
       {
       log_event(
         PBSEVENT_SYSTEM | PBSEVENT_FORCE,
