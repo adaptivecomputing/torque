@@ -7694,7 +7694,7 @@ void main_loop(void)
       check_log();  /* Possibly do a log_roll */
       }
 
-#if 0
+#if 1
     if (mom_server_all_check_connection() == 0)  /* Are we connected to any server? */
       {
       /* Don't do any other processing until we've re-established

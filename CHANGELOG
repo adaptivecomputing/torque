@@ -30,6 +30,10 @@ c - crash     b - bug fix    e - enhancement    f - new feature
       options.
   b - reject a qchkpt request if checkpointing is not enabled for the job
 
+2.3.6
+  b - change back to not sending status updates until we get cluster addr message
+      from server, also only try to send hello when the server stream is down.
+
 2.3.4
   c - fixed segfault when loading array files of an older/incompatible version
   b - fixed a bug where if attempt to send job to a pbs_mom failed due to 
