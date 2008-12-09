@@ -475,6 +475,13 @@ jump:
       }
     }
 
+  if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_CHECKPOINT_FILE) != 0)
+    {
+    /* job has restart file at mom, change restart comment if failed */
+
+    change_restart_comment_if_needed(pjob);
+    }
+
   if (pjob->ji_qs.ji_state == JOB_STATE_RUNNING)
     {
     /*
@@ -520,8 +527,6 @@ jump:
   if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_CHECKPOINT_FILE) != 0)
     {
     /* job has restart file at mom, do end job processing */
-
-    change_restart_comment_if_needed(pjob);
     
     svr_setjobstate(pjob, JOB_STATE_EXITING, JOB_SUBSTATE_EXITING);
 

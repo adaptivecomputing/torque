@@ -160,6 +160,12 @@ void req_deletearray(struct batch_request *preq)
         issue_signal(pjob, "SIGTERM", post_delete, NULL);
         }
 
+      if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_CHECKPOINT_FILE) != 0)
+        {
+        /* job has restart file at mom, change restart comment if failed */
+        change_restart_comment_if_needed(pjob);
+        }
+
       pjob = next;
 
       continue;
@@ -168,10 +174,12 @@ void req_deletearray(struct batch_request *preq)
 
     if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_CHECKPOINT_FILE) != 0)
       {
-      /* job has restart file at mom, do end job processing */
+      /* job has restart file at mom, change restart comment if failed */
 
       change_restart_comment_if_needed(pjob);
 
+      /* job has restart file at mom, do end job processing */
+      
       svr_setjobstate(pjob, JOB_STATE_EXITING, JOB_SUBSTATE_EXITING);
 
       pjob->ji_momhandle = -1;
