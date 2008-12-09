@@ -102,6 +102,7 @@ int        default_checkpoint_interval = 10; /* minutes */
 
 extern char *mk_dirs A_((char *));
 extern int mom_open_socket_to_jobs_server A_((job *, char *, void (*) A_((int))));
+extern void set_attr A_((struct attrl **, char *, char *));
 
 int create_missing_files(job *pjob);
 
@@ -541,7 +542,7 @@ int blcr_checkpoint_job(
   char line[1028];
   int conn;
   int err;
-  struct attrl at;
+  struct attrl *attrib = NULL;
   time_t epoch;
 
   assert(pjob != NULL);
@@ -663,12 +664,10 @@ int blcr_checkpoint_job(
       
     /* open a connection to the server */
     conn = pbs_connect(pjob->ji_wattr[(int)JOB_ATR_at_server].at_val.at_str);
-    at.resource = NULL;
-    at.value = err_buf;
-    at.name = ATTR_comment;
-    at.next = NULL;
+    
+    set_attr(&attrib, ATTR_comment, err_buf);
 
-    err = pbs_alterjob(conn, pjob->ji_qs.ji_jobid, &at, NULL);
+    err = pbs_alterjob(conn, pjob->ji_qs.ji_jobid, attrib, NULL);
 
     if (err != 0)
       {
@@ -710,10 +709,7 @@ int blcr_checkpoint_job(
       
     /* open a connection to the server */
     conn = pbs_connect(pjob->ji_wattr[(int)JOB_ATR_at_server].at_val.at_str);
-    at.resource = NULL;
-    at.name = ATTR_comment;
-    at.next = NULL;
-    at.value = err_buf;
+
     epoch = (time_t)pjob->ji_wattr[(int)JOB_ATR_checkpoint_time].at_val.at_long;
 
     if (request_type == PBS_BATCH_HoldJob)
@@ -724,7 +720,9 @@ int blcr_checkpoint_job(
         pjob->ji_wattr[(int)JOB_ATR_checkpoint_name].at_val.at_str,
         ctime(&epoch));
 
-      err = pbs_alterjob(conn, pjob->ji_qs.ji_jobid, &at, CHECKPOINTED);
+      set_attr(&attrib, ATTR_comment, err_buf);
+
+      err = pbs_alterjob(conn, pjob->ji_qs.ji_jobid, attrib, CHECKPOINTED);
       }
     else
       {
@@ -734,9 +732,11 @@ int blcr_checkpoint_job(
         pjob->ji_wattr[(int)JOB_ATR_checkpoint_name].at_val.at_str,
         ctime(&epoch));
 
-      err = pbs_alterjob(conn, pjob->ji_qs.ji_jobid, &at, NULL);
-      }
+      set_attr(&attrib, ATTR_comment, err_buf);
+     
+      err = pbs_alterjob(conn, pjob->ji_qs.ji_jobid, attrib, NULL);
 
+      }
     if (err != 0)
       {
         /* TODO: GB call log_err */
@@ -995,6 +995,11 @@ void post_checkpoint(
     return;
     }
 
+  /* since checkpointing failed, clear out checkpoint name and time */
+  
+  pjob->ji_wattr[(int)JOB_ATR_checkpoint_name].at_flags = 0;
+  pjob->ji_wattr[(int)JOB_ATR_checkpoint_time].at_flags = 0;
+
   /*
   ** If we get here, an error happened.  Only try to recover
   ** if we had abort set.
@@ -1096,7 +1101,8 @@ int start_checkpoint(
 
       /* Build the name of the checkpoint file before forking to the child because
        * we want this name to persist and this won't work if we are the child.
-       * Notice that the ATR_VFLAG_SEND bit causes this to also go to the pbs_server.
+       * Notice that the ATR_VFLAG_SEND bit is not set. We don't want this to go
+       * to the pbs_server until the checkpoint has completed successfully.
        */
 
       sprintf(name_buffer,"ckpt.%s.%d", 
@@ -1106,12 +1112,12 @@ int start_checkpoint(
       decode_str(&pjob->ji_wattr[(int)JOB_ATR_checkpoint_name], NULL, NULL, name_buffer);
 
       pjob->ji_wattr[(int)JOB_ATR_checkpoint_name].at_flags =
-        ATR_VFLAG_SET | ATR_VFLAG_MODIFY | ATR_VFLAG_SEND;
+        ATR_VFLAG_SET | ATR_VFLAG_MODIFY;
 
       /* Set the checkpoint time so can determine if the checkpoint is recent */
       pjob->ji_wattr[(int)JOB_ATR_checkpoint_time].at_val.at_long = (long)time_now;
       pjob->ji_wattr[(int)JOB_ATR_checkpoint_time].at_flags =
-        ATR_VFLAG_SET | ATR_VFLAG_MODIFY | ATR_VFLAG_SEND;
+        ATR_VFLAG_SET | ATR_VFLAG_MODIFY;
 
       /* For BLCR, there must be a directory name in the job attributes. */
 
