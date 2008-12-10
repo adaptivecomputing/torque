@@ -550,8 +550,6 @@ causes mom to increase and decrease logging levels, respectively.
  are ignored.
 .IP "SIGBUS, SIGFPE, SIGILL, SIGTRAP, and SIGSYS"
 cause a core dump if the PBSCOREDUMP environmental variable is defined.
- .LP
-are ignored.
 .LP
 All other signals have their default behavior installed.
 .SH EXIT STATUS
