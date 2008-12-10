@@ -201,6 +201,7 @@ char        *path_server_name;
 char        *path_home = PBS_SERVER_HOME;
 char        *mom_home;
 extern char *msg_daemonname;          /* for logs     */
+extern char *msg_info_mom; /* Mom information message   */
 extern int pbs_errno;
 gid_t  pbsgroup;
 unsigned int pbs_mom_port = 0;
@@ -3202,6 +3203,16 @@ check_log(void)
 
     log_roll(log_file_roll_depth);
     }
+
+  /* periodically record the version and loglevel */
+
+  sprintf(log_buffer, msg_info_mom, PACKAGE_VERSION, LOGLEVEL);
+
+  log_event(
+    PBSEVENT_SYSTEM | PBSEVENT_FORCE,
+    PBS_EVENTCLASS_SERVER,
+    msg_daemonname,
+    log_buffer);
 
   return;
   }  /* END check_log() */

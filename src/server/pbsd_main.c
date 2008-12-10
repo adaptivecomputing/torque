@@ -179,6 +179,7 @@ char        *path_nodestate;
 char        *path_nodenote;
 char        *path_nodenote_new;
 extern char    *msg_daemonname;
+extern char *msg_info_server; /* Server information message   */
 extern int pbs_errno;
 char        *pbs_o_host = "PBS_O_HOST";
 pbs_net_t pbs_mom_addr;
@@ -1686,6 +1687,17 @@ void check_log(
         }
       }
     }
+
+  /* periodically record the version and loglevel */
+
+  sprintf(log_buffer, msg_info_server,
+    server.sv_attr[(int)SRV_ATR_version].at_val.at_str, LOGLEVEL);
+
+  log_event(
+    PBSEVENT_SYSTEM | PBSEVENT_FORCE,
+    PBS_EVENTCLASS_SERVER,
+    msg_daemonname,
+    log_buffer);
 
   set_task(WORK_Timed, time_now + PBS_LOG_CHECK_RATE, check_log, NULL);
 

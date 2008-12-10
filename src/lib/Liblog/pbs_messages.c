@@ -103,6 +103,8 @@ char *msg_err_noqueue = "Unable to requeue job, queue is not defined";
 char *msg_err_purgejob = "Unlink of job file failed";
 char *msg_err_unlink = "Unlink of %s file %s failed";
 char *msg_illregister = "Illegal op in register request received for job %s";
+char *msg_info_server = "Torque Server Version = %s, loglevel = %d";
+char *msg_info_mom = "Torque Mom Version = %s, loglevel = %d";
 char *msg_init_abt = "Job aborted on PBS Server initialization";
 char *msg_init_baddb = "Unable to read server database";
 char *msg_init_badjob = "Recover of job %s failed";

@@ -38,6 +38,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature
   b - change back to not sending status updates until we get cluster addr message
       from server, also only try to send hello when the server stream is down.
   b - change pbs_server so log_file_max_size of zero behavior matches documentation
+  e - added periodic logging of version and loglevel to help in support
 
 2.3.4
   c - fixed segfault when loading array files of an older/incompatible version
