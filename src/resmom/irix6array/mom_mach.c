@@ -205,6 +205,7 @@ extern double wallfactor;
 extern  long    system_ncpus;
 extern char *loadave A_((struct rm_attribute *attrib));
 extern  int     ignwalltime;
+extern  int     ignvmem;
 
 /*
 ** local functions and data
@@ -928,7 +929,7 @@ mom_set_limits(
       {
       res64lim.rlim_cur = res64lim.rlim_max = mem_limit;
 
-      if (setrlimit64(RLIMIT_VMEM, &res64lim) < 0)
+      if ((ignvmem == 0) && (setrlimit64(RLIMIT_VMEM, &res64lim) < 0))
         return (error("RLIMIT_VMEM", PBSE_SYSTEM));
       }
     }
@@ -1272,7 +1273,7 @@ mom_over_limit(job *pjob)
       if (retval != PBSE_NONE)
         continue;
 
-      if ((num64 = mem_sum(pjob)) > sizeval)
+      if ((ignvmem == 0) && ((num64 = mem_sum(pjob)) > sizeval))
         {
         sprintf(log_buffer,
                 "vmem %llu exceeded limit %llu",
@@ -1287,7 +1288,7 @@ mom_over_limit(job *pjob)
       if (retval != PBSE_NONE)
         continue;
 
-      if (overmem_proc(pjob, sizeval))
+      if ((ignvmem == 0) && (overmem_proc(pjob, sizeval)))
         {
         sprintf(log_buffer,
                 "pvmem exceeded limit %llukb", sizeval);

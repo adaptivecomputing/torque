@@ -181,6 +181,7 @@ extern double	cputfactor;
 extern double	wallfactor;
 extern long     system_ncpus;
 extern int      ignwalltime;
+extern  int     ignvmem;
 
 /*
 ** local functions and data
@@ -1499,7 +1500,7 @@ int mom_set_limits(
 
       reslim.rlim_cur = reslim.rlim_max = vmem_limit;
 
-      if (setrlimit(RLIMIT_AS, &reslim) < 0)
+      if ((ignvmem == 0) && (setrlimit(RLIMIT_AS, &reslim) < 0))
         {
         sprintf(log_buffer, "setrlimit() failed setting AS for vmem_limit mod in %s\n",
                 id);
@@ -1835,7 +1836,7 @@ int mom_over_limit(
       if (retval != PBSE_NONE)
         continue;
 
-      if ((numll = mem_sum(pjob)) > value)
+      if ((ignvmem == 0) && ((numll = mem_sum(pjob)) > value))
         {
         sprintf(log_buffer, "vmem %llu exceeded limit %lu",
                 numll,
@@ -1855,7 +1856,7 @@ int mom_over_limit(
 
       valuell = (unsigned long long)value;
 
-      if (overmem_proc(pjob, valuell))
+      if ((ignvmem == 0) && (overmem_proc(pjob, valuell)))
         {
         sprintf(log_buffer, "pvmem exceeded limit %llu",
                 valuell);

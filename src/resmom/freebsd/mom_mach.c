@@ -157,6 +157,7 @@ extern double cputfactor;
 extern double wallfactor;
 extern  long    system_ncpus;
 extern  int     ignwalltime;
+extern  int     ignvmem;
 
 extern  int     LOGLEVEL;
 
@@ -762,10 +763,10 @@ mom_set_limits(
       {
       reslim.rlim_cur = reslim.rlim_max = mem_limit;
 
-      if (setrlimit(RLIMIT_DATA, &reslim) < 0)
+      if ((ignvmem == 0) && (setrlimit(RLIMIT_DATA, &reslim) < 0))
         return (error("RLIMIT_DATA", PBSE_SYSTEM));
 
-      if (setrlimit(RLIMIT_STACK, &reslim) < 0)
+      if ((ignvmem == 0) && (setrlimit(RLIMIT_STACK, &reslim) < 0))
         return (error("RLIMIT_STACK", PBSE_SYSTEM));
       }
     }
@@ -1013,7 +1014,7 @@ mom_over_limit(job *pjob)
       if (retval != PBSE_NONE)
         continue;
 
-      if (overmem_proc(pjob, value))
+      if ((ignvmem == 0) && (overmem_proc(pjob, value)))
         {
         sprintf(log_buffer, "pvmem exceeded limit %lu",
                 value);

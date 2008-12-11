@@ -176,6 +176,7 @@ int    exiting_tasks = 0;
 float  ideal_load_val = -1.0;
 int    internal_state = 0;
 int    ignwalltime = 0;        /* by default, enable mom based walltime enforcement */
+int             ignvmem = 0; /* by default, enable mom based vmem enforcement */
 int    lockfds = -1;
 time_t loopcnt;  /* used for MD5 calc */
 float  max_load_val = -1.0;
@@ -321,6 +322,7 @@ static unsigned long cputmult(char *);
 static unsigned long setallocparcmd(char *);
 static unsigned long setidealload(char *);
 static unsigned long setignwalltime(char *);
+static unsigned long setignvmem(char *);
 static unsigned long setlogevent(char *);
 static unsigned long setloglevel(char *);
 static unsigned long setumask(char *);
@@ -375,6 +377,7 @@ static struct specials
   { "cputmult",            cputmult },
   { "ideal_load",          setidealload },
   { "ignwalltime",         setignwalltime },
+  { "ignvmem",             setignvmem },
   { "logevent",            setlogevent },
   { "loglevel",            setloglevel },
   { "max_load",            setmaxload },
@@ -2673,7 +2676,37 @@ static unsigned long setignwalltime(
   /* SUCCESS */
 
   return(1);
-  }  /* END setidealload() */
+  }  /* END setignwalltime() */
+
+
+static unsigned long setignvmem(
+
+  char *value)  /* I */
+
+  {
+  char newstr[50] = "setignvmem ";
+
+  log_record(
+    PBSEVENT_SYSTEM,
+    PBS_EVENTCLASS_SERVER,
+    "setignvmem",
+    value);
+
+  if (!strncasecmp(value, "t", 1) || (value[0] == '1') || !strcasecmp(value, "on"))
+    {
+    ignvmem = 1;
+    }
+  else
+    {
+    ignvmem = 0;
+    }
+
+  strcat(newstr, value);
+
+  /* SUCCESS */
+
+  return(1);
+  }  /* END setignvmem() */
 
 
 static unsigned long setautoidealload(

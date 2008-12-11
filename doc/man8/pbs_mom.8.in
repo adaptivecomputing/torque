@@ -460,6 +460,8 @@ the format $VAR=$VAL, i.e.,
 .LP
 .IP xauthpath
 Specifies the path to the xauth binary to enable X11 fowarding.
+.IP ignvmem
+If set to true, then pbs_mom will ignore vmem/pvmem limit enforcement.
 .IP ignwalltime
 If set to true, then pbs_mom will ignore walltime limit enforcement.
 .IP mom_host
