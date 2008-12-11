@@ -355,9 +355,13 @@ void qdel_all(
       a = a->next;
       }
 
-    /* Don't bother deleting jobs that are 'C'omplete or 'E'xiting */
-
-    if ((*state != 'E') && (*state != 'C'))
+    /* 
+     * Don't bother deleting jobs that are 'C'omplete or 'E'xiting
+     * Unless we are Purging, then try these jobs as well
+     */
+    
+    if ((strstr(extend,DELPURGE) != NULL) ||
+        ((*state != 'E') && (*state != 'C')))
       {
       retries = 0;
 
