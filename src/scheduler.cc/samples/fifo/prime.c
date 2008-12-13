@@ -290,7 +290,7 @@ int parse_holidays(char *fname)
 
     if (!skip_line(buf))
       {
-      config_name = strtok(buf, "  ");
+      config_name = strtok(buf, " \t");
 
 
       /* if there is a 4 digit number, it describes the year and the
@@ -306,14 +306,14 @@ int parse_holidays(char *fname)
           isdigit((int) config_name[1]) && isdigit((int) config_name[2]) &&
           isdigit((int) config_name[3]))
         {
-        tok = strtok(NULL, "  ");
+        tok = strtok(NULL, " \t");
 
         if (load_day(WEEKDAY, PRIME, tok) < 0)
           error = 1;
 
         if (!error)
           {
-          tok = strtok(NULL, "  ");
+          tok = strtok(NULL, " \t");
 
           if (load_day(WEEKDAY, NON_PRIME, tok) < 0)
             error = 1;
@@ -337,7 +337,7 @@ int parse_holidays(char *fname)
        */
       else if (!strcmp(config_name, "YEAR"))
         {
-        tok = strtok(NULL, "  ");
+        tok = strtok(NULL, " \t");
 
         if (tok == NULL)
           error = 1;
@@ -361,14 +361,14 @@ int parse_holidays(char *fname)
        */
       else if (!strcmp(config_name, "saturday"))
         {
-        tok = strtok(NULL, "  ");
+        tok = strtok(NULL, " \t");
 
         if (load_day(SATURDAY, PRIME, tok) < 0)
           error = 1;
 
         if (!error)
           {
-          tok = strtok(NULL, "  ");
+          tok = strtok(NULL, " \t");
 
           if (load_day(SATURDAY, NON_PRIME, tok) < 0)
             error = 1;
@@ -378,14 +378,14 @@ int parse_holidays(char *fname)
       /* primetime hours for sunday  - same format as saturday */
       else if (!strcmp(config_name, "sunday"))
         {
-        tok = strtok(NULL, "  ");
+        tok = strtok(NULL, " \t");
 
         if (load_day(SUNDAY, PRIME, tok) < 0)
           error = 1;
 
         if (!error)
           {
-          tok = strtok(NULL, "  ");
+          tok = strtok(NULL, " \t");
 
           if (load_day(SUNDAY, NON_PRIME, tok) < 0)
             error = 1;
@@ -395,14 +395,14 @@ int parse_holidays(char *fname)
       /* primetime for weekday - same format as saturday */
       else if (!strcmp(config_name, "weekday"))
         {
-        tok = strtok(NULL, "  ");
+        tok = strtok(NULL, " \t");
 
         if (load_day(WEEKDAY, PRIME, tok) < 0)
           error = 1;
 
         if (!error)
           {
-          tok = strtok(NULL, "  ");
+          tok = strtok(NULL, " \t");
 
           if (load_day(WEEKDAY, NON_PRIME, tok) < 0)
             error = 1;
