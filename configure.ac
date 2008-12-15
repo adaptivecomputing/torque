@@ -20,7 +20,7 @@ dnl  bi-arches, pbs-config script, and updated to TORQUE 2.x
 dnl  by Garrick Staples (garrick@usc.edu)
 
 AC_PREREQ(2.53)
-AC_INIT([torque], [2.4.0], [torqueusers@supercluster.org])
+AC_INIT([torque], [2.4.0b1], [torqueusers@supercluster.org])
 AC_REVISION($Revision$)
 AC_CONFIG_SRCDIR([src/cmds/qrun.c])
 AC_CONFIG_AUX_DIR([buildutils])
