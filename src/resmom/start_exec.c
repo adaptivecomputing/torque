@@ -1888,7 +1888,7 @@ int determine_umask(
 
     UMaskVal = UMaskVal & 0377;
 
-    if (LOGLEVEL >= 7)
+    if (LOGLEVEL > 7)
       {
       sprintf(log_buffer, "Using $job_output_file_umask value of %o",
               UMaskVal);
