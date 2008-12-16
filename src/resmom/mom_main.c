@@ -559,6 +559,9 @@ const char *PJobSubState[] =
   "RERUN1",    /* job is rerun, stageout phase */
   "RERUN2",    /* job is rerun, delete files stage */
   "RERUN3",    /* job is rerun, mom delete job */
+  "RETSTD",    /* job has checkpoint file, return stdout / stderr files to server
+                * spool dir so that job can be restarted
+                */
   NULL
   };
 
