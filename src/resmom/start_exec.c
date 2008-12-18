@@ -1409,6 +1409,10 @@ int TMomFinalizeJob1(
 
 #endif /* IBM SP */
 
+  /* Starting job */
+
+  mom_checkpoint_init_job_periodic_timer(pjob);
+
   if (mom_checkpoint_job_has_checkpoint(pjob))
     {
     rc = mom_checkpoint_start_restart(pjob);
@@ -1431,6 +1435,12 @@ int TMomFinalizeJob1(
 
       if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_Suspend) == 0)
         {
+        if ((pjob->ji_qs.ji_stime == 0) &&
+            (pjob->ji_wattr[(int)JOB_ATR_start_time].at_flags & ATR_VFLAG_SET))
+          {
+          pjob->ji_qs.ji_stime = 
+              (time_t)pjob->ji_wattr[(int)JOB_ATR_start_time].at_val.at_long;
+          }
         pjob->ji_qs.ji_stime = time_now - (sb.st_mtime - pjob->ji_qs.ji_stime);
         pjob->ji_qs.ji_substate = JOB_SUBSTATE_RUNNING;
 
@@ -1502,11 +1512,7 @@ int TMomFinalizeJob1(
 
       return(FAILURE);
       }
-    }
-
-  /* Starting new job */
-
-  mom_checkpoint_init_job_periodic_timer(pjob);
+    } /* end of if mom_checkpoint_job_has_checkpoint(pjob) */
 
   /*
    * if certain resource limits require that the job usage be

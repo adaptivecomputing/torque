@@ -31,6 +31,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature
       was successful
   b - fix so that running jobs that have a hold type and that fail on checkpoint
       restart get deleted when qdel is used
+  b - fix so we reset start_time, if needed, when restarting a checkpointed job
 
 2.3.6
   b - change back to not sending status updates until we get cluster addr message
