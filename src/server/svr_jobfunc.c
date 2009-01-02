@@ -1212,6 +1212,32 @@ int svr_chkque(
 
           return(PBSE_NONONRERUNABLE);
           }
+        if (strcmp(Q_DT_fault_tolerant,
+                   pque->qu_attr[QA_ATR_DisallowedTypes].at_val.at_arst->as_string[i]) == 0
+            && ((pjob->ji_wattr[(int)JOB_ATR_fault_tolerant].at_flags & ATR_VFLAG_SET) &&
+                pjob->ji_wattr[(int)JOB_ATR_fault_tolerant].at_val.at_long != 0))
+          {
+          if (EMsg) snprintf(EMsg, 1024,
+                               "fault_tolerant jobs are not allowed for queue: user %s, queue %s",
+                               pjob->ji_wattr[(int)JOB_ATR_job_owner].at_val.at_str,
+                               pque->qu_qs.qu_name);
+
+          return(PBSE_NOFAULTTOLERANT);
+          }
+          
+        if (strcmp(Q_DT_fault_intolerant,
+                   pque->qu_attr[QA_ATR_DisallowedTypes].at_val.at_arst->as_string[i]) == 0
+            && (!(pjob->ji_wattr[(int)JOB_ATR_fault_tolerant].at_flags & ATR_VFLAG_SET) ||
+                pjob->ji_wattr[(int)JOB_ATR_fault_tolerant].at_val.at_long == 0))
+          {
+          if (EMsg) snprintf(EMsg, 1024,
+                               "only fault_tolerant jobs are allowed for queue: user %s, queue %s",
+                               pjob->ji_wattr[(int)JOB_ATR_job_owner].at_val.at_str,
+                               pque->qu_qs.qu_name);
+
+          return(PBSE_NOFAULTINTOLERANT);
+          }
+          
         }
       }    /* END if (pque->qu_attr[QA_ATR_DisallowedTypes].at_flags & ATR_VFLAG_SET) */
 

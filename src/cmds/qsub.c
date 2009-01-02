@@ -156,6 +156,7 @@ char default_ckpt[256];
 
 int validate_path = 1;
 int rerunnable_by_default = 1;
+int fault_tolerant_by_default = 0;
 int interactivechild = 0;
 int x11child = 0;
 
@@ -880,6 +881,7 @@ int a_opt = FALSE;
 int b_opt = FALSE;
 int c_opt = FALSE;
 int e_opt = FALSE;
+int f_opt = FALSE;
 int h_opt = FALSE;
 int j_opt = FALSE;
 int k_opt = FALSE;
@@ -895,6 +897,7 @@ int v_opt = FALSE;
 int z_opt = FALSE;
 int A_opt = FALSE;
 int C_opt = FALSE;
+int F_opt = FALSE;
 int M_opt = FALSE;
 int N_opt = FALSE;
 int S_opt = FALSE;
@@ -2485,7 +2488,7 @@ int process_opts(
   char search_string[256];
 
 #if !defined(PBS_NO_POSIX_VIOLATION)
-#define GETOPT_ARGS "a:A:b:c:C:d:D:e:hIj:k:l:m:M:N:o:p:q:r:S:t:u:v:VW:Xz-:"
+#define GETOPT_ARGS "a:A:b:c:C:d:D:e:fhIj:k:l:m:M:N:o:p:q:r:S:t:u:v:VW:Xz-:"
 #else
 #define GETOPT_ARGS "a:A:c:C:e:hj:k:l:m:M:N:o:p:q:r:S:u:v:VW:z"
 #endif /* PBS_NO_POSIX_VIOLATION */
@@ -2823,6 +2826,21 @@ int process_opts(
           }
 
         break;
+        
+#if !defined(PBS_NO_POSIX_VIOLATION)
+      
+      case 'f':
+      
+        if_cmd_line(f_opt)
+          {
+          f_opt = passet;
+          
+          set_attr(&attrib, ATTR_f, "TRUE");
+          }
+          
+        break;
+      
+#endif
 
       case 'h':
 
@@ -3441,6 +3459,37 @@ int process_opts(
               set_attr(&attrib,ATTR_umask,valuewd);
               }
             }
+          else if (!strcmp(keyword, ATTR_f))
+            {
+            
+            switch (valuewd[0])
+              {
+            
+              /*accept 1, TRUE,true,YES,yes, 0, FALSE, false, NO, no */
+              case 1:
+              case 'T':
+              case 't':
+              case 'Y':
+              case 'y':
+                f_opt = passet;
+                set_attr(&attrib, ATTR_f, "TRUE");
+                break;
+                
+              case 0:
+              case 'F':
+              case 'f':
+              case 'N':
+              case 'n':
+                f_opt = passet;
+                set_attr(&attrib, ATTR_f, "FALSE");
+                break;
+              
+              default:
+                fprintf(stderr, "invalid %s value: %s\n", ATTR_f, valuewd);
+                errflg++;
+              }
+              
+            }
           else
             {
             /* generic job attribute specified */
@@ -3791,6 +3840,13 @@ set_opt_defaults(void)
     else
       set_attr(&attrib, ATTR_r, "FALSE");
     }
+  if (f_opt == FALSE)
+    {
+    if (fault_tolerant_by_default)
+      set_attr(&attrib, ATTR_f, "TRUE");
+    else
+      set_attr(&attrib, ATTR_f, "FALSE");
+    }
   return;
   }  /* END set_opt_defaults() */
 
@@ -4063,6 +4119,11 @@ int main(
       {
       if (!strcasecmp(param_val, "false"))
         rerunnable_by_default = 0;
+      }
+    if ((param_val = get_param("FAULT_TOLERANT_BY_DEFAULT", config_buf)) != NULL)
+      {
+      if (!strcasecmp(param_val, "true"))
+        fault_tolerant_by_default = 1;
       }
     }    /* END if (load_config(config_buf,sizeof(config_buf)) == 0) */
 

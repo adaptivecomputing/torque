@@ -110,6 +110,7 @@
 #define ATTR_a "Execution_Time"
 #define ATTR_c "Checkpoint"
 #define ATTR_e "Error_Path"
+#define ATTR_f "fault_tolerant"
 #define ATTR_g "group_list"
 #define ATTR_h "Hold_Types"
 #define ATTR_j "Join_Path"
@@ -173,6 +174,7 @@
 #define ATTR_checkpoint_name  "checkpoint_name"   /* user specified name of checkpoint file */
 #define ATTR_checkpoint_time  "checkpoint_time"   /* timestamp of start of last checkpoint */
 #define ATTR_checkpoint_restart_status  "checkpoint_restart_status"   /* checkpoint restart status */
+
 #ifdef ENABLE_CSA
 #define ATTR_pagg         "pagg_id"
 #endif /* ENABLE_CSA */
@@ -320,6 +322,8 @@
 #define Q_DT_interactive        "interactive"
 #define Q_DT_rerunable          "rerunable"
 #define Q_DT_nonrerunable       "nonrerunable"
+#define Q_DT_fault_tolerant     "fault_tolerant"
+#define Q_DT_fault_intolerant   "fault_intolerant"
 
 /*constant related to sum of string lengths for above strings*/
 #define MAX_ENCODE_BFR  100

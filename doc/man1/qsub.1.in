@@ -83,7 +83,7 @@ qsub \- submit pbs job
 .SH SYNOPSIS
 qsub [\-a date_time] [\-A account_string] [\-b secs] [\-c checkpoint_options]
 [\-C directive_prefix]
-[\-d path] [\-D path] [\-e path] [\-h] [\-I] [\-j join] [\-k keep] [\-l resource_list]
+[\-d path] [\-D path] [\-e path] [\-f] [\-h] [\-I] [\-j join] [\-k keep] [\-l resource_list]
 [\-m mail_options] [\-M user_list] [\-N name] [\-o path] 
 [\-p priority] [\-q destination] [\-r c] [\-S path_list] [\-t num_jobs]
 [\-u user_list] [\-v variable_list] [\-V] [\-W additional_attributes] [\-X] [\-z]
@@ -378,6 +378,13 @@ job is submitted.
 .if !\n(Pb .ig Ig
 This option sets the job attribute
 .At Error_Path .
+.Ig
+.IP "\-f" 8
+Specifies that the job is fault tolerant. The
+.At fault_tolerant
+attribute will be set to true, which indicates that the job can 
+survive the loss of a mom other than the "mother superior" mom
+(the first node in the exec hosts )
 .Ig
 .IP "\-h" 8
 Specifies that a user hold be applied to the job at submission time.
@@ -1143,6 +1150,12 @@ parameter overrides this default.
 this parameter specifies if a job is rerunnable by default. The default is true, setting 
 this to false causes the rerunnable attribute value to be false unless the users specifies 
 otherwise with the -r option 
+.LP
+.B FAULT_TOLERANT_BY_DEFAULT
+this parameter specifies if a job is fault tolerant by default.  The default value for 
+the fault_tolerant job attribute is false, setting this parameter to true causes the 
+default value of the attribute to be true. The user can specify their preference with 
+the -f qsub option.
 .LP
 For example:
 .RS

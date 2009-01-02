@@ -841,6 +841,18 @@ attribute_def job_attr_def[] =
     ATR_TYPE_STR,
     PARENT_TYPE_JOB
   },
+  /* JOB_ATR_f (fault_tolerant)*/
+  { ATTR_f,
+    decode_b,
+    encode_b,
+    set_b,
+    comp_b,
+    free_null,
+    NULL_FUNC,
+    READ_WRITE | ATR_DFLAG_ALTRUN | ATR_DFLAG_SELEQ,
+    ATR_TYPE_LONG,
+    PARENT_TYPE_JOB
+  },
 
 #ifdef ENABLE_CSA
   /* JOB_ATR_pagg_id */

@@ -1311,8 +1311,13 @@ void node_bailout(
         log_err(-1, id, log_buffer);
 
         /* we should be more patient - how do we recover this connection? (NYI) */
-
-        pjob->ji_nodekill = np->hn_node;
+        
+        /* if job attribute fault_tolerant is not set or set to false then kill the job */
+        if ((pjob->ji_wattr[(int)JOB_ATR_fault_tolerant].at_flags & ATR_VFLAG_SET) == 0 || 
+            pjob->ji_wattr[(int)JOB_ATR_fault_tolerant].at_val.at_long == FALSE) 
+          {
+          pjob->ji_nodekill = np->hn_node;
+          }
 
 #endif /* __TRR */
 

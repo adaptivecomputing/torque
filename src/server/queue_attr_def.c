@@ -102,6 +102,8 @@ char* array_disallowed_types[] =
   Q_DT_interactive,
   Q_DT_rerunable,
   Q_DT_nonrerunable,
+  Q_DT_fault_tolerant,
+  Q_DT_fault_intolerant,
   "_END_" /* must be last string */
   };
 

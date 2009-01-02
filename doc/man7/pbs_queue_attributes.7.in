@@ -173,7 +173,7 @@ default value: all users allowed.
 [internal type:  access control list]
 .Ig
 .Al disallowed_types
-List of job "types" (interactive,batch,rerunable) that are not allowed in this queue.
+List of job "types" (interactive,batch,rerunable,nonrerunable,fault_tolerant,fault_intolerant) that are not allowed in this queue.
 
 default value: all types allowed.
 .if !\n(Pb .ig Ig
