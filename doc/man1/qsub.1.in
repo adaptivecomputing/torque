@@ -1131,20 +1131,29 @@ default path is $(libexecdir)/qsub_filter, which falls back to
 parameter overrides this default.
 .LP
 .B SERVERHOST
+specifies the value for the PBS_SERVER environment variable
 .LP
 .B QSUBHOST
+specifies the hostname for the jobs QSUB_O_HOST variable
 .LP
 .B QSUBSENDUID
+specifies a uid to use for the jobs PBS_O_UID variable
 .LP
 .B XAUTHPATH
+specifies the path to xauth
 .LP
 .B CLIENTRETRY
+specifies the integer seconds between retry attempts to communicate with pbs_server
 .LP
 .B VALIDATEGROUP
+set this parameter to force qsub to verify the subitter's group id
 .LP
 .B DEFAULTCKPT
+specifies the default value for the jobs checkpoint attribute.  The user overrides 
+this with the -c qsub option.
 .LP
 .B VALIDATEPATH
+set this parameter to force qsub to validate local existence of a "-d" working directory 
 .LP
 .B RERUNNABLEBYDEFAULT
 this parameter specifies if a job is rerunnable by default. The default is true, setting 
