@@ -114,9 +114,8 @@ Apple OS X:
 
   The Leopard release of OS X caused a few issues with TORQUE
 
-  1)  TORQUE now has difficulty authenticating a user when they are not logged
-      into the node. There is no known work around at this time, but developers
-      are investigating and would welcome community help. 
+  1)  TORQUE now has difficulty authenticating a user in certain circumstances, 
+      and it doesn't always seem to be repeatable.
 
   2)  The code encapsulated by the HAVE_WORDEXP macro in pbs_mom causes causes 
       a child process of pbs_mom that copies the stderr and stdout files back 
