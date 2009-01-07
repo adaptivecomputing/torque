@@ -96,7 +96,7 @@ INSTALL: The standard "install" target will install all of the
 
 OS NOTES
 
-MAC: 
+Apple OS X: 
 
   If using 'bash' as the job execution shell, '.bashrc' may not be 
   executed.  Use '#!/bin/bash -l' at the start of the pbs command file
@@ -105,9 +105,28 @@ MAC:
   Some versions of OSX have a buggy bind() preventing binding to privileged
   ports.  In this case, --disable-privports should be used.
 
-  gcc 4.0 on OS X will not compile TORQUE with -pendantic -Werror.  run 
-  configure with the --disable-gcc-warnings to build TORQUE with gcc 4.0
-  on OS X
+  gcc 4.0 on OS X will not compile TORQUE with -pendantic -Werror (installed
+  with Developer Tools versions prior to 2.5) .  run configure with the 
+  --disable-gcc-warnings to build TORQUE with gcc 4.0 on OS X. gcc installed 
+  by Apple Developer Tools 2.5 and newer will compile TORQUE without warning
+
+  OS X 10.5 (Leopard) support:
+
+  The Leopard release of OS X caused a few issues with TORQUE
+
+  1)  TORQUE now has difficulty authenticating a user when they are not logged
+      into the node. There is no known work around at this time, but developers
+      are investigating and would welcome community help. 
+
+  2)  The code encapsulated by the HAVE_WORDEXP macro in pbs_mom causes causes 
+      a child process of pbs_mom that copies the stderr and stdout files back 
+      to the user to crash and the job gets stuck in the "E" state.  Until we 
+      have a better solution a work around for this issue is to edit 
+      src/include/pbs_config.h, and search for HAVE_WORDEXP.  Comment out
+      the #define HAVE_WORDEXP 1
+
+      Unfortunately it is likely that issue 1) will still arise. 
+      
 
 
 TRU64/DIGITALUNIX: If building for a TRU64/Digital Unix cluster, some
