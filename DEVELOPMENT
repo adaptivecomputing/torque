@@ -3,4 +3,3 @@ Current active development projects (to be released soon)
 TODO:  route job start failure messages from sister to mother superior
 TODO:  add queue hostlist attribute (CRI)
 TODO:  enable background epilog.precancel script management
-TODO:  X11 forwarding for interactive jobs
