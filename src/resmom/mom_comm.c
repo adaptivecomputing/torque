@@ -1303,13 +1303,6 @@ void node_bailout(
 
 #else /* __TRR */
 
-        sprintf(log_buffer, "%s POLL failed from node %s %d - recovery not attempted - job will be killed)",
-                pjob->ji_qs.ji_jobid,
-                np->hn_host,
-                np->hn_node);
-
-        log_err(-1, id, log_buffer);
-
         /* we should be more patient - how do we recover this connection? (NYI) */
         
         /* if job attribute fault_tolerant is not set or set to false then kill the job */
@@ -1317,7 +1310,21 @@ void node_bailout(
             pjob->ji_wattr[(int)JOB_ATR_fault_tolerant].at_val.at_long == FALSE) 
           {
           pjob->ji_nodekill = np->hn_node;
+          
+          sprintf(log_buffer, "%s POLL failed from node %s %d - job is fault tolerant - job will not be killed)",
+          pjob->ji_qs.ji_jobid,
+          np->hn_host,
+          np->hn_node);
           }
+        else
+          {
+          sprintf(log_buffer, "%s POLL failed from node %s %d - recovery not attempted - job will be killed)",
+          pjob->ji_qs.ji_jobid,
+          np->hn_host,
+          np->hn_node);
+          }
+          
+        log_err(-1, id, log_buffer);
 
 #endif /* __TRR */
 
