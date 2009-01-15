@@ -2969,19 +2969,19 @@ void req_cpyfile(
   {
   char   id[] = "req_cpyfile";
 
-  char  *arg2;
-  char  *arg3;
+  char  *arg2 = NULL;
+  char  *arg3 = NULL;
   int   bad_files = 0;
   char  *bad_list = NULL;
-  int   dir;
-  int   from_spool;  /* boolean - set if file must be removed from spool after copy */
+  int   dir = 0;
+  int   from_spool = 0;  /* boolean - set if file must be removed from spool after copy */
   int   len;
   char   localname[MAXPATHLEN + 1];  /* used only for in-bound */
 
-  struct rqfpair *pair;
+  struct rqfpair *pair = NULL;
   char  *prmt;
   int   rc;
-  int   rmtflag;
+  int   rmtflag = 0;
 #if NO_SPOOL_OUTPUT == 0
   char   undelname[MAXPATHLEN + 1];
 #endif /* !NO_SPOOL_OUTPUT */
