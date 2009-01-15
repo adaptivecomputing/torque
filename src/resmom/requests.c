@@ -2355,7 +2355,7 @@ static int del_files(
 
   struct rqfpair  *pair;
   int   rc = 0;
-  char   path[MAXPATHLEN + 1];
+  char  *path;
   char  *pp;
   char  *prmt;
 
@@ -2371,6 +2371,15 @@ static int del_files(
   job *pjob;
   wordexp_t pathexp;
 #endif
+
+  path = malloc(sizeof(char)*(MAXPATHLEN + 1));
+
+  if (path==NULL)
+    {
+    add_bad_list(pbadfile,"malloc failed",1);
+ 
+    return(-1);
+    }
 
   /*
    * NOTE:  may be called as root in TORQUE home dir
@@ -2403,7 +2412,7 @@ static int del_files(
     {
     prmt = pair->fp_rmt;
 
-    path[0] = '\0';
+    *path = '\0';
 
     if (pair->fp_flag == STDJOBFILE)
       {
@@ -2440,7 +2449,7 @@ static int del_files(
         add_bad_list(pbadfile,log_buffer,1);
 
         return(-1);
-	      }
+      }
 
       /* run as the user */
       if (setuid(useruid) != 0 && EUID0 == TRUE)
@@ -2454,7 +2463,7 @@ static int del_files(
         add_bad_list(pbadfile,log_buffer,1);
 
         return(-1);
-	      }
+      }
 	      
       EUID0 = FALSE;
       UID0 = FALSE;
@@ -2960,8 +2969,8 @@ void req_cpyfile(
   {
   char   id[] = "req_cpyfile";
 
-  char   arg2[MAXPATHLEN + 1];
-  char   arg3[MAXPATHLEN + 1];
+  char  *arg2;
+  char  *arg3;
   int   bad_files = 0;
   char  *bad_list = NULL;
   int   dir;
@@ -3000,9 +3009,6 @@ void req_cpyfile(
   char   faketmpdir[1024];
   int   wordexperr = 0;
 #endif
-
-  arg2[0] = '\0';
-  arg3[0] = '\0';
 
   if (LOGLEVEL >= 3)
     {
@@ -3150,6 +3156,20 @@ void req_cpyfile(
 
     pjob = job_alloc();
 
+    if (pjob == NULL)
+      {
+      /* FAILURE - in child process */
+
+      sprintf(log_buffer,"alloc failed with errno=%d - returning failure",
+        errno);
+
+      log_err(errno,id,log_buffer);
+
+      bad_files = 1;
+
+      goto error;
+      }
+
     strcpy(pjob->ji_qs.ji_jobid, preq->rq_ind.rq_cpyfile.rq_jobid);
 
     if (TTmpDirName(pjob, faketmpdir))
@@ -3159,6 +3179,20 @@ void req_cpyfile(
         char *envstr;
 
         envstr = malloc((strlen("TMPDIR=") + strlen(faketmpdir) + 1) * sizeof(char));
+
+        if (envstr == NULL)
+          {
+          /* FAILURE - in child process */
+
+          sprintf(log_buffer,"alloc failed with errno=%d - returning failure",
+            errno);
+
+          log_err(errno,id,log_buffer);
+
+          bad_files = 1;
+
+          goto error;
+          }
 
         sprintf(envstr, "TMPDIR=%s",
                 faketmpdir);
@@ -3181,6 +3215,23 @@ void req_cpyfile(
 #endif  /* END HAVE_WORDEXP */
 
   /* build up cp/rcp command(s), one per file pair */
+
+  arg2 = malloc(sizeof(char)*(MAXPATHLEN + 1));
+  arg3 = malloc(sizeof(char)*(MAXPATHLEN + 1));
+
+  if ((arg2==NULL) || (arg3==NULL))
+    {
+    /* FAILURE - in child process */
+
+    sprintf(log_buffer,"alloc failed with errno=%d - returning failure",
+      errno);
+
+    log_err(errno,id,log_buffer);
+
+    bad_files = 1;
+
+    goto error;
+    }
 
   dir = preq->rq_ind.rq_cpyfile.rq_dir;
 
@@ -3322,7 +3373,7 @@ void req_cpyfile(
 
       /* take (remote) destination name from request */
 
-      arg3[0] = '\0';
+      *arg3 = '\0';
 
       if (rmtflag)
         {
@@ -3340,7 +3391,7 @@ void req_cpyfile(
 
       /* take (remote) source name from request */
 
-      arg2[0] = '\0';
+      *arg2 = '\0';
 
       if (rmtflag)
         {
