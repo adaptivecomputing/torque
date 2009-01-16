@@ -69,7 +69,7 @@ browse-log is in the perltests/bin directory. You can either edit your PATH
 variable to reflect this location, or you can copy browse-log to a directory
 in your path. 
 
-browse-log requires Moab::Test::Reader to be in the Perl path.
+browse-log requires CRI::Test::Reader to be in the Perl path.
 
 The last-log program will run browse-log on the last test which was run. 
 Last-log requires that browse-log be in the PATH.

@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w 
 use strict;
 use warnings;
-use Moab::Test::Reader;
+use CRI::Test::Reader;
 use POSIX qw(:termios_h);
 
 # Browse the test results from a single run
@@ -35,7 +35,7 @@ if (not defined $testFile)
 
 my $version = 0.6;
 
-my $testResult = Moab::Test::Reader->new;
+my $testResult = CRI::Test::Reader->new;
 $testResult->loadLog($testFile);
 
 print "\n\n\tWelcome to browse-log version $version.\n\tPress '?' for help\n";
@@ -392,7 +392,7 @@ browse-log -- A tool to make browsing and debuggin Moab::Test results easy
 
 =head1 SYNOPSIS
 
-uses the Moab::Test::Reader module to access the Moab test results and provide a 
+uses the CRI::Test::Reader module to access the Moab test results and provide a 
 good debugging environment for the Moab (and related products) tester
 
 =head1 Running browse-log 

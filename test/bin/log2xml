@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w 
 use strict;
 use warnings;
-use Moab::Test::XML;
+use CRI::Test::XML;
 
 # By Michael Moore mmoore@clusterresources.com
 # Copyright 2007, Cluster Resources Inc.
@@ -27,7 +27,7 @@ if (not defined $outfile)
 
 my $version = 0.6;
 
-my $xmlmaker = Moab::Test::XML->new;
+my $xmlmaker = CRI::Test::XML->new;
 $xmlmaker->loadLog($testFile);
 my $output = $xmlmaker->makeXML();
 open(XMLFILE,">$outfile") or die("Couldn't open $outfile : $!");

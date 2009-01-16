@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 use strict;
 use warnings;
-use Moab::Test::Reader;
+use CRI::Test::Reader;
 use Data::Properties;
 use Fcntl ':flock';
 use POSIX qw(:termios_h);
@@ -70,7 +70,7 @@ while($keepGoing)
     print "Showing tests " . $tests[0] . " to " . $tests[scalar(@tests) - 1]." of $max\n";
     print "---------------\n";
     for(my $i = 0;$i<10;$i++){
-	my $testResult = Moab::Test::Reader->new;
+	my $testResult = CRI::Test::Reader->new;
 	$testResult->loadLog("$dir/" . $dirs[$tests[$i]] . "/Summary.log");
 	my $line = "$i (" . $dirs[$tests[$i]] . ") : " . $testResult->nodeSummary() . "\n"; 
 	print colorLine($line,$i == $currentIndex);
