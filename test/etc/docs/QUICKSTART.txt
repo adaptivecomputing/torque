@@ -1,0 +1,128 @@
+Moab::Test Setup Quickstart
+
+Copyright 2007, Cluster Resources Inc.
+
+=====================================
+
+Intro:
+
+  Moab::Test and related tools are supposed to make it easier to do Moab testing
+  and analyze the results in a meaningfull way. This guide will lead the user
+  through the process of setting up Moab::Test on Debian Linux, as it is used
+  by me, Michael Moore.
+  
+  This quickstart will get Moab::Test installed and your system configured so 
+  that you can run tests manually and use the command line browse-log program
+  to analyze your test results. 
+
+  All commands are to be run as root.
+
+System Setup: 
+  
+  This procedure is being performed on a Virtual Machine in VMWare Server, version 
+  1.0.4, running under Ubuntu 7.10 (Gutsy, 64 bit version). The VM is configured 
+  with 756 M of RAM, a 15 Gb hard drive and bridged networking. The version of Debian being used is 
+  Debian 4.1 (Etch, 32 bit version), installed from the Business Card ISO. Only
+  the Standard System was installed.
+
+Configuring Users and Groups: 
+  
+  Add the groups apitest and scottmo:
+
+  # addgroup apitest 
+  # addgroup scottmo
+
+  Add the users apitest and scottmo: 
+
+  # useradd -m -s /bin/bash -g apitest -G apitest apitest
+  # useradd -m -s /bin/bash -g scottmo -G scottmo scottmo 
+ 
+  Copy the .ssh directories from a working test machine for the apitest user 
+  This directory has SSH keys already set up.
+
+  # su - apitest
+  # scp -r root@workingMachine:/home/apitest/.ssh .
+  # exit
+
+  Copy the .subversion directory for the root user.
+
+  # su -
+  # scp -r root@workingMachine:/root/.subversion .
+  # exit
+
+
+
+Required Programs:
+
+  In order to install and run Moab::Test tests, you will need to run the 
+  following commands to install required packages: 
+
+  # apt-get update 
+  # apt-get install subversion build-essential psmisc autoconf libxml libxml2-dev zlib1g zlib1g-dev
+
+Configuring Perl: 
+
+  Edit your ~/.bashrc file and add the following line: 
+
+    export PERL5LIB='/usr/local/perltests/bin'
+
+  Install the required Perl modules with the following command: 
+
+  cpan -i IPC::Run3 Test::More Data::Properties TAP::Harness XML::LibXML Proc::Daemon Attribute::Curried 
+
+  You will need to answer a series of questions the first time you run CPAN. 
+  You can accept the default answer for all of them except for the geographic
+  location questions, which have no default answer. 
+
+
+Getting Moab::Test: 
+ 
+  We will now fetch the latest Moab::Test. Change to the directory /usr/local, 
+  and run the command:
+
+  # svn co svn://arc/perltests/trunk perltests 
+ 
+  This command will check out the latest version of Moab::Test from the Subversion
+  repository.
+
+Configuring Moab::Test:
+  
+  Create the place where test code will be managed: 
+
+  # mkdir -p /usr/test/src
+
+  Copy the system wide preferences to /etc
+
+  # cp /usr/local/perltests/lib/clustertest.conf /etc
+
+  Edit /etc/clustertest.conf so that the MoabHost variable matches the hostname
+
+  # vi /etc/clustertest.conf
+
+  Copy the Moab 5.2 preference file to /tmp/clustertest.props
+
+  # cp /usr/local/perltests/lib/moab5.2.0.props /tmp/clustertest.props
+
+
+Configuring browse-log / last-log:
+
+  If you will be using a small terminal, you may also want to add this line.
+    
+      export treetab=" "
+
+  This last export will tell browse-log how much to indent each level of the tree.
+  
+  The last-log program simply figures out which test was the last one run, and runs 
+  browse-log on the results of that run.
+
+Run the tests
+  
+  At this point you should be ready to run the release_dev test by running: 
+
+  # /usr/local/perltests/t/release_dev.t
+
+  When it is complete, check the results by running :
+
+  # log
+
+  ...which will run the browse-log program on the results of the previous test

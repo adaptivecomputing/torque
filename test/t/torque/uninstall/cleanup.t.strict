@@ -1,0 +1,25 @@
+#! /usr/bin/perl 
+#^ Cleanup Torque
+#* This test deletes jobs, removes log files, etc.
+
+use CRI::Test;
+plan no_plan;
+
+use strict;
+use warnings;
+
+ok(chdir $props->get_property('torque.home.dir'),"Changing to torque install dir") or BAIL_OUT("Unable to change directory to torque install dir");
+
+# Delete all jobs
+ok(unlink <server_priv/jobs/*>,"Removing all jobs") or BAIL_OUT("Failed to delete torque jobs");
+is(<server_priv/jobs/*>,'',"Verifying that no jobs exist") or BAIL_OUT("Failed to remove job files");
+
+# Clear out the log files
+ok(unlink <mom_logs/*>,"Removing all mom logs") or BAIL_OUT("Failed to delete mom logs");
+is(<mom_logs/*>,'',"Verifying that no mom logs exist") or BAIL_OUT("Failed to remove mom log files"); 
+
+ok(unlink <server_logs/*>,"Removing all server logs") or BAIL_OUT("Failed to delete server logs");
+is(<server_logs/*>,'','Verifying that no server logs exist') or BAIL_OUT("Failed to remove server log files"); 
+
+ok(unlink <sched_logs/*>,"Removing all sched logs") or BAIL_OUT("Failed to delte sched logs");
+is(<sched_logs/*>,'','Verifying that no sched logs exist') or BAIL_OUT('Failed to remove sched log files');

@@ -1,0 +1,39 @@
+mtestd database setup
+
+This database is used on the mtestd head node to launch test jobs at regular intervals.
+
+
+Table :: cron -- Tests to run regularly, and their parameters
+=============================================================
+id : Numeric ID of the cron entry. Auto incrementing. 
+enabled : Boolian which tells if the test should be executed. 
+period : (daily | weekly | monthly)
+test : Path to top level .bat file for the test. The /.../perltests/t/ portion is not needed
+conf_file : Path to the conf file for the test. The /.../perltests/lib portion is not needed
+lat : The timestamp of the last time the test was run
+
+Table :: queue -- Queue of tests to run next
+=============================================================
+id : Numeric ID of the test to run
+cron_id : foreign key, associates with cron:id
+test : Path to top level .bat file for the test. The /.../perltests/t/ portion is not needed
+conf_file : Path to the conf file for the test. The /.../perltests/lib portion is not needed
+time : Time inserted into the queue
+timetorun : How long it took for the test to run
+run : Boolean stating if test was run or not
+logdir : the directory the results were logged to
+exit_code : Exit code of the test
+
+Table :: vms -- All info about the Virtual Machines available
+=============================================================
+idx : Numeric ID of the VM
+name : Name should be the name of the vmx file, which should match the machine's hostname.
+host : Host where the VM files are located
+path : Path of the folder on the host where the files are located. Do not include the name.vmx portion of the path. 
+
+
+Table :: vmrelations -- Keep track of which vms to use with which job
+=============================================================
+idx : Numeric ID of the vmrelation
+cronid : cron job foreign key (cron:id)
+vmid : vms foreign key (vms:idx)

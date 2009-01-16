@@ -1,0 +1,36 @@
+#!/usr/bin/perl -w 
+use strict;
+use warnings;
+use Moab::Test::XML;
+
+# By Michael Moore mmoore@clusterresources.com
+# Copyright 2007, Cluster Resources Inc.
+#
+# Convert test results to XML 
+
+
+my $testFile = $ARGV[0];
+
+# Use Summary.log by default
+
+if (not defined $testFile) 
+{
+  die("Give an input filename please\n") unless defined $testFile;
+}
+
+my $outfile = $ARGV[1];
+
+if (not defined $outfile)
+{
+  die("Give an output filename please\n") unless defined $outfile;
+}
+
+my $version = 0.6;
+
+my $xmlmaker = Moab::Test::XML->new;
+$xmlmaker->loadLog($testFile);
+my $output = $xmlmaker->makeXML();
+open(XMLFILE,">$outfile") or die("Couldn't open $outfile : $!");
+print XMLFILE $output;
+close(XMLFILE);
+

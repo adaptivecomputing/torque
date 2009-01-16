@@ -1,0 +1,87 @@
+LD_LIBRARY_PATH = /usr/test/torque/lib:/usr/test/blcr/lib
+
+moab.user.one       = testuser1
+moab.user.one.group = testgroup1
+moab.user.two       = testuser2
+moab.user.two.group = testgroup2
+
+torque.user.one            = testuser1
+torque.user.one.group      = testgroup1
+torque.user.two            = testuser2
+torque.user.two.group      = testgroup2
+torque.queue.one           = batch
+torque.queue.two           = batch2
+torque.get.src             = svn|svn://arc/torque/trunk
+torque.build.dir           = /usr/test/src/torque/
+torque.home.dir            = /usr/test/torque/
+torque.spool.dir           = /usr/test/torque/spool/
+torque.node.np             = 2
+torque.node.args           = fast terabyte
+torque.checkpoint_script   = /usr/test/torque/mom_priv/blcr_checkpoint_script
+torque.restart_script      = /usr/test/torque/mom_priv/blcr_restart_script
+torque.checkpoint_run_exe  = /usr/test/blcr/bin/cr_run
+torque.checkpoint_interval = 5
+
+mom.home.dir               = /usr/test/torque/mom_priv
+mom.host.port              = 15003
+mom.host.list.file         = /tmp/mom.hostlist
+mom.single.host.list.file  = /tmp/mom.single.hostlist
+mom.version                = 2.4.0
+mom.communication.model    = rpp
+mom.server.update.interval = 45
+mom.check.poll.time        = 45
+mom.mem.locked             = true
+mom.tcp.timeout            = 20
+mom.prolog                 = /usr/test/torque/mom_priv/prologue
+mom.alarm.time             = 10
+mom.copy.command           = /usr/bin/scp -rpb
+mom.reconfig.file          = /usr/test/torque/mom_priv/reconfig
+mom.config.file            = /usr/test/torque/mom_priv/config
+
+mom.config.logevent            = 255
+mom.config.cputmult            = 1.0
+mom.config.usecp               = *:/home  /home
+mom.config.wallmult            = 1.0
+mom.config.configversion       = 1.0
+mom.config.ideal_load          = 1.0
+mom.config.auto_ideal_load     = t-0.2
+mom.config.log_file_max_size   = 10240
+mom.config.log_file_roll_depth = 1
+mom.config.max_load            = 7.0
+mom.config.auto_max_load       = t-0.2
+mom.config.node_check_script   = /dev/null
+mom.config.node_check_interval = 0Disabled
+mom.config.prologalarm         = 300
+mom.config.remote_reconfig     = yes
+mom.config.timeout             = 61
+mom.config.tmpdir              = /tmp
+mom.config.varattr             = date
+mom.config.xauthpath           = /usr/bin/xauth
+mom.config.ignwalltime         = false
+mom.config.status_update_time  = 40
+mom.config.check_poll_time     = 40
+mom.config.jobstartblocktime   = 40
+mom.config.enablemomrestart    = 0
+mom.config.loglevel            = 5
+mom.config.down_on_error       = 0
+mom.config.rcpcmd              = /usr/bin/scp -rpB
+mom.config.tape8mm             = 1
+mom.config.version             = 2.4.0
+
+tmp.mom.config.status_update_time = 50
+tmp.mom.config.check_poll_time    = 50
+tmp.mom.config.jobstartblocktime  = 50
+tmp.mom.config.enablemomrestart   = 1
+tmp.mom.config.loglevel           = 1
+tmp.mom.config.down_on_error      = 1
+tmp.mom.config.rcpcmd             = /usr/bin/rcp -rp
+
+job.walltime     = 05:00:00
+job.nodes        = 1
+
+tmp.job.walltime = 01:00:00
+tmp.job.nodes    = 0
+
+blcr.get.src     = url|http://ftg.lbl.gov/CheckpointRestart/downloads/blcr-0.8.0.tar.gz
+blcr.build.dir   = /usr/test/src/blcr/
+blcr.home.dir    = /usr/test/blcr/

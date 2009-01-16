@@ -1,0 +1,103 @@
+#! /usr/bin/perl
+################################################################################
+#
+# Usage: checkpoint_script <session_id> <job_id> <user_id> <group_id> <checkpoint_dir> <checkpoint_name> <signal_num> <checkpoint_depth>   
+#
+# This script is invoked by pbs_mom to checkpoint a job.
+# Errors are logged to syslog
+#
+################################################################################
+use strict;
+
+use Sys::Syslog;
+
+
+# Customize the PATH to include location of cr_checkpoint and qrls
+$ENV{PATH} .= ":/usr/test/blcr/bin:/usr/test/torque/bin";
+my $logLevel = 3; # 0 = none, 1 = fail, 2 = info, 3 = debug
+
+logPrint(2, "Invoked: $0 " . join(' ', @ARGV) . "\n");
+
+my ($sessionId, $jobId, $userId, $groupId, $signalNum, $checkpointDir, $checkpointName, $checkpointDepth);
+my $usage =
+  "Usage: $0 <session_id> <job_id> <user_id> <group_id> <checkpoint_dir> <checkpoint_name> <signal_num> <checkpoint_depth>\n";
+
+# Note that depth is not used in this script but could control a limit to the
+# number of checkpoint  image files that are preserved on the disk.
+#
+# Note also that a request was made to identify whether this script was invoked
+# by the job's owner or by a system administrator.  While this information is
+# known to pbs_server, it is not propagated to pbs_mom and thus it is not
+# possible to pass this to the script.  Therefore, a workaround is to invoke
+# qmgr and attempt to set a trivial variable. This will fail if the invoker is
+# not a manager.
+
+if (@ARGV == 8)
+{
+    ($sessionId, $jobId, $userId, $groupId, $checkpointDir, $checkpointName, $signalNum, $checkpointDepth) = @ARGV;
+}
+else { logDie(1, $usage); }
+
+# Drop privileges to the job owner
+# If blcr is compiled with --enable-restore-ids, this script would need to
+# be modified to su the command instead of dropping privileges and running
+# it directly since it will require all supplemental groups to be set.
+my $gid = getgrnam($groupId);
+logDie(1, "Unable to resolve group id ($groupId)\n") unless defined $gid;
+$( = $gid;
+$) = $gid;
+logDie(1, "Unable to set gid: $gid") unless $gid == $(;
+my $uid = getpwnam($userId);
+logDie(1, "Unable to resolve user id ($userId)\n") unless defined $uid;
+$< = $uid;
+$> = $uid;
+logDie(1, "Unable to set uid: $uid") unless $uid == $<;
+
+# Change to the checkpoint directory where we want the checkpoint to be created
+chdir $checkpointDir
+  or logDie(1, "Unable to cd to checkpoint dir ($checkpointDir): $!\n")
+  if $logLevel;
+
+my $cmd = "cr_checkpoint";
+$cmd .= " --signal $signalNum" if $signalNum;
+$cmd .= " --tree $sessionId";
+$cmd .= " --file $checkpointName";
+my $output = `$cmd 2>&1`;
+my $rc     = $? >> 8;
+if ($rc)
+{
+  `qrls $jobId`; # Release the job so it does not go into hold after completion
+  logDie(1, "Subcommand ($cmd) failed with rc=$rc:\n$output") if $logLevel >= 1;
+}
+logPrint(3, "Subcommand ($cmd) yielded rc=$rc:\n$output")
+   if $logLevel >= 3;
+exit 0;
+
+################################################################################
+# logPrint($message)
+# Write a message (to syslog) and die
+################################################################################
+sub logPrint
+{
+    my ($level, $message) = @_;
+    my @severity = ('none', 'warning', 'info', 'debug');
+
+    return if $level > $logLevel;
+
+    openlog('checkpoint_script', '', 'user');
+    syslog($severity[$level], $message);
+    closelog();
+}
+
+################################################################################
+# logDie($message)
+# Write a message (to syslog) and die
+################################################################################
+sub logDie
+{
+    my ($level, $message) = @_;
+
+    logPrint($level, $message);
+    die($message);
+}
+

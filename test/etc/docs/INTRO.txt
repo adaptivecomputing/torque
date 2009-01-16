@@ -1,0 +1,165 @@
+Moab::Test Introduction
+
+Copyright 2007, Cluster Resources Inc.
+
+
+Overview
+=====================================
+
+Moab::Test is a Perl module which helps make testing Moab easier, specifically it attempts to logs anything of interest about each command run so that you can analyze it afterwards. A log browsing program is also included. 
+
+Moab::Test uses Test::More, any tests written for Test::More or Test::Simple should work with minimal changes. 
+
+If you would like to run tests on your own machine, please read QUICKSTART.txt for setup instructions. 
+
+
+
+Writing Tests
+=====================================
+
+  ###  Starting the test 
+
+  A standard test will start off by including Moab::Test and defining a plan. If you don't know how many tests you will have, you can use 'no_plan', otherwise use the syntax "tests=>4".
+
+  [code]
+  #!/usr/bin/perl
+  use CRI::Test;
+  plan('no_plan');
+  [/code]
+
+  Setting a description is recomended to make it clear what your test does. The description must be only one line (no line breaks) and contain no double quotes.  
+  Using strict and warnings is recomended as a Perl best practice. 
+
+  [code]
+  setDesc("Install and Test All (Moab, Torque and Gold)");
+  use strict;
+  use warnings;
+  [/code]
+
+  ### Test methods
+
+  For the actual tests, you should use the methods provided by Test::More. The Test::More documentation can be found here: http://search.cpan.org/~mschwern/Test-Simple-0.74/lib/Test/More.pm
+  A primer on using Test::Simple (which is compatible with Test::More) can be found here:http://perl.active-venture.com/lib/Test/Tutorial.html 
+ 
+ The simplest test is to just check if something is true with the "ok()" test. 
+ [code]
+ my $x = 5;
+ ok($x==5,"Checking if x == 5);
+ [/code]
+ 
+ All the Test::More methods return 1 if the test passed, and 0 if it did not pass. 
+
+
+ ### Running external commands
+
+ Every external command you wish to run should be run through the command runCommand() or runCommandAs(). These methods log info about how the process ran so you can analyze it later.
+
+ runCommand() and runCommandAs() will return the exit code of the process if called in a scalar context, or will return a hash full of information about how the process ran if called in a list context. 
+
+ Scalar context examples
+ [code]
+ # Just run configure
+ runCommand("'./configure -r --homedir='/usr/test/moab' --instdir='/usr/test/moab'"); 
+ 
+ # Just run configure and die if the exit code is non 0
+ runCommand("'./configure -r --homedir='/usr/test/moab' --instdir='/usr/test/moab'") && die("Configure failed, I can't go on"); 
+ [/code]
+
+ List context examples
+ [code]
+ # Run configure and check the STDERR output for the word 'error' 
+ my %confOut = runCommand("'./configure -r --homedir='/usr/test/moab' --instdir='/usr/test/moab'"); 
+
+ if($confOut{'STDERR'} =~ m/error/){
+    die("There was an error while running configure");
+ } 
+
+ # Run an msub command as the user john
+ my %msubOut = runCommandAs('john',"echo sleep 1000 | msub");
+
+  [/code]
+
+  Other hash keys available are: 
+
+    PROGRAM_RUN  -- The command run
+    CWD          -- The working directory when the command was run
+    RUN_AS_USER  -- The user who ran the program
+    RUN_AS_GROUP -- The primary group of the user who ran the program
+    TIME_RUN     -- The time of day the program was run
+    BENCHMARK    -- How long the program took to run
+    PTID         -- The process ID when it was run
+    STDOUT       -- Standard out 
+    STDERR       -- Standard error
+    EXIT_CODE    -- Program exit code
+
+
+  If runCommand or runCommandAs fail, the EXIT_CODE will be 999, and PTID,STDOUT and STDERR will all say that "Run3 gave an error". This is usually caused if a command is not found or cannot be executed.   
+
+
+ ### Running batch tests
+
+ Tests can be organized hirarchically by calling tests from within other tests. To call a sub test use the execute_tests(@tests) function. Execute_tests returns the number of test from the array which failed. The array passed to execute_tests is an array of strings which are the paths to the tests to be executed. 
+
+ [code]
+ # Just run the tests
+ my @tests = (
+    '/usr/local/perltests/setup.t',
+    '/usr/local/perltests/addjobs.t',
+    '/usr/local/perltests/checkstats.bat'
+    );
+  execute_tests(@tests);
+
+ # Run the tests, and die if any of them fail
+ my @tests = (
+    '/usr/local/perltests/setup.t',
+    '/usr/local/perltests/addjobs.t',
+    '/usr/local/perltests/checkstats.bat'
+    );
+  runtests(@tests) and die("One of the tests failed");
+ [/code]
+
+ ### Configuring test properties 
+
+ Use of test properties can allow you to use the same test for different parameters such as software versions or with different compile time options.
+
+ Test options are stored in two places. /etc/clustertest.conf holds test-wide properties and optionally points to the location where a secondary properties file can be loaded from. 
+
+ The properties file is in the Data::Properies format. One key and value per line in the format 'key=value'.  
+
+ Properties can be read and set through the global variable $props. 
+
+ # Example properties file 
+ [code]
+  test.src.dir=/usr/test/src/
+  moab.svn.location=svn://moabsource/moab/branches/v5_2_0 moab-5.2.0
+ [/code]
+
+ # Example use of properties
+ [code]
+  ok(chdir $props->get_property('test.src.dir'),'Changing to moab test.src.dir');
+  runCommand("svn co " . $props->get_property('moab.svn.location'));
+ [/code]
+
+
+ Setting a property can be done with the function "setProps(key => 'value', ...)". setProps takes a hash, making property key value pairs from the key value pairs in the hash. When a property is set, the property is saved to the secondary properties file so that it can be accessed by subsequent tests.   
+
+ # Setting a property
+ [code]
+ setProps(
+  freeRAM => '432',
+  useSwap => 'no',
+ );
+ [/code]
+
+
+ # Working around blocking tests and commands
+
+ If you have a command which is blocking (for example moab when in debug mode) you can use the commands forkCommand and forkCommandAs.
+
+ If a test or command which isn't supposed to be blocking is blocking you can set timeouts for either the entire test with 'testTimeout($seconds)' or for and individual command with the 'setTimeout($seconds)' command. 
+
+ Note that setTimeout($seconds) will set the max execution time for any subsequent commands run with runCommand or runCommandAs. 
+
+ To disable the timeout for runCommand and runCommandAs, call setTimeout(0). 
+ 
+

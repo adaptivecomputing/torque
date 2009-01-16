@@ -1,0 +1,16 @@
+﻿SUSE Setup Procedures for Basic Testing Environment
+
+Note: Using 'MCB 64-bit Newest' SUSE Enterprise Server CD
+
+During the installation, make sure to uncheck the software option that contains the Moab software (under the Cluster section, named something like HPC Cluster).
+
+For some reason, the setup failed the first time, but when I restarted the VM and redid the setups in the installation as prompted, the VM started with no problems.
+
+I had to allow SSH connections through the Firewall by going to Computer-->Control Center-->YaST-->Firewall (Under the Security and Users section). In the Firewall window, click on “Allowed Services” in the menu, then click on the “Service to Allow” drop-down menu and select SHH and then add it. Click next at the bottom-corner of the window and follow prompts. If you want to, you can also just completely disable the firewall.
+
+Must use the command 'ssh-keygen -2' to create a ssh key.
+
+Have to manually add a package repository. Go to Computer-->Control Center-->YaST-->Installation Sources. Find out what version of Suse you have installed by running the command 'cat /etc/SuSE-release' from the terminal. Then, search for some openSuSE repositories on the internet. I then used the package manager to install subversion and other required packages.
+(Later discovered that 'zypper' is the commandline package installer for openSUSE)
+
+I then used svn to checkout the perltests in the usual directory and then I ran the quick-setup.sh and did as much as I could for openSUSE with the script, which was create users, download cpan perl packages, and the directory creation stuff. For the required packages listed by the script, just open another terminal and 'zypper install <package>' those packages.
