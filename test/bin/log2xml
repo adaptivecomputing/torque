@@ -1,6 +1,11 @@
 #!/usr/bin/perl -w 
+
 use strict;
 use warnings;
+
+use FindBin;
+use lib "$FindBin::Bin../lib";
+
 use CRI::Test::XML;
 
 # By Michael Moore mmoore@clusterresources.com
