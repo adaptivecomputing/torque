@@ -15,5 +15,5 @@ my $testbase = $props->get_property('test.base') . "/torque/uninstall";
 
 execute_tests(
               "$testbase/shutdown.t",
-              "$testbase/remove.t"
+              "$testbase/make_uninstall.t"
              );

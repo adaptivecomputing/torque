@@ -10,18 +10,28 @@ use FindBin;
 use lib "$FindBin::Bin/../../../lib/";
 
 use CRI::Test;
+use CRI::Utils   qw(
+                     run_and_check_cmd
+                   );
+use Torque::Ctrl qw(
+                    stopTorque
+                   );
 
 plan('no_plan');
-setDesc('Setup Torque');
+setDesc('Setup Torque with multiple queues');
+
+# Scripts and paramters
+my $torque_queue_setup_script = "$FindBin::Bin/scripts/torque.queue.setup";
+my $queue1                    = $props->get_property('torque.queue.one');
+my $queue2                    = $props->get_property('torque.queue.two');
 
 # Extract build directory from test properties
-ok(-d $props->get_property('torque.build.dir'),"Checking if torque build directory exists") or die("Torque build directory doesn't exist");
-
-# Change directory to build dir
-ok(chdir $props->get_property('torque.build.dir'),"Changing directory to " . $props->get_property('torque.build.dir')) or die("Can't change to torque build dir");
+ok(-e $torque_queue_setup_script, "Checking if '$torque_queue_setup_script' exists") 
+  or die("'$torque_queue_setup_script' doesn't exist");
 
 # Run setup
-runCommand("./torque.setup root") && die("Torque setup script failed");
+my $setup_cmd = "$torque_queue_setup_script root $queue1 $queue2";
+run_and_check_cmd($setup_cmd);
 
 # Shutdown torque
-runCommand("qterm -t quick") && die("Couldn't shut down torque!");
+stopTorque
