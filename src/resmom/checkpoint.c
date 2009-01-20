@@ -658,7 +658,16 @@ int blcr_checkpoint_job(
 
   if (rc != 0)
     {
-    
+    /*
+     * If the checkpoint script did not return data for the err_buf,
+     * fill it in so we can show that something went wrong
+     */
+     
+    if (strlen(err_buf) == 0)
+      {
+      sprintf(err_buf,"Checkpoint script failed with return value of %d", rc);
+      }
+
     /* checkpoint script returned a non-zero value.  We assume the checkpoint
         failed */ 
       
