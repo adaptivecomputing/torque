@@ -8,7 +8,7 @@ use strict;
 use warnings;
 
 use FindBin;
-use lib "$FindBin::Bin../../../../lib/";
+use lib "$FindBin::Bin/../../../../lib/";
 
 
 # Create/edit the mom_priv/config file on each node

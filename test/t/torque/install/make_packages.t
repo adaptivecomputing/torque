@@ -7,7 +7,7 @@ use strict;
 use warnings;
 
 use FindBin;
-use lib "$FindBin::Bin../../../../lib/";
+use lib "$FindBin::Bin/../../../../lib/";
 
 
 my $torque_build_dir = $props->get_property('torque.build.dir');
