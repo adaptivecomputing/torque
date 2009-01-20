@@ -9,7 +9,8 @@ use FindBin;
 use lib "$FindBin::Bin/../../../../lib/";
 
 
-my $testbase=$props->get_property('test.base') . "torque/commands/qrerun";
+my $testbase = $FindBin::Bin;
+
 setDesc("ALL qrerun tests");
 
 execute_tests("$testbase/setup.t") 

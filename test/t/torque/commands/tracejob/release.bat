@@ -10,7 +10,8 @@ use lib "$FindBin::Bin/../../../../lib/";
 
 setDesc('RELEASE tracejob Compatibility Tests');
 
-my $testbase = $props->get_property('test.base') . "torque/commands/tracejob";
+my $testbase = $FindBin::Bin;
+
 
 execute_tests("$testbase/setup.t") 
   or die('Could not setup tracejob tests');

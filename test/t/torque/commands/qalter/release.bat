@@ -10,7 +10,8 @@ use FindBin;
 use lib "$FindBin::Bin/../../../../lib/";
 
 
-my $testbase=$props->get_property('test.base') . "torque/commands/qalter";
+my $testbase = $FindBin::Bin;
+
 setDesc("RELEASE qalter Compatibility Tests");
 
 execute_tests("$testbase/setup.t") 

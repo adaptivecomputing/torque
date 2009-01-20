@@ -1,16 +1,16 @@
 #!/usr/bin/perl 
 
-use CRI::Test;
-plan('no_plan');
-setDesc('Install Latest Torque from subversion to use BLCR checkpointing on a remote node');
 use strict;
 use warnings;
 
 use FindBin;
 use lib "$FindBin::Bin/../../../lib/";
 
+use CRI::Test;
+plan('no_plan');
+setDesc('Install Latest Torque from subversion to use BLCR checkpointing on a remote node');
 
-my $testbase = $props->get_property('test.base') . "torque/install"; 
+my $testbase = $FindBin::Bin;
 
 execute_tests(
 "$testbase/configure.t",

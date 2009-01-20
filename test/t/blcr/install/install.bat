@@ -12,7 +12,8 @@ use CRI::Test;
 plan('no_plan');
 setDesc("Install 'Berkley Lab Checkpoint/Restart (BLCR) for Linux'");
 
-my $testbase = $props->get_property('test.base') . "blcr/install";
+my $testbase = $FindBin::Bin;
+
 
 execute_tests(
         "$testbase/010_get_blcr_src.t",

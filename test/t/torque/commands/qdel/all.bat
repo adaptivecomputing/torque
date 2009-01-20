@@ -9,7 +9,8 @@ use FindBin;
 use lib "$FindBin::Bin/../../../../lib/";
 
 
-my $testbase=$props->get_property('test.base') . "torque/commands/qdel";
+my $testbase = $FindBin::Bin;
+
 setDesc("ALL qdel Tests");
 
 execute_tests("$testbase/setup.t") 

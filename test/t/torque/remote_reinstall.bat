@@ -12,7 +12,8 @@ use CRI::Test;
 plan('no_plan');
 setDesc("Reinstall Latest Torque (from subversion) to use BLCR checkpointing");
 
-my $testbase = $props->get_property('test.base');
+my $testbase = "$FindBin::Bin/../";
+
 
 execute_tests(
                "${testbase}blcr/reinstall.bat",

@@ -9,6 +9,7 @@ use FindBin;
 use lib "$FindBin::Bin/../../lib/";
 
 
-my $testbase = $props->get_property('test.base') . "torque";
+my $testbase = $FindBin::Bin;
+
 
 execute_tests("$testbase/uninstall/shutdown.t","$testbase/install/startup.t");

@@ -12,7 +12,8 @@ use CRI::Test;
 plan('no_plan');
 setDesc("Reinstall 'Berkley Lab Checkpoint/Restart (BLCR) for Linux'");
 
-my $testbase = $props->get_property('test.base') . "blcr";
+my $testbase = $FindBin::Bin;
+
 
 execute_tests(
         "$testbase/uninstall/remote_uninstall.bat",

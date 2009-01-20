@@ -10,7 +10,8 @@ use FindBin;
 use lib "$FindBin::Bin/../../../../../lib/";
 
 
-my $testbase=$props->get_property('test.base') . "torque/commands/qhold/checkpoint";
+my $testbase = $FindBin::Bin;
+
 setDesc("ALL qhold Checkpoint Tests");
 
 execute_tests(

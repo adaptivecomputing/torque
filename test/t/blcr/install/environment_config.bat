@@ -12,7 +12,8 @@ use CRI::Test;
 plan('no_plan');
 setDesc("Configure the environment for BLRC");
 
-my $testbase = $props->get_property('test.base') . "blcr/install";
+my $testbase = $FindBin::Bin;
+
 
 execute_tests(
         "$testbase/072_create_blcr_conf.t",

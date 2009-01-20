@@ -10,7 +10,8 @@ use FindBin;
 use lib "$FindBin::Bin/../../../lib/";
 
 
-my $testbase = $props->get_property('test.base') . "torque/commands";
+my $testbase = $FindBin::Bin;
+
 execute_tests(
               "$testbase/momctl/release.bat",
               "$testbase/qalter/release.bat",

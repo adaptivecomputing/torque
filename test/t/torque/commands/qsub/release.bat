@@ -10,7 +10,8 @@ use lib "$FindBin::Bin/../../../../lib/";
 
 setDesc('RELEASE qsub Compatibility Tests');
 
-my $testbase = $props->get_property('test.base') . "torque/commands/qsub";
+my $testbase = $FindBin::Bin;
+
 
 execute_tests("$testbase/setup.t") 
   or die('Could not setup qsub tests');

@@ -12,7 +12,8 @@ use CRI::Test;
 plan('no_plan');
 setDesc("SNAP Torque Regression Tests");
 
-my $testbase = $props->get_property('test.base') . "/torque";
+my $testbase = $FindBin::Bin;
+
 
 execute_tests(
     "$testbase/torque/reinstall.bat",

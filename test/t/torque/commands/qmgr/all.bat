@@ -9,7 +9,8 @@ use FindBin;
 use lib "$FindBin::Bin/../../../../lib/";
 
 
-my $testbase=$props->get_property('test.base') . "torque/commands/qmgr";
+my $testbase = $FindBin::Bin;
+
 setDesc("ALL qmgr tests");
 
 execute_tests("$testbase/setup.t") 
