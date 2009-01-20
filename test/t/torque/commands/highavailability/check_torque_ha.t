@@ -20,6 +20,10 @@ setDesc("test for pbs_server --ha");
 use strict;
 use warnings;
 
+use FindBin;
+use lib "$FindBin::Bin../../../../../lib/";
+
+
 die "************************************************
 read the header to this file ...
 ************************************************\n";

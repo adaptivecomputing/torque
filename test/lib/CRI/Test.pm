@@ -4,6 +4,10 @@ $VERSION = 1.2;
 
 use strict;
 use warnings;
+
+use FindBin;
+use lib "$FindBin::Bin../../../lib/";
+
 use IPC::Run3;
 use Cwd qw(realpath); 
 use Data::Properties;
@@ -800,6 +804,10 @@ sub plan  {
 } # END PLAN 
 
 use warnings;
+
+use FindBin;
+use lib "$FindBin::Bin../../../lib/";
+
 
 sub runtests {
     return execute_tests(@_);

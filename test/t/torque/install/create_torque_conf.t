@@ -3,6 +3,10 @@
 use strict;
 use warnings;
 
+use FindBin;
+use lib "$FindBin::Bin../../../../lib/";
+
+
 use CRI::Test;
 
 my $torque_conf_loc = "/etc/ld.so.conf.d/torque.conf";

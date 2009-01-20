@@ -7,6 +7,10 @@ setDesc('Configure Torque on the Compute Nodes');
 use strict;
 use warnings;
 
+use FindBin;
+use lib "$FindBin::Bin../../../../lib/";
+
+
 # Create/edit the mom_priv/config file on each node
 my $configFile = $props->get_property('torque.home.dir') . "/mom_priv/config";
 

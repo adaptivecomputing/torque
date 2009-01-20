@@ -3,6 +3,10 @@
 use strict;
 use warnings;
 
+use FindBin;
+use lib "$FindBin::Bin../../../../lib/";
+
+
 # Turn on the autoflush
 local $| = 1;
 

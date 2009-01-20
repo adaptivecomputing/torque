@@ -7,6 +7,10 @@ setDesc('Qsub -A');
 use strict;
 use warnings;
 
+use FindBin;
+use lib "$FindBin::Bin../../../../../lib/";
+
+
 
 # Submit a job with qsub and get its job id
 my %jobId = runCommandAs($props->get_property('moab.user.one'),'echo /bin/sleep 60 | qsub -A myAccount');

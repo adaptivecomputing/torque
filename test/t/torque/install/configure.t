@@ -7,6 +7,10 @@ setDesc('Configure Torque');
 use strict;
 use warnings;
 
+use FindBin;
+use lib "$FindBin::Bin../../../../lib/";
+
+
 ok(-d ($props->get_property('torque.build.dir')),"Checking if torque build dir exists") or die("Torque build dir doesn't exist");
 
 # Change directory to build dir

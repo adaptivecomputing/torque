@@ -3,6 +3,10 @@
 use strict;
 use warnings;
 
+use FindBin;
+use lib "$FindBin::Bin../../../../../lib/";
+
+
 # Test Module
 use CRI::Test;
 use Torque::Test::Momctl::Diag qw(test_mult_diag);

@@ -7,6 +7,10 @@ setDesc('Startup Torque in HA mode');
 use strict;
 use warnings;
 
+use FindBin;
+use lib "$FindBin::Bin../../../../lib/";
+
+
 # What is this testing? Are we testing if we can freshly start an instance
 # of pbs_mom/server? Or are we making sure one is running? If it is the 
 # former, uncomment the die portions of the runCommand('pbs_mom/server') 

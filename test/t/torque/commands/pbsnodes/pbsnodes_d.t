@@ -3,6 +3,10 @@
 use strict;
 use warnings;
 
+use FindBin;
+use lib "$FindBin::Bin../../../../../lib/";
+
+
 # Test Modules
 use CRI::Test;
 use Torque::Test::Utils qw( run_and_check_cmd );

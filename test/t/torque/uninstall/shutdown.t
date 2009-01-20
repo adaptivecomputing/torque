@@ -7,6 +7,10 @@ setDesc('Shutdown Torque');
 use strict;
 use warnings;
 
+use FindBin;
+use lib "$FindBin::Bin../../../../lib/";
+
+
 # Stop the pbs server
 unless(runCommand("pgrep -x pbs_server")) { 
     runCommand("qterm -t quick"); 

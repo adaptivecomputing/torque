@@ -5,6 +5,10 @@ plan('no_plan');
 use strict;
 use warnings;
 
+use FindBin;
+use lib "$FindBin::Bin../../../../../lib/";
+
+
 my $testbase=$props->get_property('test.base') . "torque/commands/qalter";
 setDesc("ALL qalter Tests");
 

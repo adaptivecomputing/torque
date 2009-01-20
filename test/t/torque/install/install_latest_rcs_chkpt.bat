@@ -6,6 +6,10 @@ setDesc('Install Latest Torque from subversion to use BLCR checkpointing');
 use strict;
 use warnings;
 
+use FindBin;
+use lib "$FindBin::Bin../../../../lib/";
+
+
 my $testbase = $props->get_property('test.base') . "torque/install"; 
 
 execute_tests(

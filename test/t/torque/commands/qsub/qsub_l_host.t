@@ -6,6 +6,10 @@ setDesc('Qsub -l host');
 use strict;
 use warnings;
 
+use FindBin;
+use lib "$FindBin::Bin../../../../../lib/";
+
+
 #? apitest
 #* This tests qsub -l host=myHost
 

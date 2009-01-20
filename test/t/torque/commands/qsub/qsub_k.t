@@ -6,6 +6,10 @@ setDesc('Qsub -k');
 use strict;
 use warnings;
 
+use FindBin;
+use lib "$FindBin::Bin../../../../../lib/";
+
+
 #? apitest
 #* This tests qsub -k oe
 

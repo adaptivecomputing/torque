@@ -4,6 +4,10 @@
 use strict;
 use warnings;
 
+use FindBin;
+use lib "$FindBin::Bin../../../../lib/";
+
+
 use CRI::Test;
 use Torque::Ctrl        qw( startTorque );
 use Torque::Test::Utils qw( list2array  );

@@ -8,6 +8,10 @@ setDesc('Configure Torque Server');
 use strict;
 use warnings;
 
+use FindBin;
+use lib "$FindBin::Bin../../../../lib/";
+
+
 my %hostnameCommand = runCommand("hostname -s","Getting hostname IP address");
 my $hostname = $hostnameCommand{'STDOUT'};
 chomp($hostname);

@@ -3,6 +3,10 @@
 use strict;
 use warnings;
 
+use FindBin;
+use lib "$FindBin::Bin../../../../lib/";
+
+
 use CRI::Test;
 
 my $blcr_conf_loc = "/etc/ld.so.conf.d/blcr.conf";

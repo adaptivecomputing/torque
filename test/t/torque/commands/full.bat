@@ -6,6 +6,10 @@ setDesc('FULL Torque Compatibility Tests');
 use strict;
 use warnings;
 
+use FindBin;
+use lib "$FindBin::Bin../../../../lib/";
+
+
 my $testbase = $props->get_property('test.base') . "torque/commands";
 execute_tests(
 #              "$testbase/momctl/snap.bat",

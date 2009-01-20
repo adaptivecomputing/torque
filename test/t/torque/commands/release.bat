@@ -6,6 +6,10 @@ setDesc('RELEASE Torque Compatability Tests');
 use strict;
 use warnings;
 
+use FindBin;
+use lib "$FindBin::Bin../../../../lib/";
+
+
 my $testbase = $props->get_property('test.base') . "torque/commands";
 execute_tests(
               "$testbase/momctl/release.bat",

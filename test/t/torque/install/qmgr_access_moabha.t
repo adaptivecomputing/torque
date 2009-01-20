@@ -7,6 +7,10 @@ setDesc('Set Torque Management Permissions');
 use strict;
 use warnings;
 
+use FindBin;
+use lib "$FindBin::Bin../../../../lib/";
+
+
 my $primary = $props->get_property('MoabHost');
 my $fallback = $props->get_property('fallback.hostname');
 

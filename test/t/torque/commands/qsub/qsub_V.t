@@ -4,6 +4,10 @@ use CRI::Test;
 plan('no_plan');
 use strict;
 use warnings;
+
+use FindBin;
+use lib "$FindBin::Bin../../../../../lib/";
+
 setDesc('Qsub -V');
 
 #? apitest

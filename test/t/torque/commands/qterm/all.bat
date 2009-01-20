@@ -4,6 +4,10 @@ use CRI::Test;
 plan('no_plan');
 use strict;
 use warnings;
+
+use FindBin;
+use lib "$FindBin::Bin../../../../../lib/";
+
 setDesc('ALL qterm Compatibility Tests');
 
 my $testbase = $props->get_property('test.base') . "torque/commands/qterm";

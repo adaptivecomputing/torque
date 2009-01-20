@@ -8,6 +8,10 @@ setDesc('Cleanup Torque');
 use strict;
 use warnings;
 
+use FindBin;
+use lib "$FindBin::Bin../../../../lib/";
+
+
 ok(chdir $props->get_property('torque.home.dir'),"Changing to torque install dir") or die("Unable to change directory to torque install dir");
 
 # Delete all jobs

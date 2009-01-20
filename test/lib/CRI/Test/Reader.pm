@@ -19,6 +19,10 @@ This module isn't useful by itself, but should be used by other scripts to provi
 
 use strict;
 use warnings;
+
+use FindBin;
+use lib "$FindBin::Bin../../../../lib/";
+
 use Fcntl ':flock';
 
 # Set up tab and return string
