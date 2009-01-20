@@ -6,7 +6,7 @@ use strict;
 use warnings;
 
 use FindBin;
-use lib "$FindBin::Bin/../../../lib/";
+use lib "$FindBin::Bin/../../lib/";
 
 use IPC::Run3;
 use Cwd qw(realpath); 
@@ -806,7 +806,7 @@ sub plan  {
 use warnings;
 
 use FindBin;
-use lib "$FindBin::Bin/../../../lib/";
+use lib "$FindBin::Bin/../../lib/";
 
 
 sub runtests {

@@ -1,15 +1,16 @@
 #! /usr/bin/perl 
 #* This test creates the mom_priv/config file on each client node
 
-use CRI::Test;
-plan('no_plan');
-setDesc('Configure Torque on the Compute Nodes');
 use strict;
 use warnings;
 
 use FindBin;
-use lib "$FindBin::Bin/../../../../lib/";
+use lib "$FindBin::Bin/../../../lib/";
 
+use CRI::Test;
+
+plan('no_plan');
+setDesc('Configure Torque on the Compute Nodes');
 
 # Create/edit the mom_priv/config file on each node
 my $configFile = $props->get_property('torque.home.dir') . "/mom_priv/config";

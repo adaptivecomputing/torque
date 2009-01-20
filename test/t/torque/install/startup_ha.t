@@ -1,15 +1,16 @@
 #! /usr/bin/perl 
 #* This test starts both pbs_server and pbs_mom
 
-use CRI::Test;
-plan('no_plan'); 
-setDesc('Startup Torque in HA mode');
 use strict;
 use warnings;
 
 use FindBin;
-use lib "$FindBin::Bin/../../../../lib/";
+use lib "$FindBin::Bin/../../../lib/";
 
+use CRI::Test;
+
+plan('no_plan'); 
+setDesc('Startup Torque in HA mode');
 
 # What is this testing? Are we testing if we can freshly start an instance
 # of pbs_mom/server? Or are we making sure one is running? If it is the 

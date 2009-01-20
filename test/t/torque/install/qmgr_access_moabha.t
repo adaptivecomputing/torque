@@ -1,15 +1,16 @@
 #! /usr/bin/perl 
 #* This tests that permissions are set on torque to allow a Moab fallback server to access job lists
 
-use CRI::Test;
-plan('no_plan'); 
-setDesc('Set Torque Management Permissions');
 use strict;
 use warnings;
 
 use FindBin;
-use lib "$FindBin::Bin/../../../../lib/";
+use lib "$FindBin::Bin/../../../lib/";
 
+use CRI::Test;
+
+plan('no_plan'); 
+setDesc('Set Torque Management Permissions');
 
 my $primary = $props->get_property('MoabHost');
 my $fallback = $props->get_property('fallback.hostname');

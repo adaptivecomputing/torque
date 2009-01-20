@@ -1,16 +1,16 @@
 #! /usr/bin/perl 
 #? apitest
 
-use CRI::Test;
-plan('no_plan'); 
-setDesc('Make torque');
-
 use strict;
 use warnings;
 
 use FindBin;
-use lib "$FindBin::Bin/../../../../lib/";
+use lib "$FindBin::Bin/../../../lib/";
 
+use CRI::Test;
+
+plan('no_plan'); 
+setDesc('Make torque');
 
 # Extract build directory from test properties
 ok(-d $props->get_property('torque.build.dir'),"Checking if torque build directory exists") or die("Torque build dir doesn't exist");

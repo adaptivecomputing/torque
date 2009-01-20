@@ -3,15 +3,16 @@
 #* and runs a series of qmgr commands to define admins, create queues, etc.
 #* Finally, it shuts torque back down.
 
-use CRI::Test;
-plan('no_plan');
-setDesc('Setup Torque');
 use strict;
 use warnings;
 
 use FindBin;
-use lib "$FindBin::Bin/../../../../lib/";
+use lib "$FindBin::Bin/../../../lib/";
 
+use CRI::Test;
+
+plan('no_plan');
+setDesc('Setup Torque');
 
 # Extract build directory from test properties
 ok(-d $props->get_property('torque.build.dir'),"Checking if torque build directory exists") or die("Torque build directory doesn't exist");

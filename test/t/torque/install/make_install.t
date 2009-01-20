@@ -1,14 +1,15 @@
 #! /usr/bin/perl 
 
-use CRI::Test;
-plan('no_plan'); 
-setDesc('Make Install');
 use strict;
 use warnings;
 
 use FindBin;
-use lib "$FindBin::Bin/../../../../lib/";
+use lib "$FindBin::Bin/../../../lib/";
 
+use CRI::Test;
+
+plan('no_plan'); 
+setDesc('Make Install');
 
 # Extract build directory from test properties
 ok(-d $props->get_property('torque.build.dir'),"Checking if torque build directory exists") or die("Torque build directory doesn't exist");

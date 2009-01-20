@@ -1,15 +1,15 @@
 #! /usr/bin/perl 
 #  This test stops both pbs_server and pbs_mom
 
-use CRI::Test;
-plan('no_plan');
-setDesc('Shutdown Torque');
 use strict;
 use warnings;
 
 use FindBin;
-use lib "$FindBin::Bin/../../../../lib/";
+use lib "$FindBin::Bin/../../../lib/";
 
+use CRI::Test;
+plan('no_plan');
+setDesc('Shutdown Torque');
 
 # Stop the pbs server
 unless(runCommand("pgrep -x pbs_server")) { 
