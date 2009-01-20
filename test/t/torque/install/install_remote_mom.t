@@ -24,6 +24,8 @@ my @nodes                  = list2array($nodes_str);
 my $torque_build_dir       = $props->get_property('torque.build.dir');
 my $torque_install_dir     = $props->get_property('torque.home.dir');
 my $mom_priv_config        = $torque_install_dir . "mom_priv/config";
+my $blcr_checkpoint_script = $props->get_property('torque.checkpoint_script');
+my $blcr_restart_script    = $props->get_property('torque.restart_script');
 
 SKIP:
   {
@@ -50,20 +52,32 @@ SKIP:
     {
 
     # Copy the mom install file over
-    $scp_cmd = "scp -v $mom_sh_path $node:$target_mom";
+    $scp_cmd = "scp $mom_sh_path $node:$target_mom";
     %scp     = runCommand($scp_cmd);
     ok($scp{ 'EXIT_CODE' } == 0, "Checking exit code of '$scp_cmd'")
       or die "'$scp_cmd' failed: $scp{ 'STDERR' }";
 
     # Remove the install directory
     $ssh_cmd = "rm -rf $torque_install_dir";
-    %ssh     = runCommand($node, $ssh_cmd);
+    %ssh     = runCommandSsh($node, $ssh_cmd);
 
     # Run the installation
     $ssh_cmd = "sh $target_mom --install --overwriteconf";
     %ssh     = runCommandSsh($node, $ssh_cmd);
     ok($ssh{ 'EXIT_CODE' } == 0, "Checking exit code of '$ssh_cmd'")
       or die "'$ssh_cmd' failed: $ssh{ 'STDERR' }";
+
+    # Scp over the blcr_checkpoint_script
+    $scp_cmd = "scp $blcr_checkpoint_script $node:$blcr_checkpoint_script";
+    %scp     = runCommand($scp_cmd);
+    ok($scp{ 'EXIT_CODE' } == 0, "Checking exit code of '$scp_cmd'")
+      or die "'$scp_cmd' failed: $scp{ 'STDERR' }";
+
+    # Scp over the blcr_restart_script
+    $scp_cmd = "scp $blcr_restart_script $node:$blcr_restart_script";
+    %scp     = runCommand($scp_cmd);
+    ok($scp{ 'EXIT_CODE' } == 0, "Checking exit code of '$scp_cmd'")
+      or die "'$scp_cmd' failed: $scp{ 'STDERR' }";
 
     # Scp over the mom_priv/config file
     $scp_cmd = "scp $mom_priv_config $node:$mom_priv_config";

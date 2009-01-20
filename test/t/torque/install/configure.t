@@ -3,7 +3,7 @@
 
 use CRI::Test;
 plan('no_plan'); 
-setDesc('Configure Torque');
+setDesc('Configure Torque to use BLCR checkpointing');
 use strict;
 use warnings;
 
@@ -11,10 +11,30 @@ use FindBin;
 use lib "$FindBin::Bin../../../../lib/";
 
 
-ok(-d ($props->get_property('torque.build.dir')),"Checking if torque build dir exists") or die("Torque build dir doesn't exist");
+my $build_dir   = $props->get_property('torque.build.dir'       );
+my $home_dir    = $props->get_property('torque.home.dir'        ); 
+my $config_vars = $props->get_property('torque.config.variables');
+my $config_args = $props->get_property('torque.config.args'     );
+
+ok(-d ($build_dir), "Checking if torque build dir exists") 
+  or die("Torque build dir doesn't exist");
 
 # Change directory to build dir
-ok(chdir $props->get_property('torque.build.dir'),"Changing directory to " . $props->get_property('torque.build.dir')) or die("Couldn't change to torque build directory");
+ok(chdir $build_dir, "Changing directory to " . $build_dir) 
+  or die("Couldn't change to torque build directory");
 
 # Run configure
-runCommand("./configure --prefix=" . $props->get_property('torque.home.dir') . " --with-server-home=" . $props->get_property('torque.home.dir') . " " . $props->get_property('torque.config.args') . " --with-debug --enable-syslog") && die("Torque configure failed!");
+my $config_cmd = "./configure"
+                 . " --prefix="           . $home_dir
+                 . " --with-server-home=" . $home_dir 
+                 . " --with-debug"
+                 . " --enable-syslog"
+                 . " --enable-unixsockets=no"
+                 . " --enable-blcr"
+                 . " CFLAGS=\"-g\""
+                 . " $config_vars";
+
+my %config = runCommand($config_cmd);
+cmp_ok($config{ 'EXIT_CODE' }, '==', 0, "Checking exit code of '$config_cmd'")
+  or die("Config failed: $config{ 'STDERR' }");
+
