@@ -122,7 +122,7 @@ sub get_url #($)
   my $src         = $params->{ 'src'         } || confess("Parameter 'src' missing.  Please provide a source");
   my $dest        = $params->{ 'dest'        } || confess("Parameter 'dest' missing.  Please provide a destination");
   my $remote_node = $params->{ 'remote_node' } || undef;
-  my $wget_cmd    = "wget -c -nv -P /tmp $src";
+  my $wget_cmd    = "wget --no-check-certificate -c -nv -P /tmp $src";
   my %result;
 
   if (defined $remote_node)
