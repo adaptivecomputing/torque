@@ -17,7 +17,6 @@ my $testbase = "$FindBin::Bin/../";
 
 execute_tests(
                "${testbase}blcr/reinstall.bat",
-               "${testbase}blcr/remote_reinstall.bat",
                "${testbase}torque/uninstall/uninstall.bat",
                "${testbase}torque/install/remote_install_latest_rcs.bat",
              );
