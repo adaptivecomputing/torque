@@ -1,18 +1,15 @@
 #! /usr/bin/perl
 
-use CRI::Test;
-plan('no_plan');
 use strict;
 use warnings;
 
 use FindBin;
 use lib "$FindBin::Bin/../../../../lib/";
 
+use CRI::Test;
+
+plan('no_plan');
 setDesc('Qsub -l pmem');
-
-#? apitest
-#* This tests qsub -l pmem=100mb
-
 
 # Submit a job with qsub and get its job id
 my %jobId = runCommandAs($props->get_property('moab.user.one'),'echo /bin/sleep 60 | qsub -l pmem=100mb');

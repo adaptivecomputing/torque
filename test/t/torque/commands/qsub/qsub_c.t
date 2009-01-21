@@ -1,17 +1,15 @@
 #!/usr/bin/perl
 
-use CRI::Test;
-plan('no_plan');
-setDesc('Qsub -c');
 use strict;
 use warnings;
 
 use FindBin;
 use lib "$FindBin::Bin/../../../../lib/";
 
+use CRI::Test;
 
-#? apitest
-#* This tests qsub -c c=10
+plan('no_plan');
+setDesc('Qsub -c');
 
 # Submit a job with qsub and get its job id
 my %jobId = runCommandAs($props->get_property('moab.user.one'),'echo /bin/sleep 60 | qsub -c c=10');

@@ -1,19 +1,15 @@
 #! /usr/bin/perl
 
-use CRI::Test;
-plan('no_plan');
 use strict;
 use warnings;
 
 use FindBin;
 use lib "$FindBin::Bin/../../../../lib/";
 
+use CRI::Test;
+
+plan('no_plan');
 setDesc('Qsub stdin Test');
-
-#? apitest
-#* This tests the specification of the command by piping it to STDIN --
-#* specifically echo /bin/hostname | qsub
-
 
 # Submit a job with qsub and get its job id
 my $user  = $props->get_property('moab.user.one');

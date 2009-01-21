@@ -1,18 +1,16 @@
 #!/usr/bin/perl
 
-use CRI::Test;
-
-plan('no_plan');
 use strict;
 use warnings;
 
 use FindBin;
 use lib "$FindBin::Bin/../../../../lib/";
 
+use CRI::Test;
+plan('no_plan');
+setDesc("RELEASE qalter Compatibility Tests");
 
 my $testbase = $FindBin::Bin;
-
-setDesc("RELEASE qalter Compatibility Tests");
 
 execute_tests("$testbase/setup.t") 
   or die("Couldn't setup for qalter tests!");

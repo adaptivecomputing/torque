@@ -17,7 +17,7 @@ my %action_taken      = (
                         );
 
 my $stdin;
-my $div               = "\n================================================================================\n\n";
+my $div               = "\n" . "=" x 80 . "n\n";
 my $yes_regex         = '^(y|yes)$';
 my $root              = 'root';
 my $group1            = 'testgroup1';

@@ -1,18 +1,17 @@
 #!/usr/bin/perl
 
-use CRI::Test;
-
-plan('no_plan');
 use strict;
 use warnings;
 
 use FindBin;
 use lib "$FindBin::Bin/../../../../../lib/";
 
+use CRI::Test;
+
+plan('no_plan');
+setDesc("RELEASE qhold non-checkpoint tests");
 
 my $testbase = $FindBin::Bin;
-
-setDesc("RELEASE qhold non-checkpoint tests");
 
 execute_tests(
               "$testbase/qhold.t",

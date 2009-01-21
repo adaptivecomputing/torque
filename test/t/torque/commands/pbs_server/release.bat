@@ -1,17 +1,17 @@
 #!/usr/bin/perl 
 
-use CRI::Test;
-plan('no_plan');
 use strict;
 use warnings;
 
 use FindBin;
 use lib "$FindBin::Bin/../../../../lib/";
 
+use CRI::Test;
+
+plan('no_plan');
 setDesc('RELEASE pbs_server Compatibility Tests');
 
 my $testbase = $FindBin::Bin;
-
 
 execute_tests("$testbase/setup.t") 
   or die('Could not setup pbs_server tests');

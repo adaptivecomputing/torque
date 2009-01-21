@@ -1,17 +1,15 @@
 #! /usr/bin/perl
 
-use CRI::Test;
-plan('no_plan');
 use strict;
 use warnings;
 
 use FindBin;
 use lib "$FindBin::Bin/../../../../lib/";
 
-setDesc('Qsub -V');
+use CRI::Test;
 
-#? apitest
-#* This tests qsub -V
+plan('no_plan');
+setDesc('Qsub -V');
 
 $ENV{MYVAR} = "MyValue";
 

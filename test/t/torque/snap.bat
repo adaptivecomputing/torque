@@ -16,7 +16,7 @@ my $testbase = $FindBin::Bin;
 
 
 execute_tests(
-    "$testbase/torque/reinstall.bat",
+    "$testbase/reinstall.bat",
 ) or die("Torque reinstall test failed!");
 
 execute_tests(
