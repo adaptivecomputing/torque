@@ -33,20 +33,3 @@ foreach my $blcr_module (@blcr_modules)
   ok($lsmod{ 'STDOUT' } =~ /${blcr_module}/, "Checking for '$blcr_module' on '$local_node'");
 
   } # END foreach my $blcr_module (@blcr_modules)
-
-
-# Check the remote nodes
-foreach my $remote_node (@remote_nodes)
-  {
-
-  foreach my $blcr_module (@blcr_modules)
-    {
-
-    $lsmod_cmd = "lsmod | grep $blcr_module";
-    %lsmod     = runCommandSsh($remote_node, $lsmod_cmd);
-    ok($lsmod{ 'STDOUT' } =~ /${blcr_module}/, "Checking for '$blcr_module' on '$remote_node'");
-
-    } # END foreach my $blcr_module (@blcr_modules)
- 
- } # END foreach my $remote_node (@remote_nodes)
-
