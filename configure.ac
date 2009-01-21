@@ -529,7 +529,8 @@ AC_MSG_RESULT($CSA)
 
 case "$CSA" in
   yes) AC_DEFINE([ENABLE_CSA], 1, [Define to enable Cray's CSA support])
-      MOMLIBS="$MOMLIBS -ljob -lcsa"
+      MOMLIBS="$MOMLIBS -L/opt/cray/job/default/lib64 -ljob -lcsa"
+        MOMLIBS="$MOMLIBS -L$cpalib -lcpalib"
       ;;
   no) : ;;
   *) AC_MSG_ERROR([--enable-csa should be yes or no]) ;;
