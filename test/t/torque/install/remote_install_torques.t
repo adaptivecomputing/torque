@@ -17,13 +17,33 @@ setDesc('Install pbs_mom on remote compute nodes');
 # Variables
 my $nodes_str          = $props->get_property('torque.remote.nodes');
 my @nodes              = list2array($nodes_str);
-my $remote_install_bat = "$FindBin::Bin/../remote_reinstall.bat";
+my $props_loc          = "$FindBin::Bin/../../../etc/props/torque.props";
+my $pbs_server         = $props->get_property('MoabHost');
+my $pbs_server_loc     = $props->get_property('torque.home.dir') . "/pbs_server";
 
 foreach my $node (@nodes)
   {
 
-  my %ssh = runCommandSsh($node, $remote_install_bat);
+  diag("Setting up torque on '$node'");
+
+  my %ssh;
+
+  # Set up the props file on the remote node
+  my $cp_cmd = "cp $props_loc " . $props->get_property( 'data.props.loc' );
+  %ssh       = runCommandSsh($node, $cp_cmd);
+  cmp_ok($ssh{ 'EXIT_CODE' }, '==', 0, "Checking exit code of '$node:$cp_cmd'")
+    or die("Unable to install torque on '$node': $ssh{ 'STDERR' }");
+
+  # Install torque
+  my $remote_install_bat = "$FindBin::Bin/../remote_reinstall.bat";
+  %ssh                   = runCommandSsh($node, $remote_install_bat);
   cmp_ok($ssh{ 'EXIT_CODE' }, '==', 0, "Checking exit code of '$node:$remote_install_bat'")
+    or die("Unable to install torque on '$node': $ssh{ 'STDERR' }");
+
+  # Set the pbs_mom server to trust the pbs_server
+  my $cmd = "echo '$pbs_server' > $pbs_server_loc";
+  %ssh    = runCommandSsh($node, $cmd);
+  cmp_ok($ssh{ 'EXIT_CODE' }, '==', 0, "Checking exit code of '$node:$cmd'")
     or die("Unable to install torque on '$node': $ssh{ 'STDERR' }");
 
   } # END foreach my $node (@nodes)
