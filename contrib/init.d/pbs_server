@@ -20,6 +20,7 @@ fi
 case "$1" in
 	start) 
 		echo -n "Starting TORQUE Server: "
+                # ulimit -c unlimited  # Uncomment this to preserve core files
 		if [ -r $PBS_HOME/server_priv/serverdb ]
 		then
 			daemon $PBS_DAEMON

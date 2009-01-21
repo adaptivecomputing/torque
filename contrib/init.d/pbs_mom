@@ -52,6 +52,7 @@ kill_pbs_mom() {
 case "$1" in
 	start)
 		echo -n "Starting TORQUE Mom: "
+                # ulimit -c unlimited  # Uncomment this to preserve core files
 		daemon $PBS_DAEMON $args
 		RET=$?
 		touch /var/lock/subsys/pbs_mom
