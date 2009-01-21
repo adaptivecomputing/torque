@@ -15,11 +15,11 @@ plan('no_plan');
 setDesc('Install pbs_mom on remote compute nodes');
 
 # Variables
-my $nodes_str          = $props->get_property('torque.remote.nodes');
-my @nodes              = list2array($nodes_str);
-my $props_loc          = "$FindBin::Bin/../../../etc/props/torque.props";
-my $pbs_server         = $props->get_property('MoabHost');
-my $pbs_server_loc     = $props->get_property('torque.home.dir') . "/pbs_server";
+my $nodes_str      = $props->get_property('torque.remote.nodes');
+my @nodes          = list2array($nodes_str);
+my $props_loc      = "$FindBin::Bin/../../../etc/props/torque.props";
+my $pbs_server     = $props->get_property('MoabHost');
+my $pbs_server_loc = $props->get_property('torque.home.dir') . "/server_name";
 
 foreach my $node (@nodes)
   {
