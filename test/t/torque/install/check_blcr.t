@@ -17,8 +17,8 @@ plan('no_plan');
 setDesc('Check for BLCR on all nodes');
 
 # Variables
-my $local_node   = $props->get_property('MoabHost');
-my @remote_nodes = list2array($props->get_property('torque.remote.nodes'));
+my $local_node   = $props->get_property('Test.Host');
+my @remote_nodes = list2array($props->get_property('Torque.Remote.Nodes'));
 
 my $lsmod_cmd;
 my %lsmod;

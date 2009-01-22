@@ -21,7 +21,7 @@ our @EXPORT_OK = qw(
                    );
 
 # Mom Variables
-my $mom_host               = $props->get_property('MoabHost');
+my $mom_host               = $props->get_property('Test.Host');
 my $mom_version            = $props->get_property('mom.version');
 my $mom_home_dir           = $props->get_property('mom.home.dir');
 my $mom_comm_model         = $props->get_property('mom.communication.model');
@@ -36,7 +36,7 @@ my $mom_copy_command       = $props->get_property('mom.copy.command');
 my $mom_varattrs           = $props->get_property('mom.config.varattr');
 
 # Torque Variables
-my $torque_spool_dir = $props->get_property('torque.spool.dir');
+my $torque_spool_dir = $props->get_property('Torque.Home.Dir' . "/spool/");
 
 ###############################################################################
 # test_mult_diag

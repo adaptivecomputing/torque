@@ -27,10 +27,10 @@ options. A sample /etc/clustertest.conf file is as follows :
 
     # Pound lines are comment lines
     # This file is in the Data::Properties format
-    MoabHost=Perltestdev
-    Outdir=/var/log/clustertest/
+    Test.Host=Perltestdev
+    Log.Dir=/var/log/clustertest/
     PATH=/usr/test/moab/bin:/usr/test/moab/sbin:/usr/test/torque/bin:/usr/test/torque/sbin:/usr/test/slurm/bin:/usr/test/slurm/sbin:/usr/test/bin/:/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin:/usr/X11R6/bin
-    data.props.loc=/tmp/clustertest.props
+    Data.Props.Loc=/tmp/clustertest.props
     source.dir=/usr/test/src/
     test.base=/usr/local/perltests/t/
 
@@ -39,15 +39,15 @@ Edit the file to reflect your configuration.
 
 source.dir -- all source code can be downloaded to a common directory
 test.base -- the location of the `t' folder where tests are located
-data.props.loc -- the location of test specific Data::Properties files
-Outdir -- the directory where timestamped directories will be created to store test results
+Data.Props.Loc -- the location of test specific Data::Properties files
+Log.Dir -- the directory where timestamped directories will be created to store test results
 
-===== About data.props.loc (/tmp/clustertest.props) =====
+===== About Data.Props.Loc (/tmp/clustertest.props) =====
 
 In order to be able to use the same test with different configurations, Moab::Test
 uses Data::Properties files to store test variables. Nearly every test will require 
 that the appropriate Data::Properties file be present at the location specified 
-by the global data.props.loc variable. In my case, I copy the appropriate file 
+by the global Data.Props.Loc variable. In my case, I copy the appropriate file 
 from the perltests/lib directory to /tmp/clustertest.conf, then run the test. 
 
 You may need to edit the Data::Properties files in the perltests/lib directory

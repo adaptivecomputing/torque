@@ -16,7 +16,7 @@ setDesc('Momctl -p <PORT> -h <HOST> -c <JOBID>');
 
 # Variables
 my %momctl;
-my $host = $props->get_property('MoabHost');
+my $host = $props->get_property('Test.Host');
 my $port = $props->get_property('mom.host.port');
 
 # Create some stale jobs

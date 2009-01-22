@@ -32,7 +32,7 @@ my @servers;
 
 # We are creating an array of servers because we may want to test more than
 # just one server in the future.
-my $server1 = $props->get_property('MoabHost');
+my $server1 = $props->get_property('Test.Host');
 
 push(@servers, $server1);
 

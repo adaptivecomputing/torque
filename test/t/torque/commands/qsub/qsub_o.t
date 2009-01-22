@@ -35,5 +35,5 @@ foreach my $line (@stdout)
    }
 }
 
-die("Expected Output_Path [" . $props->get_property('MoabHost') . ":/home/".$props->get_property('moab.user.one')."/myOutputFile] but found [$outputPath]") unless cmp_ok($outputPath,'eq',$props->get_property('MoabHost') . ":/home/".$props->get_property('moab.user.one')."/myOutputFile",'Checking for expected output file');
+die("Expected Output_Path [" . $props->get_property('Test.Host') . ":/home/".$props->get_property('moab.user.one')."/myOutputFile] but found [$outputPath]") unless cmp_ok($outputPath,'eq',$props->get_property('Test.Host') . ":/home/".$props->get_property('moab.user.one')."/myOutputFile",'Checking for expected output file');
 

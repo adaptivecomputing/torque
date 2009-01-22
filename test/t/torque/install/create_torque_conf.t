@@ -13,7 +13,7 @@ my $torque_conf_loc = "/etc/ld.so.conf.d/torque.conf";
 plan('no_plan');
 setDesc("Adding '$torque_conf_loc' to local node");
 
-my $cfg = $props->get_property('torque.home.dir') . "/lib";
+my $cfg = $props->get_property('Torque.Home.Dir') . "/lib";
 
 my $echo_cmd  = "echo '$cfg' > $torque_conf_loc";
 my %echo      = runCommand($echo_cmd);

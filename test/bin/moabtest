@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-#use FindBin;
+use FindBin;
 #use lib "$FindBin::RealBin/../lib";
 
 #use CRI::Test;
@@ -24,12 +24,12 @@ flock(FH,LOCK_EX) or die('Bad stuff happened with the file lock on /etc/clustert
 $props->load(\*FH);
 close(FH);
 
-my $testbase = $props->get_property('test.base');
+my $testbase  = "$FindBin::RealBin/../t/";
 my $propsbase = $testbase . '../etc/props/'; 
-my $propsloc = $props->get_property('data.props.loc');
+my $propsloc  = $props->get_property('Data.Props.Loc');
 
-my $cmd = "svn up $testbase/../";
-my $svn_up = `$cmd`;
+my $cmd       = "svn up $testbase/../";
+my $svn_up    = `$cmd`;
 
 system("cp $propsbase/" . $ARGV[1] . " $propsloc") && die("ERROR: Could not copy property file to the property file location");
 

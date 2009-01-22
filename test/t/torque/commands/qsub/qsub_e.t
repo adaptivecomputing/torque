@@ -35,4 +35,4 @@ foreach my $line (@stdout)
    }
 }
 
-die("Expected Error_Path [mauna:/home/" . $props->get_property('moab.user.one') . "/myErrorFile] but found [$errorPath]") unless cmp_ok($errorPath,'eq', $props->get_property('MoabHost') . ":/home/" . $props->get_property('moab.user.one') . "/myErrorFile",'Looking for expected error file');
+die("Expected Error_Path [mauna:/home/" . $props->get_property('moab.user.one') . "/myErrorFile] but found [$errorPath]") unless cmp_ok($errorPath,'eq', $props->get_property('Test.Host') . ":/home/" . $props->get_property('moab.user.one') . "/myErrorFile",'Looking for expected error file');

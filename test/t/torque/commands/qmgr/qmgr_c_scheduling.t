@@ -21,7 +21,7 @@ my %qmgr;
 my $scheduling;
 my %server_info;
 
-my $server = $props->get_property('MoabHost');
+my $server = $props->get_property('Test.Host');
 
 # Perform the test for scheduling=false
 $scheduling = 'false';

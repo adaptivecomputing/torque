@@ -24,7 +24,7 @@ setDesc('pbsnodes -l');
 # Variables
 my $cmd;
 my $status_update_time = $props->get_property('mom.config.status_update_time');
-my $nodes_str          = $props->get_property('MoabHost');
+my $nodes_str          = $props->get_property('Test.Host');
 my @nodes              = list2array($nodes_str);
 my %pbsnodes;
 my %node_states;

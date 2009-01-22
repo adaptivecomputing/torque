@@ -28,20 +28,20 @@ setDesc("qrun -H");
 # Variables
 my $cmd;
 my %qrun;
-my @nodes = list2array($props->get_property('torque.remote.nodes'));
+my @nodes = list2array($props->get_property('Torque.Remote.Nodes'));
 my $node;
 my $job_params;
 my $job_id;
 my %job_info;
 
 # Make sure we have a node to submit to
-die "No remote nodes to submit to.  Please add the 'torque.remote.nodes' list to clustertest.conf"
+die "No remote nodes to submit to.  Please add the 'Torque.Remote.Nodes' list to clustertest.conf"
   if (! scalar @nodes);
 
 # Submit a job
 $job_params = {
                 'user'       => $props->get_property('torque.user.one'),
-                'torque_bin' => $props->get_property('torque.home.dir') . "bin/",
+                'torque_bin' => $props->get_property('Torque.Home.Dir') . "bin/",
               };
 
 $job_id = submitSleepJob($job_params);

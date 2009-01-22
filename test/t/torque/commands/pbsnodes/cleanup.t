@@ -21,7 +21,7 @@ plan('no_plan');
 setDesc('Pbsnodes Cleanup');
 
 # Torque params
-my @remote_moms = list2array($props->get_property('torque.remote.nodes'));
+my @remote_moms = list2array($props->get_property('Torque.Remote.Nodes'));
 my $torque_params  = {
                      'remote_moms' => \@remote_moms
                   };
@@ -55,7 +55,7 @@ ok(! $@, "Restoring mom configuration to '$mom_cfg_file'");
 ###############################################################################
 # Restore the old node configuration file
 ###############################################################################
-my $node_cfg_path     = $props->get_property('torque.home.dir') . '/server_priv/nodes';
+my $node_cfg_path     = $props->get_property('Torque.Home.Dir') . '/server_priv/nodes';
 my $node_cfg_path_bak = $node_cfg_path . ".bak";
 
 eval

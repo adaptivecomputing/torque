@@ -7,9 +7,12 @@ use FindBin;
 use lib "$FindBin::Bin/../../../../../lib/";
 
 
-use CRI::Test;
-
 use Expect;
+
+use CRI::Test;
+use CRI::Utils          qw(
+                             resolve_path
+                          );
 
 use Torque::Test::Utils qw(
                              job_info
@@ -41,7 +44,7 @@ my $pPattern = 'do you wish to continue y\/\(n\)\?';
 
 # Variables
 my @job_ids;
-my @remote_moms = list2array($props->get_property('torque.remote.nodes'));
+my @remote_moms = list2array($props->get_property('Torque.Remote.Nodes'));
 
 # Commands
 my $pbs_server_cmd   = "pbs_server -t cold";
@@ -54,13 +57,13 @@ my %ps;
 
 # Params
 my $chkpt_params     = {
-                         'torque_bin' => $props->get_property('torque.home.dir') . "/bin/",
+                         'torque_bin' => $props->get_property('Torque.Home.Dir') . "/bin/",
                          'user'       => $props->get_property('torque.user.one'),
-                         'app'        => $props->get_property('test.base') . "/torque/test_programs/test.pl",
+                         'app'        => resolve_path("$FindBin::Bin/../../../test_programs/test.pl"),
                          'c_value'    => 'enabled,shutdown'
                        };
 my $non_chkpt_params = {
-                         'torque_bin' => $props->get_property('torque.home.dir') . "/bin/",
+                         'torque_bin' => $props->get_property('Torque.Home.Dir') . "/bin/",
                          'user'       => $props->get_property('torque.user.one'),
                        };
 my $mom_params       = {

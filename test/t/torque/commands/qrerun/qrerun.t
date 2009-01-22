@@ -31,7 +31,7 @@ my $job_id;
 # Submit a job
 $job_params = {
                 'user'       => $props->get_property('torque.user.one'),
-                'torque_bin' => $props->get_property('torque.home.dir') . 'bin/',
+                'torque_bin' => $props->get_property('Torque.Home.Dir') . 'bin/',
               };
 
 $job_id = submitSleepJob($job_params);

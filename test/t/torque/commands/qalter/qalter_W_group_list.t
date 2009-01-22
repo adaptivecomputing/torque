@@ -31,7 +31,7 @@ my $qalter_cmd;
 my %job_info;
 my $depend;
 
-my ($remote_host) = list2array('torque.remote.nodes');
+my ($remote_host) = list2array('Torque.Remote.Nodes');
 
 my $group1 = $props->get_property('torque.user.one.group');
 my $group2 = $props->get_property('torque.user.two.group');
@@ -41,7 +41,7 @@ my $group_list = "$group1,$group2\@$remote_host";
 # Submit the jobs
 my $job_params = {
                    'user'       => $props->get_property('torque.user.one'),
-                   'torque_bin' => $props->get_property('torque.home.dir') . '/bin/'
+                   'torque_bin' => $props->get_property('Torque.Home.Dir') . '/bin/'
                  };
 
 my $job_id = submitSleepJob($job_params);

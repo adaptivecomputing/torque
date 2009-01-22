@@ -18,7 +18,7 @@ plan('no_plan');
 setDesc('Momctl Setup');
 
 # Torque Params
-my @remote_nodes = $props->get_property( 'torque.remote.nodes' );
+my @remote_nodes = $props->get_property( 'Torque.Remote.Nodes' );
 my $torque_params    = {
                           'remote_moms' => \@remote_nodes
                        };
@@ -34,9 +34,9 @@ stopTorque($torque_params)
 ###############################################################################
 
 # Configuration File
-my $pbsserver            = $props->get_property('MoabHost'                        );
-my $pbsclient            = $props->get_property('MoabHost'                        );
-my $restricted           = $props->get_property('MoabHost'                        );
+my $pbsserver            = $props->get_property('Test.Host'                        );
+my $pbsclient            = $props->get_property('Test.Host'                        );
+my $restricted           = $props->get_property('Test.Host'                        );
 my $logevent             = $props->get_property('mom.config.logevent'             );
 my $cputmult             = $props->get_property('mom.config.cputmult'             );
 my $usecp                = $props->get_property('mom.config.usecp'                );
@@ -57,7 +57,7 @@ my $tmpdir               = $props->get_property('mom.config.tmpdir'             
 my $varattr              = $props->get_property('mom.config.varattr'              );
 my $xauthpath            = $props->get_property('mom.config.xauthpath'            );
 my $ignwalltime          = $props->get_property('mom.config.ignwalltime'          );
-my $mom_host             = $props->get_property('MoabHost'                        );
+my $mom_host             = $props->get_property('Test.Host'                        );
 my $status_update_time   = $props->get_property('mom.config.status_update_time'   );
 my $check_poll_time      = $props->get_property('mom.config.check_poll_time'      );
 my $job_start_block_time = $props->get_property('mom.config.jobstartblocktime'    );
@@ -185,8 +185,8 @@ ok(! $@, "Writing out mom reconfiguration to '$mom_recfg_file'");
 ###############################################################################
 # Create a hosts list file
 ###############################################################################
-my $host_list      = $props->get_property('MoabHost') 
-                     . "," . $props->get_property('torque.remote.nodes');
+my $host_list      = $props->get_property('Test.Host') 
+                     . "," . $props->get_property('Torque.Remote.Nodes');
 my $host_list_file = $props->get_property('mom.host.list.file');
 eval
   {
@@ -201,7 +201,7 @@ eval
 ok(! $@, "Writing out host list to '$host_list_file'");
 
 # Create a hosts list file with a single host
-$host_list      = $props->get_property('MoabHost');
+$host_list      = $props->get_property('Test.Host');
 $host_list_file = $props->get_property('mom.single.host.list.file');
 eval
   {

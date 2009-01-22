@@ -40,7 +40,7 @@ my $pPattern = 'do you wish to continue y\/\(n\)\?';
 
 # Variables
 my @job_ids;
-my @remote_moms = list2array($props->get_property('torque.remote.nodes'));
+my @remote_moms = list2array($props->get_property('Torque.Remote.Nodes'));
 
 # Commands
 my $pbs_server_cmd   = "pbs_server -t cold";
@@ -53,12 +53,12 @@ my %ps;
 
 # Params
 my $rerun_params     = {
-                         'torque_bin' => $props->get_property('torque.home.dir') . "/bin/",
+                         'torque_bin' => $props->get_property('Torque.Home.Dir') . "/bin/",
                          'user'       => $props->get_property('torque.user.one'),
                          'add_args'   => '-r y'
                        };
 my $non_rerun_params = {
-                         'torque_bin' => $props->get_property('torque.home.dir') . "/bin/",
+                         'torque_bin' => $props->get_property('Torque.Home.Dir') . "/bin/",
                          'user'       => $props->get_property('torque.user.one'),
                          'add_args'   => '-r n'
                        };

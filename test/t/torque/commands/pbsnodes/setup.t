@@ -16,7 +16,7 @@ plan('no_plan');
 setDesc('Pbsnodes Setup');
 
 # Torque params
-my @remote_nodes  = list2array($props->get_property('torque.remote.nodes'));
+my @remote_nodes  = list2array($props->get_property('Torque.Remote.Nodes'));
 my $torque_params = {
                       'remote_moms' => \@remote_nodes
                     };
@@ -26,9 +26,9 @@ stopTorque($torque_params)
   or die 'Unable to stop Torque';
 
 # Write the configuration file
-my $pbsserver            = $props->get_property('MoabHost'                        );
-my $pbsclient            = $props->get_property('MoabHost'                        );
-my $restricted           = $props->get_property('MoabHost'                        );
+my $pbsserver            = $props->get_property('Test.Host'                        );
+my $pbsclient            = $props->get_property('Test.Host'                        );
+my $restricted           = $props->get_property('Test.Host'                        );
 my $logevent             = $props->get_property('mom.config.logevent'             );
 
 my $status_update_time   = $props->get_property('mom.config.status_update_time'   );

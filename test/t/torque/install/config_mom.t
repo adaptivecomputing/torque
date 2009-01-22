@@ -13,7 +13,7 @@ plan('no_plan');
 setDesc('Configure Torque on the Compute Nodes');
 
 # Create/edit the mom_priv/config file on each node
-my $configFile = $props->get_property('torque.home.dir') . "/mom_priv/config";
+my $configFile = $props->get_property('Torque.Home.Dir') . "/mom_priv/config";
 
 my %hostnameCommand = runCommand("hostname --ip-address", "Getting hostname IP address");
 my $ipAddress       = $hostnameCommand{'STDOUT'};

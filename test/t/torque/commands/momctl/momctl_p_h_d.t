@@ -22,7 +22,7 @@ setDesc('Momctl -p <PORT> -h <HOST> -d <LOGLEVEL>');
 
 # Other Variables
 my %momctl;
-my $mom_host      = $props->get_property('MoabHost'     );
+my $mom_host      = $props->get_property('Test.Host'     );
 my $mom_host_port = $props->get_property('mom.host.port');
 
 # Test momctl -p $mom_host_port -h $mom_host -d 3

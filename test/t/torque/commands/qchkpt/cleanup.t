@@ -23,7 +23,7 @@ use Torque::Ctrl        qw(
 plan('no_plan');
 setDesc('Qchkpt Cleanup');
 
-my @remote_moms    = list2array($props->get_property('torque.remote.nodes'));
+my @remote_moms    = list2array($props->get_property('Torque.Remote.Nodes'));
 my $torque_params  = {
                       'remote_moms' => \@remote_moms
                      };

@@ -30,7 +30,7 @@ my $sleep_time   = 299;
 my $job_id;
 my $job_params   = {
                      'user'       => $props->get_property('torque.user.one'),
-                     'torque_bin' => $props->get_property('torque.home.dir') . "/bin/",
+                     'torque_bin' => $props->get_property('Torque.Home.Dir') . "/bin/",
                      'sleep_time' => $sleep_time
                    };
 my $process_name = "sleep $sleep_time";

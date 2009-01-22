@@ -6,9 +6,11 @@ use warnings;
 use FindBin;
 use lib "$FindBin::Bin/../../../../lib/";
 
-
 # Test Modules
 use CRI::Test;
+use CRI::Utils                 qw(
+                                    resolve_path
+                                 );
 use Torque::Job::Ctrl          qw( 
                                     submitCheckpointJob
                                     runJobs 
@@ -44,14 +46,14 @@ my $local_job_id;
 my $job_id;
 my @job_ids;
 
-my $local_node   = $props->get_property('MoabHost');
-my @remote_nodes = list2array($props->get_property('torque.remote.nodes'));
+my $local_node   = $props->get_property('Test.Host');
+my @remote_nodes = list2array($props->get_property('Torque.Remote.Nodes'));
 
 # Submit checkpoint job params
 my $params = {
               'user'       => $props->get_property('torque.user.one'),
-              'torque_bin' => $props->get_property('torque.home.dir') . 'bin/',
-              'app'        => $props->get_property('test.base') . 'torque/test_programs/test.pl'
+              'torque_bin' => $props->get_property('Torque.Home.Dir') . 'bin/',
+              'app'        => resolve_path("$FindBin::Bin/../../test_programs/test.pl")
              };
 
 ###############################################################################
@@ -104,7 +106,7 @@ ok($checkpoint_name  =~ /${\CHECKPOINT_FILE_NAME}/,  "Checking the 'checkpoint_n
 ok(exists $job_info{ $job_id }{ 'checkpoint_time' }, "Checking for the existence of the job attribute 'checkpoint_time'");
 
 # Check for the actual file 
-$checkpoint_path = $props->get_property('torque.home.dir') . "checkpoint/${job_id}.CK/$checkpoint_name";
+$checkpoint_path = $props->get_property('Torque.Home.Dir') . "checkpoint/${job_id}.CK/$checkpoint_name";
 ok(-e $checkpoint_path, "Checking that '$checkpoint_path' exists");
 
 ###############################################################################
@@ -167,7 +169,7 @@ foreach my $node (@remote_nodes)
   ok(exists $job_info{ $job_id }{ 'checkpoint_time' }, "Checking for the existence of the job attribute 'checkpoint_time'");
 
   # Check for the actual checkpoint file on the node
-  $checkpoint_path = $props->get_property('torque.home.dir') . "checkpoint/${job_id}.CK/$checkpoint_name";
+  $checkpoint_path = $props->get_property('Torque.Home.Dir') . "checkpoint/${job_id}.CK/$checkpoint_name";
   $ls_cmd = "ls $checkpoint_path";
   %ls     = runCommandSsh($node, $ls_cmd);
   ok($ls{ 'EXIT_CODE' } == 0, "Checking exit code of '$ls_cmd'")

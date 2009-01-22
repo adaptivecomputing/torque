@@ -143,7 +143,7 @@ sub startPbsmom #($)#
   my $return           = 1;
 
   # Mom executables
-  my $torque_sbin = $props->get_property( 'torque.home.dir' ) . "/sbin/" || '';
+  my $torque_sbin = $props->get_property( 'Torque.Home.Dir' ) . "/sbin/" || '';
 
   # Set up the commands
   my $pbs_mom_cmd  = "${torque_sbin}pbs_mom ";
@@ -219,7 +219,7 @@ sub stopPbsmom
     if scalar @$nodes == 0;
 
   # Mom executables
-  my $torque_sbin = $props->get_property( 'torque.home.dir' ) . "sbin/" || '';
+  my $torque_sbin = $props->get_property( 'Torque.Home.Dir' ) . "sbin/" || '';
 
   # Decide if the mom is on a remote host
   if (scalar @$nodes)

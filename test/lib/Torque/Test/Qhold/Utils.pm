@@ -85,7 +85,7 @@ sub verify_qhold_chkpt #($)
   ok(exists $job_info{ $job_id }{ 'checkpoint_time' }, "Checking for the existence of the job attribute 'checkpoint_time'");
 
   # Check for the actual file 
-  $checkpoint_path = $props->get_property('torque.home.dir') . "checkpoint/${job_id}.CK/$checkpoint_name";
+  $checkpoint_path = $props->get_property('Torque.Home.Dir') . "checkpoint/${job_id}.CK/$checkpoint_name";
   ok(-e $checkpoint_path, "Checking that '$checkpoint_path' exists");
 
   } # END sub verify_qhold_chkpt #($)

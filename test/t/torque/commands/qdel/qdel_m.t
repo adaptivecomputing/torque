@@ -36,7 +36,7 @@ my $message;
 # Submit a job
 $params = {
             'user'       => $props->get_property('torque.user.one'),
-            'torque_bin' => $props->get_property('torque.home.dir') . 'bin/',
+            'torque_bin' => $props->get_property('Torque.Home.Dir') . 'bin/',
             'sleep_time' => 200
           };
 $job_id = submitSleepJob($params);

@@ -28,7 +28,7 @@ my $attr;
 my $reg_exp;
 my $query;
 
-my $host = $props->get_property( 'MoabHost'      );
+my $host = $props->get_property( 'Test.Host'      );
 my $port = $props->get_property( 'mom.host.port' );
 
 # Perform the tests on the attributes shown in the documentation

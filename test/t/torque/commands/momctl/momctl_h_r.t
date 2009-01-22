@@ -16,7 +16,7 @@ setDesc('Momctl -h <HOST> -r <CONFIGFILE>');
 
 # Variables
 my %momctl;
-my $host                     = $props->get_property('MoabHost');
+my $host                     = $props->get_property('Test.Host');
 my $reconfig_file            = $props->get_property('mom.reconfig.file');
 my $config_file              = $props->get_property('mom.config.file');
 my $reconfig_check_poll_time = $props->get_property('tmp.mom.config.check_poll_time');

@@ -27,9 +27,9 @@ else{
 }
 
 # Get a list of the directories
-my $dir = $tmp_props->get_property('Outdir');
+my $dir = $tmp_props->get_property('Log.Dir');
 
-chdir($tmp_props->get_property('Outdir')) or die("Couldn't change to the results directory: " . $tmp_props->get_property('Outdir'));
+chdir($tmp_props->get_property('Log.Dir')) or die("Couldn't change to the results directory: " . $tmp_props->get_property('Log.Dir'));
 my @dirs = <*>;
 
 if(scalar @dirs == 0){
@@ -185,7 +185,7 @@ the user to choose test results to analyze.
 
 =head1 CONFIGURATION
 
-Make sure that the 'Outdir' variable is properly set in /etc/clustertest.conf 
+Make sure that the 'Log.Dir' variable is properly set in /etc/clustertest.conf 
 and that analyze-log is in your PATH variable. 
 
 =head1 Copyright 

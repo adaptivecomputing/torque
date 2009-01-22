@@ -24,7 +24,7 @@ setDesc('Momctl -p <PORT> -d <LOGLEVEL>');
 my $mom_host_port    = $props->get_property('mom.host.port');
 
 # Torque Variables
-my $torque_spool_dir = $props->get_property('torque.spool.dir');
+my $torque_spool_dir = $props->get_property('Torque.Home.Dir') . "/spool/";
 
 # Other Variables
 my %momctl;

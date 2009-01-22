@@ -790,7 +790,7 @@ sub _auto_complete_job_id #($)
   my ($job_id) = @_;
 
   # Make sure that we know what the server name is
-  my $server_name = $props->get_property( 'MoabHost' )
+  my $server_name = $props->get_property( 'Test.Host' )
      || return;
 
   # Make sure that we do need to complete the job_id

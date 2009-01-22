@@ -99,8 +99,8 @@ sub _init
 
     # set some default props for critical values
     $props = Data::Properties->new();
-    $props->set_property('data.props.loc','/tmp/clustertest.props');
-    $props->set_property('Outdir','/tmp/');
+    $props->set_property('Data.Props.Loc','/tmp/clustertest.props');
+    $props->set_property('Log.Dir','/tmp/');
 
     # Load system wide config and test-specific props, probably overriding the defaults above  
     if (not exists $ENV{MoabTestOut} or (defined $ENV{MoabTestOut} and $ENV{MoabTestOut} eq '')){
@@ -224,7 +224,7 @@ sub _topLevelInit
     );
 
     # Recursively make the outdir or complain if we can't
-    my $outdir = $props->get_property("Outdir");
+    my $outdir = $props->get_property("Log.Dir");
     $outdir =~ s/\/$//; # remove trailing slash if needed
     $outdir .=  '/' . $timestamp;
     chomp($outdir);
@@ -237,7 +237,7 @@ sub _topLevelInit
 	    unless (-d $makeMe)
 	    {
 		mkdir($makeMe,0777) or die "Could not create $outdir. Do you have permission and does "
-		. $props->get_property("Outdir")
+		. $props->get_property("Log.Dir")
 		. "exist?\nERROR: $!\n";
 	    }
 	}
@@ -247,7 +247,7 @@ sub _topLevelInit
     $ENV{MoabTestOut} = $outdir; 
 
     # Read in .props file and $set_props, if it exists
-    my $dataProps = $props->get_property('data.props.loc');
+    my $dataProps = $props->get_property('Data.Props.Loc');
     if( defined $dataProps && -e $dataProps )
     {
 	open(FH, "<$dataProps") or die "$dataProps read error: $!\n";
@@ -300,7 +300,7 @@ sub _topLevelInit
     }
 
     $props->set_property('PATH' => $ENV{PATH} );
-    $ENV{MOABHOMEDIR} = $props->get_property('moab.home.dir');
+    $ENV{MOABHOMEDIR} = $props->get_property('Moab.Home.Dir');
 
     # Create combined internal props file
     open(FH, ">",$full_props) or die("can't open $full_props $!\n");

@@ -95,7 +95,7 @@ Configuring Moab::Test:
 
   # cp /usr/local/perltests/lib/clustertest.conf /etc
 
-  Edit /etc/clustertest.conf so that the MoabHost variable matches the hostname
+  Edit /etc/clustertest.conf so that the Test.Host variable matches the hostname
 
   # vi /etc/clustertest.conf
 

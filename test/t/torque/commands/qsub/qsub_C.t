@@ -7,6 +7,9 @@ use FindBin;
 use lib "$FindBin::Bin/../../../../lib/";
 
 use CRI::Test;
+use CRI::Utils qw(
+                   resolve_path
+                 );
 
 use Torque::Job::Ctrl   qw( delJobs   );
 use Torque::Test::Utils qw( job_info  );
@@ -15,7 +18,7 @@ plan('no_plan');
 setDesc('qsub -C');
 
 # Variables
-my $directive_script = $props->get_property('test.base') . '/torque/test_programs/directive_test.pl';
+my $directive_script = resolve_path("$FindBin::Bin/../../test_programs/directive_test.pl");
 
 # Run the command
 my $user = $props->get_property('moab.user.one');

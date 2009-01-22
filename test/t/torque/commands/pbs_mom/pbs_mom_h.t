@@ -22,7 +22,7 @@ plan('no_plan');
 setDesc('pbs_mom -h');
 
 # Variables
-my $host = $props->get_property('MoabHost');
+my $host = $props->get_property('Test.Host');
 
 # StopPbsmom
 stopPbsmom();

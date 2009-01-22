@@ -9,6 +9,9 @@ use lib "$FindBin::Bin/../../../../lib/";
 
 # Test Modules
 use CRI::Test;
+use CRI::Utils                 qw(
+                                    resolve_path
+                                 )
 use Torque::Job::Ctrl          qw( 
                                     submitSleepJob
                                     delJobs
@@ -44,8 +47,8 @@ my $rls_type = 'n';
 ###############################################################################
 $job_params = {
                'user'       => $user1,
-               'torque_bin' => $props->get_property('torque.home.dir') . 'bin/',
-               'app'        => $props->get_property('test.base') . 'torque/test_programs/test.pl'
+               'torque_bin' => $props->get_property('Torque.Home.Dir') . 'bin/',
+               'app'        => resolve_path("$FindBin::Bin/../../test_programs/test.pl")
               };
 
 $job_id = submitSleepJob($job_params);

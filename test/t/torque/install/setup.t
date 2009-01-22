@@ -27,7 +27,7 @@ setDesc('Setup Torque with multiple queues');
 my $user     = 'root';
 my $q1       = $props->get_property('torque.queue.one');
 my $q2       = $props->get_property('torque.queue.two');
-my $hostname = $props->get_property('MoabHost');
+my $hostname = $props->get_property('Test.Host');
 my %result;
 
 ###############################################################################

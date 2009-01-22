@@ -6,8 +6,10 @@ use warnings;
 use FindBin;
 use lib "$FindBin::Bin/../../../../../lib/";
 
-
 use CRI::Test;
+use CRI::Utils          qw(
+                            resolve_path
+                          );
 
 use Torque::Ctrl        qw( 
                             startPbsserver 
@@ -32,8 +34,8 @@ startPbsserver();
 # Submit a job
 my $job_params = {
                    'user'       => $props->get_property( 'torque.user.one' ),
-                   'torque_bin' => $props->get_property( 'torque.home.dir' ) . '/bin',
-                   'app'        => $props->get_property( 'test.base' ) . 'torque/test_programs/test.pl',
+                   'torque_bin' => $props->get_property( 'Torque.Home.Dir' ) . '/bin',
+                   'app'        => resolve_path("$FindBin::Bin/../../../test_programs/test.pl"),
                    'c_value'    => 'shutdown'
                  };
 

@@ -228,7 +228,7 @@ sub test_output #($)
   my ($input) = @_;
 
   my $stdout         = $input->{ 'output'     } or die "Argument 'output' required";
-  my $hosts          = $input->{ 'hosts'      } or Torque::Test::Utils::list2array($props->get_property('MoabHost'));    
+  my $hosts          = $input->{ 'hosts'      } or Torque::Test::Utils::list2array($props->get_property('Test.Host'));    
   my $properties     = $input->{ 'properties' } or Torque::Test::Utils::list2array($props->get_property('torque.node.properties'));
   my $xml            = $input->{ 'xml'        } or 0;
 
@@ -325,7 +325,7 @@ sub test_q_output
 
  my ($q_out) = @_;
 
- my $host    = $props->get_property('MoabHost');
+ my $host    = $props->get_property('Test.Host');
 
  my $line_1  = "Cannot connect to default server host '$host' - check pbs_server daemon.";
  my $line_2  = "pbsnodes: cannot connect to server $host, error=111 (Connection refused)";
@@ -343,7 +343,7 @@ sub test_s_q_output
 
  my ($q_out) = @_;
 
- my $host    = $props->get_property('MoabHost');
+ my $host    = $props->get_property('Test.Host');
 
  my $line_1  = "Cannot connect to specified server host '$host'";
  my $line_2  = "pbsnodes: cannot connect to server $host, error=111 (Connection refused)";

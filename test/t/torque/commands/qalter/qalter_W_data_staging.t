@@ -31,7 +31,7 @@ my $qalter_cmd;
 my %job_info;
 my $depend;
 
-my $host     = $props->get_property('MoabHost');
+my $host     = $props->get_property('Test.Host');
 my $in_file  = 'in_test.txt';
 my $out_file = 'out_test.txt';
 my $stagein  = "$in_file\@$host:$out_file";
@@ -40,7 +40,7 @@ my $stageout = "$out_file\@$host:$in_file";
 # Submit the jobs
 my $job_params = {
                    'user'       => $props->get_property('torque.user.one'),
-                   'torque_bin' => $props->get_property('torque.home.dir') . '/bin/'
+                   'torque_bin' => $props->get_property('Torque.Home.Dir') . '/bin/'
                  };
 
 my $job_id = submitSleepJob($job_params);

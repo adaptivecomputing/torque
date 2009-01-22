@@ -9,6 +9,9 @@ use lib "$FindBin::Bin/../../../../lib/";
 
 # Test Modules
 use CRI::Test;
+use CRI::Utils                qw(
+                                  resolve_path
+                                );
 
 
 use Torque::Job::Ctrl         qw(
@@ -40,9 +43,9 @@ my %job_info;
 my %signals;
 
 my $user       = $props->get_property('torque.user.one');
-my $app        = $props->get_property('test.base') . "torque/test_programs/sig_trap.pl";
-my $torque_bin = $props->get_property('torque.home.dir') . "bin/";
-my $spool_dir  = $props->get_property('torque.home.dir') . "spool/";
+my $app        = resolve_path("$FindBin::Bin/../../test_programs/sig_trap.pl");
+my $torque_bin = $props->get_property('Torque.Home.Dir') . "bin/";
+my $spool_dir  = $props->get_property('Torque.Home.Dir') . "spool/";
 
 ###############################################################################
 # Submit a job

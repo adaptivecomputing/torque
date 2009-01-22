@@ -32,12 +32,12 @@ my %qalter;
 my $group_list;
 my $depend;
 
-my $host   = $props->get_property('MoabHost');
+my $host   = $props->get_property('Test.Host');
 
 # Submit the jobs
 my $job_params = {
                    'user'       => $props->get_property('torque.user.one'),
-                   'torque_bin' => $props->get_property('torque.home.dir') . '/bin/'
+                   'torque_bin' => $props->get_property('Torque.Home.Dir') . '/bin/'
                  };
 
 my $job1 = submitSleepJob($job_params);

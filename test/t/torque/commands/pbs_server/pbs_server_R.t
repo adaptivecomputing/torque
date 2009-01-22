@@ -23,9 +23,9 @@ plan('no_plan');
 setDesc('pbs_server -R');
 
 # Variables
-my $host        = $props->get_property('MoabHost');
+my $host        = $props->get_property('Test.Host');
 my $port        = '3334';
-my @remote_moms = list2array($props->get_property('torque.remote.nodes'));
+my @remote_moms = list2array($props->get_property('Torque.Remote.Nodes'));
 
 # Params
 my $remote_mom_params = {

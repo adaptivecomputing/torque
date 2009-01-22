@@ -18,7 +18,7 @@ setDesc('Momctl -p <PORT> -h <HOST> -s');
 # Variables
 my %momctl;
 
-my $host = $props->get_property('MoabHost');
+my $host = $props->get_property('Test.Host');
 my $port = $props->get_property('mom.host.port');
 my $cmd  = "momctl -p $port -h $host -s";
 

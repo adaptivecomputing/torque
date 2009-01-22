@@ -26,8 +26,8 @@ plan('no_plan');
 setDesc('pbsnodes -server <SERVER> -c <HOST> -q');
 
 # Variables
-my $node     = $props->get_property('MoabHost');
-my $server   = $props->get_property('MoabHost');
+my $node     = $props->get_property('Test.Host');
+my $server   = $props->get_property('Test.Host');
 my $cmd      = "pbsnodes -s $server";
 my $c_cmd    = "pbsnodes -s $server -c $node";
 my $o_cmd    = "pbsnodes -s $server -o $node";

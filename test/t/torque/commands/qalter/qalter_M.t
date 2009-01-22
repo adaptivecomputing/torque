@@ -35,12 +35,12 @@ my $mail_users;
 # Users and host
 my $user1 = $props->get_property('torque.user.one');
 my $user2 = $props->get_property('torque.user.two');
-my $host  = $props->get_property('MoabHost'       );
+my $host  = $props->get_property('Test.Host'       );
 
 # Submit the jobs
 my $job_params = {
                    'user'       => $props->get_property('torque.user.one'),
-                   'torque_bin' => $props->get_property('torque.home.dir') . '/bin/'
+                   'torque_bin' => $props->get_property('Torque.Home.Dir') . '/bin/'
                  };
 
 $job_id = submitSleepJob($job_params);

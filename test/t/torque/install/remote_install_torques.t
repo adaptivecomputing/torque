@@ -15,11 +15,11 @@ plan('no_plan');
 setDesc('Install pbs_mom on remote compute nodes');
 
 # Variables
-my $nodes_str      = $props->get_property('torque.remote.nodes');
+my $nodes_str      = $props->get_property('Torque.Remote.Nodes');
 my @nodes          = list2array($nodes_str);
 my $props_loc      = "$FindBin::Bin/../../../etc/props/torque.props";
-my $pbs_server     = $props->get_property('MoabHost');
-my $pbs_server_loc = $props->get_property('torque.home.dir') . "/server_name";
+my $pbs_server     = $props->get_property('Test.Host');
+my $pbs_server_loc = $props->get_property('Torque.Home.Dir') . "/server_name";
 
 foreach my $node (@nodes)
   {
@@ -29,7 +29,7 @@ foreach my $node (@nodes)
   my %ssh;
 
   # Set up the props file on the remote node
-  my $cp_cmd = "cp $props_loc " . $props->get_property( 'data.props.loc' );
+  my $cp_cmd = "cp $props_loc " . $props->get_property( 'Data.Props.Loc' );
   %ssh       = runCommandSsh($node, $cp_cmd);
   cmp_ok($ssh{ 'EXIT_CODE' }, '==', 0, "Checking exit code of '$node:$cp_cmd'")
     or die("Unable to install torque on '$node': $ssh{ 'STDERR' }");

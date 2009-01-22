@@ -27,7 +27,7 @@ sub get_recieved_signals #($)
   # Return value
   my %signals = ();
 
-  my $job_output_file = $props->get_property('torque.home.dir') 
+  my $job_output_file = $props->get_property('Torque.Home.Dir') 
                         . "spool/$job_id.OU";
 
   open(JOB_OU, "<$job_output_file")

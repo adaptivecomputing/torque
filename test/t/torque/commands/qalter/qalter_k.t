@@ -35,7 +35,7 @@ my $join_path;
 # Submit the jobs
 my $job_params = {
                    'user'       => $props->get_property('torque.user.one'),
-                   'torque_bin' => $props->get_property('torque.home.dir') . '/bin/'
+                   'torque_bin' => $props->get_property('Torque.Home.Dir') . '/bin/'
                  };
 
 $job_ids[0] = submitSleepJob($job_params);

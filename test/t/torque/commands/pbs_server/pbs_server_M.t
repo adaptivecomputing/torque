@@ -29,9 +29,9 @@ plan('no_plan');
 setDesc('pbs_server -M');
 
 # Variables
-my $host        = $props->get_property('MoabHost');
+my $host        = $props->get_property('Test.Host');
 my $port        = '3334';
-my @remote_moms = list2array($props->get_property('torque.remote.nodes'));
+my @remote_moms = list2array($props->get_property('Torque.Remote.Nodes'));
 my $job_id1;
 my $job_id2;
 
@@ -45,7 +45,7 @@ my $local_mom_params  = {
                         };
 my $job_params        = {
                           'user'       => $props->get_property('torque.user.one'),
-                          'torque_bin' => $props->get_property('torque.home.dir') . '/bin/'
+                          'torque_bin' => $props->get_property('Torque.Home.Dir') . '/bin/'
                         };
 my $job_state_params  = {
                           'exp_job_state' => 'R',

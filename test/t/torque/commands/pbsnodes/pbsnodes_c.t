@@ -20,7 +20,7 @@ plan('no_plan');
 setDesc('pbsnodes -c <HOST>');
 
 # Variables
-my $node       = $props->get_property('MoabHost');
+my $node       = $props->get_property('Test.Host');
 my $cmd        = "pbsnodes";
 my $c_cmd      = "pbsnodes -c $node";
 my $o_cmd      = "pbsnodes -o $node";

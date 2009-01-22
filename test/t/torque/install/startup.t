@@ -16,5 +16,5 @@ use Torque::Test::Utils qw( list2array  );
 plan('no_plan'); 
 setDesc('Startup Torque');
 
-my @remote_nodes = list2array($props->get_property('torque.remote.nodes'));
+my @remote_nodes = list2array($props->get_property('Torque.Remote.Nodes'));
 startTorque({ 'remote_moms' => \@remote_nodes });

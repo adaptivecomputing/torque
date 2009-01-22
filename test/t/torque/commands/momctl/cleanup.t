@@ -25,7 +25,7 @@ my $mom_cfg_file     = $props->get_property('mom.config.file');
 my $mom_cfg_file_bak = $props->get_property('mom.config.file') . ".bak";
 
 # Torque params
-my @remote_nodes     = list2array($props->get_property('torque.remote.nodes'));
+my @remote_nodes     = list2array($props->get_property('Torque.Remote.Nodes'));
 my $torque_params    = {
                           'remote_moms' => \@remote_nodes
                        };

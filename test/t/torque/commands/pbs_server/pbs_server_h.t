@@ -22,7 +22,7 @@ plan('no_plan');
 setDesc('pbs_server -h');
 
 # Variables
-my $host = $props->get_property('MoabHost');
+my $host = $props->get_property('Test.Host');
 
 # StopPbsserver
 stopPbsserver();

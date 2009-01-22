@@ -23,7 +23,7 @@ plan('no_plan');
 setDesc('pbs_server -d');
 
 # Variables
-my $directory   = $props->get_property("torque.home.dir");
+my $directory   = $props->get_property("Torque.Home.Dir");
 
 # Commands
 my $pgrep_cmd   = 'pgrep -x pbs_server';

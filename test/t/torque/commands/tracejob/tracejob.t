@@ -31,12 +31,12 @@ my $reg_exp;
 
 my $queue = $props->get_property( 'torque.queue.one' );
 my $user  = $props->get_property( 'torque.user.one'  );
-my $host  = $props->get_property( 'MoabHost'         );
+my $host  = $props->get_property( 'Test.Host'         );
 
 # Submit a job
 $job_params = {
                 'user'       => $props->get_property( 'torque.user.one' ),
-                'torque_bin' => $props->get_property( 'torque.home.dir' ) . '/bin',
+                'torque_bin' => $props->get_property( 'Torque.Home.Dir' ) . '/bin',
                 'sleep_time' => 60
               };
 

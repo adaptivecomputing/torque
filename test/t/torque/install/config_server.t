@@ -24,7 +24,7 @@ my %grep;
 
 
 # server_priv/nodes file
-$nodes_cfg = $props->get_property('torque.home.dir') . "server_priv/nodes";
+$nodes_cfg = $props->get_property('Torque.Home.Dir') . "server_priv/nodes";
 
 # Local TORQUE node
 %hostname_cmd = runCommand("hostname -s", "Getting hostname IP address");
@@ -34,7 +34,7 @@ chomp($hostname);
 $node_args    = $props->get_property('torque.node.args');
 
 # Remote TORQUE nodes
-$nodes_str = $props->get_property('torque.remote.nodes');
+$nodes_str = $props->get_property('Torque.Remote.Nodes');
 @nodes     = split (/,|\s+|,\s+/, $nodes_str);
 
 # Create/edit the server_priv/nodes file for the server

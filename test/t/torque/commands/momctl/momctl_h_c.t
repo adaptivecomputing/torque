@@ -16,7 +16,7 @@ setDesc('Momctl -h <HOST> -c <JOBID>');
 
 # Variables
 my %momctl;
-my $host = $props->get_property('MoabHost');
+my $host = $props->get_property('Test.Host');
 
 # Create some stale jobs
 my $job_id = 'all'; # stubed out

@@ -206,7 +206,7 @@ case "$continue" in
     [Yy]*) 
 	mkdir -p /usr/test/src
 	cp /usr/local/perltests/lib/clustertest.conf /etc
-	sed -i -r s/MoabHost=.*/MoabHost=`hostname`/g /etc/clustertest.conf
+	sed -i -r s/Test.Host=.*/Test.Host=`hostname`/g /etc/clustertest.conf
 	cp /usr/local/perltests/etc/props/moab5.3.0.props /tmp/clustertest.props
 	TESTCONFIGED="yes"
 	;;

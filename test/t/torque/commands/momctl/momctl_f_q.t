@@ -22,7 +22,7 @@ my $attr;
 my $reg_exp;
 my $query;
 
-my $host           = $props->get_property( 'MoabHost' );
+my $host           = $props->get_property( 'Test.Host' );
 my $host_list_file = $props->get_property( 'mom.host.list.file' );
 my @hosts          = split(/,|\s+/, `cat $host_list_file`);
 

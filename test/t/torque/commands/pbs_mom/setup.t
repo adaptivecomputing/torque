@@ -22,15 +22,15 @@ plan('no_plan');
 setDesc('Pbs_mom Setup');
 
 # Torque params
-my @remote_moms    = list2array($props->get_property('torque.remote.nodes'));
+my @remote_moms    = list2array($props->get_property('Torque.Remote.Nodes'));
 my $torque_params  = {
                      'remote_moms' => \@remote_moms
                      };
 
 # Mom config parameters
-my $pbsserver      = $props->get_property('MoabHost'            );
-my $pbsclient      = $props->get_property('MoabHost'            );
-my $restricted     = $props->get_property('MoabHost'            );
+my $pbsserver      = $props->get_property('Test.Host'            );
+my $pbsclient      = $props->get_property('Test.Host'            );
+my $restricted     = $props->get_property('Test.Host'            );
 my $logevent       = $props->get_property('mom.config.logevent' );
 
 ###############################################################################

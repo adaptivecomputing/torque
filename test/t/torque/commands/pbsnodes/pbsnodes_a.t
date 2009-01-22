@@ -23,7 +23,7 @@ plan('no_plan');
 setDesc("pbsnodes -a");
 # Variables
 my $cmd;
-my $nodes_str      = $props->get_property('MoabHost');
+my $nodes_str      = $props->get_property('Test.Host');
 my @nodes          = list2array($nodes_str);
 my $properties_str = $props->get_property('torque.node.args');
 my @properties     = list2array($properties_str);

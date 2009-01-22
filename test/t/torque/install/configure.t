@@ -12,7 +12,7 @@ plan('no_plan');
 setDesc('Configure Torque to use BLCR checkpointing');
 
 my $build_dir   = "$FindBin::Bin/../../../../";
-my $home_dir    = $props->get_property('torque.home.dir'        ); 
+my $home_dir    = $props->get_property('Torque.Home.Dir'        ); 
 my $config_vars = $props->get_property('torque.config.variables');
 my $config_args = $props->get_property('torque.config.args'     );
 
