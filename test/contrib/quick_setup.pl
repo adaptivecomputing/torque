@@ -280,7 +280,7 @@ my $moab_bin     = "$moab_home_dir/bin";
 my $moab_sbin    = "$moab_home_dir/sbin";
 
 my $path         = "$test_bin:$torque_bin:$torque_sbin:$moab_bin:$moab_sbin:\$PATH";
-my $path_export  = "export PATH='$path'";
+my $path_export  = "export PATH=\"$path\"";
 
 my $path_explain =<<PATH_EXPLAIN;
 
