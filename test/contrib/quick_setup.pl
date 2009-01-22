@@ -6,9 +6,6 @@ use warnings;
 use FindBin;
 use lib "$FindBin::Bin/../lib";
 
-use CRI::Utils qw(
-                   resolve_path
-                 );
 use Sys::Hostname;
 
 ###############################################################################
@@ -16,14 +13,14 @@ use Sys::Hostname;
 ###############################################################################
 # General Variables
 my %action_taken        = (
-                            '01 USERS ADDED'                 => 'no',
                             '01 CONF CREATED'                => 'no',
-                            '02 PATHS MODIFIED'              => 'no',
-                            '03 COREDUMP SIZE'               => 'no',
-                            '04 COREDUMP TEMPLATE'           => 'no',
-                            '05 PROGRAMS INSTALLED'          => 'no',
-                            '06 PERLLIBS INSTALLED'          => 'no',
-#                            '07 TEST ENVIRONMENT CONFIGURED' => 'no'
+                            '02 USERS ADDED'                 => 'no',
+                            '03 PROPS COPIED'                => 'no',
+                            '04 PATHS MODIFIED'              => 'no',
+                            '05 COREDUMP SIZE'               => 'no',
+                            '06 COREDUMP TEMPLATE'           => 'no',
+                            '07 PROGRAMS INSTALLED'          => 'no',
+                            '08 PERLLIBS INSTALLED'          => 'no',
                           );
 my $div                 = "\n" . "=" x 80 . "\n\n";
 my $yes_regex           = '^(y|yes)$';
@@ -50,6 +47,9 @@ my $torque_remote_nodes = '';
 my $moab_remote_nodes   = '';
 my $moab_test_prefix    = '/usr/local/qatests/src/moab';
 my $torque_test_prefix  = '/usr/local/qatests/src/torque';
+
+# Template props loc
+my $props_loc = resolve_path("$FindBin::Bin/../etc/props/torque.props");
 
 ###############################################################################
 # Check that the user is $root
@@ -143,7 +143,7 @@ if ($stdin =~ /${yes_regex}/i)
   $torque_remote_nodes = $stdin
     unless $stdin eq '';
 
-  if (open (CONF, ">>$data_conf_loc"))
+  if (open (CONF, ">$data_conf_loc"))
     {
 
     my $conf_file =<<CONF_FILE;
@@ -175,9 +175,9 @@ CONF_FILE
     close CONF;
 
 
-    print "\nThe file '$conf_file' has been created.  You can edit CRI global test variables at this location.\n";
+    print "\nThe file '$data_conf_loc' has been created.  You can edit CRI global test variables at this location.\n";
 
-    } # END if (open (CONF, ">>$data_conf_loc"))
+    } # END if (open (CONF, ">$data_conf_loc"))
   else
     {
 
@@ -193,6 +193,44 @@ else
   {
 
   print "\nNot creating '$data_conf_loc'!\n";
+
+  } # END else
+
+###############################################################################
+# Copy the props file
+###############################################################################
+my $cp_cmd = "cp $props_loc $data_props_loc";
+my $props_explain =<<PROPS_EXPLAIN;
+I am going to create the $data_props_loc by running the command $cp_cmd.
+
+Is this ok? [y/N] 
+PROPS_EXPLAIN
+
+print $div;
+chomp $props_explain;
+print $props_explain;
+$stdin = <STDIN>;
+
+if ($stdin =~ /${yes_regex}/i)
+  {
+
+  my $cp = `$cp_cmd`; 
+
+  if ($? != 0)
+    {
+
+    warn "'$cp_cmd' failed: $cp";
+
+    } # END if ($? != 0)
+
+  $action_taken{ '03 PROPS COPIED' } = 'yes';
+  print "\nProps file copied\n";
+
+  } # END if ($stdin =~ /${yes_regex}/i)
+else
+  {
+
+  print "\nNot copying the props file!\n";
 
   } # END else
 
@@ -222,7 +260,7 @@ if ($stdin =~ /${yes_regex}/i)
   my $useradd2  = `useradd -m -s /bin/bash -g $group2 -G testgroup2 $user2`;
 
   print "\nNOTE: No passwords were set for these users. (not needed for testing).\n";
-  $action_taken{ '01 USERS ADDED' } = 'yes';
+  $action_taken{ '02 USERS ADDED' } = 'yes';
 
   } # END if ($stdin =~ /${yes_regex}/i)
 else
@@ -276,7 +314,7 @@ if ($stdin =~ /${yes_regex}/i)
     } # END else  
 
   # Update the action taken
-  $action_taken{ '02 PATHS MODIFIED' } = 'yes';
+  $action_taken{ '04 PATHS MODIFIED' } = 'yes';
 
   } # END if ($stdin =~ /${yes_regex}/i)
 else
@@ -319,7 +357,7 @@ if ($stdin =~ /${yes_regex}/i)
 
     } # END else
 
-  $action_taken{ '03 COREDUMP SIZE' } = 'yes';
+  $action_taken{ '05 COREDUMP SIZE' } = 'yes';
 
   } # END if ($stdin =~ /${yes_regex}/i)
 else
@@ -363,7 +401,7 @@ if ($stdin =~ /${yes_regex}/i)
 
     } # END else
 
-  $action_taken{ '04 COREDUMP TEMPLATE' } = 'yes';
+  $action_taken{ '06 COREDUMP TEMPLATE' } = 'yes';
 
   } # END if ($stdin =~ /${yes_regex}/i)
 else
@@ -430,7 +468,7 @@ if ($stdin =~ /${yes_regex}/i)
 
     } # END foreach my $program (@programs)
 
-  $action_taken{ '05 PROGRAMS INSTALLED' } = 'yes';
+  $action_taken{ '07 PROGRAMS INSTALLED' } = 'yes';
 
   } # END if ($stdin =~ /${yes_regex}/i)
 else
@@ -488,7 +526,7 @@ if ($stdin =~ /${yes_regex}/i)
 
     } # END foreach my $module (@modules)
 
-  $action_taken{ '06 PERLLIBS INSTALLED' } = 'yes';
+  $action_taken{ '08 PERLLIBS INSTALLED' } = 'yes';
 
   } # END if ($stdin =~ /${yes_regex}/i)
 else
@@ -511,3 +549,23 @@ foreach my $step (sort keys %action_taken)
 
   } # END foreach my $step (sort keys %action_taken)
 
+###############################################################################
+# resolve_path
+###############################################################################
+sub resolve_path #($)
+  {
+
+  my ($path) = @_;
+
+  # Remove ../ from the path the coresponding directories
+  my $reg_ex = '[^\/]+\/\.\.(\/)?';
+  while ($path =~ /${reg_ex}/)
+    {
+
+    $path =~ s/${reg_ex}//;   
+
+    } # END while ($path =~ /\.\./)
+
+  return $path;
+
+  } # END sub resolve_path #($)
