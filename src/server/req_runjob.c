@@ -980,7 +980,7 @@ static void post_sendmom(
       /* accounting log for start or restart */
 
       if (jobp->ji_qs.ji_svrflags & JOB_SVFLG_CHECKPOINT_FILE)
-        account_record(PBS_ACCT_RESTRT, jobp, NULL);
+        account_record(PBS_ACCT_RESTRT, jobp, "Restart from checkpoint");
       else
         account_jobstr(jobp);
 
