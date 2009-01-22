@@ -680,7 +680,9 @@ int blcr_checkpoint_job(
 
     if (err != 0)
       {
-        /* TODO: GB call log_err */
+      sprintf(buf, "pbs_alterjob requested on job %s failed (%d)\n",
+          pjob->ji_qs.ji_jobid, err);
+      log_err(-1, id, buf);
       if (err == PBSE_UNKJOBID)
         {
         /* TODO: GB - can the job exit while waiting for the checkpoint 
@@ -713,42 +715,37 @@ int blcr_checkpoint_job(
     } /* END if (rc != 0) */
   else
     {
+    char timestr[80];
     /* checkpoint script returned a zero value.  We assume the checkpoint
         suceeded */ 
       
     /* open a connection to the server */
     conn = pbs_connect(pjob->ji_wattr[(int)JOB_ATR_at_server].at_val.at_str);
 
+    sprintf(timestr,"%ld",
+        (long)pjob->ji_wattr[(int)JOB_ATR_checkpoint_time].at_val.at_long);
     epoch = (time_t)pjob->ji_wattr[(int)JOB_ATR_checkpoint_time].at_val.at_long;
 
-    if (request_type == PBS_BATCH_HoldJob)
-      {
-      sprintf(err_buf,"Job %s was checkpointed and terminated to %s/%s at %s",
-        pjob->ji_qs.ji_jobid,
-        pjob->ji_wattr[(int)JOB_ATR_checkpoint_dir].at_val.at_str,
-        pjob->ji_wattr[(int)JOB_ATR_checkpoint_name].at_val.at_str,
-        ctime(&epoch));
+    sprintf(err_buf,"Job %s was checkpointed and %s to %s/%s at %s",
+      pjob->ji_qs.ji_jobid,
+      (request_type == PBS_BATCH_HoldJob) ? "terminated" : "continued",
+      pjob->ji_wattr[(int)JOB_ATR_checkpoint_dir].at_val.at_str,
+      pjob->ji_wattr[(int)JOB_ATR_checkpoint_name].at_val.at_str,
+      ctime(&epoch));
 
-      set_attr(&attrib, ATTR_comment, err_buf);
+    set_attr(&attrib, ATTR_comment, err_buf);
+    set_attr(&attrib, ATTR_checkpoint_name,
+        pjob->ji_wattr[(int)JOB_ATR_checkpoint_name].at_val.at_str);
+    set_attr(&attrib, ATTR_checkpoint_time, timestr);
 
-      err = pbs_alterjob(conn, pjob->ji_qs.ji_jobid, attrib, CHECKPOINTED);
-      }
-    else
-      {
-      sprintf(err_buf,"Job %s was checkpointed and continued to %s/%s at %s",
-        pjob->ji_qs.ji_jobid,
-        pjob->ji_wattr[(int)JOB_ATR_checkpoint_dir].at_val.at_str,
-        pjob->ji_wattr[(int)JOB_ATR_checkpoint_name].at_val.at_str,
-        ctime(&epoch));
+    err = pbs_alterjob(conn, pjob->ji_qs.ji_jobid, attrib,
+        (request_type == PBS_BATCH_HoldJob) ? CHECKPOINTED : NULL);
 
-      set_attr(&attrib, ATTR_comment, err_buf);
-     
-      err = pbs_alterjob(conn, pjob->ji_qs.ji_jobid, attrib, NULL);
-
-      }
     if (err != 0)
       {
-        /* TODO: GB call log_err */
+      sprintf(buf, "pbs_alterjob requested on job %s failed (%d)\n",
+          pjob->ji_qs.ji_jobid, err);
+      log_err(-1, id, buf);
       if (err == PBSE_UNKJOBID)
         {
         /* TODO: GB - can the job exit while waiting for the checkpoint 
@@ -985,21 +982,6 @@ void post_checkpoint(
   if (ev == 0)
     {
     pjob->ji_qs.ji_svrflags |= JOB_SVFLG_CHECKPOINT_FILE;
-    
-    /*
-     * We need to get checkpoint information to the server in a more timely
-     * manner.  So we put the changed checkpoint attributes into TORQUE_JData 
-     * and set ForceServerUpdate to TRUE.
-     */
-
-    sprintf(TORQUE_JData,"%s:%s=%s,%s=%ld",
-      pjob->ji_qs.ji_jobid,
-      job_attr_def[(int)JOB_ATR_checkpoint_name].at_name,
-      pjob->ji_wattr[(int)JOB_ATR_checkpoint_name].at_val.at_str,
-      job_attr_def[(int)JOB_ATR_checkpoint_time].at_name,
-      pjob->ji_wattr[(int)JOB_ATR_checkpoint_time].at_val.at_long);
-      
-    ForceServerUpdate = TRUE;
 
     return;
     }

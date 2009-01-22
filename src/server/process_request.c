@@ -111,6 +111,7 @@
 #include "log.h"
 #include "svrfunc.h"
 #include "pbs_proto.h"
+#include "csv.h"
 
 #ifndef PBS_MOM
 #include "array.h"
@@ -541,7 +542,54 @@ void process_request(
       return;
       }
 
-    request->rq_perm = svr_get_privilege(request->rq_user, request->rq_host);
+    /*
+     * pbs_mom and checkpoint restart scripts both need the authority to do
+     * alters and releases on checkpointable jobs.  Allow manager permission
+     * for root on the jobs execution node.
+     */
+     
+    if (((request->rq_type == PBS_BATCH_ModifyJob) ||
+        (request->rq_type == PBS_BATCH_ReleaseJob)) &&
+        (strcmp(request->rq_user, PBS_DEFAULT_ADMIN) == 0))
+      {
+      job *pjob;
+      char *dptr;
+      int skip = FALSE;
+      char short_host[PBS_MAXHOSTNAME+1];
+
+      /* make short host name */
+
+      strcpy(short_host, request->rq_host);
+      if ((dptr = strchr(short_host, '.')) != NULL)
+        {
+        *dptr = '\0';
+        }
+      
+      if (((pjob = find_job(request->rq_ind.rq_modify.rq_objname)) != (job *)0) &&
+          (pjob->ji_qs.ji_state == JOB_STATE_RUNNING))
+        {
+
+        if ((pjob->ji_wattr[(int)JOB_ATR_checkpoint].at_flags & ATR_VFLAG_SET) &&
+          ((csv_find_string(pjob->ji_wattr[(int)JOB_ATR_checkpoint].at_val.at_str, "s") != NULL) ||
+          (csv_find_string(pjob->ji_wattr[(int)JOB_ATR_checkpoint].at_val.at_str, "c") != NULL) ||
+          (csv_find_string(pjob->ji_wattr[(int)JOB_ATR_checkpoint].at_val.at_str, "enabled") != NULL)) &&
+          (strstr(pjob->ji_wattr[(int)JOB_ATR_exec_host].at_val.at_str, short_host) != NULL))
+          {
+
+          request->rq_perm = svr_get_privilege(request->rq_user, server_host);
+          skip = TRUE;
+
+          }
+        }
+      if (!skip)
+        {
+        request->rq_perm = svr_get_privilege(request->rq_user, request->rq_host);
+        }
+      }
+    else
+      {
+      request->rq_perm = svr_get_privilege(request->rq_user, request->rq_host);
+      }
     }  /* END else (svr_conn[sfds].cn_authen == PBS_NET_CONN_FROM_PRIVIL) */
 
   /* if server shutting down, disallow new jobs and new running */

@@ -824,7 +824,7 @@ attribute_def job_attr_def[] =
     comp_l,
     free_null,
     NULL_FUNC,
-    READ_ONLY | ATR_DFLAG_SSET,
+    NO_USER_SET | ATR_DFLAG_SvWR | ATR_DFLAG_ALTRUN,
     ATR_TYPE_LONG,
     PARENT_TYPE_JOB
   },

@@ -36,6 +36,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature
       -f to qsub) this attribute indicates that a job can survive the loss of 
       a sister mom also added corresponding fault_tolerant and 
       fault_intolerant types to the "disallowed_types" queue attribute
+  b - fixes for pbs_moms updating of comment and checkpoint name and time 
 
 2.3.6
   b - change back to not sending status updates until we get cluster addr message
