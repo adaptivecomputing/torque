@@ -224,6 +224,12 @@ void req_holdjob(
       pjob->ji_qs.ji_svrflags |=
         JOB_SVFLG_HASRUN | JOB_SVFLG_CHECKPOINT_FILE;
       job_save(pjob, SAVEJOB_QUICK);
+      
+      /* fill in log_buffer again, since relay_to_mom changed it */
+      
+      sprintf(log_buffer, msg_jobholdset, pset, preq->rq_user,
+          preq->rq_host);
+          
       LOG_EVENT(PBSEVENT_JOB, PBS_EVENTCLASS_JOB,
         pjob->ji_qs.ji_jobid, log_buffer);
       }
@@ -543,7 +549,7 @@ static void process_hold_reply(
     svr_evaljobstate(pjob, &newstate, &newsub, 0);
     svr_setjobstate(pjob, newstate, newsub); /* saves job */
 
-    account_record(PBS_ACCT_CHKPNT, pjob, (char *)0);  /* note in accounting file */
+    account_record(PBS_ACCT_CHKPNT, pjob, "Checkpointed and held"); /* note in accounting file */
     reply_ack(preq);
     }
   }
@@ -578,7 +584,7 @@ static void process_checkpoint_reply(
     {
     /* record that MOM has a checkpoint file */
 
-    account_record(PBS_ACCT_CHKPNT, pjob, (char *)0);  /* note in accounting file */
+    account_record(PBS_ACCT_CHKPNT, pjob, "Checkpointed"); /* note in accounting file */
     reply_ack(preq);
     }
   }
