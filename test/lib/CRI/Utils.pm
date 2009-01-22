@@ -15,6 +15,7 @@ use base 'Exporter';
 our @EXPORT_OK = qw(
                      list2array
                      run_and_check_cmd
+                     resolve_path
                    );
 
 ###############################################################################
@@ -49,6 +50,27 @@ sub run_and_check_cmd #($)
 
   } # END sub run_and_check_cmd #($)
 
+###############################################################################
+# resolve_path
+###############################################################################
+sub resolve_path #($)
+  {
+
+  my ($path) = @_;
+
+  # Remove ../ from the path the coresponding directories
+  my $reg_ex = '[^\/]+\/\.\.(\/)?';
+  while ($path =~ /${reg_ex}/)
+    {
+
+    $path =~ s/${reg_ex}//;   
+
+    } # END while ($path =~ /\.\./)
+
+  return $path;
+
+  } # END sub resolve_path #($)
+
 1;
 
 =head1 NAME
@@ -60,6 +82,7 @@ CRI::Utils - Some useful CRI test utilities
  use CRI::Utils qw(
                     list2array
                     run_and_check_cmd
+                    resolve_path
                   );
 
 
@@ -69,6 +92,9 @@ CRI::Utils - Some useful CRI test utilities
 
  # run_and_check_cmd
  my %result = run_and_check_cmd('sleep 30');
+
+ # resolve_path
+ my $path = resolve_path('/path/to/dir/../../lib');
 
 =head1 DESCRIPTION
 
@@ -85,6 +111,12 @@ Takes a comma or space delimited string and returns an array.
 =item run_and_check_cmd
 
 Runs a command using the Moab::Test::runCommand and checks that the command ran successfully
+
+=item resolve_path($path)
+
+Resolves the path by removing '../' from the path and the coresponding directories.  Returns the resolved path.
+
+
 
 =back
 

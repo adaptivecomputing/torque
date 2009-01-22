@@ -3,30 +3,53 @@
 use strict;
 use warnings;
 
+use FindBin;
+use lib "$FindBin::Bin/../lib";
+
+use CRI::Utils qw(
+                   resolve_path
+                 );
+use Sys::Hostname;
+
 ###############################################################################
 # Variables
 ###############################################################################
-my %action_taken      = (
-                          '01 USERS ADDED'                 => 'no',
-                          '02 PATHS MODIFIED'              => 'no',
-                          '03 COREDUMP SIZE'               => 'no',
-                          '04 COREDUMP TEMPLATE'           => 'no',
-                          '05 PROGRAMS INSTALLED'          => 'no',
-                          '06 PERLLIBS INSTALLED'          => 'no',
-#                          '07 TEST ENVIRONMENT CONFIGURED' => 'no'
-                        );
-
+# General Variables
+my %action_taken        = (
+                            '01 USERS ADDED'                 => 'no',
+                            '01 CONF CREATED'                => 'no',
+                            '02 PATHS MODIFIED'              => 'no',
+                            '03 COREDUMP SIZE'               => 'no',
+                            '04 COREDUMP TEMPLATE'           => 'no',
+                            '05 PROGRAMS INSTALLED'          => 'no',
+                            '06 PERLLIBS INSTALLED'          => 'no',
+#                            '07 TEST ENVIRONMENT CONFIGURED' => 'no'
+                          );
+my $div                 = "\n" . "=" x 80 . "\n\n";
+my $yes_regex           = '^(y|yes)$';
 my $stdin;
-my $div               = "\n" . "=" x 80 . "n\n";
-my $yes_regex         = '^(y|yes)$';
-my $root              = 'root';
-my $group1            = 'testgroup1';
-my $group2            = 'testgroup2';
-my $user1             = 'testuser1';
-my $user2             = 'testuser2';
-my $root_bashrc_loc   = '/root/.bashrc';
-my $user1_bashrc_loc  = "/home/$user1/.bashrc";
-my $user2_bashrc_loc  = "/home/$user2/.bashrc";
+
+# User variables
+my $root                = 'root';
+my $group1              = 'testgroup1';
+my $group2              = 'testgroup2';
+my $user1               = 'testuser1';
+my $user2               = 'testuser2';
+my $root_bashrc_loc     = '/root/.bashrc';
+my $user1_bashrc_loc    = "/home/$user1/.bashrc";
+my $user2_bashrc_loc    = "/home/$user2/.bashrc";
+
+# Conf file parameters
+my $data_conf_loc       = "/etc/clustertest.conf";
+my $data_props_loc      = "/tmp/clustertest.props";
+my $test_host           = hostname();
+my $log_dir             = "/tmp/testoutput";
+my $torque_home_dir     = "/usr/test/torque";
+my $moab_home_dir       = "/usr/test/moab";
+my $torque_remote_nodes = '';
+my $moab_remote_nodes   = '';
+my $moab_test_prefix    = '/usr/local/qatests/src/moab';
+my $torque_test_prefix  = '/usr/local/qatests/src/torque';
 
 ###############################################################################
 # Check that the user is $root
@@ -53,6 +76,127 @@ print $script_explain;
 $stdin = <STDIN>;
 
 ###############################################################################
+# Copy the property files
+###############################################################################
+my $conf_explain =<<CONF_EXPLAIN;
+
+I am going to create the file '$data_conf_loc'.  This file contains important 
+properties that are used in CRI tests.
+
+Is this ok? [y/N] 
+CONF_EXPLAIN
+
+print $div;
+chomp $conf_explain;
+print $conf_explain;
+$stdin = <STDIN>;
+
+if ($stdin =~ /${yes_regex}/i)
+  {
+
+  # Get the Test.Host
+  print "\nWhat is the Test.Host? [$test_host] ";
+  $stdin           = <STDIN>;
+  chomp $stdin;
+  $test_host       = $stdin
+    unless $stdin eq '';
+
+  # Get the Log.Dir
+  print "\nWhere is the Log.Dir? [$log_dir] ";
+  $stdin = <STDIN>;
+  chomp $stdin;
+  $log_dir = $stdin
+    unless $stdin eq '';
+
+  # Get the Data.Props.Dir
+  print "\nWhere is the Data.Props.Dir? [$data_props_loc] ";
+  $stdin = <STDIN>;
+  chomp $stdin;
+  $data_props_loc = $stdin
+    unless $stdin eq '';
+
+  # Get the Moab.Home
+  print "\nWhere is the Moab.Home.Dir? [$moab_home_dir] ";
+  $stdin = <STDIN>;
+  chomp $stdin;
+  $moab_home_dir = $stdin
+    unless $stdin eq '';
+
+  # Get the Torque.Home
+  print "\nWhere is the Torque.Home.Dir? [$torque_home_dir] ";
+  $stdin = <STDIN>;
+  chomp $stdin;
+  $torque_home_dir = $stdin
+    unless $stdin eq '';
+
+  # Get the Moab.Remote.Nodes
+  print "\nWhere are the Moab.Remote.Nodes? This is a comma seperated list. [$moab_remote_nodes] ";
+  $stdin = <STDIN>;
+  chomp $stdin;
+  $moab_remote_nodes = $stdin
+    unless $stdin eq '';
+
+  # Get the Torque.Remote.Nodes
+  print "\nWhere are the Torque.Remote.Nodes? This is a comma seperated list. [$torque_remote_nodes] ";
+  $stdin = <STDIN>;
+  chomp $stdin;
+  $torque_remote_nodes = $stdin
+    unless $stdin eq '';
+
+  if (open (CONF, ">>$data_conf_loc"))
+    {
+
+    my $conf_file =<<CONF_FILE;
+# QAtests Global Test Parameters File
+
+# The hostname for the Moab/TORQUE server
+Test.Host=$test_host
+
+# Enter full path for test-log output
+Log.Dir=$log_dir
+
+# Enter full path to locate of test-specific parameters file
+Data.Props.Loc=$data_props_loc
+
+# Home Directories
+Moab.Home.Dir=$moab_home_dir
+Torque.Home.Dir=$torque_home_dir
+
+# Remote nodes
+Moab.Remote.Nodes=$moab_remote_nodes
+Torque.Remote.Nodes=$torque_remote_nodes
+
+# These are for QA Testing Machines only
+# Moab.Test.Prefix=$moab_test_prefix
+# Torque.Test.Prefix=$torque_test_prefix
+CONF_FILE
+
+    print CONF $conf_file;
+    close CONF;
+
+
+    print "\nThe file '$conf_file' has been created.  You can edit CRI global test variables at this location.\n";
+
+    } # END if (open (CONF, ">>$data_conf_loc"))
+  else
+    {
+
+    warn "WARNING: Unable to open '$data_conf_loc': $!";
+
+    } # END else  
+
+  # Update the action taken
+  $action_taken{ '01 CONF CREATED' } = 'yes';
+
+  } # END if ($stdin =~ /${yes_regex}/i)
+else
+  {
+
+  print "\nNot creating '$data_conf_loc'!\n";
+
+  } # END else
+
+###############################################################################
 # Add the testing users
 ###############################################################################
 my $users_explain =<<USERS_EXPLAIN;
@@ -61,7 +205,7 @@ I am going to add two new groups and users
  users: $user1, $user2
 groups: $group1, $group2
 
-Is this alright? [y/N] 
+Is this ok? [y/N] 
 USERS_EXPLAIN
 
 print $div;
@@ -89,14 +233,24 @@ else
   } # END else
 
 ###############################################################################
-# Add paths to bashrc
+# Add binaries to /usr/bin
 ###############################################################################
-my $path_explain =<<PATH_EXPLAIN;
-I am going to append /usr/local/perltests/bin to your PERL5LIB in .bashrc for $root
-I am going to append /usr/local/perltest/bin plus some over Perltest environment PATHS
-to your PATH in .bashrc for $root, $user1, and $user2
+my $test_bin     = resolve_path("$FindBin::Bin/../bin");
+my $torque_bin   = "$torque_home_dir/bin";
+my $torque_sbin  = "$torque_home_dir/sbin";
+my $moab_bin     = "$moab_home_dir/bin";
+my $moab_sbin    = "$moab_home_dir/sbin";
 
-Is this alright? [y/N] 
+my $path         = "$test_bin:$torque_bin:$torque_sbin:$moab_bin:$moab_sbin:\$PATH";
+my $path_export  = "export PATH='$path'";
+
+my $path_explain =<<PATH_EXPLAIN;
+
+I am going to add the following line to '$root_bashrc_loc':
+
+$path_export 
+
+Is this ok? [y/N] 
 PATH_EXPLAIN
 
 print $div;
@@ -107,15 +261,11 @@ $stdin = <STDIN>;
 if ($stdin =~ /${yes_regex}/i)
   {
 
-  # Set the $root .bashrc
-  if (open (ROOT_BASHRC, ">>$root_bashrc_loc"))
+ if (open (ROOT_BASHRC, ">>$root_bashrc_loc"))
     {
 
     print ROOT_BASHRC "\n# Added by CRI::Test quick_setup.pl\n";
-    print ROOT_BASHRC "export PERL5LIB='/usr/local/perltests/bin:\$PERL5LIB'\n";
-    print ROOT_BASHRC "export PATH='/usr/local/perltests/bin:\$PATH'\n";
-
-    close ROOT_BASHRC;
+    print ROOT_BASHRC "$path_export\n";
 
     } # END if (open (ROOT_BASHRC, ">>$root_bashrc_loc"))
   else
@@ -123,41 +273,7 @@ if ($stdin =~ /${yes_regex}/i)
 
     warn "WARNING: Unable to open '$root_bashrc_loc': $!";
 
-    } # END else
-	
-  # Set the $user1 .bashrc
-  if (open (USER1_BASHRC, ">>$user1_bashrc_loc"))
-    {
-
-    print USER1_BASHRC "\n# Added by CRI::Test quick_setup.pl\n";
-    print USER1_BASHRC "export PATH=\"/usr/local/perltests/bin:/usr/test/moab/bin:/usr/test/moab/sbin:/usr/test/torque/bin:/usr/test/torque/sbin:/usr/test/bin/:/root/bin:/usr/local/apitest/bin:/usr/test/moab/bin:/usr/test/moab/sbin:/usr/test/torque/bin:/usr/test/torque/sbin:/usr/test/gold/bin:/usr/test/gold/sbin:/usr/kerberos/sbin:/usr/kerberos/bin:/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin:/usr/X11R6/bin:/usr/test/slurm/sbin:/usr/test/slurm/bin:\$PATH\"\n";
-
-    close USER1_BASHRC;
-
-    } # END if (open (USER1_BASHRC, ">>$user1_bashrc_loc"))
-  else
-    {
-
-    warn "WARNING: Unable to open '$user1_bashrc_loc': $!";
-
-    } # END else
-	
-  # Set the $user2 .bashrc
-  if (open (USER2_BASHRC, ">>$user2_bashrc_loc"))
-    {
-
-    print USER2_BASHRC "\n# Added by CRI::Test quick_setup.pl\n";
-    print USER2_BASHRC "export PATH=\"/usr/local/perltests/bin:/usr/test/moab/bin:/usr/test/moab/sbin:/usr/test/torque/bin:/usr/test/torque/sbin:/usr/test/bin/:/root/bin:/usr/local/apitest/bin:/usr/test/moab/bin:/usr/test/moab/sbin:/usr/test/torque/bin:/usr/test/torque/sbin:/usr/test/gold/bin:/usr/test/gold/sbin:/usr/kerberos/sbin:/usr/kerberos/bin:/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin:/usr/X11R6/bin:/usr/test/slurm/sbin:/usr/test/slurm/bin:\$PATH\"\n";
-
-    close USER2_BASHRC;
- 
-    }
-  else
-    {
-
-    warn "WARNING: Unable to open '$user2_bashrc_loc': $!";
-
-    } # END else
+    } # END else  
 
   # Update the action taken
   $action_taken{ '02 PATHS MODIFIED' } = 'yes';
@@ -166,7 +282,7 @@ if ($stdin =~ /${yes_regex}/i)
 else
   {
 
-  print "\nNot modifying your PERL5LIB or PATH!\n";
+  print "\nNot exporting the PATH in '$root_bashrc_loc'!\n";
 
   } # END else
 
@@ -178,7 +294,7 @@ I am going to set the coredump file size to unlimited by adding 'ulimit -c unlim
 
 NOTE: Needed for automated Coredump detection in CRI::Test module
 
-Is this alright? [y/N] 
+Is this ok? [y/N] 
 COREULIMIT_EXPLAIN
 
 print $div;
@@ -222,7 +338,7 @@ by adding the line 'echo '/tmp/%e-core.%p' > /proc/sys/kernel/core_pattern' to $
 
 Note: Needed for automated Coredump detection in CRI::Test module
 
-Is this alright? [y/N]
+Is this ok? [y/N] 
 COREFORMAT_EXPLAIN
 
 print $div;
@@ -274,15 +390,18 @@ my @programs = qw(
                    nfs-common
                    ia32-libs
                  );
-my $program_list = join(", ", @programs);
+my $program_list = join("\n", @programs);
 
 my $program_explain =<<PROGRAM_EXPLAIN;
 I am going to install needed programs with apt-get.
-I will be installing $program_list.
+
+I will be installing the following:
+
+$program_list
 
 If you are not on Ubuntu or Debian, say no here, and install these programs (or their equivalents) yourself.
 
-Is this alright? [y/N] 
+Is this ok? [y/N] 
 PROGRAM_EXPLAIN
 
 print $div;
@@ -317,14 +436,14 @@ if ($stdin =~ /${yes_regex}/i)
 else
   {
 
-  print "\nNot installing $program_list\n";
+  print "\nNot installing!\n";
 
   } # END else
 
 ###############################################################################
 # Install CPAN modules required by tests
 ###############################################################################
-my @libraries = qw(
+my @modules = qw(
                     IPC::Run3
                     Test::More
                     Data::Properties
@@ -334,15 +453,18 @@ my @libraries = qw(
                     Proc::Daemon
                     Expect
                   );
-my $library_list = join(", ", @libraries);
+my $module_list = join("\n", @modules);
 
 my $cpan_explain =<<CPAN_EXPLAIN;
-I am going to use CPAN to install needed Perl libraries
-Libraries are $library_list
+I am going to use CPAN to install needed Perl modules
+
+The modules are:
+
+$module_list
 
 You may need to configure CPAN before this will work (it will prompt you if needed)
 
-Is this alright? [y/N ]
+Is this ok? [y/N] 
 CPAN_EXPLAIN
 
 print $div;
@@ -353,10 +475,10 @@ $stdin = <STDIN>;
 if ($stdin =~ /${yes_regex}/i)
   {
 
-  foreach my $library (@libraries)
+  foreach my $module (@modules)
     {
    
-    my $cpan_cmd    = "cpan $library";
+    my $cpan_cmd    = "cpan $module";
     print "Running '$cpan_cmd'\n";
 
     my $cpan_result = `$cpan_cmd`;
@@ -364,7 +486,7 @@ if ($stdin =~ /${yes_regex}/i)
     warn "'$cpan_cmd' failed: $cpan_result"
       if $? != 0;
 
-    } # END foreach my $library (@libraries)
+    } # END foreach my $module (@modules)
 
   $action_taken{ '06 PERLLIBS INSTALLED' } = 'yes';
 
@@ -372,7 +494,7 @@ if ($stdin =~ /${yes_regex}/i)
 else
   {
 
-  print "\nNot installing $library_list\n";
+  print "\nNot installing!\n";
 
   } # END else
 
@@ -388,3 +510,4 @@ foreach my $step (sort keys %action_taken)
   print "$step: " . $action_taken{ $step } . "\n"; 
 
   } # END foreach my $step (sort keys %action_taken)
+
