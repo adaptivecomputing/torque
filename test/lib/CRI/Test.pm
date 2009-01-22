@@ -271,19 +271,6 @@ sub _topLevelInit
     # Get all keys in $props hash-ref
     my @keys = $props->property_names();
 
-    # Create test.base variables (if nonexistent) for relevant Products
-    foreach ('moab', 'torque')
-    {
-	unless( $props->get_property("$_.test.base") ne '' )
-	{
-	    if( $props->get_property("$_.branch") ne '' )
-	    {
-		my $new_str = $props->get_property("$_.test.prefix") . '/' . $props->get_property("$_.branch") . '/t';
-		$props->set_property( "$_.test.base" => $new_str );
-	    }
-	}
-    }
-    
     # Get an array of Products to use in PATH
     my @prods = grep { /get\.src/ } @keys;
 
