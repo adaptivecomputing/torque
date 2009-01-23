@@ -8,6 +8,9 @@ use FindBin;
 use lib "$FindBin::Bin/../../../lib/";
 
 use CRI::Test;
+use CRI::Utils qw(
+                   list2array
+                 );
 
 plan('no_plan'); 
 setDesc('Configure Torque Server');
@@ -24,22 +27,19 @@ my %grep;
 
 
 # server_priv/nodes file
-$nodes_cfg = $props->get_property('Torque.Home.Dir') . "server_priv/nodes";
+$nodes_cfg = $props->get_property('Torque.Home.Dir') . "/server_priv/nodes";
 
 # Local TORQUE node
-%hostname_cmd = runCommand("hostname -s", "Getting hostname IP address");
-$hostname     = $hostname_cmd{'STDOUT'};
-chomp($hostname);
-
-$node_args    = $props->get_property('torque.node.args');
+$hostname  = $props->get_property('Test.Host');
+$node_args = $props->get_property('torque.node.args');
 
 # Remote TORQUE nodes
 $nodes_str = $props->get_property('Torque.Remote.Nodes');
-@nodes     = split (/,|\s+|,\s+/, $nodes_str);
+@nodes     = list2array($nodes_str);
 
 # Create/edit the server_priv/nodes file for the server
-ok(open(NODES, ">$nodes_cfg"), 'Opening Torque server config file') 
-  or die("Couldn't open torque server config file");
+ok(open(NODES, ">$nodes_cfg"), "Opening Torque server config file '$nodes_cfg'") 
+  or die("Couldn't open torque server config file: $!");
 
 # Add the local torque node
 print NODES "$hostname $node_args\n";
@@ -52,12 +52,12 @@ foreach my $node (@nodes)
 
   } # END foreach my $node (@nodes)
 
-ok('close NODES','Closing Torque server config file') 
+ok(close NODES, 'Closing Torque server config file') 
   or die("Couldn't close torque server config file");
 
 # Check the configuration file for the localhost
 $grep_cmd = "grep $hostname $nodes_cfg";
-%grep = runCommand($grep_cmd);
+%grep     = runCommand($grep_cmd);
 ok($grep{ 'EXIT_CODE' } == 0, "Checking exit code of '$grep_cmd'")
   or die("Server config is not correct!");
 
@@ -66,7 +66,7 @@ foreach my $node (@nodes)
   {
 
   $grep_cmd = "grep $node $nodes_cfg";
-  %grep = runCommand($grep_cmd);
+  %grep     = runCommand($grep_cmd);
   ok($grep{ 'EXIT_CODE' } == 0, "Checking exit code of '$grep_cmd'")
     or die("Server config is not correct!");
 
