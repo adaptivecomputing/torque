@@ -40,13 +40,13 @@ my $user2_bashrc_loc    = "/home/$user2/.bashrc";
 my $data_conf_loc       = "/etc/clustertest.conf";
 my $data_props_loc      = "/tmp/clustertest.props";
 my $test_host           = hostname();
-my $log_dir             = "/tmp/testoutput";
-my $torque_home_dir     = "/usr/test/torque";
-my $moab_home_dir       = "/usr/test/moab";
+my $log_dir             = "/tmp/testoutput/";
+my $torque_home_dir     = "/usr/test/torque/";
+my $moab_home_dir       = "/usr/test/moab/";
 my $torque_remote_nodes = '';
 my $moab_remote_nodes   = '';
-my $moab_test_prefix    = '/usr/local/qatests/src/moab';
-my $torque_test_prefix  = '/usr/local/qatests/src/torque';
+my $moab_test_prefix    = '/usr/local/qatests/src/moab/';
+my $torque_test_prefix  = '/usr/local/qatests/src/torque/';
 
 # Template props loc
 my $props_loc = resolve_path("$FindBin::Bin/../etc/props/torque.props");
