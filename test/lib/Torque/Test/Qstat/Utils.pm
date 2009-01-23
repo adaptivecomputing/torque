@@ -767,7 +767,8 @@ sub list_queue_info #($)
     or return %queue_info;
 
   # Parse out the information
-  %queue_info = parse_qstat_Q_f1($output);
+  $output = $qstat{ 'STDOUT' };
+  %queue_info = parse_qstat_Q_f_1($output);
 
   return %queue_info;
 
