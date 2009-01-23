@@ -11,7 +11,7 @@ use lib "$FindBin::Bin/../../../../../lib/";
 use CRI::Test;
 use CRI::Utils                 qw(
                                     resolve_path
-                                 )
+                                 );
 use Torque::Job::Ctrl          qw( 
                                     submitCheckpointJob
                                     runJobs

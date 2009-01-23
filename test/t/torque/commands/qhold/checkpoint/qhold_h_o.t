@@ -46,7 +46,7 @@ my %job_info;
 $params = {
             'user'       => $props->get_property('torque.user.one'),
             'torque_bin' => $props->get_property('Torque.Home.Dir') . 'bin/',
-            'app'        => resolve_path("$FindBin::Bin/../../../test_programs/test.pl'
+            'app'        => resolve_path("$FindBin::Bin/../../../test_programs/test.pl")
           };
 
 $job_id = submitCheckpointJob($params);
