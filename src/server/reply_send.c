@@ -117,6 +117,7 @@ extern char *msg_system;
 #ifndef PBS_MOM
 extern tlist_head task_list_event;
 extern tlist_head task_list_immed;
+extern int LOGLEVEL;
 #endif /* PBS_MOM */
 
 extern struct pbs_err_to_txt pbs_err_to_txt[];
@@ -284,6 +285,18 @@ int reply_send(
 #endif
       rc = dis_reply_write(sfds, &request->rq_reply);
 #ifndef PBS_MOM
+      if (LOGLEVEL >= 7)
+        {
+        sprintf(log_buffer, "Reply sent for request type %s on socket %d",
+          reqtype_to_txt(request->rq_type),
+          sfds);
+
+        log_record(
+          PBSEVENT_JOB,
+          PBS_EVENTCLASS_JOB,
+          id,
+          log_buffer);
+        }
 #ifdef AUTORUN_JOBS
       }
 
