@@ -4,14 +4,14 @@ use strict;
 use warnings;
 
 use FindBin;
-use lib "$FindBin::Bin/../../lib/";
+use lib "$FindBin::RealBin/../../lib/";
 
 use CRI::Test;
 
 plan('no_plan');
 setDesc("RELEASE Torque Regression Tests (NIGHTLY)");
 
-my $testbase = $FindBin::Bin;
+my $testbase = $FindBin::RealBin;
 
 
 execute_tests(
