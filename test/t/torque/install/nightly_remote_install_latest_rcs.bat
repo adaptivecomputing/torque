@@ -7,9 +7,8 @@ use FindBin;
 use lib "$FindBin::Bin/../../../lib/";
 
 use CRI::Test;
-
 plan('no_plan');
-setDesc('Install TORQUE from subversion to use BLCR checkpointing');
+setDesc('Install Torque from subversion to use BLCR checkpointing on a remote node (NIGHTLY)');
 
 my $testbase = $FindBin::Bin;
 
@@ -21,9 +20,6 @@ execute_tests(
 "$testbase/setup.t",
 "$testbase/config_mom.t",
 "$testbase/cp_chkpt_scripts.t",
-"$testbase/remote_install_torques.t",
-"$testbase/config_server.t",
 "$testbase/create_torque_conf.t",
 "$testbase/check_blcr.t",
-"$testbase/startup.t",
 );

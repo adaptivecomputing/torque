@@ -6,16 +6,16 @@ use warnings;
 use FindBin;
 use lib "$FindBin::Bin/../../lib/";
 
-
 use CRI::Test;
 
 plan('no_plan');
-setDesc("Release Torque Regression Tests");
+setDesc("RELEASE Torque Regression Tests (NIGHTLY)");
 
 my $testbase = $FindBin::Bin;
 
+
 execute_tests(
-    "$testbase/reinstall.bat",
+    "$testbase/nightly_reinstall.bat",
 ) or die("Torque reinstall test failed!");
 
 execute_tests(
