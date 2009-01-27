@@ -306,7 +306,7 @@ void req_checkpointjob(
     }
   else
     {
-    /* everything went well, may need to update the job state */
+    /* Job does not have checkpointing enabled, so reject the request */
 
     LOG_EVENT(
       PBSEVENT_JOB,
