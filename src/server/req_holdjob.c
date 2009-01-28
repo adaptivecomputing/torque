@@ -234,6 +234,25 @@ void req_holdjob(
         pjob->ji_qs.ji_jobid, log_buffer);
       }
     }
+#ifdef ENABLE_BLCR
+  else if (pjob->ji_qs.ji_state == JOB_STATE_RUNNING)
+    {
+    /*
+     * This system is configured with BLCR checkpointing to be used,
+     * but this Running job does not have checkpointing enabled,
+     * so we reject the request
+     */
+
+    LOG_EVENT(
+      PBSEVENT_JOB,
+      PBS_EVENTCLASS_JOB,
+      pjob->ji_qs.ji_jobid,
+      log_buffer);
+
+    req_reject(PBSE_IVALREQ, 0, preq, NULL,
+        "job not held since checkpointing is expected but not enabled for job");
+    }
+#endif
   else
     {
     /* everything went well, may need to update the job state */
