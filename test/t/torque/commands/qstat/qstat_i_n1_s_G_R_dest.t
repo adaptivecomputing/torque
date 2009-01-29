@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr//bin/perl
 
 use strict;
 use warnings;
@@ -40,7 +40,7 @@ my $job_params;
 
 my $queue      = $props->get_property( 'torque.queue.one'   );
 my $user       = $props->get_property( 'torque.user.one'    );
-my $torque_bin = $props->get_property( 'Torque.Home.Dir' ) . 'bin/';
+my $torque_bin = $props->get_property( 'Torque.Home.Dir' ) . '/bin/';
 
 my @attributes = qw(
                      job_id

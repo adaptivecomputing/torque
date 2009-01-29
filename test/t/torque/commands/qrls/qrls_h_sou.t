@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr//bin/perl
 
 use strict;
 use warnings;
@@ -47,7 +47,7 @@ my $rls_type = 'n';
 ###############################################################################
 $job_params = {
                'user'       => $user1,
-               'torque_bin' => $props->get_property('Torque.Home.Dir') . 'bin/',
+               'torque_bin' => $props->get_property('Torque.Home.Dir') . '/bin/',
                'app'        => resolve_path("$FindBin::Bin/../../test_programs/test.pl")
               };
 

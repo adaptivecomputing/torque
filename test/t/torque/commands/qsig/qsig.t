@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr//bin/perl
 
 use strict;
 use warnings;
@@ -44,8 +44,7 @@ my %signals;
 
 my $user       = $props->get_property('torque.user.one');
 my $app        = resolve_path("$FindBin::Bin/../../test_programs/sig_trap.pl");
-my $torque_bin = $props->get_property('Torque.Home.Dir') . "bin/";
-my $spool_dir  = $props->get_property('Torque.Home.Dir') . "spool/";
+my $torque_bin = $props->get_property('Torque.Home.Dir') . "/bin/";
 
 ###############################################################################
 # Submit a job

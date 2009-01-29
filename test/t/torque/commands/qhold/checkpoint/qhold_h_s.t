@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr//bin/perl
 
 use strict;
 use warnings;
@@ -45,7 +45,7 @@ my %job_info;
 # Submit a job
 $params = {
             'user'       => $props->get_property('torque.user.one'),
-            'torque_bin' => $props->get_property('Torque.Home.Dir') . 'bin/',
+            'torque_bin' => $props->get_property('Torque.Home.Dir') . '/bin/',
             'app'        => resolve_path("$FindBin::Bin/../../../test_programs/test.pl")
           };
 

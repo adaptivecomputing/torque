@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr//bin/perl
 
 use strict;
 use warnings;
@@ -42,7 +42,7 @@ my $checkpoint_path;
 # Submit a job
 my $params = {
               'user'       => $props->get_property('torque.user.one'),
-              'torque_bin' => $props->get_property('Torque.Home.Dir') . 'bin/',
+              'torque_bin' => $props->get_property('Torque.Home.Dir') . '/bin/',
               'app'        => resolve_path("$FindBin::Bin/../../test_programs/test.pl")
              };
 
@@ -94,7 +94,7 @@ ok($checkpoint_name  =~ /${\CHECKPOINT_FILE_NAME}/,  "Checking the 'checkpoint_n
 ok(exists $job_info{ $job_id }{ 'checkpoint_time' }, "Checking for the existence of the job attribute 'checkpoint_time'");
 
 # Check for the actual file 
-$checkpoint_path = $props->get_property('Torque.Home.Dir') . "checkpoint/${job_id}.CK/$checkpoint_name";
+$checkpoint_path = $props->get_property('Torque.Home.Dir') . "/checkpoint/${job_id}.CK/$checkpoint_name";
 ok(-e $checkpoint_path, "Checking that '$checkpoint_path' exists");
 
 # Delete the job
