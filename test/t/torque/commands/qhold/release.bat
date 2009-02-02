@@ -17,7 +17,7 @@ execute_tests("$testbase/setup.t")
 
 execute_tests(
               "$testbase/checkpoint/release.bat",
-              "$testbase/non-checkpoint/release.bat",
+#              "$testbase/non-checkpoint/release.bat",
 );
 
 execute_tests("$testbase/cleanup.t"); 
