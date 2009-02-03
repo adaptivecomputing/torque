@@ -16,5 +16,6 @@ my $testbase = $FindBin::Bin;
 
 execute_tests(
               "$testbase/shutdown.t",
-              "$testbase/make_uninstall.t"
+              "$testbase/make_uninstall.t",
+              "$testbase/rm_home.t",
              );
