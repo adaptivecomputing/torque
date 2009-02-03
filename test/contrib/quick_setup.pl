@@ -7,6 +7,7 @@ use FindBin;
 use lib "$FindBin::Bin/../lib";
 
 use Sys::Hostname;
+use CPAN;
 
 ###############################################################################
 # Variables
@@ -40,16 +41,17 @@ my $user2_bashrc_loc    = "/home/$user2/.bashrc";
 my $data_conf_loc       = "/etc/clustertest.conf";
 my $data_props_loc      = "/tmp/clustertest.props";
 my $test_host           = hostname();
-my $log_dir             = "/tmp/testoutput/";
-my $torque_home_dir     = "/usr/test/torque/";
-my $moab_home_dir       = "/usr/test/moab/";
+my $log_dir             = "/tmp/testoutput";
+my $torque_home_dir     = "/usr/test/torque";
+my $moab_home_dir       = "/usr/test/moab";
 my $torque_remote_nodes = '';
-my $moab_remote_nodes   = '';
-my $moab_test_prefix    = '/usr/local/qatests/src/moab/';
-my $torque_test_prefix  = '/usr/local/qatests/src/torque/';
+my $moabha_remote_nodes = '';
+my $moabgd_remote_nodes = '';
+my $moab_test_prefix    = '/usr/local/qatests/src/moab';
+my $torque_test_prefix  = '/usr/local/qatests/src/torque';
 
 # Template props loc
-my $props_loc = resolve_path("$FindBin::Bin/../etc/props/torque.props");
+my $props_loc = resolve_path("$FindBin::Bin/../etc/props/default.props");
 
 ###############################################################################
 # Check that the user is $root
@@ -108,8 +110,8 @@ if ($stdin =~ /${yes_regex}/i)
   $log_dir = $stdin
     unless $stdin eq '';
 
-  # Get the Data.Props.Dir
-  print "\nWhere is the Data.Props.Dir? [$data_props_loc] ";
+  # Get the Data.Props.Loc
+  print "\nWhere is the Data.Props.Loc? [$data_props_loc] ";
   $stdin = <STDIN>;
   chomp $stdin;
   $data_props_loc = $stdin
@@ -129,11 +131,18 @@ if ($stdin =~ /${yes_regex}/i)
   $torque_home_dir = $stdin
     unless $stdin eq '';
 
-  # Get the Moab.Remote.Nodes
-  print "\nWhere are the Moab.Remote.Nodes? This is a comma seperated list. [$moab_remote_nodes] ";
+  # Get the Moab.HA.Remote.Nodes
+  print "\nWhat are the Moab.HA.Remote.Nodes hostnames? This is a comma seperated list. [$moabha_remote_nodes] ";
   $stdin = <STDIN>;
   chomp $stdin;
-  $moab_remote_nodes = $stdin
+  $moabha_remote_nodes = $stdin
+    unless $stdin eq '';
+
+  # Get the Moab.Grid.Remote.Nodes
+  print "\nWhat are the Moab.Grid.Remote.Nodes hostnames? This is a comma seperated list. [$moabgd_remote_nodes] ";
+  $stdin = <STDIN>;
+  chomp $stdin;
+  $moabgd_remote_nodes = $stdin
     unless $stdin eq '';
 
   # Get the Torque.Remote.Nodes
@@ -163,7 +172,8 @@ Moab.Home.Dir=$moab_home_dir
 Torque.Home.Dir=$torque_home_dir
 
 # Remote nodes
-Moab.Remote.Nodes=$moab_remote_nodes
+Moab.HA.Remote.Nodes=$moabha_remote_nodes
+Moab.Grid.Remote.Nodes=$moabgd_remote_nodes
 Torque.Remote.Nodes=$torque_remote_nodes
 
 # These are for QA Testing Machines only
@@ -453,18 +463,18 @@ if ($stdin =~ /${yes_regex}/i)
   my $apt_update_cmd = "apt-get update";
   print "\nRunning '$apt_update_cmd'\n";
 
-  my $apt_update_result = `apt-get update`;
-  warn "$apt_update_cmd failed: $apt_update_result"
-    if $? != 0;
+  my $apt_update_result = system("apt-get update");
+  warn "$apt_update_cmd failed: $!"
+    if $apt_update_result != 0;
 
   foreach my $program (@programs)
     {
 
     my $apt_cmd = "apt-get install --assume-yes $program";
     print "Running '$apt_cmd'\n";
-    my $apt_result = `$apt_cmd`;
-    warn "$apt_cmd failed: $apt_result"
-      if $? != 0;
+    my $apt_result = system($apt_cmd);
+    warn "$apt_cmd failed: $!"
+      if $apt_result != 0;
 
     } # END foreach my $program (@programs)
 
@@ -481,11 +491,20 @@ else
 ###############################################################################
 # Install CPAN modules required by tests
 ###############################################################################
+
+# NOTE:  It is a good idea to include any module dependencies in this list.
+#        The module dependency listings sometimes don't give enough 
+#        information to CPAN::Module::Install
 my @modules = qw(
+                    IO::Pty
+                    IO::Tty
                     IPC::Run3
                     Test::More
                     Data::Properties
                     TAP::Harness
+                    XML::NamespaceSupport
+                    XML::SAX
+                    XML::LibXML::Common
                     XML::LibXML
                     XML::Simple
                     Proc::Daemon
@@ -516,13 +535,10 @@ if ($stdin =~ /${yes_regex}/i)
   foreach my $module (@modules)
     {
    
-    my $cpan_cmd    = "cpan $module";
-    print "Running '$cpan_cmd'\n";
+    print "\nInstalling $module...\n";
 
-    my $cpan_result = `$cpan_cmd`;
-
-    warn "'$cpan_cmd' failed: $cpan_result"
-      if $? != 0;
+    my $cpan_obj = CPAN::Shell->expand('Module', $module);
+    $cpan_obj->install();
 
     } # END foreach my $module (@modules)
 
