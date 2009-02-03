@@ -10,6 +10,12 @@ use Sys::Hostname;
 use CPAN;
 
 ###############################################################################
+# Check the user
+###############################################################################
+die "Please run as root"
+  if $ENV{ 'USER' } ne 'root';
+
+###############################################################################
 # Variables
 ###############################################################################
 # General Variables
@@ -51,7 +57,7 @@ my $moab_test_prefix    = '/usr/local/qatests/src/moab';
 my $torque_test_prefix  = '/usr/local/qatests/src/torque';
 
 # Template props loc
-my $props_loc = resolve_path("$FindBin::Bin/../etc/props/default.props");
+my $props_loc = cleanup_path("$FindBin::Bin/../etc/props/default.props");
 
 ###############################################################################
 # Check that the user is $root
@@ -283,11 +289,11 @@ else
 ###############################################################################
 # Add binaries to /usr/bin
 ###############################################################################
-my $test_bin     = resolve_path("$FindBin::Bin/../bin");
-my $torque_bin   = "$torque_home_dir/bin";
-my $torque_sbin  = "$torque_home_dir/sbin";
-my $moab_bin     = "$moab_home_dir/bin";
-my $moab_sbin    = "$moab_home_dir/sbin";
+my $test_bin     = cleanup_path("$FindBin::Bin/../bin");
+my $torque_bin   = cleanup_path("$torque_home_dir/bin");
+my $torque_sbin  = cleanup_path("$torque_home_dir/sbin");
+my $moab_bin     = cleanup_path("$moab_home_dir/bin");
+my $moab_sbin    = cleanup_path("$moab_home_dir/sbin");
 
 my $path         = "$test_bin:$torque_bin:$torque_sbin:$moab_bin:$moab_sbin:\$PATH";
 my $path_export  = "export PATH=\"$path\"";
@@ -566,22 +572,45 @@ foreach my $step (sort keys %action_taken)
   } # END foreach my $step (sort keys %action_taken)
 
 ###############################################################################
-# resolve_path
+# $path = &cleanup_path($path)
 ###############################################################################
-sub resolve_path #($)
+#
+# Takes a path and appropriatly cleans it up.
+#
+# Will take a ../ and remove it and the coresponding directory#.
+# Also takes a ~ and replaces it with the value of $ENV{ 'HOME' }.
+# Finally replaces // with /.
+#
+###############################################################################
+sub cleanup_path #($)
   {
 
   my ($path) = @_;
 
+  my $reg_ex;
+
   # Remove ../ from the path the coresponding directories
-  my $reg_ex = '[^\/]+\/\.\.(\/)?';
-  while ($path =~ /${reg_ex}/)
+  $reg_ex = qr/[^\/]+\/\.\.(\/)?/;
+  while ($path =~ /$reg_ex/)
     {
 
-    $path =~ s/${reg_ex}//;   
+    $path =~ s/$reg_ex//;   
 
     } # END while ($path =~ /\.\./)
 
+  # Replace ~ with the home directory
+  my $home =  $ENV{ 'HOME' };
+  $path    =~ s/\~/${home}/g;
+
+  # Replace // with /
+  $reg_ex = qr/\/\//;
+  while ($path =~ /$reg_ex/)
+    {
+
+    $path =~ s/$reg_ex/\//g;
+
+    } # END while ($path =~ /$reg_ex/)
+
   return $path;
 
-  } # END sub resolve_path #($)
+  } # END sub cleanup_path #($)
