@@ -8,6 +8,7 @@ use lib "$FindBin::Bin/../../../../lib/";
 
 
 use CRI::Test;
+use CRI::Utils          qw( scp                    );
 
 use Torque::Test::Utils qw( run_and_check_cmd      );
 
@@ -144,7 +145,13 @@ foreach my $node (@remote_nodes)
   ok($ssh{ 'EXIT_CODE' } == 0, "Checking exit code of '$ssh_cp_cmd'");
 
   # Copy the new file
-  run_and_check_cmd("scp $mom_cfg_file $node:$mom_cfg_file");
+  my $scp_params = {
+                     "src"  => $mom_cfg_file,
+                     "dest" => "$node:$mom_cfg_file"
+                   };
+  my %scp        = scp($scp_params);
+  cmp_ok($scp{ 'EXIT_CODE' }, '==', 0, "Checking exit code of the scp command")
+    or diag("$scp{ 'STDERR' }");
 
 
   } # END foreach my $node (@nodes)
