@@ -2713,9 +2713,19 @@ int process_opts(
 
       case 'd':
 
-        if (optarg != NULL)
+        pc = optarg;
+
+        if ((optarg != NULL) && ((ptr = strchr(pc, ':')) != NULL))
           {
-          if (optarg[0] != '/')
+          /* a stage host was entered */
+          pc = ptr + 1;
+          ptr[0] = '\0';
+          set_attr(&attrib, ATTR_output_host, optarg);
+          }
+
+        if (pc != NULL)
+          {
+          if (pc[0] != '/')
             {
             /* make '-d' relative to current directory, not $HOME */
 
@@ -2742,7 +2752,7 @@ int process_opts(
               mypwd = tmpPWD;
               }
 
-            if ((strlen(mypwd) + strlen(optarg)) >= sizeof(PBS_InitDir))
+            if ((strlen(mypwd) + strlen(pc)) >= sizeof(PBS_InitDir))
               {
               fprintf(stderr, "qsub: -d arg is longer than %ld characters\n",
                       (long)sizeof(PBS_InitDir));
@@ -2753,11 +2763,11 @@ int process_opts(
             snprintf(PBS_InitDir, sizeof(PBS_InitDir), "%s/%s",
 
                      mypwd,
-                     optarg);
-            }  /* END if (optarg[0] != '/') */
+                     pc);
+            }  /* END if (pc[0] != '/') */
           else
             {
-            if (strlen(optarg) >= sizeof(PBS_InitDir))
+            if (strlen(pc) >= sizeof(PBS_InitDir))
               {
               fprintf(stderr, "qsub: -d arg is longer than %ld characters\n",
                       (long)sizeof(PBS_InitDir));
@@ -2765,8 +2775,8 @@ int process_opts(
               errflg++;
               }
 
-            strncpy(PBS_InitDir, optarg, sizeof(PBS_InitDir));
-            } /* end optarg[1] != '/' */
+            strncpy(PBS_InitDir, pc, sizeof(PBS_InitDir));
+            } /* end pc[1] != '/' */
 
           if (validate_path != 0)
             {
@@ -2775,14 +2785,15 @@ int process_opts(
             if (chdir(PBS_InitDir) == -1)
               {
               fprintf(stderr, "qsub: cannot chdir to '%s' errno: %d (%s)\n",
-                      optarg,
+                      pc,
                       errno,
                       strerror(errno));
 
               errflg++;
               }
             }
-          }    /* END if (optarg != NULL) */
+
+          }    /* END if (pc != NULL) */
         else
           {
           fprintf(stderr, "qsub: illegal -d value\n");

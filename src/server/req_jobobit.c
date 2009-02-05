@@ -172,6 +172,64 @@ static char *setup_from(
 
 
 
+/*
+ * setup_to - setup the "to" name for a standard job file:
+ * output, error
+ */
+
+static char *setup_to(
+
+  job                 *pjob,   /* I */
+  enum job_atr         ati) /* JOB_ATR_ output or error path */
+
+  {
+  char *to;
+  char *ptr;
+
+  attribute *pathattr = &pjob->ji_wattr[(int)ati];
+
+  if ((pjob->ji_wattr[(int)JOB_ATR_output_host].at_flags & ATR_VFLAG_SET) &&
+      ((ptr = strchr(pathattr->at_val.at_str, ':')) != NULL))
+    {
+    /* replace the host name with the output host name */
+
+    to = (char *)malloc(strlen(ptr) +
+        strlen(pjob->ji_wattr[(int)JOB_ATR_output_host].at_val.at_str) + 1);
+
+    if (to != NULL)
+      {
+      strcpy(to, pjob->ji_wattr[(int)JOB_ATR_output_host].at_val.at_str);
+      strcat(to, ptr);
+      }
+
+    if (LOGLEVEL >= 7)
+      {
+      sprintf(log_buffer,"setup_to: output_host conversion from (%s) to (%s)\n",
+          pathattr->at_val.at_str,
+          to);
+      log_event(
+        PBSEVENT_JOB,
+        PBS_EVENTCLASS_JOB,
+        pjob->ji_qs.ji_jobid,
+        log_buffer);
+      }
+    }
+  else
+    {
+    /* go with the supplied name */
+
+    to = (char *)malloc(strlen(pathattr->at_val.at_str) + 1);
+
+    if (to != NULL)
+      {
+      strcpy(to, pathattr->at_val.at_str);
+      }
+    }
+
+  return(to);
+  }  /* END setup_to() */
+
+
 
 
 /*
@@ -451,26 +509,22 @@ static struct batch_request *cpy_stdfile(
     return(preq);
     }
 
-  /* go with the supplied name */
+  /* build up the name used by MOM as the to name */
 
-  to = (char *)malloc(strlen(pathattr->at_val.at_str) + 1);
+  to = setup_to(pjob, ati);
 
   if (to == NULL)
     {
-    /* FAILURE */
-
-    /* cannot allocate memory for request this one */
+    /* FAILURE - could not allocate memory for 'to' request */
 
     log_event(
       PBSEVENT_ERROR | PBSEVENT_JOB,
       PBS_EVENTCLASS_JOB,
       pjob->ji_qs.ji_jobid,
-      "ERROR:  cannot allocate 'to' memory in cpy_stdfile");
+      "ERROR:  cannot allocate 'to' memory for from in cpy_stdfile");
 
     return(preq);
     }
-
-  strcpy(to, pathattr->at_val.at_str);
 
   /* build up the name used by MOM as the from name */
 
@@ -478,7 +532,7 @@ static struct batch_request *cpy_stdfile(
 
   if (from == NULL)
     {
-    /* FAILURE */
+    /* FAILURE - could not allocate memory for 'from' request */
 
     log_event(
       PBSEVENT_ERROR | PBSEVENT_JOB,

@@ -1299,6 +1299,9 @@ const char *TJobAttr[] =
   "start_count",
   "chkptdir",
   "chkptname",
+  "restartstat",
+  "faulttol",
+  "stagehost",
 #ifdef ENABLE_CSA
   "pagg_id",
 #endif /* ENABLE_CSA */

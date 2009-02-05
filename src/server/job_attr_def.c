@@ -854,6 +854,19 @@ attribute_def job_attr_def[] =
     PARENT_TYPE_JOB
   },
 
+  /* JOB_ATR_output_host */
+  { ATTR_output_host,  /* "output_host" */
+    decode_str,
+    encode_str,
+    set_str,
+    comp_str,
+    free_str,
+    NULL_FUNC,
+    READ_WRITE | ATR_DFLAG_SvRD | ATR_DFLAG_Creat,
+    ATR_TYPE_STR,
+    PARENT_TYPE_JOB
+  },
+
 #ifdef ENABLE_CSA
   /* JOB_ATR_pagg_id */
   { ATTR_pagg,  /* "pagg_id" */

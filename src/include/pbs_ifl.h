@@ -133,6 +133,7 @@
 #define ATTR_inter    "interactive"
 #define ATTR_stagein  "stagein"
 #define ATTR_stageout "stageout"
+#define ATTR_output_host "output_host"
 
 /* additional job and general attribute names */
 
