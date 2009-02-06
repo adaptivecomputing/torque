@@ -83,7 +83,7 @@ pbs_server \- start a pbs batch server
 .SH SYNOPSIS
 pbs_server\ [\-a active] [\-d\ config_path\^]\ [\-p\ port\^] [\^\-A\ acctfile\^]
 [\^\-L\ logfile\^] [\-M\ mom_port\^] [\-R\ momRPP_port] [\-S\ scheduler_port\^]
-[\-h\ hostname\^] [\-t\ type\^]
+[\-H\ hostname\^] [\-t\ type\^]
 .SH DESCRIPTION
 The
 .B pbs_server
@@ -153,7 +153,7 @@ Specifies the port number to which the server should connect when
 contacting the Scheduler.  The option argument,
 .Ar scheduler_conn ,
 is of the same syntax as under the \-M option.
-.IP "\-h hostname"
+.IP "\-H hostname"
 Causes the server to start under a different hostname as obtained from
 gethostname(2). Useful for servers with multiple network interfaces to support
 connections from clients over an interface that has a hostname assigned
