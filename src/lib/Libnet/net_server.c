@@ -245,7 +245,10 @@ int init_network(
 
   struct sockaddr_un unsocname;
   int unixsocket;
+  memset(&unsocname, 0, sizeof(unsocname));
 #endif
+ 
+  memset(&socname, 0, sizeof(socname));
 
   if (initialized == 0)
     {

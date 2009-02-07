@@ -202,6 +202,9 @@ int client_to_svr(
 
   errno = 0;
 
+  memset(&local, 0, sizeof(local));
+  memset(&remote, 0, sizeof(remote));
+
   local.sin_family      = AF_INET;
 
   local.sin_addr.s_addr = 0;
