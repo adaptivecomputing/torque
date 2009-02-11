@@ -283,7 +283,6 @@ enum job_atr
   JOB_ATR_checkpoint_time,   /* timestamp of start of last checkpoint */
   JOB_ATR_checkpoint_restart_status,   /* checkpoint restart status */
   JOB_ATR_fault_tolerant, /* indicates if a job should keep going if it looses a sister */
-  JOB_ATR_output_host,  /* indicates host where OU / ER files are to be returned to */
 #ifdef ENABLE_CSA
   JOB_ATR_pagg_id,
 #endif /* ENABLE_CSA */
