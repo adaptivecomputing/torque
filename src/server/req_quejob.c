@@ -641,7 +641,8 @@ void req_quejob(
 
     /* if JOB_ATR_outpath/JOB_ATR_errpath not set, set default */
 
-    if (!(pj->ji_wattr[(int)JOB_ATR_outpath].at_flags & ATR_VFLAG_SET))
+    if (!(pj->ji_wattr[(int)JOB_ATR_outpath].at_flags & ATR_VFLAG_SET) ||
+        (((pj->ji_wattr[(int)JOB_ATR_outpath].at_val.at_str[strlen(pj->ji_wattr[(int)JOB_ATR_outpath].at_val.at_str) - 1] == ':'))))
       {
       pj->ji_wattr[(int)JOB_ATR_outpath].at_val.at_str =
         prefix_std_file(pj, (int)'o');
@@ -660,7 +661,8 @@ void req_quejob(
 
 #endif
 
-    if (!(pj->ji_wattr[(int)JOB_ATR_errpath].at_flags & ATR_VFLAG_SET))
+    if (!(pj->ji_wattr[(int)JOB_ATR_errpath].at_flags & ATR_VFLAG_SET) ||
+        (((pj->ji_wattr[(int)JOB_ATR_errpath].at_val.at_str[strlen(pj->ji_wattr[(int)JOB_ATR_errpath].at_val.at_str) - 1] == ':'))))
       {
       pj->ji_wattr[(int)JOB_ATR_errpath].at_val.at_str =
         prefix_std_file(pj, (int)'e');

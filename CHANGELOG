@@ -39,6 +39,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature
   b - fixes for pbs_moms updating of comment and checkpoint name and time 
   e - change so we can reject hold requests on running jobs that do not have
       checkpoint enabled if system was configured with --enable-blcr
+  e - change to qsub so only the host name can be specified on the -e/-o options
 
 2.3.6
   b - change back to not sending status updates until we get cluster addr message

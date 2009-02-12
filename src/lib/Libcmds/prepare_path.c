@@ -196,9 +196,14 @@ int prepare_path(
 
   if (strlen(path_name) == 0)
     {
-    /* FAILURE */
+    /* Accept just host name for path */
 
-    return(1);
+    if (host_given != NULL)
+      {
+      strcpy(path_out, host_name);
+      strcat(path_out, ":");
+      }
+    return(3);
     }
 
   /* get full host name */

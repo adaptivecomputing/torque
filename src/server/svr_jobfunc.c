@@ -1708,6 +1708,30 @@ char *prefix_std_file(
 
   if (qsubhost != NULL)
     {
+
+    /* If just the host name portion was specified
+     * then we use it instead of qsubhost
+     */
+    
+    if ((key == (int)'e') &&
+        (pjob->ji_wattr[(int)JOB_ATR_errpath].at_flags & ATR_VFLAG_SET) &&
+        (pjob->ji_wattr[(int)JOB_ATR_errpath].at_val.at_str[strlen(pjob->ji_wattr[(int)JOB_ATR_errpath].at_val.at_str) - 1] == ':'))
+      {
+      
+      pjob->ji_wattr[(int)JOB_ATR_errpath].at_val.at_str[strlen(pjob->ji_wattr[(int)JOB_ATR_errpath].at_val.at_str) - 1] = '\0';
+      qsubhost = pjob->ji_wattr[(int)JOB_ATR_errpath].at_val.at_str;
+      
+      }
+    else if ((key == (int)'o') && 
+        (pjob->ji_wattr[(int)JOB_ATR_outpath].at_flags & ATR_VFLAG_SET) &&
+        (pjob->ji_wattr[(int)JOB_ATR_outpath].at_val.at_str[strlen(pjob->ji_wattr[(int)JOB_ATR_outpath].at_val.at_str) - 1] == ':'))
+      {
+      
+      pjob->ji_wattr[(int)JOB_ATR_outpath].at_val.at_str[strlen(pjob->ji_wattr[(int)JOB_ATR_outpath].at_val.at_str) - 1] = '\0';
+      qsubhost = pjob->ji_wattr[(int)JOB_ATR_outpath].at_val.at_str;
+      
+      }
+
     len = strlen(qsubhost) +
           strlen(pjob->ji_wattr[(int)JOB_ATR_jobname].at_val.at_str) +
           PBS_MAXSEQNUM +

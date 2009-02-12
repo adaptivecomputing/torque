@@ -2811,9 +2811,11 @@ int process_opts(
 
         if_cmd_line(e_opt)
           {
+          int rc = 0;
           e_opt = passet;
 
-          if (prepare_path(optarg, path_out) == 0)
+          rc = prepare_path(optarg, path_out);
+          if ((rc == 0) || (rc == 3))
             {
             set_attr(&attrib, ATTR_e, path_out);
             }
@@ -3086,9 +3088,11 @@ int process_opts(
 
         if_cmd_line(o_opt)
           {
+          int rc = 0;
           o_opt = passet;
 
-          if (prepare_path(optarg, path_out) == 0)
+          rc = prepare_path(optarg, path_out);
+          if ((rc == 0) || (rc == 3))
             {
             set_attr(&attrib, ATTR_o, path_out);
             }

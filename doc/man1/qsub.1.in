@@ -334,7 +334,7 @@ The
 .Ar path
 argument is of the form:
 .br
-.Ty "\ \ \ \ [hostname:]path_name"
+.Ty "\ \ \ \ [hostname:][path_name]"
 .br
 where 
 .Ty hostname
@@ -358,15 +358,20 @@ to the user's home directory on the \fBhostname\fP system.
 .IP \fBpath_name\fP
 Where path_name specifies an absolute path name, then the qsub will supply
 the name of the host on which it is executing for the
-.Ar hostname .
+.Ar hostname
 .IP \fBhostname:path_name\fP
 Where path_name specifies an absolute path name, the path will be used as
 specified.
+.Ar hostname .
+.IP \fBhostname:\fP
+Where hostname specifies the name of the host that the file should be returned
+to. The path will be the default file name.
 .RE
 .IP
 If the
 .Ar \-e
-option is not specified, the default file name for the standard error stream
+option is not specified or the \fBpath_name\fP is not specified, the default file
+name for the standard error stream
 will be used.  The default name has the following form:
 .br
 \ \ \ \ \fBjob_name.esequence_number\fP
@@ -620,7 +625,7 @@ The
 .Ar path
 argument is of the form:
 .br
-.Ty "\ \ \ \ [hostname:]path_name"
+.Ty "\ \ \ \ [hostname:][path_name]"
 .br
 where 
 .Ty hostname
@@ -644,15 +649,20 @@ to the user's home directory on the \fBhostname\fP system.
 .IP \fBpath_name\fP
 Where path_name specifies an absolute path name, then the qsub will supply
 the name of the host on which it is executing for the
-.Ar hostname .
+.Ar hostname
 .IP \fBhostname:path_name\fP
 Where path_name specifies an absolute path name, the path will be used as
 specified.
+.Ar hostname .
+.IP \fBhostname:\fP
+Where hostname specifies the name of the host that the file should be returned
+to. The path will be the default file name.
 .RE
 .IP
 If the
 .Ar \-o
-option is not specified, the default file name for the standard output stream
+option is not specified or the \fBpath_name\fP is not specified, the default file
+name for the standard output stream
 will be used.  The default name has the following form:
 .br
 \ \ \ \ \fBjob_name.osequence_number\fP
