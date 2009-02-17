@@ -32,7 +32,7 @@ execute_tests(
     "$testbase/pbsnodes_s_q.t",
     "$testbase/pbsnodes_x_q.t",
     "$testbase/pbsnodes_l_n.t",
-    "$testbase/pbsnodes_o_N.t",
+    "$testbase/pbsnodes_o_cN.t",
     "$testbase/pbsnodes_s_a.t",
     "$testbase/pbsnodes_s_c.t",
     "$testbase/pbsnodes_s_l.t",

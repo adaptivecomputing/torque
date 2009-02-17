@@ -20,7 +20,7 @@ execute_tests(
               "$testbase/qdel.t",
               "$testbase/qdel_p.t",
               "$testbase/qdel_m.t",
-              "$testbase/qdel_W.t",
+              "$testbase/qdel_cW.t",
 );
 
 execute_tests("$testbase/cleanup.t"); 

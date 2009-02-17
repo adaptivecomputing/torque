@@ -18,7 +18,7 @@ execute_tests("$testbase/setup.t")
 
 execute_tests(
               "$testbase/qrun.t",
-              "$testbase/qrun_H.t",
+              "$testbase/qrun_cH.t",
 );
 
 execute_tests("$testbase/cleanup.t");
