@@ -505,7 +505,7 @@ resource_def svr_resc_def_const[] =
     comp_size,
     free_null,
     NULL_FUNC,
-    READ_WRITE | ATR_DFLAG_MOM | ATR_DFLAG_ALTRUN,
+    READ_WRITE,
     ATR_TYPE_SIZE
   },
   { "srfs_tmp",   /* SRFS TMPDIR allocation */

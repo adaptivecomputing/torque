@@ -11,9 +11,8 @@ use strict;
 use Sys::Syslog;
 
 # Customize the following script variables
-# Customize the PATH to include location of blcr checkpoint commands
-# (e.g. cr_checkpoint) and torque client commands (e.g. qrls),
-$ENV{PATH} .= ":/usr/local/bin:/opt/torque/bin";
+# Customize the PATH to include location of blcr cr_checkpoint command
+$ENV{PATH} .= ":/usr/local/bin";
 my $logLevel = 3; # 0 = none, 1 = fail, 2 = info, 3 = debug
 
 logPrint(2, "Invoked: $0 " . join(' ', @ARGV) . "\n");
