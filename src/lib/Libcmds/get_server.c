@@ -115,7 +115,7 @@
  *  server.  A client identifies the default server by  (a)  the
  *  setting  of  the environment variable PBS_DEFAULT which con-
  *  tains a destination, or (b) the  destination  in  the  batch
- *  administrator established file {PBS_DIR}/default_destn.
+ *  administrator established file {PBS_DIR}/server_name.
  * ------------------------------------
  *
  * Takes a job_id_in string as input, calls parse_jobid to separate
@@ -246,14 +246,22 @@ int get_server(
 
   if (notNULL(parent_server))
     {
-    if (get_fullhostname(parent_server, host_server, PBS_MAXSERVERNAME, NULL) != 0)
+    if (notNULL(current_server))
       {
-      /* FAILURE */
-
-      return(1);
+      /* parent_server might not be resolvable if current_server specified */
+      strcat(job_id_out, parent_server);
       }
+    else
+      {
+      if (get_fullhostname(parent_server, host_server, PBS_MAXSERVERNAME, NULL) != 0)
+        {
+        /* FAILURE */
 
-    strcat(job_id_out, host_server);
+        return(1);
+        }
+
+      strcat(job_id_out, host_server);
+      }
 
     if ((c = strchr(parent_server, ':')) != 0)
       {
