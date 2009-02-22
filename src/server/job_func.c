@@ -528,7 +528,7 @@ void job_free(
 
 job *job_clone(
 
-  job *poldjob, /* I */  /* job to clone */
+  job *template_job, /* I */  /* job to clone */
   int  taskid)  /* I */
 
   {
@@ -580,13 +580,13 @@ job *job_clone(
 
   /* copy the fixed size quick save information */
 
-  memcpy(&pnewjob->ji_qs, &poldjob->ji_qs, sizeof(struct jobfix));
+  memcpy(&pnewjob->ji_qs, &template_job->ji_qs, sizeof(struct jobfix));
 
   /* pnewjob->ji_qs.ji_arrayid = taskid; */
 
   /* find the job id for the cloned job */
 
-  oldid = strdup(poldjob->ji_qs.ji_jobid);
+  oldid = strdup(template_job->ji_qs.ji_jobid);
 
   if (oldid == NULL)
     {
@@ -674,18 +674,18 @@ job *job_clone(
 
   for (i = 0; i < JOB_ATR_LAST; i++)
     {
-    if (poldjob->ji_wattr[i].at_flags & ATR_VFLAG_SET)
+    if (template_job->ji_wattr[i].at_flags & ATR_VFLAG_SET)
       {
       if ((i == JOB_ATR_errpath) || (i == JOB_ATR_outpath) || (i == JOB_ATR_jobname))
         {
         /* modify the errpath and outpath */
 
-        slen = strlen(poldjob->ji_wattr[i].at_val.at_str);
+        slen = strlen(template_job->ji_wattr[i].at_val.at_str);
 
         tmpstr = (char*)malloc(sizeof(char) * (slen + PBS_MAXJOBARRAYLEN + 1));
 
         sprintf(tmpstr, "%s-%d",
-                poldjob->ji_wattr[i].at_val.at_str,
+                template_job->ji_wattr[i].at_val.at_str,
                 taskid);
 
         clear_attr(&tempattr, &job_attr_def[i]);
@@ -709,7 +709,7 @@ job *job_clone(
         {
         job_attr_def[i].at_set(
           &(pnewjob->ji_wattr[i]),
-          &(poldjob->ji_wattr[i]),
+          &(template_job->ji_wattr[i]),
           SET);
         }
       }
@@ -744,7 +744,7 @@ job *job_clone(
   job_attr_def[(int)JOB_ATR_variables].at_free(&tempattr);
 
   /* we need to link the cloned job into the array task list */
-  pa = get_array(poldjob->ji_qs.ji_jobid);
+  pa = get_array(template_job->ji_qs.ji_jobid);
 
   CLEAR_LINK(pnewjob->ji_arrayjobs);
 
