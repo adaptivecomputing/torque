@@ -35,14 +35,15 @@ typedef struct
 
 struct job_array
   {
-  list_link all_arrays;
-  tlist_head array_alljobs;
-  tlist_head request_tokens;
+  list_link all_arrays;      /* node in server's linked list of all arrays */
+  tlist_head array_alljobs;  /* head of linked list of all jobs in this array */
+  tlist_head request_tokens; /* head of linked list of request tokens, used 
+                                during cloning */
 
-  int jobs_recovered;
+  int jobs_recovered; /* on server restart we track the number of array tasks
+                         that have been recovered */
 
   /* this info is saved in the array file */
-
   struct array_info
     {
     int  struct_version;
