@@ -639,15 +639,30 @@ void add_conn(
 
 #ifndef NOPRIVPORTS
 
-  if (socktype == PBS_SOCK_INET && port < IPPORT_RESERVED)
+  if ((socktype == PBS_SOCK_INET) && (port < IPPORT_RESERVED))
+    {
     svr_conn[sock].cn_authen = PBS_NET_CONN_FROM_PRIVIL;
+    }
   else
+    {
+    /* AF_UNIX sockets */
     svr_conn[sock].cn_authen = 0;
+    }
 
 #else /* !NOPRIVPORTS */
-  svr_conn[sock].cn_authen = PBS_NET_CONN_FROM_PRIVIL;
 
-#endif /* NOPRIVPORTS */
+  if (socktype == PBS_SOCK_INET)
+    {
+    /* All TCP connections are privileged */
+    svr_conn[sock].cn_authen = PBS_NET_CONN_FROM_PRIVIL;
+    }
+  else
+    {
+    /* AF_UNIX sockets */
+    svr_conn[sock].cn_authen = 0;
+    }
+
+#endif /* !NOPRIVPORTS */
 
   return;
   }  /* END add_conn() */
