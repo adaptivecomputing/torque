@@ -532,8 +532,10 @@ static int array_request_parse_token(char *str, int *start, int *end)
   idx = index(str, '-');
   ridx = rindex(str, '-');
 
+  /* token is not a range, parse it as a single task id */
   if (idx == NULL)
     {
+    /* make sure it is a number...*/
     if (!is_num(str))
       {
       start_l = -1;
@@ -541,15 +543,18 @@ static int array_request_parse_token(char *str, int *start, int *end)
       }
     else
       {
+      /* token is a number, set start_l and end_l to the value */ 
       start_l = strtol(str, NULL, 10);
       end_l = start_l;
       }
     }
+  /* index and rindex found the same '-' character, this is a range */
   else if (idx == ridx)
     {
     *idx = '\0';
     idx++;
 
+    /* check for an invalid range */
     if (!is_num(str) || !is_num(idx))
       {
       start_l = -1;
@@ -557,23 +562,30 @@ static int array_request_parse_token(char *str, int *start, int *end)
       }
     else
       {
+      /* both sides of the range were numbers so we set start_l and end_l
+         we will check later to make sure that the range is "good" */
       start_l = strtol(str, NULL, 10);
       end_l = strtol(idx, NULL, 10);
       }
     }
+  /* index/rindex found different '-' characters, this can't be a good range */
   else
     {
     start_l = -1;
     end_l = -1;
     }
 
-  /* restore the string */
-  if (idx != NULL)
+  /* restore the string so this function is non-destructive to the token */
+  if (idx != NULL && idx == ridx)
     {
     idx--;
     *idx = '-';
     }
+    
 
+  /* make sure the start or end of the range is not out of the range for 
+     job array task IDs, and make sure that end_l is not less than start_l 
+     (it is OK for end_l to == start_l)*/
   if (start_l < 0 || start_l >= INT_MAX || end_l < 0 || end_l >= INT_MAX
       || start_l > PBS_MAXJOBARRAY || end_l > PBS_MAXJOBARRAY || end_l < start_l)
     {
@@ -583,6 +595,10 @@ static int array_request_parse_token(char *str, int *start, int *end)
     }
   else
     {
+    /* calculate the number of task IDs in the range, and cast the start_l and
+       end_l to ints when setting start and end (we already confirmed that 
+       start_l and end_l are > 0 and <= INT_MAX, so we will not under/overflow)
+      */
     num_ids = end_l - start_l + 1;
     *start = (int)start_l;
     *end   = (int)end_l;
