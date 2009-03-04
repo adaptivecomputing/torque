@@ -192,7 +192,9 @@ int client_to_svr(
   struct sockaddr_in remote;
   int                sock;
   unsigned short     tryport;
+#ifndef NOPRIVPORTS
   int                flags;
+#endif /* !NOPRIVPORTS */
   int                one = 1;
 
   int                trycount;
@@ -213,7 +215,9 @@ int client_to_svr(
 
   tryport = IPPORT_RESERVED - 1;
 
+#ifndef NOPRIVPORTS
 retry:  /* retry goto added (rentec) */
+#endif /* !NOPRIVPORTS */
 
   /* get socket */
 
