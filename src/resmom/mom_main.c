@@ -3833,6 +3833,8 @@ char *conf_res(
   child_len = 0;
   child_spot[0] = '\0';
 
+retryread:
+
   while ((len = read(fd, child_spot, ret_size - child_len)) > 0)
     {
     for (i = 0;i < len;i++)
@@ -3859,6 +3861,11 @@ char *conf_res(
 
   if (len == -1)
     {
+    if (errno == EINTR)
+      {
+      goto retryread;
+      }
+
     log_err(errno, id, "pipe read");
 
     sprintf(ret_string, "? %d",
