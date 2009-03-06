@@ -150,6 +150,7 @@ static char PBS_DPREFIX_DEFAULT[] = "#PBS";
 char PBS_Filter[256];
 char PBS_InitDir[256];
 char PBS_RootDir[256];
+char PBS_WorkDir[256];
 
 char xauth_path[256];
 char default_ckpt[256];
@@ -1080,7 +1081,10 @@ int set_job_env(
     len += strlen("PBS_O_ROOTDIR=") + strlen(PBS_RootDir) + 1;
     }
 
-  len += strlen("PBS_O_WORKDIR=") + 1;
+  if (PBS_WorkDir[0] != '\0')
+    {
+    len += strlen("PBS_O_WORKDIR=") + strlen(PBS_WorkDir) + 1;
+    }
 
   len += strlen("PBS_SERVER=") + 1;
 
@@ -1210,55 +1214,68 @@ int set_job_env(
   /* get current working directory, use $PWD if available, it is more */
   /* NFS automounter "friendly".  But must double check that is right */
 
-  s = job_env + strlen(job_env);
+  /* load work dir into env if specified */
 
-  strcat(job_env, ",PBS_O_WORKDIR=");
-
-  c = getenv("PWD");
-
-  if (c != NULL)
+  if (PBS_WorkDir[0] != '\0')
     {
+    /* load work dir into env */
 
-    struct stat statbuf;
-    dev_t dev;
-    ino_t ino;
+    strcat(job_env, ",PBS_O_WORKDIR=");
 
-    if (stat(c, &statbuf) < 0)
+    strcat(job_env, PBS_WorkDir);
+    }
+  else
+    {
+    s = job_env + strlen(job_env);
+
+    strcat(job_env, ",PBS_O_WORKDIR=");
+
+    c = getenv("PWD");
+
+    if (c != NULL)
       {
-      c = NULL; /* cannot stat, cannot trust it */
-      }
-    else
-      {
-      dev = statbuf.st_dev;
-      ino = statbuf.st_ino;
 
-      if (stat(".", &statbuf) < 0)
+      struct stat statbuf;
+      dev_t dev;
+      ino_t ino;
+
+      if (stat(c, &statbuf) < 0)
         {
-        /* compare against "." */
-
-        perror("qsub: cannot stat current directory: ");
-        exit(3);
-        }
-
-      if (!memcmp(&dev, &statbuf.st_dev, sizeof(dev_t)) &&
-          !memcmp(&ino, &statbuf.st_ino, sizeof(ino_t)))
-        {
-        strcat(job_env, c);
+        c = NULL; /* cannot stat, cannot trust it */
         }
       else
         {
-        c = NULL;
+        dev = statbuf.st_dev;
+        ino = statbuf.st_ino;
+
+        if (stat(".", &statbuf) < 0)
+          {
+          /* compare against "." */
+
+          perror("qsub: cannot stat current directory: ");
+          exit(3);
+          }
+
+        if (!memcmp(&dev, &statbuf.st_dev, sizeof(dev_t)) &&
+            !memcmp(&ino, &statbuf.st_ino, sizeof(ino_t)))
+          {
+          strcat(job_env, c);
+          }
+        else
+          {
+          c = NULL;
+          }
         }
+      }    /* END if (c != NULL) */
+
+    if (c == NULL)
+      {
+      /* fall back to using the cwd */
+      c = job_env + strlen(job_env);
+
+      if (getcwd(c, MAXPATHLEN + 1) == NULL)
+        *s = '\0';
       }
-    }    /* END if (c != NULL) */
-
-  if (c == NULL)
-    {
-    /* fall back to using the cwd */
-    c = job_env + strlen(job_env);
-
-    if (getcwd(c, MAXPATHLEN + 1) == NULL)
-      *s = '\0';
     }
 
   /* Send these variables with the job. */
@@ -2488,7 +2505,7 @@ int process_opts(
   char search_string[256];
 
 #if !defined(PBS_NO_POSIX_VIOLATION)
-#define GETOPT_ARGS "a:A:b:c:C:d:D:e:fhIj:k:l:m:M:N:o:p:q:r:S:t:u:v:VW:Xz-:"
+#define GETOPT_ARGS "a:A:b:c:C:d:D:e:fhIj:k:l:m:M:N:o:p:q:r:S:t:u:v:Vw:W:Xz-:"
 #else
 #define GETOPT_ARGS "a:A:c:C:e:hj:k:l:m:M:N:o:p:q:r:S:u:v:VW:z"
 #endif /* PBS_NO_POSIX_VIOLATION */
@@ -3283,6 +3300,21 @@ int process_opts(
         if_cmd_line(V_opt)
           {
           V_opt = passet;
+          }
+
+        break;
+
+      case 'w':
+
+        if (optarg != NULL)
+          {
+          strncpy(PBS_WorkDir, optarg, sizeof(PBS_WorkDir));
+          }
+        else
+          {
+          fprintf(stderr, "qsub: illegal -w value\n");
+
+          errflg++;
           }
 
         break;
@@ -4144,10 +4176,14 @@ int main(
       [-C directive_prefix] [-d path] [-D path]\n\
       [-e path] [-h] [-I] [-j oe] [-k {oe}] [-l resource_list] [-m n|{abe}]\n\
       [-M user_list] [-N jobname] [-o path] [-p priority] [-q queue] [-r y|n]\n\
-      [-S path] [-t number_to_submit] [-u user_list] [-X] [-W otherattributes=value...]\n\
-      [-v variable_list] [-V ] [-z] [script]\n";
+      [-S path] [-t number_to_submit] [-u user_list] [-X] [-w] path\n";
 
-    fprintf(stderr,"%s", usage);
+    /* need secondary usage since there appears to be a 512 byte size limit */
+
+    static char usage2[] =
+      "      [-W otherattributes=value...] [-v variable_list] [-V ] [-z] [script]\n";
+      
+    fprintf(stderr,"%s%s", usage, usage2);
 
     exit(2);
     }

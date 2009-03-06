@@ -86,7 +86,8 @@ qsub [\-a date_time] [\-A account_string] [\-b secs] [\-c checkpoint_options]
 [\-d path] [\-D path] [\-e path] [\-f] [\-h] [\-I] [\-j join] [\-k keep] [\-l resource_list]
 [\-m mail_options] [\-M user_list] [\-N name] [\-o path] 
 [\-p priority] [\-q destination] [\-r c] [\-S path_list] [\-t num_jobs]
-[\-u user_list] [\-v variable_list] [\-V] [\-W additional_attributes] [\-X] [\-z]
+[\-u user_list] [\-v variable_list] [\-V] [-w] path [\-W additional_attributes]
+[\-X] [\-z]
 [script]
 .SH DESCRIPTION
 To create a job is to submit an executable script to a batch server.
@@ -846,6 +847,12 @@ The
 .At Variable_List
 attribute is appended with the variables in the qsub
 command's environment and their values.
+.Ig
+.IP "\-w path" 8
+Defines the working directory path to be used for the job.  If the
+.Ar \-w
+option is not specified, the default working directory is the current directory.
+This option sets the environment variable PBS_O_WORKDIR.
 .Ig
 .IP "\-W additional_attributes" 8
 The \-W option allows for the specification of additional job attributes.

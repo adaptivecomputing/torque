@@ -40,6 +40,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature
   e - change so we can reject hold requests on running jobs that do not have
       checkpoint enabled if system was configured with --enable-blcr
   e - change to qsub so only the host name can be specified on the -e/-o options
+  e - added -w option to qsub that allows setting of PBS_O_WORKDIR
 
 2.3.7
   b - fixed a bug where UNIX domain socket communication was failing when "--disable-privports" was used.
