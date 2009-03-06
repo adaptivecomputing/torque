@@ -113,7 +113,7 @@ int main(
 
   int  errflg = 0;
 
-  char c;
+  int c;
 
   static char usage[] = "usage: qrerun [-f] <JOBID>[ <JOBID>]...\n";
 
