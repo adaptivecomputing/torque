@@ -251,6 +251,191 @@ void req_runjob(
 
 
 
+/*
+ * is_checkpoint_restart - Is this the restart of a checkpoint job
+ */
+
+static int is_checkpoint_restart(
+
+  job                  *pjob)     /* I */
+
+  {
+#if 0
+  if ((pjob->ji_wattr[(int)JOB_ATR_checkpoint_name].at_flags & ATR_VFLAG_SET) == 0)
+    {
+    return(FALSE);
+    }
+#else
+  if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_CHECKPOINT_FILE) == 0)
+    {
+    return(FALSE);
+    }
+#endif
+ 
+  return(TRUE);
+  }  /* END is_checkpoint_restart() */
+
+
+
+
+/*
+ * post_checkpointsend - process reply from MOM to checkpoint copy request
+ */
+
+static void post_checkpointsend(
+
+  struct work_task *pwt)
+
+  {
+  int        code;
+  job       *pjob;
+
+  struct batch_request *preq;
+  attribute      *pwait;
+
+  preq = pwt->wt_parm1;
+  code = preq->rq_reply.brp_code;
+  pjob = find_job(preq->rq_extra);
+
+  free(preq->rq_extra);
+
+  if (pjob != NULL)
+    {
+    if (code != 0)
+      {
+      /* copy failed - hold job */
+
+      free_nodes(pjob);
+
+      pwait = &pjob->ji_wattr[(int)JOB_ATR_exectime];
+
+      if ((pwait->at_flags & ATR_VFLAG_SET) == 0)
+        {
+        pwait->at_val.at_long = time_now + PBS_STAGEFAIL_WAIT;
+
+        pwait->at_flags |= ATR_VFLAG_SET;
+
+        job_set_wait(pwait, pjob, 0);
+        }
+
+      svr_setjobstate(pjob, JOB_STATE_WAITING, JOB_SUBSTATE_STAGEFAIL);
+
+      if (preq->rq_reply.brp_choice == BATCH_REPLY_CHOICE_Text)
+        {
+
+        sprintf(log_buffer, "Failed to copy checkpoint file to mom - %s",
+                preq->rq_reply.brp_un.brp_txt.brp_str);
+
+        log_event(
+          PBSEVENT_JOB,
+          PBS_EVENTCLASS_JOB,
+          pjob->ji_qs.ji_jobid,
+          log_buffer);
+
+        /* NYI */
+
+        svr_mailowner(
+          pjob,
+          MAIL_CHKPTCOPY,
+          MAIL_FORCE,
+          preq->rq_reply.brp_un.brp_txt.brp_str);
+        }
+      }
+    else
+      {
+      /* checkpoint copy was successful */
+
+      pjob->ji_qs.ji_svrflags |= JOB_SVFLG_CHECKPOINT_COPIED;
+      
+      /* set restart_name attribute to the checkpoint_name we just copied */
+      
+      job_attr_def[(int)JOB_ATR_restart_name].at_set(
+        &pjob->ji_wattr[(int)JOB_ATR_restart_name],
+        &pjob->ji_wattr[(int)JOB_ATR_checkpoint_name],
+        SET);
+
+      pjob->ji_modified = 1;
+      
+      job_save(pjob, SAVEJOB_FULL);
+      
+      /* continue to start job running */
+
+      svr_strtjob2(pjob, NULL);
+      }
+    }    /* END if (pjob != NULL) */
+
+  release_req(pwt); /* close connection and release request */
+
+  return;
+  }  /* END post_checkpointsend() */
+
+
+
+
+/*
+ * svr_send_checkpoint - direct MOM to copy in the checkpoint files for a job
+ */
+
+static int svr_send_checkpoint(
+
+  job                  *pjob,     /* I */
+  struct batch_request *preq,     /* I */
+  int                   state,    /* I */
+  int                   substate) /* I */
+
+  {
+
+  struct batch_request *momreq = 0;
+  int        rc;
+
+  momreq = cpy_checkpoint(momreq, pjob, JOB_ATR_checkpoint_name, CKPT_DIR_IN);
+
+  if (momreq == NULL)
+    {
+    /* no files to send, go directly to sending job to mom */
+
+    return(svr_strtjob2(pjob, preq));
+    }
+
+  /* save job id for post_checkpointsend */
+
+  momreq->rq_extra = malloc(PBS_MAXSVRJOBID + 1);
+
+  if (momreq->rq_extra == 0)
+    {
+    return(PBSE_SYSTEM);
+    }
+
+  strcpy(momreq->rq_extra, pjob->ji_qs.ji_jobid);
+
+  rc = relay_to_mom(
+         pjob->ji_qs.ji_un.ji_exect.ji_momaddr,
+         momreq,
+         post_checkpointsend);
+
+  if (rc == 0)
+    {
+    svr_setjobstate(pjob, state, substate);
+
+    /*
+     * checkpoint copy started ok - reply to client as copy may
+     * take too long to wait.
+     */
+
+    if (preq != NULL)
+      reply_ack(preq);
+    }
+  else
+    {
+    free(momreq->rq_extra);
+    }
+
+  return(rc);
+  }  /* END svr_send_checkpoint() */
+
+
+
+
 
 
 /*
@@ -372,9 +557,21 @@ static void post_stagein(
 
       if (pjob->ji_qs.ji_substate == JOB_SUBSTATE_STAGEGO)
         {
-        /* continue to start job running */
+        if (is_checkpoint_restart(pjob))
+          {
+          /* need to copy checkpoint file to mom before running */
+          svr_send_checkpoint(
+              pjob,
+              preq,
+              JOB_STATE_RUNNING,
+              JOB_SUBSTATE_CHKPTGO);
+          }
+        else
+          {
+          /* continue to start job running */
 
-        svr_strtjob2(pjob, NULL);
+          svr_strtjob2(pjob, NULL);
+          }
         }
       else
         {
@@ -755,6 +952,16 @@ int svr_startjob(
            JOB_SUBSTATE_STAGEGO);
 
     /* note, the positive acknowledgment is done by svr_stagein */
+    }
+  else if (is_checkpoint_restart(pjob))
+    {
+    /* Checkpoint file copy needed, start copy */
+
+    rc = svr_send_checkpoint(
+           pjob,
+           preq,
+           JOB_STATE_RUNNING,
+           JOB_SUBSTATE_CHKPTGO);
     }
   else
     {

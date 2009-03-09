@@ -357,7 +357,8 @@ void req_rerunjob(
   /* So job has run and is to be rerun (not restarted) */
 
   pjob->ji_qs.ji_svrflags = (pjob->ji_qs.ji_svrflags &
-                             ~(JOB_SVFLG_CHECKPOINT_FILE | JOB_SVFLG_CHECKPOINT_MIGRATEABLE)) | JOB_SVFLG_HASRUN;
+      ~(JOB_SVFLG_CHECKPOINT_FILE |JOB_SVFLG_CHECKPOINT_MIGRATEABLE |
+       JOB_SVFLG_CHECKPOINT_COPIED)) | JOB_SVFLG_HASRUN;
 
   sprintf(log_buffer, msg_manager,
           msg_jobrerun,

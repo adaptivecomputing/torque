@@ -133,6 +133,7 @@ char *msg_jobrerun = "Job Rerun";
 char *msg_jobrun = "Job Run";
 char *msg_job_start = "Begun execution";
 char *msg_job_stageinfail = "File stage in failed, see below.\nJob will be retried later, please investigate and correct problem.";
+char *msg_job_copychkptfail = "Checkpoint file copy failed, see below.\nJob will be retried later, please investigate and correct problem.";
 char *msg_job_otherfail = "An error has occurred processing your job, see below.";
 char *msg_leftrunning = "job running on at Server shutdown";
 char *msg_manager = "%s at request of %s@%s";

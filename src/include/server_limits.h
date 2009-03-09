@@ -118,6 +118,7 @@
 #define PBS_ARRAYDIR  "arrays"
 #define PBS_JOBDIR  "jobs"
 #define PBS_SPOOLDIR  "spool"
+#define PBS_CHKPTDIR  "checkpoint"
 #define PBS_QUEDIR  "queues"
 #define PBS_LOGFILES  "server_logs"
 #define PBS_ACTFILES  "accounting"

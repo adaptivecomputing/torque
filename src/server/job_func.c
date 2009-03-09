@@ -126,6 +126,7 @@
 #include "server_limits.h"
 #include "server.h"
 #include "queue.h"
+#include "batch_request.h"
 #include "pbs_job.h"
 #include "log.h"
 #include "pbs_error.h"
@@ -146,6 +147,7 @@ void job_purge A_((job *));
 
 /* External functions */
 
+extern void cleanup_restart_file(job *);
 
 /* Local Private Functions */
 
@@ -167,6 +169,7 @@ extern int   LOGLEVEL;
 
 extern tlist_head svr_newjobs;
 extern tlist_head svr_alljobs;
+extern char *path_checkpoint;
 
 
 
@@ -210,6 +213,152 @@ void send_qsub_delmsg(
 
   return;
   }  /* END send_qsub_delmsg() */
+
+
+
+/*
+ * remtree - remove a tree (or single file)
+ *
+ * returns  0 on success
+ *  -1 on failure
+ */
+
+int remtree(
+
+  char *dirname)
+
+  {
+  static char id[] = "remtree";
+  DIR  *dir;
+
+  struct dirent *pdir;
+  char  namebuf[MAXPATHLEN], *filnam;
+  int  i;
+  int  rtnv = 0;
+#if defined(HAVE_STRUCT_STAT64) && defined(HAVE_STAT64)
+
+  struct stat64 sb;
+#else
+
+  struct stat sb;
+#endif
+
+#if defined(HAVE_STRUCT_STAT64) && defined(HAVE_STAT64)
+
+  if (lstat64(dirname, &sb) == -1)
+#else
+  if (lstat(dirname, &sb) == -1)
+#endif
+    {
+
+    if (errno != ENOENT)
+      log_err(errno, id, "stat");
+
+    return(-1);
+    }
+
+  if (S_ISDIR(sb.st_mode))
+    {
+    if ((dir = opendir(dirname)) == NULL)
+      {
+      if (errno != ENOENT)
+        log_err(errno, id, "opendir");
+
+      return(-1);
+      }
+
+    strcpy(namebuf, dirname);
+
+    strcat(namebuf, "/");
+
+    i = strlen(namebuf);
+
+    filnam = &namebuf[i];
+
+    while ((pdir = readdir(dir)) != NULL)
+      {
+      if ((pdir->d_name[0] == '.') &&
+          ((pdir->d_name[1] == '\0') || (pdir->d_name[1] == '.')))
+        continue;
+
+      strcpy(filnam, pdir->d_name);
+
+#if defined(HAVE_STRUCT_STAT64) && defined(HAVE_STAT64)
+      if (lstat64(namebuf, &sb) == -1)
+#else
+      if (lstat(namebuf, &sb) == -1)
+#endif
+        {
+        log_err(errno, id, "stat");
+
+        rtnv = -1;
+
+        continue;
+        }
+
+      if (S_ISDIR(sb.st_mode))
+        {
+        rtnv = remtree(namebuf);
+        }
+      else if (unlink(namebuf) < 0)
+        {
+        if (errno != ENOENT)
+          {
+          sprintf(log_buffer, "unlink failed on %s",
+                  namebuf);
+
+          log_err(errno, id, log_buffer);
+
+          rtnv = -1;
+          }
+        }
+      else if (LOGLEVEL >= 7)
+        {
+        sprintf(log_buffer, "unlink(1) succeeded on %s", namebuf);
+
+        log_err(-1, id, log_buffer);
+        }
+      }    /* END while ((pdir = readdir(dir)) != NULL) */
+
+    closedir(dir);
+
+    if (rmdir(dirname) < 0)
+      {
+      if ((errno != ENOENT) && (errno != EINVAL))
+        {
+        sprintf(log_buffer, "rmdir failed on %s",
+                dirname);
+
+        log_err(errno, id, log_buffer);
+
+        rtnv = -1;
+        }
+      }
+    else if (LOGLEVEL >= 7)
+      {
+      sprintf(log_buffer, "rmdir succeeded on %s", dirname);
+
+      log_err(-1, id, log_buffer);
+      }
+    }
+  else if (unlink(dirname) < 0)
+    {
+    sprintf(log_buffer, "unlink failed on %s",
+            dirname);
+
+    log_err(errno, id, log_buffer);
+
+    rtnv = -1;
+    }
+  else if (LOGLEVEL >= 7)
+    {
+    sprintf(log_buffer, "unlink(2) succeeded on %s", dirname);
+
+    log_err(-1, id, log_buffer);
+    }
+
+  return(rtnv);
+  }  /* END remtree() */
 
 
 
@@ -921,6 +1070,359 @@ static void job_init_wattr(
 
 
 
+/*
+ * cpy_checkpoint - set up a Copy Files request to transfer checkpoint files
+ */
+
+struct batch_request *cpy_checkpoint(
+
+        struct batch_request *preq,
+        job       *pjob,
+        enum job_atr       ati,  /* JOB_ATR_checkpoint_name or JOB_ATR_restart_name */
+        int        direction)
+
+  {
+  char       momfile[MAXPATHLEN+1];
+  char       serverfile[MAXPATHLEN+1];
+  char       *from = NULL;
+  char       *to = NULL;
+  attribute  *pattr;
+  mode_t     saveumask = 0;
+  
+  pattr = &pjob->ji_wattr[(int)ati];
+
+  if ((pattr->at_flags & ATR_VFLAG_SET) == 0)
+    {
+    /* no file to transfer */
+    
+    return(preq);
+    }
+    
+  /* build up the name used for SERVER file */
+
+  strcpy(serverfile, path_checkpoint);
+  strcat(serverfile, pjob->ji_qs.ji_fileprefix);
+  strcat(serverfile, JOB_CHECKPOINT_SUFFIX);
+  
+  /*
+   * We need to make sure the jobs checkpoint directory exists.  If it does
+   * not we need to add it since this is the first time we are copying a
+   * checkpoint file for this job
+   */
+
+  saveumask = umask(0000);
+  if ((mkdir(serverfile, 0777) == -1) && (errno != EEXIST))
+    {
+    log_err(errno,"cpy_checkpoint", "Failed to create jobs checkpoint directory");
+    }
+  umask(saveumask);
+
+  strcat(serverfile, "/");
+  strcat(serverfile, pjob->ji_wattr[(int)JOB_ATR_checkpoint_name].at_val.at_str);
+
+  /* build up the name used for MOM file */
+
+  if (pjob->ji_wattr[(int)JOB_ATR_checkpoint_dir].at_flags & ATR_VFLAG_SET)
+    {
+    strcpy(momfile, pjob->ji_wattr[(int)JOB_ATR_checkpoint_dir].at_val.at_str);
+    strcat(momfile, "/");
+    strcat(momfile, pattr->at_val.at_str);
+    }
+  else
+    {
+    /* if not specified, moms path may not be the same */
+    strcpy(momfile, MOM_DEFAULT_CHECKPOINT_DIR);
+    strcat(momfile, "/");
+    strcat(momfile, pjob->ji_qs.ji_fileprefix);
+    strcat(momfile, JOB_CHECKPOINT_SUFFIX);
+    strcat(momfile, "/");
+    strcat(momfile, pjob->ji_wattr[(int)JOB_ATR_checkpoint_name].at_val.at_str);
+    if (LOGLEVEL >= 7)
+      {
+      sprintf(log_buffer, "Job has NO checkpoint dir specified, using file %s",
+          momfile);
+      LOG_EVENT(
+        PBSEVENT_JOB,
+        PBS_EVENTCLASS_JOB,
+        pjob->ji_qs.ji_jobid,
+        log_buffer);
+      }
+    }
+  if (direction == CKPT_DIR_OUT)
+  {
+    if (LOGLEVEL >= 7)
+      {
+      sprintf(log_buffer,"Requesting checkpoint copy from MOM (%s) to SERVER (%s)",
+          momfile, serverfile);
+      LOG_EVENT(
+        PBSEVENT_JOB,
+        PBS_EVENTCLASS_JOB,
+        pjob->ji_qs.ji_jobid,
+        log_buffer);
+      }
+   }
+  else
+  {
+    if (LOGLEVEL >= 7)
+      {
+      sprintf(log_buffer,"Requesting checkpoint copy from SERVER (%s) to MOM (%s)",
+          serverfile, momfile);
+      LOG_EVENT(
+        PBSEVENT_JOB,
+        PBS_EVENTCLASS_JOB,
+        pjob->ji_qs.ji_jobid,
+        log_buffer);
+      }
+   }
+ 
+  to = (char *)malloc(strlen(serverfile) + strlen(server_name) + 2);
+
+  if (to == NULL)
+    {
+    /* FAILURE */
+
+    /* cannot allocate memory for request this one */
+
+    log_event(
+      PBSEVENT_ERROR | PBSEVENT_JOB,
+      PBS_EVENTCLASS_JOB,
+      pjob->ji_qs.ji_jobid,
+      "ERROR:  cannot allocate 'to' memory in cpy_checkpoint");
+
+    return(preq);
+    }
+
+  strcpy(to, server_name);
+  strcat(to, ":");
+  strcat(to, serverfile);
+  
+  from = (char *)malloc(strlen(momfile) + 1);
+
+  if (from == NULL)
+    {
+    /* FAILURE */
+
+    log_event(
+      PBSEVENT_ERROR | PBSEVENT_JOB,
+      PBS_EVENTCLASS_JOB,
+      pjob->ji_qs.ji_jobid,
+      "ERROR:  cannot allocate 'from' memory for from in cpy_checkpoint");
+
+    free(to);
+
+    return(preq);
+    }
+    
+  strcpy(from, momfile);
+
+  if (LOGLEVEL >= 7)
+    {
+    sprintf(log_buffer,"Checkpoint copy from (%s) to (%s)", from, to);
+    LOG_EVENT(
+      PBSEVENT_JOB,
+      PBS_EVENTCLASS_JOB,
+      pjob->ji_qs.ji_jobid,
+      log_buffer);
+    }
+  
+  preq = setup_cpyfiles(preq, pjob, from, to, direction, JOBCKPFILE);
+
+  return(preq);
+  }  /* END cpy_checkpoint() */
+
+
+
+
+/*
+ * remove_checkpoint() - request that mom delete checkpoint file for a job
+ * used when the job is to be purged after file has been transferred
+ */
+
+void remove_checkpoint(
+
+  job *pjob)  /* I */
+
+  {
+  static char *id = "remove_checkpoint";
+
+  struct batch_request *preq = 0;
+
+  preq = cpy_checkpoint(preq, pjob, JOB_ATR_checkpoint_name, CKPT_DIR_IN);
+
+  if (preq != NULL)
+    {
+    /* have files to delete  */
+
+    sprintf(log_buffer,"Removing checkpoint file (%s/%s)",
+      pjob->ji_wattr[(int)JOB_ATR_checkpoint_dir].at_val.at_str,
+      pjob->ji_wattr[(int)JOB_ATR_checkpoint_name].at_val.at_str);
+    log_err(-1, id, log_buffer);
+
+    /* change the request type from copy to delete  */
+
+    preq->rq_type = PBS_BATCH_DelFiles;
+
+    preq->rq_extra = NULL;
+
+    if (relay_to_mom(
+          pjob->ji_qs.ji_un.ji_exect.ji_momaddr,
+          preq,
+          release_req) == 0)
+      {
+      pjob->ji_qs.ji_svrflags &= ~JOB_SVFLG_CHECKPOINT_COPIED;
+      }
+    else
+      {
+      /* log that we were unable to remove the files */
+
+      log_event(
+        PBSEVENT_JOB,
+        PBS_EVENTCLASS_FILE,
+        pjob->ji_qs.ji_jobid,
+        "unable to remove checkpoint file for job");
+
+      free_br(preq);
+      }
+    }
+
+  return;
+  }  /* END remove_checkpoint() */
+
+
+
+
+/*
+ * post_restartfilecleanup - process reply from MOM to checkpoint copy request
+ */
+
+static void post_restartfilecleanup(
+
+  struct work_task *pwt)
+
+  {
+  int        code;
+  job       *pjob;
+
+  struct batch_request *preq;
+
+  preq = pwt->wt_parm1;
+  code = preq->rq_reply.brp_code;
+  pjob = find_job(preq->rq_ind.rq_cpyfile.rq_jobid);
+
+  free(preq->rq_extra);
+
+  if (pjob != NULL)
+    {
+    if (code != 0)
+      {
+      /* restart file cleanup failed - just log it */
+
+      if (preq->rq_reply.brp_choice == BATCH_REPLY_CHOICE_Text)
+        {
+        sprintf(log_buffer, "Failed to cleanup checkpoint restart file on mom - %s",
+                preq->rq_reply.brp_un.brp_txt.brp_str);
+
+        log_event(
+          PBSEVENT_JOB,
+          PBS_EVENTCLASS_JOB,
+          pjob->ji_qs.ji_jobid,
+          log_buffer);
+        
+        svr_mailowner(
+          pjob,
+          MAIL_CHKPTCOPY,
+          MAIL_FORCE,
+          preq->rq_reply.brp_un.brp_txt.brp_str);
+        }
+      }
+    else
+      {
+      /* checkpoint restart file cleanup was successful */
+
+      pjob->ji_qs.ji_svrflags |= JOB_SVFLG_CHECKPOINT_COPIED;
+      
+      /* clear restart_name attribute that we just cleaned up */
+      
+      pjob->ji_wattr[(int)JOB_ATR_restart_name].at_flags &= ATR_VFLAG_SET;
+      pjob->ji_modified = 1;
+      
+      job_save(pjob, SAVEJOB_FULL);
+
+      if (LOGLEVEL >= 7)
+        {
+          sprintf(log_buffer, "Successfully cleaned up checkpoint restart file on mom");
+
+          log_event(
+            PBSEVENT_JOB,
+            PBS_EVENTCLASS_JOB,
+            pjob->ji_qs.ji_jobid,
+            log_buffer);
+        }
+      }
+    }    /* END if (pjob != NULL) */
+
+  release_req(pwt); /* close connection and release request */
+
+  return;
+  }  /* END post_restartfilecleanup() */
+
+
+
+
+/*
+ * cleanup_restart_file() - request that mom cleanup checkpoint restart file for
+ * a job. used when the job has completed or put on hold or deleted
+ */
+
+void cleanup_restart_file(
+
+  job *pjob)  /* I */
+
+  {
+  static char *id = "cleanup_restart_file";
+  struct batch_request *preq = 0;
+
+  preq = cpy_checkpoint(preq, pjob, JOB_ATR_restart_name, CKPT_DIR_OUT);
+
+  if (preq != NULL)
+    {
+    /* have files to delete  */
+    sprintf(log_buffer,"Cleaning up restart file (%s/%s)",
+      pjob->ji_wattr[(int)JOB_ATR_checkpoint_dir].at_flags & ATR_VFLAG_SET? pjob->ji_wattr[(int)JOB_ATR_checkpoint_dir].at_val.at_str : "NONE",
+      pjob->ji_wattr[(int)JOB_ATR_restart_name].at_val.at_str);
+    log_err(-1, id, log_buffer);
+
+    /* change the request type from copy to delete  */
+
+    preq->rq_type = PBS_BATCH_DelFiles;
+
+    preq->rq_extra = NULL;
+
+    if (relay_to_mom(
+          pjob->ji_qs.ji_un.ji_exect.ji_momaddr,
+          preq,
+          post_restartfilecleanup) == 0)
+      {
+      }
+    else
+      {
+      /* log that we were unable to cleanup the files */
+
+      log_event(
+        PBSEVENT_JOB,
+        PBS_EVENTCLASS_FILE,
+        pjob->ji_qs.ji_jobid,
+        "unable to cleanup checkpoint restart file for job");
+
+      free_br(preq);
+      }
+    }
+
+  return;
+  }  /* END cleanup_restart_file() */
+
+
+
 
 
 /*
@@ -1029,6 +1531,37 @@ void job_purge(
                PBS_EVENTCLASS_JOB,
                pjob->ji_qs.ji_jobid,
                log_buffer);
+    }
+
+  /* remove checkpoint restart file if there is one */
+  
+  if (pjob->ji_wattr[(int)JOB_ATR_restart_name].at_flags & ATR_VFLAG_SET)
+    {
+    cleanup_restart_file(pjob);
+    }
+
+  /* delete checkpoint file directory if there is one */
+  
+  if (pjob->ji_wattr[(int)JOB_ATR_checkpoint_name].at_flags & ATR_VFLAG_SET)
+    {
+    strcpy(namebuf, path_checkpoint);
+    strcat(namebuf, pjob->ji_qs.ji_fileprefix);
+    strcat(namebuf, JOB_CHECKPOINT_SUFFIX);
+
+    if (remtree(namebuf) < 0)
+      {
+      if (errno != ENOENT)
+        log_err(errno, id, msg_err_purgejob);
+      }
+    else if (LOGLEVEL >= 6)
+      {
+      sprintf(log_buffer, "removed job checkpoint");
+
+      log_record(PBSEVENT_DEBUG,
+                 PBS_EVENTCLASS_JOB,
+                 pjob->ji_qs.ji_jobid,
+                 log_buffer);
+      }
     }
 
   strcpy(namebuf, path_jobs); /* delete job file */

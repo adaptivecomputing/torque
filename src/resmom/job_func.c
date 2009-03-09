@@ -320,6 +320,12 @@ int remtree(
           rtnv = -1;
           }
         }
+      else if (LOGLEVEL >= 7)
+        {
+        sprintf(log_buffer, "unlink(1) succeeded on %s", namebuf);
+
+        log_err(-1, id, log_buffer);
+        }
       }    /* END while ((pdir = readdir(dir)) != NULL) */
 
     closedir(dir);
@@ -336,6 +342,12 @@ int remtree(
         rtnv = -1;
         }
       }
+    else if (LOGLEVEL >= 7)
+      {
+      sprintf(log_buffer, "rmdir succeeded on %s", dirname);
+
+      log_err(-1, id, log_buffer);
+      }
     }
   else if (unlink(dirname) < 0)
     {
@@ -345,6 +357,12 @@ int remtree(
     log_err(errno, id, log_buffer);
 
     rtnv = -1;
+    }
+  else if (LOGLEVEL >= 7)
+    {
+    sprintf(log_buffer, "unlink(2) succeeded on %s", dirname);
+
+    log_err(-1, id, log_buffer);
     }
 
   return(rtnv);

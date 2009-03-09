@@ -111,6 +111,7 @@ extern char *msg_job_start;
 extern char *msg_job_end;
 extern char *msg_job_del;
 extern char *msg_job_stageinfail;
+extern char *msg_job_copychkptfail;
 extern char *msg_job_otherfail;
 
 extern int LOGLEVEL;
@@ -316,6 +317,12 @@ void svr_mailowner(
     case MAIL_STAGEIN:
 
       stdmessage = msg_job_stageinfail;
+
+      break;
+
+    case MAIL_CHKPTCOPY:
+
+      stdmessage = msg_job_copychkptfail;
 
       break;
 

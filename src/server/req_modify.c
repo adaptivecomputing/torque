@@ -91,6 +91,8 @@
 #include <sys/types.h>
 #include "libpbs.h"
 #include <signal.h>
+#include <errno.h>
+#include <sys/stat.h>
 #include "server_limits.h"
 #include "list_link.h"
 #include "attribute.h"
@@ -114,11 +116,16 @@ extern char *msg_mombadmodify;
 extern int   comp_resc_gt;
 extern int   comp_resc_lt;
 extern int   LOGLEVEL;
-
+extern char *path_checkpoint;
+extern char server_name[];
 
 extern const char *PJobSubState[];
 extern char *PJobState[];
 
+/* External Functions called */
+
+extern void cleanup_restart_file(job *);
+extern void rel_resc(job *);
 
 
 /*
@@ -188,6 +195,29 @@ static void post_modify_req(
 
 
 
+/*
+ * chkpt_xfr_done - Handle the clean up of the transfer of the checkpoint files.
+ */
+
+void chkpt_xfr_done(
+
+  struct work_task *ptask)
+
+  {
+  job       *pjob;
+
+  struct batch_request *preq;
+
+  preq = (struct batch_request *)ptask->wt_parm1;
+  pjob = (job *)preq->rq_extra;
+  
+  release_req(ptask);
+
+  return;
+  }  /* END chkpt_xfr_done() */
+
+
+
 
 
 /*
@@ -212,6 +242,7 @@ void req_modifyjob(
   resource_def *prsd;
   int   rc;
   int   sendmom = 0;
+  int   copy_checkpoint_files = FALSE;
 
   pjob = chk_job_request(preq->rq_ind.rq_modify.rq_objname, preq);
 
@@ -241,17 +272,34 @@ void req_modifyjob(
     preq->rq_noreply = TRUE; /* set for no more replies */
     }
 
-   if ((preq->rq_extend != NULL) &&
-       (strcmp(preq->rq_extend,CHECKPOINTED) == 0) &&
-       (pjob->ji_qs.ji_substate == JOB_SUBSTATE_RUNNING))
-     {
-     sprintf(log_buffer,"setting jobsubstate for %s to RERUN\n", pjob->ji_qs.ji_jobid);
+  if ((preq->rq_extend != NULL) &&
+      (pjob->ji_qs.ji_substate == JOB_SUBSTATE_RUNNING) &&
+      ((strcmp(preq->rq_extend,CHECKPOINTHOLD) == 0) ||
+      (strcmp(preq->rq_extend,CHECKPOINTCONT) == 0)))
+    {
+    /* May need to request copy of the checkpoint file from mom */
 
-     pjob->ji_qs.ji_substate = JOB_SUBSTATE_RERUN;
-     job_save(pjob, SAVEJOB_QUICK);
-     LOG_EVENT(PBSEVENT_JOB, PBS_EVENTCLASS_JOB,
+    copy_checkpoint_files = TRUE;
+
+    if (strcmp(preq->rq_extend,CHECKPOINTHOLD) == 0)
+      {
+
+      sprintf(log_buffer,"setting jobsubstate for %s to RERUN\n", pjob->ji_qs.ji_jobid);
+
+      pjob->ji_qs.ji_substate = JOB_SUBSTATE_RERUN;
+      job_save(pjob, SAVEJOB_QUICK);
+      LOG_EVENT(PBSEVENT_JOB, PBS_EVENTCLASS_JOB,
                 pjob->ji_qs.ji_jobid, log_buffer);
-     }
+
+      /* remove checkpoint restart file if there is one */
+      
+      if (pjob->ji_wattr[(int)JOB_ATR_restart_name].at_flags & ATR_VFLAG_SET)
+        {
+        cleanup_restart_file(pjob);
+        }
+
+      }
+    }
 
   plist = (svrattrl *)GET_NEXT(preq->rq_ind.rq_modify.rq_attr);
 
@@ -396,6 +444,30 @@ void req_modifyjob(
 
   reply_ack(preq);
 
+  /* Request the copying of checkpoint files if needed */
+  
+  if (copy_checkpoint_files)
+    {
+    struct batch_request *momreq = 0;
+    momreq = cpy_checkpoint(momreq, pjob, JOB_ATR_checkpoint_name, CKPT_DIR_OUT);
+
+    if (momreq != NULL)
+      {
+      /* have files to copy */
+
+      momreq->rq_extra = (void *)pjob;
+
+      if (relay_to_mom(pjob->ji_qs.ji_un.ji_exect.ji_momaddr, momreq, chkpt_xfr_done) != 0)
+        {
+        return;  /* come back when mom replies */
+        }
+      }
+    else
+      {
+      log_err(-1, "req_modifyjob", "Failed to get batch request");
+      }
+    }
+  
   return;
   }  /* END req_modifyjob() */
 

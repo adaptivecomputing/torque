@@ -157,6 +157,7 @@ extern int              pbs_rm_port;
 extern char             rcp_path[];
 extern char             rcp_args[];
 extern char            *TNoSpoolDirList[];
+extern char             path_checkpoint[];
 
 /* Local Data Items */
 
@@ -179,6 +180,8 @@ extern int mom_open_socket_to_jobs_server A_((job *, char *, void (*) A_((int)))
 /* prototypes */
 
 char *get_job_envvar(job *, char *);
+int replace_checkpoint_path(char *);
+int in_remote_checkpoint_dir(char *);
 
 /* loaded in mom_mach.h */
 
@@ -211,7 +214,6 @@ char *get_job_envvar(
 
   return(pc);
   }  /* END get_job_envvar() */
-
 
 
 
@@ -252,7 +254,9 @@ static pid_t fork_to_user(
     EMsg[0] = '\0';
 
   if ((pjob = find_job(preq->rq_ind.rq_cpyfile.rq_jobid)) &&
-      (pjob->ji_grpcache != 0))
+      (pjob->ji_grpcache != 0) &&
+      (preq->rq_ind.rq_cpyfile.rq_dir != CKPT_DIR_IN) &&
+      (preq->rq_ind.rq_cpyfile.rq_dir != CKPT_DIR_OUT))
     {
     /* use information cached in the job structure */
 
@@ -1299,7 +1303,9 @@ const char *TJobAttr[] =
   "start_count",
   "chkptdir",
   "chkptname",
+  "chkpttime",
   "restartstat",
+  "restartname",
   "faulttol",
 #ifdef ENABLE_CSA
   "pagg_id",
@@ -2360,6 +2366,7 @@ static int del_files(
   char  *path;
   char  *pp;
   char  *prmt;
+  int   del_dir = 0;
 
   struct stat  sb;
 #if NO_SPOOL_OUTPUT == 1
@@ -2397,8 +2404,6 @@ static int del_files(
    * Build up path of file using local name only, then unlink it.
    * The first set of files may have the STDJOBFILE
    * flag set, which we need to unlink as root, the others as the user.
-   * This is changed from the past.  We no longer delete
-   * checkpoint files here.
    */
 
   if (HDir != NULL)
@@ -2492,6 +2497,8 @@ static int del_files(
       }
 
     strcat(path, pair->fp_local);
+
+    del_dir = replace_checkpoint_path(path);
 
     if (local_or_remote(&prmt) == 0)
       {
@@ -2595,45 +2602,66 @@ static int del_files(
         log_buffer);
       }
 
-    if (remtree(path) == -1)
+    /*
+     * This should only be set it we are trying to delete a checkpoint restart
+     * file that is in the moms default checkpoint directory.  We change the
+     * path to remove the jobs checkpoint directory not just the checkpoint itself.
+     * Do not remove if it is in the remote checkpoint directory list
+     */
+     
+    if (del_dir)
       {
-      if (errno != ENOENT)
+      char *ptr;
+      ptr = strrchr(path,'/');
+      if (ptr != NULL)
         {
-        sprintf(log_buffer, "Unable to delete file %s for user %s, error = %d %s",
-                path,
-                preq->rq_ind.rq_cpyfile.rq_user,
-                errno,
-                pbs_strerror(errno));
-
-        LOG_EVENT(
-          PBSEVENT_JOB,
-          PBS_EVENTCLASS_REQUEST,
-          id,
-          log_buffer);
-
-        add_bad_list(pbadfile, log_buffer, 2);
-
-        rc = errno;
+        ptr[0] = '\0';
         }
+      }
+
+    if (!in_remote_checkpoint_dir(path))
+      {
+      if (remtree(path) == -1)
+        {
+        if (errno != ENOENT)
+          {
+          sprintf(log_buffer, "Unable to delete file %s for user %s, error = %d %s",
+                  path,
+                  preq->rq_ind.rq_cpyfile.rq_user,
+                  errno,
+                  pbs_strerror(errno));
+
+          LOG_EVENT(
+            PBSEVENT_JOB,
+            PBS_EVENTCLASS_REQUEST,
+            id,
+            log_buffer);
+
+          add_bad_list(pbadfile, log_buffer, 2);
+
+          rc = errno;
+          }
 
 #ifdef DEBUG
 
-      }
-    else
-      {
-      sprintf(log_buffer, "Deleted file %s for user %s",
-              path,
-              preq->rq_ind.rq_cpyfile.rq_user);
+        }
+      else
+        {
+        sprintf(log_buffer, "Deleted file %s for user %s",
+                path,
+                preq->rq_ind.rq_cpyfile.rq_user);
 
-      LOG_EVENT(
-        PBSEVENT_DEBUG,
-        PBS_EVENTCLASS_FILE,
-        id,
-        log_buffer);
+        LOG_EVENT(
+          PBSEVENT_DEBUG,
+          PBS_EVENTCLASS_FILE,
+          id,
+          log_buffer);
 
 #endif  /* DEBUG */
+        }
       }
     }
+    
 
   return(rc);
   }  /* END del_files() */
@@ -2744,11 +2772,19 @@ void req_returnfiles(
 
   if (pjob != NULL)
     {
+retry:
     sock = mom_open_socket_to_jobs_server(pjob, id, NULL);
 
     if (sock < 0)
       {
       /* XXX TODO */
+      sprintf(log_buffer, "mom_open_socket_to_jobs_server FAILED to get socket: %d for job %s",
+              sock,
+              pjob->ji_qs.ji_jobid);
+
+      log_err(-1, id, log_buffer);
+      sleep(1);
+      goto retry;
       }
 
     if (preq->rq_ind.rq_returnfiles.rq_return_stdout)
@@ -3151,7 +3187,8 @@ void req_cpyfile(
 
   if ((pjob = find_job(preq->rq_ind.rq_cpyfile.rq_jobid)) == NULL)
     {
-    /* This a stagein which happens before the job struct to sent to MOM
+    /* This is a stagein which happens before the job struct to sent to MOM
+     * or a checkpoint file coming in.
      * This limits the available variables we can use.  fork_to_user()
      * has already set PBS_JOBID and HOME for us.  Now just fake a TMPDIR
      * if we need it. */
@@ -3267,7 +3304,7 @@ void req_cpyfile(
 
     /* which way to copy, in or out? */
 
-    if (dir == STAGE_DIR_OUT)
+    if ((dir == STAGE_DIR_OUT) || (dir == CKPT_DIR_OUT))
       {
       /*
        * out bound copy ...
@@ -3338,14 +3375,23 @@ void req_cpyfile(
         }  /* END if (pair->fp_flag == STDJOBFILE) */
       else if (pair->fp_flag == JOBCKPFILE)
         {
-        extern char     *path_checkpoint;
-        strcpy(localname, path_checkpoint);
-        strcat(localname, pair->fp_local); /* from location */
-        }
+        strncpy(localname, pair->fp_local, sizeof(localname) - 1);  /* from location */
+        
+        replace_checkpoint_path(localname);
+        
+        /*
+         * If the checkpoint directory
+         * is in the the TRemChkptDirList then we do not transfer since directory
+         * is remotely mounted.
+         */
+        if (in_remote_checkpoint_dir(localname))
+          {
+          continue;
+          }
+        }  /* END if (pair->fp_flag == JOBCKPFILE) */
       else
         {
         /* user-supplied stage-out file */
-
         strncpy(localname, pair->fp_local, sizeof(localname) - 1);  /* from location */
         }
 
@@ -3393,6 +3439,53 @@ void req_cpyfile(
 
       /* take (remote) source name from request */
 
+      strcpy(arg3, pair->fp_local);
+
+      if (pair->fp_flag == JOBCKPFILE)
+        {
+        int path_changed = 0;
+       
+        path_changed = replace_checkpoint_path(arg3);
+        
+        /*
+         * If the checkpoint directory
+         * is in the the TRemChkptDirList then we do not transfer since directory
+         * is remotely mounted.
+         */
+        if (in_remote_checkpoint_dir(arg3))
+          {
+          continue;
+          }
+        
+        /*
+         * We may need to create the directory for this inbound checkpoint /
+         * restart file.  If we changed the path and the last segment of the
+         * path does not exist then create it.
+         */
+        if (path_changed == 1)
+          {
+          char needdir[MAXPATHLEN + 1];
+          int saveumask;
+          char *ptr;
+          
+          strcpy(needdir,arg3);
+          ptr = strrchr(needdir,'/');
+          if (ptr != NULL)
+          {
+          ptr[0] = '\0';
+          }
+          
+          saveumask = umask(0000);
+
+          if ((mkdir(needdir, 0777) == -1) && (errno != EEXIST))
+            {
+            log_err(errno, id, "Failed to create jobs checkpoint directory");
+            }
+
+          umask(saveumask); 
+          }
+        }  /* END if (pair->fp_flag == JOBCKPFILE) */
+
       *arg2 = '\0';
 
       if (rmtflag)
@@ -3405,7 +3498,6 @@ void req_cpyfile(
 
       strcat(arg2, prmt);
 
-      strcpy(arg3, pair->fp_local);
       }  /* END else (dir == STAGE_DIR_OUT) */
 
 #ifdef HAVE_WORDEXP
@@ -3578,7 +3670,7 @@ nextword:
 error:
 #endif
 
-      if (dir == STAGE_DIR_IN)
+      if ((dir == STAGE_DIR_IN) || (dir == CKPT_DIR_IN))
         {
         /* delete the stage_in files that were just copied in */
 
@@ -3617,7 +3709,7 @@ error:
 #endif /* !NO_SPOOL_OUTPUT */
         }
 
-      if (dir == STAGE_DIR_IN)
+      if ((dir == STAGE_DIR_IN) || (dir == CKPT_DIR_IN))
         {
         unlink(rcperr);
 
@@ -3627,6 +3719,12 @@ error:
     else
       {
       /* Copy in/out succeeded */
+      if (LOGLEVEL >= 7)
+        {
+        sprintf(log_buffer,"copy succeeded (%s) from (%s) to (%s)\n",
+          (dir == 0)? "In" : "Out", arg2, arg3);
+        log_err(-1, id, log_buffer);
+        }
 
       if (dir == STAGE_DIR_OUT)
         {
@@ -3636,6 +3734,63 @@ error:
           {
           sprintf(log_buffer, msg_err_unlink,
                   "stage out",
+                  localname);
+
+          log_err(errno, id, log_buffer);
+
+
+          add_bad_list(&bad_list, log_buffer, 2);
+
+          bad_files = 1;
+          }
+        }
+      else if (dir == CKPT_DIR_OUT)
+        {
+        /* if we are using the default checkpoint path then we need to clean
+         * up the job directory
+         */
+         
+        if (strncmp(localname, path_checkpoint, strlen(path_checkpoint)) == 0)
+          {
+          char *ptr1;
+
+          ptr1 = strrchr(localname, '/');
+          if (ptr1 != NULL)
+            {
+            ptr1[0] = '\0';
+            }
+
+          /*
+           * If the checkpoint directory
+           * is in the the TRemChkptDirList then we do not delete since directory
+           * is remotely mounted.
+           */
+          if (in_remote_checkpoint_dir(localname))
+            {
+            continue;
+            }
+          
+          if (LOGLEVEL >= 7)
+            {
+            sprintf(log_buffer,"removing checkpoint file directory (%s)\n", localname);
+            log_err(-1, id, log_buffer);
+            }
+          }
+        else
+          {
+          if (LOGLEVEL >= 7)
+            {
+            sprintf(log_buffer,"removing local checkpoint file (%s)\n", localname);
+            log_err(-1, id, log_buffer);
+            }
+          }
+
+        /* have copied out, ok to remove local one */
+
+        if (remtree(localname) < 0)
+          {
+          sprintf(log_buffer, msg_err_unlink,
+                  "checkpoint",
                   localname);
 
           log_err(errno, id, log_buffer);

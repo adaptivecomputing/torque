@@ -244,6 +244,7 @@ extern int  mom_checkpoint_job_has_checkpoint(job *pjob);
 extern void mom_checkpoint_execute_job(job *pjob, char *shell, char *arg[], struct var_table *vtable);
 extern void mom_checkpoint_init_job_periodic_timer(job *pjob);
 extern int  mom_checkpoint_start_restart(job *pjob);
+extern void get_jobs_default_checkpoint_dir(job *pjob, char *defaultpath);
 
 
 /* END prototypes */
@@ -1427,9 +1428,7 @@ int TMomFinalizeJob1(
       /* update to time now minus the time already used    */
       /* unless it is suspended, see request.c/req_signal() */
 
-      strcpy(buf, path_checkpoint);
-      strcat(buf, pjob->ji_qs.ji_fileprefix);
-      strcat(buf, JOB_CHECKPOINT_SUFFIX);
+      get_jobs_default_checkpoint_dir(pjob, buf);
       stat(buf, &sb);
 
 

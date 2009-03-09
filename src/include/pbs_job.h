@@ -214,7 +214,7 @@ struct grpcache
 
 /**
  * sync w/ src/server/job_attr_def.c
- * sync w/ src/resmom/request.c TJobAttr constants
+ * sync w/ src/resmom/requests.c TJobAttr constants
  *
  * @see struct job
  */
@@ -282,6 +282,7 @@ enum job_atr
   JOB_ATR_checkpoint_name,   /* name of checkpoint file */
   JOB_ATR_checkpoint_time,   /* timestamp of start of last checkpoint */
   JOB_ATR_checkpoint_restart_status,   /* checkpoint restart status */
+  JOB_ATR_restart_name,   /* name of checkpoint restart file */
   JOB_ATR_fault_tolerant, /* indicates if a job should keep going if it looses a sister */
 #ifdef ENABLE_CSA
   JOB_ATR_pagg_id,
@@ -687,6 +688,7 @@ task *task_find A_((
 #define JOB_SVFLG_StagedIn 0x400 /* job has files that have been staged in */
 #define JOB_SVFLG_HasNodes 0x1000 /* job has nodes allocated to it */
 #define JOB_SVFLG_RescAssn 0x2000 /* job resources accumulated in server/que */
+#define JOB_SVFLG_CHECKPOINT_COPIED 0x4000 /* job checkpoint file that has been copied */
 
 /*
  * Related defines
@@ -702,6 +704,7 @@ task *task_find A_((
 #define MAIL_END   (int)'e'
 #define MAIL_OTHER (int)'o'
 #define MAIL_STAGEIN (int)'s'
+#define MAIL_CHKPTCOPY (int)'c'
 #define MAIL_NORMAL 0
 #define MAIL_FORCE  1
 
@@ -747,6 +750,8 @@ task *task_find A_((
 #define JOB_SUBSTATE_STAGEIN 14 /* job staging in files then wait */
 #define JOB_SUBSTATE_STAGEGO 15 /* job staging in files and then run */
 #define JOB_SUBSTATE_STAGECMP 16 /* job stage in complete */
+#define JOB_SUBSTATE_CHKPTGO 17 /* job copy checkpoint file and then run */
+#define JOB_SUBSTATE_CHKPTCMP 18 /* job copy checkpoint file complete */
 
 #define JOB_SUBSTATE_HELD 20 /* job held - user or operator */
 #define JOB_SUBSTATE_SYNCHOLD 21 /* job held - waiting on sync regist */
@@ -844,6 +849,8 @@ extern int   net_move A_((job *, struct batch_request *));
 extern int   svr_chk_owner A_((struct batch_request *, job *));
 
 extern struct batch_request *cpy_stage A_((struct batch_request *, job *, enum job_atr, int));
+extern struct batch_request *setup_cpyfiles A_((struct batch_request *, job *, char *, char *, int, int));
+extern struct batch_request *cpy_checkpoint A_((struct batch_request *, job *, enum job_atr, int));
 #endif /* BATCH_REQUEST_H */
 
 #ifdef QUEUE_H

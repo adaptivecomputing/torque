@@ -170,6 +170,7 @@ extern char *path_nodes_new;
 extern char *path_nodestate;
 extern char *path_nodenote;
 extern char *path_nodenote_new;
+extern char *path_checkpoint;
 
 extern int  queue_rank;
 extern char  server_name[];
@@ -514,6 +515,8 @@ int pbsd_init(
   path_nodenote  = build_path(path_priv, NODE_NOTE,    NULL);
 
   path_nodenote_new = build_path(path_priv, NODE_NOTE, new_tag);
+
+  path_checkpoint     = build_path(path_home, PBS_CHKPTDIR, suffix_slash);
 
   init_resc_defs();
 
@@ -1320,6 +1323,10 @@ static int pbsd_init_job(
     case JOB_SUBSTATE_STAGEFAIL:
 
     case JOB_SUBSTATE_STAGEGO:
+
+    case JOB_SUBSTATE_CHKPTGO:
+
+    case JOB_SUBSTATE_CHKPTCMP:
 
     case JOB_SUBSTATE_HELD:
 

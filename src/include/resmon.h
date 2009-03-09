@@ -115,6 +115,7 @@ struct config
 #define PBS_MAXSERVER   4
 
 #define TMAX_NSDCOUNT   32
+#define TMAX_RCDCOUNT   32
 
 /* Checkpoint system type, return values from the mach_dep function mom_does_checkpoint. */
 #define CST_NONE        0  /* There is no checkpointing in this environment/system. */

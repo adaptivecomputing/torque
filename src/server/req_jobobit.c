@@ -136,14 +136,12 @@ extern const char *PJobState[];
 /* External Functions called */
 
 extern void set_resc_assigned A_((job *, enum batch_op));
+extern void cleanup_restart_file(job *);
 
 /* Local public functions  */
 
 void req_jobobit A_((struct batch_request *));
 
-/* Local private functions */
-
-static struct batch_request *setup_cpyfiles A_((struct batch_request *, job *, char *, char *, int, int));
 
 
 /*
@@ -179,7 +177,7 @@ static char *setup_from(
  * batch request, then append the file pairs
  */
 
-static struct batch_request *setup_cpyfiles(
+struct batch_request *setup_cpyfiles(
 
         struct batch_request *preq,
         job  *pjob,
@@ -230,9 +228,18 @@ static struct batch_request *setup_cpyfiles(
       pjob->ji_wattr[(int)JOB_ATR_job_owner].at_val.at_str,
       pcf->rq_owner);
 
-    get_jobowner(
-      pjob->ji_wattr[(int)JOB_ATR_euser].at_val.at_str,
-      pcf->rq_user);
+    if (tflag == JOBCKPFILE)
+      {
+      get_jobowner(
+        PBS_DEFAULT_ADMIN,
+        pcf->rq_user);
+      }
+    else
+      {
+      get_jobowner(
+        pjob->ji_wattr[(int)JOB_ATR_euser].at_val.at_str,
+        pcf->rq_user);
+      }
 
     if (((pjob->ji_wattr[(int)JOB_ATR_egroup].at_flags & ATR_VFLAG_DEFLT) == 0) &&
         (pjob->ji_wattr[(int)JOB_ATR_egroup].at_val.at_str != 0))
@@ -2361,6 +2368,13 @@ void req_jobobit(
         }
       }
 
+    /* remove checkpoint restart file if there is one */
+    
+    if (pjob->ji_wattr[(int)JOB_ATR_restart_name].at_flags & ATR_VFLAG_SET)
+      {
+      cleanup_restart_file(pjob);
+      }
+
     /* "on_job_exit()" will be dispatched out of the main loop */
     }
   else
@@ -2409,6 +2423,13 @@ void req_jobobit(
           jobid,
           "on_job_rerun task assigned to job");
         }
+      }
+
+    /* remove checkpoint restart file if there is one */
+    
+    if (pjob->ji_wattr[(int)JOB_ATR_restart_name].at_flags & ATR_VFLAG_SET)
+      {
+      cleanup_restart_file(pjob);
       }
 
     /* "on_job_rerun()" will be dispatched out of the main loop */

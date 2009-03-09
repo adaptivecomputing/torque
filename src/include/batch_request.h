@@ -260,6 +260,8 @@ struct rq_authen
 
 #define STAGE_DIR_IN  0
 #define STAGE_DIR_OUT 1
+#define CKPT_DIR_IN  2
+#define CKPT_DIR_OUT 3
 
 struct rq_cpyfile
   {
@@ -267,7 +269,7 @@ struct rq_cpyfile
   char   rq_owner[PBS_MAXUSER + 1];   /* used in Copy only    */
   char    rq_user[PBS_MAXUSER + 1];   /* used in Copy & Delete */
   char    rq_group[PBS_MAXGRPN + 1];   /* used in Copy only     */
-  int   rq_dir;     /* used in Copy only     */
+  int   rq_dir;     /* used in Copy & checkpoint restart delete   */
   tlist_head rq_pair;                        /* list of rqfpair,  used in Copy & Delete */
   };
 

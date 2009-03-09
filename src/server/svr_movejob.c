@@ -123,6 +123,7 @@
 
 extern void stat_mom_job A_((job *));
 extern void remove_stagein(job *);
+extern void remove_checkpoint(job *);
 extern int  job_route A_((job *));
 
 extern struct pbsnode *PGetNodeFromAddr(pbs_net_t);
@@ -373,6 +374,9 @@ static void post_routejob(
       if (jobp->ji_qs.ji_svrflags & JOB_SVFLG_StagedIn)
         remove_stagein(jobp);
 
+      if (jobp->ji_qs.ji_svrflags & JOB_SVFLG_CHECKPOINT_COPIED)
+        remove_checkpoint(jobp);
+
       job_purge(jobp); /* need to remove server job struct */
 
       return;
@@ -480,6 +484,9 @@ static void post_movejob(
 
       if (jobp->ji_qs.ji_svrflags & JOB_SVFLG_StagedIn)
         remove_stagein(jobp);
+
+      if (jobp->ji_qs.ji_svrflags & JOB_SVFLG_CHECKPOINT_COPIED)
+        remove_checkpoint(jobp);
 
       strcpy(log_buffer, msg_movejob);
 

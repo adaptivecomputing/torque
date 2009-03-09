@@ -174,6 +174,7 @@
 #define ATTR_checkpoint_name  "checkpoint_name"   /* user specified name of checkpoint file */
 #define ATTR_checkpoint_time  "checkpoint_time"   /* timestamp of start of last checkpoint */
 #define ATTR_checkpoint_restart_status  "checkpoint_restart_status"   /* checkpoint restart status */
+#define ATTR_restart_name  "restart_name"   /* saved name of checkpoint restart file */
 
 #ifdef ENABLE_CSA
 #define ATTR_pagg         "pagg_id"
@@ -298,7 +299,6 @@
 #define DELPURGE  "delpurge="   /* see qdel.c */
 #define EXECQUEONLY  "exec_queue_only"   /* see req_stat.c */
 #define RERUNFORCE "force"
-#define CHECKPOINTED "checkpoint_success"
 
 #define USER_HOLD "u"
 #define OTHER_HOLD "o"
@@ -424,6 +424,14 @@
 #ifndef PBS_SCHEDULER_SERVICE_PORT
 #define PBS_SCHEDULER_SERVICE_PORT 15004
 #endif /* PBS_SCHEDULER_SERVICE_PORT */
+
+/*
+ * Other misc checkpoint defines
+ */
+#define CHECKPOINTHOLD "checkpoint_hold"
+#define CHECKPOINTCONT "checkpoint_cont"
+#define MOM_DEFAULT_CHECKPOINT_DIR "$MOMDEFAULTCHECKPOINTDIR$"
+
 
 enum batch_op { SET, UNSET, INCR, DECR, EQ, NE, GE, GT, LE, LT, DFLT, MERGE };
 

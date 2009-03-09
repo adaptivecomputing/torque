@@ -225,6 +225,7 @@ time_t  last_log_check;
 char           *nodefile_suffix = NULL;    /* suffix to append to each host listed in job host file */
 char           *submithost_suffix = NULL;  /* suffix to append to submithost for interactive jobs */
 char           *TNoSpoolDirList[TMAX_NSDCOUNT];
+char           *TRemChkptDirList[TMAX_RCDCOUNT];
 
 char           *AllocParCmd = NULL;  /* (alloc) */
 
@@ -359,6 +360,7 @@ static unsigned long setmomhost(char *);
 static unsigned long setrreconfig(char *);
 static unsigned long setsourceloginbatch(char *);
 static unsigned long setsourcelogininteractive(char *);
+static unsigned long setremchkptdirlist(char *);
 
 
 static struct specials
@@ -413,6 +415,7 @@ static struct specials
   { "preexec",             setpreexec },
   { "source_login_batch",  setsourceloginbatch },
   { "source_login_interactive", setsourcelogininteractive },
+  { "remote_checkpoint_dirs", setremchkptdirlist },
   { NULL,                  NULL }
   };
 
@@ -3212,6 +3215,55 @@ static unsigned long setnospooldirlist(
   return(1);
   }  /* END setnospooldirlist() */
 
+
+
+static unsigned long setremchkptdirlist(
+
+  char *value)  /* I */
+
+  {
+  char *TokPtr;
+  char *ptr;
+
+  int   index = 0;
+  char  tmpLine[1024];
+  
+  while ((TRemChkptDirList[index] != NULL) && (index < TMAX_RCDCOUNT))
+    {
+    index++;
+    }
+
+  if (index >= TMAX_RCDCOUNT)
+    return (1);
+
+  ptr = strtok_r(value, " \t\n:,", &TokPtr);
+
+  while (ptr != NULL)
+    {
+    TRemChkptDirList[index] = strdup(ptr);
+
+    snprintf(tmpLine, sizeof(tmpLine), "added RemChkptDir[%d] '%s'",
+             index,
+             ptr);
+
+    log_record(
+      PBSEVENT_SYSTEM,
+      PBS_EVENTCLASS_SERVER,
+      "setremchkptdirlist",
+      tmpLine);
+
+    index++;
+
+    if (index >= TMAX_RCDCOUNT)
+      break;
+
+    ptr = strtok_r(NULL, " \t\n:,", &TokPtr);
+    }  /* END while (ptr != NULL) */
+
+  /* SUCCESS */
+
+  return (1);
+  }  /* END setremchkptdirlist() */
 
 
 

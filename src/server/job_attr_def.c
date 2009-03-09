@@ -841,6 +841,20 @@ attribute_def job_attr_def[] =
     ATR_TYPE_STR,
     PARENT_TYPE_JOB
   },
+
+  /* JOB_ATR_restart_name */
+  { ATTR_restart_name,  /* "restart_name" */
+    decode_str,
+    encode_str,
+    set_str,
+    comp_str,
+    free_str,
+    NULL_FUNC,
+    NO_USER_SET | ATR_DFLAG_SvWR | ATR_DFLAG_ALTRUN | ATR_DFLAG_MOM,
+    ATR_TYPE_STR,
+    PARENT_TYPE_JOB
+  },
+
   /* JOB_ATR_f (fault_tolerant)*/
   { ATTR_f,
     decode_b,

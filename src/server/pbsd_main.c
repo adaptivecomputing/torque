@@ -178,6 +178,7 @@ char        *path_nodes_new;
 char        *path_nodestate;
 char        *path_nodenote;
 char        *path_nodenote_new;
+char        *path_checkpoint;
 extern char    *msg_daemonname;
 extern char *msg_info_server; /* Server information message   */
 extern int pbs_errno;
