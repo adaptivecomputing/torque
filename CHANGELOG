@@ -1,5 +1,8 @@
 c - crash     b - bug fix    e - enhancement    f - new feature
 
+2.4.1
+  f - added a "-w" option to qsub to override the working directory
+
 2.4.0
   f - added a "-q" option to pbs_mom which does *not* perform the default -p 
       behavior
