@@ -1969,6 +1969,7 @@ void req_signaljob(
   char            id[] = "req_signaljob";
   job            *pjob;
   int             sig;
+  int             numprocs=0;
   char           *sname;
 
   struct sig_tbl *psigt;
@@ -2078,12 +2079,20 @@ void req_signaljob(
     sleep(1);
     }
 
-  if ((kill_job(pjob, sig, id, "job was suspended, now killing") == 0) && (sig == 0))
+  /*
+   * When kill_job is launched, processes are killed and waitpid() should harvest the process
+   * and takes action to send an obit. If no matching process exists, then an obit may never be
+   * sent due to the current way that TORQUE's state machine works. 
+   */
+
+  numprocs = kill_job(pjob, sig, id, "killing job");
+
+  if ((numprocs == 0) && ((sig == 0)||(sig == SIGKILL)))
     {
     /* SIGNUL and no procs found, force job to exiting */
     /* force issue of (another) job obit */
 
-    sprintf(log_buffer, "job recycled into exiting on SIGNULL from substate %d",
+    sprintf(log_buffer, "job recycled into exiting on SIGNULL/KILL from substate %d",
             pjob->ji_qs.ji_substate);
 
     LOG_EVENT(
@@ -2099,27 +2108,18 @@ void req_signaljob(
     exiting_tasks = 1;
     }
 
-  if ((sig == SIGKILL) && (pjob->ji_qs.ji_substate == JOB_SUBSTATE_EXITING))
-    {
-    /* force issue of (another) job obit */
-
-    sprintf(log_buffer, "job recycled into exiting on SIGKILL from substate exiting");
-
-    LOG_EVENT(
-      PBSEVENT_ERROR,
-      PBS_EVENTCLASS_JOB,
-      pjob->ji_qs.ji_jobid,
-      log_buffer);
-
-    exiting_tasks = 1;
-    }
-
   reply_ack(preq);
 
   return;
   }  /* END req_signaljob() */
 
 
+/**
+ * Encodes the used resource information (cput, mem, walltime, etc.)
+ * about the given job. (The data is encoded in preparation for
+ * being sent to the pbs_server.)
+ *
+ */
 
 void encode_used(
 
@@ -2251,6 +2251,14 @@ void encode_flagged_attrs(
 /*
  * req_stat_job - return the status of one (if id is specified) or all
  * jobs (if id is the null string).
+ *
+ * This is usually triggered due to a request from the pbs_server to learn
+ * about this (or all) jobs. The server will query the MOM periodically
+ * for this information. It is controlled by the pbs_server attributes
+ * 'job_stat_rate' and 'poll_jobs'.
+ *
+ * This data is different than the occasional status update sent to
+ * the server that tells the server the MOM's general stats (see mom_server_all_update_stat()).
  */
 
 void req_stat_job(
