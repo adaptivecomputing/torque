@@ -30,7 +30,6 @@ my $config_cmd = "./configure"
                  . " --with-debug"
                  . " --enable-syslog"
                  . " --enable-unixsockets=no"
-                 . " --enable-blcr"
                  . " CFLAGS=\"-g\""
                  . " $config_vars";
 
