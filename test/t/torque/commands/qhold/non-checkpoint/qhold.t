@@ -20,6 +20,10 @@ use Torque::Job::Ctrl          qw(
 use Torque::Test::Utils        qw( 
                                     run_and_check_cmd
                                  );
+use Torque::Test::Qhold::Utils qw(
+                                   verify_qhold
+                                 );
+
 
 # Test Description
 plan('no_plan');
@@ -49,11 +53,9 @@ runJobs($job_id);
 
 # Test qhold
 $cmd     = "qhold $job_id";
-%qhold   = runCommand($cmd);
+%qhold   = run_and_check_cmd($cmd);
 
-like($qhold{ 'STDERR' }, 
-     qr/qhold: Invalid request MSG=job not held since checkpointing is expected but not enabled for job $job_id/, 
-     "Checking for qhold error message");
+verify_qhold($job_id);
 
 # Delete the job
 delJobs($job_id);
