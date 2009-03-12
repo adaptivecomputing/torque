@@ -518,7 +518,7 @@ int wait_request(
 
     /* NOTE:  add info about node associated with connection - NYI */
 
-    snprintf(tmpLine, sizeof(tmpLine), "connection %d to host %s has timed out out after %d seconds - closing stale connection\n",
+    snprintf(tmpLine, sizeof(tmpLine), "connection %d to host %s has timed out after %d seconds - closing stale connection\n",
              i,
              PAddrToString(&cp->cn_addr),
              PBS_NET_MAXCONNECTIDLE);
