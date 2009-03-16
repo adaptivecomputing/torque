@@ -47,7 +47,7 @@ my $chkpt_params     = {
                          'torque_bin' => $props->get_property('Torque.Home.Dir') . "/bin/",
                          'user'       => $props->get_property('torque.user.one'),
                          'c_value'    => 'enabled,shutdown',
-                         'app'        => resolve_path("$FindBin::Bin/../../test_programs/test.pl")
+                         'app'        => resolve_path("$FindBin::Bin/../../../test_programs/test.pl")
                        };
 my $non_chkpt_params = {
                          'torque_bin'  => $props->get_property('Torque.Home.Dir') . "/bin/",
