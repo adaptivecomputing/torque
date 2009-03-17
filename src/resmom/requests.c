@@ -608,7 +608,7 @@ static int return_file(
   int        seq = 0;
 
   filename = std_file_name(pjob, which, &amt); /* amt is place holder */
-  
+
   /* We need to check for NULL which may be returned */
   
   if (filename == NULL)
@@ -989,7 +989,93 @@ static int is_file_same(
     }
 
   return(0);
-  }
+  } /* End of is_file_same() */
+
+
+
+
+/*
+ * is_file_going_to_dir() - is file going to destination directory
+ * returns: 1 if file is going to directory
+ *   0 if not going to the directory or destiation is not a directory (or cannot tell)
+ */
+
+static int is_file_going_to_dir(
+
+  char *file,
+  char *destdir)
+
+  {
+  char           *id = "is_file_going_to_dir";
+
+#if defined(HAVE_STRUCT_STAT64) && defined(HAVE_STAT64)
+
+  struct stat64 sb1;
+#else
+
+  struct stat sb1;
+#endif
+
+#if defined(HAVE_STRUCT_STAT64) && defined(HAVE_STAT64)
+
+  if (stat64(destdir, &sb1) == 0)
+#else
+
+  if (stat(destdir, &sb1) == 0)
+#endif
+    {
+    char *ptr1;
+    char filename[MAXPATHLEN+1];
+    int complen = 0;
+
+    /* Make sure the destination is a directory */
+    
+    if (!S_ISDIR(sb1.st_mode))
+      {
+      /* destination is not a directory */
+      return(0);
+      }
+
+    strcpy(filename,file);
+    
+    /* Does directory match the files path? */
+    
+    ptr1 = strrchr(filename, '/');
+    if (ptr1 != NULL)
+      {
+      ptr1[0] = '\0';
+      
+      complen = strlen(destdir);      
+      if (destdir[complen - 1] == '/')
+        {
+        /* don't include trailing slash (if any) in comparision */
+        complen--;
+        }
+      
+      if (memcmp(filename, destdir, complen) == 0)
+        {
+        /* file is going to directory*/
+        return(1);
+        }
+      }
+    }
+  else if (errno == 2)
+    {
+    /*
+     * This is okay. Probably a file that does not yet exist because
+     * we have not copied it yet
+     */
+    }
+  else
+    {
+    sprintf(log_buffer, "File %s stat failed, errno = %d",
+            destdir,
+            errno);
+    log_err(-1, id, log_buffer);
+    }
+
+  return(0);
+  } /* End of is_file_going_to_dir() */
 
 
 
@@ -3636,9 +3722,15 @@ nextword:
 
 #endif /* HAVE_WORDEXP */
 
-    if ((rmtflag == 0) && (is_file_same(arg2, arg3) == 1))
+    if ((rmtflag == 0) &&
+         ((is_file_same(arg2, arg3) == 1) || (is_file_going_to_dir(arg2, arg3) == 1)))
       {
-      /* local file, source == destination, don't copy */
+      /*
+       * If this is a local file then don't copy it
+       * if source file and destination file are the same file or
+       * if the destination (arg3) is a directory not a file name
+       * and the source file (arg2) is in the destination directory (arg3)
+       */
 
       continue;
       }
