@@ -127,6 +127,10 @@
 #include <ufs/ufs/quota.h>
 #include <vm/vm_map.h>
 
+#ifdef USE_SYSCTL
+#include        <vm/vm_param.h>
+#endif
+
 #include "portability.h"
 #include "pbs_error.h"
 #include "log.h"
@@ -1929,6 +1933,12 @@ physmem(struct rm_attribute *attrib)
 
   struct vmmeter sum;
   u_int  val;
+#ifdef USE_SYSCTL
+  int      mib[2];
+  size_t   len;
+  unsigned int      phys_mem;
+  int      page_size;
+#endif
 
   if (attrib)
     {
@@ -1937,6 +1947,7 @@ physmem(struct rm_attribute *attrib)
     return NULL;
     }
 
+#ifndef USE_SYSCTL
   if (kd == NULL)
     {
     log_err(-1, id, nokernel);
@@ -1970,6 +1981,18 @@ physmem(struct rm_attribute *attrib)
     val *= sum.v_page_count;
     }
 
+#else
+  mib[0] = CTL_HW;        /* get physical memory */
+
+  mib[1] = HW_PHYSMEM;
+
+  len    = sizeof(phys_mem);
+
+  (void)sysctl(mib, 2, &phys_mem, &len, NULL,  0);
+
+  val = phys_mem / 1024;
+
+#endif
   sprintf(ret_string, "%ukb", val);
 
   return ret_string;
@@ -2270,6 +2293,14 @@ get_la(double *rv)
   {
   char *id = "get_la";
   long la[3];
+#ifdef USE_SYSCTL
+  int      mib[2];
+  size_t   len;
+  unsigned int      phys_mem;
+  int      page_size;
+#endif
+
+#ifndef USE_SYSCTL
 
   if (kd == NULL)
     {
@@ -2289,6 +2320,17 @@ get_la(double *rv)
     log_err(errno, id, "kvm_read");
     return (rm_errno = RM_ERR_SYSTEM);
     }
+
+#else
+  mib[0] = CTL_VM;        /* get load average */
+
+  mib[1] = VM_LOADAVG;
+
+  len    = sizeof(la);
+
+  (void)sysctl(mib, 2, &la, &len, NULL,  0);
+
+#endif
 
   *rv = (double)la[0] / (double)FSCALE;
 
