@@ -19,6 +19,14 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+
+/* this macro is for systems like BSD4 that do not have O_SYNC in fcntl.h,
+ * but do have O_FSYNC! */
+
+#ifndef O_SYNC
+#define O_SYNC O_FSYNC
+#endif /* !O_SYNC */
+
 #include <unistd.h>
 
 
