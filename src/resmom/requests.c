@@ -608,6 +608,13 @@ static int return_file(
   int        seq = 0;
 
   filename = std_file_name(pjob, which, &amt); /* amt is place holder */
+  
+  /* We need to check for NULL which may be returned */
+  
+  if (filename == NULL)
+    {
+    return(-1);
+    }  
 
   if (strcmp(filename, "/dev/null") == 0)
     {
