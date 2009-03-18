@@ -161,10 +161,11 @@ static char *mk_log_name(
   {
 
   struct tm *ptm;
+  struct tm  tmpPtm;
   time_t time_now;
 
   time_now = time((time_t *)0);
-  ptm = localtime(&time_now);
+  ptm = localtime_r(&time_now,&tmpPtm);
 
   if (log_suffix[0] != '\0')
     {
@@ -436,6 +437,7 @@ void log_record(
   time_t now;
 
   struct tm *ptm;
+  struct tm  tmpPtm;
   int    rc = 0;
   FILE  *savlog;
   char  *start = NULL, *end = NULL;
@@ -448,7 +450,7 @@ void log_record(
 
   now = time((time_t *)0); /* get time for message */
 
-  ptm = localtime(&now);
+  ptm = localtime_r(&now,&tmpPtm);
 
   /* Do we need to switch the log? */
 

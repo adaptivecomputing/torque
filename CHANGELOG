@@ -8,6 +8,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature
   b - changed so we don't try to copy a local file when the destination is a
       directory and the file is already in that directory
   f - changes to allow TORQUE to operate without pbs_iff (merged from 2.3)
+  e - made logging functions rentrant safe by using localtime_r instead of
+      localtime() (merged from 2.3)
 
 2.4.0
   f - added a "-q" option to pbs_mom which does *not* perform the default -p 
