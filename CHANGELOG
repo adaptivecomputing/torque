@@ -7,6 +7,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature
   c - check filename for NULL to prevent crash
   b - changed so we don't try to copy a local file when the destination is a
       directory and the file is already in that directory
+  f - changes to allow TORQUE to operate without pbs_iff (merged from 2.3)
 
 2.4.0
   f - added a "-q" option to pbs_mom which does *not* perform the default -p 

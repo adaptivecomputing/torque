@@ -782,7 +782,7 @@ int pbs_original_connect(
 
     /* Have pbs_iff authenticate connection */
 
-    if (PBSD_authenticate(connection[out].ch_socket) != 0)
+    if ((ENABLE_TRUSTED_AUTH == FALSE) && (PBSD_authenticate(connection[out].ch_socket) != 0))
       {
       close(connection[out].ch_socket);
 

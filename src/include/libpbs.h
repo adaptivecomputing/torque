@@ -139,6 +139,9 @@ enum job_file
 extern char pbs_current_user[];
 extern char pbs_current_group[];
 
+/* set ENABLE_TRUSTED_AUTH to "TRUE" to bypass using pbs_iff for authentication */
+#define ENABLE_TRUSTED_AUTH FALSE
+
 #define NCONNECTS 5
 
 struct connect_handle
