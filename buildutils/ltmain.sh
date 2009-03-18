@@ -45,6 +45,7 @@ PROGRAM=ltmain.sh
 PACKAGE=libtool
 VERSION=1.5.22
 TIMESTAMP=" (1.1220.2.365 2005/12/18 22:14:06)"
+EGREP="grep -E"
 
 # See if we are running on zsh, and set the options which allow our
 # commands through without removal of \ escapes.

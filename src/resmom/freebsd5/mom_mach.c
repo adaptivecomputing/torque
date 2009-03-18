@@ -2321,11 +2321,11 @@ quota(struct rm_attribute *attrib)
       break;
 
     case timedata:
-      sprintf(ret_string, "%lu", gracetime(qi.dqb_btime));
+      sprintf(ret_string, "%lu", (long unsigned)gracetime(qi.dqb_btime));
       break;
 
     case timefile:
-      sprintf(ret_string, "%lu", gracetime(qi.dqb_itime));
+      sprintf(ret_string, "%lu", (long unsigned)gracetime(qi.dqb_itime));
       break;
     }
 
