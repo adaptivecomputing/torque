@@ -409,9 +409,10 @@ int run_pelog(
 
   if (LOGLEVEL >= 5)
     {
-    sprintf(log_buffer, "running %s script '%s'",
+    sprintf(log_buffer,"running %s script '%s' for job %s",
       PPEType[which],
-      (pelog != NULL) ? pelog : "NULL");
+      (pelog != NULL) ? pelog : "NULL",
+      pjob->ji_qs.ji_jobid);
 
     log_record(PBSEVENT_SYSTEM, 0, id, log_buffer);
     }

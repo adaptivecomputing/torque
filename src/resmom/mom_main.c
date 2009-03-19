@@ -7054,7 +7054,11 @@ setup_program_environment(void)
 
 #endif
 
-  act.sa_handler = catch_child; /* set up to catch death of child */
+#ifdef NOSIGCHLDMOM
+  act.sa_handler = SIG_DFL;
+#else
+  act.sa_handler = catch_child;	/* set up to catch death of child */
+#endif
 
   sigaction(SIGCHLD, &act, NULL);
 
@@ -7737,7 +7741,9 @@ kill_all_running_jobs(void)
       }
     }
 
+#ifndef NOSIGCHLDMOM
   if (termin_child != 0)
+#endif
     scan_for_terminated();
 
   if (exiting_tasks)
@@ -7854,7 +7860,9 @@ void main_loop(void)
         }
       }  /* END BLOCK */
 
+#ifndef NOSIGCHLDMOM
     if (termin_child != 0)  /* termin_child is a flag set by the catch_child signal handler */
+#endif
       scan_for_terminated();  /* machine dependent (calls mom_get_sample()???) */
 
     /* if -p, must poll tasks inside jobs to look for completion */
