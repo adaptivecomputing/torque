@@ -79,13 +79,13 @@
 .so ../ers/ers.macros
 .Iq
 .SH NAME
-qterm \- terminate processing by a pbs batch server
+qterm \- terminate processing by a PBS batch server
 .SH SYNOPSIS
-qterm \^\-t\ type\^ [server...]
+qterm [\^\-t\ type\^] [server...]
 .SH DESCRIPTION
 The
 .B qterm 
-command terminates a batch server.
+command terminates a PBS batch server.
 .if !\n(Pb .ig Ig
 The command sends a
 .I "Server Shutdown"
@@ -98,14 +98,14 @@ terminate command,
 .if !\n(Pb .ig Ig
 Shutdown request,
 .Ig
-The server will go into 
-.I Terminating
+the server will go into a
+.I terminating
 state.
-No new jobs will be allowed to be started into execution nor enqueued into
-the server.
-The impact on jobs currently being run by the server depends on the type of
-shut down requested as described below.
-The qterm command will not exit until the server has completed it shutdown
+While in this state, the server will not allow new jobs to be started or enqueued.
+By default, qterm will request a "quick" shutdown of the PBS server.
+Other ways of shutting down the server (specified with the -t argument),
+and their impact on running jobs, are described below.
+The qterm command will not exit until the server has completed its shutdown
 procedure.
 .LP
 In order to execute qterm, the user must have PBS Operation or Manager
