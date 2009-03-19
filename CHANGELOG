@@ -11,6 +11,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature
   e - made logging functions rentrant safe by using localtime_r instead of
       localtime() (merged from 2.3)
   e - Merged in more logging and NOSIGCHLDMOM capability from Yahoo branch
+  e - merged in new log_ext() function to allow more fine grained syslog events, 
+      you can now specify severity level. Also added more logging statements
   
 2.4.0
   f - added a "-q" option to pbs_mom which does *not* perform the default -p 

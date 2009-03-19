@@ -2151,7 +2151,7 @@ mom_server *mom_server_valid_message_source(
             netaddr(addr),
             "(server not authorized)");
 
-    log_err(-1, id, log_buffer);
+    log_ext(-1,id,log_buffer,LOG_ALERT);
 
     rpp_close(stream);
     }
@@ -2211,7 +2211,7 @@ void is_request(
     sprintf(log_buffer, "protocol version %d unknown",
             version);
 
-    log_err(-1, id, log_buffer);
+    log_ext(-1,id,log_buffer,LOG_ALERT);
 
     rpp_close(stream);
 
@@ -2331,7 +2331,7 @@ void is_request(
       sprintf(log_buffer, "unknown command %d sent",
               command);
 
-      log_err(-1, id, log_buffer);
+      log_ext(-1,id,log_buffer,LOG_ALERT);
 
       goto err;
     }  /* END switch(command) */
@@ -2349,7 +2349,7 @@ err:
           dis_emsg[ret],
           (addr != NULL) ? netaddr(addr) : "???");
 
-  log_err(-1, id, log_buffer);
+  log_ext(-1,id,log_buffer,LOG_ALERT);
 
   rpp_close(stream);
 

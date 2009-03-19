@@ -83,6 +83,7 @@
  * Functions included are:
  * log_open()
  * log_err()
+ * log_ext()
  * log_record()
  * log_close()
  * log_roll()
@@ -325,6 +326,35 @@ void log_err(
   char *text)    /* I */
 
   {
+  log_ext(errnum,routine,text,LOG_ERR);
+
+  return;
+  }  /* END log_err() */
+
+
+
+
+/*
+ *  log_ext (log extended) - log message to syslog (if available) and to the TORQUE log.
+ *
+ *  The error is recorded to the TORQUE log file and to syslogd if it is
+ *	available.  If the error file has not been opened and if syslog is
+ *	not defined, then the console is opened.
+
+ *  Note that this function differs from log_err in that you can specify a severity
+ *  level that will accompany the message in the syslog (see 'manpage syslog' for a list
+ *  of severity/priority levels). This function, is in fact, used by log_err--it just uses
+ *  a severity level of LOG_ERR
+ */
+
+void log_ext(
+
+  int   errnum,   /* I (errno or PBSErrno) */
+  char *routine,  /* I */
+  char *text,     /* I */
+  int   severity) /* I */
+
+  {
   char  buf[LOG_BUF_SIZE];
 
   char *EPtr;
@@ -405,12 +435,12 @@ void log_err(
     syslogopen = 1;
     }
 
-  syslog(LOG_ERR | LOG_DAEMON, "%s", buf);
+  syslog(severity|LOG_DAEMON,"%s",buf);
 
 #endif /* SYSLOG */
 
   return;
-  }  /* END log_err() */
+  }  /* END log_ext() */
 
 
 

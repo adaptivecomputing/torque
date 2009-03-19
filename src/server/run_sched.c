@@ -188,7 +188,7 @@ static int contact_sched(
             pbs_scheduler_port,
             EMsg);
 
-    log_err(errno, id, tmpLine);
+    log_ext(errno,id,tmpLine,LOG_ALERT);
 #endif
 
     return(-1);
@@ -215,7 +215,7 @@ static int contact_sched(
             msg_sched_nocall,
             pbs_scheduler_port);
 
-    log_err(errno, id, tmpLine);
+    log_ext(errno,id,tmpLine,LOG_ALERT);
 
     close_conn(sock);
 

@@ -990,7 +990,7 @@ int send_job(
               rc,
               (connection[con].ch_errtxt != NULL) ? connection[con].ch_errtxt : "N/A");
 
-      log_err(errno2, id, log_buffer);
+      log_ext(errno2, id, log_buffer, LOG_WARNING);
 
       /* if failure occurs, pbs_mom should purge job and pbs_server should set *
          job state to idle w/error msg */
@@ -1008,7 +1008,7 @@ int send_job(
         sprintf(log_buffer, "child commit request timed-out for job %s, increase tcp_timeout?",
                 jobp->ji_qs.ji_jobid);
 
-        log_err(errno2, id, log_buffer);
+        log_ext(errno2, id, log_buffer, LOG_WARNING);
 
         /* don't retry on timeout--break out and report error! */
 
@@ -1019,7 +1019,7 @@ int send_job(
         sprintf(log_buffer, "child failed in commit request for job %s",
                 jobp->ji_qs.ji_jobid);
 
-        log_err(errno2, id, log_buffer);
+        log_ext(errno2, id, log_buffer, LOG_CRIT);
 
         /* FAILURE */
 
@@ -1047,7 +1047,7 @@ int send_job(
     sprintf(log_buffer, "child timed-out attempting to start job %s",
             jobp->ji_qs.ji_jobid);
 
-    log_err(pbs_errno, id, log_buffer);
+    log_ext(pbs_errno, id, log_buffer, LOG_WARNING);
 
     exit(10);
     }
