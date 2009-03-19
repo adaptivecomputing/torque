@@ -1064,6 +1064,17 @@ void on_job_exit(
             return;
             }
 
+          /* FAILURE */
+
+          if (LOGLEVEL >= 1)
+            {
+            log_event(
+              PBSEVENT_JOB,
+              PBS_EVENTCLASS_JOB,
+              pjob->ji_qs.ji_jobid,
+              "copy request failed");
+            }
+
           /* set up as if mom returned error */
 
           IsFaked = 1;
@@ -1262,6 +1273,17 @@ void on_job_exit(
             /* request issued,  we'll come back when mom replies */
 
             return;
+            }
+
+          /* FAILURE */
+
+          if (LOGLEVEL >= 2)
+            {
+            log_event(
+              PBSEVENT_JOB,
+              PBS_EVENTCLASS_JOB,
+              pjob->ji_qs.ji_jobid,
+              "cannot issue file delete request for staged files");
             }
 
           IsFaked = 1;
