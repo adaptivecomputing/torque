@@ -63,7 +63,7 @@ $exp->expect(5,
             );
 
 
-%result = run_and_check_cmd('echo set server operators += $user | $qmgr');
+%result = run_and_check_cmd("echo set server operators += $user | $qmgr");
 
 if ($result{ 'EXIT_CODE' } != 0)
   {

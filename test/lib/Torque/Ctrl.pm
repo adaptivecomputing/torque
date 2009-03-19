@@ -8,20 +8,26 @@ use lib "$FindBin::Bin/../../lib/";
 
 
 use CRI::Test;
+use Expect;
 
 use Torque::Test::Utils qw(
                             is_running
                             is_running_remote
+                          );
+use CRI::Utils          qw(
+                            run_and_check_cmd
                           );
 
 use base 'Exporter';
 
 our @EXPORT = qw(
                  startTorque
+                 startTorqueClean
                  stopTorque
                  startPbsmom
                  stopPbsmom
                  startPbsserver
+                 startPbsserverClean
                  stopPbsserver
                  startPbssched
                  stopPbssched
@@ -75,6 +81,54 @@ sub startTorque #($)#
   return $torque_rtn;
 
   } # END sub startTorque #($)# 
+
+###############################################################################
+# startTorqueClean ($)
+###############################################################################
+sub startTorqueClean #($)# 
+  {
+  
+  my ($cfg) = @_;
+
+  # Config variables
+  my $pbs_mom_cfg    = $cfg->{ 'pbs_mom'     } || {};
+  my $pbs_server_cfg = $cfg->{ 'pbs_server'  } || {};
+  my $remote_moms    = $cfg->{ 'remote_moms' } || [];
+
+  # Return values
+  my $local_mom_rtn;
+  my $remote_moms_rtn;
+  my $pbs_server_rtn;
+  my $torque_rtn;
+
+  # pbs_mom parmas
+  my $mom_params        = {
+                             'args' => $pbs_mom_cfg->{ 'args' }
+                          };
+  my $remote_mom_params = {
+                             'args'  => $pbs_mom_cfg->{ 'args' },
+                             'nodes' => $remote_moms
+                          };
+
+  diag("Start pbs_mom on local compute node");
+  $local_mom_rtn = startPbsmom($mom_params);
+
+  diag("Start pbs_mom on remote compute nodes");
+  $remote_moms_rtn = startPbsmom($remote_mom_params);
+
+  diag("Start pbs_server");
+  $pbs_server_rtn = startPbsserverClean($pbs_server_cfg);
+
+  $torque_rtn = (
+                     $local_mom_rtn 
+                 and $remote_moms_rtn
+                 and $pbs_server_rtn
+                );
+
+  ok($torque_rtn, "Checking if all torque components started");
+  return $torque_rtn;
+
+  } # END sub startTorqueClean #($)# 
 
 ###############################################################################
 # stopTorque
@@ -297,7 +351,7 @@ sub startPbsserver #($)
   my $args  = $cfg->{ 'args' } || '';
 
   # pbs_server command
-  my $pbs_server_cmd  = 'pbs_server ';
+  my $pbs_server_cmd  = $props->get_property("Torque.Home.Dir") . '/sbin/pbs_server ';
   $pbs_server_cmd    .= $args;
 
   # Stop the pbs_server
@@ -309,12 +363,90 @@ sub startPbsserver #($)
     or return 0;
 
   # Unfortunately, it takes 15 seconds to stabilize in its current incantation
-  diag("Waiting for pbs_server to stabilize...");
-  sleep 15;
+  my $wait = 15;
+  diag("Waiting $wait seconds for pbs_server to stabilize...");
+  sleep $wait;
 
   return 1;
 
   } # END startPbsserver
+
+##############################################################################
+# startPbsserverClean
+##############################################################################
+sub startPbsserverClean #($)
+  {
+
+  my ($cfg) = @_;
+
+  # Variables
+  my $qmgr_cmd          = $props->get_property("Torque.Home.Dir") . "/bin/qmgr";
+  my $pbs_server_cmd    = $props->get_property("Torque.Home.Dir") . "/sbin/pbs_server";
+  my $operator          = 'root';
+  my $manager           = 'root';
+  my $hostname          = $props->get_property('Test.Host');
+  my $default_setup_str =<<DEFAULT;
+echo set server operators += $operator\@$hostname | $qmgr_cmd
+echo set server managers += $manager\@$hostname | $qmgr_cmd
+$qmgr_cmd -c 'set server scheduling = true'
+$qmgr_cmd -c 'set server keep_completed = 300'
+$qmgr_cmd -c 'set server mom_job_sync = true'
+$qmgr_cmd -c 'create queue batch'
+$qmgr_cmd -c 'set queue batch queue_type = execution'
+$qmgr_cmd -c 'set queue batch started = true'
+$qmgr_cmd -c 'set queue batch enabled = true'
+$qmgr_cmd -c 'set queue batch resources_default.walltime = 1:00:00'
+$qmgr_cmd -c 'set queue batch resources_default.nodes = 1'
+$qmgr_cmd -c 'set server default_queue = batch'
+DEFAULT
+
+  # Configuration Variables
+  my $setup_str   = $cfg->{ 'setup_str' } || $default_setup_str;
+  my @setup_lines = split(/\n/, $setup_str);
+
+  # pbs_server command
+  my $pbs_cmd  = "$pbs_server_cmd -t create";
+
+  # Stop the pbs_server
+  stopPbsserver();
+
+  # Start the pbs server
+  my $exp     = Expect->spawn($pbs_cmd)
+    or die "Cannot spawn '$pbs_cmd'";
+
+  $exp->expect(5,
+               [
+                 qr/do you wish to continue/ => sub {
+                            
+                                                      my ($exp) = @_;
+                                                      $exp->send("y\n");
+                                                      exp_continue();
+                           
+                                                    } # END sub
+               ],
+              );
+
+  
+  ok(is_running('pbs_server'), "Checking if the pbs_server was started")
+    or return 0;
+
+  # Unfortunately, it takes 15 seconds to stabilize in its current incantation
+  my $wait = 15;
+  diag("Waiting $wait seconds for pbs_server to stabilize...");
+  sleep $wait;
+
+  # Resetup Moab
+  diag("Setup Torque");
+  foreach my $setup_line (@setup_lines)
+    {
+
+    run_and_check_cmd($setup_line);
+
+    } # END foreach my $setup_line (@setup_lines)
+
+  return 1;
+
+  } # END startPbsserverClean
 
 ###############################################################################
 # stopPbsserver
@@ -501,11 +633,15 @@ This module provides methods to control the basic functionality of torque.
                    'remote_moms' => \@remote_nodes,
                  };
 
+=item startTorque($start_torque_config)
+
+Identical to startTorque() except startPbsserverClean() called instead of startPbsserver().
+
 =item stopTorque
 
 stopTorque simply stops both the 'pbs_server' and the 'pbs_mom' daemons.
 
-=item startPbsmom($)
+=item startPbsmom($cfg)
 
 (Re)Start the pbsmom server for given node(s) if specified.  Can pass it the 'arg' hash which is argument that will be appended onto the pbs_mom command.  The hash has the following possible arguments:
 
@@ -515,7 +651,7 @@ stopTorque simply stops both the 'pbs_server' and the 'pbs_mom' daemons.
                 'nodes' => \@remote_nodes
                };
 
-=item stopPbsmom($)
+=item stopPbsmom($cfg)
 
 Stops the pbsmom server for given node(s) if specified.  The following are possible arguments:
 
@@ -533,6 +669,15 @@ Stops the pbsmom server for given node(s) if specified.  The following are possi
                     'args' => '-h host1'
                   };
 
+=item startPbsserverClean($)
+
+(Re)Starts the pbs_server on the local machine using the pbs_server -t create command. 'pbs_server -t create' will clean out any configuration files, queues, and jobs, and will initialize the configuration files to default values.  This method can have the following configuration hashref passed to it:
+
+ my $server_cfg = {
+                    'setup_str' => $setup_str
+                  };
+
+The setup_str is \n delimited list of commands that will be executed afte the pbs_server -t create command is complete.  If this parameter is not passed then the default setup_str will be used.
 
 =item stopPbsserver
 
@@ -555,7 +700,7 @@ Stops pbs_sched on the local machine.
 
 =head1 DEPENDENDCIES
 
-Moab::Test, Torque::Test::Utils
+CRI::Test, Torque::Test::Utils, Expect
 
 =head1 AUTHOR(S)
 
