@@ -13,6 +13,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature
   e - Merged in more logging and NOSIGCHLDMOM capability from Yahoo branch
   e - merged in new log_ext() function to allow more fine grained syslog events, 
       you can now specify severity level. Also added more logging statements
+  b - fixed a bug where CPU time was not being added up properly in all cases 
+      (fix for Linux only) 
   
 2.4.0
   f - added a "-q" option to pbs_mom which does *not* perform the default -p 

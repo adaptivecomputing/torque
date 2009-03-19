@@ -1716,9 +1716,10 @@ mom_get_sample(void)
       continue;
       }
 
-    nproc++;
+    /* nproc++; -- we need to increment AFTER assigning this ps to
+       the proc_array--otherwise we could skip it in for loops */
 
-    if (nproc >= max_proc)
+    if ((nproc + 1) >= max_proc)
       {
       proc_stat_t *hold;
 
@@ -1740,10 +1741,10 @@ mom_get_sample(void)
 
       proc_array = hold;
 
-      memset(&proc_array[nproc], '\0', sizeof(proc_stat_t) * (max_proc >> 1));
-      }  /* END if (++nproc == max_proc) */
+      memset(&proc_array[(nproc+1)], '\0', sizeof(proc_stat_t) * (max_proc >> 1));
+      }  /* END if ((nproc+1) == max_proc) */
 
-    pi = &proc_array[nproc];
+    pi = &proc_array[nproc++];
 
     memcpy(pi, ps, sizeof(proc_stat_t));
     }  /* END while ((dent = readdir(pdir)) != NULL) */
