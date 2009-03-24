@@ -176,7 +176,7 @@ pbs_get_server_list(void)
         return(server_list);
         }
 
-      if (fgets(server_list, PBS_MAXSERVERNAME, fd) == NULL)
+      if (fgets(server_list, sizeof(server_list), fd) == NULL)
         {
         fclose(fd);
 
@@ -190,7 +190,7 @@ pbs_get_server_list(void)
       }
     else
       {
-      strncpy(server_list, server, PBS_MAXSERVERNAME);
+      strncpy(server_list, server, sizeof(server_list));
       }
 
     got_dflt = TRUE;

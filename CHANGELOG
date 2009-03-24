@@ -25,6 +25,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature
   f - added code from 2.3-extreme that allows TORQUE to handle more than 1024 sockets.
       Also, increased the size of TORQUE's internal socket handle table to avoid
       running out of handles under busy conditions.
+  e - TORQUE can now handle server names larger than 64 bytes (now set to 1024,
+      which should be larger than the max for hostnames)
 
 2.4.0
   f - added a "-q" option to pbs_mom which does *not* perform the default -p 

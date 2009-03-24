@@ -355,7 +355,7 @@
 #define SIG_RESUME "resume"
 #define SIG_SUSPEND "suspend"
 
-#define PBS_MAXHOSTNAME  64 /* max host name length */
+#define PBS_MAXHOSTNAME  1024 /* max host name length */
 #ifndef MAXPATHLEN
 #define MAXPATHLEN  1024 /* max path name length */
 #endif
