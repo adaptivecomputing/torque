@@ -1054,7 +1054,7 @@ int InitUserEnv(
             j,
             ebsize);
 
-    log_err(-1, id, log_buffer);
+    log_ext(-1, id, log_buffer, LOG_DEBUG);
     }
 
   vstrs = pjob->ji_wattr[(int)JOB_ATR_variables].at_val.at_arst;
@@ -1106,7 +1106,7 @@ int InitUserEnv(
     sprintf(log_buffer, "local env added, count: %d",
             j);
 
-    log_err(-1, id, log_buffer);
+    log_ext(-1, id, log_buffer, LOG_DEBUG);
     }
 
   /* Next, the variables passed with the job.  They may   */
@@ -1130,7 +1130,7 @@ int InitUserEnv(
       sprintf(log_buffer, "job env added, count: %d",
               j);
 
-      log_err(-1, id, log_buffer);
+      log_ext(-1, id, log_buffer, LOG_DEBUG);
       }
     }    /* END if (vstrs != NULL) */
 
@@ -1422,7 +1422,7 @@ int TMomFinalizeJob1(
       {
       /* SUCCESS */
 
-      log_err(-1, id, "Restart succeeded");
+      log_ext(-1, id, "Restart succeeded", LOG_DEBUG);
 
       /* reset mtime so walltime will not include held time */
       /* update to time now minus the time already used    */
@@ -1898,7 +1898,7 @@ int determine_umask(
       sprintf(log_buffer, "Using $job_output_file_umask value of %o",
               UMaskVal);
 
-      log_err(-1, id, log_buffer);
+      log_ext(-1, id, log_buffer, LOG_DEBUG);
       }
     }
 
@@ -1974,7 +1974,7 @@ int TMomFinalizeChild(
             messages will route to syslog via log_err() */
 
   if (LOGLEVEL >= 10)
-    log_err(-1, id, "starting");
+    log_ext(-1, id, "starting", LOG_DEBUG);
 
   if (lockfds >= 0)
     {
@@ -1994,7 +1994,7 @@ int TMomFinalizeChild(
   shell = set_shell(pjob, pwdp); /* in the machine dependent section */
 
   if (LOGLEVEL >= 10)
-    log_err(-1, id, "shell initialized");
+    log_ext(-1, id, "shell initialized", LOG_DEBUG);
 
   /* Setup user env */
 
@@ -2006,7 +2006,7 @@ int TMomFinalizeChild(
     }
 
   if (LOGLEVEL >= 10)
-    log_err(-1, id, "env initialized");
+    log_ext(-1, id, "env initialized", LOG_DEBUG);
 
   /* Create the job's nodefile */
 
@@ -2115,7 +2115,7 @@ int TMomFinalizeChild(
     }  /* END if (pjob->ji_flags & MOM_HAS_NODEFILE) */
 
   if (LOGLEVEL >= 10)
-    log_err(-1, id, "node file created");
+    log_ext(-1, id, "node file created", LOG_DEBUG);
 
   /* Set PBS_VNODENUM */
 
@@ -2128,7 +2128,7 @@ int TMomFinalizeChild(
   sprintf(log_buffer, "about to create cpuset for job %s.\n",
           pjob->ji_qs.ji_jobid);
 
-  log_err(-1, id, log_buffer);
+  log_ext(-1, id, log_buffer, LOG_DEBUG);
 
   if (create_jobset(pjob) != 0)
     {
@@ -2176,7 +2176,7 @@ int TMomFinalizeChild(
     }
 
   if (LOGLEVEL >= 10)
-    log_err(-1, id, "system vars set");
+    log_ext(-1, id, "system vars set", LOG_DEBUG);
 
   umask(determine_umask(pjob->ji_qs.ji_un.ji_momt.ji_exuid));
 
@@ -2554,7 +2554,7 @@ int TMomFinalizeChild(
 #endif  /* SHELL_USE_ARGV */
 
     if (LOGLEVEL >= 10)
-      log_err(-1, id, "opening script");
+      log_ext(-1, id, "opening script", LOG_DEBUG);
 
     if (script_in < 0)
       {
@@ -2592,7 +2592,7 @@ int TMomFinalizeChild(
       }
 
     if (LOGLEVEL >= 10)
-      log_err(-1, id, "stdout/stderr opened");
+      log_ext(-1, id, "stdout/stderr opened", LOG_DEBUG);
 
     /* run prolog - standard batch job */
 
@@ -2621,7 +2621,7 @@ int TMomFinalizeChild(
       }
 
     if (LOGLEVEL >= 10)
-      log_err(-1, id, "prolog complete");
+      log_ext(-1, id, "prolog complete", LOG_DEBUG);
 
 #ifdef ENABLE_CSA
     /*
@@ -2664,7 +2664,7 @@ int TMomFinalizeChild(
     j = set_job(pjob, &sjr);
 
     if (LOGLEVEL >= 10)
-      log_err(-1, id, "set_job complete");
+      log_ext(-1, id, "set_job complete", LOG_DEBUG);
 
     memcpy(TJE->sjr, &sjr, sizeof(sjr));
 
@@ -2741,7 +2741,7 @@ int TMomFinalizeChild(
     }
 
   if (LOGLEVEL >= 10)
-    log_err(-1, id, "setting system limits");
+    log_ext(-1, id, "setting system limits", LOG_DEBUG);
 
   log_buffer[0] = '\0';
 
@@ -2789,7 +2789,7 @@ int TMomFinalizeChild(
   endpwent();
 
   if (LOGLEVEL >= 10)
-    log_err(-1, id, "system limits set");
+    log_ext(-1, id, "system limits set", LOG_DEBUG);
 
   if ((idir = get_job_envvar(pjob, "PBS_O_ROOTDIR")) != NULL)
     {
@@ -2823,7 +2823,7 @@ int TMomFinalizeChild(
             pjob->ji_qs.ji_un.ji_momt.ji_exuid,
             pjob->ji_qs.ji_un.ji_momt.ji_exgid);
 
-    log_err(-1, id, log_buffer);
+    log_ext(-1, id, log_buffer, LOG_DEBUG);
     }
 
   if (setgroups(
@@ -2935,7 +2935,7 @@ int TMomFinalizeChild(
     }
 
   if (LOGLEVEL >= 10)
-    log_err(-1, id, "initial directory set");
+    log_ext(-1, id, "initial directory set", LOG_DEBUG);
 
   /* X11 forwarding init */
 
@@ -2971,7 +2971,7 @@ int TMomFinalizeChild(
   /* tell mom we are going */
 
   if (LOGLEVEL >= 10)
-    log_err(-1, id, "forking child");
+    log_ext(-1, id, "forking child", LOG_DEBUG);
 
   starter_return(TJE->upfds, TJE->downfds, JOB_EXEC_OK, &sjr);
 
@@ -3015,7 +3015,7 @@ int TMomFinalizeChild(
         sprintf(log_buffer, "bypass sourcing of login files for job %s",
                 pjob->ji_qs.ji_jobid);
 
-        log_err(-1, id, log_buffer);
+        log_ext(-1, id, log_buffer, LOG_DEBUG);
         }
 
       }
@@ -3097,7 +3097,7 @@ int TMomFinalizeChild(
         strcat(cmd,")");
 
         sprintf(log_buffer, "execing command (%s)\n", cmd);
-        log_err(-1, id, log_buffer);
+        log_ext(-1, id, log_buffer, LOG_DEBUG);
         }
       execve(shell, arg, vtable.v_envp);
       }
@@ -3763,7 +3763,7 @@ int start_process(
   /************************************************/
 
   if (LOGLEVEL >= 10)
-    log_err(-1, id, "child starting");
+    log_ext(-1, id, "child starting", LOG_DEBUG);
 
   if (lockfds >= 0)
     {
@@ -3792,7 +3792,7 @@ int start_process(
     }
 
   if (LOGLEVEL >= 10)
-    log_err(-1, id, "user env initialized");
+    log_ext(-1, id, "user env initialized", LOG_DEBUG);
 
   if (set_mach_vars(pjob, &vtable) != 0)
     {
@@ -3808,7 +3808,7 @@ int start_process(
     }
 
   if (LOGLEVEL >= 10)
-    log_err(-1, id, "mach vars set");
+    log_ext(-1, id, "mach vars set", LOG_DEBUG);
 
   umask(077);
 
@@ -3915,7 +3915,7 @@ int start_process(
       }
 
   if (LOGLEVEL >= 10)
-    log_err(-1, id, "MPI/TM variables set");
+    log_ext(-1, id, "MPI/TM variables set", LOG_DEBUG);
 
 #ifdef PENABLE_LINUX26_CPUSETS
     {
@@ -3937,7 +3937,7 @@ int start_process(
         sprintf(log_buffer, "about to move to taskset for job %s/%s.\n",
                 pjob->ji_qs.ji_jobid, nodeidbuf);
 
-        log_err(-1, id, log_buffer);
+        log_ext(-1, id, log_buffer, LOG_DEBUG);
 
         /* Move this mom process into the cpuset so the job will start in it. */
 
@@ -4077,7 +4077,7 @@ int start_process(
    *******************************************************/
 
   if (LOGLEVEL >= 10)
-    log_err(-1, id, "about to perform set_job");
+    log_ext(-1, id, "about to perform set_job", LOG_DEBUG);
 
   j = set_job(pjob, &sjr);
 
@@ -4132,7 +4132,7 @@ int start_process(
     }
 
   if (LOGLEVEL >= 10)
-    log_err(-1, id, "set_job complete");
+    log_ext(-1, id, "set_job complete", LOG_DEBUG);
 
   if ((idir = get_job_envvar(pjob, "PBS_O_ROOTDIR")) != NULL)
     {
@@ -4251,7 +4251,7 @@ int start_process(
     }
 
   if (LOGLEVEL >= 10)
-    log_err(-1, id, "done - writing pipe and exec'ing");
+    log_ext(-1, id, "done - writing pipe and exec'ing", LOG_DEBUG);
 
   starter_return(
     kid_write,
@@ -5300,7 +5300,7 @@ char *std_file_name(
       sprintf(log_buffer, "std_file_name path before NO_SPOOL_OUTPUT: %s",
               path);
 
-      log_err(-1, "std_file_name", log_buffer);
+      log_ext(-1, "std_file_name", log_buffer, LOG_DEBUG);
       }
 
 #if NO_SPOOL_OUTPUT == 1
@@ -5337,7 +5337,7 @@ char *std_file_name(
       sprintf(log_buffer, "std_file_name path in NO_SPOOL_OUTPUT: %s",
               path);
 
-      log_err(-1, "std_file_name", log_buffer);
+      log_ext(-1, "std_file_name", log_buffer, LOG_DEBUG);
       }
 
 #else /* NO_SPOOL_OUTPUT */
@@ -5355,7 +5355,7 @@ char *std_file_name(
         sprintf(log_buffer, "wdir: %s",
                 wdir);
 
-        log_err(-1, "std_file_name", log_buffer);
+        log_ext(-1, "std_file_name", log_buffer, LOG_DEBUG);
         }
 
       if (wdir != NULL)
@@ -5363,7 +5363,7 @@ char *std_file_name(
         /* check if job's work dir matches the no-spool directory list */
 
         if (LOGLEVEL >= 10)
-          log_err(-1, "std_file_name", "inside wdir != NULL");
+          log_ext(-1, "std_file_name", "inside wdir != NULL", LOG_DEBUG);
 
         for (dindex = 0;dindex < TMAX_NSDCOUNT;dindex++)
           {
@@ -5376,7 +5376,7 @@ char *std_file_name(
             havehomespool = 1;
 
             if (LOGLEVEL >= 10)
-              log_err(-1, "std_file_name", "inside !strcasecmp");
+              log_ext(-1, "std_file_name", "inside !strcasecmp", LOG_DEBUG);
 
             strncpy(path, wdir, sizeof(path));
 
@@ -5388,7 +5388,7 @@ char *std_file_name(
             havehomespool = 1;
 
             if (LOGLEVEL >= 10)
-              log_err(-1, "std_file_name", "inside !strncmp");
+              log_ext(-1, "std_file_name", "inside !strncmp", LOG_DEBUG);
 
             strncpy(path, wdir, sizeof(path));
 
@@ -5414,7 +5414,7 @@ char *std_file_name(
       sprintf(log_buffer, "std_file_name path in else NO_SPOOL_OUTPUT: %s",
               path);
 
-      log_err(-1, "std_file_name", log_buffer);
+      log_ext(-1, "std_file_name", log_buffer, LOG_DEBUG);
       }
 
 #endif /* NO_SPOOL_OUTPUT */
@@ -5430,7 +5430,7 @@ char *std_file_name(
               pjob->ji_qs.ji_fileprefix,
               suffix);
 
-      log_err(-1, "std_file_name", log_buffer);
+      log_ext(-1, "std_file_name", log_buffer, LOG_DEBUG);
       }
     }    /* END else ((pjob->ji_wattr[(int)JOB_ATR_keep].at_flags & ...)) */
 
@@ -5522,20 +5522,24 @@ int open_std_file(
       /* lstat failed - should we return failure in all cases? */
 
       if (errno == EINTR)
-        sprintf(log_buffer, "cannot stat stdout/stderr file '%s' (timeout)",
-                path);
-      else
-        sprintf(log_buffer, "cannot stat stdout/stderr file '%s' - file does not exist, will create",
-                path);
-
-      if (LOGLEVEL >= 6)
-        log_err(errno, "open_std_file", log_buffer);
-
-      if (errno == EINTR)
         {
+          sprintf(log_buffer, "cannot stat stdout/stderr file '%s' (timeout)",
+                  path);
+
+        if (LOGLEVEL >= 6)
+          log_err(errno, "open_std_file", log_buffer);
+
         /* fail on timeout */
 
         return(-2);
+        }
+      else
+        {
+          sprintf(log_buffer, "cannot stat stdout/stderr file '%s' - file does not exist, will create",
+                  path);
+
+        if (LOGLEVEL >= 6)
+          log_ext(errno, "open_std_file", log_buffer, LOG_DEBUG);
         }
       }
     }    /* END else (keeping) */
@@ -5631,7 +5635,7 @@ int open_std_file(
       sprintf(log_buffer, "successfully created/opened stdout/stderr file '%s'",
               path);
 
-      log_err(-1, "open_std_file", log_buffer);
+      log_ext(-1, "open_std_file", log_buffer, LOG_DEBUG);
       }
     }
 
@@ -5715,7 +5719,7 @@ void bld_env_variables(
              name,
              (value != NULL) ? value : "NULL");
 
-    log_err(-1, "bld_env_variables", tmpLine);
+    log_ext(-1, "bld_env_variables", tmpLine, LOG_DEBUG);
     }
 
   amt = strlen(name) + 1;
@@ -5840,7 +5844,7 @@ int init_groups(
 
   if (LOGLEVEL >= 4)
     {
-    log_err(-1, id, "pre-sigprocmask");
+    log_ext(-1, id, "pre-sigprocmask", LOG_DEBUG);
     }
 
   /* Block signals while we do this or else the signal handler might
@@ -5868,7 +5872,7 @@ int init_groups(
 
   if (LOGLEVEL >= 4)
     {
-    log_err(-1, id, "post-initgroups");
+    log_ext(-1, id, "post-initgroups", LOG_DEBUG);
     }
 
   /* restore state */
@@ -6256,7 +6260,7 @@ uint64_t get_csa_jobid(
               csa_job_id,
               pbs_jobid);
 
-      log_err(-1, id, log_buffer);
+      log_ext(-1, id, log_buffer, LOG_DEBUG);
       }
     }
 
@@ -6395,7 +6399,7 @@ int create_WLM_Rec(
             "job_id = %llx, compCode = %d, pbs job %s",
             &rec_type, &sub_type, job_id, compCode, pbs_jobid);
 
-    log_err(-1, id, log_buffer);
+    log_ext(-1, id, log_buffer, LOG_DEBUG);
     }
 
   memset(&wkm, 0, sizeof(wkm));
@@ -6521,7 +6525,7 @@ void add_wkm_start(
                 job_id,
                 pbs_jobid);
 
-        log_err(-1, id, log_buffer);
+        log_ext(-1, id, log_buffer, LOG_DEBUG);
         }
       }
     else
@@ -6548,7 +6552,7 @@ void add_wkm_start(
                 job_id,
                 pbs_jobid);
 
-        log_err(-1, id, log_buffer);
+        log_ext(-1, id, log_buffer, LOG_DEBUG);
         }
       }
     else if (LOGLEVEL >= 2)
@@ -6590,7 +6594,7 @@ void add_wkm_end(
                 job_id,
                 pbs_jobid);
 
-        log_err(-1, id, log_buffer);
+        log_extt(-1, id, log_buffer, LOG_DEBUG);
         }
       }
     else if (LOGLEVEL >= 2)

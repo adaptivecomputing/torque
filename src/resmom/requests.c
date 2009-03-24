@@ -877,7 +877,7 @@ static int told_to_cp(
             oldpath,
             nh);
 
-    log_err(-1, (char *)id, log_buffer);
+    log_ext(-1, (char *)id, log_buffer, LOG_DEBUG);
     }
 
   return(0);
@@ -2958,7 +2958,7 @@ static int sys_copy(
             ag2,
             ag3);
 
-    log_err(-1, id, log_buffer);
+    log_ext(-1, id, log_buffer, LOG_DEBUG);
     }
 
   for (loop = 1;loop < 4;++loop)
@@ -3830,7 +3830,7 @@ error:
         {
         sprintf(log_buffer,"copy succeeded (%s) from (%s) to (%s)\n",
           (dir == 0)? "In" : "Out", arg2, arg3);
-        log_err(-1, id, log_buffer);
+        log_ext(-1, id, log_buffer, LOG_DEBUG);
         }
 
       if (dir == STAGE_DIR_OUT)
@@ -3880,7 +3880,7 @@ error:
           if (LOGLEVEL >= 7)
             {
             sprintf(log_buffer,"removing checkpoint file directory (%s)\n", localname);
-            log_err(-1, id, log_buffer);
+            log_ext(-1, id, log_buffer, LOG_DEBUG);
             }
           }
         else
@@ -3888,7 +3888,7 @@ error:
           if (LOGLEVEL >= 7)
             {
             sprintf(log_buffer,"removing local checkpoint file (%s)\n", localname);
-            log_err(-1, id, log_buffer);
+            log_ext(-1, id, log_buffer, LOG_DEBUG);
             }
           }
 

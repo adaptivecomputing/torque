@@ -189,7 +189,7 @@ mom_checkpoint_execute_job(job *pjob, char *shell, char *arg[], struct var_table
 
     log_buffer[0] = '\0';
     sprintf(log_buffer, "execing checkpoint command (%s)\n", cmd);
-    log_err(-1, id, log_buffer);
+    log_ext(-1, id, log_buffer, LOG_DEBUG);
     }
 
   execve(checkpoint_run_exe_name, arg, vtable->v_envp);
@@ -404,7 +404,7 @@ int replace_checkpoint_path(
     strcpy(path, tmppath);
     sprintf(log_buffer,"Converted filename is (%s)\n",
         path);
-    log_err(-1, id, log_buffer);
+    log_ext(-1, id, log_buffer, LOG_DEBUG);
     rtnval = 1;
     }
 
@@ -438,7 +438,7 @@ int in_remote_checkpoint_dir(
         if ((LOGLEVEL >= 10) && (dindex == 0))
           {
           sprintf(log_buffer, "NO remote checkpoint directories configured");
-          log_err(-1, id, log_buffer);
+          log_ext(-1, id, log_buffer, LOG_DEBUG);
           }
       break;
       }
@@ -454,7 +454,7 @@ int in_remote_checkpoint_dir(
           "Checkpoint file %s matched in remote directory %s\n",
           ckpt_path,
           TRemChkptDirList[dindex]);
-          log_err(-1, id, log_buffer);
+          log_ext(-1, id, log_buffer, LOG_DEBUG);
           }
       return (TRUE);
       }
@@ -488,7 +488,7 @@ void delete_blcr_checkpoint_files(
     {
     sprintf(log_buffer,
       "No checkpoint directory specified for %s\n", pjob->ji_qs.ji_jobid);
-    log_err(-1, id, log_buffer);
+    log_ext(-1, id, log_buffer, LOG_DEBUG);
     return;
     }
 
@@ -522,7 +522,7 @@ void delete_blcr_checkpoint_files(
         {
         sprintf(log_buffer,
           "remtree for checkpoint %s\n",namebuf);
-        log_err(-1, id, log_buffer);
+        log_ext(-1, id, log_buffer, LOG_DEBUG);
         }
       remtree(namebuf);
       }
@@ -558,7 +558,7 @@ void delete_blcr_checkpoint_files(
         {
         sprintf(log_buffer,
           "remtree for restart %s\n",namebuf);
-        log_err(-1, id, log_buffer);
+        log_ext(-1, id, log_buffer, LOG_DEBUG);
         }
       remtree(namebuf);
       }
@@ -836,7 +836,7 @@ int blcr_checkpoint_job(
   
   strcat(buf, " 2>&1 1>/dev/null");
 
-  log_err(-1, id, buf);
+  log_ext(-1, id, buf, LOG_DEBUG);
   if (preq != NULL)
     {
     request_type = preq->rq_type;
@@ -1667,7 +1667,7 @@ int blcr_restart_job(
       strcat(buf, *ap);
       }
 
-    log_err(-1, id, buf);
+    log_ext(-1, id, buf, LOG_DEBUG);
 
     log_close(0);
 
@@ -1909,7 +1909,7 @@ int mom_checkpoint_job_has_checkpoint(
           }
         }
 
-      log_err(-1, "mom_checkpoint_job_has_checkpoint", "TRUE");
+      log_ext(-1, "mom_checkpoint_job_has_checkpoint", "TRUE", LOG_DEBUG);
 
       return(TRUE); /* Yes, there is a checkpoint. */
       break;
@@ -1918,14 +1918,14 @@ int mom_checkpoint_job_has_checkpoint(
 
       if (pjob->ji_wattr[(int)JOB_ATR_checkpoint_name].at_flags & ATR_VFLAG_SET)
         {
-        log_err(-1, "mom_checkpoint_job_has_checkpoint", "TRUE");
+        log_ext(-1, "mom_checkpoint_job_has_checkpoint", "TRUE", LOG_DEBUG);
         return(TRUE);
         }
 
       break;
     }
 
-  log_err(-1, "mom_checkpoint_job_has_checkpoint", "FALSE");
+  log_ext(-1, "mom_checkpoint_job_has_checkpoint", "FALSE", LOG_DEBUG);
 
   return(FALSE); /* No checkpoint attribute on job. */
   }
