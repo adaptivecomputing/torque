@@ -15,6 +15,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature
       you can now specify severity level. Also added more logging statements
   b - fixed a bug where CPU time was not being added up properly in all cases 
       (fix for Linux only) 
+  c - fixed a few memory errors due to a spurious comma and some uninitialized
+      memory being allocated (ported from 2.3 R2493)
   
 2.4.0
   f - added a "-q" option to pbs_mom which does *not* perform the default -p 

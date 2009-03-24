@@ -242,8 +242,9 @@ job_array *array_recov(char *path)
   int i;
 
   old_version = ARRAY_QS_STRUCT_VERSION;
+
   /* allocate the storage for the struct */
-  pa = (job_array*)malloc(sizeof(job_array));
+  pa = (job_array*)calloc(1,sizeof(job_array));
 
   if (pa == NULL)
     {
@@ -426,7 +427,7 @@ int setup_array_struct(job *pjob)
 
 
   /* setup a link to this job array in the servers all_arrays list */
-  pa = (job_array*)malloc(sizeof(job_array));
+  pa = (job_array *)calloc(1,sizeof(job_array));
 
   pa->ai_qs.struct_version = ARRAY_QS_STRUCT_VERSION;
 
