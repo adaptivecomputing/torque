@@ -906,6 +906,10 @@ job *job_clone(
 
 
 
+#ifndef CLONE_BATCH_SIZE
+#define CLONE_BATCH_SIZE 256
+#endif /* CLONE_BATCH_SIZE */
+
 
 
 /*
@@ -943,7 +947,7 @@ void job_clone_wt(
   strcat(namebuf, pjob->ji_qs.ji_fileprefix);
   strcat(namebuf, ".AR");
 
-  /* do the clones in batches of 256 */
+  /* do the clones in batches of CLONE_BATCH_SIZE */
 
   num_cloned = 0;
   loop = TRUE;
@@ -953,9 +957,9 @@ void job_clone_wt(
     start = rn->start;
     end = rn->end;
 
-    if (end - start > 256)
+    if (end - start > CLONE_BATCH_SIZE)
       {
-      end = start + 255;
+      end = start + CLONE_BATCH_SIZE - 1;
       }
 
     for (i = start; i <= end; i++)
@@ -1000,7 +1004,7 @@ void job_clone_wt(
       array_save(pa);
       }
 
-    if (num_cloned == 256 || rn == NULL)
+    if (num_cloned == CLONE_BATCH_SIZE || rn == NULL)
       {
       loop = FALSE;
       }

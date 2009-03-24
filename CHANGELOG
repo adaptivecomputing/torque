@@ -17,7 +17,10 @@ c - crash     b - bug fix    e - enhancement    f - new feature
       (fix for Linux only) 
   c - fixed a few memory errors due to a spurious comma and some uninitialized
       memory being allocated (ported from 2.3 R2493)
-  
+  e - added code to allow compilers to override CLONE_BATCH_SIZE at configure
+      time (allows for finer grained control on how arrays are created) (ported
+      from Yahoo R2461)
+
 2.4.0
   f - added a "-q" option to pbs_mom which does *not* perform the default -p 
       behavior
