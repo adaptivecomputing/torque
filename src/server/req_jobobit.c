@@ -739,7 +739,7 @@ void on_job_exit(
   struct work_task *ptask)  /* I */
 
   {
-  int    handle;
+  int    handle = -1;
   job   *pjob;
 #ifdef VNODETESTING
   job   *pj;
