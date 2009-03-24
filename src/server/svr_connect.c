@@ -198,7 +198,7 @@ int svr_connect(
     return(PBS_NET_RC_RETRY);
     }
 
-  /* establish UDP socket connection to specified host */
+  /* establish socket connection to specified host */
 
   sock = client_to_svr(hostaddr, port, 1, EMsg);
 

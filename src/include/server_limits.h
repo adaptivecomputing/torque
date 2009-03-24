@@ -130,7 +130,16 @@
 #define NODE_NOTE  "node_note"
 
 #ifndef PBS_NET_MAX_CONNECTIONS
-#define PBS_NET_MAX_CONNECTIONS 1024  /* increased from 256 */
+/* 
+ * PBS_NET_MAX_CONNECTIONS is used to limit both socket descriptors and socket
+ * handles. Tests show that often socket handles are used up much faster than
+ * socket descriptors (is there a leak of socket handles???). In the future, we
+ * should probably break out handle size and socket descriptor size and the
+ * socket descriptor size should equal getdtablesize(). For now, however,
+ * PBS_NET_MAX_CONNECTIONS should be larger than ulimit -n due to more socket
+ * handles being handed out than sockets are available.
+ */
+#define PBS_NET_MAX_CONNECTIONS 10240  /* increased from 256--should be larger than ulimit -n */
 #endif /* PBS_NET_MAX_CONNECTIONS */
 
 #define PBS_LOCAL_CONNECTION PBS_NET_MAX_CONNECTIONS

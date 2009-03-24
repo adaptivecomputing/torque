@@ -1045,13 +1045,16 @@ int activereq(void)
 
   struct timeval tv;
 
-  fd_set         fdset;
+  fd_set *FDSet;
+
+  int MaxNumDescriptors = 0;
 
   pbs_errno = 0;
 
   flushreq();
 
-  FD_ZERO(&fdset);
+  MaxNumDescriptors = get_max_num_descriptors();
+  FDSet = (fd_set *)calloc(1,sizeof(char) * get_fdset_size());
 
 #if RPP
   for (try = 0;try < 3;)
@@ -1060,6 +1063,7 @@ int activereq(void)
       {
       if ((op = findout(i)) != NULL)
         {
+        free(FDSet);
         return(i);
         }
 
@@ -1069,6 +1073,7 @@ int activereq(void)
         {
         pbs_errno = errno;
 
+        free(FDSet);
         return(-1);
         }
 
@@ -1084,20 +1089,22 @@ int activereq(void)
       {
       pbs_errno = errno;
 
+      free(FDSet);
       return(-1);
       }
     else
       {
 
-      FD_SET(rpp_fd, &fdset);
+			FD_SET(rpp_fd, FDSet);
       tv.tv_sec = 5;
       tv.tv_usec = 0;
-      num = select(FD_SETSIZE, &fdset, NULL, NULL, &tv);
+			num = select(FD_SETSIZE, FDSet, NULL, NULL, &tv);
 
       if (num == -1)
         {
         pbs_errno = errno;
         DBPRT(("%s: select %d %s\n", id, pbs_errno, pbs_strerror(pbs_errno)))
+        free(FDSet);
         return -1;
         }
 
@@ -1110,6 +1117,7 @@ int activereq(void)
       }
     }
 
+  free(FDSet);
   return i;
 
 #else
@@ -1124,7 +1132,7 @@ int activereq(void)
 
     while (op)
       {
-      FD_SET(op->stream, &fdset);
+			FD_SET(op->stream, FDSet);
       op = op->next;
       }
     }
@@ -1132,16 +1140,21 @@ int activereq(void)
   tv.tv_sec = 15;
 
   tv.tv_usec = 0;
-  num = select(FD_SETSIZE, &fdset, NULL, NULL, &tv);
+
+  num = select(MaxNumDescriptors, FDSet, NULL, NULL, &tv);
 
   if (num == -1)
     {
     pbs_errno = errno;
     DBPRT(("%s: select %d %s\n", id, pbs_errno, pbs_strerror(pbs_errno)))
+    free(FDSet);
     return -1;
     }
   else if (num == 0)
-    return -2;
+    {
+    free(FDSet);
+		return -2;
+    }
 
   for (i = 0; i < HASHOUT; i++)
     {
@@ -1152,13 +1165,17 @@ int activereq(void)
 
     while (op)
       {
-      if (FD_ISSET(op->stream, &fdset))
-        return op->stream;
+			if (FD_ISSET(op->stream, FDSet))
+        {
+        free(FDSet);
+				return op->stream;
+        }
 
       op = op->next;
       }
     }
 
+  free(FDSet);
   return(-2);
 
 #endif

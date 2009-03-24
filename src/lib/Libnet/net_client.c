@@ -86,6 +86,7 @@
 #include <errno.h>
 #include <netdb.h>
 #include <string.h>
+#include <stdlib.h>
 #include "portability.h"
 #include "server_limits.h"
 #include "net_connect.h"
@@ -103,6 +104,64 @@
 int bindresvport(int sd, struct sockaddr_in *sin);
 #endif
 
+/**
+ * Returns the max number of possible file descriptors (as
+ * per the OS limits).
+ *
+ */
+
+int get_max_num_descriptors(void)
+  {
+  static int max_num_descriptors = 0;
+
+  if (max_num_descriptors <= 0)
+    max_num_descriptors = getdtablesize();
+
+  return(max_num_descriptors);
+  }  /* END get_num_max_descriptors() */
+
+/**
+ * Returns the number of bytes needed to allocate
+ * a fd_set array that can hold all of the possible
+ * socket descriptors.
+ */
+
+int get_fdset_size(void)
+  {
+  unsigned int MaxNumDescriptors = 0;
+  int NumFDSetsNeeded = 0;
+  int NumBytesInFDSet = 0;
+  int Result = 0;
+
+  MaxNumDescriptors = get_max_num_descriptors();
+
+  NumBytesInFDSet = sizeof(fd_set);
+  NumFDSetsNeeded = MaxNumDescriptors / FD_SETSIZE;
+
+  if (MaxNumDescriptors < FD_SETSIZE)
+    {
+    /* the default size already provides sufficient space */
+
+    Result = NumBytesInFDSet;
+    }
+  else if ((MaxNumDescriptors % FD_SETSIZE) > 0)
+    {
+    /* we need to allocate more memory to cover extra
+     * bits--add an extra FDSet worth of memory to the size */
+
+    Result = (NumFDSetsNeeded + 1) * NumBytesInFDSet;
+    }
+  else
+    {
+    /* division was exact--we know exactly how many bytes we need */
+
+    Result = NumFDSetsNeeded * NumBytesInFDSet;
+    }
+
+  return(Result);
+  }  /* END get_fdset_size() */
+
+
 /*
 ** wait for connect to complete.  We use non-blocking sockets,
 ** so have to wait for completion this way.
@@ -110,27 +169,42 @@ int bindresvport(int sd, struct sockaddr_in *sin);
 
 static int await_connect(
 
-  int timeout,   /* I */
+  long timeout,   /* I */
   int sockd)     /* I */
 
   {
-  fd_set fs;
   int n, val, rc;
+
+  int MaxNumDescriptors = 0;
+
+  fd_set *BigFDSet = NULL;
 
   struct timeval tv;
 
   torque_socklen_t len;
 
-  tv.tv_sec = timeout;
-  tv.tv_usec = 0;
+  /* 
+   * some operating systems (like FreeBSD) cannot have a value for tv.tv_usec
+   * larger than 1,000,000 so we need to split up the timeout duration between
+   * seconds and microseconds
+   */
 
-  FD_ZERO(&fs);
-  FD_SET(sockd, &fs);
+  tv.tv_sec = timeout / 1000000;
+  tv.tv_usec = timeout % 1000000;
 
-  if ((n = select(sockd + 1, 0, &fs, 0, &tv)) != 1)
+  /* calculate needed size for fd_set in select() */
+
+  MaxNumDescriptors = get_max_num_descriptors();
+
+  BigFDSet = (fd_set *)calloc(1,sizeof(char) * get_fdset_size());
+
+  FD_SET(sockd, BigFDSet);
+
+  if ((n = select(sockd+1,0,BigFDSet,0,&tv)) != 1)
     {
     /* FAILURE:  socket not ready for write */
 
+    free(BigFDSet);
     return(-1);
     }
 
@@ -142,6 +216,7 @@ static int await_connect(
     {
     /* SUCCESS:  no failures detected */
 
+    free(BigFDSet);
     return(0);
     }
 
@@ -149,13 +224,15 @@ static int await_connect(
 
   /* FAILURE:  socket error detected */
 
+  free(BigFDSet);
   return(-1);
   }  /* END await_connect() */
 
 
 
 
-#define TORQUE_MAXCONNECTTIMEOUT  5
+/* in microseconds */
+#define TORQUE_MAXCONNECTTIMEOUT  5000000
 
 /*
  * client_to_svr - connect to a server
@@ -179,10 +256,10 @@ static int await_connect(
 
 int client_to_svr(
 
-  pbs_net_t     hostaddr, /* I - internet addr of host */
-  unsigned int  port,  /* I - port to which to connect */
-  int           local_port, /* I - BOOLEAN:  not 0 to use local reserved port */
-  char         *EMsg)           /* O (optional,minsize=1024) */
+  pbs_net_t     hostaddr,	  /* I - internet addr of host */
+  unsigned int  port,		    /* I - port to which to connect */
+  int           local_port,	/* I - BOOLEAN:  not 0 to use local reserved port */
+  char         *EMsg)       /* O (optional,minsize=1024) */
 
   {
   const char id[] = "client_to_svr";
@@ -417,7 +494,7 @@ retry:  /* retry goto added (rentec) */
     case ECONNREFUSED:
 
       if (EMsg != NULL)
-        sprintf(EMsg, "cannot bind to port %d in %s - connection refused",
+        sprintf(EMsg, "cannot connect to port %d in %s - connection refused",
                 tryport,
                 id);
 
@@ -432,7 +509,7 @@ retry:  /* retry goto added (rentec) */
     default:
 
       if (EMsg != NULL)
-        sprintf(EMsg, "cannot bind to port %d in %s - errno:%d %s",
+        sprintf(EMsg, "cannot connect to port %d in %s - errno:%d %s",
                 tryport,
                 id,
                 errno,

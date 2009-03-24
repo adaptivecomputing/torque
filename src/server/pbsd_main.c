@@ -1120,7 +1120,7 @@ main_loop(void)
 
     /* touch the rpp streams that need to send */
 
-    rpp_request(42);
+    rpp_request(0);
 
     /* wait for a request and process it */
 
