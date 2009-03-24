@@ -150,6 +150,10 @@ static char *class_names[] =
 
 /* External functions called */
 
+/* local prototypes */
+const char *log_get_severity_string(int);
+
+
 /*
  * mk_log_name - make the log name used by MOM
  * based on the date: yyyymmdd
@@ -357,11 +361,17 @@ void log_ext(
   {
   char  buf[LOG_BUF_SIZE];
 
-  char *EPtr;
+  char *EPtr = NULL;
 
   char  EBuf[1024];
 
-  int   i;
+  char  tmpLine[2048];
+
+  const char *SeverityText = NULL;
+
+  tmpLine[0] = '\0';
+
+  EBuf[0] = '\0';
 
   if (errnum == -1)
     {
@@ -388,19 +398,18 @@ void log_ext(
       EPtr = EBuf;
       }
 
-    sprintf(buf, "%s (%d) in ",
-
+    sprintf(tmpLine,"%s (%d) in ", 
             EPtr,
             errnum);
     }
 
-  strcat(buf, routine);
+  SeverityText = log_get_severity_string(severity);
 
-  strcat(buf, ", ");
-
-  i = LOG_BUF_SIZE - (int)strlen(buf) - 2;
-
-  strncat(buf, text, i);
+  snprintf(buf,sizeof(buf),"%s::%s%s, %s",
+    SeverityText,
+    tmpLine,
+    routine,
+    text);
 
   buf[LOG_BUF_SIZE - 1] = '\0';
 
@@ -441,6 +450,61 @@ void log_ext(
 
   return;
   }  /* END log_ext() */
+
+
+
+/**
+ * Returns a string to represent the syslog severity-level given.
+ */
+
+const char *log_get_severity_string(
+
+  int severity)
+
+  {
+  const char *result = NULL;
+
+  /* We can't just index into an array to get the strings, as we don't always
+   * have control over what the value of the LOG_* consts are */
+
+  switch (severity)
+    {
+    case LOG_EMERG:
+      result = "LOG_EMERGENCY";
+      break;
+    
+    case LOG_ALERT:
+      result = "LOG_ALERT";
+      break;
+
+    case LOG_CRIT:
+      result = "LOG_CRITICAL";
+      break;
+
+    case LOG_ERR:
+      result = "LOG_ERROR";
+      break;
+
+    case LOG_WARNING:
+      result = "LOG_WARNING";
+      break;
+
+    case LOG_NOTICE:
+      result = "LOG_NOTICE";
+      break;
+
+    case LOG_DEBUG:
+      result = "LOG_DEBUG";
+      break;
+
+    case LOG_INFO:
+    default:
+      result = "LOG_INFO";
+      break;
+    }
+
+  return(result);
+  }  /* END log_get_severity_string() */
 
 
 
