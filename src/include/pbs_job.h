@@ -812,6 +812,7 @@ dir so that job can be restarted */
 #define JOB_EXEC_INITRMG  -6 /* job aborted on MOM init, checkpoint, ok migrate */
 #define JOB_EXEC_BADRESRT -7 /* job restart failed */
 #define JOB_EXEC_CMDFAIL  -8 /* exec() of user command failed */
+#define JOB_EXEC_STDOUTFAIL -9 /* could not create/open stdout stderr files */
 
 extern void  add_dest A_((job *));
 extern void  depend_clrrdy A_((job *));
