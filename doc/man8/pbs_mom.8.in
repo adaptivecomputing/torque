@@ -439,12 +439,10 @@ only be run every TTL seconds.  A TTL of \-1 will cause the command to be
 executed only once.  A TTL of 0 will cause the command to be run everytime
 varattr is requested.  This parameter may be used multiple times, but all
 output will be grouped into a single "varattr" attribute in the request and
-status output.  If the command has no output, the name will be skipped in the
-output.
+status output.  The command should output data in the form of 
+.Ty varattrname=va1ue1[+value2]...
 .IP
-.Ty $varattr seta 3600 /path/to/script [<ARGS>]...
-.br
-.Ty $varattr setb 3600 /path/to/script [<ARGS>]...
+.Ty "$varattr 3600 /path/to/script [<ARGS>]..."
 .IP
 .RE
 .LP

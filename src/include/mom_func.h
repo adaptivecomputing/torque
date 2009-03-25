@@ -121,7 +121,6 @@ extern int cphosts_num;
 struct varattr
   {
   list_link   va_link;
-  char       *va_name;
   int         va_ttl;
   char       *va_cmd;
   char       *va_value;

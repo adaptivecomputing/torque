@@ -477,6 +477,7 @@ u_long   localaddr = 0;
 
 char   extra_parm[] = "extra parameter(s)";
 char   no_parm[]    = "required parameter not found";
+char   varattr_delimiter[] = ";";
 
 int   cphosts_num = 0;
 
@@ -1003,6 +1004,7 @@ static char *reqvarattr(
 
   struct varattr *pva;
   int             fd, len, child_len;
+  int             first_line;
   FILE           *child;
 
   char           *ptr;
@@ -1035,7 +1037,7 @@ static char *reqvarattr(
         if (pva->va_value[0] != '\0')
           {
           if (*list != '\0')
-            strcat(list, "+");
+            strcat(list, varattr_delimiter);
 
           strcat(list, pva->va_value);
           }
@@ -1106,26 +1108,30 @@ retryread:
 
         tmpBuf[child_len] = '\0';
 
-        /* migrate attr/val values into var value field */
+        /* Transfer returned data into var value field */
+        
+        first_line = TRUE;
 
-        ptr = strtok(tmpBuf, " \t\n;");
+        ptr = strtok(tmpBuf,"\n;");
 
         ptr2 = pva->va_value;
 
         ptr2[0] = '\0';
 
-        /* NOTE:  no bounds checking (NYI) */
-
-        /* OUTPUT FORMAT:  <VAR>=<VAL>[+<VAR>=<VAL>]... */
+        /* 
+         * OUTPUT FORMAT:  Take what script gives us.
+         * Script should output 1 or more lines of Name=value1+value2+...
+         */
 
         while (ptr != NULL)
           {
-          if (ptr2[0] != '\0')
-            strcat(ptr2, "+");
+          if (!first_line)
+            strcat(ptr2,varattr_delimiter);
 
-          strcat(ptr2, ptr);
+          strcat(ptr2,ptr);
+          first_line = FALSE;
 
-          ptr = strtok(NULL, " \t\n;");
+          ptr = strtok(NULL,"\n;");
           }  /* END while (ptr != NULL) */
         }    /* END else ((child = popen(pva->va_cmd,"r")) == NULL) */
       }      /* END if ((pva->va_lasttime == 0) || ...) */
@@ -1133,7 +1139,7 @@ retryread:
     if (pva->va_value[0] != '\0')
       {
       if (*list != '\0')
-        strcat(list, "+");
+        strcat(list, varattr_delimiter);
 
       strcat(list, pva->va_value);
       }
@@ -3000,37 +3006,10 @@ static u_long setvarattr(
 
   CLEAR_LINK(pva->va_link);
 
-  /* FORMAT:  <NAME> <TTL> <PATH> */
-
-  pva->va_name = strdup(value);
-
-  /* step forward to get the ttl value */
-
-  ptr = pva->va_name;
-
-  while (!isspace(*ptr))
-    ptr++;
-
-  if (*ptr == '\0')
-    {
-    /* FAILURE - cannot locate ttl or path */
-
-    free(pva->va_name);
-    free(pva);
-
-    return(0);
-    }
-
-  *ptr = '\0';
-
-  /* skip white space */
-
-  ptr++;
-
-  while (isspace(*ptr))
-    ptr++;
-
+  /* FORMAT:  <TTL> <PATH> */
   /* extract TTL */
+
+  ptr = value;
 
   pva->va_ttl = strtol(ptr, NULL, 10);
 
@@ -3041,7 +3020,6 @@ static u_long setvarattr(
 
   if (*ptr == '\0')
     {
-    free(pva->va_name);
     free(pva);
 
     return(0);
@@ -3054,7 +3032,6 @@ static u_long setvarattr(
 
   if (*ptr == '\0')
     {
-    free(pva->va_name);
     free(pva);
 
     return(0);
@@ -3062,7 +3039,7 @@ static u_long setvarattr(
 
   /* preserve command and args */
 
-  pva->va_cmd = ptr;
+  pva->va_cmd = strdup(ptr);
 
   append_link(&mom_varattrs, &pva->va_link, pva);
 
@@ -4878,8 +4855,7 @@ int rm_request(
 
               while (pva != NULL)
                 {
-                sprintf(tmpLine, "  name=%s  ttl=%d  last=%s  cmd=%s  value=%s\n\n",
-                        pva->va_name,
+                sprintf(tmpLine, "  ttl=%d  last=%s  cmd=%s\n  value=%s\n\n",
                         pva->va_ttl,
                         ctime(&pva->va_lasttime),
                         pva->va_cmd,
