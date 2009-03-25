@@ -1785,12 +1785,15 @@ int decode_depend(
 
 
 /*
- * cpy_jobsvr() - a version of strcpy() that watches for an embedded colon
+ * cpy_jobsvr() - a version of strcat() that watches for an embedded colon
  * and escapes it with a leading blackslash.  This is needed because
  * the colon is overloaded, both as job_id separater within a set of
- * depend jobs, and as the server:port separater.  Ugh!
+ *	depend jobs, and as the server:port separater. Ugh!
+ *
+ *	This code is horribly inefficient, because we have to walk the length of d, when called in a tight loop. We are
+ *	trying to replace this with cat_jobsvr.
  */
-
+#if 0
 static void cpy_jobsvr(
 
   char *d,
@@ -1812,6 +1815,71 @@ static void cpy_jobsvr(
 
   return;
   }  /* END cpy_jobsvr() */
+#endif /* 0 */
+
+/*
+ *  cat_jobsvr() - a version of strcat() that watches for an embedded colon
+ *	and escapes it with a leading blackslash.  This is needed because
+ *	the colon is overloaded, both as job_id separater within a set of
+ *	depend jobs, and as the server:port separater. Ugh!
+ */
+
+static void cat_jobsvr(
+
+  char **Dest,
+  char *Src)
+
+  {
+  char *d;
+
+  if (Dest == NULL)
+    return;
+
+  d = *Dest;
+
+  while (*Src) 
+    {
+    if (*Src == ':')
+      *d++ = '\\';
+
+    *d++ = *Src++;
+    }
+
+  *d = '\0';
+
+  *Dest = d;
+
+  return;
+  }
+
+
+/*
+ * fast_strcat() - an improved version of strcat() that is more efficient in
+ * a tight loop
+ */
+
+static void fast_strcat(
+
+  char **Dest,
+  char  *Src)
+
+  {
+  char *d;
+
+  if (Dest == NULL)
+    return;
+
+  d = *Dest;
+
+  while (*Src)
+    *d++ = *Src++;
+
+  *d = '\0';
+
+  *Dest = d;
+
+  return;
+  }
 
 
 
@@ -1876,14 +1944,14 @@ static int dup_depend(
  */
 /*ARGSUSED*/
 
-int
-encode_depend(
-  attribute *attr, /* ptr to attribute to encode */
-  tlist_head *phead, /* ptr to head of attrlist list */
-  char *atname, /* attribute name */
-  char *rsname, /* resource name or null */
-  int mode /* encode mode, unused here */
-)
+int encode_depend(
+
+  attribute    *attr,   /* ptr to attribute to encode */
+  tlist_head   *phead,  /* ptr to head of attrlist list */
+  char	       *atname, /* attribute name */
+  char	       *rsname, /* resource name or null */
+  int           mode)   /* encode mode, unused here */
+
   {
   int      ct = 0;
   char      cvtbuf[22];
@@ -1898,6 +1966,9 @@ encode_depend(
   struct depend_job  *pdjb = NULL;
 
   struct dependnames *pn;
+
+  char *BPtr = 0;
+  int   BSpace = -1;
 
   if (!attr)
     return (-1);
@@ -1916,7 +1987,9 @@ encode_depend(
     {
     if ((nxdp->dp_type == JOB_DEPEND_TYPE_SYNCCT) ||
         (nxdp->dp_type == JOB_DEPEND_TYPE_ON))
-      ct += 30;   /* a guess at a reasonable amt of spece */
+      {
+      ct += 30;   /* a guess at a reasonable amt of space */
+      }
     else
       {
       ct += 12; /* for longest type */
@@ -1937,45 +2010,51 @@ encode_depend(
 
   *pal->al_value = '\0';
 
-  for (nxdp = pdp; nxdp; nxdp = (struct depend *)GET_NEXT(nxdp->dp_link))
+  BPtr = pal->al_value;
+  BSpace = pal->al_tsize;  /* this is actually a little larger than the actual buffer */
+
+	for (nxdp = pdp; nxdp; nxdp = (struct depend *)GET_NEXT(nxdp->dp_link))
     {
-    if ((nxdp->dp_type != JOB_DEPEND_TYPE_SYNCCT) &&
-        (nxdp->dp_type != JOB_DEPEND_TYPE_ON)       &&
-        !(pdjb = (struct depend_job *)GET_NEXT(nxdp->dp_jobs)))
-      continue; /* no value, skip this one */
-
-    if (numdep > 0)
-      strcat(pal->al_value, ","); /* comma between */
-
-    pn = &dependnames[nxdp->dp_type];
-
-    strcat(pal->al_value, pn->name);
-
-    if ((pn->type == JOB_DEPEND_TYPE_SYNCCT) ||
-        (pn->type == JOB_DEPEND_TYPE_ON))
+		if ((nxdp->dp_type != JOB_DEPEND_TYPE_SYNCCT) &&
+		    (nxdp->dp_type != JOB_DEPEND_TYPE_ON)       &&
+		    !(pdjb = (struct depend_job *)GET_NEXT(nxdp->dp_jobs)))
       {
-      sprintf(cvtbuf, ":%d", nxdp->dp_numexp);
-      strcat(pal->al_value, cvtbuf);
+			continue;	/* no value, skip this one */
+      }
+
+		if (nxdp != pdp)
+      fast_strcat(&BPtr,",");  /* comma between */
+
+		pn = &dependnames[nxdp->dp_type];
+    fast_strcat(&BPtr,pn->name);
+
+		if ((pn->type == JOB_DEPEND_TYPE_SYNCCT) ||
+		    (pn->type == JOB_DEPEND_TYPE_ON))
+      {
+			sprintf(cvtbuf, ":%d", nxdp->dp_numexp);
+      fast_strcat(&BPtr,cvtbuf);
       }
     else
       {
-      while (pdjb)
+			while (pdjb)
         {
-        strcat(pal->al_value, ":");
-        cpy_jobsvr(pal->al_value, pdjb->dc_child);
+        fast_strcat(&BPtr,":");
+        cat_jobsvr(&BPtr,pdjb->dc_child);
 
         if (*pdjb->dc_svr != '\0')
           {
-          strcat(pal->al_value, "@");
-          cpy_jobsvr(pal->al_value, pdjb->dc_svr);
+          /* WARNING: do we need to escape colons here (we used to) */
+          fast_strcat(&BPtr,"@");
+
+          cat_jobsvr(&BPtr,pdjb->dc_svr);
           }
 
-        pdjb = (struct depend_job *)GET_NEXT(pdjb->dc_link);
-        }
-      }
+				pdjb = (struct depend_job *)GET_NEXT(pdjb->dc_link);
+			  } 
+		  }
 
-    ++numdep;
-    }
+		++numdep;
+	  }
 
   if (numdep)
     {

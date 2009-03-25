@@ -31,6 +31,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature
       accounting files.
   e - changed mom config varattr so invoked script returns the varattr name
       and value(s)
+  e - improved the performance of pbs_server when submitting large numbers of
+      jobs with dependencies defined
 
 2.4.0
   f - added a "-q" option to pbs_mom which does *not* perform the default -p 
