@@ -905,6 +905,19 @@ attribute_def svr_attr_def[] =
       PARENT_TYPE_SERVER
   },
 
+  /* SRV_ATR_AcctKeepDays */
+  {   ATTR_acctkeepdays,      /* "accounting_keep_days" */
+    	decode_l,
+    	encode_l,
+    	set_l,
+    	comp_l,
+    	free_null,
+    	NULL_FUNC,
+    	NO_USER_SET,
+    	ATR_TYPE_LONG,
+    	PARENT_TYPE_SERVER
+  },
+
   /* SRV_ATR_checkpoint_dir */
   {   ATTR_checkpoint_dir,   /* "checkpoint_dir" */
       decode_str,
@@ -917,7 +930,6 @@ attribute_def svr_attr_def[] =
       ATR_TYPE_STR,
       PARENT_TYPE_SERVER
   },
-
 
   /* site supplied server attribute definitions if any, see site_svr_attr_*.h  */
 #include "site_svr_attr_def.h"

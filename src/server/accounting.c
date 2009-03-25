@@ -115,8 +115,9 @@ static int      acct_auto_switch = 0;
 
 extern attribute_def job_attr_def[];
 extern char     *path_acct;
-extern int      resc_access_perm;
-extern time_t      time_now;
+extern int       resc_access_perm;
+extern time_t	   time_now;
+extern int       LOGLEVEL;
 
 
 
@@ -557,6 +558,45 @@ void account_jobend(
 
   return;
   }  /* END account_jobend() */
+
+
+
+/*
+ * acct_cleanup - remove the old accounting files
+ */
+
+void acct_cleanup(
+
+  long	days_to_keep)	/* Number of days to keep accounting files */
+
+  {
+  char command[100];
+  char retdata[200];
+  FILE *fp;
+  char *id = "acct_cleanup";
+    
+  sprintf(command,"find %s -type f -daystart -mtime +%ld -print | xargs rm -f",
+    path_acct, days_to_keep);
+
+  if (LOGLEVEL >= 7)
+    {
+    log_record(PBSEVENT_SYSTEM,PBS_EVENTCLASS_SERVER,"Act",command);
+    }
+
+  if ((fp = popen(command, "r")) != NULL)
+    {
+    while (fgets(retdata,180,fp) != NULL)
+      {
+      }
+    pclose(fp);
+    }
+  else
+    {
+    log_err(errno,id,"popen failed\n");
+    }
+
+  return;
+  }  /* END acct_cleanup() */
 
 
 /* END accounting.c */

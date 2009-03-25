@@ -111,6 +111,9 @@
 #define PBS_JOBSTAT_MIN         4 /* minimum time between job stats */
 #define PBS_POLLJOBS         TRUE /* enable pbs_server job polling */
 #define PBS_LOG_CHECK_RATE    300 /* check log size every 5 min if log_file_max_size is set */
+#define PBS_ACCT_CHECK_RATE   60*60  /* check accounting files every hour
+																		 if accounting_keep_days is set */
+
 /* Server Database information - path names */
 
 #define PBS_SVR_PRIVATE  "server_priv"

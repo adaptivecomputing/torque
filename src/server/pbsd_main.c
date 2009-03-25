@@ -141,6 +141,7 @@ extern void svr_shutdown(int);
 extern void acct_close(void);
 extern int  svr_startjob A_((job *, struct batch_request *, char *, char *));
 extern int RPPConfigure(int, int);
+extern void acct_cleanup(long);
 #ifdef NO_SIGCHLD
 extern void check_children();
 #endif
@@ -982,6 +983,7 @@ main_loop(void)
   void ping_nodes A_((struct work_task *));
   void check_nodes A_((struct work_task *));
   void check_log A_((struct work_task *));
+  void check_acct_log A_((struct work_task *));
 
   extern char *msg_startup2; /* log message   */
 
@@ -1029,6 +1031,7 @@ main_loop(void)
 
   set_task(WORK_Timed, time_now + 5, check_log, NULL);
 
+  set_task(WORK_Timed,time_now + 10,check_acct_log,NULL);
 
   /*
    * Now at last, we are ready to do some batch work.  The
@@ -1705,6 +1708,34 @@ void check_log(
   return;
   } /* END check_log */
 
+
+
+void check_acct_log(
+
+ struct work_task *ptask) /* I */
+
+ {
+  
+  if (((server.sv_attr[(int)SRV_ATR_AcctKeepDays].at_flags & ATR_VFLAG_SET) != 0)
+       && (server.sv_attr[(int)SRV_ATR_AcctKeepDays].at_val.at_long >= 0))
+   {
+     
+     sprintf(log_buffer,"Checking accounting files - keep days = %ld",
+       server.sv_attr[(int)SRV_ATR_AcctKeepDays].at_val.at_long);
+     log_event(
+       PBSEVENT_SYSTEM | PBSEVENT_FORCE,
+       PBS_EVENTCLASS_SERVER,
+       msg_daemonname,
+       log_buffer);
+     
+    acct_cleanup(server.sv_attr[(int)SRV_ATR_AcctKeepDays].at_val.at_long);
+    
+   }
+
+  set_task(WORK_Timed,time_now + PBS_ACCT_CHECK_RATE,check_acct_log,NULL);
+
+  return;
+  } /* END check_acct_log */
 
 
 
