@@ -275,6 +275,7 @@
 #define ATTR_extraresc   "extra_resc"
 #define ATTR_schedversion "sched_version"
 #define ATTR_acctkeepdays "accounting_keep_days"
+#define ATTR_lockfile "lock_file"
 
 /* additional node "attributes" names */
 

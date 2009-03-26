@@ -282,7 +282,7 @@ pbs_queue *que_recov(
   /* read in queue attributes */
 
   if (recov_attr(fds, pq, que_attr_def, pq->qu_attr,
-                 (int)QA_ATR_LAST, 0) != 0)
+	               (int)QA_ATR_LAST, 0, TRUE) != 0)
     {
     log_err(-1, "que_recov", "recov_attr[common] failed");
     que_free(pq);

@@ -155,6 +155,7 @@ enum srv_atr
   SRV_ATR_ServerName,
   SRV_ATR_SchedVersion,
 	SRV_ATR_AcctKeepDays,
+  SRV_ATR_lockfile,
   SRV_ATR_checkpoint_dir,
 #include "site_svr_attr_enum.h"
   /* This must be last */
@@ -219,7 +220,7 @@ extern struct server server;
 
 /* function prototypes */
 
-extern int svr_recov A_((char *));
+extern int svr_recov A_((char *, int));
 extern int svr_save A_((struct server *, int));
 
 

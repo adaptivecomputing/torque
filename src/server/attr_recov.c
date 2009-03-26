@@ -392,7 +392,8 @@ int recov_attr(
   struct attribute_def *padef,
   struct attribute     *pattr,
   int                   limit,
-  int                   unknown)
+  int                   unknown,
+  int                   do_actions)
 
   {
   static char  id[] = "recov_attr";
@@ -514,7 +515,7 @@ int recov_attr(
       pal->al_resc,
       pal->al_value);
 
-    if ((padef + index)->at_action != (int (*)())0)
+    if ((do_actions) && (padef + index)->at_action != (int (*)())0)
       (padef + index)->at_action(pattr + index, parent, ATR_ACTION_RECOV);
 
     (pattr + index)->at_flags = pal->al_flags & ~ATR_VFLAG_MODIFY;

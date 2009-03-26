@@ -500,7 +500,8 @@ job *job_recov(
         job_attr_def,
         pj->ji_wattr,
         (int)JOB_ATR_LAST,
-        (int)JOB_ATR_UNKN) != 0)
+        (int)JOB_ATR_UNKN,
+        TRUE) != 0) 
     {
     sprintf(log_buffer, "unable to recover %s (file is likely corrupted)",
             namebuf);

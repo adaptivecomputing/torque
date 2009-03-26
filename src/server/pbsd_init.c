@@ -98,6 +98,7 @@
 #include "server.h"
 #include "queue.h"
 #include "pbs_job.h"
+#include "resource.h"
 #include "work_task.h"
 #include "tracking.h"
 #include "svrfunc.h"
@@ -521,7 +522,10 @@ int pbsd_init(
 
   path_checkpoint     = build_path(path_home, PBS_CHKPTDIR, suffix_slash);
 
-  init_resc_defs();
+  if (svr_resc_def == NULL)
+    {
+    init_resc_defs();
+    }
 
 #if !defined(DEBUG) && !defined(NO_SECURITY_CHECK)
 
@@ -625,7 +629,7 @@ int pbsd_init(
     {
     /* Open the server database (save file) and read it in */
 
-    if ((rc != 0) || ((rc = svr_recov(path_svrdb)) == -1))
+    if ((rc != 0) || ((rc = svr_recov(path_svrdb, FALSE)) == -1)) 
       {
       log_err(rc, "pbsd_init", msg_init_baddb);
 
@@ -2055,3 +2059,44 @@ static void init_abt_job(
 
   return;
   }
+
+
+
+
+/*
+ * This just reads in the server attributes from the server db.
+ */
+
+int get_svr_attr(
+
+  int type)		/* type of initialization   */
+
+  {
+  static char id[] = "get_svr_attr";
+  int	 rc;
+  char	*suffix_slash = "/";
+  
+  if (type != RECOV_CREATE) 
+    {
+    /* Open the server database (save file) and read it in */
+
+    path_priv      = build_path(path_home, PBS_SVR_PRIVATE, suffix_slash);
+    path_svrdb     = build_path(path_priv, PBS_SERVERDB, NULL);
+
+    if (svr_resc_def == NULL)
+      {
+      init_resc_defs();
+      }
+
+    if (((rc = chk_save_file(path_svrdb))!= 0) || ((rc = svr_recov(path_svrdb, TRUE)) == -1)) 
+      {
+      log_err(rc, id ,msg_init_baddb);
+
+      return(-1);
+      }
+
+    } 
+
+  return(0);
+  }  /* END get_svr_attr() */
+

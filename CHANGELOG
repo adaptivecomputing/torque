@@ -35,6 +35,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature
       jobs with dependencies defined
   e - added new parameter "log_keep_days" to both pbs_server and pbs_mom.
       Specifies how long to keep log files before they are automatically removed
+  e - added qmgr server attribute lock_file, specifies where server lock file
+      is located
 
 2.4.0
   f - added a "-q" option to pbs_mom which does *not* perform the default -p 

@@ -152,6 +152,10 @@ extern void check_children();
 extern int    svr_chngNodesfile;
 extern int    svr_totnodes;
 
+/* External Functions */
+
+extern int    get_svr_attr (int);
+
 /* Local Private Functions */
 
 static int    get_port A_((char *, unsigned int *, pbs_net_t *));
@@ -1372,12 +1376,37 @@ int main(
     return(1);
     }
 
+  /*
+   * Read in server attributes so they are available to be used
+   * Attributes will not be read in on a pbs_server -t create
+   */
 
-  /* make sure no other server is running with this home directory */
+  if (get_svr_attr(server_init_type) == -1)
+    {
+    fprintf(stderr,"%s: failed to get server attributes\n", 
+      ProgName);
 
-  sprintf(lockfile, "%s/%s/server.lock",
-          path_home,
-          PBS_SVR_PRIVATE);
+    return(1);
+    }
+
+  /*
+   * make sure no other server is running with this home directory.
+   * If server lockfile attribute has been set use it.
+   * If not use default location for it
+   */
+   
+  if ((server.sv_attr[(int)SRV_ATR_lockfile].at_flags & ATR_VFLAG_SET) &&
+               (server.sv_attr[(int)SRV_ATR_lockfile].at_val.at_str))
+    {
+    sprintf(lockfile,"%s",
+      server.sv_attr[(int)SRV_ATR_lockfile].at_val.at_str);
+    }
+  else
+    {
+    sprintf(lockfile,"%s/%s/server.lock",
+      path_home,
+      PBS_SVR_PRIVATE);
+    }
 
   if ((lockfds = open(lockfile, O_CREAT | O_TRUNC | O_WRONLY, 0600)) < 0)
     {
