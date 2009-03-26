@@ -570,29 +570,11 @@ void acct_cleanup(
   long	days_to_keep)	/* Number of days to keep accounting files */
 
   {
-  char command[100];
-  char retdata[200];
-  FILE *fp;
   char *id = "acct_cleanup";
-    
-  sprintf(command,"find %s -type f -daystart -mtime +%ld -print | xargs rm -f",
-    path_acct, days_to_keep);
 
-  if (LOGLEVEL >= 7)
+  if (log_remove_old(path_acct,(days_to_keep * SECS_PER_DAY)) != 0)
     {
-    log_record(PBSEVENT_SYSTEM,PBS_EVENTCLASS_SERVER,"Act",command);
-    }
-
-  if ((fp = popen(command, "r")) != NULL)
-    {
-    while (fgets(retdata,180,fp) != NULL)
-      {
-      }
-    pclose(fp);
-    }
-  else
-    {
-    log_err(errno,id,"popen failed\n");
+    log_err(-1,id,"failure occurred when checking for old accounting logs");
     }
 
   return;

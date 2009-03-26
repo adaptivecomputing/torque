@@ -33,6 +33,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature
       and value(s)
   e - improved the performance of pbs_server when submitting large numbers of
       jobs with dependencies defined
+  e - added new parameter "log_keep_days" to both pbs_server and pbs_mom.
+      Specifies how long to keep log files before they are automatically removed
 
 2.4.0
   f - added a "-q" option to pbs_mom which does *not* perform the default -p 

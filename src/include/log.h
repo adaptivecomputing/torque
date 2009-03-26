@@ -154,6 +154,7 @@ extern int  log_open A_((char *, char *));
 extern void log_record A_((int, int, char *, char *));
 extern void log_roll A_((int));
 extern long log_size A_((void));
+extern int  log_remove_old A_((char *,unsigned long));
 extern char log_buffer[LOG_BUF_SIZE];
 int log_init A_((char *, char *));
 
@@ -187,3 +188,13 @@ extern int  setup_env A_((char *));
 /* Logging Masks */
 
 #define PBSEVENT_MASK  0x01ff
+
+/* definition's for pbs_log.c's log_remove_old() function */
+#define MAX_PATH_LEN    1024  /* maximum possible length of any path */
+#define SECS_PER_DAY     86400
+
+#if !defined(TRUE) || !defined(FALSE)
+#define TRUE 1
+#define FALSE 0
+#endif /* !defined(TRUE) || !defined(FALSE) */
+

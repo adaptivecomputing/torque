@@ -106,6 +106,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <errno.h>
+#include <dirent.h>
 
 #include "log.h"
 #if SYSLOG
@@ -674,6 +675,109 @@ void log_close(
 
   return;
   }  /* END log_close() */
+
+
+
+/**
+ * log_remove_old - Removes log files older than a given time.
+ * This function removes files from the given path if they were last modified after ExpireTime.
+ *
+ * Note that this function will skip over special filenames like '.' and '..'.
+ *
+ * @param DirPath (I)
+ * @param ExpireTime (I, how old the file must be to be removed, in seconds)
+ * if (Expiretime == 0), nothing will be removed
+ * @return 0 on success, non-zero otherwise
+ */
+
+int log_remove_old(
+
+  char  *DirPath,     /* I (path in which we're removing files)*/
+  unsigned long ExpireTime)   /* I (how old the file must be to be removed, in seconds) */
+
+  {
+  char tmpPath[MAX_PATH_LEN];
+ 
+  DIR *DirHandle;
+  struct dirent *FileHandle;
+  struct stat sbuf;
+  unsigned long FMTime;
+  unsigned long TTime;
+ 
+  int IsDir = FALSE;
+  TTime = time((time_t *)NULL);
+ 
+  /* check the input for an empty path */
+  if ((DirPath == NULL) || (DirPath[0] == '\0'))
+    {
+    return(-1);
+    }
+
+  if (ExpireTime == 0)
+    {
+    return(0);
+    }
+
+  /* open directory for reading */
+      
+  DirHandle = opendir(DirPath);
+
+  /* fail if path couldn't be opened */  
+  if (DirHandle == (DIR *)NULL)
+    {
+    return(-1);
+    }
+
+  FileHandle = readdir(DirHandle);
+  
+  while (FileHandle != (struct dirent *)NULL)
+    {    
+    /* attempt to delete old files */
+
+    if (!strcmp(FileHandle->d_name,".") ||
+        !strcmp(FileHandle->d_name,".."))
+      {
+      /* skip special file names */
+
+      FileHandle = readdir(DirHandle);
+
+      continue;
+      }
+
+    snprintf(tmpPath,sizeof(tmpPath),"%s/%s",
+      DirPath,
+      FileHandle->d_name);
+
+    if (stat(tmpPath,&sbuf) == -1) 
+      {
+      /* -1 is the failure value for stat */
+
+      FMTime = 0;
+
+      FileHandle = readdir(DirHandle);
+
+      continue;
+      }
+
+    /* set FMTime's value */
+    FMTime = (unsigned long)sbuf.st_mtime;
+    
+    if ((IsDir == FALSE) &&
+        (TTime - FMTime) > ExpireTime)
+      {
+      /* file is too old - delete it */
+
+      remove(tmpPath);
+      }
+
+    FileHandle = readdir(DirHandle);
+    } /* end file checking while loop */
+
+  closedir(DirHandle);
+
+  return(0);
+  }  /* END log_remove_ld() */
+
 
 
 

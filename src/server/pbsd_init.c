@@ -164,6 +164,7 @@ extern char *path_queues;
 extern char *path_spool;
 extern char *path_svrdb;
 extern char *path_svrdb_new;
+extern char *path_svrlog;
 extern char *path_track;
 extern char *path_nodes;
 extern char *path_nodes_new;
@@ -503,6 +504,8 @@ int pbsd_init(
   path_svrdb     = build_path(path_priv, PBS_SERVERDB, NULL);
 
   path_svrdb_new = build_path(path_priv, PBS_SERVERDB, new_tag);
+
+  path_svrlog = build_path(path_home, PBS_LOGFILES, suffix_slash);
 
   path_track  = build_path(path_priv, PBS_TRACKING, NULL);
 

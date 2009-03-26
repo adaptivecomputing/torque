@@ -225,7 +225,7 @@
 /* NOTE: steps for adding new attribute described in ??? */
 /*  - create #define ATTR_* in include/pbs_ifl.h
     - insert SRV_ATR_* in include/server.h
-    - add SRV_ATR_* in include/qmgr_svr_public.h
+    - add ATTR_* in include/qmgr_svr_public.h
     - insert structure in server/svr_attr_def.c
         NOTE:  structure must be in same relative position as SRV_ATR_*
     - insert usage code in proper location
@@ -270,6 +270,7 @@
 #define ATTR_servername  "server_name"
 #define ATTR_logfilemaxsize "log_file_max_size"
 #define ATTR_logfilerolldepth "log_file_roll_depth"
+#define ATTR_logkeepdays "log_keep_days"
 #define ATTR_nextjobnum  "next_job_number"
 #define ATTR_extraresc   "extra_resc"
 #define ATTR_schedversion "sched_version"

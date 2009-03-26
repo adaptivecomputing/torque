@@ -351,6 +351,7 @@ static unsigned long setlogfilemaxsize(char *);
 static unsigned long setlogfilerolldepth(char *);
 static unsigned long setlogfilesuffix(char *);
 static unsigned long setlogdirectory(char *);
+static unsigned long setlogkeepdays(char *);
 static unsigned long setvarattr(char *);
 static unsigned long setautoidealload(char *);
 static unsigned long setautomaxload(char *);
@@ -406,6 +407,7 @@ static struct specials
   { "log_file_max_size",   setlogfilemaxsize },
   { "log_file_roll_depth", setlogfilerolldepth },
   { "log_file_suffix",     setlogfilesuffix },
+  { "log_keep_days",       setlogkeepdays },
   { "varattr",             setvarattr },
   { "nodefile_suffix",     setnodefilesuffix },
   { "nospool_dir_list",    setnospooldirlist },
@@ -447,6 +449,7 @@ struct config common_config[] =
   };
 
 int                     LOGLEVEL = 0;  /* valid values (0 - 10) */
+int                     LOGKEEPDAYS = 0; /* days each log file should be kept before deleting */
 int                     DEBUGMODE = 0;
 int                     DOBACKGROUND = 1;
 char                    DEFAULT_UMASK[1024];
@@ -2981,6 +2984,25 @@ static unsigned long setlogfilesuffix(
 
 
 
+static unsigned long setlogkeepdays(
+ 
+  char *value)  /* I */
+
+  {
+  int i;
+
+  i = (int)atoi(value);
+
+  if (i < 0)
+    {
+    return(0);  /* error */
+    }
+
+  LOGKEEPDAYS = i;
+
+  return(1);
+  }
+
 
 
 static u_long setvarattr(
@@ -3252,6 +3274,26 @@ check_log(void)
 
   {
   last_log_check = time_now;
+
+  if (LOGKEEPDAYS > 0)
+    {
+    /* remove logs older than log_keep_days */
+
+    snprintf(log_buffer,sizeof(log_buffer),"checking for old pbs_mom logs in dir '%s' (older than %d days)",
+      path_log,
+      LOGKEEPDAYS);
+   
+    log_event(
+      PBSEVENT_SYSTEM | PBSEVENT_FORCE,
+      PBS_EVENTCLASS_SERVER,
+      msg_daemonname,
+      log_buffer);
+
+    if (log_remove_old(path_log,(LOGKEEPDAYS * SECS_PER_DAY)) != 0)
+      {
+      log_err(-1,"check_log","failure occurred when checking for old pbs_mom logs");
+      }
+    }
 
   if (log_file_max_size <= 0)
     {

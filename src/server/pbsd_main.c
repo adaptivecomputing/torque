@@ -173,7 +173,8 @@ char        *path_queues;
 char        *path_spool;
 char        *path_svrdb;
 char        *path_svrdb_new;
-char         *path_track;
+char        *path_svrlog;
+char        *path_track;
 char        *path_nodes;
 char        *path_nodes_new;
 char        *path_nodestate;
@@ -1663,6 +1664,27 @@ void check_log(
   {
   long depth = 1;
 
+ /* remove logs older than LogKeepDays */
+
+ if ((server.sv_attr[(int)SRV_ATR_LogKeepDays].at_flags 
+     & ATR_VFLAG_SET) != 0)
+   {
+   snprintf(log_buffer,sizeof(log_buffer),"checking for old pbs_server logs in dir '%s' (older than %ld days)",
+     path_svrlog,
+     server.sv_attr[(int)SRV_ATR_LogKeepDays].at_val.at_long);
+ 
+   log_event(
+     PBSEVENT_SYSTEM | PBSEVENT_FORCE,
+     PBS_EVENTCLASS_SERVER,
+     msg_daemonname,
+     log_buffer);
+
+   if (log_remove_old(path_svrlog,server.sv_attr[(int)SRV_ATR_LogKeepDays].at_val.at_long * SECS_PER_DAY) != 0)
+     {
+     log_err(-1,"check_log","failure occurred when checking for old pbs_server logs");
+     }
+   }
+
   if ((server.sv_attr[(int)SRV_ATR_LogFileMaxSize].at_flags
        & ATR_VFLAG_SET) != 0)
     {
@@ -1715,22 +1737,21 @@ void check_acct_log(
  struct work_task *ptask) /* I */
 
  {
-  
   if (((server.sv_attr[(int)SRV_ATR_AcctKeepDays].at_flags & ATR_VFLAG_SET) != 0)
        && (server.sv_attr[(int)SRV_ATR_AcctKeepDays].at_val.at_long >= 0))
-   {
-     
-     sprintf(log_buffer,"Checking accounting files - keep days = %ld",
-       server.sv_attr[(int)SRV_ATR_AcctKeepDays].at_val.at_long);
-     log_event(
-       PBSEVENT_SYSTEM | PBSEVENT_FORCE,
-       PBS_EVENTCLASS_SERVER,
-       msg_daemonname,
-       log_buffer);
+    {
+    sprintf(log_buffer,"Checking accounting files - keep days = %ld",
+      server.sv_attr[(int)SRV_ATR_AcctKeepDays].at_val.at_long);
+
+    log_event(
+      PBSEVENT_SYSTEM | PBSEVENT_FORCE,
+      PBS_EVENTCLASS_SERVER,
+      msg_daemonname,
+      log_buffer);
      
     acct_cleanup(server.sv_attr[(int)SRV_ATR_AcctKeepDays].at_val.at_long);
     
-   }
+    }
 
   set_task(WORK_Timed,time_now + PBS_ACCT_CHECK_RATE,check_acct_log,NULL);
 

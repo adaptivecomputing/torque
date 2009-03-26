@@ -144,9 +144,10 @@ enum srv_atr
   SRV_ATR_SubmitHosts,
   SRV_ATR_AllowNodeSubmit,
   SRV_ATR_AllowProxyUser,
-  SRV_ATR_AutoNodeNP,
+  SRV_ATR_AutoNodeNP,            /* 50 */
   SRV_ATR_LogFileMaxSize,
   SRV_ATR_LogFileRollDepth,
+  SRV_ATR_LogKeepDays,
   SRV_ATR_NextJobNumber,
   SRV_ATR_tokens,
   SRV_ATR_NetCounter,
