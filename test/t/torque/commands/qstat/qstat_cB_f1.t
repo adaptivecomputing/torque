@@ -75,7 +75,7 @@ foreach my $server (@servers)
     {
 
     my $reg_exp = &QSTAT_BF1_REGEXP->{ $attribute };
-    ok($server_info{ $server }{ $attribute } =~ /${reg_exp}/, "Checking '$server' $attribute attribute");
+    like($server_info{ $server }{ $attribute }, qr/$reg_exp/, "Checking '$server' $attribute attribute");
 
     } # END foreach my $attribue (@attributes)
 
