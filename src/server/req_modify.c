@@ -586,6 +586,57 @@ int modify_job_attr(
 
       rc = set_jobexid(pjob, newattr, NULL);
       }
+
+    if ((rc == 0) &&
+        (newattr[(int)JOB_ATR_outpath].at_flags & ATR_VFLAG_MODIFY))
+      {
+      /* need to recheck if JOB_ATR_outpath is a special case of host only */
+
+      if (newattr[(int)JOB_ATR_outpath].at_val.at_str[strlen(newattr[(int)JOB_ATR_outpath].at_val.at_str) - 1] == ':')
+        {
+        newattr[(int)JOB_ATR_outpath].at_val.at_str =
+          prefix_std_file(pjob, (int)'o');
+        }
+      /*
+       * if the output path was specified and ends with a '/'
+       * then append the standard file name
+       */
+      else if (newattr[(int)JOB_ATR_outpath].at_val.at_str[strlen(newattr[(int)JOB_ATR_outpath].at_val.at_str) - 1] == '/')
+        {
+          newattr[(int)JOB_ATR_outpath].at_val.at_str[strlen(newattr[(int)JOB_ATR_outpath].at_val.at_str) - 1] = '\0';
+          
+          replace_attr_string(&newattr[(int)JOB_ATR_outpath],
+                            (add_std_filename(pjob,
+                            newattr[(int)JOB_ATR_outpath].at_val.at_str,
+                            (int)'o')));
+        }
+      }
+
+    if ((rc == 0) &&
+        (newattr[(int)JOB_ATR_errpath].at_flags & ATR_VFLAG_MODIFY))
+      {
+      /* need to recheck if JOB_ATR_errpath is a special case of host only */
+
+      if (newattr[(int)JOB_ATR_errpath].at_val.at_str[strlen(newattr[(int)JOB_ATR_errpath].at_val.at_str) - 1] == ':')
+        {
+        newattr[(int)JOB_ATR_errpath].at_val.at_str =
+          prefix_std_file(pjob, (int)'e');
+        }
+      /*
+       * if the error path was specified and ends with a '/'
+       * then append the standard file name
+       */
+      else if (newattr[(int)JOB_ATR_errpath].at_val.at_str[strlen(newattr[(int)JOB_ATR_errpath].at_val.at_str) - 1] == '/')
+        {
+          newattr[(int)JOB_ATR_errpath].at_val.at_str[strlen(newattr[(int)JOB_ATR_errpath].at_val.at_str) - 1] = '\0';
+          
+          replace_attr_string(&newattr[(int)JOB_ATR_errpath],
+                            (add_std_filename(pjob,
+                            newattr[(int)JOB_ATR_errpath].at_val.at_str,
+                            (int)'e')));
+        }
+      }
+
     }  /* END if (rc == 0) */
 
   if (rc != 0)

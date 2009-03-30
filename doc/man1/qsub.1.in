@@ -371,8 +371,8 @@ to. The path will be the default file name.
 .IP
 If the
 .Ar \-e
-option is not specified or the \fBpath_name\fP is not specified, the default file
-name for the standard error stream
+option is not specified or the \fBpath_name\fP is not specified or is specified
+and is a directory, the default file name for the standard error stream
 will be used.  The default name has the following form:
 .br
 \ \ \ \ \fBjob_name.esequence_number\fP
@@ -662,8 +662,8 @@ to. The path will be the default file name.
 .IP
 If the
 .Ar \-o
-option is not specified or the \fBpath_name\fP is not specified, the default file
-name for the standard output stream
+option is not specified or the \fBpath_name\fP is not specified or is specified
+and is a directory, the default file name for the standard output stream
 will be used.  The default name has the following form:
 .br
 \ \ \ \ \fBjob_name.osequence_number\fP

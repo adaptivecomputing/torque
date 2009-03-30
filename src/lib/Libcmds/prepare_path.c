@@ -293,8 +293,18 @@ int prepare_path(
     strcat(path_out, "/");
     }
 
-  strcat(path_out, path_name);
+  /* try to determine if this is a directory, if it is end it with a '/' */
+  
+  if ((host_given == NULL) && (path_name[strlen(path_name) - 1] != '/'))
+    {
+    if ((stat(path_name, &statbuf) == 0) && (S_ISDIR(statbuf.st_mode)))
+      {
+      strcat(path_name, "/");
+      }
+    }
 
+  strcat(path_out, path_name);
+  
   /* SUCCESS */
 
   return(0);

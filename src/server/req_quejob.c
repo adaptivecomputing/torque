@@ -649,17 +649,20 @@ void req_quejob(
 
       pj->ji_wattr[(int)JOB_ATR_outpath].at_flags |= ATR_VFLAG_SET;
       }
-
-#if 0
-    else  /* change to show expected output path and filename */
+    /*
+     * if the output path was specified and ends with a '/'
+     * then append the standard file name
+     */
+    else if ((pj->ji_wattr[(int)JOB_ATR_outpath].at_flags & ATR_VFLAG_SET) &&
+        (((pj->ji_wattr[(int)JOB_ATR_outpath].at_val.at_str[strlen(pj->ji_wattr[(int)JOB_ATR_outpath].at_val.at_str) - 1] == '/'))))
       {
-      replace_attr_string(&pj->ji_wattr[(int)JOB_ATR_outpath],
+        pj->ji_wattr[(int)JOB_ATR_outpath].at_val.at_str[strlen(pj->ji_wattr[(int)JOB_ATR_outpath].at_val.at_str) - 1] = '\0';
+        
+        replace_attr_string(&pj->ji_wattr[(int)JOB_ATR_outpath],
                           (add_std_filename(pj,
-                                            pj->ji_wattr[(int)JOB_ATR_outpath].at_val.at_str,
-                                            (int)'o')));
+                          pj->ji_wattr[(int)JOB_ATR_outpath].at_val.at_str,
+                          (int)'o')));
       }
-
-#endif
 
     if (!(pj->ji_wattr[(int)JOB_ATR_errpath].at_flags & ATR_VFLAG_SET) ||
         (((pj->ji_wattr[(int)JOB_ATR_errpath].at_val.at_str[strlen(pj->ji_wattr[(int)JOB_ATR_errpath].at_val.at_str) - 1] == ':'))))
@@ -669,17 +672,20 @@ void req_quejob(
 
       pj->ji_wattr[(int)JOB_ATR_errpath].at_flags |= ATR_VFLAG_SET;
       }
-
-#if 0
-    else  /* change to show expected error path and filename */
+    /*
+     * if the error path was specified and ends with a '/'
+     * then append the standard file name
+     */
+    else if ((pj->ji_wattr[(int)JOB_ATR_errpath].at_flags & ATR_VFLAG_SET) &&
+        (((pj->ji_wattr[(int)JOB_ATR_errpath].at_val.at_str[strlen(pj->ji_wattr[(int)JOB_ATR_errpath].at_val.at_str) - 1] == '/'))))
       {
-      replace_attr_string(&pj->ji_wattr[(int)JOB_ATR_errpath],
+        pj->ji_wattr[(int)JOB_ATR_errpath].at_val.at_str[strlen(pj->ji_wattr[(int)JOB_ATR_errpath].at_val.at_str) - 1] = '\0';
+        
+        replace_attr_string(&pj->ji_wattr[(int)JOB_ATR_errpath],
                           (add_std_filename(pj,
-                                            pj->ji_wattr[(int)JOB_ATR_errpath].at_val.at_str,
-                                            (int)'e')));
+                          pj->ji_wattr[(int)JOB_ATR_errpath].at_val.at_str,
+                          (int)'e')));
       }
-
-#endif
 
     if ((pj->ji_wattr[(int)JOB_ATR_outpath].at_val.at_str == NULL) ||
         (pj->ji_wattr[(int)JOB_ATR_errpath].at_val.at_str == NULL))

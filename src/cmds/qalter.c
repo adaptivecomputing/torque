@@ -107,6 +107,7 @@ int main(
   int i;
   int u_cnt, o_cnt, s_cnt, n_cnt;
   int asynch = FALSE;
+  int rc = 0;
 
   struct attrl *attrib = NULL;
   char *keyword;
@@ -211,8 +212,9 @@ int main(
         break;
 
       case 'e':
-
-        if (prepare_path(optarg, path_out) == 0)
+ 
+        rc = prepare_path(optarg, path_out);
+        if ((rc == 0) || (rc == 3))
           {
           set_attr(&attrib, ATTR_e, path_out);
           }
@@ -404,8 +406,9 @@ int main(
       case 'o':
 
         /* output */
-
-        if (prepare_path(optarg, path_out) == 0)
+ 
+        rc = prepare_path(optarg, path_out);
+        if ((rc == 0) || (rc == 3))
           {
           set_attr(&attrib, ATTR_o, path_out);
           }
