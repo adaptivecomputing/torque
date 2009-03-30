@@ -710,6 +710,7 @@ task *task_find A_((
 
 #define JOB_FILE_COPY           ".JC"    /* tmp copy while updating */
 #define JOB_FILE_SUFFIX         ".JB"    /* job control file */
+#define JOB_FILE_BACKUP			".BK"	 /* job file backup */
 #define JOB_SCRIPT_SUFFIX       ".SC"    /* job script file  */
 #define JOB_STDOUT_SUFFIX       ".OU"    /* job standard out */
 #define JOB_STDERR_SUFFIX       ".ER"    /* job standard error */

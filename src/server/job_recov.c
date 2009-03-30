@@ -126,7 +126,7 @@ int save_tmsock(job *);
 int recov_tmsock(int, job *);
 #endif
 
-extern int job_qs_upgrade(job *, int , int);
+extern int job_qs_upgrade(job *, int, char *, int);
 
 /* global data items */
 
@@ -454,7 +454,7 @@ job *job_recov(
             namebuf);
     log_err(-1, "job_recov", log_buffer);
 
-    if (job_qs_upgrade(pj, fds, pj->ji_qs.qs_version) != 0)
+    if (job_qs_upgrade(pj, fds, namebuf, pj->ji_qs.qs_version) != 0)
       {
       sprintf(log_buffer, "unable to upgrade %s\n", namebuf);
 
