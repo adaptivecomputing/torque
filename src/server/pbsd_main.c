@@ -198,6 +198,7 @@ extern pbs_net_t pbs_server_addr;
 unsigned int pbs_server_port_dis;
 listener_connection listener_conns[MAXLISTENERS];
 int  queue_rank = 0;
+int a_opt_init = -1;
 
 struct server server;  /* the server structure */
 char         server_host[PBS_MAXHOSTNAME + 1]; /* host_name */
@@ -596,6 +597,7 @@ void parse_command_line(int argc, char *argv[])
 
           exit(1);
           }
+        a_opt_init = server.sv_attr[(int)SRV_ATR_scheduling].at_val.at_long;
 
         break;
 
