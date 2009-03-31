@@ -39,6 +39,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature
       is located
   b - change so we use default file name for output / error file when just a
       directory is specified on qsub / qalter -e -o options
+  e - modified to allow retention of completed jobs across server shutdown
 
 2.4.0
   f - added a "-q" option to pbs_mom which does *not* perform the default -p 

@@ -271,7 +271,17 @@ void req_rerunjob(
 
     case - 1:
 
-      /* completed job was requeued - NO-OP */
+      /* completed job was requeued */
+
+      /* clear out job completion time if there is one */
+
+      if (pjob->ji_wattr[(int)JOB_ATR_comp_time].at_flags & ATR_VFLAG_SET)
+        {
+        job_attr_def[(int)JOB_ATR_comp_time].at_free(
+            &pjob->ji_wattr[(int)JOB_ATR_comp_time]);
+
+        job_save(pjob, SAVEJOB_FULL);
+        }
 
       break;
 

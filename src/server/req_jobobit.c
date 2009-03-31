@@ -88,6 +88,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 #include <unistd.h>
 #include "libpbs.h"
 #include "server_limits.h"
@@ -806,7 +807,13 @@ void on_job_exit(
          log_buffer));
 #endif /* END VNODETESTING */
 
-  if ((handle = mom_comm(pjob, on_job_exit)) < 0)
+  /*
+   * we don't need a handle if we are complete. On starting up we will NOT have
+   * a connection to mom, but still want to try and process the completed job
+   */
+  
+  if ((pjob->ji_qs.ji_substate != JOB_SUBSTATE_COMPLETE) &&
+    ((handle = mom_comm(pjob,on_job_exit)) < 0))
     {
     /* FAILURE - cannot connect to mom */
 
@@ -1477,7 +1484,7 @@ void on_job_exit(
 
     case JOB_SUBSTATE_COMPLETE:
 
-      if (LOGLEVEL >= 4)
+      if ((LOGLEVEL >= 4) && (ptask->wt_type == WORK_Immed))
         {
         log_event(
           PBSEVENT_JOB,
@@ -1503,9 +1510,30 @@ void on_job_exit(
 
       if (ptask->wt_type == WORK_Immed)
         {
-        /* first time in */
+        /* first time in or server restart recovery */
+        
+        if ((handle == -1) &&
+            (pjob->ji_wattr[(int)JOB_ATR_comp_time].at_flags & ATR_VFLAG_SET))
+          {
+          /*
+           * server restart - if we already have a completion_time then we
+           * better be restarting.
+           * use the comp_time to determine task invocation time
+           */
+          ptask = set_task(WORK_Timed,
+            pjob->ji_wattr[(int)JOB_ATR_comp_time].at_val.at_long + KeepSeconds,
+            on_job_exit, pjob);
+          }
+        else
+          {
+          /* First time in - Set the job completion time */
 
-        ptask = set_task(WORK_Timed, time_now + KeepSeconds, on_job_exit, pjob);
+          pjob->ji_wattr[(int)JOB_ATR_comp_time].at_val.at_long = (long)time(NULL);
+          pjob->ji_wattr[(int)JOB_ATR_comp_time].at_flags |= ATR_VFLAG_SET;
+
+          ptask = set_task(WORK_Timed, time_now + KeepSeconds, on_job_exit, pjob);
+          job_save(pjob, SAVEJOB_FULL);
+          }
 
         if (ptask != NULL)
           {

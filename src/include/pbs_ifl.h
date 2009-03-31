@@ -175,6 +175,7 @@
 #define ATTR_checkpoint_time  "checkpoint_time"   /* timestamp of start of last checkpoint */
 #define ATTR_checkpoint_restart_status  "checkpoint_restart_status"   /* checkpoint restart status */
 #define ATTR_restart_name  "restart_name"   /* saved name of checkpoint restart file */
+#define ATTR_comp_time   "comp_time"
 
 #ifdef ENABLE_CSA
 #define ATTR_pagg         "pagg_id"

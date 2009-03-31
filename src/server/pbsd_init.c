@@ -913,19 +913,6 @@ int pbsd_init(
 
         if ((pjob = job_recov(pdirent->d_name)) != NULL)
           {
-          if (pjob->ji_qs.ji_substate == JOB_SUBSTATE_COMPLETE)
-            {
-            /* ignore/remove completed job */
-
-            /* for some reason, if a completed job is recovered, and it is
-                    * forcibly purged with 'qdel -p', it will get deleted a second
-                    * time resulting in a segfault */
-
-            job_purge(pjob);
-
-            continue;
-            }
-
           if (pbsd_init_job(pjob, type) == FAILURE)
             {
             log_event(
@@ -1403,8 +1390,7 @@ static int pbsd_init_job(
 
     case JOB_SUBSTATE_COMPLETE:
 
-      /* NOOP - completed jobs are already purged above */
-      /* for some reason, this doesn't actually work */
+      /* Completed jobs are no longer purged on startup */
 
       pwt = set_task(WORK_Immed, 0, on_job_exit, (void *)pjob);
 
