@@ -110,6 +110,7 @@
 
 
 #define RESC_USED_BUF 2048
+#define JOBMUSTREPORTDEFAULTKEEP 30
 
 /* External Global Data Items */
 
@@ -750,6 +751,8 @@ void on_job_exit(
 
   int    IsFaked = 0;
   int  KeepSeconds = 0;
+  int  PurgeIt = FALSE;
+  int MustReport = FALSE;
   pbs_queue *pque;
   char namebuf[MAXPATHLEN + 1];
   char *namebuf2;
@@ -1501,16 +1504,48 @@ void on_job_exit(
                         0);
         }
 
+      if (ptask->wt_type == WORK_Immed) 
+        {
+        /* first time in */
+
+        if (((server.sv_attr[(int)SRV_ATR_JobMustReport].at_flags & ATR_VFLAG_SET) != 0)
+          && (server.sv_attr[(int)SRV_ATR_JobMustReport].at_val.at_long > 0))
+          {
+          MustReport = TRUE;
+          pjob->ji_wattr[(int)JOB_ATR_reported].at_val.at_long = 0;
+
+          pjob->ji_wattr[(int)JOB_ATR_reported].at_flags =
+            ATR_VFLAG_SET | ATR_VFLAG_MODIFY;
+          job_save(pjob,SAVEJOB_FULL);
+          }
+        }
+      else if (((pjob->ji_wattr[(int)JOB_ATR_reported].at_flags & ATR_VFLAG_SET) != 0)
+        && (pjob->ji_wattr[(int)JOB_ATR_reported].at_val.at_long == 0))
+        {
+        MustReport = TRUE;
+        }
+
       if (KeepSeconds <= 0)
         {
-        job_purge(pjob);
+        if (MustReport)
+          {
+          /*
+           * If job must report is set and keep_completed is 0,
+           * default to JOBMUSTREPORTDEFAULTKEEP seconds
+           */
+          KeepSeconds = JOBMUSTREPORTDEFAULTKEEP;
+          }
+        else
+          {
+          job_purge(pjob);
 
-        break;
+          break;
+          }
         }
 
       if (ptask->wt_type == WORK_Immed)
         {
-        /* first time in or server restart recovery */
+        /* is it first time in or server restart recovery */
         
         if ((handle == -1) &&
             (pjob->ji_wattr[(int)JOB_ATR_comp_time].at_flags & ATR_VFLAG_SET))
@@ -1545,8 +1580,43 @@ void on_job_exit(
       else
         {
         /* job has been around long enough */
+        
+        /*
+         * If the jobs must report attribute is set
+         * then skip the job if it has not yet reported to the scheduler.
+         */
+        
+        PurgeIt = TRUE;
+        if (((pjob->ji_wattr[(int)JOB_ATR_reported].at_flags & ATR_VFLAG_SET) != 0)
+          && (pjob->ji_wattr[(int)JOB_ATR_reported].at_val.at_long == 0))
+          {
+          if (LOGLEVEL >= 7)
+            {
+            sprintf(log_buffer, "Bypassing job %s waiting for purge completed command",
+              pjob->ji_qs.ji_jobid);
+            log_record(
+              PBSEVENT_JOB,
+              PBS_EVENTCLASS_JOB,
+              pjob->ji_qs.ji_jobid,
+              log_buffer);
+            }
 
-        job_purge(pjob);
+          ptask = set_task(WORK_Timed,time_now +
+                JOBMUSTREPORTDEFAULTKEEP,on_job_exit,pjob);
+
+          if (ptask != NULL)
+            {
+            /* insure that work task will be removed if job goes away */
+
+            append_link(&pjob->ji_svrtask,&ptask->wt_linkobj,ptask);
+            }
+            
+            PurgeIt = FALSE;
+          }
+        if (PurgeIt)
+          {
+          job_purge(pjob);
+          }
         }
 
       break;

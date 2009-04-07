@@ -144,11 +144,15 @@ int pbs_deljob(
 
   struct attropl *aoplp = NULL;
 
-  if ((c < 0) || (jobid == NULL) || (*jobid == '\0'))
+  if ((extend == NULL) ||
+        strncmp(extend,PURGECOMP,strlen(PURGECOMP)))
     {
-    pbs_errno = PBSE_IVALREQ;
+    if ((c < 0) || (jobid == NULL) || (*jobid == '\0'))
+      {
+      pbs_errno = PBSE_IVALREQ;
 
-    return(pbs_errno);
+      return(pbs_errno);
+      }
     }
 
   rc = PBSD_manager(

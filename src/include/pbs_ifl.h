@@ -176,6 +176,7 @@
 #define ATTR_checkpoint_restart_status  "checkpoint_restart_status"   /* checkpoint restart status */
 #define ATTR_restart_name  "restart_name"   /* saved name of checkpoint restart file */
 #define ATTR_comp_time   "comp_time"
+#define ATTR_reported    "reported"
 
 #ifdef ENABLE_CSA
 #define ATTR_pagg         "pagg_id"
@@ -277,6 +278,7 @@
 #define ATTR_schedversion "sched_version"
 #define ATTR_acctkeepdays "accounting_keep_days"
 #define ATTR_lockfile "lock_file"
+#define ATTR_jobmustreport "job_must_report"
 
 /* additional node "attributes" names */
 
@@ -301,6 +303,7 @@
 
 #define DELDELAY  "deldelay=" /* see qdel.c */
 #define DELPURGE  "delpurge="   /* see qdel.c */
+#define PURGECOMP  "purgecomplete="   /* see req_delete.c */
 #define EXECQUEONLY  "exec_queue_only"   /* see req_stat.c */
 #define RERUNFORCE "force"
 

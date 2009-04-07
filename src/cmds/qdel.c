@@ -107,6 +107,7 @@ int main(
   int c;
   int errflg = 0;
   int any_failed = 0;
+  int purge_completed = FALSE;
   char *pc;
 
   char job_id[PBS_MAXCLTJOBID]; /* from the command line */
@@ -117,7 +118,7 @@ int main(
 
   char extend[1024];
 
-#define GETOPT_ARGS "m:pW:"
+#define GETOPT_ARGS "cm:pW:"
 
   extend[0] = '\0';
 
@@ -125,6 +126,20 @@ int main(
     {
     switch (c)
       {
+
+      case 'c':
+
+        if (extend[0] != '\0')
+          {
+          errflg++;
+
+          break;
+          }
+
+        snprintf(extend,sizeof(extend),"%s%ld",PURGECOMP,(time(NULL)));
+        purge_completed = TRUE;
+
+        break;
 
       case 'm':
 
@@ -215,13 +230,19 @@ int main(
       }
     }    /* END while (c) */
 
+  if (purge_completed)
+    {
+    strcpy(server_out,pbs_default());
+    goto cnt;
+    }
+
   if ((errflg != 0) || (optind >= argc))
     {
-    static char usage[] = "usage: qdel [{ -p | -W delay | -m message}] [<JOBID>[<JOBID>]|'all'|'ALL']...\n";
+    static char usage[] = "usage: qdel [{ -c | -p | -W delay | -m message}] [<JOBID>[<JOBID>]|'all'|'ALL']...\n";
 
     fprintf(stderr, "%s", usage);
 
-    fprintf(stderr, "       -m, -p, and -W are mutually exclusive\n");
+    fprintf(stderr, "       -c, -m, -p, and -W are mutually exclusive\n");
 
     exit(2);
     }

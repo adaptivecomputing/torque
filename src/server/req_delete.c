@@ -115,9 +115,11 @@ extern char *msg_manager;
 extern char *msg_unkjobid;
 extern char *msg_permlog;
 extern char *msg_badstate;
+tlist_head	svr_alljobs;           /* list of all jobs in server       */
 
 extern struct server server;
 extern time_t time_now;
+extern int   LOGLEVEL;
 
 /* Private Functions in this file */
 
@@ -127,6 +129,7 @@ static void post_delete_mom2 A_((struct work_task *));
 static int forced_jobpurge A_((struct batch_request *));
 static void job_delete_nanny A_((struct work_task *));
 static void post_job_delete_nanny A_((struct work_task *));
+static void purge_completed_jobs A_((struct batch_request *));
 
 /* Public Functions in this file */
 
@@ -253,6 +256,19 @@ void req_deletejob(
   char             *sigt = "SIGTERM";
 
   char             *Msg = NULL;
+
+  /* check if we are getting a purgecomplete from scheduler */
+  if ((preq->rq_extend != NULL) && 
+        !strncmp(preq->rq_extend,PURGECOMP,strlen(PURGECOMP)))
+    {
+
+    /*
+     * purge_completed_jobs will respond with either an ack or reject
+     */
+    purge_completed_jobs(preq);
+
+    return;
+    }
 
   /* The way this is implemented, if the user enters the command "qdel -p <jobid>",
    * they can then delete jobs other than their own since the authorization
@@ -1117,6 +1133,87 @@ static void post_job_delete_nanny(
   return;
   } /* END post_job_delete_nanny() */
 
+
+
+/*
+ * purge_completed_jobs - service the Delete Job Request
+ *
+ *	This request deletes a job.
+ */
+
+void purge_completed_jobs(
+
+  struct batch_request *preq)  /* I */
+
+  {
+  char *id = "purge_completed_jobs";
+  job  *pjob;
+  char *time_str;
+  time_t purge_time = 0;
+
+  /* get the time to purge the jobs that completed before */
+  time_str = preq->rq_extend;
+  time_str += strlen(PURGECOMP);
+  purge_time = strtol(time_str,NULL,10);
+  
+  /*
+    * Clean unreported capability is only for operators and managers.
+    * Check if request is authorized
+  */
+
+  if ((preq->rq_perm & (ATR_DFLAG_OPRD|ATR_DFLAG_OPWR|
+                    ATR_DFLAG_MGRD|ATR_DFLAG_MGWR)) == 0)
+    {
+    req_reject(PBSE_PERM,0,preq,NULL,
+      "must have operator or manager privilege to use -c parameter");
+    return;
+    }
+    
+  if (LOGLEVEL >= 4)
+    {
+    sprintf(log_buffer,"Received purge completed jobs command, purge time is %ld (%s)",
+      purge_time, preq->rq_extend);
+
+    LOG_EVENT(
+      PBSEVENT_SYSTEM, 
+      PBS_EVENTCLASS_REQUEST,
+      id,
+      log_buffer);
+    }
+
+  for (pjob = (job *)GET_NEXT(svr_alljobs);
+        pjob != NULL;
+        pjob = (job *)GET_NEXT(pjob->ji_alljobs)) 
+    {
+    if ((pjob->ji_qs.ji_substate == JOB_SUBSTATE_COMPLETE) &&
+      (pjob->ji_wattr[(int)JOB_ATR_comp_time].at_val.at_long <= purge_time) &&
+      ((pjob->ji_wattr[(int)JOB_ATR_reported].at_flags & ATR_VFLAG_SET) != 0) &&
+      (pjob->ji_wattr[(int)JOB_ATR_reported].at_val.at_long == 0))
+      {
+      if (LOGLEVEL >= 4)
+        {
+        sprintf(log_buffer,"Reported job is COMPLETED (%ld), setting reported to TRUE",
+          pjob->ji_wattr[(int)JOB_ATR_comp_time].at_val.at_long);
+          
+        log_event(
+          PBSEVENT_JOB, 
+          PBS_EVENTCLASS_JOB,
+          pjob->ji_qs.ji_jobid,
+          log_buffer);
+        }
+
+      pjob->ji_wattr[(int)JOB_ATR_reported].at_val.at_long = 1;
+      pjob->ji_wattr[(int)JOB_ATR_reported].at_flags =
+        ATR_VFLAG_SET | ATR_VFLAG_MODIFY;
+          
+      job_save(pjob,SAVEJOB_FULL); 
+      }
+    }
+
+
+  reply_ack(preq);
+  return;
+  } /* END purge_completed_jobs() */
 
 /* END req_delete.c */
 

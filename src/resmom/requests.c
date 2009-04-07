@@ -1400,6 +1400,8 @@ const char *TJobAttr[] =
   "restartstat",
   "restartname",
   "faulttol",
+  "comp_time",
+  "reported",
 #ifdef ENABLE_CSA
   "pagg_id",
 #endif /* ENABLE_CSA */

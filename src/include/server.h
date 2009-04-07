@@ -154,8 +154,9 @@ enum srv_atr
   SRV_ATR_ExtraResc,
   SRV_ATR_ServerName,
   SRV_ATR_SchedVersion,
-	SRV_ATR_AcctKeepDays,
+	SRV_ATR_AcctKeepDays,          /* 60 */
   SRV_ATR_lockfile,
+  SRV_ATR_JobMustReport,
   SRV_ATR_checkpoint_dir,
 #include "site_svr_attr_enum.h"
   /* This must be last */

@@ -171,6 +171,7 @@ void req_rerunjob(
 
   {
   job *pjob;
+  struct work_task	*pwt;
 
   int  Force;
 
@@ -256,6 +257,21 @@ void req_rerunjob(
       svr_setjobstate(pjob, JOB_STATE_HELD, JOB_SUBSTATE_HELD);
       }
 
+    /* reset some job attributes */
+    
+    pjob->ji_wattr[(int)JOB_ATR_comp_time].at_flags &= ~ATR_VFLAG_SET;
+    pjob->ji_wattr[(int)JOB_ATR_reported].at_flags &= ~ATR_VFLAG_SET;
+
+    /*
+     * delete any work task entries associated with the job
+     * there may be tasks for keep_completed proccessing
+     */
+
+    while ((pwt = (struct work_task *)GET_NEXT(pjob->ji_svrtask)) != NULL) 
+      {
+      delete_task(pwt);
+      }
+
     set_statechar(pjob);
 
     rc = -1;
@@ -274,15 +290,6 @@ void req_rerunjob(
       /* completed job was requeued */
 
       /* clear out job completion time if there is one */
-
-      if (pjob->ji_wattr[(int)JOB_ATR_comp_time].at_flags & ATR_VFLAG_SET)
-        {
-        job_attr_def[(int)JOB_ATR_comp_time].at_free(
-            &pjob->ji_wattr[(int)JOB_ATR_comp_time]);
-
-        job_save(pjob, SAVEJOB_FULL);
-        }
-
       break;
 
     case 0:

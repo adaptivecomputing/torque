@@ -40,6 +40,10 @@ c - crash     b - bug fix    e - enhancement    f - new feature
   b - change so we use default file name for output / error file when just a
       directory is specified on qsub / qalter -e -o options
   e - modified to allow retention of completed jobs across server shutdown
+  e - added job_must_report qmgr configuration which says the job must be reported
+      to scheduler. Added job attribute "reported". Added PURGECOMP functionality
+      which allows scheduler to confirm jobs are reported. Also added -c option
+      to qdel. Used to clean up unreported jobs.
 
 2.4.0
   f - added a "-q" option to pbs_mom which does *not* perform the default -p 
