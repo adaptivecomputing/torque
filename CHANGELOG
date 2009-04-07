@@ -44,6 +44,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature
       to scheduler. Added job attribute "reported". Added PURGECOMP functionality
       which allows scheduler to confirm jobs are reported. Also added -c option
       to qdel. Used to clean up unreported jobs.
+  b - Fix so interactive jobs run when using $job_output_file_umask userdefault
 
 2.4.0
   f - added a "-q" option to pbs_mom which does *not* perform the default -p 

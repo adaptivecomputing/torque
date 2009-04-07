@@ -1880,6 +1880,7 @@ int determine_umask(
             /* set the umask value from returned data */
             UMaskVal = strtol(retdata, NULL, 8);
             }
+            pclose(fp);
           }
         }
 
