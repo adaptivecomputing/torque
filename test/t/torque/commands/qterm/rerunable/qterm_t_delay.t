@@ -67,14 +67,14 @@ sleep 2;
 diag("Restarting the pbs_server");
 startPbsserver();
 
+# Test the jobs and their states
 my %job_info = job_info();
-
-# Check that job1 and job2 exists
 ok(exists $job_info{ $job_id1 }, "Checking for job '$job_id1'");
+cmp_ok($job_info{ $job_id1 }{ 'job_state' }, 'eq', 'Q', "Checking state of job '$job_id1'");
 ok(exists $job_info{ $job_id2 }, "Checking for job '$job_id2'");
-
-# Check that job3 does not exists
-ok(! exists $job_info{ $job_id3 }, "Checking that job '$job_id3' doesn't exist");
+cmp_ok($job_info{ $job_id2 }{ 'job_state' }, 'eq', 'Q', "Checking state of job '$job_id2'");
+ok(exists $job_info{ $job_id3 }, "Checking for job '$job_id3'");
+cmp_ok($job_info{ $job_id3 }{ 'job_state' }, 'eq', 'C', "Checking state of job '$job_id3'");
 
 # Delete Jobs
-delJobs($job_id1, $job_id2);
+delJobs($job_id1, $job_id2, $job_id3);
