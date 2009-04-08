@@ -2499,6 +2499,7 @@ void req_jobobit(
     }
   else
     {
+
     /* Rerunning job, if not checkpointed, clear "resources_used and requeue job */
 
     if ((pjob->ji_qs.ji_svrflags & (JOB_SVFLG_CHECKPOINT_FILE | JOB_SVFLG_CHECKPOINT_MIGRATEABLE)) == 0)
@@ -2544,6 +2545,22 @@ void req_jobobit(
           "on_job_rerun task assigned to job");
         }
       }
+
+#ifdef RERUNUSAGE
+
+    /* replace new-lines with blanks for accounting record */
+
+    for (pc = acctbuf;*pc;++pc)
+      {
+      if (*pc == '\n')
+        *pc = ' ';
+      }
+
+    /* record accounting  */
+
+    account_jobend(pjob, acctbuf);
+
+#endif    /* RERUNUSAGE */
 
     /* remove checkpoint restart file if there is one */
     

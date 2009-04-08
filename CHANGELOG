@@ -45,6 +45,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature
       which allows scheduler to confirm jobs are reported. Also added -c option
       to qdel. Used to clean up unreported jobs.
   b - Fix so interactive jobs run when using $job_output_file_umask userdefault
+  f - Allow adding extra End accounting record for a running job that is rerun.
+      Provides usage data.  Enabled by CFLAGS=-DRERUNUSAGE.
 
 2.4.0
   f - added a "-q" option to pbs_mom which does *not* perform the default -p 
