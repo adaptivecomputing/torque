@@ -1386,7 +1386,7 @@ static struct pbssubn *create_subnode(
   pnode->nd_nsnfree++;
 
   if ((pnode->nd_state & (INUSE_JOB | INUSE_JOBSHARE)) != 0)
-    pnode->nd_state = INUSE_FREE;
+    pnode->nd_state &= ~(INUSE_JOB|INUSE_JOBSHARE);
 
   psubn->allocto = (resource_t)0;
 

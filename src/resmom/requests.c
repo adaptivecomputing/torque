@@ -119,6 +119,7 @@
 
 extern struct var_table vtable;      /* see start_exec.c */
 extern char           **environ;
+extern unsigned int alarm_time;
 
 extern int InitUserEnv(
 
@@ -1272,12 +1273,14 @@ int message_job(
 
   rc = PBSE_NONE;
 
+  alarm(alarm_time);
   if (write(fds, text, len) != len)
     {
     log_err(errno, "message_job", "unable to write message to job");
 
     rc = PBSE_INTERNAL;
     }
+  alarm(0);
 
   if (close(fds) != 0)
     {

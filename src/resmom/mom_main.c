@@ -470,7 +470,7 @@ unsigned int            reqnum = 0;  /* the packet number */
 
 int   port_care = TRUE; /* secure connecting ports */
 uid_t   uid = 0;  /* uid we are running with */
-int   alarm_time = 10; /* time before alarm */
+unsigned int   alarm_time = 10; /* time before alarm */
 
 extern tree            *okclients;  /* accept connections from */
 char                  **maskclient = NULL; /* wildcard connections */

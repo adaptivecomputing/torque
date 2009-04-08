@@ -102,6 +102,7 @@
 #include "work_task.h"
 #include "net_connect.h"
 #include "svrfunc.h"
+#include "pbs_nodes.h"
 
 
 
@@ -119,6 +120,7 @@ extern unsigned int pbs_mom_port;
 extern unsigned int pbs_server_port_dis;
 
 extern struct  connection svr_conn[];
+extern struct pbsnode *tfind_addr(); 
 
 extern int       LOGLEVEL;
 
@@ -149,6 +151,16 @@ int relay_to_mom(
 
   int conn; /* a client style connection handle */
   int   rc;
+
+  struct pbsnode *node;
+
+  /* if MOM is down don't try to connect */
+
+  if (((node = tfind_addr(momaddr)) != NULL) &&
+       (node->nd_state & (INUSE_DELETED|INUSE_DOWN)))
+    {
+    return(PBSE_NORELYMOM);
+    }
 
   if (LOGLEVEL >= 7)
     {
