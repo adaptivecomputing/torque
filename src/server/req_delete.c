@@ -846,7 +846,10 @@ static int forced_jobpurge(
 
         free_nodes(pjob);
 
-        set_resc_assigned(pjob, DECR);
+        if (pjob->ji_qhdr->qu_qs.qu_type == QTYPE_Execution)
+          {
+          set_resc_assigned(pjob, DECR);
+          }
 
         job_purge(pjob);
 
