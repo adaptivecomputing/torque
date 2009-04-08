@@ -1347,7 +1347,7 @@ static void post_restartfilecleanup(
       
       /* clear restart_name attribute that we just cleaned up */
       
-      pjob->ji_wattr[(int)JOB_ATR_restart_name].at_flags &= ATR_VFLAG_SET;
+      pjob->ji_wattr[(int)JOB_ATR_restart_name].at_flags &= ~ATR_VFLAG_SET;
       pjob->ji_modified = 1;
       
       job_save(pjob, SAVEJOB_FULL);
