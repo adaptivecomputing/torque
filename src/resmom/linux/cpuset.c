@@ -102,6 +102,8 @@ int cpuset_delete(
         {
         while (fscanf(fd, "%d", &killpids) == 1)
           kill(killpids, SIGKILL);
+
+        fclose(fd);
         }
 
       sleep(1);
