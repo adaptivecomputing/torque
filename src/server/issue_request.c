@@ -120,7 +120,7 @@ extern unsigned int pbs_mom_port;
 extern unsigned int pbs_server_port_dis;
 
 extern struct  connection svr_conn[];
-extern struct pbsnode *tfind_addr(); 
+extern struct pbsnode *tfind_addr(const u_long); 
 
 extern int       LOGLEVEL;
 
