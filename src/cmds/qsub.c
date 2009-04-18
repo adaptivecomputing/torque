@@ -2021,9 +2021,9 @@ void no_suspend(
   int sig)
 
   {
-  printf("Sorry, you cannot suspend qsub until the job is started\n");
+  fprintf(stderr, "Sorry, you cannot suspend qsub until the job is started\n");
 
-  fflush(stdout);
+  fflush(stderr);
   }
 
 

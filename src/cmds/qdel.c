@@ -108,6 +108,7 @@ int main(
   int errflg = 0;
   int any_failed = 0;
   int purge_completed = FALSE;
+  int located = FALSE;
   char *pc;
 
   char job_id[PBS_MAXCLTJOBID]; /* from the command line */
@@ -251,7 +252,6 @@ int main(
     {
     int connect;
     int stat = 0;
-    int located = FALSE;
 
     /* check to see if user specified 'all' to delete all jobs */
 
