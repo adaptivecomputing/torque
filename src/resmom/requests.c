@@ -119,7 +119,6 @@
 
 extern struct var_table vtable;      /* see start_exec.c */
 extern char           **environ;
-extern unsigned int alarm_time;
 
 extern int InitUserEnv(
 
@@ -139,6 +138,7 @@ extern int TTmpDirName(job*, char *);
 
 /* External Global Data Items */
 
+extern unsigned int alarm_time;
 extern unsigned int default_server_port;
 extern int  exiting_tasks;
 extern tlist_head svr_alljobs;
@@ -3777,11 +3777,8 @@ nextword:
         add_bad_list(&bad_list, ">>> end error output", 1);
         }
 
-#ifdef HAVE_WORDEXP
 
 error:
-#endif
-
       if ((dir == STAGE_DIR_IN) || (dir == CKPT_DIR_IN))
         {
         /* delete the stage_in files that were just copied in */
