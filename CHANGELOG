@@ -92,7 +92,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature
 
 2.3.7
   b - fixed a bug where UNIX domain socket communication was failing when "--disable-privports" was used.
-
+  e - add job exit status as 10th argument to the epilogue script
+ 
 2.3.6
   b - change back to not sending status updates until we get cluster addr message
       from server, also only try to send hello when the server stream is down.
