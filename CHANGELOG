@@ -91,7 +91,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature
   e - added -w option to qsub that allows setting of PBS_O_WORKDIR
 
 2.3.7
-  b - fixed a bug where UNIX domain socket communication was failing when "--disable-privports" was used.
+  b - fixed a bug where UNIX domain socket communication was failing when 
+      "--disable-privports" was used.
   e - add job exit status as 10th argument to the epilogue script
  
 2.3.6

@@ -311,7 +311,7 @@ static void pelogalm(
  *   - argv[7] is the list of resources used
  *   - argv[8] is the queue in which the job resides
  *   - argv[9] is the account under which the job run
- *   - argv[10] is the exit status
+ *   - argv[10] is the job's exit status
  * The prologue also has:
  *   - argv[5] is the list of resource limits specified
  *   - argv[6] is the queue in which the job resides
