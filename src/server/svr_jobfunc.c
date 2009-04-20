@@ -770,6 +770,48 @@ char *get_variable(
 
 
 /*
+ * get_resource - find a resource (value) entry in the queue or server list
+ *
+ * Returns: pointer to struct resource or NULL
+ */
+
+resource *get_resource(
+
+  attribute    *p_queattr,  /* I */
+  attribute    *p_svrattr,  /* I */
+  resource_def *rscdf,      /* I */
+  int          *fromQueue)  /* O */
+
+  {
+  resource *pr;
+
+  pr = find_resc_entry(p_queattr, rscdf);
+
+  if ((pr == NULL) || ((pr->rs_value.at_flags & ATR_VFLAG_SET) == 0))
+    {
+    /* queue limit not set, check server's */
+
+    pr = find_resc_entry(p_svrattr, rscdf);
+
+    if ((pr != NULL) && (pr->rs_value.at_flags & ATR_VFLAG_SET))
+      {
+      *fromQueue = 0;
+      }
+    }
+  else
+    {
+    /* queue limit is set, use it */
+
+    *fromQueue = 1;
+    }
+
+  return(pr);
+  }  /* END get_resource() */
+
+
+
+
+/*
  * compare the job resource limit against the system limit
  * unless a queue limit exists, it takes priority
  *
@@ -780,9 +822,8 @@ char *get_variable(
 static void chk_svr_resc_limit(
 
   attribute *jobatr, /* I */
-  attribute *queatr, /* I */
-  attribute *svratr, /* I */
-  int      qtype,  /* I */
+  pbs_queue *pque,   /* I */
+  int       qtype,   /* I */
   char      *EMsg)   /* O (optional,minsize=1024) */
 
   {
@@ -804,10 +845,16 @@ static void chk_svr_resc_limit(
   int       MPPWidth = 0;
   int       PPN = 0;
 
+  long      mpp_nppn = 0;
+  long      mpp_width = 0;
+  long      mpp_nodect = 0;
+  resource  *mppnodect_resource = NULL;
+
   static resource_def *noderesc     = NULL;
   static resource_def *needresc     = NULL;
   static resource_def *nodectresc   = NULL;
   static resource_def *mppwidthresc = NULL;
+  static resource_def *mppnppn      = NULL;
 
   static time_t UpdateTime = 0;
   static time_t now;
@@ -829,6 +876,7 @@ static void chk_svr_resc_limit(
     needresc     = find_resc_def(svr_resc_def, "neednodes", svr_resc_size);
     nodectresc   = find_resc_def(svr_resc_def, "nodect", svr_resc_size);
     mppwidthresc = find_resc_def(svr_resc_def, "mppwidth", svr_resc_size);
+    mppnppn      = find_resc_def(svr_resc_def, "mppnppn", svr_resc_size);
 
     SvrNodeCt = 0;
 
@@ -870,29 +918,22 @@ static void chk_svr_resc_limit(
 
     if ((jbrc->rs_value.at_flags & (ATR_VFLAG_SET | ATR_VFLAG_DEFLT)) == ATR_VFLAG_SET)
       {
-      qurc = find_resc_entry(queatr, jbrc->rs_defin);
+      qurc = find_resc_entry(&pque->qu_attr[QA_ATR_ResourceMax], jbrc->rs_defin);
 
-      LimitIsFromQueue = 0;
       LimitName = jbrc->rs_defin->rs_name;
 
-      if ((qurc == NULL) || ((qurc->rs_value.at_flags & ATR_VFLAG_SET) == 0))
+      cmpwith = get_resource(&pque->qu_attr[QA_ATR_ResourceMax],
+          &server.sv_attr[SRV_ATR_ResourceMax],
+          jbrc->rs_defin,
+          &LimitIsFromQueue);
+
+      if (strcmp(LimitName,"mppnppn") == 0)
         {
-        /* queue limit not set, check server's */
-
-        svrc = find_resc_entry(svratr, jbrc->rs_defin);
-
-        if ((svrc != NULL) && (svrc->rs_value.at_flags & ATR_VFLAG_SET))
-          {
-          cmpwith = svrc;
-          }
+        mpp_nppn = jbrc->rs_value.at_val.at_long;
         }
-      else
+      if (strcmp(LimitName,"mppwidth") == 0)
         {
-        /* queue limit is set, use it */
-
-        LimitIsFromQueue = 1;
-
-        cmpwith = qurc;
+        mpp_width = jbrc->rs_value.at_val.at_long;
         }
 
       if ((jbrc->rs_defin == noderesc) && (qtype == QTYPE_Execution))
@@ -913,6 +954,18 @@ static void chk_svr_resc_limit(
         }
 
 #endif /* NERSCDEV */
+      else if ((strcmp(LimitName,"mppnodect") == 0)
+          && (jbrc->rs_value.at_val.at_long == -1))
+        {
+        /*
+         * mppnodect is a special attrtibute,  It gets set based upon the
+         * values of mppwidth and mppnppn. -1 signifies the case where mppwidth
+         * and mppnppn were not both specified for the job. We will need to
+         * check mppnodect limits against queue/server defaults, if any.
+         */
+         
+        mppnodect_resource = jbrc;
+        }
       else if ((cmpwith != NULL) && (jbrc->rs_defin != needresc))
         {
         /* don't check neednodes */
@@ -941,6 +994,117 @@ static void chk_svr_resc_limit(
 
     jbrc = (resource *)GET_NEXT(jbrc->rs_link);
     }  /* END while (jbrc != NULL) */
+
+  if (mppnodect_resource != NULL)
+    {
+    /*
+     * special case where mppnodect was not specified for the job, we need to
+     * check max against recalculated value using queue/server resources_defaults
+     */
+     
+    if (mpp_nppn == 0)
+      {     
+      /* get queue/server default value */
+      
+      if (mppnppn != NULL)
+        {
+        cmpwith = get_resource(&pque->qu_attr[QA_ATR_ResourceDefault],
+            &server.sv_attr[SRV_ATR_resource_deflt],
+            mppnppn,
+            &LimitIsFromQueue);
+          
+        if (cmpwith != NULL)
+          {
+          mpp_nppn = cmpwith->rs_value.at_val.at_long;
+          }
+        }
+      }
+
+    if (mpp_width == 0)
+      {
+      /* get queue/server default value */
+
+      if (mppwidthresc != NULL)
+        {
+        cmpwith = get_resource(&pque->qu_attr[QA_ATR_ResourceDefault],
+            &server.sv_attr[SRV_ATR_resource_deflt],
+            mppwidthresc,
+            &LimitIsFromQueue);
+          
+        if (cmpwith != NULL)
+          {
+          mpp_width = cmpwith->rs_value.at_val.at_long;
+          }
+        }
+      }
+
+    /* Uses same way of calculating as set_mppnodect */
+    /* Check for width less than a node */
+
+    if ((mpp_width) && (mpp_width < mpp_nppn))
+      {
+      mpp_nppn = mpp_width;
+      }
+
+    /* Compute an estimate for the number of nodes needed */
+
+    mpp_nodect = mpp_width;
+    if (mpp_nppn > 1)
+      {
+      mpp_nodect = (mpp_nodect + mpp_nppn - 1) / mpp_nppn;
+      }
+
+    LimitIsFromQueue = 0;
+    LimitName = mppnodect_resource->rs_defin->rs_name;
+    
+    cmpwith = get_resource(&pque->qu_attr[QA_ATR_ResourceMax],
+        &server.sv_attr[SRV_ATR_ResourceMax],
+        mppnodect_resource->rs_defin,
+        &LimitIsFromQueue);
+
+    if (cmpwith != NULL)
+      {
+      long nodect_orig;
+
+      if (LOGLEVEL >= 7)
+        {
+        sprintf(log_buffer,
+            "chk_svr_resc_limit: comparing calculated mppnodect %ld, %s limit %s %ld\n",
+            mpp_nodect,
+            (LimitIsFromQueue == 1) ? "queue" : "server",
+            LimitName,
+            cmpwith->rs_value.at_val.at_long);
+
+        log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_SERVER, msg_daemonname,
+                  log_buffer);
+        }
+
+      nodect_orig = mppnodect_resource->rs_value.at_val.at_long;
+      mppnodect_resource->rs_value.at_val.at_long = mpp_nodect;
+      
+      rc = mppnodect_resource->rs_defin->rs_comp(
+              &cmpwith->rs_value,
+              &mppnodect_resource->rs_value);
+
+      mppnodect_resource->rs_value.at_val.at_long = nodect_orig;
+
+      if (rc > 0)
+        {
+        comp_resc_gt++;
+        }
+      else if (rc < 0)
+        {
+        if ((EMsg != NULL) && (EMsg[0] == '\0'))
+          {
+          sprintf(EMsg, "cannot satisfy %s max %s requirement",
+                  (LimitIsFromQueue == 1) ? "queue" : "server",
+                  (LimitName != NULL) ? LimitName : "resource");
+          }
+
+        comp_resc_lt++;
+        }
+      }
+    }  /* END if (mppnodect_resource != NULL) */
 
   if (jbrc_nodes != NULL)
     {
@@ -1042,8 +1206,7 @@ int chk_resc_limits(
 
   chk_svr_resc_limit(
     pattr,
-    &pque->qu_attr[QA_ATR_ResourceMax],
-    &server.sv_attr[SRV_ATR_ResourceMax],
+    pque,
     pque->qu_qs.qu_type,
     EMsg);
 

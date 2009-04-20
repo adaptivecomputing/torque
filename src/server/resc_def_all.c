@@ -1084,6 +1084,8 @@ static int set_mppnodect(
   int width;
   int nppn;
   int nodect;
+  int have_mppwidth = 0;
+  int have_mppnppn = 0;
   resource_def *pdef;
   resource *pent = NULL;
 
@@ -1096,12 +1098,14 @@ static int set_mppnodect(
     ((pent = find_resc_entry(attr,pdef))))
     {
     width = pent->rs_value.at_val.at_long;
+    have_mppwidth = 1;
     }
 
   if (((pdef = find_resc_def(svr_resc_def,"mppnppn",svr_resc_size))) &&
     ((pent = find_resc_entry(attr,pdef))))
     {
     nppn = pent->rs_value.at_val.at_long;
+    have_mppnppn = 1;
     }
 
   /* Check for width less than a node */
@@ -1132,7 +1136,14 @@ static int set_mppnodect(
 
   /* Update the value */
 
-  pent->rs_value.at_val.at_long = nodect;
+  if (!have_mppwidth || !have_mppnppn)
+    {
+    pent->rs_value.at_val.at_long = -1;
+    }
+  else
+    {
+    pent->rs_value.at_val.at_long = nodect;
+    }
   pent->rs_value.at_flags |= ATR_VFLAG_SET;
 
   return (0);
