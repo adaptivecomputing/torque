@@ -350,6 +350,7 @@ int run_pelog(
 
   struct stat sbuf;
   char   sid[20];
+  char   exit_stat[11];
   int    waitst;
   int    isjoined;
   char   buf[MAXPATHLEN + 2];
@@ -734,13 +735,15 @@ int run_pelog(
 
       sprintf(sid, "%ld",
               pjob->ji_wattr[(int)JOB_ATR_session_id].at_val.at_long);
+      sprintf(exit_stat,"%d",
+              pjob->ji_qs.ji_un.ji_exect.ji_exitstat);
 
       arg[5] = sid;
       arg[6] = resc_to_string(pjob, (int)JOB_ATR_resource, resc_list, sizeof(resc_list));
       arg[7] = resc_to_string(pjob, (int)JOB_ATR_resc_used, resc_used, sizeof(resc_used));
       arg[8] = pjob->ji_wattr[(int)JOB_ATR_in_queue].at_val.at_str;
       arg[9] = pjob->ji_wattr[(int)JOB_ATR_account].at_val.at_str;
-      asprintf(&arg[10], "%ld", pjob->ji_qs.ji_un.ji_exect.ji_exitstat);
+      arg[10] = exit_stat;
       arg[11] = NULL;
 
       LastArg = 11;
