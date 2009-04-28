@@ -1,5 +1,5 @@
 #!/usr/bin/perl
-#TEST -l walltime=00:30
+#TEST -l walltime=00:00:30
 
 use strict;
 use warnings;

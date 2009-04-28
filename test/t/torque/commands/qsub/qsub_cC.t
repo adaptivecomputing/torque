@@ -22,7 +22,7 @@ my $directive_script = resolve_path("$FindBin::Bin/../../test_programs/directive
 
 # Run the command
 my $user = $props->get_property('moab.user.one');
-my $cmd  = "qsub -C TEST $directive_script";
+my $cmd  = "qsub -C '#TEST' $directive_script";
 my %qsub = runCommandAs($user, $cmd);
 
 # Check that the command ran
@@ -47,9 +47,9 @@ else
  }
 my %job_info = job_info($job_id);
 
-my $mem = $job_info{ $job_id }{ 'Resource_List' }{ 'mem' } 
+my $mem = $job_info{ $job_id }{ 'Resource_List' }{ 'walltime' } 
   || '';
-ok($mem eq '1024mb', "Checking that the directive worked correctly");
+cmp_ok($mem, 'eq', '00:00:30', "Checking that the directive worked correctly");
 
 # Stop the job
 delJobs($job_id);

@@ -21,7 +21,7 @@ execute_tests(
               "$testbase/qsub_cA.t",
               "$testbase/qsub_b.t",
               "$testbase/qsub_c.t",
-#              "$testbase/qsub_cC.t",
+              "$testbase/qsub_cC.t",
               "$testbase/qsub_d.t",
               "$testbase/qsub_cD.t",
               "$testbase/qsub_e.t",
