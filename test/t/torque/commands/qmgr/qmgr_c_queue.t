@@ -25,14 +25,14 @@ my %queue_info;
 my $qname = 'test_q';
 
 # Test creating a queue
-$cmd  = "qmgr -c 'create queue $qname'";
+$cmd  = "qmgr -a -c 'create queue $qname'";
 %qmgr = run_and_check_cmd($cmd);
 
 %queue_info = list_queue_info($qname);
 ok(exists $queue_info{ $qname }, "Checking that the queue was created");
 
 # Test deleting a queue
-$cmd  = "qmgr -c 'delete queue $qname'";
+$cmd  = "qmgr -a -c 'delete queue $qname'";
 %qmgr = run_and_check_cmd($cmd);
 
 %queue_info = list_queue_info();
