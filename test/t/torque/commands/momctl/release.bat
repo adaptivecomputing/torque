@@ -26,7 +26,7 @@ execute_tests(
     "$testbase/momctl_f_cC.t",
     "$testbase/momctl_f_d.t",
 #    "$testbase/momctl_f_q.t",
-#    "$testbase/momctl_f_r.t",
+    "$testbase/momctl_f_r.t",
     "$testbase/momctl_f_s.t",
     "$testbase/momctl_h_c.t",
     "$testbase/momctl_h_cC.t",

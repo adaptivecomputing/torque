@@ -175,6 +175,7 @@ my $mom_recfg =<<RECFG;
 \$restricted           $restricted  
 
 \$check_poll_time      $tmp_check_poll_time
+\$remote_reconfig      $remote_reconfig
 RECFG
 
 eval
@@ -188,6 +189,22 @@ eval
   }; # END eval
 
 ok(! $@, "Writing out mom reconfiguration to '$mom_recfg_file'");
+
+# Copy the mom_recfg_file to the remotenodes
+foreach my $node (@remote_nodes)
+  {
+
+  # Copy the new file
+  my $scp_params = {
+                     "src"  => $mom_recfg_file,
+                     "dest" => "$node:$mom_recfg_file"
+                   };
+  my %scp        = scp($scp_params);
+  cmp_ok($scp{ 'EXIT_CODE' }, '==', 0, "Checking exit code of the scp command for mom reconfig file")
+    or diag("$scp{ 'STDERR' }");
+
+
+  } # END foreach my $node (@nodes)
 
 ###############################################################################
 # Create a hosts list file
