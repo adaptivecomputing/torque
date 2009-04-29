@@ -81,7 +81,7 @@
 .SH NAME
 pbs_mom \- start a pbs batch execution mini-server
 .SH SYNOPSIS
-pbs_mom [\^\-C\ chkdirectory\^] [\^\-c\ config\^] [\^\-d\ directory] [\^\-h\ hostname] [\^\-L\ logfile] [\^\-M\ MOMport\^] [\^\-R\ RPPport\^] [\^\-p\^|\^\-r] [\^\-x]
+pbs_mom [\^\-a\ alarm\^] [\^\-C\ chkdirectory\^] [\^\-c\ config\^] [\^\-d\ directory] [\^\-h\ hostname] [\^\-L\ logfile] [\^\-M\ MOMport\^] [\^\-R\ RPPport\^] [\^\-p\^|\^\-q\^|\^\-r] [\^\-x]
 .SH DESCRIPTION
 The
 .B pbs_mom
@@ -114,6 +114,12 @@ directory below the home directory of the server.
 If the log file cannot be opened, the diagnostic message is written
 to the system console.
 .SH OPTIONS
+.IP "\-a alarm" 16
+Used to specify the alarm timeout in seconds for computing a resource.
+Every time a resource request is processed, an alarm is set for the
+given amount of time.  If the request has not completed before the
+given time, an alarm signal is generated.
+The default is 5 seconds.
 .IP "\-C chkdirectory" 16
 Specifieds the path of the directory used to hold checkpoint files.
 [Currently this is only valid on Cray systems.]
@@ -162,9 +168,8 @@ The \-p option is mutually exclusive with the \-r and \-q options.
 .IP "\-q" 16
 Specifies the impact on jobs which were in execution when the mini-server
 shut down.  With the \-q option,
-MOM will allow the processes belonging to jobs to continue to run, but
-will not attempt to monitor them.
-The \-q option is mutually exclusive with the \-p and \-r options.
+The MOM will mark the jobs as terminated and notify the batch server which
+owns the job. The \-q option is mutually exclusive with the \-p and \-r options.
 .IP "\-r" 16
 Specifies the impact on jobs which were in execution when the mini-server
 shut down.  With the \-r option,
@@ -172,24 +177,9 @@ MOM will kill any processes belonging to jobs, mark the jobs as terminated,
 and notify the batch server which owns the job.
 The \-r option is mutually exclusive with the \-p and \-q options.
 .IP
-Normally the mini-server is started from the system boot file
-without the 
-.At \-p
-or the 
-.At \-r
-option.  The mini-server will make no attempt to signal the
-former session of any job which may have been running when the mini-server
-terminated.  It is assumed that on reboot, all processes have been killed.
-.IP
 If the \-r option is used following a reboot,
 process IDs (pids) may be reused and
 MOM may kill a process that is not a batch session.
-.IP "\-a alarm" 16
-Used to specify the alarm timeout in seconds for computing a resource.
-Every time a resource request is processed, an alarm is set for the
-given amount of time.  If the request has not completed before the
-given time, an alarm signal is generated.
-The default is 5 seconds.
 .IP "\-x" 16
 Disables the check for privileged port resource monitor connections.  This is
 used mainly for testing since the privileged port is the only
