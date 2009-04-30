@@ -27,7 +27,6 @@ execute_tests(
               "$testbase/pbs_mom_cM.t",
               "$testbase/pbs_mom_cR.t",
               "$testbase/pbs_mom_default_p.t", # This is the default for 2.4
-#              "$testbase/pbs_mom_default_r.t",
               "$testbase/pbs_mom_p.t",
 #              "$testbase/pbs_mom_q.t",
 #              "$testbase/pbs_mom_r.t",

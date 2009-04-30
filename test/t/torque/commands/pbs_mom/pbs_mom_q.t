@@ -18,15 +18,15 @@ use Torque::Job::Ctrl   qw(
                             delJobs
                           );
 use Torque::Test::Utils qw(
-                            job_info
                             run_and_check_cmd
+                            verify_job_state
                           );
 
 plan('no_plan');
 setDesc('pbs_mom -q');
 
 # Variables
-my $sleep_time   = 299;
+my $sleep_time   = 60;
 my $job_id;
 my $job_params   = {
                      'user'       => $props->get_property('torque.user.one'),
@@ -43,8 +43,6 @@ my $ps_cmd      = "ps aux | grep 'sleep $sleep_time' | grep -v 'grep' | grep ' R
 # Hashes
 my %pgrep;
 my %pbs_mom;
-my %job_info;
-my %ps_aux;
 my %ps;
 
 ###############################################################################
@@ -78,9 +76,12 @@ runJobs($job_id);
 diag("Stop pbs and check that the job is still in the queued state");
 stopPbsmom();
 
-%job_info = job_info($job_id);
-ok(! exists $job_info{ $job_id }{ 'job_state' }, "Checking that job '$job_id' is not in the queue")
-  or diag("\$job_info{ '$job_id' }{ 'job_state' } => $job_info{ $job_id }{ 'job_state' }");
+# Check that the job is queued
+verify_job_state({ 
+                   'job_id'        => $job_id,
+                   'exp_job_state' => 'Q',
+                   'wait_time'     => 2 * $sleep_time
+                });
 
 ###############################################################################
 # Start pbs_mom and verify that the job is still in the queued state
@@ -94,13 +95,12 @@ ok($pbs_mom{ 'EXIT_CODE' } == 0, "Checking exit code of '$pbs_mom_cmd'")
 %pgrep = runCommand($pgrep_cmd);
 ok($pgrep{ 'EXIT_CODE' } == 0, "Verifying that pbs_mom is running");
 
-# Allow pbs_mom to place the job in the queue state
-sleep 15;
-
 # Check that the job is queued
-%job_info = job_info($job_id);
-ok($job_info{ $job_id }{ 'job_state' } eq 'R', "Checking that job '$job_id' is in the queued (R) state")
-  or diag("\$job_info{ '$job_id' }{ 'job_state' } => $job_info{ $job_id }{ 'job_state' }");
+verify_job_state({ 
+                   'job_id'        => $job_id,
+                   'exp_job_state' => 'Q',
+                   'wait_time'     => 2 * $sleep_time
+                });
 
 ###############################################################################
 # Check for the process
