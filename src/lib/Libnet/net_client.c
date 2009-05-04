@@ -231,8 +231,8 @@ static int await_connect(
 
 
 
-/* in microseconds */
-#define TORQUE_MAXCONNECTTIMEOUT  5000000
+/* global */
+long MaxConnectTimeout = 5000000; /* in microseconds */
 
 /*
  * client_to_svr - connect to a server
@@ -249,7 +249,7 @@ static int await_connect(
  * hosts with the same port.  Let the caller keep the addresses around
  * rather than look it up each time.
  *
- * NOTE:  will wait up to TORQUE_MAXCONNECTTIMEOUT seconds for transient network failures
+ * NOTE:  will wait up to MaxConnectTimeout microseconds for transient network failures
  */
 
 /* NOTE:  create new connection on reserved port to validate root/trusted authority */
@@ -481,9 +481,9 @@ retry:  /* retry goto added (rentec) */
 
     case EINPROGRESS:
 
-      if (await_connect(TORQUE_MAXCONNECTTIMEOUT, sock) == 0)
+      if (await_connect(MaxConnectTimeout, sock) == 0)
         {
-        /* socket not ready for writing after TORQUE_MAXCONNECTTIMEOUT second timeout */
+        /* socket not ready for writing after MaxConnectTimeout microseconds timeout */
         /* no network failures detected */
 
         break;

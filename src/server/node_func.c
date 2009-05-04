@@ -288,7 +288,7 @@ void bad_node_warning(
 
 
 /*
- * return 0 if addr is a mom node and node is in bad state,
+ * return 0 if addr is a MOM node and node is in bad state,
  * return 1 otherwise (it is not a MOM node, or it's state is OK)
  */
 

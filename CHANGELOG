@@ -52,7 +52,9 @@ c - crash     b - bug fix    e - enhancement    f - new feature
   f - merged in new dynamic array struct and functions to implement a new (and
       more efficient) way of loading jobs at startup--should help by 2 orders of
       magnitude!
-
+  f - changed TORQUE_MAXCONNECTTIMEOUT to be a global variable that is now 
+      changed by the MOM to be smaller than the pbs_server and is also
+      configurable on the MOM ($max_conn_timeout_micro_sec)
 2.4.0
   f - added a "-q" option to pbs_mom which does *not* perform the default -p 
       behavior

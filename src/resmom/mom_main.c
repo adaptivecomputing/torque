@@ -236,6 +236,7 @@ int      src_login_interactive = TRUE;
 
 extern unsigned int pe_alarm_time;
 extern time_t   pbs_tcp_timeout;
+extern long     MaxConnectTimeout;
 
 char            tmpdir_basename[MAXPATHLEN];  /* for $TMPDIR */
 
@@ -362,6 +363,7 @@ static unsigned long setrreconfig(char *);
 static unsigned long setsourceloginbatch(char *);
 static unsigned long setsourcelogininteractive(char *);
 static unsigned long setremchkptdirlist(char *);
+static unsigned long setmaxconnecttimeout(char *);
 
 
 static struct specials
@@ -418,6 +420,7 @@ static struct specials
   { "source_login_batch",  setsourceloginbatch },
   { "source_login_interactive", setsourcelogininteractive },
   { "remote_checkpoint_dirs", setremchkptdirlist },
+  { "max_conn_timeout_micro_sec",   setmaxconnecttimeout },
   { NULL,                  NULL }
   };
 
@@ -2792,6 +2795,26 @@ static unsigned long setautomaxload(
   return(1);
   }  /* END setautomaxload() */
 
+
+
+
+
+static unsigned long setmaxconnecttimeout(
+
+  char *value)  /* I */
+
+  {
+  MaxConnectTimeout = strtol(value, NULL, 10);
+
+  if (MaxConnectTimeout < 0)
+    {
+    MaxConnectTimeout = 10000;
+
+    return(0);
+    }
+
+  return(1);
+  }
 
 
 
@@ -6313,6 +6336,10 @@ void initialize_globals(void)
                     "tcp",
                     PBS_MANAGER_SERVICE_PORT);
     }
+
+  /* set timeout values for MOM */
+
+  MaxConnectTimeout = 10000;  /* in microseconds */
   }  /* END initialize_globals() */
 
 
