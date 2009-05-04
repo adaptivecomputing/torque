@@ -228,6 +228,132 @@ static void  stop_me A_((int));
 #define CHANGE_STATE 1
 #define KEEP_STATE   0
 
+/**
+ * dynamic array, with utility functions for easy appending
+*/
+
+typedef struct darray_t {
+  int Length;
+  void **Data;
+  int AppendIndex;
+} darray_t;
+
+
+
+/**
+ * Initialize a dynamic array to a specific size
+ * @param Array (O) Assumed to be uninitialized struct
+ * @param InitialSize (I) raised to 0 if less than 0
+ */
+
+int DArrayInit(
+
+  darray_t *Array,      /* I */
+  int       InitialSize) /* I */
+
+  {
+  if (InitialSize <= 0)
+    {
+    Array->Length = 0;
+    Array->Data = NULL;
+    }
+  else
+    {
+    Array->Length = InitialSize;
+    Array->Data = (void **)malloc(sizeof(Array->Data[0]) * InitialSize);
+
+    if (Array->Data == NULL)
+      return(FAILURE);
+    }
+
+  Array->AppendIndex = 0;
+  return(SUCCESS);
+  } /*END DArrayInit */
+
+
+
+/**
+ * Free the resources associated with Array
+ * It does NOT free any data stored in the array, just the array structure itself.
+ * param Array (I)
+ */
+
+int DArrayFree(
+
+  darray_t *Array) /* I */
+
+  {
+  free(Array->Data);
+  Array->Data = NULL;
+  Array->Length = 0;
+  Array->AppendIndex = 0;
+  return(SUCCESS);
+  } /*END DArrayFree */
+
+
+
+/**
+ * Append Item onto the end of Array, resizing it if necessary 
+ * @param Array (I/O)
+ * @param Item (I)
+ */
+
+int DArrayAppend(
+
+  darray_t *Array, /* I/O */
+  void     *Item)  /* I */
+
+  {
+
+  if(Array->AppendIndex >= Array->Length)
+    {
+    int newLength = Array->Length * 2;
+
+    if(newLength <= 10)
+      newLength = 10;
+
+    Array->Length = newLength;
+    Array->Data = realloc(Array->Data,sizeof(Array->Data[0]) * Array->Length);
+
+    if(Array->Data == NULL)
+      {
+      Array->Length = 0;
+      Array->AppendIndex = 0;
+      return(FAILURE);
+      }
+    }
+
+  /*
+  assert(Array->AppendIndex >= 0);
+  assert(Array->AppendIndex < Array->Length);
+   */
+  Array->Data[Array->AppendIndex++] = Item;
+  return(SUCCESS);
+  } /* END DArrayAppend */
+
+
+
+/**
+ * Sort two job structs by their priority in ascending order
+ * @param A (I)
+ * @param B (I)
+ */
+
+static int SortPrioAscend(
+
+  const void *A, /* I */
+  const void *B) /* I */
+
+  {
+  job *pjob1 = *((job **)A);
+  job *pjob2 = *((job **)B);
+  int prio1 = pjob1->ji_wattr[(int)JOB_ATR_qrank].at_val.at_long;
+  int prio2 = pjob2->ji_wattr[(int)JOB_ATR_qrank].at_val.at_long;
+  return(prio1 - prio2);
+  } /*END SortPrioAscend */
+
+
+
 /* Add the server names from /var/spool/torque/server_name to the trusted hosts list. */
 
 void add_server_names_to_acl_hosts(void)
@@ -302,6 +428,7 @@ int pbsd_init(
   pbs_queue *pque;
   char *psuffix;
   int  rc;
+  int Index;
 
   struct stat statbuf;
   char *suffix_slash = "/";
@@ -880,6 +1007,8 @@ int pbsd_init(
     }
   else
     {
+    darray_t Array;
+    DArrayInit(&Array,100);
     /* Now, for each job found ... */
 
     while ((pdirent = readdir(dir)) != NULL)
@@ -913,38 +1042,12 @@ int pbsd_init(
 
         if ((pjob = job_recov(pdirent->d_name)) != NULL)
           {
-          if (pbsd_init_job(pjob, type) == FAILURE)
+
+          if (DArrayAppend(&Array,pjob) == FAILURE)
             {
-            log_event(
-              PBSEVENT_ERROR | PBSEVENT_SYSTEM | PBSEVENT_ADMIN | PBSEVENT_JOB | PBSEVENT_FORCE,
-              PBS_EVENTCLASS_JOB,
-              pdirent->d_name,
-              msg_script_open);
+            log_err(ENOMEM,"main","out of memory reloading jobs");
+            exit(-1);
 
-            continue;
-            }
-
-          if ((type != RECOV_COLD) &&
-              (type != RECOV_CREATE) &&
-              (!(pjob->ji_wattr[(int)JOB_ATR_job_array_request].at_flags & ATR_VFLAG_SET)) &&
-              (pjob->ji_qs.ji_svrflags & JOB_SVFLG_SCRIPT))
-            {
-            strcpy(basen, pdirent->d_name);
-
-            psuffix = basen + baselen;
-
-            strcpy(psuffix, JOB_SCRIPT_SUFFIX);
-
-            if (chk_save_file(basen) != 0)
-              {
-              log_event(
-                PBSEVENT_ERROR | PBSEVENT_SYSTEM | PBSEVENT_ADMIN | PBSEVENT_JOB | PBSEVENT_FORCE,
-                PBS_EVENTCLASS_JOB,
-                pjob->ji_qs.ji_jobid,
-                msg_script_open);
-
-              init_abt_job(pjob);
-              }
             }
           }
         else
@@ -972,9 +1075,51 @@ int pbsd_init(
             }
           }
         }
-      }
+      }    /* END while ((pdirent = readdir(dir)) != NULL) */
 
     closedir(dir);
+    qsort(Array.Data,Array.AppendIndex,sizeof(Array.Data[0]),SortPrioAscend);
+
+    for (Index = 0; Index < Array.AppendIndex; Index++)
+      {
+      job *pjob = (job *)Array.Data[Index];
+
+      if (pbsd_init_job(pjob, type) == FAILURE)
+        {
+        log_event(
+          PBSEVENT_ERROR | PBSEVENT_SYSTEM | PBSEVENT_ADMIN | PBSEVENT_JOB | PBSEVENT_FORCE,
+          PBS_EVENTCLASS_JOB,
+          pjob->ji_qs.ji_jobid,
+          msg_script_open);
+
+        continue;
+        }
+
+      if ((type != RECOV_COLD) &&
+          (type != RECOV_CREATE) &&
+          (!(pjob->ji_wattr[(int)JOB_ATR_job_array_request].at_flags & ATR_VFLAG_SET)) &&
+          (pjob->ji_qs.ji_svrflags & JOB_SVFLG_SCRIPT))
+        {
+        strcpy(basen, pjob->ji_qs.ji_jobid);
+
+        psuffix = basen + baselen;
+
+        strcpy(psuffix, JOB_SCRIPT_SUFFIX);
+
+        if (chk_save_file(basen) != 0)
+          {
+          log_event(
+            PBSEVENT_ERROR | PBSEVENT_SYSTEM | PBSEVENT_ADMIN | PBSEVENT_JOB | PBSEVENT_FORCE,
+            PBS_EVENTCLASS_JOB,
+            pjob->ji_qs.ji_jobid,
+            msg_script_open);
+
+          init_abt_job(pjob);
+          }
+        }
+      }
+
+    DArrayFree(&Array);
 
     if ((had != server.sv_qs.sv_numjobs) &&
         (type != RECOV_CREATE) &&
@@ -988,7 +1133,6 @@ int pbsd_init(
       }
 
     sprintf(log_buffer, msg_init_exptjobs,
-
             had, server.sv_qs.sv_numjobs);
 
     log_event(

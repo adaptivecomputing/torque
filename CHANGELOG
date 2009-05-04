@@ -49,6 +49,9 @@ c - crash     b - bug fix    e - enhancement    f - new feature
       Provides usage data.  Enabled by CFLAGS=-DRERUNUSAGE.
   b - Fix to use queue/server resources_defaults to validate mppnodect against
       resources_max when mppwidth or mppnppn are not specified for job
+  f - merged in new dynamic array struct and functions to implement a new (and
+      more efficient) way of loading jobs at startup--should help by 2 orders of
+      magnitude!
 
 2.4.0
   f - added a "-q" option to pbs_mom which does *not* perform the default -p 
