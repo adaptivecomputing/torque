@@ -217,13 +217,12 @@ resources_default/min/max.  Format: list; default value: none.
 [internal type: list]
 .Ig
 .Al job_nanny
-Enables the experimental "job deletion nanny" feature.  All job cancels will
+Enables the "job deletion nanny" feature.  All job cancels will
 create a repeating task that will resend KILL signals if the initial job cancel
 failed.  Further job cancels will be rejected with the message "job cancel in
 progress." This is useful for temporary failures with a job's execution node
 during a job delete request.  It is possible that the job nanny might interfere
-with job restarts, migrations, and checkpointing.  This is an EXPERIMENTAL
-feature and may be removed in the future.  Format: boolean; default value: false.
+with job restarts, migrations, and checkpointing.  Format: boolean; default value: false.
 .if !\n(Pb .ig Ig
 [internal type: boolean]
 .Ig
