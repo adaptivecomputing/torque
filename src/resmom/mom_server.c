@@ -2889,7 +2889,8 @@ int mom_open_socket_to_jobs_server(
   void (*message_handler) A_((int)))
 
   {
-  char *svrport;
+  char *svrport = NULL;
+  char *serverAddr = NULL;
   char error_buffer[1024];
   int sock;
   int sock3;
@@ -2899,10 +2900,14 @@ int mom_open_socket_to_jobs_server(
 
   /* See if the server address string has a ':' implying a port number. */
 
-  svrport = strchr(pjob->ji_wattr[(int)JOB_ATR_at_server].at_val.at_str, (int)':');
+  serverAddr = pjob->ji_wattr[(int)JOB_ATR_at_server].at_val.at_str;
+  if (serverAddr != NULL)
+    {
+    svrport = strchr(serverAddr, (int)':');
+    }
 
   if (svrport)
-    port = atoi(svrport + 1);  /* Yes, use the specified server port number. */
+    port = atoi(svrport + 1);    /* Yes, use the specified server port number. */
   else
     port = default_server_port;  /* No, use the global default server port. */
 

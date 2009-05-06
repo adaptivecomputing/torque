@@ -117,6 +117,9 @@ extern char     *AllocParCmd;
 
 /* Private variables */
 
+#define TMAX_TJCACHESIZE 128
+job *TJCache[TMAX_TJCACHESIZE];
+
 /*
  * set_job - set up a new job session
  *  Set session id and whatever else is required on this machine
@@ -336,9 +339,6 @@ char *set_shell(
  *
  */
 
-#define TMAX_TJCACHESIZE 128
-
-
 void scan_for_terminated(void)
 
   {
@@ -353,8 +353,6 @@ void scan_for_terminated(void)
   int    tcount;
 
 #ifdef CACHEOBITFAILURES
-  static job *TJCache[TMAX_TJCACHESIZE];
-
   int tjcindex;
 
   int TJCIndex = 0;
@@ -662,6 +660,35 @@ void scan_for_terminated(void)
 
   return;
   }  /* END scan_for_terminated() */
+
+
+
+/**
+ * Removes any cached obits relating to the given job.
+ */
+void remove_job_from_obit_cache(
+
+  job *pjob)  /* I */
+
+  { 
+#ifdef CACHEOBITFAILURES
+  int TJCIndex;
+
+  /* remove any reference to this job in the obit cache */
+
+  for (TJCIndex = 0;TJCIndex < TMAX_TJCACHESIZE;TJCIndex++)
+    {
+    if (TJCache[TJCIndex] == NULL)
+      break;
+
+    if (TJCache[TJCIndex] == (job *)1)
+      continue;
+
+    if (TJCache[TJCIndex] == pjob)
+      TJCache[TJCIndex] = (job *)1;  /* clear slot */
+    }
+#endif /* CACHEOBITFAILURES */
+  }  /* END remove_job_from_obit_cache() */
 
 
 
