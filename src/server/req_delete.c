@@ -1195,7 +1195,7 @@ void purge_completed_jobs(
   if (LOGLEVEL >= 4)
     {
     sprintf(log_buffer,"Received purge completed jobs command, purge time is %ld (%s)",
-      purge_time, preq->rq_extend);
+      (long)purge_time, preq->rq_extend);
 
     LOG_EVENT(
       PBSEVENT_SYSTEM, 

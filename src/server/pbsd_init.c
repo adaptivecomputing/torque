@@ -410,7 +410,7 @@ int pbsd_init(
   int type)  /* type of initialization   */
 
   {
-  int baselen;
+  int baselen = 0;
   char basen[MAXPATHLEN+1];
 
   struct dirent *pdirent;

@@ -137,7 +137,7 @@ int main(
           break;
           }
 
-        snprintf(extend,sizeof(extend),"%s%ld",PURGECOMP,(time(NULL)));
+        snprintf(extend,sizeof(extend),"%s%ld",PURGECOMP,(long)(time(NULL)));
         purge_completed = TRUE;
 
         break;
