@@ -569,10 +569,30 @@ jump:
     {
     /*
      * the job is not transitting (though it may have been) and
-     * is not running, so abort it.
+     * is not running, so put in into a complete state.
      */
 
-    job_abt(&pjob, Msg);
+    struct work_task *ptask;
+    struct pbs_queue *pque;
+    int  KeepSeconds = 0;
+
+    svr_setjobstate(pjob, JOB_STATE_COMPLETE, JOB_SUBSTATE_COMPLETE);
+
+    if ((pque = pjob->ji_qhdr) && (pque != NULL))
+      {
+      pque->qu_numcompleted++;
+      }
+
+    KeepSeconds = attr_ifelse_long(
+                    &pque->qu_attr[(int)QE_ATR_KeepCompleted],
+                    &server.sv_attr[(int)SRV_ATR_KeepCompleted],
+                    0);
+    ptask = set_task(WORK_Timed, time_now + KeepSeconds, on_job_exit, pjob);
+
+    if (ptask != NULL)
+      {
+      append_link(&pjob->ji_svrtask, &ptask->wt_linkobj, ptask);
+      }
     }  /* END else if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_CHECKPOINT_FILE) != 0) */
 
   reply_ack(preq);

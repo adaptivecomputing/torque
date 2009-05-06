@@ -205,7 +205,32 @@ void req_deletearray(struct batch_request *preq)
       }
     else
       {
-      job_abt(&pjob, NULL);
+      /*
+       * the job is not transitting (though it may have been) and
+       * is not running, so put in into a complete state.
+       */
+
+      struct work_task *ptask;
+      struct pbs_queue *pque;
+      int  KeepSeconds = 0;
+
+      svr_setjobstate(pjob, JOB_STATE_COMPLETE, JOB_SUBSTATE_COMPLETE);
+
+      if ((pque = pjob->ji_qhdr) && (pque != NULL))
+        {
+        pque->qu_numcompleted++;
+        }
+
+      KeepSeconds = attr_ifelse_long(
+                      &pque->qu_attr[(int)QE_ATR_KeepCompleted],
+                      &server.sv_attr[(int)SRV_ATR_KeepCompleted],
+                      0);
+      ptask = set_task(WORK_Timed, time_now + KeepSeconds, on_job_exit, pjob);
+
+      if (ptask != NULL)
+        {
+        append_link(&pjob->ji_svrtask, &ptask->wt_linkobj, ptask);
+        }
       }
 
     pjob = next;
