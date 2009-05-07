@@ -2633,7 +2633,7 @@ static int del_files(
 
       default:
 
-        sprintf(log_buffer, ">>> failed to delete files, expansion of %s failed",
+        sprintf(log_buffer, "*** failed to delete files, expansion of %s failed",
                 path);
 
         add_bad_list(pbadfile, log_buffer, 1);
@@ -3760,7 +3760,7 @@ nextword:
 
       if ((fp = fopen(rcperr, "r")) != NULL)
         {
-        add_bad_list(&bad_list, ">>> error from copy", 1);
+        add_bad_list(&bad_list, "*** error from copy", 1);
 
         while (fgets(log_buffer, LOG_BUF_SIZE, fp) != NULL)
           {
@@ -3774,7 +3774,7 @@ nextword:
 
         fclose(fp);
 
-        add_bad_list(&bad_list, ">>> end error output", 1);
+        add_bad_list(&bad_list, "*** end error output", 1);
         }
 
 

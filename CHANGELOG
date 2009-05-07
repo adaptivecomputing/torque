@@ -57,6 +57,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature
       configurable on the MOM ($max_conn_timeout_micro_sec)
   e - change so queued jobs that get deleted go to complete and get displayed
       in qstat based on keep_completed
+  b - Changes to improve the qstat -x XML output and documentation
 
 2.4.0
   f - added a "-q" option to pbs_mom which does *not* perform the default -p 
