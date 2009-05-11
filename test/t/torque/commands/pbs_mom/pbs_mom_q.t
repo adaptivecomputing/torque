@@ -11,6 +11,7 @@ use CRI::Test;
 
 use Torque::Ctrl        qw(
                             stopPbsmom
+                            startPbsmom
                           );
 use Torque::Job::Ctrl   qw(
                             submitSleepJob
@@ -37,8 +38,13 @@ my $process_name = "sleep $sleep_time";
 
 # Commands
 my $pgrep_cmd   = 'pgrep -x pbs_mom';
-my $pbs_mom_cmd = "pbs_mom -q";
 my $ps_cmd      = "ps aux | grep 'sleep $sleep_time' | grep -v 'grep' | grep ' R '";
+my @pbs_moms    = split(/,/, $props->get_property('Torque.Remote.Nodes'));
+my $pbsmom_href = {
+                   'nodes'      => \@pbs_moms,
+                   'local_node' => 1,
+                   'args'       => '-q'
+                  };
 
 # Hashes
 my %pgrep;
@@ -49,19 +55,13 @@ my %ps;
 # Make sure pbs_mom is stopped
 ###############################################################################
 diag("Make sure pbs_mom is stopped");
-stopPbsmom();
+stopPbsmom($pbsmom_href);
 
 ###############################################################################
 # Start pbs_mom with -q
 ###############################################################################
 diag("Start pbs_mom with -q");
-%pbs_mom = runCommand($pbs_mom_cmd);
-ok($pbs_mom{ 'EXIT_CODE' } == 0, "Checking exit code of '$pbs_mom_cmd'")
-  or diag("EXIT_CODE: $pbs_mom{ 'EXIT_CODE' }\nSTDERR: $pbs_mom{ 'STDERR' }");
-
-# Make sure that pbs_mom has started
-%pgrep = runCommand($pgrep_cmd);
-ok($pgrep{ 'EXIT_CODE' } == 0, "Verifying that pbs_mom is running");
+startPbsmom($pbsmom_href);
 
 ###############################################################################
 # Submit and run a sleep job
@@ -74,12 +74,12 @@ runJobs($job_id);
 # Stop pbs and check that the job is still in the running state
 ###############################################################################
 diag("Stop pbs and check that the job is still in the queued state");
-stopPbsmom();
+stopPbsmom($pbsmom_href);
 
 # Check that the job is queued
 verify_job_state({ 
                    'job_id'        => $job_id,
-                   'exp_job_state' => 'Q',
+                   'exp_job_state' => 'R',
                    'wait_time'     => 2 * $sleep_time
                 });
 
@@ -87,13 +87,7 @@ verify_job_state({
 # Start pbs_mom and verify that the job is still in the queued state
 ###############################################################################
 diag("Start pbs_mom and verify that the job is not in the queued state");
-%pbs_mom = runCommand($pbs_mom_cmd);
-ok($pbs_mom{ 'EXIT_CODE' } == 0, "Checking exit code of '$pbs_mom_cmd'")
-  or diag("EXIT_CODE: $pbs_mom{ 'EXIT_CODE' }\nSTDERR: $pbs_mom{ 'STDERR' }");
-
-# Make sure that pbs_mom has started
-%pgrep = runCommand($pgrep_cmd);
-ok($pgrep{ 'EXIT_CODE' } == 0, "Verifying that pbs_mom is running");
+startPbsmom($pbsmom_href);
 
 # Check that the job is queued
 verify_job_state({ 
