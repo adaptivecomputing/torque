@@ -218,8 +218,7 @@ sub parse_qstat_fx #($)
     {
 
     # Add the job_id value, job_id makes more sense than content
-    my $job_id = $job->{ 'content' };
-    delete $job->{ 'content' };
+    my $job_id = $job->{ 'Job_Id' };
 
     # Create a hash for the variable list
     my $variable_list = $job->{ 'Variable_List' };
