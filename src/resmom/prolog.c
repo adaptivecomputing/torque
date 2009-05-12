@@ -341,7 +341,7 @@ int run_pelog(
   char *id = "run_pelog";
 
   struct sigaction act, oldact;
-  char *arg[11];
+  char *arg[12];
   int   fds1 = 0;
   int   fds2 = 0;
   int   fd_input;
