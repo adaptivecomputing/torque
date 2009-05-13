@@ -318,9 +318,17 @@ void req_modifyjob(
             job is running, job is held, or job was held and just barely
             released (ie qhold/qrls) */
 
+  /* COMMENTED OUT BY JOSH B IN 2.3 DUE TO MAJOR PROBLEMS w/ CUSTOMERS
+   * --FIX and uncomment once we know what is really going on.
+   *
+   * We now know that ji_destin gets set on a qmove and that the mom does not
+   * have the job at that point.
+   *
   if ((pjob->ji_qs.ji_state == JOB_STATE_RUNNING) ||
-      ((pjob->ji_qs.ji_state == JOB_STATE_HELD) && (pjob->ji_qs.ji_destin[0] != '\0')) ||
-      ((pjob->ji_qs.ji_state == JOB_STATE_QUEUED) && (pjob->ji_qs.ji_destin[0] != '\0')))
+     ((pjob->ji_qs.ji_state == JOB_STATE_HELD) && (pjob->ji_qs.ji_destin[0] != '\0')) ||
+     ((pjob->ji_qs.ji_state == JOB_STATE_QUEUED) && (pjob->ji_qs.ji_destin[0] != '\0')))
+  */
+  if (pjob->ji_qs.ji_state == JOB_STATE_RUNNING)
     {
     while (plist != NULL)
       {
