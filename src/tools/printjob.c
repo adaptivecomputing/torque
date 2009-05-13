@@ -123,6 +123,8 @@ void prt_job_struct(
          pjob->ji_qs.ji_fileprefix);
   printf("queue:\t\t%s\n",
          pjob->ji_qs.ji_queue);
+  printf("destin:\t\t%s\n",
+         pjob->ji_qs.ji_destin);
 
   switch (pjob->ji_qs.ji_un_type)
     {
