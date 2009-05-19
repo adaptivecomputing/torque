@@ -58,6 +58,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature
   e - change so queued jobs that get deleted go to complete and get displayed
       in qstat based on keep_completed
   b - Changes to improve the qstat -x XML output and documentation
+  b - Change so BATCH_PARTITION_ID does not pass through to child jobs
 
 2.4.0
   f - added a "-q" option to pbs_mom which does *not* perform the default -p 

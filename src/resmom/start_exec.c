@@ -5735,6 +5735,17 @@ void bld_env_variables(
     log_ext(-1, "bld_env_variables", tmpLine, LOG_DEBUG);
     }
 
+  /*
+   * We do not want the BATCH_PARTITION_ID to be passed down to the child.
+   * It just needs to be checked for the job submitted by the user, not for
+   * any jobs that the job might qsub.
+   */
+
+  if (memcmp(name,"BATCH_PARTITION_ID",strlen("BATCH_PARTITION_ID")) == 0)
+    {
+    return;
+    }
+
   amt = strlen(name) + 1;
 
   if (value != NULL)
