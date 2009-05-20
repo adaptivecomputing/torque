@@ -730,7 +730,15 @@ void close_conn(
   if (svr_conn[sd].cn_oncl != 0)
     svr_conn[sd].cn_oncl(sd);
 
-  FD_CLR(sd, GlobalSocketReadSet);
+  /* 
+   * In the case of a -t cold start, this will be called prior to
+   * GlobalSocketReadSet being initialized
+   */
+
+  if (GlobalSocketReadSet != NULL)
+  {
+    FD_CLR(sd, GlobalSocketReadSet);
+  }
 
   svr_conn[sd].cn_addr = 0;
 

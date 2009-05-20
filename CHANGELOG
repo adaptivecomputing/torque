@@ -59,6 +59,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature
       in qstat based on keep_completed
   b - Changes to improve the qstat -x XML output and documentation
   b - Change so BATCH_PARTITION_ID does not pass through to child jobs
+  c - fix to prevent segfault on pbs_server -t cold
 
 2.4.0
   f - added a "-q" option to pbs_mom which does *not* perform the default -p 
