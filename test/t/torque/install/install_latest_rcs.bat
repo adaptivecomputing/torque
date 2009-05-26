@@ -14,6 +14,7 @@ setDesc('Install TORQUE from subversion to use BLCR checkpointing');
 my $testbase = $FindBin::Bin;
 
 execute_tests(
+"$testbase/kill_moab.t",
 "$testbase/configure.t",
 "$testbase/make_clean.t",
 "$testbase/make.t",
