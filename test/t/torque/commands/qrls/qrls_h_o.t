@@ -103,7 +103,7 @@ ok($qhold{ 'EXIT_CODE' } == 0, "Checking exit code of '$cmd'");
 # Check the job_state and Hold_Types
 $verify_params = {
                   'job_id' => $job_id,
-                  'exp_job_state' => 'R'
+                  'exp_job_state' => 'H'
                  };
 
 verify_job_state($verify_params);
@@ -122,7 +122,7 @@ ok($qrls{ 'EXIT_CODE' } != 0, "Checking exit code of '$cmd'");
 
 $verify_params = {
                   'job_id' => $job_id,
-                  'exp_job_state' => 'R'
+                  'exp_job_state' => 'H'
                  };
 
 verify_job_state($verify_params);
