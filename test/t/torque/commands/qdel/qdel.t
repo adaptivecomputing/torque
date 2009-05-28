@@ -17,6 +17,9 @@ use Torque::Job::Ctrl           qw(
 use Torque::Job::Utils          qw( 
                                     checkForJob
                                   );
+use Torque::Test::Qstat::Utils  qw(
+                                    qstat_fx
+                                  );
 use Torque::Test::Utils         qw( 
                                     run_and_check_cmd 
                                     list2array        
@@ -46,11 +49,12 @@ if ($job_id eq '-1')
   die 'Unable to submit a sleep job';
   }
 
-
 # Delete the job
 $cmd  = "qdel $job_id";
 %qdel = run_and_check_cmd($cmd);
 
 # Check that job is deleted
-ok(! checkForJob($job_id), "Checking that the job was deleted")
-  or delJobs($job_id); # Make sure the job gets deleted
+my %job_info = qstat_fx();
+
+cmp_ok($job_info{ $job_id }{ 'job_state' }, 'eq', 'C', "Checking job state of job:$job_id");
+delJobs($job_id); # Make sure the job gets deleted

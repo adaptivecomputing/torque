@@ -9,12 +9,16 @@ use lib "$FindBin::Bin/../../../../lib/";
 
 # Test Modules
 use CRI::Test;
+
 use Torque::Job::Ctrl           qw( 
                                     submitSleepJob
                                     delJobs
                                   );
 use Torque::Job::Utils          qw( 
                                     checkForJob
+                                  );
+use Torque::Test::Qstat::Utils  qw(
+                                    qstat_fx
                                   );
 use Torque::Test::Utils         qw( 
                                     run_and_check_cmd 
@@ -51,6 +55,10 @@ $delay = 2;
 $cmd   = "qdel -W $delay $job_id";
 %qdel  = run_and_check_cmd($cmd);
 
+sleep 2 * $delay;
+
 # Check that job is deleted
-ok(! checkForJob($job_id), "Checking that the job was deleted")
-  or delJobs($job_id); # Make sure the job gets deleted
+my %job_info = qstat_fx();
+
+cmp_ok($job_info{ $job_id }{ 'job_state' }, 'eq', 'C', "Checking job state of job:$job_id");
+delJobs($job_id); # Make sure the job gets deleted
