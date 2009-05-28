@@ -15,6 +15,7 @@ use Carp;
 use base 'Exporter';
 
 our @EXPORT_OK = qw(
+                   qstat_fx
                    parse_qstat
                    parse_qstat_f
                    parse_qstat_f1
@@ -30,6 +31,25 @@ our @EXPORT_OK = qw(
                    parse_qstat_B_f_1
                    list_queue_info
                    );
+
+###############################################################################
+# qstat_fx
+###############################################################################
+sub qstat_fx #($)
+  {
+
+  my ($params) = @_;
+
+  my $job_id = $params->{ 'job_id' } || '';
+  my $user   = $params->{ 'user'   } || 'root';
+
+  my $cmd = "qstat -f -x $job_id";
+
+  my %result = runCommandAs($user, $cmd, 'test_success_die');
+
+  return parse_qstat_fx($result{ 'STDOUT' });
+
+  } # END sub qstat_fx #($)
 
 ###############################################################################
 # parse_qstat - parse the output of qstat  
