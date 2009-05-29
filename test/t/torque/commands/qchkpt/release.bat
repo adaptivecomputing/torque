@@ -18,7 +18,7 @@ execute_tests("$testbase/setup.t")
 
 execute_tests(
               "$testbase/qchkpt.t",
-              "$testbase/mult_node_qchkpt.t",
+#              "$testbase/mult_node_qchkpt.t",
 );
 
 execute_tests("$testbase/cleanup.t"); 
