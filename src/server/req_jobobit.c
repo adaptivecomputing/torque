@@ -757,6 +757,7 @@ void on_job_exit(
   char namebuf[MAXPATHLEN + 1];
   char *namebuf2;
   int spool_file_exists;
+  int rc = 0;
 
   extern void remove_job_delete_nanny(struct job *);
 
@@ -1392,7 +1393,19 @@ void on_job_exit(
         {
         strcpy(preq->rq_ind.rq_delete.rq_objname, pjob->ji_qs.ji_jobid);
 
-        issue_Drequest(handle, preq, release_req, 0);
+        rc = issue_Drequest(handle, preq, release_req, 0);
+
+        if (rc != 0)
+          {
+          snprintf(log_buffer, LOG_BUF_SIZE, "DeleteJob issue_Drequest failure, rc = %d",
+                    rc);
+
+          log_event(
+            PBSEVENT_ERROR | PBSEVENT_ADMIN | PBSEVENT_JOB,
+            PBS_EVENTCLASS_JOB,
+            pjob->ji_qs.ji_jobid,
+            log_buffer);
+          }
 
         /* release_req will free preq and close connection */
         }
@@ -1647,6 +1660,7 @@ void on_job_rerun(
   int        handle;
   int        newstate;
   int        newsubst;
+  int        rc = 0;
   job       *pjob;
 
   struct batch_request *preq;
@@ -1975,7 +1989,19 @@ void on_job_rerun(
 
         preq->rq_extra = (void *)pjob;
 
-        issue_Drequest(handle, preq, release_req, 0);
+        rc = issue_Drequest(handle, preq, release_req, 0);
+
+        if (rc != 0)
+          {
+          snprintf(log_buffer, LOG_BUF_SIZE, "DeleteJob issue_Drequest failure, rc = %d",
+                    rc);
+
+          log_event(
+            PBSEVENT_ERROR | PBSEVENT_ADMIN | PBSEVENT_JOB,
+            PBS_EVENTCLASS_JOB,
+            pjob->ji_qs.ji_jobid,
+            log_buffer);
+          }
 
         /* release_req will free preq and close connection */
         }
