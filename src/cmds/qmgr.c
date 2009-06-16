@@ -957,7 +957,7 @@ disconnect_from_server(struct server *svr)
 /*
  *
  * clean_up_and_exit - disconnect from the servers and free memory used
- *       by active object lists and then exits
+ *       by active object lists, flush output, and then exits
  *
  *   exit_val - value to pass to exit
  *
@@ -983,6 +983,7 @@ clean_up_and_exit(int exit_val)
     cur_svr = next_svr;
     }
 
+   fflush(NULL);   /* peter h IPSec+jan n NANCO 2009 * fix truncated output. */
 
   exit(exit_val);
   }
