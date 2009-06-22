@@ -737,7 +737,7 @@ resource *find_resc_entry(
 
   while (pr != NULL)
     {
-    if (pr->rs_defin == rscdf)
+    if (!strcmp(pr->rs_defin->rs_name, rscdf->rs_name))
       break;
 
     pr = (resource *)GET_NEXT(pr->rs_link);

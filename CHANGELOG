@@ -60,6 +60,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature
   b - Changes to improve the qstat -x XML output and documentation
   b - Change so BATCH_PARTITION_ID does not pass through to child jobs
   c - fix to prevent segfault on pbs_server -t cold
+  b - fix so find_resc_entry still works after setting server extra_resc
 
 2.4.0
   f - added a "-q" option to pbs_mom which does *not* perform the default -p 
