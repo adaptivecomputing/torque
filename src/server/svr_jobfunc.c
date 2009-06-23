@@ -1270,7 +1270,8 @@ int svr_chkque(
     {
     /* 1a. if not already set, set up execution uid/gid/name */
 
-    if (!(pjob->ji_wattr[(int)JOB_ATR_euser].at_flags & ATR_VFLAG_SET))
+    if (!(pjob->ji_wattr[(int)JOB_ATR_euser].at_flags & ATR_VFLAG_SET) ||
+        !(pjob->ji_wattr[(int)JOB_ATR_egroup].at_flags & ATR_VFLAG_SET))
       {
       if ((i = set_jobexid(pjob, pjob->ji_wattr, EMsg)) != 0)
         {
