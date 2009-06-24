@@ -1348,9 +1348,11 @@ int mom_set_limits(
           vmem_limit = value;
         }
       }
-    else if (!strcmp(pname, "mem") && (pjob->ji_numnodes != 1))
+    else if ((!strcmp(pname,"mem") && (pjob->ji_numnodes != 1)) ||
+              !strcmp(pname,"mppmem"))
       {
-      /* ignore */
+      /* ignore. If we ever get rid of support for the UNICOS OS then we can
+         remove the ATR_DFLAG_MOM | ATR_DFLAG_ALTRUN flags from mppmem */
       }
     else if ((!strcmp(pname, "mem") && (pjob->ji_numnodes == 1)) ||
              !strcmp(pname, "pmem"))
