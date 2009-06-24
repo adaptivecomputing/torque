@@ -9,8 +9,8 @@ if [ "$1" = "" ] ; then
   fi
 
 if [ "$2" = "" ] ; then
-  # validate hostname matches DNS
-  HOSTNAME=`hostname`
+  # obtain name obtained from reverse lookup of ip address
+  HOSTNAME=`perl -e "print +(gethostbyname(\"$(hostname)\"))[0]"`
 else
   HOSTNAME=$2
 fi
