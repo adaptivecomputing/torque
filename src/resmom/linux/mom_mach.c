@@ -1912,19 +1912,23 @@ int mom_over_limit(
  * stats gathered by the mom_get_sample() function. This function
  * is often called by "im_request()" as a result of POLL_JOB query
  * from the mother superior.
+ * 
+ * @see im_request() - parent - respond to poll_job request from mother superior
+ * @see examine_all_running_jobs() - parent - update local use on mother superior
+ * @see TMomFinalizeJob1() - parent - update serial job immediately at job start
  *
  * @return An error code if something goes wrong.
  */
 
 int mom_set_use(
 
-  job *pjob)
+  job *pjob)  /* I (modified) */
 
   {
-  resource  *pres;
-  attribute  *at;
+  resource      *pres;
+  attribute     *at;
   resource_def  *rd;
-  unsigned long  *lp, lnum;
+  unsigned long *lp, lnum;
 
   assert(pjob != NULL);
   at = &pjob->ji_wattr[(int)JOB_ATR_resc_used];

@@ -1894,6 +1894,7 @@ void im_request(
             tmpLine);
 
     log_err(-1, id, log_buffer);
+
     rpp_close(stream);
 
     return;
@@ -1902,33 +1903,75 @@ void im_request(
   jobid = disrst(stream, &ret);
 
   if (ret != DIS_SUCCESS)
+    {
+    sprintf(log_buffer,"request for failed - %s (jobid)",
+      dis_emsg[ret]);
+
+    log_err(-1,id,log_buffer);
+
     goto err;
+    }
 
   cookie = disrst(stream, &ret);
 
   if (ret != DIS_SUCCESS)
+    {
+    sprintf(log_buffer,"request for job %s failed - %s (cookie)",
+      jobid,
+      dis_emsg[ret]);
+
+    log_err(-1,id,log_buffer);
+
     goto err;
+    }
 
   command = disrsi(stream, &ret);
 
   if (ret != DIS_SUCCESS)
+    {
+    sprintf(log_buffer,"request for job %s failed - %s (command)",
+      jobid,
+      dis_emsg[ret]);
+
+    log_err(-1,id,log_buffer);
+
     goto err;
+    }
 
   event = disrsi(stream, &ret);
 
   if (ret != DIS_SUCCESS)
+    {
+    sprintf(log_buffer,"%s request for job %s failed - %s (event)",
+      PMOMCommand[MIN(command,IM_MAX)],
+      jobid,
+      dis_emsg[ret]);
+
+    log_err(-1,id,log_buffer);
+
     goto err;
+    }
 
   fromtask = disrsi(stream, &ret);
 
   if (ret != DIS_SUCCESS)
+    {
+    sprintf(log_buffer,"%s request for job %s failed - %s (fromtask)",
+      PMOMCommand[MIN(command,IM_MAX)],
+      jobid,
+      dis_emsg[ret]);
+
+    log_err(-1,id,log_buffer);
+
     goto err;
+    }
 
   if (LOGLEVEL >= 3)
     {
-    sprintf(log_buffer, "received request '%s' from %s",
-            PMOMCommand[MIN(command,IM_MAX)],
-            netaddr(addr));
+    sprintf(log_buffer,"received request '%s' for job %s from %s",
+      PMOMCommand[MIN(command,IM_MAX)],
+      jobid,
+      netaddr(addr));
 
     LOG_EVENT(
       PBSEVENT_JOB,
@@ -1969,9 +2012,7 @@ void im_request(
 
       if (ret != DIS_SUCCESS)
         {
-        sprintf(log_buffer, "%s: join_job request to node %d for job %s failed - %s (nodeid)",
-                id,
-                nodeid,
+        sprintf(log_buffer,"join_job request for job %s failed - %s (nodeid)",
                 jobid,
                 dis_emsg[ret]);
 
@@ -1984,8 +2025,7 @@ void im_request(
 
       if (ret != DIS_SUCCESS)
         {
-        sprintf(log_buffer, "%s: join_job request to node %d for job %s failed - %s (nodenum)",
-                id,
+        sprintf(log_buffer, "join_job request from node %d for job %s failed - %s (nodenum)",
                 nodeid,
                 jobid,
                 dis_emsg[ret]);
@@ -3534,9 +3574,9 @@ void im_request(
           ** I'm mother superior.
           **
           ** auxiliary info (
-          ** cput ulong;
-          ** mem ulong;
-          **      vmem    ulong;
+          **   cput    ulong;
+          **   mem     ulong;
+          **   vmem    ulong;
           ** )
           */
 

@@ -5204,10 +5204,10 @@ void do_rpp(
   {
   static char  id[] = "do_rpp";
 
-  int   ret, proto, version;
+  int             ret, proto, version;
   void im_request A_((int, int));
   void is_request A_((int, int, int *));
-  void im_eof  A_((int, int));
+  void im_eof     A_((int, int));
 
   DIS_rpp_reset();
   proto = disrsi(stream, &ret);
@@ -5218,10 +5218,13 @@ void do_rpp(
            id,
            dis_emsg[ret]))
 
-    sprintf(log_buffer, "cannot get protocol %s",
-            dis_emsg[ret]);
+    if (LOGLEVEL >= 6)
+      {
+      sprintf(log_buffer, "cannot get protocol %s",
+              dis_emsg[ret]);
 
-    log_err(errno, id, log_buffer);
+      log_err(errno, id, log_buffer);
+      }
 
     im_eof(stream, ret);
 
@@ -6464,10 +6467,10 @@ void parse_command_line(
 
   {
   extern char *optarg;
-  extern int optind;
-  int           errflg;
-  int           c;
-  char  *ptr;                   /* local tmp variable */
+  extern int   optind;
+  int          errflg;
+  int          c;
+  char        *ptr;                   /* local tmp variable */
 
   errflg = 0;
 
@@ -6704,11 +6707,16 @@ void parse_command_line(
 
     exit(1);
     }
-  }
+
+  return;
+  }  /* END parse_command_line() */
 
 
 
-/*
+
+
+
+/**
  * setup_program_environment
  */
 
@@ -6716,15 +6724,15 @@ int
 setup_program_environment(void)
   {
   static char   id[] = "setup_program_environment";
-  int   c;
-  int       hostc = 1;
-  FILE  *dummyfile;
+  int           c;
+  int           hostc = 1;
+  FILE         *dummyfile;
   int  tryport;
-  int  rppfd;   /* fd for rm and im comm */
-  int  privfd = 0;  /* fd for sending job info */
+  int  rppfd;  /* fd for rm and im comm */
+  int  privfd = 0; /* fd for sending job info */
 
   struct sigaction act;
-  char  *ptr;                   /* local tmp variable */
+  char         *ptr;            /* local tmp variable */
 
   /* must be started with real and effective uid of 0 */
 
@@ -7577,6 +7585,7 @@ int TMOMScanForStarting(void)
 
 void
 examine_all_polled_jobs(void)
+
   {
   static char id[] = "examine_all_polled_jobs";
   job         *pjob;
@@ -7661,7 +7670,11 @@ examine_all_polled_jobs(void)
       pjob->ji_qs.ji_svrflags |= JOB_SVFLG_OVERLMT1;
       }
     }    /* END for (pjob) */
-  }
+
+  return;
+  }      /* END examine_all_polled_jobs() */
+
+
 
 
 
@@ -7671,6 +7684,7 @@ examine_all_polled_jobs(void)
 
 void
 examine_all_running_jobs(void)
+
   {
   job         *pjob;
 #ifdef _CRAY
@@ -7692,7 +7706,7 @@ examine_all_running_jobs(void)
 
     mom_set_use(pjob); /* Machine dependent function to compute and set attributes like cput, vmem, etc. */
 
-    /* Have all job processes vanished undetected ?       */
+    /* Have all job processes vanished undetected?       */
     /* double check by sig0 to session pid for each task */
     /* But why not use the proc_array? */
 
@@ -7744,14 +7758,16 @@ examine_all_running_jobs(void)
 
           exiting_tasks = 1;
           }  /* END if ((kill == -1) && ...) */
-
         }    /* END while (ptask != NULL) */
       }      /* END if (pjob->ji_flags & MOM_NO_PROC) */
 
 
     mom_checkpoint_check_periodic_timer(pjob);
     }  /* END for (pjob) */
-  }
+
+  return;
+  }  /* END examine_all_running_jobs() */
+
 
 
 
@@ -7784,7 +7800,7 @@ kill_all_running_jobs(void)
       {
       term_job(pjob);
       }
-    }
+    }  /* END for (pjob) */
 
 #ifndef NOSIGCHLDMOM
   if (termin_child != 0)
@@ -7991,6 +8007,7 @@ void restart_mom(
   strcpy(envstr, "PATH=");
   strcat(envstr, orig_path);
   putenv(envstr);
+
   DBPRT(("Re-execing myself now...\n"));
 
   execvp(MOMExePath, argv);
