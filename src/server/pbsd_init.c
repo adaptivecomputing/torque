@@ -1030,7 +1030,8 @@ int pbsd_init(
             }
           else
             {
-            /* should we do something here?  we won't beable to finish cloning this array */
+            /* FIXME: what should we do here?  we won't be able to finish 
+               cloning this array because the initial job file is missing */
             }
 
           continue;
