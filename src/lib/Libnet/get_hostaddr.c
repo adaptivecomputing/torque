@@ -91,6 +91,7 @@
 #include "server_limits.h"
 #include "net_connect.h"
 #include "pbs_error.h"
+#include "log.h"
 
 #if !defined(H_ERRNO_DECLARED)
 extern int h_errno;
@@ -142,6 +143,17 @@ pbs_net_t get_hostaddr(
 
   if (hp == NULL)
     {
+    sprintf(log_buffer,"cannot resolve IP address for host '%s' herror=%d: %s",
+      hostname,
+      h_errno,
+      hstrerror(h_errno));
+
+    log_event(
+      PBSEVENT_SYSTEM,
+      PBS_EVENTCLASS_SERVER,
+      "get_hostaddr",
+      log_buffer);
+
     if (h_errno == TRY_AGAIN)
       pbs_errno = PBS_NET_RC_RETRY;
     else

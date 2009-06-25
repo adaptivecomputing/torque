@@ -795,7 +795,7 @@ static int injob(
 
 
 /*
- * Internal session cpu time decoding routine.
+ * Internal session CPU time decoding routine.
  *
  * Accepts a job pointer.  Returns the sum of all cpu time
  * consumed for all tasks executed by the job, in seconds,

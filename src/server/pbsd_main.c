@@ -1125,7 +1125,6 @@ main_loop(void)
       {
       check_children();
       }
-
 #endif
 
     /* touch the rpp streams that need to send */

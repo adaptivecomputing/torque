@@ -1685,7 +1685,7 @@ static int assign_hosts(
         if (list != NULL)
           free(list);
 
-        sprintf(log_buffer, "ALERT:  job cannot allocate node '%s'",
+        sprintf(log_buffer, "ALERT:  job cannot allocate node '%s' (could not determine IP address for node)",
                 pjob->ji_qs.ji_destin);
 
         log_event(

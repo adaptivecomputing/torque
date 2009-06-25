@@ -102,7 +102,7 @@ int pbs_runjob(
   unsigned int resch = 0;
   int sock;
 
-  /* NOTE:  routes over to X on server side
+  /* NOTE:  routes over to req_runjob() on server side
        DIS_tcp_wflush  -----> wait_request()                       (net_server.c)
                                 process_request()                  (server/process_request.c)
                                   dis_request_read()               (server/dis_read.c)
