@@ -254,16 +254,35 @@ int svr_get_privilege(
   {
   int   is_root = 0;
   int   priv = (ATR_DFLAG_USRD | ATR_DFLAG_USWR);
+  int   num_host_chars;
   char  uh[PBS_MAXUSER + PBS_MAXHOSTNAME + 2];
+  char  host_no_port[1024];
+
+  char *colon_loc = strchr(host, ':');
+
+  /* if the request host has port information in it, we want to strip it out */
+
+  if (colon_loc == NULL) 
+    {
+    /* no colon found */
+    num_host_chars = sizeof(host_no_port);
+    }
+  else
+    {
+    num_host_chars = colon_loc - host;
+    }
 
   strcpy(uh, user);
   strcat(uh, "@");
   strcat(uh, host);
 
+  strncpy(host_no_port,host,num_host_chars);
+  host_no_port[num_host_chars] = 0;
+
   /* NOTE:  enable case insensitive host check (CRI) */
 
   if ((strcmp(user, PBS_DEFAULT_ADMIN) == 0) &&
-      !strcasecmp(host, server_host))
+      !strcasecmp(host_no_port, server_host))
     {
     is_root = 1;
 
