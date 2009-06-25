@@ -1035,6 +1035,7 @@ static void preobit_reply(
   svrattrl             *sattrl;
   int  runepilogue = 0;
   int  deletejob = 0;
+  int  jobiscorrupt = 0;
 
   /* struct batch_status *bsp = NULL; */
 
@@ -1110,7 +1111,7 @@ static void preobit_reply(
     close_conn(sock);
 
     return;
-    }
+    }  /* END if (pjob != NULL) */
 
   /* we've got a job in PREOBIT and matches the socket, now
      inspect the results of the job stat */
@@ -1167,31 +1168,47 @@ static void preobit_reply(
         break;
         }
 
+      /* determine if job has exechost set - if set, and task 0 host is X ... */
+
       sattrl = (svrattrl *)GET_NEXT(pstatus->brp_attr);
+
+      jobiscorrupt = 1;
 
       while (sattrl != NULL)
         {
         if (!strcmp(sattrl->al_name, ATTR_exechost))
           {
-          runepilogue = 1;
+          jobiscorrupt = 0;
 
-          if (strncmp(sattrl->al_value, pjob->ji_hosts[0].hn_host, strlen(pjob->ji_hosts[0].hn_host)))
+          if (strncmp(
+                sattrl->al_value,
+                pjob->ji_hosts[0].hn_host,
+                strlen(pjob->ji_hosts[0].hn_host)))
             {
             /* the job was re-run elsewhere */
 
-            sprintf(log_buffer, "first host DOES NOT match me: %s!=%s",
+            sprintf(log_buffer, "first host DOES NOT match me: %s != %s",
                     sattrl->al_value,
                     pjob->ji_hosts[0].hn_host);
 
-            runepilogue = 0;
-
             deletejob = 1;
+            }
+          else
+            {
+            /* job was run locally */
+
+            runepilogue = 1;
             }
 
           break;
           }
 
         sattrl = (svrattrl *)GET_NEXT(sattrl->al_link);
+        }  /* END while (sattrl != NULL) */
+
+      if (jobiscorrupt == 1)
+        {
+        /* runepilogue = 1; */
         }
 
       break;
