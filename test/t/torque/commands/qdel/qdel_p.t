@@ -17,7 +17,7 @@ use Torque::Job::Ctrl           qw(
 use Torque::Job::Utils          qw(                                  
                                     checkForJob
                                   );
-use Torque::Test::Utils         qw( 
+use Torque::Util         qw( 
                                     run_and_check_cmd 
                                     list2array        
                                   );

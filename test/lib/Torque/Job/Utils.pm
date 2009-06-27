@@ -10,7 +10,7 @@ use lib "$FindBin::Bin/../../../lib/";
 use CRI::Test;
 use Carp;
 
-use Torque::Test::Qstat::Utils qw(
+use Torque::Util::Qstat qw(
                                     parse_qstat_fx
                                  );
 

@@ -10,13 +10,13 @@ use lib "$FindBin::Bin/../../../../lib/";
 # Test Modules
 use CRI::Test;
 
-use Torque::Test::Regexp       qw(
+use Torque::Util::Regexp       qw(
                                    QSTAT_BF1_REGEXP
                                  );
-use Torque::Test::Utils        qw(
+use Torque::Util        qw(
                                    run_and_check_cmd
                                  );
-use Torque::Test::Qstat::Utils qw(
+use Torque::Util::Qstat qw(
                                    parse_qstat_B_f_1
                                  );
 

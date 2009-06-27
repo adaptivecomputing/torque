@@ -12,7 +12,7 @@ use Torque::Ctrl        qw(
                             startTorque 
                             stopTorque
                           );
-use Torque::Test::Utils qw(
+use Torque::Util qw(
                             list2array
                           );
 

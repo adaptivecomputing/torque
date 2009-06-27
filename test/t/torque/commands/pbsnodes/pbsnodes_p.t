@@ -9,7 +9,7 @@ use lib "$FindBin::Bin/../../../../lib/";
 
 # Test Modules
 use CRI::Test;
-use Torque::Test::Utils qw( run_and_check_cmd );
+use Torque::Util qw( run_and_check_cmd );
 
 # Test Description
 plan('no_plan');

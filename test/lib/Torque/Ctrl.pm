@@ -10,7 +10,7 @@ use lib "$FindBin::Bin/../../lib/";
 use CRI::Test;
 use Expect;
 
-use Torque::Test::Utils qw(
+use Torque::Util qw(
                             is_running
                             is_running_remote
                           );
@@ -700,7 +700,7 @@ Stops pbs_sched on the local machine.
 
 =head1 DEPENDENDCIES
 
-CRI::Test, Torque::Test::Utils, Expect
+CRI::Test, Torque::Util, Expect
 
 =head1 AUTHOR(S)
 

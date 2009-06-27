@@ -9,8 +9,8 @@ use lib "$FindBin::Bin/../../../../lib/";
 
 # Test Modules
 use CRI::Test;
-use Torque::Test::Regexp       qw(HOST_STATES);
-use Torque::Test::Momctl::Diag qw(test_mult_diag);
+use Torque::Util::Regexp       qw(HOST_STATES);
+use Torque::Util::Momctl qw(test_mult_diag);
 
 # Test Description
 plan('no_plan');

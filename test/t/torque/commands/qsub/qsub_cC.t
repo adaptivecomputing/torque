@@ -12,7 +12,7 @@ use CRI::Utils qw(
                  );
 
 use Torque::Job::Ctrl   qw( delJobs   );
-use Torque::Test::Utils qw( job_info  );
+use Torque::Util qw( job_info  );
 
 plan('no_plan');
 setDesc('qsub -C');

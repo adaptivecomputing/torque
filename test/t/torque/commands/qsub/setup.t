@@ -11,7 +11,7 @@ use Torque::Ctrl        qw( startTorque
                             stopTorque 
                             stopPbssched
                           );
-use Torque::Test::Utils qw( 
+use Torque::Util qw( 
                             run_and_check_cmd
                             list2array             
                           );

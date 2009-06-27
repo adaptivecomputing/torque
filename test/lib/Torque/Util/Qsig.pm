@@ -1,11 +1,10 @@
-package Torque::Test::Qsig::Utils;
+package Torque::Util::Qsig;
 
 use strict;
 use warnings;
 
 use FindBin;
-use lib "$FindBin::Bin/../../../../lib/";
-
+use lib "$FindBin::Bin/../..";
 
 use CRI::Test;
 
@@ -59,13 +58,13 @@ sub get_recieved_signals #($)
 
 =head1 NAME
 
-Torque::Test::Qsig::Utils - Some useful Torque test utilities for the qsig command
+Torque::Util::Qsig - Some useful Torque test utilities for the qsig command
 
 =head1 SYNOPSIS
 
- use Torque::Test::Qsig::Utils qw( 
-                                   get_recieved_signals
-                                 );
+ use Torque::Util::Qsig qw( 
+                            get_recieved_signals
+                          );
 
  use CRI::Test;
 

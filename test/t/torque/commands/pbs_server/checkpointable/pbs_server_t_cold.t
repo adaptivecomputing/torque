@@ -14,7 +14,7 @@ use CRI::Utils          qw(
                              resolve_path
                           );
 
-use Torque::Test::Utils qw(
+use Torque::Util qw(
                              job_info
                              list2array
                           );

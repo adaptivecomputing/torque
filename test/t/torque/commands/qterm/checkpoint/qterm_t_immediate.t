@@ -20,7 +20,7 @@ use Torque::Job::Ctrl   qw(
                             runJobs
                             delJobs
                           );
-use Torque::Test::Utils qw(
+use Torque::Util qw(
                              run_and_check_cmd
                              job_info
                           );

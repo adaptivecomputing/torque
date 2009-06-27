@@ -1,10 +1,10 @@
-package Torque::Test::Momctl::Diag;
+package Torque::Util::Momctl;
 
 use strict;
 use warnings;
 
 use FindBin;
-use lib "$FindBin::Bin/../../../../lib/";
+use lib "$FindBin::Bin/../..";
 
 
 use CRI::Test;
@@ -565,12 +565,12 @@ sub _gen_key_value #($)
 
 =head1 NAME
 
-Torque::Test::Momctl::Diag - A module that provides methods to test the output of momctl diagnostics
+Torque::Util::Momctl - A module that provides methods to test the output of momctl diagnostics
 
 =head1 SYNOPSIS
 
 use CRI::Test;
-use Torque::Test::Momctl::Diag qw(
+use Torque::Util::Momctl qw(
                                   test_level_0
                                   test_level_1
                                   test_level_2

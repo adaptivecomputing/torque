@@ -17,10 +17,10 @@ use Torque::Job::Ctrl           qw(
 use Torque::Job::Utils          qw( 
                                     checkForJob
                                   );
-use Torque::Test::Qstat::Utils  qw(
+use Torque::Util::Qstat  qw(
                                     qstat_fx
                                   );
-use Torque::Test::Utils         qw( 
+use Torque::Util         qw( 
                                     run_and_check_cmd 
                                     list2array        
                                   );

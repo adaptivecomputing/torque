@@ -9,17 +9,20 @@ use lib "$FindBin::Bin/../../../../lib/";
 
 # Test Modules
 use CRI::Test;
-use Torque::Ctrl                  qw( startTorque
-                                      stopTorque
-                                    );
-use Torque::Test::Utils           qw( 
-                                      run_and_check_cmd 
-                                      list2array
-                                    );
-
-use Torque::Test::Pbsnodes::Utils qw( parse_output 
-                                      test_s_q_output
-                                    );
+use Torque::Ctrl            qw( 
+                               startTorque
+                               stopTorque
+                              );
+use Torque::Util    qw( 
+                              run_and_check_cmd 
+                              list2array
+                             );
+use Torque::Util::Pbsnodes qw( 
+                              parse_output 
+                             );
+use Torque::Test::Pbsnodes qw( 
+                              test_s_q_output
+                             );
 
 # Test Description
 plan('no_plan');

@@ -15,9 +15,9 @@ use Torque::Job::Ctrl           qw(
                                     runJobs
                                     delJobs
                                   );
-use Torque::Test::Utils         qw( run_and_check_cmd 
+use Torque::Util         qw( run_and_check_cmd 
                                     list2array        );
-use Torque::Test::Qstat::Utils  qw( parse_qstat_fx    );
+use Torque::Util::Qstat  qw( parse_qstat_fx    );
 
 # Other modules
 use Sys::Hostname;

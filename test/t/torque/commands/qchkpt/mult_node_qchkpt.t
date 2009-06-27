@@ -16,14 +16,14 @@ use Torque::Job::Ctrl          qw(
                                     runJobs 
                                     delJobs
                                  );
-use Torque::Test::Utils        qw( 
+use Torque::Util        qw( 
                                     run_and_check_cmd
                                     list2array
                                  );
-use Torque::Test::Qstat::Utils qw(
+use Torque::Util::Qstat qw(
                                     parse_qstat_fx
                                  );
-use Torque::Test::Regexp       qw(
+use Torque::Util::Regexp       qw(
                                     CHECKPOINT_FILE_NAME
                                  );
 

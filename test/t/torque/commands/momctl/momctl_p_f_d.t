@@ -9,7 +9,7 @@ use lib "$FindBin::Bin/../../../../lib/";
 
 # Test Module
 use CRI::Test;
-use Torque::Test::Momctl::Diag qw(test_mult_diag);
+use Torque::Util::Momctl qw(test_mult_diag);
 
 # Test Case Description
 plan('no_plan');

@@ -9,7 +9,7 @@ use lib "$FindBin::Bin/../../../../lib/";
 
 use CRI::Test;
 use Torque::Ctrl        qw( startTorque stopTorque );
-use Torque::Test::Utils qw( list2array             );
+use Torque::Util qw( list2array             );
 
 # Describe Test
 plan('no_plan');

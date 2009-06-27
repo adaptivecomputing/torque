@@ -1,11 +1,10 @@
-package Torque::Test::Qalter::Utils;
+package Torque::Util::Qalter;
 
 use strict;
 use warnings;
 
 use FindBin;
-use lib "$FindBin::Bin/../../../../lib/";
-
+use lib "$FindBin::Bin/../../";
 
 use CRI::Test;
 
@@ -59,11 +58,11 @@ sub gen_a_time #($)
 
 =head1 NAME
 
-Torque::Test::Qalter::Utils - Some useful Torque test utilities for the qalter command
+Torque::Util::Qalter - Some useful Torque test utilities for the qalter command
 
 =head1 SYNOPSIS
 
- use Torque::Test::Qalter::Utils qw( );
+ use Torque::Util::Qalter qw( );
  use CRI::Test;
 
 =head1 DESCRIPTION

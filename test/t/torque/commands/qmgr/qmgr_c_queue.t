@@ -9,8 +9,8 @@ use lib "$FindBin::Bin/../../../../lib/";
 
 use CRI::Test;
 
-use Torque::Test::Utils        qw( run_and_check_cmd );
-use Torque::Test::Qstat::Utils qw( list_queue_info   );
+use Torque::Util        qw( run_and_check_cmd );
+use Torque::Util::Qstat qw( list_queue_info   );
 
 plan('no_plan');
 setDesc("qmgr -c create and delete a queue");

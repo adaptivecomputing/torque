@@ -9,7 +9,7 @@ use lib "$FindBin::Bin/../../../../lib/";
 
 # Test Module
 use CRI::Test;
-use Torque::Test::Momctl::Diag qw(
+use Torque::Util::Momctl qw(
                                  test_level_0
                                  test_level_1
                                  test_level_2

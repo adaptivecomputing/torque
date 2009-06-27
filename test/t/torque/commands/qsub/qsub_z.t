@@ -8,7 +8,7 @@ use lib "$FindBin::Bin/../../../../lib/";
 
 use CRI::Test;
 
-use Torque::Test::Utils qw( job_info );
+use Torque::Util qw( job_info );
 use Torque::Job::Ctrl   qw( delJobs  );
 
 plan('no_plan');

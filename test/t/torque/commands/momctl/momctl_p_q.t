@@ -9,10 +9,10 @@ use lib "$FindBin::Bin/../../../../lib/";
 
 # Test Modules
 use CRI::Test;
-use Torque::Test::Regexp       qw(
+use Torque::Util::Regexp       qw(
                                   HOST_STATES
                                  );
-use Torque::Test::Momctl::Diag qw(
+use Torque::Util::Momctl qw(
                                   test_level_0
                                   test_level_1
                                   test_level_2

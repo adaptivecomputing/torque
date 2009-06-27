@@ -1,11 +1,10 @@
-package Torque::Test::Qmgr::Utils;
+package Torque::Util::Qmgr;
 
 use strict;
 use warnings;
 
 use FindBin;
-use lib "$FindBin::Bin/../../../../lib/";
-
+use lib "$FindBin::Bin/../..";
 
 use CRI::Test;
 
@@ -70,11 +69,11 @@ sub list_server_info #($)
 
 =head1 NAME
 
-Torque::Test::Qmgr::Utils - Some useful Torque test utilities for the qmgr command
+Torque::Util::Qmgr - Some useful Torque test utilities for the qmgr command
 
 =head1 SYNOPSIS
 
- use Torque::Test::Qmgr::Utils qw( 
+ use Torque::Util::Qmgr qw( 
                                    list_server_info
                                  );
  use CRI::Test;

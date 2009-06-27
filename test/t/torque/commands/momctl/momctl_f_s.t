@@ -10,7 +10,7 @@ use lib "$FindBin::Bin/../../../../lib/";
 # Test Modules
 use CRI::Test;
 use Torque::Ctrl;
-use Torque::Test::Utils qw(hostlist2array);
+use Torque::Util qw(hostlist2array);
 
 # Test Description
 plan('no_plan');

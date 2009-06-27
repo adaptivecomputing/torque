@@ -15,12 +15,12 @@ use Torque::Job::Ctrl           qw(
                                     runJobs
                                     delJobs
                                   );
-use Torque::Test::Utils         qw( 
+use Torque::Util         qw( 
                                     run_and_check_cmd 
                                     list2array
                                     job_info
                                   );
-use Torque::Test::Qstat::Utils  qw( parse_qstat_fx    );
+use Torque::Util::Qstat  qw( parse_qstat_fx    );
 
 # Test Description
 plan('no_plan');

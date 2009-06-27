@@ -1,17 +1,17 @@
-package Torque::Test::Utils;
+package Torque::Util;
 
 use strict;
 use warnings;
 
 use FindBin;
-use lib "$FindBin::Bin/../../../lib/";
+use lib "$FindBin::Bin/..";
 
 
 use CRI::Test;
 use Carp;
 
-use Torque::Test::Qstat::Utils    qw( parse_qstat_fx );
-use Torque::Test::Pbsnodes::Utils qw( parse_xml      );
+use Torque::Util::Qstat    qw( parse_qstat_fx );
+use Torque::Util::Pbsnodes qw( parse_xml      );
 
 use base 'Exporter';
 
@@ -324,11 +324,11 @@ sub is_running_remote #($$)
 
 =head1 NAME
 
-Torque::Test::Utils - Some useful Torque test utilities
+Torque::Util - Some useful Torque test utilities
 
 =head1 SYNOPSIS
 
- use Torque::Test::Utils qw(
+ use Torque::Util qw(
                              hostlist2array
                              list2array
                              run_and_check_cmd
@@ -428,7 +428,7 @@ Checks that a given process is running on a remote node and is not just a zombie
 
 =head1 DEPENDENDCIES
 
-Moab::Test, Torque::Test::Qstat::Utils, Carp
+Moab::Test, Torque::Util::Qstat, Carp
 
 =head1 AUTHOR(S)
 

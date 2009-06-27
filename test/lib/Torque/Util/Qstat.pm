@@ -1,11 +1,10 @@
-package Torque::Test::Qstat::Utils;
+package Torque::Util::Qstat;
 
 use strict;
 use warnings;
 
 use FindBin;
-use lib "$FindBin::Bin/../../../../lib/";
-
+use lib "$FindBin::Bin/../..";
 
 use CRI::Test;
 
@@ -829,11 +828,11 @@ sub _auto_complete_job_id #($)
 
 =head1 NAME
 
-Torque::Test::Qstat::Utils - Some useful Torque test utilities for the qstat command
+Torque::Util::Qstat - Some useful Torque test utilities for the qstat command
 
 =head1 SYNOPSIS
 
- use Torque::Test::Qalter::Utils qw( 
+ use Torque::Util::Qalter qw( 
                                      parse_qstat
                                      parse_qstat_f
                                      parse_qstat_f1

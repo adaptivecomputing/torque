@@ -1,17 +1,17 @@
-package Torque::Test::Qhold::Utils;
+package Torque::Test::Qhold;
 
 use strict;
 use warnings;
 
 use FindBin;
-use lib "$FindBin::Bin/../../../../lib/";
+use lib "$FindBin::Bin/../..";
 
 
 use CRI::Test;
 
-use Torque::Test::Utils        qw( run_and_check_cmd    );
+use Torque::Util        qw( run_and_check_cmd    );
 use Torque::Test::Regexp       qw( CHECKPOINT_FILE_NAME );
-use Torque::Test::Qstat::Utils qw( parse_qstat_fx       );
+use Torque::Util::Qstat qw( parse_qstat_fx       );
 
 use base 'Exporter';
 
@@ -142,11 +142,11 @@ sub verify_qhold #($)
 
 =head1 NAME
 
-Torque::Test::Qhold::Utils - Some useful Torque test utilities for the qhold command
+Torque::Test::Qhold - Some useful Torque test utilities for the qhold command
 
 =head1 SYNOPSIS
 
- use Torque::Test::Qhold::Utils qw( 
+ use Torque::Test::Qhold qw( 
                                     verify_qhold_chkpt
                                     verify_qhold
                                   );
@@ -178,7 +178,7 @@ Runs a series of tests on a given job to determine if it has been placed in the 
 
 =head1 DEPENDENDCIES
 
-Moab::Test, Torque::Test::Regexp, Torque::Test::Qstat::Utils
+Moab::Test, Torque::Test::Regexp, Torque::Util::Qstat
 
 =head1 AUTHOR(S)
 

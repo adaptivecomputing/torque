@@ -14,7 +14,7 @@ use Torque::Job::Ctrl   qw(
                             submitSleepJob
                             delJobs
                           );
-use Torque::Test::Utils qw(
+use Torque::Util qw(
                             is_running
                             verify_job_state
                           );

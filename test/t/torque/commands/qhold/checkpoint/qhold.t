@@ -17,10 +17,10 @@ use Torque::Job::Ctrl          qw(
                                     runJobs
                                     delJobs
                                  );
-use Torque::Test::Utils        qw( 
+use Torque::Util        qw( 
                                     run_and_check_cmd
                                  );
-use Torque::Test::Qhold::Utils qw(
+use Torque::Test::Qhold qw(
                                     verify_qhold_chkpt
                                  );
 

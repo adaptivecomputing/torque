@@ -16,11 +16,11 @@ use Torque::Job::Ctrl          qw(
                                    runJobs
                                    delJobs 
                                  );
-use Torque::Test::Utils        qw(
+use Torque::Util        qw(
                                    run_and_check_cmd
                                    job_info
                                  );
-use Torque::Test::Qstat::Utils qw(
+use Torque::Util::Qstat qw(
                                    parse_qstat_f1
                                  );
 

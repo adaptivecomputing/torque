@@ -9,7 +9,7 @@ use lib "$FindBin::Bin/../../../../lib/";
 
 use CRI::Test;
 
-use Torque::Test::Utils qw(
+use Torque::Util qw(
                              list2array
                           );
 use Torque::Ctrl        qw(

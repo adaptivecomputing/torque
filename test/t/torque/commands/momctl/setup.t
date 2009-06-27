@@ -10,7 +10,7 @@ use lib "$FindBin::Bin/../../../../lib/";
 use CRI::Test;
 use CRI::Utils          qw( scp                    );
 
-use Torque::Test::Utils qw( run_and_check_cmd      );
+use Torque::Util qw( run_and_check_cmd      );
 
 use Torque::Ctrl        qw( startTorque stopTorque );
 

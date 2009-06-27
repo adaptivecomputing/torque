@@ -9,17 +9,17 @@ use lib "$FindBin::Bin/../../../../lib/";
 
 # Test Modules
 use CRI::Test;
-use Torque::Test::Utils           qw( 
-                                      list2array
-                                      run_and_check_cmd 
-                                    );
-use Torque::Test::Regexp          qw( 
-                                      HOST_STATES
-                                      NTYPES
-                                    );
-use Torque::Test::Pbsnodes::Utils qw( 
-                                      test_output
-                                    );
+use Torque::Util    qw( 
+                               list2array
+                               run_and_check_cmd 
+                             );
+use Torque::Util::Regexp   qw( 
+                               HOST_STATES
+                               NTYPES
+                             );
+use Torque::Test::Pbsnodes qw( 
+                               test_output
+                             );
 
 # Test Description
 plan('no_plan');

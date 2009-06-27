@@ -8,7 +8,7 @@ use lib "$FindBin::Bin/../../../lib/";
 
 use CRI::Test;
 
-use Torque::Test::Utils qw(
+use Torque::Util qw(
                            list2array
                            run_and_check_cmd
                           );
