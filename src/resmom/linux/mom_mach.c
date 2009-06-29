@@ -2074,7 +2074,7 @@ int kill_task(
   {
   char          *id = "kill_task";
 
-  int            ct = 0;
+  int            ct = 0;  /* num of processes killed */
   int            NumProcessesFound = 0; /* number of processes found with session ID */
 
   struct dirent *dent;
@@ -2212,7 +2212,6 @@ int kill_task(
 
         if (sig == SIGKILL)
           {
-
           struct timespec req;
 
           req.tv_sec = 0;
@@ -2345,9 +2344,21 @@ int kill_task(
 
   if ((NumProcessesFound == 0) && (ct <= 0))
     {
+    /* we can't find any processes belonging to given session, so we can safely say
+     * that we "killed" the task and have TORQUE clean it up */
+
+    ct++;
+
+    /* do code to mark task as finished (borrowed from Linux scan_for_terminating())... */
+
+    ptask->ti_qs.ti_exitstat = 0;  /* assume successful completion */
+    ptask->ti_qs.ti_status   = TI_STATE_EXITED;
+
+    task_save(ptask);
+
     if (LOGLEVEL >= 5)
       {
-      sprintf(log_buffer, "%s: could not send signal %d to task %d (session %d)--no process was found with this session ID!",
+      sprintf(log_buffer, "%s: could not send signal %d to task %d (session %d)--no process was found with this session ID (marking task as killed)!",
               id,
               sig,
               ptask->ti_qs.ti_task,

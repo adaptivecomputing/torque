@@ -119,6 +119,9 @@ c - crash     b - bug fix    e - enhancement    f - new feature
   e - added pbs_mom config option ignvmem to ignore vmem/pvmem limit enforcement
   b - change to correct strtoks that accidentally got changed in astyle 
       formatting
+  e - in Linux, a pbs_mom will now "kill" a job's task, even if that task can no
+      longer be found in the OS processor table. This prevents jobs from getting
+      "stuck" when the PID vanishes in some rare cases.
 
 2.3.5
   e - added new init.d scripts for Debian/Ubuntu systems
