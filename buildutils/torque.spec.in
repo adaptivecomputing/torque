@@ -235,6 +235,7 @@ This package holds the execute daemon required on every node.
 %{_sbindir}/pbs_mom
 %{_sbindir}/qnoded
 %{_sbindir}/pbs_demux
+%{_bindir}/pbs_track
 %{_initrddir}/pbs_mom
 %if "%build_pbs_rcp" == "yes"
 %attr(4755 root root) %{_sbindir}/pbs_rcp
