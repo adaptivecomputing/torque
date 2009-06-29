@@ -1,4 +1,4 @@
-package Torque::Test::Regexp;
+package Torque::Util::Regexp;
 
 use strict;
 use warnings;
@@ -161,11 +161,11 @@ use constant QSTAT_QF1_REGEXP     => {
 
 =head1 NAME
 
-Torque::Test::Regexp - Some useful Torque regular expressions
+Torque::Util::Regexp - Some useful Torque regular expressions
 
 =head1 SYNOPSIS
 
- use Torque::Test::Regexp qw( 
+ use Torque::Util::Regexp qw( 
                               HOST_STATES 
                               NTYPES 
                               CHECKPOINT_FILE_NAME
