@@ -77,7 +77,7 @@ Some useful methods to use when running the qalter command.
 
 =head1 DEPENDENDCIES
 
-Moab::Test, Torque::Test::Utils, XML::Simple
+Moab::Test, Torque::Util, XML::Simple
 
 =head1 AUTHOR(S)
 

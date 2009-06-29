@@ -973,7 +973,7 @@ Returns the results of 'qstat -Q -f -1' in a hash.  Takes an option queue name.
 
 =head1 DEPENDENDCIES
 
-Moab::Test, Torque::Test::Utils, XML::Simple
+Moab::Test, Torque::Util, XML::Simple
 
 =head1 AUTHOR(S)
 
