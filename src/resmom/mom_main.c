@@ -7730,7 +7730,6 @@ examine_all_running_jobs(void)
         if ((kill(ptask->ti_qs.ti_sid, 0) == -1) && (errno == ESRCH))
 #endif /* not cray */
           {
-
           if (LOGLEVEL >= 3)
             {
             LOG_EVENT(

@@ -89,7 +89,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
-#if !defined(H_ERRNO_DECLARED)
+#if !defined(H_ERRNO_DECLARED) && !defined(_AIX)
 extern int h_errno;
 #endif
 

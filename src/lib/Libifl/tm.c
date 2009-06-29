@@ -82,7 +82,7 @@
 
 /* define the following so we get prototype for getsid() */
 #define _XOPEN_SOURCE
-#define _XOPEN_SOURCE_EXTENDED
+#define _XOPEN_SOURCE_EXTENDED 1
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -98,6 +98,9 @@
 #include <sys/time.h>
 #include <netinet/in.h>
 #include <netdb.h>
+#ifdef _AIX
+#include <arpa/inet.h>
+#endif /* _AIX */
 
 #include "dis.h"
 #include "dis_init.h"

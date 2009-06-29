@@ -138,6 +138,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature
       is being rerun
   b - fixed a bug preventing multiple TORQUE servers and TORQUE MOMs from 
       operating properly all from the same host
+  e - fixed several compiler error and warnings for AIX 5.2 systems
 
 2.3.3
   b - fixed bug where pbs_mom would sometimes not connect properly with 

@@ -83,6 +83,9 @@
 #include <stdio.h>
 #include <string.h>
 #include <netdb.h>
+#ifdef _AIX
+#include <arpa/aixrcmds.h>
+#endif /* _AIX */
 #include "portability.h"
 #include "list_link.h"
 #include "attribute.h"

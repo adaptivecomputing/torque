@@ -109,7 +109,6 @@ int diswcs(
 
   assert(disw_commit != NULL);
   assert(dis_puts != NULL);
-  assert(nchars <= UINT_MAX);
 
   retval = diswui_(stream, (unsigned)nchars);
 
