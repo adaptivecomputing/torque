@@ -2053,10 +2053,15 @@ static void resume_suspend(
 
 
 
-/*
+/**
  * req_signaljob - issue (kill) a specified signal to a job
  * Signal may be either a numeric string or a signal name
  * with or without the "SIG" prefix.
+ *
+ * NOTE:  process_request() set up as request handler via accept_conn()
+ *
+ * @see process_request->dispatch_request() - parent
+ * @see req_signaljob() in server/req_signal.c - peer
  */
 
 void req_signaljob(
@@ -2088,7 +2093,7 @@ void req_signaljob(
   if (LOGLEVEL >= 3)
     {
     sprintf(log_buffer, "signaling job with signal %s",
-            sname);
+      sname);
 
     log_record(
       PBSEVENT_JOB,
@@ -2191,7 +2196,7 @@ void req_signaljob(
     /* force issue of (another) job obit */
 
     sprintf(log_buffer, "job recycled into exiting on SIGNULL/KILL from substate %d",
-            pjob->ji_qs.ji_substate);
+      pjob->ji_qs.ji_substate);
 
     LOG_EVENT(
       PBSEVENT_ERROR,

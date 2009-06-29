@@ -6911,10 +6911,11 @@ setup_program_environment(void)
   if (lockfds < 0)
     {
     sprintf(log_buffer, "pbs_mom: unable to open lock file - errno=%d '%s'\n",
-            errno,
-            strerror(errno));
+      errno,
+      strerror(errno));
 
-    fprintf(stderr, "%s", log_buffer);
+    fprintf(stderr, "%s",
+      log_buffer);
 
     return(1);
     }
@@ -6928,9 +6929,9 @@ setup_program_environment(void)
     c = errno;
 
     sprintf(log_buffer, "server port = %u, errno = %d (%s)",
-            pbs_mom_port,
-            c,
-            strerror(c));
+      pbs_mom_port,
+      c,
+      strerror(c));
 
     if (c == EADDRINUSE)
       strcat(log_buffer, ", already in use");
@@ -6949,9 +6950,9 @@ setup_program_environment(void)
     c = errno;
 
     sprintf(log_buffer, "resource (tcp) port = %u, errno = %d (%s)",
-            pbs_rm_port,
-            c,
-            strerror(c));
+      pbs_rm_port,
+      c,
+      strerror(c));
 
     if (c == EADDRINUSE)
       strcat(log_buffer, ", already in use");

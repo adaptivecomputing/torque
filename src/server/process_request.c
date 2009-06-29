@@ -298,10 +298,11 @@ int get_creds(int sd, char *username, char *hostname)
 
 /*
  * process_request - process an request from the network:
- * Call function to read in the request and decode it.
- * Validate requesting host and user.
- * Call function to process request based on type.
- *  That function MUST free the request by calling free_br()
+ *
+ * - Call function to read in the request and decode it.
+ * - Validate requesting host and user.
+ * - Call function to process request based on type.
+ *    That function MUST free the request by calling free_br()
  */
 
 void process_request(
@@ -643,8 +644,8 @@ void process_request(
     if (!tfind(svr_conn[sfds].cn_addr, &okclients))
       {
       sprintf(log_buffer, "request type %s from host %s rejected (host not authorized)",
-              reqtype_to_txt(request->rq_type),
-              request->rq_host);
+        reqtype_to_txt(request->rq_type),
+        request->rq_host);
 
       log_record(
         PBSEVENT_JOB,
@@ -662,8 +663,8 @@ void process_request(
     if (LOGLEVEL >= 3)
       {
       sprintf(log_buffer, "request type %s from host %s allowed",
-              reqtype_to_txt(request->rq_type),
-              request->rq_host);
+        reqtype_to_txt(request->rq_type),
+        request->rq_host);
 
       log_record(
         PBSEVENT_JOB,
@@ -705,6 +706,8 @@ void process_request(
  * function.  The function will perform the request action and return the
  * reply.  The function MUST also reply and free the request by calling
  * reply_send().
+ *
+ * @see process_request() - parent
  */
 
 void dispatch_request(
@@ -730,7 +733,6 @@ void dispatch_request(
 
   switch (request->rq_type)
     {
-
     case PBS_BATCH_QueueJob:
 
       net_add_close_func(sfds, close_quejob);

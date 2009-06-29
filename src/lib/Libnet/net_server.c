@@ -229,7 +229,7 @@ netcounter_get(void)
 
 
 
-/*
+/**
  * init_network - initialize the network interface
  * allocate a socket and bind it to the service port,
  * add the socket to the readset for select(),
@@ -239,8 +239,8 @@ netcounter_get(void)
 
 int init_network(
 
-  unsigned int port,
-  void (*readfunc)())
+  unsigned int  port,
+  void        (*readfunc)())
 
   {
   int   i;
