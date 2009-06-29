@@ -92,6 +92,7 @@
 #include "pbs_error.h"
 #include "log.h"
 #include "svrfunc.h"
+#include "mcom.h"
 
 /* Global Data */
 
