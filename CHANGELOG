@@ -120,6 +120,9 @@ c - crash     b - bug fix    e - enhancement    f - new feature
   b - change to correct strtoks that accidentally got changed in astyle 
       formatting
 
+2.3.5
+  e - added new init.d scripts for Debian/Ubuntu systems
+
 2.3.4
   c - fixed segfault when loading array files of an older/incompatible version
   b - fixed a bug where if attempt to send job to a pbs_mom failed due to 
