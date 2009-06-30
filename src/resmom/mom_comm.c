@@ -951,7 +951,7 @@ hnodent *find_node(
   if (i == pjob->ji_numvnod)
     {
     sprintf(log_buffer, "node %d not found",
-            nodeid);
+      nodeid);
 
     log_err(-1, id, log_buffer);
 
@@ -1011,8 +1011,11 @@ hnodent *find_node(
           sizeof(node_addr->sin_addr)) != 0)
       {
   */
+
   if (stream_addr->sin_addr.s_addr != node_addr->sin_addr.s_addr)
     {
+    /* FAILURE */
+
     char *addr1;
     char *addr2;
 
@@ -1021,11 +1024,11 @@ hnodent *find_node(
     addr2 = strdup(netaddr(node_addr));
 
     sprintf(log_buffer, "stream id %d does not match %d to node %d (stream=%s node=%s)",
-            stream,
-            hp->hn_stream,
-            nodeid,
-            addr1,
-            addr2);
+      stream,
+      hp->hn_stream,
+      nodeid,
+      (addr1 != NULL) ? addr1 : "",
+      (addr2 != NULL) ? addr2 : "");
 
     log_err(-1, id, log_buffer);
 
@@ -1722,19 +1725,37 @@ char *resc_string(
   char   *getuname();
   extern int  resc_access_perm;
 
+  char   *tmpResStr;
+
   ch = getuname();
+
   len = strlen(ch);
+
   tot = len * 2;
+
   used = 0;
+
   res_str = (char *)malloc(tot);
+
+  if (res_str == NULL)
+    {
+    /* FAILURE - cannot alloc memory */
+
+    return(NULL);
+    }
+
   strcpy(res_str, ch);
+
   used += len;
+
   res_str[used++] = ':';
 
   at = &pjob->ji_wattr[(int)JOB_ATR_resource];
 
   if (at->at_type != ATR_TYPE_RESC)
     {
+    /* SUCCESS */
+
     res_str[used] = '\0';
 
     return(res_str);
@@ -1762,7 +1783,19 @@ char *resc_string(
     while (used + pal->al_rescln + pal->al_valln > tot)
       {
       tot *= 2;
-      res_str = realloc(res_str, tot);
+
+      tmpResStr = realloc(res_str,tot);
+
+      if (tmpResStr == NULL)
+        {
+        /* FAILURE - cannot alloc memory */
+
+        free(res_str);
+
+        return(NULL);
+        }
+
+      res_str = tmpResStr;
       }
 
     strcpy(&res_str[used], pal->al_resc);
@@ -1777,6 +1810,8 @@ char *resc_string(
   free_attrlist(&lhead);
 
   res_str[--used] = '\0';
+
+  /* SUCCESS */
 
   return(res_str);
   }  /* END resc_string() */
@@ -2385,7 +2420,7 @@ void im_request(
       job_save(pjob, SAVEJOB_FULL);
 
       sprintf(log_buffer, "JOIN JOB as node %d",
-              nodeid);
+        nodeid);
 
       log_record(
         PBSEVENT_JOB,
@@ -2446,9 +2481,9 @@ void im_request(
     if (LOGLEVEL >= 0)
       {
       sprintf(log_buffer, "ERROR:    received request '%s' from %s for job '%s' (job does not exist locally)",
-              PMOMCommand[MIN(command,IM_MAX)],
-              netaddr(addr),
-              jobid);
+        PMOMCommand[MIN(command,IM_MAX)],
+        netaddr(addr),
+        jobid);
 
       LOG_EVENT(
         PBSEVENT_JOB,
@@ -2469,9 +2504,9 @@ void im_request(
     if (LOGLEVEL >= 0)
       {
       sprintf(log_buffer, "ERROR:    received request '%s' from %s for job '%s' (job has no cookie)",
-              PMOMCommand[MIN(command,IM_MAX)],
-              netaddr(addr),
-              jobid);
+        PMOMCommand[MIN(command,IM_MAX)],
+        netaddr(addr),
+        jobid);
 
       LOG_EVENT(
         PBSEVENT_JOB,
@@ -2492,11 +2527,11 @@ void im_request(
     if (LOGLEVEL >= 0)
       {
       sprintf(log_buffer, "ERROR:    received request '%s' from %s for job '%s' (job has corrupt cookie - '%s' != '%s')",
-              PMOMCommand[MIN(command,IM_MAX)],
-              netaddr(addr),
-              jobid,
-              oreo,
-              cookie);
+        PMOMCommand[MIN(command,IM_MAX)],
+        netaddr(addr),
+        jobid,
+        oreo,
+        cookie);
 
       LOG_EVENT(
         PBSEVENT_JOB,
@@ -2528,7 +2563,7 @@ void im_request(
     if (nodeidx == pjob->ji_numnodes)
       {
       sprintf(log_buffer, "stream %d not found",
-              stream);
+        stream);
 
       log_err(-1, id, log_buffer);
 
@@ -2548,8 +2583,8 @@ void im_request(
     if (ep == NULL)
       {
       sprintf(log_buffer, "event %d taskid %ld not found",
-              event,
-              (long)fromtask);
+        event,
+        (long)fromtask);
 
       log_err(-1, id, log_buffer);
 
@@ -2652,12 +2687,12 @@ void im_request(
       if (LOGLEVEL >= 3)
         {
         sprintf(log_buffer, "INFO:     received request '%s' from %s for job '%s' (spawning task on node '%d' with taskid=%d, globid='%s'",
-                PMOMCommand[MIN(command,IM_MAX)],
-                netaddr(addr),
-                jobid,
-                nodeid,
-                taskid,
-                globid);
+          PMOMCommand[MIN(command,IM_MAX)],
+          netaddr(addr),
+          jobid,
+          nodeid,
+          taskid,
+          globid);
 
         LOG_EVENT(
           PBSEVENT_JOB,
@@ -2679,9 +2714,9 @@ void im_request(
       else if (strcmp(pjob->ji_globid, globid) != 0)
         {
         DBPRT(("%s: globid job %s received %s\n",
-               id,
-               pjob->ji_globid,
-               globid))
+          id,
+          pjob->ji_globid,
+          globid))
 
         free(globid);
         }
@@ -2709,11 +2744,16 @@ void im_request(
 
         if (i == num - 1)
           {
+          char **tmpArgV;
+
           num *= 2;
 
-          argv = (char **)realloc(argv, num * sizeof(char **));
+          tmpArgV = (char **)realloc(argv,num * sizeof(char **));
 
-          assert(argv);
+          if (tmpArgV == NULL)
+            goto err;
+
+          argv = tmpArgV;
           }
 
         argv[i] = cp;
@@ -4758,9 +4798,12 @@ int tm_request(
         }
 
       DBPRT(("%s: POSTINFO %s task %d sent info %s:%s(%d)\n",
-
-             id,
-             jobid, fromtask, name, info, (int)len))
+        id,
+        jobid,
+        fromtask,
+        name,
+        info,
+        (int)len))
 
       if (prev_error)
         goto done;
@@ -4778,7 +4821,7 @@ int tm_request(
     case TM_REGISTER:
 
       sprintf(log_buffer, "REGISTER - NOT IMPLEMENTED %s",
-              jobid);
+        jobid);
 
       tm_reply(fd, TM_ERROR, event);
 
@@ -4855,7 +4898,9 @@ int tm_request(
       */
 
       DBPRT(("%s: TASKS %s on node %d\n",
-             id, jobid, nodeid))
+        id,
+        jobid,
+        nodeid))
 
       if (prev_error)
         goto done;
@@ -4935,7 +4980,9 @@ int tm_request(
       */
 
       DBPRT(("%s: SPAWN %s on node %d\n",
-             id, jobid, nodeid))
+        id,
+        jobid,
+        nodeid))
 
       numele = disrui(fd, &ret);
 
@@ -5014,7 +5061,22 @@ int tm_request(
 
       envp[i] = malloc(1024 * sizeof(char));
 
-      sprintf(envp[i], "PBS_VNODENUM=%d", nodeid);
+      if (envp[i] == NULL)
+        {
+        log_record(
+          PBSEVENT_ERROR,
+          PBS_EVENTCLASS_JOB,
+          pjob->ji_qs.ji_jobid,
+          "cannot alloc env memory)");
+
+        arrayfree(argv);
+        arrayfree(envp);
+
+        goto done;
+        }
+
+      sprintf(envp[i], "PBS_VNODENUM=%d",
+        nodeid);
 
       i++;
 

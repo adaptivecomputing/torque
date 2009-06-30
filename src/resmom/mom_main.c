@@ -954,7 +954,16 @@ static char *getjoblist(
 
   if (list == NULL)
     {
-    list = calloc(BUFSIZ + 50, sizeof(char));
+    if ((list = calloc(BUFSIZ + 50, sizeof(char)))==NULL)
+      {
+      /* FAILURE - cannot alloc memory */
+
+      fprintf(stderr,"ERROR: could not calloc!\n");
+
+      /* since memory cannot be allocated, report no jobs */
+
+      return (" ");	
+      }
 
     listlen = BUFSIZ;
     }
@@ -977,12 +986,28 @@ static char *getjoblist(
 
     if ((int)strlen(list) >= listlen)
       {
+      char *tmpList;
+
       listlen += BUFSIZ;
-      list = realloc(list, listlen);
+
+      tmpList = realloc(list,listlen);
+
+      if (tmpList == NULL)
+      	{
+        /* FAILURE - cannot alloc memory */
+
+        fprintf(stderr,"ERROR: could not realloc!\n");
+
+        /* since memory cannot be allocated, report no jobs */
+
+        return(" ");
+      	}
+
+      list = tmpList;
       }
 
     firstjob = 0;
-    }
+    }  /* END for (pjob) */
 
   if (list[0] == '\0')
     {
@@ -1005,6 +1030,7 @@ static char *reqvarattr(
 
   {
   static char id[] = "reqvarattr";
+
   static char    *list = NULL, *child_spot;
   static int      listlen = 0;
 
@@ -1021,6 +1047,15 @@ static char *reqvarattr(
   if (list == NULL)
     {
     list = calloc(BUFSIZ + 1024, sizeof(char));
+
+    if (list == NULL)
+      {
+      /* FAILURE - cannot alloc memory */
+
+      log_err(errno,id,"cannot alloc memory");
+
+      return(" ");
+      }
 
     listlen = BUFSIZ;
     }
@@ -1051,7 +1086,15 @@ static char *reqvarattr(
         if ((int)strlen(list) >= listlen)
           {
           listlen += BUFSIZ;
+
           list = realloc(list, listlen);
+
+          if (list == NULL)
+            {
+            log_err(errno,id,"cannot alloc memory");
+
+            return(" ");
+            }
           }
 
         continue;  /* ttl of -1 is only run once */
@@ -1069,8 +1112,8 @@ static char *reqvarattr(
       if ((child = popen(pva->va_cmd, "r")) == NULL)
         {
         sprintf(pva->va_value, "error: %d %s",
-                errno,
-                strerror(errno));
+          errno,
+          strerror(errno));
         }
       else
         {
@@ -1101,7 +1144,7 @@ retryread:
           log_err(errno, id, "pipe read");
 
           sprintf(pva->va_value, "? %d",
-                  RM_ERR_SYSTEM);
+            RM_ERR_SYSTEM);
 
           pclose(child);
 
@@ -1135,6 +1178,7 @@ retryread:
             strcat(ptr2,varattr_delimiter);
 
           strcat(ptr2,ptr);
+
           first_line = FALSE;
 
           ptr = strtok(NULL,"\n;");
@@ -1154,8 +1198,15 @@ retryread:
       {
       listlen += BUFSIZ;
       list = realloc(list, listlen);
+
+      if (list == NULL)
+        {
+        log_err(errno,id,"cannot alloc memory");
+
+        return(" ");
+        }
       }
-    }    /* END for () */
+    }    /* END for (pva) */
 
   if (list[0] == '\0')
     strcat(list, " ");
@@ -1877,6 +1928,9 @@ static u_long setlogevent(
 
 
 
+
+/* NOTE:  maskclient is global */
+
 static u_long restricted(
 
   char *name)
@@ -1884,28 +1938,61 @@ static u_long restricted(
   {
   static char id[] = "restricted";
 
+  char **tmpMaskClient;
+
   log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, id, name);
 
   if (mask_max == 0)
     {
-    maskclient = (char **)calloc(4, sizeof(char *));
+    if ((maskclient = (char **)calloc(4, sizeof(char *))) == NULL)
+      {
+      /* FAILURE - cannot alloc memory */
+
+      log_err(errno,id,"cannot alloc memory");
+
+      return(-1);	
+      }
 
     mask_max = 4;
     }
 
-  maskclient[mask_num++] = strdup(name);
+  maskclient[mask_num] = strdup(name);
+
+  if (maskclient[mask_num] == NULL)
+    {
+    /* FAILURE - cannot alloc memory */
+
+    log_err(errno,id,"cannot alloc memory");
+
+    return(-1);
+    }
+
+  mask_num++;
 
   if (mask_num == mask_max)
     {
     mask_max *= 2;
 
-    maskclient = (char **)realloc(
-                   maskclient,
-                   mask_max * sizeof(char *));
+    tmpMaskClient = (char **)realloc(
+      maskclient,
+      mask_max * sizeof(char *));
+
+    if (tmpMaskClient == NULL)
+      {
+      /* FAILURE - cannot alloc memory */
+
+      log_err(errno,id,"cannot alloc memory");
+
+      return(-1);
+      }
+
+    maskclient = tmpMaskClient;
     }
 
+  /* SUCCESS */
+
   return(1);
-  }  /* END restricted */
+  }  /* END restricted() */
 
 
 
@@ -2149,22 +2236,31 @@ static u_long usecp(
     if (pcphosts == NULL)
       {
       sprintf(log_buffer, "%s: out of memory while allocating pcphosts",
-              id);
+        id);
+
       log_err(-1, id, log_buffer);
+
+      return(0);
       }
 
     cphosts_max = 2;
     }
   else if (cphosts_max == cphosts_num)
     {
-    newp = realloc(pcphosts,
-                   (cphosts_max + 2) * sizeof(struct cphosts));
+    newp = realloc(
+      pcphosts,
+      (cphosts_max + 2) * sizeof(struct cphosts));
 
     if (newp == NULL)
       {
-      sprintf(log_buffer, "%s: out of memory while reallocating pcphosts",
-              id);
-      log_err(-1, id, log_buffer);
+      /* FAILURE */
+
+      sprintf(log_buffer,"%s: out of memory while reallocating pcphosts",
+        id);
+
+      log_err(-1,id,log_buffer);
+
+      return(0);
       }
 
     pcphosts = newp;
@@ -2179,7 +2275,7 @@ static u_long usecp(
     /* request failed */
 
     sprintf(log_buffer, "invalid host specification: %s",
-            value);
+      value);
 
     log_err(-1, id, log_buffer);
 
@@ -2188,12 +2284,17 @@ static u_long usecp(
 
   *pnxt++ = '\0';
 
-  (pcphosts + cphosts_num)->cph_hosts = strdup(value);
+  pcphosts[cphosts_num].cph_hosts = strdup(value);
 
-  if ((pcphosts + cphosts_num)->cph_hosts == NULL)
+  if (pcphosts[cphosts_num].cph_hosts == NULL)
     {
-    sprintf(log_buffer, "%s: out of memory in strdup(cph_hosts)", id);
+    /* FAILURE */
+
+    sprintf(log_buffer, "%s: out of memory in strdup(cph_hosts)",
+      id);
+
     log_err(-1, id, log_buffer);
+
     return(0);
     }
 
@@ -2204,9 +2305,14 @@ static u_long usecp(
     if (*pnxt == '\0')
       {
       sprintf(log_buffer, "invalid '%s' specification %s: "
-              "missing destination path", id, value);
+        "missing destination path",
+        id,
+        value);
+
       log_err(-1, id, log_buffer);
+
       free(pcphosts[cphosts_num].cph_hosts);
+
       return(0);
       }
 
@@ -2215,24 +2321,32 @@ static u_long usecp(
 
   *pnxt++ = '\0';
 
-  (pcphosts + cphosts_num)->cph_from = strdup(value);
+  pcphosts[cphosts_num].cph_from = strdup(value);
 
-  if ((pcphosts + cphosts_num)->cph_from == NULL)
+  if (pcphosts[cphosts_num].cph_from == NULL)
     {
-    sprintf(log_buffer, "%s: out of memory in strdup(cph_from)", id);
+    sprintf(log_buffer, "%s: out of memory in strdup(cph_from)",
+      id);
+
     log_err(-1, id, log_buffer);
+
     free(pcphosts[cphosts_num].cph_hosts);
+
     return(0);
     }
 
-  (pcphosts + cphosts_num)->cph_to   = strdup(skipwhite(pnxt));
+  pcphosts[cphosts_num].cph_to = strdup(skipwhite(pnxt));
 
-  if ((pcphosts + cphosts_num)->cph_to == NULL)
+  if (pcphosts[cphosts_num].cph_to == NULL)
     {
-    sprintf(log_buffer, "%s: out of memory in strdup(cph_to)", id);
+    sprintf(log_buffer, "%s: out of memory in strdup(cph_to)",
+      id);
+
     log_err(-1, id, log_buffer);
+
     free(pcphosts[cphosts_num].cph_hosts);
     free(pcphosts[cphosts_num].cph_from);
+
     return(0);
     }
 
@@ -2613,10 +2727,10 @@ static void add_static(
   memcheck(cp->c.c_u.c_value);
 
   sprintf(log_buffer, "%s[%d] add name %s value %s",
-          file,
-          linenum,
-          name,
-          str);
+    file,
+    linenum,
+    name,
+    str);
 
   log_record(
     PBSEVENT_DEBUG,
@@ -5393,7 +5507,6 @@ int do_tcp(
 
   switch (ret)
     {
-
     case DIS_SUCCESS:  /* worked */
 
       break;
@@ -5429,21 +5542,21 @@ int do_tcp(
   if (ret != DIS_SUCCESS)
     {
     DBPRT(("%s: no protocol version number %s\n",
-           id, dis_emsg[ret]))
+      id,
+      dis_emsg[ret]))
 
     goto bad;
     }
 
   switch (proto)
     {
-
     case RM_PROTOCOL:
 
       {
       time_t tmpT;
 
       DBPRT(("%s: got a resource monitor request\n",
-             id))
+        id))
 
       tmpT = pbs_tcp_timeout;
 
@@ -5470,7 +5583,7 @@ int do_tcp(
     case TM_PROTOCOL:
 
       DBPRT(("%s: got an internal task manager request\n",
-             id))
+        id))
 
       ret = tm_request(fd, version);
 
@@ -5479,8 +5592,8 @@ int do_tcp(
     default:
 
       DBPRT(("%s: unknown request %d\n",
-             id,
-             proto))
+        id,
+        proto))
 
       goto bad;
 
@@ -6038,6 +6151,8 @@ char *MOMFindMyExe(
 
   if (link == NULL)
     {
+    /* FAILURE */
+
     return(NULL);
     }
 
@@ -6720,8 +6835,7 @@ void parse_command_line(
  * setup_program_environment
  */
 
-int
-setup_program_environment(void)
+int setup_program_environment(void)
   {
   static char   id[] = "setup_program_environment";
   int           c;
@@ -7658,12 +7772,15 @@ examine_all_polled_jobs(void)
 
         kill_msg = malloc(80 + strlen(log_buffer));
 
-        sprintf(kill_msg, "=>> PBS: job killed: %s\n",
-                log_buffer);
+        if (kill_msg != NULL)
+          {
+          sprintf(kill_msg,"=>> PBS: job killed: %s\n",
+            log_buffer);
 
-        message_job(pjob, StdErr, kill_msg);
+          message_job(pjob,StdErr,kill_msg);
 
-        free(kill_msg);
+          free(kill_msg);
+          }
         }
 
       kill_job(pjob, SIGTERM, id, "job is over-limit-0");

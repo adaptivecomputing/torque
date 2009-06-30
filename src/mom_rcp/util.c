@@ -153,18 +153,26 @@ susystem(char *s, int userid)
   return (status);
   }
 
-BUF *
-allocbuf(bp, fd, blksize)
-BUF *bp;
-int fd, blksize;
+
+
+
+BUF *allocbuf(
+
+  BUF *bp,
+  int  fd, 
+  int  blksize)
+
   {
 
   struct stat stb;
   size_t size;
 
+  void *tmpP;
+
   if (fstat(fd, &stb) < 0)
     {
     run_err("fstat: %s", strerror(errno));
+
     return (0);
     }
 
@@ -174,27 +182,39 @@ int fd, blksize;
     size = blksize;
 
   if (bp->cnt >= (int)size)
-    return (bp);
+    {
+    return(bp);
+    }
 
-  if (bp->buf)
-    bp->buf = realloc(bp->buf, size);
+  if (bp->buf != NULL)
+    tmpP = realloc(bp->buf,size);
   else
-    bp->buf = malloc(size);
+    tmpP = malloc(size);
 
-  if (bp->buf == NULL)
+  if (tmpP == NULL)
     {
     bp->cnt = 0;
-    run_err("%s", strerror(errno));
-    return (0);
+
+    run_err("%s",strerror(errno));
+
+    return(0);
     }
+
+  bp->buf = tmpP;
 
   bp->cnt = size;
 
   return (bp);
   }
 
-void
-lostconn(int signo)
+
+
+
+
+void lostconn(
+
+  int signo)
+
   {
   if (!iamremote)
     warnx("lost connection");

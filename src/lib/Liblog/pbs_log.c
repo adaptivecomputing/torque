@@ -580,19 +580,20 @@ void log_record(
     while (tryagain)
       {
       rc = fprintf(logfile,
-                   "%02d/%02d/%04d %02d:%02d:%02d;%04x;%10.10s;%s;%s;%s%.*s\n",
-                   ptm->tm_mon + 1,
-                   ptm->tm_mday,
-                   ptm->tm_year + 1900,
-                   ptm->tm_hour,
-                   ptm->tm_min,
-                   ptm->tm_sec,
-                   (eventtype & ~PBSEVENT_FORCE),
-                   msg_daemonname,
-                   class_names[objclass],
-                   objname,
-                   (text == start ? "" : "[continued]"),
-                   (int)nchars, start);
+              "%02d/%02d/%04d %02d:%02d:%02d;%04x;%10.10s;%s;%s;%s%.*s\n",
+              ptm->tm_mon + 1,
+              ptm->tm_mday,
+              ptm->tm_year + 1900,
+              ptm->tm_hour,
+              ptm->tm_min,
+              ptm->tm_sec,
+              (eventtype & ~PBSEVENT_FORCE),
+              msg_daemonname,
+              class_names[objclass],
+              objname,
+              (text == start ? "" : "[continued]"),
+              (int)nchars,
+              start);
 
       if ((rc < 0) &&
           (errno == EPIPE) &&
@@ -618,7 +619,7 @@ void log_record(
       break;
 
     start = end + 1;
-    }
+    }  /* END while (1) */
 
   fflush(logfile);
 
@@ -817,12 +818,19 @@ void log_roll(
 
   dest   = (char*)malloc(file_buf_len);
 
+  if ((source == NULL) || (dest == NULL))
+    {
+    err = errno;
+
+    goto done_roll;
+    }
+
   /* call unlink to delete logname.max_depth - it doesn't matter if it
      doesn't exist, so we'll ignore ENOENT */
 
   sprintf(dest, "%s.%d",
-          logpath,
-          max_depth);
+    logpath,
+    max_depth);
 
   if ((unlink(dest) != 0) && (errno != ENOENT))
     {
@@ -841,13 +849,13 @@ void log_roll(
     else
       {
       sprintf(source, "%s.%d",
-              logpath,
-              i);
+        logpath,
+        i);
       }
 
     sprintf(dest, "%s.%d",
-            logpath,
-            i + 1);
+      logpath,
+      i + 1);
 
     /* rename file if it exists */
 
@@ -856,7 +864,7 @@ void log_roll(
       err = errno;
       goto done_roll;
       }
-    }
+    }    /* END for (i) */
 
 done_roll:
 
@@ -869,9 +877,11 @@ done_roll:
     log_open(logpath, log_directory);
     }
 
-  free(source);
+  if (source != NULL)
+    free(source);
 
-  free(dest);
+  if (dest != NULL)
+    free(dest);
 
   if (err != 0)
     {
@@ -888,6 +898,8 @@ done_roll:
 
   return;
   } /* END log_roll() */
+
+
 
 
 

@@ -335,6 +335,14 @@ int decode_DIS_replyCmd(
 
       reply->brp_un.brp_rescq.brq_down   = (int *)malloc(ct * sizeof(int));
 
+      if ((reply->brp_un.brp_rescq.brq_avail == NULL) ||
+          (reply->brp_un.brp_rescq.brq_alloc == NULL) ||
+          (reply->brp_un.brp_rescq.brq_resvd == NULL) ||
+          (reply->brp_un.brp_rescq.brq_down == NULL)) 
+        {
+        return(DIS_NOMALLOC);
+        }
+
       for (i = 0;(i < ct) && (rc == 0);++i)
         *(reply->brp_un.brp_rescq.brq_avail + i) = disrui(sock, &rc);
 

@@ -96,6 +96,7 @@
 #include <netinet/in.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <errno.h>
 
 #include "tm.h"
 #include "mcom.h"
@@ -433,9 +434,9 @@ void wait_for_task(
           continue;
 
         fprintf(stderr, "%s: killing task %u signal %d\n",
-                id,
-                *(tid + c),
-                fire_phasers);
+          id,
+          *(tid + c),
+          fire_phasers);
 
         tm_kill(*(tid + c), fire_phasers, &event);
         }
@@ -454,8 +455,8 @@ void wait_for_task(
     if (rc != TM_SUCCESS)
       {
       fprintf(stderr, "%s: Event poll failed, error %s\n",
-              id,
-              get_ecname(rc));
+        id,
+        get_ecname(rc));
 
       if (rc == TM_ENOTCONNECTED)
         {
@@ -490,8 +491,8 @@ void wait_for_task(
         if (tm_errno)
           {
           fprintf(stderr, "%s: error %d on spawn\n",
-                  id,
-                  tm_errno);
+            id,
+            tm_errno);
 
           continue;
           }
@@ -516,7 +517,7 @@ void wait_for_task(
           if (verbose)
             {
             fprintf(stderr, "%s: error TM_ESYSTEM on obit (resubmitting)\n",
-                    id);
+              id);
             }
 
           sleep(2);  /* Give the world a second to take a breath */
@@ -529,9 +530,9 @@ void wait_for_task(
         if (tm_errno != 0)
           {
           fprintf(stderr, "%s: error %d on obit for task %d\n",
-                  id,
-                  tm_errno,
-                  c);
+            id,
+            tm_errno,
+            c);
           }
 
         /* task exited */
@@ -566,10 +567,15 @@ void wait_for_task(
   }  /* END wait_for_task() */
 
 
+
+
 /* ask TM for all node resc descriptions and parse the output
  * for hostnames */
+
 char *gethostnames(
+
   tm_node_id *nodelist)
+
   {
   char *allnodes;
   char *rescinfo;
@@ -584,34 +590,45 @@ char *gethostnames(
 
   if (!allnodes || !rescinfo || !rescevent)
     {
-    fprintf(stderr, "%s: malloc failed!\n", id);
+    fprintf(stderr, "%s: malloc failed!\n",
+      id);
     tm_finalize();
+
     exit(1);
     }
 
   /* submit resource requests */
+
   for (i = 0;i < numnodes;i++)
     {
-    if (tm_rescinfo(nodelist[i],
-                    rescinfo + (i*RESCSTRLEN),
-                    RESCSTRLEN - 1,
-                    rescevent + i) != TM_SUCCESS)
+    if (tm_rescinfo(
+          nodelist[i],
+          rescinfo + (i*RESCSTRLEN),
+          RESCSTRLEN - 1,
+          rescevent + i) != TM_SUCCESS)
       {
       fprintf(stderr, "%s: error from tm_rescinfo()\n", id);
+
       tm_finalize();
+
       exit(1);
       }
     }
 
   /* read back resource requests */
+
   for (j = 0, i = 0; i < numnodes; i++)
     {
     rc = tm_poll(TM_NULL_EVENT, &resultevent, 1, &tm_errno);
 
     if ((rc != TM_SUCCESS) || (tm_errno != TM_SUCCESS))
       {
-      fprintf(stderr, "%s: error from tm_poll() %d\n", id, rc);
+      fprintf(stderr, "%s: error from tm_poll() %d\n",
+        id,
+        rc);
+
       tm_finalize();
+
       exit(1);
       }
 
@@ -712,8 +729,10 @@ int uniquehostlist(tm_node_id *nodelist, char *allnodes)
   return(hole);
   }
 
-static int
-build_listener(int *port)
+static int build_listener(
+
+  int *port)
+
   {
   int s;
 
@@ -727,12 +746,17 @@ build_listener(int *port)
     fprintf(stderr, "%s: listen", id);
 
   if (getsockname(s, (struct sockaddr *)&addr, &len) < 0)
-    fprintf(stderr, "%s: getsockname", id);
+    {
+    fprintf(stderr, "%s: getsockname", 
+      id);
+    }
 
   *port = ntohs(addr.sin_port);
 
-  return s;
+  return (s);
   }
+
+
 
 
 int main(
@@ -769,6 +793,16 @@ int main(
   char *envstr;
 
   id = malloc(60 * sizeof(char));
+
+  if (id == NULL)
+    {
+    fprintf(stderr, "%s: malloc failed, (%d)\n",
+      id,
+      errno);
+
+    return(1);
+    }
+
   sprintf(id, "pbsdsh%s",
           ((getenv("PBSDEBUG") != NULL) && (getenv("PBS_TASKNUM") != NULL))
           ? getenv("PBS_TASKNUM")
@@ -820,6 +854,7 @@ int main(
         break;
 
       case 'o':
+
         grabstdio = 1;
 
         break;
@@ -854,12 +889,13 @@ int main(
   if ((err != 0) || ((onenode >= 0) && (ncopies >= 1)))
     {
     fprintf(stderr, "Usage: %s [-c copies][-o][-s][-u][-v] program [args]...]\n",
-            argv[0]);
+      argv[0]);
 
     fprintf(stderr, "       %s [-n nodenumber][-o][-s][-u][-v] program [args]...\n",
-            argv[0]);
+      argv[0]);
+
     fprintf(stderr, "       %s [-h hostname][-o][-v] program [args]...\n",
-            argv[0]);
+      argv[0]);
 
     fprintf(stderr, "Where -c copies =  run  copy of \"args\" on the first \"copies\" nodes,\n");
     fprintf(stderr, "      -n nodenumber = run a copy of \"args\" on the \"nodenumber\"-th node,\n");
@@ -885,7 +921,7 @@ int main(
   if (getenv("PBS_ENVIRONMENT") == NULL)
     {
     fprintf(stderr, "%s: not executing under PBS\n",
-            id);
+      id);
 
     return(1);
     }
@@ -898,9 +934,9 @@ int main(
   if ((rc = tm_init(0, &rootrot)) != TM_SUCCESS)
     {
     fprintf(stderr, "%s: tm_init failed, rc = %s (%d)\n",
-            id,
-            get_ecname(rc),
-            rc);
+      id,
+      get_ecname(rc),
+      rc);
 
     return(1);
     }
@@ -929,12 +965,12 @@ int main(
   if (rootrot.tm_parent == TM_NULL_TASK)
     {
     fprintf(stderr, "%s: I am the mother of all tasks\n",
-            id);
+      id);
     }
   else
     {
     fprintf(stderr, "%s: I am but a child in the scheme of things\n",
-            id);
+      id);
     }
 
 #endif /* DEBUG */
@@ -942,9 +978,9 @@ int main(
   if ((rc = tm_nodeinfo(&nodelist, &numnodes)) != TM_SUCCESS)
     {
     fprintf(stderr, "%s: tm_nodeinfo failed, rc = %s (%d)\n",
-            id,
-
-            get_ecname(rc), rc);
+      id,
+      get_ecname(rc),
+      rc);
 
     return(1);
     }
@@ -975,8 +1011,8 @@ int main(
   if ((onenode >= numnodes) || (ncopies > numnodes))
     {
     fprintf(stderr, "%s: only %d nodes available\n",
-            id,
-            numnodes);
+      id,
+      numnodes);
 
     return(1);
     }
@@ -996,8 +1032,10 @@ int main(
       (events_obit == NULL) ||
       (ev == NULL))
     {
+    /* FAILURE - cannot alloc memory */
+
     fprintf(stderr, "%s: memory alloc of task ids failed\n",
-            id);
+      id);
 
     return(1);
     }
@@ -1034,14 +1072,32 @@ int main(
     stop  = numnodes;
     }
 
-  ioenv = calloc(2, sizeof(char));
+  if ((ioenv = calloc(2, sizeof(char)))==NULL)
+    {
+    /* FAILURE - cannot alloc memory */
 
-  if (grabstdio)
+    fprintf(stderr,"%s: memory alloc of ioenv failed\n",
+      id);
+
+    return(1);
+    }
+
+  if (grabstdio != 0)
     {
     stdoutfd = build_listener(&stdoutport);
 
-    *ioenv = calloc(50, sizeof(char));
-    snprintf(*ioenv, 49, "TM_STDOUT_PORT=%d", stdoutport);
+    if ((*ioenv = calloc(50,sizeof(char))) == NULL)
+      {
+      /* FAILURE - cannot alloc memory */
+
+      fprintf(stderr,"%s: memory alloc of *ioenv failed\n",
+        id);
+
+      return(1);
+      }
+
+    snprintf(*ioenv,49,"TM_STDOUT_PORT=%d", 
+      stdoutport);
 
     FD_ZERO(&permrfsd);
     }
@@ -1050,20 +1106,25 @@ int main(
 
   for (c = start; c < stop; ++c)
     {
-    if ((rc = tm_spawn(argc - optind,
-                       argv + optind,
-                       ioenv,
-                       *(nodelist + c),
-                       tid + c,
-                       events_spawn + c)) != TM_SUCCESS)
+    if ((rc = tm_spawn(
+                argc - optind,
+                argv + optind,
+                ioenv,
+                *(nodelist + c),
+                tid + c,
+                events_spawn + c)) != TM_SUCCESS)
       {
       fprintf(stderr, "%s: spawn failed on node %d err %s\n",
-              id, c, get_ecname(rc));
+        id,
+        c,
+        get_ecname(rc));
       }
     else
       {
       if (verbose)
-        fprintf(stderr, "%s: spawned task %d\n", id, c);
+        fprintf(stderr, "%s: spawned task %d\n",
+          id,
+          c);
 
       ++nspawned;
 
@@ -1071,7 +1132,7 @@ int main(
         wait_for_task(&nspawned); /* one at a time */
       }
 
-    }
+    }    /* END for (c) */
 
   if (sync == 0)
     wait_for_task(&nspawned); /* wait for all to finish */
@@ -1080,7 +1141,10 @@ int main(
   /*
    * Terminate interface with Task Manager
    */
+
   tm_finalize();
 
   return 0;
-  }
+  }  /* END main() */
+
+/* END pbsdsh.c */

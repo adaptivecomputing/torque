@@ -464,7 +464,7 @@ int mom_writer(
         c -= wc;
 
         p += wc;
-        }  /* END while(c) */
+        }  /* END while (c > 0) */
 
       continue;
       }  /* END if (c > 0) */
@@ -534,14 +534,31 @@ int x11_create_display(
 
   *display = '\0';
 
-  socks = calloc(sizeof(struct pfwdsock), NUM_SOCKS);
+  if ((socks = calloc(sizeof(struct pfwdsock), NUM_SOCKS)) == NULL)
+    {
+    /* FAILURE - cannot alloc memory */
 
-  homeenv = malloc(strlen("HOME=") + strlen(homedir) + 2);
-  sprintf(homeenv, "HOME=%s", homedir);
+    fprintf(stderr,"ERROR: could not calloc!\n");
+
+    return(-1);
+    }
+
+  if ((homeenv = malloc(strlen("HOME=") + strlen(homedir) + 2)) == NULL)
+    {
+    /* FAILURE - cannot alloc memory */
+
+    fprintf(stderr, "ERROR: could not malloc!\n");
+
+    return(-1);
+    }
+
+  sprintf(homeenv, "HOME=%s",
+    homedir);
+
   putenv(homeenv);
 
   for (n = 0;n < NUM_SOCKS;n++)
-    (socks + n)->active = 0;
+    socks[n].active = 0;
 
   x11proto[0] = x11data[0] = '\0';
 
@@ -553,9 +570,9 @@ int x11_create_display(
                   &x11screen)) != 3)
     {
     fprintf(stderr, "sscanf(%s)=%d failed: %s\n",
-            x11authstr,
-            n,
-            strerror(errno));
+      x11authstr,
+      n,
+      strerror(errno));
 
     free(socks);
 
@@ -573,12 +590,12 @@ int x11_create_display(
     hints.ai_socktype = SOCK_STREAM;
 
     snprintf(strport, sizeof(strport), "%d",
-             port);
+      port);
 
     if ((gaierr = getaddrinfo(NULL, strport, &hints, &aitop)) != 0)
       {
       fprintf(stderr, "getaddrinfo: %.100s\n",
-              gai_strerror(gaierr));
+        gai_strerror(gaierr));
 
       free(socks);
 
@@ -598,21 +615,25 @@ int x11_create_display(
         {
         if ((errno != EINVAL) && (errno != EAFNOSUPPORT))
           {
-          fprintf(stderr, "socket: %.100s\n", strerror(errno));
+          fprintf(stderr, "socket: %.100s\n",
+            strerror(errno));
+
           free(socks);
-          return -1;
+
+          return (-1);
           }
         else
           {
           DBPRT(("x11_create_display: Socket family %d *NOT* supported\n",
-                 ai->ai_family));
+            ai->ai_family));
+
           continue;
           }
         }
 
       DBPRT(("x11_create_display: Socket family %d is supported\n",
+        ai->ai_family));
 
-             ai->ai_family));
 #ifdef IPV6_V6ONLY
 
       if (ai->ai_family == AF_INET6)
@@ -636,7 +657,7 @@ int x11_create_display(
 
         for (n = 0; n < num_socks; n++)
           {
-          close((socks + n)->sock);
+          close(socks[n].sock);
           }
 
         num_socks = 0;
@@ -644,8 +665,8 @@ int x11_create_display(
         break;
         }
 
-      (socks + num_socks)->sock = sock;
-      (socks + num_socks)->active = 1;
+      socks[num_socks].sock = sock;
+      socks[num_socks].active = 1;
       num_socks++;
 #ifndef DONT_TRY_OTHER_AF
 
@@ -686,55 +707,55 @@ int x11_create_display(
   for (n = 0;n < num_socks;n++)
     {
     DBPRT(("listening on fd %d\n",
-           (socks + n)->sock));
+      socks[n].sock));
 
-    if (listen((socks + n)->sock, TORQUE_LISTENQUEUE) < 0)
+    if (listen(socks[n].sock,TORQUE_LISTENQUEUE) < 0)
       {
-      fprintf(stderr, "listen: %.100s\n",
-              strerror(errno));
+      fprintf(stderr,"listen: %.100s\n",
+        strerror(errno));
 
-      close((socks + n)->sock);
+      close(socks[n].sock);
 
       free(socks);
 
       return(-1);
       }
 
-    (socks + n)->listening = 1;
-    }
+    socks[n].listening = 1;
+    }  /* END for (n) */
 
   /* setup local xauth */
 
   sprintf(display, "localhost:%u.%u",
-          display_number,
-          x11screen);
+    display_number,
+    x11screen);
 
   snprintf(auth_display, sizeof(auth_display), "unix:%u.%u",
-           display_number,
-           x11screen);
+    display_number,
+    x11screen);
 
   snprintf(cmd, sizeof(cmd), "%s %s -",
-           xauth_path,
-           DEBUGMODE ? "-v" : "-q");
+    xauth_path,
+    DEBUGMODE ? "-v" : "-q");
 
   f = popen(cmd, "w");
 
-  if (f)
+  if (f != NULL)
     {
     fprintf(f, "remove %s\n",
-            auth_display);
+      auth_display);
 
     fprintf(f, "add %s %s %s\n",
-            auth_display,
-            x11proto,
-            x11data);
+      auth_display,
+      x11proto,
+      x11data);
 
     pclose(f);
     }
   else
     {
     fprintf(stderr, "could not run %s\n",
-            cmd);
+      cmd);
 
     free(socks);
 
@@ -746,7 +767,7 @@ int x11_create_display(
     free(socks);
 
     DBPRT(("successful x11 init, returning display %d\n",
-           display_number));
+      display_number));
 
     return(display_number);
     }

@@ -314,10 +314,17 @@ static char *x11_get_proto(
 
   authstring = malloc(strlen(proto) + strlen(data) + strlen(screen) + 4);
 
+  if (authstring == NULL)
+    {
+    /* FAILURE */
+
+    return(NULL);
+    }
+
   sprintf(authstring, "%s:%s:%s",
-          proto,
-          data,
-          screen);
+    proto,
+    data,
+    screen);
 
   return(authstring);
   }  /* END x11_get_proto() */
@@ -3359,7 +3366,8 @@ int process_opts(
 
               pdepend = malloc(PBS_DEPEND_LEN);
 
-              if (parse_depend_list(valuewd, pdepend, PBS_DEPEND_LEN))
+              if ((pdepend == NULL) ||
+                   parse_depend_list(valuewd,pdepend,PBS_DEPEND_LEN))
                 {
                 /* cannot parse 'depend' value */
 

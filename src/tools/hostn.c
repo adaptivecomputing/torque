@@ -122,19 +122,24 @@ main(int argc, char *argv[], char *env[])
       {
 
       case 'v':
+
         vflag = 1;
+
         break;
 
       default:
+
         usage(argv[0]);
-        return 1;
+
+        return (1);
       }
     }
 
   if (optind != argc - 1)
     {
     usage(argv[0]);
-    return 1;
+
+    return (1);
     }
 
   h_errno = 0;
@@ -146,7 +151,9 @@ main(int argc, char *argv[], char *env[])
     if (!strncmp(env[i], "LOCALDOMAIN", 11))
       {
       printf("%s\n", env[i]);
+
       env[i] = "";
+
       break;
       }
 
@@ -157,7 +164,8 @@ main(int argc, char *argv[], char *env[])
 
   if (host)
     {
-    printf("primary name:  %s", host->h_name);
+    printf("primary name:  %s",
+      host->h_name);
 
     if (vflag)
       printf(" (from gethostbyname())");
@@ -190,10 +198,19 @@ main(int argc, char *argv[], char *env[])
 
     ina = (struct in_addr *)malloc(sizeof(struct in_addr) * naddr);
 
+    if (ina == NULL)
+      {
+      fprintf(stderr,"ERROR:  no memory\n");
+
+      return(1);
+      }
+
     for (i = 0; i < naddr; ++i)
       {
-      (void)memcpy((char *)(ina + i), host->h_addr_list[i],
-                   host->h_length);
+      (void)memcpy(
+        (char *)(ina + i),
+        host->h_addr_list[i],
+        host->h_length);
       }
 
     for (i = 0; i < naddr; ++i)
@@ -230,6 +247,10 @@ main(int argc, char *argv[], char *env[])
 
   return 0;
   }
+
+
+
+
 
 void
 prt_herrno(void)

@@ -572,8 +572,9 @@ int run_pelog(
 
     if ((which == PE_PROLOGUSER) || (which == PE_EPILOGUSER))
       {
-      if (setgroups(pjob->ji_grpcache->gc_ngroup,
-        (gid_t *)pjob->ji_grpcache->gc_groups) != 0)
+      if (setgroups(
+          pjob->ji_grpcache->gc_ngroup,
+          (gid_t *)pjob->ji_grpcache->gc_groups) != 0)
         {
         snprintf(log_buffer,sizeof(log_buffer),
           "setgroups() for UID = %lu failed: %s\n",
@@ -640,22 +641,26 @@ int run_pelog(
 
       switch (isjoined)
         {
-        case - 1:
+        case -1:
 
           fds2 = open_std_file(pjob, StdErr, O_WRONLY | O_APPEND,
                                pjob->ji_qs.ji_un.ji_momt.ji_exgid);
 
           fds1 = dup(fds2);
+
           break;
 
         case 1:
+
           fds1 = open_std_file(pjob, StdOut, O_WRONLY | O_APPEND,
                                pjob->ji_qs.ji_un.ji_momt.ji_exgid);
 
           fds2 = dup(fds1);
+
           break;
 
         default:
+
           fds1 = open_std_file(pjob, StdOut, O_WRONLY | O_APPEND,
                                pjob->ji_qs.ji_un.ji_momt.ji_exgid);
 
@@ -695,10 +700,10 @@ int run_pelog(
         /* warn only, no failure */
 
         sprintf(log_buffer,
-                "PBS: chdir to %s failed: %s (running user %s in current directory)",
-                pjob->ji_grpcache->gc_homedir,
-                strerror(errno),
-                which == PE_PROLOGUSER ? "prologue" : "epilogue");
+          "PBS: chdir to %s failed: %s (running user %s in current directory)",
+          pjob->ji_grpcache->gc_homedir,
+          strerror(errno),
+          which == PE_PROLOGUSER ? "prologue" : "epilogue");
 
         if (write(2, log_buffer, strlen(log_buffer)) == -1) {}
 
@@ -789,13 +794,16 @@ int run_pelog(
       envstr = malloc(
                  (strlen(envname) + strlen(r->rs_value.at_val.at_str) + 1) * sizeof(char));
 
-      strcpy(envstr, envname);
+      if (envstr != NULL)
+        {
+        strcpy(envstr,envname);
 
-      strcat(envstr, r->rs_value.at_val.at_str);
+        strcat(envstr,r->rs_value.at_val.at_str);
 
-      /* do _not_ free the string when using putenv */
+        /* do _not_ free the string when using putenv */
 
-      putenv(envstr);
+        putenv(envstr);
+        }
       }  /* END if (r != NULL) */
 
     r = find_resc_entry(
@@ -812,13 +820,16 @@ int run_pelog(
       envstr = malloc(
                  (strlen(envname) + strlen(r->rs_value.at_val.at_str) + 1) * sizeof(char));
 
-      strcpy(envstr, envname);
+      if (envstr != NULL)
+        {
+        strcpy(envstr,envname);
 
-      strcat(envstr, r->rs_value.at_val.at_str);
+        strcat(envstr,r->rs_value.at_val.at_str);
 
-      /* do _not_ free the string when using putenv */
+        /* do _not_ free the string when using putenv */
 
-      putenv(envstr);
+        putenv(envstr);
+        }
       }  /* END if (r != NULL) */
 
     if (TTmpDirName(pjob, buf))
@@ -829,16 +840,20 @@ int run_pelog(
       envstr = malloc(
                  (strlen(envname) + strlen(buf) + 1) * sizeof(char));
 
-      strcpy(envstr, envname);
+      if (envstr != NULL)
+        {
+        strcpy(envstr,envname);
 
-      strcat(envstr, buf);
+        strcat(envstr,buf);
 
-      /* do _not_ free the string when using putenv */
+        /* do _not_ free the string when using putenv */
 
-      putenv(envstr);
+        putenv(envstr);
+        }
       }  /* END if (TTmpDirName(pjob,&buf)) */
 
     /* Set PBS_SCHED_HINT */
+
       {
       char *envname = "PBS_SCHED_HINT";
       char *envval;
@@ -848,11 +863,14 @@ int run_pelog(
         {
         envstr = malloc((strlen(envname) + strlen(envval) + 2) * sizeof(char));
 
-        sprintf(envstr, "%s=%s",
-                envname,
-                envval);
+        if (envstr != NULL)
+          {
+          sprintf(envstr,"%s=%s",
+            envname,
+            envval);
 
-        putenv(envstr);
+          putenv(envstr);
+          }
         }
       }
 
@@ -862,15 +880,18 @@ int run_pelog(
       char *envstr;
 
       sprintf(buf, "%d",
-              pjob->ji_nodeid);
+        pjob->ji_nodeid);
 
       envstr = malloc((strlen(envname) + strlen(buf) + 2) * sizeof(char));
 
-      sprintf(envstr, "%s=%d",
-              envname,
-              pjob->ji_nodeid);
+      if (envstr != NULL)
+        {
+        sprintf(envstr,"%s=%d",
+          envname,
+          pjob->ji_nodeid);
 
-      putenv(envstr);
+        putenv(envstr);
+        }
       }
 
     /* Set PBS_MSHOST */
@@ -882,11 +903,14 @@ int run_pelog(
         {
         envstr = malloc((strlen(envname) + strlen(pjob->ji_vnods[0].vn_host->hn_host) + 2) * sizeof(char));
 
-        sprintf(envstr, "%s=%s",
-                envname,
-                pjob->ji_vnods[0].vn_host->hn_host);
+        if (envstr != NULL)
+          {
+          sprintf(envstr,"%s=%s",
+            envname,
+            pjob->ji_vnods[0].vn_host->hn_host);
 
-        putenv(envstr);
+          putenv(envstr);
+          }
         }
       }
 
@@ -903,11 +927,14 @@ int run_pelog(
 
         envstr = malloc((strlen(envname) + strlen(buf) + 2) * sizeof(char));
 
-        sprintf(envstr, "%s=%s",
-                envname,
-                buf);
+        if (envstr != NULL)
+          {
+          sprintf(envstr,"%s=%s",
+            envname,
+            buf);
 
-        putenv(envstr);
+          putenv(envstr);
+          }
         }
       }
 
@@ -917,8 +944,8 @@ int run_pelog(
 
       struct array_strings *vstrs;
 
-      int    VarIsSet = 0;
-      int    j;
+      int VarIsSet = 0;
+      int j;
 
       vstrs = pjob->ji_wattr[(int)JOB_ATR_variables].at_val.at_arst;
 
@@ -941,9 +968,12 @@ int run_pelog(
 
         envstr = malloc((strlen(vstrs->as_string[j])) * sizeof(char));
 
-        strcpy(envstr, vstrs->as_string[j]);
+        if (envstr != NULL)
+          {
+          strcpy(envstr,vstrs->as_string[j]);
 
-        putenv(envstr);
+          putenv(envstr);
+          }
         }
       }
 
@@ -966,7 +996,6 @@ int run_pelog(
     }  /* END else () */
 
   switch (run_exit)
-
     {
     case 0:
 

@@ -284,10 +284,13 @@ void dep_initialize(void)
 
   {
   char *id = "dep_initialize";
+
   int i, rc, len;
   char line[200], *dev;
   char *swapfil = "/etc/swapspaces";
   FILE *fil;
+
+  char *tmpSwapDev;
 
 #if defined( _AIX43 )
   char        *odm_path;
@@ -301,6 +304,15 @@ void dep_initialize(void)
 
   if (swap_dev == NULL)
     swap_dev = (char **)calloc(10, sizeof(char *));
+
+  if (swap_dev == NULL)
+    {
+    /* FAILURE - cannot alloc memory */
+
+    log_err(errno,id,"cannot alloc memory");
+
+    return;
+    }
 
   page_size = sysconf(_SC_PAGESIZE);
 
@@ -324,9 +336,20 @@ void dep_initialize(void)
         continue;
 
       DBPRT(("%s: swapdev(%d) %s\n",
-             id, i, dev))
+        id, i, dev))
 
-      swap_dev = realloc(swap_dev, (i + 2) * sizeof(char *));
+      tmpSwapDev = realloc(swap_dev,(i + 2) * sizeof(char *));
+
+      if (tmpSwapDev == NULL)
+        {
+        /* FAILURE - cannot alloc memory */
+
+        log_err(errno,id,"cannot alloc memory");
+
+        return;
+        }
+
+      swap_dev = tmpSwapDev;
 
       swap_dev[i++] = strdup(dev);
       }  /* END for (i) */

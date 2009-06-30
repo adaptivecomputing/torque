@@ -155,6 +155,13 @@ int decode_time(
 
   workvalsv = workval;
 
+  if (workvalsv == NULL)
+    {
+    /* FAILURE - cannot alloc memory */
+
+    goto badval;
+    }
+
   for (i = 0;i < 3;++i)
     msec[i] = '0';
 
@@ -208,10 +215,11 @@ int decode_time(
   return(0);
 
 badval:
+
   free(workvalsv);
 
   return(PBSE_BADATVAL);
-  }
+  }  /* END decode_time() */
 
 
 

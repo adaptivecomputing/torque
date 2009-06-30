@@ -154,7 +154,7 @@ mom_checkpoint_job_is_checkpointable(job *pjob)
  * @param pjob Pointer to job structure.
  * @see TMomFinalizeChild
  */
-void
+int
 mom_checkpoint_execute_job(job *pjob, char *shell, char *arg[], struct var_table *vtable)
   {
   static char          *id = "mom_checkpoint_execute_job";
@@ -171,6 +171,14 @@ mom_checkpoint_execute_job(job *pjob, char *shell, char *arg[], struct var_table
      executable is launched, so we don't have to worry about freeing
      this malloc later */
   arg[1] = malloc(strlen(shell) + 1);
+
+  if (arg[1] == NULL)
+    {
+    log_err(errno,id,"cannot alloc env");
+
+    return(-1);
+    }
+
   strcpy(arg[1], shell);
   arg[0] = checkpoint_run_exe_name;
 
@@ -193,6 +201,8 @@ mom_checkpoint_execute_job(job *pjob, char *shell, char *arg[], struct var_table
     }
 
   execve(checkpoint_run_exe_name, arg, vtable->v_envp);
+  
+  return (0);
   }
 
 

@@ -128,10 +128,17 @@ int main(
       case 'd':
 
         /* diagnose */
+        /* FORMAT:  momctl -d<X> */
 
         CmdIndex = momQuery;
 
-        Query[QueryI] = calloc(strlen(DiagPtr) + 3,sizeof(char));
+        if ((Query[QueryI] = calloc(strlen(DiagPtr) + 3, sizeof(char))) == NULL)
+      	  {
+          fprintf(stderr,"ERROR:    could not calloc %d bytes!\n",
+            (int)strlen(DiagPtr) + 3);
+
+          exit(EXIT_FAILURE);
+      	  }
 
         if (optarg == NULL)
           {
@@ -160,9 +167,9 @@ int main(
         if ((fp = fopen(optarg, "r")) == NULL)
           {
           fprintf(stderr, "ERROR:    cannot open file '%s', errno: %d (%s)\n",
-                  optarg,
-                  errno,
-                  strerror(errno));
+            optarg,
+            errno,
+            strerror(errno));
 
           exit(EXIT_FAILURE);
           }
@@ -172,9 +179,9 @@ int main(
         if ((rc == 0) && (!feof(fp)))
           {
           fprintf(stderr, "ERROR:    cannot read file '%s', errno: %d (%s)\n",
-                  optarg,
-                  errno,
-                  strerror(errno));
+            optarg,
+            errno,
+            strerror(errno));
 
           exit(EXIT_FAILURE);
           }

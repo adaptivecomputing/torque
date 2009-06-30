@@ -241,7 +241,7 @@ extern int x11_create_display(int, char *, char *phost, int pport, char *homedir
 extern int blcr_restart_job(job  *pjob, char *file);
 extern int  mom_checkpoint_job_is_checkpointable(job *pjob);
 extern int  mom_checkpoint_job_has_checkpoint(job *pjob);
-extern void mom_checkpoint_execute_job(job *pjob, char *shell, char *arg[], struct var_table *vtable);
+extern int mom_checkpoint_execute_job(job *pjob, char *shell, char *arg[], struct var_table *vtable);
 extern void mom_checkpoint_init_job_periodic_timer(job *pjob);
 extern int  mom_checkpoint_start_restart(job *pjob);
 extern void get_jobs_default_checkpoint_dir(job *pjob, char *defaultpath);
@@ -2022,13 +2022,13 @@ int TMomFinalizeChild(
     char *BPtr;
 
     sprintf(buf, "%s/%s",
-            path_aux,
-            pjob->ji_qs.ji_jobid);
+      path_aux,
+      pjob->ji_qs.ji_jobid);
 
     if ((nhow = fopen(buf, "w")) == NULL)
       {
       sprintf(log_buffer, "cannot open %s",
-              buf);
+        buf);
 
       log_err(errno, id, log_buffer);
 
@@ -2048,7 +2048,7 @@ int TMomFinalizeChild(
     if (fchmod(fileno(nhow), 0644) == -1)
       {
       sprintf(log_buffer, "cannot chmod %s",
-              buf);
+        buf);
 
       log_err(errno, id, log_buffer);
 
@@ -2082,8 +2082,8 @@ int TMomFinalizeChild(
         if (nodefile_suffix != NULL)
           {
           fprintf(nhow, "%s%s\n",
-                  ptr,
-                  nodefile_suffix);
+            ptr,
+            nodefile_suffix);
           }
         else
           {
@@ -2103,13 +2103,13 @@ int TMomFinalizeChild(
         if (nodefile_suffix != NULL)
           {
           fprintf(nhow, "%s%s\n",
-                  vp->vn_host->hn_host,
-                  nodefile_suffix);
+            vp->vn_host->hn_host,
+            nodefile_suffix);
           }
         else
           {
           fprintf(nhow, "%s\n",
-                  vp->vn_host->hn_host);
+            vp->vn_host->hn_host);
           }
         }   /* END for (j) */
       }
@@ -2129,7 +2129,7 @@ int TMomFinalizeChild(
 #ifdef PENABLE_LINUX26_CPUSETS
 
   sprintf(log_buffer, "about to create cpuset for job %s.\n",
-          pjob->ji_qs.ji_jobid);
+    pjob->ji_qs.ji_jobid);
 
   log_ext(-1, id, log_buffer, LOG_DEBUG);
 
@@ -2201,7 +2201,7 @@ int TMomFinalizeChild(
 #endif /* SA_INTERRUPT */
     act.sa_handler = no_hang;
 
-    sigaction(SIGALRM, &act, (struct sigaction *)0);
+    sigaction(SIGALRM, &act, NULL);
 
     /* only giving ourselves 5 seconds to connect to qsub
      * and get term settings */
@@ -2241,8 +2241,8 @@ int TMomFinalizeChild(
     if (submithost_suffix != NULL)
       {
       snprintf(qsubhostname, sizeof(qsubhostname), "%s%s",
-               phost,
-               submithost_suffix);
+        phost,
+        submithost_suffix);
       }
     else
       {
@@ -2254,9 +2254,9 @@ int TMomFinalizeChild(
     if (qsub_sock < 0)
       {
       snprintf(log_buffer, 1024, "cannot open interactive qsub socket to host %s:%d - '%s' - check routing tables/multi-homed host issues",
-               qsubhostname,
-               pport,
-               EMsg);
+        qsubhostname,
+        pport,
+        EMsg);
 
       log_err(errno, id, log_buffer);
 
@@ -2799,8 +2799,8 @@ int TMomFinalizeChild(
     if (chroot(idir) == -1)
       {
       sprintf(log_buffer, "PBS: chroot to '%.256s' failed: %s\n",
-              idir,
-              strerror(errno));
+        idir,
+        strerror(errno));
 
       if (write(2, log_buffer, strlen(log_buffer)) == -1) {}
 
@@ -2823,8 +2823,8 @@ int TMomFinalizeChild(
   if (LOGLEVEL >= 10)
     {
     sprintf(log_buffer, "setting user/group credentials to %d/%d",
-            pjob->ji_qs.ji_un.ji_momt.ji_exuid,
-            pjob->ji_qs.ji_un.ji_momt.ji_exgid);
+      pjob->ji_qs.ji_un.ji_momt.ji_exuid,
+      pjob->ji_qs.ji_un.ji_momt.ji_exgid);
 
     log_ext(-1, id, log_buffer, LOG_DEBUG);
     }
@@ -2897,8 +2897,8 @@ int TMomFinalizeChild(
     if (chdir(idir) == -1)
       {
       sprintf(log_buffer, "PBS: chdir to '%.256s' failed: %s\n",
-              idir,
-              strerror(errno));
+        idir,
+        strerror(errno));
 
       if (write(2, log_buffer, strlen(log_buffer)) == -1) {}
 
@@ -2920,8 +2920,8 @@ int TMomFinalizeChild(
     if (chdir(pwdp->pw_dir) == -1)
       {
       sprintf(log_buffer, "PBS: chdir to '%.256s' failed: %s\n",
-              pwdp->pw_dir,
-              strerror(errno));
+        pwdp->pw_dir,
+        strerror(errno));
 
       if (write(2, log_buffer, strlen(log_buffer)) == -1) {}
 
@@ -3011,12 +3011,23 @@ int TMomFinalizeChild(
       {
       arg[aindex] = malloc(strlen(shellname) + 1);
 
+      if (arg[aindex] == NULL)
+        {
+        log_err(errno,id,"cannot alloc env");
+
+        starter_return(TJE->upfds,TJE->downfds,JOB_EXEC_FAIL2,&sjr);
+
+        /*NOTREACHED*/
+
+        return(-1);
+        }
+
       strcpy(arg[aindex], shellname);
 
       if (LOGLEVEL >= 7)
         {
         sprintf(log_buffer, "bypass sourcing of login files for job %s",
-                pjob->ji_qs.ji_jobid);
+          pjob->ji_qs.ji_jobid);
 
         log_ext(-1, id, log_buffer, LOG_DEBUG);
         }
@@ -3025,6 +3036,17 @@ int TMomFinalizeChild(
     else
       {
       arg[aindex] = malloc(strlen(shellname) + 2);
+
+      if (arg[aindex] == NULL)
+        {
+        log_err(errno,id,"cannot alloc env");
+
+        starter_return(TJE->upfds,TJE->downfds,JOB_EXEC_FAIL2,&sjr);
+
+        /*NOTREACHED*/
+
+        return(-1);
+        }
 
       /* specifying '-' indicates this is a 'login' shell */
 
@@ -3041,6 +3063,17 @@ int TMomFinalizeChild(
       {
       arg[aindex] = strdup(PRE_EXEC);
 
+      if (arg[aindex] == NULL)
+        {
+        log_err(errno,id,"cannot alloc env");
+
+        starter_return(TJE->upfds,TJE->downfds,JOB_EXEC_FAIL2,&sjr);
+
+        /*NOTREACHED*/
+
+        return(-1);
+        }
+
       arg[aindex + 1] = NULL;
 
       aindex++;
@@ -3054,6 +3087,17 @@ int TMomFinalizeChild(
                       strlen(path_jobs) +
                       strlen(pjob->ji_qs.ji_fileprefix) +
                       strlen(JOB_SCRIPT_SUFFIX) + 1);
+
+      if (arg[aindex] == NULL)
+        {
+        log_err(errno,id,"cannot alloc env");
+
+        starter_return(TJE->upfds,TJE->downfds,JOB_EXEC_FAIL2,&sjr);
+
+        /*NOTREACHED*/
+
+        return(-1);
+        }
 
       strcpy(arg[aindex], path_jobs);
       strcat(arg[aindex], pjob->ji_qs.ji_fileprefix);
@@ -3082,7 +3126,14 @@ int TMomFinalizeChild(
 
     if (mom_checkpoint_job_is_checkpointable(pjob))
       {
-      mom_checkpoint_execute_job(pjob, shell, arg, &vtable);
+      if (mom_checkpoint_execute_job(pjob, shell, arg, &vtable) == -1)
+        {
+        starter_return(TJE->upfds,TJE->downfds,JOB_EXEC_FAIL2,&sjr);
+
+        /*NOTREACHED*/
+
+        return(-1);
+        }
       }
     else
       {
@@ -3136,6 +3187,17 @@ int TMomFinalizeChild(
 
     arg[aindex] = malloc(strlen(shellname) + 1);
 
+    if (arg[aindex] == NULL)
+      {
+      log_err(errno,id,"cannot alloc env");
+
+      starter_return(TJE->upfds,TJE->downfds,JOB_EXEC_FAIL2,&sjr);
+
+      /*NOTREACHED*/
+
+      return(-1);
+      }
+
     strcpy(arg[aindex], shellname);
 
     arg[aindex + 1] = NULL;
@@ -3145,6 +3207,17 @@ int TMomFinalizeChild(
     if (PRE_EXEC[0] != '\0')
       {
       arg[aindex] = strdup(PRE_EXEC);
+
+      if (arg[aindex] == NULL)
+        {
+        log_err(errno,id,"cannot alloc env");
+
+        starter_return(TJE->upfds,TJE->downfds,JOB_EXEC_FAIL2,&sjr);
+
+        /*NOTREACHED*/
+
+        return(-1);
+        }
 
       arg[aindex + 1] = NULL;
 
@@ -3159,7 +3232,7 @@ int TMomFinalizeChild(
     }  /* END else if (cpid == 0) */
 
   sprintf(log_buffer, "PBS: exec of shell '%.256s' failed\n",
-          shell);
+    shell);
 
   if (write(2, log_buffer, strlen(log_buffer)) == -1) {}
 
@@ -3171,8 +3244,8 @@ int TMomFinalizeChild(
     extern char mom_host[];
 #endif
     DBPRT(("user \"%s\" may not have a shell defined on node \"%s\"\n",
-           pwdp->pw_name,
-           mom_host));
+      pwdp->pw_name,
+      mom_host));
     }
   else if (strstr(shell, "/bin/false") != NULL)
     {
@@ -3180,8 +3253,8 @@ int TMomFinalizeChild(
     extern char mom_host[];
 #endif
     DBPRT(("user \"%s\" has shell \"/bin/false\" on node \"%s\"\n",
-           pwdp->pw_name,
-           mom_host));
+      pwdp->pw_name,
+      mom_host));
     }
   else
     {
@@ -3191,19 +3264,19 @@ int TMomFinalizeChild(
     if (stat(shell, &buf) != 0)
       {
       DBPRT(("stat of shell \"%s\" failed with error %d\n",
-             shell,
-             errno));
+        shell,
+        errno));
       }
     else if (S_ISREG(buf.st_mode) == 0)
       {
       DBPRT(("shell \"%s\" is not a file\n",
-             shell));
+        shell));
       }
     else if ((buf.st_mode & S_IXUSR) != 0)
       {
       DBPRT(("shell \"%s\" is not executable by user \"%s\"\n",
-             shell,
-             pwdp->pw_name));
+        shell,
+        pwdp->pw_name));
       }
     }
 
@@ -4575,10 +4648,10 @@ void start_exec(
   struct sockaddr_in saddr;
   hnodent      *np;
   attribute    *pattr;
-  tlist_head phead;
+  tlist_head    phead;
   svrattrl     *psatl;
-  int  stream;
-  char  tmpdir[MAXPATHLEN];
+  int           stream;
+  char          tmpdir[MAXPATHLEN];
 
   torque_socklen_t slen;
 
@@ -4601,7 +4674,18 @@ void start_exec(
 
     /* alloc 33 bytes? */
 
-    tt = pjob->ji_wattr[(int)JOB_ATR_Cookie].at_val.at_str = malloc(33);
+    tt = malloc(33);
+
+    if (tt == NULL)
+      {
+      log_err(-1,id,"cannot alloc memory");
+
+      exec_bail(pjob,JOB_EXEC_FAIL1);
+
+      return;
+      }
+ 
+    pjob->ji_wattr[(int)JOB_ATR_Cookie].at_val.at_str = tt;
 
     pjob->ji_wattr[(int)JOB_ATR_Cookie].at_flags |= ATR_VFLAG_SET;
 
@@ -4618,12 +4702,11 @@ void start_exec(
     for (i = 0;i < 16;i++)
       {
       sprintf(&tt[i * 2], "%02X",
-              c.digest[i]);
+        c.digest[i]);
       }
 
     DBPRT(("===== MD5 %s\n",
-
-           tt))
+      tt))
     }  /* END if () */
 
   /* Step 2.0 Initialize Job */
@@ -4658,7 +4741,7 @@ void start_exec(
     if (!TMakeTmpDir(pjob, tmpdir))
       {
       snprintf(log_buffer, 1024, "cannot create temp dir '%s'",
-               tmpdir);
+        tmpdir);
 
       log_err(-1, id, log_buffer);
 

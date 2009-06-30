@@ -1253,7 +1253,14 @@ int pbsd_init(
   else
     server.sv_tracksize = i;
 
-  server.sv_track = (struct tracking *)calloc(server.sv_tracksize, sizeof(struct tracking));
+  if ((server.sv_track = (struct tracking *)calloc(server.sv_tracksize,sizeof(struct tracking))) == NULL)
+    {
+    /* FAILURE - cannot alloc memory */
+
+    log_err(errno,"pbs_init","calloc failure");
+
+    return(-1);	
+    }
 
   for (i = 0;i < server.sv_tracksize;i++)
     (server.sv_track + i)->tk_mtime = 0;
@@ -1274,6 +1281,8 @@ int pbsd_init(
   /* set work task to periodically save the tracking records */
 
   set_task(WORK_Timed, (long)(time_now + PBS_SAVE_TRACK_TM), track_save, 0);
+
+  /* SUCCESS */
 
   return(0);
   }  /* END pbsd_init() */

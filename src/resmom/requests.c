@@ -3194,8 +3194,8 @@ void req_cpyfile(
     if ((rc != -PBSE_SYSTEM) && (rc != -PBSE_BADUSER))
       {
       sprintf(tmpLine, "fork_to_user failed with rc=%d '%s' - exiting",
-              rc,
-              EMsg);
+        rc,
+        EMsg);
 
       log_err(errno, id, tmpLine);
 
@@ -3203,14 +3203,13 @@ void req_cpyfile(
       }
 
     sprintf(tmpLine, "fork_to_user failed with rc=%d '%s' - returning failure",
-
-            rc,
-            EMsg);
+      rc,
+      EMsg);
 
     log_err(errno, id, tmpLine);
 
     return;
-    }
+    }  /* END if (rc < 0) */
 
   if (rc > 0)
     {
@@ -3227,7 +3226,7 @@ void req_cpyfile(
 
 #if NO_SPOOL_OUTPUT == 1
   snprintf(homespool, sizeof(homespool), "%s/.pbs_spool/",
-           HDir);
+    HDir);
 
   rcstat = stat(homespool, &myspooldir);
 
@@ -3345,7 +3344,7 @@ void req_cpyfile(
           }
 
         sprintf(envstr, "TMPDIR=%s",
-                faketmpdir);
+          faketmpdir);
 
         putenv(envstr);
 
@@ -3633,7 +3632,7 @@ void req_cpyfile(
       default:
 
         sprintf(log_buffer, "Failed to expand source path in data staging: %s",
-                arg2);
+          arg2);
 
         add_bad_list(&bad_list, log_buffer, 2);
 
@@ -3679,7 +3678,7 @@ void req_cpyfile(
       default:
 
         sprintf(log_buffer, "Failed to expand destination path in data staging: %s",
-                arg3);
+          arg3);
 
         add_bad_list(&bad_list, log_buffer, 2);
 
@@ -3754,8 +3753,8 @@ nextword:
       bad_files = 1;
 
       sprintf(log_buffer, "Unable to copy file %s to %s",
-              arg2,
-              arg3);
+        arg2,
+        arg3);
 
       add_bad_list(&bad_list, log_buffer, 2);
 

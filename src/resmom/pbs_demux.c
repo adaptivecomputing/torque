@@ -201,7 +201,6 @@ int main(
   char *argv[])
 
   {
-
   struct timeval timeout;
   int i;
   int maxfd;
@@ -248,12 +247,12 @@ int main(
 
   for (i = 0;i < maxfd;++i)
     {
-    (routem + i)->r_where = invalid;
-    (routem + i)->r_nl    = 1;
+    routem[i].r_where = invalid;
+    routem[i].r_nl    = 1;
     }
 
-  (routem + main_sock_out)->r_where = new_out;
-  (routem + main_sock_err)->r_where = new_err;
+  routem[main_sock_out].r_where = new_out;
+  routem[main_sock_err].r_where = new_err;
 
   FD_ZERO(&readset);
   FD_SET(main_sock_out, &readset);
@@ -290,7 +289,7 @@ int main(
       else
         {
         fprintf(stderr, "%s: select failed\n",
-                argv[0]);
+          argv[0]);
 
         exit(1);
         }

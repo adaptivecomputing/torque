@@ -563,7 +563,8 @@ int main(
             {
             pdepend = malloc(PBS_DEPEND_LEN);
 
-            if (parse_depend_list(valuewd, pdepend, PBS_DEPEND_LEN))
+            if ((pdepend == NULL) ||
+                 parse_depend_list(valuewd,pdepend,PBS_DEPEND_LEN))
               {
               fprintf(stderr, "qalter: illegal -W value\n");
 
