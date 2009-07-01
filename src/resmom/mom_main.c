@@ -3412,6 +3412,16 @@ check_log(void)
   {
   last_log_check = time_now;
 
+  /* periodically record the version and loglevel */
+
+  sprintf(log_buffer, msg_info_mom, PACKAGE_VERSION, LOGLEVEL);
+
+  log_event(
+    PBSEVENT_SYSTEM | PBSEVENT_FORCE,
+    PBS_EVENTCLASS_SERVER,
+    msg_daemonname,
+    log_buffer);
+
   if (LOGKEEPDAYS > 0)
     {
     /* remove logs older than log_keep_days */
@@ -3447,16 +3457,6 @@ check_log(void)
 
     log_roll(log_file_roll_depth);
     }
-
-  /* periodically record the version and loglevel */
-
-  sprintf(log_buffer, msg_info_mom, PACKAGE_VERSION, LOGLEVEL);
-
-  log_event(
-    PBSEVENT_SYSTEM | PBSEVENT_FORCE,
-    PBS_EVENTCLASS_SERVER,
-    msg_daemonname,
-    log_buffer);
 
   return;
   }  /* END check_log() */
