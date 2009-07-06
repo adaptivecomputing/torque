@@ -78,6 +78,7 @@
 */
 
 #ifdef _AIX
+#include <stdio.h>
 #include <arpa/aixrcmds.h>
 #endif
 
