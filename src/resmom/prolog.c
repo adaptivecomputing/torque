@@ -416,7 +416,7 @@ int run_pelog(
       (pelog != NULL) ? pelog : "NULL",
       pjob->ji_qs.ji_jobid);
 
-    log_record(PBSEVENT_SYSTEM, 0, id, log_buffer);
+    log_ext(-1,id,log_buffer,LOG_DEBUG);  /* not actually an error--but informational */
     }
 
   /* script must be owned by root, be regular file, read and execute by user *
