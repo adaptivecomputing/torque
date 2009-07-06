@@ -626,8 +626,8 @@ void req_quejob(
       strcat(buf, preq->rq_host);
       }
 
-    job_attr_def[(int)JOB_ATR_variables].at_decode(&tempattr,
-
+    job_attr_def[(int)JOB_ATR_variables].at_decode(
+        &tempattr,
         NULL,
         NULL,
         buf);
@@ -658,10 +658,11 @@ void req_quejob(
       {
         pj->ji_wattr[(int)JOB_ATR_outpath].at_val.at_str[strlen(pj->ji_wattr[(int)JOB_ATR_outpath].at_val.at_str) - 1] = '\0';
         
-        replace_attr_string(&pj->ji_wattr[(int)JOB_ATR_outpath],
-                          (add_std_filename(pj,
-                          pj->ji_wattr[(int)JOB_ATR_outpath].at_val.at_str,
-                          (int)'o')));
+        replace_attr_string(
+          &pj->ji_wattr[(int)JOB_ATR_outpath],
+          (add_std_filename(pj,
+          pj->ji_wattr[(int)JOB_ATR_outpath].at_val.at_str,
+          (int)'o')));
       }
 
     if (!(pj->ji_wattr[(int)JOB_ATR_errpath].at_flags & ATR_VFLAG_SET) ||
@@ -681,10 +682,11 @@ void req_quejob(
       {
         pj->ji_wattr[(int)JOB_ATR_errpath].at_val.at_str[strlen(pj->ji_wattr[(int)JOB_ATR_errpath].at_val.at_str) - 1] = '\0';
         
-        replace_attr_string(&pj->ji_wattr[(int)JOB_ATR_errpath],
-                          (add_std_filename(pj,
-                          pj->ji_wattr[(int)JOB_ATR_errpath].at_val.at_str,
-                          (int)'e')));
+        replace_attr_string(
+          &pj->ji_wattr[(int)JOB_ATR_errpath],
+          (add_std_filename(pj,
+          pj->ji_wattr[(int)JOB_ATR_errpath].at_val.at_str,
+          (int)'e')));
       }
 
     if ((pj->ji_wattr[(int)JOB_ATR_outpath].at_val.at_str == NULL) ||
@@ -784,8 +786,7 @@ void req_quejob(
       }
 
 #endif /* PNOT */
-
-    }
+    }  /* END if (created_here) */
   else
     {
     /* job was created elsewhere and moved here */

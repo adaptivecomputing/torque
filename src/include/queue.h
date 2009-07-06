@@ -66,9 +66,9 @@
 */
 
 /*
- * queue.h - struture definations for queue objects
+ * queue.h - structure definitions for queue objects
  *
- * Include Files Requried:
+ * Include Files Required:
  *
  * <sys/types.h>
  * "attribute.h"
@@ -149,8 +149,7 @@ enum queueattr
 #include "site_que_attr_enum.h"
   QA_ATR_Enabled, /* these are last for qmgr print function   */
   QA_ATR_Started,
-  QA_ATR_LAST
-  };        /* WARNING: Must be the highest valued enum */
+  QA_ATR_LAST};   /* WARNING: Must be the highest valued enum */
 
 extern attribute_def que_attr_def[];
 
@@ -166,10 +165,10 @@ struct pbs_queue
 
   struct queuefix
     {
-    int    qu_modified;  /* != 0 => update disk file */
-    int    qu_type;  /* queue type: exec, route */
-    time_t qu_ctime;  /* time queue created */
-    time_t qu_mtime;  /* time queue last modified */
+    int    qu_modified; /* != 0 => update disk file */
+    int    qu_type;     /* queue type: exec, route */
+    time_t qu_ctime;    /* time queue created */
+    time_t qu_mtime;    /* time queue last modified */
     char   qu_name[PBS_MAXQUEUENAME]; /* queue name */
     } qu_qs;
 

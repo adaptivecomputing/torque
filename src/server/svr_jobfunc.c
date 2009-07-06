@@ -292,9 +292,9 @@ int svr_enquejob(
 
 #ifndef NDEBUG
   sprintf(log_buffer, "enqueuing into %s, state %x hop %ld",
-          pque->qu_qs.qu_name,
-          pjob->ji_qs.ji_state,
-          pjob->ji_wattr[(int)JOB_ATR_hopcount].at_val.at_long);
+    pque->qu_qs.qu_name,
+    pjob->ji_qs.ji_state,
+    pjob->ji_wattr[(int)JOB_ATR_hopcount].at_val.at_long);
 
   log_event(
     PBSEVENT_DEBUG2,
@@ -325,8 +325,11 @@ int svr_enquejob(
     {
     /* link after 'current' job in server's list */
 
-    insert_link(&pjcur->ji_alljobs, &pjob->ji_alljobs, pjob,
-                LINK_INSET_AFTER);
+    insert_link(
+      &pjcur->ji_alljobs,
+      &pjob->ji_alljobs,
+      pjob,
+      LINK_INSET_AFTER);
     }
 
   server.sv_qs.sv_numjobs++;
@@ -390,7 +393,7 @@ int svr_enquejob(
     /* issue enqueued accounting record */
 
     sprintf(log_buffer, "queue=%s",
-            pque->qu_qs.qu_name);
+      pque->qu_qs.qu_name);
 
     account_record(PBS_ACCT_QUEUE, pjob, log_buffer);
     }
@@ -872,11 +875,11 @@ static void chk_svr_resc_limit(
 
     /* NOTE:  to optimize, only update once per 30 seconds */
 
-    noderesc     = find_resc_def(svr_resc_def, "nodes", svr_resc_size);
+    noderesc     = find_resc_def(svr_resc_def, "nodes",     svr_resc_size);
     needresc     = find_resc_def(svr_resc_def, "neednodes", svr_resc_size);
-    nodectresc   = find_resc_def(svr_resc_def, "nodect", svr_resc_size);
-    mppwidthresc = find_resc_def(svr_resc_def, "mppwidth", svr_resc_size);
-    mppnppn      = find_resc_def(svr_resc_def, "mppnppn", svr_resc_size);
+    nodectresc   = find_resc_def(svr_resc_def, "nodect",    svr_resc_size);
+    mppwidthresc = find_resc_def(svr_resc_def, "mppwidth",  svr_resc_size);
+    mppnppn      = find_resc_def(svr_resc_def, "mppnppn",   svr_resc_size);
 
     SvrNodeCt = 0;
 
@@ -946,7 +949,6 @@ static void chk_svr_resc_limit(
 #ifdef NERSCDEV
       else if (jbrc->rs_defin == mppwidthresc)
         {
-
         if (jbrc->rs_value.at_flags & ATR_VFLAG_SET)
           {
           MPPWidth = jbrc->rs_value.at_val.at_long;
@@ -983,8 +985,8 @@ static void chk_svr_resc_limit(
           if ((EMsg != NULL) && (EMsg[0] == '\0'))
             {
             sprintf(EMsg, "cannot satisfy %s max %s requirement",
-                    (LimitIsFromQueue == 1) ? "queue" : "server",
-                    (LimitName != NULL) ? LimitName : "resource");
+              (LimitIsFromQueue == 1) ? "queue" : "server",
+              (LimitName != NULL) ? LimitName : "resource");
             }
 
           comp_resc_lt++;
@@ -1993,6 +1995,13 @@ void get_jobowner(
 
 
 
+/**
+ * @see set_resc_deflt() - parent
+ *
+ * @param jb
+ * @param *dflt
+ */
+
 static void set_deflt_resc(
 
   attribute *jb,
@@ -2047,7 +2056,19 @@ static void set_deflt_resc(
 
 
 
-/* NOTE:  if ji_wattr parameter is passed in, update it */
+
+
+/**
+ * Set job defaults
+ *
+ * @see svr_enquejob() - parent
+ * @see set_deflt_resc() - child
+ *
+ * @param pjob (I) [modified]
+ * @param ji_wattr
+ *
+ * NOTE:  if ji_wattr parameter is passed in, update it instead of pjob
+ */
 
 void set_resc_deflt(
 
@@ -2100,6 +2121,7 @@ void set_resc_deflt(
       if ((rc = pdef->at_action(&pjob->ji_wattr[i], pjob, ATR_ACTION_NEW)) != 0)
         {
         /* FIXME: return an actual error */
+
         return;
         }
       }
