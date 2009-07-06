@@ -125,6 +125,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature
 
 2.3.5
   e - added new init.d scripts for Debian/Ubuntu systems
+  b - fixed a bug where TORQUE's exponential backoff for sending messages to the
+      MOM could overflow
 
 2.3.4
   c - fixed segfault when loading array files of an older/incompatible version
