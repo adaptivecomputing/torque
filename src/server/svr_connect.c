@@ -141,8 +141,6 @@ int svr_connect(
   enum conn_type cntype)
 
   {
-  extern char *PAddrToString(pbs_net_t *);
-
   char         EMsg[1024];
 
   static char *id = "svr_connect";
