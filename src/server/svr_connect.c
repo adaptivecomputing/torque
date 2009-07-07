@@ -157,7 +157,7 @@ int svr_connect(
     {
     sprintf(log_buffer, "attempting connect to %s %s port %d",
             (hostaddr == pbs_server_addr) ? "server" : "host",
-            ((int)hostaddr != 0) ? PAddrToString(&hostaddr) : "localhost",
+            ((int)hostaddr != 0) ? netaddr_pbs_net_t(hostaddr) : "localhost",
             port);
 
     log_event(

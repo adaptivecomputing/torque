@@ -145,8 +145,6 @@ int relay_to_mom(
   void (*func) A_((struct work_task *)))
 
   {
-  extern char *PAddrToString(pbs_net_t *);
-
   char *id = "relay_to_mom";
 
   int conn; /* a client style connection handle */
@@ -165,7 +163,7 @@ int relay_to_mom(
   if (LOGLEVEL >= 7)
     {
     sprintf(log_buffer, "momaddr=%s",
-            PAddrToString(&momaddr));
+            netaddr_pbs_net_t(momaddr));
 
     log_record(
       PBSEVENT_SCHED,

@@ -191,6 +191,7 @@ int  wait_request(time_t waittime, long *);
 void net_add_close_func A_((int, void(*)()));
 int get_max_num_descriptors(void);
 int get_fdset_size(void);
+char * netaddr_pbs_net_t A_((pbs_net_t));
 
 
 struct connection

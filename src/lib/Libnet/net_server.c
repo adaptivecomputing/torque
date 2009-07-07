@@ -918,6 +918,31 @@ int get_connecthost(
 
 
 
+/*
+** Put a human readable representation of a network address into
+** a staticly allocated string.
+*/
+char *netaddr_pbs_net_t(
+
+  pbs_net_t ipadd)
+
+  {
+  static char out[80];
+
+  if (ipadd == 0)
+    return "unknown";
+
+  sprintf(out, "%ld.%ld.%ld.%ld",
+          (ipadd & 0xff000000) >> 24,
+          (ipadd & 0x00ff0000) >> 16,
+          (ipadd & 0x0000ff00) >> 8,
+          (ipadd & 0x000000ff));
+
+  return (out);
+  }
+
+
+
 
 /* END net_server.c */
 

@@ -121,6 +121,7 @@
 #include "log.h"
 #include "rpp.h"
 #include "pbs_proto.h"
+#include "net_connect.h"
 
 #if !defined(H_ERRNO_DECLARED)
 extern int h_errno;
@@ -781,12 +782,9 @@ static void initialize_pbsnode(
     {
     if (LOGLEVEL >= 6)
       {
-      sprintf(log_buffer, "node '%s' allows trust for ipaddr %ld.%ld.%ld.%ld\n",
+      sprintf(log_buffer, "node '%s' allows trust for ipaddr %s\n",
               pnode->nd_name,
-              (pul[i] & 0xff000000) >> 24,
-              (pul[i] & 0x00ff0000) >> 16,
-              (pul[i] & 0x0000ff00) >> 8,
-              (pul[i] & 0x000000ff));
+              netaddr_pbs_net_t(pul[i]));
 
       log_record(
         PBSEVENT_SCHED,

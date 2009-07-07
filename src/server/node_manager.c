@@ -1828,13 +1828,10 @@ int add_cluster_addrs(
 
       if (LOGLEVEL >= 8)
         {
-        sprintf(log_buffer, "adding node[%d] interface[%d] %ld.%ld.%ld.%ld to hello response",
+        sprintf(log_buffer, "adding node[%d] interface[%d] %s to hello response",
                 i,
                 j,
-                (ipaddr & 0xff000000) >> 24,
-                (ipaddr & 0x00ff0000) >> 16,
-                (ipaddr & 0x0000ff00) >> 8,
-                (ipaddr & 0x000000ff));
+                netaddr_pbs_net_t(ipaddr));
 
         log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, id, log_buffer);
         }

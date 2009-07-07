@@ -5278,18 +5278,12 @@ int rm_request(
 
 bad:
 
-  sprintf(output, "\n\tmessage refused from port %d addr %ld.%ld.%ld.%ld",
+  sprintf(output, "\n\tmessage refused from port %d addr %s",
           port,
-          (ipadd & 0xff000000) >> 24,
-          (ipadd & 0x00ff0000) >> 16,
-          (ipadd & 0x0000ff00) >> 8,
-          (ipadd & 0x000000ff));
+          netaddr_pbs_net_t(ipadd));
 
-  sprintf(TMOMRejectConn, "%ld.%ld.%ld.%ld:%d  %s",
-          (ipadd & 0xff000000) >> 24,
-          (ipadd & 0x00ff0000) >> 16,
-          (ipadd & 0x0000ff00) >> 8,
-          (ipadd & 0x000000ff),
+  sprintf(TMOMRejectConn, "%s:%d  %s",
+          netaddr_pbs_net_t(ipadd),
           port,
           (NotTrusted == 1) ? "(server not authorized)" : "(request corrupt)");
 
@@ -5629,11 +5623,8 @@ void tcp_request(
 
   ipadd = svr_conn[fd].cn_addr;
 
-  sprintf(address, "%ld.%ld.%ld.%ld:%d",
-          (ipadd & 0xff000000) >> 24,
-          (ipadd & 0x00ff0000) >> 16,
-          (ipadd & 0x0000ff00) >> 8,
-          (ipadd & 0x000000ff),
+  sprintf(address, "%s:%d",
+          netaddr_pbs_net_t(ipadd),
           ntohs(svr_conn[fd].cn_port));
 
   if (LOGLEVEL >= 6)

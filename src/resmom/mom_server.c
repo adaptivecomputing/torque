@@ -1874,12 +1874,8 @@ int tlist(
     return(-1);
     }
 
-  sprintf(tmpLine, "%ld.%ld.%ld.%ld",
-
-          (rootp->key & 0xff000000) >> 24,
-          (rootp->key & 0x00ff0000) >> 16,
-          (rootp->key & 0x0000ff00) >> 8,
-          (rootp->key & 0x000000ff));
+  sprintf(tmpLine, "%s",
+          netaddr_pbs_net_t(rootp->key));
 
   if ((Buf[0] != '\0') && (BSize > 1))
     {
@@ -2309,12 +2305,9 @@ void is_request(
           {
           char tmpLine[1024];
 
-          sprintf(tmpLine, "%s:\t%ld.%ld.%ld.%ld added to okclients",
+          sprintf(tmpLine, "%s:\t%s added to okclients",
                   id,
-                  (ipaddr & 0xff000000) >> 24,
-                  (ipaddr & 0x00ff0000) >> 16,
-                  (ipaddr & 0x0000ff00) >> 8,
-                  (ipaddr & 0x000000ff));
+                  netaddr_pbs_net_t(ipaddr));
 
           log_record(
             PBSEVENT_ERROR,

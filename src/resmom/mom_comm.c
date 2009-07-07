@@ -5706,12 +5706,9 @@ err:
 
   ipadd = svr_conn[fd].cn_addr;
 
-  sprintf(log_buffer, "message refused from port %d addr %ld.%ld.%ld.%ld",
+  sprintf(log_buffer, "message refused from port %d addr %s",
           svr_conn[fd].cn_port,
-          (ipadd & 0xff000000) >> 24,
-          (ipadd & 0x00ff0000) >> 16,
-          (ipadd & 0x0000ff00) >> 8,
-          (ipadd & 0x000000ff));
+          netaddr_pbs_net_t(ipadd));
 
   close_conn(fd);
 
