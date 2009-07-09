@@ -2322,7 +2322,7 @@ int kill_task(
 
     ct++;
 
-    /* do code to mark task as finished (borrowed from Linux scan_for_terminating())... */
+    /* do code to mark task as finished (borrowed from Linux scan_for_terminated())... */
 
     ptask->ti_qs.ti_exitstat = 0;  /* assume successful completion */
     ptask->ti_qs.ti_status   = TI_STATE_EXITED;
@@ -2349,7 +2349,7 @@ int kill_task(
 
     ct++;
 
-    /* do code to mark task as finished (borrowed from Linux scan_for_terminating())... */
+    /* do code to mark task as finished (borrowed from Linux scan_for_terminated())... */
 
     ptask->ti_qs.ti_exitstat = 0;  /* assume successful completion */
     ptask->ti_qs.ti_status   = TI_STATE_EXITED;

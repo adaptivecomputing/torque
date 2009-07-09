@@ -294,7 +294,7 @@ scan_for_terminated(void)
         break;
 
       pjob = (job *)GET_NEXT(pjob->ji_alljobs);
-      }
+      }  /* END while (pjob) */
 
     if (WIFEXITED(statloc))
       exiteval = WEXITSTATUS(statloc);

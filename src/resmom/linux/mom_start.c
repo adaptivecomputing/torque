@@ -495,7 +495,8 @@ void scan_for_terminated(void)
 
       while (ptask != NULL)
         {
-        if (ptask->ti_qs.ti_sid == pid)
+        if ((ptask->ti_qs.ti_sid == pid) &&
+            (ptask->ti_qs.ti_status != TI_STATE_EXITED))
           {
           if (LOGLEVEL >= 7)
             {

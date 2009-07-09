@@ -3826,7 +3826,6 @@ int start_process(
       }
 
     sprintf(log_buffer, "%s: task started, tid %d, sid %ld, cmd %s",
-
             id,
             ptask->ti_qs.ti_task,
             (long)ptask->ti_qs.ti_sid,
