@@ -438,9 +438,9 @@ struct job
   struct grpcache *ji_grpcache; /* cache of user's groups */
   time_t  ji_checkpoint_time; /* periodic checkpoint time */
   time_t  ji_checkpoint_next; /* next checkpoint time */
-  time_t  ji_sampletim; /* last usage sample time, irix only */
-  pid_t  ji_momsubt; /* pid of mom subtask   */
-  int (*ji_mompost)();       /* ptr to post processing func  */
+  time_t  ji_sampletim;       /* last usage sample time, irix only */
+  pid_t  ji_momsubt;          /* pid of mom subtask   */
+  int (*ji_mompost)();        /* ptr to post processing func  */
 
   struct batch_request *ji_preq; /* hold request until finish_exec */
   int  ji_numnodes; /* number of nodes (at least 1) */

@@ -369,28 +369,46 @@ struct passwd *check_pwd(
     {
     /* execution group specified and not default of login group */
 
-    /* NOTE:  egroup should be groupname, not groupid */
+    /* NOTE: ideally egroup should be groupname, not groupid, but pbs_server
+     * code will send a group ID over in some instances, so we should try
+     * to work with a groupid if provided */
 
     grpp = getgrnam(pjob->ji_wattr[(int)JOB_ATR_egroup].at_val.at_str);
 
-    if (grpp == NULL)
+    if (grpp != NULL)
       {
-      /* FAILURE */
-
-      sprintf(log_buffer, "no group entry for group %s, user=%s, errno=%d (%s)",
-              pjob->ji_wattr[(int)JOB_ATR_egroup].at_val.at_str,
-              ptr,
-              errno,
-              strerror(errno));
-
-      return(NULL);
+      pjob->ji_qs.ji_un.ji_momt.ji_exgid = grpp->gr_gid;
       }
+    else
+      {
+      int tmpGID;
 
-    pjob->ji_qs.ji_un.ji_momt.ji_exgid = grpp->gr_gid;
+      /* check to see if we were given a groupid (group names cannot start
+       * with a number) */
+
+      tmpGID = (int)strtol(pjob->ji_wattr[(int)JOB_ATR_egroup].at_val.at_str,NULL,10);
+
+      if (tmpGID != 0)
+        {
+        pjob->ji_qs.ji_un.ji_momt.ji_exgid = tmpGID;
+        }
+      else
+        {
+        /* FAILURE */
+
+        sprintf(log_buffer, "no group entry for group %s, user=%s, errno=%d (%s)",
+                pjob->ji_wattr[(int)JOB_ATR_egroup].at_val.at_str,
+                ptr,
+                errno,
+                strerror(errno));
+
+        return(NULL);
+        }
+      }  /* END if (grpp != NULL) */
     }
   else
     {
-    /* default to login group */
+    /* if no group specified, default to login group */
 
     pjob->ji_qs.ji_un.ji_momt.ji_exgid = pwdp->pw_gid;
     }
