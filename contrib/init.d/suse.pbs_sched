@@ -19,7 +19,7 @@
 ### END INIT INFO
 
 PBS_DAEMON=/usr/sbin/pbs_sched
-PBS_HOME=/var/torque
+PBS_HOME=/var/spool/torque
 export PBS_DAEMON
 
 # Source the library functions
