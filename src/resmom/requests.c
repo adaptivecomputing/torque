@@ -1405,6 +1405,7 @@ const char *TJobAttr[] =
   "faulttol",
   "comp_time",
   "reported",
+  "job_type",
 #ifdef ENABLE_CSA
   "pagg_id",
 #endif /* ENABLE_CSA */

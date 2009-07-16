@@ -333,7 +333,7 @@ static void pelogalm(
 int run_pelog(
 
   int   which,      /* I (one of PE_*) */
-  char *pelog,      /* I - script path */
+  char *specpelog,  /* I - script path */
   job  *pjob,       /* I - associated job */
   int   pe_io_type) /* I */
 
@@ -352,8 +352,11 @@ int run_pelog(
   char   sid[20];
   char   exit_stat[11];
   int    waitst;
-  int    isjoined;
-  char   buf[MAXPATHLEN + 2];
+  int    isjoined;  /* boolean */
+  char   buf[MAXPATHLEN + 1024];
+  char   pelog[MAXPATHLEN + 1024];
+
+  int    jobtypespecified = 0;
 
   resource      *r;
 
@@ -362,7 +365,40 @@ int run_pelog(
   int            LastArg;
   int            aindex;
 
-  if (stat(pelog, &sbuf) == -1)
+  int            rc;
+
+  char          *ptr;
+
+  if ((pjob == NULL) || (specpelog == NULL) || (specpelog[0] == '\0'))
+    {
+    return(0);
+    }
+
+  ptr = pjob->ji_wattr[(int)JOB_ATR_jobtype].at_val.at_str;
+
+  if (ptr != NULL)
+    {
+    jobtypespecified = 1;
+
+    snprintf(pelog,sizeof(pelog),"%s.%s",
+      specpelog,
+      ptr);
+    }
+  else
+    {
+    strncpy(pelog,specpelog,sizeof(pelog));
+    }
+
+  rc = stat(pelog,&sbuf);
+
+  if ((rc == -1) && (jobtypespecified == 1))
+    {
+    strncpy(pelog,specpelog,sizeof(pelog));
+
+    rc = stat(pelog,&sbuf);
+    }
+
+  if (rc == -1)
     {
     if (errno == ENOENT)
       {
@@ -391,7 +427,7 @@ int run_pelog(
         if (LOGLEVEL >= 8)
           {
           sprintf(log_buffer, "%s calling add_wkm_end from run_pelog() - no user epilog",
-                  pjob->ji_qs.ji_jobid);
+            pjob->ji_qs.ji_jobid);
 
           log_err(-1, id, log_buffer);
           }
@@ -922,8 +958,8 @@ int run_pelog(
       if (pjob->ji_flags & MOM_HAS_NODEFILE)
         {
         sprintf(buf, "%s/%s",
-                path_aux,
-                pjob->ji_qs.ji_jobid);
+          path_aux,
+          pjob->ji_qs.ji_jobid);
 
         envstr = malloc((strlen(envname) + strlen(buf) + 2) * sizeof(char));
 

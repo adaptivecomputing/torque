@@ -112,8 +112,8 @@ extern int comp_checkpoint A_((attribute *, attribute *));
  * parent object type
  */
 
-/* sync w/ src/include/pbs_job.h */
-/* sync w/ src/resmom/request.c TJobAttr constants */
+/* sync w/enum job_atr in src/include/pbs_job.h */
+/* sync w/ TJobAttr[] in src/resmom/requests.c */
 
 attribute_def job_attr_def[] =
   {
@@ -892,6 +892,19 @@ attribute_def job_attr_def[] =
   	READ_ONLY | ATR_DFLAG_SSET,
   	ATR_TYPE_LONG,
   	PARENT_TYPE_JOB
+  },
+
+  /* JOB_ATR_jobtype */
+  { ATTR_jobtype,   /* "Job_Type" */
+    decode_str,
+    encode_str,
+    set_str,
+    comp_str,
+    free_str,
+    NULL_FUNC,
+    READ_WRITE | ATR_DFLAG_SELEQ | ATR_DFLAG_MOM,
+    ATR_TYPE_STR,
+    PARENT_TYPE_JOB
   },
 
 #ifdef ENABLE_CSA

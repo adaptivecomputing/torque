@@ -2469,8 +2469,14 @@ interactive(void)
 
 
 
-/* NOTE:  return 0 on success */
-/* NOTE:  only run submitfilter if pass < 10 */
+/** 
+ * Process command line options.
+ *
+ * @see main() - parent
+ *
+ * NOTE:  return 0 on success 
+ * NOTE:  only run submitfilter if pass < 10 
+ */ 
 
 int process_opts(
 
@@ -2512,7 +2518,7 @@ int process_opts(
   char search_string[256];
 
 #if !defined(PBS_NO_POSIX_VIOLATION)
-#define GETOPT_ARGS "a:A:b:c:C:d:D:e:fhIj:k:l:m:M:N:o:p:q:r:S:t:u:v:Vw:W:Xz-:"
+#define GETOPT_ARGS "a:A:b:c:C:d:D:e:fhIj:k:l:m:M:N:o:p:q:r:S:t:T:u:v:Vw:W:Xz-:"
 #else
 #define GETOPT_ARGS "a:A:c:C:e:hj:k:l:m:M:N:o:p:q:r:S:u:v:VW:z"
 #endif /* PBS_NO_POSIX_VIOLATION */
@@ -2546,7 +2552,7 @@ int process_opts(
         if ((optarg != NULL) && !strcmp(optarg, "version"))
           {
           fprintf(stderr, "version: %s\n",
-                  PACKAGE_VERSION);
+            PACKAGE_VERSION);
 
           exit(0);
           }
@@ -3255,6 +3261,20 @@ int process_opts(
           }
 
         break;
+
+      case 'T':
+
+        if_cmd_line(t_opt)
+          {
+          t_opt = passet;
+
+          /* validate before sending request to server? */
+
+          set_attr(&attrib,ATTR_jobtype,optarg);
+          }
+
+        break;
+
 #endif
 
       case 'u':
@@ -4004,7 +4024,11 @@ char *get_param(
 
 
 
-/* qsub main */
+/** 
+ * qsub main 
+ *
+ * @see process_opts() - child
+ */
 
 int main(
 
@@ -4184,7 +4208,7 @@ int main(
       [-C directive_prefix] [-d path] [-D path]\n\
       [-e path] [-h] [-I] [-j oe] [-k {oe}] [-l resource_list] [-m n|{abe}]\n\
       [-M user_list] [-N jobname] [-o path] [-p priority] [-q queue] [-r y|n]\n\
-      [-S path] [-t number_to_submit] [-u user_list] [-X] [-w] path\n";
+      [-S path] [-t number_to_submit] [-T type]  [-u user_list] [-X] [-w] path\n";
 
     /* need secondary usage since there appears to be a 512 byte size limit */
 

@@ -300,7 +300,7 @@ static void no_hang(
 
 struct passwd *check_pwd(
 
-        job *pjob)  /* I (modified) */
+  job *pjob)  /* I (modified) */
 
   {
 
@@ -330,7 +330,7 @@ struct passwd *check_pwd(
     /* FAILURE */
 
     sprintf(log_buffer, "no password entry for user %s",
-            ptr);
+      ptr);
 
     return(NULL);
     }
@@ -349,7 +349,7 @@ struct passwd *check_pwd(
   pjob->ji_qs.ji_un.ji_momt.ji_exuid = pwdp->pw_uid;
 
   pjob->ji_grpcache = malloc(
-                        sizeof(struct grpcache) + strlen(pwdp->pw_dir) + 1);
+    sizeof(struct grpcache) + strlen(pwdp->pw_dir) + 1);
 
   if (pjob->ji_grpcache == NULL)
     {

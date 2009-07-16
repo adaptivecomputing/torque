@@ -212,23 +212,24 @@ struct grpcache
  * define the size of the array.
  */
 
-/**
- * sync w/ src/server/job_attr_def.c
- * sync w/ src/resmom/requests.c TJobAttr constants
+/*
+ * sync w/job_attr_def[]  (NOTE:  must maintain same ordering between enum and
+ * job_attr_def[] table in src/server/job_attr_def.c)
+ * sync w/TJobAttr[] table in src/resmom/request.c
  *
  * @see struct job
  */
 
 enum job_atr
   {
-  JOB_ATR_jobname, /* this set appears first as they show */
+  JOB_ATR_jobname,   /* this set appears first as they show */
   JOB_ATR_job_owner, /* in a basic job status display       */
   JOB_ATR_resc_used,
   JOB_ATR_state,
   JOB_ATR_in_queue,
   JOB_ATR_at_server,    /* (5) */
 
-  JOB_ATR_account, /* the bulk of the attributes are in   */
+  JOB_ATR_account,    /* the bulk of the attributes are in   */
   JOB_ATR_checkpoint, /* alphabetic order for no good reason */
   JOB_ATR_ctime,
   JOB_ATR_depend,
@@ -286,6 +287,7 @@ enum job_atr
   JOB_ATR_fault_tolerant, /* indicates if a job should keep going if it looses a sister */
   JOB_ATR_comp_time,  /* time when job was completed */
   JOB_ATR_reported, /* tracks whether job has been reported to scheduler */
+  JOB_ATR_jobtype,     /* opaque job type string */
 #ifdef ENABLE_CSA
   JOB_ATR_pagg_id,
 #endif /* ENABLE_CSA */
@@ -296,7 +298,7 @@ enum job_atr
   };
 
 /*
- * The "definitions" for the job attributes are in the following array,
+ * The "definitions" for the job attributes are in job_attr_def[],
  * it is also indexed by the JOB_ATR_... enums.
  */
 
@@ -427,7 +429,7 @@ struct job
             (except for ji_stdout, ji_stderr) */
 
   list_link       ji_alljobs; /* link to next job in server job list */
-  list_link       ji_jobque; /* SVR: link to next job in queue list */
+  list_link       ji_jobque;  /* SVR: link to next job in queue list */
   /* MOM: links to polled jobs */
   time_t  ji_momstat; /* SVR: time of last status from MOM */
   /* MOM: time job suspend (Cray) */
@@ -479,13 +481,13 @@ struct job
   struct jobfix
     {
     int     qs_version;  /* quick save version */
-    int     ji_state;  /* internal copy of state */
+    int     ji_state;    /* internal copy of state */
     int     ji_substate; /* job sub-state */
     int     ji_svrflags; /* server flags */
     int     ji_numattr;  /* number of attributes in list */
     int     ji_ordering; /* special scheduling ordering */
     int     ji_priority; /* internal priority */
-    time_t  ji_stime;  /* time job started execution */
+    time_t  ji_stime;    /* time job started execution */
     char    ji_jobid[PBS_MAXSVRJOBID + 1];   /* job identifier */
     char    ji_fileprefix[PBS_JOBBASE + 1];  /* job file prefix */
     char    ji_queue[PBS_MAXQUEUENAME + 1];  /* name of current queue */
