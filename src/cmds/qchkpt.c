@@ -14,7 +14,7 @@
 int main(int argc, char **argv) /* qchkpt */
   {
   int any_failed = 0;
-  static char *usage = "Usage: qchkpt job_id ...\n";
+  static char usage[] = "Usage: qchkpt job_id ...\n";
 
   char job_id[PBS_MAXCLTJOBID];       /* from the command line */
 
@@ -24,7 +24,7 @@ int main(int argc, char **argv) /* qchkpt */
 
   if (argc == 1)
     {
-    fprintf(stderr, usage);
+    fprintf(stderr, "%s", usage);
     return 1;
     }
 
