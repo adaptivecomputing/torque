@@ -2615,6 +2615,43 @@ int TMomFinalizeChild(
     if (LOGLEVEL >= 10)
       log_ext(-1, id, "stdout/stderr opened", LOG_DEBUG);
 
+    /* set up the job session (update sjr) */
+
+    j = set_job(pjob, &sjr);
+
+    if (LOGLEVEL >= 10)
+      log_ext(-1, id, "set_job complete", LOG_DEBUG);
+
+    memcpy(TJE->sjr, &sjr, sizeof(sjr));
+
+    if (j < 0)
+      {
+      /* FAILURE */
+
+      if (j != -2 && j != -3)
+        {
+        /* set_job didn't leave message in log_buffer */
+
+        strcpy(log_buffer, "unable to set session");
+        }
+
+      /* set_job leaves message in log_buffer */
+
+      log_err(-1, id, log_buffer);
+
+      if (j == -3)
+        {
+        starter_return(TJE->upfds, TJE->downfds, JOB_EXEC_RETRY, &sjr);
+        }
+      else
+        {
+        starter_return(TJE->upfds, TJE->downfds, JOB_EXEC_FAIL2, &sjr);
+        }
+
+      /*NOTREACHED*/
+
+      exit(1);
+      }
     /* run prolog - standard batch job */
 
     if ((j = run_pelog(
@@ -2680,43 +2717,6 @@ int TMomFinalizeChild(
       /*NOTREACHED*/
       }
 
-    /* set up the job session (update sjr) */
-
-    j = set_job(pjob, &sjr);
-
-    if (LOGLEVEL >= 10)
-      log_ext(-1, id, "set_job complete", LOG_DEBUG);
-
-    memcpy(TJE->sjr, &sjr, sizeof(sjr));
-
-    if (j < 0)
-      {
-      /* FAILURE */
-
-      if (j != -2 && j != -3)
-        {
-        /* set_job didn't leave message in log_buffer */
-
-        strcpy(log_buffer, "unable to set session");
-        }
-
-      /* set_job leaves message in log_buffer */
-
-      log_err(-1, id, log_buffer);
-
-      if (j == -3)
-        {
-        starter_return(TJE->upfds, TJE->downfds, JOB_EXEC_RETRY, &sjr);
-        }
-      else
-        {
-        starter_return(TJE->upfds, TJE->downfds, JOB_EXEC_FAIL2, &sjr);
-        }
-
-      /*NOTREACHED*/
-
-      exit(1);
-      }
     }    /* END else (TJE->is_interactive == TRUE) */
 
   /***********************************************************************/
