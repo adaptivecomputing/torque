@@ -983,7 +983,7 @@ clean_up_and_exit(int exit_val)
     cur_svr = next_svr;
     }
 
-   fflush(NULL);   /* peter h IPSec+jan n NANCO 2009 * fix truncated output. */
+  fflush(NULL);   /* peter h IPSec+jan n NANCO 2009 * fix truncated output. */
 
   exit(exit_val);
   }
