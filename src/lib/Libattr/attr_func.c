@@ -402,6 +402,14 @@ free_attrlist(tlist_head *pattrlisthead)
   svrattrl *pal;
   svrattrl *nxpal;
 
+  if (pattrlisthead == NULL)
+    {
+      return;
+    }
+  if (pattrlisthead->ll_next == NULL)
+    {
+      return;
+    }
   pal = (svrattrl *)GET_NEXT(*pattrlisthead);
 
   while (pal != (svrattrl *)0)

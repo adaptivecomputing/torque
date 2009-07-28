@@ -61,6 +61,9 @@ c - crash     b - bug fix    e - enhancement    f - new feature
   b - Change so BATCH_PARTITION_ID does not pass through to child jobs
   c - fix to prevent segfault on pbs_server -t cold
   b - fix so find_resc_entry still works after setting server extra_resc
+  c - keep pbs_server from trying to free empty attrlist after recieving 
+      bad request (Michael Meier, University of Erlangen-Nurnberg) (merged from
+      2.3.8)
 
 2.4.0
   f - added a "-q" option to pbs_mom which does *not* perform the default -p 
@@ -103,6 +106,10 @@ c - crash     b - bug fix    e - enhancement    f - new feature
       checkpoint enabled if system was configured with --enable-blcr
   e - change to qsub so only the host name can be specified on the -e/-o options
   e - added -w option to qsub that allows setting of PBS_O_WORKDIR
+
+2.3.8
+  c - keep pbs_server from trying to free empty attrlist after recieving 
+      bad request (Michael Meier, University of Erlangen-Nurnberg)
 
 2.3.7
   b - fixed a bug where UNIX domain socket communication was failing when 
