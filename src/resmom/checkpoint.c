@@ -406,7 +406,7 @@ int replace_checkpoint_path(
     len = strlen(path_checkpoint);
     memcpy(ptr2, path_checkpoint, len);
     ptr2 += len;
-    if ((path_checkpoint[strlen(path_checkpoint - 1)] == '/') && (ptr1[0] == '/'))
+    if ((path_checkpoint[strlen(path_checkpoint) - 1] == '/') && (ptr1[0] == '/'))
       {
       ptr1++;
       }
