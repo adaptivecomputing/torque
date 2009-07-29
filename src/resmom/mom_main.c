@@ -2440,7 +2440,9 @@ static unsigned long setpreexec(
   char *value)  /* I */
 
   {
+#if SHELL_USE_ARGV == 0
   static char *id = "setpreexec";
+#endif
   log_record(
     PBSEVENT_SYSTEM,
     PBS_EVENTCLASS_SERVER,

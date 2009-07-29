@@ -1725,7 +1725,11 @@ int TMomFinalizeJob2(
 
   char                  buf[MAXPATHLEN + 2];
   pid_t                 cpid;
+#if SHELL_USE_ARGV == 0
+#if SHELL_INVOKE == 1
   int                   i, j;
+#endif /* SHELL_INVOKE */
+#endif  /* !SHELL_USE_ARGV */
 
   job                  *pjob;
   task                 *ptask;
