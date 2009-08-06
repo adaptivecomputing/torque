@@ -119,6 +119,7 @@
 #define PARSE_HELP_STARVING_JOBS "help_starving_jobs"
 #define PARSE_MAX_STARVE "max_starve"
 #define PARSE_SORT_QUEUES "sort_queues"
+#define PARSE_IGNORE_QUEUE "ignore_queue"
 
 /* max sizes */
 #define MAX_HOLIDAY_SIZE 50
@@ -127,6 +128,7 @@
 #define MAX_LOG_SIZE 100
 #define MAX_RES_NAME_SIZE 256
 #define MAX_RES_RET_SIZE 256
+#define MAX_IGNORED_QUEUES 16
 
 
 /* messages -
@@ -150,6 +152,7 @@
 #define INFO_JOB_STARVING "Draining system to allow %s to run"
 #define INFO_SCHD_ERROR "Internal Scheduling Error"
 #define INFO_TOKEN_UTILIZATION "Max token usage reached"
+#define INFO_QUEUE_IGNORED "Queue is configured to be ignored"
 
 #define COMMENT_QUEUE_NOT_STARTED "Not Running: Queue not started."
 #define COMMENT_QUEUE_NOT_EXEC    "Not Running: Queue not an execution queue."
@@ -168,5 +171,6 @@
 #define COMMENT_JOB_STARVING "Not Running: Draining system to allow starving job to run"
 #define COMMENT_TOKEN_UTILIZATION "Not Running: Max token usage reached"
 #define COMMENT_SCHD_ERROR "Not Running: An internal scheduling error has occured"
+#define COMMENT_QUEUE_IGNORED "Not Running: Queue is configured to be ignored"
 
 #endif

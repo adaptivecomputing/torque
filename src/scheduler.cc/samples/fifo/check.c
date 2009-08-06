@@ -124,7 +124,10 @@ int is_ok_to_run_queue(queue_info *qinfo)
       {
       if (!(rc = check_ded_time_queue(qinfo)))
         {
-        rc = SUCCESS;
+        if (!(rc = check_ignored(qinfo)))
+          {
+          rc = SUCCESS;
+          }
         }
       }
     else
@@ -889,3 +892,19 @@ int check_token_utilization(server_info *sinfo, job_info *jinfo)
   return ret;
   }
 
+/** Check if the queue is ignored
+*
+* @param qinfo queue to be checked
+* @returns 0 if OK, 1 if ignored
+*/
+int check_ignored(queue_info *qinfo)
+{
+  int i;
+  
+  /* check if the queue is ignored */
+  for (i = 0; i < MAX_IGNORED_QUEUES; i++)
+    if (!strcmp(qinfo->name,conf.ignored_queues[i]))
+        return QUEUE_IGNORED;
+
+  return SUCCESS;
+}

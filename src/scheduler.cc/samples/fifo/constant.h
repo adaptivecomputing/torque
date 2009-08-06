@@ -116,6 +116,7 @@
 #define NOT_ENOUGH_NODES_AVAIL (RET_BASE + 15)
 #define JOB_STARVING (RET_BASE + 16)
 #define SERVER_TOKEN_UTILIZATION (RET_BASE + 17)
+#define QUEUE_IGNORED (RET_BASE + 18)
 
 /* for SORT_BY */
 enum sort_type

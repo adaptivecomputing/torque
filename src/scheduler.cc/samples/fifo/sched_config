@@ -165,6 +165,10 @@ log_filter: 256
 #	NO PRIME OPTION
 dedicated_prefix: ded
 
+# ignored queues
+# you can specify up to 16 queues to be ignored by the scheduler
+#ignore_queue: queue_name
+
 # this defines how long before a job is considered starving.  If a job has 
 # been queued for this long, it will be considered starving
 #	NO PRIME OPTION

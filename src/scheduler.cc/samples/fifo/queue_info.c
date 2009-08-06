@@ -556,6 +556,11 @@ void translate_queue_fail_code(int fail_code,
       strcpy(comment_msg, COMMENT_DED_TIME);
       strcpy(log_msg, INFO_DED_TIME);
       break;
+      
+    case QUEUE_IGNORED:
+      strcpy(comment_msg, COMMENT_QUEUE_IGNORED);
+      strcpy(log_msg, INFO_QUEUE_IGNORED);
+      break;
 
     default:
       comment_msg[0] = '\0';

@@ -317,6 +317,22 @@ int parse_config(char *fname)
               }
             }
           }
+        else if (!strcmp(config_name,PARSE_IGNORE_QUEUE))
+          {
+          if (strlen(config_value) > PBS_MAXQUEUENAME)
+            error = 1;
+          else
+            {
+            for (i = 0; i < MAX_IGNORED_QUEUES; i++)
+              {
+                if (conf.ignored_queues[i][0] == '\0')
+                {
+                strcpy(conf.ignored_queues[i],config_value);
+                break;
+                }
+              }
+            }
+          }
         }
       else
         error = 1;
@@ -341,6 +357,7 @@ int parse_config(char *fname)
 int
 init_config(void)
   {
+  int i;
   memset(&conf, 0, sizeof(struct config));
   memset(&cstat, 0, sizeof(struct status));
 
@@ -368,6 +385,16 @@ init_config(void)
     init_prime_time();
   else
     init_non_prime_time();
+  
+  for (i = 0; i < MAX_IGNORED_QUEUES; i++)
+    {
+    if ((conf.ignored_queues[i] = (char*)malloc(PBS_MAXQUEUENAME+1)) == NULL)
+      {
+      perror("Error Allocating Memory");
+      return 0;
+      }
+    memset(conf.ignored_queues[i],0,PBS_MAXQUEUENAME+1);
+    }
 
   return 1;
   }
@@ -383,8 +410,13 @@ init_config(void)
 int
 reinit_config(void)
   {
+  int i;
   free(conf.prime_sort);
   free(conf.non_prime_sort);
   free_group_tree(conf.group_root);
+  for (i = 0; i < MAX_IGNORED_QUEUES; i++)
+    {
+    free(conf.ignored_queues[i]);
+    }
   return init_config();
   }

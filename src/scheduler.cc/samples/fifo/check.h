@@ -178,5 +178,12 @@ int check_ded_time_queue(queue_info *qinfo);
  */
 int check_token_utilization(server_info *sinfo, job_info *jinfo);
 
+/** Check if the queue is ignored
+*
+* @param qinfo queue to be checked
+* @returns SUCCESS if OK, QUEUE_IGNORED if ignored
+*/
+int check_ignored(queue_info *qinfo);
+
 #endif
 
