@@ -325,7 +325,7 @@ int parse_config(char *fname)
             {
             for (i = 0; i < MAX_IGNORED_QUEUES; i++)
               {
-                if (conf.ignored_queues[i][0] == '\0')
+              if (conf.ignored_queues[i][0] == '\0')
                 {
                 strcpy(conf.ignored_queues[i],config_value);
                 break;
