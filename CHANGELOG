@@ -66,7 +66,9 @@ c - crash     b - bug fix    e - enhancement    f - new feature
       2.3.8)
   f - new fifo scheduler config option. ignore_queue: queue_name
       allows the scheduler to be instructed to ignore up to 16 queues on the server
-      (Simon Toth, SimonT@mail.muni.cz)
+      (Simon Toth, muni.cz)
+  e - add administrator configurable email notifications (see manpage for
+      pbs_server_attributes) - (Roland Haas, Georgia Tech)
 
 2.4.0
   f - added a "-q" option to pbs_mom which does *not* perform the default -p 

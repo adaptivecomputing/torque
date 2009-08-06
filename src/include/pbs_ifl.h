@@ -291,6 +291,9 @@
 #define ATTR_NODE_status        "status"
 #define ATTR_NODE_note          "note"
 
+/* notification email formating */
+#define ATTR_mailsubjectfmt "mail_subject_fmt"
+#define ATTR_mailbodyfmt    "mail_body_fmt"
 
 
 /* various attribute values */

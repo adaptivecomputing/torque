@@ -102,17 +102,11 @@
 /* External Functions Called */
 
 extern void net_close A_((int));
+extern void svr_format_job A_((FILE *, job *, char *, int, char *));
 
 /* Global Data */
 
 extern struct server server;
-extern char *msg_job_abort;
-extern char *msg_job_start;
-extern char *msg_job_end;
-extern char *msg_job_del;
-extern char *msg_job_stageinfail;
-extern char *msg_job_copychkptfail;
-extern char *msg_job_otherfail;
 
 extern int LOGLEVEL;
 
@@ -128,10 +122,11 @@ void svr_mailowner(
   int    i;
   char *mailfrom;
   char  mailto[1024];
+  char *bodyfmt, *subjectfmt;
+  char bodyfmtbuf[1024];
   FILE *outmail;
 
   struct array_strings *pas;
-  char *stdmessage = NULL;
 
   if ((server.sv_attr[(int)SRV_ATR_MailDomain].at_flags & ATR_VFLAG_SET) &&
       (server.sv_attr[(int)SRV_ATR_MailDomain].at_val.at_str != NULL) &&
@@ -251,6 +246,41 @@ void svr_mailowner(
       }
     }
 
+  /* mail subject line formating statement */
+
+  if ((server.sv_attr[(int)SRV_ATR_MailSubjectFmt].at_flags & ATR_VFLAG_SET) &&
+      (server.sv_attr[(int)SRV_ATR_MailSubjectFmt].at_val.at_str != NULL))
+    {
+    subjectfmt = server.sv_attr[(int)SRV_ATR_MailSubjectFmt].at_val.at_str;
+    }
+  else
+    {
+    subjectfmt = "PBS JOB %i";
+    }
+
+  /* mail body formating statement */
+
+  if ((server.sv_attr[(int)SRV_ATR_MailBodyFmt].at_flags & ATR_VFLAG_SET) &&
+      (server.sv_attr[(int)SRV_ATR_MailBodyFmt].at_val.at_str != NULL))
+    {
+    bodyfmt = server.sv_attr[(int)SRV_ATR_MailBodyFmt].at_val.at_str;
+    }
+  else
+    {
+    bodyfmt =  strcpy(bodyfmtbuf, "PBS Job Id: %i\n"
+                                  "Job Name:   %j\n");
+    if (pjob->ji_wattr[(int)JOB_ATR_exec_host].at_flags & ATR_VFLAG_SET)
+      {
+      strcat(bodyfmt, "Exec host:  %h\n");
+      }
+
+    strcat(bodyfmt, "%m\n");
+
+    if (text != NULL)
+      {
+      strcat(bodyfmt, "%d\n");
+      }
+    }
   /* setup sendmail command line with -f from_whom */
 
   i = strlen(SENDMAIL_CMD) + strlen(mailfrom) + strlen(mailto) + 6;
@@ -278,86 +308,16 @@ void svr_mailowner(
   fprintf(outmail, "To: %s\n",
           mailto);
 
-  fprintf(outmail, "Subject: PBS JOB %s\n",
-          pjob->ji_qs.ji_jobid);
+  fprintf(outmail, "Subject: ");
+  svr_format_job(outmail, pjob, subjectfmt, mailpoint, text);
+  fprintf(outmail, "\n");
 
   /* Set "Precedence: bulk" to avoid vacation messages, etc */
 
   fprintf(outmail, "Precedence: bulk\n\n");
 
-  /* Now pipe in "standard" message */
-
-  switch (mailpoint)
-    {
-
-    case MAIL_ABORT:
-
-      stdmessage = msg_job_abort;
-
-      break;
-
-    case MAIL_BEGIN:
-
-      stdmessage = msg_job_start;
-
-      break;
-
-    case MAIL_END:
-
-      stdmessage = msg_job_end;
-
-      break;
-
-    case MAIL_DEL:
-
-      stdmessage = msg_job_del;
-
-      break;
-
-    case MAIL_STAGEIN:
-
-      stdmessage = msg_job_stageinfail;
-
-      break;
-
-    case MAIL_CHKPTCOPY:
-
-      stdmessage = msg_job_copychkptfail;
-
-      break;
-
-    case MAIL_OTHER:
-
-    default:
-
-      stdmessage = msg_job_otherfail;
-
-      break;
-    }  /* END switch (mailpoint) */
-
-  fprintf(outmail, "PBS Job Id: %s\n",
-          pjob->ji_qs.ji_jobid);
-
-  fprintf(outmail, "Job Name:   %s\n",
-          pjob->ji_wattr[(int)JOB_ATR_jobname].at_val.at_str);
-
-  if (pjob->ji_wattr[(int)JOB_ATR_exec_host].at_flags & ATR_VFLAG_SET)
-    {
-    fprintf(outmail, "Exec host:  %s\n",
-            pjob->ji_wattr[(int)JOB_ATR_exec_host].at_val.at_str);
-    }
-
-  if (stdmessage != NULL)
-    {
-    fprintf(outmail, "%s\n",
-            stdmessage);
-    }
-
-  if (text != NULL)
-    {
-    fprintf(outmail, "%s\n",
-            text);
-    }
+  /* Now pipe in the email body */
+  svr_format_job(outmail, pjob, bodyfmt, mailpoint, text);
 
   fclose(outmail);
 

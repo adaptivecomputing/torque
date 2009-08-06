@@ -83,7 +83,8 @@ am_pbs_server_OBJECTS = accounting.$(OBJEXT) array_func.$(OBJEXT) \
 	svr_func.$(OBJEXT) svr_jobfunc.$(OBJEXT) svr_mail.$(OBJEXT) \
 	svr_movejob.$(OBJEXT) svr_recov.$(OBJEXT) \
 	svr_resccost.$(OBJEXT) svr_task.$(OBJEXT) req_tokens.$(OBJEXT) \
-	job_qs_upgrade.$(OBJEXT) req_holdarray.$(OBJEXT)
+	job_qs_upgrade.$(OBJEXT) req_holdarray.$(OBJEXT) \
+	svr_format_job.$(OBJEXT)
 pbs_server_OBJECTS = $(am_pbs_server_OBJECTS)
 am__DEPENDENCIES_1 = ../lib/Libattr/libattr.a ../lib/Libsite/libsite.a \
 	../lib/Libpbs/libtorque.la
@@ -373,7 +374,7 @@ pbs_server_SOURCES = accounting.c array_func.c array_upgrade.c attr_recov.c \
 		     svr_attr_def.c svr_chk_owner.c svr_connect.c \
 		     svr_func.c svr_jobfunc.c svr_mail.c svr_movejob.c \
 		     svr_recov.c svr_resccost.c svr_task.c req_tokens.c \
-		     job_qs_upgrade.c req_holdarray.c
+		     job_qs_upgrade.c req_holdarray.c svr_format_job.c
 
 all: all-am
 

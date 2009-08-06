@@ -279,10 +279,99 @@ minimum verbosity.
 .if !\n(Pb .ig Ig
 [internal type: integer]
 .Ig
+.Al mail_body_fmt
+Override the default format for the body of outgoing mail messages. A number 
+of printf-like format specifiers and escape sequences can be used:
+.TP
+\en
+new line
+.TP
+\et
+horizontal tab
+.TP
+\e\e
+backslash
+.TP
+\e'
+single quote
+.TP
+\e"
+double quote
+.TP
+%d
+details concerning the message
+.TP
+%h
+PBS host name
+.TP
+%i
+PBS job identifier
+.TP
+%j
+PBS job name
+.TP
+%m
+long reason for message
+.TP
+%r
+short reason for message
+.TP
+%%
+a single %
+.PP
+Format: a printf-like format string; Default value: 
+"PBS Job Id: %i\enJob Name:   %j\enExec host:  %h\en%m\en%d\en".
+.if !\n(Pb .ig Ig
+[internal type: string]
+.Ig
 .Al mail_domain
 Override the default domain for outgoing mail messages.  If set, emails will be
 addressed to "euser@mail_domain".  If unset, the job's Job_Owner attribute will
 be used.  Format: a domain name; Default value: none.
+.if !\n(Pb .ig Ig
+[internal type: string]
+.Ig
+.Al mail_subject_fmt
+Override the default format for the subject of outgoing mail messages. A number 
+of printf-like format specifiers and escape sequences can be used:
+.TP
+\en
+new line
+.TP
+\et
+horizontal tab
+.TP
+\e\e
+backslash
+.TP
+\e'
+single quote
+.TP
+\e"
+double quote
+.TP
+%d
+details concerning the message
+.TP
+%h
+PBS host name
+.TP
+%i
+PBS job identifier
+.TP
+%j
+PBS job name
+.TP
+%m
+long reason for message
+.TP
+%r
+short reason for message
+.TP
+%%
+a single %
+.PP
+Format: a printf-like format string; Default value: "PBS JOB %i".
 .if !\n(Pb .ig Ig
 [internal type: string]
 .Ig
