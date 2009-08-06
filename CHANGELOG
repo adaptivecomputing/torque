@@ -64,6 +64,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature
   c - keep pbs_server from trying to free empty attrlist after recieving 
       bad request (Michael Meier, University of Erlangen-Nurnberg) (merged from
       2.3.8)
+  f - new fifo scheduler config option. ignore_queue: queue_name
+      allows the scheduler to be instructed to ignore up to 16 queues on the server
 
 2.4.0
   f - added a "-q" option to pbs_mom which does *not* perform the default -p 
