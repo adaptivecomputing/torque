@@ -107,7 +107,7 @@
 
 #define MAX_LINE_LEN 32768  /* increased from 2048 */
 #define MAXSERVERNAME PBS_MAXSERVERNAME+PBS_MAXPORTNUM+2
-#define PBS_DEPEND_LEN 2040
+#define PBS_DEPEND_LEN 65528  /* increased from 2040 */
 
 extern int optind, opterr;
 extern char *optarg;
