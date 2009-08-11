@@ -92,6 +92,11 @@
  * the server attributes and resource (limits).
  */
 
+#ifndef SERVER_H
+#define SERVER_H
+
+#include "server_limits.h"
+
 enum srv_atr
   {
   SRV_ATR_State,                 /* 0 */
@@ -251,3 +256,5 @@ typedef struct new_node
   } new_node;
 
 /* END server.h */
+
+#endif /* ifndef SERVER_H */

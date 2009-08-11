@@ -160,7 +160,8 @@ extern int    get_svr_attr (int);
 
 static int    get_port A_((char *, unsigned int *, pbs_net_t *));
 static void   lock_out A_((int, int));
-static int   try_lock_out A_((int, int));
+static int    try_lock_out A_((int, int));
+void          restore_attr_default A_((struct attribute *));
 
 /* Global Data Items */
 
@@ -1906,6 +1907,69 @@ static void lock_out(
 
   return;
   }  /* END lock_out() */
+
+
+
+/**
+ *
+ * restores this attribute to its default where supported/possible
+ */
+
+void restore_attr_default(
+
+  struct attribute *attr) /* I */
+
+  {
+  int index;
+
+  index = (int)(attr - server.sv_attr);
+
+  attr->at_flags &= ~ATR_VFLAG_SET;
+
+  switch (index)
+    {
+    case SRV_ATR_log_events:
+
+      server.sv_attr[(int)SRV_ATR_log_events].at_val.at_long = PBSEVENT_MASK;
+
+      break;
+
+    case SRV_ATR_tcp_timeout:
+
+      server.sv_attr[(int)SRV_ATR_tcp_timeout].at_val.at_long = PBS_TCPTIMEOUT;
+
+      break;
+
+    case SRV_ATR_JobStatRate:
+
+      server.sv_attr[(int)SRV_ATR_JobStatRate].at_val.at_long = PBS_RESTAT_JOB;
+
+      break;
+
+    case SRV_ATR_PollJobs:
+
+      server.sv_attr[(int)SRV_ATR_PollJobs].at_val.at_long = PBS_POLLJOBS;
+
+      break;
+
+    case SRV_ATR_LogLevel:
+
+      server.sv_attr[(int)SRV_ATR_LogLevel].at_val.at_long = 0;
+
+      break; 
+
+    default:
+
+      /* should never get here, but if we do then reset the flags so the user knows 
+       * that the value hasn't been cleared */
+
+      attr->at_flags |= ATR_VFLAG_SET;
+
+      break;
+    }
+
+  } /* END restore_attr_default() */
+
 
 /* END pbsd_main.c */
 

@@ -81,6 +81,9 @@
  * include file for error/event logging
  */
 
+#ifndef LOG_H
+#define LOG_H
+
 #define LOG_BUF_SIZE  16384
 
 /* The following macro assist in sharing code between the Server and Mom */
@@ -198,3 +201,4 @@ extern int  setup_env A_((char *));
 #define FALSE 0
 #endif /* !defined(TRUE) || !defined(FALSE) */
 
+#endif /* ifndef LOG_H */
