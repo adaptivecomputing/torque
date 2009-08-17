@@ -9,13 +9,13 @@ use lib "$FindBin::Bin/../../../../lib/";
 
 # Test Modules
 use CRI::Test;
-use Torque::Test::Utils           qw( 
-                                      list2array
-                                      run_and_check_cmd 
-                                    );
-use Torque::Test::Pbsnodes::Utils qw( 
-                                      parse_list_output      
-                                    );
+use Torque::Util           qw( 
+                               list2array
+                               run_and_check_cmd 
+                             );
+use Torque::Util::Pbsnodes qw( 
+                               parse_list_output      
+                             );
 
 # Test Description
 plan('no_plan');
