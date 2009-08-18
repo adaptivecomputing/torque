@@ -8,6 +8,7 @@ use warnings;
 use FindBin;
 use lib "$FindBin::Bin/../../lib/";
 
+use Carp;
 use IPC::Run3;
 use Cwd qw(realpath); 
 use Data::Properties;
@@ -48,9 +49,11 @@ my %badCoredumpExes = (
     'cr_restart' 	=> 1,
     'cr_run' 		=> 1,
     'moab' 		=> 1,
+    'msub'		=> 1,
     'pbs_mom' 		=> 1,
     'pbs_sched' 	=> 1,
     'pbs_server' 	=> 1,
+    'perl' 		=> 1,
     'slurmctld' 	=> 1,
     'slurmd' 		=> 1,
 );
@@ -71,21 +74,25 @@ require Exporter;
 our @ISA    = qw(Exporter Test::More);
 our @EXPORT = (
     @Test::More::EXPORT,
-    'runtests',       # Now an alias of execute_tests, deprecated 
-    'execute_tests',  # Run a batch of tests. 
-    'setTimeout',     # Set how long of an alarm will be used for runCommand calls 
-    'runCommand',     # Run a system command, with logging
-    'runCommandAs',   # Run a system command as a different user, with logging
-    'runCommandSsh',  # Run a system command on a remote host via SSH, with logging (a work-around for a common SSH hangup)
-    'forkCommand',    # Fork a command
-    'forkCommandAs',  # Fork a command
-    'setProps',       # Set properties which will carry over to subsequent tests (in the current test run)
-    '$props',         # The properties object (Data::properties)
-    'die',            # Die, with logging 
-    'setDesc',        # Set the test description
-    'logMsg', 	      # Print a message to the test log
-    'logEnv',         # Log all the environment variables
-    'testTimeout',    # Set a time limit for the test itself
+    'runtests',         # Now an alias of execute_tests, deprecated 
+    'execute_tests',    # Run a batch of tests. 
+    'setTimeout',       # Set how long of an alarm will be used for runCommand calls 
+    'runCommand',       # Run a system command, with logging
+    'runCommandAs',     # Run a system command as a different user, with logging
+    'runCommandSsh',    # Run a system command on a remote host via SSH, with logging (a work-around for a common SSH hangup)
+    'runCommandSshAs',  # Run a system command as a differnt user on a remote host via SSH, with logging (a work-around for a common SSH hangup)
+    'forkCommand',      # Fork a command
+    'forkCommandAs',    # Fork a command
+    'setProps',         # Set properties which will carry over to subsequent tests (in the current test run)
+    '$props',           # The properties object (Data::properties)
+    'die',              # Die, with logging 
+    'setDesc',          # Set the test description
+    'logMsg', 	        # Print a message to the test log
+    'logEnv',           # Log all the environment variables
+    'testTimeout',      # Set a time limit for the test itself
+    'dynamic_cmp',      # Chooses Test method based on variable type of expected value
+    'cmp_tolr',	        # Tests Difference between values given set tolerance levels
+    'sleep_diag',       # Sleeps for a given amount of time and prints out a diag message
 ); 
 
 
@@ -103,7 +110,7 @@ sub _init
     $props->set_property('Log.Dir','/tmp/');
 
     # Load system wide config and test-specific props, probably overriding the defaults above  
-    if (not exists $ENV{MoabTestOut} or (defined $ENV{MoabTestOut} and $ENV{MoabTestOut} eq '')){
+    if (not exists $ENV{CRILogDir} or (defined $ENV{CRILogDir} and $ENV{CRILogDir} eq '')){
 	_topLevelInit(); 
     }
 
@@ -123,15 +130,15 @@ sub _init
     }
 
     # Put all properties in the environment
-    my @varNames = $props->property_names();
-    foreach (@varNames) { $ENV{$_} = $props->get_property($_); }
+    #my @varNames = $props->property_names();
+    #foreach (@varNames) { $ENV{$_} = $props->get_property($_); }
 
     # get script name and full path to script
     $curbin     = realpath($0);
     $scriptName =  $curbin;
     $scriptName =~ s/.*\///;
 
-    $logName = "$ENV{MoabTestOut}/${$}_$scriptName.log";
+    $logName = "$ENV{CRILogDir}/${$}_$scriptName.log";
     open(_LOGFILE, ">>$logName") or die("Couldn't open log file $logName :  $!");
     flock(_LOGFILE,LOCK_EX) or die('Bad stuff happened with the file lock on ' . $logName . "  " . $!); 
     chmod(0777,$logName);
@@ -187,9 +194,6 @@ sub _init
     #$ENV{'PATH'} = $props->get_property('test.base') . "/../bin/tools/:" . $ENV{'PATH'};
 } # END sub _init
 
-
-
-
 # Note: This init only should get called at the start of the first script!
 # It reads the system wide config and test-specific .props file into a combined
 #   internal props file $full_props. Also, creates test log directory and opens
@@ -244,7 +248,8 @@ sub _topLevelInit
     }
 
     # Set Log outdir across tests
-    $ENV{MoabTestOut} = $outdir; 
+    $ENV{CRILogDir} = $outdir; 
+    $props->set_property('Current.Test.Log.Dir' => $ENV{CRILogDir} );
 
     # Read in .props file and $set_props, if it exists
     my $dataProps = $props->get_property('Data.Props.Loc');
@@ -272,13 +277,12 @@ sub _topLevelInit
     my @keys = $props->property_names();
 
     # Get an array of Products to use in PATH
-    my @prods = grep { /get\.src/ } @keys;
+    my @prods = grep { /home\.dir/i } @keys;
 
     # Create PATH evironment variable for tests
     foreach (@prods)
     {
-	my $prod = $1 if $_ =~ /(\w+)\.get/;
-	my $homeDir = $props->get_property("$prod.home.dir");
+	my $homeDir = $props->get_property("$_");
 
 	foreach my $dir ('bin', 'sbin')
 	{
@@ -292,7 +296,7 @@ sub _topLevelInit
     # Create combined internal props file
     open(FH, ">",$full_props) or die("can't open $full_props $!\n");
     flock(FH,LOCK_EX) or die "Bad stuff happened with the file lock on $full_props"; 
-    $props->store(\*FH,"Last written to by $0 during test run with results in $ENV{'MoabTestOut'}") or die("Couldn't save properties to file");
+    $props->store(\*FH,"Last written to by $0 during test run with results in $ENV{'CRILogDir'}") or die("Couldn't save properties to file");
     close(FH);
     
     # Enable Coredump Detection
@@ -301,7 +305,7 @@ sub _topLevelInit
     `$cmd`;
 
     # Lines starting with # are ignored by TAP.
-    print "#\n#######   Logging results to $ENV{MoabTestOut}\n#\n";
+    print "#\n#######   Logging results to $ENV{CRILogDir}\n#\n";
 } # END sub _topLevelInit
 
 # appends key/value pairs to a test log (not summary log!)
@@ -408,6 +412,31 @@ sub forkCommand {
     return 0;
 } # END forkCommand
 
+sub forkCommandSsh {
+    logMsg("Forking ssh command '$_[0]'");
+
+    my $pid;
+
+    if($pid = fork()){
+
+	push(@kidPids,$pid) if (@kidPids);
+	return 1; 
+
+    } elsif (defined $pid) {
+
+
+	$ENV{PrintLogInfo} = 0;
+	undef(@kidPids);
+	$imafork = 1;
+	Proc::Daemon::Init;
+	runCommandSsh($_[0], $_[1]);
+	exit();
+    }
+
+    logMsg("forkCommandSsh didn't work correctly");
+    return 0;
+} # END forkCommandSsh
+
 # kills all children processes which haven't exited yet
 sub _cleanExit {
     logMsg("Test asked to exit cleanly (possibly by a timer). Attempting to terminate children and exit as requested");
@@ -433,7 +462,8 @@ sub runCommand
 {
     haveCoreDump();
     
-    my $command = shift;
+    my $command = shift; 
+    my %flags 	= @_;
 
     my ($thePid, $stdout, $stderr, $theExitCode);
 
@@ -484,13 +514,38 @@ sub runCommand
     _writeLog("STDERR",$stderr);
     _writeLog("EXIT_CODE",$theExitCode);
 
-    if($stderr =~ /cannot load packet size|connection refused/)
+    if($stderr =~ /cannot load packet size|connection refused|core dumped|Aborted/)
     {
 	logMsg('Searching for possible Coredump');
 	sleep 10;
 	haveCoreDump();
     }
     
+    if( exists $flags{test_success} || exists $flags{test_success_die} )
+    {
+	my $default_msg = "Command Ran Successfully";
+	
+	my $msg = $flags{msg} || $default_msg;
+	
+	my $success = cmp_ok($theExitCode, '==', 0, $msg . " (CMD: '$command')")
+          or diag "STDERR:$stderr";
+
+        die("Command '$command' failed")
+           if (exists $flags{test_success_die} and ! $success);
+    }
+    elsif( exists $flags{test_fail} || exists $flags{test_fail_die} )
+    {
+	my $default_msg = "Command Failed as Expected";
+	
+	my $msg = $flags{msg} || $default_msg;
+	
+	my $success = cmp_ok($theExitCode, '!=', 0, $msg . " (CMD: '$command')")
+          or diag ("STDERR:$stderr");
+
+        die("Command '$command' did not fail as expected")
+	  if (exists $flags{test_fail_die} and ! $success);
+    }
+
     if (wantarray)
     {
 	return
@@ -531,7 +586,7 @@ sub runCommandSsh
 
     my @date = localtime;
 
-    $command = "ssh root\@$host 'sleep 0.5; $command'";
+    $command = "ssh -t -t root\@$host '$command'";
 
     my $startTime = gettimeofday();
     eval
@@ -595,9 +650,93 @@ sub runCommandSsh
     return $theExitCode;
 } # END sub runCommandSsh
 
+sub runCommandSshAs
+{
+    my ($host, $user, $command) = @_;
+    
+    haveCoreDump({'ssh' => $host});
+
+    my ($thePid, $stdout, $stderr, $theExitCode);
+
+    # Catch generic errors
+    $thePid = $stdout = $stderr = "Run3 gave an error. This probably means the command was not found.";
+    $theExitCode = 999;
+
+    # Tainted variables are hard to debug...
+    if(tainted($command))
+    {
+	$thePid = $stdout = $stderr = "The given command was tainted and probably won't work ($command)";
+    }
+
+    my @date = localtime;
+
+    $command = "ssh -t -t $user\@$host '$command'";
+
+    my $startTime = gettimeofday();
+    eval
+    {
+	local $SIG{ALRM} = sub { die("Command timed out after $commandAlarm seconds. Command was : $command"); }; 
+	alarm($commandAlarm);
+	$thePid = run3($command,undef,\$stdout,\$stderr);
+	alarm(0);
+	$theExitCode = $? >> 8;
+    };
+    alarm(0);
+    my $endTime = gettimeofday(); 
+
+    my $timestamp = sprintf
+    (
+	'%d%02d%02d%02d%02d%02d',
+	$date[5] + 1900,
+	$date[4] + 1,
+	$date[3],
+	$date[2],
+	$date[1],
+	$date[0]
+    );
+
+    _writeLog("PROGRAM_RUN",$command);
+    _writeLog("CWD",Cwd::getcwd());
+    _writeLog("RUN_AS_USER",scalar getpwuid($<));
+    _writeLog("RUN_AS_GROUP",scalar getgrgid($());
+    _writeLog("TIME_RUN",$timestamp);
+    _writeLog("BENCHMARK",$endTime - $startTime);
+    _writeLog("PTID",getppid());
+    _writeLog("TID",$thePid);
+    _writeLog("STDOUT",$stdout);
+    _writeLog("STDERR",$stderr);
+    _writeLog("EXIT_CODE",$theExitCode);
+
+    if($stderr =~ /cannot load packet size/)
+    {
+	logMsg("Searching for possible Coredump on remote host $host");
+	sleep 10;
+    	haveCoreDump({'ssh' => $host});
+    }
+    
+    if (wantarray)
+    {
+	return
+	(
+	    PROGRAM_RUN  => $command,
+	    PTID         => getppid(),
+	    EXIT_CODE    => $theExitCode,
+	    RUN_AS_USER  => scalar getpwuid($<),
+	    RUN_AS_GROUP => scalar getpwuid($<),
+	    CWD          => Cwd::getcwd(),
+	    STDOUT       => $stdout,
+	    STDERR       => $stderr,
+	    TIME_RUN     => $timestamp,
+	    SECONDS_TAKEN=> $endTime - $startTime,
+	);
+    }
+
+    return $theExitCode;
+} # END sub runCommandSshAs
+
 sub runCommandAs 
 {
-    my ($username,$command) = @_;
+    my ($username,$command,%args) = @_;
 
     haveCoreDump();
 
@@ -615,17 +754,17 @@ sub runCommandAs
 	local $< = $uid;
 	local $> = $uid; 
 
-	my $old_cwd = $ENV{'PWD'};
+	my $old_cwd = $ENV{PWD};
 	my $new_cwd = "/home/$username";
 	chdir $new_cwd;
 
 	if (wantarray) {
-	    my %results = runCommand($command);
+	    my %results = runCommand($command,%args);
 	    return %results;
 	} 
 	else 
 	{
-	    my $results = runCommand($command);
+	    my $results = runCommand($command,%args);
 	    return $results;
 	}
 	chdir $old_cwd;
@@ -641,7 +780,7 @@ sub ok ($;$)
 {
     my $result = Test::More::ok($_[0],$_[1]);
 
-    _writeLog("OK[$result]",join(' , ',@_)) or die("Printing threw an error in sub ok() $!\n"); 
+    _writeLog("OK[$result]",join(' , ',replaceUndef(@_))) or die("Printing threw an error in sub ok() $!\n"); 
 
     return $result;
 } # END ok 
@@ -653,10 +792,46 @@ sub cmp_ok ($$$;$)
 
     my $result = Test::More::cmp_ok($one,$two,$three,$four);
 
-    _writeLog("CMP_OK[$result]",join(' , ',@_)) or die("Printing threw an error in sub cmp_ok()");
+    _writeLog("CMP_OK[$result]",join(' , ',replaceUndef(@_))) or die("Printing threw an error in sub cmp_ok()");
 
     return $result;
 } # END cmp_ok
+
+sub cmp_tolr ($$$$;$)
+{
+    my ($rep, $opr, $exp, $tolr, $msg) = @_;
+
+    my $log_msg = "Reported $rep and Expected $exp";
+    my $exp_tolr = $tolr;
+
+    my $value;
+    
+    my $diff = $tolr =~ /^[\+\-]/ ? $rep - $exp : abs($rep - $exp);
+
+    if( $tolr =~ /^([\-\+]?[\d\.]+)%$/ )
+    {
+	$value 	  = $rep != 0 ? $diff / $rep * 100 : $diff;
+	$exp_tolr = $1;
+	$msg 	 .= " ($exp_tolr% Tolerance)";
+	$log_msg .= " have $value% Difference.";
+    }
+    else
+    {
+	$value = $diff;
+	$msg .= " (Tolerance Used)";
+	$log_msg .= " Differ by $value.";
+    }
+
+    $log_msg .= " Tolerance Set at $tolr.";
+
+    my $result = Test::More::cmp_ok($value,$opr,$exp_tolr,$msg);
+    
+    _writeLog("CMP_TOLR[$result]",$msg) or die("Printing threw an error in sub cmp_tolr()");
+    _writeLog('CMP_TOLR_MSG',$log_msg) if $result;
+    diag $log_msg unless $result;
+
+    return $result;
+} # END cmp_tolr
 
 # Override isnt so we can log these tests too
 sub isnt ($$;$)
@@ -664,7 +839,7 @@ sub isnt ($$;$)
     my ($one,$two) = @_;
     my $isntResult = Test::More::isnt($one,$two);
 
-    _writeLog("ISNT[$isntResult]", join(' , ',@_)) or die("Printing threw an error in sub isnt() $!\n"); 
+    _writeLog("ISNT[$isntResult]", join(' , ',replaceUndef(@_))) or die("Printing threw an error in sub isnt() $!\n"); 
 
     return $isntResult;
 } # END isnt 
@@ -674,7 +849,7 @@ sub like ($$;$)
     my ($one, $two, $three) = @_;
     my $likeResults = Test::More::like($one, $two, $three);
 
-    _writeLog("LIKE[$likeResults]" , join(' , ',@_)) or die("Printing threw an error in sub like() $!\n");
+    _writeLog("LIKE[$likeResults]" , join(' , ',replaceUndef(@_))) or die("Printing threw an error in sub like() $!\n");
 
     return $likeResults;
 } #END like
@@ -684,7 +859,7 @@ sub unlike ($$;$)
     my ($one, $two,$three) = @_;
     my $unlikeResults = Test::More::unlike($one,$two,$three);
 
-    _writeLog("UNLIKE[$unlikeResults]" , join(' , ',@_)) or die("Printing threw an error in sub unlike() $!\n"); 
+    _writeLog("UNLIKE[$unlikeResults]" , join(' , ',replaceUndef(@_))) or die("Printing threw an error in sub unlike() $!\n"); 
 
     return $unlikeResults;
 } # END unlike 
@@ -694,10 +869,52 @@ sub is ($$;$)
     my ($one,$two,$three) = @_;
     my $isResult = Test::More::is($one,$two,$three);
 
-    _writeLog("IS[$isResult]", join(',',@_)) or die("Printing threw an error in sub is() $!\n"); 
+    _writeLog("IS[$isResult]", join(',',replaceUndef(@_))) or die("Printing threw an error in sub is() $!\n"); 
 
     return $isResult;
 } # END is 
+
+#-----------------------------------------------------
+# my $result = dynamic_cmp(
+# 	'rept' => 10,
+# 	'expt' => 12,
+# 	'msg'  => 'Some Message',
+# 	'tolr' => '15.5%',
+# 	'opr'  => '>=',
+# );
+#-----------------------------------------------------
+# Dynamically determines testing method based on
+#  variable type of expected value. If the 'opr' flag
+#  exists, the default flag will be replaced.
+#-----------------------------------------------------
+sub dynamic_cmp
+{
+    my %case = @_;
+
+    if( defined $case{tolr} )
+    {
+	my $opr = $case{opr} || '<=';
+	cmp_tolr($case{rept}, $opr, $case{expt}, $case{tolr}, $case{msg});
+    }
+    elsif( $case{expt} =~ /^-?\d+(?:\.\d+)?$/ )
+    {
+	my $opr = $case{opr} || '==';
+	cmp_ok($case{rept}, $opr, $case{expt}, $case{msg});
+    }
+    elsif( ref $case{expt} eq 'Regexp' )
+    {
+	like($case{rept}, $case{expt}, $case{msg});
+    }
+    elsif( ref $case{expt} eq 'ARRAY' || ref $case{expt} eq 'HASH' )
+    {
+	is_deeply($case{rept}, $case{expt}, $case{msg});
+    }
+    else
+    {
+	my $opr = $case{opr} || 'eq';
+	cmp_ok($case{rept}, $opr, $case{expt}, $case{msg});
+    }
+}
 
 sub pass (;$)
 {
@@ -727,24 +944,33 @@ sub is_deeply
 
     my($ref1, $ref2, $desc) = @_;
     my $log_string;
-    my $header = "Index#\tExpected    <=>    Got\n";
 
-    my $test = "$ref1";
-
-    if( $test =~ /ARRAY/ )
+    if( ref $ref1 eq 'ARRAY' )
     {
-	$log_string .= $header;
-	foreach (0 .. scalar @$ref2 - 1)
+	my $num = [reverse sort (scalar @$ref1 - 1, scalar @$ref2 - 1)]->[0];
+
+	$log_string .= "Index#\tExpected    <=>    Got\n";
+	foreach (0 .. $num)
 	{
+	    $ref1->[$_] = 'Does Not Exist' unless defined $ref1->[$_];
+	    $ref2->[$_] = 'Does Not Exist' unless defined $ref2->[$_];
+
 	    $log_string .= "$_:\t$ref2->[$_]    <=>\t$ref1->[$_]\n" if $ref2->[$_] ne $ref1->[$_];
 	}
     }
-    elsif( $test =~ /HASH/ )
+    elsif( ref $ref1 eq 'HASH' )
     {
+	my $use = scalar keys %{$ref1} > scalar keys %{$ref2}
+		? $ref1
+		: $ref2;
+
 	$log_string .= "Key\tExpected-Value    <=>    Got-Value\n";
-	foreach (keys %$ref2)
+	foreach ( keys %{$use} )
 	{
-	    $log_string .= "$_:\t$ref2->{$_}    <=>\t$ref1->{$_}\n" if $ref2->[$_] ne $ref1->[$_];;
+	    $ref1->{$_} = 'Does Not Exist' unless defined $ref1->{$_};
+	    $ref2->{$_} = 'Does Not Exist' unless defined $ref2->{$_};
+	    
+	    $log_string .= "$_:\t$ref2->{$_}    <=>\t$ref1->{$_}\n" if $ref2->{$_} ne $ref1->{$_};
 	}
     }
     else
@@ -752,7 +978,8 @@ sub is_deeply
 	$log_string = "Did not recieve an array or hash reference!";
     }
 
-    $log_string = "Data Structures are Equal!" if $log_string eq $header;
+    my @lines = split(/\n/,$log_string);
+    $log_string = "Data Structures are Equal!" if scalar @lines < 2;
 
     _writeLog("IS_DEEPLY[$isDeep]","$desc\n$log_string") or die('Printing threw an error in sub is_deeply()');
 
@@ -766,6 +993,31 @@ sub diag
 
     Test::More::diag($one);
 } # End diag
+
+
+#------------------------------------------------------------------------------
+# sleep_diag 15;
+#------------------------------------------------------------------------------
+#
+# Sleeps for a given amount of time and prints out a diag message.
+#
+#------------------------------------------------------------------------------
+sub sleep_diag #($)
+  {
+
+  my ($sleep_time) = @_; 
+
+  # Check the passed in sleep time
+  die "No sleep time given"
+    unless defined $sleep_time;
+  die "Sleep time needs to be an integer"
+     unless $sleep_time =~ /^\d+$/;
+
+  # Print out the message and sleep
+  diag("Sleeping for $sleep_time second(s) ...");
+  sleep $sleep_time;
+
+  } # END sleep_diag #($)
 
 sub skip
 {
@@ -789,12 +1041,6 @@ sub plan  {
     _writeLog("PLAN",join(", ",@_));
     Test::More::plan(@_); 
 } # END PLAN 
-
-use warnings;
-
-use FindBin;
-use lib "$FindBin::Bin/../../lib/";
-
 
 sub runtests {
     return execute_tests(@_);
@@ -882,14 +1128,14 @@ sub setProps
 
     open(FH, ">$set_props") or die "can't open $set_props: $!\n";
     flock(FH,LOCK_EX) or die("Bad stuff happened with the file lock on $set_props"); 
-    $tmp_props->store(\*FH,"Last written to by $scriptName during test run with results in $ENV{'MoabTestOut'}");
+    $tmp_props->store(\*FH,"Last written to by $scriptName during test run with results in $ENV{'CRILogDir'}");
     close(FH);
 } # END sub setProps
 
 sub readSpool
 {
     require 'shellwords.pl';
-    my $spoolFile = "$ENV{MoabTestOut}/Summary.log"; 
+    my $spoolFile = "$ENV{CRILogDir}/Summary.log"; 
     my %data = ();
 
     unless (-e $spoolFile)
@@ -945,7 +1191,7 @@ sub _writeSpool
 	$wholeLog{$tid}->{$key} = $logInfo{$key}; 
     }
 
-    open(SPOOL, ">$ENV{'MoabTestOut'}/Summary.log") or die "Couldn't open Summary.log!\n";
+    open(SPOOL, ">$ENV{'CRILogDir'}/Summary.log") or die "Couldn't open Summary.log!\n";
     flock(SPOOL,LOCK_EX) or die('Bad stuff happened with the file lock on Summary.log'); 
 
     foreach my $rowID (sort keys %wholeLog)
@@ -1018,7 +1264,7 @@ sub _finalizeReport
     _writeLog("TOTAL_TIME",$totalTime);
     if($ENV{PrintLogInfo})
     {
-	print "#\n#######   Logged results to $ENV{MoabTestOut}\n#\n";
+	print "#\n#######   Logged results to $ENV{CRILogDir}\n#\n";
     }
 } # END _finalizeReport
 
@@ -1060,7 +1306,7 @@ sub haveCoreDump
 	    my $process_name = $2;
 	    push @exe_names, $2;
 	    
-	    my $outdir = $1 if $ENV{MoabTestOut} =~ /(.+)/;
+	    my $outdir = $1 if $ENV{CRILogDir} =~ /(.+)/;
 	    
 	    my $core_fullpath = "$outdir/$filename";
 	    
@@ -1107,9 +1353,32 @@ sub haveCoreDump
 		_writeSpool($$,'COREDUMP'=>join(',',@coreList));
 		_writeSpool($$,'COREDUMPLOG'=>join(',',@coreLogs));
 		print "# Possibly Insignificant Coredump Found!\n";
+		
+		$testStatus = "COREDUMP";
 	    }
 	}
     }
+}
+
+# Used to replace undef values with empty strings
+#   for log printing and prevent Perl from throwing
+#   concatenation errors
+sub replaceUndef
+{
+    my @params;
+
+    foreach (@_)
+    {
+	my $element = $_;
+	if( !defined $element )
+	{
+	    $element = '';
+	}
+	
+	push @params, $element;
+    }
+
+    return @params;
 }
 
 END
