@@ -70,14 +70,11 @@ ok($job_info{ $job_id }{ 'job_state' } eq 'R',
 ###############################################################################
 # Test qsig
 ###############################################################################
+sleep_diag 5;
 $cmd  = "qsig $job_id";
 %qsig = run_and_check_cmd($cmd);
 
-# Wait a few seconds
-sleep 2;
-
 %signals = get_recieved_signals($job_id);
-
 ok(defined $signals{ 'TERM' }, "Checking for the 'TERM' signal");
 
 ###############################################################################

@@ -74,7 +74,7 @@ foreach my $signal (@signals)
   $cmd  = "qsig -s $signal $job_id";
   %qsig = run_and_check_cmd($cmd);
 
-  sleep 2;
+  sleep_diag 5;
 
   %rcvd_signals = get_recieved_signals($job_id);
   ok(defined $rcvd_signals{ $signal }, "Checking for the '$signal' signal");
