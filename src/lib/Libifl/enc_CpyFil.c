@@ -138,7 +138,7 @@ encode_DIS_CopyFiles(int sock, struct batch_request *preq)
   while (ppair)
     {
     if (ppair->fp_rmt == NULL)
-      ppair->fp_rmt = nullstr;
+      ppair->fp_rmt = strdup(nullstr);
 
     if ((rc = diswui(sock, ppair->fp_flag) != 0) ||
         (rc = diswst(sock, ppair->fp_local) != 0) ||
