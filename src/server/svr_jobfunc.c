@@ -444,11 +444,10 @@ int svr_enquejob(
       {
       pjob->ji_wattr[(int)JOB_ATR_etime].at_val.at_long = time_now;
       pjob->ji_wattr[(int)JOB_ATR_etime].at_flags |= ATR_VFLAG_SET;
-
-      /* notify the scheduler we have a new job */
-
-      svr_do_schedule = SCH_SCHEDULE_NEW;
       }
+      
+    /* notify the scheduler we have a new job */
+    svr_do_schedule = SCH_SCHEDULE_NEW;
     }
   else if (pque->qu_qs.qu_type == QTYPE_RoutePush)
     {
