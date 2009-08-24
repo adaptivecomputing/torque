@@ -12,26 +12,31 @@ use CRI::Test;
 plan('no_plan');
 setDesc("Reinstall 'Berkley Lab Checkpoint/Restart (BLCR) for Linux'");
 
-my $testbase = $FindBin::Bin;
+my $testbase    = $FindBin::Bin;
+my $blcr_exists = 0;
 
-# Check to see if blcr is alread installed
-my $blcr_bin = $props->get_property('blcr.home.dir') . "/bin";
-my $cr_run   = "$blcr_bin/cr_run";
-
-if (-e $cr_run)
+foreach my $blcr_module ('blcr_imports', 'blcr')
   {
 
-  my %result = runCommand($cr_run);
+  my %ls_mod = runCommand("lsmod | grep $blcr_module");
 
-  if ($result{ 'EXIT_CODE' } == 0)
+  if ($ls_mod{ 'STDOUT' } =~ /${blcr_module}/)
     {
 
-    pass("BLCR is already installed.  Skipping the install"); 
-    exit 0;
+    $blcr_exists = 1;
+    last;
 
-    } # END if ($result{ 'EXIT_CODE' }, '!=', 0)
+    } # END if ($ls_mod{ 'STDOUT' } =~ /${blcr_module}/)
 
-  } # END if (-e $cr_run)
+  } # END foreach my $blcr_module ('blcr_imports', 'blcr')
+
+if ($blcr_exists)
+  {
+
+  pass("BLCR is already installed.  Skipping the install"); 
+  exit 0;
+
+  } # END if ($blcr_exists)
 
 execute_tests(
               "$testbase/uninstall/uninstall.bat",
