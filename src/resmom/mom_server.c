@@ -231,6 +231,7 @@
 #include "resmon.h"
 #include "server_limits.h"
 #include "pbs_job.h"
+#include "utils.h"
 
 #include        "mcom.h"
 
@@ -296,9 +297,6 @@ extern struct config *rm_search(struct config *where, char *what);
 extern struct rm_attribute *momgetattr(char *str);
 extern char *conf_res(char *resline, struct rm_attribute *attr);
 extern char *dependent(char *res, struct rm_attribute *attr);
-extern int MUStrNCat(char **BPtr, int *BSpace, char *Src);
-extern int MUSNPrintF(char **BPtr, int *BSpace, char *Format, ...);
-extern void tinsert(const u_long, tree **);
 
 char TORQUE_JData[MMAX_LINE];
 
@@ -592,7 +590,7 @@ int mom_server_add(
       ipaddr = ntohl(saddr.s_addr);
 
       if (ipaddr != 0)
-        tinsert(ipaddr, &okclients);
+        tinsert(ipaddr, NULL, &okclients);
       }
     }    /* END BLOCK */
 
@@ -1800,230 +1798,11 @@ void mom_server_update_receive_time_by_ip(
 
 
 
-/*
- * Tree search generalized from Knuth (6.2.2) Algorithm T just like
- * the AT&T man page says.
- *
- * The node_t structure is for internal use only, lint doesn't grok it.
- *
- * Written by reading the System V Interface Definition, not the code.
- *
- * Totally public domain.
- */
-/*LINTLIBRARY*/
-
-/*
+/**
 ** Modified by Tom Proett <proett@nas.nasa.gov> for PBS.
 */
 
 tree *okclients = NULL; /* tree of ip addrs */
-
-
-
-
-
-/* list keys in tree */
-
-int tlist(
-
-  tree *rootp,   /* I */
-  char *Buf,     /* O (modified) */
-  int   BufSize) /* I */
-
-  {
-  char tmpLine[32];
-
-  int  BSize;
-
-  /* NOTE:  recursive.  Buf not initialized */
-
-  if ((rootp == NULL) || (Buf == NULL))
-    {
-    /* empty tree - failure */
-
-    return(1);
-    }
-
-  if (BufSize <= 16)
-    {
-    /* inadequate space to append data */
-
-    return(-1);
-    }
-
-  BSize = BufSize;
-
-  if (rootp->left != NULL)
-    {
-    tlist(rootp->left, Buf, BSize);
-
-    BSize -= strlen(Buf);
-    }
-
-  if (rootp->right != NULL)
-    {
-    tlist(rootp->right, Buf, BSize);
-
-    BSize -= strlen(Buf);
-    }
-
-  if (BSize <= 16)
-    {
-    /* inadequate space to append data */
-
-    return(-1);
-    }
-
-  sprintf(tmpLine, "%s",
-          netaddr_pbs_net_t(rootp->key));
-
-  if ((Buf[0] != '\0') && (BSize > 1))
-    {
-    strcat(Buf, ",");
-
-    BSize--;
-    }
-
-  if (BSize > (int)strlen(tmpLine))
-    {
-    strcat(Buf, tmpLine);
-    }
-
-  return(-1);
-  }  /* END tlist() */
-
-
-
-
-/* find value in tree, return 1 if found, 0 if not */
-
-struct pbsnode *tfind(
-
-        const u_long   key, /* key to be located */
-        tree         **rootp) /* address of tree root */
-
-  {
-  if (rootp == NULL)
-    {
-    /* empty tree - failure */
-
-    return(NULL);
-    }
-
-  while (*rootp != NULL)
-    {
-    /* Knuth's T1: */
-
-    if (key == (*rootp)->key)
-      {
-      /* T2: */
-
-      /* we found it! */
-
-      return((struct pbsnode *)1);
-      }
-
-    rootp = (key < (*rootp)->key) ?
-
-            &(*rootp)->left : /* T3: follow left branch */
-            &(*rootp)->right; /* T4: follow right branch */
-    }  /* END while (*rootp != NULL) */
-
-  /* cannot locate value in tree - failure */
-
-  return(NULL);
-  }  /* END tfind() */
-
-
-
-
-
-/* NOTE:  tinsert cannot report failure */
-
-void tinsert(
-
-  const u_long   key, /* key to be located */
-  tree         **rootp) /* address of tree root */
-
-  {
-  register tree *q;
-
-  if (rootp == NULL)
-    {
-    /* invalid tree address - failure */
-
-    return;
-    }
-
-  while (*rootp != NULL)
-    {
-    /* Knuth's T1: */
-
-    if (key == (*rootp)->key) /* T2: */
-      {
-      /* key already exists */
-
-      return;   /* we found it! */
-      }
-
-    rootp = (key < (*rootp)->key) ?
-
-            &(*rootp)->left : /* T3: follow left branch */
-            &(*rootp)->right; /* T4: follow right branch */
-    }
-
-  /* create new tree node */
-
-  q = (tree *)malloc(sizeof(tree)); /* T5: key not found */
-
-  if (q == NULL)
-    {
-    /* cannot allocate memory - failure */
-
-    return;
-    }
-
-  /* make new tree */
-
-  *rootp = q;   /* link new node to old */
-
-  q->key = key;   /* initialize new tree node */
-
-  q->left = NULL;
-
-  q->right = NULL;
-
-  /* success */
-
-  return;
-  }  /* END tinsert() */
-
-
-
-
-
-void tfree(
-
-  tree **rootp)
-
-  {
-  if (rootp == NULL || *rootp == NULL)
-    {
-    return;
-    }
-
-  tfree(&(*rootp)->left);
-
-  tfree(&(*rootp)->right);
-
-  free(*rootp);
-
-  *rootp = NULL;
-
-  return;
-  }  /* END tfree() */
-
-
 
 
 
@@ -2138,7 +1917,7 @@ mom_server *mom_server_valid_message_source(
 
             if (ipaddr == server_ip)
               {
-              tinsert(ipaddr, &okclients);
+              tinsert(ipaddr, NULL, &okclients);
               pms->SStream = stream;
               return(pms);
               }
@@ -2299,7 +2078,7 @@ void is_request(
         if (ret != DIS_SUCCESS)
           break;
 
-        tinsert(ipaddr, &okclients);
+        tinsert(ipaddr, NULL, &okclients);
 
         if (LOGLEVEL >= 4)
           {
@@ -2579,75 +2358,6 @@ void check_busy(
 
   return;
   }  /* END check_busy() */
-
-
-
-
-
-int MUReadPipe(
-
-  char *Command,  /* I */
-  char *Buffer,   /* O */
-  int   BufSize)  /* I */
-
-  {
-  FILE *fp;
-  int   rc;
-
-  int   rcount;
-  int   ccount;
-
-  if ((Command == NULL) || (Buffer == NULL))
-    {
-    return(1);
-    }
-
-  if ((fp = popen(Command, "r")) == NULL)
-    {
-    return(1);
-    }
-
-  ccount = 0;
-
-  rcount = 0;
-
-  do
-    {
-    rc = fread(Buffer + ccount, 1, BufSize - ccount, fp);
-
-    /* NOTE:  ferror may create false failures */
-
-    if (rc > 0)
-      {
-      ccount += rc;
-      }
-
-    if ((ccount >= BufSize) || (rcount++ > 10))
-      {
-      /* full buffer loaded or too many attempts */
-
-      break;
-      }
-    }
-  while (!feof(fp));
-
-  if (ferror(fp))
-    {
-    /* FAILURE */
-
-    pclose(fp);
-
-    return(1);
-    }
-
-  /* SUCCESS - terminate buffer */
-
-  Buffer[MIN(BufSize - 1,ccount)] = '\0';
-
-  pclose(fp);
-
-  return(0);
-  }  /* END MUReadPipe() */
 
 
 

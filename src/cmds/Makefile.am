@@ -1,6 +1,7 @@
 include $(top_srcdir)/buildutils/config.mk
 
-PBS_LIBS = ../lib/Libpbs/libtorque.la
+PBS_LIBS = ../lib/Libpbs/libtorque.la \
+					 ../lib/Libutils/libutils.a
 
 dist_bin_SCRIPTS = nqs2pbs
 bin_PROGRAMS = qalter qdel qhold qmove qorder qmsg qrerun qrls qselect qsig \

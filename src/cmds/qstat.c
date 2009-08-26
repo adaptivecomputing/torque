@@ -95,6 +95,7 @@
 
 #include "cmds.h"
 #include "mcom.h"
+#include "utils.h"
 
 static void states();
 

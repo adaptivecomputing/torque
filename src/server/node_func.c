@@ -122,6 +122,7 @@
 #include "rpp.h"
 #include "pbs_proto.h"
 #include "net_connect.h"
+#include "utils.h"
 
 #if !defined(H_ERRNO_DECLARED)
 extern int h_errno;
@@ -349,15 +350,6 @@ int addr_ok(
 
   return(status);
   }  /* END addr_ok() */
-
-
-
-/* FIXME: this should all be in a seperate header file */
-
-extern void tinsert(const u_long key, struct pbsnode *nodep, tree **rootp);
-extern void *tdelete(const u_long key, tree **rootp);
-extern void tfree(tree **rootp);
-
 
 
 

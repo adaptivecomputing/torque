@@ -87,7 +87,7 @@ am_pbs_server_OBJECTS = accounting.$(OBJEXT) array_func.$(OBJEXT) \
 	svr_format_job.$(OBJEXT)
 pbs_server_OBJECTS = $(am_pbs_server_OBJECTS)
 am__DEPENDENCIES_1 = ../lib/Libattr/libattr.a ../lib/Libsite/libsite.a \
-	../lib/Libpbs/libtorque.la
+	../lib/Libutils/libutils.a ../lib/Libpbs/libtorque.la
 pbs_server_DEPENDENCIES = $(am__DEPENDENCIES_1)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src/include
 depcomp = $(SHELL) $(top_srcdir)/buildutils/depcomp
@@ -354,6 +354,7 @@ XPBSMON_DIR = $(libdir)/xpbsmon
 SUBMIT_FILTER_PATH = $(libexecdir)/qsub_filter
 PBS_LIBS = ../lib/Libattr/libattr.a \
 	   ../lib/Libsite/libsite.a \
+		 ../lib/Libutils/libutils.a \
 	   ../lib/Libpbs/libtorque.la
 
 pbs_server_LDADD = $(PBS_LIBS)
@@ -497,6 +498,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/svr_attr_def.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/svr_chk_owner.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/svr_connect.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/svr_format_job.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/svr_func.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/svr_jobfunc.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/svr_mail.Po@am__quote@

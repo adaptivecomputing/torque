@@ -1,3 +1,6 @@
+#ifndef RESOURCE_H
+#define RESOURCE_H
+
 /*
 *         OpenPBS (Portable Batch System) v2.3 Software License
 *
@@ -142,4 +145,5 @@ extern resource_def *find_resc_def A_((resource_def *, char *, int));
 extern resource     *find_resc_entry A_((attribute *, resource_def *));
 
 /* END resource.h */
+#endif
 

@@ -1,3 +1,5 @@
+#ifndef PBS_NODES_H
+#define PBS_NODES_H
 /*
 *         OpenPBS (Portable Batch System) v2.3 Software License
 *
@@ -278,3 +280,5 @@ extern  int     mgr_set_node_attr A_((struct pbsnode *, attribute_def *, int, sv
 
 struct prop  *init_prop A_((char *pname));
 #endif /* BATCH_REQUEST_H */
+
+#endif /* PBS_NODES_H */ 

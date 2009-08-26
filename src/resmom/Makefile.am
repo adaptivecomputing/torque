@@ -12,6 +12,7 @@ AM_CPPFLAGS += -I$(top_srcdir)/src/resmom/@PBS_MACH@ -DPBS_MOM \
 
 PBS_LIBS = ../lib/Libattr/libattr.a \
 	   ../lib/Libsite/libsite.a \
+		 ../lib/Libutils/libutils.a \
 	   ../lib/Libpbs/libtorque.la
 
 EXTRA_DIST = rm_dep.h

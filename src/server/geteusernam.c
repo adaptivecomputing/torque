@@ -95,6 +95,7 @@
 #include "pbs_error.h"
 #include "svrfunc.h"
 #include "log.h"
+#include "utils.h"
 #ifdef _CRAY
 #include <udb.h>
 #endif /* _CRAY */
@@ -525,7 +526,7 @@ int set_jobexid(
     /* user specified a group, group must exist and either */
     /* must be user's primary group or the user must be in it */
 
-    gpent = getgrnam(pgrpn);
+    gpent = getgrnam_ext(pgrpn);
 
     if (gpent == NULL)
       {

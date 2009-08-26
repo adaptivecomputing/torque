@@ -110,6 +110,7 @@
 #include "rpp.h"
 #include "resmon.h"
 #include "net_connect.h"
+#include "utils.h"
 #ifdef _CRAY
 #include <sys/category.h>
 #endif
@@ -1744,27 +1745,6 @@ static void cray_susp_resum(
   }  /* END cray_susp_resum() */
 
 #endif /* _CRAY */
-
-
-
-
-
-int MUSleep(
-
-  long SleepDuration) /* I (in us) */
-
-  {
-
-  struct timeval timeout;
-
-  timeout.tv_sec  = SleepDuration / 1000000;
-  timeout.tv_usec = SleepDuration % 1000000;
-
-  select(0, (fd_set *)NULL, (fd_set *)NULL, (fd_set *)NULL, &timeout);
-
-  return(0);
-  }  /* END MUSleep() */
-
 
 
 

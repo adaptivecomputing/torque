@@ -86,7 +86,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include        <stdarg.h>
+#include <stdarg.h>
 
 #ifdef _CRAY
 #include <termios.h>
@@ -124,8 +124,8 @@
 #endif
 
 
-#include  "libpbs.h"
-#include  "pbs_ifl.h"
+#include "libpbs.h"
+#include "pbs_ifl.h"
 #include "server_limits.h"
 #include "list_link.h"
 #include "attribute.h"
@@ -141,11 +141,12 @@
 #include "dis.h"
 #include "dis_init.h"
 #include "resmon.h"
-#include        "pbs_nodes.h"
-#include        "dis.h"
-#include        "csv.h"
+#include "pbs_nodes.h"
+#include "dis.h"
+#include "csv.h"
+#include "utils.h"
 
-#include        "mcom.h"
+#include "mcom.h"
 
 #ifdef NOPOSIXMEMLOCK
 #undef _POSIX_MEMLOCK
@@ -606,7 +607,6 @@ extern int TMomCheckJobChild(pjobexec_t *, int, int *, int *);
 extern int TMomFinalizeJob3(pjobexec_t *, int, int, int *);
 extern void exec_bail(job *, int);
 extern void check_state(int);
-extern void tinsert(const u_long, tree **);
 extern void DIS_tcp_funcs();
 
 
@@ -620,169 +620,6 @@ int         TMOMScanForStarting(void);
 /* Local private functions */
 
 void check_log A_((void));
-
-int MUSNPrintF(
-
-  char **BPtr,   /* I */
-  int   *BSpace, /* I */
-  char  *Format, /* I */
-  ...)           /* I */
-
-  {
-  int len;
-
-  va_list Args;
-
-  if ((BPtr == NULL) ||
-      (BSpace == NULL) ||
-      (Format == NULL) ||
-      (*BSpace <= 0))
-    {
-    return(FAILURE);
-    }
-
-  va_start(Args, Format);
-
-  len = vsnprintf(*BPtr,*BSpace,Format,Args);
-
-  va_end(Args);
-
-  if (len <= 0)
-    {
-    return(FAILURE);
-    }
-
-  *BPtr += len;
-
-  *BSpace -= len;
-
-  return(SUCCESS);
-  }  /* END MUSNPrintF() */
-
-
-
-
-int MUStrNCat(
-
-  char **BPtr,   /* I (modified) */
-  int   *BSpace, /* I (modified) */
-  char  *Src)    /* I */
-
-  {
-  int index;
-
-  if ((BPtr == NULL) || (BSpace == NULL) || (*BSpace <= 0))
-    {
-    return(FAILURE);
-    }
-
-  if ((Src == NULL) || (Src[0] == '\0'))
-    {
-    return(SUCCESS);
-    }
-
-  for (index = 0;index < *BSpace - 1;index++)
-    {
-    if (Src[index] == '\0')
-      break;
-
-    (*BPtr)[index] = Src[index];
-    }  /* END for (index) */
-
-  (*BPtr)[index] = '\0';
-
-  *BPtr   += index;
-
-  *BSpace -= index;
-
-  return(SUCCESS);
-  }  /* END MUStrNCat() */
-
-
-
-
-
-char *MUStrTok(
-
-  char  *Line,  /* I (optional) */
-  char  *DList, /* I */
-  char **Ptr)   /* O point to termination character of returned token */
-
-  {
-  static char *Head = NULL;
-
-  int dindex;
-
-  mbool_t ignchar;
-
-  /* NOTE:  no handling if Line is NULL and Ptr is uninitialized */
-
-  if (Ptr == NULL)
-    {
-    /* tokPtr not specified */
-
-    return(NULL);
-    }
-
-  if (Line != NULL)
-    {
-    *Ptr = Line;
-
-    if (Line[0] == '\0')
-      {
-      /* line is empty */
-
-      if (Ptr != NULL)
-        *Ptr = NULL;
-
-      return(NULL);
-      }
-    }
-  else if (*Ptr == NULL)
-    {
-    return(NULL);
-    }
-
-  ignchar = FALSE;
-
-  Head = NULL;
-
-  while (**Ptr != '\0')
-    {
-    for (dindex = 0;DList[dindex] != '\0';dindex++)
-      {
-      if (**Ptr == DList[dindex])
-        {
-        **Ptr = '\0';
-
-        (*Ptr)++;
-
-        if (Head != NULL)
-          {
-          return(Head);
-          }
-        else
-          {
-          ignchar = TRUE;
-
-          break;
-          }
-        }
-      }    /* END for (dindex) */
-
-    if ((ignchar != TRUE) && (**Ptr != '\0'))
-      {
-      if (Head == NULL)
-        Head = *Ptr;
-
-      (*Ptr)++;
-      }
-
-    ignchar = FALSE;
-    }  /* END while (**Ptr != '\0') */
-
-  return(Head);
-  }  /* END MUStrTok() */
 
 
 
@@ -1759,7 +1596,7 @@ u_long addclient(
 
   ipaddr = ntohl(saddr.s_addr);
 
-  tinsert(ipaddr, &okclients);
+  tinsert(ipaddr, NULL, &okclients);
 
   return(ipaddr);
   }  /* END addclient() */

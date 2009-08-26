@@ -1,0 +1,8 @@
+
+include $(top_srcdir)/buildutils/config.mk
+
+noinst_LIBRARIES = libutils.a
+
+libutils_a_SOURCES = u_groups.c u_tree.c u_mu.c u_MXML.c
+
+

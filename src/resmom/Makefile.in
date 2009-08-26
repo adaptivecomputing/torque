@@ -65,7 +65,7 @@ pbs_demux_OBJECTS = $(am_pbs_demux_OBJECTS)
 pbs_demux_LDADD = $(LDADD)
 am__DEPENDENCIES_1 =
 am__DEPENDENCIES_2 = ../lib/Libattr/libattr.a ../lib/Libsite/libsite.a \
-	../lib/Libpbs/libtorque.la
+	../lib/Libutils/libutils.a ../lib/Libpbs/libtorque.la
 pbs_demux_DEPENDENCIES = @PBS_MACH@/libmommach.a $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_2)
 am__pbs_mom_SOURCES_DIST = catch_child.c mom_comm.c mom_inter.c \
@@ -370,6 +370,7 @@ DIST_SUBDIRS = aix4 aix5 darwin digitalunix freebsd freebsd5 fujitsu hpux10 hpux
 
 PBS_LIBS = ../lib/Libattr/libattr.a \
 	   ../lib/Libsite/libsite.a \
+		 ../lib/Libutils/libutils.a \
 	   ../lib/Libpbs/libtorque.la
 
 EXTRA_DIST = rm_dep.h

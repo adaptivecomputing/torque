@@ -1,6 +1,3 @@
-#ifndef ACCT_H
-#define ACCT_H
-
 /*
 *         OpenPBS (Portable Batch System) v2.3 Software License
 *
@@ -80,33 +77,64 @@
 * without reference to its choice of law rules.
 */
 
-/*
- * @(#) $Id$
- */
+#ifndef UTILS_H
+#define UTILS_H
 
-/*
- * header file supporting PBS accounting information
- */
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdarg.h>
+#include <pwd.h>
+#include <signal.h>
+#include <string.h>
+#include <ctype.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <time.h>
+#include <limits.h>
+#include <netdb.h>
+#include <grp.h>
+#include <sys/types.h>
+#include <sys/param.h>
+#include <sys/times.h>
+#include <sys/stat.h>
 
-/* NOTE:  PBS_ACCT_MAX_RCD must be large enought to handle full job
-          accounting record - this is usually ~1KB + <MAX_JOB_TASK_COUNT> *
-          (<HOSTNAME_SIZE + 2) - see THE_BUF_SIZE in dis.h */
+#include "portability.h"
+#include "server_limits.h"
+#include "list_link.h"
+#include "attribute.h"
+#include "pbs_nodes.h"
+#include "libpbs.h"
+#include "pbs_ifl.h"
+#include "resource.h"
+#include "svrfunc.h"
+#include "pbs_error.h"
+#include "log.h"
+#include "mcom.h"
 
-#define PBS_ACCT_MAX_RCD 262144         /* increased from 4095 */
+/* Function declarations */
 
-#define PBS_ACCT_QUEUE (int)'Q' /* Job Queued record */
-#define PBS_ACCT_RUN (int)'S' /* Job run (Started) */
-#define PBS_ACCT_RERUN (int)'R' /* Job Rerun record */
-#define PBS_ACCT_CHKPNT (int)'C' /* Job Checkpointed and held */
-#define PBS_ACCT_RESTRT (int)'T' /* Job resTart (from chkpnt) record */
-#define PBS_ACCT_END (int)'E' /* Job Ended/usage record */
-#define PBS_ACCT_DEL (int)'D' /* Job Deleted by request */
-#define PBS_ACCT_ABT (int)'A' /* Job Abort by server */
+/* group functions in u_groups.c */
+extern struct group *getgrnam_ext A_((char *));
 
-extern int  acct_open A_((char *filename));
-extern void account_record A_((int acctype, job *pjob, char *text));
-extern void account_jobstr A_((job *pjob));
-extern void account_jobend A_((job *pjob, char * used));
+/* tree functions in u_tree.c */
+extern void tinsert A_((const u_long, struct pbsnode *, tree **));
+extern void *tdelete A_((const u_long, tree **));
+extern struct pbsnode *tfind A_((const u_long, tree **));
+extern int tlist A_((tree *, char *, int));
+extern void tfree A_((tree **));
 
-#endif
+/* moab-like utility functions in u_mu.c */
+extern int MUSNPrintF A_((char **, int *, char *, ...));
+extern int MUStrNCat A_((char **, int *, char *));
+extern int MUSleep A_((long));
+extern int MUReadPipe A_((char *, char *, int));
 
+/* MXML functions from u_MXML.c */
+extern int MXMLGetChild A_((mxml_t *, char *, int *, mxml_t **));
+extern int MXMLAddE A_((mxml_t *, mxml_t *));
+extern int MXMLGetAttrF A_((mxml_t *, char *, int *, void *, enum MDataFormatEnum, int));
+extern int MXMLGetAttr A_((mxml_t *, char *, int *, char *, int));
+extern int MXMLToString A_((mxml_t *, char *, int, char **, mbool_t));
+
+#endif /* END #ifndef UTILS_H */
+ 

@@ -359,7 +359,7 @@ EXTRA_DIST = CHANGELOG INSTALL.GNU README.configure README.mpiexec \
 	     contrib/init.d/suse.pbs_server contrib/init.d/suse.pbs_sched \
 			 contrib/init.d/debian.pbs_mom contrib/init.d/debian.pbs_server \
 			 contrib/init.d/debian.pbs_sched \
-	     contrib/blcr/restart_script contrib/blcr/checkpoint_script
+	     contrib/blcr/checkpoint_script contrib/blcr/restart_script
 
 bin_SCRIPTS = pbs-config
 DISTCLEANFILES = pbs-config
@@ -596,7 +596,7 @@ distclean-tags:
 distdir: $(DISTFILES)
 	$(am__remove_distdir)
 	mkdir $(distdir)
-	$(mkdir_p) $(distdir)/buildutils $(distdir)/contrib $(distdir)/contrib/init.d $(distdir)/contrib/pestat-1.0 $(distdir)/src/drmaa
+	$(mkdir_p) $(distdir)/buildutils $(distdir)/contrib $(distdir)/contrib/blcr $(distdir)/contrib/init.d $(distdir)/contrib/pestat-1.0 $(distdir)/src/drmaa
 	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
 	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's|.|.|g'`; \
 	list='$(DISTFILES)'; for file in $$list; do \

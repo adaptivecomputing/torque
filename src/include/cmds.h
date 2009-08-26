@@ -1,3 +1,6 @@
+#ifndef CMDS_H
+#define CMDS_H
+
 /*
 *         OpenPBS (Portable Batch System) v2.3 Software License
 *
@@ -130,3 +133,6 @@ int parse_depend_list A_((char *, char *, int));
 int parse_stage_list A_((char *));
 int cnt2server_conf A_((long));
 int TShowAbout(void);
+
+#endif
+

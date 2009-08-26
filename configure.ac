@@ -1393,6 +1393,7 @@ AC_OUTPUT(buildutils/pbs_mkdirs
 	  src/lib/Libnet/Makefile
 	  src/lib/Libpbs/Makefile
 	  src/lib/Libsite/Makefile
+    src/lib/Libutils/Makefile
 	  src/mom_rcp/Makefile
 	  src/momctl/Makefile
 	  src/resmom/Makefile

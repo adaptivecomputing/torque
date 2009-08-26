@@ -115,6 +115,7 @@
 #include "dis_init.h"
 #include "resmon.h"
 #include "mcom.h"
+#include "utils.h"
 
 extern void DIS_rpp_reset A_((void));
 
@@ -199,19 +200,7 @@ funcs_dis(void)  /* The equivalent of DIS_tcp_funcs() */
 /*#define      close_dis(x)    rpp_close(x) */
 /*#define      flush_dis(x)    rpp_flush(x) */
 
-/*
- * Tree search generalized from Knuth (6.2.2) Algorithm T just like
- * the AT&T man page says.
- *
- * The tree_t structure is for internal use only, lint doesn't grok it.
- *
- * Written by reading the System V Interface Definition, not the code.
- *
- * Totally public domain.
- */
-/*LINTLIBRARY*/
-
-/*
+/**
 **      Modified by Tom Proett <proett@nas.nasa.gov> for PBS.
 */
 
@@ -219,42 +208,11 @@ tree *ipaddrs = NULL; /* tree of ip addrs */
 tree *streams = NULL; /* tree of stream numbers */
 
 
-
-/* find value in tree, return NULL if not found */
-
-struct pbsnode *tfind(
-
-        const u_long   key, /* I - key to be located */
-        tree         **rootp) /* O - address of tree root */
-
-  {
-  if (rootp == NULL)
-    {
-    return(NULL);
-    }
-
-  while (*rootp != NULL)
-    {
-    /* Knuth's T1: */
-
-    if (key == (*rootp)->key) /* T2: */
-      {
-      return((*rootp)->nodep); /* we found it! */
-      }
-
-    rootp = (key < (*rootp)->key) ?
-
-            &(*rootp)->left : /* T3: follow left branch */
-            &(*rootp)->right; /* T4: follow right branch */
-    }
-
-  return(NULL);
-  }  /* END tfind() */
-
-
-
-
-
+/**
+ * specialized version of tfind for looking in the ipadders tree
+ * @param key - the node we are searching for
+ * @return a pointer to the pbsnode
+*/
 
 struct pbsnode *tfind_addr(
 
@@ -263,175 +221,6 @@ struct pbsnode *tfind_addr(
   {
   return tfind(key, &ipaddrs);
   }
-
-
-
-
-
-void tinsert(
-
-  const u_long     key,  /* key to be located */
-  struct pbsnode  *nodep,
-  tree           **rootp) /* address of tree root */
-
-  {
-  register tree *q;
-
-  if (nodep != NULL)
-    {
-    /*
-    DBPRT(("tinsert: %lu %s stream %d\n",
-      key,
-      nodep->nd_name,
-      nodep->nd_stream))
-    */
-    }
-
-  if (rootp == NULL)
-    {
-    return;
-    }
-
-  while (*rootp != NULL)
-    {
-    /* Knuth's T1: */
-
-    if (key == (*rootp)->key) /* T2: */
-      {
-      return;   /* we found it! */
-      }
-
-    rootp = (key < (*rootp)->key) ?
-
-            &(*rootp)->left : /* T3: follow left branch */
-            &(*rootp)->right; /* T4: follow right branch */
-    }
-
-  q = (tree *) malloc(sizeof(tree)); /* T5: key not found */
-
-  if (q != NULL)
-    {
-    /* make new node */
-    *rootp = q;   /* link new node to old */
-    q->key = key;   /* initialize new node */
-    q->nodep = nodep;
-    q->left = q->right = NULL;
-    }
-
-  return;
-  }  /* END tinsert() */
-
-
-
-
-/* delete node with given key */
-
-void *tdelete(
-
-  const u_long   key, /* key to be deleted */
-  tree         **rootp) /* address of the root of tree */
-
-  {
-  tree  *p;
-  register tree *q;
-  register tree *r;
-
-  if (LOGLEVEL >= 6)
-    {
-    sprintf(log_buffer, "deleting key %lu",
-            key);
-
-    log_record(
-      PBSEVENT_SCHED,
-      PBS_EVENTCLASS_REQUEST,
-      "tdelete",
-      log_buffer);
-    }
-
-  if ((rootp == NULL) || ((p = *rootp) == NULL))
-    {
-    return(NULL);
-    }
-
-  while (key != (*rootp)->key)
-    {
-    p = *rootp;
-
-    rootp = (key < (*rootp)->key) ?
-            &(*rootp)->left :  /* left branch */
-            &(*rootp)->right;  /* right branch */
-
-    if (*rootp == NULL)
-      {
-      return(NULL);  /* key not found */
-      }
-    }
-
-  r = (*rootp)->right;    /* D1: */
-
-  if ((q = (*rootp)->left) == NULL)  /* Left */
-    {
-    q = r;
-    }
-  else if (r != NULL)
-    {
-    /* Right is null? */
-
-    if (r->left == NULL)
-      {
-      /* D2: Find successor */
-      r->left = q;
-
-      q = r;
-      }
-    else
-      {
-      /* D3: Find (struct tree_t *)0 link */
-
-      for (q = r->left;q->left != NULL;q = r->left)
-        {
-        r = q;
-        }
-
-      r->left = q->right;
-
-      q->left = (*rootp)->left;
-      q->right = (*rootp)->right;
-      }
-    }
-
-  free((struct tree_t *)*rootp);     /* D4: Free node */
-
-  *rootp = q;                         /* link parent to new node */
-
-  return(p);
-  }  /* END tdelete() */
-
-
-
-
-void tfree(
-
-  tree **rootp)
-
-  {
-  if (rootp == NULL || *rootp == NULL)
-    {
-    return;
-    }
-
-  tfree(&(*rootp)->left);
-
-  tfree(&(*rootp)->right);
-
-  free(*rootp);
-
-  *rootp = NULL;
-
-  return;
-  }  /* END tfree() */
-
-
 
 
 

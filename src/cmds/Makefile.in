@@ -70,7 +70,8 @@ PROGRAMS = $(bin_PROGRAMS)
 am_pbs_track_OBJECTS = pbs_track.$(OBJEXT)
 pbs_track_OBJECTS = $(am_pbs_track_OBJECTS)
 pbs_track_LDADD = $(LDADD)
-am__DEPENDENCIES_1 = ../lib/Libpbs/libtorque.la
+am__DEPENDENCIES_1 = ../lib/Libpbs/libtorque.la \
+	../lib/Libutils/libutils.a
 pbs_track_DEPENDENCIES = $(am__DEPENDENCIES_1)
 am_pbsdsh_OBJECTS = pbsdsh.$(OBJEXT)
 pbsdsh_OBJECTS = $(am_pbsdsh_OBJECTS)
@@ -449,7 +450,9 @@ DEMUX_PATH = $(sbindir)/$(program_prefix)pbs_demux$(program_suffix)
 XPBS_DIR = $(libdir)/xpbs
 XPBSMON_DIR = $(libdir)/xpbsmon
 SUBMIT_FILTER_PATH = $(libexecdir)/qsub_filter
-PBS_LIBS = ../lib/Libpbs/libtorque.la
+PBS_LIBS = ../lib/Libpbs/libtorque.la \
+					 ../lib/Libutils/libutils.a
+
 dist_bin_SCRIPTS = nqs2pbs
 EXTRA_DIST = nqs2pbs.in sample.qstatrc
 LDADD = $(PBS_LIBS)
