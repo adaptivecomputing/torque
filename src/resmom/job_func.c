@@ -154,7 +154,9 @@ void unload_sp_switch A_((job *pjob));
 void remove_job_from_obit_cache(job *pjob);
 #endif /* CACHEOBITFAILURES */
 
-
+#ifdef PENABLE_LINUX26_CPUSETS
+extern int use_cpusets(job *);
+#endif /* PENABLE_LINUX26_CPUSETS */
 /* Local Private Functions */
 
 static void job_init_wattr A_((job *));
@@ -639,6 +641,7 @@ void job_purge(
 
 #ifdef PENABLE_LINUX26_CPUSETS
 
+  if (use_cpusets(pjob) == TRUE)
     {
     extern void cpuset_delete(char *);
 

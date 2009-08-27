@@ -10,9 +10,21 @@
 
 #include "libpbs.h"
 #include "attribute.h"
+#include "resource.h"
 #include "server_limits.h"
 #include "pbs_job.h"
 #include "log.h"
+
+/* NOTE: move these three things to utils when lib is checked in */
+#ifndef MAXPATHLEN
+#define MAXPATHLEN 1024
+#endif /* MAXPATHLEN */
+#ifndef FAILURE
+#define FAILURE 0
+#endif /* FAILURE */
+#ifndef SUCCESS
+#define SUCCESS 1
+#endif /* SUCCESS */
 
 #define TTORQUECPUSET_PATH "/dev/cpuset/torque"
 #define TROOTCPUSET_PATH   "/dev/cpuset"
@@ -25,13 +37,28 @@ int           *VPToCPUMap = NULL;  /* map of virtual processors to cpus (alloc) 
 extern char    mom_host[];
 extern char    mom_short_name[];
 
+
+/* private functions */
+void remove_defunct_cpusets();
+int get_cpu_string(job *pjob,char *);
+int create_vnodesets(job *,char *path,char *,mode_t);
+int init_jobset(char *,job *,mode_t,char *);
+/* end private functions */
+
+
+/**
+ * deletes a cpuset
+ *
+ * @param cpusetname - name of cpuset to be deleted
+ * @return -1 on failure, 0 otherwise
+ */
 int cpuset_delete(
 
   char *cpusetname)  /* I */
 
   {
-  char   path[1024 + 1];
-  char   childpath[1024 + 1];
+  char   path[MAXPATHLEN + 1];
+  char   childpath[MAXPATHLEN + 1];
   pid_t  killpids;
   FILE  *fd;
   DIR   *dir;
@@ -63,12 +90,7 @@ int cpuset_delete(
       continue;
 
     /* Prepend directory name to file name for lstat. */
-
-    strcpy(childpath, path);
-
-    strcat(childpath, "/");
-
-    strcat(childpath, pdirent->d_name);
+    snprintf(childpath,sizeof(childpath),"%s/%s",path,pdirent->d_name);
 
     /* Skip file on error. */
 
@@ -84,7 +106,10 @@ int cpuset_delete(
         sprintf(log_buffer, "Unused cpuset '%s' deleted.",
                 childpath);
 
-        log_err(-1, id, log_buffer);
+        log_event(PBSEVENT_SYSTEM,
+          PBS_EVENTCLASS_SERVER,
+          id,
+          log_buffer);
         }
       else
         {
@@ -110,10 +135,11 @@ int cpuset_delete(
       }
 
     /* FIXME: only need when testing with a fake /dev/cpuset */
+    /* does this mean it should be removed for production? */
 
     if (!(statbuf.st_mode & S_IFDIR))
       unlink(childpath);
-    }
+    } /* END while((pdirent = readdir(dir)) != NULL) */
 
   if (rmdir(path) != 0)
     {
@@ -129,11 +155,82 @@ int cpuset_delete(
 
 
 
+/**
+ * removes cpusets for jobs that no longer exist
+ *
+ * @see initialize_root_cpuset() - parent
+ */
+void remove_defunct_cpusets()
+
+  {
+  DIR *dir;
+  struct dirent *pdirent;
+
+  struct stat    statbuf;
+
+  char *id = "remove_defunct_cpusets";
+  char  path[MAXPATHLEN];
+
+  /* Find all the job cpusets. */
+
+  if ((dir = opendir(TTORQUECPUSET_PATH)) == NULL)
+    {
+    sprintf(log_buffer, "opendir(%s) failed.\n",TTORQUECPUSET_PATH);
+
+    log_err(-1, id, log_buffer);
+    }
+
+  while ((pdirent = readdir(dir)) != NULL)
+    {
+    /* Skip parent and current directory. */
+    if (!strcmp(pdirent->d_name, ".") || !strcmp(pdirent->d_name, "..")) 
+      continue;
+
+    /* Prepend directory name to file name for lstat. */
+    strcpy(path, TTORQUECPUSET_PATH);
+
+    if (path[strlen(path)-1] != '/') 
+      strcat(path, "/");
+
+    strcat(path, pdirent->d_name);
+
+    /* Skip file on error. */
+    if (!(lstat(path, &statbuf) >= 0)) continue;
+
+    /* If a directory is found try to get cpuset info about it. */
+    if (statbuf.st_mode&S_IFDIR)
+      {
+      /* If the job isn't found, delete its cpuset. */
+      if (find_job(pdirent->d_name) == NULL)
+        {
+        if (cpuset_delete(pdirent->d_name) == 0)
+          {
+          sprintf(log_buffer, "Unused cpuset '%s' deleted.", path);
+          log_event(PBSEVENT_SYSTEM,
+            PBS_EVENTCLASS_SERVER,
+            id,
+            log_buffer);
+          }
+        else
+          {
+          sprintf(log_buffer, "Could not delete unused cpuset %s.", path);
+          log_err(-1, id, log_buffer);
+          }
+        }
+      }
+    } /* END while ((pdirent = readdir(dir)) != NULL) */
+
+  closedir(dir);
+  } /* END remove_defunct_cpusets() */
+
+
 
 
 /*
  * Create the root cpuset for Torque if it doesn't already exist.
  * clear out any job cpusets for jobs that no longer exist.
+ *
+ * @see remove_defunct_cpusets() - child
  */
 
 void
@@ -142,20 +239,20 @@ initialize_root_cpuset(void)
   {
   static char    id[] = "initialize_root_cpuset";
 
-  DIR  *dir;
-
-  struct dirent *pdirent;
   char           path[MAXPATHLEN + 1];
 
   struct stat    statbuf;
 
-  char cpuset_buf[1024];
-  FILE *fp;
+  char           cpuset_buf[MAXPATHLEN];
+  FILE           *fp;
 
   sprintf(log_buffer, "Init TORQUE cpuset %s.",
           TTORQUECPUSET_PATH);
 
-  log_err(-1, id, log_buffer);
+  log_event(PBSEVENT_SYSTEM,
+    PBS_EVENTCLASS_SERVER,
+    id,
+    log_buffer);
 
   /* make sure cpusets are available */
 
@@ -183,7 +280,10 @@ initialize_root_cpuset(void)
     sprintf(log_buffer, "TORQUE cpuset %s does not exist, creating it now.\n",
             path);
 
-    log_err(-1, id, log_buffer);
+    log_event(PBSEVENT_SYSTEM,
+      PBS_EVENTCLASS_SERVER,
+      id,
+      log_buffer);
 
     mkdir(path, 0755);
 
@@ -204,7 +304,7 @@ initialize_root_cpuset(void)
       int   maxindex;
       int   mindex;
 
-      char  tmpBuf[1024];
+      char  tmpBuf[MAXPATHLEN];
 
       /* FORMAT:  <CPU#>[<CPU#>][,<CPU#>[<CPU#>]]... */
 
@@ -223,7 +323,10 @@ initialize_root_cpuset(void)
               path,
               cpuset_buf);
 
-      log_err(-1, id, log_buffer);
+      log_event(PBSEVENT_SYSTEM,
+        PBS_EVENTCLASS_SERVER,
+        id,
+        log_buffer);
 
       /* convert string to lookup table */
 
@@ -273,7 +376,7 @@ initialize_root_cpuset(void)
 
       if (fp != NULL)
         {
-        char bootbuf[1024];
+        char bootbuf[MAXPATHLEN];
 
         /* what is format of data? */
 
@@ -308,7 +411,10 @@ initialize_root_cpuset(void)
                 cpuset_buf,
                 path);
 
-        log_err(-1, id, log_buffer);
+        log_event(PBSEVENT_SYSTEM,
+          PBS_EVENTCLASS_SERVER,
+          id,
+          log_buffer);
 
         fwrite(cpuset_buf, sizeof(char), strlen(cpuset_buf), fp);
 
@@ -348,7 +454,10 @@ initialize_root_cpuset(void)
                 cpuset_buf,
                 path);
 
-        log_err(-1, id, log_buffer);
+        log_event(PBSEVENT_SYSTEM,
+          PBS_EVENTCLASS_SERVER,
+          id,
+          log_buffer);
 
         fwrite(cpuset_buf, sizeof(char), strlen(cpuset_buf), fp);
 
@@ -362,56 +471,274 @@ initialize_root_cpuset(void)
     {
     /* The cpuset already exists, delete any cpusets for jobs that no longer exist. */
 
-    /* Find all the job cpusets. */
-
-    if ((dir = opendir(TTORQUECPUSET_PATH)) == NULL)
-      {
-      sprintf(log_buffer, "opendir(%s) failed.\n",
-              TTORQUECPUSET_PATH);
-
-      log_err(-1, id, log_buffer);
-      }
-
-    while ((pdirent = readdir(dir)) != NULL)
-      {
-      /* Skip parent and current directory. */
-      if (!strcmp(pdirent->d_name, ".") || !strcmp(pdirent->d_name, "..")) continue;
-
-      /* Prepend directory name to file name for lstat. */
-      strcpy(path, TTORQUECPUSET_PATH);
-
-      if (path[strlen(path)-1] != '/') strcat(path, "/");
-
-      strcat(path, pdirent->d_name);
-
-      /* Skip file on error. */
-      if (!(lstat(path, &statbuf) >= 0)) continue;
-
-      /* If a directory is found try to get cpuset info about it. */
-      if (statbuf.st_mode&S_IFDIR)
-        {
-        /* If the job isn't found, delete its cpuset. */
-        if (find_job(pdirent->d_name) == NULL)
-          {
-          if (cpuset_delete(pdirent->d_name) == 0)
-            {
-            sprintf(log_buffer, "Unused cpuset '%s' deleted.", path);
-            log_err(-1, id, log_buffer);
-            }
-          else
-            {
-            sprintf(log_buffer, "Could not delete unused cpuset %s.", path);
-            log_err(-1, id, log_buffer);
-            }
-          }
-        }
-      }
-
-    closedir(dir);
+    remove_defunct_cpusets();
     }
 
   return;
   }  /* END initialize_root_cpuset() */
+
+
+
+
+/**
+ * get_cpu_string
+ * @see add_cpus_to_jobset() - parent
+ *
+ * @param pjob - (I) the job whose cpu string we're building
+ * @param CpuStr - (O) the cpu string
+ * @return 1 if the cpu string is built, 0 otherwise
+ */
+
+int get_cpu_string(
+
+  job  *pjob,   /* I */
+  char *CpuStr) /* O */
+
+  {
+  vnodent *np = pjob->ji_vnods;
+  int     j;
+  char    tmpStr[MAXPATHLEN];
+
+  if ((pjob == NULL) || 
+      (CpuStr == NULL))
+    return(FAILURE);
+
+  CpuStr[0] = '\0';
+
+
+  for (j = 0;j < pjob->ji_numvnod;++j, np++)
+    {
+    if (pjob->ji_nodeid == np->vn_host->hn_node)
+      {
+      if (CpuStr[0] != '\0')
+        strcat(CpuStr, ",");
+
+      sprintf(tmpStr, "%d", np->vn_index);
+
+      strcat(CpuStr, tmpStr);
+
+      }
+    }
+
+  return(SUCCESS);
+  }
+
+
+
+
+/**
+ * initializes the cpuset for the job
+ * 
+ * deletes any existing cpuset
+ * creates the directory
+ * copies relevant memory information
+ *
+ * @see create_jobset() - parent
+ * @param path - (I) the path where the job's cpuset should be
+ * @param pjob - (I) the job
+ * @param savemask - (I) the settings to be restored
+ * @param membuf- (O) the contents of the memory being moved
+ */
+int init_jobset(
+
+  char  *path,     /* I */
+  job   *pjob,     /* I */
+  mode_t savemask, /* I */
+  char  *membuf)   /* O */
+
+  {
+  char *id = "init_jobset";
+  char  tmppath[MAXPATHLEN+1];
+  FILE *fd;
+
+  if ((path == NULL) ||
+      (pjob == NULL) ||
+      (membuf == NULL))
+    return(FAILURE);
+
+  membuf[0] = '\0';
+
+  /* delete the current cpuset for the job if it exists */
+  if (access(path, F_OK) == 0)
+    {
+    if (cpuset_delete(path) != 0)
+      {
+      sprintf(log_buffer, "Could not delete cpuset for job %s.\n", pjob->ji_qs.ji_jobid);
+      log_err(-1, id, log_buffer);
+      umask(savemask);
+      return(FAILURE);
+      }
+    }
+  /* don't "else return(FAILURE);" because the directory doesn't necessarily exist */
+
+  /* create the directory and copy the relevant memory data */
+  if (access(TTORQUECPUSET_PATH, F_OK) == 0)
+    {
+
+    /* create the jobset */
+    mkdir(path, 0755);
+
+    /* add all mems to jobset */
+    snprintf(tmppath,sizeof(tmppath),"%s/mems",TTORQUECPUSET_PATH);
+    fd = fopen(tmppath, "r");
+
+    if (fd)
+      {
+      fread(membuf, sizeof(char), 1023, fd);
+      fclose(fd);
+      snprintf(tmppath,sizeof(tmppath),"%s/mems",path);
+      fd = fopen(tmppath, "w");
+      if (fd)
+        {
+        fwrite(membuf, sizeof(char), strlen(membuf), fd);
+        fclose(fd);
+        }
+      return(SUCCESS);
+      }
+    }
+
+  return(FAILURE);
+  }
+
+
+
+
+/**
+ * creates the vnodesets for the job
+ *
+ * creates and writes the files for each virtual node on the job
+ *
+ * @see create_jobset() - parent
+ *
+ * @param pjob (I) - the job whose vnodesets are being created
+ * @param path (I) - path to the job's cpuset directory
+ * @param membuf (I) - the memory information to be copied
+ * @param savemask (I) - the settings to be restored
+ */
+int create_vnodesets(
+
+  job    *pjob,     /* I */
+  char   *path,     /* I */
+  char   *membuf,   /* I */
+  mode_t  savemask) /* I */
+
+  {
+  FILE    *fd;
+  vnodent *np;
+  int      j;
+  int      rc = SUCCESS;
+
+  char    *id = "create_vnodesets";
+  char     cpusbuf[MAXPATHLEN+1];
+  char     tasksbuf[MAXPATHLEN+1];
+  char     tmppath[MAXPATHLEN+1];
+
+  np = pjob->ji_vnods;
+  cpusbuf[0] = '\0';
+
+  for (j = 0;j < pjob->ji_numvnod;++j, np++)
+    {
+    if (pjob->ji_nodeid == np->vn_host->hn_node)
+      {
+      snprintf(tmppath,sizeof(tmppath),"%s/%d",path,np->vn_node);
+      mkdir(tmppath, 0755);
+      chmod(tmppath, 00755);
+      sprintf(tasksbuf, "%d", np->vn_index);
+      strcat(tmppath, "/cpus");
+      sprintf(log_buffer, "TASKSET: %s cpus %s\n", tmppath, tasksbuf);
+      log_event(PBSEVENT_SYSTEM, 
+        PBS_EVENTCLASS_SERVER,
+        id,
+        log_buffer);
+      fd = fopen(tmppath, "w");
+
+      if (fd)
+        {
+        fwrite(tasksbuf, sizeof(char), strlen(tasksbuf), fd);
+        fclose(fd);
+        }
+      else
+        rc = FAILURE;
+
+      memset(tasksbuf, '\0', sizeof(tasksbuf));
+
+      /* add all mems to torqueset - membuf has info stored */
+      sprintf(tmppath, "%s/%d/%s",path,np->vn_node,"/mems");
+      fd = fopen(tmppath, "w");
+
+      if (fd)
+        {
+        sprintf(log_buffer, "adding %s to %s", tasksbuf, tmppath);
+        log_event(PBSEVENT_SYSTEM, 
+          PBS_EVENTCLASS_SERVER,
+          id,
+          log_buffer);
+
+        fwrite(membuf, sizeof(char), strlen(tasksbuf), fd);
+        fclose(fd);
+        }
+      else
+        rc = FAILURE;
+
+      }
+    }
+
+  umask(savemask);
+
+  return(rc);
+  }
+
+
+
+
+/**
+ * adds the cpus to the jobset
+ *
+ * @param pjob - the job associated with the jobset
+ * @param path - the path to the jobset directory
+ * @return SUCCESS if the files are correctly written, else FALSE
+ */
+int add_cpus_to_jobset(
+
+  char *path,
+  job  *pjob)
+
+  {
+  FILE *fd;
+  char *id = "add_cpus_to_jobset";
+  char  cpusbuf[MAXPATHLEN+1];
+  char  tmppath[MAXPATHLEN+1];
+
+  if ((pjob == NULL) ||
+      (path == NULL))
+    {
+    return(FAILURE);
+    }
+
+  /* Make the string defining the CPUs to add into the jobset */
+  get_cpu_string(pjob,cpusbuf);
+
+  snprintf(tmppath,sizeof(tmppath),"%s/cpus",path);
+
+  sprintf(log_buffer, "CPUSET: %s job %s path %s\n", cpusbuf,
+          pjob->ji_qs.ji_jobid, tmppath);
+  log_event(PBSEVENT_SYSTEM, 
+    PBS_EVENTCLASS_SERVER,
+    id,
+    log_buffer);
+
+  fd = fopen(tmppath, "w");
+  if (fd)
+    {
+    fwrite(cpusbuf, sizeof(char), strlen(cpusbuf), fd);
+    fclose(fd);
+    return(SUCCESS);
+    }
+    
+  return(FAILURE);
+  }
+
+
 
 
 
@@ -420,157 +747,33 @@ int create_jobset(
   job *pjob)  /* I */
 
   {
-  static char id[] = "create_jobset";
-  char path[1024+1];
-  char rootpath[1024+1];
-  char tmppath[1024+1];
-  char cpusbuf[1024+1];
-  char tasksbuf[1024+1];
-  int ix;
-  FILE *fd;
-  vnodent       *np;
-  int j;
+  char path[MAXPATHLEN+1];
+  char membuf[MAXPATHLEN+1];
+
   mode_t savemask;
 
   savemask = (umask(0022));
 
-  sprintf(path, "%s/%s", TTORQUECPUSET_PATH, pjob->ji_qs.ji_jobid);
+  snprintf(path,sizeof(path),"%s/%s",TTORQUECPUSET_PATH,pjob->ji_qs.ji_jobid);
 
-  if (access(path, F_OK) == 0)
+  if (init_jobset(path,pjob,savemask,membuf) == FAILURE)
     {
-    if (cpuset_delete(path) != 0)
-      {
-      sprintf(log_buffer, "Could not delete cpuset for job %s.\n", pjob->ji_qs.ji_jobid);
-      log_err(-1, id, log_buffer);
-      umask(savemask);
-      return(0);
-      }
-    }
-
-  if (access(TTORQUECPUSET_PATH, F_OK) == 0)
-    {
-
-    /* create the jobset */
-    mkdir(path, 0755);
-
-    /* add all mems to jobset */
-    strcpy(rootpath, TTORQUECPUSET_PATH);
-    strcat(rootpath, "/mems");
-    fd = fopen(rootpath, "r");
-
-    if (fd)
-      {
-      fread(cpusbuf, sizeof(char), 1023, fd);
-      fclose(fd);
-      strcpy(tmppath, path);
-      strcat(tmppath, "/mems");
-      fd = fopen(tmppath, "w");
-      fwrite(cpusbuf, sizeof(char), strlen(cpusbuf), fd);
-      fclose(fd);
-      memset(cpusbuf, '\0', sizeof(cpusbuf));
-      }
-    }
-
-
-  /* Make the string defining the CPUs to add into the jobset */
-  np = pjob->ji_vnods;
-
-  cpusbuf[0] = '\0';
-
-  ix = 0;
-
-  for (j = 0;j < pjob->ji_numvnod;++j, np++)
-    {
-    if (pjob->ji_nodeid == np->vn_host->hn_node)
-      {
-      if (cpusbuf[0] != '\0')
-        strcat(cpusbuf, ",");
-
-      sprintf(tmppath, "%d", np->vn_index);
-
-      strcat(cpusbuf, tmppath);
-
-      }
+    return(FAILURE);
     }
 
   /* add the CPUs to the jobset */
-  strcpy(tmppath, path);
-
-  strcat(tmppath, "/cpus");
-
-  sprintf(log_buffer, "CPUSET: %s job %s path %s\n", cpusbuf,
-          pjob->ji_qs.ji_jobid, tmppath);
-
-  log_err(-1, id, log_buffer);
-
-  fd = fopen(tmppath, "w");
-
-  if (fd)
+  if (add_cpus_to_jobset(path,pjob) == FAILURE)
     {
-    fwrite(cpusbuf, sizeof(char), strlen(cpusbuf), fd);
-    fclose(fd);
+    return(FAILURE);
     }
-
-  memset(cpusbuf, '\0', sizeof(cpusbuf));
 
   /* Create the vnodesets */
-  np = pjob->ji_vnods;
-  cpusbuf[0] = '\0';
-  ix = 0;
-
-  for (j = 0;j < pjob->ji_numvnod;++j, np++)
+  if (create_vnodesets(pjob,path,membuf,savemask) == FAILURE)
     {
-    if (pjob->ji_nodeid == np->vn_host->hn_node)
-      {
-      sprintf(tmppath, "%s/%s/%d", TTORQUECPUSET_PATH, pjob->ji_qs.ji_jobid, np->vn_node);
-      mkdir(tmppath, 0755);
-      chmod(tmppath, 00755);
-      sprintf(tasksbuf, "%d", np->vn_index);
-      strcat(tmppath, "/cpus");
-      sprintf(log_buffer, "TASKSET: %s cpus %s\n", tmppath, tasksbuf);
-      log_err(-1, id, log_buffer);
-      fd = fopen(tmppath, "w");
-
-      if (fd)
-        {
-        fwrite(tasksbuf, sizeof(char), strlen(tasksbuf), fd);
-        fclose(fd);
-        }
-
-      memset(tasksbuf, '\0', sizeof(tasksbuf));
-
-
-      /* add all mems to torqueset */
-      sprintf(tmppath, "%s/%s/%s", TTORQUECPUSET_PATH, pjob->ji_qs.ji_jobid, "/mems");
-      fd = fopen(tmppath, "r");
-
-      if (fd)
-        {
-        fread(tasksbuf, sizeof(char), 1023, fd);
-        fclose(fd);
-        }
-
-      sprintf(tmppath, "%s/%s/%d/%s", TTORQUECPUSET_PATH,
-
-              pjob->ji_qs.ji_jobid, np->vn_node, "/mems");
-      fd = fopen(tmppath, "w");
-
-      if (fd)
-        {
-        sprintf(log_buffer, "adding %s to %s", tasksbuf, tmppath);
-        log_err(-1, id, log_buffer);
-        fwrite(tasksbuf, sizeof(char), strlen(tasksbuf), fd);
-        fclose(fd);
-        }
-
-      memset(tasksbuf, '\0', sizeof(tasksbuf));
-
-      }
+    return(FAILURE);
     }
 
-  umask(savemask);
-
-  return 0;
+  return(SUCCESS);
   }  /* END create_jobset() */
 
 
@@ -580,17 +783,22 @@ int move_to_jobset(
   job *pjob)  /* I */
 
   {
-  char pidbuf[1024];
-  char taskspath[1024];
-  FILE *fd;
-  mode_t savemask;
+  char   *id = "move_to_jobset";
+
+  char    pidbuf[MAXPATHLEN];
+  char    taskspath[MAXPATHLEN];
+  FILE   *fd;
+  mode_t  savemask;
 
   savemask = (umask(0022));
 
   sprintf(pidbuf, "%d", pid);
   sprintf(taskspath, "%s/%s/tasks", TTORQUECPUSET_PATH, pjob->ji_qs.ji_jobid);
   sprintf(log_buffer, "CPUSET MOVE: %s  %s\n", taskspath, pidbuf);
-  log_err(-1, "move_to_jobset", log_buffer);
+  log_event(PBSEVENT_SYSTEM,
+    PBS_EVENTCLASS_SERVER,
+    id,
+    log_buffer);
 
   fd = fopen(taskspath, "w");
 
@@ -599,12 +807,13 @@ int move_to_jobset(
     fwrite(pidbuf, sizeof(char), strlen(pidbuf), fd);
     fclose(fd);
     }
+  /* ERROR HANDLING - job won't be bound correctly */
 
   memset(pidbuf, '\0', sizeof(pidbuf));
 
   umask(savemask);
 
-  return 0;
+  return(SUCCESS);
   }  /* END move_to_jobset() */
 
 
@@ -614,18 +823,22 @@ int move_to_taskset(
   char * vnodeid)  /* I */
 
   {
+  char   *id = "move_to_taskset";
 
-  char pidbuf[1024];
-  char taskspath[1024];
-  FILE *fd;
-  mode_t savemask;
+  char    pidbuf[MAXPATHLEN];
+  char    taskspath[MAXPATHLEN];
+  FILE   *fd;
+  mode_t  savemask;
 
   savemask = (umask(0022));
 
   sprintf(pidbuf, "%d", pid);
   sprintf(taskspath, "%s/%s/%s/tasks", TTORQUECPUSET_PATH, pjob->ji_qs.ji_jobid, vnodeid);
   sprintf(log_buffer, "TASKSET MOVE: %s  %s\n", taskspath, pidbuf);
-  log_err(-1, "move_to_taskset", log_buffer);
+  log_event(PBSEVENT_SYSTEM,
+    PBS_EVENTCLASS_SERVER,
+    id,
+    log_buffer);
 
   fd = fopen(taskspath, "w");
 
@@ -634,6 +847,7 @@ int move_to_taskset(
     fwrite(pidbuf, sizeof(char), strlen(pidbuf), fd);
     fclose(fd);
     }
+  /* ERROR HANDLING - job won't be bound correctly */
 
   memset(pidbuf, '\0', sizeof(pidbuf));
 
@@ -641,3 +855,5 @@ int move_to_taskset(
 
   return 0;
   }  /* END move_to_taskset() */
+
+

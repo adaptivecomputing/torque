@@ -114,6 +114,7 @@
 #include "batch_request.h"
 #include "md5.h"
 #include "mcom.h"
+#include "resource.h"
 #ifdef ENABLE_CPA
 #include "pbs_cpa.h"
 #endif
@@ -227,6 +228,9 @@ static int num_var_else = tveLAST;
 static void starter_return A_((int, int, int, struct startjob_rtn *));
 static void catchinter A_((int));
 
+#ifdef PENABLE_LINUX26_CPUSETS
+extern int use_cpusets(job *);
+#endif /* PENABLE_LINUX26_CPUSETS */
 int TMomFinalizeJob1(job *, pjobexec_t *, int *);
 int TMomFinalizeJob2(pjobexec_t *, int *);
 int TMomFinalizeJob3(pjobexec_t *, int, int, int *);
@@ -1932,6 +1936,45 @@ int determine_umask(
 
 
 
+#ifdef PENABLE_LINUX26_CPUSETS 
+/**
+ * indicates whether or not cpusets should be used to run this job
+ *
+ * @param pjob - the job to check
+ * @return TRUE if either GEOMETRY_REQUESTS is undefined or a request was made
+ * else FALSE
+ */
+
+int use_cpusets(
+  
+  job *pjob) /* I */
+
+  {
+#ifdef GEOMETRY_REQUESTS
+  resource     *presc;
+  resource_def *prd;
+
+  if (pjob == NULL)
+    return(FALSE);
+
+  prd = find_resc_def(svr_resc_def,"procs_bitmap",svr_resc_size);
+  presc = find_resc_entry(&pjob->ji_wattr[(int)JOB_ATR_resource],prd);
+  
+  /* don't create a cpuset unless one was specifically requested */
+  if ((presc == NULL) || 
+      (presc->rs_value.at_flags & ATR_VFLAG_SET) == FALSE)
+    {
+    return(FALSE);
+    }
+  else 
+    return(TRUE);
+#else
+  return(TRUE);
+#endif /* GEOMETRY_REQUESTS */
+  } /* END use_cpusets() */
+#endif /* PENABLE_LINUX26_CPUSETS */
+
+
 
 
 /* child portion of job launch executed as user - called by TMomFinalize2() */
@@ -2150,21 +2193,24 @@ int TMomFinalizeChild(
 
 #ifdef PENABLE_LINUX26_CPUSETS
 
-  sprintf(log_buffer, "about to create cpuset for job %s.\n",
-    pjob->ji_qs.ji_jobid);
-
-  log_ext(-1, id, log_buffer, LOG_DEBUG);
-
-  if (create_jobset(pjob) != 0)
+  if (use_cpusets(pjob) == TRUE)
     {
-    /* FAILURE */
+    sprintf(log_buffer, "about to create cpuset for job %s.\n",
+      pjob->ji_qs.ji_jobid);
 
-    sprintf(log_buffer, "Could not create cpuset for job %s.\n",
-            pjob->ji_qs.ji_jobid);
+    log_ext(-1, id, log_buffer, LOG_DEBUG);
 
-    log_err(-1, id, log_buffer);
+    if (create_jobset(pjob) == FAILURE)
+      {
+      /* FAILURE */
 
-    starter_return(TJE->upfds, TJE->downfds, JOB_EXEC_RETRY, &sjr);
+      sprintf(log_buffer, "Could not create cpuset for job %s.\n",
+        pjob->ji_qs.ji_jobid);
+
+      log_err(-1, id, log_buffer);
+
+      starter_return(TJE->upfds, TJE->downfds, JOB_EXEC_RETRY, &sjr);
+      }
     }
 
 #endif /* END PENABLE_LINUX26_CPUSETS */
@@ -2744,7 +2790,10 @@ int TMomFinalizeChild(
 #ifdef PENABLE_LINUX26_CPUSETS
   /* Move this mom process into the cpuset so the job will start in it. */
 
-  move_to_jobset(getpid(), pjob);
+  if (use_cpusets(pjob) == TRUE)
+    {
+    move_to_jobset(getpid(), pjob);
+    }
 
 #endif  /* (PENABLE_LINUX26_CPUSETS) */
 
@@ -4025,6 +4074,7 @@ int start_process(
     log_ext(-1, id, "MPI/TM variables set", LOG_DEBUG);
 
 #ifdef PENABLE_LINUX26_CPUSETS
+  if (use_cpusets(pjob) == TRUE)
     {
     int j;
     char nodeidbuf[1024];

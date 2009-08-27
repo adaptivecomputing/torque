@@ -72,6 +72,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature
   e - moving jobs can now trigger a scheduling iteration (merged from 2.3.8)
   e - created a utility module that is shared between both server and mom but
       does NOT get placed in the libtorque library
+  e - allow the user to request a specific processor geometry for their job using
+      a bitmap, and then bind their jobs to those processors using cpusets.
 
 2.4.0
   f - added a "-q" option to pbs_mom which does *not* perform the default -p 

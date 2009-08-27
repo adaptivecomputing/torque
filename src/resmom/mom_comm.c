@@ -185,7 +185,9 @@ extern void DIS_tcp_funcs();
 extern int TTmpDirName(job *, char *);
 extern int TMakeTmpDir(job *, char *);
 extern void mom_server_close_stream(int stream);
-
+#ifdef PENABLE_LINUX26_CPUSETS
+extern int use_cpusets(job *);
+#endif /* PENABLE_LINUX26_CPUSETS */
 
 
 /* END external functions */
@@ -2335,17 +2337,20 @@ void im_request(
 
 #ifdef PENABLE_LINUX26_CPUSETS
 
-      sprintf(log_buffer, "about to create cpuset for job %s.\n",
-              pjob->ji_qs.ji_jobid);
-
-      log_err(-1, id, log_buffer);
-
-      if (create_jobset(pjob) != 0)
+      if (use_cpusets(pjob) == TRUE)
         {
-        sprintf(log_buffer, "Could not create cpuset for job %s.\n",
-                pjob->ji_qs.ji_jobid);
+        sprintf(log_buffer, "about to create cpuset for job %s.\n",
+          pjob->ji_qs.ji_jobid);
 
         log_err(-1, id, log_buffer);
+
+        if (create_jobset(pjob) == FAILURE)
+          {
+          sprintf(log_buffer, "Could not create cpuset for job %s.\n",
+            pjob->ji_qs.ji_jobid);
+
+          log_err(-1, id, log_buffer);
+          }
         }
 
 #endif  /* (PENABLE_LINUX26_CPUSETS) */

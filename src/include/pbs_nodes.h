@@ -85,6 +85,7 @@
 
 /* NOTE:  requires server_limits.h */
 
+#define BM_ERROR    -20
 
 enum psit
   {
@@ -158,6 +159,16 @@ struct pbsnode
   time_t                 nd_warnbad;
   time_t                 nd_lastupdate; /* time of last update. */
   };
+
+struct howl
+  {
+  char        *name;
+  int          order;
+  int          index;
+
+  struct howl *next;
+  };
+
 
 typedef struct tree_t
   {

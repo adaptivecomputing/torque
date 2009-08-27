@@ -422,6 +422,25 @@ fi
 AM_CONDITIONAL([BUILD_L26_CPUSETS], test "$build_l26_cpuset" = yes)
 
 
+dnl turn on the new feature to request a specific geometry for a process
+dnl this uses cpusets to bind the job to that geometry
+dnl --enable-geometry-request
+AC_ARG_ENABLE(geometry_requests, [
+  --enable-geometry-requests  Enables the user to request a specific geometry using a cpuset implementation])
+if test "x$GCC" = "xyes" ;then
+  AC_MSG_CHECKING([whether to allow geometry requests])
+  if test "${enable_geometry_requests}" = "yes" ; then
+    AC_MSG_RESULT([yes])
+    build_l26_cpuset=yes
+    AC_DEFINE(PENABLE_LINUX26_CPUSETS, 1, [Define to enable Linux 2.6 cpusets])
+dnl    AC_DEFINE(GEOMETRY_REQUESTS, 1, [Define to allow job specific geometry requests])
+    CFLAGS="$CFLAGS -DGEOMETRY_REQUESTS"
+  else
+    AC_MSG_RESULT([no])
+  fi
+fi
+AM_CONDITIONAL([BUILD_L26_CPUSETS], test "$build_l26_cpuset" = yes)
+
 dnl  irix6 can be changed to irix6array explicitly with an
 dnl  --enable-array and irix6array can be made into irix6 with a
 dnl  --disable-array.

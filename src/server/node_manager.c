@@ -117,6 +117,8 @@
 #include "mcom.h"
 #include "utils.h"
 
+#define IS_VALID_STR(STR)  (((STR) != NULL) && ((STR)[0] != '\0'))
+
 extern void DIS_rpp_reset A_((void));
 
 extern int LOGLEVEL;
@@ -166,10 +168,18 @@ extern int            SvrNodeCt;
 #define SKIP_ANYINUSE 2
 #define SKIP_NONE_REUSE 3
 
+#ifndef MAX_BM
+#define MAX_BM   64
+#endif
+
 int hasprop(struct pbsnode *, struct prop *);
 void send_cluster_addrs(struct work_task *);
 int add_cluster_addrs(int);
 int is_compose(int, int);
+int add_job_to_node(struct pbsnode *,struct pbssubn *,short,job *,int);
+int node_satisfies_request(struct pbsnode *,char *);
+int reserve_node(struct pbsnode *,short,job *,char *,struct howl **);
+int build_host_list(struct howl **,struct pbssubn *,struct pbsnode *);
 
 /*
 
@@ -3166,6 +3176,7 @@ static int node_spec(
   char  *spec,       /* I */
   int    early,      /* I (boolean) */
   int    exactmatch, /* I (boolean) - NOT USED */
+  char  *ProcBMStr,  /* I */
   char  *FailNode,   /* O (optional,minsize=1024) */
   char  *EMsg)       /* O (optional,minsize=1024) */
 
@@ -3341,6 +3352,18 @@ static int node_spec(
 
     if (pnode->nd_state & INUSE_DELETED)
       continue;
+
+#ifdef GEOMETRY_REQUESTS
+    /* must be dedicated node use for cpusets */
+    if (IS_VALID_STR(ProcBMStr)) 
+      {
+      if (pnode->nd_state != INUSE_FREE)
+        continue;
+
+      if (node_satisfies_request(pnode,ProcBMStr) == FALSE)
+        continue;
+      }
+#endif /* GEOMETRY_REQUESTS */
 
     if (LOGLEVEL >= 6)
       {
@@ -3669,6 +3692,302 @@ static int node_spec(
 
 
 
+#ifdef GEOMETRY_REQUESTS
+/**
+ * get_bitmap
+ *
+ * @param pjob (I) - the job whose bitmap is be retrieved
+ * @param ProcBMPtr (O) - the ptr to the string where the bitmap will be stored
+ * @param ProcBMSize (I) - the size of the string ProcBMPtr points to
+ * @return FAILURE if there is no specified bitmap or either pjob or ProcBMStrPtr are NULL
+ * @return SUCCESS otherwise
+ */
+int get_bitmap(
+
+  job  *pjob,        /* I */
+  int   ProcBMSize,  /* I */
+  char *ProcBMPtr)   /* O */
+
+  {
+  resource     *presc;
+  resource_def *prd;
+
+  char          LocalBM[MAX_BM];
+
+  if ((pjob == NULL) ||
+      (ProcBMPtr == NULL))
+    {
+    return(FAILURE);
+    }
+
+  LocalBM[0] = '\0';
+
+  /* read the bitmap from the resource list */
+  prd = find_resc_def(svr_resc_def,"procs_bitmap",svr_resc_size);
+  presc = find_resc_entry(&pjob->ji_wattr[(int)JOB_ATR_resource],prd);
+  
+  if ((presc != NULL) && 
+      (presc->rs_value.at_flags & ATR_VFLAG_SET))
+    {
+    snprintf(LocalBM,sizeof(LocalBM),"%s",presc->rs_value.at_val.at_str);
+    }
+  else
+    {
+    /* fail if there was no bitmap given */
+
+    return(FAILURE);
+    }
+
+  if (LocalBM[0] == '\0')
+    {
+    /* fail if there was no bitmap given */
+
+    return(FAILURE);
+    }
+  else
+    {
+    snprintf(ProcBMPtr,sizeof(LocalBM),"%s",LocalBM);
+    return(SUCCESS);
+    }
+  } /* end get_bitmap() */
+
+
+
+
+/**
+ * node_satisfies_request
+ *
+ * @param pnode (I) - the node to check for validity
+ * @param ProcBMStr (I) - the bitmap of procs requested
+ * @return TRUE - if the node satisfies the bitmap, FALSE otherwise
+ * @return BM_ERROR if the bitmap isn't valid
+ */
+int node_satisfies_request(
+
+  struct pbsnode *pnode,     /* I */
+  char           *ProcBMStr) /* I */
+
+  {
+  int BMLen;
+  int BMIndex;
+
+  struct pbssubn *snp; 
+
+  if (IS_VALID_STR(ProcBMStr) == FALSE)
+    return(BM_ERROR);
+
+  /* nodes are exclusive when we're using bitmaps */
+  if (pnode->nd_state != INUSE_FREE)
+    return(FALSE);
+
+  BMLen = strlen(ProcBMStr);
+
+  /* process in reverse because ProcBMStr[0] referes to core index 0 */
+  BMIndex = BMLen-1;
+
+  /* check if the requested processors are available on this node */
+  for (snp = pnode->nd_psn;snp && BMIndex >= 0;snp = snp->next)
+    {
+    /* don't check cores that aren't requested */
+    if (ProcBMStr[BMIndex--] != '1')
+      continue;
+
+    /* cannot use this node, one of the requested cores is busy */
+    if (snp->inuse != INUSE_FREE)
+      return(FALSE);
+    }
+
+  if (BMIndex >= 0)
+    {
+    /* this means we didn't finish checking the string -
+     * the node doesn't have enough processors */
+
+    return(FALSE);
+    }
+
+  /* passed all checks, we're good */
+  return(TRUE);
+  } /* END node_satisfies_request() */
+
+
+
+
+/**
+ * reserve_node
+ *
+ * @param pnode - node to reserve
+ * @param pjob - the job to be added to the node
+ * @param hlistptr - a pointer to the host list 
+ */
+
+int reserve_node(
+
+  struct pbsnode  *pnode,     /* I/O */
+  short            newstate,  /* I */
+  job             *pjob,      /* I */
+  char            *ProcBMStr, /* I */
+  struct howl    **hlistptr)  /* O */
+
+  {
+  int BMLen;
+  int BMIndex;
+
+  struct pbssubn *snp; 
+
+  if ((pnode == NULL) ||
+      (pjob == NULL) ||
+      (hlistptr == NULL))
+    {
+    return(FAILURE);
+    }
+
+  BMLen = strlen(ProcBMStr);
+  BMIndex = BMLen-1;
+
+  /* now reserve each node */
+  for (snp = pnode->nd_psn;snp && BMIndex >= 0;snp = snp->next)
+    {
+    /* ignore unrequested cores */
+    if (ProcBMStr[BMIndex--] != '1')
+      continue;
+
+    add_job_to_node(pnode,snp,INUSE_JOB,pjob,exclusive);
+
+    build_host_list(hlistptr,snp,pnode);
+    }
+  
+  /* mark the node as exclusive */
+  pnode->nd_state = INUSE_JOB;
+
+  return(SUCCESS);
+  }
+#endif /* GEOMETRY_REQUESTS */
+
+
+
+
+/**
+ * adds this job to the node's list of jobs
+ * checks to be sure not to add duplicates
+ *
+ * conditionally updates the subnode's state
+ * decrements the amount of needed nodes
+ *
+ * @param pnode - the node that the job is running on
+ * @param nd_psn - the subnode (processor) that the job is running on
+ * @param newstate - the state nodes are transitioning to when used
+ * @param pjob - the job that is going to be run
+ * @param exclusive - TRUE if jobs are given exclusive node use, FALSE otherwise
+ */
+int add_job_to_node(
+
+  struct pbsnode *pnode,     /* I/O */
+  struct pbssubn *snp,       /* I/O */
+  short           newstate,  /* I */
+  job            *pjob,      /* I */
+  int             exclusive) /* I */
+
+  {
+  char *id = "add_job_to_node";
+  struct jobinfo *jp;
+
+  /* NOTE:  search existing job array.  add job only if job not already in place */
+  if (LOGLEVEL >= 5)
+    {
+    sprintf(log_buffer, "allocated node %s/%d to job %s (nsnfree=%d)",
+      pnode->nd_name,
+      snp->index,
+      pjob->ji_qs.ji_jobid,
+      pnode->nd_nsnfree);
+
+    log_record(
+      PBSEVENT_SCHED,
+      PBS_EVENTCLASS_REQUEST,
+      id,
+      log_buffer);
+    DBPRT(("%s\n", log_buffer));
+    }
+
+  for (jp = snp->jobs;jp != NULL;jp = jp->next)
+    {
+    if (jp->job == pjob)
+      break;
+    }
+
+  if (jp == NULL)
+    {
+    /* add job to front of subnode job array */
+
+    jp = (struct jobinfo *)malloc(sizeof(struct jobinfo));
+    jp->next = snp->jobs;
+    snp->jobs = jp;
+    jp->job = pjob;
+    pnode->nd_nsnfree--;            /* reduce free count */
+
+    /* if no free VPs, set node state */
+    if (pnode->nd_nsnfree <= 0)     
+      pnode->nd_state = newstate;
+
+    if (snp->inuse == INUSE_FREE)
+      {
+      snp->inuse = newstate;
+
+      if (!exclusive)
+        pnode->nd_nsnshared++;
+      }
+    }
+
+  /* decrement the amount of nodes needed */
+  --pnode->nd_needed;
+
+  return(SUCCESS);
+  }
+
+
+
+/**
+ * builds the host list (hlist)
+ *
+ * @param pnode - the node being added to the host list
+ * @param hlist - the host list being built
+ */ 
+int build_host_list(
+
+  struct howl    **hlistptr,  /* O */
+  struct pbssubn  *snp,       /* I */
+  struct pbsnode  *pnode)     /* I */
+  
+  {
+  struct howl *curr;
+  struct howl *prev;
+  struct howl *hp;
+
+  /* initialize the pointers */
+  curr = (struct howl *)malloc(sizeof(struct howl));
+  curr->order = pnode->nd_order;
+  curr->name  = pnode->nd_name;
+  curr->index = snp->index;
+
+  /* find the proper place in the list */
+  for (prev = NULL, hp = *hlistptr;hp;prev = hp, hp = hp->next)
+    {
+    if (curr->order <= hp->order)
+      break;
+    }  /* END for (prev) */
+
+  /* set the correct pointers in the list */
+  curr->next = hp;
+
+  if (prev == NULL)
+    *hlistptr = curr;
+  else
+    prev->next = curr;
+
+  return(SUCCESS);
+  }
+
+
+
 
 /*
  * set_nodes() - Call node_spec() to allocate nodes then set them inuse.
@@ -3686,14 +4005,9 @@ int set_nodes(
 
   {
 
-  struct howl
-    {
-    char *name;
-    int   order;
-    int   index;
-
-    struct howl *next;
-    } *hp, *hlist, *curr, *prev, *nxt;
+  struct howl *hp;
+  struct howl *hlist;
+  struct howl *nxt;
 
   int     i;
   short   newstate;
@@ -3706,6 +4020,8 @@ int set_nodes(
 
   struct pbssubn *snp;
   char           *nodelist;
+
+  char   ProcBMStr[MAX_BM];
 
   if (FailHost != NULL)
     FailHost[0] = '\0';
@@ -3726,9 +4042,14 @@ int set_nodes(
       log_buffer);
     }
 
+  ProcBMStr[0] = '\0';
+#ifdef GEOMETRY_REQUESTS
+  get_bitmap(pjob,sizeof(ProcBMStr),ProcBMStr);
+#endif /* GEOMETRY_REQUESTS */
+
   /* allocate nodes */
 
-  if ((i = node_spec(spec, 1, 1, FailHost, EMsg)) == 0) /* check spec */
+  if ((i = node_spec(spec, 1, 1, ProcBMStr, FailHost, EMsg)) == 0) /* check spec */
     {
     /* no resources located, request failed */
 
@@ -3767,8 +4088,6 @@ int set_nodes(
   for (i = 0;i < svr_totnodes;i++)
     {
 
-    struct jobinfo *jp;
-
     pnode = pbsndlist[i];
 
     if (pnode->nd_state & INUSE_DELETED)
@@ -3784,6 +4103,18 @@ int set_nodes(
       }
 
     /* within the node, check each subnode */
+#ifdef GEOMETRY_REQUESTS
+    if (ProcBMStr[0] != '\0')
+      {
+      /* check node here, a request was given */
+      if (node_satisfies_request(pnode,ProcBMStr) == TRUE)
+        {
+        reserve_node(pnode,newstate,pjob,ProcBMStr,&hlist);
+        }
+
+      continue;
+      }
+#endif /* GEOMETRY_REQUESTS */
 
     for (snp = pnode->nd_psn;snp && pnode->nd_needed;snp = snp->next)
       {
@@ -3800,114 +4131,11 @@ int set_nodes(
 
       /* Mark subnode as being IN USE */
 
-      if (LOGLEVEL >= 5)
-        {
-        sprintf(log_buffer, "allocated node %s/%d to job %s (nsnfree=%d)",
-          pnode->nd_name,
-          snp->index,
-          pjob->ji_qs.ji_jobid,
-          pnode->nd_nsnfree);
-
-        log_record(
-          PBSEVENT_SCHED,
-          PBS_EVENTCLASS_REQUEST,
-          id,
-          log_buffer);
-
-        DBPRT(("%s\n", log_buffer));
-        }
-
-      /* NOTE:  search existing job array.  add job only if job not already in place */
-
-      for (jp = snp->jobs;jp != NULL;jp = jp->next)
-        {
-        if (jp->job == pjob)
-          break;
-        }
-
-      if (jp == NULL)
-        {
-        /* add job to front of subnode job array */
-
-        jp = (struct jobinfo *)malloc(sizeof(struct jobinfo));
-
-        if (jp == NULL)
-          {
-          sprintf(log_buffer,"cannot alloc memory");
-
-          log_record(
-            PBSEVENT_SCHED,
-            PBS_EVENTCLASS_REQUEST,
-            id,
-            log_buffer);
-
-          if (EMsg != NULL)
-            sprintf(EMsg,"cannot alloc memory");
-
-          return(PBSE_RESCUNAV);
-          }
-
-        jp->next = snp->jobs;
-
-        snp->jobs = jp;
-
-        jp->job = pjob;
-
-        pnode->nd_nsnfree--;            /* reduce free count */
-
-        if (snp->inuse == INUSE_FREE)
-          {
-          snp->inuse = newstate;
-
-          if (!exclusive)
-            pnode->nd_nsnshared++;
-          }
-        }
-
-      /* build list of nodes ordered to match request */
-
-      curr = (struct howl *)malloc(sizeof(struct howl));
-
-      if (curr == NULL)
-        {
-        sprintf(log_buffer,"cannot alloc memory");
-
-        log_record(
-          PBSEVENT_SCHED,
-          PBS_EVENTCLASS_REQUEST,
-          id,
-          log_buffer);
-
-        if (EMsg != NULL)
-          sprintf(EMsg,"cannot alloc memory");
-
-        return(PBSE_RESCUNAV);
-        }
-
-      curr->order = pnode->nd_order;
-
-      curr->name  = pnode->nd_name;
-
-      curr->index = snp->index;
-
-      for (prev = NULL, hp = hlist;hp;prev = hp, hp = hp->next)
-        {
-        if (curr->order <= hp->order)
-          break;
-        }  /* END for (prev) */
-
-      curr->next = hp;
-
-      if (prev == NULL)
-        hlist = curr;
-      else
-        prev->next = curr;
-
-      --pnode->nd_needed;
+      add_job_to_node(pnode,snp,newstate,pjob,exclusive);
+  
+      build_host_list(&hlist,snp,pnode);
       }  /* END for (snp) */
 
-    if (pnode->nd_nsnfree <= 0)     /* if no free VPs, set node state */
-      pnode->nd_state = newstate;
     }    /* END for (i) */
 
   if (hlist == NULL)
@@ -4029,7 +4257,7 @@ int node_avail_complex(
 
   holdnum = svr_numnodes;
 
-  ret = node_spec(spec, 1, 0, NULL, NULL);
+  ret = node_spec(spec, 1, 0, NULL, NULL, NULL);
 
   svr_numnodes = holdnum;
 
@@ -4217,7 +4445,7 @@ int node_reserve(
     return(-1);
     }
 
-  if ((ret_val = node_spec(nspec, 0, 0, NULL, NULL)) >= 0)
+  if ((ret_val = node_spec(nspec, 0, 0, NULL, NULL, NULL)) >= 0)
     {
     /*
     ** Zero or more of the needed Nodes are available to be
