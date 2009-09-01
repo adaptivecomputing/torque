@@ -1163,25 +1163,49 @@ int set_job_env(
     strcat(job_env, c);
     }
 
-  if (qsub_host[0] != '\0')
+  if (qsub_host[0] != '\0' ||
+     (rc = gethostname(qsub_host, PBS_MAXHOSTNAME + 1)) == 0)
     {
-    strcat(job_env, ",PBS_O_HOST=");
-    strcat(job_env, qsub_host);
-    }
-
-  if ((server_host[0] != '\0') ||
-      ((rc = gethostname(server_host, PBS_MAXHOSTNAME + 1)) == 0))
-    {
-    if ((rc = get_fullhostname(server_host, server_host, PBS_MAXHOSTNAME, NULL)) == 0)
+    if ((rc = get_fullhostname(qsub_host, qsub_host, PBS_MAXHOSTNAME, NULL)) == 0)
       {
-      strcat(job_env, ",PBS_SERVER=");
-      strcat(job_env, server_host);
-
-      if (qsub_host[0] == '\0')
-        {
-        strcat(job_env, ",PBS_O_HOST=");
-        strcat(job_env, server_host);
-        }
+      strcat(job_env, ",PBS_O_HOST=");
+      strcat(job_env, qsub_host);
+      }
+      
+    }
+    
+  if (rc != 0)
+    {
+    fprintf(stderr, "qsub: cannot get full local host name\n");
+    exit(3);
+    }
+    
+  if (server_host[0] != '\0')
+    {
+    if (get_fullhostname(server_host, server_host, PBS_MAXHOSTNAME, NULL) == 0)
+      {
+      strcat(job_env,",PBS_SERVER=");
+      strcat(job_env,server_host);
+      }
+    else
+      {
+      fprintf(stderr,"qsub: cannot get full server host name\n");
+      exit(3);
+      }
+    }
+  else
+    {
+    c = pbs_default();
+    if (*c != '\0')
+      {
+      strncpy(server_host, c, sizeof(server_host));
+      strcat(job_env,",PBS_SERVER=");
+      strcat(job_env,server_host);
+      }
+    else
+      {
+      strcat(job_env,",PBS_SERVER=");
+      strcat(job_env,qsub_host);
       }
     }
 
@@ -1189,13 +1213,6 @@ int set_job_env(
     {
     strcat(job_env, ",PBS_O_UID=");
     strcat(job_env, owner_uid);
-    }
-
-  if (rc != 0)
-    {
-    fprintf(stderr, "qsub: cannot get full local host name\n");
-
-    exit(3);
     }
 
   /* load init dir into env if specified */

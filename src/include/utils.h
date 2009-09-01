@@ -97,6 +97,7 @@
 #include <sys/param.h>
 #include <sys/times.h>
 #include <sys/stat.h>
+#include <sys/select.h>
 
 #include "portability.h"
 #include "server_limits.h"

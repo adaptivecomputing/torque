@@ -74,7 +74,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature
       does NOT get placed in the libtorque library
   e - allow the user to request a specific processor geometry for their job using
       a bitmap, and then bind their jobs to those processors using cpusets.
-
+  b - fix how qsub sets PBS_O_HOST and PBS_SERVER (Eirikur Hjartarson, deCODE 
+      genetics) (merged from 2.3.8)
 2.4.0
   f - added a "-q" option to pbs_mom which does *not* perform the default -p 
       behavior
@@ -120,6 +121,11 @@ c - crash     b - bug fix    e - enhancement    f - new feature
 2.3.8
   c - keep pbs_server from trying to free empty attrlist after recieving 
       bad request (Michael Meier, University of Erlangen-Nurnberg)
+  c - keep pbs_server from trying to free empty attrlist after recieving 
+      bad request (Michael Meier, University of Erlangen-Nurnberg)
+  e - moving jobs can now trigger a scheduling iteration
+  b - fix how qsub sets PBS_O_HOST and PBS_SERVER (Eirikur Hjartarson, deCODE 
+      genetics)
 
 2.3.7
   b - fixed a bug where UNIX domain socket communication was failing when 
