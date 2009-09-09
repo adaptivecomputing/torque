@@ -400,6 +400,11 @@ the remote host and accept arguments of the form "user@host:files"  For example:
 .Ty "$rcpcmd /usr/bin/rcp \-rp
 .br
 .Ty "$rcpcmd /usr/bin/scp \-rpB
+.IP remote_checkpoint_dirs
+Specifies what server checkpoint directories are remotely mounted.  This directive is used to
+tell the MOM which directories are shared with the server.  Using remote checkpoint directories eliminates the need to copy the checkpoint files back and forth between the mom and the server. This parameter is available in 2.4.1 and later.
+.IP
+.Ty "$remote_checkpoint_dirs /var/spool/torque/checkpoint"
 .IP remote_reconfig
 Enables the ability to remotely reconfigure pbs_mom with a new config file.
 Default is disabled.  This parameter accepts various forms of true, yes, and 1.
