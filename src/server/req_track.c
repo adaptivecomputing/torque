@@ -113,7 +113,8 @@ extern char         *path_track;
 
 extern struct server server;
 extern time_t        time_now;
-extern char       server_name[];
+extern char          server_name[];
+extern int           LOGLEVEL;
 
 /*
  * req_track - record job tracking information
@@ -232,6 +233,15 @@ void req_track(
     strcpy(empty->tk_location, prqt->rq_location);
     empty->tk_state = *prqt->rq_state;
     server.sv_trackmodifed = 1;
+
+    if (LOGLEVEL >= 7)
+      {
+      log_event(
+        PBSEVENT_JOB,
+        PBS_EVENTCLASS_JOB,
+        prqt->rq_jid,
+        "job added to server tracking list");
+      }
     }
 
   reply_ack(preq);

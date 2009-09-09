@@ -107,6 +107,7 @@
 
 extern struct server server;
 extern char   server_name[];
+extern int    LOGLEVEL;
 
 /*
  * req_locatejob - service the Locate Job Request
@@ -158,6 +159,15 @@ void req_locatejob(
     }
   else
     {
+    if (LOGLEVEL >= 7)
+      {
+      log_event(
+        PBSEVENT_JOB,
+        PBS_EVENTCLASS_JOB,
+        preq->rq_ind.rq_locate,
+        "cannot find job in server tracking list");
+      }
+
     req_reject(PBSE_UNKJOBID, 0, preq, NULL, NULL);
     }
 
