@@ -3009,7 +3009,12 @@ int TMomFinalizeChild(
     }
 
   if (LOGLEVEL >= 10)
-    log_ext(-1, id, "initial directory set", LOG_DEBUG);
+    {
+    sprintf(log_buffer, "initial directory set to %s\n",
+      idir != NULL ? idir : pwdp->pw_dir);
+
+    log_ext(-1, id, log_buffer, LOG_DEBUG);
+    }
 
   /* X11 forwarding init */
 
