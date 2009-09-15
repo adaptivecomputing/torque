@@ -3188,7 +3188,6 @@ int TMomFinalizeChild(
 
     if (TJE->is_interactive == TRUE)
       {
-
       struct sigaction act;
 
       /* restore SIGINT so that the child shell can use ctrl-c */
@@ -3198,6 +3197,51 @@ int TMomFinalizeChild(
       act.sa_handler = SIG_DFL;
 
       sigaction(SIGINT, &act, (struct sigaction *)0);
+      
+      /* if the user specified command(s) then invoke it */
+
+      if ((pjob->ji_wattr[(int)JOB_ATR_inter_cmd].at_flags & ATR_VFLAG_SET) != 0)
+        {
+        arg[aindex] = malloc(strlen("-c") + 1);
+
+        if (arg[aindex] == NULL)
+          {
+          log_err(errno,id,"cannot alloc env");
+
+          starter_return(TJE->upfds,TJE->downfds,JOB_EXEC_FAIL2,&sjr);
+
+          /*NOTREACHED*/
+
+          return(-1);
+          }
+
+        strcpy(arg[aindex], "-c");
+
+        arg[aindex + 1] = NULL;
+
+        aindex++;
+   
+        arg[aindex] = malloc(strlen(pjob->ji_wattr[(int)JOB_ATR_inter_cmd].at_val.at_str) + 1);
+
+        if (arg[aindex] == NULL)
+          {
+          log_err(errno,id,"cannot alloc env");
+
+          starter_return(TJE->upfds,TJE->downfds,JOB_EXEC_FAIL2,&sjr);
+
+          /*NOTREACHED*/
+
+          return(-1);
+          }
+        log_ext(-1, id, log_buffer, LOG_DEBUG);
+
+        strcpy(arg[aindex], pjob->ji_wattr[(int)JOB_ATR_inter_cmd].at_val.at_str);
+
+        arg[aindex + 1] = NULL;
+
+        aindex++;
+        }
+
       }
 
     if (mom_checkpoint_job_is_checkpointable(pjob))
@@ -3213,20 +3257,22 @@ int TMomFinalizeChild(
       }
     else
       {
-      if (LOGLEVEL >= 10)
+      if ((TRUE) || (LOGLEVEL >= 10))
         {
         char cmd[1024];
         int i;
 
         strcpy(cmd,arg[0]);
+        strcat(cmd,",");
         for (i = 1; arg[i] != NULL; i++)
           {
           strcat(cmd," ");
           strcat(cmd,arg[i]);
+          strcat(cmd,",");
           }
         strcat(cmd,")");
 
-        sprintf(log_buffer, "execing command (%s)\n", cmd);
+        sprintf(log_buffer, "execing command (%s) args (%s)\n", shell, cmd);
         log_ext(-1, id, log_buffer, LOG_DEBUG);
         }
       execve(shell, arg, vtable.v_envp);

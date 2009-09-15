@@ -178,6 +178,7 @@
 #define ATTR_restart_name  "restart_name"   /* saved name of checkpoint restart file */
 #define ATTR_comp_time   "comp_time"
 #define ATTR_reported    "reported"
+#define ATTR_intcmd      "inter_cmd"
 
 #ifdef ENABLE_CSA
 #define ATTR_pagg         "pagg_id"

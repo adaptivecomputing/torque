@@ -4074,6 +4074,7 @@ int main(
 
   char *submit_args_str = NULL;       /* buffer to hold args */
   int   argi, argslen = 0;
+  int   idx;
 
   if ((param_val = getenv("PBS_CLIENTRETRY")) != NULL)
     {
@@ -4216,7 +4217,7 @@ int main(
 
   errflg = process_opts(argc, argv, 0); /* get cmd-line options */
 
-  if (errflg || ((optind + 1) < argc))
+  if (errflg || (((optind + 1) < argc) && !Interact_opt))
     {
     static char usage[] =
       "usage: qsub [-a date_time] [-A account_string] [-b secs]\n\
@@ -4246,6 +4247,16 @@ int main(
 
   if (optind < argc)
     strcpy(script, argv[optind]);
+
+  argi = argc - optind;
+  if (Interact_opt)
+    {
+    for (idx = 1; idx < argi; idx++)
+      {
+      strcat(script," ");
+      strcat(script, argv[optind + idx]);
+      }
+    }
 
   /* store the saved args string in "submit_args" attribute */
 
@@ -4311,6 +4322,10 @@ int main(
         }
       }
     }    /* END if (!strcmp(script,"") || !strcmp(script,"-")) */
+  else if (Interact_opt != FALSE)
+    {
+      set_attr(&attrib, ATTR_intcmd, script);
+    }
   else
     {
     /* non-empty script, read it for directives */
