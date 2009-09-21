@@ -4597,7 +4597,7 @@ int rm_request(
                 {
                 sprintf(tmpLine, "Node Health Check Script: %s (%d second update interval)\n",
                         PBSNodeCheckPath,
-                        PBSNodeCheckInterval);
+                        PBSNodeCheckInterval * ServerStatUpdateInterval);
 
                 MUStrNCat(&BPtr, &BSpace, tmpLine);
                 }
