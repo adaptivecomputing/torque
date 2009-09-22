@@ -215,12 +215,19 @@ mom_checkpoint_execute_job(job *pjob, char *shell, char *arg[], struct var_table
 int
 mom_checkpoint_init(void)
   {
-  int c = 0;
+  int   c = 0;
+  char *path_checkpt_tmp;
 
   checkpoint_system_type = mom_does_checkpoint(); /* {CST_NONE, CST_MACH_DEP, CST_BLCR} */
 
   if (strlen(path_checkpoint) == 0) /* if not -C option */
-    strcpy(path_checkpoint, mk_dirs("checkpoint/"));
+    {
+    /* mk_dirs mallocs the string it returns so this string must be freed */
+
+    path_checkpt_tmp = mk_dirs("checkpoint/");
+    snprintf(path_checkpoint,sizeof(path_checkpoint),"%s",path_checkpt_tmp);
+    free(path_checkpt_tmp);
+    }
 
 
 #if !defined(DEBUG) && !defined(NO_SECURITY_CHECK)
