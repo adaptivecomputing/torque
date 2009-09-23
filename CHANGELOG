@@ -76,6 +76,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature
       a bitmap, and then bind their jobs to those processors using cpusets.
   b - fix how qsub sets PBS_O_HOST and PBS_SERVER (Eirikur Hjartarson, deCODE 
       genetics) (merged from 2.3.8)
+  b - fix to prevent some jobs from getting deleted on startup.
+
 2.4.0
   f - added a "-q" option to pbs_mom which does *not* perform the default -p 
       behavior

@@ -1103,9 +1103,7 @@ int pbsd_init(
         {
         strcpy(basen, pjob->ji_qs.ji_jobid);
 
-        psuffix = basen + baselen;
-
-        strcpy(psuffix, JOB_SCRIPT_SUFFIX);
+        strcat(basen, JOB_SCRIPT_SUFFIX);
 
         if (chk_save_file(basen) != 0)
           {
