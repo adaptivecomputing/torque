@@ -126,7 +126,6 @@
 #  include <sys/select.h>
 #endif
 
-
 #include "cmds.h"
 #include "net_connect.h"
 #include "log.h"
@@ -163,7 +162,7 @@ int x11child = 0;
 
 int do_dir(char *);
 int process_opts(int, char **, int);
-
+int have_terminal = TRUE;
 
 char *checkpoint_strings = "n,c,s,u,none,shutdown,periodic,enabled,interval,depth,dir";
 
@@ -868,7 +867,7 @@ int do_dir(
 
 /* globals */
 
-int inter_sock;
+int inter_sock = -1;
 
 struct termios oldtio;
 
@@ -1541,12 +1540,6 @@ char *interactive_port(int *sock)
 
   struct sockaddr_in myaddr;
   unsigned short port;
-
-  if ((isatty(0) == 0) || (isatty(1) == 0))
-    {
-    fprintf(stderr, "qsub:\tstandard input and output must be a terminal for \n\tinteractive job submission\n");
-    exit(1);
-    }
 
   *sock = socket(AF_INET, SOCK_STREAM, 0);
 
@@ -2269,7 +2262,7 @@ interactive(void)
 
   /* save the old terminal setting */
 
-  if (tcgetattr(0, &oldtio) < 0)
+  if (have_terminal && tcgetattr(0, &oldtio) < 0)
     {
     perror("qsub: unable to get terminal settings");
 
@@ -2278,7 +2271,14 @@ interactive(void)
 
   /* Get the current window size, to be sent to MOM later */
 
-  if (getwinsize(&wsz))
+  if (! have_terminal)
+    {
+    wsz.ws_row = 20; /* unable to get actual values */
+    wsz.ws_col = 80; /* set defaults   */
+    wsz.ws_xpixel = 0;
+    wsz.ws_ypixel = 0;
+    }
+  else if (getwinsize(&wsz))
     {
     wsz.ws_row = 20; /* unable to get actual values */
     wsz.ws_col = 80; /* set defaults   */
@@ -2410,6 +2410,8 @@ interactive(void)
     exit(1);
     }
 
+  fflush(NULL);
+
   interactivechild = fork();
 
   if (interactivechild == 0)
@@ -2419,13 +2421,15 @@ interactive(void)
      *     set terminal into raw mode
      */
 
-    settermraw(&oldtio);
+    if (have_terminal)
+      settermraw(&oldtio);
 
     reader(news, fileno(stdout));
 
     /* reset terminal */
 
-    tcsetattr(0, TCSANOW, &oldtio);
+    if (have_terminal)
+      tcsetattr(0, TCSANOW, &oldtio);
 
     printf("\nqsub: job %s completed\n",
            new_jobname);
@@ -2469,7 +2473,8 @@ interactive(void)
 
     close(inter_sock);
 
-    tcsetattr(0, TCSANOW, &oldtio);
+    if (have_terminal)
+      tcsetattr(0, TCSANOW, &oldtio);
 
     exit(0);
     }
@@ -4075,6 +4080,7 @@ int main(
   char *submit_args_str = NULL;       /* buffer to hold args */
   int   argi, argslen = 0;
   int   idx;
+  int   have_intr_cmd = FALSE;
 
   if ((param_val = getenv("PBS_CLIENTRETRY")) != NULL)
     {
@@ -4325,6 +4331,7 @@ int main(
   else if (Interact_opt != FALSE)
     {
       set_attr(&attrib, ATTR_intcmd, script);
+      have_intr_cmd = TRUE;
     }
   else
     {
@@ -4405,6 +4412,24 @@ int main(
     unlink(script_tmp);
 
     exit(2);
+    }
+
+  if (Interact_opt && ((isatty(0) == 0) || (isatty(1) == 0)))
+    {
+      if (have_intr_cmd)
+      {
+        have_terminal = FALSE;
+      }
+      else
+      {
+      fprintf(stderr, "qsub:\tstandard input and output must be a terminal for \n\tinteractive job submission\n");
+
+      unlink(script_tmp);
+
+      close(inter_sock);
+
+      exit(1);
+      }
     }
 
   set_opt_defaults();  /* set option default values */
