@@ -945,6 +945,32 @@ attribute_def svr_attr_def[] =
     	ATR_TYPE_STR,
     	PARENT_TYPE_SERVER
   },
+
+  /* SRV_ATR_lockfile */
+  {   ATTR_LockfileUpdateTime, /* lock_file_update_time */
+      decode_l,
+      encode_l,
+      set_l,
+      comp_l,
+      free_null,
+      NULL_FUNC,
+      MGR_ONLY_SET,
+      ATR_TYPE_STR,
+      PARENT_TYPE_SERVER
+  },
+
+  /* SRV_ATR_LockfileCheckTime */
+  {   ATTR_LockfileCheckTime, /* lock_file_check_time */
+      decode_l,
+      encode_l,
+      set_l,
+      comp_l,
+      free_null,
+      NULL_FUNC,
+      MGR_ONLY_SET,
+      ATR_TYPE_STR,
+      PARENT_TYPE_SERVER
+  },
 	
   /* SRV_ATR_JobMustReport */
   { ATTR_jobmustreport,      /* "job_must_report" */

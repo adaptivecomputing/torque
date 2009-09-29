@@ -160,6 +160,8 @@ enum srv_atr
   SRV_ATR_ServerName,
   SRV_ATR_SchedVersion,SRV_ATR_AcctKeepDays,          /* 60 */
   SRV_ATR_lockfile,
+  SRV_ATR_LockfileUpdateTime,
+  SRV_ATR_LockfileCheckTime,
   SRV_ATR_JobMustReport,
   SRV_ATR_checkpoint_dir,
   SRV_ATR_MailSubjectFmt,
@@ -254,6 +256,13 @@ typedef struct new_node
   list_link            nn_link;   /* link to other resources in list */
   char                *nn_name;   /* name of new node */
   } new_node;
+
+/* Threaded-HA code */
+#ifdef USE_HA_THREADS
+typedef pthread_mutex_t mutex_t;
+#else
+typedef int mutex_t;
+#endif /* USE_HA_THREADS */
 
 /* END server.h */
 
