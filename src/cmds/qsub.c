@@ -2021,7 +2021,8 @@ void catchchild(
 
   /* reset terminal to cooked mode */
 
-  tcsetattr(0, TCSANOW, &oldtio);
+  if(have_terminal)
+    tcsetattr(0, TCSANOW, &oldtio);
 
   exit(0);
 
