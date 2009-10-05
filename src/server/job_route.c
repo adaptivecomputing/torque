@@ -118,11 +118,9 @@ int  job_route A_((job *));
 void queue_route A_((pbs_queue *));
 
 /* Global Data */
-
-extern char *msg_badstate;
 extern char *msg_routexceed;
-extern char *msg_routebad;
 extern char *msg_err_malloc;
+extern char *msg_routexceed;
 extern time_t  time_now;
 
 /*
@@ -242,7 +240,7 @@ int default_router(
           PBSEVENT_JOB,
           PBS_EVENTCLASS_JOB,
           jobp->ji_qs.ji_jobid,
-          msg_routebad);
+          pbse_to_txt(PBSE_ROUTEREJ));
 
         return(PBSE_ROUTEREJ);
         }
@@ -359,7 +357,7 @@ int job_route(
 
     default:
 
-      sprintf(log_buffer, "%s %d", msg_badstate,
+      sprintf(log_buffer, "%s %d", pbse_to_txt(PBSE_BADSTATE),
               jobp->ji_qs.ji_state);
 
       strcat(log_buffer, id);
@@ -481,7 +479,7 @@ void queue_route(
     if (pjob->ji_qs.ji_un.ji_routet.ji_rteretry <= time_now)
       {
       if ((rc = job_route(pjob)) == PBSE_ROUTEREJ)
-        job_abt(&pjob, msg_routebad);
+        job_abt(&pjob, pbse_to_txt(PBSE_ROUTEREJ));
       else if (rc == PBSE_ROUTEEXPD)
         job_abt(&pjob, msg_routexceed);
       }

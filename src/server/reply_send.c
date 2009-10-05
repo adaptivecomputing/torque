@@ -112,15 +112,12 @@
 extern struct connection svr_conn[];
 
 extern char *msg_daemonname;
-extern char *msg_system;
 
 #ifndef PBS_MOM
 extern tlist_head task_list_event;
 extern tlist_head task_list_immed;
 extern int LOGLEVEL;
 #endif /* PBS_MOM */
-
-extern struct pbs_err_to_txt pbs_err_to_txt[];
 
 #define ERR_MSG_SIZE 127
 
@@ -141,7 +138,7 @@ static void set_err_msg(
   if (code == PBSE_SYSTEM)
     {
     strcpy(msgbuf, msg_daemonname);
-    strcat(msgbuf, msg_system);
+    strcat(msgbuf, pbse_to_txt(PBSE_SYSTEM));
 
     msg_tmp = strerror(errno);
 

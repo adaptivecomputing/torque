@@ -112,7 +112,6 @@
 extern char *msg_deletejob;
 extern char *msg_delrunjobsig;
 extern char *msg_manager;
-extern char *msg_unkjobid;
 extern char *msg_permlog;
 extern char *msg_badstate;
 tlist_head	svr_alljobs;           /* list of all jobs in server       */
@@ -838,7 +837,7 @@ static int forced_jobpurge(
       PBSEVENT_DEBUG,
       PBS_EVENTCLASS_JOB,
       preq->rq_ind.rq_delete.rq_objname,
-      msg_unkjobid);
+      pbse_to_txt(PBSE_UNKJOBID));
 
     req_reject(PBSE_UNKJOBID, 0, preq, NULL, NULL);
 

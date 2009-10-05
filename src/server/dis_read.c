@@ -104,8 +104,6 @@
 
 /* External Global Data */
 
-extern char *msg_nosupport;
-
 extern int       LOGLEVEL;
 
 
@@ -167,7 +165,7 @@ int dis_request_read(
     return(PBSE_DISPROTO);
     }
 
-  if ((request->rq_type < 0) || (request->rq_type > PBS_BATCH_Disconnect))
+  if ((request->rq_type < 0) || (request->rq_type >= PBS_BATCH_CEILING))
     {
     sprintf(log_buffer, "invalid request type: %d",
             request->rq_type);
@@ -385,7 +383,7 @@ int dis_request_read(
     default:
 
       sprintf(log_buffer, "%s: %d from %s",
-              msg_nosupport,
+              pbse_to_txt(PBSE_NOSUP),
               request->rq_type,
               request->rq_user);
 

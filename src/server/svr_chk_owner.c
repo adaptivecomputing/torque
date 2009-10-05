@@ -99,9 +99,7 @@
 extern struct credential conn_credent[PBS_NET_MAX_CONNECTIONS];
 extern char *pbs_o_host;
 extern char  server_host[];
-extern char *msg_badstate;
 extern char *msg_permlog;
-extern char *msg_unkjobid;
 extern time_t time_now;
 
 extern char *PJobState[];
@@ -412,7 +410,7 @@ job *chk_job_request(
       PBSEVENT_DEBUG,
       PBS_EVENTCLASS_JOB,
       jobid,
-      msg_unkjobid);
+      pbse_to_txt(PBSE_UNKJOBID));
 
     req_reject(PBSE_UNKJOBID, 0, preq, NULL, "cannot locate job");
 
@@ -460,7 +458,7 @@ job *chk_job_request(
         char tmpLine[1024];
 
         sprintf(log_buffer, "%s %s",
-                msg_badstate,
+                pbse_to_txt(PBSE_BADSTATE),
                 PJobState[pjob->ji_qs.ji_state]);
 
         log_event(

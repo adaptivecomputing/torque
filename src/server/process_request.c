@@ -143,7 +143,6 @@ extern tlist_head svr_newjobs;
 extern time_t    time_now;
 extern char  *msg_err_noqueue;
 extern char  *msg_err_malloc;
-extern char  *msg_reqbadhost;
 extern char  *msg_request;
 #ifndef PBS_MOM
 extern char            server_name[];
@@ -412,7 +411,7 @@ void process_request(
     char tmpLine[1024];
 
     sprintf(log_buffer, "%s: %lu",
-            msg_reqbadhost,
+            pbse_to_txt(PBSE_BADHOST),
             get_connectaddr(sfds));
 
     LOG_EVENT(PBSEVENT_DEBUG, PBS_EVENTCLASS_REQUEST, "", log_buffer);

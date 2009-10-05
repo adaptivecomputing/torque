@@ -103,7 +103,6 @@
 /* Global Data Items: */
 
 extern char *msg_unkjobid;
-extern char *msg_badstate;
 extern char *msg_manager;
 extern char *msg_movejob;
 extern int  pbs_errno;
@@ -139,7 +138,7 @@ void req_movejob(
     {
 #ifndef NDEBUG
     sprintf(log_buffer, "%s %d",
-            msg_badstate,
+            pbse_to_txt(PBSE_BADSTATE),
             jobp->ji_qs.ji_state);
 
     strcat(log_buffer, id);
@@ -249,7 +248,7 @@ void req_orderjob(
     {
 #ifndef NDEBUG
     sprintf(log_buffer, "%s %d",
-            msg_badstate,
+            pbse_to_txt(PBSE_BADSTATE),
             pjob->ji_qs.ji_state);
 
     strcat(log_buffer, id);

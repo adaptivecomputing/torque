@@ -27,7 +27,6 @@ extern char *msg_job_start;
 extern char *msg_job_end;
 extern char *msg_job_del;
 extern char *msg_job_stageinfail;
-extern char *msg_stageinfail;
 extern char *msg_job_copychkptfail;
 extern char *msg_job_otherfail;
 
@@ -78,7 +77,7 @@ void svr_format_job(
       case MAIL_STAGEIN:
 
         stdmessage = msg_job_stageinfail;
-        reason = msg_stageinfail; /* NB: short version used */
+        reason = pbse_to_txt(PBSE_STAGEIN); /* NB: short version used */
 
         break;
 

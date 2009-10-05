@@ -140,7 +140,6 @@ static int    send_depend_req A_((job *, struct depend_job *pparent, int, int, i
 
 extern struct server server;
 extern char  server_name[];
-extern char *msg_unkjobid;
 extern char *msg_err_malloc;
 extern char *msg_illregister;
 extern char *msg_registerdel;
@@ -205,7 +204,7 @@ void req_register(
         PBSEVENT_DEBUG,
         PBS_EVENTCLASS_JOB,
         preq->rq_ind.rq_register.rq_parent,
-        msg_unkjobid);
+        pbse_to_txt(PBSE_UNKJOBID));
 
       req_reject(PBSE_UNKJOBID, 0, preq, NULL, NULL);
       }

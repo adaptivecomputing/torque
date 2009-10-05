@@ -86,101 +86,25 @@
  */
 #ifndef PBSE_
 
-#define PBSE_ 15000
+/* pbs error constants generator */
+/** @see pbs_error_db.h */
+enum PBSE_Constants {
 
+#define PbsErrClient(id, txt) id,
+#include "pbs_error_db.h"
+#undef PbsErrClient
+
+#define PbsErrRm(id, txt) id,
+#include "pbs_error_db.h"
+#undef PbsErrRm
+
+PBSE_TOTAL_CEILING
+};
+/* END: pbs error constants generator */
+
+
+#define PBSE_ 15000
 #define PBSE_NONE       0  /* no error */
-#define PBSE_UNKJOBID 15001  /* Unknown Job Identifier */
-#define PBSE_NOATTR 15002  /* Undefined Attribute */
-#define PBSE_ATTRRO 15003  /* attempt to set READ ONLY attribute */
-#define PBSE_IVALREQ 15004  /* Invalid request */
-#define PBSE_UNKREQ 15005  /* Unknown batch request */
-#define PBSE_TOOMANY 15006  /* Too many submit retries */
-#define PBSE_PERM 15007  /* No permission */
-#define PBSE_BADHOST 15008  /* access from host not allowed */
-#define PBSE_JOBEXIST 15009  /* job already exists */
-#define PBSE_SYSTEM 15010  /* system error occurred */
-#define PBSE_INTERNAL 15011  /* internal server error occurred */
-#define PBSE_REGROUTE 15012  /* parent job of dependent in rte que */
-#define PBSE_UNKSIG 15013  /* unknown signal name */
-#define PBSE_BADATVAL 15014  /* bad attribute value */
-#define PBSE_MODATRRUN 15015  /* Cannot modify attrib in run state */
-#define PBSE_BADSTATE 15016  /* request invalid for job state */
-#define PBSE_UNKQUE 15018  /* Unknown queue name */
-#define PBSE_BADCRED 15019  /* Invalid Credential in request */
-#define PBSE_EXPIRED 15020  /* Expired Credential in request */
-#define PBSE_QUNOENB 15021  /* Queue not enabled */
-#define PBSE_QACESS 15022  /* No access permission for queue */
-#define PBSE_BADUSER 15023  /* Bad user - no password entry */
-#define PBSE_HOPCOUNT 15024  /* Max hop count exceeded */
-#define PBSE_QUEEXIST 15025  /* Queue already exists */
-#define PBSE_ATTRTYPE 15026  /* incompatable queue attribute type */
-#define PBSE_QUEBUSY 15027  /* Queue Busy (not empty) */
-#define PBSE_QUENBIG 15028  /* Queue name too long */
-#define PBSE_NOSUP 15029  /* Feature/function not supported */
-#define PBSE_QUENOEN 15030  /* Cannot enable queue,needs add def */
-#define PBSE_PROTOCOL 15031  /* Protocol error */
-#define PBSE_BADATLST 15032  /* Bad attribute list structure */
-#define PBSE_NOCONNECTS 15033  /* No free connections */
-#define PBSE_NOSERVER 15034  /* No server to connect to */
-#define PBSE_UNKRESC 15035  /* Unknown resource */
-#define PBSE_EXCQRESC 15036  /* Job exceeds Queue resource limits */
-#define PBSE_QUENODFLT 15037  /* No Default Queue Defined */
-#define PBSE_NORERUN 15038  /* Job Not Rerunnable */
-#define PBSE_ROUTEREJ 15039  /* Route rejected by all destinations */
-#define PBSE_ROUTEEXPD 15040  /* Time in Route Queue Expired */
-#define PBSE_MOMREJECT  15041  /* Request to MOM failed */
-#define PBSE_BADSCRIPT 15042  /* (qsub) cannot access script file */
-#define PBSE_STAGEIN 15043  /* Stage In of files failed */
-#define PBSE_RESCUNAV 15044  /* Resources temporarily unavailable */
-#define PBSE_BADGRP 15045  /* Bad Group specified */
-#define PBSE_MAXQUED 15046  /* Max number of jobs in queue */
-#define PBSE_CKPBSY 15047  /* Checkpoint Busy, may be retries */
-#define PBSE_EXLIMIT 15048  /* Limit exceeds allowable */
-#define PBSE_BADACCT 15049  /* Bad Account attribute value */
-#define PBSE_ALRDYEXIT 15050  /* Job already in exit state */
-#define PBSE_NOCOPYFILE 15051  /* Job files not copied */
-#define PBSE_CLEANEDOUT 15052  /* unknown job id after clean init */
-#define PBSE_NOSYNCMSTR 15053  /* No Master in Sync Set */
-#define PBSE_BADDEPEND 15054  /* Invalid dependency */
-#define PBSE_DUPLIST 15055  /* Duplicate entry in List */
-#define PBSE_DISPROTO 15056  /* Bad DIS based Request Protocol */
-#define PBSE_EXECTHERE 15057  /* cannot execute there */
-#define PBSE_SISREJECT 15058  /* sister rejected */
-#define PBSE_SISCOMM 15059  /* sister could not communicate */
-#define PBSE_SVRDOWN 15060  /* req rejected -server shutting down */
-#define PBSE_CKPSHORT 15061  /* not all tasks could checkpoint */
-#define PBSE_UNKNODE 15062  /* Named node is not in the list */
-#define PBSE_UNKNODEATR 15063  /* node-attribute not recognized */
-#define PBSE_NONODES 15064  /* Server has no node list */
-#define PBSE_NODENBIG 15065  /* Node name is too big */
-#define PBSE_NODEEXIST 15066  /* Node name already exists */
-#define PBSE_BADNDATVAL 15067  /* Bad node-attribute value */
-#define PBSE_MUTUALEX 15068  /* State values are mutually exclusive */
-#define PBSE_GMODERR 15069  /* Error(s) during global modification of nodes */
-#define PBSE_NORELYMOM 15070  /* could not contact Mom */
-#define PBSE_NOTSNODE 15071  /* no time-shared nodes */
-#define PBSE_JOBTYPE 15072  /* wrong job type (batch or interactive) */
-#define PBSE_BADACLHOST 15073  /* bad entry in ACL host list */
-#define PBSE_MAXUSERQUED     15074 /* max number of jobs queued for user */
-#define PBSE_BADDISALLOWTYPE 15075 /* bad type in disallowed_types queue attribute */
-#define PBSE_NOINTERACTIVE   15076 /* interactive jobs not allowed in queue */
-#define PBSE_NOBATCH    15077  /* batch jobs not allowed in queue */
-#define PBSE_NORERUNABLE     15078 /* rerunable jobs not allowed in queue */
-#define PBSE_NONONRERUNABLE  15079 /* nonrerunable jobs not allowed in queue */
-#define PBSE_UNKARRAYID 15080  /* unknown array id */
-#define PBSE_BAD_ARRAY_REQ   15081      /* bad array request */
-#define PBSE_TIMEOUT 15082  /* Time out */
-#define PBSE_NOFAULTTOLERANT 15083 /* fault tolerant jobs not allowed in queue */
-#define PBSE_NOFAULTINTOLERANT 15084 /* only fault tolerant jobs allowed in queue */
-/*
-**  Resource monitor specific
-*/
-#define PBSE_RMUNKNOWN 15201  /* resource unknown */
-#define PBSE_RMBADPARAM 15202  /* parameter could not be used */
-#define PBSE_RMNOPARAM 15203  /* a parameter needed did not exist */
-#define PBSE_RMEXIST 15204  /* something specified didn't exist */
-#define PBSE_RMSYSTEM 15205  /* a system error occured */
-#define PBSE_RMPART 15206  /* only part of reservation made */
 #define RM_ERR_UNKNOWN PBSE_RMUNKNOWN
 #define RM_ERR_BADPARAM PBSE_RMBADPARAM
 #define RM_ERR_NOPARAM PBSE_RMNOPARAM
@@ -190,16 +114,6 @@
 #ifndef NULL
 #define NULL (char *)0
 #endif /* NULL */
-
-
-/* the following structure is used to tie error number      */
-/* with text to be returned to a client, see svr_messages.c */
-
-struct pbs_err_to_txt
-  {
-  int    err_no;
-  char **err_txt;
-  };
 
 extern char *pbse_to_txt(int);
 

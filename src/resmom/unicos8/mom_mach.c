@@ -295,7 +295,6 @@ static long  session_table_size;
 static struct proc *process_table;
 static long  process_table_size;
 
-extern struct pbs_err_to_txt pbs_err_to_txt[];
 extern time_t time_now;
 extern char *path_checkpoint;
 
@@ -1016,28 +1015,14 @@ extern char *msg_momsetlim;
 int
 error(char *string, int value)
   {
-  int  i = 0;
   char  *message;
 
   assert(string != NULL);
   assert(*string != '\0');
-  assert(value > PBSE_);   /* minimum PBS error number */
-  assert(value <= PBSE_NOSYNCMSTR); /* maximum PBS error number */
-  assert(pbs_err_to_txt[i].err_no != 0);
 
-  do
-    {
-    if (pbs_err_to_txt[i].err_no == value)
-      break;
-    }
-  while (pbs_err_to_txt[++i].err_no != 0);
-
-  assert(pbs_err_to_txt[i].err_txt != NULL);
-
-  message = *pbs_err_to_txt[i].err_txt;
+  message = pbse_to_txt(value);
 
   assert(message != NULL);
-
   assert(*message != '\0');
 
   (void)fprintf(stderr, msg_momsetlim, string, message);

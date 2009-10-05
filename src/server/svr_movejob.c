@@ -148,7 +148,6 @@ extern int  queue_rank;
 extern char  server_host[];
 extern char  server_name[];
 extern char *msg_badexit;
-extern char *msg_routebad;
 extern char *msg_routexceed;
 extern char *msg_manager;
 extern char *msg_movejob;
@@ -408,7 +407,7 @@ static void post_routejob(
       svr_setjobstate(jobp, newstate, newsub);
 
       if ((r = job_route(jobp)) == PBSE_ROUTEREJ)
-        job_abt(&jobp, msg_routebad);
+        job_abt(&jobp, pbse_to_txt(PBSE_ROUTEREJ));
       else if (r != 0)
         job_abt(&jobp, msg_routexceed);
 

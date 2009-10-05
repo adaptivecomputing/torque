@@ -172,283 +172,53 @@ char *msg_svdbopen = "Unable to open server data base";
 char *msg_svdbnosv = "Unable to save server data base";
 char *msg_svrdown = "Server shutdown completed";
 
-
-
-/* sync w/enum PBatchReqTypeEnum in libpbs.h */
-
+/* This construct pulls the text parts from the batch types definitions
+ *
+ * @see pbs_batchreqtype_db.h for more info
+ */
+#define PbsBatchReqType(id,text) text,
 static const char *PBatchReqType[] =
   {
-  "Connect",
-  "QueueJob",
-  "JobCred",
-  "JobScript",
-  "ReadyToCommit",
-  "Commit",
-  "DeleteJob",
-  "HoldJob",
-  "LocateJob",
-  "Manager",
-  "MessageJob",
-  "ModifyJob",
-  "MoveJob",
-  "ReleaseJob",
-  "RerunJob",
-  "RunJob",
-  "SelectJobs",
-  "Shutdown",
-  "SignalJob",
-  "StatusJob",
-  "StatusQueue",
-  "StatusServer",
-  "TrackJob",
-  "AsyncRunJob",
-  "ResourceQuery",
-  "ReserveResource",
-  "ReleaseResource", /* 26 */
-  "CheckpointJob",
-  "AsyncModifyJob",
-  "NONE",
-  "NONE",
-  "NONE",
-  "NONE",
-  "NONE",
-  "NONE",
-  "NONE",
-  "NONE",
-  "NONE",
-  "NONE",
-  "NONE",
-  "NONE",
-  "NONE",
-  "NONE",
-  "NONE",
-  "NONE",
-  "NONE",
-  "NONE",
-  "NONE",
-  "StageIn",   /* 48 */
-  "AuthenticateUser",
-  "OrderJob",
-  "SelStat",
-  "RegisterDependency",
-  "ReturnFiles",
-  "CopyFiles",
-  "DeleteFiles",
-  "JobObituary",
-  "MoveJobFile",
-  "StatusNode",
-  "Disconnect",
+#include "pbs_batchreqtype_db.h"
   NULL
   };
+#undef PbsBatchReqType
 
 #define NPBatchReqType (sizeof(PBatchReqType)/sizeof(PBatchReqType[0]))
 
-/*
- * This next set of messages are returned to the client on an error.
- * They may also be logged.
- */
-
-char *msg_unkjobid = "Unknown Job Id";
-char *msg_noattr = "Undefined attribute ";
-char *msg_attrro = "Cannot set attribute, read only or insufficient permission ";
-char *msg_ivalreq = "Invalid request";
-char *msg_unkreq = "Unknown request";
-char *msg_perm  = "Unauthorized Request ";
-char *msg_reqbadhost = "Access from host not allowed, or unknown host";
-char *msg_jobexist = "Job with requested ID already exists";
-char *msg_system = " System error: ";
-char *msg_internal = "PBS server internal error";
-char *msg_regroute = "Dependent parent job currently in routing queue";
-char *msg_unksig = "Unknown/illegal signal name";
-char *msg_badatval = "Illegal attribute or resource value for ";
-char *msg_badnodeatval = "Illegal value for ";
-char *msg_mutualex = "Mutually exclusive values for ";
-char *msg_modatrrun = "Cannot modify attribute while job running ";
-char *msg_badstate = "Request invalid for state of job";
-char *msg_unkque = "Unknown queue";
-char *msg_unknode = "Unknown node ";
-char *msg_unknodeatr = "Unknown node-attribute ";
-char *msg_nonodes = "Server has no node list";
-char *msg_badcred = "Invalid credential";
-char *msg_expired = "Expired credential";
-char *msg_qunoenb = "Queue is not enabled";
-char *msg_qacess = "Access to queue is denied";
-char *msg_baduser = "Bad UID for job execution";
-char *msg_badgrp = "Bad GID for job execution";
-char *msg_hopcount = "Job routing over too many hops";
-char *msg_queexist = "Queue already exists";
+/* used by server/req_manager.c */
 char *msg_attrtype = "Warning: type of queue %s incompatible with attribute %s";
-char *msg_attrtype2 = "Incompatible type";
-char *msg_quebusy = "Cannot delete busy queue";
-char *msg_quenbig = "Queue name too long";
-char *msg_nosupport = "No support for requested service";
-char *msg_quenoen = "Cannot enable queue, incomplete definition";
-char *msg_protocol = "Batch protocol error";
-char *msg_noconnects = "No free connections";
-char *msg_noserver = "No server specified";
-char *msg_unkresc = "Unknown resource type ";
-char *msg_excqresc = "Job exceeds queue resource limits";
-char *msg_quenodflt = "No default queue specified";
-char *msg_jobnorerun  = "job is not rerunnable";
-char *msg_routebad = "Job rejected by all possible destinations";
-char *msg_momreject = "Execution server rejected request";
-char *msg_nosyncmstr = "No master found for sync job set";
+/* used by server/run_sched.c */
 char *msg_sched_called 	= "Scheduler was sent the command %s";
 char *msg_sched_nocall  = "Could not contact Scheduler";
 char *msg_listnr_called = "Listener %d sent event %s";
 char *msg_listnr_nocall  = "Could not contact Listener";
-char *msg_stageinfail = "Stage In of files failed";
-char *msg_rescunav = "Resource temporarily unavailable";
-char *msg_maxqueued = "Maximum number of jobs already in queue";
-char *msg_maxuserqued   = "Maximum number of jobs already in queue for user";
-char *msg_chkpointbusy = "Checkpoint busy, may retry";
-char *msg_exceedlmt = "Resource limit exceeds allowable";
-char *msg_badacct = "Invalid Account";
-char *msg_baddepend = "Invalid Job Dependency";
-char *msg_duplist = "Duplicate entry in list ";
-char *msg_svrshut = "Request not allowed: Server shutting down";
-char *msg_execthere = "Cannot execute at specified host because of checkpoint or stagein files";
-char *msg_gmoderr = "Modification failed for ";
-char *msg_notsnode = "No time-share node available";
-char *msg_alrdyexit     = "Job already in exit state";
-char *msg_badatlst      = "Bad attribute list structure";
-char *msg_badscript     = "(qsub) cannot access script file";
-char *msg_ckpshort      = "not all tasks could checkpoint";
-char *msg_cleanedout    = "unknown job id after clean init";
-char *msg_disproto      = "Bad DIS based Request Protocol";
-char *msg_nocopyfile    = "Job files not copied";
-char *msg_nodeexist     = "Node name already exists";
-char *msg_nodenbig      = "Node name is too big";
-char *msg_none          = "no error";
-char *msg_rmbadparam    = "parameter could not be used";
-char *msg_rmexist       = "something specified didn't exist";
-char *msg_rmnoparam     = "a parameter needed did not exist";
-char *msg_rmpart        = "only part of reservation made";
-char *msg_rmsystem      = "a system error occured";
-char *msg_rmunknown     = "resource unknown";
-char *msg_routeexpd     = "Time in Route Queue Expired";
-char *msg_siscomm       = "sister could not communicate";
-char *msg_sisreject     = "sister rejected";
-char *msg_toomany       = "Too many submit retries";
-char *msg_jobtype       = "Wrong job type";
-char *msg_badaclhost = "Bad ACL entry in host list";
-char *msg_baddisallowtype = "Bad type in disallowed_types list";
-char *msg_nointeractive = "Queue does not allow interactive jobs";
-char *msg_nobatch       = "Queue does not allow batch jobs";
-char *msg_norerunable   = "Queue does not allow rerunable jobs";
-char *msg_nononrerunable = "Queue does not allow nonrerunable jobs";
-char *msg_unkarrayid    = "Unknown Array ID";
-char *msg_bad_array_req = "Bad Job Array Request";
-char *msg_nofaulttolerant = "Queue does not allow fault tolerant jobs";
-char *msg_nofaultintolerant = "Queue does not allow fault intolerant jobs";
-char *msg_timeout  = "Time out";
-/*
- * The following table connects error numbers with text
- * to be returned to the client.  Each is guaranteed to be pure text.
- * There are no printf formatting strings imbedded.
+
+/* pbs_err_db generators
+ *
+ * @see pbs_error_db.h
+ *
+ * @note this constant should be const char*, but the current state of code
+ *       doesn't allow this
  */
+/* this construct generates array of text representations for error constants */
+#define PbsErrClient(id, txt) txt,
+static char * pbs_err_client_txt[] =
+{
+#include "pbs_error_db.h"
+(char*)0
+};
+#undef PbsErrClient
 
-struct pbs_err_to_txt pbs_err_to_txt[] =
-  {
-    {
-    PBSE_UNKJOBID, &msg_unkjobid
-    },
+#define PbsErrRm(id, txt) txt,
+static char * pbs_err_rm_txt[] =
+{
+#include "pbs_error_db.h"
+(char*)0
+};
+#undef PbsErrRm
 
-  { PBSE_NOATTR, &msg_noattr },
-  { PBSE_ATTRRO, &msg_attrro },
-  { PBSE_IVALREQ, &msg_ivalreq },
-  { PBSE_UNKREQ, &msg_unkreq },
-  { PBSE_PERM, &msg_perm },
-  { PBSE_BADHOST, &msg_reqbadhost },
-  { PBSE_JOBEXIST, &msg_jobexist },
-  { PBSE_SYSTEM, &msg_system },
-  { PBSE_INTERNAL, &msg_internal },
-  { PBSE_REGROUTE, &msg_regroute },
-  { PBSE_UNKSIG, &msg_unksig },
-  { PBSE_BADATVAL, &msg_badatval },
-  { PBSE_BADNDATVAL, &msg_badnodeatval },
-  { PBSE_MUTUALEX, &msg_mutualex },
-  { PBSE_MODATRRUN, &msg_modatrrun },
-  { PBSE_BADSTATE, &msg_badstate },
-  { PBSE_UNKQUE, &msg_unkque },
-  { PBSE_UNKNODE, &msg_unknode },
-  { PBSE_UNKNODEATR, &msg_unknodeatr },
-  { PBSE_NONODES, &msg_nonodes },
-  { PBSE_BADCRED, &msg_badcred },
-  { PBSE_EXPIRED, &msg_expired },
-  { PBSE_QUNOENB, &msg_qunoenb },
-  { PBSE_QACESS, &msg_qacess },
-  { PBSE_BADUSER, &msg_baduser },
-  { PBSE_HOPCOUNT, &msg_hopcount },
-  { PBSE_QUEEXIST, &msg_queexist },
-  { PBSE_QUEBUSY, &msg_quebusy },
-  { PBSE_QUENBIG, &msg_quenbig },
-  { PBSE_NOSUP, &msg_nosupport },
-  { PBSE_QUENOEN, &msg_quenoen },
-  { PBSE_PROTOCOL, &msg_protocol },
-  { PBSE_NOCONNECTS, &msg_noconnects },
-  { PBSE_NOSERVER, &msg_noserver },
-  { PBSE_UNKRESC, &msg_unkresc },
-  { PBSE_EXCQRESC, &msg_excqresc },
-  { PBSE_QUENODFLT, &msg_quenodflt },
-  { PBSE_NORERUN, &msg_jobnorerun },
-  { PBSE_ROUTEREJ, &msg_routebad },
-  { PBSE_MOMREJECT, &msg_momreject },
-  { PBSE_NOSYNCMSTR, &msg_nosyncmstr },
-  { PBSE_STAGEIN, &msg_stageinfail },
-  { PBSE_RESCUNAV, &msg_rescunav },
-  { PBSE_BADGRP,  &msg_badgrp },
-  { PBSE_MAXQUED, &msg_maxqueued },
-  { PBSE_MAXUSERQUED, &msg_maxuserqued },
-  { PBSE_CKPBSY, &msg_chkpointbusy },
-  { PBSE_EXLIMIT, &msg_exceedlmt },
-  { PBSE_BADACCT, &msg_badacct },
-  { PBSE_BADDEPEND, &msg_baddepend },
-  { PBSE_DUPLIST, &msg_duplist },
-  { PBSE_EXECTHERE, &msg_execthere },
-  { PBSE_SVRDOWN, &msg_svrshut },
-  { PBSE_ATTRTYPE, &msg_attrtype2 },
-  { PBSE_GMODERR, &msg_gmoderr },
-  { PBSE_NORELYMOM, &msg_norelytomom },
-  { PBSE_NOTSNODE, &msg_notsnode },
-  { PBSE_ALRDYEXIT, &msg_alrdyexit },
-  { PBSE_BADATLST, &msg_badatlst },
-  { PBSE_BADSCRIPT, &msg_badscript },
-  { PBSE_CKPSHORT, &msg_ckpshort },
-  { PBSE_CLEANEDOUT, &msg_cleanedout },
-  { PBSE_DISPROTO, &msg_disproto },
-  { PBSE_NOCOPYFILE, &msg_nocopyfile },
-  { PBSE_NODEEXIST, &msg_nodeexist },
-  { PBSE_NODENBIG, &msg_nodenbig },
-  { PBSE_RMBADPARAM, &msg_rmbadparam },
-  { PBSE_RMEXIST, &msg_rmexist },
-  { PBSE_RMNOPARAM, &msg_rmnoparam },
-  { PBSE_RMPART, &msg_rmpart },
-  { PBSE_RMSYSTEM, &msg_rmsystem },
-  { PBSE_RMUNKNOWN, &msg_rmunknown },
-  { PBSE_ROUTEEXPD, &msg_routeexpd },
-  { PBSE_SISCOMM, &msg_siscomm },
-  { PBSE_SISREJECT, &msg_sisreject },
-  { PBSE_TOOMANY, &msg_toomany },
-  { PBSE_JOBTYPE, &msg_jobtype },
-  { PBSE_BADACLHOST, &msg_badaclhost },
-  { PBSE_BADDISALLOWTYPE, &msg_baddisallowtype },
-  { PBSE_NOINTERACTIVE, &msg_nointeractive },
-  { PBSE_NOBATCH, &msg_nobatch },
-  { PBSE_NORERUNABLE, &msg_norerunable },
-  { PBSE_NONONRERUNABLE, &msg_nononrerunable },
-  { PBSE_UNKARRAYID, &msg_unkarrayid },
-  { PBSE_BAD_ARRAY_REQ, &msg_bad_array_req },
-  { PBSE_TIMEOUT, &msg_timeout },
-  { PBSE_NOFAULTTOLERANT, &msg_nofaulttolerant },
-  { PBSE_NOFAULTINTOLERANT, &msg_nofaultintolerant },
-  { PBSE_NONE, &msg_none },
-  { 0, (char **)0 }  /* MUST be the last entry */
-  };
-
-
-
-
+/*END: pbs_err_db generators */
 
 /*
  * pbse_to_txt() - return a text message for an PBS error number
@@ -460,17 +230,16 @@ char *pbse_to_txt(
   int err)  /* I */
 
   {
-  int i = 0;
+  if (err == 0)
+	  return pbs_err_client_txt[0];
 
-  while ((pbs_err_to_txt[i].err_no != 0) && (pbs_err_to_txt[i].err_no != err))
-    ++i;
+  if (err > PBSE_FLOOR && err < PBSE_CEILING)
+	  return pbs_err_client_txt[err - PBSE_FLOOR];
 
-  if (pbs_err_to_txt[i].err_txt != (char **)0)
-    {
-    return(*pbs_err_to_txt[i].err_txt);
-    }
+  if (err > PBSE_RMFLOOR && err < PBSE_RMCEILING)
+	  return pbs_err_rm_txt[err - PBSE_RMFLOOR];
 
-  return(NULL);
+  return (char*)0;
   }  /* END pbse_to_txt() */
 
 /*

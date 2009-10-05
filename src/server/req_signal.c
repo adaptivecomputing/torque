@@ -107,7 +107,6 @@ static void post_signal_req A_((struct work_task *));
 /* Global Data Items: */
 
 extern int   LOGLEVEL;
-extern char *msg_momreject;
 
 extern void   set_old_nodes A_((job *));
 
@@ -285,7 +284,7 @@ static void post_signal_req(
       PBSEVENT_DEBUG,
       PBS_EVENTCLASS_REQUEST,
       preq->rq_ind.rq_signal.rq_jid,
-      msg_momreject);
+      pbse_to_txt(PBSE_MOMREJECT));
 
     errno = 0;
 
