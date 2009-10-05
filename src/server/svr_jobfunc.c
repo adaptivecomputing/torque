@@ -1441,6 +1441,16 @@ int svr_chkque(
 
           return(PBSE_NOFAULTINTOLERANT);
           }
+        if (strcmp(Q_DT_job_array,
+                   pque->qu_attr[QA_ATR_DisallowedTypes].at_val.at_arst->as_string[i]) == 0
+            && (pjob->ji_wattr[(int)JOB_ATR_job_array_request].at_flags & ATR_VFLAG_SET))
+          {
+          if (EMsg)
+            snprintf(EMsg, 1024,
+              "job arrays are not allowed for queue: queue %s",
+              pque->qu_qs.qu_name);
+          return(PBSE_NOJOBARRAYS);
+          }
           
         }
       }    /* END if (pque->qu_attr[QA_ATR_DisallowedTypes].at_flags & ATR_VFLAG_SET) */

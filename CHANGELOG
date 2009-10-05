@@ -84,6 +84,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature
       server resource limits (queue limits are respected). This allows routing 
       queues to route jobs that would be rejected for exceeding local resources
       even when the job won't be run locally. (Simon Toth, muni.cz)
+  e - add support for "job_array" as a type for queue disallowed_types attribute
 
 2.4.0
   f - added a "-q" option to pbs_mom which does *not* perform the default -p 

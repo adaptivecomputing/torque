@@ -339,6 +339,7 @@
 #define Q_DT_nonrerunable       "nonrerunable"
 #define Q_DT_fault_tolerant     "fault_tolerant"
 #define Q_DT_fault_intolerant   "fault_intolerant"
+#define Q_DT_job_array          "job_array"
 
 /*constant related to sum of string lengths for above strings*/
 #define MAX_ENCODE_BFR  100
