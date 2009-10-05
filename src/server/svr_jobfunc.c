@@ -981,14 +981,24 @@ static void chk_svr_resc_limit(
           }
         else if (rc < 0)
           {
-          if ((EMsg != NULL) && (EMsg[0] == '\0'))
+          /* only record if:
+           *     is_transit flag is not set
+           * or  is_transit is set, but not to true
+           * or  the value comes from queue limit
+           */
+          if ((!(pque->qu_attr[(int)QE_ATR_is_transit].at_flags & ATR_VFLAG_SET)) ||
+              (!pque->qu_attr[(int)QE_ATR_is_transit].at_val.at_long) ||
+              (LimitIsFromQueue))
             {
-            sprintf(EMsg, "cannot satisfy %s max %s requirement",
-              (LimitIsFromQueue == 1) ? "queue" : "server",
-              (LimitName != NULL) ? LimitName : "resource");
-            }
+            if ((EMsg != NULL) && (EMsg[0] == '\0'))
+              {
+              sprintf(EMsg, "cannot satisfy %s max %s requirement",
+                      (LimitIsFromQueue == 1) ? "queue" : "server",
+                      (LimitName != NULL) ? LimitName : "resource");
+              }
 
-          comp_resc_lt++;
+              comp_resc_lt++;
+            }
           }
         }
       }    /* END if () */
@@ -1095,14 +1105,24 @@ static void chk_svr_resc_limit(
         }
       else if (rc < 0)
         {
-        if ((EMsg != NULL) && (EMsg[0] == '\0'))
+        /* only record if:
+         *     is_transit flag is not set
+         * or  is_transit is set, but not to true
+         * or  the value comes from queue limit
+         */
+        if ((!(pque->qu_attr[(int)QE_ATR_is_transit].at_flags & ATR_VFLAG_SET)) ||
+            (!pque->qu_attr[(int)QE_ATR_is_transit].at_val.at_long) ||
+            (LimitIsFromQueue))
           {
-          sprintf(EMsg, "cannot satisfy %s max %s requirement",
-                  (LimitIsFromQueue == 1) ? "queue" : "server",
-                  (LimitName != NULL) ? LimitName : "resource");
-          }
+          if ((EMsg != NULL) && (EMsg[0] == '\0'))
+            {
+            sprintf(EMsg, "cannot satisfy %s max %s requirement",
+                    (LimitIsFromQueue == 1) ? "queue" : "server",
+                    (LimitName != NULL) ? LimitName : "resource");
+            }
 
-        comp_resc_lt++;
+          comp_resc_lt++;
+          }
         }
       }
     }  /* END if (mppnodect_resource != NULL) */
@@ -1144,10 +1164,18 @@ static void chk_svr_resc_limit(
             &dummy,
             &dummy) == -1)
         {
-        if ((EMsg != NULL) && (EMsg[0] == '\0'))
-          strcpy(EMsg, "cannot locate feasible nodes");
+        /* only record if:
+         *     is_transit flag is not set
+         * or  is_transit is set, but not to true
+         */
+        if ((!(pque->qu_attr[(int)QE_ATR_is_transit].at_flags & ATR_VFLAG_SET)) ||
+            (!pque->qu_attr[(int)QE_ATR_is_transit].at_val.at_long))
+          {
+          if ((EMsg != NULL) && (EMsg[0] == '\0'))
+            strcpy(EMsg, "cannot locate feasible nodes");
 
-        comp_resc_lt++;
+          comp_resc_lt++;
+          }
         }
       }
     }    /* END if (jbrc_nodes != NULL) */

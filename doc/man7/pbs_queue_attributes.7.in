@@ -194,6 +194,13 @@ based on job resource limits.  Format: boolean; default value: disabled.
 .if !\n(Pb .ig Ig
 [internal type: boolean]
 .Ig
+.Al is_transit
+When true, jobs will be allowed into this queue that do not fit server 
+resource limitations. This is to allow the jobs to be routed to a server that 
+does have the appropriate resources.  Any queue limits are checked.
+.if !\n(Pb .ig Ig
+[internal type: boolean]
+.Ig
 .Al max_queuable
 The maximum number of jobs allowed to reside in the queue at any given time.
 Format: integer; default value: infinite.

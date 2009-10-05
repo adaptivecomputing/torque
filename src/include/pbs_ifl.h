@@ -223,6 +223,7 @@
 #define ATTR_aclgrpslpy  "acl_group_sloppy"
 #define ATTR_keepcompleted "keep_completed"
 #define ATTR_disallowedtypes "disallowed_types"
+#define ATTR_is_transit  "is_transit"
 
 /* additional server attributes names */
 

@@ -78,6 +78,12 @@ c - crash     b - bug fix    e - enhancement    f - new feature
       genetics) (merged from 2.3.8)
   b - fix to prevent some jobs from getting deleted on startup.
   f - add qpool.gz to contrib directory
+  e - improve how error constants and text messages are represented (Simon Toth,
+      muni.cz)
+  f - new boolean queue attribute "is_transit" that allows jobs to exceede 
+      server resource limits (queue limits are respected). This allows routing 
+      queues to route jobs that would be rejected for exceeding local resources
+      even when the job won't be run locally. (Simon Toth, muni.cz)
 
 2.4.0
   f - added a "-q" option to pbs_mom which does *not* perform the default -p 
