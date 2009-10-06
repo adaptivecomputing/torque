@@ -1,5 +1,4 @@
 #!/usr/bin/perl 
-
 use strict;
 use warnings;
 
@@ -7,13 +6,12 @@ use FindBin;
 use lib "$FindBin::Bin/../../../lib/";
 
 use CRI::Test;
-
 plan('no_plan');
 setDesc('Install TORQUE from subversion to use BLCR checkpointing');
 
 my $testbase = $FindBin::Bin;
 
-execute_tests(
+my @testList = (
 "$testbase/kill_moab.t",
 "$testbase/configure.t",
 "$testbase/make_clean.t",
@@ -28,3 +26,9 @@ execute_tests(
 "$testbase/check_blcr.t",
 "$testbase/startup.t",
 );
+
+foreach( @testList )
+{
+    execute_tests($_)
+	or die "Torque installation Failed on $_";
+}
