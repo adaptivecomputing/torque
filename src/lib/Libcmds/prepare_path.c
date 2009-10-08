@@ -233,7 +233,7 @@ int prepare_path(
 
   strcat(path_out, ":");
 
-  if ((path_name[0] != '/') && (strcmp(path_name,"$HOME") != 0) && (host_given == NULL))
+  if ((path_name[0] != '/') && (strncmp(path_name,"$HOME",strlen("$HOME")) != 0) && (host_given == NULL))
     {
     c = getenv("PWD");  /* PWD carries a name that will cause */
 
@@ -303,7 +303,20 @@ int prepare_path(
       }
     }
 
-  strcat(path_out, path_name);
+  if (strncmp(path_name,"$HOME",strlen("$HOME")) == 0)
+    {
+    /* get the actual value for $HOME */
+    char *HomeVal = getenv("HOME");
+    char *NamePtr = path_name+strlen("$HOME");
+
+    /* add the string to the path correctly */
+    strcat(path_out,HomeVal);
+    strcat(path_out,NamePtr);
+    }
+  else
+    {
+    strcat(path_out, path_name);
+    }
   
   /* SUCCESS */
 
