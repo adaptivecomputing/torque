@@ -176,8 +176,12 @@ unsigned int default_server_port = 0;
 int    exiting_tasks = 0;
 float  ideal_load_val = -1.0;
 int    internal_state = 0;
-int    ignwalltime = 0;        /* by default, enable mom based walltime enforcement */
-int             ignvmem = 0; /* by default, enable mom based vmem enforcement */
+/* by default, enforce these policies */
+int    ignwalltime = 0; 
+int    ignmem = 0;
+int    igncput = 0;
+int    ignvmem = 0; 
+/* end policies */
 int    lockfds = -1;
 time_t loopcnt;  /* used for MD5 calc */
 float  max_load_val = -1.0;
@@ -325,6 +329,8 @@ static unsigned long cputmult(char *);
 static unsigned long setallocparcmd(char *);
 static unsigned long setidealload(char *);
 static unsigned long setignwalltime(char *);
+static unsigned long setignmem(char *);
+static unsigned long setigncput(char *);
 static unsigned long setignvmem(char *);
 static unsigned long setlogevent(char *);
 static unsigned long setloglevel(char *);
@@ -383,6 +389,8 @@ static struct specials
   { "cputmult",            cputmult },
   { "ideal_load",          setidealload },
   { "ignwalltime",         setignwalltime },
+  { "ignmem",              setignmem },
+  { "igncput",             setigncput },
   { "ignvmem",             setignvmem },
   { "logevent",            setlogevent },
   { "loglevel",            setloglevel },
@@ -2648,6 +2656,48 @@ static unsigned long setignwalltime(
 
   return(1);
   }  /* END setignwalltime() */
+
+
+
+static unsigned long setignmem(
+
+  char *value)  /* I */
+
+  {
+  log_record(
+    PBSEVENT_SYSTEM,
+    PBS_EVENTCLASS_SERVER,
+    "ignmem",
+    value);
+
+  if (!strncasecmp(value,"t",1) || (value[0] == '1') || !strcasecmp(value,"on") )
+    ignmem = 1;
+  else
+    ignmem = 0;
+
+  return(1);
+  } /* END setignmem() */
+
+
+
+static unsigned long setigncput(
+
+  char *value) /* I */
+
+  {
+  log_record(
+    PBSEVENT_SYSTEM,
+    PBS_EVENTCLASS_SERVER,
+    "igncput",
+    value);
+
+  if (!strncasecmp(value,"t",1) || (value[0] == '1') || !strcasecmp(value,"on") )
+    igncput = 1;
+  else
+    igncput = 0;
+
+  return(1);
+  }
 
 
 static unsigned long setignvmem(
@@ -5869,9 +5919,19 @@ int job_over_limit(
     rd = limresc->rs_defin;
 
     if (!strcmp(rd->rs_name, "cput"))
-      index = 0;
+      {
+      if (igncput == TRUE)
+        continue;
+      else
+        index = 0;
+      }
     else if (!strcmp(rd->rs_name, "mem"))
-      index = 1;
+      {
+      if (ignmem == TRUE)
+        continue;
+      else
+        index = 1;
+      }
     else
       continue;
 

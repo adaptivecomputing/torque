@@ -167,7 +167,9 @@ extern double cputfactor;
 extern double wallfactor;
 extern  long    system_ncpus;
 extern  int     ignwalltime;
+extern  int     igncput;
 extern  int     ignvmem;
+extern  int     ignmem;
 
 /*
 ** local functions and data
@@ -568,24 +570,30 @@ mom_set_limits(
 
     if (strcmp(pname, "cput") == 0)   /* cpu time - check */
       {
-      retval = local_gettime(pres, &value);
+      if (igncput == FALSE)
+        {
+        retval = local_gettime(pres, &value);
 
-      if (retval != PBSE_NONE)
-        return (error(pname, retval));
+        if (retval != PBSE_NONE)
+          return (error(pname, retval));
+        }
       }
     else if (strcmp(pname, "pcput") == 0)
       {
-      /* process cpu time - set */
-      retval = local_gettime(pres, &value);
+      if (igncput == FALSE)
+        {
+        /* process cpu time - set */
+        retval = local_gettime(pres, &value);
 
-      if (retval != PBSE_NONE)
-        return (error(pname, retval));
+        if (retval != PBSE_NONE)
+          return (error(pname, retval));
 
-      reslim.rlim_cur = reslim.rlim_max =
-                          (unsigned long)((double)value / cputfactor);
+        reslim.rlim_cur = reslim.rlim_max =
+          (unsigned long)((double)value / cputfactor);
 
-      if (setrlimit(RLIMIT_CPU, &reslim) < 0)
-        return (error("RLIMIT_CPU", PBSE_SYSTEM));
+        if (setrlimit(RLIMIT_CPU, &reslim) < 0)
+          return (error("RLIMIT_CPU", PBSE_SYSTEM));
+        }
       }
     else if (strcmp(pname, "file") == 0)   /* set */
       {
@@ -605,16 +613,56 @@ mom_set_limits(
           return (error(pname, PBSE_SYSTEM));
         }
       }
-    else if (strcmp(pname, "mem") == 0)    /* check */
+    else if (strcmp(pname, "mem") == 0)   /* check */
       {
-      retval = local_getsize(pres, &value);
+      if (ignmem == FALSE)
+        {
+        retval = local_getsize(pres, &value);
 
-      if (retval != PBSE_NONE)
-        return (error(pname, retval));
+        if (retval != PBSE_NONE)
+          return (error(pname, retval));
+        }
       }
     else if (strcmp(pname, "pmem") == 0)   /* set */
       {
-      if (set_mode == SET_LIMIT_SET)
+      if (ignmem == FALSE)
+        {
+        if (set_mode == SET_LIMIT_SET)
+          {
+          retval = local_getsize(pres, &value);
+
+          if (retval != PBSE_NONE)
+            return (error(pname, retval));
+
+          if (value > LONG_MAX)
+            return (error(pname, PBSE_BADATVAL));
+
+          reslim.rlim_cur = reslim.rlim_max = value;
+
+          if (setrlimit(RLIMIT_DATA, &reslim) < 0)
+            return (error("RLIMIT_DATA", PBSE_SYSTEM));
+
+          if (setrlimit(RLIMIT_STACK, &reslim) < 0)
+            return (error("RLIMIT_STACK", PBSE_SYSTEM));
+          }
+        }
+      }
+    else if (strcmp(pname, "vmem") == 0)   /* check */
+      {
+      if (ignvmem == FALSE)
+        {
+        retval = local_getsize(pres, &value);
+
+        if (retval != PBSE_NONE)
+          return (error(pname, retval));
+
+        if ((mem_limit == 0) || (value < mem_limit))
+          mem_limit = value;
+        }
+      }
+    else if (strcmp(pname, "pvmem") == 0)   /* set */
+      {
+      if (ignvmem == FALSE)
         {
         retval = local_getsize(pres, &value);
 
@@ -624,37 +672,9 @@ mom_set_limits(
         if (value > LONG_MAX)
           return (error(pname, PBSE_BADATVAL));
 
-        reslim.rlim_cur = reslim.rlim_max = value;
-
-        if (setrlimit(RLIMIT_DATA, &reslim) < 0)
-          return (error("RLIMIT_DATA", PBSE_SYSTEM));
-
-        if (setrlimit(RLIMIT_STACK, &reslim) < 0)
-          return (error("RLIMIT_STACK", PBSE_SYSTEM));
+        if ((mem_limit == 0) || (value < mem_limit))
+          mem_limit = value;
         }
-      }
-    else if (strcmp(pname, "vmem") == 0)   /* check */
-      {
-      retval = local_getsize(pres, &value);
-
-      if (retval != PBSE_NONE)
-        return (error(pname, retval));
-
-      if ((mem_limit == 0) || (value < mem_limit))
-        mem_limit = value;
-      }
-    else if (strcmp(pname, "pvmem") == 0)   /* set */
-      {
-      retval = local_getsize(pres, &value);
-
-      if (retval != PBSE_NONE)
-        return (error(pname, retval));
-
-      if (value > LONG_MAX)
-        return (error(pname, PBSE_BADATVAL));
-
-      if ((mem_limit == 0) || (value < mem_limit))
-        mem_limit = value;
       }
     else if (strcmp(pname, "walltime") == 0)   /* Check */
       {
@@ -844,7 +864,7 @@ mom_over_limit(job *pjob)
     assert(pname != NULL);
     assert(*pname != '\0');
 
-    if (strcmp(pname, "cput") == 0)
+    if ((igncput == FALSE) && (strcmp(pname, "cput") == 0))
       {
       retval = local_gettime(pres, &value);
 
@@ -859,7 +879,7 @@ mom_over_limit(job *pjob)
         return (TRUE);
         }
       }
-    else if (strcmp(pname, "pcput") == 0)
+    else if ((igncput == FALSE) && (strcmp(pname, "pcput") == 0))
       {
       retval = local_gettime(pres, &value);
 

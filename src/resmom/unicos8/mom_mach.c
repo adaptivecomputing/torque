@@ -186,6 +186,10 @@ dev_t  srfs_tmp_dev = -1;
 dev_t  srfs_big_dev = -1;
 dev_t  srfs_fast_dev = -1;
 
+extern int ignmem;
+extern int ignvmem;
+extern int igncput;
+
 static char **v_name = NULL;
 static char **v_value = NULL;
 
@@ -312,6 +316,7 @@ extern double cputfactor;
 extern double wallfactor;
 extern  long    system_ncpus;
 extern  int     ignwalltime;
+extern  int     igncput;
 
 /*
 ** local functions and data
@@ -1316,69 +1321,80 @@ mom_set_limits(
 
     if (strcmp(pname, "cput") == 0)
       {
-      retval = gettime(pres, &value);
-      value = (unsigned long)((double)value / cputfactor);
+      if (igncput == FALSE)
+        {
+        retval = gettime(pres, &value);
+        value = (unsigned long)((double)value / cputfactor);
 
-      if (retval != PBSE_NONE)
-        return (error(pname, retval));
+        if (retval != PBSE_NONE)
+          return (error(pname, retval));
 
-      if (value > INT_MAX)
-        return (error(pname, PBSE_BADATVAL));
+        if (value > INT_MAX)
+          return (error(pname, PBSE_BADATVAL));
 
-      retval = which_limit(value, maxcput,
-                           pres->rs_value.at_flags, 0, &maxcput);
+        retval = which_limit(value, maxcput,
+          pres->rs_value.at_flags, 0, &maxcput);
 
-      if (retval != PBSE_NONE)
-        return (error(pname, retval));
+        if (retval != PBSE_NONE)
+          return (error(pname, retval));
+        }
       }
     else if (strcmp(pname, "pcput") == 0)
       {
-      retval = gettime(pres, &value);
-      value = (unsigned long)((double)value / cputfactor);
+      if (igncput == FALSE) 
+        {
+        retval = gettime(pres, &value);
+        value = (unsigned long)((double)value / cputfactor);
 
-      if (retval != PBSE_NONE)
-        return (error(pname, retval));
+        if (retval != PBSE_NONE)
+          return (error(pname, retval));
 
-      if (value > INT_MAX)
-        return (error(pname, PBSE_BADATVAL));
+        if (value > INT_MAX)
+          return (error(pname, PBSE_BADATVAL));
 
-      retval = which_limit(value, maxpcput,
-                           pres->rs_value.at_flags, 0, &maxpcput);
+        retval = which_limit(value, maxpcput,
+          pres->rs_value.at_flags, 0, &maxpcput);
 
-      if (retval != PBSE_NONE)
-        return (error(pname, retval));
+        if (retval != PBSE_NONE)
+          return (error(pname, retval));
       }
     else if (strcmp(pname, "mem") == 0)
       {
-      retval = getsize(pres, &value);
+      if (ignmem == FALSE) 
+        {
+        retval = getsize(pres, &value);
 
-      if (retval != PBSE_NONE)
-        return (error(pname, retval));
+        if (retval != PBSE_NONE)
+          return (error(pname, retval));
 
-      if (value > INT_MAX)
-        return (error(pname, PBSE_BADATVAL));
+        if (value > INT_MAX)
+          return (error(pname, PBSE_BADATVAL));
 
-      retval = which_limit((value + 4095) / 4096, maxmem,
-                           pres->rs_value.at_flags, 0, &maxmem);
+        retval = which_limit((value + 4095) / 4096, maxmem,
+          pres->rs_value.at_flags, 0, &maxmem);
 
-      if (retval != PBSE_NONE)
-        return (error(pname, retval));
+        if (retval != PBSE_NONE)
+          return (error(pname, retval));
+        }
       }
     else if (strcmp(pname, "pmem") == 0)
       {
-      retval = getsize(pres, &value);
+      if (ignmem == FALSE) 
+        {
+        retval = getsize(pres, &value);
 
-      if (retval != PBSE_NONE)
-        return (error(pname, retval));
+        if (retval != PBSE_NONE)
+          return (error(pname, retval));
 
-      if (value > INT_MAX)
-        return (error(pname, PBSE_BADATVAL));
+        if (value > INT_MAX)
+          return (error(pname, PBSE_BADATVAL));
 
-      retval = which_limit((value + 4095) / 4096, maxpmem,
-                           pres->rs_value.at_flags, 0, &maxpmem);
+        retval = which_limit((value + 4095) / 4096, maxpmem,
+          pres->rs_value.at_flags, 0, &maxpmem);
 
-      if (retval != PBSE_NONE)
-        return (error(pname, retval));
+         if (retval != PBSE_NONE)
+           return (error(pname, retval));
+        }
       }
     else if (strcmp(pname, "vmem")  == 0)   /* ignore */
       {
@@ -1989,7 +2005,7 @@ mom_over_limit(job *pjob)
     assert(pname != NULL);
     assert(*pname != '\0');
 
-    if (strcmp(pname, "ncpus") == 0)
+    if ((strcmp(pname, "ncpus") == 0) && (igncput == FALSE))
       {
       retval = getlong(pres, &value);
 
