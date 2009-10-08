@@ -2272,20 +2272,14 @@ interactive(void)
 
   /* Get the current window size, to be sent to MOM later */
 
-  if (! have_terminal)
+  if (!have_terminal || getwinsize(&wsz))
     {
     wsz.ws_row = 20; /* unable to get actual values */
     wsz.ws_col = 80; /* set defaults   */
     wsz.ws_xpixel = 0;
     wsz.ws_ypixel = 0;
     }
-  else if (getwinsize(&wsz))
-    {
-    wsz.ws_row = 20; /* unable to get actual values */
-    wsz.ws_col = 80; /* set defaults   */
-    wsz.ws_xpixel = 0;
-    wsz.ws_ypixel = 0;
-    }
+
 
   printf("qsub: waiting for job %s to start\n",
 
