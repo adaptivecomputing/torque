@@ -1,6 +1,10 @@
 c - crash     b - bug fix    e - enhancement    f - new feature
 
 2.4.1
+  e - added a prologue and epilogue option to the list of resources for qsub -l
+      which allows a per job prologue or epilogue script. The syntax for
+      the new option is qsub -l prologue=<prologue script>, 
+      epilogue=<epilogue script>
   f - added a "-w" option to qsub to override the working directory
   e - changes needed to allow relocatable checkpoint jobs. Job checkpoint files
       are now under the control of the server.

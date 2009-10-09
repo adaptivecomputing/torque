@@ -458,7 +458,17 @@ int run_pelog(
   /* script must be owned by root, be regular file, read and execute by user *
    * and not writeable by group or other */
 
-  if ((sbuf.st_uid != 0) ||
+  if(which == PE_PROLOGUSERJOB || which == PE_EPILOGUSERJOB)
+    {
+    if ((sbuf.st_uid != pjob->ji_qs.ji_un.ji_momt.ji_exuid) ||
+        (!S_ISREG(sbuf.st_mode)) ||
+        ((sbuf.st_mode & (S_IRUSR | S_IXUSR)) != (S_IRUSR | S_IXUSR)) ||
+        (sbuf.st_mode & (S_IWGRP | S_IWOTH)))
+      {
+      return(pelog_err(pjob,pelog,-1,"permission Error"));
+      }
+    }
+  else if ((sbuf.st_uid != 0) ||
       (!S_ISREG(sbuf.st_mode)) ||
       ((sbuf.st_mode & (S_IRUSR | S_IXUSR)) != (S_IRUSR | S_IXUSR)) ||
       (sbuf.st_mode & (S_IWGRP | S_IWOTH)))
@@ -606,7 +616,7 @@ int run_pelog(
 
     net_close(-1);
 
-    if ((which == PE_PROLOGUSER) || (which == PE_EPILOGUSER))
+    if ((which == PE_PROLOGUSER) || (which == PE_EPILOGUSER) || (which == PE_PROLOGUSERJOB) || which == PE_EPILOGUSERJOB)
       {
       if (setgroups(
           pjob->ji_grpcache->gc_ngroup,
@@ -729,7 +739,7 @@ int run_pelog(
         }
       }
 
-    if ((which == PE_PROLOGUSER) || (which == PE_EPILOGUSER))
+    if ((which == PE_PROLOGUSER) || (which == PE_EPILOGUSER) || (which == PE_PROLOGUSERJOB) || (which == PE_EPILOGUSERJOB))
       {
       if (chdir(pjob->ji_grpcache->gc_homedir) != 0)
         {

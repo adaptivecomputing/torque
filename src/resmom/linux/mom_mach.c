@@ -1471,6 +1471,12 @@ int mom_set_limits(
 
       /* NO-OP */
       }
+    else if(!strcmp(pname, "prologue"))
+      {
+      }
+    else if(!strcmp(pname, "epilogue"))
+      {
+      }
     else if ((pres->rs_defin->rs_flags & ATR_DFLAG_RMOMIG) == 0)
       {
       /* don't recognize and not marked as ignore by mom */

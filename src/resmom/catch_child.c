@@ -124,9 +124,9 @@
 /* External Globals */
 
 extern char  *path_epilog;
-extern char             *path_epiloguser;
-extern char             *path_epilogp;
-extern char             *path_epiloguserp;
+extern char  *path_epiloguser;
+extern char  *path_epilogp;
+extern char  *path_epiloguserp;
 extern char  *path_jobs;
 extern unsigned int default_server_port;
 extern tlist_head svr_alljobs, mom_polljobs;
@@ -138,12 +138,12 @@ extern struct connection svr_conn[];
 extern int  resc_access_perm;
 extern char  *path_aux;
 
-extern int              LOGLEVEL;
+extern int   LOGLEVEL;
 
-extern char            *PJobSubState[];
-extern char             mom_host[];
-extern int              PBSNodeCheckProlog;
-extern int              PBSNodeCheckEpilog;
+extern char  *PJobSubState[];
+extern char  mom_host[];
+extern int   PBSNodeCheckProlog;
+extern int   PBSNodeCheckEpilog;
 
 
 /* external prototypes */
@@ -166,13 +166,10 @@ extern void clear_down_mom_servers();
 extern int is_mom_server_down(pbs_net_t);
 extern void set_mom_server_down(pbs_net_t);
 extern int no_mom_servers_down();
+extern char *get_local_script_path(job *pjob, char *base);
 
 
 /* END external prototypes */
-
-
-
-
 
 /*
  * catch_child() - the signal handler for SIGCHLD.
@@ -319,7 +316,7 @@ scan_for_exiting(void)
   static int ForceObit    = -1;   /* boolean - if TRUE, ObitsAllowed will be enforced */
   static int ObitsAllowed = 1;
 
-  int           NumSisters;
+  int NumSisters;
 
   /*
   ** Look through the jobs.  Each one has it's tasks examined
@@ -668,6 +665,7 @@ scan_for_exiting(void)
       if ((pjob->ji_wattr[(int)JOB_ATR_interactive].at_flags & ATR_VFLAG_SET) &&
           pjob->ji_wattr[(int)JOB_ATR_interactive].at_val.at_long)
         {
+
         if (run_pelog(PE_EPILOGUSER, path_epiloguserp, pjob, PE_IO_TYPE_NULL) != 0)
           {
           log_err(-1, id, "user parallel epilog failed");
@@ -680,9 +678,10 @@ scan_for_exiting(void)
         }
       else
         {
+      
         if (run_pelog(PE_EPILOGUSER, path_epiloguserp, pjob, PE_IO_TYPE_STD) != 0)
           {
-          log_err(-1, id, "user parallel epilog failed");
+          log_err(-1, id, "parallel user epilog failed");
           }
 
         if (run_pelog(PE_EPILOG, path_epilogp, pjob, PE_IO_TYPE_STD) != 0)
@@ -1029,6 +1028,9 @@ static void preobit_reply(
   int  deletejob = 0;
   int  jobiscorrupt = 0;
 
+  char *path_epiloguserjob;
+  resource *presc;
+
   /* struct batch_status *bsp = NULL; */
 
   log_record(
@@ -1331,6 +1333,24 @@ static void preobit_reply(
     {
     /* job is interactive */
 
+    presc = find_resc_entry(
+          &pjob->ji_wattr[(int)JOB_ATR_resource],
+          find_resc_def(svr_resc_def, "epilogue", svr_resc_size));
+    if((presc != NULL))
+      if((presc->rs_value.at_flags & ATR_VFLAG_SET) && (presc->rs_value.at_val.at_str != NULL))
+        {
+        path_epiloguserjob = get_local_script_path(pjob, presc->rs_value.at_val.at_str);
+        if(path_epiloguserjob)
+          {
+          if (run_pelog(PE_EPILOGUSERJOB, path_epiloguserjob, pjob, PE_IO_TYPE_NULL) != 0)
+            {
+            log_err(-1, id, "user local epilog failed");
+            }
+          free(path_epiloguserjob);
+          }
+        }
+
+
     if (run_pelog(PE_EPILOGUSER, path_epiloguser, pjob, PE_IO_TYPE_NULL) != 0)
       {
       log_err(-1, id, "user epilog failed - interactive job");
@@ -1346,6 +1366,25 @@ static void preobit_reply(
     /* job is not interactive */
 
     int rc;
+
+    presc = find_resc_entry(
+          &pjob->ji_wattr[(int)JOB_ATR_resource],
+          find_resc_def(svr_resc_def, "epilogue", svr_resc_size));
+    if((presc != NULL))
+      if((presc->rs_value.at_flags & ATR_VFLAG_SET) && (presc->rs_value.at_val.at_str != NULL))
+        {
+        path_epiloguserjob = get_local_script_path(pjob, presc->rs_value.at_val.at_str);
+        
+        if(path_epiloguserjob)
+          {
+          if (run_pelog(PE_EPILOGUSERJOB, path_epiloguserjob, pjob, PE_IO_TYPE_STD) != 0)
+            {
+            log_err(-1, id, "user local epilog failed");
+            }
+          free(path_epiloguserjob);
+          }
+        
+        }
 
     if (run_pelog(PE_EPILOGUSER, path_epiloguser, pjob, PE_IO_TYPE_STD) != 0)
       {

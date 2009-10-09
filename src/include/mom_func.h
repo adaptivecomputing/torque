@@ -196,6 +196,8 @@ extern int kill_task A_((struct task *, int, int));
 #define PE_EPILOG   2
 #define PE_PROLOGUSER   3
 #define PE_EPILOGUSER   4
+#define PE_PROLOGUSERJOB 5  /* per job prologue script */
+#define PE_EPILOGUSERJOB 6 /* per job epilogue script */
 
 #ifdef LIBPBS_H
 extern int   open_std_file A_((job *, enum job_file, int, gid_t));

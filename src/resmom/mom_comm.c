@@ -185,6 +185,9 @@ extern void DIS_tcp_funcs();
 extern int TTmpDirName(job *, char *);
 extern int TMakeTmpDir(job *, char *);
 extern void mom_server_close_stream(int stream);
+char *cat_dirs(char *root, char *base);
+char *get_local_script_path(job *pjob, char *base);
+
 #ifdef PENABLE_LINUX26_CPUSETS
 extern int use_cpusets(job *);
 #endif /* PENABLE_LINUX26_CPUSETS */
@@ -1844,7 +1847,7 @@ void im_request(
   int stream,   /* I */
   int version)  /* I */
 
-  {
+{
   char   *id = "im_request";
 
   int   command = 0;
@@ -2406,6 +2409,9 @@ void im_request(
 
         goto done;
         }
+
+       
+
 
 #if IBM_SP2==2  /* IBM SP with PSSP 3.1 */
 
@@ -5882,7 +5888,85 @@ static int adoptSession(pid_t sid, char *id, int command, char *cookie)
   return TM_OKAY;
   }
 
+/*
+ * cat_dirs --
+ *
+ *  Concatenate root and base into a new string and return the result
+ * 
+ * Result:
+ *    if root is null only the base value is returned. Otherwise a string
+ *    with the root followed by base is returned. If memory cannot be
+ *    allocated NULL is returned.
+ *
+ * Side effects:
+ *    If a non-null value is returned the new string will need
+ *    to later be freed
+ *
+ * <Ken Nielson Oct. 2009>
+ */
 
+char *cat_dirs(char *root, char *base)
+{
+  char *pn;
+  int   len = 0;
+
+  if(root)
+    len = strlen(root);
+
+  len += strlen(base);
+
+  pn = malloc(len+2);
+  if(!pn)
+    {
+    return(NULL);
+    }
+
+  if(root)
+    {
+    strcpy(pn, root);
+    strcat(pn, base);
+    }
+  else
+    strcpy(pn, base);
+
+  return(pn);
+}
+
+/*
+ *  get_local_script_path --
+ *  
+ *  takes a path given by base and prepends
+ *  the PBS_O_WORKDIR if base is a relative path. That is, if
+ *  base does not begin with '/'. Otherwise it returns
+ *  the value of base. cat_dirs allocates memory for the new
+ *  string so this has to be freed.
+ *  
+ *  If a null string is returned it is because cat_dirs could
+ *  not allocate memory
+*/
+
+char *get_local_script_path(job *pjob, char *base)
+{
+  char *wdir;
+  size_t len;
+  char *pn = NULL;
+
+  
+  /* see if base is an absolute path*/
+  if(base[0] != '/')
+    {
+    /* base is not an absolute path. Prepend it with the working directory */
+    wdir = get_job_envvar(pjob, "PBS_O_WORKDIR");
+    len = strlen(wdir);
+    if(wdir[len-1] != '/')
+      strcat(wdir, "/");
+    pn = cat_dirs(wdir, base);
+    }
+  else
+    pn = cat_dirs(NULL, base);  /* cat_dirs will allocate memory to hold our string */
+
+  return(pn);
+}
 
 
 /* END mom_comm.c */
