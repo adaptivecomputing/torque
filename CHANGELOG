@@ -3,6 +3,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature
 2.4.2
   b - Added pbs_error_db.h to src/include/Makefile.am and src/include/Makefile.in. 
       pbs_error_db.h now needed for install.
+  e - Modified pbs_get_server_list so the $TORQUE_HOME/server_name file will work with 
+      a comma delimited string or a list of server names separated by a new line.
 2.4.1
   e - added a prologue and epilogue option to the list of resources for qsub -l
       which allows a per job prologue or epilogue script. The syntax for

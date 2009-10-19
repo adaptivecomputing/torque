@@ -161,6 +161,8 @@ char *pbs_get_server_list(void)
   FILE *fd;
   char *pn;
   char *server;
+  char tmp[1024];
+  int len;
 
   if (got_dflt != TRUE)
     {
@@ -181,15 +183,27 @@ char *pbs_get_server_list(void)
         return(server_list);
         }
 
-      if (fgets(server_list, sizeof(server_list), fd) == NULL)
+      if (fgets(tmp, sizeof(tmp), fd) == NULL)
         {
         fclose(fd);
 
         return(server_list);
         }
 
+      strcpy(server_list, tmp);
       if ((pn = strchr(server_list, (int)'\n')))
         * pn = '\0';
+
+      while(fgets(tmp, sizeof(tmp), fd))
+        {
+        strcat(server_list, ",");
+        strcat(server_list, tmp);
+        len = strlen(server_list);
+        if(server_list[len-1] == '\n')
+          {
+          server_list[len-1] = '\0';
+          }
+        }
 
       fclose(fd);
       }
