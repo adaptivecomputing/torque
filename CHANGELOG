@@ -148,6 +148,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature
   b - fix how qsub sets PBS_O_HOST and PBS_SERVER (Eirikur Hjartarson, deCODE 
       genetics)
   f - add qpool.gz to contrib directory
+  b - fix so after* dependencies are handled correctly for exiting / completed
+      jobs
 
 2.3.7
   b - fixed a bug where UNIX domain socket communication was failing when 

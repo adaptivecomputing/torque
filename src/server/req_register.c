@@ -146,6 +146,8 @@ extern char *msg_registerdel;
 extern char *msg_registerrel;
 extern char *msg_regrej;
 extern char  log_buffer[];
+extern int   LOGLEVEL;
+extern char *PJobState[];
 
 
 
@@ -216,9 +218,56 @@ void req_register(
     return;
     }
 
+  type = preq->rq_ind.rq_register.rq_dependtype;
+
+  if (((pjob->ji_qs.ji_state == JOB_STATE_COMPLETE) ||
+    (pjob->ji_qs.ji_state == JOB_STATE_EXITING)) &&
+    ((type = JOB_DEPEND_TYPE_AFTERSTART) ||
+    (type = JOB_DEPEND_TYPE_AFTERANY) ||
+    ((type = JOB_DEPEND_TYPE_AFTEROK) && (pjob->ji_qs.ji_un.ji_exect.ji_exitstat == 0)) ||
+    ((type = JOB_DEPEND_TYPE_AFTERNOTOK) && (pjob->ji_qs.ji_un.ji_exect.ji_exitstat != 0))))
+    {
+    if (LOGLEVEL >= 8)
+      {
+      sprintf(log_buffer,"Dependency requested for %s job, parent job %s, child job %s",
+        PJobState[pjob->ji_qs.ji_state],
+        preq->rq_ind.rq_register.rq_parent,
+        preq->rq_ind.rq_register.rq_child);
+
+      log_event(
+        PBSEVENT_JOB,
+        PBS_EVENTCLASS_JOB,
+        pjob->ji_qs.ji_jobid,
+        log_buffer);
+      }
+
+      log_event(
+        PBSEVENT_DEBUG,
+        PBS_EVENTCLASS_JOB,
+        preq->rq_ind.rq_register.rq_parent,
+        pbse_to_txt(PBSE_BADSTATE));
+
+      req_reject(PBSE_BADSTATE, 0, preq, NULL, NULL);
+
+      return;
+    }
+
+  if (LOGLEVEL >= 8)
+    {
+    sprintf(log_buffer,"Dependency requested parent job %s state (%s), child job %s",
+      preq->rq_ind.rq_register.rq_parent,
+      PJobState[pjob->ji_qs.ji_state],
+      preq->rq_ind.rq_register.rq_child);
+
+    log_event(
+      PBSEVENT_JOB,
+      PBS_EVENTCLASS_JOB,
+      pjob->ji_qs.ji_jobid,
+      log_buffer);
+    }
+
   pattr = &pjob->ji_wattr[(int)JOB_ATR_depend];
 
-  type = preq->rq_ind.rq_register.rq_dependtype;
   pjob->ji_modified = 1;
 
   /* more of the server:port fix kludge */
@@ -603,7 +652,10 @@ static void post_doq(
       strcat(log_buffer, "\n");
       strcat(log_buffer, "Job held for unknown job dep, use 'qrls' to release");
 
-      svr_mailowner(pjob, MAIL_ABORT, MAIL_FORCE, log_buffer);
+      if (preq->rq_reply.brp_code != PBSE_BADSTATE)
+        {
+        svr_mailowner(pjob, MAIL_ABORT, MAIL_FORCE, log_buffer);
+        }
 
       pattr = &pjob->ji_wattr[(int)JOB_ATR_depend];
 
@@ -612,9 +664,12 @@ static void post_doq(
         {
         del_depend_job(pdjb);
 
-        pjob->ji_wattr[(int)JOB_ATR_hold].at_val.at_long |= HOLD_u;
-        pjob->ji_wattr[(int)JOB_ATR_hold].at_flags |= ATR_VFLAG_SET;
-        pjob->ji_modified = 1;
+        if (preq->rq_reply.brp_code != PBSE_BADSTATE)
+          {
+          pjob->ji_wattr[(int)JOB_ATR_hold].at_val.at_long |= HOLD_u;
+          pjob->ji_wattr[(int)JOB_ATR_hold].at_flags |= ATR_VFLAG_SET;
+          pjob->ji_modified = 1;
+          }
 
         set_depend_hold(pjob, pattr);
         }
@@ -1215,6 +1270,15 @@ static void set_depend_hold(
 
       /* newstate is job's 'natural state - ie, what it would be if dependency did not exist */
 
+      if (LOGLEVEL >= 8)
+        {
+        log_event(
+          PBSEVENT_JOB,
+          PBS_EVENTCLASS_JOB,
+          pjob->ji_qs.ji_jobid,
+          "Clearing HOLD_s due to dependencies\n");
+        }
+
       svr_evaljobstate(pjob, &newstate, &newsubst, 0);
 
       svr_setjobstate(pjob, newstate, newsubst);
@@ -1226,6 +1290,15 @@ static void set_depend_hold(
 
     pjob->ji_wattr[(int)JOB_ATR_hold].at_val.at_long |= HOLD_s;
     pjob->ji_wattr[(int)JOB_ATR_hold].at_flags |= ATR_VFLAG_SET;
+
+    if (LOGLEVEL >= 8)
+      {
+      log_event(
+        PBSEVENT_JOB,
+        PBS_EVENTCLASS_JOB,
+        pjob->ji_qs.ji_jobid,
+        "Setting HOLD_s due to dependencies\n");
+      }
 
     svr_setjobstate(pjob, JOB_STATE_HELD, substate);
     }
