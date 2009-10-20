@@ -311,7 +311,7 @@ int main(
     /* FAILURE */
 
     fprintf(stderr, "pbs_iff: cannot get account info for uid %d, errno=%d (%s)\n",
-            myrealuid,
+            (int)myrealuid,
             errno,
             strerror(errno));
 

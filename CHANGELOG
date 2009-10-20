@@ -152,6 +152,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature
   c - modified acct_job in server/accounting.c to dynamically allocate memory
       to accomodate strings larger than PBS_ACCT_MAX_RCD. (Ken Nielson Cluster 
       Resources)
+  e - all the user to turn off credential lifetimes so they don't have to lose
+      iterations while credentials are renewed.
   b - fix so after* dependencies are handled correctly for exiting / completed
       jobs
 

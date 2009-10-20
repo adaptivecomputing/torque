@@ -345,11 +345,28 @@ int authenticate_user(
 
   if (pcred->timestamp)
     {
-    if ((pcred->timestamp - CREDENTIAL_TIME_DELTA > time_now) ||
-        (pcred->timestamp + CREDENTIAL_LIFETIME < time_now))
+    long lifetime;
+    if ((server.sv_attr[SRV_ATR_CredentialLifetime].at_flags & ATR_VFLAG_SET) != 0)
       {
-      return(PBSE_EXPIRED);
+      /* use configured value if set */
+      lifetime = server.sv_attr[SRV_ATR_CredentialLifetime].at_val.at_long;
       }
+    else 
+      {
+      /* if not use the default */
+      lifetime = CREDENTIAL_LIFETIME;
+      }
+
+    /* negative values mean that credentials have an infinite lifetime */
+    if (lifetime > -1)
+      {
+      if ((pcred->timestamp - CREDENTIAL_TIME_DELTA > time_now) ||
+          (pcred->timestamp + lifetime < time_now))
+        {
+        return(PBSE_EXPIRED);
+        }
+      }
+
     }
 
   /* If Server's Acl_User enabled, check if user in list */

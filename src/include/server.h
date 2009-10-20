@@ -163,6 +163,7 @@ enum srv_atr
   SRV_ATR_lockfile,
   SRV_ATR_LockfileUpdateTime,
   SRV_ATR_LockfileCheckTime,
+  SRV_ATR_CredentialLifetime,
   SRV_ATR_JobMustReport,
   SRV_ATR_checkpoint_dir,
   SRV_ATR_MailSubjectFmt,

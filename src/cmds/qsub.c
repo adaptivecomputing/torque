@@ -4166,7 +4166,7 @@ int main(
 
     if ((param_val = get_param("QSUBSENDUID", config_buf)) != NULL)
       {
-      sprintf(owner_uid, "%d", getuid());
+      sprintf(owner_uid, "%d", (int)getuid());
       }
 
     if ((param_val = get_param("XAUTHPATH", config_buf)) != NULL)

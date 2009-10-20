@@ -618,7 +618,10 @@ int pbsd_init(
 
   /* 2. set up the various paths and other global variables we need */
 
-  path_priv      = build_path(path_home, PBS_SVR_PRIVATE, suffix_slash);
+  if(path_priv == NULL)
+    {
+    path_priv      = build_path(path_home, PBS_SVR_PRIVATE, suffix_slash);
+    }
 
   path_arrays  = build_path(path_priv, PBS_ARRAYDIR, suffix_slash);
 
@@ -630,7 +633,10 @@ int pbsd_init(
 
   path_acct  = build_path(path_priv, PBS_ACCT,     suffix_slash);
 
-  path_svrdb     = build_path(path_priv, PBS_SERVERDB, NULL);
+  if(path_svrdb == NULL)
+    {
+    path_svrdb     = build_path(path_priv, PBS_SERVERDB, NULL);
+    }
 
   path_svrdb_new = build_path(path_priv, PBS_SERVERDB, new_tag);
 
@@ -2214,8 +2220,14 @@ int get_svr_attr(
     {
     /* Open the server database (save file) and read it in */
 
-    path_priv      = build_path(path_home, PBS_SVR_PRIVATE, suffix_slash);
-    path_svrdb     = build_path(path_priv, PBS_SERVERDB, NULL);
+    if(path_priv == NULL)
+      {
+      path_priv = build_path(path_home, PBS_SVR_PRIVATE, suffix_slash);
+      }
+    if(path_svrdb == NULL)
+      {
+      path_svrdb     = build_path(path_priv, PBS_SERVERDB, NULL);
+      }
 
     if (svr_resc_def == NULL)
       {
