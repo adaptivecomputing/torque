@@ -154,6 +154,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature
       Resources)
   e - all the user to turn off credential lifetimes so they don't have to lose
       iterations while credentials are renewed.
+  e - added OS independent resending of failed job obits (from D Beer), also
+      removed OS specific CACHEOBITFAILURES code.
   b - fix so after* dependencies are handled correctly for exiting / completed
       jobs
 

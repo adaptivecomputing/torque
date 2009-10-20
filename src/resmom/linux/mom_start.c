@@ -352,12 +352,6 @@ void scan_for_terminated(void)
 
   int    tcount;
 
-#ifdef CACHEOBITFAILURES
-  int tjcindex;
-
-  int TJCIndex = 0;
-#endif
-
   if (LOGLEVEL >= 7)
     {
     log_record(
@@ -383,62 +377,6 @@ void scan_for_terminated(void)
       pjob = (job *)GET_PRIOR(pjob->ji_alljobs);
       }
     }
-
-#ifdef CACHEOBITFAILURES
-  /* process cached obit failures */
-
-  for (TJCIndex = 0;TJCIndex < TMAX_TJCACHESIZE;TJCIndex++)
-    {
-    if (TJCache[TJCIndex] == NULL)
-      break;
-
-    if (TJCache[TJCIndex] == (job *)1)
-      continue;
-
-    /* attempt to send obit again */
-
-    pjob = TJCache[TJCIndex];
-
-    if (LOGLEVEL >= 7)
-      {
-      LOG_EVENT(
-        PBSEVENT_DEBUG,
-        PBS_EVENTCLASS_JOB,
-        pjob->ji_qs.ji_jobid,
-        "retrying send of OBIT");
-      }
-
-    if (pjob->ji_mompost(pjob,exiteval) != 0)
-      {
-      /* attempt failed again */
-
-      termin_child = 1;
-
-      continue;
-      }
-
-    /* success */
-
-    if (LOGLEVEL >= 7)
-      {
-      LOG_EVENT(
-        PBSEVENT_DEBUG,
-        PBS_EVENTCLASS_JOB,
-        pjob->ji_qs.ji_jobid,
-        "OBIT resent successfully");
-      }
-
-    pjob->ji_mompost = NULL;
-
-    /* clear mom sub-task */
-
-    pjob->ji_momsubt = 0;
-
-    job_save(pjob, SAVEJOB_QUICK);
-    TJCache[TJCIndex] = ((job *)1);
-    }  /* END for (TJIndex) */
-
-#endif /* CACHEOBITFAILURES */
 
   /* Now figure out which task(s) have terminated (are zombies) */
 
@@ -570,34 +508,6 @@ void scan_for_terminated(void)
           pjob->ji_mompost = NULL;
           }
 
-#ifdef CACHEOBITFAILURES
-        else
-          {
-          for (tjcindex = 0;tjcindex < TMAX_TJCACHESIZE;tjcindex++)
-            {
-            if ((TJCache[tjcindex] == NULL) || (TJCache[tjcindex] == (job *)1))
-              {
-              if (LOGLEVEL >= 7)
-                {
-                LOG_EVENT(
-                  PBSEVENT_DEBUG,
-                  PBS_EVENTCLASS_JOB,
-                  pjob->ji_qs.ji_jobid,
-                  "Caching OBIT for resend");
-                }
-
-              TJCache[tjcindex] = pjob;
-
-              termin_child = 1;
-
-              break;
-              }
-            }    /* END for (tjcindex) */
-
-          continue;
-          }
-
-#endif /* CACHEOBITFAILURES */
         }  /* END if (pjob->ji_mompost != NULL) */
       else
         {
@@ -661,35 +571,6 @@ void scan_for_terminated(void)
 
   return;
   }  /* END scan_for_terminated() */
-
-
-
-/**
- * Removes any cached obits relating to the given job.
- */
-void remove_job_from_obit_cache(
-
-  job *pjob)  /* I */
-
-  { 
-#ifdef CACHEOBITFAILURES
-  int TJCIndex;
-
-  /* remove any reference to this job in the obit cache */
-
-  for (TJCIndex = 0;TJCIndex < TMAX_TJCACHESIZE;TJCIndex++)
-    {
-    if (TJCache[TJCIndex] == NULL)
-      break;
-
-    if (TJCache[TJCIndex] == (job *)1)
-      continue;
-
-    if (TJCache[TJCIndex] == pjob)
-      TJCache[TJCIndex] = (job *)1;  /* clear slot */
-    }
-#endif /* CACHEOBITFAILURES */
-  }  /* END remove_job_from_obit_cache() */
 
 
 

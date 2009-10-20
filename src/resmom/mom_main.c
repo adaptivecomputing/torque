@@ -160,6 +160,8 @@
 #define DEFAULT_SERVER_STAT_UPDATES 45
 
 #define PMAX_PORT           32000
+#define MAX_RESEND_JOBS     512
+#define DUMMY_JOB_PTR       1
 
 /* Global Data Items */
 
@@ -232,6 +234,8 @@ char           *submithost_suffix = NULL;  /* suffix to append to submithost for
 char           *TNoSpoolDirList[TMAX_NSDCOUNT];
 char           *TRemChkptDirList[TMAX_RCDCOUNT];
 
+job            *JobsToResend[MAX_RESEND_JOBS];
+
 char           *AllocParCmd = NULL;  /* (alloc) */
 
 int      src_login_batch = TRUE;
@@ -277,10 +281,12 @@ extern void     mom_server_all_diag(char **BPtr, int *BSpace);
 extern void     mom_server_update_receive_time(int stream, const char *command_name);
 extern void     mom_server_all_init(void);
 extern void     mom_server_all_update_stat(void);
+extern int      mark_for_resend(job *);
 extern int      mom_server_all_check_connection(void);
 extern int      mom_server_all_send_state(void);
 extern int      mom_server_add(char *name);
 extern int      mom_server_count;
+extern int      post_epilogue(job *, int);
 extern int      mom_checkpoint_init(void);
 extern void     mom_checkpoint_check_periodic_timer(job *pjob);
 extern void     mom_checkpoint_set_directory_path(char *str);
@@ -6376,6 +6382,9 @@ void initialize_globals(void)
   /* set timeout values for MOM */
 
   MaxConnectTimeout = 10000;  /* in microseconds */
+
+  memset(JobsToResend,0,sizeof(JobsToResend));
+
   }  /* END initialize_globals() */
 
 
@@ -7804,6 +7813,47 @@ examine_all_running_jobs(void)
 
 
 
+/**
+ * examine_all_jobs_to_resend
+ *
+ * tries to resend each of the jobs that hasn't been sent yet
+ */
+void examine_all_jobs_to_resend(void)
+
+  {
+  int jindex;
+
+  for (jindex=0;jindex < MAX_RESEND_JOBS;jindex++)
+    {
+    /* no job ptrs are stored after a NULL value */
+    if (JobsToResend[jindex] == NULL)
+      break;
+
+    /* skip dummy job */
+    if (JobsToResend[jindex] == (job *)DUMMY_JOB_PTR)
+      continue;
+
+    if (!post_epilogue(JobsToResend[jindex],-5))
+      {
+
+      if (LOGLEVEL >= 7)
+        {
+        log_record(
+          PBSEVENT_JOB,
+          PBS_EVENTCLASS_JOB,
+          JobsToResend[jindex]->ji_qs.ji_jobid,
+          "job obit resent");
+        }
+
+      /* sent successfully, make this slot the dummy pointer */
+
+      JobsToResend[jindex] = (job *)DUMMY_JOB_PTR;
+      }
+    }
+  }  /* END examine_all_jobs_to_resend() */
+    
+
+
 
 
 /*
@@ -7844,6 +7894,52 @@ kill_all_running_jobs(void)
 
   return;
   }  /* END kill_all_running_jobs() */
+
+
+
+/**
+ * mark_for_resend
+ *
+ * used to keep track of jobs whose obits weren't sent correctly
+ * marks them so they can be resent
+ *
+ * @param pjob - the job that should be resent
+ */
+int mark_for_resend(
+
+  job *pjob) /* I */
+
+  {
+  int jindex;
+  int rc = FAILURE;
+
+  if (pjob == NULL)
+    return(rc);
+
+  for (jindex = 0;jindex < MAX_RESEND_JOBS;jindex++)
+    {
+    if ((JobsToResend[jindex] == NULL) || 
+        (JobsToResend[jindex] == (job *)DUMMY_JOB_PTR))
+      {
+      JobsToResend[jindex] = pjob;
+
+      if (LOGLEVEL >= 7)
+        {
+        log_record(
+          PBSEVENT_JOB,
+          PBS_EVENTCLASS_JOB,
+          pjob->ji_qs.ji_jobid,
+          "marking job for resend");
+        }
+
+      rc = SUCCESS;
+
+      break;
+      }
+    }
+
+  return(rc);
+  }
 
 
 
@@ -7948,6 +8044,8 @@ void main_loop(void)
             examine_all_running_jobs();
 
             examine_all_polled_jobs();
+
+            examine_all_jobs_to_resend();
             }
           }
         }

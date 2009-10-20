@@ -160,6 +160,7 @@ extern int task_recov A_((job *));
 extern void mom_server_all_update_stat(void);
 extern void check_state(int);
 extern int mom_open_socket_to_jobs_server A_((job *, char *, void (*) A_((int))));
+extern int mark_for_resend A_((job *));
 extern void checkpoint_partial(job *pjob);
 extern void mom_checkpoint_recover(job *pjob);
 extern void clear_down_mom_servers();
@@ -909,6 +910,7 @@ int post_epilogue(
        * every so often to send the obit.  This would work for recovered
        * jobs also.
        */
+      mark_for_resend(pjob);
 
       return(1);
       }
