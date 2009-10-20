@@ -126,3 +126,34 @@ int decode_DIS_QueueJob(
   }  /* END decode_DIS_QueueJob() */
 
 
+int tcp_decode_DIS_QueueJob(
+
+  int                   sock,
+  struct batch_request *preq)
+
+  {
+  int rc;
+
+  CLEAR_HEAD(preq->rq_ind.rq_queuejob.rq_attr);
+
+  rc = tcp_disrfst(sock, PBS_MAXSVRJOBID + 1, preq->rq_ind.rq_queuejob.rq_jid);
+
+  if (rc != 0)
+    {
+    return(rc);
+    }
+
+  rc = tcp_disrfst(sock, PBS_MAXSVRJOBID + 1, preq->rq_ind.rq_queuejob.rq_destin);
+
+  if (rc != 0)
+    {
+    return(rc);
+    }
+
+  rc = tcp_decode_DIS_svrattrl(sock, &preq->rq_ind.rq_queuejob.rq_attr);
+
+  return(rc);
+  }  /* END tcp_decode_DIS_QueueJob() */
+
+
+

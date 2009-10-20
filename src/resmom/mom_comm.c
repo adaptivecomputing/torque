@@ -615,22 +615,22 @@ int tm_reply(
 
   DIS_tcp_funcs();
 
-  ret = diswsi(stream, TM_PROTOCOL);
+  ret = tcp_diswsi(stream, TM_PROTOCOL);
 
   if (ret != DIS_SUCCESS)
     goto done;
 
-  ret = diswsi(stream, TM_PROTOCOL_VER);
+  ret = tcp_diswsi(stream, TM_PROTOCOL_VER);
 
   if (ret != DIS_SUCCESS)
     goto done;
 
-  ret = diswsi(stream, com);
+  ret = tcp_diswsi(stream, com);
 
   if (ret != DIS_SUCCESS)
     goto done;
 
-  ret = diswsi(stream, event);
+  ret = tcp_diswsi(stream, event);
 
   if (ret != DIS_SUCCESS)
     goto done;
@@ -4527,27 +4527,27 @@ int tm_request(
     goto err;
     }
 
-  jobid = disrst(fd, &ret);
+  jobid = tcp_disrst(fd, &ret);
 
   if (ret != DIS_SUCCESS)
     goto err;
 
-  cookie = disrst(fd, &ret);
+  cookie = tcp_disrst(fd, &ret);
 
   if (ret != DIS_SUCCESS)
     goto err;
 
-  command = disrsi(fd, &ret);
+  command = tcp_disrsi(fd, &ret);
 
   if (ret != DIS_SUCCESS)
     goto err;
 
-  event = disrsi(fd, &ret);
+  event = tcp_disrsi(fd, &ret);
 
   if (ret != DIS_SUCCESS)
     goto err;
 
-  fromtask = disrui(fd, &ret);
+  fromtask = tcp_disrui(fd, &ret);
 
   if (ret != DIS_SUCCESS)
     goto err;
@@ -4573,11 +4573,11 @@ int tm_request(
     reply = TRUE;
 
     /* Read the session id and alt/job id from tm_adopt() */
-    sid = disrsi(fd, &ret);
+    sid = tcp_disrsi(fd, &ret);
 
     if (ret != DIS_SUCCESS) goto err;
 
-    id = disrst(fd, &ret);
+    id = tcp_disrst(fd, &ret);
 
     if (ret != DIS_SUCCESS)
       {
@@ -4597,7 +4597,7 @@ int tm_request(
        not. This is synchronous - doesn't use the event stuff.*/
     DIS_tcp_funcs();    /* do I really need this? */
 
-    ret = diswsi(fd, adoptStatus);
+    ret = tcp_diswsi(fd, adoptStatus);
 
     if (ret != DIS_SUCCESS) goto err;
 
@@ -4663,7 +4663,7 @@ int tm_request(
     if (ret != DIS_SUCCESS)
       goto done;
 
-    ret = diswsi(fd, TM_ENOTFOUND);
+    ret = tcp_diswsi(fd, TM_ENOTFOUND);
 
     if (ret != DIS_SUCCESS)
       goto done;
@@ -4744,7 +4744,7 @@ int tm_request(
 
       vnodenum = pjob->ji_numvnod;
 
-      ret = diswui(fd, vnodenum); /* num nodes */
+      ret = tcp_diswui(fd, vnodenum); /* num nodes */
 
       if (ret != DIS_SUCCESS)
         goto done;
@@ -4753,23 +4753,23 @@ int tm_request(
 
       for (i = 0;i < vnodenum;i++)
         {
-        ret = diswsi(fd, pnode[i].vn_node);
+        ret = tcp_diswsi(fd, pnode[i].vn_node);
 
         if (ret != DIS_SUCCESS)
           goto done;
         }
 
-      ret = diswst(fd, ptask->ti_qs.ti_parentjobid); /* dad job */
+      ret = tcp_diswst(fd, ptask->ti_qs.ti_parentjobid); /* dad job */
 
       if (ret != DIS_SUCCESS)
         goto done;
 
-      ret = diswsi(fd, ptask->ti_qs.ti_parentnode); /* dad node */
+      ret = tcp_diswsi(fd, ptask->ti_qs.ti_parentnode); /* dad node */
 
       if (ret != DIS_SUCCESS)
         goto done;
 
-      ret = diswsi(fd, ptask->ti_qs.ti_parenttask); /* dad task */
+      ret = tcp_diswsi(fd, ptask->ti_qs.ti_parenttask); /* dad task */
 
       if (ret != DIS_SUCCESS)
         goto done;
@@ -4793,12 +4793,12 @@ int tm_request(
       ** )
       */
 
-      name = disrst(fd, &ret);
+      name = tcp_disrst(fd, &ret);
 
       if (ret != DIS_SUCCESS)
         goto err;
 
-      info = disrcs(fd, &len, &ret);
+      info = tcp_disrcs(fd, &len, &ret);
 
       if (ret != DIS_SUCCESS)
         {
@@ -4835,7 +4835,7 @@ int tm_request(
 
       tm_reply(fd, TM_ERROR, event);
 
-      diswsi(fd, TM_ENOTIMPLEMENTED);
+      tcp_diswsi(fd, TM_ENOTIMPLEMENTED);
 
       DIS_tcp_wflush(fd);
 
@@ -4862,7 +4862,7 @@ int tm_request(
   ** )
   */
 
-  nodeid = disrui(fd, &ret);
+  nodeid = tcp_disrui(fd, &ret);
 
   if (ret != DIS_SUCCESS)
     goto err;
@@ -4887,7 +4887,7 @@ int tm_request(
     if (ret != DIS_SUCCESS)
       goto done;
 
-    ret = diswsi(fd, TM_ENOTFOUND);
+    ret = tcp_diswsi(fd, TM_ENOTFOUND);
 
     if (ret != DIS_SUCCESS)
       goto done;
@@ -4963,13 +4963,13 @@ int tm_request(
            ptask;
            ptask = (task *)GET_NEXT(ptask->ti_jobtask))
         {
-        ret = diswui(fd, ptask->ti_qs.ti_task);
+        ret = tcp_diswui(fd, ptask->ti_qs.ti_task);
 
         if (ret != DIS_SUCCESS)
           goto done;
         }
 
-      ret = diswui(fd, TM_NULL_TASK);
+      ret = tcp_diswui(fd, TM_NULL_TASK);
 
       break;
 
@@ -4994,7 +4994,7 @@ int tm_request(
         jobid,
         nodeid))
 
-      numele = disrui(fd, &ret);
+      numele = tcp_disrui(fd, &ret);
 
       if (ret != DIS_SUCCESS)
         goto done;
@@ -5005,7 +5005,7 @@ int tm_request(
 
       for (i = 0;i < numele;i++)
         {
-        argv[i] = disrst(fd, &ret);
+        argv[i] = tcp_disrst(fd, &ret);
 
         if (ret != DIS_SUCCESS)
           {
@@ -5027,7 +5027,7 @@ int tm_request(
         {
         char *env;
 
-        env = disrst(fd, &ret);
+        env = tcp_disrst(fd, &ret);
 
         if ((ret != DIS_SUCCESS) && (ret != DIS_EOD))
           {
@@ -5149,7 +5149,7 @@ int tm_request(
         if (ret != DIS_SUCCESS)
           goto done;
 
-        ret = diswsi(
+        ret = tcp_diswsi(
                 fd,
                 ((i == TM_ERROR) ?  TM_ESYSTEM : ptask->ti_qs.ti_task));
 
@@ -5293,12 +5293,12 @@ int tm_request(
       ** )
       */
 
-      taskid = disrui(fd, &ret);
+      taskid = tcp_disrui(fd, &ret);
 
       if (ret != DIS_SUCCESS)
         goto err;
 
-      signum = disrui(fd, &ret);
+      signum = tcp_disrui(fd, &ret);
 
       if (ret != DIS_SUCCESS)
         goto err;
@@ -5361,7 +5361,7 @@ int tm_request(
         if (ret != DIS_SUCCESS)
           goto done;
 
-        ret = diswsi(fd, TM_ENOTFOUND);
+        ret = tcp_diswsi(fd, TM_ENOTFOUND);
 
         break;
         }
@@ -5394,7 +5394,7 @@ int tm_request(
       ** )
       */
 
-      taskid = disrui(fd, &ret);
+      taskid = tcp_disrui(fd, &ret);
 
       if (ret != DIS_SUCCESS)
         goto err;
@@ -5460,7 +5460,7 @@ int tm_request(
         if (ret != DIS_SUCCESS)
           goto done;
 
-        ret = diswsi(fd, TM_ENOTFOUND);
+        ret = tcp_diswsi(fd, TM_ENOTFOUND);
 
         break;
         }
@@ -5472,7 +5472,7 @@ int tm_request(
         if (ret != DIS_SUCCESS)
           goto done;
 
-        ret = diswsi(fd, ptask->ti_qs.ti_exitstat);
+        ret = tcp_diswsi(fd, ptask->ti_qs.ti_exitstat);
         }
       else
         {
@@ -5504,12 +5504,12 @@ int tm_request(
       ** )
       */
 
-      taskid = disrui(fd, &ret);
+      taskid = tcp_disrui(fd, &ret);
 
       if (ret != DIS_SUCCESS)
         goto err;
 
-      name = disrst(fd, &ret);
+      name = tcp_disrst(fd, &ret);
 
       if (ret != DIS_SUCCESS)
         goto err;
@@ -5586,7 +5586,7 @@ int tm_request(
           if (ret != DIS_SUCCESS)
             goto done;
 
-          ret = diswcs(fd, ip->ie_info, ip->ie_len);
+          ret = tcp_diswcs(fd, ip->ie_info, ip->ie_len);
 
           break;
           }
@@ -5597,7 +5597,7 @@ int tm_request(
       if (ret != DIS_SUCCESS)
         goto done;
 
-      ret = diswsi(fd, TM_ENOTFOUND);
+      ret = tcp_diswsi(fd, TM_ENOTFOUND);
 
       break;
 
@@ -5656,7 +5656,7 @@ int tm_request(
       if (ret != DIS_SUCCESS)
         goto done;
 
-      ret = diswst(fd, info);
+      ret = tcp_diswst(fd, info);
 
       free(info);
 
@@ -5669,7 +5669,7 @@ int tm_request(
 
       tm_reply(fd, TM_ERROR, event);
 
-      diswsi(fd, TM_EUNKNOWNCMD);
+      tcp_diswsi(fd, TM_EUNKNOWNCMD);
 
       DIS_tcp_wflush(fd);
 

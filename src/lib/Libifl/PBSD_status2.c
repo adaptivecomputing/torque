@@ -105,9 +105,9 @@ int PBSD_status_put(
 
   DIS_tcp_setup(sock);
 
-  if ((rc = encode_DIS_ReqHdr(sock, function, pbs_current_user)) ||
-      (rc = encode_DIS_Status(sock, id, attrib)) ||
-      (rc = encode_DIS_ReqExtend(sock, extend)))
+  if ((rc = tcp_encode_DIS_ReqHdr(sock, function, pbs_current_user)) ||
+      (rc = tcp_encode_DIS_Status(sock, id, attrib)) ||
+      (rc = tcp_encode_DIS_ReqExtend(sock, extend)))
     {
     connection[c].ch_errtxt = strdup(dis_emsg[rc]);
 

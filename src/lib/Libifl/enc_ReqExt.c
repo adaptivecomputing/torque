@@ -89,6 +89,26 @@
 #include "dis.h"
 
 int
+tcp_encode_DIS_ReqExtend(int sock, char *extend)
+  {
+  int rc;
+
+  if ((extend == (char *)0) || (*extend == '\0'))
+    {
+    rc = tcp_diswui(sock, 0);
+    }
+  else
+    {
+    if ((rc = tcp_diswui(sock, 1)) == 0)
+      {
+      rc = tcp_diswst(sock, extend);
+      }
+    }
+
+  return rc;
+  }
+
+int
 encode_DIS_ReqExtend(int sock, char *extend)
   {
   int rc;
@@ -107,3 +127,4 @@ encode_DIS_ReqExtend(int sock, char *extend)
 
   return rc;
   }
+

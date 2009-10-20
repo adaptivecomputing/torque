@@ -115,11 +115,15 @@ static int      acct_auto_switch = 0;
 
 extern attribute_def job_attr_def[];
 extern char     *path_acct;
-extern int       resc_access_perm;
-extern time_t	   time_now;
+extern int      resc_access_perm;
+extern time_t      time_now;
 extern int       LOGLEVEL;
 
 
+
+#define EXTRA_PAD 1000 /* Used to bad the account buffer string */
+
+int AdjustAcctBufSize(char **Buf, unsigned int *BufSiz, int newStringLen, job *pjob);
 
 
 /*
@@ -130,27 +134,32 @@ extern int       LOGLEVEL;
 static char *acct_job(
 
   job  *pjob,    /* I */
-  char *Buf,     /* O - buffer in which data is to be placed */
-  int   BufSize) /* I */
+  char **Buf,     /* O - buffer in which data is to be placed */
+  unsigned int   *BufSize) /* I */
 
   {
   char *ptr;
   int   Len;
+  int  runningBufSize = *BufSize;
+  int  newStringLen;
 
   tlist_head attrlist;
   svrattrl *pal;
 
   if (pjob == NULL)
     {
-    return(Buf);
+    return(*Buf);
     }
 
   CLEAR_HEAD(attrlist);
 
-  ptr = Buf;
+  ptr = *Buf;
 
   /* user */
 
+	/* acct_job is only called from account_jobstr and account_jobend. BufSize should be
+	 	 PBS_ACCT_MAX_RCD + 1 in size. We will make the assumption that the following
+	 	 strncat calls have ample buffer space to complete successfully */
   sprintf(ptr, "user=%s ",
           pjob->ji_wattr[(int)JOB_ATR_euser].at_val.at_str);
 
@@ -220,20 +229,34 @@ static char *acct_job(
   sprintf(ptr, "owner=%s ",
           pjob->ji_wattr[(int)JOB_ATR_job_owner].at_val.at_str);
 
-  ptr += strlen(ptr);
+
+ 
+  /* For large clusters strings can get pretty long. We need to see if there
+     is a need to allocate a bigger buffer */
+
+  runningBufSize -= strlen(*Buf);
+
+  newStringLen = strlen("exec_host=")+strlen(pjob->ji_wattr[(int)JOB_ATR_exec_host].at_val.at_str);
+  if(runningBufSize <= newStringLen+1)
+  {
+    Len = AdjustAcctBufSize(Buf, BufSize, newStringLen, pjob);
+    if(Len == 0)
+      return(ptr);
+    runningBufSize += newStringLen+EXTRA_PAD;
+  }
+
+  ptr = *Buf;
+  ptr += strlen(*Buf);
 
   /* execution host name */
-
-  BufSize -= strlen(Buf);
-
-  snprintf(ptr, BufSize, "exec_host=%s ",
+  snprintf(ptr, runningBufSize, "exec_host=%s ",
            pjob->ji_wattr[(int)JOB_ATR_exec_host].at_val.at_str);
 
   Len = strlen(ptr);
 
-  BufSize -= Len;
+	runningBufSize -= Len;
 
-  if (BufSize <= 100)
+/*  if (BufSize <= 100)
     {
     char tmpLine[1024];
 
@@ -243,7 +266,7 @@ static char *acct_job(
     log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, "Act", tmpLine);
 
     return(ptr);
-    }
+    }*/
 
   ptr += Len;
 
@@ -260,18 +283,63 @@ static char *acct_job(
 
   while ((pal = GET_NEXT(attrlist)) != NULL)
     {
-    strcat(ptr, pal->al_name);
+		/* exec_host can use a lot of buffer space. We can't assume
+		 	 we still have enough to make these small strncpy calls */
+
+		newStringLen = strlen(pal->al_name);
+		if(runningBufSize <= newStringLen+1)
+			{
+			Len = AdjustAcctBufSize(Buf, BufSize, newStringLen, pjob);
+			if(Len == 0)
+				return(ptr);
+
+			runningBufSize += newStringLen+EXTRA_PAD;
+			}
+
+    strncat(ptr, pal->al_name,runningBufSize);
+		runningBufSize -= strlen(ptr);
+		ptr += strlen(ptr);
 
     if (pal->al_resc != NULL)
       {
-      strcat(ptr, ".");
-      strcat(ptr, pal->al_resc);
+			if(runningBufSize <= (int)(strlen(pal->al_resc)+2)) /*one for 0 and one for the '.' for 2 */
+				{
+				Len = AdjustAcctBufSize(Buf, BufSize, newStringLen, pjob);
+				if(Len == 0)
+					return(ptr);
+
+				runningBufSize += newStringLen+EXTRA_PAD;
+				}
+      strncat(ptr, ".",runningBufSize);
+      strncat(ptr, pal->al_resc,runningBufSize);
+			runningBufSize -= strlen(ptr);
+			ptr += strlen(ptr);
       }
 
-    strcat(ptr, "=");
+		if(runningBufSize <= 2)
+			{
+			Len = AdjustAcctBufSize(Buf, BufSize, newStringLen, pjob);
+			if(Len == 0)
+				return(ptr);
 
-    strcat(ptr, pal->al_value);
-    strcat(ptr, " ");
+			runningBufSize += newStringLen+EXTRA_PAD;
+			}
+
+		strncat(ptr, "=",runningBufSize);
+
+    runningBufSize -= strlen(ptr);
+    newStringLen = strlen(pal->al_value);
+    if(runningBufSize <= newStringLen+1)
+    {
+      Len = AdjustAcctBufSize(Buf, BufSize, newStringLen, pjob);
+      if(Len == 0)
+        return(ptr);
+
+      runningBufSize += newStringLen+EXTRA_PAD;
+    }
+
+    strncat(ptr, pal->al_value, runningBufSize);
+    strncat(ptr, " ", runningBufSize);
 
     delete_link(&pal->al_link);
 
@@ -279,11 +347,11 @@ static char *acct_job(
 
     Len = strlen(ptr);
 
-    BufSize -= Len;
+    runningBufSize -= Len;
 
     ptr += Len;
 
-    if (BufSize <= 100)
+   /*  if (BufSize <= 100)
       {
       char tmpLine[1024];
 
@@ -293,7 +361,7 @@ static char *acct_job(
       log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, "Act", tmpLine);
 
       return(ptr);
-      }
+      }*/
     }  /* END while (pal != NULL) */
 
 #ifdef ATTR_X_ACCT
@@ -489,15 +557,22 @@ void account_jobstr(
   job *pjob)
 
   {
-  char buf[PBS_ACCT_MAX_RCD + 1];
+  /*char buf[PBS_ACCT_MAX_RCD + 1];*/
+  char *buf;
+  unsigned int  bufSize = PBS_ACCT_MAX_RCD + 1;
 
   /* pack in general information about the job */
 
-  acct_job(pjob, buf, sizeof(buf));
+  buf = (char *)malloc(bufSize+1);
+  if(!buf)
+    return;
+  acct_job(pjob, &buf, &bufSize);
 
-  buf[PBS_ACCT_MAX_RCD] = '\0';
+  buf[bufSize] = '\0';
 
   account_record(PBS_ACCT_RUN, pjob, buf);
+
+  free(buf);
 
   return;
   }  /* END account_jobstr() */
@@ -517,12 +592,18 @@ void account_jobend(
   char *used) /* job usage information, see req_jobobit() */
 
   {
-  char   buf[PBS_ACCT_MAX_RCD + 1];
+  /*char   buf[PBS_ACCT_MAX_RCD + 1];*/
+  char  *buf;
+  unsigned int   bufSize = PBS_ACCT_MAX_RCD + 1;
   char  *pb;
 
   /* pack in general information about the job */
 
-  pb = acct_job(pjob, buf, sizeof(buf));
+  buf = (char *)malloc(bufSize);
+  if(!buf)
+    return;
+
+  pb = acct_job(pjob, &buf, &bufSize);
 
   /* session */
 
@@ -556,10 +637,9 @@ void account_jobend(
 
   account_record(PBS_ACCT_END, pjob, buf);
 
+  free(buf);
   return;
   }  /* END account_jobend() */
-
-
 
 /*
  * acct_cleanup - remove the old accounting files
@@ -579,6 +659,35 @@ void acct_cleanup(
 
   return;
   }  /* END acct_cleanup() */
+
+
+/* AdjustAcctBufSize - Increase the size of the current size plus
+   newStringLen + EXTRA_PAD. Return newStringLen on success or 0 if the
+   realloc fails */
+ int AdjustAcctBufSize(char **Buf, unsigned int *BufSize, int newStringLen, job *pjob)
+ {
+	 char *newBuf;
+
+   newBuf = (char *)realloc(*Buf, *BufSize+newStringLen+EXTRA_PAD); /* add 1000 so we don't have to realloc for the small strings */
+   if(newBuf == NULL)
+     {
+     char tmpLine[1024];
+
+     sprintf(tmpLine, "account record for job %s too long and realloc failed. The job is not fully recorded.",
+                     pjob->ji_qs.ji_jobid);
+
+     log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, "Act", tmpLine);
+
+     return(0);
+
+     }
+
+   *BufSize += newStringLen+EXTRA_PAD;
+
+	 *Buf = newBuf;
+
+   return(newStringLen);
+ }
 
 
 /* END accounting.c */

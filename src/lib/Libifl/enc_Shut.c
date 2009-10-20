@@ -94,3 +94,10 @@ encode_DIS_ShutDown(int sock, int manner)
   {
   return (diswui(sock, manner));
   }
+
+int
+tcp_encode_DIS_ShutDown(int sock, int manner)
+  {
+  return (tcp_diswui(sock, manner));
+  }
+

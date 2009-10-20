@@ -141,6 +141,8 @@ int cpuset_delete(
       unlink(childpath);
     } /* END while((pdirent = readdir(dir)) != NULL) */
 
+  closedir(dir);
+
   if (rmdir(path) != 0)
     {
     /* FAILURE */

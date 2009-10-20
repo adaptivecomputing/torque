@@ -113,3 +113,17 @@ decode_DIS_MoveJob(int sock, struct batch_request *preq)
 
   return rc;
   }
+
+int tcp_decode_DIS_MoveJob(int sock, struct batch_request *preq)
+  {
+  int rc;
+
+  rc = tcp_disrfst(sock, PBS_MAXSVRJOBID + 1, preq->rq_ind.rq_move.rq_jid);
+
+  if (rc) return rc;
+
+  rc = tcp_disrfst(sock, PBS_MAXDEST + 1, preq->rq_ind.rq_move.rq_destin);
+
+  return rc;
+  }
+

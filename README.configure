@@ -19,9 +19,9 @@ Shared libs are now built by default if the build host supports it.  Only a
 single libtorque, instead of libnet, liblog, libpbs, etc. are now built and
 installed.
 
-The Tcl-environment should get found automatically if it is located in usual
+The Tcl-environment should be found automatically if it is located in the usual
 places - but this is not the case for (some?) Debian systems.  If configure
-fails although you have Tcl installed, then please `locate` the file
+fails even though you have Tcl installed, then please `locate` the file
 "tclConfig.sh" and provide full path and filename to the "--with-tcl="
 argument.  Repeat for the other Tcl parts.
 

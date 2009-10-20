@@ -49,10 +49,10 @@ c - crash     b - bug fix    e - enhancement    f - new feature
   b - change so we use default file name for output / error file when just a
       directory is specified on qsub / qalter -e -o options
   e - modified to allow retention of completed jobs across server shutdown
-  e - added job_must_report qmgr configuration which says the job must be reported
-      to scheduler. Added job attribute "reported". Added PURGECOMP functionality
-      which allows scheduler to confirm jobs are reported. Also added -c option
-      to qdel. Used to clean up unreported jobs.
+  e - added job_must_report qmgr configuration which says the job must be 
+      reported to scheduler. Added job attribute "reported". Added PURGECOMP 
+      functionality which allows scheduler to confirm jobs are reported. Also 
+      added -c option to qdel. Used to clean up unreported jobs.
   b - Fix so interactive jobs run when using $job_output_file_umask userdefault
   f - Allow adding extra End accounting record for a running job that is rerun.
       Provides usage data.  Enabled by CFLAGS=-DRERUNUSAGE.
@@ -142,12 +142,16 @@ c - crash     b - bug fix    e - enhancement    f - new feature
 2.3.8
   c - keep pbs_server from trying to free empty attrlist after recieving 
       bad request (Michael Meier, University of Erlangen-Nurnberg)
-  c - keep pbs_server from trying to free empty attrlist after recieving 
-      bad request (Michael Meier, University of Erlangen-Nurnberg)
   e - moving jobs can now trigger a scheduling iteration
   b - fix how qsub sets PBS_O_HOST and PBS_SERVER (Eirikur Hjartarson, deCODE 
       genetics)
   f - add qpool.gz to contrib directory
+  b - fix return value of cpuset_delete() for Linux (Chris Samuel - VPAC)
+  e - Set PBS_MAXUSER to 32 from 16 in order to accomodate systems that 
+      use a 32 bit user name.(Ken Nielson Cluster Resources)
+  c - modified acct_job in server/accounting.c to dynamically allocate memory
+      to accomodate strings larger than PBS_ACCT_MAX_RCD. (Ken Nielson Cluster 
+      Resources)
   b - fix so after* dependencies are handled correctly for exiting / completed
       jobs
 
@@ -161,8 +165,9 @@ c - crash     b - bug fix    e - enhancement    f - new feature
       valid group name. This helps TORQUE be more robust to group lookup failures.
 
 2.3.6
-  b - change back to not sending status updates until we get cluster addr message
-      from server, also only try to send hello when the server stream is down.
+  b - change back to not sending status updates until we get cluster addr 
+      message from server, also only try to send hello when the server stream 
+      is down.
   b - change pbs_server so log_file_max_size of zero behavior matches documentation
   e - added periodic logging of version and loglevel to help in support
   e - added pbs_mom config option ignvmem to ignore vmem/pvmem limit enforcement

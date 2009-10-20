@@ -866,7 +866,7 @@ int pbs_disconnect(
 
   DIS_tcp_setup(sock);
 
-  if ((encode_DIS_ReqHdr(sock, PBS_BATCH_Disconnect, pbs_current_user) == 0) &&
+  if ((tcp_encode_DIS_ReqHdr(sock, PBS_BATCH_Disconnect, pbs_current_user) == 0) &&
       (DIS_tcp_wflush(sock) == 0))
     {
     int atime;

@@ -12,6 +12,21 @@
 #include "dis.h"
 
 int
+tcp_encode_DIS_ReturnFiles(int sock, struct batch_request *preq)
+  {
+  int   rc;
+
+
+  if ((rc = tcp_diswst(sock, preq->rq_ind.rq_returnfiles.rq_jobid) != 0) ||
+      (rc = tcp_diswsi(sock, preq->rq_ind.rq_returnfiles.rq_return_stdout) != 0) ||
+      (rc = tcp_diswsi(sock, preq->rq_ind.rq_returnfiles.rq_return_stderr) != 0))
+    return rc;
+
+  return 0;
+  }
+
+
+int
 encode_DIS_ReturnFiles(int sock, struct batch_request *preq)
   {
   int   rc;

@@ -388,7 +388,7 @@
 #define MAX_NOTE  256 /* max node note length */
 #define MAX_NOTE_STR  "256" /* max node note length as a string literal (this MUST match MAX_NOTE) */
 
-#define PBS_MAXUSER  16 /* max user name length */
+#define PBS_MAXUSER  32 /* max user name length */
 #define PBS_MAXGRPN  16 /* max group name length */
 #define PBS_MAXQUEUENAME 15 /* max queue name length */
 #define PBS_MAXSERVERNAME PBS_MAXHOSTNAME /* max server name length */

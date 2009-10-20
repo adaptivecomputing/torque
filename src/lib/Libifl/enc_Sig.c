@@ -101,3 +101,16 @@ encode_DIS_SignalJob(int sock, char *jobid, char *signal)
 
   return 0;
   }
+
+int
+tcp_encode_DIS_SignalJob(int sock, char *jobid, char *signal)
+  {
+  int   rc;
+
+  if ((rc = tcp_diswst(sock, jobid) != 0) ||
+      (rc = tcp_diswst(sock, signal) != 0))
+    return rc;
+
+  return 0;
+  }
+

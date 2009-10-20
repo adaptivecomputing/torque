@@ -142,4 +142,45 @@ int decode_DIS_ReqHdr(
   }  /* END decode_DIS_ReqHdr() */
 
 
+int tcp_decode_DIS_ReqHdr(
+
+  int                 sock,
+  struct batch_request *preq,
+  int                *proto_type,
+  int                  *proto_ver)
+
+  {
+  int rc;
+
+  *proto_type = tcp_disrui(sock, &rc);
+
+  if (rc != 0)
+    {
+    return(rc);
+    }
+
+  if (*proto_type != PBS_BATCH_PROT_TYPE)
+    {
+    return(DIS_PROTO);
+    }
+
+  *proto_ver = tcp_disrui(sock, &rc);
+
+  if (rc)
+    {
+    return(rc);
+    }
+
+  preq->rq_type = tcp_disrui(sock, &rc);
+
+  if (rc != 0)
+    {
+    return(rc);
+    }
+
+  return(tcp_disrfst(sock, PBS_MAXUSER + 1, preq->rq_user));
+  }  /* END tcp_decode_DIS_ReqHdr() */
+
+
+
 

@@ -4305,7 +4305,10 @@ int rm_request(
 
   /* looks okay, find out what command it is */
 
-  command = disrsi(iochan, &ret);
+  if(tcp)
+    command = tcp_disrsi(iochan, &ret);
+  else
+    command = disrsi(iochan, &ret);
 
   if (ret != DIS_SUCCESS)
     {
@@ -4333,7 +4336,10 @@ int rm_request(
 
       reqnum++;
 
-      ret = diswsi(iochan, RM_RSP_OK);
+      if(tcp)
+        ret = tcp_diswsi(iochan, RM_RSP_OK);
+      else
+        ret = diswsi(iochan, RM_RSP_OK);
 
       if (ret != DIS_SUCCESS)
         {
@@ -4345,7 +4351,10 @@ int rm_request(
 
       for (;;)
         {
-        cp = disrst(iochan, &ret);
+        if(tcp)
+          cp = tcp_disrst(iochan, &ret);
+        else
+          cp = disrst(iochan, &ret);
 
         if (ret == DIS_EOD)
           {
@@ -4988,7 +4997,11 @@ int rm_request(
 
         free(cp);
 
-        ret = diswst(iochan, output);
+        if(tcp)
+          ret = tcp_diswst(iochan, output);
+        else
+          ret = diswst(iochan, output);
+
 
         if (ret != DIS_SUCCESS)
           {
@@ -5023,7 +5036,10 @@ int rm_request(
 
       log_record(PBSEVENT_SYSTEM, 0, id, "configure");
 
-      body = disrst(iochan, &ret);
+      if(tcp)
+        body = tcp_disrst(iochan, &ret);
+      else
+        body = disrst(iochan, &ret);
 
       /* FORMAT:  FILE:<FILENAME> or <FILEDATA> (NYI) */
 
@@ -5076,7 +5092,10 @@ int rm_request(
 
       len = read_config(body);
 
-      ret = diswsi(iochan, len ? RM_RSP_ERROR : RM_RSP_OK);
+      if(tcp)
+        ret = tcp_diswsi(iochan, len ? RM_RSP_ERROR : RM_RSP_OK);
+      else
+        ret = diswsi(iochan, len ? RM_RSP_ERROR : RM_RSP_OK);
 
       if (ret != DIS_SUCCESS)
         {
@@ -5100,7 +5119,10 @@ int rm_request(
 
       log_record(PBSEVENT_SYSTEM, 0, id, "shutdown");
 
-      ret = diswsi(iochan, RM_RSP_OK);
+      if(tcp)
+        ret = tcp_diswsi(iochan, RM_RSP_OK);
+      else
+        ret = diswsi(iochan, RM_RSP_OK);
 
       if (ret != DIS_SUCCESS)
         {
@@ -5133,7 +5155,10 @@ int rm_request(
 
       log_err(-1, id, log_buffer);
 
-      ret = diswsi(iochan, RM_RSP_ERROR);
+      if(tcp)
+        ret = tcp_diswsi(iochan, RM_RSP_ERROR);
+      else
+        ret = diswsi(iochan, RM_RSP_ERROR);
 
       if (ret != DIS_SUCCESS)
         {
@@ -5143,7 +5168,10 @@ int rm_request(
         goto bad;
         }
 
-      ret = diswst(iochan, log_buffer);
+      if(tcp)
+        ret = tcp_diswst(iochan, log_buffer);
+      else
+        ret = diswst(iochan, log_buffer);
 
       if (ret != DIS_SUCCESS)
         {
@@ -5373,7 +5401,7 @@ int do_tcp(
 
   pbs_tcp_timeout = 0;
 
-  proto = disrsi(fd, &ret);
+  proto = tcp_disrsi(fd, &ret);
 
   if (tmpT > 0)
     {
@@ -5420,7 +5448,7 @@ int do_tcp(
       break;
     }  /* END switch (ret) */
 
-  version = disrsi(fd, &ret);
+  version = tcp_disrsi(fd, &ret);
 
   if (ret != DIS_SUCCESS)
     {
@@ -6455,11 +6483,6 @@ char *mk_dirs(
 
   return(pn);
   }  /* END mk_dirs() */
-
-
-
-
-
 
 /*
  * parse_command_line

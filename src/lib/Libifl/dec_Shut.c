@@ -107,3 +107,13 @@ decode_DIS_ShutDown(int sock, struct batch_request *preq)
 
   return rc;
   }
+
+int
+tcp_decode_DIS_ShutDown(int sock, struct batch_request *preq)
+  {
+  int rc;
+
+  preq->rq_ind.rq_shutdown = tcp_disrui(sock, &rc);
+
+  return rc;
+  }

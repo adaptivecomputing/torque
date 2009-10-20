@@ -106,8 +106,64 @@
 #include "attribute.h"
 #include "dis.h"
 
-int
-encode_DIS_svrattrl(int sock, svrattrl *psattl)
+int tcp_encode_DIS_svrattrl(sock, psattl)
+int   sock;
+svrattrl *psattl;
+  {
+  unsigned int ct = 0;
+  unsigned int name_len;
+  svrattrl *ps;
+  int rc;
+
+  /* count how many */
+
+  for (ps = psattl; ps; ps = (svrattrl *)GET_NEXT(ps->al_link))
+    {
+    ++ct;
+    }
+
+  if ((rc = tcp_diswui(sock, ct)))
+    return rc;
+
+  for (ps = psattl; ps; ps = (svrattrl *)GET_NEXT(ps->al_link))
+    {
+    /* length of three strings */
+    name_len = (int)strlen(ps->al_atopl.name) +
+               (int)strlen(ps->al_atopl.value) + 2;
+
+    if (ps->al_atopl.resource)
+      name_len += strlen(ps->al_atopl.resource) + 1;
+
+    if ((rc = tcp_diswui(sock, name_len)))
+      break;
+
+    if ((rc = tcp_diswst(sock, ps->al_atopl.name)))
+      break;
+
+    if (ps->al_rescln)   /* has a resource name */
+      {
+      if ((rc = tcp_diswui(sock, 1)))
+        break;
+
+      if ((rc = tcp_diswst(sock, ps->al_atopl.resource)))
+        break;
+      }
+    else
+      {
+      if ((rc = tcp_diswui(sock, 0))) /* no resource name */
+        break;
+      }
+
+    if ((rc = tcp_diswst(sock, ps->al_atopl.value)) ||
+        (rc = tcp_diswui(sock, (unsigned int)ps->al_op)))
+      break;
+    }
+
+  return rc;
+  }
+
+
+int encode_DIS_svrattrl(int sock, svrattrl *psattl)
   {
   unsigned int ct = 0;
   unsigned int name_len;

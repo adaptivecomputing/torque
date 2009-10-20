@@ -112,9 +112,9 @@ int PBSD_rdytocmt(
   sock = connection[connect].ch_socket;
   DIS_tcp_setup(sock);
 
-  if ((rc = encode_DIS_ReqHdr(sock, PBS_BATCH_RdytoCommit, pbs_current_user)) ||
-      (rc = encode_DIS_JobId(sock, jobid)) ||
-      (rc = encode_DIS_ReqExtend(sock, NULL)))
+  if ((rc = tcp_encode_DIS_ReqHdr(sock, PBS_BATCH_RdytoCommit, pbs_current_user)) ||
+      (rc = tcp_encode_DIS_JobId(sock, jobid)) ||
+      (rc = tcp_encode_DIS_ReqExtend(sock, NULL)))
     {
     connection[connect].ch_errtxt = strdup(dis_emsg[rc]);
 
@@ -164,9 +164,9 @@ int PBSD_commit(
 
   DIS_tcp_setup(sock);
 
-  if ((rc = encode_DIS_ReqHdr(sock, PBS_BATCH_Commit, pbs_current_user)) ||
-      (rc = encode_DIS_JobId(sock, jobid)) ||
-      (rc = encode_DIS_ReqExtend(sock, NULL)))
+  if ((rc = tcp_encode_DIS_ReqHdr(sock, PBS_BATCH_Commit, pbs_current_user)) ||
+      (rc = tcp_encode_DIS_JobId(sock, jobid)) ||
+      (rc = tcp_encode_DIS_ReqExtend(sock, NULL)))
     {
     connection[connect].ch_errtxt = strdup(dis_emsg[rc]);
 
@@ -225,9 +225,9 @@ static int PBSD_scbuf(
   if (jobid == NULL)
     jobid = ""; /* use null string for null pointer */
 
-  if ((rc = encode_DIS_ReqHdr(sock, reqtype, pbs_current_user)) ||
-      (rc = encode_DIS_JobFile(sock, seq, buf, len, jobid, which)) ||
-      (rc = encode_DIS_ReqExtend(sock, NULL)))
+  if ((rc = tcp_encode_DIS_ReqHdr(sock, reqtype, pbs_current_user)) ||
+      (rc = tcp_encode_DIS_JobFile(sock, seq, buf, len, jobid, which)) ||
+      (rc = tcp_encode_DIS_ReqExtend(sock, NULL)))
     {
     connection[c].ch_errtxt = strdup(dis_emsg[rc]);
 
@@ -375,9 +375,9 @@ char *PBSD_queuejob(
 
   /* first, set up the body of the Queue Job request */
 
-  if ((rc = encode_DIS_ReqHdr(sock, PBS_BATCH_QueueJob, pbs_current_user)) ||
-      (rc = encode_DIS_QueueJob(sock, jobid, destin, attrib)) ||
-      (rc = encode_DIS_ReqExtend(sock, extend)))
+  if ((rc = tcp_encode_DIS_ReqHdr(sock, PBS_BATCH_QueueJob, pbs_current_user)) ||
+      (rc = tcp_encode_DIS_QueueJob(sock, jobid, destin, attrib)) ||
+      (rc = tcp_encode_DIS_ReqExtend(sock, extend)))
     {
     connection[connect].ch_errtxt = strdup(dis_emsg[rc]);
 

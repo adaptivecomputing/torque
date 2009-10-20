@@ -137,9 +137,9 @@ PBSD_select_put(int c, int type, struct attropl *attrib, char *extend)
 
   DIS_tcp_setup(sock);
 
-  if ((rc = encode_DIS_ReqHdr(sock, type, pbs_current_user)) ||
-      (rc = encode_DIS_attropl(sock, attrib)) ||
-      (rc = encode_DIS_ReqExtend(sock, extend)))
+  if ((rc = tcp_encode_DIS_ReqHdr(sock, type, pbs_current_user)) ||
+      (rc = tcp_encode_DIS_attropl(sock, attrib)) ||
+      (rc = tcp_encode_DIS_ReqExtend(sock, extend)))
     {
     connection[c].ch_errtxt = strdup(dis_emsg[rc]);
     return (pbs_errno = PBSE_PROTOCOL);

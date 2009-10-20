@@ -212,3 +212,107 @@ decode_DIS_svrattrl(int sock, tlist_head *phead)
 
   return (rc);
   }
+
+
+int tcp_decode_DIS_svrattrl(sock, phead)
+int     sock;
+tlist_head *phead;
+  {
+  unsigned int i;
+  unsigned int hasresc;
+  size_t  ls;
+  unsigned int data_len;
+  unsigned int numattr;
+  svrattrl       *psvrat = NULL;
+  int  rc;
+  size_t  tsize;
+
+
+  numattr = tcp_disrui(sock, &rc); /* number of attributes in set */
+
+  if (rc) return rc;
+
+  for (i = 0; i < numattr; ++i)
+    {
+
+    data_len = tcp_disrui(sock, &rc); /* here it is used */
+
+    if (rc) return rc;
+
+    tsize = sizeof(svrattrl) + data_len;
+
+    if ((psvrat = (svrattrl *)malloc(tsize)) == 0)
+      return DIS_NOMALLOC;
+
+    CLEAR_LINK(psvrat->al_link);
+
+    psvrat->al_atopl.next = 0;
+
+    psvrat->al_tsize = tsize;
+
+    psvrat->al_name  = (char *)psvrat + sizeof(svrattrl);
+
+    psvrat->al_resc  = 0;
+
+    psvrat->al_value = 0;
+
+    psvrat->al_nameln = 0;
+
+    psvrat->al_rescln = 0;
+
+    psvrat->al_valln  = 0;
+
+    psvrat->al_flags  = 0;
+
+    if ((rc = tcp_disrfcs(sock, &ls, data_len, psvrat->al_name)))
+      break;
+
+    *(psvrat->al_name + ls++) = '\0';
+
+    psvrat->al_nameln = (int)ls;
+
+    data_len -= ls;
+
+    hasresc = tcp_disrui(sock, &rc);
+
+    if (rc) break;
+
+    if (hasresc)
+      {
+      psvrat->al_resc = psvrat->al_name + ls;
+
+      if ((rc = tcp_disrfcs(sock, &ls, data_len, psvrat->al_resc)))
+        break;
+
+      *(psvrat->al_resc + ls++) = '\0';
+
+      psvrat->al_rescln = (int)ls;
+
+      data_len -= ls;
+      }
+
+    psvrat->al_value  = psvrat->al_name + psvrat->al_nameln +
+
+                        psvrat->al_rescln;
+
+    if ((rc = tcp_disrfcs(sock, &ls, data_len, psvrat->al_value)))
+      break;
+
+    *(psvrat->al_value + ls++) = '\0';
+
+    psvrat->al_valln = (int)ls;
+
+    psvrat->al_op = (enum batch_op)tcp_disrui(sock, &rc);
+
+    if (rc) break;
+
+    append_link(phead, &psvrat->al_link, psvrat);
+    }
+
+  if (rc)
+    {
+    (void)free(psvrat);
+    }
+
+  return (rc);
+  }

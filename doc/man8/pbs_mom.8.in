@@ -180,6 +180,10 @@ The \-r option is mutually exclusive with the \-p and \-q options.
 If the \-r option is used following a reboot,
 process IDs (pids) may be reused and
 MOM may kill a process that is not a batch session.
+.IP "\-S port" 16
+Specifies the port number on which the pbs_server is listening for requests.
+If pbs_server is started with a \-p option, pbs_mom will need to use the \-S
+option and match the port value which was used to start pbs_server.
 .IP "\-x" 16
 Disables the check for privileged port resource monitor connections.  This is
 used mainly for testing since the privileged port is the only

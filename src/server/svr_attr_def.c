@@ -800,7 +800,7 @@ attribute_def svr_attr_def[] =
       MGR_ONLY_SET,
       ATR_TYPE_LONG,
       PARENT_TYPE_SERVER
-  },
+  }, 
 
   /* SRV_ATR_LogFileMaxSize */
   {   ATTR_logfilemaxsize,      /* "log_file_max_size" */

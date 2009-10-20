@@ -113,3 +113,25 @@ int encode_DIS_MoveJob(
   return(0);
   }
 
+int tcp_encode_DIS_MoveJob(
+
+  int   sock,
+  char *jobid,
+  char *destin)
+
+  {
+  int   rc;
+
+  if ((rc = tcp_diswst(sock, jobid) != 0) ||
+      (rc = tcp_diswst(sock, destin) != 0))
+    {
+    /* FAILURE */
+
+    return(rc);
+    }
+
+  /* SUCCESS */
+
+  return(0);
+  }
+

@@ -152,5 +152,58 @@ int decode_DIS_JobFile(
   return(rc);
   }
 
+int tcp_decode_DIS_JobFile(
+
+  int                   sock,
+  struct batch_request *preq)
+
+  {
+  int   rc;
+  size_t amt;
+
+  preq->rq_ind.rq_jobfile.rq_data = 0;
+
+  preq->rq_ind.rq_jobfile.rq_sequence = tcp_disrui(sock, &rc);
+
+  if (rc)
+    {
+    return(rc);
+    }
+
+  preq->rq_ind.rq_jobfile.rq_type = tcp_disrui(sock, &rc);
+
+  if (rc)
+    {
+    return(rc);
+    }
+
+  preq->rq_ind.rq_jobfile.rq_size = tcp_disrui(sock, &rc);
+
+  if (rc)
+    {
+    return(rc);
+    }
+
+  if ((rc = tcp_disrfst(sock, PBS_MAXSVRJOBID + 1, preq->rq_ind.rq_jobfile.rq_jobid)) != 0)
+    {
+    return(rc);
+    }
+
+  preq->rq_ind.rq_jobfile.rq_data = tcp_disrcs(sock, &amt, &rc);
+
+  if (((long)amt != preq->rq_ind.rq_jobfile.rq_size) && (rc == 0))
+    rc = DIS_EOD;
+
+  if (rc)
+    {
+    if (preq->rq_ind.rq_jobfile.rq_data)
+      free(preq->rq_ind.rq_jobfile.rq_data);
+
+    preq->rq_ind.rq_jobfile.rq_data = 0;
+    }
+
+  return(rc);
+  }
+
 /* END dec_JobFile.c */
 

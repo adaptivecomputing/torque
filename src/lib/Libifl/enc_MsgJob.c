@@ -103,3 +103,17 @@ encode_DIS_MessageJob(int sock, char *jobid, int fileopt, char *msg)
 
   return 0;
   }
+
+int
+tcp_encode_DIS_MessageJob(int sock, char *jobid, int fileopt, char *msg)
+  {
+  int   rc;
+
+  if ((rc = tcp_diswst(sock, jobid) != 0) ||
+      (rc = tcp_diswui(sock, fileopt) != 0) ||
+      (rc = tcp_diswst(sock, msg) != 0))
+    return rc;
+
+  return 0;
+  }
+

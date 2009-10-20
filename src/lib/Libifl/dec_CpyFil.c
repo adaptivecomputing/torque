@@ -184,3 +184,83 @@ decode_DIS_CopyFiles(int sock, struct batch_request *preq)
 
   return 0;
   }
+
+int tcp_decode_DIS_CopyFiles(sock, preq)
+int   sock;
+
+struct batch_request *preq;
+  {
+  int   pair_ct;
+
+  struct rq_cpyfile *pcf;
+
+  struct rqfpair    *ppair;
+  int   rc;
+
+  pcf = &preq->rq_ind.rq_cpyfile;
+  CLEAR_HEAD(pcf->rq_pair);
+
+  if ((rc = tcp_disrfst(sock, PBS_MAXSVRJOBID, pcf->rq_jobid)) != 0)
+    return rc;
+
+  if ((rc = tcp_disrfst(sock, PBS_MAXUSER, pcf->rq_owner)) != 0)
+    return rc;
+
+  if ((rc = tcp_disrfst(sock, PBS_MAXUSER, pcf->rq_user))  != 0)
+    return rc;
+
+  if ((rc = tcp_disrfst(sock, PBS_MAXGRPN, pcf->rq_group)) != 0)
+    return rc;
+
+  pcf->rq_dir = tcp_disrui(sock, &rc);
+
+  if (rc) return rc;
+
+  pair_ct = tcp_disrui(sock, &rc);
+
+  if (rc) return rc;
+
+  while (pair_ct--)
+    {
+
+    ppair = (struct rqfpair *)malloc(sizeof(struct rqfpair));
+
+    if (ppair == (struct rqfpair *)0)
+      return DIS_NOMALLOC;
+
+    CLEAR_LINK(ppair->fp_link);
+
+    ppair->fp_local = 0;
+
+    ppair->fp_rmt   = 0;
+
+    ppair->fp_flag = tcp_disrui(sock, &rc);
+
+    if (rc)
+      {
+      (void)free(ppair);
+      return rc;
+      }
+
+    ppair->fp_local = tcp_disrst(sock, &rc);
+
+    if (rc)
+      {
+      (void)free(ppair);
+      return rc;
+      }
+
+    ppair->fp_rmt = tcp_disrst(sock, &rc);
+
+    if (rc)
+      {
+      (void)free(ppair->fp_local);
+      (void)free(ppair);
+      return rc;
+      }
+
+    append_link(&pcf->rq_pair, &ppair->fp_link, ppair);
+    }
+
+  return 0;
+  }

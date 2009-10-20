@@ -416,6 +416,7 @@ extern int   relay_to_mom A_((pbs_net_t, struct batch_request *, void (*)()));
 
 /* PBS Batch Request Decode/Encode routines */
 
+/* udp decode and encode routines */
 extern int decode_DIS_Authen A_((int socket, struct batch_request *));
 extern int decode_DIS_CopyFiles A_((int socket, struct batch_request *));
 extern int decode_DIS_JobCred A_((int socket, struct batch_request *));
@@ -446,6 +447,38 @@ extern int encode_DIS_ReturnFiles A_((int socket, struct batch_request *));
 extern int encode_DIS_TrackJob A_((int socket, struct batch_request *));
 extern int encode_DIS_reply A_((int socket, struct batch_reply *));
 extern int encode_DIS_svrattrl A_((int socket, svrattrl *));
+
+/* tcp decode and encode routines */
+extern int tcp_decode_DIS_Authen A_((int socket, struct batch_request *));
+extern int tcp_decode_DIS_CopyFiles A_((int socket, struct batch_request *));
+extern int tcp_decode_DIS_JobCred A_((int socket, struct batch_request *));
+extern int tcp_decode_DIS_JobFile A_((int socket, struct batch_request *));
+extern int tcp_decode_DIS_JobObit A_((int socket, struct batch_request *));
+extern int tcp_decode_DIS_Manage A_((int socket, struct batch_request *));
+extern int tcp_decode_DIS_MoveJob A_((int socket, struct batch_request *));
+extern int tcp_decode_DIS_MessageJob A_((int socket, struct batch_request *));
+extern int tcp_decode_DIS_QueueJob A_((int socket, struct batch_request *));
+extern int tcp_decode_DIS_Register A_((int socket, struct batch_request *));
+extern int tcp_decode_DIS_ReqExtend A_((int socket, struct batch_request *));
+extern int tcp_decode_DIS_ReqHdr A_((int socket, struct batch_request *, int *tp, int *pv));
+extern int tcp_decode_DIS_Rescl A_((int socket, struct batch_request *));
+extern int tcp_decode_DIS_Rescq A_((int socket, struct batch_request *));
+extern int tcp_decode_DIS_ReturnFiles A_((int socket, struct batch_request *));
+extern int tcp_decode_DIS_RunJob A_((int socket, struct batch_request *));
+extern int tcp_decode_DIS_ShutDown A_((int socket, struct batch_request *));
+extern int tcp_decode_DIS_SignalJob A_((int socket, struct batch_request *));
+extern int tcp_decode_DIS_Status A_((int socket, struct batch_request *));
+extern int tcp_decode_DIS_TrackJob A_((int socket, struct batch_request *));
+extern int tcp_decode_DIS_replySvr A_((int socket, struct batch_reply *));
+extern int tcp_decode_DIS_svrattrl A_((int socket, tlist_head *));
+
+extern int tcp_encode_DIS_CopyFiles A_((int socket, struct batch_request *));
+extern int tcp_encode_DIS_JobObit A_((int socket, struct batch_request *));
+extern int tcp_encode_DIS_Register A_((int socket, struct batch_request *));
+extern int tcp_encode_DIS_ReturnFiles A_((int socket, struct batch_request *));
+extern int tcp_encode_DIS_TrackJob A_((int socket, struct batch_request *));
+extern int tcp_encode_DIS_reply A_((int socket, struct batch_reply *));
+extern int tcp_encode_DIS_svrattrl A_((int socket, svrattrl *));
 
 extern int dis_request_read A_((int socket, struct batch_request *));
 extern int dis_reply_read A_((int socket, struct batch_reply *));

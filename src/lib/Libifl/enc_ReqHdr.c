@@ -91,6 +91,22 @@
 #include "dis.h"
 
 int
+tcp_encode_DIS_ReqHdr(int sock, int reqt, char *user)
+  {
+  int rc;
+
+  if ((rc = tcp_diswui(sock, PBS_BATCH_PROT_TYPE)) ||
+      (rc = tcp_diswui(sock, PBS_BATCH_PROT_VER)) ||
+      (rc = tcp_diswui(sock, reqt))   ||
+      (rc = tcp_diswst(sock, user)))
+    {
+    return rc;
+    }
+
+  return 0;
+  }
+
+int
 encode_DIS_ReqHdr(int sock, int reqt, char *user)
   {
   int rc;
@@ -105,3 +121,4 @@ encode_DIS_ReqHdr(int sock, int reqt, char *user)
 
   return 0;
   }
+

@@ -1169,13 +1169,12 @@ int set_job_env(
       {
       strcat(job_env, ",PBS_O_HOST=");
       strcat(job_env, qsub_host);
-      }
-      
+      }   
     }
     
   if (rc != 0)
     {
-    fprintf(stderr, "qsub: cannot get full local host name\n");
+    fprintf(stderr, "qsub: cannot get (full) local host name\n");
     exit(3);
     }
     

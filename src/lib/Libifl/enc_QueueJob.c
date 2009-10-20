@@ -120,4 +120,31 @@ int encode_DIS_QueueJob(
   return(encode_DIS_attropl(sock, aoplp));
   }  /* END encode_DIS_QueueJob() */
 
+int tcp_encode_DIS_QueueJob(
+
+  int    sock,
+  char  *jobid,
+  char  *destin,
+  struct attropl *aoplp)
+
+  {
+  int   rc;
+
+  if (jobid == (char *)0)
+    jobid = "";
+
+  if (destin == (char *)0)
+    destin = "";
+
+  if ((rc = tcp_diswst(sock, jobid) != 0) ||
+      (rc = tcp_diswst(sock, destin) != 0))
+    {
+    return rc;
+    }
+
+  return(tcp_encode_DIS_attropl(sock, aoplp));
+  }  /* END tcp_encode_DIS_QueueJob() */
+
+
+
 

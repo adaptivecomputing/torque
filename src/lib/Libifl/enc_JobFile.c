@@ -110,3 +110,22 @@ encode_DIS_JobFile(int sock, int seq, char *buf, int len, char *jobid, int which
 
   return 0;
   }
+
+int
+tcp_encode_DIS_JobFile(int sock, int seq, char *buf, int len, char *jobid, int which)
+  {
+  int   rc;
+
+  if (jobid == (char *)0)
+    jobid = "";
+
+  if ((rc = tcp_diswui(sock, seq) != 0) ||
+      (rc = tcp_diswui(sock, which) != 0) ||
+      (rc = tcp_diswui(sock, len) != 0) ||
+      (rc = tcp_diswst(sock, jobid) != 0) ||
+      (rc = tcp_diswcs(sock, buf, len) != 0))
+    return rc;
+
+  return 0;
+  }
+

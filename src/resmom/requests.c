@@ -652,9 +652,9 @@ static int return_file(
 
     DIS_tcp_setup(sock);
 
-    if ((rc = encode_DIS_ReqHdr(sock, PBS_BATCH_MvJobFile, pbs_current_user)) ||
-        (rc = encode_DIS_JobFile(sock, seq++, buf, amt, pjob->ji_qs.ji_jobid, which)) ||
-        (rc = encode_DIS_ReqExtend(sock, NULL)))
+    if ((rc = tcp_encode_DIS_ReqHdr(sock, PBS_BATCH_MvJobFile, pbs_current_user)) ||
+        (rc = tcp_encode_DIS_JobFile(sock, seq++, buf, amt, pjob->ji_qs.ji_jobid, which)) ||
+        (rc = tcp_encode_DIS_ReqExtend(sock, NULL)))
       {
       break;
       }

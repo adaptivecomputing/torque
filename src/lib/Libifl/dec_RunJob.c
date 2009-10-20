@@ -120,3 +120,25 @@ decode_DIS_RunJob(int sock, struct batch_request *preq)
 
   return rc;
   }
+
+int
+tcp_decode_DIS_RunJob(int sock, struct batch_request *preq)
+  {
+  int rc;
+
+  preq->rq_ind.rq_run.rq_destin = 0;
+
+  rc = tcp_disrfst(sock, PBS_MAXSVRJOBID + 1, preq->rq_ind.rq_run.rq_jid);
+
+  if (rc) return rc;
+
+  /* This will need to be changed for nodes for FPA */
+  preq->rq_ind.rq_run.rq_destin = tcp_disrst(sock, &rc);
+
+  if (rc) return rc;
+
+  preq->rq_ind.rq_run.rq_resch = tcp_disrui(sock, &rc);
+
+  return rc;
+  }
+

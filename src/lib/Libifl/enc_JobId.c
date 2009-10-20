@@ -98,3 +98,11 @@ encode_DIS_JobId(int sock, char *jobid)
   {
   return (diswst(sock, jobid));
   }
+
+
+int
+tcp_encode_DIS_JobId(int sock, char *jobid)
+  {
+  return (tcp_diswst(sock, jobid));
+  }
+

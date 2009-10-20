@@ -188,3 +188,87 @@ decode_DIS_attrl(int sock, struct attrl **ppatt)
 
   return rc;
   }
+
+
+int tcp_decode_DIS_attrl(sock, ppatt)
+int   sock;
+
+struct attrl **ppatt;
+  {
+  int   hasresc;
+  unsigned int  i;
+  unsigned int  name_len;
+  unsigned int  numpat;
+
+  struct attrl  *pat = NULL;
+
+  struct attrl  *patprior = NULL;
+  int   rc;
+
+
+  numpat = tcp_disrui(sock, &rc);
+
+  if (rc) return rc;
+
+  for (i = 0; i < numpat; ++i)
+    {
+
+    name_len = tcp_disrui(sock, &rc); /* name_len is unusued here */
+
+    if (rc) break;
+
+    pat = malloc(sizeof(struct attrl));
+
+    if (pat == 0)
+      return DIS_NOMALLOC;
+
+    pat->next     = (struct attrl *)0;
+
+    pat->name     = (char *)0;
+
+    pat->resource = (char *)0;
+
+    pat->value    = (char *)0;
+
+    pat->name = tcp_disrst(sock, &rc);
+
+    if (rc) break;
+
+    hasresc = tcp_disrui(sock, &rc);
+
+    if (rc) break;
+
+    if (hasresc)
+      {
+      pat->resource = tcp_disrst(sock, &rc);
+
+      if (rc) break;
+      }
+
+    pat->value = tcp_disrst(sock, &rc);
+
+    if (rc) break;
+
+    /* discard the op field */
+    (void)tcp_disrui(sock, &rc);
+
+    if (rc) break;
+
+    if (i == 0)
+      {
+      /* first one, link to passing in pointer */
+      *ppatt = pat;
+      }
+    else
+      {
+      patprior->next = pat;
+      }
+
+    patprior = pat;
+    }
+
+  if (rc)
+    PBS_free_aopl((struct attropl *)pat);
+
+  return rc;
+  }

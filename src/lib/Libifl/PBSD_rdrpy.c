@@ -128,7 +128,7 @@ struct batch_reply *PBSD_rdrpy(
 
   DIS_tcp_setup(sock);
 
-  if ((rc = decode_DIS_replyCmd(sock, reply)))
+  if ((rc = tcp_decode_DIS_replyCmd(sock, reply)))
     {
     free(reply);
 

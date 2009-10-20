@@ -96,7 +96,7 @@ static int nodes_down  = 0;
 static char *resc_nodes = "nodes";
 
 /*
- * encode_DIS_resc() - encode a resource related request,
+ * tcp_encode_DIS_resc() - encode a resource related request,
  * Used by pbs_rescquery(), pbs_rescreserve() and pbs_rescfree()
  *
  * Data items are:  signed int resource handle
@@ -105,25 +105,28 @@ static char *resc_nodes = "nodes";
  *     string resource query
  */
 
-static int
-encode_DIS_Resc(int sock, char **rlist, int ct, resource_t rh)
+static int tcp_encode_DIS_Resc(sock, rlist, ct, rh)
+int       sock;
+char     **rlist;
+int       ct;
+resource_t    rh;
   {
   int    i;
   int    rc;
 
-  if ((rc = diswsi(sock, rh)) == 0)     /* resource reservation handle */
+  if ((rc = tcp_diswsi(sock, rh)) == 0)     /* resource reservation handle */
     {
 
     /* next send the number of resource strings */
 
-    if ((rc = diswui(sock, ct)) == 0)
+    if ((rc = tcp_diswui(sock, ct)) == 0)
       {
 
       /* now send each string (if any) */
 
       for (i = 0; i < ct; ++i)
         {
-        if ((rc = diswst(sock, *(rlist + i))) != 0)
+        if ((rc = tcp_diswst(sock, *(rlist + i))) != 0)
           break;
         }
       }
@@ -131,6 +134,7 @@ encode_DIS_Resc(int sock, char **rlist, int ct, resource_t rh)
 
   return rc;
   }
+
 
 /*
  * PBS_resc() - internal common code for sending resource requests
@@ -152,9 +156,9 @@ PBS_resc(int c, int reqtype, char **rescl, int ct, resource_t rh)
 
   DIS_tcp_setup(sock);
 
-  if ((rc = encode_DIS_ReqHdr(sock, reqtype, pbs_current_user)) ||
-      (rc = encode_DIS_Resc(sock, rescl, ct, rh)) ||
-      (rc = encode_DIS_ReqExtend(sock, (char *)0)))
+  if ((rc = tcp_encode_DIS_ReqHdr(sock, reqtype, pbs_current_user)) ||
+      (rc = tcp_encode_DIS_Resc(sock, rescl, ct, rh)) ||
+      (rc = tcp_encode_DIS_ReqExtend(sock, (char *)0)))
     {
     connection[c].ch_errtxt = strdup(dis_emsg[rc]);
     return (pbs_errno = PBSE_PROTOCOL);

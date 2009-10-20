@@ -132,8 +132,8 @@ pbs_server will ping the node and, if they communicate correctly, free the node.
 .IP "\-l" 15
 List node names and their state.  If no state is specified, only nodes in the
 DOWN, OFFLINE, or UNKNOWN states are listed.  Specifying a state string acts as
-an output filter.  Valid state strings are "active", "all", "busy", "down",
-"free", "offline", "unknown", and "up".
+an output filter.  Valid state strings are "free", "offline", "down", "reserve", 
+"job-exclusive", "job-sharing", "busy", "time-shared", or "state-unknown".
 .IP "\-N" 15
 Specify a "note" attribute.  This allows an administrator to add an
 arbitrary annotation to the listed nodes.  To clear a note, use

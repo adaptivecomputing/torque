@@ -108,9 +108,9 @@ int pbs_terminate(
 
   DIS_tcp_setup(sock);
 
-  if ((rc = encode_DIS_ReqHdr(sock, PBS_BATCH_Shutdown, pbs_current_user)) ||
-      (rc = encode_DIS_ShutDown(sock, manner)) ||
-      (rc = encode_DIS_ReqExtend(sock, extend)))
+  if ((rc = tcp_encode_DIS_ReqHdr(sock, PBS_BATCH_Shutdown, pbs_current_user)) ||
+      (rc = tcp_encode_DIS_ShutDown(sock, manner)) ||
+      (rc = tcp_encode_DIS_ReqExtend(sock, extend)))
     {
     connection[c].ch_errtxt = strdup(dis_emsg[rc]);
 

@@ -111,9 +111,9 @@ pbs_stagein(int c, char *jobid, char *location, char *extend)
 
   /* send stagein request, a run request with a different id */
 
-  if ((rc = encode_DIS_ReqHdr(sock, PBS_BATCH_StageIn, pbs_current_user)) ||
-      (rc = encode_DIS_RunJob(sock, jobid, location, 0)) ||
-      (rc = encode_DIS_ReqExtend(sock, extend)))
+  if ((rc = tcp_encode_DIS_ReqHdr(sock, PBS_BATCH_StageIn, pbs_current_user)) ||
+      (rc = tcp_encode_DIS_RunJob(sock, jobid, location, 0)) ||
+      (rc = tcp_encode_DIS_ReqExtend(sock, extend)))
     {
     connection[c].ch_errtxt = strdup(dis_emsg[rc]);
     return (pbs_errno = PBSE_PROTOCOL);

@@ -103,9 +103,9 @@ PBSD_msg_put(int c, char *jobid, int fileopt, char *msg, char *extend)
   sock = connection[c].ch_socket;
   DIS_tcp_setup(sock);
 
-  if ((rc = encode_DIS_ReqHdr(sock, PBS_BATCH_MessJob, pbs_current_user)) ||
-      (rc = encode_DIS_MessageJob(sock, jobid, fileopt, msg)) ||
-      (rc = encode_DIS_ReqExtend(sock, extend)))
+  if ((rc = tcp_encode_DIS_ReqHdr(sock, PBS_BATCH_MessJob, pbs_current_user)) ||
+      (rc = tcp_encode_DIS_MessageJob(sock, jobid, fileopt, msg)) ||
+      (rc = tcp_encode_DIS_ReqExtend(sock, extend)))
     {
     connection[c].ch_errtxt = strdup(dis_emsg[rc]);
     return (pbs_errno = PBSE_PROTOCOL);

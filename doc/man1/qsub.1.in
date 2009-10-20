@@ -1320,7 +1320,7 @@ job terminates, is aborted, or the user interrupts qsub with an SIGINT
 it will query if the user wishes to exit.
 If the user response "yes", qsub exits and the job is aborted.
 .LP
-One the interactive job has started execution, input to and output from the
+Once the interactive job has started execution, input to and output from the
 job pass through qsub.  Keyboard generated interrupts are passed to the job.
 Lines entered that begin with the tilde ('~') character and contain special
 sequences are escaped by qsub.  The recognized escape sequences are:

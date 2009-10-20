@@ -103,6 +103,23 @@
 #include "dis.h"
 
 int
+tcp_encode_DIS_Register(int sock, struct batch_request *preq)
+  {
+  int   rc;
+
+  if ((rc = tcp_diswst(sock, preq->rq_ind.rq_register.rq_owner) != 0) ||
+      (rc = tcp_diswst(sock, preq->rq_ind.rq_register.rq_parent) != 0) ||
+      (rc = tcp_diswst(sock, preq->rq_ind.rq_register.rq_child) != 0) ||
+      (rc = tcp_diswui(sock, preq->rq_ind.rq_register.rq_dependtype) != 0) ||
+      (rc = tcp_diswui(sock, preq->rq_ind.rq_register.rq_op) != 0) ||
+      (rc = tcp_diswsl(sock, preq->rq_ind.rq_register.rq_cost) != 0))
+    return rc;
+
+  return 0;
+  }
+
+
+int
 encode_DIS_Register(int sock, struct batch_request *preq)
   {
   int   rc;
@@ -117,3 +134,4 @@ encode_DIS_Register(int sock, struct batch_request *preq)
 
   return 0;
   }
+

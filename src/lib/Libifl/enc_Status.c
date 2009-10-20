@@ -108,6 +108,25 @@ int encode_DIS_Status(
   return(0);
   }  /* END encode_DIS_Status() */
 
+
+int tcp_encode_DIS_Status(
+
+  int sock,
+  char *objid,
+  struct attrl *pattrl)
+
+  {
+  int rc;
+
+  if ((rc = tcp_diswst(sock, objid) != 0) || (rc = tcp_encode_DIS_attrl(sock, pattrl) != 0))
+    {
+    return(rc);
+    }
+
+  return(0);
+  }  /* END tcp_encode_DIS_Status() */
+
+
 /* END enc_Status.c */
 
 
