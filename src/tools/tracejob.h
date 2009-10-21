@@ -107,6 +107,11 @@
 #define DEFAULT_LOG_LINES 1024
 #endif
 
+/* Maximum number of log files to check per day */
+#ifndef MAX_LOG_FILES_PER_DAY
+#define MAX_LOG_FILES_PER_DAY 1024
+#endif
+
 #define SECONDS_IN_DAY 86400
 
 /* indicies into the mid_path array */
@@ -154,7 +159,7 @@ int parse_log(FILE *, char *, int);
 char *strip_path(char *path);
 void free_log_entry(struct log_entry *lg);
 void line_wrap(char *line, int start, int end);
-char *log_path(char *path, int index, struct tm *tm_ptr);
+int  log_path(char *path, int index, struct tm *tm_ptr, char *filenames[]);
 void alloc_more_space();
 void filter_excess(int threshold);
 int sort_by_message(const void *v1, const void *v2);

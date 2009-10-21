@@ -118,7 +118,8 @@ int main(
   /* Array for the log entries for the specified job */
   FILE *fp;
   int i, j;
-  char *filename;  /* full path of logfile to read */
+  int file_count;
+  char *filenames[MAX_LOG_FILES_PER_DAY];  /* full path of logfiles to read */
 
   struct tm *tm_ptr;
   time_t t, t_save;
@@ -319,33 +320,46 @@ int main(
             (j == IND_MOM && no_mom)   || (j == IND_SCHED && no_schd))
           continue;
 
-        filename = log_path(prefix_path, j, tm_ptr);
-
-        if ((fp = fopen(filename, "r")) == NULL)
+        file_count = log_path(prefix_path, j, tm_ptr, filenames);
+        
+        /* there can be multiple server and mom log files per day */
+        /* traverse filenames until we have got them all */
+        
+        if (file_count < 0)
           {
-          if (verbosity >= 1)
-            perror(filename);
-
+          printf("Error getting file names\n");
           continue;
           }
 
-        if (parse_log(fp, argv[opt], j) < 0)
+        for (; file_count > 0; file_count--)
           {
-          /* no valid entries located in file */
-
-          if (verbosity >= 1)
+          if ((fp = fopen(filenames[file_count-1], "r")) == NULL)
             {
-            fprintf(stderr, "%s: No matching job records located\n",
-                    filename);
-            }
-          }
-        else if (verbosity >= 2)
-          {
-          fprintf(stderr, "%s: Successfully located matching job records\n",
-                  filename);
-          }
+            if (verbosity >= 1)
+              perror(filenames[file_count-1]);
 
-        fclose(fp);
+            continue;
+            }
+
+          if (parse_log(fp, argv[opt], j) < 0)
+            {
+            /* no valid entries located in file */
+
+            if (verbosity >= 1)
+              {
+              fprintf(stderr, "%s: No matching job records located\n",
+                      filenames[file_count-1]);
+              }
+            }
+          else if (verbosity >= 2)
+            {
+            fprintf(stderr, "%s: Successfully located matching job records\n",
+                    filenames[file_count-1]);
+            }
+
+          fclose(fp);
+          free(filenames[file_count-1]);
+          } /* end of for file_count */
         }
       }    /* END for (i) */
 
@@ -787,19 +801,25 @@ void line_wrap(char *line, int start, int end)
  *   path - prefix path
  *   index  - index into the prefix_path array
  *   tm_ptr - time pointer to create filename from
+ *   filenames - returned filenames
  *
- * returns path to log file
+ * returns -1 if unsuccessful otherwise the number of filenames found
  *
  */
 
-char *log_path(
+int log_path(
 
   char      *path,
   int        index,
-  struct tm *tm_ptr)
+  struct tm *tm_ptr,
+  char      *filenames[])
 
   {
-  static char buf[256];
+  static char buf[512];
+  static char cmd[512 + 20];
+  char        pbuf[512 + 10];
+  int         filecount = 0;
+  FILE       *fp;
 
   sprintf(buf, "%s/%s/%04d%02d%02d",
           (path != NULL) ? path : PBS_SERVER_HOME,
@@ -808,7 +828,30 @@ char *log_path(
           tm_ptr->tm_mon + 1,
           tm_ptr->tm_mday);
 
-  return(buf);
+  filenames[filecount] = malloc(strlen(buf));
+  strcpy(filenames[filecount],buf);
+  filecount++;
+
+  sprintf(cmd, "ls -1t %s.* 2>1",
+    buf);
+
+  if ((fp = popen(cmd, "r")) != NULL)
+    {
+    while (fgets(pbuf, 512, fp) != NULL)
+      {
+      filenames[filecount] = malloc(strlen(pbuf));
+      if (isspace(pbuf[strlen(pbuf)-1]))
+        {
+        pbuf[strlen(pbuf)-1] = '\0';
+        }
+      strcpy(filenames[filecount],pbuf);
+      filecount++;
+      }
+
+    pclose(fp);
+    }
+
+  return(filecount);
   }
 
 

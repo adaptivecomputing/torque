@@ -5,6 +5,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature
       pbs_error_db.h now needed for install.
   e - Modified pbs_get_server_list so the $TORQUE_HOME/server_name file will work with 
       a comma delimited string or a list of server names separated by a new line.
+  b - fix tracejob so it handles multiple server and mom logs for the same day
+  
 2.4.1
   e - added a prologue and epilogue option to the list of resources for qsub -l
       which allows a per job prologue or epilogue script. The syntax for
