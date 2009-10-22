@@ -109,6 +109,7 @@
 #include "batch_request.h"
 #include "array.h"
 #include "csv.h"
+#include "pbs_nodes.h"
 
 
 /*#ifndef SIGKILL*/
@@ -353,6 +354,31 @@ static int SortPrioAscend(
   } /*END SortPrioAscend */
 
 
+void  update_default_np()
+{
+  struct pbsnode *pnode;
+  int i;
+  long default_np;
+  long npfreediff;
+
+  default_np = server.sv_attr[(int)SRV_ATR_NPDefault].at_val.at_long;
+
+
+  if(default_np > 0)
+    {
+    for(i = 0; i < svr_totnodes; i++)
+      {
+      pnode = pbsndlist[i];
+
+       npfreediff = pnode->nd_nsn - pnode->nd_nsnfree;
+       pnode->nd_nsn = default_np;
+       pnode->nd_nsnfree = default_np - npfreediff;
+
+      }
+    }
+
+  return;
+}
 
 /* Add the server names from /var/spool/torque/server_name to the trusted hosts list. */
 
@@ -829,6 +855,7 @@ int pbsd_init(
     }
 
   add_server_names_to_acl_hosts();
+  update_default_np();
 
   /*
    * 8. If not a "create" initialization, recover queues.

@@ -285,6 +285,7 @@
 #define ATTR_jobmustreport "job_must_report"
 #define ATTR_LockfileUpdateTime "lock_file_update_time"
 #define ATTR_LockfileCheckTime "lock_file_check_time"
+#define ATTR_npdefault  "np_default"
 
 /* additional node "attributes" names */
 
