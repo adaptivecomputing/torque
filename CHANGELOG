@@ -6,6 +6,9 @@ c - crash     b - bug fix    e - enhancement    f - new feature
   e - Modified pbs_get_server_list so the $TORQUE_HOME/server_name file will work with 
       a comma delimited string or a list of server names separated by a new line.
   b - fix tracejob so it handles multiple server and mom logs for the same day
+  f - Added a new server parameter np_default. This allows the administrator to
+      change the number of processors to a unified value dynamically for the
+      entire cluster.
   
 2.4.1
   e - added a prologue and epilogue option to the list of resources for qsub -l
