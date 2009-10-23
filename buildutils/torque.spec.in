@@ -350,6 +350,7 @@ necessary for developing programs which will use %{name}.
 %{_libdir}/libtorque*.a
 %{_libdir}/libtorque*.so
 %{_includedir}/pbs_error.h
+%{_includedir}/pbs_error_db.h
 %{_includedir}/pbs_ifl.h
 %{_includedir}/rm.h
 %{_includedir}/rpp.h
