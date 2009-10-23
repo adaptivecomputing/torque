@@ -12,6 +12,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature
   e - high availability enhanced so that the server spawns a separate thread to
       update the "lock" on the lockfile.  Thread update and check time are both
       setable parameters in qmgr.
+  b - close empty ACL files
   
 2.4.1
   e - added a prologue and epilogue option to the list of resources for qsub -l
