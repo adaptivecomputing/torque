@@ -9,6 +9,9 @@ c - crash     b - bug fix    e - enhancement    f - new feature
   f - Added a new server parameter np_default. This allows the administrator to
       change the number of processors to a unified value dynamically for the
       entire cluster.
+  e - high availability enhanced so that the server spawns a separate thread to
+      update the "lock" on the lockfile.  Thread update and check time are both
+      setable parameters in qmgr.
   
 2.4.1
   e - added a prologue and epilogue option to the list of resources for qsub -l
