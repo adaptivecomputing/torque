@@ -1085,7 +1085,6 @@ overflow:
 
 
 
-/* END tcp_dis.c */
 
 unsigned tcp_disrui(
 
@@ -1881,3 +1880,4 @@ int tcp_diswui(int stream, unsigned value)
           DIS_NOCOMMIT : retval);
   } /* end tcp_diswui */
 
+/* END tcp_dis.c */
