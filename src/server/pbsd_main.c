@@ -1533,10 +1533,10 @@ int main(
 
   /* handle running in the background or not if we're debugging */
 
-  if (daemonize_server(TDoBackground,&sid) == FAILURE)
+/*  if (daemonize_server(TDoBackground,&sid) == FAILURE)
     {
     exit(2);
-    }
+    }*/
 
 #ifdef OS_LOSES_FD_OVER_FORK
   /* NOTE:  file descriptors may be lost across forks in SLES 10 SP1 */
@@ -1662,9 +1662,14 @@ int main(
     }
 
 
-  sprintf(log_buffer, "%ld\n",
+  /* handle running in the background or not if we're debugging */
 
-          (long)sid);
+  if (daemonize_server(TDoBackground,&sid) == FAILURE)
+    {
+    exit(2);
+    }
+
+  sprintf(log_buffer, "%ld\n", (long)sid);
 
   if (!high_availability_mode)
     {
@@ -2525,13 +2530,13 @@ static int daemonize_server(
   int *sid)           /* O */
 
   {
-  int    pid;
+  int    pid;          
   FILE  *dummyfile;
   
   char   id[] = "daemonize_server";
   
   if (!DoBackground)
-    {
+    {  
     /* handle foreground (i.e. debug mode) */
     
     *sid = getpid();
@@ -2555,7 +2560,7 @@ static int daemonize_server(
   
   
   if (pid != 0)
-    {
+    {        
      /* exit if parent */
 
      log_event(
@@ -2574,7 +2579,7 @@ static int daemonize_server(
     log_err(errno,id,"Could not disconnect from controlling terminal");
 
     return(FAILURE);
-    }
+    }    
 
   /* disconnect stdin,stdout,stderr */
 
