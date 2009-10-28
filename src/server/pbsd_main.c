@@ -1533,10 +1533,13 @@ int main(
 
   /* handle running in the background or not if we're debugging */
 
-/*  if (daemonize_server(TDoBackground,&sid) == FAILURE)
+  if(server_init_type != RECOV_CREATE)
     {
-    exit(2);
-    }*/
+    if (daemonize_server(TDoBackground,&sid) == FAILURE)
+      {
+      exit(2);
+      }
+    }
 
 #ifdef OS_LOSES_FD_OVER_FORK
   /* NOTE:  file descriptors may be lost across forks in SLES 10 SP1 */
@@ -1664,9 +1667,12 @@ int main(
 
   /* handle running in the background or not if we're debugging */
 
-  if (daemonize_server(TDoBackground,&sid) == FAILURE)
+  if(server_init_type == RECOV_CREATE)
     {
-    exit(2);
+    if (daemonize_server(TDoBackground,&sid) == FAILURE)
+      {
+      exit(2);
+      }
     }
 
   sprintf(log_buffer, "%ld\n", (long)sid);

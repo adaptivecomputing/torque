@@ -55,5 +55,5 @@ qmgr -c 'set queue batch resources_default.walltime = 1:00:00'
 qmgr -c 'set queue batch resources_default.nodes = 1'
 
 qmgr -c 'set server default_queue = batch'
-
+qmgr -c 'set server resources_available.nodect = 1024'
 
