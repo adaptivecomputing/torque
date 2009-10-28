@@ -5920,6 +5920,14 @@ int job_over_limit(
 
         case SISTER_EOF:
 
+          sprintf(log_buffer, "node %d (%s) requested job terminate, '%s' (code %d) - received SISTER_EOF attempting to communicate with sister MOM's",
+                  pjob->ji_nodekill,
+                  pnode->hn_host,
+                  "EOF",
+                  pnode->hn_sister);
+
+          break;
+
         default:
 
           sprintf(log_buffer, "node %d (%s) requested job terminate, '%s' (code %d) - internal or network failure attempting to communicate with sister MOM's",
