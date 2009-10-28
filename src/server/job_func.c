@@ -878,7 +878,7 @@ job *job_clone(
   /* set PBS_ARRAYID var */
   clear_attr(&tempattr, &job_attr_def[(int)JOB_ATR_variables]);
 
-  sprintf(buf, ",PBS_ARRAYID=%d", taskid);
+  sprintf(buf, "PBS_ARRAYID=%d", taskid);
 
   job_attr_def[(int)JOB_ATR_variables].at_decode(&tempattr,
       NULL,
