@@ -2084,8 +2084,10 @@ int create_missing_files(job *pjob)
       {
       if ((fd = creat(namebuf, S_IRUSR | S_IWUSR)) > 0)
         {
-        /* TODO check return value of fchown */
-        fchown(fd,  pjob->ji_qs.ji_un.ji_momt.ji_exuid, pjob->ji_qs.ji_un.ji_momt.ji_exgid);
+        if (fchown(fd,  pjob->ji_qs.ji_un.ji_momt.ji_exuid, pjob->ji_qs.ji_un.ji_momt.ji_exgid) == -1)
+          {
+          log_err(errno, "create_missing_files", "cannot change file owner");
+          }
         close(fd);
         ++files_created;
         }
@@ -2118,8 +2120,10 @@ int create_missing_files(job *pjob)
       {
       if ((fd = creat(namebuf, S_IRUSR | S_IWUSR)) > 0)
         {
-        /* TODO check return value of fchown */
-        fchown(fd,  pjob->ji_qs.ji_un.ji_momt.ji_exuid, pjob->ji_qs.ji_un.ji_momt.ji_exgid);
+        if (fchown(fd,  pjob->ji_qs.ji_un.ji_momt.ji_exuid, pjob->ji_qs.ji_un.ji_momt.ji_exgid) == -1)
+          {
+          log_err(errno, "create_missing_files", "cannot change file ownership");
+          }
         close(fd);
         ++files_created;
         }

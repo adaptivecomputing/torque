@@ -909,7 +909,14 @@ void on_job_exit(
             {
             strcpy(namebuf2, namebuf);
             strcat(namebuf2, ".SAV");
-            link(namebuf, namebuf2);
+            if (link(namebuf, namebuf2) == -1)
+              {
+              LOG_EVENT(
+                PBSEVENT_ERROR | PBSEVENT_SECURITY,
+                PBS_EVENTCLASS_JOB,
+                pjob->ji_qs.ji_jobid,
+                "Link(1) in on_job_exit failed");
+              }
             }
 
 
@@ -926,7 +933,14 @@ void on_job_exit(
             {
             strcpy(namebuf2, namebuf);
             strcat(namebuf2, ".SAV");
-            link(namebuf, namebuf2);
+            if (link(namebuf, namebuf2) == -1)
+              {
+              LOG_EVENT(
+                PBSEVENT_ERROR | PBSEVENT_SECURITY,
+                PBS_EVENTCLASS_JOB,
+                pjob->ji_qs.ji_jobid,
+                "Link(2) in on_job_exit failed");
+              }
             }
 
           free(namebuf2);
@@ -1212,7 +1226,14 @@ void on_job_exit(
 
       if (spool_file_exists == 0)
         {
-        link(namebuf2, namebuf);
+        if (link(namebuf2, namebuf) == -1)
+          {
+          LOG_EVENT(
+            PBSEVENT_ERROR | PBSEVENT_SECURITY,
+            PBS_EVENTCLASS_JOB,
+            pjob->ji_qs.ji_jobid,
+            "Link(3) in on_job_exit failed");
+          }
         unlink(namebuf2);
         }
 
@@ -1229,7 +1250,14 @@ void on_job_exit(
       if (spool_file_exists == 0)
         {
 
-        link(namebuf2, namebuf);
+        if (link(namebuf2, namebuf) == -1)
+          {
+          LOG_EVENT(
+            PBSEVENT_ERROR | PBSEVENT_SECURITY,
+            PBS_EVENTCLASS_JOB,
+            pjob->ji_qs.ji_jobid,
+            "Link(4) in on_job_exit failed");
+          }
         unlink(namebuf2);
         }
 
