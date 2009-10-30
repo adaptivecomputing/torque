@@ -88,18 +88,21 @@ runJobs(@job_ids);
 # Restart the pbs_server cold
 ###############################################################################
 stopPbsserver();
+#startPbsserver({ 'args' => '-t cold' });
 
-diag("Using expect to run the command '$pbs_server_cmd'");
-$exp->spawn($pbs_server_cmd);
+#diag("Using expect to run the command '$pbs_server_cmd'");
+#$exp->spawn($pbs_server_cmd);
 
-if ($exp->expect($timeout, '-re', $pPattern))
-  {
-  $exp->send("y\n");
-  }
-else
-  {
-  fail("Expect did not see '$pPattern'");
-  }
+#if ($exp->expect($timeout, '-re', $pPattern))
+#  {
+#  $exp->send("y\n");
+#  }
+#else
+#  {
+#  fail("Expect did not see '$pPattern'");
+#  }
+runCommand($pbs_server_cmd);
+sleep 15;
 
 # Verify that the pbs_server is running
 %ps = runCommand($ps_cmd);
