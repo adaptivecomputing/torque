@@ -97,7 +97,7 @@
 #if defined(HAVE_SYS_IOCTL_H)
 #include <sys/ioctl.h>
 #endif
-#if !defined(sgi) && !defined(_AIX) && !defined(linux) !defined(__CYGWIN__)
+#if !defined(sgi) && !defined(_AIX) && !defined(linux) && !defined(__CYGWIN__)
 #include <sys/tty.h>
 #endif  /* ! sgi */
 
