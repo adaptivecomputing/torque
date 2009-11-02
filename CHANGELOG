@@ -1,5 +1,8 @@
 c - crash     b - bug fix    e - enhancement    f - new feature
 
+2.5.0
+   - nuttin' honey
+
 2.4.2
   b - Added pbs_error_db.h to src/include/Makefile.am and src/include/Makefile.in. 
       pbs_error_db.h now needed for install.
