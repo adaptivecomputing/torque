@@ -161,6 +161,12 @@ extern int  log_remove_old A_((char *,unsigned long));
 extern char log_buffer[LOG_BUF_SIZE];
 int log_init A_((char *, char *));
 
+#ifdef __CYGWIN__
+extern int  IAmAdmin A_((void));
+extern int  IAmAdminByName A_((char *));
+extern int  IAmUser A_((char *));
+#endif  /* __CYGWIN__ */
+
 extern int  chk_file_sec A_((char *, int, int, int, int, char *));
 extern int  setup_env A_((char *));
 

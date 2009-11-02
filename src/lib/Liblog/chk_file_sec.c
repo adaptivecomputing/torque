@@ -90,11 +90,82 @@
 #include "portability.h"
 #include "log.h"
 
+#ifdef __CYGWIN__
+#include <pwd.h>
+#include <grp.h>
+#include <unistd.h>
+#include <string.h>
+#endif  /* __CYGWIN__ */
+
 #ifndef S_ISLNK
 #define S_ISLNK(m) (((m) & S_IFMT) == S_IFLNK)
 #endif
 
 int chk_file_sec_stderr = 0;
+
+
+#ifdef __CYGWIN__
+int IAmAdmin()
+{
+  struct group *gr;
+  struct passwd *p;
+  char **t;
+  if (getuid()==18) return 1;
+  if ((p = getpwuid(getuid()))==NULL)
+  {
+	log_err(-1, "WARNING!!!","No password entry for currient user. Check your /etc/passwd file.\n");
+  	return 0;
+  }
+
+  if ((gr=getgrgid(544))!=NULL)
+  {
+     for (t = gr->gr_mem; t && *t; t++)
+        if (!strcmp (p->pw_name,*t)) 
+        return 1;
+  }
+  else
+  {
+	log_err(-1, "WARNING!!!","No group entry. Check your /etc/group file.\n");
+	return 0;
+  }
+log_err(-1, "WARNING!!!" ,"Must be run with Administrator privileges.\n");
+return 0;
+}
+
+int IAmAdminByName(char *userName)
+{
+  struct group *gr;
+  char **t;
+  if ((gr=getgrgid(544))!=NULL)
+     for (t = gr->gr_mem; t && *t; t++)
+        if (!strcmp (userName,*t))	
+        return 1;
+return 0;
+}
+
+
+/* IAmUser return 1 if user not included to Administrator group, else return 0 */
+
+int IAmUser(char *userName)
+{
+  struct group *gr;
+  char **t;
+  char buff[512];
+  if ((gr=getgrgid(544))!=NULL)
+  {  
+     for (t = gr->gr_mem; t && *t; t++)
+        if (!strcmp (userName,*t))	
+	{
+        sprintf(buff, "Can`t run job with Administrator privileges. Your should limit preveleges for \"%s\"",userName);
+	log_err(-1, "WARNING!!!", buff);
+        return 0;
+	}
+	/*else  log_err(-1,"Try",*t); */
+  }
+return 1;
+}
+#endif  /* __CYGWIN__ */
+
 
 /*
  * chk_file_sec() - Check file/directory security
@@ -250,6 +321,7 @@ int chk_file_sec(
 
   i = sbuf.st_mode & (S_IRWXU | S_IRWXG | S_IRWXO);
 
+#ifndef __CYGWIN__
   if (sbuf.st_uid > 10)
     {
     rc = EPERM;
@@ -259,7 +331,10 @@ int chk_file_sec(
     snprintf(EMsg, 1024, "%s is not owned by admin user",
              path);
     }
-  else if (((isdir == 1) && (S_ISDIR(sbuf.st_mode) == 0)) ||
+  else 
+#endif  /* __CYGWIN__ */
+
+    if (((isdir == 1) && (S_ISDIR(sbuf.st_mode) == 0)) ||
            ((isdir == 0) && (S_ISREG(sbuf.st_mode) == 0)))
     {
     /* FAILURE */
@@ -287,6 +362,7 @@ int chk_file_sec(
     {
     /* if group write, gid must be less than 10 */
 
+#ifndef __CYGWIN__
     if ((i & disallow & S_IWGRP) && (sbuf.st_gid > 9))
       {
       /* FAILURE */
@@ -296,6 +372,7 @@ int chk_file_sec(
 
       rc = EPERM;
       }
+#endif  /* __CYGWIN__ */
 
     /* if world write, sticky bit must be set and "sticky" ok */
 

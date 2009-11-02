@@ -156,6 +156,8 @@ case "$OS" in
 
   linux*) mach=linux ;;
 
+  cygwin*) mach=cygwin ;;
+  
   unicosmk*) mach=unicosmk2 ;;
 
   unicos*) mach=unicos8 ;;

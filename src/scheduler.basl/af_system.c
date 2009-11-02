@@ -657,8 +657,14 @@ SystemInit(int argc, char *argv[])
 
 #ifndef DEBUG
 
+#ifndef __CYGWIN__
   if ((geteuid() != 0) || (getuid() != 0))
     {
+#else
+  if (!IAmAdmin())
+    {
+#endif  /* __CYGWIN__ */
+
     fprintf(stderr, "%s: Must be run by root\n", argv[0]);
     exit(1);
     }

@@ -6770,7 +6770,7 @@ int setup_program_environment(void)
   static char   id[] = "setup_program_environment";
   int           c;
   int           hostc = 1;
-#ifndef DEBUG
+#if !defined(DEBUG) && !defined(DISABLE_DAEMONS)
   FILE         *dummyfile;
 #endif
   int  tryport;
@@ -6782,12 +6782,17 @@ int setup_program_environment(void)
 
   /* must be started with real and effective uid of 0 */
 
+#ifndef __CYGWIN__
   if ((getuid() != 0) || (geteuid() != 0))
     {
     /* FAILURE */
 
     fprintf(stderr, "must be run as root\n");
 
+#else
+  if (!IAmAdmin())
+    {
+#endif  /* __CYGWIN__ */
     return(1);
     }
 
@@ -6891,7 +6896,12 @@ int setup_program_environment(void)
 
   path_undeliv     = mk_dirs("undelivered/");
 
+#ifdef __CYGWIN__
+/*  AUX is reserved word in Windows  */
+  path_aux         = mk_dirs("auxx/");
+#else
   path_aux         = mk_dirs("aux/");
+#endif  /* __CYGWIN__ */
 
   path_server_name = mk_dirs("server_name");
 
@@ -7014,7 +7024,7 @@ int setup_program_environment(void)
 
   /* go into the background and become own session/process group */
 
-#ifndef DEBUG
+#if !defined(DEBUG) && !defined(DISABLE_DAEMONS)
 
   mom_lock(lockfds, F_UNLCK); /* unlock so child can relock */
 

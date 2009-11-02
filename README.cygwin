@@ -1,36 +1,122 @@
-TORQUE clients can be built and used under Cygwin, but be aware that there is
-basicly no security.  Windows doesn't have a concept of setuid root programs
-and priviledged ports.  This means that any user on cygwin can impersonate any
-user on your cluster[1].  You have been warned!
+   
+   
+Tested with the last stable release Cygwin 1.5.25-15 on http://www.cygwin.com
+As of July 24, 2009, Cygwin doesn't yet support getaddrinfo() 
+which means that X11 forwarding won't be built.  
+Tcl/Tk components are untested.  
+Interactive jobs are untested.
 
-To install Cygwin, browse to http://www.cygwin.com and click the "Install
-Cygwin Now" link.  Download and run setup.exe to install the base packages.
-After installation, run setup.exe again, click through the defaults and under
-the package selection, select the gcc and make packages.
+Sheduler C is used only.
+Mail and drmaa are untested.
+In mom quota and setrlimit are not supported .
+Windows file system must be NTFS!!!
+         
+     
+###########################
+###   Install  Cygwin   ###
+###########################
+   
+Torque needs two Windows users on each host:
+<UserAdmin> with Computer administrator privileges and 
+<SimpleUser> with Limited account.
 
-Run Cygwin and you should be looking at a terminal window with bash.  Download
-the TORQUE tarball with wget, untar it, and ./configure, make, make install as
-usual.  The configure script will warn that cygwin is an unsupported OS and
-disable the server[2] and mom components.  After the install, put your TORQUE
-server name in $PBS_SERVER_HOME/server_name.
+To install Cygwin, enter into Windows as an user <UserAdmin>.
+Browse to http://www.cygwin.com and click the "Install Cygwin Now" link.  
+Download and run setup.exe.
+Click through the defaults and under the package selection 
+select the following packages:
 
-As of July 24, 2006, Cygwin doesn't yet support getaddrinfo() which means that
-X11 forwarding won't be built.  Tcl/Tk components are untested.  Interactive
-jobs are untested.
+   autoconf;
+   automake;
+   cygrunsrv;
+   email;
+   gcc;
+   make;
+   openssh;
+   sunrpc;
+   vim or mc is desirable.
+   
+Download and install the default's and selected Cygwin packages.
 
-If your server has a host_acl, add the DNS hostname of your Cygwin box to it
-and you should be able to run qstat and pbsnodes.
 
-Now add the hostname to your server's submit_hosts and check your Cygwin
-username with 'id' in your bash shell.  If it matches a username on your
-cluster, you can now submit jobs!  If it doesn't match, edit /etc/passwd to
-change your uid to the desired username.
+Setup openssh for <UserAdmin> and <SimpleUser>:
+
+   # ssh-host-config
+
+   # ssh-user-config
+   
+   #login
+   login:<SimpleUser>
+   Password:***
+
+   [SimleUser]# ssh-user-config
+
+Customise an access without password prompting on each host.
+
+     
+######################################
+###   Start torque under cygwin    ###
+######################################
+   
+Enter into working directory as <UserAdmin> and execute the following commands:
+   
+   # ./configure --disable-unixsockets [--enable-server] [--enable-mom] [--enable-clients] 
+   
+   # make
+   
+   # make install
+   
+   # ./AddPrivilege.sh <UserAdmin>
+
+The last command must be at the server and mom installation.   
 
 
-[1] Someone should write a service to take the place of the setuid root
-    pbs_iff, or wait for the forthcoming kerberos support.
+Configure pbs_server by means of the .../torque/server_priv/nodes file. 
 
-[2] The server and scheduler components will successfully build under Cygwin,
-    but these components are disabled by default because actually running them
-    on Cygwin isn't practical.
+Initiate a pbs_server database and customise a desirable structure of queues:
+   
+   # pbs_server -t create
+   
+   # qmgr -c "s s scheduling=true"
+   # qmgr -c "c q batch queue_type=execution"
+   # qmgr -c "s q batch started=true"
+   # qmgr -c "s q batch enabled=true"
+   # qmgr -c "s q batch resources_default.nodes=1"
+   # qmgr -c "s q batch resources_default.walltime=3600"
+   # qmgr -c "s s default_queue=batch"
+   
+Further restart the server:
+
+   # qterm -t quick
+   
+   # pbs_server
+   
+Start the scheduler:
+   
+   # pbs_sched
+
+
+Configure pbs_mom by means of the .../torque/mom_priv/config file. 
+
+Start the mom:
+   
+   # pbs_mom
+
+
+Add the client's hostname to your server's submit_hosts
+
+Set your server's hostsname in the .../torque/server_name file. 
+
+Submit jobs from <SimpleUser> with Limited account.
+
+
+########################################################
+###   Start torque under cygwin as Windows service   ###
+########################################################
+
+ ./configure --disable-daemons
+ make
+ make install
+
+Using cygrunsrv.exe for install, start, stop and remove services
 

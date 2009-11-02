@@ -24,6 +24,7 @@ extern char *optarg;
 #include "pbs_ifl.h"
 #include "resmon.h"
 #include "rm.h"
+#include "log.h"
 
 #define MAX_QUERY  128
 
@@ -91,9 +92,14 @@ int main(
   HostList[0]     = '\0';
   ConfigBuf[0] = '\0';
 
+#ifndef __CYGWIN__
   if (getuid() != 0)
     {
     fprintf(stderr, "ERROR:  must be root to run this command\n");
+#else
+  if (!IAmAdmin())
+    {
+#endif  /* __CYGWIN__ */
 
     exit(EXIT_FAILURE);
     }

@@ -889,8 +889,13 @@ int main(
     }
 
 #ifndef DEBUG
+#ifndef __CYGWIN__
   if ((geteuid() != 0) || (getuid() != 0))
     {
+#else
+  if (!IAmAdmin())
+    {
+#endif  /* __CYGWIN__ */
     fprintf(stderr, "%s: Must be run by root\n", argv[0]);
     return (1);
     }
@@ -1111,6 +1116,9 @@ int main(
     {
     lock_out(lockfds, F_UNLCK);
 
+#ifdef DISABLE_DAEMONS
+    pid = getpid();
+#else
     if ((pid = fork()) == -1)
       {
       /* error on fork */
@@ -1118,7 +1126,8 @@ int main(
 
       exit(1);
       }
-    else if (pid > 0)               /* parent exits */
+    else
+    if (pid > 0)               /* parent exits */
       {
       exit(0);
       }
@@ -1129,6 +1138,7 @@ int main(
 
       exit(1);
       }
+#endif  /*  DISABLE_DAEMONS  */
 
     lock_out(lockfds, F_WRLCK);
 

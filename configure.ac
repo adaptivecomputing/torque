@@ -847,6 +847,14 @@ AC_ARG_ENABLE(privports, [
   *)   AC_MSG_ERROR(--enable-privports cannot take a value) ;;
 esac])dnl
 
+AC_ARG_ENABLE(daemons, [
+  --disable-daemons       disable the use of background daemons.],
+[case "${enableval}" in
+  yes)  ;;
+  no)  DISABLE_DAEMONS=1; AC_DEFINE(DISABLE_DAEMONS, 1, [Define to disable daemons]) ;;
+  *)   AC_MSG_ERROR(--enable-daemons cannot take a value) ;;
+esac])dnl
+
 
 AC_ARG_ENABLE(mom-checkspool, [
   --disable-mom-checkspool
@@ -1440,6 +1448,7 @@ AC_OUTPUT(buildutils/pbs_mkdirs
 	  src/resmom/Makefile
 	  src/resmom/aix4/Makefile
 	  src/resmom/aix5/Makefile
+	  src/resmom/cygwin/Makefile
 	  src/resmom/darwin/Makefile
 	  src/resmom/digitalunix/Makefile
 	  src/resmom/freebsd/Makefile

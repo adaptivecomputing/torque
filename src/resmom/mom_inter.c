@@ -97,7 +97,7 @@
 #if defined(HAVE_SYS_IOCTL_H)
 #include <sys/ioctl.h>
 #endif
-#if !defined(sgi) && !defined(_AIX) && !defined(linux)
+#if !defined(sgi) && !defined(_AIX) && !defined(linux) !defined(__CYGWIN__)
 #include <sys/tty.h>
 #endif  /* ! sgi */
 
@@ -117,7 +117,10 @@ static struct winsize wsz;
 
 extern int mom_reader_go;
 
+#ifdef HAVE_GETADDRINFO
 static int IPv4or6 = AF_UNSPEC;
+#endif
+
 extern int conn_qsub(char *, int, char *);
 extern char xauth_path[];
 extern int DEBUGMODE;
@@ -517,6 +520,7 @@ int x11_create_display(
   char *x11authstr)      /* proto:data:screen */
 
   {
+#ifdef HAVE_GETADDRINFO
   int display_number, sock;
   u_short port;
 
@@ -606,7 +610,11 @@ int x11_create_display(
 
     for (ai = aitop;ai != NULL;ai = ai->ai_next)
       {
-      if (ai->ai_family != AF_INET && ai->ai_family != AF_INET6)
+      if (ai->ai_family != AF_INET 
+#ifdef IPV6_V6ONLY
+            && ai->ai_family != AF_INET6
+#endif
+        )
         continue;
 
       sock = socket(ai->ai_family, SOCK_STREAM, 0);
@@ -784,6 +792,7 @@ int x11_create_display(
   DBPRT(("entering port_forwarder\n"));
 
   port_forwarder(socks, conn_qsub, phost, pport, NULL);
+#endif        /* HAVE_GETADDRINFO */
 
   exit(EXIT_FAILURE);
   }  /* END x11_create_display() */

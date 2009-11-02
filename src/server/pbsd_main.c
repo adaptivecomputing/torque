@@ -1440,14 +1440,18 @@ int main(
 
   parse_command_line(argc, argv);
 
+#ifndef __CYGWIN__
   /* if we are not running with real and effective uid of 0, forget it */
 
   if ((getuid() != 0) || (geteuid() != 0))
     {
     fprintf(stderr, "%s: must be run by root\n",
             ProgName);
-
-    return(1);
+#else
+  if (!IAmAdmin())
+        {
+#endif  /* __CYGWIN__ */
+	return(1);
     }
 
   /*
@@ -1530,6 +1534,9 @@ int main(
     DEBUGMODE = 1;
     TDoBackground = 0;
     }
+#ifdef DISABLE_DAEMONS
+    TDoBackground = 0;
+#endif
 
   /* handle running in the background or not if we're debugging */
 

@@ -342,6 +342,11 @@ struct passwd *check_pwd(
 		return(NULL);
 		}
 
+#ifdef __CYGWIN__
+	if (!IAmUser(ptr))
+    		return(NULL);
+#endif  /* __CYGWIN__ */
+	    
 	if (pjob->ji_grpcache != NULL)
 		{
 		/* SUCCESS */

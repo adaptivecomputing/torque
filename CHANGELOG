@@ -1,7 +1,20 @@
 c - crash     b - bug fix    e - enhancement    f - new feature
 
 2.5.0
-   - nuttin' honey
+  f - added full support (server-scheduler-mom) for Cygwin (UIIP NAS of Belarus, uiip.bas-net.by)
+  f - architecture and build system changes to support Cygwin (Igor Ilyenko, uiip.bas-net.by)
+  b - fixed EINPROGRESS in net_client.c. This signal appears in every time of connect
+      and requires individual processing. The old erroneous processing brought to 
+      big network delay, especially on Cygwin.
+  e - added own implementation of bindresvport for OS which doesn't it, improved signal
+      processing after connect (Igor Ilyenko, uiip.bas-net.by)
+  f - created checking permissions of Windows (Cygwin) users, using mkpasswd, mkgroup and
+      own functions IAmAdmin, IAmUser (Yauheni Charniauski, uiip.bas-net.by)
+  f - created checking permissions of submit jobs (Vikentsi Lapa, uiip.bas-net.by)
+  f - Added the --disable-daemons configure option for start server-shed-mom as Windows
+      services, cygrunsrv.exe goes its into background independently.
+  e - Adapted output of Cygwin diagnostic information (Yauheni Charniauski, uiip.bas-net.by)
+
 
 2.4.2
   b - Added pbs_error_db.h to src/include/Makefile.am and src/include/Makefile.in. 

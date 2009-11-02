@@ -271,13 +271,22 @@ int client_to_svr(
 
   struct sockaddr_in remote;
   int                sock;
-  unsigned short     tryport;
+  unsigned short     tryport = 777;
+
+  int                errorsock;
+
 #ifndef NOPRIVPORTS
   int                flags;
-#endif /* !NOPRIVPORTS */
+#endif
+
   int                one = 1;
 
-  int                trycount;
+  int         	     trycount = 0;
+
+#define STARTPORT 600
+#define ENDPORT (IPPORT_RESERVED - 1)
+#define NPORTS  (ENDPORT - STARTPORT + 1)
+#define SHUFFLE_COUNT 3
 
   if (EMsg != NULL)
     EMsg[0] = '\0';
@@ -293,11 +302,7 @@ int client_to_svr(
 
   local.sin_port        = 0;
 
-  tryport = IPPORT_RESERVED - 1;
-
-#ifndef NOPRIVPORTS
 retry:  /* retry goto added (rentec) */
-#endif /* !NOPRIVPORTS */
 
   /* get socket */
 
@@ -337,8 +342,6 @@ retry:  /* retry goto added (rentec) */
   /* If local privilege port requested, bind to one */
   /* must be root privileged to do this */
 
-  trycount = 0;
-
   if (local_port != FALSE)
     {
     /* set REUSEADDR (rentec) */
@@ -352,79 +355,86 @@ retry:  /* retry goto added (rentec) */
 
 #ifndef NOPRIVPORTS
 
+	if (trycount < SHUFFLE_COUNT)
+	{
+		errorsock = -1;
+
 #ifdef HAVE_BINDRESVPORT
-    /*
-     * bindresvport seems to cause connect() failures in some odd corner case when
-     * talking to a local daemon.  So we'll only try this once and fallback to
-     * the slow loop around bind() if connect() fails with EADDRINUSE
-     * or EADDRNOTAVAIL.
-     * http://www.supercluster.org/pipermail/torqueusers/2006-June/003740.html
-     */
+		/*
+		* bindresvport seems to cause connect() failures in some odd corner case when
+		* talking to a local daemon.  So we'll only try this once and fallback to
+		* the slow loop around bind() if connect() fails with EADDRINUSE
+		* or EADDRNOTAVAIL.
+		* http://www.supercluster.org/pipermail/torqueusers/2006-June/003740.html
+		*/
 
-    if (tryport == (IPPORT_RESERVED - 1))
-      {
-      if (bindresvport(sock, &local) < 0)
-        {
-        if (EMsg != NULL)
-          sprintf(EMsg, "cannot bind to reserved port in %s",
-                  id);
+		errorsock = bindresvport(sock, &local);
 
-        close(sock);
+		tryport = local.sin_port;
 
-        return(PBS_NET_RC_FATAL);
-        }
-      }
-    else
-      {
+		goto jump_to_check;
+
+#else /* HAVE_BINDRESVPORT */
+
+		/* Pseudo-casual shuffling of tryport */
+		
+		srand((unsigned int)getpid() + (unsigned int)sock + (unsigned int)trycount);
+
+		tryport = (rand() % NPORTS) + STARTPORT;
+	
+#endif     /* HAVE_BINDRESVPORT */
+	}
+	else
+	{
+	/* A simple port search after SHUFFLE_COUNT shuffling */
+	
+		if (tryport > ENDPORT)
+		{
+			tryport = STARTPORT;
+		}
+	}
+
+retry_bind:
+
+	local.sin_port = htons(tryport);
+	
+	errorsock = bind(sock, (struct sockaddr *)&local, sizeof(local));
+
+#ifdef HAVE_BINDRESVPORT
+
+jump_to_check:
+
 #endif /* HAVE_BINDRESVPORT */
 
-      local.sin_port = htons(tryport);
-
-      while (bind(sock, (struct sockaddr *)&local, sizeof(local)) < 0)
+        if (errorsock < 0)
         {
 #ifdef NDEBUG2
-        fprintf(stderr, "INFO:  cannot bind to port %d, errno: %d - %s\n",
-                tryport,
-                errno,
-                strerror(errno));
+            fprintf(stderr, "INFO:  cannot bind to port %d, errno: %d - %s\n",
+                    tryport,
+                    errno,
+                    strerror(errno));
 #endif /* NDEBUG2 */
 
-        if ((errno != EADDRINUSE) && (errno != EADDRNOTAVAIL))
-          {
-          if (EMsg != NULL)
-            sprintf(EMsg, "cannot bind to port %d in %s - errno: %d %s",
-                    tryport,
+	    /* Terminate on errors, except "address already in use" */
+	    if ((errno == EADDRINUSE) || (errno == EINVAL))
+	    {
+		if (tryport++ <  ENDPORT)	
+		    goto retry_bind;
+	    }		
+
+    	    if (EMsg != NULL)
+        	sprintf(EMsg, "cannot bind to reserved port in %s - errno: %d %s",
                     id,
                     errno,
                     strerror(errno));
 
-          close(sock);
+    	    close(sock);
 
-          return(PBS_NET_RC_FATAL);
-          }
+    	    return(PBS_NET_RC_FATAL);
+        }
 
-        trycount++;
-
-        if (--tryport < (unsigned short)(IPPORT_RESERVED / 2))
-          {
-          if (EMsg != NULL)
-            sprintf(EMsg, "cannot bind to port %d in %s - too many retries",
-                    tryport,
-                    id);
-
-          close(sock);
-
-          return(PBS_NET_RC_RETRY);
-          }
-
-        local.sin_port = htons(tryport);
-        }  /* END while (bind() < 0) */
-
-#ifdef HAVE_BINDRESVPORT
-      }    /* END if (tryport == (IPPORT_RESERVED - 1)) else */
-
-#endif     /* HAVE_BINDRESVPORT */
 #endif     /* !NOPRIVPORTS */
+
     }      /* END if (local_port != FALSE) */
 
   /* bind successful!!! */
@@ -444,94 +454,99 @@ retry:  /* retry goto added (rentec) */
     return(sock);
     }
 
+  /* process failure */
+
+  if (errno == EINPROGRESS)
+        if (await_connect(MaxConnectTimeout, sock) == 0)
+        {
+          return(sock);
+        }
+
 #ifdef NDEBUG2
   fprintf(stderr, "INFO:  cannot connect to port %d, errno=%d - %s\n",
           tryport,
           errno,
           strerror(errno));
-
 #endif /* NDEBUG2 */
-
-  /* process failure */
 
   switch (errno)
     {
 
-    case EADDRINUSE:
+    case ECONNREFUSED:		/* Connection refused */
 
-    case EADDRNOTAVAIL:
-
-#ifndef NOPRIVPORTS
-
-      if (local_port != FALSE)
-        {
-        /* continue port search (rentec) */
-
-        close(sock);
-
-        --tryport;
-
-        goto retry;
-        }
-
-#endif /* NOPRIVPORTS */
-
-      /* fall through to next case */
-
-    case EINTR:
-
-    case ETIMEDOUT:
-
-    case EINPROGRESS:
-
-      if (await_connect(MaxConnectTimeout, sock) == 0)
-        {
-        /* socket not ready for writing after MaxConnectTimeout microseconds timeout */
-        /* no network failures detected */
-
-        break;
-        }
-
-      /* fall through to next case */
-
-    case ECONNREFUSED:
-
-      if (EMsg != NULL)
-        sprintf(EMsg, "cannot connect to port %d in %s - connection refused",
+        if (EMsg != NULL)
+          sprintf(EMsg, "cannot connect to port %d in %s - connection refused",
                 tryport,
                 id);
 
-      close(sock);
+        close(sock);
 
-      return(PBS_NET_RC_RETRY);
+        return(PBS_NET_RC_FATAL);
 
-      /*NOTREACHED*/
+        /*NOTREACHED*/
 
-      break;
+    case EINPROGRESS:		/* Operation now in progress */
+
+    case EALREADY:		/* Operation already in progress */
+
+    case EISCONN:		/* Transport endpoint is already connected */
+    
+    case ETIMEDOUT:		/* Connection timed out */
+
+    case EAGAIN:		/* Operation would block */
+    
+    case EINTR:			/* Interrupted system call */	
+
+        if (await_connect(MaxConnectTimeout, sock) == 0)
+        {
+          /* socket not ready for writing after MaxConnectTimeout microseconds timeout */
+          /* no network failures detected */
+
+          break;
+        }/* Interrupted system call */
+
+      /* fall through to next case */
+
+    case EINVAL:		/* Invalid argument */
+    
+    case EADDRINUSE:		/* Address already in use */
+
+    case EADDRNOTAVAIL:		/* Cannot assign requested address */
+
+        if (trycount++ > (NPORTS))
+        {
+          close(sock);
+
+          return(PBS_NET_RC_RETRY);
+        }
+        if (local_port != FALSE)
+        {
+          /* continue port search (rentec) */
+
+          tryport++;
+
+          close(sock);
+
+          goto retry;
+        }
 
     default:
 
-      if (EMsg != NULL)
-        sprintf(EMsg, "cannot connect to port %d in %s - errno:%d %s",
+        if (EMsg != NULL)
+          sprintf(EMsg, "cannot connect to port %d in %s - errno:%d %s",
                 tryport,
                 id,
                 errno,
                 strerror(errno));
 
-      close(sock);
+        close(sock);
 
-      return(PBS_NET_RC_FATAL);
+        return(PBS_NET_RC_RETRY);
 
-      /*NOTREACHED*/
-
-      break;
     }  /* END switch (errno) */
 
-  /* SUCCESS */
-
   return(sock);
+
   }  /* END client_to_svr() */
 
 /* END net_client.c */
-
-
