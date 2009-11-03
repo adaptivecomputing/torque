@@ -2183,7 +2183,8 @@ void req_signaljob(
 
   numprocs = kill_job(pjob, sig, id, "killing job");
 
-  if ((numprocs == 0) && ((sig == 0)||(sig == SIGKILL)))
+  if ((numprocs == 0) && ((sig == 0)||(sig == SIGKILL)) &&
+    (pjob->ji_qs.ji_substate != JOB_SUBSTATE_OBIT))
     {
     /* SIGNUL and no procs found, force job to exiting */
     /* force issue of (another) job obit */
