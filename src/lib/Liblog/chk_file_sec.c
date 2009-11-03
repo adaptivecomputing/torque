@@ -113,7 +113,7 @@ int IAmAdmin()
   if (getuid()==18) return 1;
   if ((p = getpwuid(getuid()))==NULL)
   {
-	log_err(-1, "WARNING!!!","No password entry for currient user. Check your /etc/passwd file.\n");
+	log_err(-1, "WARNING!!!","No password entry for current user. Check your /etc/passwd file.\n");
   	return 0;
   }
 

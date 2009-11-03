@@ -434,14 +434,12 @@ proc_stat_t *get_proc_stat(
   }  /* END get_proc_stat() */
 
 
-#ifndef __CYGWIN__
 proc_mem_t *get_proc_mem(void)
 
   {
   static proc_mem_t   mm;
   FILE               *fp;
   char                str[32];
-  unsigned long long  bfsz, casz;
 
   if ((fp = fopen("/proc/meminfo","r")) == NULL)
     {
@@ -464,17 +462,13 @@ proc_mem_t *get_proc_mem(void)
 
     /* umu vmem patch */
 
-    if (fscanf(fp, "%*s %llu %llu %llu %*u %llu %llu",
+    if (fscanf(fp, "%*s %llu %llu %llu %*u",
                &mm.mem_total,
                &mm.mem_used,
-               &mm.mem_free,
-               &bfsz,
-               &casz) != 5)
-      {
+               &mm.mem_free) != 3)
+       {
       return(NULL);
       }
-
-    mm.mem_free += casz + bfsz;
 
     /*
         if (fscanf(fp,"%*s %lu %lu %lu %*[^\n]%*c",
@@ -498,7 +492,6 @@ proc_mem_t *get_proc_mem(void)
     {
     do
       {
-      /* new format (kernel > 2.4) the first 'str' has been read */
 
       if (!strncmp(str, "MemTotal:", sizeof(str)))
         {
@@ -519,26 +512,6 @@ proc_mem_t *get_proc_mem(void)
           }
 
         mm.mem_free *= 1024;
-        }
-      else if (!strncmp(str, "Buffers:", sizeof(str)))
-        {
-        if (fscanf(fp, "%llu",
-                   &bfsz) != 1)
-          {
-          return(NULL);
-          }
-
-        mm.mem_free += bfsz * 1024;
-        }
-      else if (!strncmp(str, "Cached:", sizeof(str)))
-        {
-        if (fscanf(fp, "%llu",
-                   &casz) != 1)
-          {
-          return(NULL);
-          }
-
-        mm.mem_free += casz * 1024;
         }
       else if (!strncmp(str, "SwapTotal:", sizeof(str)))
         {
@@ -569,7 +542,7 @@ proc_mem_t *get_proc_mem(void)
   return(&mm);
   }  /* END get_proc_mem() */
 
-#else	/* __CYGWIN__*/
+#ifdef PNOT
 
 proc_mem_t *
 get_proc_mem(void)
@@ -606,8 +579,7 @@ get_proc_mem(void)
   return(&mm);
   }  /* END get_proc_mem() */
 
-#endif	/* __CYGWIN__ */
-
+#endif /* PNOT */
 
 
 
@@ -3823,7 +3795,8 @@ char *idletime(
 
   curtm = time(NULL);
 
-  setmax("/dev/mouse");
+  /* setmax("/dev/mouse"); */
+  setmax("/dev/ttyS0");
 
   while ((de = readdir(dp)) != NULL)
     {

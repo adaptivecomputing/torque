@@ -4200,7 +4200,7 @@ int bad_restrict(
     if (len1 < len2)
       continue;
 
-    cp1 = &host->h_name[len1];
+    cp1 = (char *)&host->h_name[len1];
 
     cp2 = &maskclient[i][len2];
 
