@@ -122,19 +122,19 @@ extern int   LOGLEVEL;
 
 /* Private Functions in this file */
 
-static void post_delete_route A_((struct work_task *));
-static void post_delete_mom1 A_((struct work_task *));
-static void post_delete_mom2 A_((struct work_task *));
-static int forced_jobpurge A_((struct batch_request *));
-static void job_delete_nanny A_((struct work_task *));
-static void post_job_delete_nanny A_((struct work_task *));
-static void purge_completed_jobs A_((struct batch_request *));
+static void post_delete_route(struct work_task *);
+static void post_delete_mom1(struct work_task *);
+static void post_delete_mom2(struct work_task *);
+static int forced_jobpurge(struct batch_request *);
+static void job_delete_nanny(struct work_task *);
+static void post_job_delete_nanny(struct work_task *);
+static void purge_completed_jobs(struct batch_request *);
 
 /* Public Functions in this file */
 
-struct work_task *apply_job_delete_nanny A_((struct job *, int));
-int has_job_delete_nanny A_((struct job *));
-void change_restart_comment_if_needed A_((struct job *));
+struct work_task *apply_job_delete_nanny(struct job *, int);
+int has_job_delete_nanny(struct job *);
+void change_restart_comment_if_needed(struct job *);
 
 /* Private Data Items */
 

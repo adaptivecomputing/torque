@@ -148,19 +148,19 @@ extern int   PBSNodeCheckEpilog;
 
 /* external prototypes */
 
-u_long resc_used(job *, char *, u_long(*f) A_((resource *)));
-static void preobit_reply A_((int));
-static void obit_reply A_((int));
-extern int tm_reply A_((int, int, tm_event_t));
-extern u_long addclient A_((char *));
-extern void encode_used A_((job *, tlist_head *));
-extern void encode_flagged_attrs A_((job *, tlist_head *));
-extern void job_nodes A_((job *));
-extern int task_recov A_((job *));
+u_long resc_used(job *, char *, u_long(*f) (resource *));
+static void preobit_reply (int);
+static void obit_reply (int);
+extern int tm_reply (int, int, tm_event_t);
+extern u_long addclient (char *);
+extern void encode_used (job *, tlist_head *);
+extern void encode_flagged_attrs (job *, tlist_head *);
+extern void job_nodes (job *);
+extern int task_recov (job *);
 extern void mom_server_all_update_stat(void);
 extern void check_state(int);
-extern int mom_open_socket_to_jobs_server A_((job *, char *, void (*) A_((int))));
-extern int mark_for_resend A_((job *));
+extern int mom_open_socket_to_jobs_server (job *, char *, void (*) (int));
+extern int mark_for_resend (job *);
 extern void checkpoint_partial(job *pjob);
 extern void mom_checkpoint_recover(job *pjob);
 extern void clear_down_mom_servers();
@@ -309,10 +309,10 @@ scan_for_exiting(void)
   obitent *pobit;
   int  sock;
   char  *cookie;
-  u_long gettime  A_((resource *));
-  u_long getsize  A_((resource *));
-  task         *task_find A_((job *, tm_task_id));
-  int im_compose A_((int, char *, char *, int, tm_event_t, tm_task_id));
+  u_long gettime(resource *);
+  u_long getsize(resource *);
+  task *task_find(job *, tm_task_id);
+  int im_compose(int, char *, char *, int, tm_event_t, tm_task_id);
 
   static int ForceObit    = -1;   /* boolean - if TRUE, ObitsAllowed will be enforced */
   static int ObitsAllowed = 1;
@@ -679,7 +679,7 @@ scan_for_exiting(void)
         }
       else
         {
-      
+
         if (run_pelog(PE_EPILOGUSER, path_epiloguserp, pjob, PE_IO_TYPE_STD) != 0)
           {
           log_err(-1, id, "parallel user epilog failed");
@@ -1376,7 +1376,7 @@ static void preobit_reply(
       if((presc->rs_value.at_flags & ATR_VFLAG_SET) && (presc->rs_value.at_val.at_str != NULL))
         {
         path_epiloguserjob = get_local_script_path(pjob, presc->rs_value.at_val.at_str);
-        
+
         if(path_epiloguserjob)
           {
           if (run_pelog(PE_EPILOGUSERJOB, path_epiloguserjob, pjob, PE_IO_TYPE_STD) != 0)
@@ -1385,7 +1385,7 @@ static void preobit_reply(
             }
           free(path_epiloguserjob);
           }
-        
+
         }
 
     if (run_pelog(PE_EPILOGUSER, path_epiloguser, pjob, PE_IO_TYPE_STD) != 0)

@@ -84,7 +84,7 @@
 
 #undef strToL
 #undef strTouL
-u_Long strTouL A_((const char *nptr, char **endptr, int base));
+u_Long strTouL(const char *nptr, char **endptr, int base);
 
 /*
  * strToL - returns the Long value representing the string whose first

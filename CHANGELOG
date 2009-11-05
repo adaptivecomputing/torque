@@ -16,6 +16,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature
   e - Adapted output of Cygwin diagnostic information (Yauheni Charniauski, uiip.bas-net.by)
   b - Changed pbsd_main to call daemonize_server early only if high_availability_mode
       is set.
+  e - removed the very old A_ macros (patch provided by Simon Toth)
 
 
 2.4.2

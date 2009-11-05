@@ -115,27 +115,27 @@
 
 /* External Functions Called: */
 
-extern int                   send_job A_((job *, pbs_net_t, int, int, void (*x)(), struct batch_request *));
-extern void                  set_resc_assigned A_((job *, enum batch_op));
+extern int                   send_job(job *, pbs_net_t, int, int, void (*x)(), struct batch_request *);
+extern void                  set_resc_assigned(job *, enum batch_op);
 
-extern struct batch_request *cpy_stage A_((struct batch_request *, job *, enum job_atr, int));
-void                         stream_eof A_((int, u_long, int));
+extern struct batch_request *cpy_stage(struct batch_request *, job *, enum job_atr, int);
+void                         stream_eof(int, u_long, int);
 extern int                   job_set_wait(attribute *, void *, int);
-extern void                  stat_mom_job A_((job *));
+extern void                  stat_mom_job(job *);
 
 extern int LOGLEVEL;
 
 /* Public Functions in this file */
 
-int  svr_startjob A_((job *, struct batch_request *, char *, char *));
+int  svr_startjob(job *, struct batch_request *, char *, char *);
 
 /* Private Functions local to this file */
 
-static void post_sendmom A_((struct work_task *));
-static int  svr_stagein A_((job *, struct batch_request *, int, int));
-static int  svr_strtjob2 A_((job *, struct batch_request *));
-static job *chk_job_torun A_((struct batch_request *, int));
-static int  assign_hosts A_((job *, char *, int, char *, char *));
+static void post_sendmom(struct work_task *);
+static int  svr_stagein(job *, struct batch_request *, int, int);
+static int  svr_strtjob2(job *, struct batch_request *);
+static job *chk_job_torun(struct batch_request *, int);
+static int  assign_hosts(job *, char *, int, char *, char *);
 
 /* Global Data Items: */
 

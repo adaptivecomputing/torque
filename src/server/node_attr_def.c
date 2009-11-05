@@ -90,18 +90,18 @@
 /* External Functions Referenced */
 
 /*
-* extern int decode_state A_((struct attribute *patr, char *nam, char *rn, char *val));
-* extern int decode_props A_((struct attribute *patr, char *nam, char *rn, char *val));
-* extern int encode_state      A_((struct attribute *patr, tlist_head *ph, char *anm, char *rmn, int mode));
-* extern int encode_props      A_((struct attribute *patr, tlist_head *ph, char *anm, char *rmn, int mode));
-* extern int set_node_state    A_((attribute *patr, attribute *new, enum batch_op));
-* extern int set_node_props    A_((attribute *patr, attribute *new, enum batch_op));
-* extern int node_state        A_((attribute *patr, void *pobj, int actmode));
-* extern int node_np_action    A_((attribute *patr, void *pobj, int actmode));
-* extern int node_prop_list    A_((attribute *patr, void *pobj, int actmode));
-* extern void free_null      A_((attribute *patr));
-* extern void free_prop_attr   A_((attribute *patr));
-* extern int  comp_null      A_((attribute *patr, attribute *with));
+* extern int decode_state(struct attribute *patr, char *nam, char *rn, char *val);
+* extern int decode_props(struct attribute *patr, char *nam, char *rn, char *val);
+* extern int encode_state      (struct attribute *patr, tlist_head *ph, char *anm, char *rmn, int mode);
+* extern int encode_props      (struct attribute *patr, tlist_head *ph, char *anm, char *rmn, int mode);
+* extern int set_node_state    (attribute *patr, attribute *new, enum batch_op);
+* extern int set_node_props    (attribute *patr, attribute *new, enum batch_op);
+* extern int node_state        (attribute *patr, void *pobj, int actmode);
+* extern int node_np_action    (attribute *patr, void *pobj, int actmode);
+* extern int node_prop_list    (attribute *patr, void *pobj, int actmode);
+* extern void free_null      (attribute *patr);
+* extern void free_prop_attr   (attribute *patr);
+* extern int  comp_null      (attribute *patr, attribute *with);
 */
 
 

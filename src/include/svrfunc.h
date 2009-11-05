@@ -81,54 +81,54 @@
  * misc server function prototypes
  */
 
-extern int   chk_hold_priv A_((long hold, int priv));
-extern void  get_jobowner A_((char *from, char *to));
-extern char *parse_servername A_((char *, unsigned int *));
-extern void  process_Areply A_((int));
-extern void  process_Dreply A_((int));
-extern void  process_request A_((int));
-extern void  process_dis_request A_((int));
+extern int   chk_hold_priv(long hold, int priv);
+extern void  get_jobowner(char *from, char *to);
+extern char *parse_servername(char *, unsigned int *);
+extern void  process_Areply(int);
+extern void  process_Dreply(int);
+extern void  process_request(int);
+extern void  process_dis_request(int);
 extern int   save_flush();
-extern void  save_setup A_((int));
-extern int   save_struct A_((char *, unsigned int));
-extern void  schedule_job A_((void));
-extern char *site_map_user A_((char *, char *));
-extern int   socket_to_handle A_((int));
-extern void  svr_disconnect A_((int));
-extern int   svr_get_privilege A_((char *, char *));
-extern int   srv_shutdown A_((int));
-extern void  write_node_state A_((void));
-extern int  write_node_note A_((void));
-extern int   setup_nodes A_((void));
-extern int   node_avail A_((char *spec, int  *navail,
-                              int *nalloc, int *nreserved, int *ndown));
-extern void  node_unreserve A_((resource_t handle));
-extern int   node_reserve A_((char *speclist, resource_t tag));
-extern int   init_resc_defs A_((void));
+extern void  save_setup(int);
+extern int   save_struct(char *, unsigned int);
+extern void  schedule_job(void);
+extern char *site_map_user(char *, char *);
+extern int   socket_to_handle(int);
+extern void  svr_disconnect(int);
+extern int   svr_get_privilege(char *, char *);
+extern int   srv_shutdown(int);
+extern void  write_node_state(void);
+extern int  write_node_note(void);
+extern int   setup_nodes(void);
+extern int   node_avail(char *spec, int  *navail,
+                              int *nalloc, int *nreserved, int *ndown);
+extern void  node_unreserve(resource_t handle);
+extern int   node_reserve(char *speclist, resource_t tag);
+extern int   init_resc_defs(void);
 
 #ifdef PBS_JOB_H
-extern int   set_nodes A_((job *, char *, char **, char *, char *));
-extern int   is_ts_node A_((char *));
-extern char *find_ts_node A_((void));
-extern void  free_nodes A_((job *));
+extern int   set_nodes(job *, char *, char **, char *, char *);
+extern int   is_ts_node(char *);
+extern char *find_ts_node(void);
+extern void  free_nodes(job *);
 #endif /* PBS_JOB_H */
 
 #ifdef ATTRIBUTE_H
-extern int   check_que_enable A_((attribute *, void *, int));
-extern int   set_queue_type A_((attribute *, void *, int));
+extern int   check_que_enable(attribute *, void *, int);
+extern int   set_queue_type(attribute *, void *, int);
 #ifdef QUEUE_H
-extern int   chk_resc_limits A_((attribute *, pbs_queue *, char *));
+extern int   chk_resc_limits(attribute *, pbs_queue *, char *);
 #endif /* QUEUE_H */
 #endif /* ATTRIBUTE_H */
 
 #ifdef PBS_NET_H
-extern int   svr_connect A_((pbs_net_t, unsigned int, void (*)(int), enum conn_type));
+extern int   svr_connect(pbs_net_t, unsigned int, void (*)(int), enum conn_type);
 #endif /* PBS_NET_H */
 
 #ifdef WORK_TASK_H
-extern void  release_req A_((struct work_task *));
+extern void  release_req(struct work_task *);
 #ifdef BATCH_REQUEST_H
-extern int   issue_Drequest A_((int, struct batch_request *, void (*)(), struct work_task **));
+extern int   issue_Drequest(int, struct batch_request *, void (*)(), struct work_task **);
 #endif /* BATCH_REQUEST_H */
 #endif /* WORK_TASK_H */
 
@@ -158,11 +158,11 @@ struct stat_cntl    /* used in req_stat_job */
   struct batch_request *sc_origrq;
 
   struct select_list   *sc_select;
-  void (*sc_post) A_((struct stat_cntl *));
+  void (*sc_post)(struct stat_cntl *);
   char        sc_jobid[PBS_MAXSVRJOBID+1];
   };
 
-extern int stat_to_mom A_((job *, struct stat_cntl *));
+extern int stat_to_mom(job *, struct stat_cntl *);
 
 #endif /* STAT_CNTL */
 

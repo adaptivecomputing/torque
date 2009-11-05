@@ -106,8 +106,8 @@
 
 /* Private Functions Local to this file */
 
-static void process_checkpoint_reply A_((struct work_task *));
-static void process_hold_reply A_((struct work_task *));
+static void process_checkpoint_reply(struct work_task *);
+static void process_hold_reply(struct work_task *);
 
 /* Global Data Items: */
 
@@ -118,8 +118,8 @@ extern char *msg_mombadhold;
 extern char *msg_postmomnojob;
 extern time_t  time_now;
 
-int chk_hold_priv A_((long val, int perm));
-int get_hold A_((tlist_head *, char **, attribute *));
+int chk_hold_priv(long val, int perm);
+int get_hold(tlist_head *, char **, attribute *);
 
 
 

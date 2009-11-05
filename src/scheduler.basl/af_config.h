@@ -91,21 +91,21 @@
 
 /* External Functions */
 extern int
-  addClient A_((char *name));
+  addClient(char *name);
 
 extern void
-  okClientPrint A_((void));
+  okClientPrint(void);
 
 extern int
-  validateClient A_((void *saddr));
+  validateClient(void *saddr);
 
 extern void
-  freeClients A_((void));
+  freeClients(void);
 
 extern void
-  freeConfig A_((void));
+  freeConfig(void);
 
 extern int
-  readConfig A_((char *file));
+  readConfig(char *file);
 
 #endif /* _AF_CONFIG_H */

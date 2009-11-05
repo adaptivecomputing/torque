@@ -185,11 +185,11 @@ struct pbs_queue
 
 typedef struct pbs_queue pbs_queue;
 
-extern pbs_queue *find_queuebyname A_((char *));
+extern pbs_queue *find_queuebyname(char *);
 extern pbs_queue *get_dfltque();
-extern pbs_queue *que_alloc A_((char *name));
-extern void   que_free A_((pbs_queue *));
-extern pbs_queue *que_recov A_((char *));
-extern int    que_save A_((pbs_queue *));
+extern pbs_queue *que_alloc(char *name);
+extern void   que_free(pbs_queue *);
+extern pbs_queue *que_recov(char *);
+extern int    que_save(pbs_queue *);
 
 #endif /* QUEUE_H */

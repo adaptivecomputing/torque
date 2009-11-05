@@ -163,46 +163,46 @@ static struct CNodeAttrInfo dynamic_attrinfo_map[] =
 
 /* External Functions */
 extern int
-  nodeAttrCmpNoTag A_((char *attr1, char *attr2));
+  nodeAttrCmpNoTag(char *attr1, char *attr2);
 
 extern char *
-  parseAttrForTag A_((char *attName));
+  parseAttrForTag(char *attName);
 
 extern char *
-  getStaticAttrAtIndex A_((int index, int *type, void (**putfunc)()));
+  getStaticAttrAtIndex(int index, int *type, void (**putfunc)());
 
 extern char *
-  getDynamicAttrAtIndex A_((int index, int *type, void (**putfunc)()));
+  getDynamicAttrAtIndex(int index, int *type, void (**putfunc)());
 
 extern int
-  getAttrType A_((char *attName));
+  getAttrType(char *attName);
 
 extern void
-  (*getAttrPutFunc A_((char *attName)))();
+  (*getAttrPutFunc(char *attName))();
 
 extern int
-  getAttrVectorFlg A_((char *attName));
+  getAttrVectorFlg(char *attName);
 
 extern void
-  attrInfoMapPrint A_((void));
+  attrInfoMapPrint(void);
 
 /* Res stuff */
 extern int
-  addRes A_((char *archType, char *nodeAttr, char *hostQuery));
+  addRes(char *archType, char *nodeAttr, char *hostQuery);
 
 extern struct Resource **
-        getResPtr A_((char *archType, char *nodeAttr));
+        getResPtr(char *archType, char *nodeAttr);
 
 extern char *
-  getNodeAttrGivenResPtr A_((struct Resource *resptr));
+  getNodeAttrGivenResPtr(struct Resource *resptr);
 
 extern char *
-  getHostQueryKeywordGivenResPtr A_((struct Resource *resptr));
+  getHostQueryKeywordGivenResPtr(struct Resource *resptr);
 
 extern void
-  ResPrint A_((void));
+  ResPrint(void);
 
 extern void
-  ResFree A_((void));
+  ResFree(void);
 
 #endif  /* _AF_CNODEMAP_H */

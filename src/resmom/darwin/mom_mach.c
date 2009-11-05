@@ -168,9 +168,9 @@ typedef struct kinfo_proc kinfo_proc;
 ** external functions and data
 */
 
-extern struct  config *search A_((struct config *, char *));
+extern struct  config *search(struct config *, char *);
 
-extern struct  rm_attribute *momgetattr A_((char *));
+extern struct  rm_attribute *momgetattr(char *);
 extern int     rm_errno;
 extern unsigned int  reqnum;
 extern double cputfactor;
@@ -188,8 +188,8 @@ extern  char   *msg_momsetlim;
 
 extern  time_t  time_now;
 
-extern char *loadave A_((struct rm_attribute *attrib));
-extern char *nullproc A_((struct rm_attribute *attrib));
+extern char *loadave(struct rm_attribute *attrib);
+extern char *nullproc(struct rm_attribute *attrib);
 
 extern int errno;
 
@@ -197,19 +197,19 @@ extern int errno;
 ** local functions
 */
 
-static char *resi A_((struct rm_attribute *attrib));
-static char *physmem A_((struct rm_attribute *attrib));
-static char *walltime A_((struct rm_attribute *attrib));
-static char *quota A_((struct rm_attribute *attrib));
-static char *ncpus A_((struct rm_attribute *attrib));
-static char *totmem A_((struct rm_attribute *attrib));
-static char *availmem A_((struct rm_attribute *attrib));
-static char *netload A_((struct rm_attribute *attrib));
-static int   get_tinfo_by_pid  A_((struct task_basic_info *t_info,
-                                   unsigned int pid));
-static int   get_time_info_by_pid  A_((struct task_thread_times_info *t_info,
-                                       unsigned int pid));
-static kinfo_proc *get_bsd_process_list A_((int *procCount));
+static char *resi(struct rm_attribute *attrib);
+static char *physmem(struct rm_attribute *attrib);
+static char *walltime(struct rm_attribute *attrib);
+static char *quota(struct rm_attribute *attrib);
+static char *ncpus(struct rm_attribute *attrib);
+static char *totmem(struct rm_attribute *attrib);
+static char *availmem(struct rm_attribute *attrib);
+static char *netload(struct rm_attribute *attrib);
+static int  get_tinfo_by_pid(struct task_basic_info *t_info,
+                                   unsigned int pid);
+static int  get_time_info_by_pid(struct task_thread_times_info *t_info,
+                                       unsigned int pid);
+static kinfo_proc *get_bsd_process_list(int *procCount);
 
 struct config dependent_config[] =
   {

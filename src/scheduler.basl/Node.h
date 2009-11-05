@@ -94,25 +94,6 @@
 #define _POSIX_SOURCE 1
 #endif  /* _POSIX_SOURCE */
 
-#if __STDC__ == 1
-/*
- * The following macro definations take affect when compiling under ansi C
- *
- * The A_ macro is provided for function prototype declarations.  It allows
- * ANSI C prototypes to be complied under K&R C
- */
-
-#define A_(x) x
-
-#else
-/* The following macro definations take affect when compiling under K&R C */
-
-#define const
-#define volatile
-#define A_(x) ()
-
-#endif  /* __STDC__ */
-
 #include "ParLexGlob.h"
 
 struct FUNDESCR
@@ -144,81 +125,81 @@ typedef struct Node *Np;
 /*prototypes*/
 
 extern void
-  NodePutDF A_((int df));
+  NodePutDF(int df);
 
 extern void
-  NodeCondPrint A_((char *str));
+  NodeCondPrint(char *str);
 
 extern Np
-  NodeNew A_((char *lexem, int typ, int lin, int leve, int funFla));
+  NodeNew(char *lexem, int typ, int lin, int leve, int funFla);
 
 extern void
-  NodePrint A_((Np xp));
+  NodePrint(Np xp);
 
 extern void
-  NodePrint2 A_((Np xp));
+  NodePrint2(Np xp);
 
 extern void
-  NodeFunDescrPrint A_((Np nx));
+  NodeFunDescrPrint(Np nx);
 
 extern Np
-  NodeFunDescrFindByLexeme A_((Np nx, char *lexem));
+  NodeFunDescrFindByLexeme(Np nx, char *lexem);
 
 extern void
-  NodeInit A_((Np nx, char *lexem, int typ, int lin, int leve, int funFla));
+  NodeInit(Np nx, char *lexem, int typ, int lin, int leve, int funFla);
 
 extern int
-  NodeCmp A_((Np xp, char *lexem));
+  NodeCmp(Np xp, char *lexem);
 
 extern void
-  NodeErr A_((int e));
+  NodeErr(int e);
 
 extern char *
-  NodeGetLexeme A_((Np nxp));
+  NodeGetLexeme(Np nxp);
 
 extern int
-  NodeGetType A_((Np nxp));
+  NodeGetType(Np nxp);
 
 extern int
-  NodeGetLineDef A_((Np nxp));
+  NodeGetLineDef(Np nxp);
 
 extern int
-  NodeGetLevel A_((Np nxp));
+  NodeGetLevel(Np nxp);
 
 extern int
-  NodeGetFunFlag A_((Np nxp));
+  NodeGetFunFlag(Np nxp);
 
 extern int
-  NodeGetParamCnt A_((Np nxp));
+  NodeGetParamCnt(Np nxp);
 
 extern Np
-  NodeGetParamPtr A_((Np nxp));
+  NodeGetParamPtr(Np nxp);
 
 extern void
-  NodePutLexeme A_((Np nxp, char *lexem));
+  NodePutLexeme(Np nxp, char *lexem);
 
 extern void
-  NodePutType A_((Np nxp, int typ));
+  NodePutType(Np nxp, int typ);
 
 extern void
-  NodePutLineDef A_((Np nxp, int lin));
+  NodePutLineDef(Np nxp, int lin);
 
 extern void
-  NodePutLevel A_((Np nxp, int leve));
+  NodePutLevel(Np nxp, int leve);
 
 extern void
-  NodePutFunFlag A_((Np nxp, int funFla));
+  NodePutFunFlag(Np nxp, int funFla);
 
 extern void
-  NodePutParamCnt A_((Np nxp, int paramCn));
+  NodePutParamCnt(Np nxp, int paramCn);
 
 extern void
-  NodePutParamPtr A_((Np nxp, Np paramPt));
+  NodePutParamPtr(Np nxp, Np paramPt);
 
 extern void
-  NodeParamCntIncr A_((Np nxp));
+  NodeParamCntIncr(Np nxp);
 
 extern void
-  NodeParamCntDecr A_((Np nxp));
+  NodeParamCntDecr(Np nxp);
 
 #endif /* _NODE_H */

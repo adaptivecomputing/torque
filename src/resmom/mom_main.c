@@ -608,13 +608,13 @@ const char *PBSServerCmds[] =
 ** These routines are in the "dependent" code.
 */
 
-extern void dep_initialize A_((void));
-extern void dep_cleanup A_((void));
+extern void dep_initialize(void);
+extern void dep_cleanup(void);
 
 /* External Functions */
 
-extern void catch_child A_((int));
-extern void init_abort_jobs A_((int));
+extern void catch_child(int);
+extern void init_abort_jobs(int);
 extern void scan_for_exiting();
 extern void scan_for_terminated();
 extern int TMomCheckJobChild(pjobexec_t *, int, int *, int *);
@@ -626,14 +626,14 @@ extern void DIS_tcp_funcs();
 
 /* Local public functions */
 
-static void stop_me A_((int));
-static void PBSAdjustLogLevel A_((int));
+static void stop_me(int);
+static void PBSAdjustLogLevel(int);
 int         TMOMScanForStarting(void);
 
 
 /* Local private functions */
 
-void check_log A_((void));
+void check_log(void);
 
 
 
@@ -1369,9 +1369,9 @@ DIS_rpp_reset(void)
   if (dis_getc != rpp_getc)
     {
     dis_getc = rpp_getc;
-    dis_puts = (int (*) A_((int, const char *, size_t)))rpp_write;
-    dis_gets = (int (*) A_((int, char *, size_t)))rpp_read;
-    disr_skip   = (int (*) A_((int, size_t)))rpp_skip;
+    dis_puts = (int (*)(int, const char *, size_t))rpp_write;
+    dis_gets = (int (*)(int, char *, size_t))rpp_read;
+    disr_skip   = (int (*)(int, size_t))rpp_skip;
 
     disr_commit = rpp_rcommit;
     disw_commit = rpp_wcommit;
@@ -4254,8 +4254,8 @@ int rm_request(
   struct sockaddr_in *addr;
   unsigned long ipadd;
   u_short port;
-  void (*close_io) A_((int));
-  int (*flush_io) A_((int));
+  void (*close_io)(int);
+  int (*flush_io)(int);
 
   extern struct connection svr_conn[];
 
@@ -4281,7 +4281,7 @@ int rm_request(
     ipadd = ntohl(addr->sin_addr.s_addr);
     port = ntohs((unsigned short)addr->sin_port);
 
-    close_io = (void(*) A_((int)))rpp_close;
+    close_io = (void(*)(int))rpp_close;
     flush_io = rpp_flush;
     }
 
@@ -5236,9 +5236,9 @@ void do_rpp(
   static char  id[] = "do_rpp";
 
   int             ret, proto, version;
-  void im_request A_((int, int));
-  void is_request A_((int, int, int *));
-  void im_eof     A_((int, int));
+  void im_request(int, int);
+  void is_request(int, int, int *);
+  void im_eof(int, int);
 
   DIS_rpp_reset();
   proto = disrsi(stream, &ret);
@@ -5399,7 +5399,7 @@ int do_tcp(
 #endif
 
   int ret, proto, version;
-  int tm_request A_((int stream, int version));
+  int tm_request(int stream, int version);
 
   time_t tmpT;
 

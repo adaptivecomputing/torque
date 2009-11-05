@@ -107,22 +107,22 @@
 
 /* External Functions */
 extern int
-  openrm  A_((char * host, unsigned int port));
+  openrm(char * host, unsigned int port);
 
 extern int
-  closerm  A_((int));
+  closerm(int);
 
 extern int
-  addreq          A_((int, char *));
+  addreq(int, char *);
 
 extern char *
-  getreq          A_((int));
+  getreq(int);
 
 extern int
-  activereq       A_((void));
+  activereq(void);
 
 extern void
-  fullresp       A_((int flag));
+  fullresp(int flag);
 
 /* Structures and Unions */
 /* NONE */

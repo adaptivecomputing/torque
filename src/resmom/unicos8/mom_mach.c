@@ -306,9 +306,9 @@ extern char *path_checkpoint;
 ** external functions and data
 */
 
-extern struct config  *search A_((struct config *, char *));
+extern struct config  *search(struct config *, char *);
 
-extern struct rm_attribute *momgetattr A_((char *));
+extern struct rm_attribute *momgetattr(char *);
 extern int   rm_errno;
 extern unsigned int reqnum;
 extern char   *ret_string;
@@ -321,26 +321,26 @@ extern  int     igncput;
 /*
 ** local functions and data
 */
-static char *ncpus   A_((struct rm_attribute *attrib));
-static char *totmem  A_((struct rm_attribute *attrib));
-static char *availmem A_((struct rm_attribute *attrib));
-static char *physmem A_((struct rm_attribute *attrib));
-static char *quota  A_((struct rm_attribute *attrib));
-static char *srfs_reserve A_((struct rm_attribute *attrib));
-static char *swaprate A_((struct rm_attribute *attrib));
-static char *swapinrate A_((struct rm_attribute *attrib));
-static char *swapoutrate A_((struct rm_attribute *attrib));
-static char *swapused A_((struct rm_attribute *attrib));
-static char *swapavail A_((struct rm_attribute *attrib));
-static char *swaptotal A_((struct rm_attribute *attrib));
-static char *cpuidle A_((struct rm_attribute *attrib));
-static char *cpuguest A_((struct rm_attribute *attrib));
-static char *cpuuser A_((struct rm_attribute *attrib));
-static char *cpuunix A_((struct rm_attribute *attrib));
-static char *cpusysw A_((struct rm_attribute *attrib));
+static char *ncpus(struct rm_attribute *attrib);
+static char *totmem(struct rm_attribute *attrib);
+static char *availmem(struct rm_attribute *attrib);
+static char *physmem(struct rm_attribute *attrib);
+static char *quota(struct rm_attribute *attrib);
+static char *srfs_reserve(struct rm_attribute *attrib);
+static char *swaprate(struct rm_attribute *attrib);
+static char *swapinrate(struct rm_attribute *attrib);
+static char *swapoutrate(struct rm_attribute *attrib);
+static char *swapused(struct rm_attribute *attrib);
+static char *swapavail(struct rm_attribute *attrib);
+static char *swaptotal(struct rm_attribute *attrib);
+static char *cpuidle(struct rm_attribute *attrib);
+static char *cpuguest(struct rm_attribute *attrib);
+static char *cpuuser(struct rm_attribute *attrib);
+static char *cpuunix(struct rm_attribute *attrib);
+static char *cpusysw(struct rm_attribute *attrib);
 
-extern char *loadave A_((struct rm_attribute *attrib));
-extern char *nullproc A_((struct rm_attribute *attrib));
+extern char *loadave(struct rm_attribute *attrib);
+extern char *nullproc(struct rm_attribute *attrib);
 
 extern char extra_parm[];
 extern char no_parm[];

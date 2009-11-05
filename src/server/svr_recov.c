@@ -142,7 +142,7 @@ int svr_recov(
   int i;
   int sdb;
 
-  void recov_acl A_((attribute *, attribute_def *, char *, char *));
+  void recov_acl(attribute *, attribute_def *, char *, char *);
 
   sdb = open(svrfile, O_RDONLY, 0);
 
@@ -261,7 +261,7 @@ int svr_save(
   static char *this_function_name = "svr_save";
   int i;
   int sdb;
-  int save_acl A_((attribute *, attribute_def *, char *, char *));
+  int save_acl(attribute *, attribute_def *, char *, char *);
 
 
   if (mode == SVR_SAVE_QUICK)

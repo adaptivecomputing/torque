@@ -90,7 +90,7 @@ struct rm_attribute
 ** for the name in question.
 */
 
-typedef char *(*confunc) A_((struct rm_attribute *));
+typedef char *(*confunc)(struct rm_attribute *);
 
 struct config
   {

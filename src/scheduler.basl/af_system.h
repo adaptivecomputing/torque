@@ -94,15 +94,15 @@
 
 /* External Functions */
 extern void
-  SystemInit A_((int argc, char *argv[]));
+  SystemInit(int argc, char *argv[]);
 
 extern void
-  SystemStateRead A_((void (*sched_main)()));
+  SystemStateRead(void (*sched_main)());
 
 extern void
-  SystemCloseServers A_((void));
+  SystemCloseServers(void);
 
 extern void
-  SystemClose A_((void));
+  SystemClose(void);
 
 #endif  /* _AF_SYSTEM_H */

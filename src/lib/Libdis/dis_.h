@@ -84,19 +84,19 @@
 
 #define DIS_BUFSIZ (CHAR_BIT * sizeof(ULONG_MAX))
 
-char *discui_ A_((char *cp, unsigned value, unsigned *ndigs));
-char *discul_ A_((char *cp, unsigned long value, unsigned *ndigs));
+char *discui_(char *cp, unsigned value, unsigned *ndigs);
+char *discul_(char *cp, unsigned long value, unsigned *ndigs);
 void disi10d_();
 void disi10l_();
-void disiui_ A_((void));
-double disp10d_ A_((int expon));
-dis_long_double_t disp10l_ A_((int expon));
-int disrl_ A_((int stream, dis_long_double_t *ldval, unsigned *ndigs,
-               unsigned *nskips, unsigned sigd, unsigned count));
-int disrsi_ A_((int stream, int *negate, unsigned *value, unsigned count));
-int disrsl_ A_((int stream, int *negate, unsigned long *value,
-                unsigned long count));
-int diswui_ A_((int stream, unsigned value));
+void disiui_(void);
+double disp10d_(int expon);
+dis_long_double_t disp10l_(int expon);
+int disrl_(int stream, dis_long_double_t *ldval, unsigned *ndigs,
+               unsigned *nskips, unsigned sigd, unsigned count);
+int disrsi_(int stream, int *negate, unsigned *value, unsigned count);
+int disrsl_(int stream, int *negate, unsigned long *value,
+                unsigned long count);
+int diswui_(int stream, unsigned value);
 
 extern unsigned dis_dmx10;
 extern double *dis_dp10;

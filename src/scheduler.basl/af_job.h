@@ -169,188 +169,188 @@ typedef struct setJob_struct SetJob;
 /* External Functions */
 /* GET functions: ======================================================= */
 extern char *
-  JobIdGet A_((Job *job));
+  JobIdGet(Job *job);
 
 extern char *
-  JobNameGet A_((Job *job));
+  JobNameGet(Job *job);
 
 extern char *
-  JobOwnerNameGet A_((Job *job));
+  JobOwnerNameGet(Job *job);
 
 extern char *
-  JobEffectiveUserNameGet A_((Job *job));
+  JobEffectiveUserNameGet(Job *job);
 
 extern char *
-  JobEffectiveGroupNameGet A_((Job *job));
+  JobEffectiveGroupNameGet(Job *job);
 
 extern int
-  JobStateGet A_((Job *job));
+  JobStateGet(Job *job);
 
 extern int
-  JobPriorityGet A_((Job *job));
+  JobPriorityGet(Job *job);
 
 extern int
-  JobRerunFlagGet A_((Job *job));
+  JobRerunFlagGet(Job *job);
 
 extern int
-  JobInteractiveFlagGet A_((Job *job));
+  JobInteractiveFlagGet(Job *job);
 
 extern DateTime
-  JobDateTimeCreatedGet A_((Job *job));
+  JobDateTimeCreatedGet(Job *job);
 
 extern char *
-  JobEmailAddrGet A_((Job *job));
+  JobEmailAddrGet(Job *job);
 
 extern void *
-  JobServerGet A_((Job *job));
+  JobServerGet(Job *job);
 
 extern void *
-  JobQueueGet A_((Job *job));
+  JobQueueGet(Job *job);
 
 extern int
-  JobRefCntGet A_((Job *job));
+  JobRefCntGet(Job *job);
 
 extern char *
-  JobStageinFilesGet A_((Job *job));
+  JobStageinFilesGet(Job *job);
 
 extern char *
-  JobStageoutFilesGet A_((Job *job));
+  JobStageoutFilesGet(Job *job);
 
 extern int
-  JobIntResReqGet A_((Job *job, char *name));
+  JobIntResReqGet(Job *job, char *name);
 
 extern Size
-  JobSizeResReqGet A_((Job *job, char *name));
+  JobSizeResReqGet(Job *job, char *name);
 
 extern char *
-  JobStringResReqGet A_((Job *job, char *name));
+  JobStringResReqGet(Job *job, char *name);
 
 extern int
-  JobIntResUseGet A_((Job *job, char *name));
+  JobIntResUseGet(Job *job, char *name);
 
 extern Size
-  JobSizeResUseGet A_((Job *job, char *name));
+  JobSizeResUseGet(Job *job, char *name);
 
 extern char *
-  JobStringResUseGet A_((Job *job, char *name));
+  JobStringResUseGet(Job *job, char *name);
 
 /* PUT functions: ======================================================= */
 extern void
-  JobIdPut A_((Job *job, char *jobId));
+  JobIdPut(Job *job, char *jobId);
 
 extern void
-  JobNamePut A_((Job *job, char *jobName));
+  JobNamePut(Job *job, char *jobName);
 
 extern void
-  JobOwnerNamePut A_((Job *job, char *ownerName));
+  JobOwnerNamePut(Job *job, char *ownerName);
 
 extern void
-  JobEffectiveUserNamePut A_((Job *job, char *effectiveUserName));
+  JobEffectiveUserNamePut(Job *job, char *effectiveUserName);
 
 extern void
-  JobEffectiveGroupNamePut A_((Job *job, char *groupName));
+  JobEffectiveGroupNamePut(Job *job, char *groupName);
 
 extern void
-  JobStatePut A_((Job *job, int state));
+  JobStatePut(Job *job, int state);
 
 extern void
-  JobPriorityPut A_((Job *job, int priority));
+  JobPriorityPut(Job *job, int priority);
 
 extern void
-  JobRerunFlagPut A_((Job *job, int rerunFlag));
+  JobRerunFlagPut(Job *job, int rerunFlag);
 
 extern void
-  JobInteractiveFlagPut A_((Job *job, int interactiveFlag));
+  JobInteractiveFlagPut(Job *job, int interactiveFlag);
 
 extern void
-  JobDateTimeCreatedPut A_((Job *job, DateTime cdate));
+  JobDateTimeCreatedPut(Job *job, DateTime cdate);
 
 extern void
-  JobEmailAddrPut A_((Job *job, char *emailAddr));
+  JobEmailAddrPut(Job *job, char *emailAddr);
 
 extern void
-  JobServerPut A_((Job *job, void *server));
+  JobServerPut(Job *job, void *server);
 
 extern void
-  JobQueuePut A_((Job *job, void *queue));
+  JobQueuePut(Job *job, void *queue);
 
 extern void
-  JobRefCntPut A_((Job *job, int refCnt));
+  JobRefCntPut(Job *job, int refCnt);
 
 extern void
-  JobStageinFilesPut A_((Job *job, char *stagein));
+  JobStageinFilesPut(Job *job, char *stagein);
 
 extern void
-  JobStageoutFilesPut A_((Job *job, char *stageout));
+  JobStageoutFilesPut(Job *job, char *stageout);
 
 extern void
-  JobIntResReqPut A_((Job *job, char *name, int value));
+  JobIntResReqPut(Job *job, char *name, int value);
 
 extern void
-  JobSizeResReqPut A_((Job *job, char *name, Size value));
+  JobSizeResReqPut(Job *job, char *name, Size value);
 
 extern void
-  JobStringResReqPut A_((Job *job, char *name, char *value));
+  JobStringResReqPut(Job *job, char *name, char *value);
 
 extern void
-  JobIntResUsePut A_((Job *job, char *name, int value));
+  JobIntResUsePut(Job *job, char *name, int value);
 
 extern void
-  JobSizeResUsePut A_((Job *job, char *name, Size value));
+  JobSizeResUsePut(Job *job, char *name, Size value);
 
 extern void
-  JobStringResUsePut A_((Job *job, char *name, char *value));
+  JobStringResUsePut(Job *job, char *name, char *value);
 
 /* Set of Jobs abstractions */
 extern void
-  SetJobInit A_((SetJob *sjob));
+  SetJobInit(SetJob *sjob);
 
 extern void
-  SetJobAdd A_((SetJob *sjob, Job *job));
+  SetJobAdd(SetJob *sjob, Job *job);
 
 extern int
-  SetJobSortInt A_((struct SetJobElement *sje, int (*key)(), int order));
+  SetJobSortInt(struct SetJobElement *sje, int (*key)(), int order);
 
 extern int
-  SetJobSortStr A_((struct SetJobElement *sje, char *(*key)(), int order));
+  SetJobSortStr(struct SetJobElement *sje, char *(*key)(), int order);
 
 extern int
-  SetJobSortDateTime A_((struct SetJobElement *sje, DateTime(*key)(), int order));
+  SetJobSortDateTime(struct SetJobElement *sje, DateTime(*key)(), int order);
 
 extern int
-  SetJobSortSize A_((struct SetJobElement *sje, Size(*key)(), int order));
+  SetJobSortSize(struct SetJobElement *sje, Size(*key)(), int order);
 
 extern int
-  SetJobSortFloat A_((struct SetJobElement *s, double(*key)(), int order));
+  SetJobSortFloat(struct SetJobElement *s, double(*key)(), int order);
 
 extern void
-  SetJobRemove A_((SetJob *sjob, Job *job));
+  SetJobRemove(SetJob *sjob, Job *job);
 
 extern void
-  SetJobFree A_((SetJob *sjob));
+  SetJobFree(SetJob *sjob);
 
 extern void
-  SetJobPrint A_((struct SetJobElement    *sje));
+  SetJobPrint(struct SetJobElement    *sje);
 
 extern int
-  inSetJob A_((Job *job, struct SetJobElement *sje));
+  inSetJob(Job *job, struct SetJobElement *sje);
 /* MISC functions: ======================================================= */
 extern void
-  firstJobPtr A_((struct SetJobElement **sjeptr, struct SetJobElement *first));
+  firstJobPtr(struct SetJobElement **sjeptr, struct SetJobElement *first);
 
 extern void
-  nextJobPtr A_((struct SetJobElement **sjeptr));
+  nextJobPtr(struct SetJobElement **sjeptr);
 
 extern void
-  JobPrint A_((Job *job));
+  JobPrint(Job *job);
 
 extern void
-  JobInit  A_((Job *job));
+  JobInit(Job *job);
 
 extern void
-  JobFree  A_((Job *job));
+  JobFree(Job *job);
 
 extern int
-  strToJobState A_((char *val));
+  strToJobState(char *val);
 
 #endif /* _AF_JOB_H */

@@ -94,8 +94,8 @@
 #include "libpbs.h"
 #include "dis.h"
 
-static int PBSD_select_put A_((int, int, struct attropl *, char *));
-static char **PBSD_select_get A_((int));
+static int PBSD_select_put(int, int, struct attropl *, char *);
+static char **PBSD_select_get(int);
 
 char **
 pbs_selectjob(int c, struct attropl *attrib, char *extend)

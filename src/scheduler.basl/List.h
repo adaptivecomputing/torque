@@ -94,25 +94,6 @@
 #define _POSIX_SOURCE 1
 #endif  /* _POSIX_SOURCE */
 
-#if __STDC__ == 1
-/*
- * The following macro definations take affect when compiling under ansi C
- *
- * The A_ macro is provided for function prototype declarations.  It allows
- * ANSI C prototypes to be complied under K&R C
- */
-
-#define A_(x) x
-
-#else
-/* The following macro definations take affect when compiling under K&R C */
-
-#define const
-#define volatile
-#define A_(x) ()
-
-#endif  /* __STDC__ */
-
 #include "Node.h"
 
 typedef Np List;
@@ -120,75 +101,75 @@ typedef Np List;
 /*prototypes*/
 
 extern void
-  ListPutDF A_((int df));
+  ListPutDF(int df);
 
 extern void
-  ListCondPrint A_((char *str));
+  ListCondPrint(char *str);
 
 extern int
-  ListIsEmpty A_((List L));
+  ListIsEmpty(List L);
 
 extern void
-  ListPrint A_((List L));
+  ListPrint(List L);
 
 extern void
-  ListErr A_((int e));
+  ListErr(int e);
 
 extern List
-  ListInsertFront A_((List L, Np nxp));
+  ListInsertFront(List L, Np nxp);
 
 extern List
-  ListInsertSortedN A_((List L, Np nxp));
+  ListInsertSortedN(List L, Np nxp);
 
 extern List
-  ListInsertSortedD A_((List L, char * lexem, int typ, int LineDe, int leve, int funFlag));
+  ListInsertSortedD(List L, char * lexem, int typ, int LineDe, int leve, int funFlag);
 
 extern int
-  ListIsMember A_((List L, Np nxp));
+  ListIsMember(List L, Np nxp);
 
 extern Np
-  ListGetLast A_((List L));
+  ListGetLast(List L);
 
 extern Np
-  ListGetSucc A_((List L, Np nxp));
+  ListGetSucc(List L, Np nxp);
 
 extern List
-  ListDelete A_((List L));
+  ListDelete(List L);
 
 extern List
-  ListDeleteNode A_((List L, Np nxp));
+  ListDeleteNode(List L, Np nxp);
 
 extern Np
-  ListFindNodeByLexeme A_((List L, char * lexem));
+  ListFindNodeByLexeme(List L, char * lexem);
 
 extern Np
-  ListFindNodeByLexemeInLevel A_((List L, char * lexem, int leve));
+  ListFindNodeByLexemeInLevel(List L, char * lexem, int leve);
 
 extern Np
-  ListFindNodeByLexemeInLine A_((List L, char * lexem, int line));
+  ListFindNodeByLexemeInLine(List L, char * lexem, int line);
 
 extern Np
-  ListMatchNodeByLexemeInLine A_((List L, char * lexem, int line));
+  ListMatchNodeByLexemeInLine(List L, char * lexem, int line);
 
 extern Np
-  ListFindNodeBeforeLexemeInLine A_((List L, char * lexem, int line));
+  ListFindNodeBeforeLexemeInLine(List L, char * lexem, int line);
 
 extern Np
-  ListMatchNodeBeforeLexemeInLine A_((List L, char * lexem, int line));
+  ListMatchNodeBeforeLexemeInLine(List L, char * lexem, int line);
 
 extern Np
-  ListFindNodeByLexemeAndTypeInLevel A_((List L, char * lexem, int leve, int type, int (*compare_func)()));
+  ListFindNodeByLexemeAndTypeInLevel(List L, char * lexem, int leve, int type, int (*compare_func)());
 
 extern Np
-  ListFindAnyNodeInLevelOfType A_((List L, int leve, int type));
+  ListFindAnyNodeInLevelOfType(List L, int leve, int type);
 
 extern List
-  ListDeleteLevel A_((List L, int leve));
+  ListDeleteLevel(List L, int leve);
 
 extern void
-  ListParamLink A_((Np tailnp, Np newnp));
+  ListParamLink(Np tailnp, Np newnp);
 
 extern Np
-  ListFindFunProtoByLexemeInProg A_((List L, char * lexem));
+  ListFindFunProtoByLexemeInProg(List L, char * lexem);
 
 #endif /* _LIST_H */

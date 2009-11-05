@@ -101,50 +101,31 @@
 #define _POSIX_SOURCE 1
 #endif  /* _POSIX_SOURCE */
 
-#if __STDC__ == 1
-/*
- * The following macro definations take affect when compiling under ansi C
- *
- * The A_ macro is provided for function prototype declarations.  It allows
- * ANSI C prototypes to be complied under K&R C
- */
-
-#define A_(x) x
-
-#else
-/* The following macro definations take affect when compiling under K&R C */
-
-#define const
-#define volatile
-#define A_(x) ()
-
-#endif  /* __STDC__ */
-
 #include "ParLexGlob.h"
 
 /*prototypes*/
 
 extern void
-  LexerInit A_((void));
+  LexerInit(void);
 
 extern void
-  LexerPutDF A_((int df));
+  LexerPutDF(int df);
 
 extern void
-  LexerCondPrint A_((char *str));
+  LexerCondPrint(char *str);
 
 extern void
-  LexerPrint A_((void));
+  LexerPrint(void);
 
 extern void
-  LexerErr A_((int e));
+  LexerErr(int e);
 
 extern void
-  LexerTokenPut A_((char *lexem, int lin, int len, int typ, int symbolFlag));
+  LexerTokenPut(char *lexem, int lin, int len, int typ, int symbolFlag);
 
 extern void
-  LexerPrintToken A_((int linenum, char *yytext, int yylen));
+  LexerPrintToken(int linenum, char *yytext, int yylen);
 
 extern void
-  LexerPrintToken2 A_((struct MYTOK tok));
+  LexerPrintToken2(struct MYTOK tok);
 #endif /* _LEXER_H */

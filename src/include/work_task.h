@@ -114,18 +114,18 @@ struct work_task
   list_link  wt_linkobj; /* link to others of same object */
   long   wt_event; /* event id: time, pid, socket, ... */
   enum work_type  wt_type; /* type of event */
-  void (*wt_func) A_((struct work_task *));
+  void (*wt_func)(struct work_task *);
   /* function to perform task */
   void  *wt_parm1; /* obj pointer for use by func */
   void  *wt_parm2; /* optional pointer for use by func */
-  void (*wt_parmfunc) A_((struct work_task *));
+  void (*wt_parmfunc)(struct work_task *);
   /* used in reissue_to_svr to store wt_func */
   int   wt_aux; /* optional info: e.g. child status */
   };
 
-extern struct work_task *set_task A_((enum work_type, long event, void (*func)(), void *param));
-extern void clear_task A_((struct work_task *ptask));
-extern void dispatch_task A_((struct work_task *));
-extern void delete_task A_((struct work_task *ptask));
+extern struct work_task *set_task(enum work_type, long event, void (*func)(), void *param);
+extern void clear_task(struct work_task *ptask);
+extern void dispatch_task(struct work_task *);
+extern void delete_task(struct work_task *ptask);
 
 #endif /* WORK_TASK_H */

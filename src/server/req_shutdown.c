@@ -104,9 +104,9 @@
 
 /* Private Fuctions Local to this File */
 
-static int shutdown_checkpoint A_((job *));
-static void post_checkpoint A_((struct work_task *));
-static void rerun_or_kill A_((job *, char *text));
+static int shutdown_checkpoint(job *);
+static void post_checkpoint(struct work_task *);
+static void rerun_or_kill(job *, char *text);
 
 /* Private Data Items */
 

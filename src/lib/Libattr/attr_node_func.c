@@ -141,8 +141,8 @@ extern int LOGLEVEL;
  * Set of forward declarations for functions used before defined
  * keeps the compiler happy
 */
-static int set_nodeflag A_((char*, short*));
-/* static int load_prop A_(( char*, struct prop* )); */
+static int set_nodeflag(char*, short*);
+/* static int load_prop( char*, struct prop* ); */
 
 
 static struct node_state

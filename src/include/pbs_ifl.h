@@ -86,25 +86,6 @@
 #ifndef _PBS_IFL_DEF
 #define _PBS_IFL_DEF
 
-#ifdef __STDC__
-/*
- * The following macro definations take affect when compiling under ansi C
- *
- * The A_ macro is provided for function prototype declarations.  It allows
- * ANSI C prototypes to be complied under K&R C
- */
-#define A_(x) x
-
-#else
-
-/* The following macro definations take affect when compiling under K&R C */
-
-#define A_(x) ()
-#define const
-#define volatile
-
-#endif /* __STDC__ */
-
 /* Attribute Names used by user commands */
 
 #define ATTR_a "Execution_Time"
@@ -507,95 +488,95 @@ extern int pbs_errno;  /* error number */
 extern char *pbs_server; /* server attempted to connect | connected to */
 /* see pbs_connect(3B)         */
 
-extern char *avail A_((int connect, char *resc));
-extern int pbs_asyrunjob A_((int c, char *jobid, char *location, char *extend));
-extern int pbs_alterjob_async A_((int connect, char *job_id, struct attrl *attrib, char *extend));
-extern int pbs_alterjob A_((int connect, char *job_id, struct attrl *attrib, char *extend));
-extern int pbs_connect A_((char *server));
+extern char *avail(int connect, char *resc);
+extern int pbs_asyrunjob(int c, char *jobid, char *location, char *extend);
+extern int pbs_alterjob_async(int connect, char *job_id, struct attrl *attrib, char *extend);
+extern int pbs_alterjob(int connect, char *job_id, struct attrl *attrib, char *extend);
+extern int pbs_connect(char *server);
 extern int pbs_query_max_connections();
-extern char *pbs_default A_((void));
-extern char *pbs_fbserver A_((void));
-extern char *pbs_get_server_list A_((void));
+extern char *pbs_default(void);
+extern char *pbs_fbserver(void);
+extern char *pbs_get_server_list(void);
 
-extern int pbs_deljob A_((int connect, char *job_id, char *extend));
-extern int pbs_disconnect A_((int connect));
-extern char *pbs_geterrmsg A_((int connect));
-extern int pbs_holdjob A_((int connect, char *job_id, char *hold_type, char *extend));
-extern int pbs_checkpointjob A_((int connect, char *job_id, char *extend));
-extern char *pbs_locjob A_((int connect, char *job_id, char *extend));
-
-extern int
-  pbs_manager A_((int connect, int command, int obj_type, char *obj_name,
-                  struct attropl *attrib, char *extend));
+extern int pbs_deljob(int connect, char *job_id, char *extend);
+extern int pbs_disconnect(int connect);
+extern char *pbs_geterrmsg(int connect);
+extern int pbs_holdjob(int connect, char *job_id, char *hold_type, char *extend);
+extern int pbs_checkpointjob(int connect, char *job_id, char *extend);
+extern char *pbs_locjob(int connect, char *job_id, char *extend);
 
 extern int
-  pbs_movejob A_((int connect, char *job_id, char *destination, char *extend));
+  pbs_manager(int connect, int command, int obj_type, char *obj_name,
+                  struct attropl *attrib, char *extend);
 
 extern int
-  pbs_msgjob A_((int connect, char *job_id, int file, char *message,
-                 char *extend));
+  pbs_movejob(int connect, char *job_id, char *destination, char *extend);
 
 extern int
-  pbs_orderjob A_((int connect, char *job1, char *job2, char *extend));
+  pbs_msgjob(int connect, char *job_id, int file, char *message,
+                 char *extend);
 
 extern int
-  pbs_rescquery A_((int connect, char **rlist, int nresc, int *avail,
-                    int *alloc, int *resv, int *down));
+  pbs_orderjob(int connect, char *job1, char *job2, char *extend);
 
 extern int
-  pbs_rescreserve A_((int connect, char **rlist, int nresc, resource_t *phandle));
+  pbs_rescquery(int connect, char **rlist, int nresc, int *avail,
+                    int *alloc, int *resv, int *down);
 
 extern int
-  pbs_rescrelease A_((int connect, resource_t rhandle));
+  pbs_rescreserve(int connect, char **rlist, int nresc, resource_t *phandle);
 
 extern int
-  pbs_rerunjob A_((int connect, char *job_id, char *extend));
+  pbs_rescrelease(int connect, resource_t rhandle);
 
 extern int
-  pbs_rlsjob A_((int connect, char *job_id, char *hold_type, char *extend));
+  pbs_rerunjob(int connect, char *job_id, char *extend);
 
 extern int
-  pbs_runjob A_((int connect, char *jobid, char *loc, char *extend));
+  pbs_rlsjob(int connect, char *job_id, char *hold_type, char *extend);
+
+extern int
+  pbs_runjob(int connect, char *jobid, char *loc, char *extend);
 
 extern char **
-  pbs_selectjob A_((int connect, struct attropl *select_list, char *extend));
+  pbs_selectjob(int connect, struct attropl *select_list, char *extend);
 
 extern int
-  pbs_sigjob A_((int connect, char *job_id, char *signal, char *extend));
+  pbs_sigjob(int connect, char *job_id, char *signal, char *extend);
 
 extern void
-  pbs_statfree A_((struct batch_status *stat));
+  pbs_statfree(struct batch_status *stat);
 
 extern struct batch_status *
-        pbs_statdest A_((int connect, char *id, char *extend));
+        pbs_statdest(int connect, char *id, char *extend);
 
 extern struct batch_status *
-        pbs_statjob A_((int connect, char *id, struct attrl *attrib, char *extend));
+        pbs_statjob(int connect, char *id, struct attrl *attrib, char *extend);
 
 extern struct batch_status *
-        pbs_selstat A_((int connect, struct attropl *select_list, char *extend));
+        pbs_selstat(int connect, struct attropl *select_list, char *extend);
 
 extern struct batch_status *
-        pbs_statque A_((int connect, char *id, struct attrl *attrib, char *extend));
+        pbs_statque(int connect, char *id, struct attrl *attrib, char *extend);
 
 extern struct batch_status *
-        pbs_statserver A_((int connect, struct attrl *attrib, char *extend));
+        pbs_statserver(int connect, struct attrl *attrib, char *extend);
 
 extern struct batch_status *
-        pbs_statnode A_((int connect, char *id, struct attrl *attrib, char *extend));
+        pbs_statnode(int connect, char *id, struct attrl *attrib, char *extend);
 
 extern char *
-  pbs_submit A_((int connect, struct attropl *attrib, char *script,
-                 char *destination, char *extend));
+  pbs_submit(int connect, struct attropl *attrib, char *script,
+                 char *destination, char *extend);
 
 extern int
-  pbs_terminate A_((int connect, int manner, char *extend));
+  pbs_terminate(int connect, int manner, char *extend);
 
 extern int
-  totpool A_((int connect, int update));
+  totpool(int connect, int update);
 
 extern int
-  usepool A_((int connect, int update));
+  usepool(int connect, int update);
 
 #endif /* _PBS_IFL_DEF */
 

@@ -27,7 +27,7 @@ extern void job_purge(job *pjob);
 extern struct work_task *apply_job_delete_nanny(struct job *, int);
 extern int has_job_delete_nanny(struct job *);
 extern void remove_stagein(job *pjob);
-extern void change_restart_comment_if_needed A_((struct job *));
+extern void change_restart_comment_if_needed(struct job *);
 
 extern char *msg_unkarrayid;
 extern char *msg_permlog;

@@ -194,15 +194,15 @@ extern time_t   last_scan;
 ** external functions and data
 */
 
-extern struct config  *search A_((struct config *, char *));
+extern struct config  *search (struct config *, char *);
 
-extern struct rm_attribute *momgetattr A_((char *));
+extern struct rm_attribute *momgetattr (char *);
 extern int   rm_errno;
 extern unsigned int reqnum;
 extern double cputfactor;
 extern double wallfactor;
 extern  long    system_ncpus;
-extern char *loadave A_((struct rm_attribute *attrib));
+extern char *loadave (struct rm_attribute *attrib);
 extern  int     ignwalltime;
 extern  int     igncput;
 extern  int     ignvmem;
@@ -211,15 +211,15 @@ extern  int     ignmem;
 /*
 ** local functions and data
 */
-static char *totmem  A_((struct rm_attribute *attrib));
-static char *availmem A_((struct rm_attribute *attrib));
-static char *physmem A_((struct rm_attribute *attrib));
-static char *ncpus  A_((struct rm_attribute *attrib));
-static char *quota  A_((struct rm_attribute *attrib));
+static char *totmem  (struct rm_attribute *attrib);
+static char *availmem (struct rm_attribute *attrib);
+static char *physmem (struct rm_attribute *attrib);
+static char *ncpus  (struct rm_attribute *attrib);
+static char *quota  (struct rm_attribute *attrib);
 #if NODEMASK != 0
-static char *availmask A_((struct rm_attribute *attrib));
+static char *availmask (struct rm_attribute *attrib);
 #endif /* NODEMASK */
-extern char *nullproc A_((struct rm_attribute *attrib));
+extern char *nullproc (struct rm_attribute *attrib);
 
 /*
 ** local resource array
@@ -876,7 +876,7 @@ mom_set_limits(
             return (error(pname, retval));
 
           res64lim.rlim_cur = res64lim.rlim_max = sizeval;
-  
+
           if (setrlimit64(RLIMIT_RSS, &res64lim) < 0)
             return (error("RLIMIT_RSS", PBSE_SYSTEM));
           }

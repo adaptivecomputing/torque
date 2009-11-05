@@ -149,26 +149,26 @@ extern long *log_event_mask;
 extern int   chk_file_sec_stderr;
 
 
-extern void log_close A_((int));
-extern void log_err A_((int, char *, char *));
-extern void log_ext A_((int,char *,char *,int));
-extern void log_event A_((int, int, char *, char *));
-extern int  log_open A_((char *, char *));
-extern void log_record A_((int, int, char *, char *));
-extern void log_roll A_((int));
-extern long log_size A_((void));
-extern int  log_remove_old A_((char *,unsigned long));
+extern void log_close (int);
+extern void log_err (int, char *, char *);
+extern void log_ext (int,char *,char *,int);
+extern void log_event (int, int, char *, char *);
+extern int  log_open (char *, char *);
+extern void log_record (int, int, char *, char *);
+extern void log_roll (int);
+extern long log_size (void);
+extern int  log_remove_old (char *,unsigned long);
 extern char log_buffer[LOG_BUF_SIZE];
-int log_init A_((char *, char *));
+int log_init (char *, char *);
 
 #ifdef __CYGWIN__
-extern int  IAmAdmin A_((void));
-extern int  IAmAdminByName A_((char *));
-extern int  IAmUser A_((char *));
+extern int  IAmAdmin (void);
+extern int  IAmAdminByName (char *);
+extern int  IAmUser (char *);
 #endif  /* __CYGWIN__ */
 
-extern int  chk_file_sec A_((char *, int, int, int, int, char *));
-extern int  setup_env A_((char *));
+extern int  chk_file_sec (char *, int, int, int, int, char *);
+extern int  setup_env (char *);
 
 
 /* Event types */

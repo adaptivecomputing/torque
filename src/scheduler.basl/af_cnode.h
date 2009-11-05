@@ -189,285 +189,285 @@ typedef struct SetCNode_type SetCNode;
 
 /* GET FUNCTIONS */
 extern ResMom *
-  CNodeResMomGet A_((CNode *node));
+  CNodeResMomGet(CNode *node);
 
 extern char *
-  CNodeNameGet A_((CNode *node));
+  CNodeNameGet(CNode *node);
 
 extern char *
-  CNodePropertiesGet A_((CNode *node));
+  CNodePropertiesGet(CNode *node);
 
 extern char *
-  CNodeVendorGet A_((CNode *node));
+  CNodeVendorGet(CNode *node);
 
 extern char *
-  CNodeOsGet A_((CNode *node));
+  CNodeOsGet(CNode *node);
 
 extern int
-  CNodeNumCpusGet A_((CNode *node));
+  CNodeNumCpusGet(CNode *node);
 
 extern Size
-  CNodeMemTotalGet A_((CNode *node, char *type));
+  CNodeMemTotalGet(CNode *node, char *type);
 
 extern Size
-  CNodeMemAvailGet A_((CNode *node, char *type));
+  CNodeMemAvailGet(CNode *node, char *type);
 
 extern int
-  CNodeStateGet A_((CNode *node));
+  CNodeStateGet(CNode *node);
 
 extern int
-  CNodeTypeGet A_((CNode *node));
+  CNodeTypeGet(CNode *node);
 
 extern int
-  CNodeIdletimeGet A_((CNode *node));
+  CNodeIdletimeGet(CNode *node);
 
 extern double
-  CNodeLoadAveGet A_((CNode *node));
+  CNodeLoadAveGet(CNode *node);
 
 extern int
-  CNodeQueryMomGet A_((CNode *node));
+  CNodeQueryMomGet(CNode *node);
 
 extern int
-  CNodeMultiplicityGet A_((CNode *node));
+  CNodeMultiplicityGet(CNode *node);
 
 extern int
-  CNodeNetworkBwGet A_((CNode *node, char *type));
+  CNodeNetworkBwGet(CNode *node, char *type);
 
 extern Size
-  CNodeDiskSpaceTotalGet A_((CNode *node, char *name));
+  CNodeDiskSpaceTotalGet(CNode *node, char *name);
 
 extern Size
-  CNodeDiskSpaceAvailGet A_((CNode *node, char *name));
+  CNodeDiskSpaceAvailGet(CNode *node, char *name);
 
 extern Size
-  CNodeDiskSpaceReservedGet A_((CNode *node, char *name));
+  CNodeDiskSpaceReservedGet(CNode *node, char *name);
 
 extern int
-  CNodeDiskInBwGet A_((CNode *node, char *name));
+  CNodeDiskInBwGet(CNode *node, char *name);
 
 extern int
-  CNodeDiskOutBwGet A_((CNode *node, char *name));
+  CNodeDiskOutBwGet(CNode *node, char *name);
 
 extern Size
-  CNodeSwapSpaceTotalGet A_((CNode *node, char *name));
+  CNodeSwapSpaceTotalGet(CNode *node, char *name);
 
 extern Size
-  CNodeSwapSpaceAvailGet A_((CNode *node, char *name));
+  CNodeSwapSpaceAvailGet(CNode *node, char *name);
 
 extern Size
-  CNodeSwapSpaceReservedGet A_((CNode *node, char *name));
+  CNodeSwapSpaceReservedGet(CNode *node, char *name);
 
 extern int
-  CNodeSwapInBwGet A_((CNode *node, char *name));
+  CNodeSwapInBwGet(CNode *node, char *name);
 
 extern int
-  CNodeSwapOutBwGet A_((CNode *node, char *name));
+  CNodeSwapOutBwGet(CNode *node, char *name);
 
 extern Size
-  CNodeTapeSpaceTotalGet A_((CNode *node, char *name));
+  CNodeTapeSpaceTotalGet(CNode *node, char *name);
 
 extern Size
-  CNodeTapeSpaceAvailGet A_((CNode *node, char *name));
+  CNodeTapeSpaceAvailGet(CNode *node, char *name);
 
 extern Size
-  CNodeTapeSpaceReservedGet A_((CNode *node, char *name));
+  CNodeTapeSpaceReservedGet(CNode *node, char *name);
 
 extern int
-  CNodeTapeInBwGet A_((CNode *node, char *name));
+  CNodeTapeInBwGet(CNode *node, char *name);
 
 extern int
-  CNodeTapeOutBwGet A_((CNode *node, char *name));
+  CNodeTapeOutBwGet(CNode *node, char *name);
 
 extern Size
-  CNodeSrfsSpaceTotalGet A_((CNode *node, char *name));
+  CNodeSrfsSpaceTotalGet(CNode *node, char *name);
 
 extern Size
-  CNodeSrfsSpaceAvailGet A_((CNode *node, char *name));
+  CNodeSrfsSpaceAvailGet(CNode *node, char *name);
 
 extern Size
-  CNodeSrfsSpaceReservedGet A_((CNode *node, char *name));
+  CNodeSrfsSpaceReservedGet(CNode *node, char *name);
 
 extern int
-  CNodeSrfsInBwGet A_((CNode *node, char *name));
+  CNodeSrfsInBwGet(CNode *node, char *name);
 
 extern int
-  CNodeSrfsOutBwGet A_((CNode *node, char *name));
+  CNodeSrfsOutBwGet(CNode *node, char *name);
 
 extern int
-  CNodeCpuPercentIdleGet A_((CNode *node));
+  CNodeCpuPercentIdleGet(CNode *node);
 
 extern int
-  CNodeCpuPercentSysGet A_((CNode *node));
+  CNodeCpuPercentSysGet(CNode *node);
 
 extern int
-  CNodeCpuPercentUserGet A_((CNode *node));
+  CNodeCpuPercentUserGet(CNode *node);
 
 extern int
-  CNodeCpuPercentGuestGet A_((CNode *node));
+  CNodeCpuPercentGuestGet(CNode *node);
 
 /* PUT FUNCTIONS */
 extern void
-  CNodeResMomPut A_((CNode *node, ResMom *name));
+  CNodeResMomPut(CNode *node, ResMom *name);
 
 extern void
-  CNodePropertiesPut A_((CNode *node, char *properties));
+  CNodePropertiesPut(CNode *node, char *properties);
 
 extern void
-  CNodeVendorPut A_((CNode *node, char *vendor));
+  CNodeVendorPut(CNode *node, char *vendor);
 
 extern void
-  CNodeOsPut A_((CNode *node, char *os));
+  CNodeOsPut(CNode *node, char *os);
 
 extern void
-  CNodeNumCpusPut A_((CNode *node, int ncpus));
+  CNodeNumCpusPut(CNode *node, int ncpus);
 
 extern void
-  CNodeMemTotalPut A_((CNode *node, char *type, Size pmem));
+  CNodeMemTotalPut(CNode *node, char *type, Size pmem);
 
 extern void
-  CNodeMemAvailPut A_((CNode *node, char *type, Size pmem));
+  CNodeMemAvailPut(CNode *node, char *type, Size pmem);
 
 extern void
-  CNodeQueryMomPut A_((CNode *node, int queryMom));
+  CNodeQueryMomPut(CNode *node, int queryMom);
 
 extern void
-  CNodeMultiplicityPut A_((CNode *node, int nodect));
+  CNodeMultiplicityPut(CNode *node, int nodect);
 
 extern void
-  CNodeStatePut A_((CNode *node, int state));
+  CNodeStatePut(CNode *node, int state);
 
 extern void
-  CNodeTypePut A_((CNode *node, int type));
+  CNodeTypePut(CNode *node, int type);
 
 extern void
-  CNodeIdletimePut A_((CNode *node, int idletime));
+  CNodeIdletimePut(CNode *node, int idletime);
 
 extern void
-  CNodeLoadAvePut A_((CNode *node, double loadave));
+  CNodeLoadAvePut(CNode *node, double loadave);
 
 extern void
-  CNodeNetworkBwPut A_((CNode *node, char *type, int bw));
+  CNodeNetworkBwPut(CNode *node, char *type, int bw);
 
 extern void
-  CNodeDiskSpaceTotalPut A_((CNode *node, char *name, Size size));
+  CNodeDiskSpaceTotalPut(CNode *node, char *name, Size size);
 
 extern void
-  CNodeDiskSpaceAvailPut A_((CNode *node, char *name, Size size));
+  CNodeDiskSpaceAvailPut(CNode *node, char *name, Size size);
 
 extern void
-  CNodeDiskSpaceReservedPut A_((CNode *node, char *name, Size size));
+  CNodeDiskSpaceReservedPut(CNode *node, char *name, Size size);
 
 extern void
-  CNodeDiskInBwPut A_((CNode *node, char *name, int bw));
+  CNodeDiskInBwPut(CNode *node, char *name, int bw);
 
 extern void
-  CNodeDiskOutBwPut A_((CNode *node, char *name, int bw));
+  CNodeDiskOutBwPut(CNode *node, char *name, int bw);
 
 extern void
-  CNodeSwapSpaceTotalPut A_((CNode *node, char *name, Size swaptot));
+  CNodeSwapSpaceTotalPut(CNode *node, char *name, Size swaptot);
 
 extern void
-  CNodeSwapSpaceAvailPut A_((CNode *node, char *name, Size swapavail));
+  CNodeSwapSpaceAvailPut(CNode *node, char *name, Size swapavail);
 
 extern void
-  CNodeSwapSpaceReservedPut A_((CNode *node, char *name, Size swapres));
+  CNodeSwapSpaceReservedPut(CNode *node, char *name, Size swapres);
 
 extern void
-  CNodeSwapInBwPut A_((CNode *node, char *name, int bw));
+  CNodeSwapInBwPut(CNode *node, char *name, int bw);
 
 extern void
-  CNodeSwapOutBwPut A_((CNode *node, char *name, int bw));
+  CNodeSwapOutBwPut(CNode *node, char *name, int bw);
 
 extern void
-  CNodeTapeSpaceTotalPut A_((CNode *node, char *name, Size size));
+  CNodeTapeSpaceTotalPut(CNode *node, char *name, Size size);
 
 extern void
-  CNodeTapeSpaceAvailPut A_((CNode *node, char *name, Size size));
+  CNodeTapeSpaceAvailPut(CNode *node, char *name, Size size);
 
 extern void
-  CNodeTapeSpaceReservedPut A_((CNode *node, char *name, Size size));
+  CNodeTapeSpaceReservedPut(CNode *node, char *name, Size size);
 
 extern void
-  CNodeTapeInBwPut A_((CNode *node, char *name, int bw));
+  CNodeTapeInBwPut(CNode *node, char *name, int bw);
 
 extern void
-  CNodeTapeOutBwPut A_((CNode *node, char *name, int bw));
+  CNodeTapeOutBwPut(CNode *node, char *name, int bw);
 
 extern void
-  CNodeSrfsSpaceTotalPut A_((CNode *node, char *name, Size size));
+  CNodeSrfsSpaceTotalPut(CNode *node, char *name, Size size);
 
 extern void
-  CNodeSrfsSpaceAvailPut A_((CNode *node, char *name, Size size));
+  CNodeSrfsSpaceAvailPut(CNode *node, char *name, Size size);
 
 extern void
-  CNodeSrfsSpaceReservedPut A_((CNode *node, char *name, Size size));
+  CNodeSrfsSpaceReservedPut(CNode *node, char *name, Size size);
 
 extern void
-  CNodeSrfsInBwPut A_((CNode *node, char *name, int bw));
+  CNodeSrfsInBwPut(CNode *node, char *name, int bw);
 
 extern void
-  CNodeSrfsOutBwPut A_((CNode *node, char *name, int bw));
+  CNodeSrfsOutBwPut(CNode *node, char *name, int bw);
 
 extern void
-  CNodeCpuPercentIdlePut A_((CNode *node, int percent));
+  CNodeCpuPercentIdlePut(CNode *node, int percent);
 
 extern void
-  CNodeCpuPercentSysPut A_((CNode *node, int percent));
+  CNodeCpuPercentSysPut(CNode *node, int percent);
 
 extern void
-  CNodeCpuPercentUserPut A_((CNode *node, int percent));
+  CNodeCpuPercentUserPut(CNode *node, int percent);
 
 extern void
-  CNodeCpuPercentGuestPut A_((CNode *node, int percent));
+  CNodeCpuPercentGuestPut(CNode *node, int percent);
 
 /* MISC FUNCTIONS */
 extern void
-  CNodeFree A_((CNode *node));
+  CNodeFree(CNode *node);
 
 extern void
-  CNodeInit A_((CNode *node));
+  CNodeInit(CNode *node);
 
 extern void
-  CNodePrint A_((CNode *node));
+  CNodePrint(CNode *node);
 
 extern void
-  CNodeStateRead A_((CNode *node, int typeOfData));
+  CNodeStateRead(CNode *node, int typeOfData);
 
 /* Set stuff */
 extern void
-  SetCNodeInit A_((SetCNode *scn));
+  SetCNodeInit(SetCNode *scn);
 
 extern void
-  SetCNodeAdd A_((SetCNode *scn, CNode *cn));
+  SetCNodeAdd(SetCNode *scn, CNode *cn);
 
 extern void
-  SetCNodeFree A_((SetCNode *scn));
+  SetCNodeFree(SetCNode *scn);
 
 extern CNode *
-  SetCNodeFindCNodeByName A_((SetCNode *scn, char *node_name));
+  SetCNodeFindCNodeByName(SetCNode *scn, char *node_name);
 
 extern void
-  SetCNodePrint A_((SetCNode *scn));
+  SetCNodePrint(SetCNode *scn);
 
 extern int
-  inSetCNode A_((CNode *cn, SetCNode *scn));
+  inSetCNode(CNode *cn, SetCNode *scn);
 
 extern void
-  CNodeStateRead A_((CNode *node, int typeOfData));
+  CNodeStateRead(CNode *node, int typeOfData);
 
 extern int
-  SetCNodeSortInt A_((SetCNode *s, int (*key)(), int order));
+  SetCNodeSortInt(SetCNode *s, int (*key)(), int order);
 
 extern int
-  SetCNodeSortStr A_((SetCNode *s, char *(*key)(), int order));
+  SetCNodeSortStr(SetCNode *s, char *(*key)(), int order);
 
 extern int
-  SetCNodeSortDateTime A_((SetCNode *s, DateTime(*key)(), int order));
+  SetCNodeSortDateTime(SetCNode *s, DateTime(*key)(), int order);
 
 extern int
-  SetCNodeSortSize A_((SetCNode *s, Size(*key)(), int order));
+  SetCNodeSortSize(SetCNode *s, Size(*key)(), int order);
 
 extern int
-  SetCNodeSortFloat A_((SetCNode *s, double(*key)(), int order));
+  SetCNodeSortFloat(SetCNode *s, double(*key)(), int order);
 
 #endif /* _AF_CNODE_H */

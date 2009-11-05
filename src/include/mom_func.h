@@ -132,45 +132,45 @@ struct varattr
 #ifdef _CRAY
 #define WJSIGNAL 46
 
-extern void  post_suspend A_((job *, int));
-extern void  post_resume  A_((job *, int));
+extern void  post_suspend(job *, int);
+extern void  post_resume(job *, int);
 
 #endif /* _CRAY */
 
-extern void  bld_env_variables A_((struct var_table *, char *, char *));
-extern pid_t fork_me A_((int sock));
-extern int   get_la A_((double *));
-extern void  init_abort_jobs A_((int));
-extern int   init_groups A_((char *, int, int, int *));
-extern int   kill_job A_((job *, int sig, char *killer_id_name, char *why_killed_reason));
-extern void  mom_deljob A_((job *));
-extern void  mom_freenodes A_((job *));
+extern void  bld_env_variables(struct var_table *, char *, char *);
+extern pid_t fork_me(int sock);
+extern int   get_la(double *);
+extern void  init_abort_jobs(int);
+extern int   init_groups(char *, int, int, int *);
+extern int   kill_job(job *, int sig, char *killer_id_name, char *why_killed_reason);
+extern void  mom_deljob(job *);
+extern void  mom_freenodes(job *);
 extern void  scan_for_exiting();
 extern void  scan_for_terminated();
 extern void  scan_non_child_tasks(void);
-extern int   set_job A_((job *, struct startjob_rtn *));
-extern void  set_globid A_((job *, struct startjob_rtn *));
-extern int   set_mach_vars A_((job *, struct var_table *));
-extern char *set_shell A_((job *, struct passwd *));
-extern void  start_exec A_((job *));
+extern int   set_job(job *, struct startjob_rtn *);
+extern void  set_globid(job *, struct startjob_rtn *);
+extern int   set_mach_vars(job *, struct var_table *);
+extern char *set_shell(job *, struct passwd *);
+extern void  start_exec(job *);
 extern int   open_master(char **);
 extern int   open_slave();
-extern char *rcvttype A_((int));
-extern int   rcvwinsize A_((int));
-extern int   remtree A_((char *));
-extern int   setwinsize A_((int));
-extern void  set_termcc A_((int));
-extern int   site_job_setup A_((job *));
-extern int   site_mom_chkuser A_((job *));
-extern int   site_mom_postchk A_((job *, int));
-extern int   site_mom_prerst A_((job *));
-extern int   reader A_((int, int));
-extern int   writer A_((int, int));
-extern int   conn_qsub A_((char *, unsigned int, char *));  /* NOTE:  should be moved out of here to job_func proto header */
-extern int   run_pelog A_((int, char *, job *, int));
-extern int   is_joined A_((job *));
-extern void  check_busy A_((double));
-extern void  state_to_server A_((int, int));
+extern char *rcvttype(int);
+extern int   rcvwinsize(int);
+extern int   remtree(char *);
+extern int   setwinsize(int);
+extern void  set_termcc(int);
+extern int   site_job_setup(job *);
+extern int   site_mom_chkuser(job *);
+extern int   site_mom_postchk(job *, int);
+extern int   site_mom_prerst(job *);
+extern int   reader(int, int);
+extern int   writer(int, int);
+extern int   conn_qsub(char *, unsigned int, char *);  /* NOTE:  should be moved out of here to job_func proto header */
+extern int   run_pelog(int, char *, job *, int);
+extern int   is_joined(job *);
+extern void  check_busy(double);
+extern void  state_to_server(int, int);
 extern void  dep_main_loop_cycle(void);
 extern int   message_job(job *, enum job_file, char *);
 extern void  term_job(job *);
@@ -178,13 +178,13 @@ extern void  term_job(job *);
 extern struct passwd *check_pwd(job *);
 extern int   send_sisters(job *, int);
 extern int   task_save(task *) ;
-extern void DIS_rpp_reset A_((void));
-extern void  checkret A_((char **, int));
-extern char *get_job_envvar A_((job *, char *));
-extern int   mom_open_socket_to_jobs_server A_((job* pjob, char *id, void (*message_hander) A_((int))));
+extern void  DIS_rpp_reset(void);
+extern void  checkret(char **, int);
+extern char *get_job_envvar(job *, char *);
+extern int   mom_open_socket_to_jobs_server(job* pjob, char *id, void (*message_hander)(int));
 
 /* defined in mach-dependant mom_mach.c */
-extern int kill_task A_((struct task *, int, int));
+extern int kill_task(struct task *, int, int);
 
 /* Defines for pe_io_type, see run_pelog() */
 
@@ -200,12 +200,12 @@ extern int kill_task A_((struct task *, int, int));
 #define PE_EPILOGUSERJOB 6 /* per job epilogue script */
 
 #ifdef LIBPBS_H
-extern int   open_std_file A_((job *, enum job_file, int, gid_t));
-extern char *std_file_name A_((job *, enum job_file, int *));
+extern int   open_std_file(job *, enum job_file, int, gid_t);
+extern char *std_file_name(job *, enum job_file, int *);
 #endif /* LIBPBS_H */
 
 #ifdef BATCH_REQUEST_H
-extern int   start_checkpoint A_((job *, int, struct batch_request *));
+extern int   start_checkpoint(job *, int, struct batch_request *);
 #endif /* BATCH_REQUEST_H */
 
 

@@ -149,9 +149,9 @@ static char ident[] = "@(#) netbsd/$RCSfile$ $Revision$";
 ** external functions and data
 */
 
-extern struct config  *search A_((struct config *, char *));
+extern struct config  *search(struct config *, char *);
 
-extern struct rm_attribute *momgetattr A_((char *));
+extern struct rm_attribute *momgetattr(char *);
 extern int   rm_errno;
 extern unsigned int reqnum;
 extern double cputfactor;
@@ -165,13 +165,13 @@ extern  int     ignmem;
 /*
 ** local functions
 */
-static char *resi  A_((struct rm_attribute *attrib));
-static char *physmem A_((struct rm_attribute *attrib));
-static char *walltime A_((struct rm_attribute *attrib));
-static char *quota  A_((struct rm_attribute *attrib));
+static char *resi(struct rm_attribute *attrib);
+static char *physmem(struct rm_attribute *attrib);
+static char *walltime(struct rm_attribute *attrib);
+static char *quota(struct rm_attribute *attrib);
 
-extern char *loadave A_((struct rm_attribute *attrib));
-extern char *nullproc A_((struct rm_attribute *attrib));
+extern char *loadave(struct rm_attribute *attrib);
+extern char *nullproc(struct rm_attribute *attrib);
 
 struct config dependent_config[] =
   {

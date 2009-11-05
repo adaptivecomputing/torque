@@ -151,111 +151,111 @@ typedef struct SetQue_type SetQue;
 /* External Functions */
 /* GET functions */
 extern char *
-  QueNameGet A_((Que *que));
+  QueNameGet(Que *que);
 
 extern int
-  QueTypeGet A_((Que *que));
+  QueTypeGet(Que *que);
 
 extern int
-  QueNumJobsGet A_((Que *que));
+  QueNumJobsGet(Que *que);
 
 extern int
-  QueMaxRunJobsGet A_((Que *que));
+  QueMaxRunJobsGet(Que *que);
 
 extern int
-  QueMaxRunJobsPerUserGet A_((Que *que));
+  QueMaxRunJobsPerUserGet(Que *que);
 
 extern int
-  QueMaxRunJobsPerGroupGet A_((Que *que));
+  QueMaxRunJobsPerGroupGet(Que *que);
 
 extern int
-  QuePriorityGet A_((Que *que));
+  QuePriorityGet(Que *que);
 
 extern int
-  QueStateGet A_((Que *que));
+  QueStateGet(Que *que);
 
 extern struct SetJobElement *
-        QueJobsGet A_((Que *que));
+        QueJobsGet(Que *que);
 
 extern int
-  QueIntResAvailGet A_((Que *que, char *name));
+  QueIntResAvailGet(Que *que, char *name);
 
 extern int
-  QueIntResAssignGet A_((Que *que, char *name));
+  QueIntResAssignGet(Que *que, char *name);
 
 extern Size
-  QueSizeResAvailGet A_((Que *que, char *name));
+  QueSizeResAvailGet(Que *que, char *name);
 
 extern Size
-  QueSizeResAssignGet A_((Que *que, char *name));
+  QueSizeResAssignGet(Que *que, char *name);
 
 extern char *
-  QueStringResAvailGet A_((Que *que, char *name));
+  QueStringResAvailGet(Que *que, char *name);
 
 extern char *
-  QueStringResAssignGet A_((Que *que, char *name));
+  QueStringResAssignGet(Que *que, char *name);
 
 /* Put functions */
 extern void
-  QueNamePut A_((Que *que, char *queue_name));
+  QueNamePut(Que *que, char *queue_name);
 
 extern void
-  QueTypePut A_((Que *que, int type));
+  QueTypePut(Que *que, int type);
 
 extern void
-  QueNumJobsPut A_((Que *que, int numJobs));
+  QueNumJobsPut(Que *que, int numJobs);
 
 extern void
-  QueMaxRunJobsPut A_((Que *que, int maxRunJobs));
+  QueMaxRunJobsPut(Que *que, int maxRunJobs);
 
 extern void
-  QueMaxRunJobsPerUserPut A_((Que *que, int maxRunJobsPerUser));
+  QueMaxRunJobsPerUserPut(Que *que, int maxRunJobsPerUser);
 
 extern void
-  QueMaxRunJobsPerGroupPut A_((Que *que, int maxRunJobsPerGroup));
+  QueMaxRunJobsPerGroupPut(Que *que, int maxRunJobsPerGroup);
 
 extern void
-  QuePriorityPut A_((Que *que, int priority));
+  QuePriorityPut(Que *que, int priority);
 
 extern void
-  QueStatePut A_((Que *que, int state));
+  QueStatePut(Que *que, int state);
 
 extern void
-  QueIntResAvailPut A_((Que *que, char *name, int value));
+  QueIntResAvailPut(Que *que, char *name, int value);
 
 extern void
-  QueIntResAssignPut A_((Que *que, char *name, int value));
+  QueIntResAssignPut(Que *que, char *name, int value);
 
 extern void
-  QueSizeResAvailPut A_((Que *que, char *name, Size value));
+  QueSizeResAvailPut(Que *que, char *name, Size value);
 
 extern void
-  QueSizeResAssignPut A_((Que *que, char *name, Size value));
+  QueSizeResAssignPut(Que *que, char *name, Size value);
 
 extern void
-  QueStringResAvailPut A_((Que *que, char *name, char *value));
+  QueStringResAvailPut(Que *que, char *name, char *value);
 
 extern void
-  QueStringResAssignPut A_((Que *que, char *name, char *value));
+  QueStringResAssignPut(Que *que, char *name, char *value);
 
 extern void
-  QueNextptrPut A_((Que *que, Que *qptr));
+  QueNextptrPut(Que *que, Que *qptr);
 
 /* Miscellaneous functions */
 extern void
-  QueInit A_((Que *que));
+  QueInit(Que *que);
 
 extern void
-  QuePrint A_((Que *que));
+  QuePrint(Que *que);
 
 extern void
-  QueFree A_((Que *que));
+  QueFree(Que *que);
 
 extern void
-  QueJobInsert A_((Que *que, Job *job));
+  QueJobInsert(Que *que, Job *job);
 
 extern void
-  QueJobDelete A_((Que *que, Job *job));
+  QueJobDelete(Que *que, Job *job);
 
 extern Job *
   QueJobFindInt(Que *que, ...);
@@ -270,50 +270,50 @@ extern Job *
   QueJobFindSize(Que *que, ...);
 
 extern Que *
-  QueFilterInt A_((Que *que, int (*func)(), Comp operator, int value));
+  QueFilterInt(Que *que, int (*func)(), Comp operator, int value);
 
 extern Que *
-  QueFilterStr A_((Que *que, char *(*strfunc)(), Comp operator, char *valuestr));
+  QueFilterStr(Que *que, char *(*strfunc)(), Comp operator, char *valuestr);
 
 extern Que *
-  QueFilterDateTime A_((Que *que, DateTime(*datetfunc)(), Comp operator,
-                        DateTime datet));
+  QueFilterDateTime(Que *que, DateTime(*datetfunc)(), Comp operator,
+                        DateTime datet);
 
 extern Que *
-  QueFilterSize A_((Que *que, Size(*sizefunc)(), Comp operator, Size size));
+  QueFilterSize(Que *que, Size(*sizefunc)(), Comp operator, Size size);
 
 /* Set of Ques abstraction */
 extern void
-  SetQueInit A_((SetQue *sq));
+  SetQueInit(SetQue *sq);
 
 extern void
-  SetQueAdd A_((SetQue *sq, Que *q));
+  SetQueAdd(SetQue *sq, Que *q);
 
 extern void
-  SetQueFree A_((SetQue *sq));
+  SetQueFree(SetQue *sq);
 
 extern Que *
-  SetQueFindQueByName A_((SetQue *sq, char *que_name));
+  SetQueFindQueByName(SetQue *sq, char *que_name);
 
 extern void
-  SetQuePrint A_((SetQue *sq));
+  SetQuePrint(SetQue *sq);
 
 extern int
-  inSetQue A_((Que *que, SetQue *sq));
+  inSetQue(Que *que, SetQue *sq);
 
 extern int
-  SetQueSortInt A_((SetQue *s, int (*key)(), int order));
+  SetQueSortInt(SetQue *s, int (*key)(), int order);
 
 extern int
-  SetQueSortStr A_((SetQue *s, char *(*key)(), int order));
+  SetQueSortStr(SetQue *s, char *(*key)(), int order);
 
 extern int
-  SetQueSortDateTime A_((SetQue *s, DateTime(*key)(), int order));
+  SetQueSortDateTime(SetQue *s, DateTime(*key)(), int order);
 
 extern int
-  SetQueSortSize A_((SetQue *s, Size(*key)(), int order));
+  SetQueSortSize(SetQue *s, Size(*key)(), int order);
 
 extern int
-  SetQueSortFloat A_((SetQue *s, double(*key)(), int order));
+  SetQueSortFloat(SetQue *s, double(*key)(), int order);
 
 #endif /* _AF_QUE_H */

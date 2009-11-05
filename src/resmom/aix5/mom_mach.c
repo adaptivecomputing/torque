@@ -162,9 +162,9 @@ static int   njob = 1;
 ** external functions and data
 */
 
-extern struct config  *search A_((struct config *, char *));
+extern struct config  *search(struct config *, char *);
 
-extern struct rm_attribute *momgetattr A_((char *));
+extern struct rm_attribute *momgetattr(char *);
 extern int   rm_errno;
 extern unsigned int reqnum;
 extern char *ret_string;
@@ -179,15 +179,15 @@ extern  int      ignmem;
 /*
 ** local functions
 */
-static char *resi  A_((struct rm_attribute *attrib));
-static char *totmem  A_((struct rm_attribute *attrib));
-static char *physmem A_((struct rm_attribute *attrib));
-static char *availmem A_((struct rm_attribute *attrib));
-static char *walltime A_((struct rm_attribute *attrib));
-static char *ncpus  A_((struct rm_attribute *attrib));
+static char *resi(struct rm_attribute *attrib);
+static char *totmem(struct rm_attribute *attrib);
+static char *physmem(struct rm_attribute *attrib);
+static char *availmem(struct rm_attribute *attrib);
+static char *walltime(struct rm_attribute *attrib);
+static char *ncpus(struct rm_attribute *attrib);
 
-extern char *loadave A_((struct rm_attribute *attrib));
-extern char *nullproc A_((struct rm_attribute *attrib));
+extern char *loadave(struct rm_attribute *attrib);
+extern char *nullproc(struct rm_attribute *attrib);
 
 /*
 ** local resource list storage

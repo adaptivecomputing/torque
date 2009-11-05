@@ -137,7 +137,7 @@ int svr_connect(
 
   pbs_net_t      hostaddr,  /* host order */
   unsigned int   port,   /* I */
-  void (*func) A_((int)),
+  void (*func)(int),
   enum conn_type cntype)
 
   {

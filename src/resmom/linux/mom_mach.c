@@ -173,8 +173,8 @@ static int            max_proc = 0;
 /*
 ** external functions and data
 */
-extern struct	config		*search A_((struct config *,char *));
-extern struct	rm_attribute	*momgetattr A_((char *));
+extern struct	config		*search(struct config *,char *);
+extern struct	rm_attribute	*momgetattr(char *);
 extern int                      rm_errno;
 extern double	cputfactor;
 extern double	wallfactor;
@@ -187,14 +187,14 @@ extern int      ignmem;
 /*
 ** local functions and data
 */
-static char *resi     A_((struct rm_attribute *));
-static char *totmem   A_((struct rm_attribute *));
-static char *availmem A_((struct rm_attribute *));
-static char *physmem  A_((struct rm_attribute *));
-static char *ncpus    A_((struct rm_attribute *));
-static char *walltime A_((struct rm_attribute *));
-static char *quota    A_((struct rm_attribute *));
-static char *netload  A_((struct rm_attribute *));
+static char *resi     (struct rm_attribute *);
+static char *totmem   (struct rm_attribute *);
+static char *availmem (struct rm_attribute *);
+static char *physmem  (struct rm_attribute *);
+static char *ncpus    (struct rm_attribute *);
+static char *walltime (struct rm_attribute *);
+static char *quota    (struct rm_attribute *);
+static char *netload  (struct rm_attribute *);
 
 #ifndef mbool_t
 #define mbool_t char
@@ -202,8 +202,8 @@ static char *netload  A_((struct rm_attribute *));
 
 mbool_t ProcIsChild(char *,char *,char *);
 
-extern char *loadave A_((struct rm_attribute *));
-extern char *nullproc A_((struct rm_attribute *));
+extern char *loadave(struct rm_attribute *);
+extern char *nullproc(struct rm_attribute *);
 
 time_t wait_time = 10;
 

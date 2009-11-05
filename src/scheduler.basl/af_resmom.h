@@ -101,41 +101,41 @@ typedef struct resmom_struct ResMom;
 /* External Functions */
 
 extern char *
-  ResMomInetAddrGet A_((ResMom *mom));
+  ResMomInetAddrGet(ResMom *mom);
 
 extern int
-  ResMomPortNumberGet A_((ResMom *mom));
+  ResMomPortNumberGet(ResMom *mom);
 
 extern int
-  ResMomConnectFdGet A_((ResMom *mom));
+  ResMomConnectFdGet(ResMom *mom);
 
 extern void
-  ResMomInetAddrPut A_((ResMom *mom, char *mom_name));
+  ResMomInetAddrPut(ResMom *mom, char *mom_name);
 
 extern void
-  ResMomPortNumberPut A_((ResMom *mom, int port));
+  ResMomPortNumberPut(ResMom *mom, int port);
 
 extern void
-  ResMomConnectFdPut A_((ResMom *mom, int fd));
+  ResMomConnectFdPut(ResMom *mom, int fd);
 
 extern void
-  ResMomPrint A_((ResMom *mom));
+  ResMomPrint(ResMom *mom);
 
 extern void
-  ResMomInit A_((ResMom *mom));
+  ResMomInit(ResMom *mom);
 
 extern int
-  ResMomOpen A_((ResMom *mom));
+  ResMomOpen(ResMom *mom);
 
 extern char *
-  ResMomRead A_((ResMom *mom));
+  ResMomRead(ResMom *mom);
 
 extern int
-  ResMomWrite A_((ResMom *mom, char *buffer));
+  ResMomWrite(ResMom *mom, char *buffer);
 
 extern int
-  ResMomClose A_((ResMom *momptr));
+  ResMomClose(ResMom *momptr);
 
 extern void
-  ResMomFree A_((ResMom *mom));
+  ResMomFree(ResMom *mom);
 #endif /* _AF_RESMOM_H */

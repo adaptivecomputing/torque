@@ -179,7 +179,7 @@ int decode_rcost(
   resource_def *prdef;
 
   struct resource_cost *pcost;
-  void free_rcost A_((attribute *));
+  void free_rcost(attribute *);
 
   if ((val == NULL) || (rescn == NULL))
     {

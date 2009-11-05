@@ -83,13 +83,13 @@
 /*
 ** Routines to read and write down a stream
 */
-int (*dis_getc) A_((int stream))     = NULL;
-int (*dis_puts) A_((int stream, const char *string, size_t count)) = NULL;
-int (*dis_gets) A_((int stream, char *string, size_t count))  = NULL;
+int (*dis_getc)(int stream)     = NULL;
+int (*dis_puts)(int stream, const char *string, size_t count) = NULL;
+int (*dis_gets)(int stream, char *string, size_t count)  = NULL;
 
-int (*disr_skip) A_((int stream, size_t nskips))   = NULL;
-int (*disw_commit) A_((int stream, int commit))    = NULL;
-int (*disr_commit) A_((int stream, int commit))    = NULL;
+int (*disr_skip)(int stream, size_t nskips)   = NULL;
+int (*disw_commit)(int stream, int commit)    = NULL;
+int (*disr_commit)(int stream, int commit)    = NULL;
 
 /* sync w/#define DIS_* (include/dis.h) */
 

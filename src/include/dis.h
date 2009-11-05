@@ -109,58 +109,50 @@
 #define DIS_NOCOMMIT 10 /* Protocol failure in commit */
 #define DIS_EOF  11 /* End of File */
 
-#ifdef __STDC__
-#define A_(x) x
-#else
-#define A_(x) ()
-#define const
-#define volatile
-#endif
 
-
-unsigned long disrul A_((int stream, int *retval));
+unsigned long disrul (int stream, int *retval);
 
 /*#if UINT_MAX == ULONG_MAX*/
 #if SIZEOF_UNSIGNED == SIZEOF_LONG
 #define disrui(stream, retval) (unsigned)disrul(stream, (retval))
 #else
-unsigned disrui A_((int stream, int *retval));
+unsigned disrui (int stream, int *retval);
 #endif
 
 /*#if USHRT_MAX == UINT_MAX*/
 #if SIZEOF_UNSIGNED_SHORT == SIZEOF_UNSIGNED_INT
 #define disrus(strea, retval) (unsigned short)disrui(stream, (retval))
 #else
-unsigned short disrus A_((int stream, int *retval));
+unsigned short disrus (int stream, int *retval);
 #endif
 
 /*#if UCHAR_MAX == USHRT_MAX*/
 #if SIZEOF_UNSIGNED_CHAR == SIZEOF_UNSIGNED_SHORT
 #define disruc(stream, retval) (unsigned char)disrus(stream, (retval))
 #else
-unsigned char disruc A_((int stream, int *retval));
+unsigned char disruc (int stream, int *retval);
 #endif
 
-long disrsl A_((int stream, int *retval));
+long disrsl (int stream, int *retval);
 /*#if INT_MIN == LONG_MIN && INT_MAX == LONG_MAX*/
 #if SIZEOF_INT == SIZEOF_LONG
 #define disrsi(stream, retval) (int)disrsl(stream, (retval))
 #else
-int disrsi A_((int stream, int *retval));
+int disrsi (int stream, int *retval);
 #endif
 
 /*#if SHRT_MIN == INT_MIN && SHRT_MAX == INT_MAX*/
 #if SIZEOF_SHORT == SIZEOF_INT
 #define disrss(stream, retval) (short)disrsi(stream, (retval))
 #else
-short disrss A_((int stream, int *retval));
+short disrss (int stream, int *retval);
 #endif
 
 /*#if CHAR_MIN == SHRT_MIN && CHAR_MAX == SHRT_MAX*/
 #if SIZEOF_SIGNED_CHAR == SIZEOF_SHORT
 #define disrsc(stream, retval) (signed char)disrss(stream, (retval))
 #else
-signed char disrsc A_((int stream, int *retval));
+signed char disrsc (int stream, int *retval);
 #endif
 
 /*#if CHAR_MIN, i.e. if chars are signed*/
@@ -171,10 +163,10 @@ signed char disrsc A_((int stream, int *retval));
 #define disrc(stream, retval) (char)disrsc(stream, (retval))
 #endif
 
-char *disrcs A_((int stream, size_t *nchars, int *retval));
-int disrfcs A_((int stream, size_t *nchars, size_t achars, char *value));
-char *disrst A_((int stream, int *retval));
-int disrfst A_((int stream, size_t achars, char *value));
+char *disrcs(int stream, size_t *nchars, int *retval);
+int disrfcs(int stream, size_t *nchars, size_t achars, char *value);
+char *disrst(int stream, int *retval);
+int disrfst(int stream, size_t achars, char *value);
 
 /*
  * some compilers do not like long doubles, if long double is the same
@@ -186,38 +178,38 @@ typedef double dis_long_double_t;
 typedef long double dis_long_double_t;
 #endif
 
-dis_long_double_t disrl A_((int stream, int *retval));
+dis_long_double_t disrl (int stream, int *retval);
 /*#if DBL_MANT_DIG == LDBL_MANT_DIG && DBL_MAX_EXP == LDBL_MAX_EXP*/
 #if SIZEOF_DOUBLE == SIZEOF_LONG_DOUBLE
 #define disrd(stream, retval) (double)disrl(stream, (retval))
 #else
-double disrd A_((int stream, int *retval));
+double disrd (int stream, int *retval);
 #endif
 
 /*#if FLT_MANT_DIG == DBL_MANT_DIG && FLT_MAX_EXP == DBL_MAX_EXP*/
 #if SIZEOF_FLOAT == SIZEOF_DOUBLE
 #define disrf(stream, retval) (float)disrd(stream, (retval))
 #else
-float disrf A_((int stream, int *retval));
+float disrf (int stream, int *retval);
 #endif
 
-int diswul A_((int stream, unsigned long value));
+int diswul (int stream, unsigned long value);
 /*#if UINT_MAX == ULONG_MAX*/
-#if SIZEOF_UNSIGNED_INT == SIZEOF_UNSIGNED_LONG 
+#if SIZEOF_UNSIGNED_INT == SIZEOF_UNSIGNED_LONG
 #define diswui(stream, value) diswul(stream, (unsigned long)(value))
 #else
-int diswui A_((int stream, unsigned value));
+int diswui (int stream, unsigned value);
 #endif
 #define diswus(stream, value) diswui(stream, (unsigned)(value))
 #define diswuc(stream, value) diswui(stream, (unsigned)(value))
 #define tcp_diswuc(stream, value) tcp_diswui(stream, (unsigned)(value))
 
-int diswsl A_((int stream, long value));
+int diswsl (int stream, long value);
 /*#if INT_MIN == LONG_MIN && INT_MAX == LONG_MAX*/
 #if SIZEOF_INT == SIZEOF_LONG
 #define diswsi(stream, value) diswsl(stream, (long)(value))
 #else
-int diswsi A_((int stream, int value));
+int diswsi (int stream, int value);
 #endif
 #define diswss(stream, value) diswsi(stream, (int)(value))
 #define diswsc(stream, value) diswsi(stream, (int)(value))
@@ -229,18 +221,18 @@ int diswsi A_((int stream, int value));
 #define diswc(stream, value) diswsi(stream, (int)(value))
 #endif
 
-int diswcs A_((int stream, const char *value, size_t nchars));
+int diswcs (int stream, const char *value, size_t nchars);
 #define diswst(stream, value) diswcs(stream, value, strlen(value))
 #define tcp_diswst(stream, value) tcp_diswcs(stream, value, strlen(value))
 
-int diswl_ A_((int stream, dis_long_double_t value, unsigned int ndigs));
+int diswl_ (int stream, dis_long_double_t value, unsigned int ndigs);
 #define diswl(stream, value) diswl_(stream, (value), LDBL_DIG)
 #define diswd(stream, value) diswl_(stream, (dis_long_double_t)(value), DBL_DIG)
 /*#if FLT_MANT_DIG == DBL_MANT_DIG || DBL_MANT_DIG == LDBL_MANT_DIG*/
 #if SIZEOF_FLOAT == SIZEOF_DOUBLE
 #define diswf(stream,value) diswl_(stream,(dis_long_double_t)(value),FLT_DIG)
 #else
-int diswf A_((int stream, double value));
+int diswf (int stream, double value);
 #endif
 
 
@@ -248,11 +240,11 @@ extern const char *dis_emsg[];
 
 /* the following routines set/control DIS over tcp */
 
-extern void DIS_tcp_reset A_((int fd, int rw));
-extern void DIS_tcp_setup A_((int fd));
-extern int  DIS_tcp_wflush A_((int fd));
-extern void DIS_tcp_settimeout A_((long timeout));
-extern int  DIS_tcp_istimeout A_((int fd));
+extern void DIS_tcp_reset (int fd, int rw);
+extern void DIS_tcp_setup (int fd);
+extern int  DIS_tcp_wflush (int fd);
+extern void DIS_tcp_settimeout (long timeout);
+extern int  DIS_tcp_istimeout (int fd);
 
 extern unsigned tcp_disrui(int stream, int *retval);
 extern int tcp_disrsi(int stream, int *retval);

@@ -270,26 +270,26 @@ extern struct tree_t  *ipaddrs;
 
 extern struct tree_t  *streams;
 
-extern int update_nodes_file A_((void));
+extern int update_nodes_file(void);
 
 extern void bad_node_warning(pbs_net_t);
 extern int addr_ok(pbs_net_t);
 
 #ifdef BATCH_REQUEST_H
-extern void initialize_pbssubn A_((struct pbsnode *, struct pbssubn *, struct prop *));
-extern void effective_node_delete A_((struct pbsnode *));
-extern void setup_notification A_((char *));
+extern void initialize_pbssubn(struct pbsnode *, struct pbssubn *, struct prop *);
+extern void effective_node_delete(struct pbsnode *);
+extern void setup_notification(char *);
 
-extern  struct pbssubn  *find_subnodebyname A_((char *));
+extern struct pbssubn  *find_subnodebyname(char *);
 
-extern struct pbsnode  *find_nodebyname A_((char *));
-extern void free_prop_list A_((struct prop*));
-extern void     free_prop_attr  A_((attribute*));
-extern void recompute_ntype_cnts A_(());
-extern  int     create_pbs_node A_((char *, svrattrl *, int, int *));
-extern  int     mgr_set_node_attr A_((struct pbsnode *, attribute_def *, int, svrattrl *, int, int *, void *, int));
+extern struct pbsnode  *find_nodebyname(char *);
+extern void free_prop_list(struct prop*);
+extern void free_prop_attr(attribute*);
+extern void recompute_ntype_cnts();
+extern  int create_pbs_node(char *, svrattrl *, int, int *);
+extern  int mgr_set_node_attr(struct pbsnode *, attribute_def *, int, svrattrl *, int, int *, void *, int);
 
-struct prop  *init_prop A_((char *pname));
+struct prop  *init_prop(char *pname);
 #endif /* BATCH_REQUEST_H */
 
 #endif /* PBS_NODES_H */ 

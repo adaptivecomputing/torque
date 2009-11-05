@@ -105,7 +105,7 @@
 
 /* External functions */
 
-extern int issue_to_svr A_((char *svr, struct batch_request *, void (*func)(struct work_task *)));
+extern int issue_to_svr(char *svr, struct batch_request *, void (*func)(struct work_task *));
 
 /* Global Data Items: */
 

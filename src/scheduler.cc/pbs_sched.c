@@ -775,8 +775,8 @@ int main(
   extern int rpp_fd;
   fd_set fdset;
 
-  int  schedinit A_((int argc, char **argv));
-  int  schedule A_((int com, int connector));
+  int  schedinit(int argc, char **argv);
+  int  schedule(int com, int connector);
 
   glob_argv = argv;
   alarm_time = 180;

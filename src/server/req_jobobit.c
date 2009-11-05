@@ -137,12 +137,12 @@ extern const char *PJobState[];
 
 /* External Functions called */
 
-extern void set_resc_assigned A_((job *, enum batch_op));
+extern void set_resc_assigned(job *, enum batch_op);
 extern void cleanup_restart_file(job *);
 
 /* Local public functions  */
 
-void req_jobobit A_((struct batch_request *));
+void req_jobobit(struct batch_request *);
 
 
 
@@ -632,7 +632,7 @@ struct batch_request *cpy_stage(
 int mom_comm(
 
   job *pjob,
-  void (*func) A_((struct work_task *)))
+  void (*func)(struct work_task *))
 
   {
   unsigned int dummy;

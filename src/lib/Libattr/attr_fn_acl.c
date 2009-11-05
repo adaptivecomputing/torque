@@ -123,13 +123,13 @@
 
 /* Private Functions */
 
-static int hacl_match A_((const char *can, const char *master));
-static int user_match A_((const char *can, const char *master));
-static int gid_match A_((const char *can, const char *master));
-static int host_order A_((char *old, char *new));
-static int user_order A_((char *old, char *new));
-static int set_allacl A_((attribute *, attribute *, enum batch_op,
-                          int (*order_func)()));
+static int hacl_match(const char *can, const char *master);
+static int user_match(const char *can, const char *master);
+static int gid_match(const char *can, const char *master);
+static int host_order(char *old, char *new);
+static int user_order(char *old, char *new);
+static int set_allacl(attribute *, attribute *, enum batch_op,
+                          int (*order_func)());
 
 /* for all decode_*acl() - use decode_arst() */
 /* for all encode_*acl() - use encode_arst() */
@@ -207,7 +207,7 @@ int acl_check(
 
   struct array_strings *pas;
   char       *pstr;
-  int (*match_func) A_((const char *, const char *));
+  int (*match_func)(const char *, const char *);
 
   extern char server_host[];
 
@@ -352,13 +352,7 @@ static int chk_dup_acl(
  * parameter which indicates the ACL type.
  */
 
-static int set_allacl(attr, new, op, order_func)
-
-struct attribute *attr;
-
-struct attribute *new;
-enum batch_op op;
-int (*order_func) A_((char *, char *));
+static int set_allacl(struct attribute *attr, struct attribute *new, enum batch_op op, int (*order_func)(char *, char *))
   {
   int  i;
   int  j;

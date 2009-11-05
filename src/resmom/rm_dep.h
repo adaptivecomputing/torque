@@ -82,15 +82,15 @@
 ** these resources.
 */
 
-char *cput  A_((struct rm_attribute *attrib));
-char *mem  A_((struct rm_attribute *attrib));
-char *sessions A_((struct rm_attribute *attrib));
-char *pids  A_((struct rm_attribute *attrib));
-char *nsessions A_((struct rm_attribute *attrib));
-char *nusers  A_((struct rm_attribute *attrib));
-char *size  A_((struct rm_attribute *attrib));
-char *idletime A_((struct rm_attribute *attrib));
-char *nullproc A_((struct rm_attribute *attrib));
+char *cput(struct rm_attribute *attrib);
+char *mem(struct rm_attribute *attrib);
+char *sessions(struct rm_attribute *attrib);
+char *pids(struct rm_attribute *attrib);
+char *nsessions(struct rm_attribute *attrib);
+char *nusers(struct rm_attribute *attrib);
+char *size(struct rm_attribute *attrib);
+char *idletime(struct rm_attribute *attrib);
+char *nullproc(struct rm_attribute *attrib);
 
 struct  config  standard_config[] =
   {

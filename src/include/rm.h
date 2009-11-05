@@ -82,15 +82,15 @@
 ** to the resource monitor.
 */
 
-int openrm  A_((char *, unsigned int));
-int closerm  A_((int));
-int downrm  A_((int));
-int configrm A_((int, char *));
-int addreq  A_((int, char *));
-int allreq  A_((char *));
-char* getreq  A_((int));
-int flushreq A_((void));
-int activereq A_((void));
-void fullresp A_((int));
+int openrm(char *, unsigned int);
+int closerm(int);
+int downrm(int);
+int configrm(int, char *);
+int addreq(int, char *);
+int allreq(char *);
+char* getreq(int);
+int flushreq(void);
+int activereq(void);
+void fullresp(int);
 
 

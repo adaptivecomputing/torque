@@ -291,256 +291,256 @@ typedef struct SetServer_type SetServer;
 
 /* External Functions */
 extern char *
-  ServerInetAddrGet A_((Server *server));
+  ServerInetAddrGet(Server *server);
 
 extern char *
-  ServerDefQueGet A_((Server *server));
+  ServerDefQueGet(Server *server);
 
 extern int
-  ServerPortNumberOneWayGet A_((Server *server));
+  ServerPortNumberOneWayGet(Server *server);
 
 extern int
-  ServerPortNumberTwoWayGet A_((Server *server));
+  ServerPortNumberTwoWayGet(Server *server);
 
 extern int
-  ServerSocketGet A_((Server *server));
+  ServerSocketGet(Server *server);
 
 extern int
-  ServerFdOneWayGet A_((Server *server));
+  ServerFdOneWayGet(Server *server);
 
 extern int
-  ServerFdTwoWayGet A_((Server *server));
+  ServerFdTwoWayGet(Server *server);
 
 extern int
-  ServerStateGet A_((Server *server));
+  ServerStateGet(Server *server);
 
 extern int
-  ServerMaxRunJobsGet A_((Server *server));
+  ServerMaxRunJobsGet(Server *server);
 
 extern int
-  ServerMaxRunJobsPerUserGet A_((Server *server));
+  ServerMaxRunJobsPerUserGet(Server *server);
 
 extern int
-  ServerMaxRunJobsPerGroupGet A_((Server *server));
+  ServerMaxRunJobsPerGroupGet(Server *server);
 
 extern SetQue *
-  ServerQueuesGet A_((Server *server));
+  ServerQueuesGet(Server *server);
 
 extern struct SetJobElement *
-        ServerJobsGet A_((Server *server));
+        ServerJobsGet(Server *server);
 
 extern int
-  ServerIntResAvailGet A_((Server *server, char *name));
+  ServerIntResAvailGet(Server *server, char *name);
 
 extern int
-  ServerIntResAssignGet A_((Server *server, char *name));
+  ServerIntResAssignGet(Server *server, char *name);
 
 extern Size
-  ServerSizeResAvailGet A_((Server *server, char *name));
+  ServerSizeResAvailGet(Server *server, char *name);
 
 extern Size
-  ServerSizeResAssignGet A_((Server *server, char *name));
+  ServerSizeResAssignGet(Server *server, char *name);
 
 extern char *
-  ServerStringResAvailGet A_((Server *server, char *name));
+  ServerStringResAvailGet(Server *server, char *name);
 
 extern char *
-  ServerStringResAssignGet A_((Server *server, char *name));
+  ServerStringResAssignGet(Server *server, char *name);
 
 /* Put functions */
 extern void
-  ServerInetAddrPut A_((Server *server, char *server_name));
+  ServerInetAddrPut(Server *server, char *server_name);
 
 extern void
-  ServerDefQuePut A_((Server *server, char *que_name));
+  ServerDefQuePut(Server *server, char *que_name);
 
 extern void
-  ServerPortNumberOneWayPut A_((Server *server, int port));
+  ServerPortNumberOneWayPut(Server *server, int port);
 
 extern void
-  ServerPortNumberTwoWayPut A_((Server *server, int port));
+  ServerPortNumberTwoWayPut(Server *server, int port);
 
 extern void
-  ServerSocketPut A_((Server *server, int fd));
+  ServerSocketPut(Server *server, int fd);
 
 extern void
-  ServerFdOneWayPut A_((Server *server, int fd));
+  ServerFdOneWayPut(Server *server, int fd);
 
 extern void
-  ServerFdTwoWayPut A_((Server *server, int fd));
+  ServerFdTwoWayPut(Server *server, int fd);
 
 extern void
-  ServerStatePut A_((Server *server, int state));
+  ServerStatePut(Server *server, int state);
 
 extern void
-  ServerMaxRunJobsPut A_((Server *server, int maxRun));
+  ServerMaxRunJobsPut(Server *server, int maxRun);
 
 extern void
-  ServerMaxRunJobsPerUserPut A_((Server *server, int maxRunPerUser));
+  ServerMaxRunJobsPerUserPut(Server *server, int maxRunPerUser);
 
 extern void
-  ServerMaxRunJobsPerGroupPut A_((Server *server, int maxRunPerGroup));
+  ServerMaxRunJobsPerGroupPut(Server *server, int maxRunPerGroup);
 
 extern void
-  ServerQueuesPut A_((Server *server, Que *queues));
+  ServerQueuesPut(Server *server, Que *queues);
 
 extern void
-  ServerIntResAvailPut A_((Server *server, char *name, int value));
+  ServerIntResAvailPut(Server *server, char *name, int value);
 
 extern void
-  ServerIntResAssignPut A_((Server *server, char *name, int value));
+  ServerIntResAssignPut(Server *server, char *name, int value);
 
 extern void
-  ServerSizeResAvailPut A_((Server *server, char *name, Size value));
+  ServerSizeResAvailPut(Server *server, char *name, Size value);
 
 extern void
-  ServerSizeResAssignPut A_((Server *server, char *name, Size value));
+  ServerSizeResAssignPut(Server *server, char *name, Size value);
 
 extern void
-  ServerStringResAvailPut A_((Server *server, char *name, char *value));
+  ServerStringResAvailPut(Server *server, char *name, char *value);
 
 extern void
-  ServerStringResAssignPut A_((Server *server, char *name, char *value));
+  ServerStringResAssignPut(Server *server, char *name, char *value);
 
 extern void
-  ServerPrint A_((Server *server));
+  ServerPrint(Server *server);
 
 extern void
-  ServerInit A_((Server *server));
+  ServerInit(Server *server);
 
 extern int
-  ServerOpenInit A_((Server *server));
+  ServerOpenInit(Server *server);
 
 extern int
-  ServerOpen A_((Server *server));
+  ServerOpen(Server *server);
 
 extern int
-  ServerRead A_((Server *server));
+  ServerRead(Server *server);
 
 extern void *
-  ServerWriteRead A_((Server *server, int msg, void *param));
+  ServerWriteRead(Server *server, int msg, void *param);
 
 extern int
-  ServerClose A_((Server *server));
+  ServerClose(Server *server);
 
 extern void
-  ServerCloseFinal A_((Server *server));
+  ServerCloseFinal(Server *server);
 
 extern void
-  ServerStateRead A_((Server *server));
+  ServerStateRead(Server *server);
 
 extern int
-  JobAction A_((Job *job, Action action, void *param));
+  JobAction(Job *job, Action action, void *param);
 
 extern void
-  ServerFree A_((Server *server));
+  ServerFree(Server *server);
 
 /* Set stuff */
 extern void
-  SetServerInit A_((SetServer *ss));
+  SetServerInit(SetServer *ss);
 
 extern void
-  SetServerAdd A_((SetServer *ss, Server *s));
+  SetServerAdd(SetServer *ss, Server *s);
 
 extern void
-  SetServerFree A_((SetServer *ss));
+  SetServerFree(SetServer *ss);
 
 extern void
-  SetServerPrint A_((SetServer *ss));
+  SetServerPrint(SetServer *ss);
 
 extern int
-  inSetServer A_((Server *s, SetServer *ss));
+  inSetServer(Server *s, SetServer *ss);
 
 /* AllServers stuff */
 extern int
-  AllServersAdd A_((char *name, int port));
+  AllServersAdd(char *name, int port);
 
 extern void
-  AllServersInit A_((void));
+  AllServersInit(void);
 
 extern SetServer *
-  AllServersGet A_((void));
+  AllServersGet(void);
 
 extern Server  *
-  AllServersHeadGet A_((void));
+  AllServersHeadGet(void);
 
 extern Server  *
-  AllServersLocalHostGet A_((void));
+  AllServersLocalHostGet(void);
 
 extern void
-  AllServersLocalHostPut A_((Server *s));
+  AllServersLocalHostPut(Server *s);
 
 extern void
-  AllServersFree A_((void));
+  AllServersFree(void);
 
 extern int
-  SetServerSortInt A_((SetServer *s, int (*key)(), int order));
+  SetServerSortInt(SetServer *s, int (*key)(), int order);
 
 extern int
-  SetServerSortStr A_((SetServer *s, char *(*key)(), int order));
+  SetServerSortStr(SetServer *s, char *(*key)(), int order);
 
 extern int
-  SetServerSortDateTime A_((SetServer *s, DateTime(*key)(), int order));
+  SetServerSortDateTime(SetServer *s, DateTime(*key)(), int order);
 
 extern int
-  SetServerSortSize A_((SetServer *s, Size(*key)(), int order));
+  SetServerSortSize(SetServer *s, Size(*key)(), int order);
 
 extern int
-  SetServerSortFloat A_((SetServer *s, double(*key)(), int order));
+  SetServerSortFloat(SetServer *s, double(*key)(), int order);
 
 extern int
-  inAccumTable A_((char *resName));
+  inAccumTable(char *resName);
 
 /* ServerNodes stuff */
 extern SetCNode *
-  ServerNodesGet A_((Server *server));
+  ServerNodesGet(Server *server);
 
 extern CNode *
-  ServerNodesAdd A_((Server *s, char *name, int port, int queryMom));
+  ServerNodesAdd(Server *s, char *name, int port, int queryMom);
 
 extern CNode  *
-  ServerNodesHeadGet A_((Server *s));
+  ServerNodesHeadGet(Server *s);
 
 extern CNode  *
-  ServerNodesTailGet A_((Server *s));
+  ServerNodesTailGet(Server *s);
 
 extern int
-  ServerNodesQuery A_((Server *server, char *spec));
+  ServerNodesQuery(Server *server, char *spec);
 
 extern int
-  ServerNodesReserve A_((Server *server, char *spec, int resId));
+  ServerNodesReserve(Server *server, char *spec, int resId);
 
 extern int
-  ServerNodesRelease A_((Server *server, int resId));
+  ServerNodesRelease(Server *server, int resId);
 
 extern int
-  ServerNodesNumAvailGet A_((Server *server));
+  ServerNodesNumAvailGet(Server *server);
 
 extern int
-  ServerNodesNumAllocGet A_((Server *server));
+  ServerNodesNumAllocGet(Server *server);
 
 extern int
-  ServerNodesNumRsvdGet A_((Server *server));
+  ServerNodesNumRsvdGet(Server *server);
 
 extern int
-  ServerNodesNumDownGet A_((Server *server));
+  ServerNodesNumDownGet(Server *server);
 
 extern void
-  ServerNodesNumAvailPut A_((Server *server, int numAvail));
+  ServerNodesNumAvailPut(Server *server, int numAvail);
 
 extern void
-  ServerNodesNumAllocPut A_((Server *server, int numAlloc));
+  ServerNodesNumAllocPut(Server *server, int numAlloc);
 
 extern void
-  ServerNodesNumRsvdPut A_((Server *server, int numRsvd));
+  ServerNodesNumRsvdPut(Server *server, int numRsvd);
 
 extern void
-  ServerNodesNumDownPut A_((Server *server, int numDown));
+  ServerNodesNumDownPut(Server *server, int numDown);
 
 /* AllNodes stuff */
 extern SetCNode *
-  AllNodesGet A_((void));
+  AllNodesGet(void);
 
 extern CNode *
-  AllNodesLocalHostGet A_((void));
+  AllNodesLocalHostGet(void);
 #endif  /* _AF_SERVER_H */

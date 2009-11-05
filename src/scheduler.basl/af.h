@@ -258,276 +258,276 @@ typedef struct sizeRange_struct SizeRange;
 
 /* External Functions */
 extern void
-  dynamic_strcpy A_((char **str1_ptr, const char *str2));
+  dynamic_strcpy(char **str1_ptr, const char *str2);
 
 extern void
-  dynamic_strcat A_((char **str1_ptr, const char *str2));
+  dynamic_strcat(char **str1_ptr, const char *str2);
 
 extern int
-  strtimeToSecs A_((char *times));
+  strtimeToSecs(char *times);
 
 extern int
-  strToInt A_((char *str));
+  strToInt(char *str);
 
 extern double
-  strToFloat A_((char *str));
+  strToFloat(char *str);
 
 extern int
-  strToDayofweek A_((char *str));
+  strToDayofweek(char *str);
 
 extern Date
-  strToDate A_((char *str));
+  strToDate(char *str);
 
 extern Time
-  strToTime A_((char *str));
+  strToTime(char *str);
 
 extern DateTime
-  strToDateTime A_((char *str));
+  strToDateTime(char *str);
 
 extern Size
-  strToSize A_((char *str));
+  strToSize(char *str);
 
 extern IntRange
-  strToIntRange A_((char *str));
+  strToIntRange(char *str);
 
 extern FloatRange
-  strToFloatRange A_((char *str));
+  strToFloatRange(char *str);
 
 extern DayofweekRange
-  strToDayofweekRange A_((char *str));
+  strToDayofweekRange(char *str);
 
 extern DateRange
-  strToDateRange A_((char *str));
+  strToDateRange(char *str);
 
 extern TimeRange
-  strToTimeRange A_((char *str));
+  strToTimeRange(char *str);
 
 extern DateTimeRange
-  strToDateTimeRange A_((char *str));
+  strToDateTimeRange(char *str);
 
 extern SizeRange
-  strToSizeRange A_((char *str));
+  strToSizeRange(char *str);
 
 extern DateTime
-  strsecsToDateTime A_((char *val));
+  strsecsToDateTime(char *val);
 
 extern int
-  strToBool A_((char *val));
+  strToBool(char *val);
 
 extern void
-  sizeToStr A_((Size sizeval, char *cvnbuf));
+  sizeToStr(Size sizeval, char *cvnbuf);
 
 extern int
-  datecmp A_((Date d1, Date d2));
+  datecmp(Date d1, Date d2);
 
 extern int
-  timecmp A_((Time t1, Time t2));
+  timecmp(Time t1, Time t2);
 
 extern int
-  datetimecmp A_((DateTime dt1, DateTime dt2));
+  datetimecmp(DateTime dt1, DateTime dt2);
 
 extern DateTime
-  datetimeGet A_((void));
+  datetimeGet(void);
 
 extern int
-  datetimeToSecs A_((DateTime dt));
+  datetimeToSecs(DateTime dt);
 
 extern int
-  sizecmp A_((Size a, Size w));
+  sizecmp(Size a, Size w);
 
 extern Size
-  sizeAdd A_((Size a, Size w));
+  sizeAdd(Size a, Size w);
 
 extern Size
-  sizeSub A_((Size a, Size w));
+  sizeSub(Size a, Size w);
 
 extern Size
-  sizeMul A_((Size a, Size w));
+  sizeMul(Size a, Size w);
 
 extern Size
-  sizeDiv A_((Size a, Size w));
+  sizeDiv(Size a, Size w);
 
 extern Size
-  sizeUminus A_((Size sz));
+  sizeUminus(Size sz);
 
 extern int
-  dynamicArraySize A_((void *array));
+  dynamicArraySize(void *array);
 
 extern void *
-  initDynamicArray A_((size_t numElems, size_t elementSize));
+  initDynamicArray(size_t numElems, size_t elementSize);
 
 extern void *
-  extendDynamicArray A_((void *array, size_t numElems, size_t elementSize));
+  extendDynamicArray(void *array, size_t numElems, size_t elementSize);
 
 extern void
-  printDynamicArrayTable A_((void));
+  printDynamicArrayTable(void);
 
 extern void
-  freeDynamicArray A_((void *array));
+  freeDynamicArray(void *array);
 
 extern void
-  datePrint A_((Date d));
+  datePrint(Date d);
 
 extern void
-  timePrint A_((Time t));
+  timePrint(Time t);
 
 extern void
-  datetimePrint A_((DateTime dt));
+  datetimePrint(DateTime dt);
 
 extern void
-  sizePrint A_((Size s, int readable));
+  sizePrint(Size s, int readable);
 
 extern void
-  intRangePrint A_((IntRange r));
+  intRangePrint(IntRange r);
 
 extern void
-  floatRangePrint A_((FloatRange r));
+  floatRangePrint(FloatRange r);
 
 extern void
-  dayofweekPrint A_((Dayofweek dow));
+  dayofweekPrint(Dayofweek dow);
 
 extern void
-  actPrint A_((Action act));
+  actPrint(Action act);
 
 extern void
-  cprPrint A_((Comp cpr));
+  cprPrint(Comp cpr);
 
 extern void
-  dayofweekRangePrint A_((DayofweekRange r));
+  dayofweekRangePrint(DayofweekRange r);
 
 extern void
-  dateRangePrint A_((DateRange d));
+  dateRangePrint(DateRange d);
 
 extern void
-  timeRangePrint A_((TimeRange t));
+  timeRangePrint(TimeRange t);
 
 extern void
-  datetimeRangePrint A_((DateTimeRange dt));
+  datetimeRangePrint(DateTimeRange dt);
 
 extern void
-  sizeRangePrint A_((SizeRange s, int readable));
+  sizeRangePrint(SizeRange s, int readable);
 
 extern int
-  sizeRangecmp A_((SizeRange r1, SizeRange r2));
+  sizeRangecmp(SizeRange r1, SizeRange r2);
 
 extern int
-  sizeStrcmp A_((char *a, char *w));
+  sizeStrcmp(char *a, char *w);
 
 extern int
-  sizeRangeStrcmp A_((char *str1, char *str2));
+  sizeRangeStrcmp(char *str1, char *str2);
 
 extern IntRange
-  toIntRange A_((int i1, int i2));
+  toIntRange(int i1, int i2);
 
 extern FloatRange
-  toFloatRange A_((double f1, double f2));
+  toFloatRange(double f1, double f2);
 
 extern DayofweekRange
-  toDayofweekRange A_((Dayofweek dow1, Dayofweek dow2));
+  toDayofweekRange(Dayofweek dow1, Dayofweek dow2);
 
 extern DateRange
-  toDateRange A_((Date d1, Date d2));
+  toDateRange(Date d1, Date d2);
 
 extern TimeRange
-  toTimeRange A_((Time t1, Time t2));
+  toTimeRange(Time t1, Time t2);
 
 extern DateTimeRange
-  toDateTimeRange A_((DateTime dt1, DateTime dt2));
+  toDateTimeRange(DateTime dt1, DateTime dt2);
 
 extern SizeRange
-  toSizeRange A_((Size sz1, Size sz2));
+  toSizeRange(Size sz1, Size sz2);
 
 extern char *
-  strCat A_((char *str1, char *str2));
+  strCat(char *str1, char *str2);
 
 extern void
-  varstrAdd A_((void *ptr, int scope, void *pptr));
+  varstrAdd(void *ptr, int scope, void *pptr);
 
 extern void
-  varstrRemove A_((void *ptr));
+  varstrRemove(void *ptr);
 
 extern void
-  varstrModScope A_((void *ptr, int newscope));
+  varstrModScope(void *ptr, int newscope);
 
 extern void
-  varstrModPptr A_((void *ptr, void *newpptr));
+  varstrModPptr(void *ptr, void *newpptr);
 
 extern void
-  varstrFree A_((void *ptr));
+  varstrFree(void *ptr);
 
 extern void
-  varstrFreeByScope A_((int scope));
+  varstrFreeByScope(int scope);
 
 extern void
-  varstrFreeByPptr A_((void *pptr));
+  varstrFreeByPptr(void *pptr);
 
 extern void
-  varstrPrint A_((void));
+  varstrPrint(void);
 
 extern void
-  mallocTableAdd A_((void *ptr, void *pptr, int scope));
+  mallocTableAdd(void *ptr, void *pptr, int scope);
 
 extern void
-  mallocTablePrint A_((void));
+  mallocTablePrint(void);
 
 extern void
-  mallocTableFree A_((void *ptr));
+  mallocTableFree(void *ptr);
 
 extern void
-  mallocTableFreeByPptr A_((void *pptr));
+  mallocTableFreeByPptr(void *pptr);
 
 extern void
-  mallocTableFreeByScope A_((int scope, void (*freefunc)()));
+  mallocTableFreeByScope(int scope, void (*freefunc)());
 
 extern void
-  mallocTableModScope A_((void *ptr, int scope));
+  mallocTableModScope(void *ptr, int scope);
 
 extern void
-  mallocTableSafeModScope A_((void *ptr, int scope));
+  mallocTableSafeModScope(void *ptr, int scope);
 
 extern int
-  inMallocTable A_((void *ptr));
+  inMallocTable(void *ptr);
 
 extern int
-  normalizeSize A_((Size *a, Size *b, Size *ta, Size *tb));
+  normalizeSize(Size *a, Size *b, Size *ta, Size *tb);
 
 /* functions related to IntRes and SizeRes */
 
 extern int
-  IntResValueGet A_((struct IntRes *head, char *name));
+  IntResValueGet(struct IntRes *head, char *name);
 
 extern struct IntRes *
-        IntResValuePut A_((struct IntRes *head, char *name, int value, void *pptr));
+        IntResValuePut(struct IntRes *head, char *name, int value, void *pptr);
 
 extern void
-  IntResListPrint A_((struct IntRes *head, char *descr));
+  IntResListPrint(struct IntRes *head, char *descr);
 
 extern void
-  IntResListFree A_((struct IntRes *head));
+  IntResListFree(struct IntRes *head);
 
 extern Size
-  SizeResValueGet A_((struct SizeRes *head, char *name));
+  SizeResValueGet(struct SizeRes *head, char *name);
 
 extern struct SizeRes *
-        SizeResValuePut A_((struct SizeRes *head, char *name, Size value, void *pptr));
+        SizeResValuePut(struct SizeRes *head, char *name, Size value, void *pptr);
 
 extern void
-  SizeResListPrint A_((struct SizeRes *head, char *descr));
+  SizeResListPrint(struct SizeRes *head, char *descr);
 
 extern void
-  SizeResListFree A_((struct SizeRes *head));
+  SizeResListFree(struct SizeRes *head);
 
 extern char *
-  StringResValueGet A_((struct StringRes *head, char *name));
+  StringResValueGet(struct StringRes *head, char *name);
 
 extern struct StringRes *
-        StringResValuePut A_((struct StringRes *head, char *name, char *value,
-                              void *pptr));
+        StringResValuePut(struct StringRes *head, char *name, char *value,
+                              void *pptr);
 
 extern void
-  StringResListPrint A_((struct StringRes *head, char *descr));
+  StringResListPrint(struct StringRes *head, char *descr);
 
 extern void
-  StringResListFree A_((struct StringRes *head));
+  StringResListFree(struct StringRes *head);
 
 #endif  /* _AF_H */

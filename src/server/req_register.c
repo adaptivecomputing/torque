@@ -110,31 +110,31 @@
 
 /* External functions */
 
-extern int issue_to_svr A_((char *svr, struct batch_request *, void (*func)(struct work_task *)));
-extern long calc_job_cost A_((job *));
+extern int issue_to_svr(char *svr, struct batch_request *, void (*func)(struct work_task *));
+extern long calc_job_cost(job *);
 
 
 /* Local Private Functions */
 
-static void set_depend_hold A_((job *, attribute *));
-static int register_sync A_((struct depend *,  char *child, char *host, long));
-static int register_dep A_((attribute *, struct batch_request *, int, int *));
-static int unregister_dep A_((attribute *, struct batch_request *));
-static int unregister_sync A_((attribute *, struct batch_request *));
+static void set_depend_hold(job *, attribute *);
+static int register_sync(struct depend *,  char *child, char *host, long);
+static int register_dep(attribute *, struct batch_request *, int, int *);
+static int unregister_dep(attribute *, struct batch_request *);
+static int unregister_sync(attribute *, struct batch_request *);
 
-static struct depend *find_depend A_((int type, attribute *pattr));
+static struct depend *find_depend(int type, attribute *pattr);
 
-static struct depend *make_depend A_((int type, attribute *pattr));
+static struct depend *make_depend(int type, attribute *pattr);
 
-static struct depend_job *find_dependjob A_((struct depend *, char *name));
+static struct depend_job *find_dependjob(struct depend *, char *name);
 
-static struct depend_job *make_dependjob A_((struct depend *, char *jobid, char *host));
-static void   del_depend_job A_((struct depend_job *pdj));
-static int    build_depend A_((attribute *, char *));
-static void   clear_depend A_((struct depend *, int type, int exists));
-static void   del_depend A_((struct depend *));
-static void   release_cheapest A_((job *, struct depend *));
-static int    send_depend_req A_((job *, struct depend_job *pparent, int, int, int, void (*postfunc)(struct work_task *)));
+static struct depend_job *make_dependjob(struct depend *, char *jobid, char *host);
+static void   del_depend_job(struct depend_job *pdj);
+static int    build_depend(attribute *, char *);
+static void   clear_depend(struct depend *, int type, int exists);
+static void   del_depend(struct depend *);
+static void   release_cheapest(job *, struct depend *);
+static int    send_depend_req(job *, struct depend_job *pparent, int, int, int, void (*postfunc)(struct work_task *));
 
 /* External Global Data Items */
 
@@ -1671,7 +1671,7 @@ static int send_depend_req(
   int  type,
   int  op,
   int  schedhint,
-  void (*postfunc) A_((struct work_task *)))
+  void (*postfunc)(struct work_task *))
 
   {
   int        i;

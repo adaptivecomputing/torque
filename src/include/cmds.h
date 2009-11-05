@@ -115,23 +115,23 @@
 extern int optind, opterr;
 extern char *optarg;
 
-int check_job_name A_((char *name, int));
-time_t cvtdate A_((char *));
-int get_server A_((char *, char *, char *));
-int locate_job A_((char *, char *, char *));
-int parse_destination_id A_((char *, char **, char **));
-int parse_equal_string A_((char *, char **, char **));
-int parse_jobid A_((char *, char **, char **, char **));
-int prepare_path A_((char *, char*));
-void prt_error A_((char *, char *, int));
-void set_attr A_((struct attrl **, char *, char *));
-int set_resources A_((struct attrl **, char *, int));
-int cnt2server A_((char *server));
-void prt_job_err A_((char *, int, char *));
-int parse_at_list A_((char *, int, int));
-int parse_depend_list A_((char *, char *, int));
-int parse_stage_list A_((char *));
-int cnt2server_conf A_((long));
+int check_job_name(char *name, int);
+time_t cvtdate(char *);
+int get_server(char *, char *, char *);
+int locate_job(char *, char *, char *);
+int parse_destination_id(char *, char **, char **);
+int parse_equal_string(char *, char **, char **);
+int parse_jobid(char *, char **, char **, char **);
+int prepare_path(char *, char*);
+void prt_error(char *, char *, int);
+void set_attr(struct attrl **, char *, char *);
+int set_resources(struct attrl **, char *, int);
+int cnt2server(char *server);
+void prt_job_err(char *, int, char *);
+int parse_at_list(char *, int, int);
+int parse_depend_list(char *, char *, int);
+int parse_stage_list(char *);
+int cnt2server_conf(long);
 int TShowAbout(void);
 
 #endif

@@ -140,7 +140,7 @@
 
 #define notNULL(x) (((x)!=NULL) && (strlen(x)>(size_t)0))
 
-extern int parse_jobid A_((char *, char **, char **, char **));
+extern int parse_jobid(char *, char **, char **, char **);
 
 
 

@@ -107,4 +107,4 @@ struct tracking
   char     tk_state;
   };
 
-extern void track_save A_((struct work_task *));
+extern void track_save(struct work_task *);

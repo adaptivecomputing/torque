@@ -300,9 +300,9 @@ extern char *dependent(char *res, struct rm_attribute *attr);
 
 char TORQUE_JData[MMAX_LINE];
 
-void state_to_server A_((int, int));
+void state_to_server(int, int);
 
-extern void DIS_rpp_reset A_((void));
+extern void DIS_rpp_reset(void);
 
 /**
  * mom_server_init
@@ -2598,7 +2598,7 @@ int mom_open_socket_to_jobs_server(
 
   job  *pjob,
   char *caller_id,
-  void (*message_handler) A_((int)))
+  void (*message_handler)(int))
 
   {
   char *svrport = NULL;

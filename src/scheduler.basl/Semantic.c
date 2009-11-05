@@ -95,7 +95,7 @@
 static char ident[] = "@(#) $RCSfile$ $Revision$";
 
 extern void
-  yyerror A_((char *ep));
+  yyerror(char *ep);
 
 extern int  linenum;
 extern char linebuf[];

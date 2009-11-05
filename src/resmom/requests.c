@@ -176,8 +176,8 @@ static char   rcperr[MAXPATHLEN]; /* file to contain rcp error */
 extern char PBSNodeMsgBuf[1024];
 extern int  LOGLEVEL;
 
-extern int im_compose A_((int, char *, char *, int, tm_event_t, tm_task_id));
-extern int mom_open_socket_to_jobs_server A_((job *, char *, void (*) A_((int))));
+extern int im_compose(int, char *, char *, int, tm_event_t, tm_task_id);
+extern int mom_open_socket_to_jobs_server(job *, char *, void (*)(int));
 
 /* prototypes */
 

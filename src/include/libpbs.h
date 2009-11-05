@@ -253,95 +253,95 @@ enum PBatchReqTypeEnum
 const char *reqtype_to_txt(int);
 
 void
-PBS_free_aopl A_((struct attropl * aoplp));
+PBS_free_aopl (struct attropl * aoplp);
 
 
 int
-PBSD_commit A_((int connect, char *jobid));
+PBSD_commit (int connect, char *jobid);
 
 int
-PBSD_jcred A_((int connect, char *buf, int len));
+PBSD_jcred (int connect, char *buf, int len);
 
 int
-PBSD_jscript A_((int connect, char *script_file, char *jobid));
+PBSD_jscript (int connect, char *script_file, char *jobid);
 
 int
-PBSD_mgr_put A_((int connect, int func, int cmd, int objtype, char *objname, struct attropl *al, char *extend));
+PBSD_mgr_put (int connect, int func, int cmd, int objtype, char *objname, struct attropl *al, char *extend);
 
 int
-PBSD_manager  A_((int connect, int func, int cmd, int objtype, char *objname, struct attropl *al, char *extend));
+PBSD_manager  (int connect, int func, int cmd, int objtype, char *objname, struct attropl *al, char *extend);
 
 int
-PBSD_msg_put A_((int connect, char *jobid, int fileopt, char *msg, char *extend));
+PBSD_msg_put (int connect, char *jobid, int fileopt, char *msg, char *extend);
 
 int
-PBSD_rdytocmt A_((int connect, char *jobid));
+PBSD_rdytocmt (int connect, char *jobid);
 
 int
-PBSD_sig_put A_((int connect, char *jobid, char *signal, char *extend));
+PBSD_sig_put (int connect, char *jobid, char *signal, char *extend);
 
 int
-PBSD_term_put A_((int connect, int manner, char *extend));
+PBSD_term_put (int connect, int manner, char *extend);
 
 int
-PBSD_jobfile A_((int connect, int req_type, char *path, char *jobid, enum job_file which));
+PBSD_jobfile (int connect, int req_type, char *path, char *jobid, enum job_file which);
 
 int
-PBSD_status_put A_((int c, int func, char *id, struct attrl *attrib, char *extend));
+PBSD_status_put (int c, int func, char *id, struct attrl *attrib, char *extend);
 
-struct batch_reply *PBSD_rdrpy A_((int connect));
+struct batch_reply *PBSD_rdrpy (int connect);
 
-void PBSD_FreeReply A_((struct batch_reply *));
+void PBSD_FreeReply (struct batch_reply *);
 
-struct batch_status *PBSD_status A_((int c, int function, char *id, struct attrl *attrib, char *extend));
+struct batch_status *PBSD_status (int c, int function, char *id, struct attrl *attrib, char *extend);
 
-struct batch_status *PBSD_status_get A_((int c));
+struct batch_status *PBSD_status_get (int c);
 
-char * PBSD_queuejob A_((int c, char *j, char *d, struct attropl *a, char *ex));
-
-
-extern int decode_DIS_JobId A_((int socket, char *jobid));
-extern int decode_DIS_replyCmd A_((int socket, struct batch_reply *));
-
-extern int encode_DIS_JobCred A_((int socket, int type, char *cred, int len));
-extern int encode_DIS_JobFile A_((int socket, int, char *, int, char *, int));
-extern int encode_DIS_JobId A_((int socket, char *));
-extern int encode_DIS_Manage A_((int socket, int cmd, int objt, char *, struct attropl *));
-extern int encode_DIS_MoveJob A_((int socket, char *jid, char *dest));
-extern int encode_DIS_MessageJob A_((int socket, char *jid, int fopt, char *m));
-extern int encode_DIS_QueueJob A_((int socket, char *jid, char *dest, struct attropl *));
-extern int encode_DIS_ReqExtend A_((int socket, char *extend));
-extern int encode_DIS_ReqHdr A_((int socket, int reqt, char *user));
-extern int encode_DIS_Rescq A_((int socket, char **rlist, int num));
-extern int encode_DIS_RunJob A_((int socket, char *jid, char *where, unsigned int resch));
-extern int encode_DIS_ShutDown A_((int socket, int manner));
-extern int encode_DIS_SignalJob A_((int socket, char *jid, char *sig));
-extern int encode_DIS_Status A_((int socket, char *objid, struct attrl *));
-extern int encode_DIS_attrl A_((int socket, struct attrl *));
-extern int encode_DIS_attropl A_((int socket, struct attropl *));
-
-extern int tcp_decode_DIS_JobId A_((int socket, char *jobid));
-extern int tcp_decode_DIS_replyCmd A_((int socket, struct batch_reply *));
-
-extern int tcp_encode_DIS_JobCred A_((int socket, int type, char *cred, int len));
-extern int tcp_encode_DIS_JobFile A_((int socket, int, char *, int, char *, int));
-extern int tcp_encode_DIS_JobId A_((int socket, char *));
-extern int tcp_encode_DIS_Manage A_((int socket, int cmd, int objt, char *, struct attropl *));
-extern int tcp_encode_DIS_MoveJob A_((int socket, char *jid, char *dest));
-extern int tcp_encode_DIS_MessageJob A_((int socket, char *jid, int fopt, char *m));
-extern int tcp_encode_DIS_QueueJob A_((int socket, char *jid, char *dest, struct attropl *));
-extern int tcp_encode_DIS_ReqExtend A_((int socket, char *extend));
-extern int tcp_encode_DIS_ReqHdr A_((int socket, int reqt, char *user));
-extern int tcp_encode_DIS_Rescq A_((int socket, char **rlist, int num));
-extern int tcp_encode_DIS_RunJob A_((int socket, char *jid, char *where, unsigned int resch));
-extern int tcp_encode_DIS_ShutDown A_((int socket, int manner));
-extern int tcp_encode_DIS_SignalJob A_((int socket, char *jid, char *sig));
-extern int tcp_encode_DIS_Status A_((int socket, char *objid, struct attrl *));
-extern int tcp_encode_DIS_attrl A_((int socket, struct attrl *));
-extern int tcp_encode_DIS_attropl A_((int socket, struct attropl *));
+char * PBSD_queuejob (int c, char *j, char *d, struct attropl *a, char *ex);
 
 
-extern int DIS_reply_read A_((int socket, struct batch_reply *preply));
+extern int decode_DIS_JobId (int socket, char *jobid);
+extern int decode_DIS_replyCmd (int socket, struct batch_reply *);
+
+extern int encode_DIS_JobCred (int socket, int type, char *cred, int len);
+extern int encode_DIS_JobFile (int socket, int, char *, int, char *, int);
+extern int encode_DIS_JobId (int socket, char *);
+extern int encode_DIS_Manage (int socket, int cmd, int objt, char *, struct attropl *);
+extern int encode_DIS_MoveJob (int socket, char *jid, char *dest);
+extern int encode_DIS_MessageJob (int socket, char *jid, int fopt, char *m);
+extern int encode_DIS_QueueJob (int socket, char *jid, char *dest, struct attropl *);
+extern int encode_DIS_ReqExtend (int socket, char *extend);
+extern int encode_DIS_ReqHdr (int socket, int reqt, char *user);
+extern int encode_DIS_Rescq (int socket, char **rlist, int num);
+extern int encode_DIS_RunJob (int socket, char *jid, char *where, unsigned int resch);
+extern int encode_DIS_ShutDown (int socket, int manner);
+extern int encode_DIS_SignalJob (int socket, char *jid, char *sig);
+extern int encode_DIS_Status (int socket, char *objid, struct attrl *);
+extern int encode_DIS_attrl (int socket, struct attrl *);
+extern int encode_DIS_attropl (int socket, struct attropl *);
+
+extern int tcp_decode_DIS_JobId (int socket, char *jobid);
+extern int tcp_decode_DIS_replyCmd (int socket, struct batch_reply *);
+
+extern int tcp_encode_DIS_JobCred (int socket, int type, char *cred, int len);
+extern int tcp_encode_DIS_JobFile (int socket, int, char *, int, char *, int);
+extern int tcp_encode_DIS_JobId (int socket, char *);
+extern int tcp_encode_DIS_Manage (int socket, int cmd, int objt, char *, struct attropl *);
+extern int tcp_encode_DIS_MoveJob (int socket, char *jid, char *dest);
+extern int tcp_encode_DIS_MessageJob (int socket, char *jid, int fopt, char *m);
+extern int tcp_encode_DIS_QueueJob (int socket, char *jid, char *dest, struct attropl *);
+extern int tcp_encode_DIS_ReqExtend (int socket, char *extend);
+extern int tcp_encode_DIS_ReqHdr (int socket, int reqt, char *user);
+extern int tcp_encode_DIS_Rescq (int socket, char **rlist, int num);
+extern int tcp_encode_DIS_RunJob (int socket, char *jid, char *where, unsigned int resch);
+extern int tcp_encode_DIS_ShutDown (int socket, int manner);
+extern int tcp_encode_DIS_SignalJob (int socket, char *jid, char *sig);
+extern int tcp_encode_DIS_Status (int socket, char *objid, struct attrl *);
+extern int tcp_encode_DIS_attrl (int socket, struct attrl *);
+extern int tcp_encode_DIS_attropl (int socket, struct attropl *);
+
+
+extern int DIS_reply_read (int socket, struct batch_reply *preply);
 
 #endif /* LIBPBS_H */
 

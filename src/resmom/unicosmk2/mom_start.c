@@ -214,7 +214,7 @@ mktmpdir(
        ptask = (task *)GET_NEXT(ptask->ti_jobtask), tasks++);
 
 #if SRFS
-  extern char *var_value A_((char *));
+  extern char *var_value(char *);
 
   tmpdir = tmpdirname(var_value("TMPDIR"), seq);
 
@@ -322,7 +322,7 @@ rmtmpdir(char *sequence)
   static char *id = "rmtmpdir";
   char *tmpdir;
   int pid, pstat;
-  extern char *var_value A_((char *));
+  extern char *var_value(char *);
 
   pid = fork();
 

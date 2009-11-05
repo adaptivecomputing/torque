@@ -94,7 +94,7 @@ extern struct connection svr_conn[];
 
 void net_add_close_func(sd, func)
 int sd;
-void (*func) A_((int));
+void (*func)(int);
   {
   if (svr_conn[sd].cn_active == Idle)
     return;

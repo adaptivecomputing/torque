@@ -108,8 +108,8 @@ extern char *msg_movejob;
 extern int  pbs_errno;
 extern char *pbs_o_host;
 
-extern int svr_movejob A_((job *, char *, struct batch_request *));
-extern int svr_chkque A_((job *, pbs_queue *, char *, int, char *));
+extern int svr_movejob(job *, char *, struct batch_request *);
+extern int svr_chkque(job *, pbs_queue *, char *, int, char *);
 
 /*
  * req_movejob = move a job to a new destination (local or remote)

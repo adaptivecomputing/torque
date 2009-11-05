@@ -103,10 +103,10 @@
 #define PBS_ACCT_DEL (int)'D' /* Job Deleted by request */
 #define PBS_ACCT_ABT (int)'A' /* Job Abort by server */
 
-extern int  acct_open A_((char *filename));
-extern void account_record A_((int acctype, job *pjob, char *text));
-extern void account_jobstr A_((job *pjob));
-extern void account_jobend A_((job *pjob, char * used));
+extern int  acct_open (char *filename);
+extern void account_record (int acctype, job *pjob, char *text);
+extern void account_jobstr (job *pjob);
+extern void account_jobend (job *pjob, char * used);
 
 #endif
 

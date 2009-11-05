@@ -81,26 +81,6 @@
  * @(#) $Id$
  */
 
-#ifdef __STDC__
-/*
- * The following macro definations take affect when compiling under ansi C
- *
- * The A_ macro is provided for function prototype declarations.  It allows
- * ANSI C prototypes to be complied under K&R C
- */
-
-#define A_(x) x
-
-#else
-
-/* The following macro definations take affect when compiling under K&R C */
-
-#define A_(x) ()
-#define const
-#define volatile
-
-#endif
-
 /* The following macros are for HPUX */
 #if defined(HAVE_SETRESUID) && defined(HAVE_SETRESGID)
 # ifndef seteuid

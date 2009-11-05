@@ -660,19 +660,19 @@ typedef struct infoent
 
 #define IM_MAX          12
 
-eventent *event_alloc A_((
+eventent *event_alloc(
                            int  command,
                            hnodent *pnode,
                            tm_event_t event,
-                           tm_task_id taskid));
+                           tm_task_id taskid);
 
-task *pbs_task_create A_((
+task *pbs_task_create(
                            job *pjob,
-                           tm_task_id taskid));
+                           tm_task_id taskid);
 
-task *task_find A_((
+task *task_find(
                      job *pjob,
-                     tm_task_id taskid));
+                     tm_task_id taskid);
 
 #endif /* MOM */
 
@@ -820,57 +820,57 @@ dir so that job can be restarted */
 #define JOB_EXEC_CMDFAIL  -8 /* exec() of user command failed */
 #define JOB_EXEC_STDOUTFAIL -9 /* could not create/open stdout stderr files */
 
-extern void  add_dest A_((job *));
-extern void  depend_clrrdy A_((job *));
-extern int   depend_on_que A_((attribute *, void *, int));
-extern int   depend_on_exec A_((job *));
-extern int   depend_on_term A_((job *));
-extern job  *find_job A_((char *));
-extern char *get_egroup A_((job *));
-extern char *get_variable A_((job *, char *));
-extern int   init_chkmom A_((job *));
-extern void  issue_track A_((job *));
-extern int   job_abt A_((job **, char *));
+extern void  add_dest(job *);
+extern void  depend_clrrdy(job *);
+extern int   depend_on_que(attribute *, void *, int);
+extern int   depend_on_exec(job *);
+extern int   depend_on_term(job *);
+extern job  *find_job(char *);
+extern char *get_egroup(job *);
+extern char *get_variable(job *, char *);
+extern int   init_chkmom(job *);
+extern void  issue_track(job *);
+extern int   job_abt(job **, char *);
 extern job  *job_alloc();
-extern job  *job_clone A_((job *, int));
-extern void  job_free A_((job *));
-extern void  job_purge A_((job *));
-extern job  *job_recov A_((char *));
-extern int   job_save A_((job *, int));
-extern int   modify_job_attr A_((job *, svrattrl *, int, int *));
-extern char *prefix_std_file A_((job *, int));
-extern char *add_std_filename A_((job *, char *, int));
-extern int   set_jobexid A_((job *, attribute *, char *));
-extern int   site_check_user_map A_((job *, char *, char *));
-extern void  svr_dequejob A_((job *));
-extern int   svr_enquejob A_((job *));
-extern void  svr_evaljobstate A_((job *, int *, int *, int));
-extern void  svr_mailowner A_((job *, int, int, char *));
-extern void  set_resc_deflt A_((job *, attribute *));
-extern void  set_statechar A_((job *));
-extern int   svr_setjobstate A_((job *, int, int));
+extern job  *job_clone(job *, int);
+extern void  job_free(job *);
+extern void  job_purge(job *);
+extern job  *job_recov(char *);
+extern int   job_save(job *, int);
+extern int   modify_job_attr(job *, svrattrl *, int, int *);
+extern char *prefix_std_file(job *, int);
+extern char *add_std_filename(job *, char *, int);
+extern int   set_jobexid(job *, attribute *, char *);
+extern int   site_check_user_map(job *, char *, char *);
+extern void  svr_dequejob(job *);
+extern int   svr_enquejob(job *);
+extern void  svr_evaljobstate(job *, int *, int *, int);
+extern void  svr_mailowner(job *, int, int, char *);
+extern void  set_resc_deflt(job *, attribute *);
+extern void  set_statechar(job *);
+extern int   svr_setjobstate(job *, int, int);
 
 #ifdef BATCH_REQUEST_H
-extern job  *chk_job_request A_((char *, struct batch_request *));
-extern int   net_move A_((job *, struct batch_request *));
-extern int   svr_chk_owner A_((struct batch_request *, job *));
+extern job  *chk_job_request(char *, struct batch_request *);
+extern int   net_move(job *, struct batch_request *);
+extern int   svr_chk_owner(struct batch_request *, job *);
 
-extern struct batch_request *cpy_stage A_((struct batch_request *, job *, enum job_atr, int));
-extern struct batch_request *setup_cpyfiles A_((struct batch_request *, job *, char *, char *, int, int));
-extern struct batch_request *cpy_checkpoint A_((struct batch_request *, job *, enum job_atr, int));
+extern struct batch_request *cpy_stage(struct batch_request *, job *, enum job_atr, int);
+extern struct batch_request *setup_cpyfiles(struct batch_request *, job *, char *, char *, int, int);
+extern struct batch_request *cpy_checkpoint(struct batch_request *, job *, enum job_atr, int);
 #endif /* BATCH_REQUEST_H */
 
 #ifdef QUEUE_H
-extern int   svr_chkque A_((job *, pbs_queue *, char *, int, char *));
-extern int   default_router A_((job *, pbs_queue *, long));
-extern int   site_alt_router A_((job *, pbs_queue *, long));
-extern int   site_acl_check A_((job *, pbs_queue *));
+extern int   svr_chkque(job *, pbs_queue *, char *, int, char *);
+extern int   default_router(job *, pbs_queue *, long);
+extern int   site_alt_router(job *, pbs_queue *, long);
+extern int   site_acl_check(job *, pbs_queue *);
 #endif /* QUEUE_H */
 
 #ifdef WORK_TASK_H
-extern void  job_clone_wt A_((struct work_task *));
-extern int   issue_signal A_((job *, char *, void(*)(struct work_task *), void *));
-extern void   on_job_exit A_((struct work_task *));
+extern void  job_clone_wt(struct work_task *);
+extern int   issue_signal(job *, char *, void(*)(struct work_task *), void *);
+extern void   on_job_exit(struct work_task *);
 #endif /* WORK_TASK_H */
 
 #endif /* PBS_JOB_H */

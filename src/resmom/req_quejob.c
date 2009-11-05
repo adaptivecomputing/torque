@@ -112,11 +112,11 @@
 
 /* External Functions Called: */
 
-extern int  reply_jid A_((char *));
-extern void start_exec A_((job *));
-extern int  svr_authorize_jobreq A_((struct batch_request *, job *));
-extern int  svr_chkque A_((job *, pbs_queue *, char *, int, char *));
-extern int  job_route A_((job *));
+extern int  reply_jid(char *);
+extern void start_exec(job *);
+extern int  svr_authorize_jobreq(struct batch_request *, job *);
+extern int  svr_chkque(job *, pbs_queue *, char *, int, char *);
+extern int  job_route(job *);
 extern void check_state(int);
 extern void mom_server_all_update_stat();
 
@@ -160,12 +160,12 @@ extern int decode_arst_merge(struct attribute *,char *,char *,char *);
 
 /* Private Functions in this file */
 
-static job *locate_new_job A_((int, char *));
+static job *locate_new_job(int, char *);
 
 #ifdef PNOT
-static int user_account_verify A_((char *, char *));
-static char *user_account_default A_((char *));
-static int user_account_read_user A_((char *));
+static int user_account_verify(char *, char *);
+static char *user_account_default(char *);
+static int user_account_read_user(char *);
 #endif /* PNOT */
 
 

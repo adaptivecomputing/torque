@@ -232,8 +232,8 @@ extern struct server server;
 
 /* function prototypes */
 
-extern int svr_recov A_((char *, int));
-extern int svr_save A_((struct server *, int));
+extern int svr_recov(char *, int);
+extern int svr_save(struct server *, int);
 
 
 /*

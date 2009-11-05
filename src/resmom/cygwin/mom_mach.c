@@ -166,8 +166,8 @@ static int            max_proc = 0;
 /*
 ** external functions and data
 */
-extern struct	config		*search A_((struct config *,char *));
-extern struct	rm_attribute	*momgetattr A_((char *));
+extern struct	config		*search (struct config *,char *);
+extern struct	rm_attribute	*momgetattr (char *);
 extern int                      rm_errno;
 extern double	cputfactor;
 extern double	wallfactor;
@@ -180,14 +180,14 @@ extern int      ignmem;
 /*
 ** local functions and data
 */
-static char *resi     A_((struct rm_attribute *));
-static char *totmem   A_((struct rm_attribute *));
-static char *availmem A_((struct rm_attribute *));
-static char *physmem  A_((struct rm_attribute *));
-static char *ncpus    A_((struct rm_attribute *));
-static char *walltime A_((struct rm_attribute *));
-static char *quota    A_((struct rm_attribute *));
-static char *netload  A_((struct rm_attribute *));
+static char *resi     (struct rm_attribute *);
+static char *totmem   (struct rm_attribute *);
+static char *availmem (struct rm_attribute *);
+static char *physmem  (struct rm_attribute *);
+static char *ncpus    (struct rm_attribute *);
+static char *walltime (struct rm_attribute *);
+static char *quota    (struct rm_attribute *);
+static char *netload  (struct rm_attribute *);
 
 #ifndef mbool_t
 #define mbool_t char
@@ -195,8 +195,8 @@ static char *netload  A_((struct rm_attribute *));
 
 mbool_t ProcIsChild(char *,char *,char *);
 
-extern char *loadave A_((struct rm_attribute *));
-extern char *nullproc A_((struct rm_attribute *));
+extern char *loadave (struct rm_attribute *);
+extern char *nullproc (struct rm_attribute *);
 
 time_t wait_time = 10;
 
@@ -375,7 +375,7 @@ proc_stat_t *get_proc_stat(
 
   lastbracket++;
 
-  if (sscanf(readbuf,"%d (%[^\n]",&ps.pid,path) != 2) 
+  if (sscanf(readbuf,"%d (%[^\n]",&ps.pid,path) != 2)
     {
     /* FAILURE */
 
@@ -386,7 +386,7 @@ proc_stat_t *get_proc_stat(
 
   /* see stat_str[] value for mapping 'stat' format */
 
-  if (sscanf(lastbracket,stat_str, 
+  if (sscanf(lastbracket,stat_str,
         &ps.state,     /* state (one of RSDZTW) */
         &ps.ppid,      /* ppid */
         &ps.pgrp,      /* pgrp */
@@ -1404,7 +1404,7 @@ int mom_set_limits(
 #endif
 
           mem_limit = value;
-  
+
           if (getrlimit(RLIMIT_STACK, &reslim) >= 0)
             {
             /* NOTE:  mem_limit no longer used with UMU patch in place */
@@ -1904,7 +1904,7 @@ int mom_over_limit(
  * stats gathered by the mom_get_sample() function. This function
  * is often called by "im_request()" as a result of POLL_JOB query
  * from the mother superior.
- * 
+ *
  * @see im_request() - parent - respond to poll_job request from mother superior
  * @see examine_all_running_jobs() - parent - update local use on mother superior
  * @see TMomFinalizeJob1() - parent - update serial job immediately at job start
@@ -2049,12 +2049,12 @@ int mom_set_use(
  * Kill a task session.
  * Call with the task pointer and a signal number.
  *
- * @return number of tasks signalled (0 = failure) 
+ * @return number of tasks signalled (0 = failure)
  *
  * @see kill_job() - parent
  *
  * NOTE:  should support killpg() or killpidtree() - (NYI)
- *        may be required for suspend/resume 
+ *        may be required for suspend/resume
  */
 
 int kill_task(
@@ -2303,8 +2303,8 @@ int kill_task(
     }      /* END while ((dent = readdir(pdir)) != NULL) */
 
   /* NOTE:  to fix bad state situations resulting from a hard crash, the logic
-            below should be triggered any time no processes are found (NYI) */ 
-            
+            below should be triggered any time no processes are found (NYI) */
+
   if (IS_ADOPTED_TASK(ptask->ti_qs.ti_task) && (NumProcessesFound == 0))
     {
     /* no process was found, but for an adopted task this is OK (we don't find

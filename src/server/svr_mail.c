@@ -101,8 +101,8 @@
 
 /* External Functions Called */
 
-extern void net_close A_((int));
-extern void svr_format_job A_((FILE *, job *, char *, int, char *));
+extern void net_close (int);
+extern void svr_format_job (FILE *, job *, char *, int, char *);
 
 /* Global Data */
 

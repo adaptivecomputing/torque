@@ -1609,7 +1609,7 @@ u_long resc_used(
 
   job    *pjob,
   char  *name,
-  u_long(*func) A_((resource *)))
+  u_long(*func)(resource *))
 
   {
   attribute    *at;
@@ -1885,9 +1885,9 @@ void im_request(
 
   struct passwd  *check_pwd();
   extern int  resc_access_perm;
-  int start_process A_((task *, char **, char **));
-  u_long gettime A_((resource *));
-  u_long getsize A_((resource *));
+  int start_process(task *, char **, char **);
+  u_long gettime(resource *);
+  u_long getsize(resource *);
 
   memset(&efwd, 0, sizeof(efwd));
 
@@ -4510,7 +4510,7 @@ int tm_request(
 
   extern struct connection svr_conn[];
 
-  int start_process A_((task *ptask, char **argv, char **envp));
+  int start_process(task *ptask, char **argv, char **envp);
 
   if (svr_conn[fd].cn_addr != localaddr)
     {

@@ -113,10 +113,10 @@
  */
 
 
-int to_size A_((char *, struct size_value *));
-void from_size A_((struct size_value *, char *));
-int normalize_size A_((struct size_value *a, struct size_value *b,
-                       struct size_value *c, struct size_value *d));
+int to_size(char *, struct size_value *);
+void from_size(struct size_value *, char *);
+int normalize_size(struct size_value *a, struct size_value *b,
+                       struct size_value *c, struct size_value *d);
 
 /*
  * decode_size - decode size into attribute structure

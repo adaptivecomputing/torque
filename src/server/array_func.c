@@ -46,8 +46,8 @@
 
 
 
-extern void  job_clone_wt A_((struct work_task *));
-extern int array_upgrade A_((job_array *, int, int, int *));
+extern void  job_clone_wt(struct work_task *);
+extern int array_upgrade(job_array *, int, int, int *);
 
 /* global data items used */
 

@@ -124,7 +124,7 @@ extern struct pbsnode *tfind_addr(const u_long);
 
 extern int       LOGLEVEL;
 
-int issue_to_svr A_((char *, struct batch_request *, void (*f)(struct work_task *)));
+int issue_to_svr(char *, struct batch_request *, void (*f)(struct work_task *));
 
 /*
  * relay_to_mom - relay a (typically existing) batch_request to MOM
@@ -142,7 +142,7 @@ int relay_to_mom(
 
   pbs_net_t          momaddr, /* address of mom */
   struct batch_request  *request, /* the request to send */
-  void (*func) A_((struct work_task *)))
+  void (*func)(struct work_task *))
 
   {
   char *id = "relay_to_mom";
@@ -248,7 +248,7 @@ int issue_to_svr(
 
   char                 *servern,                  /* I */
   struct batch_request *preq,                     /* I */
-  void (*replyfunc)     A_((struct work_task *))) /* I */
+  void (*replyfunc)    (struct work_task *))      /* I */
 
   {
   int   do_retry = 0;
@@ -374,7 +374,7 @@ int issue_Drequest(
 
   int          conn,
   struct batch_request *request,
-  void (*func) A_((struct work_task *)),
+  void (*func) (struct work_task *),
   struct work_task    **ppwt)
 
   {

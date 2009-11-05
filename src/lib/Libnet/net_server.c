@@ -115,7 +115,7 @@ extern int LOGLEVEL;
 
 /* External Functions Called */
 
-extern void process_request A_((int));
+extern void process_request(int);
 
 extern time_t time(time_t *);
 
@@ -135,7 +135,7 @@ struct connection svr_conn[PBS_NET_MAX_CONNECTIONS];
 static int max_connection = PBS_NET_MAX_CONNECTIONS;
 static int num_connections = 0;
 static fd_set *GlobalSocketReadSet = NULL;
-static void (*read_func[2]) A_((int));
+static void (*read_func[2])(int);
 
 pbs_net_t pbs_server_addr;
 
@@ -654,7 +654,7 @@ void add_conn(
   pbs_net_t      addr,    /* IP address of connected host */
   unsigned int   port,    /* port number (host order) on connected host */
   unsigned int   socktype, /* inet or unix */
-  void (*func) A_((int)))  /* function to invoke on data rdy to read */
+  void (*func)(int))  /* function to invoke on data rdy to read */
 
   {
   num_connections++;

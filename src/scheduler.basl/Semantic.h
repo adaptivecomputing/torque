@@ -98,143 +98,124 @@
 #define _POSIX_SOURCE 1
 #endif  /* _POSIX_SOURCE */
 
-#if __STDC__ == 1
-/*
- * The following macro definations take affect when compiling under ansi C
- *
- * The A_ macro is provided for function prototype declarations.  It allows
- * ANSI C prototypes to be complied under K&R C
- */
-
-#define A_(x) x
-
-#else
-/* The following macro definations take affect when compiling under K&R C */
-
-#define const
-#define volatile
-#define A_(x) ()
-
-#endif  /* __STDC__ */
-
 #include "SymTab.h"
 
 /*prototypes*/
 extern void
-  SemanticInit A_((void));
+  SemanticInit(void);
 
 extern void
-  SemanticPutDF A_((int df));
+  SemanticPutDF(int df);
 
 extern void
-  SemanticCondPrint A_((char *str));
+  SemanticCondPrint(char *str);
 
 extern void
-  SemanticPrint A_((void));
+  SemanticPrint(void);
 
 extern void
-  SemanticErr A_((int e));
+  SemanticErr(int e);
 
 extern void
-  SemanticPrintToken2 A_((struct MYTOK symbol));
+  SemanticPrintToken2(struct MYTOK symbol);
 
 extern void
-  SemanticPutToken A_((struct MYTOK symbolp, char *lex, int lin, int len, int typ, int varFlag));
+  SemanticPutToken(struct MYTOK symbolp, char *lex, int lin, int len, int typ, int varFlag);
 
 extern void
-  SemanticStatNopCk A_((void));
+  SemanticStatNopCk(void);
 
 extern void
-  SemanticStatPlusExprCk A_((struct MYTOK left_expr, struct MYTOK right_expr));
+  SemanticStatPlusExprCk(struct MYTOK left_expr, struct MYTOK right_expr);
 
 extern void
-  SemanticStatMinusExprCk A_((struct MYTOK left_expr, struct MYTOK right_expr));
+  SemanticStatMinusExprCk(struct MYTOK left_expr, struct MYTOK right_expr);
 
 extern void
-  SemanticStatMultDivExprCk A_((struct MYTOK left_expr, struct MYTOK right_expr));
+  SemanticStatMultDivExprCk(struct MYTOK left_expr, struct MYTOK right_expr);
 
 extern void
-  SemanticStatModulusExprCk A_((struct MYTOK left_expr, struct MYTOK right_expr));
+  SemanticStatModulusExprCk(struct MYTOK left_expr, struct MYTOK right_expr);
 
 extern void
-  SemanticStatCompExprCk A_((struct MYTOK left_expr, struct MYTOK right_expr));
+  SemanticStatCompExprCk(struct MYTOK left_expr, struct MYTOK right_expr);
 
 extern void
-  SemanticStatAndOrExprCk A_((struct MYTOK left_expr, struct MYTOK right_expr));
+  SemanticStatAndOrExprCk(struct MYTOK left_expr, struct MYTOK right_expr);
 
 extern void
-  SemanticStatNotExprCk A_((struct MYTOK expr));
+  SemanticStatNotExprCk(struct MYTOK expr);
 
 extern void
-  SemanticStatPostOpExprCk A_((struct MYTOK expr));
+  SemanticStatPostOpExprCk(struct MYTOK expr);
 
 extern void
-  SemanticStatUnaryExprCk A_((struct MYTOK expr));
+  SemanticStatUnaryExprCk(struct MYTOK expr);
 
 extern void
-  SemanticStatAssignCk A_((struct MYTOK var, struct MYTOK expr));
+  SemanticStatAssignCk(struct MYTOK var, struct MYTOK expr);
 
 extern void
-  SemanticStatPrintTailCk A_((struct MYTOK exp));
+  SemanticStatPrintTailCk(struct MYTOK exp);
 
 extern void
-  SemanticStatWhileHeadCk A_((struct MYTOK exp));
+  SemanticStatWhileHeadCk(struct MYTOK exp);
 
 extern void
-  SemanticStatIfHeadCk A_((struct MYTOK exp));
+  SemanticStatIfHeadCk(struct MYTOK exp);
 
 extern void
-  SemanticStatReturnTailCk A_((struct MYTOK exp));
+  SemanticStatReturnTailCk(struct MYTOK exp);
 
 extern void
-  SemanticStatForHeadCk A_((struct MYTOK exp6, struct MYTOK exp8));
+  SemanticStatForHeadCk(struct MYTOK exp6, struct MYTOK exp8);
 
 extern void
-  SemanticStatForAssignCk A_((struct MYTOK exp1, struct MYTOK exp2));
+  SemanticStatForAssignCk(struct MYTOK exp1, struct MYTOK exp2);
 
 extern void
-  SemanticStatForPostAssignCk A_((struct MYTOK exp));
+  SemanticStatForPostAssignCk(struct MYTOK exp);
 
 extern void
-  SemanticStatForeachHeadCk A_((struct MYTOK val1, struct MYTOK val2));
+  SemanticStatForeachHeadCk(struct MYTOK val1, struct MYTOK val2);
 
 extern void
-  SemanticVarDefCk A_((struct MYTOK var));
+  SemanticVarDefCk(struct MYTOK var);
 
 extern int
-  SemanticParamVarCk A_((struct MYTOK val));
+  SemanticParamVarCk(struct MYTOK val);
 
 extern int
-  SemanticParamConstsCk A_((struct MYTOK val));
+  SemanticParamConstsCk(struct MYTOK val);
 
 extern void
-  SemanticCaseTypeCk A_((struct MYTOK val));
+  SemanticCaseTypeCk(struct MYTOK val);
 
 extern void
-  SemanticCaseInTypeCk A_((struct MYTOK val));
+  SemanticCaseInTypeCk(struct MYTOK val);
 
 extern void
-  SemanticCaseInVarCk A_((struct MYTOK var));
+  SemanticCaseInVarCk(struct MYTOK var);
 
 extern void
-  SemanticTimeConstCk A_((struct MYTOK h, struct MYTOK m, struct MYTOK s));
+  SemanticTimeConstCk(struct MYTOK h, struct MYTOK m, struct MYTOK s);
 
 extern void
-  SemanticDateConstCk A_((struct MYTOK m, struct MYTOK d, struct MYTOK y));
+  SemanticDateConstCk(struct MYTOK m, struct MYTOK d, struct MYTOK y);
 
 extern void
-  SemanticIntConstRangeCk A_((struct MYTOK lo, struct MYTOK hi));
+  SemanticIntConstRangeCk(struct MYTOK lo, struct MYTOK hi);
 
 extern void
-  SemanticFloatConstRangeCk A_((struct MYTOK lo, struct MYTOK hi));
+  SemanticFloatConstRangeCk(struct MYTOK lo, struct MYTOK hi);
 
 extern void
-  SemanticDayofweekConstRangeCk A_((struct MYTOK lo, struct MYTOK hi));
+  SemanticDayofweekConstRangeCk(struct MYTOK lo, struct MYTOK hi);
 
 extern void
-  SemanticDateTimeConstRangeCk A_((struct MYTOK lo, struct MYTOK hi));
+  SemanticDateTimeConstRangeCk(struct MYTOK lo, struct MYTOK hi);
 
 extern void
-  SemanticSizeConstRangeCk A_((struct MYTOK lo, struct MYTOK hi));
+  SemanticSizeConstRangeCk(struct MYTOK lo, struct MYTOK hi);
 
 #endif /* _SEMANTIC_H */

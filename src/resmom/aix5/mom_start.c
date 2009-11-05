@@ -114,7 +114,7 @@ extern tlist_head svr_alljobs;
 extern int  termin_child;
 extern char *path_home;
 
-extern void    state_to_server A_((int, int));
+extern void    state_to_server(int, int);
 
 /* Private variables */
 static int     job_key;

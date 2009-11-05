@@ -128,10 +128,10 @@ struct sealed_ticket
 #define CREDENTIAL_LIFETIME  3600
 #define CREDENTIAL_TIME_DELTA 300
 
-extern void break_cred A_((char key[PBS_KEY_SIZE], char *ticket, int size, struct credential *pcred));
-extern int  get_credent A_((char *server, unsigned int port, char **credential));
-extern int  make_sealed A_((char key[PBS_KEY_SIZE], char *subcred, int size, char **ticket));
-extern void make_svr_key A_((char key[PBS_KEY_SIZE]));
-extern int  make_subcred A_((char key[PBS_KEY_SIZE], char *user, char **subcred));
+extern void break_cred(char key[PBS_KEY_SIZE], char *ticket, int size, struct credential *pcred);
+extern int  get_credent(char *server, unsigned int port, char **credential);
+extern int  make_sealed(char key[PBS_KEY_SIZE], char *subcred, int size, char **ticket);
+extern void make_svr_key(char key[PBS_KEY_SIZE]);
+extern int  make_subcred(char key[PBS_KEY_SIZE], char *user, char **subcred);
 
 #endif /* CREDENTIAL_H */

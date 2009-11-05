@@ -98,25 +98,6 @@
 #define _POSIX_SOURCE 1
 #endif  /* _POSIX_SOURCE */
 
-#if __STDC__ == 1
-/*
- * The following macro definations take affect when compiling under ansi C
- *
- * The A_ macro is provided for function prototype declarations.  It allows
- * ANSI C prototypes to be complied under K&R C
- */
-
-#define A_(x) x
-
-#else
-/* The following macro definations take affect when compiling under K&R C */
-
-#define const
-#define volatile
-#define A_(x) ()
-
-#endif  /* __STDC__ */
-
 #include "List.h"
 
 struct Stack
@@ -131,113 +112,113 @@ typedef struct Stack *St;
 /*prototypes*/
 
 extern void
-  CodeGenInit A_((void));
+  CodeGenInit(void);
 
 extern void
-  CodeGenPutDF A_((int df));
+  CodeGenPutDF(int df);
 
 extern void
-  CodeGenCondPrint A_((char *str));
+  CodeGenCondPrint(char *str);
 
 extern void
-  CodeGenPrint A_((void));
+  CodeGenPrint(void);
 
 extern void
-  CodeGenErr A_((int e));
+  CodeGenErr(int e);
 
 extern void
-  CodeGenBuffClear A_((void));
+  CodeGenBuffClear(void);
 
 extern void
-  CodeGenBuffPrint A_((void));
+  CodeGenBuffPrint(void);
 
 extern void
-  CodeGenBuffEmit A_((void));
+  CodeGenBuffEmit(void);
 
 extern void
-  CodeGenBuffSwitchEmit A_((void));
+  CodeGenBuffSwitchEmit(void);
 
 extern void
-  CodeGenBuffSave A_((char *str));
+  CodeGenBuffSave(char *str);
 
 extern void
-  CodeGenBuffSaveBefore A_((char *str, char *lexeme, int level));
+  CodeGenBuffSaveBefore(char *str, char *lexeme, int level);
 
 extern void
-  CodeGenBuffSaveAfter A_((char *str, char *lexeme, int level));
+  CodeGenBuffSaveAfter(char *str, char *lexeme, int level);
 
 extern void
-  CodeGenBuffSaveFirst A_((char *str));
+  CodeGenBuffSaveFirst(char *str);
 
 extern void
-  CodeGenBuffSaveFun A_((char *str));
+  CodeGenBuffSaveFun(char *str);
 
 extern void
-  CodeGenBuffSaveFunBefore A_((char *str, char *lexeme, int level));
+  CodeGenBuffSaveFunBefore(char *str, char *lexeme, int level);
 
 extern void
-  CodeGenBuffSaveFunAfter A_((char *str, char *lexeme, int level));
+  CodeGenBuffSaveFunAfter(char *str, char *lexeme, int level);
 
 extern void
-  CodeGenBuffSaveFunFirst A_((char *str));
+  CodeGenBuffSaveFunFirst(char *str);
 
 extern void
-  CodeGenStatPrint A_((void));
+  CodeGenStatPrint(void);
 
 extern void
-  CodeGenStatPrintTail A_((struct MYTOK data));
+  CodeGenStatPrintTail(struct MYTOK data);
 
 extern void
-  CodeGenDefSimple A_((struct MYTOK data));
+  CodeGenDefSimple(struct MYTOK data);
 
 extern void
-  CodeGenProgHead A_((void));
+  CodeGenProgHead(void);
 
 extern int
-  CodeGenLastDef A_((char *lexeme));
+  CodeGenLastDef(char *lexeme);
 
 extern void
-  CodeGenStackClear A_((void));
+  CodeGenStackClear(void);
 
 extern St
-  CodeGenStackNew A_((Np np));
+  CodeGenStackNew(Np np);
 
 extern void
-  CodeGenStackPush A_((Np np));
+  CodeGenStackPush(Np np);
 
 extern Np
-  CodeGenStackPop A_((void));
+  CodeGenStackPop(void);
 
 extern void
-  CodeGenStackPrint A_((void));
+  CodeGenStackPrint(void);
 
 extern void
-  CodeGenBuffSaveSpecOper A_((char *operstr));
+  CodeGenBuffSaveSpecOper(char *operstr);
 
 extern Np
-  CodeGenBuffGetLast A_((void));
+  CodeGenBuffGetLast(void);
 
 extern void
-  CodeGenBuffDelete A_((char *lexeme, int inst));
+  CodeGenBuffDelete(char *lexeme, int inst);
 
 extern void
-  CodeGenBuffSaveStrAssign A_((void));
+  CodeGenBuffSaveStrAssign(void);
 
 extern void
-  CodeGenBuffSaveForeach A_((struct MYTOK var, struct MYTOK svar));
+  CodeGenBuffSaveForeach(struct MYTOK var, struct MYTOK svar);
 
 extern void
-  CodeGenBuffSaveSwitch A_((struct MYTOK switchVar));
+  CodeGenBuffSaveSwitch(struct MYTOK switchVar);
 
 extern void
-  CodeGenBuffSaveSwitchIn A_((struct MYTOK switchVar, struct MYTOK caseVal));
+  CodeGenBuffSaveSwitchIn(struct MYTOK switchVar, struct MYTOK caseVal);
 
 extern void
-  CodeGenBuffSaveQueJobFind A_((void));
+  CodeGenBuffSaveQueJobFind(void);
 
 extern void
-  CodeGenBuffSaveQueFilter A_((void));
+  CodeGenBuffSaveQueFilter(void);
 
 extern Np
-  CodeGenBuffGetNp A_((char *lexeme, int lineDef));
+  CodeGenBuffGetNp(char *lexeme, int lineDef);
 #endif /* _CODEGEN_H */

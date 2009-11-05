@@ -147,7 +147,7 @@ void job_purge(job *);
 extern void mom_checkpoint_delete_files(job *pjob);
 
 #if IBM_SP2==2  /* IBM SP PSSP 3.1 */
-void unload_sp_switch A_((job *pjob));
+void unload_sp_switch(job *pjob);
 #endif   /* IBM SP */
 
 #ifdef PENABLE_LINUX26_CPUSETS
@@ -155,7 +155,7 @@ extern int use_cpusets(job *);
 #endif /* PENABLE_LINUX26_CPUSETS */
 /* Local Private Functions */
 
-static void job_init_wattr A_((job *));
+static void job_init_wattr(job *);
 
 /* Global Data items */
 
@@ -172,8 +172,8 @@ extern tlist_head svr_newjobs;
 extern tlist_head svr_alljobs;
 
 
-void nodes_free A_((job *));
-int TTmpDirName A_((job *, char *));
+void nodes_free(job *);
+int TTmpDirName(job *, char *);
 
 
 void tasks_free(
@@ -593,7 +593,7 @@ void job_purge(
   extern char  *msg_err_purgejob;
   int           rc;
 
-  extern void MOMCheckRestart A_((void));
+  extern void MOMCheckRestart(void);
 
   if (pjob->ji_flags & MOM_HAS_TMPDIR)
     {

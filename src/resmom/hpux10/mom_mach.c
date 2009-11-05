@@ -152,9 +152,9 @@ static char ident[] = "@(#) hpux10/$RCSfile$ $Revision$";
 ** external functions and data
 */
 
-extern struct config  *search A_((struct config *, char *));
+extern struct config  *search(struct config *, char *);
 
-extern struct rm_attribute *momgetattr A_((char *));
+extern struct rm_attribute *momgetattr(char *);
 extern int   rm_errno;
 extern unsigned int reqnum;
 extern double cputfactor;
@@ -167,17 +167,17 @@ extern  int     ignvmem;
 /*
 ** local functions and data
 */
-static char *resi  A_((struct rm_attribute *attrib));
-static char *physmem A_((struct rm_attribute *attrib));
-static char *ncpus  A_((struct rm_attribute *attrib));
-static char *cpuspeed A_((struct rm_attribute *attrib));
-static char *cputype A_((struct rm_attribute *attrib));
-static char *platform A_((struct rm_attribute *attrib));
-static char *walltime A_((struct rm_attribute *attrib));
-static char *valid_user A_((struct rm_attribute *attrib));
+static char *resi       (struct rm_attribute *attrib);
+static char *physmem    (struct rm_attribute *attrib);
+static char *ncpus      (struct rm_attribute *attrib);
+static char *cpuspeed   (struct rm_attribute *attrib);
+static char *cputype    (struct rm_attribute *attrib);
+static char *platform   (struct rm_attribute *attrib);
+static char *walltime   (struct rm_attribute *attrib);
+static char *valid_user (struct rm_attribute *attrib);
 
-extern char *loadave A_((struct rm_attribute *attrib));
-extern char *nullproc A_((struct rm_attribute *attrib));
+extern char *loadave    (struct rm_attribute *attrib);
+extern char *nullproc   (struct rm_attribute *attrib);
 
 extern char *ret_string;
 time_t  wait_time = 10;

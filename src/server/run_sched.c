@@ -113,9 +113,9 @@ int listener_command = 0;
 
 /* Functions private to this file */
 
-static int  put_4byte A_((int sock, unsigned int val));
-static void scheduler_close A_((int));
-static void listener_close A_((int));
+static int  put_4byte(int sock, unsigned int val);
+static void scheduler_close(int);
+static void listener_close(int);
 
 
 extern void bad_node_warning(pbs_net_t);

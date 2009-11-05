@@ -17,8 +17,8 @@
 #include "array.h"
 #include "csv.h"
 
-extern int chk_hold_priv A_((long val, int perm));
-extern int get_hold A_((tlist_head *, char **, attribute *));
+extern int chk_hold_priv(long val, int perm);
+extern int get_hold(tlist_head *, char **, attribute *);
 extern int svr_authorize_req(struct batch_request *preq, char *owner,
                                char *submit_host);
 

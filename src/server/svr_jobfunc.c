@@ -130,8 +130,8 @@
 
 /* Private Functions */
 
-static void default_std A_((job *, int key, char * to));
-static void eval_checkpoint A_((attribute *j, attribute *q));
+static void default_std(job *, int key, char * to);
+static void eval_checkpoint(attribute *j, attribute *q);
 
 /* Global Data Items: */
 
@@ -163,7 +163,7 @@ extern int node_avail_complex(char *, int *, int *, int *, int *);
 /* Private Functions */
 
 #ifndef NDEBUG
-static void correct_ct A_((pbs_queue *));
+static void correct_ct(pbs_queue *);
 #endif  /* NDEBUG */
 
 /* sync w/#define JOB_STATE_XXX */

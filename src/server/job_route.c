@@ -110,12 +110,12 @@
 #endif
 
 /* External functions called */
-extern int svr_movejob A_((job *, char *, struct batch_request *));
+extern int svr_movejob(job *, char *, struct batch_request *);
 
 /* Local Functions */
 
-int  job_route A_((job *));
-void queue_route A_((pbs_queue *));
+int  job_route(job *);
+void queue_route(pbs_queue *);
 
 /* Global Data */
 extern char *msg_routexceed;

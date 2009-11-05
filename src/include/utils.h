@@ -115,27 +115,27 @@
 /* Function declarations */
 
 /* group functions in u_groups.c */
-extern struct group *getgrnam_ext A_((char *));
+extern struct group *getgrnam_ext (char *);
 
 /* tree functions in u_tree.c */
-extern void tinsert A_((const u_long, struct pbsnode *, tree **));
-extern void *tdelete A_((const u_long, tree **));
-extern struct pbsnode *tfind A_((const u_long, tree **));
-extern int tlist A_((tree *, char *, int));
-extern void tfree A_((tree **));
+extern void tinsert (const u_long, struct pbsnode *, tree **);
+extern void *tdelete (const u_long, tree **);
+extern struct pbsnode *tfind (const u_long, tree **);
+extern int tlist (tree *, char *, int);
+extern void tfree (tree **);
 
 /* moab-like utility functions in u_mu.c */
-extern int MUSNPrintF A_((char **, int *, char *, ...));
-extern int MUStrNCat A_((char **, int *, char *));
-extern int MUSleep A_((long));
-extern int MUReadPipe A_((char *, char *, int));
+extern int MUSNPrintF (char **, int *, char *, ...);
+extern int MUStrNCat (char **, int *, char *);
+extern int MUSleep (long);
+extern int MUReadPipe (char *, char *, int);
 
 /* MXML functions from u_MXML.c */
-extern int MXMLGetChild A_((mxml_t *, char *, int *, mxml_t **));
-extern int MXMLAddE A_((mxml_t *, mxml_t *));
-extern int MXMLGetAttrF A_((mxml_t *, char *, int *, void *, enum MDataFormatEnum, int));
-extern int MXMLGetAttr A_((mxml_t *, char *, int *, char *, int));
-extern int MXMLToString A_((mxml_t *, char *, int, char **, mbool_t));
+extern int MXMLGetChild (mxml_t *, char *, int *, mxml_t **);
+extern int MXMLAddE (mxml_t *, mxml_t *);
+extern int MXMLGetAttrF (mxml_t *, char *, int *, void *, enum MDataFormatEnum, int);
+extern int MXMLGetAttr (mxml_t *, char *, int *, char *, int);
+extern int MXMLToString (mxml_t *, char *, int, char **, mbool_t);
 
 #endif /* END #ifndef UTILS_H */
  

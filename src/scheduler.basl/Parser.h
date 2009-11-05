@@ -91,93 +91,74 @@
 #define _POSIX_SOURCE 1
 #endif  /* _POSIX_SOURCE */
 
-#if __STDC__ == 1
-/*
- * The following macro definations take affect when compiling under ansi C
- *
- * The A_ macro is provided for function prototype declarations.  It allows
- * ANSI C prototypes to be complied under K&R C
- */
-
-#define A_(x) x
-
-#else
-/* The following macro definations take affect when compiling under K&R C */
-
-#define const
-#define volatile
-#define A_(x) ()
-
-#endif  /* __STDC__ */
-
 #include "SymTab.h"
 
 /* workaround for my Bison version */
 
 /*test1*/
 extern void
-  ParserInit A_((void));
+  ParserInit(void);
 
 extern void
-  ParserPutDF A_((int df));
+  ParserPutDF(int df);
 
 extern void
-  ParserCondPrint A_((char *str));
+  ParserCondPrint(char *str);
 
 extern void
-  ParserPrint A_((void));
+  ParserPrint(void);
 
 extern void
-  ParserErr A_((int e));
+  ParserErr(int e);
 
 extern void
-  execError A_((char *cp));
+  execError(char *cp);
 
 extern void
-  ParserFpeCatch A_((void));
+  ParserFpeCatch(void);
 
 extern void
-  warning A_((char *cp));
+  warning(char *cp);
 
 extern void
-  ParserPrintToken A_((char *lexem, int lin, int len, int typ));
+  ParserPrintToken(char *lexem, int lin, int len, int typ);
 
 extern void
-  ParserPrintToken2 A_((struct MYTOK tok));
+  ParserPrintToken2(struct MYTOK tok);
 
 extern void
-  ParserLevelIncr A_((void));
+  ParserLevelIncr(void);
 
 extern void
-  ParserLevelDecr A_((void));
+  ParserLevelDecr(void);
 
 extern int
-  ParserLevelGet A_((void));
+  ParserLevelGet(void);
 
 extern void
-  ParserVarScopeIncr A_((void));
+  ParserVarScopeIncr(void);
 
 extern int
-  ParserVarScopeGet A_((void));
+  ParserVarScopeGet(void);
 
 extern void
-  ParserCurrFunPtrPut A_((Np np));
+  ParserCurrFunPtrPut(Np np);
 
 extern Np
-  ParserCurrFunPtrGet A_((void));
+  ParserCurrFunPtrGet(void);
 
 extern void
-  ParserCurrFunParamPtrPut A_((Np np));
+  ParserCurrFunParamPtrPut(Np np);
 
 extern Np
-  ParserCurrFunParamPtrGet A_((void));
+  ParserCurrFunParamPtrGet(void);
 
 extern void
-  ParserCurrSwitchVarPut A_((struct MYTOK token));
+  ParserCurrSwitchVarPut(struct MYTOK token);
 
 extern struct MYTOK
-        ParserCurrSwitchVarGet A_((void));
+        ParserCurrSwitchVarGet(void);
 
 extern void
-  yyerror A_((char *ep));
+  yyerror(char *ep);
 #endif /* _PARSER_H */

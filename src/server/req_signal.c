@@ -102,13 +102,13 @@
 
 /* Private Function local to this file */
 
-static void post_signal_req A_((struct work_task *));
+static void post_signal_req (struct work_task *);
 
 /* Global Data Items: */
 
 extern int   LOGLEVEL;
 
-extern void   set_old_nodes A_((job *));
+extern void   set_old_nodes (job *);
 
 
 
@@ -222,7 +222,7 @@ int issue_signal(
 
   job  *pjob,
   char *signame, /* name of the signal to send */
-  void (*func) A_((struct work_task *)),
+  void (*func)(struct work_task *),
   void *extra) /* extra parameter to be stored in sig request */
 
   {

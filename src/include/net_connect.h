@@ -176,22 +176,22 @@ enum conn_type
 
 /* functions available in libnet.a */
 
-void add_conn A_((int, enum conn_type, pbs_net_t, unsigned int, unsigned int, void (*func) A_((int))));
-int  find_conn A_((pbs_net_t));
-int  client_to_svr A_((pbs_net_t, unsigned int, int, char *));
-void close_conn A_((int));
-pbs_net_t get_connectaddr A_((int));
-int  get_connecthost A_((int sock, char *, int));
-pbs_net_t get_hostaddr A_((char *));
-int  get_fullhostname A_((char *, char *, int, char *));
-unsigned int  get_svrport A_((char *, char *, unsigned int));
-int  init_network A_((unsigned int, void (*readfunc)()));
-void net_close A_((int));
+void add_conn(int, enum conn_type, pbs_net_t, unsigned int, unsigned int, void (*func)(int));
+int  find_conn(pbs_net_t);
+int  client_to_svr(pbs_net_t, unsigned int, int, char *);
+void close_conn(int);
+pbs_net_t get_connectaddr(int);
+int  get_connecthost(int sock, char *, int);
+pbs_net_t get_hostaddr(char *);
+int  get_fullhostname(char *, char *, int, char *);
+unsigned int  get_svrport(char *, char *, unsigned int);
+int  init_network(unsigned int, void (*readfunc)());
+void net_close(int);
 int  wait_request(time_t waittime, long *);
-void net_add_close_func A_((int, void(*)()));
+void net_add_close_func(int, void(*)());
 int get_max_num_descriptors(void);
 int get_fdset_size(void);
-char * netaddr_pbs_net_t A_((pbs_net_t));
+char * netaddr_pbs_net_t(pbs_net_t);
 
 
 struct connection
@@ -203,8 +203,8 @@ struct connection
   unsigned short cn_socktype; /* authentication flags */
   enum conn_type cn_active;     /* idle or type if active */
   time_t cn_lasttime;    /* time last active */
-  void (*cn_func) A_((int));  /* read function when data rdy */
-  void (*cn_oncl) A_((int));  /* func to call on close */
+  void (*cn_func)(int);  /* read function when data rdy */
+  void (*cn_oncl)(int);  /* func to call on close */
   };
 
 struct netcounter

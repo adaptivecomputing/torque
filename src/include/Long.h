@@ -86,16 +86,6 @@
 
 #include <limits.h>
 
-#ifndef A_
-#if __STDC__ == 1
-#define A_(x) x
-#else /* STDC */
-#define const
-#define volatile
-#define A_(x) ()
-#endif /* STDC */
-#endif /* A_   */
-
 /*
  * Define Long and u_Long to be the largest integer types supported by the
  * native compiler.  They need not be supported by printf or scanf or their
@@ -121,8 +111,8 @@ typedef unsigned long long u_Long;
 #define lONG_MAX   0x7FFFFFFFFFFFFFFFLL
 #define UlONG_MAX   0x7FFFFFFFFFFFFFFFULL
 
-Long strToL A_((const char *nptr, char **endptr, int base));
-u_Long strTouL A_((const char *nptr, char **endptr, int base));
+Long strToL(const char *nptr, char **endptr, int base);
+u_Long strTouL(const char *nptr, char **endptr, int base);
 #define atoL(nptr)  strToL((nptr), (char **)NULL, 10)
 
 /****************************************************************************/
@@ -139,8 +129,8 @@ typedef unsigned long long u_Long;
 #define lONG_MAX    0x7FFFFFFFFFFFFFFFLL
 #define UlONG_MAX    0xFFFFFFFFFFFFFFFFULL
 
-Long strToL A_((const char *nptr, char **endptr, int base));
-u_Long strTouL A_((const char *nptr, char **endptr, int base));
+Long strToL(const char *nptr, char **endptr, int base);
+u_Long strTouL(const char *nptr, char **endptr, int base);
 #define atoL(nptr)  strToL((nptr), (char **)NULL, 10)
 
 /****************************************************************************/
@@ -207,7 +197,7 @@ typedef unsigned long  u_Long;
 /****************************************************************************/
 #endif
 
-const char *LTostr A_((Long value, int base));
-const char *uLTostr A_((u_Long value, int base));
+const char *LTostr(Long value, int base);
+const char *uLTostr(u_Long value, int base);
 
 #endif /* lONG_H */

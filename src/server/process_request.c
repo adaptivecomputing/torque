@@ -152,12 +152,12 @@ extern int LOGLEVEL;
 
 /* private functions local to this file */
 
-static void close_client A_((int sfds));
-static void freebr_manage A_((struct rq_manage *));
-static void freebr_cpyfile A_((struct rq_cpyfile *));
-static void close_quejob A_((int sfds));
+static void close_client(int sfds);
+static void freebr_manage(struct rq_manage *);
+static void freebr_cpyfile(struct rq_cpyfile *);
+static void close_quejob(int sfds);
 #ifndef PBS_MOM
-static void free_rescrq A_((struct rq_rescq *));
+static void free_rescrq(struct rq_rescq *);
 #endif /* PBS_MOM */
 
 /* END private prototypes */

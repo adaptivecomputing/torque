@@ -113,10 +113,10 @@ extern struct server server;
 
 /* sync w/job_attr_def.c */
 
-static int decode_nodes A_((struct attribute *, char *, char *, char *));
-static int set_node_ct A_((resource *, attribute *, int actmode));
-static int set_tokens A_((struct attribute *attr, struct attribute *new, enum batch_op actmode));
-static int set_mppnodect A_((resource *, attribute *, int actmode));
+static int decode_nodes(struct attribute *, char *, char *, char *);
+static int set_node_ct(resource *, attribute *, int actmode);
+static int set_tokens(struct attribute *attr, struct attribute *new, enum batch_op actmode);
+static int set_mppnodect(resource *, attribute *, int actmode);
 
 resource_def *svr_resc_def;
 

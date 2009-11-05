@@ -106,8 +106,8 @@
 
 /* Extenal functions called */
 
-extern int   status_job A_((job *, struct batch_request *, svrattrl *, tlist_head *, int *));
-extern int   svr_authorize_jobreq A_((struct batch_request *, job *));
+extern int   status_job(job *, struct batch_request *, svrattrl *, tlist_head *, int *);
+extern int   svr_authorize_jobreq(struct batch_request *, job *);
 
 
 /* Global Data Items  */
@@ -119,13 +119,13 @@ extern time_t  time_now;
 
 /* Private Functions  */
 
-static int  build_selist A_((svrattrl *, int perm, struct  select_list **,
-                             pbs_queue **, int *bad));
-static void free_sellist A_((struct select_list *pslist));
-static int  sel_attr A_((attribute *, struct select_list *));
-static int  select_job A_((job *, struct select_list *));
-static void sel_step2 A_((struct stat_cntl *));
-static void sel_step3 A_((struct stat_cntl *));
+static int  build_selist(svrattrl *, int perm, struct  select_list **,
+                             pbs_queue **, int *bad);
+static void free_sellist(struct select_list *pslist);
+static int  sel_attr(attribute *, struct select_list *);
+static int  select_job(job *, struct select_list *);
+static void sel_step2(struct stat_cntl *);
+static void sel_step3(struct stat_cntl *);
 
 
 

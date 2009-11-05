@@ -94,25 +94,6 @@
 #define _POSIX_SOURCE 1
 #endif  /* _POSIX_SOURCE */
 
-#if __STDC__ == 1
-/*
- * The following macro definations take affect when compiling under ansi C
- *
- * The A_ macro is provided for function prototype declarations.  It allows
- * ANSI C prototypes to be complied under K&R C
- */
-
-#define A_(x) x
-
-#else
-/* The following macro definations take affect when compiling under K&R C */
-
-#define const
-#define volatile
-#define A_(x) ()
-
-#endif  /* __STDC__ */
-
 #include "List.h"
 
 typedef Np STEP;
@@ -126,71 +107,71 @@ struct SYMTAB
 /*prototypes*/
 
 extern void
-  SymTabInit A_((void));
+  SymTabInit(void);
 
 extern void
-  SymTabKeyWordsInit A_((void));
+  SymTabKeyWordsInit(void);
 
 extern void
-  SymTabPutDF A_((int df));
+  SymTabPutDF(int df);
 
 extern void
-  SymTabCondPrint A_((char *str));
+  SymTabCondPrint(char *str);
 
 extern int
-  SymTabIsEmpty A_((void));
+  SymTabIsEmpty(void);
 
 extern void
-  SymTabPrint A_((void));
+  SymTabPrint(void);
 
 extern void
-  SymTabErr A_((int e));
+  SymTabErr(int e);
 
 extern void
-  SymTabInsertFront A_((STEP nxp));
+  SymTabInsertFront(STEP nxp);
 
 extern void
-  SymTabInsertSortedN A_((STEP nxp));
+  SymTabInsertSortedN(STEP nxp);
 
 extern void
-  symTabInsertSortedD A_((char * lexem, int typ, int lineDe, int leve, int funFla));
+  symTabInsertSortedD(char * lexem, int typ, int lineDe, int leve, int funFla);
 
 extern int
-  SymTabIsMember A_((STEP nxp));
+  SymTabIsMember(STEP nxp);
 
 extern STEP
-  SymTabGetLast A_((void));
+  SymTabGetLast(void);
 
 extern STEP
-  SymTabGetSucc A_((STEP nxp));
+  SymTabGetSucc(STEP nxp);
 
 extern void
-  SymTabDelete A_((void));
+  SymTabDelete(void);
 
 extern void
-  SymTabDeleteNode A_((STEP nxp));
+  SymTabDeleteNode(STEP nxp);
 
 extern STEP
-  SymTabFindNodeByLexemeInProg A_((char * lexem));
+  SymTabFindNodeByLexemeInProg(char * lexem);
 
 extern STEP
-  SymTabFindNodeByLexemeInLevel A_((char * lexem, int leve));
+  SymTabFindNodeByLexemeInLevel(char * lexem, int leve);
 
 extern STEP
-  SymTabFindNodeByLexemeAndTypeInLevel A_((char * lexem, int leve, int type, int (*compare_func)()));
+  SymTabFindNodeByLexemeAndTypeInLevel(char * lexem, int leve, int type, int (*compare_func)());
 
 extern STEP
-  SymTabFindAnyNodeInLevelOfType A_((int leve, int type));
+  SymTabFindAnyNodeInLevelOfType(int leve, int type);
 
 extern void
-  SymTabDeleteLevel A_((int leve));
+  SymTabDeleteLevel(int leve);
 
 extern STEP
-  SymTabGetOrigin A_((void));
+  SymTabGetOrigin(void);
 
 extern void
-  SymTabParamLink A_((STEP funNp, Np parNp));
+  SymTabParamLink(STEP funNp, Np parNp);
 
 extern STEP
-  SymTabFindFunProtoByLexemeInProg A_((char * lexem));
+  SymTabFindFunProtoByLexemeInProg(char * lexem);
 #endif /* _SYMTAB_H */

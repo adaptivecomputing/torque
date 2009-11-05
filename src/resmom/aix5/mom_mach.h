@@ -100,22 +100,22 @@ struct startjob_rtn
   pid_t sj_session; /* session */
   };
 
-extern int mom_set_limits A_((job *pjob, int)); /* Set job's limits */
-extern int mom_do_poll A_((job *pjob));  /* Should limits be polled? */
+extern int mom_set_limits(job *pjob, int); /* Set job's limits */
+extern int mom_do_poll(job *pjob);  /* Should limits be polled? */
 extern int mom_does_checkpoint();   /* see if mom does checkpoint */
-extern int mom_open_poll A_(());  /* Initialize poll ability */
-extern int mom_get_sample A_(());  /* Sample kernel poll data */
-extern int mom_over_limit A_((job *pjob)); /* Is polled job over limit? */
-extern int mom_set_use A_((job *pjob));  /* Set resource_used list */
-extern int mom_kill A_((int sid, int sig)); /* Kill a session */
-extern int mom_close_poll A_(());  /* Terminate poll ability */
-extern int mach_checkpoint A_((struct task *, char *path, int abt));
+extern int mom_open_poll();  /* Initialize poll ability */
+extern int mom_get_sample();  /* Sample kernel poll data */
+extern int mom_over_limit(job *pjob); /* Is polled job over limit? */
+extern int mom_set_use(job *pjob);  /* Set resource_used list */
+extern int mom_kill(int sid, int sig); /* Kill a session */
+extern int mom_close_poll();  /* Terminate poll ability */
+extern int mach_checkpoint(struct task *, char *path, int abt);
 /* do the checkpoint */
-extern long mach_restart A_((struct task *, char *path)); /* Restart checkpointed task */
+extern long mach_restart(struct task *, char *path); /* Restart checkpointed task */
 
 #if IBM_SP2==2        /* IBM SP with PSSP 3.1 */
-int  load_sp_switch A_((job *pjob));  /* load SP2 Switch */
-void unload_sp_switch A_((job *pjob));  /* unload SP2 Switch */
+int  load_sp_switch(job *pjob);  /* load SP2 Switch */
+void unload_sp_switch(job *pjob);  /* unload SP2 Switch */
 
 #define SWNODEBUFSZ  1024
 #define MAX_SW_NODES 1024

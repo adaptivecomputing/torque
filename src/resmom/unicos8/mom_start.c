@@ -202,7 +202,7 @@ mktmpdir(
   task *ptask;
   int tasks;
 #if SRFS
-  extern char *var_value A_((char *));
+  extern char *var_value(char *);
 #endif
 
   uid = pjob->ji_qs.ji_un.ji_momt.ji_exuid;
@@ -320,7 +320,7 @@ rmtmpdir(char *sequence)
   static char *id = "rmtmpdir";
   char *tmpdir;
   int pid, pstat;
-  extern char *var_value A_((char *));
+  extern char *var_value(char *);
 
   pid = fork();
 

@@ -117,12 +117,12 @@ typedef struct resource
 typedef struct resource_def
   {
   char   *rs_name;
-  int (*rs_decode)A_((attribute *, char *, char *, char *));
-  int (*rs_encode)A_((attribute *, tlist_head *, char *, char *, int));
-  int (*rs_set)A_((attribute *, attribute *, enum batch_op));
-  int (*rs_comp)A_((attribute *, attribute *));
-  void (*rs_free)A_((attribute *));
-  int (*rs_action)A_((resource *, attribute *, int));
+  int (*rs_decode)(attribute *, char *, char *, char *);
+  int (*rs_encode)(attribute *, tlist_head *, char *, char *, int);
+  int (*rs_set)(attribute *, attribute *, enum batch_op);
+  int (*rs_comp)(attribute *, attribute *);
+  void (*rs_free)(attribute *);
+  int (*rs_action)(resource *, attribute *, int);
 
 unsigned int rs_flags:
   ATRFLAG; /* flags: R/O, ..., see attribute.h */
@@ -140,9 +140,9 @@ extern resource_def *svr_resc_def;
 /* size (num elements) in above  */
 extern int         svr_resc_size;
 
-extern resource     *add_resource_entry A_((attribute *, resource_def *));
-extern resource_def *find_resc_def A_((resource_def *, char *, int));
-extern resource     *find_resc_entry A_((attribute *, resource_def *));
+extern resource     *add_resource_entry(attribute *, resource_def *);
+extern resource_def *find_resc_def(resource_def *, char *, int);
+extern resource     *find_resc_entry(attribute *, resource_def *);
 
 /* END resource.h */
 #endif

@@ -102,7 +102,7 @@
 
 /* Private Function local to this file */
 
-static void post_message_req A_((struct work_task *));
+static void post_message_req(struct work_task *);
 
 /* Global Data Items: */
 

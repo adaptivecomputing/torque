@@ -119,7 +119,7 @@
 
 #define IS_VALID_STR(STR)  (((STR) != NULL) && ((STR)[0] != '\0'))
 
-extern void DIS_rpp_reset A_((void));
+extern void DIS_rpp_reset(void);
 
 extern int LOGLEVEL;
 
@@ -148,7 +148,7 @@ extern int  has_nodes;
 
 extern time_t    time_now;
 
-extern int ctnodes A_((char *));
+extern int ctnodes(char *);
 extern char *path_home;
 extern char *path_nodes;
 extern char *path_nodes_new;
