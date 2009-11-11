@@ -153,4 +153,6 @@ ATTR_checkpoint_dir,
 ATTR_mailsubjectfmt,
 ATTR_mailbodyfmt,
 ATTR_npdefault,
+ATTR_clonebatchsize,
+ATTR_clonebatchdelay,
 

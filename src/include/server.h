@@ -169,6 +169,8 @@ enum srv_atr
   SRV_ATR_MailSubjectFmt,
   SRV_ATR_MailBodyFmt,
   SRV_ATR_NPDefault,
+  SRV_ATR_clonebatchsize,        /* 70 */
+  SRV_ATR_clonebatchdelay,
 #include "site_svr_attr_enum.h"
   /* This must be last */
   SRV_ATR_LAST

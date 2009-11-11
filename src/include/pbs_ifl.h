@@ -267,6 +267,8 @@
 #define ATTR_LockfileUpdateTime "lock_file_update_time"
 #define ATTR_LockfileCheckTime "lock_file_check_time"
 #define ATTR_npdefault  "np_default"
+#define ATTR_clonebatchsize "clone_batch_size"
+#define ATTR_clonebatchdelay "clone_batch_delay"
 
 /* additional node "attributes" names */
 

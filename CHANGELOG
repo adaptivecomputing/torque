@@ -17,6 +17,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature
   b - Changed pbsd_main to call daemonize_server early only if high_availability_mode
       is set.
   e - removed the very old A_ macros (patch provided by Simon Toth, CESNET z.s.p.o.)
+  e - added new qmgr server attributes (clone_batch_size, clone_batch_delay) for 
+      controlling job cloning (Bugzilla #4)
 
 
 2.4.2

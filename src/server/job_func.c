@@ -927,6 +927,8 @@ void job_clone_wt(
   struct work_task *new_task;
   int i;
   int num_cloned;
+  int clone_size;
+  int clone_delay;
   int newstate;
   int newsub;
   int rc;
@@ -950,6 +952,29 @@ void job_clone_wt(
   /* do the clones in batches of CLONE_BATCH_SIZE */
 
   num_cloned = 0;
+
+  /* see if there are qmgr attributes for cloning the batch */
+
+  if (((server.sv_attr[(int)SRV_ATR_clonebatchsize].at_flags & ATR_VFLAG_SET) != 0)
+       && (server.sv_attr[(int)SRV_ATR_clonebatchsize].at_val.at_long > 0))
+    {
+    clone_size = server.sv_attr[(int)SRV_ATR_clonebatchsize].at_val.at_long;
+    }
+  else
+    {
+    clone_size = CLONE_BATCH_SIZE;
+    }
+
+  if (((server.sv_attr[(int)SRV_ATR_clonebatchdelay].at_flags & ATR_VFLAG_SET) != 0)
+       && (server.sv_attr[(int)SRV_ATR_clonebatchdelay].at_val.at_long > 0))
+    {
+    clone_delay = server.sv_attr[(int)SRV_ATR_clonebatchdelay].at_val.at_long;
+    }
+  else
+    {
+    clone_delay = 1;
+    }
+
   loop = TRUE;
 
   while (loop)
@@ -957,9 +982,9 @@ void job_clone_wt(
     start = rn->start;
     end = rn->end;
 
-    if (end - start > CLONE_BATCH_SIZE)
+    if (end - start > clone_size)
       {
-      end = start + CLONE_BATCH_SIZE - 1;
+      end = start + clone_size - 1;
       }
 
     for (i = start; i <= end; i++)
@@ -1004,7 +1029,7 @@ void job_clone_wt(
       array_save(pa);
       }
 
-    if (num_cloned == CLONE_BATCH_SIZE || rn == NULL)
+    if (num_cloned == clone_size || rn == NULL)
       {
       loop = FALSE;
       }
@@ -1012,7 +1037,7 @@ void job_clone_wt(
 
   if (rn != NULL)
     {
-    new_task = set_task(WORK_Timed, time_now + 1, job_clone_wt, ptask->wt_parm1);
+    new_task = set_task(WORK_Timed, time_now + clone_delay, job_clone_wt, ptask->wt_parm1);
     }
   else
     {

@@ -173,6 +173,18 @@ Requires full manager privilege to set or alter.
 Format: boolean; default value: disabled.
 .if !\n(Pb .ig Ig
 [internal type: boolean]
+.Ig
+.Al clone_batch_delay
+Number of seconds to delay between cloning a batch for a job array.
+Format: integer; default value: 1.
+.if !\n(Pb .ig Ig
+[internal type: integer]
+.Ig
+.Al clone_batch_size
+Number of jobs to clone in a batch for a job array.
+Format: integer; default value: 256.
+.if !\n(Pb .ig Ig
+[internal type: integer]
 .Ig 
 .Al comment
 A text string which may be set by the scheduler or other privileged client
