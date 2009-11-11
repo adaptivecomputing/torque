@@ -15,7 +15,6 @@
 
 
 # define Q_GETQUOTA 0x800007	/* get user quota structure */
-# define Q_SETQUOTA 0x800008	/* set user quota structure */
 
 
 struct dqblk

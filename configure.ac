@@ -588,6 +588,9 @@ case $PBS_MACH in
   irix6array) MOMLIBS="$MOMLIBS -larray"
     ;;
 
+  cygwin) MOMLIBS="$MOMLIBS -liphlpapi"
+    ;;
+
   linux)
     AC_CHECK_FUNC(openpty, ,
       AC_CHECK_LIB(util, openpty, MOMLIBS="$MOMLIBS -lutil"),

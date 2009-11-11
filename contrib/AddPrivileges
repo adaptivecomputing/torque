@@ -1,0 +1,109 @@
+#! /bin/sh
+
+###       AddPrivileges  ver 1.0     11 Nov 2009                    ###
+### --------------------------------------------------------------- ###
+### This script set additional privileges for Windows (Cygwin) user ###
+###  with Computer administrator privileges only.                   ###
+### It must be run at the first Torque server                       ###
+###  and Torque mom installation on Cygwin.                         ###
+
+
+OS=`uname -s | tr '[A-Z]' '[a-z]'`
+
+case $OS in
+   cygwin*) ;;
+   *) echo "   Script can run on Cygwin 1.5 only" 1>&2
+      exit 1;;
+esac
+
+
+case $1 in
+  '')
+     echo "   No user's login.  Try \`$0 --help' for more information." 1>&2
+     exit 1;
+     ;;
+  -h | --h*)
+    cat <<\EOF
+
+Usage: AddPrivileges [--help] [--version] <UserAdmin>
+
+ Set additional privileges for Windows (Cygwin) user
+
+ Run from user with Computer administrator privileges only
+
+ Options:
+   -h, --help      display this help and exit
+   -v, --version   output version information and exit
+
+   <UserAdmin>     login of Windows user
+                    with Computer administrator privileges
+
+EOF
+    exit $?
+    ;;
+  -v | --v*)
+    echo " AddPrivileges  ver 1.0    11 Nov 2009" 1>&2
+    exit $?
+    ;;
+esac
+
+
+CURRENTU=`whoami`
+
+PASSWDF=/etc/passwd
+
+GROUPF=/etc/group
+
+ADMINGR=544:544
+
+
+mkpasswd -l > $PASSWDF
+
+mkgroup -l -u > $GROUPF
+
+chmod 644 $PASSWDF
+
+chmod 644 $GROUPF
+
+
+if grep "$ADMINGR" "$GROUPF" | grep -q "$CURRENTU";
+
+    then echo "   " 1>&2;
+
+    else echo "   Current user '$CURRENTU' has not administrator privileges" 1>&2
+         exit $?;
+fi
+
+
+if grep "$ADMINGR" "$GROUPF" | grep -q $1;
+
+    then echo "   $1 has got Computer administrator privileges" 1>&2;
+
+    else echo "   $1 is not Windows user with Computer administrator privileges" 1>&2
+         exit $?;
+fi
+
+
+editrights -a SeAssignPrimaryTokenPrivilege -u $1
+
+editrights -a SeCreateTokenPrivilege -u $1
+
+editrights -a SeTcbPrivilege -u $1
+
+editrights -a SeIncreaseQuotaPrivilege -u $1
+
+editrights -a SeServiceLogonRight -u $1
+
+
+if [[ $? -eq $SUCCESS ]]; then
+
+ cat <<\EOF
+
+   Additional privileges were set successfully
+
+   Should run 'editrights -l -u <UserAdmin>'
+    to ascertain of the privileges installation
+
+EOF
+fi
+

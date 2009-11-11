@@ -112,6 +112,8 @@
 
 #include <windows.h>
 #include <sys/cygwin.h>
+#include <iphlpapi.h>
+#include <winbase.h>
 #include <grp.h>
 
 
@@ -143,6 +145,11 @@
 #define FALSE 0
 #define TRUE 1
 #endif /* TRUE */
+
+/***************************************************/
+/***  setrlimit don't support on CYGWIN till now ***/
+/***************************************************/
+#undef HAVE_GYGWIN_SETRLIMIT
 
 static char    procfs[] = "/proc";
 static DIR    *pdir = NULL;
@@ -434,6 +441,7 @@ proc_stat_t *get_proc_stat(
   }  /* END get_proc_stat() */
 
 
+
 proc_mem_t *get_proc_mem(void)
 
   {
@@ -488,98 +496,11 @@ proc_mem_t *get_proc_mem(void)
       return(NULL);
       }
     }
-  else
-    {
-    do
-      {
-
-      if (!strncmp(str, "MemTotal:", sizeof(str)))
-        {
-        if (fscanf(fp, "%llu",
-                   &mm.mem_total) != 1)
-          {
-          return(NULL);
-          }
-
-        mm.mem_total *= 1024; /* the unit is kB */
-        }
-      else if (!strncmp(str, "MemFree:", sizeof(str)))
-        {
-        if (fscanf(fp, "%llu",
-                   &mm.mem_free) != 1)
-          {
-          return(NULL);
-          }
-
-        mm.mem_free *= 1024;
-        }
-      else if (!strncmp(str, "SwapTotal:", sizeof(str)))
-        {
-        if (fscanf(fp, "%llu",
-                   &mm.swap_total) != 1)
-          {
-          return(NULL);
-          }
-
-        mm.swap_total *= 1024;
-        }
-      else if (!strncmp(str, "SwapFree:", sizeof(str)))
-        {
-        if (fscanf(fp, "%llu",
-                   &mm.swap_free) != 1)
-          {
-          return(NULL);
-          }
-
-        mm.swap_free *= 1024;
-        }
-      }
-    while (fscanf(fp, "%30s", str) == 1);
-    }    /* END else */
-
   fclose(fp);
 
   return(&mm);
   }  /* END get_proc_mem() */
 
-#ifdef PNOT
-
-proc_mem_t *
-get_proc_mem(void)
-
-  {
-  static proc_mem_t mm;
-  FILE     *fp;
-  unsigned long m_tot, m_use, m_free;
-  unsigned long s_tot, s_use, s_free;
-
-  if ((fp = fopen("/proc/meminfo", "r")) == NULL)
-    {
-    return(NULL);
-    }
-
-  fscanf(fp, "%*[^\n]%*c");      /* remove text header */;
-
-  fscanf(fp, "%*s %lu %lu %lu %*[^\n]%*c",
-         &m_tot,
-         &m_use,
-         &m_free);
-
-  fscanf(fp, "%*s %lu %lu %lu %*[^\n]%*c",
-         &s_tot,
-         &s_use,
-         &s_free);
-
-  mm.mem_total = m_tot + s_tot;
-  mm.mem_used = m_use + s_use;
-  mm.mem_free = m_free + s_free;
-
-  fclose(fp);
-
-  return(&mm);
-  }  /* END get_proc_mem() */
-
-#endif /* PNOT */
 
 
 
@@ -1190,14 +1111,7 @@ int mom_set_limits(
             log_buffer[0] = '\0';
             }
 
-          /* NOTE: some versions of linux have a bug which causes the parent
-                   process to receive a SIGKILL if the child's cpu limit is exceeded */
-
-#if 0
-/*************************************************/
-/***  setrlimit don't write in CYGWIN till now ***/
-/*************************************************/
-
+#ifdef HAVE_GYGWIN_SETRLIMIT
           if (setrlimit(RLIMIT_CPU, &reslim) < 0)
             {
             sprintf(log_buffer, "setrlimit for RLIMIT_CPU failed in %s, errno=%d (%s)",
@@ -1206,8 +1120,7 @@ int mom_set_limits(
 
             return(error("RLIMIT_CPU", PBSE_SYSTEM));
             }
-/*************************************************/
-#endif
+#endif  /*  HAVE_GYGWIN_SETRLIMIT */
 
           }    /* END if (set_mode == SET_LIMIT_SET) */
         }
@@ -1246,9 +1159,7 @@ int mom_set_limits(
 
         reslim.rlim_cur = reslim.rlim_max = value;
 
-#if 0
-/*************************************************/
-
+#ifdef HAVE_GYGWIN_SETRLIMIT
         if (setrlimit(RLIMIT_FSIZE, &reslim) < 0)
           {
           sprintf(log_buffer, "cannot set file limit to %ld for job %s (setrlimit failed - check default user limits)",
@@ -1261,10 +1172,7 @@ int mom_set_limits(
 
           return(error(pname, PBSE_SYSTEM));
           }
-
-/*************************************************/
-#endif
-
+#endif  /*  HAVE_GYGWIN_SETRLIMIT */
         }
       }
     else if (!strcmp(pname, "vmem"))
@@ -1346,9 +1254,7 @@ int mom_set_limits(
 
           reslim.rlim_cur = reslim.rlim_max = value;
 
-#if 0
-/*************************************************/
-
+#ifdef HAVE_GYGWIN_SETRLIMIT
           if (setrlimit(RLIMIT_DATA, &reslim) < 0)
             {
             sprintf(log_buffer, "cannot set data limit to %ld for job %s (setrlimit failed w/errno=%d (%s) - check default user limits)",
@@ -1370,38 +1276,7 @@ int mom_set_limits(
 
             return(error("RLIMIT_RSS", PBSE_SYSTEM));
             }
-
-#ifdef __GATECH
-          /* NOTE:  best patch may be to change to 'vmem_limit = value;' */
-
-          if (setrlimit(RLIMIT_STACK, &reslim) < 0)
-            {
-            sprintf(log_buffer, "cannot set stack limit to %ld for job %s (setrlimit failed w/errno=%d (%s) - check default user limits)",
-              (long int)reslim.rlim_max,
-              pjob->ji_qs.ji_jobid,
-              errno,
-              strerror(errno));
-
-            return(error("RLIMIT_STACK", PBSE_SYSTEM));
-            }
-
-          /* set address space */
-
-          if (setrlimit(RLIMIT_AS, &reslim) < 0)
-            {
-            sprintf(log_buffer, "cannot set AS limit to %ld for job %s (setrlimit failed w/errno=%d (%s) - check default user limits)",
-              (long int)reslim.rlim_max,
-              pjob->ji_qs.ji_jobid,
-              errno,
-              strerror(errno));
-
-            return(error("RLIMIT_AS", PBSE_SYSTEM));
-            }
-
-#endif /* __GATECH */
-
-/*************************************************/
-#endif
+#endif  /*  HAVE_GYGWIN_SETRLIMIT */
 
           mem_limit = value;
 
@@ -1488,9 +1363,7 @@ int mom_set_limits(
 
       reslim.rlim_cur = reslim.rlim_max = vmem_limit;
 
-#if 0
-/*************************************************/
-
+#ifdef HAVE_GYGWIN_SETRLIMIT
       if ((ignvmem == 0) && (setrlimit(RLIMIT_AS, &reslim) < 0))
         {
         sprintf(log_buffer, "setrlimit() failed setting AS for vmem_limit mod in %s\n",
@@ -1498,31 +1371,7 @@ int mom_set_limits(
 
         return(error("RLIMIT_AS", PBSE_SYSTEM));
         }
-
-/*************************************************/
-#endif
-
-      /* UMU vmem patch sets RLIMIT_AS rather than RLIMIT_DATA and RLIMIT_STACK */
-
-      /*
-      reslim.rlim_cur = reslim.rlim_max = mem_limit;
-
-      if (setrlimit(RLIMIT_DATA,&reslim) < 0)
-        {
-        sprintf(log_buffer,"setrlimit() failed setting data for vmem_limit mod in %s\n",
-          id);
-
-        return(error("RLIMIT_DATA",PBSE_SYSTEM));
-        }
-
-      if (setrlimit(RLIMIT_STACK,&reslim) < 0)
-        {
-        sprintf(log_buffer,"setrlimit() failed setting stack for vmem_limit mod in %s\n",
-          id);
-
-        return(error("RLIMIT_STACK",PBSE_SYSTEM));
-        }
-      */
+#endif  /*  HAVE_GYGWIN_SETRLIMIT */
       }
     }
 
@@ -1542,7 +1391,6 @@ int mom_set_limits(
 
   return(PBSE_NONE);
   }  /* END mom_set_limits() */
-
 
 
 
@@ -3312,7 +3160,8 @@ static char *availmem(
 
   {
   char *id = "availmem";
-  proc_mem_t *mm;
+/*  proc_mem_t *mm; */
+  MEMORYSTATUS memstat;
 
   if (attrib != NULL)
     {
@@ -3322,7 +3171,7 @@ static char *availmem(
 
     return(NULL);
     }
-
+/*
   if ((mm = get_proc_mem()) == NULL)
     {
     log_err(errno, id, "get_proc_mem");
@@ -3330,20 +3179,22 @@ static char *availmem(
     rm_errno = RM_ERR_SYSTEM;
 
     return(NULL);
-    }  /* END availmem() */
+    }  */
+
+  GlobalMemoryStatus(&memstat);
 
   if (LOGLEVEL >= 6)
     {
-    sprintf(log_buffer, "%s: free mem=%llu",
+    sprintf(log_buffer, "%s: free mem=%lu",
             id,
-            mm->mem_free + mm->swap_free);
+            memstat.dwAvailPageFile);
 
     log_record(PBSEVENT_SYSTEM, 0, id, log_buffer);
     }
 
   sprintf(ret_string, "%lukb",
 
-          (ulong)((mm->mem_free >> 10) + (mm->swap_free >> 10))); /* KB */
+          (ulong)(memstat.dwAvailPageFile >> 10)); /* KB */
 
   return(ret_string);
   }  /* END availmem() */
@@ -3736,42 +3587,17 @@ void scan_non_child_tasks(void)
 
 
 
-
-time_t maxtm;
-
-void setmax(
-
-  char *dev)
-
-  {
-
-  struct stat sb;
-
-  if (stat(dev, &sb) == -1)
-    {
-    return;
-    }
-
-  if (maxtm < sb.st_atime)
-    maxtm = sb.st_atime;
-
-  return;
-  }  /* END setmax() */
-
-
-
-
+/*
+ * Cygwin has a virtual /dev/tty (and other /dev/...) only.
+ * This path has a specified value of time of last access.
+ * As variant, it is proposed to return time from a system reboot moment.
+*/
 char *idletime(
 
   struct rm_attribute *attrib)
 
   {
   char         *id = "idletime";
-  DIR         *dp;
-
-  struct dirent *de;
-  char          ttyname[50];
-  time_t         curtm;
 
   if (attrib)
     {
@@ -3782,40 +3608,7 @@ char *idletime(
     return(NULL);
     }
 
-  if ((dp = opendir("/dev")) == NULL)
-    {
-    log_err(errno, id, "opendir /dev");
-
-    rm_errno = RM_ERR_SYSTEM;
-
-    return(NULL);
-    }
-
-  maxtm = 0;
-
-  curtm = time(NULL);
-
-  /* setmax("/dev/mouse"); */
-  setmax("/dev/ttyS0");
-
-  while ((de = readdir(dp)) != NULL)
-    {
-    if (maxtm >= curtm)
-      break;
-
-    if (strncmp(de->d_name, "tty", 3))
-      continue;
-
-    sprintf(ttyname, "/dev/%s",
-            de->d_name);
-
-    setmax(ttyname);
-    }
-
-  closedir(dp);
-
-  sprintf(ret_string, "%ld",
-          (long)MAX(0, curtm - maxtm));
+  sprintf(ret_string, "%ld", GetTickCount()/1000); 
 
   return(ret_string);
   }  /* END idletime() */
@@ -4226,13 +4019,8 @@ static char *quota(
     case currdata:
 
 #if defined(TENABLEQUOTA)
-#if _LINUX_QUOTA_VERSION < 2
-      sprintf(ret_string, "%lukb",
-              (u_long)qi.dqb_curblocks >> 10);
-#else /* _LINUX_QUOTA_VERSION < 2 */
       sprintf(ret_string, "%lukb",
               (u_long)qi.dqb_curspace >> 10);
-#endif /* _LINUX_QUOTA_VERSION < 2 */
 #endif /* TENABLEQUOTA */
 
       break;
@@ -4278,99 +4066,26 @@ static char *quota(
 
 
 
-/* tested for linux 2.4 kernel (not tested on 2.6) */
 
-#define MAX_INTERFACES 10 /*the maximum number of interfaces*/
-#define HEADER_STR "%*[^\n]\n%*[^\n]\n"
-#define INTERFACE_STR "%[^:]:%lu %*d %*d %*d %*d %*d %*d %*d %lu %*d %*d %*d %*d %*d %*d %*d\n"
-
+/* needs gcc -liphlpapi */
 static char *netload(
 
   struct rm_attribute *attrib)
-
   {
-  int interface11 = 0;
-  /* int ethNum = 0; */
-  char  *id = "netload";
+  MIB_IPSTATS  Stats;
 
-  FILE *fp;
-  int   rc; /*read count*/
+  PMIB_IPSTATS  pStats=&Stats;
 
-  char interfaceName[MAX_INTERFACES][32];
-  unsigned long int bytesRX[MAX_INTERFACES + 1];
-  unsigned long int bytesTX[MAX_INTERFACES + 1];
+  if (NO_ERROR == GetIpStatistics(pStats))
+  {
+	sprintf(ret_string, "%lu", pStats->dwInReceives + pStats->dwOutRequests);
 
-  if ((fp = fopen("/proc/net/dev", "r")) == NULL)
-    {
-    rm_errno = RM_ERR_SYSTEM;
+	return(ret_string);
+  }
+  rm_errno = RM_ERR_SYSTEM;
 
-    return(NULL);
-    }
-
-  rc = fscanf(fp, HEADER_STR); /*strip off header lines*/
-
-  if (rc < 0)
-    {
-    log_err(errno, id, "fscanf of header lines in /proc/net/dev");
-
-    fclose(fp);
-
-    rm_errno = RM_ERR_SYSTEM;
-
-    return(NULL);
-    }
-
-  /* read in interface stats until we can't */
-  /* sum all interface stats, excluding 'lo'*/
-
-  memset(bytesRX, 0, sizeof(bytesRX));
-
-  memset(bytesTX, 0, sizeof(bytesTX));
-
-  for (interface11 = 0; interface11 < MAX_INTERFACES; interface11++)
-    {
-    rc = fscanf(fp, INTERFACE_STR,
-                interfaceName[interface11],
-                &bytesRX[interface11],
-                &bytesTX[interface11]);
-
-    if (rc != 3)
-      {
-
-      interface11++; /*adjust counter for future decrement*/
-
-      break;
-      }
-
-    if (strcmp(interfaceName[interface11], "lo") != 0) /* don't count 'lo' interfaces' stats */
-      {
-      /* For singling out ethernet interfaces */
-
-      /*
-      if (strncmp(interfaceName[interface11],"eth",3) == 0)
-        {
-        rc = sscanf(interfaceName[interface11],"eth%d",
-          &ethNum);
-        }
-      */
-
-      bytesRX[MAX_INTERFACES] += bytesRX[interface11];
-      bytesTX[MAX_INTERFACES] += bytesTX[interface11];
-      }
-    }   /* END for (interface11) */
-
-  /* remove lo from interface count */
-
-  --interface11;
-
-  fclose(fp);
-
-  sprintf(ret_string, "%lu",
-          bytesRX[MAX_INTERFACES] + bytesTX[MAX_INTERFACES]);
-
-  return(ret_string);
-  }  /* END netload() */
-
+  return (NULL);
+}  /* END netload() */
 
 
 
