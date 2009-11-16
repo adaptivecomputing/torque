@@ -34,7 +34,7 @@ args=""
 if [ -z "$PREVLEVEL" ];then
    # being run manually, don't disturb jobs
    args="-p"
-elif
+else
    args="-q"
 fi
 

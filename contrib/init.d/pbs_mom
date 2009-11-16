@@ -21,7 +21,7 @@ args=""
 if [ -z "$previous" ];then
    # being run manually, don't disturb jobs
    args="-p"
-elif
+else
    args="-q"
 fi
 
