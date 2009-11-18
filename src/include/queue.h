@@ -127,6 +127,7 @@ enum queueattr
 
   QE_ATR_checkpoint_dir,
   QE_ATR_checkpoint_min,
+  QE_ATR_checkpoint_defaults,
   QE_ATR_RendezvousRetry,
   QE_ATR_ReservedExpedite,
   QE_ATR_ReservedSync,

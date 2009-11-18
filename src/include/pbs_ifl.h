@@ -175,6 +175,7 @@
 #define ATTR_acluser    "acl_users"
 #define ATTR_altrouter  "alt_router"
 #define ATTR_checkpoint_min  "checkpoint_min"
+#define ATTR_checkpoint_defaults  "checkpoint_defaults"
 #define ATTR_enable     "enabled"
 #define ATTR_fromroute  "from_route_only"
 #define ATTR_hostlist    "hostlist"         /* TORQUE only */

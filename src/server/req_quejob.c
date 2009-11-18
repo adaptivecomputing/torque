@@ -110,8 +110,8 @@
 #include "server.h"
 #include "credential.h"
 #include "batch_request.h"
-#include "pbs_job.h"
 #include "queue.h"
+#include "pbs_job.h"
 #include "net_connect.h"
 #include "pbs_error.h"
 #include "log.h"
@@ -698,6 +698,12 @@ void req_quejob(
 
       return;
       }
+
+    /*
+     * set any "unspecified" checkpoint with queue default values, if any
+     */
+
+    set_chkpt_deflt(pj, pque);
 
     /* If queue has checkpoint directory name specified, propagate it to the job. */
 

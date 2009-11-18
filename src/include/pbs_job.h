@@ -865,6 +865,7 @@ extern int   svr_chkque(job *, pbs_queue *, char *, int, char *);
 extern int   default_router(job *, pbs_queue *, long);
 extern int   site_alt_router(job *, pbs_queue *, long);
 extern int   site_acl_check(job *, pbs_queue *);
+extern void  set_chkpt_deflt(job *, pbs_queue *);
 #endif /* QUEUE_H */
 
 #ifdef WORK_TASK_H

@@ -19,6 +19,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature
   e - removed the very old A_ macros (patch provided by Simon Toth, CESNET z.s.p.o.)
   e - added new qmgr server attributes (clone_batch_size, clone_batch_delay) for 
       controlling job cloning (Bugzilla #4)
+  e - added new qmgr attribute (checkpoint_defaults) for setting default
+      checkpoint values on Execution queues (Bugzilla #1)
 
 
 2.4.2

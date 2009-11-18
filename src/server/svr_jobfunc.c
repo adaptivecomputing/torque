@@ -126,6 +126,7 @@
 #include "svrfunc.h"
 #include "sched_cmds.h"
 #include "pbs_proto.h"
+#include "csv.h"
 
 
 /* Private Functions */
@@ -404,6 +405,12 @@ int svr_enquejob(
    */
 
   set_resc_deflt(pjob, NULL);
+
+  /*
+   * set any "unspecified" checkpoint with queue default values, if any
+   */
+
+  set_chkpt_deflt(pjob, pque);
 
   /* See if we need to do anything special based on type of queue */
 
@@ -2184,6 +2191,61 @@ void set_resc_deflt(
   return;
   }  /* END set_resc_deflt() */
 
+
+
+
+/**
+ * Set job defaults
+ *
+ * @see svr_enquejob() - parent
+ * @see set_chkpt_resc() - child
+ *
+ * @param pjob (I) [modified]
+ * @param pque (I)
+ *
+ */
+
+void set_chkpt_deflt(
+
+  job       *pjob,     /* I (modified) */
+  pbs_queue *pque)     /* Input */
+
+  {
+
+  /* If execution queue has checkpoint defaults specified, but job does not have
+   * checkpoint values, then set defaults on the job.
+   */
+
+  if ((pque->qu_qs.qu_type == QTYPE_Execution) &&
+    (pque->qu_attr[(int)QE_ATR_checkpoint_defaults].at_flags & ATR_VFLAG_SET) &&
+    (pque->qu_attr[(int)QE_ATR_checkpoint_defaults].at_val.at_str))
+    {
+    if ((!(pjob->ji_wattr[(int)JOB_ATR_checkpoint].at_flags & ATR_VFLAG_SET)) ||
+      (csv_find_string(pjob->ji_wattr[(int)JOB_ATR_checkpoint].at_val.at_str, "u") != NULL))
+      {
+      job_attr_def[(int)JOB_ATR_checkpoint].at_set(
+        &pjob->ji_wattr[(int)JOB_ATR_checkpoint],
+        &pque->qu_attr[(int)QE_ATR_checkpoint_defaults],
+        SET);
+
+      if (LOGLEVEL >= 7)
+        {
+        sprintf(log_buffer,"Applying queue (%s) checkpoint defaults (%s) to job",
+          pque->qu_qs.qu_name,
+          pque->qu_attr[(int)QE_ATR_checkpoint_defaults].at_val.at_str);
+
+        LOG_EVENT(
+          PBSEVENT_JOB,
+          PBS_EVENTCLASS_JOB,
+          pjob->ji_qs.ji_jobid,
+          log_buffer);
+        }
+      }
+    }
+
+
+  return;
+  }  /* END set_chkpt_deflt() */
 
 
 
