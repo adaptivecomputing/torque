@@ -1,6 +1,7 @@
    
    
-Tested with the last stable release Cygwin 1.5.25-15 on Windows XP SP3.
+Tested with the last stable release Cygwin 1.5.25-15 on 
+Windows XP Pro and on Windows Server 2003 SE (both 32-bit).
 As of July 24, 2009, Cygwin doesn't yet support getaddrinfo() 
 which means that X11 forwarding won't be built.  
 Tcl/Tk components are untested.  
@@ -16,13 +17,16 @@ Torque needs two Windows users on each host:
 <UserAdmin> with Computer administrator privileges and 
 <SimpleUser> with Limited account.
 Both users must be password protected.
-         
-     
+Torque server-sched-mom can run as Cygwin daemons
+or as Windows services.
+
+
+
 ###########################
 ###   Install  Cygwin   ###
 ###########################
    
-To install Cygwin, enter into Windows as an user <UserAdmin>.
+To install Cygwin, enter into Windows as user <UserAdmin>.
 Browse to http://www.cygwin.com and click the "Install Cygwin Now" link.  
 Download and run setup.exe.
 Click through the defaults and under the package selection 
@@ -41,19 +45,19 @@ select the following packages:
 Download and install the default's and selected Cygwin packages.
 
 
+
 Setup openssh for <UserAdmin> and <SimpleUser>:
 
    #ssh-host-config
-
    #ssh-user-config
-   
    #login
    login:<SimpleUser>
-   Password:***
-
+   Password:<password>
    [SimleUser]#ssh-user-config
 
+
 Adjust an access without password prompting on each host.
+
 
      
 ######################################
@@ -63,14 +67,50 @@ Adjust an access without password prompting on each host.
 Enter into working directory as <UserAdmin> and execute the following commands:
    
    #./configure --disable-unixsockets
-   
    #make
-   
    #make install
    
+The next command must be at the server installation:
+
    #./contrib/AddPrivileges <UserAdmin>
 
-The last command must be at the server and mom installation.   
+The next command must be at the mom installation:   
+
+   #./contrib/AddPrivileges <UserAdmin> mom
+   
+The AddPrivileges script creates passwd&group files and adds privileges
+necessary for normal work Torque components.
+As a rule pbs_mom is demanded more privileges than pbs_server.
+
+Usage of privileges for various start of Torque components
+is resulted in the table:
+ ----------------------------------------------------------------------- 
+!                   !!                       !                          !
+!      Run as       !!  pbs_server + sched   !         pbs_mom          !
+!                   !!                       !                          !
+!===================!!=======================!==========================!
+!                   !!                       !                          !
+!  Cygwin daemon    !!          ---          !  SeCreateTokenPrivilege  !
+!                   !!                       !                          !
+!-------------------!!-----------------------!--------------------------!
+!                   !!                       !                          !
+!  Windows service  !!  SeServiceLogonRight  !  SeServiceLogonRight     !
+!   by <UserAdmin>  !!                       !  SeCreateTokenPrivilege  !
+!                   !!                       !                          ! 
+!-------------------!!-----------------------!--------------------------! 
+!                   !!                       !                          ! 
+!  Windows service  !!          ---          !           ---            !
+!     by SYSTEM     !!                       !                          !
+!   on Windows XP   !!                       !                          !
+!                   !!                       !                          !
+ ----------------------------------------------------------------------- 
+Warning!!! You have to understand that a installing of additional privileges
+can decrease your OS security level.
+
+Open the ports for sshd, pbs_server, pbs_mom and pbs_sched in your firewalls.
+
+Reboot your computers.
+
 
 
 Configure pbs_server via the .../torque/server_priv/nodes file. 
@@ -90,12 +130,12 @@ Initiate a pbs_server database and adjust a appropriate structure of queues:
 Further restart the server:
 
    #qterm -t quick
-   
    #pbs_server
    
 Start the scheduler:
    
    #pbs_sched
+
 
 
 Configure pbs_mom via the .../torque/mom_priv/config file. 
@@ -105,34 +145,70 @@ Start the mom:
    #pbs_mom
 
 
+
 Add the client's hostname to your server's submit_hosts
 
 Set your server's hostsname in the .../torque/server_name file. 
 
-Submit jobs from <SimpleUser> with Limited account.
+Submit jobs as <SimpleUser> with Limited account.
 
 See more the Torque Documentations.
+
+
+
+###################################
+###   Test Torque under Cygwin  ###
+###################################
+
+See nodes information:
+
+   #pbsnodes -a
+   
+Run simple jobs:
+
+   #echo "sleep 30" | qsub
+   #echo "ls -l" | qsub
+   #qstat
+
+Run Windows application:
+
+   #echo "/cygdrive/c/WINDOWS/system32/mspaint.exe" | qsub
+   #qstat
+   #qdel all
+
 
 
 ########################################################
 ###   Start Torque under Cygwin as Windows service   ###
 ########################################################
 
+Enter into working directory as <UserAdmin> and execute the following commands:
+   
    #./configure --disable-daemons --disable-unixsockets
    #make
    #make install
+
+Configure and initiate Torque components.
+Instal the additional privileges (see above).
 
 Use cygrunsrv.exe for install, start, stop and remove services.
 See more cygrunsrv.exe --help.
 
 For example:
 
+   #./contrib/AddPrivileges <UserAdmin>
    #cygrunsrv.exe -I pbs_server -p /usr/sbin/pbs_server.exe –u <UserAdmin> -w <password>
+   #cygrunsrv.exe -I pbs_sched -p /usr/sbin/pbs_sched.exe –u <UserAdmin> -w <password>
  
-<UserAdmin> also can start server-sched-mom as services from Windows 
-native user System (uid=18):
+   #./contrib/AddPrivileges <UserAdmin> mom
+   #cygrunsrv.exe -I pbs_mom -p /usr/sbin/pbs_mom.exe –u <UserAdmin> -w <password>
  
+On Windows XP <UserAdmin> also can start server-sched-mom as services by Windows 
+native user SYSTEM (uid=18):
+ 
+   #./contrib/AddPrivileges SYSTEM
+   #chown SYSTEM -R /var/spool/torque
    #cygrunsrv.exe -I pbs_mom -p /usr/sbin/pbs_mom.exe
 
-Services are managed via the Windows Control Panel or comand line.
+Services and privileges are managed via the Windows Control Panel or comand line.
 

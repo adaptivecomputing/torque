@@ -6782,18 +6782,9 @@ int setup_program_environment(void)
 
   /* must be started with real and effective uid of 0 */
 
-#ifndef __CYGWIN__
-  if ((getuid() != 0) || (geteuid() != 0))
+  if (IamRoot() == 0)
     {
-    /* FAILURE */
-
-    fprintf(stderr, "must be run as root\n");
-
-#else
-  if (!IAmAdmin())
-    {
-#endif  /* __CYGWIN__ */
-    return(1);
+        return(1);
     }
 
   /* The following is code to reduce security risks                */

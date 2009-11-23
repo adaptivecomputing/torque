@@ -297,7 +297,7 @@ static pid_t fork_to_user(
 #ifdef __CYGWIN__
     /* printf("TRY IAMADMIN FOR %s ", preq->rq_ind.rq_cpyfile.rq_user); */
 
-    if (IAmAdmin())
+    if (IamUser() == 0)
     {
       log_err(errno, id, "Can`t run job with Administrator privileges");
 
@@ -2505,7 +2505,7 @@ static int del_files(
  if (getuid() != 0)
     {
 #else
-  if (!IAmAdmin())
+  if (IamUser() == 1)
     {
 #endif  /* __CYGWIN__ */
     UID0 = FALSE;
@@ -2515,7 +2515,7 @@ static int del_files(
  if (geteuid() != 0)
     {
 #else
-  if (!IAmAdmin())
+  if (IamUser() == 1)
     {
 #endif  /* __CYGWIN__ */
     EUID0 = FALSE;

@@ -161,10 +161,11 @@ extern int  log_remove_old (char *,unsigned long);
 extern char log_buffer[LOG_BUF_SIZE];
 int log_init (char *, char *);
 
+extern int  IamRoot (void);
 #ifdef __CYGWIN__
-extern int  IAmAdmin (void);
-extern int  IAmAdminByName (char *);
-extern int  IAmUser (char *);
+extern int  IamAdminByName (char *);
+extern int  IamUser (void);
+extern int  IamUserByName (char *);
 #endif  /* __CYGWIN__ */
 
 extern int  chk_file_sec (char *, int, int, int, int, char *);

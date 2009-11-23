@@ -89,13 +89,10 @@
 #include <limits.h>
 #include "portability.h"
 #include "log.h"
-
-#ifdef __CYGWIN__
 #include <pwd.h>
 #include <grp.h>
 #include <unistd.h>
 #include <string.h>
-#endif  /* __CYGWIN__ */
 
 #ifndef S_ISLNK
 #define S_ISLNK(m) (((m) & S_IFMT) == S_IFLNK)
@@ -104,67 +101,128 @@
 int chk_file_sec_stderr = 0;
 
 
-#ifdef __CYGWIN__
-int IAmAdmin()
-{
+/* 
+ * IamRoot returns 1 if current user has root (Administrator) account, 
+ * else returns 0
+*/
+int IamRoot()
+  {
+#ifndef __CYGWIN__
+  if ((getuid() == 0) && (geteuid() == 0))
+    {
+	return 1;				
+    }
+  fprintf(stderr, "Must be run as root\n");
+
+#else
   struct group *gr;
   struct passwd *p;
   char **t;
-  if (getuid()==18) return 1;
-  if ((p = getpwuid(getuid()))==NULL)
-  {
-	log_err(-1, "WARNING!!!","No password entry for current user. Check your /etc/passwd file.\n");
+
+  if (getuid() == 18)
+    {
+	return 1;
+    }
+  if ((p = getpwuid(getuid())) == NULL)
+    {
+	fprintf(stderr, "No password entry for current user. Check your /etc/passwd file.\n");
   	return 0;
-  }
-
-  if ((gr=getgrgid(544))!=NULL)
-  {
-     for (t = gr->gr_mem; t && *t; t++)
-        if (!strcmp (p->pw_name,*t)) 
-        return 1;
-  }
+    }
+  if ((gr=getgrgid(544)) != NULL)
+    {
+	for (t = gr->gr_mem; t && *t; t++)
+	{
+	    if (!strcmp (p->pw_name, *t)) 
+		return 1;
+	}
+	fprintf(stderr, "Must be run as user with Administrator privileges\n");
+    }
   else
-  {
-	log_err(-1, "WARNING!!!","No group entry. Check your /etc/group file.\n");
-	return 0;
-  }
-log_err(-1, "WARNING!!!" ,"Must be run with Administrator privileges.\n");
-return 0;
-}
+    {
+	fprintf(stderr, "No group entry. Check your /etc/group file.\n");
+    }
+#endif  /* __CYGWIN__ */
+  return 0;
+  }  /* END IamRoot() */
 
-int IAmAdminByName(char *userName)
-{
+
+#ifdef __CYGWIN__
+/* 
+ * IamAdminByName returns 1 if user <userName> has Administrator account, 
+ * else returns 0 
+*/
+int IamAdminByName(char *userName)
+  {
   struct group *gr;
   char **t;
-  if ((gr=getgrgid(544))!=NULL)
-     for (t = gr->gr_mem; t && *t; t++)
-        if (!strcmp (userName,*t))	
-        return 1;
-return 0;
-}
+
+  if ((gr=getgrgid(544)) != NULL)
+    {
+	for (t = gr->gr_mem; t && *t; t++)
+	    if (!strcmp (userName, *t))	
+		return 1;
+    }
+  return 0;
+  }  /* END IamAdminByName */
 
 
-/* IAmUser return 1 if user not included to Administrator group, else return 0 */
 
-int IAmUser(char *userName)
-{
+/*
+ * IamUser returns 1 if current user isn't included to Administrators group
+ * (i.e. has a limited account), else returns 0 
+*/
+int IamUser()
+  {
+  struct group *gr;
+  struct passwd *p;
+  char **t;  
+
+  if ((p = getpwuid(getuid())) && (gr = getgrgid(544)) != NULL)
+    {
+  	if (getuid() < 1000)
+    	{
+		return 0;
+    	}	
+	for (t = gr->gr_mem; t && *t; t++)
+	{
+	    if (!strcmp (p->pw_name, *t)) 
+		return 0;
+	}
+	return 1;
+    }
+  log_err(-1, "WARNING!!!", "Check your /etc/group and /etc/passwd files.\n");
+  return 0;
+  }  /* END IamUser() */
+
+
+
+/* 
+ * IamUserByName returns 1 if user <userName> isn't included to Administrators group
+ * (i.e. has a limited account), else returns 0
+*/
+int IamUserByName(char *userName)
+  {
   struct group *gr;
   char **t;
   char buff[512];
-  if ((gr=getgrgid(544))!=NULL)
-  {  
-     for (t = gr->gr_mem; t && *t; t++)
-        if (!strcmp (userName,*t))	
-	{
-        sprintf(buff, "Can`t run job with Administrator privileges. Your should limit preveleges for \"%s\"",userName);
-	log_err(-1, "WARNING!!!", buff);
-        return 0;
-	}
-	/*else  log_err(-1,"Try",*t); */
-  }
-return 1;
-}
-#endif  /* __CYGWIN__ */
+
+  if ((gr = getgrgid(544)) != NULL)
+    {
+	for (t = gr->gr_mem; t && *t; t++)
+	    if (!strcmp (userName, *t))	
+	    {
+		sprintf(buff, "Can`t run job with Administrator privileges. Your should limit privileges for \"%s\"", userName);
+		log_err(-1, "WARNING!!!", buff);
+		return 0;
+	    }
+	    /* else  log_err(-1,"Try",*t); */
+	return 1;
+    }
+  return 0;
+  }  /* END IamUserByName */
+#endif /* __CYGWIN__ */
+
+
 
 
 /*

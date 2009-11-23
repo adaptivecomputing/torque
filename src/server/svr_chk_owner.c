@@ -281,7 +281,7 @@ int svr_get_privilege(
   /* NOTE:  enable case insensitive host check (CRI) */
 
 #ifdef __CYGWIN__
-  if (IAmAdminByName(user) && !strcasecmp(host_no_port, server_host))
+  if (IamAdminByName(user) && !strcasecmp(host_no_port, server_host))
     {
     is_root = 1;
     return(priv | ATR_DFLAG_MGRD | ATR_DFLAG_MGWR | ATR_DFLAG_OPRD | ATR_DFLAG_OPWR);
@@ -391,7 +391,7 @@ int authenticate_user(
       {
 
 #ifdef __CYGWIN__
-  if (!IAmAdminByName(preq->rq_user) || (strcasecmp(preq->rq_host, server_host) != 0))
+  if (!IamAdminByName(preq->rq_user) || (strcasecmp(preq->rq_host, server_host) != 0))
     {
 	return(PBSE_PERM);
     }

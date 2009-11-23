@@ -3153,7 +3153,11 @@ static char *totmem(
 
 
 
-
+/*
+ * Has been used Win API.
+ * Cygwin's /proc/meminfo also takes information from here
+ * but does it incorrectly till now
+*/ 
 static char *availmem(
 
   struct rm_attribute *attrib)
@@ -3983,6 +3987,8 @@ static char *quota(
     uid = pw->pw_uid;
     }
 
+  /* Cygwin doesn't yet support quota
+   * It is stub */ 
   if (quotactl(
         QCMD(Q_GETQUOTA, USRQUOTA),
         me->mnt_fsname,

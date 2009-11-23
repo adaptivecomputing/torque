@@ -1,48 +1,53 @@
 #! /bin/sh
 
-###       AddPrivileges  ver 1.0     11 Nov 2009                    ###
-### --------------------------------------------------------------- ###
-### This script set additional privileges for Windows (Cygwin) user ###
-###  with Computer administrator privileges only.                   ###
-### It must be run at the first Torque server                       ###
-###  and Torque mom installation on Cygwin.                         ###
+###       AddPrivileges  ver 1.0     19 Nov 2009           ###
+### ------------------------------------------------------ ###
+###  This script creates Passwd&Group files and sets       ###
+###   additional privileges only for Windows users         ###
+###    with Computer administrator privileges.             ###
+###  It must be run at the first Torque pbs_server         ###
+###   and Torque pbs_mom installation on Cygwin.           ###
 
 
 OS=`uname -s | tr '[A-Z]' '[a-z]'`
 
 case $OS in
    cygwin*) ;;
-   *) echo "   Script can run on Cygwin 1.5 only" 1>&2
+   *) echo "   Script can run on Cygwin 1.5 only"
       exit 1;;
 esac
 
 
 case $1 in
   '')
-     echo "   No user's login.  Try \`$0 --help' for more information." 1>&2
+     echo "   No user's login.  Try \`$0 --help' for more information."
      exit 1;
      ;;
   -h | --h*)
     cat <<\EOF
 
-Usage: AddPrivileges [--help] [--version] <UserAdmin>
+Usage: AddPrivileges [--help] [--version] UserAdmin [mom]
 
  Set additional privileges for Windows (Cygwin) user
 
  Run from user with Computer administrator privileges only
 
  Options:
-   -h, --help      display this help and exit
-   -v, --version   output version information and exit
+   --help, -h      display this help and exit
+   --version, -v   output version information and exit
 
-   <UserAdmin>     login of Windows user
-                    with Computer administrator privileges
+   UserAdmin       login of Windows user
+                    with Computer administrator privileges or
+		   SYSTEM - native Windows user
+		    
+   mom             add privileges for Torque pbs_mom only
 
 EOF
     exit $?
     ;;
   -v | --v*)
-    echo " AddPrivileges  ver 1.0    11 Nov 2009" 1>&2
+    echo
+    echo " AddPrivileges  ver 1.0    19 Nov 2009"
     exit $?
     ;;
 esac
@@ -68,29 +73,38 @@ chmod 644 $GROUPF
 
 if grep "$ADMINGR" "$GROUPF" | grep -q "$CURRENTU";
 
-    then echo "   " 1>&2;
+    then echo;
 
-    else echo "   Current user '$CURRENTU' has not administrator privileges" 1>&2
-         exit $?;
+    else echo "   Current user '$CURRENTU' has not administrator privileges"
+    exit $?;
+fi
+
+
+if [ "$1" = "SYSTEM" ]; then
+
+    echo
+    echo "   Passwd&Group files were created"
+    echo
+    exit $?;
+
 fi
 
 
 if grep "$ADMINGR" "$GROUPF" | grep -q $1;
 
-    then echo "   $1 has got Computer administrator privileges" 1>&2;
+    then echo "   $1 has got Computer administrator privileges";
 
-    else echo "   $1 is not Windows user with Computer administrator privileges" 1>&2
-         exit $?;
+    else echo "   $1 is not Windows user with Computer administrator privileges"
+    exit $?;
 fi
 
 
-editrights -a SeAssignPrimaryTokenPrivilege -u $1
+if [ "$2" = "mom" ]; then 
 
-editrights -a SeCreateTokenPrivilege -u $1
+    editrights -a SeCreateTokenPrivilege -u $1
 
-editrights -a SeTcbPrivilege -u $1
+fi
 
-editrights -a SeIncreaseQuotaPrivilege -u $1
 
 editrights -a SeServiceLogonRight -u $1
 
@@ -99,10 +113,13 @@ if [[ $? -eq $SUCCESS ]]; then
 
  cat <<\EOF
 
-   Additional privileges were set successfully
+   Passwd&Group files and additional privileges were set successfully
 
-   Should run 'editrights -l -u <UserAdmin>'
+   Should run 'editrights -l -u UserAdmin'
     to ascertain of the privileges installation
+
+ Warning!!! You have to understand that the installing of additional privileges
+            can decrease your OS security level
 
 EOF
 fi

@@ -1440,17 +1440,10 @@ int main(
 
   parse_command_line(argc, argv);
 
-#ifndef __CYGWIN__
   /* if we are not running with real and effective uid of 0, forget it */
 
-  if ((getuid() != 0) || (geteuid() != 0))
+  if (IamRoot() == 0)
     {
-    fprintf(stderr, "%s: must be run by root\n",
-            ProgName);
-#else
-  if (!IAmAdmin())
-        {
-#endif  /* __CYGWIN__ */
 	return(1);
     }
 

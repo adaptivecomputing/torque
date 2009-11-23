@@ -3,17 +3,17 @@ c - crash     b - bug fix    e - enhancement    f - new feature
 2.5.0
   f - added full support (server-scheduler-mom) for Cygwin (UIIP NAS of Belarus, uiip.bas-net.by)
   f - architecture and build system changes to support Cygwin (Igor Ilyenko, uiip.bas-net.by)
-  b - fixed EINPROGRESS in net_client.c. This signal appears in every time of connect
+  b - fixed EINPROGRESS in net_client.c. This signal appears every time of connecting
       and requires individual processing. The old erroneous processing brought to 
       big network delay, especially on Cygwin.
-  e - added own implementation of bindresvport for OS which doesn't it, improved signal
-      processing after connect (Igor Ilyenko, uiip.bas-net.by)
-  f - created checking permissions of Windows (Cygwin) users, using mkpasswd, mkgroup and
-      own functions IAmAdmin, IAmUser (Yauheni Charniauski, uiip.bas-net.by)
-  f - created checking permissions of submit jobs (Vikentsi Lapa, uiip.bas-net.by)
-  f - Added the --disable-daemons configure option for start server-shed-mom as Windows
+  e - improved signal processing after connecting in client_to_svr and added own implementation
+      of bindresvport for OS which haven't it, (Igor Ilyenko, uiip.bas-net.by)
+  f - created permission checking of Windows (Cygwin) users, using mkpasswd, mkgroup and
+      own functions IamRoot, IamUser (Yauheni Charniauski, uiip.bas-net.by)
+  f - created permission checking of submited jobs (Vikentsi Lapa, uiip.bas-net.by)
+  f - Added the --disable-daemons configure option for start server-sched-mom as Windows
       services, cygrunsrv.exe goes its into background independently.
-  e - Adapted output of Cygwin diagnostic information (Yauheni Charniauski, uiip.bas-net.by)
+  e - Adapted output of Cygwin's diagnostic information (Yauheni Charniauski, uiip.bas-net.by)
   b - Changed pbsd_main to call daemonize_server early only if high_availability_mode
       is set.
   e - removed the very old A_ macros (patch provided by Simon Toth, CESNET z.s.p.o.)

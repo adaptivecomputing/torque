@@ -343,7 +343,7 @@ struct passwd *check_pwd(
 		}
 
 #ifdef __CYGWIN__
-	if (!IAmUser(ptr))
+	if (IamUserByName(ptr) == 0)
     		return(NULL);
 #endif  /* __CYGWIN__ */
 

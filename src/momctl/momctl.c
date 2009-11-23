@@ -92,16 +92,9 @@ int main(
   HostList[0]     = '\0';
   ConfigBuf[0] = '\0';
 
-#ifndef __CYGWIN__
-  if (getuid() != 0)
+  if (IamRoot() == 0)
     {
-    fprintf(stderr, "ERROR:  must be root to run this command\n");
-#else
-  if (!IAmAdmin())
-    {
-#endif  /* __CYGWIN__ */
-
-    exit(EXIT_FAILURE);
+	exit(EXIT_FAILURE);
     }
 
   while ((c = getopt(ArgC, ArgV, OptString)) != EOF)

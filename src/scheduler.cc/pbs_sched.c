@@ -889,17 +889,10 @@ int main(
     }
 
 #ifndef DEBUG
-#ifndef __CYGWIN__
-  if ((geteuid() != 0) || (getuid() != 0))
+  if (IamRoot() == 0)
     {
-#else
-  if (!IAmAdmin())
-    {
-#endif  /* __CYGWIN__ */
-    fprintf(stderr, "%s: Must be run by root\n", argv[0]);
-    return (1);
+        return (1);
     }
-
 #endif        /* DEBUG */
 
   /* Save the original working directory for "restart" */
