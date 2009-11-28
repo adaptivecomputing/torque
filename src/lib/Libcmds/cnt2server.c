@@ -135,7 +135,6 @@ int cnt2server(
 
   char Server[1024];
 
-
   if (cnt2server_retry > 0)
     {
     firsttime = time(NULL);
@@ -253,7 +252,6 @@ start:
               }
 
             fprintf(stderr, "Cannot connect to default server host '%s' - check pbs_server daemon.\n",
-
               pbs_default());
             }
           else

@@ -96,6 +96,9 @@ int   rpp_eom(int);
 int   rpp_getc(int);
 int   rpp_putc(int, int);
 char *  netaddr(struct sockaddr_in *);
+int rpp_get_stream_state(int index);
+
+
 unsigned long  crc(unsigned char *, unsigned long);
 
 

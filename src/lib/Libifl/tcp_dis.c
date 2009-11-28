@@ -775,7 +775,6 @@ void DIS_tcp_setup(
   int fd)
 
   {
-
   struct tcp_chan *tcp;
   struct tcpdisbuf *tp;
 

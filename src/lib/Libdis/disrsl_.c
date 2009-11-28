@@ -102,6 +102,7 @@ int disrsl_(
   unsigned long locval;
   unsigned long ndigs;
   char  *cp;
+  char  scratch[DIS_BUFSIZ+1];
 
   assert(negate != NULL);
   assert(value != NULL);
@@ -110,9 +111,11 @@ int disrsl_(
   assert(dis_getc != NULL);
   assert(dis_gets != NULL);
 
+  memset(scratch, 0, DIS_BUFSIZ+1);
+
   if (ulmaxdigs == 0)
     {
-    cp = discul_(dis_buffer + DIS_BUFSIZ, ULONG_MAX, &ulmaxdigs);
+    cp = discul_(scratch + DIS_BUFSIZ, ULONG_MAX, &ulmaxdigs);
 
     ulmax = (char *)malloc(ulmaxdigs);
 
@@ -140,7 +143,7 @@ int disrsl_(
 
       *negate = (c == '-');
 
-      if ((*dis_gets)(stream, dis_buffer, count) != (int)count)
+      if ((*dis_gets)(stream, scratch, count) != (int)count)
         {
         return(DIS_EOD);
         }
@@ -150,11 +153,11 @@ int disrsl_(
         if (count > ulmaxdigs)
           goto overflow;
 
-        if (memcmp(dis_buffer, ulmax, ulmaxdigs) > 0)
+        if (memcmp(scratch, ulmax, ulmaxdigs) > 0)
           goto overflow;
         }
 
-      cp = dis_buffer;
+      cp = scratch;
 
       locval = 0;
 
@@ -207,14 +210,14 @@ int disrsl_(
 
       if (count > 1)
         {
-        if ((*dis_gets)(stream, dis_buffer + 1, count - 1) != (int)count - 1)
+        if ((*dis_gets)(stream, scratch + 1, count - 1) != (int)count - 1)
           {
           /* FAILURE */
 
           return(DIS_EOD);
           }
 
-        cp = dis_buffer;
+        cp = scratch;
 
         if (count >= ulmaxdigs)
           {
@@ -223,7 +226,7 @@ int disrsl_(
 
           *cp = c;
 
-          if (memcmp(dis_buffer, ulmax, ulmaxdigs) > 0)
+          if (memcmp(scratch, ulmax, ulmaxdigs) > 0)
             break;
           }
 

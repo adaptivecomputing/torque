@@ -100,11 +100,13 @@ int disrl_(
   unsigned unum;
   char  *cp;
   dis_long_double_t fpnum;
+  char  scratch[DIS_BUFSIZ+1];
 
   assert(stream >= 0);
   assert(dis_getc != NULL);
   assert(disr_skip != NULL);
 
+  memset(scratch, 0, DIS_BUFSIZ+1);
   if (dis_umaxd == 0)
     disiui_();
 
@@ -237,7 +239,7 @@ int disrl_(
 
       if (count > 1)
         {
-        if ((*dis_gets)(stream, dis_buffer + 1, count - 1) != (int)count - 1)
+        if ((*dis_gets)(stream, scratch + 1, count - 1) != (int)count - 1)
           {
           /* cannot read all requested characters from stream */
 
@@ -246,7 +248,7 @@ int disrl_(
           return(DIS_EOD);
           }
 
-        cp = dis_buffer;
+        cp = scratch;
 
         if (count >= dis_umaxd)
           {
@@ -255,7 +257,7 @@ int disrl_(
 
           *cp = c;
 
-          if (memcmp(dis_buffer, dis_umax, dis_umaxd) > 0)
+          if (memcmp(scratch, dis_umax, dis_umaxd) > 0)
             break;
           }
 

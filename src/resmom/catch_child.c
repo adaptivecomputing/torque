@@ -504,7 +504,7 @@ scan_for_exiting(void)
             {
             tm_reply(tp->ti_fd, IM_ALL_OKAY, pobit->oe_info.fe_event);
 
-            diswsi(tp->ti_fd, ptask->ti_qs.ti_exitstat);
+            tcp_diswsi(tp->ti_fd, ptask->ti_qs.ti_exitstat);
 
             DIS_tcp_wflush(tp->ti_fd);
             }

@@ -122,10 +122,13 @@ int diswsi(
   char     *cp;
 
   int       rc;
+  char		scratch[DIS_BUFSIZ+1];
 
   assert(stream >= 0);
   assert(dis_puts != NULL);
   assert(disw_commit != NULL);
+
+  memset(scratch, 0, DIS_BUFSIZ+1);
 
   if (value < 0)
     {
@@ -140,7 +143,7 @@ int diswsi(
     c = '+';
     }
 
-  cp = discui_(&dis_buffer[DIS_BUFSIZ], uval, &ndigs);
+  cp = discui_(&scratch[DIS_BUFSIZ], uval, &ndigs);
 
   *--cp = c;
 
@@ -150,7 +153,7 @@ int diswsi(
   retval = (*dis_puts)(
              stream,
              cp,
-             (size_t)(&dis_buffer[DIS_BUFSIZ] - cp)) < 0 ?  DIS_PROTO : DIS_SUCCESS;
+             strlen(cp)) < 0 ?  DIS_PROTO : DIS_SUCCESS;
 
   /* disw_commit -> rpp_wcommit */
 

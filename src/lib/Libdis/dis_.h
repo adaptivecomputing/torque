@@ -106,6 +106,6 @@ extern unsigned dis_lmx10;
 extern dis_long_double_t *dis_lp10;
 extern dis_long_double_t *dis_ln10;
 
-extern char dis_buffer[DIS_BUFSIZ];
+/*extern char dis_buffer[DIS_BUFSIZ];*/
 extern char *dis_umax;
 extern unsigned dis_umaxd;

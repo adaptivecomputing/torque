@@ -109,5 +109,5 @@ const char *dis_emsg[] =
   "End of File"
   };
 
-char dis_buffer[DIS_BUFSIZ];
+/*char dis_buffer[DIS_BUFSIZ];*/
 

@@ -119,10 +119,13 @@ int diswsl(
   unsigned long ulval;
   char  c;
   char  *cp;
+  char  scratch[DIS_BUFSIZ+1];
 
   assert(stream >= 0);
   assert(dis_puts != NULL);
   assert(disw_commit != NULL);
+
+  memset(scratch, 0, DIS_BUFSIZ+1);
 
   if (value < 0)
     {
@@ -135,7 +138,7 @@ int diswsl(
     c = '+';
     }
 
-  cp = discul_(&dis_buffer[DIS_BUFSIZ], ulval, &ndigs);
+  cp = discul_(&scratch[DIS_BUFSIZ], ulval, &ndigs);
 
   *--cp = c;
 
@@ -143,7 +146,7 @@ int diswsl(
     cp = discui_(cp, ndigs, &ndigs);
 
   retval = (*dis_puts)(stream, cp,
-                       (size_t)(&dis_buffer[DIS_BUFSIZ] - cp)) < 0 ?
+                       strlen(cp)) < 0 ?
            DIS_PROTO : DIS_SUCCESS;
 
   return (((*disw_commit)(stream, retval == DIS_SUCCESS) < 0) ?

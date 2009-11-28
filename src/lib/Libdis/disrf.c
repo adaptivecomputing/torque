@@ -118,9 +118,12 @@ static int disrd_(
   int  negate;
   unsigned int  unum;
   char  *cp;
+  char scratch[DIS_BUFSIZ+1];
 
   if (dis_umaxd == 0)
     disiui_();
+
+  memset(scratch, 0, DIS_BUFSIZ+1);
 
   c = (*dis_getc)(stream);
 
@@ -253,12 +256,12 @@ static int disrd_(
 
       if (count > 1)
         {
-        if ((*dis_gets)(stream, dis_buffer + 1, count - 1) != (int)count - 1)
+        if ((*dis_gets)(stream, scratch + 1, count - 1) != (int)count - 1)
           {
           return(DIS_EOD);
           }
 
-        cp = dis_buffer;
+        cp = scratch;
 
         if (count >= dis_umaxd)
           {
@@ -267,7 +270,7 @@ static int disrd_(
 
           *cp = c;
 
-          if (memcmp(dis_buffer, dis_umax, dis_umaxd) > 0)
+          if (memcmp(scratch, dis_umax, dis_umaxd) > 0)
             break;
           }
 

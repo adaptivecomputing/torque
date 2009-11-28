@@ -125,19 +125,21 @@ int diswul(
   char         *cp;
 
   int           rc;
+  char  scratch[DIS_BUFSIZ+1];
 
   assert(stream >= 0);
   assert(dis_puts != NULL);
   assert(disw_commit != NULL);
 
-  cp = discul_(&dis_buffer[DIS_BUFSIZ], value, &ndigs);
+  memset(scratch, 0, DIS_BUFSIZ+1);
+  cp = discul_(&scratch[DIS_BUFSIZ], value, &ndigs);
 
   *--cp = '+';
 
   while (ndigs > 1)
     cp = discui_(cp, ndigs, &ndigs);
 
-  retval = (*dis_puts)(stream, cp, (size_t)(&dis_buffer[DIS_BUFSIZ] - cp)) < 0 ?
+  retval = (*dis_puts)(stream, cp, strlen(cp)) < 0 ?
            DIS_PROTO :
            DIS_SUCCESS;
 

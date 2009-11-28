@@ -90,17 +90,19 @@ diswui_(int stream, unsigned value)
   {
   unsigned ndigs;
   char  *cp;
+  char  scratch[DIS_BUFSIZ+1];
 
   assert(stream >= 0);
   assert(dis_puts != NULL);
 
-  cp = discui_(&dis_buffer[DIS_BUFSIZ], value, &ndigs);
+  memset(scratch, 0, DIS_BUFSIZ+1);
+  cp = discui_(&scratch[DIS_BUFSIZ], value, &ndigs);
   *--cp = '+';
 
   while (ndigs > 1)
     cp = discui_(cp, ndigs, &ndigs);
 
-  if ((*dis_puts)(stream, cp, (size_t)(&dis_buffer[DIS_BUFSIZ] - cp)) < 0)
+  if ((*dis_puts)(stream, cp, strlen(cp)) < 0)
     return(DIS_PROTO);
 
   return (DIS_SUCCESS);

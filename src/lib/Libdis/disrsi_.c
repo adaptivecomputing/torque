@@ -99,6 +99,7 @@ int disrsi_(
   unsigned locval;
   unsigned ndigs;
   char  *cp;
+  char  scratch[DIS_BUFSIZ+1];
 
   assert(negate != NULL);
   assert(value != NULL);
@@ -107,6 +108,7 @@ int disrsi_(
   assert(dis_getc != NULL);
   assert(dis_gets != NULL);
 
+  memset(scratch, 0, DIS_BUFSIZ+1);
   if (dis_umaxd == 0)
     disiui_();
 
@@ -119,7 +121,7 @@ int disrsi_(
 
       *negate = c == '-';
 
-      if ((*dis_gets)(stream, dis_buffer, count) != (int)count)
+      if ((*dis_gets)(stream, scratch, count) != (int)count)
         {
         return(DIS_EOD);
         }
@@ -129,11 +131,11 @@ int disrsi_(
         if (count > dis_umaxd)
           goto overflow;
 
-        if (memcmp(dis_buffer, dis_umax, dis_umaxd) > 0)
+        if (memcmp(scratch, dis_umax, dis_umaxd) > 0)
           goto overflow;
         }
 
-      cp = dis_buffer;
+      cp = scratch;
 
       locval = 0;
 
@@ -182,12 +184,12 @@ int disrsi_(
 
       if (count > 1)
         {
-        if ((*dis_gets)(stream, dis_buffer + 1, count - 1) != (int)count - 1)
+        if ((*dis_gets)(stream, scratch + 1, count - 1) != (int)count - 1)
           {
           return(DIS_EOD);
           }
 
-        cp = dis_buffer;
+        cp = scratch;
 
         if (count >= dis_umaxd)
           {
@@ -196,7 +198,7 @@ int disrsi_(
 
           *cp = c;
 
-          if (memcmp(dis_buffer, dis_umax, dis_umaxd) > 0)
+          if (memcmp(scratch, dis_umax, dis_umaxd) > 0)
             break;
           }
 

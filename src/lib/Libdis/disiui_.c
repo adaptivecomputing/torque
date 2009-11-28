@@ -101,11 +101,13 @@ void
 disiui_(void)
   {
   char  *cp;
+  char  scratch[DIS_BUFSIZ+1];
 
   assert(dis_umax == NULL);
   assert(dis_umaxd == 0);
 
-  cp = discui_(dis_buffer + DIS_BUFSIZ, UINT_MAX, &dis_umaxd);
+  memset(scratch, 0, DIS_BUFSIZ+1);
+  cp = discui_(&scratch[DIS_BUFSIZ], UINT_MAX, &dis_umaxd);
   assert(dis_umaxd > 0);
   dis_umax = (char *)malloc(dis_umaxd);
   assert(dis_umax != NULL);

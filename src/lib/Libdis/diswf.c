@@ -113,11 +113,13 @@ double  value;
   char  *cp;
   char  *ocp;
   double  dval;
+  char  scratch[DIS_BUFSIZ+1];
 
   assert(stream >= 0);
   assert(dis_puts != NULL);
   assert(disw_commit != NULL);
 
+  memset(scratch, 0, DIS_BUFSIZ+1);
   /* Make zero a special case.  If we don't it will blow exponent  */
   /* calculation.        */
 
@@ -186,7 +188,7 @@ double  value;
 
   /* Starting in the middle of the buffer, convert coefficient digits, */
   /* most significant first.      */
-  ocp = cp = &dis_buffer[DIS_BUFSIZ - FLT_DIG];
+  ocp = cp = &scratch[DIS_BUFSIZ - FLT_DIG];
 
   ndigs = FLT_DIG;
 
