@@ -410,24 +410,15 @@ static int startcom(
 
   setup_dis(stream);
 
-  if(RPP)
-    ret = diswsi(stream, RM_PROTOCOL);
-  else
-    ret = tcp_diswsi(stream, RM_PROTOCOL);
+  ret = diswsi(stream, RM_PROTOCOL);
 
   if (ret == DIS_SUCCESS)
     {
-    if(RPP)
-      ret = diswsi(stream, RM_PROTOCOL_VER);
-    else
-      ret = tcp_diswsi(stream, RM_PROTOCOL_VER);
+    ret = diswsi(stream, RM_PROTOCOL_VER);
 
     if (ret == DIS_SUCCESS)
       {
-      if(RPP)
-        ret = diswsi(stream, com);
-      else
-        ret = tcp_diswsi(stream, com);
+      ret = diswsi(stream, com);
       }
     }
 
@@ -512,10 +503,7 @@ static int simpleget(
   int ret, num;
 
 
-  if(RPP)
-    num = disrsi(stream, &ret);
-  else
-    num = disrsi(stream, &ret);
+  num = disrsi(stream, &ret);
 
   if (ret != DIS_SUCCESS)
     {
@@ -647,10 +635,8 @@ int configrm(
     return(-1);
     }
 
-  if(RPP)
     ret = diswcs(stream, file, len);
-  else
-    ret = tcp_diswcs(stream, file, len);
+
 
   if (ret != DIS_SUCCESS)
     {
@@ -717,10 +703,8 @@ static int doreq(
     op->len = 1;
     }
 
-  if(RPP)
-    ret = diswcs(op->stream, line, strlen(line));
-  else
-    ret = diswcs(op->stream, line, strlen(line));
+  ret = diswcs(op->stream, line, strlen(line));
+
 
   if (ret != DIS_SUCCESS)
     {
@@ -899,10 +883,8 @@ char *getreq(
     op->len = -1;
     }
 
-  if(RPP)
-    startline = disrst(stream, &ret);
-  else
-    startline = disrst(stream, &ret);
+
+  startline = disrst(stream, &ret);
 
   if (ret == DIS_EOF)
     {

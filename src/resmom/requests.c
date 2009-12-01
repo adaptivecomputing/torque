@@ -663,9 +663,9 @@ static int return_file(
 
     DIS_tcp_setup(sock);
 
-    if ((rc = tcp_encode_DIS_ReqHdr(sock, PBS_BATCH_MvJobFile, pbs_current_user)) ||
-        (rc = tcp_encode_DIS_JobFile(sock, seq++, buf, amt, pjob->ji_qs.ji_jobid, which)) ||
-        (rc = tcp_encode_DIS_ReqExtend(sock, NULL)))
+    if ((rc = encode_DIS_ReqHdr(sock, PBS_BATCH_MvJobFile, pbs_current_user)) ||
+        (rc = encode_DIS_JobFile(sock, seq++, buf, amt, pjob->ji_qs.ji_jobid, which)) ||
+        (rc = encode_DIS_ReqExtend(sock, NULL)))
       {
       break;
       }
@@ -791,6 +791,21 @@ static int told_to_cp(
       {
       if (wchost_match(host, pcphosts[nh].cph_hosts))
         {
+
+        if (LOGLEVEL >= 5)
+          {
+          sprintf(log_buffer, "host '%s' pcphosts[%d].cph_hosts: %s",
+                  host,
+                  nh,
+                  pcphosts[nh].cph_hosts);
+
+          log_record(
+            PBSEVENT_SYSTEM,
+            PBS_EVENTCLASS_SERVER,
+            (char *)id,
+            log_buffer);
+          }
+
         i = strlen(pcphosts[nh].cph_from);
 
         if (strncmp(pcphosts[nh].cph_from, oldpath, i) == 0)

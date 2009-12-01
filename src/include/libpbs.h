@@ -320,29 +320,7 @@ extern int encode_DIS_Status (int socket, char *objid, struct attrl *);
 extern int encode_DIS_attrl (int socket, struct attrl *);
 extern int encode_DIS_attropl (int socket, struct attropl *);
 
-extern int tcp_decode_DIS_JobId (int socket, char *jobid);
-extern int tcp_decode_DIS_replyCmd (int socket, struct batch_reply *);
-
-extern int tcp_encode_DIS_JobCred (int socket, int type, char *cred, int len);
-extern int tcp_encode_DIS_JobFile (int socket, int, char *, int, char *, int);
-extern int tcp_encode_DIS_JobId (int socket, char *);
-extern int tcp_encode_DIS_Manage (int socket, int cmd, int objt, char *, struct attropl *);
-extern int tcp_encode_DIS_MoveJob (int socket, char *jid, char *dest);
-extern int tcp_encode_DIS_MessageJob (int socket, char *jid, int fopt, char *m);
-extern int tcp_encode_DIS_QueueJob (int socket, char *jid, char *dest, struct attropl *);
-extern int tcp_encode_DIS_ReqExtend (int socket, char *extend);
-extern int tcp_encode_DIS_ReqHdr (int socket, int reqt, char *user);
-extern int tcp_encode_DIS_Rescq (int socket, char **rlist, int num);
-extern int tcp_encode_DIS_RunJob (int socket, char *jid, char *where, unsigned int resch);
-extern int tcp_encode_DIS_ShutDown (int socket, int manner);
-extern int tcp_encode_DIS_SignalJob (int socket, char *jid, char *sig);
-extern int tcp_encode_DIS_Status (int socket, char *objid, struct attrl *);
-extern int tcp_encode_DIS_attrl (int socket, struct attrl *);
-extern int tcp_encode_DIS_attropl (int socket, struct attropl *);
-
-
 extern int DIS_reply_read (int socket, struct batch_reply *preply);
-
 #endif /* LIBPBS_H */
 
 

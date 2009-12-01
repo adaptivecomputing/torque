@@ -504,7 +504,7 @@ scan_for_exiting(void)
             {
             tm_reply(tp->ti_fd, IM_ALL_OKAY, pobit->oe_info.fe_event);
 
-            tcp_diswsi(tp->ti_fd, ptask->ti_qs.ti_exitstat);
+            diswsi(tp->ti_fd, ptask->ti_qs.ti_exitstat);
 
             DIS_tcp_wflush(tp->ti_fd);
             }
@@ -807,9 +807,9 @@ scan_for_exiting(void)
 
     DIS_tcp_setup(sock);
 
-    if (tcp_encode_DIS_ReqHdr(sock, PBS_BATCH_StatusJob, pbs_current_user) ||
-        tcp_encode_DIS_Status(sock, pjob->ji_qs.ji_jobid, NULL) ||
-        tcp_encode_DIS_ReqExtend(sock, NULL))
+    if (encode_DIS_ReqHdr(sock, PBS_BATCH_StatusJob, pbs_current_user) ||
+        encode_DIS_Status(sock, pjob->ji_qs.ji_jobid, NULL) ||
+        encode_DIS_ReqExtend(sock, NULL))
       {
       /* FAILURE */
 
@@ -950,9 +950,9 @@ int post_epilogue(
 
   DIS_tcp_setup(sock);
 
-  if (tcp_encode_DIS_ReqHdr(sock, PBS_BATCH_JobObit, pbs_current_user) ||
-      tcp_encode_DIS_JobObit(sock, preq) ||
-      tcp_encode_DIS_ReqExtend(sock, 0))
+  if (encode_DIS_ReqHdr(sock, PBS_BATCH_JobObit, pbs_current_user) ||
+      encode_DIS_JobObit(sock, preq) ||
+      encode_DIS_ReqExtend(sock, 0))
     {
     /* FAILURE */
 

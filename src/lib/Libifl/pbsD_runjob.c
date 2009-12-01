@@ -164,9 +164,9 @@ int pbs_runjob(
 
   /* send run request */
 
-  if ((rc = tcp_encode_DIS_ReqHdr(sock, PBS_BATCH_RunJob, pbs_current_user)) ||
-      (rc = tcp_encode_DIS_RunJob(sock, jobid, location, resch)) ||
-      (rc = tcp_encode_DIS_ReqExtend(sock, extend)))
+  if ((rc = encode_DIS_ReqHdr(sock, PBS_BATCH_RunJob, pbs_current_user)) ||
+      (rc = encode_DIS_RunJob(sock, jobid, location, resch)) ||
+      (rc = encode_DIS_ReqExtend(sock, extend)))
     {
     connection[c].ch_errtxt = strdup(dis_emsg[rc]);
 

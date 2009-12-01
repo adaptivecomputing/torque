@@ -103,16 +103,3 @@ encode_DIS_Manage(int sock, int command, int objtype, char *objname, struct attr
   return (encode_DIS_attropl(sock, aoplp));
   }
 
-int
-tcp_encode_DIS_Manage(int sock, int command, int objtype, char *objname, struct attropl *aoplp)
-  {
-  int   rc;
-
-  if ((rc = tcp_diswui(sock, command) != 0) ||
-      (rc = tcp_diswui(sock, objtype) != 0) ||
-      (rc = tcp_diswst(sock, objname) != 0))
-    return rc;
-
-  return (tcp_encode_DIS_attropl(sock, aoplp));
-  }
-

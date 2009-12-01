@@ -130,30 +130,4 @@ decode_DIS_Register(int sock, struct batch_request *preq)
   return rc;
   }
 
-int
-tcp_decode_DIS_Register(int sock, struct batch_request *preq)
-  {
-  int   rc;
-
-  if ((rc = tcp_disrfst(sock, PBS_MAXUSER, preq->rq_ind.rq_register.rq_owner)))
-    return rc;
-
-  if ((rc = tcp_disrfst(sock, PBS_MAXSVRJOBID, preq->rq_ind.rq_register.rq_parent)))
-    return rc;
-
-  if ((rc = tcp_disrfst(sock, PBS_MAXCLTJOBID, preq->rq_ind.rq_register.rq_child)))
-    return rc;
-
-  preq->rq_ind.rq_register.rq_dependtype = tcp_disrui(sock, &rc);
-
-  if (rc) return rc;
-
-  preq->rq_ind.rq_register.rq_op = tcp_disrui(sock, &rc);
-
-  if (rc) return rc;
-
-  preq->rq_ind.rq_register.rq_cost = tcp_disrsl(sock, &rc);
-
-  return rc;
-  }
 

@@ -119,23 +119,3 @@ decode_DIS_MessageJob(int sock, struct batch_request *preq)
   return rc;
   }
 
-int
-tcp_decode_DIS_MessageJob(int sock, struct batch_request *preq)
-  {
-  int rc;
-
-  preq->rq_ind.rq_message.rq_text = 0;
-
-  rc = tcp_disrfst(sock, PBS_MAXSVRJOBID + 1, preq->rq_ind.rq_message.rq_jid);
-
-  if (rc) return rc;
-
-  preq->rq_ind.rq_message.rq_file = tcp_disrui(sock, &rc);
-
-  if (rc) return rc;
-
-  preq->rq_ind.rq_message.rq_text = tcp_disrst(sock, &rc);
-
-  return rc;
-  }
-

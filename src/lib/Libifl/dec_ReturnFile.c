@@ -37,27 +37,3 @@ decode_DIS_ReturnFiles(int sock, struct batch_request *preq)
   }
 
 
-int
-tcp_decode_DIS_ReturnFiles(int sock, struct batch_request *preq)
-  {
-
-  struct rq_returnfiles *prfs;
-  int   rc;
-
-  prfs = &preq->rq_ind.rq_returnfiles;
-
-  if ((rc = tcp_disrfst(sock, PBS_MAXSVRJOBID, prfs->rq_jobid)) != 0)
-    return rc;
-
-  prfs->rq_return_stdout = tcp_disrsi(sock, &rc);
-
-  if (rc != 0)
-    return rc;
-
-  prfs->rq_return_stderr = tcp_disrsi(sock, &rc);
-
-  if (rc != 0)
-    return rc;
-
-  return 0;
-  }

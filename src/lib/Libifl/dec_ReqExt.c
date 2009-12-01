@@ -122,27 +122,5 @@ int decode_DIS_ReqExtend(
   return(rc);
   }
 
-int tcp_decode_DIS_ReqExtend(
-
-  int                   sock,
-  struct batch_request *preq)
-
-  {
-  int i;
-  int rc;
-
-  i = tcp_disrui(sock, &rc); /* indicates if an extension exists */
-
-  if (rc == 0)
-    {
-    if (i != 0)
-      {
-      preq->rq_extend = tcp_disrst(sock, &rc);
-      }
-    }
-
-  return(rc);
-  }
-
 
 

@@ -133,37 +133,6 @@ int decode_DIS_JobObit(
   return(rc);
   }  /* END decode_DIS_JobObit() */
 
-int tcp_decode_DIS_JobObit(
-
-  int                   sock,  /* I */
-  struct batch_request *preq)  /* O */
-
-  {
-  int rc;
-
-  CLEAR_HEAD(preq->rq_ind.rq_jobobit.rq_attr);
-
-  rc = tcp_disrfst(sock, PBS_MAXSVRJOBID, preq->rq_ind.rq_jobobit.rq_jid);
-
-  if (rc != 0)
-    {
-    return(rc);
-    }
-
-  preq->rq_ind.rq_jobobit.rq_status = tcp_disrsi(sock, &rc);
-
-  if (rc != 0)
-    {
-    return(rc);
-    }
-
-  /* decode list of svrattrl (if any) */
-
-  rc = tcp_decode_DIS_svrattrl(sock, &preq->rq_ind.rq_jobobit.rq_attr);
-
-  return(rc);
-  }  /* END tcp_decode_DIS_JobObit() */
-
 
 /* END dec_JobObit.c */
 

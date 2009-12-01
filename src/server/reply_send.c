@@ -185,7 +185,7 @@ static int dis_reply_write(
 
   /* send message to remote client */
 
-  if ((rc = tcp_encode_DIS_reply(sfds, preply)) ||
+  if ((rc = encode_DIS_reply(sfds, preply)) ||
       (rc = DIS_tcp_wflush(sfds)))
     {
     sprintf(log_buffer, "DIS reply failure, %d",

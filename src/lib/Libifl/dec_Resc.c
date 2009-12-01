@@ -160,59 +160,5 @@ int decode_DIS_Rescl(
   }  /* END decode_DIS_Rescl() */
 
 
-int tcp_decode_DIS_Rescl(
-
-  int  sock,
-  struct batch_request *preq)
-
-  {
-  int    ct;
-  int    i;
-  char **ppc;
-  int    rc;
-
-  /* first, the resource handle (even if not used in request) */
-
-  preq->rq_ind.rq_rescq.rq_rhandle = tcp_disrsi(sock, &rc);
-
-  if (rc)
-    {
-    return(rc);
-    }
-
-  /* next need to know how many query strings */
-
-  ct = tcp_disrui(sock, &rc);
-
-  if (rc)
-    {
-    return(rc);
-    }
-
-  preq->rq_ind.rq_rescq.rq_num = ct;
-
-  if (ct)
-    {
-    if ((ppc = (char **)malloc(ct * sizeof(char *))) == NULL)
-      {
-      return(PBSE_RMSYSTEM);
-      }
-
-    for (i = 0;i < ct;i++)
-      *(ppc + i) = NULL;
-
-    preq->rq_ind.rq_rescq.rq_list = ppc;
-
-    for (i = 0;i < ct;i++)
-      {
-      *(ppc + i) = tcp_disrst(sock, &rc);
-
-      if (rc)
-        break;
-      }
-    }
-
-  return(rc);
-  }  /* END tcp_decode_DIS_Rescl() */
 
 

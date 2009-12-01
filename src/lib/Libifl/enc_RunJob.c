@@ -92,19 +92,6 @@
 #include "dis.h"
 
 int
-tcp_encode_DIS_RunJob(int sock, char *jobid, char *where, unsigned int resch)
-  {
-  int   rc;
-
-  if ((rc = tcp_diswst(sock, jobid) != 0) ||
-      (rc = tcp_diswst(sock, where) != 0) ||
-      (rc = tcp_diswui(sock, resch) != 0))
-    return rc;
-
-  return 0;
-  }
-
-int
 encode_DIS_RunJob(int sock, char *jobid, char *where, unsigned int resch)
   {
   int   rc;

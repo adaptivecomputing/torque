@@ -116,20 +116,4 @@ decode_DIS_Status(int sock, struct batch_request *preq)
   return rc;
   }
 
-int
-tcp_decode_DIS_Status(int sock, struct batch_request *preq)
-  {
-  int rc;
-
-  CLEAR_HEAD(preq->rq_ind.rq_status.rq_attr);
-  rc = tcp_disrfst(sock,
-               (PBS_MAXSVRJOBID > PBS_MAXDEST ? PBS_MAXSVRJOBID : PBS_MAXDEST) + 1,
-               preq->rq_ind.rq_status.rq_id);
-
-  if (rc) return rc;
-
-  rc = tcp_decode_DIS_svrattrl(sock, &preq->rq_ind.rq_status.rq_attr);
-
-  return rc;
-  }
 

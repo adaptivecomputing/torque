@@ -149,50 +149,5 @@ int decode_DIS_Manage(
   return (rc);
   }  /* END decode_DIS_Manage() */
 
-int tcp_decode_DIS_Manage(
-
-  int   sock,
-  struct batch_request *preq)
-
-  {
-  int rc;
-
-  CLEAR_HEAD(preq->rq_ind.rq_manager.rq_attr);
-
-  /* parse request */
-
-  preq->rq_ind.rq_manager.rq_cmd = tcp_disrui(sock, &rc);
-
-  if (rc)
-    {
-    return(rc);
-    }
-
-  preq->rq_ind.rq_manager.rq_objtype = tcp_disrui(sock, &rc);
-
-  if (rc)
-    {
-    return(rc);
-    }
-
-  rc = tcp_disrfst(
-
-         sock,
-         PBS_MAXSVRJOBID + 1,
-         preq->rq_ind.rq_manager.rq_objname);
-
-  if (rc)
-    {
-    return(rc);
-    }
-
-  rc = tcp_decode_DIS_svrattrl(
-
-         sock,
-         &preq->rq_ind.rq_manager.rq_attr);
-
-  return (rc);
-  }  /* END tcp_decode_DIS_Manage() */
-
 
 /* END dec_Manage.c */

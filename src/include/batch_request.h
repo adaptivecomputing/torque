@@ -448,39 +448,6 @@ extern int encode_DIS_TrackJob (int socket, struct batch_request *);
 extern int encode_DIS_reply (int socket, struct batch_reply *);
 extern int encode_DIS_svrattrl (int socket, svrattrl *);
 
-/* tcp decode and encode routines */
-extern int tcp_decode_DIS_Authen (int socket, struct batch_request *);
-extern int tcp_decode_DIS_CopyFiles (int socket, struct batch_request *);
-extern int tcp_decode_DIS_JobCred (int socket, struct batch_request *);
-extern int tcp_decode_DIS_JobFile (int socket, struct batch_request *);
-extern int tcp_decode_DIS_JobObit (int socket, struct batch_request *);
-extern int tcp_decode_DIS_Manage (int socket, struct batch_request *);
-extern int tcp_decode_DIS_MoveJob (int socket, struct batch_request *);
-extern int tcp_decode_DIS_MessageJob (int socket, struct batch_request *);
-extern int tcp_decode_DIS_QueueJob (int socket, struct batch_request *);
-extern int tcp_decode_DIS_Register (int socket, struct batch_request *);
-extern int tcp_decode_DIS_ReqExtend (int socket, struct batch_request *);
-extern int tcp_decode_DIS_ReqHdr (int socket, struct batch_request *, int *tp, int *pv);
-extern int tcp_decode_DIS_Rescl (int socket, struct batch_request *);
-extern int tcp_decode_DIS_Rescq (int socket, struct batch_request *);
-extern int tcp_decode_DIS_ReturnFiles (int socket, struct batch_request *);
-extern int tcp_decode_DIS_RunJob (int socket, struct batch_request *);
-extern int tcp_decode_DIS_ShutDown (int socket, struct batch_request *);
-extern int tcp_decode_DIS_SignalJob (int socket, struct batch_request *);
-extern int tcp_decode_DIS_Status (int socket, struct batch_request *);
-extern int tcp_decode_DIS_TrackJob (int socket, struct batch_request *);
-extern int tcp_decode_DIS_replySvr (int socket, struct batch_reply *);
-extern int tcp_decode_DIS_svrattrl (int socket, tlist_head *);
-
-extern int tcp_encode_DIS_CopyFiles (int socket, struct batch_request *);
-extern int tcp_encode_DIS_JobObit (int socket, struct batch_request *);
-extern int tcp_encode_DIS_Register (int socket, struct batch_request *);
-extern int tcp_encode_DIS_ReturnFiles (int socket, struct batch_request *);
-extern int tcp_encode_DIS_TrackJob (int socket, struct batch_request *);
-extern int tcp_encode_DIS_reply (int socket, struct batch_reply *);
-extern int tcp_encode_DIS_svrattrl (int socket, svrattrl *);
-
 extern int dis_request_read (int socket, struct batch_request *);
 extern int dis_reply_read (int socket, struct batch_reply *);
-
 #endif /* BATCH_REQUEST_H */

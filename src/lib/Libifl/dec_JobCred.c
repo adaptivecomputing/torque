@@ -119,22 +119,4 @@ decode_DIS_JobCred(int sock, struct batch_request *preq)
   return rc;
   }
 
-int tcp_decode_DIS_JobCred(int sock, struct batch_request *preq)
-  {
-  int rc;
-  size_t rqsize;
-
-  preq->rq_ind.rq_jobcred.rq_data = 0;
-  preq->rq_ind.rq_jobcred.rq_type = tcp_disrui(sock, &rc);
-
-  if (rc) return rc;
-
-  preq->rq_ind.rq_jobcred.rq_data = tcp_disrcs(sock,
-                                    &rqsize,
-                                    &rc);
-
-  preq->rq_ind.rq_jobcred.rq_size = rqsize;
-
-  return rc;
-  }
 
