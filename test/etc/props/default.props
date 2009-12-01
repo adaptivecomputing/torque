@@ -62,7 +62,11 @@ mom.config.loglevel            = 5
 mom.config.down_on_error       = 0
 mom.config.rcpcmd              = /usr/bin/scp -rpB
 mom.config.tape8mm             = 1
+<<<<<<< .working
 mom.config.version             = 2.5.0
+=======
+mom.config.version             = 2.4.3
+>>>>>>> .merge-right.r3257
 
 tmp.mom.config.status_update_time = 50
 tmp.mom.config.check_poll_time    = 50
