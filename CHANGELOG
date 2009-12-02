@@ -22,9 +22,17 @@ c - crash     b - bug fix    e - enhancement    f - new feature
   e - added new qmgr attribute (checkpoint_defaults) for setting default
       checkpoint values on Execution queues (Bugzilla #1)
   b - PBSD_authenticate correctly splits PATH on : instead of ; (bugzilla #33)
+  b - Merged revision 3268 from 2.4-fixes. removed block of code that broke pbs_statjob 
+      for requested attributes
 
+2.4.3
+  b - fix PBSD_authenticate so it correctly splits PATH with : instead of ;
+      (bugzilla #33)
 
 2.4.2
+  b - Changed predicate in pbsd_main.c for the two locations where 
+      daemonize_server is called to check for the value of high_availability_mode 
+      to determine when to put the server process in the background.
   b - Added pbs_error_db.h to src/include/Makefile.am and src/include/Makefile.in. 
       pbs_error_db.h now needed for install.
   e - Modified pbs_get_server_list so the $TORQUE_HOME/server_name file will work with 
@@ -108,7 +116,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature
       2.3.8)
   f - new fifo scheduler config option. ignore_queue: queue_name
       allows the scheduler to be instructed to ignore up to 16 queues on the server
-      (Simon Toth, muni.cz)
+      (Simon Toth, CESNET z.s.p.o.)
   e - add administrator customizable email notifications (see manpage for
       pbs_server_attributes) - (Roland Haas, Georgia Tech)
   e - moving jobs can now trigger a scheduling iteration (merged from 2.3.8)
@@ -121,11 +129,11 @@ c - crash     b - bug fix    e - enhancement    f - new feature
   b - fix to prevent some jobs from getting deleted on startup.
   f - add qpool.gz to contrib directory
   e - improve how error constants and text messages are represented (Simon Toth,
-      muni.cz)
+      CESNET z.s.p.o)
   f - new boolean queue attribute "is_transit" that allows jobs to exceede 
       server resource limits (queue limits are respected). This allows routing 
       queues to route jobs that would be rejected for exceeding local resources
-      even when the job won't be run locally. (Simon Toth, muni.cz)
+      even when the job won't be run locally. (Simon Toth, CESNET z.s.p.o)
   e - add support for "job_array" as a type for queue disallowed_types attribute
   e - added pbs_mom config option ignmem to ignore mem/pmem limit enforcement
   e - added pbs_mom config option igncput to ignore pcput limit enforcement
