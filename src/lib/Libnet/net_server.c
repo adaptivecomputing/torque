@@ -351,7 +351,7 @@ int init_network(
 
     unsocname.sun_family = AF_UNIX;
 
-    strncpy(unsocname.sun_path, TSOCK_PATH, 107);  /* sun_path is defined to be 108 bytes */
+    strncpy(unsocname.sun_path, TSOCK_PATH, sizeof(unsocname.sun_path));  
 
     unlink(TSOCK_PATH);  /* don't care if this fails */
 

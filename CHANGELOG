@@ -25,9 +25,13 @@ c - crash     b - bug fix    e - enhancement    f - new feature
   b - Merged revision 3268 from 2.4-fixes. removed block of code that broke pbs_statjob 
       for requested attributes
 
+
 2.4.3
   b - fix PBSD_authenticate so it correctly splits PATH with : instead of ;
       (bugzilla #33)
+  b - pbs_mom now sets resource limits for tasks started with tm_spawn (Chris 
+      Samuel, VPAC)
+  c - fix assumption about size of unsocname.sun_path in Libnet/net_server.c
 
 2.4.2
   b - Changed predicate in pbsd_main.c for the two locations where 

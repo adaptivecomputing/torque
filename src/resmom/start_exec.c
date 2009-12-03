@@ -4100,6 +4100,20 @@ int start_process(
 	bld_env_variables(&vtable, "PBS_ENVIRONMENT", "PBS_BATCH");
 
 	bld_env_variables(&vtable, "ENVIRONMENT",    "BATCH");
+	
+	/* Set limits for the child */
+    if (mom_set_limits(pjob, SET_LIMIT_SET) != PBSE_NONE)
+      {
+      strcpy(log_buffer, "PBS: resource limits setup failed\n");
+
+      log_err(errno, id, log_buffer);
+  
+      starter_return(kid_write, kid_read, JOB_EXEC_FAIL1, &sjr);
+
+      /*NOTREACHED*/
+
+      exit(1);
+      }
 
 	/* NULL terminate the envp array, This is MUST DO */
 
