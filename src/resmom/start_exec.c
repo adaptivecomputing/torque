@@ -137,7 +137,8 @@
 /* Global Variables */
 
 
-extern  int  num_var_env;
+extern int  spoolasfinalname;
+extern int  num_var_env;
 extern char       **environ;
 extern int  exiting_tasks;
 extern int  lockfds;
@@ -5412,6 +5413,50 @@ static void starter_return(
 
 
 /*
+ * remove_leading_hostname
+ *
+ * removes the leading hostname from the output path in jobpath
+ * the path is stored as <hostname>:<path>
+ * this retrieves just the path
+ *
+ * @param jobpath - the altered path, I/O
+ * @return SUCCESS if hostname is removed, FALSE otherwise
+ */
+int remove_leading_hostname(
+    
+  char **jobpath) /* I / O */
+
+  {
+
+  char *ptr;
+
+  if ((jobpath == NULL) || 
+      (*jobpath == NULL))
+    {
+    return(FAILURE);
+    }
+
+  ptr = strchr(*jobpath,':');
+  if (ptr == NULL)
+    {
+    return(FAILURE);
+    }
+
+  /* SUCCESS, move past the ':' and return the rest */
+  ptr++;
+  
+  *jobpath = ptr;
+
+  return(SUCCESS);
+  }
+
+
+
+
+
+
+
+/*
  * std_file_name - generate the fully qualified path/name for a
  *     job standard stream
  *
@@ -5500,6 +5545,13 @@ char *std_file_name(
 			if (pjob->ji_wattr[(int)JOB_ATR_outpath].at_flags & ATR_VFLAG_SET)
 				{
 				jobpath = pjob->ji_wattr[(int)JOB_ATR_outpath].at_val.at_str;
+
+        if (spoolasfinalname == TRUE)
+          {
+          remove_leading_hostname(&jobpath);
+
+          return(jobpath);
+          }
 				}
 
 			break;
@@ -5512,6 +5564,13 @@ char *std_file_name(
 			if (pjob->ji_wattr[(int)JOB_ATR_errpath].at_flags & ATR_VFLAG_SET)
 				{
 				jobpath = pjob->ji_wattr[(int)JOB_ATR_errpath].at_val.at_str;
+
+        if (spoolasfinalname == TRUE)
+          {
+          remove_leading_hostname(&jobpath);
+
+          return(jobpath);
+          }
 				}
 
 			break;

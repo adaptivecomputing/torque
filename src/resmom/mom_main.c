@@ -183,6 +183,7 @@ int    ignwalltime = 0;
 int    ignmem = 0;
 int    igncput = 0;
 int    ignvmem = 0; 
+int    spoolasfinalname = 0;
 /* end policies */
 int    lockfds = -1;
 time_t loopcnt;  /* used for MD5 calc */
@@ -375,6 +376,7 @@ static unsigned long setmomhost(char *);
 static unsigned long setrreconfig(char *);
 static unsigned long setsourceloginbatch(char *);
 static unsigned long setsourcelogininteractive(char *);
+static unsigned long setspoolasfinalname(char *);
 static unsigned long setremchkptdirlist(char *);
 static unsigned long setmaxconnecttimeout(char *);
 
@@ -434,6 +436,7 @@ static struct specials
   { "preexec",             setpreexec },
   { "source_login_batch",  setsourceloginbatch },
   { "source_login_interactive", setsourcelogininteractive },
+  { "spool_as_final_name", setspoolasfinalname },
   { "remote_checkpoint_dirs", setremchkptdirlist },
   { "max_conn_timeout_micro_sec",   setmaxconnecttimeout },
   { NULL,                  NULL }
@@ -3245,6 +3248,29 @@ static unsigned long setnospooldirlist(
 
   return(1);
   }  /* END setnospooldirlist() */
+
+
+
+
+static unsigned long setspoolasfinalname(
+
+  char *value)  /* I */
+
+  {
+  log_record(
+    PBSEVENT_SYSTEM,
+    PBS_EVENTCLASS_SERVER,
+    "spoolasfinalname",
+    value);
+
+  if (!strncasecmp(value,"t",1) || (value[0] == '1') || !strcasecmp(value,"on") )
+    spoolasfinalname = 1;
+  else
+    spoolasfinalname = 0;
+
+  return(1);
+  }  /* END setspoolasfinalname() */
+
 
 
 
