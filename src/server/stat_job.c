@@ -233,34 +233,6 @@ int status_attrib(
     {
     /* client specified certain attributes */
 
-    if (pal->al_valln != 0)
-      {
-      /* HACK - report pal via high-throughput attr list */
-
-      for (;pal != NULL;pal = (svrattrl *)GET_NEXT(pal->al_link))
-        {
-        index = pal->al_valln;
-
-        if (((padef + index)->at_flags & priv) &&
-            !((padef + index)->at_flags & ATR_DFLAG_NOSTAT))
-          {
-          if (!(((padef + index)->at_flags & ATR_DFLAG_PRIVR) && (IsOwner == 0)))
-            {
-            (padef + index)->at_encode(
-              pattr + index,
-              phead,
-              (padef + index)->at_name,
-              NULL,
-              ATR_ENCODE_CLIENT);
-            }
-          }
-        }    /* END for (pal) */
-
-      /* SUCCESS */
-
-      return(0);
-      }
-
     while (pal != NULL)
       {
       ++nth;
