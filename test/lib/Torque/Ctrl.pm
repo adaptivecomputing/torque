@@ -6,7 +6,6 @@ use warnings;
 use FindBin;
 use lib "$FindBin::Bin/../../lib/";
 
-
 use CRI::Test;
 use Expect;
 use Carp;
@@ -14,9 +13,6 @@ use Carp;
 use Torque::Util qw(
                             is_running
                             is_running_remote
-                          );
-use CRI::Utils          qw(
-                            run_and_check_cmd
                           );
 
 use base 'Exporter';
@@ -50,17 +46,15 @@ sub startTorque #($)#
   {
   
   my ($cfg) = @_;
+  my @mom_hosts;
 
   # Config variables
   my $pbs_mom_cfg    = $cfg->{ 'pbs_mom'     } || {};
   my $pbs_server_cfg = $cfg->{ 'pbs_server'  } || {};
   my $remote_moms    = $cfg->{ 'remote_moms' } || [];
 
-  # Return values
-  my $local_mom_rtn;
-  my $remote_moms_rtn;
-  my $pbs_server_rtn;
-  my $torque_rtn;
+  # Return value
+  my $torque_rtn = 1;
 
   # pbs_mom params
   my $mom_params        = {
@@ -71,30 +65,55 @@ sub startTorque #($)#
                              'nodes' => $remote_moms
                           };
 
+  ##########################
+  # Pbs_mom Section
+  ##########################
+  
   diag("Start pbs_mom on local compute node");
-  $local_mom_rtn = startPbsmom($mom_params);
+  $torque_rtn = startPbsmom($mom_params);
+
+  push @mom_hosts, $props->get_property('Test.Host');
 
   if( scalar @$remote_moms )
   {
       diag("Start pbs_mom on remote compute nodes");
       $remote_moms_rtn = startPbsmom($remote_mom_params);
+
+      $torque_rtn = $torque_rtn && $remote_moms_rtn;
+      
+      push @mom_hosts, @$remote_moms;
   }
-  else
-  {
-      $remote_moms_rtn = 1;
-  }
+
+  ##########################
+  # Pbs_server Section
+  ##########################
+  
+  $pbs_server_cfg->{mom_hosts} = \@mom_hosts;
 
   $pbs_server_rtn =   !exists $cfg->{clean_start}
 		    ? startPbsserver($pbs_server_cfg)
 		    : startPbsserverClean($pbs_server_cfg);
 
-  $torque_rtn = (
-                     $local_mom_rtn 
-                 and $remote_moms_rtn
-                 and $pbs_server_rtn
-                );
+  $torque_rtn = $torque_rtn && $pbs_server_rtn;
 
   ok($torque_rtn, "All Torque Components Started");
+  
+  my $wait = 30;
+  diag "Waiting for All Torque Components to Sync (${wait}s Timeout)";
+
+  my $ready = sub{ 
+      my $nodes  = qx/pbsnodes -l all/;
+      my $result = 1;
+      
+      $result = $result && $nodes =~ /^$_\s+free/m foreach @_;
+  
+      return $result;
+  };
+
+  sleep 1 while $wait-- > 0 && !&$ready( @mom_hosts );
+
+  die "Torque Components Failed to Sync!" unless $wait > 0;
+  
   return $torque_rtn;
 
   } # END sub startTorque #($)# 
@@ -418,7 +437,7 @@ DEFAULT
 
   # Configuration Variables
   my %server_nodes = ();
-  $server_nodes{hosts} = $cfg->{hosts} if exists $cfg->{hosts};
+  $server_nodes{hosts} = $cfg->{mom_hosts} if exists $cfg->{mom_hosts};
   my $setup_str        = $cfg->{ 'setup_str' } || $default_setup_str;
   my @setup_lines      = split(/\n/, $setup_str);
 
@@ -715,176 +734,3 @@ sub createPbsserverNodes
 }
 
 1;
-
-=head1 NAME
-
-Torque::Ctrl - A module to control torque
-
-=head1 SYNOPSIS
-
- use Torque::Ctrl qw(
-                      startTorque
-                      stopTorque
-                      startPbsmom
-                      stopPbsmom
-                      startPbsserver
-                      stopPbsserver
-                      startPbssched
-                      stopPbsschec
-                    );
-
- # Start Torque
- my $torque_cfg = {
-                   'pbs_mom'    =>  {
-                                     'args' => "-M 15003"
-                                    },
-                   'pbs_server' =>  {
-                                     'args' => "-M 15003",
-                                    },
-                   'remote_moms' => \@remote_nodes,
-                 };
-
- my $torque_started = startTorque($start_torque_cfg);
-
- # Stop Torque
- my $torque_stopped = stopTorque();
-
- # Start pbs_mom
- my $mom_cfg = {
-                'args'  => '-h host1',
-                'node'  => 'host1',
-                'nodes' => \@remote_nodes
-               };
-
- my $mom_started = startPbsmom($mom_cfg); 
-
- # Stop pbs_mom
- my $mom_cfg = {
-                'node'  => 'host1',
-                'nodes' => \@remote_nodes
-               };
-
- my $mom_stop = stopPbsmom($mom_cfg); 
-
- # Start pbs_server
- my $server_cfg = {
-                    'args' => '-h host1'
-                  };
-
- my $server_started = startPbsserver($server_cfg);
- 
- # Stop the pbs_server
- my $server_stopped = stopPbsserver();
-
- # Start the pbs_sched
- my $sched_cfg = {
-                   'args' => '-S 15009'
-                 };
-
- my $sched_started = startPbssched($sched_cfg);
- 
- # Stop pbs_sched
- my $sched_stopped = stopPbssched($sched_cfg);
-
-=head1 DESCRIPTION
-
-This module provides methods to control the basic functionality of torque.
-
-=head1 SUBROUTINES/METHODS
-
-=over 4
-
-=item startTorque($start_torque_config)
-
-(Re)Start both the pbs_mom and pbs_server.  The arguments for the commands 'pbs_mom' and pbs_server' can be passed through a hash.  The hash is in the following format:
-
- my $torque_cfg = {
-                   'pbs_mom'    =>  {
-                                     'args' => "-M 15003"
-                                    },
-                   'pbs_server' =>  {
-                                     'args' => "-M 15003",
-                                    },
-                   'remote_moms' => \@remote_nodes,
-                 };
-
-=item startTorque($start_torque_config)
-
-Identical to startTorque() except startPbsserverClean() called instead of startPbsserver().
-
-=item stopTorque
-
-stopTorque simply stops both the 'pbs_server' and the 'pbs_mom' daemons.
-
-=item startPbsmom($cfg)
-
-(Re)Start the pbsmom server for given node(s) if specified.  Can pass it the 'arg' hash which is argument that will be appended onto the pbs_mom command.  The hash has the following possible arguments:
-
- my $mom_cfg = {
-                'args'  => '-h host1',
-                'node'  => 'host1',
-                'nodes' => \@remote_nodes
-               };
-
-=item stopPbsmom($cfg)
-
-Stops the pbsmom server for given node(s) if specified.  The following are possible arguments:
-
- my $mom_cfg = {
-                'node'  => 'host1',
-                'nodes' => \@remote_nodes
-               };
- 
-
-=item startPbsserver($)
-
-(Re)Starts the pbs_server on the local machine.  Can have the following configuration hashref passed to it:
-
- my $server_cfg = {
-                    'args' => '-h host1'
-                  };
-
-=item startPbsserverClean($)
-
-(Re)Starts the pbs_server on the local machine using the pbs_server -t create command. 'pbs_server -t create' will clean out any configuration files, queues, and jobs, and will initialize the configuration files to default values.  This method can have the following configuration hashref passed to it:
-
- my $server_cfg = {
-                    'setup_str' => $setup_str
-                  };
-
-The setup_str is \n delimited list of commands that will be executed afte the pbs_server -t create command is complete.  If this parameter is not passed then the default setup_str will be used.
-
-=item stopPbsserver
-
-Stops the pbs_server on the local machine
-
-=item startPbssched($)
-
-(Re)Starts pbs_sched on the local machine. Can have teh following configuration hashref passed to it:
-
- my $sched_cfg = {
-                    'args' => '-S 15009'
-                 };
-
-=item stopPbsSched
-
-Stops pbs_sched on the local machine.
-
-
-=back
-
-=head1 DEPENDENDCIES
-
-CRI::Test, Torque::Utils, Expect
-
-=head1 AUTHOR(S)
-
-Jeff Dayley <jdayley at clusterresources dot com>
-
-=head1 COPYRIGHT
-
-Copyright (c) 2008 Cluster Resources Inc.
-
-=cut
-
-__END__

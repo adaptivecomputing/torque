@@ -22,4 +22,4 @@ execute_tests(
               "$testbase/qrun_cH.t",
 );
 
-execute_tests("$testbase/cleanup.t");
+#execute_tests("$testbase/cleanup.t");
