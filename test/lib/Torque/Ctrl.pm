@@ -77,7 +77,7 @@ sub startTorque #($)#
   if( scalar @$remote_moms )
   {
       diag("Start pbs_mom on remote compute nodes");
-      $remote_moms_rtn = startPbsmom($remote_mom_params);
+      my $remote_moms_rtn = startPbsmom($remote_mom_params);
 
       $torque_rtn = $torque_rtn && $remote_moms_rtn;
       
@@ -90,9 +90,9 @@ sub startTorque #($)#
   
   $pbs_server_cfg->{mom_hosts} = \@mom_hosts;
 
-  $pbs_server_rtn =   !exists $cfg->{clean_start}
-		    ? startPbsserver($pbs_server_cfg)
-		    : startPbsserverClean($pbs_server_cfg);
+  my $pbs_server_rtn = !exists $cfg->{clean_start}
+		     ? startPbsserver($pbs_server_cfg)
+		     : startPbsserverClean($pbs_server_cfg);
 
   $torque_rtn = $torque_rtn && $pbs_server_rtn;
 
