@@ -27,9 +27,9 @@ setDesc('qsub -I');
 my $user1 = $props->get_property('moab.user.one');
 my %command;
 
-my $cmd = "su - $user1 -m -c 'qsub -I'";
+my $cmd = "su $user1 -p -c 'qsub -I'";
 my $mPattern = 'qsub: job (\d+\S+) ready';
-my $timeout = 10;
+my $timeout = 15;
 
 # Delete all jobs
 diag("Delete all jobs");

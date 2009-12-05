@@ -20,6 +20,7 @@ use base 'Exporter';
 our @EXPORT = qw(
                  startTorque
                  startTorqueClean
+		 syncServerMom
                  stopTorque
                  startPbsmom
                  stopPbsmom
@@ -98,21 +99,7 @@ sub startTorque #($)#
 
   ok($torque_rtn, "All Torque Components Started");
   
-  my $wait = 30;
-  diag "Waiting for All Torque Components to Sync (${wait}s Timeout)";
-
-  my $ready = sub{ 
-      my $nodes  = qx/pbsnodes -l all/;
-      my $result = 1;
-      
-      $result = $result && $nodes =~ /^$_\s+free/m foreach @_;
-  
-      return $result;
-  };
-
-  sleep 1 while $wait-- > 0 && !&$ready( @mom_hosts );
-
-  die "Torque Components Failed to Sync!" unless $wait > 0;
+  syncServerMom({ 'mom_hosts' => \@mom_hosts });
   
   return $torque_rtn;
 
@@ -128,6 +115,34 @@ sub startTorqueClean
   $cfg->{clean_start} = 1;
 
   return startTorque($cfg);
+}
+
+###############################################################################
+# syncServerMom
+###############################################################################
+sub syncServerMom
+{
+    my ($params) = @_;
+
+    my $mom_hosts = $params->{mom_hosts} || [ $props->get_property('Test.Host') ];
+
+    my $wait = 30;
+    diag "Waiting for All Torque Components to Sync (${wait}s Timeout)";
+
+    my $ready = sub{ 
+	my $nodes  = qx/pbsnodes -l all/;
+	my $result = 1;
+
+	$result = $result && $nodes !~ /^$_\s+.*?(?:down|unknown)/m foreach @_;
+
+	return $result;
+    };
+
+    sleep 1 while $wait-- > 0 && !&$ready( @$mom_hosts );
+
+    die "Torque Components Failed to Sync!" unless $wait > 0;
+
+    return 1;
 }
 
 ###############################################################################

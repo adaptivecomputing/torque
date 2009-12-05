@@ -1,17 +1,12 @@
 #!/usr/bin/perl
-
 use strict;
 use warnings;
 
 use FindBin;
 use lib "$FindBin::Bin/../../../../lib/";
 
-
 use CRI::Test;
-
-use Torque::Ctrl        qw( 
-                            startPbsserver 
-                          );
+use Torque::Ctrl;
 use Torque::Job::Ctrl   qw(
                             submitSleepJob
                             runJobs
@@ -25,9 +20,15 @@ use Torque::Util qw(
 plan('no_plan');
 setDesc('qterm');
 
+my @remote_moms = split ',', $props->get_property('Torque.Remote.Nodes');
+my $sync_href   = { 'mom_hosts' => [ $props->get_property('Test.Host') ] };
+push @{ $sync_href->{mom_hosts} }, @remote_moms if scalar @remote_moms > 0;
+
 # Make sure pbs_server is running
 diag("Restarting the pbs_server");
+stopPbsserver();
 startPbsserver();
+syncServerMom($sync_href);
 
 # Submit a job
 my $job_params = {
@@ -54,7 +55,9 @@ sleep 5;
 
 # Restart pbs_server
 diag("Restarting the pbs_server");
+stopPbsserver();
 startPbsserver();
+syncServerMom($sync_href);
 
 my %job_info = job_info();
 

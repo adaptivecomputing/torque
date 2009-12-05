@@ -32,13 +32,13 @@ my %output;
 run_and_check_cmd($o_cmd);
 %pbsnodes = run_and_check_cmd($cmd);
 %output   = parse_output($pbsnodes{ 'STDOUT' });
-ok($output{ $node }{ 'state' } eq 'offline', "Checking for the offline state");
+cmp_ok($output{ $node }{ 'state' },'eq','offline', "Checking for the offline state");
 
 # Run the clear command
 run_and_check_cmd($c_cmd);
 %pbsnodes = run_and_check_cmd($cmd);
 %output   = parse_output($pbsnodes{ 'STDOUT' });
-ok($output{ $node }{ 'state' } eq 'free', "Checking for the free state");
+cmp_ok($output{ $node }{ 'state' },'eq','free', "Checking for the free state");
 
 # Check for a given property
 foreach my $property (@properties)
