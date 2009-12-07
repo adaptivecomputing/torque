@@ -24,6 +24,10 @@ c - crash     b - bug fix    e - enhancement    f - new feature
   b - PBSD_authenticate correctly splits PATH on : instead of ; (bugzilla #33)
   b - Merged revision 3268 from 2.4-fixes. removed block of code that broke pbs_statjob 
       for requested attributes
+  f - added a diagnostic script (contrib/diag/tdiag.sh).  This script grabs the log 
+      files for the server and the mom, records the output of qmgr -c 'p s' and the
+      nodefile, and creates a tarfile containing these.
+  b - Merged fix for bugzilla bug 35 from 2.4.3 
 
 
 2.4.3
@@ -32,6 +36,17 @@ c - crash     b - bug fix    e - enhancement    f - new feature
   b - pbs_mom now sets resource limits for tasks started with tm_spawn (Chris 
       Samuel, VPAC)
   c - fix assumption about size of unsocname.sun_path in Libnet/net_server.c
+  b - pbs_mom now sets resource limits for tasks started with tm_spawn (Chris 
+      Samuel, VPAC)
+  c - fix assumption about size of unsocname.sun_path in Libnet/net_server.c
+  b - Fix for Bugzilla bug 34. "torque 2.4.X breaks OSC's mpiexec". fix in src/server
+      src/server/stat_job.c revision 3268.
+  b - Fix for Bugzilla bug 35 - printing the wrong pid (normal mode) and not printing
+      any pid for high availability mode.
+  f - added a diagnostic script (contrib/diag/tdiag.sh).  This script grabs the log 
+      files for the server and the mom, records the output of qmgr -c 'p s' and the
+      nodefile, and creates a tarfile containing these.
+
 
 2.4.2
   b - Changed predicate in pbsd_main.c for the two locations where 
@@ -203,6 +218,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature
       removed OS specific CACHEOBITFAILURES code.
   b - fix so after* dependencies are handled correctly for exiting / completed
       jobs
+
 
 2.3.7
   b - fixed a bug where UNIX domain socket communication was failing when 
