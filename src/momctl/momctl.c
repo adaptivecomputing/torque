@@ -549,7 +549,7 @@ int do_mom(
 
         closerm(sd);
 
-        return(-1);
+        exit(EXIT_FAILURE);
         }
 
       fprintf(stdout, "shutdown request successful on %s\n",

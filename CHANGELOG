@@ -28,7 +28,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature
       files for the server and the mom, records the output of qmgr -c 'p s' and the
       nodefile, and creates a tarfile containing these.
   b - Merged fix for bugzilla bug 35 from 2.4.3 
-
+  b - Changed momctl -s to use exit(EXIT_FAILURE) instead of return(-1) if a mom is not running.
 
 2.4.3
   b - fix PBSD_authenticate so it correctly splits PATH with : instead of ;
