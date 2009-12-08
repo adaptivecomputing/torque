@@ -77,6 +77,18 @@ sub startTorque #($)#
                           };
 
   ##########################
+  # Clean Start Required
+  ##########################
+  if( exists $cfg->{clean_start} )
+  {
+      runCommand(
+	  "rm $torque_home/*_logs/* $torque_home/server_priv/accounting/*",
+	  'test_success' => 1,
+	  'msg' => 'Cleaning up Torque Files'
+      );
+  }
+
+  ##########################
   # Pbs_mom Section
   ##########################
   
@@ -284,7 +296,7 @@ sub stopPbsmom
 	foreach my $n (@$nodes)
 	{
 	    diag "Attempting to Shutdown Remote PBS_Mom on Host $n...";
-	    my $ps_info   = sub{ return &$remote_ps_list($n, $check_cmd, 'pbs_mom'); };
+	    my $ps_info = sub{ return &$remote_ps_list($n, $check_cmd, 'pbs_mom'); };
 
 	    unless( &$ps_info eq '')
 	    { 
@@ -295,7 +307,7 @@ sub stopPbsmom
 		    my $kill_cmd = 'kill -9 '.&$ps_info;
 		    
 		    diag "Normal Shutdown Failed! Attempting to SIGKILL Remote PBS_Mom";
-		    runCommandSsh($n, $kill_cmd);
+		    runCommandSsh($n, $kill_cmd, 'logging_off' => 1);
 		}
 	    
 		my $wait = 30;

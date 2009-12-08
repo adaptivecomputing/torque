@@ -1,14 +1,11 @@
 #!/usr/bin/perl
-
 use strict;
 use warnings;
 
 use FindBin;
 use lib "$FindBin::Bin/../../../../lib/";
 
-
 use CRI::Test;
-
 use Torque::Util qw(
                             run_and_check_cmd
                           );
@@ -17,50 +14,59 @@ use Torque::Job::Ctrl   qw(
                             runJobs
                             delJobs
                           );
-
 plan('no_plan');
 setDesc('tracejob');
-
-# Variables
-my $job_params;
-my $job_id;
-my $tracejob_cmd;
-my %tracejob;
-my @lines;
-my $reg_exp;
 
 my $queue = $props->get_property( 'torque.queue.one' );
 my $user  = $props->get_property( 'torque.user.one'  );
 my $host  = $props->get_property( 'Test.Host'         );
+my $home_dir = $props->get_property('Torque.Home.Dir');
+my $date_regex = '\d+/\d+/\d+ \d+:\d+:\d+';
 
 # Submit a job
-$job_params = {
+my $job_params = {
                 'user'       => $props->get_property( 'torque.user.one' ),
-                'torque_bin' => $props->get_property( 'Torque.Home.Dir' ) . '/bin',
+                'torque_bin' => "$home_dir/bin",
                 'sleep_time' => 60
               };
 
-$job_id = submitSleepJob($job_params);
+my $job_id = submitSleepJob($job_params);
 
-# Run Tracejob
-$tracejob_cmd = "tracejob $job_id";
-%tracejob     = run_and_check_cmd($tracejob_cmd);
+my @exp_stderr = (
+    qr/^$home_dir\/mom_logs\/\d+: No matching job records located$/,
+    qr/^$home_dir\/sched_logs\/\d+: No such file or directory$/,
+    '',
+);
+my @exp_lines = (
+    '',
+    "Job: $job_id",
+    '',
+    qr/^$date_regex  S    enqueuing into $queue, state 1 hop 1$/,
+    qr/^$date_regex  S    Job Queued at request of $user\@$host, owner = $user\@$host, job name = STDIN, queue = $queue$/,
+    qr/^$date_regex  A    queue=$queue$/,
+    '',
+);
+
+my %cmd = runCommand("tracejob $job_id", 'test_success_die' => 1);
 
 # Check the output of tracejob
-@lines = split(/\n/, $tracejob{ 'STDOUT' });
+my @lines  = split(/\n/, $cmd{STDOUT});
+my @stderr = split(/\n/, $cmd{STDERR});
 
-$reg_exp = "Job:\\s+$job_id";
-ok($lines[1] =~ /${reg_exp}/, "Checking for the job_id '$job_id'")
-  or diag("\$lines[1] = '$lines[1]'");
+for( my $i=0; $i < scalar @lines; $i++ )
+{
+    dynamic_cmp(
+	'rept' => $lines[$i],
+	'expt' => $exp_lines[$i],
+	'msg'  => 'Checking STDOUT Line '.($i+1),
+    );
+}
 
-$reg_exp = "enqueuing into $queue";  
-ok($lines[3] =~ /${reg_exp}/, "Checking for '$reg_exp'")
-  or diag("\$lines[3] = '$lines[3]'");
-
-$reg_exp = "Job Queued at request of $user\@$host";  
-ok($lines[4] =~ /${reg_exp}/, "Checking for '$reg_exp'")
-  or diag("\$lines[4] = '$lines[4]'");
-
-$reg_exp = "queue=$queue";  
-ok($lines[5] =~ /${reg_exp}/, "Checking for '$reg_exp'")
-  or diag("\$lines[5] = '$lines[5]'");
+for( my $i=0; $i < scalar @stderr; $i++ )
+{
+    dynamic_cmp(
+	'rept' => $stderr[$i],
+	'expt' => $exp_stderr[$i],
+	'msg'  => 'Checking STDERR Line '.($i+1),
+    );
+}

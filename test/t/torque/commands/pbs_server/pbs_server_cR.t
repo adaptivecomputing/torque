@@ -20,12 +20,10 @@ my $port        = '3334';
 my @remote_moms = list2array($props->get_property('Torque.Remote.Nodes'));
 
 # Params
-my $remote_mom_params = {
+my $mom_params = {
                           'args'  => "-R $port",
-                          'nodes' => \@remote_moms
-                        };
-my $local_mom_params  = {
-                          'args'  => "-R $port"
+                          'nodes' => \@remote_moms,
+			  'local_node' => 1,
                         };
 
 # Hashes
@@ -35,10 +33,9 @@ my %node_info;
 
 
 diag("Restarting pbs_moms to listen on the port '$port'");
-stopTorque({ 'remote_moms' => \@remote_moms });
+stopTorque({ 'remote_moms' => \@remote_moms, 'pbs_mom' => $mom_params });
 
-startPbsmom($local_mom_params);
-startPbsmom($remote_mom_params);
+startPbsmom($mom_params);
 
 # Perform Test
 startPbsserver({ 'args' => "-R $port" });
