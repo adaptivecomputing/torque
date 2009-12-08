@@ -3398,16 +3398,26 @@ int process_opts(
             {
             if_cmd_line(Depend_opt)
               {
+              int rtn = 0;
               Depend_opt = passet;
 
               pdepend = malloc(PBS_DEPEND_LEN);
 
               if ((pdepend == NULL) ||
-                   parse_depend_list(valuewd,pdepend,PBS_DEPEND_LEN))
+                   (rtn = parse_depend_list(valuewd,pdepend,PBS_DEPEND_LEN)))
                 {
                 /* cannot parse 'depend' value */
 
-                fprintf(stderr, "qsub: illegal -W value\n");
+                if (rtn == 2)
+                  {
+                  fprintf(stderr,"qsub: -W value exceeded max length (%d)\n",
+                    PBS_DEPEND_LEN);
+                  }
+                else
+                  {
+                  fprintf(stderr,"qsub: illegal -W value\n");
+                  }
+
                 errflg++;
 
                 break;

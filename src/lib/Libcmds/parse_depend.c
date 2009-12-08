@@ -110,6 +110,8 @@ static char *deptypes[] =
  *
  * jobid[:jobid...]
  *
+ * return 0 on okay, 1 if error, 2 if length will be too long
+ *
  */
 
 int
@@ -174,10 +176,21 @@ parse_depend_item(
         if (get_server(s, full_job_id, server_out) != 0)
           return 1;
 
+        /* check if we will exceed the length of the return string size */
+        if (strlen(rtn_list) + strlen(full_job_id) > (size_t)rtn_size)
+          {
+          return 2;
+          }
+
         (void)strcat(rtn_list, full_job_id);
 
         if (at)
           {
+          /* check if we will exceed the length of the return string size */
+          if (strlen(rtn_list) + strlen(server_out) + 1 > (size_t)rtn_size)
+            {
+            return 2;
+            }
           (void)strcat(rtn_list, "@");
           (void)strcat(rtn_list, server_out);
           }
@@ -219,6 +232,7 @@ parse_depend_list(
   {
   char *b, *c, *s, *lc;
   int comma = 0;
+  int rtn = 0;
 
   if (strlen(list) == 0) return (1);
 
@@ -255,9 +269,10 @@ parse_depend_list(
 
     /* Parse the individual list item */
 
-    if (parse_depend_item(s, rtn_list, rtn_size))
+    rtn = parse_depend_item(s, rtn_list, rtn_size);
+    if (rtn)
       {
-      return 1;
+      return (rtn);
       }
 
     if (comma)
