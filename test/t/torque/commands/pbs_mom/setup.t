@@ -8,7 +8,7 @@ use lib "$FindBin::Bin/../../../../lib/";
 
 
 use CRI::Test;
-use Torque::Ctrl        qw( startTorque 
+use Torque::Ctrl        qw( startTorqueClean
                             stopTorque 
                             stopPbssched
                           );
@@ -80,10 +80,4 @@ ok(! $@, "Writing out mom reconfiguration to '$mom_recfg_file'");
 ###############################################################################
 # Restart Torque
 ###############################################################################
-startTorque($torque_params)
-  or die 'Unable to start Torque';
-
-###############################################################################
-# Stop all jobs
-###############################################################################
-run_and_check_cmd('qdel -p all');
+startTorqueClean($torque_params);

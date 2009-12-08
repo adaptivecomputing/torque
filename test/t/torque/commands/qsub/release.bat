@@ -19,7 +19,6 @@ execute_tests("$testbase/setup.t")
 execute_tests(
               "$testbase/qsub_a.t",
               "$testbase/qsub_cA.t",
-              "$testbase/qsub_b.t",
               "$testbase/qsub_c.t",
               "$testbase/qsub_cC.t",
               "$testbase/qsub_d.t",
@@ -58,6 +57,7 @@ execute_tests(
               "$testbase/qsub_cW_depend.t",
               "$testbase/qsub_cW_group_list.t",
               "$testbase/qsub_z.t",
+              "$testbase/qsub_b.t",
              ); 
 
 execute_tests("$testbase/cleanup.t"); 

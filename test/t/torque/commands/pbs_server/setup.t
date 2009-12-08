@@ -8,16 +8,11 @@ use lib "$FindBin::Bin/../../../../lib/";
 
 
 use CRI::Test;
-use Torque::Ctrl        qw( startTorque 
+use Torque::Ctrl        qw( startTorqueClean
                             stopTorque 
                             stopPbssched
                           );
-use Torque::Util qw( 
-                            run_and_check_cmd
-                            list2array             
-                          );
-
-# Describe Test
+use Torque::Util qw( list2array );
 plan('no_plan');
 setDesc('Pbs_server Setup');
 
@@ -42,10 +37,4 @@ stopPbssched()
 ###############################################################################
 # Restart Torque
 ###############################################################################
-startTorque($torque_params)
-  or die 'Unable to start Torque';
-
-###############################################################################
-# Delete all jobs
-###############################################################################
-run_and_check_cmd('qdel -p all');
+startTorqueClean($torque_params);

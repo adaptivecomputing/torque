@@ -1,31 +1,22 @@
 #!/usr/bin/perl
-
 use strict;
 use warnings;
 
 use FindBin;
 use lib "$FindBin::Bin/../../../../../lib/";
-
-
-use CRI::Test;
-
 use Expect;
 
+use CRI::Test;
 use Torque::Util qw(
                              job_info
                              list2array
                           );
-use Torque::Ctrl        qw(
-                             stopPbsserver
-                             startPbsserver
-                             startPbsmom
-                          );
+use Torque::Ctrl;
 use Torque::Job::Ctrl   qw(
                              submitSleepJob
                              runJobs
                              delJobs
                           );
-
 plan('no_plan');
 setDesc("pbs_server -t cold (Rerunnable jobs)");
 
@@ -70,9 +61,9 @@ my $mom_params       = {
 ###############################################################################
 # Restart pbs_mom
 ###############################################################################
+stopPbsmom($mom_params);
 startPbsmom($mom_params);
-diag(" Waiting for pbs_moms to stabilize...");
-sleep 15; # Give some time for things to stabilize
+syncServerMom({ 'mom_hosts' => [ $props->get_property('Test.Host'), @remote_moms ] });
 
 ###############################################################################
 # Submit a job that can be rerun and one that cannot be rerun
@@ -81,7 +72,6 @@ sleep 15; # Give some time for things to stabilize
 push(@job_ids, submitSleepJob($rerun_params));
 push(@job_ids, submitSleepJob($non_rerun_params));
 
-# Run the jobs
 runJobs(@job_ids);
 
 ###############################################################################
@@ -106,35 +96,22 @@ else
 die("pbs_server not running.  Unable to continue test")
   if ($ps{ 'EXIT_CODE' } != 0);
 
-diag("Waiting for the pbs_server to stabilize...");
-sleep 15;
+syncServerMom({ 'mom_hosts' => [ $props->get_property('Test.Host'), @remote_moms ] });
 
 ###############################################################################
 # Perform the test
 ###############################################################################
 %job_info = job_info();
 
-ok(! exists $job_info{ $job_ids[0] }{ 'job_state' }, 
-   "Checking that job '$job_ids[0]' doesn't exists");
-ok(! exists $job_info{ $job_ids[1] }{ 'job_state' }, 
-   "Checking that job '$job_ids[1]' doesn't exists");
-
-###############################################################################
-# Restart the pbs_server - 
-###############################################################################
-startPbsserver();
+ok(! exists $job_info{ $_ }{ 'job_state' }, "Checking that job '$job_ids[0]' doesn't exist") foreach @job_ids;
 
 ###############################################################################
 # logIt
 ###############################################################################
 sub logIt 
-  {
-
+{
     foreach my $logline (@_)
-      {
-
-   	  logMsg("Expect log: $logline");
-
-      } # END foreach my $logline (@_)
-
-  } # END foreach my $logline (@_)
+    {
+	logMsg("Expect log: $logline");
+    }
+}

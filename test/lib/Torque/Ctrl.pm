@@ -40,6 +40,16 @@ our $torque_sbin      = "$torque_home/sbin/";
 our $mom_lock_file    = "$torque_home/mom_priv/mom.lock";
 our $server_lock_file = "$torque_home/server_priv/server.lock";
 
+our $ps_list        = sub{
+    my @matches = (qx/$_[0]/ =~ /^\w+\s+(\d+).+$_[1](?:\s+.*)?$/gm);
+    return join(" ",@matches);
+};
+our $remote_ps_list = sub{
+    my %cmd     = runCommandSsh($_[0], $_[1], 'logging_off' => 1);
+    my @matches = ($cmd{STDOUT} =~ /^\w+\s+(\d+).+$_[2](?:\s+.*)?$/gm);
+    return join(" ",@matches);
+};
+
 ###############################################################################
 # startTorque ($)
 ###############################################################################
@@ -70,14 +80,12 @@ sub startTorque #($)#
   # Pbs_mom Section
   ##########################
   
-  diag("Start pbs_mom on local compute node");
   $torque_rtn = startPbsmom($mom_params);
 
   push @mom_hosts, $props->get_property('Test.Host');
 
   if( scalar @$remote_moms )
   {
-      diag("Start pbs_mom on remote compute nodes");
       my $remote_moms_rtn = startPbsmom($remote_mom_params);
 
       $torque_rtn = $torque_rtn && $remote_moms_rtn;
@@ -124,13 +132,14 @@ sub syncServerMom
 {
     my ($params) = @_;
 
+    my $check_cmd = 'pbsnodes -l all';
     my $mom_hosts = $params->{mom_hosts} || [ $props->get_property('Test.Host') ];
 
     my $wait = 30;
     diag "Waiting for All Torque Components to Sync (${wait}s Timeout)";
 
     my $ready = sub{ 
-	my $nodes  = qx/pbsnodes -l all/;
+	my $nodes  = qx/$check_cmd/;
 	my $result = 1;
 
 	$result = $result && $nodes !~ /^$_\s+.*?(?:down|unknown)/m foreach @_;
@@ -140,7 +149,7 @@ sub syncServerMom
 
     sleep 1 while $wait-- > 0 && !&$ready( @$mom_hosts );
 
-    die "Torque Components Failed to Sync!" unless $wait > 0;
+    die "Torque Components Failed to Sync!\n".qx/$check_cmd 2>&1/ unless $wait > 0;
 
     return 1;
 }
@@ -152,39 +161,25 @@ sub stopTorque
 {
     my ($cfg) = @_;
 
-    # Config variables
     my $remote_moms = $cfg->{ 'remote_moms' } || [];
+    my $torque_rtn  = 1;
 
-    # Return values
-    my $local_mom_rtn;
-    my $remote_moms_rtn;
-    my $pbs_server_rtn;
-    my $torque_rtn;
-
-    # pbs_mom parmas
+    ##########################
+    # Pbs_mom Section
+    ##########################
     my $remote_mom_params = { 'nodes' => $remote_moms };
 
-    diag("Stop local pbs_mom");
-    $local_mom_rtn   = stopPbsmom();
+    $torque_rtn = $torque_rtn && stopPbsmom();
 
     if( scalar @$remote_moms )
     {
-	diag("Stop remote pbs_moms");
-	$remote_moms_rtn = stopPbsmom($remote_mom_params);
-    }
-    else
-    {
-	$remote_moms_rtn = 1;
+	$torque_rtn = $torque_rtn && stopPbsmom($remote_mom_params);
     }
 
-    diag("Stop pbs_server");
-    $pbs_server_rtn  = stopPbsserver();
-
-    $torque_rtn = (
-	$local_mom_rtn 
-	    and $remote_moms_rtn
-	    and $pbs_server_rtn
-    );
+    ##########################
+    # Pbs_server Section
+    ##########################
+    $torque_rtn = $torque_rtn && stopPbsserver();
 
     return ok($torque_rtn, "All Torque Components Stopped");
 }
@@ -206,78 +201,61 @@ sub startPbsmom #($)#
     if $node;
 
     # Assume that we want to start the local node if no remote nodes are passed
-    $local_node = 1
-    if scalar @$nodes == 0;
+    $local_node = 1 if scalar @$nodes == 0;
 
-    # Return values
-    my $return           = 1;
+    my $check_cmd = "ps aux | grep pbs_mom | grep -v grep";
 
-    # Set up the commands
-    my $pbs_mom_cmd  = "${torque_sbin}pbs_mom ";
-    $pbs_mom_cmd    .= $args;
+    my $pbs_mom_cmd  = "${torque_sbin}pbs_mom";
+    $pbs_mom_cmd    .= " $args";
 
     # Start any Remote mom's
     if (scalar @$nodes)
     {
-	# Make sure pbs_mom is stopped
-	stopPbsmom({
-	    'nodes'      => $nodes,
-	    'local_node' => $local_node
-	});
-
 	foreach my $n (@$nodes)
 	{
-	    my %ssh     = runCommandSsh($n, $pbs_mom_cmd, 'test_success_die' => 1);
+	    my %ssh = runCommandSsh($n, $pbs_mom_cmd, 'test_success_die' => 1, 'msg' => "Starting New Remote PBS_Mom Process on Host $n...");
+	    
+	    my $ps_info = sub{ return &$remote_ps_list($n, $check_cmd, 'pbs_mom'); };
+	    
+	    my $wait = 30;
+	    diag "Waiting for Remote PBS_Mom to Start on Host $n... (${wait}s Timeout)";
+	    
+	    sleep 1 while $wait-- > 0 && &$ps_info eq '';
 
-	    if (! ok(is_running_remote('pbs_mom', $n), "Checking if pbs_mom was successfully started on '$n'"))
+	    if( $wait > 0 )
 	    {
-		diag("pbs_mom STDERR: $ssh{ 'STDERR' }");
-		$return = 0;
-
-	    } # END if (! ok(is_running_remote('pbs_mom', $n), "Checking if pbs_mom was successfully started on '$n'"))
-
-	} # END foreach my $n (@nodes)
-
-    } # END if (scalar @$nodes)
+		pass "Remote PBS_Mom is now Running on Host $n";
+	    }
+	    else
+	    {
+		die "Remote PBS_Mom Failed to Start on Host $n!";
+	    }
+	}
+    }
     
     # Start local mom
     if ($local_node)
     {
-	my %pbs_mom = runCommand($pbs_mom_cmd);
-	
-	if( $pbs_mom{EXIT_CODE} != 0 && $pbs_mom{STDERR} =~ /another mom running/ )
+	runCommand($pbs_mom_cmd, 'test_success_die' => 1, 'msg' => 'Starting New Local PBS_Mom Process..');
+
+	my $ps_info = sub{ return &$ps_list($check_cmd, 'pbs_mom'); };
+
+	my $wait = 30;
+	diag "Waiting for Local PBS_Mom to Start... (${wait}s Timeout)";
+
+	sleep 1 while $wait-- > 0 && &$ps_info eq '';
+
+	if( $wait > 0 )
 	{
-	    pass "A Local pbs_mom is already Running!";
+	    pass "Local PBS_Mom is now Running";
 	}
 	else
 	{
-	    my $check_cmd = -e $mom_lock_file
-	                  ? "ps aux | grep \`cat $mom_lock_file\` | grep -v grep"
-	                  : "ps aux | grep pbs_server | grep -v grep";
-
-	    my $wait = 30;
-	    diag "Waiting at most $wait seconds for Local pbs_mom to Start";
-
-	    do
-	    {
-		sleep 1;
-		$wait--;
-	    }
-	    while( $wait && `$check_cmd` !~ /pbs_mom/);
-
-	    if( $wait != 0 )
-	    {
-		pass "Local pbs_server is now Running!";
-	    }
-	    else
-	    {
-		fail "Local pbs_server Failed to Start";
-		$return = 0;
-	    }
+	    die "Local PBS_Mom Failed to Start!";
 	}
     }
 
-    return $return;
+    return 1;
 }
 
 ###############################################################################
@@ -292,7 +270,7 @@ sub stopPbsmom
     my $nodes      = $cfg->{ 'nodes'      } || [];
     my $local_node = $cfg->{ 'local_node' } || 0;
 
-    my $return = 1;
+    my $check_cmd = 'ps aux | grep pbs_mom | grep -v grep';
 
     push(@$nodes, $node) if $node;
 
@@ -305,65 +283,70 @@ sub stopPbsmom
     {
 	foreach my $n (@$nodes)
 	{
-	    if (is_running_remote('pbs_mom', $n))
+	    diag "Attempting to Shutdown Remote PBS_Mom on Host $n...";
+	    my $ps_info   = sub{ return &$remote_ps_list($n, $check_cmd, 'pbs_mom'); };
+
+	    unless( &$ps_info eq '')
 	    { 
-		my %momctl     = runCommandSsh($n, $momctl_cmd);
-		sleep 2;
+		my %momctl = runCommandSsh($n, $momctl_cmd);
 
-		if (is_running_remote('pbs_mom', $n))
+		if( $momctl{EXIT_CODE} != 0 && &$ps_info ne '' )
 		{
-		    my $kill_cmd = "pkill -9 -x pbs_mom";
-		    my %kill     = runCommandSsh($n, $kill_cmd);
-		    sleep 2;
+		    my $kill_cmd = 'kill -9 '.&$ps_info;
+		    
+		    diag "Normal Shutdown Failed! Attempting to SIGKILL Remote PBS_Mom";
+		    runCommandSsh($n, $kill_cmd);
+		}
+	    
+		my $wait = 30;
+		diag "Waiting for Remote PBS_Mom to Stop on Host $n... (${wait}s Timeout)";
 
-		} # END if (is_running_remote('pbs_mom', $n))
+		sleep 1 while $wait-- > 0 && &$ps_info ne '';
 
-		# Fail if pbs is still running
-		ok(! is_running_remote('pbs_mom', $n), "Checking if pbs_mom is stopped on '$n'")
-		    or $return = 0;
+		if( $wait <= 0 )
+		{
+		    die "Unable to Stop Remote PBS_Mom on Host $n!";
+		}
 
 	    }
+
+	    pass "Remote PBS_Mom is now Stopped on Host $n";
 	}
     }
     
     # Stop local pbs_mom
     if ($local_node)
     {
-	my $ps_info = `ps aux | grep \`cat $mom_lock_file\` | grep -v grep`;
+	diag "Attempting to Shutdown Local PBS_Mom...";
+	my $ps_info   = sub{ return &$ps_list($check_cmd, 'pbs_mom'); };
 
-	if( $ps_info =~ /pbs_mom/ )
+	unless( &$ps_info eq '' )
 	{ 
 	    my %momctl = runCommand($momctl_cmd);
 
 	    if( $momctl{EXIT_CODE} != 0 )
 	    {
-		my $kill = "kill -9 `cat $mom_lock_file`";
+		my $kill = "kill -9 ".&$ps_info;
 
 		diag "Normal Shutdown Failed! Attempting to SIGKILL pbs_mom";
 		system $kill;
 	    }
 
 	    my $wait = 30;
-	    diag "Waiting at most $wait seconds for Local pbs_mom to Stop";
+	    diag "Waiting for Local PBS_Mom to Stop... (${wait}s Timeout)";
 
-	    do
-	    {
-		sleep 1;
-		$wait--;
-	    }
-	    while( $wait && `ps aux | grep \`cat $mom_lock_file\` | grep -v grep` =~ /pbs_mom/);
+	    sleep 1 while $wait-- > 0 && &$ps_info ne '';
 
-	    if( $wait == 0 )
+	    if( $wait <= 0 )
 	    {
-		fail "Unable to Stop Local pbs_mom!";
-		return 0;
+		die "Unable to Stop Local PBS_Mom!";
 	    }
 	}
 	
-	pass "Local pbs_mom is now Stopped";
+	pass "Local PBS_Mom is now Stopped";
     }
 
-    return $return;
+    return 1;
 }
 
 ###############################################################################
@@ -379,44 +362,27 @@ sub startPbsserver #($)
     my $pbs_server_cmd  = "${torque_sbin}pbs_server";
     $pbs_server_cmd    .= " $args" if defined $args;
 
-    diag 'Attempting to Start PBS_Server';
-
     # Start the pbs server
-    my %server = runCommand($pbs_server_cmd);
+    runCommand($pbs_server_cmd, 'test_success_die' => 1, 'msg' => 'Starting New PBS_Server Process...');
 
-    if( $server{EXIT_CODE} != 0 && $server{STDERR} =~ /another server running/ )
+    my $check_cmd = "ps aux | grep pbs_server | grep -v grep";
+
+    my $ps_info = sub{ return &$ps_list($check_cmd, 'pbs_server'); };
+
+    my $wait = 30;
+    diag "Waiting for PBS_Server to Start... (${wait}s Timeout)";
+
+    sleep 1 while $wait-- > 0 && &$ps_info eq '';
+
+    if( $wait > 0 )
     {
-	pass "A Local pbs_server is already Running!";
+	pass "PBS_Server is now Running!";
     }
     else
     {
-	my $check_cmd = "ps aux | grep pbs_server | grep -v grep";
-
-	my $wait = 30;
-	diag "Waiting at most $wait seconds for Local pbs_server to Start";
-
-	do
-	{
-	    sleep 1;
-	    $wait--;
-	}
-	while( $wait && `$check_cmd` !~ /pbs_server/);
-	
-	if( $wait != 0 )
-	{
-	    pass "Local pbs_server is now Running!";
-	}
-	else
-	{
-	    fail "Local pbs_server Failed to Start";
-	    return 0;
-	}
+	fail "PBS_Server Failed to Start";
+	return 0;
     }
-
-    # Unfortunately, it takes 15 seconds to stabilize in its current incantation
-    #my $wait = 10;
-    #diag("Waiting $wait seconds for pbs_server to stabilize...");
-    #sleep $wait;
 
     return 1;
 }
@@ -480,24 +446,20 @@ DEFAULT
 
   my $check_cmd = "ps aux | grep pbs_server | grep -v grep";
 
+  my $ps_info = sub{ return &$ps_list($check_cmd, 'pbs_server'); };
+  
   my $wait = 30;
-  diag "Waiting at most $wait seconds for Local pbs_server to Start";
+  diag "Waiting for PBS_Server to Start Clean... (${wait}s Timeout)";
 
-  do
-  {
-      sleep 1;
-      $wait--;
-      logMsg "$check_cmd:\n".`$check_cmd`;
-  }
-  while( $wait && `$check_cmd` !~ /pbs_server/);
+  sleep 1 while $wait-- > 0 && &$ps_info eq '';
 
-  if( $wait != 0 )
+  if( $wait > 0 )
   {
       pass "Local pbs_server is now Running!";
   }
   else
   {
-      fail "Local pbs_server Failed to Start";
+      fail "Local pbs_server Failed to Start\n".qx/$check_cmd 2>&1/;
       return 0;
   }
 
@@ -523,40 +485,34 @@ sub stopPbsserver
 
     # Commands  
     my $qterm_cmd = "qterm -t quick";
-    my $kill      = 'kill -9 `pgrep -x pbs_server`';
     my $check_cmd = "ps aux | grep pbs_server | grep -v grep";
-
-    my $ps_info = `$check_cmd`;
-
-    if( $ps_info =~ /pbs_server/ )
+  
+    my $ps_info = sub{ return &$ps_list($check_cmd, 'pbs_server'); };
+    
+    unless( $ps_info eq '' )
     { 
 	my %qterm = runCommand($qterm_cmd);
 
-	if( $qterm{EXIT_CODE} != 0 )
+	if( $qterm{EXIT_CODE} != 0 && &$ps_info ne '' )
 	{
+	    my $kill = 'kill -9 '.&$ps_info;
 	    diag "Normal Shutdown Failed! Attempting to SIGKILL pbs_server";
-	    system $kill;
+	    qx/$kill/;
 	}
 
 	my $wait = 30;
-	diag "Waiting at most $wait seconds for pbs_server to Stop";
-	logMsg "Using Command '$check_cmd' to Check";
+	diag "Waiting for PBS_Server to Stop... (${wait}s Timeout)";
 
-	do
-	{
-	    sleep 1;
-	    $wait--;
-	}
-	while( $wait && `$check_cmd` =~ /pbs_server/);
+	sleep 1 while $wait-- > 0 && &$ps_info ne '';
 
 	if( $wait == 0 )
 	{
-	    fail "Unable to Stop Local pbs_server!";
+	    fail "Unable to Stop PBS_Server!\n".qx/$check_cmd 2>&1/;
 	    return 0;
 	}
     }
 
-    pass "Local pbs_server is now Stopped";
+    pass "PBS_Server is now Stopped";
 
     return $return;
 }

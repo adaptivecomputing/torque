@@ -61,4 +61,5 @@ ok($lsof{ 'STDOUT' } ne '', "Checking if pbs_mom is listening on port '$port'");
 
 # Restart pbs_mom to it's default state
 diag("Restarting pbs_mom");
+stopPbsmom();
 startPbsmom();

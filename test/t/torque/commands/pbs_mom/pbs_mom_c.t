@@ -56,6 +56,7 @@ ok($cur_check_poll_time eq $tmp_check_poll_time, "Verify that mom was reconfigur
 
 # Restart pbs_mom to it's default state
 diag("Restarting pbs_mom");
+stopPbsmom();
 startPbsmom();
 
 # Check that pbs_mom was reset to it's original state

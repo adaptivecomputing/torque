@@ -22,7 +22,7 @@ use Torque::Util qw(
                           );
 
 plan('no_plan');
-setDesc('pbs_mom (Check default -p behavior for TORQUE 2.4)');
+setDesc('pbs_mom (Check default -p behavior)');
 
 # Variables
 my $sleep_time = 299;
