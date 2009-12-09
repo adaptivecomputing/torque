@@ -1,13 +1,16 @@
-This is a simple PAM module to be used on PBS pbs_mom hosts used to authorize
-users that having a running job.  You'll want something like this in your PAM
-config:
+This is a simple PAM module to be used on PBS compute nodes (hosts running
+pbs_mom) to authorize users that have a running job. Uid 0 is always allowed.
+The optional argument "debug" sends verbose information to syslog.
+
+You'll want something like this in your PAM
+conf files:
 
    account    sufficient   pam_pbssimpleauth.so
 
-If other users should having login priviledges (such as the cluster admins),
-then use the pam_access module after the pam_pbssimpleauth module.
+The pam_pbssimpleauth module combines nicely with the pam_access module to
+allow access to cluster administrators:
 
-   account    sufficient   pam_pbssimpleauth.so debug
+   account    sufficient   pam_pbssimpleauth.so
    account    required     pam_access.so
 
 /etc/security/access.conf can then have something like:
