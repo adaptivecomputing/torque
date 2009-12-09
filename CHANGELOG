@@ -32,7 +32,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature
   b - Changed momctl -s to use exit(EXIT_FAILURE) instead of return(-1) if a mom
       is not running.
   b - Fix for Bugzilla bug 36. "qsub crashes with long dependency list".
-
+  b - Fix for Bugzilla bug 41. "tracejob creates a file in the local directory".
 
 2.4.3
   b - fix PBSD_authenticate so it correctly splits PATH with : instead of ;

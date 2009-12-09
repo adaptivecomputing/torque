@@ -832,7 +832,7 @@ int log_path(
   strcpy(filenames[filecount],buf);
   filecount++;
 
-  sprintf(cmd, "ls -1t %s.* 2>1",
+  sprintf(cmd, "ls -1t %s.* 2> /dev/null",
     buf);
 
   if ((fp = popen(cmd, "r")) != NULL)
