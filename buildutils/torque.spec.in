@@ -27,17 +27,6 @@
 %define pammoddir @pammoddir@
 %define modulefiles_dir @MODULEFILES_DIR@
 
-# LANL wanted to build torque RPMS for both x86_64 and i686
-# architectures on the same build x86_64 build host.
-# allow cross compile based on rpmbuild --target option
-#   e.g. rpmbuild --target i686 -bb <SPECfile>
-%ifarch %{ix86} ppc
-%define optflags -m32
-%else
-%define optflags -m64
-%endif
-
-
 %define configure_args ''@ac_configure_args@
 
 
