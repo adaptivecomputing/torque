@@ -50,6 +50,20 @@ c - crash     b - bug fix    e - enhancement    f - new feature
   f - added a diagnostic script (contrib/diag/tdiag.sh).  This script grabs the log 
       files for the server and the mom, records the output of qmgr -c 'p s' and the
       nodefile, and creates a tarfile containing these.
+  b - pbs_mom now sets resource limits for tasks started with tm_spawn (Chris 
+      Samuel, VPAC)
+  c - fix assumption about size of unsocname.sun_path in Libnet/net_server.c
+  b - Fix for Bugzilla bug 34. "torque 2.4.X breaks OSC's mpiexec". fix in src/server
+      src/server/stat_job.c revision 3268.
+  b - Fix for Bugzilla bug 35 - printing the wrong pid (normal mode) and not printing
+      any pid for high availability mode.
+  f - added a diagnostic script (contrib/diag/tdiag.sh).  This script grabs the log 
+      files for the server and the mom, records the output of qmgr -c 'p s' and the
+      nodefile, and creates a tarfile containing these.
+  b - Changed momctl -s to use exit(EXIT_FAILURE) instead of return(-1) if a mom
+      is not running.
+  b - Fix for Bugzilla bug 36. "qsub crashes with long dependency list".
+  b - Fix for Bugzilla bug 41. "tracejob creates a file in the local directory".
 
 
 2.4.2
