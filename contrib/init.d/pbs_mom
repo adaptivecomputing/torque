@@ -17,12 +17,11 @@ if [ -f /etc/sysconfig/pbs_mom ];then
     . /etc/sysconfig/pbs_mom
 fi
 
-args=""
 if [ -z "$previous" ];then
    # being run manually, don't disturb jobs
-   args="-p"
+   args="$args -p"
 else
-   args="-q"
+   args="$args -q"
 fi
 
 pidof_pbs_mom() {

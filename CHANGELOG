@@ -34,6 +34,10 @@ c - crash     b - bug fix    e - enhancement    f - new feature
   b - Fix for Bugzilla bug 36. "qsub crashes with long dependency list".
   b - Fix for Bugzilla bug 41. "tracejob creates a file in the local directory".
 
+2.4.4
+  b - fixed contrib/init.d/pbs_mom so that it doesn't overwrite $args defined in
+      /etc/sysconfig/pbs_mom
+
 2.4.3
   b - fix PBSD_authenticate so it correctly splits PATH with : instead of ;
       (bugzilla #33)
