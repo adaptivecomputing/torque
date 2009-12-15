@@ -1111,6 +1111,7 @@ Optional Features:
                           bind to privileged ports.
 
   --disable-daemons       disable the use of background daemons.
+                          For Cygwin, disable daemons to run as Windows services
 
   --disable-mom-checkspool
                           Don't check free space on spool directory and set an error

@@ -208,6 +208,10 @@ int IamUserByName(char *userName)
 
   if ((gr = getgrgid(544)) != NULL)
     {
+  	if (getuid() < 1000)
+    	{
+		return 0;
+    	}	
 	for (t = gr->gr_mem; t && *t; t++)
 	    if (!strcmp (userName, *t))	
 	    {

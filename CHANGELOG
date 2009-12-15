@@ -7,8 +7,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature
       and requires individual processing. The old erroneous processing brought to 
       big network delay, especially on Cygwin.
   e - improved signal processing after connecting in client_to_svr and added own
-      implementation
-      of bindresvport for OS which haven't it, (Igor Ilyenko, uiip.bas-net.by)
+      implementation of bindresvport for OS which lack it (Igor Ilyenko, uiip.bas-net.by)
   f - created permission checking of Windows (Cygwin) users, using mkpasswd, mkgroup and
       own functions IamRoot, IamUser (Yauheni Charniauski, uiip.bas-net.by)
   f - created permission checking of submited jobs (Vikentsi Lapa, uiip.bas-net.by)

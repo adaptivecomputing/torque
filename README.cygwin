@@ -7,6 +7,7 @@ which means that X11 forwarding won't be built.
 Tcl/Tk components are untested.  
 Interactive jobs are untested.
 
+Can be used on heterogeneous Torque clusters.
 Scheduler C is used only.
 Mail and drmaa are untested.
 In mom quota and setrlimit are not supported

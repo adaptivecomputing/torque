@@ -283,7 +283,7 @@ int client_to_svr(
 
   int         	     trycount = 0;
 
-#define STARTPORT 600
+#define STARTPORT 144
 #define ENDPORT (IPPORT_RESERVED - 1)
 #define NPORTS  (ENDPORT - STARTPORT + 1)
 #define SHUFFLE_COUNT 3
@@ -370,7 +370,7 @@ retry:  /* retry goto added (rentec) */
 
 		errorsock = bindresvport(sock, &local);
 
-		tryport = local.sin_port;
+		tryport = ntohs(local.sin_port);
 
 		goto jump_to_check;
 
@@ -378,7 +378,7 @@ retry:  /* retry goto added (rentec) */
 
 		/* Pseudo-casual shuffling of tryport */
 		
-		srand((unsigned int)getpid() + (unsigned int)sock + (unsigned int)trycount);
+		srand((unsigned int)getpid() + (unsigned int)time(NULL) + (unsigned int)trycount);
 
 		tryport = (rand() % NPORTS) + STARTPORT;
 	
@@ -430,7 +430,7 @@ jump_to_check:
 
     	    close(sock);
 
-    	    return(PBS_NET_RC_FATAL);
+    	    return(PBS_NET_RC_RETRY);
         }
 
 #endif     /* !NOPRIVPORTS */
@@ -513,14 +513,15 @@ jump_to_check:
 
     case EADDRNOTAVAIL:		/* Cannot assign requested address */
 
-        if (trycount++ > (NPORTS))
-        {
-          close(sock);
-
-          return(PBS_NET_RC_RETRY);
-        }
         if (local_port != FALSE)
-        {
+	{
+	  if (trycount++ > (NPORTS))
+    	  {
+        	close(sock);
+
+		return(PBS_NET_RC_RETRY);
+	  }
+
           /* continue port search (rentec) */
 
           tryport++;
