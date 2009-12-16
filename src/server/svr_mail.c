@@ -85,6 +85,7 @@
 
 #include "pbs_ifl.h"
 #include <sys/types.h>
+#include <sys/wait.h>
 #include <unistd.h>
 #include <errno.h>
 #include <stdio.h>
@@ -167,12 +168,21 @@ void svr_mailowner(
             mailpoint) == NULL)
         {
         /* do not send mail */
+        log_event(PBSEVENT_ERROR | PBSEVENT_ADMIN | PBSEVENT_JOB,
+          PBS_EVENTCLASS_JOB,
+          pjob->ji_qs.ji_jobid,
+          "Not sending email: User does not want mail of this type.\n");
 
         return;
         }
       }
     else if (mailpoint != MAIL_ABORT) /* not set, default to abort */
       {
+      log_event(PBSEVENT_ERROR | PBSEVENT_ADMIN | PBSEVENT_JOB,
+        PBS_EVENTCLASS_JOB,
+        pjob->ji_qs.ji_jobid,
+        "Not sending email: Default mailpoint does not include this type.\n");
+
       return;
       }
     }
@@ -199,7 +209,21 @@ void svr_mailowner(
   /* Who is mail from, if SRV_ATR_mailfrom not set use default */
 
   if ((mailfrom = server.sv_attr[(int)SRV_ATR_mailfrom].at_val.at_str) == NULL)
+    {
+    if (LOGLEVEL >= 5)
+      {
+      char tmpBuf[LOG_BUF_SIZE];
+
+      snprintf(tmpBuf,sizeof(tmpBuf),
+        "Updated mailto from user list: '%s'\n",
+        mailto);
+      log_event(PBSEVENT_ERROR | PBSEVENT_ADMIN | PBSEVENT_JOB,
+        PBS_EVENTCLASS_JOB,
+        pjob->ji_qs.ji_jobid,
+        tmpBuf);
+      }
     mailfrom = PBS_DEFAULT_MAIL;
+    }
 
   /* Who does the mail go to?  If mail-list, them; else owner */
 
@@ -233,6 +257,19 @@ void svr_mailowner(
       strcpy(mailto, pjob->ji_wattr[(int)JOB_ATR_euser].at_val.at_str);
       strcat(mailto, "@");
       strcat(mailto, server.sv_attr[(int)SRV_ATR_MailDomain].at_val.at_str);
+
+      if (LOGLEVEL >= 5) 
+        {
+        char tmpBuf[LOG_BUF_SIZE];
+
+        snprintf(tmpBuf,sizeof(tmpBuf),
+          "Updated mailto from job owner and mail domain: '%s'\n",
+          mailto);
+        log_event(PBSEVENT_ERROR | PBSEVENT_ADMIN | PBSEVENT_JOB,
+          PBS_EVENTCLASS_JOB,
+          pjob->ji_qs.ji_jobid,
+          tmpBuf);
+        }
       }
     else
       {
@@ -243,6 +280,19 @@ void svr_mailowner(
 #else /* TMAILDOMAIN */
       strcpy(mailto, pjob->ji_wattr[(int)JOB_ATR_job_owner].at_val.at_str);
 #endif /* TMAILDOMAIN */
+
+      if (LOGLEVEL >= 5)
+        {
+        char tmpBuf[LOG_BUF_SIZE];
+
+        snprintf(tmpBuf,sizeof(tmpBuf),
+          "Updated mailto from job owner: '%s'\n",
+          mailto);
+        log_event(PBSEVENT_ERROR | PBSEVENT_ADMIN | PBSEVENT_JOB,
+          PBS_EVENTCLASS_JOB,
+          pjob->ji_qs.ji_jobid,
+          tmpBuf);
+        }
       }
     }
 
@@ -287,6 +337,18 @@ void svr_mailowner(
 
   if ((cmdbuf = malloc(i)) == NULL)
     {
+    char tmpBuf[LOG_BUF_SIZE];
+
+    snprintf(tmpBuf,sizeof(tmpBuf),
+      "Unable to popen() command '%s' for writing: '%s' (error %d)\n",
+      cmdbuf,
+      strerror(errno),
+      errno);
+    log_event(PBSEVENT_ERROR | PBSEVENT_ADMIN | PBSEVENT_JOB,
+      PBS_EVENTCLASS_JOB,
+      pjob->ji_qs.ji_jobid,
+      tmpBuf);
+
     exit(1);
     }
 
@@ -319,7 +381,32 @@ void svr_mailowner(
   /* Now pipe in the email body */
   svr_format_job(outmail, pjob, bodyfmt, mailpoint, text);
 
-  fclose(outmail);
+  errno = 0;
+  if ((i = pclose(outmail)) != 0)
+    {
+    char tmpBuf[LOG_BUF_SIZE];
+
+    snprintf(tmpBuf,sizeof(tmpBuf),
+      "Email '%c' to %s failed: Child process '%s' %s %d (errno %d:%s)\n",
+      mailpoint,
+      mailto,
+      cmdbuf,
+      ((WIFEXITED(i)) ? ("returned") : ((WIFSIGNALED(i)) ? ("killed by signal") : ("croaked"))),
+      ((WIFEXITED(i)) ? (WEXITSTATUS(i)) : ((WIFSIGNALED(i)) ? (WTERMSIG(i)) : (i))),
+      errno,
+      strerror(errno));
+    log_event(PBSEVENT_ERROR | PBSEVENT_ADMIN | PBSEVENT_JOB,
+      PBS_EVENTCLASS_JOB,
+      pjob->ji_qs.ji_jobid,
+      tmpBuf);
+    }
+  else if (LOGLEVEL >= 4)
+    {
+    log_event(PBSEVENT_ERROR | PBSEVENT_ADMIN | PBSEVENT_JOB,
+      PBS_EVENTCLASS_JOB,
+      pjob->ji_qs.ji_jobid,
+      "Email sent successfully\n");
+    }
 
   exit(0);
 

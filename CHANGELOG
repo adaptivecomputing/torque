@@ -36,6 +36,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature
 2.4.4
   b - fixed contrib/init.d/pbs_mom so that it doesn't overwrite $args defined in
       /etc/sysconfig/pbs_mom
+  f - added logging for email events, allows the admin to check if emails are 
+      being sent correctly
 
 2.4.3
   b - fix PBSD_authenticate so it correctly splits PATH with : instead of ;
