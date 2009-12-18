@@ -342,8 +342,8 @@ static struct batch_request *return_stdfile(
 
   {
 
-  if (pjob->ji_wattr[(int)JOB_ATR_interactive].at_flags &&
-      pjob->ji_wattr[(int)JOB_ATR_interactive].at_val.at_long)
+  if ((pjob->ji_wattr[(int)JOB_ATR_interactive].at_flags) &&
+      (pjob->ji_wattr[(int)JOB_ATR_interactive].at_val.at_long))
     {
     return NULL;
     }
@@ -401,8 +401,8 @@ static struct batch_request *cpy_stdfile(
   char *suffix;
   char *to = NULL;
 
-  if (pjob->ji_wattr[(int)JOB_ATR_interactive].at_flags &&
-      pjob->ji_wattr[(int)JOB_ATR_interactive].at_val.at_long)
+  if ((pjob->ji_wattr[(int)JOB_ATR_interactive].at_flags) &&
+      (pjob->ji_wattr[(int)JOB_ATR_interactive].at_val.at_long))
     {
     /* the job is interactive, don't bother to return output file */
 

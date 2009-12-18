@@ -120,6 +120,7 @@
 
 extern struct var_table vtable;      /* see start_exec.c */
 extern char           **environ;
+extern int              spoolasfinalname;
 
 extern int InitUserEnv(
 
@@ -3183,6 +3184,14 @@ void req_cpyfile(
   char   faketmpdir[1024];
   int   wordexperr = 0;
 #endif
+
+  /* there is nothing to copy */
+  if (spoolasfinalname == TRUE)
+    {
+    reply_ack(preq);
+
+    return;
+    }
 
   if (LOGLEVEL >= 3)
     {
