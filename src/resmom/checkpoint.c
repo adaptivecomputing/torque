@@ -501,7 +501,8 @@ void delete_blcr_checkpoint_files(
   static char id[] = "delete_blcr_checkpoint_files";
   char namebuf[MAXPATHLEN+1];
 
-  if ((pjob->ji_wattr[(int)JOB_ATR_checkpoint_dir].at_flags & ATR_VFLAG_SET) == 0)
+  if (((pjob->ji_wattr[(int)JOB_ATR_checkpoint_dir].at_flags & ATR_VFLAG_SET) == 0)
+      && (LOGLEVEL >= 7))
     {
     sprintf(log_buffer,
       "No checkpoint directory specified for %s\n", pjob->ji_qs.ji_jobid);
