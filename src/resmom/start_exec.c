@@ -122,6 +122,29 @@
 	#include "pbs_cpuset.h"
 #endif
 
+#ifdef HAVE_WORDEXP
+#include <wordexp.h>
+
+extern struct var_table vtable;      /* see start_exec.c */
+extern char           **environ;
+extern int              spoolasfinalname;
+
+extern int InitUserEnv(
+
+    job            *pjob,   /* I */
+    task           *ptask,  /* I (optional) */
+    char          **envp,   /* I (optional) */
+    struct passwd  *pwdp,   /* I (optional) */
+    char           *shell);  /* I (optional) */
+
+extern int mkdirtree(
+
+    char *dirpath, /* I */
+    mode_t mode);
+
+extern int TTmpDirName(job*, char *);
+#endif /* HAVE_WORDEXP */
+
 #ifdef ENABLE_CSA
 	#include "csa_api.h"
 	#include "csaacct.h"
@@ -235,6 +258,7 @@ extern int use_cpusets(job *);
 int TMomFinalizeJob1(job *, pjobexec_t *, int *);
 int TMomFinalizeJob2(pjobexec_t *, int *);
 int TMomFinalizeJob3(pjobexec_t *, int, int, int *);
+int expand_path(job *,char *,int,char *);
 int TMomFinalizeChild(pjobexec_t *);
 
 int TMomCheckJobChild(pjobexec_t *, int, int *, int *);
@@ -5482,6 +5506,7 @@ char *std_file_name(
 	char *pd;
 	char *suffix;
 	char *jobpath = NULL;
+  char *id = "std_file_name";
 #ifdef QSUB_KEEP_NO_OVERRIDE
 	char *pt;
 	char endpath[MAXPATHLEN + 1];
@@ -5550,7 +5575,14 @@ char *std_file_name(
           {
           remove_leading_hostname(&jobpath);
 
-          return(jobpath);
+          if (expand_path(pjob,jobpath,sizeof(path),path) == SUCCESS)
+            {
+            return(path);
+            }
+          else
+            {
+            return(NULL);
+            }
           }
 				}
 
@@ -5569,7 +5601,14 @@ char *std_file_name(
           {
           remove_leading_hostname(&jobpath);
 
-          return(jobpath);
+          if (expand_path(pjob,jobpath,sizeof(path),path) == SUCCESS)
+            {
+            return(path);
+            }
+          else
+            {
+            return(NULL);
+            }
           }
 				}
 
@@ -5683,10 +5722,11 @@ char *std_file_name(
 
 		if (LOGLEVEL >= 10)
 			{
-			sprintf(log_buffer, "std_file_name path before NO_SPOOL_OUTPUT: %s",
-							path);
+			sprintf(log_buffer, "%s path before NO_SPOOL_OUTPUT: %s",
+        id,
+        path);
 
-			log_ext(-1, "std_file_name", log_buffer, LOG_DEBUG);
+			log_ext(-1, id, log_buffer, LOG_DEBUG);
 			}
 
 #if NO_SPOOL_OUTPUT == 1
@@ -5720,10 +5760,11 @@ char *std_file_name(
 
 		if (LOGLEVEL >= 10)
 			{
-			sprintf(log_buffer, "std_file_name path in NO_SPOOL_OUTPUT: %s",
-							path);
+			sprintf(log_buffer, "%s path in NO_SPOOL_OUTPUT: %s",
+        id,
+        path);
 
-			log_ext(-1, "std_file_name", log_buffer, LOG_DEBUG);
+			log_ext(-1, id, log_buffer, LOG_DEBUG);
 			}
 
 #else /* NO_SPOOL_OUTPUT */
@@ -5741,7 +5782,7 @@ char *std_file_name(
 				sprintf(log_buffer, "wdir: %s",
 								wdir);
 
-				log_ext(-1, "std_file_name", log_buffer, LOG_DEBUG);
+				log_ext(-1, id, log_buffer, LOG_DEBUG);
 				}
 
 			if (wdir != NULL)
@@ -5749,7 +5790,7 @@ char *std_file_name(
 				/* check if job's work dir matches the no-spool directory list */
 
 				if (LOGLEVEL >= 10)
-					log_ext(-1, "std_file_name", "inside wdir != NULL", LOG_DEBUG);
+					log_ext(-1, id, "inside wdir != NULL", LOG_DEBUG);
 
 				for (dindex = 0;dindex < TMAX_NSDCOUNT;dindex++)
 					{
@@ -5762,7 +5803,7 @@ char *std_file_name(
 						havehomespool = 1;
 
 						if (LOGLEVEL >= 10)
-							log_ext(-1, "std_file_name", "inside !strcasecmp", LOG_DEBUG);
+							log_ext(-1, id, "inside !strcasecmp", LOG_DEBUG);
 
 						strncpy(path, wdir, sizeof(path));
 
@@ -5774,7 +5815,7 @@ char *std_file_name(
 						havehomespool = 1;
 
 						if (LOGLEVEL >= 10)
-							log_ext(-1, "std_file_name", "inside !strncmp", LOG_DEBUG);
+							log_ext(-1, id, "inside !strncmp", LOG_DEBUG);
 
 						strncpy(path, wdir, sizeof(path));
 
@@ -5796,10 +5837,11 @@ char *std_file_name(
 
 		if (LOGLEVEL >= 10)
 			{
-			sprintf(log_buffer, "std_file_name path in else NO_SPOOL_OUTPUT: %s",
-							path);
+			sprintf(log_buffer, "%s path in else NO_SPOOL_OUTPUT: %s",
+        id,
+        path);
 
-			log_ext(-1, "std_file_name", log_buffer, LOG_DEBUG);
+			log_ext(-1, id, log_buffer, LOG_DEBUG);
 			}
 
 #endif /* NO_SPOOL_OUTPUT */
@@ -5815,7 +5857,7 @@ char *std_file_name(
 							pjob->ji_qs.ji_fileprefix,
 							suffix);
 
-			log_ext(-1, "std_file_name", log_buffer, LOG_DEBUG);
+			log_ext(-1, id, log_buffer, LOG_DEBUG);
 			}
 		}		 /* END else ((pjob->ji_wattr[(int)JOB_ATR_keep].at_flags & ...)) */
 
@@ -6990,6 +7032,88 @@ void add_wkm_end(
 
 
 #endif /* ENABLE_CSA */
+
+
+
+
+
+
+
+
+int expand_path(
+
+  job  *pjob,     /* I */
+  char *path_in,  /* I */
+  int   pathlen,  /* I */
+  char *path)     /* I/O */
+
+{
+#ifndef HAVE_WORDEXP
+  /* no need for expansion if this isn't defined */
+
+  return(SUCCESS);
+#else
+
+  wordexp_t  exp;
+
+  if ((path_in == NULL) ||
+      (pjob == NULL) ||
+      (path == NULL))
+    {
+    /* must have inputs and outputs */
+
+    return(FAILURE);
+    }
+
+  InitUserEnv(pjob, NULL, NULL, NULL, NULL);
+  
+  *(vtable.v_envp + vtable.v_used) = NULL;
+  
+  environ = vtable.v_envp;
+
+  /* initialize the path to empty */
+  path[0] = '\0';
+
+  /* expand the path */
+  switch (wordexp(path_in, &exp, WRDE_NOCMD | WRDE_UNDEF))
+    {
+    
+    case 0:
+      
+      /* success - allow if word count is 1 */
+      
+      if (exp.we_wordc == 1)
+        {
+        snprintf(path,pathlen,"%s",exp.we_wordv[0]);
+        
+        wordfree(&exp);
+        
+        return(SUCCESS);
+        }
+      
+      /* fall through */
+      
+    case WRDE_NOSPACE:
+      
+      wordfree(&exp);
+      
+      /* fall through */
+      
+    default:
+      
+      return(FAILURE);
+      
+    }  /* END switch () */
+
+  /* not reached */
+
+  return(FAILURE);
+
+#endif /* HAVE_WORD_EXP */
+}
+
+
+
 
 
 

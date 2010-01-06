@@ -40,6 +40,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature
       being sent correctly
   b - when spool_as_final_name is configured for the mom, no longer send email 
       messages about not being able to copy the spool file
+  b - when spool_as_final_name is configured for the mom, correctly substitue 
+      job environment variables
 
 2.4.3
   b - fix PBSD_authenticate so it correctly splits PATH with : instead of ;

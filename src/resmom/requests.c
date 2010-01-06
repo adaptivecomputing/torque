@@ -3697,7 +3697,7 @@ void req_cpyfile(
           wordfree(&arg3exp);
 
           wordexperr = 0;
-
+          
           break; /* Successful */
           }
 
