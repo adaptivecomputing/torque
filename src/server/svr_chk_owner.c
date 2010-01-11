@@ -251,42 +251,83 @@ int svr_get_privilege(
   char *host)  /* I */
 
   {
+  char  id[] = "svr_get_privilege";
   int   is_root = 0;
   int   priv = (ATR_DFLAG_USRD | ATR_DFLAG_USWR);
   int   num_host_chars;
   char  uh[PBS_MAXUSER + PBS_MAXHOSTNAME + 2];
-  char  host_no_port[1024];
+  char  host_no_port[PBS_MAXHOSTNAME+1];
+  char *colon_loc = NULL;
 
-  char *colon_loc = strchr(host, ':');
+  if(!user)
+    {
+
+    sprintf(log_buffer, "Invalid user: %s", "null");
+
+    log_record(
+      PBSEVENT_SECURITY,
+      PBS_EVENTCLASS_SERVER,
+      id,
+      log_buffer);
+
+
+    return(0);
+    }
+
+  /* user name cannot be longer than PBS_MAXUSER*/
+  if(strlen(user) > PBS_MAXUSER)
+    {
+    sprintf(log_buffer, "Invalid user: %s", user);
+
+    log_record(
+      PBSEVENT_SECURITY,
+      PBS_EVENTCLASS_SERVER,
+      id,
+      log_buffer);
+     
+    return(0);
+    }
+
+  if(!host)
+    return(0);
+
+  colon_loc = strchr(host, ':');
 
   /* if the request host has port information in it, we want to strip it out */
 
   if (colon_loc == NULL) 
     {
     /* no colon found */
-    num_host_chars = sizeof(host_no_port);
+    num_host_chars = strlen(host);
     }
   else
     {
     num_host_chars = colon_loc - host;
     }
 
-  strcpy(uh, user);
-  strcat(uh, "@");
-  strcat(uh, host);
+  /* num_host_chars cannot be more than PBS_MAXHOSTNAME */
+  if(num_host_chars > PBS_MAXHOSTNAME)
+    {
+    snprintf(log_buffer, LOG_BUF_SIZE, "Invalid host: %s", host);
+    /* log_buffer is big but just in case host was really long we need to
+       null terminate the last byte. strncpy will copy LOG_BUF_SIZE but
+       not null terminate the array if host is larger. */
+    log_buffer[LOG_BUF_SIZE - 1] = 0;
 
-  strncpy(host_no_port,host,num_host_chars);
-  host_no_port[num_host_chars] = 0;
+    log_record(
+      PBSEVENT_SECURITY,
+      PBS_EVENTCLASS_SERVER,
+      id,
+      log_buffer);
+
+    return(0);
+    }
+
+  sprintf(uh, "%s@%s", user, host);
+
+  sprintf(host_no_port, host);
 
   /* NOTE:  enable case insensitive host check (CRI) */
-
-#ifdef __CYGWIN__
-  if (IamAdminByName(user) && !strcasecmp(host_no_port, server_host))
-    {
-    is_root = 1;
-    return(priv | ATR_DFLAG_MGRD | ATR_DFLAG_MGWR | ATR_DFLAG_OPRD | ATR_DFLAG_OPWR);
-    }
-#else /* __CYGWIN__ */
 
   if ((strcmp(user, PBS_DEFAULT_ADMIN) == 0) &&
       !strcasecmp(host_no_port, server_host))
@@ -297,8 +338,6 @@ int svr_get_privilege(
     return(priv | ATR_DFLAG_MGRD | ATR_DFLAG_MGWR | ATR_DFLAG_OPRD | ATR_DFLAG_OPWR);
 #endif
     }
-
-#endif /* __CYGWIN__ */
 
   if (!(server.sv_attr[(int)SRV_ATR_managers].at_flags & ATR_VFLAG_SET))
     {
