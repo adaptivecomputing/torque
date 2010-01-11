@@ -325,7 +325,7 @@ int svr_get_privilege(
 
   sprintf(uh, "%s@%s", user, host);
 
-  sprintf(host_no_port, host);
+  sprintf(host_no_port, "%s", host);
 
   /* NOTE:  enable case insensitive host check (CRI) */
 
