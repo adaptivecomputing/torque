@@ -1350,7 +1350,7 @@ int main(
 
   {
   int  i;
-  int  lockfds;
+  int  lockfds = -1;
   int  rppfd;   /* fd to receive is HELLO's */
   int  privfd;  /* fd to send is messages */
   uint  tryport;
@@ -1544,7 +1544,9 @@ int main(
 #ifdef OS_LOSES_FD_OVER_FORK
   /* NOTE:  file descriptors may be lost across forks in SLES 10 SP1 */
 
+#ifndef USE_HA_THREADS
   close(lockfds);
+#endif /* !USE_HA_THREADS */
 
   if ((lockfds = open(lockfile, O_CREAT | O_TRUNC | O_WRONLY, 0600)) < 0)
     {

@@ -50,6 +50,9 @@ c - crash     b - bug fix    e - enhancement    f - new feature
       messages about not being able to copy the spool file
   b - when spool_as_final_name is configured for the mom, correctly substitue 
       job environment variables
+  b - Missed a format statement in an sprintf statement for the bug fix above.
+  b - Fixed a way that a file descriptor (for the server lockfile) could be used without 
+      initialization. RT 6756
 
 2.4.3
   b - fix PBSD_authenticate so it correctly splits PATH with : instead of ;
