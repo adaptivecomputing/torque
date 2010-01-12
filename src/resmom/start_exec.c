@@ -115,34 +115,15 @@
 #include "md5.h"
 #include "mcom.h"
 #include "resource.h"
+
 #ifdef ENABLE_CPA
 	#include "pbs_cpa.h"
 #endif
 #ifdef PENABLE_LINUX26_CPUSETS
 	#include "pbs_cpuset.h"
 #endif
-
 #ifdef HAVE_WORDEXP
 #include <wordexp.h>
-
-extern struct var_table vtable;      /* see start_exec.c */
-extern char           **environ;
-extern int              spoolasfinalname;
-
-extern int InitUserEnv(
-
-    job            *pjob,   /* I */
-    task           *ptask,  /* I (optional) */
-    char          **envp,   /* I (optional) */
-    struct passwd  *pwdp,   /* I (optional) */
-    char           *shell);  /* I (optional) */
-
-extern int mkdirtree(
-
-    char *dirpath, /* I */
-    mode_t mode);
-
-extern int TTmpDirName(job*, char *);
 #endif /* HAVE_WORDEXP */
 
 #ifdef ENABLE_CSA
@@ -262,6 +243,11 @@ int expand_path(job *,char *,int,char *);
 int TMomFinalizeChild(pjobexec_t *);
 
 int TMomCheckJobChild(pjobexec_t *, int, int *, int *);
+
+int InitUserEnv(job *,task *,char **,struct passwd *pwdp,char *);
+int mkdirtree(char *,mode_t);
+int TTmpDirName(job*, char *);
+
 static int search_env_and_open(const char *, u_long);
 extern int TMOMJobGetStartInfo(job *, pjobexec_t **);
 extern int mom_reader(int, int);
@@ -7039,10 +7025,15 @@ void add_wkm_end(
 
 
 
-
+/*
+ * @param pjob - used to set up the user's environment if desired
+ * @param path_in - the path that will be expanded
+ * @param pathlen - viable space in path
+ * @param path - where to save the new path
+ */
 int expand_path(
 
-  job  *pjob,     /* I */
+  job  *pjob,     /* I optional */
   char *path_in,  /* I */
   int   pathlen,  /* I */
   char *path)     /* I/O */
@@ -7057,7 +7048,6 @@ int expand_path(
   wordexp_t  exp;
 
   if ((path_in == NULL) ||
-      (pjob == NULL) ||
       (path == NULL))
     {
     /* must have inputs and outputs */
@@ -7065,11 +7055,12 @@ int expand_path(
     return(FAILURE);
     }
 
-  InitUserEnv(pjob, NULL, NULL, NULL, NULL);
-  
-  *(vtable.v_envp + vtable.v_used) = NULL;
-  
-  environ = vtable.v_envp;
+  if (pjob != NULL)
+    {
+    InitUserEnv(pjob, NULL, NULL, NULL, NULL);
+    *(vtable.v_envp + vtable.v_used) = NULL;
+    environ = vtable.v_envp;
+    }
 
   /* initialize the path to empty */
   path[0] = '\0';
