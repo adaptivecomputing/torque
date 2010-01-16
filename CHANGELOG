@@ -40,6 +40,9 @@ c - crash     b - bug fix    e - enhancement    f - new feature
       variables before they were used. The symptom of this bug was that non-root
       managers and operators could not perform operations where they should 
       have had rights.
+  b - now checks secondary groups (as well as primary) for creating a file
+      when spooling.  Before it wouldn't create the spool file if a user had 
+      permission through a secondary group.
 
 2.4.4
   b - fixed contrib/init.d/pbs_mom so that it doesn't overwrite $args defined in

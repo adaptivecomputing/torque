@@ -5918,9 +5918,22 @@ int open_std_file(
 
 				if ((statbuf.st_gid != exgid) && (statbuf.st_gid != 0))
 					{
-					log_err(-1, "open_std_file", "std file exists with the wrong group, someone is doing something fishy");
+          int i;
+          int equal = FALSE;
+          
+          /* check all of the secondary groups before throwing an error */
+          for (i = 0; i < pjob->ji_grpcache->gc_ngroup; i++)
+            {
+            if (statbuf.st_gid == (gid_t)pjob->ji_grpcache->gc_groups[i])
+              equal = TRUE;
+            }
 
-					return(-1);
+          if (equal == FALSE)
+            {
+  					log_err(-1, "open_std_file", "std file exists with the wrong group, someone is doing something fishy");
+
+	  				return(-1);
+            }
 					}
 				}
 
@@ -5958,7 +5971,7 @@ int open_std_file(
 
 	/* become user to create file */
 
-	if ((setegid(exgid) == -1) ||
+	if (setgroups(pjob->ji_grpcache->gc_ngroup,(gid_t *)pjob->ji_grpcache->gc_groups) != 0 ||
 			(seteuid(pjob->ji_qs.ji_un.ji_momt.ji_exuid) == -1))
 		{
 		log_err(errno, "open_std_file", "cannot set user/group permissions on stdout/stderr file");
