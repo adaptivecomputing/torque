@@ -38,6 +38,8 @@ PbsErrClient(PBSE_UNKREQ,            "Unknown request")
 PbsErrClient(PBSE_TOOMANY,           "Too many submit retries")
 /* No permission */
 PbsErrClient(PBSE_PERM,              "Unauthorized Request ")
+/* pbs_iff not found */
+PbsErrClient(PBSE_IFF_NOT_FOUND,     "pbs_iff command not found, unable to authenticate")
 /* access from host not allowed */
 PbsErrClient(PBSE_BADHOST,           "Access from host not allowed, or unknown host")
 /* job already exists */

@@ -210,6 +210,11 @@ start:
             goto retry;
 
           break;
+          
+        case PBSE_IFF_NOT_FOUND:
+        
+          fprintf(stderr, "pbs_iff command not found.\n");
+          break;
 
         case PBSE_PROTOCOL:
 

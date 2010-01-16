@@ -1,32 +1,38 @@
 c - crash     b - bug fix    e - enhancement    f - new feature
 
 2.5.0
-  f - added full support (server-scheduler-mom) for Cygwin (UIIP NAS of Belarus, uiip.bas-net.by)
-  f - architecture and build system changes to support Cygwin (Igor Ilyenko, uiip.bas-net.by)
-  b - fixed EINPROGRESS in net_client.c. This signal appears every time of connecting
-      and requires individual processing. The old erroneous processing brought to 
-      big network delay, especially on Cygwin.
+  f - added full support (server-scheduler-mom) for Cygwin (UIIP NAS of Belarus,
+      uiip.bas-net.by)
+  f - architecture and build system changes to support Cygwin (Igor Ilyenko, 
+      uiip.bas-net.by)
+  b - fixed EINPROGRESS in net_client.c. This signal appears every time of 
+      connecting and requires individual processing. The old erroneous 
+      processing brought to big network delay, especially on Cygwin.
   e - improved signal processing after connecting in client_to_svr and added own
-      implementation of bindresvport for OS which lack it (Igor Ilyenko, uiip.bas-net.by)
-  f - created permission checking of Windows (Cygwin) users, using mkpasswd, mkgroup and
-      own functions IamRoot, IamUser (Yauheni Charniauski, uiip.bas-net.by)
-  f - created permission checking of submited jobs (Vikentsi Lapa, uiip.bas-net.by)
-  f - Added the --disable-daemons configure option for start server-sched-mom as Windows
-      services, cygrunsrv.exe goes its into background independently.
-  e - Adapted output of Cygwin's diagnostic information (Yauheni Charniauski, uiip.bas-net.by)
-  b - Changed pbsd_main to call daemonize_server early only if high_availability_mode
-      is set.
+      implementation of bindresvport for OS which lack it (Igor Ilyenko, 
+      uiip.bas-net.by)
+  f - created permission checking of Windows (Cygwin) users, using mkpasswd, 
+      mkgroup and own functions IamRoot, IamUser (Yauheni Charniauski, 
+      uiip.bas-net.by)
+  f - created permission checking of submited jobs (Vikentsi Lapa, 
+      uiip.bas-net.by)
+  f - Added the --disable-daemons configure option for start server-sched-mom 
+      as Windows services, cygrunsrv.exe goes its into background independently.
+  e - Adapted output of Cygwin's diagnostic information (Yauheni Charniauski, 
+      uiip.bas-net.by)
+  b - Changed pbsd_main to call daemonize_server early only if 
+      high_availability_mode is set.
   e - removed the very old A_ macros (patch provided by Simon Toth, CESNET z.s.p.o.)
   e - added new qmgr server attributes (clone_batch_size, clone_batch_delay) for 
       controlling job cloning (Bugzilla #4)
   e - added new qmgr attribute (checkpoint_defaults) for setting default
       checkpoint values on Execution queues (Bugzilla #1)
   b - PBSD_authenticate correctly splits PATH on : instead of ; (bugzilla #33)
-  b - Merged revision 3268 from 2.4-fixes. removed block of code that broke pbs_statjob 
-      for requested attributes
-  f - added a diagnostic script (contrib/diag/tdiag.sh).  This script grabs the log 
-      files for the server and the mom, records the output of qmgr -c 'p s' and the
-      nodefile, and creates a tarfile containing these.
+  b - Merged revision 3268 from 2.4-fixes. removed block of code that broke 
+      pbs_statjob for requested attributes
+  f - added a diagnostic script (contrib/diag/tdiag.sh).  This script grabs the
+      log files for the server and the mom, records the output of qmgr -c 'p s'
+      and the nodefile, and creates a tarfile containing these.
   b - Merged fix for bugzilla bug 35 from 2.4.3 
   b - Changed momctl -s to use exit(EXIT_FAILURE) instead of return(-1) if a mom
       is not running.
@@ -43,6 +49,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature
   b - now checks secondary groups (as well as primary) for creating a file
       when spooling.  Before it wouldn't create the spool file if a user had 
       permission through a secondary group.
+  e - print a more informative error if pbs_iff isn't found when trying to
+      authenticate a client
 
 2.4.4
   b - fixed contrib/init.d/pbs_mom so that it doesn't overwrite $args defined in
@@ -54,8 +62,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature
   b - when spool_as_final_name is configured for the mom, correctly substitue 
       job environment variables
   b - Missed a format statement in an sprintf statement for the bug fix above.
-  b - Fixed a way that a file descriptor (for the server lockfile) could be used without 
-      initialization. RT 6756
+  b - Fixed a way that a file descriptor (for the server lockfile) could be used
+      without initialization. RT 6756
 
 2.4.3
   b - fix PBSD_authenticate so it correctly splits PATH with : instead of ;

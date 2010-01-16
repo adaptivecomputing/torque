@@ -416,11 +416,11 @@ static int PBSD_authenticate(
                   strerror(errno));
           }
 
-        /* cannot locate iff in default location - search PATH */
+        /* cannot locate iff in default location or  PATH */
 
         iffpath[0] = '\0';
 
-        return(-1);
+        return(PBSE_IFF_NOT_FOUND);
         }
       }
     }    /* END if (iffpath[0] == '\0') */
@@ -558,6 +558,7 @@ int pbs_original_connect(
   struct hostent *hp;
   int out;
   int i;
+  int auth;
 
   struct passwd *pw;
   int use_unixsock = 0;
@@ -807,20 +808,32 @@ int pbs_original_connect(
 
     /* Have pbs_iff authenticate connection */
 
-    if ((ENABLE_TRUSTED_AUTH == FALSE) && (PBSD_authenticate(connection[out].ch_socket) != 0))
+    if ((ENABLE_TRUSTED_AUTH == FALSE) && ((auth = PBSD_authenticate(connection[out].ch_socket)) != 0))
       {
       close(connection[out].ch_socket);
 
       connection[out].ch_inuse = 0;
 
-      pbs_errno = PBSE_PERM;
-
-      if (getenv("PBSDEBUG"))
+      if (auth == PBSE_IFF_NOT_FOUND)
         {
-        fprintf(stderr, "ERROR:  cannot authenticate connection to server \"%s\", errno=%d (%s)\n",
-                server,
-                errno,
-                strerror(errno));
+        pbs_errno = PBSE_IFF_NOT_FOUND;
+        
+        if (getenv("PBSDEBUG"))
+          {
+          fprintf(stderr, "ERROR:  cannot find pbs_iif executable\n");
+          }
+        }
+      else
+        {
+        pbs_errno = PBSE_PERM;
+
+        if (getenv("PBSDEBUG"))
+          {
+          fprintf(stderr, "ERROR:  cannot authenticate connection to server \"%s\", errno=%d (%s)\n",
+                  server,
+                  errno,
+                  strerror(errno));
+          }
         }
 
       return(-1);
