@@ -292,6 +292,7 @@ extern int      mom_checkpoint_init(void);
 extern void     mom_checkpoint_check_periodic_timer(job *pjob);
 extern void     mom_checkpoint_set_directory_path(char *str);
 
+void prepare_child_tasks_for_delete();
 
 #define PMOMTCPTIMEOUT 60  /* duration in seconds mom TCP requests will block */
 
@@ -311,7 +312,7 @@ enum PMOMStateEnum
 
 static enum PMOMStateEnum mom_run_state;
 
-static int recover = 2;
+static int recover = JOB_RECOV_RUNNING;
 static int recover_set = FALSE;
 
 static int      call_hup = 0;
@@ -6519,7 +6520,7 @@ void parse_command_line(
 
   errflg = 0;
 
-  while ((c = getopt(argc, argv, "a:c:C:d:DhH:l:L:M:pqrR:s:S:vx-:")) != -1)
+  while ((c = getopt(argc, argv, "a:c:C:d:DhH:l:L:M:pPqrR:s:S:vx-:")) != -1)
     {
     switch (c)
       {
@@ -6649,7 +6650,21 @@ void parse_command_line(
 
         if (!recover_set)
           {
-          recover = 2;
+          recover = JOB_RECOV_RUNNING;
+          recover_set = TRUE;
+          }
+        else
+          {
+          errflg = 1;
+          }
+
+        break;
+
+      case 'P':
+
+        if ( !recover_set )
+          {
+          recover = JOB_RECOV_DELETE;
           recover_set = TRUE;
           }
         else
@@ -6663,7 +6678,7 @@ void parse_command_line(
 
         if (!recover_set)
           {
-          recover = 1;
+          recover = JOB_RECOV_TERM_REQUE;
           recover_set = TRUE;
           }
         else
@@ -6677,7 +6692,7 @@ void parse_command_line(
 
         if (!recover_set)
           {
-          recover = 0;
+          recover = JOB_RECOV_REQUE;
           recover_set = TRUE;
           }
         else
@@ -8067,8 +8082,16 @@ void main_loop(void)
 
     /* if -p, must poll tasks inside jobs to look for completion */
 
-    if (recover == 2)
+    if (recover == JOB_RECOV_RUNNING)
       scan_non_child_tasks();
+
+    if(recover == JOB_RECOV_DELETE)
+      {
+      prepare_child_tasks_for_delete();
+      /* we can only do this once so set recover back to the default */
+      recover = JOB_RECOV_RUNNING;
+      }
+      
 
     if (exiting_tasks)
       scan_for_exiting();

@@ -1349,49 +1349,50 @@ int TMomFinalizeJob1(
 	/* prepare job environment */
 
 	if (pjob->ji_numnodes > 1)
-		{
-		/*
-		** Get port numbers from file decriptors in job struct.  The
-		** sockets are stored there so they can be closed later as
-		** Main MOM will not need them after the job is going.
-		*/
+      {
+	  /*
+	  ** Get port numbers from file decriptors in job struct.  The
+	  ** sockets are stored there so they can be closed later as
+	  ** Main MOM will not need them after the job is going.
+	  */
 
-		slen = sizeof(saddr);
+	  slen = sizeof(saddr);
 
-		if (getsockname(
-									 pjob->ji_stdout,
-									 (struct sockaddr *)&saddr,
-									 &slen) == -1)
-			{
-			sprintf(log_buffer, "getsockname on stdout");
+	  if (getsockname(
+	  				pjob->ji_stdout,
+	  			    (struct sockaddr *)&saddr,
+	  				&slen) == -1)
+	  	{
+	  	sprintf(log_buffer, "getsockname on stdout");
 
-			*SC = JOB_EXEC_RETRY;
+	  	*SC = JOB_EXEC_RETRY;
 
-			return(FAILURE);
-			}
+	  	return(FAILURE);
+	  	}
 
-		TJE->port_out = (int)ntohs(saddr.sin_port);
+	  TJE->port_out = (int)ntohs(saddr.sin_port);
 
-		slen = sizeof(saddr);
+	  slen = sizeof(saddr);
 
-		if (getsockname(
-									 pjob->ji_stderr,
-									 (struct sockaddr *)&saddr,
-									 &slen) == -1)
-			{
-			sprintf(log_buffer, "getsockname on stderr");
+	  if (getsockname(
+	  							 pjob->ji_stderr,
+	  							 (struct sockaddr *)&saddr,
+	  							 &slen) == -1)
+	  	{
+	  	sprintf(log_buffer, "getsockname on stderr");
 
-			*SC = JOB_EXEC_RETRY;
+	  	*SC = JOB_EXEC_RETRY;
 
-			return(FAILURE);
-			}
+	  	return(FAILURE);
+	  	}
 
-		TJE->port_err = (int)ntohs(saddr.sin_port);
-		} else
-		{
-		TJE->port_out = -1;
-		TJE->port_err = -1;
-		}
+	  TJE->port_err = (int)ntohs(saddr.sin_port);
+	  } 
+	else
+	  {
+	  TJE->port_out = -1;
+	  TJE->port_err = -1;
+	  }
 
 	/* did the job request nodes?  will need to setup node file */
 
@@ -1593,10 +1594,10 @@ int TMomFinalizeJob1(
 		job_attr_def[(int)JOB_ATR_outpath].at_free(pattr);
 
 		job_attr_def[(int)JOB_ATR_outpath].at_decode(
-																								pattr,
-																								NULL,
-																								NULL,
-																								TJE->ptc_name);
+													 pattr,
+													 NULL,
+													 NULL,
+													 TJE->ptc_name);
 
 		pjob->ji_wattr[(int)JOB_ATR_outpath].at_flags =
 		(ATR_VFLAG_SET | ATR_VFLAG_MODIFY | ATR_VFLAG_SEND);
@@ -1606,10 +1607,10 @@ int TMomFinalizeJob1(
 		job_attr_def[(int)JOB_ATR_errpath].at_free(pattr);
 
 		job_attr_def[(int)JOB_ATR_errpath].at_decode(
-																								pattr,
-																								NULL,
-																								NULL,
-																								TJE->ptc_name);
+													 pattr,
+													 NULL,
+													 NULL,
+													 TJE->ptc_name);
 
 		pjob->ji_wattr[(int)JOB_ATR_errpath].at_flags =
 		(ATR_VFLAG_SET | ATR_VFLAG_MODIFY | ATR_VFLAG_SEND);
@@ -1749,16 +1750,16 @@ int TMomFinalizeJob2(
 	if (LOGLEVEL >= 4)
 		{
 		log_record(
-							PBSEVENT_ERROR,
-							PBS_EVENTCLASS_JOB,
-							pjob->ji_qs.ji_jobid,
-							"about to fork child which will become job");
+				   PBSEVENT_ERROR,
+				   PBS_EVENTCLASS_JOB,
+				   pjob->ji_qs.ji_jobid,
+				   "about to fork child which will become job");
 
 		log_record(
-							PBSEVENT_ERROR,
-							PBS_EVENTCLASS_JOB,
-							id,
-							log_buffer);
+				   PBSEVENT_ERROR,
+				   PBS_EVENTCLASS_JOB,
+				   id,
+				   log_buffer);
 		}
 
 	/*

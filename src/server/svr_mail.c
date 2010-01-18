@@ -134,6 +134,13 @@ void svr_mailowner(
       (!strcasecmp("never", server.sv_attr[(int)SRV_ATR_MailDomain].at_val.at_str)))
     {
     /* never send user mail under any conditions */
+    if (LOGLEVEL >= 3) 
+      {
+      log_event(PBSEVENT_ERROR | PBSEVENT_ADMIN | PBSEVENT_JOB,
+        PBS_EVENTCLASS_JOB,
+        pjob->ji_qs.ji_jobid,
+        "Not sending email: Mail domain set to 'never'\n");
+      }
 
     return;
     }
@@ -362,6 +369,18 @@ void svr_mailowner(
 
   if (outmail == NULL)
     {
+    char tmpBuf[LOG_BUF_SIZE];
+
+    snprintf(tmpBuf,sizeof(tmpBuf),
+      "Unable to popen() command '%s' for writing: '%s' (error %d)\n",
+      cmdbuf,
+      strerror(errno),
+      errno);
+    log_event(PBSEVENT_ERROR | PBSEVENT_ADMIN | PBSEVENT_JOB,
+      PBS_EVENTCLASS_JOB,
+      pjob->ji_qs.ji_jobid,
+      tmpBuf);
+
     exit(1);
     }
 

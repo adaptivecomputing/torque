@@ -152,6 +152,12 @@ struct depend_job
 #define JOB_DEPEND_OP_DELETE  4
 #define JOB_DEPEND_OP_UNREG  5
 
+/* Job recovery levels. Options used to start pbs_mom */
+#define JOB_RECOV_REQUE       0  /* -q option */
+#define JOB_RECOV_TERM_REQUE  1  /* -r option */
+#define JOB_RECOV_RUNNING     2  /* -p option */
+#define JOB_RECOV_DELETE      3  /* -P option */
+
 /*
  * The badplace structure is used to keep track of destinations
  * which have been tried by a route queue and given a "reject"
@@ -776,6 +782,8 @@ task *task_find(
 #define JOB_SUBSTATE_STAGEDEL 52 /* job deleteing staged out files  */
 #define JOB_SUBSTATE_EXITED 53 /* job exit processing completed   */
 #define JOB_SUBSTATE_ABORT      54 /* job is being aborted by server  */
+#define JOB_SUBSTATE_NOTERM_REQUE 55 /* (MOM) on mom initialization. Requeue job
+                                        but do not terminate any running process */
 #define JOB_SUBSTATE_PREOBIT    57 /* (MOM) preobit jobstat sent */
 #define JOB_SUBSTATE_OBIT       58 /* (MOM) job obit notice sent */
 #define JOB_SUBSTATE_COMPLETE   59 /* job is complete */

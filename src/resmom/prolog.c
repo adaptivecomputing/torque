@@ -780,7 +780,7 @@ int run_pelog(
 
     /* NOTE:  inside child */
 
-    if (which == PE_EPILOG)
+    if ( which == PE_EPILOG || which == PE_EPILOGUSER || which == PE_EPILOGUSERJOB )
       {
       /* for epilog only */
 

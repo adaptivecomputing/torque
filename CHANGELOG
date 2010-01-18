@@ -1,4 +1,4 @@
-c - crash     b - bug fix    e - enhancement    f - new feature
+c - crash     b - bug fix    e - enhancement    f - new feature  n - note
 
 2.5.0
   f - added full support (server-scheduler-mom) for Cygwin (UIIP NAS of Belarus,
@@ -51,19 +51,48 @@ c - crash     b - bug fix    e - enhancement    f - new feature
       permission through a secondary group.
   e - print a more informative error if pbs_iff isn't found when trying to
       authenticate a client
+  n - 01/18/2010. Merged 2.4.5 revisions 3268-3375. 
+
+2.4.5
+  b - epilogue.user scripts were being run with prologue argments. Fixed
+      bug in run_pelog() to include PE_EPILOGUSER so epilogue arguments get
+      passed to eplilogue.user script.
+
+  b - Ticket 6665. pbs_mom and job recovery. Fixed a bug where the -q option 
+      would terminate running processes as well as requeue jobs. This made the
+      -q option the same as the -r option for pbs_mom. -q will now only reque 
+      jobs and will not attempt to kill running processes. I also added a -P
+      option to start pbs_mom. This is similar to the -p option except the -P
+      option will only delete any left over jobs from the queue and will not
+      attempt to adopt and running processes.
+  e - Modified man page for pbs_mom. Added new -P option plus edited -p, -q
+      and -r options to hopefully make them more understandable.
+  n - 01/15/2010 created snapshot torque-2.4.5-snap201001151416.tar.gz.
+  b - now checks secondary groups (as well as primary) for creating a file
+      when spooling.  Before it wouldn't create the spool file if a user had 
+      permission through a secondary group.
+  n - 01/18/2010. Items above this point merged into trunk.
 
 2.4.4
   b - fixed contrib/init.d/pbs_mom so that it doesn't overwrite $args defined in
       /etc/sysconfig/pbs_mom
-  f - added logging for email events, allows the admin to check if emails are 
-      being sent correctly
   b - when spool_as_final_name is configured for the mom, no longer send email 
       messages about not being able to copy the spool file
   b - when spool_as_final_name is configured for the mom, correctly substitue 
       job environment variables
+  f - added logging for email events, allows the admin to check if emails are 
+      being sent correctly
+  b - Made a fix to svr_get_privilege(). On some architectures a non-root user
+      name would be set to null after the line " host_no_port[num_host_chars] = 0;"
+      because num_host_chars was = 1024 which was the size of hot_no_port. 
+      The null termination needed to happen at 1023. There were other problems
+      with this function so code was added to  validate the incoming
+      variables before they were used. The symptom of this bug was that non-root
+      managers and operators could not perform operations where they should 
+      have had rights.
   b - Missed a format statement in an sprintf statement for the bug fix above.
-  b - Fixed a way that a file descriptor (for the server lockfile) could be used
-      without initialization. RT 6756
+  b - Fixed a way that a file descriptor (for the server lockfile) could be used without 
+      initialization. RT 6756
 
 2.4.3
   b - fix PBSD_authenticate so it correctly splits PATH with : instead of ;
@@ -81,6 +110,20 @@ c - crash     b - bug fix    e - enhancement    f - new feature
   f - added a diagnostic script (contrib/diag/tdiag.sh).  This script grabs the log 
       files for the server and the mom, records the output of qmgr -c 'p s' and the
       nodefile, and creates a tarfile containing these.
+  b - pbs_mom now sets resource limits for tasks started with tm_spawn (Chris 
+      Samuel, VPAC)
+  c - fix assumption about size of unsocname.sun_path in Libnet/net_server.c
+  b - Fix for Bugzilla bug 34. "torque 2.4.X breaks OSC's mpiexec". fix in src/server
+      src/server/stat_job.c revision 3268.
+  b - Fix for Bugzilla bug 35 - printing the wrong pid (normal mode) and not printing
+      any pid for high availability mode.
+  f - added a diagnostic script (contrib/diag/tdiag.sh).  This script grabs the log 
+      files for the server and the mom, records the output of qmgr -c 'p s' and the
+      nodefile, and creates a tarfile containing these.
+  b - Changed momctl -s to use exit(EXIT_FAILURE) instead of return(-1) if a mom
+      is not running.
+  b - Fix for Bugzilla bug 36. "qsub crashes with long dependency list".
+  b - Fix for Bugzilla bug 41. "tracejob creates a file in the local directory".
   b - pbs_mom now sets resource limits for tasks started with tm_spawn (Chris 
       Samuel, VPAC)
   c - fix assumption about size of unsocname.sun_path in Libnet/net_server.c

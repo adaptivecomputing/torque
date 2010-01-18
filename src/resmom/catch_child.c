@@ -557,7 +557,7 @@ scan_for_exiting(void)
     ** in any state other than EXITING continue on.
     */
 
-    if (pjob->ji_qs.ji_substate != JOB_SUBSTATE_EXITING)
+    if ((pjob->ji_qs.ji_substate != JOB_SUBSTATE_EXITING) && (pjob->ji_qs.ji_substate != JOB_SUBSTATE_NOTERM_REQUE))
       {
       if (LOGLEVEL >= 3)
         {
@@ -607,7 +607,10 @@ scan_for_exiting(void)
             "connection to server lost - no obit sent - job will be purged");
           }
 
-        kill_job(pjob, SIGKILL, id, "connection to server lost - no obit sent");
+        if(pjob->ji_qs.ji_substate != JOB_SUBSTATE_NOTERM_REQUE)
+          {
+          kill_job(pjob, SIGKILL, id, "connection to server lost - no obit sent");
+          }
 
         job_purge(pjob);
 
@@ -738,7 +741,35 @@ scan_for_exiting(void)
 
     pjob->ji_qs.ji_svrflags &= ~JOB_SVFLG_Suspend;
 
-    kill_job(pjob, SIGKILL, id, "local task termination detected");
+    if(pjob->ji_qs.ji_substate != JOB_SUBSTATE_NOTERM_REQUE)
+      kill_job(pjob, SIGKILL, id, "local task termination detected");
+    else
+      {
+      ptask = (task *)GET_NEXT(pjob->ji_tasks);
+
+      while (ptask != NULL)
+        {
+        if (ptask->ti_qs.ti_status == TI_STATE_RUNNING)
+          {
+          if (LOGLEVEL >= 4)
+            {
+            log_record(
+              PBSEVENT_JOB,
+              PBS_EVENTCLASS_JOB,
+              pjob->ji_qs.ji_jobid,
+              "kill_job found a task to kill");
+            }
+
+          ptask->ti_qs.ti_exitstat = 0;  /* assume successful completion */
+          ptask->ti_qs.ti_status   = TI_STATE_EXITED;
+
+          task_save(ptask);
+          }
+
+        ptask = (task *)GET_NEXT(ptask->ti_jobtask);
+        }  /* END while (ptask != NULL) */
+
+      }
 
 #ifdef ENABLE_CPA
     if (CPADestroyPartition(pjob) != 0)
@@ -1629,18 +1660,21 @@ static void obit_reply(
  * init_abort_jobs - on mom initialization, recover all running jobs.
  *
  * Called on initialization
- *    If the -p option was given (default) (recover = 2), Mom will allow the jobs
+ *    If the -p option was given (default) (recover = JOB_RECOV_RUNNING), Mom will allow the jobs
  *    to continue to run.   She depends on detecting when they terminate
  *    via the slow poll method rather than SIGCHLD.
  *
- *    If the -r option was given (recover = 1), MOM is recovering on a
- *      running system and the session id of the jobs should be valid;
- *    the jobs are killed.
+ *    If the -r option was given (recover = JOB_RECOV_TERM_REQUE), MOM is
+ *    recovering on a running system and the session id of the jobs should be valid;
+ *    the job processes are killed and the job is re-queued
  *
- *    If -q was given (recover = 0), it is assumed that the whole
+ *    If -q was given (recover = JOB_RECOV_RQUE), it is assumed that the whole
  *    system, not just MOM, is coming up, the session ids are not valid;
  *    so no attempt is made to kill the job processes.  But the jobs are
  *    terminated and requeued.
+ * 
+ *    If the -P option was given (recover == JOB_RECOV_DELETE), no attempt is
+ *    made to recover the jobs. The jobs are deleted from the queue.
  */
 
 void init_abort_jobs(
@@ -1779,11 +1813,12 @@ void init_abort_jobs(
         log_buffer);
       }
 
-    if ((recover != 2) &&
+    if ((recover != JOB_RECOV_RUNNING) && (recover != JOB_RECOV_DELETE) &&
         ((pj->ji_qs.ji_substate == JOB_SUBSTATE_RUNNING) ||
          (pj->ji_qs.ji_substate == JOB_SUBSTATE_PRERUN) ||
          (pj->ji_qs.ji_substate == JOB_SUBSTATE_SUSPEND) ||
          (pj->ji_qs.ji_substate == JOB_SUBSTATE_EXITED) ||
+         (pj->ji_qs.ji_substate == JOB_SUBSTATE_NOTERM_REQUE) ||
          (pj->ji_qs.ji_substate == JOB_SUBSTATE_EXITING)))
       {
       if (LOGLEVEL >= 2)
@@ -1799,7 +1834,7 @@ void init_abort_jobs(
           log_buffer);
         }
 
-      if (recover != 0)
+      if (recover == JOB_RECOV_TERM_REQUE) /* -r option was used to start mom */
         {
         kill_job(pj, SIGKILL, id, "recover is non-zero");
         }
@@ -1883,13 +1918,16 @@ void init_abort_jobs(
         continue;
         }
 
-      pj->ji_qs.ji_substate = JOB_SUBSTATE_EXITING;
+      /* If mom was initialized with a -r any running processes have already
+         been killed. We set substate to JOB_SUBSTATE_NOTERM_REQUE so scan_for_exiting
+         will not try to kill the running processes for this job */
+      pj->ji_qs.ji_substate = JOB_SUBSTATE_NOTERM_REQUE;
 
       job_save(pj, SAVEJOB_QUICK);
 
       exiting_tasks = 1;
       }  /* END if ((recover != 2) && ...) */
-    else if (recover == 2)
+    else if (recover == JOB_RECOV_RUNNING || recover == JOB_RECOV_DELETE)
       {
       /*
        * add: 8/11/03 David.Singleton@anu.edu.au
@@ -1897,9 +1935,11 @@ void init_abort_jobs(
        * Lots of job structure components need to be
        * initialized if we are leaving this job
        * running,  this is just a few.
+       * Modified to accomodate JOB_RECOV_DELETE option
+       * 01/13/2009 Ken Nielson knielson@adaptivecomputing.com
        */
 
-      if (LOGLEVEL >= 2)
+      if (LOGLEVEL >= 2 && recover == JOB_RECOV_RUNNING)
         {
         sprintf(log_buffer, "attempting to recover job %s in state %s",
                 pj->ji_qs.ji_jobid,
@@ -1917,7 +1957,7 @@ void init_abort_jobs(
       if (sisters > 0)
         pj->ji_resources = (noderes *)calloc(sisters, sizeof(noderes));
 
-      if (mom_do_poll(pj))
+      if (mom_do_poll(pj) && (recover == JOB_RECOV_RUNNING))
         append_link(&mom_polljobs, &pj->ji_jobque, pj);
 
       if (pj->ji_grpcache == NULL)

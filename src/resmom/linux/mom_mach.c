@@ -3639,6 +3639,49 @@ char *size(
   }  /* END size() */
 
 
+/*
+ * This is for a mom starting with the -P option. Set all existing 
+ * tasks to TI_STATE_EXITED so they can be cleanup up on the mom 
+ * and at the server 
+ */
+void prepare_child_tasks_for_delete()
+{
+  char *id = "prepare_child_tasks_for_delete";
+  job *job;
+  extern tlist_head svr_alljobs;
+
+
+  for (job = GET_NEXT(svr_alljobs);job != NULL;job = GET_NEXT(job->ji_alljobs))
+    {
+    task *task;
+
+    for (task = GET_NEXT(job->ji_tasks);task != NULL;task = GET_NEXT(task->ti_jobtask))
+      {
+
+      char buf[128];
+
+      extern int exiting_tasks;
+
+      sprintf(buf, "preparing exited session %d for task %d in job %s for deletion",
+              task->ti_qs.ti_sid,
+              task->ti_qs.ti_task,
+              job->ji_qs.ji_jobid);
+
+      log_event(
+        PBSEVENT_JOB,
+        PBS_EVENTCLASS_JOB,
+        id,
+        buf);
+
+      task->ti_qs.ti_exitstat = 0;  /* actually unknown */
+      task->ti_qs.ti_status = TI_STATE_EXITED;
+
+      task_save(task);
+
+      exiting_tasks = 1;
+      }
+    }
+}
 
 
 
