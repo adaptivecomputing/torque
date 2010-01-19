@@ -1546,7 +1546,6 @@ int main(
 
 #ifndef USE_HA_THREADS
   close(lockfds);
-#endif /* !USE_HA_THREADS */
 
   if ((lockfds = open(lockfile, O_CREAT | O_TRUNC | O_WRONLY, 0600)) < 0)
     {
@@ -1560,6 +1559,9 @@ int main(
 
     exit(2);
     }
+
+#endif /* !USE_HA_THREADS */
+  /* no file descriptor was held if we're using ha threads */
 #endif /* OS_LOSES_FD_OVER_FORK */
 
 #ifdef USE_HA_THREADS
