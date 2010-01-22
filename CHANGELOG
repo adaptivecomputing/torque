@@ -74,6 +74,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   n - 01/18/2010. Items above this point merged into trunk.
   b - fixed a file descriptor error with high availability. Before it was possible
       to try to regain a file descriptor which was never held, now this is fixed.
+  b - No longer overwrites the user's environment when spoolasfinalname is set.
+      Now the environment is handled correctly.
 
 2.4.4
   b - fixed contrib/init.d/pbs_mom so that it doesn't overwrite $args defined in

@@ -5562,11 +5562,7 @@ char *std_file_name(
           {
           remove_leading_hostname(&jobpath);
 
-          if (expand_path(pjob,jobpath,sizeof(path),path) == SUCCESS)
-            {
-            return(path);
-            }
-          else
+          if (expand_path(pjob,jobpath,sizeof(path),path) != SUCCESS)
             {
             return(NULL);
             }
@@ -5588,11 +5584,7 @@ char *std_file_name(
           {
           remove_leading_hostname(&jobpath);
 
-          if (expand_path(pjob,jobpath,sizeof(path),path) == SUCCESS)
-            {
-            return(path);
-            }
-          else
+          if (expand_path(pjob,jobpath,sizeof(path),path) != SUCCESS)
             {
             return(NULL);
             }
@@ -5611,6 +5603,9 @@ char *std_file_name(
 			break;
 		}	 /* END switch (which) */
 
+  /* everything that changes the path here is ignored if spoolasfinalname is set
+   * to true. spoolasfinalname specifies directly spooling as the output file */
+
 	/* Is file to be kept?, if so, place the stderr/stdout files in the
 	 * path specified by the user. The path must be local to the execution node,
 	 * if a hostname is supplied, it will be stripped off. The only suppported
@@ -5622,67 +5617,73 @@ char *std_file_name(
 		{
 		/* yes, it is to be kept */
 
-		strcpy(path, pjob->ji_grpcache->gc_homedir);
+    if (spoolasfinalname == FALSE)
+      {
+  		strcpy(path, pjob->ji_grpcache->gc_homedir);
 
-		pd = strrchr(pjob->ji_wattr[(int)JOB_ATR_jobname].at_val.at_str, '/');
+	  	pd = strrchr(pjob->ji_wattr[(int)JOB_ATR_jobname].at_val.at_str, '/');
 
-		if (pd == NULL)
-			{
-			pd = pjob->ji_wattr[(int)JOB_ATR_jobname].at_val.at_str;
+		  if (pd == NULL)
+			  {
+  			pd = pjob->ji_wattr[(int)JOB_ATR_jobname].at_val.at_str;
 
-			strcat(path, "/");
-			}
+	  		strcat(path, "/");
+		  	}
+      
 
 #ifdef QSUB_KEEP_NO_OVERRIDE
-		/* don't do for checkpoint file names, only StdErr and StdOut */
+	  	/* don't do for checkpoint file names, only StdErr and StdOut */
 
-		if (strcmp(suffix, JOB_CHECKPOINT_SUFFIX) != 0)
-			{
-			pt = strstr(jobpath, "$HOME");
+  		if (strcmp(suffix, JOB_CHECKPOINT_SUFFIX) != 0)
+	  		{
+  			pt = strstr(jobpath, "$HOME");
 
-			if (pt != NULL)
-				{
-				strcpy(endpath, pt + 5);
-				strcpy(pt, pjob->ji_grpcache->gc_homedir);
-				strcat(jobpath, endpath);
-				}
+  			if (pt != NULL)
+				  {
+			  	strcpy(endpath, pt + 5);
+		  		strcpy(pt, pjob->ji_grpcache->gc_homedir);
+	  			strcat(jobpath, endpath);
+  				}
 
-			if ((strstr(jobpath, pd) == NULL) && (strchr(jobpath, '$') == NULL))
-				{
-				if (jobpath[strlen(jobpath) - 1] != '/')
-					{
-					strcat(jobpath, "/");
-					}
+		  	if ((strstr(jobpath, pd) == NULL) && (strchr(jobpath, '$') == NULL))
+	  			{
+  				if (jobpath[strlen(jobpath) - 1] != '/')
+				  	{
+			  		strcat(jobpath, "/");
+		  			}
 
-				pt = strchr(jobpath, ':');
+	  			pt = strchr(jobpath, ':');
 
-				if (pt == NULL)
-					{
-					strcpy(path, jobpath);
-					} else
-					{
-					strcpy(path, pt + 1);
-					}
-				}
-			}
+  				if (pt == NULL)
+			  		{
+		  			strcpy(path, jobpath);
+	  				} 
+          else
+  					{
+					  strcpy(path, pt + 1);
+				  	}
+			  	}
+		  	}
 #endif
 
-		strcat(path, pd);						 /* start with the job name */
+	  	strcat(path, pd);						 /* start with the job name */
 
-		len = strlen(path);
+  		len = strlen(path);
 
-		*(path + len++) = '.';					/* the dot        */
-		*(path + len++) = key;		 /* the letter     */
+		  *(path + len++) = '.';					/* the dot        */
+	  	*(path + len++) = key;		 /* the letter     */
 
-		pd = pjob->ji_qs.ji_jobid;			/* the seq_number */
+  		pd = pjob->ji_qs.ji_jobid;			/* the seq_number */
 
-		while (isdigit((int)*pd))
-			*(path + len++) = *pd++;
+	  	while (isdigit((int)*pd))
+	  		*(path + len++) = *pd++;
 
-		*(path + len) = '\0';
+  		*(path + len) = '\0';
+      } /* END if (spoolasfinalname == FALSE) */
 
 		*keeping = 1;
-		} else
+		} 
+  else
 		{
 		/* don't bother keeping output if the user actually wants to discard it */
 
@@ -5718,107 +5719,115 @@ char *std_file_name(
 
 #if NO_SPOOL_OUTPUT == 1
 
-		/* force all output to user's HOME */
+    if (spoolasfinalname == FALSE)
+      {
+  		/* force all output to user's HOME */
 
-		strncpy(path, pjob->ji_grpcache->gc_homedir, sizeof(path));
+	  	strncpy(path, pjob->ji_grpcache->gc_homedir, sizeof(path));
 
-		/* check for $HOME/.pbs_spool */
-		/* if it's not a directory, just use $HOME us usual */
+  		/* check for $HOME/.pbs_spool */
+	  	/* if it's not a directory, just use $HOME us usual */
 
-		strncpy(path_alt, path, sizeof(path_alt));
+		  strncpy(path_alt, path, sizeof(path_alt));
 
-		strncat(path_alt, "/.pbs_spool/", sizeof(path_alt));
+  		strncat(path_alt, "/.pbs_spool/", sizeof(path_alt));
 
-		if (seteuid(pjob->ji_qs.ji_un.ji_momt.ji_exuid) == -1)
-			{
-			return(NULL);
-			}
+	  	if (seteuid(pjob->ji_qs.ji_un.ji_momt.ji_exuid) == -1)
+		  	{
+			  return(NULL);
+  			}
 
-		rcstat = stat(path_alt, &myspooldir);
+	  	rcstat = stat(path_alt, &myspooldir);
 
-		seteuid(0);
+		  seteuid(0);
 
-		if ((rcstat == 0) && (S_ISDIR(myspooldir.st_mode)))
-			strncpy(path, path_alt, sizeof(path));
-		else
-			strncat(path, "/", sizeof(path));
+  		if ((rcstat == 0) && (S_ISDIR(myspooldir.st_mode)))
+	  		strncpy(path, path_alt, sizeof(path));
+		  else
+  			strncat(path, "/", sizeof(path));
 
-		*keeping = 1;
+	  	*keeping = 1;
 
-		if (LOGLEVEL >= 10)
-			{
-			sprintf(log_buffer, "%s path in NO_SPOOL_OUTPUT: %s",
-        id,
-        path);
+		  if (LOGLEVEL >= 10)
+			  {
+  			sprintf(log_buffer, "%s path in NO_SPOOL_OUTPUT: %s",
+          id,
+          path);
 
-			log_ext(-1, id, log_buffer, LOG_DEBUG);
-			}
+  			log_ext(-1, id, log_buffer, LOG_DEBUG);
+	  		}
+      } /* END if (spoolasfinalname == FALSE) */
 
 #else /* NO_SPOOL_OUTPUT */
 
-		if ((TNoSpoolDirList[0] != NULL))
-			{
-			int   dindex;
+    if (spoolasfinalname == FALSE)
+      {
+  		if ((TNoSpoolDirList[0] != NULL))
+	  		{
+		  	int   dindex;
 
-			char *wdir;
+			  char *wdir;
 
-			wdir = get_job_envvar(pjob, "PBS_O_WORKDIR");
+  			wdir = get_job_envvar(pjob, "PBS_O_WORKDIR");
 
-			if (LOGLEVEL >= 10)
-				{
-				sprintf(log_buffer, "wdir: %s",
-								wdir);
+	  		if (LOGLEVEL >= 10)
+		  		{
+			  	sprintf(log_buffer, "wdir: %s",
+				  	wdir);
 
-				log_ext(-1, id, log_buffer, LOG_DEBUG);
-				}
+  				log_ext(-1, id, log_buffer, LOG_DEBUG);
+	  			}
 
-			if (wdir != NULL)
-				{
-				/* check if job's work dir matches the no-spool directory list */
+		  	if (wdir != NULL)
+			  	{
+				  /* check if job's work dir matches the no-spool directory list */
 
-				if (LOGLEVEL >= 10)
-					log_ext(-1, id, "inside wdir != NULL", LOG_DEBUG);
+  				if (LOGLEVEL >= 10)
+	  				log_ext(-1, id, "inside wdir != NULL", LOG_DEBUG);
 
-				for (dindex = 0;dindex < TMAX_NSDCOUNT;dindex++)
-					{
-					if (TNoSpoolDirList[dindex] == NULL)
-						break;
+		  		for (dindex = 0;dindex < TMAX_NSDCOUNT;dindex++)
+			  		{
+				  	if (TNoSpoolDirList[dindex] == NULL)
+					  	break;
 
-					if (!strcasecmp(TNoSpoolDirList[dindex], "$WORKDIR") ||
-							!strcmp(TNoSpoolDirList[dindex], "*"))
-						{
-						havehomespool = 1;
+  					if (!strcasecmp(TNoSpoolDirList[dindex], "$WORKDIR") ||
+	  						!strcmp(TNoSpoolDirList[dindex], "*"))
+		  				{
+			  			havehomespool = 1;
 
-						if (LOGLEVEL >= 10)
-							log_ext(-1, id, "inside !strcasecmp", LOG_DEBUG);
+				  		if (LOGLEVEL >= 10)
+					  		log_ext(-1, id, "inside !strcasecmp", LOG_DEBUG);
 
-						strncpy(path, wdir, sizeof(path));
+						  strncpy(path, wdir, sizeof(path));
 
-						break;
-						}
+  						break;
+	  					}
 
-					if (!strncmp(TNoSpoolDirList[dindex], wdir, strlen(TNoSpoolDirList[dindex])))
-						{
-						havehomespool = 1;
+		  			if (!strncmp(TNoSpoolDirList[dindex], wdir, strlen(TNoSpoolDirList[dindex])))
+			  			{
+				  		havehomespool = 1;
 
-						if (LOGLEVEL >= 10)
-							log_ext(-1, id, "inside !strncmp", LOG_DEBUG);
+					  	if (LOGLEVEL >= 10)
+						  	log_ext(-1, id, "inside !strncmp", LOG_DEBUG);
 
-						strncpy(path, wdir, sizeof(path));
+  						strncpy(path, wdir, sizeof(path));
 
-						break;
-						}
-					}	 /* END for (dindex) */
-				}		 /* END if (wdir != NULL) */
-			}			 /* END if (TNoSpoolDirList != NULL) */
+	  					break;
+		  				}
+				  	}	 /* END for (dindex) */
+  				}		 /* END if (wdir != NULL) */
+  			}			 /* END if (TNoSpoolDirList != NULL) */
 
-		if (havehomespool == 0)
-			{
-			strncpy(path, path_spool, sizeof(path));
-			} else
-			{
-			strncat(path, "/", sizeof(path));
-			}
+		  if (havehomespool == 0)
+			  {
+  			strncpy(path, path_spool, sizeof(path));
+	  		} 
+      else
+		  	{
+			  strncat(path, "/", sizeof(path));
+  			}
+
+      } /* END if (spoolasfinalname == FALSE) */
 
 		*keeping = 0;
 
@@ -5832,20 +5841,22 @@ char *std_file_name(
 			}
 
 #endif /* NO_SPOOL_OUTPUT */
+    if (spoolasfinalname == FALSE)
+      {
+  		strncat(path, pjob->ji_qs.ji_fileprefix, (sizeof(path) - strlen(path) - 1));
 
-		strncat(path, pjob->ji_qs.ji_fileprefix, (sizeof(path) - strlen(path) - 1));
+	  	strncat(path, suffix, (sizeof(path) - strlen(path) - 1));
 
-		strncat(path, suffix, (sizeof(path) - strlen(path) - 1));
+		  if (LOGLEVEL >= 10)
+			  {
+  			sprintf(log_buffer, "path: '%s'  prefix: '%s'  suffix: '%s'",
+					path,
+					pjob->ji_qs.ji_fileprefix,
+					suffix);
 
-		if (LOGLEVEL >= 10)
-			{
-			sprintf(log_buffer, "path: '%s'  prefix: '%s'  suffix: '%s'",
-							path,
-							pjob->ji_qs.ji_fileprefix,
-							suffix);
-
-			log_ext(-1, id, log_buffer, LOG_DEBUG);
-			}
+	  		log_ext(-1, id, log_buffer, LOG_DEBUG);
+		  	}
+      } /* END if (spoolasfinalname == FALSE) */
 		}		 /* END else ((pjob->ji_wattr[(int)JOB_ATR_keep].at_flags & ...)) */
 
 	return(path);
@@ -7069,15 +7080,8 @@ int expand_path(
     return(FAILURE);
     }
 
-  if (pjob != NULL)
-    {
-    InitUserEnv(pjob, NULL, NULL, NULL, NULL);
-    *(vtable.v_envp + vtable.v_used) = NULL;
-    environ = vtable.v_envp;
-    }
-
-  /* initialize the path to empty */
-  path[0] = '\0';
+  *(vtable.v_envp + vtable.v_used) = NULL;
+  environ = vtable.v_envp;
 
   /* expand the path */
   switch (wordexp(path_in, &exp, WRDE_NOCMD | WRDE_UNDEF))
