@@ -7061,7 +7061,7 @@ int expand_path(
   job  *pjob,     /* I optional */
   char *path_in,  /* I */
   int   pathlen,  /* I */
-  char *path)     /* I/O */
+  char *path)     /* I */
 
 {
 #ifndef HAVE_WORDEXP
@@ -7080,8 +7080,27 @@ int expand_path(
     return(FAILURE);
     }
 
-  *(vtable.v_envp + vtable.v_used) = NULL;
-  environ = vtable.v_envp;
+  if (vtable.v_envp == NULL)
+    {
+    if (pjob != NULL)
+      {
+      InitUserEnv(pjob,NULL,NULL,NULL,NULL);
+      *(vtable.v_envp + vtable.v_used) = NULL;
+      environ = vtable.v_envp;
+      }
+    else
+      {
+      /* if there is no environment, there's no way to expand words */
+      path = path_in;
+      return(SUCCESS);
+      }
+    }
+  else
+    {
+    *(vtable.v_envp + vtable.v_used) = NULL;
+    environ = vtable.v_envp;
+    }
+
 
   /* expand the path */
   switch (wordexp(path_in, &exp, WRDE_NOCMD | WRDE_UNDEF))
