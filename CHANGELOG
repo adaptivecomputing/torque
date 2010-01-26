@@ -52,6 +52,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   e - print a more informative error if pbs_iff isn't found when trying to
       authenticate a client
   n - 01/18/2010. Merged 2.4.5 revisions 3268-3375. 
+  e - added qmgr server attribute job_start_timeout, specifies timeout to be
+      used for sending job to mom. If not set, tcp_timeout is used.
 
 2.4.5
   b - epilogue.user scripts were being run with prologue argments. Fixed

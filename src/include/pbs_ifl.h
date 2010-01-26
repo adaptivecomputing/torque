@@ -270,6 +270,7 @@
 #define ATTR_npdefault  "np_default"
 #define ATTR_clonebatchsize "clone_batch_size"
 #define ATTR_clonebatchdelay "clone_batch_delay"
+#define ATTR_jobstarttimeout "job_start_timeout"
 
 /* additional node "attributes" names */
 

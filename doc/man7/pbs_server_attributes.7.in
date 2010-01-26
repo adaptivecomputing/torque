@@ -238,6 +238,14 @@ with job restarts, migrations, and checkpointing.  Format: boolean; default valu
 .if !\n(Pb .ig Ig
 [internal type: boolean]
 .Ig
+.Al job_start_timeout
+Specifies the pbs_server to pbs_mom TCP socket timeout in seconds that is used
+when the pbs_server sends a job start to the pbs_mom.  It is useful when the mom
+has extra overhead involved in starting jobs.  If not specified then the
+tcp_timeout value is used.
+.if !\n(Pb .ig Ig
+[internal type: integer]
+.Ig
 .Al job_stat_rate
 Moderates how often job stat requests will be issued from pbs_server
 to the MOM daemons.  If poll_jobs is unset or false, then all jobs that
@@ -613,6 +621,12 @@ Starts.\*U
 [default value: none, cost of resource is not computed]
 .if !\n(Pb .ig Ig
 [internal type: list]
+.Ig
+.Al tcp_timeout
+Specifies the pbs_server to pbs_mom TCP socket timeout in seconds.
+Format: integer; default value: 6.
+.if !\n(Pb .ig Ig
+[internal type: integer]
 .Ig
 .RE
 .LP
