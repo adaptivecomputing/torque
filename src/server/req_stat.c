@@ -831,6 +831,14 @@ static void stat_update(
           svr_mailowner(pjob, MAIL_BEGIN, MAIL_NORMAL, NULL);
           }
 
+#ifdef USESAVEDRESOURCES
+        else
+          {
+          /* save so we can recover resources used */
+          job_save(pjob, SAVEJOB_FULL);
+          }
+#endif    /* USESAVEDRESOURCES */
+
         pjob->ji_momstat = time_now;
         }
 

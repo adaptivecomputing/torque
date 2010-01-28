@@ -2113,6 +2113,118 @@ static int setrerun(
 
 
 
+/**
+ * Gets the latest stored used resource information (cput, mem, walltime, etc.)
+ * about the given job. 
+ *
+ */
+
+int get_used(
+
+  svrattrl   *patlist,   /* I */
+  char       *acctbuf)  /* O */
+
+  {
+  int       retval = FALSE;
+  int       amt;
+  int       need;
+
+  amt = RESC_USED_BUF - strlen(acctbuf);
+
+  while (patlist != NULL)
+    {
+    if (strcmp(patlist->al_name, ATTR_session) == 0)
+      {
+      patlist = (svrattrl *)GET_NEXT(patlist->al_link);
+      continue;
+      }
+
+    need = strlen(patlist->al_name) + strlen(patlist->al_value) + 3;
+
+    if (patlist->al_resc)
+      {
+      need += strlen(patlist->al_resc) + 3;
+      }
+
+    if (need < amt)
+      {
+      strcat(acctbuf, "\n");
+      strcat(acctbuf, patlist->al_name);
+
+      if (patlist->al_resc)
+        {
+        strcat(acctbuf, ".");
+        strcat(acctbuf, patlist->al_resc);
+        }
+
+      strcat(acctbuf, "=");
+
+      strcat(acctbuf, patlist->al_value);
+
+      amt -= need;
+      }
+
+    retval = TRUE;
+
+    patlist = (svrattrl *)GET_NEXT(patlist->al_link);
+    }
+
+  return (retval);
+  }  /* END get_used() */
+
+
+/**
+ * Encodes the used resource information (cput, mem, walltime, etc.)
+ * about the given job.
+ *
+ */
+
+#ifdef USESAVEDRESOURCES
+void encode_job_used(
+
+  job        *pjob,   /* I */
+  tlist_head *phead)  /* O */
+
+  {
+  attribute  *at;
+  attribute_def  *ad;
+  resource  *rs;
+
+  at = &pjob->ji_wattr[JOB_ATR_resc_used];
+  ad = &job_attr_def[JOB_ATR_resc_used];
+
+  if ((at->at_flags & ATR_VFLAG_SET) == 0)
+    {
+    return;
+    }
+
+  for (rs = (resource *)GET_NEXT(at->at_val.at_list);
+       rs != NULL;
+       rs = (resource *)GET_NEXT(rs->rs_link))
+    {
+    resource_def *rd = rs->rs_defin;
+    attribute     val;
+    int           rc;
+
+    val = rs->rs_value; /* copy resource attribute */
+
+    rc = rd->rs_encode(
+
+           &val,
+           phead,
+           ad->at_name,
+           rd->rs_name,
+           ATR_ENCODE_CLIENT);
+
+    if (rc < 0)
+      break;
+    }  /* END for (rs) */
+
+  return;
+  }  /* END encode_job_used() */
+#endif    /* USESAVEDRESOURCES */
+
+
 
 
 
@@ -2126,19 +2238,21 @@ void req_jobobit(
   struct batch_request *preq)  /* I */
 
   {
+#ifdef USESAVEDRESOURCES
+  char   id[] = "req_jobobit";
+#endif    /* USESAVEDRESOURCES */
   int    alreadymailed = 0;
-  int    amt;
   int    bad;
-  char     acctbuf[RESC_USED_BUF];
+  char   acctbuf[RESC_USED_BUF];
   int    accttail;
   int    exitstatus;
-  char    mailbuf[RESC_USED_BUF];
-  int    need;
+  int    have_resc_used = FALSE;
+  char   mailbuf[RESC_USED_BUF];
   int    newstate;
   int    newsubst;
   char   *pc;
-  job   *pjob;
-  char        jobid[PBS_MAXSVRJOBID+1];
+  job    *pjob;
+  char   jobid[PBS_MAXSVRJOBID+1];
 
   struct work_task *ptask;
   svrattrl  *patlist;
@@ -2285,37 +2399,53 @@ void req_jobobit(
 
   accttail = strlen(acctbuf);
 
-  amt = RESC_USED_BUF - accttail;
+  have_resc_used = get_used(patlist, acctbuf);
 
-  while (patlist != NULL)
+#ifdef USESAVEDRESOURCES
+
+  /* if we don't have resources from the obit, use what the job already had */
+
+  if (!have_resc_used)
     {
-    need = strlen(patlist->al_name) + strlen(patlist->al_value) + 3;
-
-    if (patlist->al_resc)
+    struct batch_request *tmppreq;
+    if (LOGLEVEL >= 7)
       {
-      need += strlen(patlist->al_resc) + 3;
+      log_event(
+        PBSEVENT_ERROR | PBSEVENT_JOB,
+        PBS_EVENTCLASS_JOB,
+        jobid,
+        "No resources used found");
       }
 
-    if (need < amt)
+    tmppreq = alloc_br(PBS_BATCH_JobObit);
+
+    if (tmppreq == NULL)
       {
-      strcat(acctbuf, "\n");
-      strcat(acctbuf, patlist->al_name);
+      /* FAILURE */
 
-      if (patlist->al_resc)
-        {
-        strcat(acctbuf, ".");
-        strcat(acctbuf, patlist->al_resc);
-        }
+      sprintf(log_buffer, "cannot allocate memory for temp obit message");
 
-      strcat(acctbuf, "=");
+      LOG_EVENT(
+        PBSEVENT_DEBUG,
+        PBS_EVENTCLASS_REQUEST,
+        id,
+        log_buffer);
 
-      strcat(acctbuf, patlist->al_value);
-
-      amt -= need;
+      return;
       }
 
-    patlist = (svrattrl *)GET_NEXT(patlist->al_link);
+    CLEAR_HEAD(tmppreq->rq_ind.rq_jobobit.rq_attr);
+
+    encode_job_used(pjob, &tmppreq->rq_ind.rq_jobobit.rq_attr);
+
+    patlist = (svrattrl *)GET_NEXT(tmppreq->rq_ind.rq_jobobit.rq_attr);
+
+    have_resc_used = get_used(patlist, acctbuf);
+    
+    free_br(tmppreq);
     }
+
+#endif    /* USESAVEDRESOURCES */
 
   strncat(mailbuf, (acctbuf + accttail), RESC_USED_BUF - strlen(mailbuf) - 1);
 

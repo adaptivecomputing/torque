@@ -639,6 +639,10 @@ typedef struct infoent
 #define TI_FLAGS_INIT           1  /* task has called tm_init */
 #define TI_FLAGS_CHECKPOINT     2  /* task has checkpointed */
 
+#ifdef USESAVEDRESOURCES
+#define TI_FLAGS_RECOVERY       4  /* recovering dead task on restart */
+#endif    /* USESAVEDRESOURCES */
+
 #define TI_STATE_EMBRYO  0
 #define TI_STATE_RUNNING 1    /* includes suspended jobs */
 #define TI_STATE_EXITED  2  /* ti_exitstat valid */

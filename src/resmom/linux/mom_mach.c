@@ -3699,6 +3699,9 @@ void scan_non_child_tasks(void)
 
   job *job;
   extern tlist_head svr_alljobs;
+#ifdef USESAVEDRESOURCES
+  static int first_time = TRUE;
+#endif    /* USESAVEDRESOURCES */
 
   DIR *pdir;  /* use local pdir to prevent race conditions associated w/global pdir (VPAC) */
 
@@ -3775,6 +3778,13 @@ void scan_non_child_tasks(void)
 
         task->ti_qs.ti_exitstat = 0;  /* actually unknown */
         task->ti_qs.ti_status = TI_STATE_EXITED;
+        
+#ifdef USESAVEDRESOURCES
+        if (first_time)
+          {
+          task->ti_flags |= TI_FLAGS_RECOVERY;
+          }
+#endif    /* USESAVEDRESOURCES */
 
         task_save(task);
 
@@ -3784,6 +3794,10 @@ void scan_non_child_tasks(void)
     }    /* END for (job = GET_NEXT(svr_alljobs)) */
 
   closedir(pdir);
+  
+#ifdef USESAVEDRESOURCES
+  first_time = FALSE;
+#endif    /* USESAVEDRESOURCES */
 
   return;
   }  /* END scan_non_child_tasks() */
