@@ -2163,7 +2163,7 @@ void set_resc_deflt(
 
   /* apply queue max limits first since they take precedence */
 
-#ifndef RESOURCEMAXNOTDEFAULT
+#ifdef RESOURCEMAXDEFAULT
   set_deflt_resc(ja, &pque->qu_attr[(int)QA_ATR_ResourceMax]);
 
   /* server max limits will only be applied to attributes which have

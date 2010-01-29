@@ -97,13 +97,15 @@ dnl
 dnl  ######################################################################
 dnl  Resource max not default mode?
 dnl
-AC_MSG_CHECKING([whether to turn on the RESOURCEMAXNOTDEFAULT flag])
-AC_ARG_ENABLE(maxnotdefault,
-    [  --enable-maxnotdefault  turn on the RESOURCEMAXNOTDEFAULT flag],
-    enable_maxnotdefault=$enableval, enable_maxnotdefault=no)
-AC_MSG_RESULT($enable_maxnotdefault)
-if test "x$enable_maxnotdefault" = "xyes" ; then
-	AC_DEFINE(RESOURCEMAXNOTDEFAULT, 1, [turns on the compilation of RESOURCEMAXNOTDEFAULT code])
+dnl  NOTE: due to confusion we are changing MAX to not be default by default
+dnl
+AC_MSG_CHECKING([whether to turn on the RESOURCEMAXDEFAULT flag])
+AC_ARG_ENABLE(maxdefault,
+    [  --enable-maxdefault  turn on the RESOURCEMAXDEFAULT flag],
+    enable_maxdefault=$enableval, enable_maxdefault=no)
+AC_MSG_RESULT($enable_maxdefault)
+if test "x$enable_maxdefault" = "xyes" ; then
+	AC_DEFINE(RESOURCEMAXDEFAULT, 1, [turns on the compilation of RESOURCEMAXDEFAULT code])
 fi
 
 
