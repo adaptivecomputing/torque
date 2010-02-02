@@ -975,7 +975,26 @@ int post_epilogue(
 
   resc_access_perm = ATR_DFLAG_RDACC;
 
+#ifdef USESAVEDRESOURCES
+
+  if ((pjob->ji_flags & MOM_JOB_RECOVERY) == 0)
+    {
+    encode_used(pjob, &preq->rq_ind.rq_jobobit.rq_attr);
+    }
+  else if (LOGLEVEL >= 7)
+    {
+    LOG_EVENT(
+      PBSEVENT_DEBUG,
+      PBS_EVENTCLASS_JOB,
+      pjob->ji_qs.ji_jobid,
+      "NOT encoding used resources for job");
+    }
+
+#else
+
   encode_used(pjob, &preq->rq_ind.rq_jobobit.rq_attr);
+
+#endif    /* USESAVEDRESOURCES */
 
   encode_flagged_attrs(pjob, &preq->rq_ind.rq_jobobit.rq_attr);
 

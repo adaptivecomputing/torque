@@ -8030,6 +8030,9 @@ void main_loop(void)
   double        myla;
   job          *pjob;
   time_t        tmpTime;
+#ifdef USESAVEDRESOURCES
+  int           check_dead = TRUE;
+#endif    /* USESAVEDRESOURCES */
 
   mom_run_state = MOM_RUN_STATE_RUNNING;  /* mom_run_state is altered by stop_me() or MOMCheckRestart() */
 
@@ -8098,6 +8101,17 @@ void main_loop(void)
 
       mom_server_all_send_state();
 
+#ifdef USESAVEDRESOURCES
+
+      /* if -p, must poll tasks inside jobs to look for completion */
+
+      if ((check_dead) && (recover == JOB_RECOV_RUNNING))
+        {
+        scan_non_child_tasks();
+        }
+
+#endif    /* USESAVEDRESOURCES */
+
       if (time_now >= (last_poll_time + CheckPollTime))
         {
         last_poll_time = time_now;
@@ -8119,6 +8133,10 @@ void main_loop(void)
           }
         }
       }  /* END BLOCK */
+
+#ifdef USESAVEDRESOURCES
+      check_dead = FALSE;
+#endif    /* USESAVEDRESOURCES */
 
 #ifndef NOSIGCHLDMOM
     if (termin_child != 0)  /* termin_child is a flag set by the catch_child signal handler */

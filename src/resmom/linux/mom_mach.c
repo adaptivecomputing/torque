@@ -3732,15 +3732,26 @@ void scan_non_child_tasks(void)
 
         task->ti_qs.ti_exitstat = 0;  /* actually unknown */
         task->ti_qs.ti_status = TI_STATE_EXITED;
-        
+
+        task_save(task);
+
 #ifdef USESAVEDRESOURCES
         if (first_time)
           {
-          task->ti_flags |= TI_FLAGS_RECOVERY;
+          job->ji_flags |= MOM_JOB_RECOVERY;
+          if (LOGLEVEL >= 7)
+            {
+            sprintf(buf, "marking job as MOM_JOB_RECOVERY for task %d",
+                task->ti_qs.ti_task);
+
+            LOG_EVENT(
+              PBSEVENT_DEBUG,
+              PBS_EVENTCLASS_JOB,
+              job->ji_qs.ji_jobid,
+              buf);
+            }
           }
 #endif    /* USESAVEDRESOURCES */
-
-        task_save(task);
 
         exiting_tasks = 1;
         }

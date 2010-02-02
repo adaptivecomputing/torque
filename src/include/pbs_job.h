@@ -368,6 +368,11 @@ typedef struct noderes
 #define MOM_HAS_NODEFILE 4 /* Mom wrote job PBS_NODEFILE */
 #define MOM_NO_PROC  8 /* no procs found for job */
 #define MOM_HAS_TMPDIR  16 /* Mom made a tmpdir */
+
+#ifdef USESAVEDRESOURCES
+#define MOM_JOB_RECOVERY   32  /* recovering dead job on restart */
+#endif    /* USESAVEDRESOURCES */
+
 #endif /* MOM */
 
 
@@ -638,10 +643,6 @@ typedef struct infoent
 
 #define TI_FLAGS_INIT           1  /* task has called tm_init */
 #define TI_FLAGS_CHECKPOINT     2  /* task has checkpointed */
-
-#ifdef USESAVEDRESOURCES
-#define TI_FLAGS_RECOVERY       4  /* recovering dead task on restart */
-#endif    /* USESAVEDRESOURCES */
 
 #define TI_STATE_EMBRYO  0
 #define TI_STATE_RUNNING 1    /* includes suspended jobs */
