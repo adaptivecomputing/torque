@@ -7024,7 +7024,7 @@ void add_wkm_end(
 								job_id,
 								pbs_jobid);
 
-				log_extt(-1, id, log_buffer, LOG_DEBUG);
+				log_ext(-1, id, log_buffer, LOG_DEBUG);
 				}
 			} else if (LOGLEVEL >= 2)
 			{
