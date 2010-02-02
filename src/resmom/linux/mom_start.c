@@ -148,34 +148,10 @@ int set_job(
 
   long  sid;
 
-#ifdef __XTTEST
-  char  tmpLine[1024];
-#endif /* __ XTTEST */
-
   sid = setsid();
 
   if (sjr != NULL)
     sjr->sj_session = sid;
-
-#ifdef __XTTEST
-  PPtr = get_job_envvar(pjob, "BATCH_PARTITION_ID");
-
-  CPtr = get_job_envvar(pjob, "BATCH_ALLOC_COOKIE");
-
-  sprintf(tmpLine, "echo \"P:'%s' C:'%s'\" >> /tmp/dog",
-          (PPtr != NULL) ? PPtr : "NULL",
-          (CPtr != NULL) ? CPtr : "NULL");
-
-  rc = system(tmpLine);
-
-  if (WEXITSTATUS(rc) != 0)
-    {
-    snprintf(log_buffer, 1024, "cannot create alloc partition");
-
-    return(-2);
-    }
-
-#endif /* __ XTTEST */
 
   /* NOTE:  only activate partition create script for XT4+ environments */
 
