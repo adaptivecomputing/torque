@@ -542,6 +542,8 @@ int issue_Drequest(
 
       break;
 
+    case PBS_BATCH_AsySignalJob:
+
     case PBS_BATCH_SignalJob:
 
       rc = PBSD_sig_put(

@@ -104,6 +104,7 @@ int main(
   int c;
   int errflg = 0;
   int any_failed = 0;
+  int runAsync = FALSE;
 
   char job_id[PBS_MAXCLTJOBID];       /* from the command line */
 
@@ -114,11 +115,17 @@ int main(
 #define MAX_SIGNAL_TYPE_LEN 32
   static char sig_string[MAX_SIGNAL_TYPE_LEN+1] = "SIGTERM";
 
-#define GETOPT_ARGS "s:"
+#define GETOPT_ARGS "as:"
 
   while ((c = getopt(argc, argv, GETOPT_ARGS)) != EOF)
     switch (c)
       {
+
+      case 'a':
+
+        runAsync = TRUE;
+
+        break;
 
       case 's':
         strcpy(sig_string, optarg);
@@ -130,7 +137,7 @@ int main(
 
   if (errflg || optind >= argc)
     {
-    static char usage[] = "usage: qsig [-s signal] job_identifier...\n";
+    static char usage[] = "usage: qsig [-a] [-s signal] job_identifier...\n";
     fprintf(stderr,"%s", usage);
     exit(2);
     }
@@ -162,7 +169,14 @@ cnt:
       continue;
       }
 
-    stat = pbs_sigjob(connect, job_id_out, sig_string, NULL);
+    if (runAsync == TRUE)
+      {
+      stat = pbs_sigjobasync(connect,job_id_out,sig_string,NULL);
+      }
+    else
+      {
+      stat = pbs_sigjob(connect, job_id_out, sig_string, NULL);
+      }
 
     if (stat && (pbs_errno != PBSE_UNKJOBID))
       {

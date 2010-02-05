@@ -119,3 +119,34 @@ char *extend;
 
   return rc;
   }
+
+
+int PBSD_async_sig_put(c,jobid,signal,extend)
+int c;
+char *jobid;
+char *signal;
+char *extend;
+  {
+  int sock;
+  int rc = 0;
+
+  sock = connection[c].ch_socket;
+  DIS_tcp_setup(sock);
+
+  if ((rc = encode_DIS_ReqHdr(sock,PBS_BATCH_SignalJob,pbs_current_user)) ||
+      (rc = encode_DIS_SignalJob(sock,jobid,signal)) ||
+      (rc = encode_DIS_ReqExtend(sock,extend)))
+    {
+    connection[c].ch_errtxt = strdup(dis_emsg[rc]);
+    return (pbs_errno = PBSE_PROTOCOL);
+    }
+    
+  if (DIS_tcp_wflush(sock))
+    {
+    pbs_errno = PBSE_PROTOCOL;
+    rc = pbs_errno;
+    }
+
+  return(rc);
+  }
+

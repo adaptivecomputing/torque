@@ -191,6 +191,12 @@ void req_signaljob(
       log_buffer);
     }
 
+  /* send reply for asynchronous suspend */
+  if (preq->rq_type == PBS_BATCH_AsySignalJob)
+    {
+    reply_ack(preq);
+    }
+
   /* pass the request on to MOM */
 
   if ((rc = relay_to_mom(

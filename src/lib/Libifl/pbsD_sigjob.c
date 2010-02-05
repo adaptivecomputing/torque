@@ -113,3 +113,37 @@ char *extend;
 
   return (connection[c].ch_errno);
   }
+
+
+int pbs_sigjobasync(
+
+  int c,
+  char *jobid,
+  char *signal,
+  char *extend)
+
+  {
+  int rc = 0;
+
+  struct batch_reply *reply;
+
+  if ((jobid == (char *)0) || (*jobid == '\0') ||
+      (signal == (char *)0) || (*jobid == '\0'))
+    return (pbs_errno = PBSE_IVALREQ);
+
+  /* send request */
+
+  if ((rc = PBSD_async_sig_put(c, jobid, signal, extend)) != 0)
+    return (rc);
+
+  /* read reply */
+
+  reply = PBSD_rdrpy(c);
+
+  PBSD_FreeReply(reply);
+
+  return (connection[c].ch_errno);
+  
+  }
+
+

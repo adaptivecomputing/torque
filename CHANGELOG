@@ -58,6 +58,9 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       for accounting end record instead of current resources used for jobs that
       stopped running while mom was not up.
 
+2.4.6
+  f - added an asynchronous option for qsig, specified with -a.
+
 2.4.5
   b - epilogue.user scripts were being run with prologue argments. Fixed
       bug in run_pelog() to include PE_EPILOGUSER so epilogue arguments get
