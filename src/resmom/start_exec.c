@@ -348,10 +348,10 @@ struct passwd *check_pwd(
   	return(NULL);
   	}
 
-#ief __CYGWIN__
+#ifdef __CYGWIN__
   if (IamUserByName(ptr) == 0)
   		return(NULL);
-#eif  /* __CYGWIN__ */
+#endif  /* __CYGWIN__ */
 
   if (pjob->ji_grpcache != NULL)
   	{
