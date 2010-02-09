@@ -187,44 +187,44 @@ static pid_t    shellpid;	/* shell part of interactive job  */
 /* sync w/variables_else[] */
 
 enum TVarElseEnum
-	{
-	tveHome = 0,
-	tveLogName,
-	tveJobName,
-	tveJobID,
-	tveQueue,
-	tveShell,
-	tveUser,
-	tveJobCookie,
-	tveNodeNum,
-	tveTaskNum,
-	tveMOMPort,
-	tveNodeFile,
-	tveNumNodes,
-	tveTmpDir,
-	tveVerID,
-	tveLAST
-	};
+  {
+  tveHome = 0,
+  tveLogName,
+  tveJobName,
+  tveJobID,
+  tveQueue,
+  tveShell,
+  tveUser,
+  tveJobCookie,
+  tveNodeNum,
+  tveTaskNum,
+  tveMOMPort,
+  tveNodeFile,
+  tveNumNodes,
+  tveTmpDir,
+  tveVerID,
+  tveLAST
+  };
 
 static char *variables_else[] =   /* variables to add, value computed */
-{
-	"HOME",
-	"LOGNAME",
-	"PBS_JOBNAME",
-	"PBS_JOBID",
-	"PBS_QUEUE",
-	"SHELL",
-	"USER",
-	"PBS_JOBCOOKIE",
-	"PBS_NODENUM",
-	"PBS_TASKNUM",
-	"PBS_MOMPORT",
-	"PBS_NODEFILE",
-	"PBS_NNODES",		 /* number of nodes */
-	"TMPDIR",
-	"PBS_VERSION",
-	NULL
-};
+  {
+  "HOME",
+  "LOGNAME",
+  "PBS_JOBNAME",
+  "PBS_JOBID",
+  "PBS_QUEUE",
+  "SHELL",
+  "USER",
+  "PBS_JOBCOOKIE",
+  "PBS_NODENUM",
+  "PBS_TASKNUM",
+  "PBS_MOMPORT",
+  "PBS_NODEFILE",
+  "PBS_NNODES",		 /* number of nodes */
+  "TMPDIR",
+  "PBS_VERSION",
+  NULL
+  };
 
 static int num_var_else = tveLAST;
 
@@ -272,12 +272,12 @@ void add_wkm_end(uint64_t, int64_t, char *);
 
 /* valid commands for csaswitch checking */
 enum csa_chk_cmd
-	{
-	IS_INSTALLED = 0,
-	IS_UP = 1
-	};
+    {
+  IS_INSTALLED = 0,
+  IS_UP = 1
+  };
 
-	#define JOB_FAIL               (jid_t)-1
+  #define JOB_FAIL               (jid_t)-1
 
 #endif /* ENABLE_CSA */
 
@@ -298,169 +298,163 @@ enum csa_chk_cmd
  */
 
 static void no_hang(
+  int sig)	 /* I (not used) */
 
-									 int sig)	 /* I (not used) */
-
-{
-	LOG_EVENT(
-					 PBSEVENT_JOB,
-					 PBS_EVENTCLASS_REQUEST,
-					 " ",
-					 "alarm timed-out connect to qsub");
-
-	return;
-}	 /* END no_hang() */
-
-
+  {
+   LOG_EVENT(
+     			   PBSEVENT_JOB,
+     			   PBS_EVENTCLASS_REQUEST,
+     			   " ",
+     			   "alarm timed-out connect to qsub");
+  
+   return;
+  }	 /* END no_hang() */
 
 
 
 struct passwd *check_pwd(
+  job *pjob) /* I (modified) */
 
-												job *pjob)
+  {
 
-/* I (modified) */
-	{
+  struct passwd *pwdp;
 
-	struct passwd *pwdp;
+  struct group *grpp;
 
-	struct group *grpp;
+  char          *ptr;
 
-	char          *ptr;
+  /* NOTE:  should cache entire pwd object (NYI) */
 
-	/* NOTE:  should cache entire pwd object (NYI) */
+  ptr = pjob->ji_wattr[(int)JOB_ATR_euser].at_val.at_str;
 
-	ptr = pjob->ji_wattr[(int)JOB_ATR_euser].at_val.at_str;
+  if (ptr == NULL)
+  	{
+  	/* FAILURE */
 
-	if (ptr == NULL)
-		{
-		/* FAILURE */
+  	sprintf(log_buffer, "no user specified for job");
 
-		sprintf(log_buffer, "no user specified for job");
+  	return(NULL);
+  	}
 
-		return(NULL);
-		}
+  pwdp = getpwnam(ptr);
 
-	pwdp = getpwnam(ptr);
+  if (pwdp == NULL)
+  	{
+  	/* FAILURE */
 
-	if (pwdp == NULL)
-		{
-		/* FAILURE */
+  	sprintf(log_buffer, "no password entry for user %s",
+  					ptr);
 
-		sprintf(log_buffer, "no password entry for user %s",
-						ptr);
+  	return(NULL);
+  	}
 
-		return(NULL);
-		}
+#ief __CYGWIN__
+  if (IamUserByName(ptr) == 0)
+  		return(NULL);
+#eif  /* __CYGWIN__ */
 
-#ifdef __CYGWIN__
-	if (IamUserByName(ptr) == 0)
-    		return(NULL);
-#endif  /* __CYGWIN__ */
+  if (pjob->ji_grpcache != NULL)
+  	{
+  	/* SUCCESS */
 
-	if (pjob->ji_grpcache != NULL)
-		{
-		/* SUCCESS */
+  	/* group cache previously loaded and cached */
 
-		/* group cache previously loaded and cached */
+  	return(pwdp);
+  	}
 
-		return(pwdp);
-		}
+  pjob->ji_qs.ji_un_type = JOB_UNION_TYPE_MOM;
 
-	pjob->ji_qs.ji_un_type = JOB_UNION_TYPE_MOM;
+  pjob->ji_qs.ji_un.ji_momt.ji_exuid = pwdp->pw_uid;
 
-	pjob->ji_qs.ji_un.ji_momt.ji_exuid = pwdp->pw_uid;
+  pjob->ji_grpcache = malloc(
+  													sizeof(struct grpcache) + strlen(pwdp->pw_dir) + 1);
 
-	pjob->ji_grpcache = malloc(
-														sizeof(struct grpcache) + strlen(pwdp->pw_dir) + 1);
+  if (pjob->ji_grpcache == NULL)
+  	{
+  	/* FAILURE */
 
-	if (pjob->ji_grpcache == NULL)
-		{
-		/* FAILURE */
+  	sprintf(log_buffer, "malloc failed");
 
-		sprintf(log_buffer, "malloc failed");
+  	return(NULL);
+  	}
 
-		return(NULL);
-		}
+  strcpy(pjob->ji_grpcache->gc_homedir, pwdp->pw_dir);
 
-	strcpy(pjob->ji_grpcache->gc_homedir, pwdp->pw_dir);
+  /* get the group and supplimentary under which the job is to be run */
 
-	/* get the group and supplimentary under which the job is to be run */
+  if ((pjob->ji_wattr[(int)JOB_ATR_egroup].at_flags &
+  		 (ATR_VFLAG_SET | ATR_VFLAG_DEFLT)) == ATR_VFLAG_SET)
+  	{
+  	/* execution group specified and not default of login group */
 
-	if ((pjob->ji_wattr[(int)JOB_ATR_egroup].at_flags &
-			 (ATR_VFLAG_SET | ATR_VFLAG_DEFLT)) == ATR_VFLAG_SET)
-		{
-		/* execution group specified and not default of login group */
+  	/* NOTE: ideally egroup should be groupname, not groupid, but pbs_server
+  	 * code will send a group ID over in some instances, so we should try
+  	 * to work with a groupid if provided */
 
-		/* NOTE: ideally egroup should be groupname, not groupid, but pbs_server
-		 * code will send a group ID over in some instances, so we should try
-		 * to work with a groupid if provided */
+  	grpp = getgrnam(pjob->ji_wattr[(int)JOB_ATR_egroup].at_val.at_str);
 
-		grpp = getgrnam(pjob->ji_wattr[(int)JOB_ATR_egroup].at_val.at_str);
+  	if (grpp != NULL)
+  		{
+  		pjob->ji_qs.ji_un.ji_momt.ji_exgid = grpp->gr_gid;
+  		} else
+  		{
+  		int tmpGID;
 
-		if (grpp != NULL)
-			{
-			pjob->ji_qs.ji_un.ji_momt.ji_exgid = grpp->gr_gid;
-			} else
-			{
-			int tmpGID;
+  		/* check to see if we were given a groupid (group names cannot start
+  		 * with a number) */
 
-			/* check to see if we were given a groupid (group names cannot start
-			 * with a number) */
+  		tmpGID = (int)strtol(pjob->ji_wattr[(int)JOB_ATR_egroup].at_val.at_str,NULL,10);
 
-			tmpGID = (int)strtol(pjob->ji_wattr[(int)JOB_ATR_egroup].at_val.at_str,NULL,10);
+  		if (tmpGID != 0)
+  			{
+  			pjob->ji_qs.ji_un.ji_momt.ji_exgid = tmpGID;
+  			} else
+  			{
+  			/* FAILURE */
 
-			if (tmpGID != 0)
-				{
-				pjob->ji_qs.ji_un.ji_momt.ji_exgid = tmpGID;
-				} else
-				{
-				/* FAILURE */
+  			sprintf(log_buffer, "no group entry for group %s, user=%s, errno=%d (%s)",
+  							pjob->ji_wattr[(int)JOB_ATR_egroup].at_val.at_str,
+  							ptr,
+  							errno,
+  							strerror(errno));
 
-				sprintf(log_buffer, "no group entry for group %s, user=%s, errno=%d (%s)",
-								pjob->ji_wattr[(int)JOB_ATR_egroup].at_val.at_str,
-								ptr,
-								errno,
-								strerror(errno));
+  			return(NULL);
+  			}
+  		}	 /* END if (grpp != NULL) */
+  	} else
+  	{
+  	/* if no group specified, default to login group */
 
-				return(NULL);
-				}
-			}	 /* END if (grpp != NULL) */
-		} else
-		{
-		/* if no group specified, default to login group */
+  	pjob->ji_qs.ji_un.ji_momt.ji_exgid = pwdp->pw_gid;
+  	}
 
-		pjob->ji_qs.ji_un.ji_momt.ji_exgid = pwdp->pw_gid;
-		}
+  if ((pjob->ji_grpcache->gc_ngroup = init_groups( pwdp->pw_name,
+												   pjob->ji_qs.ji_un.ji_momt.ji_exgid,
+												   NGROUPS_MAX,
+												   pjob->ji_grpcache->gc_groups)) < 0)
+  	{
+  	/* FAILURE */
 
-	if ((pjob->ji_grpcache->gc_ngroup = init_groups(
-																								 pwdp->pw_name,
-																								 pjob->ji_qs.ji_un.ji_momt.ji_exgid,
-																								 NGROUPS_MAX,
-																								 pjob->ji_grpcache->gc_groups)) < 0)
-		{
-		/* FAILURE */
+  	sprintf(log_buffer, "too many group entries");
 
-		sprintf(log_buffer, "too many group entries");
+  	return(NULL);
+  	}
 
-		return(NULL);
-		}
+  /* perform site specific check on validatity of account */
 
-	/* perform site specific check on validatity of account */
+  if (site_mom_chkuser(pjob))
+  	{
+  	/* FAILURE */
 
-	if (site_mom_chkuser(pjob))
-		{
-		/* FAILURE */
+  	sprintf(log_buffer, "site_mom_chkuser failed");
 
-		sprintf(log_buffer, "site_mom_chkuser failed");
+  	return(NULL);
+  	}
 
-		return(NULL);
-		}
+  /* SUCCESS */
 
-	/* SUCCESS */
-
-	return(pwdp);
-	}	 /* END check_pwd() */
+  return(pwdp);
+  }	 /* END check_pwd() */
 
 
 
@@ -472,45 +466,44 @@ struct passwd *check_pwd(
  */
 
 void exec_bail(
+  job *pjob,	/* I */
+  int  code)	/* I */
 
-							job *pjob,	/* I */
-							int  code)	/* I */
-
-{
-	static char id[] = "exec_bail";
-
-	int nodecount;
-
-	nodecount = send_sisters(pjob, IM_ABORT_JOB);
-
-	if (nodecount != pjob->ji_numnodes - 1)
-		{
-		sprintf(log_buffer, "%s: sent %d ABORT requests, should be %d",
-						id,
-						nodecount,
-						pjob->ji_numnodes - 1);
-
-		log_err(-1, id, log_buffer);
-		}
-
-	/* inform non-MS nodes that job is aborting */
-
-	pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITING;
-
-	pjob->ji_qs.ji_un.ji_momt.ji_exitstat = code;
-
-	job_save(pjob, SAVEJOB_QUICK);
-
-	exiting_tasks = 1;
-
-	if (pjob->ji_stdout > 0)
-		close(pjob->ji_stdout);
-
-	if (pjob->ji_stderr > 0)
-		close(pjob->ji_stderr);
-
-	return;
-}	 /* END exec_bail() */
+  {
+  static char id[] = "exec_bail";
+  
+  int nodecount;
+  
+  nodecount = send_sisters(pjob, IM_ABORT_JOB);
+  
+  if (nodecount != pjob->ji_numnodes - 1)
+	{
+	sprintf(log_buffer, "%s: sent %d ABORT requests, should be %d",
+					id,
+					nodecount,
+					pjob->ji_numnodes - 1);
+	
+	log_err(-1, id, log_buffer);
+	}
+  
+  /* inform non-MS nodes that job is aborting */
+  
+  pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITING;
+  
+  pjob->ji_qs.ji_un.ji_momt.ji_exitstat = code;
+  
+  job_save(pjob, SAVEJOB_QUICK);
+  
+  exiting_tasks = 1;
+  
+  if (pjob->ji_stdout > 0)
+    close(pjob->ji_stdout);
+  
+  if (pjob->ji_stderr > 0)
+    close(pjob->ji_stderr);
+  
+  return;
+  }	 /* END exec_bail() */
 
 
 
@@ -519,97 +512,96 @@ void exec_bail(
 #define RETRY 3
 
 int open_demux(
+  u_long addr, /* I */
+  int    port) /* I */
 
-							u_long addr, /* I */
-							int    port) /* I */
-
-{
-	static char id[] = "open_demux";
-
-	int         sock;
-	int         i;
-
-	struct sockaddr_in remote;
-
-	remote.sin_addr.s_addr = addr;
-	remote.sin_port = htons((unsigned short)port);
-	remote.sin_family = AF_INET;
-
-	if ((sock = socket(AF_INET, SOCK_STREAM, 0)) == -1)
-		{
-		sprintf(log_buffer, "%s: socket %s",
-						id,
-						netaddr(&remote));
-
-		log_err(errno, id, log_buffer);
-
-		return(-1);
-		}
-
-	for (i = 0;i < RETRY;i++)
-		{
-		if (connect(sock, (struct sockaddr *)&remote, sizeof(remote)) == 0)
-			{
-			/* success */
-
-			return(sock);
-			}
-
-		switch (errno)
-			{
-
-			case EINTR:
-
-			case ETIMEDOUT:
-
-			case ECONNRESET:
-
-				sleep(2);
-
-				continue;
-
-				/*NOTREACHED*/
-
-				break;
-
-			case EADDRINUSE:
-
-			case ECONNREFUSED:
-
-				sprintf(log_buffer, "%s: cannot connect to %s",
-								id,
-								netaddr(&remote));
-
-				log_err(errno, id, log_buffer);
-
-				sleep(2);
-
-				continue;
-
-				/*NOTREACHED*/
-
-				break;
-
-			default:
-
-				/* NO-OP */
-
-				break;
-			}	 /* END switch (errno) */
-
-		break;
-		}	 /* END for (i) */
-
-	sprintf(log_buffer, "%s: connect %s",
-					id,
-					netaddr(&remote));
-
-	log_err(errno, id, log_buffer);
-
-	close(sock);
-
-	return(-1);
-}	 /* END open_demux() */
+  {
+  static char id[] = "open_demux";
+  
+  int         sock;
+  int         i;
+  
+  struct sockaddr_in remote;
+  
+  remote.sin_addr.s_addr = addr;
+  remote.sin_port = htons((unsigned short)port);
+  remote.sin_family = AF_INET;
+  
+  if ((sock = socket(AF_INET, SOCK_STREAM, 0)) == -1)
+    {
+    sprintf(log_buffer, "%s: socket %s",
+  				  id,
+  				  netaddr(&remote));
+  
+    log_err(errno, id, log_buffer);
+  
+    return(-1);
+    }
+  
+  for (i = 0;i < RETRY;i++)
+    {
+    if (connect(sock, (struct sockaddr *)&remote, sizeof(remote)) == 0)
+      {
+      /* success */
+  
+      return(sock);
+      }
+  
+    switch (errno)
+      {
+  
+      case EINTR:
+  
+      case ETIMEDOUT:
+  
+      case ECONNRESET:
+  
+        sleep(2);
+  
+        continue;
+  
+        /*NOTREACHED*/
+  
+        break;
+  
+      case EADDRINUSE:
+  
+      case ECONNREFUSED:
+  
+        sprintf(log_buffer, "%s: cannot connect to %s",
+      				  id,
+      				  netaddr(&remote));
+  
+        log_err(errno, id, log_buffer);
+  
+        sleep(2);
+  
+        continue;
+  
+        /*NOTREACHED*/
+  
+        break;
+  
+      default:
+  
+        /* NO-OP */
+  
+        break;
+      }	 /* END switch (errno) */
+  
+    break;
+    }	 /* END for (i) */
+  
+  sprintf(log_buffer, "%s: connect %s",
+    			  id,
+    			  netaddr(&remote));
+  
+  log_err(errno, id, log_buffer);
+  
+  close(sock);
+  
+  return(-1);
+  }	 /* END open_demux() */
 
 
 
@@ -619,57 +611,54 @@ int open_demux(
  */
 
 static int open_pty(
+  job *pjob)	 /* I */
 
-									 job *pjob)	 /* I */
-
-{
-	char *name;
-	int  pts;
-
-	/* Open the slave pty as the controlling tty */
-
-	name = pjob->ji_wattr[(int)JOB_ATR_outpath].at_val.at_str;
-
-	if ((pts = open(name, O_RDWR, 0600)) < 0)
-		{
-		log_err(errno, "open_pty", "cannot open slave");
-		} else
-		{
-		FDMOVE(pts);
-
-		fchmod(pts, 0620);
-
-		if (fchown(pts, pjob->ji_qs.ji_un.ji_momt.ji_exuid,
-							 pjob->ji_qs.ji_un.ji_momt.ji_exgid) == -1)
-			{
-			close(pts);
-			log_err(errno, "open_pty", "cannot change slave's owner");
-			return -1;
-			}
-
-#ifdef SETCONTROLLINGTTY
-
+  {
+  char *name;
+  int  pts;
+  
+  /* Open the slave pty as the controlling tty */
+  
+  name = pjob->ji_wattr[(int)JOB_ATR_outpath].at_val.at_str;
+  
+  if ((pts = open(name, O_RDWR, 0600)) < 0)
+      {
+      log_err(errno, "open_pty", "cannot open slave");
+      } 
+  else
+    {
+    FDMOVE(pts);
+  
+    fchmod(pts, 0620);
+  
+    if (fchown(pts, pjob->ji_qs.ji_un.ji_momt.ji_exuid,
+      				   pjob->ji_qs.ji_un.ji_momt.ji_exgid) == -1)
+      {
+      close(pts);
+      log_err(errno, "open_pty", "cannot change slave's owner");
+      return -1;
+      }
+  
+  #ifdef SETCONTROLLINGTTY
+  
 	#if defined(_CRAY)
-		ioctl(0, TCCLRCTTY, 0);
-
-		ioctl(pts, TCSETCTTY, 0);	/* make controlling */
-
+	    ioctl(0, TCCLRCTTY, 0);
+  
+	    ioctl(pts, TCSETCTTY, 0);	/* make controlling */
+  
 	#elif defined(TCSETCTTY)
-		ioctl(pts, TCSETCTTY, 0);	/* make controlling */
-
+	    ioctl(pts, TCSETCTTY, 0);	/* make controlling */
+  
 	#elif defined(TIOCSCTTY)
-		ioctl(pts, TIOCSCTTY, 0);
-
+	    ioctl(pts, TIOCSCTTY, 0);
+  
 	#endif
-
-#endif /* SETCONTROLLINGTTY */
-		}
-
+  
+  #endif /* SETCONTROLLINGTTY */
+	}
+  
 	return(pts);
-}	 /* END open_pty() */
-
-
-
+  }	 /* END open_pty() */
 
 
 /*
@@ -681,32 +670,31 @@ static int open_pty(
  */
 
 int is_joined(
+  job *pjob)	 /* I */
 
-						 job *pjob)	 /* I */
-
-{
-	attribute *pattr;
-
-	pattr = &pjob->ji_wattr[(int)JOB_ATR_join];
-
-	if ((pattr->at_flags & ATR_VFLAG_SET) &&
-			(pattr->at_val.at_str[0] != 'n'))
-		{
-		if ((pattr->at_val.at_str[0] == 'o') &&
-				(strchr(pattr->at_val.at_str, (int)'e') != 0))
-			{
-			return(1);
-			}
-
-		if ((pattr->at_val.at_str[0] == 'e') &&
-				(strchr(pattr->at_val.at_str, (int)'e') != 0))
-			{
-			return(-1);
-			}
-		}
-
-	return(0);
-}	 /* END is_joined() */
+  {
+  attribute *pattr;
+  
+  pattr = &pjob->ji_wattr[(int)JOB_ATR_join];
+  
+  if ((pattr->at_flags & ATR_VFLAG_SET) &&
+  	  (pattr->at_val.at_str[0] != 'n'))
+    {
+    if ((pattr->at_val.at_str[0] == 'o') &&
+  		  (strchr(pattr->at_val.at_str, (int)'e') != 0))
+  	  {
+  	  return(1);
+  	  }
+  
+    if ((pattr->at_val.at_str[0] == 'e') &&
+  		  (strchr(pattr->at_val.at_str, (int)'e') != 0))
+  	  {
+  	  return(-1);
+  	  }
+    }
+  
+  return(0);
+  }	 /* END is_joined() */
 
 
 
@@ -716,328 +704,322 @@ int is_joined(
  */
 
 static int open_std_out_err(
+  job *pjob,		 /* I */
+  int  timeout) /* I (optional,>0 to set) */
 
-													 job *pjob,		 /* I */
-													 int  timeout) /* I (optional,>0 to set) */
-
-{
-	int i;
-	int file_out = -2;
-	int file_err = -2;
-	int filemode = O_CREAT | O_WRONLY | O_APPEND | O_EXCL;
-
-	/* if std out/err joined (set and != "n"), which file is first */
-
-	i = is_joined(pjob);
-
-	if (timeout > 0)
-		{
-		alarm(timeout);
-		}
-
-	if (i == 1)
-		{
-		file_out = open_std_file(
-														pjob,
-														StdOut,
-														filemode,
-														pjob->ji_qs.ji_un.ji_momt.ji_exgid);
-
-		file_err = dup(file_out);
-		} else if (i == -1)
-		{
-		file_err = open_std_file(
-														pjob,
-														StdErr,
-														filemode,
-														pjob->ji_qs.ji_un.ji_momt.ji_exgid);
-
-		file_out = dup(file_err);
-		}
-
-	if (file_out == -2)
-		file_out = open_std_file(
-														pjob,
-														StdOut,
-														filemode,
-														pjob->ji_qs.ji_un.ji_momt.ji_exgid);
-
-	if (file_err == -2)
-		file_err = open_std_file(
-														pjob,
-														StdErr,
-														filemode,
-														pjob->ji_qs.ji_un.ji_momt.ji_exgid);
-
-	alarm(0);	 /* disable alarm */
-
-	if ((file_out < 0) || (file_err < 0))
-		{
-		/* FAILURE - cannot load files */
-
-		if ((file_out == -2) || (file_err == -2))
-			{
-			/* timeout occurred */
-
-			char *path;
-
-			int   keeping;
-
-			path = std_file_name(pjob, StdOut, &keeping);
-
-			sprintf(log_buffer, "unable to stat/open file '%s' within %d seconds - check filesystem",
-							(path != NULL) ? path : "???",
-							timeout);
-
-			log_err(
-						 errno,
-						 "open_std_out_err",
-						 log_buffer);
-			} else
-			{
-			log_err(
-						 errno,
-						 "open_std_out_err",
-						 "unable to open standard output/error");
-			}
-
-		return(-1);
-		}	 /* END if ((file_out < 0) || (file_err < 0)) */
-
-	FDMOVE(file_out);	/* make sure descriptor > 2       */
-
-	FDMOVE(file_err);	/* so don't clobber stdin/out/err */
-
-	if (file_out != 1)
-		{
-		close(1);
-
-		if (dup(file_out) == -1)
-			{
-			}
-
-		close(file_out);
-		}
-
-	if (file_err != 2)
-		{
-		close(2);
-
-		if (dup(file_err) == -1)
-			{
-			}
-
-		close(file_err);
-		}
-
-	return(0);
-}	 /* END open_std_out_err() */
+  {
+  int i;
+  int file_out = -2;
+  int file_err = -2;
+  int filemode = O_CREAT | O_WRONLY | O_APPEND | O_EXCL;
+  
+  /* if std out/err joined (set and != "n"), which file is first */
+  
+  i = is_joined(pjob);
+  
+  if (timeout > 0)
+    {
+    alarm(timeout);
+    }
+  
+  if (i == 1)
+    {
+    file_out = open_std_file( pjob,
+  							  StdOut,
+  							  filemode,
+  							  pjob->ji_qs.ji_un.ji_momt.ji_exgid);
+  
+    file_err = dup(file_out);
+    } 
+  else if (i == -1)
+    {
+    file_err = open_std_file( pjob,
+  							  StdErr,
+  							  filemode,
+  							  pjob->ji_qs.ji_un.ji_momt.ji_exgid);
+  
+    file_out = dup(file_err);
+    }
+  
+  if (file_out == -2)
+      file_out = open_std_file(	pjob,
+    							StdOut,
+    							filemode,
+    							pjob->ji_qs.ji_un.ji_momt.ji_exgid);
+  
+  if (file_err == -2)
+      file_err = open_std_file(	pjob,
+    							StdErr,
+    							filemode,
+    							pjob->ji_qs.ji_un.ji_momt.ji_exgid);
+  
+  alarm(0);	 /* disable alarm */
+  
+  if ((file_out < 0) || (file_err < 0))
+    {
+    /* FAILURE - cannot load files */
+  
+    if ((file_out == -2) || (file_err == -2))
+  	  {
+  	  /* timeout occurred */
+  
+  	  char *path;
+  
+  	  int   keeping;
+  
+  	  path = std_file_name(pjob, StdOut, &keeping);
+  
+  	  sprintf(log_buffer, "unable to stat/open file '%s' within %d seconds - check filesystem",
+  					  (path != NULL) ? path : "???",
+  					  timeout);
+  
+  	  log_err(
+  				   errno,
+  				   "open_std_out_err",
+  				   log_buffer);
+  	  }
+	else
+  	  {
+  	  log_err(
+  				   errno,
+  				   "open_std_out_err",
+  				   "unable to open standard output/error");
+  	  }
+  
+    return(-1);
+    }	 /* END if ((file_out < 0) || (file_err < 0)) */
+  
+  FDMOVE(file_out);	/* make sure descriptor > 2       */
+  
+  FDMOVE(file_err);	/* so don't clobber stdin/out/err */
+  
+  if (file_out != 1)
+    {
+    close(1);
+  
+    if (dup(file_out) == -1)
+      {
+      }
+  
+    close(file_out);
+    }
+  
+  if (file_err != 2)
+    {
+    close(2);
+  
+    if (dup(file_err) == -1)
+     {
+     }
+  
+    close(file_err);
+    }
+  
+  return(0);
+  }	 /* END open_std_out_err() */
 
 
 
 
 
 int mkdirtree(
+  char   *dirpath,	/* I */
+  mode_t  mode)		/* I */
 
-						 char   *dirpath,	/* I */
-						 mode_t  mode)		/* I */
-
-{
-	char *part;
-	int rc = 0;
-	mode_t oldmask = 0;
-	char *path = NULL;
-
-	if (*dirpath != '/')
-		{
-		rc = -1;
-
-		goto done;
-		}
-
-	/* make a copy to scribble NULLs on */
-
-	if ((path = strdup(dirpath)) == NULL)
-		{
-		rc = -1;
-
-		goto done;
-		}
-
-	oldmask = umask(0000);
-
-	part = strtok(path, "/");
-
-	if (part == NULL)
-		{
-		rc = -1;
-
-		goto done;
-		}
-
-	*(part - 1) = '/';	/* leading '/' */
-
-	while ((part = strtok(NULL, "/")) != NULL)
-		{
-		if (mkdir(path, mode) == -1)
-			{
-			if (errno != EEXIST)
-				{
-				rc = errno;
-
-				goto done;
-				}
-			}
-
-		*(part - 1) = '/';
-		}
-
-	/* very last component */
-
-	if (mkdir(path, mode) == -1)
-		{
-		if (errno != EEXIST)
-			{
-			rc = errno;
-
-			goto done;
-			}
-		}
-
-	done:
-
-	if (oldmask != 0)
-		umask(oldmask);
-
-	if (path != NULL)
-		free(path);
-
-	return(rc);
-}	 /* END mkdirtree() */
-
-
-
+  {
+  char *part;
+  int rc = 0;
+  mode_t oldmask = 0;
+  char *path = NULL;
+  
+  if (*dirpath != '/')
+    {
+    rc = -1;
+  
+    goto done;
+    }
+  
+  /* make a copy to scribble NULLs on */
+  
+  if ((path = strdup(dirpath)) == NULL)
+    {
+    rc = -1;
+  
+    goto done;
+    }
+  
+  oldmask = umask(0000);
+  
+  part = strtok(path, "/");
+  
+  if (part == NULL)
+    {
+    rc = -1;
+  
+    goto done;
+    }
+  
+  *(part - 1) = '/';	/* leading '/' */
+  
+  while ((part = strtok(NULL, "/")) != NULL)
+    {
+    if (mkdir(path, mode) == -1)
+  	  {
+  	  if (errno != EEXIST)
+  	    {
+  	    rc = errno;
+  
+  	    goto done;
+  	    }
+  	  }
+  
+    *(part - 1) = '/';
+    }
+  
+  /* very last component */
+  
+  if (mkdir(path, mode) == -1)
+    {
+    if (errno != EEXIST)
+  	  {
+  	  rc = errno;
+  
+  	  goto done;
+  	  }
+    }
+  
+  done:
+  
+  if (oldmask != 0)
+      umask(oldmask);
+  
+  if (path != NULL)
+      free(path);
+  
+  return(rc);
+  }	 /* END mkdirtree() */
 
 
 /* If our config allows it, construct tmpdir path */
 
 int TTmpDirName(
+  job  *pjob,	 /* I */
+  char *tmpdir) /* O */
 
-							 job  *pjob,	 /* I */
-							 char *tmpdir) /* O */
-
-{
-	if (tmpdir_basename[0] == '/')
-		{
-		snprintf(tmpdir,
-						 MAXPATHLEN,
-						 "%s/%s",
-						 tmpdir_basename,
-						 pjob->ji_qs.ji_jobid);
-		} else
-		{
-		*tmpdir = '\0';
-		}
-
-	return(*tmpdir != '\0');	/* return "true" if tmpdir is set */
-}
-
+  {
+  if (tmpdir_basename[0] == '/')
+    {
+    snprintf(tmpdir,
+  				   MAXPATHLEN,
+  				   "%s/%s",
+  				   tmpdir_basename,
+  				   pjob->ji_qs.ji_jobid);
+    } 
+  else
+    {
+    *tmpdir = '\0';
+    }
+  
+  return(*tmpdir != '\0');	/* return "true" if tmpdir is set */
+  }
 
 
 
 
 int TMakeTmpDir(
+  job  *pjob,	 /* I */
+  char *tmpdir) /* I */
 
-							 job  *pjob,	 /* I */
-							 char *tmpdir) /* I */
-
-{
-	char id[] = "TMakeTmpDir";
-
-	int   rc;
-	int   retval;
-
-	struct stat  sb;
-
-	if ((setegid(pjob->ji_qs.ji_un.ji_momt.ji_exgid) == -1) ||
-			(seteuid(pjob->ji_qs.ji_un.ji_momt.ji_exuid) == -1))
-		{
-		return(0);
-		}
-
-	retval = mkdirtree(tmpdir, 0755);
-
-	if (retval == 0)
-		{
-		/* We made it, it's ours */
-
-		pjob->ji_flags |= MOM_HAS_TMPDIR;
-		} else
-		{
-		rc = stat(tmpdir, &sb);
-
-		if (rc)
-			rc = errno;
-
-		switch (rc)
-			{
-
-			case ENOENT:
-
-				sprintf(log_buffer,
-								"Unable to make job transient directory: %s",
-								tmpdir);
-
-				break;
-
-			case 0:
-
-				if (S_ISDIR(sb.st_mode))
-					{
-					if (sb.st_uid == pjob->ji_qs.ji_un.ji_momt.ji_exuid)
-						{
-						retval = 0;	 /* owned by the job, allowed */
-						} else
-						{
-						sprintf(log_buffer,
-										"Job transient tmpdir %s already exists, owned by %d",
-										tmpdir,
-										sb.st_uid);
-
-						retval = -1;
-						}
-					} else
-					{
-					sprintf(log_buffer,
-									"Job transient tmpdir %s exists, but is not a directory",
-									tmpdir);
-
-					retval = -1;
-					}
-
-				break;
-
-			default:
-
-				sprintf(log_buffer,
-								"Cannot name job tmp directory %s (on stat)",
-								tmpdir);
-
-				return(0);
-
-				break;
-			}
-		}		 /* END if (retval == 0) */
-
-	seteuid(0);
-
-	setegid(pbsgroup);
-
-	if (retval != 0)
-		log_err(retval, id, log_buffer);
-
-	return(retval == 0);	/* return boolean */
-}	 /* END TMakeTmpDir() */
+  {
+  char id[] = "TMakeTmpDir";
+  
+  int   rc;
+  int   retval;
+  
+  struct stat  sb;
+  
+  if ((setegid(pjob->ji_qs.ji_un.ji_momt.ji_exgid) == -1) ||
+    	  (seteuid(pjob->ji_qs.ji_un.ji_momt.ji_exuid) == -1))
+    {
+    return(0);
+    }
+  
+  retval = mkdirtree(tmpdir, 0755);
+  
+  if (retval == 0)
+    {
+    /* We made it, it's ours */
+  
+    pjob->ji_flags |= MOM_HAS_TMPDIR;
+    } 
+  else
+    {
+    rc = stat(tmpdir, &sb);
+  
+    if (rc)
+  	  rc = errno;
+  
+    switch (rc)
+  	  {
+  
+  	  case ENOENT:
+  
+  		  sprintf(log_buffer,
+  						  "Unable to make job transient directory: %s",
+  						  tmpdir);
+  
+  		  break;
+  
+  	  case 0:
+  	    
+  	    if (S_ISDIR(sb.st_mode))
+  	      {
+  	      if (sb.st_uid == pjob->ji_qs.ji_un.ji_momt.ji_exuid)
+	       {
+	       retval = 0;	 /* owned by the job, allowed */
+	       } 
+	      else
+	       {
+	       sprintf(log_buffer,
+	     			   "Job transient tmpdir %s already exists, owned by %d",
+	     			   tmpdir,
+	     			   sb.st_uid);
+   	    
+	       retval = -1;
+	       }
+  	      } 
+	    else
+  	      {
+  	      sprintf(log_buffer,
+  	    				  "Job transient tmpdir %s exists, but is not a directory",
+  	    				  tmpdir);
+  	    
+  	      retval = -1;
+  	      }
+  	    
+  	    break;
+  
+  	  default:
+  
+  		 sprintf(log_buffer,
+  						  "Cannot name job tmp directory %s (on stat)",
+  						  tmpdir);
+  
+  		  return(0);
+  
+  		  break;
+  	  }
+    }		 /* END if (retval == 0) */
+  
+  seteuid(0);
+  
+  setegid(pbsgroup);
+  
+  if (retval != 0)
+      log_err(retval, id, log_buffer);
+  
+  return(retval == 0);	/* return boolean */
+  }	 /* END TMakeTmpDir() */
 
 
 
@@ -1046,247 +1028,238 @@ int TMakeTmpDir(
  * and file copies */
 
 int InitUserEnv(
-
-							 job            *pjob,	 /* I */
-							 task           *ptask,	 /* I (optional) */
-							 char          **envp,	 /* I (optional) */
-							 struct passwd  *pwdp,	 /* I (optional) */
-							 char           *shell)	 /* I (optional) */
-
-{
-	char id[] = "InitUserEnv";
-
-	struct array_strings *vstrs;
-	int                   j = 0;
-	int                   ebsize = 0;
-	char                  buf[MAXPATHLEN + 2];
-	int                   usertmpdir = 0;
-
-	attribute            *pattr;
-	resource             *presc;
-	resource_def         *prd;
-
-	if (pjob == NULL)
-		{
-		sprintf(log_buffer, "passed a NULL pjob!");
-
-		log_err(errno, id, log_buffer);
-
-		return(-1);
-		}
-
-	/* initialize vtable */
-
-	if (envp != NULL)
-		{
-		for (j = 0, ebsize = 0;envp[j] != NULL;j++)
-			ebsize += strlen(envp[j]);
-		}
-
-	if (LOGLEVEL >= 10)
-		{
-		sprintf(log_buffer, "creating env buffer, count: %d  size: %d",
-						j,
-						ebsize);
-
-		log_ext(-1, id, log_buffer, LOG_DEBUG);
-		}
-
-	vstrs = pjob->ji_wattr[(int)JOB_ATR_variables].at_val.at_arst;
-
-	vtable.v_bsize = ebsize + EXTRA_VARIABLE_SPACE +
-									 (vstrs != NULL ? (vstrs->as_next - vstrs->as_buf) : 0);
-
-	vtable.v_block = malloc(vtable.v_bsize);
-
-	if (vtable.v_block == NULL)
-		{
-		sprintf(log_buffer, "PBS: failed to init env, malloc: %s\n",
-						strerror(errno));
-
-		log_err(errno, id, log_buffer);
-
-		return(-1);
-		}
-
-	vtable.v_ensize =
-
-	num_var_else +
-	num_var_env +
-	j +
-	EXTRA_ENV_PTRS +
-	(vstrs != NULL ? vstrs->as_usedptr : 0);
-
-	vtable.v_used = 0;
-
-	vtable.v_envp = malloc(vtable.v_ensize * sizeof(char *));
-
-	if (vtable.v_envp == NULL)
-		{
-		sprintf(log_buffer, "PBS: failed to init env, malloc: %s\n",
-						strerror(errno));
-
-		log_err(errno, id, log_buffer);
-
-		return(-1);
-		}
-
-	/* First variables from the local environment */
-
-	for (j = 0;j < num_var_env;++j)
-		bld_env_variables(&vtable, environ[j], NULL);
-
-	if (LOGLEVEL >= 10)
-		{
-		sprintf(log_buffer, "local env added, count: %d",
-						j);
-
-		log_ext(-1, id, log_buffer, LOG_DEBUG);
-		}
-
-	/* Next, the variables passed with the job.  They may   */
-	/* be overwritten with new correct values for this job  */
-
-	if (vstrs != NULL)
-		{
-		for (j = 0;j < vstrs->as_usedptr;++j)
-			{
-			bld_env_variables(&vtable, vstrs->as_string[j], NULL);
-
-			if (!strncmp(
-									vstrs->as_string[j],
-									variables_else[tveTmpDir],
-									strlen(variables_else[tveTmpDir])))
-				usertmpdir = 1;
-			}
-
-		if (LOGLEVEL >= 10)
-			{
-			sprintf(log_buffer, "job env added, count: %d",
-							j);
-
-			log_ext(-1, id, log_buffer, LOG_DEBUG);
-			}
-		}		 /* END if (vstrs != NULL) */
-
-	/* HOME */
-
-	if (pjob->ji_grpcache != NULL)
-		bld_env_variables(&vtable, variables_else[tveHome], pjob->ji_grpcache->gc_homedir);
-
-	/* LOGNAME */
-
-	if (pwdp != NULL)
-		bld_env_variables(&vtable, variables_else[tveLogName], pwdp->pw_name);
-
-	/* PBS_JOBNAME */
-
-	bld_env_variables(
-									 &vtable,
-									 variables_else[tveJobName],
-									 pjob->ji_wattr[(int)JOB_ATR_jobname].at_val.at_str);
-
-	/* PBS_JOBID */
-
-	bld_env_variables(&vtable, variables_else[tveJobID], pjob->ji_qs.ji_jobid);
-
-	/* PBS_QUEUE */
-
-	bld_env_variables(
-									 &vtable,
-									 variables_else[tveQueue],
-									 pjob->ji_wattr[(int)JOB_ATR_in_queue].at_val.at_str);
-
-	/* SHELL */
-
-	if (shell != NULL)
-		bld_env_variables(&vtable, variables_else[tveShell], shell);
-
-	/* USER, for compatability */
-
-	if (pwdp != NULL)
-		bld_env_variables(&vtable, variables_else[tveUser], pwdp->pw_name);
-
-	/* PBS_JOBCOOKIE */
-
-	bld_env_variables(
-									 &vtable,
-									 variables_else[tveJobCookie],
-									 pjob->ji_wattr[(int)JOB_ATR_Cookie].at_val.at_str);
-
-	/* PBS_NODENUM */
-
-	sprintf(buf, "%d",
-					pjob->ji_nodeid);
-
-	bld_env_variables(&vtable, variables_else[tveNodeNum], buf);
-
-	/* PBS_TASKNUM */
-
-	if (ptask != NULL)
-		{
-		sprintf(buf, "%d",
-						(int)ptask->ti_qs.ti_task);
-
-		bld_env_variables(&vtable, variables_else[tveTaskNum], buf);
-		}
-
-	/* PBS_MOMPORT */
-
-	sprintf(buf, "%d",
-					pbs_rm_port);
-
-	bld_env_variables(&vtable, variables_else[tveMOMPort], buf);
-
-	/* PBS_NODEFILE */
-
-	if (pjob->ji_flags & MOM_HAS_NODEFILE)
-		{
-		sprintf(buf, "%s/%s",
-						path_aux,
-						pjob->ji_qs.ji_jobid);
-
-		bld_env_variables(&vtable, variables_else[tveNodeFile], buf);
-		}
-
-	/* PBS_NNODES */
-
-	pattr = &pjob->ji_wattr[(int)JOB_ATR_resource];
-
-	prd = find_resc_def(svr_resc_def, "size", svr_resc_size);
-
-	presc = find_resc_entry(pattr, prd);
-
-	if (presc != NULL)
-		{
-		sprintf(buf, "%ld",
-						presc->rs_value.at_val.at_long);
-
-		bld_env_variables(&vtable, variables_else[tveNumNodes], buf);
-		}
-
-	/* setup TMPDIR */
-
-	if (!usertmpdir && TTmpDirName(pjob, buf))
-		bld_env_variables(&vtable, variables_else[tveTmpDir], buf);
-
-	/* PBS_VERSION */
-
-	sprintf(buf, "TORQUE-%s",
-					PACKAGE_VERSION);
-
-	bld_env_variables(&vtable, variables_else[tveVerID], buf);
-
-	/* passed-in environment for tasks */
-
-	if (envp != NULL)
-		{
-		for (j = 0;envp[j];j++)
-			bld_env_variables(&vtable, envp[j], NULL);
-		}
-
-	return(0);
-}	 /* END InitUserEnv() */
+  job            *pjob,	 /* I */
+  task           *ptask,	 /* I (optional) */
+  char          **envp,	 /* I (optional) */
+  struct passwd  *pwdp,	 /* I (optional) */
+  char           *shell)	 /* I (optional) */
+
+  {
+  char id[] = "InitUserEnv";
+  
+  struct array_strings *vstrs;
+  int                   j = 0;
+  int                   ebsize = 0;
+  char                  buf[MAXPATHLEN + 2];
+  int                   usertmpdir = 0;
+  
+  attribute            *pattr;
+  resource             *presc;
+  resource_def         *prd;
+  
+  if (pjob == NULL)
+    {
+    sprintf(log_buffer, "passed a NULL pjob!");
+  
+    log_err(errno, id, log_buffer);
+  
+    return(-1);
+    }
+  
+  /* initialize vtable */
+  
+  if (envp != NULL)
+    {
+    for (j = 0, ebsize = 0;envp[j] != NULL;j++)
+  	  ebsize += strlen(envp[j]);
+    }
+  
+  if (LOGLEVEL >= 10)
+    {
+    sprintf(log_buffer, "creating env buffer, count: %d  size: %d",
+  				  j,
+  				  ebsize);
+  
+    log_ext(-1, id, log_buffer, LOG_DEBUG);
+    }
+  
+  vstrs = pjob->ji_wattr[(int)JOB_ATR_variables].at_val.at_arst;
+  
+  vtable.v_bsize = ebsize + EXTRA_VARIABLE_SPACE +
+    							   (vstrs != NULL ? (vstrs->as_next - vstrs->as_buf) : 0);
+  
+  vtable.v_block = malloc(vtable.v_bsize);
+  
+  if (vtable.v_block == NULL)
+    {
+    sprintf(log_buffer, "PBS: failed to init env, malloc: %s\n",
+  				  strerror(errno));
+  
+    log_err(errno, id, log_buffer);
+  
+    return(-1);
+    }
+  
+  vtable.v_ensize =
+  
+  num_var_else +
+  num_var_env +
+  j +
+  EXTRA_ENV_PTRS +
+  (vstrs != NULL ? vstrs->as_usedptr : 0);
+  
+  vtable.v_used = 0;
+  
+  vtable.v_envp = malloc(vtable.v_ensize * sizeof(char *));
+  
+  if (vtable.v_envp == NULL)
+    {
+    sprintf(log_buffer, "PBS: failed to init env, malloc: %s\n",
+  				  strerror(errno));
+  
+    log_err(errno, id, log_buffer);
+  
+    return(-1);
+    }
+  
+  /* First variables from the local environment */
+  
+  for (j = 0;j < num_var_env;++j)
+      bld_env_variables(&vtable, environ[j], NULL);
+  
+  if (LOGLEVEL >= 10)
+    {
+    sprintf(log_buffer, "local env added, count: %d",
+  				  j);
+  
+    log_ext(-1, id, log_buffer, LOG_DEBUG);
+    }
+  
+  /* Next, the variables passed with the job.  They may   */
+  /* be overwritten with new correct values for this job  */
+  
+  if (vstrs != NULL)
+    {
+    for (j = 0;j < vstrs->as_usedptr;++j)
+  	  {
+  	  bld_env_variables(&vtable, vstrs->as_string[j], NULL);
+  
+  	  if (!strncmp(
+  							  vstrs->as_string[j],
+  							  variables_else[tveTmpDir],
+  							  strlen(variables_else[tveTmpDir])))
+  		  usertmpdir = 1;
+  	  }
+  
+    if (LOGLEVEL >= 10)
+  	  {
+  	  sprintf(log_buffer, "job env added, count: %d",
+  					  j);
+  
+  	  log_ext(-1, id, log_buffer, LOG_DEBUG);
+  	  }
+    }		 /* END if (vstrs != NULL) */
+  
+  /* HOME */
+  
+  if (pjob->ji_grpcache != NULL)
+      bld_env_variables(&vtable, variables_else[tveHome], pjob->ji_grpcache->gc_homedir);
+  
+  /* LOGNAME */
+  
+  if (pwdp != NULL)
+      bld_env_variables(&vtable, variables_else[tveLogName], pwdp->pw_name);
+  
+  /* PBS_JOBNAME */
+  
+  bld_env_variables( &vtable,
+    				 variables_else[tveJobName],
+    				 pjob->ji_wattr[(int)JOB_ATR_jobname].at_val.at_str);
+  
+  /* PBS_JOBID */
+  
+  bld_env_variables(&vtable, variables_else[tveJobID], pjob->ji_qs.ji_jobid);
+  
+  /* PBS_QUEUE */
+  
+  bld_env_variables( &vtable,
+    				 variables_else[tveQueue],
+    				 pjob->ji_wattr[(int)JOB_ATR_in_queue].at_val.at_str);
+  
+  /* SHELL */
+  
+  if (shell != NULL)
+      bld_env_variables(&vtable, variables_else[tveShell], shell);
+  
+  /* USER, for compatability */
+  
+  if (pwdp != NULL)
+      bld_env_variables(&vtable, variables_else[tveUser], pwdp->pw_name);
+  
+  /* PBS_JOBCOOKIE */
+  
+  bld_env_variables( &vtable,
+    				 variables_else[tveJobCookie],
+    				 pjob->ji_wattr[(int)JOB_ATR_Cookie].at_val.at_str);
+  
+  /* PBS_NODENUM */
+  
+  sprintf(buf, "%d", pjob->ji_nodeid);
+  
+  bld_env_variables(&vtable, variables_else[tveNodeNum], buf);
+  
+  /* PBS_TASKNUM */
+  
+  if (ptask != NULL)
+      {
+      sprintf(buf, "%d", (int)ptask->ti_qs.ti_task);
+  
+      bld_env_variables(&vtable, variables_else[tveTaskNum], buf);
+      }
+  
+  /* PBS_MOMPORT */
+  
+  sprintf(buf, "%d", pbs_rm_port);
+  
+  bld_env_variables(&vtable, variables_else[tveMOMPort], buf);
+  
+  /* PBS_NODEFILE */
+  
+  if (pjob->ji_flags & MOM_HAS_NODEFILE)
+      {
+      sprintf(buf, "%s/%s",	path_aux, pjob->ji_qs.ji_jobid);
+  
+      bld_env_variables(&vtable, variables_else[tveNodeFile], buf);
+      }
+  
+  /* PBS_NNODES */
+  
+  pattr = &pjob->ji_wattr[(int)JOB_ATR_resource];
+  
+  prd = find_resc_def(svr_resc_def, "size", svr_resc_size);
+  
+  presc = find_resc_entry(pattr, prd);
+  
+  if (presc != NULL)
+    {
+    sprintf(buf, "%ld",
+  				  presc->rs_value.at_val.at_long);
+  
+    bld_env_variables(&vtable, variables_else[tveNumNodes], buf);
+    }
+  
+  /* setup TMPDIR */
+  
+  if (!usertmpdir && TTmpDirName(pjob, buf))
+      bld_env_variables(&vtable, variables_else[tveTmpDir], buf);
+  
+  /* PBS_VERSION */
+  
+  sprintf(buf, "TORQUE-%s",
+    			  PACKAGE_VERSION);
+  
+  bld_env_variables(&vtable, variables_else[tveVerID], buf);
+  
+  /* passed-in environment for tasks */
+  
+  if (envp != NULL)
+    {
+    for (j = 0;envp[j];j++)
+  	  bld_env_variables(&vtable, envp[j], NULL);
+    }
+  
+  return(0);
+  }	 /* END InitUserEnv() */
 
 
 
@@ -1301,10 +1274,9 @@ int InitUserEnv(
  */
 
 int TMomFinalizeJob1(
-
-										job        *pjob,	 /* I (modified) */
-										pjobexec_t *TJE,	 /* O */
-										int        *SC)		 /* O */
+  job        *pjob,	 /* I (modified) */
+  pjobexec_t *TJE,	 /* O */
+  int        *SC)		 /* O */
 
 {
 	static char       *id = "TMomFinalizeJob1";
@@ -6728,208 +6700,221 @@ uint64_t get_csa_jobid(
  *
  */
 int create_WLM_Rec(
-									char*    pbs_jobid,
-									uint64_t job_id,
-									int type,
-									int subtype,
-									uint64_t prid,
-									uint64_t ash,
-									int64_t compCode,
-									int64_t reqid)
-{
-	static char *id = "create_WLM_Rec";
+  char*    pbs_jobid,
+  uint64_t job_id,
+  int type,
+  int subtype,
+  uint64_t prid,
+  uint64_t ash,
+  int64_t compCode,
+  int64_t reqid)
 
-	struct csa_wra_req cw;
-	struct wkmgmtbs wkm;
-
-	char    rec_type[8];
-	char    sub_type[8];
-
-	/*
-	 * First, create an workload management record
-	 */
-
-	if (type == WM_INIT)
-		{
-		strcpy(rec_type, "init");
-
-		if (subtype == WM_INIT_START)
-			{
-			strcpy(sub_type, "start");
-			} else if (subtype == WM_INIT_RESTART)
-			{
-			strcpy(sub_type, "restart");
-			} else if (subtype == WM_INIT_RERUN)
-			{
-			strcpy(sub_type, "rerun");
-			} else
-			{
-			sprintf(log_buffer, "WM_INIT bad sub type = %d for pbs job %s",
-							subtype,
-							pbs_jobid);
-
-			log_err(-1, id, log_buffer);
-			return 0;
-			}
-		} else if (type == WM_TERM)
-		{
-		strcpy(rec_type, "term");
-
-		if (subtype == WM_TERM_EXIT)
-			{
-			strcpy(sub_type, "exited");
-			} else if (subtype == WM_TERM_REQUEUE)
-			{
-			strcpy(sub_type, "requeue");
-			} else if (subtype == WM_TERM_HOLD)
-			{
-			strcpy(sub_type, "hold");
-			} else if (subtype == WM_TERM_RERUN)
-			{
-			strcpy(sub_type, "rerun");
-			} else if (subtype == WM_TERM_MIGRATE)
-			{
-			strcpy(sub_type, "migrate");
-			} else
-			{
-			sprintf(log_buffer, "WM_TERM bad sub type = %d for pbs job %s",
-							subtype,
-							pbs_jobid);
-
-			log_err(-1, id, log_buffer);
-			return 0;
-			}
-		} else if (type == WM_RECV)
-		{
-		strcpy(rec_type, "recv");
-
-		if (subtype == WM_RECV_NEW)
-			{
-			strcpy(sub_type, "new");
-			} else
-			{
-			sprintf(log_buffer, "WM_RECV bad sub type = %d for pbs job %s",
-							subtype,
-							pbs_jobid);
-
-			log_err(-1, id, log_buffer);
-			return 0;
-			}
-		} else
-		{
-		sprintf(log_buffer, "bad record type = %d for pbs job %s",
-						type,
-						pbs_jobid);
-
-		log_err(-1, id, log_buffer);
-		return 0;
-		}
-
-	if (LOGLEVEL >= 7)
-		{
-		sprintf(log_buffer, "Creating CSA workload management %s - %s record for: "
-						"job_id = %llx, compCode = %d, pbs job %s",
-						&rec_type, &sub_type, job_id, compCode, pbs_jobid);
-
-		log_ext(-1, id, log_buffer, LOG_DEBUG);
-		}
-
-	memset(&wkm, 0, sizeof(wkm));
-
-	/* fill in header data */
-
-	wkm.hdr.ah_magic = ACCT_MAGIC;
-	wkm.hdr.ah_revision = REV_APP;
-	wkm.hdr.ah_type = ACCT_DAEMON_WKMG;
-
-	if (!getuid() || ! geteuid())
-		wkm.hdr.ah_flag |= ASU;	/* set super user flag */
-
-	wkm.hdr.ah_size = sizeof(struct wkmgmtbs);
-
-	/* fill in rest of needed data */
-
-	wkm.type = type;
-
-	wkm.subtype = subtype;
-
-	wkm.arrayid = 0;
-
-	strncpy(&wkm.serv_provider[0], "TORQUE          ", sizeof(wkm.serv_provider));
-
-	if ((wkm.time = time(NULL)) == (time_t) - 1)
-		{
-		sprintf(log_buffer, "error setting time, errno = %d - %s pbs job = %s",
-						errno,
-						strerror(errno),
-						pbs_jobid);
-
-		log_err(-1, id, log_buffer);
-		return 0;
-		}
-
-	if ((wkm.enter_time = time(NULL)) == (time_t) - 1)
-		{
-		sprintf(log_buffer, "error setting INIT enter time, errno = %d - %s pbs job = %s",
-						errno,
-						strerror(errno),
-						pbs_jobid);
-
-		log_err(-1, id, log_buffer);
-		return 0;
-		}
-
-	wkm.uid = getuid();
-
-	wkm.prid = prid;
-	wkm.ash = ash;
-
-	wkm.jid = job_id;
-
-	/*
-	* character fields need to be NULL terminated
-	*/
-	strncpy(&wkm.machname[0], "TORQUE-MACHINE", sizeof(wkm.machname) - 1);
-	strncpy(&wkm.reqname[0], "TORQUE-REQUEST", sizeof(wkm.reqname) - 1);
-	strncpy(&wkm.quename[0], "TORQUE-QUEUE", sizeof(wkm.quename) - 1);
-	wkm.reqid = reqid;
-
-	if (type == WM_TERM)
-		{
-		wkm.code = compCode;
-		}
-
-	/*
-	* Fill in the CSA_WRACCT request structure for csa ioctl call
-	*/
-	memset(&cw, 0, sizeof(cw));
-
-	cw.wra_did = ACCT_DMD_WKMG;	 /* daemon ID */
-
-	cw.wra_len = sizeof(struct wkmgmtbs);	/* length of app record */
-
-	cw.wra_jid = job_id;	 /* job Id from job create */
-
-	cw.wra_buf = (char *) & wkm;	/* pointer to record */
-
-	if (csa_wracct(&cw))
-		{
-		/* EINVAL is okay for a WM_TERM */
-		if ((type != WM_TERM) && (errno != EINVAL))
-			{
-			sprintf(log_buffer, "error writing wkm %s record, errno=%d - %s pbs job = %s",
-							&rec_type,
-							errno,
-							strerror(errno),
-							pbs_jobid);
-
-			log_err(-1, id, log_buffer);
-			return 0;
-			}
-		}
-
-	return 1;
-}
+  {
+  static char *id = "create_WLM_Rec";
+  
+  struct csa_wra_req cw;
+  struct wkmgmtbs wkm;
+  
+  char    rec_type[8];
+  char    sub_type[8];
+  
+  /*
+   * First, create an workload management record
+   */
+  
+  if (type == WM_INIT)
+	{
+	strcpy(rec_type, "init");
+	
+	if (subtype == WM_INIT_START)
+	  {
+	  strcpy(sub_type, "start");
+	  } 
+	else if (subtype == WM_INIT_RESTART)
+	  {
+	  strcpy(sub_type, "restart");
+	  } 
+	else if (subtype == WM_INIT_RERUN)
+	  {
+	  strcpy(sub_type, "rerun");
+	  } 
+	else
+	  {
+	  sprintf(log_buffer, "WM_INIT bad sub type = %d for pbs job %s",
+					  subtype,
+					  pbs_jobid);
+	  
+	  log_err(-1, id, log_buffer);
+	  return 0;
+	  }
+	} 
+  else if (type == WM_TERM)
+	{
+	strcpy(rec_type, "term");
+	
+	if (subtype == WM_TERM_EXIT)
+	  {
+	  strcpy(sub_type, "exited");
+	  } 
+	else if (subtype == WM_TERM_REQUEUE)
+	  {
+	  strcpy(sub_type, "requeue");
+	  } 
+	else if (subtype == WM_TERM_HOLD)
+	  {
+	  strcpy(sub_type, "hold");
+	  } 
+	else if (subtype == WM_TERM_RERUN)
+	  {
+	  strcpy(sub_type, "rerun");
+	  } 
+	else if (subtype == WM_TERM_MIGRATE)
+	  {
+	  strcpy(sub_type, "migrate");
+	  } 
+	else
+	  {
+	  sprintf(log_buffer, "WM_TERM bad sub type = %d for pbs job %s",
+					  subtype,
+					  pbs_jobid);
+	  
+	  log_err(-1, id, log_buffer);
+	  return 0;
+	  }
+	} 
+  else if (type == WM_RECV)
+	{
+	strcpy(rec_type, "recv");
+	
+	if (subtype == WM_RECV_NEW)
+	  {
+	  strcpy(sub_type, "new");
+	  } 
+	else
+	  {
+	  sprintf(log_buffer, "WM_RECV bad sub type = %d for pbs job %s",
+					  subtype,
+					  pbs_jobid);
+	  
+	  log_err(-1, id, log_buffer);
+	  return 0;
+	  }
+	} 
+  else
+    {
+    sprintf(log_buffer, "bad record type = %d for pbs job %s",
+      			  type,
+      			  pbs_jobid);
+  
+    log_err(-1, id, log_buffer);
+    return 0;
+    }
+  
+  if (LOGLEVEL >= 7)
+    {
+    sprintf(log_buffer, "Creating CSA workload management %s - %s record for: "
+      			  "job_id = %llx, compCode = %d, pbs job %s",
+      			  &rec_type, &sub_type, job_id, compCode, pbs_jobid);
+  
+    log_ext(-1, id, log_buffer, LOG_DEBUG);
+    }
+  
+  memset(&wkm, 0, sizeof(wkm));
+  
+  /* fill in header data */
+  
+  wkm.hdr.ah_magic = ACCT_MAGIC;
+  wkm.hdr.ah_revision = REV_APP;
+  wkm.hdr.ah_type = ACCT_DAEMON_WKMG;
+  
+  if (!getuid() || ! geteuid())
+      wkm.hdr.ah_flag |= ASU;	/* set super user flag */
+  
+  wkm.hdr.ah_size = sizeof(struct wkmgmtbs);
+  
+  /* fill in rest of needed data */
+  
+  wkm.type = type;
+  
+  wkm.subtype = subtype;
+  
+  wkm.arrayid = 0;
+  
+  strncpy(&wkm.serv_provider[0], "TORQUE          ", sizeof(wkm.serv_provider));
+  
+  if ((wkm.time = time(NULL)) == (time_t) - 1)
+    {
+    sprintf(log_buffer, "error setting time, errno = %d - %s pbs job = %s",
+      			  errno,
+      			  strerror(errno),
+      			  pbs_jobid);
+  
+    log_err(-1, id, log_buffer);
+    return 0;
+    }
+  
+  if ((wkm.enter_time = time(NULL)) == (time_t) - 1)
+    {
+    sprintf(log_buffer, "error setting INIT enter time, errno = %d - %s pbs job = %s",
+  				  errno,
+  				  strerror(errno),
+  				  pbs_jobid);
+  
+    log_err(-1, id, log_buffer);
+    return 0;
+    }
+  
+  wkm.uid = getuid();
+  
+  wkm.prid = prid;
+  wkm.ash = ash;
+  
+  wkm.jid = job_id;
+  
+  /*
+  * character fields need to be NULL terminated
+  */
+  strncpy(&wkm.machname[0], "TORQUE-MACHINE", sizeof(wkm.machname) - 1);
+  strncpy(&wkm.reqname[0], "TORQUE-REQUEST", sizeof(wkm.reqname) - 1);
+  strncpy(&wkm.quename[0], "TORQUE-QUEUE", sizeof(wkm.quename) - 1);
+  wkm.reqid = reqid;
+  
+  if (type == WM_TERM)
+    {
+    wkm.code = compCode;
+    }
+  
+  /*
+  * Fill in the CSA_WRACCT request structure for csa ioctl call
+  */
+  memset(&cw, 0, sizeof(cw));
+  
+  cw.wra_did = ACCT_DMD_WKMG;	 /* daemon ID */
+  
+  cw.wra_len = sizeof(struct wkmgmtbs);	/* length of app record */
+  
+  cw.wra_jid = job_id;	 /* job Id from job create */
+  
+  cw.wra_buf = (char *) & wkm;	/* pointer to record */
+  
+  if (csa_wracct(&cw))
+    {
+    /* EINVAL is okay for a WM_TERM */
+    if ((type != WM_TERM) && (errno != EINVAL))
+  	  {
+  	  sprintf(log_buffer, "error writing wkm %s record, errno=%d - %s pbs job = %s",
+  					  &rec_type,
+  					  errno,
+  					  strerror(errno),
+  					  pbs_jobid);
+  
+  	  log_err(-1, id, log_buffer);
+  	  return 0;
+  	  }
+    }
+  
+  return 1;
+  }
 
 
 
@@ -6938,66 +6923,68 @@ int create_WLM_Rec(
  */
 
 void add_wkm_start(
-									uint64_t job_id,
-									char*    pbs_jobid)
-{
-	static char *id = "add_wkm_start";
-
-	if (check_csa_status(IS_UP))
+  uint64_t job_id,
+  char*    pbs_jobid)
+  {
+  static char *id = "add_wkm_start";
+  
+  if (check_csa_status(IS_UP))
+	{
+	
+	/* Add a workload management received record before the start */
+	
+	if (create_WLM_Rec(pbs_jobid, job_id, WM_RECV, WM_RECV_NEW, 0, 0, 0, 0))
+	  {
+	  if (LOGLEVEL >= 7)
 		{
-
-		/* Add a workload management received record before the start */
-
-		if (create_WLM_Rec(pbs_jobid, job_id, WM_RECV, WM_RECV_NEW, 0, 0, 0, 0))
-			{
-			if (LOGLEVEL >= 7)
-				{
-				sprintf(log_buffer,
-								"Added CSA workload management WM_RECV for job id = %llx for pbs job %s",
-								job_id,
-								pbs_jobid);
-
-				log_ext(-1, id, log_buffer, LOG_DEBUG);
-				}
-			} else
-			{
-			if (LOGLEVEL >= 2)
-				{
-				sprintf(log_buffer,
-								"Failed to add CSA workload management WM_RECV for job id = %llx for pbs job %s",
-								job_id,
-								pbs_jobid);
-
-				log_err(-1, id, log_buffer);
-				}
-
-			return;
-			}
-
-		if (create_WLM_Rec(pbs_jobid, job_id, WM_INIT, WM_INIT_START, 0, 0, 0, 0))
-			{
-			if (LOGLEVEL >= 7)
-				{
-				sprintf(log_buffer,
-								"Added CSA workload management WM_INIT for job id = %llx for pbs job %s",
-								job_id,
-								pbs_jobid);
-
-				log_ext(-1, id, log_buffer, LOG_DEBUG);
-				}
-			} else if (LOGLEVEL >= 2)
-			{
-			sprintf(log_buffer,
-							"Failed to add CSA workload management WM_INIT for job id = %llx for pbs job %s",
-							job_id,
-							pbs_jobid);
-
-			log_err(-1, id, log_buffer);
-			}
+		sprintf(log_buffer,
+						"Added CSA workload management WM_RECV for job id = %llx for pbs job %s",
+						job_id,
+						pbs_jobid);
+		
+		log_ext(-1, id, log_buffer, LOG_DEBUG);
 		}
-
-	return;
-}	 /* END add_wkm_recv() */
+	  } 
+	else
+	  {
+	  if (LOGLEVEL >= 2)
+		{
+		sprintf(log_buffer,
+						"Failed to add CSA workload management WM_RECV for job id = %llx for pbs job %s",
+						job_id,
+						pbs_jobid);
+		
+		log_err(-1, id, log_buffer);
+		}
+	  
+	  return;
+	  }
+	
+	if (create_WLM_Rec(pbs_jobid, job_id, WM_INIT, WM_INIT_START, 0, 0, 0, 0))
+	  {
+	  if (LOGLEVEL >= 7)
+		{
+		sprintf(log_buffer,
+						"Added CSA workload management WM_INIT for job id = %llx for pbs job %s",
+						job_id,
+						pbs_jobid);
+		
+		log_ext(-1, id, log_buffer, LOG_DEBUG);
+		}
+	  } 
+	else if (LOGLEVEL >= 2)
+	  {
+	  sprintf(log_buffer,
+					  "Failed to add CSA workload management WM_INIT for job id = %llx for pbs job %s",
+					  job_id,
+					  pbs_jobid);
+	  
+	  log_err(-1, id, log_buffer);
+	  }
+	}
+  
+  return;
+  }	 /* END add_wkm_recv() */
 
 
 
@@ -7007,38 +6994,39 @@ void add_wkm_start(
  */
 
 void add_wkm_end(
-								uint64_t job_id,
-								int64_t comp_code,
-								char*    pbs_jobid)
-{
-	static char *id = "add_wkm_end";
-
-	if (check_csa_status(IS_UP))
+  uint64_t job_id,
+  int64_t comp_code,
+  char*    pbs_jobid)
+  {
+  static char *id = "add_wkm_end";
+  
+  if (check_csa_status(IS_UP))
+	{
+	if (create_WLM_Rec(pbs_jobid, job_id, WM_TERM, WM_TERM_EXIT, 0, 0, comp_code, 0))
+	  {
+	  if (LOGLEVEL >= 7)
 		{
-		if (create_WLM_Rec(pbs_jobid, job_id, WM_TERM, WM_TERM_EXIT, 0, 0, comp_code, 0))
-			{
-			if (LOGLEVEL >= 7)
-				{
-				sprintf(log_buffer,
-								"Added CSA workload management WM_TERM for job id = %llx for pbs job %s",
-								job_id,
-								pbs_jobid);
-
-				log_ext(-1, id, log_buffer, LOG_DEBUG);
-				}
-			} else if (LOGLEVEL >= 2)
-			{
-			sprintf(log_buffer,
-							"Failed to add CSA workload management WM_TERM for job id = %llx for pbs job %s",
-							job_id,
-							pbs_jobid);
-
-			log_err(-1, id, log_buffer);
-			}
+		sprintf(log_buffer,
+						"Added CSA workload management WM_TERM for job id = %llx for pbs job %s",
+						job_id,
+						pbs_jobid);
+		
+		log_ext(-1, id, log_buffer, LOG_DEBUG);
 		}
-
-	return;
-}	 /* END add_wkm_end() */
+	  } 
+	else if (LOGLEVEL >= 2)
+	  {
+	  sprintf(log_buffer,
+					  "Failed to add CSA workload management WM_TERM for job id = %llx for pbs job %s",
+					  job_id,
+					  pbs_jobid);
+	  
+	  log_err(-1, id, log_buffer);
+	  }
+	}
+  
+  return;
+  }	 /* END add_wkm_end() */
 
 
 
