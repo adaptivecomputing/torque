@@ -1938,6 +1938,14 @@ int mom_set_use(
   at = &pjob->ji_wattr[(int)JOB_ATR_resc_used];
   assert(at->at_type == ATR_TYPE_RESC);
 
+#ifdef USESAVEDRESOURCES
+  /* don't update jobs that are marked as recovery */
+  if (pjob->ji_flags & MOM_JOB_RECOVERY)
+    {
+    return(PBSE_NONE);
+    }
+#endif    /* USESAVEDRESOURCES */
+
   at->at_flags |= ATR_VFLAG_MODIFY;
 
   if ((at->at_flags & ATR_VFLAG_SET) == 0)
@@ -3653,9 +3661,7 @@ void scan_non_child_tasks(void)
 
   job *job;
   extern tlist_head svr_alljobs;
-#ifdef USESAVEDRESOURCES
   static int first_time = TRUE;
-#endif    /* USESAVEDRESOURCES */
 
   DIR *pdir;  /* use local pdir to prevent race conditions associated w/global pdir (VPAC) */
 
@@ -3670,6 +3676,30 @@ void scan_non_child_tasks(void)
 
       struct dirent *dent;
       int found;
+
+      /*
+       * Check for tasks that were exiting when mom went down, set back to
+       * running so we can reprocess them and send the obit
+       */
+      if ((first_time) && (task->ti_qs.ti_sid != 0) &&
+         ((task->ti_qs.ti_status == TI_STATE_EXITED) ||
+         (task->ti_qs.ti_status == TI_STATE_DEAD)))
+        {
+
+        if (LOGLEVEL >= 7)
+          {
+          sprintf(log_buffer, "marking task %d as TI_STATE_RUNNING was %d",
+              task->ti_qs.ti_task,
+              task->ti_qs.ti_status);
+
+          LOG_EVENT(
+            PBSEVENT_DEBUG,
+            PBS_EVENTCLASS_JOB,
+            job->ji_qs.ji_jobid,
+            log_buffer);
+          }
+        task->ti_qs.ti_status = TI_STATE_RUNNING;
+        }
 
       /* only check on tasks that we think should still be around */
 
@@ -3760,9 +3790,7 @@ void scan_non_child_tasks(void)
 
   closedir(pdir);
   
-#ifdef USESAVEDRESOURCES
   first_time = FALSE;
-#endif    /* USESAVEDRESOURCES */
 
   return;
   }  /* END scan_non_child_tasks() */
