@@ -137,6 +137,7 @@ int   tasksize;
 #endif
 
 int   tasksize = DEFTASKSIZE;
+int   alias_opt = FALSE;
 
 
 
@@ -1206,6 +1207,18 @@ void display_statjob(
         while ((*c != '.') && (*c != '\0'))
           c++;
 
+        if (alias_opt == TRUE)
+          {
+          /* show the alias as well as the first part of the server name */
+          if (*c == '.')
+            {
+            c++;
+
+            while((*c != '.') && (*c != '\0'))
+              c++;
+            }
+          }
+
         c++;    /* List the first part of the server name, too. */
 
         while ((*c != '.') && (*c != '\0'))
@@ -2033,9 +2046,9 @@ int main(
 #endif /* !FALSE */
 
 #if !defined(PBS_NO_POSIX_VIOLATION)
-#define GETOPT_ARGS "aeE:fin1qrsu:xGMQRBW:-:"
+#define GETOPT_ARGS "aeE:filn1qrsu:xGMQRBW:-:"
 #else
-#define GETOPT_ARGS "fQBW:"
+#define GETOPT_ARGS "flQBW:"
 #endif /* PBS_NO_POSIX_VIOLATION */
 
   mode = JOBS; /* default */
@@ -2184,6 +2197,12 @@ int main(
 
           errflg++;
           }
+
+        break;
+
+      case 'l':
+
+        alias_opt = TRUE;
 
         break;
 

@@ -61,6 +61,12 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
 2.4.6
   f - added an asynchronous option for qsig, specified with -a.
   b - fix to cleanup job that is left in running state after mom restart
+  f - added two server parameters: display_job_server_suffix and job_suffix_alias.
+      The first defaults to true and is whether or not jobs should be appended
+      by .server_name. The second defaults to NULL, but if it is defined it
+      will be appended at the end of the jobid, i.e. jobid.job_suffix_alias.
+  f - added -l option to qstat so that it will display a server name and an
+      alias if both are used. If these aren't used, -l has no effect.
 
 2.4.5
   b - epilogue.user scripts were being run with prologue argments. Fixed

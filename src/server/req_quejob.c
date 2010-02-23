@@ -255,21 +255,62 @@ void req_quejob(
   else
     {
     char host_server[PBS_MAXSERVERNAME + 1];
+    int  server_suffix = TRUE;
 
     created_here = JOB_SVFLG_HERE;
 
-    sprintf(jidbuf, "%d.",
-            server.sv_qs.sv_jobidnumber);
-
     memset(host_server, 0, sizeof(host_server));
 
-    if (get_fullhostname(pbs_default(), host_server, PBS_MAXSERVERNAME, NULL) == 0)
+    if ((server.sv_attr[SRV_ATR_display_job_server_suffix].at_flags & ATR_VFLAG_SET) &&
+        (server.sv_attr[SRV_ATR_display_job_server_suffix].at_val.at_long == FALSE))
+      server_suffix = FALSE;
+
+    if ((server.sv_attr[SRV_ATR_job_suffix_alias].at_flags & ATR_VFLAG_SET) &&
+        (server_suffix == TRUE))
       {
-      strcat(jidbuf, host_server);
+      char *svrnm;
+
+      if (get_fullhostname(pbs_default(), host_server, PBS_MAXSERVERNAME, NULL) == 0)
+        {
+        svrnm = host_server;
+        }
+      else
+        {
+        svrnm = server_name;
+        }
+
+      snprintf(jidbuf,sizeof(jidbuf),"%d.%s.%s",
+        server.sv_qs.sv_jobidnumber,
+        svrnm,
+        server.sv_attr[SRV_ATR_job_suffix_alias].at_val.at_str);
+      }
+    else if (server.sv_attr[SRV_ATR_job_suffix_alias].at_flags & ATR_VFLAG_SET)
+      {
+      snprintf(jidbuf,sizeof(jidbuf),"%d.%s",
+        server.sv_qs.sv_jobidnumber,
+        server.sv_attr[SRV_ATR_job_suffix_alias].at_val.at_str);
+      }
+    else if (server_suffix == TRUE)
+      {
+      char *svrnm;
+
+      if (get_fullhostname(pbs_default(), host_server, PBS_MAXSERVERNAME, NULL) == 0)
+        {
+        svrnm = host_server;
+        }
+      else
+        {
+        svrnm = server_name;
+        }
+
+      snprintf(jidbuf,sizeof(jidbuf),"%d.%s",
+        server.sv_qs.sv_jobidnumber,
+        svrnm);
       }
     else
       {
-      strcat(jidbuf, server_name);
+      snprintf(jidbuf,sizeof(jidbuf),"%d",
+        server.sv_qs.sv_jobidnumber);
       }
 
     jid = jidbuf;

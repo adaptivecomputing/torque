@@ -166,6 +166,8 @@ enum srv_atr
   SRV_ATR_CredentialLifetime,
   SRV_ATR_JobMustReport,
   SRV_ATR_checkpoint_dir,
+  SRV_ATR_display_job_server_suffix,
+  SRV_ATR_job_suffix_alias,
   SRV_ATR_MailSubjectFmt,
   SRV_ATR_MailBodyFmt,
   SRV_ATR_NPDefault,

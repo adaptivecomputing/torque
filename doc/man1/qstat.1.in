@@ -81,16 +81,16 @@
 .SH NAME
 qstat \- show status of pbs batch jobs
 .SH SYNOPSIS
-qstat [\-f [\-1]] [\-W site_specific] [\-x] [\^job_identifier... | destination...\^]
+qstat [\-f [\-1]] [-l] [\-W site_specific] [\-x] [\^job_identifier... | destination...\^]
 .sp
-qstat [\-a|-i|-r|-e] [\-n [\-1]] [\-s] [\-G|-M] [\-R] [\-u user_list] [\^job_identifier... |\ 
+qstat [\-a|-i|-r|-e] [-l] [\-n [\-1]] [\-s] [\-G|-M] [\-R] [\-u user_list] [\^job_identifier... |\ 
 destination...\^]
 .sp
-qstat \-Q [\-f [\-1]][\-W site_specific] [\^destination...\^]
+qstat \-Q [\-f [\-1]][\-W site_specific] [-l] [\^destination...\^]
 .sp
-qstat \-q [\-G|-M] [\^destination...\^]
+qstat \-q [\-G|-M] [-l] [\^destination...\^]
 .sp
-qstat \-B [\-f [\-1]][\-W site_specific] [\^server_name...\^]
+qstat \-B [\-f [\-1]][\-W site_specific] [-l] [\^server_name...\^]
 .SH DESCRIPTION
 The
 .B qstat
@@ -193,6 +193,9 @@ are the names of servers.
 Specifies that the output is to be displayed in XML form.  This option is only
 valid with the \-f option or by itself, which will also specify the \-f full status
 display.
+.IP "\-l" 10
+Specifies that the long name of the job (or the job name appended with the suffix alias)
+should be displayed.
 .LP
 .SH  OPERANDS
 If neither the
