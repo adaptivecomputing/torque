@@ -67,6 +67,9 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       will be appended at the end of the jobid, i.e. jobid.job_suffix_alias.
   f - added -l option to qstat so that it will display a server name and an
       alias if both are used. If these aren't used, -l has no effect.
+  e - qstat -f now includes an extra field "Walltime Remaining" that tells 
+      the remaining walltime in seconds. This field is does not account for
+      weighted walltime.
 
 2.4.5
   b - epilogue.user scripts were being run with prologue argments. Fixed

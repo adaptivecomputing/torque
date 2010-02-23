@@ -396,6 +396,8 @@ The amount of space requested on the parallel I/O file system.
 .RE
 The last three fields may not contain useful information at all sites
 or on all systems.
+.br
+Note: Remaining walltime does not account for walltime multiplication factors.
 .sp 2
 Displaying Queue Status
 .LP
