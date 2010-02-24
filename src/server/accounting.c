@@ -103,6 +103,9 @@
 #include "queue.h"
 #include "log.h"
 #include "acct.h"
+#ifdef USESAVEDRESOURCES
+#include "resource.h"
+#endif
 
 /* Local Data */
 
@@ -596,6 +599,10 @@ void account_jobend(
   char  *buf;
   unsigned int   bufSize = PBS_ACCT_MAX_RCD + 1;
   char  *pb;
+#ifdef USESAVEDRESOURCES
+  attribute *pattr;
+  long walltime_val = 0;
+#endif
 
   /* pack in general information about the job */
 
@@ -624,8 +631,35 @@ void account_jobend(
 
   /* add the execution end time */
 
+#ifdef USESAVEDRESOURCES
+  pattr = &pjob->ji_wattr[(int)JOB_ATR_resc_used];
+
+  if (pattr->at_flags & ATR_VFLAG_SET)
+    {
+    resource *pres;
+    char     *pname;
+
+    pres = (resource *)GET_NEXT(pattr->at_val.at_list);
+    
+    /* find the walltime resource */
+    for (;pres != NULL;pres = (resource *)GET_NEXT(pres->rs_link))
+      {
+      pname = pres->rs_defin->rs_name;
+      
+      if (strcmp(pname, "walltime") == 0)
+        {
+        /* found walltime */
+        walltime_val = pres->rs_value.at_val.at_long;
+        break;
+        }
+      }
+    }
+  sprintf(pb, "end=%ld ",
+          (long)pjob->ji_qs.ji_stime + walltime_val);
+#else
   sprintf(pb, "end=%ld ",
           (long)time_now);
+#endif /* USESAVEDRESOURCES */
 
   pb += strlen(pb);
 
