@@ -330,6 +330,292 @@ static char *x11_get_proto(
 
 
 
+
+char *smart_strtok(
+
+  char  *line,          /* I */
+  char  *delims,        /* I */
+  char **ptrPtr,        /* O */
+  int    ign_backslash) /* I */
+
+  {
+  char *head = NULL;
+  char *start = NULL;
+
+  int dindex;
+  int ignchar;
+  int ignore;
+
+  int sq_count = 0;
+  int dq_count = 0;
+  int sb_count = 0;
+
+  char *tmpLine = NULL;
+  int   tmpLineSize;
+  int   tindex;
+
+  char *ptr;
+
+  if (line != NULL)
+    {
+    *ptrPtr = line;
+    }
+  else if (ptrPtr == NULL)
+    {
+    /* FAILURE */
+
+    return(head);
+    }
+
+  start = *ptrPtr;
+
+  tmpLineSize = (line == NULL) ? strlen(*ptrPtr + 1) : strlen(line) + 1;
+  tmpLine = (char *)malloc(tmpLineSize * sizeof(char));
+
+  tmpLine[0] = '\0';
+
+  tindex = 0;
+
+  ignchar = FALSE;
+
+  ptr = *ptrPtr;
+
+  while (*ptr != '\0')
+    {
+    if (*ptr == '\'')
+      {
+      sq_count++;
+
+      if ((head != NULL) && !(sq_count % 2) && !(dq_count % 2))
+        {
+        ptr++;
+
+        ignchar = TRUE;
+        }
+      else 
+        {
+        ignore = TRUE;
+
+        if (ign_backslash == TRUE)
+          {
+          /* check if backslash precedes delimiter */
+
+          if ((ptr > start) && (*(ptr-1) == '\\'))
+            {
+            /* check if backslash is backslashed */
+
+            if ((ptr > start + 1) && (*(ptr-2) != '\\'))
+              {
+              /* delimiter is backslashed, ignore */
+
+              ignore = FALSE;
+              
+              sq_count--;
+              }
+            }
+          }
+
+        if (ignore == TRUE)
+          {
+          ptr++;
+
+          ignchar = TRUE;
+          }
+        }
+      }
+    else if (*ptr == '\"')
+      {
+      dq_count++;
+
+      if ((head != NULL) && !(sq_count % 2) && !(dq_count % 2))
+        {
+        ptr++;
+
+        ignchar = TRUE;
+        }
+      else 
+        {
+        ignore = TRUE;
+
+        if (ign_backslash == TRUE)
+          {
+          /* check if backslash precedes delimiter */
+
+          if ((ptr > start) && (*(ptr-1) == '\\'))
+            {
+            /* check if backslash is backslashed */
+
+            if ((ptr > start + 1) && (*(ptr-2) != '\\'))
+              {
+              /* delimiter is backslashed, ignore */
+
+              ignore = FALSE;
+              
+              dq_count--;
+              }
+            }
+          }
+
+        if (ignore == TRUE)
+          {
+          ptr++;
+
+          ignchar = TRUE;
+          }
+        }
+      }
+    else if (*ptr == '[' )
+      {
+      sb_count = 1;
+      }
+    else if (*ptr == ']')
+      {
+      sb_count = 0;
+      }
+    else if (!(sq_count % 2) && !(dq_count % 2) && (sb_count == 0))
+      {
+      /* not in quotations, locate delimiter */
+
+      for (dindex = 0; delims[dindex] != '\0'; dindex++)
+        {
+        if (*ptr != delims[dindex])
+          continue;
+
+        if ((ign_backslash == TRUE) && (head != NULL))
+          {
+          /* check if backslash precedes delimiter */
+          if ((ptr > head) && (*(ptr-1) == '\\'))
+            {
+            /* check if backslash is backslashed */
+
+            if ((ptr > head + 1) && (*(ptr-1) != '\\'))
+              {
+              /* delimiter is backslashed, ignore */
+
+              continue;
+              }
+            }
+          }
+
+        /* delimiter found */
+
+        *ptr = '\0';
+        
+        ptr++;
+        
+        if (head != NULL)
+          {
+          *ptrPtr = ptr;
+
+          tmpLine[tindex] = '\0';
+          
+          if (tindex > 0)
+            strcpy(head,tmpLine);
+          
+          free(tmpLine);
+
+          return(head);
+          }
+
+        ignchar = TRUE;
+
+        break;
+        } /* END for (dindex) */
+      }
+
+    if ((ignchar != TRUE) && (*ptr != '\0'))
+      {
+      if (head == NULL)
+        head = ptr;
+
+      tmpLine[tindex++] = ptr[0];
+
+      ptr++;
+      }
+
+    ignchar = FALSE;
+    } /* END while (*ptr != '\0') */
+
+  tmpLine[tindex] = '\0';
+
+  if (tindex > 0)
+    strcpy(head,tmpLine);
+
+  free(tmpLine);
+
+  *ptrPtr = ptr;
+
+  return(head);
+  } /* END smarter_strtok */
+
+
+
+
+
+int get_name_value(start, name, value)
+char  *start;
+char **name;
+char **value;
+  {
+  static char *tok_ptr;
+  char *curr_ptr;
+  char *equals;
+
+  /* we've reached the end */
+  if ((start == NULL) &&
+      (*tok_ptr == '\0'))
+    return(0);
+
+  curr_ptr = smart_strtok(start,",",&tok_ptr,FALSE);
+
+  if ((curr_ptr == NULL))
+    return(0);
+     
+  if ((*curr_ptr == '=') || 
+      (*curr_ptr == '\0'))
+    {
+    /* no name, fail */
+    return(-1);
+    }
+
+  /* skip leading spaces */
+  while (isspace((int)*curr_ptr) && (*curr_ptr))
+    curr_ptr++;
+
+  *name = curr_ptr;
+
+  equals = *name;
+
+  /* skip over name */
+  while ((*equals) && (!isspace((int)*equals)) && (*equals != '='))
+    equals++;
+
+  /* strip blanks */
+  while ((*equals) && (isspace((int)*equals)))
+    *equals++ = '\0';
+
+  if (*equals != '=')
+    return (-1); /* should have found a = as first non blank */
+
+  *equals++ = '\0';
+
+  /* skip leading white space */
+  while (isspace((int)*equals) && *equals)
+    equals++;
+
+  if (*equals == '\0')
+    return(-1);
+
+  *value = equals;
+
+  return (1);
+  }
+
+
+
+
+
+
 char *set_dir_prefix(
 
   char *prefix,
@@ -3378,7 +3664,7 @@ int process_opts(
           break;
           }
 
-        i = parse_equal_string(optarg, &keyword, &valuewd);
+        i = get_name_value(optarg, &keyword, &valuewd);
 
         if (i != 1)
           {
@@ -3389,7 +3675,7 @@ int process_opts(
           snprintf(tmpLine, sizeof(tmpLine), "x=%s",
                    optarg);
 
-          i = parse_equal_string(tmpLine, &keyword, &valuewd);
+          i = get_name_value(tmpLine, &keyword, &valuewd);
           }
 
         while (i == 1)
@@ -3587,7 +3873,7 @@ int process_opts(
             set_attr(&attrib, keyword, valuewd);
             }
 
-          i = parse_equal_string(NULL, &keyword, &valuewd);
+          i = get_name_value(NULL, &keyword, &valuewd);
           }  /* END while (i == 1) */
 
         if (i == -1)
