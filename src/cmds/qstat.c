@@ -589,6 +589,7 @@ static void altdsp_statjob(
   char *jobn = NULL;
   char *sess;
   char *tasks;
+  char  calcTasks[64];
   char *nodect;
   char *rqtimecpu;
   char *rqtimewal;
@@ -696,9 +697,28 @@ static void altdsp_statjob(
           {
           nodect = pat->value;
           }
+        else if (!strcmp(pat->resource, "nodes"))
+          {
+          char *tmp = pat->value;
+          char *eq = strchr(tmp,'=');
+          
+          if (eq != NULL)
+            {
+            int nodes = atoi(pat->value);
+            int procs = atoi(eq+1);
+
+            sprintf(calcTasks,"%d",nodes*procs);
+            tasks = calcTasks;
+            }
+          else
+            {
+            tasks = pat->value;
+            }
+
+          }
         else if (!strcmp(pat->resource, "ncpus"))
           {
-          if (strcmp(pat->value, "0"))
+          if ((!strcmp(tasks,blank)) && (strcmp(pat->value, "0")))
             tasks = pat->value;
           }
         else if (!strcmp(pat->resource, "mppe"))
