@@ -890,7 +890,7 @@ scan_for_exiting(void)
 int post_epilogue(
 
   job *pjob,  /* I */
-  int  ev)    /* I exit value (not used) */
+  int  ev)    /* I exit value (only used to determine if retrying obit) */
 
   {
   char id[] = "post_epilogue";
@@ -937,11 +937,14 @@ int post_epilogue(
     if (sock < 0)
       {
       /* We are trying to send obit, but failed - where is this retried?
-       * Answer: I think that the main_loop should examine jobs and try
+       * Answer: In the main_loop examine_all_jobs_to_resend() tries
        * every so often to send the obit.  This would work for recovered
        * jobs also.
        */
-      mark_for_resend(pjob);
+      if (ev != MOM_OBIT_RETRY)
+        {
+        mark_for_resend(pjob);
+        }
 
       return(1);
       }

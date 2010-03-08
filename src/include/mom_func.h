@@ -104,6 +104,7 @@ struct sig_tbl
   };
 
 #define NUM_LCL_ENV_VAR  10
+#define MOM_OBIT_RETRY   -5
 
 /* used by mom_main.c and requests.c for $usecp */
 

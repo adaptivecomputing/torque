@@ -7857,7 +7857,7 @@ void examine_all_jobs_to_resend(void)
     if (JobsToResend[jindex] == (job *)DUMMY_JOB_PTR)
       continue;
 
-    if (!post_epilogue(JobsToResend[jindex],-5))
+    if (!post_epilogue(JobsToResend[jindex], MOM_OBIT_RETRY))
       {
 
       if (LOGLEVEL >= 7)
