@@ -63,6 +63,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       initialized, causing a segfault
   b - stop counting down walltime remaining after a job is completed
   b - correctly display the number for tasks as used in TORQUE in qstat -a output
+  b - no longer ignoring fread return values in linux cpuset code (gcc 4.3.3)
 
 2.4.6
   f - added an asynchronous option for qsig, specified with -a.
