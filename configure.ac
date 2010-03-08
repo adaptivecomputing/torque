@@ -1172,11 +1172,7 @@ if test "$with_modulefiles" != 'no'; then
     MODULEFILES_DIR="$with_modulefiles"
   fi
 else
-  if test -d /etc/modulefiles;then
-    MODULEFILES_DIR=/etc/modulefiles
-  else
-    MODULEFILES_DIR=no
-  fi
+  MODULEFILES_DIR=no
 fi
 AM_CONDITIONAL(INSTALL_MODULEFILES, [test "x$MODULEFILES_DIR" != "xno"])
 AC_SUBST(MODULEFILES_DIR)

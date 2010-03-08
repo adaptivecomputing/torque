@@ -66,6 +66,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   b - no longer ignoring fread return values in linux cpuset code (gcc 4.3.3)
   b - fixed a bug where job was added to obit retry list multiple times, causing
       a segfault
+  b - Fix for Bugzilla bug 43. "configure ignores with-modulefiles=no"
 
 2.4.6
   f - added an asynchronous option for qsig, specified with -a.
