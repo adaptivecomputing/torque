@@ -4857,6 +4857,7 @@ void start_exec(
 
 	eventent     *ep;
 	int  i, nodenum;
+  int  resuming_service = FALSE;
 	int  ports[2], socks[2];
 
 	struct sockaddr_in saddr;

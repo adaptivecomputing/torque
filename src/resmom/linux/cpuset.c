@@ -312,9 +312,14 @@ initialize_root_cpuset(void)
 
       /* read cpus from root cpuset */
 
-      /* FIXME: need proper error checking and response */
-
-      fread(cpuset_buf, sizeof(char), sizeof(cpuset_buf), fp);
+      if (fread(cpuset_buf, sizeof(char), sizeof(cpuset_buf), fp) != sizeof(cpuset_buf))
+        {
+        if (ferror(fp) != 0)
+          {
+          log_err(-1,id,
+            "An error occurred while reading the root cpuset, attempting to continue.\n");
+          }
+        }
 
       /* Replace trailing newline with NULL */
       *(index(cpuset_buf, '\n')) = '\0';
@@ -386,7 +391,14 @@ initialize_root_cpuset(void)
 
         /* FIXME: need proper error checking and response */
 
-        fread(bootbuf, sizeof(char), sizeof(bootbuf), fp);
+        if (fread(bootbuf, sizeof(char), sizeof(bootbuf), fp) != sizeof(bootbuf))
+          {
+          if (ferror(fp) != 0)
+            {
+            log_err(-1,id,
+              "An error occurred while reading the root cpuset, attempting to continue.\n");
+            }
+          }
 
         /* Replace trailing newline with NULL */
         *(index(bootbuf, '\n')) = '\0';
@@ -439,7 +451,14 @@ initialize_root_cpuset(void)
 
       /* read all mems from root cpuset */
 
-      fread(cpuset_buf, sizeof(char), 1023, fp);
+      if (fread(cpuset_buf, sizeof(char), sizeof(cpuset_buf), fp) != sizeof(cpuset_buf))
+        {
+        if (ferror(fp) != 0)
+          {
+          log_err(-1,id,
+            "An error occurred while reading the root cpuset, attempting to continue.\n");
+          }
+        }
 
       fclose(fp);
 
@@ -586,7 +605,17 @@ int init_jobset(
 
     if (fd)
       {
-      fread(membuf, sizeof(char), 1023, fd);
+      if (fread(membuf, sizeof(char), sizeof(membuf), fd))
+        {
+        if (ferror(fd) != 0)
+          {
+          log_err(-1,id,
+            "An error occurred while reading cpuset's memory\n");
+
+          return(FAILURE);
+          }
+        }
+
       fclose(fd);
       snprintf(tmppath,sizeof(tmppath),"%s/mems",path);
       fd = fopen(tmppath, "w");
