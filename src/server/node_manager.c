@@ -123,8 +123,6 @@ extern void DIS_rpp_reset(void);
 
 extern int LOGLEVEL;
 
-extern int allow_any_mom;
-
 #if !defined(H_ERRNO_DECLARED)
 extern int h_errno;
 #endif
@@ -1205,36 +1203,6 @@ int is_stat_get(
         update_node_state(np, INUSE_UNKNOWN);
         }
       }
-    else if(!strncmp(ret_info, "uname", 5) && allow_any_mom)
-      {
-        /* for any mom mode if an address did not succeed at gethostbyaddr it was
-           given the hex value of its ip address */
-        if(!strncmp(np->nd_name, "0x", 2))
-          {
-            char *cp;
-            char node_name[PBS_MAXHOSTNAME + 1];
-            int count;
-
-            cp = strchr(ret_info, ' ');
-            count = 0;
-
-            do
-              {
-              cp++;
-              node_name[count] = *cp;
-              count++;
-              }while(*cp != ' ' && count < PBS_MAXHOSTNAME);
-
-              node_name[count-1] = 0;
-              cp = strdup(node_name);
-              free(np->nd_name);
-              np->nd_name = cp;
-              np->nd_first = init_prop(np->nd_name);
-              np->nd_last = np->nd_first;
-              np->nd_f_st = init_prop(np->nd_name);
-              np->nd_l_st = np->nd_f_st;
-          }
-      }
     else if (!strncmp(ret_info, "me", 2))  /* shorter str compare than "message" */
       {
       if (!strncmp(ret_info, "message=ERROR", 13))
@@ -1805,13 +1773,9 @@ void is_request(
 
   int  command = 0;
   int  ret = DIS_SUCCESS;
-  int  i, err;
-  char nodename[PBS_MAXHOSTNAME];
-  int   perm = ATR_DFLAG_MGRD | ATR_DFLAG_MGWR;
-  struct hostent *hp;      
+  int  i;
 
   unsigned long ipaddr;
-  unsigned long tmpaddr;
 
   struct sockaddr_in *addr;
 
@@ -1920,29 +1884,6 @@ void is_request(
 
     goto found;
     }  /* END if ((node = tfind(ipaddr,&ipaddrs)) != NULL) */
-    else if (allow_any_mom)                                           
-      {                                                               
-        {                                                             
-          hp = gethostbyaddr(&ipaddr, sizeof(ipaddr), AF_INET);       
-          if(hp != NULL)                                              
-            {                                                         
-            strncpy(nodename, hp->h_name, PBS_MAXHOSTNAME);           
-            err = create_partial_pbs_node(nodename, ipaddr, perm);    
-            }                                                         
-          else                                                        
-            {      
-            tmpaddr = ntohl(addr->sin_addr.s_addr);                                                   
-            sprintf(nodename, "0x%lX", tmpaddr);
-            err = create_partial_pbs_node(nodename, ipaddr, perm);    
-            }                                                         
-                                                                      
-          if(err == PBSE_NONE)                                        
-            {   
-            node = tfind(ipaddr, &ipaddrs);                           
-            goto found;                                               
-            }                                                         
-        }                                                             
-      }
 
   /* node not listed in trusted ipaddrs list */
 

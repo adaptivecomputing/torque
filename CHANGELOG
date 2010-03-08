@@ -57,14 +57,12 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   e - added -DUSESAVEDRESOURCES code that uses servers saved resources used
       for accounting end record instead of current resources used for jobs that
       stopped running while mom was not up.
-  f - added SIG_SUSPEND/SIG_RESUME capability for pseudo services (from 2.3-trans)
 
 2.4.7
   b - fixed a bug for when a resource_list has been set, but isn't completely
       initialized, causing a segfault
   b - stop counting down walltime remaining after a job is completed
   b - correctly display the number for tasks as used in TORQUE in qstat -a output
-  b - no longer ignoring fread return values in linux cpuset code (gcc 4.3.3)
 
 2.4.6
   f - added an asynchronous option for qsig, specified with -a.

@@ -1871,17 +1871,11 @@ static void resume_suspend(
 
   int   stat = 0;
   int   savederr = 0;
-  int   service_job = 0;
 
   int   signum;
-  time_t save_stime = 0;
 
   signum = (susp == 1) ? SIGSTOP : SIGCONT;
 
-  if (pjob != NULL)
-    {
-    service_job = is_service_job(pjob);
-    }
 
   if (LOGLEVEL >= 2)
     {
@@ -1920,114 +1914,90 @@ static void resume_suspend(
 
   if (susp == 1)
     {
-    if (service_job)
-      {
-      pjob->ji_qs.ji_substate = JOB_SUBSTATE_SUSPEND;
-      }
     kill_task((task *)GET_NEXT(pjob->ji_tasks), SIGTSTP, 0);
 
     MUSleep(50000);
     }
-  else if (service_job)
+
+  for (tp = (task *)GET_NEXT(pjob->ji_tasks);
+       tp != NULL;
+       tp = (task *)GET_NEXT(tp->ti_jobtask))
     {
-    /*
-     * for service jobs we need to save off the start time then
-     * reset it after the job starts
-     */
+    if (tp->ti_qs.ti_status != TI_STATE_RUNNING)
+      continue;
 
-    save_stime = pjob->ji_qs.ji_stime;
+    DBPRT(("%s: inspecting %d from node %d\n",
+           id,
+           tp->ti_qs.ti_task,
+           tp->ti_qs.ti_parentnode));
 
-    /* need to restart the service job */
+    stat = kill_task(tp, signum, 0);
 
-    start_exec(pjob);
+    if (stat < 0)
+      {
+      /* couldn't send signal, don't signal more tasks */
 
-    pjob->ji_qs.ji_stime = save_stime;
-   }
+      savederr = errno;
 
-  /* if we are a service job we can skip the other tasks and sisters */
-  
-  if (!service_job)
-  {
+      break;
+      }  /* END if (stat < 0) */
+    }    /* END for (tp) */
+
+  if (stat >= 0)
+    {
+    if (pjob->ji_numnodes > 1)
+      {
+      stat = sigalltasks_sisters(pjob, signum);
+
+      if (stat < 0)
+        {
+        savederr = errno;
+        }
+      }
+    }
+
+  if (stat < 0)
+    {
+    /* We couldn't signal all the tasks, signal them back to their old state */
+
+    if (LOGLEVEL >= 1)
+      {
+      sprintf(log_buffer, "cannot send signal %s to tasks of job in %s (errno=%d %s) - attempt aborted",
+              (susp == 1) ? "SIGSTOP" : "SIGCONT",
+              id,
+              savederr,
+              pbs_strerror(savederr));
+
+      log_record(
+        PBSEVENT_ERROR,
+        PBS_EVENTCLASS_JOB,
+        (pjob != NULL) ? pjob->ji_qs.ji_jobid : "N/A",
+        log_buffer);
+      }
+
+    signum = (susp == 1) ? SIGCONT : SIGSTOP;
+
     for (tp = (task *)GET_NEXT(pjob->ji_tasks);
-          tp != NULL;
-          tp = (task *)GET_NEXT(tp->ti_jobtask))
+         tp != NULL;
+         tp = (task *)GET_NEXT(tp->ti_jobtask))
       {
       if (tp->ti_qs.ti_status != TI_STATE_RUNNING)
         continue;
 
-      DBPRT(("%s: inspecting %d from node %d\n",
-              id,
-              tp->ti_qs.ti_task,
-              tp->ti_qs.ti_parentnode));
-
-      stat = kill_task(tp, signum, 0);
-
-      if (stat < 0)
-        {
-        /* couldn't send signal, don't signal more tasks */
-
-        savederr = errno;
-
-        break;
-        }  /* END if (stat < 0) */
-      }    /* END for (tp) */
-
-    if (stat >= 0)
-      {
-      if (pjob->ji_numnodes > 1)
-        {
-        stat = sigalltasks_sisters(pjob, signum);
-
-        if (stat < 0)
-          {
-          savederr = errno;
-          }
-        }
+      kill_task(tp, signum, 0);
       }
 
-    if (stat < 0)
+    if (pjob->ji_numnodes > 1)
       {
-      /* We couldn't signal all the tasks, signal them back to their old state */
+      sigalltasks_sisters(pjob, signum);
+      }
 
-      if (LOGLEVEL >= 1)
-        {
-        sprintf(log_buffer, "cannot send signal %s to tasks of job in %s (errno=%d %s) - attempt aborted",
-                (susp == 1) ? "SIGSTOP" : "SIGCONT",
-                id,
-                savederr,
-                pbs_strerror(savederr));
+    /* report suspend/resume failure */
 
-        log_record(
-          PBSEVENT_ERROR,
-          PBS_EVENTCLASS_JOB,
-          (pjob != NULL) ? pjob->ji_qs.ji_jobid : "N/A",
-          log_buffer);
-        }
+    req_reject(PBSE_SYSTEM, savederr, preq, NULL, NULL);
 
-      signum = (susp == 1) ? SIGCONT : SIGSTOP;
-
-      for (tp = (task *)GET_NEXT(pjob->ji_tasks);
-            tp != NULL;
-            tp = (task *)GET_NEXT(tp->ti_jobtask))
-        {
-        if (tp->ti_qs.ti_status != TI_STATE_RUNNING)
-          continue;
-
-        kill_task(tp, signum, 0);
-        }
-
-      if (pjob->ji_numnodes > 1)
-        {
-        sigalltasks_sisters(pjob, signum);
-        }
-
-      /* report suspend/resume failure */
-
-      req_reject(PBSE_SYSTEM, savederr, preq, NULL, NULL);
-
-      return;
-      }  /* END if (stat < 0) */
-  }  /* end if (!service_job) */
+    return;
+    }  /* END if (stat < 0) */
 
 
   /* signals sent to all tasks, now adjust job state */

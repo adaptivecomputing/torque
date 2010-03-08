@@ -280,7 +280,6 @@ int             TForceUpdate = 0;  /* (boolean) */
 char           *ProgName;
 char           *NodeSuffix = NULL;
 
-int allow_any_mom = FALSE;
 
 
 void
@@ -577,7 +576,7 @@ void parse_command_line(int argc, char *argv[])
 
 
 
-  while ((c = getopt(argc, argv, "A:a:d:DefhH:L:l:mM:p:R:S:t:v-:")) != -1)
+  while ((c = getopt(argc, argv, "A:a:d:DfhH:L:l:M:p:R:S:t:v-:")) != -1)
     {
     switch (c)
       {
@@ -664,10 +663,6 @@ void parse_command_line(int argc, char *argv[])
 
         TDoBackground = 0;
 
-        break;
-
-      case 'e':
-        allow_any_mom = TRUE;
         break;
 
       case 'f':
