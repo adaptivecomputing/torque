@@ -2066,4 +2066,132 @@ node_np_action(
     }
 
   return 0;
-  }
+  } /* END node_np_action */
+
+
+/* create_partial_pbs_node - similar to create_pbs_node except there will
+   only be a name for the new node and no attributes or properties */
+
+int create_partial_pbs_node(
+  char *nodename, 
+  unsigned long addr, 
+  int perms)
+
+  {
+  int iht;
+  int              ntype; /* node type; time-shared, not */
+  int rc, bad = 0;
+  svrattrl *plist = NULL;
+  struct pbsnode **tmpndlist;
+  struct pbsnode  *pnode = NULL;
+  u_long *pul;
+  char *pname;
+
+  for(iht = 0; iht < svr_totnodes; iht++)
+    {
+    if(pbsndmast[iht]->nd_state & INUSE_DELETED)
+      {
+      /* there is a slot available */
+      pnode = pbsndmast[iht];
+      break;
+      }
+    }
+
+  if (iht == svr_totnodes)
+    {
+    /*no unused entry, make an entry*/
+
+    pnode = (struct pbsnode *)calloc(1, sizeof(struct pbsnode));
+
+    if (pnode == NULL)
+      {
+      return(PBSE_SYSTEM);
+      }
+
+    pnode->nd_state = INUSE_DELETED;
+
+    /* expand pbsndmast array exactly svr_totnodes long*/
+
+    tmpndlist = (struct pbsnode **)realloc(
+                  pbsndmast,
+                  sizeof(struct pbsnode *) * (svr_totnodes + 1));
+
+    if (tmpndlist == NULL)
+      {
+      free(pnode);
+
+      return(PBSE_SYSTEM);
+      }
+
+    /*add in the new entry etc*/
+
+    pbsndmast = tmpndlist;
+
+    pbsndmast[svr_totnodes++] = pnode;
+
+    tmpndlist = (struct pbsnode **)realloc(
+                  pbsndlist,
+                  sizeof(struct pbsnode *) * (svr_totnodes + 1));
+
+    if (tmpndlist == NULL)
+      {
+      free(pnode);
+
+      return(PBSE_SYSTEM);
+      }
+
+    memcpy(
+      tmpndlist,
+      pbsndmast,
+      svr_totnodes * sizeof(struct pbsnode *));
+
+    pbsndlist = tmpndlist;
+    }
+
+  ntype = NTYPE_CLUSTER;
+  pul = (u_long *)malloc(sizeof(u_long) * 2);
+  if(!pul)
+    {
+    free(pnode);
+    return(PBSE_SYSTEM);
+    }
+
+  memset(pul, 0, sizeof(u_long) * 2);
+  *pul = addr;
+  pname = strdup(nodename);
+  initialize_pbsnode(pnode, pname, pul, ntype);
+
+  /* create and initialize the first subnode to go with the parent node */
+
+  if (create_subnode(pnode) == NULL)
+    {
+    pnode->nd_state = INUSE_DELETED;
+
+    return (PBSE_SYSTEM);
+    }
+
+  rc = mgr_set_node_attr(
+         pnode,
+         node_attr_def,
+         ND_ATR_LAST,
+         plist,
+         perms,
+         &bad,
+         (void *)pnode,
+         ATR_ACTION_ALTER);
+
+  if (rc != 0)
+    {
+    effective_node_delete(pnode);
+    free(pul);
+
+    return(rc);
+    }
+
+  recompute_ntype_cnts();
+
+  tinsert(addr, pnode, &ipaddrs);
+
+  return(PBSE_NONE);     /*create completely successful*/
+  } /* END create_partial_pbs_node */
+
