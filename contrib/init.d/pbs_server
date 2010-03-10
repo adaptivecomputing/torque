@@ -21,11 +21,13 @@ case "$1" in
 	start) 
 		echo -n "Starting TORQUE Server: "
                 # ulimit -c unlimited  # Uncomment this to preserve core files
-		if [ -r $PBS_HOME/server_priv/serverdb ]
-		then
-			daemon $PBS_DAEMON
-		else
-			daemon $PBS_DAEMON -t create
+#		if [ -r $PBS_HOME/server_priv/serverdb ]
+#		then
+# Commented out by dbeer. This if check (and -t create possibility) will blow
+# away the serverdb file if $TORQUE_HOME isn't the default
+		daemon $PBS_DAEMON
+#		else
+#			daemon $PBS_DAEMON -t create
 		fi
 		RET=$?
 		touch /var/lock/subsys/pbs_server

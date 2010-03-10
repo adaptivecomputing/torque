@@ -67,6 +67,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   b - fixed a bug where job was added to obit retry list multiple times, causing
       a segfault
   b - Fix for Bugzilla bug 43. "configure ignores with-modulefiles=no"
+  b - no longer try to decide when to start with -t create in init.d scripts, 
+      -t creates should be done manually by the user
 
 2.4.6
   f - added an asynchronous option for qsig, specified with -a.

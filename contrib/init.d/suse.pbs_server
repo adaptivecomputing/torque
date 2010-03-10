@@ -33,11 +33,13 @@ rc_reset
 case "$1" in
 	start) 
 		echo -n "Starting TORQUE Server: "
-		if [ -r $PBS_HOME/server_priv/serverdb ]
-		then
+#		if [ -r $PBS_HOME/server_priv/serverdb ]
+#		then
+# Commented out by dbeer. This if check (and -t create possibility) will blow
+# away the serverdb file if $TORQUE_HOME isn't the default
 			startproc $PBS_DAEMON $SERVER_ARGS
-		else
-			startproc $PBS_DAEMON -t create $DAEMON_ARGS
+#		else
+#			startproc $PBS_DAEMON -t create $DAEMON_ARGS
 		fi
 		rc_status -v
 		;;
