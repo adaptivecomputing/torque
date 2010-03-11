@@ -2820,9 +2820,9 @@ int process_opts(
   char search_string[256];
 
 #if !defined(PBS_NO_POSIX_VIOLATION)
-#define GETOPT_ARGS "a:A:b:c:C:d:D:e:fhIj:k:l:m:M:N:o:p:q:r:S:t:T:u:v:Vw:W:Xz-:"
+#define GETOPT_ARGS "a:A:b:c:C:d:D:e:fhIj:k:l:m:M:N:o:p:P:q:r:S:t:T:u:v:Vw:W:Xz-:"
 #else
-#define GETOPT_ARGS "a:A:c:C:e:hj:k:l:m:M:N:o:p:q:r:S:u:v:VW:z"
+#define GETOPT_ARGS "a:A:c:C:e:hj:k:l:m:M:N:o:p:P:q:r:S:u:v:VW:z"
 #endif /* PBS_NO_POSIX_VIOLATION */
 
   /* The following macro, together the value of passet (pass + 1) is used */
@@ -3487,6 +3487,29 @@ int process_opts(
             }
 
           set_attr(&attrib, ATTR_p, optarg);
+          }
+
+        break;
+
+      case 'P':
+
+        if (strlen(optarg) > 0)
+          {
+          set_attr(&attrib, ATTR_P, optarg);
+
+          /* make sure this is the super user */
+          if (geteuid() != (uid_t)0)
+            {
+            fprintf(stderr, "qsub: Must be the super user to submit a proxy job\n");
+
+            errflg++;
+            }
+          }
+        else
+          {
+          fprintf(stderr, "qsub: -P requires a user name\n");
+
+          errflg++;
           }
 
         break;

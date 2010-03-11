@@ -295,6 +295,7 @@ enum job_atr
   JOB_ATR_reported, /* tracks whether job has been reported to scheduler */
   JOB_ATR_jobtype,     /* opaque job type string */
   JOB_ATR_inter_cmd,      /* command for interactive job */
+  JOB_ATR_proxy_user,
 #ifdef ENABLE_CSA
   JOB_ATR_pagg_id,
 #endif /* ENABLE_CSA */

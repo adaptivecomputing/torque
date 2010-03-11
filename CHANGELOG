@@ -57,6 +57,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   e - added -DUSESAVEDRESOURCES code that uses servers saved resources used
       for accounting end record instead of current resources used for jobs that
       stopped running while mom was not up.
+  f - added -P to qsub. When submitting a job as root, the root user may add -P
+      <username> to submit the job as the proxy user specified by <usermname>
 
 2.4.7
   b - fixed a bug for when a resource_list has been set, but isn't completely
