@@ -114,7 +114,7 @@ extern char *msg_delrunjobsig;
 extern char *msg_manager;
 extern char *msg_permlog;
 extern char *msg_badstate;
-tlist_head	svr_alljobs;           /* list of all jobs in server       */
+extern tlist_head svr_alljobs;    /* list of all jobs in server       */
 
 extern struct server server;
 extern time_t time_now;
