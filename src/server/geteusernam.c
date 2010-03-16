@@ -289,6 +289,10 @@ int set_jobexid(
   struct group *gpent;
   char  *puser = NULL;
   char  *id = "set_jobexid";
+  char *at;
+  char *usr_at_host = NULL;
+  int len;
+
 
   struct passwd *pwent = NULL;
   char  *pgrpn;
@@ -327,7 +331,33 @@ int set_jobexid(
       else
         pattr = &pjob->ji_wattr[(int)JOB_ATR_userlst];
 
-      if ((puser = geteusernam(pjob, pattr)) == NULL)
+      if (pjob->ji_wattr[JOB_ATR_proxy_user].at_flags & ATR_VFLAG_SET)
+        {
+        puser = pjob->ji_wattr[JOB_ATR_proxy_user].at_val.at_str;
+
+        /* set the job's owner as the new user */
+        at = strchr(pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str,'@');
+        len = strlen(puser) + 1;
+        if (at != NULL)
+          {
+          len += strlen(at);
+          usr_at_host = (char *)malloc(len * sizeof(char));
+          snprintf(usr_at_host,len,"%s%s",
+            puser,
+            at);
+          }
+        else
+          {
+          usr_at_host = (char *)malloc(len * sizeof(char));
+
+          snprintf(usr_at_host,len,"%s",
+            puser);
+          }
+
+        free(pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str);
+        pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str = usr_at_host;
+        }
+      else if ((puser = geteusernam(pjob, pattr)) == NULL)
         {
         if (EMsg != NULL)
           snprintf(EMsg, 1024, "cannot locate user name in job");
@@ -382,10 +412,6 @@ int set_jobexid(
       /* add check here for virtual user */
       if (pjob->ji_wattr[JOB_ATR_proxy_user].at_flags & ATR_VFLAG_SET)
         {
-        char *usr_at_host = NULL;
-        char *at;
-        int len;
-
         puser = pjob->ji_wattr[JOB_ATR_proxy_user].at_val.at_str;
 
         pwent = getpwnam(puser);
