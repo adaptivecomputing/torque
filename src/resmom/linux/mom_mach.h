@@ -92,9 +92,17 @@
 #define PBS_CHECKPOINT_MIGRATE 0
 
 
-#ifdef ENABLE_CSA
+#ifdef USEJOBCREATE
+#ifndef JOBFAKE
 #include <job.h>
-#endif /* ENABLE_CSA */
+#define JOB_FAIL      (jid_t)-1
+#else
+#include <stdint.h>
+typedef uint64_t jid_t;
+#define JOB_FAIL      (jid_t)-1
+
+#endif /* JOBFAKE */
+#endif /* USEJOBCREATE */
 
 
 /* struct startjob_rtn = used to pass error/session/other info  */
@@ -105,9 +113,9 @@ struct startjob_rtn
   int   sj_code; /* error code */
   pid_t sj_session; /* session */
 
-#ifdef ENABLE_CSA
-  jid_t sj_csajobid;
-#endif /* ENABLE_CSA */
+#ifdef USEJOBCREATE
+  jid_t sj_jobid;
+#endif /* USEJOBCREATE */
   };
 
 extern int mom_set_limits(job *, int); /* Set job's limits */

@@ -164,9 +164,11 @@ int set_job(
     if (AllocParCmd == NULL)
       AllocParCmd = strdup("/opt/moab/default/tools/partition.create.xt4.pl");
 
-#ifdef ENABLE_CSA
+#ifdef USEJOBCREATE
 
-    if (pjob->ji_wattr[(int)JOB_ATR_pagg_id].at_flags & ATR_VFLAG_SET)
+    if ((pjob->ji_wattr[(int)JOB_ATR_pagg_id].at_flags & ATR_VFLAG_SET) &&
+      (pjob->ji_wattr[(int)JOB_ATR_pagg_id].at_val.at_ll != (long)JOB_FAIL) &&
+      (pjob->ji_wattr[(int)JOB_ATR_pagg_id].at_val.at_ll > 0x00000000ffffffff))
       {
       snprintf(tmpLine, sizeof(tmpLine), "%s --confirm -p %s -j %s -a %lld",
                AllocParCmd,
@@ -175,7 +177,7 @@ int set_job(
                pjob->ji_wattr[(int)JOB_ATR_pagg_id].at_val.at_ll);
       }
     else
-#endif
+#endif  /* USEJOBCREATE */
       {
       snprintf(tmpLine, sizeof(tmpLine), "%s --confirm -p %s -j %s -a %ld",
              AllocParCmd,

@@ -296,9 +296,9 @@ enum job_atr
   JOB_ATR_jobtype,     /* opaque job type string */
   JOB_ATR_inter_cmd,      /* command for interactive job */
   JOB_ATR_proxy_user,
-#ifdef ENABLE_CSA
+#ifdef USEJOBCREATE
   JOB_ATR_pagg_id,
-#endif /* ENABLE_CSA */
+#endif /* USEJOBCREATE */
 #include "site_job_attr_enum.h"
 
   JOB_ATR_UNKN,  /* the special "unknown" type    */

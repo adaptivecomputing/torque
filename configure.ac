@@ -572,7 +572,9 @@ AC_MSG_RESULT($CSA)
 
 case "$CSA" in
   yes) AC_DEFINE([ENABLE_CSA], 1, [Define to enable Cray's CSA support])
-      MOMLIBS="$MOMLIBS -L/opt/cray/job/default/lib64 -ljob -lcsa"
+      MOMLIBS="$MOMLIBS -L/opt/cray/job/default/lib64 -lcsa"
+      AC_CHECK_LIB([job], [job_create], ,
+        [AC_MSG_ERROR([--enable-csa requires job library support])])
       ;;
   no) : ;;
   *) AC_MSG_ERROR([--enable-csa should be yes or no]) ;;
@@ -598,6 +600,12 @@ case $PBS_MACH in
       AC_CHECK_LIB(util, openpty, MOMLIBS="$MOMLIBS -lutil"),
         AC_MSG_WARN([This is an ancient distro... will open ptys directly])
         AC_DEFINE([USEOLDTTY], 1, [Define on ancient linux distros]))
+dnl
+dnl  Check for job_create function on Cray
+dnl
+    AC_CHECK_LIB([job], [job_create],
+      [MOMLIBS="-L/opt/cray/job/default/lib64 -ljob $MOMLIBS"
+        CFLAGS="$CFLAGS -DUSEJOBCREATE"])
     ;;
   darwin*) AC_DEFINE(SETCONTROLLINGTTY, 1, [Define to set the controlling tty])
     ;;

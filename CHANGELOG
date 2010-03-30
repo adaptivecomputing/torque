@@ -89,6 +89,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   e - qsub's -W can now parse attributes with quoted lists, for example: 
       qsub script -W attr="foo,foo1,foo2,foo3" will set foo,foo1,foo2,foo3
       as attr's value.
+  b - split Cray job library and CSA functionality since CSA is dependant on job
+      library but job library is not dependant on CSA
 
 2.4.5
   b - epilogue.user scripts were being run with prologue argments. Fixed
