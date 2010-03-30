@@ -1006,7 +1006,7 @@ static int svr_strtjob2(
 
   pattr = &pjob->ji_wattr[(int)JOB_ATR_start_time];
 
-  if ((pattr->at_flags & ATR_VFLAG_SET) == 0)
+  if ((pjob->ji_wattr[(int)JOB_ATR_restart_name].at_flags & ATR_VFLAG_SET) == 0)
     {
     pattr->at_val.at_long = time(NULL);
     pattr->at_flags |= ATR_VFLAG_SET;
