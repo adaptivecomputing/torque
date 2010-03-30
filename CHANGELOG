@@ -60,6 +60,9 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   f - added -P to qsub. When submitting a job as root, the root user may add -P
       <username> to submit the job as the proxy user specified by <usermname>
 
+2.4.8
+  e - Bugzilla bug 22. HIGH_PRECISION_FAIRSHARE for fifo scheduling.
+
 2.4.7
   b - fixed a bug for when a resource_list has been set, but isn't completely
       initialized, causing a segfault

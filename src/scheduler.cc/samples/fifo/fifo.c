@@ -233,16 +233,26 @@ int init_scheduling_cycle(server_info *sinfo)
 
       for (i = 0; i < last_running_size ; i++)
         {
+        job_info** jobs;
         user = last_running[i].ginfo;
+#if HIGH_PRECISION_FAIRSHARE
+        jobs = sinfo -> jobs; /* check all jobs (exiting, completed, running) */
+#else
+        jobs = sinfo -> running_jobs; /* check only running */
+#endif
 
-        for (j = 0; sinfo -> running_jobs[j] != NULL &&
-             strcmp(last_running[i].name, sinfo -> running_jobs[j] -> name); j++)
-          ;
+        for (j = 0; jobs[j] != NULL; j++)
+          {
+            if (jobs[j] -> is_completed || jobs[j] -> is_exiting ||
+              jobs[j] -> is_running)
+              if (!strcmp(last_running[i].name, jobs[j] -> name))
+                break;
+          }
 
-        if (sinfo -> running_jobs[j] != NULL)
+        if (jobs[j] != NULL)
           {
           user -> usage +=
-            calculate_usage_value(sinfo -> running_jobs[j] -> resused) -
+            calculate_usage_value(jobs[j] -> resused) -
             calculate_usage_value(last_running[i].resused);
           }
         }
