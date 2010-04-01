@@ -481,7 +481,7 @@ jump_to_check:
 
         close(sock);
 
-        return(PBS_NET_RC_FATAL);
+        return(PBS_NET_RC_RETRY);
 
         /*NOTREACHED*/
 
@@ -542,7 +542,7 @@ jump_to_check:
 
         close(sock);
 
-        return(PBS_NET_RC_RETRY);
+        return(PBS_NET_RC_FATAL);
 
     }  /* END switch (errno) */
 

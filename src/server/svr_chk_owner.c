@@ -329,6 +329,14 @@ int svr_get_privilege(
 
   /* NOTE:  enable case insensitive host check (CRI) */
 
+#ifdef __CYGWIN__
+  if (IamAdminByName(user) && !strcasecmp(host_no_port, server_host))
+    {
+    is_root = 1;
+    return(priv | ATR_DFLAG_MGRD | ATR_DFLAG_MGWR | ATR_DFLAG_OPRD | ATR_DFLAG_OPWR);
+    }
+#else /* __CYGWIN__ */
+
   if ((strcmp(user, PBS_DEFAULT_ADMIN) == 0) &&
       !strcasecmp(host_no_port, server_host))
     {
@@ -338,6 +346,7 @@ int svr_get_privilege(
     return(priv | ATR_DFLAG_MGRD | ATR_DFLAG_MGWR | ATR_DFLAG_OPRD | ATR_DFLAG_OPWR);
 #endif
     }
+#endif /* __CYGWIN__ */
 
   if (!(server.sv_attr[(int)SRV_ATR_managers].at_flags & ATR_VFLAG_SET))
     {

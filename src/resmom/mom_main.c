@@ -8249,6 +8249,21 @@ void restart_mom(
 
 
 
+/* handles everything for binding a specific mom to a nodeboard
+ *
+ * parses mom.layout, registers procs/mem
+ * @return nonzero if there's a problem
+ */
+int bind_to_nodeboard()
+
+  {
+
+  return(0);
+  } /* END bind_to_nodeboard */
+
+
+
+
 
 /*
  * main - the main program of MOM
@@ -8279,6 +8294,11 @@ int main(
   parse_command_line(argc, argv); /* Calls exit on command line error */
 
   if ((rc = setup_program_environment()) != 0)
+    {
+    return(rc);
+    }
+
+  if ((rc = bind_to_nodeboard()) != 0)
     {
     return(rc);
     }
