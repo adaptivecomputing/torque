@@ -64,6 +64,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   e - Bugzilla bug 22. HIGH_PRECISION_FAIRSHARE for fifo scheduling.
   c - no longer sigabrt with "running" jobs not in an execution queue. log
       an error. 
+  b - fixed segfault for when TORQUE thinks there's a nanny but there isn't
 
 2.4.7
   b - fixed a bug for when a resource_list has been set, but isn't completely
