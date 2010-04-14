@@ -85,7 +85,7 @@ qsub [\-a date_time] [\-A account_string] [\-b secs] [\-c checkpoint_options]
 [\-C directive_prefix]
 [\-d path] [\-D path] [\-e path] [\-f] [\-h] [\-I] [\-j join] [\-k keep] [\-l resource_list]
 [\-m mail_options] [\-M user_list] [\-N name] [\-o path] 
-[\-p priority] [-P proxy_username]  [\-q destination] [\-r c] [\-S path_list] [\-t num_jobs]
+[\-p priority] [-P proxy_username[:group]]  [\-q destination] [\-r c] [\-S path_list] [\-t num_jobs]
 [\-T prologue/epilogue script_name] [\-u user_list] [\-v variable_list] [\-V]
 [-w] path [\-W additional_attributes]
 [\-X] [\-z]
@@ -687,9 +687,9 @@ The
 .At Priority
 job attribute is set to this signed integer value.
 .Ig
-.IP "\-P proxy_user" 8
-Proxy user for whom the job should be submitted. This option is only available
-for the super user.
+.IP "\-P proxy_user[:group]" 8
+Proxy user for whom the job should be submitted. 
+This option is only available for the super user.
 .Ig
 .IP "\-q destination" 8
 Defines the destination of the job.  The 

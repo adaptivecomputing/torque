@@ -335,7 +335,8 @@ int set_jobexid(
         {
         puser = pjob->ji_wattr[JOB_ATR_proxy_user].at_val.at_str;
 
-        /* set the job's owner as the new user */
+        /* set the job's owner as the new user, appending @host if
+         * the job's owner has that */
         at = strchr(pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str,'@');
         len = strlen(puser) + 1;
         if (at != NULL)
