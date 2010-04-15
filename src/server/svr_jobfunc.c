@@ -948,8 +948,24 @@ static void chk_svr_resc_limit(
       if ((jbrc->rs_defin == noderesc) && (qtype == QTYPE_Execution))
         {
         /* NOTE:  process after loop so SvrNodeCt is loaded */
+        /* can check pure nodes violation right here */
+        int job_nodes;
+        int queue_nodes;
 
         jbrc_nodes = jbrc;
+        if ((jbrc_nodes != NULL) && 
+            (qurc != NULL))
+          {
+          if ((isdigit(*(jbrc_nodes->rs_value.at_val.at_str))) &&
+              (isdigit(*(qurc->rs_value.at_val.at_str))))
+            {
+            job_nodes   = atoi(jbrc_nodes->rs_value.at_val.at_str);
+            queue_nodes = atoi(qurc->rs_value.at_val.at_str);
+
+            if (queue_nodes < job_nodes)
+              comp_resc_lt++;
+            }
+          }
         }
 
 #ifdef NERSCDEV

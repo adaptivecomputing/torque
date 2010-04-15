@@ -68,6 +68,9 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   e - mapped 'qsub -P user:group' to qsub -P user -W group_list=group
   b - reverted to old behavior where interactive scripts are checked for 
       directives and not run without a parameter.
+  e - setting a queue's resource_max.nodes now actually restricts things,
+      although so far it only limits based on the number of nodes (i.e. not
+      ppn)
 
 2.4.7
   b - fixed a bug for when a resource_list has been set, but isn't completely
