@@ -1197,6 +1197,7 @@ int S_opt = FALSE;
 int V_opt = FALSE;
 int Depend_opt    = FALSE;
 int Interact_opt  = FALSE;
+int Run_Inter_opt = FALSE;
 int Stagein_opt   = FALSE;
 int Stageout_opt  = FALSE;
 int Grouplist_opt = FALSE;
@@ -2820,7 +2821,7 @@ int process_opts(
   char search_string[256];
 
 #if !defined(PBS_NO_POSIX_VIOLATION)
-#define GETOPT_ARGS "a:A:b:c:C:d:D:e:fhIj:k:l:m:M:N:o:p:P:q:r:S:t:T:u:v:Vw:W:Xz-:"
+#define GETOPT_ARGS "a:A:b:c:C:d:D:e:fhIj:k:l:m:M:N:o:p:P:q:r:S:t:T:u:v:Vw:W:Xxz-:"
 #else
 #define GETOPT_ARGS "a:A:c:C:e:hj:k:l:m:M:N:o:p:q:r:S:u:v:VW:z"
 #endif /* PBS_NO_POSIX_VIOLATION */
@@ -3942,6 +3943,16 @@ int process_opts(
           }
 
         break;
+
+      case 'x':
+
+        if_cmd_line(Run_Inter_opt)
+          {
+          Run_Inter_opt = passet;
+          }
+
+        break;
+        
 #endif
 
       case 'z':
@@ -4658,11 +4669,13 @@ int main(
         }
       }
     }    /* END if (!strcmp(script,"") || !strcmp(script,"-")) */
-  else if (Interact_opt != FALSE)
+  else if ((Interact_opt != FALSE) && (Run_Inter_opt))
+    
     {
-      set_attr(&attrib, ATTR_intcmd, script);
-      have_intr_cmd = TRUE;
+    set_attr(&attrib, ATTR_intcmd, script);
+    have_intr_cmd = TRUE;
     }
+
   else
     {
     /* non-empty script, read it for directives */
@@ -4732,7 +4745,7 @@ int main(
       exit(8);
       }
     }    /* END else (!strcmp(script,"") || !strcmp(script,"-")) */
-
+  
   /* interactive job can not be job array */
 
   if (Interact_opt && t_opt)

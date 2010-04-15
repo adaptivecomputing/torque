@@ -66,6 +66,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       an error. 
   b - fixed segfault for when TORQUE thinks there's a nanny but there isn't
   e - mapped 'qsub -P user:group' to qsub -P user -W group_list=group
+  b - reverted to old behavior where interactive scripts are checked for 
+      directives and not run without a parameter.
 
 2.4.7
   b - fixed a bug for when a resource_list has been set, but isn't completely
