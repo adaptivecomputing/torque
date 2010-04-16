@@ -88,7 +88,7 @@ qsub [\-a date_time] [\-A account_string] [\-b secs] [\-c checkpoint_options]
 [\-p priority] [-P proxy_username[:group]]  [\-q destination] [\-r c] [\-S path_list] [\-t num_jobs]
 [\-T prologue/epilogue script_name] [\-u user_list] [\-v variable_list] [\-V]
 [-w] path [\-W additional_attributes]
-[\-X] [\-z]
+[\-x] [\-X] [\-z]
 [script]
 .SH DESCRIPTION
 To create a job is to submit an executable script to a batch server.
@@ -1078,6 +1078,8 @@ Sets umask used to create stdout and stderr spool files in pbs_mom
 spool directory. Values starting with 0 are treated as octal values, 
 otherwise the value is treated as a decimal umask value.
 .br
+.IP "\-x"
+When running an interactive job, the -x flag makes it so that the script won't be parsed for PBS directives, but instead will be a command that is launched once the interactive job has started. The job will terminate at the completion of this command.
 .IP "\-X" 8
 Enables X11 forwarding.  The DISPLAY environment variable must be set.
 .IP "\-z" 8
