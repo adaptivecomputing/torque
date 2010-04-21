@@ -71,6 +71,9 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   e - setting a queue's resource_max.nodes now actually restricts things,
       although so far it only limits based on the number of nodes (i.e. not
       ppn)
+  f - added QSUBSENDGROUPLIST to qsub. This allows the server to know the 
+      correct group name when disable_server_id_check is set to true and
+      the user doesn't exist on the server.
 
 2.4.7
   b - fixed a bug for when a resource_list has been set, but isn't completely

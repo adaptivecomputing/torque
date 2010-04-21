@@ -1165,7 +1165,7 @@ char destination[PBS_MAXDEST];
 static char server_out[PBS_MAXSERVERNAME + PBS_MAXPORTNUM + 2];
 char server_host[PBS_MAXHOSTNAME + 1];
 char qsub_host[PBS_MAXHOSTNAME + 1];
-char  owner_uid[1024 + 1];
+char  owner_uid[MAXPATHLEN + 1];
 
 long cnt2server_retry = -100;
 
@@ -4476,9 +4476,9 @@ int main(
 
   validate_path = 1;  /* boolean - by default verify '-d' working dir locally */
 
-  server_host[0] = '\0';
-  qsub_host[0] = '\0';
-  owner_uid[0] = '\0';
+  server_host[0]  = '\0';
+  qsub_host[0]    = '\0';
+  owner_uid[0]    = '\0';
 
   if (getenv("PBSDEBUG") != NULL)
     {
@@ -4514,6 +4514,17 @@ int main(
     if ((param_val = get_param("QSUBSENDUID", config_buf)) != NULL)
       {
       sprintf(owner_uid, "%d", (int)getuid());
+      }
+
+    if ((param_val = get_param("QSUBSENDGROUPLIST", config_buf)) != NULL)
+      {
+      gid_t group_id = getgid();
+      struct group *gpent = getgrgid(group_id);
+
+      if (gpent != NULL)
+        {
+        set_attr(&attrib, ATTR_g, gpent->gr_name);
+        }
       }
 
     if ((param_val = get_param("XAUTHPATH", config_buf)) != NULL)
