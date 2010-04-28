@@ -1,5 +1,4 @@
 #!/bin/sh
-
 #
 # 
 #         OpenPBS (Portable Batch System) v2.3 Software License
@@ -84,19 +83,21 @@
 # housekeeping.
 #
 # Usage:
-#  pbs_mkdirs [-v] [-c] what
+#  pbs_mkdirs [-v] [-c] [-C chk_tree_location] what
 #    -v     be verbose
 #    -c     allow usage of chk_tree (do not use this within a make install)
+#    -C     Specify where the location of the chk_tree binary
 #    what   select from the following list
 #              server   -- dirs needed by pbs_server
 #              mom      -- dirs needed by pbs_mom
 #              aux      -- the aux directory
 #              default  -- the default file
+#              common   -- make common directory to all daemons
 #              check    -- run chk_tree (turns on -c automatically)
 #              all      -- do all of the above
 #
-#
-# $Id$
+# SVN INFO:
+#  $Id$
 #
 
 #
@@ -126,6 +127,26 @@ else
 fi
 
 verbose=""
+
+display_flags()
+{
+cat << EOF
+Usage:
+  pbs_mkdirs [-v] [-c] [-C chk_tree_location] what
+    -v     be verbose
+    -c     allow usage of chk_tree (do not use this within a make install)
+    -C     Specify where the location of the chk_tree binary
+    what   select from the following list
+              server   -- dirs needed by pbs_server
+              mom      -- dirs needed by pbs_mom
+              aux      -- the aux directory
+              default  -- the default file
+              common   -- make common directory to all daemons
+              check    -- run chk_tree (turns on -c automatically)
+              all      -- do all of the above
+EOF
+exit 0
+}
 
 
 #
@@ -253,7 +274,7 @@ mk_server_dirs()
 	install_dir $PBS_SERVER_HOME/sched_priv 750 || return 1
 	install_dir $PBS_SERVER_HOME/sched_priv/accounting 755 || return 1
 	install_dir $PBS_SERVER_HOME/sched_logs 755 || return 1
-        install_dir $PBS_SERVER_HOME/server_priv/arrays 750 || return 1
+	install_dir $PBS_SERVER_HOME/server_priv/arrays 750 || return 1
 
 	test -f $PBS_ENVIRON || check_env || return 1
 
@@ -298,7 +319,6 @@ mk_mom_dirs()
 		$PBS_SERVER_HOME/undelivered || return 1
 	chk_tree_wrap -n $PBS_ENVIRON || return 1
 }
-
 
 mk_default_file()
 {
@@ -362,19 +382,75 @@ mk_dirs()
 	mk_aux_dir || return 1
 }
 
-while true; do
+
+getopt vcd:C:h "$@" > /dev/null || display_flags
+set -- `getopt vcd:C:h "$@"`
+while true
+do
 	case "$1" in
-	    -v)       verbose=yes ; shift; continue ;;
-	    -c)       chktree=yes ; shift; continue ;;
-	    -d)	      shift; PBS_SERVER_HOME=$1; shift; continue;;
-	    serv*)    mk_server_dirs || exit 1 ; break ;;
-	    mom*)     mk_mom_dirs || exit 1; break ;;
-	    aux*)     mk_aux_dir || exit 1; break ;;
-	    default*) mk_default_file || exit 1; break ;;
-	    common*)  mk_common || exit 1; break ;;
-	    check*)   chktree=yes; do_check_tree || exit 1; break ;;
-	    all*)     mk_dirs || exit 1; break ;;
-	    *)        echo "unknown option" 1>&2; exit 1; break ;;
-	esac
+		-v)
+			verbose=yes
+			shift
+		;;
+		-d)
+			PBS_SERVER_HOME=$2
+			shift 2
+		;; 
+		-h)
+			display_flags
+		;;
+		-c)
+			chktree=yes
+			shift 
+		;; 
+		-C)
+			CHK_TREE=$2
+			shift 2
+		;; 
+		--)
+			shift; break
+		;;
+
+  esac
 done
 
+while [ $# -gt 0 ]
+do
+	case "$1" in
+		serv*)    
+			mk_server_dirs || exit 1
+			break
+			;;
+	    	mom*)   
+			mk_mom_dirs || exit 1 
+			break
+			;;
+		aux*)   
+			mk_aux_dir || exit 1
+			break
+		;; 
+		default*) 
+			mk_default_file || exit 1
+			break
+		;;
+		common*)
+			mk_common || exit 1
+			break
+		;;
+	    	check*)
+			chktree=yes
+			do_check_tree || exit 1
+			break
+		;;
+		all*)  
+			mk_dirs || exit 1
+			break
+		;;
+		*)		
+			echo "$1 is unknown flag"
+			display_flags
+			break
+		;;
+	esac
+	shift
+done

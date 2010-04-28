@@ -74,6 +74,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   f - added QSUBSENDGROUPLIST to qsub. This allows the server to know the 
       correct group name when disable_server_id_check is set to true and
       the user doesn't exist on the server.
+  e - Bugzilla bug 54. Patch submitted by Bas van der Vlies to make pbs_mkdirs
+      more robust, provide a help function and new option -C <chk_tree_location> 
 
 2.4.7
   b - fixed a bug for when a resource_list has been set, but isn't completely
