@@ -45,7 +45,7 @@ ok(close CONFIG, 'Closing Torque mom config file')
 ok(chmod(0644, $configFile), 'Setting Torque mom config file permissions') 
   or die("Torque file permissions couldn't be set");
 
-my $grep_cmd = "grep $ipAddress $configFile";
+my $grep_cmd = "grep '$ipAddress' $configFile";
 my %grep     = runCommand($grep_cmd);
 
 cmp_ok($grep{ 'EXIT_CODE' }, '==', 0, "Checking exit code of '$grep_cmd'")

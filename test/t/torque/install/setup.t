@@ -63,7 +63,7 @@ $exp->expect(5,
             );
 
 
-%result = run_and_check_cmd("echo set server operators += $user | $qmgr");
+%result = run_and_check_cmd("$qmgr -c 'set server operators += $user'");
 
 if ($result{ 'EXIT_CODE' } != 0)
   {
@@ -74,7 +74,7 @@ if ($result{ 'EXIT_CODE' } != 0)
 
   } # END if ($result{ 'EXIT_CODE' } != 0)
 
-run_and_check_cmd("echo set server managers += $user | $qmgr");
+run_and_check_cmd("$qmgr -c 'set server managers += $user' ");
 
 run_and_check_cmd("$qmgr -c 'set server scheduling = true'");
 run_and_check_cmd("$qmgr -c 'set server keep_completed = 300'");

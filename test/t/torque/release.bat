@@ -15,7 +15,7 @@ setDesc("Release Torque Regression Tests");
 my $testbase = $FindBin::Bin;
 
 execute_tests(
-    "$testbase/reinstall.bat",
+    "$testbase/reinstall_blcr.bat",
 ) or die("Torque reinstall test failed!");
 
 execute_tests(

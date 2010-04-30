@@ -12,7 +12,7 @@ use CRI::Utils qw(
                  );
 
 plan('no_plan');
-setDesc('Install pbs_mom on remote compute nodes');
+setDesc('Install pbs_mom on Remote Nodes with BLCR');
 
 # Variables
 my $nodes_str      = $props->get_property('Torque.Remote.Nodes');
@@ -20,6 +20,9 @@ my @nodes          = list2array($nodes_str);
 my $props_loc      = "$FindBin::Bin/../../../etc/props/default.props";
 my $pbs_server     = $props->get_property('Test.Host');
 my $pbs_server_loc = $props->get_property('Torque.Home.Dir') . "/server_name";
+
+pass("No remote nodes given")
+  if ! scalar @nodes;
 
 foreach my $node (@nodes)
   {
@@ -35,7 +38,7 @@ foreach my $node (@nodes)
     or die("Unable to install torque on '$node': $ssh{ 'STDERR' }");
 
   # Install torque
-  my $remote_install_bat = "$FindBin::Bin/../remote_reinstall.bat";
+  my $remote_install_bat = "$FindBin::Bin/../remote_reinstall_blcr.bat";
   %ssh                   = runCommandSsh($node, $remote_install_bat);
   cmp_ok($ssh{ 'EXIT_CODE' }, '==', 0, "Checking exit code of '$node:$remote_install_bat'")
     or die("Unable to install torque on '$node': $ssh{ 'STDERR' }");

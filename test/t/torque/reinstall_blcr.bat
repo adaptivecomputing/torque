@@ -7,13 +7,14 @@ use lib "$FindBin::Bin/../../lib/";
 
 use CRI::Test;
 plan('no_plan');
-setDesc("Reinstall Torque");
+setDesc("Reinstall Torque with BLCR checkpointing");
 
 my $testbase = "$FindBin::Bin/..";
 
 my @testList = (
+    "$testbase/blcr/reinstall.bat",
     "$testbase/torque/uninstall/uninstall.bat",
-    "$testbase/torque/install/install.bat",
+    "$testbase/torque/install/install_blcr.bat",
 );
 
 foreach( @testList )

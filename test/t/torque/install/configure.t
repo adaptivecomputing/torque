@@ -9,7 +9,7 @@ use lib "$FindBin::Bin/../../../lib/";
 use CRI::Test;
 
 plan('no_plan'); 
-setDesc('Configure Torque to use BLCR checkpointing');
+setDesc('Configure Torque');
 
 my $build_dir   = "$FindBin::Bin/../../../../";
 my $home_dir    = $props->get_property('Torque.Home.Dir'        ); 
