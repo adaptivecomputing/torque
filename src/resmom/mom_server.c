@@ -289,14 +289,12 @@ extern time_t          time_now;
 extern int             verbositylevel;
 extern tree           *okclients;  /* accept connections from */
 
-extern char *skipwhite(char *str);
-extern char *tokcpy(char *str, char *tok);
-
 extern struct config *rm_search(struct config *where, char *what);
 
 extern struct rm_attribute *momgetattr(char *str);
 extern char *conf_res(char *resline, struct rm_attribute *attr);
 extern char *dependent(char *res, struct rm_attribute *attr);
+extern char *reqgres(struct rm_attribute *);
 
 char TORQUE_JData[MMAX_LINE];
 
@@ -998,107 +996,18 @@ void gen_gres(
   int   *BSpace)
 
   {
-  struct config  *ap;
 
-  struct rm_attribute *attr;
   char  *value;
 
-  ap = rm_search(config_array,name);
+  value = reqgres(NULL);
 
-  if (ap != NULL)
+  if (value != NULL)
     {
-    attr = momgetattr(ap->c_u.c_value);
-
-    if (attr)
-      {
-      value = dependent(name,attr);
-
-      if (value == NULL)
-        {
-        /* value not set (attribute required) */
-
-        MUSNPrintF(BPtr,BSpace,"%s=? %d",
-          name,
-          rm_errno);
-
-        (*BPtr)++; /* Need to start the next string after the null */
-        (*BSpace)--;
-        }
-      else if (value[0] == '\0')
-        {
-        /* value not set (attribute optional) */
-        }
-      else
-        {
-        if (strstr(value, ":!") != NULL)
-          {
-          /* value contains executable call-out, must process */
-
-          /* FORMAT:  <XNAME1>:[!]<XVAL1>[+<XNAME2>:[!]<XVAL2>]... */
-
-          char *ptr;
-          char *tail;
-          char  gname[64];
-          char  src[1024];
-          char  result[1024];
-
-          strncpy(src, value, sizeof(src));
-          result[0] = '\0';
-
-          ptr = strtok(src, "+");
-
-          while (ptr != NULL)
-            {
-            if ((tail = strchr(ptr, ':')) == NULL)
-              {
-              /* cannot parse value */
-
-              ptr = strtok(NULL, "+");
-
-              continue;
-              }
-
-            strncpy(gname, ptr, tail - ptr);
-
-            gname[tail - ptr] = '\0';
-
-            ptr = conf_res(tail + 1, attr);
-
-            if ((ptr == NULL) || (ptr[0] == '\0'))
-              {
-              /* all static attributes are optional */
-
-              ptr = strtok(NULL, "+");
-
-              continue;
-              }
-
-            if (result[0] != '\0')
-              strcat(result, "+");
-
-            if ((ptr != NULL) && (strncmp(ptr, gname, strlen(gname))))
-              {
-              strcat(result, gname);
-              strcat(result, ":");
-              }
-
-            strcat(result, ptr);
-
-            ptr = strtok(NULL, "+");
-            }  /* END while (ptr != NULL) */
-
-          if (result[0] != '\0')
-            {
-            MUSNPrintF(BPtr, BSpace, "%s=%s",
-              name,
-              result);
-
-            (*BPtr)++; /* Need to start the next string after the null */
-            (*BSpace)--;
-            }
-          }
-        }
-      }
+    MUSNPrintF(BPtr, BSpace, "%s=%s",
+                name,
+                value);
+    (*BPtr)++; /* Need to start the next string after the null */
+    (*BSpace)--;
     }
 
   return;

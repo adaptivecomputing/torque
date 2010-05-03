@@ -61,6 +61,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       <username> to submit the job as the proxy user specified by <usermname>
   b - Bugzilla bug 57. Check return value of malloc for tracejob for Linux
       (Chris Samuel - VPAC)
+  b - fix so "gres" config gets displayed by pbsnodes
 
 2.4.8
   e - Bugzilla bug 22. HIGH_PRECISION_FAIRSHARE for fifo scheduling.
