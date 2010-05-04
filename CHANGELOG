@@ -60,7 +60,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   f - added -P to qsub. When submitting a job as root, the root user may add -P
       <username> to submit the job as the proxy user specified by <usermname>
   b - Bugzilla bug 57. Check return value of malloc for tracejob for Linux
-      (Chris Samuel - VPAC)
+      (Chris Samuel - Univ. of Melbourne)
   b - fix so "gres" config gets displayed by pbsnodes
 
 2.4.8
