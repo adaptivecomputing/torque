@@ -3147,7 +3147,11 @@ int process_opts(
           int rc = 0;
           e_opt = passet;
 
-          rc = prepare_path(optarg, path_out);
+          if (qsub_host[0] != '\0')
+            rc = prepare_path(optarg,path_out,qsub_host);
+          else
+            rc = prepare_path(optarg,path_out,NULL);
+
           if ((rc == 0) || (rc == 3))
             {
             set_attr(&attrib, ATTR_e, path_out);
@@ -3424,7 +3428,11 @@ int process_opts(
           int rc = 0;
           o_opt = passet;
 
-          rc = prepare_path(optarg, path_out);
+          if (qsub_host[0] != '\0')
+            rc = prepare_path(optarg,path_out,qsub_host);
+          else
+            rc = prepare_path(optarg,path_out,NULL);
+
           if ((rc == 0) || (rc == 3))
             {
             set_attr(&attrib, ATTR_o, path_out);

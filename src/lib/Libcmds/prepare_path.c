@@ -102,7 +102,8 @@
 int prepare_path(
 
   char *path_in,   /* I */
-  char *path_out)  /* O */
+  char *path_out,  /* O */
+  char *host)      /* I */
 
   {
   int i;
@@ -210,7 +211,10 @@ int prepare_path(
 
   if (host_name[0] == '\0')
     {
-    if (gethostname(host_name, PBS_MAXSERVERNAME) != 0)
+    if (host != NULL)
+      snprintf(host_name,sizeof(host_name),"%s",host);
+
+    else if (gethostname(host_name, PBS_MAXSERVERNAME) != 0)
       {
       /* FAILURE */
 

@@ -122,7 +122,7 @@ int locate_job(char *, char *, char *);
 int parse_destination_id(char *, char **, char **);
 int parse_equal_string(char *, char **, char **);
 int parse_jobid(char *, char **, char **, char **);
-int prepare_path(char *, char*);
+int prepare_path(char *, char*,char *);
 void prt_error(char *, char *, int);
 void set_attr(struct attrl **, char *, char *);
 int set_resources(struct attrl **, char *, int);
