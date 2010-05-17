@@ -62,6 +62,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   b - Bugzilla bug 57. Check return value of malloc for tracejob for Linux
       (Chris Samuel - Univ. of Melbourne)
   b - fix so "gres" config gets displayed by pbsnodes
+  b - Bugzilla bug 55. Check return value of malloc for pbs_mom for Linux
+      (Chris Samuel - Univ. of Melbourne)
 
 2.4.8
   e - Bugzilla bug 22. HIGH_PRECISION_FAIRSHARE for fifo scheduling.

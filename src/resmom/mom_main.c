@@ -8229,6 +8229,17 @@ void restart_mom(
   envstr = malloc(
              (strlen("PATH") + strlen(orig_path) + 2) * sizeof(char));
 
+  if (!envstr)
+  {
+    sprintf(log_buffer, "malloc failed prior to execing myself: %s (%d)",
+            strerror(errno),
+            errno);
+
+    log_err(errno, id, log_buffer);
+
+    return;
+  }
+
   strcpy(envstr, "PATH=");
   strcat(envstr, orig_path);
   putenv(envstr);
