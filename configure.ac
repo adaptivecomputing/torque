@@ -440,8 +440,13 @@ AC_SUBST(PBSPOEO)
 AC_ARG_ENABLE(cpuset,[  --enable-cpuset         enable Linux 2.6 kernel cpusets (in development)])
 build_l26_cpuset=no
 if test "x$enable_cpuset" = "xyes" ;then
-      build_l26_cpuset=yes
-       AC_DEFINE(PENABLE_LINUX26_CPUSETS, 1, [Define to enable Linux 2.6 cpusets])
+  build_l26_cpuset=yes
+  AC_DEFINE(PENABLE_LINUX26_CPUSETS, 1, [Define to enable Linux 2.6 cpusets])
+  cpuset=1
+  dnl define geometry requests to allow these to be requested here
+dnl  CFLAGS="$CFLAGS -DGEOMETRY_REQUESTS"  
+else
+  cpuset=0
 fi
 AM_CONDITIONAL([BUILD_L26_CPUSETS], test "$build_l26_cpuset" = yes)
 
@@ -458,7 +463,11 @@ if test "x$GCC" = "xyes" ;then
     build_l26_cpuset=yes
     AC_DEFINE(PENABLE_LINUX26_CPUSETS, 1, [Define to enable Linux 2.6 cpusets])
 dnl    AC_DEFINE(GEOMETRY_REQUESTS, 1, [Define to allow job specific geometry requests])
-    CFLAGS="$CFLAGS -DGEOMETRY_REQUESTS"
+    if test "${cpuset}" = "1" ; then
+      CFLAGS="$CFLAGS -DGEOMETRY_REQUESTS -DALWAYS_USE_CPUSETS"
+    else
+      CFLAGS="$CFLAGS -DGEOMETRY_REQUESTS"
+    fi
   else
     AC_MSG_RESULT([no])
   fi

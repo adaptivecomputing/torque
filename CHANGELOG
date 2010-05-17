@@ -45,6 +45,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   b - fix so "gres" config gets displayed by pbsnodes
   b - use QSUBHOST as the default host for output files when no host is
       specified. (RT 7678) 
+  e - allow users to use cpusets and geometry requests at the same time by
+      specifying both at configure time.
   b - Bugzilla bug 55. Check return value of malloc for pbs_mom for Linux
       (Chris Samuel - Univ. of Melbourne)
 
