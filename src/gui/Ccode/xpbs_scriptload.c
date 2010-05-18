@@ -321,8 +321,8 @@ make_argv(int *argc, char *argv[], char *line)
 
 int process_opts(
 
-  int    argc, 
-  char **argv, 
+  int    argc,
+  char **argv,
   int    pass)
 
   {
@@ -466,7 +466,7 @@ int process_opts(
           {
           e_opt = passet;
 
-          if (prepare_path(optarg, path_out) == 0)
+          if (prepare_path(optarg, path_out, NULL) == 0)
             {
             printf("%s = %s\n", ATTR_e, path_out);
             }
@@ -627,7 +627,7 @@ int process_opts(
           {
           o_opt = passet;
 
-          if (prepare_path(optarg, path_out) == 0)
+          if (prepare_path(optarg, path_out, NULL) == 0)
             {
             printf("%s = %s\n", ATTR_o, path_out);
             }
