@@ -199,6 +199,42 @@ void remove_stagein(
 
 
 
+void ensure_deleted(
+
+  struct work_task *ptask)  /* I */
+
+  {
+  struct batch_request *preq;
+  job *pjob;
+
+  preq = ptask->wt_parm1;
+
+  if ((pjob = find_job(preq->rq_ind.rq_delete.rq_objname)) == NULL)
+    {
+    /* job doesn't exist, we're done */
+    return;
+    }
+
+  sprintf(log_buffer, "purging job without checking MOM");
+  
+  log_event(
+    PBSEVENT_JOB,
+    PBS_EVENTCLASS_JOB,
+    pjob->ji_qs.ji_jobid,
+    log_buffer);
+  
+  free_nodes(pjob);
+  
+  if (pjob->ji_qhdr->qu_qs.qu_type == QTYPE_Execution)
+    {
+    set_resc_assigned(pjob, DECR);
+    }
+  
+  job_purge(pjob);
+
+  } /* ensure_deleted */
+
+
 /*
  * req_deletejob - service the Delete Job Request
  *
@@ -250,6 +286,7 @@ void req_deletejob(
   struct work_task *pwtold;
 
   struct work_task *pwtnew;
+  struct work_task *pwtcheck;
 
   int               rc;
   char             *sigt = "SIGTERM";
@@ -593,6 +630,20 @@ jump:
       append_link(&pjob->ji_svrtask, &ptask->wt_linkobj, ptask);
       }
     }  /* END else if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_CHECKPOINT_FILE) != 0) */
+
+  /* make a cleanup task if set */
+  if ((server.sv_attr[SRV_ATR_JobForceCancelTime].at_flags & ATR_VFLAG_SET) &&
+      (server.sv_attr[SRV_ATR_JobForceCancelTime].at_val.at_long > 0))
+    {
+    pwtcheck = set_task(
+        WORK_Timed,
+        time_now + server.sv_attr[SRV_ATR_JobForceCancelTime].at_val.at_long,
+        ensure_deleted,
+        preq);
+    
+    if (pwtcheck != NULL)
+      append_link(&pjob->ji_svrtask, &pwtcheck->wt_linkobj, pwtcheck);
+    }
 
   reply_ack(preq);
 

@@ -49,6 +49,10 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       specifying both at configure time.
   b - Bugzilla bug 55. Check return value of malloc for pbs_mom for Linux
       (Chris Samuel - Univ. of Melbourne)
+  e - added server parameter job_force_cancel_time. When configured to X 
+      seconds, a job that is still there X seconds after a qdel will be
+      purged. Useful for freeing nodes from a job when one node goes down
+      midjob.
 
 2.4.8
   e - Bugzilla bug 22. HIGH_PRECISION_FAIRSHARE for fifo scheduling.
