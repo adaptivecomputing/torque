@@ -162,7 +162,7 @@ start:
         {
         case PBSE_BADHOST:
 
-          if ((Server == NULL) || (Server[0] == '\0'))
+          if (Server[0] == '\0')
             {
             fprintf(stderr, "Cannot resolve default server host '%s' - check server_name file.\n",
               pbs_default());
@@ -235,7 +235,7 @@ start:
         {
         if (errno == ECONNREFUSED)
           {
-          if ((Server == NULL) || (Server[0] == '\0'))
+          if (Server[0] == '\0')
             {
             char *fbserver;
 

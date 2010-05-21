@@ -53,6 +53,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       seconds, a job that is still there X seconds after a qdel will be
       purged. Useful for freeing nodes from a job when one node goes down
       midjob.
+  b - fixed gcc warnings reported by Skip Montanaro
 
 2.4.8
   e - Bugzilla bug 22. HIGH_PRECISION_FAIRSHARE for fifo scheduling.
