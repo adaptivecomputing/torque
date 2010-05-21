@@ -99,11 +99,17 @@
 /* Define to 1 if you have the `elf' library (-lelf). */
 #undef HAVE_LIBELF
 
+/* Define to 1 if you have the `job' library (-ljob). */
+#undef HAVE_LIBJOB
+
 /* Define to 1 if you have the `kvm' library (-lkvm). */
 #undef HAVE_LIBKVM
 
 /* Define to 1 if you have the `nsl' library (-lnsl). */
 #undef HAVE_LIBNSL
+
+/* Define to 1 if you have the `resolv' library (-lresolv). */
+#undef HAVE_LIBRESOLV
 
 /* Define to 1 if you have the `socket' library (-lsocket). */
 #undef HAVE_LIBSOCKET
@@ -410,8 +416,8 @@
 /* turns on the compilation of QUICKCOMMIT code */
 #undef QUICKCOMMIT
 
-/* turns on the compilation of RESOURCEMAXNOTDEFAULT code */
-#undef RESOURCEMAXNOTDEFAULT
+/* turns on the compilation of RESOURCEMAXDEFAULT code */
+#undef RESOURCEMAXDEFAULT
 
 /* Define to enable RPP resource queries */
 #undef RPP
@@ -551,18 +557,21 @@
 #endif
 
 
+
 #ifndef __GNUC__
 #       define __attribute__ /* nothing */
 #endif
 
-
-/*  Needs for the old Cygwin versions (gcc 3.3 or earlier) */
-/*
 #ifdef __CYGWIN__
+/* sys/types.h from cygwin fails to define uid_t and gid_t */
+#ifndef uid_t
 #define uid_t int
+#endif
+#ifndef gid_t
 #define gid_t int
-#endif 
-*/
+#endif
+#endif  /* __CYGWIN__  */
+
 
 
 #endif /* _PBS_CONFIG_H_ */

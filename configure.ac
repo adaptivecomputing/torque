@@ -1204,6 +1204,7 @@ dnl
 dnl  nsl is needed on some systems but duplicates libc.a on others (O2000s)
 AC_CHECK_FUNC(xdr_int, , AC_CHECK_LIB(nsl, xdr_int))
 AC_CHECK_FUNC(ruserok, , AC_CHECK_LIB(socket, ruserok))
+AC_CHECK_FUNC(hstrerror, , AC_CHECK_LIB(resolv, hstrerror))
 
 
 dnl  Readline
