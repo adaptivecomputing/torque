@@ -788,6 +788,11 @@ int init_resc_defs(void)
 
   svr_resc_def = calloc(svr_resc_size + dindex, sizeof(resource_def));
 
+  if (svr_resc_def == NULL)
+     {
+     return(-1);
+     }
+
   /* copy all const resources, except for the last "unknown" */
   for (rindex = 0; rindex < (svr_resc_size - 1); rindex++)
     {

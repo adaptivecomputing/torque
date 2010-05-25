@@ -684,7 +684,13 @@ int pbsd_init(
 
   if (svr_resc_def == NULL)
     {
-    init_resc_defs();
+    rc = init_resc_defs();
+    if (rc != 0)
+      {
+        log_err(rc, "pbsd_init", msg_init_baddb);
+
+        return(-1);
+      }
     }
 
 #if !defined(DEBUG) && !defined(NO_SECURITY_CHECK)
@@ -2258,7 +2264,13 @@ int get_svr_attr(
 
     if (svr_resc_def == NULL)
       {
-      init_resc_defs();
+      rc = init_resc_defs();
+      if (rc != 0)
+        {
+        log_err(rc, "pbsd_init", msg_init_baddb);
+
+        return(-1);
+        }
       }
 
     if (((rc = chk_save_file(path_svrdb))!= 0) || ((rc = svr_recov(path_svrdb, TRUE)) == -1)) 
