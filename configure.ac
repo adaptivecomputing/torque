@@ -1449,7 +1449,7 @@ AC_DEFINE_UNQUOTED([PBS_CONFIG_ARGS],"${ac_configure_args}",[Define to the insta
 AC_DEFINE_UNQUOTED([PBS_CFLAGS],"${CFLAGS}",[Define to the install directory])
 
 AC_CONFIG_FILES([torque.spec:buildutils/torque.spec.in])
-AC_OUTPUT(buildutils/pbs_mkdirs
+AC_CONFIG_FILES([buildutils/pbs_mkdirs
 	  buildutils/self-extract-head-sh
 	  buildutils/modulefiles
 	  buildutils/modulefiles.vers
@@ -1516,7 +1516,8 @@ AC_OUTPUT(buildutils/pbs_mkdirs
 	  src/drmaa/src/Makefile
 	  src/drmaa/test/Makefile
 	  src/drmaa/Doxyfile
-	  src/pam/Makefile)
+	  src/pam/Makefile])
+AC_OUTPUT
 
 echo
 echo "Building components: server=$build_server mom=$build_mom clients=$build_clients 
