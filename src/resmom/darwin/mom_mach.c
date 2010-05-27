@@ -586,8 +586,8 @@ static unsigned long resi_sum(
     memsize += ctob(t_info.resident_size); */
     memsize += t_info.resident_size;
 
-    DBPRT(("%s: pid=%d ses=%d mem=%d totmem=%lu\n",
-           id, pp->kp_proc.p_pid, sess_tbl[i], t_info.resident_size, memsize))
+    DBPRT(("%s: pid=%d ses=%d mem=%ld totmem=%lu\n",
+           id, pp->kp_proc.p_pid, sess_tbl[i], (long)t_info.resident_size, memsize))
     }  /* END for (i) */
 
   return(memsize);
@@ -940,7 +940,7 @@ int qs_cmp(
   const void *b)
 
   {
-  return((int)((struct kinfo_proc *)a)->kp_eproc.e_paddr - (int)((struct kinfo_proc *)b)->kp_eproc.e_paddr);
+  return((long)((struct kinfo_proc *)a)->kp_eproc.e_paddr - (long)((struct kinfo_proc *)b)->kp_eproc.e_paddr);
   }
 
 

@@ -908,7 +908,7 @@ done_roll:
 long log_size(void)
 
   {
-#if defined(HAVE_STRUCT_STAT64) && defined(HAVE_STAT64)
+#if defined(HAVE_STRUCT_STAT64) && defined(HAVE_STAT64) && defined(LARGEFILE_WORKS)
 
   struct stat64 file_stat;
 #else
@@ -916,7 +916,7 @@ long log_size(void)
   struct stat file_stat;
 #endif
 
-#if defined(HAVE_STRUCT_STAT64) && defined(HAVE_STAT64)
+#if defined(HAVE_STRUCT_STAT64) && defined(HAVE_STAT64) && defined(LARGEFILE_WORKS)
 
   if (log_opened && (fstat64(fileno(logfile), &file_stat) != 0))
 #else
