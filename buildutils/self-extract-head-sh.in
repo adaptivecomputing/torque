@@ -12,6 +12,10 @@ exec_prefix=@exec_prefix@
 XPBS_DIR=@libdir@/xpbs
 XPBSMON_DIR=@libdir@/xpbsmon
 libdir=@libdir@
+bindir=@bindir@
+sbindir=@sbindir@
+program_prefix=@program_prefix@
+program_suffix=@program_suffix@
 export XPBS_DIR XPBSMON_DIR
 
 conffiles="$PBS_SERVER_HOME/sched_priv/sched_config
@@ -127,6 +131,14 @@ if test $install -gt 0;then
     sed -n $SKIP,\$p $0 | gzip -dc | tar tf - | \
       while read line;do
          chown $user $destdir$line; chgrp $group $destdir$line
+         case $line in
+            *$bindir/${program_prefix}pbs_iff${program_suffix})
+               chmod u+s $destdir$sbindir/${program_prefix}pbs_iff${program_suffix};;
+            *$bindir/${program_prefix}pbs_rcp${program_suffix})
+               chmod u+s $destdir$bindir/${program_prefix}pbs_rcp${program_suffix};;
+            *$PBS_SERVER_HOME/spool)
+               chmod 1777 $destdir$PBS_SERVER_HOME/spool;;
+         esac
       done
   fi
 
