@@ -1111,7 +1111,7 @@ AC_MSG_CHECKING([for PAM install directory])
 pammoddir=disabled
 AC_ARG_WITH(pam,
     [  --with-pam=DIR          Directory that holds the system PAM modules.
-                          Defaults to /lib(64)/security on Linux.],
+                          On Linux, 'yes' uses the default /lib(64)/security.],
     [pammoddir=$withval])
 case "$pammoddir" in
   disabled) ;;
