@@ -137,7 +137,11 @@
 #include <mach/mach_host.h>
 #include <mach/mach_port.h>
 #include <mach/mach_traps.h>
+#ifdef HAVE_MACH_SHARED_REGION_H
+#include <mach/shared_region.h>
+#else
 #include <mach/shared_memory_server.h>
+#endif
 #include <mach/task.h>
 #include <mach/thread_act.h>
 
@@ -256,6 +260,11 @@ char   nokernel[] = "kernel not available";
 char   noproc[] = "process %d does not exist";
 static  int  nncpus = 0;
 static  int  gpagesize;
+static  int  cputype;
+#if defined HAVE_MACH_SHARED_REGION_H
+static  unsigned long  sharedregionbase; 
+static  unsigned int  sharedregionsize; 
+#endif
 
 
 void
@@ -279,6 +288,31 @@ dep_initialize(void)
     {
     gpagesize = 4096;
     }
+
+  len = sizeof(cputype);
+
+  if (sysctlbyname("hw.cputype", &cputype, &len, NULL, 0) != 0)
+    {
+    cputype = CPU_TYPE_X86;
+    }
+
+#if defined(HAVE_MACH_SHARED_REGION_H)
+  switch (cputype)
+    {
+    case CPU_TYPE_X86:
+      sharedregionbase = SHARED_REGION_BASE_I386; /* same as x86_64? */
+      sharedregionsize = SHARED_REGION_SIZE_I386; /* same as x86_64? */
+    case CPU_TYPE_POWERPC:
+      sharedregionbase = SHARED_REGION_BASE_PPC;
+      sharedregionsize = SHARED_REGION_SIZE_PPC;
+    case CPU_TYPE_POWERPC64:
+      sharedregionbase = SHARED_REGION_BASE_PPC64;
+      sharedregionsize = SHARED_REGION_SIZE_PPC64;
+    default:
+      sharedregionbase = SHARED_REGION_BASE_I386; /* i386 is current standard */
+      sharedregionsize = SHARED_REGION_SIZE_I386; /* i386 is current standard */
+    } 
+#endif
 
   return;
   }
@@ -3206,10 +3240,15 @@ static int get_tinfo_by_pid(
 
   vm_size_t     size;
   mach_port_t   object_name;
-  vm_address_t address = GLOBAL_SHARED_TEXT_SEGMENT;
+  vm_address_t address;
   kern_return_t errno;
 
 
+#if defined(HAVE_MACH_SHARED_REGION_H)
+  address = sharedregionbase;
+#else
+  address = GLOBAL_SHARED_TEXT_SEGMENT;
+#endif
 
   if (task_for_pid(mach_task_self(), pid, &task) != KERN_SUCCESS)
     {
@@ -3267,12 +3306,15 @@ static int get_tinfo_by_pid(
    * We'll modify t_info inline here.
    */
 
+#if! defined(HAVE_MACH_SHARED_REGION_H)
+/* FIXME: What do we need in the mach/shared_region.h case? */
   if (vm_info.reserved &&
       (size == SHARED_TEXT_REGION_SIZE) &&
       (t_info->virtual_size > (SHARED_DATA_REGION_SIZE + SHARED_TEXT_REGION_SIZE)))
     {
     t_info->virtual_size -= (SHARED_DATA_REGION_SIZE + SHARED_TEXT_REGION_SIZE);
     }
+#endif
 
   return(0);
   }

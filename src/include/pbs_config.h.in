@@ -120,6 +120,9 @@
 /* Define if lseek64() is available */
 #undef HAVE_LSEEK64
 
+/* Define to 1 if you have the <mach/shared_region.h> header file. */
+#undef HAVE_MACH_SHARED_REGION_H
+
 /* Define to 1 if you have the <malloc.h> header file. */
 #undef HAVE_MALLOC_H
 

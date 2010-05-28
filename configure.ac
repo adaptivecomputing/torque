@@ -361,7 +361,8 @@ AC_CHECK_HEADERS([arpa/inet.h fcntl.h float.h limits.h malloc.h netdb.h \
 		  sys/socket.h sys/time.h sys/ioctl.h sys/mount.h \
                   sys/vfs.h sys/statfs.h sys/statvfs.h sys/ucred.h sys/un.h sys/uio.h \
                   syslog.h readline/readline.h \
-                  termios.h err.h sys/poll.h pam/pam_modules.h security/pam_appl.h])
+                  termios.h err.h sys/poll.h pam/pam_modules.h security/pam_appl.h \
+                  mach/shared_region.h])
 
 # On Solaris, pam_modules.h requires pam_appl.h
 AC_CHECK_HEADERS([security/pam_modules.h], [], [],
@@ -1206,7 +1207,6 @@ AC_CHECK_FUNC(xdr_int, , AC_CHECK_LIB(nsl, xdr_int))
 AC_CHECK_FUNC(ruserok, , AC_CHECK_LIB(socket, ruserok))
 AC_CHECK_FUNC(hstrerror, , AC_CHECK_LIB(resolv, hstrerror))
 
-
 dnl  Readline
 if test "$HAVE_READLINE" = "yes" ; then
 AC_CHECK_LIB(ncurses, initscr, READLINE_LIBS="-lncurses")
@@ -1449,7 +1449,7 @@ AC_DEFINE_UNQUOTED([PBS_CONFIG_ARGS],"${ac_configure_args}",[Define to the insta
 AC_DEFINE_UNQUOTED([PBS_CFLAGS],"${CFLAGS}",[Define to the install directory])
 
 AC_CONFIG_FILES([torque.spec:buildutils/torque.spec.in])
-AC_CONFIG_FILES([buildutils/pbs_mkdirs
+AC_OUTPUT(buildutils/pbs_mkdirs
 	  buildutils/self-extract-head-sh
 	  buildutils/modulefiles
 	  buildutils/modulefiles.vers
@@ -1516,8 +1516,7 @@ AC_CONFIG_FILES([buildutils/pbs_mkdirs
 	  src/drmaa/src/Makefile
 	  src/drmaa/test/Makefile
 	  src/drmaa/Doxyfile
-	  src/pam/Makefile])
-AC_OUTPUT
+	  src/pam/Makefile)
 
 echo
 echo "Building components: server=$build_server mom=$build_mom clients=$build_clients 
