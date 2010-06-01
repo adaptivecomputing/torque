@@ -186,10 +186,11 @@ int set_job(
              sid);
       }
 
-    log_err(
+    log_ext(
       -1,
       id,
-      tmpLine);
+      tmpLine,
+      LOG_DEBUG);
 
     rc = system(tmpLine);
 
