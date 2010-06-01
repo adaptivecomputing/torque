@@ -3554,7 +3554,11 @@ char *size_fs(
 
   sprintf(ret_string, "%lukb:%lukb",
 
+#ifdef RPT_BAVAIL
+          (ulong)(((double)fsbuf.f_bsize * (double)fsbuf.f_bavail) / 1024.0),
+#else
           (ulong)(((double)fsbuf.f_bsize * (double)fsbuf.f_bfree) / 1024.0),
+#endif
           (ulong)(((double)fsbuf.f_bsize * (double)fsbuf.f_blocks) / 1024.0)); /* KB */
 
   return(ret_string);
