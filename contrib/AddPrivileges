@@ -60,22 +60,20 @@ GROUPF=/etc/group
 
 ADMINGRL=544
 
-ADMINGRD=512
+ADMINGRD=10512
 
+mkpasswd -l -d > $PASSWDF
+mkgroup -l -d -u > $GROUPF;
 
 if id -G | grep -q "$ADMINGRD"
 
     then
     echo "   $CURRENTU is a domain administrator"
-    mkpasswd -l -d > $PASSWDF
-    mkgroup -l -d -u > $GROUPF;
 
     elif id -G | grep -q "$ADMINGRL"
 
         then
         echo "   $CURRENTU is a local administrator"
-        mkpasswd -l > $PASSWDF
-        mkgroup -l -u > $GROUPF;
 
     else echo "   Current user '$CURRENTU' has not administrator privileges"
     exit $?;

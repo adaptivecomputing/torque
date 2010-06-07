@@ -1410,16 +1410,6 @@ AH_BOTTOM([
 #ifndef __GNUC__
 #       define __attribute__ /* nothing */
 #endif
-
-#ifdef __CYGWIN__
-/* sys/types.h from cygwin fails to define uid_t and gid_t */
-#ifndef uid_t
-#define uid_t int
-#endif
-#ifndef gid_t
-#define gid_t int
-#endif
-#endif  /* __CYGWIN__  */
 ])
 
 AH_BOTTOM([
