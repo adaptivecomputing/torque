@@ -3267,7 +3267,7 @@ static int get_tinfo_by_pid(
     return(errno);
     }
 
-#ifdef VM_REGION_BASIC_INFO_COUNT_64;
+#ifdef VM_REGION_BASIC_INFO_COUNT_64
   if ((errno = vm_region_64(
                  task,
                  &address,
