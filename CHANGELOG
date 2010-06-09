@@ -56,6 +56,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   b - fixed gcc warnings reported by Skip Montanaro
   e - added RPT_BAVAIL define that allows pbs_mom to report f_bavail instead of
       f_bfree on Linux systems
+  b - no longer consider -t and -T the same in qsub
+  e - make PBS_O_WORKDIR accessible in the environment for prolog scripts
 
 2.4.8
   e - Bugzilla bug 22. HIGH_PRECISION_FAIRSHARE for fifo scheduling.

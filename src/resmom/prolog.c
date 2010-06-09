@@ -984,6 +984,28 @@ int run_pelog(
         }
       }
 
+    /* Set PBS_O_Workdir */
+      {
+      char *envname = "PBS_O_WORKDIR";
+      char *workdir_val;
+      char *envstr;
+
+      workdir_val = get_job_envvar(pjob,envname);
+      if (workdir_val != NULL)
+        {
+        envstr = malloc((strlen(workdir_val) + strlen(envname) + 2) * sizeof(char));
+
+        if (envstr != NULL)
+          {
+          sprintf(envstr,"%s=%s",
+            envname,
+            workdir_val);
+
+          putenv(envstr);
+          }
+        }
+      }
+
     /* SET BEOWULF_JOB_MAP */
 
       {

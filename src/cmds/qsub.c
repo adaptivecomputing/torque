@@ -1185,6 +1185,7 @@ int p_opt = FALSE;
 int q_opt = FALSE;
 int r_opt = FALSE;
 int t_opt = FALSE;
+int T_opt = FALSE;
 int u_opt = FALSE;
 int v_opt = FALSE;
 int z_opt = FALSE;
@@ -3615,9 +3616,9 @@ int process_opts(
 
       case 'T':
 
-        if_cmd_line(t_opt)
+        if_cmd_line(T_opt)
           {
-          t_opt = passet;
+          T_opt = passet;
 
           /* validate before sending request to server? */
 

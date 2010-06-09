@@ -1319,7 +1319,10 @@ static int status_node(
 
   bad = 0;                                    /*global variable*/
 
-  pal = (svrattrl *)GET_NEXT(preq->rq_ind.rq_status.rq_attr);
+  if (preq->rq_ind.rq_status.rq_attr.ll_struct != NULL)
+    pal = (svrattrl *)GET_NEXT(preq->rq_ind.rq_status.rq_attr);
+  else
+    pal = NULL;
 
   rc = status_nodeattrib(
          pal,
