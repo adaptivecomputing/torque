@@ -164,6 +164,7 @@ struct pbs_queue
   {
   list_link  qu_link;  /* forward/backward links */
   tlist_head qu_jobs;  /* jobs in this queue */
+  tlist_head qu_jobs_array_sum; /* jobs with job arrays summarized */
 
   struct queuefix
     {

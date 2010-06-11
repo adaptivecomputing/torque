@@ -107,6 +107,7 @@
 #include "svrfunc.h"
 #include "sched_cmds.h"
 #include "queue.h"
+#include "array.h"
 
 
 #define RESC_USED_BUF 2048
@@ -2225,6 +2226,118 @@ void encode_job_used(
 #endif    /* USESAVEDRESOURCES */
 
 
+/**
+ * Gets the latest stored used resource information (cput, mem, walltime, etc.)
+ * about the given job. 
+ *
+ */
+
+int get_used(
+
+  svrattrl   *patlist,   /* I */
+  char       *acctbuf)  /* O */
+
+  {
+  int       retval = FALSE;
+  int       amt;
+  int       need;
+
+  amt = RESC_USED_BUF - strlen(acctbuf);
+
+  while (patlist != NULL)
+    {
+    if (strcmp(patlist->al_name, ATTR_session) == 0)
+      {
+      patlist = (svrattrl *)GET_NEXT(patlist->al_link);
+      continue;
+      }
+
+    need = strlen(patlist->al_name) + strlen(patlist->al_value) + 3;
+
+    if (patlist->al_resc)
+      {
+      need += strlen(patlist->al_resc) + 3;
+      }
+
+    if (need < amt)
+      {
+      strcat(acctbuf, "\n");
+      strcat(acctbuf, patlist->al_name);
+
+      if (patlist->al_resc)
+        {
+        strcat(acctbuf, ".");
+        strcat(acctbuf, patlist->al_resc);
+        }
+
+      strcat(acctbuf, "=");
+
+      strcat(acctbuf, patlist->al_value);
+
+      amt -= need;
+      }
+
+    retval = TRUE;
+
+    patlist = (svrattrl *)GET_NEXT(patlist->al_link);
+    }
+
+  return (retval);
+  }  /* END get_used() */
+
+
+/**
+ * Encodes the used resource information (cput, mem, walltime, etc.)
+ * about the given job.
+ *
+ */
+
+#ifdef USESAVEDRESOURCES
+void encode_job_used(
+
+  job        *pjob,   /* I */
+  tlist_head *phead)  /* O */
+
+  {
+  attribute  *at;
+  attribute_def  *ad;
+  resource  *rs;
+
+  at = &pjob->ji_wattr[JOB_ATR_resc_used];
+  ad = &job_attr_def[JOB_ATR_resc_used];
+
+  if ((at->at_flags & ATR_VFLAG_SET) == 0)
+    {
+    return;
+    }
+
+  for (rs = (resource *)GET_NEXT(at->at_val.at_list);
+       rs != NULL;
+       rs = (resource *)GET_NEXT(rs->rs_link))
+    {
+    resource_def *rd = rs->rs_defin;
+    attribute     val;
+    int           rc;
+
+    val = rs->rs_value; /* copy resource attribute */
+
+    rc = rd->rs_encode(
+
+           &val,
+           phead,
+           ad->at_name,
+           rd->rs_name,
+           ATR_ENCODE_CLIENT);
+
+    if (rc < 0)
+      break;
+    }  /* END for (rs) */
+
+  return;
+  }  /* END encode_job_used() */
+#endif    /* USESAVEDRESOURCES */
+
+
 
 
 
@@ -2653,6 +2766,14 @@ void req_jobobit(
       }
 
     ptask = set_task(WORK_Immed, 0, on_job_exit, (void *)pjob);
+
+    /* decrease array running job count */
+    if ((pjob->ji_arraystruct != NULL) &&
+        (pjob->ji_is_array_template == FALSE))
+      {
+      update_array_values(pjob->ji_arraystruct,
+        pjob,JOB_STATE_RUNNING,aeTerminate);
+      }
 
     if (ptask != NULL)
       {

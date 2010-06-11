@@ -35,24 +35,27 @@
 #include "list_link.h"
 #include "attribute.h"
 #include "server_limits.h"
+#include "server.h"
 #include "pbs_job.h"
+#include "queue.h"
 #include "pbs_error.h"
 #include "svrfunc.h"
-
 #include "work_task.h"
 
 #include "array.h"
 
 
-
-
 extern void  job_clone_wt(struct work_task *);
 extern int array_upgrade(job_array *, int, int, int *);
+extern char *get_correct_jobname(const char *jobid);
+extern int count_user_queued_jobs(pbs_queue *,char *);
 
 /* global data items used */
 
 /* list of job arrays */
+extern struct server   server;
 extern tlist_head svr_jobarrays;
+extern tlist_head svr_jobs_array_sum;
 extern char *path_arrays;
 extern char *path_jobs;
 extern time_t time_now;
@@ -63,18 +66,15 @@ extern char *pbs_o_host;
 static int is_num(char *);
 static int array_request_token_count(char *);
 static int array_request_parse_token(char *, int *, int *);
-static int parse_array_request(char *request, job_array *pa);
+static int parse_array_request(char *request, tlist_head *tl);
 
 
 
 /* search job array list to determine if id is a job array */
 int is_array(char *id)
   {
-
   job_array *pa;
-
-
-
+  
   pa = (job_array*)GET_NEXT(svr_jobarrays);
 
   while (pa != NULL)
@@ -149,15 +149,9 @@ int array_save(job_array *pa)
     }
 
   /* count number of request tokens left */
-  num_tokens = 0;
-
-  rn = (array_request_node*)GET_NEXT(pa->request_tokens);
-
-  while (rn != NULL)
-    {
-    num_tokens++;
-    rn = (array_request_node*)GET_NEXT(rn->request_tokens_link);
-    }
+  for (rn = (array_request_node*)GET_NEXT(pa->request_tokens), num_tokens = 0;
+       rn != NULL;
+       rn = (array_request_node*)GET_NEXT(rn->request_tokens_link), num_tokens++);
 
 
   if (write(fds, &num_tokens, sizeof(num_tokens)) == -1)
@@ -170,9 +164,8 @@ int array_save(job_array *pa)
   if (num_tokens > 0)
     {
 
-    rn = (array_request_node*)GET_NEXT(pa->request_tokens);
-
-    while (rn != NULL)
+    for (rn = (array_request_node*)GET_NEXT(pa->request_tokens); rn != NULL;
+         rn = (array_request_node*)GET_NEXT(rn->request_tokens_link))
       {
       if (write(fds, rn, sizeof(array_request_node)) == -1)
         {
@@ -180,10 +173,7 @@ int array_save(job_array *pa)
         close(fds);
         return -1;
         }
-
-      rn = (array_request_node*)GET_NEXT(rn->request_tokens_link);
       }
-
     }
 
   close(fds);
@@ -199,33 +189,87 @@ void array_get_parent_id(char *job_id, char *parent_id)
   {
   char *c;
   char *pid;
+  int bracket = 0;
 
   c = job_id;
   *parent_id = '\0';
   pid = parent_id;
 
-  /* copy until the '-' */
+  /* copy up to the '[' */
 
-  while (*c != '-' && *c != '\0')
+  while (!bracket && *c != '\0')
     {
+    if (*c == '[')
+      {
+      bracket = 1;
+      }
     *pid = *c;
     c++;
     pid++;
     }
 
-  /* skip the until the first '.' */
-  while (*c != '.' && *c != '\0')
+  /* skip the until the closing bracket */
+  while (*c != ']' && *c != '\0')
     {
     c++;
     }
 
   /* copy the rest of the id */
   *pid = '\0';
-
   strcat(pid, c);
 
-
   }
+
+
+/*
+ * find_array_template() - find an array template job by jobid
+ *
+ * Return NULL if not found or pointer to job struct if found
+ */
+
+job *find_array_template(char *arrayid)
+  {
+  char *at;
+  char *comp;
+  int   different = FALSE;
+
+  job  *pj;
+
+  if ((at = strchr(arrayid, (int)'@')) != NULL)
+    * at = '\0'; /* strip off @server_name */
+
+  pj = (job *)GET_NEXT(svr_jobs_array_sum);
+
+  if ((server.sv_attr[SRV_ATR_display_job_server_suffix].at_flags & ATR_VFLAG_SET) ||
+      (server.sv_attr[SRV_ATR_job_suffix_alias].at_flags & ATR_VFLAG_SET))
+    {
+    comp = get_correct_jobname(arrayid);
+    different = TRUE;
+
+    if (comp == NULL)
+      return NULL;
+    }
+  else
+    {
+    comp = arrayid;
+    }
+
+  while (pj != NULL)
+    {
+    if (!strcmp(comp, pj->ji_qs.ji_jobid))
+      break;
+
+    pj = (job *)GET_NEXT(pj->ji_jobs_array_sum);
+    }
+
+  if (at)
+    *at = '@'; /* restore @server_name */
+
+  if (different)
+    free(comp);
+
+  return(pj);  /* may be NULL */
+  }   /* END find_job() */
 
 
 
@@ -254,8 +298,6 @@ job_array *array_recov(char *path)
   /* initialize the linked list nodes */
   CLEAR_LINK(pa->all_arrays);
 
-  CLEAR_HEAD(pa->array_alljobs);
-
   CLEAR_HEAD(pa->request_tokens);
 
   fd = open(path, O_RDONLY, 0);
@@ -278,6 +320,9 @@ job_array *array_recov(char *path)
     close(fd);
     return NULL;
     }
+
+  pa->jobs = malloc(sizeof(job *) * pa->ai_qs.array_size);
+  memset(pa->jobs,0,sizeof(job *) * pa->ai_qs.array_size);
 
   /* check to see if there is any additional info saved in the array file */
   /* check if there are any array request tokens that haven't been fully
@@ -307,13 +352,12 @@ job_array *array_recov(char *path)
 
         free(rn);
 
-        rn = (array_request_node*)GET_NEXT(pa->request_tokens);
-
-        while (rn != NULL)
+        for (rn = (array_request_node*)GET_NEXT(pa->request_tokens);
+             rn != NULL;
+             rn = (array_request_node*)GET_NEXT(pa->request_tokens))
           {
           delete_link(&rn->request_tokens_link);
           free(rn);
-          rn = (array_request_node*)GET_NEXT(pa->request_tokens);
           }
 
         free(pa);
@@ -328,17 +372,15 @@ job_array *array_recov(char *path)
 
       }
 
-
-
     }
-
-
-
 
   close(fd);
 
+  CLEAR_HEAD(pa->ai_qs.deps);
+
   if (old_version != ARRAY_QS_STRUCT_VERSION)
     {
+    /* resave the array struct if the version on disk is older than the current */
     array_save(pa);
     }
 
@@ -378,39 +420,27 @@ int array_delete(job_array *pa)
     log_err(errno, "array_delete", log_buffer);
     }
 
-  strcpy(path, path_jobs); /* delete script file */
-
-  strcat(path, pa->ai_qs.fileprefix);
-  strcat(path, JOB_SCRIPT_SUFFIX);
-
-  if (unlink(path) < 0)
-    {
-    sprintf(log_buffer, "unable to delete %s", path);
-    log_err(errno, "array_delete", log_buffer);
-    }
-
-  else if (LOGLEVEL >= 6)
-    {
-    sprintf(log_buffer, "removed job script");
-
-    log_record(PBSEVENT_DEBUG,
-               PBS_EVENTCLASS_JOB,
-               pa->ai_qs.parent_id,
-               log_buffer);
-    }
 
   /* clear array request linked list */
 
-  rn = (array_request_node*)GET_NEXT(pa->request_tokens);
-
-  while (rn != NULL)
+  for (rn = (array_request_node*)GET_NEXT(pa->request_tokens);
+       rn != NULL;
+       rn = (array_request_node*)GET_NEXT(pa->request_tokens))
     {
     delete_link(&rn->request_tokens_link);
     free(rn);
-    rn = (array_request_node*)GET_NEXT(pa->request_tokens);
     }
 
+  /* free the memory for the job pointers */
+  free(pa->jobs);
 
+  /* purge the "template" job, 
+     this also deletes the shared script file for the array*/
+  if (pa->template_job)
+    {
+    job_purge(pa->template_job);
+    }
+    
   /* free the memory allocated for the struct */
   free(pa);
 
@@ -418,18 +448,76 @@ int array_delete(job_array *pa)
   }
 
 
+/* 
+ * set_slot_limit()
+ * sets how many jobs can be run from this array at once
+ *
+ * @param request - the string array request
+ * @param pa - the array to receive a slot limit
+ *
+ * @return 0 on SUCCESS
+ */
+int set_slot_limit(
+
+  char      *request, /* I */
+  job_array *pa)      /* O */
+
+  {
+  char *pcnt;
+  int   max_limit = NO_SLOT_LIMIT;
+
+  /* check for a max slot limit */
+  if (server.sv_attr[SRV_ATR_MaxSlotLimit].at_flags & ATR_VFLAG_SET)
+    {
+    max_limit = server.sv_attr[SRV_ATR_MaxSlotLimit].at_val.at_long;
+    }
+
+  if ((pcnt = strchr(request,'%')) != NULL)
+    {
+    /* remove '%' from the request, or else it can't be parsed */
+    *pcnt = '\0';
+
+    /* read the number if one is given */
+    pcnt++;
+    if (strlen(pcnt) > 0)
+      {
+      pa->ai_qs.slot_limit = atoi(pcnt);
+      if ((max_limit != NO_SLOT_LIMIT) &&
+          (max_limit < pa->ai_qs.slot_limit))
+        {
+        return(INVALID_SLOT_LIMIT);
+        }
+      }
+    else
+      {
+      pa->ai_qs.slot_limit = max_limit;
+      }
+    }
+  else
+    {
+    pa->ai_qs.slot_limit = max_limit;
+    }
+
+  return(0);
+  } /* END set_slot_limit() */
+
+
 int setup_array_struct(job *pjob)
   {
   job_array *pa;
 
-  struct work_task *wt;
+  /* struct work_task *wt; */
+  array_request_node *rn;
   int bad_token_count;
-
+  int array_size;
+  int rc;
 
   /* setup a link to this job array in the servers all_arrays list */
   pa = (job_array *)calloc(1,sizeof(job_array));
 
   pa->ai_qs.struct_version = ARRAY_QS_STRUCT_VERSION;
+  
+  pa->template_job = pjob;
 
   /*pa->ai_qs.array_size  = pjob->ji_wattr[(int)JOB_ATR_job_array_size].at_val.at_long;*/
 
@@ -440,7 +528,6 @@ int setup_array_struct(job *pjob)
 
   pa->ai_qs.num_cloned = 0;
   CLEAR_LINK(pa->all_arrays);
-  CLEAR_HEAD(pa->array_alljobs);
   CLEAR_HEAD(pa->request_tokens);
   append_link(&svr_jobarrays, &pa->all_arrays, (void*)pa);
 
@@ -461,9 +548,68 @@ int setup_array_struct(job *pjob)
     return 1;
     }
 
+  if ((rc = set_slot_limit(pjob->ji_wattr[JOB_ATR_job_array_request].at_val.at_str, pa)))
+    {
+    array_delete(pa);
+
+    snprintf(log_buffer,sizeof(log_buffer),
+      "Array %s requested a slot limit above the max limit %ld, rejecting\n",
+      pa->ai_qs.parent_id,
+      server.sv_attr[SRV_ATR_MaxSlotLimit].at_val.at_long);
+    log_event(PBSEVENT_SYSTEM,
+      PBS_EVENTCLASS_JOB,
+      pa->ai_qs.parent_id,
+      log_buffer);
+
+    return(INVALID_SLOT_LIMIT);
+    }
+
+  pa->ai_qs.jobs_running = 0;
+  pa->ai_qs.num_started = 0;
+  pa->ai_qs.num_failed = 0;
+  pa->ai_qs.num_successful = 0;
+  
   bad_token_count =
 
-    parse_array_request(pjob->ji_wattr[(int)JOB_ATR_job_array_request].at_val.at_str, pa);
+    parse_array_request(pjob->ji_wattr[(int)JOB_ATR_job_array_request].at_val.at_str,
+                        &(pa->request_tokens));
+
+  /* get the number of elements that should be allocated in the array */
+  rn = (array_request_node *)GET_NEXT(pa->request_tokens);
+  array_size = 0;
+  pa->ai_qs.num_jobs = 0;
+  while (rn != NULL) 
+    {
+    if (rn->end > array_size)
+      array_size = rn->end;
+    /* calculate the actual number of jobs (different from array size) */
+    pa->ai_qs.num_jobs += rn->end - rn->start + 1;
+
+    rn = (array_request_node *)GET_NEXT(rn->request_tokens_link);
+    }
+
+  /* size of array is the biggest index + 1 */
+  array_size++; 
+
+  if (server.sv_attr[SRV_ATR_MaxArraySize].at_flags & ATR_VFLAG_SET)
+    {
+    int max_array_size = server.sv_attr[SRV_ATR_MaxArraySize].at_val.at_long;
+    if (max_array_size < pa->ai_qs.num_jobs)
+      {
+      array_delete(pa);
+
+      return(ARRAY_TOO_LARGE);
+      }
+    }
+
+  /* initialize the array */
+  pa->jobs = malloc(array_size * sizeof(job *));
+  memset(pa->jobs,0,array_size * sizeof(job *));
+
+  /* remember array_size */
+  pa->ai_qs.array_size = array_size;
+
+  CLEAR_HEAD(pa->ai_qs.deps);
 
   array_save(pa);
 
@@ -473,10 +619,6 @@ int setup_array_struct(job *pjob)
     array_delete(pa);
     return 2;
     }
-
-  wt = set_task(WORK_Timed, time_now + 1, job_clone_wt, (void*)pjob);
-
-  /* svr_setjobstate(pj,JOB_STATE_HELD,JOB_SUBSTATE_HELD);*/
 
   return 0;
 
@@ -617,7 +759,7 @@ static int array_request_parse_token(char *str, int *start, int *end)
   }
 
 
-static int parse_array_request(char *request, job_array *pa)
+static int parse_array_request(char *request, tlist_head *tl)
   {
   char *temp_str;
   int num_tokens;
@@ -631,8 +773,6 @@ static int parse_array_request(char *request, job_array *pa)
   int searching;
   array_request_node *rn;
   array_request_node *rn2;
-
-  pa->ai_qs.array_size = 0;
 
   temp_str = strdup(request);
   num_tokens = array_request_token_count(request);
@@ -672,7 +812,7 @@ static int parse_array_request(char *request, job_array *pa)
       rn->end = end;
       CLEAR_LINK(rn->request_tokens_link);
 
-      rn2 = GET_NEXT(pa->request_tokens);
+      rn2 = GET_NEXT(*tl);
       searching = TRUE;
 
       while (searching)
@@ -680,7 +820,7 @@ static int parse_array_request(char *request, job_array *pa)
 
         if (rn2 == NULL)
           {
-          append_link(&pa->request_tokens, &rn->request_tokens_link, (void*)rn);
+          append_link(tl, &rn->request_tokens_link, (void*)rn);
           searching = FALSE;
           }
         else if (rn->start < rn2->start)
@@ -710,7 +850,6 @@ static int parse_array_request(char *request, job_array *pa)
         num_bad_tokens++;
         }
 
-      pa->ai_qs.array_size += end - start + 1;
       }
     }
 
@@ -720,4 +859,519 @@ static int parse_array_request(char *request, job_array *pa)
 
   return num_bad_tokens;
   }
+
+
+
+
+
+
+/*
+ * delete_array_range()
+ *
+ * deletes a range from a specific array
+ *
+ * @param pa - the array whose jobs are deleted
+ * @param range_str - the user-given range to delete 
+ * @return - the number of jobs skipped, -1 if range error 
+ */
+int delete_array_range(
+
+  job_array *pa,
+  char      *range_str)
+
+  {
+  tlist_head tl;
+  array_request_node *rn;
+  array_request_node *to_free;
+  job *pjob;
+  char *range;
+
+  int i;
+  int num_skipped = 0;
+
+  /* get just the numeric range specified, '=' should
+   * always be there since we put it there in qdel */
+  range = strchr(range_str,'=');
+  range++; /* move past the '=' */
+
+  CLEAR_HEAD(tl);
+  if (parse_array_request(range,&tl) > 0)
+    {
+    /* don't delete jobs if range error */
+
+    return(-1);
+    }
+
+  rn = (array_request_node*)GET_NEXT(tl);
+
+  while (rn != NULL)
+    {
+    for (i = rn->start; i <= rn->end; i++)
+      {
+      if (pa->jobs[i] == NULL)
+        continue;
+
+      /* don't stomp on other memory */
+      if (i >= pa->ai_qs.array_size)
+        continue;
+
+      pjob = pa->jobs[i];
+
+      if (pjob->ji_qs.ji_state >= JOB_STATE_EXITING)
+        {
+        /* invalid state for request,  skip */
+        continue;
+        }
+
+      if (attempt_delete((void *)pjob) == FALSE)
+        num_skipped++;
+      }
+
+    to_free = rn;
+    rn = (array_request_node*)GET_NEXT(rn->request_tokens_link);
+
+    /* release mem */
+    free(to_free);
+    }
+
+  return(num_skipped);
+  }
+
+
+
+/* 
+ * first_job_index()
+ *
+ * @param pa - the array
+ * @return the index of the first job in the array
+ */
+int first_job_index(
+
+  job_array *pa)
+
+  {
+  int i;
+
+  for (i = 0; i < pa->ai_qs.array_size; i++)
+    {
+    if (pa->jobs[i] != NULL)
+      return i;
+    }
+
+  return -1;
+  } /* END first_job_index() */
+
+
+
+/* 
+ * delete_whole_array()
+ *
+ * iterates over the array and deletes the whole thing
+ * @param pa - the array to be deleted
+ * @return - the number of jobs skipped
+ */
+int delete_whole_array(
+
+  job_array *pa) /* I */
+
+  {
+  int i;
+  int num_skipped = 0;
+
+  job *pjob;
+
+  for (i = 0; i < pa->ai_qs.array_size; i++)
+    {
+    if (pa->jobs[i] == NULL)
+      continue;
+
+    pjob = (job *)pa->jobs[i];
+
+    if (pjob->ji_qs.ji_state >= JOB_STATE_EXITING)
+      {
+      /* invalid state for request,  skip */
+      continue;
+      }
+
+    if (attempt_delete((void *)pjob) == FALSE)
+      num_skipped++;
+    }
+
+  return(num_skipped);
+  }
+
+
+/*
+ * hold_array_range()
+ * 
+ * holds just a specified range from an array
+ * @param pa - the array to be acted on
+ * @param range_str - string specifying the range 
+ */
+int hold_array_range(
+
+  job_array *pa,         /* O */
+  char      *range_str,  /* I */
+  attribute *temphold)   /* I */
+
+  {
+  tlist_head tl;
+  int i;
+
+  array_request_node *rn;
+  array_request_node *to_free;
+  
+  char *range = strchr(range_str,'=');
+  if (range == NULL)
+    return(PBSE_IVALREQ);
+
+  range++; /* move past the '=' */
+  
+  CLEAR_HEAD(tl);
+  
+  if (parse_array_request(range,&tl) > 0)
+    {
+    /* don't hold the jobs if range error */
+    
+    return(PBSE_IVALREQ);
+    }
+  else 
+    {
+    /* hold just that range from the array */
+    rn = (array_request_node*)GET_NEXT(tl);
+    
+    while (rn != NULL)
+      {
+      for (i = rn->start; i <= rn->end; i++)
+        {
+        if (pa->jobs[i] == NULL)
+          continue;
+        
+        /* don't stomp on other memory */
+        if (i >= pa->ai_qs.array_size)
+          continue;
+        
+        hold_job(temphold,pa->jobs[i]);
+        }
+      
+      /* release mem */
+      to_free = rn;
+      rn = (array_request_node*)GET_NEXT(rn->request_tokens_link);
+      free(to_free);
+      }
+    }
+
+  return(0);
+  } /* END hold_array_range() */
+
+
+
+
+int release_array_range(
+
+  job_array            *pa,
+  struct batch_request *preq,
+  char                 *range_str)
+
+  {
+  tlist_head tl;
+  int i;
+  int rc;
+
+  array_request_node *rn;
+  array_request_node *to_free;
+  
+  char *range = strchr(range_str,'=');
+  if (range == NULL)
+    return(PBSE_IVALREQ);
+
+  range++; /* move past the '=' */
+  
+  CLEAR_HEAD(tl);
+  
+  if (parse_array_request(range,&tl) > 0)
+    {
+    /* don't hold the jobs if range error */
+    
+    return(PBSE_IVALREQ);
+    }
+  
+  /* hold just that range from the array */
+  rn = (array_request_node*)GET_NEXT(tl);
+  
+  while (rn != NULL)
+    {
+    for (i = rn->start; i <= rn->end; i++)
+      {
+      if (pa->jobs[i] == NULL)
+        continue;
+      
+      /* don't stomp on other memory */
+      if (i >= pa->ai_qs.array_size)
+        continue;
+      
+      if ((rc = release_job(preq,pa->jobs[i])))
+        return(rc);
+      }
+    
+    /* release mem */
+    to_free = rn;
+    rn = (array_request_node*)GET_NEXT(rn->request_tokens_link);
+    free(to_free);
+    }
+
+  return(0);
+
+  } /* END release_array_range() */
+
+
+
+
+int modify_array_range(
+
+  job_array *pa,              /* I/O */
+  char      *range,           /* I */
+  svrattrl  *plist,           /* I */
+  struct batch_request *preq, /* I */
+  int        checkpoint_req)  /* I */
+
+  {
+  tlist_head tl;
+  int i;
+
+  array_request_node *rn;
+  array_request_node *to_free;
+  
+  CLEAR_HEAD(tl);
+  
+  if (parse_array_request(range,&tl) > 0)
+    {
+    /* don't hold the jobs if range error */
+    
+    return(FAILURE);
+    }
+  else 
+    {
+    /* hold just that range from the array */
+    rn = (array_request_node*)GET_NEXT(tl);
+    
+    while (rn != NULL)
+      {
+      for (i = rn->start; i <= rn->end; i++)
+        {
+        if ((i >= pa->ai_qs.array_size) ||
+            (pa->jobs[i] == NULL))
+          continue;
+        
+        modify_job(pa->jobs[i],plist,preq,checkpoint_req);
+        }
+      
+      /* release mem */
+      to_free = rn;
+      rn = (array_request_node*)GET_NEXT(rn->request_tokens_link);
+      free(to_free);
+      }
+    }
+
+  return(SUCCESS);
+  } /* END modify_array_range() */
+
+
+
+/**
+ * update_array_values()
+ *
+ * updates internal bookeeping values for job arrays
+ * @param pa - array to update
+ * @param pjob - the pjob that an event happened on
+ * @param event - code for what event just happened
+ */
+void update_array_values(
+
+  job_array            *pa,        /* I */
+  void                 *j,         /* I */
+  int                   old_state, /* I */
+  enum ArrayEventsEnum  event)     /* I */
+
+  {
+  job *pjob = (job *)j;
+  int exit_status;
+
+  switch (event)
+    {
+    case aeQueue:
+
+      /* NYI, nothing needs to be done for this yet */
+
+      break;
+
+    case aeRun:
+
+      if (old_state != JOB_STATE_RUNNING)
+        {
+        pa->ai_qs.jobs_running++;
+        pa->ai_qs.num_started++;
+        }
+
+      break;
+
+    case aeTerminate:
+
+      exit_status = pjob->ji_qs.ji_un.ji_exect.ji_exitstat;
+      if (old_state == JOB_STATE_RUNNING)
+        {
+        if (pa->ai_qs.jobs_running > 0)
+          pa->ai_qs.jobs_running--;
+        }
+
+      if (exit_status == 0)
+        {
+        pa->ai_qs.num_successful++;
+        }
+      else
+        {
+        pa->ai_qs.num_failed++;
+        }
+
+      break;
+
+    default:
+
+      /* log error? */
+
+      break;
+    }
+
+  set_array_depend_holds(pa);
+  array_save(pa);
+
+  } /* END update_array_values() */
+
+
+void update_array_statuses()
+  {
+  job_array *pa;
+  job *pj;
+  int i;
+  unsigned int running;
+  unsigned int queued;
+  unsigned int held;
+  unsigned int complete;
+  
+  pa = (job_array*)GET_NEXT(svr_jobarrays);
+
+  while (pa != NULL)
+    {
+    running = 0;
+    queued = 0;
+    held = 0;
+    complete = 0;
+    
+    for (i = 0; i < pa->ai_qs.array_size; i++)
+      {
+      pj = pa->jobs[i];
+      
+      if (pj != NULL)
+        {
+        if (pj->ji_qs.ji_state == JOB_STATE_RUNNING)
+          {
+          running++;
+          }
+        else if (pj->ji_qs.ji_state == JOB_STATE_QUEUED)
+          {
+          queued++;
+          }
+        else if (pj->ji_qs.ji_state == JOB_STATE_HELD)
+          {
+          held++;
+          }
+        else if (pj->ji_qs.ji_state == JOB_STATE_COMPLETE)
+          {
+          complete++;
+          }
+        }
+      }
+    
+    if (running > 0)
+      {
+      svr_setjobstate(pa->template_job, JOB_STATE_RUNNING, pa->template_job->ji_qs.ji_substate);
+      }
+    else if (held > 0 && queued == 0 && complete == 0)
+      {
+      svr_setjobstate(pa->template_job, JOB_STATE_HELD, pa->template_job->ji_qs.ji_substate);
+      }
+    else if (complete > 0 && queued == 0 && held == 0)
+      {
+      svr_setjobstate(pa->template_job, JOB_STATE_COMPLETE, pa->template_job->ji_qs.ji_substate);
+      }
+    else 
+      {
+      /* default to just calling the array queued */
+      svr_setjobstate(pa->template_job, JOB_STATE_QUEUED, pa->template_job->ji_qs.ji_substate);
+      }
+      
+    pa = (job_array*)GET_NEXT(pa->all_arrays);
+    }
+  }
+
+
+
+
+/* num_array_jobs()
+ *
+ * determine the number of jobs in the array from the array request 
+ *
+ * @param req_str - the string of the array request
+ * @return - the number of jobs in the array, -1 on error 
+ */
+
+int num_array_jobs(
+
+  char *req_str) /* I */
+
+  {
+  int   num_jobs = 0;
+  int   start;
+  int   end;
+
+  char *delim = ",";
+  char *ptr;
+  char *dash;
+
+  if (req_str == NULL)
+    return(-1);
+
+  ptr = strtok(req_str,delim);
+
+  while (ptr != NULL)
+    {
+    if ((dash = strchr(ptr,'-')) != NULL)
+      {
+      /* this is a range */
+      start = atoi(ptr);
+      end   = atoi(dash+1);
+
+      /* check for invalid range */
+      if (end < start)
+        return(-1);
+
+      num_jobs += end - start + 1;
+      }
+    else
+      {
+      /* just one job */
+      num_jobs++;
+      }
+
+    ptr = strtok(NULL,delim);
+    }
+
+  return(num_jobs);
+  } /* END num_array_jobs */
+
+
+
+
+
+/* END array_func.c */
 

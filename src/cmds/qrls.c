@@ -111,11 +111,12 @@ int main(
   char job_id_out[PBS_MAXCLTJOBID];
   char server_out[MAXSERVERNAME];
   char rmt_server[MAXSERVERNAME];
+  char extend[MAXPATHLEN];
 
 #define MAX_HOLD_TYPE_LEN 32
   char hold_type[MAX_HOLD_TYPE_LEN+1];
 
-#define GETOPT_ARGS "h:"
+#define GETOPT_ARGS "h:t:"
 
   hold_type[0] = '\0';
 
@@ -164,6 +165,24 @@ int main(
 
         strcpy(hold_type, optarg);
 
+        break;
+
+      case 't':
+
+        pc = optarg;
+
+        if (strlen(pc) == 0)
+          {
+          fprintf(stderr, "qrls: illegal -t value (array range cannot be zero length)\n");
+
+          errflg++;
+
+          break;
+          }
+
+        snprintf(extend,sizeof(extend),"%s%s",
+          ARRAY_RANGE,
+          pc);
         break;
 
       default:
@@ -217,7 +236,7 @@ cnt:
       continue;
       }
 
-    stat = pbs_rlsjob(connect, job_id_out, hold_type, NULL);
+    stat = pbs_rlsjob(connect, job_id_out, hold_type, extend);
 
     if (stat && (pbs_errno != PBSE_UNKJOBID))
       {

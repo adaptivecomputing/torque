@@ -127,6 +127,8 @@ int   linesize = 77;
 
 int   tasksize;
 
+static char *summarize_arrays_extend_opt = "summarize_arrays";
+
 /* END globals */
 
 
@@ -1239,6 +1241,18 @@ void display_statjob(
             }
           }
 
+        if (alias_opt == TRUE)
+          {
+          /* show the alias as well as the first part of the server name */
+          if (*c == '.')
+            {
+            c++;
+
+            while((*c != '.') && (*c != '\0'))
+              c++;
+            }
+          }
+
         c++;    /* List the first part of the server name, too. */
 
         while ((*c != '.') && (*c != '\0'))
@@ -2040,7 +2054,7 @@ int main(
 
   char operand[PBS_MAXCLTJOBID + 1];
   int alt_opt;
-  int f_opt, B_opt, Q_opt;
+  int f_opt, B_opt, Q_opt, t_opt, E_opt;
   int p_header = TRUE;
   int stat_single_job = 0;
   enum { JOBS, QUEUES, SERVERS } mode;
@@ -2062,7 +2076,7 @@ int main(
 #endif /* !TRUE */
 
 #ifndef FALSE
-#define FALSE 1
+#define FALSE 0
 #endif /* !FALSE */
 
 #if !defined(PBS_NO_POSIX_VIOLATION)
@@ -2076,6 +2090,8 @@ int main(
   f_opt = 0;
   B_opt = 0;
   Q_opt = 0;
+  t_opt = 0;
+  E_opt = 0;
 
   tcl_init();
   tcl_addarg(flags, argv[0]);
@@ -2085,7 +2101,7 @@ int main(
 
   if (getenv("PBS_QSTAT_EXECONLY") != NULL)
     exec_only = 1;
-
+    
   while ((c = getopt(argc, argv, GETOPT_ARGS)) != EOF)
     {
     option[1] = (char)c;
@@ -2118,8 +2134,10 @@ int main(
       case 'E':
 
         if (optarg != NULL)
+          {
           ExtendOpt = strdup(optarg);
-
+          E_opt = TRUE;
+          }
         break;
 
       case 'i':
@@ -2156,6 +2174,11 @@ int main(
 
         alt_opt |= ALT_DISPLAY_s;
 
+        break;
+      case 't':
+      
+        t_opt = 1;
+        
         break;
 
       case 'u':
@@ -2217,6 +2240,12 @@ int main(
 
           errflg++;
           }
+
+        break;
+
+      case 'l':
+
+        alias_opt = TRUE;
 
         break;
 
@@ -2414,7 +2443,7 @@ int main(
     {
     static char usage[] = "usage: \n\
                           qstat [-f [-1]] [-W site_specific] [-x] [ job_identifier... | destination... ]\n\
-                          qstat [-a|-i|-r|-e] [-u user] [-n [-1]] [-s] [-G|-M] [-R] [job_id... | destination...]\n\
+                          qstat [-a|-i|-r|-e] [-u user] [-n [-1]] [-s] [-t] [-G|-M] [-R] [job_id... | destination...]\n\
                           qstat -Q [-f [-1]] [-W site_specific] [ destination... ]\n\
                           qstat -q [-G|-M] [ destination... ]\n\
                           qstat -B [-f [-1]] [-W site_specific] [ server_name... ]\n";
@@ -2422,6 +2451,11 @@ int main(
     fprintf(stderr,"%s", usage);
 
     exit(2);
+    }
+
+  if (!t_opt && !E_opt && !exec_only)
+    {
+    ExtendOpt = summarize_arrays_extend_opt;
     }
 
   def_server = pbs_default();
@@ -2605,7 +2639,14 @@ job_no_args:
           }
         else
           {
-          p_status = pbs_selstat(connect, p_atropl, exec_only ? EXECQUEONLY : NULL);
+          if (t_opt)
+            {
+            p_status = pbs_selstat(connect, p_atropl, exec_only ? EXECQUEONLY : NULL);
+            }
+          else
+            {
+            p_status = pbs_selstat(connect, p_atropl, exec_only ? EXECQUEONLY : summarize_arrays_extend_opt);
+            }
           }
 
         if (p_status == NULL)

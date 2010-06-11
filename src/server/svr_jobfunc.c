@@ -127,6 +127,7 @@
 #include "sched_cmds.h"
 #include "pbs_proto.h"
 #include "csv.h"
+#include "array.h"
 
 
 /* Private Functions */
@@ -139,6 +140,7 @@ static void eval_checkpoint(attribute *j, attribute *q);
 extern struct server server;
 
 extern tlist_head svr_alljobs;
+extern tlist_head svr_jobs_array_sum;
 extern tlist_head svr_jobarrays;
 extern char  *msg_badwait;  /* error message */
 extern char  *msg_daemonname;
@@ -257,6 +259,11 @@ const char *PJobSubState[] =
   "SUBSTATE68",
   "SUBSTATE69",
   "RETURNSTD",             /* returning stderr/stdout files to server spool */
+  "SUBSTATE71",
+  "SUBSTATE72",
+  "SUBSTATE73",
+  "SUBSTATE74",
+  "ARRAY",
   NULL
   };
 
@@ -305,71 +312,131 @@ int svr_enquejob(
 
 #endif /* NDEBUG */
 
-  pjcur = (job *)GET_PRIOR(svr_alljobs);
-
-  while (pjcur != NULL)
+  if (!pjob->ji_is_array_template)
     {
-    if ((unsigned long)pjob->ji_wattr[(int)JOB_ATR_qrank].at_val.at_long >=
-        (unsigned long)pjcur->ji_wattr[(int)JOB_ATR_qrank].at_val.at_long)
-      break;
+    pjcur = (job *)GET_PRIOR(svr_alljobs);
 
-    pjcur = (job *)GET_PRIOR(pjcur->ji_alljobs);
-    }  /* END while (pjcur != NULL) */
+    while (pjcur != NULL)
+      {
+      if ((unsigned long)pjob->ji_wattr[(int)JOB_ATR_qrank].at_val.at_long >=
+          (unsigned long)pjcur->ji_wattr[(int)JOB_ATR_qrank].at_val.at_long)
+        break;
 
-  if (pjcur == 0)
-    {
-    /* link first in server's list */
+      pjcur = (job *)GET_PRIOR(pjcur->ji_alljobs);
+      }  /* END while (pjcur != NULL) */
 
-    insert_link(&svr_alljobs, &pjob->ji_alljobs, pjob, LINK_INSET_AFTER);
-    }
-  else
-    {
-    /* link after 'current' job in server's list */
+    if (pjcur == 0)
+      {
+      /* link first in server's list */
 
-    insert_link(
-      &pjcur->ji_alljobs,
-      &pjob->ji_alljobs,
-      pjob,
-      LINK_INSET_AFTER);
+      insert_link(&svr_alljobs, &pjob->ji_alljobs, pjob, LINK_INSET_AFTER);
+      }
+    else
+      {
+      /* link after 'current' job in server's list */
+
+      insert_link(&pjcur->ji_alljobs, &pjob->ji_alljobs, pjob, LINK_INSET_AFTER);
     }
 
-  server.sv_qs.sv_numjobs++;
+    server.sv_qs.sv_numjobs++;
 
-  server.sv_jobstates[pjob->ji_qs.ji_state]++;
+    server.sv_jobstates[pjob->ji_qs.ji_state]++;
+    }
+  
+  /* place into svr_jobs_array_sum if necessary */
+  if (pjob->ji_is_array_template || pjob->ji_arraystruct == NULL)
+    {
+    pjcur = (job *)GET_PRIOR(svr_jobs_array_sum);
+    
+    while (pjcur != NULL)
+      {
+      if ((unsigned long)pjob->ji_wattr[(int)JOB_ATR_qrank].at_val.at_long >=
+          (unsigned long)pjcur->ji_wattr[(int)JOB_ATR_qrank].at_val.at_long)
+        break;
+      
+      pjcur = (job *)GET_PRIOR(pjcur->ji_alljobs);
+      }  /* END while (pjcur != NULL) */
+      
+    if (pjcur == 0)
+      {
+      /* link first in server's list */
+      insert_link(&svr_jobs_array_sum, &pjob->ji_jobs_array_sum, pjob, LINK_INSET_AFTER);
+      }
+    else
+      {
+      /* link after 'current' job in server's list */
+
+      insert_link(&pjcur->ji_jobs_array_sum, &pjob->ji_jobs_array_sum,
+                  pjob,LINK_INSET_AFTER);
+      }
+      
+    }
 
   /* place into queue in order of queue rank starting at end */
 
   pjob->ji_qhdr = pque;
 
-  pjcur = (job *)GET_PRIOR(pque->qu_jobs);
-
-  while (pjcur != NULL)
+  if (!pjob->ji_is_array_template)
     {
-    if ((unsigned long)pjob->ji_wattr[(int)JOB_ATR_qrank].at_val.at_long >=
-        (unsigned long)pjcur->ji_wattr[(int)JOB_ATR_qrank].at_val.at_long)
-      break;
+    pjob->ji_qhdr = pque;
 
-    pjcur = (job *)GET_PRIOR(pjcur->ji_jobque);
+    pjcur = (job *)GET_PRIOR(pque->qu_jobs);
+
+    while (pjcur != NULL)
+      {
+      if ((unsigned long)pjob->ji_wattr[(int)JOB_ATR_qrank].at_val.at_long >=
+          (unsigned long)pjcur->ji_wattr[(int)JOB_ATR_qrank].at_val.at_long)
+        break;
+
+      pjcur = (job *)GET_PRIOR(pjcur->ji_jobque);
+      }
+
+    if (pjcur == NULL)
+      {
+      /* link first in list */
+
+      insert_link(&pque->qu_jobs, &pjob->ji_jobque, pjob, LINK_INSET_AFTER);
+      }
+    else
+      {
+      /* link after 'current' job in list */
+
+      insert_link(&pjcur->ji_jobque, &pjob->ji_jobque, pjob, LINK_INSET_AFTER);
+      }
+
+    /* update counts: queue and queue by state */
+
+    pque->qu_numjobs++;
+
+    pque->qu_njstate[pjob->ji_qs.ji_state]++;
     }
-
-  if (pjcur == NULL)
+  
+  if (pjob->ji_is_array_template || pjob->ji_arraystruct == NULL)
     {
-    /* link first in list */
+    pjcur = (job *)GET_PRIOR(pque->qu_jobs_array_sum);
 
-    insert_link(&pque->qu_jobs, &pjob->ji_jobque, pjob, LINK_INSET_AFTER);
+    while (pjcur != NULL)
+      {
+      if ((unsigned long)pjob->ji_wattr[(int)JOB_ATR_qrank].at_val.at_long >=
+          (unsigned long)pjcur->ji_wattr[(int)JOB_ATR_qrank].at_val.at_long)
+        break;
+
+      pjcur = (job *)GET_PRIOR(pjcur->ji_jobque_array_sum);
+      }
+
+    if (pjcur == NULL)
+      {
+      /* link first in list */
+
+      insert_link(&pque->qu_jobs_array_sum, &pjob->ji_jobque_array_sum, pjob, LINK_INSET_AFTER);
+      }
+    else
+      {
+      /* link after 'current' job in list */
+
+      insert_link(&pjcur->ji_jobque_array_sum, &pjob->ji_jobque_array_sum, pjob, LINK_INSET_AFTER);
+      }
     }
-  else
-    {
-    /* link after 'current' job in list */
-
-    insert_link(&pjcur->ji_jobque, &pjob->ji_jobque, pjob, LINK_INSET_AFTER);
-    }
-
-  /* update counts: queue and queue by state */
-
-  pque->qu_numjobs++;
-
-  pque->qu_njstate[pjob->ji_qs.ji_state]++;
 
   /* update the current location and type attribute */
 
@@ -492,11 +559,14 @@ void svr_dequejob(
     {
     delete_link(&pjob->ji_alljobs);
 
-    if (--server.sv_qs.sv_numjobs < 0)
-      bad_ct = 1;
+    if (!pjob->ji_is_array_template)
+      {
+      if (--server.sv_qs.sv_numjobs < 0)
+        bad_ct = 1;
 
-    if (--server.sv_jobstates[pjob->ji_qs.ji_state] < 0)
-      bad_ct = 1;
+      if (--server.sv_jobstates[pjob->ji_qs.ji_state] < 0)
+        bad_ct = 1;
+      }
     }
 
 
@@ -517,7 +587,11 @@ void svr_dequejob(
         if (--pque->qu_numcompleted < 0)
           bad_ct = 1;
       }
-
+    
+    if (is_linked(&pque->qu_jobs_array_sum, &pjob->ji_jobque_array_sum))
+      {
+      delete_link(&pjob->ji_jobque_array_sum);
+      }
     pjob->ji_qhdr = (pbs_queue *)0;
     }
 
@@ -683,7 +757,8 @@ int svr_setjobstate(
 
 
 /*
- * svr_evaljobstate - evaluate and return the job state and substate
+ * 
+ - evaluate and return the job state and substate
  * according to the the values of the hold, execution time, and
  * dependency attributes.  This is typically called after the job has been
  * enqueued or the (hold, execution-time) attributes have been modified.
@@ -740,6 +815,10 @@ void svr_evaljobstate(
     *newsub   = JOB_SUBSTATE_QUEUED;
     }
 
+  if (pjob->ji_is_array_template)
+    {
+    *newsub = JOB_SUBSTATE_ARRAY_TEMP;
+    }
   return;
   }  /* END svr_evaljobstate() */
 
@@ -1220,6 +1299,92 @@ static void chk_svr_resc_limit(
 
 
 
+
+/*
+ * count_queued_jobs
+ *
+ * @param pque - the queue we're counting in
+ * @param user - the user who we're counting for, or NULL if all users
+ *
+ * @return the number of jobs, or -1 on error
+ */
+
+int count_queued_jobs(
+
+  pbs_queue *pque, /* I */
+  char      *user) /* I */
+
+  {
+  job       *pj;
+
+  int        num_jobs = 0;
+  int        i;
+  int        num_arrays = 0;
+  job_array *arrays[PBS_MAXJOBARRAY];
+
+  if (pque == NULL)
+    {
+    return(-1);
+    }
+
+  pj = (job *)GET_NEXT(pque->qu_jobs);
+
+  while (pj != NULL)
+    {
+    if (pj->ji_qs.ji_state <= JOB_STATE_RUNNING)
+      {
+      if (user != NULL)
+        {
+        if (!strcmp(pj->ji_wattr[JOB_ATR_job_owner].at_val.at_str,user))
+          {
+          num_jobs++;
+          }
+        }
+      else
+        {
+        num_jobs++;
+        }
+      }
+
+    /* record arrays in queue to check later */
+    if (pj->ji_arraystruct != NULL)
+      {
+      int found = FALSE;
+
+      /* make sure to not insert a duplicate */
+      for (i = 0; i < num_arrays; i++)
+        {
+        if (arrays[i] == pj->ji_arraystruct)
+          {
+          found = TRUE;
+          break;
+          }
+        }
+
+      if (found == FALSE)
+        {
+        arrays[num_arrays] = pj->ji_arraystruct;
+        num_arrays++;
+        }
+      }
+
+    pj = (job *)GET_NEXT(pj->ji_jobque);
+    }
+
+  /* also count any jobs not yet queued that have already been accepted
+   * into the queue */
+  for (i = 0; i < num_arrays; i++)
+    {
+    num_jobs += (arrays[i]->ai_qs.num_jobs - arrays[i]->ai_qs.num_cloned);
+    }
+
+  return(num_jobs);
+  } /* END count_queued_jobs */
+
+
+
+
+
 /*
  * chk_resc_limits - check job Resource_Limits attribute against the queue
  * and server maximum and mininum values.
@@ -1304,7 +1469,6 @@ int svr_chkque(
   int failed_group_acl = 0;
   int failed_user_acl  = 0;
   int user_jobs;
-  job *pj;
 
   struct array_strings *pas;
   int j = 0;
@@ -1578,8 +1742,29 @@ int svr_chkque(
 
   if ((mtype != MOVE_TYPE_MgrMv) && (mtype != MOVE_TYPE_Order))
     {
-    /* 2. the queue must be enabled and the job limit not exceeded */
+    int array_jobs = 0;
 
+    /* set the number of array jobs in this request if applicable */
+    if (pjob->ji_is_array_template)
+      {
+      array_jobs = num_array_jobs(
+          pjob->ji_wattr[JOB_ATR_job_array_request].at_val.at_str);
+
+      /* only add if there wasn't an error. if there is, fail elsewhere */
+      if (array_jobs > 0)
+        {
+        /* when not an array, user_jobs is the current number of jobs, not
+         * the number of jobs that will be added. For this reason, the 
+         * comparison below is >= and this needs to be decremented by 1 */
+        array_jobs--;
+        }
+      else
+        {
+        array_jobs = 0;
+        }
+      }
+
+    /* 2. the queue must be enabled and the job limit not exceeded */
     if (pque->qu_attr[QA_ATR_Enabled].at_val.at_long == 0)
       {
       if (EMsg)
@@ -1592,13 +1777,13 @@ int svr_chkque(
       }
 
     if ((pque->qu_attr[QA_ATR_MaxJobs].at_flags & ATR_VFLAG_SET) &&
-        ((pque->qu_numjobs - pque->qu_numcompleted) >= pque->qu_attr[QA_ATR_MaxJobs].at_val.at_long))
+        ((count_queued_jobs(pque,NULL) + array_jobs) >= pque->qu_attr[QA_ATR_MaxJobs].at_val.at_long))
       {
       if (EMsg)
         snprintf(EMsg, 1024,
           "total number of jobs in queue exceeds the queue limit: "
           "user %s, queue %s",
-          pjob->ji_wattr[(int)JOB_ATR_job_owner].at_val.at_str,
+          pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str,
           pque->qu_qs.qu_name);
 
       return(PBSE_MAXQUED);
@@ -1609,29 +1794,16 @@ int svr_chkque(
       {
       /* count number of jobs user has in queue */
 
-      user_jobs = 0;
+      user_jobs = count_queued_jobs(pque,
+          pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str);
 
-      pj = (job *)GET_NEXT(pque->qu_jobs);
-
-      while (pj != NULL)
-        {
-        if ((pj->ji_qs.ji_state <= JOB_STATE_RUNNING) &&
-            (!strcmp(pj->ji_wattr[JOB_ATR_job_owner].at_val.at_str,
-                     pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str)))
-          {
-          user_jobs++;
-          }
-
-        pj = (job *)GET_NEXT(pj->ji_jobque);
-        }
-
-      if (user_jobs >= pque->qu_attr[QA_ATR_MaxUserJobs].at_val.at_long)
+      if (user_jobs + array_jobs >= pque->qu_attr[QA_ATR_MaxUserJobs].at_val.at_long)
         {
         if (EMsg)
           snprintf(EMsg, 1024,
             "total number of current user's jobs exceeds the queue limit: "
             "user %s, queue %s",
-            pjob->ji_wattr[(int)JOB_ATR_job_owner].at_val.at_str,
+            pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str,
             pque->qu_qs.qu_name);
 
         return(PBSE_MAXUSERQUED);

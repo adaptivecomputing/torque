@@ -99,6 +99,7 @@
 #include "svrfunc.h"
 #include "sched_cmds.h"
 #include "csv.h"
+#include "log.h"
 
 extern int    scheduler_sock;
 extern int    svr_do_schedule;

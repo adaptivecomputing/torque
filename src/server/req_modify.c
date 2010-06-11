@@ -106,6 +106,10 @@
 #include "pbs_error.h"
 #include "log.h"
 #include "svrfunc.h"
+#include "array.h"
+
+#define CHK_HOLD 1
+#define CHK_CONT 2
 
 /* Global Data Items: */
 
@@ -221,67 +225,57 @@ void chkpt_xfr_done(
 
 
 /*
- * req_modifyjob - service the Modify Job Request
+ * modify_job()
+ * modifies a job according to the newattr
  *
- * This request modifes a job's attributes.
- *
- * @see relay_to_mom() - child - routes change down to pbs_mom
+ * @param j - the job being altered
+ * @param newattr - the new attributes
+ * @return SUCCESS if set, FAILURE if problems
  */
 
-void req_modifyjob(
+int modify_job(
 
-  struct batch_request *preq)
+  void      *j,               /* O */
+  svrattrl  *plist,           /* I */
+  struct batch_request *preq, /* I */
+  int        checkpoint_req)  /* I */
 
   {
   int   bad = 0;
   int   i;
   int   newstate;
   int   newsubstate;
-  job  *pjob;
-  svrattrl *plist;
   resource_def *prsd;
   int   rc;
   int   sendmom = 0;
   int   copy_checkpoint_files = FALSE;
 
-  pjob = chk_job_request(preq->rq_ind.rq_modify.rq_objname, preq);
+  char *id = "modify_job";
 
-  if (pjob == NULL)
-    {
-    return;
-    }
-
+  job *pjob = (job *)j;
+  
   /* cannot be in exiting or transit, exiting has already been checked */
 
   if (pjob->ji_qs.ji_state == JOB_STATE_TRANSIT)
     {
     /* FAILURE */
+    snprintf(log_buffer,sizeof(log_buffer),
+      "Cannot modify job '%s' in transit\n",
+      pjob->ji_qs.ji_jobid);
 
-    req_reject(PBSE_BADSTATE, 0, preq, NULL, NULL);
+    log_err(PBSE_BADSTATE,id,log_buffer);
 
-    return;
+    return(PBSE_BADSTATE);
     }
 
-  /* If async modify, reply now; otherwise reply is handled later */
-
-  if (preq->rq_type == PBS_BATCH_AsyModifyJob)
-    {
-
-    reply_ack(preq);
-
-    preq->rq_noreply = TRUE; /* set for no more replies */
-    }
-
-  if ((preq->rq_extend != NULL) &&
-      (pjob->ji_qs.ji_substate == JOB_SUBSTATE_RUNNING) &&
-      ((strcmp(preq->rq_extend,CHECKPOINTHOLD) == 0) ||
-      (strcmp(preq->rq_extend,CHECKPOINTCONT) == 0)))
+  if ((checkpoint_req == TRUE) &&
+      (pjob->ji_qs.ji_substate == JOB_SUBSTATE_RUNNING))
     {
     /* May need to request copy of the checkpoint file from mom */
 
     copy_checkpoint_files = TRUE;
 
-    if (strcmp(preq->rq_extend,CHECKPOINTHOLD) == 0)
+    if (checkpoint_req == CHK_HOLD)
       {
 
       sprintf(log_buffer,"setting jobsubstate for %s to RERUN\n", pjob->ji_qs.ji_jobid);
@@ -299,17 +293,6 @@ void req_modifyjob(
         }
 
       }
-    }
-
-  plist = (svrattrl *)GET_NEXT(preq->rq_ind.rq_modify.rq_attr);
-
-  if (plist == NULL)
-    {
-    /* nothing to do */
-
-    reply_ack(preq);
-
-    return;
     }
 
   /* if job is running, special checks must be made */
@@ -340,10 +323,12 @@ void req_modifyjob(
           ((job_attr_def[i].at_flags & ATR_DFLAG_ALTRUN) == 0))
         {
         /* FAILURE */
+        snprintf(log_buffer,sizeof(log_buffer),
+          "Cannot modify attribute '%s' while running\n",
+          plist->al_name);
+        log_err(PBSE_MODATRRUN,id,log_buffer);
 
-        reply_badattr(PBSE_MODATRRUN, 1, plist, preq);
-
-        return;
+        return PBSE_MODATRRUN;
         }
 
       /* NOTE:  only explicitly specified job attributes are routed down to MOM */
@@ -361,19 +346,23 @@ void req_modifyjob(
         if (prsd == NULL)
           {
           /* FAILURE */
+          snprintf(log_buffer,sizeof(log_buffer),
+            "Unknown attribute '%s'\n",
+            plist->al_name);
+          log_err(PBSE_UNKRESC,id,log_buffer);
 
-          reply_badattr(PBSE_UNKRESC, 1, plist, preq);
-
-          return;
+          return(PBSE_UNKRESC);
           }
 
         if ((prsd->rs_flags & ATR_DFLAG_ALTRUN) == 0)
           {
           /* FAILURE */
+          snprintf(log_buffer,sizeof(log_buffer),
+            "Cannot modify attribute '%s' while running\n",
+            plist->al_name);
+          log_err(PBSE_MODATRRUN,id,log_buffer);
 
-          reply_badattr(PBSE_MODATRRUN, 1, plist, preq);
-
-          return;
+          return(PBSE_MODATRRUN);
           }
 
         sendmom = 1;
@@ -400,10 +389,12 @@ void req_modifyjob(
   if (rc)
     {
     /* FAILURE */
+    snprintf(log_buffer,sizeof(log_buffer),
+      "Cannot set attributes for job '%s'\n",
+      pjob->ji_qs.ji_jobid);
+    log_err(rc,id,log_buffer);
 
-    reply_badattr(rc, bad, plist, preq);
-
-    return;
+    return(rc);
     }
 
   /* Reset any defaults resource limit which might have been unset */
@@ -443,17 +434,18 @@ void req_modifyjob(
                 pjob->ji_qs.ji_un.ji_exect.ji_momaddr,
                 preq,
                 post_modify_req)))
-      {
-      req_reject(rc, 0, preq, NULL, NULL);    /* unable to get to MOM */
+      {  
+      snprintf(log_buffer,sizeof(log_buffer),
+        "Unable to relay information to mom for job '%s'\n",
+        pjob->ji_qs.ji_jobid);
+      log_err(rc,id,log_buffer);
+
+      return(rc); /* unable to get to MOM */
       }
 
-    return;
+    return(0);
     }
 
-  reply_ack(preq);
-
-  /* Request the copying of checkpoint files if needed */
-  
   if (copy_checkpoint_files)
     {
     struct batch_request *momreq = 0;
@@ -467,14 +459,224 @@ void req_modifyjob(
 
       if (relay_to_mom(pjob->ji_qs.ji_un.ji_exect.ji_momaddr, momreq, chkpt_xfr_done) != 0)
         {
-        return;  /* come back when mom replies */
+        snprintf(log_buffer,sizeof(log_buffer),
+          "Unable to relay information to mom for job '%s'\n",
+          pjob->ji_qs.ji_jobid);
+        log_err(rc,id,log_buffer);
+
+        return(0);  /* come back when mom replies */
         }
       }
     else
       {
-      log_err(-1, "req_modifyjob", "Failed to get batch request");
+      log_err(-1,id, "Failed to get batch request");
       }
     }
+
+  return(0);
+  } /* END modify_job() */
+
+
+
+
+/*
+ * modify_whole_array()
+ * modifies the entire job array 
+ * @SEE req_modify_array PARENT
+ */ 
+int modify_whole_array(
+
+  job_array *pa,              /* I/O */
+  svrattrl  *plist,           /* I */
+  struct batch_request *preq, /* I */
+  int        checkpoint_req)  /* I */
+
+  {
+  int i;
+
+  for (i = 0; i < pa->ai_qs.array_size; i++)
+    {
+    if (pa->jobs[i] == NULL)
+      continue;
+
+    modify_job(pa->jobs[i],plist,preq,checkpoint_req);
+    }
+
+  return(SUCCESS);
+  } /* END modify_whole_array() */
+
+
+
+/*
+ * req_modifyarray()
+ * modifies a job array
+ * additionally, can change the slot limit of the array
+ */
+
+void req_modifyarray(
+
+  struct batch_request *preq)  /* I */
+
+  {
+  job_array *pa;
+  svrattrl *plist;
+  int   checkpoint_req = FALSE;
+  char *array_spec = NULL;
+  char *pcnt = NULL;
+
+  pa = get_array(preq->rq_ind.rq_modify.rq_objname);
+
+  if (pa == NULL)
+    {
+    req_reject(PBSE_IVALREQ,0,preq,NULL,"Cannot find array");
+
+    return;
+    }
+
+  plist = (svrattrl *)GET_NEXT(preq->rq_ind.rq_modify.rq_attr);
+
+  /* If async modify, reply now; otherwise reply is handled later */
+  if (preq->rq_type == PBS_BATCH_AsyModifyJob)
+    {
+    reply_ack(preq);
+
+    preq->rq_noreply = TRUE; /* set for no more replies */
+    }
+
+  /* Commented out by David Beer because qalter never uses the 
+   * extend string for this
+  if (preq->rq_extend != NULL)
+    {
+    if (strcmp(preq->rq_extend,CHECKPOINTHOLD) == 0)
+      {
+      checkpoint_req = CHK_HOLD;
+      }
+    else if (strcmp(preq->rq_extend,CHECKPOINTCONT) == 0)
+      {
+      checkpoint_req = CHK_CONT;
+      }
+    } */
+
+  /* find if an array range was specified */
+  if ((preq->rq_extend != NULL) && 
+      ((array_spec = strstr(preq->rq_extend,ARRAY_RANGE)) != NULL))
+    {
+    /* move array spec past ARRAY_RANGE= */
+    char *equals = strchr(array_spec,'=');
+    if (equals != NULL)
+      {
+      array_spec = equals + 1;
+      }
+
+    if ((pcnt = strchr(array_spec,'%')) != NULL)
+      {
+      int slot_limit = atoi(pcnt+1);
+      pa->ai_qs.slot_limit = slot_limit;
+      }
+    }
+
+  if ((array_spec != NULL) &&
+      (pcnt != array_spec))
+    {
+    if (pcnt != NULL)
+      *pcnt = '\0';
+
+    /* there is more than just a slot given, modify that range */
+    if (modify_array_range(pa,array_spec,plist,preq,checkpoint_req) == FAILURE)
+      {
+      req_reject(PBSE_IVALREQ,0,preq,NULL,"Error reading array range");
+
+      return;
+      }
+
+    if (pcnt != NULL)
+      *pcnt = '%';
+    }
+  else if (modify_whole_array(pa,plist,preq,checkpoint_req) == FAILURE)
+    {
+    req_reject(PBSE_IVALREQ,0,preq,NULL,"Error altering the array");
+
+    return;
+    }
+
+  /* SUCCESS */
+
+  reply_ack(preq);
+
+  } /* END req_modifyarray() */
+
+
+
+
+
+/*
+ * req_modifyjob - service the Modify Job Request
+ *
+ * This request modifes a job's attributes.
+ *
+ * @see relay_to_mom() - child - routes change down to pbs_mom
+ */
+
+void req_modifyjob(
+
+  struct batch_request *preq)
+
+  {
+  job  *pjob;
+  svrattrl *plist;
+  int   rc;
+  int   checkpoint_req = FALSE;
+
+  pjob = chk_job_request(preq->rq_ind.rq_modify.rq_objname, preq);
+
+  if (pjob == NULL)
+    {
+    return;
+    }
+
+  plist = (svrattrl *)GET_NEXT(preq->rq_ind.rq_modify.rq_attr);
+
+  if (plist == NULL)
+    {
+    /* nothing to do */
+
+    reply_ack(preq);
+
+    /* SUCCESS */
+
+    return;
+    }
+
+  /* If async modify, reply now; otherwise reply is handled later */
+  if (preq->rq_type == PBS_BATCH_AsyModifyJob)
+    {
+    reply_ack(preq);
+
+    preq->rq_noreply = TRUE; /* set for no more replies */
+    }
+
+  reply_ack(preq);
+
+  /* Commented out by David Beer because qalter never uses the 
+   * extend string for this
+   Request the copying of checkpoint files if needed 
+  if ((preq->rq_extend != NULL) &&
+      ((strcmp(preq->rq_extend,CHECKPOINTHOLD) == 0) ||
+      (strcmp(preq->rq_extend,CHECKPOINTCONT) == 0)))
+    {
+    checkpoint_req = TRUE;
+    } */
+
+  if ((rc = modify_job(pjob,plist,preq,checkpoint_req)) != 0)
+    {
+    if ((rc == PBSE_MODATRRUN) ||
+        (rc == PBSE_UNKRESC))
+      reply_badattr(rc,1,plist,preq);
+    else
+      req_reject(rc,0,preq,NULL,NULL);
+    }
+  else
+    reply_ack(preq);
   
   return;
   }  /* END req_modifyjob() */

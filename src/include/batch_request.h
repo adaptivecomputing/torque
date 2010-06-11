@@ -395,6 +395,8 @@ extern void  req_locatejob (struct batch_request *req);
 extern void  req_manager (struct batch_request *req);
 extern void  req_movejob (struct batch_request *req);
 extern void  req_register (struct batch_request *req);
+extern void  req_registerarray (struct batch_request *req);
+extern void  req_releasearray (struct batch_request *req);
 extern void  req_releasejob (struct batch_request *req);
 extern void  req_rescq (struct batch_request *req);
 extern void  req_rerunjob (struct batch_request *req);

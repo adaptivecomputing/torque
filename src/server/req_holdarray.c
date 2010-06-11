@@ -24,18 +24,65 @@ extern int svr_authorize_req(struct batch_request *preq, char *owner,
 
 extern char *msg_permlog;
 
-void req_holdarray(struct batch_request *preq)
+
+void hold_job(
+
+  attribute *temphold, /* I */
+  void      *j)        /* I */
+
   {
   long *hold_val;
-  int newstate;
-  int newsub;
   long old_hold;
 
-  job *pjob;
+  int newstate;
+  int newsub;
+
+  attribute *pattr;
+  job *pjob = (job *)j;
+
+  if (pjob == NULL)
+    return;
+
+  hold_val = &pjob->ji_wattr[(int)JOB_ATR_hold].at_val.at_long;
+  old_hold = *hold_val;
+  *hold_val |= temphold->at_val.at_long;
+  pjob->ji_wattr[(int)JOB_ATR_hold].at_flags |= ATR_VFLAG_SET;
+  
+  pattr = &pjob->ji_wattr[(int)JOB_ATR_checkpoint];
+  
+  if ((pjob->ji_qs.ji_state == JOB_STATE_RUNNING) &&
+      ((pattr->at_flags & ATR_VFLAG_SET) &&
+       ((csv_find_string(pattr->at_val.at_str, "s") != NULL) ||
+        (csv_find_string(pattr->at_val.at_str, "c") != NULL) ||
+        (csv_find_string(pattr->at_val.at_str, "enabled") != NULL))))
+    {
+    /* TODO */
+    /* preq_tmp = alloc_br(preq->rq_type); */
+    
+    }
+  else if (old_hold != *hold_val)
+    {
+    /* indicate attributes changed  */
+    
+    pjob->ji_modified = 1;
+
+    svr_evaljobstate(pjob, &newstate, &newsub, 0);
+
+    svr_setjobstate(pjob, newstate, newsub);
+    }
+
+  }
+
+
+
+void req_holdarray(struct batch_request *preq)
+  {
+  int i;
+
   char *pset;
+  char *range_str;
   int rc;
   attribute temphold;
-  attribute *pattr;
   char owner[PBS_MAXUSER + 1];
   job_array *pa;
   /* batch_request *preq_tmp; */
@@ -86,41 +133,27 @@ void req_holdarray(struct batch_request *preq)
     return;
     }
 
-  pjob = (job*)GET_NEXT(pa->array_alljobs);
-
-  while (pjob != NULL)
+  /* get the range of jobs to iterate over */
+  range_str = preq->rq_extend;
+  if ((range_str != NULL) &&
+      (strstr(range_str,ARRAY_RANGE) != NULL))
     {
-
-    hold_val = &pjob->ji_wattr[(int)JOB_ATR_hold].at_val.at_long;
-    old_hold = *hold_val;
-    *hold_val |= temphold.at_val.at_long;
-    pjob->ji_wattr[(int)JOB_ATR_hold].at_flags |= ATR_VFLAG_SET;
-
-    pattr = &pjob->ji_wattr[(int)JOB_ATR_checkpoint];
-
-    if ((pjob->ji_qs.ji_state == JOB_STATE_RUNNING) &&
-        ((pattr->at_flags & ATR_VFLAG_SET) &&
-         ((csv_find_string(pattr->at_val.at_str, "s") != NULL) ||
-          (csv_find_string(pattr->at_val.at_str, "c") != NULL) ||
-          (csv_find_string(pattr->at_val.at_str, "enabled") != NULL))))
+    if ((rc = hold_array_range(pa,range_str,&temphold)) != 0)
       {
-      /* TODO */
-      /* preq_tmp = alloc_br(preq->rq_type); */
-
+      req_reject(rc,0,preq,NULL,
+        "Error in specified array range");
       }
-    else if (old_hold != *hold_val)
+    }
+  else
+    {
+    /* do the entire array */
+    for (i = 0;i < pa->ai_qs.array_size;i++)
       {
-      /* indicate attributes changed  */
+      if (pa->jobs[i] == NULL)
+        continue;
 
-      pjob->ji_modified = 1;
-
-      svr_evaljobstate(pjob, &newstate, &newsub, 0);
-
-      svr_setjobstate(pjob, newstate, newsub);
+      hold_job(&temphold,pa->jobs[i]);
       }
-
-
-    pjob = (job*)GET_NEXT(pjob->ji_arrayjobs);
     }
 
   reply_ack(preq);

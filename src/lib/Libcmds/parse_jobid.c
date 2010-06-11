@@ -105,8 +105,13 @@ static int p_pos;
 static char current_server[MAXSERVERNAME];
 static int c_pos;
 
-int
-parse_jobid(char *job_id, char **arg_seq_number, char **arg_parent_server, char **arg_current_server)
+int parse_jobid(
+    
+  char *job_id, 
+  char **arg_seq_number, 
+  char **arg_parent_server, 
+  char **arg_current_server)
+
   {
   int i;
   char *c;
@@ -133,7 +138,8 @@ parse_jobid(char *job_id, char **arg_seq_number, char **arg_parent_server, char 
   /* Looking for a seq_number */
   while (*c != '\0')
     {
-    if (isdigit(*c) || *c == '-')
+    /* look for a digit or array brackets */
+    if (isdigit(*c) || *c == '[' || *c == ']')
       {
       if (s_pos >= PBS_MAXSEQNUM + PBS_MAXJOBARRAYLEN) return 3;
 

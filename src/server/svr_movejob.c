@@ -109,6 +109,7 @@
 #include "svrfunc.h"
 #include "rpp.h"
 #include "mcom.h"
+#include "array.h"
 
 #if __STDC__ != 1
 #include <memory.h>

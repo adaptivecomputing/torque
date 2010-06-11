@@ -109,6 +109,7 @@
 #include "svrfunc.h"
 #include "net_connect.h"
 #include "pbs_proto.h"
+#include "array.h"
 
 #ifdef HAVE_NETINET_IN_H
 #include <netinet/in.h>
@@ -225,6 +226,30 @@ void req_runjob(
     reply_ack(preq);
 
     preq = NULL;  /* cleared so we don't try to reuse */
+    }
+
+  /* if the job is part of an array, check the slot limit */
+  if ((pjob->ji_arraystruct != NULL) &&
+      (pjob->ji_is_array_template == FALSE))
+    {
+    job_array *pa = pjob->ji_arraystruct;
+    
+    if ((pa->ai_qs.slot_limit < 0) ||
+        (pa->ai_qs.slot_limit > pa->ai_qs.jobs_running))
+      {
+      update_array_values(pa,pjob,pjob->ji_qs.ji_state,aeRun);
+      }
+    else
+      {
+      snprintf(log_buffer,sizeof(log_buffer),
+        "Cannot run job. Array slot limit is %d and there are already %d jobs running\n",
+        pa->ai_qs.slot_limit,
+        pa->ai_qs.jobs_running);
+      
+      req_reject(PBSE_IVALREQ,0,preq,NULL,log_buffer);
+
+      return;
+      }
     }
 
   /* NOTE:  nodes assigned to job in svr_startjob() */
@@ -1020,6 +1045,14 @@ static int svr_strtjob2(
   /* send the job to MOM */
 
   svr_setjobstate(pjob,JOB_STATE_RUNNING,JOB_SUBSTATE_PRERUN);
+
+  /* if job start timeout attribute is set use its value */
+  
+  if (((server.sv_attr[(int)SRV_ATR_JobStartTimeout].at_flags & ATR_VFLAG_SET) != 0)
+          && (server.sv_attr[(int)SRV_ATR_JobStartTimeout].at_val.at_long > 0))
+    {
+    DIS_tcp_settimeout(server.sv_attr[(int)SRV_ATR_JobStartTimeout].at_val.at_long);
+    }
 
   /* if job start timeout attribute is set use its value */
   

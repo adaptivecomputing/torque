@@ -117,14 +117,6 @@
 #include <signal.h>
 /*#endif*/
 
-#ifndef SUCCESS
-#define SUCCESS 1
-#endif /* SUCCESS */
-
-#ifndef FAILURE
-#define FAILURE 0
-#endif /* FAILURE */
-
 #ifndef TRUE
 #define TRUE 1
 #endif /* TRUE */
@@ -180,6 +172,7 @@ extern char  server_name[];
 extern int  svr_delay_entry;
 extern tlist_head svr_newjobs;
 extern tlist_head svr_alljobs;
+extern tlist_head svr_jobs_array_sum;
 extern tlist_head svr_queues;
 extern tlist_head svr_requests;
 extern tlist_head svr_newnodes;
@@ -724,6 +717,8 @@ int pbsd_init(
 
   CLEAR_HEAD(svr_alljobs);
 
+  CLEAR_HEAD(svr_jobs_array_sum);
+
   CLEAR_HEAD(svr_newjobs);
 
   CLEAR_HEAD(svr_newnodes);
@@ -979,10 +974,10 @@ int pbsd_init(
 
         if (pa == NULL)
           {
-          /* TODO GB */
 
           sprintf(log_buffer,
-                  "could not recover array-struct from file %s--skipping",
+                  "could not recover array-struct from file %s--skipping. "
+                  "job array can not be recovered.",
                   pdirent->d_name);
 
           log_err(errno, "pbsd_init", log_buffer);
@@ -1064,13 +1059,13 @@ int pbsd_init(
           {
           if ((pjob = job_recov(pdirent->d_name)) != NULL)
             {
-            append_link(&svr_alljobs, &pjob->ji_alljobs, pjob);
-            pjob->ji_isparent = TRUE;
-            }
-          else
-            {
-            /* FIXME: what should we do here?  we won't be able to finish 
-               cloning this array because the initial job file is missing */
+            pjob->ji_is_array_template = TRUE;
+            
+            if (DArrayAppend(&Array,pjob) == FAILURE)
+              {
+              log_err(ENOMEM,"main","out of memory reloading jobs");
+              exit(-1);
+              }
             }
 
           continue;
@@ -1198,42 +1193,54 @@ int pbsd_init(
       }
     }
 
-  /* look for empty arrays and delete them
+  /* finish setting up array structs
+     look for empty arrays and delete them
      also look for arrays that weren't fully built and setup a work task to
      continue the cloning process*/
   pa = (job_array*)GET_NEXT(svr_jobarrays);
 
   while (pa != NULL)
     {
-    if (pa->ai_qs.num_cloned != pa->ai_qs.array_size)
+    pa->template_job = find_array_template(pa->ai_qs.parent_id);
+    
+    if (pa->ai_qs.num_cloned != pa->ai_qs.num_jobs)
       {
 
-      job *pjob = find_job(pa->ai_qs.parent_id);
-
-      if (pjob == NULL)
+      /* if we can't finish building the job array then delete whats been done 
+         so far */
+      if (pa->template_job == NULL)
         {
-        /* TODO, we need to so something here, we can't finish cloning the 
-           array! */
+        int i;
+        job_array *temp;
+        for (i = 0; i < pa->ai_qs.array_size; i++)
+          {
+          if (pa->jobs[i] != NULL)
+            {
+            job_purge(pa->jobs[i]);
+            }
+          }
 
+        temp = (job_array*)GET_NEXT(pa->all_arrays);
+        array_delete(pa);
+        pa = temp;
+        continue;
         }
       else
         {
-        /* TODO if num_cloned != num_recovered then something strange happend
-           it is possible num_recovered == num_cloned+1.  That means that the 
-           server terminated after cloning a job but before updating the saved 
-           array_info struct. we probably should delete that last job and start
-           the cloning process off at num_cloned. Someone must have been 
-           naughty and did a kill -9 on pbs_server  */
-        wt = set_task(WORK_Timed, time_now + 1, job_clone_wt, (void*)pjob);
+        /* TODO Someone must have been naughty and did a kill -9 on pbs_server, 
+           we might need to validate that the last job was fully initialized 
+           before continuing the cloning process. */
+        wt = set_task(WORK_Timed, time_now + 1, job_clone_wt, (void*)pa->template_job);
 
         }
 
       }
-    else if (GET_NEXT(pa->array_alljobs) == pa->array_alljobs.ll_struct)
+    else if (pa->ai_qs.jobs_done == pa->ai_qs.num_jobs && pa->template_job == NULL)
       {
       job_array *temp = (job_array*)GET_NEXT(pa->all_arrays);
       array_delete(pa);
       pa = temp;
+      continue;
       }
 
     if (pa != NULL)
@@ -1518,6 +1525,8 @@ static int pbsd_init_job(
     case JOB_SUBSTATE_WAITING:
 
     case JOB_SUBSTATE_PRERUN:
+    
+    case JOB_SUBSTATE_ARRAY_TEMP:
 
       pbsd_init_reque(pjob, CHANGE_STATE);
 
@@ -1591,6 +1600,14 @@ static int pbsd_init_job(
         }
 
       pbsd_init_reque(pjob, KEEP_STATE);
+
+      /* do array bookeeping */
+      if ((pjob->ji_arraystruct != NULL) &&
+          (pjob->ji_is_array_template == FALSE))
+        {
+        update_array_values(pjob->ji_arraystruct,
+          pjob,JOB_STATE_RUNNING,aeTerminate);
+        }
 
       break;
 

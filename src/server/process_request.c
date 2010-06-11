@@ -197,6 +197,7 @@ void req_stagein(struct batch_request *preq);
 
 void req_deletearray(struct batch_request *preq);
 void req_holdarray(struct batch_request *preq);
+void req_modifyarray(struct batch_request *preq);
 
 #endif
 
@@ -837,8 +838,18 @@ void dispatch_request(
     case PBS_BATCH_AsyModifyJob:
 
     case PBS_BATCH_ModifyJob:
-
+#ifndef PBS_MOM
+      if (is_array(request->rq_ind.rq_delete.rq_objname))
+        {
+        req_modifyarray(request);
+        }
+      else
+        {
+        req_modifyjob(request);
+        }
+#else /* END ifndef PBS_MOM */
       req_modifyjob(request);
+#endif /* PBS_MOM */
 
       break;
 
@@ -882,7 +893,14 @@ void dispatch_request(
 
     case PBS_BATCH_ReleaseJob:
 
-      req_releasejob(request);
+      if (is_array(request->rq_ind.rq_delete.rq_objname))
+        {
+        req_releasearray(request);
+        }
+      else
+        {
+        req_releasejob(request);
+        }
 
       break;
 
@@ -916,6 +934,8 @@ void dispatch_request(
       break;
 
     case PBS_BATCH_SignalJob:
+
+    case PBS_BATCH_AsySignalJob:
 
     case PBS_BATCH_AsySignalJob:
 
@@ -965,7 +985,14 @@ void dispatch_request(
 
     case PBS_BATCH_RegistDep:
 
-      req_register(request);
+      if (is_array(request->rq_ind.rq_register.rq_parent))
+        {
+        req_registerarray(request);
+        }
+      else
+        {
+        req_register(request);
+        }
 
       break;
 

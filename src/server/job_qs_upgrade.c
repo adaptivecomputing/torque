@@ -367,6 +367,7 @@ int upgrade_2_2_X(
       return(1);
       }
 
+    /* FIX ME: this hasn't been accurate since arrays version 1 */
     sprintf(range, "0-%d", pa->ai_qs.array_size - 1);
 
     clear_attr(&tempattr, &job_attr_def[JOB_ATR_job_array_request]);

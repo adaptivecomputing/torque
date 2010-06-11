@@ -102,6 +102,7 @@ int main(int argc, char **argv) /* qhold */
   int any_failed = 0;
   int u_cnt, o_cnt, s_cnt;
   char *pc;
+  char  extend[1024];
 
   char job_id[PBS_MAXCLTJOBID];       /* from the command line */
 
@@ -112,9 +113,10 @@ int main(int argc, char **argv) /* qhold */
 #define MAX_HOLD_TYPE_LEN 32
   char hold_type[MAX_HOLD_TYPE_LEN+1];
 
-#define GETOPT_ARGS "h:"
+#define GETOPT_ARGS "h:t:"
 
   hold_type[0] = '\0';
+  extend[0] = '\0';
 
   while ((c = getopt(argc, argv, GETOPT_ARGS)) != EOF)
     switch (c)
@@ -157,6 +159,25 @@ int main(int argc, char **argv) /* qhold */
 
         break;
 
+      case 't':
+
+        pc = optarg;
+
+        if (strlen(pc) == 0)
+          {
+          fprintf(stderr, "qhold: illegal -t value (array range cannot be zero length)\n");
+
+          errflg++;
+
+          break;
+          }
+
+        snprintf(extend,sizeof(extend),"%s%s",
+          ARRAY_RANGE,
+          pc);
+
+        break;
+
       default :
         errflg++;
       }
@@ -195,7 +216,10 @@ cnt:
       continue;
       }
 
-    stat = pbs_holdjob(connect, job_id_out, hold_type, NULL);
+    if (extend[0] == '\0')
+      stat = pbs_holdjob(connect, job_id_out, hold_type, NULL);
+    else
+      stat = pbs_holdjob(connect,job_id_out,hold_type,extend);
 
     if (stat && (pbs_errno != PBSE_UNKJOBID))
       {

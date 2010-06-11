@@ -38,6 +38,27 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   e - added -DUSESAVEDRESOURCES code that uses servers saved resources used
       for accounting end record instead of current resources used for jobs that
       stopped running while mom was not up.
+  e - TORQUE job arrays now use arrays to hold the job pointers and not 
+      linked lists. 
+  f - Allow users to delete a range of jobs from the job array
+  f - Added a slot limit to the job arrays - this restricts the number of 
+      jobs that can concurrently run from one job array. 
+  f - added support for holding ranges of jobs from an array with a single 
+      qhold (using the -t option). 
+  f - now jobs in an array can be modified through qalter 
+      (using the -t option). 
+  f - jobs can now depend on arrays using these dependencies: 
+      afterstartarray, afterokarray, afternotokarray, afteranyarray, 
+  f - added support for using qrls on arrays with the -t option
+  e - complte overhaul of job array submission code
+  f - by default show only a single entry in qstat output for the whole array
+      (qstat -t expands the job array)
+  f - server parameter max_job_array_size limits the number of jobs allowed
+      in an array
+  b - fixed things so that arrays can't circumvent max_user_queuable
+  b - fixed things so that arrays can't circumvent max_queuable
+  f - added server parameter max_slot_limit to restrict slot limits
+  e - changed array names from jobid-index to jobid[index] for consistency
 
 2.4.9
   b - Bugzilla bug 57. Check return value of malloc for tracejob for Linux

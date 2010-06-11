@@ -119,7 +119,7 @@ int main(
 
   char extend[1024];
 
-#define GETOPT_ARGS "cm:pW:"
+#define GETOPT_ARGS "cm:pW:t:"
 
   extend[0] = '\0';
 
@@ -183,6 +183,32 @@ int main(
 
         break;
 
+      case 't':
+
+        if (extend[0] != '\0')
+          {
+          errflg++;
+
+          break;
+          }
+
+        pc = optarg;
+
+        if (strlen(pc) == 0)
+          {
+          fprintf(stderr, "qdel: illegal -t value (array range cannot be zero length)\n");
+
+          errflg++;
+
+          break;
+          }
+
+        snprintf(extend,sizeof(extend),"%s%s",
+          ARRAY_RANGE,
+          pc);
+
+        break;
+
       case 'W':
 
         if (extend[0] != '\0')
@@ -239,11 +265,11 @@ int main(
 
   if ((errflg != 0) || (optind >= argc))
     {
-    static char usage[] = "usage: qdel [{ -c | -p | -W delay | -m message}] [<JOBID>[<JOBID>]|'all'|'ALL']...\n";
+    static char usage[] = "usage: qdel [{ -c | -p | -t | -W delay | -m message}] [<JOBID>[<JOBID>]|'all'|'ALL']...\n";
 
     fprintf(stderr, "%s", usage);
 
-    fprintf(stderr, "       -c, -m, -p, and -W are mutually exclusive\n");
+    fprintf(stderr, "       -c, -m, -p, -t, and -W are mutually exclusive\n");
 
     exit(2);
     }

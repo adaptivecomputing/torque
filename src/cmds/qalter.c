@@ -122,8 +122,10 @@ int main(
   char server_out[MAXSERVERNAME];
   char rmt_server[MAXSERVERNAME];
   char path_out[MAXPATHLEN + 1];
+  char extend[MAXPATHLEN];
+  char *extend_ptr = NULL; /* only give value if extend has value */
 
-#define GETOPT_ARGS "a:A:c:e:h:j:k:l:m:M:N:o:p:qr:S:u:v:W:x:"
+#define GETOPT_ARGS "a:A:c:e:h:j:k:l:m:M:N:o:p:qr:S:t:u:v:W:x:"
 
   while ((c = getopt(argc, argv, GETOPT_ARGS)) != EOF)
     {
@@ -520,6 +522,19 @@ int main(
 
         break;
 
+      case 't':
+
+        if ((optarg != NULL) && 
+            (strlen(optarg) > 0))
+          {
+          snprintf(extend,sizeof(extend),"%s%s",
+            ARRAY_RANGE,
+            optarg);
+          extend_ptr = extend;
+          }
+
+        break;
+
       case 'u':
 
         if (parse_at_list(optarg, TRUE, FALSE))
@@ -656,8 +671,8 @@ int main(
                           [-a date_time] [-A account_string] [-c interval] [-e path] \n\
                           [-h hold_list] [-j y|n] [-k keep] [-l resource_list] [-m mail_options] \n\
                           [-M user_list] [-N jobname] [-o path] [-p priority] [-q] [-r y|n] [-S path] \n\
-                          [-u user_list] [-v variable_list] [-W dependency_list] [-x exec_host] \n\
-                          job_identifier...\n";
+                          [t [array range]%slot limit] [-u user_list] [-v variable_list] \n\
+                          [-W dependency_list] [-x exec_host] job_identifier...\n";
 
     fprintf(stderr, "%s", usage);
 
@@ -700,11 +715,11 @@ cnt:
 
     if (asynch)
       {
-      stat = pbs_alterjob_async(connect, job_id_out, attrib, NULL);
+      stat = pbs_alterjob_async(connect, job_id_out, attrib, extend_ptr);
       }
     else
       {
-      stat = pbs_alterjob(connect, job_id_out, attrib, NULL);
+      stat = pbs_alterjob(connect, job_id_out, attrib, extend_ptr);
       }
 
     if ((stat != 0) && (pbs_errno != PBSE_UNKJOBID))

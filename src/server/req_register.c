@@ -98,6 +98,7 @@
 #include "pbs_error.h"
 #include "log.h"
 #include "svrfunc.h"
+#include "array.h"
 
 #define SYNC_SCHED_HINT_NULL 0
 #define SYNC_SCHED_HINT_FIRST 1
@@ -605,6 +606,344 @@ void req_register(
 
 
 
+
+/*
+ * req_registerarray() 
+ * registers a dependency on an array
+ */
+
+void req_registerarray(
+
+  struct batch_request *preq)  /* I */
+
+  {
+  job_array  *pa;
+  char        array_name[PBS_MAXSVRJOBID];
+  char        range[MAXPATHLEN >> 4];
+  int         num_jobs = -1;
+  char       *dot_server;
+  char       *bracket_ptr;
+  int         rc = 0;
+  int         type;
+
+  /*  make sure request is from a server */
+  if (!preq->rq_fromsvr)
+    {
+    req_reject(PBSE_IVALREQ, 0, preq, NULL, NULL);
+
+    return;
+    }
+
+  strcpy(array_name,preq->rq_ind.rq_register.rq_parent);
+
+  /* if brackets are present, remove the brackets and 
+   * store the number in range */
+  range[0] = '\0';
+  if ((bracket_ptr = strchr(array_name,'[')) != NULL)
+    {
+    *bracket_ptr = '\0';
+    bracket_ptr++;
+
+    strcpy(range,bracket_ptr);
+    if ((bracket_ptr = strchr(range,']')) != NULL)
+      {
+      *bracket_ptr = '\0';
+      num_jobs = atoi(range);
+
+      if ((dot_server = strchr(bracket_ptr+1,'.')) != NULL)
+        {
+        strcat(array_name,dot_server);
+        }
+      else 
+        {
+        /* error, no server. shouldn't get here ever due
+         * to checks in depend_on_que */
+
+        req_reject(PBSE_IVALREQ,0,preq,NULL,
+          "No server specified");
+        }
+      }
+    else
+      {
+      /* error, if bracket opens must close */
+
+      req_reject(PBSE_IVALREQ,0,preq,NULL,
+        "Array range format invalid, must have closed bracket ']'");
+      }
+    }
+
+  /* get the array */
+  if ((pa = get_array(array_name)) == NULL)
+    {
+    /*
+     * array not found... if server is initializing, it may not
+     * yet be recovered, that is not an error.
+     */
+
+    if (server.sv_attr[(int)SRV_ATR_State].at_val.at_long != SV_STATE_INIT)
+      {
+      log_event(
+        PBSEVENT_DEBUG,
+        PBS_EVENTCLASS_JOB,
+        preq->rq_ind.rq_register.rq_parent,
+        pbse_to_txt(PBSE_UNKJOBID));
+
+      req_reject(PBSE_UNKJOBID, 0, preq, NULL, NULL);
+      }
+    else
+      {
+      reply_ack(preq);
+      }
+
+    return;
+    }
+
+  type = preq->rq_ind.rq_register.rq_dependtype;
+
+  if (type < JOB_DEPEND_TYPE_AFTERSTARTARRAY)
+    {
+    req_reject(PBSE_IVALREQ,0,preq,NULL,
+      "Arrays may only be given array dependencies");
+
+    return;
+    }
+
+  /* register the dependency on the array */
+
+  switch (preq->rq_ind.rq_register.rq_op)
+    {
+
+    case JOB_DEPEND_OP_REGISTER:
+
+      if ((rc = register_array_depend(pa,preq,type,num_jobs)))
+        {
+        req_reject(rc,0,preq,NULL,NULL);
+        }
+
+      set_array_depend_holds(pa);
+
+      break;
+
+    case JOB_DEPEND_OP_RELEASE:
+
+    case JOB_DEPEND_OP_DELETE:
+    case JOB_DEPEND_OP_UNREG:
+
+      /* NYI */
+
+      break;
+    } /* END switch (preq->rq_ind.rq_register.rq_op */
+
+  } /* END req_registerarray() */
+
+
+
+int register_array_depend(
+
+  job_array            *pa,    /* I/O */
+  struct batch_request *preq,  /* I */
+  int                   type,  /* I */
+  int                   num_jobs) /* I */
+
+  {
+  struct array_depend     *pdep;
+
+  struct array_depend_job *pdj;
+
+  /* check for existing dependencies of that type */
+  pdep = (struct array_depend *)GET_NEXT(pa->ai_qs.deps);
+  while (pdep != NULL)
+    {
+    if (type == pdep->dp_type)
+     break; 
+
+    pdep = (struct array_depend *)GET_NEXT(pdep->dp_link);
+    }
+
+  /* make dependency of none exists */
+  if (pdep == NULL)
+    {
+    pdep = malloc(sizeof(struct array_depend));
+
+    if (pdep != NULL)
+      {
+      CLEAR_HEAD(pdep->dp_link);
+      CLEAR_HEAD(pdep->dp_jobs);
+      pdep->dp_type = type;
+
+      append_link(&pa->ai_qs.deps,&pdep->dp_link,pdep);
+      }
+    else
+      return(PBSE_SYSTEM);
+    }
+
+  /* now we have the dependency, add the job to it */
+
+  pdj = (struct array_depend_job *)GET_NEXT(pdep->dp_jobs);
+
+  /* verify the job isn't already there */
+  while (pdj != NULL)
+    {
+    if (!strcmp(preq->rq_ind.rq_register.rq_child, pdj->dc_child))
+      break;
+
+    pdj = (struct array_depend_job *)GET_NEXT(pdj->dc_link);
+    }
+
+  /* assume success if the job is there */
+  if (pdj != NULL)
+    return(0);
+
+  /* try to create the job */
+  pdj = (struct array_depend_job *)malloc(sizeof(struct array_depend_job));
+
+  if (pdj != NULL)
+    {
+    CLEAR_LINK(pdj->dc_link);
+
+    snprintf(pdj->dc_child,sizeof(pdj->dc_child),"%s",preq->rq_ind.rq_register.rq_child);
+    snprintf(pdj->dc_svr,sizeof(pdj->dc_svr),"%s",preq->rq_ind.rq_register.rq_svr);
+
+    if (num_jobs == -1)
+      {
+      /* not specified, make it the entire array */
+      pdj->dc_num = pa->ai_qs.num_jobs;
+      }
+    else
+      {
+      /* specified, use parameter */
+      pdj->dc_num = num_jobs;
+      }
+
+    append_link(&pdep->dp_jobs, &pdj->dc_link, pdj);
+    }
+  else
+    {
+    return(PBSE_SYSTEM);
+    }
+
+  /* SUCCESS */
+
+  return(0);
+  } /* END register_array_depend */
+
+
+
+
+void set_array_depend_holds(
+
+  job_array *pa)
+
+  {
+  int  compareNumber;
+
+  job *pjob;
+  struct array_depend_job   *pdj;
+
+  struct array_depend *pdep = (struct array_depend *)GET_NEXT(pa->ai_qs.deps);
+
+  /* loop through dependencies to update holds */
+  while (pdep != NULL)
+    {
+    compareNumber = -1;
+
+    switch (pdep->dp_type)
+      {
+      case JOB_DEPEND_TYPE_AFTERSTARTARRAY:
+
+        compareNumber = pa->ai_qs.num_started;
+
+        break;
+
+      case JOB_DEPEND_TYPE_AFTEROKARRAY:
+
+        compareNumber = pa->ai_qs.num_successful;
+
+        break;
+
+      case JOB_DEPEND_TYPE_AFTERNOTOKARRAY:
+
+        compareNumber = pa->ai_qs.num_failed;
+
+        break;
+
+      case JOB_DEPEND_TYPE_AFTERANYARRAY:
+
+        compareNumber = pa->ai_qs.jobs_done;
+
+        break;
+
+      case JOB_DEPEND_TYPE_BEFORESTARTARRAY:
+
+        compareNumber = pa->ai_qs.num_started;
+
+        break;
+
+      case JOB_DEPEND_TYPE_BEFOREOKARRAY:
+
+        compareNumber = pa->ai_qs.num_successful;
+
+        break;
+
+      case JOB_DEPEND_TYPE_BEFORENOTOKARRAY:
+
+        compareNumber = pa->ai_qs.num_failed;
+
+        break;
+
+      case JOB_DEPEND_TYPE_BEFOREANYARRAY:
+
+        compareNumber = pa->ai_qs.jobs_done;
+
+        break;
+      }
+
+    /* update each job with that dependency type */
+    pdj = (struct array_depend_job *)GET_NEXT(pdep->dp_jobs);
+
+    while (pdj != NULL)
+      {
+      pjob = find_job(pdj->dc_child);
+
+      if (pjob != NULL)
+        {
+        if (((compareNumber < pdj->dc_num) &&
+             (pdep->dp_type < JOB_DEPEND_TYPE_BEFORESTARTARRAY)) ||
+            ((compareNumber >= pdj->dc_num) && 
+             (pdep->dp_type > JOB_DEPEND_TYPE_AFTERANYARRAY)))
+          {
+          /* hold */
+          pjob->ji_wattr[JOB_ATR_depend].at_val.at_long |= HOLD_s;
+          pjob->ji_wattr[JOB_ATR_depend].at_flags |= ATR_VFLAG_SET;
+
+          if (LOGLEVEL >= 8)
+            {
+            log_event(
+              PBSEVENT_JOB,
+              PBS_EVENTCLASS_JOB,
+              pjob->ji_qs.ji_jobid,
+              "Setting HOLD_s due to dependencies\n");
+            }
+
+          svr_setjobstate(pjob, JOB_STATE_HELD, JOB_SUBSTATE_DEPNHOLD);
+          }
+        else 
+          {
+          /* release the array's hold - set_depend_hold
+           * will clear holds if there are no other dependencies
+           * logged in set_depend_hold */
+          set_depend_hold(pjob,&pjob->ji_wattr[(int)JOB_ATR_depend]);
+          }
+        }
+
+
+      pdj = (struct array_depend_job *)GET_NEXT(pdj->dc_link);
+      }
+
+    pdep = (struct array_depend *)GET_NEXT(pdep->dp_link);
+    }
+
+  } /* END set_array_depend_holds */
 
 
 /*
@@ -1792,6 +2131,14 @@ struct dependnames
   {JOB_DEPEND_TYPE_ON,         "on" },
   {JOB_DEPEND_TYPE_SYNCWITH,   "syncwith" },
   {JOB_DEPEND_TYPE_SYNCCT,     "synccount" },
+  {JOB_DEPEND_TYPE_AFTERSTARTARRAY, "afterstartarray" },
+  {JOB_DEPEND_TYPE_AFTEROKARRAY, "afterokarray" },
+  {JOB_DEPEND_TYPE_AFTERNOTOKARRAY, "afternotokarray" },
+  {JOB_DEPEND_TYPE_AFTERANYARRAY, "afteranyarray" },
+  {JOB_DEPEND_TYPE_BEFORESTARTARRAY, "beforestartarray" },
+  {JOB_DEPEND_TYPE_BEFOREOKARRAY, "beforeokarray" },
+  {JOB_DEPEND_TYPE_BEFORENOTOKARRAY, "beforenotokarray" },
+  {JOB_DEPEND_TYPE_BEFOREANYARRAY, "beforeanyarray" },
   { -1, (char *)0 }
   };
 
@@ -2383,6 +2730,18 @@ static int build_depend(
         }
 
       break;
+
+    default:
+
+      if (type >= JOB_DEPEND_TYPE_AFTERSTARTARRAY)
+        {
+        for (i = 0; i < JOB_DEPEND_TYPE_AFTERSTARTARRAY; i++)
+          {
+          /* do not mix array dependencies with other deps */
+          if (have[i])
+            return(PBSE_BADATVAL);
+          }
+        }
     }
 
   if ((pd = have[type]) == NULL)

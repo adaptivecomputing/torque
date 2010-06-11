@@ -183,7 +183,7 @@ int job_save(
   strcat(namebuf1, JOB_FILE_SUFFIX);
 #else
 
-  if (pjob->ji_isparent == TRUE)
+  if (pjob->ji_is_array_template == TRUE)
     {
     strcat(namebuf1, JOB_FILE_TMP_SUFFIX);
     }
@@ -539,21 +539,21 @@ job *job_recov(
 
     if (strcmp(parent_id, pj->ji_qs.ji_jobid) == 0)
       {
-      pj->ji_isparent = TRUE;
+      pj->ji_is_array_template = TRUE;
+      pj->ji_arraystruct = pa;
       }
     else
       {
+      /* XXX should we move this up after pa = get_array... */
       if (pa == NULL)
-        {
-        /* couldn't find array struct, it must not have been recovered,
-        treat job as indepentent job?  perhaps we should delete the job
-        XXX_JOB_ARRAY: should I unset this?*/
-        pj->ji_wattr[(int)JOB_ATR_job_array_request].at_flags &= ~ATR_VFLAG_SET;
+        {   
+        job_abt(&pj, "Array job missing array struct, aborting job");
+        close(fds);
+        return NULL;
         }
       else
         {
-        CLEAR_LINK(pj->ji_arrayjobs);
-        append_link(&pa->array_alljobs, &pj->ji_arrayjobs, (void*)pj);
+        pa->jobs[(int)pj->ji_wattr[JOB_ATR_job_array_id].at_val.at_long] = (void *)pj;
         pj->ji_arraystruct = pa;
         pa->jobs_recovered++;
         }

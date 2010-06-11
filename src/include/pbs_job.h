@@ -90,8 +90,16 @@
 #ifndef PBS_JOB_H
 #define PBS_JOB_H 1
 
-/* anything including job.h also needs array.h so lets just include it this way*/
-#include "array.h"
+#ifndef SUCCESS
+#define SUCCESS 1
+#endif 
+#ifndef FAILURE
+#define FAILURE 0
+#endif
+
+#ifndef PBS_MOM
+struct job_array;
+#endif
 
 /*
  * Dependent Job Structures
@@ -129,6 +137,22 @@ struct depend_job
   char dc_svr[PBS_MAXSERVERNAME+1]; /* server owning job  */
   };
 
+struct array_depend
+  {
+  list_link  dp_link;
+  short      dp_type;
+  tlist_head dp_jobs;
+  };
+
+struct array_depend_job
+  {
+  list_link dc_link;
+  /* in this case, the child is the job depending on the array */
+  char dc_child[PBS_MAXSVRJOBID+1];
+  char dc_svr[PBS_MAXSERVERNAME+1];
+  int  dc_num;
+  };
+
 /*
  * Warning: the relation between the numbers assigned to after* and before*
  * is critical.
@@ -144,7 +168,15 @@ struct depend_job
 #define JOB_DEPEND_TYPE_ON   8
 #define JOB_DEPEND_TYPE_SYNCWITH  9
 #define JOB_DEPEND_TYPE_SYNCCT  10
-#define JOB_DEPEND_NUMBER_TYPES  11
+#define JOB_DEPEND_TYPE_AFTERSTARTARRAY 11
+#define JOB_DEPEND_TYPE_AFTEROKARRAY 12
+#define JOB_DEPEND_TYPE_AFTERNOTOKARRAY 13
+#define JOB_DEPEND_TYPE_AFTERANYARRAY 14
+#define JOB_DEPEND_TYPE_BEFORESTARTARRAY 15
+#define JOB_DEPEND_TYPE_BEFOREOKARRAY 16
+#define JOB_DEPEND_TYPE_BEFORENOTOKARRAY 17
+#define JOB_DEPEND_TYPE_BEFOREANYARRAY 18
+#define JOB_DEPEND_NUMBER_TYPES  19
 
 #define JOB_DEPEND_OP_REGISTER  1
 #define JOB_DEPEND_OP_RELEASE  2
@@ -443,6 +475,10 @@ struct job
 
   list_link       ji_alljobs; /* link to next job in server job list */
   list_link       ji_jobque;  /* SVR: link to next job in queue list */
+#ifndef PBS_MOM
+  list_link       ji_jobs_array_sum; /*linked list of jobs with arrays summarized as a single "placeholder" job */
+  list_link       ji_jobque_array_sum;
+#endif
   /* MOM: links to polled jobs */
   time_t  ji_momstat; /* SVR: time of last status from MOM */
   /* MOM: time job suspend (Cray) */
@@ -480,9 +516,8 @@ struct job
   int  ji_lastdest; /* last destin tried by route */
   int  ji_retryok; /* ok to retry, some reject was temp */
   tlist_head ji_rejectdest; /* list of rejected destinations */
-  list_link ji_arrayjobs; /* links to all jobs in same array */
-  job_array      *ji_arraystruct; /* pointer to job_array for this array */
-  int  ji_isparent;    /* set to TRUE if this is a "parent job"*/
+  struct job_array      *ji_arraystruct; /* pointer to job_array for this array */
+  int  ji_is_array_template;    /* set to TRUE if this is a "template job" for a job array*/
 #endif/* PBS_MOM */   /* END SERVER ONLY */
 
   /*
@@ -654,6 +689,10 @@ typedef struct infoent
 #define TI_FLAGS_INIT           1  /* task has called tm_init */
 #define TI_FLAGS_CHECKPOINT     2  /* task has checkpointed */
 
+#ifdef USESAVEDRESOURCES
+#define TI_FLAGS_RECOVERY       4  /* recovering dead task on restart */
+#endif    /* USESAVEDRESOURCES */
+
 #define TI_STATE_EMBRYO  0
 #define TI_STATE_RUNNING 1    /* includes suspended jobs */
 #define TI_STATE_EXITED  2  /* ti_exitstat valid */
@@ -743,7 +782,7 @@ task *task_find(
 #define JOB_CHECKPOINT_SUFFIX   ".CK"    /* job checkpoint file */
 #define JOB_TASKDIR_SUFFIX      ".TK"    /* job task directory */
 #define JOB_BAD_SUFFIX          ".BD"    /* save bad job file */
-#define JOB_FILE_TMP_SUFFIX     ".TA"    /* temporary job array parent file suffix */
+#define JOB_FILE_TMP_SUFFIX     ".TA"    /* job array template file suffix */
 /*
  * Job states are defined by POSIX as:
  */
@@ -812,6 +851,8 @@ task *task_find(
 stdout / stderr files to server spool
 dir so that job can be restarted */
 
+#define JOB_SUBSTATE_ARRAY_TEMP 75  /* job is an array template */
+
 /* decriminator for ji_un union type */
 
 #define JOB_UNION_TYPE_NEW   0
@@ -855,7 +896,9 @@ extern int   init_chkmom(job *);
 extern void  issue_track(job *);
 extern int   job_abt(job **, char *);
 extern job  *job_alloc();
-extern job  *job_clone(job *, int);
+#ifndef PBS_MOM
+extern job  *job_clone(job *,struct job_array *, int);
+#endif
 extern void  job_free(job *);
 extern void  job_purge(job *);
 extern job  *job_recov(char *);
@@ -884,6 +927,7 @@ extern struct batch_request *cpy_checkpoint(struct batch_request *, job *, enum 
 #endif /* BATCH_REQUEST_H */
 
 #ifdef QUEUE_H
+extern int   count_user_queued_jobs(pbs_queue *,char *);
 extern int   svr_chkque(job *, pbs_queue *, char *, int, char *);
 extern int   default_router(job *, pbs_queue *, long);
 extern int   site_alt_router(job *, pbs_queue *, long);

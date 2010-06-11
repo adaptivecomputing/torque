@@ -117,6 +117,7 @@
 #include "log.h"
 #include "svrfunc.h"
 #include "csv.h"
+#include "array.h"
 
 #include "work_task.h"
 extern void  job_clone_wt(struct work_task *);
@@ -140,6 +141,7 @@ extern struct server server;
 extern char  server_name[];
 extern int   queue_rank;
 extern tlist_head svr_jobarrays;
+extern tlist_head svr_jobs_array_sum;
 
 extern const char *PJobSubState[];
 
@@ -203,7 +205,7 @@ void req_quejob(
 
   char   basename[PBS_JOBBASE + 1];
   int   created_here = 0;
-  int   index;
+  int   attr_index;
   char  *jid;
   char   namebuf[MAXPATHLEN + 1];
   attribute_def *pdef;
@@ -483,18 +485,18 @@ void req_quejob(
     {
     /* identify the attribute by name */
 
-    index = find_attr(job_attr_def, psatl->al_name, JOB_ATR_LAST);
+    attr_index = find_attr(job_attr_def, psatl->al_name, JOB_ATR_LAST);
 
-    if (index < 0)
+    if (attr_index < 0)
       {
       /* FAILURE */
 
       /* didn`t recognize the name */
 
-      index = JOB_ATR_UNKN; /* keep as "unknown" for now */
+      attr_index = JOB_ATR_UNKN; /* keep as "unknown" for now */
       }
 
-    pdef = &job_attr_def[index];
+    pdef = &job_attr_def[attr_index];
 
     /* Is attribute not writeable by manager or by a server? */
 
@@ -512,7 +514,7 @@ void req_quejob(
     /* decode attribute */
 
     rc = pdef->at_decode(
-           &pj->ji_wattr[index],
+           &pj->ji_wattr[attr_index],
            psatl->al_name,
            psatl->al_resc,
            psatl->al_value);
@@ -878,6 +880,36 @@ void req_quejob(
    * svr_chkque() is called way down here because it needs to have the
    * job structure and attributes already set up.
    */
+  /* set ji_is_array_template before calling */
+  if (pj->ji_wattr[JOB_ATR_job_array_request].at_flags & ATR_VFLAG_SET)
+    {
+    char  *oldid;
+    char  *hostname;
+    
+    pj->ji_is_array_template = TRUE;
+    
+    /* rewrite jobid to include empty brackets
+       this causes arrays to show up as id[].host in qstat output, and 
+       actions applied to id[] are applied to the entire array */
+    oldid = strdup(pj->ji_qs.ji_jobid);
+
+    if (oldid == NULL)
+      {
+      /* TODO, return with error if unable to alocate memory! */
+      }
+
+    hostname = index(oldid, '.');
+
+    *(hostname++) = '\0';
+
+    snprintf(pj->ji_qs.ji_jobid, PBS_MAXSVRJOBID, "%s[].%s",
+             oldid,
+             hostname);
+
+    free(oldid);    
+       
+    
+    }
 
   if ((rc = svr_chkque(pj, pque, preq->rq_host, MOVE_TYPE_Move, EMsg)))
     {
@@ -1256,15 +1288,16 @@ void req_rdytocommit(
   struct batch_request *preq)  /* I */
 
   {
-  job *pj;
-  int  sock = preq->rq_conn;
+  job  *pj;
+  int   sock = preq->rq_conn;
 
-  int  OrigState;
-  int  OrigSState;
-  char OrigSChar;
-  long OrigFlags;
+  int   OrigState;
+  int   OrigSState;
+  char  OrigSChar;
+  long  OrigFlags;
 
-  char namebuf[MAXPATHLEN+1];
+  char *id = "req_rdytocommit";
+  char  namebuf[MAXPATHLEN+1];
 
   pj = locate_new_job(sock, preq->rq_ind.rq_rdytocommit);
 
@@ -1279,7 +1312,7 @@ void req_rdytocommit(
 
   if (pj == NULL)
     {
-    log_err(errno, "req_rdytocommit", "unknown job id");
+    log_err(errno, id, "unknown job id");
 
     req_reject(PBSE_UNKJOBID, 0, preq, NULL, NULL);
 
@@ -1290,7 +1323,7 @@ void req_rdytocommit(
 
   if (pj->ji_qs.ji_substate != JOB_SUBSTATE_TRANSIN)
     {
-    log_err(errno, "req_rdytocommit", "cannot commit job in unexpected state");
+    log_err(errno, id, "cannot commit job in unexpected state");
 
     req_reject(PBSE_IVALREQ, 0, preq, NULL, NULL);
 
@@ -1319,9 +1352,16 @@ void req_rdytocommit(
   pj->ji_wattr[(int)JOB_ATR_state].at_val.at_char = 'T';
   pj->ji_wattr[(int)JOB_ATR_state].at_flags |= ATR_VFLAG_SET;
 
+  /* if this is a job array template then we'll delete the .JB file that 
+     was created for this job since we are going to save it with a different 
+     suffix here. 
+     XXX: not sure why the .JB file already exists before we do the SAVEJOB_NEW
+     save below
+   */
   if (pj->ji_wattr[(int)JOB_ATR_job_array_request].at_flags & ATR_VFLAG_SET)
     {
-    pj->ji_isparent = TRUE;
+    pj->ji_is_array_template = TRUE;
+
 
     strcpy(namebuf, path_jobs);
     strcat(namebuf, pj->ji_qs.ji_fileprefix);
@@ -1338,7 +1378,7 @@ void req_rdytocommit(
             errno,
             strerror(errno));
 
-    log_err(errno, "req_rdytocommit", tmpLine);
+    log_err(errno, id, tmpLine);
 
     /* commit failed, backoff state changes */
 
@@ -1364,7 +1404,7 @@ void req_rdytocommit(
             errno,
             strerror(errno));
 
-    log_err(errno, "req_rdytocommit", log_buffer);
+    log_err(errno, id, log_buffer);
 
     close_conn(sock);
 
@@ -1471,8 +1511,8 @@ void req_commit(
 
   if (pj->ji_wattr[(int)JOB_ATR_job_array_request].at_flags & ATR_VFLAG_SET)
     {
-    pj->ji_isparent = TRUE;
-
+    pj->ji_is_array_template = TRUE;
+    
     strcpy(namebuf, path_jobs);
     strcat(namebuf, pj->ji_qs.ji_fileprefix);
     strcat(namebuf, JOB_FILE_SUFFIX);
@@ -1511,19 +1551,34 @@ void req_commit(
 
   delete_link(&pj->ji_alljobs);
 
-  /* job array, setup cloning work task and reply with placeholder job id
+  /* job array, setup the array task
      *** job array under development */
-  if (pj->ji_wattr[(int)JOB_ATR_job_array_request].at_flags & ATR_VFLAG_SET)
+  if (pj->ji_is_array_template)
     {
-    if (setup_array_struct(pj))
+    if ((rc = setup_array_struct(pj)))
       {
-      req_reject(PBSE_BAD_ARRAY_REQ, 0, preq, NULL, NULL);
+      if (rc == ARRAY_TOO_LARGE)
+        {
+        snprintf(log_buffer,sizeof(log_buffer),
+          "Requested array size too large, limit is %ld",
+          server.sv_attr[SRV_ATR_MaxArraySize].at_val.at_long);
+
+        req_reject(PBSE_BAD_ARRAY_REQ, 0, preq, NULL, log_buffer);
+        }
+      else if (rc == INVALID_SLOT_LIMIT)
+        {
+        snprintf(log_buffer,sizeof(log_buffer),
+          "Requested slot limit too large, limit is %ld",
+          server.sv_attr[SRV_ATR_MaxSlotLimit].at_val.at_long);
+
+        req_reject(PBSE_BAD_ARRAY_REQ, 0, preq, NULL, log_buffer);
+        }
+      else
+        {
+        req_reject(PBSE_BAD_ARRAY_REQ, 0, preq, NULL, NULL);
+        }
       return;
       }
-
-    reply_jobid(preq, pj->ji_qs.ji_jobid, BATCH_REPLY_CHOICE_Commit);
-
-    return;
     }  /* end if (pj->ji_wattr[(int)JOB_ATR_job_array_request].at_flags & ATR_VFLAG_SET) */
 
   svr_evaljobstate(pj, &newstate, &newsub, 1);
@@ -1646,7 +1701,13 @@ void req_commit(
   /* acknowledge the request with the job id */
 
   reply_jobid(preq, pj->ji_qs.ji_jobid, BATCH_REPLY_CHOICE_Commit);
-
+  
+  /* if job array, setup the cloning work task */
+  if (pj->ji_is_array_template)
+    {
+    set_task(WORK_Timed, time_now + 1, job_clone_wt, (void*)pj);
+    }
+    
   LOG_EVENT(
     PBSEVENT_JOB,
     PBS_EVENTCLASS_JOB,

@@ -103,6 +103,7 @@
 #include "acct.h"
 #include "svrfunc.h"
 #include "csv.h"
+#include "array.h"
 
 /* Private Functions Local to this file */
 
@@ -121,6 +122,8 @@ extern time_t  time_now;
 int chk_hold_priv(long val, int perm);
 int get_hold(tlist_head *, char **, attribute *);
 
+/* external functions */
+extern int svr_authorize_jobreq(struct batch_request *,job *);
 
 
 /*
@@ -338,59 +341,47 @@ void req_checkpointjob(
   }  /* END req_checkpointjob() */
 
 
-
-
 /*
- * req_releasejob - service the Release Job Request
- *
- *  This request clears one or more holds on a job.
- * As a result, the job might change state.
+ * release_job - releases the hold on job j
+ * @param j - the job to modify
+ * @return 0 if successful, a PBS error on failure
  */
+int release_job(
 
-void req_releasejob(
-
-  struct batch_request *preq) /* ptr to the decoded request   */
+  struct batch_request *preq, /* I */
+  void                 *j)    /* I/O */
 
   {
-  int   newstate;
-  int   newsub;
   long   old_hold;
-  job  *pjob;
+  int    rc = 0;
+  int    newstate;
+  int    newsub;
   char  *pset;
-  int   rc;
+  job   *pjob = (job *)j;
+
   attribute      temphold;
-
-  pjob = chk_job_request(preq->rq_ind.rq_release.rq_objname, preq);
-
-  if (pjob == NULL)
-    {
-    return;
-    }
 
   /* cannot do anything until we decode the holds to be set */
 
   if ((rc = get_hold(&preq->rq_ind.rq_hold.rq_orig.rq_attr, &pset, &temphold)) != 0)
     {
-    req_reject(rc, 0, preq, NULL, NULL);
-    return;
+    return(rc);
     }
 
   /* if other than HOLD_u is being released, must have privil */
 
   if ((rc = chk_hold_priv(temphold.at_val.at_long, preq->rq_perm)) != 0)
     {
-    req_reject(rc, 0, preq, NULL, NULL);
-    return;
+    return(rc);
     }
 
-  /* all ok so far, unset the hold */
+  /* unset the hold */
 
   old_hold = pjob->ji_wattr[(int)JOB_ATR_hold].at_val.at_long;
 
   if ((rc = job_attr_def[(int)JOB_ATR_hold].at_set(&pjob->ji_wattr[(int)JOB_ATR_hold], &temphold, DECR)))
     {
-    req_reject(rc, 0, preq, NULL, NULL);
-    return;
+    return(rc);
     }
 
   /* everything went well, if holds changed, update the job state */
@@ -405,19 +396,123 @@ void req_releasejob(
     }
 
   sprintf(log_buffer, msg_jobholdrel,
-
-          pset,
-          preq->rq_user,
-          preq->rq_host);
+    pset,
+    preq->rq_user,
+    preq->rq_host);
 
   LOG_EVENT(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid,
             log_buffer);
 
-  reply_ack(preq);
+  return(rc);
+  }
+
+
+
+
+/*
+ * req_releasejob - service the Release Job Request
+ *
+ *  This request clears one or more holds on a job.
+ * As a result, the job might change state.
+ */
+
+void req_releasejob(
+
+  struct batch_request *preq) /* ptr to the decoded request   */
+
+  {
+  job  *pjob;
+  int   rc;
+
+  pjob = chk_job_request(preq->rq_ind.rq_release.rq_objname, preq);
+
+  if (pjob == NULL)
+    {
+    return;
+    }
+
+  if ((rc = release_job(preq,pjob)) != 0)
+    {
+    req_reject(rc,0,preq,NULL,NULL);
+    }
+  else
+    {
+    reply_ack(preq);
+    }
 
   return;
   }  /* END req_releasejob() */
 
+
+
+int release_whole_array(
+
+  job_array            *pa,   /* I/0 */
+  struct batch_request *preq) /* I */
+
+  {
+  int i;
+  int rc;
+
+  for (i = 0; i < pa->ai_qs.array_size; i++)
+    {
+    if (pa->jobs[i] == NULL)
+      continue;
+
+    if ((rc = release_job(preq,pa->jobs[i])) != 0)
+      {
+      return(rc);
+      }
+    }
+
+  /* SUCCESS */
+
+  return(0);
+  } /* END release_whole_array */
+
+
+
+void req_releasearray(
+
+  struct batch_request *preq)
+
+  {
+  job       *pjob;
+  job_array *pa;
+  char      *range;
+  int        rc;
+
+  pa = get_array(preq->rq_ind.rq_release.rq_objname);
+  pjob = (job *)pa->jobs[first_job_index(pa)];
+
+  if (svr_authorize_jobreq(preq, pjob) == -1)
+    {
+    req_reject(PBSE_PERM,0,preq,NULL,NULL);
+
+    return;
+    }
+
+  range = preq->rq_extend;
+  if ((range != NULL) &&
+      (strstr(range,ARRAY_RANGE) != NULL))
+    {
+    /* parse the array range */
+    if ((rc = release_array_range(pa,preq,range)) != 0)
+      {
+      req_reject(rc,0,preq,NULL,NULL);
+
+      return;
+      }
+    }
+  else if ((rc = release_whole_array(pa,preq)) != 0)
+    {
+    req_reject(rc,0,preq,NULL,NULL);
+
+    return;
+    }
+
+  reply_ack(preq);
+  }
 
 
 

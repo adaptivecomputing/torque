@@ -13,10 +13,14 @@
 extern char *path_arrays;
 
 
+/* an example prototpe of an upgrade function for a specific version of the struct
+   each upgrade function should upgrade a specific version of the struct to the 
+   current version!
+int array_upgrade_v1(job_array *pa, int fds, int version, int *old_version);
+ */
+
 /* old versions of the struct.  These should have hard coded array sizes
    rather than using #defines that can change between version */
-int array_upgrade_v1(job_array *pa, int fds, int version, int *old_version);
-
 struct array_info_v1
   {
   int  struct_version;
@@ -27,6 +31,7 @@ struct array_info_v1
   char fileprefix[12];
   char submit_host[65];
   };
+  
 
 
 int array_upgrade(job_array *pa, int fds, int version, int *old_version)
@@ -41,10 +46,15 @@ int array_upgrade(job_array *pa, int fds, int version, int *old_version)
     return -1;
     }
 
-  /* call the appropriate upgrader function */
+  /* call the appropriate upgrader function, if we ever wish to depricate an old
+     array struct version, then we should delete the case from this if else-if 
+     block and delete its upgrader function */
   if (version == 1)
     {
-    return array_upgrade_v1(pa, fds, version, old_version);
+    /* version 1 is depricated, but this code is left commented out as an example */
+    /* return array_upgrade_v1(pa, fds, version, old_version); */
+    return 1; /* version 1 is not longer supported, this if block included for 
+                 example only, returning 1 */
     }
   else
     {
@@ -55,6 +65,12 @@ int array_upgrade(job_array *pa, int fds, int version, int *old_version)
 /* upgrader functions - upgrade from a specific version to the current version
    each time the array structure is updated these functions need to be updated */
 
+
+/* here is an example that upgraded from ai_qs version 1 to version 2
+   This version of the struct has been depricated, but this code is left here
+   as an example of an upgrade function */
+   
+/*   
 int array_upgrade_v1(job_array *pa, int fds, int version, int *old_version)
   {
 
@@ -93,3 +109,4 @@ int array_upgrade_v1(job_array *pa, int fds, int version, int *old_version)
   return 0;
 
   }
+*/

@@ -146,6 +146,7 @@ pbs_queue *que_alloc(
   pq->qu_qs.qu_type = QTYPE_Unset;
 
   CLEAR_HEAD(pq->qu_jobs);
+  CLEAR_HEAD(pq->qu_jobs_array_sum);
   CLEAR_LINK(pq->qu_link);
 
   strncpy(pq->qu_qs.qu_name, name, PBS_MAXQUEUENAME);

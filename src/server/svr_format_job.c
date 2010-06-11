@@ -19,6 +19,7 @@
 #include "log.h"
 #include "server.h"
 #include "rpp.h"
+#include "array.h"
 
 /* Global Data */
 

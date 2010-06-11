@@ -166,12 +166,6 @@ extern void check_children();
 #ifndef bool_t
 #define bool_t unsigned char
 #endif
-#ifndef SUCCESS
-#define SUCCESS 1
-#endif 
-#ifndef FAILURE
-#define FAILURE 0
-#endif
 #define ISEMPTYSTR(STR)  ((STR)[0] == '\0')
 #ifndef MAX_CMD_ARGS
 #define MAX_CMD_ARGS 10
@@ -261,6 +255,7 @@ int  svr_delay_entry = 0;
 int  svr_do_schedule = SCH_SCHEDULE_NULL;
 tlist_head svr_queues;            /* list of queues                   */
 tlist_head svr_alljobs;           /* list of all jobs in server       */
+tlist_head svr_jobs_array_sum;    /* list of jobs in server, arrays summarized as single "placeholder" job */
 tlist_head svr_newjobs;           /* list of incoming new jobs        */
 tlist_head svr_newnodes;          /* list of newly created nodes      */
 tlist_head svr_jobarrays;         /* list of all job arrays           */
@@ -282,6 +277,7 @@ char           *NodeSuffix = NULL;
 
 int allow_any_mom = FALSE;
 
+int allow_any_mom = FALSE;
 
 void
 DIS_rpp_reset(void)
@@ -664,6 +660,10 @@ void parse_command_line(int argc, char *argv[])
 
         TDoBackground = 0;
 
+        break;
+
+      case 'e':
+        allow_any_mom = TRUE;
         break;
 
       case 'e':

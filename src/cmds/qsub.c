@@ -616,6 +616,292 @@ char **value;
 
 
 
+
+char *smart_strtok(
+
+  char  *line,          /* I */
+  char  *delims,        /* I */
+  char **ptrPtr,        /* O */
+  int    ign_backslash) /* I */
+
+  {
+  char *head = NULL;
+  char *start = NULL;
+
+  int dindex;
+  int ignchar;
+  int ignore;
+
+  int sq_count = 0;
+  int dq_count = 0;
+  int sb_count = 0;
+
+  char *tmpLine = NULL;
+  int   tmpLineSize;
+  int   tindex;
+
+  char *ptr;
+
+  if (line != NULL)
+    {
+    *ptrPtr = line;
+    }
+  else if (ptrPtr == NULL)
+    {
+    /* FAILURE */
+
+    return(head);
+    }
+
+  start = *ptrPtr;
+
+  tmpLineSize = (line == NULL) ? strlen(*ptrPtr + 1) : strlen(line) + 1;
+  tmpLine = (char *)malloc(tmpLineSize * sizeof(char));
+
+  tmpLine[0] = '\0';
+
+  tindex = 0;
+
+  ignchar = FALSE;
+
+  ptr = *ptrPtr;
+
+  while (*ptr != '\0')
+    {
+    if (*ptr == '\'')
+      {
+      sq_count++;
+
+      if ((head != NULL) && !(sq_count % 2) && !(dq_count % 2))
+        {
+        ptr++;
+
+        ignchar = TRUE;
+        }
+      else 
+        {
+        ignore = TRUE;
+
+        if (ign_backslash == TRUE)
+          {
+          /* check if backslash precedes delimiter */
+
+          if ((ptr > start) && (*(ptr-1) == '\\'))
+            {
+            /* check if backslash is backslashed */
+
+            if ((ptr > start + 1) && (*(ptr-2) != '\\'))
+              {
+              /* delimiter is backslashed, ignore */
+
+              ignore = FALSE;
+              
+              sq_count--;
+              }
+            }
+          }
+
+        if (ignore == TRUE)
+          {
+          ptr++;
+
+          ignchar = TRUE;
+          }
+        }
+      }
+    else if (*ptr == '\"')
+      {
+      dq_count++;
+
+      if ((head != NULL) && !(sq_count % 2) && !(dq_count % 2))
+        {
+        ptr++;
+
+        ignchar = TRUE;
+        }
+      else 
+        {
+        ignore = TRUE;
+
+        if (ign_backslash == TRUE)
+          {
+          /* check if backslash precedes delimiter */
+
+          if ((ptr > start) && (*(ptr-1) == '\\'))
+            {
+            /* check if backslash is backslashed */
+
+            if ((ptr > start + 1) && (*(ptr-2) != '\\'))
+              {
+              /* delimiter is backslashed, ignore */
+
+              ignore = FALSE;
+              
+              dq_count--;
+              }
+            }
+          }
+
+        if (ignore == TRUE)
+          {
+          ptr++;
+
+          ignchar = TRUE;
+          }
+        }
+      }
+    else if (*ptr == '[' )
+      {
+      sb_count = 1;
+      }
+    else if (*ptr == ']')
+      {
+      sb_count = 0;
+      }
+    else if (!(sq_count % 2) && !(dq_count % 2) && (sb_count == 0))
+      {
+      /* not in quotations, locate delimiter */
+
+      for (dindex = 0; delims[dindex] != '\0'; dindex++)
+        {
+        if (*ptr != delims[dindex])
+          continue;
+
+        if ((ign_backslash == TRUE) && (head != NULL))
+          {
+          /* check if backslash precedes delimiter */
+          if ((ptr > head) && (*(ptr-1) == '\\'))
+            {
+            /* check if backslash is backslashed */
+
+            if ((ptr > head + 1) && (*(ptr-1) != '\\'))
+              {
+              /* delimiter is backslashed, ignore */
+
+              continue;
+              }
+            }
+          }
+
+        /* delimiter found */
+
+        *ptr = '\0';
+        
+        ptr++;
+        
+        if (head != NULL)
+          {
+          *ptrPtr = ptr;
+
+          tmpLine[tindex] = '\0';
+          
+          if (tindex > 0)
+            strcpy(head,tmpLine);
+          
+          free(tmpLine);
+
+          return(head);
+          }
+
+        ignchar = TRUE;
+
+        break;
+        } /* END for (dindex) */
+      }
+
+    if ((ignchar != TRUE) && (*ptr != '\0'))
+      {
+      if (head == NULL)
+        head = ptr;
+
+      tmpLine[tindex++] = ptr[0];
+
+      ptr++;
+      }
+
+    ignchar = FALSE;
+    } /* END while (*ptr != '\0') */
+
+  tmpLine[tindex] = '\0';
+
+  if (tindex > 0)
+    strcpy(head,tmpLine);
+
+  free(tmpLine);
+
+  *ptrPtr = ptr;
+
+  return(head);
+  } /* END smarter_strtok */
+
+
+
+
+
+int get_name_value(start, name, value)
+char  *start;
+char **name;
+char **value;
+  {
+  static char *tok_ptr;
+  char *curr_ptr;
+  char *equals;
+
+  /* we've reached the end */
+  if ((start == NULL) &&
+      (*tok_ptr == '\0'))
+    return(0);
+
+  curr_ptr = smart_strtok(start,",",&tok_ptr,FALSE);
+
+  if ((curr_ptr == NULL))
+    return(0);
+     
+  if ((*curr_ptr == '=') || 
+      (*curr_ptr == '\0'))
+    {
+    /* no name, fail */
+    return(-1);
+    }
+
+  /* skip leading spaces */
+  while (isspace((int)*curr_ptr) && (*curr_ptr))
+    curr_ptr++;
+
+  *name = curr_ptr;
+
+  equals = *name;
+
+  /* skip over name */
+  while ((*equals) && (!isspace((int)*equals)) && (*equals != '='))
+    equals++;
+
+  /* strip blanks */
+  while ((*equals) && (isspace((int)*equals)))
+    *equals++ = '\0';
+
+  if (*equals != '=')
+    return (-1); /* should have found a = as first non blank */
+
+  *equals++ = '\0';
+
+  /* skip leading white space */
+  while (isspace((int)*equals) && *equals)
+    equals++;
+
+  if (*equals == '\0')
+    return(-1);
+
+  *value = equals;
+
+  return (1);
+  }
+
+
+
+
+
+
 char *set_dir_prefix(
 
   char *prefix,
@@ -3541,6 +3827,46 @@ int process_opts(
 
 #endif /* PBS_NO_POSIX_VIOLATION */
 
+#if !defined(PBS_NO_POSIX_VIOLATION)
+
+      case 'P':
+
+        if (strlen(optarg) > 0)
+          {
+          char *user;
+          char *group;
+          char *colon;
+
+          /* make sure this is the super user */
+          if (geteuid() != (uid_t)0)
+            {
+            fprintf(stderr, "qsub: Must be the super user to submit a proxy job\n");
+
+            errflg++;
+            }
+          user = optarg;
+          colon = strchr(user,':');
+
+          if (colon != NULL)
+            {
+            group = colon+1;
+            *colon = '\0';
+            set_attr(&attrib, ATTR_g, group);
+            }
+
+          set_attr(&attrib, ATTR_P, user);
+          }
+        else
+          {
+          fprintf(stderr, "qsub: -P requires a user name\n");
+
+          errflg++;
+          }
+
+        break;
+
+#endif /* PBS_NO_POSIX_VIOLATION */
+
       case 'q':
 
         if_cmd_line(q_opt)
@@ -4523,6 +4849,17 @@ int main(
     if ((param_val = get_param("QSUBSENDUID", config_buf)) != NULL)
       {
       sprintf(owner_uid, "%d", (int)getuid());
+      }
+
+    if ((param_val = get_param("QSUBSENDGROUPLIST", config_buf)) != NULL)
+      {
+      gid_t group_id = getgid();
+      struct group *gpent = getgrgid(group_id);
+
+      if (gpent != NULL)
+        {
+        set_attr(&attrib, ATTR_g, gpent->gr_name);
+        }
       }
 
     if ((param_val = get_param("QSUBSENDGROUPLIST", config_buf)) != NULL)
