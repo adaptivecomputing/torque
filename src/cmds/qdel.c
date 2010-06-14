@@ -155,15 +155,6 @@ int main(
           break;
           }
 
-        if (strchr(optarg, '='))
-          {
-          /* message cannot contain '=' character */
-
-          errflg++;
-
-          break;
-          }
-
         strncpy(extend, optarg, sizeof(extend));
 
         break;
