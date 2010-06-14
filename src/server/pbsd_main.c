@@ -277,10 +277,7 @@ char           *NodeSuffix = NULL;
 
 int allow_any_mom = FALSE;
 
-int allow_any_mom = FALSE;
-
-void
-DIS_rpp_reset(void)
+void DIS_rpp_reset(void)
 
   {
   if (dis_getc != rpp_getc)
@@ -660,10 +657,6 @@ void parse_command_line(int argc, char *argv[])
 
         TDoBackground = 0;
 
-        break;
-
-      case 'e':
-        allow_any_mom = TRUE;
         break;
 
       case 'e':

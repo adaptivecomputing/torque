@@ -2080,7 +2080,7 @@ int main(
 #endif /* !FALSE */
 
 #if !defined(PBS_NO_POSIX_VIOLATION)
-#define GETOPT_ARGS "aeE:filn1qrsu:xGMQRBW:-:"
+#define GETOPT_ARGS "aeE:filn1qrstu:xGMQRBW:-:"
 #else
 #define GETOPT_ARGS "flQBW:"
 #endif /* PBS_NO_POSIX_VIOLATION */
@@ -2240,12 +2240,6 @@ int main(
 
           errflg++;
           }
-
-        break;
-
-      case 'l':
-
-        alias_opt = TRUE;
 
         break;
 

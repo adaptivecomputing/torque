@@ -449,6 +449,13 @@ int job_abt(
         depend_on_term(pjob);
         }
 
+      /* update internal array bookeeping values */
+      if ((pjob->ji_arraystruct != NULL) &&
+          (pjob->ji_is_array_template == FALSE))
+        {
+        update_array_values(pjob->ji_arraystruct,pjob,old_state,aeTerminate);
+        }
+
       job_purge(pjob);
 
       *pjobp = NULL;
@@ -479,6 +486,13 @@ int job_abt(
     if (pjob->ji_wattr[(int)JOB_ATR_depend].at_flags & ATR_VFLAG_SET)
       {
       depend_on_term(pjob);
+      }
+
+    /* update internal array bookeeping values */
+    if ((pjob->ji_arraystruct != NULL) &&
+        (pjob->ji_is_array_template == FALSE))
+      {
+      update_array_values(pjob->ji_arraystruct,pjob,old_state,aeTerminate);
       }
 
     job_purge(pjob);
@@ -589,12 +603,13 @@ job_alloc(void)
 
   CLEAR_LINK(pj->ji_alljobs);
   CLEAR_LINK(pj->ji_jobque);
+  CLEAR_LINK(pj->ji_jobs_array_sum);
+  CLEAR_LINK(pj->ji_jobque_array_sum);
 
   CLEAR_HEAD(pj->ji_svrtask);
   CLEAR_HEAD(pj->ji_rejectdest);
-  CLEAR_LINK(pj->ji_arrayjobs);
   pj->ji_arraystruct = NULL;
-  pj->ji_isparent = FALSE;
+  pj->ji_is_array_template = FALSE;
 
   pj->ji_momhandle = -1;  /* mark mom connection invalid */
 
@@ -677,8 +692,9 @@ void job_free(
 
 job *job_clone(
 
-  job *template_job, /* I */  /* job to clone */
-  int  taskid)  /* I */
+  job       *template_job, /* I */  /* job to clone */
+  job_array *pa,           /* I */  /* array which the job is a part of */
+  int        taskid)  /* I */
 
   {
   static char   id[] = "job_clone";
@@ -688,17 +704,16 @@ job *job_clone(
 
   char  *oldid;
   char  *hostname;
+  char  *bracket;
   char  *tmpstr;
-  char  basename[PBS_JOBBASE+1];
-  char  namebuf[MAXPATHLEN + 1];
-  char  buf[256];
+  char   basename[PBS_JOBBASE+1];
+  char   namebuf[MAXPATHLEN + 1];
+  char   buf[256];
   char  *pc;
-  int  fds;
+  int    fds;
 
-  int   i;
-  int           slen;
-
-  job_array *pa;
+  int    i;
+  int    slen;
 
   if (taskid > PBS_MAXJOBARRAY)
     {
@@ -723,6 +738,7 @@ job *job_clone(
 
   CLEAR_LINK(pnewjob->ji_alljobs);
   CLEAR_LINK(pnewjob->ji_jobque);
+  CLEAR_LINK(pnewjob->ji_jobs_array_sum);
   CLEAR_LINK(pnewjob->ji_svrtask);
   CLEAR_HEAD(pnewjob->ji_rejectdest);
   pnewjob->ji_modified = 1;   /* struct changed, needs to be saved */
@@ -730,8 +746,6 @@ job *job_clone(
   /* copy the fixed size quick save information */
 
   memcpy(&pnewjob->ji_qs, &template_job->ji_qs, sizeof(struct jobfix));
-
-  /* pnewjob->ji_qs.ji_arrayid = taskid; */
 
   /* find the job id for the cloned job */
 
@@ -745,13 +759,15 @@ job *job_clone(
     return(NULL);
     }
 
+  bracket = index(oldid,'[');
   hostname = index(oldid, '.');
 
-  *(hostname++) = '\0';
+  *bracket = '\0';
+  hostname++;
 
-  pnewjob->ji_qs.ji_jobid[PBS_MAXSVRJOBID] = '\0';
+  pnewjob->ji_qs.ji_jobid[PBS_MAXSVRJOBID-1] = '\0';
 
-  snprintf(pnewjob->ji_qs.ji_jobid, PBS_MAXSVRJOBID, "%s-%d.%s",
+  snprintf(pnewjob->ji_qs.ji_jobid, PBS_MAXSVRJOBID, "%s[%d].%s",
            oldid,
            taskid,
            hostname);
@@ -833,7 +849,7 @@ job *job_clone(
 
         tmpstr = (char*)malloc(sizeof(char) * (slen + PBS_MAXJOBARRAYLEN + 1));
 
-        sprintf(tmpstr, "%s-%d",
+        sprintf(tmpstr, "%s[%d]",
                 template_job->ji_wattr[i].at_val.at_str,
                 taskid);
 
@@ -865,40 +881,37 @@ job *job_clone(
     }
 
   /* put a system hold on the job.  we'll take the hold off once the
-   * entire array is cloned */
-  pnewjob->ji_wattr[(int)JOB_ATR_hold].at_val.at_long |= HOLD_a;
-
-  pnewjob->ji_wattr[(int)JOB_ATR_hold].at_flags |= ATR_VFLAG_SET;
+   * entire array is cloned. We don't want any of the jobs to run and
+   * complete before the whole thing is cloned. This is in case we run into
+   * a problem during setting up the array and want to abort before any of
+   * the jobs run */
+  pnewjob->ji_wattr[JOB_ATR_hold].at_val.at_long |= HOLD_a;
+  pnewjob->ji_wattr[JOB_ATR_hold].at_flags |= ATR_VFLAG_SET;
 
   /* set JOB_ATR_job_array_id */
-  pnewjob->ji_wattr[(int)JOB_ATR_job_array_id].at_val.at_long = taskid;
+  pnewjob->ji_wattr[JOB_ATR_job_array_id].at_val.at_long = taskid;
+  pnewjob->ji_wattr[JOB_ATR_job_array_id].at_flags |= ATR_VFLAG_SET;
 
-  pnewjob->ji_wattr[(int)JOB_ATR_job_array_id].at_flags |= ATR_VFLAG_SET;
-
-  /* set PBS_ARRAYID var */
-  clear_attr(&tempattr, &job_attr_def[(int)JOB_ATR_variables]);
+  /* set PBS_ARRAYID enironment variable */
+  clear_attr(&tempattr, &job_attr_def[JOB_ATR_variables]);
 
   sprintf(buf, "PBS_ARRAYID=%d", taskid);
 
-  job_attr_def[(int)JOB_ATR_variables].at_decode(&tempattr,
+  job_attr_def[JOB_ATR_variables].at_decode(&tempattr,
       NULL,
       NULL,
       buf);
 
-  job_attr_def[(int)JOB_ATR_variables].at_set(
-    &pnewjob->ji_wattr[(int)JOB_ATR_variables],
+  job_attr_def[JOB_ATR_variables].at_set(
+    &pnewjob->ji_wattr[JOB_ATR_variables],
     &tempattr,
     INCR);
 
-  job_attr_def[(int)JOB_ATR_variables].at_free(&tempattr);
+  job_attr_def[JOB_ATR_variables].at_free(&tempattr);
 
-  /* we need to link the cloned job into the array task list */
+  /* we need to put the cloned job into the array */
   pa = get_array(template_job->ji_qs.ji_jobid);
-
-  CLEAR_LINK(pnewjob->ji_arrayjobs);
-
-  append_link(&pa->array_alljobs, &pnewjob->ji_arrayjobs, (void*)pnewjob);
-
+  pa->jobs[taskid] = pnewjob;
   pnewjob->ji_arraystruct = pa;
 
   return(pnewjob);
@@ -955,29 +968,28 @@ void job_clone_wt(
 
   /* see if there are qmgr attributes for cloning the batch */
 
-  if (((server.sv_attr[(int)SRV_ATR_clonebatchsize].at_flags & ATR_VFLAG_SET) != 0)
-       && (server.sv_attr[(int)SRV_ATR_clonebatchsize].at_val.at_long > 0))
+  if (((server.sv_attr[SRV_ATR_clonebatchsize].at_flags & ATR_VFLAG_SET) != 0)
+       && (server.sv_attr[SRV_ATR_clonebatchsize].at_val.at_long > 0))
     {
-    clone_size = server.sv_attr[(int)SRV_ATR_clonebatchsize].at_val.at_long;
+    clone_size = server.sv_attr[SRV_ATR_clonebatchsize].at_val.at_long;
     }
   else
     {
     clone_size = CLONE_BATCH_SIZE;
     }
 
-  if (((server.sv_attr[(int)SRV_ATR_clonebatchdelay].at_flags & ATR_VFLAG_SET) != 0)
-       && (server.sv_attr[(int)SRV_ATR_clonebatchdelay].at_val.at_long > 0))
+  if (((server.sv_attr[SRV_ATR_clonebatchdelay].at_flags & ATR_VFLAG_SET) != 0)
+       && (server.sv_attr[SRV_ATR_clonebatchdelay].at_val.at_long > 0))
     {
-    clone_delay = server.sv_attr[(int)SRV_ATR_clonebatchdelay].at_val.at_long;
+    clone_delay = server.sv_attr[SRV_ATR_clonebatchdelay].at_val.at_long;
     }
   else
     {
+    /* default to one second */
     clone_delay = 1;
     }
 
-  loop = TRUE;
-
-  while (loop)
+  for (loop = TRUE; loop;)
     {
     start = rn->start;
     end = rn->end;
@@ -989,7 +1001,7 @@ void job_clone_wt(
 
     for (i = start; i <= end; i++)
       {
-      pjobclone = job_clone(pjob, i);
+      pjobclone = job_clone(pjob, pa, i);
 
       if (pjobclone == NULL)
         {
@@ -1000,22 +1012,26 @@ void job_clone_wt(
       svr_evaljobstate(pjobclone, &newstate, &newsub, 1);
 
       svr_setjobstate(pjobclone, newstate, newsub);
-      pjobclone->ji_wattr[(int)JOB_ATR_qrank].at_val.at_long = ++queue_rank;
-      pjobclone->ji_wattr[(int)JOB_ATR_qrank].at_flags |= ATR_VFLAG_SET;
+      pjobclone->ji_wattr[JOB_ATR_qrank].at_val.at_long = ++queue_rank;
+      pjobclone->ji_wattr[JOB_ATR_qrank].at_flags |= ATR_VFLAG_SET;
 
       if ((rc = svr_enquejob(pjobclone)))
         {
+        /* XXX need more robust error handling */
         job_purge(pjobclone);
         }
 
       if (job_save(pjobclone, SAVEJOB_FULL) != 0)
         {
+        /* XXX need more robust error handling */
         job_purge(pjobclone);
         }
 
       pa->ai_qs.num_cloned++;
 
       rn->start++;
+
+      pa->jobs[i] = (void *)pjobclone;
 
       array_save(pa);
       num_cloned++;
@@ -1041,15 +1057,17 @@ void job_clone_wt(
     }
   else
     {
-    /* this is the last batch of jobs, we can purge the "parent" job */
-
-    job_purge(pjob);
+    int i;
+    /* this is the last batch of jobs */
 
     /* scan over all the jobs in the array and unset the hold */
-    pjob = GET_NEXT(pa->array_alljobs);
-
-    while (pjob != NULL)
+    for (i = 0; i < pa->ai_qs.array_size; i++)
       {
+      if (pa->jobs[i] == NULL)
+        continue;
+
+      pjob = (job *)pa->jobs[i];
+
       pjob->ji_wattr[(int)JOB_ATR_hold].at_val.at_long &= ~HOLD_a;
 
       if (pjob->ji_wattr[(int)JOB_ATR_hold].at_val.at_long == 0)
@@ -1066,8 +1084,6 @@ void job_clone_wt(
       svr_setjobstate(pjob, newstate, newsub);
 
       job_save(pjob, SAVEJOB_FULL);
-
-      pjob = (job*)GET_NEXT(pjob->ji_arrayjobs);
       }
     }
 
@@ -1480,27 +1496,31 @@ void job_purge(
     }
 
   /* if part of job array then remove from array's job list */
-  if (pjob->ji_arraystruct != NULL &&
-      pjob->ji_isparent == FALSE)
+  if ((pjob->ji_arraystruct) != NULL &&
+      (pjob->ji_is_array_template == FALSE))
     {
+    job_array *pa = pjob->ji_arraystruct;
 
-    delete_link(&pjob->ji_arrayjobs);
-    /* if the only thing in the array alljobs list is the head, then we can
-       clean that up too */
+    /* erase the pointer to this job in the job array */
+    pa->jobs[pjob->ji_wattr[JOB_ATR_job_array_id].at_val.at_long] = NULL;
 
-    if (GET_NEXT(pjob->ji_arraystruct->array_alljobs) == pjob->ji_arraystruct->array_alljobs.ll_struct)
+    /* if there are no more jobs in the arry,
+     * then we can clean that up too */
+    if (++pa->ai_qs.jobs_done == pa->ai_qs.num_jobs)
       {
       array_delete(pjob->ji_arraystruct);
       }
     }
 
-  if (pjob->ji_isparent == TRUE)
+  if ((pjob->ji_is_array_template == TRUE) ||
+      (pjob->ji_arraystruct == NULL))
     {
-    delete_link(&pjob->ji_alljobs);
+    delete_link(&pjob->ji_jobs_array_sum);
     }
 
-
-  if (!(pjob->ji_wattr[(int)JOB_ATR_job_array_request].at_flags & ATR_VFLAG_SET))
+  /* delete the script file */
+  if ((pjob->ji_arraystruct == NULL) ||
+      (pjob->ji_is_array_template == TRUE))
     {
     strcpy(namebuf, path_jobs); /* delete script file */
     strcat(namebuf, pjob->ji_qs.ji_fileprefix);
@@ -1597,7 +1617,7 @@ void job_purge(
 
   strcat(namebuf, pjob->ji_qs.ji_fileprefix);
 
-  if (pjob->ji_isparent == TRUE)
+  if (pjob->ji_is_array_template == TRUE)
     {
     strcat(namebuf, JOB_FILE_TMP_SUFFIX);
     }

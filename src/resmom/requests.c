@@ -3972,6 +3972,8 @@ error:
   if (bad_files)
     {
     reply_text(preq, PBSE_NOCOPYFILE, bad_list);
+
+    log_err(-1,id,bad_list);
     }
   else
     {

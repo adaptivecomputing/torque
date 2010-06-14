@@ -235,40 +235,6 @@ void ensure_deleted(
   } /* ensure_deleted */
 
 
-void ensure_deleted(
-
-  struct work_task *ptask)  /* I */
-
-  {
-  struct batch_request *preq;
-  job *pjob;
-
-  preq = ptask->wt_parm1;
-
-  if ((pjob = find_job(preq->rq_ind.rq_delete.rq_objname)) == NULL)
-    {
-    /* job doesn't exist, we're done */
-    return;
-    }
-
-  sprintf(log_buffer, "purging job without checking MOM");
-  
-  log_event(
-    PBSEVENT_JOB,
-    PBS_EVENTCLASS_JOB,
-    pjob->ji_qs.ji_jobid,
-    log_buffer);
-  
-  free_nodes(pjob);
-  
-  if (pjob->ji_qhdr->qu_qs.qu_type == QTYPE_Execution)
-    {
-    set_resc_assigned(pjob, DECR);
-    }
-  
-  job_purge(pjob);
-
-  } /* ensure_deleted */
 
 
 /*

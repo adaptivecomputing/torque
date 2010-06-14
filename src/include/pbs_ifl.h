@@ -275,6 +275,8 @@
 #define ATTR_clonebatchdelay "clone_batch_delay"
 #define ATTR_jobstarttimeout "job_start_timeout"
 #define ATTR_jobforcecanceltime "job_force_cancel_time"
+#define ATTR_maxarraysize    "max_job_array_size"
+#define ATTR_maxslotlimit    "max_slot_limit"
 
 /* additional node "attributes" names */
 
@@ -300,6 +302,7 @@
 #define MAIL_AT_ABORT "a"
 
 
+#define ARRAY_RANGE "array_range=" /* see qdel.c */
 #define DELDELAY  "deldelay=" /* see qdel.c */
 #define DELPURGE  "delpurge="   /* see qdel.c */
 #define PURGECOMP  "purgecomplete="   /* see req_delete.c */
@@ -365,9 +368,10 @@
 
 /* WARNING: be careful changing these PBS_MAX* values.  They can result in a
    change in the structure of the .JB file, and binary incompatibilities between
-   versions of TORQUE.  Do not change in a -fixes branch */
-   
-   
+   versions of TORQUE.  Do not change in a -fixes branch, avoid changing in
+   a minor release if possible */
+
+
 
 #define PBS_MAXHOSTNAME  1024 /* max host name length */
 #ifndef MAXPATHLEN
@@ -383,7 +387,7 @@
 #define PBS_MAXGRPN  16 /* max group name length */
 #define PBS_MAXQUEUENAME 15 /* max queue name length */
 #define PBS_MAXSERVERNAME PBS_MAXHOSTNAME /* max server name length */
-#define PBS_MAXJOBARRAYLEN      6       /* number of characters allowed in jobarray portion of job id, including '-' */
+#define PBS_MAXJOBARRAYLEN      7       /* number of characters allowed in jobarray portion of job id, including '[]' */
 #define PBS_MAXSEQNUM  8 /* max sequence number length */
 #define PBS_MAXPORTNUM  5 /* udp/tcp port numbers max=16 bits */
 #define PBS_MAXJOBARRAY  99999
@@ -401,7 +405,7 @@
    hex value e.g. 0x00020300 for torque v2.3.0. Now we just increment a value 
    which is added to the last version encoded that way */
 #define PBS_QS_VERSION_BASE 0x00020300 /* magic number do not change */
-#define PBS_QS_VERSION_INT 1 /* increment this version number with every change to the ji_qs struct */
+#define PBS_QS_VERSION_INT 2 /* increment this version number with every change to the ji_qs struct */
 #define PBS_QS_VERSION  (PBS_QS_VERSION_BASE + PBS_QS_VERSION_INT) /* version number saved in the ji_qs struct */
 
 /* someday the PBS_*_PORT definition will go away and only the */

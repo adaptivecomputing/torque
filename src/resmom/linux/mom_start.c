@@ -328,6 +328,9 @@ void scan_for_terminated(void)
   job *pjob;
   task *ptask = NULL;
   int  statloc;
+#ifdef USESAVEDRESOURCES
+  int update_stats = TRUE;
+#endif /* USESAVEDRESOURCES */
 
   int    tcount;
 
@@ -351,7 +354,48 @@ void scan_for_terminated(void)
 
     while (pjob != NULL)
       {
+
+#ifdef USESAVEDRESOURCES
+      ptask = (task *)GET_NEXT(pjob->ji_tasks);
+
+      /*
+       ** check task with associated process id to see if we are recovering
+       ** after a mom restart where process completed while we were gone
+        */
+      
+      while (ptask != NULL)
+        {
+        if (ptask->ti_flags & TI_FLAGS_RECOVERY)
+          {
+          if (LOGLEVEL >= 7)
+            {
+            snprintf(log_buffer, 1024, "found match for recovering job task for sid=%d",
+              ptask->ti_qs.ti_sid);
+
+            LOG_EVENT(
+              PBSEVENT_DEBUG,
+              PBS_EVENTCLASS_JOB,
+              pjob->ji_qs.ji_jobid,
+              log_buffer);
+            }
+          
+          update_stats = FALSE;
+          break;
+          }
+
+        ptask = (task *)GET_NEXT(ptask->ti_jobtask);
+        
+        }  /* END while (ptask) */
+      
+      if (update_stats)
+        {
+        mom_set_use(pjob);
+        }
+#else
+
       mom_set_use(pjob);
+
+#endif /* USESAVEDRESOURCES */
 
       pjob = (job *)GET_PRIOR(pjob->ji_alljobs);
       }
