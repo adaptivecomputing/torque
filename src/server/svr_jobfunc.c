@@ -336,7 +336,7 @@ int svr_enquejob(
       /* link after 'current' job in server's list */
 
       insert_link(&pjcur->ji_alljobs, &pjob->ji_alljobs, pjob, LINK_INSET_AFTER);
-    }
+      }
 
     server.sv_qs.sv_numjobs++;
 
@@ -366,8 +366,13 @@ int svr_enquejob(
       {
       /* link after 'current' job in server's list */
 
-      insert_link(&pjcur->ji_jobs_array_sum, &pjob->ji_jobs_array_sum,
-                  pjob,LINK_INSET_AFTER);
+      /* only link if it isn't the same job - it may already be inserted
+       * if submitted to a routing queue */
+      if (strcmp(pjcur->ji_qs.ji_jobid,pjob->ji_qs.ji_jobid))
+        {
+        insert_link(&pjcur->ji_jobs_array_sum, &pjob->ji_jobs_array_sum,
+          pjob,LINK_INSET_AFTER);
+        }
       }
       
     }
