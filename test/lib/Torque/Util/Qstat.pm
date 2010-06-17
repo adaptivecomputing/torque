@@ -44,7 +44,7 @@ sub qstat_fx #($)
 
   my $cmd = "qstat -f -x $job_id";
 
-  my %result = runCommandAs($user, $cmd, 'test_success_die');
+  my %result = runCommandAs($user, $cmd, ('test_success_die' => 1));
 
   return parse_qstat_fx($result{ 'STDOUT' });
 
