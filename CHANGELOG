@@ -59,6 +59,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   b - fixed things so that arrays can't circumvent max_queuable
   f - added server parameter max_slot_limit to restrict slot limits
   e - changed array names from jobid-index to jobid[index] for consistency
+  b - properly escape characters (&"'<>) in XML output)
 
 2.4.9
   b - Bugzilla bug 57. Check return value of malloc for tracejob for Linux

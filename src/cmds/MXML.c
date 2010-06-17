@@ -503,6 +503,10 @@ int MXMLSetVal(
   char  tmpLine[MMAX_LINE];
   char *ptr;
 
+  int Vlen;
+  int final_len = 0;
+  int i;
+
   if ((E == NULL) || (V == NULL))
     {
     return(FAILURE);
@@ -522,7 +526,61 @@ int MXMLSetVal(
 
     default:
 
+      /* temporarily use ptr as the input string */
       ptr = (char *)V;
+      Vlen = strlen(ptr);
+      for (i = 0; i < Vlen; i++)
+        {
+        /* escape characters &"'<> */
+        if (ptr[i] == '<')
+          {
+          tmpLine[final_len++] = '&';
+          tmpLine[final_len++] = 'l';
+          tmpLine[final_len++] = 't';
+          tmpLine[final_len++] = ';';
+          }
+        else if (ptr[i] == '>')
+          {
+          tmpLine[final_len++] = '&';
+          tmpLine[final_len++] = 'g';
+          tmpLine[final_len++] = 't';
+          tmpLine[final_len++] = ';';
+          }
+        else if (ptr[i] == '&')
+          {
+          tmpLine[final_len++] = '&';
+          tmpLine[final_len++] = 'a';
+          tmpLine[final_len++] = 'm';
+          tmpLine[final_len++] = 'p';
+          tmpLine[final_len++] = ';';
+          }
+        else if (ptr[i] == '"')
+          {
+          tmpLine[final_len++] = '&';
+          tmpLine[final_len++] = 'q';
+          tmpLine[final_len++] = 'u';
+          tmpLine[final_len++] = 'o';
+          tmpLine[final_len++] = 't';
+          tmpLine[final_len++] = ';';
+          }
+        else if (ptr[i] == '\'')
+          {
+          tmpLine[final_len++] = '&';
+          tmpLine[final_len++] = 'a';
+          tmpLine[final_len++] = 'p';
+          tmpLine[final_len++] = 'o';
+          tmpLine[final_len++] = 's';
+          tmpLine[final_len++] = ';';
+          }
+        else
+          {
+          tmpLine[final_len++] = ptr[i];
+          }
+        }
+      tmpLine[final_len] = '\0';
+
+      /* set ptr to it's proper output place */
+      ptr = tmpLine;
 
       break;
 
@@ -555,13 +613,6 @@ int MXMLSetVal(
     }  /* END switch(Format) */
 
   E->Val = strdup(ptr);
-
-  /* strip '<' symbols  NOTE:  ignore '<' symbol in attrs */
-
-  /* NOTE:  must replace temp hack 14 w/ &lt; */
-
-  for (ptr = strchr(E->Val, '<');ptr != NULL;ptr = strchr(ptr, '<'))
-    * ptr = (char)14;
 
   return(SUCCESS);
   }  /* END MXMLSetVal() */
