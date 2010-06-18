@@ -259,19 +259,37 @@ sub submitJob #($)
 sub runJobs #(@)
   {
 
+  # Gather Parameters
   my @job_ids = @_;
+  my $params  = {};
 
+  if (ref $job_ids[0] eq 'HASH')
+    {
+
+    $params  = $job_ids[0];
+    @job_ids = @{ $params->{ 'job_ids' } }
+
+    } # END if (ref $job_ids[0] eq 'HASH')
+
+  # Variables
+  my $run_cmd_flags = $params->{ 'run_cmd_flags' } || { 'test_success' => 1 };
+
+  my @qruns        = ();
+
+  # Run the jobs
   foreach my $job_id (@job_ids)
     {
   
     $job_id = cleanupJobId($job_id);
 
     my $cmd  = "qrun $job_id";
-    my %qrun = runCommand($cmd);
-    ok($qrun{ 'EXIT_CODE' } == 0, "Checking that '$cmd' ran successfully")
-      or diag ("STDERR: $qrun{ 'STDERR' }");
+    my %qrun = runCommand($cmd, %$run_cmd_flags);
+
+    push(@qruns, \%qrun);
 
     } # END foreach my $job_id (@job_ids)
+
+  return \@qruns;
 
   } # END runJobs #(@)
 
