@@ -591,10 +591,10 @@ void req_quejob(
 
     /* check that job has a jobname */
 
-    if ((pj->ji_wattr[(int)JOB_ATR_jobname].at_flags & ATR_VFLAG_SET) == 0)
+    if ((pj->ji_wattr[JOB_ATR_jobname].at_flags & ATR_VFLAG_SET) == 0)
       {
-      job_attr_def[(int)JOB_ATR_jobname].at_decode(
-        &pj->ji_wattr[(int)JOB_ATR_jobname],
+      job_attr_def[JOB_ATR_jobname].at_decode(
+        &pj->ji_wattr[JOB_ATR_jobname],
         NULL,
         NULL,
         "none");
@@ -602,10 +602,10 @@ void req_quejob(
 
     /* check value of priority */
 
-    if (pj->ji_wattr[(int)JOB_ATR_priority].at_flags & ATR_VFLAG_SET)
+    if (pj->ji_wattr[JOB_ATR_priority].at_flags & ATR_VFLAG_SET)
       {
-      if ((pj->ji_wattr[(int)JOB_ATR_priority].at_val.at_long < -1024) ||
-          (pj->ji_wattr[(int)JOB_ATR_priority].at_val.at_long > 1024))
+      if ((pj->ji_wattr[JOB_ATR_priority].at_val.at_long < -1024) ||
+          (pj->ji_wattr[JOB_ATR_priority].at_val.at_long > 1024))
         {
         job_purge(pj);
 
@@ -617,8 +617,8 @@ void req_quejob(
 
     /* set job owner attribute to user@host */
 
-    job_attr_def[(int)JOB_ATR_job_owner].at_free(
-      &pj->ji_wattr[(int)JOB_ATR_job_owner]);
+    job_attr_def[JOB_ATR_job_owner].at_free(
+      &pj->ji_wattr[JOB_ATR_job_owner]);
 
     strcpy(buf, preq->rq_user);
 
@@ -626,36 +626,36 @@ void req_quejob(
 
     strcat(buf, preq->rq_host);
 
-    job_attr_def[(int)JOB_ATR_job_owner].at_decode(
-      &pj->ji_wattr[(int)JOB_ATR_job_owner],
+    job_attr_def[JOB_ATR_job_owner].at_decode(
+      &pj->ji_wattr[JOB_ATR_job_owner],
       NULL,
       NULL,
       buf);
 
     /* set create time */
 
-    pj->ji_wattr[(int)JOB_ATR_ctime].at_val.at_long = (long)time_now;
+    pj->ji_wattr[JOB_ATR_ctime].at_val.at_long = (long)time_now;
 
-    pj->ji_wattr[(int)JOB_ATR_ctime].at_flags |= ATR_VFLAG_SET;
+    pj->ji_wattr[JOB_ATR_ctime].at_flags |= ATR_VFLAG_SET;
 
     /* set hop count = 1 */
 
-    pj->ji_wattr[(int)JOB_ATR_hopcount].at_val.at_long = 1;
+    pj->ji_wattr[JOB_ATR_hopcount].at_val.at_long = 1;
 
-    pj->ji_wattr[(int)JOB_ATR_hopcount].at_flags |= ATR_VFLAG_SET;
+    pj->ji_wattr[JOB_ATR_hopcount].at_flags |= ATR_VFLAG_SET;
 
     /* Interactive jobs are necessarily not rerunable */
 
-    if ((pj->ji_wattr[(int)JOB_ATR_interactive].at_flags & ATR_VFLAG_SET) &&
-        pj->ji_wattr[(int)JOB_ATR_interactive].at_val.at_long)
+    if ((pj->ji_wattr[JOB_ATR_interactive].at_flags & ATR_VFLAG_SET) &&
+        pj->ji_wattr[JOB_ATR_interactive].at_val.at_long)
       {
-      pj->ji_wattr[(int)JOB_ATR_rerunable].at_val.at_long = 0;
-      pj->ji_wattr[(int)JOB_ATR_rerunable].at_flags |= ATR_VFLAG_SET;
+      pj->ji_wattr[JOB_ATR_rerunable].at_val.at_long = 0;
+      pj->ji_wattr[JOB_ATR_rerunable].at_flags |= ATR_VFLAG_SET;
       }
 
     /* need to set certain environmental variables per POSIX */
 
-    clear_attr(&tempattr, &job_attr_def[(int)JOB_ATR_variables]);
+    clear_attr(&tempattr, &job_attr_def[JOB_ATR_variables]);
 
     strcpy(buf, pbs_o_que);
 
@@ -669,71 +669,71 @@ void req_quejob(
       strcat(buf, preq->rq_host);
       }
 
-    job_attr_def[(int)JOB_ATR_variables].at_decode(
+    job_attr_def[JOB_ATR_variables].at_decode(
         &tempattr,
         NULL,
         NULL,
         buf);
 
-    job_attr_def[(int)JOB_ATR_variables].at_set(
-      &pj->ji_wattr[(int)JOB_ATR_variables],
+    job_attr_def[JOB_ATR_variables].at_set(
+      &pj->ji_wattr[JOB_ATR_variables],
       &tempattr,
       INCR);
 
-    job_attr_def[(int)JOB_ATR_variables].at_free(&tempattr);
+    job_attr_def[JOB_ATR_variables].at_free(&tempattr);
 
     /* if JOB_ATR_outpath/JOB_ATR_errpath not set, set default */
 
-    if (!(pj->ji_wattr[(int)JOB_ATR_outpath].at_flags & ATR_VFLAG_SET) ||
-        (((pj->ji_wattr[(int)JOB_ATR_outpath].at_val.at_str[strlen(pj->ji_wattr[(int)JOB_ATR_outpath].at_val.at_str) - 1] == ':'))))
+    if (!(pj->ji_wattr[JOB_ATR_outpath].at_flags & ATR_VFLAG_SET) ||
+        (((pj->ji_wattr[JOB_ATR_outpath].at_val.at_str[strlen(pj->ji_wattr[JOB_ATR_outpath].at_val.at_str) - 1] == ':'))))
       {
-      pj->ji_wattr[(int)JOB_ATR_outpath].at_val.at_str =
+      pj->ji_wattr[JOB_ATR_outpath].at_val.at_str =
         prefix_std_file(pj, (int)'o');
 
-      pj->ji_wattr[(int)JOB_ATR_outpath].at_flags |= ATR_VFLAG_SET;
+      pj->ji_wattr[JOB_ATR_outpath].at_flags |= ATR_VFLAG_SET;
       }
     /*
      * if the output path was specified and ends with a '/'
      * then append the standard file name
      */
-    else if ((pj->ji_wattr[(int)JOB_ATR_outpath].at_flags & ATR_VFLAG_SET) &&
-        (((pj->ji_wattr[(int)JOB_ATR_outpath].at_val.at_str[strlen(pj->ji_wattr[(int)JOB_ATR_outpath].at_val.at_str) - 1] == '/'))))
+    else if ((pj->ji_wattr[JOB_ATR_outpath].at_flags & ATR_VFLAG_SET) &&
+        (((pj->ji_wattr[JOB_ATR_outpath].at_val.at_str[strlen(pj->ji_wattr[JOB_ATR_outpath].at_val.at_str) - 1] == '/'))))
       {
-        pj->ji_wattr[(int)JOB_ATR_outpath].at_val.at_str[strlen(pj->ji_wattr[(int)JOB_ATR_outpath].at_val.at_str) - 1] = '\0';
+        pj->ji_wattr[JOB_ATR_outpath].at_val.at_str[strlen(pj->ji_wattr[JOB_ATR_outpath].at_val.at_str) - 1] = '\0';
         
         replace_attr_string(
-          &pj->ji_wattr[(int)JOB_ATR_outpath],
+          &pj->ji_wattr[JOB_ATR_outpath],
           (add_std_filename(pj,
-          pj->ji_wattr[(int)JOB_ATR_outpath].at_val.at_str,
+          pj->ji_wattr[JOB_ATR_outpath].at_val.at_str,
           (int)'o')));
       }
 
-    if (!(pj->ji_wattr[(int)JOB_ATR_errpath].at_flags & ATR_VFLAG_SET) ||
-        (((pj->ji_wattr[(int)JOB_ATR_errpath].at_val.at_str[strlen(pj->ji_wattr[(int)JOB_ATR_errpath].at_val.at_str) - 1] == ':'))))
+    if (!(pj->ji_wattr[JOB_ATR_errpath].at_flags & ATR_VFLAG_SET) ||
+        (((pj->ji_wattr[JOB_ATR_errpath].at_val.at_str[strlen(pj->ji_wattr[JOB_ATR_errpath].at_val.at_str) - 1] == ':'))))
       {
-      pj->ji_wattr[(int)JOB_ATR_errpath].at_val.at_str =
+      pj->ji_wattr[JOB_ATR_errpath].at_val.at_str =
         prefix_std_file(pj, (int)'e');
 
-      pj->ji_wattr[(int)JOB_ATR_errpath].at_flags |= ATR_VFLAG_SET;
+      pj->ji_wattr[JOB_ATR_errpath].at_flags |= ATR_VFLAG_SET;
       }
     /*
      * if the error path was specified and ends with a '/'
      * then append the standard file name
      */
-    else if ((pj->ji_wattr[(int)JOB_ATR_errpath].at_flags & ATR_VFLAG_SET) &&
-        (((pj->ji_wattr[(int)JOB_ATR_errpath].at_val.at_str[strlen(pj->ji_wattr[(int)JOB_ATR_errpath].at_val.at_str) - 1] == '/'))))
+    else if ((pj->ji_wattr[JOB_ATR_errpath].at_flags & ATR_VFLAG_SET) &&
+        (((pj->ji_wattr[JOB_ATR_errpath].at_val.at_str[strlen(pj->ji_wattr[JOB_ATR_errpath].at_val.at_str) - 1] == '/'))))
       {
-        pj->ji_wattr[(int)JOB_ATR_errpath].at_val.at_str[strlen(pj->ji_wattr[(int)JOB_ATR_errpath].at_val.at_str) - 1] = '\0';
+        pj->ji_wattr[JOB_ATR_errpath].at_val.at_str[strlen(pj->ji_wattr[JOB_ATR_errpath].at_val.at_str) - 1] = '\0';
         
         replace_attr_string(
-          &pj->ji_wattr[(int)JOB_ATR_errpath],
+          &pj->ji_wattr[JOB_ATR_errpath],
           (add_std_filename(pj,
-          pj->ji_wattr[(int)JOB_ATR_errpath].at_val.at_str,
+          pj->ji_wattr[JOB_ATR_errpath].at_val.at_str,
           (int)'e')));
       }
 
-    if ((pj->ji_wattr[(int)JOB_ATR_outpath].at_val.at_str == NULL) ||
-        (pj->ji_wattr[(int)JOB_ATR_errpath].at_val.at_str == NULL))
+    if ((pj->ji_wattr[JOB_ATR_outpath].at_val.at_str == NULL) ||
+        (pj->ji_wattr[JOB_ATR_errpath].at_val.at_str == NULL))
       {
       job_purge(pj);
 
@@ -750,40 +750,40 @@ void req_quejob(
 
     /* If queue has checkpoint directory name specified, propagate it to the job. */
 
-    if (!(pj->ji_wattr[(int)JOB_ATR_checkpoint_dir].at_flags & ATR_VFLAG_SET))
+    if (!(pj->ji_wattr[JOB_ATR_checkpoint_dir].at_flags & ATR_VFLAG_SET))
       {
       attribute *pattr;
       char *vp;
 
-      pattr = &pj->ji_wattr[(int)JOB_ATR_checkpoint];
+      pattr = &pj->ji_wattr[JOB_ATR_checkpoint];
 
       if ((pattr->at_flags & ATR_VFLAG_SET) &&
           (vp = csv_find_value(pattr->at_val.at_str, "dir")))
         {
         clear_attr(
-          &pj->ji_wattr[(int)JOB_ATR_checkpoint_dir],
-          &job_attr_def[(int)JOB_ATR_checkpoint_dir]);
+          &pj->ji_wattr[JOB_ATR_checkpoint_dir],
+          &job_attr_def[JOB_ATR_checkpoint_dir]);
 
-        job_attr_def[(int)JOB_ATR_checkpoint_dir].at_decode(
-          &pj->ji_wattr[(int)JOB_ATR_checkpoint_dir],
+        job_attr_def[JOB_ATR_checkpoint_dir].at_decode(
+          &pj->ji_wattr[JOB_ATR_checkpoint_dir],
           NULL,
           NULL,
           vp);
         }
-      else if ((pque->qu_attr[(int)QE_ATR_checkpoint_dir].at_flags & ATR_VFLAG_SET) &&
-               (pque->qu_attr[(int)QE_ATR_checkpoint_dir].at_val.at_str))
+      else if ((pque->qu_attr[QE_ATR_checkpoint_dir].at_flags & ATR_VFLAG_SET) &&
+               (pque->qu_attr[QE_ATR_checkpoint_dir].at_val.at_str))
         {
-        job_attr_def[(int)JOB_ATR_checkpoint_dir].at_set(
-          &pj->ji_wattr[(int)JOB_ATR_checkpoint_dir],
-          &pque->qu_attr[(int)QE_ATR_checkpoint_dir],
+        job_attr_def[JOB_ATR_checkpoint_dir].at_set(
+          &pj->ji_wattr[JOB_ATR_checkpoint_dir],
+          &pque->qu_attr[QE_ATR_checkpoint_dir],
           SET);
         }
-      else if ((server.sv_attr[(int)SRV_ATR_checkpoint_dir].at_flags & ATR_VFLAG_SET) &&
-               (server.sv_attr[(int)SRV_ATR_checkpoint_dir].at_val.at_str))
+      else if ((server.sv_attr[SRV_ATR_checkpoint_dir].at_flags & ATR_VFLAG_SET) &&
+               (server.sv_attr[SRV_ATR_checkpoint_dir].at_val.at_str))
         {
-        job_attr_def[(int)JOB_ATR_checkpoint_dir].at_set(
-          &pj->ji_wattr[(int)JOB_ATR_checkpoint_dir],
-          &server.sv_attr[(int)SRV_ATR_checkpoint_dir],
+        job_attr_def[JOB_ATR_checkpoint_dir].at_set(
+          &pj->ji_wattr[JOB_ATR_checkpoint_dir],
+          &server.sv_attr[SRV_ATR_checkpoint_dir],
           SET);
         }
       }
@@ -797,13 +797,13 @@ void req_quejob(
      * Else return error: valid user account is required
      *************************************************************/
 
-    if (pj->ji_wattr[(int)JOB_ATR_account].at_flags & ATR_VFLAG_SET)
+    if (pj->ji_wattr[JOB_ATR_account].at_flags & ATR_VFLAG_SET)
       {
       /* account specified, reject if it's not valid for user */
 
       if (user_account_verify(
             preq->rq_user,
-            pj->ji_wattr[(int)JOB_ATR_account].at_val.at_str) == 0)
+            pj->ji_wattr[JOB_ATR_account].at_val.at_str) == 0)
         {
         job_purge(pj);
 
@@ -816,13 +816,13 @@ void req_quejob(
       {
       /* account not specified, get default value */
 
-      job_attr_def[(int)JOB_ATR_account].at_decode(
-        &pj->ji_wattr[(int)JOB_ATR_account],
+      job_attr_def[JOB_ATR_account].at_decode(
+        &pj->ji_wattr[JOB_ATR_account],
         NULL,
         NULL,
         (char *)user_account_default(preq->rq_user));
 
-      if (pj->ji_wattr[(int)JOB_ATR_account].at_val.at_str == 0)
+      if (pj->ji_wattr[JOB_ATR_account].at_val.at_str == 0)
         {
         /* no default found */
 
@@ -842,7 +842,7 @@ void req_quejob(
 
     /* make sure job_owner is set, error if not */
 
-    if (!(pj->ji_wattr[(int)JOB_ATR_job_owner].at_flags & ATR_VFLAG_SET))
+    if (!(pj->ji_wattr[JOB_ATR_job_owner].at_flags & ATR_VFLAG_SET))
       {
       job_purge(pj);
 
@@ -855,7 +855,7 @@ void req_quejob(
 
     /* increment hop count */
 
-    if (++pj->ji_wattr[(int)JOB_ATR_hopcount].at_val.at_long > PBS_MAX_HOPCOUNT)
+    if (++pj->ji_wattr[JOB_ATR_hopcount].at_val.at_long > PBS_MAX_HOPCOUNT)
       {
       job_purge(pj);
 
@@ -867,8 +867,8 @@ void req_quejob(
 
   /* set up at_server attribute for status */
 
-  job_attr_def[(int)JOB_ATR_at_server].at_decode(
-    &pj->ji_wattr[(int)JOB_ATR_at_server],
+  job_attr_def[JOB_ATR_at_server].at_decode(
+    &pj->ji_wattr[JOB_ATR_at_server],
     NULL,
     NULL,
     server_name);
@@ -908,7 +908,6 @@ void req_quejob(
 
     free(oldid);    
        
-    
     }
 
   if ((rc = svr_chkque(pj, pque, preq->rq_host, MOVE_TYPE_Move, EMsg)))
@@ -924,9 +923,9 @@ void req_quejob(
 
   strcpy(pj->ji_qs.ji_queue, pque->qu_qs.qu_name);
 
-  pj->ji_wattr[(int)JOB_ATR_substate].at_val.at_long = JOB_SUBSTATE_TRANSIN;
+  pj->ji_wattr[JOB_ATR_substate].at_val.at_long = JOB_SUBSTATE_TRANSIN;
 
-  pj->ji_wattr[(int)JOB_ATR_substate].at_flags |= ATR_VFLAG_SET;
+  pj->ji_wattr[JOB_ATR_substate].at_flags |= ATR_VFLAG_SET;
 
   /* set remaining job structure elements */
 
@@ -934,9 +933,9 @@ void req_quejob(
 
   pj->ji_qs.ji_substate = JOB_SUBSTATE_TRANSIN;
 
-  pj->ji_wattr[(int)JOB_ATR_mtime].at_val.at_long = (long)time_now;
+  pj->ji_wattr[JOB_ATR_mtime].at_val.at_long = (long)time_now;
 
-  pj->ji_wattr[(int)JOB_ATR_mtime].at_flags |= ATR_VFLAG_SET;
+  pj->ji_wattr[JOB_ATR_mtime].at_flags |= ATR_VFLAG_SET;
 
   pj->ji_qs.ji_un_type = JOB_UNION_TYPE_NEW;
 

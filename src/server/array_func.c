@@ -571,7 +571,7 @@ int setup_array_struct(job *pjob)
   
   bad_token_count =
 
-    parse_array_request(pjob->ji_wattr[(int)JOB_ATR_job_array_request].at_val.at_str,
+    parse_array_request(pjob->ji_wattr[JOB_ATR_job_array_request].at_val.at_str,
                         &(pa->request_tokens));
 
   /* get the number of elements that should be allocated in the array */
@@ -1338,10 +1338,13 @@ int num_array_jobs(
   char *ptr;
   char *dash;
 
+  char  tmp_str[MAXPATHLEN];
+
   if (req_str == NULL)
     return(-1);
 
-  ptr = strtok(req_str,delim);
+  strcpy(tmp_str,req_str);
+  ptr = strtok(tmp_str,delim);
 
   while (ptr != NULL)
     {
