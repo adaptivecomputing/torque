@@ -39,13 +39,13 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       for accounting end record instead of current resources used for jobs that
       stopped running while mom was not up.
   e - TORQUE job arrays now use arrays to hold the job pointers and not 
-      linked lists. 
-  f - Allow users to delete a range of jobs from the job array
+      linked lists (constant lookup). 
+  f - Allow users to delete a range of jobs from the job array (qdel -t)
   f - Added a slot limit to the job arrays - this restricts the number of 
       jobs that can concurrently run from one job array. 
   f - added support for holding ranges of jobs from an array with a single 
       qhold (using the -t option). 
-  f - now jobs in an array can be modified through qalter 
+  f - now ranges of jobs in an array can be modified through qalter 
       (using the -t option). 
   f - jobs can now depend on arrays using these dependencies: 
       afterstartarray, afterokarray, afternotokarray, afteranyarray, 

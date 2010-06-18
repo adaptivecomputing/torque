@@ -177,6 +177,7 @@ enum TJobStatTypeEnum
   tjstTruncatedServer,
   tjstSummarizeArraysServer,
   tjstSummarizeArraysQueue,
+  tjstArray,
   tjstLAST
   };
 
@@ -225,12 +226,25 @@ void req_stat_job(
     {
     /* status a single job */
 
-    type = tjstJob;
-
-    if ((pjob = find_job(name)) == NULL)
+    if (is_array(name))
       {
-      rc = PBSE_UNKJOBID;
+      
+      if (type != tjstSummarizeArraysServer)
+        {
+        type = tjstArray;
+        }
+      pjob = find_array_template(name);
       }
+    else
+      {
+      type = tjstJob;
+      if ((pjob = find_job(name)) == NULL)
+        {
+        rc = PBSE_UNKJOBID;
+        }
+      }
+      
+    
     }
   else if (isalpha(name[0]))
     {
@@ -324,7 +338,7 @@ static void req_stat_job_step2(
 
   {
   svrattrl        *pal;
-  job         *pjob;
+  job         *pjob = NULL;
 
   struct batch_request *preq;
 
@@ -341,6 +355,10 @@ static void req_stat_job_step2(
   long                  DTime;  /* delta time - only report full attribute list if J->MTime > DTime */
 
   static svrattrl      *dpal = NULL;
+  
+  int job_array_index = 0;
+  job_array *pa = NULL;
+  
 
   preq   = cntl->sc_origrq;
   type   = (enum TJobStatTypeEnum)cntl->sc_type;
@@ -386,6 +404,11 @@ static void req_stat_job_step2(
       }
     }  /* END if (dpal == NULL) */
 
+  if (type == tjstArray)
+    {
+    pa = get_array(preq->rq_ind.rq_status.rq_id);
+    }
+
   if (!server.sv_attr[(int)SRV_ATR_PollJobs].at_val.at_long)
     {
     /* polljobs not set - indicates we may need to obtain fresh data from
@@ -410,6 +433,14 @@ static void req_stat_job_step2(
           {
           pjob = (job *)GET_NEXT(cntl->sc_pque->qu_jobs);
           }
+        else if (type == tjstArray)
+          {
+          job_array_index = 0;
+          /* increment job_array_index until we find a non-null pointer or hit the end */
+          while (job_array_index < pa->ai_qs.array_size && (pjob = pa->jobs[job_array_index]) == NULL)
+             job_array_index++;
+         
+          }
         else
           {
           if ((type == tjstTruncatedServer) || (type == tjstTruncatedQueue))
@@ -429,6 +460,14 @@ static void req_stat_job_step2(
           pjob = (job *)GET_NEXT(pjob->ji_jobque);
         else
           pjob = (job *)GET_NEXT(pjob->ji_alljobs);
+          
+        if (type == tjstArray)
+          {
+          pjob = NULL;
+          /* increment job_array_index until we find a non-null pointer or hit the end */
+          while (++job_array_index < pa->ai_qs.array_size && (pjob = pa->jobs[job_array_index]) == NULL)
+            ;
+          }
         }
 
       if (pjob == NULL)
@@ -492,6 +531,14 @@ static void req_stat_job_step2(
     pjob = (job *)GET_NEXT(cntl->sc_pque->qu_jobs_array_sum);
   else if (type == tjstSummarizeArraysServer)
     pjob = (job *)GET_NEXT(svr_jobs_array_sum);
+  else if (type == tjstArray)
+    {
+    job_array_index = 0;
+    pjob = NULL;
+    /* increment job_array_index until we find a non-null pointer or hit the end */
+    while (job_array_index < pa->ai_qs.array_size && (pjob = pa->jobs[job_array_index]) == NULL)
+        job_array_index++;
+    }
   else
     pjob = (job *)GET_NEXT(svr_alljobs);
 
@@ -661,6 +708,13 @@ nextjob:
       pjob = (job *)GET_NEXT(pjob->ji_jobque_array_sum);
     else if (type == tjstSummarizeArraysServer)
       pjob = (job *)GET_NEXT(pjob->ji_jobs_array_sum);
+    else if (type == tjstArray)
+      {
+      pjob = NULL;
+      /* increment job_array_index until we find a non-null pointer or hit the end */
+      while (++job_array_index < pa->ai_qs.array_size && (pjob = pa->jobs[job_array_index]) == NULL)
+        ;
+      }
     else
       pjob = (job *)GET_NEXT(pjob->ji_alljobs);
 
