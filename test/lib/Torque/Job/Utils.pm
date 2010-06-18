@@ -64,7 +64,7 @@ sub detaint_job_id #($)
 
     my ($job_id) = @_;
 
-    if ($job_id =~ /^([-\@\w.]+)$/) 
+    if ($job_id =~ /^([-\@\w.\[\]]+)$/) 
       {
 	    $job_id = $1;	# $job_id now untainted
       } 
