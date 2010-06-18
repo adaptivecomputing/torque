@@ -171,7 +171,6 @@ extern int   LOGLEVEL;
 extern tlist_head svr_newjobs;
 extern tlist_head svr_alljobs;
 
-
 void nodes_free(job *);
 int TTmpDirName(job *, char *);
 

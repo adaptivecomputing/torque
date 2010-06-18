@@ -169,8 +169,8 @@ extern int   LOGLEVEL;
 
 extern tlist_head svr_newjobs;
 extern tlist_head svr_alljobs;
+extern tlist_head svr_jobs_array_sum;
 extern char *path_checkpoint;
-
 
 
 void send_qsub_delmsg(
@@ -1855,13 +1855,23 @@ job *find_job(
   char *at;
   char *comp;
   int   different = FALSE;
+  int   array = FALSE;
 
   job  *pj;
 
   if ((at = strchr(jobid, (int)'@')) != NULL)
     * at = '\0'; /* strip off @server_name */
 
-  pj = (job *)GET_NEXT(svr_alljobs);
+  /* if its the name of a job array, look in the other list */
+  if (strstr(jobid,"[]") != NULL)
+    {
+    pj = (job *)GET_NEXT(svr_jobs_array_sum);
+    array = TRUE;
+    }
+  else
+    {
+    pj = (job *)GET_NEXT(svr_alljobs);
+    }
 
   if ((server.sv_attr[SRV_ATR_display_job_server_suffix].at_flags & ATR_VFLAG_SET) ||
       (server.sv_attr[SRV_ATR_job_suffix_alias].at_flags & ATR_VFLAG_SET))
@@ -1882,7 +1892,14 @@ job *find_job(
     if (!strcmp(comp, pj->ji_qs.ji_jobid))
       break;
 
-    pj = (job *)GET_NEXT(pj->ji_alljobs);
+    if (array == TRUE)
+      {
+      pj = (job *)GET_NEXT(pj->ji_jobs_array_sum);
+      }
+    else
+      {
+      pj = (job *)GET_NEXT(pj->ji_alljobs);
+      }
     }
 
   if (at)
