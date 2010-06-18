@@ -51,6 +51,7 @@ execute_tests(
               "$testbase/qsub_r.t",
               "$testbase/qsub_cS.t",
               "$testbase/qsub_stdin.t",
+              "$testbase/qsub_t.t",
               "$testbase/qsub_u.t",
               "$testbase/qsub_v.t",
               "$testbase/qsub_cV.t",
