@@ -11,8 +11,8 @@ use CRI::Test;
 use Carp;
 
 use Torque::Util::Qstat qw(
-                                    parse_qstat_fx
-                                 );
+                            parse_qstat_fx
+                          );
 
 use base 'Exporter';
 
@@ -20,6 +20,7 @@ our @EXPORT = qw(
                 checkForJob
                 detaintJobId
                 cleanupJobId
+                generateArrayIds
                 );
  
 ###############################################################################
@@ -94,6 +95,65 @@ sub cleanupJobId #($)
 
   } # END sub cleanupJobId #($)
 
+###############################################################################
+# generateArrayIds
+###############################################################################
+sub generateArrayIds #($)
+  {
+
+  my ($params) = @_;
+
+  # Gather parameters
+  my $job_id = $params->{ 'job_id' } || croak "Please provide a 'job_id'";
+  my $id_exp = $params->{ 'id_exp' } || croak "Please provide a 'id_exp'";
+
+  # Check job id 
+  my $regex = qr/^\d+\[\](\.\S+)?$/;
+  croak "Please provide a job id that matches $regex. Job id given: $job_id"
+    unless $job_id =~ $regex;
+
+  # Variables
+  my @array_ids = ();
+  my @indexes   = ();
+
+  # Determine array indexes
+  my @tmp_exp = split(/,/, $id_exp);
+
+  foreach my $id_exp (@tmp_exp)
+    {
+
+    my ($x, $y) = split('-', $id_exp);
+
+    if (! defined $y)
+      {
+
+      push @indexes, $x;
+      next;
+
+      } # END if (! defined $y)
+    else
+      {
+
+      push @indexes, ($x..$y);
+
+      } # END else
+
+    } # END foreach my $id_exp (@tmp_exp)
+
+
+  # Generate the Array Ids
+  foreach my $index (@indexes)
+    {
+
+    push @array_ids, $job_id;
+    $array_ids[-1] =~ s/\[\]/[$index]/;
+
+    } # END foreach my $index (@indexes)
+
+  return @array_ids;
+
+  } # END sub generateArrayIds #($)
+
 1;
 
 =head1 NAME
@@ -106,6 +166,7 @@ Torque::Job::Utils - A module to control torque jobs
                              checkForJob
                              detaintJobId
                              cleanupJobId
+                             generateArrayIds
                            );
 
 =head1 DESCRIPTION
@@ -128,11 +189,15 @@ Takes a job_id and returns a detainted job id
 
 Takes a job_id and returns the job_id in an expected format.
 
+=item generateArrayIds
+
+Takes a job array id and a id_exp and returns a list of job ids for the job arrays sub jobs.  The id_exp is the value given to the qsub -t flag.
+
 =back
 
 =head1 DEPENDENDCIES
 
-Moab::Test
+CRI::Test, Carp, CRI::Util::Qstat
 
 =head1 AUTHOR(S)
 
