@@ -16,10 +16,6 @@ plan('no_plan');
 setDesc('Qsub -t');
 
 # Variables
-my $torque_home = $props->get_property("Torque.Home.Dir");
-my $user        = $props->get_property('moab.user.one');
-my $qsub        = "$torque_home/bin/qsub";
-
 my %qhash       = ();
 my $qref        = {};
 my $id_exp      = '5-6';
