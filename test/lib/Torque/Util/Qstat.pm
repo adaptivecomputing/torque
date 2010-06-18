@@ -15,6 +15,7 @@ use base 'Exporter';
 
 our @EXPORT_OK = qw(
                    qstat_fx
+                   qstat_tfx
                    parse_qstat
                    parse_qstat_f
                    parse_qstat_f1
@@ -45,6 +46,26 @@ sub qstat_fx #($)
   my $cmd = "qstat -f -x $job_id";
 
   my %result = runCommandAs($user, $cmd, ('test_success_die' => 1));
+
+  return parse_qstat_fx($result{ 'STDOUT' });
+
+  } # END sub qstat_fx #($)
+
+###############################################################################
+# qstat_tfx
+###############################################################################
+sub qstat_tfx #($)
+  {
+
+  my ($params) = @_;
+
+  my $job_id        = $params->{ 'job_id'        } || '';
+  my $user          = $params->{ 'user'          } || 'root';
+  my $run_cmd_flags = $params->{ 'run_cmd_flags' } || { 'test_success_die' => 1 };
+
+  my $cmd = "qstat -t -f -x $job_id";
+
+  my %result = runCommandAs($user, $cmd, %$run_cmd_flags);
 
   return parse_qstat_fx($result{ 'STDOUT' });
 
