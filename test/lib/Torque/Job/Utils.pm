@@ -117,6 +117,7 @@ sub generateArrayIds #($)
   my @indexes   = ();
 
   # Determine array indexes
+  ($id_exp) = split(/%/, $id_exp); # Ignore everything after %
   my @tmp_exp = split(/,/, $id_exp);
 
   foreach my $id_exp (@tmp_exp)
