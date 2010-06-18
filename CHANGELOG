@@ -59,7 +59,6 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   b - fixed things so that arrays can't circumvent max_queuable
   f - added server parameter max_slot_limit to restrict slot limits
   e - changed array names from jobid-index to jobid[index] for consistency
-  b - properly escape characters (&"'<>) in XML output)
 
 2.4.9
   b - Bugzilla bug 57. Check return value of malloc for tracejob for Linux
@@ -82,6 +81,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   e - make PBS_O_WORKDIR accessible in the environment for prolog scripts
   e - Bugzilla 59. Applied patch to allow '=' for qdel -m.
       (Chris Samuel - Univ. of Melbourne)
+  b - properly escape characters (&"'<>) in XML output)
+  b - ignore port when checking host in svr_get_privilege()
 
 2.4.8
   e - Bugzilla bug 22. HIGH_PRECISION_FAIRSHARE for fifo scheduling.

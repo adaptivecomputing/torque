@@ -299,14 +299,21 @@ int svr_get_privilege(
     {
     /* no colon found */
     num_host_chars = strlen(host);
+
+    sprintf(host_no_port, "%s", host);
     }
   else
     {
     num_host_chars = colon_loc - host;
+
+    /* actually remove the colon for host_no_port */
+    *colon_loc = '\0';
+    sprintf(host_no_port,"%s",host);
+    *colon_loc = ':';
     }
 
   /* num_host_chars cannot be more than PBS_MAXHOSTNAME */
-  if(num_host_chars > PBS_MAXHOSTNAME)
+  if (num_host_chars > PBS_MAXHOSTNAME)
     {
     snprintf(log_buffer, LOG_BUF_SIZE, "Invalid host: %s", host);
     /* log_buffer is big but just in case host was really long we need to
@@ -324,8 +331,6 @@ int svr_get_privilege(
     }
 
   sprintf(uh, "%s@%s", user, host);
-
-  sprintf(host_no_port, "%s", host);
 
   /* NOTE:  enable case insensitive host check (CRI) */
 
