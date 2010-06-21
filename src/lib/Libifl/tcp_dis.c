@@ -87,6 +87,7 @@
 #include <sys/types.h>
 #include <stdlib.h>
 #include <assert.h>
+#include <fcntl.h>
 
 #if defined(FD_SET_IN_SYS_SELECT_H)
 #  include <sys/select.h>
@@ -788,6 +789,23 @@ void DIS_tcp_setup(
   if (fd >= tcparraymax)
     {
     int hold = tcparraymax;
+    int flags;
+    
+    /*
+    ** Check if this is a valid file descriptor, if not log an error and don't
+    ** do any memory allocations
+    */
+
+    flags = fcntl(fd, F_GETFL);
+
+    if (errno == EBADF)
+      {
+      sprintf(log_buffer, "invalid file descriptor (%d) for socket",
+        fd);
+      log_err(errno, "DIS_tcp_setup", log_buffer);
+
+      return;
+      }
 
     tcparraymax = fd + 10;
 
