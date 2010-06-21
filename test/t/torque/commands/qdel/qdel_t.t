@@ -13,7 +13,7 @@ use Torque::Job::Ctrl   qw( qsub             delJobs );
 use Torque::Job::Utils  qw( generateArrayIds         );
 
 plan('no_plan');
-setDesc('Qsub -t');
+setDesc('Qdel -t');
 
 # Variables
 my %qhash       = ();
