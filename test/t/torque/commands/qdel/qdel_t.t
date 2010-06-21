@@ -42,8 +42,7 @@ foreach my $jaid (@jaids)
   {
 
   ok(defined $qhash{ $jaid }, "Checking job:$jid for subjob:$jaid");
-  cmp_ok($qhash{ $jaid }{ 'job_array_request' }, 'eq', $id_exp, "Verifying 'job_array_request' for subjob:$jaid");
-  cmp_ok($qhash{ $jaid }{ 'job_state'         }, 'eq', 'Q',     "Verifying 'job_array_request' for subjob:$jaid");
+  cmp_ok($qhash{ $jaid }{ 'job_state' }, 'eq', 'Q', "Verifying 'job_state' for subjob:$jaid");
 
   } # END foreach my $jaid (@jaids)
 
@@ -55,8 +54,7 @@ foreach my $jaid (@jaids)
   {
 
   ok(defined $qhash{ $jaid }, "Checking job:$jid for subjob:$jaid");
-  cmp_ok($qhash{ $jaid }{ 'job_array_request' }, 'eq', $id_exp, "Verifying 'job_array_request' for subjob:$jaid");
-  cmp_ok($qhash{ $jaid }{ 'job_state'             }, 'eq', 'C',     "Verifying 'job_array_request' for subjob:$jaid");
+  cmp_ok($qhash{ $jaid }{ 'job_state' }, 'eq', 'C', "Verifying 'job_state' for subjob:$jaid");
 
   } # END foreach my $jaid (@jaids)
 
